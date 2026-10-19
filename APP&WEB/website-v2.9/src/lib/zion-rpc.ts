@@ -1524,7 +1524,14 @@ class ZionRpcClient {
       matched = statsPayload.miner || statsPayload.stats;
     }
 
-    const chainPayouts = await this.getChainPayoutsForAddress(address, 200).catch(() => ({ totalPaidAtomic: 0, payouts: [] }));
+    // Bounded: getBlockByHeight is ~1.2 s per height — cap the scan window
+    // and race it so miner lookups stay responsive.
+    const chainPayouts = await Promise.race([
+      this.getChainPayoutsForAddress(address, 120),
+      new Promise<{ totalPaidAtomic: number; payouts: any[] }>((resolve) =>
+        setTimeout(() => resolve({ totalPaidAtomic: 0, payouts: [] }), 8_000),
+      ),
+    ]).catch(() => ({ totalPaidAtomic: 0, payouts: [] }));
 
     if (matched) {
       const pendingPayouts = Array.isArray(payoutsPayload?.payouts)

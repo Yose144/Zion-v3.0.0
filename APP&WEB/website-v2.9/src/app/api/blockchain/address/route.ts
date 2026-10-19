@@ -9,6 +9,29 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
+import { SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
+import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
+
+// Pool PPLNS unpaid is pool-side accounting — the node RPC does not know it.
+// Public endpoint: /public/v1/miner/<coin>/<wallet> → { unpaid: "<flowers>" }.
+async function fetchPoolUnpaid(address: string, timeoutMs = 4000): Promise<number | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(
+      `${SITE_PRIMARY_POOL_API_URL.replace(/\/$/, '')}/public/v1/miner/zion/${address}`,
+      { cache: 'no-store', signal: ctrl.signal },
+    );
+    if (!res.ok) return null;
+    const j = await res.json();
+    const unpaid = Number(j?.unpaid ?? 0);
+    return Number.isFinite(unpaid) ? unpaid / ATOMIC_UNITS_PER_ZION : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
 
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
@@ -21,11 +44,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Address required' }, { status: 400 });
     }
 
-    // Fetch blockchain balance (authoritative) + pool mining stats + on-chain TXs in parallel
-    const [walletSnapshot, minerData, txHistory] = await Promise.all([
+    // Fetch blockchain balance (authoritative) + pool mining stats + on-chain TXs
+    // + pool PPLNS unpaid in parallel
+    const [walletSnapshot, minerData, txHistory, poolUnpaid] = await Promise.all([
       rpc.getWalletSnapshot(address).catch(() => null),
       rpc.getMinerInfo(address).catch(() => null),
       rpc.getTransactionHistory(address, 50, 0).catch(() => null),
+      fetchPoolUnpaid(address),
     ]);
 
     // Build address info — chain balance is the real balance
@@ -37,8 +62,9 @@ export async function GET(request: NextRequest) {
       total: balanceZion,
       total_atomic: balanceAtomic,
       utxo_count: utxoCount,
-      // Pool sub-balances (pending payouts etc.)
-      pool_pending: minerData?.balance?.pending || 0,
+      // Pool sub-balances — pool API unpaid is authoritative for PPLNS;
+      // node-side balance.pending is only a fallback (usually 0).
+      pool_pending: poolUnpaid ?? (minerData?.balance?.pending || 0),
       pool_locked: minerData?.balance?.locked || 0,
       pool_paid: minerData?.balance?.paid || 0,
     };
