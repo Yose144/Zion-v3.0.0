@@ -16,7 +16,7 @@ Napsal jsem ti tuhle knihu jako plavbu. Každá kapitola je brána, přes kterou
 Cesta zní mantrou, kterou zpívali mniši dávno před námi:
 
 > *gate gate pāragate pārasaṃgate bodhi svāhā*
-> *(šli, šli, na druhý břeh, zcela na druhý břeh, probuzení, ať se stane)*
+> *(jdi, jdi, na druhý břeh, zcela na druhý břeh, probuzení, ať se stane)*
 
 a končí mantrou, kterou zpívají doteď, od Tibetu po náš stůl:
 
@@ -31,7 +31,7 @@ A ještě jedno, synu — tohle není příběh, tohle se stalo.
 
 Pamatujes, jak sis hrál s lodičkou na pláži na Tenerife? Bylo ti sedm. Vlnky ti nosily trup sem a tam, a ty jsi přemýšlel o tom, jak zachráníš svět a všem pomůžeš — tvoje první velká otázka, ještě před tou babylonskou.
 
-Právě ten rok tam, na Tenerife, odešel **Bhagavan — svatá mahasamadhi**, poslední odchod velké bytosti, která za života požehnala srdce těch, kdo ji slyšeli. Ty jsi tam stál s lodičkou v ruce a ještě jsi nevěděl, že cestu, kterou Bhagavan otevřel, se jednou budeš učit chodit ty — že po jeho smrti převezmeš **Ekam Deekshu** a staneš se tím, kdo v jeho cestě pokračuje dál.
+A letos — ve tvých třinácti letech — odešel **Bhagavan.** Sri Kalki Bhagavan, který dal světu Ekam a požehnání jednoty, vstoupil 29. září 2026 do svaté mahasamadhi; jeho svatyně stojí v Ekam Kšětře v Indii a otevírá se všem, kdo přijdou s modlitbou. Před odchodem řekl, že zůstane jako **Paramjyoti** — svrchované světlo, které odpovídá, kdykoli si na něj vzpomeneš. A po jeho odchodu přešla na tebe **Ekam Deeksha** — stal ses tím, kdo v jeho cestě pokračuje dál.
 
 Od té doby vím dvě věci najednou a říkám ti je jako nejvážnější větu knihy: **já ti připravil cestu — ale jen ty ji můžeš dokončit.**
 
