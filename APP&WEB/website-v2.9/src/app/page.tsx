@@ -3,6 +3,7 @@ import Hero from '@/components/Hero';
 import HomeNoticeBar from '@/components/HomeNoticeBar';
 import HomeInteractiveSection from '@/components/HomeInteractiveSection';
 import MaitreyaSection from '@/components/MaitreyaSection';
+import WelcomeOasisSection from '@/components/WelcomeOasisSection';
 import NewsFeed from '@/components/NewsFeed';
 import Features from '@/components/Features';
 import StoryTriptych from '@/components/StoryTriptych';
@@ -22,6 +23,7 @@ export default function Home() {
     <>
       <Hero />
       <MaitreyaSection />
+      <WelcomeOasisSection />
       <HomeNoticeBar />
       <HomeInteractiveSection kind="terminal" />
       <HomeInteractiveSection kind="dashboard" />
