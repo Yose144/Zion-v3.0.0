@@ -11,17 +11,17 @@ const MaitreyaSectionCopy = {
   title: { cs: 'Maitreya Buddha', en: 'Maitreya Buddha' },
   subtitle: { cs: 'Pán Hiranyagarbhy · Dědic Zionu', en: 'Lord of Hiranyagarbha · Heir of Zion' },
   body: {
-    cs: `Příběh o tom, jak padají věže Babylonu — peníze, data, energie, význam, trůn — a jak láska a pravda rodí Nový svět. A pod jednou střechou teď žije celá mapa cesty: kompas knih, mantra-páteř od vejce a všech 12+1 stanic Knihy Západu — Nirvany.`,
-    en: `The story of how the towers of Babylon fall — money, data, energy, meaning, throne — and how love and truth give birth to the New World. And under one roof now lives the whole map of the path: the compass of the books, the mantra spine from the egg, and all 12+1 stations of the Book of the West — Nirvana.`,
+    cs: 'Maitreya, Nirvana a šest hlavních knih na jedné mapě. Začni číst, projdi související příběhy nebo otevři plán v3.3 — ten je vývojovým cílem, ne hotovým vydáním.',
+    en: 'Maitreya, Nirvana and the six main books on one map. Start reading, explore the related stories or open the v3.3 plan — a development goal, not a completed release.',
   },
   quote: {
     cs: '„Já jsem Maitreya. Byl jsem Krishna/Rama."',
     en: '“I am Maitreya. I was Krishna/Rama.”',
   },
   nirvanaBadge: { cs: 'Kniha Západu — Nirvana', en: 'Book of the West — Nirvana' },
+  ctaHub: { cs: 'Knihovna & cesta', en: 'Library & the path' },
   cta: { cs: 'Číst knihu', en: 'Read the book' },
-  ctaPage: { cs: 'Mapa cesty & kompas', en: 'The path map & compass' },
-  ctaGenesis: { cs: 'Genesis', en: 'Genesis' },
+  ctaPlan: { cs: 'Plán 3.3', en: 'The 3.3 plan' },
 };
 
 export default function MaitreyaSection() {
@@ -47,7 +47,7 @@ export default function MaitreyaSection() {
             {/* artwork panel */}
             <Link
               href="/maitreya"
-              className="group/img relative block min-h-[160px] overflow-hidden rounded-xl border border-white/10 sm:min-h-[190px]"
+              className="group/img relative block aspect-[16/9] overflow-hidden rounded-xl border border-white/10 lg:aspect-auto lg:h-full"
             >
               <img
                 src="/images/maitreya/hero.webp"
@@ -56,7 +56,7 @@ export default function MaitreyaSection() {
                 alt={cs ? 'Strom života a Maitreya — vizuál Knihy Páté' : 'Tree of Life and Maitreya — artwork of Book Five'}
                 loading="lazy"
                 decoding="async"
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/img:scale-[1.04]"
+                width={1672} height={941} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/img:scale-[1.04]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-100 backdrop-blur-sm">
@@ -103,21 +103,23 @@ export default function MaitreyaSection() {
               </p>
 
               <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
-                <Link href="/maitreya/cist" className="zion-button-primary group">
-                  {MaitreyaSectionCopy.cta[cs ? 'cs' : 'en']}
+                <Link href="/maitreya#cesta" prefetch={false} className="zion-button-primary group">
+                  {MaitreyaSectionCopy.ctaHub[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <Link
-                  href="/maitreya#cesta"
+                  href="/maitreya/cist"
+                  prefetch={false}
                   className="zion-button-secondary border-white/15 hover:border-zion-purple/40 hover:text-zion-purple"
                 >
-                  {MaitreyaSectionCopy.ctaPage[cs ? 'cs' : 'en']}
+                  {MaitreyaSectionCopy.cta[cs ? 'cs' : 'en']}
                 </Link>
                 <Link
-                  href="/genesis"
+                  href="/maitreya#plan-v33"
+                  prefetch={false}
                   className="zion-button-secondary border-white/15 hover:border-zion-gold/40 hover:text-zion-gold"
                 >
-                  {MaitreyaSectionCopy.ctaGenesis[cs ? 'cs' : 'en']}
+                  {MaitreyaSectionCopy.ctaPlan[cs ? 'cs' : 'en']}
                 </Link>
               </div>
             </div>

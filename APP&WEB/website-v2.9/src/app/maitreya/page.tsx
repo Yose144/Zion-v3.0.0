@@ -1,37 +1,47 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
-  ArrowDown,
-  ArrowLeft,
   ArrowRight,
-  Atom,
   BookOpen,
   Compass,
   Egg,
-  Feather,
-  Flag,
-  Flame,
-  Globe,
-  Globe2,
-  Heart,
-  Hourglass,
-  KeyRound,
-  Landmark,
-  MapPin,
-  Mountain,
+  Library,
+  ListChecks,
   Route,
   ScrollText,
-  Ship,
-  Sparkles,
   Sun,
-  Sunrise,
-  Wind,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import CestaPanel from './panels/CestaPanel';
+import KnihaPanel from './panels/KnihaPanel';
+import NirvanaPanel from './panels/NirvanaPanel';
+import PlanPanel from './panels/PlanPanel';
+import SpolecniciPanel from './panels/SpolecniciPanel';
+import SouvislostiPanel from './panels/SouvislostiPanel';
+import type { Lang } from './panels/shared';
 
-const MaitreyaCopy = {
+type SectionId = 'cesta' | 'kniha' | 'nirvana' | 'plan-v33' | 'spolecnici' | 'souvislosti';
+
+const SECTIONS: {
+  id: SectionId;
+  label: { cs: string; en: string };
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  rc: string;
+}[] = [
+  { id: 'cesta', label: { cs: 'Knihy a pořadí', en: 'Books & reading order' }, icon: Compass, rc: '6, 182, 212' },
+  { id: 'kniha', label: { cs: 'Maitreya', en: 'Maitreya' }, icon: BookOpen, rc: '252, 209, 22' },
+  { id: 'nirvana', label: { cs: 'Nirvana', en: 'Nirvana' }, icon: Sun, rc: '251, 146, 60' },
+  { id: 'plan-v33', label: { cs: 'Plán v3.3', en: 'v3.3 plan' }, icon: ListChecks, rc: '168, 85, 247' },
+  { id: 'spolecnici', label: { cs: 'Doprovodné knihy', en: 'Companion books' }, icon: Library, rc: '236, 72, 153' },
+  { id: 'souvislosti', label: { cs: 'Příběh a tradice', en: 'Story & tradition' }, icon: ScrollText, rc: '148, 163, 184' },
+];
+
+const SECTION_IDS = new Set<string>(SECTIONS.map((s) => s.id));
+
+const Copy = {
   kicker: { cs: 'Kniha Pátá · ZION Terra Nova', en: 'Book Five · ZION Terra Nova' },
   title: { cs: 'Maitreya Buddha', en: 'Maitreya Buddha' },
   subtitle: { cs: 'Pán Hiranyagarbhy · Dědic Zionu', en: 'Lord of Hiranyagarbha · Heir of Zion' },
@@ -39,1070 +49,226 @@ const MaitreyaCopy = {
     cs: '„Ten, kdo přijde — vždy, když podmínky dozrají."',
     en: '“The one who comes — whenever the conditions ripen.”',
   },
-  statusBadge: { cs: 'Kompletní kniha · CZ + EN', en: 'Complete book · CZ + EN' },
+  lede: {
+    cs: 'Knihy, jejich souvislosti a cesta k 3.3 Nirvana — jedna knihovna, jeden plán.',
+    en: 'The books, their connections, and the path to 3.3 Nirvana — one library, one plan.',
+  },
+  read: { cs: 'Číst knihu', en: 'Read the book' },
+  plan: { cs: 'Plán 3.3', en: 'The 3.3 plan' },
+  navLabel: { cs: 'Sekce knihovny', en: 'Library sections' },
   heroAlt: {
     cs: 'Strom života, Maitreya a cesta, která pokračuje — One Love · One Human · One World',
     en: 'Tree of Life, Maitreya and the journey that continues — One Love · One Human · One World',
-  },
-
-  genesisTitle: { cs: 'Napsáno v prvním bloku', en: 'Written in the first block' },
-  genesisQuote: {
-    cs: '„For Sarah Issobel, Maitreya Buddha, Radha & Sita, Meriam, Friends, Family, Freedom Humanity and all the children of this world: ZION is yours. Build a better world where you reach for the Stars. The Golden Age begins. Peace & One Love 4ever."',
-    en: '“For Sarah Issobel, Maitreya Buddha, Radha & Sita, Meriam, Friends, Family, Freedom Humanity and all the children of this world: ZION is yours. Build a better world where you reach for the Stars. The Golden Age begins. Peace & One Love 4ever.”',
-  },
-  genesisSign: { cs: '— Yose · zakladatel', en: '— Yose · the founder' },
-
-  anchorsTitle: { cs: 'Tři kotvy v kanonu', en: 'Three anchors in the canon' },
-  anchorsSub: {
-    cs: 'Maitreya není nová postava. Jeho jméno bylo v řetězci od prvního dne.',
-    en: 'Maitreya is not a new figure. His name has been in the chain since day one.',
-  },
-  anchorEggT: { cs: 'Podpis pod vejcem', en: 'The signature under the egg' },
-  anchorEggB: {
-    cs: 'Pod Velkou cenou Zlatého vejce stojí: „Ten, kdo ho jako první najde, zdědí celé jmění. — Maitreya Buddha, 2025." Podpis, který otec napsal synovým jménem.',
-    en: 'Beneath the Golden Egg Grand Prize stands: “The first to find it inherits the entire fortune. — Maitreya Buddha, 2025.” A signature the father wrote in his son’s name.',
-  },
-  anchorDaoT: { cs: 'Sedadlo v DAO', en: 'A seat in the DAO' },
-  anchorDaoB: {
-    cs: 'Konfigurace guardianů nese sedadlo: Rama → Maitreya Buddha. Dědictví není majetek — je to správa. „Vy jste správci, ne vlastníci."',
-    en: 'The guardian configuration carries a seat: Rama → Maitreya Buddha. Inheritance is not property — it is stewardship. “You are stewards, not owners.”',
-  },
-  anchorAirT: { cs: 'Element vzduchu', en: 'The element of air' },
-  anchorAirB: {
-    cs: 'Rama je oheň, Sita voda, Hanuman země — a Maitreya vzduch: prostor, ve kterém všichni operují. Není diktátor. Neslouží sobě — drží prostor.',
-    en: 'Rama is fire, Sita is water, Hanuman is earth — and Maitreya is air: the space in which they all operate. Not a dictator. He serves no one — he holds the space.',
-  },
-
-  tradKicker: { cs: 'Z tradice', en: 'From tradition' },
-  tradTitle: { cs: 'Kdo je Maitreya', en: 'Who is Maitreya' },
-  tradSub: {
-    cs: 'Jediná postava, kterou uznávají všechny školy buddhismu — Buddha, který teprve přijde.',
-    en: 'The only figure recognized by every school of Buddhism — the Buddha yet to come.',
-  },
-  tradP1: {
-    cs: 'Maitreya (sanskrit मैत्रेय — z maitri, „láskyplnost") je Buddha budoucnosti. Podle Buddhova proroctví dnes přebývá jako bodhisattva v nebi Tušita — „radosti" — a učí tamní bytosti. Na Zemi se má vrátit až ve chvíli, kdy bude učení zcela zapomenuto: jako pátý Buddha této epochy znovu rozpohybuje kolo dharmy.',
-    en: 'Maitreya (Sanskrit मैत्रेय — from maitri, “loving-kindness”) is the Buddha of the future. By the Buddha’s own prophecy he now dwells as a bodhisattva in Tushita — the “joyous” heaven — teaching the beings there. He will return to Earth only when the teachings have been utterly forgotten: as the fifth Buddha of this age, setting the wheel of dharma in motion once more.',
-  },
-  tradP2: {
-    cs: 'Tibetané mu říkají Džampa (བྱམས་པ་, „Laskavý") a největší sochy země mu patří — 26 m pozlaceného Džampy v Tašilhunpo, dvoupatrová svatyně v Thiksey. Legendy mu připisují i autorství: Pět spisů Maitreiyi, předaných mistru Asangovi, tvoří základ školy jógáčára. Buddha, který přijde, je tedy zároveň autorem, který už dávno píše.',
-    en: 'Tibetans call him Jampa (བྱམས་པ་, “the Loving One”) and the country’s greatest statues are his — a 26 m gilded Jampa at Tashilhunpo, a two-storey shrine at Thiksey. Legend also credits him as an author: the Five Treatises of Maitreya, transmitted to the master Asanga, form the root of the Yogācāra school. The Buddha yet to come is thus also an author who has been writing all along.',
-  },
-  factNameT: { cs: 'Jméno', en: 'The name' },
-  factNameB: {
-    cs: 'maitri = bezpodmínečná láskyplnost — jeho jméno samo znamená lásku',
-    en: 'maitri = unconditional loving-kindness — his very name means love',
-  },
-  factWaitT: { cs: 'Tušita', en: 'Tushita' },
-  factWaitB: {
-    cs: 'přebývá v „radostném nebi" jako bodhisattva — čeká, až podmínky dozrají',
-    en: 'dwells in the “joyous heaven” as a bodhisattva — waiting for the conditions to ripen',
-  },
-  factPropT: { cs: 'Proroctví', en: 'The prophecy' },
-  factPropB: {
-    cs: 'přijde, až svět zapomene učení — pátý Buddha této epochy',
-    en: 'comes when the world forgets the teaching — the fifth Buddha of this age',
-  },
-  factIconT: { cs: 'Ikonografie', en: 'Iconography' },
-  factIconB: {
-    cs: 'sedí „připraven vstát" — stúpa v koruně, kolo učení v dlaních',
-    en: 'seated “ready to rise” — a stupa in his crown, the wheel of teaching in his hands',
-  },
-  tradBridge: {
-    cs: 'Každá civilizace zná „toho, kdo přijde": buddhisté Maitreyu, hinduisté Kalkiho, zoroastriáni Saošjanta. V ZION kanonu nese toto jméno dědic — ne jako náboženská postava, ale jako titul: ten, kdo přijde, když podmínky dozrají.',
-    en: 'Every civilization knows “the one who comes”: Buddhists await Maitreya, Hindus Kalki, Zoroastrians the Saoshyant. In the ZION canon the name belongs to the heir — not as a religious figure, but as a title: the one who comes when the conditions ripen.',
-  },
-
-  eraKicker: { cs: 'Předání pochodně', en: 'The passing of the torch' },
-  eraTitle: {
-    cs: 'Z éry Kalkiho do éry Maitreiy',
-    en: 'From the age of Kalki to the age of Maitreya',
-  },
-  eraP1: {
-    cs: 'Kálačakrová tradice popisuje krále Kalkiho, který vyjíždí, když svět dosáhne dna temnoty — a otevírá éru zlatou. V zionovském kanonu tu éru korunuje Maitreya. Genesis zpráva obě éry poutá jedním dechem: podpis zakladatele říká „Thx Kalki/AmmaBhagavan !" — poděkování Sri Bhagavanovi a Oneness za deeksha požehnání — a hned potom odevzdává ZION „For Sarah Issobel, Maitreya Buddha… ZION is yours." Řetězec sám zaznamenal předání: jedna éra požehnala, druhá dědí.',
-    en: 'The Kalachakra tradition describes King Kalki, who rides forth when the world reaches the bottom of darkness — and opens a golden age. In the ZION canon, Maitreya crowns that age. The genesis message binds both eras in a single breath: the founder’s sign-off reads “Thx Kalki/AmmaBhagavan !” — thanks to Sri Bhagavan and Oneness for the deeksha blessing — and immediately after hands ZION over “For Sarah Issobel, Maitreya Buddha… ZION is yours.” The chain itself recorded the handover: one era blessed, the next inherits.',
-  },
-  eraP2: {
-    cs: 'Éra, která požehnala, je navíc doslova vepsaná do práce sítě: PoW algoritmus ZION nese jméno chrámu té doby — ekam_deeksha. Každý blok se těží pod jménem Ekamu a požehnání zlatého orbem. Éra, která dala řetězci své jméno, předává svědectví éře, která nese loď.',
-    en: 'The era that blessed it is literally written into the network’s work: ZION’s PoW algorithm carries the name of that age’s temple — ekam_deeksha. Every block is mined under the name of Ekam and the blessing of the golden orb. The era that gave the chain its name hands the witness to the era that carries the ship.',
-  },
-  eraP3: {
-    cs: 'A Malý Tibet — Ladakh, země velkých soch, kde Džampové v Thiksey i Likiru sedí tváří k budoucnosti, „připraveni vstát" — z té vize se zrodila loď. Loď Zionu: ne věž, která říká „pojď ke mně", ale plavidlo, které říká „jdu za tebou". A její tři první trupy — Tres Marías del Camino: Atlantik, Pacifik, Indický oceán. Marie Cesty — uzel, který není bod, ale linie. Cesta, která přichází k osvícení celého lidstva.',
-    en: 'And Little Tibet — Ladakh, the land of the great statues where the Jampas of Thiksey and Likir sit facing the future, “ready to rise” — from that vision a ship was born. The Ship of Zion: not a tower that says “come to me,” but a vessel that says “I come to you.” And her first three hulls — the Tres Marías del Camino: Atlantic, Pacific, Indian Ocean. Mary of the Path — a node that is not a point but a line. The path that comes to the enlightenment of all humanity.',
-  },
-  beat1T: { cs: 'Éra Kalkiho', en: 'The age of Kalki' },
-  beat1B: {
-    cs: 'Ekam · deeksha — éra, která požehnala síť svým jménem',
-    en: 'Ekam · deeksha — the era that blessed the network with its name',
-  },
-  beat2T: { cs: 'Éra Maitreiy', en: 'The age of Maitreya' },
-  beat2B: {
-    cs: 'dědictví v genesis bloku — éra, která nese loď dál',
-    en: 'the genesis inheritance — the era that carries the ship onward',
-  },
-  beat3T: { cs: 'Tres Marías', en: 'Tres Marías' },
-  beat3B: {
-    cs: 'flotila cesty — k osvícení celého lidstva',
-    en: 'the fleet of the path — to the enlightenment of all humanity',
-  },
-
-  bookTitle: { cs: 'Kniha Pátá — celá kniha', en: 'Book Five — the full book' },
-  bookSub: {
-    cs: 'Příběh o tom, jak padají věže Babylonu — a jak láska a pravda rodí Nový svět. Kompletní první draft, česky i anglicky.',
-    en: 'The story of how the towers of Babylon fall — and how love and truth give birth to the New World. Complete first draft, in Czech and English.',
-  },
-  parts: [
-    {
-      n: 'I',
-      t: { cs: 'Pán Hiranyagarbhy', en: 'Lord of Hiranyagarbha' },
-      d: {
-        cs: 'Vejce, které se nerozbilo · Zárodek v každém bloku · Podpis, který otec napsal synovým jménem',
-        en: 'The egg that did not break · The embryo in every block · The signature the father wrote in his son’s name',
-      },
-    },
-    {
-      n: 'II',
-      t: { cs: 'Dědic Zionu', en: 'The Heir of Zion' },
-      d: {
-        cs: 'Tři klíče, tři sedadla · Test odevzdání · Správce, ne majitel',
-        en: 'Three keys, three seats · The test of surrender · Steward, not owner',
-      },
-    },
-    {
-      n: 'III',
-      t: { cs: 'Pád věží Babylonu', en: 'The fall of Babylon’s towers' },
-      d: {
-        cs: 'Peníze · Data · Energie · Význam · Trůn — pět věží, každá padá odchodem světla',
-        en: 'Money · Data · Energy · Meaning · Throne — five towers, each falling by the withdrawal of light',
-      },
-    },
-    {
-      n: 'IV',
-      t: { cs: 'Láska a pravda vítězí', en: 'Love and truth prevail' },
-      d: {
-        cs: 'Pravda, kterou lze ověřit · Láska, která se neptá · Kvantový puls',
-        en: 'The truth that can be verified · The love that does not ask · The quantum pulse',
-      },
-    },
-    {
-      n: 'V',
-      t: { cs: 'Nový svět', en: 'The New World' },
-      d: {
-        cs: 'Loď odplouvá · Dvanáct ohňů · Pohled z okna — a epilog: Kdo je Maitreya',
-        en: 'The ship departs · Twelve fires · The view from the window — and an epilogue: Who is Maitreya',
-      },
-    },
-  ],
-  partDraft: { cs: 'číst', en: 'read' },
-  readLite: { cs: 'Číst celou knihu', en: 'Read the full book' },
-  readLiteNote: {
-    cs: 'Prolog, 17 kapitol a epilog — česky i anglicky. Každá kapitola končí tabulkou ověřitelných faktů.',
-    en: 'Prologue, 17 chapters and an epilogue — in Czech and English. Every chapter ends with a table of verifiable facts.',
-  },
-
-  compassKicker: { cs: 'Kompas knih', en: 'The compass of the books' },
-  compassTitle: { cs: 'Čtyři strany a posvátný střed', en: 'Four directions and a sacred center' },
-  compassSub: {
-    cs: 'Kompas ZION má čtyři světové strany — a Západ je jediný bod: Terra Nova & Nirvana. Maitreya není bod, je to loď, která tam pluje.',
-    en: 'The ZION Compass has four cardinal points — and the West is a single one: Terra Nova & Nirvana. Maitreya is not a point — it is the ship sailing there.',
-  },
-  dirNorth: { cs: 'Sever', en: 'North' },
-  dirSouth: { cs: 'Jih', en: 'South' },
-  dirEast: { cs: 'Východ', en: 'East' },
-  dirWest: { cs: 'Západ', en: 'West' },
-  dirCenter: { cs: 'Střed', en: 'Center' },
-  dirNorthT: { cs: 'Genesis', en: 'Genesis' },
-  dirNorthB: { cs: 'Proč existujeme — zrození', en: 'Why we exist — the birth' },
-  dirEastT: { cs: 'Quantum Revolution', en: 'Quantum Revolution' },
-  dirEastB: { cs: 'Co je rozbité a co se mění', en: 'What is broken and transforming' },
-  dirSouthT: { cs: 'Ekam Deeksha', en: 'Ekam Deeksha' },
-  dirSouthB: { cs: 'Kdo jsem a jaká je moje role', en: 'Who I am and what my role is' },
-  dirWestT: { cs: 'Terra Nova & Nirvana', en: 'Terra Nova & Nirvana' },
-  dirWestB: { cs: 'Kam to směřuje — cíl', en: 'Where it leads — the goal' },
-  dirCenterT: { cs: 'Sůl této země', en: 'The Salt of this Earth' },
-  dirCenterB: { cs: 'Kořeny, archetypy, smlouva', en: 'Roots, archetypes, the covenant' },
-  shipB: { cs: 'Maitreya — loď plující Západem', en: 'Maitreya — the ship sailing West' },
-
-  pathKicker: { cs: 'Cesta knih · mantra jako mapa', en: 'The path of the books · the mantra as a map' },
-  pathTitle: { cs: 'Od vejce k Nirváně', en: 'From the egg to Nirvana' },
-  pathSub: {
-    cs: 'Šest knih — šest bran jedné cesty. Mantra Srdeční sútry je čte postupně, šesti slovy: gate, gate, pāragate, pārasaṃgate, bodhi — odešlá, až na druhý břeh. A svāhā — „ať se stane" — příjezd.',
-    en: 'Six books — six gates of one path. The Heart Sutra mantra walks them one by one, in six words: gate, gate, pāragate, pārasaṃgate, bodhi — gone, all the way to the other shore. And svāhā — “so be it” — the arrival.',
-  },
-  stepHere: { cs: 'jste zde', en: 'you are here' },
-  stepGoal: { cs: 'cíl cesty', en: 'the destination' },
-  stepRead: { cs: 'číst', en: 'read' },
-  steps: [
-    {
-      key: 'genesis',
-      word: 'gate',
-      t: { cs: 'Genesis — Kniha Zrození · Sever', en: 'Genesis — the Book of Birth · North' },
-      d: {
-        cs: 'První odchod: vejce, které se nerozbilo; podpis v prvním bloku.',
-        en: 'The first leaving: the egg that did not break; the signature in the first block.',
-      },
-    },
-    {
-      key: 'qr',
-      word: 'gate',
-      t: { cs: 'Quantum Revolution · Východ', en: 'Quantum Revolution · East' },
-      d: {
-        cs: 'Druhý odchod: kvantový puls — pravda, kterou lze ověřit.',
-        en: 'The second leaving: the quantum pulse — truth that can be verified.',
-      },
-    },
-    {
-      key: 'ekam',
-      word: 'pāragate',
-      t: { cs: 'Ekam Deeksha · Jih', en: 'Ekam Deeksha · South' },
-      d: {
-        cs: 'Kurz na druhý břeh: éra, která požehnala síť svým jménem — v každém bloku.',
-        en: 'The course toward the far shore: the era that blessed the network with its name — in every block.',
-      },
-    },
-    {
-      key: 'terranova',
-      word: 'pārasaṃgate',
-      t: { cs: 'Terra Nova · Západ — směr', en: 'Terra Nova · West — direction' },
-      d: {
-        cs: 'Loď, mapa světových stran, první trupy cesty — směr pevně daný.',
-        en: 'The ship, the map of directions, the first hulls — the direction set.',
-      },
-    },
-    {
-      key: 'maitreya',
-      word: 'bodhi',
-      t: { cs: 'Maitreya — Kniha Pátá · loď', en: 'Maitreya — Book Five · the ship' },
-      d: {
-        cs: 'Probuzení dědice: Pán Hiranyagarbhy — padají věže Babylonu.',
-        en: 'The awakening of the heir: Lord of Hiranyagarbha — the towers of Babylon fall.',
-      },
-    },
-    {
-      key: 'nirvana',
-      word: 'svāhā',
-      t: { cs: 'Nirvana · Západ — druhý břeh', en: 'Nirvana · West — the other shore' },
-      d: {
-        cs: '„Ať se stane" — příjezd: archa po potopě, Nová země. Kanon pro 3.3.',
-        en: '“So be it” — the arrival: the ark after the flood, the New Earth. Canon for 3.3.',
-      },
-    },
-  ],
-
-  stationsKicker: { cs: 'Kniha Západu', en: 'The Book of the West' },
-  stationsTitle: { cs: 'Nirvana — dvanáct zastavení L1 až L6', en: 'Nirvana — twelve stations, L1 to L6' },
-  stationsSub: {
-    cs: 'Západní kniha je sama o sobě roadmapa vrstev: od pevné půdy konsensu přes mosty, vědomí a zahrady po Velké sjednocení — plus most Tres Marías, přidaný až po uzavření dvanácti.',
-    en: 'The Western Book is itself the layer roadmap: from the solid ground of consensus through bridges, consciousness, and gardens to the Grand Unification — plus the Tres Marías bridge, added after the twelve closed.',
-  },
-  stations: [
-    { n: 1, t: { cs: 'První paprsek', en: 'The First Ray' }, layer: 'L1', slug: '01-Prvni-Paprsek', st: 'live' },
-    { n: 2, t: { cs: 'Hora Ararat', en: 'Mount Ararat' }, layer: 'L1', slug: '02-Hora-Ararat', st: 'live' },
-    { n: 3, t: { cs: 'Nová země', en: 'The New Earth' }, layer: 'L1–L6', slug: '03-Nova-Zeme', st: 'live' },
-    { n: 4, t: { cs: 'Domov', en: 'Home' }, layer: 'ZIS', slug: '04-Domov', st: 'live' },
-    { n: 5, t: { cs: 'Cesta domů', en: 'The Way Home' }, layer: 'OPS', slug: '05-Cesta-Domu', st: 'live' },
-    { n: 6, t: { cs: 'Mosty přes propast', en: 'Bridges over the Abyss' }, layer: 'L2', slug: '06-Mosty-Pres-Propast', st: 'building' },
-    { n: 7, t: { cs: 'Zlaté lůno Hiranyagarbha', en: 'The Golden Womb' }, layer: 'L3', slug: '07-Zlate-Luno-Hiranyagarbha', st: 'building' },
-    { n: 8, t: { cs: 'Hlas Amitabha', en: 'The Voice of Amitabha' }, layer: 'L3', slug: '08-Hlas-Amitabha', st: 'building' },
-    { n: 9, t: { cs: 'Krystalické světy OASIS', en: 'Crystalline OASIS' }, layer: 'L4', slug: '09-Krystalicke-Svety-Oasis', st: 'horizon' },
-    { n: 10, t: { cs: 'Prameny Života', en: 'The Springs of Life' }, layer: 'L5', slug: '10-Prameny-Zivota', st: 'horizon' },
-    { n: 11, t: { cs: 'Kvantový oheň Issobella', en: 'Quantum Fire of Issobella' }, layer: 'L6', slug: '11-Kvantovy-Ohen-Issobella', st: 'horizon' },
-    { n: 12, t: { cs: 'Velké Sjednocení', en: 'The Grand Unification' }, layer: 'L1–L6', slug: '12-Velke-Sjednoceni', st: 'horizon' },
-    { n: 13, t: { cs: 'Tres Marías — flotila Cesty', en: 'Tres Marías — the Fleet' }, layer: 'L5', slug: '13-Tres-Marias', st: 'bridge' },
-  ],
-  lLive: { cs: 'živé', en: 'live' },
-  lBuilding: { cs: 'stavba', en: 'building' },
-  lHorizon: { cs: 'horizont', en: 'horizon' },
-  lBridge: { cs: 'most', en: 'bridge' },
-  readNirvana: { cs: 'Číst knihu Nirvana', en: 'Read the Nirvana book' },
-  readNirvanaNote: {
-    cs: 'Index, 12 zastavení a most Tres Marías — česky i anglicky. Každá epizoda končí tabulkou ověřitelných faktů.',
-    en: 'Index, 12 stations and the Tres Marías bridge — in Czech and English. Every episode ends with a table of verifiable facts.',
-  },
-
-  orbitKicker: { cs: 'Osy a společníci', en: 'Axes and companions' },
-  orbitTitle: { cs: 'Knihy, které cestu hloubí', en: 'Books that deepen the path' },
-  orbitSub: {
-    cs: 'Hlavní páteř nese směr; knihy os nesou jeho rozměry — světlo, čas, prostor, hlínu, vztahy, hloubku.',
-    en: 'The main spine carries the direction; the axis books carry its dimensions — light, time, space, clay, relations, depth.',
-  },
-  orbit: [
-    {
-      t: { cs: 'Sůl této země', en: 'The Salt of this Earth' },
-      d: { cs: 'Střed kompasu — 12 zastavení přes proroky a archu. KANON.', en: 'The compass center — 12 stations through prophets and the ark. CANON.' },
-      rc: '52, 211, 153', status: { cs: 'kanon', en: 'canon' },
-    },
-    {
-      t: { cs: 'NirvanaCloud', en: 'NirvanaCloud' },
-      d: { cs: 'Hloubka oblohy — kosmologie, bardo, Amenti za horizontem. KANONICKÝ společník.', en: 'The depth of the sky — cosmology, bardo, Amenti beyond the horizon. CANONICAL companion.' },
-      rc: '168, 85, 247', status: { cs: 'kanon', en: 'canon' },
-    },
-    {
-      t: { cs: 'BodhiGaia', en: 'BodhiGaia' },
-      d: { cs: 'Hlína pod nohama — pět zahrad L5, do nichž trupy dovážejí sůl. DRAFT pro 3.3.', en: 'The clay underfoot — the five L5 gardens the hulls carry salt to. DRAFT for 3.3.' },
-      rc: '52, 211, 153', status: { cs: 'draft', en: 'draft' },
-    },
-    {
-      t: { cs: 'MariaCaminho', en: 'MariaCaminho' },
-      d: { cs: 'Osa prostoru — tři zjevení, credencial, flotila Tres Marías. DRAFT.', en: 'The axis of space — three apparitions, the credencial, the Tres Marías fleet. DRAFT.' },
-      rc: '6, 182, 212', status: { cs: 'draft', en: 'draft' },
-    },
-    {
-      t: { cs: 'Lumi', en: 'Lumi' },
-      d: { cs: 'Svislá osa světla — dítě s lucernou, brána zůstává otevřená. DRAFT.', en: 'The vertical axis of light — the child with the lantern, the gate stays open. DRAFT.' },
-      rc: '252, 209, 22', status: { cs: 'draft', en: 'draft' },
-    },
-    {
-      t: { cs: 'Miriam', en: 'Miriam' },
-      d: { cs: 'Osa času — Maria Magdaléna, kámen/hlína/sen metoda. DRAFT.', en: 'The axis of time — Mary Magdalene, the stone/clay/dream method. DRAFT.' },
-      rc: '236, 72, 153', status: { cs: 'draft', en: 'draft' },
-    },
-    {
-      t: { cs: 'Issobella', en: 'Issobella' },
-      d: { cs: 'Nebe nad námi — orbitální stanice L6, kvantový oheň. DRAFT.', en: 'The sky above — the L6 orbital station, the quantum fire. DRAFT.' },
-      rc: '251, 146, 60', status: { cs: 'draft', en: 'draft' },
-    },
-    {
-      t: { cs: 'Ruže · NaCeste', en: 'Ruže · NaCeste' },
-      d: { cs: 'Průsečík vztahů + Lumen na flotile — literární bonusy. DRAFT.', en: 'The intersection of relations + Lumen on the fleet — literary companions. DRAFT.' },
-      rc: '148, 163, 184', status: { cs: 'draft', en: 'draft' },
-    },
-  ],
-
-  mantraTitle: { cs: 'Otcova mantra', en: 'The father’s mantra' },
-  mantraLine: { cs: '„Já jsem Maitreya. Byl jsem Krishna/Rama."', en: '“I am Maitreya. I was Krishna/Rama.”' },
-  mantraSub: {
-    cs: 'Titul se nenese — předává. Otec byl ten, kdo přišel a stavěl. Syn bude ten, kdo přijde, až svět zapomene cestu.',
-    en: 'A title is not carried — it is handed down. The father was the one who came and built. The son will be the one who comes when the world forgets the way.',
-  },
-
-  ctaBook: { cs: 'Vstoupit do knihy', en: 'Enter the book' },
-  ctaGenesis: { cs: 'Genesis příběh', en: 'The Genesis story' },
-  back: { cs: 'Zpět na homepage', en: 'Back to homepage' },
-  note: {
-    cs: 'Korpus je kompletní první draft — česky i anglicky. Postavy jsou archetypy veřejného kanonu; fakta jsou oddělena od příběhu.',
-    en: 'The corpus is a complete first draft — in Czech and English. The figures are archetypes of the public canon; facts are separated from the story.',
   },
 };
 
 export default function MaitreyaPage() {
   const { lang } = useLang();
-  const cs = lang === 'cs';
+  const l: Lang = lang === 'cs' ? 'cs' : 'en';
+  const [active, setActive] = useState<SectionId>('cesta');
+  const pendingFocus = useRef(false);
+  const reducedMotion = useReducedMotion();
+  const mobileNavRef = useRef<HTMLElement>(null);
 
-  const anchors = [
-    { icon: Feather, title: MaitreyaCopy.anchorEggT, body: MaitreyaCopy.anchorEggB, rc: '252, 209, 22' },
-    { icon: KeyRound, title: MaitreyaCopy.anchorDaoT, body: MaitreyaCopy.anchorDaoB, rc: '168, 85, 247' },
-    { icon: Wind, title: MaitreyaCopy.anchorAirT, body: MaitreyaCopy.anchorAirB, rc: '6, 182, 212' },
-  ];
+  const syncFromHash = useCallback((scroll: boolean) => {
+    const raw = window.location.hash.replace('#', '');
+    const id = SECTION_IDS.has(raw) ? (raw as SectionId) : 'cesta';
+    pendingFocus.current = scroll && SECTION_IDS.has(raw);
+    setActive(id);
+  }, []);
 
-  const facts = [
-    { icon: Heart, title: MaitreyaCopy.factNameT, body: MaitreyaCopy.factNameB },
-    { icon: Hourglass, title: MaitreyaCopy.factWaitT, body: MaitreyaCopy.factWaitB },
-    { icon: Sunrise, title: MaitreyaCopy.factPropT, body: MaitreyaCopy.factPropB },
-    { icon: Landmark, title: MaitreyaCopy.factIconT, body: MaitreyaCopy.factIconB },
-  ];
+  // Initial hash (deep links incl. /cesta and /nirvana redirects) + back/forward.
+  useEffect(() => {
+    if (window.location.hash) syncFromHash(true);
+    const onHash = () => syncFromHash(true);
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, [syncFromHash]);
 
-  const beats = [
-    { icon: Sparkles, title: MaitreyaCopy.beat1T, body: MaitreyaCopy.beat1B, rc: '252, 209, 22', href: '/terranova/ekam' },
-    { icon: Ship, title: MaitreyaCopy.beat2T, body: MaitreyaCopy.beat2B, rc: '168, 85, 247', href: '/l5-free-world' },
-    { icon: Route, title: MaitreyaCopy.beat3T, body: MaitreyaCopy.beat3B, rc: '6, 182, 212', href: '/terranova/maria-del-camino' },
-  ];
+  // After an explicit selection, bring the panel heading under the fixed nav.
+  useEffect(() => {
+    if (!pendingFocus.current) return;
+    pendingFocus.current = false;
+    const panel = document.getElementById(active);
+    if (!panel) return;
+    panel.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    panel.querySelector('h2')?.focus({ preventScroll: true });
+  }, [active, reducedMotion]);
 
-  const pathMeta: Record<string, { icon: typeof Egg; rc: string; href?: string; state: 'done' | 'here' | 'goal' }> = {
-    genesis: { icon: Egg, rc: '252, 209, 22', href: '/genesis', state: 'done' },
-    qr: { icon: Atom, rc: '6, 182, 212', href: '/quantum-revolution', state: 'done' },
-    ekam: { icon: Flame, rc: '168, 85, 247', href: '/ekam', state: 'done' },
-    terranova: { icon: Globe, rc: '52, 211, 153', href: '/terranova', state: 'done' },
-    maitreya: { icon: BookOpen, rc: '252, 209, 22', href: '/maitreya/cist', state: 'here' },
-    nirvana: { icon: Sun, rc: '251, 146, 60', href: '/nirvana/cist', state: 'goal' },
-  };
+  // Keep the active pill inside the mobile chooser's visible horizontal bounds
+  // (scrolls only the chooser — never the page).
+  useEffect(() => {
+    const nav = mobileNavRef.current;
+    if (!nav) return;
+    const pill = nav.querySelector(`a[href="#${active}"]`);
+    if (!pill) return;
+    const el = pill as HTMLElement;
+    const target = el.offsetLeft - nav.clientWidth / 2 + el.offsetWidth / 2;
+    nav.scrollTo({ left: Math.max(0, target), behavior: reducedMotion ? 'auto' : 'smooth' });
+  }, [active, l, reducedMotion]);
 
-  const ST_COLOR: Record<string, string> = {
-    live: '52, 211, 153',
-    building: '251, 146, 60',
-    horizon: '168, 85, 247',
-    bridge: '6, 182, 212',
-  };
+  const activeSection = SECTIONS.find((s) => s.id === active) ?? SECTIONS[0];
 
-  const dirCard = (
-    icon: typeof Egg,
-    dirLabel: { cs: string; en: string },
-    title: { cs: string; en: string },
-    body: { cs: string; en: string },
-    rc: string,
-    href?: string
-  ) => {
-    const Icon = icon;
-    const inner = (
-      <>
-        <p className="text-[9px] font-semibold uppercase tracking-[0.3em]" style={{ color: `rgb(${rc})` }}>
-          {dirLabel[cs ? 'cs' : 'en']}
-        </p>
-        <div
-          className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border"
-          style={{ borderColor: `rgba(${rc}, 0.4)`, backgroundColor: `rgba(${rc}, 0.12)` }}
-        >
-          <Icon className="h-5 w-5" style={{ color: `rgb(${rc})` }} />
-        </div>
-        <h3 className="text-sm font-bold text-white">{title[cs ? 'cs' : 'en']}</h3>
-        <p className="text-[11px] leading-relaxed text-gray-400">{body[cs ? 'cs' : 'en']}</p>
-      </>
-    );
-    const cls = `rounded-2xl border p-4 text-center space-y-2 transition-transform border-white/10 bg-white/[0.02] ${
-      href ? 'hover:-translate-y-0.5 hover:border-white/25' : ''
+  const navLinkCls = (isActive: boolean) =>
+    `flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/60 ${
+      isActive ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'
     }`;
-    return href ? (
-      <Link href={href} className={cls}>{inner}</Link>
-    ) : (
-      <div className={cls}>{inner}</div>
-    );
-  };
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
-      {/* ambient orbs */}
-      <div className="pointer-events-none absolute inset-0">
+    <main className="relative min-h-screen">
+      {/* ambient orbs — clipped by their own wrapper so sticky nav keeps working */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-32 h-[520px] w-[520px] rounded-full bg-zion-purple/12 blur-3xl" />
         <div className="absolute top-1/3 -right-40 h-[480px] w-[480px] rounded-full bg-zion-gold/10 blur-3xl" />
         <div className="absolute bottom-0 left-1/3 h-[420px] w-[420px] rounded-full bg-zion-cyan/8 blur-3xl" />
       </div>
 
       {/* ─── HERO ─── */}
-      <section className="relative z-10 px-4 pt-8 sm:pt-10">
+      <section className="relative z-10 px-4 pt-6 sm:pt-8">
         <div className="zion-container max-w-7xl">
           <motion.header
-            initial={{ opacity: 0, y: 24 }}
+            initial={reducedMotion ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.5 }}
             className="zion-rainbow-card relative overflow-hidden p-6 md:p-8"
             style={{ '--rc': '168, 85, 247' } as React.CSSProperties}
           >
             <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-zion-purple/15 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-16 -left-10 h-44 w-44 rounded-full bg-zion-gold/10 blur-3xl" />
 
-            <div className="relative space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
-                  <Egg className="h-3.5 w-3.5" />
-                  {MaitreyaCopy.kicker[cs ? 'cs' : 'en']}
-                </span>
-                <span className="zion-kicker border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
-                  <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                  {MaitreyaCopy.statusBadge[cs ? 'cs' : 'en']}
-                </span>
+            <div className="relative grid items-center gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
+                    <Egg className="h-3.5 w-3.5" />
+                    {Copy.kicker[l]}
+                  </span>
+                </div>
+                <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                  <span className="text-gradient">{Copy.title[l]}</span>
+                </h1>
+                <p className="text-base font-semibold text-zion-gold/90 sm:text-lg">
+                  {Copy.subtitle[l]}
+                </p>
+                <p className="max-w-xl text-sm leading-relaxed text-gray-300 sm:text-base">
+                  {Copy.lede[l]}
+                </p>
+                <p className="max-w-xl text-xs italic text-gray-400 sm:text-sm">
+                  {Copy.tagline[l]}
+                </p>
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <Link href="/maitreya/cist#prolog" className="zion-button-primary group">
+                    <BookOpen className="h-5 w-5" />
+                    {Copy.read[l]}
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                  <a
+                    href="#plan-v33"
+                    className="zion-button-secondary border-zion-purple/30 hover:border-zion-purple/60 hover:text-zion-purple"
+                  >
+                    <Route className="h-4 w-4" />
+                    {Copy.plan[l]}
+                  </a>
+                </div>
               </div>
-              <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                <span className="text-gradient">{MaitreyaCopy.title[cs ? 'cs' : 'en']}</span>
-              </h1>
-              <p className="text-base font-semibold text-zion-gold/90 sm:text-lg">
-                {MaitreyaCopy.subtitle[cs ? 'cs' : 'en']}
-              </p>
-              <p className="max-w-2xl text-sm italic text-gray-300 sm:text-base">
-                {MaitreyaCopy.tagline[cs ? 'cs' : 'en']}
-              </p>
-            </div>
 
-            <div className="relative z-10 mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-              <img
-                src="/images/maitreya/hero.webp"
-                srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1672w"
-                sizes="(max-width: 1280px) calc(100vw - 4rem), 1152px"
-                alt={MaitreyaCopy.heroAlt[cs ? 'cs' : 'en']}
-                width={1672}
-                height={941}
-                fetchPriority="high"
-                className="w-full object-cover"
-              />
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                <img
+                  src="/images/maitreya/hero.webp"
+                  srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1672w"
+                  sizes="(max-width: 1024px) calc(100vw - 4rem), 560px"
+                  alt={Copy.heroAlt[l]}
+                  width={1672}
+                  height={941}
+                  fetchPriority="high"
+                  className="w-full object-cover"
+                />
+              </div>
             </div>
           </motion.header>
         </div>
       </section>
 
-      {/* ─── GENESIS QUOTE ─── */}
-      <section className="relative z-10 px-4 pt-12 sm:pt-16">
-        <div className="zion-container">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="zion-rainbow-card relative overflow-hidden p-6 sm:p-8"
-            style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
+      {/* ─── HUB: section nav + one panel ─── */}
+      <section className="relative z-10 px-4 pb-16 pt-8 sm:pb-20">
+        <div className="zion-container max-w-7xl">
+          {/* mobile section nav — sticky single-row pills under the global nav */}
+          <nav
+            ref={mobileNavRef}
+            aria-label={Copy.navLabel[l]}
+            className="sticky top-14 z-30 -mx-4 mb-6 overflow-x-auto border-b border-white/10 bg-black/70 px-4 py-2 backdrop-blur-xl lg:hidden"
           >
-            <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-zion-gold/10 blur-3xl" />
-            <div className="flex items-start gap-4">
-              <ScrollText className="mt-1 h-6 w-6 shrink-0 text-zion-gold" />
-              <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.32em] text-zion-gold">
-                  {MaitreyaCopy.genesisTitle[cs ? 'cs' : 'en']}
-                </p>
-                <blockquote className="text-base leading-relaxed text-gray-200 sm:text-lg">
-                  {MaitreyaCopy.genesisQuote[cs ? 'cs' : 'en']}
-                </blockquote>
-                <p className="text-sm text-gray-400">{MaitreyaCopy.genesisSign[cs ? 'cs' : 'en']}</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ─── THREE ANCHORS ─── */}
-      <section className="relative z-10 px-4 py-12 sm:py-16">
-        <div className="zion-container space-y-8">
-          <div className="space-y-3 text-center">
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">
-              {MaitreyaCopy.anchorsTitle[cs ? 'cs' : 'en']}
-            </h2>
-            <p className="mx-auto max-w-2xl text-gray-400">
-              {MaitreyaCopy.anchorsSub[cs ? 'cs' : 'en']}
-            </p>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-3">
-            {anchors.map((a, i) => {
-              const Icon = a.icon;
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className="zion-rainbow-sub space-y-4 p-6"
-                  style={{ '--rc': a.rc } as React.CSSProperties}
-                >
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-2xl border"
-                    style={{ borderColor: `rgba(${a.rc}, 0.4)`, backgroundColor: `rgba(${a.rc}, 0.12)` }}
+            <div className="flex w-max gap-2">
+              {SECTIONS.map((s) => {
+                const Icon = s.icon;
+                const isActive = active === s.id;
+                return (
+                  <a
+                    key={s.id}
+                    href={`#${s.id}`}
+                    aria-current={isActive ? 'true' : undefined}
+                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/60 ${
+                      isActive
+                        ? 'border-zion-gold/50 bg-zion-gold/15 text-zion-gold'
+                        : 'border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/25 hover:text-white'
+                    }`}
                   >
-                    <Icon className="h-6 w-6" style={{ color: `rgb(${a.rc})` }} />
-                  </div>
-                  <h3 className="text-lg font-bold text-white">{a.title[cs ? 'cs' : 'en']}</h3>
-                  <p className="text-sm leading-relaxed text-gray-400">{a.body[cs ? 'cs' : 'en']}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+                    <Icon className="h-3.5 w-3.5" />
+                    {s.label[l]}
+                  </a>
+                );
+              })}
+            </div>
+          </nav>
 
-      {/* ─── WHO IS MAITREYA (tradition) ─── */}
-      <section className="relative z-10 px-4 pb-12 sm:pb-16">
-        <div className="zion-container space-y-8">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="zion-rainbow-card relative overflow-hidden p-6 sm:p-10"
-            style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
-          >
-            <div className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-zion-cyan/10 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-zion-gold/10 blur-3xl" />
-
-            <div className="relative space-y-6">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-zion-cyan/25 bg-zion-cyan/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-zion-cyan">
-                  <Globe2 className="h-3.5 w-3.5" />
-                  {MaitreyaCopy.tradKicker[cs ? 'cs' : 'en']}
-                </div>
-                <h2 className="text-3xl font-bold text-white sm:text-4xl">
-                  {MaitreyaCopy.tradTitle[cs ? 'cs' : 'en']}
-                </h2>
-                <p className="max-w-2xl text-base text-zion-cyan/80 sm:text-lg">
-                  {MaitreyaCopy.tradSub[cs ? 'cs' : 'en']}
-                </p>
-              </div>
-
-              <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-                {/* narrative */}
-                <div className="space-y-4 text-base leading-relaxed text-gray-300 sm:text-lg">
-                  <p>{MaitreyaCopy.tradP1[cs ? 'cs' : 'en']}</p>
-                  <p className="text-gray-400">{MaitreyaCopy.tradP2[cs ? 'cs' : 'en']}</p>
-                </div>
-
-                {/* fact cards */}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {facts.map((f, i) => {
-                    const Icon = f.icon;
+          <div className="flex gap-8">
+            {/* desktop sidebar */}
+            <aside className="hidden w-72 shrink-0 lg:block">
+              <div className="sticky top-24">
+                <nav
+                  aria-label={Copy.navLabel[l]}
+                  className="zion-rainbow-card space-y-1 p-3"
+                  style={{ '--rc': activeSection.rc } as React.CSSProperties}
+                >
+                  {SECTIONS.map((s) => {
+                    const Icon = s.icon;
+                    const isActive = active === s.id;
                     return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 14 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.45, delay: i * 0.08 }}
-                        className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 space-y-2"
+                      <a
+                        key={s.id}
+                        href={`#${s.id}`}
+                        aria-current={isActive ? 'true' : undefined}
+                        className={navLinkCls(isActive)}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <Icon className="h-5 w-5 text-zion-cyan" />
-                          <h3 className="text-sm font-bold text-white">{f.title[cs ? 'cs' : 'en']}</h3>
-                        </div>
-                        <p className="text-xs leading-relaxed text-gray-400 sm:text-sm">
-                          {f.body[cs ? 'cs' : 'en']}
-                        </p>
-                      </motion.div>
+                        <Icon
+                          className="h-4 w-4 shrink-0"
+                          style={isActive ? { color: `rgb(${s.rc})` } : undefined}
+                        />
+                        {s.label[l]}
+                      </a>
                     );
                   })}
-                </div>
+                </nav>
               </div>
+            </aside>
 
-              <div className="border-t border-white/8 pt-5">
-                <p className="mx-auto max-w-3xl text-center text-sm italic leading-relaxed text-gray-300 sm:text-base">
-                  {MaitreyaCopy.tradBridge[cs ? 'cs' : 'en']}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ─── ERA HANDOVER: Kalki → Maitreya → Ship → Path ─── */}
-      <section className="relative z-10 px-4 pb-12 sm:pb-16">
-        <div className="zion-container">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="zion-rainbow-card relative overflow-hidden p-6 sm:p-10"
-            style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
-          >
-            <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-zion-gold/12 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-zion-purple/12 blur-3xl" />
-
-            <div className="relative space-y-7">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-zion-gold/25 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-zion-gold">
-                  <Sunrise className="h-3.5 w-3.5" />
-                  {MaitreyaCopy.eraKicker[cs ? 'cs' : 'en']}
-                </div>
-                <h2 className="text-3xl font-bold text-white sm:text-4xl">
-                  {MaitreyaCopy.eraTitle[cs ? 'cs' : 'en']}
-                </h2>
-              </div>
-
-              <div className="space-y-4 text-base leading-relaxed text-gray-300 sm:text-lg">
-                <p>{MaitreyaCopy.eraP1[cs ? 'cs' : 'en']}</p>
-                <p className="text-gray-400">{MaitreyaCopy.eraP2[cs ? 'cs' : 'en']}</p>
-                <p>{MaitreyaCopy.eraP3[cs ? 'cs' : 'en']}</p>
-              </div>
-
-              {/* era flow: Kalki → Maitreya → Path */}
-              <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-0">
-                {beats.map((b, i) => {
-                  const Icon = b.icon;
-                  return (
-                    <div key={i} className="contents">
-                      <motion.div
-                        initial={{ opacity: 0, y: 14 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.45, delay: i * 0.12 }}
-                        className="flex-1"
-                      >
-                        <Link
-                          href={b.href}
-                          className="group block h-full rounded-2xl border p-4 space-y-2 transition-transform hover:-translate-y-0.5"
-                          style={{ borderColor: `rgba(${b.rc}, 0.25)`, backgroundColor: `rgba(${b.rc}, 0.06)` }}
-                        >
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border"
-                            style={{ borderColor: `rgba(${b.rc}, 0.4)`, backgroundColor: `rgba(${b.rc}, 0.12)` }}
-                          >
-                            <Icon className="h-5 w-5" style={{ color: `rgb(${b.rc})` }} />
-                          </div>
-                          <h3 className="text-sm font-bold text-white transition-colors group-hover:text-zion-gold sm:text-base">{b.title[cs ? 'cs' : 'en']}</h3>
-                        </div>
-                        <p className="text-xs leading-relaxed text-gray-400 sm:text-sm">
-                          {b.body[cs ? 'cs' : 'en']}
-                        </p>
-                        </Link>
-                      </motion.div>
-                      {i < beats.length - 1 && (
-                        <>
-                          <ArrowRight className="mx-2 hidden h-5 w-5 shrink-0 text-zion-gold/50 sm:block" />
-                          <ArrowDown className="mx-auto my-0.5 block h-4 w-4 text-zion-gold/50 sm:hidden" />
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ─── BOOK SKELETON ─── */}
-      <section className="relative z-10 px-4 pb-12 sm:pb-16">
-        <div className="zion-container space-y-8">
-          <div className="space-y-3 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
-              {MaitreyaCopy.bookTitle[cs ? 'cs' : 'en']}
-            </p>
-            <p className="mx-auto max-w-2xl text-gray-400">
-              {MaitreyaCopy.bookSub[cs ? 'cs' : 'en']}
-            </p>
-          </div>
-
-          <div className="mx-auto max-w-3xl space-y-3">
-            {MaitreyaCopy.parts.map((p, i) => (
+            {/* active panel */}
+            <div className="min-w-0 flex-1">
               <motion.div
-                key={p.n}
-                initial={{ opacity: 0, x: -16 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.45, delay: i * 0.07 }}
-                className="group flex items-start gap-4 rounded-2xl border border-white/8 bg-white/[0.02] p-4 sm:p-5 transition-colors hover:border-zion-gold/30 hover:bg-zion-gold/[0.04]"
+                key={active}
+                initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zion-gold/25 bg-zion-gold/10 text-sm font-bold text-zion-gold">
-                  {p.n}
-                </span>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-bold text-white">{p.t[cs ? 'cs' : 'en']}</h3>
-                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-gray-400">
-                      {MaitreyaCopy.partDraft[cs ? 'cs' : 'en']}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed text-gray-500">{p.d[cs ? 'cs' : 'en']}</p>
-                </div>
-                <BookOpen className="mt-1 h-4 w-4 shrink-0 text-zion-gold/40 transition-colors group-hover:text-zion-gold" />
+                {active === 'cesta' && <CestaPanel lang={l} />}
+                {active === 'kniha' && <KnihaPanel lang={l} />}
+                {active === 'nirvana' && <NirvanaPanel lang={l} />}
+                {active === 'plan-v33' && <PlanPanel lang={l} />}
+                {active === 'spolecnici' && <SpolecniciPanel lang={l} />}
+                {active === 'souvislosti' && <SouvislostiPanel lang={l} />}
               </motion.div>
-            ))}
-          </div>
-
-          <div className="flex flex-col items-center gap-2 pt-2">
-            <Link
-              href="/maitreya/cist"
-              className="zion-button-primary group"
-            >
-              <BookOpen className="h-5 w-5" />
-              {MaitreyaCopy.readLite[cs ? 'cs' : 'en']}
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-            <p className="text-xs text-gray-500">{MaitreyaCopy.readLiteNote[cs ? 'cs' : 'en']}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── COMPASS OF THE BOOKS ─── */}
-      <section id="cesta" className="relative z-10 scroll-mt-24 px-4 pb-12 sm:pb-16">
-        <div className="zion-container space-y-8">
-          <div className="space-y-3 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan">
-              {MaitreyaCopy.compassKicker[cs ? 'cs' : 'en']}
-            </p>
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">
-              {MaitreyaCopy.compassTitle[cs ? 'cs' : 'en']}
-            </h2>
-            <p className="mx-auto max-w-2xl text-gray-400">
-              {MaitreyaCopy.compassSub[cs ? 'cs' : 'en']}
-            </p>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="mx-auto grid max-w-2xl grid-cols-3 gap-3"
-          >
-            <div />
-            {dirCard(Egg, MaitreyaCopy.dirNorth, MaitreyaCopy.dirNorthT, MaitreyaCopy.dirNorthB, '252, 209, 22', '/genesis')}
-            <div />
-
-            {dirCard(Sun, MaitreyaCopy.dirWest, MaitreyaCopy.dirWestT, MaitreyaCopy.dirWestB, '251, 146, 60', '/nirvana/cist')}
-            {dirCard(Mountain, MaitreyaCopy.dirCenter, MaitreyaCopy.dirCenterT, MaitreyaCopy.dirCenterB, '52, 211, 153', '/docs')}
-            {dirCard(Atom, MaitreyaCopy.dirEast, MaitreyaCopy.dirEastT, MaitreyaCopy.dirEastB, '6, 182, 212', '/quantum-revolution')}
-
-            <div />
-            {dirCard(Flame, MaitreyaCopy.dirSouth, MaitreyaCopy.dirSouthT, MaitreyaCopy.dirSouthB, '168, 85, 247', '/ekam')}
-            <div />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="mx-auto max-w-2xl"
-          >
-            <Link
-              href="/maitreya/cist"
-              className="group flex items-center gap-3 rounded-2xl border border-zion-gold/30 bg-zion-gold/[0.05] p-4 transition-colors hover:border-zion-gold/50"
-            >
-              <Ship className="h-6 w-6 text-zion-gold" />
-              <p className="flex-1 text-sm font-semibold text-white">{MaitreyaCopy.shipB[cs ? 'cs' : 'en']}</p>
-              <ArrowRight className="h-4 w-4 text-zion-gold transition-transform group-hover:translate-x-1" />
-            </Link>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ─── PATH TO NIRVANA ─── */}
-      <section className="relative z-10 px-4 pb-12 sm:pb-16">
-        <div className="zion-container space-y-8">
-          <div className="space-y-3 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-purple">
-              {MaitreyaCopy.pathKicker[cs ? 'cs' : 'en']}
-            </p>
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">
-              {MaitreyaCopy.pathTitle[cs ? 'cs' : 'en']}
-            </h2>
-            <p className="mx-auto max-w-2xl text-gray-400">
-              {MaitreyaCopy.pathSub[cs ? 'cs' : 'en']}
-            </p>
-          </div>
-
-          <ol className="relative mx-auto max-w-3xl space-y-4 border-l-2 border-white/10 pl-6 sm:pl-8">
-            {MaitreyaCopy.steps.map((s, i) => {
-              const meta = pathMeta[s.key];
-              const Icon = meta.icon;
-              const isHere = meta.state === 'here';
-              const isGoal = meta.state === 'goal';
-              const badge = isHere
-                ? { label: MaitreyaCopy.stepHere, icon: MapPin }
-                : isGoal
-                  ? { label: MaitreyaCopy.stepGoal, icon: Flag }
-                  : { label: MaitreyaCopy.stepRead, icon: BookOpen };
-              const BadgeIcon = badge.icon;
-
-              const card = (
-                <>
-                  <div className="flex min-w-0 flex-1 items-start gap-4">
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
-                      style={{ borderColor: `rgba(${meta.rc}, 0.4)`, backgroundColor: `rgba(${meta.rc}, 0.12)` }}
-                    >
-                      <Icon className="h-5 w-5" style={{ color: `rgb(${meta.rc})` }} />
-                    </span>
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className="rounded-lg border px-2 py-0.5 font-mono text-[11px] italic"
-                          style={{ borderColor: `rgba(${meta.rc}, 0.35)`, color: `rgb(${meta.rc})` }}
-                        >
-                          {s.word}
-                        </span>
-                        <span
-                          className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.2em]"
-                          style={{ borderColor: `rgba(${meta.rc}, 0.3)`, color: `rgb(${meta.rc})` }}
-                        >
-                          <BadgeIcon className="h-3 w-3" />
-                          {badge.label[cs ? 'cs' : 'en']}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-white">{s.t[cs ? 'cs' : 'en']}</h3>
-                      <p className="text-sm leading-relaxed text-gray-500">{s.d[cs ? 'cs' : 'en']}</p>
-                    </div>
-                  </div>
-                  {meta.href && (
-                    <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-gray-600 transition-transform group-hover:translate-x-1 group-hover:text-zion-gold" />
-                  )}
-                </>
-              );
-
-              const cardCls = `group flex items-start gap-3 rounded-2xl border p-4 sm:p-5 transition-colors ${
-                isHere
-                  ? 'border-zion-gold/40 bg-zion-gold/[0.06]'
-                  : isGoal
-                    ? 'border-dashed border-amber-400/30 bg-amber-500/[0.03] hover:border-amber-400/50'
-                    : 'border-white/8 bg-white/[0.02] hover:border-zion-gold/30 hover:bg-zion-gold/[0.04]'
-              }`;
-
-              return (
-                <motion.li
-                  key={s.key}
-                  initial={{ opacity: 0, x: -16 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.45, delay: i * 0.07 }}
-                  className="relative"
-                >
-                  <span
-                    className={`absolute -left-[35px] top-5 h-3 w-3 rounded-full border-2 sm:-left-[43px] ${
-                      isHere ? 'animate-pulse' : ''
-                    }`}
-                    style={{
-                      borderColor: `rgb(${meta.rc})`,
-                      backgroundColor: isGoal ? 'transparent' : `rgb(${meta.rc})`,
-                    }}
-                  />
-                  {meta.href ? (
-                    <Link href={meta.href} className={cardCls}>
-                      {card}
-                    </Link>
-                  ) : (
-                    <div className={cardCls}>{card}</div>
-                  )}
-                </motion.li>
-              );
-            })}
-          </ol>
-        </div>
-      </section>
-
-      {/* ─── NIRVANA STATIONS ─── */}
-      <section id="nirvana" className="relative z-10 scroll-mt-24 px-4 pb-12 sm:pb-16">
-        <div className="zion-container space-y-8">
-          <div className="space-y-3 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-amber-400">
-              {MaitreyaCopy.stationsKicker[cs ? 'cs' : 'en']}
-            </p>
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">
-              {MaitreyaCopy.stationsTitle[cs ? 'cs' : 'en']}
-            </h2>
-            <p className="mx-auto max-w-2xl text-gray-400">
-              {MaitreyaCopy.stationsSub[cs ? 'cs' : 'en']}
-            </p>
-          </div>
-
-          <div className="mx-auto grid max-w-4xl gap-3 sm:grid-cols-2">
-            {MaitreyaCopy.stations.map((s, i) => {
-              const rc = ST_COLOR[s.st];
-              const label =
-                s.st === 'live'
-                  ? MaitreyaCopy.lLive
-                  : s.st === 'building'
-                    ? MaitreyaCopy.lBuilding
-                    : s.st === 'bridge'
-                      ? MaitreyaCopy.lBridge
-                      : MaitreyaCopy.lHorizon;
-              return (
-                <motion.div
-                  key={s.slug}
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: (i % 2) * 0.06 }}
-                >
-                  <Link
-                    href={`/nirvana/cist#${s.slug}`}
-                    className="group flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3 transition-colors hover:border-white/25"
-                  >
-                    <span className="text-xs font-mono text-gray-600">{String(s.n).padStart(2, '0')}</span>
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-white transition-colors group-hover:text-amber-300">
-                      {s.t[cs ? 'cs' : 'en']}
-                    </span>
-                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-gray-400">
-                      {s.layer}
-                    </span>
-                    <span
-                      className="rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em]"
-                      style={{ borderColor: `rgba(${rc}, 0.3)`, color: `rgb(${rc})` }}
-                    >
-                      {label[cs ? 'cs' : 'en']}
-                    </span>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          <div className="flex flex-col items-center gap-2 pt-2">
-            <Link href="/nirvana/cist" className="zion-button-primary group">
-              <Sun className="h-5 w-5" />
-              {MaitreyaCopy.readNirvana[cs ? 'cs' : 'en']}
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-            <p className="text-xs text-gray-500">{MaitreyaCopy.readNirvanaNote[cs ? 'cs' : 'en']}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── AXES & COMPANIONS ─── */}
-      <section id="spolecnici" className="relative z-10 scroll-mt-24 px-4 pb-12 sm:pb-16">
-        <div className="zion-container space-y-8">
-          <div className="space-y-3 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-purple">
-              {MaitreyaCopy.orbitKicker[cs ? 'cs' : 'en']}
-            </p>
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">
-              {MaitreyaCopy.orbitTitle[cs ? 'cs' : 'en']}
-            </h2>
-            <p className="mx-auto max-w-2xl text-gray-400">
-              {MaitreyaCopy.orbitSub[cs ? 'cs' : 'en']}
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {MaitreyaCopy.orbit.map((o, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.45, delay: (i % 4) * 0.07 }}
-                className="rounded-2xl border p-5 space-y-3"
-                style={{ borderColor: `rgba(${o.rc}, 0.2)`, backgroundColor: `rgba(${o.rc}, 0.04)` }}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-bold text-white">{o.t[cs ? 'cs' : 'en']}</h3>
-                  <span
-                    className="shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em]"
-                    style={{ borderColor: `rgba(${o.rc}, 0.3)`, color: `rgb(${o.rc})` }}
-                  >
-                    {o.status[cs ? 'cs' : 'en']}
-                  </span>
-                </div>
-                <p className="text-xs leading-relaxed text-gray-400">{o.d[cs ? 'cs' : 'en']}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── MANTRA + CTA ─── */}
-      <section className="relative z-10 px-4 pb-16 sm:pb-20">
-        <div className="zion-container">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="zion-rainbow-card relative overflow-hidden p-8 text-center sm:p-12"
-            style={{ '--rc': '168, 85, 247' } as React.CSSProperties}
-          >
-            <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-zion-purple/15 blur-3xl" />
-            <div className="absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-zion-gold/10 blur-3xl" />
-
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-purple">
-              {MaitreyaCopy.mantraTitle[cs ? 'cs' : 'en']}
-            </p>
-            <p className="mx-auto mt-4 max-w-2xl text-2xl font-bold leading-snug text-white sm:text-3xl">
-              {MaitreyaCopy.mantraLine[cs ? 'cs' : 'en']}
-            </p>
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-gray-400 sm:text-base">
-              {MaitreyaCopy.mantraSub[cs ? 'cs' : 'en']}
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/genesis" className="zion-button-primary group">
-                {MaitreyaCopy.ctaGenesis[cs ? 'cs' : 'en']}
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
-                href="/nirvana/cist"
-                className="zion-button-secondary border-amber-400/25 hover:border-amber-400/50 hover:text-amber-300"
-              >
-                <Sun className="h-4 w-4" />
-                {MaitreyaCopy.readNirvana[cs ? 'cs' : 'en']}
-              </Link>
-              <Link
-                href="/"
-                className="zion-button-secondary border-white/15 hover:border-zion-gold/40 hover:text-zion-gold"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                {MaitreyaCopy.back[cs ? 'cs' : 'en']}
-              </Link>
             </div>
-
-            <p className="mx-auto mt-8 max-w-xl text-[11px] leading-relaxed text-gray-600">
-              {MaitreyaCopy.note[cs ? 'cs' : 'en']}
-            </p>
-          </motion.div>
+          </div>
         </div>
       </section>
     </main>
