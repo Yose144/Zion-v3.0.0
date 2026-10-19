@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- AUDIT-FIX E-04 (16 Feb 2026): Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://62.171.141.136:* http://62.171.141.136:* https://openrouter.ai https://sepolia.basescan.org; frame-src 'self' https://market.zionterranova.com https://oasis.zionterranova.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://62.171.141.136:* https://pool.zionterranova.com:* http://62.171.141.136:* https://openrouter.ai https://sepolia.basescan.org; frame-src 'self' https://market.zionterranova.com https://oasis.zionterranova.com; object-src 'none'; base-uri 'self'; form-action 'self';">
   <title>ZION V31 Mainnet Alpha v3.2.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -7138,14 +7138,14 @@
 
               <div class="pool-grid">
                 <label class="pool-card">
-                  <input type="radio" name="pool-select" value="62.171.141.136:8444" id="pool-primary" checked />
+                  <input type="radio" name="pool-select" value="pool.zionterranova.com:8444" id="pool-primary" checked />
                   <div class="pool-card-body">
                     <div class="pool-meta">
                       <span class="pill pill-purple">Canonical</span>
                       <span class="pill pill-gold">Primary</span>
                     </div>
                     <h4>Canonical Pool</h4>
-                    <p>62.171.141.136:8444</p>
+                    <p>pool.zionterranova.com:8444</p>
                     <div class="pool-meta pool-meta-secondary">
                       <span class="pill pill-cyan">Deeksha</span>
                       <span class="pill pill-gold">ZION only</span>
@@ -7269,7 +7269,7 @@
 
               <label class="wizard-label-sm">PRL pool</label>
               <input id="srbminer-prlpool-input" class="algo-select" type="text" placeholder="auto — same as Stream 2 pool (our pool speaks both)" spellcheck="false">
-              <div class="slider-hint">Pearl stratum endpoint for the sidecar when Stream 2 = PRL. Empty = reuse the QTU pool setting (our <code>62.171.141.136:8444</code> auto-detects the protocol); falls back to <code>pearl-eu2.luckypool.io:3360</code> when no pool is configured.</div>
+              <div class="slider-hint">Pearl stratum endpoint for the sidecar when Stream 2 = PRL. Empty = reuse the QTU pool setting (our <code>pool.zionterranova.com:8444</code> auto-detects the protocol); falls back to <code>pearl-eu2.luckypool.io:3360</code> when no pool is configured.</div>
 
               <label class="wizard-label-sm" style="margin-top: 10px;">PRL wallet</label>
               <input id="srbminer-prlwallet-input" class="algo-select" type="text" placeholder="prl1… — leave empty for the pool default" spellcheck="false">
@@ -7915,7 +7915,7 @@
                   <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> NETWORK
                 </div>
                 <div class="info-card-value network">Mainnet LIVE</div>
-                <div class="info-card-sub">Edge Pool: 62.171.141.136:8444 · Prague</div>
+                <div class="info-card-sub">Pool: pool.zionterranova.com:8444 · Prague</div>
               </div>
               <div class="info-card engine">
                 <div class="info-card-kicker">
@@ -8048,7 +8048,7 @@
                   <span class="emoji-16"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-pickaxe"></use></svg></span>
                   <span class="resource-item-label">Mining Pools</span>
                 </div>
-                <span class="resource-item-value">62.171.141.136:8444 · custom endpoint supported</span>
+                <span class="resource-item-value">pool.zionterranova.com:8444 · custom endpoint supported</span>
               </div>
               <div class="resource-item">
                 <div class="resource-item-left">
@@ -8527,7 +8527,7 @@
               <h2>Start Mining</h2>
               <div class="stack-col" style="gap:8px;">
                 <input id="cli-mine-wallet" class="wizard-input" type="text" placeholder="Wallet address (zion1...)">
-                <input id="cli-mine-pool" class="wizard-input" type="text" placeholder="Pool (default: 62.171.141.136:8444)">
+                <input id="cli-mine-pool" class="wizard-input" type="text" placeholder="Pool (default: pool.zionterranova.com:8444)">
                 <input id="cli-mine-worker" class="wizard-input" type="text" placeholder="Worker name (optional)">
                 <div class="actions-row" style="gap:8px;">
                   <button class="btn btn-accent" id="cli-btn-mine-start">Start Mining</button>

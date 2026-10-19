@@ -68,7 +68,7 @@ let isRunning = false;
 let isStarting = false;
 
 // Mainnet Edge relay (Hetzner VPS, Prague) — public-facing pool + node
-const PRIMARY_MAINNET_HOST = '62.171.141.136';
+const PRIMARY_MAINNET_HOST = 'pool.zionterranova.com';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
 // Legacy alias
@@ -7430,7 +7430,7 @@ function initCliView() {
   document.getElementById('cli-btn-mine-start')?.addEventListener('click', async () => {
     if (!requireValues([['cli-mine-wallet', 'wallet address']])) return;
     const wallet = getValue('cli-mine-wallet');
-    const pool = getValue('cli-mine-pool') || '62.171.141.136:8444';
+    const pool = getValue('cli-mine-pool') || 'pool.zionterranova.com:8444';
     const worker = getValue('cli-mine-worker');
     await runCli('cliMineStart', 'miner start', { pool, wallet, worker });
   });

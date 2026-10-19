@@ -22,7 +22,7 @@ use tracing::{debug, info};
 /// v3 (F3): `coin_revenue` audit table — each native-coin revenue event
 /// posted by the treasury oracle, keyed by event id for restart-safe
 /// dedup.
-const SCHEMA_VERSION: u32 = 3;
+const SCHEMA_VERSION: u32 = 4;
 
 /// A thread-safe wrapper around a SQLite connection.  SQLite with
 /// `serialized` mode (default for `bundled`) supports multi-thread access,
@@ -248,6 +248,26 @@ impl ShareStore {
                 "#,
             )
             .context("failed to migrate schema to v3")?;
+        }
+
+        if current < 4 {
+            // v4: periodic pool snapshots for the hashrate-history API —
+            // survives restarts so `/public/v1/history` keeps the last 24h
+            // instead of starting empty after every pool bounce.
+            conn.execute_batch(
+                r#"
+                CREATE TABLE IF NOT EXISTS history (
+                    ts             INTEGER PRIMARY KEY,
+                    hashrate       REAL NOT NULL,
+                    miners_online  INTEGER NOT NULL,
+                    online_by_coin TEXT NOT NULL DEFAULT '{}',
+                    accepted       INTEGER NOT NULL DEFAULT 0,
+                    rejected       INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE INDEX IF NOT EXISTS idx_history_ts ON history(ts);
+                "#,
+            )
+            .context("failed to migrate schema to v4")?;
         }
 
         conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
@@ -803,6 +823,58 @@ impl ShareStore {
         let count: u64 = conn.query_row("SELECT COUNT(*) FROM miners", [], |row| row.get(0))?;
         Ok(count)
     }
+
+    // ── Pool history snapshots (schema v4) ─────────────────────────────
+
+    /// Append one history sample. Rows older than `retain_secs` are pruned
+    /// in the same call so the table stays bounded at ~24h of 60s samples.
+    pub fn record_history_sample(
+        &self,
+        ts: u64,
+        hashrate: f64,
+        miners_online: u64,
+        online_by_coin_json: &str,
+        accepted: u64,
+        rejected: u64,
+        retain_secs: u64,
+    ) -> Result<()> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        conn.execute(
+            "INSERT OR REPLACE INTO history (ts, hashrate, miners_online, online_by_coin, accepted, rejected)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![ts as i64, hashrate, miners_online as i64, online_by_coin_json, accepted as i64, rejected as i64],
+        )?;
+        conn.execute(
+            "DELETE FROM history WHERE ts < ?1",
+            params![ts.saturating_sub(retain_secs) as i64],
+        )?;
+        Ok(())
+    }
+
+    /// Load the newest `limit` history samples, ascending by ts.
+    /// Returns `(ts, hashrate, miners_online, online_by_coin_json, accepted, rejected)`.
+    pub fn load_history(&self, limit: u32) -> Result<Vec<(u64, f64, u64, String, u64, u64)>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT ts, hashrate, miners_online, online_by_coin, accepted, rejected
+             FROM (SELECT * FROM history ORDER BY ts DESC LIMIT ?1) ORDER BY ts ASC",
+        )?;
+        let rows = stmt.query_map(params![limit as i64], |row| {
+            Ok((
+                row.get::<_, i64>(0)? as u64,
+                row.get::<_, f64>(1)?,
+                row.get::<_, i64>(2)? as u64,
+                row.get::<_, String>(3)?,
+                row.get::<_, i64>(4)? as u64,
+                row.get::<_, i64>(5)? as u64,
+            ))
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    }
 }
 
 // ── Row types for queries ──────────────────────────────────────────────
@@ -1196,5 +1268,35 @@ mod tests {
             store.get_block("qtu", 42).unwrap().unwrap().status,
             "pending"
         );
+    }
+}
+
+#[cfg(test)]
+mod history_tests {
+    use super::ShareStore;
+
+    #[test]
+    fn history_sample_roundtrip_and_retention() {
+        let store = ShareStore::open_in_memory().unwrap();
+        store
+            .record_history_sample(1000, 250.5, 3, r#"{"zion":3}"#, 10, 1, 86400)
+            .unwrap();
+        store
+            .record_history_sample(2000, 300.0, 4, r#"{"zion":4,"qtu":1}"#, 20, 2, 86400)
+            .unwrap();
+        let rows = store.load_history(10).unwrap();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].0, 1000);
+        assert_eq!(rows[1].0, 2000);
+        assert_eq!(rows[1].2, 4);
+        assert!(rows[1].3.contains("qtu"));
+
+        // Retention: a new sample at ts=90000 prunes rows older than 3600s.
+        store
+            .record_history_sample(90000, 1.0, 1, "{}", 30, 3, 3600)
+            .unwrap();
+        let rows = store.load_history(10).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].0, 90000);
     }
 }
