@@ -51,12 +51,12 @@ export default function MaitreyaSection() {
             >
               <img
                 src="/images/maitreya/hero.webp"
-                srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1672w"
+                srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1536w"
                 sizes="(max-width: 1024px) calc(100vw - 3rem), 620px"
-                alt={cs ? 'Strom života a Maitreya — vizuál Knihy Páté' : 'Tree of Life and Maitreya — artwork of Book Five'}
+                alt={cs ? 'Oasis — jedna rodina pod Stromem života, vizuál Knihy Páté' : 'Oasis — one family under the Tree of Life, artwork of Book Five'}
                 loading="lazy"
                 decoding="async"
-                width={1672} height={941} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/img:scale-[1.04]"
+                width={1536} height={1024} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/img:scale-[1.04]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-100 backdrop-blur-sm">

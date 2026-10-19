@@ -57,8 +57,8 @@ const Copy = {
   plan: { cs: 'Plán 3.3', en: 'The 3.3 plan' },
   navLabel: { cs: 'Sekce knihovny', en: 'Library sections' },
   heroAlt: {
-    cs: 'Strom života, Maitreya a cesta, která pokračuje — One Love · One Human · One World',
-    en: 'Tree of Life, Maitreya and the journey that continues — One Love · One Human · One World',
+    cs: 'Oasis — jedna rodina pod Stromem života: Maitreya, Krišna s flétnou, tesař a děti nové země · One World, One Family',
+    en: 'Oasis — one family under the Tree of Life: Maitreya, Krishna with his flute, the carpenter and the children of the new earth · One World, One Family',
   },
 };
 
@@ -175,11 +175,11 @@ export default function MaitreyaPage() {
               <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                 <img
                   src="/images/maitreya/hero.webp"
-                  srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1672w"
+                  srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1536w"
                   sizes="(max-width: 1024px) calc(100vw - 4rem), 560px"
                   alt={Copy.heroAlt[l]}
-                  width={1672}
-                  height={941}
+                  width={1536}
+                  height={1024}
                   fetchPriority="high"
                   className="w-full object-cover"
                 />
