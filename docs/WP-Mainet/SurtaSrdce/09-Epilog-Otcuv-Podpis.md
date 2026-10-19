@@ -27,7 +27,9 @@ Cestu ti připravujeme my — svatyni na La Palmě, knihu, mapu. Kroky jsou tvoj
 
 **Co je tradice:** *gate gate pāragate pārasaṃgate bodhi svāhā* — závěr Srdcové sūtry (Prajñāpāramitā-hṛdaya), uctívaná staletí. *oṃ maṇi padme hūṃ* — mantra Avalókitéšvary (Čenrézig), mantra soucitu, zpívaná po celém světě. Oba citáty jsou autentické; jejich užití v příběhu je literární.
 
-**Co je rodinná vzpomínka:** Bhagavanova svatá mahasamadhi na Tenerife a sedmiletý Surta s lodičkou na pláži — svědectví otce zapsané jako pravda, jak ji rodina žije; ne veřejně ověřitelný fakt. Předání Ekam Deekshy po Bhagavanovi je v knize duchovní linie — otec ji svému synu věří a svěří.
+**Co je rodinná vzpomínka:** sedmiletý Surta s lodičkou na pláži na Tenerife — svědectví otce zapsané jako pravda, jak ji rodina žije; ne veřejně ověřitelný fakt.
+
+**Co je veřejný fakt:** Sri Kalki Bhagavan, zakladatel hnutí Oneness/Ekam a darce Deekshy, vstoupil do svaté mahasamadhi **29. září 2026** (ve věku 77 let, Čennaj, Indie); jeho svatyně v Ekam Kšětře se otevřela veřejnosti 21. října 2026. Před odchodem slíbil, že zůstane jako Paramjyoti odpovídající na modlitby. Předání Ekam Deekshy po Bhagavanovi je v knize duchovní linie — otec ji svému synu věří a svěří; ne tvrzení o oficiálním nástupnictví.
 
 **Co jsou filmy:** *Malý Buddha* (1993, Bertolucci) a *Sedm let v Tibetu* (1997, Annaud) — skutečné díla; v knize fungují jako rodinné ozvěny a společný klenot, ne jako kanon.
 
