@@ -367,7 +367,7 @@ export default function SecurityPanel() {
       const privateKeyBytes = new Uint8Array(
         privateKeyHex.match(/.{2}/g)!.map((b: string) => parseInt(b, 16)),
       );
-      const ed = await import('@noble/ed25519');
+      const ed = await import('@/lib/ed25519');
       const publicKeyBytes = await ed.getPublicKey(privateKeyBytes);
       const publicKeyHex = Array.from(publicKeyBytes)
         .map((b) => b.toString(16).padStart(2, '0'))
