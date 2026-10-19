@@ -25,6 +25,7 @@ export default function StatsPage() {
   const [ov, setOv] = useState<PoolOverview | null>(null);
   const [blocks, setBlocks] = useState<BlockRow[]>([]);
   const [histories, setHistories] = useState<Record<string, SeriesPoint[]>>({});
+  const [minersHist, setMinersHist] = useState<Record<string, SeriesPoint[]>>({});
   const historiesRef = useRef(histories);
   historiesRef.current = histories;
 
@@ -60,6 +61,14 @@ export default function StatsPage() {
             v: p.hashrate,
           }));
           setHistories((h) => ({ ...h, zion: zionSeries }));
+          // Per-coin miners-online series from the same server snapshots.
+          const perCoin: Record<string, SeriesPoint[]> = {};
+          for (const p of s) {
+            for (const [coin, n] of Object.entries(p.online_by_coin ?? {})) {
+              (perCoin[coin] ??= []).push({ t: p.ts * 1000, v: n });
+            }
+          }
+          setMinersHist(perCoin);
         })
         .catch(() => {});
     pull();
@@ -210,6 +219,21 @@ export default function StatsPage() {
                   )}
                 />
               </div>
+
+              {/* miners-online history (server-side, persists restarts) */}
+              {(minersHist[c.id]?.length ?? 0) > 0 && (
+                <div className="mt-4">
+                  <p className="kicker mb-2">
+                    {t('mineři online · 24h', 'miners online · 24h')}
+                  </p>
+                  <AreaChart
+                    data={minersHist[c.id]}
+                    color={ACCENT[c.accent]}
+                    height={70}
+                    fmt={(v) => fmtInt(v)}
+                  />
+                </div>
+              )}
             </div>
           );
         })}
