@@ -1,13 +1,14 @@
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { Component, memo, useEffect, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import clsx from 'clsx';
+import { useLang } from '@/contexts/LanguageContext';
 
 const HolographicEarth = dynamic(
   () => import('./HolographicEarth'),
-  { ssr: false, loading: () => <EarthSkeleton className="" /> }
+  { ssr: false, loading: () => null }
 );
 
 function isWebGLAvailable() {
@@ -18,14 +19,6 @@ function isWebGLAvailable() {
   } catch {
     return false;
   }
-}
-
-function EarthSkeleton({ className }: { className?: string }) {
-  return (
-    <div className={clsx('relative animate-pulse aspect-[5/4] w-full max-h-[300px] overflow-hidden rounded-[22px] border border-rasta-gold/30 bg-gradient-to-b from-rasta-black/85 via-rasta-dark/82 to-rasta-black/86 sm:max-h-[340px]', className)}>
-      <div className="absolute inset-0 rounded-[22px] bg-[radial-gradient(ellipse_at_50%_42%,rgba(252,209,22,0.2),transparent_58%)]" />
-    </div>
-  );
 }
 
 function EarthStaticFallback({ className }: { className?: string }) {
@@ -67,35 +60,102 @@ function EarthStaticFallback({ className }: { className?: string }) {
   );
 }
 
+/** Local boundary — a broken 3D chunk/WebGL context must never take the page down. */
+class EarthErrorBoundary extends Component<
+  { onError: () => void; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch() {
+    this.props.onError();
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
 function HolographicEarthLazy({ className }: { className?: string }) {
-  const [webglOk, setWebglOk] = useState<boolean | null>(null);
-  const [blocked, setBlocked] = useState(false);
-  const [enhanced, setEnhanced] = useState(false);
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const [requested, setRequested] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [pageVisible, setPageVisible] = useState(true);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setWebglOk(isWebGLAvailable());
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    setBlocked(reduceMotion || !!connection?.saveData);
+    const el = wrapRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), {
+      rootMargin: '200px',
+    });
+    io.observe(el);
+    const onVis = () => setPageVisible(document.visibilityState === 'visible');
+    document.addEventListener('visibilitychange', onVis);
+    return () => { io.disconnect(); document.removeEventListener('visibilitychange', onVis); };
   }, []);
 
-  useEffect(() => {
-    if (!webglOk || blocked) return;
-    const timer = window.setTimeout(() => setEnhanced(true), 900);
-    return () => window.clearTimeout(timer);
-  }, [blocked, webglOk]);
+  const show3D = requested && !failed;
 
-  if (webglOk === null) {
-    return <EarthSkeleton className={className} />;
-  }
+  return (
+    <div ref={wrapRef} className={clsx('relative', className)}>
+      {/* static textured poster — always useful, SSR-friendly */}
+      <EarthStaticFallback />
 
-  // Static 2D globe only when 3D can't run: no WebGL, reduced motion or save-data.
-  // Mobile devices get the real scene — it self-throttles via useLowPower.
-  if (!webglOk || blocked || !enhanced) {
-    return <EarthStaticFallback className={className} />;
-  }
+      {/* 3D layer mounts only on explicit opt-in; poster stays until the day
+          texture actually rendered (onReady). */}
+      {show3D && (
+        <div
+          className={`absolute inset-0 aspect-[5/4] max-h-[300px] sm:max-h-[340px] transition-opacity duration-300 ${
+            ready ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+          aria-hidden={!ready}
+        >
+          <EarthErrorBoundary onError={() => { setFailed(true); setRequested(false); }}>
+            <HolographicEarth
+              active={visible && pageVisible}
+              onReady={() => setReady(true)}
+              onUnavailable={() => { setFailed(true); setRequested(false); }}
+            />
+          </EarthErrorBoundary>
+        </div>
+      )}
 
-  return <HolographicEarth className={className} />;
+      {/* opt-in / return controls */}
+      <div className="mt-2 flex items-center justify-center gap-3">
+        {!failed && !show3D && (
+          <button
+            type="button"
+            onClick={() => setRequested(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-rasta-gold/30 bg-black/40 px-4 py-1.5 text-xs font-semibold text-rasta-gold transition-colors hover:border-rasta-gold/60 hover:bg-rasta-gold/10"
+          >
+            {cs ? 'Prozkoumat ve 3D' : 'Explore in 3D'}
+          </button>
+        )}
+        {show3D && !ready && (
+          <span className="text-xs text-gray-400">{cs ? 'Načítám 3D…' : 'Loading 3D…'}</span>
+        )}
+        {show3D && ready && (
+          <button
+            type="button"
+            onClick={() => { setRequested(false); setReady(false); }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/40 px-4 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-white/35 hover:text-white"
+          >
+            {cs ? 'Zpět na statický náhled' : 'Back to static preview'}
+          </button>
+        )}
+        {failed && (
+          <span className="text-xs text-gray-500">
+            {cs ? '3D zobrazení není k dispozici' : '3D view is not available'}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default memo(HolographicEarthLazy);

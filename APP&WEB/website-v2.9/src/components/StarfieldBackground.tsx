@@ -56,7 +56,10 @@ export default function StarfieldBackground({
 
     const colorList = Array.isArray(starColor[0]) ? (starColor as RGBColor[]) : [starColor as RGBColor];
     const pickColor = () => colorList[Math.floor(Math.random() * colorList.length)];
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const isStaticMode = () =>
+      motionQuery.matches ||
+      !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
     const effectiveDensity = () => window.innerWidth < 640 ? Math.min(density, 120) : density;
     let frameInterval = 0;
     const updateFrameInterval = () => {
@@ -112,17 +115,7 @@ export default function StarfieldBackground({
     let animationFrameId = 0;
     let lastFrameTime = 0;
 
-    const animate = (timestamp: number) => {
-      animationFrameId = 0;
-      if (!ctx || !canvas || document.visibilityState === 'hidden') return;
-      if (!reduceMotion) animationFrameId = requestAnimationFrame(animate);
-
-      if (frameInterval > 0) {
-        const delta = timestamp - lastFrameTime;
-        if (delta < frameInterval) return;
-        lastFrameTime = timestamp - (delta % frameInterval);
-      }
-
+    const draw = () => {
       if (clearPerFrame) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       } else {
@@ -204,7 +197,25 @@ export default function StarfieldBackground({
       });
     };
 
+    const animate = (timestamp: number) => {
+      animationFrameId = 0;
+      if (isStaticMode() || document.visibilityState === 'hidden') return;
+      animationFrameId = requestAnimationFrame(animate);
+
+      if (frameInterval > 0) {
+        const delta = timestamp - lastFrameTime;
+        if (delta < frameInterval) return;
+        lastFrameTime = timestamp - (delta % frameInterval);
+      }
+      draw();
+    };
+
     const startAnimation = () => {
+      if (document.visibilityState === 'hidden') return;
+      if (isStaticMode()) {
+        draw(); // single static frame — no recurring RAF
+        return;
+      }
       if (!animationFrameId && document.visibilityState !== 'hidden') {
         animationFrameId = requestAnimationFrame(animate);
       }
@@ -223,18 +234,28 @@ export default function StarfieldBackground({
       resizeFrame = requestAnimationFrame(() => {
         resize();
         seedStars();
+        if (isStaticMode()) draw();
       });
     };
+    const handleMotionChange = () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      animationFrameId = 0;
+      startAnimation();
+    };
 
-    startAnimation();
+    // First frame is always drawn — canvas is never blank regardless of mode.
+    draw();
+    if (!isStaticMode()) startAnimation();
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('resize', handleResize);
+    motionQuery.addEventListener('change', handleMotionChange);
 
     return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       if (resizeFrame) cancelAnimationFrame(resizeFrame);
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('resize', handleResize);
+      motionQuery.removeEventListener('change', handleMotionChange);
     };
   }, [density, speed, starColor, trailOpacity, flowDirection, clearPerFrame, lineTrails, canvasGradient, canvasGradientAlpha, fpsLimit]);
 

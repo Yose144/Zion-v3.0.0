@@ -70,27 +70,67 @@ void main() {
 }
 `;
 
-function EarthGlobe({ low }: { low?: boolean }) {
+function EarthGlobe({
+  low,
+  onReady,
+  onUnavailable,
+}: {
+  low?: boolean;
+  onReady?: () => void;
+  onUnavailable?: () => void;
+}) {
   const [maps, setMaps] = useState<{
     color?: THREE.Texture;
     bump?: THREE.Texture;
     night?: THREE.Texture;
   }>({});
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+  const onUnavailableRef = useRef(onUnavailable);
+  onUnavailableRef.current = onUnavailable;
 
   useEffect(() => {
+    let cancelled = false;
     const loader = new THREE.TextureLoader();
-    loader.load('/textures/earth-blue-marble.webp', (color) => {
-      color.colorSpace = THREE.SRGBColorSpace;
-      loader.load('/textures/earth-topology.png', (bump) => {
-        loader.load('/textures/earth-dark.jpg', (night) => {
-          night.colorSpace = THREE.SRGBColorSpace;
-          setMaps({ color, bump, night });
-        });
-      });
-    });
+    const loaded: THREE.Texture[] = [];
+    const result: { color?: THREE.Texture; bump?: THREE.Texture; night?: THREE.Texture } = {};
+    const commit = () => { if (!cancelled) setMaps({ ...result }); };
+
+    // Color is required (readiness signal); bump/night are optional extras
+    // loaded in parallel — a missing extra never blanks the globe.
+    loader.load(
+      '/textures/earth-blue-marble.webp',
+      (color) => {
+        loaded.push(color);
+        if (cancelled) { color.dispose(); return; }
+        color.colorSpace = THREE.SRGBColorSpace;
+        result.color = color;
+        commit();
+        onReadyRef.current?.();
+      },
+      undefined,
+      () => { if (!cancelled) onUnavailableRef.current?.(); }
+    );
+    loader.load('/textures/earth-topology.png', (bump) => {
+      loaded.push(bump);
+      if (cancelled) { bump.dispose(); return; }
+      result.bump = bump;
+      if (result.color) commit();
+    }, undefined, () => { /* optional — silent */ });
+    loader.load('/textures/earth-dark.jpg', (night) => {
+      loaded.push(night);
+      if (cancelled) { night.dispose(); return; }
+      night.colorSpace = THREE.SRGBColorSpace;
+      result.night = night;
+      if (result.color) commit();
+    }, undefined, () => { /* optional — silent */ });
+    return () => {
+      cancelled = true;
+      loaded.forEach((t) => t.dispose());
+    };
   }, []);
 
-  if (!maps.color || !maps.bump) return null;
+  if (!maps.color) return null;
 
   return (
     <group>
@@ -800,7 +840,15 @@ function StarField({ low }: { low?: boolean }) {
   );
 }
 
-function Scene() {
+function Scene({
+  onReady,
+  onUnavailable,
+  reducedMotion,
+}: {
+  onReady?: () => void;
+  onUnavailable?: () => void;
+  reducedMotion?: boolean;
+}) {
   const low = useLowPower();
   return (
     <>
@@ -817,7 +865,7 @@ function Scene() {
       <Sun low={low} />
       <Planets low={low} />
       <group rotation={[0, -Math.PI / 2, 0]}>
-        <EarthGlobe low={low} />
+        <EarthGlobe low={low} onReady={onReady} onUnavailable={onUnavailable} />
         <TerraNovaMarkers />
       </group>
       <Moon low={low} />
@@ -832,7 +880,7 @@ function Scene() {
         maxPolarAngle={Math.PI * 0.82}
         minDistance={1.72}
         maxDistance={4.5}
-        autoRotate
+        autoRotate={!reducedMotion}
         autoRotateSpeed={0.28}
       />
     </>
@@ -841,15 +889,38 @@ function Scene() {
 
 export type HolographicEarthProps = {
   className?: string;
+  /** false pauses the render loop entirely (offscreen/hidden) */
+  active?: boolean;
+  /** fires when the day color texture is actually rendered-ready */
+  onReady?: () => void;
+  /** fires when WebGL or the color texture is unavailable */
+  onUnavailable?: () => void;
 };
 
-function HolographicEarth({ className }: HolographicEarthProps) {
-  const [webglOk, setWebglOk] = useState(false);
+function HolographicEarth({
+  className,
+  active = true,
+  onReady,
+  onUnavailable,
+}: HolographicEarthProps) {
+  const [webglOk, setWebglOk] = useState<boolean | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const low = useLowPower();
+  const onUnavailableRef = useRef(onUnavailable);
+  onUnavailableRef.current = onUnavailable;
 
   useEffect(() => {
     setWebglOk(isWebGLAvailable());
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
   }, []);
+
+  useEffect(() => {
+    if (webglOk === false) onUnavailableRef.current?.();
+  }, [webglOk]);
 
   return (
     <div
@@ -873,6 +944,7 @@ function HolographicEarth({ className }: HolographicEarthProps) {
           <Canvas
             className="h-full w-full !block"
             dpr={low ? 1 : [1, 1.5]}
+            frameloop={active ? (reducedMotion ? 'demand' : 'always') : 'never'}
             gl={{
               alpha: true,
               antialias: !low,
@@ -880,10 +952,11 @@ function HolographicEarth({ className }: HolographicEarthProps) {
             }}
             onCreated={({ gl }) => {
               gl.setClearColor(0x000000, 0);
+              gl.domElement.addEventListener('webglcontextlost', () => onUnavailableRef.current?.(), { once: true });
             }}
             camera={{ position: [0, 0, 2.72], fov: 40 }}
           >
-            <Scene />
+            <Scene onReady={onReady} onUnavailable={onUnavailable} reducedMotion={reducedMotion} />
           </Canvas>
         ) : (
           <div className="flex h-full w-full items-center justify-center">

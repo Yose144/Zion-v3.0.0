@@ -59,10 +59,15 @@ export default function HiranFloatingChat() {
         if (!cancelled) setOnline(false);
       }
     };
+    // poll availability only while the chat is open and the page is visible —
+    // no probing from a closed widget or a hidden tab
+    if (!open) return;
+    const onVisible = () => { if (document.visibilityState === 'visible') check(); };
     check();
-    const id = setInterval(check, 30_000);
-    return () => { cancelled = true; clearInterval(id); };
-  }, []);
+    const id = setInterval(() => { if (document.visibilityState === 'visible') check(); }, 30_000);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { cancelled = true; clearInterval(id); document.removeEventListener('visibilitychange', onVisible); };
+  }, [open]);
 
   const sendMessage = useCallback(async (text: string) => {
     const prompt = text.trim();
@@ -98,7 +103,7 @@ export default function HiranFloatingChat() {
         <button
           onClick={() => setOpen(true)}
           aria-label={Copy.fabLabel[t]}
-          className="fixed bottom-5 right-5 z-[70] group flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-zion-purple to-zion-cyan shadow-[0_0_32px_rgba(147,51,234,0.45)] hover:shadow-[0_0_48px_rgba(147,51,234,0.7)] transition-all duration-300 hover:scale-110"
+          className="fixed bottom-20 right-4 z-40 group flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-zion-purple to-zion-cyan shadow-[0_0_32px_rgba(147,51,234,0.45)] hover:shadow-[0_0_48px_rgba(147,51,234,0.7)] transition-all duration-300 hover:scale-110"
         >
           <Brain className="w-6 h-6 text-white" />
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black bg-zion-cyan animate-pulse" />
@@ -111,8 +116,8 @@ export default function HiranFloatingChat() {
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed z-[70] bottom-5 right-5 flex flex-col overflow-hidden rounded-2xl border border-zion-purple/30 bg-black/85 backdrop-blur-xl shadow-[0_0_48px_rgba(0,0,0,0.6)]"
-          style={{ width: 'min(380px, calc(100vw - 2.5rem))', height: 'min(540px, calc(100dvh - 6rem))' }}
+          className="fixed z-40 bottom-20 right-4 flex flex-col overflow-hidden rounded-2xl border border-zion-purple/30 bg-black/85 backdrop-blur-xl shadow-[0_0_48px_rgba(0,0,0,0.6)]"
+          style={{ width: 'min(380px, calc(100vw - 2rem))', height: 'min(540px, calc(100dvh - 7rem))' }}
         >
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-black/40">
