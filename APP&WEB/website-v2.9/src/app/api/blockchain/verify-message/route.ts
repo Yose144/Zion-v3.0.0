@@ -33,7 +33,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAsync } from '@noble/ed25519';
+import { verifyAsync } from '@/lib/ed25519';
 import { sha256, sha512 } from '@noble/hashes/sha2.js';
 import { ripemd160 } from '@noble/hashes/legacy.js';
 

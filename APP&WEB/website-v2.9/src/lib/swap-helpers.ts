@@ -1,6 +1,6 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 import { ripemd160 } from '@noble/hashes/legacy.js';
-import { getPublicKeyAsync, utils } from '@noble/ed25519';
+import { getPublicKeyAsync, utils } from '@/lib/ed25519';
 
 const ZION_BASE32_ALPHABET = '023456789acdefghjklmnpqrstuvwxyz';
 
