@@ -46,6 +46,15 @@ const UpdateProfileSchema = z.object({
   email: z.string().email().max(255).optional().nullable(),
   avatar: z.string().url().max(512).optional().nullable(),
   bio: z.string().max(512).optional().nullable(),
+  avatar3d: z
+    .object({
+      callsign: z.string().max(24).optional(),
+      bodyType: z.enum(['slim', 'standard', 'heavy']).optional(),
+      neonColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+      augmentation: z.enum(['reflexes', 'neural', 'tech', 'bio', 'stealth']).optional(),
+    })
+    .optional()
+    .nullable(),
 });
 
 const NftAvatarSchema = z.object({
@@ -379,6 +388,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     if ('displayName' in data) update.displayName = data.displayName;
     if ('email' in data) update.email = data.email;
     if ('avatar' in data) update.avatar = data.avatar;
+    if ('avatar3d' in data) update.avatar3d = data.avatar3d ?? null;
     if ('bio' in data) update.bio = data.bio;
 
     const user = await app.prisma.user.update({

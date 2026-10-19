@@ -29,8 +29,10 @@ import {
   logout as zisLogout,
   type ZisUser,
   type ZisPasskey,
+  type ZisAvatar3d,
 } from '@/lib/zis';
 import { deriveWalletFromMnemonic, signMessage } from '@/lib/zionWallet';
+import { useGameStore } from '@/store/gameStore';
 
 export interface AuthUser {
   id?: string;
@@ -38,6 +40,7 @@ export interface AuthUser {
   displayName: string | null;
   email?: string | null;
   avatar?: string | null;
+  avatar3d?: ZisAvatar3d | null;
   bio?: string | null;
   role?: string;
   createdAt?: number;
@@ -85,12 +88,29 @@ function zisToAuthUser(zisUser: ZisUser | null): AuthUser | null {
     displayName: zisUser.displayName ?? null,
     email: zisUser.email ?? null,
     avatar: zisUser.avatar ?? null,
+    avatar3d: zisUser.avatar3d ?? null,
     bio: zisUser.bio ?? null,
     role: zisUser.role,
     createdAt: zisUser.createdAt ? new Date(zisUser.createdAt).getTime() : undefined,
     lastLogin: zisUser.lastLogin ? new Date(zisUser.lastLogin).getTime() : undefined,
     loginCount: zisUser.loginCount,
   };
+}
+
+/**
+ * Pull the persisted OASIS avatar config from ZIS into the local game
+ * store — called on session refresh/login so the in-world identity follows
+ * the account, not the browser.
+ */
+function hydrateAvatar3d(cfg: ZisAvatar3d | null | undefined) {
+  if (!cfg) return;
+  const { setAvatarConfig } = useGameStore.getState();
+  setAvatarConfig({
+    ...(cfg.callsign !== undefined ? { callsign: cfg.callsign } : {}),
+    ...(cfg.bodyType ? { bodyType: cfg.bodyType } : {}),
+    ...(cfg.neonColor ? { neonColor: cfg.neonColor } : {}),
+    ...(cfg.augmentation ? { augmentation: cfg.augmentation } : {}),
+  });
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -100,7 +120,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       const zisUser = await getCurrentUser();
-      setUser(zisToAuthUser(zisUser));
+      const authUser = zisToAuthUser(zisUser);
+      setUser(authUser);
+      hydrateAvatar3d(zisUser?.avatar3d);
     } catch (e) {
       setUser(null);
     }

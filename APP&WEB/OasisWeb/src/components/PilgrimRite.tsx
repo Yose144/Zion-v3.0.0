@@ -21,6 +21,8 @@ import {
   Ghost,
 } from 'lucide-react';
 import { useGameStore, type Archetype, type BodyType, type Augmentation } from '@/store/gameStore';
+import AvatarCustomizer from './AvatarCustomizer';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Step = 'morpheus' | 'customize' | 'archetype';
 
@@ -101,8 +103,9 @@ interface PilgrimRiteProps {
 }
 
 export function PilgrimRite({ onEnter }: PilgrimRiteProps) {
-  const [step, setStep] = useState<Step>('archetype');
+  const [step, setStep] = useState<Step>('customize');
   const applyArchetype = useGameStore((s) => s.applyArchetype);
+  const { user } = useAuth();
 
   const selectArchetype = (archetype: NonNullable<Archetype>) => {
     applyArchetype(archetype);
@@ -118,7 +121,37 @@ export function PilgrimRite({ onEnter }: PilgrimRiteProps) {
         className="zion-hud-panel relative w-full max-w-3xl overflow-hidden p-6 sm:p-10"
       >
         <AnimatePresence mode="wait">
-          <motion.div
+          {step === 'customize' && (
+            <motion.div
+              key="customize"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.35 }}
+              className="relative z-10 flex max-h-[80vh] flex-col overflow-y-auto"
+            >
+              <div className="mb-4 inline-flex items-center gap-2 self-center rounded-full border border-[#fcd116]/30 bg-[#fcd116]/10 px-3 py-1 text-xs font-bold tracking-wider text-[#fcd116]">
+                <User size={12} />
+                FORGE YOUR AVATAR
+              </div>
+              <h2 className="mb-2 text-center text-2xl font-black tracking-tight text-white sm:text-3xl">
+                Who steps into the OASIS?
+              </h2>
+              <p className="mb-6 text-center text-sm leading-relaxed text-white/80">
+                Shape your in-world identity — callsign, body, neon trim and augmentation.
+                {user ? ' Synced to your ZIS identity.' : ''}
+              </p>
+              <AvatarCustomizer
+                seed={user?.id}
+                avatarSrc={user?.avatar}
+                onDone={() => setStep('archetype')}
+                doneLabel="Continue →"
+              />
+            </motion.div>
+          )}
+
+          {step === 'archetype' && (
+            <motion.div
               key="archetype"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -175,6 +208,7 @@ export function PilgrimRite({ onEnter }: PilgrimRiteProps) {
                 })}
               </div>
             </motion.div>
+          )}
         </AnimatePresence>
       </motion.div>
     </div>
