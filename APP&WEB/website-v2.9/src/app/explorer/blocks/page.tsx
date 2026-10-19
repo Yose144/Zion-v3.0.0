@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Box, ChevronDown, Download, AlertCircle } from "lucide-react";
+import { Box, ChevronDown, Download, AlertCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
@@ -262,17 +262,30 @@ export default function BlocksPage() {
                             const known = block.miner ? KNOWN_ADDRESS_MAP.get(block.miner) : undefined;
                             if (!block.miner) return <span className="text-gray-600 text-xs">—</span>;
                             return (
-                              <Link href={`/explorer/address?addr=${block.miner}`} className="group/miner inline-flex items-center">
-                                {known ? (
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${known.type === 'pool' ? 'bg-zion-gold/15 text-zion-gold border border-zion-gold/30' : 'bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20'}`}>
-                                    {known.label}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-500 group-hover/miner:text-gray-300 transition font-mono text-xs">
-                                    {`${block.miner.slice(0, 10)}…${block.miner.slice(-6)}`}
-                                  </span>
+                              <span className="inline-flex items-center gap-1.5">
+                                <Link href={`/explorer/address?addr=${block.miner}`} className="group/miner inline-flex items-center">
+                                  {known ? (
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${known.type === 'pool' ? 'bg-zion-gold/15 text-zion-gold border border-zion-gold/30' : 'bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20'}`}>
+                                      {known.label}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-500 group-hover/miner:text-gray-300 transition font-mono text-xs">
+                                      {`${block.miner.slice(0, 10)}…${block.miner.slice(-6)}`}
+                                    </span>
+                                  )}
+                                </Link>
+                                {known?.type === 'pool' && (
+                                  <a
+                                    href="https://pool.zionterranova.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={cs ? 'Otevřít pool' : 'Open pool'}
+                                    className="text-zion-gold/60 transition hover:text-zion-gold"
+                                  >
+                                    <ExternalLink size={12} />
+                                  </a>
                                 )}
-                              </Link>
+                              </span>
                             );
                           })()}
                         </td>
