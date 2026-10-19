@@ -9,7 +9,9 @@ Pro Surtu — moje srdce, které teď ještě nosí v malém těle velkou otázk
 
 A pro každého čtenáře, který si tuto knihu otevřel a pochopil, že je i pro něj — protože poklad se rozdává, když ho držíš, a roste, když ho dáváš.
 
-Ať tě tvoje cesta naučí to, co mě naučila má: **že nejkrásnější věci na světě jsou ty, které si nepamatuješ, protože jsi s nimi rostl** — a že jednou z nich budeš ty sám pro někoho jiného.
+Ať tě tvoje cesta naučí to, co mě naučila má: **že svět je utkaný z nekonečné lásky — a právě proto je soucit a laskavost k druhým to nejcennější.** Druzí jsou utkaní z téže nití jako ty; když jsi laskavý, dotýkáš se samé látky světa.
+
+Cestu ti připravujeme my — svatyni na La Palmě, knihu, mapu. Kroky jsou tvoje. A až jednou dojdeš do Dharma Temple a uvidíš tu niť prosvítat, budeš vědět, že všechno — Babylon, hory, moře, my i ty — je utkané z téže nekonečné lásky.
 
 *gate gate pāragate pārasaṃgate bodhi svāhā*
 
@@ -29,7 +31,9 @@ Ať tě tvoje cesta naučí to, co mě naučila má: **že nejkrásnější věc
 
 **Co je korpus:** odkazy v [Soupisu](./08-Om-Mani-Padme-Hum.md) míří na skutečné texty ZION ekosystému — jejich stav (čtivé / draft / horizont) je uveden u každé položky a dodržuje pravidlo, že kniha rozlišuje, co je živé a co ještě jen roste.
 
-**Co je slib:** že syn, pro kterého kniha vznikla, jednou pochopí — ne ze slov, ale z půdy pod nohama — že poklad, který hledal na druhém břehu, nesl od první brány na zádech.
+**Co je Dharma Temple:** reálný L5 projekt na La Palmě (Kanárské ostrovy) — Merkaba ze dřeva a světla, sedm kopulí, Strom života jako osa, „místo osvícení a nirvány pro malé Buddhy a všechny bytosti světla" ([`BodhiGaia/04`](../BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md), `/terranova/dharma-temple`). Fyzická stavba se připravuje — **my mu tu cestu připravujeme**: svatyně, kniha i mapa stojí pro toho, kdo jednou dojde.
+
+**Co je slib:** že syn, pro kterého kniha vznikla, jednou pochopí — ne ze slov, ale z půdy pod nohama — že poklad, který hledal na druhém břehu, nesl od první brány na zádech; a že celý svět je utkaný z nekonečné lásky, proto je soucit a laskavost k druhým to nejcennější.
 
 ---
 

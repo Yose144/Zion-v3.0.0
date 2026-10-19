@@ -27,10 +27,11 @@ Přečti ji jednou jako pohádku. Podruhé jako dopis. A až budeš velký a sv�
 
 ## Poklad pro Surtu
 
-Dvě pravidla na celou knihu, nauč se je jako rodné jméno:
+Tři pravdy na celou knihu, nauč se je jako rodné jméno:
 
 1. **Poklad už nosíš.** Není v bance, není v horách, není na druhém břehu. Je v tobě — v srdci, které se umí probudit. Cesta ho jen odkrývá.
-2. **Za tebe to neudělá nikdo.** Otec ukáže brány, kniha ukáže cestu, mantry druhých ukážou, že cesta existuje. Ale přes bránu jdeš sám, jedna noha před druhou.
+2. **Cestu ti připravujeme my — jdeš ji ty.** Otec ukáže brány, kniha ukáže cestu, a na konci na tebe už čeká svatyně, kterou stavíme na La Palmě — Dharma Temple pro malé Buddhy. Ale přes bránu jdeš sám, jedna noha před druhou. My stavíme; ty jdeš.
+3. **Svět je utkaný z nekonečné lásky — a právě proto je soucit a laskavost k druhým to nejcennější.** To uvidíš na konci cesty vlastníma očima. Do té doby to ber ode mě: druzí jsou utkaní z téže nití jako ty.
 
 ## Kotva pravdy
 
