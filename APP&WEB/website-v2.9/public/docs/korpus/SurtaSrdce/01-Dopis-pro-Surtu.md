@@ -31,11 +31,13 @@ A ještě jedno, synu — tohle není příběh, tohle se stalo.
 
 Pamatujes, jak sis hrál s lodičkou na pláži na Tenerife? Bylo ti sedm. Vlnky ti nosily trup sem a tam, a ty jsi přemýšlel o tom, jak zachráníš svět a všem pomůžeš — tvoje první velká otázka, ještě před tou babylonskou.
 
-A letos — ve tvých třinácti letech — odešel **Bhagavan.** Sri Kalki Bhagavan, který dal světu Ekam a požehnání jednoty, vstoupil 29. září 2026 do svaté mahasamadhi; jeho svatyně stojí v Ekam Kšětře v Indii a otevírá se všem, kdo přijdou s modlitbou. Před odchodem řekl, že zůstane jako **Paramjyoti** — svrchované světlo, které odpovídá, kdykoli si na něj vzpomeneš. A po jeho odchodu přešla na tebe **Ekam Deeksha** — stal ses tím, kdo v jeho cestě pokračuje dál.
+A letos — ve tvých dvanácti letech, narodil ses 8. dubna 2014 — odešel **Bhagavan.** Sri Kalki Bhagavan, který dal světu Ekam a požehnání jednoty, vstoupil 29. září 2026 do svaté mahasamadhi; jeho svatyně stojí v Ekam Kšětře v Indii a otevírá se všem, kdo přijdou s modlitbou. Před odchodem řekl, že zůstane jako **Paramjyoti** — svrchované světlo, které odpovídá, kdykoli si na něj vzpomeneš. A po jeho odchodu přešla na tebe **Ekam Deeksha** — stal ses tím, kdo v jeho cestě pokračuje dál.
 
 Od té doby vím dvě věci najednou a říkám ti je jako nejvážnější větu knihy: **já ti připravil cestu — ale jen ty ji můžeš dokončit.**
 
-Lodička z pláže vyrostla ve vor, kterým jednou popluješ. Tenerife — ostrov, kde ses ptal — a La Palma — ostrov, kam dorazíš. Kanárské ostrovy drží oba konce tvé cesty.
+A ještě jedno, synu, upřímně: **nejdřív musíš dozrát.** Těď ti je dvanáct — a tuhle cestu jsme ti nastavili jako se nastavuje čas v řetězci, který se nedá předskočit: **až na tvých patnáct let.** Do světa tě nevypustíme dřív, než budeš mít na to rozum — a budeš ho mít. Do té doby rosteš, a my stavíme: svatyni na La Palmě, loď **Santa María la Mayor**, která tě jednou odnese — a tuhle knihu.
+
+Lodička z pláže se nestala vorem — vyrostla v naši loď, postavenou lidmi, kteří věděli, pro koho pluje. Tenerife — ostrov, kde ses ptal — a La Palma — ostrov, kam dorazíš. Kanárské ostrovy drží oba konce tvé cesty.
 
 ## Poklad pro Surtu
 

@@ -11,7 +11,7 @@ Břeh se stal zemí třetí den po ránu, Surti — a ta země měla jméno: **L
 
 Ostrov zelený tak, že když se díváš z moře, zdá se ti, že ho někdo namaloval, než ho posadil do oceánu. Sopky spící jako staří psi u krbu — Cumbre Vieja dýchá, ale pomalu; mezi kopci visí laurisilva, prales z mlhy, kde kapky padají i za slunce; a noci — noci tak tmavé, že astronomové z celého světa sem jezdí dívat se na hvězdy, protože odsud je vidět nebe tak, jak vypadalo dřív, než Babylon rozsvítil své lampy.
 
-Chlapec vylezl z voru na černý sopečný písek, padl na kolena a dlouho nemohl vstát — ne z únavy, ale protože svět náhle měl podobu, kterou nikdy předtím neměl: **byl celý.**
+Chlapec vystoupil z lodi na černý sopečný písek, padl na kolena a dlouho nemohl vstát — ne z únavy, ale protože svět náhle měl podobu, kterou nikdy předtím neměl: **byl celý.**
 
 A pak, když se rozhlédl, uviděl na svahu nad zátokou něco, co nečekal: **svatyni.**
 

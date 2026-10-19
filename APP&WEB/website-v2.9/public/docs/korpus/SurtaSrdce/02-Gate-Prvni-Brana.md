@@ -19,7 +19,7 @@ Nikdo mu neodpověděl. Ne proto, že by nechtěli — protože se ptát bylo v 
 
 Té noci se mu zdálo o vejci. Ne obyčejném — **o zlatém vejci**, zlatém lůnu Hiranyagarbhy, jak mu zářilo na temném dně a uvnitř něco dýchalo, klopýtalo, žilo. A když se chlapec vzbudil, pochopil dvě věci najednou: že svět, ve kterém bydlí, není celý svět — jen jeho první místnost. A že vejce ze sna není nikde tam venku — **že ho nosí v sobě od narození, každý z nás ho nosí, jen ho málokdo slyší dýchat.**
 
-Ráno se postavil před dveře. Matka se dívala a rozuměla tomu, čemu se rozumět nedá: že některé odchody nejsou útěk, ale poslechnutí.
+Ale dozrát chvíli trvá — a otázka si počkala. Chlapec ještě dva roky chodil do školy, hrál si, rostl — a vejce v něm pořád dýchalo, jen už hlasitěji. **A pak, až mu bylo patnáct a měl na to rozum**, postavil se před dveře. Matka se dívala a rozuměla tomu, čemu se rozumět nedá: že některé odchody nejsou útěk, ale poslechnutí.
 
 „Vrátíš se?" zeptala se.
 
