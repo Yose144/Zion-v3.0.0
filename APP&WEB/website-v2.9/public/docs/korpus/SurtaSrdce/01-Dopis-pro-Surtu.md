@@ -29,7 +29,7 @@ Přečti ji jednou jako pohádku. Podruhé jako dopis. A až budeš velký a sv�
 
 Tři pravdy na celou knihu, nauč se je jako rodné jméno:
 
-1. **Poklad už nosíš.** Není v bance, není v horách, není na druhém břehu. Je v tobě — v srdci, které se umí probudit. Cesta ho jen odkrývá.
+1. **Poklad už nosíš — zlaté vejce Hiranyagarbhy.** Zlaté lůno, které každý z nás nosí v srdci od narození. Není v bance, není v horách, není na druhém břehu. Cesta ho jen odkrývá — a jednou se vylíhne. To vylíhnutí se jmenuje probuzení.
 2. **Cestu ti připravujeme my — jdeš ji ty.** Otec ukáže brány, kniha ukáže cestu, a na konci na tebe už čeká svatyně, kterou stavíme na La Palmě — Dharma Temple pro malé Buddhy. Ale přes bránu jdeš sám, jedna noha před druhou. My stavíme; ty jdeš.
 3. **Svět je utkaný z nekonečné lásky — a právě proto je soucit a laskavost k druhým to nejcennější.** To uvidíš na konci cesty vlastníma očima. Do té doby to ber ode mě: druzí jsou utkaní z téže nití jako ty.
 

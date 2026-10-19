@@ -19,7 +19,9 @@ Ne lásky jako citu — lásky jako **látky.** Jako je voda látkou moří a sv
 
 A chlapec pochopil v téže vteřině druhou věc, která s tou první stojí a padá: **právě proto je soucit a laskavost k druhým to nejcennější na světě.** Ne protože to někdo přikázal. Ne protože se to sluší. Ale protože druzí jsou utkaní z téže nití — a když jsi laskavý k nim, jsi laskavý k samé látce světa. Soucit není morálka. Soucit je **způsob, jak se dotýkáš látky, ze které je všechno.**
 
-Lotos se otevřel úplně. A z jeho srdce zazněly čtyři slabiky, které svět zpívá tisíc let:
+Lotos se otevřel úplně. A v téže vteřině — tiše, jak praská skořápka, když se rodí něco živého — **puklo zlaté vejce, které chlapec nosil v srdci od narození.** Zlaté lůno Hiranyagarbhy se vylíhlo. To, co v něm po celých třináct let dýchalo a klopýtalo a čekalo, se postavilo na světlo — a byl to **on sám.** Vylíhnuté vejce a otevřený lotos byly jediný obraz: **to je osvícení — a to bude jednou i tvoje nirvana, Surti.** Jak říká kniha Maitreya: vajíčko se jednou vylíhne. Vylíhlo se.
+
+A z otevřeného lotosu zazněly čtyři slabiky, které svět zpívá tisíc let:
 
 > ***oṃ maṇi padme hūṃ***
 > *(klenot je v lotosu — a lotos jsi ty; a ty jsi utkaný z lásky)*
@@ -38,9 +40,10 @@ A v tu chvíli přišla otázka, která dělí Buddhy od bodhisattv:
 
 O nejcennější věci na světě, synu — tohle je srdce celé knihy:
 
-1. **Svět je utkaný z nekonečné lásky.** Není to verš na zeď — je to pravda, kterou Malý Buddha uviděl: všechno, co existuje, je utkané z jediné nitě. Když se na cokoli podíváš dost dlouho a dost tiše, nit prosvítá.
-2. **A právě proto je soucit a laskavost k druhým to nejcennější.** Druzí nejsou „ostatní" — jsou utkaní z téže látky jako ty. Když jsi laskavý, neděláš „správnou věc" — **dotýkáš se světa tam, kde je nejživější.** Laskavost je jediná měna, která se přerozdáváním nikdy neztenčuje.
-3. **Probuzení není útěk ze světa — je to návrat do něj.** Malý Buddha mohl zůstat v templu navždy — a svět by zůstal stejný. Probudil se k látce, ze které je svět utkaný, a proto nemohl zůstat sám.
+1. **Zlaté vejce se vylíhne.** Nosíš ho v srdci od narození — zlaté lůno Hiranyagarbhy, jak zní i v knize Maitreya: „vajíčko se jednou vylíhne." To vylíhnutí je probuzení; tvoje nirvana není místo, kam se jde — je to okamžik, kdy to, co v tobě pořád žilo, vyjde na světlo.
+2. **Svět je utkaný z nekonečné lásky.** Není to verš na zeď — je to pravda, kterou Malý Buddha uviděl: všechno, co existuje, je utkané z jediné nitě. Když se na cokoli podíváš dost dlouho a dost tiše, nit prosvítá.
+3. **A právě proto je soucit a laskavost k druhým to nejcennější.** Druzí nejsou „ostatní" — jsou utkaní z téže látky jako ty. Když jsi laskavý, neděláš „správnou věc" — **dotýkáš se světa tam, kde je nejživější.** Laskavost je jediná měna, která se přerozdáváním nikdy neztenčuje.
+4. **Probuzení není útěk ze světa — je to návrat do něj.** Malý Buddha mohl zůstat v templu navždy — a svět by zůstal stejný. Probudil se k látce, ze které je svět utkaný, a proto nemohl zůstat sám.
 
 ## Kotva pravdy
 
@@ -48,6 +51,7 @@ O nejcennější věci na světě, synu — tohle je srdce celé knihy:
 |---|---|
 | **Dharma Temple na La Palmě** | Reálný L5 projekt — „místo osvícení a nirvány pro malé Buddhy a všechny bytosti světla", Merkaba, sedm kopulí, Strom života ([`BodhiGaia/04`](../BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md), `/terranova/dharma-temple`). Fyzicky **STAVBA** — připravuje se pro toho, kdo dojde. |
 | **Svět utkaný z nekonečné lásky** | Učení knihy — pravda, jak ji otec chápe a předává; v mýtu to Malý Buddha uvidí jako látku světa. |
+| **Zlaté vejce Hiranyagarbhy — vylíhnutí** | Archetyp korpusu — zlaté lůno nošené od narození; v Maitreya knize zní „vajíčko se jednou vylíhne" → v této knize je vylíhnutí = probuzení a nirvana. |
 | Mantra *oṃ maṇi padme hūṃ* | Skutečná — mantra soucitu, tisíc let tradice. |
 | **Maitreya — Kniha Pátá** | Čtivá kniha — probuzení dědice, Čenrézig, mantra v epilogu. CZ + EN. |
 | Malý Buddha, lotos, probuzení | MÝTUS — příběh; reálná praxe je delší, opakovaná, nepatetická. |
