@@ -936,7 +936,7 @@ function HolographicEarth({
       <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(228,30,43,0.10),transparent_45%)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-t from-black/25 to-transparent" />
       <div className="pointer-events-none absolute inset-3 rounded-[16px] border border-white/[0.06]" />
-      <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 text-center text-[9px] font-medium uppercase tracking-[0.42em] text-rasta-gold/50">
+      <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 truncate text-center text-[9px] font-medium uppercase tracking-[0.42em] text-rasta-gold/50">
         Holographic Earth <span className="hidden sm:inline">· Solar System · Milky Way · Orion · Bright Stars</span> · Terra Nova · <span className="sm:hidden">drag</span><span className="hidden sm:inline">drag orbit</span>
       </p>
       <div className="absolute inset-x-0 bottom-0 top-9 sm:top-10">

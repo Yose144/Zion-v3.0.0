@@ -36,7 +36,7 @@ function EarthStaticFallback({ className }: { className?: string }) {
       <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(228,30,43,0.10),transparent_45%)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-t from-black/25 to-transparent" />
       <div className="pointer-events-none absolute inset-3 rounded-[16px] border border-white/[0.06]" />
-      <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 text-center text-[9px] font-medium uppercase tracking-[0.42em] text-rasta-gold/50">
+      <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 truncate text-center text-[9px] font-medium uppercase tracking-[0.42em] text-rasta-gold/50">
         ZION Terra Nova · Earth · Solar System
       </p>
       <div className="absolute inset-x-0 bottom-0 top-9 flex items-center justify-center sm:top-10">
@@ -101,25 +101,41 @@ function HolographicEarthLazy({ className }: { className?: string }) {
 
   const show3D = requested && !failed;
 
+  // Context loss fired during an intentional unmount (user went back to the
+  // poster) must NOT mark 3D as failed — only a loss while mounted counts.
+  const requestedRef = useRef(requested);
+  requestedRef.current = requested;
+  const handleUnavailable = () => {
+    if (!requestedRef.current) return;
+    setFailed(true);
+    setRequested(false);
+    setReady(false);
+  };
+
   return (
     <div ref={wrapRef} className={clsx('relative', className)}>
-      {/* static textured poster — always useful, SSR-friendly */}
-      <EarthStaticFallback />
+      {/* static textured poster — always useful, SSR-friendly. Keeps the
+          layout height; hidden once the real scene is on screen so its
+          caption/earth can't bleed through the transparent 3D canvas. */}
+      <div aria-hidden={ready || undefined} className={ready ? 'invisible' : ''}>
+        <EarthStaticFallback />
+      </div>
 
       {/* 3D layer mounts only on explicit opt-in; poster stays until the day
-          texture actually rendered (onReady). */}
+          texture actually rendered (onReady). Bounds match the card area
+          exactly — never covers the control row. */}
       {show3D && (
         <div
-          className={`absolute inset-0 aspect-[5/4] max-h-[300px] sm:max-h-[340px] transition-opacity duration-300 ${
+          className={`absolute inset-x-0 top-0 aspect-[5/4] max-h-[300px] sm:max-h-[340px] transition-opacity duration-300 ${
             ready ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
           aria-hidden={!ready}
         >
-          <EarthErrorBoundary onError={() => { setFailed(true); setRequested(false); }}>
+          <EarthErrorBoundary onError={handleUnavailable}>
             <HolographicEarth
               active={visible && pageVisible}
               onReady={() => setReady(true)}
-              onUnavailable={() => { setFailed(true); setRequested(false); }}
+              onUnavailable={handleUnavailable}
             />
           </EarthErrorBoundary>
         </div>
