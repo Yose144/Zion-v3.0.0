@@ -107,6 +107,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/nirvana/cist', 0.7, 'monthly'),
     // ── Surta Srdce — heart sūtra for Surta (linked from /maitreya#spolecnici) ──
     r('/surta-srdce/cist', 0.7, 'monthly'),
+    // ── Království srdce — the carpenter's boat (linked from /maitreya#spolecnici) ──
+    r('/kralovstvi-srdce/cist', 0.7, 'monthly'),
 
     // ── Misc real pages ──────────────────────────────────────────────
     r('/ekam', 0.6, 'monthly'),

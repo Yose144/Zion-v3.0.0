@@ -2,6 +2,7 @@ import { Book, Rocket, Shield, FileText, Sparkles, Globe, Cpu, Map, AlertTriangl
 import { MAITREYA_CHAPTERS } from '@/app/maitreya/chapters';
 import { NIRVANA_CHAPTERS } from '@/app/nirvana/chapters';
 import { SURTA_CHAPTERS } from '@/app/surta-srdce/chapters';
+import { KRAL_CHAPTERS } from '@/app/kralovstvi-srdce/chapters';
 
 /* ═══════════════════════════════════════════
    Docs manifest — single source of truth for
@@ -252,6 +253,12 @@ export const docTitles: Record<string, LocalizedText> = {
       { cs: `Surta Srdce · ${c.num.cs} — ${c.title.cs}`, en: `Surta Srdce · ${c.num.en} — ${c.title.en}` },
     ]),
   ),
+  ...Object.fromEntries(
+    KRAL_CHAPTERS.map((c) => [
+      `book-kral-${c.slug}`,
+      { cs: `Království srdce · ${c.num.cs} — ${c.title.cs}`, en: `Kingdom of the Heart · ${c.num.en} — ${c.title.en}` },
+    ]),
+  ),
 };
 
 export const versions: Version[] = [
@@ -398,6 +405,11 @@ export const sections: Section[] = [
         title: c.title.cs,
         file: `books/surta-srdce/kapitoly/${c.slug}.md`,
       })),
+      ...KRAL_CHAPTERS.map((c) => ({
+        id: `book-kral-${c.slug}`,
+        title: c.title.cs,
+        file: `books/kralovstvi-srdce/kapitoly/${c.slug}.md`,
+      })),
       { id: 'book-genesis', title: 'Genesis — Kniha probuzení', file: 'mainnet/genesis-book.md' },
       { id: 'book-ekam-full', title: 'Ekam Deeksha — kompletní kniha', file: 'books/ekam-deeksha/BOOK-FULL-VERSION.md' },
       { id: 'book-ekam-ucebnice', title: 'Učebnice Ekam (historie)', file: 'books/ekam-deeksha/UCEBNICE-FULL-VERSION.md' },
@@ -527,6 +539,8 @@ export const DOC_HASH_ALIASES: Record<string, string> = {
   'book-surta': `book-surta-${SURTA_CHAPTERS[0].slug}`,
   'book-surta-srdce': `book-surta-${SURTA_CHAPTERS[0].slug}`,
   'surta-srdce': `book-surta-${SURTA_CHAPTERS[0].slug}`,
+  'book-kralovstvi': `book-kral-${KRAL_CHAPTERS[0].slug}`,
+  'kralovstvi-srdce': `book-kral-${KRAL_CHAPTERS[0].slug}`,
   whitepaper: 'wp-v3-mainnet',
   books: `book-maitreya-${MAITREYA_CHAPTERS[0].slug}`,
 };
