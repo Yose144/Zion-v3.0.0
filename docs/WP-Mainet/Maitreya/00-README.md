@@ -82,3 +82,5 @@ Detail: `00-OUTLINE.md` (architektura), `00-SYNOPSES.md` (synopse), `00-GLOSSARY
 
 *„Ten, kdo ho jako první najde, zdědí celé jmění."*
 *— Maitreya Buddha, 2025 (podpis, který otec napsal synovým jménem)*
+
+*Gate, Gate, Paragate, Parasamgate, Bodhi Svaha.*

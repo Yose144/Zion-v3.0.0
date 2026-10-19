@@ -6,6 +6,7 @@ import { Book, BookOpen, Code2, Rocket, Shield, Zap, FileText, Github, ExternalL
 import { useLang } from '@/contexts/LanguageContext';
 import { tr, tx } from '@/lib/translations';
 import { MAITREYA_CHAPTERS } from '@/app/maitreya/chapters';
+import { NIRVANA_CHAPTERS } from '@/app/nirvana/chapters';
 
 const PhilosophyContent = dynamic(() => import('@/components/docs/PhilosophyContent'));
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'));
@@ -232,6 +233,12 @@ const docTitles: Record<string, LocalizedText> = {
       { cs: `${c.num.cs} — ${c.title.cs}`, en: `${c.num.en} — ${c.title.en}` },
     ]),
   ),
+  ...Object.fromEntries(
+    NIRVANA_CHAPTERS.map((c) => [
+      `book-nirvana-${c.slug}`,
+      { cs: `Nirvana · ${c.num.cs} — ${c.title.cs}`, en: `Nirvana · ${c.num.en} — ${c.title.en}` },
+    ]),
+  ),
 };
 
 function resolveLabel(value: string | LocalizedText, lang: 'cs' | 'en') {
@@ -388,6 +395,11 @@ const sections: Section[] = [
         id: `book-maitreya-${c.slug}`,
         title: c.title.cs,
         file: `books/maitreya/kapitoly/${c.slug}.md`,
+      })),
+      ...NIRVANA_CHAPTERS.map((c) => ({
+        id: `book-nirvana-${c.slug}`,
+        title: c.title.cs,
+        file: `books/nirvana/kapitoly/${c.slug}.md`,
       })),
       { id: 'book-genesis', title: 'Genesis — Kniha probuzení', file: 'mainnet/genesis-book.md' },
       { id: 'book-ekam-full', title: 'Ekam Deeksha — kompletní kniha', file: 'books/ekam-deeksha/BOOK-FULL-VERSION.md' },

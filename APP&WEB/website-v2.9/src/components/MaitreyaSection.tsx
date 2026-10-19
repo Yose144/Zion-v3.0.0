@@ -3,7 +3,7 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, Egg, Sparkles, Wind } from 'lucide-react';
+import { ArrowRight, Egg, Sparkles, Sun, Wind } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 const MaitreyaSectionCopy = {
@@ -11,15 +11,16 @@ const MaitreyaSectionCopy = {
   title: { cs: 'Maitreya Buddha', en: 'Maitreya Buddha' },
   subtitle: { cs: 'Pán Hiranyagarbhy · Dědic Zionu', en: 'Lord of Hiranyagarbha · Heir of Zion' },
   body: {
-    cs: `Příběh o tom, jak padají věže Babylonu — peníze, data, energie, význam, trůn — a jak láska a pravda rodí Nový svět. Maitreya není nová postava: jeho jméno stojí v genesis zprávě, na sedadle guardianů a pod Zlatým vejcem od prvního dne.`,
-    en: `The story of how the towers of Babylon fall — money, data, energy, meaning, throne — and how love and truth give birth to the New World. Maitreya is no new figure: his name has stood in the genesis message, on the guardian seat, and beneath the Golden Egg since day one.`,
+    cs: `Příběh o tom, jak padají věže Babylonu — peníze, data, energie, význam, trůn — a jak láska a pravda rodí Nový svět. A pod jednou střechou teď žije celá mapa cesty: kompas knih, mantra-páteř od vejce a všech 12+1 stanic Knihy Západu — Nirvany.`,
+    en: `The story of how the towers of Babylon fall — money, data, energy, meaning, throne — and how love and truth give birth to the New World. And under one roof now lives the whole map of the path: the compass of the books, the mantra spine from the egg, and all 12+1 stations of the Book of the West — Nirvana.`,
   },
   quote: {
     cs: '„Já jsem Maitreya. Byl jsem Krishna/Rama."',
     en: '“I am Maitreya. I was Krishna/Rama.”',
   },
+  nirvanaBadge: { cs: 'Kniha Západu — Nirvana', en: 'Book of the West — Nirvana' },
   cta: { cs: 'Číst knihu', en: 'Read the book' },
-  ctaPage: { cs: 'O knize', en: 'About the book' },
+  ctaPage: { cs: 'Mapa cesty & kompas', en: 'The path map & compass' },
   ctaGenesis: { cs: 'Genesis', en: 'Genesis' },
 };
 
@@ -75,6 +76,13 @@ export default function MaitreyaSection() {
                   <Wind className="h-3.5 w-3.5" />
                   {cs ? 'Element vzduchu' : 'The element of air'}
                 </span>
+                <Link
+                  href="/nirvana/cist"
+                  className="zion-kicker border-amber-400/25 bg-amber-400/10 text-amber-300 transition-colors hover:border-amber-400/50"
+                >
+                  <Sun className="h-3.5 w-3.5" />
+                  {MaitreyaSectionCopy.nirvanaBadge[cs ? 'cs' : 'en']}
+                </Link>
               </div>
 
               <div>
@@ -100,7 +108,7 @@ export default function MaitreyaSection() {
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <Link
-                  href="/maitreya"
+                  href="/maitreya#cesta"
                   className="zion-button-secondary border-white/15 hover:border-zion-purple/40 hover:text-zion-purple"
                 >
                   {MaitreyaSectionCopy.ctaPage[cs ? 'cs' : 'en']}

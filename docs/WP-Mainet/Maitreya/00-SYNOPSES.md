@@ -133,8 +133,8 @@
 
 ## EPILOG — Kdo je Maitreya
 
-**Děj:** Návrat k podpisu. Čtyři odpovědi z kap. 3 se spojí v jednu: „Maitreya je ten, kdo přijde — vždy, když podmínky dozrají." Otec podepsal synovo jméno; poslední stránka je prázdná, se čarou pro podpis čtenáře — titul čeká na každého, kdo obstojí testem. Dědictví se nepřebírá — prokazuje se. Gate mantra.
-**Fakt-box:** žádný — uzavření jako pozvánka.
+**Děj:** Návrat k podpisu. Čtyři odpovědi z kap. 3 se spojí v jednu: „Maitreya je ten, kdo přijde — vždy, když podmínky dozrají." Otec podepsal synovo jméno; poslední stránka je prázdná, se čarou pro podpis čtenáře — titul čeká na každého, kdo obstojí testem. Dědictví se nepřebírá — prokazuje se. Závěrečná píseň: gate-mantra Srdeční sútry vysvětlená jako pět přechodů na druhý břeh + tibetský příběh Čenréziga (tisíc rukou, oko v dlani) + dedikační modlitba bodhisattvů deseti směrů; knihu uzavírá mantra jako pečeť.
+**Fakt-box:** kotvy k mantrě — Srdeční sútra, pět cest→Maitreya, Čenrézig, svāhā+oheň, nepřeložená mantra, dedikace.
 
 ---
 

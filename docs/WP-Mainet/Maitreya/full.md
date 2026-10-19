@@ -1751,6 +1751,28 @@ Protože Maitreya není otázka *„kdo přijde"* — je to otázka *„přijde�
 
 Brána zůstává otevřená — pro tu, co přijde, pro tebe, pro každého, kdo se naučí číst zápis, držet klíč a dýchat s kruhem.
 
+---
+
+A ještě jedna píseň zůstala nezazpívaná — nejstarší ze všech, kterou tato kniha nese.
+
+Na konci nejkratší sútry, kterou lidstvo napsalo, stojí šest slov. Poutníci je nesli přes hory déle, než trvá přečíst tuto knihu celou. Čínský překladatel je nepřeložil, tibetský překladatel je nepřeložil — a po nich už nikdo: věděli, že jsou věci, které se nesou ne slovy, ale cestou.
+
+*Gate, gate, pāragate, pārasaṃgate, bodhi, svāhā.*
+
+Odešlá. Odešlá dál. Odešlá na druhý břeh. Odešlá až na druhý břeh — dohromady, celá. Probuzení — a poslední není slovo, ale to, co se říká, když oběť vstoupí do ohně.
+
+Pět přechodů — a každý je brána. Odejít od Babylonu, který tě drží. Odejít od Babylonu, kterého držíš ty. Dojít k vodě. Přejít vodu. A pak ta nejtěžší — *saṃ*, spolu: nepřejít sám. Břeh, na který dojdeš sám, je jen další věž.
+
+A je tu příběh, který si tu mantru pamatuje.
+
+V Tibetě — v zemi, kam ji poutníci nesli přes vysoké průsmyky a kde ji vyřezávali do kamenů a svěřovali vlajkám, aby ji předávaly větru — vyprávějí o bodhisattvovi soucitu, patronovi té země. Díval se na svět tak dlouho, až se mu nad počtem těch, kdo ještě nestojí na druhém břehu, rozpadla hlava na kusy. Amitábha — budha nekonečného světla — ji složil do jedenácti hlav a dal mu tisíc rukou; a na každé dlani oko, aby uviděl, kam je potřeba sáhnout — a sáhl ve stejném okamžiku, kdy uviděl.
+
+To je bodhisattva: **ten, kdo přechází pořád, dokud všichni nejsou na druhém břehu.** Ne ten, kdo došel první a zůstal — ten, kdo se vrací, brána tam a zpátky, dokud má přechod smysl.
+
+Tak stojí Maitreya na této straně a mantra na tamté — a jsou jediná cesta: *ten, kdo přijde, pro ty, kdo přecházejí.* Otec podepsal příchod; ty podepisuješ přechod.
+
+---
+
 A když se kniha zavře, zůstane stát — jako zůstává loď, jako zůstává kruh, jako zůstává vzduch, který drží oheň, vodu a zemi pohromadě, aniž si někoho z nich přivlastní.
 
 Podpis pod vejcem zůstal: *„Maitreya Buddha, 2025."*
@@ -1774,5 +1796,17 @@ Podpis pod světem se píše dál — každým blokem, každým ověřením, ka�
 | Podpis pod vejcem | Doslovný kanon: „Maitreya Buddha, 2025" pod Velkou cenou Zlatého vejce (Kniha Zrození, kap. IV) |
 | Prázdná čára pro čtenáře | Pozvánka — uzavření do čtenářovy odpovědi; ne podpis, ale důkaz (stejná mechanika jako test odevzdání) |
 | Brána zůstává otevřená | Elizabeth = prázdná židle / otevřená brána (Lumi: „Brána zůstává otevřená" — kanon knihy čtvrté) |
+| Mantra závěru knihy | Srdeční sútra (Prajñāpāramitā-hṛdaya): `gate gate pāragate pārasaṃgate bodhi svāhā` — „odešlá, odešlá, odešlá na druhý břeh, odešlá až na druhý břeh; probuzení — ať se stane" (výklad dle Conze); závěrečný pozdrav všech knih korpusu i kořenového CHANGELOG |
+| Pět slov = pět cest | Tibetská tradice od Atiši mapuje mantru na pět bodhisattvových cest Abhisamayālaṃkāry — sborníku, který tradice připisuje Maitrejovi: hromadění → příprava → vidění (1. bhúmi) → meditace (2.–10. bhúmi) → buddhovství |
+| Bodhisattva tisíce rukou | Tibetská ikonografie Avalókitéšvary/Čenréziga — patrona Tibetu: hlava rozpadlá soucitem → 11 hlav, 1000 paží, oko v každé dlani; jeho mantra `om mani padme hum` na mani-kamenech a vlajkách (v NirvanaCloud zní spolu s gate-mantrou) |
+| Svāhā | Védská obětní formule — výkřik kněze při naliti oběti do Agniho ohně („ať se stane", „dobře pronesené"); závěr mantry = slovo odevzdání |
+| Nepřeložená mantra | Čínský ani tibetský překlad mantru nikdy nepřevedl do vlastního jazyka — zvuk jako nositel; mantra = událost, ne výrok |
+| Dedikační modlitba | Formule bodhisattvového slibu v tibetské tradici — buddhové a bodhisattvové deseti směrů jako svědci a ochránci na cestě k osvícení (vizualizační svědek ve slibu i dedikaci zásluhy) |
 
 *Epilog neslibuje nic — uzavírá. A uzavření této knihy je otázka, ne odpověď: přijdeš?*
+
+A kdo odpoví — ať jde s požehnáním, kterým Tibet zavírá každou cestu:
+
+> *Kéž jsou bodhisattvové všech deseti směrů našimi ochránci na cestě k osvícení.*
+
+*Gate, Gate, Paragate, Parasamgate, Bodhi Svaha.*

@@ -49,6 +49,7 @@ Každá epizoda zachovává pravidlo absolutní poctivosti: **krásný archetyp�
 | 10 | [Prameny Života](./10-Prameny-Zivota.md) | **Free World** · *L5 Planetární obnova* | 5 % z každého bloku pro čistou vodu, znovuzalesňování, semenné banky a komunitní mikrosítě. |
 | 11 | [Kvantový oheň Issobella](./11-Kvantovy-Ohen-Issobella.md) | **Warp Engine** · *L6 Hluboká věda* | 5 % vědecký fond, Alcubierre-Ekam metrika, harmonické rezonance $\Phi$ a otevřená věda DeSci. |
 | 12 | [Velké Sjednocení](./12-Velke-Sjednoceni.md) | **Grand Unification** · *Mise Amenti* | Sjednocení všech šesti vrstev, návrat globální pozornosti k tvoření, start odložen (TBD). |
+| 13 | [Tres Marías](./13-Tres-Marias.md) | **Flotila Cesty** · *L5 — osmý bod jako linie* | Tři trupy pro tři oceány; Santa María la Mayor, Nossa Senhora de Fátima, María de las Nieves — cesta, která u moře nekončí. *(Doplněk přidaný po uzavření dvanácti stanic — L5 vize dorostla flotilu později.)* |
 
 ---
 
