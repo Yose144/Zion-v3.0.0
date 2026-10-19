@@ -138,6 +138,18 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         czOnly: true,
         rc: '251, 113, 133',
       },
+      {
+        id: 'kralovstvi-srdce',
+        title: { cs: 'Království srdce', en: 'Kingdom of the Heart' },
+        desc: {
+          cs: 'Příběh lodi, kterou postavil tesař z Nazareta — pro moře, které není na mapě. Opírá se o Bibli (tekton, arka, učení z lodi, království uvnitř vás) a uzavírá novým zjevením: flotila Tres Marías a mantra Maitreyi.',
+          en: 'The story of the boat the carpenter of Nazareth built — for a sea on no map. Rooted in scripture (tekton, the ark, teaching from the boat, the kingdom within) and closed by the new revelation: the Tres Marías fleet and the Maitreya mantra. Czech original.',
+        },
+        status: 'draft',
+        href: `/kralovstvi-srdce/cist`,
+        czOnly: true,
+        rc: '245, 158, 11',
+      },
     ],
   },
   {
