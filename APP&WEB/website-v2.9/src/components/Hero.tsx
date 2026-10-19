@@ -37,7 +37,7 @@ export default function Hero() {
   ];
 
   return (
-    <section className="relative px-4 pt-16 pb-10 sm:pt-20 sm:pb-14 md:pt-24 md:pb-18 overflow-hidden">
+    <section className="home-hero relative px-4 pt-6 pb-10 sm:pt-10 sm:pb-14 md:pt-14 md:pb-18 overflow-hidden">
       {/* ── rasta ambient orbs ── */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-48 -left-32 w-[560px] h-[560px] rounded-full bg-zion-purple/12 blur-3xl animate-bubble-drift" />
@@ -48,7 +48,7 @@ export default function Hero() {
       <div className="zion-container relative z-10">
         {/* ─── top badge row ─── */}
         <motion.div
-          initial={{ opacity: 0, y: -12 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="flex flex-wrap items-center gap-2 mb-8 justify-center lg:justify-start"
@@ -77,10 +77,10 @@ export default function Hero() {
         <div className="grid lg:grid-cols-[1fr_0.85fr] gap-8 xl:gap-12 items-start">
           {/* ─── LEFT col ─── */}
           <motion.div
-            initial={{ opacity: 0, y: 32 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.85 }}
-            className="space-y-6"
+            className="space-y-6 min-w-0"
           >
             {/* headline */}
             <div>
@@ -105,28 +105,28 @@ export default function Hero() {
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
               <Link
-                href="/network"
+                href="/network" prefetch={false}
                 className="zion-button-primary group w-full sm:w-auto justify-center rasta-shimmer"
               >
                 {tr('hero', 'btn_warp', lang)}
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
-                href="/docs"
+                href="/docs" prefetch={false}
                 className="zion-button-secondary w-full sm:w-auto justify-center border-zion-gold/30 hover:border-zion-gold/60 hover:bg-zion-gold/10 hover:text-zion-gold transition-colors"
               >
                 <ShieldHalf className="w-5 h-5 text-zion-purple" />
                 {tr('hero', 'btn_guardian_docs', lang)}
               </Link>
               <Link
-                href="/download"
+                href="/download" prefetch={false}
                 className="zion-button-secondary w-full sm:w-auto justify-center border-zion-cyan/30 hover:border-zion-cyan/60 hover:bg-zion-cyan/10 hover:text-zion-cyan transition-colors"
               >
                 <CircuitBoard className="w-5 h-5 text-zion-cyan" />
                 {tr('hero', 'btn_native_miner', lang)}
               </Link>
               <Link
-                href="/maitreya/cist"
+                href="/maitreya/cist" prefetch={false}
                 className="zion-button-secondary w-full sm:w-auto justify-center border-zion-purple/30 hover:border-zion-purple/60 hover:bg-zion-purple/10 hover:text-violet-200 transition-colors"
               >
                 <BookOpen className="w-5 h-5 text-zion-purple" />
@@ -139,7 +139,7 @@ export default function Hero() {
               {heroMetrics.map((metric, i) => (
                 <motion.div
                   key={metric.label}
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
                   className="zion-panel-soft zion-panel-hover group p-3 cursor-default min-w-0"
@@ -155,10 +155,10 @@ export default function Hero() {
 
           {/* ─── RIGHT col — HolographicEarth + Launch Countdown ─── */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.25 }}
-            className="relative"
+            className="relative min-w-0"
           >
             {/* outer halo glow */}
             <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-zion-purple/25 via-zion-cyan/15 to-transparent blur-3xl pointer-events-none" />
@@ -176,7 +176,7 @@ export default function Hero() {
 
         {/* ─── hero slider — One Planet · One People · One Love ─── */}
         <motion.div
-          initial={{ opacity: 0, y: 32 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}

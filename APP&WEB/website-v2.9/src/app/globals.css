@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@config "../../tailwind.config.ts";
 @import "leaflet/dist/leaflet.css";
 
 @layer base {
@@ -50,7 +51,9 @@
   
   html, body {
     max-width: 100%;
-    overflow-x: hidden;
+    /* clip (not hidden) — no scroll container, sticky keeps working */
+    overflow-x: clip;
+    background-color: rgb(var(--color-bg));
   }
 
   body {
@@ -84,7 +87,7 @@
     position: relative;
     padding-top: 7rem;      /* pt-28 */
     padding-bottom: 6rem;   /* pb-24 */
-    overflow-x: hidden;
+    overflow-x: clip;
     isolation: isolate;
   }
   @media (min-width: 768px) {
@@ -625,17 +628,8 @@
   background: linear-gradient(180deg, #e41e2b, #066928);
 }
 
-/* ═══ Mobile safety — force single column for grids without explicit mobile breakpoint ═══ */
-@media (max-width: 639px) {
-  /* Target only grids that use explicit numbered columns without ANY responsive prefix */
-  .grid.grid-cols-2:not(.grid-cols-1):not(.sm\:grid-cols-2):not(.sm\:grid-cols-1),
-  .grid.grid-cols-3:not(.grid-cols-1):not(.sm\:grid-cols-3):not(.sm\:grid-cols-1),
-  .grid.grid-cols-4:not(.grid-cols-1):not(.sm\:grid-cols-4):not(.sm\:grid-cols-1),
-  .grid.grid-cols-5:not(.grid-cols-1):not(.sm\:grid-cols-5):not(.sm\:grid-cols-1),
-  .grid.grid-cols-6:not(.grid-cols-1):not(.sm\:grid-cols-6):not(.sm\:grid-cols-1) {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-  }
-}
+/* Mobile grid columns are owned by each component's responsive classes —
+   no blanket single-column override here. */
 
 /* ═══ Reduced Motion ═══ */
 @media (prefers-reduced-motion: reduce) {
@@ -668,37 +662,14 @@ body.menu-open {
   to   { transform: translateX(0); }
 }
 
-/* ═══ Mobile-only: tighter spacing for stacked homepage sections ═══ */
+/* ═══ Mobile-only: legibility rules (spacing owned by components) ═══ */
 @media (max-width: 640px) {
-  /* Reduce vertical padding on common section wrappers */
-  section {
-    padding-top: clamp(2.5rem, 8vw, 4rem);
-    padding-bottom: clamp(2.5rem, 8vw, 4rem);
-  }
-  /* Hero overrides its own padding (pt-24 pb-16) — don't double-up */
-  section.relative:first-of-type {
-    padding-top: unset;
-    padding-bottom: unset;
-  }
   /* Prevent oversized headings overflowing on small viewports */
   h1, h2 {
     word-break: break-word;
     overflow-wrap: anywhere;
     hyphens: auto;
   }
-  /* Tighten panel inner padding on mobile */
-  .zion-panel,
-  .zion-panel-soft {
-    padding: clamp(1rem, 4vw, 1.5rem);
-  }
-}
-
-/* ═══ Render perf: skip layout/paint for off-screen page sections ═══ */
-.zion-page > section,
-.site-main > section,
-.site-main > div > section {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 500px;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1182,13 +1153,15 @@ pre.wrap {
   margin-top: 4px;
 }
 
-/* Skip rendering off-screen content for faster initial paint */
-.zion-page > section,
-.zion-page > div > section,
-main > section,
-main > div > section {
+/* Defer off-screen sections, but never the first-paint homepage hero. */
+.zion-page > section:not(.home-hero),
+.zion-page > div > section:not(.home-hero),
+.site-main > section:not(.home-hero),
+.site-main > div > section:not(.home-hero),
+main > section:not(.home-hero),
+main > div > section:not(.home-hero) {
   content-visibility: auto;
-  contain-intrinsic-size: 0 500px;
+  contain-intrinsic-size: auto 500px;
 }
 
 /* Respect user motion preferences */
@@ -1201,4 +1174,9 @@ main > div > section {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Keep an opaque base even if the optional canvas fails to initialize. */
+html {
+  background-color: #050505;
 }

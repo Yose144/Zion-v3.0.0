@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, Globe, Orbit, Radio, Sparkles, Palette } from 'lucide-react';
 import { useObservatory, type ObservatoryMode } from '@/contexts/ObservatoryContext';
 import { useLang } from '@/contexts/LanguageContext';
@@ -24,6 +24,7 @@ export default function BackgroundToggle() {
   const { mode, setMode } = useObservatory();
   const { lang } = useLang();
   const [isOpen, setIsOpen] = useState(false);
+  const reducedMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const CurrentIcon = backgroundConfig[mode]?.icon || Sparkles;
@@ -51,7 +52,7 @@ export default function BackgroundToggle() {
   }, [isOpen]);
 
   return (
-    <div ref={containerRef} className="fixed bottom-4 right-4 z-[70]">
+    <div ref={containerRef} className="fixed bottom-4 right-4 z-40">
       {/* Trigger button — circular, glass, matches nav aesthetic */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
@@ -63,6 +64,8 @@ export default function BackgroundToggle() {
           boxShadow: `0 0 20px rgba(${currentColor}, 0.3), 0 8px 24px rgba(0,0,0,0.4)`,
         }}
         aria-label={backgroundCopy.switch[lang]}
+        aria-expanded={isOpen}
+        aria-controls="background-mode-menu"
       >
         {/* Rotating aura */}
         <motion.span
@@ -72,8 +75,8 @@ export default function BackgroundToggle() {
             background: `conic-gradient(from 0deg, rgba(${currentColor}, 0), rgba(${currentColor}, 0.7), rgba(${currentColor}, 0), rgba(${currentColor}, 0.55), rgba(${currentColor}, 0))`,
             filter: 'blur(5px)',
           }}
-          animate={{ rotate: 360, opacity: isOpen ? 0.95 : 0.6, scale: isOpen ? 1.18 : 1.02 }}
-          transition={{ rotate: { duration: isOpen ? 1.6 : 4.2, repeat: Infinity, ease: 'linear' }, opacity: { duration: 0.24 }, scale: { duration: 0.24 } }}
+          animate={reducedMotion ? { opacity: isOpen ? 0.95 : 0.6 } : { rotate: 360, opacity: isOpen ? 0.95 : 0.6, scale: isOpen ? 1.18 : 1.02 }}
+          transition={reducedMotion ? { opacity: { duration: 0.24 } } : { rotate: { duration: isOpen ? 1.6 : 4.2, repeat: Infinity, ease: 'linear' }, opacity: { duration: 0.24 }, scale: { duration: 0.24 } }}
         />
         <CurrentIcon className="w-6 h-6 relative z-10" style={{ color: `rgb(${currentColor})` }} />
       </motion.button>
@@ -101,7 +104,8 @@ export default function BackgroundToggle() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 12 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="absolute bottom-16 right-0 w-72 rounded-2xl border border-white/10 bg-black/80 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.55)] overflow-hidden"
+            id="background-mode-menu"
+            className="absolute bottom-16 right-0 w-72 max-w-[calc(100vw-2rem)] max-h-[70dvh] overflow-y-auto rounded-2xl border border-white/10 bg-black/80 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.55)] overflow-x-hidden"
           >
             {/* Rasta gradient top accent — same as nav */}
             <div className="h-1 w-full bg-linear-to-r from-zion-cyan/60 via-zion-gold/70 to-zion-purple/60" />

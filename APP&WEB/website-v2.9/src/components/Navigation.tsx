@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe,
@@ -105,6 +105,7 @@ export default function Navigation() {
         { href: '/team', label: tr('nav', 'team', lang) },
         { href: '/genesis', label: tr('nav', 'genesis', lang) },
         { href: '/terranova', label: tr('nav', 'terranova', lang) },
+        { href: '/maitreya', label: 'Maitreya' },
         { href: '/tree-of-life', label: tr('nav', 'tree_of_life', lang), children: [
           { href: '/tree-of-life#evoluzion', label: 'evoluZion V2' },
           { href: '/tree-of-life#proof-of-care', label: 'Proof-of-Care' },
@@ -134,24 +135,63 @@ export default function Navigation() {
     [tr('nav', 'learn_group', lang)]: tr('nav', 'learn_group', lang),
   };
 
-  /* Close mobile menu on route change */
+  /* Close mobile menu on ACTUAL route change (not initial mount) */
+  const prevPathname = useRef(pathname);
   useEffect(() => {
-    const raf = requestAnimationFrame(() => {
-      setIsOpen(false);
-      setOpenGroup(null);
-    });
-    return () => cancelAnimationFrame(raf);
+    if (prevPathname.current === pathname) return;
+    prevPathname.current = pathname;
+    setIsOpen(false);
+    setOpenGroup(null);
   }, [pathname]);
 
-  /* Scroll lock when mobile menu open */
+  /* Scroll lock when mobile menu open — preserves scroll position + prior style */
+  useEffect(() => {
+    if (!isOpen) return;
+    const scrollY = window.scrollY;
+    const prevTop = document.body.style.top;
+    const lockedPath = window.location.pathname;
+    document.body.classList.add('menu-open');
+    document.body.style.top = `-${scrollY}px`;
+    return () => {
+      document.body.classList.remove('menu-open');
+      document.body.style.top = prevTop;
+      if (window.location.pathname === lockedPath) {
+        window.scrollTo({ top: scrollY, behavior: 'instant' });
+      }
+    };
+  }, [isOpen]);
+
+  /* Focus management: into drawer on open, trap Tab, back to trigger on close */
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (isOpen) {
-      document.body.classList.add('menu-open');
-    } else {
-      document.body.classList.remove('menu-open');
+      const el = drawerRef.current;
+      const first = el?.querySelector<HTMLElement>(
+        'button, a[href], [tabindex]:not([tabindex="-1"])'
+      );
+      first?.focus({ preventScroll: true });
+      const trigger = menuButtonRef.current;
+      return () => trigger?.focus({ preventScroll: true });
     }
-    return () => document.body.classList.remove('menu-open');
   }, [isOpen]);
+
+  const handleDrawerKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab' || !drawerRef.current) return;
+    const focusables = drawerRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   /* Escape key closes menus */
   useEffect(() => {
@@ -214,7 +254,7 @@ export default function Navigation() {
           >
 
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group shrink-0">
+          <Link prefetch={false} href="/" className="flex items-center space-x-2 group shrink-0">
             <div className={`rounded-lg flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-all duration-300 bg-transparent shadow-[0_6px_18px_rgba(0,0,0,0.3)] ${scrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-8 h-8 sm:w-9 sm:h-9'}`}>
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,105,40,0.08),transparent_65%)]" />
               <img
@@ -240,7 +280,7 @@ export default function Navigation() {
               const isActive = navItemMatches(ml.href);
               return (
                 <Link
-                  key={ml.href}
+                  prefetch={false} key={ml.href}
                   href={ml.href}
                   title={ml.label}
                   className={`group relative flex items-center gap-1 rounded-lg border transition-all hover:scale-105 shrink-0 ${scrolled ? 'px-1.5 py-1' : 'px-2 py-1.5'}`}
@@ -275,7 +315,7 @@ export default function Navigation() {
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
             </button>
             <Link
-              href="https://github.com/Zion-TerraNova/v3-Mainnet"
+              prefetch={false} href="https://github.com/Zion-TerraNova/v3-Mainnet"
               target="_blank"
               rel="noreferrer"
               title="GitHub"
@@ -287,7 +327,7 @@ export default function Navigation() {
             <NavAuthButton />
             <NotificationBell />
             <Link
-              href="/dashboard"
+              prefetch={false} href="/dashboard"
               title={tr('nav', 'dashboard', lang)}
               className={`hidden sm:inline-flex rounded-lg border border-white/15 bg-black/85 items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
             >
@@ -298,11 +338,12 @@ export default function Navigation() {
 
           {/* Mobile hamburger */}
           <button
+            ref={menuButtonRef}
             onClick={() => setIsOpen(!isOpen)}
             className="text-white p-2 rounded-xl border border-white/20 bg-white/5 hover:border-white/40 active:scale-95 transition-all min-w-[40px] min-h-[40px] flex items-center justify-center lg:hidden"
             aria-label={isOpen ? tr('nav', 'close_menu', lang) : tr('nav', 'open_menu', lang)}
             aria-expanded={isOpen}
-            
+            aria-controls="mobile-nav-drawer"
           >
             {isOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -351,7 +392,7 @@ export default function Navigation() {
               {activeGroup.items.map((item) => (
                 <div key={item.href}>
                   <Link
-                    href={item.href}
+                    prefetch={false} href={item.href}
                     className={`rounded-2xl px-4 py-3 text-sm font-semibold transition block ${
                       navItemMatches(item.href) ? 'bg-white/10 text-white' : 'text-zion-gold/85 hover:bg-white/5 hover:text-white'
                     }`}
@@ -361,7 +402,7 @@ export default function Navigation() {
                   </Link>
                   {item.children?.map((child) => (
                     <Link
-                      key={child.href}
+                      prefetch={false} key={child.href + child.label}
                       href={child.href}
                       className={`rounded-2xl pl-8 pr-4 py-2.5 text-[13px] transition block ${
                         pathname === child.href ? 'bg-white/10 text-white' : 'text-zion-gold/75 hover:bg-white/5 hover:text-zion-gold'
@@ -389,7 +430,15 @@ export default function Navigation() {
               
             />
             {/* Slide-in panel */}
-            <div className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(6, 105, 40,0.4), rgba(252, 209, 22,0.5), rgba(228, 30, 43,0.4)) 1' }}>
+            <div
+              ref={drawerRef}
+              id="mobile-nav-drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-label={tr('nav', 'menu_title', lang)}
+              className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(6, 105, 40,0.4), rgba(252, 209, 22,0.5), rgba(228, 30, 43,0.4)) 1' }}
+              onKeyDown={handleDrawerKeyDown}
+            >
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
@@ -405,7 +454,7 @@ export default function Navigation() {
               <div className="p-4 space-y-2">
                 {/* Home shortcut — always visible */}
                 <Link
-                  href="/"
+                  prefetch={false} href="/"
                   className={`rounded-xl px-3 py-3 text-base font-semibold transition min-h-[48px] flex items-center ${
                     pathname === '/' ? 'bg-white/10 text-white' : 'text-zion-gold/90 hover:bg-white/5 active:bg-white/10'
                   }`}
@@ -429,9 +478,9 @@ export default function Navigation() {
                       {isExpanded && (
                         <div className="mt-1 ml-1 border-l border-white/10 pl-2 space-y-0.5">
                           {group.items.map((item) => (
-                            <div key={item.href}>
+                            <div key={item.href + item.label}>
                               <Link
-                                href={item.href}
+                                prefetch={false} href={item.href}
                                 className={`rounded-xl px-3 py-3 text-base font-medium transition min-h-[44px] flex items-center ${
                                   navItemMatches(item.href)
                                     ? 'bg-white/10 text-white'
@@ -443,7 +492,7 @@ export default function Navigation() {
                               </Link>
                               {item.children?.map((child) => (
                                 <Link
-                                  key={child.href}
+                                  prefetch={false} key={child.href + child.label}
                                   href={child.href}
                                   className={`rounded-xl pl-7 pr-3 py-2.5 text-sm transition min-h-[40px] flex items-center ${
                                     pathname === child.href ? 'bg-white/10 text-white' : 'text-zion-gold/75 hover:bg-white/5 active:bg-white/10'
@@ -472,35 +521,35 @@ export default function Navigation() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <Link
-                    href="/explorer"
+                    prefetch={false} href="/explorer"
                     onClick={() => setIsOpen(false)}
                     className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
                   >
                     {tr('nav', 'explorer', lang)}
                   </Link>
                   <Link
-                    href="/pool"
+                    prefetch={false} href="/pool"
                     onClick={() => setIsOpen(false)}
                     className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
                   >
                     {tr('nav', 'pool', lang)}
                   </Link>
                   <Link
-                    href="/dao"
+                    prefetch={false} href="/dao"
                     onClick={() => setIsOpen(false)}
                     className="rounded-xl border border-zion-purple/30 bg-zion-purple/10 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
                   >
                     {tr('nav', 'dao_governance', lang)}
                   </Link>
                   <Link
-                    href="/dashboard"
+                    prefetch={false} href="/dashboard"
                     onClick={() => setIsOpen(false)}
                     className="rounded-xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-3 py-3 inline-flex items-center justify-center text-white min-h-[44px] font-semibold text-center"
                   >
                     {tr('nav', 'dashboard', lang)}
                   </Link>
                   <Link
-                    href="/dashboard/guardian"
+                    prefetch={false} href="/dashboard/guardian"
                     onClick={() => setIsOpen(false)}
                     className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
                   >

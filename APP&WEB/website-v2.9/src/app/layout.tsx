@@ -12,7 +12,7 @@ import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { MultichainWalletProvider } from "@/contexts/MultichainWalletContext";
 import HeroSection from "@/components/HeroSection";
-import HiranFloatingChat from "@/components/HiranFloatingChat";
+import FloatingUtilities from "@/components/FloatingUtilities";
 import PerformanceShell from "@/components/PerformanceShell";
 import { SITE_APP_URL, SITE_INTRO_URL, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
@@ -65,7 +65,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="cs" className="dark" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
+    <html lang="cs" className="dark" style={{ maxWidth: '100%', overflowX: 'clip' }}>
       <head>
         <link rel="preconnect" href="https://prod.spline.design" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://widget.li.fi" />
@@ -96,7 +96,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.variable} ${jetbrains.variable} antialiased text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden', background: 'transparent' }}>
+      <body className={`${inter.variable} ${jetbrains.variable} antialiased text-white w-full`} style={{ maxWidth: '100%', overflowX: 'clip' }}>
         <GlobalErrorBoundary>
           <ThemeProvider>
             <ObservatoryProvider>
@@ -117,7 +117,7 @@ export default function RootLayout({
                       <div className="site-footer">
                         <Footer />
                       </div>
-                      <HiranFloatingChat />
+                      <FloatingUtilities />
                     </div>
                     </MultichainWalletProvider>
                     </AuthProvider>

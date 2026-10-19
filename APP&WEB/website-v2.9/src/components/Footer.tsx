@@ -99,9 +99,9 @@ export default function Footer() {
               </div>
               <ul className="space-y-2.5">
                 {group.links.map(({ href, label }) => (
-                  <li key={href}>
+                  <li key={href + label}>
                     <Link
-                      href={href}
+                      prefetch={false} href={href}
                       className={`text-sm text-zion-gold/70 ${group.hover} hover:pl-1 transition-all duration-200 inline-block`}
                     >
                       {label}
@@ -120,7 +120,7 @@ export default function Footer() {
           <p className="text-[11px] leading-relaxed text-zion-gold/55 max-w-3xl">
             {tr('footer', 'disclaimer', lang)}
             {' '}{tr('footer', 'legal_suffix', lang)}{' '}
-            <Link href="/docs#legal" className="text-zion-gold/70 hover:text-zion-gold underline underline-offset-2 transition-colors">
+            <Link prefetch={false} href="/docs#legal" className="text-zion-gold/70 hover:text-zion-gold underline underline-offset-2 transition-colors">
               {tr('footer', 'legal_disclaimer', lang)}
             </Link>{' '}
             {tr('footer', 'legal_suffix_tail', lang)}

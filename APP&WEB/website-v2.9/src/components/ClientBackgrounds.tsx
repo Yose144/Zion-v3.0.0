@@ -12,10 +12,8 @@ export default function ClientBackgrounds() {
   const isWarpOnlyMode = mode === 'warp-speed';
 
   useEffect(() => {
-    // Ensure body/html backgrounds are transparent so canvas/CSS backgrounds show through
-    document.body.style.background = 'transparent';
-    document.body.classList.remove('bg-black');
-    document.documentElement.style.background = 'transparent';
+    // Only manage the mode class — html/body keep their opaque CSS fallback
+    // background so the page is never white before/without the canvas.
     document.body.classList.toggle('warp-only-mode', isWarpOnlyMode);
     return () => document.body.classList.remove('warp-only-mode');
   }, [isWarpOnlyMode]);

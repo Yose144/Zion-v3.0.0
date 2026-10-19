@@ -1,19 +1,13 @@
 import type { Metadata } from 'next';
-import dynamicImport from 'next/dynamic';
 import Hero from '@/components/Hero';
 import HomeNoticeBar from '@/components/HomeNoticeBar';
-
-const WebTerminal = dynamicImport(() => import('@/components/WebTerminal'), {
-  loading: () => null,
-});
-const MaitreyaSection = dynamicImport(() => import('@/components/MaitreyaSection'), { ssr: true });
-const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'), { ssr: true });
-const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'), { ssr: true });
-const Features = dynamicImport(() => import('@/components/Features'), { ssr: true });
-const StoryTriptych = dynamicImport(() => import('@/components/StoryTriptych'), { ssr: true });
-const GoldenEggHaraniagharba = dynamicImport(() => import('@/components/GoldenEggHaraniagharba'), { ssr: true });
-const RoadmapPulse = dynamicImport(() => import('@/components/RoadmapPulse'), { ssr: true });
-const DocsRail = dynamicImport(() => import('@/components/DocsRail'), { ssr: true });
+import HomeInteractiveSection from '@/components/HomeInteractiveSection';
+import MaitreyaSection from '@/components/MaitreyaSection';
+import NewsFeed from '@/components/NewsFeed';
+import Features from '@/components/Features';
+import StoryTriptych from '@/components/StoryTriptych';
+import RoadmapPulse from '@/components/RoadmapPulse';
+import DocsRail from '@/components/DocsRail';
 
 // ISR: regenerate at most once every 60s. All visible content is either
 // static (hero/news copy) or fetched client-side by 'use client' components
@@ -29,11 +23,11 @@ export default function Home() {
       <Hero />
       <MaitreyaSection />
       <HomeNoticeBar />
-      <WebTerminal />
-      <LiveDashboard />
+      <HomeInteractiveSection kind="terminal" />
+      <HomeInteractiveSection kind="dashboard" />
       <NewsFeed />
       <StoryTriptych />
-      <GoldenEggHaraniagharba />
+      <HomeInteractiveSection kind="hiran" />
       <Features />
       <RoadmapPulse />
       <DocsRail />

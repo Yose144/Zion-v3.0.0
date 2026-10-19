@@ -97,18 +97,27 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 function getStoredTheme(): Theme {
-  if (typeof window === 'undefined') {
-    return themes.cosmic;
-  }
-  const savedTheme = localStorage.getItem('zion-theme') as ThemeName | null;
-  if (savedTheme && themes[savedTheme]) {
-    return themes[savedTheme];
+  try {
+    const savedTheme = window.localStorage.getItem('zion-theme') as ThemeName | null;
+    if (savedTheme && themes[savedTheme]) {
+      return themes[savedTheme];
+    }
+  } catch {
+    /* storage denied — deterministic default */
   }
   return themes.cosmic;
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [currentTheme, setCurrentTheme] = useState<Theme>(() => getStoredTheme());
+  // Deterministic on SSR + first client render; persisted theme applies in
+  // an effect so hydration never mismatches and storage denial can't crash.
+  const [currentTheme, setCurrentTheme] = useState<Theme>(() => themes.cosmic);
+
+  // Read persisted theme once after hydration — deterministic SSR first.
+  useEffect(() => {
+    const stored = getStoredTheme();
+    setCurrentTheme((cur) => (cur.name === stored.name ? cur : stored));
+  }, []);
 
   useEffect(() => {
     // Apply theme CSS variables
@@ -126,14 +135,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.body.style.color = currentTheme.colors.text;
   }, [currentTheme]);
 
-  useEffect(() => {
-    localStorage.setItem('zion-theme', currentTheme.name);
-  }, [currentTheme.name]);
-
+  // Persist ONLY on explicit user choice — never write the default over a
+  // stored selection before the read effect has run.
   const setTheme = (themeName: ThemeName) => {
     const theme = themes[themeName];
     if (theme) {
       setCurrentTheme(theme);
+      try {
+        window.localStorage.setItem('zion-theme', themeName);
+      } catch {
+        /* storage denied — theme still applies for this session */
+      }
     }
   };
 
