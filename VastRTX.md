@@ -7,26 +7,28 @@
 
 ---
 
-## 1. Solo baselines (RTX 3060, ustálené)
+## 1. Solo baselines (RTX 3060, ustálené, čistě změřené)
 
 | algo | SRBMiner 3.7.6 | native zion-miner | SRB gain |
 |---|---|---|---|
-| **pearlhash (PRL)** | **~43–46 TH/s** | ~19–21 TH/s-eq (2762 att/s best) | **~2.2×** |
+| **pearlhash (PRL)** | **~21 TH/s** | ~19–21 TH/s-eq (2762 att/s best) | **~0–10 % — parita** |
 | **quantus (QTU)** | **197.6 MH/s** | ~127–134 MH/s | **~1.5×** |
 | ekam_deeksha (ZION) | — (SRB neumí) | ~16–25 KH/s raw kernel; host-bound | — |
 
-**⚠️ Korekce:** dřívější "SRB PRL solo = 20.8 TH/s" byl artefakt — běžel leftover soak miner. Skutečné solo = **~43–46 TH/s** (match s referencí 46.55 TH/s z instance 56527570). QTU 197.6 MH/s taky match s ref 212.
+**⚠️ Korekce měření:** transient `43 TH/s` reading byl artefakt během restartu QTU procesu (autotune display glitch). Čisté solo (GPU prázdná, 100 % util, A16): **20.96 TH/s**. Na této konkrétní kartě je tedy **SRB pearlhash ≈ native v6c1** (parita) — SRB výhra je celá na QTU (+50 %). Ref 46.55 TH/s z instance 56527570 se tu nereprodukoval (power limit / silicon variance).
 
 ## 2. Naměřené kombinace (GPU 100 %, ~120 W)
 
-| # | konfigurace | PRL | QTU | ZION | combined % solo* |
+| # | konfigurace | PRL | QTU | ZION | extraction* |
 |---|---|---|---|---|---|
-| — | all-native quad (4/48/48, §18) | ~19 TH/s-eq | 83 MH/s | ~0.4 sh/s | ~85 % |
-| A | SRB-QTU + native PRL + ZION | ~9.7 TH/s-eq | 110 MH/s | ~0.4 sh/s | ~78 % |
-| D | SRB-PRL + native QTU + ZION | 21.2 TH/s | 61.6 MH/s | ~0.3 sh/s | ~79 % |
-| **E** | **SRB-PRL + SRB-QTU + native ZION** | **20.9 TH/s** | **90.6 MH/s** | **~0.25 sh/s** | **~93 %** ✅ |
+| — | all-native quad (4/48/48, §18) | ~19 TH/s-eq | 83 MH/s | ~0.4 sh/s | ~132 % |
+| A | SRB-QTU + native PRL + ZION | ~9.7 TH/s-eq | 110 MH/s | ~0.4 sh/s | ~102 % |
+| D | SRB-PRL + native QTU + ZION | 21.2 TH/s | 61.6 MH/s | ~0.3 sh/s | ~132 % |
+| **E** | **SRB-PRL + SRB-QTU + native ZION** | **20.9 TH/s** | **90.6 MH/s** | **~0.25 sh/s** | **~146 %** ✅ |
 
-\* combined % = Σ(podíl nejlepšího možného solo daného coinu). Config E **dominuje native quad na OBŮ coinů zároveň** (20.9>19 PRL i 90.6>83 QTU) — dva SRB procesy se driver-timesharingem dělí ~48/46 a native si vezme ~4 % na ZION.
+\* extraction = Σ(podíl SRB-solo ceiling: PRL/21 TH/s + QTU/197.6 MH/s). PRL+QTU jsou komplementární (MMA-compute vs sponge-memory) → >100 % součet je reálný. **Config E drží PRL na ~100 % svého sola A QTU na ~46 % jeho sola** + ZION ~0.25 sh/s — nejvyšší součet i absolutní výstupy.
+
+**Dual-algo v jednom SRB procesu** (`--algorithm "pearlhash;quantus"` + `--gpu-dual-max-loss`) — silent exit, pair evidentně nepodporovaný; proto 2 separátní procesy.
 
 ### PRL duty pod SRB-QTU (pro úplnost)
 | native PRL duty | SRB QTU | native PRL |
