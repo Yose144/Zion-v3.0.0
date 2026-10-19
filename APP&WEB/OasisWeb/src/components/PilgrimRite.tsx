@@ -11,6 +11,7 @@ import {
   Flame,
   Rocket,
   User,
+  Eye,
 } from 'lucide-react';
 import { useGameStore, type Archetype } from '@/store/gameStore';
 import AvatarCustomizer from './AvatarCustomizer';
@@ -73,7 +74,7 @@ interface PilgrimRiteProps {
 }
 
 export function PilgrimRite({ onEnter }: PilgrimRiteProps) {
-  const [step, setStep] = useState<Step>('customize');
+  const [step, setStep] = useState<Step>('morpheus');
   const applyArchetype = useGameStore((s) => s.applyArchetype);
   const { user } = useAuth();
 
@@ -91,6 +92,54 @@ export function PilgrimRite({ onEnter }: PilgrimRiteProps) {
         className="zion-hud-panel relative w-full max-w-3xl overflow-hidden p-6 sm:p-10"
       >
         <AnimatePresence mode="wait">
+          {step === 'morpheus' && (
+            <motion.div
+              key="morpheus"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.35 }}
+              className="relative z-10 flex flex-col items-center text-center"
+            >
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#9333ea]/30 bg-[#9333ea]/10 px-3 py-1 text-xs font-bold tracking-wider text-[#9333ea]">
+                <Eye size={12} />
+                THE GUIDE
+              </div>
+              <h2 className="mb-2 text-2xl font-black tracking-tight text-white sm:text-4xl">
+                You made it this far, Pilgrim.
+              </h2>
+              <p className="mb-10 max-w-lg text-sm leading-relaxed text-white/80 sm:text-base">
+                Beyond this threshold your identity becomes real — etched into the
+                worlds you will walk. One last choice before the gates open.
+              </p>
+
+              <div className="flex w-full max-w-md flex-col gap-4 sm:flex-row">
+                {/* Blue pill — keep the default form, skip customization */}
+                <button
+                  onClick={() => setStep('archetype')}
+                  className="group flex-1 rounded-2xl border border-[#3b82f6]/40 bg-[#3b82f6]/10 p-5 text-left transition-all hover:-translate-y-1 hover:border-[#3b82f6]/70"
+                >
+                  <div className="mx-auto mb-3 h-4 w-10 rounded-full bg-[#3b82f6] shadow-[0_0_18px_#3b82f6aa] transition-transform group-hover:scale-110" />
+                  <p className="mb-1 text-center text-sm font-black text-[#60a5fa]">Stay as you are</p>
+                  <p className="text-center text-[11px] leading-snug text-white/60">
+                    Enter with the default form. You can always reshape later.
+                  </p>
+                </button>
+                {/* Red pill — forge a custom avatar first */}
+                <button
+                  onClick={() => setStep('customize')}
+                  className="group flex-1 rounded-2xl border border-[#e41e2b]/40 bg-[#e41e2b]/10 p-5 text-left transition-all hover:-translate-y-1 hover:border-[#e41e2b]/70"
+                >
+                  <div className="mx-auto mb-3 h-4 w-10 rounded-full bg-[#e41e2b] shadow-[0_0_18px_#e41e2baa] transition-transform group-hover:scale-110" />
+                  <p className="mb-1 text-center text-sm font-black text-[#f87171]">Forge your avatar</p>
+                  <p className="text-center text-[11px] leading-snug text-white/60">
+                    Choose a callsign, body, neon trim and augmentation.
+                  </p>
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {step === 'customize' && (
             <motion.div
               key="customize"
