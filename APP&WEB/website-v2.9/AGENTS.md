@@ -39,6 +39,19 @@ ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new \
 
 # Restart služby
 ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new "systemctl restart zion-website"
+```
+
+⚠️ **`output: "standalone"` — `public/` se servíruje z `.next/standalone/public/`, ne `public/`:** Při hot-file deployi (např. jen změněný markdown v `public/docs/…`) je potřeba soubor zkopírovat na obě místa — `public/…` i `.next/standalone/public/…` — jinak HTTP vrací starý obsah. Plný deploy přes `deploy-web2.9.sh` rsyncuje celý `.next`, takže se to řeší samo.
+
+⚠️ **Nové public soubory = 404 do restartu:** Standalone server drží seznam `public/` souborů z manifestu při startu. **Přepsání** existujícího souboru se projeví okamžitě, ale **nová cesta** vrací Next 404 stránku, dokud se neprovede `systemctl restart zion-website` (hot-deploy nových markdownů → rsync na obě místa + restart).
+
+```bash
+# Hot markdown deploy (bez buildu) — příklad
+rsync -avzs -e ssh "public/docs/books/maitreya/kapitoly/epilog.md" \
+  "zion-post-wipe:/opt/zion/APP&WEB/website-v2.9/public/docs/books/maitreya/kapitoly/epilog.md"
+ssh zion-post-wipe "cp '/opt/zion/APP&WEB/website-v2.9/public/docs/books/maitreya/kapitoly/epilog.md' \
+  '/opt/zion/APP&WEB/website-v2.9/.next/standalone/public/docs/books/maitreya/kapitoly/epilog.md' \
+  && chown zion:zion '/opt/zion/APP&WEB/website-v2.9/.next/standalone/public/docs/books/maitreya/kapitoly/epilog.md'"
 
 # Intro hub deploy (jen maintenance.html)
 scp -i ~/.ssh/zion-edge-post-wipe-2026-07-29 \

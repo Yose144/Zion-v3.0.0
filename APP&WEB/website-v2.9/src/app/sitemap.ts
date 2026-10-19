@@ -103,6 +103,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/maitreya', 0.8, 'monthly'),
     r('/maitreya/cist', 0.7, 'monthly'),
 
+    // ── Nirvana — Book of the West reader (landing lives under /maitreya#nirvana) ──
+    r('/nirvana/cist', 0.7, 'monthly'),
+
     // ── Misc real pages ──────────────────────────────────────────────
     r('/ekam', 0.6, 'monthly'),
     r('/ekam/deeksha', 0.6, 'monthly'),
