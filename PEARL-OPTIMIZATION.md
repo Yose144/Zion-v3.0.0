@@ -622,3 +622,89 @@ PRL submissions through V3 were rare in solo tests (A0 mostly, one
 hybrid jobs — upstream `prlu:` targets are LuckyPool-issued and far
 harder than the eased native share target. Native-leg share acceptance
 was already proven in §12/§14 live runs.
+
+## 17. Session 8 — ZION deeksha metric forensics + real tuning levers (2026-10-19, RTX 3060)
+
+Investigation started from an apparent binary regression: HEAD build reported
+~368 KH/s vs ~995 KH/s on the Oct-16 Edge binary. Controlled A/B proved the
+binaries identical under the same env — the delta was entirely **configuration
++ a synthetic hashrate metric**. What follows is the decomposed truth.
+
+### 17.1 The metric is synthetic
+
+`mine_v3_zion_share` runs `gpu.mine_batch(header, target, start, batch=1M)`.
+The ekam_deeksha CUDA kernel chunks the batch by `work_size`, launches all
+chunks back-to-back, and uses an in-kernel sentinel for early-exit once any
+thread finds a top-32-bit target candidate. `GpuBatchResult.nonces_tested`
+counts **launched** nonces — always the full 1M — while the device only scans
+up to the first candidate chunk. Reported rate = `1M / iter_time`, an
+artifact of job difficulty and per-chunk latency, **not** scan throughput.
+The same synthetic counting applies to the V1 `mine_zion_pool_share` path.
+
+### 17.2 Ground-truth rates (measured)
+
+| path | rate | notes |
+|---|---|---|
+| CUDA kernel, ws=8192 | **24.8 KH/s** | `gpu_bench`, 10 s raw |
+| CUDA kernel, ws=2048 | 16.6 KH/s | scratchpad 1 GB vs 4 GB |
+| CPU-only, 4 cores | **255 H/s** | `--gpu cpu --threads 4` |
+| CPU verify (`local_ok`) | ~15 ms | single hash per candidate |
+
+ekam_deeksha is memory-hard (512 KiB scratchpad per nonce, fill + 2 passes +
+128 random reads) — designed to be slow everywhere. The GPU contributes a
+fast pre-filter (top-32-bit check, exact — no false negatives); candidates
+are `local_ok`-verified on CPU before submit.
+
+### 17.3 Every knob measured against SHARE RATE (accepted/s), not the metric
+
+90 s windows, V3 solo ZION, same wallet/worker pattern:
+
+| config | reported | accepted/s | verdict |
+|---|---|---|---|
+| ws8192, thr1/2 | 369–737 KH/s | **~1.31** | baseline |
+| ws2048, thr2 | 1952 | **~1.60** | **+22–25 % shares** |
+| ws1024, thr2/4 | 1945–3707 | ~1.66 | ≈ ws2048 |
+| ws512, thr2 | 1725 | ~1.44 | worse (launch overhead) |
+| ws16384 | 217 | ~1.0 | worse |
+| thr4 vs thr2 @ ws2048 | 3882 vs 1952 | **1.58 vs 1.59** | **no share gain** |
+| SKIP_CPU_RESCAN=1 | ≈same metric | ≈same shares | neutral @ easy diff |
+
+Confirmed at 180 s windows, interleaved a/b/a/b: ws8192 → A239+A248
+(1.35/s avg), ws2048 → A315+A321 (1.77/s avg) = **+31 % accepted shares**,
+0–1 rejects throughout.
+
+Threads scale only the synthetic EWMA (iteration overhead mix); accepted
+shares are flat (A142–143 both). `ZION_NONCE_COUNT`, `ZION_CUDA_TPB`
+(64/128; 256 crashed the run), `ZION_GPU_TIME_DUTY_PCT` — all flat/no-op.
+
+### 17.4 `ZION_GPU_SKIP_CPU_RESCAN=1` — new opt-in (miner)
+
+On GPU miss the legacy paths re-scan the whole 1M batch on CPU
+(`parallel_zion_find_nonce`, `miner_threads`). At ~64–255 H/s/thread a full
+rescan takes **minutes-to-hours** and propagates `NoAuxPoWSolution` + 100 ms
+backoff per iteration — a latency landmine whenever a job's prefilter hit
+rate drops below ~1/1M (hard targets, cold job). The GPU pre-filter is
+exact (top-32-bit necessary condition + full `local_ok` verify on every
+candidate), so the rescan can only ever find shares lost to kernel false
+negatives — which the KAT suite already guards against. Opt-in env skips it
+on both V1 (`mine_zion_pool_share`) and V3 paths; default off, production
+unchanged. `ZION_ITER_DEBUG=1` logs per-iteration `gpu_ms`/`iter_ms` for
+future forensics.
+
+### 17.5 Actionable ZION conclusions
+
+- **`ZION_GPU_WORK_SIZE=2048` (or 1024) is the single real ZION lever found:
+  +31 % accepted shares on SM86, replicated** — smaller scratchpad pool
+  (1 GB vs 4 GB) cuts per-chunk latency, so u32-prefilter candidates surface
+  ~2× faster.
+  Also halves ZION's VRAM claim in shared-GPU deployments. Needs a
+  per-device sanity check before rolling to the 1070 Ti rig (different
+  memory subsystem; wrapper default is 4096 under `sharing_gpu`).
+- Reported ZION "hashrate" should never be compared across configs —
+  compare **accepted shares/s** (or pool-side worker stats) instead.
+- `--threads` beyond 2: no share-rate benefit on this path (CPU rescan is
+  dormant at current difficulties); leave at wrapper default.
+- The GPU kernel's ~20 KH/s raw scan is the ceiling that matters only for
+  rare hard-target windows; the real work per share is a few thousand
+  nonces at current pool diff — no kernel rewrite justified by these data.
+
