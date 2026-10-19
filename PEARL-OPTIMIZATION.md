@@ -538,3 +538,87 @@ for future variants; default build unchanged.
 `QPOW_NVRTC_OPTS=-maxrregcount={48..96}`: all medians in a 143–146 MH/s
 band → launch config and occupancy are saturated; the sponge chain's
 issue rate is the ceiling. No env promotion; defaults stay.
+
+## 16. Session 7 — full-miner V3 sweep on vast.ai RTX 3060 (2026-10-19)
+
+Instance `56680673` ($0.068/h), RTX 3060 SM86, driver 580.173.02, ubuntu
+22.04 container. Fresh HEAD binary built on-instance (rsync source +
+`cargo build --release -p zion-miner --features gpu-cuda,gpu-opencl`,
+incremental ~3 min). All numbers below are the **full-miner path**
+(`--v3-trinity` against live `pool.zionterranova.com:8444`), not the
+isolated kernel gate — expect ~10–15 % below the `pearl_cuda` test
+harness numbers (tokio/V3 IO + serialize overhead).
+
+### 16.1 PRL solo (ZION/CPU streams off, duty=100, k=2048)
+
+| config | att/s | Δ |
+|---|---|---|
+| v6 default (streams=4, batch=16, cum=0) | 2646.8 | — |
+| v6 + `ZION_PEARL_CUMULATIVE_MMA=1` | 2708.7 | +2.3 % |
+| v6 + `ZION_PEARL_BATCH=64` | 2706.6 | +2.3 % |
+| v6 + `ZION_PEARL_BATCH=32` | 2692.2 | +1.7 % |
+| v6 + `ZION_PEARL_STREAMS=6` | 2687.0 | +1.5 % |
+| v6 + `ZION_PEARL_STREAMS=2` | 2579.1 | −2.6 % |
+| **v6 + cum + batch=64 + streams=4** | **2762.0** | **+4.4 %** |
+| v11 (cp.async ring) | 2285.5 | −13.6 % |
+| v4 (scalar strip8) | 913.6 | −65 % |
+
+cum+batch stacking is additive in the full miner (prior gate showed cum
+alone +1.46 %). Best env set: `ZION_PEARL_CUMULATIVE_MMA=1
+ZION_PEARL_BATCH=64` (streams stay at default 4 — s6 adds nothing once
+batch is large).
+
+### 16.2 QTU solo via V3 qtun/native leg
+
+`ZION_STREAM2_FORCE_COIN=QTU`: all launch knobs land in a **127–129
+MH/s band** (default 128.38, tpb384/npt4 127.75, tpb128/npt1 127.53,
+tpb256/npt2 127.69, single-nonce 127.36, `-maxrregcount=64` 129.12) —
+confirms §15's plateau verdict on the live path. QTU submits accept
+through the V3 bridge fine (up to A10 per 100 s window).
+
+### 16.3 Trinity duty curve (ZION deeksha + PRL pearl on shared card)
+
+`ZION_EXT_GPU_TIME_DUTY_PCT` sweep, both GPU streams V3-served:
+
+| duty | PRL att/s | ZION KH/s |
+|---|---|---|
+| 30 | 977 | 1065 |
+| 50 | 1633 | 1026 |
+| 70 | 2127 | 957 |
+| 100 | **2885** | **935** |
+
+Duty<100 partitions time at batch granularity and costs PRL heavily for
+single-digit-% ZION gains; **free contention (100) wins on combined
+throughput** — PRL at 2885 even exceeds its solo run (other stream's
+gaps fill pipeline bubbles). If a deployment wants deterministic ZION
+floor, ~50 is the knee.
+
+### 16.4 Quad mode live (STREAM4 opt-in)
+
+`ZION_STREAM4_ENABLED=1 ZION_STREAM4_FORCE_COIN=QTU` with PRL on
+stream2 + VRSC CPU + ZION: all four streams active over ONE V3
+connection — steady ~860 KH/s ZION (A395, 99.5 %), ~1100–1380 att/s PRL,
+~85–100 MH/s QTU (V3 `qtun:`/native leg), VRSC CPU ~56–120 (displayed
+unit is an H/s-eq artefact, stream itself healthy). Pool served
+`external_stream` (PRL) and `external_stream_2` (QTU) correctly per
+coin preference.
+
+### 16.5 Deploy caveat found
+
+In this binary the V3 external-stream consumer task is gated on
+`stream2_enabled` — `ZION_STREAM2_ENABLED=0` leaves `gpu-external`
+permanently idle even though the pool serves the job. The SMOS group
+for rig 518837 currently carries `ZION_STREAM2_ENABLED=0` yet PRL
+flowed on vega-smos — env path on the rig needs verification before
+the next binary roll (wrapper default `${ZION_STREAM2_ENABLED:-0}`
+forces 0 unless minerOptions override). Recommended: set
+`ZION_STREAM2_ENABLED=1` in the group options (harmless — direct
+stream2 URL is unset so only the V3 consumer is affected).
+
+### 16.6 Share acceptance note
+
+PRL submissions through V3 were rare in solo tests (A0 mostly, one
+`prlu:` upstream accept on v11 run) because the pool currently serves
+hybrid jobs — upstream `prlu:` targets are LuckyPool-issued and far
+harder than the eased native share target. Native-leg share acceptance
+was already proven in §12/§14 live runs.
