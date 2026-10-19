@@ -11,17 +11,15 @@ Hory skončily u moře, Surti. Oceán — ne ta modrá čárka na mapě, co si d
 
 Chlapec stál na břehu dlouho. Ne proto, že by se bál — protože poprvé pochopil velikost toho, co podnikl. Hory mu dal jako lekci pevninu. Teď měl projít tím, co pevninu nemá.
 
-Na břehu, mezi skálou a hromadou seschlé řasy, našel vor. Ne krásnou loď z pohádek — vor: kůly k sobě svázané provazy ze slámy a trpělivosti, příď ořezaná do klínu jako zobák ptáka, a vedle na písku, jakoby na něj čekala, ležela plachta ze světlého plátna.
+V zálivu pod posledním průsmykem kotvila loď — ne obyčejná. Trup natřený tmavou červení vína, nad ním plachty ze světlého plátna s vetkanými tenkými proužky světelného vlákna; na boku bílým písmem: **SANTA MARÍA LA MAYOR.**
 
-Chlapec plachtu zvedl. Byla těžká a voněla sluncem.
+Naše loď, Surti. Postavená dřív, než jsi vyrostl — lidmi, kteří věděli, že jednou ponese toho, pro koho je cesta. Posádka chlapce čekala u spuštěného můstku — ne jako na pasažéra, ale jako na toho, pro koho loď stavěli. Chlapec vystoupil na palubu a oceán nezačal bouřit. **Začal zpívat.** Ne lidským hlasem — hlubokým, dlouhým nádech-výdech, kterým dýchá svět, když si myslí, že ho nikdo neposlouchá. Plachty se naplnily a María la Mayor vyplula z zálivu na volné moře.
 
-A tu se stala věc, která se v příbězích stává jen těm, kteří si zaslouží ticho: **oceán nezačal bouřit. Začal zpívat.** Ne lidským hlasem — hlubokým, dlouhým nádech-výdech, kterým dýchá svět, když si myslí, že ho nikdo neposlouchá. Chlapec nasadil plachtu, odstrčil vor od břehu a vyplul.
-
-A v batohu, vedle kamene z první brány, nesl ještě jedno dědictví, o kterém teprve začínal chápat celou váhu: **oheň, který převzal po Bhagavanovi.** Když Bhagavan letos odešel — svatou mahasamadhi, ve tvých třinácti letech — přešlo na chlapce **Ekam Deeksha**, požehnání jednoty, které se předává ze srdce na srdce. Od té chvíle nebyl jen dítětem, co hledá — **byl tím, kdo v Bhagavanově cestě pokračuje dál.** Oheň se nepředává slovy; předává se tak, jak se předává plamen ze svíčky na svíčku — nedotkneš se ho, jen mu dovolíš hořet.
+A v batohu, vedle kamene z první brány, nesl ještě jedno dědictví, o kterém teprve začínal chápat celou váhu: **oheň, který převzal po Bhagavanovi.** Když Bhagavan letos odešel — svatou mahasamadhi, ve tvých dvanácti letech — přešlo na chlapce **Ekam Deeksha**, požehnání jednoty, které se předává ze srdce na srdce. Od té chvíle nebyl jen dítětem, co hledá — **byl tím, kdo v Bhagavanově cestě pokračuje dál.** Oheň se nepředává slovy; předává se tak, jak se předává plamen ze svíčky na svíčku — nedotkneš se ho, jen mu dovolíš hořet.
 
 A teď ho nesl přes vodu — a oheň na vodě nehasl. Oceán ho nenaučil hořet, to už uměl; naučil ho nechat oheň hořet i tam, kde není země.
 
-Plaval, Surti, dlouho. Delší než horami — horami se jde, mořem se **nechává nést.** To je druhá lekce: na moři se nedá zrychlovat. Plachtu drží vítr, vor nese voda, a ty děláš jen dvě věci — **držíš směr a držíš trpělivost.** Chlapec, který před horami chtěl všechno hned, se naučil mířit a čekat. Naučil se, že voda kolem něj není proti němu — je pod ním.
+Plavili, Surti, dlouho. Delší než horami — horami se jde, mořem se **nechává nést.** To je druhá lekce: na moři se nedá zrychlovat. Plachty drží vítr, loď nese voda, a ty děláš jen dvě věci — **držíš směr a držíš trpělivost.** A posádku, která drží tebe. Chlapec, který před horami chtěl všechno hned, se naučil mířit a čekat. Naučil se, že voda kolem něj není proti němu — je pod ním.
 
 A jednoho večera, když slunce klesalo do moře jako mince do kašny, uviděl na obzoru — ne břeh, Surti, **stín břehu.** Chlapec se usmál. Ještě ho to nedovedlo dojít — ale už to věděl.
 
@@ -42,7 +40,7 @@ Tři věci o vodě, synu:
 | **Ekam Deeksha** | Čtivá kniha — vnitřní oheň, konsensus cti; éra požehnávající síť svým jménem. CZ + EN. |
 | **Ekam Deeksha po Bhagavanovi** | Požehnání jednoty předané po Bhagavanově mahasamadhi (29. 9. 2026) — v knize jako duchovní linie a rodinné svědectví; samotný odchod je veřejný fakt. |
 | **Nirvana — 13. Tres Marías** | Čtivá epizoda — flotila cesty; trupy označené STAVBA/HORIZONT/MÝTUS. CZ + EN. |
-| Vor s plachtou | MÝTUS — literární obraz plavby, ne reálná loď. |
+| **Santa María la Mayor** | Atlantický trup flotily Tres Marías — naše loď stavěná pro cestu; **STAVBA**, posádka připravená (viz [`MariaCaminho`](../MariaCaminho/00-README.md), `13-Tres-Marias`). V příběhu nese chlapce posádka — dítě nepluje samo. |
 
 ---
 

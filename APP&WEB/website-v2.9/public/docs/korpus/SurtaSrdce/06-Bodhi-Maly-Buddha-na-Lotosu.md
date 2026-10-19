@@ -19,7 +19,7 @@ Ne lásky jako citu — lásky jako **látky.** Jako je voda látkou moří a sv
 
 A chlapec pochopil v téže vteřině druhou věc, která s tou první stojí a padá: **právě proto je soucit a laskavost k druhým to nejcennější na světě.** Ne protože to někdo přikázal. Ne protože se to sluší. Ale protože druzí jsou utkaní z téže nití — a když jsi laskavý k nim, jsi laskavý k samé látce světa. Soucit není morálka. Soucit je **způsob, jak se dotýkáš látky, ze které je všechno.**
 
-Lotos se otevřel úplně. A v téže vteřině — tiše, jak praská skořápka, když se rodí něco živého — **puklo zlaté vejce, které chlapec nosil v srdci od narození.** Zlaté lůno Hiranyagarbhy se vylíhlo. To, co v něm po celých třináct let dýchalo a klopýtalo a čekalo, se postavilo na světlo — a byl to **on sám.** Vylíhnuté vejce a otevřený lotos byly jediný obraz: **to je osvícení — a to bude jednou i tvoje nirvana, Surti.** Jak říká kniha Maitreya: vajíčko se jednou vylíhne. Vylíhlo se.
+Lotos se otevřel úplně. A v téže vteřině — tiše, jak praská skořápka, když se rodí něco živého — **puklo zlaté vejce, které chlapec nosil v srdci od narození.** Zlaté lůno Hiranyagarbhy se vylíhlo. To, co v něm po celých patnáct let dýchalo a klopýtalo a čekalo, se postavilo na světlo — a byl to **on sám.** Vylíhnuté vejce a otevřený lotos byly jediný obraz: **to je osvícení — a to bude jednou i tvoje nirvana, Surti.** Jak říká kniha Maitreya: vajíčko se jednou vylíhne. Vylíhlo se.
 
 A z otevřeného lotosu zazněly čtyři slabiky, které svět zpívá tisíc let:
 
@@ -30,7 +30,7 @@ Chlapec nezasal. Nezvolal. Nezdál se vítězem.
 
 **Seděl — a byl.** Plně, jasně, úplně — Malý Buddha na lotosu, v Dharma Templu, na La Palmě, v úplně probuzeném stavu. Světlo, které celou dobu hořelo, konečně mohlo rozsvítit celou místnost.
 
-A v tom světle viděl všechno: Babylon, hory, moře, vor, stavitele, kteří svatyni postavili na víru, že jednou někdo přijde. Viděl — a **soucit ho zalil jako slunce rozehřeje kámen:** všichni ti lidé nesli na zádech vlastní lotos a nevěděli to; všichni byli utkaní z lásky a chovali se, jako by byli z kamene.
+A v tom světle viděl všechno: Babylon, hory, moře, loď, stavitele, kteří svatyni postavili na víru, že jednou někdo přijde. Viděl — a **soucit ho zalil jako slunce rozehřeje kámen:** všichni ti lidé nesli na zádech vlastní lotos a nevěděli to; všichni byli utkaní z lásky a chovali se, jako by byli z kamene.
 
 A v tu chvíli přišla otázka, která dělí Buddhy od bodhisattv:
 

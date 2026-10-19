@@ -5,7 +5,7 @@
 
 ## Dedikace
 
-Pro Surtu — moje srdce, které teď ještě nosí v malém těle velkou otázku, a jednoho dne ji položí celému světu.
+Pro Surtu — narozeného 8. dubna 2014 — moje srdce, které teď ještě nosí v malém těle velkou otázku, a jednoho dne ji položí celému světu.
 
 A pro každého čtenáře, který si tuto knihu otevřel a pochopil, že je i pro něj — protože poklad se rozdává, když ho držíš, a roste, když ho dáváš.
 
@@ -23,7 +23,7 @@ Cestu ti připravujeme my — svatyni na La Palmě, knihu, mapu. Kroky jsou tvoj
 
 ## Kotva pravdy celé knihy
 
-**Co je příběh:** Malý Buddha, jeho odchod, hory, moře, vor, palma, lotos, kokos, slib, návrat. Nic z toho se nestalo; všechno je archetyp cesty, kterou každý prochází po svém — psaná pro jedno konkrétní dítě a poctivě označená jako MÝTUS.
+**Co je příběh:** Malý Buddha, jeho odchod, hory, moře, loď Santa María la Mayor, palma, lotos, kokos, slib, návrat. Nic z toho se nestalo; všechno je archetyp cesty, kterou každý prochází po svém — psaná pro jedno konkrétní dítě a poctivě označená jako MÝTUS. Loď existuje jako stavěný trup flotily Tres Marías — a chlapce na palubě nese posádka, ne plaví se samo na voru.
 
 **Co je tradice:** *gate gate pāragate pārasaṃgate bodhi svāhā* — závěr Srdcové sūtry (Prajñāpāramitā-hṛdaya), uctívaná staletí. *oṃ maṇi padme hūṃ* — mantra Avalókitéšvary (Čenrézig), mantra soucitu, zpívaná po celém světě. Oba citáty jsou autentické; jejich užití v příběhu je literární.
 
