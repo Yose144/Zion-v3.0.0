@@ -9,18 +9,10 @@ import {
   Crosshair,
   Coins,
   Flame,
-  Droplets,
   Rocket,
-  Sparkles,
   User,
-  Cpu,
-  Eye,
-  Zap,
-  Heart,
-  Wrench,
-  Ghost,
 } from 'lucide-react';
-import { useGameStore, type Archetype, type BodyType, type Augmentation } from '@/store/gameStore';
+import { useGameStore, type Archetype } from '@/store/gameStore';
 import AvatarCustomizer from './AvatarCustomizer';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -75,28 +67,6 @@ const ARCHETYPES: ArchetypeMeta[] = [
   },
 ];
 
-const BODY_TYPES: { id: BodyType; label: string; desc: string }[] = [
-  { id: 'slim', label: 'Slim', desc: 'Agile — faster reflexes' },
-  { id: 'standard', label: 'Standard', desc: 'Balanced — versatile' },
-  { id: 'heavy', label: 'Heavy', desc: 'Resilient — more capacity' },
-];
-
-const NEON_COLORS = [
-  { hex: '#078930', label: 'Cyan' },
-  { hex: '#e41e2b', label: 'Magenta' },
-  { hex: '#fcd116', label: 'Gold' },
-  { hex: '#078930', label: 'Emerald' },
-  { hex: '#e41e2b', label: 'Crimson' },
-  { hex: '#e41e2b', label: 'Violet' },
-];
-
-const AUGMENTS: { id: Augmentation; label: string; icon: LucideIcon; desc: string }[] = [
-  { id: 'reflexes', label: 'Reflexes', icon: Zap, desc: 'Faster reaction time' },
-  { id: 'neural', label: 'Neural', icon: Brain, desc: 'Enhanced cognition' },
-  { id: 'tech', label: 'Tech', icon: Wrench, desc: 'Gadget mastery' },
-  { id: 'bio', label: 'Bio', icon: Heart, desc: 'Regenerative implants' },
-  { id: 'stealth', label: 'Stealth', icon: Ghost, desc: 'Optical camouflage' },
-];
 
 interface PilgrimRiteProps {
   onEnter: () => void;
