@@ -215,6 +215,12 @@ def unit_bounds(idx):
 def do_lease(worker_id, label):
     janitor()
     cur = int(_meta_get("cursor", 0))
+    # The meta cursor can lag behind existing unit rows (e.g. after a
+    # migration/restore) — skip any unit_id that is already leased or done
+    # instead of crashing the INSERT on the UNIQUE constraint.
+    while cur < N_UNITS and db().execute(
+            "SELECT 1 FROM units WHERE unit_id=?", (cur,)).fetchone():
+        cur += 1
     if cur >= N_UNITS:
         return None  # range exhausted
     start, end = unit_bounds(cur)
