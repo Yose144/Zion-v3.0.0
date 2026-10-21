@@ -1,0 +1,13 @@
+[Unit]
+Description=vastctl local dashboard (market + launch controls, 127.0.0.1 only)
+After=network.target
+
+[Service]
+WorkingDirectory=%h/2.9.6-main/tools/vast
+Environment=VASTAI_BIN=%h/.local/bin/vastai
+ExecStart=/usr/bin/python3 %h/2.9.6-main/tools/vast/vastctl.py serve --port 8088 --bind 127.0.0.1
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
