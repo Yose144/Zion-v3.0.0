@@ -8,6 +8,8 @@ type Miner = {
   algo: string | null;
   pool: string | null;
   worker: string | null;
+  cmd?: string;
+  pid?: number;
   etime?: string;
   hashrate?: Hashrate;
   hist?: number[];
@@ -175,16 +177,22 @@ export default function Dashboard() {
     setTimeout(() => setToast(null), 9000);
   };
   const [logs, setLogs] = useState<Record<number, string>>({});
-  const [logsOpen, setLogsOpen] = useState<Record<number, boolean>>({});
-  const toggleLogs = (id: number) => {
-    const open = !logsOpen[id];
-    setLogsOpen({ ...logsOpen, [id]: open });
-    if (open) {
-      fetch(`/vast-ops/api/logs?id=${id}`)
-        .then((r) => r.text())
-        .then((t) => setLogs({ ...logs, [id]: t }))
-        .catch((e) => setLogs({ ...logs, [id]: String(e) }));
+  const [logsOpen, setLogsOpen] = useState<Record<number, string>>({});
+  const loadLogs = (id: number, src: string) => {
+    setLogs({ ...logs, [id]: `loading ${src} logs…` });
+    fetch(`/vast-ops/api/logs?id=${id}&src=${src}`)
+      .then((r) => r.text())
+      .then((t) => setLogs({ ...logs, [id]: t }))
+      .catch((e) => setLogs({ ...logs, [id]: String(e) }));
+  };
+  const toggleLogs = (id: number, src = "all") => {
+    const cur = logsOpen[id];
+    if (cur === src) {
+      setLogsOpen({ ...logsOpen, [id]: "" });
+      return;
     }
+    setLogsOpen({ ...logsOpen, [id]: src });
+    loadLogs(id, src);
   };
   const ops = async (path: string, method = "GET") => {
     setBusy(path);
@@ -549,21 +557,82 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* ops controls */}
-              <div className="mt-4 border-t border-white/5 pt-3">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/35">Mining presets</p>
-                <div className="grid grid-cols-2 gap-2 min-[480px]:grid-cols-4">
-                {(["srb", "zion", "xmr", "all"] as const).map((m) => (
+              {/* ops controls — organized per miner engine */}
+              {(() => {
+                const hasZion = r.miners.some((m) => (m.cmd || "").includes("zion-miner"));
+                const srbAlgos = new Set(r.miners.filter((m) => (m.cmd || "").includes("SRBMiner")).map((m) => m.algo).filter((a): a is string => !!a));
+                const hasXmr = r.miners.some((m) => (m.cmd || "").toLowerCase().includes("xmrig"));
+                const b = (label: string, key: string, fn: () => void, cls = "") => (
                   <button
-                    key={m}
+                    key={key}
                     disabled={!!busy}
-                    onClick={() => confirm(`launch ${m} on ${r.id}?`) && ops(`launch?id=${r.id}&m=${m}`, "POST")}
-                    className="min-h-10 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition hover:border-[#fcd116]/50 hover:text-[#fcd116] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
+                    onClick={fn}
+                    className={`min-h-9 rounded-md border px-2.5 py-1.5 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40 ${cls}`}
                   >
-                    {busy === `launch?id=${r.id}&m=${m}` ? "Starting…" : `Start ${m}`}
+                    {busy === key ? "…" : label}
                   </button>
-                ))}
-                </div>
+                );
+                const launch = (m: string) =>
+                  b(m, `launch?id=${r.id}&m=${m}`,
+                    () => confirm(`launch ${m} on ${r.id}?`) && ops(`launch?id=${r.id}&m=${m}`, "POST"),
+                    "border-white/15 bg-white/5 text-white/75 hover:border-[#fcd116]/50 hover:text-[#fcd116]");
+                const stop = (m: string) =>
+                  b(`■ ${m}`, `stop?id=${r.id}&m=${m}`,
+                    () => confirm(`stop ${m} on ${r.id}?`) && ops(`stop?id=${r.id}&m=${m}`, "POST"),
+                    "border-[#ff7b72]/25 bg-[#ff7b72]/[0.05] text-[#ff9b93] hover:bg-[#ff7b72]/15");
+                const logBtn = (src: string, label = "logs") =>
+                  b(logsOpen[r.id] === src ? `▾ ${label}` : `▸ ${label}`, "",
+                    () => toggleLogs(r.id, src),
+                    logsOpen[r.id] === src
+                      ? "border-white/40 bg-white/10 text-white"
+                      : "border-white/15 bg-white/[0.03] text-white/50 hover:border-white/35 hover:text-white/80");
+                const Sec = ({ title, on, children }: { title: string; on: boolean; children: React.ReactNode }) => (
+                  <div className="rounded-xl border border-white/[0.07] bg-black/20 p-2.5">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className={`h-1.5 w-1.5 rounded-full ${on ? "bg-[#34d399] shadow-[0_0_6px_#34d399]" : "bg-white/20"}`} />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/45">{title}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">{children}</div>
+                  </div>
+                );
+                return (
+                  <div className="mt-4 space-y-2 border-t border-white/5 pt-3">
+                    <div className="flex gap-2">
+                      {b("▸ Full deploy — PRL/QTU 50/50 + CPU", `launch?id=${r.id}&m=full`,
+                        () => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → installed (standby)\n• zion-miner → PRL/QTU 50/50 via pool\n• xmrig → CPU rx/0`) && ops(`launch?id=${r.id}&m=full`, "POST"),
+                        "flex-1 border-[#fcd116]/50 bg-[#fcd116]/10 font-semibold text-[#fcd116] hover:bg-[#fcd116]/20")}
+                      {b("■ all", `stop?id=${r.id}&m=all`,
+                        () => confirm(`stop ALL miners on ${r.id}?`) && ops(`stop?id=${r.id}&m=all`, "POST"),
+                        "border-[#ff7b72]/30 bg-[#ff7b72]/[0.07] text-[#ff9b93] hover:bg-[#ff7b72]/15")}
+                      {logBtn("all")}
+                    </div>
+                    <Sec title="Native zion-miner · pool" on={hasZion}>
+                      {launch("zion")}{b("dual 100/40", `launch?id=${r.id}&m=zionmax`,
+                        () => confirm("launch zion 100/40 on " + r.id + "?") && ops(`launch?id=${r.id}&m=zionmax`, "POST"),
+                        "border-white/10 bg-white/[0.03] text-white/50 hover:border-[#fcd116]/40 hover:text-[#fcd116]")}
+                      {launch("prl")}{launch("qtu")}{stop("zion")}{logBtn("zion")}
+                    </Sec>
+                    <Sec title={`SRBMiner · upstream${srbAlgos.size ? " (" + Array.from(srbAlgos).join("+") + ")" : ""}`} on={srbAlgos.size > 0}>
+                      {launch("srb")}{launch("srb-prl")}{launch("srb-qtu")}
+                      {srbAlgos.has("pearlhash") && stop("srb-prl")}
+                      {srbAlgos.has("quantus") && stop("srb-qtu")}
+                      {stop("srb")}{logBtn("srb")}
+                    </Sec>
+                    <Sec title="CPU · XMRig" on={hasXmr}>
+                      {b("▸ start xmr", `launch?id=${r.id}&m=xmr`,
+                        () => ops(`launch?id=${r.id}&m=xmr`, "POST"),
+                        "border-white/15 bg-white/5 text-white/75 hover:border-[#fb923c]/50 hover:text-[#fb923c]")}
+                      {stop("xmr")}{logBtn("xmr")}
+                    </Sec>
+                    {logsOpen[r.id] && (
+                      <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/50 p-3 text-[10px] leading-relaxed text-white/60">
+                        <span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-white/35">logs · {logsOpen[r.id]}</span>
+                        {logs[r.id] ?? "loading…"}
+                      </pre>
+                    )}
+                  </div>
+                );
+              })()}
                 <form
                   className="mt-3 flex min-w-0 gap-2"
                   onSubmit={(e) => {
@@ -583,7 +652,6 @@ export default function Dashboard() {
                     {busy.startsWith("exec?") && busy.includes(`id=${r.id}&`) ? "Running…" : "Run"}
                   </button>
                 </form>
-              </div>
             </div>
           ))}
           {!rigs.length && !err && (
@@ -612,7 +680,7 @@ export default function Dashboard() {
                     onChange={(e) => setMGpu(e.target.value)}
                     className="mt-1 block min-h-11 w-full rounded-lg border border-white/15 bg-black/40 px-3 text-sm text-white focus:border-[#fcd116]/50 focus:outline-none focus:ring-1 focus:ring-[#fcd116]/40 sm:min-w-40"
                   >
-                {["RTX_3060", "RTX_3070", "RTX_3060_Ti", "RTX_4060", "RTX_3080", "any"].map((g) => (
+                {["RTX_3060", "RTX_3060_Ti", "RTX_3070", "RTX_3080", "RTX_3090", "RTX_4060", "RTX_4060_Ti", "RTX_4070", "RTX_4080", "RTX_4090", "RTX_5090", "A4000", "A5000", "A6000", "L40", "L40S", "A100_PCIE", "A100_SXM4_80GB", "H100", "any"].map((g) => (
                   <option key={g} value={g}>{g.replace(/_/g, " ")}</option>
                 ))}
                   </select>

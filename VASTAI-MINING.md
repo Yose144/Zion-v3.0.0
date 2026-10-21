@@ -89,7 +89,7 @@ Nesrovnatelné 1:1 s in-process schedulerem `zion-miner`.
 ```bash
 cd ~/miners/SRBMiner-Multi-3-7-9
 nohup ./SRBMiner-MULTI --algorithm pearlhash --pool pearl-eu2.luckypool.io:3360 \
-  --wallet PRL_WALLET --worker rig1-prl > ~/srb-prl.log 2>&1 &
+  --wallet prl1pwqx7esdehf58j4yqq68q0kts3zy5j2cf8c9gnn9tc3qaj6ptaq6qy35v6h --worker rig1-prl > ~/srb-prl.log 2>&1 &
 nohup ./SRBMiner-MULTI --algorithm quantus --pool eu.lproute.com:5660 \
   --wallet qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb --worker rig1-qtu \
   > ~/srb-qtu.log 2>&1 &

@@ -658,26 +658,41 @@ def _ensure_tools():
             "(apt-get update -qq && apt-get install -y -qq tmux >/dev/null 2>&1)")
 
 
-def launch_srb(inst, iid):
-    """SRBMiner dual: PRL → luckypool + QTU → lproute, one tmux each."""
+def launch_srb(inst, iid, coins=("qtu", "prl")):
+    """SRBMiner sessions: PRL → luckypool, QTU → lproute, one tmux each."""
     wq, wp = f"vast-{iid}-qtu", f"vast-{iid}-prl"
+    kills = ("tmux kill-session -t zion 2>/dev/null; "
+             "pkill -f 'zion-miner --pool' 2>/dev/null\n")
+    sessions = []
+    if "qtu" in coins:
+        kills += "tmux kill-session -t srb-qtu 2>/dev/null\n"
+        sessions.append(
+            f'tmux new-session -d -s srb-qtu "exec ./SRBMiner-MULTI '
+            f'--algorithm quantus --pool {QTU_POOL} --wallet {QTU_WALLET} '
+            f'--worker {wq} --disable-cpu"')
+    if "prl" in coins:
+        kills += "tmux kill-session -t srb-prl 2>/dev/null\n"
+        sessions.append(
+            f'tmux new-session -d -s srb-prl "exec ./SRBMiner-MULTI '
+            f'--algorithm pearlhash --pool {PRL_POOL} --wallet {PRL_WALLET} '
+            f'--worker {wp} --disable-cpu"')
     script = f'''
 {_ensure_tools()}
 mkdir -p /root/miners && cd /root/miners &&
 [ -x {SRB_DIR}/SRBMiner-MULTI ] || (wget -q {SRB_TARBALL} && tar xzf {os.path.basename(SRB_TARBALL)}) &&
 cd {SRB_DIR} &&
-tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srb-prl 2>/dev/null
-tmux kill-session -t zion 2>/dev/null; pkill -f 'zion-miner --pool' 2>/dev/null; sleep 1
-tmux new-session -d -s srb-qtu "exec ./SRBMiner-MULTI --algorithm quantus --pool {QTU_POOL} --wallet {QTU_WALLET} --worker {wq} --disable-cpu"
-tmux new-session -d -s srb-prl "exec ./SRBMiner-MULTI --algorithm pearlhash --pool {PRL_POOL} --wallet {PRL_WALLET} --worker {wp} --disable-cpu"
+{kills}sleep 1
+{chr(10).join(sessions)}
 sleep 4; tmux ls; pgrep -c -x SRBMiner-MULTI
 '''
     return script
 
 
-def launch_zion(inst, iid, duty_prl=100, duty_qtu=40):
-    """zion-miner native dual PRL+QTU via our pool (gpu2 QTU route pin)."""
+def launch_zion(inst, iid, prl_pct=50, qtu_pct=50):
+    """zion-miner native streams via our pool. pct=0 disables that stream."""
     w = f"vast-dual-{iid}"   # matches ZION_POOL_AUXPOW_GPU_COIN2_ROUTE vast-dual*
+    s2 = "1" if prl_pct > 0 else "0"
+    s4 = "1" if qtu_pct > 0 else "0"
     script = f'''
 {_ensure_tools()}
 mkdir -p /root/zion-native && cd /root/zion-native &&
@@ -690,10 +705,10 @@ ZION_MINER_ID={w} ZION_GPU_BACKEND=cuda ZION_PROFILE=pool ZION_VERBOSE=1 \
 ZION_INTERACTIVE=0 ZION_NO_STICKY=1 ZION_LOG_INTERVAL=15 \
 ZION_V3_TRINITY=1 ZION_AUTOTUNE=1 ZION_AUTOTUNE_SECS=3 ZION_IGNORE_GPU_SELF_TEST_FAIL=1 \
 ZION_STREAM1_ENABLED=0 ZION_STREAM3_ENABLED=0 \
-ZION_STREAM2_ENABLED=1 ZION_STREAM2_FORCE_COIN=PRL ZION_PEARL_K=2048 \
+ZION_STREAM2_ENABLED={s2} ZION_STREAM2_FORCE_COIN=PRL ZION_PEARL_K=2048 \
 ZION_PEARL_BATCH=64 ZION_PEARL_STREAMS=4 ZION_PEARL_CUMULATIVE_MMA=1 \
-ZION_STREAM4_ENABLED=1 ZION_STREAM4_FORCE_COIN=QTU ZION_QPOW_BACKEND=cuda \
-ZION_EXT_GPU_TIME_DUTY_PCT={duty_prl} ZION_EXT_GPU2_TIME_DUTY_PCT={duty_qtu} \
+ZION_STREAM4_ENABLED={s4} ZION_STREAM4_FORCE_COIN=QTU ZION_QPOW_BACKEND=cuda \
+ZION_EXT_GPU_TIME_DUTY_PCT={prl_pct} ZION_EXT_GPU2_TIME_DUTY_PCT={qtu_pct} \
 ZION_EXT_GPU_GAP_MS=0 ZION_EXT_GPU_MAX_GAP_MS=5000 ZION_MINER_THREADS=4 \
 ./zion-miner --pool {ZION_POOL} --wallet {ZION_WALLET} \
 --worker {w} --gpu cuda --threads 4 --log-interval 15 --v3-trinity \
@@ -701,6 +716,25 @@ ZION_EXT_GPU_GAP_MS=0 ZION_EXT_GPU_MAX_GAP_MS=5000 ZION_MINER_THREADS=4 \
 sleep 4; tmux ls; pgrep -f "zion-miner --pool" | grep -v 'bash -c' | head -3
 '''
     return script
+
+
+STOP_SCRIPT = {
+    "zion": "tmux kill-session -t zion 2>/dev/null; pkill -f 'zion-miner --pool' 2>/dev/null",
+    "srb": "tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srb-prl 2>/dev/null; pkill -x SRBMiner-MULTI 2>/dev/null",
+    "srb-prl": "tmux kill-session -t srb-prl 2>/dev/null",
+    "srb-qtu": "tmux kill-session -t srb-qtu 2>/dev/null",
+    "xmr": "pkill -x xmrig 2>/dev/null",
+}
+
+
+def stop_script(miner):
+    if miner == "all":
+        return ("; ".join(dict.fromkeys(
+            s for v in STOP_SCRIPT.values() for s in v.split("; ")))
+            + "; sleep 1; tmux ls 2>/dev/null; echo STOPPED")
+    if miner in STOP_SCRIPT:
+        return STOP_SCRIPT[miner] + "; sleep 1; echo STOPPED"
+    return None
 
 
 def install_srb_script():
@@ -722,14 +756,16 @@ def cmd_launch(args):
         miners = ["srb", "zion", "xmr"]
     if "full" in miners:
         # one-button: install srb (idle) + zion dual 50/50 running + xmr on cpu
-        miners = ["_srb_install", "zion50", "xmr"]
+        miners = ["_srb_install", "zion", "xmr"]
+    ZION_DUTY = {"zion": (50, 50), "zion50": (50, 50), "zionmax": (100, 40),
+                 "prl": (100, 0), "qtu": (0, 100)}
     for mn in miners:
         print(f"[{args.id}] launch {mn}…")
         if mn == "xmr":
             ns = argparse.Namespace(id=args.id, config=args.config)
             cmd_deploy_xmrig(ns)
             continue
-        if mn in ("zion", "zion50"):
+        if mn in ZION_DUTY:
             # rig downloads the glibc-compatible build from Edge (local build
             # is glibc-2.43 — would not run on ubuntu 22.04 rigs)
             rc, out, _ = ssh(inst, "test -x /root/zion-native/zion-miner && echo OK")
@@ -744,16 +780,36 @@ def cmd_launch(args):
                 if "DL_OK" not in out:
                     print(f"  download failed: {(out + err).strip()[:200]}")
                     continue
-            dp, dq = (50, 50) if mn == "zion50" else (100, 40)
-            script = launch_zion(inst, args.id, dp, dq)
+            script = launch_zion(inst, args.id, *ZION_DUTY[mn])
         elif mn == "_srb_install":
             script = install_srb_script()
         elif mn == "srb":
             script = launch_srb(inst, args.id)
+        elif mn == "srb-prl":
+            script = launch_srb(inst, args.id, ("prl",))
+        elif mn == "srb-qtu":
+            script = launch_srb(inst, args.id, ("qtu",))
         else:
-            print(f"  unknown miner '{mn}' (srb|zion|xmr|all)")
+            print(f"  unknown miner '{mn}' "
+                  f"(full|zion|zionmax|prl|qtu|srb|srb-prl|srb-qtu|xmr|all)")
             continue
         rc, out, err = ssh(inst, script, timeout=180)
+        print((out + err).strip() or f"(exit {rc})")
+
+
+def cmd_stop(args):
+    inst = [i for i in instances() if str(i["id"]) == args.id]
+    if not inst:
+        raise SystemExit(f"instance {args.id} not found")
+    inst = inst[0]
+    for mn in args.miners:
+        script = stop_script(mn)
+        if not script:
+            print(f"[{args.id}] unknown stop target '{mn}' "
+                  f"(zion|srb|srb-prl|srb-qtu|xmr|all)")
+            continue
+        print(f"[{args.id}] stop {mn}…")
+        rc, out, err = ssh(inst, script, timeout=60)
         print((out + err).strip() or f"(exit {rc})")
 
 
@@ -783,10 +839,31 @@ def render_dashboard(rigs, ts):
   <div class=sub>gpu {g.get('util','?')} · {g.get('power','?')} · {g.get('temp','?')} · vram {g.get('mem','?')} · <span class=dim>{r['ssh']}</span></div>
   {err}<table>{rows}</table>
   <div class=btns>
-    <button onclick="launch({r['id']},'srb')">▸ srb dual</button>
-    <button onclick="launch({r['id']},'zion')">▸ zion dual</button>
-    <button onclick="launch({r['id']},'xmr')">▸ xmr</button>
-    <button onclick="launch({r['id']},'all')" class=dim2>▸ all</button>
+    <button onclick="launch({r['id']},'full')" class=gold>▸ FULL deploy</button>
+    <button onclick="stop({r['id']},'all')" class=red>■ all</button>
+  </div>
+  <div class=btns>
+    <span class=lbl>zion</span>
+    <button onclick="launch({r['id']},'zion')">50/50</button>
+    <button onclick="launch({r['id']},'prl')">prl</button>
+    <button onclick="launch({r['id']},'qtu')">qtu</button>
+    <button onclick="stop({r['id']},'zion')" class=red>■</button>
+    <button onclick="logs({r['id']},'zion')">log</button>
+  </div>
+  <div class=btns>
+    <span class=lbl>srb</span>
+    <button onclick="launch({r['id']},'srb')">dual</button>
+    <button onclick="launch({r['id']},'srb-prl')">prl</button>
+    <button onclick="launch({r['id']},'srb-qtu')">qtu</button>
+    <button onclick="stop({r['id']},'srb')" class=red>■</button>
+    <button onclick="logs({r['id']},'srb')">log</button>
+  </div>
+  <div class=btns>
+    <span class=lbl>xmr</span>
+    <button onclick="launch({r['id']},'xmr')">start</button>
+    <button onclick="stop({r['id']},'xmr')" class=red>■</button>
+    <button onclick="logs({r['id']},'xmr')">log</button>
+    <button onclick="logs({r['id']},'all')">all-logs</button>
   </div>
   <form onsubmit="return run(this,{r['id']})"><input name=cmd placeholder="ssh cmd…"><button>run</button></form>
 </div>""")
@@ -799,9 +876,12 @@ table{{width:100%;border-collapse:collapse;margin-top:8px}} td{{padding:2px 6px}
 input,select{{background:#0b0e14;border:1px solid #232c3d;color:#cfd8e3;padding:4px}}
 input{{width:55%}}
 button{{background:#1f6feb;color:#fff;border:0;padding:4px 10px;border-radius:4px;cursor:pointer}}
-.btns{{margin:8px 0;display:flex;gap:6px}}
+.btns{{margin:6px 0;display:flex;gap:6px;align-items:center;flex-wrap:wrap}}
 .btns button{{background:#21262d;border:1px solid #30363d;font-size:12px}}
 .btns button:hover{{border-color:#1f6feb}} .dim2{{opacity:.7}}
+.btns .lbl{{color:#8b98a9;font-size:11px;text-transform:uppercase;letter-spacing:.05em;min-width:34px}}
+.btns .gold{{background:#332d10;border-color:#9e7c1e;color:#fcd116}}
+.btns .red{{background:#2d1416;border-color:#7a2e2e;color:#ff9b93}}
 #market{{margin-top:22px;border-top:1px solid #232c3d;padding-top:10px}}
 #market th{{color:#8b98a9;text-align:left;padding:2px 6px;font-weight:normal}}
 #market td{{padding:2px 6px;border-top:1px solid #1c2330}}
@@ -814,9 +894,16 @@ button{{background:#1f6feb;color:#fff;border:0;padding:4px 10px;border-radius:4p
   <h1>market — offers (cheapest first)</h1>
   <form onsubmit="return offers()">
     <select name=gpu>
-      <option value="RTX_3060">RTX 3060</option><option value="RTX_3070">RTX 3070</option>
-      <option value="RTX_3060_Ti">RTX 3060 Ti</option><option value="RTX_4060">RTX 4060</option>
-      <option value="RTX_3080">RTX 3080</option><option value="any">any GPU</option>
+      <option value="RTX_3060">RTX 3060</option><option value="RTX_3060_Ti">RTX 3060 Ti</option>
+      <option value="RTX_3070">RTX 3070</option><option value="RTX_3080">RTX 3080</option>
+      <option value="RTX_3090">RTX 3090</option><option value="RTX_4060">RTX 4060</option>
+      <option value="RTX_4060_Ti">RTX 4060 Ti</option><option value="RTX_4070">RTX 4070</option>
+      <option value="RTX_4080">RTX 4080</option><option value="RTX_4090">RTX 4090</option>
+      <option value="RTX_5090">RTX 5090</option><option value="A4000">A4000</option>
+      <option value="A5000">A5000</option><option value="A6000">A6000</option>
+      <option value="L40">L40</option><option value="L40S">L40S</option>
+      <option value="A100_PCIE">A100 PCIe</option><option value="H100">H100</option>
+      <option value="any">any GPU</option>
     </select>
     <input name=maxdph placeholder="max $/h (e.g. 0.08)" style="width:130px">
     <button>search</button>
@@ -829,6 +916,10 @@ setTimeout(()=>location.reload(),30000);
 function run(f,id){{fetch('api/exec?id='+id+'&cmd='+encodeURIComponent(f.cmd.value)).then(r=>r.text()).then(alert);return false}}
 function launch(id,m){{if(!confirm('launch '+m+' on '+id+'?'))return;
   fetch('api/launch?id='+id+'&m='+m,{{method:'POST'}}).then(r=>r.text()).then(alert)}}
+function stop(id,m){{if(!confirm('stop '+m+' on '+id+'?'))return;
+  fetch('api/stop?id='+id+'&m='+m,{{method:'POST'}}).then(r=>r.text()).then(alert)}}
+function logs(id,src){{fetch('api/logs?id='+id+'&src='+src).then(r=>r.text()).then(t=>{{
+  const w=window.open('','_blank');w.document.write('<pre style="background:#0b0e14;color:#cfd8e3;padding:16px;white-space:pre-wrap;font:12px monospace">'+t.replace(/</g,'&lt;')+'</pre>')}})}}
 function offers(){{const f=document.forms[document.forms.length-1]||document.querySelector('#market form');
   const g=f.gpu.value,d=f.maxdph.value;
   document.getElementById('mstat').textContent=' searching…';
@@ -970,11 +1061,25 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(json.dumps({"error": str(e)}), 500, "application/json")
         elif u.path == "/api/logs":
             iid = q.get("id", [""])[0]
+            src = q.get("src", ["all"])[0]
             inst = [i for i in instances() if str(i["id"]) == iid]
             if not inst:
                 self._send("bad request", 400, "text/plain")
                 return
-            script = '''
+            if src == "zion":
+                script = '''
+tmux capture-pane -t zion -p 2>/dev/null | tail -40
+[ -f /root/zion.log ] && echo "=== /root/zion.log ===" && tail -40 /root/zion.log
+'''
+            elif src == "srb":
+                script = '''
+for s in srb-qtu srb-prl; do tmux capture-pane -t "$s" -p 2>/dev/null | tail -25 | sed "s/^/[$s] /"; done
+for f in /root/srb-*.log; do [ -f "$f" ] && echo "=== $f ===" && tail -20 "$f"; done
+'''
+            elif src == "xmr":
+                script = '[ -f /root/xmrig.log ] && tail -45 /root/xmrig.log'
+            else:
+                script = '''
 tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null | while read p; do echo "=== $p ==="; tmux capture-pane -t "$p" -p 2>/dev/null | tail -18; done
 for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -f "$f" ] && echo "=== $f ===" && tail -15 "$f"; done
 '''
@@ -1047,6 +1152,22 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
                 self._send(f"failed: {e}", 500, "text/plain")
             except Exception as e:
                 self._send(f"failed: {e}", 500, "text/plain")
+        elif u.path == "/api/stop":
+            if readonly():
+                self._send("readonly mode", 403, "text/plain")
+                return
+            iid, mn = q.get("id", [""])[0], q.get("m", [""])[0]
+            try:
+                ns = argparse.Namespace(id=iid, miners=[mn])
+                import io, contextlib
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                    cmd_stop(ns)
+                self._send(buf.getvalue(), ctype="text/plain")
+            except SystemExit as e:
+                self._send(f"failed: {e}", 500, "text/plain")
+            except Exception as e:
+                self._send(f"failed: {e}", 500, "text/plain")
         elif u.path == "/api/rent":
             if readonly():
                 self._send("readonly mode", 403, "text/plain")
@@ -1105,7 +1226,11 @@ def main():
     p = sub.add_parser("launch", help="start miners on a rig (tmux)")
     p.add_argument("id")
     p.add_argument("miners", nargs="+",
-                   help="srb zion xmr | all")
+                   help="full|zion|zionmax|prl|qtu|srb|srb-prl|srb-qtu|xmr|all")
+    p = sub.add_parser("stop", help="stop miners on a rig")
+    p.add_argument("id")
+    p.add_argument("miners", nargs="+",
+                   help="zion|srb|srb-prl|srb-qtu|xmr|all")
     p = sub.add_parser("daemon")
     p.add_argument("--interval", type=int, default=60)
     p.add_argument("--json-out", default="status.json")
@@ -1130,6 +1255,8 @@ def main():
         return cmd_rent(args)
     if args.cmd == "launch":
         return cmd_launch(args)
+    if args.cmd == "stop":
+        return cmd_stop(args)
     if args.cmd == "daemon":
         return cmd_daemon(args)
 
