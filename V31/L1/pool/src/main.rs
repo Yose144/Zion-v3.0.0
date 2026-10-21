@@ -194,6 +194,86 @@ async fn main() -> anyhow::Result<()> {
     };
     let pool = Arc::new(Mutex::new(Pool::try_new(config, telemetry.clone())?));
 
+    if let Some(store) = share_store.as_ref() {
+        let pending_events = store.pending_coin_revenue()?;
+        if !pending_events.is_empty() {
+            let mut pool = pool.lock().expect("pool lock poisoned");
+            let state_path: String = pool
+                .config
+                .state_path
+                .as_deref()
+                .ok_or_else(|| anyhow::anyhow!("pending native revenue requires PPLNS state persistence"))?
+                .to_string();
+            for event in pending_events {
+                let (emitted, emitted_total, payouts) = if pool
+                    .pplns
+                    .has_applied_revenue_event(&event.event_id)
+                {
+                    let payouts = pool.pending_revenue_payouts(&event.event_id);
+                    let outbox_count = store.coin_revenue_outbox_count(&event.event_id)?;
+                    let emitted = event.emitted.max(payouts.len());
+                    if outbox_count < emitted {
+                        anyhow::bail!(
+                                "native revenue event {} is snapshotted but its payout outbox is incomplete",
+                                event.event_id
+                            );
+                    }
+                    let emitted_total = if event.emitted > 0 {
+                        event.emitted_total
+                    } else {
+                        payouts
+                            .iter()
+                            .map(|(_, payout)| payout.amount)
+                            .fold(0u64, u64::saturating_add)
+                    };
+                    (emitted, emitted_total, payouts)
+                } else {
+                    let outcome = pool
+                        .on_coin_revenue(
+                            &event.coin,
+                            event.amount_native,
+                            event.ref_height,
+                            &event.event_id,
+                        )
+                        .with_context(|| {
+                            format!("failed to replay native revenue event {}", event.event_id)
+                        })?;
+                    (outcome.emitted, outcome.emitted_total, outcome.payouts)
+                };
+
+                store
+                    .prepare_coin_revenue(&event.event_id, emitted, emitted_total, &payouts)
+                    .with_context(|| {
+                        format!(
+                            "failed to recover outbox for revenue event {}",
+                            event.event_id
+                        )
+                    })?;
+
+                pool.pplns.save_if_dirty(&state_path).with_context(|| {
+                    format!(
+                        "failed to persist recovered PPLNS state for {}",
+                        event.event_id
+                    )
+                })?;
+                store
+                    .complete_coin_revenue(&event.event_id)
+                    .with_context(|| {
+                        format!(
+                            "failed to commit recovered revenue event {}",
+                            event.event_id
+                        )
+                    })?;
+                info!(
+                    event = %event.event_id,
+                    emitted,
+                    emitted_total,
+                    "recovered pending native revenue event"
+                );
+            }
+        }
+    }
+
     let server = StratumServer::new(pool.clone()).with_share_store(share_store.clone());
 
     // ── Notifications (Telegram/SMTP/OASIS/webhook) ───────────────────────
