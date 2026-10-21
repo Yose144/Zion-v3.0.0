@@ -220,6 +220,7 @@ const t = {
     walletTitle: { cs: 'Připojte peněženku', en: 'Connect your wallet' },
     walletSubtitle: { cs: 'Připojte se k Base L2 pro vytvoření nabídky.', en: 'Connect to Base L2 to create a listing.' },
     errorIpfs: { cs: 'Nahrání na IPFS selhalo', en: 'IPFS upload failed' },
+    errorAuth: { cs: 'Pro vytvoření artefaktu se přihlaste přes ZIS', en: 'Sign in with ZIS to create an artifact' },
     errorTransaction: { cs: 'Transakce selhala', en: 'Transaction failed' },
     sectionAsset: { cs: 'Aktivum', en: 'Asset' },
     labelName: { cs: 'Název *', en: 'Name *' },

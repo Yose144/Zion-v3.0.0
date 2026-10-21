@@ -7,16 +7,25 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+/// @dev Minimal interface to resolve the creator of a token on a ZIONArtifact-style
+///      ERC-1155. Used to authorize royalty setters.
+interface IArtifactCreator {
+    function tokenCreator(uint256 tokenId) external view returns (address);
+}
+
 /// @title ZIONMarketplace — ERC-1155 marketplace with hybrid L1/L2 payment
 /// @notice Fixed-price listings + auctions. Payment in wZION (L2) OR native ZION (L1 via bridge).
 /// @dev Royalties: 2.5% marketplace fee + 5% creator royalty on secondary sales.
 ///      L1 payment: buyer sends ZION to bridge vault with memo MARKETBUY:listingId,
 ///      watcher calls relayerSettle() — NFT transfers on L2, seller gets wZION via bridge.
+///      Outbid auction funds use pull-pattern refunds (pendingReturns) so a reverting
+///      bidder cannot DoS the auction.
 contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
     IERC20 public immutable wzion;
+    address public feeRecipient;
     uint256 public constant MARKETPLACE_FEE_BPS = 250;   // 2.5%
     uint256 public constant ROYALTY_BPS = 500;            // 5%
     uint256 public constant MAX_ROYALTY_BPS = 1000;       // 10% cap
@@ -48,6 +57,8 @@ contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
     mapping(address => mapping(uint256 => uint256)) public royaltyBps;
     /// @dev nftAddress => tokenId => creator (royalty recipient)
     mapping(address => mapping(uint256 => address)) public royaltyRecipient;
+    /// @dev Outbid auction funds claimable by the previous bidder (pull pattern)
+    mapping(address => uint256) public pendingReturns;
 
     uint256 private nextListingId = 1;
 
@@ -74,9 +85,12 @@ contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
     event AuctionSettled(uint256 indexed listingId, address winner, uint256 amount);
     event RoyaltySet(address indexed nftAddress, uint256 indexed tokenId, address recipient, uint256 bps);
     event L1Settled(uint256 indexed listingId, address indexed buyer, uint256 quantity, uint256 totalPrice);
+    event FeeRecipientSet(address indexed recipient);
+    event RefundWithdrawn(address indexed account, uint256 amount);
 
     constructor(address _wzion) {
         wzion = IERC20(_wzion);
+        feeRecipient = msg.sender;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
     }
@@ -198,7 +212,7 @@ contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
         _checkExpiry(listing);
 
         uint256 totalPrice = listing.pricePerItem * quantity;
-        uint256 fee = (totalPrice * MARKETPLACE_FEE_BPS) / 10000;
+        uint256 fee = feeRecipient == address(0) ? 0 : (totalPrice * MARKETPLACE_FEE_BPS) / 10000;
         uint256 royalty = _calculateRoyalty(listing.nftAddress, listing.tokenId, totalPrice);
         uint256 sellerProceeds = totalPrice - fee - royalty;
 
@@ -211,6 +225,9 @@ contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
         // Pay seller, fee recipient, and royalty recipient
         if (sellerProceeds > 0) {
             require(wzion.transfer(listing.seller, sellerProceeds), "Seller payment failed");
+        }
+        if (fee > 0) {
+            require(wzion.transfer(feeRecipient, fee), "Fee payment failed");
         }
         if (royalty > 0) {
             address recipient = royaltyRecipient[listing.nftAddress][listing.tokenId];
@@ -305,7 +322,9 @@ contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
 
     // ── Bidding (Auction) ───────────────────────────────────────────
 
-    /// @notice Place a bid on an auction
+    /// @notice Place a bid on an auction. The previous bidder's funds are
+    ///         credited to pendingReturns (pull pattern) instead of being
+    ///         pushed, so a reverting bidder cannot block the auction.
     function bid(uint256 listingId, uint256 amount) external nonReentrant {
         Listing storage listing = listings[listingId];
         Auction storage auction = auctions[listingId];
@@ -318,9 +337,9 @@ contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
             "Bid payment failed"
         );
 
-        // Refund previous bidder
+        // Credit previous bidder for pull-withdrawal
         if (auction.highestBidder != address(0)) {
-            require(wzion.transfer(auction.highestBidder, auction.highestBid), "Refund failed");
+            pendingReturns[auction.highestBidder] += auction.highestBid;
         }
 
         auction.highestBid = amount;
@@ -328,6 +347,15 @@ contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
         auction.bidCount++;
 
         emit BidPlaced(listingId, msg.sender, amount);
+    }
+
+    /// @notice Withdraw wZION credited after being outbid
+    function withdrawRefund() external nonReentrant {
+        uint256 amount = pendingReturns[msg.sender];
+        require(amount > 0, "Nothing to withdraw");
+        pendingReturns[msg.sender] = 0;
+        require(wzion.transfer(msg.sender, amount), "Refund failed");
+        emit RefundWithdrawn(msg.sender, amount);
     }
 
     /// @notice Settle an ended auction (transfer NFT to winner, pay seller)
@@ -342,12 +370,15 @@ contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
         listing.active = false;
 
         uint256 totalPrice = auction.highestBid;
-        uint256 fee = (totalPrice * MARKETPLACE_FEE_BPS) / 10000;
+        uint256 fee = feeRecipient == address(0) ? 0 : (totalPrice * MARKETPLACE_FEE_BPS) / 10000;
         uint256 royalty = _calculateRoyalty(listing.nftAddress, listing.tokenId, totalPrice);
         uint256 sellerProceeds = totalPrice - fee - royalty;
 
         if (sellerProceeds > 0) {
             require(wzion.transfer(listing.seller, sellerProceeds), "Seller payment failed");
+        }
+        if (fee > 0) {
+            require(wzion.transfer(feeRecipient, fee), "Fee payment failed");
         }
         if (royalty > 0) {
             address recipient = royaltyRecipient[listing.nftAddress][listing.tokenId];
@@ -367,7 +398,9 @@ contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
 
     // ── Royalty Management ──────────────────────────────────────────
 
-    /// @notice Set royalty for a token (creator only, max 10%)
+    /// @notice Set royalty for a token. Caller must be the token creator as
+    ///         reported by the NFT contract (tokenCreator), or an admin.
+    ///         For non-ZION NFT contracts (no tokenCreator), admin only.
     function setRoyalty(
         address nftAddress,
         uint256 tokenId,
@@ -375,11 +408,26 @@ contract ZIONMarketplace is AccessControl, ERC1155Holder, ReentrancyGuard {
         uint256 bps
     ) external {
         require(bps <= MAX_ROYALTY_BPS, "Royalty too high");
-        // Only the NFT contract's creator can set royalty
-        // (in production, verify via the NFT contract's tokenCreator mapping)
+        if (!hasRole(ADMIN_ROLE, msg.sender)) {
+            address creator;
+            try IArtifactCreator(nftAddress).tokenCreator(tokenId) returns (address c) {
+                creator = c;
+            } catch {
+                revert("Not authorized");
+            }
+            require(creator == msg.sender, "Not token creator");
+        }
         royaltyBps[nftAddress][tokenId] = bps;
         royaltyRecipient[nftAddress][tokenId] = recipient;
         emit RoyaltySet(nftAddress, tokenId, recipient, bps);
+    }
+
+    // ── Admin ───────────────────────────────────────────────────────
+
+    /// @notice Set the marketplace fee recipient. address(0) disables the fee.
+    function setFeeRecipient(address recipient) external onlyRole(ADMIN_ROLE) {
+        feeRecipient = recipient;
+        emit FeeRecipientSet(recipient);
     }
 
     // ── View Functions ──────────────────────────────────────────────

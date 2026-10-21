@@ -91,9 +91,11 @@ export default function ItemDetailPage() {
     [isConnected, address, display.owner]
   );
 
+  // MARKETBUY memo uses the ON-CHAIN listing id (chainListingId), which is
+  // what the L1 watcher feeds into relayerSettle(listingId, buyer, qty).
   const l1Memo = address
-    ? `MARKETBUY:${display.id}:${address}:${l1Qty || '1'}`
-    : `MARKETBUY:${display.id}:<YOUR_L2_ADDRESS>:1`;
+    ? `MARKETBUY:${display.listingId ?? '?'}:${address}:${l1Qty || '1'}`
+    : `MARKETBUY:${display.listingId ?? '?'}:<YOUR_L2_ADDRESS>:1`;
 
   const copyL1Instructions = () => {
     const text = t('item.copyL1Text', { price, vault: ZION_BRIDGE_L1_VAULT, memo: l1Memo });

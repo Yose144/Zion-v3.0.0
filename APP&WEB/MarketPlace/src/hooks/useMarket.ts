@@ -82,13 +82,13 @@ export function priceToWei(price: string): bigint {
 // ── Writes ────────────────────────────────────────────────────────
 
 export function useBuyFixed(listingId: bigint, quantity: bigint, price: string) {
-  const { writeContract, isPending, error, data } = useWriteContract();
+  const { writeContractAsync, isPending, error, data } = useWriteContract();
   const totalWei = priceToWei(price) * quantity;
 
   return {
     buy: async () => {
       if (!ZION_MARKETPLACE_ADDRESS) throw new Error('Marketplace not deployed');
-      return writeContract({
+      return writeContractAsync({
         address: MARKET,
         abi: MARKETPLACE_ABI,
         functionName: 'buy',
@@ -103,12 +103,12 @@ export function useBuyFixed(listingId: bigint, quantity: bigint, price: string) 
 }
 
 export function useBid(listingId: bigint, amount: string) {
-  const { writeContract, isPending, error, data } = useWriteContract();
+  const { writeContractAsync, isPending, error, data } = useWriteContract();
 
   return {
     bid: async () => {
       if (!ZION_MARKETPLACE_ADDRESS) throw new Error('Marketplace not deployed');
-      return writeContract({
+      return writeContractAsync({
         address: MARKET,
         abi: MARKETPLACE_ABI,
         functionName: 'bid',
@@ -122,12 +122,12 @@ export function useBid(listingId: bigint, amount: string) {
 }
 
 export function useCancelListing(listingId: bigint) {
-  const { writeContract, isPending, error, data } = useWriteContract();
+  const { writeContractAsync, isPending, error, data } = useWriteContract();
 
   return {
     cancel: async () => {
       if (!ZION_MARKETPLACE_ADDRESS) throw new Error('Marketplace not deployed');
-      return writeContract({
+      return writeContractAsync({
         address: MARKET,
         abi: MARKETPLACE_ABI,
         functionName: 'cancelListing',
@@ -141,7 +141,7 @@ export function useCancelListing(listingId: bigint) {
 }
 
 export function useCreateListing() {
-  const { writeContract, isPending, error, data } = useWriteContract();
+  const { writeContractAsync, isPending, error, data } = useWriteContract();
 
   return {
     create: async (params: {
@@ -154,7 +154,7 @@ export function useCreateListing() {
       const expiry = params.expiryHours
         ? BigInt(Math.floor(Date.now() / 1000) + params.expiryHours * 3600)
         : 0n;
-      return writeContract({
+      return writeContractAsync({
         address: MARKET,
         abi: MARKETPLACE_ABI,
         functionName: 'createListing',
@@ -168,7 +168,7 @@ export function useCreateListing() {
 }
 
 export function useCreateAuction() {
-  const { writeContract, isPending, error, data } = useWriteContract();
+  const { writeContractAsync, isPending, error, data } = useWriteContract();
 
   return {
     create: async (params: {
@@ -179,7 +179,7 @@ export function useCreateAuction() {
     }) => {
       if (!ZION_MARKETPLACE_ADDRESS) throw new Error('Marketplace not deployed');
       const duration = BigInt(params.durationHours * 3600);
-      return writeContract({
+      return writeContractAsync({
         address: MARKET,
         abi: MARKETPLACE_ABI,
         functionName: 'createAuction',
@@ -203,12 +203,12 @@ export function useIsApprovedForAll(owner?: `0x${string}`, operator = MARKET) {
 }
 
 export function useSetApprovalForAll() {
-  const { writeContract, isPending, error, data } = useWriteContract();
+  const { writeContractAsync, isPending, error, data } = useWriteContract();
 
   return {
     approve: async () => {
       if (!ZION_ARTIFACT_NFT_ADDRESS) throw new Error('NFT contract not deployed');
-      return writeContract({
+      return writeContractAsync({
         address: NFT,
         abi: ARTIFACT_NFT_ABI,
         functionName: 'setApprovalForAll',
@@ -222,7 +222,7 @@ export function useSetApprovalForAll() {
 }
 
 export function useMintArtifact() {
-  const { writeContract, isPending, error, data } = useWriteContract();
+  const { writeContractAsync, isPending, error, data } = useWriteContract();
 
   return {
     mint: async (params: {
@@ -235,7 +235,7 @@ export function useMintArtifact() {
       if (!ZION_ARTIFACT_NFT_ADDRESS) throw new Error('NFT contract not deployed');
       const category = toBytes32(params.category);
       const rarity = toBytes32(params.rarity);
-      return writeContract({
+      return writeContractAsync({
         address: NFT,
         abi: ARTIFACT_NFT_ABI,
         functionName: 'mint',
@@ -261,11 +261,11 @@ function toBytes32(input: string): `0x${string}` {
 }
 
 export function useApproveWZION() {
-  const { writeContract, isPending, error, data } = useWriteContract();
+  const { writeContractAsync, isPending, error, data } = useWriteContract();
 
   return {
     approve: async (amount: bigint) => {
-      return writeContract({
+      return writeContractAsync({
         address: WZION,
         abi: WZION_ABI,
         functionName: 'approve',

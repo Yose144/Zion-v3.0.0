@@ -18,9 +18,14 @@ export async function POST(request: NextRequest) {
   try {
     if (stripe && webhookSecret && sig) {
       event = stripe.webhooks.constructEvent(payload, sig, webhookSecret);
-    } else if (stripe) {
-      // Fallback without signature verification (dev / missing secret)
+    } else if (stripe && process.env.NODE_ENV !== 'production') {
+      // Unsigned fallback is dev-only — production must verify signatures
       event = JSON.parse(payload) as Stripe.Event;
+    } else if (stripe) {
+      return NextResponse.json(
+        { error: 'Webhook signature required' },
+        { status: 400 }
+      );
     } else {
       return NextResponse.json(
         { error: 'Stripe is not configured' },

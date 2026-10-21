@@ -16,14 +16,18 @@ import {
 } from '@/lib/oasis-api';
 import { uploadArtifactMetadata } from '@/lib/ipfs';
 import { prisma } from '@/lib/db';
+import { requireAdminAuth } from '@/lib/admin-guard';
 
 /**
- * GET /api/oasis/sync — fetch OASIS game data and sync to marketplace DB
+ * GET /api/oasis/sync — fetch OASIS game data and sync to marketplace DB.
+ * Admin only (writes to the DB).
  *
  * Query params:
  *   type = avatars | quests | prizes | territories | all (default: all)
  */
 export async function GET(req: NextRequest) {
+  const denied = requireAdminAuth(req);
+  if (denied) return denied;
   const { searchParams } = new URL(req.url);
   const type = searchParams.get('type') ?? 'all';
 
@@ -207,6 +211,8 @@ export async function GET(req: NextRequest) {
  * 3. Return metadata URI for client-side minting via smart contract
  */
 export async function POST(req: NextRequest) {
+  const denied = requireAdminAuth(req);
+  if (denied) return denied;
   try {
     const body = await req.json();
     const { type, id, recipient } = body as {

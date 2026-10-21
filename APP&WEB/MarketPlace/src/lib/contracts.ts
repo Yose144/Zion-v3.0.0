@@ -1,10 +1,11 @@
 // ── ZION Marketplace Contract Addresses & ABIs ─────────────────────
-// Base Mainnet (L2) — deployed contracts
+// Base L2 — chain selected via NEXT_PUBLIC_CHAIN_ID (8453 mainnet / 84532 sepolia)
 
-export const CHAIN_ID = 8453; // Base Mainnet
+export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? '8453');
 
 // ── Existing ZION L2 contracts (from V3/L2/contracts/hardhat/deployed-base.json) ───
-export const WZION_ADDRESS = '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6' as const;
+export const WZION_ADDRESS = (process.env.NEXT_PUBLIC_WZION_ADDRESS ??
+  '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6') as `0x${string}`;
 export const ZION_BRIDGE_ADDRESS = '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467' as const;
 export const ZION_STAKING_ADDRESS = '0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B' as const;
 export const ZION_FARM_ADDRESS = '0x167B2753F5D8D9F8e62875cc9e379d7804308B08' as const;
@@ -312,6 +313,105 @@ export const MARKETPLACE_ABI = [
     outputs: [{ name: '', type: 'bytes32' }],
     stateMutability: 'view',
     type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'pendingReturns',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'withdrawRefund',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'feeRecipient',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'recipient', type: 'address' }],
+    name: 'setFeeRecipient',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+] as const;
+
+// ── Marketplace event ABIs (indexer / log decoding) ──────────────────
+export const MARKETPLACE_EVENT_ABIS = [
+  {
+    type: 'event',
+    name: 'ListingCreated',
+    inputs: [
+      { name: 'listingId', type: 'uint256', indexed: true },
+      { name: 'seller', type: 'address', indexed: true },
+      { name: 'nftAddress', type: 'address', indexed: true },
+      { name: 'tokenId', type: 'uint256', indexed: false },
+      { name: 'quantity', type: 'uint256', indexed: false },
+      { name: 'pricePerItem', type: 'uint256', indexed: false },
+      { name: 'isAuction', type: 'bool', indexed: false },
+      { name: 'expiryTime', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'ListingCancelled',
+    inputs: [{ name: 'listingId', type: 'uint256', indexed: true }],
+  },
+  {
+    type: 'event',
+    name: 'ListingPurchased',
+    inputs: [
+      { name: 'listingId', type: 'uint256', indexed: true },
+      { name: 'buyer', type: 'address', indexed: true },
+      { name: 'quantity', type: 'uint256', indexed: false },
+      { name: 'totalPrice', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'BidPlaced',
+    inputs: [
+      { name: 'listingId', type: 'uint256', indexed: true },
+      { name: 'bidder', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'AuctionSettled',
+    inputs: [
+      { name: 'listingId', type: 'uint256', indexed: true },
+      { name: 'winner', type: 'address', indexed: false },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'L1Settled',
+    inputs: [
+      { name: 'listingId', type: 'uint256', indexed: true },
+      { name: 'buyer', type: 'address', indexed: true },
+      { name: 'quantity', type: 'uint256', indexed: false },
+      { name: 'totalPrice', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'RoyaltySet',
+    inputs: [
+      { name: 'nftAddress', type: 'address', indexed: true },
+      { name: 'tokenId', type: 'uint256', indexed: true },
+      { name: 'recipient', type: 'address', indexed: false },
+      { name: 'bps', type: 'uint256', indexed: false },
+    ],
   },
 ] as const;
 

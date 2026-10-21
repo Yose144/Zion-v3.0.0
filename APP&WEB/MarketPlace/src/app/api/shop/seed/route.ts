@@ -6,8 +6,11 @@ import { shopProducts } from '@/data/shopProducts';
 export async function POST(req: NextRequest) {
   try {
     const auth = req.headers.get('authorization');
-    const secret =
-      process.env.SHOP_SEED_SECRET ?? process.env.SHOP_SEED ?? 'zion-dev-seed';
+    // No default secret — must be explicitly configured (fail closed).
+    const secret = process.env.SHOP_SEED_SECRET ?? process.env.SHOP_SEED;
+    if (!secret) {
+      return NextResponse.json({ success: false, error: 'Seed secret not configured' }, { status: 500 });
+    }
     if (auth !== `Bearer ${secret}`) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }

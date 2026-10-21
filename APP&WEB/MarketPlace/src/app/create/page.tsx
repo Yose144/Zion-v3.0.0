@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, usePublicClient } from 'wagmi';
 import { useRouter } from 'next/navigation';
+import { parseEventLogs } from 'viem';
 import { Zap, Gavel, Lock, X, Wallet } from 'lucide-react';
 import OasisImportPanel, { type OasisArtifactDraft } from '@/components/OasisImportPanel';
-import { useMintArtifact, useSetApprovalForAll, useIsApprovedForAll, useCreateListing, useCreateAuction } from '@/hooks/useMarket';
+import { useSetApprovalForAll, useIsApprovedForAll, useCreateListing, useCreateAuction } from '@/hooks/useMarket';
+import { MARKETPLACE_EVENT_ABIS, ZION_MARKETPLACE_ADDRESS } from '@/lib/contracts';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLangT } from '@/lib/useTranslation';
 
 const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'unique'] as const;
@@ -27,6 +30,8 @@ type Rarity = typeof rarities[number];
 
 export default function CreatePage() {
   const { isConnected, address } = useAccount();
+  const { authenticated, loginWithSiwe } = useAuth();
+  const publicClient = usePublicClient();
   const router = useRouter();
   const { t } = useLangT();
 
@@ -42,7 +47,6 @@ export default function CreatePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { mint: mintNft, isPending: minting } = useMintArtifact();
   const { create: createListing, isPending: listing } = useCreateListing();
   const { create: createAuction, isPending: auctioning } = useCreateAuction();
   const { approve: approveAll, isPending: approving } = useSetApprovalForAll();
@@ -72,6 +76,10 @@ export default function CreatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isConnected || !address) return;
+    if (!authenticated) {
+      setError(t('create.errorAuth'));
+      try { await loginWithSiwe(); } catch { return; }
+    }
     setSubmitting(true);
     setError(null);
 
@@ -80,59 +88,100 @@ export default function CreatePage() {
         .filter((t) => t.trait.trim() && t.value.trim())
         .map((t) => ({ trait_type: t.trait, value: t.value }));
 
-      const metadataRes = await fetch('/api/ipfs/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          description,
-          image: imageUrl,
-          attributes,
-          properties: {
-            category: collection.toLowerCase().replace(/\s+/g, '_'),
-            rarity,
-            collection,
-            source: 'marketplace',
-          },
-        }),
-      });
-      const metadataJson = (await metadataRes.json()) as { success: boolean; ipfsUrl?: string; error?: string };
-      if (!metadataRes.ok || !metadataJson.success) {
-        throw new Error(metadataJson.error ?? t('create.errorIpfs'));
+      // IPFS metadata upload is best-effort — the artifact row stores
+      // metadataUri when available; the contract uses a templated URI.
+      let metadataUri = '';
+      try {
+        const metadataRes = await fetch('/api/ipfs/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            description,
+            image: imageUrl,
+            attributes,
+            properties: {
+              category: collection.toLowerCase().replace(/\s+/g, '_'),
+              rarity,
+              collection,
+              source: 'marketplace',
+            },
+          }),
+        });
+        const metadataJson = (await metadataRes.json()) as { success: boolean; ipfsUrl?: string };
+        if (metadataJson.success && metadataJson.ipfsUrl) metadataUri = metadataJson.ipfsUrl;
+      } catch {
+        // non-fatal — continue without IPFS uri
       }
 
-      const tokenId = BigInt(Date.now());
+      const tokenId = BigInt(Date.now()) * 1000n + BigInt(Math.floor(Math.random() * 1000));
       const category = collection.toLowerCase().replace(/\s+/g, '_');
 
-      await mintNft({
-        to: address,
-        tokenId,
-        amount: 1n,
-        category,
-        rarity,
+      // 1. Backend mint (server minter wallet → user's address)
+      const mintRes = await fetch('/api/mint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          to: address,
+          tokenId: tokenId.toString(),
+          amount: 1,
+          category,
+          rarity,
+          name,
+          description,
+          imageUri: imageUrl,
+          metadataUri,
+          stats: Object.fromEntries(attributes.map((a) => [a.trait_type, a.value])),
+        }),
       });
+      const mintJson = (await mintRes.json()) as {
+        success: boolean;
+        data?: { txHash: string; artifactId: string };
+        error?: string;
+      };
+      if (!mintRes.ok || !mintJson.success) {
+        throw new Error(mintJson.error ?? t('create.errorTransaction'));
+      }
+      const artifactId = mintJson.data?.artifactId;
 
-      if (!isApproved) {
-        await approveAll();
+      // 2. List on-chain from the user's wallet (seller = user)
+      let chainListingId: bigint | undefined;
+      let listTxHash: string | undefined;
+      if (listingType !== 'none' && ZION_MARKETPLACE_ADDRESS && publicClient) {
+        if (!isApproved) {
+          await approveAll();
+        }
+        const hash = listingType === 'fixed'
+          ? await createListing({ tokenId, quantity: 1n, pricePerItem: price, expiryHours: undefined })
+          : await createAuction({ tokenId, quantity: 1n, startingPrice: price, durationHours: Number(auctionDuration) || 24 });
+
+        if (hash) {
+          listTxHash = hash as string;
+          const receipt = await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` });
+          const events = parseEventLogs({
+            abi: MARKETPLACE_EVENT_ABIS,
+            logs: receipt.logs,
+          });
+          const created = events.find(
+            (e) => e.eventName === 'ListingCreated' &&
+              (e.address as string).toLowerCase() === ZION_MARKETPLACE_ADDRESS.toLowerCase(),
+          );
+          chainListingId = created ? (created.args as { listingId: bigint }).listingId : undefined;
+        }
       }
 
-      if (listingType === 'fixed') {
-        await createListing({
-          tokenId,
-          quantity: 1n,
-          pricePerItem: price,
-          expiryHours: undefined,
-        });
-      } else if (listingType === 'auction') {
-        await createAuction({
-          tokenId,
-          quantity: 1n,
-          startingPrice: price,
-          durationHours: Number(auctionDuration) || 24,
-        });
+      // 3. Register the on-chain listing in the DB for instant visibility
+      if (chainListingId !== undefined) {
+        await fetch('/api/listings/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ chainListingId: chainListingId.toString(), txHash: listTxHash }),
+        }).catch(() => {});
       }
 
-      router.push('/explore');
+      router.push(artifactId ? `/item/${artifactId}` : '/explore');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('create.errorTransaction'));
     } finally {
@@ -368,13 +417,13 @@ export default function CreatePage() {
 
         <button
           type="submit"
-          disabled={submitting || minting || listing || auctioning || approving}
+          disabled={submitting || listing || auctioning || approving}
           className="zion-button-primary w-full text-lg py-3.5 disabled:opacity-50"
         >
-          {submitting || minting || listing || auctioning || approving ? (
+          {submitting || listing || auctioning || approving ? (
             <span className="flex items-center justify-center gap-2">
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              {minting ? t('create.minting') : listing || auctioning ? t('create.creatingListing') : approving ? t('create.approving') : t('create.mintAndList')}
+              {listing || auctioning ? t('create.creatingListing') : approving ? t('create.approving') : t('create.mintAndList')}
             </span>
           ) : t('create.createListing')}
         </button>

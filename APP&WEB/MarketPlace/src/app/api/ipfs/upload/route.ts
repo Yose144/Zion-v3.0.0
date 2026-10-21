@@ -1,8 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadArtifactMetadata, uploadFile } from '@/lib/ipfs';
+import { requireMarketAuth, isAuthDenied } from '@/lib/zis';
+import { requireAdminAuth } from '@/lib/admin-guard';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
 
-// POST /api/ipfs/upload — upload artifact metadata to IPFS
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
+
+// POST /api/ipfs/upload — upload artifact metadata to IPFS.
+// Requires ZIS session (or admin key) + rate limited — open uploads would
+// let anyone pin arbitrary content through our gateway credentials.
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(`ipfs:${clientIp(req)}`, 20, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { success: false, error: 'Rate limited', retryAfterSec: rl.retryAfterSec },
+      { status: 429 },
+    );
+  }
+  const auth = await requireMarketAuth();
+  if (isAuthDenied(auth) && requireAdminAuth(req) !== null) return auth;
+
   try {
     const contentType = req.headers.get('content-type') ?? '';
 
@@ -37,6 +54,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           { success: false, error: 'no file provided' },
           { status: 400 }
+        );
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        return NextResponse.json(
+          { success: false, error: 'file too large (max 10 MB)' },
+          { status: 413 }
         );
       }
       const buffer = Buffer.from(await file.arrayBuffer());

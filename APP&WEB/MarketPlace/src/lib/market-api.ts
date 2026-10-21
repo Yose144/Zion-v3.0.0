@@ -6,6 +6,7 @@ export interface ItemDetailData extends ArtifactCardData {
   contractAddress: string;
   supply: string;
   owner: string;
+  /** On-chain listing id (Base L2) — used for buy/bid contract calls and L1 memo */
   listingId?: string;
   quantity?: number;
   properties: { trait: string; value: string }[];
@@ -27,11 +28,13 @@ export interface ApiItem {
   metadataUri: string;
   stats?: Record<string, unknown>;
   creator: string;
+  ownerWallet?: string | null;
   totalSupply: number;
   circulatingSupply: number;
   createdAt: string;
   listings?: {
     id: string;
+    chainListingId?: string | null;
     saleType: string;
     price: string;
     quantity: number;
@@ -39,6 +42,14 @@ export interface ApiItem {
     highestBid?: string | null;
     bidCount?: number;
     expiresAt?: string | null;
+  }[];
+  sales?: {
+    buyer: string;
+    seller: string;
+    price: string;
+    quantity: number;
+    txHash: string;
+    createdAt: string;
   }[];
 }
 
@@ -95,10 +106,17 @@ function toDetailData(item: ApiItem): ItemDetailData {
   }
 
   const history: ItemDetailData['history'] = [];
-  const listed = activeListing
-    ? [{ event: 'Listed', price: `${price} wZION`, from: item.creator, time: 'Recently' }]
-    : [];
-  history.push(...listed);
+  if (activeListing) {
+    history.push({ event: 'Listed', price: `${price} wZION`, from: item.creator, time: 'Recently' });
+  }
+  for (const s of item.sales ?? []) {
+    history.push({
+      event: 'Sale',
+      price: `${formatPrice(s.price)} wZION`,
+      from: s.seller,
+      time: new Date(s.createdAt).toLocaleDateString(),
+    });
+  }
   history.push({ event: 'Minted', price: '—', from: item.creator, time: new Date(item.createdAt).toLocaleDateString() });
 
   return {
@@ -116,8 +134,8 @@ function toDetailData(item: ApiItem): ItemDetailData {
     tokenId: item.tokenId,
     contractAddress: item.contractAddress,
     supply: `${item.circulatingSupply} / ${item.totalSupply}`,
-    owner: item.creator,
-    listingId: activeListing?.id,
+    owner: item.ownerWallet ?? item.creator,
+    listingId: activeListing?.chainListingId?.toString() ?? undefined,
     quantity: activeListing?.quantity,
     properties,
     history,

@@ -38,6 +38,10 @@ model Artifact {
   totalSupply     Int      @default(1)
   circulatingSupply Int    @default(1)
 
+  // On-chain state (Base L2)
+  ownerWallet     String?
+  activePrice     BigInt?  // denormalized floor price of cheapest active listing (wei)
+
   // Relations
   listings        Listing[]
   sales           Sale[]
@@ -47,6 +51,7 @@ model Artifact {
   @@index([rarity])
   @@index([creator])
   @@index([source])
+  @@index([activePrice])
 }
 
 // ── Collections (groups of artifacts) ──────────────────────────────
@@ -82,6 +87,11 @@ model Listing {
   createdAt       DateTime @default(now())
   expiresAt       DateTime?
 
+  // On-chain linkage (Base L2)
+  chainListingId  BigInt?  @unique
+  txHash          String?
+  chainId         Int      @default(8453)
+
   // Auction-specific
   highestBidder   String?
   highestBid      BigInt?
@@ -96,6 +106,7 @@ model Listing {
   @@index([status])
   @@index([artifactId])
   @@index([saleType, status])
+  @@index([chainListingId])
 }
 
 // ── Bids (auction bids) ────────────────────────────────────────────
