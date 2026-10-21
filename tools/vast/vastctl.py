@@ -774,6 +774,8 @@ def cmd_launch(args):
         miners = ["srb", "xmr", "_zion_install"]
     ZION_DUTY = {"zion": (50, 50), "zion50": (50, 50), "zionmax": (100, 40),
                  "prl": (100, 0), "qtu": (0, 100)}
+    if getattr(args, "duty", None):
+        ZION_DUTY[miners[0]] = args.duty
     for mn in miners:
         print(f"[{args.id}] launch {mn}…")
         if mn == "xmr":
@@ -1201,8 +1203,15 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
                 self._send("readonly mode", 403, "text/plain")
                 return
             iid, mn = q.get("id", [""])[0], q.get("m", [""])[0]
+            duty = None
+            p_, q_ = q.get("prl", [None])[0], q.get("qtu", [None])[0]
+            if p_ is not None and q_ is not None:
+                try:
+                    duty = (max(0, min(100, int(p_))), max(0, min(100, int(q_))))
+                except ValueError:
+                    duty = None
             try:
-                ns = argparse.Namespace(id=iid, miners=[mn],
+                ns = argparse.Namespace(id=iid, miners=[mn], duty=duty,
                                         config=self.cfg_path)
                 import io, contextlib
                 buf = io.StringIO()

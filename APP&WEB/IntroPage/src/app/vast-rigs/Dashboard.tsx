@@ -293,6 +293,7 @@ export default function Dashboard() {
               style={{ borderColor: `${t.c}66`, background: `${t.c}14`, color: t.c }}
             >
               {name} {t.v >= 1000 ? t.v.toFixed(0) : t.v.toFixed(1)} {t.unit}
+              <span className="text-white/40 font-normal">· A{t.a}</span>
             </span>
           ))}
         </div>
@@ -356,8 +357,41 @@ export default function Dashboard() {
                         onChange={(event) => setInferenceModel(event.target.value)}
                         maxLength={200}
                         spellCheck={false}
+                        list="ai-model-presets"
                         className="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-white/15 bg-black/40 px-3 text-xs normal-case text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none focus:ring-1 focus:ring-[#a371f7]/40 sm:text-sm"
                       />
+                      <datalist id="ai-model-presets">
+                        <option value="Qwen/Qwen2.5-1.5B-Instruct">1.5B · tiny</option>
+                        <option value="Qwen/Qwen2.5-Coder-3B-Instruct">3B · code</option>
+                        <option value="Qwen/Qwen2.5-3B-Instruct">3B · general</option>
+                        <option value="meta-llama/Llama-3.2-3B-Instruct">3B · llama (gated)</option>
+                        <option value="Qwen/Qwen2.5-7B-Instruct">7B · general</option>
+                        <option value="Qwen/Qwen2.5-Coder-7B-Instruct">7B · code</option>
+                        <option value="mistralai/Mistral-7B-Instruct-v0.3">7B · mistral</option>
+                      </datalist>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {[
+                          ["Qwen/Qwen2.5-1.5B-Instruct", "1.5B"],
+                          ["Qwen/Qwen2.5-Coder-3B-Instruct", "3B code"],
+                          ["Qwen/Qwen2.5-3B-Instruct", "3B"],
+                          ["Qwen/Qwen2.5-7B-Instruct", "7B"],
+                          ["Qwen/Qwen2.5-Coder-7B-Instruct", "7B code"],
+                        ].map(([id, tag]) => (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setInferenceModel(id)}
+                            title={id}
+                            className={`rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
+                              inferenceModel === id
+                                ? "border-[#a371f7]/60 bg-[#a371f7]/20 text-[#d8b4fe]"
+                                : "border-white/10 bg-black/30 text-white/50 hover:border-white/25 hover:text-white/80"
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
                     </label>
                     <label className="text-[10px] font-semibold uppercase tracking-wider text-white/45">
                       vLLM VRAM target
@@ -581,12 +615,20 @@ export default function Dashboard() {
                           {ms.map((m, i) => {
                             const coin = coinOf(m);
                             return (
-                              <div key={i} className="flex min-w-0 items-center gap-2 rounded-lg bg-black/30 px-2 py-1.5">
-                                <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ background: `${coin.c}18`, color: coin.c }}>
-                                  {coin.name}
-                                </span>
-                                <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-white">{fmt(m.hashrate)}</span>
-                                <Spark data={m.hist} color={coin.c} />
+                              <div key={i} className="rounded-lg bg-black/30 px-2 py-1.5">
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ background: `${coin.c}18`, color: coin.c }}>
+                                    {coin.name}
+                                  </span>
+                                  <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-white">{fmt(m.hashrate)}</span>
+                                  {m.etime && <span className="shrink-0 text-[10px] text-white/35">up {m.etime}</span>}
+                                  <Spark data={m.hist} color={coin.c} />
+                                </div>
+                                {(m.pool || m.worker) && (
+                                  <div className="mt-1 truncate text-[10px] text-white/30" title={`${m.pool || ""} ${m.worker || ""}`}>
+                                    {m.pool || "—"}{m.worker ? ` · ${m.worker}` : ""}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -631,6 +673,25 @@ export default function Dashboard() {
                         <Pill k={`launch?id=${r.id}&m=zionmax`} onClick={launch("zionmax", `launch zion 100/40 on ${r.id}?`)}>100/40</Pill>
                         <Pill k={`launch?id=${r.id}&m=prl`} onClick={launch("prl", `launch PRL-only on ${r.id}?`)}>PRL</Pill>
                         <Pill k={`launch?id=${r.id}&m=qtu`} onClick={launch("qtu", `launch QTU-only on ${r.id}?`)}>QTU</Pill>
+                        <input
+                          id={`dprl-${r.id}`}
+                          inputMode="numeric"
+                          placeholder="PRL%"
+                          aria-label="PRL duty percent"
+                          className="min-h-8 w-14 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-center text-[11px] text-white placeholder-white/25 focus:border-white/30 focus:outline-none"
+                        />
+                        <input
+                          id={`dqtu-${r.id}`}
+                          inputMode="numeric"
+                          placeholder="QTU%"
+                          aria-label="QTU duty percent"
+                          className="min-h-8 w-14 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-center text-[11px] text-white placeholder-white/25 focus:border-white/30 focus:outline-none"
+                        />
+                        <Pill k="" tone="ghost" onClick={() => {
+                          const p = (document.getElementById(`dprl-${r.id}`) as HTMLInputElement)?.value || "50";
+                          const q = (document.getElementById(`dqtu-${r.id}`) as HTMLInputElement)?.value || "50";
+                          if (confirm(`launch zion ${p}/${q} on ${r.id}?`)) ops(`launch?id=${r.id}&m=zion&prl=${encodeURIComponent(p)}&qtu=${encodeURIComponent(q)}`, "POST");
+                        }}>custom</Pill>
                         <span className="flex-1" />
                         <Pill k={`stop?id=${r.id}&m=zion`} tone="danger" onClick={stopFn("zion")}>■</Pill>
                         <Lg src="zion" />
