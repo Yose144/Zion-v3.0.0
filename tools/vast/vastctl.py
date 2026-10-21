@@ -642,13 +642,12 @@ def cmd_rent(args):
     rc, out, err = run(cli, timeout=120)
     txt = (out + err).strip()
     print(txt)
-    m = re.search(r"'new_contract':\s*(\d+)|new_contract.?=.?(\d+)"
-                  r"|instance.?(\d{7,})", txt)
+    m = re.search(r"'new_contract':\s*(\d+)|new_contract.?=.?(\d+)", txt)
     iid = next((g for g in (m.groups() if m else []) if g), None)
-    if rc != 0:
-        raise SystemExit("rent failed")
-    print(f"\n→ instance {iid or '(check vastai show instances)'} — "
-          f"boot takes ~1-3 min, then: vastctl launch <id> all")
+    if rc != 0 or not iid:
+        raise SystemExit(f"rent failed: {txt[:400] or 'no output'}")
+    print(f"\n→ instance {iid} — "
+          f"boot takes ~1-3 min, then: vastctl launch {iid} all")
 
 
 # ── launchers: per-miner start scripts (tmux sessions) ───────────────────
@@ -894,16 +893,59 @@ button{{background:#1f6feb;color:#fff;border:0;padding:4px 10px;border-radius:4p
   <h1>market — offers (cheapest first)</h1>
   <form onsubmit="return offers()">
     <select name=gpu>
-      <option value="RTX_3060">RTX 3060</option><option value="RTX_3060_Ti">RTX 3060 Ti</option>
-      <option value="RTX_3070">RTX 3070</option><option value="RTX_3080">RTX 3080</option>
-      <option value="RTX_3090">RTX 3090</option><option value="RTX_4060">RTX 4060</option>
-      <option value="RTX_4060_Ti">RTX 4060 Ti</option><option value="RTX_4070">RTX 4070</option>
-      <option value="RTX_4080">RTX 4080</option><option value="RTX_4090">RTX 4090</option>
-      <option value="RTX_5090">RTX 5090</option><option value="A4000">A4000</option>
-      <option value="A5000">A5000</option><option value="A6000">A6000</option>
-      <option value="L40">L40</option><option value="L40S">L40S</option>
-      <option value="A100_PCIE">A100 PCIe</option><option value="H100">H100</option>
       <option value="any">any GPU</option>
+      <optgroup label="GTX / 16xx">
+      <option value="GTX_1050_Ti">GTX 1050 Ti</option><option value="GTX_1060">GTX 1060</option>
+      <option value="GTX_1070">GTX 1070</option><option value="GTX_1070_Ti">GTX 1070 Ti</option>
+      <option value="GTX_1080">GTX 1080</option><option value="GTX_1080_Ti">GTX 1080 Ti</option>
+      <option value="GTX_1650">GTX 1650</option><option value="GTX_1660">GTX 1660</option>
+      <option value="GTX_1660_S">GTX 1660 S</option><option value="GTX_1660_Ti">GTX 1660 Ti</option>
+      <option value="GTX_TITAN_X">GTX TITAN X</option>
+      </optgroup>
+      <optgroup label="RTX 20xx">
+      <option value="RTX_2060">RTX 2060</option><option value="RTX_2060S">RTX 2060S</option>
+      <option value="RTX_2070">RTX 2070</option><option value="RTX_2070S">RTX 2070S</option>
+      <option value="RTX_2080">RTX 2080</option><option value="RTX_2080_Ti">RTX 2080 Ti</option>
+      </optgroup>
+      <optgroup label="RTX 30xx">
+      <option value="RTX_3050">RTX 3050</option><option value="RTX_3060" selected>RTX 3060</option>
+      <option value="RTX_3060_Ti">RTX 3060 Ti</option><option value="RTX_3070">RTX 3070</option>
+      <option value="RTX_3070_Ti">RTX 3070 Ti</option><option value="RTX_3080">RTX 3080</option>
+      <option value="RTX_3080_Ti">RTX 3080 Ti</option><option value="RTX_3090">RTX 3090</option>
+      <option value="RTX_3090_Ti">RTX 3090 Ti</option>
+      </optgroup>
+      <optgroup label="RTX 40xx">
+      <option value="RTX_4060">RTX 4060</option><option value="RTX_4060_Ti">RTX 4060 Ti</option>
+      <option value="RTX_4070">RTX 4070</option><option value="RTX_4070S">RTX 4070S</option>
+      <option value="RTX_4070_Ti">RTX 4070 Ti</option><option value="RTX_4070S_Ti">RTX 4070S Ti</option>
+      <option value="RTX_4080">RTX 4080</option><option value="RTX_4080S">RTX 4080S</option>
+      <option value="RTX_4090">RTX 4090</option>
+      </optgroup>
+      <optgroup label="RTX 50xx">
+      <option value="RTX_5060">RTX 5060</option><option value="RTX_5060_Ti">RTX 5060 Ti</option>
+      <option value="RTX_5070">RTX 5070</option><option value="RTX_5070_Ti">RTX 5070 Ti</option>
+      <option value="RTX_5080">RTX 5080</option><option value="RTX_5090">RTX 5090</option>
+      </optgroup>
+      <optgroup label="Workstation">
+      <option value="RTX_A2000">RTX A2000</option><option value="RTX_A4000">RTX A4000</option>
+      <option value="RTX_A5000">RTX A5000</option><option value="RTX_A6000">RTX A6000</option>
+      <option value="RTX_4000Ada">RTX 4000Ada</option><option value="RTX_4500Ada">RTX 4500Ada</option>
+      <option value="RTX_5000Ada">RTX 5000Ada</option><option value="RTX_5880Ada">RTX 5880Ada</option>
+      <option value="RTX_6000Ada">RTX 6000Ada</option>
+      </optgroup>
+      <optgroup label="Datacenter">
+      <option value="A40">A40</option><option value="A100_PCIE">A100 PCIE</option>
+      <option value="A100_SXM4">A100 SXM4</option><option value="L4">L4</option>
+      <option value="L40">L40</option><option value="L40S">L40S</option>
+      <option value="H100_PCIE">H100 PCIE</option><option value="H100_SXM">H100 SXM</option>
+      <option value="H100_NVL">H100 NVL</option><option value="H200_NVL">H200 NVL</option>
+      </optgroup>
+      <optgroup label="Legacy / Tesla">
+      <option value="Tesla_P40">Tesla P40</option><option value="Tesla_P100">Tesla P100</option>
+      <option value="Tesla_T4">Tesla T4</option><option value="Tesla_V100">Tesla V100</option>
+      <option value="Titan_RTX">Titan RTX</option><option value="Titan_V">Titan V</option>
+      <option value="Titan_Xp">Titan Xp</option>
+      </optgroup>
     </select>
     <input name=maxdph placeholder="max $/h (e.g. 0.08)" style="width:130px">
     <button>search</button>

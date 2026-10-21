@@ -697,8 +697,22 @@ export default function Dashboard() {
                     onChange={(e) => setMGpu(e.target.value)}
                     className="mt-1 block min-h-11 w-full rounded-lg border border-white/15 bg-black/40 px-3 text-sm text-white focus:border-[#fcd116]/50 focus:outline-none focus:ring-1 focus:ring-[#fcd116]/40 sm:min-w-40"
                   >
-                {["RTX_3060", "RTX_3060_Ti", "RTX_3070", "RTX_3080", "RTX_3090", "RTX_4060", "RTX_4060_Ti", "RTX_4070", "RTX_4080", "RTX_4090", "RTX_5090", "A4000", "A5000", "A6000", "L40", "L40S", "A100_PCIE", "A100_SXM4_80GB", "H100", "any"].map((g) => (
-                  <option key={g} value={g}>{g.replace(/_/g, " ")}</option>
+                <option value="any">any GPU</option>
+                {([
+                  ["GTX / 16xx", ["GTX_1050_Ti", "GTX_1060", "GTX_1070", "GTX_1070_Ti", "GTX_1080", "GTX_1080_Ti", "GTX_1650", "GTX_1660", "GTX_1660_S", "GTX_1660_Ti", "GTX_TITAN_X"]],
+                  ["RTX 20xx", ["RTX_2060", "RTX_2060S", "RTX_2070", "RTX_2070S", "RTX_2080", "RTX_2080_Ti"]],
+                  ["RTX 30xx", ["RTX_3050", "RTX_3060", "RTX_3060_Ti", "RTX_3070", "RTX_3070_Ti", "RTX_3080", "RTX_3080_Ti", "RTX_3090", "RTX_3090_Ti"]],
+                  ["RTX 40xx", ["RTX_4060", "RTX_4060_Ti", "RTX_4070", "RTX_4070S", "RTX_4070_Ti", "RTX_4070S_Ti", "RTX_4080", "RTX_4080S", "RTX_4090"]],
+                  ["RTX 50xx", ["RTX_5060", "RTX_5060_Ti", "RTX_5070", "RTX_5070_Ti", "RTX_5080", "RTX_5090"]],
+                  ["Workstation", ["RTX_A2000", "RTX_A4000", "RTX_A5000", "RTX_A6000", "RTX_4000Ada", "RTX_4500Ada", "RTX_5000Ada", "RTX_5880Ada", "RTX_6000Ada", "Q_RTX_6000", "Q_RTX_8000"]],
+                  ["Datacenter", ["A40", "A100_PCIE", "A100_SXM4", "A800_PCIE", "L4", "L40", "L40S", "H100_PCIE", "H100_SXM", "H100_NVL", "H200_NVL", "B300"]],
+                  ["Legacy / Tesla", ["Tesla_P40", "Tesla_P100", "Tesla_T4", "Tesla_V100", "Titan_RTX", "Titan_V", "Titan_Xp", "CMP_170HX"]],
+                ] as [string, string[]][]).map(([grp, gpus]) => (
+                  <optgroup key={grp} label={grp}>
+                    {gpus.map((g) => (
+                      <option key={g} value={g}>{g.replace(/_/g, " ")}</option>
+                    ))}
+                  </optgroup>
                 ))}
                   </select>
                 </label>
