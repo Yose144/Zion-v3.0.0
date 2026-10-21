@@ -6,7 +6,12 @@ for probing rigs (nvidia-smi, miner processes, miner logs, xmrig API).
 
 Usage:
     vastctl status                 # text table of all rigs
-    vastctl serve [--port 8088]    # web dashboard (auto-refresh)
+    vastctl serve [--port 8088]    # web dashboard (auto-refresh + market + launch)
+    vastctl offers [--gpu RTX_3060] [--max-dph 0.08]
+                                   # vast.ai offers, cheapest first
+    vastctl rent <offer_id>        # rent → ssh instance (auto-provision)
+    vastctl launch <id> srb|zion|xmr|all
+                                   # start miners in tmux on a rig
     vastctl deploy-xmrig <id>      # push config + install + launch XMRig
     vastctl exec <id> <cmd...>     # run a command on a rig
     vastctl logs <id>              # tail miner logs on a rig
@@ -36,12 +41,36 @@ DEFAULT_XMRIG_CONFIG = "xmrig-vast-cpu.json"
 XMRIG_VERSION = "6.25.0"
 XMRIG_TARBALL = f"https://github.com/xmrig/xmrig/releases/download/v{XMRIG_VERSION}/xmrig-{XMRIG_VERSION}-linux-static-x64.tar.gz"
 
+# ── miner launch presets (overridable via env) ──────────────────────────
+SRB_DIR = "SRBMiner-Multi-3-7-9"
+SRB_TARBALL = ("https://github.com/doktor83/SRBMiner-Multi/releases/"
+               "download/3.7.9/SRBMiner-Multi-3-7-9-Linux.tar.gz")
+PRL_POOL = os.environ.get("VASTCTL_PRL_POOL", "pearl-eu2.luckypool.io:3360")
+QTU_POOL = os.environ.get("VASTCTL_QTU_POOL", "eu.lproute.com:5660")
+PRL_WALLET = os.environ.get(
+    "VASTCTL_PRL_WALLET",
+    "prl1pwqx7esdehf58j4yqq68q0kts3zy5j2cf8c9gnn9tc3qaj6ptaq6qy35v6h")
+QTU_WALLET = os.environ.get(
+    "VASTCTL_QTU_WALLET",
+    "qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb")
+# zion pool = our project pool (gpu2 QTU route pin matches vast-dual* workers)
+ZION_POOL = os.environ.get("VASTCTL_ZION_POOL", "62.171.141.136:8444")
+ZION_WALLET = os.environ.get(
+    "VASTCTL_ZION_WALLET", "zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6")
+REPO_ROOT = Path(__file__).resolve().parents[2]
+ZION_LOCAL_BIN = os.environ.get(
+    "VASTCTL_ZION_BIN",
+    str(REPO_ROOT / "V31/target/release/zion-miner"))
+RENT_IMAGE = os.environ.get("VASTCTL_RENT_IMAGE",
+                            "nvidia/cuda:12.4.1-base-ubuntu22.04")
+
 # One SSH round-trip: GPU stats, miner processes, miner log tails, xmrig API.
 PROBE_SCRIPT = r'''
 echo "==GPU=="; nvidia-smi --query-gpu=utilization.gpu,power.draw,temperature.gpu,memory.used --format=csv,noheader 2>/dev/null
-echo "==PROC=="; pgrep -af "SRBMiner|xmrig|zion-miner|ccminer" 2>/dev/null | grep -v pgrep
+echo "==PROC=="; ps -eo pid,etime,args 2>/dev/null | grep -E "SRBMiner|xmrig|zion-miner|ccminer" | grep -v grep
+echo "==TMUX=="; tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null | while read p; do echo "--pane:$p--"; tmux capture-pane -t "$p" -p 2>/dev/null | tail -60; done
 echo "==LOGS=="; for f in /root/srb-*.log /root/xmrig.log /root/miner*.log; do [ -f "$f" ] && echo "--$f--" && tail -45 "$f"; done
-echo "==XMRIG_API=="; curl -s -m 3 http://127.0.0.1:16000/2/summary 2>/dev/null
+echo "==XMRIG_API=="; curl -s -m 3 http://127.0.0.1:16000/2/summary 2>/dev/null; echo
 echo "==END=="
 '''
 
@@ -96,10 +125,15 @@ def parse_probe(inst, text):
     sec = None
     log_file = None
     hr_by_log = {}
+    pane_hrs = []          # [(algo, rate, unit, a, r)] from tmux panes
+    pane_algo = None
+    api_buf = []
     for line in text.splitlines():
         line = line.strip("\x1b").rstrip()
         clean = re.sub(r"\x1b\[[0-9;]*m", "", line).strip()
         if clean.startswith("==") and clean.endswith("=="):
+            if sec == "XMRIG_API":
+                _parse_xmrig_api(rig, api_buf)
             sec = clean.strip("=")
             continue
         if sec == "GPU" and "," in clean and not rig["gpu"]:
@@ -108,7 +142,9 @@ def parse_probe(inst, text):
                 rig["gpu"] = {"util": parts[0], "power": parts[1],
                               "temp": parts[2], "mem": parts[3]}
         elif sec == "PROC" and clean:
-            m = {"pid": clean.split()[0], "cmd": " ".join(clean.split()[1:]),
+            toks = clean.split()
+            m = {"pid": toks[0], "etime": toks[1] if len(toks) > 2 else "",
+                 "cmd": " ".join(toks[2:] if len(toks) > 2 else toks[1:]),
                  "algo": None, "pool": None, "worker": None}
             for rx, key in ((ALGO_RE, "algo"), (POOL_RE, "pool"), (WORKER_RE, "worker")):
                 g = rx.search(clean)
@@ -117,6 +153,20 @@ def parse_probe(inst, text):
             if "xmrig" in clean.lower():
                 m["algo"] = m["algo"] or "rx/0"
             rig["miners"].append(m)
+        elif sec == "TMUX":
+            g = re.match(r"^--pane:(.+)--$", clean)
+            if g:
+                pane_algo = None
+                continue
+            ga = re.search(r"\[\s*A\d+\s*-\s*(\S+)\s*\]", clean)
+            if ga:
+                pane_algo = ga.group(1)
+            h = HR_RE.search(clean)
+            if h and pane_algo:
+                pane_hrs.append((pane_algo, {
+                    "rate": float(h.group(1)), "unit": h.group(2),
+                    "a": int(h.group(3)), "r": int(h.group(4)),
+                }))
         elif sec == "LOGS":
             g = LOG_HEAD_RE.match(clean)
             if g:
@@ -128,29 +178,56 @@ def parse_probe(inst, text):
                     "rate": float(h.group(1)), "unit": h.group(2),
                     "a": int(h.group(3)), "r": int(h.group(4)),
                 }
-        elif sec == "XMRIG_API" and clean.startswith("{"):
-            try:
-                api = json.loads(clean)
-                hr = api.get("hashrate", {}).get("total", [])
-                res = api.get("results", {})
-                rig["xmrig_api"] = {
-                    "hps_10s": hr[0] if len(hr) > 0 else 0,
-                    "hps_15m": hr[2] if len(hr) > 2 else 0,
-                    "shares_good": res.get("shares_good", 0),
-                    "shares_total": res.get("shares_total", 0),
-                    "algo": api.get("algo", "rx/0"),
-                }
-            except json.JSONDecodeError:
-                pass
-    # attach log hashrates to miners (best-effort: match algo token to log name)
+        elif sec == "XMRIG_API":
+            if clean:
+                # strip a glued-on ==END== marker (json lacks trailing \n)
+                api_buf.append(re.sub(r"==[A-Z_]+==\s*$", "", clean).rstrip())
+    if sec == "XMRIG_API":
+        _parse_xmrig_api(rig, api_buf)
+
+    # attach hashrates: tmux pane stats (primary), log tails (fallback)
     for m in rig["miners"]:
-        for lf, hr in hr_by_log.items():
-            if (m["algo"] and m["algo"].split("-")[0][:3] in lf) or \
-               (m["algo"] == "pearlhash" and "prl" in lf) or \
-               (m["algo"] == "quantus" and "qtu" in lf):
+        algo = m.get("algo") or ""
+        for pa, hr in reversed(pane_hrs):  # last stat wins
+            if pa.split("-")[0].lower() == algo.split("-")[0].lower() or \
+               pa.lower() == algo.lower():
                 m["hashrate"] = hr
                 break
+        if "hashrate" not in m:
+            for lf, hr in hr_by_log.items():
+                if (algo and algo.split("-")[0][:3] in lf) or \
+                   (algo == "pearlhash" and "prl" in lf) or \
+                   (algo == "quantus" and "qtu" in lf):
+                    m["hashrate"] = hr
+                    break
+        # xmrig proc: fill pool + hashrate from API
+        if "xmrig" in (m.get("cmd") or "").lower() and rig["xmrig_api"]:
+            xa = rig["xmrig_api"]
+            m["pool"] = m["pool"] or xa.get("pool")
+            m["hashrate"] = {"rate": round(xa["hps_15m"], 1), "unit": "H/s",
+                             "a": xa["shares_good"],
+                             "r": xa["shares_total"] - xa["shares_good"]}
     return rig
+
+
+def _parse_xmrig_api(rig, lines):
+    try:
+        api = json.loads("\n".join(lines))
+    except json.JSONDecodeError:
+        return
+    hr = api.get("hashrate", {}).get("total", [])
+    res = api.get("results", {})
+    hps_10s = hr[0] if len(hr) > 0 and hr[0] is not None else 0
+    hps_15m = hr[2] if len(hr) > 2 and hr[2] is not None else hps_10s
+    rig["xmrig_api"] = {
+        "hps_10s": hps_10s,
+        "hps_15m": hps_15m,
+        "shares_good": res.get("shares_good", 0),
+        "shares_total": res.get("shares_total", 0),
+        "algo": api.get("algo", "rx/0"),
+        "pool": (api.get("connection") or {}).get("pool"),
+        "uptime_s": api.get("uptime", 0),
+    }
 
 
 def probe(inst):
@@ -238,12 +315,8 @@ def snapshot(ids=None):
                 h.append(hr["rate"])
                 del h[:-90]
                 m["hist"] = list(h)
-        if r["xmrig_api"]:
-            key = (r["id"], r["xmrig_api"]["algo"])
-            h = _history.setdefault(key, [])
-            h.append(r["xmrig_api"]["hps_15m"])
-            del h[:-90]
-            r["xmrig_api"]["hist"] = list(h)
+        # xmrig_api hist is covered by the rx/0 miner row (hashrate attached)
+
     return {
         "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "total_dph": round(sum(r["dph"] for r in rigs), 4),
@@ -335,6 +408,148 @@ sleep 3 && pgrep -x xmrig && tail -5 /root/xmrig.log 2>/dev/null
     print("[4/4] done — verify with: vastctl status")
 
 
+# ── marketplace: search offers + rent ────────────────────────────────────
+
+def search_offers(gpu=None, max_dph=None, limit=30, order="dph"):
+    """vastai search offers, cheapest first. Returns list of offer dicts."""
+    q = "rentable=true verified=true num_gpus=1"
+    if gpu and gpu.lower() != "any":
+        q += f" gpu_name={gpu.replace(' ', '_')}"
+    if max_dph:
+        q += f" dph_total<={max_dph}"
+    rc, out, err = run([VASTAI, "search", "offers", q, "-o", order,
+                        "--raw", "--limit", str(limit)], timeout=60)
+    if rc != 0:
+        raise SystemExit(f"search failed: {err.strip() or out.strip()}")
+    data = json.loads(out)
+    return data.get("offers", data) if isinstance(data, dict) else data
+
+
+def cmd_offers(args):
+    offers = search_offers(args.gpu, args.max_dph, args.limit)
+    print(f"{'offer':<10} {'GPU':<10} {'$/h':<8} {'$/day':<7} {'inet↓↑':<15} "
+          f"{'reliab':<7} {'cuda':<5} {'ram':<6} {'disk':<6} location")
+    print("-" * 105)
+    for o in offers:
+        rel = f"{o.get('reliability', 0) * 100:.1f}%"
+        inet = f"{o.get('inet_down', 0):.0f}/{o.get('inet_up', 0):.0f}"
+        ram = f"{o.get('cpu_ram', 0) / 1024:.0f}G"
+        print(f"{o['id']:<10} {o.get('gpu_name', '?')[:9]:<10} "
+              f"{o.get('dph_total', 0):<8.4f} {o.get('dph_total', 0) * 24:<7.2f} "
+              f"{inet:<15} {rel:<7} {o.get('cuda_max_good', '?'):<5} "
+              f"{ram:<6} {o.get('disk_space', 0):.0f}G   "
+              f"{o.get('geolocation', '?')}")
+    print(f"\n{len(offers)} offers — rent: vastctl rent <offer_id>")
+
+
+def cmd_rent(args):
+    """Rent an offer → ssh instance. Provision installs tmux + tools."""
+    cli = [VASTAI, "create", "instance", str(args.offer_id),
+           "--image", args.image, "--disk", str(args.disk),
+           "--ssh", "--direct",
+           "--onstart-cmd",
+           "apt-get update -qq; apt-get install -y -qq tmux curl xz-utils "
+           ">/dev/null 2>&1; touch /root/.vastctl-provisioned"]
+    if args.label:
+        cli += ["--label", args.label]
+    rc, out, err = run(cli, timeout=120)
+    txt = (out + err).strip()
+    print(txt)
+    m = re.search(r"'new_contract':\s*(\d+)|new_contract.?=.?(\d+)"
+                  r"|instance.?(\d{7,})", txt)
+    iid = next((g for g in (m.groups() if m else []) if g), None)
+    if rc != 0:
+        raise SystemExit("rent failed")
+    print(f"\n→ instance {iid or '(check vastai show instances)'} — "
+          f"boot takes ~1-3 min, then: vastctl launch <id> all")
+
+
+# ── launchers: per-miner start scripts (tmux sessions) ───────────────────
+
+def _ensure_tools():
+    return ("command -v tmux >/dev/null || "
+            "(apt-get update -qq && apt-get install -y -qq tmux >/dev/null 2>&1)")
+
+
+def launch_srb(inst, iid):
+    """SRBMiner dual: PRL → luckypool + QTU → lproute, one tmux each."""
+    wq, wp = f"vast-{iid}-qtu", f"vast-{iid}-prl"
+    script = f'''
+{_ensure_tools()}
+mkdir -p /root/miners && cd /root/miners &&
+[ -x {SRB_DIR}/SRBMiner-MULTI ] || (wget -q {SRB_TARBALL} && tar xzf {os.path.basename(SRB_TARBALL)}) &&
+cd {SRB_DIR} &&
+tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srb-prl 2>/dev/null; sleep 1
+tmux new-session -d -s srb-qtu "exec ./SRBMiner-MULTI --algorithm quantus --pool {QTU_POOL} --wallet {QTU_WALLET} --worker {wq} --disable-cpu"
+tmux new-session -d -s srb-prl "exec ./SRBMiner-MULTI --algorithm pearlhash --pool {PRL_POOL} --wallet {PRL_WALLET} --worker {wp} --disable-cpu"
+sleep 4; tmux ls; pgrep -c -x SRBMiner-MULTI
+'''
+    return script
+
+
+def launch_zion(inst, iid):
+    """zion-miner native dual PRL+QTU via our pool (gpu2 QTU route pin)."""
+    w = f"vast-dual-{iid}"   # matches ZION_POOL_AUXPOW_GPU_COIN2_ROUTE vast-dual*
+    script = f'''
+{_ensure_tools()}
+mkdir -p /root/zion-native && cd /root/zion-native &&
+[ -x ./zion-miner ] || {{ echo "NO_BIN"; exit 1; }}
+tmux kill-session -t zion 2>/dev/null; sleep 1
+tmux new-session -d -s zion "env \
+ZION_MINER_ID={w} ZION_GPU_BACKEND=cuda ZION_PROFILE=pool ZION_VERBOSE=1 \
+ZION_INTERACTIVE=0 ZION_NO_STICKY=1 ZION_LOG_INTERVAL=15 \
+ZION_V3_TRINITY=1 ZION_AUTOTUNE=1 ZION_AUTOTUNE_SECS=3 ZION_IGNORE_GPU_SELF_TEST_FAIL=1 \
+ZION_STREAM1_ENABLED=0 ZION_STREAM3_ENABLED=0 \
+ZION_STREAM2_ENABLED=1 ZION_STREAM2_FORCE_COIN=PRL ZION_PEARL_K=2048 \
+ZION_PEARL_BATCH=64 ZION_PEARL_STREAMS=4 ZION_PEARL_CUMULATIVE_MMA=1 \
+ZION_STREAM4_ENABLED=1 ZION_STREAM4_FORCE_COIN=QTU ZION_QPOW_BACKEND=cuda \
+ZION_EXT_GPU_TIME_DUTY_PCT=100 ZION_EXT_GPU2_TIME_DUTY_PCT=40 \
+ZION_EXT_GPU_GAP_MS=0 ZION_EXT_GPU_MAX_GAP_MS=5000 ZION_MINER_THREADS=4 \
+exec ./zion-miner --pool {ZION_POOL} --wallet {ZION_WALLET} \
+--worker {w} --gpu cuda --threads 4 --log-interval 15 --v3-trinity"
+sleep 4; tmux ls; pgrep -f "zion-miner --pool" | head -3
+'''
+    return script
+
+
+def cmd_launch(args):
+    inst = [i for i in instances() if str(i["id"]) == args.id]
+    if not inst:
+        raise SystemExit(f"instance {args.id} not found")
+    inst = inst[0]
+    miners = args.miners
+    if "all" in miners:
+        miners = ["srb", "zion", "xmr"]
+    for mn in miners:
+        print(f"[{args.id}] launch {mn}…")
+        if mn == "xmr":
+            ns = argparse.Namespace(id=args.id, config=args.config)
+            cmd_deploy_xmrig(ns)
+            continue
+        if mn == "zion":
+            # push binary if missing remotely
+            rc, out, _ = ssh(inst, "test -x /root/zion-native/zion-miner && echo OK")
+            if "OK" not in out:
+                if not Path(ZION_LOCAL_BIN).exists():
+                    print(f"  skip: no remote binary and local {ZION_LOCAL_BIN} missing")
+                    continue
+                print(f"  pushing {ZION_LOCAL_BIN}…")
+                ssh(inst, "mkdir -p /root/zion-native")
+                rc, _, err = scp(inst, ZION_LOCAL_BIN,
+                                 "/root/zion-native/zion-miner", timeout=180)
+                if rc != 0:
+                    print(f"  scp failed: {err.strip()}")
+                    continue
+            script = launch_zion(inst, args.id)
+        elif mn == "srb":
+            script = launch_srb(inst, args.id)
+        else:
+            print(f"  unknown miner '{mn}' (srb|zion|xmr|all)")
+            continue
+        rc, out, err = ssh(inst, script, timeout=180)
+        print((out + err).strip() or f"(exit {rc})")
+
+
 def render_dashboard(rigs, ts):
     cards = []
     tot_cost = 0.0
@@ -360,8 +575,13 @@ def render_dashboard(rigs, ts):
     <span class=dim>{html.escape(str(r['geo']))} · ${r['dph']:.4f}/h</span></div>
   <div class=sub>gpu {g.get('util','?')} · {g.get('power','?')} · {g.get('temp','?')} · vram {g.get('mem','?')} · <span class=dim>{r['ssh']}</span></div>
   {err}<table>{rows}</table>
-  <form onsubmit="return run(this,{r['id']})"><input name=cmd placeholder="ssh cmd…"><button>run</button>
-  <button formaction="/api/deploy-xmrig?id={r['id']}" formmethod=post type=button onclick="deploy({r['id']})">deploy xmrig</button></form>
+  <div class=btns>
+    <button onclick="launch({r['id']},'srb')">▸ srb dual</button>
+    <button onclick="launch({r['id']},'zion')">▸ zion dual</button>
+    <button onclick="launch({r['id']},'xmr')">▸ xmr</button>
+    <button onclick="launch({r['id']},'all')" class=dim2>▸ all</button>
+  </div>
+  <form onsubmit="return run(this,{r['id']})"><input name=cmd placeholder="ssh cmd…"><button>run</button></form>
 </div>""")
     return f"""<!doctype html><meta charset=utf-8><title>vastctl</title><style>
 body{{background:#0b0e14;color:#cfd8e3;font:14px/1.5 ui-monospace,monospace;margin:16px}}
@@ -369,16 +589,50 @@ h1{{font-size:18px}} .grid{{display:grid;grid-template-columns:repeat(auto-fill,
 .card{{background:#121723;border:1px solid #232c3d;border-radius:8px;padding:12px}}
 .hd b{{color:#7ee787}} .sub,.dim{{color:#8b98a9}} .err{{color:#ff7b72}}
 table{{width:100%;border-collapse:collapse;margin-top:8px}} td{{padding:2px 6px}}
-input{{background:#0b0e14;border:1px solid #232c3d;color:#cfd8e3;padding:4px;width:70%}}
+input,select{{background:#0b0e14;border:1px solid #232c3d;color:#cfd8e3;padding:4px}}
+input{{width:55%}}
 button{{background:#1f6feb;color:#fff;border:0;padding:4px 10px;border-radius:4px;cursor:pointer}}
+.btns{{margin:8px 0;display:flex;gap:6px}}
+.btns button{{background:#21262d;border:1px solid #30363d;font-size:12px}}
+.btns button:hover{{border-color:#1f6feb}} .dim2{{opacity:.7}}
+#market{{margin-top:22px;border-top:1px solid #232c3d;padding-top:10px}}
+#market th{{color:#8b98a9;text-align:left;padding:2px 6px;font-weight:normal}}
+#market td{{padding:2px 6px;border-top:1px solid #1c2330}}
+.rent{{background:#238636}}
 .tot{{color:#8b98a9;margin:10px 0}}</style>
 <h1>vastctl — vast.ai multi-mining</h1>
 <div class=tot>{len(rigs)} rigs · ${tot_cost:.4f}/h = ${tot_cost*24:.2f}/day · refreshed {ts} · auto 30s</div>
 <div class=grid>{''.join(cards)}</div>
+<div id=market>
+  <h1>market — offers (cheapest first)</h1>
+  <form onsubmit="return offers()">
+    <select name=gpu>
+      <option value="RTX_3060">RTX 3060</option><option value="RTX_3070">RTX 3070</option>
+      <option value="RTX_3060_Ti">RTX 3060 Ti</option><option value="RTX_4060">RTX 4060</option>
+      <option value="RTX_3080">RTX 3080</option><option value="any">any GPU</option>
+    </select>
+    <input name=maxdph placeholder="max $/h (e.g. 0.08)" style="width:130px">
+    <button>search</button>
+    <span id=mstat class=dim></span>
+  </form>
+  <div id=offers></div>
+</div>
 <script>
 setTimeout(()=>location.reload(),30000);
 function run(f,id){{fetch('/api/exec?id='+id+'&cmd='+encodeURIComponent(f.cmd.value)).then(r=>r.text()).then(alert);return false}}
-function deploy(id){{if(!confirm('deploy xmrig on '+id+'?'))return;fetch('/api/deploy-xmrig?id='+id,{{method:'POST'}}).then(r=>r.text()).then(alert)}}
+function launch(id,m){{if(!confirm('launch '+m+' on '+id+'?'))return;
+  fetch('/api/launch?id='+id+'&m='+m,{{method:'POST'}}).then(r=>r.text()).then(alert)}}
+function offers(){{const f=document.forms[document.forms.length-1]||document.querySelector('#market form');
+  const g=f.gpu.value,d=f.maxdph.value;
+  document.getElementById('mstat').textContent=' searching…';
+  fetch('/api/offers?gpu='+g+'&max_dph='+d).then(r=>r.json()).then(os=>{{
+    let h='<table><tr><th>offer</th><th>gpu</th><th>$/h</th><th>$/day</th><th>inet↓↑</th><th>reliab</th><th>cuda</th><th>ram</th><th>location</th><th></th></tr>';
+    for(const o of os)h+=`<tr><td>${{o.id}}</td><td>${{o.gpu_name}}</td><td>${{o.dph_total.toFixed(4)}}</td><td>${{(o.dph_total*24).toFixed(2)}}</td><td>${{Math.round(o.inet_down)}}/${{Math.round(o.inet_up)}}</td><td>${{(o.reliability*100).toFixed(1)}}%</td><td>${{o.cuda_max_good}}</td><td>${{Math.round(o.cpu_ram/1024)}}G</td><td>${{o.geolocation}}</td><td><button class=rent onclick="rent(${{o.id}})">rent</button></td></tr>`;
+    document.getElementById('offers').innerHTML=h+'</table>';
+    document.getElementById('mstat').textContent=' '+os.length+' offers';
+  }});return false}}
+function rent(oid){{if(!confirm('RENT offer '+oid+'? this bills your vast.ai account!'))return;
+  fetch('/api/rent?id='+oid,{{method:'POST'}}).then(r=>r.text()).then(t=>{{alert(t);location.reload()}})}}
 </script>"""
 
 
@@ -416,6 +670,17 @@ class Handler(BaseHTTPRequestHandler):
         q = parse_qs(u.query)
         if u.path == "/api/status":
             self._send(json.dumps(snapshot_from(cached_rigs())), ctype="application/json")
+        elif u.path == "/api/offers":
+            try:
+                os_ = search_offers(q.get("gpu", ["RTX_3060"])[0],
+                                    q.get("max_dph", [None])[0] or None)
+                keep = ("id", "gpu_name", "dph_total", "geolocation", "inet_down",
+                        "inet_up", "reliability", "cuda_max_good", "cpu_ram",
+                        "disk_space", "num_gpus", "total_flops", "verification")
+                self._send(json.dumps([{k: o.get(k) for k in keep} for o in os_]),
+                           ctype="application/json")
+            except SystemExit as e:
+                self._send(json.dumps({"error": str(e)}), 500, "application/json")
         elif u.path == "/api/exec":
             if readonly():
                 self._send("readonly mode", 403, "text/plain")
@@ -449,6 +714,40 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(f"failed: {e}", 500, "text/plain")
             except Exception as e:
                 self._send(f"failed: {e}", 500, "text/plain")
+        elif u.path == "/api/launch":
+            if readonly():
+                self._send("readonly mode", 403, "text/plain")
+                return
+            iid, mn = q.get("id", [""])[0], q.get("m", [""])[0]
+            try:
+                ns = argparse.Namespace(id=iid, miners=[mn],
+                                        config=self.cfg_path)
+                import io, contextlib
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                    cmd_launch(ns)
+                self._send(buf.getvalue(), ctype="text/plain")
+            except SystemExit as e:
+                self._send(f"failed: {e}", 500, "text/plain")
+            except Exception as e:
+                self._send(f"failed: {e}", 500, "text/plain")
+        elif u.path == "/api/rent":
+            if readonly():
+                self._send("readonly mode", 403, "text/plain")
+                return
+            oid = q.get("id", [""])[0]
+            try:
+                ns = argparse.Namespace(offer_id=oid, image=RENT_IMAGE,
+                                        disk=20, label="")
+                import io, contextlib
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                    cmd_rent(ns)
+                self._send(buf.getvalue(), ctype="text/plain")
+            except SystemExit as e:
+                self._send(f"failed: {e}", 500, "text/plain")
+            except Exception as e:
+                self._send(f"failed: {e}", 500, "text/plain")
         else:
             self._send("not found", 404, "text/plain")
 
@@ -477,6 +776,20 @@ def main():
     p.add_argument("cmd", nargs=argparse.REMAINDER)
     p = sub.add_parser("logs")
     p.add_argument("id")
+    p = sub.add_parser("offers", help="search vast.ai offers, cheapest first")
+    p.add_argument("--gpu", default="RTX_3060",
+                   help="gpu_name filter or 'any'")
+    p.add_argument("--max-dph", type=float, default=None)
+    p.add_argument("--limit", type=int, default=30)
+    p = sub.add_parser("rent", help="rent an offer → ssh instance")
+    p.add_argument("offer_id")
+    p.add_argument("--image", default=RENT_IMAGE)
+    p.add_argument("--disk", type=int, default=20)
+    p.add_argument("--label", default="")
+    p = sub.add_parser("launch", help="start miners on a rig (tmux)")
+    p.add_argument("id")
+    p.add_argument("miners", nargs="+",
+                   help="srb zion xmr | all")
     p = sub.add_parser("daemon")
     p.add_argument("--interval", type=int, default=60)
     p.add_argument("--json-out", default="status.json")
@@ -495,6 +808,12 @@ def main():
         return cmd_exec(args)
     if args.cmd == "logs":
         return cmd_logs(args)
+    if args.cmd == "offers":
+        return cmd_offers(args)
+    if args.cmd == "rent":
+        return cmd_rent(args)
+    if args.cmd == "launch":
+        return cmd_launch(args)
     if args.cmd == "daemon":
         return cmd_daemon(args)
 
