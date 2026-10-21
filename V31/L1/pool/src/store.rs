@@ -25,6 +25,7 @@ use crate::v3_pplns::PayoutEntry;
 /// v3 (F3): `coin_revenue` audit table — each native-coin revenue event
 /// posted by the treasury oracle, keyed by event id for restart-safe
 /// dedup.
+/// v4: persistent pool history samples.
 /// v5: revenue event prepare/commit journal and durable native payout outbox.
 const SCHEMA_VERSION: u32 = 5;
 
@@ -275,7 +276,31 @@ impl ShareStore {
         }
 
         if current < 5 {
-            conn.execute_batch(
+            let has_status = {
+                let mut stmt = conn.prepare("PRAGMA table_info(coin_revenue)")?;
+                let columns = stmt
+                    .query_map([], |row| row.get::<_, String>(1))?
+                    .collect::<rusqlite::Result<Vec<_>>>()?
+                    .iter()
+                    .any(|column| column == "status");
+                columns
+            };
+            conn.execute_batch(if has_status {
+                r#"
+                CREATE TABLE IF NOT EXISTS coin_revenue_outbox (
+                    id          TEXT PRIMARY KEY,
+                    event_id    TEXT NOT NULL,
+                    chain       TEXT NOT NULL,
+                    height      INTEGER NOT NULL,
+                    payout_json TEXT NOT NULL,
+                    status      TEXT NOT NULL DEFAULT 'pending',
+                    created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
+                    acked_at    INTEGER
+                );
+                CREATE INDEX IF NOT EXISTS idx_coin_revenue_outbox_pending
+                    ON coin_revenue_outbox(chain, status, created_at);
+                "#
+            } else {
                 r#"
                 ALTER TABLE coin_revenue
                     ADD COLUMN status TEXT NOT NULL DEFAULT 'committed';
@@ -291,8 +316,8 @@ impl ShareStore {
                 );
                 CREATE INDEX IF NOT EXISTS idx_coin_revenue_outbox_pending
                     ON coin_revenue_outbox(chain, status, created_at);
-                "#,
-            )
+                "#
+            })
             .context("failed to migrate schema to v5")?;
         }
 
@@ -501,8 +526,11 @@ impl ShareStore {
                 |row| row.get::<_, String>(0),
             )
             .optional()?;
-        row.map(|s| s.parse::<u64>().context("invalid amount_native in coin_revenue"))
-            .transpose()
+        row.map(|s| {
+            s.parse::<u64>()
+                .context("invalid amount_native in coin_revenue")
+        })
+        .transpose()
     }
 
     /// Durably create or retrieve a native revenue journal event.
@@ -582,6 +610,9 @@ impl ShareStore {
             tx.commit()?;
             return Ok(());
         }
+        if !matches!(status.as_str(), "pending" | "prepared") {
+            anyhow::bail!("invalid coin revenue journal status: {status}");
+        }
 
         for (height, payout) in payouts {
             let height_i64 = i64::try_from(*height).context("payout height exceeds i64")?;
@@ -596,8 +627,8 @@ impl ShareStore {
             )?;
         }
         tx.execute(
-            "UPDATE coin_revenue SET emitted = ?2, emitted_total = ?3 \
-             WHERE id = ?1 AND status = 'pending'",
+            "UPDATE coin_revenue SET emitted = ?2, emitted_total = ?3, status = 'prepared' \
+             WHERE id = ?1 AND status IN ('pending', 'prepared')",
             params![
                 event_id,
                 i64::try_from(emitted).context("emitted count exceeds i64")?,
@@ -608,22 +639,25 @@ impl ShareStore {
         Ok(())
     }
 
-    /// Commit a revenue event after its result has been durably snapshotted.
+    /// Commit a prepared revenue event after its result has been durably snapshotted.
     pub fn complete_coin_revenue(&self, event_id: &str) -> Result<()> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let changed = conn.execute(
             "UPDATE coin_revenue SET status = 'committed' \
-             WHERE id = ?1 AND status = 'pending'",
+             WHERE id = ?1 AND status = 'prepared'",
             params![event_id],
         )?;
-        if changed == 0
-            && !conn.query_row(
-                "SELECT EXISTS(SELECT 1 FROM coin_revenue WHERE id = ?1)",
-                params![event_id],
-                |row| row.get::<_, bool>(0),
-            )?
-        {
-            anyhow::bail!("coin revenue journal event does not exist");
+        if changed == 0 {
+            let status = conn
+                .query_row(
+                    "SELECT status FROM coin_revenue WHERE id = ?1",
+                    params![event_id],
+                    |row| row.get::<_, String>(0),
+                )
+                .optional()?;
+            if status.as_deref() != Some("committed") {
+                anyhow::bail!("coin revenue event is missing or not prepared");
+            }
         }
         Ok(())
     }
@@ -632,7 +666,7 @@ impl ShareStore {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
             "SELECT id, coin, amount_native, ref_height, emitted, emitted_total, status \
-             FROM coin_revenue WHERE status = 'pending' ORDER BY ts, id",
+             FROM coin_revenue WHERE status IN ('pending', 'prepared') ORDER BY ts, id",
         )?;
         let rows = stmt.query_map([], |row| {
             Ok((
@@ -655,7 +689,8 @@ impl ShareStore {
                     .parse()
                     .context("invalid amount_native in coin_revenue")?,
                 ref_height: u64::try_from(row.3).context("negative ref_height in coin_revenue")?,
-                emitted: usize::try_from(row.4).context("negative emitted count in coin_revenue")?,
+                emitted: usize::try_from(row.4)
+                    .context("negative emitted count in coin_revenue")?,
                 emitted_total: row
                     .5
                     .parse()
@@ -671,8 +706,11 @@ impl ShareStore {
     pub fn pending_coin_revenue_payouts(&self, chain: &str) -> Result<Vec<CoinRevenuePayout>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT id, height, payout_json FROM coin_revenue_outbox \
-             WHERE chain = ?1 AND status = 'pending' ORDER BY created_at, id",
+            "SELECT outbox.id, outbox.height, outbox.payout_json \
+             FROM coin_revenue_outbox AS outbox \
+             JOIN coin_revenue AS event ON event.id = outbox.event_id \
+             WHERE outbox.chain = ?1 AND outbox.status = 'pending' \
+             AND event.status = 'committed' ORDER BY outbox.created_at, outbox.id",
         )?;
         let rows = stmt.query_map(params![chain], |row| {
             Ok((
@@ -692,6 +730,16 @@ impl ShareStore {
         .collect()
     }
 
+    pub fn coin_revenue_outbox_count(&self, event_id: &str) -> Result<usize> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM coin_revenue_outbox WHERE event_id = ?1",
+            params![event_id],
+            |row| row.get(0),
+        )?;
+        usize::try_from(count).context("negative outbox row count")
+    }
+
     /// Acknowledge payouts after the downstream ledger has durably recorded
     /// them. Repeated acknowledgements are harmless.
     pub fn ack_coin_revenue_payouts(&self, chain: &str, ids: &[String]) -> Result<usize> {
@@ -701,7 +749,10 @@ impl ShareStore {
         for id in ids {
             acked += tx.execute(
                 "UPDATE coin_revenue_outbox SET status = 'acked', acked_at = unixepoch() \
-                 WHERE id = ?1 AND chain = ?2 AND status = 'pending'",
+                 WHERE id = ?1 AND chain = ?2 AND status = 'pending' \
+                 AND EXISTS (SELECT 1 FROM coin_revenue AS event \
+                     WHERE event.id = coin_revenue_outbox.event_id \
+                     AND event.status = 'committed')",
                 params![id, chain],
             )?;
         }
@@ -1223,6 +1274,107 @@ mod tests {
             store.coin_revenue_amount("qtu:bal:0:100").unwrap(),
             Some(100)
         );
+    }
+
+    #[test]
+    fn coin_revenue_journal_outbox_and_ack_are_idempotent() {
+        let store = ShareStore::open_in_memory().unwrap();
+        let event = store
+            .begin_coin_revenue("qtu:event:1", "qtu", 500, 42)
+            .unwrap();
+        assert_eq!(event.status, "pending");
+        assert!(store.complete_coin_revenue("qtu:event:1").is_err());
+
+        let payout = PayoutEntry {
+            miner_id: "alice/rig".into(),
+            address: "qz1alice".into(),
+            amount: 500,
+            share_count: 4,
+            payout_chain: Some("quantus".into()),
+            native_units: true,
+            coin: Some("qtu".into()),
+            revenue_event: Some("qtu:event:1".into()),
+        };
+        store
+            .prepare_coin_revenue("qtu:event:1", 1, 500, &[(42, payout.clone())])
+            .unwrap();
+        assert_eq!(store.pending_coin_revenue().unwrap()[0].status, "prepared");
+        assert!(store
+            .pending_coin_revenue_payouts("quantus")
+            .unwrap()
+            .is_empty());
+        store.complete_coin_revenue("qtu:event:1").unwrap();
+        let pending = store.pending_coin_revenue_payouts("quantus").unwrap();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].height, 42);
+        assert_eq!(pending[0].payout, payout);
+        assert_eq!(store.coin_revenue_outbox_count("qtu:event:1").unwrap(), 1);
+
+        assert_eq!(
+            store
+                .ack_coin_revenue_payouts("pearl", std::slice::from_ref(&pending[0].id))
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            store
+                .ack_coin_revenue_payouts("quantus", std::slice::from_ref(&pending[0].id))
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            store
+                .ack_coin_revenue_payouts("quantus", std::slice::from_ref(&pending[0].id))
+                .unwrap(),
+            0
+        );
+        assert!(store
+            .pending_coin_revenue_payouts("quantus")
+            .unwrap()
+            .is_empty());
+
+        let duplicate = store
+            .begin_coin_revenue("qtu:event:1", "prl", 999, 99)
+            .unwrap();
+        assert_eq!(duplicate.status, "committed");
+        assert_eq!(duplicate.coin, "qtu");
+        assert_eq!(duplicate.amount_native, 500);
+        assert_eq!(duplicate.ref_height, 42);
+    }
+
+    #[test]
+    fn schema_v4_revenue_rows_migrate_as_committed() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE coin_revenue (
+                id TEXT PRIMARY KEY,
+                coin TEXT NOT NULL,
+                amount_native TEXT NOT NULL,
+                ref_height INTEGER NOT NULL DEFAULT 0,
+                emitted INTEGER NOT NULL DEFAULT 0,
+                emitted_total TEXT NOT NULL DEFAULT '0',
+                ts INTEGER NOT NULL DEFAULT (unixepoch())
+            );
+            INSERT INTO coin_revenue (id, coin, amount_native, ref_height)
+                VALUES ('qtu:legacy:1', 'qtu', '77', 9);
+            PRAGMA user_version = 4;",
+        )
+        .unwrap();
+        let store = ShareStore {
+            conn: Mutex::new(conn),
+        };
+
+        store.run_migrations().unwrap();
+        let legacy = store
+            .begin_coin_revenue("qtu:legacy:1", "prl", 999, 100)
+            .unwrap();
+        assert_eq!(legacy.status, "committed");
+        assert_eq!(legacy.coin, "qtu");
+        assert_eq!(legacy.amount_native, 77);
+        assert!(store
+            .pending_coin_revenue_payouts("quantus")
+            .unwrap()
+            .is_empty());
     }
 
     #[test]

@@ -99,8 +99,7 @@ impl PrlPayoutConfig {
                 .unwrap_or_else(|_| "sendfrom".into()),
             rpc_send_account: std::env::var("PRL_RPC_SEND_ACCOUNT")
                 .unwrap_or_else(|_| "default".into()),
-            rpc_fee_rate: std::env::var("PRL_RPC_FEE_RATE")
-                .unwrap_or_else(|_| "0.0001".into()),
+            rpc_fee_rate: std::env::var("PRL_RPC_FEE_RATE").unwrap_or_else(|_| "0.0001".into()),
             rpc_balance_method: std::env::var("PRL_RPC_BALANCE_METHOD")
                 .unwrap_or_else(|_| "getbalance".into()),
             interval: Duration::from_secs(
@@ -123,10 +122,7 @@ impl PrlPayoutConfig {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(0)
                 .min(10_000),
-            dry_run: std::env::var("PRL_PAYOUT_DRY_RUN")
-                .ok()
-                .as_deref()
-                != Some("0"),
+            dry_run: std::env::var("PRL_PAYOUT_DRY_RUN").ok().as_deref() != Some("0"),
             address_hrps: std::env::var("PRL_ADDRESS_HRPS")
                 .ok()
                 .map(|v| {
@@ -149,6 +145,8 @@ struct DrainResponse {
 
 #[derive(Debug, Deserialize)]
 struct DrainEntry {
+    #[serde(default)]
+    outbox_id: Option<String>,
     height: u64,
     miner_id: String,
     address: String,
@@ -220,11 +218,12 @@ impl OysterRpc {
             .await
             .map_err(|e| MultichainError::Internal(format!("oyster rpc decode: {e}")))?;
         if let Some(err) = resp.get("error").filter(|e| !e.is_null()) {
-            return Err(MultichainError::Internal(format!(
-                "oyster {method}: {err}"
-            )));
+            return Err(MultichainError::Internal(format!("oyster {method}: {err}")));
         }
-        Ok(resp.get("result").cloned().unwrap_or(serde_json::Value::Null))
+        Ok(resp
+            .get("result")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null))
     }
 }
 
@@ -304,22 +303,25 @@ async fn tick(
     // 2. Ledger each drained entry.  Native entries only — a flowers-unit
     // entry on the pearl chain has no conversion rate and indicates a
     // pool accounting bug.
+    let mut ack_ids = Vec::new();
     for p in &resp.payouts {
         let Some((id, gross)) = plan_entry(p) else {
             continue;
         };
         let fee = gross.saturating_mul(config.fee_bps as u128) / 10_000;
         let units = gross.saturating_sub(fee);
-        if units < config.min_units {
-            continue;
-        }
+        let status = if units < config.min_units {
+            "dust"
+        } else {
+            "queued"
+        };
         let now = now_secs() as i64;
         let db = db.lock().await;
         db.conn().execute(
             "INSERT OR IGNORE INTO ext_payout_records \
              (id, chain, source_height, miner_id, address, amount_flowers, \
               amount_native, fee_native, status, created_at, updated_at) \
-             VALUES (?1,'pearl',?2,?3,?4,?5,?6,?7,'queued',?8,?8)",
+             VALUES (?1,'pearl',?2,?3,?4,?5,?6,?7,?8,?9,?9)",
             rusqlite::params![
                 id,
                 p.height as i64,
@@ -328,9 +330,34 @@ async fn tick(
                 p.amount_flowers as i64,
                 units.to_string(),
                 fee.to_string(),
+                status,
                 now
             ],
         )?;
+        if let Some(outbox_id) = p.outbox_id.as_ref() {
+            ack_ids.push(outbox_id.clone());
+        }
+    }
+
+    // Unsupported entries remain pending in the pool outbox for inspection.
+    if !ack_ids.is_empty() {
+        let ack_url = format!("{}/admin/external-payouts/ack", config.pool_api);
+        let ack: serde_json::Value = rpc
+            .http
+            .post(&ack_url)
+            .header("X-Admin-Key", &config.admin_key)
+            .json(&serde_json::json!({"chain": "pearl", "ids": ack_ids}))
+            .send()
+            .await
+            .map_err(|e| MultichainError::Internal(format!("pool outbox ACK: {e}")))?
+            .json()
+            .await
+            .map_err(|e| MultichainError::Internal(format!("pool outbox ACK decode: {e}")))?;
+        if ack.get("ok").and_then(|v| v.as_bool()) != Some(true) {
+            return Err(MultichainError::Internal(format!(
+                "pool outbox ACK rejected: {ack}"
+            )));
+        }
     }
 
     // 3. Submit due rows.
@@ -407,8 +434,7 @@ async fn tick(
         // oyster parses both, numbers avoid string coercion quirks.
         let whole = format!("{}.{:08}", units / 100_000_000, units % 100_000_000);
         let amount: serde_json::Number = whole.parse().unwrap_or_else(|_| 0.into());
-        let fee_rate: serde_json::Number =
-            config.rpc_fee_rate.parse().unwrap_or_else(|_| 0.into());
+        let fee_rate: serde_json::Number = config.rpc_fee_rate.parse().unwrap_or_else(|_| 0.into());
         let params = if config.rpc_send_method == "sendfrom" {
             serde_json::json!([config.rpc_send_account, row.address, amount, fee_rate])
         } else {
@@ -429,22 +455,27 @@ async fn tick(
                 info!(id = %row.id, tx = %tx, "prl payout submitted");
             }
             Err(e) => {
-                mark_error(db, &row.id, &e.to_string(), row.attempts, config.max_attempts).await;
+                mark_error(
+                    db,
+                    &row.id,
+                    &e.to_string(),
+                    row.attempts,
+                    config.max_attempts,
+                )
+                .await;
             }
         }
     }
     Ok(())
 }
 
-async fn mark_error(
-    db: &Arc<Mutex<Db>>,
-    id: &str,
-    error: &str,
-    attempts: u32,
-    max_attempts: u32,
-) {
+async fn mark_error(db: &Arc<Mutex<Db>>, id: &str, error: &str, attempts: u32, max_attempts: u32) {
     let next = attempts + 1;
-    let status = if next >= max_attempts { "stalled" } else { "queued" };
+    let status = if next >= max_attempts {
+        "stalled"
+    } else {
+        "queued"
+    };
     let now = now_secs() as i64;
     let db = db.lock().await;
     let _ = db.conn().execute(
@@ -463,6 +494,7 @@ mod tests {
 
     fn entry(unit: &str, coin: Option<&str>, event: Option<&str>) -> DrainEntry {
         DrainEntry {
+            outbox_id: None,
             height: 42,
             miner_id: "alice".into(),
             address: "prl1palice".into(),
@@ -475,8 +507,7 @@ mod tests {
 
     #[test]
     fn native_prl_entry_plans_event_scoped() {
-        let (id, units) =
-            plan_entry(&entry("native", Some("prl"), Some("prl:bal:0:1k"))).unwrap();
+        let (id, units) = plan_entry(&entry("native", Some("prl"), Some("prl:bal:0:1k"))).unwrap();
         assert_eq!(id, "pearl:rev:prl:bal:0:1k:alice");
         assert_eq!(units, 1_000);
     }

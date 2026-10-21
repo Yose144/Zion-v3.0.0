@@ -66,3 +66,52 @@ backups.
   successful save timestamp populated, and `0` save failures.
 - Stratum ports 8444 and 8445 were listening.
 - Public `https://pool.zionterranova.com/public/v1/coins`: HTTP 200, 12 coins.
+
+## Follow-up — native-revenue journal and payout outbox (2026-10-21)
+
+### Scope and implementation
+
+This follow-up closes the native-revenue accounting gap described above. It
+is a code change only: **it has not been deployed to Edge**.
+
+- SQLite schema v5 adds a pending/committed revenue journal and a durable
+  payout outbox. Existing v3/v4 revenue rows migrate as `committed`, because
+  they may already have been distributed. The migration also handles
+  re-entry if the schema change was interrupted before `user_version` moved.
+- Each revenue event gets an idempotency marker in the durable PPLNS snapshot.
+  The pool persists outbox entries first, then the PPLNS state, then commits
+  the journal row. Startup replays pending rows before opening listeners and
+  fails closed if recovery cannot be made durable.
+- External payout POSTs return pending outbox records repeatedly, with
+  `outbox_id` values. A new admin-authenticated ACK endpoint marks them
+  delivered only after the QTC or PRL sweeper has written its own payout
+  ledger. Dust payouts are explicitly ledgered as `dust`; unsupported
+  entries remain unacknowledged for operator review.
+- Revenue intake now returns 5xx on missing durability configuration or
+  persistence errors rather than reporting success after an audit-write
+  failure.
+
+### Validation
+
+- `cargo test --manifest-path V31/Cargo.toml -p zion-pool --lib` —
+  **342 passed, 0 failed**. Includes v4 migration behavior, prepared-event
+  crash recovery, idempotent outbox ACK, and API delivery/retry coverage.
+- `cargo test --manifest-path V31/Cargo.toml -p zion-multichain --lib` —
+  **736 passed, 0 failed, 4 ignored**.
+- `cargo check --manifest-path V31/Cargo.toml -p zion-pool --bin zion-pool` —
+  passed.
+- Targeted Clippy for `zion-pool` and `zion-multichain` all-targets completed
+  successfully; existing warnings remain in unrelated code.
+- `rustfmt --edition 2021 --check` for the touched Rust files and
+  `git diff --check` — passed.
+- No production deploy or live payout was performed as part of this follow-up.
+
+### Remaining pre-deploy checks
+
+- Confirm the targeted test and lint results below after the code changes
+  settle.
+- Exercise startup replay against a copied production database and PPLNS
+  snapshot, including the crash boundaries around outbox, snapshot, and
+  journal commit.
+- Confirm QTC/PRL ledger insertion and ACK with test doubles or regtest,
+  then plan a separately approved deployment window.

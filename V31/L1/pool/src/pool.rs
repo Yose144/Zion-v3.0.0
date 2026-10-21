@@ -9,6 +9,7 @@ use zion_l1_types::{Address, ChainId};
 
 use crate::config::PoolConfig;
 use crate::share::ShareSubmission;
+use crate::store::ShareStore;
 use crate::telemetry::MinerTelemetryRegistry;
 use crate::v3_pplns::{PayoutEntry, PplnsConfig, PplnsEngine};
 use crate::validator::ShareValidator;
@@ -632,6 +633,81 @@ impl Pool {
     }
 }
 
+pub fn recover_pending_coin_revenue(pool: &mut Pool, store: &ShareStore) -> anyhow::Result<usize> {
+    let pending_events = store.pending_coin_revenue()?;
+    if pending_events.is_empty() {
+        return Ok(0);
+    }
+    let state_path = pool
+        .config
+        .state_path
+        .as_deref()
+        .context("pending native revenue requires PPLNS state persistence")?
+        .to_string();
+
+    let mut recovered = 0;
+    for event in pending_events {
+        let (emitted, emitted_total, payouts) =
+            if pool.pplns.has_applied_revenue_event(&event.event_id) {
+                let payouts = pool.pending_revenue_payouts(&event.event_id);
+                let outbox_count = store.coin_revenue_outbox_count(&event.event_id)?;
+                let emitted = event.emitted.max(payouts.len());
+                if outbox_count < emitted {
+                    anyhow::bail!(
+                    "native revenue event {} is snapshotted but its payout outbox is incomplete",
+                    event.event_id
+                );
+                }
+                let emitted_total = if event.emitted > 0 {
+                    event.emitted_total
+                } else {
+                    payouts
+                        .iter()
+                        .map(|(_, payout)| payout.amount)
+                        .fold(0u64, u64::saturating_add)
+                };
+                (emitted, emitted_total, payouts)
+            } else {
+                let outcome = pool
+                    .on_coin_revenue(
+                        &event.coin,
+                        event.amount_native,
+                        event.ref_height,
+                        &event.event_id,
+                    )
+                    .with_context(|| {
+                        format!("failed to replay native revenue event {}", event.event_id)
+                    })?;
+                (outcome.emitted, outcome.emitted_total, outcome.payouts)
+            };
+
+        store
+            .prepare_coin_revenue(&event.event_id, emitted, emitted_total, &payouts)
+            .with_context(|| {
+                format!(
+                    "failed to recover outbox for revenue event {}",
+                    event.event_id
+                )
+            })?;
+        pool.pplns.save_if_dirty(&state_path).with_context(|| {
+            format!(
+                "failed to persist recovered PPLNS state for {}",
+                event.event_id
+            )
+        })?;
+        store
+            .complete_coin_revenue(&event.event_id)
+            .with_context(|| {
+                format!(
+                    "failed to commit recovered revenue event {}",
+                    event.event_id
+                )
+            })?;
+        recovered += 1;
+    }
+    Ok(recovered)
+}
+
 fn parse_worker_address(worker: &str) -> Option<Address> {
     let wallet = worker.split('.').next().unwrap_or(worker).trim();
     if wallet.starts_with("zion1") {
@@ -710,6 +786,69 @@ mod tests {
 
     fn telemetry() -> Arc<Mutex<MinerTelemetryRegistry>> {
         Arc::new(Mutex::new(MinerTelemetryRegistry::new()))
+    }
+
+    #[test]
+    fn startup_recovery_replays_prepared_revenue_after_pre_snapshot_crash() {
+        let root = std::env::temp_dir().join(format!(
+            "zion_pool_revenue_recovery_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let state_path = root.join("pplns.json");
+        let config = PoolConfig {
+            native_payout_coins: vec!["qtu".into()],
+            state_path: Some(state_path.to_string_lossy().into_owned()),
+            ..config()
+        };
+        let store = ShareStore::open_in_memory().unwrap();
+        let mut original = Pool::new(config.clone(), telemetry());
+        original
+            .pplns
+            .register_address_with_chain("alice", "qz1alice", "quantus");
+        original
+            .pplns
+            .record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
+        original.save().unwrap();
+        store
+            .begin_coin_revenue("qtu:recovery:1", "qtu", 5_000_000, 42)
+            .unwrap();
+        let outcome = original
+            .on_coin_revenue("qtu", 5_000_000, 42, "qtu:recovery:1")
+            .unwrap();
+        store
+            .prepare_coin_revenue(
+                "qtu:recovery:1",
+                outcome.emitted,
+                outcome.emitted_total,
+                &outcome.payouts,
+            )
+            .unwrap();
+        drop(original);
+
+        let mut restarted = Pool::try_new(config.clone(), telemetry()).unwrap();
+        assert!(!restarted.pplns.has_applied_revenue_event("qtu:recovery:1"));
+        assert_eq!(
+            recover_pending_coin_revenue(&mut restarted, &store).unwrap(),
+            1
+        );
+        assert!(store.pending_coin_revenue().unwrap().is_empty());
+        assert_eq!(
+            store.coin_revenue_outbox_count("qtu:recovery:1").unwrap(),
+            1
+        );
+        assert_eq!(
+            store.pending_coin_revenue_payouts("quantus").unwrap().len(),
+            1
+        );
+
+        let restored = Pool::try_new(config, telemetry()).unwrap();
+        assert!(restored.pplns.has_applied_revenue_event("qtu:recovery:1"));
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -921,6 +1060,20 @@ mod tests {
         assert_eq!(p.revenue_event.as_deref(), Some("qtu:bal:0:5m"));
         // Nothing leaked into the ZION queue.
         assert!(pool.take_pending_payouts().is_empty());
+
+        let snapshot = pool.pplns.snapshot();
+        let mut restored = Pool::new(
+            PoolConfig {
+                native_payout_coins: vec!["qtu".into()],
+                ..config()
+            },
+            telemetry(),
+        );
+        restored.pplns.restore(snapshot);
+        assert!(matches!(
+            restored.on_coin_revenue("qtu", 5_000_000, 42, "qtu:bal:0:5m"),
+            Err(PoolError::DuplicateRevenueEvent)
+        ));
     }
 
     #[test]

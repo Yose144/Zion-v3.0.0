@@ -489,6 +489,29 @@ Testy: `zion-pool` 314/314, `zion-multichain` 731/731.
 `/root/build/pool-F5` ponechán pro další pool buildy; `/opt/zion` tree
 zůstává dirty (pre-existing).
 
+### F7 — Crash-safe native revenue and payout outbox (2026-10-21, local)
+
+**Implementace je rozpracovaná a zatím není nasazená.** Cílem je uzavřít
+mezeru mezi příjmem QTU/PRL revenue eventu, PPLNS unpaid stavem a
+multichain payout ledgerem:
+
+1. SQLite v5 ukládá revenue event jako `pending`; historické v3/v4 řádky
+   se při migraci považují za `committed`.
+2. Aplikace eventu je idempotentní podle markeru uloženého v PPLNS snapshotu.
+   Payouty se nejprve zapisují do SQLite outboxu, poté se synchronně uloží
+   PPLNS snapshot a journal se označí jako `committed`.
+3. Startup před otevřením stratum/API rekonciluje všechny `pending` eventy.
+   Při chybě journalu, outboxu nebo snapshotu pool nenastartuje.
+4. `POST /admin/external-payouts?chain=...` vrací durable revenue položky
+   opakovaně včetně `outbox_id`. QTC/PRL sweeper nejprve zapisuje do
+   `ext_payout_records`, pak volá autentizovaný
+   `POST /admin/external-payouts/ack`. Dust položky se ledgerují se stavem
+   `dust`; nepodporované položky se neackují.
+
+**Zbývá před nasazením:** dokončit testy journal replay/crash hranic a
+QTC/PRL ACK cesty, ověřit migraci na kopii produkční DB a teprve potom
+naplánovat oddělený deploy. Tato změna zatím nemění produkční stav Edge.
+
 ### F6 — L1 RPC failover (implementováno, čeká na edge deploy)
 
 - **`L1Endpoints`** (`rpc_client.rs`) — `ZION_L1_RPC_URL`/`--l1-rpc-url`

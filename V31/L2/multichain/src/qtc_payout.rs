@@ -83,8 +83,7 @@ fn parse_decimal_ratio(s: &str) -> Option<(u128, u128)> {
     if int.is_empty() && frac.is_empty() {
         return None;
     }
-    if !int.chars().all(|c| c.is_ascii_digit()) || !frac.chars().all(|c| c.is_ascii_digit())
-    {
+    if !int.chars().all(|c| c.is_ascii_digit()) || !frac.chars().all(|c| c.is_ascii_digit()) {
         return None;
     }
     let num: u128 = format!("{}{}", int, frac).parse().ok()?;
@@ -103,10 +102,10 @@ impl QtcPayoutConfig {
             .map_err(|_| MultichainError::Config("QTC_PAYOUT_ADMIN_KEY not set".into()))?;
         let rate_raw = std::env::var("QTC_PLANKS_PER_FLOWER")
             .map_err(|_| MultichainError::Config("QTC_PLANKS_PER_FLOWER not set".into()))?;
-        let (planks_per_flower_num, planks_per_flower_den) =
-            parse_decimal_ratio(rate_raw.trim()).ok_or_else(|| {
-                MultichainError::Config(format!("bad QTC_PLANKS_PER_FLOWER: {rate_raw}"))
-            })?;
+        let (planks_per_flower_num, planks_per_flower_den) = parse_decimal_ratio(rate_raw.trim())
+            .ok_or_else(|| {
+            MultichainError::Config(format!("bad QTC_PLANKS_PER_FLOWER: {rate_raw}"))
+        })?;
         if planks_per_flower_num == 0 {
             return Err(MultichainError::Config(
                 "QTC_PLANKS_PER_FLOWER must be > 0".into(),
@@ -157,6 +156,8 @@ struct DrainResponse {
 
 #[derive(Debug, Deserialize)]
 struct DrainEntry {
+    #[serde(default)]
+    outbox_id: Option<String>,
     height: u64,
     miner_id: String,
     address: String,
@@ -287,6 +288,7 @@ async fn tick(
     }
 
     // 2. Ledger each drained entry (queued) before touching the chain.
+    let mut ack_ids = Vec::new();
     for p in &resp.payouts {
         let Some((id, gross_planks)) = plan_entry(p, config) else {
             continue;
@@ -295,16 +297,18 @@ async fn tick(
         // it never leaves the payout account (we simply send less).
         let fee_planks = gross_planks.saturating_mul(config.fee_bps as u128) / 10_000;
         let planks = gross_planks.saturating_sub(fee_planks);
-        if planks < config.min_planks {
-            continue; // dust — record nothing, keep queue small
-        }
+        let status = if planks < config.min_planks {
+            "dust"
+        } else {
+            "queued"
+        };
         let now = now_secs() as i64;
         let db = db.lock().await;
         db.conn().execute(
             "INSERT OR IGNORE INTO ext_payout_records \
              (id, chain, source_height, miner_id, address, amount_flowers, \
               amount_native, fee_native, status, created_at, updated_at) \
-             VALUES (?1,'quantus',?2,?3,?4,?5,?6,?7,'queued',?8,?8)",
+             VALUES (?1,'quantus',?2,?3,?4,?5,?6,?7,?8,?9,?9)",
             rusqlite::params![
                 id,
                 p.height as i64,
@@ -313,9 +317,34 @@ async fn tick(
                 p.amount_flowers as i64,
                 planks.to_string(),
                 fee_planks.to_string(),
+                status,
                 now
             ],
         )?;
+        if let Some(outbox_id) = p.outbox_id.as_ref() {
+            ack_ids.push(outbox_id.clone());
+        }
+    }
+
+    // Unsupported entries remain pending for operator review rather than
+    // being silently discarded.
+    if !ack_ids.is_empty() {
+        let ack_url = format!("{}/admin/external-payouts/ack", config.pool_api);
+        let ack: serde_json::Value = http
+            .post(&ack_url)
+            .header("X-Admin-Key", &config.admin_key)
+            .json(&serde_json::json!({"chain": "quantus", "ids": ack_ids}))
+            .send()
+            .await
+            .map_err(|e| MultichainError::Internal(format!("pool outbox ACK: {e}")))?
+            .json()
+            .await
+            .map_err(|e| MultichainError::Internal(format!("pool outbox ACK decode: {e}")))?;
+        if ack.get("ok").and_then(|v| v.as_bool()) != Some(true) {
+            return Err(MultichainError::Internal(format!(
+                "pool outbox ACK rejected: {ack}"
+            )));
+        }
     }
 
     // 3. Submit due rows (bounded attempts). 'deferred' = parked by the
@@ -383,7 +412,14 @@ async fn tick(
         let account = match crate::chain::adapters::quantus::ss58_decode(&row.address) {
             Ok((acct, _)) => acct,
             Err(e) => {
-                mark_error(db, &row.id, &format!("bad ss58: {e}"), row.attempts, config.max_attempts).await;
+                mark_error(
+                    db,
+                    &row.id,
+                    &format!("bad ss58: {e}"),
+                    row.attempts,
+                    config.max_attempts,
+                )
+                .await;
                 continue;
             }
         };
@@ -448,10 +484,7 @@ async fn tick(
             )?;
         }
 
-        match adapter
-            .send_payment(&to, Amount(planks))
-            .await
-        {
+        match adapter.send_payment(&to, Amount(planks)).await {
             Ok(hash) => {
                 let now = now_secs() as i64;
                 let db = db.lock().await;
@@ -463,7 +496,14 @@ async fn tick(
                 info!(id = %row.id, tx = %hash.to_hex(), "qtc payout submitted");
             }
             Err(e) => {
-                mark_error(db, &row.id, &e.to_string(), row.attempts, config.max_attempts).await;
+                mark_error(
+                    db,
+                    &row.id,
+                    &e.to_string(),
+                    row.attempts,
+                    config.max_attempts,
+                )
+                .await;
             }
         }
     }
@@ -512,18 +552,16 @@ async fn mark_deferred(db: &Arc<Mutex<Db>>, id: &str, reason: &str) {
     );
 }
 
-async fn mark_error(
-    db: &Arc<Mutex<Db>>,
-    id: &str,
-    error: &str,
-    attempts: u32,
-    max_attempts: u32,
-) {
+async fn mark_error(db: &Arc<Mutex<Db>>, id: &str, error: &str, attempts: u32, max_attempts: u32) {
     // Submission RPC errors are ambiguous (the extrinsic may have landed
     // before the error surfaced) — after `max_attempts` we stall rather
     // than risk a duplicate payment.
     let next = attempts + 1;
-    let status = if next >= max_attempts { "stalled" } else { "queued" };
+    let status = if next >= max_attempts {
+        "stalled"
+    } else {
+        "queued"
+    };
     let now = now_secs() as i64;
     let db = db.lock().await;
     let _ = db.conn().execute(
@@ -557,6 +595,7 @@ mod tests {
 
     fn entry(unit: &str, coin: Option<&str>, event: Option<&str>) -> DrainEntry {
         DrainEntry {
+            outbox_id: None,
             height: 42,
             miner_id: "alice".into(),
             address: "qz1alice".into(),

@@ -574,103 +574,103 @@ impl PoolApi {
                     },
                     None => Ok(Vec::new()),
                 };
-                if let Err(e) = &durable {
-                    (
+                match durable {
+                    Err(e) => (
                         "503 Service Unavailable",
                         "application/json",
                         serde_json::json!({"ok": false, "error": e.to_string()}).to_string(),
-                    )
-                } else if method == "POST" {
-                    let durable = durable.expect("checked successful durable outbox read");
-                    let drained = {
-                        let mut pool = self.pool.lock().expect("pool lock poisoned");
-                        pool.take_external_payouts(&chain)
-                            .into_iter()
-                            .filter(|(_, payout)| payout.revenue_event.is_none())
-                            .collect::<Vec<_>>()
-                    };
-                    let mut entries: Vec<serde_json::Value> = durable
-                        .iter()
-                        .map(|row| {
-                            let p = &row.payout;
-                            serde_json::json!({
-                                "outbox_id": row.id,
-                                "height": row.height,
-                                "miner_id": &p.miner_id,
-                                "address": &p.address,
-                                "amount_flowers": p.amount,
-                                "share_count": p.share_count,
-                                "unit": p.unit(),
-                                "coin": p.coin.as_deref(),
-                                "event": p.revenue_event.as_deref(),
-                            })
-                        })
-                        .collect();
-                    entries.extend(drained.iter().map(|(height, p)| {
-                        serde_json::json!({
-                            "height": height,
-                            "miner_id": &p.miner_id,
-                            "address": &p.address,
-                            "amount_flowers": p.amount,
-                            "share_count": p.share_count,
-                            "unit": p.unit(),
-                            "coin": p.coin.as_deref(),
-                            "event": p.revenue_event.as_deref(),
-                        })
-                    }));
-                    let body = serde_json::json!({
-                        "ok": true,
-                        "chain": chain,
-                        "count": entries.len(),
-                        "payouts": entries,
-                    })
-                    .to_string();
-                    ("200 OK", "application/json", body)
-                } else {
-                    let durable = durable.expect("checked successful durable outbox read");
-                    let mut entries: Vec<serde_json::Value> = durable
-                        .iter()
-                        .map(|row| {
-                            let p = &row.payout;
-                            serde_json::json!({
-                                "outbox_id": row.id,
-                                "height": row.height,
-                                "miner_id": &p.miner_id,
-                                "address": &p.address,
-                                "amount_flowers": p.amount,
-                                "share_count": p.share_count,
-                                "unit": p.unit(),
-                                "coin": p.coin.as_deref(),
-                                "event": p.revenue_event.as_deref(),
-                            })
-                        })
-                        .collect();
-                    let pending = {
-                        let pool = self.pool.lock().expect("pool lock poisoned");
-                        pool.pending_external_payouts(&chain)
-                            .into_iter()
-                            .filter(|p| p.revenue_event.is_none())
-                            .map(|p| {
+                    ),
+                    Ok(durable) if method == "POST" => {
+                        let drained = {
+                            let mut pool = self.pool.lock().expect("pool lock poisoned");
+                            pool.take_external_payouts(&chain)
+                                .into_iter()
+                                .filter(|(_, payout)| payout.revenue_event.is_none())
+                                .collect::<Vec<_>>()
+                        };
+                        let mut entries: Vec<serde_json::Value> = durable
+                            .iter()
+                            .map(|row| {
+                                let p = &row.payout;
                                 serde_json::json!({
+                                    "outbox_id": row.id,
+                                    "height": row.height,
                                     "miner_id": &p.miner_id,
                                     "address": &p.address,
                                     "amount_flowers": p.amount,
+                                    "share_count": p.share_count,
                                     "unit": p.unit(),
                                     "coin": p.coin.as_deref(),
                                     "event": p.revenue_event.as_deref(),
                                 })
                             })
-                            .collect::<Vec<_>>()
-                    };
-                    entries.extend(pending);
-                    let body = serde_json::json!({
-                        "ok": true,
-                        "chain": chain,
-                        "pending": entries.len(),
-                        "payouts": entries,
-                    })
-                    .to_string();
-                    ("200 OK", "application/json", body)
+                            .collect();
+                        entries.extend(drained.iter().map(|(height, p)| {
+                            serde_json::json!({
+                                "height": height,
+                                "miner_id": &p.miner_id,
+                                "address": &p.address,
+                                "amount_flowers": p.amount,
+                                "share_count": p.share_count,
+                                "unit": p.unit(),
+                                "coin": p.coin.as_deref(),
+                                "event": p.revenue_event.as_deref(),
+                            })
+                        }));
+                        let body = serde_json::json!({
+                            "ok": true,
+                            "chain": chain,
+                            "count": entries.len(),
+                            "payouts": entries,
+                        })
+                        .to_string();
+                        ("200 OK", "application/json", body)
+                    }
+                    Ok(durable) => {
+                        let mut entries: Vec<serde_json::Value> = durable
+                            .iter()
+                            .map(|row| {
+                                let p = &row.payout;
+                                serde_json::json!({
+                                    "outbox_id": row.id,
+                                    "height": row.height,
+                                    "miner_id": &p.miner_id,
+                                    "address": &p.address,
+                                    "amount_flowers": p.amount,
+                                    "share_count": p.share_count,
+                                    "unit": p.unit(),
+                                    "coin": p.coin.as_deref(),
+                                    "event": p.revenue_event.as_deref(),
+                                })
+                            })
+                            .collect();
+                        let pending = {
+                            let pool = self.pool.lock().expect("pool lock poisoned");
+                            pool.pending_external_payouts(&chain)
+                                .into_iter()
+                                .filter(|p| p.revenue_event.is_none())
+                                .map(|p| {
+                                    serde_json::json!({
+                                        "miner_id": &p.miner_id,
+                                        "address": &p.address,
+                                        "amount_flowers": p.amount,
+                                        "unit": p.unit(),
+                                        "coin": p.coin.as_deref(),
+                                        "event": p.revenue_event.as_deref(),
+                                    })
+                                })
+                                .collect::<Vec<_>>()
+                        };
+                        entries.extend(pending);
+                        let body = serde_json::json!({
+                            "ok": true,
+                            "chain": chain,
+                            "pending": entries.len(),
+                            "payouts": entries,
+                        })
+                        .to_string();
+                        ("200 OK", "application/json", body)
+                    }
                 }
             }
             "/admin/external-payouts/ack" => {
@@ -757,17 +757,8 @@ impl PoolApi {
                                 )
                             } else if let Some(store) = self.share_store.as_ref() {
                                 let mut pool = self.pool.lock().expect("pool lock poisoned");
-                                let state_path = match pool.config.state_path.as_deref() {
-                                    Some(path) => path,
-                                    None => {
-                                        return write_http_response(
-                                            &mut stream,
-                                            "503 Service Unavailable",
-                                            "application/json",
-                                            "{\"ok\":false,\"error\":\"PPLNS state persistence is required for native revenue\"}",
-                                        );
-                                    }
-                                };
+                                let state_path: Option<String> =
+                                    pool.config.state_path.as_deref().map(|p| p.to_string());
                                 let coin = req.coin.trim().to_ascii_lowercase();
                                 if !pool.pplns.is_native_payout_coin(&coin) {
                                     (
@@ -814,13 +805,17 @@ impl PoolApi {
                                             .pplns
                                             .has_applied_revenue_event(event_id)
                                         {
-                                            let payouts =
-                                                pool.pending_revenue_payouts(event_id);
-                                            (
-                                                journal.emitted.max(payouts.len()),
-                                                journal.emitted_total,
-                                                payouts,
-                                            )
+                                            let payouts = pool.pending_revenue_payouts(event_id);
+                                            let emitted = journal.emitted.max(payouts.len());
+                                            let emitted_total = if journal.emitted > 0 {
+                                                journal.emitted_total
+                                            } else {
+                                                payouts
+                                                    .iter()
+                                                    .map(|(_, payout)| payout.amount)
+                                                    .fold(0u64, u64::saturating_add)
+                                            };
+                                            (emitted, emitted_total, payouts)
                                         } else {
                                             match pool.on_coin_revenue(
                                                 &journal.coin,
@@ -866,7 +861,15 @@ impl PoolApi {
                                                     .to_string(),
                                             );
                                         }
-                                        if let Err(e) = pool.pplns.save_if_dirty(state_path) {
+                                        let Some(ref sp) = state_path else {
+                                            return write_http_response(
+                                                &mut stream,
+                                                "503 Service Unavailable",
+                                                "application/json",
+                                                "{\"ok\":false,\"error\":\"PPLNS state persistence is required for native revenue\"}",
+                                            );
+                                        };
+                                        if let Err(e) = pool.pplns.save_if_dirty(sp) {
                                             tracing::error!(
                                                 event = %event_id,
                                                 "failed to persist PPLNS revenue snapshot: {e}"
@@ -2259,6 +2262,91 @@ mod tests {
             crate::config::PoolConfig::default(),
             telemetry,
         )))
+    }
+
+    fn request(api: &PoolApi, method: &str, path: &str, body: &str) -> String {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let mut client = TcpStream::connect(addr).unwrap();
+        let (server, _) = listener.accept().unwrap();
+        std::thread::scope(|scope| {
+            let handler = scope.spawn(move || api.handle_request(server).unwrap());
+            let request = format!(
+                "{method} {path} HTTP/1.1\r\nHost: localhost\r\nX-Admin-Key: test-admin\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            client.write_all(request.as_bytes()).unwrap();
+            client.shutdown(std::net::Shutdown::Write).unwrap();
+            let mut response = String::new();
+            client.read_to_string(&mut response).unwrap();
+            handler.join().unwrap();
+            response
+        })
+    }
+
+    #[test]
+    fn coin_revenue_endpoint_commits_snapshot_and_repeats_outbox_until_ack() {
+        let state_path = std::env::temp_dir().join(format!(
+            "zion_pool_api_revenue_{}_{}.json",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let telemetry = Arc::new(Mutex::new(crate::telemetry::MinerTelemetryRegistry::new()));
+        let mut config = crate::config::PoolConfig {
+            admin_key: Some("test-admin".into()),
+            native_payout_coins: vec!["qtu".into()],
+            state_path: Some(state_path.to_string_lossy().into_owned()),
+            ..Default::default()
+        };
+        config.min_payout_native.insert("qtu".into(), 1);
+        let mut pool = Pool::new(config, telemetry);
+        pool.pplns
+            .register_address_with_chain("alice", "qz1alice", "quantus");
+        pool.pplns
+            .record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
+        let pool = Arc::new(Mutex::new(pool));
+        let store = Arc::new(ShareStore::open_in_memory().unwrap());
+        let api = PoolApi::new(pool, Some(store.clone()), None);
+
+        let revenue = request(
+            &api,
+            "POST",
+            "/admin/coin-revenue",
+            r#"{"coin":"qtu","amount":5000000,"ref_height":42,"event":"qtu:event:42"}"#,
+        );
+        assert!(revenue.starts_with("HTTP/1.1 200 OK"), "{revenue}");
+        let revenue_body = revenue.split("\r\n\r\n").nth(1).unwrap();
+        let revenue_json: serde_json::Value = serde_json::from_str(revenue_body).unwrap();
+        assert_eq!(revenue_json["emitted"], 1);
+
+        let payout_path = "/admin/external-payouts?chain=quantus";
+        let first = request(&api, "POST", payout_path, "");
+        let second = request(&api, "POST", payout_path, "");
+        let first_json: serde_json::Value =
+            serde_json::from_str(first.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+        let second_json: serde_json::Value =
+            serde_json::from_str(second.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+        let outbox_id = first_json["payouts"][0]["outbox_id"]
+            .as_str()
+            .expect("durable payout has an outbox id");
+        assert_eq!(second_json["payouts"][0]["outbox_id"], outbox_id);
+
+        let ack = request(
+            &api,
+            "POST",
+            "/admin/external-payouts/ack",
+            &serde_json::json!({"chain": "quantus", "ids": [outbox_id]}).to_string(),
+        );
+        assert!(ack.starts_with("HTTP/1.1 200 OK"), "{ack}");
+        let after_ack = request(&api, "POST", payout_path, "");
+        let after_ack_json: serde_json::Value =
+            serde_json::from_str(after_ack.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+        assert_eq!(after_ack_json["count"], 0);
+
+        std::fs::remove_file(state_path).unwrap();
     }
 
     fn test_job(
