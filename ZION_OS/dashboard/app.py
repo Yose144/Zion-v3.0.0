@@ -183,7 +183,7 @@ def _systemctl_show(service: str) -> dict:
     try:
         r = subprocess.run(
             ["systemctl", "show", service,
-             "--property=ActiveState,SubState,UnitFileState,MainPID,MemoryCurrent"],
+             "--property=LoadState,ActiveState,SubState,UnitFileState,MainPID,MemoryCurrent"],
             capture_output=True, text=True, timeout=5
         )
         props = {}
@@ -194,6 +194,71 @@ def _systemctl_show(service: str) -> dict:
         return props
     except Exception:
         return {}
+
+
+def _systemctl_show_many(units: list) -> dict:
+    """Batch `systemctl show` for multiple units → {unit: props}.
+
+    One subprocess instead of N — sequential `systemctl show` calls cost
+    ~0.1-0.35 s each under load and dominated status build time.
+    """
+    result = {u: {} for u in units}
+    if not units:
+        return result
+    try:
+        r = subprocess.run(
+            ["systemctl", "show", *units,
+             "--property=Id,LoadState,ActiveState,SubState,UnitFileState,MainPID,MemoryCurrent"],
+            capture_output=True, text=True, timeout=8,
+        )
+        for block in r.stdout.split("\n\n"):
+            props = {}
+            for line in block.split("\n"):
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    props[k] = v
+            uid = props.get("Id")
+            if uid:
+                result[uid] = props
+    except Exception:
+        pass
+    return result
+
+
+_V31_MINER_UNIT_CACHE = {"ts": 0.0, "unit": None}
+
+def _v31_miner_unit() -> str:
+    """Resolve which systemd unit currently represents the V31 miner.
+
+    The canonical ``zion-v31-miner.service`` was superseded on Edge by
+    ``zion-fallback-miner.service`` (off-site backup producer). Both units
+    may be installed; prefer whichever is actually active. If neither is
+    running, prefer the canonical unit when it is still installed so the
+    dashboard reports its true (down) state instead of a phantom one.
+    Cached for 60 s — units change rarely and this is on the hot status path.
+    """
+    now = time.time()
+    cached = _V31_MINER_UNIT_CACHE["unit"]
+    if cached and (now - _V31_MINER_UNIT_CACHE["ts"]) < 60:
+        return cached
+    canonical = "zion-v31-miner.service"
+    fallback = "zion-fallback-miner.service"
+    _props = _systemctl_show_many([canonical, fallback])
+    canon_props = _props.get(canonical, {})
+    fb_props = _props.get(fallback, {})
+    if canon_props.get("ActiveState") == "active":
+        unit = canonical
+    elif fb_props.get("ActiveState") == "active":
+        unit = fallback
+    elif canon_props.get("LoadState") == "loaded":
+        unit = canonical
+    elif fb_props.get("LoadState") == "loaded":
+        unit = fallback
+    else:
+        unit = canonical
+    _V31_MINER_UNIT_CACHE["ts"] = now
+    _V31_MINER_UNIT_CACHE["unit"] = unit
+    return unit
 
 # Load config
 def load_config() -> dict:
@@ -318,6 +383,9 @@ def _run_edge_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     """Run a command on the Edge server — locally if we're on Edge, via SSH otherwise."""
     if EDGE_IS_LOCAL:
         return subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
+    return _run_edge_cmd_remote(cmd, timeout)
+
+def _run_edge_cmd_remote(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     # v3.0.7: Use repo symlink "ssh-key-zion-edge" -> ~/.ssh/zion-edge-post-wipe-2026-07-29, or SSH alias "zion-new"
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
     if ssh_key.exists():
@@ -331,6 +399,27 @@ def _run_edge_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["ssh", "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
          "zion-new", cmd],
+        capture_output=True, text=True, timeout=timeout
+    )
+
+# EDGE2 = second server (vmi3684458, 207.180.217.100) — primary chain+app core.
+# Dashboard probes it via SSH using the zion user's dedicated probe key
+# (installed on edge at /home/zion/.ssh/id_ed25519, authorized on EDGE2 root).
+EDGE2_HOST = os.environ.get("ZION_EDGE2_HOST", "207.180.217.100")
+EDGE2_SSH_KEY = os.environ.get("ZION_EDGE2_SSH_KEY", "/home/zion/.ssh/id_ed25519")
+
+def _run_edge2_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
+    """Run a command on EDGE2 via SSH (always remote)."""
+    if Path(EDGE2_SSH_KEY).exists():
+        return subprocess.run(
+            ["ssh", "-i", EDGE2_SSH_KEY, "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=4", "-o", "BatchMode=yes",
+             f"root@{EDGE2_HOST}", cmd],
+            capture_output=True, text=True, timeout=timeout
+        )
+    return subprocess.run(
+        ["ssh", "-o", "ConnectTimeout=4", "-o", "BatchMode=yes",
+         "zion-edge2", cmd],
         capture_output=True, text=True, timeout=timeout
     )
 
@@ -1307,6 +1396,24 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 Mainnet Alpha 3.2.0-beta (protocol 3.2.0-alpha) — PROD node. P2P 8335, RPC 9445. Independent of V3. systemd zion-v31-node.service.",
      "child_says": "🚀 V31 PROD node — mainnet alpha!",
      "depends_on": []},
+    {"id": "v31-node2", "name": "V31 Node 2 (Follower)", "icon": "🛰️", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8336, "rpc": 9446},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:9446",
+     "purpose": "V31 follower node 2 — P2P 8336, RPC 9446. Syncs from primary 8335; L1 RPC failover target for the pool. systemd zion-v31-node2.service.",
+     "child_says": "🛰️ Backup copy of the chain — failover ready!",
+     "depends_on": ["v31-node"]},
+    {"id": "v31-node3", "name": "V31 Node 3 (Follower)", "icon": "📡", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8337, "rpc": 9447},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:9447",
+     "purpose": "V31 follower node 3 — P2P 8337, RPC 9447. Syncs from primary 8335; L1 RPC failover target for the pool. systemd zion-v31-node3.service.",
+     "child_says": "📡 Second backup copy of the chain!",
+     "depends_on": ["v31-node"]},
     {"id": "v31-pool", "name": "V31 Pool (PROD)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
@@ -3283,7 +3390,7 @@ def parse_miner_log() -> dict:
 _STATUS_CACHE: dict = {}
 _STATUS_CACHE_TIME: float = 0.0
 _STATUS_CACHE_LOCK = threading.Lock()
-STATUS_CACHE_TTL_SEC: float = 15.0
+STATUS_CACHE_TTL_SEC: float = float(os.environ.get("DASHBOARD_STATUS_TTL_S", "30"))
 
 # ── Backup node beacon cache ──────────────────────────────────────────────
 # The operator's local machine POSTs its backup node status here every 15s.
@@ -3304,23 +3411,26 @@ RIG_BEACON_TTL_SEC: float = 180.0  # offline if no beacon for 3 min
 
 def build_status() -> dict:
     global _STATUS_CACHE, _STATUS_CACHE_TIME
-    now = time.time()
+    # The lock covers the whole build: the 5 s sampler, the WS push loop and
+    # every /api/status* request used to trigger CONCURRENT full rebuilds —
+    # each ~4-8 s of probes — which pinned a CPU core on the Edge box.
+    # Single-flight: extra callers wait and share the fresh result.
     with _STATUS_CACHE_LOCK:
+        now = time.time()
         if _STATUS_CACHE and (now - _STATUS_CACHE_TIME) < STATUS_CACHE_TTL_SEC:
             # Refresh timestamp so consumers see recent data
             cached = dict(_STATUS_CACHE)
             cached["timestamp"] = datetime.now().isoformat()
             cached["_cached"] = True
             return cached
-    # Topology-aware status building
-    if TOPOLOGY == "edge-primary":
-        result = _build_status_edge_primary()
-    else:
-        result = _build_status_local_dev()
-    with _STATUS_CACHE_LOCK:
+        # Topology-aware status building
+        if TOPOLOGY == "edge-primary":
+            result = _build_status_edge_primary()
+        else:
+            result = _build_status_local_dev()
         _STATUS_CACHE = result
-        _STATUS_CACHE_TIME = now
-    return result
+        _STATUS_CACHE_TIME = time.time()
+        return result
 
 def _g8_state_file_candidates() -> list:
     return [
@@ -3566,6 +3676,12 @@ def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, 
     }
 
 
+# Follower node RPC results are expensive on the loaded Edge box (~6-8 s per
+# getStatus when the primary saturates cores) — cache them briefly so most
+# builds don't pay it. {port: (ts, data)}
+_FOLLOWER_RPC_CACHE: dict = {}
+
+
 def _build_status_edge_primary() -> dict:
     """Build status for edge-primary topology: fast, parallel RPC with short timeouts."""
     t0 = time.time()
@@ -3575,12 +3691,16 @@ def _build_status_edge_primary() -> dict:
     # V3 nodes (port 9443, 8448) are archived — only V31 nodes are probed.
 
     def _v31_rpc_call():
-        # V31 Node — TCP JSON-RPC on port 9445 (not HTTP)
+        # V31 Node — TCP JSON-RPC on port 9445 (not HTTP).
+        # getStatus alone returns height/tip/mempool/protocol/version —
+        # the extra calls below only add peers/node metadata and are
+        # skipped when the node is too loaded to answer quickly.
         import socket as _sock
-        def _call(method, params=None):
+        deadline = time.time() + 12.0
+        def _call(method, params=None, timeout=4.0):
             req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params or []}) + "\n"
             try:
-                with _sock.create_connection(("127.0.0.1", 9445), timeout=2.0) as s:
+                with _sock.create_connection(("127.0.0.1", 9445), timeout=timeout) as s:
                     s.sendall(req.encode())
                     resp = b""
                     while True:
@@ -3596,30 +3716,36 @@ def _build_status_edge_primary() -> dict:
                     return r.get("result")
             except Exception:
                 return None
-        status = _call("getStatus")
+        status = _call("getStatus", timeout=6.0)
         if status is None:
+            # RPC thread CPU-starved — fall back to the node's own SQLite
+            # chain_state (WAL → safe read-only access, ~ms cost).
+            try:
+                conn = sqlite3.connect("file:/opt/zion/data/v31/node.db?mode=ro", uri=True)
+                row = conn.execute("SELECT tip_height, tip_hash FROM chain_state LIMIT 1").fetchone()
+                conn.close()
+                if row:
+                    return ("v31", {"native_chain_height": row[0], "chain_height": row[0],
+                                    "tip_hash": (row[1].hex() if isinstance(row[1], (bytes, bytearray)) else row[1]),
+                                    "network": "mainnet",
+                                    "protocol_version": "3.2.0-alpha", "_db_fallback": True})
+            except Exception:
+                pass
             return ("v31", None)
-        nodeinfo = _call("getNodeInfo")
-        peers = _call("getPeerInfo")
-        chaininfo = _call("getChainInfo")
         combined = dict(status) if isinstance(status, dict) else {}
-        if isinstance(nodeinfo, dict):
-            combined.update(nodeinfo)
-        if isinstance(peers, dict):
-            combined["known_peers"] = peers.get("count", 0)
-            combined["active_peers"] = peers.get("active_count", 0)
-            combined["peers"] = peers.get("peers", [])
-        if isinstance(chaininfo, dict):
-            # getChainInfo returns native_chain_height (real height) vs chain_height (V3=0)
-            if chaininfo.get("native_chain_height") is not None:
-                combined["native_chain_height"] = chaininfo["native_chain_height"]
-                combined["chain_height"] = chaininfo["native_chain_height"]
-            if chaininfo.get("tip_hash"):
-                combined["tip_hash"] = chaininfo["tip_hash"]
-            if chaininfo.get("difficulty") is not None:
-                combined["difficulty"] = chaininfo["difficulty"]
-            if chaininfo.get("accepted_blocks") is not None:
-                combined["accepted_blocks"] = chaininfo["accepted_blocks"]
+        if time.time() < deadline:
+            peers = _call("getPeerInfo", timeout=max(0.5, deadline - time.time()))
+            if isinstance(peers, dict):
+                combined["known_peers"] = peers.get("count", 0)
+                combined["active_peers"] = peers.get("active_count", 0)
+                combined["peers"] = peers.get("peers", [])
+        if time.time() < deadline:
+            nodeinfo = _call("getNodeInfo", timeout=max(0.5, deadline - time.time()))
+            if isinstance(nodeinfo, dict):
+                combined.update(nodeinfo)
+        # getStatus already carries native_chain_height/tip_hash — normalize
+        if combined.get("native_chain_height") is not None:
+            combined["chain_height"] = combined["native_chain_height"]
         return ("v31", combined)
 
     def _v31_systemd_call():
@@ -3641,12 +3767,41 @@ def _build_status_edge_primary() -> dict:
             return ("v31_sys", {})
 
     def _v31_follower_rpc_call(port, key):
-        """RPC call for V31 follower nodes (node2=9446, node3=9447)."""
+        """RPC call for V31 follower nodes (node2=9446, node3=9447).
+
+        The followers are CPU-starved on the 4-core Edge box — getStatus takes
+        ~6-8 s under load, so the old 2 s socket timeout made every call fail
+        and the cards showed height=None forever. Now: getStatus with an 8 s
+        timeout (the gating call), remaining calls only inside a 14 s deadline,
+        and results cached 30 s — follower cards don't need fresher data.
+        """
         import socket as _sock
-        def _call(method, params=None):
+        ent = _FOLLOWER_RPC_CACHE.get(port)
+        if ent and time.time() - ent[0] < 30.0:
+            return (key, ent[1])
+        deadline = time.time() + 14.0
+        # Baseline from the node's own SQLite chain_state first (~ms) —
+        # followers are CPU-starved and their RPC often needs >8 s, so the
+        # card should always have real height/hash even when RPC can't answer.
+        combined: dict = {}
+        db_path = {9446: "/opt/zion/data/v31/node2.db",
+                   9447: "/opt/zion/data/v31/node3.db"}.get(port)
+        if db_path:
+            try:
+                conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+                row = conn.execute("SELECT tip_height, tip_hash FROM chain_state LIMIT 1").fetchone()
+                conn.close()
+                if row:
+                    combined = {"native_chain_height": row[0], "chain_height": row[0],
+                                "tip_hash": (row[1].hex() if isinstance(row[1], (bytes, bytearray)) else row[1]),
+                                    "network": "mainnet",
+                                "protocol_version": "3.2.0-alpha", "_db_fallback": True}
+            except Exception:
+                pass
+        def _call(method, params=None, timeout=4.0):
             req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params or []}) + "\n"
             try:
-                with _sock.create_connection(("127.0.0.1", port), timeout=2.0) as s:
+                with _sock.create_connection(("127.0.0.1", port), timeout=timeout) as s:
                     s.sendall(req.encode())
                     resp = b""
                     while True:
@@ -3662,25 +3817,28 @@ def _build_status_edge_primary() -> dict:
                     return r.get("result")
             except Exception:
                 return None
-        status = _call("getStatus")
+        # RPC is only an enrichment once the DB baseline exists — a starved
+        # node won't answer within 8 s anyway, so probe briefly instead.
+        status = _call("getStatus", timeout=8.0 if not combined else 3.0)
         if status is None:
-            return (key, None)
-        nodeinfo = _call("getNodeInfo")
-        peers = _call("getPeerInfo")
-        chaininfo = _call("getChainInfo")
-        combined = dict(status) if isinstance(status, dict) else {}
-        if isinstance(nodeinfo, dict):
-            combined.update(nodeinfo)
-        if isinstance(peers, dict):
-            combined["known_peers"] = peers.get("count", 0)
-            combined["active_peers"] = peers.get("active_count", 0)
-            combined["peers"] = peers.get("peers", [])
-        if isinstance(chaininfo, dict):
-            if chaininfo.get("native_chain_height") is not None:
-                combined["native_chain_height"] = chaininfo["native_chain_height"]
-                combined["chain_height"] = chaininfo["native_chain_height"]
-            if chaininfo.get("tip_hash"):
-                combined["tip_hash"] = chaininfo["tip_hash"]
+            # RPC unresponsive — serve the DB baseline (or nothing).
+            if combined:
+                _FOLLOWER_RPC_CACHE[port] = (time.time(), combined)
+            return (key, combined or None)
+        if isinstance(status, dict):
+            status.pop("_db_fallback", None)
+            combined.update(status)
+        # getStatus already returns native_chain_height/tip_hash/protocol —
+        # only fetch peers metadata if there's time left in the deadline.
+        if time.time() < deadline:
+            peers = _call("getPeerInfo", timeout=max(0.5, deadline - time.time()))
+            if isinstance(peers, dict):
+                combined["known_peers"] = peers.get("count", 0)
+                combined["active_peers"] = peers.get("active_count", 0)
+                combined["peers"] = peers.get("peers", [])
+        if combined.get("native_chain_height") is not None:
+            combined["chain_height"] = combined["native_chain_height"]
+        _FOLLOWER_RPC_CACHE[port] = (time.time(), combined)
         return (key, combined)
 
     def _v31_follower_systemd_call(service, key):
@@ -3717,7 +3875,10 @@ def _build_status_edge_primary() -> dict:
         ex.submit(_v31_follower_systemd_call, "zion-v31-node3.service", "v31_node3_sys"),
     }
     try:
-        for fut in as_completed(futures, timeout=5.0):
+        # 9 s window: follower getStatus alone needs ~6-8 s under CPU load.
+        # Even when a future misses the window its result lands in
+        # _FOLLOWER_RPC_CACHE for the next build, so nothing is lost.
+        for fut in as_completed(futures, timeout=9.0):
             try:
                 key, val = fut.result()
                 if key == "v31":
@@ -3900,8 +4061,18 @@ def _build_status_edge_primary() -> dict:
             v31_node2_status["sync_lag"] = _primary_h - int(v31_node2_status["chain_height"])
         if v31_node3_status.get("chain_height") is not None:
             v31_node3_status["sync_lag"] = _primary_h - int(v31_node3_status["chain_height"])
+    # ── Batched systemd probe — one `systemctl show` for all V31 services ──
+    # Replaces ~7 sequential calls (~0.1-0.35 s each under load).
+    v31_miner_unit = _v31_miner_unit()
+    _sysd = _systemctl_show_many([
+        "zion-v31-pool.service", v31_miner_unit,
+        "zion-v31-multichain.service", "zion-v31-dao.service",
+        "zion-v31-oasis.service", "zion-v31-free-world.service",
+        "zion-v31-issobella.service",
+    ])
+
     # ── V31 Pool (PROD) — systemd + share count from journald ──────────────
-    v31_pool_sys = _systemctl_show("zion-v31-pool.service")
+    v31_pool_sys = _sysd.get("zion-v31-pool.service", {})
     v31_pool_active = v31_pool_sys.get("ActiveState", "unknown")
     v31_pool_shares = 0
     v31_pool_jobs = 0
@@ -3925,14 +4096,15 @@ def _build_status_edge_primary() -> dict:
         "jobs_broadcast": v31_pool_jobs,
     }
     # ── V31 Miner (PROD) — systemd + hashrate from journald ────────────────
-    v31_miner_sys = _systemctl_show("zion-v31-miner.service")
+    # Unit resolved above (_v31_miner_unit): canonical vs Edge fallback miner.
+    v31_miner_sys = _sysd.get(v31_miner_unit, {})
     v31_miner_active = v31_miner_sys.get("ActiveState", "unknown")
     v31_miner_hashrate = None
     v31_miner_shares = 0
     v31_miner_accepted = 0
     try:
         r = subprocess.run(
-            ["journalctl", "-u", "zion-v31-miner.service", "--no-pager", "-n", "100", "--output=cat"],
+            ["journalctl", "-u", v31_miner_unit, "--no-pager", "-n", "100", "--output=cat"],
             capture_output=True, text=True, timeout=5
         )
         for line in r.stdout.strip().split("\n"):
@@ -3972,6 +4144,7 @@ def _build_status_edge_primary() -> dict:
     v31_miner_status = {
         "running": v31_miner_active == "active",
         "systemd_active": v31_miner_active,
+        "systemd_unit": v31_miner_unit,
         "hashrate": v31_miner_hashrate,
         "shares_submitted": v31_miner_shares,
         "shares_accepted": v31_miner_accepted,
@@ -3980,7 +4153,7 @@ def _build_status_edge_primary() -> dict:
         "on_chain_balance_zion": v31_miner_on_chain,
     }
     # ── V31 Multichain (PROD) — systemd + /health ──────────────────────────
-    v31_mc_sys = _systemctl_show("zion-v31-multichain.service")
+    v31_mc_sys = _sysd.get("zion-v31-multichain.service", {})
     v31_mc_active = v31_mc_sys.get("ActiveState", "unknown")
     v31_mc_health = {}
     try:
@@ -3997,7 +4170,7 @@ def _build_status_edge_primary() -> dict:
         "version": v31_mc_health.get("version", "—"),
     }
     # ── V31 DAO (PROD) — systemd + /health ─────────────────────────────────
-    v31_dao_sys = _systemctl_show("zion-v31-dao.service")
+    v31_dao_sys = _sysd.get("zion-v31-dao.service", {})
     v31_dao_active = v31_dao_sys.get("ActiveState", "unknown")
     v31_dao_health = {}
     v31_dao_total = 0
@@ -4023,7 +4196,7 @@ def _build_status_edge_primary() -> dict:
         "proposals_active": v31_dao_active_proposals,
     }
     # ── V31 OASIS (PROD) — systemd + /health ───────────────────────────────
-    v31_oasis_sys = _systemctl_show("zion-v31-oasis.service")
+    v31_oasis_sys = _sysd.get("zion-v31-oasis.service", {})
     v31_oasis_active = v31_oasis_sys.get("ActiveState", "unknown")
     v31_oasis_health = {}
     try:
@@ -4037,7 +4210,7 @@ def _build_status_edge_primary() -> dict:
         "ok": v31_oasis_health.get("success", False) or v31_oasis_health.get("ok", False),
     }
     # ── V31 Free World (PROD) — systemd + /health ───────────────────────────
-    v31_free_world_sys = _systemctl_show("zion-v31-free-world.service")
+    v31_free_world_sys = _sysd.get("zion-v31-free-world.service", {})
     v31_free_world_active = v31_free_world_sys.get("ActiveState", "unknown")
     v31_free_world_health = {}
     v31_free_world_balance_zion = 0
@@ -4059,7 +4232,7 @@ def _build_status_edge_primary() -> dict:
         "balance_zion": v31_free_world_balance_zion,
     }
     # ── V31 Issobella (PROD) — systemd + /health ────────────────────────────
-    v31_issobella_sys = _systemctl_show("zion-v31-issobella.service")
+    v31_issobella_sys = _sysd.get("zion-v31-issobella.service", {})
     v31_issobella_active = v31_issobella_sys.get("ActiveState", "unknown")
     v31_issobella_health = {}
     v31_issobella_balance_zion = 0
@@ -5428,10 +5601,24 @@ def build_wallets() -> dict:
             pass
 
     # 4. On-chain UTXO balance via fast getUtxos RPC (replaces block-by-block scan).
+    # Looked up in parallel — sequential calls pushed /api/wallets past 12 s.
+    _waddrs = [w.get("address", "") for w in wallets if str(w.get("address", "")).startswith("zion1")]
+    _wbal: dict = {}
+    if _waddrs:
+        ex = ThreadPoolExecutor(max_workers=min(8, len(_waddrs)))
+        try:
+            futs = {a: ex.submit(_get_on_chain_balance, a) for a in _waddrs}
+            for a, fut in futs.items():
+                try:
+                    _wbal[a] = fut.result(timeout=8.0)
+                except Exception:
+                    _wbal[a] = (0, False)
+        finally:
+            ex.shutdown(wait=False)
     for w in wallets:
         addr = w.get("address", "")
         if addr and addr.startswith("zion1"):
-            atomic, ok = _get_on_chain_balance(addr)
+            atomic, ok = _wbal.get(addr, (0, False))
             if ok:
                 w["balance_zion"] = flowers_to_zion(atomic)
                 w["balance_atomic"] = atomic
@@ -5800,22 +5987,23 @@ def _estimate_circulating_supply_at_height(height: int) -> float:
 
 def _rpc_with_fallback(method: str, params: dict, timeout: float = 2.0):
     """Call RPC on the configured local endpoint, falling back to Edge.
-    Returns (result, effective_host, effective_port)."""
+    Returns (result, effective_host, effective_port).
+
+    Endpoints are deduplicated: on the Edge box itself the "local" endpoint
+    and the Edge fallbacks resolve to the same 9445 listener, and retrying it
+    serially used to triple the worst-case latency of every failing call.
+    """
     rpc_host, rpc_port = _get_node_rpc_addr()
-
-    result = rpc_call(rpc_host, rpc_port, method, params, timeout=timeout)
-    if result and not result.get("_rpc_error"):
-        return result, rpc_host, rpc_port
-
-    # Fallback to Edge RPC
-    result = rpc_call(EDGE_HOST, 9445, method, params, timeout=timeout)
-    if result and not result.get("_rpc_error"):
-        return result, EDGE_HOST, 9445
-
-    # Final fallback: public Edge RPC (nginx TCP stream on 8443 -> V31 node)
-    result = rpc_call(EDGE_PUBLIC_IP, 8443, method, params, timeout=timeout)
-    if result and not result.get("_rpc_error"):
-        return result, EDGE_PUBLIC_IP, 8443
+    candidates = [(rpc_host, rpc_port), (EDGE_HOST, 9445), (EDGE_PUBLIC_IP, 8443)]
+    seen: set = set()
+    for host, port in candidates:
+        key = (host, port)
+        if key in seen:
+            continue
+        seen.add(key)
+        result = rpc_call(host, port, method, params, timeout=timeout)
+        if result and not result.get("_rpc_error"):
+            return result, host, port
     return None, rpc_host, rpc_port
 
 
@@ -5933,13 +6121,15 @@ def _scan_all_utxo_balances(timeout_per_block: float = 3.0, max_total_time: floa
         return balances
 
 
-@_ttl_cache_fn(15.0)
+@_ttl_cache_fn(60.0)
 def _get_utxo_balance(address: str) -> tuple[int, bool]:
     """Return (confirmed UTXO balance in flowers, ok) for a single address.
 
     Uses the node's `getUtxos` RPC, which is authoritative and O(1) per
     address instead of scanning the whole chain block-by-block. Cached for
-    15 s so multiple dashboard panels can reuse the same lookup cheaply.
+    60 s — balances are display-only data, and a dozen+ dashboard panels
+    share the same wallet set; a short TTL meant every panel re-paid the
+    ~5-8 s cold lookup cost for wallets with large UTXO sets.
     """
     if not address or not isinstance(address, str) or not address.startswith("zion1"):
         return 0, False
@@ -5950,6 +6140,13 @@ def _get_utxo_balance(address: str) -> tuple[int, bool]:
     return sum(int(u.get("amount", 0)) for u in utxos), True
 
 
+# Single-flight registry for in-flight getUtxos lookups — several dashboard
+# panels ask for the same wallet set concurrently, and without dedup every
+# overlapping request duplicated the ~5 s RPC per address.
+_BAL_INFLIGHT: dict = {}
+_BAL_INFLIGHT_LOCK = threading.Lock()
+
+
 def _get_on_chain_balance(address: str, scan: dict = None) -> tuple[int, bool]:
     """Return (balance_flowers, ok) for a single address.
 
@@ -5958,12 +6155,28 @@ def _get_on_chain_balance(address: str, scan: dict = None) -> tuple[int, bool]:
     """
     if not address or not isinstance(address, str) or not address.startswith("zion1"):
         return 0, False
-    bal, ok = _get_utxo_balance(address)
-    if ok:
-        return bal, True
-    if scan:
-        return int(scan.get(address, 0)), bool(scan)
-    return 0, False
+    with _BAL_INFLIGHT_LOCK:
+        slot = _BAL_INFLIGHT.get(address)
+        if slot is None:
+            slot = {"done": threading.Event(), "result": (0, False)}
+            _BAL_INFLIGHT[address] = slot
+            owner = True
+        else:
+            owner = False
+    if not owner:
+        slot["done"].wait(timeout=12.0)
+        return tuple(slot["result"])
+    try:
+        bal, ok = _get_utxo_balance(address)
+        if ok:
+            slot["result"] = (bal, True)
+        elif scan:
+            slot["result"] = (int(scan.get(address, 0)), bool(scan))
+        return slot["result"]
+    finally:
+        with _BAL_INFLIGHT_LOCK:
+            _BAL_INFLIGHT.pop(address, None)
+        slot["done"].set()
 
 
 def _get_latest_block_recipients(timeout: float = 5.0) -> dict:
@@ -6194,100 +6407,196 @@ def build_explorer() -> dict:
 # ── Edge server system status ───────────────────────────────────────────
 
 _edge_status_cache = {"data": None, "ts": 0}
+_edge2_status_cache = {"data": None, "ts": 0}
 _EDGE_CACHE_TTL = 15  # seconds
 
+# Service catalogue per host — (unit, label, icon). Rendered server-side so the
+# frontend stays generic.
+EDGE_SERVICES = [
+    ("zion-v31-node2", "Node2", "🔷"), ("zion-v31-node3", "Node3", "🔷"),
+    ("zion-v31-pool", "Pool", "⚡"), ("zion-fallback-miner", "Miner", "⛏️"),
+    ("zion-chain-tunnel", "Tunnel", "🔗"), ("zion-bitcoind-regtest", "BTC-reg", "₿"),
+    ("zion-pool-wedgewatch", "WedgeW", "👁️"), ("zion-g8-probe", "G8", "📡"),
+    ("zion-edge-python-dashboard", "Dash", "📊"), ("nginx", "Nginx", "🌐"),
+    ("fail2ban", "F2B", "🛡️"),
+]
+EDGE_PORTS = [
+    (8336, "P2P2"), (8337, "P2P3"), (9446, "RPC2"), (9447, "RPC3"),
+    (8444, "Stratum"), (8445, "StratTLS"), (8080, "PoolAPI"), (8003, "HIRAN"),
+    (9944, "QTC-tun"), (44207, "PRL-tun"), (8332, "BTC-tun"), (5432, "PG-tun"),
+    (8096, "ZIS-tun"), (8453, "WARP-tun"), (8454, "WAPI-tun"), (3000, "Web-tun"),
+    (8766, "Dash"), (3001, "Grafana"),
+]
+EDGE2_SERVICES = [
+    ("zion-v31-node", "Node", "🔷"), ("zion-quantus-node", "QTC", "🔮"),
+    ("zion-pearld", "PRL", "🦪"), ("zion-pearl-oyster", "Oyster", "🦪"), ("zion-pearl-gateway", "PRL-GW", "🌉"),
+    ("zion-bitcoind", "BTC", "₿"), ("postgresql", "PG", "🐘"),
+    ("zion-zis", "ZIS", "🔐"), ("zion-db-sync", "DBSync", "🔄"),
+    ("zion-v31-dao", "DAO", "🏛️"), ("zion-v31-oasis", "OASIS", "🎮"),
+    ("zion-v31-ncl", "NCL", "🧠"), ("zion-v31-free-world", "FreeWorld", "🌍"),
+    ("zion-v31-issobella", "Issobella", "🛰️"), ("zion-v31-multichain", "WARP", "🌀"),
+    ("zion-v31-ai-native", "AI-Native", "🤖"), ("zion-website", "Web", "🌐"),
+    ("zion-marketplace", "Market", "🛒"), ("zion-btcunlock-coord", "BTCUnlock", "🔓"),
+    ("zion-edge-tunnel", "RevTun", "🔗"), ("prometheus-node-exporter", "NodeExp", "📈"), ("fail2ban", "F2B", "🛡️"),
+]
+EDGE2_PORTS = [
+    (8335, "P2P"), (9445, "RPC"), (9944, "QTCrpc"), (44207, "PRLrpc"), (8477, "PRLgw"),
+    (8332, "BTCrpc"), (8333, "BTCp2p"), (30333, "QTCp2p"), (5432, "PG"), (8096, "ZIS"),
+    (8456, "DAO"), (8094, "OASIS"), (8095, "FW"), (8097, "ISSO"), (8098, "NCL"),
+    (8453, "WARP"), (8454, "WAPI"), (3000, "Web"), (3100, "Market"), (8001, "AINat"),
+    (8779, "BTCU"), (9100, "NodeExp"),
+]
+
+def _host_probe(run_fn, services, ports, timeout=12, rpc_port=None) -> dict:
+    """Probe a host's load/mem/disk/services/ports via run_fn(shell)->CompletedProcess."""
+    units = " ".join(u for u, _, _ in services)
+    port_list = " ".join(str(p) for p, _ in ports)
+    combined_cmd = (
+        "nproc && top -bn2 -d 0.4 2>/dev/null | grep '^%Cpu' | tail -1 && "
+        "cat /proc/loadavg && free -m && df -h / | tail -1 && cat /proc/uptime && "
+        "echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && "
+        f"echo '===SVC===' && systemctl is-active {units} 2>/dev/null && "
+        f"echo '===PORTS===' && bash -c 'for p in {port_list}; do "
+        "(echo >/dev/tcp/127.0.0.1/$p) 2>/dev/null && echo \"$p:open\" || echo \"$p:closed\"; done' ; true"
+    )
+    if rpc_port:
+        combined_cmd += (
+            f" && echo '===RPC===' && curl -s -m3 -X POST http://127.0.0.1:{rpc_port} "
+            "-H 'Content-Type: application/json' "
+            "-d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getStatus\",\"params\":[]}'"
+        )
+    result = run_fn(combined_cmd, timeout=timeout)
+    output = result.stdout.strip()
+    if "===SVC===" not in output:
+        return {"ok": False, "error": (result.stderr.strip() or "probe failed")[:300]}
+
+    parts = output.split("===TOP===")
+    main_part = parts[0]
+    rest = parts[1] if len(parts) > 1 else ""
+    top_part, _, tail = rest.partition("===SVC===")
+    svc_part, _, port_part = tail.partition("===PORTS===")
+    port_part, _, rpc_part = port_part.partition("===RPC===")
+
+    lines = [l for l in main_part.splitlines() if l.strip()]
+    nproc = int(lines[0].strip()) if lines else 0
+    cpu_pct = None
+    cpu_line = lines[1] if len(lines) > 1 else ""
+    m = re.search(r"([\d.,]+)\s*id", cpu_line)
+    if m:
+        cpu_pct = round(100.0 - float(m.group(1).replace(",", ".")), 1)
+    load_1m = float(lines[2].split()[0]) if len(lines) > 2 else 0.0
+
+    mem_total_mb = mem_used_mb = 0.0
+    for line in lines:
+        if line.strip().startswith("Mem:"):
+            p = line.split()
+            mem_total_mb, mem_used_mb = float(p[1]), float(p[2])
+            break
+    mem_pct = round(mem_used_mb / mem_total_mb * 100, 1) if mem_total_mb else 0.0
+
+    disk_pct = disk_free_gb = 0
+    for line in lines:
+        if "%" in line and ("/" in line.split()[-1] or line.strip().endswith(" /")):
+            p = line.split()
+            if len(p) > 4:
+                disk_pct = int(p[4].rstrip("%"))
+                disk_free_gb = p[3].replace("G", "").replace("T", "000")
+                try:
+                    disk_free_gb = float(disk_free_gb)
+                except ValueError:
+                    disk_free_gb = 0
+            break
+
+    uptime_s = 0.0
+    for line in reversed(lines):
+        try:
+            uptime_s = float(line.split()[0])
+            break
+        except (ValueError, IndexError):
+            continue
+    days = int(uptime_s // 86400)
+    hrs = int((uptime_s % 86400) // 3600)
+    uptime_str = f"{days}d {hrs}h" if days else f"{hrs}h {int((uptime_s % 3600) // 60)}m"
+
+    mem_top = []
+    for line in top_part.splitlines():
+        p = line.split(None, 1)
+        if len(p) == 2:
+            try:
+                mem_top.append({"cmd": p[1].strip(), "mb": float(p[0]) / 1024.0})
+            except ValueError:
+                pass
+
+    states = [s.strip() for s in svc_part.splitlines() if s.strip()]
+    svc_map = {}
+    for i, (unit, label, icon) in enumerate(services):
+        svc_map[unit] = {"label": label, "icon": icon,
+                         "status": states[i] if i < len(states) else "unknown"}
+
+    port_map = {}
+    for p, label in ports:
+        port_map[str(p)] = {"label": label, "open": None}
+    for line in port_part.splitlines():
+        k, _, v = line.partition(":")
+        if k in port_map:
+            port_map[k]["open"] = v.strip() == "open"
+
+    node_rpc = None
+    if rpc_part.strip():
+        try:
+            rj = json.loads(rpc_part.strip())
+            node_rpc = {
+                "chain_height": rj.get("result", {}).get("chain_height"),
+                "tip": (rj.get("result", {}).get("native_tip_hash") or "")[:12],
+                "difficulty": rj.get("result", {}).get("difficulty"),
+            }
+        except (json.JSONDecodeError, AttributeError):
+            node_rpc = None
+
+    return {
+        "ok": True, "cpu_pct": cpu_pct, "nproc": nproc,
+        "load_1m": load_1m,
+        "mem_pct": mem_pct, "mem_used_mb": mem_used_mb, "mem_total_mb": mem_total_mb,
+        "mem_top": mem_top, "mem_history": [],
+        "disk_pct": disk_pct, "disk_free_gb": disk_free_gb,
+        "uptime": uptime_str,
+        "services": svc_map, "ports": port_map,
+        "node_rpc": node_rpc,
+    }
+
 def get_edge_server_status() -> dict:
-    """Fetch Edge server system metrics via SSH. Server-side cached for 15s."""
+    """Edge (local) host metrics — cached 15s."""
     import time as _time
     now = _time.time()
     if _edge_status_cache["data"] is not None and (now - _edge_status_cache["ts"]) < _EDGE_CACHE_TTL:
         return _edge_status_cache["data"]
-
     try:
-        # Single command: combine all metrics to avoid multiple calls
-        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog.timer zion-v31-dao zion-v31-oasis zion-v31-free-world zion-v31-issobella zion-edge-python-dashboard zion-website zion-marketplace nginx 2>/dev/null"
-        result = _run_edge_cmd(combined_cmd, timeout=8)
-        if result.returncode != 0:
-            return {"ok": False, "error": result.stderr.strip() or "Edge command failed"}
-
-        output = result.stdout.strip()
-        # Split output by markers
-        parts = output.split("===TOP===")
-        main_part = parts[0].strip() if parts else output
-        top_part = parts[1].split("===SVC===")[0].strip() if len(parts) > 1 else ""
-        svc_part = parts[1].split("===SVC===")[1].strip() if len(parts) > 1 and "===SVC===" in parts[1] else ""
-
-        lines = main_part.splitlines()
-        if len(lines) < 3:
-            return {"ok": False, "error": "Incomplete output"}
-
-        # Parse loadavg: 0.12 0.08 0.03 1/123 45678
-        load_parts = lines[0].split()
-        load_1m = float(load_parts[0])
-
-        # Parse free -m: find line starting with Mem:
-        mem_line = None
-        for line in lines:
-            if line.strip().startswith("Mem:"):
-                mem_line = line
-                break
-        if mem_line is None:
-            return {"ok": False, "error": "Could not parse memory"}
-        mem_parts = mem_line.split()
-        mem_total_mb = float(mem_parts[1])
-        mem_used_mb = float(mem_parts[2])
-        mem_pct = int((mem_used_mb / mem_total_mb) * 100) if mem_total_mb > 0 else 0
-
-        # Parse df -h /: find line containing rootfs or /
-        disk_line = None
-        for line in lines:
-            if line.strip().endswith(" /") or " / " in line:
-                disk_line = line
-                break
-        if disk_line is None:
-            disk_line = lines[-1]
-        disk_parts = disk_line.split()
-        disk_pct = int(disk_parts[4].rstrip('%')) if len(disk_parts) > 4 else 0
-
-        # Top memory consumers
-        mem_top = []
-        for line in top_part.splitlines():
-            parts = line.split(None, 1)
-            if len(parts) == 2:
-                mb = float(parts[0]) / 1024.0
-                cmd = parts[1].strip()
-                mem_top.append({"cmd": cmd, "mb": mb})
-
-        # Service status
-        services = []
-        svc_names = ["v31-node", "v31-pool", "v31-miner", "v31-multichain",
-                     "v31-watchdog", "v31-dao", "v31-oasis", "v31-free-world", "v31-issobella",
-                     "dashboard", "website", "marketplace", "nginx"]
-        states = svc_part.splitlines() if svc_part else []
-        for i, name in enumerate(svc_names):
-            if i < len(states):
-                services.append({"name": name, "status": states[i]})
-
-        data = {
-            "ok": True,
-            "cpu_pct": load_1m * 10,  # rough estimate: load*10 as %
-            "load_1m": load_1m,
-            "mem_pct": mem_pct,
-            "mem_used_mb": mem_used_mb,
-            "mem_total_mb": mem_total_mb,
-            "mem_top": mem_top,
-            "mem_history": [],
-            "disk_pct": disk_pct,
-            "services": services,
-        }
-        # Cache the result
+        data = _host_probe(_run_edge_cmd, EDGE_SERVICES, EDGE_PORTS, rpc_port=9446)
+        if data.get("ok"):
+            data["host"] = "edge"
         _edge_status_cache["data"] = data
         _edge_status_cache["ts"] = now
         return data
     except subprocess.TimeoutExpired:
         return {"ok": False, "error": "Command timeout"}
-    except FileNotFoundError as e:
+    except Exception as e:
         return {"ok": False, "error": str(e)}
+
+def get_edge2_server_status() -> dict:
+    """EDGE2 (207.180.217.100) host metrics via SSH — cached 15s."""
+    import time as _time
+    now = _time.time()
+    if _edge2_status_cache["data"] is not None and (now - _edge2_status_cache["ts"]) < _EDGE_CACHE_TTL:
+        return _edge2_status_cache["data"]
+    try:
+        data = _host_probe(_run_edge2_cmd, EDGE2_SERVICES, EDGE2_PORTS, rpc_port=9445)
+        if data.get("ok"):
+            data["host"] = "edge2"
+        _edge2_status_cache["data"] = data
+        _edge2_status_cache["ts"] = now
+        return data
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "Command timeout"}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
@@ -6399,6 +6708,9 @@ def run_edge_action(action: str) -> dict:
     cmd = ACTION_MAP.get(action)
     if not cmd:
         return {"ok": False, "error": f"Unknown action: {action}"}
+    # Miner controls act on whichever unit is live (canonical or fallback).
+    if action in ("restart-v31-miner", "stop-v31-miner", "start-v31-miner"):
+        cmd = cmd.replace("zion-v31-miner.service", _v31_miner_unit())
 
     try:
         # Maintenance actions can take several minutes (docker prune, apt clean).
@@ -7269,21 +7581,28 @@ def get_pool_registered_miners() -> dict:
         if addr and isinstance(addr, str) and addr.startswith("zion1"):
             unique_addrs.add(addr)
 
-    # Per-address on-chain balance via fast getUtxos RPC.
+    # Per-address on-chain balance via fast getUtxos RPC — parallel.
     # Wedge guard: each lookup retries up to 3 RPC endpoints (~3×timeout each);
     # without an overall budget a stalled node makes this O(minutes). Balances
     # are display-only — skipping the rest still yields a useful response.
     balance_map = {}
     balance_deadline = time.time() + 8.0
-    for addr in unique_addrs:
-        if time.time() > balance_deadline:
-            break
+    if unique_addrs:
+        ex = ThreadPoolExecutor(max_workers=min(8, len(unique_addrs)))
         try:
-            atomic, ok = _get_on_chain_balance(addr)
-            if ok:
-                balance_map[addr] = flowers_to_zion(atomic)
-        except Exception:
-            pass
+            futs = {a: ex.submit(_get_on_chain_balance, a) for a in unique_addrs}
+            for a, fut in futs.items():
+                remaining = balance_deadline - time.time()
+                if remaining <= 0:
+                    break
+                try:
+                    atomic, ok = fut.result(timeout=min(remaining, 6.0))
+                    if ok:
+                        balance_map[a] = flowers_to_zion(atomic)
+                except Exception:
+                    pass
+        finally:
+            ex.shutdown(wait=False)
 
     # 3. Build per-miner records, preserving individual miner IDs even if they share an address.
     # PPLNS state keys may be "wallet.worker" (dot) or "wallet/worker" (slash).
@@ -7409,27 +7728,47 @@ def enrich_miner_balances(miners: list) -> list:
     Updates each miner dict in-place with:
       - on_chain_balance_zion (float)
       - pending_balance_zion (float) if pending_balance is in atomic flowers
+
+    Addresses are deduplicated (many workers share one wallet) and looked up
+    in parallel — sequential getUtxos calls at ~0.5-1.5 s each used to blow
+    the whole endpoint past 10 s with a dozen+ miners.
     """
     if not miners:
         return miners
     # Same wedge guard as get_pool_registered_miners: bound total enrichment
     # time so a stalled node cannot hang callers that embed balances.
     balance_deadline = time.time() + 8.0
+    # 1. Collect unique payout addresses
+    unique_addrs: list[str] = []
+    seen: set = set()
     for m in miners:
         addr = m.get("payout_address") or m.get("address") or ""
-        if (
-            addr
-            and isinstance(addr, str)
-            and addr.startswith("zion1")
-            and time.time() <= balance_deadline
-        ):
-            try:
-                atomic, ok = _get_on_chain_balance(addr)
-                if ok:
-                    m["on_chain_balance_zion"] = flowers_to_zion(atomic)
-            except Exception:
-                pass
-        # Normalize pending_balance to ZION
+        if isinstance(addr, str) and addr.startswith("zion1") and addr not in seen:
+            seen.add(addr)
+            unique_addrs.append(addr)
+    # 2. Resolve balances in parallel (TTL cache absorbs repeat lookups)
+    balances: dict = {}
+    if unique_addrs:
+        ex = ThreadPoolExecutor(max_workers=min(8, len(unique_addrs)))
+        try:
+            futs = {a: ex.submit(_get_on_chain_balance, a) for a in unique_addrs}
+            for a, fut in futs.items():
+                remaining = balance_deadline - time.time()
+                if remaining <= 0:
+                    break
+                try:
+                    balances[a] = fut.result(timeout=min(remaining, 6.0))
+                except Exception:
+                    pass
+        finally:
+            ex.shutdown(wait=False)
+    # 3. Apply to miners + normalize pending_balance
+    for m in miners:
+        addr = m.get("payout_address") or m.get("address") or ""
+        if addr in balances:
+            atomic, ok = balances[addr]
+            if ok:
+                m["on_chain_balance_zion"] = flowers_to_zion(atomic)
         pending = m.get("pending_balance")
         if pending is not None:
             try:
@@ -7445,8 +7784,8 @@ def get_pool_leaderboard(limit: int = 50) -> dict:
     if not data.get("ok"):
         return data
     miners = data.get("miners", [])
-    # Enrich with on-chain balances and normalize pending/paid
-    miners = enrich_miner_balances(miners)
+    # get_pool_miners() already ran enrich_miner_balances() in-place — a
+    # second pass only burns the dedupe deadline on cold caches.
     sorted_miners = sorted(
         miners,
         key=lambda m: (m.get("hashrate_hps") or m.get("hashrate") or 0),
@@ -10373,13 +10712,8 @@ def build_payout_status() -> dict:
         if wn:
             m["worker_name"] = wn
 
-        if addr and addr.startswith("zion1"):
-            try:
-                atomic, ok = _get_on_chain_balance(addr)
-                if ok:
-                    m["on_chain_balance_zion"] = flowers_to_zion(atomic)
-            except Exception:
-                pass
+        # On-chain balances are resolved in bulk after the loop (parallel
+        # getUtxos — sequential per-miner calls pushed /api/payout past 14 s).
         # Normalize paid_total and pending for the payout tab miner table
         if m.get("paid_total_atomic") is not None:
             m["paid_total"] = flowers_to_zion(int(m.get("paid_total_atomic") or 0))
@@ -10391,6 +10725,12 @@ def build_payout_status() -> dict:
             m["pending_balance_zion"] = flowers_to_zion(int(m.get("pending_balance") or 0))
         if m.get("unpaid_total") is not None and m.get("pending_balance_zion") is None:
             m["pending_balance_zion"] = m["unpaid_total"]
+
+    # Bulk parallel on-chain balance enrichment (dedupes shared wallets).
+    try:
+        enrich_miner_balances(miners)
+    except Exception:
+        pass
 
     # ── Network-wide emission totals from block 0 (consensus schedule) ──
     try:
@@ -10451,19 +10791,35 @@ def build_payout_status() -> dict:
         per_block_burned_zion = block_subsidy(status["last_block_height"] or 1) / 100 / 1_000_000
         status["burned_total"] = total_blocks * per_block_burned_zion
 
-    # ── Wallet balances (on-chain UTXO via getUtxos RPC) ───────────────
-    if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
-        atomic, ok = _get_on_chain_balance(status["pool_wallet"])
+    # ── Wallet balances (on-chain UTXO via getUtxos RPC, parallel) ─────
+    _fee_addrs = {"pool_wallet": status["pool_wallet"],
+                  "miner": status["miner_wallet"],
+                  "humanitarian": status["humanitarian_wallet"],
+                  "issobella": status["issobella_wallet"],
+                  "pool_fee": status.get("pool_fee_wallet")}
+    _fee_addrs = {k: v for k, v in _fee_addrs.items() if v and str(v).startswith("zion1")}
+    _fee_bal: dict = {}
+    if _fee_addrs:
+        ex = ThreadPoolExecutor(max_workers=min(5, len(_fee_addrs)))
+        try:
+            futs = {k: ex.submit(_get_on_chain_balance, v) for k, v in _fee_addrs.items()}
+            for k, fut in futs.items():
+                try:
+                    _fee_bal[k] = fut.result(timeout=8.0)
+                except Exception:
+                    _fee_bal[k] = (0, False)
+        finally:
+            ex.shutdown(wait=False)
+
+    if "pool_wallet" in _fee_bal:
+        atomic, ok = _fee_bal["pool_wallet"]
         if ok:
             status["pool_wallet_balance"] = atomic
 
     balances = {}
-    for key, addr in [("miner", status["miner_wallet"]),
-                      ("humanitarian", status["humanitarian_wallet"]),
-                      ("issobella", status["issobella_wallet"]),
-                      ("pool_fee", status.get("pool_fee_wallet"))]:
-        if addr and addr.startswith("zion1"):
-            atomic, ok = _get_on_chain_balance(addr)
+    for key in ("miner", "humanitarian", "issobella", "pool_fee"):
+        if key in _fee_bal:
+            atomic, ok = _fee_bal[key]
             if ok:
                 balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
         elif key == "pool_fee" and status.get("burned_total"):
@@ -11448,7 +11804,12 @@ def background_sampler():
             st = build_status()
             HISTORY.record(st)
             SERVICE_HISTORY.record(all_services_health())
-            scan_block_events()
+            # Log rotation every ~10 min (120 iterations * 5s)
+            rotation_counter += 1
+            # Block-event scan only every 2nd iteration (~10 s): journald
+            # tailing costs ~0.8 s per pass and blocks arrive minutes apart.
+            if rotation_counter % 2 == 0:
+                scan_block_events()
             # Persist new alerts (throttled)
             try:
                 persist_new_alerts(build_alerts(st))
@@ -11458,8 +11819,6 @@ def background_sampler():
             # (do NOT synchronously probe here — TCP timeouts can block 15s+)
             for svc in SERVICE_REGISTRY:
                 HEALTH_CACHE.pop(svc["id"], None)
-            # Log rotation every ~10 min (120 iterations * 5s)
-            rotation_counter += 1
             if rotation_counter % 120 == 0:
                 try:
                     rotate_all_logs()
@@ -11598,8 +11957,19 @@ def _build_health_map() -> dict:
     health = {}
 
     # V31 services (production)
+    # V31 primary je na EDGE2 (split v2/v3): edge:9445 je SSH tunel -> EDGE2.
     v31_node = status.get("v31_node", {})
-    health["v31-node"] = "up" if v31_node.get("running") and v31_node.get("chain_height") is not None else "down"
+    try:
+        health["v31-node"] = "up" if tcp_probe("127.0.0.1", 9445, timeout=0.4) else "down"
+    except Exception:
+        health["v31-node"] = "down"
+
+    # V31 follower nodes — systemd state is authoritative; their RPC is
+    # CPU-starved on Edge and a slow RPC is NOT a dead node.
+    v31_node2 = status.get("v31_node2", {})
+    health["v31-node2"] = "up" if v31_node2.get("running") else "down"
+    v31_node3 = status.get("v31_node3", {})
+    health["v31-node3"] = "up" if v31_node3.get("running") else "down"
 
     v31_pool = status.get("v31_pool", {})
     health["v31-pool"] = "up" if v31_pool.get("running") else "down"
@@ -11610,12 +11980,16 @@ def _build_health_map() -> dict:
     # Keep legacy alias for v2 clients
     health["miner"] = health["v31-miner"]
 
+    # WARP je na EDGE2: edge:8453 tunel.
     v31_multichain = status.get("v31_multichain", {})
-    health["v31-multichain"] = "up" if v31_multichain.get("running") and v31_multichain.get("ok") else "down"
+    try:
+        health["v31-multichain"] = "up" if tcp_probe("127.0.0.1", 8453, timeout=0.4) else "down"
+    except Exception:
+        health["v31-multichain"] = "down"
 
     # V31 node health (replaces legacy V3 edge-node)
     v31_node_h = status.get("v31_node", {})
-    health["edge-node"] = "up" if v31_node_h.get("running") and v31_node_h.get("chain_height") is not None else "down"
+    health["edge-node"] = health["v31-node"]
 
     pool_edge = status.get("pool_edge", {})
     health["pool-edge"] = "up" if pool_edge.get("running") else "down"
@@ -11628,6 +12002,14 @@ def _build_health_map() -> dict:
         "dao": 8456,          # V31 DAO API — was V3 port 8450
         "warp": 8453,         # V31 Multichain WARP Relay
         "dashboard": 8766,    # This dashboard
+        # EDGE2 sluzby — pres zion-chain-tunnel na edge loopbacku:
+        "zis": 8096,          # ZIS identity
+        "v31-free-world": 8095, "v31-issobella": 8097, "v31-ncl": 8098,
+        "marketplace": 3100,  # Next.js marketplace
+        "ai-native": 8001,    # AI-native API
+        "btcunlock": 8779,    # BTC unlock coordinator
+        "postgresql": 5432,   # PG pres tunel
+        "quantus": 9944, "pearl": 44207, "bitcoin": 8332,  # chainy na EDGE2
     }
     for sid, port in ext_ports.items():
         try:
@@ -11636,8 +12018,11 @@ def _build_health_map() -> dict:
             alive = False
         health[sid] = "up" if alive else "down"
     # Nginx + website: check via SSH on Edge server (not tunneled locally)
-    for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null"),
-                     ("website", "systemctl is-active zion-website 2>/dev/null")]:
+    try:
+        health["website"] = "up" if tcp_probe("127.0.0.1", 3000, timeout=0.4) else "down"
+    except Exception:
+        health["website"] = "down"
+    for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null")]:
         try:
             result = _run_edge_cmd(cmd, timeout=3)
             alive = result.returncode == 0 and "active" in (result.stdout or "").strip() or "true" in (result.stdout or "").strip()
@@ -11734,8 +12119,12 @@ ATTACKER_ADDRESSES = [
     },
     {
         "address": "zion17758s76520t4c6c3v656g8a5p7d4x4c2d2032x0",
-        "label": "ATTACKER — 1 ZION probe (block 21959)",
-        "expected_balance_zion": 1.0,
+        "label": "ATTACKER — 1 ZION probe (block 21959, pre-reset chain)",
+        # The 2026-08-06 genesis reset re-created the chain; this address has
+        # held 0 ZION on the live chain ever since. The old expected=1.0 fired
+        # a permanent false-positive "attacker funds moved" CRITICAL. Alert
+        # semantics preserved: any future deposit into this address trips it.
+        "expected_balance_zion": 0,
     },
 ]
 
@@ -11842,10 +12231,26 @@ def build_security_warnings(limit: int = 200) -> dict:
 
 def build_security_status() -> dict:
     """Build security status for /api/security endpoint."""
+    # Balance lookups are parallel — 10 sequential getUtxos calls used to take
+    # >10 s and push the endpoint past proxy timeouts.
+    watch_addrs = [a["address"] for a in ATTACKER_ADDRESSES] + [g["address"] for g in PREMINE_GUARD]
+    balances: dict = {}
+    if watch_addrs:
+        ex = ThreadPoolExecutor(max_workers=min(8, len(watch_addrs)))
+        try:
+            futs = {a: ex.submit(_rpc_get_balance, a) for a in watch_addrs}
+            for a, fut in futs.items():
+                try:
+                    balances[a] = fut.result(timeout=8.0)
+                except Exception:
+                    balances[a] = None
+        finally:
+            ex.shutdown(wait=False)
+
     # 1. Attacker address watch
     attackers = []
     for a in ATTACKER_ADDRESSES:
-        bal = _rpc_get_balance(a["address"])
+        bal = balances.get(a["address"])
         if bal:
             bal_flowers = int(bal.get("balance_flowers", 0))
             bal_zion = flowers_to_zion(bal_flowers)
@@ -11868,7 +12273,7 @@ def build_security_status() -> dict:
     # 2. Premine balance guard
     guards = []
     for g in PREMINE_GUARD:
-        bal = _rpc_get_balance(g["address"])
+        bal = balances.get(g["address"])
         if bal:
             bal_flowers = int(bal.get("balance_flowers", 0))
             bal_zion = flowers_to_zion(bal_flowers)
@@ -12187,6 +12592,63 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self._json({"ok": False, "error": f"Edge website unreachable: {str(e)[:120]}", "offline": True})
 
+    def do_HEAD(self):
+        """Minimal HEAD support — headers only, no body.
+
+        BaseHTTPRequestHandler otherwise answers 501, which breaks uptime
+        probes and `curl -I` health checks. Whitelisted to routes whose
+        response shape is known statically.
+        """
+        if not self._check_auth():
+            return
+        route = urllib.parse.urlparse(self.path).path
+        def _headers(code, ctype=None, length=None, extra=None):
+            self.send_response(code)
+            if ctype:
+                self.send_header("Content-Type", ctype)
+            if length is not None:
+                self.send_header("Content-Length", str(length))
+            for k, v in (extra or {}).items():
+                self.send_header(k, v)
+            self.end_headers()
+        if route in ("/", "/index.html", "/v3"):
+            _headers(302, extra={"Location": "/v31/"})
+            return
+        if route in ("/health", "/api/health"):
+            _headers(200, "application/json")
+            return
+        if route in ("/dashboard", "/dashboard.html"):
+            f = SCRIPT_DIR / "dashboard.html"
+            if f.exists():
+                _headers(200, "text/html; charset=utf-8", f.stat().st_size)
+            else:
+                _headers(404)
+            return
+        if route == "/favicon.ico":
+            f = SCRIPT_DIR / "v31" / "favicon.ico"
+            if f.exists():
+                _headers(200, "image/x-icon", f.stat().st_size)
+            else:
+                _headers(404)
+            return
+        if route in ("/g8", "/ecosystem", "/legacy", "/security-warnings", "/v31/", "/v31/index.html"):
+            fmap = {"/g8": "g8.html", "/ecosystem": "ecosystem.html",
+                    "/legacy": "legacy.html", "/security-warnings": "security-warnings.html"}
+            f = (SCRIPT_DIR / "v31" / "index.html") if route.startswith("/v31") else (SCRIPT_DIR / fmap[route])
+            if f.exists():
+                _headers(200, "text/html; charset=utf-8", f.stat().st_size)
+            else:
+                _headers(404)
+            return
+        if route in ("/dashboard.js", "/dashboard.min.js", "/v31/v31.js"):
+            f = (SCRIPT_DIR / "v31" / "v31.js") if route == "/v31/v31.js" else (SCRIPT_DIR / route.lstrip("/"))
+            if f.exists():
+                _headers(200, "application/javascript; charset=utf-8", f.stat().st_size)
+            else:
+                _headers(404)
+            return
+        self.send_error(405, "HEAD not supported for this route")
+
     def do_GET(self):
         if not self._check_auth():
             return
@@ -12227,6 +12689,40 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self.wfile.write(body)
                     return
                 self.send_error(404)
+                return
+        else:
+            # v2/dist absent on Edge — serve favicon + manifest from v31 assets
+            # so browsers stop logging 404s on every page load.
+            if route == "/favicon.ico":
+                icon = SCRIPT_DIR / "v31" / "favicon.ico"
+                if icon.exists():
+                    body = icon.read_bytes()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "image/x-icon")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.send_header("Cache-Control", "public, max-age=86400")
+                    self.end_headers()
+                    self.wfile.write(body)
+                else:
+                    self.send_error(404)
+                return
+            if route == "/manifest.json":
+                body = json.dumps({
+                    "name": "ZION Dashboard",
+                    "short_name": "ZION",
+                    "start_url": "/",
+                    "display": "standalone",
+                    "background_color": "#0a0a0f",
+                    "theme_color": "#0a0a0f",
+                    "icons": [{"src": "/v31/symbol-200x200.png",
+                               "sizes": "200x200", "type": "image/png"}],
+                }).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/manifest+json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "public, max-age=3600")
+                self.end_headers()
+                self.wfile.write(body)
                 return
 
         # ── Dashboard v2 SPA static files ────────────────────────────────────
@@ -12336,8 +12832,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.send_error(404)
         # ── Dashboard v3 SPA static files ────────────────────────────────────
         elif route == "/v3":
+            # /v3 assets were never shipped to Edge — land users on the live
+            # V31 dashboard instead of a dead /v3/ 404.
             self.send_response(302)
-            self.send_header("Location", "/v3/")
+            if (SCRIPT_DIR / "v3" / "index.html").exists():
+                self.send_header("Location", "/v3/")
+            else:
+                self.send_header("Location", "/v31/")
             self.end_headers()
             return
         elif route == "/v3/" or route == "/v3/index.html":
@@ -12461,6 +12962,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json({"error": str(ex), "reachable": False})
         elif route == "/api/edge-status":
             self._json(get_edge_server_status())
+        elif route == "/api/edge2-status":
+            self._json(get_edge2_server_status())
         elif route == "/api/pool/miners":
             self._json(get_pool_miners())
         elif route == "/api/pool/connection-history":
@@ -12508,7 +13011,21 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_lottery_units())
         elif route == "/api/miner/log-tail":
             lines = int(params.get("lines", ["30"])[0])
-            self._json({"lines": tail_log("miner.log", lines), "file": str(LOG_DIR / "miner.log")})
+            tail = tail_log("miner.log", lines)
+            if not tail:
+                # Fallback miner (and v31 miner) log to journald, not a file.
+                try:
+                    unit = _v31_miner_unit()
+                    r = subprocess.run(
+                        ["journalctl", "-u", unit, "--no-pager", "-n", str(lines), "--output=cat"],
+                        capture_output=True, text=True, timeout=5,
+                    )
+                    tail = strip_ansi(r.stdout).strip().split("\n") if r.stdout.strip() else []
+                    self._json({"lines": tail, "file": f"journalctl:{unit}"})
+                except Exception:
+                    self._json({"lines": tail, "file": str(LOG_DIR / "miner.log")})
+            else:
+                self._json({"lines": tail, "file": str(LOG_DIR / "miner.log")})
         elif route == "/api/settings/load":
             self._json(load_dashboard_settings())
         elif route == "/api/fleet/rigs":
@@ -12671,7 +13188,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # V31 systemd services use journalctl; legacy services use log files
             svc_id   = params.get("svc",   ["v31-node"])[0].strip()
             n_init   = min(int(params.get("lines", ["150"])[0]), 500)
-            journal_unit = V31_JOURNAL_MAP.get(svc_id)
+            journal_unit = _v31_miner_unit() if svc_id == "v31-miner" else V31_JOURNAL_MAP.get(svc_id)
             log_name = SERVICE_LOG_MAP.get(svc_id)
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
@@ -14257,7 +14774,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             svc_id = params.get("id", [""])[0].strip()
             n_lines = int(params.get("lines", ["80"])[0])
             # V31 systemd services → journalctl
-            journal_unit = V31_JOURNAL_MAP.get(svc_id)
+            journal_unit = _v31_miner_unit() if svc_id == "v31-miner" else V31_JOURNAL_MAP.get(svc_id)
             if journal_unit:
                 try:
                     r = subprocess.run(
@@ -14825,6 +15342,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/edge/clear-disk":
             aggressive = payload.get("aggressive", False)
             self._json(clear_edge_disk(aggressive=aggressive))
+        elif route == "/api/edge-status":
+            _edge_status_cache["data"] = None
+            self._json(get_edge_server_status())
+        elif route == "/api/edge2-status":
+            _edge2_status_cache["data"] = None
+            self._json(get_edge2_server_status())
         elif route == "/api/edge-action":
             self._json(run_edge_action(payload.get("action", "")))
         elif route == "/api/settings/save":

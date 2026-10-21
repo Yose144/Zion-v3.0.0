@@ -1283,7 +1283,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     <div id="card-edge-server" class="zion-panel svc-card p-5">
       <div class="flex items-center justify-between mb-4 relative z-10">
         <div class="flex items-center gap-3">
-          <span class="zion-kicker">🌍 Edge Server</span>
+          <span class="zion-kicker">🌍 Edge · ingress + pool + followers</span>
           <span class="text-[10px] font-mono text-gray-500">62.171.141.136</span>
           <span id="edge-h-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
         </div>
@@ -1404,6 +1404,68 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <a href="https://zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition text-indigo-300">🌐 Website</a>
           <a href="http://62.171.141.136:8444" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition text-emerald-300">🌐 V31 Pool</a>
         </div>
+      </div>
+    </div>
+
+    <!-- EDGE2 Server (vmi3684458 — primary chain + app core target) -->
+    <div id="card-edge2-server" class="zion-panel svc-card p-5">
+      <div class="flex items-center justify-between mb-4 relative z-10">
+        <div class="flex items-center gap-3">
+          <span class="zion-kicker">⚡ Edge2 Server</span>
+          <span class="text-[10px] font-mono text-gray-500">207.180.217.100 · vmi3684458</span>
+          <span class="text-[9px] px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">V31 primary</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="badge-edge2-server" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+          <button onclick="refreshEdge2ServerCard(true)" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Force refresh">⟳</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 relative z-10">
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">CPU</div>
+          <div id="edge2-cpu" class="text-xl font-bold text-amber-400">—</div>
+          <div id="edge2-load" class="text-[10px] text-gray-500 mt-0.5">load —</div>
+          <div id="edge2-cores" class="text-[9px] text-gray-600 mt-0.5">— cores</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Memory</div>
+          <div id="edge2-mem-pct" class="text-xl font-bold text-blue-400">—</div>
+          <div id="edge2-mem-detail" class="text-[10px] text-gray-500 mt-0.5">— / — GB</div>
+          <div id="edge2-mem-top" class="text-left mt-2 space-y-0.5"></div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Disk</div>
+          <div id="edge2-disk-pct" class="text-xl font-bold text-emerald-400">—</div>
+          <div id="edge2-disk-detail" class="text-[10px] text-gray-500 mt-0.5">— GB free</div>
+          <div class="mt-2 w-full h-2 bg-white/5 rounded-full overflow-hidden">
+            <div id="edge2-disk-bar" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, #078930, #fcd116, #e41e2b);"></div>
+          </div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Uptime</div>
+          <div id="edge2-uptime" class="text-xl font-bold text-cyan-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">edge2 host</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Chain</div>
+          <div id="edge2-chain-height" class="text-xl font-bold text-emerald-400">—</div>
+          <div id="edge2-chain-parity" class="text-[10px] text-gray-500 mt-0.5">vs edge —</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Services</div>
+          <div id="edge2-svcs-ok" class="text-xl font-bold text-emerald-400">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">active</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 relative z-10" id="edge2-services-grid">
+        <div class="col-span-full text-xs text-gray-500 text-center py-2">Loading edge2 services…</div>
+      </div>
+
+      <div class="mt-3 relative z-10">
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5">Key Ports</div>
+        <div class="flex flex-wrap gap-1.5" id="edge2-ports-row"></div>
       </div>
     </div>
 

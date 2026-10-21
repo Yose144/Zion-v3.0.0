@@ -394,6 +394,7 @@ async function refreshAll(){
       updateMainnetMetrics(statusData);
       updatePayouts(statusData.pool, statusData.topology);
       refreshEdgeServerCard(); // non-blocking, cached 30s
+      refreshEdge2ServerCard(); // non-blocking, cached 15s
 
       // Tab-specific rendering (only for active tab)
       if(currentTab === 'charts') renderCharts();
@@ -1157,6 +1158,11 @@ function _renderEdgeServerCard(d) {
   // Badge
   if(badge){ badge.textContent = 'LIVE'; badge.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'; }
 
+  // Record edge chain height for edge2 parity display
+  if(d.node_rpc && d.node_rpc.chain_height != null){
+    try { _edgeHeightSeen = d.node_rpc.chain_height; } catch(e){}
+  }
+
   // CPU
   const cpuEl = document.getElementById('edge-cpu');
   const loadEl = document.getElementById('edge-load');
@@ -1210,48 +1216,17 @@ function _renderEdgeServerCard(d) {
   if(diskDet && d.disk_free_gb != null) diskDet.textContent = d.disk_free_gb + ' GB free';
   if(diskPct && d.disk_pct != null) diskPct.className = 'text-xl font-bold ' + (d.disk_pct > 85 ? 'text-red-400' : d.disk_pct > 65 ? 'text-amber-400' : 'text-emerald-400');
 
-  // Services grid
-  const SVC_LABELS = {
-    'zion-node':         { icon: '🔷', label: 'Node',   url: 'http://62.171.141.136:9445' },
-    'zion-pool':         { icon: '⚡', label: 'Pool',   url: 'http://62.171.141.136:8444' },
-    'zion-dao':          { icon: '🏛️', label: 'DAO',    url: 'http://62.171.141.136:8456' },
-    'zion-warp':         { icon: '🌀', label: 'WARP',   url: 'http://62.171.141.136:8453' },
-    'zion-bridge':       { icon: '🌉', label: 'Bridge', url: 'http://62.171.141.136:9101' },
-    'nginx':             { icon: '🌐', label: 'Nginx',  url: 'https://zionterranova.com' },
-    'hiran-inference':   { icon: '🤖', label: 'Hiran',  url: null },
-    'hiranyagarbha':     { icon: '🧠', label: 'Orch',   url: 'http://62.171.141.136:8001' },
-  };
-  // Also add PM2 processes (website)
-  const pm2Labels = { 'zion-website': { icon: '🌐', label: 'Website', url: 'https://zionterranova.com' } };
-
+  // Services grid — backend returns {unit: {label, icon, status}}
   const svcs = d.services || {};
-  const pm2 = d.pm2 || {};
   let okCount = 0;
-
   const cards = [];
-  // systemd services
-  for(const [svc, meta] of Object.entries(SVC_LABELS)){
-    const st = svcs[svc] || 'unknown';
+  for(const [unit, meta] of Object.entries(svcs)){
+    const st = meta.status || 'unknown';
     const ok = st === 'active';
     if(ok) okCount++;
     const color = ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : (st === 'unknown' ? 'bg-white/5 border-white/10 text-gray-500' : 'bg-red-500/10 border-red-500/30 text-red-400');
     const dot = ok ? '🟢' : (st === 'unknown' ? '⚪' : '🔴');
-    const link = meta.url ? ` onclick="window.open('${meta.url}','_blank')" style="cursor:pointer"` : '';
-    cards.push(`<div class="rounded-lg border p-2 text-center ${color}"${link}>
-      <div class="text-base mb-0.5">${meta.icon}</div>
-      <div class="text-[10px] font-semibold">${meta.label}</div>
-      <div class="text-[9px] mt-0.5 opacity-70">${dot} ${st}</div>
-    </div>`);
-  }
-  // PM2 services
-  for(const [name, meta] of Object.entries(pm2Labels)){
-    const st = pm2[name] || 'unknown';
-    const ok = st === 'online';
-    if(ok) okCount++;
-    const color = ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : (st === 'unknown' ? 'bg-white/5 border-white/10 text-gray-500' : 'bg-red-500/10 border-red-500/30 text-red-400');
-    const dot = ok ? '🟢' : (st === 'unknown' ? '⚪' : '🔴');
-    const link = meta.url ? ` onclick="window.open('${meta.url}','_blank')" style="cursor:pointer"` : '';
-    cards.push(`<div class="rounded-lg border p-2 text-center ${color}"${link}>
+    cards.push(`<div class="rounded-lg border p-2 text-center ${color}">
       <div class="text-base mb-0.5">${meta.icon}</div>
       <div class="text-[10px] font-semibold">${meta.label}</div>
       <div class="text-[9px] mt-0.5 opacity-70">${dot} ${st}</div>
@@ -1262,18 +1237,146 @@ function _renderEdgeServerCard(d) {
   if(grid) grid.innerHTML = cards.join('');
 
   const okEl = document.getElementById('edge-svcs-ok');
-  if(okEl){ okEl.textContent = okCount; okEl.className = 'text-xl font-bold ' + (okCount >= 5 ? 'text-emerald-400' : okCount >= 3 ? 'text-amber-400' : 'text-red-400'); }
+  if(okEl){ okEl.textContent = okCount; okEl.className = 'text-xl font-bold ' + (okCount >= 10 ? 'text-emerald-400' : okCount >= 5 ? 'text-amber-400' : 'text-red-400'); }
 
-  // Ports
-  const PORT_LABELS = {8335:'P2P1',8336:'P2P2',9445:'RPC1',8444:'Stratum',8456:'DAO',8453:'WARP',3000:'Web',3100:'Grafana',9090:'Prometheus'};
+  // Cores + uptime
+  const coresEl = document.getElementById('edge-h-cpu-cores');
+  if(coresEl && d.nproc) coresEl.textContent = d.nproc + ' cores';
+  const uptimeEl = document.getElementById('edge-h-uptime');
+  if(uptimeEl && d.uptime) uptimeEl.textContent = d.uptime;
+
+  // Ports — backend returns {port: {label, open}}
   const ports = d.ports || {};
   const portsRow = document.getElementById('edge-ports-row');
   if(portsRow){
-    portsRow.innerHTML = Object.entries(PORT_LABELS).map(([port, label]) => {
-      const open = ports[parseInt(port)];
+    portsRow.innerHTML = Object.entries(ports).map(([port, meta]) => {
+      const open = meta.open;
       const cls = open === true ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : open === false ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 text-gray-500 border-white/10';
       const sym = open === true ? '✓' : open === false ? '✗' : '?';
-      return `<span class="text-[10px] px-2 py-0.5 rounded border font-mono ${cls}">${sym} :${port} ${label}</span>`;
+      return `<span class="text-[10px] px-2 py-0.5 rounded border font-mono ${cls}">${sym} :${port} ${meta.label}</span>`;
+    }).join('');
+  }
+}
+
+// ── EDGE2 server card ─────────────────────────────────────────────────
+let _edge2ServerLastFetch = 0;
+let _edgeHeightSeen = null;  // for parity display
+
+async function refreshEdge2ServerCard(force) {
+  const now = Date.now();
+  if(!force && now - _edge2ServerLastFetch < 15000) return;
+  _edge2ServerLastFetch = now;
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 15000);
+    const res = await fetch('/api/edge2-status' + (force ? '?force=1' : ''), {
+      method: force ? 'POST' : 'GET',
+      headers: force ? {'Content-Type':'application/json'} : undefined,
+      body: force ? JSON.stringify({force: true}) : undefined,
+      signal: ctrl.signal,
+    });
+    clearTimeout(tid);
+    const d = await res.json();
+    _renderEdge2ServerCard(d);
+  } catch(e) {
+    const badge = document.getElementById('badge-edge2-server');
+    if(badge){ badge.textContent = 'ERR'; badge.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/20 text-red-300'; }
+  }
+}
+
+function _renderEdge2ServerCard(d) {
+  const badge = document.getElementById('badge-edge2-server');
+  if (!d.ok) {
+    if(badge){ badge.textContent = 'SSH ERR'; badge.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/20 text-red-300'; }
+    const grid = document.getElementById('edge2-services-grid');
+    if(grid) grid.innerHTML = `<div class="col-span-full text-xs text-red-400 py-2">SSH error: ${escapeHtml(d.error || 'unknown')}</div>`;
+    return;
+  }
+  if(badge){ badge.textContent = 'LIVE'; badge.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'; }
+
+  const cpuEl = document.getElementById('edge2-cpu');
+  if(cpuEl){
+    cpuEl.textContent = d.cpu_pct != null ? d.cpu_pct.toFixed(1) + '%' : '—';
+    cpuEl.className = 'text-xl font-bold ' + (d.cpu_pct > 80 ? 'text-red-400' : d.cpu_pct > 50 ? 'text-amber-400' : 'text-emerald-400');
+  }
+  const loadEl = document.getElementById('edge2-load');
+  if(loadEl && d.load_1m != null) loadEl.textContent = 'load ' + d.load_1m.toFixed(2);
+  const coresEl = document.getElementById('edge2-cores');
+  if(coresEl && d.nproc) coresEl.textContent = d.nproc + ' cores';
+
+  const memPct = document.getElementById('edge2-mem-pct');
+  const memDet = document.getElementById('edge2-mem-detail');
+  if(memPct && d.mem_pct != null){
+    memPct.textContent = d.mem_pct + '%';
+    memPct.className = 'text-xl font-bold ' + (d.mem_pct > 85 ? 'text-red-400' : d.mem_pct > 70 ? 'text-amber-400' : 'text-blue-400');
+  }
+  if(memDet && d.mem_used_mb != null) memDet.textContent = (d.mem_used_mb/1024).toFixed(1) + ' / ' + (d.mem_total_mb/1024).toFixed(1) + ' GB';
+  const memTop = document.getElementById('edge2-mem-top');
+  if(memTop && d.mem_top){
+    memTop.innerHTML = d.mem_top.slice(0, 4).map((p, i) => {
+      const name = p.cmd.replace(/^.*\//, '').slice(0, 16);
+      const color = i === 0 ? 'text-red-400' : i === 1 ? 'text-amber-400' : 'text-gray-500';
+      return `<div class="text-[9px] font-mono ${color} flex justify-between"><span>${escapeHtml(name)}</span><span>${p.mb.toFixed(0)}M</span></div>`;
+    }).join('');
+  }
+
+  const diskPct = document.getElementById('edge2-disk-pct');
+  const diskDet = document.getElementById('edge2-disk-detail');
+  if(diskPct && d.disk_pct != null){
+    diskPct.textContent = d.disk_pct + '%';
+    diskPct.className = 'text-xl font-bold ' + (d.disk_pct > 85 ? 'text-red-400' : d.disk_pct > 65 ? 'text-amber-400' : 'text-emerald-400');
+  }
+  if(diskDet && d.disk_free_gb != null) diskDet.textContent = d.disk_free_gb + ' GB free';
+  const diskBar = document.getElementById('edge2-disk-bar');
+  if(diskBar && d.disk_pct != null) diskBar.style.width = d.disk_pct + '%';
+
+  const upEl = document.getElementById('edge2-uptime');
+  if(upEl && d.uptime) upEl.textContent = d.uptime;
+
+  // Chain parity vs edge
+  const chainEl = document.getElementById('edge2-chain-height');
+  const parityEl = document.getElementById('edge2-chain-parity');
+  const h2 = d.node_rpc && d.node_rpc.chain_height != null ? d.node_rpc.chain_height : null;
+  if(chainEl) chainEl.textContent = h2 != null ? h2.toLocaleString() : '—';
+  if(parityEl){
+    if(h2 == null){ parityEl.textContent = 'node rpc —'; parityEl.className = 'text-[10px] text-gray-500 mt-0.5'; }
+    else if(_edgeHeightSeen != null){
+      const lag = _edgeHeightSeen - h2;
+      parityEl.textContent = lag === 0 ? '✓ synced with edge' : (lag > 0 ? `▼ ${lag} behind edge` : `▲ ${-lag} ahead of edge`);
+      parityEl.className = 'text-[10px] mt-0.5 ' + (lag === 0 ? 'text-emerald-400' : Math.abs(lag) <= 3 ? 'text-amber-400' : 'text-red-400');
+    } else { parityEl.textContent = 'height ' + h2; parityEl.className = 'text-[10px] text-gray-500 mt-0.5'; }
+  }
+
+  // Services
+  const svcs = d.services || {};
+  let okCount = 0;
+  const cards = [];
+  for(const [unit, meta] of Object.entries(svcs)){
+    const st = meta.status || 'unknown';
+    const ok = st === 'active';
+    if(ok) okCount++;
+    const color = ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : (st === 'unknown' ? 'bg-white/5 border-white/10 text-gray-500' : 'bg-red-500/10 border-red-500/30 text-red-400');
+    const dot = ok ? '🟢' : (st === 'unknown' ? '⚪' : '🔴');
+    cards.push(`<div class="rounded-lg border p-2 text-center ${color}">
+      <div class="text-base mb-0.5">${meta.icon}</div>
+      <div class="text-[10px] font-semibold">${meta.label}</div>
+      <div class="text-[9px] mt-0.5 opacity-70">${dot} ${st}</div>
+    </div>`);
+  }
+  const grid = document.getElementById('edge2-services-grid');
+  if(grid) grid.innerHTML = cards.join('');
+  const okEl = document.getElementById('edge2-svcs-ok');
+  if(okEl){ okEl.textContent = okCount; okEl.className = 'text-xl font-bold ' + (okCount >= 8 ? 'text-emerald-400' : okCount >= 3 ? 'text-amber-400' : 'text-red-400'); }
+
+  // Ports
+  const ports = d.ports || {};
+  const portsRow = document.getElementById('edge2-ports-row');
+  if(portsRow){
+    portsRow.innerHTML = Object.entries(ports).map(([port, meta]) => {
+      const open = meta.open;
+      const cls = open === true ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : open === false ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 text-gray-500 border-white/10';
+      const sym = open === true ? '✓' : open === false ? '✗' : '?';
+      return `<span class="text-[10px] px-2 py-0.5 rounded border font-mono ${cls}">${sym} :${port} ${meta.label}</span>`;
     }).join('');
   }
 }
@@ -8937,7 +9040,7 @@ refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL_OK);
 setTimeout(loadMinerConfig, 500);
 // Load overview widgets on startup
 setTimeout(() => { loadNclOverview(); loadHiranOverview(); }, 1500);
-setTimeout(() => { refreshEdgeServerCard(); updateEdgeHealth(); }, 3000); // initial edge server load
+setTimeout(() => { refreshEdgeServerCard(); refreshEdge2ServerCard(); updateEdgeHealth(); }, 3000); // initial edge server load
 if(_overviewWidgetTimer) clearInterval(_overviewWidgetTimer);
 _overviewWidgetTimer = setInterval(() => { loadNclOverview(); loadHiranOverview(); }, 15000);
 
