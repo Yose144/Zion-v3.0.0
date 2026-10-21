@@ -512,6 +512,40 @@ def snapshot(ids=None):
     }
 
 
+STATE_FILE = os.path.expanduser("~/.local/share/vastctl-state.json")
+
+
+def _state():
+    try:
+        st = json.loads(Path(STATE_FILE).read_text())
+        st.setdefault("desired", {})
+        st.setdefault("last_fix", {})
+        return st
+    except Exception:
+        return {"desired": {}, "last_fix": {}}
+
+
+def _save_state(st):
+    p = Path(STATE_FILE)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(json.dumps(st, indent=1))
+    tmp.rename(p)
+
+
+def _launch_group(mn):
+    if mn.startswith("srb"):
+        return "srb"
+    if mn == "xmr":
+        return "xmr"
+    if mn in ("zion", "zion50", "zionmax", "prl", "qtu"):
+        return "zion"
+    return None
+
+
+_EXPECT_PROC = {"srb": "SRBMiner", "xmr": "xmrig", "zion": "zion-miner"}
+
+
 def snapshot_from(rigs):
     return {
         "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
@@ -564,6 +598,35 @@ def cmd_daemon(args):
                         except SystemExit as e:
                             _deploy_fail_at[r["id"]] = time.time()
                             print(f"[daemon] deploy failed on {r['id']}: {e}")
+            if getattr(args, "watchdog", False):
+                st = _state()
+                for r in snap["rigs"]:
+                    rid = str(r["id"])
+                    want = st["desired"].get(rid) or {}
+                    if not want or r["error"] or r["status"] != "running":
+                        continue
+                    # host egress firewall → nothing can mine; don't churn
+                    if r.get("net") and not all(r["net"].values()):
+                        continue
+                    cmds = " ".join(m.get("cmd") or "" for m in r["miners"])
+                    for grp, cfg in want.items():
+                        proc = _EXPECT_PROC.get(grp)
+                        if not proc or proc in cmds:
+                            continue
+                        key = f"{rid}:{grp}"
+                        if time.time() - st["last_fix"].get(key, 0) < 300:
+                            continue
+                        st["last_fix"][key] = time.time()
+                        _save_state(st)
+                        mode = cfg.get("mode", grp)
+                        print(f"[watchdog] {rid}: {grp} dead → relaunch {mode}")
+                        try:
+                            ns = argparse.Namespace(
+                                id=rid, miners=[mode], config=args.config,
+                                duty=tuple(cfg["duty"]) if cfg.get("duty") else None)
+                            cmd_launch(ns)
+                        except SystemExit as e:
+                            print(f"[watchdog] relaunch failed {rid}/{grp}: {e}")
             print(f"[daemon] {snap['ts']} rigs={len(snap['rigs'])} ${snap['total_dph']:.4f}/h")
         except Exception as e:
             print(f"[daemon] cycle error: {e}")
@@ -776,13 +839,22 @@ def cmd_launch(args):
         miners = ["srb", "xmr", "_zion_install"]
     ZION_DUTY = {"zion": (50, 50), "zion50": (50, 50), "zionmax": (100, 40),
                  "prl": (100, 0), "qtu": (0, 100)}
-    if getattr(args, "duty", None):
-        ZION_DUTY[miners[0]] = args.duty
+    duty = getattr(args, "duty", None)
+    if isinstance(duty, str) and "," in duty:
+        try:
+            duty = tuple(int(x) for x in duty.split(","))
+        except ValueError:
+            duty = None
+    if duty:
+        ZION_DUTY[miners[0]] = duty
     for mn in miners:
         print(f"[{args.id}] launch {mn}…")
         if mn == "xmr":
             ns = argparse.Namespace(id=args.id, config=args.config)
             cmd_deploy_xmrig(ns)
+            st = _state()
+            st["desired"].setdefault(str(args.id), {})["xmr"] = {"mode": "xmr"}
+            _save_state(st)
             continue
         if mn in ZION_DUTY or mn == "_zion_install":
             # rig downloads the glibc-compatible build from Edge (local build
@@ -817,6 +889,14 @@ def cmd_launch(args):
             continue
         rc, out, err = ssh(inst, script, timeout=180)
         print((out + err).strip() or f"(exit {rc})")
+        grp = _launch_group(mn)
+        if grp and rc == 0:
+            st = _state()
+            st["desired"].setdefault(str(args.id), {})[grp] = {
+                "mode": mn,
+                "duty": list(ZION_DUTY[mn]) if mn in ZION_DUTY else None,
+            }
+            _save_state(st)
 
 
 def cmd_stop(args):
@@ -833,6 +913,15 @@ def cmd_stop(args):
         print(f"[{args.id}] stop {mn}…")
         rc, out, err = ssh(inst, script, timeout=60)
         print((out + err).strip() or f"(exit {rc})")
+        # watchdog bookkeeping: stop clears the desired state so it won't relaunch
+        st = _state()
+        d = st["desired"].get(str(args.id))
+        if d is not None:
+            if mn == "all":
+                d.clear()
+            else:
+                d.pop(_launch_group(mn) or "", None)
+            _save_state(st)
 
 
 def render_dashboard(rigs, ts):
@@ -1339,6 +1428,9 @@ def main():
                    help="scp target host:/path for the status json (e.g. root@edge:/var/www/site/vast-rigs/status.json)")
     p.add_argument("--autodeploy-xmrig", action="store_true",
                    help="auto-deploy+launch xmrig on rigs that don't run it")
+    p.add_argument("--watchdog", action="store_true",
+                   help="relaunch miners that died (remembers last launch per rig; "
+                        "stop clears intent; skips rigs with unreachable pools)")
     args = ap.parse_args()
     if args.cmd == "status":
         return cmd_status(args)
