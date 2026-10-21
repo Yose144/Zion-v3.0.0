@@ -183,7 +183,47 @@ nvidia-smi                               # ~95-100 % util, ~135-170 W
   finální PRL výplatní cesta je ještě v dokončování (viz AGENTS.md
   2026-10-20 entry).
 
-## 5. Vypnutí instance (důležité — jinak utíkají peníze!)
+## 5. CPU mining — XMRig (Monero `rx/0`) vedle GPU minerů
+
+GPU dělá SRBMiner/zion-miner, **CPU na vast instancích jinak idluje** — XMRig
+ho vytěží navíc (~300–500 H/s na vCPU → ~2–5 kH/s na 8–12 vCPU).
+
+Reference config: **`xmrig-vast-cpu.json`** (root repa) — laděný pro vast
+kontejnery: `rdmsr/wrmsr:false` (kontejner nemá MSR), `rx:null` (auto-vlákna
+podle L3), `log-file:/root/xmrig.log`, HTTP API `127.0.0.1:16000` (read-only),
+failover `xmr-eu1` pool.
+
+```bash
+mkdir -p ~/miners && cd ~/miners &&
+wget https://github.com/xmrig/xmrig/releases/download/v6.25.0/xmrig-6.25.0-linux-static-x64.tar.gz &&
+tar xzf xmrig-6.25.0-linux-static-x64.tar.gz &&
+cd xmrig-6.25.0 && nano config.json          # vlož xmrig-vast-cpu.json obsah
+setsid nohup ./xmrig > /dev/null 2>&1 &
+
+tail -f /root/xmrig.log                      # hashrate + accepted
+curl -s localhost:16000/2/summary | python3 -m json.tool   # JSON staty
+```
+
+## 6. vastctl — správa multi-mining rigů + web UI
+
+`tools/vast/vastctl.py` — jednosouborový Python (stdlib only, jen `vastai` CLI
++ ssh). Inventarizace instancí + probe minerů přes jeden SSH round-trip.
+
+```bash
+cd tools/vast
+python3 vastctl.py status                # tabulka: ID, GPU, $/h, util, minery, hashraty
+python3 vastctl.py logs 57025771         # tail miner logů na rigu
+python3 vastctl.py exec 57025771 -- nvidia-smi
+python3 vastctl.py deploy-xmrig 57025771 # config+binárka+start (rig-id=vast-<id>-cpu)
+python3 vastctl.py serve --port 8088     # web UI http://127.0.0.1:8088 (auto-refresh 30 s)
+```
+
+Web UI: karty per instance (GPU util/power/temp, minery + hashrate + A/R,
+$/den součet), per-rig exec box + **deploy xmrig** tlačítko.
+Hashrate se čte ze SRBMiner logů (`/root/srb-*.log`) a XMRig API —
+minery bez log redirectu ukážou `—` (spusť s `> /root/srb-qtu.log 2>&1 &`).
+
+## 7. Vypnutí instance (důležité — jinak utíkají peníze!)
 
 ```bash
 vastai destroy instance INSTANCE_ID
