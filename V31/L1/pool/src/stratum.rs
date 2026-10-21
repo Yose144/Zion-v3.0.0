@@ -179,6 +179,12 @@ pub struct StratumServer {
     /// (`pattern=COIN,...` — `*` glob, case-insensitive; matched against
     /// the worker tail, full worker_name, miner_id and "miner/worker").
     gpu_coin_routes: Vec<(String, ExternalCoin)>,
+    /// Per-miner second-GPU coin routes (`ZION_POOL_AUXPOW_GPU_COIN2_ROUTE`)
+    /// — same glob syntax as the first-slot routes; seeds
+    /// `session_gpu2_pref` at Hello so sessions that never send a
+    /// CoinPreference still get a pinned gpu2 coin instead of the global
+    /// `ZION_POOL_AUXPOW_COIN2` default.
+    gpu2_coin_routes: Vec<(String, ExternalCoin)>,
     /// Per-miner CPU coin routes (`ZION_POOL_AUXPOW_CPU_COIN_ROUTE`).
     cpu_coin_routes: Vec<(String, ExternalCoin)>,
     /// ZIS session verifier — `Some` when `ZION_POOL_ZIS_AUTH` is
@@ -316,6 +322,7 @@ impl StratumServer {
                 .and_then(|s| ExternalCoin::from_str_loose(s.trim()))
                 .filter(|c| c.is_gpu()),
             gpu_coin_routes: parse_coin_routes("ZION_POOL_AUXPOW_GPU_COIN_ROUTE"),
+            gpu2_coin_routes: parse_coin_routes("ZION_POOL_AUXPOW_GPU_COIN2_ROUTE"),
             cpu_coin_routes: parse_coin_routes("ZION_POOL_AUXPOW_CPU_COIN_ROUTE"),
             zis: {
                 let mode = crate::zis::ZisVerifier::auth_mode();
@@ -2391,7 +2398,7 @@ impl StratumServer {
         // Hello and updated by CoinPreference messages.
         let mut session_gpu_pref: Option<ExternalCoin>;
         let mut session_cpu_pref: Option<ExternalCoin>;
-        let mut session_gpu2_pref: Option<ExternalCoin> = None;
+        let mut session_gpu2_pref: Option<ExternalCoin>;
 
         // For now, just handle Hello and forward jobs.
         // Full V3 handling over TLS uses the same logic as plain TCP.
@@ -2471,13 +2478,16 @@ impl StratumServer {
                     Self::session_coin_pref(&self.gpu_coin_routes, &miner_id, &worker_name);
                 session_cpu_pref =
                     Self::session_coin_pref(&self.cpu_coin_routes, &miner_id, &worker_name);
-                if session_gpu_pref.is_some() || session_cpu_pref.is_some() {
+                session_gpu2_pref =
+                    Self::session_coin_pref(&self.gpu2_coin_routes, &miner_id, &worker_name);
+                if session_gpu_pref.is_some() || session_cpu_pref.is_some() || session_gpu2_pref.is_some() {
                     tracing::info!(
-                        "v3_coin_route miner={} worker={} gpu={:?} cpu={:?}",
+                        "v3_coin_route miner={} worker={} gpu={:?} cpu={:?} gpu2={:?}",
                         miner_id,
                         worker_name,
                         session_gpu_pref.map(|c| c.ticker()),
                         session_cpu_pref.map(|c| c.ticker()),
+                        session_gpu2_pref.map(|c| c.ticker()),
                     );
                 }
 
@@ -2762,7 +2772,7 @@ impl StratumServer {
         // updated by CoinPreference messages.
         let mut session_gpu_pref: Option<ExternalCoin>;
         let mut session_cpu_pref: Option<ExternalCoin>;
-        let mut session_gpu2_pref: Option<ExternalCoin> = None;
+        let mut session_gpu2_pref: Option<ExternalCoin>;
 
         // ZIS user bound at Hello ("" = anonymous session).
         let mut zis_user = String::new();
@@ -2876,13 +2886,16 @@ impl StratumServer {
                     Self::session_coin_pref(&self.gpu_coin_routes, &miner_id, &worker_name);
                 session_cpu_pref =
                     Self::session_coin_pref(&self.cpu_coin_routes, &miner_id, &worker_name);
-                if session_gpu_pref.is_some() || session_cpu_pref.is_some() {
+                session_gpu2_pref =
+                    Self::session_coin_pref(&self.gpu2_coin_routes, &miner_id, &worker_name);
+                if session_gpu_pref.is_some() || session_cpu_pref.is_some() || session_gpu2_pref.is_some() {
                     tracing::info!(
-                        "v3_coin_route miner={} worker={} gpu={:?} cpu={:?}",
+                        "v3_coin_route miner={} worker={} gpu={:?} cpu={:?} gpu2={:?}",
                         miner_id,
                         worker_name,
                         session_gpu_pref.map(|c| c.ticker()),
                         session_cpu_pref.map(|c| c.ticker()),
+                        session_gpu2_pref.map(|c| c.ticker()),
                     );
                 }
 
