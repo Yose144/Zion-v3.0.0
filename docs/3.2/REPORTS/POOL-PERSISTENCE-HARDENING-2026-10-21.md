@@ -97,7 +97,9 @@ is a code change only: **it has not been deployed to Edge**.
   **342 passed, 0 failed**. Includes v4 migration behavior, prepared-event
   crash recovery, idempotent outbox ACK, and API delivery/retry coverage.
 - `cargo test --manifest-path V31/Cargo.toml -p zion-multichain --lib` —
-  **736 passed, 0 failed, 4 ignored**.
+  **738 passed, 0 failed, 4 ignored**. Includes QTC and PRL sweeper tests
+  against a local HTTP double; each test checks that the payout ledger row
+  exists before the pool accepts its outbox ACK.
 - `cargo check --manifest-path V31/Cargo.toml -p zion-pool --bin zion-pool` —
   passed.
 - Targeted Clippy for `zion-pool` and `zion-multichain` all-targets completed
@@ -108,10 +110,9 @@ is a code change only: **it has not been deployed to Edge**.
 
 ### Remaining pre-deploy checks
 
-- Confirm the targeted test and lint results below after the code changes
-  settle.
 - Exercise startup replay against a copied production database and PPLNS
   snapshot, including the crash boundaries around outbox, snapshot, and
   journal commit.
-- Confirm QTC/PRL ledger insertion and ACK with test doubles or regtest,
-  then plan a separately approved deployment window.
+- After the migration rehearsal passes, plan a separately approved deployment
+  window. No production deployment or live payout is authorized by these
+  local tests.

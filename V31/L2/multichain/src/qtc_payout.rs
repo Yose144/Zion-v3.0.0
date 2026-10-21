@@ -578,6 +578,49 @@ async fn mark_error(db: &Arc<Mutex<Db>>, id: &str, error: &str, attempts: u32, m
 mod tests {
     use super::*;
 
+    #[derive(Clone)]
+    struct AckTestState {
+        db: Arc<Mutex<Db>>,
+        ack_saw_ledger: Arc<std::sync::atomic::AtomicBool>,
+    }
+
+    async fn drain_outbox() -> axum::Json<serde_json::Value> {
+        axum::Json(serde_json::json!({
+            "ok": true,
+            "payouts": [{
+                "outbox_id": "qtc-outbox-1",
+                "height": 42,
+                "miner_id": "alice",
+                "address": "invalid-address",
+                "amount_flowers": 1000,
+                "unit": "native",
+                "coin": "qtu",
+                "event": "qtu:bal:0:1k"
+            }]
+        }))
+    }
+
+    async fn ack_outbox(
+        axum::extract::State(state): axum::extract::State<AckTestState>,
+        axum::Json(_payload): axum::Json<serde_json::Value>,
+    ) -> axum::Json<serde_json::Value> {
+        let db = state.db.lock().await;
+        let ledgered = db
+            .conn()
+            .query_row(
+                "SELECT COUNT(*) FROM ext_payout_records \
+                 WHERE id='quantus:rev:qtu:bal:0:1k:alice'",
+                [],
+                |row| row.get::<_, i64>(0),
+            )
+            .unwrap()
+            > 0;
+        state
+            .ack_saw_ledger
+            .store(ledgered, std::sync::atomic::Ordering::SeqCst);
+        axum::Json(serde_json::json!({"ok": true}))
+    }
+
     fn cfg() -> QtcPayoutConfig {
         QtcPayoutConfig {
             enabled: true,
@@ -624,6 +667,49 @@ mod tests {
     #[test]
     fn native_wrong_coin_skipped() {
         assert!(plan_entry(&entry("native", Some("prl"), Some("e1")), &cfg()).is_none());
+    }
+
+    #[tokio::test]
+    async fn durable_outbox_is_ledgered_before_ack() {
+        use axum::routing::post;
+
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ack_saw_ledger = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let app = axum::Router::new()
+            .route("/admin/external-payouts", post(drain_outbox))
+            .route("/admin/external-payouts/ack", post(ack_outbox))
+            .with_state(AckTestState {
+                db: db.clone(),
+                ack_saw_ledger: ack_saw_ledger.clone(),
+            });
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+
+        let mut config = cfg();
+        config.pool_api = format!("http://{addr}");
+        let result = tick(
+            &config,
+            &Arc::new(QuantusAdapter::new("http://127.0.0.1:1")),
+            &db,
+            &reqwest::Client::new(),
+        )
+        .await;
+        server.abort();
+
+        result.unwrap();
+        assert!(ack_saw_ledger.load(std::sync::atomic::Ordering::SeqCst));
+        let db = db.lock().await;
+        let status: String = db
+            .conn()
+            .query_row(
+                "SELECT status FROM ext_payout_records \
+                 WHERE id='quantus:rev:qtu:bal:0:1k:alice'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(status, "queued");
     }
 
     #[test]

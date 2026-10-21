@@ -508,9 +508,11 @@ multichain payout ledgerem:
    `POST /admin/external-payouts/ack`. Dust položky se ledgerují se stavem
    `dust`; nepodporované položky se neackují.
 
-**Zbývá před nasazením:** dokončit testy journal replay/crash hranic a
-QTC/PRL ACK cesty, ověřit migraci na kopii produkční DB a teprve potom
-naplánovat oddělený deploy. Tato změna zatím nemění produkční stav Edge.
+**Ověřeno lokálně:** journal replay/crash hranice a QTC/PRL ACK cesty mají
+cílené testy; oba sweeper testy ověřují, že je ledger zapsán už v okamžiku
+přijetí ACK poolem. Před nasazením zbývá ověřit migraci na kopii produkční
+DB/PPLNS snapshotu a teprve potom naplánovat oddělený deploy. Produkční stav
+Edge se touto lokální změnou nemění.
 
 ### F6 — L1 RPC failover (implementováno, čeká na edge deploy)
 
