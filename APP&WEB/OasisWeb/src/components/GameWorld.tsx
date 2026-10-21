@@ -53,7 +53,7 @@ function GameWorld({ mode, panel, children }: GameWorldProps) {
   return (
     <div className="absolute inset-0 bg-oasis-black">
       <ErrorBoundary>
-        <Canvas camera={{ position: [0, 9, 20], fov: 55 }} dpr={[1, 2]}>
+        <Canvas role="img" aria-label="ZION OASIS — 3D pohled světa" camera={{ position: [0, 9, 20], fov: 55 }} dpr={[1, 2]}>
           <color attach="background" args={['#0d0d0d']} />
           <fog attach="fog" args={['#0d0d0d', 14, 48]} />
           <ambientLight intensity={0.18} />

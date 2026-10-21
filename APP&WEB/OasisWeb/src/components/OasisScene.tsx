@@ -333,6 +333,8 @@ export default function OasisScene({
       >
         {backend && (
           <Canvas
+        role="img"
+        aria-label="ZION OASIS — interaktivní 3D mapa světů"
         camera={{ position: isMobile ? [0, 4, 22] : [0, 3.5, 34], fov: isMobile ? 60 : 55 }}
         dpr={[1, isMobile ? 1 : 1]}
         style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', inset: 0 }}

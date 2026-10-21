@@ -76,7 +76,9 @@
 | R3F error boundaries | ✅ | per-component `R3FErrorBoundary` |
 | WebGPU bundle laziness | ✅ | `three/tsl` chunk ~724K se stáhne jen při `?gpu=webgpu` |
 | Server-side FPS telemetrie | 🔭 | opt-in agregát podle privacy modelu — neimplementováno |
-| Load ≤ 3 s do interaktivní scény (V3.3 DoD) | 🚧 | neměřeno na referenčních zařízeních — device matrix task |
+| Load ≤ 3 s do interaktivní scény (V3.3 DoD) | 🚧 | neměřeno na referenčních zařízeních — device matrix task; re-scan 2026-10-21: load ~1.0 s, DOM ~460 ms (desktop, headless) |
+| a11y quick-scan (2026-10-21, live) | ✅ scan + fix | ✅ lang/title/viewport/main landmark, 0 img bez alt, 0 unlabeled btn/link/input, focusable CTA · **fixy**: `h1.sr-only` na landing page + `role="img"`/`aria-label` na oba R3F canvasy (`OasisScene`, `GameWorld`) — zbývá plný axe/device audit |
+| Privacy scan (2026-10-21, live) | ✅ | 0 cookies na oasis.zionterranova.com; localStorage jen `oasis-game-store` (herní stav, žádná PII); ZIS session cookie se objeví až po loginu |
 
 ## 6. Infra & API
 

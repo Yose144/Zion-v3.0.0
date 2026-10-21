@@ -106,7 +106,7 @@
 7. ~~🤖 **BTC signed-quote kód**~~ ✅ **code-complete** — `btc_swap.rs` ed25519 `sign_quote`/`verify_quote`, `WARP_BTC_SWAP_OFFER_KEY` (+`_PREV` rotace), routes `/v1/multichain/swaps/btc/{quote,offer,list,metrics,:id}`, outstanding caps, testy; live keys provisioned (`OFFER_KEY`,`RELAY_KEY`,`ZION_SECRET`, `BITCOIN_NETWORK=bitcoin`), `WARP_BTC_SWAP_ENABLED=0` = safety hold → flip = 👤 (capped ~100k sats pilot po auditu)
 8. ~~🤖 **Planetary map UI**~~ ✅ **už existuje a je LIVE** — `FreeWorldMap.tsx` + `FreeWorldRegistry.tsx` namountované na `/l5-free-world` (freeworld.zionterranova.com)
 9. ~~🤖 **Passkey Playwright E2E**~~ ✅ `e2e/passkey.spec.ts` — CDP virtual authenticator (reálná WebAuthn ceremony), mocked webauthn routes; login test PASS na fresh build; `/account` testy vyžadují `ZION_WALLET_MNEMONIC` (middleware validuje session server-side — konvence dex-real specu)
-10. 🤖 **OasisChecklist perf/security gate**
+10. ~~🤖 **OasisChecklist perf/security gate**~~ ✅ live a11y+privacy scan do `docs/3.2/OasisChecklist.md` + 2 fixy (sr-only `h1`, `role=img`/`aria-label` na R3F canvasy); load ~1.0 s; zbývá plný axe/device-matrix audit
 
 ## Operátor-only fronta (čeká na 👤)
 
