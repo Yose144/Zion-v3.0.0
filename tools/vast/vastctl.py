@@ -73,7 +73,7 @@ RENT_IMAGE = os.environ.get("VASTCTL_RENT_IMAGE",
 PROBE_SCRIPT = r'''
 echo "==GPU=="; nvidia-smi --query-gpu=utilization.gpu,power.draw,temperature.gpu,memory.used --format=csv,noheader 2>/dev/null
 echo "==PROC=="; ps -eo pid,etime,args 2>/dev/null | grep -E "SRBMiner|xmrig|zion-miner|ccminer" | grep -v grep
-echo "==TMUX=="; tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null | while read p; do echo "--pane:$p--"; tmux capture-pane -t "$p" -p 2>/dev/null | tail -60; done
+echo "==TMUX=="; tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null | while read p; do echo "--pane:$p--"; tmux capture-pane -t "$p" -p -J 2>/dev/null | tail -60; done
 echo "==LOGS=="; for f in /root/zion.log /root/srb-*.log /root/xmrig.log /root/miner*.log; do [ -f "$f" ] && echo "--$f--" && tail -45 "$f"; done
 echo "==XMRIG_API=="; curl -s -m 3 http://127.0.0.1:16000/2/summary 2>/dev/null; echo
 echo "==NET=="; for hp in eu.lproute.com:5660 pearl-eu2.luckypool.io:3360 62.171.141.136:8444 xmr-eu2.nanopool.org:10300; do h=${hp%:*}; p=${hp#*:}; timeout 3 bash -c "</dev/tcp/$h/$p" 2>/dev/null && echo "net:$hp:ok" || echo "net:$hp:fail"; done
@@ -143,6 +143,7 @@ def parse_probe(inst, text):
     pane_hrs = []          # [(algo, rate, unit, a, r)] from tmux panes
     zion_hrs = {}          # {coin: {rate,unit,a,r}} from [metrics] lines
     pane_algo = None
+    pane_ok = False
     api_buf = []
     for line in text.splitlines():
         line = line.strip("\x1b").rstrip()
@@ -182,18 +183,19 @@ def parse_probe(inst, text):
             g = re.match(r"^--pane:(.+)--$", clean)
             if g:
                 pane_algo = None
+                pane_ok = bool(re.match(r"^(srb|zion|xmr)", g.group(1)))
                 continue
             ga = re.search(r"\[\s*A\d+\s*-\s*(\S+)\s*\]", clean)
             if ga:
                 pane_algo = ga.group(1)
             h = HR_RE.search(clean)
-            if h and pane_algo:
+            if h and pane_algo and pane_ok:
                 pane_hrs.append((pane_algo, {
                     "rate": float(h.group(1)), "unit": h.group(2),
                     "a": int(h.group(3)), "r": int(h.group(4)),
                 }))
             # zion-miner: "[metrics] PRL: 24.8 TH/s A3 R0 | QTU: 109.9 MH/s A7 R0"
-            if "[metrics]" in clean:
+            if "[metrics]" in clean and pane_ok:
                 for cm in re.finditer(
                         r"([A-Za-z0-9_]+):\s*([0-9.]+)\s*([KMGT]?H/s|h/s)"
                         r"(?:\s*\[[^\]]*\])?\s*A(\d+)\s*R(\d+)", clean):
