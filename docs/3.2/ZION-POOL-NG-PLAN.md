@@ -334,13 +334,14 @@ na regtest QTU/PRL izolovaně (stejný model jako pearl regtest E2E).
 (home/start/miner dashboard/blocks/payouts/stats/faq, CS+EN), mock data
 layer se shapem `/public/v1/*` (swap = `USE_MOCK` konstanta).
 
-**PPLNS persistence hardening (local, not yet deployed):** configured
+**PPLNS persistence hardening (deployed 2026-10-21, commit `a3d02aa47`):** configured
 snapshots now fail pool startup when unreadable/corrupt; failed writes keep
 the dirty state for retry and are exposed as Prometheus health metrics.
 An explicitly configured SQLite share store also fails startup if it cannot
 be opened. This does **not** yet make native-revenue distribution, its SQLite
 audit row, and queued payouts one crash-safe transaction; that remains a
-separate accounting follow-up before claiming payout-audit durability.
+separate accounting follow-up before claiming payout-audit durability. Report:
+[`POOL-PERSISTENCE-HARDENING-2026-10-21.md`](./REPORTS/POOL-PERSISTENCE-HARDENING-2026-10-21.md).
 
 **F1 ✅ CoinLeg refactor** — `coin_leg.rs`: `route_job_id()` pro všechny
 job-id namespace (`qtun:`/`prlu:`/`zion_*`/`j*`/`v3_*`/`aux_*`), leg

@@ -45,6 +45,24 @@ standby host and split-brain-safe operator procedure.
 
 ## Deployment
 
-Deployment and post-restart checks are pending at report creation. Record the
-deployed commit, service health, persistence artifacts, and observed
-Prometheus metrics here only after verifying them on the production pool host.
+Deployed to the production Edge pool on 2026-10-21 from commit `a3d02aa47`.
+The original `/opt/zion/V31` checkout was inconsistent with its pool crate
+dependencies, so its direct build failed with compile errors; the service was
+left running and was not restarted. The exact committed `V31/` source was
+then extracted into an isolated build directory and built successfully.
+Only the resulting pool binary was installed; the four temporary source-file
+copies in the inconsistent checkout were restored from their pre-deploy
+backups.
+
+- Pre-deploy binary backup:
+  `/opt/zion/backups/pool-hardening-before-a3d02aa47/zion-pool`.
+- Deployed binary SHA-256:
+  `1cfdca0c0e61978cb80e3d7ea5f2358f181394c5e79e455a0a88a5e939a50793`.
+- `zion-v31-pool`: active after restart.
+- Local pool health endpoint: HTTP 200, `{"status":"ok"}`.
+- PPLNS snapshot and SQLite share-store files were present at the configured
+  service paths before deployment.
+- Prometheus confirmed PPLNS persistence and share store configured, last
+  successful save timestamp populated, and `0` save failures.
+- Stratum ports 8444 and 8445 were listening.
+- Public `https://pool.zionterranova.com/public/v1/coins`: HTTP 200, 12 coins.
