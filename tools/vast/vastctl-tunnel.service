@@ -1,0 +1,16 @@
+[Unit]
+Description=vastctl ops reverse tunnel (edge:8088 -> zionserver:8088)
+After=network.target vastctl-serve.service
+
+[Service]
+ExecStart=/usr/bin/ssh -N -T \
+  -R 127.0.0.1:8088:127.0.0.1:8088 \
+  -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+  -o ExitOnForwardFailure=yes -o BatchMode=yes \
+  -o AddressFamily=any \
+  zion-new
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=default.target

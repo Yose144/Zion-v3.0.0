@@ -9,7 +9,7 @@ WorkingDirectory=/home/zionserver/2.9.6-main/tools/vast
 ExecStart=/usr/bin/python3 vastctl.py --config /home/zionserver/2.9.6-main/xmrig-vast-cpu.json daemon \
     --interval 60 \
     --json-out /home/zionserver/2.9.6-main/tools/vast/status.json \
-    --push zion-v6:/var/www/zion-maintenance/vast-rigs/status.json \
+    --push zion-new:/var/www/zion-maintenance/vast-rigs/status.json \
     --autodeploy-xmrig
 Restart=always
 RestartSec=15

@@ -122,6 +122,10 @@ export default function Dashboard() {
         <p className="text-xs text-white/40">
           updated {snap?.ts || "—"} · auto-refresh 30 s
           {err && <span className="ml-2 text-[#ff7b72]">· {err}</span>}
+          {" · "}
+          <a href="/vast-ops/" className="text-[#fcd116]/60 underline decoration-dotted hover:text-[#fcd116]">
+            ops
+          </a>
         </p>
       </section>
 

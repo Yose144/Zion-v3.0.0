@@ -619,20 +619,20 @@ button{{background:#1f6feb;color:#fff;border:0;padding:4px 10px;border-radius:4p
 </div>
 <script>
 setTimeout(()=>location.reload(),30000);
-function run(f,id){{fetch('/api/exec?id='+id+'&cmd='+encodeURIComponent(f.cmd.value)).then(r=>r.text()).then(alert);return false}}
+function run(f,id){{fetch('api/exec?id='+id+'&cmd='+encodeURIComponent(f.cmd.value)).then(r=>r.text()).then(alert);return false}}
 function launch(id,m){{if(!confirm('launch '+m+' on '+id+'?'))return;
-  fetch('/api/launch?id='+id+'&m='+m,{{method:'POST'}}).then(r=>r.text()).then(alert)}}
+  fetch('api/launch?id='+id+'&m='+m,{{method:'POST'}}).then(r=>r.text()).then(alert)}}
 function offers(){{const f=document.forms[document.forms.length-1]||document.querySelector('#market form');
   const g=f.gpu.value,d=f.maxdph.value;
   document.getElementById('mstat').textContent=' searching…';
-  fetch('/api/offers?gpu='+g+'&max_dph='+d).then(r=>r.json()).then(os=>{{
+  fetch('api/offers?gpu='+g+'&max_dph='+d).then(r=>r.json()).then(os=>{{
     let h='<table><tr><th>offer</th><th>gpu</th><th>$/h</th><th>$/day</th><th>inet↓↑</th><th>reliab</th><th>cuda</th><th>ram</th><th>location</th><th></th></tr>';
     for(const o of os)h+=`<tr><td>${{o.id}}</td><td>${{o.gpu_name}}</td><td>${{o.dph_total.toFixed(4)}}</td><td>${{(o.dph_total*24).toFixed(2)}}</td><td>${{Math.round(o.inet_down)}}/${{Math.round(o.inet_up)}}</td><td>${{(o.reliability*100).toFixed(1)}}%</td><td>${{o.cuda_max_good}}</td><td>${{Math.round(o.cpu_ram/1024)}}G</td><td>${{o.geolocation}}</td><td><button class=rent onclick="rent(${{o.id}})">rent</button></td></tr>`;
     document.getElementById('offers').innerHTML=h+'</table>';
     document.getElementById('mstat').textContent=' '+os.length+' offers';
   }});return false}}
 function rent(oid){{if(!confirm('RENT offer '+oid+'? this bills your vast.ai account!'))return;
-  fetch('/api/rent?id='+oid,{{method:'POST'}}).then(r=>r.text()).then(t=>{{alert(t);location.reload()}})}}
+  fetch('api/rent?id='+oid,{{method:'POST'}}).then(r=>r.text()).then(t=>{{alert(t);location.reload()}})}}
 </script>"""
 
 
