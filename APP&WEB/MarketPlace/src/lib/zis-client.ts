@@ -77,6 +77,26 @@ export async function verifySiwe(
   return shared(address, message, signature, recoveredAddress);
 }
 
+/** Verify an Ed25519 signature with ZIS — native ZION L1 wallet login. */
+export async function verifyEd25519(
+  address: string,
+  publicKey: string,
+  signature: string,
+): Promise<ZisSession> {
+  if (isBrowser()) {
+    const res = await fetch(`${PROXY}/verify/ed25519`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ address, publicKey, signature }),
+    });
+    if (!res.ok) throw new Error(`Ed25519 verify failed: ${res.status}`);
+    return res.json();
+  }
+  const { verifyEd25519: shared } = await import('../../../shared/zis-client');
+  return shared(address, publicKey, signature);
+}
+
 /** Get the current ZIS user (client-side, via local proxy). */
 export async function getCurrentUser(
   options?: { cookieHeader?: string },

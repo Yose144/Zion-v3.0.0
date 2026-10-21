@@ -13,6 +13,7 @@ import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
 import {
   getChallenge,
   verifySiwe,
+  verifyEd25519,
   getCurrentUser as zisGetCurrentUser,
   logout as zisLogout,
   updateProfile as zisUpdateProfile,
@@ -38,6 +39,9 @@ interface AuthState {
   checkSession: () => Promise<void>;
   /** Login with SIWE using the connected wagmi wallet */
   loginWithSiwe: () => Promise<void>;
+  /** Login with a native ZION L1 wallet secret (mnemonic or 32-byte hex) —
+   *  key is used only for a local Ed25519 challenge signature. */
+  loginWithZion: (secret: string) => Promise<string>;
   /** Logout from ZIS (also disconnects wagmi) */
   logout: () => Promise<void>;
   /** Update display name */
@@ -50,6 +54,7 @@ const defaultState: AuthState = {
   authenticated: false,
   checkSession: async () => {},
   loginWithSiwe: async () => {},
+  loginWithZion: async () => '',
   logout: async () => {},
   updateProfile: async () => {},
 };
@@ -133,6 +138,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(zisToAuthUser(fullUser));
   }, [address, isConnected, signMessageAsync]);
 
+  const loginWithZion = useCallback(async (secret: string): Promise<string> => {
+    // 1. Derive the keypair locally (mnemonic or 32-byte hex).
+    const { walletFromSecret, bytesHex, ed25519 } = await import('@/lib/zion-wallet');
+    const kp = walletFromSecret(secret);
+
+    // 2. ZIS challenge for the zion-l1 address.
+    const { challenge } = await getChallenge(kp.address, 'zion-l1');
+
+    // 3. Sign the challenge bytes — key never leaves the browser.
+    const signature = ed25519.sign(new TextEncoder().encode(challenge), kp.secretKey);
+    const signatureHex = bytesHex(signature);
+    kp.secretKey.fill(0); // wipe
+
+    // 4. Verify with ZIS through the local proxy (sets SSO cookie).
+    await verifyEd25519(kp.address, bytesHex(kp.publicKey), signatureHex);
+
+    // 5. Fetch full user record.
+    const fullUser = await zisGetCurrentUser();
+    setUser(zisToAuthUser(fullUser));
+    return kp.address;
+  }, []);
+
   const logout = useCallback(async () => {
     await zisLogout();
     setUser(null);
@@ -152,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authenticated: !!user,
         checkSession,
         loginWithSiwe,
+        loginWithZion,
         logout,
         updateProfile,
       }}
