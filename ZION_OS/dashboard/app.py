@@ -1442,6 +1442,15 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 PROD multichain — bridge/warp/swap unified. API 8453 → Node RPC 9445. systemd zion-v31-multichain.service.",
      "child_says": "🌀 V31 PROD multichain — cross-chain hub!",
      "depends_on": ["v31-node"]},
+    {"id": "v31-zis", "site": "edge2", "name": "ZIS Identity (PROD)", "icon": "🪪", "level": "L2", "kind": "identity",
+     "ports": {"api": 8096},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "http", "severity": "critical", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8096/health",
+     "purpose": "ZION Identity Service — SSO/auth pro celý ekosystém (auth.zionterranova.com). EDGE2 přes tunel :8096. systemd zion-zis.service.",
+     "child_says": "🪪 ZIS — identity & login pro všechny!",
+     "depends_on": []},
     {"id": "v31-dao", "site": "edge2", "name": "V31 DAO (PROD)", "icon": "🗳️", "level": "L2", "kind": "dao",
      "ports": {"api": 8456},
      "host": "127.0.0.1",
@@ -7541,10 +7550,47 @@ def get_pool_blocks(limit: int = 100) -> dict:
     if limit < 1 or limit > 500:
         limit = 100
     try:
-        with _ur.urlopen(f"http://{host}:{port}/api/v1/blocks?limit={limit}", timeout=5) as r:
-            payload = json.loads(r.read().decode("utf-8", errors="ignore"))
-        # Normalize: pool returns either {blocks:[...]} or a bare list
-        blocks = payload.get("blocks", payload) if isinstance(payload, dict) else payload
+        blocks = []
+        payload = {}
+        try:
+            with _ur.urlopen(f"http://{host}:{port}/api/v1/blocks?limit={limit}", timeout=5) as r:
+                payload = json.loads(r.read().decode("utf-8", errors="ignore"))
+            _b = payload.get("blocks", payload) if isinstance(payload, dict) else payload
+            if isinstance(_b, list):
+                blocks = _b
+        except _ur.HTTPError as e:
+            if e.code in (401, 403, 404):
+                # Admin endpoint needs API key — fall back to public per-coin API
+                coins = []
+                try:
+                    with _ur.urlopen(f"http://{host}:{port}/public/v1/coins", timeout=5) as r:
+                        _cj = json.loads(r.read().decode("utf-8", errors="ignore"))
+                    _cl = _cj.get("coins", _cj) if isinstance(_cj, dict) else _cj
+                    for _c in (_cl if isinstance(_cl, list) else []):
+                        _cid = _c.get("coin") or _c.get("id")
+                        if _cid:
+                            coins.append(_cid)
+                except Exception:
+                    pass
+                for _cid in coins:
+                    try:
+                        with _ur.urlopen(f"http://{host}:{port}/public/v1/coins/{_cid}/blocks?limit={min(limit,50)}", timeout=5) as r:
+                            _pj = json.loads(r.read().decode("utf-8", errors="ignore"))
+                        for _bb in (_pj.get("blocks") or []):
+                            _bb.setdefault("coin", _cid)
+                            blocks.append(_bb)
+                    except Exception:
+                        continue
+                def _blk_ts(b):
+                    for k in ("ts", "timestamp", "found_at", "time", "height"):
+                        v = b.get(k)
+                        if isinstance(v, (int, float)):
+                            return v
+                    return 0
+                blocks.sort(key=_blk_ts, reverse=True)
+                blocks = blocks[:limit]
+            else:
+                raise
         if not isinstance(blocks, list):
             blocks = []
         # Compute summary KPIs
@@ -7572,6 +7618,81 @@ def get_pool_blocks(limit: int = 100) -> dict:
         return {"ok": False, "error": f"pool returned HTTP {e.code}", "blocks": [], "summary": {}, "ts": int(time.time())}
     except Exception as e:
         return {"ok": False, "error": str(e)[:200], "blocks": [], "summary": {}, "ts": int(time.time())}
+
+
+def get_pool_overview() -> dict:
+    """Consolidated pool overview for the Pool page — public API only.
+
+    Coins (legs/connected), per-coin stats (hashrate, miners, shares),
+    recent blocks, payouts, stratum endpoints."""
+    import urllib.request as _ur
+    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    port = V31_POOL_API_PORT
+    base = f"http://{host}:{port}"
+
+    def _get(path, timeout=5):
+        try:
+            with _ur.urlopen(base + path, timeout=timeout) as r:
+                return json.loads(r.read().decode("utf-8", errors="ignore"))
+        except Exception as e:
+            return {"_error": str(e)[:120]}
+
+    coins_resp = _get("/public/v1/coins")
+    coins_list = coins_resp.get("coins", coins_resp) if isinstance(coins_resp, dict) else coins_resp
+    if not isinstance(coins_list, list):
+        coins_list = []
+
+    coins = []
+    for c in coins_list:
+        cid = c.get("coin") or c.get("id") or "?"
+        legs = c.get("legs") or []
+        stats = _get(f"/public/v1/coins/{cid}/stats", timeout=4)
+        coins.append({
+            "coin": cid,
+            "name": c.get("name") or cid.upper(),
+            "legs_total": len(legs),
+            "legs_up": sum(1 for l in legs if l.get("connected")),
+            "legs": [{"name": l.get("name") or l.get("kind") or "leg", "connected": bool(l.get("connected"))} for l in legs],
+            "hashrate": (stats.get("hashrate") or {}).get("live"),
+            "active_miners": stats.get("active_miners") or stats.get("miners_online"),
+            "shares_accepted": (stats.get("shares") or {}).get("accepted"),
+            "shares_rejected": (stats.get("shares") or {}).get("rejected"),
+            "payout_mode": c.get("payout_mode"),
+            "stats_error": stats.get("_error"),
+        })
+
+    # recent blocks + payouts (zion first; public per-coin endpoints)
+    blocks = []
+    for cid in [c["coin"] for c in coins]:
+        bj = _get(f"/public/v1/coins/{cid}/blocks?limit=10", timeout=4)
+        for b in (bj.get("blocks") or []):
+            b.setdefault("coin", cid)
+            blocks.append(b)
+    blocks = blocks[:15]
+
+    payouts_resp = _get("/public/v1/payouts?limit=15", timeout=4)
+    payouts = payouts_resp.get("payouts", []) if isinstance(payouts_resp, dict) else []
+
+    total_hr = sum((c["hashrate"] or 0) for c in coins if isinstance(c.get("hashrate"), (int, float)))
+    total_miners = sum((c["active_miners"] or 0) for c in coins)
+    legs_down = sum(c["legs_total"] - c["legs_up"] for c in coins)
+
+    return {
+        "ok": True,
+        "coins": coins,
+        "blocks": blocks,
+        "payouts": payouts,
+        "summary": {
+            "coins": len(coins),
+            "total_hashrate": total_hr,
+            "active_miners": total_miners,
+            "legs_total": sum(c["legs_total"] for c in coins),
+            "legs_down": legs_down,
+            "stratum_tcp": "pool.zionterranova.com:8444",
+            "stratum_tls": "pool.zionterranova.com:8445",
+        },
+        "ts": int(time.time()),
+    }
 
 
 def get_pool_registered_miners() -> dict:
@@ -13020,6 +13141,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/pool/blocks":
             limit = int(params.get("limit", ["100"])[0])
             self._json(get_pool_blocks(limit=limit))
+        elif route == "/api/pool/overview":
+            self._json(get_pool_overview())
+        elif route == "/api/zis":
+            zis_h = fetch_service_json("127.0.0.1", 8096, "/health", timeout=2.5)
+            self._json({
+                "ok": bool(zis_h) and not zis_h.get("error"),
+                "health": zis_h,
+                "site": "edge2",
+                "tunnel": "127.0.0.1:8096 -> EDGE2 zion-zis",
+            })
         elif route == "/api/revenue":
             self._json(get_revenue_dashboard())
         elif route == "/api/revenue/report":
@@ -13808,12 +13939,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 jobs_data = fetch_service_json("127.0.0.1", 8001, "/api/ncl/jobs", timeout=2.0)
                 if jobs_data.get("success"):
                     jobs = jobs_data.get("data", {}).get("jobs", [])
+            # NCL marketplace (EDGE2 :8098 pres tunnel) — skutecny stav backendu
+            ncl_health = fetch_service_json("127.0.0.1", 8098, "/health", timeout=2.0)
             self._json({
                 "ok": True,
                 "jobs": jobs,
                 "total": len(jobs),
                 "orchestrator_alive": orch.get("alive", False),
                 "orchestrator_tasks": orch.get("tasks", 0),
+                "ncl_health": ncl_health,
             })
         # ── L4 endpoints: OASIS game data ──
         elif route == "/api/l4/stats":

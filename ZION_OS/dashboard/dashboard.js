@@ -41,7 +41,7 @@
   };
 })();
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','multichain','warp-swap','payout','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','qtc','ai-agents','ncl-jobs','poc-lab','marketplace-orders','marketplace-invoices','marketplace-shipping','marketplace-stripe'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','multichain','warp-swap','payout','pool','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','qtc','ai-agents','ncl-jobs','poc-lab','marketplace-orders','marketplace-invoices','marketplace-shipping','marketplace-stripe'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
@@ -198,6 +198,7 @@ function clearTabTimers(except){
   if(except !== 'backups') _backupsTimer = null;
   if(except !== 'dao') _daoTimer = null;
   if(except !== 'payout'){ clearInterval(_payoutTimer); _payoutTimer = null; }
+  if(except !== 'pool'){ clearInterval(_poolOvTimer); _poolOvTimer = null; }
   if(except !== 'pool-miners'){ clearInterval(_poolMinersTimer); _poolMinersTimer = null; }
   if(except !== 'pool-blocks'){ clearInterval(_poolBlocksTimer); _poolBlocksTimer = null; }
   if(except !== 'revenue'){ clearInterval(_revenueTimer); _revenueTimer = null; }
@@ -253,6 +254,7 @@ function switchTab(name){
   else if(name === 'qtc'){ clearTabTimers('qtc'); loadQtcPanel(); if(!_qtcTimer) _qtcTimer = setInterval(loadQtcPanel, 15000); }
   else if(name === 'warp-swap'){ clearTabTimers(null); loadWarpSwapPanel(); }
   else if(name === 'payout'){ clearTabTimers(null); loadPayoutTab(); connectPayoutSse(); if(!_payoutTimer) _payoutTimer = setInterval(loadPayoutTab, 10000); }
+  else if(name === 'pool'){ clearTabTimers(null); loadPoolOverview(); if(!_poolOvTimer) _poolOvTimer = setInterval(loadPoolOverview, 10000); }
   else if(name === 'pool-miners'){ clearTabTimers(null); loadPoolMinersTab(); if(!_poolMinersTimer) _poolMinersTimer = setInterval(loadPoolMinersTab, 10000); }
   else if(name === 'pool-blocks'){ clearTabTimers(null); loadPoolBlocksTab(); if(!_poolBlocksTimer) _poolBlocksTimer = setInterval(loadPoolBlocksTab, 15000); }
   else if(name === 'pool-setup'){ clearTabTimers(null); loadPoolSetupTab(); }
@@ -3401,6 +3403,78 @@ function renderCoinGrid(auxpow, auxEnabled){
       ${c.note ? `<div class="text-[8px] text-amber-400/70 mt-1 truncate" title="${c.note}">${c.note}</div>` : ''}
     </div>`;
   }).join('');
+}
+
+let _poolOvTimer = null;
+function _fmtHr(h){
+  if(h == null) return '—';
+  const u = ['H/s','KH/s','MH/s','GH/s','TH/s']; let i=0, v=h;
+  while(v >= 1000 && i < u.length-1){ v/=1000; i++; }
+  return v.toFixed(v >= 100 ? 0 : 1) + ' ' + u[i];
+}
+function _fmtAmt(a){
+  if(a == null) return '—';
+  const n = Number(a);
+  return isFinite(n) ? (n >= 1e6 ? (n/1e6).toFixed(2) : n.toFixed(4)) : String(a).slice(0,18);
+}
+async function loadPoolOverview(){
+  const badge = document.getElementById('pool-ov-badge');
+  try{
+    const d = await fetch('/api/pool/overview', {signal: AbortSignal.timeout(12000)}).then(r => r.json());
+    if(!d.ok) throw new Error(d.error || 'pool overview failed');
+    const s = d.summary || {};
+    const set = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+    set('pool-ov-coins', s.coins ?? '—');
+    set('pool-ov-hashrate', _fmtHr(s.total_hashrate));
+    set('pool-ov-miners', s.active_miners ?? '—');
+    set('pool-ov-legs', s.legs_total ?? '—');
+    set('pool-ov-legs-down', s.legs_down ?? '—');
+    if(badge){
+      const ok = (s.legs_down || 0) === 0;
+      badge.textContent = ok ? 'ALL LEGS UP' : s.legs_down + ' LEG(S) DOWN';
+      badge.className = 'text-xs px-2 py-0.5 rounded-full ' + (ok ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300');
+    }
+    // coin cards
+    const grid = document.getElementById('pool-ov-coins-grid');
+    if(grid){
+      grid.innerHTML = (d.coins || []).map(c => {
+        const allUp = c.legs_total > 0 && c.legs_up === c.legs_total;
+        const legsTxt = c.legs.map(l => '<span class="text-[9px] px-1.5 py-0.5 rounded ' + (l.connected ? 'bg-emerald-900/40 text-emerald-300' : 'bg-red-900/40 text-red-300') + '">' + escapeHtml(l.name) + '</span>').join(' ');
+        return '<div class="bg-black/20 rounded-lg p-3 border ' + (allUp ? 'border-emerald-800/50' : 'border-red-800/50') + '">' +
+          '<div class="flex items-center justify-between mb-2"><div class="font-bold text-sm text-white">' + escapeHtml(String(c.coin).toUpperCase()) + '</div>' +
+          '<span class="text-[10px] ' + (allUp ? 'text-emerald-400' : 'text-red-400') + '">' + c.legs_up + '/' + c.legs_total + ' legs</span></div>' +
+          '<div class="text-[10px] text-gray-400 space-y-0.5">' +
+          '<div>HR: <span class="text-emerald-300">' + _fmtHr(c.hashrate) + '</span></div>' +
+          '<div>Miners: <span class="text-blue-300">' + (c.active_miners ?? '—') + '</span></div>' +
+          '<div>Shares: <span class="text-gray-300">' + (c.shares_accepted ?? '—') + '</span>' + (c.shares_rejected ? ' <span class="text-red-400">rej ' + c.shares_rejected + '</span>' : '') + '</div>' +
+          (c.payout_mode ? '<div>Payout: <span class="text-amber-300">' + escapeHtml(c.payout_mode) + '</span></div>' : '') +
+          '<div class="flex flex-wrap gap-1 mt-1">' + legsTxt + '</div>' +
+          '</div></div>';
+      }).join('') || '<div class="text-xs text-gray-500 italic">No coins</div>';
+    }
+    // blocks
+    const bt = document.getElementById('pool-ov-blocks');
+    if(bt){
+      bt.innerHTML = (d.blocks || []).slice(0,15).map(b => {
+        const st = (b.status || b.state || '—').toLowerCase();
+        const cls = st === 'confirmed' || st === 'mature' || st === 'valid' ? 'text-emerald-400' : (st.includes('orphan') || st === 'stale' ? 'text-red-400' : 'text-amber-400');
+        return '<tr class="border-b border-white/5"><td class="py-1 text-amber-300">' + escapeHtml((b.coin || '?').toUpperCase()) + '</td><td>' + (b.height ?? '—') + '</td><td class="font-mono text-gray-500">' + escapeHtml(String(b.hash || b.block_hash || '—').slice(0,14)) + '…</td><td class="' + cls + '">' + escapeHtml(st) + '</td></tr>';
+      }).join('') || '<tr><td colspan="4" class="text-gray-500 italic py-2">No blocks</td></tr>';
+    }
+    // payouts
+    const pt = document.getElementById('pool-ov-payouts');
+    if(pt){
+      pt.innerHTML = (d.payouts || []).slice(0,15).map(p => {
+        const to = p.address || p.to || p.miner || p.wallet || '—';
+        const amt = p.amount ?? p.value ?? p.amount_native;
+        const st = (p.status || (p.dry_run ? 'dry-run' : '—'));
+        return '<tr class="border-b border-white/5"><td class="py-1 text-amber-300">' + escapeHtml((p.coin || '?').toUpperCase()) + '</td><td class="font-mono text-gray-400">' + escapeHtml(String(to).slice(0,16)) + '…</td><td class="text-emerald-300">' + _fmtAmt(amt) + '</td><td class="text-gray-400">' + escapeHtml(String(st)) + '</td></tr>';
+      }).join('') || '<tr><td colspan="4" class="text-gray-500 italic py-2">No payouts</td></tr>';
+    }
+  }catch(e){
+    if(badge){ badge.textContent = 'ERROR'; badge.className = 'text-xs px-2 py-0.5 rounded-full bg-red-700 text-red-300'; }
+    console.error('loadPoolOverview error:', e);
+  }
 }
 
 async function loadPoolMinersTab(){

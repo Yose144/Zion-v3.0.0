@@ -221,6 +221,79 @@ def cmd_logs(args):
     return rc
 
 
+# ── daemon: autonomous fleet loop ─────────────────────────────────────────
+
+_history = {}   # (rig_id, algo) -> [rate, ...]
+_deploy_fail_at = {}  # rig_id -> epoch of last failed autodeploy
+
+
+def snapshot(ids=None):
+    rigs = status_all(ids)
+    for r in rigs:
+        for m in r["miners"]:
+            hr = m.get("hashrate")
+            if hr:
+                key = (r["id"], m.get("algo") or "?")
+                h = _history.setdefault(key, [])
+                h.append(hr["rate"])
+                del h[:-90]
+                m["hist"] = list(h)
+        if r["xmrig_api"]:
+            key = (r["id"], r["xmrig_api"]["algo"])
+            h = _history.setdefault(key, [])
+            h.append(r["xmrig_api"]["hps_15m"])
+            del h[:-90]
+            r["xmrig_api"]["hist"] = list(h)
+    return {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "total_dph": round(sum(r["dph"] for r in rigs), 4),
+        "rigs": rigs,
+    }
+
+
+def _write_json_atomic(path, payload):
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_suffix(p.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=1))
+    tmp.rename(p)
+
+
+def cmd_daemon(args):
+    """Autonomous loop: probe → json-out (+push) → optional xmrig autodeploy."""
+    print(f"[daemon] interval={args.interval}s out={args.json_out} push={args.push or '-'} autodeploy={args.autodeploy_xmrig}")
+    while True:
+        try:
+            snap = snapshot()
+            _write_json_atomic(args.json_out, snap)
+            if args.push:
+                host, _, rpath = args.push.partition(":")
+                rc, _, err = run(["scp", "-o", "StrictHostKeyChecking=no",
+                                  "-o", "ConnectTimeout=10", args.json_out,
+                                  f"{host}:{rpath}"], timeout=30)
+                if rc != 0:
+                    print(f"[daemon] push failed: {err.strip()}")
+            if args.autodeploy_xmrig:
+                for r in snap["rigs"]:
+                    if r["error"] or r["status"] != "running":
+                        continue
+                    has_xmrig = any("xmrig" in (m.get("cmd") or "") for m in r["miners"]) or r["xmrig_api"]
+                    last = _deploy_fail_at.get(r["id"], 0)
+                    if not has_xmrig and time.time() - last > 600:
+                        print(f"[daemon] autodeploy xmrig → {r['id']}")
+                        try:
+                            ns = argparse.Namespace(id=str(r["id"]), config=args.config)
+                            cmd_deploy_xmrig(ns)
+                            _deploy_fail_at.pop(r["id"], None)
+                        except SystemExit as e:
+                            _deploy_fail_at[r["id"]] = time.time()
+                            print(f"[daemon] deploy failed on {r['id']}: {e}")
+            print(f"[daemon] {snap['ts']} rigs={len(snap['rigs'])} ${snap['total_dph']:.4f}/h")
+        except Exception as e:
+            print(f"[daemon] cycle error: {e}")
+        time.sleep(args.interval)
+
+
 def cmd_deploy_xmrig(args):
     cfg = Path(args.config)
     if not cfg.exists():

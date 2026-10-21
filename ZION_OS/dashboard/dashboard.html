@@ -833,6 +833,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <div class="zion-nav-group">
         <button><i class="fas fa-users"></i> Pool ▾</button>
         <div class="zion-nav-dropdown">
+          <button onclick="switchTab('pool')" id="tab-pool"><i class="fas fa-gauge-high"></i> Overview</button>
           <button onclick="switchTab('pool-miners')" id="tab-pool-miners"><i class="fas fa-users"></i> Miners</button>
           <button onclick="switchTab('pool-blocks')" id="tab-pool-blocks"><i class="fas fa-cube"></i> Blocks</button>
           <button onclick="switchTab('payout')" id="tab-payout"><i class="fas fa-money-bill"></i> Payouts</button>
@@ -3075,6 +3076,45 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
     </div>
   </div>
 
+  <div id="pane-pool" class="hidden space-y-4">
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-lg font-bold text-white"><i class="fas fa-users mr-2 text-amber-400"></i>Pool Overview</h2>
+          <div class="text-[10px] text-gray-500">public pool API (edge :8080) — coin legs, hashrate, blocks, payouts</div>
+        </div>
+        <span id="pool-ov-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3" id="pool-ov-kpi">
+        <div class="bg-black/20 rounded-lg p-3"><div class="text-[10px] text-gray-500 uppercase">Coins</div><div id="pool-ov-coins" class="text-xl font-bold text-amber-400">—</div></div>
+        <div class="bg-black/20 rounded-lg p-3"><div class="text-[10px] text-gray-500 uppercase">Hashrate</div><div id="pool-ov-hashrate" class="text-xl font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/20 rounded-lg p-3"><div class="text-[10px] text-gray-500 uppercase">Miners</div><div id="pool-ov-miners" class="text-xl font-bold text-blue-400">—</div></div>
+        <div class="bg-black/20 rounded-lg p-3"><div class="text-[10px] text-gray-500 uppercase">Legs up</div><div id="pool-ov-legs" class="text-xl font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/20 rounded-lg p-3"><div class="text-[10px] text-gray-500 uppercase">Legs down</div><div id="pool-ov-legs-down" class="text-xl font-bold text-red-400">—</div></div>
+        <div class="bg-black/20 rounded-lg p-3 col-span-2 lg:col-span-3"><div class="text-[10px] text-gray-500 uppercase">Stratum</div><div class="text-xs font-mono text-gray-300 mt-1">tcp <span class="text-emerald-400">:8444</span> · tls <span class="text-amber-400">:8445</span> — pool.zionterranova.com</div></div>
+      </div>
+    </div>
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold text-gray-300 mb-3"><i class="fas fa-coins mr-2 text-amber-400"></i>Coins / Legs</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="pool-ov-coins-grid">
+        <div class="text-xs text-gray-500 italic">Loading…</div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold text-gray-300 mb-3"><i class="fas fa-cube mr-2 text-cyan-400"></i>Recent Blocks</h3>
+        <div class="overflow-x-auto max-h-80 overflow-y-auto">
+          <table class="w-full text-xs"><thead><tr class="text-gray-500 text-left border-b border-white/10"><th class="py-1">Coin</th><th>Height</th><th>Hash</th><th>Status</th></tr></thead><tbody id="pool-ov-blocks"></tbody></table>
+        </div>
+      </div>
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold text-gray-300 mb-3"><i class="fas fa-money-bill mr-2 text-emerald-400"></i>Recent Payouts</h3>
+        <div class="overflow-x-auto max-h-80 overflow-y-auto">
+          <table class="w-full text-xs"><thead><tr class="text-gray-500 text-left border-b border-white/10"><th class="py-1">Coin</th><th>To</th><th>Amount</th><th>Status</th></tr></thead><tbody id="pool-ov-payouts"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="pane-pool-miners" class="hidden space-y-4">
     <!-- Header -->
     <div class="flex items-center justify-between">
