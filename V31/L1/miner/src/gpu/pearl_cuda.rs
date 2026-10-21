@@ -53,6 +53,7 @@ mod kern {
     pub const MINE_V9: &str = "pearl_pouw_mine_native_v9";
     pub const MINE_V10: &str = "pearl_pouw_mine_native_v10";
     pub const MINE_V11: &str = "pearl_pouw_mine_native_v11";
+    pub const MINE_V12: &str = "pearl_pouw_mine_native_v12";
     pub const DERIVE_SEEDS: &str = "pearl_derive_seeds";
     pub const MERKLE_TREE: &str = "pearl_merkle_tree";
     pub const GEN_DUAL: &str = "pearl_gen_matrix_dual";
@@ -87,6 +88,7 @@ const KERNELS: &[&str] = &[
     kern::MINE_V9,
     kern::MINE_V10,
     kern::MINE_V11,
+    kern::MINE_V12,
     kern::DERIVE_SEEDS,
     kern::MERKLE_TREE,
     kern::GEN_DUAL,
@@ -207,9 +209,9 @@ fn select_mine_version<'a>(
                 "v4"
             }
         }
-        // v6/v7 mma: native on sm_80+, m8n8k16 emulation on sm_75 —
+        // v6/v7/v12 mma: native on sm_80+, m8n8k16 emulation on sm_75 —
         // either way the canonical rank==128, k%128==0 window is required.
-        Some(v @ ("v6" | "v7")) => {
+        Some(v @ ("v6" | "v7" | "v12")) => {
             if (cc_major >= 8 || (cc_major == 7 && cc_minor >= 5))
                 && rank == 128
                 && k % 128 == 0
@@ -286,6 +288,7 @@ pub struct PearlCudaMiner {
     f_mine_v9: CudaFunction,
     f_mine_v10: CudaFunction,
     f_mine_v11: CudaFunction,
+    f_mine_v12: CudaFunction,
     f_derive: CudaFunction,
     bufs: Option<PearlCudaBufs>,
     /// Concurrent non-blocking streams for attempt pipelining — attempt
@@ -405,6 +408,7 @@ impl PearlCudaMiner {
         let f_mine_v9 = get(&dev, kern::MINE_V9)?;
         let f_mine_v10 = get(&dev, kern::MINE_V10)?;
         let f_mine_v11 = get(&dev, kern::MINE_V11)?;
+        let f_mine_v12 = get(&dev, kern::MINE_V12)?;
         let f_derive = get(&dev, kern::DERIVE_SEEDS)?;
 
         // Occupancy probe for kernel tuning: ZION_PEARL_OCC_DEBUG=1 prints
@@ -509,6 +513,7 @@ impl PearlCudaMiner {
             f_mine_v9,
             f_mine_v10,
             f_mine_v11,
+            f_mine_v12,
             f_derive,
             bufs: None,
             streams,
@@ -1092,7 +1097,7 @@ impl PearlCudaMiner {
                     block_dim: (128, 1, 1),
                     shared_mem_bytes: 0,
                 }
-            } else if ver == "v8" || ver == "v11" {
+            } else if ver == "v8" || ver == "v11" || ver == "v12" {
                 // warp-strip = 4 col-offsets of one band (v6 grid); v8's
                 // smem carries double-buffered B, v11's a per-lane ring
                 let wstrips = nco.div_ceil(4) * nro.div_ceil(8);
@@ -1133,6 +1138,7 @@ impl PearlCudaMiner {
                     "v9" => &self.f_mine_v9,
                     "v10" => &self.f_mine_v10,
                     "v11" => &self.f_mine_v11,
+                    "v12" => &self.f_mine_v12,
                     _ => &self.f_mine_v4,
                 },
                 cfg,

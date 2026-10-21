@@ -781,3 +781,13 @@ native QPoW sustained ≈ **156.5 MH/s**; SRBMiner quantus ≈ 220–224 MH/s �
 gap **~1.42×**. `QPOW_EUNROLL=2` A/B: 147.7 vs 153.2 = **−3.5 %** →
 external-round unrolling hurts (register pressure); `QPOW_EUNROLL=1`
 stays.
+
+### 19.1 `pearl_pouw_mine_native_v12` — register double-buffer B prefetch — REJECTED −1.3 %
+
+v6 + ring of `bv_next[4][2]` registers: iteration i+1's B gathers issue
+while the mma units consume i's. Hypothesis: the gather→mma bubble in
+the serial kc chain. Result on the same A/B harness (interleaved ×3,
+parity 2/2 clean incl. batch slots): **v6 3463 vs v12 3419 att/s** —
+the unrolled kc loop already lets ptxas hoist the loads; +8 live regs
+cost more than the bubble saves. Opt-in `ZION_PEARL_MINE=v12`, default
+unchanged.
