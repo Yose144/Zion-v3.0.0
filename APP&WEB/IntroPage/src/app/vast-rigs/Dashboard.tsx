@@ -537,40 +537,21 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* ops controls — one-button full deploy + logs */}
+              {/* ops controls */}
               <div className="mt-4 border-t border-white/5 pt-3">
-                <div className="grid grid-cols-[1fr_auto] gap-2">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/35">Mining presets</p>
+                <div className="grid grid-cols-2 gap-2 min-[480px]:grid-cols-4">
+                {(["srb", "zion", "xmr", "all"] as const).map((m) => (
                   <button
+                    key={m}
                     disabled={!!busy}
-                    onClick={() => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → installed (standby)\n• zion-miner → PRL/QTU 50/50 via pool\n• xmrig → CPU rx/0`) && ops(`launch?id=${r.id}&m=full`, "POST")}
-                    className="min-h-11 rounded-lg border border-[#fcd116]/50 bg-[#fcd116]/10 px-3 py-2 text-xs font-semibold text-[#fcd116] transition hover:bg-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
+                    onClick={() => confirm(`launch ${m} on ${r.id}?`) && ops(`launch?id=${r.id}&m=${m}`, "POST")}
+                    className="min-h-10 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition hover:border-[#fcd116]/50 hover:text-[#fcd116] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
                   >
-                    {busy === `launch?id=${r.id}&m=full` ? "Deploying…" : "▸ Full deploy — dual PRL/QTU + CPU XMR"}
+                    {busy === `launch?id=${r.id}&m=${m}` ? "Starting…" : `Start ${m}`}
                   </button>
-                  <button
-                    onClick={() => toggleLogs(r.id)}
-                    className="min-h-11 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white/70 transition hover:border-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                  >
-                    {logsOpen[r.id] ? "▾ logs" : "▸ logs"}
-                  </button>
+                ))}
                 </div>
-                <div className="mt-2 flex gap-1.5">
-                  {(["srb", "zion", "xmr"] as const).map((m) => (
-                    <button
-                      key={m}
-                      disabled={!!busy}
-                      onClick={() => confirm(`launch ${m} on ${r.id}?`) && ops(`launch?id=${r.id}&m=${m}`, "POST")}
-                      className="rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] text-white/45 transition hover:border-white/30 hover:text-white/80 disabled:opacity-40"
-                    >
-                      only {m}
-                    </button>
-                  ))}
-                </div>
-                {logsOpen[r.id] && (
-                  <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/50 p-3 text-[10px] leading-relaxed text-white/60">
-                    {logs[r.id] ?? "loading…"}
-                  </pre>
-                )}
                 <form
                   className="mt-3 flex min-w-0 gap-2"
                   onSubmit={(e) => {
