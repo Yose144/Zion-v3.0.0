@@ -96,6 +96,9 @@ const copy = {
     noSoftwareWallets: 'No software wallet found — create one on the Wallet page first.',
     currentSession: 'This device',
     primary: 'primary',
+    linkQuantusPearl: 'Link Quantus / Pearl',
+    mcAddressHint: 'qz… (Quantus) or prl1… (Pearl) address',
+    mcAttestHint: 'Proves ownership via your ZION key — the Quantus/Pearl address shares the same keys.',
   },
   cs: {
     security: 'Bezpečnost',
@@ -142,6 +145,9 @@ const copy = {
     noSoftwareWallets: 'Žádná softwarová peněženka — nejdřív ji vytvoř na stránce Peněženka.',
     currentSession: 'Toto zařízení',
     primary: 'primární',
+    linkQuantusPearl: 'Propojit Quantus / Pearl',
+    mcAddressHint: 'qz… (Quantus) nebo prl1… (Pearl) adresa',
+    mcAttestHint: 'Vlastnictví dokládá tvůj ZION klíč — Quantus/Pearl adresa sdílí stejné klíče.',
   },
 };
 
@@ -149,6 +155,9 @@ const CHAIN_LABELS: Record<string, string> = {
   'zion-l1': 'ZION L1',
   evm: 'EVM',
   bitcoin: 'Bitcoin',
+  solana: 'Solana',
+  quantus: 'Quantus',
+  pearl: 'Pearl',
   google: 'Google',
 };
 
@@ -192,7 +201,9 @@ export default function SecurityPanel() {
   // Link-address state
   const [linkWalletId, setLinkWalletId] = useState<string | null>(null);
   const [linkPassword, setLinkPassword] = useState('');
-  const [linkBusy, setLinkBusy] = useState<'zion' | 'evm' | null>(null);
+  const [linkBusy, setLinkBusy] = useState<'zion' | 'evm' | 'mc' | null>(null);
+  const [mcChain, setMcChain] = useState<'quantus' | 'pearl'>('quantus');
+  const [mcAddress, setMcAddress] = useState('');
   const [linkError, setLinkError] = useState<string | null>(null);
   const [linkSuccess, setLinkSuccess] = useState<string | null>(null);
 
@@ -443,6 +454,53 @@ export default function SecurityPanel() {
     }
   };
 
+  // ── Link Quantus/Pearl via ZION-key attestation ────────────────────
+  // ML-DSA-87 / XMSS have no JS impl, so the user signs
+  // `${challenge}\n${chain}:${addr}` with the ZION Ed25519 key that
+  // controls the same mnemonic; ZIS verifies the attestation.
+  const handleLinkMultichain = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const addr = mcAddress.trim();
+    if (!linkWallet || !linkPassword || !addr) return;
+    setLinkBusy('mc');
+    setLinkError(null);
+    setLinkSuccess(null);
+    try {
+      const privateKeyHex = await zionWallet.exportPrivateKey(linkWallet.id, linkPassword);
+      const privateKeyBytes = new Uint8Array(
+        privateKeyHex.match(/.{2}/g)!.map((b: string) => parseInt(b, 16)),
+      );
+      const ed = await import('@/lib/ed25519');
+      const publicKeyBytes = await ed.getPublicKey(privateKeyBytes);
+      const publicKeyHex = Array.from(publicKeyBytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      const { challenge } = await getChallenge(linkWallet.address, 'zion-l1');
+      const attestation = `${challenge}\n${mcChain}:${addr}`;
+      const signatureBytes = await ed.sign(new TextEncoder().encode(attestation), privateKeyBytes);
+      const signatureHex = Array.from(signatureBytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      await linkAddress({
+        address: addr,
+        chainType: mcChain,
+        zionAddress: linkWallet.address,
+        zionPublicKey: publicKeyHex,
+        signature: signatureHex,
+      });
+      setMcAddress('');
+      setLinkPassword('');
+      setLinkSuccess(addr);
+      await refreshUser();
+    } catch (err) {
+      setLinkError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLinkBusy(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
@@ -554,6 +612,38 @@ export default function SecurityPanel() {
             {linkBusy === 'evm' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
             {linkBusy === 'evm' ? t.linking : t.linkMetaMask}
           </button>
+
+          {/* Link Quantus / Pearl (ZION-key attestation) */}
+          {linkableWallets.length > 0 && (
+            <form onSubmit={handleLinkMultichain} className="space-y-3 border-t border-white/5 pt-4">
+              <p className="text-[11px] text-gray-500">{t.mcAttestHint}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <select
+                  value={mcChain}
+                  onChange={(e) => setMcChain(e.target.value as 'quantus' | 'pearl')}
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:border-zion-cyan/50"
+                >
+                  <option value="quantus" className="bg-zinc-900">Quantus (qz…)</option>
+                  <option value="pearl" className="bg-zinc-900">Pearl (prl1…)</option>
+                </select>
+                <input
+                  type="text"
+                  value={mcAddress}
+                  onChange={(e) => setMcAddress(e.target.value)}
+                  placeholder={t.mcAddressHint}
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-mono text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan/50"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={linkBusy !== null || !linkPassword || !linkWallet || !mcAddress.trim()}
+                className="zion-button-secondary text-sm py-2 px-4 disabled:opacity-50"
+              >
+                {linkBusy === 'mc' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+                {linkBusy === 'mc' ? t.linking : t.linkQuantusPearl}
+              </button>
+            </form>
+          )}
 
           {linkError && <p className="text-xs text-red-400">{linkError}</p>}
           {linkSuccess && (

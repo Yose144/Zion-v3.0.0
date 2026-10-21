@@ -358,6 +358,9 @@ export async function linkAddress(body: {
   publicKey?: string;
   signature: string;
   message?: string;
+  idToken?: string;
+  zionAddress?: string;
+  zionPublicKey?: string;
 }): Promise<{ linked: ZisLinkedAddress; user: ZisUser }> {
   if (isBrowser()) {
     const res = await fetch(`${CLIENT_PROXY_BASE}/link`, {

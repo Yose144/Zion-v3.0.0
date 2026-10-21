@@ -436,6 +436,7 @@ export async function linkAddress(
     message?: string;
     idToken?: string;
     zionAddress?: string;
+    zionPublicKey?: string;
   },
   options?: { cookieHeader?: string; baseUrl?: string },
 ): Promise<{ linked: ZisLinkedAddress; user: ZisUser }> {
