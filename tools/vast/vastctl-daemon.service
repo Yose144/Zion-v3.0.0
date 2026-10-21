@@ -5,6 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+EnvironmentFile=-%h/.config/vastctl.env
 WorkingDirectory=/home/zionserver/2.9.6-main/tools/vast
 ExecStart=/usr/bin/python3 vastctl.py --config /home/zionserver/2.9.6-main/xmrig-vast-cpu.json daemon \
     --interval 60 \

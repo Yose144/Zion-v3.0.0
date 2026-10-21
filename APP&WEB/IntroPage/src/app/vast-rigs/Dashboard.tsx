@@ -27,7 +27,48 @@ type Rig = {
   net?: Record<string, boolean>;
   sessions?: string[];
 };
-type Snap = { ts: string | null; total_dph: number; rigs: Rig[] };
+type Snap = { ts: string | null; total_dph: number; rigs: Rig[]; pool?: PoolMiner[] | null; smos?: SmosRig[] | null };
+type SmosRig = {
+  id: number;
+  name: string;
+  online: boolean;
+  paused: boolean;
+  group: string;
+  miner: string;
+  gpus: number;
+  gpus_max: number;
+  hash: number;
+  hash2: number;
+  gpu_hash: string[];
+  gpu_hash2: string[];
+  gpu_temp: string[];
+  gpu_fan: string[];
+  gpu_pwr: string[];
+  sys_pwr: string;
+  acc: number;
+  rej: number;
+  uptime: string;
+  proc_uptime: number;
+  alerts: string[];
+  last_update: number;
+  ip: string;
+  driver: string;
+  kernel: string;
+  os: string;
+  pwr_limit: string;
+};
+type PoolStream = { v: number; i: number; t: number };
+type PoolMiner = {
+  worker: string;
+  address: string;
+  streams: Record<string, PoolStream>;
+  hps: number;
+  hps_1h: number;
+  last_seen: number;
+  first_seen: number;
+  blocks: number;
+  paid: number;
+};
 type AiGpu = {
   name: string;
   memory_total_mib: number;
@@ -68,6 +109,40 @@ const COIN: Record<string, { name: string; c: string }> = {
   "rx/0": { name: "XMR", c: "#fb923c" },
 };
 const VLLM_IMAGE = "vllm/vllm-openai:v0.8.5";
+const POOL_COIN: Record<string, string> = {
+  zion: "#7dd3fc", qtu: "#fcd116", qtc: "#fcd116", prl: "#34d399",
+  pearl: "#34d399", vrsc: "#a78bfa", zano: "#f472b6", evr: "#fb923c",
+  krx: "#4ade80", xmr: "#fb923c",
+};
+
+function fmtHps(hps: number) {
+  if (!hps) return "—";
+  for (const [u, s] of [[1e12, "TH/s"], [1e9, "GH/s"], [1e6, "MH/s"], [1e3, "kH/s"]] as const)
+    if (hps >= u) return `${(hps / u).toFixed(1)} ${s}`;
+  return `${hps.toFixed(1)} H/s`;
+}
+
+function workerName(w: string) {
+  const core = w.split("@")[0];
+  const parts = core.split(".");
+  return parts.length > 1 ? parts[parts.length - 1] : core;
+}
+
+function workerKind(name: string): { label: string; cls: string } {
+  const n = name.toLowerCase();
+  if (n.includes("smos")) return { label: "SMOS", cls: "border-[#fcd116]/40 bg-[#fcd116]/10 text-[#fcd116]" };
+  if (n.includes("vast")) return { label: "vast", cls: "border-[#7dd3fc]/40 bg-[#7dd3fc]/10 text-[#7dd3fc]" };
+  if (n.includes("edge") || n.includes("dest-")) return { label: "infra", cls: "border-white/15 bg-white/[0.04] text-white/50" };
+  return { label: "ext", cls: "border-[#a371f7]/40 bg-[#a371f7]/10 text-[#d2a8ff]" };
+}
+
+function agoS(t: number) {
+  if (!t) return "—";
+  const d = Math.max(0, Math.floor(Date.now() / 1000) - t);
+  if (d < 90) return `${d}s ago`;
+  if (d < 5400) return `${Math.floor(d / 60)}m ago`;
+  return `${Math.floor(d / 3600)}h ago`;
+}
 
 function coinOf(m: Miner) {
   const a = (m.algo || "").toLowerCase();
@@ -182,12 +257,12 @@ export default function Dashboard() {
   const [logsOpen, setLogsOpen] = useState<Record<number, string>>({});
   const [chatAns, setChatAns] = useState<Record<number, string>>({});
   const [open, setOpen] = useState<Record<number, boolean>>({});
-  const [tab, setTab] = useState<"mining" | "ai" | "market">("mining");
+  const [tab, setTab] = useState<"mining" | "ai" | "market" | "pool">("mining");
   useEffect(() => {
     const h = window.location.hash.replace("#", "");
-    if (h === "ai" || h === "market" || h === "mining") setTab(h);
+    if (h === "ai" || h === "market" || h === "mining" || h === "pool") setTab(h);
   }, []);
-  const goTab = (t: "mining" | "ai" | "market") => {
+  const goTab = (t: "mining" | "ai" | "market" | "pool") => {
     setTab(t);
     history.replaceState(null, "", `#${t}`);
   };
@@ -331,6 +406,7 @@ export default function Dashboard() {
           ["mining", `Mining rigs · ${rigs.length}`],
           ["ai", `AI inference · ${ai ? `${ai.totals.inference_rigs}/${ai.rigs.length} online` : "…"}`],
           ["market", "GPU market"],
+          ["pool", `SMOS / Pool${snap?.smos ? ` · ${snap.smos.filter((r) => r.online).length}/${snap.smos.length}` : ""}`],
         ] as const).map(([id, label]) => (
           <button
             key={id}
@@ -890,6 +966,186 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
+        </section>
+        )}
+
+        {/* ── pool workers (SMOS / external rigs on the project pool) ── */}
+        {tab === "pool" && (
+        <section className="mx-auto w-full max-w-7xl pb-12 sm:pb-20">
+          {/* SMOS rigs card */}
+          <div className="mb-5 rounded-2xl border border-[#fcd116]/15 bg-gradient-to-br from-[#fcd116]/[0.05] to-white/[0.02]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
+              <h3 className="text-sm font-bold text-white">SimpleMining rigs</h3>
+              <span className="text-[10px] text-white/35">
+                {snap?.smos ? `${snap.smos.filter((r) => r.online).length}/${snap.smos.length} online · api.simplemining.net` : "simplemining.net"}
+              </span>
+            </div>
+            {snap?.smos === null || snap?.smos === undefined ? (
+              <div className="p-6 text-center text-xs text-white/40">
+                {snap?.smos === null
+                  ? "SMOS API unavailable — check VASTCTL_SMOS_KEY in vastctl env."
+                  : "SMOS data pending — waiting for the next daemon snapshot (≤60 s)."}
+              </div>
+            ) : snap.smos.length === 0 ? (
+              <div className="p-6 text-center text-xs text-white/40">No SimpleMining rigs on this account.</div>
+            ) : (
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[700px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  <th className="px-4 py-2">Rig</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Group / miner</th>
+                  <th className="px-3 py-2">Hashrate</th>
+                  <th className="px-3 py-2">GPU</th>
+                  <th className="px-3 py-2">Uptime</th>
+                </tr>
+              </thead>
+              <tbody>
+                {snap.smos.map((r) => (
+                  <tr key={r.id} className="border-b border-white/[0.04] align-top transition hover:bg-white/[0.03]">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-block h-2 w-2 shrink-0 rounded-full shadow-[0_0_8px_currentColor] ${r.online ? "bg-[#34d399]" : "bg-[#ff7b72]"}`} />
+                        <b className="text-sm text-white">{r.name}</b>
+                        <span className="text-[10px] text-white/30">#{r.id}</span>
+                      </div>
+                      <div className="mt-0.5 truncate text-[10px] text-white/35" title={`${r.ip} · ${r.kernel}`}>
+                        {r.os} · {r.driver} · {r.ip}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                        r.paused ? "border-white/15 text-white/40" : r.online ? "border-[#34d399]/30 text-[#34d399]" : "border-[#ff7b72]/40 text-[#ff7b72]"
+                      }`}>
+                        {r.paused ? "paused" : r.online ? "online" : "offline"}
+                      </span>
+                      {r.alerts.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1" title={r.alerts.join(", ")}>
+                          {r.alerts.filter((a) => a !== "has_alerts").map((a) => (
+                            <span key={a} className="rounded border border-[#ff7b72]/40 bg-[#ff7b72]/10 px-1 py-0.5 text-[9px] font-semibold text-[#ff7b72]">⚠{a}</span>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-xs text-white/60">
+                      <div className="truncate font-medium text-white/80">{r.group || "—"}</div>
+                      <div className="text-[10px] text-white/35">{r.miner || "—"}</div>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-xs text-white/70">
+                      {r.hash > 0 && <div className="font-semibold text-white">{fmtHps(r.hash)}</div>}
+                      {r.hash2 > 0 && <div className="font-semibold text-[#34d399]">{fmtHps(r.hash2)} <span className="text-[9px] font-normal text-white/35">aux</span></div>}
+                      {r.hash === 0 && r.hash2 === 0 && <span className="text-white/25">—</span>}
+                      {(r.acc > 0 || r.rej > 0) && <div className="text-[10px] text-white/40">A{r.acc}·R{r.rej}</div>}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-xs text-white/60">
+                      <div>{r.gpus}/{r.gpus_max} GPU{r.gpus !== 1 ? "s" : ""}</div>
+                      {r.gpu_temp.length > 0 && (
+                        <div className="mt-0.5 text-[10px] text-white/40">
+                          {r.gpu_temp.map((t, i) => (
+                            <span key={i} className="mr-1.5">{t}°{r.gpu_fan[i] ? `·${r.gpu_fan[i]}%` : ""}</span>
+                          ))}
+                        </div>
+                      )}
+                      {r.sys_pwr && <div className="text-[10px] text-white/40">{r.sys_pwr} W{r.pwr_limit ? ` / pl ${r.pwr_limit}` : ""}</div>}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-xs text-white/50">
+                      {r.uptime ? <div>{r.uptime}</div> : "—"}
+                      <div className="text-[10px] text-white/30">upd {agoS(Math.floor(Date.now() / 1000) - (r.last_update || 0))}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            </div>
+            )}
+          </div>
+
+          {/* pool workers */}
+          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
+              <h3 className="text-sm font-bold text-white">Pool workers</h3>
+              <span className="text-[10px] text-white/35">{snap?.pool ? `${snap.pool.length} workers · edge:8444` : "edge pool"}</span>
+            </div>
+            {snap?.pool === null || snap?.pool === undefined ? (
+              <div className="p-8 text-center text-sm text-white/45">
+                {snap?.pool === null
+                  ? "Pool API unreachable — daemon could not fetch /miners from the edge loopback."
+                  : "Pool data pending — waiting for the next daemon snapshot (≤60 s)."}
+              </div>
+            ) : snap.pool.length === 0 ? (
+              <div className="p-8 text-center text-sm text-white/45">No pool workers connected.</div>
+            ) : (
+            <table className="w-full min-w-[760px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-white/10 bg-white/[0.03] text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  <th className="px-3 py-2.5">Worker</th>
+                  <th className="px-3 py-2.5">Type</th>
+                  <th className="px-3 py-2.5">Streams</th>
+                  <th className="px-3 py-2.5">Hashrate</th>
+                  <th className="px-3 py-2.5">Blocks</th>
+                  <th className="px-3 py-2.5">Seen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...snap.pool]
+                  .sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0))
+                  .map((m) => {
+                    const name = workerName(m.worker);
+                    const kind = workerKind(name);
+                    const online = m.last_seen > 0 && Date.now() / 1000 - m.last_seen < 600;
+                    const totV = Object.values(m.streams).reduce((s, x) => s + x.v, 0);
+                    return (
+                      <tr key={m.worker} className="border-b border-white/[0.05] align-top transition hover:bg-white/[0.03]">
+                        <td className="px-3 py-3">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${online ? "bg-[#34d399]" : "bg-white/20"} shadow-[0_0_8px_currentColor]`} />
+                            <b className="truncate text-sm text-white" title={m.worker}>{name}</b>
+                          </div>
+                          <div className="mt-0.5 truncate text-[10px] text-white/35" title={m.address}>
+                            {m.address.length > 14 ? `${m.address.slice(0, 8)}…${m.address.slice(-6)}` : m.address}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold ${kind.cls}`}>{kind.label}</span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex flex-wrap gap-1.5">
+                            {Object.entries(m.streams).map(([c, s]) => (
+                              <span
+                                key={c}
+                                className="whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[10px] font-semibold"
+                                style={{
+                                  color: POOL_COIN[c] ?? "#9ca3af",
+                                  borderColor: `${POOL_COIN[c] ?? "#9ca3af"}44`,
+                                  background: `${POOL_COIN[c] ?? "#9ca3af"}0f`,
+                                }}
+                                title={`${c}: ${s.v} valid / ${s.i} invalid · last share ${agoS(s.t)}`}
+                              >
+                                {c.toUpperCase()} {s.v}
+                                {s.i > 0 && <span className="ml-1 text-[#ff7b72]">!{s.i}</span>}
+                                <span className="ml-1 font-normal opacity-60">{agoS(s.t)}</span>
+                              </span>
+                            ))}
+                            {totV === 0 && <span className="text-[10px] text-white/25">no shares yet</span>}
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-3 text-xs text-white/70">
+                          {fmtHps(m.hps)}
+                          {m.hps_1h > 0 && <span className="ml-1 text-[10px] text-white/35">1h {fmtHps(m.hps_1h)}</span>}
+                        </td>
+                        <td className="px-3 py-3 text-xs text-white/70">{m.blocks > 0 ? <span className="text-[#fcd116]">{m.blocks} ◆</span> : "—"}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-xs text-white/50">{agoS(m.last_seen)}</td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+            )}
+          </div>
+          <p className="mt-2 px-1 text-[10px] text-white/30">
+            Workers connected to the project pool (edge:8444). SMOS = SimpleMining rigs, vast = this dashboard's fleet, infra = pool edge services.
+          </p>
         </section>
         )}
 

@@ -495,6 +495,115 @@ def cmd_logs(args):
 _history = {}   # (rig_id, algo) -> [rate, ...]
 _deploy_fail_at = {}  # rig_id -> epoch of last failed autodeploy
 
+# ── pool workers (SMOS / external rigs on the project pool) ──────────────
+_pool_cache = {"ts": 0.0, "miners": None}
+POOL_CACHE_TTL = 55
+EDGE_SSH = os.environ.get("VASTCTL_EDGE_SSH", "zion-new")
+
+
+# ── SimpleMining (SMOS) rigs via official REST API ───────────────────────
+SMOS_API_KEY = os.environ.get("VASTCTL_SMOS_KEY", "")
+SMOS_BASE = "https://api.simplemining.net"
+_smos_cache = {"ts": 0.0, "rigs": None}
+SMOS_CACHE_TTL = 55
+
+
+def fetch_smos_rigs():
+    """SMOS /rigs/user-list → normalized rig list (None = unreachable/unconfigured)."""
+    if not SMOS_API_KEY:
+        return None
+    now = time.time()
+    if now - _smos_cache["ts"] < SMOS_CACHE_TTL:
+        return _smos_cache["rigs"]
+    rigs = None
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            f"{SMOS_BASE}/rigs/user-list?itemsPerPage=100",
+            headers={"X-AUTH-TOKEN": SMOS_API_KEY, "Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+        rigs = []
+        for r in data:
+            rd = r.get("redisData") or {}
+            grp = r.get("rigGroup") or {}
+            miner = (grp.get("minerProgram") or {}).get("name", "")
+            rigs.append({
+                "id": r.get("id"),
+                "name": r.get("name") or f"rig-{r.get('id')}",
+                "online": bool(r.get("isOnline")),
+                "paused": bool(r.get("isPaused")),
+                "group": grp.get("name") or "",
+                "miner": miner,
+                "gpus": r.get("gpuCount") or 0,
+                "gpus_max": r.get("gpuCountMax") or 0,
+                "hash": rd.get("hash") or 0,
+                "hash2": rd.get("hash2") or 0,
+                "gpu_hash": rd.get("gpuHash") or [],
+                "gpu_hash2": rd.get("gpuHash2") or [],
+                "gpu_temp": rd.get("gpuTemp") or [],
+                "gpu_fan": rd.get("gpuFan") or [],
+                "gpu_pwr": rd.get("gpuPwrCur") or [],
+                "sys_pwr": rd.get("sysPwr") or "",
+                "acc": rd.get("acc") or 0,
+                "rej": rd.get("rej") or 0,
+                "uptime": rd.get("uptime") or "",
+                "proc_uptime": r.get("processUptime") or 0,
+                "alerts": r.get("alerts") or [],
+                "last_update": r.get("valueLastUpdate") or 0,
+                "ip": r.get("ip") or "",
+                "driver": rd.get("driver") or "",
+                "kernel": rd.get("kernel") or "",
+                "os": f"{r.get('osSeries','')} {r.get('osVersion','')}".strip(),
+                "pwr_limit": r.get("ocPowerLimit") or "",
+            })
+    except Exception:
+        rigs = None
+    _smos_cache["ts"] = now
+    _smos_cache["rigs"] = rigs
+    return rigs
+
+
+def fetch_pool_miners():
+    """Pool /miners via edge loopback API → normalized worker list (None = unreachable)."""
+    now = time.time()
+    if now - _pool_cache["ts"] < POOL_CACHE_TTL:
+        return _pool_cache["miners"]
+    miners = None
+    try:
+        rc, out, _ = run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=6",
+                          EDGE_SSH, "curl -sm8 http://127.0.0.1:8080/miners?limit=200"],
+                         timeout=15)
+        if rc == 0 and out.strip().startswith("{"):
+            data = json.loads(out)
+            miners = []
+            for m in data.get("miners", []):
+                w = m.get("worker") or ""
+                if w.startswith("probe"):
+                    continue
+                miners.append({
+                    "worker": w,
+                    "address": m.get("address") or "",
+                    "streams": {
+                        c: {"v": s.get("valid_shares", 0),
+                            "i": s.get("invalid_shares", 0),
+                            "t": s.get("last_share_time", 0)}
+                        for c, s in (m.get("streams") or {}).items()
+                    },
+                    "hps": m.get("hashrate_hps") or 0,
+                    "hps_1h": m.get("hashrate_1h_hps") or 0,
+                    "last_seen": m.get("last_seen_s") or 0,
+                    "first_seen": m.get("first_seen_s") or 0,
+                    "blocks": m.get("blocks_found") or 0,
+                    "paid": m.get("paid_total_atomic") or 0,
+                })
+    except Exception:
+        miners = None
+    _pool_cache["ts"] = now
+    _pool_cache["miners"] = miners
+    return miners
+
 
 def snapshot(ids=None):
     rigs = status_all(ids)
@@ -513,6 +622,8 @@ def snapshot(ids=None):
         "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "total_dph": round(sum(r["dph"] for r in rigs), 4),
         "rigs": rigs,
+        "pool": fetch_pool_miners(),
+        "smos": fetch_smos_rigs(),
     }
 
 
@@ -555,6 +666,8 @@ def snapshot_from(rigs):
         "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "total_dph": round(sum(r["dph"] for r in rigs), 4),
         "rigs": rigs,
+        "pool": fetch_pool_miners(),
+        "smos": fetch_smos_rigs(),
     }
 
 

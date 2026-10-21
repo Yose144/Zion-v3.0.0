@@ -5,6 +5,7 @@ After=network.target
 [Service]
 WorkingDirectory=%h/2.9.6-main/tools/vast
 Environment=VASTAI_BIN=%h/.local/bin/vastai
+EnvironmentFile=-%h/.config/vastctl.env
 ExecStart=/usr/bin/python3 %h/2.9.6-main/tools/vast/vastctl.py --config %h/2.9.6-main/xmrig-vast-cpu.json serve --port 8088 --bind 127.0.0.1
 Restart=on-failure
 RestartSec=10
