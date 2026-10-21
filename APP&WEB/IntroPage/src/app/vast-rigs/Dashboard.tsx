@@ -179,6 +179,7 @@ export default function Dashboard() {
   };
   const [logs, setLogs] = useState<Record<number, string>>({});
   const [logsOpen, setLogsOpen] = useState<Record<number, string>>({});
+  const [chatAns, setChatAns] = useState<Record<number, string>>({});
   const loadLogs = (id: number, src: string) => {
     setLogs({ ...logs, [id]: `loading ${src} logs…` });
     fetch(`/vast-ops/api/logs?id=${id}&src=${src}`)
@@ -483,6 +484,44 @@ export default function Dashboard() {
                         </div>
                       )}
                       {rig.error && <div className="mt-2 break-words text-xs text-[#ff7b72]">{rig.error}</div>}
+                      <div className="mt-3 flex gap-1.5 border-t border-white/[0.06] pt-3">
+                        <input
+                          id={`aichat-${rig.id}`}
+                          placeholder={rig.inference_reachable ? "Ask the model…" : "Deploy a worker first"}
+                          disabled={!rig.inference_reachable}
+                          className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none disabled:opacity-40"
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (document.getElementById(`aichat-btn-${rig.id}`) as HTMLButtonElement)?.click(); } }}
+                        />
+                        <button
+                          id={`aichat-btn-${rig.id}`}
+                          disabled={!!busy || !rig.inference_reachable}
+                          onClick={async () => {
+                            const inp = document.getElementById(`aichat-${rig.id}`) as HTMLInputElement;
+                            const prompt = (inp?.value || "").trim();
+                            if (!prompt) return;
+                            const key = `inference:${rig.id}:chat`;
+                            setBusy(key);
+                            setChatAns((p) => ({ ...p, [rig.id]: "…" }));
+                            try {
+                              const res = await fetch(`/vast-ops/api/inference/chat?id=${rig.id}&prompt=${encodeURIComponent(prompt)}`, { method: "POST" });
+                              const text = await res.text();
+                              setChatAns((p) => ({ ...p, [rig.id]: text || "(empty reply)" }));
+                            } catch (e) {
+                              setChatAns((p) => ({ ...p, [rig.id]: `error: ${e}` }));
+                            } finally {
+                              setBusy("");
+                            }
+                          }}
+                          className="min-h-9 shrink-0 rounded-lg border border-[#a371f7]/35 bg-[#a371f7]/10 px-3 text-xs font-semibold text-[#d2a8ff] transition hover:bg-[#a371f7]/20 disabled:cursor-wait disabled:opacity-40"
+                        >
+                          {busy === `inference:${rig.id}:chat` ? "…" : "Ask"}
+                        </button>
+                      </div>
+                      {chatAns[rig.id] !== undefined && (
+                        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[#a371f7]/15 bg-black/40 p-3 text-[11px] leading-relaxed text-[#d2a8ff]">
+                          {chatAns[rig.id]}
+                        </pre>
+                      )}
                       <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/[0.06] pt-3">
                         <button
                           onClick={() => inferenceAction("deploy", rig)}

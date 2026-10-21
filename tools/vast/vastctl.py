@@ -1060,6 +1060,35 @@ def inference_action(action, query):
             raise ValueError("stopping inference requires explicit confirmation")
         name = query.get("name", [vast_inference.DEFAULT_CONTAINER])[0]
         script = vast_inference.build_stop_script(name)
+    elif action == "chat":
+        port = int(query.get("port", [str(vast_inference.REMOTE_API_PORT)])[0])
+        prompt = query.get("prompt", [""])[0].strip()
+        if not prompt:
+            raise ValueError("prompt required")
+        max_tok = int(query.get("max_tokens", ["256"])[0])
+        script = (
+            f'MODEL=$(curl -sS -m 10 http://127.0.0.1:{port}/v1/models '
+            "| python3 -c 'import sys,json;"
+            'print(json.load(sys.stdin)["data"][0]["id"])\' 2>/dev/null)\n'
+            '[ -z "$MODEL" ] && echo "no model loaded on this rig" && exit 1\n'
+            'echo "model: $MODEL"\n'
+            'PAYLOAD=$(python3 -c \'import sys,json;print(json.dumps({'
+            '"model":sys.argv[1],'
+            '"messages":[{"role":"user","content":sys.argv[2]}],'
+            '"max_tokens":int(sys.argv[3]),"temperature":0.7}))\' '
+            f'"$MODEL" {shlex.quote(prompt)} {max_tok})\n'
+            f"curl -sS -m 180 http://127.0.0.1:{port}/v1/chat/completions "
+            '-H \'Content-Type: application/json\' -d "$PAYLOAD"'
+            " | python3 -c 'import sys,json\n"
+            "try:\n"
+            " d=json.load(sys.stdin)\n"
+            " c=d[\"choices\"][0]\n"
+            " print(c[\"message\"][\"content\"])\n"
+            " u=d.get(\"usage\",{})\n"
+            " if u: print(f\"\\n-- {u.get('completion_tokens','?')} tok out / {u.get('prompt_tokens','?')} in\")\n"
+            "except Exception:\n"
+            " print(\"(no/invalid reply)\")'\n"
+        )
     elif action == "tunnel":
         local_port = int(query.get("local_port", [
             str(vast_inference.REMOTE_API_PORT)
