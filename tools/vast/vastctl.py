@@ -76,6 +76,7 @@ echo "==PROC=="; ps -eo pid,etime,args 2>/dev/null | grep -E "SRBMiner|xmrig|zio
 echo "==TMUX=="; tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null | while read p; do echo "--pane:$p--"; tmux capture-pane -t "$p" -p -J 2>/dev/null | tail -60; done
 echo "==LOGS=="; for f in /root/zion.log /root/srb-*.log /root/xmrig.log /root/miner*.log; do [ -f "$f" ] && echo "--$f--" && tail -45 "$f"; done
 echo "==XMRIG_API=="; curl -s -m 3 http://127.0.0.1:16000/2/summary 2>/dev/null; echo
+echo "==SESS=="; tmux ls 2>/dev/null | cut -d: -f1
 echo "==NET=="; for hp in eu.lproute.com:5660 pearl-eu2.luckypool.io:3360 62.171.141.136:8444 xmr-eu2.nanopool.org:10300; do h=${hp%:*}; p=${hp#*:}; timeout 3 bash -c "</dev/tcp/$h/$p" 2>/dev/null && echo "net:$hp:ok" || echo "net:$hp:fail"; done
 echo "==END=="
 '''
@@ -135,7 +136,7 @@ def parse_probe(inst, text):
         "dph": inst.get("dph_total", 0), "geo": inst.get("geolocation", "?"),
         "ssh": f"{inst.get('ssh_host')}:{inst.get('ssh_port')}",
         "gpu": {}, "miners": [], "xmrig_api": None, "error": None,
-        "net": {},
+        "net": {}, "sessions": [],
     }
     sec = None
     log_file = None
@@ -152,6 +153,9 @@ def parse_probe(inst, text):
             if sec == "XMRIG_API":
                 _parse_xmrig_api(rig, api_buf)
             sec = clean.strip("=")
+            continue
+        if sec == "SESS" and clean:
+            rig["sessions"].append(clean)
             continue
         if sec == "NET" and clean.startswith("net:"):
             parts = clean[4:].split(":")
@@ -609,20 +613,48 @@ def cmd_daemon(args):
                     if r.get("net") and not all(r["net"].values()):
                         continue
                     cmds = " ".join(m.get("cmd") or "" for m in r["miners"])
+                    sess = set(r.get("sessions") or [])
+                    # session-level expectation per mode (dual srb = 2 panes)
+                    _SESS_WANT = {"srb": {"srb-qtu", "srb-prl"},
+                                  "srb-prl": {"srb-prl"},
+                                  "srb-qtu": {"srb-qtu"},
+                                  "zion": {"zion"}, "zion50": {"zion"},
+                                  "zionmax": {"zion"}, "prl": {"zion"},
+                                  "qtu": {"zion"}}
                     for grp, cfg in want.items():
-                        proc = _EXPECT_PROC.get(grp)
-                        if not proc or proc in cmds:
-                            continue
+                        mode = cfg.get("mode", grp)
+                        want_sess = _SESS_WANT.get(mode, set())
+                        missing = want_sess - sess
+                        if not missing:
+                            # sessions alive; also require the proc itself
+                            proc = _EXPECT_PROC.get(grp)
+                            if proc and proc in cmds:
+                                continue
+                            if grp == "xmr" and "xmrig" in cmds:
+                                continue
+                            if grp != "xmr" and proc and proc in cmds:
+                                continue
+                            if grp == "xmr" and "xmrig" not in cmds:
+                                missing = {"xmr"}
+                            elif grp != "xmr" and proc and proc not in cmds:
+                                missing = want_sess or {mode}
+                            else:
+                                continue
+                        # pick smallest relaunch that restores the missing pane(s)
+                        if grp == "srb" and missing == {"srb-prl"}:
+                            mode = "srb-prl"
+                        elif grp == "srb" and missing == {"srb-qtu"}:
+                            mode = "srb-qtu"
                         key = f"{rid}:{grp}"
                         if time.time() - st["last_fix"].get(key, 0) < 300:
                             continue
                         st["last_fix"][key] = time.time()
                         _save_state(st)
-                        mode = cfg.get("mode", grp)
-                        print(f"[watchdog] {rid}: {grp} dead → relaunch {mode}")
+                        print(f"[watchdog] {rid}: {grp} missing {sorted(missing)} → relaunch {mode}")
                         try:
                             ns = argparse.Namespace(
                                 id=rid, miners=[mode], config=args.config,
+                                record=False,
                                 duty=tuple(cfg["duty"]) if cfg.get("duty") else None)
                             cmd_launch(ns)
                         except SystemExit as e:
@@ -852,9 +884,10 @@ def cmd_launch(args):
         if mn == "xmr":
             ns = argparse.Namespace(id=args.id, config=args.config)
             cmd_deploy_xmrig(ns)
-            st = _state()
-            st["desired"].setdefault(str(args.id), {})["xmr"] = {"mode": "xmr"}
-            _save_state(st)
+            if getattr(args, "record", True):
+                st = _state()
+                st["desired"].setdefault(str(args.id), {})["xmr"] = {"mode": "xmr"}
+                _save_state(st)
             continue
         if mn in ZION_DUTY or mn == "_zion_install":
             # rig downloads the glibc-compatible build from Edge (local build
@@ -890,7 +923,7 @@ def cmd_launch(args):
         rc, out, err = ssh(inst, script, timeout=180)
         print((out + err).strip() or f"(exit {rc})")
         grp = _launch_group(mn)
-        if grp and rc == 0:
+        if grp and rc == 0 and getattr(args, "record", True):
             st = _state()
             st["desired"].setdefault(str(args.id), {})[grp] = {
                 "mode": mn,
