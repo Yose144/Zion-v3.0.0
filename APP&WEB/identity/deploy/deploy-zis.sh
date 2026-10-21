@@ -18,6 +18,7 @@ echo "=== ZIS Deploy → $DEPLOY_HOST ==="
 echo "[1/6] Building ZIS..."
 cd "$REPO_ROOT/APP&WEB/identity"
 npm ci
+npm run db:generate   # regenerate the Prisma client — npm ci wipes it
 npm run build
 echo "  Build complete."
 
@@ -85,8 +86,9 @@ echo "  Health:   https://auth.zionterranova.com/health"
 echo ""
 echo "  Post-deploy checklist:"
 echo "    1. .env must set DATABASE_URL, COOKIE_DOMAIN, ZIS_SERVICE_KEY"
-echo "    2. EdDSA JWT: generate a key once and add JWT_PRIVATE_KEY to .env:"
-echo "       node -e \"const{generateKeyPairSync}=require('crypto');console.log(generateKeyPairSync('ed25519').privateKey.export({format:'pem',type:'pkcs8'}))\""
+echo "    2. EdDSA JWT: generate a key once and add JWT_PRIVATE_KEY to .env"
+echo "       (base64 — safest for systemd EnvironmentFile):"
+echo "       node -e \"const{generateKeyPairSync}=require('crypto');process.stdout.write(Buffer.from(generateKeyPairSync('ed25519').privateKey.export({format:'pem',type:'pkcs8'})).toString('base64'))\""
 echo "    3. Keep JWT_SECRET set — it verifies pre-migration HS256 sessions"
 echo "    4. Optional: ZIS_EMAIL_ENABLED=1 after postfix is confirmed"
 echo "    5. Verify: curl https://auth.zionterranova.com/.well-known/jwks.json"
