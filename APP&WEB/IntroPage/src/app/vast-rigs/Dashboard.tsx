@@ -82,6 +82,38 @@ export default function Dashboard() {
 
   const rigs = snap?.rigs || [];
 
+  // ── market ──
+  type Offer = {
+    id: number; gpu_name: string; dph_total: number; geolocation: string;
+    inet_down: number; inet_up: number; reliability: number;
+    cuda_max_good: number | string; cpu_ram: number; disk_space: number;
+  };
+  const [offers, setOffers] = useState<Offer[] | null>(null);
+  const [mGpu, setMGpu] = useState("RTX_3060");
+  const [mDph, setMDph] = useState("");
+  const loadOffers = () => {
+    setBusy("offers");
+    fetch(`/vast-ops/api/offers?gpu=${mGpu}&max_dph=${mDph}`)
+      .then((r) => r.json())
+      .then((d) => setOffers(Array.isArray(d) ? d : []))
+      .catch((e) => alert(String(e)))
+      .finally(() => setBusy(""));
+  };
+
+  // ── ops calls → /vast-ops/api/* (same realm → browser sends basic auth) ──
+  const [busy, setBusy] = useState("");
+  const ops = async (path: string, method = "GET") => {
+    setBusy(path);
+    try {
+      const r = await fetch(`/vast-ops/api/${path}`, { method });
+      alert(await r.text());
+    } catch (e) {
+      alert(String(e));
+    } finally {
+      setBusy("");
+    }
+  };
+
   const totals: Record<string, { v: number; unit: string; a: number; c: string }> = {};
   for (const r of rigs)
     for (const m of r.miners) {
@@ -122,10 +154,6 @@ export default function Dashboard() {
         <p className="text-xs text-white/40">
           updated {snap?.ts || "—"} · auto-refresh 30 s
           {err && <span className="ml-2 text-[#ff7b72]">· {err}</span>}
-          {" · "}
-          <a href="/vast-ops/" className="text-[#fcd116]/60 underline decoration-dotted hover:text-[#fcd116]">
-            ops
-          </a>
         </p>
       </section>
 
@@ -190,6 +218,38 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
+
+              {/* ops controls */}
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {(["srb", "zion", "xmr", "all"] as const).map((m) => (
+                  <button
+                    key={m}
+                    disabled={!!busy}
+                    onClick={() => confirm(`launch ${m} on ${r.id}?`) && ops(`launch?id=${r.id}&m=${m}`, "POST")}
+                    className="rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-white/80 transition hover:border-[#fcd116]/50 hover:text-[#fcd116] disabled:opacity-40"
+                  >
+                    ▸ {m}
+                  </button>
+                ))}
+                <form
+                  className="ml-auto flex gap-1"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const inp = (e.target as HTMLFormElement).elements.namedItem("c") as HTMLInputElement;
+                    if (inp.value.trim()) ops(`exec?id=${r.id}&cmd=${encodeURIComponent(inp.value)}`);
+                    inp.value = "";
+                  }}
+                >
+                  <input
+                    name="c"
+                    placeholder="ssh cmd…"
+                    className="w-32 rounded-md border border-white/15 bg-black/40 px-2 py-1 text-xs text-white placeholder-white/30 focus:border-[#fcd116]/50 focus:outline-none"
+                  />
+                  <button className="rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs text-white/70 hover:border-[#34d399]/50 hover:text-[#34d399]">
+                    run
+                  </button>
+                </form>
+              </div>
             </div>
           ))}
           {!rigs.length && !err && (
@@ -197,6 +257,80 @@ export default function Dashboard() {
               waiting for vastctl daemon…
             </div>
           )}
+        </section>
+
+        {/* ── market ── */}
+        <section className="mx-auto max-w-6xl px-4 pb-20">
+          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-5 backdrop-blur">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-lg font-bold text-white">
+                market <span className="text-sm font-normal text-white/40">— offers, cheapest first</span>
+              </h2>
+              <select
+                value={mGpu}
+                onChange={(e) => setMGpu(e.target.value)}
+                className="rounded-md border border-white/15 bg-black/40 px-2.5 py-1.5 text-sm text-white focus:border-[#fcd116]/50 focus:outline-none"
+              >
+                {["RTX_3060", "RTX_3070", "RTX_3060_Ti", "RTX_4060", "RTX_3080", "any"].map((g) => (
+                  <option key={g} value={g}>{g.replace(/_/g, " ")}</option>
+                ))}
+              </select>
+              <input
+                value={mDph}
+                onChange={(e) => setMDph(e.target.value)}
+                placeholder="max $/h"
+                className="w-24 rounded-md border border-white/15 bg-black/40 px-2.5 py-1.5 text-sm text-white placeholder-white/30 focus:border-[#fcd116]/50 focus:outline-none"
+              />
+              <button
+                onClick={loadOffers}
+                disabled={!!busy}
+                className="rounded-md border border-[#fcd116]/40 bg-[#fcd116]/10 px-4 py-1.5 text-sm font-semibold text-[#fcd116] transition hover:bg-[#fcd116]/20 disabled:opacity-40"
+              >
+                {busy === "offers" ? "searching…" : "search"}
+              </button>
+            </div>
+
+            {offers && (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-white/40">
+                      {["offer", "gpu", "$/h", "$/day", "inet↓↑", "reliab", "cuda", "ram", "location", ""].map((h) => (
+                        <th key={h} className="px-2 py-1.5 font-normal">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {offers.map((o) => (
+                      <tr key={o.id} className="border-t border-white/5 text-white/80 transition hover:bg-white/[0.04]">
+                        <td className="px-2 py-1.5 font-mono text-xs">{o.id}</td>
+                        <td className="px-2 py-1.5">{o.gpu_name}</td>
+                        <td className="px-2 py-1.5 font-semibold text-[#fcd116]">${o.dph_total.toFixed(4)}</td>
+                        <td className="px-2 py-1.5">${(o.dph_total * 24).toFixed(2)}</td>
+                        <td className="px-2 py-1.5 text-white/60">{Math.round(o.inet_down)}/{Math.round(o.inet_up)}</td>
+                        <td className="px-2 py-1.5 text-white/60">{(o.reliability * 100).toFixed(1)}%</td>
+                        <td className="px-2 py-1.5 text-white/60">{o.cuda_max_good}</td>
+                        <td className="px-2 py-1.5 text-white/60">{Math.round(o.cpu_ram / 1024)}G</td>
+                        <td className="px-2 py-1.5 text-white/60">{o.geolocation}</td>
+                        <td className="px-2 py-1.5">
+                          <button
+                            disabled={!!busy}
+                            onClick={() => confirm(`RENT offer ${o.id} — $${o.dph_total.toFixed(4)}/h?\nThis bills your vast.ai account!`) && ops(`rent?id=${o.id}`, "POST")}
+                            className="rounded-md border border-[#34d399]/40 bg-[#34d399]/10 px-3 py-1 text-xs font-semibold text-[#34d399] transition hover:bg-[#34d399]/20 disabled:opacity-40"
+                          >
+                            rent
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {!offers.length && (
+                      <tr><td colSpan={10} className="px-2 py-6 text-center text-white/30">no offers match</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </section>
       </article>
     </PageLayout>
