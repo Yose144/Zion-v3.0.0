@@ -35,8 +35,12 @@ echo "[deploy-intro] Syncing ${ROOT_DIR}/dist/ to ${EDGE_HOST}:${REMOTE_DIR}"
 # Ensure target directory exists and is empty-safe
 ssh ${SSH_OPTS} "${EDGE_USER}@${EDGE_HOST}" "mkdir -p ${REMOTE_DIR}"
 
-# Sync the whole Next.js static export
+# Sync the whole Next.js static export.
+# Exclude vast-rigs/status.json — it is live-pushed by the vastctl daemon on
+# the host; rsyncing the repo placeholder would blank the dashboard for up to
+# a full probe interval after every deploy.
 rsync -avz --delete -e "ssh ${SSH_OPTS}" \
+  --exclude '/vast-rigs/status.json' \
   "${ROOT_DIR}/dist/" \
   "${EDGE_USER}@${RSYNC_HOST}:${REMOTE_DIR}/"
 
