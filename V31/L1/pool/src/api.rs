@@ -26,6 +26,20 @@ const HISTORY_CAP: usize = 24 * 60;
 /// A miner counts as online for a coin when its last share is younger.
 const ONLINE_WINDOW_S: u64 = 600;
 
+fn write_http_response(
+    stream: &mut TcpStream,
+    status: &str,
+    content_type: &str,
+    body: &str,
+) -> Result<()> {
+    let response = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    );
+    stream.write_all(response.as_bytes())?;
+    Ok(())
+}
+
 /// One periodic pool snapshot for `/public/v1/history` and the
 /// authenticated `/api/v1/hashrate-history` alias.
 #[derive(Clone, serde::Serialize)]
@@ -548,71 +562,165 @@ impl PoolApi {
                 let body = self.build_routing_metrics_payload();
                 ("200 OK", "application/json", body)
             }
-            // External-chain payout queue (QTC etc.).  GET previews without
-            // consuming; POST drains — the multichain sweeper owns idempotent
-            // redelivery from its own ledger after a successful drain.
+            // External-chain payout queue (QTC etc.). Revenue payouts remain
+            // in SQLite until the downstream ledger acknowledges their ids.
             "/admin/external-payouts" => {
                 let chain =
                     parse_query_param(raw_path, "chain").unwrap_or_else(|| "quantus".to_string());
-                if method == "POST" {
+                let durable = match self.share_store.as_ref() {
+                    Some(store) => match store.pending_coin_revenue_payouts(&chain) {
+                        Ok(rows) => Ok(rows),
+                        Err(e) => Err(e),
+                    },
+                    None => Ok(Vec::new()),
+                };
+                if let Err(e) = &durable {
+                    (
+                        "503 Service Unavailable",
+                        "application/json",
+                        serde_json::json!({"ok": false, "error": e.to_string()}).to_string(),
+                    )
+                } else if method == "POST" {
+                    let durable = durable.expect("checked successful durable outbox read");
                     let drained = {
                         let mut pool = self.pool.lock().expect("pool lock poisoned");
                         pool.take_external_payouts(&chain)
+                            .into_iter()
+                            .filter(|(_, payout)| payout.revenue_event.is_none())
+                            .collect::<Vec<_>>()
                     };
-                    let entries: Vec<String> = drained
+                    let mut entries: Vec<serde_json::Value> = durable
                         .iter()
-                        .map(|(h, p)| {
-                            let coin = p
-                                .coin
-                                .as_deref()
-                                .map(|c| format!(",\"coin\":\"{c}\""))
-                                .unwrap_or_default();
-                            let event = p
-                                .revenue_event
-                                .as_deref()
-                                .map(|e| format!(",\"event\":\"{e}\""))
-                                .unwrap_or_default();
-                            format!(
-                                "{{\"height\":{h},\"miner_id\":\"{}\",\"address\":\"{}\",\"amount_flowers\":{},\"share_count\":{},\"unit\":\"{}\"{}{}}}",
-                                p.miner_id, p.address, p.amount, p.share_count,
-                                p.unit(), coin, event
-                            )
+                        .map(|row| {
+                            let p = &row.payout;
+                            serde_json::json!({
+                                "outbox_id": row.id,
+                                "height": row.height,
+                                "miner_id": &p.miner_id,
+                                "address": &p.address,
+                                "amount_flowers": p.amount,
+                                "share_count": p.share_count,
+                                "unit": p.unit(),
+                                "coin": p.coin.as_deref(),
+                                "event": p.revenue_event.as_deref(),
+                            })
                         })
                         .collect();
-                    let body = format!(
-                        "{{\"ok\":true,\"chain\":\"{}\",\"count\":{},\"payouts\":[{}]}}",
-                        chain,
-                        entries.len(),
-                        entries.join(",")
-                    );
+                    entries.extend(drained.iter().map(|(height, p)| {
+                        serde_json::json!({
+                            "height": height,
+                            "miner_id": &p.miner_id,
+                            "address": &p.address,
+                            "amount_flowers": p.amount,
+                            "share_count": p.share_count,
+                            "unit": p.unit(),
+                            "coin": p.coin.as_deref(),
+                            "event": p.revenue_event.as_deref(),
+                        })
+                    }));
+                    let body = serde_json::json!({
+                        "ok": true,
+                        "chain": chain,
+                        "count": entries.len(),
+                        "payouts": entries,
+                    })
+                    .to_string();
                     ("200 OK", "application/json", body)
                 } else {
+                    let durable = durable.expect("checked successful durable outbox read");
+                    let mut entries: Vec<serde_json::Value> = durable
+                        .iter()
+                        .map(|row| {
+                            let p = &row.payout;
+                            serde_json::json!({
+                                "outbox_id": row.id,
+                                "height": row.height,
+                                "miner_id": &p.miner_id,
+                                "address": &p.address,
+                                "amount_flowers": p.amount,
+                                "share_count": p.share_count,
+                                "unit": p.unit(),
+                                "coin": p.coin.as_deref(),
+                                "event": p.revenue_event.as_deref(),
+                            })
+                        })
+                        .collect();
                     let pending = {
                         let pool = self.pool.lock().expect("pool lock poisoned");
                         pool.pending_external_payouts(&chain)
-                            .iter()
+                            .into_iter()
+                            .filter(|p| p.revenue_event.is_none())
                             .map(|p| {
-                                format!(
-                                    "{{\"miner_id\":\"{}\",\"address\":\"{}\",\"amount_flowers\":{}}}",
-                                    p.miner_id, p.address, p.amount
-                                )
+                                serde_json::json!({
+                                    "miner_id": &p.miner_id,
+                                    "address": &p.address,
+                                    "amount_flowers": p.amount,
+                                    "unit": p.unit(),
+                                    "coin": p.coin.as_deref(),
+                                    "event": p.revenue_event.as_deref(),
+                                })
                             })
                             .collect::<Vec<_>>()
                     };
-                    let body = format!(
-                        "{{\"ok\":true,\"chain\":\"{}\",\"pending\":{},\"payouts\":[{}]}}",
-                        chain,
-                        pending.len(),
-                        pending.join(",")
-                    );
+                    entries.extend(pending);
+                    let body = serde_json::json!({
+                        "ok": true,
+                        "chain": chain,
+                        "pending": entries.len(),
+                        "payouts": entries,
+                    })
+                    .to_string();
                     ("200 OK", "application/json", body)
                 }
             }
-            // Native-coin revenue event intake (F3).  The multichain
-            // treasury oracle POSTs {"coin","amount","ref_height","event"}
-            // after observing a balance increase; the pool distributes the
-            // amount across the coin's PPLNS slice and queues native-unit
-            // payout entries (drained via /admin/external-payouts).
+            "/admin/external-payouts/ack" => {
+                if method != "POST" {
+                    (
+                        "405 Method Not Allowed",
+                        "application/json",
+                        "{\"ok\":false,\"error\":\"POST required\"}".to_string(),
+                    )
+                } else {
+                    #[derive(serde::Deserialize)]
+                    struct AckRequest {
+                        chain: String,
+                        ids: Vec<String>,
+                    }
+                    match serde_json::from_str::<AckRequest>(&request_body) {
+                        Err(e) => (
+                            "400 Bad Request",
+                            "application/json",
+                            serde_json::json!({"ok": false, "error": e.to_string()})
+                                .to_string(),
+                        ),
+                        Ok(req) => match self.share_store.as_ref() {
+                            Some(store) => match store.ack_coin_revenue_payouts(&req.chain, &req.ids)
+                            {
+                                Ok(acked) => (
+                                    "200 OK",
+                                    "application/json",
+                                    serde_json::json!({"ok": true, "acked": acked}).to_string(),
+                                ),
+                                Err(e) => (
+                                    "503 Service Unavailable",
+                                    "application/json",
+                                    serde_json::json!({"ok": false, "error": e.to_string()})
+                                        .to_string(),
+                                ),
+                            },
+                            None => (
+                                "503 Service Unavailable",
+                                "application/json",
+                                "{\"ok\":false,\"error\":\"durable payout store is not configured\"}"
+                                    .to_string(),
+                            ),
+                        },
+                    }
+                }
+            }
+            // Native-coin revenue intake uses a durable journal, outbox, and
+            // PPLNS snapshot commit so retries and process crashes cannot
+            // lose or double-apply payouts.
             "/admin/coin-revenue" => {
                 if method != "POST" {
                     let body = "{\"ok\":false,\"error\":\"POST required\"}";
@@ -635,80 +743,176 @@ impl PoolApi {
                         Err(e) => (
                             "400 Bad Request",
                             "application/json",
-                            format!("{{\"ok\":false,\"error\":\"bad json: {e}\"}}"),
+                            serde_json::json!({"ok": false, "error": format!("bad json: {e}")})
+                                .to_string(),
                         ),
                         Ok(req) => {
-                            // One critical section for dedup + distribute +
-                            // audit record — a retry POST must never slip
-                            // between the dedup check and the ledger write.
-                            // Order matters for crash safety: distribute
-                            // first, then record; a crash between the two
-                            // loses the in-memory payout entries anyway
-                            // (snapshot restore keeps unpaid_native intact),
-                            // while a committed dedup row blocks any later
-                            // re-post from double-paying.
-                            let mut pool = self.pool.lock().expect("pool lock poisoned");
-                            let known = self
-                                .share_store
-                                .as_ref()
-                                .and_then(|s| s.coin_revenue_amount(&req.event).ok().flatten());
-                            if let Some(recorded) = known {
+                            let event_id = req.event.trim();
+                            if event_id.is_empty() {
                                 (
-                                    "200 OK",
+                                    "400 Bad Request",
                                     "application/json",
-                                    format!(
-                                        "{{\"ok\":true,\"duplicate\":true,\"amount\":{recorded}}}"
-                                    ),
+                                    "{\"ok\":false,\"error\":\"event must not be empty\"}"
+                                        .to_string(),
                                 )
-                            } else {
-                                match pool.on_coin_revenue(
-                                    &req.coin,
-                                    req.amount,
-                                    req.ref_height,
-                                    &req.event,
-                                ) {
-                                    Ok(o) => {
-                                        if let Some(ref store) = self.share_store {
-                                            if let Err(e) = store.record_coin_revenue(
-                                                &req.event,
-                                                &o.coin,
-                                                o.amount,
-                                                req.ref_height,
-                                                o.emitted,
-                                                o.emitted_total,
-                                            ) {
-                                                tracing::warn!(
-                                                    event = %req.event,
-                                                    "coin_revenue audit write failed: {e}"
-                                                );
-                                            }
-                                        }
-                                        (
-                                            "200 OK",
+                            } else if let Some(store) = self.share_store.as_ref() {
+                                let mut pool = self.pool.lock().expect("pool lock poisoned");
+                                let state_path = match pool.config.state_path.as_deref() {
+                                    Some(path) => path,
+                                    None => {
+                                        return write_http_response(
+                                            &mut stream,
+                                            "503 Service Unavailable",
                                             "application/json",
-                                            format!(
-                                                "{{\"ok\":true,\"coin\":\"{}\",\"amount\":{},\"emitted\":{},\"emitted_total\":{}}}",
-                                                o.coin, o.amount, o.emitted, o.emitted_total
-                                            ),
-                                        )
+                                            "{\"ok\":false,\"error\":\"PPLNS state persistence is required for native revenue\"}",
+                                        );
                                     }
-                                    Err(crate::pool::PoolError::CoinNotNative) => (
+                                };
+                                let coin = req.coin.trim().to_ascii_lowercase();
+                                if !pool.pplns.is_native_payout_coin(&coin) {
+                                    (
                                         "400 Bad Request",
                                         "application/json",
                                         "{\"ok\":false,\"error\":\"coin not enabled for native payouts\"}"
                                             .to_string(),
-                                    ),
-                                    Err(crate::pool::PoolError::DuplicateRevenueEvent) => (
-                                        "200 OK",
-                                        "application/json",
-                                        "{\"ok\":true,\"duplicate\":true}".to_string(),
-                                    ),
-                                    Err(e) => (
-                                        "400 Bad Request",
-                                        "application/json",
-                                        format!("{{\"ok\":false,\"error\":\"{e}\"}}"),
-                                    ),
+                                    )
+                                } else {
+                                    let journal = match store.begin_coin_revenue(
+                                        event_id,
+                                        &coin,
+                                        req.amount,
+                                        req.ref_height,
+                                    ) {
+                                        Ok(event) => event,
+                                        Err(e) => {
+                                            tracing::error!(
+                                                event = %event_id,
+                                                "failed to begin native revenue journal: {e}"
+                                            );
+                                            return write_http_response(
+                                                &mut stream,
+                                                "503 Service Unavailable",
+                                                "application/json",
+                                                &serde_json::json!({"ok": false, "error": e.to_string()})
+                                                    .to_string(),
+                                            );
+                                        }
+                                    };
+                                    if journal.status == "committed" {
+                                        (
+                                            "200 OK",
+                                            "application/json",
+                                            serde_json::json!({
+                                                "ok": true,
+                                                "duplicate": true,
+                                                "amount": journal.amount_native,
+                                            })
+                                            .to_string(),
+                                        )
+                                    } else {
+                                        let (emitted, emitted_total, payouts) = if pool
+                                            .pplns
+                                            .has_applied_revenue_event(event_id)
+                                        {
+                                            let payouts =
+                                                pool.pending_revenue_payouts(event_id);
+                                            (
+                                                journal.emitted.max(payouts.len()),
+                                                journal.emitted_total,
+                                                payouts,
+                                            )
+                                        } else {
+                                            match pool.on_coin_revenue(
+                                                &journal.coin,
+                                                journal.amount_native,
+                                                journal.ref_height,
+                                                event_id,
+                                            ) {
+                                                Ok(outcome) => (
+                                                    outcome.emitted,
+                                                    outcome.emitted_total,
+                                                    outcome.payouts,
+                                                ),
+                                                Err(e) => {
+                                                    tracing::error!(
+                                                        event = %event_id,
+                                                        "failed to apply native revenue event: {e}"
+                                                    );
+                                                    return write_http_response(
+                                                        &mut stream,
+                                                        "503 Service Unavailable",
+                                                        "application/json",
+                                                        &serde_json::json!({"ok": false, "error": e.to_string()})
+                                                            .to_string(),
+                                                    );
+                                                }
+                                            }
+                                        };
+                                        if let Err(e) = store.prepare_coin_revenue(
+                                            event_id,
+                                            emitted,
+                                            emitted_total,
+                                            &payouts,
+                                        ) {
+                                            tracing::error!(
+                                                event = %event_id,
+                                                "failed to persist native revenue outbox: {e}"
+                                            );
+                                            return write_http_response(
+                                                &mut stream,
+                                                "503 Service Unavailable",
+                                                "application/json",
+                                                &serde_json::json!({"ok": false, "error": e.to_string()})
+                                                    .to_string(),
+                                            );
+                                        }
+                                        if let Err(e) = pool.pplns.save_if_dirty(state_path) {
+                                            tracing::error!(
+                                                event = %event_id,
+                                                "failed to persist PPLNS revenue snapshot: {e}"
+                                            );
+                                            return write_http_response(
+                                                &mut stream,
+                                                "503 Service Unavailable",
+                                                "application/json",
+                                                &serde_json::json!({"ok": false, "error": e.to_string()})
+                                                    .to_string(),
+                                            );
+                                        }
+                                        if let Err(e) = store.complete_coin_revenue(event_id) {
+                                            tracing::error!(
+                                                event = %event_id,
+                                                "failed to commit native revenue journal: {e}"
+                                            );
+                                            return write_http_response(
+                                                &mut stream,
+                                                "503 Service Unavailable",
+                                                "application/json",
+                                                &serde_json::json!({"ok": false, "error": e.to_string()})
+                                                    .to_string(),
+                                            );
+                                        }
+                                        (
+                                            "200 OK",
+                                            "application/json",
+                                            serde_json::json!({
+                                                "ok": true,
+                                                "coin": journal.coin,
+                                                "amount": journal.amount_native,
+                                                "emitted": emitted,
+                                                "emitted_total": emitted_total,
+                                            })
+                                            .to_string(),
+                                        )
+                                    }
                                 }
+                            } else {
+                                (
+                                    "503 Service Unavailable",
+                                    "application/json",
+                                    "{\"ok\":false,\"error\":\"durable revenue store is not configured\"}"
+                                        .to_string(),
+                                )
                             }
                         }
                     }
@@ -737,12 +941,7 @@ impl PoolApi {
             }
         };
 
-        let response = format!(
-            "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-            body.len()
-        );
-        stream.write_all(response.as_bytes())?;
-        Ok(())
+        write_http_response(&mut stream, status, content_type, &body)
     }
 
     fn build_stats_payload(&self) -> String {
