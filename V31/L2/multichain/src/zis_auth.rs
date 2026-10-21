@@ -100,7 +100,9 @@ pub fn zis_chain_type(chain: ChainId) -> (String, Option<String>) {
     let chain_type = match chain.family() {
         ChainFamily::Zion => "zion-l1".to_string(),
         ChainFamily::Evm => "evm".to_string(),
-        ChainFamily::Utxo => "bitcoin".to_string(),
+        // Per-chain ZIS type (bitcoin, pearl, litecoin, …) — a shared
+        // "bitcoin" bucket would hide e.g. Pearl linked addresses.
+        ChainFamily::Utxo => chain.as_str().to_string(),
         ChainFamily::Solana => "solana".to_string(),
         ChainFamily::Cosmos => "cosmos".to_string(),
         ChainFamily::Move => chain.as_str().to_string(),
@@ -339,5 +341,27 @@ pub fn require_user(
         Err(StatusCode::UNAUTHORIZED)
     } else {
         Ok(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn zis_chain_type_maps_each_utxo_chain_to_its_own_type() {
+        assert_eq!(zis_chain_type(ChainId::Bitcoin), ("bitcoin".into(), None));
+        assert_eq!(zis_chain_type(ChainId::Pearl), ("pearl".into(), None));
+    }
+
+    #[test]
+    fn zis_chain_type_covers_zion_evm_substrate() {
+        assert_eq!(zis_chain_type(ChainId::ZionL1), ("zion-l1".into(), None));
+        assert_eq!(zis_chain_type(ChainId::Quantus), ("quantus".into(), None));
+        assert_eq!(
+            zis_chain_type(ChainId::Base),
+            ("evm".into(), Some("base".into()))
+        );
+        assert_eq!(zis_chain_type(ChainId::Solana), ("solana".into(), None));
     }
 }
