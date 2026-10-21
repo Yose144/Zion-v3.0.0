@@ -7,10 +7,11 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use anyhow::Context;
 use clap::Parser;
 use tokio::net::TcpListener;
 use tokio::sync::watch;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 use zion_l1_types::{Address, ChainId};
 
 use zion_pool::api::PoolApi;
@@ -180,24 +181,18 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
-    let pool = Arc::new(Mutex::new(Pool::new(config, telemetry.clone())));
 
     // Open persistent share store for block/payout recording.
-    let share_store = args.store_db_path.as_ref().and_then(|path| {
-        match zion_pool::store::ShareStore::open(path) {
-            Ok(s) => {
-                info!("pool share store opened: {}", path);
-                Some(Arc::new(s))
-            }
-            Err(e) => {
-                error!(
-                    "failed to open share store at {}: {} — block/payout recording disabled",
-                    path, e
-                );
-                None
-            }
+    let share_store = match args.store_db_path.as_ref() {
+        Some(path) => {
+            let store = zion_pool::store::ShareStore::open(path)
+                .with_context(|| format!("failed to open pool share store at {path}"))?;
+            info!("pool share store opened: {}", path);
+            Some(Arc::new(store))
         }
-    });
+        None => None,
+    };
+    let pool = Arc::new(Mutex::new(Pool::try_new(config, telemetry.clone())?));
 
     let server = StratumServer::new(pool.clone()).with_share_store(share_store.clone());
 

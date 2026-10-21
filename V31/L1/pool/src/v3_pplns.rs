@@ -31,7 +31,7 @@ use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
-use tracing::{error, warn};
+use tracing::warn;
 use zion_l1_types::u128_str;
 
 /// Single accepted share recorded in the PPLNS window (serialization format).
@@ -724,11 +724,12 @@ impl PplnsEngine {
     /// Returns `Ok(true)` if a snapshot was written, `Ok(false)` if the state
     /// was already clean and no write was needed.
     pub fn save_if_dirty<P: AsRef<Path>>(&mut self, path: P) -> std::io::Result<bool> {
-        if !self.take_dirty() {
+        if !self.dirty {
             return Ok(false);
         }
         let snap = self.snapshot();
         Self::write_snapshot_to_path(&snap, path)?;
+        self.dirty = false;
         Ok(true)
     }
 
@@ -752,19 +753,26 @@ impl PplnsEngine {
             let mut f = std::fs::File::create(&tmp)?;
             f.write_all(&json)?;
             f.flush()?;
-            let _ = f.sync_all(); // fsync — best effort, ignore errors
+            f.sync_all()?;
         }
         // Atomic rename (POSIX guarantee on same filesystem).
         std::fs::rename(&tmp, path)?;
+        #[cfg(unix)]
+        {
+            let parent = path
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+                .unwrap_or_else(|| Path::new("."));
+            std::fs::File::open(parent)?.sync_all()?;
+        }
         Ok(())
     }
 
-    /// Load engine state from a JSON file. Returns `None` if file doesn't
-    /// exist (first run).  Errors are logged and treated as "no snapshot"
-    /// so the pool can still start.
+    /// Load engine state from a JSON file. Returns `Ok(None)` if file doesn't
+    /// exist (first run); corrupt or unreadable snapshots are errors.
     ///
     /// F1.2 upgrade: cleans up stale `.json.tmp` files from a previous crash.
-    pub fn load_from_path<P: AsRef<Path>>(path: P) -> Option<PplnsSnapshot> {
+    pub fn load_from_path<P: AsRef<Path>>(path: P) -> std::io::Result<Option<PplnsSnapshot>> {
         let path = path.as_ref();
         // Clean up stale temp file from a previous crash (F1.2).
         let tmp = path.with_extension("json.tmp");
@@ -773,29 +781,27 @@ impl PplnsEngine {
                 "pplns_persistence: cleaning up stale temp file {} (previous crash during save?)",
                 tmp.display()
             );
-            let _ = std::fs::remove_file(&tmp);
-        }
-        match std::fs::read(path) {
-            Ok(data) => match serde_json::from_slice::<PplnsSnapshot>(&data) {
-                Ok(snap) => Some(snap),
-                Err(e) => {
-                    error!(
-                        "pplns_persistence: failed to parse snapshot {}: {} — starting fresh",
-                        path.display(),
+            if let Err(e) = std::fs::remove_file(&tmp) {
+                if e.kind() != std::io::ErrorKind::NotFound {
+                    warn!(
+                        "pplns_persistence: failed to remove stale temp file {}: {}",
+                        tmp.display(),
                         e
                     );
-                    None
                 }
-            },
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
-            Err(e) => {
-                error!(
-                    "pplns_persistence: failed to read snapshot {}: {} — starting fresh",
-                    path.display(),
-                    e
-                );
-                None
             }
+        }
+        match std::fs::read(path) {
+            Ok(data) => serde_json::from_slice::<PplnsSnapshot>(&data)
+                .map(Some)
+                .map_err(|e| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!("failed to parse PPLNS snapshot {}: {e}", path.display()),
+                    )
+                }),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(e),
         }
     }
 
@@ -2187,7 +2193,9 @@ mod tests {
         assert!(path.exists(), "snapshot file should exist");
 
         // Load into a fresh engine
-        let snap = PplnsEngine::load_from_path(&path).expect("snapshot should load");
+        let snap = PplnsEngine::load_from_path(&path)
+            .expect("snapshot read should succeed")
+            .expect("snapshot should exist");
         let mut e2 = engine_with_fees(100, 500_000);
         e2.restore(snap);
 
@@ -2203,7 +2211,39 @@ mod tests {
     fn load_nonexistent_returns_none() {
         let path = std::env::temp_dir().join("zion_pplns_nonexistent_999999.json");
         let _ = std::fs::remove_file(&path);
-        assert!(PplnsEngine::load_from_path(&path).is_none());
+        assert!(PplnsEngine::load_from_path(&path).unwrap().is_none());
+    }
+
+    #[test]
+    fn corrupt_snapshot_is_an_error() {
+        let path =
+            std::env::temp_dir().join(format!("zion_pplns_corrupt_{}.json", std::process::id()));
+        std::fs::write(&path, b"{not-json").unwrap();
+
+        let err = PplnsEngine::load_from_path(&path).unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
+
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn failed_snapshot_write_keeps_engine_dirty_for_retry() {
+        let root =
+            std::env::temp_dir().join(format!("zion_pplns_save_failure_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("missing").join("state.json");
+
+        let mut engine = engine_with_fees(100, 100);
+        engine.record_share_at("alice", "rig1", 1, 10);
+        assert!(engine.save_if_dirty(&path).is_err());
+        assert!(engine.dirty);
+
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        assert!(engine.save_if_dirty(&path).unwrap());
+        assert!(!engine.dirty);
+
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

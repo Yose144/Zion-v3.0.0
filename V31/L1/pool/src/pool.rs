@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
+use anyhow::Context;
 use ed25519_dalek::SigningKey;
 use zion_cosmic_harmony::ExternalCoin;
 use zion_l1_types::{Address, ChainId};
@@ -62,6 +63,8 @@ pub struct Pool {
     pub current_job_id: AtomicU64,
     pub accepted: AtomicU64,
     pub rejected: AtomicU64,
+    pub pplns_persist_success_timestamp_s: u64,
+    pub pplns_persist_failures_total: u64,
     /// Live stratum session counters for the HTTP API.
     pub session_counters: SessionCounters,
     /// Authorized worker name -> payout address (anonymous mining).
@@ -91,6 +94,14 @@ pub struct Pool {
 
 impl Pool {
     pub fn new(config: PoolConfig, telemetry: Arc<Mutex<MinerTelemetryRegistry>>) -> Self {
+        Self::try_new(config, telemetry)
+            .unwrap_or_else(|e| panic!("failed to initialize pool: {e:#}"))
+    }
+
+    pub fn try_new(
+        config: PoolConfig,
+        telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
+    ) -> anyhow::Result<Self> {
         let pplns_config = PplnsConfig {
             window_size: config.pplns_window_size,
             min_payout_flowers: config.min_payout_flowers,
@@ -100,7 +111,9 @@ impl Pool {
         };
         let mut pplns = PplnsEngine::new(pplns_config);
         if let Some(path) = config.state_path.as_ref() {
-            if let Some(snap) = PplnsEngine::load_from_path(path) {
+            if let Some(snap) = PplnsEngine::load_from_path(path)
+                .with_context(|| format!("failed to load PPLNS state from {path}"))?
+            {
                 pplns.restore(snap);
             }
         }
@@ -109,13 +122,15 @@ impl Pool {
             let arr = <[u8; 32]>::try_from(bytes).ok()?;
             Some(SigningKey::from_bytes(&arr))
         });
-        Self {
+        Ok(Self {
             config,
             pplns,
             validator: ShareValidator::new(),
             current_job_id: AtomicU64::new(1),
             accepted: AtomicU64::new(0),
             rejected: AtomicU64::new(0),
+            pplns_persist_success_timestamp_s: 0,
+            pplns_persist_failures_total: 0,
             session_counters: SessionCounters::default(),
             worker_addresses: HashMap::new(),
             worker_ext_payouts: HashMap::new(),
@@ -127,7 +142,7 @@ impl Pool {
             seen_revenue_events: HashSet::new(),
             telemetry,
             pearl: crate::pearl_gateway::PearlRuntime::from_env(),
-        }
+        })
     }
 
     pub fn next_job_id(&self) -> u64 {
@@ -432,19 +447,33 @@ impl Pool {
     /// `Ok(false)` if there was nothing to save, and `Err` only on I/O failure.
     pub fn save(&mut self) -> std::io::Result<bool> {
         if let Some(path) = self.config.state_path.as_ref() {
-            self.pplns.save_if_dirty(path)
+            match self.pplns.save_if_dirty(path) {
+                Ok(saved) => {
+                    if saved {
+                        self.pplns_persist_success_timestamp_s =
+                            crate::telemetry::now_unix_seconds();
+                    }
+                    Ok(saved)
+                }
+                Err(e) => {
+                    self.pplns_persist_failures_total =
+                        self.pplns_persist_failures_total.saturating_add(1);
+                    Err(e)
+                }
+            }
         } else {
             Ok(false)
         }
     }
 
     /// Restore PPLNS state from the configured path, if any.
-    pub fn restore(&mut self) {
+    pub fn restore(&mut self) -> std::io::Result<()> {
         if let Some(path) = self.config.state_path.as_ref() {
-            if let Some(snap) = PplnsEngine::load_from_path(path) {
+            if let Some(snap) = PplnsEngine::load_from_path(path)? {
                 self.pplns.restore(snap);
             }
         }
+        Ok(())
     }
 
     /// Drain and return the queued ZION payouts for the sweep thread.
@@ -667,6 +696,55 @@ mod tests {
 
     fn telemetry() -> Arc<Mutex<MinerTelemetryRegistry>> {
         Arc::new(Mutex::new(MinerTelemetryRegistry::new()))
+    }
+
+    #[test]
+    fn try_new_fails_when_configured_snapshot_is_corrupt() {
+        let path = std::env::temp_dir().join(format!(
+            "zion_pool_corrupt_snapshot_{}.json",
+            std::process::id()
+        ));
+        std::fs::write(&path, b"{not-json").unwrap();
+
+        let err = Pool::try_new(
+            PoolConfig {
+                state_path: Some(path.to_string_lossy().into_owned()),
+                ..config()
+            },
+            telemetry(),
+        )
+        .unwrap_err();
+
+        assert!(format!("{err:#}").contains("failed to load PPLNS state"));
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn failed_pplns_snapshot_save_is_counted_and_retried() {
+        let root =
+            std::env::temp_dir().join(format!("zion_pool_snapshot_retry_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("missing").join("state.json");
+        let mut pool = Pool::new(
+            PoolConfig {
+                state_path: Some(path.to_string_lossy().into_owned()),
+                ..config()
+            },
+            telemetry(),
+        );
+        pool.pplns.record_share_at("miner", "worker", 1, 10);
+
+        assert!(pool.save().is_err());
+        assert_eq!(pool.pplns_persist_failures_total, 1);
+        assert_eq!(pool.pplns_persist_success_timestamp_s, 0);
+
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        assert!(pool.save().unwrap());
+        assert_eq!(pool.pplns_persist_failures_total, 1);
+        assert!(pool.pplns_persist_success_timestamp_s > 0);
+
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

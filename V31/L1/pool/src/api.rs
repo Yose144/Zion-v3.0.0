@@ -1415,7 +1415,17 @@ impl PoolApi {
     }
 
     fn build_prometheus_payload(&self) -> String {
-        let (accepted, rejected, telemetry, stats, fees, sessions) = {
+        let (
+            accepted,
+            rejected,
+            telemetry,
+            stats,
+            fees,
+            sessions,
+            persistence_configured,
+            persist_success_timestamp_s,
+            persist_failures_total,
+        ) = {
             let pool = self.pool.lock().expect("pool lock poisoned");
             (
                 pool.stats().0,
@@ -1426,6 +1436,9 @@ impl PoolApi {
                 pool.session_counters
                     .active_sessions
                     .load(Ordering::Relaxed),
+                pool.config.state_path.is_some(),
+                pool.pplns_persist_success_timestamp_s,
+                pool.pplns_persist_failures_total,
             )
         };
         let uptime_s = self.started_at.elapsed().as_secs();
@@ -1471,6 +1484,22 @@ impl PoolApi {
         body.push_str(&format!(
             "zion_pool_pplns_payout_rounds {}\n",
             stats.payout_rounds
+        ));
+        body.push_str(&format!(
+            "zion_pool_pplns_persistence_configured {}\n",
+            persistence_configured as u8
+        ));
+        body.push_str(&format!(
+            "zion_pool_pplns_persist_success_timestamp_seconds {}\n",
+            persist_success_timestamp_s
+        ));
+        body.push_str(&format!(
+            "zion_pool_pplns_persist_failures_total {}\n",
+            persist_failures_total
+        ));
+        body.push_str(&format!(
+            "zion_pool_share_store_configured {}\n",
+            self.share_store.is_some() as u8
         ));
         body.push_str(&format!(
             "zion_fee_humanitarian_pct {}\n",
@@ -2012,6 +2041,17 @@ mod tests {
         assert_eq!(payload["sessions"], 3);
         assert_eq!(payload["total_connections"], 7);
         assert_eq!(payload["pool"]["port"], 8444);
+    }
+
+    #[test]
+    fn prometheus_payload_exposes_persistence_health() {
+        let api = PoolApi::new(test_pool(), None, None);
+        let payload = api.build_prometheus_payload();
+
+        assert!(payload.contains("zion_pool_pplns_persistence_configured 0\n"));
+        assert!(payload.contains("zion_pool_pplns_persist_success_timestamp_seconds 0\n"));
+        assert!(payload.contains("zion_pool_pplns_persist_failures_total 0\n"));
+        assert!(payload.contains("zion_pool_share_store_configured 0\n"));
     }
 
     fn test_pool() -> Arc<Mutex<Pool>> {
