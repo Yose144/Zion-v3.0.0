@@ -51,4 +51,10 @@ ssh ${SSH_OPTS} "${EDGE_USER}@${EDGE_HOST}" "nginx -s reload"
 
 echo "[deploy-intro] Done — https://zionterranova.com"
 echo "[deploy-intro] Health check:"
-ssh ${SSH_OPTS} "${EDGE_USER}@${EDGE_HOST}" "curl -s -o /dev/null -w '%{http_code}' https://127.0.0.1/ --insecure"
+HEALTH_CODE="$(ssh ${SSH_OPTS} "${EDGE_USER}@${EDGE_HOST}" \
+  "curl -s -o /dev/null -w '%{http_code}' --resolve zionterranova.com:443:127.0.0.1 https://zionterranova.com/vast-rigs/ --insecure")"
+echo "${HEALTH_CODE}"
+if [[ "${HEALTH_CODE}" != "200" && "${HEALTH_CODE}" != "401" ]]; then
+  echo '[deploy-intro] health check failed' >&2
+  exit 1
+fi

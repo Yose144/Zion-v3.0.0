@@ -201,9 +201,9 @@ but advertised no model.
 The summed VRAM figure is an inventory across separate machines, **not pooled
 memory**: it cannot by itself load one model across all rigs. The panel also
 shows GPU utilization because free VRAM does not mean free compute; current
-mining and inference can still contend for GPU time. No 80/20 scheduler,
-automatic miner pause, model deployment, or automatic Vast rental is provided
-by this pilot.
+mining and inference can still contend for GPU time. There is no 80/20
+scheduler, automatic miner pause, or automatic Vast rental; model deployment
+is an explicit per-instance opt-in below.
 
 ### Opt-in vLLM on an existing instance
 
@@ -286,6 +286,12 @@ $/den součet), per-rig exec box + **deploy xmrig** tlačítko.
 Hashrate se čte ze SRBMiner logů (`/root/srb-*.log`) a XMRig API —
 minery bez log redirectu ukážou `—` (spusť s `> /root/srb-qtu.log 2>&1 &`).
 `VASTCTL_READONLY=1` vypne exec/deploy endpointy (veřejný serve mód).
+
+The deployed `vastctl-serve.service` runs a committed release snapshot from
+`~/.local/share/vastctl-release/tools/vast`, not directly from the working
+checkout. This keeps service restarts isolated from unrelated uncommitted
+changes. The Edge reverse tunnel remains loopback-only; `/vast-ops/` is
+protected by nginx Basic Auth.
 
 ### Daemon — autonomní fleet loop (DEPLOYED)
 

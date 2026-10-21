@@ -2,8 +2,7 @@
 
 **Datum:** 21. 10. 2026
 
-**Stav:** základní Vast dashboard je pushnutý a nasazený; inference worker UI
-a ovládací API jsou doplněná v této iteraci
+**Stav:** Vast dashboard i inference worker UI/API jsou pushnuté a nasazené.
 
 ## Cíl
 
@@ -70,20 +69,26 @@ garantovaný inference výkon.
   `ai_api_port`, `note`, `rigs`, `totals` a `ts`.
 - Ověřena responzivita stránky v mobilním i desktopovém viewportu před
   nasazením.
+- Po nasazení odpověděl lokální `/api/ai/status` i stejný endpoint přes Edge
+  reverse tunnel HTTP 200; Edge obsahuje generovanou `/vast-rigs/` stránku
+  s AI worker UI.
+- Nepřihlášený veřejný požadavek na dashboard vrací HTTP 401 z nginx Basic
+  Auth. Nginx konfigurace na Edge prošla `nginx -t`.
 
 ## Push a nasazení
 
-- Změny byly přeneseny do izolovaného checkoutu založeného na aktuálním
-  `origin/main`. Tím se předešlo pushnutí celé rozcházející se lokální historie.
-- Push do `origin/main` proběhl jako fast-forward, bez force push.
-- Statický IntroPage build byl nasazen skriptem
+- AI worker změny jsou v commitu `069bea305`; služba byla přepnuta na čistý,
+  committed runtime snapshot a tato konfigurace je v `1fabc0c0a`.
+- Při izolovaném buildu se zachytily omylem přibalené, nesouvisející mining UI
+  změny. Byly vráceny v `2c7f7d906` před produkčním buildem a nasazením.
+- Všechny změny byly pushnuty fast-forwardem na `origin/main`, bez force push.
+- Čistý statický build z commitu `2c7f7d906` byl nasazen skriptem
   [`APP&WEB/IntroPage/deploy/deploy-intro.sh`](./APP&WEB/IntroPage/deploy/deploy-intro.sh)
   do `/var/www/zion-maintenance` na Edge; `nginx -t` uspěl a nginx byl reloadnut.
-- Uživatelská služba `vastctl-serve.service` byla restartována a následný lokální
-  smoke test API vrátil HTTP 200.
-- Vydaný commit na aktuální `origin/main` při přípravě tohoto reportu:
-  `bdbf805516f78e6e5337b5a5fc52b4ccfa7aa663`
-  (`Improve Vast rigs responsive dashboard`).
+- Uživatelská služba `vastctl-serve.service` běží z
+  `~/.local/share/vastctl-release/tools/vast` a Edge reverse tunnel API smoke
+  test vrátil HTTP 200. Žádná Vast instance nebyla nasazena, zastavena ani
+  jinak změněna.
 
 ## Provozní bezpečnost a zbývající práce
 
