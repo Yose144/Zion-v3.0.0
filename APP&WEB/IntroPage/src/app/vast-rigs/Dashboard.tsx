@@ -153,11 +153,11 @@ export default function Dashboard() {
   const [offerError, setOfferError] = useState("");
   const [mGpu, setMGpu] = useState("RTX_3060");
   const [mDph, setMDph] = useState("");
-  const loadOffers = async () => {
+  const loadOffers = async (gpuOverride?: string) => {
     setBusy("offers");
     setOfferError("");
     setOffers(null);
-    const query = new URLSearchParams({ gpu: mGpu });
+    const query = new URLSearchParams({ gpu: gpuOverride ?? mGpu });
     if (mDph.trim()) query.set("max_dph", mDph.trim());
     try {
       const response = await fetch(`/vast-ops/api/offers?${query.toString()}`);
@@ -197,6 +197,10 @@ export default function Dashboard() {
       loadOffers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
+  const autoSearch = () => {
+    setMGpu("any");
+    loadOffers("any");
+  };
   const loadLogs = (id: number, src: string) => {
     setLogs({ ...logs, [id]: `loading ${src} logs…` });
     fetch(`/vast-ops/api/logs?id=${id}&src=${src}`)
@@ -938,11 +942,19 @@ export default function Dashboard() {
                   />
                 </label>
                 <button
-                  onClick={loadOffers}
+                  onClick={() => loadOffers()}
                   disabled={!!busy}
-                  className="col-span-2 min-h-11 rounded-lg border border-[#fcd116]/40 bg-[#fcd116]/10 px-4 py-2 text-sm font-semibold text-[#fcd116] transition hover:bg-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40 sm:col-span-1"
+                  className="col-span-1 min-h-11 rounded-lg border border-[#fcd116]/40 bg-[#fcd116]/10 px-4 py-2 text-sm font-semibold text-[#fcd116] transition hover:bg-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
                 >
                   {busy === "offers" ? "Searching…" : "Search offers"}
+                </button>
+                <button
+                  onClick={autoSearch}
+                  disabled={!!busy}
+                  title="Cheapest instances across every GPU type"
+                  className="col-span-1 min-h-11 rounded-lg border border-[#34d399]/40 bg-[#34d399]/10 px-4 py-2 text-sm font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34d399] disabled:cursor-wait disabled:opacity-40"
+                >
+                  {busy === "offers" ? "…" : "⚡ auto: cheapest"}
                 </button>
               </div>
             </div>
