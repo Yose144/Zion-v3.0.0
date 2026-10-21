@@ -3131,7 +3131,8 @@ def get_keyscan_status() -> dict:
     """
     try:
         import urllib.request as _ur
-        with _ur.urlopen("http://127.0.0.1:8777/api/status", timeout=3.0) as r:
+        base = _btcunlock_base() if "_btcunlock_base" in globals() else             __import__("os").environ.get("BTCUNLOCK_COORD_URL", "http://127.0.0.1:8779").rstrip("/")
+        with _ur.urlopen(f"{base}/api/status", timeout=3.0) as r:
             s = json.loads(r.read())
     except Exception as ex:
         return {"reachable": False, "error": str(ex)}
@@ -7553,7 +7554,8 @@ def get_pool_blocks(limit: int = 100) -> dict:
         blocks = []
         payload = {}
         try:
-            with _ur.urlopen(f"http://{host}:{port}/api/v1/blocks?limit={limit}", timeout=5) as r:
+            _req = _ur.Request(f"http://{host}:{port}/api/v1/blocks?limit={limit}", headers=_pool_admin_headers())
+            with _ur.urlopen(_req, timeout=5) as r:
                 payload = json.loads(r.read().decode("utf-8", errors="ignore"))
             _b = payload.get("blocks", payload) if isinstance(payload, dict) else payload
             if isinstance(_b, list):
@@ -8531,35 +8533,51 @@ def _fetch_pool_revenue_stats() -> dict:
         return {}
 
 
+def _pool_admin_headers(admin: bool = False) -> dict:
+    """Auth headers for pool /api/v1 (x-api-key) and /admin (admin key) tiers."""
+    import os as _os
+    key = _os.environ.get("ZION_POOL_API_ADMIN_KEY" if admin else "ZION_POOL_API_KEY", "")
+    return {"x-api-key": key} if key else {}
+
+
+# Units that physically live on EDGE2 — journalctl must go through the SSH probe
+EDGE2_JOURNAL_UNITS = {
+    "zion-v31-node", "zion-v31-multichain", "zion-v31-dao", "zion-v31-oasis",
+    "zion-v31-free-world", "zion-v31-issobella", "zion-v31-ncl", "zion-zis",
+    "zion-marketplace", "zion-website", "zion-bitcoind", "zion-quantus-node",
+    "zion-pearld", "zion-pearl-oyster", "zion-pearl-gateway", "zion-v31-ai-native",
+    "zion-btcunlock-coord", "zion-db-sync", "zion-v31-warp", "warpd",
+}
+
 def _pool_coin_override_get(stream: str) -> dict:
-    """GET current coin override from pool HTTP API. stream='cpu' or 'gpu'."""
-    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    port = V31_POOL_API_PORT
-    try:
-        import urllib.request
-        with urllib.request.urlopen(f"http://{host}:{port}/api/v1/{stream}-coin", timeout=3) as r:
-            return json.loads(r.read().decode())
-    except Exception as e:
-        return {"coin": None, "error": str(e)}
+    """Current auxpow coin per stream — zion-pool-ng has no runtime override API;
+    coin selection is env-driven (ZION_POOL_AUXPOW_*). stream='cpu' or 'gpu'."""
+    import os as _os
+    if stream == "cpu":
+        return {
+            "coin": _os.environ.get("ZION_POOL_AUXPOW_CPU_COIN", "") or None,
+            "source": "env:ZION_POOL_AUXPOW_CPU_COIN",
+            "runtime_switch": False,
+        }
+    return {
+        "coin": _os.environ.get("ZION_POOL_AUXPOW_COIN", "") or None,
+        "coin2": _os.environ.get("ZION_POOL_AUXPOW_COIN2", "") or None,
+        "route": _os.environ.get("ZION_POOL_AUXPOW_GPU_COIN_ROUTE", "") or None,
+        "route2": _os.environ.get("ZION_POOL_AUXPOW_GPU_COIN2_ROUTE", "") or None,
+        "source": "env:ZION_POOL_AUXPOW_*",
+        "runtime_switch": False,
+    }
 
 
 def _pool_coin_override_set(stream: str, coin: str) -> dict:
-    """POST coin override to pool HTTP API. stream='cpu' or 'gpu'. Empty coin clears."""
-    host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    port = V31_POOL_API_PORT
-    try:
-        import urllib.request
-        body = json.dumps({"coin": coin}).encode()
-        req = urllib.request.Request(
-            f"http://{host}:{port}/api/v1/{stream}-coin",
-            data=body,
-            method="POST",
-            headers={"Content-Type": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=3) as r:
-            return json.loads(r.read().decode())
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+    """Pool NG nema runtime hot-switch endpoint — coin se meni pres env + restart."""
+    env_name = "ZION_POOL_AUXPOW_CPU_COIN" if stream == "cpu" else "ZION_POOL_AUXPOW_COIN"
+    return {
+        "ok": False,
+        "coin": coin,
+        "error": f"runtime hot-switch not supported by zion-pool-ng — set {env_name}={coin or '<auto>'} in /etc/zion/edge-environment.sh and restart zion-v31-pool",
+        "runtime_switch": False,
+    }
 
 
 def _fetch_pool_revenue_streams() -> dict:
@@ -14957,12 +14975,22 @@ class DashboardHandler(BaseHTTPRequestHandler):
             journal_unit = _v31_miner_unit() if svc_id == "v31-miner" else V31_JOURNAL_MAP.get(svc_id)
             if journal_unit:
                 try:
-                    r = subprocess.run(
-                        ["journalctl", "-u", journal_unit, "--no-pager", "-n", str(n_lines), "--output=cat"],
-                        capture_output=True, text=True, timeout=10
-                    )
-                    lines = strip_ansi(r.stdout).split("\n")
-                    self._json({"lines": "\n".join(lines), "exists": True, "total_lines": len(lines), "source": "journalctl"})
+                    unit_base = journal_unit.replace(".service", "")
+                    if unit_base in EDGE2_JOURNAL_UNITS or journal_unit in EDGE2_JOURNAL_UNITS:
+                        _cp = _run_edge2_cmd(
+                            f"journalctl -u {journal_unit} --no-pager -n {n_lines} --output=cat",
+                            timeout=12,
+                        )
+                        _out = _cp.stdout if _cp else ""
+                        lines = strip_ansi(_out or "").split("\n")
+                        self._json({"lines": "\n".join(lines), "exists": bool(_out and _out.strip()), "total_lines": len(lines), "source": "journalctl@edge2"})
+                    else:
+                        r = subprocess.run(
+                            ["journalctl", "-u", journal_unit, "--no-pager", "-n", str(n_lines), "--output=cat"],
+                            capture_output=True, text=True, timeout=10
+                        )
+                        lines = strip_ansi(r.stdout).split("\n")
+                        self._json({"lines": "\n".join(lines), "exists": True, "total_lines": len(lines), "source": "journalctl"})
                 except Exception as e:
                     self._json({"error": str(e), "lines": ""})
             else:
@@ -14992,12 +15020,23 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "multichain": "zion-v31-multichain",
                 "dao": "zion-v31-dao",
                 "oasis": "zion-v31-oasis",
+                "zis": "zion-zis",
+                "ncl": "zion-v31-ncl",
                 "free-world": "zion-v31-free-world",
                 "issobella": "zion-v31-issobella",
             }
             unit = v31_unit_map.get(svc)
             if not unit:
                 self._json({"error": "unknown v31 service", "lines": ""})
+            elif unit in EDGE2_JOURNAL_UNITS:
+                try:
+                    _cp = _run_edge2_cmd(
+                        f"journalctl -u {unit} --no-pager -n {n_lines} --output=cat", timeout=12)
+                    _out = _cp.stdout if _cp else ""
+                    lines = strip_ansi((_out or "").strip()).split("\n")
+                    self._json({"lines": lines, "unit": unit, "exists": bool(_out and _out.strip()), "source": "journalctl@edge2"})
+                except Exception as e:
+                    self._json({"error": str(e), "lines": ""})
             else:
                 try:
                     r = subprocess.run(
@@ -15083,7 +15122,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 with urllib.request.urlopen(req, timeout=5) as r:
                     self._json(json.loads(r.read()))
             except Exception as e:
-                self._json({"error": f"NCL backend unreachable: {str(e)[:80]}"})
+                if route == "/api/ncl/jobs":
+                    # Job listing neni GET-exposed (submit-only) — graceful prazdny stav + skutecny health
+                    ncl_health = fetch_service_json("127.0.0.1", 8098, "/health", timeout=2.0)
+                    self._json({"jobs": [], "total": 0, "ncl_health": ncl_health,
+                                "note": "job listing not exposed by NCL backend (submit-only API)"})
+                else:
+                    self._json({"error": f"NCL backend unreachable: {str(e)[:80]}"})
         elif route == "/api/alerts/dismiss":
             alert_id = params.get("id", [""])[0].strip()
             if not alert_id:

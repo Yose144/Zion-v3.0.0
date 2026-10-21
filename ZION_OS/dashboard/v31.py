@@ -123,6 +123,8 @@ def _dao_port() -> int:
 def _service_unit(name: str) -> str:
     """Resolve a logical service name (node, pool, miner, multichain, dao)
     to a systemd unit name using services.json, then env, then default."""
+    if name in _UNIT_OVERRIDES:
+        return _UNIT_OVERRIDES[name]
     env_var = f"ZION_{name.upper()}_SERVICE"
     if os.environ.get(env_var):
         return os.environ[env_var]
@@ -136,12 +138,63 @@ def _service_unit(name: str) -> str:
     return f"zion-v31-{name}.service"
 
 
+# ── EDGE2 topology: units physically living on EDGE2 (207.180.217.100) ──
+_EDGE2_HOST = os.environ.get("ZION_EDGE2_HOST", "207.180.217.100")
+_EDGE2_KEY  = os.environ.get("ZION_EDGE2_SSH_KEY", "/etc/zion/keys/edge2-probe")
+EDGE2_UNITS = {
+    "zion-v31-node", "zion-v31-multichain", "zion-v31-dao", "zion-v31-oasis",
+    "zion-v31-free-world", "zion-v31-issobella", "zion-v31-ncl", "zion-zis",
+    "zion-marketplace", "zion-website", "zion-bitcoind", "zion-quantus-node",
+    "zion-pearld", "zion-pearl-oyster", "zion-pearl-gateway", "zion-v31-ai-native",
+    "zion-btcunlock-coord", "zion-db-sync", "zion-v31-warp",
+}
+
+
+def _is_edge2_unit(unit: str) -> bool:
+    return (unit or "").replace(".service", "") in EDGE2_UNITS
+
+
+def _ssh_edge2(cmd: str, timeout: int = 10) -> subprocess.CompletedProcess:
+    """Run a command on EDGE2 via the probe SSH key (same as app.py _run_edge2_cmd)."""
+    if Path(_EDGE2_KEY).exists():
+        return subprocess.run(
+            ["ssh", "-i", _EDGE2_KEY, "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=4", "-o", "BatchMode=yes",
+             f"root@{_EDGE2_HOST}", cmd],
+            capture_output=True, text=True, timeout=timeout
+        )
+    return subprocess.run(
+        ["ssh", "-o", "ConnectTimeout=4", "-o", "BatchMode=yes",
+         "zion-edge2", cmd],
+        capture_output=True, text=True, timeout=timeout
+    )
+
+
+# Logical-name → real unit overrides (EDGE2 services diverge from zion-v31-* pattern)
+_UNIT_OVERRIDES = {
+    "zis": "zion-zis.service",
+    "ncl": "zion-v31-ncl.service",
+    "oasis": "zion-v31-oasis.service",
+    "free-world": "zion-v31-free-world.service",
+    "issobella": "zion-v31-issobella.service",
+    "miner": "zion-fallback-miner.service",
+    "website": "zion-website.service",
+    "marketplace": "zion-marketplace.service",
+    "ai-native": "zion-v31-ai-native.service",
+    "warp": "zion-v31-warp.service",
+    "db-sync": "zion-db-sync.service",
+    "btcunlock": "zion-btcunlock-coord.service",
+}
+
+
 def _all_service_names() -> list:
     """List of logical V31 service names to monitor."""
     # Service *names* are logical; the actual systemd unit for each is looked
     # up in services.json via _service_unit().  This keeps the canonical set
     # small and lets local Edge vs. PC manifests differ.
-    return ["node", "pool", "miner", "multichain", "dao", "oasis"]
+    return ["node", "pool", "miner", "multichain", "dao", "oasis",
+            "zis", "ncl", "free-world", "issobella", "website", "marketplace",
+            "ai-native", "db-sync", "btcunlock"]
 
 
 V3_STATE_FILE = REPO_ROOT / "data" / "state"
@@ -183,11 +236,17 @@ def _systemctl_status(unit: str = None) -> dict:
     if unit is None:
         unit = _service_unit("node")
     try:
-        r = subprocess.run(
-            ["systemctl", "show", unit,
-             "--property=ActiveState,SubState,UnitFileState,MainPID,ExecMainStartTimestamp,MemoryCurrent"],
-            capture_output=True, text=True, timeout=5
-        )
+        if _is_edge2_unit(unit):
+            r = _ssh_edge2(
+                f"systemctl show {unit} --property=ActiveState,SubState,UnitFileState,MainPID,ExecMainStartTimestamp,MemoryCurrent",
+                timeout=8
+            )
+        else:
+            r = subprocess.run(
+                ["systemctl", "show", unit,
+                 "--property=ActiveState,SubState,UnitFileState,MainPID,ExecMainStartTimestamp,MemoryCurrent"],
+                capture_output=True, text=True, timeout=5
+            )
         props = {}
         for line in r.stdout.strip().split("\n"):
             if "=" in line:
@@ -229,11 +288,17 @@ def _journalctl_logs(lines: int = 50, unit: str = None) -> list:
     if unit is None:
         unit = _service_unit("node")
     try:
-        r = subprocess.run(
-            ["journalctl", "-u", unit, "--no-pager", "-n", str(lines),
-             "--output=cat"],
-            capture_output=True, text=True, timeout=5
-        )
+        if _is_edge2_unit(unit):
+            r = _ssh_edge2(
+                f"journalctl -u {unit} --no-pager -n {int(lines)} --output=cat",
+                timeout=10
+            )
+        else:
+            r = subprocess.run(
+                ["journalctl", "-u", unit, "--no-pager", "-n", str(lines),
+                 "--output=cat"],
+                capture_output=True, text=True, timeout=5
+            )
         return [_strip_ansi(l.rstrip()) for l in r.stdout.strip().split("\n") if l.strip()]
     except Exception:
         return ["[journalctl unavailable]"]
@@ -257,11 +322,17 @@ def _all_service_status() -> list:
     for name in _all_service_names():
         unit = _service_unit(name)
         try:
-            r = subprocess.run(
-                ["systemctl", "show", unit,
-                 "--property=ActiveState,SubState,MainPID,MemoryCurrent"],
-                capture_output=True, text=True, timeout=3
-            )
+            if _is_edge2_unit(unit):
+                r = _ssh_edge2(
+                    f"systemctl show {unit} --property=ActiveState,SubState,MainPID,MemoryCurrent",
+                    timeout=8
+                )
+            else:
+                r = subprocess.run(
+                    ["systemctl", "show", unit,
+                     "--property=ActiveState,SubState,MainPID,MemoryCurrent"],
+                    capture_output=True, text=True, timeout=3
+                )
             props = {}
             for line in r.stdout.strip().split("\n"):
                 if "=" in line:
@@ -712,10 +783,16 @@ def control(action: str, service: str = "node") -> dict:
         return {"ok": False, "error": f"Unknown action: {action}"}
     unit = _service_unit(service)
     try:
-        subprocess.run(
-            ["systemctl", action, unit],
-            capture_output=True, text=True, timeout=30
-        )
+        if _is_edge2_unit(unit):
+            r = _ssh_edge2(f"systemctl {action} {unit}", timeout=35)
+            if r.returncode != 0:
+                return {"ok": False, "action": action, "service": service,
+                        "error": (r.stderr or "remote systemctl failed")[:200]}
+        else:
+            subprocess.run(
+                ["systemctl", action, unit],
+                capture_output=True, text=True, timeout=30
+            )
         time.sleep(2)
         return {"ok": True, "action": action, "service": service, "status": status()}
     except Exception as e:
