@@ -3,6 +3,8 @@
 > **Datum:** 2026-10-21 · **Doplněk k:** [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md)
 > **Značky vlastníka:** 🤖 = autonomní (Devin může udělat end-to-end v kódu/testech/diaci) · 🔀 = autonomní příprava + operátorské schválení/flip · 👤 = potřebuje operátora (rozhodnutí, peníze, klíče, fyzický svět)
 > **Pravidlo:** Devin nikdy neflipuje produkční money-pathy, nevydává verze, nevybírá dodavatele — vždy připraví PR/artefakt/důkaz a počká na 👤 sign-off.
+>
+> ⚠️ **EDGE2 MIGRACE BĚŽÍ** (`INFRA-SPLIT-PLAN.md`, 2026-10-21): EDGE2 `207.180.217.100` = nový primary + pool + celý app stack; starý edge = followeři node2/3 + nginx ingress + monitoring. **Deploy cíl všech služeb = EDGE2** (P3 migruje i `zion-v31-ncl` — stopgap na starém edgi je OK, db cestuje s ním). **Builds POUZE EDGE2.** Pool fixy (timeout+submit) jsou v local HEAD — při P2 buildu poolu na EDGE2 ověřit, že zdroj ≥ commit `2b20217c4`. Žádné restarty starého edge mimo P2 okno.
 
 ---
 
@@ -100,9 +102,9 @@
 3. ~~🤖 **fail2ban fix**~~ ✅ live (sshd+zion-p2p jails); drop-in fixuje `RestartPreventExitStatus=255` boot-crash bug
 4. ~~🤖 **NCL bin/service**~~ ✅ `zion-ncl` daemon + persistence + unit — **DEPLOYED, live :8098**
 5. ~~🤖 **PRL dry-batch review tooling**~~ ✅ `scripts/prl-payout-review.sh` (edge-readonly audit: legs/miners, queue preview, ledger rows, sweeper journal, wiring, flip-checklist) — live run: 0 pending, 0 ledger rows (0 PRL minerů), env+unit ověřeny; ⚠️ bonus nález: **QTC treasury_free=0 → všechny QTC payouty deferred**
-6. 🤖 **QV voting UI** — backend hotový, chybí web povrch
+6. ~~🤖 **QV voting UI**~~ ✅ **už existuje a je LIVE** — `QvSection.tsx` (ballot editor + credit meter + ZIS gate + results), `/api/free-world` proxy → daemon :8095, otevřené kolo `ba7a4679` s 6 granty na produkci; zbývá jen první reálný ballot (operátor)
 7. 🤖 **BTC signed-quote kód** — odemyká hlavní audit blocker
-8. 🤖 **Planetary map UI** — L5 katalog frontend
+8. ~~🤖 **Planetary map UI**~~ ✅ **už existuje a je LIVE** — `FreeWorldMap.tsx` + `FreeWorldRegistry.tsx` namountované na `/l5-free-world` (freeworld.zionterranova.com)
 9. 🤖 **Passkey Playwright E2E**
 10. 🤖 **OasisChecklist perf/security gate**
 
