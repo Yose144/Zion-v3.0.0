@@ -40,6 +40,7 @@ SSH_BASE = [
 DEFAULT_XMRIG_CONFIG = "xmrig-vast-cpu.json"
 XMRIG_VERSION = "6.25.0"
 XMRIG_TARBALL = f"https://github.com/xmrig/xmrig/releases/download/v{XMRIG_VERSION}/xmrig-{XMRIG_VERSION}-linux-static-x64.tar.gz"
+AI_API_PORT = os.environ.get("VASTCTL_AI_PORT", "8000")
 
 # ── miner launch presets (overridable via env) ──────────────────────────
 SRB_DIR = "SRBMiner-Multi-3-7-9"
@@ -248,6 +249,128 @@ def status_all(ids=None):
         for f in as_completed(futs):
             rigs.append(f.result())
     return sorted(rigs, key=lambda r: r["id"])
+
+
+def ai_api_port():
+    try:
+        port = int(AI_API_PORT)
+    except ValueError as exc:
+        raise ValueError("VASTCTL_AI_PORT must be an integer") from exc
+    if not 1 <= port <= 65535:
+        raise ValueError("VASTCTL_AI_PORT must be between 1 and 65535")
+    return port
+
+
+def ai_probe_script(port):
+    return f'''
+echo "==GPU=="
+nvidia-smi --query-gpu=name,memory.total,memory.used,memory.free,utilization.gpu,temperature.gpu,power.draw --format=csv,noheader,nounits 2>/dev/null || true
+echo "==MODELS=="
+curl -fsS --max-time 2 http://127.0.0.1:{port}/v1/models 2>/dev/null || true
+echo
+echo "==SERVER=="
+for p in llama-server vllm ollama; do pgrep -x "$p" >/dev/null 2>&1 && echo "$p"; done
+'''
+
+
+def parse_ai_probe(inst, text, rc=0, err=""):
+    rig = {
+        "id": inst["id"],
+        "gpu_name": inst.get("gpu_name", "?"),
+        "dph": inst.get("dph_total", 0),
+        "gpus": [],
+        "models": [],
+        "inference_reachable": False,
+        "servers": [],
+        "error": None,
+    }
+    section = None
+    model_body = []
+    for line in text.splitlines():
+        if line.startswith("==") and line.endswith("=="):
+            if section == "MODELS":
+                try:
+                    payload = json.loads("\n".join(model_body))
+                    rig["models"] = [
+                        item["id"] for item in payload.get("data", [])
+                        if isinstance(item, dict) and isinstance(item.get("id"), str)
+                    ]
+                    rig["inference_reachable"] = True
+                except (json.JSONDecodeError, AttributeError):
+                    pass
+            section = line.strip("=")
+            continue
+        if section == "GPU" and line.strip():
+            columns = [part.strip() for part in line.split(",")]
+            if len(columns) >= 7:
+                try:
+                    rig["gpus"].append({
+                        "name": columns[0],
+                        "memory_total_mib": int(float(columns[1])),
+                        "memory_used_mib": int(float(columns[2])),
+                        "memory_free_mib": int(float(columns[3])),
+                        "utilization_pct": int(float(columns[4])),
+                        "temperature_c": int(float(columns[5])),
+                        "power_w": float(columns[6]) if columns[6] != "[N/A]" else None,
+                    })
+                except ValueError:
+                    continue
+        elif section == "MODELS" and line.strip():
+            model_body.append(line)
+        elif section == "SERVER" and line.strip() in {"llama-server", "vllm", "ollama"}:
+            rig["servers"].append(line.strip())
+    if section == "MODELS":
+        try:
+            payload = json.loads("\n".join(model_body))
+            rig["models"] = [
+                item["id"] for item in payload.get("data", [])
+                if isinstance(item, dict) and isinstance(item.get("id"), str)
+            ]
+            rig["inference_reachable"] = True
+        except (json.JSONDecodeError, AttributeError):
+            pass
+    if rc != 0 and not text:
+        rig["error"] = err.strip() or "SSH probe failed"
+    if not rig["gpus"] and not rig["error"]:
+        rig["error"] = "GPU metrics unavailable"
+    return rig
+
+
+def ai_probe(inst, port):
+    rc, out, err = ssh(inst, ai_probe_script(port), timeout=15)
+    return parse_ai_probe(inst, out, rc, err)
+
+
+def ai_status():
+    port = ai_api_port()
+    insts = instances()
+    rigs = []
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futs = {ex.submit(ai_probe, inst, port): inst for inst in insts}
+        for fut in as_completed(futs):
+            rigs.append(fut.result())
+    rigs.sort(key=lambda rig: rig["id"])
+    gpus = [gpu for rig in rigs for gpu in rig["gpus"]]
+    return {
+        "ts": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "ai_api_port": port,
+        "rigs": rigs,
+        "totals": {
+            "gpu_count": len(gpus),
+            "memory_total_mib": sum(gpu["memory_total_mib"] for gpu in gpus),
+            "memory_used_mib": sum(gpu["memory_used_mib"] for gpu in gpus),
+            "memory_free_mib": sum(gpu["memory_free_mib"] for gpu in gpus),
+            "gpu_utilization_pct": (
+                round(sum(gpu["utilization_pct"] for gpu in gpus) / len(gpus))
+                if gpus else None
+            ),
+            "inference_rigs": sum(rig["inference_reachable"] for rig in rigs),
+        },
+        "note": (
+            "VRAM totals are inventory only. GPUs on separate Vast hosts do not "
+            "form shared memory for one model."
+        ),
+    }
 
 
 def fmt_rate(hr):
@@ -686,6 +809,13 @@ class Handler(BaseHTTPRequestHandler):
         q = parse_qs(u.query)
         if u.path == "/api/status":
             self._send(json.dumps(snapshot_from(cached_rigs())), ctype="application/json")
+        elif u.path == "/api/ai/status":
+            try:
+                self._send(json.dumps(ai_status()), ctype="application/json")
+            except ValueError as e:
+                self._send(json.dumps({"error": str(e)}), 500, "application/json")
+            except (SystemExit, json.JSONDecodeError) as e:
+                self._send(json.dumps({"error": str(e)}), 502, "application/json")
         elif u.path == "/api/offers":
             try:
                 os_ = search_offers(q.get("gpu", ["RTX_3060"])[0],

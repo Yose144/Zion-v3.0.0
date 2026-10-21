@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PageLayout from "../components/PageLayout";
 
 type Hashrate = { rate: number; unit: string; a: number; r: number };
@@ -24,6 +24,39 @@ type Rig = {
   error: string | null;
 };
 type Snap = { ts: string | null; total_dph: number; rigs: Rig[] };
+type AiGpu = {
+  name: string;
+  memory_total_mib: number;
+  memory_used_mib: number;
+  memory_free_mib: number;
+  utilization_pct: number;
+  temperature_c: number;
+  power_w: number | null;
+};
+type AiRig = {
+  id: number;
+  gpu_name: string;
+  dph: number;
+  gpus: AiGpu[];
+  models: string[];
+  inference_reachable: boolean;
+  servers: string[];
+  error: string | null;
+};
+type AiStatus = {
+  ts: string;
+  ai_api_port: number;
+  rigs: AiRig[];
+  totals: {
+    gpu_count: number;
+    memory_total_mib: number;
+    memory_used_mib: number;
+    memory_free_mib: number;
+    gpu_utilization_pct: number | null;
+    inference_rigs: number;
+  };
+  note: string;
+};
 
 const COIN: Record<string, { name: string; c: string }> = {
   quantus: { name: "QTU", c: "#fcd116" },
@@ -67,6 +100,24 @@ export default function Dashboard() {
   const [lang, setLang] = useState<"cs" | "en">("en");
   const [snap, setSnap] = useState<Snap | null>(null);
   const [err, setErr] = useState("");
+  const [ai, setAi] = useState<AiStatus | null>(null);
+  const [aiErr, setAiErr] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const loadAiStatus = useCallback(async () => {
+    setAiLoading(true);
+    try {
+      const response = await fetch("/vast-ops/api/ai/status", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      setAi(data as AiStatus);
+      setAiErr("");
+    } catch (e) {
+      setAiErr(String(e));
+    } finally {
+      setAiLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let stop = false;
@@ -77,8 +128,10 @@ export default function Dashboard() {
         .catch((e) => !stop && setErr(String(e)));
     load();
     const t = setInterval(load, 30000);
-    return () => ((stop = true), clearInterval(t));
-  }, []);
+    loadAiStatus();
+    const aiTimer = setInterval(loadAiStatus, 30000);
+    return () => ((stop = true), clearInterval(t), clearInterval(aiTimer));
+  }, [loadAiStatus]);
 
   const rigs = snap?.rigs || [];
 
@@ -89,15 +142,25 @@ export default function Dashboard() {
     cuda_max_good: number | string; cpu_ram: number; disk_space: number;
   };
   const [offers, setOffers] = useState<Offer[] | null>(null);
+  const [offerError, setOfferError] = useState("");
   const [mGpu, setMGpu] = useState("RTX_3060");
   const [mDph, setMDph] = useState("");
-  const loadOffers = () => {
+  const loadOffers = async () => {
     setBusy("offers");
-    fetch(`/vast-ops/api/offers?gpu=${mGpu}&max_dph=${mDph}`)
-      .then((r) => r.json())
-      .then((d) => setOffers(Array.isArray(d) ? d : []))
-      .catch((e) => alert(String(e)))
-      .finally(() => setBusy(""));
+    setOfferError("");
+    setOffers(null);
+    const query = new URLSearchParams({ gpu: mGpu });
+    if (mDph.trim()) query.set("max_dph", mDph.trim());
+    try {
+      const response = await fetch(`/vast-ops/api/offers?${query.toString()}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      setOffers(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setOfferError(String(e));
+    } finally {
+      setBusy("");
+    }
   };
 
   // ── ops calls → /vast-ops/api/* (same realm → browser sends basic auth) ──
@@ -132,24 +195,29 @@ export default function Dashboard() {
   return (
     <PageLayout lang={lang} setLang={setLang}>
       {/* Hero */}
-      <section className="relative flex w-full flex-col items-center justify-center gap-4 px-4 pb-10 pt-24 text-center">
-        <span className="rounded-full border border-[#fcd116]/30 bg-black/40 px-4 py-1 text-sm font-semibold text-[#fcd116] backdrop-blur-sm">
-          ZION OPS · vast.ai
+      <section className="relative flex w-full flex-col items-center justify-center gap-4 px-4 pb-8 pt-24 text-center sm:pb-10">
+        <span className="rounded-full border border-[#fcd116]/30 bg-black/40 px-4 py-1 text-xs font-semibold tracking-[0.14em] text-[#fcd116] backdrop-blur-sm sm:text-sm">
+          ZION OPS · VAST.AI
         </span>
-        <h1 className="text-4xl font-extrabold tracking-tight text-white md:text-6xl">
+        <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl md:text-6xl">
           Multi-Mining Rigs
         </h1>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-sm text-white/80">
-            <b className="text-white">{rigs.length}</b> rigs
+        <p className="max-w-2xl text-sm leading-relaxed text-white/55 sm:text-base">
+          Live fleet overview, AI inference capacity, and instance management.
+        </p>
+        <div className="flex w-full max-w-4xl flex-wrap items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/75 sm:px-4 sm:text-sm">
+            <b className="text-white">{rigs.length}</b> active rigs
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-sm text-white/80">
-            ${snap ? snap.total_dph.toFixed(4) : "—"}/h · ${snap ? (snap.total_dph * 24).toFixed(2) : "—"}/day
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/75 sm:px-4 sm:text-sm">
+            ${snap ? snap.total_dph.toFixed(4) : "—"}/h
+            <span className="text-white/35">·</span>
+            ${snap ? (snap.total_dph * 24).toFixed(2) : "—"}/day
           </span>
           {Object.entries(totals).map(([name, t]) => (
             <span
               key={name}
-              className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold"
+              className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold sm:px-4 sm:text-sm"
               style={{ borderColor: `${t.c}66`, background: `${t.c}14`, color: t.c }}
             >
               {name} {t.v >= 1000 ? t.v.toFixed(0) : t.v.toFixed(1)} {t.unit}
@@ -157,38 +225,160 @@ export default function Dashboard() {
           ))}
         </div>
         <p className="text-xs text-white/40">
-          updated {snap?.ts || "—"} · auto-refresh 30 s
+          Updated {snap?.ts || "—"} · refreshes every 30 seconds
           {err && <span className="ml-2 text-[#ff7b72]">· {err}</span>}
         </p>
       </section>
 
-      <article className="active">
-        <section className="mx-auto grid max-w-6xl gap-5 px-4 pb-16 sm:grid-cols-2">
+      <div className="vast-dashboard-shell w-full min-w-0 px-2 pb-10 sm:px-4 lg:px-6">
+        <section className="mx-auto w-full max-w-7xl pb-6">
+          <div className="rounded-2xl border border-[#a371f7]/25 bg-gradient-to-br from-[#a371f7]/[0.08] to-white/[0.02] p-4 shadow-xl shadow-black/10 backdrop-blur sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#a371f7]/30 bg-[#a371f7]/10 text-lg text-[#d2a8ff]" aria-hidden="true">
+                    ✦
+                  </span>
+                  <h2 className="text-lg font-bold text-white sm:text-xl">AI inference capacity</h2>
+                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/45">
+                    read only
+                  </span>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-white/50 sm:text-sm">
+                  GPU inventory and local OpenAI-compatible API status · port {ai?.ai_api_port ?? 8000}
+                </p>
+              </div>
+              <button
+                onClick={loadAiStatus}
+                disabled={aiLoading}
+                className="min-h-10 rounded-lg border border-[#a371f7]/40 bg-[#a371f7]/10 px-3 py-2 text-xs font-semibold text-[#d2a8ff] transition hover:bg-[#a371f7]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2a8ff] disabled:cursor-wait disabled:opacity-50"
+              >
+                {aiLoading ? "Checking…" : "Refresh status"}
+              </button>
+            </div>
+
+            {aiErr ? (
+              <div role="alert" className="mt-4 rounded-xl border border-[#ff7b72]/25 bg-[#ff7b72]/[0.06] p-4">
+                <p className="text-sm font-semibold text-[#ff9b93]">AI status unavailable</p>
+                <p className="mt-1 break-words text-xs text-white/55">{aiErr}</p>
+              </div>
+            ) : ai ? (
+              <>
+                <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-6">
+                  {[
+                    ["GPUs", ai.totals.gpu_count],
+                    ["VRAM total", `${(ai.totals.memory_total_mib / 1024).toFixed(1)} GiB`],
+                    ["VRAM used (sum)", `${(ai.totals.memory_used_mib / 1024).toFixed(1)} GiB`],
+                    ["VRAM free (sum)", `${(ai.totals.memory_free_mib / 1024).toFixed(1)} GiB`],
+                    ["GPU load (avg)", ai.totals.gpu_utilization_pct === null ? "—" : `${ai.totals.gpu_utilization_pct}%`],
+                    ["Inference APIs", `${ai.totals.inference_rigs}/${ai.rigs.length}`],
+                  ].map(([label, value]) => (
+                    <div key={label} className="min-w-0 rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4">
+                      <div className="min-h-8 text-[10px] leading-snug text-white/45 sm:text-xs">{label}</div>
+                      <div className="mt-1 break-words text-base font-semibold text-white sm:text-lg">{value}</div>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 rounded-xl border border-[#fcd116]/20 bg-[#fcd116]/[0.05] p-3 text-xs leading-relaxed text-white/65 sm:p-4">
+                  <b className="mr-1 text-[#fcd116]">Capacity note</b>
+                  {ai.note} Free VRAM does not mean free GPU compute; mining and inference still compete for GPU time.
+                </p>
+                <div className="mt-3 grid min-w-0 gap-2 sm:grid-cols-2">
+                  {ai.rigs.map((rig) => (
+                    <div key={rig.id} className="min-w-0 rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4">
+                      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <b className="truncate text-sm text-white">Rig #{rig.id} · {rig.gpu_name}</b>
+                        <span className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold sm:text-xs ${
+                          rig.inference_reachable
+                            ? "border-[#34d399]/25 bg-[#34d399]/[0.07] text-[#6ee7b7]"
+                            : "border-white/10 bg-white/[0.03] text-white/45"
+                        }`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${rig.inference_reachable ? "bg-[#34d399]" : "bg-white/30"}`} />
+                          {rig.inference_reachable ? "API online" : `API offline · :${ai.ai_api_port}`}
+                        </span>
+                      </div>
+                      {rig.gpus.map((gpu, index) => (
+                        <div key={`${rig.id}-${index}`} className="mt-3 min-w-0">
+                          <div className="truncate text-xs font-medium text-white/75">{gpu.name}</div>
+                          <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-white/45 sm:text-xs">
+                            <span>VRAM free</span>
+                            <span className="shrink-0 font-medium text-white/75">
+                              {(gpu.memory_free_mib / 1024).toFixed(1)} / {(gpu.memory_total_mib / 1024).toFixed(1)} GiB
+                            </span>
+                          </div>
+                          <div
+                            className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10"
+                            role="progressbar"
+                            aria-label={`${gpu.name} VRAM usage`}
+                            aria-valuemin={0}
+                            aria-valuemax={gpu.memory_total_mib}
+                            aria-valuenow={gpu.memory_used_mib}
+                          >
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-[#a371f7] to-[#d2a8ff]"
+                              style={{ width: `${Math.min(100, Math.max(0, (gpu.memory_used_mib / Math.max(1, gpu.memory_total_mib)) * 100))}%` }}
+                            />
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-white/45 sm:text-xs">
+                            <span>{gpu.utilization_pct}% GPU</span>
+                            <span>{gpu.temperature_c}°C</span>
+                            <span>{gpu.power_w === null ? "—" : `${gpu.power_w.toFixed(0)} W`}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {rig.inference_reachable && rig.models.length > 0 && (
+                        <div className="mt-3 border-t border-white/[0.06] pt-2 text-xs">
+                          <div className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Models</div>
+                          <div className="mt-1 break-all leading-relaxed text-[#d2a8ff]">
+                            {rig.models.join(", ")}
+                          </div>
+                        </div>
+                      )}
+                      {rig.error && <div className="mt-2 break-words text-xs text-[#ff7b72]">{rig.error}</div>}
+                    </div>
+                  ))}
+                </div>
+                {!ai.rigs.length && (
+                  <p className="mt-4 rounded-xl border border-dashed border-white/10 p-5 text-center text-sm text-white/45">
+                    No active Vast rigs are available to probe.
+                  </p>
+                )}
+                <p className="mt-3 text-right text-[10px] text-white/30">Probed {ai.ts} · refreshes every 30 seconds</p>
+              </>
+            ) : (
+              <div className="mt-5 animate-pulse rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm text-white/45" aria-live="polite">
+                Connecting to GPU fleet…
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="mx-auto grid w-full max-w-7xl min-w-0 grid-cols-1 gap-4 pb-8 sm:grid-cols-2 sm:gap-5 lg:pb-12">
           {rigs.map((r) => (
             <div
               key={r.id}
-              className="rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-5 backdrop-blur transition hover:border-[#fcd116]/30"
+              className="w-full min-w-0 max-w-full rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-4 backdrop-blur transition hover:border-[#fcd116]/30 sm:p-5"
             >
               {/* rig header */}
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <span
                     className={`inline-block h-2.5 w-2.5 rounded-full ${
                       r.error ? "bg-[#ff7b72]" : "bg-[#34d399]"
                     } shadow-[0_0_8px_currentColor]`}
                   />
-                  <b className="text-lg text-white">#{r.id}</b>
-                  <span className="text-sm text-white/70">{r.gpu_name}</span>
+                  <b className="shrink-0 text-base text-white sm:text-lg">#{r.id}</b>
+                  <span className="truncate text-sm text-white/70">{r.gpu_name}</span>
                 </div>
-                <span className="rounded-full border border-white/15 px-2.5 py-0.5 text-xs text-white/60">
+                <span className="shrink-0 rounded-full border border-white/15 px-2.5 py-1 text-[10px] text-white/60 sm:text-xs">
                   ${r.dph.toFixed(4)}/h
                 </span>
               </div>
-              <div className="mt-1 text-xs text-white/40">
+              <div className="mt-2 break-words text-[11px] leading-relaxed text-white/40 sm:text-xs">
                 {r.geo} · gpu {r.gpu?.util ?? "?"} · {r.gpu?.power ?? "?"} ·{" "}
                 {r.gpu?.temp ?? "?"} · vram {r.gpu?.mem ?? "?"}
               </div>
-              {r.error && <div className="mt-2 text-xs text-[#ff7b72]">{r.error}</div>}
+              {r.error && <div role="alert" className="mt-2 break-words rounded-lg bg-[#ff7b72]/[0.07] p-2 text-xs text-[#ff9b93]">{r.error}</div>}
 
               {/* miners */}
               <div className="mt-4 space-y-3">
@@ -197,7 +387,7 @@ export default function Dashboard() {
                   return (
                     <div
                       key={i}
-                      className="rounded-lg border p-3"
+                      className="min-w-0 rounded-xl border p-3"
                       style={{ borderColor: `${coin.c}30`, background: `${coin.c}08` }}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -210,8 +400,8 @@ export default function Dashboard() {
                         <Spark data={m.hist} color={coin.c} />
                       </div>
                       <div className="mt-1.5 text-base">{fmt(m.hashrate)}</div>
-                      <div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] text-white/35">
-                        <span className="truncate">{m.pool || "—"}</span>
+                      <div className="mt-1 flex min-w-0 flex-col justify-between gap-1 text-[11px] text-white/35 min-[420px]:flex-row min-[420px]:items-center">
+                        <span className="truncate" title={m.pool || undefined}>{m.pool || "—"}</span>
                         {m.etime && <span className="shrink-0">up {m.etime}</span>}
                       </div>
                     </div>
@@ -225,19 +415,22 @@ export default function Dashboard() {
               </div>
 
               {/* ops controls */}
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-white/5 pt-3">
+              <div className="mt-4 border-t border-white/5 pt-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/35">Mining presets</p>
+                <div className="grid grid-cols-2 gap-2 min-[480px]:grid-cols-4">
                 {(["srb", "zion", "xmr", "all"] as const).map((m) => (
                   <button
                     key={m}
                     disabled={!!busy}
                     onClick={() => confirm(`launch ${m} on ${r.id}?`) && ops(`launch?id=${r.id}&m=${m}`, "POST")}
-                    className="rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs text-white/80 transition hover:border-[#fcd116]/50 hover:text-[#fcd116] disabled:opacity-40"
+                    className="min-h-10 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition hover:border-[#fcd116]/50 hover:text-[#fcd116] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
                   >
-                    ▸ {m}
+                    {busy === `launch?id=${r.id}&m=${m}` ? "Starting…" : `Start ${m}`}
                   </button>
                 ))}
+                </div>
                 <form
-                  className="flex min-w-0 basis-full gap-1 sm:basis-auto sm:flex-1 sm:justify-end"
+                  className="mt-3 flex min-w-0 gap-2"
                   onSubmit={(e) => {
                     e.preventDefault();
                     const inp = (e.target as HTMLFormElement).elements.namedItem("c") as HTMLInputElement;
@@ -247,102 +440,166 @@ export default function Dashboard() {
                 >
                   <input
                     name="c"
-                    placeholder="ssh cmd…"
-                    className="min-w-0 flex-1 rounded-md border border-white/15 bg-black/40 px-2 py-1.5 text-xs text-white placeholder-white/30 focus:border-[#fcd116]/50 focus:outline-none sm:w-36 sm:flex-none"
+                    aria-label={`SSH command for rig ${r.id}`}
+                    placeholder="Run SSH command…"
+                    className="min-h-11 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-white/30 focus:border-[#fcd116]/50 focus:outline-none focus:ring-1 focus:ring-[#fcd116]/40"
                   />
-                  <button className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs text-white/70 hover:border-[#34d399]/50 hover:text-[#34d399]">
-                    run
+                  <button disabled={!!busy} className="min-h-11 shrink-0 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/70 transition hover:border-[#34d399]/50 hover:text-[#34d399] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34d399] disabled:cursor-wait disabled:opacity-40">
+                    {busy.startsWith("exec?") && busy.includes(`id=${r.id}&`) ? "Running…" : "Run"}
                   </button>
                 </form>
               </div>
             </div>
           ))}
           {!rigs.length && !err && (
-            <div className="col-span-full rounded-xl border border-dashed border-white/10 p-10 text-center text-white/40">
-              waiting for vastctl daemon…
+            <div className="col-span-full rounded-2xl border border-dashed border-white/10 p-8 text-center sm:p-12">
+              <div className="text-sm font-semibold text-white/65">Fleet data is not available yet</div>
+              <p className="mt-2 text-xs leading-relaxed text-white/40">
+                {err ? "The status feed could not be loaded. Check the connection and try again." : "Waiting for the Vast status daemon to publish its first snapshot…"}
+              </p>
             </div>
           )}
         </section>
 
         {/* ── market ── */}
-        <section className="mx-auto max-w-6xl px-4 pb-20">
-          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-5 backdrop-blur">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-lg font-bold text-white">
-                market <span className="text-sm font-normal text-white/40">— offers, cheapest first</span>
-              </h2>
-              <select
-                value={mGpu}
-                onChange={(e) => setMGpu(e.target.value)}
-                className="rounded-md border border-white/15 bg-black/40 px-2.5 py-1.5 text-sm text-white focus:border-[#fcd116]/50 focus:outline-none"
-              >
+        <section className="mx-auto w-full max-w-7xl pb-12 sm:pb-20">
+          <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-4 backdrop-blur sm:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-white sm:text-xl">GPU market</h2>
+                <p className="mt-1 text-xs text-white/45 sm:text-sm">Find and rent an instance. Rentals incur charges.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
+                <label className="col-span-2 text-[10px] font-semibold uppercase tracking-wider text-white/45 sm:col-span-1">
+                  GPU model
+                  <select
+                    value={mGpu}
+                    onChange={(e) => setMGpu(e.target.value)}
+                    className="mt-1 block min-h-11 w-full rounded-lg border border-white/15 bg-black/40 px-3 text-sm text-white focus:border-[#fcd116]/50 focus:outline-none focus:ring-1 focus:ring-[#fcd116]/40 sm:min-w-40"
+                  >
                 {["RTX_3060", "RTX_3070", "RTX_3060_Ti", "RTX_4060", "RTX_3080", "any"].map((g) => (
                   <option key={g} value={g}>{g.replace(/_/g, " ")}</option>
                 ))}
-              </select>
-              <input
-                value={mDph}
-                onChange={(e) => setMDph(e.target.value)}
-                placeholder="max $/h"
-                className="w-24 rounded-md border border-white/15 bg-black/40 px-2.5 py-1.5 text-sm text-white placeholder-white/30 focus:border-[#fcd116]/50 focus:outline-none"
-              />
-              <button
-                onClick={loadOffers}
-                disabled={!!busy}
-                className="rounded-md border border-[#fcd116]/40 bg-[#fcd116]/10 px-4 py-1.5 text-sm font-semibold text-[#fcd116] transition hover:bg-[#fcd116]/20 disabled:opacity-40"
-              >
-                {busy === "offers" ? "searching…" : "search"}
-              </button>
+                  </select>
+                </label>
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-white/45">
+                  Max price / hour
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={mDph}
+                    onChange={(e) => setMDph(e.target.value)}
+                    placeholder="No limit"
+                    className="mt-1 block min-h-11 w-full rounded-lg border border-white/15 bg-black/40 px-3 text-sm text-white placeholder-white/30 focus:border-[#fcd116]/50 focus:outline-none focus:ring-1 focus:ring-[#fcd116]/40 sm:w-32"
+                  />
+                </label>
+                <button
+                  onClick={loadOffers}
+                  disabled={!!busy}
+                  className="col-span-2 min-h-11 rounded-lg border border-[#fcd116]/40 bg-[#fcd116]/10 px-4 py-2 text-sm font-semibold text-[#fcd116] transition hover:bg-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40 sm:col-span-1"
+                >
+                  {busy === "offers" ? "Searching…" : "Search offers"}
+                </button>
+              </div>
             </div>
 
+            {offerError && (
+              <p role="alert" className="mt-4 rounded-lg border border-[#ff7b72]/25 bg-[#ff7b72]/[0.06] p-3 text-xs text-[#ff9b93]">
+                Could not search offers: {offerError}
+              </p>
+            )}
+
             {offers && (
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="mt-5">
+                <p className="mb-3 text-xs text-white/45" aria-live="polite">
+                  {offers.length} {offers.length === 1 ? "offer" : "offers"} found · sorted by price
+                </p>
+                <div className="hidden overflow-x-auto rounded-xl border border-white/10 md:block">
+                <table className="w-full min-w-[850px] text-left text-sm">
                   <thead>
-                    <tr className="text-left text-xs text-white/40">
-                      {["offer", "gpu", "$/h", "$/day", "inet↓↑", "reliab", "cuda", "ram", "location", ""].map((h) => (
-                        <th key={h} className="px-2 py-1.5 font-normal">{h}</th>
+                    <tr className="bg-white/[0.04] text-left text-[10px] uppercase tracking-wider text-white/45">
+                      {["Offer", "GPU", "$ / hour", "$ / day", "Network ↓↑", "Reliability", "CUDA", "RAM", "Location", ""].map((h) => (
+                        <th key={h} className="whitespace-nowrap px-3 py-3 font-semibold">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {offers.map((o) => (
                       <tr key={o.id} className="border-t border-white/5 text-white/80 transition hover:bg-white/[0.04]">
-                        <td className="px-2 py-1.5 font-mono text-xs">{o.id}</td>
-                        <td className="px-2 py-1.5">{o.gpu_name}</td>
-                        <td className="px-2 py-1.5 font-semibold text-[#fcd116]">${o.dph_total.toFixed(4)}</td>
-                        <td className="px-2 py-1.5">${(o.dph_total * 24).toFixed(2)}</td>
-                        <td className="px-2 py-1.5 text-white/60">{Math.round(o.inet_down)}/{Math.round(o.inet_up)}</td>
-                        <td className="px-2 py-1.5 text-white/60">{(o.reliability * 100).toFixed(1)}%</td>
-                        <td className="px-2 py-1.5 text-white/60">{o.cuda_max_good}</td>
-                        <td className="px-2 py-1.5 text-white/60">{Math.round(o.cpu_ram / 1024)}G</td>
-                        <td className="px-2 py-1.5 text-white/60">{o.geolocation}</td>
-                        <td className="px-2 py-1.5">
+                        <td className="whitespace-nowrap px-3 py-3 font-mono text-xs text-white/50">{o.id}</td>
+                        <td className="whitespace-nowrap px-3 py-3 font-medium">{o.gpu_name}</td>
+                        <td className="whitespace-nowrap px-3 py-3 font-semibold text-[#fcd116]">${o.dph_total.toFixed(4)}</td>
+                        <td className="whitespace-nowrap px-3 py-3">${(o.dph_total * 24).toFixed(2)}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-white/60">{Math.round(o.inet_down)} / {Math.round(o.inet_up)} Mbps</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-white/60">{(o.reliability * 100).toFixed(1)}%</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-white/60">{o.cuda_max_good}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-white/60">{Math.round(o.cpu_ram / 1024)} GB</td>
+                        <td className="max-w-48 truncate px-3 py-3 text-white/60" title={o.geolocation}>{o.geolocation}</td>
+                        <td className="whitespace-nowrap px-3 py-3">
                           <button
                             disabled={!!busy}
                             onClick={() => confirm(`RENT offer ${o.id} — $${o.dph_total.toFixed(4)}/h?\nThis bills your vast.ai account!`) && ops(`rent?id=${o.id}`, "POST")}
-                            className="rounded-md border border-[#34d399]/40 bg-[#34d399]/10 px-3 py-1 text-xs font-semibold text-[#34d399] transition hover:bg-[#34d399]/20 disabled:opacity-40"
+                            className="min-h-9 rounded-lg border border-[#34d399]/40 bg-[#34d399]/10 px-3 py-1.5 text-xs font-semibold text-[#34d399] transition hover:bg-[#34d399]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34d399] disabled:cursor-wait disabled:opacity-40"
                           >
-                            rent
+                            Rent
                           </button>
                         </td>
                       </tr>
                     ))}
                     {!offers.length && (
-                      <tr><td colSpan={10} className="px-2 py-6 text-center text-white/30">no offers match</td></tr>
+                      <tr><td colSpan={10} className="px-3 py-8 text-center text-white/40">No offers match these filters.</td></tr>
                     )}
                   </tbody>
                 </table>
+                </div>
+                <div className="grid gap-3 md:hidden">
+                  {offers.map((o) => (
+                    <div key={o.id} className="rounded-xl border border-white/10 bg-black/20 p-4">
+                      <div className="flex min-w-0 items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-white" title={o.gpu_name}>{o.gpu_name}</p>
+                          <p className="mt-1 text-[10px] text-white/35">Offer #{o.id}</p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="font-bold text-[#fcd116]">${o.dph_total.toFixed(4)}<span className="font-normal text-white/45">/h</span></p>
+                          <p className="text-[10px] text-white/40">${(o.dph_total * 24).toFixed(2)} / day</p>
+                        </div>
+                      </div>
+                      <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-white/[0.06] pt-3 text-xs">
+                        <div><dt className="text-[10px] text-white/35">Reliability</dt><dd className="mt-0.5 text-white/75">{(o.reliability * 100).toFixed(1)}%</dd></div>
+                        <div><dt className="text-[10px] text-white/35">CUDA</dt><dd className="mt-0.5 text-white/75">{o.cuda_max_good}</dd></div>
+                        <div><dt className="text-[10px] text-white/35">Network ↓↑</dt><dd className="mt-0.5 text-white/75">{Math.round(o.inet_down)} / {Math.round(o.inet_up)} Mbps</dd></div>
+                        <div><dt className="text-[10px] text-white/35">RAM</dt><dd className="mt-0.5 text-white/75">{Math.round(o.cpu_ram / 1024)} GB</dd></div>
+                        <div className="col-span-2 min-w-0"><dt className="text-[10px] text-white/35">Location</dt><dd className="mt-0.5 truncate text-white/75" title={o.geolocation}>{o.geolocation}</dd></div>
+                      </dl>
+                      <button
+                        disabled={!!busy}
+                        onClick={() => confirm(`RENT offer ${o.id} — $${o.dph_total.toFixed(4)}/h?\nThis bills your vast.ai account!`) && ops(`rent?id=${o.id}`, "POST")}
+                        className="mt-4 min-h-11 w-full rounded-lg border border-[#34d399]/40 bg-[#34d399]/10 px-4 py-2 text-sm font-semibold text-[#34d399] transition hover:bg-[#34d399]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34d399] disabled:cursor-wait disabled:opacity-40"
+                      >
+                        Rent · ${o.dph_total.toFixed(4)} / hour
+                      </button>
+                    </div>
+                  ))}
+                  {!offers.length && (
+                    <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-white/40">
+                      No offers match these filters.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
         </section>
-      </article>
+      </div>
 
       {/* toast */}
       {toast && (
         <div
-          className={`fixed bottom-4 right-4 z-50 max-w-md whitespace-pre-wrap rounded-xl border p-4 text-xs backdrop-blur-md shadow-2xl ${
+          role="status"
+          aria-live="polite"
+          className={`fixed inset-x-3 bottom-3 z-50 max-h-[40vh] overflow-y-auto whitespace-pre-wrap break-words rounded-xl border p-4 text-xs backdrop-blur-md shadow-2xl sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-full sm:max-w-md ${
             toast.ok
               ? "border-[#34d399]/40 bg-black/80 text-[#d1fae5]"
               : "border-[#ff7b72]/50 bg-black/85 text-[#fecaca]"

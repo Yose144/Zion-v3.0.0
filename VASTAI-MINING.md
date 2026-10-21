@@ -183,7 +183,29 @@ nvidia-smi                               # ~95-100 % util, ~135-170 W
   finální PRL výplatní cesta je ještě v dokončování (viz AGENTS.md
   2026-10-20 entry).
 
-## 5. CPU mining — XMRig (Monero `rx/0`) vedle GPU minerů
+## 5. AI inference capacity dashboard (read-only pilot)
+
+`/vast-rigs/` includes an AI status panel backed by
+`tools/vast/vastctl.py` at `/vast-ops/api/ai/status`. The backend probes each
+active instance over SSH for NVIDIA GPU memory, utilization, temperature and
+power, then checks a loopback OpenAI-compatible `GET /v1/models` endpoint.
+The probe does not install or start models and does not modify mining processes.
+
+By default it checks `http://127.0.0.1:8000/v1/models` on each Vast host.
+Override the port on the host running `vastctl-serve` with
+`VASTCTL_AI_PORT=<port>` and restart that service. Keep inference bound to the
+instance loopback; do not expose an unauthenticated model API to the public
+internet. A reachable API with an empty model list means the server answered
+but advertised no model.
+
+The summed VRAM figure is an inventory across separate machines, **not pooled
+memory**: it cannot by itself load one model across all rigs. The panel also
+shows GPU utilization because free VRAM does not mean free compute; current
+mining and inference can still contend for GPU time. No 80/20 scheduler,
+automatic miner pause, model deployment, or automatic Vast rental is provided
+by this pilot.
+
+## 6. CPU mining — XMRig (Monero `rx/0`) vedle GPU minerů
 
 GPU dělá SRBMiner/zion-miner, **CPU na vast instancích jinak idluje** — XMRig
 ho vytěží navíc (~300–500 H/s na vCPU → ~2–5 kH/s na 8–12 vCPU).
@@ -204,7 +226,7 @@ tail -f /root/xmrig.log                      # hashrate + accepted
 curl -s localhost:16000/2/summary | python3 -m json.tool   # JSON staty
 ```
 
-## 6. vastctl — správa multi-mining rigů + web UI
+## 7. vastctl — správa multi-mining rigů + web UI
 
 `tools/vast/vastctl.py` — jednosouborový Python (stdlib only, jen `vastai` CLI
 + ssh). Inventarizace instancí + probe minerů přes jeden SSH round-trip.
@@ -250,7 +272,7 @@ Placeholder `public/vast-rigs/status.json` drží adresář v static exportu
 (`rsync --delete` by ho jinak smazal). Deploy: `npm run build` +
 `ZION_EDGE_HOST=zion-v6 bash deploy/deploy-intro.sh`.
 
-## 7. Vypnutí instance (důležité — jinak utíkají peníze!)
+## 8. Vypnutí instance (důležité — jinak utíkají peníze!)
 
 ```bash
 vastai destroy instance INSTANCE_ID
