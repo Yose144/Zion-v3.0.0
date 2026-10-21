@@ -180,6 +180,21 @@ export default function Dashboard() {
   const [logs, setLogs] = useState<Record<number, string>>({});
   const [logsOpen, setLogsOpen] = useState<Record<number, string>>({});
   const [chatAns, setChatAns] = useState<Record<number, string>>({});
+  const [tab, setTab] = useState<"mining" | "ai" | "market">("mining");
+  useEffect(() => {
+    const h = window.location.hash.replace("#", "");
+    if (h === "ai" || h === "market" || h === "mining") setTab(h);
+  }, []);
+  const goTab = (t: "mining" | "ai" | "market") => {
+    setTab(t);
+    history.replaceState(null, "", `#${t}`);
+  };
+  // auto-load offers on first market tab open
+  useEffect(() => {
+    if (tab === "market" && offers === null && !offerError && busy !== "offers")
+      loadOffers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
   const loadLogs = (id: number, src: string) => {
     setLogs({ ...logs, [id]: `loading ${src} logs…` });
     fetch(`/vast-ops/api/logs?id=${id}&src=${src}`)
@@ -304,7 +319,29 @@ export default function Dashboard() {
         </p>
       </section>
 
+      {/* ── section tabs ── */}
+      <nav className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-center gap-1.5 px-2 pb-5 sm:px-4" aria-label="Dashboard sections">
+        {([
+          ["mining", `Mining rigs · ${rigs.length}`],
+          ["ai", `AI inference · ${ai ? `${ai.totals.inference_rigs}/${ai.rigs.length} online` : "…"}`],
+          ["market", "GPU market"],
+        ] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => goTab(id)}
+            className={`min-h-10 rounded-full border px-4 text-xs font-semibold tracking-wide transition sm:px-5 sm:text-sm ${
+              tab === id
+                ? "border-[#fcd116]/60 bg-[#fcd116]/15 text-[#fcd116]"
+                : "border-white/10 bg-black/30 text-white/55 hover:border-white/25 hover:text-white"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
       <div className="vast-dashboard-shell w-full min-w-0 px-2 pb-10 sm:px-4 lg:px-6">
+        {tab === "ai" && (
         <section className="mx-auto w-full max-w-7xl pb-6">
           <div className="rounded-2xl border border-[#a371f7]/25 bg-gradient-to-br from-[#a371f7]/[0.08] to-white/[0.02] p-4 shadow-xl shadow-black/10 backdrop-blur sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -569,7 +606,9 @@ export default function Dashboard() {
             )}
           </div>
         </section>
+        )}
 
+        {tab === "mining" && (
         <section className="mx-auto grid w-full max-w-7xl min-w-0 grid-cols-1 gap-4 pb-8 sm:grid-cols-2 sm:gap-5 lg:pb-12">
           {rigs.map((r) => (
             <div
@@ -787,8 +826,10 @@ export default function Dashboard() {
             </div>
           )}
         </section>
+        )}
 
         {/* ── market ── */}
+        {tab === "market" && (
         <section className="mx-auto w-full max-w-7xl pb-12 sm:pb-20">
           <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-4 backdrop-blur sm:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -933,6 +974,7 @@ export default function Dashboard() {
             )}
           </div>
         </section>
+        )}
       </div>
 
       {/* toast */}
