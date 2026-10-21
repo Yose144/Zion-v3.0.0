@@ -10,7 +10,7 @@
 
 - [ ] **G8 run #3** — 99.9 % uptime, žádný kritický incident
   - [x] 🤖 RCA critical_incident z run #2 + **live stall 2026-10-21** (~40 min @89952) → [`docs/3.2/REPORTS/REPORT_2026-10-21_G8_STALL_RCA.md`](docs/3.2/REPORTS/REPORT_2026-10-21_G8_STALL_RCA.md)
-  - [x] 🤖 Fix root cause: pool RPC timeout 4→12 s (`ZION_L1_RPC_TIMEOUT_MS`), pool-side pre-orphan odstraněn (node rozhoduje), watchdog 15 s/2-fail → 30 s/3-fail — **333/333 testů ✅, čeká edge deploy**
+  - [x] 🤖 Fix root cause: pool RPC timeout 4→12 s (`ZION_L1_RPC_TIMEOUT_MS`), pool-side pre-orphan odstraněn (node rozhoduje), watchdog 15 s/2-fail → 30 s/3-fail — **333/333 testů ✅, DEPLOYED 2026-10-21** (pool rebuild z `/root/build/pool-F5` worktree — `/opt/zion` checkout je starý před-PoolNG strom, patch applied; watchdog.sh → `V31/deploy/scripts/`; chain @90028)
   - [ ] 🤖 Ověřit alert sink firing test + 40d retention před startem okna
   - [ ] 👤 Rozhodnutí: start nového 30d okna (a zda resetovat čítač runu)
 - [ ] **Externí audit**
@@ -56,7 +56,7 @@
 ## N3 · Hiranyagarbha 2.4/2.5 (L3, sandboxed)
 
 - [ ] 🤖 Maestro první read-only E2E task (intent→plan→health_poller→report) + audit log
-- [ ] 🤖 `zion-ncl` service: binárka + systemd unit + Edge deploy (crate existuje, chybí bin)
+- [x] 🤖 `zion-ncl` service: `src/bin/zion-ncl.rs` (env `NCL_BIND`/`NCL_DB_PATH`/`NCL_MAX_QUEUE`), SQLite persistence wire (`store` v `NclAppState`, persist po submit/complete/fail/schedule, `load_pending` re-hydrate na startu), unit `zion-v31-ncl.service` — **LIVE na Edge :8098** (42/42 testů, restart→re-hydrate ověřeno)
 - [ ] 🤖 Miner↔NCL spike: `ZION_NCL_*` opt-in pull-job loop v `L1/miner` (off default)
 - [ ] 🤖 Dharma engine: keyword filter → policy manifest (allowed action types + human-approval gate)
 - [ ] 🤖 Amitabha draft-only intent UI (plán s náklady/příjemci/riziky/zrušením, bez exekuce)
@@ -98,7 +98,7 @@
 1. ~~🤖 **G8 RCA** — proč run #2 failed~~ ✅ hotovo 2026-10-21 (live stall RCA + 3 fixy v kódu, čeká deploy)
 2. ~~🤖 **Disk audit**~~ ✅ `REPORT_2026-10-21_EDGE_DISK_AUDIT.md` — BTC prune+sync 100 %; ~11–13 G reclaim identifikováno
 3. ~~🤖 **fail2ban fix**~~ ✅ live (sshd+zion-p2p jails); drop-in fixuje `RestartPreventExitStatus=255` boot-crash bug
-4. 🤖 **NCL bin/service** — crate → běžitelná služba
+4. ~~🤖 **NCL bin/service**~~ ✅ `zion-ncl` daemon + persistence + unit — **DEPLOYED, live :8098**
 5. 🤖 **PRL dry-batch review tooling** — report co dry-run udělal/udělá
 6. 🤖 **QV voting UI** — backend hotový, chybí web povrch
 7. 🤖 **BTC signed-quote kód** — odemyká hlavní audit blocker

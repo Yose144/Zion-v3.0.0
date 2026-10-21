@@ -41,6 +41,7 @@ use uuid::Uuid;
 
 use crate::reputation::ReputationRegistry;
 use crate::scheduler::JobScheduler;
+use crate::store::JobStore;
 use crate::types::{ComputeBackend, NclJob, NclJobStatus, NclTaskType, NclWorker};
 
 // ─── App state ───────────────────────────────────────────────────────────────
@@ -50,6 +51,42 @@ use crate::types::{ComputeBackend, NclJob, NclJobStatus, NclTaskType, NclWorker}
 pub struct NclAppState {
     pub scheduler: Arc<Mutex<JobScheduler>>,
     pub reputation: Arc<Mutex<ReputationRegistry>>,
+    /// Optional persistent job store. Handlers persist after every state
+    /// change so jobs survive restarts (load via `JobStore::load_pending`).
+    pub store: Option<JobStore>,
+}
+
+impl NclAppState {
+    /// In-memory state (tests / ephemeral).
+    pub fn ephemeral(scheduler: JobScheduler, reputation: ReputationRegistry) -> Self {
+        Self {
+            scheduler: Arc::new(Mutex::new(scheduler)),
+            reputation: Arc::new(Mutex::new(reputation)),
+            store: None,
+        }
+    }
+
+    /// Persistent state — scheduler is pre-loaded by the caller via
+    /// `JobStore::load_pending` before serving.
+    pub fn persistent(
+        scheduler: JobScheduler,
+        reputation: ReputationRegistry,
+        store: JobStore,
+    ) -> Self {
+        Self {
+            scheduler: Arc::new(Mutex::new(scheduler)),
+            reputation: Arc::new(Mutex::new(reputation)),
+            store: Some(store),
+        }
+    }
+
+    fn persist_job(&self, job: &NclJob) {
+        if let Some(store) = &self.store {
+            if let Err(e) = store.update_job(job) {
+                tracing::warn!("ncl store update_job {} failed: {}", job.id, e);
+            }
+        }
+    }
 }
 
 // ─── Request / Response types ─────────────────────────────────────────────────
@@ -226,6 +263,9 @@ pub async fn submit_job(
     let job_id = sched
         .submit_job(job)
         .map_err(|e| bad_request(e.to_string()))?;
+    if let Some(j) = sched.get_job(&job_id) {
+        state.persist_job(j);
+    }
 
     Ok(Json(SubmitJobResponse {
         job_id,
@@ -267,6 +307,9 @@ pub async fn complete_job(
     sched
         .complete_job(id, req.output_hash)
         .map_err(|e| bad_request(e.to_string()))?;
+    if let Some(j) = sched.get_job(&id) {
+        state.persist_job(j);
+    }
     drop(sched);
 
     // Update reputation
@@ -290,6 +333,9 @@ pub async fn fail_job(
     sched
         .fail_job(id, &req.reason)
         .map_err(|e| bad_request(e.to_string()))?;
+    if let Some(j) = sched.get_job(&id) {
+        state.persist_job(j);
+    }
     drop(sched);
 
     if let Ok(mut rep) = state.reputation.lock() {
@@ -378,7 +424,12 @@ pub async fn schedule(State(state): State<NclAppState>) -> ApiResult<serde_json:
 
     loop {
         match sched.try_assign_next() {
-            Ok(Some(_)) => assigned += 1,
+            Ok(Some((job_id, _))) => {
+                assigned += 1;
+                if let Some(j) = sched.get_job(&job_id) {
+                    state.persist_job(j);
+                }
+            }
             Ok(None) => break,
             Err(e) => {
                 errors.push(e.to_string());
@@ -419,10 +470,7 @@ mod tests {
     use super::*;
 
     fn make_state() -> NclAppState {
-        NclAppState {
-            scheduler: Arc::new(Mutex::new(JobScheduler::new(100))),
-            reputation: Arc::new(Mutex::new(ReputationRegistry::new())),
-        }
+        NclAppState::ephemeral(JobScheduler::new(100), ReputationRegistry::new())
     }
 
     #[tokio::test]
