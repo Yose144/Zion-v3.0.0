@@ -103,9 +103,9 @@
 4. ~~🤖 **NCL bin/service**~~ ✅ `zion-ncl` daemon + persistence + unit — **DEPLOYED, live :8098**
 5. ~~🤖 **PRL dry-batch review tooling**~~ ✅ `scripts/prl-payout-review.sh` (edge-readonly audit: legs/miners, queue preview, ledger rows, sweeper journal, wiring, flip-checklist) — live run: 0 pending, 0 ledger rows (0 PRL minerů), env+unit ověřeny; ⚠️ bonus nález: **QTC treasury_free=0 → všechny QTC payouty deferred**
 6. ~~🤖 **QV voting UI**~~ ✅ **už existuje a je LIVE** — `QvSection.tsx` (ballot editor + credit meter + ZIS gate + results), `/api/free-world` proxy → daemon :8095, otevřené kolo `ba7a4679` s 6 granty na produkci; zbývá jen první reálný ballot (operátor)
-7. 🤖 **BTC signed-quote kód** — odemyká hlavní audit blocker
+7. ~~🤖 **BTC signed-quote kód**~~ ✅ **code-complete** — `btc_swap.rs` ed25519 `sign_quote`/`verify_quote`, `WARP_BTC_SWAP_OFFER_KEY` (+`_PREV` rotace), routes `/v1/multichain/swaps/btc/{quote,offer,list,metrics,:id}`, outstanding caps, testy; live keys provisioned (`OFFER_KEY`,`RELAY_KEY`,`ZION_SECRET`, `BITCOIN_NETWORK=bitcoin`), `WARP_BTC_SWAP_ENABLED=0` = safety hold → flip = 👤 (capped ~100k sats pilot po auditu)
 8. ~~🤖 **Planetary map UI**~~ ✅ **už existuje a je LIVE** — `FreeWorldMap.tsx` + `FreeWorldRegistry.tsx` namountované na `/l5-free-world` (freeworld.zionterranova.com)
-9. 🤖 **Passkey Playwright E2E**
+9. ~~🤖 **Passkey Playwright E2E**~~ ✅ `e2e/passkey.spec.ts` — CDP virtual authenticator (reálná WebAuthn ceremony), mocked webauthn routes; login test PASS na fresh build; `/account` testy vyžadují `ZION_WALLET_MNEMONIC` (middleware validuje session server-side — konvence dex-real specu)
 10. 🤖 **OasisChecklist perf/security gate**
 
 ## Operátor-only fronta (čeká na 👤)
