@@ -44,6 +44,13 @@ case "$MODE" in
   edge)
     : # keep defaults above
     ;;
+  edge2)
+    # EDGE2 hosts the primary V31 node only — the pool stays on edge so the
+    # stratum sees real miner IPs. Without this, the watchdog would keep
+    # resurrecting the stale zion-v31-pool unit (fails on :8080, held by the
+    # edge tunnel forward).
+    POOL_SERVICE=""
+    ;;
   backup)
     USE_USER_SYSTEMD=1
     # Local backup node RPC; edge RPC used as sync reference.
@@ -64,7 +71,7 @@ case "$MODE" in
     ;;
   *)
     echo "Unknown watchdog mode: $MODE" >&2
-    echo "Usage: $0 [edge|backup|new-server|v31]" >&2
+    echo "Usage: $0 [edge|edge2|backup|new-server|v31]" >&2
     exit 1
     ;;
 esac
