@@ -99,7 +99,7 @@
 2. ~~🤖 **Disk audit**~~ ✅ `REPORT_2026-10-21_EDGE_DISK_AUDIT.md` — BTC prune+sync 100 %; ~11–13 G reclaim identifikováno
 3. ~~🤖 **fail2ban fix**~~ ✅ live (sshd+zion-p2p jails); drop-in fixuje `RestartPreventExitStatus=255` boot-crash bug
 4. ~~🤖 **NCL bin/service**~~ ✅ `zion-ncl` daemon + persistence + unit — **DEPLOYED, live :8098**
-5. 🤖 **PRL dry-batch review tooling** — report co dry-run udělal/udělá
+5. ~~🤖 **PRL dry-batch review tooling**~~ ✅ `scripts/prl-payout-review.sh` (edge-readonly audit: legs/miners, queue preview, ledger rows, sweeper journal, wiring, flip-checklist) — live run: 0 pending, 0 ledger rows (0 PRL minerů), env+unit ověřeny; ⚠️ bonus nález: **QTC treasury_free=0 → všechny QTC payouty deferred**
 6. 🤖 **QV voting UI** — backend hotový, chybí web povrch
 7. 🤖 **BTC signed-quote kód** — odemyká hlavní audit blocker
 8. 🤖 **Planetary map UI** — L5 katalog frontend
