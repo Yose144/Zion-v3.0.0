@@ -81,7 +81,7 @@ HEIGHT=$(curl -s --max-time 5 "$NODE_RPC/jsonrpc" \
 
 ## Commity
 
-- `7da0219fb` — `fix(watchdog): fix pool restart loop caused by /dev/tcp separator bug`
+- `88cc093e4` — `fix(watchdog): fix pool restart loop caused by /dev/tcp separator bug`
 
 ## Následující krok
 

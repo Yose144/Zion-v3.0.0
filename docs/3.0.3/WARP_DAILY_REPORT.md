@@ -146,8 +146,8 @@ test result: ok. 487 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 
 ## Commits
 
-1. `2ffe2bf7` — feat(warp): BCS encoder + Aptos/Sui execute_mint — MoveVM TX submission
-2. `047e9321` — feat(warp): CBOR encoder + Cardano submit_mint_tx — Blake2b + Blockfrost
+1. `3cbaccfb` — feat(warp): BCS encoder + Aptos/Sui execute_mint — MoveVM TX submission
+2. `b4bea15b` — feat(warp): CBOR encoder + Cardano submit_mint_tx — Blake2b + Blockfrost
 3. (pending) — feat(warp): TON TL-B Cell+BOC encoder + execute_mint — all 13 adapters complete
 
 ## Co zbývá

@@ -2,18 +2,18 @@
 
 **Datum:** 2026-06-22  
 **Branch:** `main`  
-**Poslední commit:** `36309404`  
+**Poslední commit:** `919c6429`  
 **Cíl:** Rozjet desktop agenta + mobile app end-to-end s posíláním transakcí.
 
 ## 🔥 Status: **E2E WALLET WORKFLOW FUNGUJE**
 
 **Desktop agent** (`APP&WEB/desktop-agent/`):
-- ✅ Edge mainnet ACCEPTED live account transaction (commit `8c30fe49`)
+- ✅ Edge mainnet ACCEPTED live account transaction (commit `413c3762`)
 - ✅ UTXO + Account model auto-detect
 - ✅ V2 preimage hash (BLAKE3) od genesis
 
 **Mobile app** (`APP&WEB/mobile-app/`):
-- ✅ V3 compatible wallet (commit `36309404`)
+- ✅ V3 compatible wallet (commit `919c6429`)
 - ✅ BLAKE3 v2 transaction hash
 - ✅ @noble/ed25519 v3.1.0 (same as desktop)
 - ✅ V3 tx build + sign + verify verified
@@ -21,8 +21,8 @@
 - ✅ Edge mainnet ACCEPTED mobile account transaction (live verification)
 
 **Struktura:**
-- ✅ Jeden zdroj pravdy v `APP&WEB/` (APPS/ smazáno, commit `ba9fac6c`)
-- ✅ `zion-wallet-sdk` sjednocen do `APP&WEB/` (commit `de20b079`)
+- ✅ Jeden zdroj pravdy v `APP&WEB/` (APPS/ smazáno, commit `bea96483`)
+- ✅ `zion-wallet-sdk` sjednocen do `APP&WEB/` (commit `868a8b0a`)
 
 ---
 
@@ -258,10 +258,10 @@ Zobrazení v Send tab:
 ## Mobile App Wallet V3 Upgrade
 
 **Cesta k mobile wallet:**
-- ✅ Obnovena z git historie (commit `c4390ab8` → `de20b079`)
-- ✅ Verze 3.0.0 → 3.0.2 (commit `de20b079`)
+- ✅ Obnovena z git historie (commit `ea67c87a` → `868a8b0a`)
+- ✅ Verze 3.0.0 → 3.0.2 (commit `868a8b0a`)
 
-### Co bylo opraveno (commit `36309404`)
+### Co bylo opraveno (commit `919c6429`)
 
 `APP&WEB/mobile-app/src/services/TransactionBuilder.js` byl kompletně přepsán:
 
@@ -460,9 +460,9 @@ Pokud máš prázdnou adresu, potřebuješ nějakým způsobem získat UTXO:
 
 - [x] **Mobile Account model** — `AccountBuilder.js` + auto-detect v `sendZion()` ✅
 - [x] **Edge live acceptance** — mobile account tx akceptován (tx_id: `6823b84b...`) ✅
-- [x] Desktop Account model (commit `8c30fe49`) ✅
-- [x] Mobile V3 wallet (commit `36309404`) ✅
-- [x] Jeden zdroj pravdy APP&WEB/ (commit `ba9fac6c`) ✅
+- [x] Desktop Account model (commit `413c3762`) ✅
+- [x] Mobile V3 wallet (commit `919c6429`) ✅
+- [x] Jeden zdroj pravdy APP&WEB/ (commit `bea96483`) ✅
 
 ### Krátkodobě
 
@@ -487,4 +487,4 @@ Pokud máš prázdnou adresu, potřebuješ nějakým způsobem získat UTXO:
 
 ---
 
-*Report vygenerován 2026-06-22. Poslední commit s opravami: `36309404`.*
+*Report vygenerován 2026-06-22. Poslední commit s opravami: `919c6429`.*

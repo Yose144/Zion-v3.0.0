@@ -8,9 +8,9 @@
 
 | Úkol | Commit | Stav |
 |------|--------|------|
-| C7 — CLI service lifecycle (`node/pool/miner start\|stop\|status`) | `0a302b6cf` | ✅ pushnuto |
-| Fix `vardiff::test_vardiff_clamps_ratio` | `0a302b6cf` | ✅ pushnuto |
-| C8 — Dashboard V31 env + pool/miner metriky | `748c2fc66` | ✅ pushnuto |
+| C7 — CLI service lifecycle (`node/pool/miner start\|stop\|status`) | `1d117fb33` | ✅ pushnuto |
+| Fix `vardiff::test_vardiff_clamps_ratio` | `1d117fb33` | ✅ pushnuto |
+| C8 — Dashboard V31 env + pool/miner metriky | `9a976bd51` | ✅ pushnuto |
 | A9 — public subtree sync | `git subtree push` | ✅ up-to-date |
 | Release build macOS aarch64 | — | ✅ hotovo |
 
@@ -41,51 +41,51 @@
 ### Klíčové milníky (chronologicky od nejnovějších)
 
 ```
-0a302b6cf 2026-08-04 fix(cli,pool): direct service lifecycle commands and vardiff clamp test.
-338eed841 2026-08-04 feat(pool): wire Notifier, RevenueScheduler, RevenueProxy into main.rs + stratum.rs
-91cf99173 2026-08-04 fix(pool): serialize env-var-dependent tests with mutex + update STATUS.md
-a1fbe38ac 2026-08-04 feat(pool): complete V3 feature parity — AuxPoW runtime, TLS, share relay, profit switcher, expanded API
-bcaf5078c 2026-08-04 feat(V31): B2/C3-C5 integration, pool triple-stream runtime, and docs.
-6468cb804 2026-08-04 fix(v31): pool share logging + miner response handling + flush
-84122dd8c 2026-08-04 fix(v31): miner reconnect 10s + pool rate limit 20/min + keep mining after share
-1a32dd380 2026-08-04 fix(v31): increase pool reconnect rate limit to 10/min
-e77c45e64 2026-08-04 refactor(v31): B3.8 — eliminate duplicate ExternalCoin
-f07db7c6b 2026-08-03 feat(v31): Phase B completion — full RPC, pool, miner AuxPoW port
-81f6be6a8 2026-08-03 feat(v31): enable autonomous.rs + V3 pool protocol + RPC types
-e4780572c 2026-08-03 feat(v31): enable revenue_proxy + cosmic-harmony re-exports + DifficultyTarget::allows
-4e4936898 2026-08-03 feat(v31): port V3 pool modules — PPLNS, store, stratum_v1 + mining types
-4e15688a4 2026-07-30 V31 v3.1.0-alpha.2 — cleanup, clippy, runtime fixes a status.
-ec6dc3fd5 2026-07-30 E2E smoke: zion-pool binary, node/pool/miner RPC and PoW fixes.
-d5467d577 2026-07-30 V31 progress checkpoint — HeightAwareDeeksha, P2P rate limit, Alpha build plan.
-94530391b 2026-07-30 Push current workspace state before old-web refresh.
-b85d0b16a 2026-07-28 feat(V31): periodic V3 block sync loop + RPC/P2P/stratum updates
-fbfb7e438 2026-07-28 V31: implement V3 checkpoint sync primitives and format workspace.
-2297db7e3 2026-07-28 feat(v31): node P2P/IBD, migration, pool block template push and stratum integration
-9cbcaba75 2026-07-28 feat(v31): submit solved blocks to zion-l1 RPC
-1c96ffcd5 2026-07-28 feat(v31): real block reward and worker payout addresses
-b00daa774 2026-07-28 feat(v31): block detection and PPLNS payouts endpoint
-ff2b88403 2026-07-27 feat(v31): TCP stratum server with mining.notify broadcast
-9e720dc45 2026-07-27 feat(v31): add pool, bridge and wallet modules for Mainnet Alpha
+1d117fb33 2026-08-04 fix(cli,pool): direct service lifecycle commands and vardiff clamp test.
+274bab653 2026-08-04 feat(pool): wire Notifier, RevenueScheduler, RevenueProxy into main.rs + stratum.rs
+e825de6f0 2026-08-04 fix(pool): serialize env-var-dependent tests with mutex + update STATUS.md
+755d30ad4 2026-08-04 feat(pool): complete V3 feature parity — AuxPoW runtime, TLS, share relay, profit switcher, expanded API
+70e547c4c 2026-08-04 feat(V31): B2/C3-C5 integration, pool triple-stream runtime, and docs.
+a23296d14 2026-08-04 fix(v31): pool share logging + miner response handling + flush
+6f699ae4b 2026-08-04 fix(v31): miner reconnect 10s + pool rate limit 20/min + keep mining after share
+de547a3a7 2026-08-04 fix(v31): increase pool reconnect rate limit to 10/min
+c0dae5f72 2026-08-04 refactor(v31): B3.8 — eliminate duplicate ExternalCoin
+9aa5d42f9 2026-08-03 feat(v31): Phase B completion — full RPC, pool, miner AuxPoW port
+ea6842c9b 2026-08-03 feat(v31): enable autonomous.rs + V3 pool protocol + RPC types
+cacd62eed 2026-08-03 feat(v31): enable revenue_proxy + cosmic-harmony re-exports + DifficultyTarget::allows
+581e55abb 2026-08-03 feat(v31): port V3 pool modules — PPLNS, store, stratum_v1 + mining types
+bf10b9bf4 2026-07-30 V31 v3.1.0-alpha.2 — cleanup, clippy, runtime fixes a status.
+72df16b49 2026-07-30 E2E smoke: zion-pool binary, node/pool/miner RPC and PoW fixes.
+1a9fba50e 2026-07-30 V31 progress checkpoint — HeightAwareDeeksha, P2P rate limit, Alpha build plan.
+a6596f379 2026-07-30 Push current workspace state before old-web refresh.
+0590cb96f 2026-07-28 feat(V31): periodic V3 block sync loop + RPC/P2P/stratum updates
+1d65fffb6 2026-07-28 V31: implement V3 checkpoint sync primitives and format workspace.
+6ebf73641 2026-07-28 feat(v31): node P2P/IBD, migration, pool block template push and stratum integration
+423adc9ee 2026-07-28 feat(v31): submit solved blocks to zion-l1 RPC
+09bb8d3b6 2026-07-28 feat(v31): real block reward and worker payout addresses
+382082bf3 2026-07-28 feat(v31): block detection and PPLNS payouts endpoint
+bdf7ecc15 2026-07-27 feat(v31): TCP stratum server with mining.notify broadcast
+052749ebd 2026-07-27 feat(v31): add pool, bridge and wallet modules for Mainnet Alpha
 ```
 
 ### Co každý milník přinesl
 
 | Kommit | Přínos |
 |--------|--------|
-| `9e720dc45` | Přidání pool, bridge a wallet modulů do V31. |
-| `ff2b88403` | TCP stratum server s `mining.notify` broadcastem. |
-| `b00daa774` | Detekce bloků a PPLNS payouts endpoint. |
-| `1c96ffcd5` | Reálné block reward a payout adresy workerů. |
-| `9cbcaba75` | Submit vyřešených bloků do `zion-l1` RPC. |
-| `2297db7e3` | Pool block template push a stratum integrace. |
-| `b85d0b16a` | V3 block sync loop, RPC/P2P/stratum update. |
-| `ec6dc3fd5` | E2E smoke: `zion-pool` binárka, node/pool/miner RPC a PoW fixy. |
-| `4e4936898` | Port V3 pool modulů: PPLNS, store, stratum_v1, mining types. |
-| `81f6be6a8` | Autonomous profit router a V3 pool protokol. |
-| `f07db7c6b` | Fáze B completion — plný RPC, pool, miner AuxPoW port. |
-| `a1fbe38ac` | **V3 feature parity**: AuxPoW runtime, TLS, share relay, profit switcher, expanded HTTP API. |
-| `338eed841` | Zapojení Notifier, RevenueScheduler, RevenueProxy do `main.rs` a `stratum.rs`. |
-| `0a302b6cf` | Oprava `vardiff` clamp testu + přímé CLI lifecycle příkazy. |
+| `052749ebd` | Přidání pool, bridge a wallet modulů do V31. |
+| `bdf7ecc15` | TCP stratum server s `mining.notify` broadcastem. |
+| `382082bf3` | Detekce bloků a PPLNS payouts endpoint. |
+| `09bb8d3b6` | Reálné block reward a payout adresy workerů. |
+| `423adc9ee` | Submit vyřešených bloků do `zion-l1` RPC. |
+| `6ebf73641` | Pool block template push a stratum integrace. |
+| `0590cb96f` | V3 block sync loop, RPC/P2P/stratum update. |
+| `72df16b49` | E2E smoke: `zion-pool` binárka, node/pool/miner RPC a PoW fixy. |
+| `581e55abb` | Port V3 pool modulů: PPLNS, store, stratum_v1, mining types. |
+| `ea6842c9b` | Autonomous profit router a V3 pool protokol. |
+| `9aa5d42f9` | Fáze B completion — plný RPC, pool, miner AuxPoW port. |
+| `755d30ad4` | **V3 feature parity**: AuxPoW runtime, TLS, share relay, profit switcher, expanded HTTP API. |
+| `274bab653` | Zapojení Notifier, RevenueScheduler, RevenueProxy do `main.rs` a `stratum.rs`. |
+| `1d117fb33` | Oprava `vardiff` clamp testu + přímé CLI lifecycle příkazy. |
 
 ---
 
@@ -107,7 +107,7 @@ ff2b88403 2026-07-27 feat(v31): TCP stratum server with mining.notify broadcast
 | macOS x86_64 | `zion-macos-x86_64-3.1.0-alpha.2.tar.gz` | `25e8727ef71eee4ff2bb8df26e6a026f2a006cc36f109b0be92c754809351d31` |
 | Windows x86_64 | `zion-windows-x86_64-3.1.0-alpha.2.zip` | `ffc7e5e50422ee6fc09bc6f490b7770a423257a4e40441053ca610c1622809b0` |
 
-- **Git rev:** `0964d2599`
+- **Git rev:** `147d79d19`
 - **Adresář:** `V31/releases/` (v `.gitignore`, necommituje se)
 - **Draft GitHub Release:** <https://github.com/Yose144/Zion-v3.0.0/releases/tag/untagged-a1bca2e3178bdba93476>
 

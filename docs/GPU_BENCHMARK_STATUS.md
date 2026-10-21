@@ -1,7 +1,7 @@
 # Ekam Deeksha v2 — GPU Benchmark Status
 
 > **Aktualizováno:** 2026-04-02  
-> **Verze:** V3 mainnet miner (`gpu_backend.rs` commit `9e307c4d`)  
+> **Verze:** V3 mainnet miner (`gpu_backend.rs` commit `f04f4280`)  
 > **Benchmark mode:** `--ekam-bench` (čistý GPU throughput, bez pool overhead)  
 > **Algoritmus:** Ekam Deeksha v2 — 256 KiB scratchpad, 4 passes, 256 random reads, INT8 NPU Mix, 8× CosmicFusion
 

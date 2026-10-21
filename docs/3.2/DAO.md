@@ -193,11 +193,11 @@ Cílový stav: DAO je plně obsluhované z UI (web → mobile → desktop), life
 
 | Úkol | Soubor | Stav |
 |---|---|---|
-| Proposal detail stránka `/dao/proposals/[id]` | `app/dao/proposals/[id]/page.tsx` | ✅ merged (a85a3a270) — plný popis, timeline, voter tabulka, kvórum progress, D8 on-chain vote memo + QR |
-| Kvórum progress na kartě | `ProposalCard.tsx` | ✅ merged (a85a3a270) |
+| Proposal detail stránka `/dao/proposals/[id]` | `app/dao/proposals/[id]/page.tsx` | ✅ merged (4c3c8d574) — plný popis, timeline, voter tabulka, kvórum progress, D8 on-chain vote memo + QR |
+| Kvórum progress na kartě | `ProposalCard.tsx` | ✅ merged (4c3c8d574) |
 | Notifikace/refresh po vote+create | `page.tsx` | 🔄 částečně — `loadDAOData()` refresh; toast místo `alert()` otevřené |
-| Kryptografický treasury sign flow pro guardiany | `treasury_tx.rs` + `api.rs` | ✅ backend merged (8477942aa) — Ed25519 content-hash sigy + L1 UTXO spend; Edge deploy + `ZION_DAO_TREASURY_KEY` pending |
-| On-chain vote delegation UI | `page.tsx` | ✅ merged — D6 memo generator (delegator→delegate), delegated weight pod voter rows (b11fc18af) |
+| Kryptografický treasury sign flow pro guardiany | `treasury_tx.rs` + `api.rs` | ✅ backend merged (363dd6db9) — Ed25519 content-hash sigy + L1 UTXO spend; Edge deploy + `ZION_DAO_TREASURY_KEY` pending |
+| On-chain vote delegation UI | `page.tsx` | ✅ merged — D6 memo generator (delegator→delegate), delegated weight pod voter rows (084b6e3b0) |
 | Mobile DAO screen sync | `DAOService.js` + `DAOScreen.js` | 🔄 ověřit mapping nových polí; read-only zatím OK |
 | Desktop `DaoPanel` sync | `ZION_OS/desktop` | 🔄 stejný mapping jako web |
 
@@ -205,13 +205,13 @@ Cílový stav: DAO je plně obsluhované z UI (web → mobile → desktop), life
 
 | Úkol | Soubor | Stav |
 |---|---|---|
-| Guardian registry endpoint | `api.rs` + `db.rs` | ✅ merged (cb8069e49) — `GET /api/dao/guardians`: config bootstrap + on-chain registrovaní kandidáti; Edge deploy pending (live 404) |
-| Proposal events / audit log | `db.rs` + `api.rs` | ✅ merged (c952f7027) — append-only `dao_events` + `GET /api/dao/proposals/:id/events` |
+| Guardian registry endpoint | `api.rs` + `db.rs` | ✅ merged (67a282485) — `GET /api/dao/guardians`: config bootstrap + on-chain registrovaní kandidáti; Edge deploy pending (live 404) |
+| Proposal events / audit log | `db.rs` + `api.rs` | ✅ merged (87932176b) — append-only `dao_events` + `GET /api/dao/proposals/:id/events` |
 | Quadratic voting pro granty | `voting.rs` | ❌ otevřené — `sqrt` není v DAO voting; L5 má vlastní `quadratic.rs` pro QV kola |
-| Vote delegation | `db.rs` + `voting.rs` + `l1_scanner.rs` | ✅ merged (e3e5a5b46) — `dao_delegations`/`dao_delegated_votes`, non-transitive, consumed per-proposal, memo `DAO:delegate:<addr>`/`none` |
+| Vote delegation | `db.rs` + `voting.rs` + `l1_scanner.rs` | ✅ merged (26668ff21) — `dao_delegations`/`dao_delegated_votes`, non-transitive, consumed per-proposal, memo `DAO:delegate:<addr>`/`none` |
 | L5/L6 submit-to-dao | `V31/L5/free-world/src/dao_client.rs`, `V31/L6/issobella/src/dao_client.rs` | ✅ v kódu — base URL 8456 + `ZION_DAO_API_KEY` env wiring; live submit evidence otevřená |
 | On-chain vote UX | web + `l1_scanner.rs` | ✅ merged — D8 modal s `zion:vote:<id>:<choice>` memo + QR; scanner ingestuje `DAO:vote:*` mema s balance-at-block verifikací |
-| Config-driven threshold registry | `config.rs` + `executor.rs` | ✅ merged (17d7f38cb) — `apply_parameter_change` při execute (quorum_percent, voting_period_days, proposal_threshold, timelock_hours, max_active_per_proposer …) |
+| Config-driven threshold registry | `config.rs` + `executor.rs` | ✅ merged (ed2c7a86b) — `apply_parameter_change` při execute (quorum_percent, voting_period_days, proposal_threshold, timelock_hours, max_active_per_proposer …) |
 
 ### Fáze D3 — Autonomie a integrace (V3.3 horizont)
 

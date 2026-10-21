@@ -167,7 +167,7 @@ curl -s -X POST http://127.0.0.1:9334/v1/bridge/submit \
 
 ## Commit reference
 
-- `7dfd279f0` — `fix(desktop-agent): align UTXO builder and wallet send with V31 native transaction format`
+- `48778d30a` — `fix(desktop-agent): align UTXO builder and wallet send with V31 native transaction format`
 
 ## Next steps
 

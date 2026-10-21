@@ -64,7 +64,7 @@ auxpow[ZANO]: got job id=0x6bbb95dd... height=3807581
 ```
 
 ### Bug Fix Applied
-**Commit `4b37b4c11`:** `header_bytes` was empty → `header_hash = "0x"` → HeroMiners
+**Commit `7fb41d0a3`:** `header_bytes` was empty → `header_hash = "0x"` → HeroMiners
 silently rejected ZANO shares. Fix: pass `None` when `header_bytes` is empty,
 so `submit_share()` falls back to `job_id` as the block header hash.
 
@@ -110,21 +110,21 @@ Forwarding fix applied but not yet tested with live shares.
 ## Bug Fixes Applied
 
 ### Fix 1: Pool share forwarding not logged
-**Commit `4b37b4c11`** — `V31/L1/pool/src/stratum.rs` + `auxpow_runtime.rs`
+**Commit `7fb41d0a3`** — `V31/L1/pool/src/stratum.rs` + `auxpow_runtime.rs`
 
 Added `tracing::info!` for `v3_external_forward` (after bridge forward) and
 `share forwarded` (after upstream submit). Previously, the pool accepted
 external submits but did not log the forwarding result.
 
 ### Fix 2: ZANO header_bytes empty → silent rejection
-**Commit `4b37b4c11`** — `V31/L1/pool/src/auxpow_runtime.rs`
+**Commit `7fb41d0a3`** — `V31/L1/pool/src/auxpow_runtime.rs`
 
 `ShareForwardRequest.header_bytes` was always `Vec::new()`. The forwarding code
 built `header_hash = "0x" + hex::encode(&[])` = `"0x"`, causing HeroMiners to
 silently reject ZANO shares. Fix: pass `None` when `header_bytes` is empty.
 
 ### Fix 3: ZION_STREAM{1,2,3}_ENABLED env vars ignored
-**Commit `abff6874b`** — `V31/L1/miner/src/config.rs` + `bin/zion-miner.rs` + `runtime.rs`
+**Commit `6330e5f20`** — `V31/L1/miner/src/config.rs` + `bin/zion-miner.rs` + `runtime.rs`
 
 - `config.rs`: Read `ZION_STREAM{1,2,3}_ENABLED` env vars (default: true)
 - `bin/zion-miner.rs`: `--no-*` flags now augment env vars instead of overriding
@@ -214,9 +214,9 @@ silently reject ZANO shares. Fix: pass `None` when `header_bytes` is empty.
 
 | Commit | Description |
 |--------|-------------|
-| `4b37b4c11` | fix(pool): add share forwarding logs + fix empty header_bytes for ZANO |
-| `eaac07699` | docs: update Trinity engine report with debug findings & bug fixes |
-| `abff6874b` | fix(miner): respect ZION_STREAM{1,2,3}_ENABLED env vars |
+| `7fb41d0a3` | fix(pool): add share forwarding logs + fix empty header_bytes for ZANO |
+| `338fa2544` | docs: update Trinity engine report with debug findings & bug fixes |
+| `6330e5f20` | fix(miner): respect ZION_STREAM{1,2,3}_ENABLED env vars |
 
 ---
 

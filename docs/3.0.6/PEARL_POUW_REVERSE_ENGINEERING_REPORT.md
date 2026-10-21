@@ -226,9 +226,9 @@ Standardní konfigurace: m=512, n=512, k=4096, noise_rank=256
 
 ---
 
-## 8. Implementation Changes (commity 8edfe6b80, 952b8747f)
+## 8. Implementation Changes (commity 62ac11b55, 3801f727f)
 
-### AuXpow/src/auxpow_client.rs (commit 952b8747f — port 5571)
+### AuXpow/src/auxpow_client.rs (commit 3801f727f — port 5571)
 - **Default port:** 5571 (bylo 5566)
 - **Handshake:** `mining.authorize` only (žádný `mining.configure` ani `mining.subscribe`)
 - **Authorize params:** objekt `{wallet, worker, pass, agent}` (bylo pole `[wallet, worker]`)
@@ -237,12 +237,12 @@ Standardní konfigurace: m=512, n=512, k=4096, noise_rank=256
 - `parse_notify_params()` — parsuje `{header, height, job_id, target}` objekt (již implementováno)
 - `pearl_configure()` — ponecháno jako dead code (pro případnou zpětnou kompatibilitu)
 
-### AuXpow/src/pearl_real_pouw.rs (commit a8aa4d1d3)
+### AuXpow/src/pearl_real_pouw.rs (commit de1938268)
 - Proof serializace do flat binary formátu (matches alpha-miner `append_matrix_proof`)
 - Noised A/B^T row fragments pro jackpot verifikaci
 - Multi-chunk row extraction (k=4096 → 4 chunky po 1024 bytech)
 
-### AuXpow/src/types.rs (commit 952b8747f)
+### AuXpow/src/types.rs (commit 3801f727f)
 - `default_pool()` pro PRL: `us2.alphapool.tech:5571` (bylo `:5566`)
 
 ### V3/L1/miner/src/main.rs

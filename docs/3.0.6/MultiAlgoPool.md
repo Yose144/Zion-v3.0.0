@@ -246,13 +246,13 @@ Additionally, the EPIC pool connection drops frequently (every ~5 min), causing 
 login OK → getjobtemplate → mining for ~5 min → connection drops → reconnect → login OK → ...
 ```
 
-### Fix applied (2026-07-17, commit `92cb18bc8` + `49789b418`)
+### Fix applied (2026-07-17, commit `cbec675bc` + `dd227e79f`)
 
 Two fixes deployed on Edge server:
 
-**1. EPIC submit race (commit `49789b418`):** `submit_share()` EPIC path switched from `send_request` (async channel) to `send_request_inline` (exclusive reader mutex). Same approach as `epic_login` and `epic_getjobtemplate`. The submit path now holds the reader mutex exclusively, preventing the poll loop from stealing the response.
+**1. EPIC submit race (commit `dd227e79f`):** `submit_share()` EPIC path switched from `send_request` (async channel) to `send_request_inline` (exclusive reader mutex). Same approach as `epic_login` and `epic_getjobtemplate`. The submit path now holds the reader mutex exclusively, preventing the poll loop from stealing the response.
 
-**2. EPIC connection stability (commit `92cb18bc8`):** Root cause of 5-min disconnects: keepalive timer was sending bare `keepalive` requests, but EPIC server doesn't respond to those with any data. The `poll_messages` 300s read timeout fired every 5 min, triggering unnecessary reconnects. Fix: keepalive timer now sends `getjobtemplate` (fire-and-forget) every 60s — server responds with a new job, which the poll loop picks up and resets the 300s read timeout.
+**2. EPIC connection stability (commit `cbec675bc`):** Root cause of 5-min disconnects: keepalive timer was sending bare `keepalive` requests, but EPIC server doesn't respond to those with any data. The `poll_messages` 300s read timeout fired every 5 min, triggering unnecessary reconnects. Fix: keepalive timer now sends `getjobtemplate` (fire-and-forget) every 60s — server responds with a new job, which the poll loop picks up and resets the 300s read timeout.
 
 Verified on Edge: EPIC bridge stable, no `read timeout` reconnects after fix.
 
@@ -317,12 +317,12 @@ cargo build --release
 
 ## 9. Next Steps
 
-1. ~~**Fix EPIC submit race condition** — switch `submit_share` EPIC path from `send_request` to `send_request_inline`~~ ✅ DONE (commit `49789b418`, deployed on Edge)
-2. ~~**Investigate EPIC connection stability** — connection drops every ~5 min~~ ✅ DONE (commit `92cb18bc8`, root cause: bare `keepalive` doesn't generate response → 300s read timeout; fix: `getjobtemplate` as keepalive)
+1. ~~**Fix EPIC submit race condition** — switch `submit_share` EPIC path from `send_request` to `send_request_inline`~~ ✅ DONE (commit `dd227e79f`, deployed on Edge)
+2. ~~**Investigate EPIC connection stability** — connection drops every ~5 min~~ ✅ DONE (commit `cbec675bc`, root cause: bare `keepalive` doesn't generate response → 300s read timeout; fix: `getjobtemplate` as keepalive)
 3. **Investigate XMR stale share rate** — RESOLVED (not stale, `below_target`). The Edge CPU miner (2 threads, `barker`) mines XMR via `parallel_stream_cpu_embedded` but the CPU hashrate is too low to meet the XMR pool's target difficulty. Shares are rejected with `status=below_target`, not stale. The XMR target `cb10c7ba...` requires ~2 KH/s RandomX hashrate, but the Edge CPU produces <100 H/s. This is expected behavior — XMR mining is not profitable on Edge CPU. To fix: either increase CPU threads, lower XMR pool difficulty (if pool supports it), or disable XMR stream on Edge CPU.
 4. **Autotune GPU scheduling** — ProgPow hashrate is ~5 MH/s vs expected ~30 MH/s (GPU shared with Deeksha); investigate time-slicing or dual-kernel scheduling. Note: ProgPow kernel hangs on Vega 64/SMOS (see VegaRig.md §4) — needs separate OpenCL compiler investigation.
 5. ~~**Enable more coins** — add wallets for KAS, ALPH, ERG, RVN, ETC etc. in `/etc/zion/edge-environment.sh` to open more bridges~~ ✅ RVN DONE — wallet `RBv3HUypznKQ8gHnATNiDu145hs7pZj6DZ` added to `/etc/zion/edge-environment.sh`, pool restarted, RVN bridge connected to `rvn.2miners.com:6060` (KawPow). E2E verified: CoinPreference(gpu_coin=RVN) → pool embeds RVN job → external_submit → external_result(accepted=false, below_target — expected with fake hash). 7 bridges now active: KAS, EPIC, QUAI, RVN, VRSC, RTM, XMR. Remaining coins (ALPH, ERG, ETC, EVR, MEWC, FLUX, CLORE, PRL, BEAM, KLS, ZCL, QTC, VTC, IRON, NEXA, DNX) need wallets.
-6. ~~**Profit router integration** — `AutonomousProfitRouter` in `V3/L1/miner/src/autonomous.rs` can auto-select the most profitable GPU coin based on live estimates~~ ✅ DONE (commit `8c9701a09`) — wired live WhatToMine API into `fetch_profits()`, verified end-to-end on Edge: VRSC selected for CPU stream, CoinPreference sent to pool, pool embedded VRSC job. Env vars: `ZION_AUTONOMOUS=1`, `ZION_PROFIT_INTERVAL=300`, `ZION_PROFIT_HYSTERESIS=15`, `ZION_ELECTRICITY_PRICE=0.12`.
+6. ~~**Profit router integration** — `AutonomousProfitRouter` in `V3/L1/miner/src/autonomous.rs` can auto-select the most profitable GPU coin based on live estimates~~ ✅ DONE (commit `35c01bc0c`) — wired live WhatToMine API into `fetch_profits()`, verified end-to-end on Edge: VRSC selected for CPU stream, CoinPreference sent to pool, pool embedded VRSC job. Env vars: `ZION_AUTONOMOUS=1`, `ZION_PROFIT_INTERVAL=300`, `ZION_PROFIT_HYSTERESIS=15`, `ZION_ELECTRICITY_PRICE=0.12`.
 7. **Deploy EPIC submit fix on Vega rig** — miner binary on Vega needs rebuild with EPIC `send_request_inline` fix. Currently blocked by ProgPow kernel hang on SMOS (stream2 disabled). Fix is already in pool binary on Edge.
 8. ~~**NiceHash integration** — route supported coins to NiceHash for BTC payout~~ ✅ DONE (2026-07-18) — `ZION_POOL_AUXPOW_POOL_PREFERENCE=nicehash` set on Edge, BTC wallet `3QydNRmKkdcZYnQdTRN22yVTY3hZY88gTk`. 4 coins live on NiceHash (KAS, RVN, QUAI, VRSC), 3 coins fallback to default pools (DCR→WoolyPooly, EPIC→epicmine.io, XMR→MoneroOcean due to KYC requirement). NiceHash `set_extranonce` subscribe quirk handled in `auxpow_client.rs`. 11 more coins can be enabled by adding wallets (ETC, ERG, ALPH, BEAM, FLUX, IRON, NEXA, ZCL, CLORE + non-NiceHash: EVR, MEWC, PRL, KLS, QTC, VTC, RTM, DNX).
 

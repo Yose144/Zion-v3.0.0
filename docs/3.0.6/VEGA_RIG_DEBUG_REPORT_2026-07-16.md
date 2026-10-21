@@ -94,7 +94,7 @@ and AVX instructions that the Pentium G4560 does not support.
 
 ## 4. Work Done (Chronological)
 
-### Phase 1: Reorder external stream send (commit `a398cd68f`)
+### Phase 1: Reorder external stream send (commit `5ef100293`)
 
 - Moved `ext_gpu_tx.send()` before `set_stream_weights()` and `gpu_scan_job()`
   in the main mining loop to prevent OpenCL queue blocking from delaying
@@ -104,7 +104,7 @@ and AVX instructions that the Pentium G4560 does not support.
 - **Files:** `V3/L1/miner/src/main.rs`
 - **Result:** External job dispatch no longer blocked, but SIGILL persisted.
 
-### Phase 2: Disable OpenMP + force `-march=x86-64` (commit `a398cd68f`)
+### Phase 2: Disable OpenMP + force `-march=x86-64` (commit `5ef100293`)
 
 - Removed `-fopenmp` flag and `libgomp` linking on Linux in `AuXpow/build.rs`
   (libgomp contains AVX instructions).
@@ -123,7 +123,7 @@ and AVX instructions that the Pentium G4560 does not support.
 - **Result:** ProgPow DAG loads from disk cache, but KawPow DAG still
   crashes (epoch changes frequently, can't pre-generate).
 
-### Phase 4: GPU DAG generation (commit `aa8ceb396` by other dev)
+### Phase 4: GPU DAG generation (commit `98cf5ec7a` by other dev)
 
 - Another developer committed "DAG generation exclusively on GPU, never on CPU".
 - The full DAG is now computed on the GPU via OpenCL kernel
@@ -323,11 +323,11 @@ Once SIGILL is fixed, verify all 3 streams:
 ## 9. Git History (relevant commits)
 
 ```
-a398cd68f fix(miner): reorder ext_stream send + disable OpenMP for non-AVX CPUs  [Devin]
-1e751ac56 perf(progpow): 6.6x hashrate improvement via ds_bpermute + GROUP_SIZE=256
-aa8ceb396 feat(miner): DAG generation exclusively on GPU, never on CPU
-7ad18ae1c fix(miner): VRSC/VerusHash shares not accepted — read_next_result rejected ExternalResult
-5f31ce2fd perf(verushash): 2.3x VRSC speedup via fixupkey + pre-computed curBuf
+5ef100293 fix(miner): reorder ext_stream send + disable OpenMP for non-AVX CPUs  [Devin]
+b10fe4d5b perf(progpow): 6.6x hashrate improvement via ds_bpermute + GROUP_SIZE=256
+98cf5ec7a feat(miner): DAG generation exclusively on GPU, never on CPU
+bd8c44deb fix(miner): VRSC/VerusHash shares not accepted — read_next_result rejected ExternalResult
+b1ca7154c perf(verushash): 2.3x VRSC speedup via fixupkey + pre-computed curBuf
 ```
 
 ---

@@ -1,6 +1,6 @@
 # GPU OpenCL Optimization — 2026-04-01
 
-**Commit:** `7179fe8f` (main)  
+**Commit:** `b873cfc1` (main)  
 **Hardware:** AMD RX 5600 XT (gfx1010, RDNA1, 36 CU, 6 GB VRAM)  
 **Before:** 5.5 KH/s → **After:** 8.83 KH/s (+60%)
 

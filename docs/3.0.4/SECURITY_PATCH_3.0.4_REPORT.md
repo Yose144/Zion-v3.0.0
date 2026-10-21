@@ -8,7 +8,7 @@
 
 ## Shrnutí
 
-Security patch 3.0.4 je kompletní. Fáze 5 (air-gapped key rotace) proběhla při hard resetu 2026-07-06 — všechny klíče vygenerovány, na flash disku, genesis.rs odpovídá. Pool payout SK aplikován na serveru a ověřen. EVM validator a escrow SKs jsou v encrypted archivu na flash disku, na serveru placeholdery (aplikovat při cross-chain operacích). Edge binárky rebuildnuty 2026-07-09 z nejnovějšího kódu (`754fe4a0`, bincode fix).
+Security patch 3.0.4 je kompletní. Fáze 5 (air-gapped key rotace) proběhla při hard resetu 2026-07-06 — všechny klíče vygenerovány, na flash disku, genesis.rs odpovídá. Pool payout SK aplikován na serveru a ověřen. EVM validator a escrow SKs jsou v encrypted archivu na flash disku, na serveru placeholdery (aplikovat při cross-chain operacích). Edge binárky rebuildnuty 2026-07-09 z nejnovějšího kódu (`510838ea`, bincode fix).
 
 ---
 
@@ -45,8 +45,8 @@ Code hardening:
 
 ## Fáze 3 — Push + rebuild + binary swap ✅
 
-- Server `62.171.141.136` — git re-clone 2026-07-09 na `754fe4a0`
-- **Edge rebuild 2026-07-09:** Rust toolchain nainstalován, 5 binárek rebuildnuty z `754fe4a0` (node, pool, bridge, dao, warp)
+- Server `62.171.141.136` — git re-clone 2026-07-09 na `510838ea`
+- **Edge rebuild 2026-07-09:** Rust toolchain nainstalován, 5 binárek rebuildnuty z `510838ea` (node, pool, bridge, dao, warp)
 - F4.7 + F5 v binárkách (log potvrzen: `max_tx_amount_activation_height=1`, `balance_check_activation_height=0`)
 - 11/11 služeb active (node, node2, pool, bridge, dao, warp, oasis, free-world, issobella, dashboard, nginx)
 - Staré binárky zálohovány: `/root/zion/binaries-backup-2026-07-07/`
@@ -125,8 +125,8 @@ Hard reset s rotací proběhl 2026-07-06. Audit 2026-07-09 ověřil:
 | F4.7 | Aktivní od height 1 (`ZION_MAX_TX_AMOUNT_HEIGHT=1`) |
 | F5 | Aktivní od genesis (`ZION_BALANCE_CHECK_HEIGHT=0`) |
 | Pool | Aktivně minuje (miner `vega-smos`, shares Accepted) |
-| Edge git | `754fe4a0` (re-clone 2026-07-09) |
-| Edge binárky | Rebuild 2026-07-09 z `754fe4a0` (bincode fix, all security patches) |
+| Edge git | `510838ea` (re-clone 2026-07-09) |
+| Edge binárky | Rebuild 2026-07-09 z `510838ea` (bincode fix, all security patches) |
 | Web | Maintenance mode (zionterranova.com) |
 
 ---

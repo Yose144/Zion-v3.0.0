@@ -211,7 +211,7 @@
 The v5 (async htod copies) and v6 (launch_batch/collect_batch pipelining)
 optimizations documented above were originally only applied to the
 `cuda_deeksha_lite` and `cuda_deeksha_lite_fire` modules. As of commit
-`d93cd232d`, they are now also applied to the `cuda_deeksha` (ekam) module.
+`abef64a91`, they are now also applied to the `cuda_deeksha` (ekam) module.
 
 Additionally, the PTXAS O3 hang on the ekam kernel was fixed by adding
 `__launch_bounds__(256)` to all kernel entry points and using `-O2` as

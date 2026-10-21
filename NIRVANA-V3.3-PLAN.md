@@ -9,7 +9,7 @@
 
 ## 1. Verifikovaný stav k 2026-10-21 (code-verified truth)
 
-Změřeno na Edge (`zion-v6`, `vmi3425821`) + lokální repo HEAD `fc3670b37`:
+Změřeno na Edge (`zion-v6`, `vmi3425821`) + lokální repo HEAD `92ef9e1aa`:
 
 | Vrstva | Kód (LOC) | Stav | Produkční důkaz |
 |---|---|---|---|

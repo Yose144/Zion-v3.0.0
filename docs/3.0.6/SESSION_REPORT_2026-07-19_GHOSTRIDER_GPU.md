@@ -47,23 +47,23 @@ Pass: 15/15, Fail: 0/15
 ```
 
 ### Commits
-- `da703b667` fix(ghostrider): remove inline from cross-file functions for AMD OpenCL linker
-- `c7fcc2df7` fix(auxpow): correct Hamsi T512 local table indexing in GhostRider OpenCL (Mac)
-- `ba3b7bd94` SKEIN padding fix + report (Mac, includes our SPH_T64 cleanup)
+- `1bf07f106` fix(ghostrider): remove inline from cross-file functions for AMD OpenCL linker
+- `1e806da07` fix(auxpow): correct Hamsi T512 local table indexing in GhostRider OpenCL (Mac)
+- `a31c2a405` SKEIN padding fix + report (Mac, includes our SPH_T64 cleanup)
 
 ---
 
 ## 2. CUDA Feature Gate for non-CUDA builds
 
 ### Bug
-Commit `f7a86032d` added `cudarc::driver::CudaDevice` references in `main.rs:3296` and `gpu_backend.rs:1645` without `#[cfg(feature = "gpu-cuda")]` gates. The `full` feature only includes `gpu-opencl` + `native-all`, NOT `gpu-cuda`, so `cargo build --features full` failed with `cannot find module or crate 'cudarc'`.
+Commit `eda5eebdf` added `cudarc::driver::CudaDevice` references in `main.rs:3296` and `gpu_backend.rs:1645` without `#[cfg(feature = "gpu-cuda")]` gates. The `full` feature only includes `gpu-opencl` + `native-all`, NOT `gpu-cuda`, so `cargo build --features full` failed with `cannot find module or crate 'cudarc'`.
 
 ### Fix
 - `main.rs:3296-3299`: gated `shared_cuda_dev` parameter with `#[cfg(feature = "gpu-cuda")]` / `#[cfg(not(feature = "gpu-cuda"))]` (latter uses `Option<()>`)
 - `gpu_backend.rs:1641-1663`: added `#[cfg(not(feature = "gpu-cuda"))]` fallback `create_gpu_backend_with_cuda_device` that accepts `Option<()>` and ignores it
 
 ### Commit
-- `bedb9e8f7` fix(gpu): CUDA feature gate for non-CUDA builds + OpenCL scratchpad interleaved layout
+- `457b430cf` fix(gpu): CUDA feature gate for non-CUDA builds + OpenCL scratchpad interleaved layout
 
 ---
 
@@ -84,7 +84,7 @@ Added `"native-hashers"` to the `full` feature array in `V3/L1/miner/Cargo.toml`
 - VRSC CPU stream shares accepted simultaneously
 
 ### Commit
-- `92a4a9145` feat(miner): include native-hashers in 'full' feature for EPIC/KawPow DAG
+- `e1d265563` feat(miner): include native-hashers in 'full' feature for EPIC/KawPow DAG
 
 ---
 
@@ -115,7 +115,7 @@ Added `"native-hashers"` to the `full` feature array in `V3/L1/miner/Cargo.toml`
 ## 5. Pool Setup page — Edge dashboard deploy
 
 ### Commit
-- `a55cfa2b2` feat(dashboard+explorer): Pool Setup page + Explorer v4 engine plan
+- `babef3dd6` feat(dashboard+explorer): Pool Setup page + Explorer v4 engine plan
 
 ### Files (1071 lines added)
 - `ZION_OS/dashboard/dashboard.html`: new "Setup" tab with 3 stream cards (ZION GPU / GPU External / CPU External), algorithm/backend/worksize selectors, enable toggles, Save + Restart Pool buttons, supported AuxPoW coin grid (23 coins)
@@ -138,7 +138,7 @@ Added `"native-hashers"` to the `full` feature array in `V3/L1/miner/Cargo.toml`
 ## 6. Backup node fresh sync
 
 - DB wiped (old chain state at height 9355 with gap 1-10003 unrecoverable due to Edge `block_retention=1000` pruning)
-- Service restarted with `ZION_BLOCK_RETENTION=0` (commit `62d8619bf`) — backup node is now the canonical full-history archive
+- Service restarted with `ZION_BLOCK_RETENTION=0` (commit `27d6eae8b`) — backup node is now the canonical full-history archive
 - Fresh sync from Edge: backup node now tracks tip live (11325 = Edge 11325)
 - Note: blocks 1-10003 are permanently lost (pruned before any backup captured them); backup node retains blocks 10004+ going forward
 
@@ -180,9 +180,9 @@ Added `"native-hashers"` to the `full` feature array in `V3/L1/miner/Cargo.toml`
 - `AuXpow/csrc/opencl/ghostrider_cn.cl` — removed `inline` from 8 cross-file functions
 - `AuXpow/csrc/opencl/ghostrider_kernel.cl` — removed `inline` from 3 helper functions
 - `V3/L1/miner/Cargo.toml` — added `native-hashers` to `full` feature
-- `V3/L1/miner/src/main.rs` — CUDA feature gate (from earlier session, commit `bedb9e8f7`)
-- `V3/L1/miner/src/gpu_backend.rs` — CUDA feature gate fallback (from earlier session, commit `bedb9e8f7`)
-- `ZION_OS/dashboard/{app.py,dashboard.html,dashboard.js}` — Pool Setup page (commit `a55cfa2b2`)
+- `V3/L1/miner/src/main.rs` — CUDA feature gate (from earlier session, commit `457b430cf`)
+- `V3/L1/miner/src/gpu_backend.rs` — CUDA feature gate fallback (from earlier session, commit `457b430cf`)
+- `ZION_OS/dashboard/{app.py,dashboard.html,dashboard.js}` — Pool Setup page (commit `babef3dd6`)
 - `docs/3.0.6/SESSION_REPORT_2026-07-19_GHOSTRIDER_GPU.md` — this report
 
 ## Edge server changes (not in git)

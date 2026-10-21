@@ -217,4 +217,4 @@ npx hardhat verify --network base --contract sol/ZIONBridge.sol:ZIONBridge \
 - [`3.0.4.md`](./3.0.4.md) §1.5 — Basescan verify results
 - [`V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md`](./V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md) — DeFi deploy runbook
 - [`ROADMAP.md`](./ROADMAP.md) §2.2 — Basescan verification item
-- Commit `bbef2c5e` — docs: Basescan verify results
+- Commit `b15852eb` — docs: Basescan verify results

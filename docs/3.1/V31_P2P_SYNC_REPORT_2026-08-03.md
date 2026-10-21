@@ -3,7 +3,7 @@
 > **Autor:** Devin (GLM-5.2 High) + Yose
 > **Datum:** 2026-08-03
 > **Verze:** v3.1.0-alpha.2
-> **Tag:** `v3.1.0-alpha.2` (commit `2ed6d35c9`)
+> **Tag:** `v3.1.0-alpha.2` (commit `108879012`)
 > **Stav:** ✅ V31 node LIVE na Edge, synchronizuje se s V3 mainnet
 
 ---
@@ -195,7 +195,7 @@ Service je `enabled` (startuje po rebootu) a `active (running)`.
 | `V31/L1/core/src/v3_state.rs` | stored_hash: None pro test bloky |
 | `V31/L1/core/src/v3_template.rs` | stored_hash: None pro template bloky |
 
-Commit: `2ed6d35c9` — 6 files changed, 83 insertions(+), 14 deletions(-)
+Commit: `108879012` — 6 files changed, 83 insertions(+), 14 deletions(-)
 
 ---
 

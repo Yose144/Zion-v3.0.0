@@ -3231,11 +3231,11 @@ export default function MissionControlDashboard() {
                   { hash: 'c7787a2c7', msg: 'release(miner): zion-miner v3.2.0 public build with public build log masking', date: '2026-08-21' },
                   { hash: '782ab2b7e', msg: 'cuda: verified backend — kernels bit-exact vs CPU reference', date: '2026-10-07' },
                   { hash: '34ee2a072', msg: 'kat: qpow CUDA case — clean KAT sweep', date: '2026-10-07' },
-                  { hash: '03aa2eb7b', msg: 'verushash CUDA: full-hash consensus fix — kernel ≡ native ref', date: '2026-10-08' },
+                  { hash: 'c23b4ea4e', msg: 'verushash CUDA: full-hash consensus fix — kernel ≡ native ref', date: '2026-10-08' },
                   { hash: 'e9d60b109', msg: 'pool: full AuxPoW coin catalogue exposure + parity fixes', date: '2026-10-08' },
                   { hash: '7d206fc86', msg: 'desktop-agent: one-click algo/coin switching E2E + pool capability probe', date: '2026-10-08' },
-                  { hash: 'd3186799e', msg: 'fix(multichain): trustless public HTLC claim/refund with payout pinning', date: '2026-10-07' },
-                  { hash: '08783ca49', msg: 'miner: per-session QPoW nonce partition — duplicate-share fix', date: '2026-10-08' },
+                  { hash: '492e78a05', msg: 'fix(multichain): trustless public HTLC claim/refund with payout pinning', date: '2026-10-07' },
+                  { hash: '44b125bc5', msg: 'miner: per-session QPoW nonce partition — duplicate-share fix', date: '2026-10-08' },
                 ].map(c => (
                   <div key={c.hash} className="flex items-center gap-3 text-sm py-2 px-4 zion-tile">
                     <span className="font-mono text-xs text-zion-gold bg-zion-gold/10 px-2 py-1 rounded">{c.hash}</span>

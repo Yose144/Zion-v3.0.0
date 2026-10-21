@@ -1,7 +1,7 @@
 # ZION 3.2 — Whole-Project Internal Audit (2026-10-05)
 
 > **Type:** internal audit performed by the project's own autonomous agent (Devin). **This is not the independent external audit (gate G9), and it does not replace it.**
-> **Audited commit:** `29a6b8a8a` (origin/main, 2026-10-05 12:09 CEST) · **Fix branch:** `audit/3.2-internal-audit`
+> **Audited commit:** `7a4d7791f` (origin/main, 2026-10-05 12:09 CEST) · **Fix branch:** `audit/3.2-internal-audit`
 > **Production snapshot:** Edge, 2026-10-05 ~12:30–14:30 CEST (read-only except for the mitigations listed in §5)
 > **Status:** findings triaged. Critical exposures were mitigated on production the same day. Code fixes are tracked in §2 and in the deployment record `DEPLOY_2026-10-05_AUDIT_FIXES.md`.
 
@@ -25,7 +25,7 @@
 
 ## 1. Scope and method
 
-### 1.1 Measured size (non-blank lines, `git grep` on `29a6b8a8a`, inline tests included)
+### 1.1 Measured size (non-blank lines, `git grep` on `7a4d7791f`, inline tests included)
 
 | Area | Path | Lines | Files |
 |---|---|---:|---:|
@@ -194,7 +194,7 @@ Severity is about impact on the production system as deployed on 2026-10-05. Sta
 
 ### IA-06 — L1 P2P fork choice (High; latent in the current topology)
 
-**Where.** `V31/L1/core/src/p2p.rs` `sync_peer`, introduced on 2026-10-04 by `7210fe4df`.
+**Where.** `V31/L1/core/src/p2p.rs` `sync_peer`, introduced on 2026-10-04 by `0aca45144`.
 
 **Problem.**
 
@@ -313,7 +313,7 @@ Rust: see §4 (`cargo audit`); the earlier DEP-001..003 (ethers chain) remain de
 | "Protocol string bumps to 3.2.0 in the release commit" | Protocol strings are handshake labels and stay as they are; the binary version is exposed as `node_version`. | `RELEASE_ARTIFACTS.md` |
 | G8 run #2 shown as running / PENDING | The gate has failed (critical incidents); the window keeps running only to collect data. | G8 tracker (fix D), dashboards |
 
-## 4. Automated evidence (audited commit `29a6b8a8a`)
+## 4. Automated evidence (audited commit `7a4d7791f`)
 
 | Check | Result |
 |---|---|
@@ -358,7 +358,7 @@ Both nginx files and the ZIS environment were backed up on the host before the c
 
 ## Addendum — Remediation deploy 2026-10-05 (~14:00–16:20 UTC)
 
-**Deployed commit:** `94ed5fba1` (audit branch rebased onto main, pushed as main)
+**Deployed commit:** `3b1d70388` (audit branch rebased onto main, pushed as main)
 **Backup:** `/opt/zion/backup/deploy-20261005T140248Z` (old zion-node `a0c86325…`, warpd `20531e07…`, identity dist, website `.next`, g8_evidence.py)
 
 ### Deployed artifacts
@@ -383,7 +383,7 @@ Both nginx files and the ZIS environment were backed up on the host before the c
 - **cargo audit:** ~~1 vulnerability~~ **0 vulnerabilities after `rustls 0.23.42 → 0.23.45`** (`RUSTSEC-2026-0285` resolved same day; aws-lc-rs 1.18.1, rustls-webpki 0.103.15 pulled in; `cargo check --workspace` + zion-pool 178/178 green). Remaining: 9 warnings — unmaintained (fxhash, instant, paste, ring 0.16, rustls-pemfile ×2), unsound `lru` (RUSTSEC-2026-0002, -0253), yanked chacha20.
 - **npm audit (identity):** ~~7 advisories~~ **0 vulnerabilities after upgrade same day** — Fastify 4→5.12.5, `@fastify/jwt` 8→10.2.2 (fast-jwt ^6.2.4 — fixes critical ≤6.2.3: algorithm confusion, iss-validation bypass, cache confusion, empty-HMAC-secret bypass), cookie/cors/rate-limit → v5-compat majors, google-auth-library → 11 (drops vulnerable uuid dep via gaxios 7). Verified: tsc clean, 22/22 tests, real boot vs throwaway Postgres. **Deployed to Edge 2026-10-05** (`npm ci` + prisma-client rsync + restart; `/health` 200, JWKS 200, unauth probes 401).
 - **gitleaks:** 1415 history findings (burned secrets — documented, rotated). HEAD scan: 160 hits in tracked files, all triaged as test vectors/doc examples/deployed-contract data; none are the Fix-H scrubbed secrets.
-- **Workspace `cargo test`:** per-package sweep completed — all crates pass (l1-types, cosmic-harmony, miner, native-ffi, dao, ncl, ai-native, oasis, free-world, issobella, smoke, sdk, cli + core/pool/multichain above). One pre-existing failure found and fixed: `zion-smoke::warp_htlc_cross_chain_smoke` predated the upstream `source_confirmed` guard (d74b479ac); test now confirms the source lock via `set_source_lock` (`8e8be1e9c`).
+- **Workspace `cargo test`:** per-package sweep completed — all crates pass (l1-types, cosmic-harmony, miner, native-ffi, dao, ncl, ai-native, oasis, free-world, issobella, smoke, sdk, cli + core/pool/multichain above). One pre-existing failure found and fixed: `zion-smoke::warp_htlc_cross_chain_smoke` predated the upstream `source_confirmed` guard (72ab1301a); test now confirms the source lock via `set_source_lock` (`e6facb628`).
 
 ### Incident during deploy
 

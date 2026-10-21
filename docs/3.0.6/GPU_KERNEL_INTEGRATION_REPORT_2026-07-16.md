@@ -1,7 +1,7 @@
 # GPU Mining Kernel Integration Report — 2026-07-16
 
 > **Session:** OpenCL kernel implementation + stratum E2E testing for 8 new no-DAG GPU-mineable coins
-> **Commits:** `f6df75b64` → `b39f5cae8` (9 commits, 20 files, +9799/-87 lines)
+> **Commits:** `d6da35fc2` → `5f85f5f85` (9 commits, 20 files, +9799/-87 lines)
 > **Tests:** 173/173 AuXpow library tests pass, 0 errors
 > **Status:** 5/8 coins stratum E2E verified, 3/8 kernels fully mineable, 2/8 kernel-ready
 
@@ -41,7 +41,7 @@ Tato session implementovala OpenCL GPU mining kernely pro 8 nových no-DAG GPU-m
 | **Algorithm** | FishHash (Blake3 DAG, 512 parents per item) |
 | **DAG** | 37 748 717 items × 128 bytes = ~4.6 GB |
 | **Source** | FishHashMiner by Lolliedieb (`kernels/fishhash.cl`) |
-| **Commit** | `f6df75b64` |
+| **Commit** | `d6da35fc2` |
 | **Status** | ✅ Fully integrated — `build_fishhash_kernel()` + DAG + `mine()` dispatch |
 
 **Algorithm flow:**
@@ -65,7 +65,7 @@ Tato session implementovala OpenCL GPU mining kernely pro 8 nových no-DAG GPU-m
 | **Algorithm** | KarlsenHashV2 (FishHashPlus + Blake3) |
 | **DAG** | Same as FishHash (shared DAG infrastructure) |
 | **Source** | karlsend Go reference + FishHashMiner |
-| **Commit** | `f6df75b64` |
+| **Commit** | `d6da35fc2` |
 | **Status** | ✅ Fully integrated — shares DAG with FishHash |
 
 **Key difference from FishHash:**
@@ -85,7 +85,7 @@ Tato session implementovala OpenCL GPU mining kernely pro 8 nových no-DAG GPU-m
 | **Algorithm** | NexaPow (double-SHA256 → secp256k1 Schnorr → SHA256) |
 | **Source** | UltrafastSecp256k1 by shrec (MIT License, Copyright (c) 2026 Vano Chkheidze) |
 | **Repo** | https://github.com/shrec/UltrafastSecp256k1 |
-| **Commit** | `77613ad50` |
+| **Commit** | `85a2bf408` |
 | **Status** | ✅ Fully integrated — `build_nexapow_kernel()` + `mine()` dispatch |
 
 **Algorithm flow (from https://spec.nexa.org/mining/NexaPOW/):**
@@ -119,7 +119,7 @@ Tato session implementovala OpenCL GPU mining kernely pro 8 nových no-DAG GPU-m
 | **Kernel files** | `verthash_kernel.cl` (289), `sha3_512_precompute.cl` (145), `sha3_512_256.cl` (132) |
 | **Algorithm** | Verthash (I/O-bound, 1.2 GB data file, 4096 memory seek iterations) |
 | **Source** | VerthashMiner by CryptoGraphics (GPL) |
-| **Commit** | `646d14f59` |
+| **Commit** | `a4ac61a2f` |
 | **Status** | ✅ Kernel ready, ⚠️ Host-side 1.2 GB data file loader TODO |
 
 **What's done:**
@@ -141,7 +141,7 @@ Tato session implementovala OpenCL GPU mining kernely pro 8 nových no-DAG GPU-m
 | **Kernel files** | `equihash_kernel.cl` (851), `equihash_192_7_param.h` (53) |
 | **Algorithm** | Equihash 192,7 (Wagner's generalized birthday problem, Blake2b) |
 | **Source** | silentarmy by mbevand (adapted from 200,9 to 192,7) |
-| **Commit** | `646d14f59` |
+| **Commit** | `a4ac61a2f` |
 | **Status** | ✅ Kernel ready, ⚠️ Multi-kernel Wagner dispatch TODO |
 
 **What's done:**
@@ -168,7 +168,7 @@ Tato session implementovala OpenCL GPU mining kernely pro 8 nových no-DAG GPU-m
 | **Kernel file** | `ghostrider_kernel.cl` (46 lines, documentation only) |
 | **Algorithm** | GhostRider (15 hash algorithms + 6 CryptoNight variants) |
 | **Source** | xmrig by SChernykh (C++ CPU reference, ~72K lines) |
-| **Commit** | `77613ad50` |
+| **Commit** | `85a2bf408` |
 | **Status** | ⚠️ Placeholder — requires porting 15 hash algos + 6 CN variants |
 
 **Algorithm:** Randomly selects 15 core algorithms (blake, bmw, groestl, jh, keccak, skein, luffa, cubehash, shavite, simd, echo, hamsi, fugue, shabal, whirlpool) in 3 groups of 5, interleaved with 3 random CryptoNight variants per block.
@@ -182,7 +182,7 @@ Tato session implementovala OpenCL GPU mining kernely pro 8 nových no-DAG GPU-m
 | **Kernel file** | `qhash_kernel.cl` (42 lines, documentation only) |
 | **Algorithm** | Qhash (quantum circuit simulation + SHA-3) |
 | **Source** | QubitCoin by super-quantum (C source, cuQuantum CUDA-only) |
-| **Commit** | `77613ad50` |
+| **Commit** | `85a2bf408` |
 | **Status** | ⚠️ Placeholder — requires quantum circuit simulation in OpenCL |
 
 **Algorithm:** Hash block data with SHA-256 → parameterize quantum circuit (rotation gates from 4-bit hash segments) → simulate quantum circuit (single-qubit gates + two-qubit CNOTs) → extract probabilities → 256-bit string → XOR with initial hash → SHA-3 → compare to target.
@@ -196,7 +196,7 @@ Tato session implementovala OpenCL GPU mining kernely pro 8 nových no-DAG GPU-m
 | **Kernel file** | `dynexsolve_kernel.cl` (47 lines, documentation only) |
 | **Algorithm** | DynexSolve (neuromorphic PoUW, SAT solving via ODE integration) |
 | **Source** | DynexSolve by dynexcoin (CUDA, partial source with redacted handlers) |
-| **Commit** | `77613ad50` |
+| **Commit** | `85a2bf408` |
 | **Status** | ⚠️ Placeholder — requires neuromorphic ODE solver in OpenCL |
 
 **Algorithm:** Download CNF computation file → initialize neuromorphic chip state → integrate ODE system (Runge-Kutta, 15-183 steps) → check Boolean satisfiability → hash solution → compare to target.
@@ -330,15 +330,15 @@ Testy provedeny z Edge serveru (62.171.141.136, datacenter VPS bez GPU) pomocí 
 
 | # | Commit | Type | Description |
 |---|--------|------|-------------|
-| 1 | `f6df75b64` | feat | FishHash + KarlsenHashV2 OpenCL kernels for IRON/KLS mining |
-| 2 | `1e9e6a301` | docs | Add XMR RandomX E2E results to mining optimization report |
-| 3 | `646d14f59` | feat | Verthash + Equihash 192,7 OpenCL kernels for VTC/ZCL mining |
-| 4 | `77613ad50` | feat | NexaPow kernel + GhostRider/Qhash/DynexSolve placeholders |
-| 5 | `a3d0f4a90` | docs | Update root docs with 8 new GPU kernel integration status |
-| 6 | `a6d8ad35d` | perf | Double-buffered async readback — 28-30 KH/s (+50% ZION hashrate) |
-| 7 | `6dfd335d4` | fix | ProgPow kernel SMOS compatibility — remove __builtin_amdgcn_wavefrontsize |
-| 8 | `1126bacca` | fix | Update default pools based on live stratum E2E testing |
-| 9 | `b39f5cae8` | docs | Add stratum E2E test results for 8 new coins |
+| 1 | `d6da35fc2` | feat | FishHash + KarlsenHashV2 OpenCL kernels for IRON/KLS mining |
+| 2 | `fb777e360` | docs | Add XMR RandomX E2E results to mining optimization report |
+| 3 | `a4ac61a2f` | feat | Verthash + Equihash 192,7 OpenCL kernels for VTC/ZCL mining |
+| 4 | `85a2bf408` | feat | NexaPow kernel + GhostRider/Qhash/DynexSolve placeholders |
+| 5 | `4164cf6d9` | docs | Update root docs with 8 new GPU kernel integration status |
+| 6 | `9c725c944` | perf | Double-buffered async readback — 28-30 KH/s (+50% ZION hashrate) |
+| 7 | `c92c7f88c` | fix | ProgPow kernel SMOS compatibility — remove __builtin_amdgcn_wavefrontsize |
+| 8 | `6018dd0ef` | fix | Update default pools based on live stratum E2E testing |
+| 9 | `5f85f5f85` | docs | Add stratum E2E test results for 8 new coins |
 
 **Total: 20 files changed, +9799 insertions, -87 deletions**
 

@@ -16,7 +16,7 @@
 | Fix summary | `V3/L1/native-ffi/csrc/ghostrider/real/gr.c` was using the buggy `yiimp-ghostrider` `getAlgoString` (reversed bytes, high-nibble-first, dropping the last algorithm) and was missing the post-CryptoNight `memset(&hash[8], 0, 32)`. Aligned with the Raptoreum daemon, `cpuminer-gr-avx2` and `xmrig`: low-nibble-first, forward byte order, last algorithm written, CN zeroing. |
 | Submit format | `[worker, job_id, "00000000", ntime, nonce_be_8char]` |
 | Result | `*** SHARE ACCEPTED! ***` after ~10 minutes of CPU mining on Edge. |
-| Commits | `f30219e28` `fix(ghostrider): correct RTM gr_hash algorithm selection and CN zeroing`  <br>`bfbda0732` `docs(AGENTS): record RTM GhostRider fix and verification commands` |
+| Commits | `2116dadb8` `fix(ghostrider): correct RTM gr_hash algorithm selection and CN zeroing`  <br>`d5ede683f` `docs(AGENTS): record RTM GhostRider fix and verification commands` |
 
 ## 2. Algorithm readiness matrix
 

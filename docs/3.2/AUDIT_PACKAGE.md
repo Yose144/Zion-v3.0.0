@@ -8,21 +8,23 @@
 
 ## 1. Pinned commit manifest
 
+> **⚠️ History rewrite 2026-10-21:** the repository history was rewritten with `git filter-repo` to purge committed build/backup artifacts (`V3/target2..target4`, `V3/target-check`, `V3/target-vega-fix`, `scripts/finetune/outputs`, `ZION_OS/dashboard/infra/target`, `BACKUP/`). All commit IDs after those points changed. The pinned commit below is the **rewritten equivalent** of the previously pinned `adfbd4f2a78dc0220c2318dcab683632a7801dc5` (identical source content, new object ID). Auditors who obtained SHA references from earlier revisions of this package must re-resolve them against the current `main` — the full old→new mapping is committed at [`docs/3.2/ops/SHA-REMAP-2026-10-21.json`](ops/SHA-REMAP-2026-10-21.json) (711 commits).
+
 | Item | Value |
 |---|---|
 | Repository | `github.com/Yose144/Zion-v3.0.0` (public mirror is a subset — auditors should work from the full tree) |
 | Branch | `main` |
-| Pinned HEAD | `adfbd4f2a78dc0220c2318dcab683632a7801dc5` |
-| Short | `adfbd4f2a` |
+| Pinned HEAD | `663c10be2d75cffe14081dbd6029fbf9ee947170` |
+| Short | `663c10be2` |
 
 **Production-relevant commits included in HEAD:**
 
 | Commit | Content |
 |---|---|
-| `2b20217c4` | Pool L1 RPC timeout 4s→12s (`ZION_L1_RPC_TIMEOUT_MS`), pool-side pre-orphan removal, watchdog 15s/2f→30s/3f; G8 stall RCA + disk audit reports |
-| `94f785035` | `zion-ncl` daemon binary + SQLite job persistence + systemd unit |
-| `b659224a0` | `scripts/prl-payout-review.sh` PRL payout readiness audit |
-| `adfbd4f2a` | Checklist updates (EDGE2 topology guard, QV/map verified live) |
+| `edb7ddbaf` | Pool L1 RPC timeout 4s→12s (`ZION_L1_RPC_TIMEOUT_MS`), pool-side pre-orphan removal, watchdog 15s/2f→30s/3f; G8 stall RCA + disk audit reports |
+| `6c28d4524` | `zion-ncl` daemon binary + SQLite job persistence + systemd unit |
+| `becd6ec13` | `scripts/prl-payout-review.sh` PRL payout readiness audit |
+| `663c10be2` | Checklist updates (EDGE2 topology guard, QV/map verified live) |
 
 **⚠️ Deployed-vs-source divergence auditors must know:**
 - Old-Edge pool binary is built from worktree `/root/build/pool-F5`, not `/opt/zion` checkout (the latter is a stale pre-PoolNG tree). After EDGE2 cutover all builds originate on EDGE2 from a clean checkout — `INFRA-SPLIT-PLAN.md`.
@@ -35,7 +37,7 @@
 rustc 1.95.0 (59807616e 2026-04-14) · cargo 1.95.0
 # Host: Ubuntu 24.04, x86_64, glibc 2.39
 
-git clone <repo> && cd Zion-v3.0.0 && git checkout adfbd4f2a
+git clone <repo> && cd Zion-v3.0.0 && git checkout 663c10be2
 cd V31
 
 # Full workspace check (fast)
@@ -81,7 +83,7 @@ npm ci && npm run build          # Next.js 16.2.9, output: standalone
 | ZIS identity TS (`APP&WEB/identity`, excl. generated) | 5,091 |
 | Solidity live contracts (`contracts/src` + `V31/contracts`) | 4,934 |
 
-Changes vs scope doc v2.0 (`29a6b8a8a`): pool +12.4k (Pool NG F1–F6 + PRL/QTC legs), miner +19k, ncl +0.8k (daemon). Re-verify before kickoff if HEAD moves.
+Changes vs scope doc v2.0 (`7a4d7791f`): pool +12.4k (Pool NG F1–F6 + PRL/QTC legs), miner +19k, ncl +0.8k (daemon). Re-verify before kickoff if HEAD moves.
 
 ## 4. Updated known-issue baseline (verify these)
 

@@ -61,4 +61,4 @@ L6 adresa: `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5` (kategorie `l6_issobel
 - `next build` (website-v2.9) OK lokálně i na Edge
 - Edge: `zion-website` + `zion-edge-python-dashboard` restartovány; `/l6-issobella`, `/l5-free-world`, `/genesis`, `/roadmap`, `/terranova` → 200
 
-Commit: `e99540281`
+Commit: `a8071ad0d`

@@ -274,13 +274,13 @@ Všechny VerusHash fixy jsou commitnuty a pushnuty na `origin/main`:
 
 | Commit | Popis |
 |--------|-------|
-| `ea4e33bf4` | feat(auxpow): integrate real VerusHash v2.2 C++ via zion-native-ffi |
-| `40c6c50b3` | pool: rate-limit NoSolution storms, throttle AuxPow scheduler, enable native-verushash |
-| `59b97d50f` | fix(auxpow): VRSC PBaaS v7+ — nonce field NOT modified, only nonceSpace |
-| `2a1316ce3` | feat(auxpow): triple parallel mining LIVE — ZION GPU + EPIC GPU + VRSC CPU |
-| `1a1dcac55` | feat(auxpow): VerusHash PBaaS v7+ header normalization + Pearl disabled status |
-| `51f5969a7` | auxpow: raw set_target target + logging improvements (meets_target fix) |
-| `b7144d6d8` | fix(edge-deploy): fix deploy script and ReadWritePaths for live deployment |
+| `9620e6e2c` | feat(auxpow): integrate real VerusHash v2.2 C++ via zion-native-ffi |
+| `3c8b8aeb0` | pool: rate-limit NoSolution storms, throttle AuxPow scheduler, enable native-verushash |
+| `e98b47497` | fix(auxpow): VRSC PBaaS v7+ — nonce field NOT modified, only nonceSpace |
+| `2a9616c6d` | feat(auxpow): triple parallel mining LIVE — ZION GPU + EPIC GPU + VRSC CPU |
+| `9284a16a6` | feat(auxpow): VerusHash PBaaS v7+ header normalization + Pearl disabled status |
+| `8959cf4a9` | auxpow: raw set_target target + logging improvements (meets_target fix) |
+| `c4f1a2c5c` | fix(edge-deploy): fix deploy script and ReadWritePaths for live deployment |
 
 **Celkem 44 VRSC/VerusHash-related commitů** v git historii.
 

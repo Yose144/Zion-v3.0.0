@@ -99,7 +99,7 @@ Odstraněny duplikátní [13]/[14] záznamy (stará sada s jinými adresami, nep
 - L1 + EVM watchers aktivní, skenují Base mainnet bloky (chain 8453)
 - Vault adresa aktualizována v: `fee.rs`, `crypto.rs`, `bridge-mainnet.toml`, `bridge-testnet.toml`, `docker-compose.v3-mainnet.yml`
 - 448 core unit testů projde (per-modul)
-- Git commit: `4f5d43d` "v2.9.8: resolve all bridge blockers"
+- Git commit: `23541d9` "v2.9.8: resolve all bridge blockers"
 
 ---
 

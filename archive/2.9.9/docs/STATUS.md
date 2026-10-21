@@ -26,7 +26,7 @@
 ### 1. Pool payout budget-cap fallback
 - **Problem**: Pool payout attempted full amount every block, failed with `insufficient funds`
 - **Fix**: Budget-capped proportional scaling when wallet balance < payout total
-- **Commit**: 779ed80f
+- **Commit**: 6de66b06
 
 ### 2. Stack trimmed to Prague-only
 - USA (5.78.194.94) and Singapore (5.223.84.191) removed from 13+ files

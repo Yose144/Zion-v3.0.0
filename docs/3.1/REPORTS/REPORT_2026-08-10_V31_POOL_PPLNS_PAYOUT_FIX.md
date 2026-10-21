@@ -1,7 +1,7 @@
 # V31 Pool PPLNS Payout Fix Report
 
 **Date:** 2026-08-10
-**Commit:** `458fb5bb9`
+**Commit:** `1614421cf`
 **Affected service:** `zion-v31-pool` on Edge (`62.171.141.136` / `vmi3425821.contaboserver.net`)
 
 ## Problem

@@ -53,14 +53,14 @@ Podívám se na git log, jestli některé soubory nebyly smazány, a zkontroluji
 
 ● Ran command
   │ $ git reflog -20
-  │ 637e695c HEAD@{15}: commit: fix(website): Prometheus fallback URL localhost for local dev
-  │ c4286601 HEAD@{16}: commit: style(flower): lower position, remove Czech subtitle, larger elegant MAEVA
-  │ 0fb6ceb6 HEAD@{17}: commit: feat(rag): ChromaDB RAG pipeline for Hiran v2.2
-  │ c1c55d35 HEAD@{18}: commit: docs(StatusV3): add Tailscale ACL section with manual activation guide
-  │ ba5aa624 HEAD@{19}: commit: feat(layout): remove L5, enrich 3 vision cards + add Oasis banner
+  │ 1204c747 HEAD@{15}: commit: fix(website): Prometheus fallback URL localhost for local dev
+  │ b3eaea0d HEAD@{16}: commit: style(flower): lower position, remove Czech subtitle, larger elegant MAEVA
+  │ 78666178 HEAD@{17}: commit: feat(rag): ChromaDB RAG pipeline for Hiran v2.2
+  │ 8184a70e HEAD@{18}: commit: docs(StatusV3): add Tailscale ACL section with manual activation guide
+  │ bffbd3a9 HEAD@{19}: commit: feat(layout): remove L5, enrich 3 vision cards + add Oasis banner
   └ Exited with code 0
 
-Chápu — myslíš "Tiare Tahiti květ + Stargate brána + schovávací VisionBar panel" z commitu c71be1c2. Podívám se, jestli je to stále v kódu nebo někdo smazal z layout.tsx/Hero.tsx.
+Chápu — myslíš "Tiare Tahiti květ + Stargate brána + schovávací VisionBar panel" z commitu d8ebc744. Podívám se, jestli je to stále v kódu nebo někdo smazal z layout.tsx/Hero.tsx.
 
 ● Read lines 1-100 in .\APP&WEB\website-v2.9\src\app\layout.tsx
   └ 78 lines
@@ -97,7 +97,7 @@ Podívám se na homepage, jestli tyto komponenty nebyly odstraněny z page.tsx.
 
 ● Ran command
   │ $ git stash list
-  │ stash@{0}: WIP on main: 9db61bef docs(e2e): autonomous V3 mainnet test results + Hiran Vast.ai instance updates
+  │ stash@{0}: WIP on main: 892b95c6 docs(e2e): autonomous V3 mainnet test results + Hiran Vast.ai instance updates
   └ Exited with code 0
 
 ● Ran command
@@ -132,15 +132,15 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
 ● Ran command
   │ $ git log --oneline -5 -- "APP&WEB/website-v2.9/src/components/TahitiFlower.tsx" "APP&WEB/website-v2.9/src/components/VisionBar.tsx" "APP&WEB/website-v2.9/src/components/
   │   StargateGate.tsx" "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
-  │ 8e5760e1 feat(stargate): polished portal + ZION Oasis link underneath
-  │ 3e86477b feat(website): refresh roadmap for v3.0.0 mainnet readiness + hero polish
-  │ c71be1c2 feat(hero): collapsible hero — Tiare Tahiti unlocks VisionBar + Stargate
-  │ c4286601 style(flower): lower position, remove Czech subtitle, larger elegant MAEVA
-  │ ba5aa624 feat(layout): remove L5, enrich 3 vision cards + add Oasis banner
+  │ 48e006c9 feat(stargate): polished portal + ZION Oasis link underneath
+  │ c18cf7cc feat(website): refresh roadmap for v3.0.0 mainnet readiness + hero polish
+  │ d8ebc744 feat(hero): collapsible hero — Tiare Tahiti unlocks VisionBar + Stargate
+  │ b3eaea0d style(flower): lower position, remove Czech subtitle, larger elegant MAEVA
+  │ bffbd3a9 feat(layout): remove L5, enrich 3 vision cards + add Oasis banner
   └ Exited with code 0
 
 ● Ran command
-  │ $ git diff 8e5760e1 HEAD -- "APP&WEB/website-v2.9/src/components/TahitiFlower.tsx" "APP&WEB/website-v2.9/src/components/VisionBar.tsx" "APP&WEB/website-v2.9/src/components/
+  │ $ git diff 48e006c9 HEAD -- "APP&WEB/website-v2.9/src/components/TahitiFlower.tsx" "APP&WEB/website-v2.9/src/components/VisionBar.tsx" "APP&WEB/website-v2.9/src/components/
   │   StargateGate.tsx" "APP&WEB/website-v2.9/src/components/HeroSection.tsx" "APP&WEB/website-v2.9/src/app/layout.tsx" "APP&WEB/website-v2.9/src/components/Hero.tsx"
   │ +            </div>
   │ +
@@ -150,19 +150,19 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
   └ Exited with code 0
 
 ● Ran command
-  │ $ git diff 8e5760e1 HEAD -- "APP&WEB/website-v2.9/src/app/page.tsx"
+  │ $ git diff 48e006c9 HEAD -- "APP&WEB/website-v2.9/src/app/page.tsx"
   └ Exited with code 0
 
 ● Ran command
-  │ $ git log --diff-filter=D --summary HEAD...8e5760e1 -- "APP&WEB/website-v2.9/src" "APP&WEB/website-v2.9/public"
+  │ $ git log --diff-filter=D --summary HEAD...48e006c9 -- "APP&WEB/website-v2.9/src" "APP&WEB/website-v2.9/public"
   └ Exited with code 0
 
 ● Ran command
-  │ $ git diff 927e7db3 HEAD -- "APP&WEB/website-v2.9/src/app/page.tsx" "APP&WEB/website-v2.9/src/app/layout.tsx"
+  │ $ git diff 4ecdb847 HEAD -- "APP&WEB/website-v2.9/src/app/page.tsx" "APP&WEB/website-v2.9/src/app/layout.tsx"
   └ Exited with code 0
 
 ● Ran command
-  │ $ git diff 927e7db3 HEAD -- "dashboard/dashboard.html" "dashboard/dashboard.js"
+  │ $ git diff 4ecdb847 HEAD -- "dashboard/dashboard.html" "dashboard/dashboard.js"
   │ +}
   │ +
   │  // ─────────────────────────────────────────────────────────────────────
@@ -223,7 +223,7 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
   └ Exited with code 1
 
 ● Ran command
-  │ $ git diff c4286601 HEAD -- "APP&WEB/website-v2.9/src/components/TahitiFlower.tsx"
+  │ $ git diff b3eaea0d HEAD -- "APP&WEB/website-v2.9/src/components/TahitiFlower.tsx"
   │ +        </span>
   │ +      </motion.div>
   │        {/* hover tooltip */}
@@ -238,8 +238,8 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
 
 ● Ran command
   │ $ git log --all --oneline -- "APP&WEB/website-v2.9/src/app/page.tsx"
-  │ 28b6a990 web: fix client crash path, unify homepage flow, and wire V3 whitepaper docs
-  │ 1748cfce Homepage News section: DeFi Hub launch + CoinGecko listing + testnet + bridge articles
+  │ def43b3e web: fix client crash path, unify homepage flow, and wire V3 whitepaper docs
+  │ 76eb45a1 Homepage News section: DeFi Hub launch + CoinGecko listing + testnet + bridge articles
   │ 7e69312e 2.9.8 web: streamline deeksha site and homepage
   │ 533ba214 feat: homepage v2.9.7 -- CHv4 upgrade section + cosmic flower animation
   │ 57441508 v2.9.6: L3 reconstruction + version fix + audit
@@ -289,7 +289,7 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
 ❭ zkuz najit v hitorii gitu zion oasis portal , ci neco podobneho ... prozkoumej to, kdyz se kliklo na kvetinu, baner se mel schovavat, uz to bylo vvytvorene 
 
 ● Ran command
-  │ $ git show 8e5760e1 -- "APP&WEB/website-v2.9/src/components/StargateGate.tsx"
+  │ $ git show 48e006c9 -- "APP&WEB/website-v2.9/src/components/StargateGate.tsx"
   │ +        </Link>
   │ +      </motion.div>
   │ +    </div>
@@ -304,22 +304,22 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
   └ 23 lines
 
 ● Ran command
-  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show 8e5760e1:APP&WEB/website-v2.9/src/components/HeroSection.tsx
+  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show 48e006c9:APP&WEB/website-v2.9/src/components/HeroSection.tsx
   │ bash: line 1: WEB/website-v2.9/src/components/HeroSection.tsx: No such file or directory
   └ Exited with code 127
 
 ● Ran command
-  │ $ git show 8e5760e1 -- "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
+  │ $ git show 48e006c9 -- "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
   └ Exited with code 0
 
 ● Ran command
   │ $ git log --all --oneline -- "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
-  │ 3e86477b feat(website): refresh roadmap for v3.0.0 mainnet readiness + hero polish
-  │ c71be1c2 feat(hero): collapsible hero — Tiare Tahiti unlocks VisionBar + Stargate
+  │ c18cf7cc feat(website): refresh roadmap for v3.0.0 mainnet readiness + hero polish
+  │ d8ebc744 feat(hero): collapsible hero — Tiare Tahiti unlocks VisionBar + Stargate
   └ Exited with code 0
 
 ● Ran command
-  │ $ git show c71be1c2 -- "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
+  │ $ git show d8ebc744 -- "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
   │ +        )}
   │ +      </AnimatePresence>
   │ +    </div>
@@ -328,22 +328,22 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
   └ Exited with code 0
 
 ● Ran command
-  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show c71be1c2^:APP&WEB/website-v2.9/src/app/layout.tsx | grep -n -A5 -B5 "Tahiti\|VisionBar\|Oasis\|Stargate"
+  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show d8ebc744^:APP&WEB/website-v2.9/src/app/layout.tsx | grep -n -A5 -B5 "Tahiti\|VisionBar\|Oasis\|Stargate"
   │ bash: line 1: WEB/website-v2.9/src/app/layout.tsx: No such file or directory
-  │ fatal: path 'APP' does not exist in 'c71be1c2^'
+  │ fatal: path 'APP' does not exist in 'd8ebc744^'
   └ Exited with code 1
 
 ● Ran command
-  │ $ git show c71be1c2^ -- "APP&WEB/website-v2.9/src/app/layout.tsx" | grep -n -A5 -B5 "Tahiti\|VisionBar\|Oasis\|Stargate"
+  │ $ git show d8ebc744^ -- "APP&WEB/website-v2.9/src/app/layout.tsx" | grep -n -A5 -B5 "Tahiti\|VisionBar\|Oasis\|Stargate"
   └ Exited with code 1
 
 ● Ran command
-  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show ba5aa624:APP&WEB/website-v2.9/src/app/layout.tsx | grep -n -A3 -B3 "Tahiti\|VisionBar\|Oasis\|Stargate\|Banner"
+  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show bffbd3a9:APP&WEB/website-v2.9/src/app/layout.tsx | grep -n -A3 -B3 "Tahiti\|VisionBar\|Oasis\|Stargate\|Banner"
   │ bash: line 1: WEB/website-v2.9/src/app/layout.tsx: No such file or directory
   └ Exited with code 1
 
 ● Ran command
-  │ $ git show ba5aa624 -- 'APP&WEB/website-v2.9/src/app/layout.tsx' | grep -n -A3 -B3 "Tahiti\|VisionBar\|Oasis\|Stargate\|Banner"
+  │ $ git show bffbd3a9 -- 'APP&WEB/website-v2.9/src/app/layout.tsx' | grep -n -A3 -B3 "Tahiti\|VisionBar\|Oasis\|Stargate\|Banner"
   │ 47:                         <VisionBar />
   │ 48:+                        <OasisBanner />
   │ 49-                       </div>
@@ -370,22 +370,22 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
 
 ● Ran command
   │ $ git log --all --oneline -- "APP&WEB/website-v2.9/src/components/OasisBanner.tsx"
-  │ ba5aa624 feat(layout): remove L5, enrich 3 vision cards + add Oasis banner
+  │ bffbd3a9 feat(layout): remove L5, enrich 3 vision cards + add Oasis banner
   └ Exited with code 0
 
 ● Ran command
-  │ $ git show c71be1c2 --stat | grep -i oasis
+  │ $ git show d8ebc744 --stat | grep -i oasis
   │     - Replaced static TahitiFlower+VisionBar+OasisBanner with single HeroSection
   │     - Removed OasisBanner (replaced by Stargate)
   └ Exited with code 0
 
 ● Ran command
-  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show ba5aa624:APP&WEB/website-v2.9/src/components/OasisBanner.tsx
+  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show bffbd3a9:APP&WEB/website-v2.9/src/components/OasisBanner.tsx
   │ bash: line 1: WEB/website-v2.9/src/components/OasisBanner.tsx: No such file or directory
   └ Exited with code 127
 
 ● Ran command
-  │ $ git show ba5aa624 -- 'APP&WEB/website-v2.9/src/components/OasisBanner.tsx'
+  │ $ git show bffbd3a9 -- 'APP&WEB/website-v2.9/src/components/OasisBanner.tsx'
   │ +        </div>
   │ +      </Link>
   │ +    </motion.div>
@@ -394,7 +394,7 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
   └ Exited with code 0
 
 ● Ran command
-  │ $ git diff ba5aa624 c71be1c2 -- 'APP&WEB/website-v2.9/src/app/layout.tsx' 'APP&WEB/website-v2.9/src/components/TahitiFlower.tsx'
+  │ $ git diff bffbd3a9 d8ebc744 -- 'APP&WEB/website-v2.9/src/app/layout.tsx' 'APP&WEB/website-v2.9/src/components/TahitiFlower.tsx'
   │ +        </span>
   │ +      </motion.div>
   │        {/* hover tooltip */}
@@ -403,17 +403,17 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
 
 ● Searched for aloha|Aloha|brana|Brána|schov|schová|panel|Panel|květ|kvet|květina|gate|portal|oasis|Oasis in .\dashboard\dashboard.html
 
-Promiň, nemám přístup ke starším chatům, ale prohledal jsem git historii a našel jsem, co hledáš. Zdá se, že v commitu c71be1c2 byl OasisBanner smazán a nahrazen StargateGate + malýmOasis linkem pod ním.
+Promiň, nemám přístup ke starším chatům, ale prohledal jsem git historii a našel jsem, co hledáš. Zdá se, že v commitu d8ebc744 byl OasisBanner smazán a nahrazen StargateGate + malýmOasis linkem pod ním.
 
 Co jsem našel v gitu:
 
-Commit ba5aa624 (před c71be1c2) obsahoval:
+Commit bffbd3a9 (před d8ebc744) obsahoval:
 
   • TahitiFlower (květina) pod Navigation
   • VisionBar (3 karty)
   • OasisBanner — full-width emerald banner pod VisionBar s odkazem na /l4-oasis
 
-Pak v commitu c71be1c2 byl OasisBanner odstraněn a nahrazen:
+Pak v commitu d8ebc744 byl OasisBanner odstraněn a nahrazen:
 
   • HeroSection komponentem
   • Kliknutí na květinu rozbalí/schová VisionBar + StargateGate
@@ -428,7 +428,7 @@ Potvrď prosím:
   1. OasisBanner — ten velký emerald banner s "V přípravě" badge?
   2. Nebo něco jiného (např. konkrétní obsah v VisionBar/StargateGate)?
 
-Jakmile potvrdíš, obnovím to z git historie commitu ba5aa624.
+Jakmile potvrdíš, obnovím to z git historie commitu bffbd3a9.
 
 ✱ Did you know
   Use /bug to report a bug to the Devin for Terminal developers
@@ -1032,7 +1032,7 @@ Chceš, abych připravil jiný způsob deploye, nebo máš přístup k Hetzner k
   └ Exited with code 0
 
 ● Ran command
-  │ $ git show 22aadf62 --stat
+  │ $ git show 6ebc1584 --stat
   │ Session: git_show
   │  scripts/deploy-edge.ps1      | 89 ++++++++++++++++++++++++++++++++++++++++++++
   │  scripts/edge-server-setup.sh | 80 +++++++++++++++++++++++++++++++++++++++
@@ -1042,7 +1042,7 @@ Chceš, abych připravil jiný způsob deploye, nebo máš přístup k Hetzner k
   └ Exited with code 0
 
 ● Ran command
-  │ $ git show 22aadf62
+  │ $ git show 6ebc1584
   │ Session: git_show_full
   │ +    IdentityFile ~/.ssh/ssh-key-zion-edge
   │ +    StrictHostKeyChecking accept-new
@@ -1051,7 +1051,7 @@ Chceš, abych připravil jiný způsob deploye, nebo máš přístup k Hetzner k
   │ +# Then: ssh zion-edge
   └ Exited with code 0
 
-Vidím! V commitu 22aadf62 byl SSH klíč vygenerován a měl být přidán. Problém je, že klíč není přidán do authorized_keys na serveru. Zkusím použít Hetzner API k rebuild serveru s našímSSH klíčem:
+Vidím! V commitu 6ebc1584 byl SSH klíč vygenerován a měl být přidán. Problém je, že klíč není přidán do authorized_keys na serveru. Zkusím použít Hetzner API k rebuild serveru s našímSSH klíčem:
 
 ● Ran command
   │ $ curl -X POST "https://api.hetzner.cloud/v1/servers/132255220/actions/rebuild" -H "Authorization: Bearer 0bCJHqNcf4CeHblcHwm8XX0Enpek8aPPsKrsdyCKaZCKO45qJ0CdqIsry7VtINx7" -H
@@ -1138,7 +1138,7 @@ Server se rebuilduje s naším SSH klíčem. Jakmile bude hotový, SSH připojen
 
 Rebuild trvá obvykle 2-5 minut. Zatímco čekáme, shrnu co se děje:
 
-  1. SSH klíč byl vygenerován v commitu 22aadf62 (21.5.2026)
+  1. SSH klíč byl vygenerován v commitu 6ebc1584 (21.5.2026)
   2. Klíč byl nahrán do Hetzner (ID: 112618773)
   3. Server se rebuilduje s tímto klíčem - to automaticky přidá klíč do authorized_keys
   4. Po rebuildu bude SSH fungovat a deploy proběhne

@@ -52,7 +52,7 @@ if account_tx_memo_v1_active(block.height)
 ```
 
 **Deployed to Edge:** 2026-07-02 13:38 UTC
-**Commit:** `fd3387bc` (contains F1 fix) + `270a419d` (env config)
+**Commit:** `310a3f15` (contains F1 fix) + `55622991` (env config)
 **Verification:** `strings /usr/local/bin/zion-node | grep "account transaction signature verification failed"` = 2 matches
 
 ### Important Note

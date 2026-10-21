@@ -271,9 +271,9 @@ Rozdíl může být způsoben:
 
 | Commit | Popis |
 |--------|-------|
-| `11a13c212` | feat(miner): RandomX support + seed_hash plumbing for trinity mining |
-| `dbf6031e0` | perf(randomx): per-thread VMs for lock-free multi-threaded hashing |
-| `1dd22014e` | perf(randomx): enable JIT + hardware AES on Apple Silicon — 8.8x speedup |
+| `8eb055389` | feat(miner): RandomX support + seed_hash plumbing for trinity mining |
+| `37250d90e` | perf(randomx): per-thread VMs for lock-free multi-threaded hashing |
+| `24be0ac4f` | perf(randomx): enable JIT + hardware AES on Apple Silicon — 8.8x speedup |
 
 ---
 

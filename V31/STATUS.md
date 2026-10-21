@@ -22,19 +22,19 @@
 >
 > **Update 2026-08-22 (G3 solver network E2E closed):** Implementována konfigurovatelná podpora pro nezávislé off-chain solvery přes internet: `SolverConfig` + `SolverEntry` v `MultichainConfig`/`WarpConfig`, automatická registrace pre-configured solverů do intent engine, autentizace `/v1/swap/solve` přes `X-Solver-Key`, per-solver API klíče v `HttpSolverClient` a integrační testy ověřující auth + plný intent→bid→execute flow. `cargo test -p zion-multichain` 574 testů pass, `cargo clippy -p zion-multichain` bez nových warningů. Gate G3 v [`docs/3.2/ROADMAP.md`](../docs/3.2/ROADMAP.md) označen jako ✅ Complete; `warp.example.toml` dokumentuje operativní nasazení.
 >
-> **Update 2026-08-22 (git sync — core, wallet-sdk, mobile-app, website, CLI, archive):** Zbývající necommitnuté změny z multichain E2E smoke testu a UTXO builder alignmentu byly zkommitovány a připraveny k pushi: V31 core soft-fork pro premine locks a coinbase maturity (`5f6b7f2c7`), `zion-wallet-sdk` + mobilní `TransactionBuilder` na V31 native transaction format (`a2ad953e6`), website swap/atomic proxy na port 8454 (`d1b2aac0c`), CLI `zion node start --soft-fork-activation-height` (`53c1fc6e4`) a archivovaný desktop-agent feature detection (`4dc269144`). `cargo test -p zion-core` 311 passed, `APP&WEB/website-v2.9` build OK, working tree čistý.
+> **Update 2026-08-22 (git sync — core, wallet-sdk, mobile-app, website, CLI, archive):** Zbývající necommitnuté změny z multichain E2E smoke testu a UTXO builder alignmentu byly zkommitovány a připraveny k pushi: V31 core soft-fork pro premine locks a coinbase maturity (`9eaca3628`), `zion-wallet-sdk` + mobilní `TransactionBuilder` na V31 native transaction format (`5700e385b`), website swap/atomic proxy na port 8454 (`8134d3baa`), CLI `zion node start --soft-fork-activation-height` (`8c1275991`) a archivovaný desktop-agent feature detection (`d5aa22747`). `cargo test -p zion-core` 311 passed, `APP&WEB/website-v2.9` build OK, working tree čistý.
 >
 > **Update 2026-08-22 (V31 premine / coinbase maturity fix):** Implementována V31 soft-fork validace pro `Node::submit_block`, `Node::submit_utxo_transaction` a `Node::block_template`: kontroluje `COINBASE_MATURITY=100` a `PREMINE_OUTPUTS` admin/time locky pro každý input. Přidán config `soft_fork_activation_height` (CLI `--soft-fork-activation-height`, env `ZION_SOFT_FORK_ACTIVATION`, default `u64::MAX` = disabled), aby se nová pravidla neaplikovala zpětně na už přijatý block 12837 s premine spendem. Výchozí aktivace je `u64::MAX` — operátor ji musí explicitně nastavit pro mainnet (doporučená hodnota >= aktuální tip + bezpečná rezerva). Testy `cargo test -p zion-core` procházejí včetně nových unit testů `submit_block_rejects_immature_coinbase`, `submit_block_accepts_mature_coinbase` a `validate_premine_lock_rejects_spend`. Detaily a postup nasazení: [`docs/3.1/REPORTS/REPORT_2026-08-22_PREMINE_LOCK_BYPASS.md`](../docs/3.1/REPORTS/REPORT_2026-08-22_PREMINE_LOCK_BYPASS.md).
 >
 > **Update 2026-08-22 (V31 premine/coinbase fix — Edge deploy):** Nová binárka `zion-node` (`+ zion-pool/multichain/dao/oasis`) buildnuta na Edge z `/opt/zion/V31`. `ZION_SOFT_FORK_ACTIVATION=13100` nastaveno v `/etc/zion/edge-environment.sh`; restartovány `zion-v31-node`, `zion-v31-node2`, `zion-v31-node3`, `zion-v31-pool`, `zion-v31-multichain`, `zion-v31-dao` a `zion-v31-oasis`. Aktuální V31 native height=12935, aktivace bude za ~165 bloků (při ~60s/block cca 2.75h). Watchdog `zion-v31-watchdog` byl upraven: přidán 300s startup grace, aby nerestartoval node během prvního startu, když se provádí `tx_index`/`UTXO` backfill (node nyní nabíhá ~142s dle logu `RPC listening`). Watchdog nyní reportuje `OK: v31=12935 version=3.1.0-alpha`.
 >
-> **Update 2026-08-22 (L2 multichain E2E smoke test + desktop agent UTXO builder):** Local end-to-end smoke test of `zion-multichain` (`warpd`) completed. WARP health, `/v1/multichain/chains`, `/v1/multichain/height`, and `/v1/multichain/contracts` are green. DEX `/v1/swap/quote`, `/v1/swap/quote/multi`, `/v1/swap/execute`, and `/v1/bridge/submit` (burn base → zion-l1) return 200. Intent lifecycle `create` → `solver/register` → `bid` → `settle` is green; `execute` returns 400 locally because real bridge signing keys are not configured. HTLC `lock` works in offline fallback mode; `claim`/`refund` fail because the EVM and zion-l1 adapters do not yet implement `TransferDirection::Htlc`. Full report: [`docs/3.1/REPORTS/REPORT_2026-08-22_L2_MULTICHAIN_E2E_SMOKE_TEST.md`](../docs/3.1/REPORTS/REPORT_2026-08-22_L2_MULTICHAIN_E2E_SMOKE_TEST.md). Desktop agent UTXO builder was aligned with the V31 native transaction format (`7dfd279f0`).
+> **Update 2026-08-22 (L2 multichain E2E smoke test + desktop agent UTXO builder):** Local end-to-end smoke test of `zion-multichain` (`warpd`) completed. WARP health, `/v1/multichain/chains`, `/v1/multichain/height`, and `/v1/multichain/contracts` are green. DEX `/v1/swap/quote`, `/v1/swap/quote/multi`, `/v1/swap/execute`, and `/v1/bridge/submit` (burn base → zion-l1) return 200. Intent lifecycle `create` → `solver/register` → `bid` → `settle` is green; `execute` returns 400 locally because real bridge signing keys are not configured. HTLC `lock` works in offline fallback mode; `claim`/`refund` fail because the EVM and zion-l1 adapters do not yet implement `TransferDirection::Htlc`. Full report: [`docs/3.1/REPORTS/REPORT_2026-08-22_L2_MULTICHAIN_E2E_SMOKE_TEST.md`](../docs/3.1/REPORTS/REPORT_2026-08-22_L2_MULTICHAIN_E2E_SMOKE_TEST.md). Desktop agent UTXO builder was aligned with the V31 native transaction format (`48778d30a`).
 >
 > **Update 2026-08-22 (ZIS deployment + UTXO v2 wallet/CLI fixes + WARP test stability):** `zion-zis.service` je `active` na Edge; `/health` vrací OK na `https://auth.zionterranova.com` po opravě `@fastify/rate-limit` (`^9.1.0` pro Fastify 4) a systemd `ExecStart` cesty. Wallet SDK (`APP&WEB/zion-wallet-sdk`) nyní počítá v2 UTXO hash odpovídající `V31/L1/core/src/v3_tx.rs` a odesílá transakce přes `submitUtxoTransaction`. CLI `wallet send` používá `zion_core::v3_wallet::build_and_sign` s aktuálním chain tip height. NEAR env-var testy v `V31/L2/multichain/src/warp/adapter/near.rs` jsou serializovány mutexem, `cargo test -p zion-multichain` prochází 573 testy (1 ignored) bez flaky selhání.
 >
 > **Update 2026-08-22 (WARP G2 — non-EVM `disabled_reason` + config-driven registry):** Implementována podpora `disabled_reason` ve WARP: `ChainConfig`/`ChainRegistry`/`WarpError` nyní nesou důvod vypnutí; `WarpRuntime` a `/chains` API staví registry z `warp.toml` místo hardcoded `with_defaults()`. `/chains` vrací `name`, `family`, `enabled` a `disabled_reason`. `warp.example.toml` aktualizován: pro 3.2.0 jsou aktivní pouze `base` (EVM pilot) a `zion-l1`; všechny nedeployované non-EVM chainy (aptos, sui, cardano, cosmos, near, lightning) mají `enabled = false` s explicitním `disabled_reason`. Gate **G2** v [`docs/3.2/ROADMAP.md`](../docs/3.2/ROADMAP.md) označen jako ✅ Complete. Testy `cargo test -p zion-multichain` (574 testů) a `cargo clippy -p zion-multichain` prošly bez nových warningů.
 >
-> **Update 2026-08-22 (public subtree G4 closed):** `public/` subtree je plně synchronizovaný s `github.com/Zion-TerraNova/v3-Mainnet:main`. `git subtree split --prefix=public` vrací `fbc5e02f2`, identický s `public/main`; `git push public public-split:main --dry-run` hlásí "Everything up-to-date". Gate **G4** v [`docs/3.2/ROADMAP.md`](../docs/3.2/ROADMAP.md) označen jako ✅ Complete.
+> **Update 2026-08-22 (public subtree G4 closed):** `public/` subtree je plně synchronizovaný s `github.com/Zion-TerraNova/v3-Mainnet:main`. `git subtree split --prefix=public` vrací `ba1be5476`, identický s `public/main`; `git push public public-split:main --dry-run` hlásí "Everything up-to-date". Gate **G4** v [`docs/3.2/ROADMAP.md`](../docs/3.2/ROADMAP.md) označen jako ✅ Complete.
 >
 > **Update 2026-08-21 (v3.2.0 release prep):** Veřejné buildy Terminal Miner, CLI a Desktop Agent připraveny pro v3.2.0 — opraveny build skripty a CI workflow tagy/verze/názvy. Desktop miner defaultně používá `public_build` pro Boost TUI masking. Download metadata přepnuta na `v3.2.0-miner` / `v3.2.0-cli`. Čeká se na push tagů a spuštění GitHub Actions release workflow.
 
@@ -58,19 +58,19 @@
 
 Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, chain roste (height 51+ v ~5 minutách).
 
-### Bug 1: Pool `current_chain_height` četl V3 height místo native height (`c7b9980a5`)
+### Bug 1: Pool `current_chain_height` četl V3 height místo native height (`d720aa673`)
 
 - **Symptom:** Pool odmítal každý mined block jako `stale block height=2 (tip=0), treating as orphan`
 - **Root cause:** `current_chain_height()` v `stratum.rs` volala `getStatus` RPC metodu, která vrací V3 chain height (0 při běhu s `--v3-no-genesis`). Pool ale submituje native L1 bloky.
 - **Fix:** Přepnuto na `getChainInfo` RPC metodu a čten `native_chain_height` (s fallback na `chain_height` pro starší node)
 
-### Bug 2: Pool vardiff env var names neodpovídaly edge-environment.sh (`e6af816dc`)
+### Bug 2: Pool vardiff env var names neodpovídaly edge-environment.sh (`7d3bb79ef`)
 
 - **Symptom:** Pool vždy používal default `start_difficulty=1` (trivially easy target), nonce=0 vždy prošel
 - **Root cause:** Kód četl `ZION_VARDIFF_START` ale env file používá `ZION_VARDIFF_START_DIFF`. Tři env var names se neshodovaly: START, MIN, MAX.
 - **Fix:** Kód nyní čte obě varianty s `*_DIFF` prioritou
 
-### Bug 3: `difficulty_to_target` bit shift direction invertovaný (`fbde94996`) — ROOT CAUSE nonce=0
+### Bug 3: `difficulty_to_target` bit shift direction invertovaný (`f4e9b959d`) — ROOT CAUSE nonce=0
 
 - **Symptom:** I s `ZION_VARDIFF_START_DIFF=100` nonce=0 vždy prošel share target, ale nikdy nesplnil block target → žádné bloky
 - **Root cause:** Big-endian right-shift loop v `vardiff.rs` iteroval z least-significant do most-significant byte (i=31..0), což je ve skutečnosti LEFT shift. Target pro difficulty 100 byl `0xFF...FF03` místo `0x03FF...FF`.
@@ -79,7 +79,7 @@ Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, c
 
 ### Edge deployment výsledky
 
-- **Pool + miner přestavěny** na Edge s nejnovějším kódem (`fbde94996`)
+- **Pool + miner přestavěny** na Edge s nejnovějším kódem (`f4e9b959d`)
 - **ZION_VARDIFF_START_DIFF=100** nastaveno v `/etc/zion/edge-environment.sh`
 - **Block production GREEN:**
   - `submitBlock response: {"id":1,"jsonrpc":"2.0","result":{"accepted":true}}`
@@ -87,7 +87,7 @@ Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, c
   - `native_chain_height: 51` (z 1 na 51 v ~5 minutách, ~5s/blok)
   - Nonce nyní non-zero (0x0e, 0xa4, 0x10, 0x0f, ...)
 - **Pool test suite:** 165 tests pass (0 failures)
-- **Commits pushed:** `c7b9980a5`, `e6af816dc`, `fbde94996`
+- **Commits pushed:** `d720aa673`, `7d3bb79ef`, `f4e9b959d`
 
 ### Trinity Stream status
 
@@ -151,7 +151,7 @@ Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, c
     - `zion-desktop-agent-v3.1.0-linux-amd64.deb`
   - Verifikace: `zion-miner --help`, `node --help`, `zion --help` vracejí V31 volby.
 
-- **Přehled verifikace**: `cargo test --workspace` pass, `cargo clippy --workspace` clean, `npm test` pass, `npm run build:linux` pass. Commit `23e4fbd8e` obsahuje zdrojové změny.
+- **Přehled verifikace**: `cargo test --workspace` pass, `cargo clippy --workspace` clean, `npm test` pass, `npm run build:linux` pass. Commit `b7dada69d` obsahuje zdrojové změny.
 
 ## Update 2026-08-07 — PLAN_TO_3.2 audit (CLI, miner TUI, contracts, ZIS)
 

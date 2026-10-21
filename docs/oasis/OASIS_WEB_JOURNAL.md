@@ -90,19 +90,19 @@ The work began from an earlier conversation state where the `WarpIntro`, `TreeOf
 ## 3. Key Commits (newest first)
 
 ```
-d2c8a4dfc Backend sync for OASIS player progress.
-c3cfd2877 UX/UI polish: PlayerHud address, onboarding overlay, OasisHud refresh.
-1ea79c4da Add real ZION wallet login to OASIS Web.
-765765d58 Add toast notification system and wire feedback for key actions.
-83046fa9c Tune FlightControls: imperative lock, speed HUD, user-gesture pointer lock.
-2462a1e82 Add warp-gate network and free-flight game controls.
-1e33075b7 Polish UI round: responsive, camera FOV, audio, warp flash, quests, deploy fixes.
-d674270ca Improve WarpIntro: deterministic starfield, vignette, cinematic UI.
-f76fd342e Polish UI: better WorldEnvironment, filter counts, world panel, selection beacon.
-d871a1f84 Fix OrbitControls target prop to avoid jitter during camera flights.
-ae37ddef0 Fully tune Oasis galaxy: labels, filters, warp focus, world panel, 3D world entry.
-2f172cf51 Visualize all 55 OASIS worlds in the 3D galaxy map.
-3744136ab Rework Oasis intro visuals: Fountain tree, Contact core, multispectrum warp.
+6b44547ba Backend sync for OASIS player progress.
+32d9a34cc UX/UI polish: PlayerHud address, onboarding overlay, OasisHud refresh.
+826863ba9 Add real ZION wallet login to OASIS Web.
+a0f675cd0 Add toast notification system and wire feedback for key actions.
+4732fae14 Tune FlightControls: imperative lock, speed HUD, user-gesture pointer lock.
+a38afa9ed Add warp-gate network and free-flight game controls.
+e0d0abc88 Polish UI round: responsive, camera FOV, audio, warp flash, quests, deploy fixes.
+6f7c70ea6 Improve WarpIntro: deterministic starfield, vignette, cinematic UI.
+2918b7c84 Polish UI: better WorldEnvironment, filter counts, world panel, selection beacon.
+2d740c300 Fix OrbitControls target prop to avoid jitter during camera flights.
+4fa599e0e Fully tune Oasis galaxy: labels, filters, warp focus, world panel, 3D world entry.
+cdc857d60 Visualize all 55 OASIS worlds in the 3D galaxy map.
+1d0f8df61 Rework Oasis intro visuals: Fountain tree, Contact core, multispectrum warp.
 ```
 
 ---

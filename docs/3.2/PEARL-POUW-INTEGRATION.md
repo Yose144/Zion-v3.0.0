@@ -206,21 +206,21 @@ PORT=8477}` — note **8477 not 8337** (8337 is V31 node3 P2P).
 
 Pool side: `zion-v31-pool` env added `ZION_POOL_PEARL_{GATEWAY=127.0.0.1:8477,
 POLL_MS=2000,SHARE_EASE=256,JOB_TTL_MS=30000}` (edge-environment.sh, backup
-`.bak-pearl-20261013`); binary rebuilt from `8354fc5cb`, backup
+`.bak-pearl-20261013`); binary rebuilt from `cd8ddfca7`, backup
 `zion-pool.bak-pre-pearl-*`.
 
 ### Bugs found during live bring-up
 
 - **U256 `target` vs serde_json**: `serde_json::Number` stores >u64 values as
   f64 → `to_string()` yields scientific notation → `BigUint` parse fail
-  ("bad target: invalid digit"). Fix `8354fc5cb`: `quote_target_digits()`
+  ("bad target: invalid digit"). Fix `cd8ddfca7`: `quote_target_digits()`
   rewrites bare `"target":NNN…` (>15 digits) to a string literal on the raw
   response line before `serde_json::from_str`; `PearlJob.target_dec` keeps
   the verbatim decimal for `submitPlainProof` echo (which is sent as a bare
   number in hand-assembled JSON).
 - **`gpu-opencl` feature gate**: `runtime.rs`/`gpu/mod.rs` referenced
   `auxpow::gpu_opencl_full::Pearl*` types — the module is gated → pool build
-  (zion-miner as dep w/o feature) failed E0432. Fix `f1c8a4263`: plain data
+  (zion-miner as dep w/o feature) failed E0432. Fix `6cf17080c`: plain data
   types (`PearlPouwNativeInput/Result`, `PearlSeedDerivation`,
   `PEARL_SEED_{LABEL,SALT}_{A,B}`) moved to ungated `auxpow::pearl`;
   `gpu_opencl_full` re-exports.
@@ -257,7 +257,7 @@ Done since this list was written: pearld full sync (last recorded sample
 `blocks=headers=127309`), on-device CUDA parity + default-config runs on
 the 1070 Ti (§7, §9).
 
-## 7. CUDA backend (2026-10-13, commit `61a9ee31c`)
+## 7. CUDA backend (2026-10-13, commit `bf3f41ca4`)
 
 The CUDA implementation mirrors the OpenCL pipeline. On-device parity on
 the GTX 1070 Ti is verified for the two fixtures below, not every possible
@@ -674,14 +674,14 @@ or enabled on the production pool (upstream leg activates only when
 `ZION_POOL_PEARL_UPSTREAM` is configured). §10's three Suprnova accepts
 remain the frozen live result.
 
-## 12. Stage 3 — production Edge deployment + live E2E (2026-10-16, `d2522f7b4`)
+## 12. Stage 3 — production Edge deployment + live E2E (2026-10-16, `b45cca714`)
 
 Deployed the Stage 1+2 pool build to Edge and verified both Pearl
 submission paths against the live production pool.
 
 ### Deploy steps executed
 
-- Worktree `/tmp/zion-pearl-s2` @ `d2522f7b4`,
+- Worktree `/tmp/zion-pearl-s2` @ `b45cca714`,
   `CARGO_TARGET_DIR=/opt/zion/V31/target cargo build --release --locked
   -p zion-pool` (8m50s). Old binary preserved via `/proc/<pid>/exe` →
   `zion-pool.bak-pre-pearl-s2-20261016011650`.

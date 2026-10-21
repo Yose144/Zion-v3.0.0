@@ -3,7 +3,7 @@
 > **Datum:** 2026-05-27
 > **Autor:** Devin / ZION Core Team
 > **Cíl:** Trojdílná dashboard architektura — lokální control, DAO správa, Guardian portal.
-> **Status:** ✅ Fáze 1–6 hotová — branch `feat/dashboard-v2`, commit `4a3c6bbc`
+> **Status:** ✅ Fáze 1–6 hotová — branch `feat/dashboard-v2`, commit `c630d69a`
 
 ---
 
@@ -423,7 +423,7 @@ Všechny existující `/api/*` endpointy zůstávají. Nové endpointy:
 
 ---
 
-*Poslední aktualizace: 2026-05-27 (commit `4a3c6bbc`)*
+*Poslední aktualizace: 2026-05-27 (commit `c630d69a`)*
 
 *Generated with [Devin](https://cli.devin.ai/docs)*
 *Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>*

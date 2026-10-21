@@ -11,8 +11,8 @@
 
 Audit findings from 2026-06-19 were remediated in:
 
-- `02186def` — non-L1 fmt + clippy clean
-- `c523aac5` — L1 fmt + clippy clean + websocket send bugfix
+- `29c3590e` — non-L1 fmt + clippy clean
+- `6e8c4b3b` — L1 fmt + clippy clean + websocket send bugfix
 
 Current status after remediation:
 
@@ -132,7 +132,7 @@ Captured during a working SSH window before connectivity dropped.
 
 ## Doc / Version (resolved 2026-06-19)
 
-The canonical line is **v3.0.2** (git tag `v3.0.2` → commit `31d12f34`; `main` is ahead with later 3.0.2 work). Versions were unified during this pass:
+The canonical line is **v3.0.2** (git tag `v3.0.2` → commit `a44640ed`; `main` is ahead with later 3.0.2 work). Versions were unified during this pass:
 
 - `V3/Cargo.toml`, `V3/config/bridge-mainnet.toml`, `V3/config/bridge-testnet.toml`: **3.0.1 → 3.0.2** ✅
 - `V3/README.md`: now **3.0.2** ✅

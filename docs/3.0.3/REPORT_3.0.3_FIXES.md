@@ -219,8 +219,8 @@ Dashboard:
 ### Commity
 | Commit | Popis |
 |--------|-------|
-| `2f466a40` | `fix(L1): apply decimal fork scale conversion in RPC balance queries` |
-| `a7d426b1` | `chore(deploy): set ZION_MIGRATION_HEIGHT=18850 in edge node service files` |
+| `96fc67dc` | `fix(L1): apply decimal fork scale conversion in RPC balance queries` |
+| `575e1ebe` | `chore(deploy): set ZION_MIGRATION_HEIGHT=18850 in edge node service files` |
 
 ---
 

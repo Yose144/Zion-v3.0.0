@@ -38,7 +38,7 @@ CPU thread tezi VerusHash na Intel Pentium G4560 (2 core / 4 thread).
 
 ### 3.1 `ZION_GPU_EARLY_BREAK=0` (kriticke)
 
-v89 mel `ZION_GPU_EARLY_BREAK=1`, coz capnulo batch na jeden chunk (`work_size` nonci) a **kompletnie vyplo double-buffered async readback** — optimalizaci, ktera dava +50% hashrate (commit `a6d8ad35d`, viz `docs/3.0.6/30khsDeeksha.md`).
+v89 mel `ZION_GPU_EARLY_BREAK=1`, coz capnulo batch na jeden chunk (`work_size` nonci) a **kompletnie vyplo double-buffered async readback** — optimalizaci, ktera dava +50% hashrate (commit `9c725c944`, viz `docs/3.0.6/30khsDeeksha.md`).
 
 S `=0` GPU zpracuje cely 65536-nonce batch pres vice chunku s ping-pong A/B buffery. GPU pipeline zustava plna.
 

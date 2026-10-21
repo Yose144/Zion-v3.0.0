@@ -278,12 +278,12 @@ Implementation files:
 - `src/components/QuantumBubbles.tsx` — bubble presets
 - `src/components/BackgroundToggle.tsx` — UI config + styling
 
-**Nebula Drift** (`a85c2f20`)
+**Nebula Drift** (`dafc199c`)
 - Slow drifting lavender starfield (speed 1.6, density 180)
 - High-density colorful bubbles: purple, gold, cyan, magenta, pink
 - Large blur (65–100 px) for a soft misty look
 
-**Galaxy Core** (`17a9ae77`)
+**Galaxy Core** (`0e818be3`)
 - Extreme forward velocity: speed 7, density 420, trailOpacity 0.03
 - Cold blue-white stars `[200, 230, 255]`
 - 2 large central glow bubbles (600 px + 400 px) = breathing galactic nucleus

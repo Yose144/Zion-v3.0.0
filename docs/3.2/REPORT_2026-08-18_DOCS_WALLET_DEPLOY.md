@@ -82,7 +82,7 @@ All references to the three historical hashes (`08a94fb0...`, `21e2b274...`, `4f
 
 ### 3.5 Desktop-agent wallet public-API fix
 
-A separate commit (`c2e72713a`) fixed the desktop-agent wallet section that was failing for public users because it tried to reach the operator-only TCP JSON-RPC (`62.171.141.136:8443`) behind nginx IP allowlist:
+A separate commit (`163c16a8a`) fixed the desktop-agent wallet section that was failing for public users because it tried to reach the operator-only TCP JSON-RPC (`62.171.141.136:8443`) behind nginx IP allowlist:
 
 - Files: `APP&WEB/desktop-agent/src/main.js`, `archive/DesktopAgentP3.0.6/src/main.js`.
 - Added public HTTPS API constants:
@@ -131,8 +131,8 @@ After running `APP&WEB/website-v2.9/deploy/deploy-web2.9.sh`:
 
 | SHA | Message | Files |
 |-----|---------|-------|
-| `6f9c7b6c2` | `docs(public,website,master): align all public and master docs with One Love v3.2.0 genesis` | 92 files |
-| `c2e72713a` | `fix(wallet): use public HTTPS API instead of operator-only TCP RPC` | 2 files (`desktop-agent/src/main.js`, `archive/DesktopAgentP3.0.6/src/main.js`) |
+| `ba1be5476` | `docs(public,website,master): align all public and master docs with One Love v3.2.0 genesis` | 92 files |
+| `163c16a8a` | `fix(wallet): use public HTTPS API instead of operator-only TCP RPC` | 2 files (`desktop-agent/src/main.js`, `archive/DesktopAgentP3.0.6/src/main.js`) |
 
 ### 5.2 Pushes
 

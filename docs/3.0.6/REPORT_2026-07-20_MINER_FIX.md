@@ -140,7 +140,7 @@ Tento týden transformoval ZION V3 z jednoduchého single-stream mineru na **pln
 
 ## 3. StaleJob/JobMismatch Fix (07-21) — Kritický Fix
 
-**Reference:** Tento report §3, commit `8f062593c`
+**Reference:** Tento report §3, commit `0862646f9`
 
 ### Problém
 Deeksha shares měly **25-35% reject rate**:
@@ -308,7 +308,7 @@ Bugs fixed:
 
 ## 8. Hiran AI v2.4 Maestro — Ecosystem Orchestrator
 
-**Reference:** commit `61f30a8a8`, `b01cd2352`
+**Reference:** commit `3cf6ff4c4`, `7062363ca`
 
 ### 6-komponentní hierarchický agent orchestrator
 - **tool_registry.rs** — 55 tools, 32 Sub-Agents, 14 Intents, async reqwest executor s retry
@@ -329,7 +329,7 @@ Bugs fixed:
 
 ## 9. Miner TUI Redesign
 
-**Reference:** commits `d45ffa891`, `fc8276740`, `ab312992d`, `a6a73c63a`
+**Reference:** commits `6836005fb`, `57ebc4799`, `14db37f3d`, `2fe3729be`
 
 - **Pro-style boxed dashboard** — Unicode box borders, centered title, colors
 - **Triple-stream panel** — ZION / GPU / CPU per-stream A/R counters

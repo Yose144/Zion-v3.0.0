@@ -117,7 +117,7 @@ Převést 100M ZION z Bridge Vault UTXO Seed (`zion1r565v3k2u8p8t6n494p0n527c0m7
 - `V3/sdk/src/wallet.rs` — default `memo: None` v existující helper funkci
 - `V3/L1/core/src/bin/wallet.rs` — default `memo: None` v `cmd_send`
 
-**Commit:** `20379ec4 feat(L1): add memo support to UTXO SendParams + build_and_sign`
+**Commit:** `474fa0db feat(L1): add memo support to UTXO SendParams + build_and_sign`
 
 **Verifikace:**
 ```
@@ -130,7 +130,7 @@ cargo test --manifest-path V3/Cargo.toml -p zion-core --lib wallet
 **Soubory změněné:**
 - `V3/cli/src/commands/wallet.rs` — když `--memo` je poskytnuto a neexistují spendable UTXO, odmítne account-model fallback
 
-**Commit:** `50dbb7ba fix(cli): block memo sends from falling back to account-model`
+**Commit:** `6f0e11e7 fix(cli): block memo sends from falling back to account-model`
 
 ### Fix C: L2 bridge relay default_evm_recipient fallback
 
@@ -140,7 +140,7 @@ cargo test --manifest-path V3/Cargo.toml -p zion-core --lib wallet
 - `V3/L2/bridge/config/bridge-mainnet.toml` — `default_evm_recipient = "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186"`
 - `V3/config/bridge-mainnet.toml` — stejné
 
-**Commit:** `89873dfb feat(bridge): add default_evm_recipient fallback for locks without memo`
+**Commit:** `57fccc7c feat(bridge): add default_evm_recipient fallback for locks without memo`
 
 ### Fix D: Bridge relay start_block_height + L1 RPC
 
@@ -148,7 +148,7 @@ cargo test --manifest-path V3/Cargo.toml -p zion-core --lib wallet
 - `V3/L2/bridge/src/main.rs` — `last_l1_height` se inicializuje z configu `start_block_height` když je DB prázdná
 - `V3/L2/bridge/config/bridge-mainnet.toml` — `start_block_height = 11300`
 
-**Commit:** `f87adc9a fix(bridge): start L1 scan from recent block and wire config start_block_height`
+**Commit:** `5b99ef79 fix(bridge): start L1 scan from recent block and wire config start_block_height`
 
 ---
 
@@ -187,8 +187,8 @@ Všech 5 privátních klíčů nalezeno v `5ELMWallets.md` (lokální repo, nyn�
 2. Klíče uloženy do `/root/zion-validator-key.env` (mode 600) na Edge serveru ✅
 3. Relay upraven — `load_all_validator_keys()` načítá `ZION_VALIDATOR_PRIVATE_KEY` + `_2..5` ✅
 4. `handle_l1_lock()` rozšířen o smyčku přes všechny klíče — 5 TX/lock ✅
-5. Commit `c4a4841` pushnut na `main`, rebuild na Edge (56s), restart relay ✅
-6. `5ELMWallets.md` odstraněn z gitu, přidán do `.gitignore` (commit `14dd686`) ✅
+5. Commit `e82eb73` pushnut na `main`, rebuild na Edge (56s), restart relay ✅
+6. `5ELMWallets.md` odstraněn z gitu, přidán do `.gitignore` (commit `1e865a9`) ✅
 
 ### 30 submitLockProof TX odesláno (5 validátorů × 6 locků)
 
@@ -251,17 +251,17 @@ INFO  🟢 submitLockProof CONFIRMED on Base (Mainnet) (attempt 1)
 ## 10. Commity
 
 ```
-14dd686  security: add 5ELMWallets.md and key files to .gitignore
-c4a4841  feat(bridge): multi-validator key support — relay submits all 5 keys per lock
-35b05e43 docs: update bridge status — 100M UTXO locks sent, validator key blocker
-50dbb7ba fix(cli): block memo sends from falling back to account-model
-0bbba50e docs: add fixL1bridge100m.md — full L1 bridge 100M recovery report
-20379ec4 feat(L1): add memo support to UTXO SendParams + build_and_sign
-89873dfb feat(bridge): add default_evm_recipient fallback for locks without memo
-fb098515 chore: remove leftover diagnostic scripts
-e0263103 docs(status): document bridge vault liquidity and UTXO memo blocker
-b354a8a1 chore: remove temporary diagnostic scripts
-f87adc9a fix(bridge): start L1 scan from recent block and wire config start_block_height
+1e865a9  security: add 5ELMWallets.md and key files to .gitignore
+e82eb73  feat(bridge): multi-validator key support — relay submits all 5 keys per lock
+50d97377 docs: update bridge status — 100M UTXO locks sent, validator key blocker
+6f0e11e7 fix(cli): block memo sends from falling back to account-model
+a96a969a docs: add fixL1bridge100m.md — full L1 bridge 100M recovery report
+474fa0db feat(L1): add memo support to UTXO SendParams + build_and_sign
+57fccc7c feat(bridge): add default_evm_recipient fallback for locks without memo
+fc14f826 chore: remove leftover diagnostic scripts
+565f55d5 docs(status): document bridge vault liquidity and UTXO memo blocker
+9805f0e9 chore: remove temporary diagnostic scripts
+5b99ef79 fix(bridge): start L1 scan from recent block and wire config start_block_height
 ```
 
 ---

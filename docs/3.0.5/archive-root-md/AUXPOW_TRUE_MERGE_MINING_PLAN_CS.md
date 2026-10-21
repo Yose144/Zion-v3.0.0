@@ -284,7 +284,7 @@ V3 mainnet implementace se odchýlila od původní vize:
 
 ### 4.3 Současný AuXpow Crate (Fáze 1 — Stratum Proxy)
 
-`AuXpow` crate (commity `44371aa10` až pending) je **Stratum proxy** — NENÍ pravé merge mining:
+`AuXpow` crate (commity `46947d9d1` až pending) je **Stratum proxy** — NENÍ pravé merge mining:
 
 ```
 AuXpow architecture (current):

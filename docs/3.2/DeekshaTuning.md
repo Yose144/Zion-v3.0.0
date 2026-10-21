@@ -128,8 +128,8 @@ collect_batch) with 4× work_size batch, giving accurate real-world throughput.
 
 ## Commits
 
-- `79b8e9d11` — Deeksha v3.2: ASIC hardening (512 KiB scratchpad, 128 reads, 2 passes)
-- `68c69cd61` — CUDA Deeksha v3.2 tuning: work_size 4096, remove inter-chunk sync, fix debug kernel KAT output
+- `d97cc58c6` — Deeksha v3.2: ASIC hardening (512 KiB scratchpad, 128 reads, 2 passes)
+- `406780c94` — CUDA Deeksha v3.2 tuning: work_size 4096, remove inter-chunk sync, fix debug kernel KAT output
 
 ---
 

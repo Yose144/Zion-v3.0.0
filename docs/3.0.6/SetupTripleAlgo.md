@@ -11,9 +11,9 @@
 
 Metal on Apple Silicon uses **unified memory** (shared with CPU). Allocating a
 2GB+ DAG buffer for ProgPow/KawPow/Ethash causes **system freezes** (same class
-of bug as RX 5700 XT crash in commit `bf49b9013`).
+of bug as RX 5700 XT crash in commit `13bad1f6c`).
 
-The miner now has `backend_supports_algorithm()` guard (commit `4209d1dc2`):
+The miner now has `backend_supports_algorithm()` guard (commit `e3dbb4749`):
 - Metal → skips `progpow`, `ethash`, `etchash`, `kawpow`, `evrprogpow`, `meowpow`
 - OpenCL/CUDA → all algorithms allowed (dedicated VRAM)
 
@@ -384,7 +384,7 @@ target/release/zion-miner \
    - Work buffers: ~1 GB
    - Total: ~4.3 GB (safe margin)
 
-## Bugs Fixed (commit e5a9a53bf)
+## Bugs Fixed (commit 65f20d2a6)
 
 ### Bug 1: nonce_offset reset on every pool job re-send
 The pool re-sends the same job every ~1 second. The `nonce_offset` was

@@ -96,7 +96,7 @@ Pro každý L1 lock relay automaticky odešle `submitLockProof` od všech 5 vali
 ### Commit
 
 ```
-c4a4841  feat(bridge): multi-validator key support — relay submits all 5 keys per lock
+e82eb73  feat(bridge): multi-validator key support — relay submits all 5 keys per lock
 ```
 
 ---

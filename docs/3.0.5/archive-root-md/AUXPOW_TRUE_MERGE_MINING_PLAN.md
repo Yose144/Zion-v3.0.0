@@ -284,7 +284,7 @@ The V3 mainnet implementation diverged from the original vision:
 
 ### 4.3 Current AuXpow Crate (Phase 1 — Stratum Proxy)
 
-The `AuXpow` crate (commits `44371aa10` through pending) is a **Stratum proxy** — NOT true merge mining:
+The `AuXpow` crate (commits `46947d9d1` through pending) is a **Stratum proxy** — NOT true merge mining:
 
 ```
 AuXpow architecture (current):

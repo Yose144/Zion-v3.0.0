@@ -1,7 +1,7 @@
 # ZION Ekam Deeksha GPU Benchmark Matrix
 
 > **Date:** 2026-04-02  
-> **Miner:** V3/L1/miner @ commit `9e307c4d` (TPB=48 default, --use_fast_math)  
+> **Miner:** V3/L1/miner @ commit `f04f4280` (TPB=48 default, --use_fast_math)  
 > **Mode:** `--ekam-bench` (pure GPU, no pool overhead)  
 > **Algorithm:** Ekam Deeksha v2 — 256 KiB scratchpad, 4 passes, 256 random reads, INT8 NPU Mix, 8-round Cosmic Fusion
 
@@ -224,4 +224,4 @@ All benchmarks run with `--ekam-bench` mode (10-second sustained measurement, no
 
 ---
 
-*Last updated: 2026-04-02 | Miner commit: 9e307c4d*
+*Last updated: 2026-04-02 | Miner commit: f04f4280*

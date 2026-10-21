@@ -106,8 +106,8 @@
 
 | Item | Status | Detail |
 |------|--------|--------|
-| PPLNS payout persistence | ✅ Done | File-based JSON snapshot, Edge deployed (commit `33a48151`) |
-| Address TX index (O(1) history) | ✅ Done | In-memory HashMap, Edge deployed (commit `fe3beed9`) |
+| PPLNS payout persistence | ✅ Done | File-based JSON snapshot, Edge deployed (commit `2586fdcc`) |
+| Address TX index (O(1) history) | ✅ Done | In-memory HashMap, Edge deployed (commit `6cbe464f`) |
 | Final payout verification | 🔄 In progress | Fee accumulator payout logic (tracked but not paid by pool) |
 | Security audit | 🔄 Scheduled | External firm booked |
 | Bridge mainnet validator keys | ⚠️ User task | Requires air-gapped machine + hardware wallet |
@@ -148,12 +148,12 @@ Key steps:
 
 | Feature | Commit | Edge Deployed |
 |---------|--------|---------------|
-| PPLNS pool persistence (file-based JSON snapshot) | `33a48151` | ✅ Yes |
-| Address TX index (O(1) getTransactionHistory) | `fe3beed9` | ✅ Yes |
-| Mobile Universal Links + App Links + EAS config | `529456f5` | N/A (EAS build) |
-| L4 daily streak system + daily XP reset | `58ac8294` | ✅ Yes |
-| L4 territory contest 24h cooldowns | `58ac8294` | ✅ Yes |
-| L4 daily_xp reset fix (json_set) | `3559d1a7` | ✅ Yes |
+| PPLNS pool persistence (file-based JSON snapshot) | `2586fdcc` | ✅ Yes |
+| Address TX index (O(1) getTransactionHistory) | `6cbe464f` | ✅ Yes |
+| Mobile Universal Links + App Links + EAS config | `f6d45672` | N/A (EAS build) |
+| L4 daily streak system + daily XP reset | `7b9c9ed4` | ✅ Yes |
+| L4 territory contest 24h cooldowns | `7b9c9ed4` | ✅ Yes |
+| L4 daily_xp reset fix (json_set) | `2ef46bde` | ✅ Yes |
 
 ---
 
@@ -195,17 +195,17 @@ Key steps:
 
 | Feature | Status | Target |
 |---------|--------|--------|
-| Wallet SDK 3.0.3 fix (1e12→1e6, 6 souborů) | ✅ Done (commit `61ddc587`) | Q3 2026 |
-| Mobile App 3.0.3 fix (1e12→1e6, 3 soubory) | ✅ Done (commit `61ddc587`) | Q3 2026 |
-| Desktop Agent 3.0.3 fix (1e12→1e6, 6 souborů) | ✅ Done (commit `61ddc587`) | Q3 2026 |
-| Fee constants aligned (MIN_TX_FEE=1) | ✅ Done (commit `61ddc587`) | Q3 2026 |
+| Wallet SDK 3.0.3 fix (1e12→1e6, 6 souborů) | ✅ Done (commit `5416b637`) | Q3 2026 |
+| Mobile App 3.0.3 fix (1e12→1e6, 3 soubory) | ✅ Done (commit `5416b637`) | Q3 2026 |
+| Desktop Agent 3.0.3 fix (1e12→1e6, 6 souborů) | ✅ Done (commit `5416b637`) | Q3 2026 |
+| Fee constants aligned (MIN_TX_FEE=1) | ✅ Done (commit `5416b637`) | Q3 2026 |
 
 ### Fáze 2 — TX History RPC
 
 | Feature | Status | Target |
 |---------|--------|--------|
-| getTransactionHistory UTXO + coinbase scan | ✅ Done (commit `77776e48`, Edge deployed) | Q3 2026 |
-| Address-based tx index (O(1) lookup) | ✅ Done (commit `fe3beed9`, Edge deployed) | Q3 2026 |
+| getTransactionHistory UTXO + coinbase scan | ✅ Done (commit `9fda39dc`, Edge deployed) | Q3 2026 |
+| Address-based tx index (O(1) lookup) | ✅ Done (commit `6cbe464f`, Edge deployed) | Q3 2026 |
 
 ### Fáze 3 — L4 Oasis Backend Completion
 
@@ -214,8 +214,8 @@ Key steps:
 | WebSocket event wiring | ✅ Done (axum WS + tokio-tungstenite, 13 event types, 2 endpoints) | Q3 2026 |
 | Data files (avatars.json, golden_egg.json) | ✅ Done (51 avatars, 255 quests, 108 clues) | Q3 2026 |
 | L1 blockchain listener (real-time XP) | ✅ Done (blockchain_listener.rs, polls L1 RPC) | Q3 2026 |
-| Daily streak system | ✅ Done (commit `58ac8294`, touch() + daily XP reset) | Q3 2026 |
-| Territory contest cooldowns | ✅ Done (commit `58ac8294`, 24h cooldown) | Q3 2026 |
+| Daily streak system | ✅ Done (commit `7b9c9ed4`, touch() + daily XP reset) | Q3 2026 |
+| Territory contest cooldowns | ✅ Done (commit `7b9c9ed4`, 24h cooldown) | Q3 2026 |
 | Achievement system | ✅ Done (5 types, auto-checking, milestones) | Q3 2026 |
 | Wallet signature auth | 🔵 Planned | Q4 2026 |
 | Guild wars (declaration + resolution) | 🔵 Needs design | Q4 2026 |
@@ -230,9 +230,9 @@ Key steps:
 | QR code scan/generate | ✅ Done | Q4 2026 |
 | Biometric auth (FaceID/TouchID) | ✅ Done | Q4 2026 |
 | Send/receive/balance/tx history | ✅ Done | Q4 2026 |
-| 3.0.3 decimal fix | ✅ Done (commit `61ddc587`) | Q3 2026 |
-| Deep linking (Universal Links / App Links) | ✅ Done (commit `529456f5`) | Q3 2026 |
-| EAS build config (eas.json) | ✅ Done (commit `529456f5`) | Q3 2026 |
+| 3.0.3 decimal fix | ✅ Done (commit `5416b637`) | Q3 2026 |
+| Deep linking (Universal Links / App Links) | ✅ Done (commit `f6d45672`) | Q3 2026 |
+| EAS build config (eas.json) | ✅ Done (commit `f6d45672`) | Q3 2026 |
 | apple-app-site-association + assetlinks.json | ✅ Done (placeholders, need real TEAMID/SHA256) | Q3 2026 |
 | `npx expo prebuild` (android/ + ios/ folders) | 🔵 Planned | Q4 2026 |
 | First device build (EAS Build) | 🔵 Planned (needs Apple Team ID + Android SHA256) | Q4 2026 |

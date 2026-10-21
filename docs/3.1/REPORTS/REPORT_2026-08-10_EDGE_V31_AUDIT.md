@@ -94,7 +94,7 @@ Node status:
 ### 2.4 Git State on Edge
 
 ```text
-HEAD:    8c165911c0806489523633bc56a7564650e74f6f
+HEAD:    c0e9ad1f5ce4cbc0b0a4c6443acda42dd73b202f
 Branch:  main
 Status:  working tree is NOT clean
 ```
@@ -125,7 +125,7 @@ MM V31/L1/pool/src/stratum.rs
 ?? ...
 ```
 
-The last commit in `/opt/zion` is `8c165911c IntroPage: replace main navigation with Marketplace rasta style.` (a UI/website change), but the running L1/pool/miner binaries are built from **uncommitted source changes** (V31 L1 files). This makes the exact deployed code non-reproducible from a git commit.
+The last commit in `/opt/zion` is `c0e9ad1f5 IntroPage: replace main navigation with Marketplace rasta style.` (a UI/website change), but the running L1/pool/miner binaries are built from **uncommitted source changes** (V31 L1 files). This makes the exact deployed code non-reproducible from a git commit.
 
 ### 2.5 Environment & Config
 
@@ -273,7 +273,7 @@ From `http://127.0.0.1:8080/miners`:
 
 ```text
 Workspace:   /Users/yeshuae/Projects/2.9.6
-HEAD:        3955f2f46 docs: add PPLNS payout fix report
+HEAD:        20f735f86 docs: add PPLNS payout fix report
 Branch:      main
 Status:      clean (no modified files)
 ```
@@ -281,29 +281,29 @@ Status:      clean (no modified files)
 `git log --oneline -20`:
 
 ```text
-3955f2f46 docs: add PPLNS payout fix report
-458fb5bb9 fix(pool): record vardiff share weight in PPLNS instead of network difficulty
-b4600bcb9 fix(dashboard): use correct input vout index when marking UTXOs spent
-29ddd937d docs: VRSC rejection fix + performance tuning report and status update
-1c0ce2e42 perf(gpu): increase ProgPoW GWS to 1M + revert VRSC batch to 2M
-4f6f8dd89 perf(miner): tune GPU sharing gap=0 + nonce_batch=10M for +14% hashrate
-f1ccdb2c6 perf(gpu): increase ProgPoW GWS to 524288 + larger batch sizes for dedicated mode
-9cbaa6302 fix(miner): eliminate VRSC share rejection via per-coin result channels
-c0218b587 fix(opencl): local_size fix for MultiGpuMiner + dedicated mode + new wallet
-f0798d58c docs: add Windows 11 miner setup guide (ZION Trinity CUDA)
-7a13ac2f4 docs: OpenCL target check fix report + SMOS wrapper dedicated mode
-08ef9dbf1 fix(opencl): on-device target check for Deeksha — 50x ZION hashrate on AMD
-41d5ae050 chore: gitignore V31 custom cargo target dirs (13K build artifacts)
-fa8d902aa chore(miner): update Start.sh launcher for ZION GPU + auto-detect + structured logging
-c63799225 feat(miner): ZION GPU + auto-detect + structured logging + hashrate optimization
-ef214da88 fix(smos): fix RX 5600 XT not mining — remove ZION_NO_GCN_S4_MODE, restore v90 tuning
-e99e226d5 fix(miner): VRSC hashrate reporting + nonce cursor + async share submission
-8586df40c fix(miner): wire ZION_NONCE_COUNT/ZION_STREAM2_BATCH and tune SMOS wrapper
-49c81b02e VRSC VerusHash max performance tuning ported from V3 archive.
-297bb22e8 docs: update AGENTS.md, README.md and StatusV3.md with DAG cache validation
+20f735f86 docs: add PPLNS payout fix report
+1614421cf fix(pool): record vardiff share weight in PPLNS instead of network difficulty
+82def9d4e fix(dashboard): use correct input vout index when marking UTXOs spent
+6af8099a4 docs: VRSC rejection fix + performance tuning report and status update
+7ac90184a perf(gpu): increase ProgPoW GWS to 1M + revert VRSC batch to 2M
+e99a16337 perf(miner): tune GPU sharing gap=0 + nonce_batch=10M for +14% hashrate
+b7c4e91c5 perf(gpu): increase ProgPoW GWS to 524288 + larger batch sizes for dedicated mode
+75f2c5619 fix(miner): eliminate VRSC share rejection via per-coin result channels
+6eaaed3b4 fix(opencl): local_size fix for MultiGpuMiner + dedicated mode + new wallet
+1b61367e7 docs: add Windows 11 miner setup guide (ZION Trinity CUDA)
+612cbd9df docs: OpenCL target check fix report + SMOS wrapper dedicated mode
+cd02c2f95 fix(opencl): on-device target check for Deeksha — 50x ZION hashrate on AMD
+6d94f0f1f chore: gitignore V31 custom cargo target dirs (13K build artifacts)
+bb4b8009d chore(miner): update Start.sh launcher for ZION GPU + auto-detect + structured logging
+920943682 feat(miner): ZION GPU + auto-detect + structured logging + hashrate optimization
+70c08029d fix(smos): fix RX 5600 XT not mining — remove ZION_NO_GCN_S4_MODE, restore v90 tuning
+e3585b210 fix(miner): VRSC hashrate reporting + nonce cursor + async share submission
+16cfa97d4 fix(miner): wire ZION_NONCE_COUNT/ZION_STREAM2_BATCH and tune SMOS wrapper
+ab18651bd VRSC VerusHash max performance tuning ported from V3 archive.
+c392323f7 docs: update AGENTS.md, README.md and StatusV3.md with DAG cache validation
 ```
 
-The commits that correspond to the live Edge fix are `9cbaa6302` (VRSC fix) and `4f6f8dd89` (perf tuning), matching the description in `AGENTS.md` and `StatusV3.md`.
+The commits that correspond to the live Edge fix are `75f2c5619` (VRSC fix) and `e99a16337` (perf tuning), matching the description in `AGENTS.md` and `StatusV3.md`.
 
 ### 3.2 Workspace Version
 

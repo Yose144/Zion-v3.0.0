@@ -3,7 +3,7 @@
 > **Status:** ✅ DEPLOYED — 2.7x speedup, faster than hellminer
 > **Datum:** 2026-07-16
 > **Autor:** Devin (GLM-5.2 High) + Yeshua
-> **Commit:** `4341a8684`
+> **Commit:** `5371852fc`
 
 ---
 

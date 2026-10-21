@@ -269,7 +269,7 @@ QUANTUS_RPC=http://127.0.0.1:9944      # Edge (nebo https://rpc.zionterranova.co
 - [ ] První reálný QTC payout submit — čeká na unpaid ≥ min +
       `QTC_PAYOUT_ENABLED=1` + funded payout účet (`warpd` Oct-8 redeploy
       má `QUANTUS_EXTRINSIC` fix).
-- [x] **Kurz + treasury gate (2026-10-09, `32467e141`):**
+- [x] **Kurz + treasury gate (2026-10-09, `915b48a34`):**
       `QTC_PLANKS_PER_FLOWER` přijímá **decimal** přes exact ratio
       (`"1.2386"` → 12386/10000 — integer u128 by ztratil ~19 % při
       sub-1 rate). Konfigurováno na Edge: **1.2386** (CoinGecko
@@ -284,7 +284,7 @@ QUANTUS_RPC=http://127.0.0.1:9944      # Edge (nebo https://rpc.zionterranova.co
       Mainnet fee změřen z indexeru: **0.8–1.0e9 planks/tx** → cap 2e9.
       Treasury `qzpnKFmb…` = 0 → enable bezpečné: vše se queueuje jako
       deferred, vyplatí se až po collectu prvního bloku.
-      **ENABLED 2026-10-09:** warpd redeploy (`32467e141`, atomic swap +
+      **ENABLED 2026-10-09:** warpd redeploy (`915b48a34`, atomic swap +
       backup), `QTC_PAYOUT_ENABLED=1`, sweeper running (60s).
 - [x] Desktop payout routing (2026-10-09): `payoutCoin` config
       ('zion'|'qtc') + **Pool payout select** v QTC kartě → miner start
@@ -324,13 +324,13 @@ Dvě vrstvy:
       generate (`generate-quantus-wallet` → 24-word mnemonic reveal +
       auto-link); `list-wallets` vrací `qtcAddress`; **Pool payout**
       select (ZION/QTC → `payoutCoin` config).
-- [x] **Generate-fix (2026-10-09, `32467e141`):** root cause selhání „nejde
+- [x] **Generate-fix (2026-10-09, `915b48a34`):** root cause selhání „nejde
       generate" = unhandled IPC rejection na starém procesu
       (`No handler registered` → status řádek zůstal prázdný, tiché „nic
       se neděje"). `deriveQuantusAddressDetailed` vrací konkrétní důvod
       (helper path/spawn/exit-status/stderr tail, `sk=`/`pk=` redacted);
       renderer chytá invoke chyby a hlásí „restart the app".
-- [x] UI: Wallet → **Quantus network tab** (2026-10-08, `955a086ce`):
+- [x] UI: Wallet → **Quantus network tab** (2026-10-08, `a17f3f7b5`):
       `quantus-network.js` agreguje node status (`system_health`/`version`),
       pool native leg (`coin_details[].native`), wormhole rewards
       (sqm `minerRewards`), network feed + adresní lookup
@@ -344,7 +344,7 @@ Dvě vrstvy:
       (mnemonic jen stdin). **Wire+signing live-validováno mainnet:**
       extrinsic s `QUANTUS_EXTRINSIC` ctx + tip-anchored era projde
       podpisem → runtime hlásí `InsufficientFunds` (ne Bad signature)
-      pro unfunded sender — `f7422d661`. Bundled helper rebuildnutý
+      pro unfunded sender — `a5e9654c8`. Bundled helper rebuildnutý
       2026-10-08 (ctx + mainnet RPC + `--qtc-balance`). Gated: reálný
       funded submit.
 - [ ] Receive flow: `wormhole` adresa pro mining rewards není potřeba —
@@ -448,14 +448,14 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
       local share validation `get_nonce_hash` vs share_target;
       net-target → `JobResult` do node. Config `QTC_NATIVE_ENABLED` +
       `_NODE_ADDR` + `_TOKEN_FILE` + `_SHARE_PCT` + `_SHARE_DIFF`.
-      **2026-10-08, `caaf52008`** — live handshake OK (fixy: rustls
-      CryptoProvider explicit ring `b820c2dfa`, ALPN `/2` `a4f17f96a`,
+      **2026-10-08, `a23bc7dae`** — live handshake OK (fixy: rustls
+      CryptoProvider explicit ring `9c2c96e60`, ALPN `/2` `8d610e7aa`,
       token file `root:zion 640` + ExecStartPost).
 - [x] **F8.3 Hybrid policy:** per-**job** `serve_native` flag
       (`job_seq %100 < pct` — každý miner dostane stejný zdroj per-block,
       fingerprint-safe); stale native (>90s) → auto upstream fallback.
       Env na Edge: `QTC_NATIVE_ENABLED=1`, `_SHARE_PCT=5` (lottery).
-      **2026-10-08** + fix `d3fb50f88` (target inversion).
+      **2026-10-08** + fix `ff721b925` (target inversion).
       **E2E OVĚŘENO:** při `_SHARE_PCT=50` stratum probe viděla
       `external_stream.job_id="qtun:N"` v broadcast Job lines; desktop
       miner (1070 Ti, QPoW CUDA) joby přijal a **native shares accepted
@@ -479,11 +479,11 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
       prvním mined bloku). **`zion-quantus-reward-watch.timer`** (10 min,
       sqm `minerRewards` probe → journald `pending_leaves=N`) běží —
       detekce prvního bloku bez collectu. **`warpd` redeployed Oct-8**
-      @`2cf818fa1` — má `QUANTUS_EXTRINSIC` signing fix (předchozí Oct-7
+      @`b1dce1a07` — má `QUANTUS_EXTRINSIC` signing fix (předchozí Oct-7
       binárka by produkovala Bad signature). Zbývá: první live collect +
       ledger credit wiring do QtcPayoutSweeper účetnictví.
 - [~] **F8.5 Měření a rozhodnutí:** ~~dashboard `coin_details[].native`~~ ✅
-      `{enabled,connected,share_pct,job_id,job_age_ms}` (`dcc651fd3`).
+      `{enabled,connected,share_pct,job_id,job_age_ms}` (`663c7ba30`).
       **2026-10-08 post-sync fakta:**
       - Node fully synced: `currentBlock=highestBlock=189215`,
         `isSyncing:false`, 28 peers. `NewJob` streamuje (`qtun:N`),
@@ -492,7 +492,7 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
         hashes/block), NE target** — `qpow_math::is_valid_nonce`:
         `target = U512::MAX / difficulty; hash < target`. Náš kód
         porovnával `hash < difficulty` → **kritický bug** (winning
-        nonce by se nikdy neforwardoval; `d3fb50f88` fix).
+        nonce by se nikdy neforwardoval; `ff721b925` fix).
       - `QPoW.CurrentDifficulty` storage (mainnet) =
         **622 135 548 984 111** (~6.2e14 expected hashes/block);
         bloky jdou ~5–20s ⇒ implikovaný network hashrate **~5×10¹³ H/s
@@ -526,7 +526,7 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
         payoutu (nemusí se čekat na lottery blok). Edge env:
         `ZION_POOL_AUXPOW_POOL_QTU=quantus.suprnova.cc:7071` +
         `ZION_POOL_AUXPOW_WALLET_QTU=qzjoHwa…`; code default
-        `ExternalCoin::Quantus::default_pool()` přepsán (`779116a27`).
+        `ExternalCoin::Quantus::default_pool()` přepsán (`a5bb8071e`).
         E2E ověřeno: shares `Accepted` na suprnově, API
         `/api/pools/quantus/miners/<addr>` → `pendingShares`, worker
         `zion-pool` ~0.9 GH/s.

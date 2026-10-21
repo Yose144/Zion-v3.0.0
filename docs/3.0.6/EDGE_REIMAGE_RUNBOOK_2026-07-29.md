@@ -38,7 +38,7 @@ All backups are on this Mac at `~/2.9.6-main/backups/edge/` with `MANIFEST-2026-
 
 3. **Copy source code**
    - `rsync` or clone the private repo into `/opt/zion` from this Mac or from GitHub.
-   - Make sure you use the commit that contains the SSH-key rotation and hardening updates (`c8aa0401e` or newer).
+   - Make sure you use the commit that contains the SSH-key rotation and hardening updates (`66c78d476` or newer).
    - **Do not copy build artifacts or old binaries from the backup.** Rebuild from source in step 6.
 
 4. **Run initial setup**

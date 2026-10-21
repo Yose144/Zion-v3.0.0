@@ -1,7 +1,7 @@
 # VRSC Stale Share Rejection Fix — Report
 
 **Date:** 2026-07-16
-**Commit:** `2ec993499` — `fix(vrsc): reduce stale share rejections from 17% to ~8%`
+**Commit:** `085e31877` — `fix(vrsc): reduce stale share rejections from 17% to ~8%`
 **Status:** DEPLOYED (Edge pool + local miner)
 
 ---

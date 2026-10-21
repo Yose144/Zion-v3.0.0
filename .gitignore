@@ -43,6 +43,20 @@ target-fire/
 V31/releases/
 *.obj
 *.i
+
+# Rust build variant dirs (V3/target3 … — ~200 MB debug artifacts leaked into history)
+V3/target*/
+V31/target*/
+**/debug/incremental/
+**/debug/deps/
+**/debug/build/
+
+# Third-party miner binaries (download at runtime, not in git)
+archive/2miners/xmrig-*/
+
+# Generated stress-test metric dumps in docs reports (regenerate, don't commit)
+docs/**/REPORTS/**/stress_*.md
+docs/**/REPORTS/**/prometheus_dump_*.md
 *.o
 *.a
 
@@ -92,6 +106,9 @@ dashboard/
 /APP/
 lact-*.deb
 node.pid
+
+# vastctl daemon runtime snapshot (regenerated every 60 s, pushed to edge webroot)
+tools/vast/status.json
 
 # Logs
 *.log
@@ -149,6 +166,8 @@ APP&WEB/website-v2.9/public/downloads/
 # Ollama / GGUF production backups (use ~/backups or Releases; do not commit)
 backups/
 V3/data/
+# Operational snapshots (chain DB dumps) — kept on disk, never in git
+/BACKUP/
 HiranV2.1/finetune/exports/
 scripts/finetune/exports/
 # Hiran v1/v2 large artifacts (blobs + LoRA checkpoints) — keep manifests under curriculum/meta/

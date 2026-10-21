@@ -370,7 +370,7 @@ Kontrakty jsou v `V31/L2/multichain/contracts/non-evm/`. Po deploy doplň adresy
 ### ✅ Hotovo
 1. ~~**LND na Edge** — `docker compose up`, sync, open channels, macaroon~~ ✅ Done (zion-lnd systemd, testnet syncing)
 2. ~~**ZionDex Router na Edge** — build, systemd, port 8454~~ ✅ Done (zion-dex.service active, nginx /dex-api proxy)
-3. ~~**ZionDex Phase 4 — Intent crate + Solver daemon + Contracts~~ ✅ Done (88 tests passing, commit `f32c81501`)
+3. ~~**ZionDex Phase 4 — Intent crate + Solver daemon + Contracts~~ ✅ Done (88 tests passing, commit `3f5403e60`)
 
 ### 🔴 Pending
 4. **BTC WARP HTLC** — vygeneruj 5-of-5 multisig P2WSH address, nastav `WARP_BITCOIN_HTLC_ADDRESS` + `WARP_BTC_RELAY_KEY`

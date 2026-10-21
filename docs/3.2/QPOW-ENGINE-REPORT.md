@@ -59,7 +59,7 @@ Share-rate → hashrate: `rate = Σ(upstream_diff) / window`. Upstream diff je s
 - **Aktuální code defaults:** local size `64`, NPT `1`; finální benchmark použil batch 4 194 304.
 - *Historický sweep 6. 10. (portable kernel, ne aktuální defaulty):* `ZION_STREAM2_BATCH=8388608` (8M), `ZION_QPOW_OCL_NPT=4`; NPT 1→4 = +10–15 %, NPT=8 flat; LS 64/128/256 flat; batch 4M→8M +malé, 16M flat.
 - Multi-GPU: `QpowGpuMiner::Multi` (`gpu/mod.rs`) — **hashrate-weighted nonce partition** přes `thread::scope`, per-device EMA; NENÍ 50/50 split (pomalá karta neblokuje rychlou).
-- Device filter `ZION_QPOW_OCL_DEVICES=gfx900,gfx1010` — funguje i pod `ZION_ZANO_RESERVE=1` (fix `6a1f4173d`).
+- Device filter `ZION_QPOW_OCL_DEVICES=gfx900,gfx1010` — funguje i pod `ZION_ZANO_RESERVE=1` (fix `97e758e04`).
 
 ### CUDA (NVIDIA) — `V31/L1/miner/src/gpu/qpow_cuda.rs`
 
@@ -86,12 +86,12 @@ Jeden GPU = časově sdílený mezi streamy. Throttle je vždy **měřený kerne
 
 ### dest-zion 3-stream koexistence (6. 10. večer)
 
-`zion-btcunlock.service` (puzzle #71 keyscan, ~23.8 Mk/s neomezeně) **dusil miner na ~12–17 MH/s QTU**. Po nasazení `--gpu-duty 15`: btcunlock ~3.5 Mk/s + QTU ~30–33 MH/s + ZION ~1.3 MH/s současně, 0 rejects. Implementace: `BTCunlock/src/keyscan.rs` (`gpu_duty_pct`), `btcunlock-worker.py` (`BTCUNLOCK_GPU_DUTY`), systemd `zion-btcunlock.service` `Environment=BTCUNLOCK_GPU_DUTY=15`. Commit `ac0e33dce`.
+`zion-btcunlock.service` (puzzle #71 keyscan, ~23.8 Mk/s neomezeně) **dusil miner na ~12–17 MH/s QTU**. Po nasazení `--gpu-duty 15`: btcunlock ~3.5 Mk/s + QTU ~30–33 MH/s + ZION ~1.3 MH/s současně, 0 rejects. Implementace: `BTCunlock/src/keyscan.rs` (`gpu_duty_pct`), `btcunlock-worker.py` (`BTCUNLOCK_GPU_DUTY`), systemd `zion-btcunlock.service` `Environment=BTCUNLOCK_GPU_DUTY=15`. Commit `ba470f03c`.
 
 ## 4. Share-pipeline a duplicity
 
 - Ext stream loop `runtime.rs`: kontinuální batche na aktuálním jobu, stale-check před submitem (`job_id` rotace → drop).
-- **Duplicate-share fix `08783ca49`:** session-specific nonce salt z worker/session/job — dřív všechny sessiony skenovaly stejný low64 prostor → duplikáty mezi workery. Ověřeno: 0 dup rejects ve 29-min okně.
+- **Duplicate-share fix `44b125bc5`:** session-specific nonce salt z worker/session/job — dřív všechny sessiony skenovaly stejný low64 prostor → duplikáty mezi workery. Ověřeno: 0 dup rejects ve 29-min okně.
 - Watchdog: 300 s bez jakékoliv share → exit(1) → agent failover respawn (~5 s).
 
 ## 5. SMOS observability (rozluštěno)

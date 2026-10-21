@@ -1,7 +1,7 @@
 # BeamHash III GPU Solver — Readiness Report
 
 > Status: **verifier fix applied; ready for first live test on AMD RX 5600 (6 GB VRAM)**  
-> Commit: `b7873f321` (OpenCL kernel integration); verifier alignment + unit tests in this commit  
+> Commit: `516e30960` (OpenCL kernel integration); verifier alignment + unit tests in this commit  
 > Author: Devin integration  
 
 ## What is implemented

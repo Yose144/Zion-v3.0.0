@@ -163,7 +163,7 @@ fi
 # V3 Trinity architecture: single V3 protocol connection to ZION pool.
 # Pool embeds external_stream jobs and forwards AuxPoW shares to external pools.
 # All revenue flows through the pool's AuxPoW bridge and revenue system.
-# QPoW OpenCL backend: commit 789d30e02 (poseidon2_kernel.cl, bit-exact vs
+# QPoW OpenCL backend: commit 762b8cbe4 (poseidon2_kernel.cl, bit-exact vs
 # CPU reference on hash-1/hash/hash+1 boundaries incl. nonzero nonces).
 # Rollback to ZANO: flip ZION_STREAM2_FORCE_COIN back to ZANO.
 # Date: 2026-08-10 (V3.2 Trinity multi-GPU DEDICATED, max performance)

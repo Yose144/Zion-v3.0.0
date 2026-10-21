@@ -217,7 +217,7 @@ H+1 ≈ 18 983, so the treasury stays locked for ~125 000 more blocks
 | 100M wZION minted | Emergency mint 2026-06-24 | ✅ 99 999 899 wZION on Base |
 | 6 UTXO locks (~100M ZION) | L1 blocks 11611-11612 | ✅ 5/5 confirmations |
 | Bridge tests | `cargo test -p zion-bridge` | ✅ 47/47 passed |
-| Memo support (L1) | `SendParams.memo` + CLI `--memo` | ✅ commit `20379ec4` |
+| Memo support (L1) | `SendParams.memo` + CLI `--memo` | ✅ commit `474fa0db` |
 
 ### 3b.2 L2 DAO — ✅ COMPLETE
 

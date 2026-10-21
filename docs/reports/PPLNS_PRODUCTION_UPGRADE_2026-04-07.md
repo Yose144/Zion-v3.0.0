@@ -1,7 +1,7 @@
 # PPLNS Production Upgrade — VarDiff + Difficulty-Weighted Shares
 
 **Datum:** 2026-04-07  
-**Commit:** a23368dc  
+**Commit:** 984a1d9f  
 **Server:** Prague 91.98.122.165  
 
 ---

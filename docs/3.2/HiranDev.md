@@ -84,5 +84,5 @@ A100 40GB $0.375 (id 54851465).
 
 ## 6. Commits
 
-- `ae151b66d` — workspace Hiran/{2.3,2.4,2.5} + recovery map
-- `e2027eddd` — dataset rebuild ověřen (1 558) + baselines + merge tooling
+- `b4c238b78` — workspace Hiran/{2.3,2.4,2.5} + recovery map
+- `16228b006` — dataset rebuild ověřen (1 558) + baselines + merge tooling

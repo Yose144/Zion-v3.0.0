@@ -10,9 +10,9 @@
 
 | Komponenta | Existuje | 3.0.3 compatible | Co chybí |
 |------------|----------|------------------|----------|
-| Wallet SDK | ✅ `APP&WEB/zion-wallet-sdk/` | ✅ Fixed (`61ddc587`) | Mobile features (QR, biometrics, BLE) |
-| Mobile App | ✅ `APP&WEB/mobile-app/` | ✅ Fixed (`61ddc587`) | QR, biometrics, deep linking, device build |
-| TX History RPC | ✅ `getTransactionHistory` v rpc.rs | ✅ Fixed (`77776e48`, Edge deployed) | Address index (optional), height range |
+| Wallet SDK | ✅ `APP&WEB/zion-wallet-sdk/` | ✅ Fixed (`5416b637`) | Mobile features (QR, biometrics, BLE) |
+| Mobile App | ✅ `APP&WEB/mobile-app/` | ✅ Fixed (`5416b637`) | QR, biometrics, deep linking, device build |
+| TX History RPC | ✅ `getTransactionHistory` v rpc.rs | ✅ Fixed (`9fda39dc`, Edge deployed) | Address index (optional), height range |
 | L4 Oasis | ✅ `V3/L4/oasis/` | ⚠️ Needs audit | Backend completion, UE5 content |
 
 ---
@@ -37,7 +37,7 @@
 | Generic HID | `src/hardware/generic-hid-wallet.ts` (123 lines) | ✅ Abstract base |
 | Public API | `src/index.ts` (112 lines) | ✅ Exports |
 
-### 3.0.3 Fix — ✅ DONE (commit `61ddc587`)
+### 3.0.3 Fix — ✅ DONE (commit `5416b637`)
 
 | Soubor | Co | Status |
 |--------|----|--------|
@@ -93,7 +93,7 @@
 | Config | `src/constants/config.js` | ✅ (SCALE_FACTOR 1e12 correct for bridge) |
 | Blockchain constants | `src/constants/blockchain.js` | ✅ 3.0.3 fixed |
 
-### 3.0.3 Fix — ✅ DONE (commit `61ddc587`)
+### 3.0.3 Fix — ✅ DONE (commit `5416b637`)
 
 | Soubor | Co | Status |
 |--------|----|--------|
@@ -112,7 +112,7 @@
 
 | RPC Method | Status | Poznámka |
 |------------|--------|----------|
-| `getTransactionHistory` | ✅ Fixed (commit `77776e48`, Edge deployed) | ✅ Account + UTXO + coinbase, `tx_model` field |
+| `getTransactionHistory` | ✅ Fixed (commit `9fda39dc`, Edge deployed) | ✅ Account + UTXO + coinbase, `tx_model` field |
 | `getAddressInfo` | ✅ Existuje | Balance, tx count, UTXO count |
 | `getUtxos` | ✅ Existuje | Spendable UTXOs |
 | `getBalance` | ✅ Existuje | Account + UTXO hybrid |
@@ -120,7 +120,7 @@
 | `getTransaction` | ✅ Existuje | Single tx by hash |
 | `getAccountTransaction` | ✅ Existuje | Account-model tx |
 
-### ✅ Done — UTXO + coinbase scan (commit `77776e48`)
+### ✅ Done — UTXO + coinbase scan (commit `9fda39dc`)
 
 | Co | Status | Popis |
 |----|--------|-------|

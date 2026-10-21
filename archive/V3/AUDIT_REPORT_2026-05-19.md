@@ -2,7 +2,7 @@
 
 **Auditor:** Devin (automated agent)  
 **Scope:** V3/ workspace (Rust crates, Docker configs, docs, whitepapers)  
-**Commit base:** `835d3dd7` (docs(WP-Mainet): Publikovatelný Whitepaper v3.0 EN + CZ)  
+**Commit base:** `a10f5487` (docs(WP-Mainet): Publikovatelný Whitepaper v3.0 EN + CZ)  
 **Methodology:** Static analysis (`cargo clippy`, `cargo test`), code review, consistency checks, security review
 
 ---

@@ -29,22 +29,22 @@
 | Coin | Algo | Stream | Status | Blocker | Verified by |
 |------|------|--------|--------|---------|-------------|
 | **ZION** | deeksha_lite_fire | 1 | ✅ Green | — | Pool stats: vega-smos 31 KH/s, 629 valid ZION shares |
-| **EPIC** | progpow | 2 | ✅ Green | 3-phase fix complete (TLS submit + stale forward + hash verify). **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). | `EPIC_PROGPOW_SHARE_FIX_REPORT_2026-07-19.md`, commit `eb98dc694` |
-| **RVN** | kawpow | 2 | ✅ Green | E2E live, shares forwarded to 2miners. **CUDA kernel CPU/GPU MATCH** (93.5 MH/s epoch 0). Pool-side share verify fixed (`kawpow_final_hash_real`). E2E pool test on epoch 596 needs >8GB VRAM GPU (DAG = 5.66 GB). | StatusV3 §5, commit `eb98dc694` |
+| **EPIC** | progpow | 2 | ✅ Green | 3-phase fix complete (TLS submit + stale forward + hash verify). **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). | `EPIC_PROGPOW_SHARE_FIX_REPORT_2026-07-19.md`, commit `8d64e3ea0` |
+| **RVN** | kawpow | 2 | ✅ Green | E2E live, shares forwarded to 2miners. **CUDA kernel CPU/GPU MATCH** (93.5 MH/s epoch 0). Pool-side share verify fixed (`kawpow_final_hash_real`). E2E pool test on epoch 596 needs >8GB VRAM GPU (DAG = 5.66 GB). | StatusV3 §5, commit `8d64e3ea0` |
 | **DCR** | blake3 | 2 | ✅ Green | LIVE, blake3 GPU kernel embedded in pool stream. **CUDA kernel CPU/GPU MATCH** (1.23 GH/s). | StatusV3 §5 |
-| **ERG** | autolykos | 2 | ✅ Green | E2E complete, Autolykos v2 GPU thread, 2miners. CUDA benchmark PASS (1.26 GH/s, no CPU ref). | Commit `d4e03cb97` |
-| **VTC** | verthash | 2 | ✅ Green | E2E PASS (zpool), 1.2GB loader done | Commits `646d14f59`, `e8e237448` |
-| **ZCL** | equihashzero | 2 | ✅ Green | E2E PASS (zpool), Wagner dispatch done | Commit `f6df75b64` |
-| **RTM** | ghostrider | 2+3 | ✅ Green | GPU: 15/15 SPH match, E2E PASS (zpool). **CPU E2E share verify PASS** (zpool.ca, accepted) — 3 root causes fixed: target endian (LE), hash output byte order (BE→LE reversal), prevhash per-word reversal (ser_string_be). | Commit `51a34409a`, Edge test pool 2026-07-19 |
-| **QTC** | qhash | 2 | ✅ Green | E2E PASS (suprnova) | Commit `0e5ef6c40` |
-| **NEXA** | nexapow | 2 | ✅ Green | E2E PASS (nexa.2miners.com) | Commit `77613ad50` |
-| **BEAM** | beamhash III | 2 | ✅ Green | Implemented (CPU+GPU), 2miners TLS | Commit `525835d4e` |
+| **ERG** | autolykos | 2 | ✅ Green | E2E complete, Autolykos v2 GPU thread, 2miners. CUDA benchmark PASS (1.26 GH/s, no CPU ref). | Commit `e579486ed` |
+| **VTC** | verthash | 2 | ✅ Green | E2E PASS (zpool), 1.2GB loader done | Commits `a4ac61a2f`, `c7d954b7f` |
+| **ZCL** | equihashzero | 2 | ✅ Green | E2E PASS (zpool), Wagner dispatch done | Commit `d6da35fc2` |
+| **RTM** | ghostrider | 2+3 | ✅ Green | GPU: 15/15 SPH match, E2E PASS (zpool). **CPU E2E share verify PASS** (zpool.ca, accepted) — 3 root causes fixed: target endian (LE), hash output byte order (BE→LE reversal), prevhash per-word reversal (ser_string_be). | Commit `845e35d71`, Edge test pool 2026-07-19 |
+| **QTC** | qhash | 2 | ✅ Green | E2E PASS (suprnova) | Commit `46899f856` |
+| **NEXA** | nexapow | 2 | ✅ Green | E2E PASS (nexa.2miners.com) | Commit `85a2bf408` |
+| **BEAM** | beamhash III | 2 | ✅ Green | Implemented (CPU+GPU), 2miners TLS | Commit `f5fae7f57` |
 | **QUAI** | kawpow | 2 | ✅ Green | E2E, 2miners BTC payout. **CUDA kernel CPU/GPU MATCH** (93.5 MH/s). | StatusV3 §5 |
 | **KAS** | kheavyhash | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (638 MH/s). E2E: 0 shares (pool difficulty too high for GTX 1070 Ti at 14.5 MH/s — needs stronger GPU or long run). | `zion-miner --test-cuda-kernel kheavyhash` 2026-07-28 |
 | **ALPH** | blake3 (double) | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (1.58 GH/s). E2E: 0 shares (needs long run). | `zion-miner --test-cuda-kernel blake3_alph` 2026-07-28 |
 | **FLUX** | zelhash | 2 | ⏸️ Deprecated | FLUX switched to PoUW v2 (Oct 2025), mining pools disabled. WoolyPooly NXDOMAIN, minerpool.org unreachable. CUDA benchmark PASS (1.54 GH/s, no CPU ref). | Web search 2026-07-19 |
-| **EVR** | evrprogpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). Protocol fixed: EthStratum → Stratum v1. Authorized + KawPow notify on Edge test pool. | Commit `eb98dc694`, `auxpow_client.rs` line 135 |
-| **MEWC** | meowpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). Protocol fixed: EthStratum → Stratum v1. | Commit `eb98dc694` |
+| **EVR** | evrprogpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). Protocol fixed: EthStratum → Stratum v1. Authorized + KawPow notify on Edge test pool. | Commit `8d64e3ea0`, `auxpow_client.rs` line 135 |
+| **MEWC** | meowpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (11.1 MH/s, output_hash fix 2026-07-28). Protocol fixed: EthStratum → Stratum v1. | Commit `8d64e3ea0` |
 | **CLORE** | kawpow | 2 | ✅ Kernel Green | **CUDA kernel CPU/GPU MATCH** (93.5 MH/s). Pool moved to 2miners:5050. | `types.rs` line 169 |
 | **VRSC** | verushash | 3 | ✅ Green | **E2E share verify PASS** — CPU miner → ZION pool → LuckPool upstream → **accepted**. Re-verified on Edge debug pool 2026-07-31. | Edge debug pool log: `auxpow_bridge: share_forwarded ... result=Accepted`, `external_share_result ... accepted=true` |
 | **XMR** | randomx | 3 | ✅ Green | RandomX hash verify OK (native-randomx). **Stale job_id fix (2026-07-28):** `ZION_XMR_LATEST_ONLY=1` + `ZION_XMR_STALE_SECS=30`. **E2E share verify PASS ✅ (2026-07-31):** local `zion-miner --cpu-coin XMR` → Edge debug pool `62.171.141.136:8461` → MoneroOcean upstream → `Accepted`. | Edge debug pool log: `auxpow_bridge: share_forwarded ... result=Accepted`, `external_share_result ... accepted=true` |
@@ -52,7 +52,7 @@
 | **KLS** | karlsenhash | 2 | 🟡 Auth OK | E2E PASS, needs native Karlsen wallet | StatusV3 §5 |
 | **DNX** | dynexsolve | 2 | 🟡 Auth OK | Login OK, needs native DNX wallet | StatusV3 §5 |
 | **PRL** | pearlhash | 2 | ⏸️ Deferred | PoUW ZK kernels TODO — **officially deferred to 3.1.0** (2026-07-19) | — |
-| **ETC** | ethash | 2 | ✅ Green | Pure-Rust `hash_ethash` CPU reference aligned with `ethash` 0.4 crate and chfast vectors; **CUDA kernel CPU/GPU MATCH** (~117 MH/s on GTX 1070 Ti, epoch 0). `hash_ethash`/`hash_ethash_with_dag` now always use the `ethash` 0.4 crate, even with `native-hashers`, to avoid C-FFI drift. Remaining step is live upstream share. | Commit `92bb87b78` |
+| **ETC** | ethash | 2 | ✅ Green | Pure-Rust `hash_ethash` CPU reference aligned with `ethash` 0.4 crate and chfast vectors; **CUDA kernel CPU/GPU MATCH** (~117 MH/s on GTX 1070 Ti, epoch 0). `hash_ethash`/`hash_ethash_with_dag` now always use the `ethash` 0.4 crate, even with `native-hashers`, to avoid C-FFI drift. Remaining step is live upstream share. | Commit `7e0ef11e7` |
 | **CKB / CFX / ZEC / PHX / KRX** | various | 2 | 🟡 Code ready | ExternalCoin variants in enum, profit router entries — E2E not tested | `profit_router.rs` |
 
 ---
@@ -96,7 +96,7 @@
 | # | Task | Coin | Details |
 |------|------|------|---------|
 | 3.1 | ~~Reduce VRSC stale rate below 5%~~ ✅ DONE | VRSC | E2E share verify PASS — accepted by LuckPool upstream (37ms round-trip). 3 hotfixes + protocol fix deployed. |
-| 3.2 | ~~RTM GhostRider CPU E2E share verify~~ ✅ DONE | RTM | 3 root causes fixed: (1) target check LE not BE, (2) hash output BE→LE reversal, (3) prevhash per-word reversal. Share ACCEPTED by zpool.ca. Commit `51a34409a`. |
+| 3.2 | ~~RTM GhostRider CPU E2E share verify~~ ✅ DONE | RTM | 3 root causes fixed: (1) target check LE not BE, (2) hash output BE→LE reversal, (3) prevhash per-word reversal. Share ACCEPTED by zpool.ca. Commit `845e35d71`. |
 | 3.3 | XMR RandomX share verify | XMR | **Hash verify OK** (native-randomx, shares pass target check). **Stale job_id fix (2026-07-28):** Pool-side latest-job-only check (`ZION_XMR_LATEST_ONLY=1`, default on) — shares for superseded job_ids silently skipped instead of forwarded to MoneroOcean (rejects "Invalid job id"). Stale threshold reduced 120s→30s (`ZION_XMR_STALE_SECS=30`). E2E test pending deploy to Edge. |
 | 3.4 | CPU feature guard | CPU | Ensure miner skips RandomX on CPUs without AES-NI; fallback to VerusHash |
 | 3.5 | Stale pre-rejection tunable | VRSC | Keep `ZION_VRSC_STALE_SECS=0` default; add metric for forwarded-vs-rejected age distribution |
@@ -112,11 +112,11 @@
 
 | # | Task | Coin | Status | Verified by |
 |---|------|------|--------|-------------|
-| 4.1 | ~~Verthash 1.2 GB data file loader~~ | VTC | ✅ DONE | E2E PASS (zpool), commits `646d14f59`, `e8e237448` |
-| 4.2 | ~~Equihash 192,7 host-side Wagner dispatch~~ | ZCL | ✅ DONE | E2E PASS (zpool), commit `f6df75b64` |
+| 4.1 | ~~Verthash 1.2 GB data file loader~~ | VTC | ✅ DONE | E2E PASS (zpool), commits `a4ac61a2f`, `c7d954b7f` |
+| 4.2 | ~~Equihash 192,7 host-side Wagner dispatch~~ | ZCL | ✅ DONE | E2E PASS (zpool), commit `d6da35fc2` |
 | 4.3 | ~~GhostRider GPU kernel (RTM)~~ | RTM | ✅ DONE | 15/15 SPH match, E2E PASS (zpool), `GHOSTRIDER_CN_FIX_REPORT.md` |
-| 4.4 | ~~Qhash GPU kernel (QTC)~~ | QTC | ✅ DONE | E2E PASS (suprnova), commit `0e5ef6c40` |
-| 4.5 | ~~NexaPow GPU kernel (NEXA)~~ | NEXA | ✅ DONE | E2E PASS (nexa.2miners.com), commit `77613ad50` |
+| 4.4 | ~~Qhash GPU kernel (QTC)~~ | QTC | ✅ DONE | E2E PASS (suprnova), commit `46899f856` |
+| 4.5 | ~~NexaPow GPU kernel (NEXA)~~ | NEXA | ✅ DONE | E2E PASS (nexa.2miners.com), commit `85a2bf408` |
 | 4.6 | DynexSolve GPU kernel (DNX) | DNX | ✅ Kernel done | Login OK, needs native DNX wallet for shares |
 
 **Exit criteria:** ✅ MET — VTC, ZCL, RTM, QTC, NEXA all E2E PASS. DNX kernel done, wallet pending.
@@ -156,14 +156,14 @@
 > **Status update 2026-07-19:** Explorer V4 routes **already exist** in the web app
 > at `/explorer/` (not `/explorer/v4/`). Verified routes: `block`, `tx`, `address`,
 > `blocks`, `txs`, `richlist`, `mempool`, `broadcast`, `verify-message`, `charts`,
-> `status`, `search`, `api-docs`. SSE Phase 4 deployed (commit `5e47b55f0`).
+> `status`, `search`, `api-docs`. SSE Phase 4 deployed (commit `d096d72b9`).
 > Public URLs return 200: `/explorer` ✅, `/explorer/blocks` ✅, `/explorer/block/11608` ✅ (308 redirect).
 
 | # | Task | Status | Details |
 |---|------|--------|---------|
 | 7.1 | ~~Implement explorer API routes~~ | ✅ DONE | `/block`, `/tx`, `/address`, `/broadcast`, `/verify-message` all exist |
 | 7.2 | ~~Build V4 frontend pages~~ | ✅ DONE | All routes exist in `APP&WEB/website-v2.9/src/app/explorer/` |
-| 7.3 | ~~Wire SSE live feed~~ | ✅ DONE | SSE Phase 4 deployed (commit `5e47b55f0`) |
+| 7.3 | ~~Wire SSE live feed~~ | ✅ DONE | SSE Phase 4 deployed (commit `d096d72b9`) |
 | 7.4 | ~~Deploy behind `/explorer`~~ | ✅ DONE | Live at `https://zionterranova.com/explorer` (200) |
 | 7.5 | Verify block/tx detail pages render with live data | 🔲 TODO | Navigate to `/explorer/block/<hash>` and `/explorer/tx/<hash>` on live site |
 | 7.6 | Fix dashboard health check | 🔲 TODO | Dashboard reports `miner=down, nginx=down, web-next=down` but all are UP — health check logic is stale |

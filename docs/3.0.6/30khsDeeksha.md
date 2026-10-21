@@ -79,18 +79,18 @@ export ZION_GPU_MAX_BATCH=32768    # cap batch to 4x work_size
 
 ## Optimizations applied (3 commits)
 
-### 1. SHA3-512 specialization for 65-byte input (commit `e54950dfb`)
+### 1. SHA3-512 specialization for 65-byte input (commit `ad4cb118f`)
 - `sha3_512_65()` in `deeksha_lite.cl` — eliminates 65 conditional branches per call
 - Unrolled byte absorption, vectorized state zero + output copy
 - `fill_scratchpad` updated to use `sha3_512_65()` with vectorized 64-byte state copy
 - **Gain:** 11.24 → 19.42 KH/s (+73%)
 
-### 2. Sequential passes register caching + inline keccak (commit `7ba4d5ea8`)
+### 2. Sequential passes register caching + inline keccak (commit `c879fbb00`)
 - Cache prev/next block in register (`ulong4 prev_v/next_v`) — halves global memory reads
 - `keccak_f1600` marked `__attribute__((always_inline))`
 - **Gain:** 19.42 → 20-22 KH/s (+82-96%)
 
-### 3. Double-buffered async readback (commit `a6d8ad35d`)
+### 3. Double-buffered async readback (commit `9c725c944`)
 - Two output buffers (A/B) + dedicated read queue
 - While GPU computes chunk N+1, CPU processes chunk N's results from async read event
 - Hides DMA readback latency + AMD driver `clFinish()` overhead behind GPU compute

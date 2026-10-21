@@ -167,8 +167,8 @@ Stream telemetry už existuje a je consensus-safe (nemění hash output).
 7. ✅ **Žádná změna hash outputu** — chain pokračuje, 100% share acceptance.
 
 **Commity:**
-- `6530b836f` — Phase A wrapper + dispatch alias + pool fix
-- `7dd81cfb7` — CHV3_FORK_HEIGHT=4500
+- `a65ddc3b1` — Phase A wrapper + dispatch alias + pool fix
+- `b32e2135e` — CHV3_FORK_HEIGHT=4500
 
 **Edge deploy výsledek:**
 - Pool: 12 mineri, 410 KH/s, 36+ bloků nalezeno, 99.97% acceptance.
@@ -192,7 +192,7 @@ Stream telemetry už existuje a je consensus-safe (nemění hash output).
 5. ✅ 6 nových Phase B testů (12 total, všechny pass).
 6. ✅ **Žádná změna hash outputu** — consensus-safe.
 
-**Commit:** `f656782a1` — feat(chv3): Phase B — stream telemetry
+**Commit:** `5feec62ed` — feat(chv3): Phase B — stream telemetry
 
 **Edge deploy výsledek:**
 - Pool restart na nový binary, 1 blok found ihned po restartu.
@@ -221,7 +221,7 @@ Stream telemetry už existuje a je consensus-safe (nemění hash output).
 5. ✅ 4 new kernel presence/parity tests v `opencl_kernel.rs`.
 6. ✅ **186 cosmic-harmony tests pass** (17 chv3: 6 Phase A + 6 Phase B + 5 Phase C).
 
-**Commit:** `1ef6709b4` — feat(chv3): Phase C — GPU kernel parity + KAT vectors
+**Commit:** `0795b34ac` — feat(chv3): Phase C — GPU kernel parity + KAT vectors
 
 **Edge deploy výsledek:**
 - Pool restart na nový binary, 1 blok found po restartu.
@@ -251,7 +251,7 @@ Stream telemetry už existuje a je consensus-safe (nemění hash output).
    - `hash_with_chv3_equals_hash_with_lite_v1`
 6. ✅ **Žádný hard fork** — 256 KiB scratchpad preserved, hash output unchanged.
 
-**Commit:** `d6f282311` — feat(chv3): Phase D — name unification
+**Commit:** `b0150aa59` — feat(chv3): Phase D — name unification
 
 **Edge deploy výsledek:**
 - Pool restart na nový binary, 1 blok found po restartu.

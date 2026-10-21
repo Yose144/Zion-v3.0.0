@@ -43,7 +43,7 @@ ZION is a Layer-1 blockchain: UTXO/hybrid transaction model, Ed25519 signatures,
 - `archive/`, `public/` mirror
 - marketing pages (non-API)
 
-## 3. Measured size (non-blank lines incl. inline tests, `git grep`, commit `29a6b8a8a`)
+## 3. Measured size (non-blank lines incl. inline tests, `git grep`, commit `7a4d7791f`)
 
 | Area | Lines |
 |---|---:|

@@ -177,7 +177,7 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 - **Burn TX:** `0x70ad4d93ee39...` (100 wZION burned na Base)
 - **L1 Unlock:** blok **20919**, 100 ZION přesunuto z vault na recipient
 - **confirmBurnRelease TX:** `0x97f41f0a...` (Base, confirmed)
-- **Root cause fix:** `BRIDGE_VAULT_SEED` revert v `V3/L1/core/src/crypto.rs` na `"ZION Bridge Vault V3 Mainnet"`, commit `e6175b5b`
+- **Root cause fix:** `BRIDGE_VAULT_SEED` revert v `V3/L1/core/src/crypto.rs` na `"ZION Bridge Vault V3 Mainnet"`, commit `a73ca03d`
 
 ### Atomic Swap — Opravy
 
@@ -220,13 +220,13 @@ Verze **3.0.3** je nyní uzavřena. Všechny klíčové komponenty jsou funkčn�
 
 | Commit | Popis |
 |--------|-------|
-| `3482078c` | Backend: migration + consensus + RPC + CLI |
-| `c0c477cb` | Docs: §15 Edge runbook |
-| `83063666` | Ecosystem: 18 files L1+L2+L3 |
-| `58661943` | Docs: 27 files + deploy script |
-| `631429a3` | Dashboard: app.py + dashboard.js + l3.html |
-| `b666e265` | StatusV3.md + AGENTS.md |
-| `4d6c4118` | Web v2.9: constants + .tsx + upgrade doc |
+| `f13a546e` | Backend: migration + consensus + RPC + CLI |
+| `8f608eca` | Docs: §15 Edge runbook |
+| `e4da6a93` | Ecosystem: 18 files L1+L2+L3 |
+| `99e4e711` | Docs: 27 files + deploy script |
+| `4023d6da` | Dashboard: app.py + dashboard.js + l3.html |
+| `51768d83` | StatusV3.md + AGENTS.md |
+| `8841fb0c` | Web v2.9: constants + .tsx + upgrade doc |
 
 ### Kanonické konstanty (post-3.0.3)
 
@@ -250,7 +250,7 @@ Viz [`docs/3.0.3/ZION_3.0.3_DECIMAL_FORK_PLAN.md`](../../docs/3.0.3/ZION_3.0.3_D
 Viz [`docs/DEFI_FULL_ROADMAP.md`](../docs/DEFI_FULL_ROADMAP.md) pro kompletní realistickou analýzu.
 TL;DR stav:
 - **Bridge L1→EVM (mint):** ✅ 100% ověřeno v produkci (5/5, 30 TX, 100M wZION)
-- **Bridge EVM→L1 (burn):** ✅ **PLNĚ FUNKČNÍ** — E2E test passed 2026-06-29: 100 wZION burn → L1 blok 20919 unlock → confirmBurnRelease TX `0x97f41f0a...` ✅ (oprava: BRIDGE_VAULT_SEED revert, commit `e6175b5b`)
+- **Bridge EVM→L1 (burn):** ✅ **PLNĚ FUNKČNÍ** — E2E test passed 2026-06-29: 100 wZION burn → L1 blok 20919 unlock → confirmBurnRelease TX `0x97f41f0a...` ✅ (oprava: BRIDGE_VAULT_SEED revert, commit `a73ca03d`)
 - **UniV3Pool:** ✅ 138K wZION + 26.66 USDT in-range, aktivní
 - **Staking/Farm:** ⚠️ deployed pouze na Sepolia, Base Mainnet deploy chybí
 - **Swap UI:** ⚠️ kód hotov, čeká jen na pool seeding
@@ -275,11 +275,11 @@ Konstanty jsou v `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` jako
 
 ### Bridge 100M ZION → wZION — FINALIZOVÁNO
 
-- **Multi-validator relay** (`c4a4841`): `load_all_validator_keys()` čte `ZION_VALIDATOR_PRIVATE_KEY` + `_2..5` env vars. `handle_l1_lock()` iteruje všemi 5 klíči — 5 `submitLockProof` TX / lock.
+- **Multi-validator relay** (`e82eb73`): `load_all_validator_keys()` čte `ZION_VALIDATOR_PRIVATE_KEY` + `_2..5` env vars. `handle_l1_lock()` iteruje všemi 5 klíči — 5 `submitLockProof` TX / lock.
 - **30 TX odesláno** (5 validátorů × 6 locků) — všechny confirmed on-chain.
 - **5/5 on-chain confirmací** pro všech 6 locků (~100M ZION total). `getLockProofStatus()` → `confirmations=5, executed=false, timelocked=true`.
 - **24h timelock** aktivní — vyprší **2026-06-24 16:52 UTC** → relay automaticky zavolá `executeTimelockedMint()` → ~100M wZION mintováno na `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186`.
-- **Security**: `5ELMWallets.md` odstraněn z gitu (`14dd686`), přidán do `.gitignore`.
+- **Security**: `5ELMWallets.md` odstraněn z gitu (`1e865a9`), přidán do `.gitignore`.
 
 ### DeFi + DAO — Zbývající práce
 

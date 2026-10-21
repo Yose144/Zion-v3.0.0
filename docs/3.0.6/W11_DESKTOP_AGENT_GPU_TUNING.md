@@ -2,7 +2,7 @@
 
 > **Datum:** 2026-07-27
 > **Platform:** Windows 11 (GTX 1070 Ti, OpenCL backend)
-> **Branch:** `main` (commits `cc022c3ff`, `d93cd232d`, `d8e8b4f3e`)
+> **Branch:** `main` (commits `21aa50cad`, `abef64a91`, `7ad57c84d`)
 
 ---
 
@@ -331,12 +331,12 @@ fan curve (e.g., 80% fan at 70°C).
 
 | Commit | Description |
 |--------|-------------|
-| `cc022c3ff` | feat(miner+desktop): GPU hardware panel, share log, hashrate sparkline |
-| `d93cd232d` | feat(cuda): v5 async htod copies + v6 pool I/O pipelining for ekam kernel |
-| `d8e8b4f3e` | fix(cuda): resolve PTXAS O3 hang for ekam kernel |
-| `ec45b37b1` | feat(desktop-agent): professional TUI mode for terminal mining dashboard |
-| `366820af5` | fix(gpu): reduce default batch size to 65536 to eliminate stale job rejects |
-| `a17188def` | docs(3.0.6): stale job reject fix + thermal management |
-| `44e0ab9f2` | perf(gpu): enable CUDA backend on NVIDIA — 6x hashrate |
-| `97fe522f9` | feat(desktop-agent): static session metrics panel and UI cleanup |
+| `21aa50cad` | feat(miner+desktop): GPU hardware panel, share log, hashrate sparkline |
+| `abef64a91` | feat(cuda): v5 async htod copies + v6 pool I/O pipelining for ekam kernel |
+| `7ad57c84d` | fix(cuda): resolve PTXAS O3 hang for ekam kernel |
+| `e340b05db` | feat(desktop-agent): professional TUI mode for terminal mining dashboard |
+| `e24027d34` | fix(gpu): reduce default batch size to 65536 to eliminate stale job rejects |
+| `1a08a44d9` | docs(3.0.6): stale job reject fix + thermal management |
+| `16629921d` | perf(gpu): enable CUDA backend on NVIDIA — 6x hashrate |
+| `f95f7e3fb` | feat(desktop-agent): static session metrics panel and UI cleanup |
 | *(pending)* | fix(miner): default external GPU to OpenCL for CUDA primary (Claymore dual) |

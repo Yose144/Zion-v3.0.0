@@ -4,9 +4,9 @@
 **Hardware:** AMD RX 5600 XT (gfx1010, RDNA1, wave32, 36 CUs, 6GB VRAM)
 **Branch:** main
 **Commits:**
-- `83339d83b` — ProgPoWZ kernel opt: bpermute + GROUP_SIZE=256 + wave32 fix
-- `1ef58fc66` — ZANO stale share pre-rejection + ghostrider fixes
-- `11eacc605` — bpermute in DAG loop + keccak round unroll
+- `2b5097bd3` — ProgPoWZ kernel opt: bpermute + GROUP_SIZE=256 + wave32 fix
+- `924772447` — ZANO stale share pre-rejection + ghostrider fixes
+- `8479c4dea` — bpermute in DAG loop + keccak round unroll
 
 ---
 
@@ -39,7 +39,7 @@ ACCEPT 126   REJECT 2   EFF 98.4%   UP 00:03:55
 
 ### 1.1 Re-enabled `USE_AMD_BPERMUTE` (ds_bpermute lane shuffle)
 **File:** `AuXpow/csrc/opencl/progpow_kernel.cl`
-**Commit:** `83339d83b`
+**Commit:** `2b5097bd3`
 
 - `USE_AMD_BPERMUTE` was disabled (`#if 0`) due to SMOS concerns — irrelevant on Linux/AMDPRO
 - Re-enabled with WAVE_SIZE auto-detection via `__gfx1010__` macros (32 for RDNA1+, 64 for GCN)
@@ -48,21 +48,21 @@ ACCEPT 126   REJECT 2   EFF 98.4%   UP 00:03:55
 
 ### 1.2 GROUP_SIZE 128→256
 **File:** `AuXpow/src/gpu_miner.rs`
-**Commit:** `83339d83b`
+**Commit:** `2b5097bd3`
 
 - Default GROUP_SIZE increased from 128 to 256 (matches reference progminer)
 - Env-configurable via `ZION_AUXPOW_GPU_GROUP_SIZE`
 
 ### 1.3 Wave32 fix in generated code
 **File:** `AuXpow/src/progpow_codegen.rs`
-**Commit:** `83339d83b`
+**Commit:** `2b5097bd3`
 
 - `get_local_id(0) % 64` → `get_local_id(0) % WAVE_SIZE`
 - Fixed wavefront-relative lane index for RDNA1 (wave32) vs GCN (wave64)
 
 ### 1.4 Bpermute in DAG loop (eliminate 64 barriers per hash)
 **File:** `AuXpow/csrc/opencl/progpow_kernel.cl`
-**Commit:** `11eacc605`
+**Commit:** `8479c4dea`
 
 - Previously bpermute was disabled in the DAG loop due to GPU hangs on RDNA1
 - Root cause was the wave_size=64 bug (RDNA1 is wave32) — now fixed
@@ -72,7 +72,7 @@ ACCEPT 126   REJECT 2   EFF 98.4%   UP 00:03:55
 
 ### 1.5 Keccak round unroll
 **File:** `AuXpow/csrc/opencl/progpow_kernel.cl`
-**Commit:** `11eacc605`
+**Commit:** `8479c4dea`
 
 - Added `#pragma unroll` on the keccak_f800 22-round loop
 - Compiler now fully unrolls the round loop, reducing branch overhead
@@ -97,7 +97,7 @@ ZANO (HeroMiners EthStratum) was rejecting 45% of shares as "Job expired":
 
 ### Fix
 **File:** `AuXpow/src/auxpow_client.rs`
-**Commit:** `1ef58fc66`
+**Commit:** `924772447`
 
 #### 2.1 Job age tracking for EthStratum
 Added in `parse_eth_getwork_params()`:
@@ -158,15 +158,15 @@ the GPU hardware scheduler interleaves deeksha (compute-bound) with ProgPoWZ
 
 | File | Changes | Commit |
 |------|---------|--------|
-| `AuXpow/csrc/opencl/progpow_kernel.cl` | bpermute seed+DAG, WAVE_SIZE auto-detect, keccak unroll | `83339d83b`, `11eacc605` |
-| `AuXpow/src/progpow_codegen.rs` | Wave32 fix in generated code | `83339d83b` |
-| `AuXpow/src/gpu_miner.rs` | GROUP_SIZE=256, build defines, env overrides | `83339d83b` |
-| `AuXpow/src/auxpow_client.rs` | ZANO stale share detection + pre-rejection | `1ef58fc66` |
-| `AuXpow/src/miner_harness.rs` | Ghostrider error 25 check removal | `1ef58fc66` |
-| `V3/L1/miner/src/gpu_backend.rs` | Internal work_size for larger batches | `1ef58fc66` |
-| `V3/L1/miner/src/main.rs` | Batch size env override, ghostrider fix | `1ef58fc66` |
-| `scripts/start-local-miner.sh` | Duty-cycle config updates | `1ef58fc66` |
-| `Desktop/Start.sh` | Triple-stream tuning defaults | `1ef58fc66` |
+| `AuXpow/csrc/opencl/progpow_kernel.cl` | bpermute seed+DAG, WAVE_SIZE auto-detect, keccak unroll | `2b5097bd3`, `8479c4dea` |
+| `AuXpow/src/progpow_codegen.rs` | Wave32 fix in generated code | `2b5097bd3` |
+| `AuXpow/src/gpu_miner.rs` | GROUP_SIZE=256, build defines, env overrides | `2b5097bd3` |
+| `AuXpow/src/auxpow_client.rs` | ZANO stale share detection + pre-rejection | `924772447` |
+| `AuXpow/src/miner_harness.rs` | Ghostrider error 25 check removal | `924772447` |
+| `V3/L1/miner/src/gpu_backend.rs` | Internal work_size for larger batches | `924772447` |
+| `V3/L1/miner/src/main.rs` | Batch size env override, ghostrider fix | `924772447` |
+| `scripts/start-local-miner.sh` | Duty-cycle config updates | `924772447` |
+| `Desktop/Start.sh` | Triple-stream tuning defaults | `924772447` |
 
 ---
 

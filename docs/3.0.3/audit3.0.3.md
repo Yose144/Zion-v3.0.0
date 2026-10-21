@@ -100,14 +100,14 @@ Nejvetsi riziko je address drift u bridge kontraktu mezi webem a dalsimi klienty
 
 ## Git historie (relevantni milniky)
 
-- 2f466a40: L1 RPC scale conversion
-- a7d426b1: MIGRATION_HEIGHT=18850 v service files
-- 61ddc587: 6-decimal migrace napric SDK/mobile/desktop
-- 77776e48: getTransactionHistory obsahuje UTXO + coinbase
-- 33a48151: PPLNS persistence
-- fe3beed9: in-memory address TX index
-- e1113f0c: bridge height-aware decimal conversion
-- ffbe4a21: bridge config update na novy kontrakt
+- 96fc67dc: L1 RPC scale conversion
+- 575e1ebe: MIGRATION_HEIGHT=18850 v service files
+- 5416b637: 6-decimal migrace napric SDK/mobile/desktop
+- 9fda39dc: getTransactionHistory obsahuje UTXO + coinbase
+- 2586fdcc: PPLNS persistence
+- 6cbe464f: in-memory address TX index
+- b4ac8222: bridge height-aware decimal conversion
+- 52b4f81f: bridge config update na novy kontrakt
 
 ## Doporucony fix-order (prakticky runbook)
 

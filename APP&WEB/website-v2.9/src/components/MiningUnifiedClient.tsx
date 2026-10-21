@@ -116,7 +116,7 @@ const MiningUnifiedCopy = {
   highVarianceWithLowHashrate: { cs: `Vysoka variance pri nizkem hashratu`, en: `High variance with low hashrate` },
   noPartialShareRewards: { cs: `Zadne dilci share odmeny`, en: `No partial share rewards` },
   hardwareComparison: { cs: `Srovnani hardwaru`, en: `Hardware Comparison` },
-  realEkamDeekshaBenchmarksBlake: { cs: `Realne benchmarky Ekam Deeksha (BLAKE3 + RandomNPU) — commit 9e307c4d, TPB=48, --use_fast_math.`, en: `Real Ekam Deeksha benchmarks (BLAKE3 + RandomNPU) — commit 9e307c4d, TPB=48, --use_fast_math.` },
+  realEkamDeekshaBenchmarksBlake: { cs: `Realne benchmarky Ekam Deeksha (BLAKE3 + RandomNPU) — commit f04f4280, TPB=48, --use_fast_math.`, en: `Real Ekam Deeksha benchmarks (BLAKE3 + RandomNPU) — commit f04f4280, TPB=48, --use_fast_math.` },
   power: { cs: `Spotreba`, en: `Power` },
   efficiency: { cs: `Efektivita`, en: `Efficiency` },
   runAFullNode: { cs: `Spustte full node`, en: `Run a Full Node` },

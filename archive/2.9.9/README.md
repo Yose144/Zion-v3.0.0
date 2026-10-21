@@ -91,4 +91,4 @@ Runtime artifacts that accumulated during 2.9.x testing. For current monitoring 
 ---
 
 *Last updated: 2026-05-23*
-*Cleanup commit: `525e7c38` — chore: cleanup root directory for v3.0.0 Mainnet Ready*
+*Cleanup commit: `4e939749` — chore: cleanup root directory for v3.0.0 Mainnet Ready*

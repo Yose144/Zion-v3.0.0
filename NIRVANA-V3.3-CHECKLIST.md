@@ -4,7 +4,7 @@
 > **Značky vlastníka:** 🤖 = autonomní (Devin může udělat end-to-end v kódu/testech/diaci) · 🔀 = autonomní příprava + operátorské schválení/flip · 👤 = potřebuje operátora (rozhodnutí, peníze, klíče, fyzický svět)
 > **Pravidlo:** Devin nikdy neflipuje produkční money-pathy, nevydává verze, nevybírá dodavatele — vždy připraví PR/artefakt/důkaz a počká na 👤 sign-off.
 >
-> ⚠️ **EDGE2 MIGRACE BĚŽÍ** (`INFRA-SPLIT-PLAN.md`, 2026-10-21): EDGE2 `207.180.217.100` = nový primary + pool + celý app stack; starý edge = followeři node2/3 + nginx ingress + monitoring. **Deploy cíl všech služeb = EDGE2** (P3 migruje i `zion-v31-ncl` — stopgap na starém edgi je OK, db cestuje s ním). **Builds POUZE EDGE2.** Pool fixy (timeout+submit) jsou v local HEAD — při P2 buildu poolu na EDGE2 ověřit, že zdroj ≥ commit `2b20217c4`. Žádné restarty starého edge mimo P2 okno.
+> ⚠️ **EDGE2 MIGRACE HOTOVA (2026-10-21 ~15:00, split v3):** EDGE2 `207.180.217.100` = primary + chain stack + celý app stack; starý edge = nginx ingress + pool 8444/8445 (záměrně — reálné miner IP) + node2/3 followeři + dashboard/monitoring. **Deploy cíl všech služeb = EDGE2.** Pool fixy (timeout+submit) jsou v local HEAD — při buildu poolu na EDGE2 ověřit, že zdroj ≥ commit `edb7ddbaf`. Zbývá: edge cleanup ~62 G (až po observačním období, NEMAZAT bez potvrzení) + `PRL_PAYOUT_DRY_RUN=1` + `WARP_API_KEY` unset. Plán a rollback: [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md).
 
 ---
 

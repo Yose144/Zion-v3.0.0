@@ -1,7 +1,7 @@
 # Report: Dashboard Edge Metriky Fix — v3.0.4
 
 **Datum:** 2026-07-08 (22:25–00:30 CEST)
-**Commity:** `0f10ab9f`, `0a4f1a0f`
+**Commity:** `a1f89181`, `c996d730`
 **Server:** 62.171.141.136 (vmi3425821, Hetzner VPS)
 **Lokální stroj:** zionserver-144 (monitoring přes SSH tunel)
 
@@ -73,7 +73,7 @@ Dashboard používal staré názvy: `zion-edge-node1`, `zion-pool-server`, `zion
 
 ## 3. Commity
 
-### `0f10ab9f` — fix(dashboard): opravit edge metriky pro v3.0.4 nový server
+### `a1f89181` — fix(dashboard): opravit edge metriky pro v3.0.4 nový server
 
 Soubor: `ZION_OS/dashboard/app.py` (94 insertions, 84 deletions)
 
@@ -91,7 +91,7 @@ Změny:
 - `/api/l3/warp/chains`: port 8453 → 9333
 - `/api/l3/warp/transfers`: port 8453 → 9333
 
-### `0a4f1a0f` — chore(deps): metal backend macOS-only + bincode removed + heed features
+### `c996d730` — chore(deps): metal backend macOS-only + bincode removed + heed features
 
 Soubory: `V3/Cargo.toml`, `V3/Cargo.lock`, `V3/L1/miner/Cargo.toml`, `V3/scripts/security-audit.sh`
 
@@ -219,11 +219,11 @@ ssh -fN \
 
 | Soubor | Commit | Popis |
 |--------|--------|-------|
-| `ZION_OS/dashboard/app.py` | `0f10ab9f` | 12 oprav portů/SSH/detekce |
-| `V3/Cargo.toml` | `0a4f1a0f` | metal macOS-only, bincode removed, heed features |
-| `V3/Cargo.lock` | `0a4f1a0f` | dependency tree update |
-| `V3/L1/miner/Cargo.toml` | `0a4f1a0f` | metal deps target-gated, crossterm |
-| `V3/scripts/security-audit.sh` | `0a4f1a0f` | audit ignore list update |
+| `ZION_OS/dashboard/app.py` | `a1f89181` | 12 oprav portů/SSH/detekce |
+| `V3/Cargo.toml` | `c996d730` | metal macOS-only, bincode removed, heed features |
+| `V3/Cargo.lock` | `c996d730` | dependency tree update |
+| `V3/L1/miner/Cargo.toml` | `c996d730` | metal deps target-gated, crossterm |
+| `V3/scripts/security-audit.sh` | `c996d730` | audit ignore list update |
 
 **Server-side (necommitováno — na 62.171.141.136):**
 - `/root/zion/edge-environment.sh` — `ZION_ROUTING_METRICS_BIND="127.0.0.1:8455"`

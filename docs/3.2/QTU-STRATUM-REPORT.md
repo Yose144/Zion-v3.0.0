@@ -1,7 +1,7 @@
 # QTU Native Stratum for SRBMiner — Deployment Report
 
 **Date:** 2026-10-10 · **Status:** DEPLOYED to Edge (`62.171.141.136:8444`), live-verified
-**Commits:** `a78ce63c3` (implementation + fixes), `54b3794a3` (ops notes)
+**Commits:** `384a9ac98` (implementation + fixes), `d5aa88037` (ops notes)
 
 ## Summary
 

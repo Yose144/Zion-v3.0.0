@@ -69,7 +69,7 @@ ale `OpenClExternalMiner` v `gpu/mod.rs` je stub.**
 ## Co se debuguje (YELLOW)
 
 ### Stream 2: ZANO (GPU ProgPoWZ) — Architektura opravena, kernel čeká
-- **Architektura opravena (commit d51258c72):** Stream 2 nyní používá GPU
+- **Architektura opravena (commit a060e7f3b):** Stream 2 nyní používá GPU
   s persistent `gpu_ext` backendem + burst/gap duty-cycle time-slicing
   (50/50 split, gap_ms=300ms). To mirrors V3 reference `external_gpu_thread`.
 - **BLOCKER:** V31's `OpenClExternalMiner` je stub — vrací
@@ -124,14 +124,14 @@ ale `OpenClExternalMiner` v `gpu/mod.rs` je stub.**
 
 | Commit     | Popis                                                    |
 |------------|----------------------------------------------------------|
-| 287e21df0  | feat: V3 Trinity mode — single V3 protocol connection    |
-| 1a1ee050e  | fix: V3 Trinity mode default ON when auxpow enabled      |
-| 94c7023c1  | fix(auxpow): ZANO EthStratum bridge — polling survives   |
-| 6a118efc3  | debug: Add eprintln for V3 Trinity external stream       |
-| 877882ffc  | feat(trinity): nonce progression, GPU time-slicing, docs |
-| 1768f20f7  | fix: ZANO 0x prefix + VRSC full header construction      |
-| f0dde84db  | fix: VRSC solution padding to 1344 bytes                 |
-| d51258c72  | fix(trinity): Stream 2 GPU time-slicing (V3 reference)   |
+| d898b493b  | feat: V3 Trinity mode — single V3 protocol connection    |
+| 267f1c87f  | fix: V3 Trinity mode default ON when auxpow enabled      |
+| bb3f32a7c  | fix(auxpow): ZANO EthStratum bridge — polling survives   |
+| 456b757fe  | debug: Add eprintln for V3 Trinity external stream       |
+| 3d03ef033  | feat(trinity): nonce progression, GPU time-slicing, docs |
+| dd9a1a39f  | fix: ZANO 0x prefix + VRSC full header construction      |
+| cf20672f9  | fix: VRSC solution padding to 1344 bytes                 |
+| a060e7f3b  | fix(trinity): Stream 2 GPU time-slicing (V3 reference)   |
 
 ---
 

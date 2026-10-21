@@ -1,7 +1,7 @@
 # ZION 3.0.4 — Account-Model Memo v1 Hard Fork Deploy Runbook
 
 **Target:** Edge mainnet (`62.171.141.136`, `ssh zion-new`)
-**Deploy commits:** `db137efc` (account-model memo) + `f687d8ac` (runtime-configurable height)
+**Deploy commits:** `5f977ab4` (account-model memo) + `9f371633` (runtime-configurable height)
 **Activation height:** `0` (active from genesis on fresh chain post 3.0.4 hard reset; no env override needed)
 **Status:** Deployed — code complete, memo v1 active from genesis. L2 watcher operationalizace in 3.0.5.
 **Network:** Mainnet

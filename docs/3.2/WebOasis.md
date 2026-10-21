@@ -211,9 +211,9 @@ Implementováno v tomto commitu (`OasisWeb`):
 - [x] WebGPU path startuje bez EffectComposer (materiály/fog/světla only)
 - [x] `BabylonIntro`: `WebGPUEngine` s WebGL2 fallback
 - [x] Feature flag: `?gpu=webgpu|webgl2|auto` query override pro testy + `localStorage` persist
-- [x] **Akceptace splněna:** `?gpu=webgpu` renderuje galaxii/stargate/svět (508–1138 draw calls), E2E flow intro→scene projde; `navigator.gpu` off → čistý webgl2 fallback; commit `63c9d6b9e`
+- [x] **Akceptace splněna:** `?gpu=webgpu` renderuje galaxii/stargate/svět (508–1138 draw calls), E2E flow intro→scene projde; `navigator.gpu` off → čistý webgl2 fallback; commit `a741ee5ae`
 
-### G2 — TSL efekty a stabilizace ✅ NASAZENO (2026-09-30, hotfix `e69402151`)
+### G2 — TSL efekty a stabilizace ✅ NASAZENO (2026-09-30, hotfix `7b3c13be8`)
 - [x] TSL post-processing: `PostProcessing` chain (`pass` → `bloom` → `vignette` grade) v `gpu/WebGpuPostFX.tsx`, fallback na direct render dokud se TSL chunk sestaví
 - [x] TSL porty komponent: `TslStars` (PointsNodeMaterial starfield + twinkle — náhrada drei `Stars`/`TwinkleStars`), `TslAtmosphere` (fresnel node), `TslVortex` (spiral warp-gate disc)
 - [x] Perf parity: webgl2 ≈ webgpu (24.8 vs 26.2 fps headless Chrome; limit prostředí, ne rendereru)
@@ -227,14 +227,14 @@ Implementováno v tomto commitu (`OasisWeb`):
 - [ ] `auto` → WebGPU promování až po device-matrix potvrzení
 
 #### Produkční incident (root cause) — černý canvas na `?gpu=webgpu`
-Po nasazení G2 produkce hlásila `NodeMaterial: Material "MeshStandardMaterial" is not compatible` pro všechny klasické materiály → prázdný NodeMaterial → černý canvas. Dva skutečné root causes, oba fixnuté v `e69402151`:
+Po nasazení G2 produkce hlásila `NodeMaterial: Material "MeshStandardMaterial" is not compatible` pro všechny klasické materiály → prázdný NodeMaterial → černý canvas. Dva skutečné root causes, oba fixnuté v `7b3c13be8`:
 
 1. **Turbopack minifikace rozbila registraci `StandardNodeLibrary`.** `addMaterial(nodeClass, materialClass)` klíčuje mapu `materialNodes` podle `materialClass.name` — v produkčním buildu jsou class names zkrácené (`"sj"`, `"sG"`…, ověřeno dump klíčů na produkci). Lookup `materialNodes.get(material.type)` (`"MeshStandardMaterial"` — string, neminifikovaný) → vždy miss. **Fix:** po `renderer.init()` přeregistrace pod **string type klíči** (`materialNodes.set('MeshStandardMaterial', MeshStandardNodeMaterial)` × 13 typů) + registrace light node tříd pod **class-object klíči app bundlu** (`lightNodes` je `WeakMap<object,…>`, string keys hážou) — funkce `registerNodeLibrary()` v `OasisScene.tsx`. Minification-proof, nezávislé na bundleru.
 2. **MSAA resolve do canvas swapchainu selhal validaci** na části Chrome/macOS pathů (`resolve target [TextureView … WebgpuSwapChainTexture]` → `Invalid CommandBuffer`, submit se zahodil každý frame → černá). Headless repro neexistovalo. **Fix:** `antialias: false` u `WebGPURenderer` — TSL postfx stejně zvládá akceptable AA pro preview.
 
 Poučení do device-matrix: WebGPU preview **vždy testovat headed na cílovém OS** — headless Chrome neukáže swapchain/IOSurface validační cesty; `materialNodes.keys()`/`lightNodes` dump je rychlý diagnostický hook přes `window.__oasisGl.nodes.library`.
 
-### Post-G2 gameplay/perf kolo (2026-10-07, commit `d57d8cba6`)
+### Post-G2 gameplay/perf kolo (2026-10-07, commit `7eff9c075`)
 - **Galaxy instancing:** 354 non-star světů → 2 instanced draw cally (`instancedMesh` sphere + ring, `instanceColor` pro kategorii + discovered dimming). Star systemy + selected zůstávají full `World` nody (rays/gate/vortex). Hovered instanced node dostane raycast-free overlay (aura + Html label) — handoff raycast targetu mid-hover by flickeroval. **Produkce: ~1 900 → ~240 draw calls**, per-instance raycast/click zachován (`e.instanceId`).
 - **In-world objectives:** `WorldObjectives` — seeded scan/harvest/relic nody orbitující svět (5 desktop / 3 mobil), one-shot collect per `world:id` v `collectedNodes` (zustand persist), XP/credits/lore toasty, velikost škáluje se `SIZES[category]`.
 - **Discovery sync → ZIS/OASIS profil:** nový `POST /api/v1/oasis/player/:addr/worlds/:id/discover` (sensitive router → `require_auth` + rate limit, `XpSource::WorldDiscovery`, stats `discovered:<id>`); klient pushuje jen při ZIS session; `syncPlayer(trusted)` hydratuje `scanned:`/`approached:`/`discovered:` → `discoveredWorlds`. `pilgrim-0001` fallback se nehydratuje (sdílený záznam).
@@ -247,7 +247,7 @@ Poučení do device-matrix: WebGPU preview **vždy testovat headed na cílovém 
 - **Nova Zeme beacons:** 11 pioneer markerů (dot + glow halo) → 2 instanced meshe s per-instance barvou; DOM labely zůstávají, `raycast={() => null}` (select vlastní parent planet).
 - **Výsledek:** galaxy view **~240 → ~153 draw calls desktop / ~102 mobil** (baseline před instancingem ~1 900 → −92 %); produkce ověřena (`calls:153, tris:~215k, 0 errors`), mobile viewport scéna čistá.
 
-### Billboard/gate/kodama perf kolo (2026-10-07, commit `452642167`)
+### Billboard/gate/kodama perf kolo (2026-10-07, commit `b3983e1cb`)
 - **`InstancedBillboards`:** sdílený instanced-plane ShaderMaterial — billboard z view-matice, UV rotace + ±8 % pulse in-shader (žádný per-frame JS), per-instance `aOffset/aScale/aColor/aOpacity/aPhase`. Nahradilo ~57 ray spritů star systémů i 10 `DistantGalaxies` spritů → 2 cally. GLSL = jen WebGL2; na WebGPU zůstávají sprity (opt-in path, korektnost > calls).
 - **`InstancedGates`:** všechny star-system gates → 1 instanced torus (`rot.lookAt(CORE, pos, UP)` — Matrix4.lookAt(eye=CORE, target=pos) dává +Z→core stejně jako Object3D.lookAt); MeshBasicMaterial konvertuje na obou backendech. Per-node gate+vortex jen hovered/selected.
 - **`World` idle skip:** extras-only nody bez hoveru nepouští `useFrame` tělo (~57 × per-frame math ušetřeno).

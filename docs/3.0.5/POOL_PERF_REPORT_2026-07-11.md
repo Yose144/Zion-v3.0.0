@@ -1,7 +1,7 @@
 # Pool Performance Optimization Report — F1-F6
 
 **Date:** 2026-07-11
-**Commit:** `673632525`
+**Commit:** `f2f7efc32`
 **Binary:** `zion-pool-server` 2.35 MB (release, LTO fat)
 **Server:** Edge `62.171.141.136` — deployed and verified
 

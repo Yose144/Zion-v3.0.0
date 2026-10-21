@@ -11,7 +11,7 @@
 
 ---
 
-## Phase 1: CPU Auto-Tuning (commit `25281df20`)
+## Phase 1: CPU Auto-Tuning (commit `208b89684`)
 
 ### What was done
 
@@ -43,14 +43,14 @@
 
 ---
 
-## Phase 2: Crash Protection (commit `67ce28eb1`)
+## Phase 2: Crash Protection (commit `a9b6e67c4`)
 
 ### What was done
 
 - **Signal handler** (`crash_handler` module in `main.rs`): catches SIGABRT (exit 134) and SIGSEGV (exit 139) from AMD OpenCL driver crashes, writes crash log to `/tmp/zion-miner-crash.log`
 - **Watchdog restart loop** in `Start.sh`: monitors exit codes, auto-restarts miner on crash with configurable delay (`ZION_RESTART_DELAY=5`) and max restarts (`ZION_MAX_RESTARTS=999999`)
 - **`serde` dependency** added to `Cargo.toml` (needed by `PoolStreamConfig` deserialize from external commit)
-- **Build fixes** for external commit `f6d6abf73`: `ExternalCoin::protocol()` match for 8 new coins (KLS, ZCL, QTC, VTC, IRON, NEXA, RTM, DNX), `AtomicBool::store()` missing bool argument
+- **Build fixes** for external commit `11412e9d1`: `ExternalCoin::protocol()` match for 8 new coins (KLS, ZCL, QTC, VTC, IRON, NEXA, RTM, DNX), `AtomicBool::store()` missing bool argument
 
 ### Benchmark
 
@@ -62,7 +62,7 @@
 
 ---
 
-## Phase 3: GPU Kernel Optimization (commits `e54950dfb`, `7ba4d5ea8`)
+## Phase 3: GPU Kernel Optimization (commits `ad4cb118f`, `c879fbb00`)
 
 ### Bottleneck analysis
 
@@ -70,18 +70,18 @@ The `deeksha_lite.cl` kernel is **compute-bound on `fill_scratchpad`** — 8192 
 
 ### Optimizations applied
 
-1. **`sha3_512_65()` — specialized SHA3-512 for 65-byte input** (commit `e54950dfb`):
+1. **`sha3_512_65()` — specialized SHA3-512 for 65-byte input** (commit `ad4cb118f`):
    - Eliminates 65 conditional branches per call (×8192 calls = 532,480 branches/thread eliminated)
    - Vectorizes state zeroing (25 × u64) and output copy (64 bytes) via `ulong4` vload/vstore
    - Direct byte-by-byte absorption unrolled (no loop, no pos check)
    - Input always fits in one Keccak block (rate=72 > 65), so no mid-absorption permutation needed
 
-2. **`sequential_passes` register caching** (commit `7ba4d5ea8`):
+2. **`sequential_passes` register caching** (commit `c879fbb00`):
    - Cache previous/next block in register during forward/backward passes
    - Halves global memory reads (3→2 accesses per iteration)
    - Eliminates branch for wrap-around index calculation
 
-3. **`keccak_f1600` always_inline** (commit `7ba4d5ea8`):
+3. **`keccak_f1600` always_inline** (commit `c879fbb00`):
    - Forces consistent inlining across all call sites
 
 4. **`#pragma unroll 2` on fill_scratchpad loop** (uncommitted):
@@ -132,10 +132,10 @@ The `deeksha_lite.cl` kernel is **compute-bound on `fill_scratchpad`** — 8192 
 
 | Commit | Description |
 |--------|-------------|
-| `25281df20` | CPU auto-tuning per architecture (VerusHash threads + nonce_count) |
-| `67ce28eb1` | Crash handler (SIGABRT/SIGSEGV) + serde dep + build fixes |
-| `e54950dfb` | **SHA3-512 specialization — 73% ZION GPU hashrate gain** |
-| `7ba4d5ea8` | Sequential passes register caching + keccak inline |
+| `208b89684` | CPU auto-tuning per architecture (VerusHash threads + nonce_count) |
+| `a9b6e67c4` | Crash handler (SIGABRT/SIGSEGV) + serde dep + build fixes |
+| `ad4cb118f` | **SHA3-512 specialization — 73% ZION GPU hashrate gain** |
+| `c879fbb00` | Sequential passes register caching + keccak inline |
 
 ---
 
@@ -154,7 +154,7 @@ The `deeksha_lite.cl` kernel is **compute-bound on `fill_scratchpad`** — 8192 
 
 ### ✅ COMPLETED: Double-buffered async readback + nonce_count fix
 
-- **Double-buffered async readback** (commit `a6d8ad35d`): implemented and
+- **Double-buffered async readback** (commit `9c725c944`): implemented and
   benchmarked at 28-30 KH/s. Two output buffers (A/B) + dedicated read queue.
   GPU computes chunk N+1 while CPU processes chunk N's results.
 - **nonce_count fix** (2026-07-16): critical regression fixed. Default

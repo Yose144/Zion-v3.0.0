@@ -83,7 +83,7 @@ This report covers the implementation of two critical gaps for live AuxPow deplo
 ## Live Deployment Status (2026-07-13 20:09 CEST)
 
 **Edge Server (62.171.141.136):**
-- ✅ New pool binary deployed (5.8 MB release, commit `cbd488498`)
+- ✅ New pool binary deployed (5.8 MB release, commit `1457765b7`)
 - ✅ Pool service active (PID 410771, 2.4M memory)
 - ✅ AuxPow bridge connected to RVN pool: `auxpow: connected to RVN successfully`
 - ✅ BTC payout wallet authorized: `bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh`

@@ -1,7 +1,7 @@
 # REPORT: OpenCL On-Device Target Check Fix — 50x ZION Hashrate on AMD
 
 **Date:** 2026-08-10
-**Commit:** `08ef9dbf1`
+**Commit:** `cd02c2f95`
 **Deploy:** `zion-trinity-smos-v7.zip`
 **Rig:** SMOS 518837 (ZionRig) — RX 5600 XT 6GB (RDNA1/gfx1010) + RX Vega 64 8GB (GCN/gfx900)
 

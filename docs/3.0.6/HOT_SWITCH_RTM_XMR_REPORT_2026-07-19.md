@@ -143,6 +143,6 @@ Tím se RandomX batch dokončí do několika sekund a miner rychle přejme na no
 
 ## Historie commitů
 
-- `aa47652f6` — fix(auxpow+pool): RTM/XMR share acceptance — stale job check + correct share target
-- `cf24049e4` — feat(auxpow): RTM share acceptance verified + XMR debug logging
+- `a43cb431a` — fix(auxpow+pool): RTM/XMR share acceptance — stale job check + correct share target
+- `8608b5be2` — feat(auxpow): RTM share acceptance verified + XMR debug logging
 - Nový commit — RTM zůstává na zpool, MiningBoard nepodporuje `difficulty < 1.0`, zaznamenáno v reportu

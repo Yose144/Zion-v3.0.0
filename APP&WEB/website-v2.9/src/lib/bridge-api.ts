@@ -16,7 +16,7 @@ export interface BridgeStatus {
   l1_unlocks_submitted: number;
   l1_unlocks_confirmed: number;
   errors_total: number;
-  // Canonical vault + E2E confirmation (added 2026-06-29, vault fix e6175b5b)
+  // Canonical vault + E2E confirmation (added 2026-06-29, vault fix a73ca03d)
   l1_vault_address?: string;
   bridge_e2e_confirmed?: boolean;
   bridge_e2e_burn_tx?: string;

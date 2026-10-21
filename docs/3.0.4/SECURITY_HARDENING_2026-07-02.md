@@ -141,7 +141,7 @@ if is_announce
 
 ## 4. L2 security patch status
 
-The L2 patch (commit `a8b3821e`, see [`PATCH_L2_SECURITY_2026-07-02.md`](./PATCH_L2_SECURITY_2026-07-02.md))
+The L2 patch (commit `b2f0ca40`, see [`PATCH_L2_SECURITY_2026-07-02.md`](./PATCH_L2_SECURITY_2026-07-02.md))
 is **present in `main` and in the working tree**:
 
 - atomic-swap: pre-committed `claimant_address` guard, mainnet bearer-token
@@ -152,7 +152,7 @@ is **present in `main` and in the working tree**:
 
 Verification (per patch doc): `cargo test -p zion-atomic-swap -p zion-bridge -p zion-dao` → **324 passed**.
 
-**Deployed to Edge 2026-07-02** — bridge/dao/atomic-swap rebuilt from `f7896ac5`
+**Deployed to Edge 2026-07-02** — bridge/dao/atomic-swap rebuilt from `4cfebd43`
 and swapped in; bridge and dao restarted cleanly (no `validate_runtime` errors).
 The **bind-address hardening is now live**: bridge metrics `9101` and DAO `8450`
 moved from `0.0.0.0` to `127.0.0.1` (verified via `ss -tlnp`). atomic-swap binary
@@ -187,7 +187,7 @@ them:
 - `tests::p2p_get_blocks_since_returns_accepted_blocks`
 
 **Root cause:** these fixtures use `from: "wallet.alpha"` with random test keypairs.
-The earlier F1 fix (`5cee33c4`) makes `verify_signature()` require
+The earlier F1 fix (`1d2f88ec`) makes `verify_signature()` require
 `derive_address(public_key) == from`, which a label like `"wallet.alpha"` can never
 satisfy. The fixtures were not regenerated with real derived addresses. This is
 test debt from the F1 fix and is **orthogonal** to A1/A2/A3 (which do not touch the
@@ -201,7 +201,7 @@ fixtures with keypair-derived `zion1...` addresses.
 ### Deployed 2026-07-02 (this session)
 
 1. ✅ **A1–A3 + L2 patch built and swapped on Edge** — `node` (with A1/A2/A3),
-   `zion-bridge`, `zion-dao`, `zion-atomic-swap` rebuilt from `f7896ac5`.
+   `zion-bridge`, `zion-dao`, `zion-atomic-swap` rebuilt from `4cfebd43`.
    Old binaries preserved as `*.pre-a1a2a3` / `*.pre-l2patch` and in
    `/root/backups/l1l2-deploy-2026-07-02/`.
 2. ✅ **Node restart verified** — chain advanced through the restart (22212 → 22329),

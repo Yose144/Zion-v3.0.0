@@ -40,7 +40,7 @@
 
 **BSC/Polygon fix:** `enabled = false` v `/etc/zion/config/bridge-mainnet.toml`. Pro re-enable je potřeba Ankr API key (premium tier) nebo vlastní node.
 
-**Base poll error fix:** Přidán 250ms inter-chunk delay v `evm_watcher.rs` — veřejné RPC endpointy rate-limitují při rychlém scanování více 1500-block chunků. Commit `fc267eb15`.
+**Base poll error fix:** Přidán 250ms inter-chunk delay v `evm_watcher.rs` — veřejné RPC endpointy rate-limitují při rychlém scanování více 1500-block chunků. Commit `171b675c3`.
 
 ### 2.2 EVM Burns (L2→L1)
 
@@ -187,8 +187,8 @@ On-chain validátoři mají dost ETH na Base (gas price 0.006 Gwei, TX cost ~0.0
 
 | Commit | Popis |
 |--------|-------|
-| `fc267eb15` | fix(bridge): disable BSC/Polygon + inter-chunk rate-limit delay |
-| `09222b303` | docs: mark ROADMAP 2.4 done, update 2.3 with validator addresses |
+| `171b675c3` | fix(bridge): disable BSC/Polygon + inter-chunk rate-limit delay |
+| `271e3d150` | docs: mark ROADMAP 2.4 done, update 2.3 with validator addresses |
 
 ### Soubory změněny
 

@@ -164,7 +164,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 - **Authorized, žádný job:** ~~XMR~~ **vyřešeno** — moneroocean validuje ed25519 adresu (ne jen checksum); s validní adresou login+job OK (blob 76B, seed_hash, height). EPIC (pool tichý po subscribe — endpoint/protocol, ne parser). **EVR + MEWC vyřešeno** — YiiMP 7-param `[job,hdr,seed,target,clean,height,ntime]` notify parser (obě path: `StratumJob` i legacy `ExternalJob`/`AuxPowClient`)
 - **QTU:** Quantus login vyžaduje dekódovatelnou 36B adresu
 
-### kHeavyHash — opravené defekty (commit 749d112b1)
+### kHeavyHash — opravené defekty (commit d778724c7)
 
 1. **Matice per-block**: `Matrix::generate(pre_pow_hash)` (xoshiro256++, rank-64 retry) místo statického `sha3("KHeavyHash")` seedu — Rust + OpenCL host + CUDA host + obě C kopie (miner + native-ffi, které sdílely symbol `kheavyhash_mine` → link-time kolize).
 2. **maxTarget 2²²⁴−1** (bridge `hasher.rs`), ne 2²⁴⁸ — způsobovalo "Low difficulty share".
@@ -174,7 +174,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 6. **CPU scan dedup**: `start_nonce` se reálně používá (dříve se rescanovalo od 0 → duplicate-submit flood).
 7. **Stratum job channel** mpsc(8) → `watch` (latest-wins) — KaspaStratum notify spam deadlockoval session před submity.
 8. **GPU path zapnut** pro kheavyhash: ts z `header[32..40]`, en1 složené do `base_nonce`.
-9. **Zero-seed xoshiro infinite loop** (commit `374ed56a5`): all-zero `pre_pow_hash` (mock/broken pool job) → xoshiro256++ drží stav `[0,0,0,0]` navždy → `next()`=0 → rank-64 retry `while(1)` nikdy neskončí → worker wedged. Guard `s[0]=0x9E37…` ve **všech 3 kopiích**: `native-ffi/csrc`, `miner/csrc` (duplicita! linker vybere miner .o — fix jen v native-ffi se neprojeví) a Rust `hasher.rs`. **CPU dispatch přepnut na native `kheavyhash_mine`** + equivalence test `kheavyhash_native_equiv_rust_ref` (24 combos, byte-identical). ⚠️ **Dual-copy hazard — VYŘEŠENO** (commit `2ff3bac56`): `miner/csrc/*.c` duplikovalo `native-ffi/csrc/*` a linker bral miner .o pro FFI symboly. Kopie zsynchronizovány (miner superset → native-ffi: kawpow DAG gen, etchash prime sizing, verushash_hash_raw) a `miner/build.rs` teď kompiluje přímo `../native-ffi/csrc/*` — jediný source of truth, duplicitní soubory smazány.
+9. **Zero-seed xoshiro infinite loop** (commit `e3240b329`): all-zero `pre_pow_hash` (mock/broken pool job) → xoshiro256++ drží stav `[0,0,0,0]` navždy → `next()`=0 → rank-64 retry `while(1)` nikdy neskončí → worker wedged. Guard `s[0]=0x9E37…` ve **všech 3 kopiích**: `native-ffi/csrc`, `miner/csrc` (duplicita! linker vybere miner .o — fix jen v native-ffi se neprojeví) a Rust `hasher.rs`. **CPU dispatch přepnut na native `kheavyhash_mine`** + equivalence test `kheavyhash_native_equiv_rust_ref` (24 combos, byte-identical). ⚠️ **Dual-copy hazard — VYŘEŠENO** (commit `4fecaa284`): `miner/csrc/*.c` duplikovalo `native-ffi/csrc/*` a linker bral miner .o pro FFI symboly. Kopie zsynchronizovány (miner superset → native-ffi: kawpow DAG gen, etchash prime sizing, verushash_hash_raw) a `miner/build.rs` teď kompiluje přímo `../native-ffi/csrc/*` — jediný source of truth, duplicitní soubory smazány.
 
 ### Checklist — co máme / co ne (2026-10-07)
 
@@ -232,7 +232,7 @@ Testy: `kheavyhash_official_vector` (e097f2e4…), `kheavyhash_share_roundtrip_p
 
 ### Pool AuxPoW katalog + Desktop-agent one-click (2026-10-08)
 
-**Pool deployment (`a5f8f7158`, `zion-v31-pool` restart): 10 bridgů LIVE, všechny `job_fresh:true`.** `ZION_POOL_AUXPOW_COINS="QTU,ZANO,VRSC,EVR,MEWC,ZCL,PHX,KRX,ZEC,RTM"` — 6 nových zpool BTC-payout GPU coinů (EVR evrprogpow:1330, MEWC meowpow:1327, ZCL equihash192:2144, PHX neoscrypt:4233, KRX keryxhash:4233, ZEC equihash:2142 — stale port 1080 v `zpool_pool` opraven) + RTM ghostrider:5354 CPU. Všechny zpool bridgy authentizují přes fallback BTC wallet + `ZION_POOL_AUXPOW_PASSWORD_<T>=c=BTC` (per-coin password env existoval, teď produkčně použit). **Veřejný endpoint** `/api/pool/miners-dashboard` → `stats.auxpow.coin_details` nese per-coin `{algorithm, device, upstream, job_id, job_age_ms, job_fresh}` — profesionální katalog bez změny dashboard Python kódu (passthrough). `/api/v1/profit-switch` teď listuje `CoinProfile::all()` (33 coinů) se `served`/`enabled`/`disabled_reason`.
+**Pool deployment (`ebee04928`, `zion-v31-pool` restart): 10 bridgů LIVE, všechny `job_fresh:true`.** `ZION_POOL_AUXPOW_COINS="QTU,ZANO,VRSC,EVR,MEWC,ZCL,PHX,KRX,ZEC,RTM"` — 6 nových zpool BTC-payout GPU coinů (EVR evrprogpow:1330, MEWC meowpow:1327, ZCL equihash192:2144, PHX neoscrypt:4233, KRX keryxhash:4233, ZEC equihash:2142 — stale port 1080 v `zpool_pool` opraven) + RTM ghostrider:5354 CPU. Všechny zpool bridgy authentizují přes fallback BTC wallet + `ZION_POOL_AUXPOW_PASSWORD_<T>=c=BTC` (per-coin password env existoval, teď produkčně použit). **Veřejný endpoint** `/api/pool/miners-dashboard` → `stats.auxpow.coin_details` nese per-coin `{algorithm, device, upstream, job_id, job_age_ms, job_fresh}` — profesionální katalog bez změny dashboard Python kódu (passthrough). `/api/v1/profit-switch` teď listuje `CoinProfile::all()` (33 coinů) se `served`/`enabled`/`disabled_reason`.
 
 **E2E CoinPreference ověřeno live:** fake session → `coin_preference{gpu:EVR,cpu:RTM}` → od dalšího jobu pool servíruje `external_stream=EVR` + `external_stream_cpu=RTM` (defaults QTU+VRSC jen v prvním broadcastu in-flight). Defaulthy pro nepinned sessions beze změny (`AUXPOW_COIN=QTU`, `CPU_COIN=VRSC`).
 
@@ -244,7 +244,7 @@ Testy: `kheavyhash_official_vector` (e097f2e4…), `kheavyhash_share_roundtrip_p
 
 **Zbývá:** první accepted share na nových zpool coinech (probabilistické — bridgy jedou, joby fresh, EVR stream reálně hashoval; zpool `c=BTC` kredit potvrdit až po prvním acceptu), ~~repackage desktop-agent app~~ ✅ macOS DMG 2026-10-10 (Win/Linux buildy pending), VRAM-blocked algos (beze změny).
 
-### Yiimp coinbase-family pipeline — PRVNÍ ZPOOL ACCEPT (2026-10-09, `5407671cd`,`9b71acca0`)
+### Yiimp coinbase-family pipeline — PRVNÍ ZPOOL ACCEPT (2026-10-09, `be5858873`,`cb8051931`)
 
 Diagnostika KRX `Invalid nonce size` odhalila **tři vrstvy defektů pro všechny yiimp coinbase coiny** (KRX/PHX/RTM/ZCL-adjacent) — všechny opraveny + live ověřeny:
 
@@ -252,6 +252,6 @@ Diagnostika KRX `Invalid nonce size` odhalila **tři vrstvy defektů pro všechn
 2. **extranonce2 size**: forward posílal `"00"` místo `extranonce2_size` nul (zpool=4 → `"00000000"`) → další `invalid nonce2 size` vrstva.
 3. **Reálný 80B header + share target**: 9-param yiimp notify dřív forwardoval jen `prevhash` jako "header" + `target_hex=nbits` string (miner parse fail → max target → každý hash "platný"). Teď: coinb1‖en1‖en2‖coinb2 → sha256d merkle fold → version‖prev‖merkle‖ntime‖nbits‖nonce(0) jako mining template, `target_hex` = `set_target`/`set_difficulty`-derived share target, `ntime`/`extranonce2` naplněné na jobu.
 
-**Live důkaz E2E (Edge `9b71acca0`):** RTM ghostrider CPU stream → `share forwarded job=3c2ed nonce=55000436 result=Result(Accepted)` — **první accepted share na zpool coinu vůbec**. KRX přešlo z `Invalid nonce size` na `Invalid share` (formát OK; hash-kompozice neshoda — zpool KRX je coinbase-chain, náš `hash_keryxhash` je kaspa-layout (pre_pow_hash+ts+nonce+daa) → upstream layout vyžaduje referenční miner/spec, coin je prozatím `blocked: upstream-hash-layout`).
+**Live důkaz E2E (Edge `cb8051931`):** RTM ghostrider CPU stream → `share forwarded job=3c2ed nonce=55000436 result=Result(Accepted)` — **první accepted share na zpool coinu vůbec**. KRX přešlo z `Invalid nonce size` na `Invalid share` (formát OK; hash-kompozice neshoda — zpool KRX je coinbase-chain, náš `hash_keryxhash` je kaspa-layout (pre_pow_hash+ts+nonce+daa) → upstream layout vyžaduje referenční miner/spec, coin je prozatím `blocked: upstream-hash-layout`).
 
 **Zbývající residue:** RTM accept rate ~1/12 — per-job variance ukazuje na stage-selection/prevhash-endianita detail v ghostrider kompozici (FFI je consensus-verified vůči GPU KAT, ne nutně vůči chain pro všechny headery); další krok = diff našeho hash vs referenční cpuminer share na stejném jobu. PHX neoscrypt = kernel-variant (N=32) ≠ mainline → samostatný consensus port.

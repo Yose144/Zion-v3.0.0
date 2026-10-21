@@ -432,11 +432,11 @@ nc -zv 62.171.141.136 8444
 
 | Commit | Description |
 |--------|-------------|
-| `6ac734af9` | release: v3.0.6-beta Trinity Miner + public_build feature |
-| `49005b86d` | docs(whitepaper): add WpStory6 canonical addendum (CZ+EN) |
-| `a407361df` | docs(whitepaper): ZION Master Whitepaper for Mainnet Alpha 3.1 (CZ+EN) |
-| `ffbd72271` | docs(WP): publish canonical whitepapers to public/docs/WP/ (CZ+EN) |
-| `ed0b7afff` | docs(WP): add Master Whitepaper (Golden Book) CZ+EN to public/docs/WP/ |
+| `66d824f96` | release: v3.0.6-beta Trinity Miner + public_build feature |
+| `b0b0282be` | docs(whitepaper): add WpStory6 canonical addendum (CZ+EN) |
+| `da52c6690` | docs(whitepaper): ZION Master Whitepaper for Mainnet Alpha 3.1 (CZ+EN) |
+| `3d6c71d4b` | docs(WP): publish canonical whitepapers to public/docs/WP/ (CZ+EN) |
+| `7f2746e5f` | docs(WP): add Master Whitepaper (Golden Book) CZ+EN to public/docs/WP/ |
 
 ---
 

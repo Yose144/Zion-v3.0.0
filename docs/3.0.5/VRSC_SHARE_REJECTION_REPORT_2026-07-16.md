@@ -27,7 +27,7 @@ miner_harness side, limiting XMR hashrate to 1 core.
 VerusHash).  Each thread uses its own `work_blob` and thread-local VM, making
 it thread-safe.
 
-**Commit:** `1bee1e6c7` — pushed to origin.
+**Commit:** `f84c477ff` — pushed to origin.
 
 **Result:** 4x more shares expected.  Live testing blocked by missing
 `ZION_POOL_AUXPOW_WALLET_XMR` env var on Edge server.
@@ -197,8 +197,8 @@ should have the original MMR roots for the preHeaderHash check to pass.
 | File | Change | Status |
 |------|--------|--------|
 | `AuXpow/src/miner_harness.rs` | Multi-thread RandomX, clear_verushash_pbaas toggle, debug logging | Local (uncommitted) |
-| `AuXpow/src/auxpow_client.rs` | nonce2=zeros for PBaaS v7+ | Committed (`ae0a745d4`) |
-| `V3/L1/miner/src/main.rs` | Multi-thread RandomX dispatch | Committed (`1bee1e6c7`) |
+| `AuXpow/src/auxpow_client.rs` | nonce2=zeros for PBaaS v7+ | Committed (`dde7f61ac`) |
+| `V3/L1/miner/src/main.rs` | Multi-thread RandomX dispatch | Committed (`f84c477ff`) |
 
 ## Next Steps
 

@@ -1,7 +1,7 @@
 # REPORT: VRSC Share Rejection Fix + Performance Tuning
 
 **Date:** 2026-08-10
-**Commits:** `9cbaa6302` (VRSC fix), `4f6f8dd89` (perf tuning)
+**Commits:** `75f2c5619` (VRSC fix), `e99a16337` (perf tuning)
 **Hardware:** AMD Ryzen 5 3600 (6c/12t) + NVIDIA GTX 1070 Ti (8GB, 19 CUs)
 **Pool:** `62.171.141.136:8444` (V31 Edge pool, V3 protocol)
 

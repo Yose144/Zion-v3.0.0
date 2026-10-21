@@ -434,9 +434,9 @@ Tento dokument (`dashboard.md`) je v rootu repozitáře pro snadný přístup z 
 ### Git commity (session 2)
 | Commit | Popis |
 |--------|-------|
-| `17b32693` | feat(dashboard): edge backup download + systemd service + run-node.bat 3.0.3 |
-| `b91780bc` | fix(doge-vs-zion): stargate invisible (z dřívější session) |
-| `69d1cee` | fix(scripts): canonical IPs + Tailscale fallback in all .bat + AGENTS.md |
+| `8c8f886a` | feat(dashboard): edge backup download + systemd service + run-node.bat 3.0.3 |
+| `f3e498e2` | fix(doge-vs-zion): stargate invisible (z dřívější session) |
+| `95ee4bf` | fix(scripts): canonical IPs + Tailscale fallback in all .bat + AGENTS.md |
 
 ### Endpointy (aktuální)
 | Endpoint | URL | Co dělá |
@@ -499,8 +499,8 @@ Auth: `admin:root` (HTTP Basic)
 ### Git commity (session 4)
 | Commit | Popis |
 |--------|-------|
-| `a1cee372` | docs: update L2Complete.md — Uniswap V3 pools created + seed liquidity added |
-| `750e72ca` | docs: update L2Complete.md — two-sided WETH liquidity active, bridge fixes |
+| `2e9dca31` | docs: update L2Complete.md — Uniswap V3 pools created + seed liquidity added |
+| `bd6eba30` | docs: update L2Complete.md — two-sided WETH liquidity active, bridge fixes |
 
 ---
 

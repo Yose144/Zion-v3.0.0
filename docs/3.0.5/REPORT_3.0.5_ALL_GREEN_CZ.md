@@ -39,7 +39,7 @@ Plný audit stavu 3.0.4 a exekuce 3.0.5 "All Green" upgradu:
 
 ### Nalezené discrepance (opraveno)
 1. **Protokol byl zastaralý:** `NODE_PROTOCOL_VERSION = "zion-v3-node/3.0.3"` → bumped na `3.0.5`
-2. **Falešný commit hash v docs:** `5074bf35` neexistuje v repu → opraveno na reálné commity `db137efc` + `f687d8ac`
+2. **Falešný commit hash v docs:** `9f371633` neexistuje v repu → opraveno na reálné commity `5f977ab4` + `9f371633`
 3. **Aktivační výška v docs neseděla:** 24000/22181/0 → 0 pro fresh chain
 4. **Stará IP v docs:** `100.76.16.108` → `62.171.141.136`
 5. **Bridge config zastaralý:** `start_block_height = 11300` (pre-hard-reset) → `0`; backup RPC stará IP → nová IP
@@ -54,7 +54,7 @@ Plný audit stavu 3.0.4 a exekuce 3.0.5 "All Green" upgradu:
 - Node binárka: `strings /usr/local/bin/zion-node | grep zion-v3-node` → `zion-v3-node/3.0.5`
 
 ### F2: Docs Reconcile ✅
-- Opraven falešný commit hash `5074bf35` → reálné `db137efc` + `f687d8ac` v `3.0.4.md` a `V3/docs/ACCOUNT_TX_MEMO_V1_DEPLOY_RUNBOOK.md`
+- Opraven falešný commit hash `9f371633` → reálné `5f977ab4` + `9f371633` v `3.0.4.md` a `V3/docs/ACCOUNT_TX_MEMO_V1_DEPLOY_RUNBOOK.md`
 - Opravena aktivační výška (24000/22181 → 0 pro fresh chain)
 - §3.8 phased plan označen jako obsolete
 - Stará IP `100.76.16.108` → `62.171.141.136` ve všech docs
@@ -125,9 +125,9 @@ Plný audit stavu 3.0.4 a exekuce 3.0.5 "All Green" upgradu:
 
 | Commit | Popis |
 |--------|-------|
-| `d425faec` | feat: 3.0.5 — bump protocol version, docs reconcile, All Green runbook |
-| `6b930b7a` | fix: L2/L3 config operational fixes (bridge start height, backup RPC IP, DB paths) |
-| `91c201a8` | docs: update AGENTS.md — DEPLOY-5/6/7 E2E memo tests COMPLETED |
+| `db72b552` | feat: 3.0.5 — bump protocol version, docs reconcile, All Green runbook |
+| `9dadc718` | fix: L2/L3 config operational fixes (bridge start height, backup RPC IP, DB paths) |
+| `c6c8a500` | docs: update AGENTS.md — DEPLOY-5/6/7 E2E memo tests COMPLETED |
 
 ---
 

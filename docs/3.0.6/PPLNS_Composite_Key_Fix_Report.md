@@ -47,7 +47,7 @@ worker actually contributed the shares.
 
 ### 3.1 Pool Server (`V3/L1/pool/src/bin/server.rs`)
 
-**Commit `bd6f1dfb3`** — PPLNS composite keys (4 locations):
+**Commit `826ce2abf`** — PPLNS composite keys (4 locations):
 
 | Location | Function | Old Key | New Key |
 |----------|----------|---------|---------|
@@ -59,7 +59,7 @@ worker actually contributed the shares.
 Dashboard API `address_for()` updated to use composite key with fallback to
 plain `miner_id` for legacy compatibility.
 
-**Commit `85250086d`** — Telemetry registry composite keys (4 locations):
+**Commit `28ea5cc5b`** — Telemetry registry composite keys (4 locations):
 
 | Function | Old Key | New Key |
 |----------|---------|---------|
@@ -79,14 +79,14 @@ let (display_miner_id, display_worker) = key
 Prometheus metrics updated to emit `miner_id` and `worker_name` as separate
 labels (split from composite key).
 
-**Commit `49f8bfb57`** — NoSolution reconnect cooldown (related hardening):
+**Commit `e35ccdd21`** — NoSolution reconnect cooldown (related hardening):
 - New config `no_solution_reconnect_cooldown_secs` (env
   `ZION_POOL_NO_SOLUTION_RECONNECT_COOLDOWN_SECS`, Edge: 300s)
 - IPs exceeding NoSolution rate limit are banned from reconnecting
 
 ### 3.2 Dashboard Backend (`ZION_OS/dashboard/app.py`)
 
-**Commit `a43d4f20f`** — 5 functions updated for composite key support:
+**Commit `6f806b987`** — 5 functions updated for composite key support:
 
 | Function | Change |
 |----------|--------|
@@ -100,7 +100,7 @@ labels (split from composite key).
 
 ### 3.3 Web Frontend (`APP&WEB/website-v2.9/`)
 
-**Commit `899887663`** — Composite key support for pool miner display:
+**Commit `a84beda96`** — Composite key support for pool miner display:
 
 **`src/app/api/pool/stats/route.ts`:**
 - Expanded miners payload type to include `worker_name`, `payout_address`,
@@ -128,7 +128,7 @@ labels (split from composite key).
 
 ### 3.4 Public Repo Sync
 
-**Commit `ee1c810ba`** — Synced `public/V3/L1/pool/src/bin/server.rs` with
+**Commit `97a579c54`** — Synced `public/V3/L1/pool/src/bin/server.rs` with
 latest pool server changes (898 insertions, 89 deletions).
 
 ## 4. Deployment History
@@ -193,13 +193,13 @@ Barker's old balance of 3,743,089 ZION is from pre-fix misrouted payouts.
 
 | Commit | Description |
 |--------|-------------|
-| `bd6f1dfb3` | PPLNS composite keys (4 locations in server.rs) |
-| `85250086d` | Telemetry registry composite keys (4 locations) |
-| `49f8bfb57` | NoSolution reconnect cooldown config |
-| `6105362e3` | Docs: PPLNS composite key fix + NoSolution cooldown |
-| `ee1c810ba` | Sync public repo pool server.rs |
-| `a43d4f20f` | Dashboard app.py composite key support |
-| `899887663` | Web frontend composite key support |
+| `826ce2abf` | PPLNS composite keys (4 locations in server.rs) |
+| `28ea5cc5b` | Telemetry registry composite keys (4 locations) |
+| `e35ccdd21` | NoSolution reconnect cooldown config |
+| `ca0fbb0ba` | Docs: PPLNS composite key fix + NoSolution cooldown |
+| `97a579c54` | Sync public repo pool server.rs |
+| `6f806b987` | Dashboard app.py composite key support |
+| `a84beda96` | Web frontend composite key support |
 
 ## 7. Lessons Learned
 
@@ -225,12 +225,12 @@ Barker's old balance of 3,743,089 ZION is from pre-fix misrouted payouts.
 
 | File | Commits |
 |------|---------|
-| `V3/L1/pool/src/bin/server.rs` | `bd6f1dfb3`, `85250086d`, `49f8bfb57` |
-| `ZION_OS/dashboard/app.py` | `a43d4f20f` |
-| `ZION_OS/dashboard/dashboard.js` | `a43d4f20f` |
-| `APP&WEB/website-v2.9/src/app/api/pool/stats/route.ts` | `899887663` |
-| `APP&WEB/website-v2.9/src/components/PoolDashboard.tsx` | `899887663` |
-| `APP&WEB/website-v2.9/src/components/pool/PoolMinersClient.tsx` | `899887663` |
-| `public/V3/L1/pool/src/bin/server.rs` | `ee1c810ba` |
-| `StatusV3.md` | `6105362e3` |
-| `AGENTS.md` | `6105362e3` |
+| `V3/L1/pool/src/bin/server.rs` | `826ce2abf`, `28ea5cc5b`, `e35ccdd21` |
+| `ZION_OS/dashboard/app.py` | `6f806b987` |
+| `ZION_OS/dashboard/dashboard.js` | `6f806b987` |
+| `APP&WEB/website-v2.9/src/app/api/pool/stats/route.ts` | `a84beda96` |
+| `APP&WEB/website-v2.9/src/components/PoolDashboard.tsx` | `a84beda96` |
+| `APP&WEB/website-v2.9/src/components/pool/PoolMinersClient.tsx` | `a84beda96` |
+| `public/V3/L1/pool/src/bin/server.rs` | `97a579c54` |
+| `StatusV3.md` | `ca0fbb0ba` |
+| `AGENTS.md` | `ca0fbb0ba` |

@@ -142,8 +142,8 @@ by se dalo optimalizovat scratchpad reuse mezi nonces, ale funkčně je to sprá
 
 ## Commity
 
-- `7fcce5135` — V31: fix TLS block_found detection + continuous ZION mining loop + OpenMP disable
-- `3cf1aff2b` — Metal kernel v3.2 + big-endian target + metal_hash_test (v dashboard commit)
+- `db8a6f933` — V31: fix TLS block_found detection + continuous ZION mining loop + OpenMP disable
+- `4996e5f8d` — Metal kernel v3.2 + big-endian target + metal_hash_test (v dashboard commit)
 
 ---
 

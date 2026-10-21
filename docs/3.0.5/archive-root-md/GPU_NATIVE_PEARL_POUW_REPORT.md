@@ -15,12 +15,12 @@ Implemented a **fully GPU-native Pearl PoUW mining pipeline** for Apple Metal (M
 
 | Commit | Description |
 |---|---|
-| `7ce6362f7` | Pearl PoUW stratum stream integration into V3 miner |
-| `c54f1ea4c` | Fully GPU-native Metal kernel + Rust bridge (36.9x speedup) |
-| `705bff572` | Merkle proof reconstruction (read-back matrices from GPU) |
-| `0526a9379` | E2E test with Merkle proof verification |
-| `ec030f86a` | OpenCL port for AMD RX 5700 XT (buffer reuse + batched persistent mining) |
-| `0bafbfe83` | **Real Pearl PoUW GPU GEMM dispatch — 50.68x speedup (CPU-prep + GPU dispatch)** |
+| `f3b6d837c` | Pearl PoUW stratum stream integration into V3 miner |
+| `877d8bde2` | Fully GPU-native Metal kernel + Rust bridge (36.9x speedup) |
+| `242130bcb` | Merkle proof reconstruction (read-back matrices from GPU) |
+| `4f69111b3` | E2E test with Merkle proof verification |
+| `4141225ce` | OpenCL port for AMD RX 5700 XT (buffer reuse + batched persistent mining) |
+| `e13724963` | **Real Pearl PoUW GPU GEMM dispatch — 50.68x speedup (CPU-prep + GPU dispatch)** |
 
 ---
 

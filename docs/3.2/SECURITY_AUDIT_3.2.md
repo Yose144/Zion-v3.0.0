@@ -541,7 +541,7 @@ The codebase demonstrates strong security practices in several areas:
 | FIND-010 | ✅ FIXED | `warp/router.rs:321-322` checks timelock on gross `amount_flowers` |
 | FIND-011 | ✅ FIXED | `swap/dex/intent.rs:78-114` `validate_path_amounts()` checks hop continuity |
 | FIND-013 | ✅ FIXED | `swap/dex/intent.rs:171-173` `validate_path()` called during settlement |
-| FIND-014 | ⏳ ACCEPTED | `swap_executor.rs` debit-before-credit; mitigated by JournalLedger (commit d6c909230) for audit trail. Two-phase commit planned for 3.3. |
+| FIND-014 | ⏳ ACCEPTED | `swap_executor.rs` debit-before-credit; mitigated by JournalLedger (commit 3f8a4a562) for audit trail. Two-phase commit planned for 3.3. |
 | FIND-015 | ⏳ ACCEPTED | `solver_network.rs:105` `X-Solver-Key` header over HTTP. In production, solver traffic goes through nginx TLS proxy (`https://auth.zionterranova.com`). Enforcing TLS at code level planned for 3.3 (reqwest 0.12 already supports `.https_only()`). |
 | FIND-016 | ✅ FIXED (2026-09-01) | `server.rs:1863-1868` `register_solver` restricted to `role == "admin"` |
 | FIND-017 | ✅ MITIGATED | GET endpoints covered by rate limiter (`rate_limit.rs`); auth not enforced for read-only data |
@@ -585,7 +585,7 @@ All Rust code compiles (`cargo check --workspace` clean). Tests verified for `zi
 
 ## 10. Re-verification addendum (2026-10-05)
 
-A whole-project internal audit on 2026-10-05 (`REPORTS/INTERNAL_AUDIT_2026-10-05.md`) re-checked a subset of the items above against commit `29a6b8a8a`. Everything not listed here was **not** re-verified.
+A whole-project internal audit on 2026-10-05 (`REPORTS/INTERNAL_AUDIT_2026-10-05.md`) re-checked a subset of the items above against commit `7a4d7791f`. Everything not listed here was **not** re-verified.
 
 | ID | Re-verified status | Notes |
 |----|--------------------|-------|

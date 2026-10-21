@@ -15,7 +15,7 @@ Audit 2026-07-09 odhalil, že 3.0.4 implementovalo TX unification (account-model
 1. **L2 watchery neběží** — `zion-bridge`, `zion-dao` jsou enabled ale nikdy nestartovaly; `zion-warp` nemá binárku; `zion-atomic-swap` nemá ani service soubor.
 2. **Website padla** — `zion-web-next` Docker kontejner exitnul (143/SIGTERM), nemůže dosáhnout L1 RPC.
 3. **Protocol version nebyl bumpnut** — node se hlásí jako `zion-v3-node/3.0.3` přestože jsme na 3.0.4/3.0.5.
-4. **Docs obsahují chyby** — commit `5074bf35` neexistuje, aktivační výška má 3 různé hodnoty (24000 / 22181 / 0), §3.8 fázový plán je zastaralý.
+4. **Docs obsahují chyby** — commit `9f371633` neexistuje, aktivační výška má 3 různé hodnoty (24000 / 22181 / 0), §3.8 fázový plán je zastaralý.
 5. **E2E memo testy (DEPLOY-5/6/7)** stále blokovány (F4.5 funded adresa s SK).
 
 3.0.5 = **operationalizace + validace + verzování**. Žádný nový konsenzový kód.
@@ -40,8 +40,8 @@ Audit 2026-07-09 odhalil, že 3.0.4 implementovalo TX unification (account-model
 | F4.7 max-tx-amount cap | `ZION_MAX_TX_AMOUNT_HEIGHT=1` | ✅ aktivní |
 | F5 balance check | `ZION_BALANCE_CHECK_HEIGHT=0` | ✅ aktivní |
 
-**Skutečné commity:** `db137efc` (account-model memo), `f687d8ac` (runtime-configurable height).
-**Pozn.:** `3.0.4.md` cituje commit `5074bf35` — ten v repu **neexistuje** (F2 oprava).
+**Skutečné commity:** `5f977ab4` (account-model memo), `9f371633` (runtime-configurable height).
+**Pozn.:** `3.0.4.md` cituje commit `9f371633` — ten v repu **neexistuje** (F2 oprava).
 
 ### 1.2 Server — živý stav
 
@@ -66,9 +66,9 @@ Audit 2026-07-09 odhalil, že 3.0.4 implementovalo TX unification (account-model
 | # | Diskrepance | Realita |
 |---|---|---|
 | D1 | `NODE_PROTOCOL_VERSION = "zion-v3-node/3.0.3"` | `V3/L1/core/src/lib.rs:47` — nikdy nebumpnuto |
-| D2 | Commit `5074bf35` citován v `3.0.4.md` | neexistuje v repu |
+| D2 | Commit `9f371633` citován v `3.0.4.md` | neexistuje v repu |
 | D3 | Aktivační výška: docs `24000`, repo `22181`, server `0` (default) | fresh chain → `0` je správně, ale docs si odporují |
-| D4 | §3.8 říká watchery+SDK/CLI = 3.0.5 | v kódu už hotové (commity `db137efc`, `f687d8ac`) |
+| D4 | §3.8 říká watchery+SDK/CLI = 3.0.5 | v kódu už hotové (commity `5f977ab4`, `9f371633`) |
 | D5 | AGENTS.md říká "height 230" | skutečná výška 727 (chain rostl) |
 
 ---
@@ -118,8 +118,8 @@ curl -s -X POST http://127.0.0.1:8443 -H "Content-Type: application/json" \
 ### F2.1 Opravit `3.0.4.md`
 
 1. **§3.5 DEPLOY-3:** `ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=24000` → opravit na: "Na serveru není env override nastaven — memo v1 aktivní od genesis (default `0`), což je správně pro fresh chain po 3.0.4 hard resetu."
-2. **§3.5 commit reference:** `5074bf35` → nahradit skutečnými commity `db137efc` + `f687d8ac`.
-3. **§3.8:** Označit jako "ZASTARALÉ — watchery+SDK/CLI implementovány v 3.0.4 (commity db137efc, f687d8ac), operationalizace v 3.0.5".
+2. **§3.5 commit reference:** `9f371633` → nahradit skutečnými commity `5f977ab4` + `9f371633`.
+3. **§3.8:** Označit jako "ZASTARALÉ — watchery+SDK/CLI implementovány v 3.0.4 (commity 5f977ab4, 9f371633), operationalizace v 3.0.5".
 4. **§3.4:** Watchery už skenují account TX — aktualizovat popis.
 
 ### F2.2 Opravit `edge-deploy/config/edge-environment.sh` (repo)
@@ -140,7 +140,7 @@ ZION_ACCOUNT_TX_MEMO_V1_HEIGHT=22181
 
 ```bash
 # Žádný výskyt fiktivního commitu
-grep -rn "5074bf35" docs/ 3.0.4.md AGENTS.md  # → žádné matches
+grep -rn "9f371633" docs/ 3.0.4.md AGENTS.md  # → žádné matches
 # Žádná výška 24000 v kontextu memo
 grep -rn "24000" 3.0.4.md  # → žádné matches (nebo označeno jako historické)
 ```
@@ -379,7 +379,7 @@ ssh zion-new 'curl -s -X POST http://127.0.0.1:8443 -H "Content-Type: applicatio
 
 ### F7.5 Docs
 
-- [ ] `grep -rn "5074bf35" docs/ 3.0.4.md AGENTS.md` → žádné matches
+- [ ] `grep -rn "9f371633" docs/ 3.0.4.md AGENTS.md` → žádné matches
 - [ ] `grep -rn "24000" 3.0.4.md` → žádné matches (nebo označeno historické)
 - [ ] `docs/3.0.5/README.md` + `ZION_3.0.5_ALL_GREEN_RUNBOOK.md` existují
 - [ ] AGENTS.md odkazuje na 3.0.5 docs

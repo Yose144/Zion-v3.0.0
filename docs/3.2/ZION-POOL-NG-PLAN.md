@@ -430,7 +430,7 @@ Testy: `zion-pool` 314/314, `zion-multichain` 731/731.
   UI typy. `USE_MOCK=true` dokud se neověří live endpoint — flip = 1
   konstanta. `tsc --noEmit` clean, `next build` static export OK.
 
-**F5 ✅ část B — LIVE NA EDGE (2026-10-18, `0b07ceeaa`):**
+**F5 ✅ část B — LIVE NA EDGE (2026-10-18, `b63852fcd`):**
 
 - Edge SSH: `zion-v6` alias (IPv6 `2a02:c207:2342:5821::1` :2222 — IPv4
   egress je CGNAT-blokovaná); deploy script default `POOL_DEPLOY_HOST=zion-v6`.
@@ -457,7 +457,7 @@ Testy: `zion-pool` 314/314, `zion-multichain` 731/731.
   `/miner/zion/<wallet>` 200 (workers+unpaid+active), `/api/*` 404,
   `/admin` 404. HTTPS externě ověřeno.
 
-**F5 ✅ část C — TLS stratum live (2026-10-18, `51f505359`):**
+**F5 ✅ část C — TLS stratum live (2026-10-18, `5ac626cd6`):**
 
 - `ZION_POOL_TLS_BIND=0.0.0.0:8445` + cert z
   `/etc/zion/stratum-tls/` (kopie LE `pool.zionterranova.com` certu,
@@ -504,7 +504,7 @@ zůstává dirty (pre-existing).
   follower umře, all-fail error. Celý suite 331+.
 - **DEPLOYED + live failover test (2026-10-19):** unit `--l1-rpc-url` →
   3 endpointy (⚠️ ExecStart arg má přednost před `ZION_L1_RPC_URL` env),
-  rebuild `f02617abf`. `stop zion-v31-node` → `9445 failed` → pool
+  rebuild `3ff3d5de3`. `stop zion-v31-node` → `9445 failed` → pool
   broadcastoval `mining.notify` přes follower bez přerušení → restore OK.
   Last-good zůstává na followeru (nechurnuje zpět). Standby pool na jiném
   hostu zůstává open.

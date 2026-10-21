@@ -56,14 +56,14 @@ Všechny 8 algoritmů má OpenCL kernel zdrojový kód (5 plně integrovaných, 
 
 | Coin | Algorithm | Kernel File | Lines | Status | Commit |
 |------|-----------|-------------|-------|--------|--------|
-| **IRON** | FishHash | `fishhash_kernel.cl` | 532 | **Fully integrated** — DAG + mine() dispatch | `f6df75b64` |
-| **KLS** | KarlsenHashV2 | `karlsenhash_kernel.cl` | 608 | **Fully integrated** — FishHashPlus + DAG | `f6df75b64` |
-| **VTC** | Verthash | `verthash_kernel.cl` + SHA3 | 289+ | Kernel ready, host-side 1.2GB data file loader TODO | `646d14f59` |
-| **ZCL** | Equihash 192,7 | `equihash_kernel.cl` + param.h | 851+ | Kernel ready, multi-kernel Wagner dispatch TODO | `646d14f59` |
-| **NEXA** | NexaPow | `nexapow_kernel.cl` | 6164 | **Fully integrated** — secp256k1 Schnorr from UltrafastSecp256k1 | `77613ad50` |
-| **RTM** | GhostRider | `ghostrider_kernel.cl` | 46 | Placeholder — 15 algos + 6 CN variants needed | `77613ad50` |
-| **QTC** | Qhash | `qhash_kernel.cl` | 42 | Placeholder — quantum circuit sim needed | `77613ad50` |
-| **DNX** | DynexSolve | `dynexsolve_kernel.cl` | 47 | Placeholder — neuromorphic ODE solver needed | `77613ad50` |
+| **IRON** | FishHash | `fishhash_kernel.cl` | 532 | **Fully integrated** — DAG + mine() dispatch | `d6da35fc2` |
+| **KLS** | KarlsenHashV2 | `karlsenhash_kernel.cl` | 608 | **Fully integrated** — FishHashPlus + DAG | `d6da35fc2` |
+| **VTC** | Verthash | `verthash_kernel.cl` + SHA3 | 289+ | Kernel ready, host-side 1.2GB data file loader TODO | `a4ac61a2f` |
+| **ZCL** | Equihash 192,7 | `equihash_kernel.cl` + param.h | 851+ | Kernel ready, multi-kernel Wagner dispatch TODO | `a4ac61a2f` |
+| **NEXA** | NexaPow | `nexapow_kernel.cl` | 6164 | **Fully integrated** — secp256k1 Schnorr from UltrafastSecp256k1 | `85a2bf408` |
+| **RTM** | GhostRider | `ghostrider_kernel.cl` | 46 | Placeholder — 15 algos + 6 CN variants needed | `85a2bf408` |
+| **QTC** | Qhash | `qhash_kernel.cl` | 42 | Placeholder — quantum circuit sim needed | `85a2bf408` |
+| **DNX** | DynexSolve | `dynexsolve_kernel.cl` | 47 | Placeholder — neuromorphic ODE solver needed | `85a2bf408` |
 
 **Zdrojové repozitáře:**
 - FishHashMiner (Lolliedieb): `kernels/fishhash.cl` → IRON kernel

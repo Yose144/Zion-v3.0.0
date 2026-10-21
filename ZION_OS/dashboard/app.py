@@ -8347,7 +8347,7 @@ def get_revenue_dashboard() -> dict:
     # v3.0.6: Pearl (PRL) removed from canonical 3-stream mining.
     #         The 3 streams are: ZION GPU, one GPU profit coin, CPU Verus/RandomX.
     # Pool addresses aligned with AuXpow/src/types.rs default_pool()
-    # E2E stratum test status from 2026-07-16 testing (commit b39f5cae8)
+    # E2E stratum test status from 2026-07-16 testing (commit 5f85f5f85)
     # e2e: "ok" = full stratum E2E, "warn" = connectivity issues, "ok" (legacy) = previously tested
     SUPPORTED_COINS = [
         ("DCR",  "blake3",      "pool.woolypooly.com:3152",            "ok"),

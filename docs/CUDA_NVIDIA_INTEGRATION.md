@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-02  
 **Version:** 2.9.9  
-**Commit:** `43a2b73d` (cuda: variable-topology NPU + ekam kernel + CUDA device detection)
+**Commit:** `51904870` (cuda: variable-topology NPU + ekam kernel + CUDA device detection)
 
 ---
 

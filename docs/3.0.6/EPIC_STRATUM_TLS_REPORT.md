@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-14 (aktualizováno 2026-07-14 23:30)
 **Status:** COMPLETE — E2E verified on Edge server (62.171.141.136)
-**Commits:** `54514c3fc`, `41c350b97`, `53ed2ab5c`, `952b8747f`
+**Commits:** `0355bb0c3`, `b6500de9c`, `ed657536e`, `3801f727f`
 
 ---
 
@@ -212,7 +212,7 @@ EPIC requires username (wallet.worker) between 5 and 20 characters. If the payou
 
 **Date:** 2026-07-14 22:19 CEST
 **Server:** 62.171.141.136 (Edge primary)
-**Pool binary:** `/usr/local/bin/zion-pool-server` (rebuilt from `41c350b97`)
+**Pool binary:** `/usr/local/bin/zion-pool-server` (rebuilt from `b6500de9c`)
 
 ### 4.2 Log Output
 
@@ -322,10 +322,10 @@ ZION_STREAM_VERUSHASH_PCT=25
 
 | Hash | Message |
 |------|---------|
-| `54514c3fc` | `feat(auxpow): add EpicStratum TLS protocol for EPIC ProgPow pool` |
-| `41c350b97` | `fix(auxpow): EPIC protocol fixes — JSON-RPC 2.0, fire-and-forget getjobtemplate, poll loop ordering` |
-| `53ed2ab5c` | `feat(3.0.6): sync local dashboard, miner, pool and auxpow updates` (progpow_gpu_thread spawn, ring CryptoProvider, getjobtemplate handler) |
-| `952b8747f` | `feat(auxpow): switch Pearl stratum to port 5571 plain stratum protocol` (EPIC poll debug, getjobtemplate response handler) |
+| `0355bb0c3` | `feat(auxpow): add EpicStratum TLS protocol for EPIC ProgPow pool` |
+| `b6500de9c` | `fix(auxpow): EPIC protocol fixes — JSON-RPC 2.0, fire-and-forget getjobtemplate, poll loop ordering` |
+| `ed657536e` | `feat(3.0.6): sync local dashboard, miner, pool and auxpow updates` (progpow_gpu_thread spawn, ring CryptoProvider, getjobtemplate handler) |
+| `3801f727f` | `feat(auxpow): switch Pearl stratum to port 5571 plain stratum protocol` (EPIC poll debug, getjobtemplate response handler) |
 
 ---
 

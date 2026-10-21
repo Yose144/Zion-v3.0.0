@@ -299,19 +299,19 @@ Per-crate highlights: `zion-multichain` 579, `zion-ai-native` 337,
 The following git commits form the technical backbone of the 3.2.0
 "One Love" state. They are all in `main` as of 2026-08-09:
 
-- `1ff214d66` — v3.2 One Love genesis reset: BIP39 mnemonic keys + Edge deploy.
-- `750f09236` — V31 3.2.0 "One Love": canonicalize V2 genesis key set and land UTXO/pool follow-ups.
-- `418f6972b` — Document 3.2.0 "One Love" V2 key set and genesis hashes.
-- `c425761b5` — V31 3.2.0 "One Love": payout confirmation sweep with UTXO fallback.
-- `2686ac4db` — V31: restructure contracts to Foundry layout, `u128` string serde, genesis reset addresses.
-- `1df643e60` — V31 binary path, controls whitelist, and premine sync.
-- `e38683014` — Sync dashboard overview/wallets/payout/revenue with V31 2026-08-06 genesis reset.
-- `c7b9980a5` — Pool `current_chain_height` uses native `V31` height, not V3 compat height.
-- `e6af816dc` — Pool vardiff env var names match `edge-environment.sh`.
-- `fbde94996` — Fix `difficulty_to_target` bit shift direction (nonce=0 root cause).
-- `d89d118a0` — Skip external share submit when a newer job has arrived (VRSC fix).
-- `206c7ff6e` — `pop_job()` returns latest job, not oldest (ZANO duplicate share fix).
-- `0ba6d2939` — Trinity mining E2E final tuning report + status update.
+- `7d8094c28` — v3.2 One Love genesis reset: BIP39 mnemonic keys + Edge deploy.
+- `f435cb708` — V31 3.2.0 "One Love": canonicalize V2 genesis key set and land UTXO/pool follow-ups.
+- `2e0c27d62` — Document 3.2.0 "One Love" V2 key set and genesis hashes.
+- `02fd41eeb` — V31 3.2.0 "One Love": payout confirmation sweep with UTXO fallback.
+- `b4c5d9247` — V31: restructure contracts to Foundry layout, `u128` string serde, genesis reset addresses.
+- `dd76fc2fe` — V31 binary path, controls whitelist, and premine sync.
+- `57dbfb0b5` — Sync dashboard overview/wallets/payout/revenue with V31 2026-08-06 genesis reset.
+- `d720aa673` — Pool `current_chain_height` uses native `V31` height, not V3 compat height.
+- `7d3bb79ef` — Pool vardiff env var names match `edge-environment.sh`.
+- `f4e9b959d` — Fix `difficulty_to_target` bit shift direction (nonce=0 root cause).
+- `4ce26fba3` — Skip external share submit when a newer job has arrived (VRSC fix).
+- `437aadad3` — `pop_job()` returns latest job, not oldest (ZANO duplicate share fix).
+- `4f6caf1fe` — Trinity mining E2E final tuning report + status update.
 
 This chronicle is not marketing. It is a verifiable trail of the decisions
 that brought the network to the 3.2 One Love gate.

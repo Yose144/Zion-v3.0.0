@@ -134,12 +134,12 @@ Added `NEAR_ENV_LOCK: Mutex<()>` in `V31/L2/multichain/src/warp/adapter/near.rs`
 ## 6. Commits
 
 ```text
-a1bdcfeaf fix(pool): align deferred payout with v31 wallet and JSON-RPC response shape
-adee9ac6b docs: update status for ZIS deployment, UTXO v2 fixes, and WARP test stability
-7ed20d07d chore(smos): bump Trinity SMOS package to v3.2.0 and add rig monitor
-b7fecc6ef fix(wallet/cli): align UTXO transaction hash and submission with V3 v2
-93b206441 fix(zis): align rate-limit version and systemd ExecStart for Fastify 4
-504d44e00 fix(warp): serialize NEAR env-var tests to prevent flaky failures
+393d8c37f fix(pool): align deferred payout with v31 wallet and JSON-RPC response shape
+071bd3f76 docs: update status for ZIS deployment, UTXO v2 fixes, and WARP test stability
+3864bcfeb chore(smos): bump Trinity SMOS package to v3.2.0 and add rig monitor
+f92a3f2fd fix(wallet/cli): align UTXO transaction hash and submission with V3 v2
+2b364a8f5 fix(zis): align rate-limit version and systemd ExecStart for Fastify 4
+95f44e39b fix(warp): serialize NEAR env-var tests to prevent flaky failures
 ```
 
 ---

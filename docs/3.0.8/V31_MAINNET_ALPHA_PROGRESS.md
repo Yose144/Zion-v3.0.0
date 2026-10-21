@@ -6,12 +6,12 @@
 
 | Commit | Co přibylo |
 |--------|-----------|
-| `9cbcaba7` | Submit nalezených bloků z poolu na `zion-l1` přes `submitBlock` JSON-RPC. |
-| `d91ec96d` | Bitcoin deposit watching přes mempool.space (`watch_events`, `balance`, `confirmations`). |
-| `98a46b5e` | Bitcoin P2WPKH `send_payment` + `execute_outbound` pro `BurnRelease` bridge. |
-| `1ac40f9b` | `zion pool`, `zion miner start`, `zion doctor` CLI příkazy. |
-| `b90e7c4e` | Automatické odesílání PPLNS payoutů přes `ZionL1Adapter::send_payment` (každých 30s). |
-| `87620480` | V3 miner fix: výchozí externí GPU backend OpenCL pro ProgPoWZ na NVIDIA (přepínače `ZION_EXT_GPU_BACKEND`). |
+| `423adc9e` | Submit nalezených bloků z poolu na `zion-l1` přes `submitBlock` JSON-RPC. |
+| `06c11d21` | Bitcoin deposit watching přes mempool.space (`watch_events`, `balance`, `confirmations`). |
+| `ee5e855d` | Bitcoin P2WPKH `send_payment` + `execute_outbound` pro `BurnRelease` bridge. |
+| `2d27139f` | `zion pool`, `zion miner start`, `zion doctor` CLI příkazy. |
+| `38b65ca1` | Automatické odesílání PPLNS payoutů přes `ZionL1Adapter::send_payment` (každých 30s). |
+| `d6a19d7d` | V3 miner fix: výchozí externí GPU backend OpenCL pro ProgPoWZ na NVIDIA (přepínače `ZION_EXT_GPU_BACKEND`). |
 
 ## Fáze 4 — L3–L6 superstruktury, SDK, CLI menu
 
@@ -205,27 +205,27 @@ Rozpis testů:
 
 ## Commity dnes
 
-- `0678e164` — původní `main` před dnešní prací.
-- `48fd9cf1` — `feat(v31): add unified miner with AuxPoW and DEX inside multichain`
-- `df4d30b4` — `feat(v31): add Triple Stream support to zion-miner`
-- `9e720dc4` — `feat(v31): add pool, bridge and wallet modules for Mainnet Alpha`
-- `23e8ecec` — `docs: add V31 Mainnet Alpha progress report and next plan`
-- `91bdd696` — `feat(v31): add CLI commands for wallet, bridge and swap`
-- `eb7bcda7` — `feat(v31): add V3 contracts, HTTP API, CORS and Dash31 dashboard`
-- `49b8e76c` — `feat(v31): wire EvmAdapter with ethers provider, signer and V3 contracts`
-- `0f2eef54` — `feat(v31): ZionL1 bridge locks + submitBridgeUnlock with validator proof`
-- `441e327f` — `fix(v31): decimal scaling in EvmAdapter submitLockProof + fmt`
-- `18405d25` — `feat(v31): integrate zion-pool stats into HTTP API + Dash31`
-- `ff2b8840` — `feat(v31): TCP stratum server with mining.notify broadcast`
-- `6e76d23f` — `feat(v31): live mining jobs from zion-l1 getBlockTemplate`
-- `b00daa77` — `feat(v31): block detection and PPLNS payouts endpoint`
-- `1c96ffcd` — `feat(v31): real block reward and worker payout addresses`
-- `9b0ce9c5` — `feat(v31): Dash31 pool payouts panel`
-- `9cbcaba7` — `feat(v31): submit solved blocks to zion-l1 RPC`
-- `d91ec96d` — `feat(v31): Bitcoin deposit watching via mempool.space`
-- `98a46b5e` — `feat(v31): Bitcoin P2WPKH send_payment and execute_outbound`
-- `1ac40f9b` — `feat(v31): pool/miner/doctor CLI extensions`
-- `b90e7c4e` — `feat(v31): automatic pool payout execution via ZionL1Adapter`
+- `7aa85b15` — původní `main` před dnešní prací.
+- `37edc827` — `feat(v31): add unified miner with AuxPoW and DEX inside multichain`
+- `86e62bff` — `feat(v31): add Triple Stream support to zion-miner`
+- `052749eb` — `feat(v31): add pool, bridge and wallet modules for Mainnet Alpha`
+- `bb28823d` — `docs: add V31 Mainnet Alpha progress report and next plan`
+- `e9b574a8` — `feat(v31): add CLI commands for wallet, bridge and swap`
+- `5fff8878` — `feat(v31): add V3 contracts, HTTP API, CORS and Dash31 dashboard`
+- `23cb5da8` — `feat(v31): wire EvmAdapter with ethers provider, signer and V3 contracts`
+- `8179b1db` — `feat(v31): ZionL1 bridge locks + submitBridgeUnlock with validator proof`
+- `a386020e` — `fix(v31): decimal scaling in EvmAdapter submitLockProof + fmt`
+- `34dd20ee` — `feat(v31): integrate zion-pool stats into HTTP API + Dash31`
+- `bdf7ecc1` — `feat(v31): TCP stratum server with mining.notify broadcast`
+- `c57240f6` — `feat(v31): live mining jobs from zion-l1 getBlockTemplate`
+- `382082bf` — `feat(v31): block detection and PPLNS payouts endpoint`
+- `09bb8d3b` — `feat(v31): real block reward and worker payout addresses`
+- `63a7e477` — `feat(v31): Dash31 pool payouts panel`
+- `423adc9e` — `feat(v31): submit solved blocks to zion-l1 RPC`
+- `06c11d21` — `feat(v31): Bitcoin deposit watching via mempool.space`
+- `ee5e855d` — `feat(v31): Bitcoin P2WPKH send_payment and execute_outbound`
+- `2d27139f` — `feat(v31): pool/miner/doctor CLI extensions`
+- `38b65ca1` — `feat(v31): automatic pool payout execution via ZionL1Adapter`
 
 ## Další plán (Mainnet Alpha milestones)
 

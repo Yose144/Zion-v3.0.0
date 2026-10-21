@@ -27,7 +27,7 @@ Kompletní bridge round-trip test úspěšně dokončen: **Lock → Mint → Bur
 6. Systemd env vars drop-in pro bridge validator pubkeys/threshold
 
 **Report:** [`REPORT_2026-08-22_E4_BRIDGE_ROUND_TRIP.md`](./REPORT_2026-08-22_E4_BRIDGE_ROUND_TRIP.md)
-**Commit:** `c886046f1`
+**Commit:** `bc87f2187`
 
 ### 1.1 G5 / E8 — XMR / RandomX path via MoneroOcean ✅
 
@@ -148,17 +148,17 @@ Kompletní bridge round-trip test úspěšně dokončen: **Lock → Mint → Bur
 
 | Hash | Zpráva |
 |------|--------|
-| `c886046f1` | feat(bridge): E4 Base mainnet round-trip complete — lock→mint→burn→unlock |
-| `52e9539af` | feat(ops): add F2 transaction fuzzing harness to scripts/ops/ |
-| `4d310d121` | feat(ops): H5 AuxPoW E2E test script for XMR/RandomX CryptonoteStratum |
-| `6bb9af71f` | WIP: latest V31, pool, multichain, and APP&WEB explorer changes |
-| `9e49bf16a` | Wire XMR / RandomX AuxPoW path through MoneroOcean (G5/E8) |
-| `2750544ef` | status: V31 consensus/pool security hardening and Edge redeploy |
-| `38c1cfe5f` | feat(listing,api): live DEX price in CoinGecko/CMC feeds and active API rate limiting |
-| `46a008292` | docs(reports): G7 chaos/load tests and status sync |
-| `e19a922fa` | Harden V31 L1 consensus, pool payouts, and multichain HTLC/EVM relay |
-| `94f7dbd93` | docs: mark G1 GPU/rig E2E complete + add G1 monitor script |
-| `4bad12ba8` | docs(V31): status G3 solver network real E2E complete |
+| `bc87f2187` | feat(bridge): E4 Base mainnet round-trip complete — lock→mint→burn→unlock |
+| `a98178dc7` | feat(ops): add F2 transaction fuzzing harness to scripts/ops/ |
+| `2dea50ee4` | feat(ops): H5 AuxPoW E2E test script for XMR/RandomX CryptonoteStratum |
+| `ca2d3d6a8` | WIP: latest V31, pool, multichain, and APP&WEB explorer changes |
+| `553ca03c0` | Wire XMR / RandomX AuxPoW path through MoneroOcean (G5/E8) |
+| `a5b83daa2` | status: V31 consensus/pool security hardening and Edge redeploy |
+| `7a8aadff5` | feat(listing,api): live DEX price in CoinGecko/CMC feeds and active API rate limiting |
+| `0ce0a95a8` | docs(reports): G7 chaos/load tests and status sync |
+| `2ec739926` | Harden V31 L1 consensus, pool payouts, and multichain HTLC/EVM relay |
+| `810823011` | docs: mark G1 GPU/rig E2E complete + add G1 monitor script |
+| `c78dc56a5` | docs(V31): status G3 solver network real E2E complete |
 
 Všechny commity pushnuty na `origin/main` (`https://github.com/Yose144/Zion-v3.0.0.git`).
 

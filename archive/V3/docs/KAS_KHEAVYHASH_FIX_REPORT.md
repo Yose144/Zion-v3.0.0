@@ -246,7 +246,7 @@ Result matches the GPU-reported `206d2cb0...64088e5a`.
 
 ## 8. Commit
 
-Commit `ca82ec34d` on branch `main`:
+Commit `7bedb066f` on branch `main`:
 
 ```text
 Fix KAS kheavyhash GPU/CPU hash mismatch.

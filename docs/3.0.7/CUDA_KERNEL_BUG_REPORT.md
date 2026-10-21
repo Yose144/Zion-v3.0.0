@@ -1,7 +1,7 @@
 # CUDA Kernel Bug Report — Deeksha Lite v1 / Fire / Cosmic Harmony
 
 **Date:** 2026-07-27
-**Status:** Fixed (commits `4c9cdc0e`, `44084d8a`, `f729613f`)
+**Status:** Fixed (commits `aaa56b64`, `d9634383`, `25d1fa96`)
 **Affected hardware:** NVIDIA GTX 1070 Ti (and all CUDA GPUs with `threads_per_block < 256`)
 **Symptom:** GPU miner reported high hashrate but could never find a block. Pool accepted shares (submitted hash met target) but logged `hash_mismatch` on every share — the GPU-produced hash did not match the CPU reference hash. No block was ever mined via CUDA.
 
@@ -13,9 +13,9 @@ Three distinct bugs were found in the CUDA mining kernels. All three contributed
 
 | # | Bug | File(s) | Severity | Commit |
 |---|-----|---------|----------|--------|
-| 1 | AES S-box shared memory loading incomplete | `deeksha_lite.cu`, `deeksha_lite_fire.cu` | **Critical** — root cause | `f729613f` |
-| 2 | `__byte_perm` selector `0x3210` is identity (no-op), not byte-swap | `deeksha_lite.cu`, `deeksha_lite_fire.cu`, `cosmic_harmony_deeksha.cu` | High — target check broken | `44084d8a` |
-| 3 | Target passed to GPU in little-endian, GPU compared in little-endian, but host uses big-endian lexicographic comparison | `gpu_backend.rs` | High — target check broken | `4c9cdc0e` |
+| 1 | AES S-box shared memory loading incomplete | `deeksha_lite.cu`, `deeksha_lite_fire.cu` | **Critical** — root cause | `25d1fa96` |
+| 2 | `__byte_perm` selector `0x3210` is identity (no-op), not byte-swap | `deeksha_lite.cu`, `deeksha_lite_fire.cu`, `cosmic_harmony_deeksha.cu` | High — target check broken | `d9634383` |
+| 3 | Target passed to GPU in little-endian, GPU compared in little-endian, but host uses big-endian lexicographic comparison | `gpu_backend.rs` | High — target check broken | `aaa56b64` |
 
 ---
 
@@ -203,10 +203,10 @@ This is why the AMD OpenCL reference miner was finding blocks while the CUDA min
 
 1. **Initial symptom**: GPU shares rejected by pool as `no_solution` / wrong hash.
 2. **First hypothesis**: Byte order mismatch between GPU target check and host verification.
-3. **First fix attempt** (commit `4c9cdc0e`): Changed `from_le_bytes` → `from_be_bytes` for target, added `__byte_perm` for hash byte-swap. **But `__byte_perm` selector was wrong** (`0x3210` = identity).
-4. **Second fix** (commit `44084d8a`): Corrected `__byte_perm` selector to `0x0123`. Shares now accepted by pool, but `hash_mismatch` still logged on every share — GPU hash ≠ CPU hash.
+3. **First fix attempt** (commit `aaa56b64`): Changed `from_le_bytes` → `from_be_bytes` for target, added `__byte_perm` for hash byte-swap. **But `__byte_perm` selector was wrong** (`0x3210` = identity).
+4. **Second fix** (commit `d9634383`): Corrected `__byte_perm` selector to `0x0123`. Shares now accepted by pool, but `hash_mismatch` still logged on every share — GPU hash ≠ CPU hash.
 5. **Root cause discovery**: Pool log `hash_mismatch_info` revealed GPU produces completely wrong hashes. Traced to AES S-box shared memory loading bug.
-6. **Final fix** (commit `f729613f`): Strided S-box loading loop. GPU hashes now match CPU reference.
+6. **Final fix** (commit `25d1fa96`): Strided S-box loading loop. GPU hashes now match CPU reference.
 
 ## Verification
 
@@ -220,6 +220,6 @@ After the final fix, the pool should no longer log `hash_mismatch_info` for CUDA
 
 | Commit | Description |
 |--------|-------------|
-| `4c9cdc0e` | Fix CUDA target byte order (LE→BE) — first attempt (had wrong `__byte_perm` selector) |
-| `44084d8a` | Fix `__byte_perm` selector: `0x3210` (identity) → `0x0123` (byte-swap) |
-| `f729613f` | **Fix AES S-box shared memory loading (root cause of hash mismatch)** |
+| `aaa56b64` | Fix CUDA target byte order (LE→BE) — first attempt (had wrong `__byte_perm` selector) |
+| `d9634383` | Fix `__byte_perm` selector: `0x3210` (identity) → `0x0123` (byte-swap) |
+| `25d1fa96` | **Fix AES S-box shared memory loading (root cause of hash mismatch)** |

@@ -7,30 +7,22 @@
 
 ## Status
 
-> **Last updated: 2026-09-12 (Premine repurpose: DAO Treasury slot 6 → L6 Issobella 2.5B — Orbital Station & Quantum Research Fund; DAO Treasury nyní 1.5B na slotech 7–8; premine 16.78B / 14 výstupů; `cargo test -p zion-core` 316 pass, website build OK, nasazeno na Edge)**
+> **Last updated: 2026-10-21 (EDGE → EDGE2 split hotov — 2 boxy, EDGE2 = primary + celý app stack, EDGE = ingress + pool + followeři; chain ~90 400 bloků; G8 stall RCA + 3 fixy nasazeny; `zion-ncl` živý na :8098)**
 
-- **ZIS Multichain Wallet plan:** The simplified ZIS-backed multichain wallet architecture (ZIS → L2 multichain → Uniswap V3, no custom AMM) is captured in [`ZIS_WALLET_PLAN.md`](docs/3.2/ZIS_WALLET_PLAN.md). The earlier [`ZionDexZis.md`](docs/3.2/ZionDexZis.md) plan is superseded (historical).
-- **Active mainnet track:** `V31/` workspace — version `3.1.0-beta` (V31 Mainnet Alpha), protocol string `zion-v3-node/3.1.0-alpha`, clean `cargo test --workspace`.
-- **3.2 "One Love" canonical docs:** Public whitepapers and onboarding (CZ/EN) are now canonized in [`docs/WP-Mainet/`](docs/WP-Mainet/README.md); see the launch plan [`OneLoveV3.2.md`](docs/3.2/OneLoveV3.2.md) and technical execution plan [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md).
-- **V3 production line has been archived** to `archive/V3/` after the 2026-08-04 V31 cutover.
-- **Hard genesis reset (2026-08-06):** Complete key rotation — new premine, canonical, admin, DAO guardian, and EVM validator keys. All addresses updated across codebase + Edge server. See [`HARD_RESET_PLAYBOOK.md`](docs/3.2/HARD_RESET_PLAYBOOK.md) for the full procedure.
-- **Edge production is V31 (2026-08-17):**
-  - Public RPC: `rpc.zionterranova.com:8443`
-  - Public pool stratum: `62.171.141.136:8444`
-  - Chain height: 7000+ (2026-08-17)
-  - Difficulty: ~16k after LWMA re-tuning (clamped to Zawy LWMA reference: `MIN_SOLVE_TIME=6`, `MAX_SOLVE_TIME=360`, ±50% per-block clamp)
-  - Protocol: `zion-v3-node/3.1.0-alpha` (workspace version `3.1.0-beta`)
-  - 2026-08-17: LWMA difficulty clamp fix in `V31/L1/core/src/difficulty.rs` deployed on Edge. The previous clamp was too tight (`TARGET/2–2×TARGET`, ±25%), which prevented difficulty from falling fast enough when hashrate dropped, causing the 6944–6945 stall. New constants are `MIN_SOLVE_TIME=6`, `MAX_SOLVE_TIME=360`, and ±50% per-block clamp.
-  - 2026-08-17: CPU-only `zion-miner` enumeration fix in `V31/L1/miner/src/gpu/mod.rs` — `detect_gpus()` and `query_gpu_details()` now short-circuit OpenCL/CUDA/Metal when `ZION_GPU_BACKEND=cpu`, preventing `ocl::Platform::list()` panic on the CPU-only Edge server.
-  - 2026-08-10: Stale Edge `zion-pool` binary rebuilt/redeployed with latest `pop_job()`/`touch_job_timestamp` fixes; VRSC/ZANO shares now accepted upstream.
-  - 2026-08-10: Local `zion-miner` duplicate-share fix: Stream 2 (GPU external, ZANO ProgPoW) nonce cursor now starts from a unique 64-bit base per new job (`V31/L1/miner/src/runtime.rs`).
-  - 2026-08-10: CUDA ProgPoW DAG disk cache: first run generates the DAG on GPU and saves it to `~/.zion/dag-cache/progpow_epoch{N}.bin` (~2 GB, 2.7 s); subsequent starts load the cache and skip the ~10 s GPU generation.
-  - Genesis hash (V3 compat): `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`
-  - Genesis hash (V31 native): `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
-  - Active V31 services: node, pool, multichain, DAO, OASIS, dashboard, web, marketplace (plus follower nodes).
-  - Legacy/expected failed: `zion-node` (V3), `zion-pool` (V3), `zion-dashboard-web` (superseded)
-- **Latest wins:** 2026-08-10 ZANO ProgPoW duplicate-share root-cause fixed in `V31/L1/miner/src/runtime.rs` (unique 64-bit nonce base per new job) and CUDA DAG disk cache added to `V31/L1/miner/src/gpu/cuda_external.rs`; local miner rebuilt, restarted, and validated: `progpow_epoch126.bin` (2.0 GB) generated/saved in 2.7 s, subsequent start loaded from disk and ZANO share accepted with no duplicate rejects. 2026-08-10 stale Edge `zion-pool` binary rebuild/redeploy with `pop_job()` + `touch_job_timestamp` fixes and AuxPoW worker-name simplification (commit `a5b3aa2c6`) — VRSC/ZANO shares now accepted upstream. V31 pool reaches full V3 parity with payout confirmation sweep + UTXO fallback, DAO governance runtime with treasury/humanitarian/L1 scanner, GPU backend port (CUDA/OpenCL/Metal/native) with Ekam Deeksha v3.2 (512 KiB scratchpad, 128 random reads, 2 AES passes), cross-chain DEX multi-path routing + HTTP solver network, CLI with 21 subcommands (DAO/WARP/HTLC/monitor/topology/explorer/onboard), Rasta/One Love desktop and web UI theme, OASIS RPC fixed (raw TCP JSON-RPC).
-- **Test gate:** `cargo test --workspace` passes, `cargo clippy --workspace` is clean (pre-existing warnings only).
+- **Topologie (2026-10-21, split v3):**
+  - **EDGE2** `207.180.217.100` (vmi3684458, 6c EPYC / 11 G / 193 G) — V31 **primary** node (RPC 9445, P2P 8335), bitcoind mainnet (8332, pruned), quantus (9944 + QUIC 9833), pearl stack (44207/8477), PostgreSQL 16 (5432), WARP (8453/8454), ZIS (8096), db-sync, DAO (8456), OASIS (8094), free-world (8095), issobella (8097), NCL (8098), website (3000), marketplace (3100), ai-native (8001), btcunlock (8779).
+  - **EDGE** `62.171.141.136` (vmi3425821) — nginx ingress (všechny veřejné vhosty), **pool** 8444/8445 (stratum + TLS) + API 8080, fallback-miner, node2 (9446) + node3 (9447) followeři, regtest BTC, dashboard (8766), grafana, prometheus, fail2ban.
+  - **Tunely:** `zion-chain-tunnel` (edge→EDGE2) a `zion-edge-tunnel` (EDGE2→edge), oba s `permitopen` whitelist. Latence edge↔EDGE2 ≈ 1 ms.
+  - **Pool zůstává na EDGI záměrně** — stratum musí vidět reálné IP minerů (`ZION_POOL_MAX_SESSIONS_PER_IP=10` + IP ban); stream proxy by je sjednotil pod jednu IP a rozbil per-IP limity.
+  - Plán + execution log + rollback skripty: [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md).
+- **Active mainnet track:** `V31/` workspace — verze `3.2.0`, protokol `zion-v3-node/3.1.0-alpha`. V31 cutover (2026-08-04) dokončen, V3 archivován v `archive/V3/`.
+- **Chain:** ~90 400+ bloků, difficulty ~16k (LWMA-60, `MIN_SOLVE_TIME=6`, `MAX_SOLVE_TIME=360`, ±50 % clamp na blok). Genesis hash (V31 native): `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` · (V3 compat): `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`.
+- **Public RPC:** `rpc.zionterranova.com:8443` → V31 (přes edge nginx). **Pool stratum:** `pool.zionterranova.com:8444` (+ TLS 8445), `https://pool.zionterranova.com/public/v1` public API tier.
+- **V3.2 "One Love" canonical docs:** Public whitepapers a onboarding (CZ/EN) jsou kanonizované v [`docs/WP-Mainet/`](docs/WP-Mainet/README.md); launch plán [`OneLoveV3.2.md`](docs/3.2/OneLoveV3.2.md), technický execution plán [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md).
+- **V3.3 "NIRVANA" execution:** stav a jednotlivé gate jsou v [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md). Důležité otevřené blokátory: nové schválené 30denní G8 okno, externí bezpečnostní audit a rozhodnutí o vydání v3.2.0. **BTC swap zůstává vypnutý** (`WARP_BTC_SWAP_ENABLED=0`) do dokončení hardeningu, auditu a výslovného schválení pilotu; **PRL payout zůstává v dry-run** (`PRL_PAYOUT_DRY_RUN=1`) a vyžaduje kontrolu dávky i operátorský souhlas. Stav UI či hotový kód samy o sobě tyto provozní gate neuzavírají.
+- **ZIS Multichain Wallet:** ZIS → L2 multichain → Uniswap V3 architektura v [`docs/3.2/ZIS_WALLET_PLAN.md`](docs/3.2/ZIS_WALLET_PLAN.md). (Původní [`ZionDexZis.md`](docs/3.2/ZionDexZis.md) plán je superseded — historický.)
+- **Hard genesis reset (2026-08-06):** kompletní rotace klíčů — nové premine, canonical, admin, DAO guardian a EVM validator klíče. Viz [`HARD_RESET_PLAYBOOK.md`](docs/3.2/HARD_RESET_PLAYBOOK.md).
+- **Validace:** příkazy pro build a testy jsou v části Quick start. Výsledky testů závisejí na zvolených features a dostupném hardware; historické výsledky nejsou tvrzením o aktuálním stavu celé workspace.
 - **Public launch target:** postponed (TBD).
 
 ---
@@ -46,9 +38,13 @@
 | **3.2 technical execution plan** | [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md) |
 | **Canonical public docs / whitepapers** | [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) |
 | **Live status + topology** | [`StatusV3.md`](docs/3.2/StatusV3.md) |
+| **EDGE → EDGE2 split plan + execution log** | [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md) |
+| **V3.3 NIRVANA execution checklist** | [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) |
 | **Post-cutover execution plan** | [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V31 detailed status** | [`V31/STATUS.md`](V31/STATUS.md) |
 | **V3 archive (read-only)** | [`archive/V3/`](archive/V3/) |
+| **Operator runbook + pravidla** | [`AGENTS.md`](AGENTS.md) |
+| **Provozní log (2026-07-08 → 2026-10-21)** | [`docs/3.2/ops/AGENTS-CHRONOLOGY.md`](docs/3.2/ops/AGENTS-CHRONOLOGY.md) |
 | **Historical incidents + public-subtree rules** | [`AGENTS.md`](AGENTS.md) |
 | **Hard reset procedure (genesis + keys)** | [`HARD_RESET_PLAYBOOK.md`](docs/3.2/HARD_RESET_PLAYBOOK.md) |
 | **Public (MIT) subtree** | [`public/`](public/) |
@@ -74,6 +70,8 @@ cargo check
 cargo test
 cargo build --release
 ```
+
+Tyto příkazy ověřují lokální build; nezapínají produkční služby ani nepotvrzují provozní readiness. GPU testy mohou vyžadovat odpovídající ovladač a hardware.
 
 ### Run a local V31 node
 
@@ -125,10 +123,12 @@ ZION_STREAM3_FORCE_COIN=MONERO ./target/release/zion-miner \
 
 ## Network topology
 
-See [`StatusV3.md`](docs/3.2/StatusV3.md) for the authoritative live topology. In brief:
+Aktuální rozdělení EDGE/EDGE2 je shrnuté také v úvodu [`AGENTS.md`](AGENTS.md); detailní stav a rollback postup jsou v [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md). [`StatusV3.md`](docs/3.2/StatusV3.md) obsahuje starší technický/statusový kontext a nemusí odrážet poslední změny infrastruktury. Stručně:
 
-- **Edge** (Contabo VPS): V31 primary node, follower nodes, V31 pool, multichain, DAO, bridge/WARP, web, marketplace, OASIS, dashboard.
-- Public RPC is served by nginx TCP stream on port 8443.
+- **EDGE2** `207.180.217.100` — V31 **primary** node, chain stack (bitcoind/quantus/pearl), multichain/WARP, DAO, OASIS, Free World, Issobella, NCL, ZIS, db-sync, PostgreSQL, website, marketplace, ai-native, btcunlock.
+- **EDGE** `62.171.141.136` — nginx public ingress, **pool** (stratum 8444/8445 + API 8080), fallback-miner, follower nodes node2/node3, regtest BTC, dashboard, grafana/prometheus.
+- Public RPC is served by nginx TCP stream on port 8443 (edge → EDGE2 chain tunnel).
+- Two SSH tunnels (`zion-chain-tunnel` / `zion-edge-tunnel`) connect the boxes; `permitopen` whitelist only.
 
 ---
 
@@ -148,7 +148,11 @@ This repository has one source of truth per topic:
 | **Post-cutover execution plan** | [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V31 detailed status** | [`V31/STATUS.md`](V31/STATUS.md) |
 | **V3 archive** | [`archive/V3/README.md`](archive/V3/README.md) |
+| **EDGE → EDGE2 split plan + rollback** | [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md) |
+| **V3.3 NIRVANA execution checklist** | [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) |
 | **MarketPlace ZION L1 bonus payout** | [`APP&WEB/MarketPlace/PAYOUT.md`](APP&WEB/MarketPlace/PAYOUT.md) |
+| **Operator runbook + pravidla** | [`AGENTS.md`](AGENTS.md) |
+| **Provozní log (2026-07-08 → 2026-10-21)** | [`docs/3.2/ops/AGENTS-CHRONOLOGY.md`](docs/3.2/ops/AGENTS-CHRONOLOGY.md) |
 | **Historical incidents + backup rules** | [`AGENTS.md`](AGENTS.md) |
 
 ---
@@ -159,4 +163,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-08-17 · Version: 3.1.0-beta (V31 Mainnet Alpha, protocol 3.1.0-alpha) · 3.2 "One Love" docs: [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) · 3.1 archived reports: [`docs/3.1/README.md`](docs/3.1/README.md) · Live status: [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*
+*Last updated: 2026-10-21 · Version: 3.2.0 (V31 Mainnet Alpha, protocol 3.1.0-alpha) · Topologie: EDGE2 primary + EDGE ingress/pool (viz [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md)) · 3.3 NIRVANA: [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · 3.2 "One Love" docs: [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) · 3.1 archived reports: [`docs/3.1/README.md`](docs/3.1/README.md) · Live status: [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*

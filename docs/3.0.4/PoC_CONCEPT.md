@@ -181,7 +181,7 @@ care_score = accuracy_weight * accuracy
 | — **Bodhisattva Vow integrace (dual-vow, +5 % bonus)** | ✅ `poc-core` + `poc-registry` + `poc-sim` |
 | — reward split + slashing model | ✅ `PoC-lab/poc-economics` |
 | — end-to-end network simulátor (s guardian demo) | ✅ `PoC-lab/poc-sim` |
-| **PoC-lab Fáze 2 — Dharma, NCL, Consciousness, stress testy** | ✅ Commit `5d0aefea` — 119 testů PASS |
+| **PoC-lab Fáze 2 — Dharma, NCL, Consciousness, stress testy** | ✅ Commit `9c12f362` — 119 testů PASS |
 | — `DharmaValidator` + `HiranAwareVerifier` (5 pilířů) | ✅ `poc-verifier` |
 | — `NclReputationRegistry` (ban, score, bonus tiers) | ✅ `poc-economics` |
 | — `ConsciousnessLevel` enum (L0 Dormant → L6 Grok) | ✅ `poc-core` + `poc-registry` |
@@ -199,7 +199,7 @@ care_score = accuracy_weight * accuracy
 
 ### 10a. PoC-lab Fáze 2 — technické detaily (2026-07-08)
 
-**Commit:** `5d0aefea` · **119 testů PASS** (poc-core: 11, poc-economics: 22, poc-npu: 15, poc-registry: 20, poc-sim: 24, poc-tasks: 7, poc-verifier: 20)
+**Commit:** `9c12f362` · **119 testů PASS** (poc-core: 11, poc-economics: 22, poc-npu: 15, poc-registry: 20, poc-sim: 24, poc-tasks: 7, poc-verifier: 20)
 
 #### DharmaValidator (`poc-verifier`)
 Pipeline 5 etických pilířů pro každý care proof:

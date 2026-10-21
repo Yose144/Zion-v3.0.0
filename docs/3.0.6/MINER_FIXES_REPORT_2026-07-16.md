@@ -208,8 +208,8 @@ QUAI (GPU KawPow) external shares now properly counted.
 
 | Commit | Description |
 |--------|-------------|
-| `aa8ceb396` | `feat(miner): DAG generation exclusively on GPU, never on CPU` |
-| `7ad18ae1c` | `fix(miner): VRSC/VerusHash shares not accepted — read_next_result rejected ExternalResult` |
+| `98cf5ec7a` | `feat(miner): DAG generation exclusively on GPU, never on CPU` |
+| `bd8c44deb` | `fix(miner): VRSC/VerusHash shares not accepted — read_next_result rejected ExternalResult` |
 
 ---
 

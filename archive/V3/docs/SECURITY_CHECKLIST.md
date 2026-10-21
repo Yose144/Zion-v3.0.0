@@ -82,7 +82,7 @@
 | Premine backup never entered git history | ❌ | `git log --all --name-only` still shows `PREMINE_WALLETS_BACKUP.json`; BFG/history scrub remains required before any public launch or public fork |
 | No private keys in source tree | ✅ | Only public addresses in `PREMINE_ADDRESSES_PUBLIC.txt` |
 | `.env` files gitignored | ✅ | Server `.env` never committed |
-| **Pool SK scrubbed from repo (2026-07-02)** | ✅ | 5 files scrubbed: `setup-edge.sh`, `launch-stack.sh`, `start-pool.sh`, `edge-environment.sh`, `V3/docker/.env` — replaced with `<REDACTED_ROTATE_IMMEDIATELY>` placeholder (commit `19e62989`) |
+| **Pool SK scrubbed from repo (2026-07-02)** | ✅ | 5 files scrubbed: `setup-edge.sh`, `launch-stack.sh`, `start-pool.sh`, `edge-environment.sh`, `V3/docker/.env` — replaced with `<REDACTED_ROTATE_IMMEDIATELY>` placeholder (commit `af3e3991`) |
 | **Pool SK in edge-environment.sh on Edge** | ✅ | Real SK present on Edge server (chmod 600), scrubbed from git only |
 
 ## 9. Fuzzing Readiness
@@ -134,9 +134,9 @@ Attacker from `109.81.30.165` connected to P2P port 8333 on Edge server and inje
 
 ### Fix deployed
 
-- **Commit `9341344d`:** `validate_peer_block()` now calls `verify_signature()` for every non-coinbase account transaction. Height-gated to `account_tx_memo_v1_active` (height 22181+).
+- **Commit `056b67a4`:** `validate_peer_block()` now calls `verify_signature()` for every non-coinbase account transaction. Height-gated to `account_tx_memo_v1_active` (height 22181+).
 - **Regression test:** `validate_peer_block_rejects_forged_account_transaction` — verifies that a forged account TX is rejected by peer block validation.
-- **Original fix:** Commit `5cee33c4` added `derive_address` check in `verify_signature()` itself.
+- **Original fix:** Commit `1d2f88ec` added `derive_address` check in `verify_signature()` itself.
 
 ### Forensic references
 

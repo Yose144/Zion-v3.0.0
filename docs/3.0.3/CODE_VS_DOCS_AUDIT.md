@@ -69,7 +69,7 @@ On-chain `wZION.hasRole(BRIDGE_ROLE, bridge)` on all 6 chains confirmed the live
 - **V3/ROADMAP.md** line 134: "465 WARP tests pass"
 - **V3/README.md** line 116: "252 warp"
 - **Actual:** 488 test functions in `V3/L3/warp/src` (452 `#[test]` + 36 `#[tokio::test]`, no `#[ignore]`)
-- **Note:** The recent commit `7948bcb4` says "408 tests pass" — yet another number. The codebase has grown; docs cite three different stale counts. Recommend running `cargo test --manifest-path V3/Cargo.toml -p zion-warp` and recording the authoritative number.
+- **Note:** The recent commit `96232bb2` says "408 tests pass" — yet another number. The codebase has grown; docs cite three different stale counts. Recommend running `cargo test --manifest-path V3/Cargo.toml -p zion-warp` and recording the authoritative number.
 
 ---
 

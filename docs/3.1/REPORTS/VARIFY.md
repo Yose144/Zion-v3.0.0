@@ -1,7 +1,7 @@
 # VARIFY — Trinity Engine External Mining Verification Report
 
 **Datum:** 2026-08-09
-**Commit:** `5ad3d3d8b` — fix(trinity): external mining nonce cursor + share target + bridge timeout
+**Commit:** `09751b822` — fix(trinity): external mining nonce cursor + share target + bridge timeout
 **Status:** LIVE — VRSC shery potvrzeny a forwardovány do LuckPool
 
 ---
@@ -158,11 +158,11 @@ ZANO používá ProgPoW algoritmus který vyžaduje GPU. Edge server nemá GPU, 
 
 | Commit | Popis |
 |---|---|
-| `5ad3d3d8b` | fix(trinity): external mining nonce cursor + share target + bridge timeout |
-| `8a26b6026` | fix(pool): double newline in stratum v1 broadcast path |
-| `87670ed38` | fix(v3-protocol): double newline in write_v3_message causing decode errors |
-| `abff6874b` | fix(miner): respect ZION_STREAM{1,2,3}_ENABLED env vars |
-| `4b37b4c11` | fix(pool): forwarding logy + header_bytes fix pro ZANO |
+| `09751b822` | fix(trinity): external mining nonce cursor + share target + bridge timeout |
+| `14a17bfa3` | fix(pool): double newline in stratum v1 broadcast path |
+| `620a7492d` | fix(v3-protocol): double newline in write_v3_message causing decode errors |
+| `6330e5f20` | fix(miner): respect ZION_STREAM{1,2,3}_ENABLED env vars |
+| `7fb41d0a3` | fix(pool): forwarding logy + header_bytes fix pro ZANO |
 
 ---
 

@@ -25,10 +25,10 @@
 > - P2P path (`validate_peer_block`): reject TX s running balance (zohledňuje multi-TX bloky)
 > - Edge mainnet aktivace: `ZION_BALANCE_CHECK_HEIGHT=22394` (aktivní od bloku 22394)
 > - 3 regresní testy pass (RPC reject, RPC accept, peer-block reject)
-> - **5 fuzz testů přidáno (commit `a5472ec6`):** 100 random unfunded senders, double-spend s mempool debit tracking, u64::MAX amount, 200 rapid-fire no-panic, self-send z empty address — vše PASS
+> - **5 fuzz testů přidáno (commit `33e9a8aa`):** 100 random unfunded senders, double-spend s mempool debit tracking, u64::MAX amount, 200 rapid-fire no-panic, self-send z empty address — vše PASS
 > - **Node2 F5 deploy:** Potvrzeno aktivní (`balance_check_activation_height=22394` v logu, restart 20:22:55 UTC)
 > - **Node binary swap (22:55 UTC):** Nejnovější binárka s fmt/clippy cleanup deploynuta na oba nody, F5 stále aktivní, chain height 22539
-> - Commits: `69d12c7`, `fe8d449`, `9863747`, `a5472ec6`
+> - Commits: `7019d88`, `9a438a0`, `66d3c8c`, `33e9a8aa`
 
 ---
 
@@ -382,7 +382,7 @@ Internet
 - [x] F1.1: Opravit UFW — odstranit veřejná pravidla ✅ (2026-07-02 14:46)
 - [x] F1.2: Odpojit externího peera 109.81.30.165 ✅ (peers.json vyčištěn, node restart)
 - [x] F1.3: Odstranit starý cron job (MEMO_V1_HEIGHT=24000) ✅
-- [x] F1.4: Scrub privátní klíče z git repu ✅ (5 souborů, commit 19e6298)
+- [x] F1.4: Scrub privátní klíče z git repu ✅ (5 souborů, commit af3e399)
 - [x] F1.5: Opravit file permissions (chmod 600) ✅ (edge-state.db, edge2-state.db, bridge-mainnet.db, edge-environment.sh, data dir 700)
 - [x] F2.1: Vytvořit zion user ✅ (uid=995, systemd User= pending)
 - [x] F2.2: SSH config vyčištěn ✅ (PermitRootLogin prohibit-password, PasswordAuthentication no, X11Forwarding no, AllowUsers root)
@@ -393,11 +393,11 @@ Internet
   - ✅ Tailscale IP: dashboard(8888)
   - ✅ 0.0.0.0 (UFW blokuje, bezpečné): P2P(8333,8334), pool(8444) — musí zůstat pro Tailscale minery
   - ✅ Env var names fix v service files: BRIDGE_METRICS_BIND→BRIDGE_METRICS_HOST, DAO_API_BIND→DAO_API_HOST (2026-07-02 22:50)
-- [x] F5.1: F5 fix deployed on node1 ✅ (block 22394, commit 69d12c7)
+- [x] F5.1: F5 fix deployed on node1 ✅ (block 22394, commit 7019d88)
 - [x] F5.2: F5 fix deployed on node2 ✅ (potvrzeno 2026-07-02 22:55, balance_check_activation_height=22394 v logu)
-- [x] F5.3: F5 fuzz tests ✅ (commit a5472ec6, 5 testů — 100 random senders, double-spend, u64::MAX, rapid-fire, self-send)
+- [x] F5.3: F5 fuzz tests ✅ (commit 33e9a8aa, 5 testů — 100 random senders, double-spend, u64::MAX, rapid-fire, self-send)
 - [x] F5.4: Node binary swap ✅ (2026-07-02 22:55, nejnovější binárka s fmt/clippy cleanup, F5 aktivní, height 22539)
-- [x] L2.1: L2 security patch deployed ✅ (commit a8b3821e — binárky z 18:54, MD5 shoda ověřena 2026-07-02 22:45)
+- [x] L2.1: L2 security patch deployed ✅ (commit b2f0ca40 — binárky z 18:54, MD5 shoda ověřena 2026-07-02 22:45)
   - ✅ Claimant guard (atomic-swap C1)
   - ✅ Threshold 5/5 enforced (bridge H3)
   - ✅ EVM reorg pause (bridge M1)
@@ -414,8 +414,8 @@ Internet
 - [x] OPS.1: Pool service konsolidace ✅ (duplikát stopped+disabled, TimeoutStopSec 15→60s)
 - [x] OPS.2: Atomic swap restart ✅ (byl mrtvý od F5 deploy, restartován)
 - [x] OPS.3: Edge git cleanup ✅ (4 .bak soubory s rotovanými secrets odstraněny)
-- [x] OPS.4: Dashboard health probes fix ✅ (commit 46106f38, EDGE_RPC_HOST pro Edge services)
-- [x] OPS.5: cargo fmt + clippy ✅ (commit 48bf387f, 0 warnings, 0 fmt diffs)
+- [x] OPS.4: Dashboard health probes fix ✅ (commit 5a117b70, EDGE_RPC_HOST pro Edge services)
+- [x] OPS.5: cargo fmt + clippy ✅ (commit f5efa6e3, 0 warnings, 0 fmt diffs)
 - [ ] F2.3: Tailscale ACL — DOC READY (viz §F2.3 výše), uživatel musí aplikovat přes admin console:
   1. Otagovat zařízení: mainnetedge=tag:edge-server, jose--macbook-pro=tag:workstation, zionserver=tag:mining-server, zionserver-144=tag:legacy
   2. Vložit ACL JSON na https://login.tailscale.com/admin/acls

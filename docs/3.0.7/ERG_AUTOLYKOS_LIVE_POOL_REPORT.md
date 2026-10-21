@@ -28,10 +28,10 @@ No 2miners-accepted shares yet — needs longer mining run at network difficulty
 
 | Version | Approach | Hashrate | Commit |
 |---------|----------|----------|--------|
-| v1 (tableless) | On-the-fly blake2b for all 33 index computations per nonce | 14.37 MH/s | `26d98de4f` |
-| v2 (R table / DAG) | Precomputed R table (N×32B) + uint4 table lookups | 21 MH/s | `b7fc2a180` |
-| v3 (R table optimized) | __ldg() + shared mem header + 4 nonces/thread + (64,4) launch bounds | **25.35 MH/s** | `4a4c960e0` |
-| v4 (N_BASE + live) | N_BASE 2^26 (correct Ergo spec); Auto→CUDA external; stream1 VRAM | ~21 MH/s | `3d4e707fa` |
+| v1 (tableless) | On-the-fly blake2b for all 33 index computations per nonce | 14.37 MH/s | `1404f345a` |
+| v2 (R table / DAG) | Precomputed R table (N×32B) + uint4 table lookups | 21 MH/s | `9c76741c3` |
+| v3 (R table optimized) | __ldg() + shared mem header + 4 nonces/thread + (64,4) launch bounds | **25.35 MH/s** | `505881721` |
+| v4 (N_BASE + live) | N_BASE 2^26 (correct Ergo spec); Auto→CUDA external; stream1 VRAM | ~21 MH/s | `df3323946` |
 | v5 (genIndexes + rebuild fix) | Fix genIndexes in all 3 impls; stream sync for R table VRAM free; 4M work_size | **~30 MH/s** | `37f660386` |
 
 The v2 kernel uses a two-kernel approach:
@@ -48,7 +48,7 @@ The v2 kernel uses a two-kernel approach:
 
 ## Bugs Found and Fixed
 
-### Bug 1: ERG share target not filtered (commit `efe7ae980`)
+### Bug 1: ERG share target not filtered (commit `821f491b0`)
 
 **Root cause:** `AuXpow/src/multiplexer.rs` function `effective_share_target()`
 did not include `autolykos` in the `uses_notify_target` match list. The pool
@@ -221,11 +221,11 @@ default pool difficulty, a share is expected every ~15-30 seconds for a
 
 | Commit | Description |
 |--------|-------------|
-| `26d98de4f` | Integrate tableless real Autolykos v2 CUDA kernel + fix CPU/GPU mismatch |
-| `efe7ae980` | Fix ERG share target: use notify target for autolykos in effective_share_target |
-| `b7fc2a180` | Rewrite CUDA kernel to use precomputed R table (DAG) — 21 MH/s, 1.5x improvement |
-| `4a4c960e0` | Optimize kernel to 25.35 MH/s (1.76x over tableless) |
-| `3d4e707fa` | Fix N_BASE (2^26→2^21), Auto→CUDA external, stream1 VRAM — live pool test |
+| `1404f345a` | Integrate tableless real Autolykos v2 CUDA kernel + fix CPU/GPU mismatch |
+| `821f491b0` | Fix ERG share target: use notify target for autolykos in effective_share_target |
+| `9c76741c3` | Rewrite CUDA kernel to use precomputed R table (DAG) — 21 MH/s, 1.5x improvement |
+| `505881721` | Optimize kernel to 25.35 MH/s (1.76x over tableless) |
+| `df3323946` | Fix N_BASE (2^26→2^21), Auto→CUDA external, stream1 VRAM — live pool test |
 | `37f660386` | Fix genIndexes + R table VRAM rebuild + CUDA device sharing + work_size + epoch |
 
 ---

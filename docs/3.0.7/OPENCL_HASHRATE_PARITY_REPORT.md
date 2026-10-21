@@ -1,7 +1,7 @@
 # OpenCL vs CUDA Hashrate Parity Report
 
 **Date:** 2026-07-27
-**Status:** Fixed (commit `6b3561c23`)
+**Status:** Fixed (commit `ec5f88d29`)
 **Affected:** All AMD/OpenCL GPUs mining Deeksha Lite v1 or Deeksha Lite Fire
 **Symptom:** OpenCL (AMD) hashrate significantly lower than CUDA (NVIDIA) despite comparable hardware. GTX 1070 Ti (CUDA) reported ~78 kH/s while similar-tier AMD GPUs lagged well behind.
 
@@ -157,4 +157,4 @@ These are tuned per-platform for optimal occupancy. The total nonces tested per 
 
 | Commit | Description |
 |--------|-------------|
-| `6b3561c23` | Remove stream byproduct work from OpenCL kernels for hashrate parity with CUDA |
+| `ec5f88d29` | Remove stream byproduct work from OpenCL kernels for hashrate parity with CUDA |

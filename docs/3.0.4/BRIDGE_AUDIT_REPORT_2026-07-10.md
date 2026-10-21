@@ -91,7 +91,7 @@ This derives to **`0xA737B512B5EEc5B9E3E3f2476Eb1cFDF6750BA12`** — a Set C add
 
 ## 3. Files Fixed (17 files, 4 commits)
 
-### Commit `d48f3fea8` — sync bridge configs to on-chain (10 files)
+### Commit `be996bfd3` — sync bridge configs to on-chain (10 files)
 
 | File | Change |
 |------|--------|
@@ -106,7 +106,7 @@ This derives to **`0xA737B512B5EEc5B9E3E3f2476Eb1cFDF6750BA12`** — a Set C add
 | `APP&WEB/website-v2.9/src/app/api/bridge/status/route.ts` | `bridge_contract` → `0x72c8f0Dc...`, `chains_active` 6→4 |
 | `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` | Added `ZIONAtomicSwap: '0x3DE9...'` to mainnet |
 
-### Commit `06ae8b537` — sync remaining docs (3 files)
+### Commit `c65f42607` — sync remaining docs (3 files)
 
 | File | Change |
 |------|--------|
@@ -114,7 +114,7 @@ This derives to **`0xA737B512B5EEc5B9E3E3f2476Eb1cFDF6750BA12`** — a Set C add
 | `docs/3.0.4/GENESIS_HARD_RESET_CANONICAL.md` | Validator table → Set A |
 | `ROADMAP.md` | Task 2.1 ✅ Done, task 2.3 updated |
 
-### Commit `854c9381d` — DefiL2.md L1 lock recipient (1 file)
+### Commit `2da5b468e` — DefiL2.md L1 lock recipient (1 file)
 
 | File | Change |
 |------|--------|

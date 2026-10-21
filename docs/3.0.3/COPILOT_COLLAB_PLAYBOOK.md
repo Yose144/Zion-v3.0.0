@@ -113,7 +113,7 @@ website units", otevři tři chats. Sdílený kontext = drahý kontext.
 ### H2 — Scope v první větě promptu
 
 ❌ "Najdi proč pool padá."
-✅ "V `V3/L1/pool/src/server.rs` se po commit `223d104e` objevuje v
+✅ "V `V3/L1/pool/src/server.rs` se po commit `bb7cb0c0` objevuje v
 logu `panic at line ~340`. Tady je posledních 30 řádků: …"
 
 ### H3 — Memory > prompt context

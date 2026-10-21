@@ -579,7 +579,7 @@ ZION Miner (GPU rig)
 
 **Status:** CPU hasher + OpenCL kernel + Metal kernel + types DONE. Epic Stratum client + E2E TODO.
 
-**Implementováno (commit `9a248668c`):**
+**Implementováno (commit `1a0acd3ad`):**
 - ✅ `ExternalCoin::EPIC` v `types.rs` (ticker, algorithm, pool, fallback estimates)
 - ✅ `ExternalAlgorithm::ProgPow` v `external_hashers.rs`
 - ✅ `hash_progpow()` + `hash_progpow_with_dag()` + `mine_progpow()` v `external_hashers.rs`
@@ -1055,7 +1055,7 @@ auxpow: submitting share request {"id":100,"method":"mining.submit",
 
 ### Fáze R1: Stream profit system — weighted pipeline (IMPLEMENTED ✅)
 
-**Commit:** `50df9b414` — `feat(chv3): stream profit system — weighted pipeline for Deeksha Chv3`
+**Commit:** `1bab42cdf` — `feat(chv3): stream profit system — weighted pipeline for Deeksha Chv3`
 
 **Architektura:** Všechny revenue streamy žijí UVNITR Deeksha Chv3 pipeline.
 GPU vždy běží Deeksha Chv3, ale pipeline se parametrizuje podle ziskovosti
@@ -1103,7 +1103,7 @@ ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
 
 ### Fáze R1b: Live API fetching (DONE ✅)
 
-**Commit:** `e1c28689b` — `feat(stream-profit): R1b — live API fetching for profit snapshots`
+**Commit:** `bd8ba6495` — `feat(stream-profit): R1b — live API fetching for profit snapshots`
 
 **Cíl:** Naplnit `StreamProfitSnapshot` z reálných API dat místo fallback estimates.
 
@@ -1127,7 +1127,7 @@ ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
 
 ### Fáze R1c: GPU kernel parametrizace (DONE ✅)
 
-**Commits:** `74a353205` + `87bb2b2f0`
+**Commits:** `39470a019` + `26be773a0`
 
 **Cíl:** GPU kernel aplikuje stream weights na work distribution.
 
@@ -1203,7 +1203,7 @@ ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
 
 ### Fáze R4: Stream telemetry revenue report (DONE ✅)
 
-**Commit:** `d189712a7` — `feat(revenue): R4 — stream telemetry revenue report`
+**Commit:** `d2f08a9a0` — `feat(revenue): R4 — stream telemetry revenue report`
 
 **Co bylo implementováno:**
 - [x] Pool: `/api/v1/revenue/stats` — per-source breakdown (all 14 sources)
@@ -1233,7 +1233,7 @@ ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai
 
 ### Fáze R6: EthStratum protocol (DONE ✅)
 
-**Commit:** `5baa76d60` — `feat(auxpow): R6 — EthStratum protocol support`
+**Commit:** `e367fb0c6` — `feat(auxpow): R6 — EthStratum protocol support`
 
 **Co bylo implementováno:**
 - [x] `eth_getWork` polling — background task posílá `eth_getWork` request každé 3s

@@ -85,7 +85,7 @@ Jul 23 17:33:17 ... external_share_result miner=local-miner coin=ZANO accepted=t
 
 - Added `109.81.87.122` to `ignoreip` in `/etc/fail2ban/jail.d/zion-p2p.conf` and reloaded fail2ban.
 - Rebooted the SMOS rig.
-- Added `export ZION_MINER_ID=vega-smos` to `MinerP3.0.6/Smos/vega-smos.env` and `wrapper_complete.sh` so share logs match the worker name (`vega-smos`) instead of the default `local-miner`. Committed as `673563634`.
+- Added `export ZION_MINER_ID=vega-smos` to `MinerP3.0.6/Smos/vega-smos.env` and `wrapper_complete.sh` so share logs match the worker name (`vega-smos`) instead of the default `local-miner`. Committed as `e2fd6912b`.
 
 ---
 

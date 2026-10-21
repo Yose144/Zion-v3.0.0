@@ -8,7 +8,7 @@
 **Cross-ref:** [`docs/3.0.4/SecurityFirst.md`](../../docs/3.0.4/SecurityFirst.md) (full post-mortem + Edge hardening) · [`docs/3.0.4/SecurityBackup.md`](../../docs/3.0.4/SecurityBackup.md) (forensic timeline) · [`docs/3.0.4/CRITICAL_3.0.4_SECURITY_FINDINGS.md`](../../docs/3.0.4/CRITICAL_3.0.4_SECURITY_FINDINGS.md) (original findings)
 
 > **DEPLOY RECORD (2026-07-02):**
-> - F1 fix deployed as commit `9341344d` — `validate_peer_block()` now calls `verify_signature()` for non-coinbase account TX.
+> - F1 fix deployed as commit `056b67a4` — `validate_peer_block()` now calls `verify_signature()` for non-coinbase account TX.
 > - Pool wallet SK found and `edge-environment.sh` updated.
 > - F1 exploit occurred BEFORE deployment — attacker from `109.81.30.165` injected forged account TX via P2P.
 > - Chain rolled back to height 22180. F1 fix deployed immediately after.

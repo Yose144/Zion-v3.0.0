@@ -26,16 +26,16 @@ Audit odhalil:
 | `/explorer/block/11510` | 200, ale prázdný (client-side hydratation — ne bug) |
 | API `/api/blockchain/block?height=11510` | ✅ vrací plná data (4 TXs, miner labels, account-model) |
 
-**Root cause:** Commit `a55cfa2b2` (2026-07-19 04:24) upravil `explorer/layout.tsx` aby importoval `ExplorerV4LayoutWrapper` + `SseOverlayWrapper`, ale **zapomněl `git add`** 31 nových souborů (4629 řádků). HEAD byl broken — `layout.tsx` referencoval neexistující moduly. Live Edge container běžel z před-`a55cfa2b2` buildu, proto web fungoval ale bez V4 stránek.
+**Root cause:** Commit `babef3dd6` (2026-07-19 04:24) upravil `explorer/layout.tsx` aby importoval `ExplorerV4LayoutWrapper` + `SseOverlayWrapper`, ale **zapomněl `git add`** 31 nových souborů (4629 řádků). HEAD byl broken — `layout.tsx` referencoval neexistující moduly. Live Edge container běžel z před-`babef3dd6` buildu, proto web fungoval ale bez V4 stránek.
 
 ---
 
 ## 2. Provedené akce
 
-### 2.1 Commit chybějících V4 souborů (`63069057f`)
+### 2.1 Commit chybějících V4 souborů (`3a19e331e`)
 
 ```
-fix(explorer-v4): add missing V4 files forgotten by a55cfa2b2
+fix(explorer-v4): add missing V4 files forgotten by babef3dd6
 ```
 
 31 souborů, 4629 řádků:
@@ -62,7 +62,7 @@ fix(explorer-v4): add missing V4 files forgotten by a55cfa2b2
 **Lib (Phase 2):**
 - `src/lib/explorer/` — api.ts, types.ts, format.ts, sse.ts, index.ts
 
-### 2.2 Oprava deploy skriptu (`f0617349a`)
+### 2.2 Oprava deploy skriptu (`d07d31de8`)
 
 ```
 fix(scripts): repair deploy-edge-web.sh for live Edge topology
@@ -93,12 +93,12 @@ Nové features:
 ### 2.3 Edge repo synchronizace
 
 - `git stash push -u -m 'auxpow-miner-wip-pre-v4-deploy-20260719-1444'` (20 uncommitted AuXpow souborů)
-- `git pull origin main` → `ba3b7bd94` (V4 commits present)
+- `git pull origin main` → `a31c2a405` (V4 commits present)
 - `git stash pop` → 20 konfliktů (miner WIP vs nové commity)
 - `git reset HEAD && git checkout -- .` → clean working tree (per user approval)
 - **Stash@{0} bezpečně uložen** pro ruční řešení: `cd /root/zion/2.9.6 && git stash pop`
 
-### 2.4 Phase 4 polish (`5e47b55f0`)
+### 2.4 Phase 4 polish (`d096d72b9`)
 
 ```
 feat(explorer-v4): SSE live block feed + error states (Phase 4)
@@ -178,13 +178,13 @@ data: {"timestamp":1784466305957}
 
 | Commit | Title |
 |---|---|
-| `5e47b55f0` | feat(explorer-v4): SSE live block feed + error states (Phase 4) |
-| `f0617349a` | fix(scripts): repair deploy-edge-web.sh for live Edge topology |
-| `63069057f` | fix(explorer-v4): add missing V4 files forgotten by a55cfa2b2 |
+| `d096d72b9` | feat(explorer-v4): SSE live block feed + error states (Phase 4) |
+| `d07d31de8` | fix(scripts): repair deploy-edge-web.sh for live Edge topology |
+| `3a19e331e` | fix(explorer-v4): add missing V4 files forgotten by babef3dd6 |
 
 Plus 2 nezávislé miner commity z paralelní session (již na origin):
-- `bfc2d86d6` fix(miner): check pipelined GPU shares against current vardiff target
-- `bfde361e0` feat(miner): adaptive GPU duty-cycle scheduler (Fáze 4)
+- `49bafb86c` fix(miner): check pipelined GPU shares against current vardiff target
+- `48fefcd91` feat(miner): adaptive GPU duty-cycle scheduler (Fáze 4)
 
 ---
 
@@ -196,7 +196,7 @@ Plus 2 nezávislé miner commity z paralelní session (již na origin):
 | Image size | 132 MB (standalone) — původně 375 MB |
 | Compose | `/root/zion-web/docker-compose.yml` — `network_mode: host`, `HOSTNAME=127.0.0.1`, `read_only: true`, tmpfs `/tmp /var/cache` |
 | Build artifacts | `/root/zion-web-build/` (132 MB, rsync z dev machine) |
-| Edge repo | `/root/zion/2.9.6/` na `ba3b7bd94` (clean working tree) |
+| Edge repo | `/root/zion/2.9.6/` na `a31c2a405` (clean working tree) |
 | AuXpow stash | `stash@{0}: auxpow-miner-wip-pre-v4-deploy-20260719-1444` (20 souborů, čeká na ruční řešení) |
 
 ---
@@ -218,7 +218,7 @@ Plus 2 nezávislé miner commity z paralelní session (již na origin):
 
 ## 7. Lessons learned
 
-1. **`git add` po editu:** Commit `a55cfa2b2` upravil `layout.tsx` ale zapomněl `git add` nové soubory. HEAD byl broken. **Vždy `git status` před commit.**
+1. **`git add` po editu:** Commit `babef3dd6` upravil `layout.tsx` ale zapomněl `git add` nové soubory. HEAD byl broken. **Vždy `git status` před commit.**
 2. **Deploy skript drift:** `scripts/deploy-edge-web.sh` měl 11 bugů vs live Edge topology. Skript nebyl aktualizován když se měnily cesty/image/proxy. **Po každém Edge topology change aktualizovat deploy skript.**
 3. **Stash handling:** Edge má často uncommitted miner WIP. `git pull` bez stash by ho ztratil. **Deploy skript musí stash automaticky.**
 4. **Standalone build:** `next start` (375 MB) vs `node server.js` (132 MB) — standalone je 65% menší. **Vždy `output: "standalone"` v `next.config.ts`.**

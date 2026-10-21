@@ -49,9 +49,9 @@ With a 60 s exponential target, a gap above 15 min has probability ≈ e⁻¹⁵
 
 | After height | From (UTC) | To (UTC) | Gap | Attribution |
 |---|---|---|---|---|
-| 51 828 → 51 829 | 2026-09-21 04:15 | 2026-09-21 06:38 | **2 h 22 m 55 s** | **Confirmed:** watchdog restart loop during node full-state rebuild. Commit `1e96a4599` (authored 07:42 CEST, mid-stall): *"observed live: chain stalled at 51828, RPC dead"* — the 900 s startup grace expired mid-rebuild and the watchdog killed the node every ~15 min, so the ~55 min UTXO rebuild never finished. |
+| 51 828 → 51 829 | 2026-09-21 04:15 | 2026-09-21 06:38 | **2 h 22 m 55 s** | **Confirmed:** watchdog restart loop during node full-state rebuild. Commit `c5da31df7` (authored 07:42 CEST, mid-stall): *"observed live: chain stalled at 51828, RPC dead"* — the 900 s startup grace expired mid-rebuild and the watchdog killed the node every ~15 min, so the ~55 min UTXO rebuild never finished. |
 | 22 951 → 22 952 | 2026-08-30 08:50 | 2026-08-30 10:13 | 1 h 23 m | Unattributed (no logs left). |
-| 24 713 → 24 714 | 2026-08-31 16:17 | 2026-08-31 17:34 | 1 h 18 m | Unattributed. Same day as several multichain/miner-service deploys (`c675fdb6e`, `0ce844064`, `1b798c628`). |
+| 24 713 → 24 714 | 2026-08-31 16:17 | 2026-08-31 17:34 | 1 h 18 m | Unattributed. Same day as several multichain/miner-service deploys (`a21874444`, `c2f8c3688`, `09bf6a5dc`). |
 | 24 825 → 24 826 | 2026-08-31 20:10 | 2026-08-31 21:05 | 56 m | Unattributed. |
 | 26 069 → 26 070 | 2026-09-01 20:33 | 2026-09-01 21:22 | 49 m | Unattributed. |
 | 31 078 → 31 079 | 2026-09-05 15:51 | 2026-09-05 16:37 | 46 m | Unattributed. |
@@ -74,7 +74,7 @@ Pool API downtime is spread over 723 short minute-level failures (longest 9 min,
 
 | Date | Incident | Class |
 |---|---|---|
-| 2026-09-21 | Node restart → watchdog restart loop during rebuild → 2 h 23 m chain stall + balance/network API outage (web fix `642bb2092` returns 503 instead of fake 0) | **Availability — breaks the 99.9 % budget** |
+| 2026-09-21 | Node restart → watchdog restart loop during rebuild → 2 h 23 m chain stall + balance/network API outage (web fix `0a6c57389` returns 503 instead of fake 0) | **Availability — breaks the 99.9 % budget** |
 | 2026-09-20 | WARP BTC-swap safety hold: public offer endpoint allowed unquoted BTC/ZION offers. Disabled before any swap was active; hardening deployed. | Security finding, no funds lost, not an uptime event |
 | 2026-09-20 | Pool telemetry counters broken + miner reconnect bug (miner hashing offline forever) | Monitoring / mining correctness |
 | 2026-08-30 → 2026-09-18 | 14 further stalls of 30–83 min (§3) | Unattributed |

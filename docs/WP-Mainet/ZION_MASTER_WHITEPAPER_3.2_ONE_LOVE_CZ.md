@@ -288,19 +288,19 @@ Hlavní per-crate: `zion-multichain` 579, `zion-ai-native` 337,
 Následující git commity tvoří technickou páteř stavu 3.2.0 „One Love“.
 Všechny jsou v `main` k 2026-08-09:
 
-- `1ff214d66` — v3.2 One Love genesis reset: BIP39 mnemonické klíče + Edge deploy.
-- `750f09236` — V31 3.2.0 „One Love“: kanonizace V2 genesis sad klíčů a UTXO/pool follow-upy.
-- `418f6972b` — Dokumentace 3.2.0 „One Love“ V2 sady klíčů a genesis hashů.
-- `c425761b5` — V31 3.2.0 „One Love“: payout confirmation sweep s UTXO fallback.
-- `2686ac4db` — V31: restrukturalizace kontraktů do Foundry layoutu, `u128` string serde, adresy genesis resetu.
-- `1df643e60` — Cesta binárek V31, controls whitelist a synchronizace premine.
-- `e38683014` — Synchronizace dashboardu overview/wallets/payout/revenue s V31 resetem 2026-08-06.
-- `c7b9980a5` — Pool `current_chain_height` používá nativní V31 výšku, ne V3 compat výšku.
-- `e6af816dc` — Názvy env proměnných pool vardiff odpovídají `edge-environment.sh`.
-- `fbde94996` — Oprava směru bit-shiftu v `difficulty_to_target` (kořen nonce=0).
-- `d89d118a0` — Přeskočení externího odeslání share, když dorazí novější job (VRSC fix).
-- `206c7ff6e` — `pop_job()` vrací nejnovější job, ne nejstarší (ZANO duplicate share fix).
-- `0ba6d2939` — Trinity mining E2E finální tuning report + update statusu.
+- `7d8094c28` — v3.2 One Love genesis reset: BIP39 mnemonické klíče + Edge deploy.
+- `f435cb708` — V31 3.2.0 „One Love“: kanonizace V2 genesis sad klíčů a UTXO/pool follow-upy.
+- `2e0c27d62` — Dokumentace 3.2.0 „One Love“ V2 sady klíčů a genesis hashů.
+- `02fd41eeb` — V31 3.2.0 „One Love“: payout confirmation sweep s UTXO fallback.
+- `b4c5d9247` — V31: restrukturalizace kontraktů do Foundry layoutu, `u128` string serde, adresy genesis resetu.
+- `dd76fc2fe` — Cesta binárek V31, controls whitelist a synchronizace premine.
+- `57dbfb0b5` — Synchronizace dashboardu overview/wallets/payout/revenue s V31 resetem 2026-08-06.
+- `d720aa673` — Pool `current_chain_height` používá nativní V31 výšku, ne V3 compat výšku.
+- `7d3bb79ef` — Názvy env proměnných pool vardiff odpovídají `edge-environment.sh`.
+- `f4e9b959d` — Oprava směru bit-shiftu v `difficulty_to_target` (kořen nonce=0).
+- `4ce26fba3` — Přeskočení externího odeslání share, když dorazí novější job (VRSC fix).
+- `437aadad3` — `pop_job()` vrací nejnovější job, ne nejstarší (ZANO duplicate share fix).
+- `4f6caf1fe` — Trinity mining E2E finální tuning report + update statusu.
 
 Tato kronika není marketing. Je to ověřitelná stopa rozhodnutí, která
 přivedla síť k bráně 3.2 One Love.

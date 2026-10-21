@@ -1,7 +1,7 @@
 # AuxPow Merge Mining Integration Report
 
 **Date:** 2026-07-11
-**Commits:** `44371aa10` (AuXpow crate), `0a49a3f48` (pool + dashboard integration), `7eb9f89cb` (docs), `f14500db3` (live test fixes)
+**Commits:** `46947d9d1` (AuXpow crate), `59ce53e3c` (pool + dashboard integration), `5e1dfc4cf` (docs), `3a314d73a` (live test fixes)
 **Server:** Edge `62.171.141.136` — deployed, live-tested, disabled pending real wallet
 **Tests:** 146/146 pass (40 auxpow + 73 pool lib + 33 pool server)
 
@@ -231,9 +231,9 @@ AuxPow was temporarily enabled with `ZION_AUXPOW_ENABLED=1` and a dummy DCR wall
 
 | Bug | Severity | Root Cause | Fix | Commit |
 |-----|----------|------------|-----|--------|
-| **Runtime drop** | Critical | `auxpow_runtime` was a local variable — dropped at end of scope, immediately cancelling all spawned tasks. Scheduler task was killed before it could connect. | `std::mem::forget(auxpow_runtime)` to keep runtime alive for process lifetime | `f14500db3` |
-| **Stale pool addresses** | High | 2miners delisted DCR/ALPH pools, changed KAS port 4444→2020, ERG port 3056→8888. DNS returned NXDOMAIN for `dcr.2miners.com`. | Updated `default_pool()` for DCR (suprnova.cc:3256), KAS (2020), ERG (8888) + test assertions | `f14500db3` |
-| **Silent tracing** | Medium | Pool server doesn't initialize a `tracing` subscriber. All `info!/warn!/error!` calls in scheduler were silent no-ops — impossible to debug. | Replaced with `println!` in scheduler `run()` loop and `switch_coin()` | `f14500db3` |
+| **Runtime drop** | Critical | `auxpow_runtime` was a local variable — dropped at end of scope, immediately cancelling all spawned tasks. Scheduler task was killed before it could connect. | `std::mem::forget(auxpow_runtime)` to keep runtime alive for process lifetime | `3a314d73a` |
+| **Stale pool addresses** | High | 2miners delisted DCR/ALPH pools, changed KAS port 4444→2020, ERG port 3056→8888. DNS returned NXDOMAIN for `dcr.2miners.com`. | Updated `default_pool()` for DCR (suprnova.cc:3256), KAS (2020), ERG (8888) + test assertions | `3a314d73a` |
+| **Silent tracing** | Medium | Pool server doesn't initialize a `tracing` subscriber. All `info!/warn!/error!` calls in scheduler were silent no-ops — impossible to debug. | Replaced with `println!` in scheduler `run()` loop and `switch_coin()` | `3a314d73a` |
 
 **Live test log sequence (after all fixes):**
 
@@ -348,27 +348,27 @@ Replace `fallback_estimates()` with live API calls to CoinGecko/WhatToMine for r
 
 | File | Commit | Lines |
 |------|--------|-------|
-| `AuXpow/Cargo.toml` | `44371aa10` | New (crate manifest) |
-| `AuXpow/src/lib.rs` | `44371aa10` | New (module declarations) |
-| `AuXpow/src/types.rs` | `44371aa10` + `f14500db3` | New + updated pool addresses (DCR/KAS/ERG) |
-| `AuXpow/src/external_hashers.rs` | `44371aa10` | New (Blake3, kHeavyHash, target validation) |
-| `AuXpow/src/auxpow_client.rs` | `44371aa10` | New (Stratum v1 client) |
-| `AuXpow/src/auxpow_scheduler.rs` | `44371aa10` + `0a49a3f48` + `f14500db3` | New + `spawn_on()`/`stats_sync()` + println logging |
-| `Cargo.toml` | `44371aa10` | +`"AuXpow"` workspace member |
-| `V3/L1/pool/Cargo.toml` | `0a49a3f48` | +`zion-auxpow` dependency |
-| `V3/L1/pool/src/bin/server.rs` | `0a49a3f48` + `f14500db3` | +46 lines (scheduler spawn, stats) + runtime leak fix |
-| `ZION_OS/dashboard/app.py` | `0a49a3f48` | +9 lines (auxpow passthrough) |
-| `ZION_OS/dashboard/dashboard.html` | `0a49a3f48` | +62 lines (AuxPow card) |
-| `ZION_OS/dashboard/dashboard.js` | `0a49a3f48` | +38 lines (AuxPow panel logic) |
-| `AUXPOW_MERGE_MINING_PLAN.md` | `44371aa10` | New (3-phase plan document) |
+| `AuXpow/Cargo.toml` | `46947d9d1` | New (crate manifest) |
+| `AuXpow/src/lib.rs` | `46947d9d1` | New (module declarations) |
+| `AuXpow/src/types.rs` | `46947d9d1` + `3a314d73a` | New + updated pool addresses (DCR/KAS/ERG) |
+| `AuXpow/src/external_hashers.rs` | `46947d9d1` | New (Blake3, kHeavyHash, target validation) |
+| `AuXpow/src/auxpow_client.rs` | `46947d9d1` | New (Stratum v1 client) |
+| `AuXpow/src/auxpow_scheduler.rs` | `46947d9d1` + `59ce53e3c` + `3a314d73a` | New + `spawn_on()`/`stats_sync()` + println logging |
+| `Cargo.toml` | `46947d9d1` | +`"AuXpow"` workspace member |
+| `V3/L1/pool/Cargo.toml` | `59ce53e3c` | +`zion-auxpow` dependency |
+| `V3/L1/pool/src/bin/server.rs` | `59ce53e3c` + `3a314d73a` | +46 lines (scheduler spawn, stats) + runtime leak fix |
+| `ZION_OS/dashboard/app.py` | `59ce53e3c` | +9 lines (auxpow passthrough) |
+| `ZION_OS/dashboard/dashboard.html` | `59ce53e3c` | +62 lines (AuxPow card) |
+| `ZION_OS/dashboard/dashboard.js` | `59ce53e3c` | +38 lines (AuxPow panel logic) |
+| `AUXPOW_MERGE_MINING_PLAN.md` | `46947d9d1` | New (3-phase plan document) |
 
 ---
 
 ## 12. Commits
 
-1. **`44371aa10`** — `feat(auxpow): standalone merge-mining crate — stratum proxy + external hashers`
-2. **`0a49a3f48`** — `feat(auxpow): integrate merge-mining into pool server + dashboard`
-3. **`7eb9f89cb`** — `docs(auxpow): integration report + plan + StatusV3 + AGENTS.md update`
-4. **`f14500db3`** — `fix(auxpow): runtime leak + updated pool addresses + println logging`
+1. **`46947d9d1`** — `feat(auxpow): standalone merge-mining crate — stratum proxy + external hashers`
+2. **`59ce53e3c`** — `feat(auxpow): integrate merge-mining into pool server + dashboard`
+3. **`5e1dfc4cf`** — `docs(auxpow): integration report + plan + StatusV3 + AGENTS.md update`
+4. **`3a314d73a`** — `fix(auxpow): runtime leak + updated pool addresses + println logging`
 
 All pushed to `origin/main`.

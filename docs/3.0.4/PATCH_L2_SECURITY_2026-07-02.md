@@ -5,7 +5,7 @@
 > **Status:** ✅ DEPLOYED on Edge (2026-07-02 18:54, verified 23:00 UTC). All L2 security fixes active.
 > **Cross-ref:** F1 exploit post-mortem + Edge server hardening: [`SecurityFirst.md`](./SecurityFirst.md) · Forensic timeline: [`SecurityBackup.md`](./SecurityBackup.md) · L1 fix: [`CRITICAL_3.0.4_SECURITY_FINDINGS.md`](./CRITICAL_3.0.4_SECURITY_FINDINGS.md)
 
-> **UPDATE 2026-07-02 23:00 UTC:** L2 patch (commit `a8b3821e`) je **DEPLOYED na Edge**. MD5 shoda ověřena mezi `/usr/local/bin/zion-*` a `V3/target/release/zion-*` — binárky z 18:54 (build po commitu v 15:55) obsahují všechny L2 security fixy. Node binary swapnut na nejnovější verzi (22:55). Vše aktivní: claimant guard, threshold 5/5, reorg safety, key hygiene, checked cast, composite dedup, escrow key zeroing, memo cap.
+> **UPDATE 2026-07-02 23:00 UTC:** L2 patch (commit `b2f0ca40`) je **DEPLOYED na Edge**. MD5 shoda ověřena mezi `/usr/local/bin/zion-*` a `V3/target/release/zion-*` — binárky z 18:54 (build po commitu v 15:55) obsahují všechny L2 security fixy. Node binary swapnut na nejnovější verzi (22:55). Vše aktivní: claimant guard, threshold 5/5, reorg safety, key hygiene, checked cast, composite dedup, escrow key zeroing, memo cap.
 
 ## Findings addressed
 
@@ -77,7 +77,7 @@
 ## Edge server status (2026-07-02 23:00 UTC)
 
 - **L2 services running:** bridge (port 9101), DAO (port 8450), atomic-swap (port 8452) — all active, all on 127.0.0.1
-- **L2 patch DEPLOYED:** MD5 shoda ověřena — binárky z 18:54 obsahují commit `a8b3821e`. Vše aktivní.
+- **L2 patch DEPLOYED:** MD5 shoda ověřena — binárky z 18:54 obsahují commit `b2f0ca40`. Vše aktivní.
 - **Bind addresses:** ALL services on 127.0.0.1 (bridge 9101, DAO 8450, atomic-swap 8452). Env var names fix v service files (BRIDGE_METRICS_HOST, DAO_API_HOST).
 - **Node binary:** Swapnut na nejnovější verzi (22:55 UTC) s fmt/clippy cleanup + F5 fix + RPC audit log. F5 aktivní (height 22394), chain height 22539.
 - **Edge hardening complete:** UFW (only SSH/HTTP/HTTPS/Tailscale), AppArmor (zion-node enforce), ALL services on 127.0.0.1, 3 monitoring cron jobs. See [`SecurityFirst.md`](./SecurityFirst.md).

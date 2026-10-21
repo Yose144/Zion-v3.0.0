@@ -3,7 +3,7 @@
 > **Status:** ✅ RESOLVED — LuckPool nyní přijímá VRSC shares (4/4 accepted, 0 rejected)
 > **Datum:** 2026-07-16
 > **Autor:** Devin (GLM-5.2 High) + Yeshua
-> **Commits:** `071c50ebf` (clear_verushash_pbaas + debug logging), `09217752a` (TriGpuManager Cpu fix)
+> **Commits:** `7926cbf64` (clear_verushash_pbaas + debug logging), `0773c10f9` (TriGpuManager Cpu fix)
 
 ---
 

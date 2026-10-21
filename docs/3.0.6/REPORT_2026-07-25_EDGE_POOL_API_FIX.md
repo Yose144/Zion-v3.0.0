@@ -146,7 +146,7 @@ block_tracker: loaded 14 pending blocks from DB
 ## 8. Follow-up / Notes
 
 - The `/opt/zion/V3/L1/pool` source tree on Edge drifted from the local repo. Future deployments should either rebuild locally and copy the binary, or re-sync `/opt/zion` with the repo and build on Edge.
-- The dashboard `app.py` fix was committed as `11610da58`.
+- The dashboard `app.py` fix was committed as `b9c321862`.
 - One payout TX (height 5145) is still not found on chain; monitor `journalctl -u zion-edge-pool` for deferred/retry messages.
 - The local backup node and Edge nodes should continue to be monitored via the dashboard and `systemctl`.
 

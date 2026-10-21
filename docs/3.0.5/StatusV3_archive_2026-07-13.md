@@ -16,7 +16,7 @@
 > - Decimals: 6, Supply: 1B ZION
 > - Deploy pomocí `spl-token create-token` + `spl-token create-account` + `spl-token mint`
 > - WARP adapter `solana.rs` aktualizován, `WARP_SOL_ZION_MINT` + `WARP_SOL_RPC` nastaveny na Edge
-> - Commit: `bffde9263`
+> - Commit: `cb831d266`
 >
 > **2. Stellar Native Asset — ✅ DEPLOYED:**
 > - Asset: `ZION:GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`
@@ -25,7 +25,7 @@
 > - Home domain: zionterranova.com
 > - Cost: ~0.00003 XLM (TX fee only)
 > - WARP adapter `stellar.rs` aktualizován, `WARP_STELLAR_ZION_ISSUER` + `WARP_STELLAR_ZION_CODE` + `WARP_STELLAR_BRIDGE_ACCOUNT` + `WARP_STELLAR_RPC` nastaveny na Edge
-> - Commit: `9d7ce1686`
+> - Commit: `5c85e9794`
 >
 > **Non-EVM deploy status: 2/9 ✅** (Solana, Stellar). 7 remaining: Tron (needs TRX), Cardano, Cosmos, Aptos, Sui, NEAR, TON.
 >
@@ -69,7 +69,7 @@
 >
 > **Testy:** ZionDex Router 28/28 (20 unit + 8 integrace), WARP 499/499 (+ 1 ignored)
 >
-> **Commity:** `c54422094` (WARP API integration), `db9376f23` (web landing page), `03bcef653` (navigation + defi CTA), `dad8702db` (non-EVM contracts + LND + AMM routing — 47 files, +6930 řádků)
+> **Commity:** `a52f9d054` (WARP API integration), `ce543d65e` (web landing page), `3301f59c3` (navigation + defi CTA), `624674d9e` (non-EVM contracts + LND + AMM routing — 47 files, +6930 řádků)
 >
 > **Co chybí:** Deploy non-EVM kontraktů na mainnet (relay keys + chain-specific deploy), LND node start na Edge (docker compose up + kanály), ZionDex Router service na Edge (port 8454)
 >
@@ -98,7 +98,7 @@
 >
 > **Live test (2026-07-11 08:05–08:10 CEST):** AuxPow dočasně enabled s dummy wallet (`DsiXXXX...`). Scheduler vybral KAS (highest fallback profit). ✅ TCP connect to `kas.2miners.com:2020` + Stratum `mining.subscribe` succeeded. ❌ `mining.authorize` rejected dummy wallet (expected — KAS requires `kaspa:` address). Circuit breaker tripped po 5 failures (correct behavior). AuxPow disabled po testu.
 >
-> **3 bugs found + fixed during live test (commit `f14500db3`):**
+> **3 bugs found + fixed during live test (commit `3a314d73a`):**
 >
 > | Bug | Severity | Fix |
 > |-----|----------|-----|
@@ -108,7 +108,7 @@
 >
 > **Aktivace:** `ZION_AUXPOW_ENABLED=1` + `ZION_AUXPOW_WALLET=<real-wallet>` v environment. Viz [`docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md`](./docs/3.0.5/AUXPOW_INTEGRATION_REPORT_2026-07-11.md) §8 pro plný postup.
 >
-> **Commity:** `44371aa10` (AuXpow crate), `0a49a3f48` (pool + dashboard integrace), `7eb9f89cb` (docs), `f14500db3` (3 bug fixes z live testu)
+> **Commity:** `46947d9d1` (AuXpow crate), `59ce53e3c` (pool + dashboard integrace), `5e1dfc4cf` (docs), `3a314d73a` (3 bug fixes z live testu)
 >
 > **Soubory:** `AuXpow/` (nový crate), `V3/L1/pool/Cargo.toml`, `V3/L1/pool/src/bin/server.rs`, `ZION_OS/dashboard/app.py`, `ZION_OS/dashboard/dashboard.html`, `ZION_OS/dashboard/dashboard.js`, `AUXPOW_MERGE_MINING_PLAN.md`
 >
@@ -124,7 +124,7 @@
 > - Watchdog skript deploynut na server i do repa (`V3/deploy/new-server/zion-watchdog.sh`)
 > - Pool stabilní 5+ minut po fixu, žádné zbytečné restarty
 >
-> **F1-F6 pool performance optimalizace (commit `673632525`):**
+> **F1-F6 pool performance optimalizace (commit `f2f7efc32`):**
 >
 > | Fix | Popis | Dopad na 1000 minerů |
 > |-----|-------|----------------------|
@@ -148,7 +148,7 @@
 > - F4b deadlock fix deploynut a ověřeno: pool startuje bez zaseknutí, minéři aktivně posílají shares
 > - P7-P10 deploynut a ověřeno: PPLNS state restored (50 shares, 12 miners, 20 addresses), minéři aktivní
 >
-> **Commity:** `7da0219fb` (watchdog fix), `3080fb018` (watchdog fix report), `673632525` (F1-F6 optimizations), `ef4928efb` (F4b deadlock fix), `P7-P10` (pending commit)
+> **Commity:** `88cc093e4` (watchdog fix), `1b444c40c` (watchdog fix report), `f2f7efc32` (F1-F6 optimizations), `c82d17abb` (F4b deadlock fix), `P7-P10` (pending commit)
 >
 > **Soubory změněné:** `V3/L1/pool/src/bin/server.rs`, `V3/L1/pool/src/lib.rs`, `V3/L1/pool/src/pplns.rs`, `V3/deploy/new-server/zion-watchdog.sh`, `Cargo.toml` (workspace deps fix)
 >
@@ -165,7 +165,7 @@
 > - **F6:** E2E memo testy — 3 account-model TXs s memos potvrzeny v bloku 752 (BRIDGE/DAO/SWAP), memo field intact, E2E SK shredded
 > - **F7:** All Green verify — 11/11 služeb active, 1 timer active, 1 Docker container Up
 >
-> **Commity:** `d425faec` (3.0.5 bump + docs), `6b930b7a` (L2/L3 config fixes), `91c201a8` (AGENTS.md update)
+> **Commity:** `db72b552` (3.0.5 bump + docs), `9dadc718` (L2/L3 config fixes), `c6c8a500` (AGENTS.md update)
 >
 > **Pending (mimo 3.0.5 scope):** bridge EVM watcher eth_getLogs errors (BSC/Polygon RPC, non-critical). Key rotation F4.x ✅ DONE (owner air-gapped, escrow SK aplikován, EVM/guardian SKs na flash disku). AppArmor ✅ DONE (complain mode). systemd User=zion ⚠️ NOT DEPLOYED — service files still use User=root.
 >
@@ -243,7 +243,7 @@
 >
 > **Root cause:** `DEFAULT_BLOCK_RETENTION = 0` (unlimited) — `accepted_blocks` Vec rostl bez bounds. `known_peers` Vec a WebSocket channels také unbounded.
 >
-> **Code fixes (commit `348abc91` + `22a160f9`):**
+> **Code fixes (commit `1a1d9d26` + `86715307`):**
 > - `DEFAULT_BLOCK_RETENTION`: 0 → 1000 (keep last 1000 blocks in memory, staré prunovány z cache, zůstávají v LMDB)
 > - `known_peers`: cap 1000, drain oldest při překročení
 > - WebSocket channels: `unbounded_channel` → `channel(256)` pro client msgs, `channel(64)` pro ping/text. `send()` → `try_send()` (drop if full místo unbounded accumulation)
@@ -321,7 +321,7 @@
 > - ✅ **Fáze 6.3:** bincode 1.x removed (RUSTSEC-2025-0141 resolved), metal/paste macOS-only (RUSTSEC-2024-0436 no Linux exposure)
 > - ✅ **Fáze 6.4:** `cargo audit` clean (1 ignored: paste macOS-only), 470+ tests pass, SECURITY_DISCLOSURE updated (ZION-2026-006)
 > - ✅ **Fáze 5 DONE:** Air-gapped key rotation proběhla (owner). Klíče vygenerovány, flash backup OK, pool payout aplikován, escrow SK aplikován, EVM/guardian SKs na flash disku.
-> - Commity `690b6dfe`, `35e0f6d0`, `0a4f1a0f`, `cc162a14`, `5221cbf6`, `754fe4a0`
+> - Commity `bed8ed2c`, `15d40e47`, `c996d730`, `eaf3348d`, `376ef261`, `510838ea`
 >
 > **DNS:**
 > - `dns.md` aktualizováno na pure zone file format pro Webglobe admin console
@@ -350,7 +350,7 @@
 > 4. **Externí audit genesis** před public launch
 > 5. **Re-clone repo** na všech strojích (git history přepsána filter-repo)
 >
-> **Fáze 5 audit (2026-07-09):** Key rotace proběhla při hard resetu 2026-07-06. Všechny adresy ověřeny proti flash disku a genesis.rs. Pool payout SK aplikován a ověřen (pubkey derivace sedí). EVM/escrow SKs v encrypted archivu na flash disku (`/run/media/zionserver/ESD-USB/ZionKeys/zion-keys-2026-07-06/`). Edge binárky rebuildnuty 2026-07-09 z `754fe4a0`.
+> **Fáze 5 audit (2026-07-09):** Key rotace proběhla při hard resetu 2026-07-06. Všechny adresy ověřeny proti flash disku a genesis.rs. Pool payout SK aplikován a ověřen (pubkey derivace sedí). EVM/escrow SKs v encrypted archivu na flash disku (`/run/media/zionserver/ESD-USB/ZionKeys/zion-keys-2026-07-06/`). Edge binárky rebuildnuty 2026-07-09 z `510838ea`.
 >
 > **Starý Edge server (77.42.71.94):** DECOMMISSIONED — všechny služby přesunuty na nový server.
 > 
@@ -375,14 +375,14 @@
 > - P2P path: reject TX s running balance (multi-TX bloky)
 > - Edge mainnet aktivace: `ZION_BALANCE_CHECK_HEIGHT=22394` (aktivní od bloku 22394)
 > - 3 regresní testy pass
-> - Commits: `69d12c7`, `fe8d449`, `9863747`
+> - Commits: `7019d88`, `9a438a0`, `66d3c8c`
 > - Full report: [`F5_SECURITY_INCIDENT_REPORT_2026-07-02.md`](./docs/3.0.4/F5_SECURITY_INCIDENT_REPORT_2026-07-02.md)
 > 
 > ### Security Hardening Summary (2026-07-02 Phase 2)
 > 
-> **F1 Exploit Post-Mortem:** Útočník z 109.81.30.165 se připojil k P2P portu a injectoval forged account TX (from-address nebyl verifikován v `validate_peer_block`). Rollback na height 22180, externí peer odpojen, F1 fix deploynut (commit `9341344d`).
+> **F1 Exploit Post-Mortem:** Útočník z 109.81.30.165 se připojil k P2P portu a injectoval forged account TX (from-address nebyl verifikován v `validate_peer_block`). Rollback na height 22180, externí peer odpojen, F1 fix deploynut (commit `056b67a4`).
 > 
-> **Hotové fixes (commity `e6f601ed` → `d7f9a94`):**
+> **Hotové fixes (commity `01d78857` → `5fcac6c`):**
 > - **UFW:** Odstraněna veřejná pravidla pro všechny Zion porty. Jen SSH (22, LIMIT), HTTP/HTTPS (80/443), Tailscale interface, explicit deny pro Docker monitoring (3100/9090/9100).
 > - **Private keys scrubbed:** 5 souborů (`setup-edge.sh`, `launch-stack.sh`, `start-pool.sh`, `edge-environment.sh`, `V3/docker/.env`) — placeholder `ZION_POOL_SK=<REDACTED_ROTATE_IMMEDIATELY>`.
 > - **File permissions:** `chmod 600` pro `edge-state.db`, `edge2-state.db`, `bridge-mainnet.db`, `edge-environment.sh`; `chmod 700` pro data dir.
@@ -408,7 +408,7 @@
 > | 7 | ~~AppArmor profil pro zion-node~~ | security | ✅ DONE (complain mode) | NO |
 > | 8 | ~~Grant BRIDGE_ROLE na wZION~~ | defi | ✅ DONE — bridge mint proveden 2026-07-10 (16.67M wZION, TX `0xb98bba3216...`) | NO |
 > | 9 | Deepen UniV3 liquidity + E2E test swap | defi | ⏳ PENDING (owner) | NO |
-> | 10 | Stale IP cleanup (77.42.71.94 + 100.76.16.108 → 62.171.141.136) | infra | ✅ DONE (69 souborů, commit `8d55287f9`) | NO |
+> | 10 | Stale IP cleanup (77.42.71.94 + 100.76.16.108 → 62.171.141.136) | infra | ✅ DONE (69 souborů, commit `a8444bfb7`) | NO |
 > | 11 | Blockaid false-positive report | defi | ✅ DONE (report připraven, submit na `report.blockaid.io`) | NO |
 > 
 > **✅ RESOLVED po hard resetu (již nepending):**
@@ -492,10 +492,10 @@
 
 ### Commity
 
-- `966b54b0` — 3.0.4 TX unification plan + code-vs-docs audit
-- `f1780fd0` — 3.0.4 canonical docs update (8 souborů)
-- `e963cf78` — 3.0.4.md kompletní dokumentace verze
-- `ac9c53c2` — Native ZION koncept + 499 WARP tests v 3.0.4.md
+- `320215a3` — 3.0.4 TX unification plan + code-vs-docs audit
+- `448d844f` — 3.0.4 canonical docs update (8 souborů)
+- `753ebf40` — 3.0.4.md kompletní dokumentace verze
+- `974fea71` — Native ZION koncept + 499 WARP tests v 3.0.4.md
 - (tento commit) — root dokumentační cleanup: 39 souborů do `docs/3.0.3/`
 
 ---
@@ -592,12 +592,12 @@
 2. ✅ **L2 watcher update** (roadmap) — `L1Block` struct přidat `account_transactions` + watcher.rs skenovat i account-model memo TXs — **DONE 3.0.4**
 3. ✅ **Guardian mnemonics backup + USB audit** — COMPLETED 2026-07-09: zkopírováno z flash disku na `/home/zionserver/Desktop/ZionKeys/` (OpenSSL encrypted). USB backup audit: 4/4 SHA256 ✓, 4/4 GPG Good ✓, 19/19 adres cross-check ✓, chmod 600 ✓.
 4. ✅ **ATOMIC_SWAP_RUNBOOK.md** — dokumentace aktualizována pro 3.0.4 account memo
-5. ✅ **Deploy account-model memo v1 hard fork na Edge** — deploy proveden autonomně 2026-07-01, commit `5074bf35`. Aktivační výška `24000` (chain height `23635` v době deploye). Služby `zion-edge-node1`, `zion-edge-node2`, `zion-edge-pool`, `zion-edge-bridge`, `zion-edge-dao`, `zion-edge-atomic-swap`, `zion-edge-warp` restartovány. E2E testy po dosažení výšky `24000` — viz [`V3/docs/ACCOUNT_TX_MEMO_V1_DEPLOY_RUNBOOK.md`](./V3/docs/ACCOUNT_TX_MEMO_V1_DEPLOY_RUNBOOK.md).
+5. ✅ **Deploy account-model memo v1 hard fork na Edge** — deploy proveden autonomně 2026-07-01, commit `9f371633`. Aktivační výška `24000` (chain height `23635` v době deploye). Služby `zion-edge-node1`, `zion-edge-node2`, `zion-edge-pool`, `zion-edge-bridge`, `zion-edge-dao`, `zion-edge-atomic-swap`, `zion-edge-warp` restartovány. E2E testy po dosažení výšky `24000` — viz [`V3/docs/ACCOUNT_TX_MEMO_V1_DEPLOY_RUNBOOK.md`](./V3/docs/ACCOUNT_TX_MEMO_V1_DEPLOY_RUNBOOK.md).
 
 ### Commity
 
-- `4ae1c7bc` — DeFi contracts deploy + fund + DAO guardians
-- `ea73d403` — Website rebuild v3.6.3 + atomic swap E2E + ROADMAP update
+- `b5c3faa5` — DeFi contracts deploy + fund + DAO guardians
+- `21aa5f65` — Website rebuild v3.6.3 + atomic swap E2E + ROADMAP update
 
 ---
 
@@ -679,7 +679,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 
 ### Commit
 
-- `3ebe575d` — fix(dao): wire L1 scanner metrics counter + rebuild binary
+- `2777510d` — fix(dao): wire L1 scanner metrics counter + rebuild binary
 
 ---
 
@@ -851,9 +851,9 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 
 | Commit | Popis |
 |--------|-------|
-| `33a48151` | feat(pool): PPLNS persistence — survive restarts without losing miner balances |
-| `fe3beed9` | feat(core): in-memory address TX index — O(1) getTransactionHistory lookup |
-| `529456f5` | feat(mobile): Universal Links + App Links + EAS build config |
+| `2586fdcc` | feat(pool): PPLNS persistence — survive restarts without losing miner balances |
+| `6cbe464f` | feat(core): in-memory address TX index — O(1) getTransactionHistory lookup |
+| `f6d45672` | feat(mobile): Universal Links + App Links + EAS build config |
 
 ### Pool PPLNS Persistence — detaily
 
@@ -908,7 +908,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 
 ### L4 Game Mechanics — daily streak + territory cooldowns
 
-**Commit:** `58ac8294`
+**Commit:** `7b9c9ed4`
 
 **Daily Streak (player.rs):**
 - `touch()` / `touch_at()` — updates streak based on time since `last_active`
@@ -943,7 +943,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 - **L2 Bridge:** `last_l1_height` metrika se neaktualizovala — `L1Watcher` neměl přístup k `BridgeMetrics`. Opraveno.
 - **Dashboard:** 7 oprav — genesis_hash, fee_split_match, node2_running, git_status.clean, Tailscale bind, balance/payout scale auto-detect.
 - **Test results:** 501 zion-core tests, 0 failures
-- **Commity:** `2f466a40` (L1 fix), `a7d426b1` (service files)
+- **Commity:** `96fc67dc` (L1 fix), `575e1ebe` (service files)
 
 ### Balance před a po opravě
 
@@ -955,7 +955,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 
 ### Co bylo změněno
 
-#### L1 Core (commit `2f466a40`)
+#### L1 Core (commit `96fc67dc`)
 - `rpc.rs` — `scaled_amount()` helper (dělí pre-migration amounty 1e6), aplikováno na 5 balance loopů v `getBalance`, `getAccountBalance`, `getBalanceAtHeight`
 - `bin/node.rs` — čtení `ZION_MIGRATION_HEIGHT` env var + `migration::set_migration_height()` při startu
 
@@ -968,7 +968,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 - `app.py` — genesis_hash (`hash_hex` fallback), fee_split (derivace z live tip bloku, pool_fee burned), node2_running (edge_node2 mapování), git_status (ignore runtime files), balance/payout scale auto-detect (1e12 → 1e6)
 - `config.json` — bind `0.0.0.0:8766` (Tailscale access)
 
-#### Service files (commit `a7d426b1`)
+#### Service files (commit `575e1ebe`)
 - `edge-deploy/systemd/zion-edge-node1.service` — `ZION_MIGRATION_HEIGHT=1` (fresh chain post-3.0.4 hard reset)
 - `edge-deploy/systemd/zion-edge-node2.service` — `ZION_MIGRATION_HEIGHT=1` (fresh chain post-3.0.4 hard reset)
 - `ZION_OS/infra/systemd/zion-edge-node1.service` — `ZION_MIGRATION_HEIGHT=1` (fresh chain post-3.0.4 hard reset)
@@ -1012,7 +1012,7 @@ git_status.clean: True ✅
 - **Edge deploy:** binary swap `/usr/local/bin/zion-node`, backup `node.bak-20260627-2006`, node restart
 - **Verifikace:** 69,694 txs v historii miner adresy (34 account + 16 coinbase v prvních 50)
 - **Tests:** 3 nové testy, 47/47 RPC suite ✅
-- **Commit:** `77776e48`
+- **Commit:** `9fda39dc`
 
 ### Co se změnilo
 
@@ -1051,7 +1051,7 @@ getTransactionHistory(zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604, limit=50)
 
 ### Co bylo změněno (kompletní seznam)
 
-#### L1 Core (commit `3482078c`)
+#### L1 Core (commit `f13a546e`)
 - `migration.rs` — nový module: MIGRATION_DIVISOR, is_post_migration(), set_migration_height(), migrate_snapshot(), build_migration_transactions(), validate_migration_block() (11 tests)
 - `peer_block_validation.rs` — height-conditional subsidy validation (legacy vs new scale)
 - `validation.rs` — validate_fees() + validate_subsidy() berou block_height, scale podle is_post_migration()
@@ -1060,18 +1060,18 @@ getTransactionHistory(zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604, limit=50)
 - `emission.rs` — FLOWERS_PER_ZION=1e6, LEGACY_FLOWERS_PER_ZION=1e12, LEGACY_GENESIS_PREMINE
 - `genesis.rs` — verify_premine_output() používá LEGACY_FLOWERS_PER_ZION
 
-#### L1 Pool (commit `83063666`)
+#### L1 Pool (commit `e4da6a93`)
 - `pplns.rs` — fee_split_with_real_block_reward test 5.4e15→5.4e9
 
-#### CLI (commit `3482078c`)
+#### CLI (commit `f13a546e`)
 - `wallet.rs` — send command používá FLOWERS_PER_ZION constant místo hardcoded 1e12
 - `node.rs` — nový `zion node snapshot` subcommand pro migration snapshot export
 
-#### L2 Bridge (commit `3482078c`)
+#### L2 Bridge (commit `f13a546e`)
 - `types.rs` — FLOWERS_PER_ZION=1e6, FLOWERS_TO_WEI_FACTOR=1e12 (18-6=12), MIN_BRIDGE_AMOUNT
 - `main.rs` — startup check FLOWERS_PER_ZION==1e6 + FLOWERS_TO_WEI_FACTOR==1e12
 
-#### L2 DAO (commit `83063666`)
+#### L2 DAO (commit `e4da6a93`)
 - `types.rs` — FLOWERS_PER_ZION=1e6, DAO_TREASURY_TOTAL, PROPOSAL_THRESHOLD, DAILY_SPEND_LIMIT
 - `config.rs` — min_vote_weight 1e12→1e6, proposal_threshold 1e18→1e12
 - `l1_scanner.rs` — min_vote_weight 1e12→1e6
@@ -1079,33 +1079,33 @@ getTransactionHistory(zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604, limit=50)
 - `treasury.rs` tests — 1e18→1e12
 - `quorum.rs` tests — circulating, vote weights updated
 
-#### L3 WARP (commit `83063666`)
+#### L3 WARP (commit `e4da6a93`)
 - `config.rs` — daily_limit/timelock multipliers 1e12→1e6
 - `xp_bridge.rs` — volume divisor 1e12→1e6
 - `router.rs` — daily_limit/timelock_threshold 1e18→1e12
 - `types.rs` — ChainId::zion_l1() decimals 12→6, all convert_decimals tests
 - `fees.rs` — all min_fee/max_fee values + tests 12-dec→6-dec
 
-#### L3 NCL (commit `83063666`)
+#### L3 NCL (commit `e4da6a93`)
 - `pricing.rs` — split_reward test 1e12→1e6
 
-#### L3 AI-Native (commit `83063666`)
+#### L3 AI-Native (commit `e4da6a93`)
 - `orchestrator.rs` — AI_MAX_TRANSFER_FLOWERS 1e15→1e9, AI_TIMELOCK_THRESHOLD 1e14→1e8
 - `zion-ai-native-api.rs` — price divisor 1e12→1e6
 
-#### L1 Core bin (commit `83063666`)
+#### L1 Core bin (commit `e4da6a93`)
 - `bin/wallet.rs` — FLOWERS_PER_ZION import z emission (was hardcoded 1e12), 6-decimal padding
 
-#### L1 Core tests (commit `83063666`)
+#### L1 Core tests (commit `e4da6a93`)
 - `lib.rs` — all "1 ZION" test amounts 1e12→1e6, fee 1000→1
 - `rpc.rs` — all test amounts 1e12→1e6
 
-#### ZION_OS Dashboard (commit `631429a3`)
+#### ZION_OS Dashboard (commit `4023d6da`)
 - `app.py` — 21 replacements (balance_zion, amount_zion, divisor, paid_total, revenue journal, flowers_per_zion constant)
 - `dashboard.js` — 11 replacements (pending_balance, subsidy_flowers, paid_total, pplns totals, bonded, weight conversion)
 - `l3.html` — 2 replacements (amount_flowers, reward_flowers display)
 
-#### Dokumentace (commit `58661943`)
+#### Dokumentace (commit `99e4e711`)
 - 27 dokumentů aktualizováno: AGENTS.md, MAINNET_CONSTANTS.md, ROADMAP.md, README.md, PLAN.md, L2_L3_MAINNET_PLAN.md, WHITEPAPER.md, CANONICAL_UNITS_AUDIT.md, WARP_ARCHITECTURE.md, COINGECKO.md, audity, whitepapy
 - `scripts/deploy-3.0.3-edge.sh` — automated Edge deployment script (backup, build, cutover, verify, rollback)
 
@@ -1169,11 +1169,11 @@ systemctl start zion-edge-node1
 
 | Commit | Popis |
 |--------|-------|
-| `3482078c` | Backend: migration module + height-conditional consensus + RPC + CLI |
-| `c0c477cb` | Docs: §15 Edge deployment runbook |
-| `83063666` | Ecosystem: 18 files, L1+L2+L3 1e12→1e6 |
-| `58661943` | Docs: 27 files + deploy script |
-| `631429a3` | Dashboard: app.py + dashboard.js + l3.html |
+| `f13a546e` | Backend: migration module + height-conditional consensus + RPC + CLI |
+| `8f608eca` | Docs: §15 Edge deployment runbook |
+| `e4da6a93` | Ecosystem: 18 files, L1+L2+L3 1e12→1e6 |
+| `99e4e711` | Docs: 27 files + deploy script |
+| `4023d6da` | Dashboard: app.py + dashboard.js + l3.html |
 
 ---
 
@@ -1246,12 +1246,12 @@ Relay na Edge serveru byl rozšířen o podporu všech 5 validator klíčů naje
 | Krok | Popis | Status |
 |------|-------|--------|
 | Validator klíče (5/5) | Klíče z `5ELMWallets.md` ověřeny přes `cast wallet address`, uloženy do `/root/zion-validator-key.env` (mode 600) | ✅ |
-| `load_all_validator_keys()` | Nová Rust funkce čte `ZION_VALIDATOR_PRIVATE_KEY` + `_2..5` env vars | ✅ commit `c4a4841` |
-| `handle_l1_lock()` multi-key smyčka | Pro každý lock → 5 TX od 5 různých validátorů, 500ms delay mezi TX | ✅ commit `c4a4841` |
+| `load_all_validator_keys()` | Nová Rust funkce čte `ZION_VALIDATOR_PRIVATE_KEY` + `_2..5` env vars | ✅ commit `e82eb73` |
+| `handle_l1_lock()` multi-key smyčka | Pro každý lock → 5 TX od 5 různých validátorů, 500ms delay mezi TX | ✅ commit `e82eb73` |
 | Binary rebuild + deploy na Edge | 56s incremental build, stop→copy→start relay | ✅ |
 | 30× `submitLockProof` TX | 5 validátorů × 6 locků = 30 TX, všechny CONFIRMED on-chain | ✅ |
 | On-chain verifikace | `getLockProofStatus()` → `confirmations=5/5, executed=false, timelocked=true` pro všech 6 | ✅ |
-| Bezpečnost: `.gitignore` | `5ELMWallets.md` odstraněn z gitu, přidán do `.gitignore` | ✅ commit `14dd686` |
+| Bezpečnost: `.gitignore` | `5ELMWallets.md` odstraněn z gitu, přidán do `.gitignore` | ✅ commit `1e865a9` |
 
 ### Stav 6 locků na Base Mainnet (2026-06-23 17:20 UTC)
 
@@ -1287,8 +1287,8 @@ if (amount >= TIMELOCK_THRESHOLD) {  // 1_000_000 * 1e18
 ### Commity
 
 ```
-14dd686  security: add 5ELMWallets.md and key files to .gitignore
-c4a4841  feat(bridge): multi-validator key support — relay submits all 5 keys per lock
+1e865a9  security: add 5ELMWallets.md and key files to .gitignore
+e82eb73  feat(bridge): multi-validator key support — relay submits all 5 keys per lock
 ```
 
 ---
@@ -1306,9 +1306,9 @@ c4a4841  feat(bridge): multi-validator key support — relay submits all 5 keys 
 | Krok | Popis | Status |
 |------|-------|--------|
 | Root cause analýza | Identifikován bug: `--memo` flag v `zion wallet send` byl přijat CLI ale silently zahozen pro UTXO TX | ✅ |
-| Fix A: memo support (L1) | `SendParams.memo`, `build_and_sign()`, CLI `--memo` passthrough | ✅ commit `20379ec4` |
-| Fix B: account-model fallback block | CLI odmítne account-model fallback pokud `--memo` je použito | ✅ commit `50dbb7ba` |
-| Fix C: default_evm_recipient relay | Relay mintne na default adresu pokud lock nemá memo | ✅ commit `89873dfb` |
+| Fix A: memo support (L1) | `SendParams.memo`, `build_and_sign()`, CLI `--memo` passthrough | ✅ commit `474fa0db` |
+| Fix B: account-model fallback block | CLI odmítne account-model fallback pokud `--memo` je použito | ✅ commit `6f0e11e7` |
+| Fix C: default_evm_recipient relay | Relay mintne na default adresu pokud lock nemá memo | ✅ commit `57fccc7c` |
 | 6× UTXO lock TX odesláno | 5× 16,666,666 + 1× 16,666,569 ZION s memo, bloky 11611–11612 | ✅ |
 | Relay detekce | Všech 6 locků detekováno, čeká 60-block finality + validator key | ✅ |
 | Dokumentace | `fixL1bridge100m.md` vytvořen, `BRIDGE_MAINNET_READINESS.md` aktualizován | ✅ |
@@ -1350,11 +1350,11 @@ Po poskytnutí klíče + restart relay → ~100M wZION mintnut na Base mainnet.
 ### Commity
 
 ```
-35b05e43  docs: update bridge status — 100M UTXO locks sent, validator key blocker
-50dbb7ba  fix(cli): block memo sends from falling back to account-model
-0bbba50e  docs: add fixL1bridge100m.md — full L1 bridge 100M recovery report
-20379ec4  feat(L1): add memo support to UTXO SendParams + build_and_sign
-89873dfb  feat(bridge): add default_evm_recipient fallback for locks without memo
+50d97377  docs: update bridge status — 100M UTXO locks sent, validator key blocker
+6f0e11e7  fix(cli): block memo sends from falling back to account-model
+a96a969a  docs: add fixL1bridge100m.md — full L1 bridge 100M recovery report
+474fa0db  feat(L1): add memo support to UTXO SendParams + build_and_sign
+57fccc7c  feat(bridge): add default_evm_recipient fallback for locks without memo
 ```
 
 ### Detailní zpráva
@@ -1396,8 +1396,8 @@ Viz [`docs/3.0.3/fixL1bridge100m.md`](./docs/3.0.3/fixL1bridge100m.md) pro kompl
 
 - `V3/L2/bridge/src/evm_watcher.rs`, `V3/L2/bridge/src/main.rs`
 - `V3/config/bridge-{mainnet,testnet}.toml`, `V3/L2/bridge/config/bridge-{mainnet,testnet}.toml`
-- `V3/L1/core/src/wallet.rs` ✅ Done — memo přidán do `SendParams`/`build_and_sign` (commit `20379ec4`)
-- `V3/cli/src/commands/wallet.rs` ✅ Done — `--memo` propojen do `SendParams` (commit `20379ec4`)
+- `V3/L1/core/src/wallet.rs` ✅ Done — memo přidán do `SendParams`/`build_and_sign` (commit `474fa0db`)
+- `V3/cli/src/commands/wallet.rs` ✅ Done — `--memo` propojen do `SendParams` (commit `474fa0db`)
 - `V3/L2/bridge/tests/mainnet_readiness.rs`
 - `V3/docs/BRIDGE_MAINNET_DEPLOY.md`, `BRIDGE_MAINNET_LAUNCH_CHECKLIST.md`, `BRIDGE_MULTISIG.md`
 - `L2audit.md`, `ZION_3.0.2_PLAN.md`, `BRIDGE_MAINNET_READINESS.md` (new)
@@ -1459,7 +1459,7 @@ systemctl restart zion-edge-node1
 > L1 (`core`, `cosmic-harmony`) **nebyl auditem upravován** — viz `AGENTS.md` L1 protokol.
 
 ### Kanonizace verze 3.0.2
-Git tag `v3.0.2` (→ `31d12f34`) je oficiální linie; `main` je napřed s další 3.0.2 prací. Verze sjednoceny na **3.0.2**:
+Git tag `v3.0.2` (→ `a44640ed`) je oficiální linie; `main` je napřed s další 3.0.2 prací. Verze sjednoceny na **3.0.2**:
 - `V3/Cargo.toml` + `V3/config/bridge-{mainnet,testnet}.toml`: 3.0.1 → **3.0.2**
 - `V3/README.md`, root `README.md`, `ROADMAP.md`: → **v3.0.2**
 
@@ -3471,10 +3471,10 @@ top_p = 0.9
 | **Unified search** | ✅ Hotovo | `/explorer/search` — block/tx/address hash resolver, redirect z ProSearchBar |
 | **TradingView charts** | ✅ Hotovo | `ExplorerCharts.tsx` — 2×2 multi-chart dashboard + single-chart toggle, hover tooltips |
 | **Price feed oracle** | ✅ Hotovo | `/api/defi/price` — Uni V3 slot0 + Chainlink WETH/USD, live badge na `/defi` |
-| **Staking page** | ✅ Mainnet-ready | `/defi/staking` — wallet connect, stake/unstake/claim, cooldown tracking, live APR z kontraktu, approve+stake flow, TX status s basescan linky (commit 107a121, 2026-06-24) |
-| **DAO proposals** | ✅ Mainnet-ready | `/defi/dao` — proposal list, voting bars, quorum progress, mainnet CONTRACTS, deploy-pending banner (commit 107a121) |
-| **Farming page** | ✅ Mainnet-ready | `/defi/farming` — wallet connect, pool list s APR odhadem, deposit/withdraw/claim, per-user positions, approve+deposit flow (commit 107a121, 2026-06-24) |
-| **BridgeTracker** | ✅ Hotovo | `/bridge` — live L1→L2 (lock→confirm→mint) + L2→L1 (burn→submit→unlock) pipeline s Prometheus metrics, 10s polling (commit 107a121) |
+| **Staking page** | ✅ Mainnet-ready | `/defi/staking` — wallet connect, stake/unstake/claim, cooldown tracking, live APR z kontraktu, approve+stake flow, TX status s basescan linky (commit a84c929, 2026-06-24) |
+| **DAO proposals** | ✅ Mainnet-ready | `/defi/dao` — proposal list, voting bars, quorum progress, mainnet CONTRACTS, deploy-pending banner (commit a84c929) |
+| **Farming page** | ✅ Mainnet-ready | `/defi/farming` — wallet connect, pool list s APR odhadem, deposit/withdraw/claim, per-user positions, approve+deposit flow (commit a84c929, 2026-06-24) |
+| **BridgeTracker** | ✅ Hotovo | `/bridge` — live L1→L2 (lock→confirm→mint) + L2→L1 (burn→submit→unlock) pipeline s Prometheus metrics, 10s polling (commit a84c929) |
 | **Swap Aggregator backend** | ✅ Hotovo | `V3/L2/swap-aggregator/` — Rust/Axum, SQLite, quote/swap/status REST API |
 | **Bridge 3/5 multisig** | ✅ Hotovo | `bridge-mainnet.toml` — threshold=3, total=5, placeholder addresses, production checklist |
 | **Burn→Unlock E2E** | ✅ Hotovo | `bridge_integration.rs` — `test_e2e_burn_to_unlock_request`, 17/17 testů |
@@ -4413,7 +4413,7 @@ v OpenCL kernelu.
 - `V3/L1/miner/src/gpu_backend.rs` (self-test reference, build opts)
 - `VEGA64_S4_MEMHARD_DEBUG_GUIDE.md` (kompletně přepsán s novými root cause)
 
-**Historický kontext:** Commit `db55e983` (2026-03) dosahoval ~8.83 KH/s s Blake3 kernelem. Mezitím kernel přešel na SHA3, což způsobilo ~3× pokles hashrate a nesprávné hashe. Tento fix vrací kernel do stavu shodného s L1 consensusem.
+**Historický kontext:** Commit `b873cfc1` (2026-03) dosahoval ~8.83 KH/s s Blake3 kernelem. Mezitím kernel přešel na SHA3, což způsobilo ~3× pokles hashrate a nesprávné hashe. Tento fix vrací kernel do stavu shodného s L1 consensusem.
 
 ---
 
@@ -4451,7 +4451,7 @@ v OpenCL kernelu.
    - Staré bloky odstraněny ze `accepted_blocks`, `accepted_by_height`, `accepted_by_template_id`, `address_tx_index`
    - Bloky zůstávají v LMDB/ChainStore persistent storage
    - `address_tx_index` indexy dekrementovány při pruning
-   - **Default changed 0 → 1000 (2026-07-09, commit `348abc91`)** — prevents OOM na long-running nodech
+   - **Default changed 0 → 1000 (2026-07-09, commit `1a1d9d26`)** — prevents OOM na long-running nodech
 
 2. **`ZION_LMDB_MAP_SIZE_MB` env var** (default 0 = 10 GB)
    - Parsed v `NodeServerConfig`, forward-looking pro LMDB migraci
@@ -4654,9 +4654,9 @@ V4 NFT pozice deployeru (1 NFT v PositionManager po burn):
 ### Git commity (session 2)
 | Commit | Popis |
 |--------|-------|
-| `17b32693` | feat(dashboard): edge backup download + systemd service + run-node.bat 3.0.3 |
-| `b91780bc` | fix(doge-vs-zion): stargate invisible (z dřívější session) |
-| `69d1cee` | fix(scripts): canonical IPs + Tailscale fallback in all .bat + AGENTS.md |
+| `8c8f886a` | feat(dashboard): edge backup download + systemd service + run-node.bat 3.0.3 |
+| `f3e498e2` | fix(doge-vs-zion): stargate invisible (z dřívější session) |
+| `95ee4bf` | fix(scripts): canonical IPs + Tailscale fallback in all .bat + AGENTS.md |
 
 ### Dashboard endpointy (aktuální)
 | Endpoint | Metoda | Co dělá |
@@ -4706,8 +4706,8 @@ Opraveno na `zion_pool::advertised_algorithm()`. Po fixu node přijímá bloky.
 **Commity:**
 | Commit | Popis |
 |--------|-------|
-| `6530b836f` | feat(chv3): Phase A — deeksha_chv3 unified algorithm alias |
-| `7dd81cfb7` | feat(chv3): set CHV3_FORK_HEIGHT=4500 — soft fork activation |
+| `a65ddc3b1` | feat(chv3): Phase A — deeksha_chv3 unified algorithm alias |
+| `b32e2135e` | feat(chv3): set CHV3_FORK_HEIGHT=4500 — soft fork activation |
 
 ### Edge Full Recovery — 11/11 služeb active
 
@@ -4890,7 +4890,7 @@ Total: 67 work units
 - `debug_assert` verifikuje stream hash == computed hash
 
 ### Commit
-`f656782a1` — feat(chv3): Phase B — stream telemetry for unified revenue accounting
+`5feec62ed` — feat(chv3): Phase B — stream telemetry for unified revenue accounting
 
 ### Edge deploy
 - Pool binary deploynut, restart úspěšný
@@ -4945,7 +4945,7 @@ názvem a KAT (Known Answer Test) vektory pro CPU↔GPU parity verifikaci.
 - Žádná změna hash outputu
 
 ### Commit
-`1ef6709b4` — feat(chv3): Phase C — GPU kernel parity + KAT vectors
+`0795b34ac` — feat(chv3): Phase C — GPU kernel parity + KAT vectors
 
 ### Edge deploy
 - Pool restart na nový binary, 1 blok found po restartu
@@ -4991,7 +4991,7 @@ zůstávají akceptované pro backward compat.
 - Pool build: OK
 
 ### Commit
-`d6f282311` — feat(chv3): Phase D — name unification (no hard fork, 256 KiB preserved)
+`b0150aa59` — feat(chv3): Phase D — name unification (no hard fork, 256 KiB preserved)
 
 ### Edge deploy
 - Pool restart na nový binary, 1 blok found po restartu
@@ -5007,10 +5007,10 @@ zůstávají akceptované pro backward compat.
 
 | Phase | Co | Status | Commit |
 |-------|-----|--------|--------|
-| A | Alias wrapper (chv3 == lite bit-identical) | ✅ DEPLOYED | `aca83771a` |
-| B | Stream telemetry (revenue breakdown) | ✅ DEPLOYED | `f656782a1` |
-| C | GPU kernel parity + KAT vectors | ✅ DEPLOYED | `1ef6709b4` |
-| D | Name unification (no hard fork, 256 KiB) | ✅ DEPLOYED | `d6f282311` |
+| A | Alias wrapper (chv3 == lite bit-identical) | ✅ DEPLOYED | `c8c9a182b` |
+| B | Stream telemetry (revenue breakdown) | ✅ DEPLOYED | `5feec62ed` |
+| C | GPU kernel parity + KAT vectors | ✅ DEPLOYED | `0795b34ac` |
+| D | Name unification (no hard fork, 256 KiB) | ✅ DEPLOYED | `b0150aa59` |
 
 ### Výsledek
 - `deeksha_chv3` je canonical název pro height >= 4500
@@ -5119,12 +5119,12 @@ Chybí: miner software na rigách musí:
 
 ### Commits
 
-- `c21665ace` — debug(auxpow): add println diagnostics for B2b bridge job flow
-- `2f9bc1f9e` — debug(auxpow): add poll loop lifecycle diagnostics
-- `ef4e36d2f` — cleanup(auxpow): remove verbose per-message debug prints, keep bridge metrics
-- `798f96503` — fix(auxpow): prevent wait_for_job busy loop in B2b bridge
-- `44ccf9020` — fix(auxpow): use KAS share target from difficulty, log external job issuance
-- `4c68f18b2` — fix(miner/core): pass KAS block timestamp to kHeavyHash
+- `a3f090bb9` — debug(auxpow): add println diagnostics for B2b bridge job flow
+- `283ec4738` — debug(auxpow): add poll loop lifecycle diagnostics
+- `c811c04a1` — cleanup(auxpow): remove verbose per-message debug prints, keep bridge metrics
+- `2cce52431` — fix(auxpow): prevent wait_for_job busy loop in B2b bridge
+- `f50073752` — fix(auxpow): use KAS share target from difficulty, log external job issuance
+- `2b4339239` — fix(miner/core): pass KAS block timestamp to kHeavyHash
 
 ### Další kroky
 
@@ -5217,7 +5217,7 @@ Rozšířen AuxPow panel v dashboardu o 8 nových metrik:
 ### Commity
 | Commit | Popis |
 |--------|-------|
-| `259e662be` | feat(dashboard): expand AuxPow panel with extended metrics |
+| `0a58b5be4` | feat(dashboard): expand AuxPow panel with extended metrics |
 
 ### Topologie (aktuální)
 ```

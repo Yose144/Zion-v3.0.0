@@ -15,7 +15,7 @@ The V31 cutover changed the on-chain data model and pool metrics shape. The expl
 - All explorer pages pass the UI audit (`explorer_ui_audit.cjs`).
 - All key API endpoints pass the API audit (`explorer_api_audit.cjs`).
 - Build and lint pass (`0 errors`, `3 pre-existing warnings`).
-- Changes are committed and pushed to `main` (`d47a621c9`).
+- Changes are committed and pushed to `main` (`f23d358c0`).
 
 **Remaining limitations / follow-up:**
 1. `/api/blockchain/address` for UTXO addresses with many UTXOs (e.g. 916) still takes ~5 s because `getTransaction` scans the chain linearly for each hash. Only the first 20 UTXOs are enriched with height/timestamp; a future node RPC extension (`getUtxos` returning `height`) would eliminate this.
@@ -203,7 +203,7 @@ Service restarted cleanly; pages reachable with HTTP 200.
 
 ## 4. Git
 
-Commit: `d47a621c9 explorer V31 data accuracy: rewards, address history, tx inputs, mempool, miners`
+Commit: `f23d358c0 explorer V31 data accuracy: rewards, address history, tx inputs, mempool, miners`
 
 Files changed:
 - `src/app/api/blockchain/address/route.ts`

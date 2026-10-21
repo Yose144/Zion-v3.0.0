@@ -168,9 +168,9 @@ cargo build --features native-ghostrider
 ```
 
 ## Commity
-1. `de6c36a1c` — feat: RTM GhostRider E2E mining with share acceptance
-2. `dfca8f876` — fix: RTM share acceptance — target, nonce format, hash comparison
-3. `77f491673` — fix(rtm): multi-threaded GhostRider mining — SHARE ACCEPTED
+1. `9efc585b1` — feat: RTM GhostRider E2E mining with share acceptance
+2. `83a0e8784` — fix: RTM share acceptance — target, nonce format, hash comparison
+3. `735641716` — fix(rtm): multi-threaded GhostRider mining — SHARE ACCEPTED
    - version/ntime/nbits byte order fix (BE hex → LE bytes)
    - oaes rand() thread-safety fix (deterministic IV, no srand)
    - Result: 8-thread CPU, 13.5 KH/s, SHARE ACCEPTED in 3.7s

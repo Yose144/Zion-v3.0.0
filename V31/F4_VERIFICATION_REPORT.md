@@ -191,11 +191,11 @@ zion-l1-types ◄── zion-core ◄── zion-miner
 ## 7. Git History (Fáze 4 commits)
 
 ```
-b45be2244 feat(v31): F4 complete — SDK crate + interactive CLI menu
-df13545f3 feat(v31): port L4 Oasis, L5 Free-World, L6 Issobella into V31
-9e036d1fe feat(v31): port AI-Native into V31/L3/ai-native — autonomous agent framework
-ca8f80fff feat(v31): port NCL and WARP into V31 — L3 neural compute + universal bridge
-b17f7b028 feat(v31): miner node RPC integration — fetch template + submit block
+3538bd385 feat(v31): F4 complete — SDK crate + interactive CLI menu
+06fb2ed67 feat(v31): port L4 Oasis, L5 Free-World, L6 Issobella into V31
+66a88b303 feat(v31): port AI-Native into V31/L3/ai-native — autonomous agent framework
+069487e24 feat(v31): port NCL and WARP into V31 — L3 neural compute + universal bridge
+3a285e805 feat(v31): miner node RPC integration — fetch template + submit block
 ```
 
 All commits pushed to `origin/main`.

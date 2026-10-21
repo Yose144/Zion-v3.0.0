@@ -123,10 +123,10 @@ Rozsah: celý `V3/**` (L1–L6, cli, sdk). Cíl: najít exploitovatelné vzory n
 
 ## Hotové (2026-07-02)
 
-- [x] F1 fix deployed (commit `9341344d`)
-- [x] F5 fix deployed na node1 + node2 (commit `69d12c7`, `fe8d449`, height 22394)
-- [x] F5 fuzz tests (commit `a5472ec6`, 5 testů, vše PASS)
-- [x] L2 security patch deployed (commit `a8b3821e`, MD5 shoda ověřena)
+- [x] F1 fix deployed (commit `056b67a4`)
+- [x] F5 fix deployed na node1 + node2 (commit `7019d88`, `9a438a0`, height 22394)
+- [x] F5 fuzz tests (commit `33e9a8aa`, 5 testů, vše PASS)
+- [x] L2 security patch deployed (commit `b2f0ca40`, MD5 shoda ověřena)
 - [x] RPC audit log v node binárce
 - [x] Node binary swap (22:55 UTC, fmt/clippy cleanup, F5 aktivní, height 22539)
 - [x] ALL Edge services na 127.0.0.1
@@ -134,8 +134,8 @@ Rozsah: celý `V3/**` (L1–L6, cli, sdk). Cíl: najít exploitovatelné vzory n
 - [x] Pool service konsolidace (duplikát stopped)
 - [x] Atomic swap restart
 - [x] Edge git cleanup (.bak files)
-- [x] Dashboard health probes fix (commit `46106f38`)
-- [x] cargo fmt + clippy (commit `48bf387f`, 0 warnings)
+- [x] Dashboard health probes fix (commit `5a117b70`)
+- [x] cargo fmt + clippy (commit `f5efa6e3`, 0 warnings)
 - [x] UFW, AppArmor, SSH hardening, file permissions, monitoring cron jobs
 - [x] Private keys scrubbed z git repu
 - [x] Escrow key rotation (inflační 100,002 ZION spáleno)
@@ -147,7 +147,7 @@ Rozsah: celý `V3/**` (L1–L6, cli, sdk). Cíl: najít exploitovatelné vzory n
 > **Topologie 3.0.4 (2026-07-07):** Starý Edge (`77.42.71.94`) DECOMMISSIONED. Kanonický server `62.171.141.136` (`ssh zion-new`), single-node, env file `/root/zion/edge-environment.sh`. Kompletní postup: [`SECURITY_PATCH_3.0.4_PLAN.md`](./SECURITY_PATCH_3.0.4_PLAN.md).
 
 ### 1. Tailscale ACL (F2.3) — ✅ VYŘEŠENO JINAK (2026-07-07)
-**Stav:** Při hard resetu na nový server byl Tailscale **odstraněn jako attack surface** (commit `87d939c1`). Single-server topologie nepotřebuje VPN — přístup jen přes SSH klíče + nginx SSL + Basic Auth + UFW (22/80/443). F2.3 tím odpadá, ACL v admin console není potřeba.
+**Stav:** Při hard resetu na nový server byl Tailscale **odstraněn jako attack surface** (commit `0aa3a65a`). Single-server topologie nepotřebuje VPN — přístup jen přes SSH klíče + nginx SSL + Basic Auth + UFW (22/80/443). F2.3 tím odpadá, ACL v admin console není potřeba.
 
 ### 2. Key Rotation — Premine (F4.1)
 **Co:** Rotovat premine privátní klíče na air-gapped machine

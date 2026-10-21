@@ -1,7 +1,7 @@
 docs: update DEFI_FULL_ROADMAP + StatusV3 for mainnet-ready DeFi UI
 
 - DEFI_FULL_ROADMAP.md: Staking/Farming UI marked as mainnet-ready
-  (commit 107a121), BridgeTracker done, percentages updated
+  (commit a84c929), BridgeTracker done, percentages updated
   (Staking 65%→90%, Farming 50%→85%, Explorer 70%→75%)
 - StatusV3.md: 2026-06-24 date entry, Staking/Farming/DAO/BridgeTracker
   table rows updated to reflect mainnet-ready status

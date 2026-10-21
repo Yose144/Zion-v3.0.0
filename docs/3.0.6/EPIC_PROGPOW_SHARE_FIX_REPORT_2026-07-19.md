@@ -18,7 +18,7 @@ EPIC ProgPow shares byly rejectovány třemi různými způsoby:
 
 ## Opravy
 
-### Fáze 2: Dedicated one-shot TLS submit connection (commit `736ae9fb7`)
+### Fáze 2: Dedicated one-shot TLS submit connection (commit `12d4a72c5`)
 
 **Problém:** EPIC upstream pool zavírá TLS každých ~10-15s. Sdílené poll-loop connection raced s tímto close timerem → TLS EOF na každém submit pokusu (3 retry, všechny failly → `status=unknown`).
 
@@ -26,7 +26,7 @@ EPIC ProgPow shares byly rejectovány třemi různými způsoby:
 
 **Výsledek:** Shares dostávají reálné odpovědi: `rejected: Solution submitted too late` a `rejected: Share rejected due to low difficulty` — žádné `status=unknown`.
 
-### Fáze 2c: Stale EPIC share fix (commit `1b7a0d454`)
+### Fáze 2c: Stale EPIC share fix (commit `b86863e5d`)
 
 **Problém:** Main loop forwardoval EPIC jobs do external GPU threadu jednou za iteraci (~14s). EPIC pool job okno je ~10-15s, takže shares pro staré jobs byly rejectovány jako "too late".
 
@@ -34,7 +34,7 @@ EPIC ProgPow shares byly rejectovány třemi různými způsoby:
 
 **Výsledek:** External GPU thread dostává nové EPIC jobs každých ~10s místo ~14s.
 
-### Fáze 2d: Full ProgPow hash verifikace na poolu (commit `1683f21ec`)
+### Fáze 2d: Full ProgPow hash verifikace na poolu (commit `9b974e0c4`)
 
 **Problém:** GPU kernel `keccak_f800` u64 pre-check produkuje false positives. Hash byl nastaven na `[0u8; 32]` (nuly) pro DAG algoritmy (`gpu_miner.rs` line 1274-1277), což prošlo pool `meets_target` checkem (nuly ≤ jakýkoliv target), ale EPIC pool přepočítá reálný hash z nonce + mix_hash a rejectuje s "low difficulty".
 
@@ -82,10 +82,10 @@ GPU kernel u64 pre-check našel "solution" (kernel_hash=zeros prošlo starým lo
 
 | Commit | Popis |
 |--------|-------|
-| `736ae9fb7` | Fáze 2: EPIC dedicated one-shot TLS submit connection |
-| `1b7a0d454` | Fáze 2c: Forward external_stream jobs directly from pool_io_thread |
-| `fa99a5d79` | Fix start-local-miner.sh build features |
-| `1683f21ec` | Fáze 2d: Verify ProgPow/Ethash final hash on pool before upstream submit |
+| `12d4a72c5` | Fáze 2: EPIC dedicated one-shot TLS submit connection |
+| `b86863e5d` | Fáze 2c: Forward external_stream jobs directly from pool_io_thread |
+| `1a287c8a1` | Fix start-local-miner.sh build features |
+| `9b974e0c4` | Fáze 2d: Verify ProgPow/Ethash final hash on pool before upstream submit |
 
 ---
 

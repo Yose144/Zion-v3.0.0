@@ -32,7 +32,7 @@ Fixed critical `pop_job()` bug in auxpow bridge that caused **VRSC "ntime out of
 ### 1. `pop_job()` returning oldest job instead of latest (CRITICAL)
 
 **File:** `V31/L1/pool/src/auxpow_bridge.rs`  
-**Commit:** `2f00a6209`
+**Commit:** `437aadad3`
 
 The auxpow job queue uses `VecDeque` with `push_back()` (newest at back). But `pop_job()` was returning `q.front()` — the **oldest** job, not the latest. This caused:
 
@@ -54,7 +54,7 @@ The deployed pool binary contained `v3_external_job_override` logic that rewrote
 ### 3. VRSC share difficulty too high (LuckPool vardiff passthrough)
 
 **File:** `V31/L1/pool/src/stratum.rs` — `build_external_stream_cpu()`  
-**Commit:** `5a169e5bb`
+**Commit:** `60c48eca4`
 
 LuckPool's vardiff could set difficulty too high for a single CPU stream (~6 MH/s), resulting in very few shares and high stale rate (shares found after job rotation).
 
@@ -66,7 +66,7 @@ LuckPool's vardiff could set difficulty too high for a single CPU stream (~6 MH/
 ### 4. Dashboard fixes
 
 **Files:** `ZION_OS/dashboard/app.py`, `ZION_OS/dashboard/dashboard.js`  
-**Commit:** `b089dcd69`
+**Commit:** `92e9360c3`
 
 - **Trinity Mining panel 401:** `/api/pool/miners-dashboard` and `/stats` endpoints added to `AUTH_EXEMPT_ROUTES` in `app.py`
 - **Hashrate display:** `dashboard.js` line 885 was using wrong format (`mhr >= 1000 ? (mhr/1000) + ' kH/s'`) for v31_miner.hashrate. Fixed to use `_formatHashrate(mhr)` which correctly shows MH/s for values >= 1e6
@@ -74,7 +74,7 @@ LuckPool's vardiff could set difficulty too high for a single CPU stream (~6 MH/
 ### 5. Stale job thresholds tuned
 
 **File:** `V31/L1/pool/src/auxpow_runtime.rs`  
-**Commit:** `c502ceb79`
+**Commit:** `38be70f5e`
 
 - VRSC: 45s → 50s (block time ~60s)
 - ZANO: 25s → 28s (block time ~30s)
@@ -84,13 +84,13 @@ LuckPool's vardiff could set difficulty too high for a single CPU stream (~6 MH/
 
 | Commit | Description |
 |--------|-------------|
-| `2dd20b03e` | fix(auxpow): pool-side stale job check to prevent "job not found" rejections |
-| `58d5db668` | fix(auxpow): time-based stale job check + VRSC solution nonceSpace rebuild |
-| `c502ceb79` | fix(auxpow): tune stale job thresholds — VRSC 50s, ZANO 28s |
-| `b089dcd69` | fix(dashboard): auth-exempt miners-dashboard + hashrate format fix |
-| `4eb265a69` | chore(dashboard): bump cache version v129 for hashrate format fix |
-| `2f00a6209` | fix(pool): pop_job returns latest job (back of queue) not oldest |
-| `5a169e5bb` | feat(vrsc): fixed 180M share difficulty + 10 CPU threads for Stream 3 |
+| `10e02a4db` | fix(auxpow): pool-side stale job check to prevent "job not found" rejections |
+| `42b70da9f` | fix(auxpow): time-based stale job check + VRSC solution nonceSpace rebuild |
+| `38be70f5e` | fix(auxpow): tune stale job thresholds — VRSC 50s, ZANO 28s |
+| `92e9360c3` | fix(dashboard): auth-exempt miners-dashboard + hashrate format fix |
+| `cce2a08ac` | chore(dashboard): bump cache version v129 for hashrate format fix |
+| `437aadad3` | fix(pool): pop_job returns latest job (back of queue) not oldest |
+| `60c48eca4` | feat(vrsc): fixed 180M share difficulty + 10 CPU threads for Stream 3 |
 
 ## Key Files Modified
 

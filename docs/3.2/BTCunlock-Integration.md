@@ -193,13 +193,13 @@ ticket**, not a plan. Open puzzles with public keys (#140…#160) are wider than
 
 ## 11. Commits (chronological)
 
-`38d1de2cb` keyscan engine+GPU kernel+puzzle CLI · `dc35e575a` U256 Ord fix ·
-`08a2dc009` UI v1 · `e42bfff34` UI v2 (puzzle card, vault, milestones, catalog) ·
-`ea65e3e55` in-scanner hit backup + `--hit-cmd` · `d946b9161` UI JS newline fix ·
-`42ebf640b` U256 borrow/resume-rate fix + `~/btcunlock/` layout ·
-`5c36615f9` regcap 80 tuning · `01a9d8449` kangaroo · `9caf32447` README/docs ·
-`0a280b7ac` Stream-4 integration (units, dashboard, agent) ·
-`4f64e7709` daily-restart log bound
+`bf10e87f3` keyscan engine+GPU kernel+puzzle CLI · `4b634076e` U256 Ord fix ·
+`24bf34808` UI v1 · `ed94a5c88` UI v2 (puzzle card, vault, milestones, catalog) ·
+`91a3ab668` in-scanner hit backup + `--hit-cmd` · `4cd9ea37f` UI JS newline fix ·
+`c7da50916` U256 borrow/resume-rate fix + `~/btcunlock/` layout ·
+`c3d1c98dd` regcap 80 tuning · `57ac36ad8` kangaroo · `298dc1747` README/docs ·
+`c59c67368` Stream-4 integration (units, dashboard, agent) ·
+`4273f7304` daily-restart log bound
 
 ## 12. Operational cheatsheet
 

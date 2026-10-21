@@ -2,10 +2,10 @@
 
 **Date:** 2026-07-01  
 **Status:** ✅ RESOLVED — F1 fix deployed to Edge (2026-07-02), exploit post-mortem in [`SecurityFirst.md`](./SecurityFirst.md)  
-**Commit:** `9341344d` — F1 fix deployed (extends `verify_signature()` to `validate_peer_block()`)  
-**Original fix commit:** `5cee33c4` — L1 signature fix (from-address verification in `verify_signature()`)  
+**Commit:** `056b67a4` — F1 fix deployed (extends `verify_signature()` to `validate_peer_block()`)  
+**Original fix commit:** `1d2f88ec` — L1 signature fix (from-address verification in `verify_signature()`)  
 
-> **UPDATE 2026-07-02:** F1 exploit occurred before this fix was deployed. Attacker from `109.81.30.165` injected forged account TX via P2P. Chain rolled back to height 22180. F1 fix deployed as commit `9341344d` (extends `verify_signature()` call to `validate_peer_block()` for non-coinbase account TX). Full post-mortem: [`SecurityFirst.md`](./SecurityFirst.md). Edge server hardened: UFW, bind addresses, AppArmor, monitoring. See [`SecurityBackup.md`](./SecurityBackup.md) for forensic timeline.
+> **UPDATE 2026-07-02:** F1 exploit occurred before this fix was deployed. Attacker from `109.81.30.165` injected forged account TX via P2P. Chain rolled back to height 22180. F1 fix deployed as commit `056b67a4` (extends `verify_signature()` call to `validate_peer_block()` for non-coinbase account TX). Full post-mortem: [`SecurityFirst.md`](./SecurityFirst.md). Edge server hardened: UFW, bind addresses, AppArmor, monitoring. See [`SecurityBackup.md`](./SecurityBackup.md) for forensic timeline.
 
 ---
 
@@ -40,7 +40,7 @@ Pool wallet on Edge was configured with a signing key that does **not** derive t
 
 ### Fix
 
-Commit `5cee33c4` adds a `derive_address` check in `Transaction::verify_signature()` before `crypto::verify()`:
+Commit `1d2f88ec` adds a `derive_address` check in `Transaction::verify_signature()` before `crypto::verify()`:
 
 ```rust
 let derived_from = crypto::derive_address(&pk_bytes);
@@ -114,7 +114,7 @@ The correct SK hex for the pool payout signer is `[REDACTED — pool SK removed 
 ### ✅ Resolved (2026-07-02)
 
 1. **Pool wallet strategy:** Pool wallet SK found and `edge-environment.sh` updated. Pool wallet `zion16825...` custody resolved.
-2. **L1 signature fix deployed:** Commit `9341344d` — `validate_peer_block()` now calls `verify_signature()` for non-coinbase account TX. Regression test `validate_peer_block_rejects_forged_account_transaction` passes.
+2. **L1 signature fix deployed:** Commit `056b67a4` — `validate_peer_block()` now calls `verify_signature()` for non-coinbase account TX. Regression test `validate_peer_block_rejects_forged_account_transaction` passes.
 3. **Edge environment updated:** `edge-environment.sh` has correct pool wallet + SK hex.
 4. **F1 exploit post-mortem:** Full forensic report in [`SecurityBackup.md`](./SecurityBackup.md). Edge server hardened (UFW, bind addresses, AppArmor, monitoring) — see [`SecurityFirst.md`](./SecurityFirst.md).
 
@@ -129,14 +129,14 @@ The correct SK hex for the pool payout signer is `[REDACTED — pool SK removed 
 
 ## Audit trail
 
-- `5cee33c4` — L1 signature fix (from-address verification in `verify_signature()`).
-- `9341344d` — **F1 fix deployed to Edge** — extends `verify_signature()` call to `validate_peer_block()` for non-coinbase account TX.
-- `a8b3821e` — L2 security patch (claimant guard, threshold 5/5, reorg safety, key hygiene).
-- `ecba368f` — Activation monitor script.
-- `4153270d` — E2E test script for account-model memo v1.
-- `f64769ad` — Deploy status update.
-- `5074bf35` — Account-model memo v1 hard-fork implementation.
-- `e6f601ed` → `f5e126d4` — **Phase 2 security hardening** (UFW, bind addresses, AppArmor, monitoring, Tailscale ACL, RPC audit log). See [`SecurityFirst.md`](./SecurityFirst.md).
+- `1d2f88ec` — L1 signature fix (from-address verification in `verify_signature()`).
+- `056b67a4` — **F1 fix deployed to Edge** — extends `verify_signature()` call to `validate_peer_block()` for non-coinbase account TX.
+- `b2f0ca40` — L2 security patch (claimant guard, threshold 5/5, reorg safety, key hygiene).
+- `a45215b8` — Activation monitor script.
+- `2e455788` — E2E test script for account-model memo v1.
+- `6ae0b774` — Deploy status update.
+- `9f371633` — Account-model memo v1 hard-fork implementation.
+- `01d78857` → `951cec0e` — **Phase 2 security hardening** (UFW, bind addresses, AppArmor, monitoring, Tailscale ACL, RPC audit log). See [`SecurityFirst.md`](./SecurityFirst.md).
 
 ---
 

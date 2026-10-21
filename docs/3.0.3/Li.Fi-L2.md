@@ -31,7 +31,7 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 | DEX agregace na Base | ✅ Automatická | Uniswap V3/V4, Aerodrome, PancakeSwap, SushiSwap + 25 dalších |
 | Cross-chain bridge | ✅ Automatická | Stargate, Across, Hop, Synapse, deBridge, Squid, Portal/Wormhole + 13 dalších |
 | Build | ✅ Pass | `next build --webpack` prošel |
-| Deploy | ✅ Live | Commity `6730e2ba` + `cecb9cfa` + `b54752d3` — zionterranova.com |
+| Deploy | ✅ Live | Commity `834daaa5` + `359580a3` + `b0d413d9` — zionterranova.com |
 | Ankr RPC (L2 bridge) | ✅ Implementováno | `ankr.rs` — multi-chain HTTP JSON-RPC, fallback v evm_watcher |
 
 ### ⚠️ Omezení současné implementace
@@ -97,7 +97,7 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 - [x] Vytvořit `LiFiWidget.tsx` (iframe, wZION default) — Session 10
 - [x] Integrovat do `/defi` page swap tab
 - [x] Build test pass
-- [x] Commit + push (`6eb31435`)
+- [x] Commit + push (`446998cc`)
 - [x] **Session 11:** Migrace na `@lifi/widget-light` WidgetLight (postMessage)
 - [x] **Session 11:** Slippage fix `100` → `0.01` (kritický bug — 10000% → 1%)
 - [x] **Session 11:** Fee monetizace `feeConfig.fee: 0.005` (0.5% integrator fee)
@@ -106,7 +106,7 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 - [x] **Session 11:** Custom RPC per chain (7 URLs)
 - [x] **Session 11:** Dark appearance + custom theme
 - [x] **Session 11:** WalletContext toAddress pre-fill
-- [x] **Session 11:** Build + deploy na zionterranova.com (`6730e2ba` + `cecb9cfa` + `b54752d3`)
+- [x] **Session 11:** Build + deploy na zionterranova.com (`834daaa5` + `359580a3` + `b0d413d9`)
 
 ### Fáze 1.5: Ankr Premium RPC (✅ API key aktivován — free tier)
 

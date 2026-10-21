@@ -19,7 +19,7 @@
 | A6 | Tests & validation | COMPLETED | `cargo test -p zion-pool` passes. |
 
 **Commits:**
-- `9b5ac89b` — `feat(pool): drain_fees + restore_fees for on-chain fee payouts`
+- `15946580` — `feat(pool): drain_fees + restore_fees for on-chain fee payouts`
 
 ---
 
@@ -37,8 +37,8 @@
 | B7 | Tests & validation | COMPLETED | `proxy_redirect_roundtrip_is_stable` + `cargo test -p zion-pool` passes (52 lib + 29 bin tests). |
 
 **Commits:**
-- `8157e72c` — `feat(pool): External Pool Proxy scaffolding (revenue-proxy binary)`
-- `eb252b33` — `feat(pool): ProxyRedirect message + pool-server integration for Revenue/Auto`
+- `7b33be83` — `feat(pool): External Pool Proxy scaffolding (revenue-proxy binary)`
+- `8a2589c3` — `feat(pool): ProxyRedirect message + pool-server integration for Revenue/Auto`
 
 ---
 
@@ -53,7 +53,7 @@
 | C4 | Tests & validation | COMPLETED | `cargo test -p zion-core -p zion-pool` passes (494 core + 80 pool tests). |
 
 **Commits:**
-- `106b4b97` — `feat(core/pool): startup replay from RevenueJournal`
+- `bc939fec` — `feat(core/pool): startup replay from RevenueJournal`
 
 ---
 

@@ -18,7 +18,7 @@ Chain se zasekl na bloku **4502** po dobu **~25 hodin** (od ~12. července 14:04
 
 ### Root Cause #1: CHV3 algorithm name mismatch
 
-**Commit** `7dd81cfb7` (2026-07-12) nastavil `CHV3_FORK_HEIGHT=4500` — od bloku 4500 pool začal advertovat `deeksha_chv3` jako kanonický algorithm name místo `deeksha_lite_v1`.
+**Commit** `b32e2135e` (2026-07-12) nastavil `CHV3_FORK_HEIGHT=4500` — od bloku 4500 pool začal advertovat `deeksha_chv3` jako kanonický algorithm name místo `deeksha_lite_v1`.
 
 Problém: `deeksha_chv3` je bit-identical alias přes `hash_with_algorithm()`:
 ```rust
@@ -88,8 +88,8 @@ if session_group == SessionGroup::Zion {
 
 | Commit | Popis |
 |--------|-------|
-| `48e06c130` | fix(pool): stop session churning from dashboard TCP probes |
-| `fcd28a85b` | fix(pool): revert CHV3 algorithm name + fix Zion session job dispatch |
+| `d44b7177e` | fix(pool): stop session churning from dashboard TCP probes |
+| `fb301366c` | fix(pool): revert CHV3 algorithm name + fix Zion session job dispatch |
 
 ---
 

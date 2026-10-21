@@ -622,7 +622,7 @@ coin at a time per miner).
 - [ ] Update Prometheus metrics endpoint
 
 ### Phase 6: Dashboard Update (1h)
-- [ ] Add PRL to revenue tab (already partially done — `ef0ba601b`)
+- [ ] Add PRL to revenue tab (already partially done — `9e797e9e7`)
 - [ ] Show 3-stream hashrate display
 - [ ] Per-stream share counts + revenue
 
@@ -722,7 +722,7 @@ coin at a time per miner).
 - ✅ Username length handling (5-20 chars, wallet truncation)
 - ✅ E2E verified on Edge: login → job received → queued → forwarded to miners
 
-**Commits:** `54514c3fc` (EpicStratum TLS), `41c350b97` (protocol fixes)
+**Commits:** `0355bb0c3` (EpicStratum TLS), `b6500de9c` (protocol fixes)
 **Full report:** [`docs/3.0.6/EPIC_STRATUM_TLS_REPORT.md`](./docs/3.0.6/EPIC_STRATUM_TLS_REPORT.md)
 
 ### KawPoW/QUAI: COMPLETE (Pool-Side + Miner-Side)
@@ -772,7 +772,7 @@ coin at a time per miner).
 - Miner: ProgPow DAG loaded from disk cache, GPU mining active (15000+ batches, 0 errors)
 - Miner: Deployed to Edge server (`/usr/local/bin/zion-miner`, libgomp linked)
 - Docker SMOS package: `zion-miner-v3.0.35-pearl-pool-routed.zip` on Edge
-- Git commit: `c935a7c0f` (routing stats fix) + pending ProgPow commit
+- Git commit: `703525fb7` (routing stats fix) + pending ProgPow commit
 
 ### Key Files Modified for ProgPow
 

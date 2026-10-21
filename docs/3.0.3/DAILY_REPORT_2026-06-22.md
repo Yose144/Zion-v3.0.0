@@ -17,7 +17,7 @@ Dnes jsme úspěšně dokončili **kompletní E2E wallet workflow** pro desktop 
 
 ### 🔧 Opravy a vylepšení
 
-**Commit:** `52461678` - Fix desktop agent wallet E2E + v3.0.2 canonicalization
+**Commit:** `517c4877` - Fix desktop agent wallet E2E + v3.0.2 canonicalization
 
 **Problémy vyřešeny:**
 - **ELECTRON_RUN_AS_NODE env var** - Desktop agent se nespouštěl kvůli env var, který způsoboval že Electron načítal main.js jako Node.js script místo Electron renderer
@@ -33,7 +33,7 @@ Dnes jsme úspěšně dokončili **kompletní E2E wallet workflow** pro desktop 
 
 ### 💰 Account Model Support
 
-**Commit:** `8c30fe49` - Add account-model transaction support
+**Commit:** `413c3762` - Add account-model transaction support
 
 **Funkce:**
 - Přidán `AccountBuilder.js` pro account transactions
@@ -53,7 +53,7 @@ Dnes jsme úspěšně dokončili **kompletní E2E wallet workflow** pro desktop 
 
 ### 🔄 Obnova z historie
 
-**Commit:** `de20b079` - Obnovit mobile-app v3.0.2 + sjednotit zion-wallet-sdk
+**Commit:** `868a8b0a` - Obnovit mobile-app v3.0.2 + sjednotit zion-wallet-sdk
 
 **Co bylo provedeno:**
 - Obnovil `APP&WEB/mobile-app/` z commitu `6e8c3d...` (2026-05)
@@ -74,7 +74,7 @@ APP&WEB/mobile-app/
 
 ### 🔐 V3 Transaction Builder Upgrade
 
-**Commit:** `36309404` - V3 compatible wallet (BLAKE3 v2 tx hash)
+**Commit:** `919c6429` - V3 compatible wallet (BLAKE3 v2 tx hash)
 
 **Změny:**
 - **TransactionBuilder.js**: Kompletně přepsán pro V3 compatible
@@ -97,7 +97,7 @@ Výsledek: ✅ V2 BLAKE3 preimage matches desktop agent
 
 ## 3. Mobile App - Account Model Integration
 
-**Commit:** `cda409cd` - Account model + auto-detect UTXO→account fallback
+**Commit:** `375868c9` - Account model + auto-detect UTXO→account fallback
 
 **Funkce:**
 - `AccountBuilder.js`: Build, sign, verify account transactions
@@ -120,7 +120,7 @@ Výsledek: ✅ V2 BLAKE3 preimage matches desktop agent
 
 ### 🏛️ Import a konfigurace
 
-**Commit:** `d0f1c5d4` - Import Genesis Projects wallet (590M ZION) + canonical units doc
+**Commit:** `7a44039a` - Import Genesis Projects wallet (590M ZION) + canonical units doc
 
 **Genesis Projects (Slot 11):**
 - **Address:** `zion16542q4l853a2z0u5r5w8y4m8k4558847h503736`
@@ -140,7 +140,7 @@ node scripts/import-genesis-creator.js
 
 ### 🔧 Fix: miner_config.json
 
-**Commit:** `f8709437` - Fix import-genesis-creator creates miner_config.json
+**Commit:** `12b8c99e` - Fix import-genesis-creator creates miner_config.json
 
 **Problém:**
 - Import skript vytvářel `config.json` místo `miner_config.json`
@@ -154,7 +154,7 @@ node scripts/import-genesis-creator.js
 
 ## 5. Canonical Units Documentation
 
-**Commit:** `d0f1c5d4` - Canonical units documentation
+**Commit:** `7a44039a` - Canonical units documentation
 
 **FLOWERS_PER_ZION:**
 - **1 ZION = 10^6 flowers** (1 million) *(updated to 6-decimal in 3.0.3 fork)*
@@ -177,7 +177,7 @@ node scripts/import-genesis-creator.js
 
 ### 🗑️ Smazání APPS/ duplicit
 
-**Commit:** `ba9fac6c` - Smazat APPS/ duplicity
+**Commit:** `bea96483` - Smazat APPS/ duplicity
 
 **Smazané:**
 - `APPS/desktop-agent/` (v3.0.0 stale)
@@ -191,7 +191,7 @@ node scripts/import-genesis-creator.js
 
 ### 🔄 Obnova mobile-app
 
-**Commit:** `de20b079` - Obnovit mobile-app z historie
+**Commit:** `868a8b0a` - Obnovit mobile-app z historie
 
 **Proces:**
 - Vygeneroval nový mobile-app projekt v `APP&WEB/`
@@ -206,8 +206,8 @@ node scripts/import-genesis-creator.js
 ### 📊 Panel Testing (25+ panels)
 
 **Commits:**
-- `148ef94a` - E2E panel testing (25+ panels, 83% coverage)
-- `833542bc` - E2E dashboard testing summary
+- `442cb104` - E2E panel testing (25+ panels, 83% coverage)
+- `6db81623` - E2E dashboard testing summary
 
 **Výsledky:**
 - ✅ 25+ panelů testováno
@@ -218,16 +218,16 @@ node scripts/import-genesis-creator.js
 ### 🐛 Bug Fixes
 
 **Commits:**
-- `bd15aff8` - Remove grafana iframe block + backup endpoint same-origin
-- `61af9008` - Restore top navbar layout
-- `9e7bfc67` - Edge-primary health probes
-- `f87d8a7b` - Edge-primary health probes + debug plan update
+- `6d8be50c` - Remove grafana iframe block + backup endpoint same-origin
+- `7902d6d0` - Restore top navbar layout
+- `5b93399a` - Edge-primary health probes
+- `a3ba1528` - Edge-primary health probes + debug plan update
 
 ---
 
 ## 8. L2 Bridge Audit
 
-**Commit:** `36309404` - V3 compatible wallet + L2 audit
+**Commit:** `919c6429` - V3 compatible wallet + L2 audit
 
 **Soubor:** `L2audit.md`
 
@@ -261,10 +261,10 @@ node scripts/import-genesis-creator.js
 ## 10. Documentation Updates
 
 **Commits:**
-- `fac6a5b4` - Desktop agent wallet E2E report
-- `a3d0f3cd` - Real E2E UTXO send attempt
-- `b8308293` - Update E2E report with account mode
-- `d867d9d2` - Expand E2E report (mobile V3, structure)
+- `5afdea05` - Desktop agent wallet E2E report
+- `6c3f66df` - Real E2E UTXO send attempt
+- `f12d0e9c` - Update E2E report with account mode
+- `6b2c9b86` - Expand E2E report (mobile V3, structure)
 
 **Reports created:**
 - `DESKTOP_AGENT_WALLET_E2E_REPORT.md` - Comprehensive wallet report
@@ -279,27 +279,27 @@ node scripts/import-genesis-creator.js
 
 | Commit | Description | Files Changed |
 |--------|-------------|---------------|
-| `f8709437` | Fix import-genesis-creator creates miner_config.json | 1 |
-| `d0f1c5d4` | Import Genesis Projects wallet (590M ZION) + canonical units doc | 2 |
-| `cda409cd` | Mobile Account model + auto-detect UTXO→account fallback | 5 |
-| `d867d9d2` | Rozšířit E2E report o mobile V3 + strukturu | 1 |
-| `36309404` | V3 compatible wallet (BLAKE3 v2 tx hash) + L2 audit | 19 |
-| `ba9fac6c` | Smazat APPS/ duplicity | 2 |
-| `de20b079` | Obnovit mobile-app + sjednotit zion-wallet-sdk | 2 |
-| `ea0df5a5` | Payout units fix | 2 |
-| `b8308293` | Aktualizace E2E reportu | 1 |
-| `8c30fe49` | Desktop agent account model | 2 |
-| `148ef94a` | E2E panel testing | 1 |
-| `833542bc` | E2E dashboard testing | 2 |
-| `bd15aff8` | Dashboard grafana/backup fix | 2 |
-| `61af9008` | Dashboard navbar layout fix | 2 |
-| `a3d0f3cd` | Document real E2E UTXO send attempt | 1 |
-| `fac6a5b4` | Desktop agent wallet E2E report | 1 |
-| `52461678` | Desktop agent wallet E2E fixes | 3 |
-| `66407d09` | Merge conflict resolution | 1 |
-| `58a34353` | Edge sync clean rollout | 2 |
-| `9e7bfc67` | Edge-primary health probes | 2 |
-| `f87d8a7b` | Edge-primary probes + debug plan | 2 |
+| `12b8c99e` | Fix import-genesis-creator creates miner_config.json | 1 |
+| `7a44039a` | Import Genesis Projects wallet (590M ZION) + canonical units doc | 2 |
+| `375868c9` | Mobile Account model + auto-detect UTXO→account fallback | 5 |
+| `6b2c9b86` | Rozšířit E2E report o mobile V3 + strukturu | 1 |
+| `919c6429` | V3 compatible wallet (BLAKE3 v2 tx hash) + L2 audit | 19 |
+| `bea96483` | Smazat APPS/ duplicity | 2 |
+| `868a8b0a` | Obnovit mobile-app + sjednotit zion-wallet-sdk | 2 |
+| `46a99f14` | Payout units fix | 2 |
+| `f12d0e9c` | Aktualizace E2E reportu | 1 |
+| `413c3762` | Desktop agent account model | 2 |
+| `442cb104` | E2E panel testing | 1 |
+| `6db81623` | E2E dashboard testing | 2 |
+| `6d8be50c` | Dashboard grafana/backup fix | 2 |
+| `7902d6d0` | Dashboard navbar layout fix | 2 |
+| `6c3f66df` | Document real E2E UTXO send attempt | 1 |
+| `5afdea05` | Desktop agent wallet E2E report | 1 |
+| `517c4877` | Desktop agent wallet E2E fixes | 3 |
+| `f5a0b79e` | Merge conflict resolution | 1 |
+| `b3ff5c24` | Edge sync clean rollout | 2 |
+| `5b93399a` | Edge-primary health probes | 2 |
+| `a3ba1528` | Edge-primary probes + debug plan | 2 |
 
 **Total:** 21 commits
 
@@ -357,6 +357,6 @@ Všechny cíle byly dosaženy. Desktop agent a mobile app jsou nyní plně funk�
 ---
 
 **Report generated:** 2026-06-22 22:21:28 CET  
-**Last commit:** `f8709437`  
+**Last commit:** `12b8c99e`  
 **Total commits today:** 21  
 **Status:** ✅ Complete

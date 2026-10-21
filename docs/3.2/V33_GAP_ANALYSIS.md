@@ -152,7 +152,7 @@
 
 ## 7. Poznámky k integritě dat
 
-- Edge checkout `/opt/zion/V31` je na `d57f6b979` (dirty, ~15+ commitů za `main`) — analýza výše je proti **lokálnímu repo HEAD**; Edge runtime může být drobně starší. Reconciliace checkoutu doporučena (viz `AGENTS.md`).
+- Edge checkout `/opt/zion/V31` je na `a8a5f7fbc` (dirty, ~15+ commitů za `main`) — analýza výše je proti **lokálnímu repo HEAD**; Edge runtime může být drobně starší. Reconciliace checkoutu doporučena (viz `AGENTS.md`).
 - LOC z `find -name "*.rs"` — nejsou to přesné metriky testů/dokumentace, ale orientační váha implementace.
 - `zion-v31-node2/node3` jsou active — legacy jednotky vedle hlavního `zion-v31-node` (více procesů běží současně).
 

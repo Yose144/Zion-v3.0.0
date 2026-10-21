@@ -4,7 +4,7 @@
 > **Server:** `62.171.141.136` (ssh `zion-new`)
 > **Protokol:** `zion-v3-node/3.0.5`
 > **Aktuální height:** 1337+ (rostoucí)
-> **Commit opravy:** `ea08c774c`
+> **Commit opravy:** `6b9118622`
 > **Soubor:** `V3/L1/core/src/lib.rs`
 
 ---
@@ -63,7 +63,7 @@ Tím pádem byl blok zamítnut i když odesílatel měl dostatek confirmed balan
 
 ## 3. Oprava
 
-Commit: `ea08c774c` — *fix: filter insolvent mempool TXs from block template (F5 share rejection fix)*
+Commit: `6b9118622` — *fix: filter insolvent mempool TXs from block template (F5 share rejection fix)*
 
 Soubor: `V3/L1/core/src/lib.rs`
 

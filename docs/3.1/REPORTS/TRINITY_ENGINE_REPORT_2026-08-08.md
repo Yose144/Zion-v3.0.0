@@ -63,7 +63,7 @@ let header_hash_opt = if req.header_bytes.is_empty() {
 header_hash_opt.as_deref()
 ```
 
-**Commit:** `4b37b4c11` — `fix(pool): add share forwarding logs + fix empty header_bytes for ZANO`
+**Commit:** `7fb41d0a3` — `fix(pool): add share forwarding logs + fix empty header_bytes for ZANO`
 
 ## Verified Results (pre-restart window: 20:50–21:33)
 
@@ -178,11 +178,11 @@ ZION_POOL_AUXPOW_CPU_REGION=eu
 
 | File | Change | Commit |
 |------|--------|--------|
-| `V31/L1/pool/src/stratum.rs` | Add `v3_external_forward` log after bridge forward | `4b37b4c11` |
-| `V31/L1/pool/src/auxpow_runtime.rs` | Add `share forwarded` log + fix empty header_bytes → None | `4b37b4c11` |
-| `V31/L1/miner/src/config.rs` | Read `ZION_STREAM{1,2,3}_ENABLED` env vars | `abff6874b` |
-| `V31/L1/miner/src/bin/zion-miner.rs` | `--no-*` flags augment env vars instead of overriding | `abff6874b` |
-| `V31/L1/miner/src/runtime.rs` | V3 trinity checks `stream{2,3}_enabled` before spawning | `abff6874b` |
+| `V31/L1/pool/src/stratum.rs` | Add `v3_external_forward` log after bridge forward | `7fb41d0a3` |
+| `V31/L1/pool/src/auxpow_runtime.rs` | Add `share forwarded` log + fix empty header_bytes → None | `7fb41d0a3` |
+| `V31/L1/miner/src/config.rs` | Read `ZION_STREAM{1,2,3}_ENABLED` env vars | `6330e5f20` |
+| `V31/L1/miner/src/bin/zion-miner.rs` | `--no-*` flags augment env vars instead of overriding | `6330e5f20` |
+| `V31/L1/miner/src/runtime.rs` | V3 trinity checks `stream{2,3}_enabled` before spawning | `6330e5f20` |
 | `V31/L1/miner/src/gpu_guard.rs` | scratchpad 256→512 KiB, Vega work_size 4096 | earlier |
 | `V31/L1/miner/src/gpu/kernels/metal/deeksha_lite.metal` | u64 SHA3-512 optimization (+45%) | earlier |
 

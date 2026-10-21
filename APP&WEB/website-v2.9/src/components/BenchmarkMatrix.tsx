@@ -17,7 +17,7 @@ const BenchmarkMatrixCopy = {
   notes: { cs: `Poznámka`, en: `Notes` },
   bandwidthEfficiency: { cs: `Efektivita šířky pásma`, en: `Bandwidth Efficiency` },
   lowerGpusHaveBetterKhSPerGbSEk: { cs: `Nižší GPU mají lepší KH/s na GB/s — Ekam Deeksha je omezen latencí paměti, ne propustností.`, en: `Lower GPUs have better KH/s per GB/s — Ekam Deeksha is memory-latency-bound, not bandwidth-bound.` },
-  benchmarksRunWithEkamBenchMode: { cs: `Benchmarky provedeny v režimu --ekam-bench (10s měření, bez pool overhead). Miner commit: 9e307c4d`, en: `Benchmarks run with --ekam-bench mode (10-second measurement, no pool overhead). Miner commit: 9e307c4d` },
+  benchmarksRunWithEkamBenchMode: { cs: `Benchmarky provedeny v režimu --ekam-bench (10s měření, bez pool overhead). Miner commit: f04f4280`, en: `Benchmarks run with --ekam-bench mode (10-second measurement, no pool overhead). Miner commit: f04f4280` },
   miningGuide: { cs: `Průvodce těžbou`, en: `Mining Guide` },
 };
 

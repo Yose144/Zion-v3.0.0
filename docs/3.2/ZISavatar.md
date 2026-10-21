@@ -167,7 +167,7 @@ initial (současné chování).
 - [x] website-v2.9 account hero + OasisWeb GamePanel identity — animated;
       miners leaderboard preferuje `zis_user` seed (forward-compat typ)
 
-**Deployed 2026-10-10 (commit `adae7ace1`):** ZIS `a=1` live na
+**Deployed 2026-10-10 (commit `8d0e39662`):** ZIS `a=1` live na
 auth.zionterranova.com (SMIL animace ověřena veřejným endpointem),
 website-v2.9 + OasisWeb + MarketPlace + ZION_OS dashboard aktualizovány;
 `zis_user` propaguje v `/api/pool/miners-dashboard` (anonymous → `""`,

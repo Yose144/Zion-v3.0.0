@@ -200,21 +200,21 @@ export ZION_MINER_ALGORITHM=deeksha_lite_v1
 
 ### 30khs Patch Optimizations (3 commits, RX 5700 XT)
 
-1. **SHA3-512 specialization for 65-byte input** (`e54950dfb`)
+1. **SHA3-512 specialization for 65-byte input** (`ad4cb118f`)
    - `sha3_512_65()` eliminates 65 conditional branches
    - Gain: 11.24 → 19.42 KH/s (+73%)
 
-2. **Sequential passes register caching + inline keccak** (`7ba4d5ea8`)
+2. **Sequential passes register caching + inline keccak** (`c879fbb00`)
    - Cache prev/next block in register (`ulong4`)
    - `keccak_f1600` marked `__attribute__((always_inline))`
    - Gain: 19.42 → 20-22 KH/s (+82-96%)
 
-3. **Double-buffered async readback** (`a6d8ad35d`)
+3. **Double-buffered async readback** (`9c725c944`)
    - Two output buffers (A/B) + dedicated read queue
    - GPU computes chunk N+1 while CPU processes chunk N
    - Gain: 20-22 → 28-30 KH/s (+50%)
 
-### Vega 64 (gfx900, i066d) — 25 KH/s Root Cause & Fix (commit `a8e9d0594`)
+### Vega 64 (gfx900, i066d) — 25 KH/s Root Cause & Fix (commit `b1962e7d8`)
 
 The Vega rig was stuck at **12-13 KH/s** for weeks. The 20 KH/s target (achieved
 by an old binary) was finally traced to **three compiler-sensitive issues**:
@@ -227,7 +227,7 @@ by an old binary) was finally traced to **three compiler-sensitive issues**:
 
 **Result:** 12-13 KH/s → **25.78 KH/s peak / 24.33 KH/s stable, 98.8% accept rate**
 
-> The bit-shift ROL64 and `local_ws=256` were introduced in commit `86f46c05b`
+> The bit-shift ROL64 and `local_ws=256` were introduced in commit `a3bdd3776`
 > for i088 (ROCm 6.x) compatibility, where `rotate()` produced 126 H/s. On i066d
 > (ROCm 5.x), `rotate()` works correctly and is faster. The two SMOS images
 > require **different kernel configs** — see "i066d vs i088" below.
@@ -246,7 +246,7 @@ by an old binary) was finally traced to **three compiler-sensitive issues**:
 
 | Work Size | KH/s | Notes |
 |-----------|------|-------|
-| 8192 | ~20 | Old binary target (commit `32fc80db0`) |
+| 8192 | ~20 | Old binary target (commit `66ab86d23`) |
 | **16384** | **24-25** | **Optimal** for Vega 64 (4 waves × 64 CUs) |
 
 > Vega 64 has 64 CUs (not 56 — the 56-CU figure was wrong; Vega 64 has 64 CUs
@@ -414,14 +414,14 @@ ssh zion-new
 ## 10. Key Commits (latest first)
 
 ```
-a8e9d0594 perf(gpu): restore 25 KH/s deeksha on Vega 64 — rotate() + vload4 + no atomics ext
-c6b3bdd33 feat(stratum): 5-param submit format for 7 new coins
-fec2ecb53 fix(gpu): nonce_count default 1024→4×work_size (10 KH/s regression fix)
-26e4d8aad fix(gpu): always_inline progPowLoop — barrier deadlock fix
-f6f4aa7d0 feat(zcl): Equihash 192,7 stratum submit format + 8GB GPU VRAM fix
-a9acf064f fix(gpu): disable AMD bpermute + reduce GROUP_SIZE to 128 for SMOS
-1e751ac56 perf(progpow): 6.6x hashrate improvement via ds_bpermute + GROUP_SIZE=256
-a398cd68f fix(miner): reorder ext_stream send + disable OpenMP for non-AVX CPUs
+b1962e7d8 perf(gpu): restore 25 KH/s deeksha on Vega 64 — rotate() + vload4 + no atomics ext
+38e0218db feat(stratum): 5-param submit format for 7 new coins
+a5a83dd20 fix(gpu): nonce_count default 1024→4×work_size (10 KH/s regression fix)
+96bbb10d6 fix(gpu): always_inline progPowLoop — barrier deadlock fix
+d2c03bb16 feat(zcl): Equihash 192,7 stratum submit format + 8GB GPU VRAM fix
+fc85ffbbf fix(gpu): disable AMD bpermute + reduce GROUP_SIZE to 128 for SMOS
+b10fe4d5b perf(progpow): 6.6x hashrate improvement via ds_bpermute + GROUP_SIZE=256
+5ef100293 fix(miner): reorder ext_stream send + disable OpenMP for non-AVX CPUs
 ```
 
 ---
@@ -488,8 +488,8 @@ The kernel now requires **different configs** depending on the SMOS image:
 | `local_ws` | 64 (wave64) | 256 (was set for i088) |
 
 **Action item:** If the rig is ever reflashed to i088, the kernel must be
-reverted to the bit-shift ROL64 + disabled vload4 config (commit `86f46c05b`).
-The current code (commit `a8e9d0594`) is **i066d-only**.
+reverted to the bit-shift ROL64 + disabled vload4 config (commit `a3bdd3776`).
+The current code (commit `b1962e7d8`) is **i066d-only**.
 
 ### ProgPow Kernel Hang (Stream 2)
 

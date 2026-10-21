@@ -12,7 +12,7 @@
 
 | # | Položka | Severity | Stav | Kdo |
 |---|---------|----------|------|-----|
-| F1-mempool | Account TX neověřuje sender adresu (RPC/mempool path) | CRITICAL | ✅ Opraveno (`5cee33c4`) + regresní test | hotovo |
+| F1-mempool | Account TX neověřuje sender adresu (RPC/mempool path) | CRITICAL | ✅ Opraveno (`1d2f88ec`) + regresní test | hotovo |
 | F1-peer | Account TX neověřuje sender adresu (peer-block path) | **CRITICAL** | ✅ Opraveno (`lib.rs` + regression test) | hotovo |
 | F1-test | Regresní test uzamykající F1 | — | ✅ Přidáno (`wallet.rs`), testuje jen `verify_signature()` izolovaně | hotovo |
 | Pool-guard | Kontrola pool wallet/klíč při startu | — | ✅ Přidáno (`server.rs`), nyní **skutečný fail-fast** | hotovo |
@@ -29,7 +29,7 @@
 
 ## 1. Co je HOTOVO (v repu, bezpečné, netýká se konsenzu)
 
-### 1.1 Finding 1 — from-address verification (commit `5cee33c4`, mempool/RPC path)
+### 1.1 Finding 1 — from-address verification (commit `1d2f88ec`, mempool/RPC path)
 
 `V3/L1/core/src/lib.rs` — `Transaction::verify_signature()` nyní ověřuje, že public key odvozuje `from` adresu:
 

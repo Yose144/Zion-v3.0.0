@@ -41,7 +41,7 @@
 | Část | Stav | Poznámka |
 |---|---|---|
 | WebGL2 path (default) | ✅ | R3F + EffectComposer (bloom/vignette/sat/contrast), pixel-parity zachována |
-| `?gpu=webgpu` WebGPU preview | ✅ opt-in verified | `WebGPURenderer` (three 0.169) + `WebGPUEngine` (Babylon) s WebGL2 fallback; **produkce ověřena** — plná galaxie 402 světů, ~1 900 draw calls, 0 material chyb (hotfix `e69402151`: string-key node library registrace proti Turbopack minifikaci + `antialias:false` kvůli swapchain resolve validaci); `auto` → webgl2 do device-matrix potvrzení |
+| `?gpu=webgpu` WebGPU preview | ✅ opt-in verified | `WebGPURenderer` (three 0.169) + `WebGPUEngine` (Babylon) s WebGL2 fallback; **produkce ověřena** — plná galaxie 402 světů, ~1 900 draw calls, 0 material chyb (hotfix `7b3c13be8`: string-key node library registrace proti Turbopack minifikaci + `antialias:false` kvůli swapchain resolve validaci); `auto` → webgl2 do device-matrix potvrzení |
 | TSL postfx (bloom + vignette) | ✅ preview | `gpu/WebGpuPostFX.tsx` |
 | TSL porty shader komponent | ✅ | `TslStars` ✅, `TslAtmosphere` ✅, `TslVortex` ✅, `TslStreaks` ✅ (GalaxyCore — instanced quady, WebGPU nemá point size; fix `timerLocal()` callable) |
 | FPS parita | 🚧 | headless Chrome ~25 fps oba backendy (limit prostředí); device matrix chybí |
@@ -66,11 +66,11 @@
 |---|---|---|
 | Adaptive quality (PerformanceMonitor → one-way degrade) | ✅ | fps < ~40 % refresh → lehčí pipeline na zbytek session |
 | `lowPower` detekce (cores/RAM/saveData/mobil) | ✅ | méně hvězd/částic, žádný bloom/MatrixCore |
-| Galaxy node instancing | ✅ | Všech ~410 world bases → 2 instanced draw cally (sphere + ring, per-instance barva/discovered dimming); star systemy renderují jen extras přes `instancedBase`/`instancedRays`/`instancedGate`, selected = full node; hover = raycast-free overlay; **~1900 → ~100 draw calls desktop / ~81 mobil**, ověřeno na produkci (`452642167`) |
+| Galaxy node instancing | ✅ | Všech ~410 world bases → 2 instanced draw cally (sphere + ring, per-instance barva/discovered dimming); star systemy renderují jen extras přes `instancedBase`/`instancedRays`/`instancedGate`, selected = full node; hover = raycast-free overlay; **~1900 → ~100 draw calls desktop / ~81 mobil**, ověřeno na produkci (`b3983e1cb`) |
 | Star extras instancing | ✅ | `InstancedBillboards` (billboard+UV rotace+pulse+per-instance color/scale/phase/opacity, 1 call) pro ~57 ray spritů + 10 distant galaxies (webgl2; webgpu padá na sprity); `InstancedGates` = 1 instanced torus pro všechny star gates (oba backendy), per-node gate+vortex jen na hover/selected |
 | Nova Zeme beacon instancing | ✅ | 12 pioneer markerů (dot + halo) → 2 instanced draw cally, per-instance barva; DOM labely zachovány |
 | Kodama instancing | ✅ | ~12 figurek × 5 meshů → 2 instanced draws (tělo + vertex-colored merged hlava s obličejem); rattle/sway v per-instance maticích |
-| Earth texture payload | ✅ | blue-marble 4096px jpg 1376K → 2048px webp 291K, topology png→lossless webp, dark jpg→webp — **1.85MB → 609K** (`467e81e0e`) |
+| Earth texture payload | ✅ | blue-marble 4096px jpg 1376K → 2048px webp 291K, topology png→lossless webp, dark jpg→webp — **1.85MB → 609K** (`24cd52455`) |
 | Load budget (produkce) | ✅ změřeno | TTFB ~270ms, DOMContentLoaded ~370ms, load ~650ms, JS ~0.7MB, celkem ~1.9MB po WebP — hluboko pod 3s budgetem |
 | `DirectRenderer` (manual-render freeze fix) | ✅ | ověřeno `calls: 1→16` po vstupu do světa |
 | R3F error boundaries | ✅ | per-component `R3FErrorBoundary` |

@@ -1,7 +1,7 @@
 # ZION v3.0.2 — Kompletní Debug Plán
 
 **Datum:** 2026-06-19  
-**Branch:** `main` (kanonická linie v3.0.2, tag `v3.0.2` → `31d12f34`)  
+**Branch:** `main` (kanonická linie v3.0.2, tag `v3.0.2` → `a44640ed`)  
 **Rozsah:** `V3/` Rust workspace (L1–L6, SDK, CLI) + Edge runtime  
 **Cíl:** Dostat workspace do CI-clean stavu (`fmt` ✅, `clippy -D warnings` ✅, `test` ✅) a opravit Edge pool.
 
@@ -13,8 +13,8 @@
 
 Implementace podle tohoto plánu byla dokončena ve dvou commitech:
 
-- `02186def` — PR-1: non-L1 fmt + clippy clean
-- `c523aac5` — PR-2: L1 fmt + clippy clean + websocket bugfix
+- `29c3590e` — PR-1: non-L1 fmt + clippy clean
+- `6e8c4b3b` — PR-2: L1 fmt + clippy clean + websocket bugfix
 
 Finální validace:
 
@@ -55,9 +55,9 @@ Provedené kroky:
 
 Git výstupy (2026-06-22):
 
-- Lokální commit: `f87d8a7b` — `fix(dashboard): edge-primary health probes + debug plan update`.
-- Edge clean sync commit: `a329075b` — `sync(edge): merge dashboard+bridge deltas from edge runtime`.
-- Edge dashboard health commit: `9e7bfc67` — `fix(dashboard): topology-aware edge-primary health probes`.
+- Lokální commit: `a3ba1528` — `fix(dashboard): edge-primary health probes + debug plan update`.
+- Edge clean sync commit: `ef719761` — `sync(edge): merge dashboard+bridge deltas from edge runtime`.
+- Edge dashboard health commit: `5b93399a` — `fix(dashboard): topology-aware edge-primary health probes`.
 
 Poznámka k L1/miner/pool synchronizaci:
 

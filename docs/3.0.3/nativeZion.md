@@ -58,7 +58,7 @@ WARP přenáší **native L1 ZION**, ne wZION. wZION je jen wrapped reprezentace
 - **TON:** ZION jetton s mint/burn
 - **Lightning:** BTC Lightning (HTLC, no ZION — direct BTC channel)
 
-## Změny v kódu (commit 7d52cfd0)
+## Změny v kódu (commit 6c32267e)
 
 - **15 souborů** aktualizováno (non-EVM adapters + signers + comments)
 - `wzion_mint` → `zion_mint` (Solana)

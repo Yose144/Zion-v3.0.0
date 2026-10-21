@@ -73,7 +73,7 @@ void memory_hard_transform(const uchar input[64], __global uchar *pad, ...) {
 }
 ```
 
-The kernel still contained `ekam_init_scratchpad()` and `ekam_mix_block()` (Blake3) from the `db55e983` era, but the main entrypoints (`ekam_deeksha_mine`, `ekam_deeksha_mine_s4`) called the SHA3 versions instead.
+The kernel still contained `ekam_init_scratchpad()` and `ekam_mix_block()` (Blake3) from the `b873cfc1` era, but the main entrypoints (`ekam_deeksha_mine`, `ekam_deeksha_mine_s4`) called the SHA3 versions instead.
 
 ---
 
@@ -285,7 +285,7 @@ When deploying to SimpleMining OS rigs:
 
 | Date | Commit | Change | Impact |
 |------|--------|--------|--------|
-| 2026-04-11 | `0cb6efba` | Added `gcn_s4_mode` workaround | Vega 64 mines at ~200 H/s |
+| 2026-04-11 | `d9f59b43` | Added `gcn_s4_mode` workaround | Vega 64 mines at ~200 H/s |
 | 2026-06-06 | `13922cbd` | RDNA lws=128, remove printf, revert fast-relaxed-math | RX 5600 XT: 3.2 KH/s |
 | 2026-06-06 | `ad19b26d` | **Restore Blake3 scratchpad, fix b3_xof counter** | RX 5600 XT: 8.44 KH/s |
 | 2026-06-06 | `04bfdbc8` | Route `mine_batch` through `s4_kernel.is_some()` instead of `is_gcn` | Fixes unconditional s4 routing |

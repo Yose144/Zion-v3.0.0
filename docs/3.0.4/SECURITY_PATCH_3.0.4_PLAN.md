@@ -1,7 +1,7 @@
 # ZION 3.0.4 — MAX SECURITY PATCH PLAN (kanonický postup)
 
 **Vytvořeno:** 2026-07-07
-**Status:** FÁZE 1–6 VŠE HOTOVO ✅ · Fáze 5 key rotation DONE (owner air-gapped, escrow SK aplikován, EVM/guardian SKs na flash disku) · AppArmor + systemd User=zion DONE (2026-07-10) · EDGE REBUILD 2026-07-09 (binárky z `754fe4a0`, bincode fix)
+**Status:** FÁZE 1–6 VŠE HOTOVO ✅ · Fáze 5 key rotation DONE (owner air-gapped, escrow SK aplikován, EVM/guardian SKs na flash disku) · AppArmor + systemd User=zion DONE (2026-07-10) · EDGE REBUILD 2026-07-09 (binárky z `510838ea`, bincode fix)
 **Navazuje na:** `SECURITY_TODO_2026-07-03.md`, `SECURITY_RECOVERY_PLAN_2026-07-03.md`, `SecurityFirst.md`, `HARDRESETOFFICIAL.md`
 **Pravidlo:** Tento dokument je jediný zdroj pravdy pro pořadí kroků security patche 3.0.4. Každý krok se odškrtává zde.
 
@@ -11,8 +11,8 @@
 
 | Fakt | Hodnota |
 |------|---------|
-| Git HEAD | `754fe4a0` (re-clone 2026-07-09, sync s origin) |
-| Binárky | **rebuild 2026-07-09** z `754fe4a0` (5 binárek: node, pool, bridge, dao, warp) — bincode fix, F4.7, všechny security commity |
+| Git HEAD | `510838ea` (re-clone 2026-07-09, sync s origin) |
+| Binárky | **rebuild 2026-07-09** z `510838ea` (5 binárek: node, pool, bridge, dao, warp) — bincode fix, F4.7, všechny security commity |
 | F5 balance check | ✅ **AKTIVNÍ od genesis** (`ZION_BALANCE_CHECK_HEIGHT=0`) |
 | F4.7 max-tx cap | ✅ **AKTIVNÍ od height 1** (`ZION_MAX_TX_AMOUNT_HEIGHT=1`, log potvrzen v nové binárce) |
 | Seed peers | `ZION_SEED_PEERS="127.0.0.1:8333"` |
@@ -25,7 +25,7 @@
 | Escrow SK | ✅ DONE — aplikován na server (`ZION_SWAP_ESCROW_KEY` vyplněný) |
 | systemd User=zion | ✅ DONE (2026-07-10) — 11/11 služeb jako `User=zion` |
 | AppArmor | ✅ DONE (2026-07-10) — complain mode, profil načten |
-| Stale IP cleanup | ✅ DONE (2026-07-10) — 69 souborů, commit `8d55287f9` |
+| Stale IP cleanup | ✅ DONE (2026-07-10) — 69 souborů, commit `a8444bfb7` |
 
 ---
 
@@ -35,7 +35,7 @@
 |------|-------|------|-----|
 | 1 | Dependency + code hardening (advisories, guardy, timeouty) | ✅ HOTOVO 2026-07-07 | agent |
 | 2 | F4.7 Max TX amount cap — implementace (code-ready) | ✅ HOTOVO 2026-07-07 | agent |
-| 3 | Push + rebuild + binary swap na nový server | ✅ HOTOVO (server na `690b6dfe`, F4.7 binárky, F5 aktivní) | owner + agent |
+| 3 | Push + rebuild + binary swap na nový server | ✅ HOTOVO (server na `bed8ed2c`, F4.7 binárky, F5 aktivní) | owner + agent |
 | 4 | F4.7 aktivace (odkomentovat env + restart) + smoke test | ✅ HOTOVO (aktivní od height 1, smoke test PASS 2026-07-08) | agent |
 | 5 | Air-gapped key rotace (F4.1–F4.5) | ✅ HOTOVO 2026-07-10 (klíče vygenerovány, flash backup OK, pool payout aplikován, escrow SK aplikován, EVM/guardian SKs na flash disku) | owner (air-gapped) |
 | 6 | Git history scrub + Tailscale ACL + finální audit | ✅ HOTOVO (6.1 scrub, 6.2 Tailscale removed, 6.3 bincode+paste, 6.4 audit+test+disclosure) | owner + agent |
@@ -102,7 +102,7 @@ git commit -m "security(3.0.4): dependency hardening + F4.7 max-tx-amount cap (c
 git push origin main
 ```
 
-- [x] Commit + push proveden (commit `690b6dfe`, 2026-07-07)
+- [x] Commit + push proveden (commit `bed8ed2c`, 2026-07-07)
 - [ ] CI (pokud běží) zelená
 
 ### 3.2 Nový server pull + rebuild
@@ -244,7 +244,7 @@ journalctl -u zion-node --no-pager -n 20 | grep max_tx_amount
 - [ ] Všichni collaborators re-clone (ruční akce ownera)
 
 ### 6.2 Tailscale ACL (F2.3) — ✅ VYŘEŠENO JINAK (2026-07-07)
-> Tailscale byl při hard resetu na nový server **odstraněn jako attack surface** (commit `87d939c1`). Single-server topologie nepotřebuje VPN — přístup je jen přes SSH klíče + nginx SSL + Basic Auth + UFW (22/80/443). F2.3 tím odpadá.
+> Tailscale byl při hard resetu na nový server **odstraněn jako attack surface** (commit `0aa3a65a`). Single-server topologie nepotřebuje VPN — přístup je jen přes SSH klíče + nginx SSL + Basic Auth + UFW (22/80/443). F2.3 tím odpadá.
 - [x] Tailscale odstraněn z nového serveru
 - [x] Dashboard/monitoring bez Tailscale závislosti
 

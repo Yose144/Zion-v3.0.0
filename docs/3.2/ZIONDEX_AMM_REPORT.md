@@ -212,11 +212,11 @@ User (authenticated)
 
 | Commit | Description |
 |--------|-------------|
-| `94cbe1359` | feat(multichain): on-chain AMM integration + ZionDex design |
-| `d6c909230` | Wire JournalLedger into SwapExecutor for atomic credit/debit audit trail |
-| `8c9a67197` | docs: update ZIONDex README with deployed contract addresses on Base |
-| `b85cf485f` | fix(zis): wallet routes use per-route preHandler + Asset struct for L2 proxy |
-| `d57f6b979` | feat(web): add beta test tokens to ZionDex swap widget |
+| `7ffa566b4` | feat(multichain): on-chain AMM integration + ZionDex design |
+| `3f8a4a562` | Wire JournalLedger into SwapExecutor for atomic credit/debit audit trail |
+| `97c14b817` | docs: update ZIONDex README with deployed contract addresses on Base |
+| `71152a13d` | fix(zis): wallet routes use per-route preHandler + Asset struct for L2 proxy |
+| `a8a5f7fbc` | feat(web): add beta test tokens to ZionDex swap widget |
 
 ---
 
