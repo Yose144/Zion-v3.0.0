@@ -25,6 +25,7 @@ type Rig = {
   miners: Miner[];
   error: string | null;
   net?: Record<string, boolean>;
+  sessions?: string[];
 };
 type Snap = { ts: string | null; total_dph: number; rigs: Rig[] };
 type AiGpu = {
@@ -699,7 +700,7 @@ export default function Dashboard() {
                   <button
                     disabled={!!busy}
                     onClick={onClick}
-                    className={`min-h-8 rounded-md border px-2.5 py-1 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40 ${
+                    className={`min-h-7 rounded-md border px-2 py-0.5 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40 ${
                       tone === "danger"
                         ? "border-[#ff7b72]/25 text-[#ff9b93] hover:bg-[#ff7b72]/10"
                         : tone === "ghost"
@@ -713,7 +714,7 @@ export default function Dashboard() {
                 const Engine = ({ title, accent, ms, children }: { title: string; accent: string; ms: Miner[]; children: React.ReactNode }) => {
                   const on = ms.length > 0;
                   return (
-                    <div className={`rounded-xl border p-3 transition ${on ? "border-white/[0.12] bg-white/[0.04]" : "border-white/[0.06] bg-black/25"}`}>
+                    <div className={`min-w-0 rounded-xl border p-2.5 transition ${on ? "border-white/[0.12] bg-white/[0.04]" : "border-white/[0.06] bg-black/25"}`}>
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
                           <span
@@ -729,7 +730,7 @@ export default function Dashboard() {
                         </span>
                       </div>
                       {!!ms.length && (
-                        <div className="mt-2 space-y-1.5">
+                        <div className="mt-1.5 space-y-1">
                           {ms.map((m, i) => {
                             const coin = coinOf(m);
                             return (
@@ -752,7 +753,7 @@ export default function Dashboard() {
                           })}
                         </div>
                       )}
-                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">{children}</div>
+                      <div className="mt-2 flex flex-wrap items-center gap-1">{children}</div>
                     </div>
                   );
                 };
@@ -762,16 +763,24 @@ export default function Dashboard() {
                   </Pill>
                 );
                 return (
-                  <div className="mt-4 border-t border-white/5 pt-3">
+                  <div className="mt-3 border-t border-white/5 pt-2.5">
+                    {/* meta bar: hw + tmux sessions */}
+                    <div className="mb-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-white/[0.06] bg-black/25 px-2.5 py-1.5 text-[10px] text-white/45">
+                      <span title="GPU util / power / temp / vram">
+                        <b className="text-white/70">gpu</b> {r.gpu?.util ?? "?"} · {r.gpu?.power ?? "?"} · {r.gpu?.temp ?? "?"} · vram {r.gpu?.mem ?? "?"}
+                      </span>
+                      <span title="tmux sessions"><b className="text-white/70">tmux</b> {(r.sessions ?? []).join(", ") || "—"}</span>
+                      <span className="ml-auto truncate font-mono text-white/30" title="ssh endpoint">{r.ssh}</span>
+                    </div>
                     <button
                       disabled={!!busy}
                       onClick={() => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → PRL+QTU dual → upstream pools (max hashrate)\n• xmrig → CPU rx/0\n• zion-miner → binary installed (standby)`) && ops(`launch?id=${r.id}&m=full`, "POST")}
-                      className="w-full rounded-xl border border-[#fcd116]/40 bg-gradient-to-r from-[#fcd116]/[0.14] to-transparent px-4 py-2.5 text-left transition hover:border-[#fcd116]/70 hover:from-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
+                      className="w-full rounded-xl border border-[#fcd116]/40 bg-gradient-to-r from-[#fcd116]/[0.14] to-transparent px-4 py-2 text-left transition hover:border-[#fcd116]/70 hover:from-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
                     >
                       <div className="text-sm font-bold text-[#fcd116]">{isB(`launch?id=${r.id}&m=full`) ? "Deploying…" : "▸ Full deploy"}</div>
                       <div className="mt-0.5 text-[10px] text-white/40">SRBMiner PRL+QTU dual → upstream pools · XMRig CPU · zion standby</div>
                     </button>
-                    <div className="mt-2.5 space-y-2">
+                    <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-3">
                       <Engine title="SRBMiner · PRL+QTU upstream" accent="#34d399" ms={srbM}>
                         <Pill k={`launch?id=${r.id}&m=srb`} onClick={launch("srb", `launch SRB dual on ${r.id}?`)}>dual</Pill>
                         <Pill k={`launch?id=${r.id}&m=srb-prl`} onClick={launch("srb-prl", `launch SRB PRL on ${r.id}?`)}>prl</Pill>
@@ -815,7 +824,7 @@ export default function Dashboard() {
                         <Lg src="zion" />
                       </Engine>
                       {otherM.length > 0 && (
-                        <div className="truncate rounded-lg border border-white/[0.06] px-2.5 py-1.5 text-[10px] text-white/35">
+                        <div className="truncate rounded-lg border border-white/[0.06] px-2.5 py-1.5 text-[10px] text-white/35 lg:col-span-3">
                           other: {otherM.map((m) => m.algo || (m.cmd || "").split(" ")[0]).join(", ")}
                         </div>
                       )}
