@@ -1,6 +1,13 @@
 # AGENTS.md — V31 Mainnet Alpha
 
 
+## 2026-10-21 (2) — PEARL v13 packed-k PROMOTED default na SM80+ (+12 %), dual PRL/QTU parity se SRB, gpu2 ZANO-substitution guard
+
+- `pearl_pouw_mine_native_v13` + `pearl_apply_noise_regen_packed`: noised A/B v packed k-pair layoutu → `int2`/LDG.64 fragment loads místo 2× `__ldg.32` (16→8 LDG issues/kc blok). **Gates 4/4 PASS** (batch slots vs CPU, fragment, repeated attempts, parity vs CPU) s default selectorem; A/B interleaved ×3 **3878 vs 3455 att/s = +12 %** → promoted do defaultu na sm_80+, `ZION_PEARL_MINE=v6` = explicit fallback. Fix pod cestou: packed regen počítal B řádek z globálního `gid` (B se nezapisovalo) — index off `g = gid - mk`.
+- **Dual PRL+QTU bez ZION streamu** (`ZION_STREAM1_ENABLED=0`, project pool, RTX 3060 170 W, 300 s): v13 PRL-first 100/40 = **PRL 24.83 TH/s + QTU 109.9 MH/s ≈ SRB 2×proc reference (24.9/107.4)**. QTU-focused 35/60 = 5.9 TH/s + 129 MH/s. SRB "dual" = dva procesy time-share, NE in-process scheduler — srovnání orientační.
+- **QTU→ZANO substitution bug:** pool může na `external_stream_2` poslat jinou coinu, když pinned QTU upstream job zastárne (fallback řetěz `build_external_stream`; ZANO leg ten den 66k× timeout = mrtvý upstream). Miner-side guard v `runtime.rs`: `ZION_STREAM4_FORCE_COIN` teď nesouladný gpu2 job **odmítne a stream idlí** (one-shot warn) místo tiché těžby cizí coiny. Pool-side hard-pin fix zůstává otevřený.
+- Detail `PEARL-OPTIMIZATION.md` §20; guide `VASTAI-MINING.md` §4b přepsán na dual PRL+QTU.
+
 ## 2026-10-21 — PEARL `ZION_PEARL_SUBTREE` sweep + QPOW `EUNROLL` — both rejected; per-card baselines on RTX 3060 #3 (vast 57022777, 170 W)
 
 - New opt-in `ZION_PEARL_SUBTREE` (pow2 16..1024, default 128) on `pearl_gen_chunk_merkle_fused`: block size = subtree leaf count, NVRTC `-DPEARL_SUBTREE`, module suffix `_stN`, root buffers sized per value. Sweep st{32,64,256} vs 128 → **3347/3359/3393 vs 3458 att/s = −3.2/−2.9/−1.9 %, parity PASS all** → REJECTED; 4 streams already put ~128 blocks in flight. Knob stays opt-in.

@@ -54,6 +54,7 @@ mod kern {
     pub const MINE_V10: &str = "pearl_pouw_mine_native_v10";
     pub const MINE_V11: &str = "pearl_pouw_mine_native_v11";
     pub const MINE_V12: &str = "pearl_pouw_mine_native_v12";
+    pub const MINE_V13: &str = "pearl_pouw_mine_native_v13";
     pub const DERIVE_SEEDS: &str = "pearl_derive_seeds";
     pub const MERKLE_TREE: &str = "pearl_merkle_tree";
     pub const GEN_DUAL: &str = "pearl_gen_matrix_dual";
@@ -68,6 +69,7 @@ mod kern {
     pub const NOISE_FUSED: &str = "pearl_gen_noise_fused";
     pub const APPLY_DUAL: &str = "pearl_apply_noise_dual";
     pub const APPLY_REGEN: &str = "pearl_apply_noise_regen";
+    pub const APPLY_REGEN_PACKED: &str = "pearl_apply_noise_regen_packed";
 }
 
 const KERNELS: &[&str] = &[
@@ -89,6 +91,7 @@ const KERNELS: &[&str] = &[
     kern::MINE_V10,
     kern::MINE_V11,
     kern::MINE_V12,
+    kern::MINE_V13,
     kern::DERIVE_SEEDS,
     kern::MERKLE_TREE,
     kern::GEN_DUAL,
@@ -103,6 +106,7 @@ const KERNELS: &[&str] = &[
     kern::NOISE_FUSED,
     kern::APPLY_DUAL,
     kern::APPLY_REGEN,
+    kern::APPLY_REGEN_PACKED,
 ];
 
 /// Max attempts queued per `mine_native_batch` call — found/tile/jackpot
@@ -178,9 +182,9 @@ struct PearlCudaBufs {
 /// Pick the mine kernel for an attempt.
 ///
 /// `requested` is the raw `ZION_PEARL_MINE` env value; `cc_*` is the
-/// cached device compute capability. The default is v6 on sm_80+ and v4
+/// cached device compute capability. The default is v13 on sm_80+ and v4
 /// elsewhere — on sm_75 (Turing) the mma path exists only via explicit
-/// `ZION_PEARL_MINE=v6|v7` opt-in (m8n8k16 emulation; its performance
+/// `ZION_PEARL_MINE=v6|v7|v12|v13` opt-in (m8n8k16 emulation; its performance
 /// and correctness on Turing silicon are not yet verified). v8-v10 need
 /// real sm_80 features (cp.async/ldmatrix). Unmet or unknown → v4.
 fn select_mine_version<'a>(
@@ -191,12 +195,12 @@ fn select_mine_version<'a>(
     k: usize,
 ) -> &'a str {
     match requested {
-        // Default: v6 only on sm_80+ with the canonical window layout;
+        // Default: v13 only on sm_80+ with the canonical window layout;
         // non-canonical rank/k and every sm<80 device keep v4 — the
         // sm_75 mma path is never promoted by default.
         None => {
             if cc_major >= 8 && rank == 128 && k % 128 == 0 {
-                "v6"
+                "v13"
             } else {
                 "v4"
             }
@@ -209,9 +213,9 @@ fn select_mine_version<'a>(
                 "v4"
             }
         }
-        // v6/v7/v12 mma: native on sm_80+, m8n8k16 emulation on sm_75 —
+        // v6/v7/v12/v13 mma: native on sm_80+, m8n8k16 emulation on sm_75 —
         // either way the canonical rank==128, k%128==0 window is required.
-        Some(v @ ("v6" | "v7" | "v12")) => {
+        Some(v @ ("v6" | "v7" | "v12" | "v13")) => {
             if (cc_major >= 8 || (cc_major == 7 && cc_minor >= 5))
                 && rank == 128
                 && k % 128 == 0
@@ -274,6 +278,7 @@ pub struct PearlCudaMiner {
     f_noise_fused: CudaFunction,
     f_apply_dual: CudaFunction,
     f_apply_regen: CudaFunction,
+    f_apply_regen_packed: CudaFunction,
     f_small_hash: CudaFunction,
     f_gen_perm: CudaFunction,
     f_gen_uniform: CudaFunction,
@@ -289,6 +294,7 @@ pub struct PearlCudaMiner {
     f_mine_v10: CudaFunction,
     f_mine_v11: CudaFunction,
     f_mine_v12: CudaFunction,
+    f_mine_v13: CudaFunction,
     f_derive: CudaFunction,
     bufs: Option<PearlCudaBufs>,
     /// Concurrent non-blocking streams for attempt pipelining — attempt
@@ -394,6 +400,7 @@ impl PearlCudaMiner {
         let f_noise_fused = get(&dev, kern::NOISE_FUSED)?;
         let f_apply_dual = get(&dev, kern::APPLY_DUAL)?;
         let f_apply_regen = get(&dev, kern::APPLY_REGEN)?;
+        let f_apply_regen_packed = get(&dev, kern::APPLY_REGEN_PACKED)?;
         let f_small_hash = get(&dev, kern::SMALL_HASH)?;
         let f_gen_perm = get(&dev, kern::GEN_PERM)?;
         let f_gen_uniform = get(&dev, kern::GEN_UNIFORM)?;
@@ -409,6 +416,7 @@ impl PearlCudaMiner {
         let f_mine_v10 = get(&dev, kern::MINE_V10)?;
         let f_mine_v11 = get(&dev, kern::MINE_V11)?;
         let f_mine_v12 = get(&dev, kern::MINE_V12)?;
+        let f_mine_v13 = get(&dev, kern::MINE_V13)?;
         let f_derive = get(&dev, kern::DERIVE_SEEDS)?;
 
         // Occupancy probe for kernel tuning: ZION_PEARL_OCC_DEBUG=1 prints
@@ -499,6 +507,7 @@ impl PearlCudaMiner {
             f_noise_fused,
             f_apply_dual,
             f_apply_regen,
+            f_apply_regen_packed,
             f_small_hash,
             f_gen_perm,
             f_gen_uniform,
@@ -514,6 +523,7 @@ impl PearlCudaMiner {
             f_mine_v10,
             f_mine_v11,
             f_mine_v12,
+            f_mine_v13,
             f_derive,
             bufs: None,
             streams,
@@ -1038,8 +1048,25 @@ impl PearlCudaMiner {
         // Matrices are never materialized in the fused pipeline — apply
         // regenerates each element via gen_int7 (pure function of
         // nonce+index), saving the 4MB matrix readback.
+        // Mine-kernel select is computed early because the packed v13
+        // layout needs its own apply variant (paired-k write).
+        let nro = input.row_offsets.len() as u32;
+        let nco = input.col_offsets.len() as u32;
+        let requested = std::env::var("ZION_PEARL_MINE").ok();
+        let ver = select_mine_version(
+            requested.as_deref(),
+            self.compute_capability.0,
+            self.compute_capability.1,
+            input.rank,
+            input.k,
+        );
+        let apply_f = if ver == "v13" {
+            &self.f_apply_regen_packed
+        } else {
+            &self.f_apply_regen
+        };
         klaunch!(
-            &self.f_apply_regen,
+            apply_f,
             cfg_1d(mk + nk, 256),
             (
                 &mut p.noised_a,
@@ -1065,16 +1092,6 @@ impl PearlCudaMiner {
             // v5 = smem-staged A window (rank ≤ 128). ZION_PEARL_MINE
             // overrides; v6/v7 are additionally opt-in on sm_75 where the
             // mma is emulated via m8n8k16 (see select_mine_version).
-            let nro = input.row_offsets.len() as u32;
-            let nco = input.col_offsets.len() as u32;
-            let requested = std::env::var("ZION_PEARL_MINE").ok();
-            let ver = select_mine_version(
-                requested.as_deref(),
-                self.compute_capability.0,
-                self.compute_capability.1,
-                input.rank,
-                input.k,
-            );
             let cfg = if ver == "v3" {
                 LaunchConfig {
                     grid_dim: ((nro * nco).div_ceil(4), 1, 1),
@@ -1097,7 +1114,7 @@ impl PearlCudaMiner {
                     block_dim: (128, 1, 1),
                     shared_mem_bytes: 0,
                 }
-            } else if ver == "v8" || ver == "v11" || ver == "v12" {
+            } else if ver == "v8" || ver == "v11" || ver == "v12" || ver == "v13" {
                 // warp-strip = 4 col-offsets of one band (v6 grid); v8's
                 // smem carries double-buffered B, v11's a per-lane ring
                 let wstrips = nco.div_ceil(4) * nro.div_ceil(8);
@@ -1139,6 +1156,7 @@ impl PearlCudaMiner {
                     "v10" => &self.f_mine_v10,
                     "v11" => &self.f_mine_v11,
                     "v12" => &self.f_mine_v12,
+                    "v13" => &self.f_mine_v13,
                     _ => &self.f_mine_v4,
                 },
                 cfg,

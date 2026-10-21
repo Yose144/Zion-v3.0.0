@@ -791,3 +791,63 @@ parity 2/2 clean incl. batch slots): **v6 3463 vs v12 3419 att/s** —
 the unrolled kc loop already lets ptxas hoist the loads; +8 live regs
 cost more than the bubble saves. Opt-in `ZION_PEARL_MINE=v12`, default
 unchanged.
+
+
+## 20. Session 11 — `pearl_mine_v13` packed-k + dual PRL/QTU no-ZION (2026-10-21, RTX 3060 #3, vast 57022777, 170 W)
+
+**`pearl_pouw_mine_native_v13`** — the v6 inner loop re-fed through a
+packed memory layout: `pearl_apply_noise_regen_packed` writes noised A/B
+as interleaved k-pairs so the mine kernel loads `int2` (LDG.64) instead
+of two narrow `__ldg.32` per fragment — 16→8 load instructions per kc
+block. Promoted to **default on SM80+** (`ZION_PEARL_MINE=v6` stays as
+explicit fallback; SM75 default unchanged = v4).
+
+- Bug found by gate: first version computed the B row from the *global*
+  `gid` (`i = gid/k_dim` included the A offset) — B never written.
+  Fixed by indexing off `g = gid - mk`; parity verified for all 2048
+  packed offsets vs v6 fragment mapping.
+- Gates on-device (default selector = v13): batch slots vs CPU,
+  tensor fragment, repeated attempts, parity vs CPU reference — 4/4
+  PASS; NVRTC matrix 9/9; packed source never read by the proof path
+  (canonical `matrix_a`/`matrix_bt` regenerated on hit).
+- A/B interleaved ×3: **v13 3874–3884 vs v6 3443–3470 att/s → +12 %**.
+- Dual solo: post-shutdown PRL-only samples ~26.8–27.3 TH/s (v13) vs
+  ~23.9 (v6) — consistent with +12 %.
+
+### 20.1 Dual PRL+QTU (ZION_STREAM1_ENABLED=0) — 300 s runs, project pool
+
+| Config | PRL | QTU | Note |
+|---|---|---|---|
+| SRBMiner 2×proc (reference) | 24.9 TH/s | 107.4 MH/s | time-share, not in-process dual |
+| v6 duty 100/100 free | 6.12 TH/s | 116.2 MH/s | scheduler favours QTU ~3:1 |
+| v6 duty 35/60 | 5.90 TH/s | 129.4 MH/s | QTU-focused |
+| v6 duty 100/40 (PRL-first) | 22.81 TH/s | 105.6 MH/s | PRL ≈ solo |
+| v13 duty 100/40 (PRL-first) | **24.83 TH/s** | **109.9 MH/s** | ≈ SRB parity on both coins |
+| v13 duty 100/100 free | 6.29 TH/s | 119.3 MH/s | QTU leg lost mid-run (§20.2) |
+
+PRL duty <100 throttles PRL hard (sleep = batch×(100−d)/d) — the "low
+PRL" numbers are the knob working as designed, not a kernel limit.
+
+### 20.2 QTU→ZANO gpu2 substitution — found, guarded miner-side
+
+Two v13 runs lost the QTU leg mid-run: metrics flipped `QTU` → `ZANO`
+~17 MH/s. Pool journal proves the session pref `gpu=PRL gpu2=QTU` was
+received+applied (`v3_coin_preference`), yet job bundles later carried
+`external_stream_2 = ZANO` — reachable only via `build_external_stream`
+fallback (prefer→env_default→ticker order skips stale coins; the ZANO
+upstream leg itself was in a 66k-timeout dead state, so the served job
+was likely stale too). Empty `gpu_coin_2` fields cannot clear the pin
+(`apply_coin_preference` skips blanks), so the substitution happens in
+the bundle-build path — pool-side fix = treat session gpu2_pref as a
+hard pin (serve `null`, not a fallback coin). **Miner-side guard added**
+(runtime.rs): `ZION_STREAM4_FORCE_COIN` now refuses non-matching
+`gpu_external_2` jobs — stream idles with a one-shot warn instead of
+silently mining another coin. Guarded binary ran a clean 300 s dual
+(PRL 26.1 TH/s + QTU 107.5 MH/s at end-of-run, no substitution); the
+log carried no guard warn that run — pool simply served QTU.
+
+Cross-check caveat: the guard run showed half-rate mid-window
+(PRL ~12 TH/s / QTU ~51) consistent with a leftover overlapping miner
+process (an earlier launch attempt wasn't cleaned) — final sample once
+it expired. Treat 26.1/107.5 as the clean number, matching the v13
+100/40 result.

@@ -72,25 +72,40 @@ nohup ./SRBMiner-MULTI --algorithm quantus --pool eu.lproute.com:5660 --wallet q
 tail -f ~/mine.log   # sledování logu
 ```
 
-## 4b. TRIPLE mining přes náš pool — ZION + PRL + QTU v jednom `zion-miner`
+## 4b. DUAL mining přes náš pool — PRL + QTU v jednom `zion-miner`
 
-Jeden proces, tři GPU streamy, **vše přes `62.171.141.136:8444`** (V3 Trinity —
-pool sám routuje PRL → `prlu:` LuckyPool a QTU → `lproute:` upstream).
-Žádný SRBMiner sidecar. Vyžaduje SM80+ GPU (RTX 30xx/40xx) pro tensor kernely.
+Jeden proces, dva GPU streamy, **vše přes `pool.zionterranova.com:8444`**
+(V3 Trinity — pool sám routuje PRL → `prlu:` LuckyPool a QTU → `qtun:`
+upstream). Žádný SRBMiner sidecar. ZION stream je vypnutý
+(`ZION_STREAM1_ENABLED=0`). Vyžaduje SM80+ GPU (RTX 30xx/40xx) pro tensor
+kernely; na SM75 (RTX 20xx) PRL běží jen fallback kernelem.
 
-### Varianta A — prebuilt binárka z Edge (nejrychlejší)
+### Referenční měření — SRBMiner dual (2 procesy na 1 kartě)
+
+SRBMiner nemá integrovaný pearlhash+quantus dual mód — "dual" = dva
+nezávislé procesy, které si kartu dělí **time-sharingem** (~50/50).
+Nesrovnatelné 1:1 s in-process schedulerem `zion-miner`.
 
 ```bash
-cd ~/miners && curl -fsSL -o zion-miner \
-  http://62.171.141.136/zion-miner/zion-miner-v31-cuda && chmod +x zion-miner
+cd ~/miners/SRBMiner-Multi-3-7-9
+nohup ./SRBMiner-MULTI --algorithm pearlhash --pool pearl-eu2.luckypool.io:3360 \
+  --wallet PRL_WALLET --worker rig1-prl > ~/srb-prl.log 2>&1 &
+nohup ./SRBMiner-MULTI --algorithm quantus --pool eu.lproute.com:5660 \
+  --wallet qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb --worker rig1-qtu \
+  > ~/srb-qtu.log 2>&1 &
 ```
 
-> ⚠️ Edge binary se aktualizuje manuálně — pro nejnovější kernely
-> (cumulative-MMA, IUNROLL=21) je lepší varianta B.
+**Změřeno (RTX 3060 @170 W, 4 min steady):** PRL **~24.9 TH/s** +
+QTU **~107 MH/s** současně (každý ~47–49 % svého solo výkonu).
 
-### Varianta B — vlastní build (max performance, ~15 min)
+### Nativní dual — binárka
 
 ```bash
+# Varianta A — prebuilt z Edge (nemusí obsahovat nejnovější kernely):
+cd ~/miners && curl -fsSL -o zion-miner \
+  http://62.171.141.136/zion-miner/zion-miner-v31-cuda && chmod +x zion-miner
+
+# Varianta B — vlastní build (doporučeno, ~15 min na 6vCPU):
 # na lokálním stroji (z repo root):
 rsync -az -e "ssh -i ~/.ssh/id_ed25519 -p PORT" V31/ root@HOST:/root/zion-native/
 # na instanci:
@@ -100,47 +115,73 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profil
   ln -sf target/release/zion-miner /root/zion-miner
 ```
 
-### Spuštění — max-performance env set (změřeno na RTX 3060)
+### Spuštění — dual PRL+QTU (ZION vypnutý)
 
 ```bash
 export ZION_MINER_ID=vast-3060 ZION_GPU_BACKEND=cuda ZION_PROFILE=pool \
   ZION_VERBOSE=1 ZION_INTERACTIVE=0 ZION_NO_STICKY=1 ZION_LOG_INTERVAL=15 \
   ZION_STATS_FILE=/root/zion-miner-stats.json ZION_V3_TRINITY=1 \
   ZION_AUTOTUNE=1 ZION_IGNORE_GPU_SELF_TEST_FAIL=1 \
-  ZION_MINER_ALGORITHM=ekam_deeksha ZION_NONCE_AUTOTUNE=1 \
-  ZION_NONCE_COUNT=262144 ZION_GPU_MAX_BATCH=262144 \
-  ZION_STREAM1_ENABLED=1 \
+  ZION_STREAM1_ENABLED=0 \
   ZION_STREAM2_ENABLED=1 ZION_STREAM2_FORCE_COIN=PRL ZION_PEARL_K=2048 \
   ZION_STREAM3_ENABLED=0 \
   ZION_STREAM4_ENABLED=1 ZION_STREAM4_FORCE_COIN=QTU ZION_QPOW_BACKEND=cuda \
   ZION_MINER_THREADS=4
 
-# ── max-perf knoby (měřené A/B, viz PEARL-OPTIMIZATION.md §16-19) ──
-export ZION_GPU_WORK_SIZE=2048            # +31 % ZION share rate
-export ZION_GPU_SKIP_CPU_RESCAN=1         # rescan landmine pryč
-export ZION_PEARL_CUMULATIVE_MMA=1        # +1.5 % PRL (opt-in vítěz)
-export ZION_PEARL_STREAMS=4               # default, explicit pro jistotu
-export ZION_PEARL_BATCH=64                # +4.4 % PRL vs 16
+# ── max-perf knoby (A/B měřené, PEARL-OPTIMIZATION.md §16-20) ──
+export ZION_PEARL_CUMULATIVE_MMA=1     # +1.5 % PRL
+export ZION_PEARL_STREAMS=4            # default, explicit
+export ZION_PEARL_BATCH=64             # +4.4 % PRL vs 16
+# v13 packed-k kernel = default na SM80+; fallback: ZION_PEARL_MINE=v6
 
 # duty split — vyber JEDEN profil:
-# (a) balanced triple  ZION 5 / PRL 35 / QTU 60:
-export ZION_GPU_TIME_DUTY_PCT=5 ZION_EXT_GPU_TIME_DUTY_PCT=35 ZION_EXT_GPU2_TIME_DUTY_PCT=60
-# (b) max-PRL: cap jen QTU, PRL vyplní mezery (~4/50/46):
-# export ZION_GPU_TIME_DUTY_PCT=4 ZION_EXT_GPU_TIME_DUTY_PCT=100 ZION_EXT_GPU2_TIME_DUTY_PCT=46
-# (c) PRL solo: 0 / 100 / 0
+# (a) PRL-first: PRL 100 / QTU 40 → nejvyšší PRL, QTU drží ~110 MH/s
+export ZION_EXT_GPU_TIME_DUTY_PCT=100 ZION_EXT_GPU2_TIME_DUTY_PCT=40
+# (b) QTU-focused: PRL 35 / QTU 60 → PRL ~6 TH/s, QTU ~129 MH/s
+# export ZION_EXT_GPU_TIME_DUTY_PCT=35 ZION_EXT_GPU2_TIME_DUTY_PCT=60
+# (c) free contention 100/100 → scheduler sám rozdělí (~25 % PRL / 75 % QTU)
 
-nohup ./zion-miner --pool 62.171.141.136:8444 \
+nohup ./zion-miner --pool pool.zionterranova.com:8444 \
   --wallet ZION_WALLET --worker vast-3060 \
   --gpu cuda --threads 4 --log-interval 15 --v3-trinity \
-  > /root/triple.log 2>&1 &
-tail -f /root/triple.log
+  > /root/dual.log 2>&1 &
+tail -f /root/dual.log
 ```
 
-**Očekávané výkony (RTX 3060, duty 5/35/60):** ZION ~68 KH/s · PRL ~5–6 TH/s
-zobrazeno (contended) · QTU ~138 MH/s. Solo: PRL ~24 TH/s, QTU ~156 MH/s.
+### Změřené výkony (RTX 3060 @170 W, 300 s okna, steady-state)
 
-> Pozor: `ZION_STREAM2_ENABLED` gate — bez něj GPU-external stream zahálí
-> (viz AGENTS §16.5). Shares ověř přes `curl http://62.171.141.136:8443/public/v1/...`.
+| Profil | PRL | QTU | Pozn. |
+|---|---|---|---|
+| SRB 2×proc (reference) | ~24.9 TH/s | ~107 MH/s | time-sharing, ne in-process dual |
+| nativní 100/40 (PRL-first, v13) | **~24.8 TH/s** | **~110 MH/s** | ≈parita se SRB na obou mincích |
+| nativní 100/40 (v6) | ~22.5 TH/s | ~106 MH/s | `ZION_PEARL_MINE=v6` |
+| nativní 35/60 (v6) | ~5.9 TH/s | ~129 MH/s | QTU-focused |
+| nativní 100/100 free (v13) | ~6.3 TH/s | ~119 MH/s | scheduler jede ~3× víc QTU |
+| solo (v13 / v6) | ~27 / ~24 TH/s | ~156 MH/s | horní mez |
+
+PRL se v metrikách zobrazuje v **GH/s** (24.8 TH/s = `24800 GH/s`).
+
+### Kontrola
+
+```bash
+tail -f /root/dual.log | grep metrics    # PRL: xx GH/s | QTU: xx MH/s | zion: 0
+curl -s 'https://pool.zionterranova.com/public/v1/miner/ZION_WALLET' | python3 -m json.tool
+nvidia-smi                               # ~95-100 % util, ~135-170 W
+```
+
+### Známé chování / caveat
+
+- **`zion: 0 H/s` v metrics = správně** — banner může říkat "Stream 1 enabled",
+  metriky jsou autoritativní.
+- **Pool-side fallback:** když je QTU upstream job dočasně stale, pool může
+  na gpu2 slot poslat jinou coinu (ZANO). Nejnovější binárka ji s
+  `ZION_STREAM4_FORCE_COIN` nastaveným **odmítne a stream počká** (idle)
+  — starší buildy ji skutečně těžily. Ověř v `[metrics]`, že stream 4
+  ukazuje `QTU`, ne `ZANO`.
+- **Výplaty:** PRL/QTU shares jdou přes pool → LuckyPool/upstream
+  (`prlu:`/`qtun:` legy). PRL payout sweeper na poolu běží v dry-run —
+  finální PRL výplatní cesta je ještě v dokončování (viz AGENTS.md
+  2026-10-20 entry).
 
 ## 5. Vypnutí instance (důležité — jinak utíkají peníze!)
 

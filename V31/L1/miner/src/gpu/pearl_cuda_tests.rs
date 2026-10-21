@@ -6,8 +6,8 @@ use std::time::Duration;
 #[test]
 fn pearl_selector_keeps_unverified_turing_opt_in() {
     assert_eq!(select_mine_version(None, 7, 5, 128, 2048), "v4");
-    assert_eq!(select_mine_version(None, 8, 6, 128, 2048), "v6");
-    for version in ["v6", "v7"] {
+    assert_eq!(select_mine_version(None, 8, 6, 128, 2048), "v13");
+    for version in ["v6", "v7", "v13"] {
         assert_eq!(select_mine_version(Some(version), 7, 5, 128, 2048), version);
         assert_eq!(select_mine_version(Some(version), 7, 0, 128, 2048), "v4");
         assert_eq!(select_mine_version(Some(version), 6, 1, 128, 2048), "v4");
@@ -176,7 +176,7 @@ fn pearl_cuda_tensor_fragment_matches_cpu() {
 }
 
 #[test]
-#[ignore = "requires an isolated SM75+ device; default kernel v6"]
+#[ignore = "requires an isolated SM75+ device; default kernel v13"]
 fn pearl_cuda_tensor_batch_slots_match_cpu() {
     const BATCH: usize = 16;
     let cfg = PearlMineConfig::from_env().expect("Pearl configuration");
@@ -194,7 +194,7 @@ fn pearl_cuda_tensor_batch_slots_match_cpu() {
             cfg.rank,
             cfg.k,
         ),
-        request.as_deref().unwrap_or("v6"),
+        request.as_deref().unwrap_or("v13"),
         "requested kernel must be the selected kernel (no fallback allowed)"
     );
     let row_offsets = cfg.row_offsets();

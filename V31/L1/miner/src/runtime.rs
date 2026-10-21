@@ -2314,6 +2314,7 @@ impl MinerRuntime {
                 }
                 let mut bundle = bundle.unwrap();
                 let mut dup_warned = false;
+                let mut forced_warned = false;
 
                 loop {
                     if *shutdown.borrow() {
@@ -2323,6 +2324,19 @@ impl MinerRuntime {
                     if let Some(ref ext) = bundle.gpu_external_2 {
                         this.set_stream_coin(StreamId::GpuExternal2, &ext.coin)
                             .await;
+                        // Force-coin pin: when ZION_STREAM4_FORCE_COIN is
+                        // set, refuse jobs for any other coin — the pool's
+                        // gpu2 fallback can serve a different coin (e.g.
+                        // ZANO) while the pinned upstream is stale, and the
+                        // stream would silently mine it.
+                        let forced_mismatch = this
+                            .config
+                            .stream4_force_coin
+                            .map(|c| {
+                                !ext.coin.eq_ignore_ascii_case(c.ticker())
+                                    && !ext.coin.eq_ignore_ascii_case(c.as_str())
+                            })
+                            .unwrap_or(false);
                         // Defensive dedup: pool never sends the same coin on
                         // both GPU slots, but if it ever does, refuse to
                         // mine a duplicate job — duplicate nonce space would
@@ -2332,7 +2346,17 @@ impl MinerRuntime {
                             .as_ref()
                             .map(|e| e.coin.eq_ignore_ascii_case(&ext.coin))
                             .unwrap_or(false);
-                        if dup {
+                        if forced_mismatch {
+                            if !forced_warned {
+                                ext_warn!(
+                                    coin = %ext.coin,
+                                    forced = ?this.config.stream4_force_coin,
+                                    "V3 Quad: gpu2 job coin != ZION_STREAM4_FORCE_COIN — idling until pool serves the pinned coin"
+                                );
+                                forced_warned = true;
+                            }
+                            sleep(Duration::from_secs(2)).await;
+                        } else if dup {
                             if !dup_warned {
                                 ext_warn!(
                                     coin = %ext.coin,
@@ -2342,6 +2366,7 @@ impl MinerRuntime {
                             }
                             sleep(Duration::from_secs(2)).await;
                         } else {
+                            forced_warned = false;
                             dup_warned = false;
                             match this
                                 .mine_v3_external_share(
