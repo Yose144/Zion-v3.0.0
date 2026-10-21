@@ -32,6 +32,7 @@ import { registerMetrics, inc, M } from '../src/lib/metrics.js';
 import { metricsRoutes } from '../src/routes/metrics.js';
 import { adminRoutes } from '../src/routes/admin.js';
 import { notificationRoutes } from '../src/routes/notifications.js';
+import { walletRoutes } from '../src/routes/wallet.js';
 
 const JWT_SECRET = 'test-secret';
 const SERVICE_KEY = 'svc-test-key';
@@ -115,6 +116,18 @@ function makeFakePrisma() {
         return { count };
       },
       updateMany: async () => ({ count: 0 }),
+    },
+    multichainWalletAccount: {
+      findUnique: async () => null,
+    },
+    multichainWalletAddress: {
+      findMany: async () => [],
+    },
+    multichainBalance: {
+      findMany: async () => [],
+    },
+    multichainOrder: {
+      findMany: async () => [],
     },
     authChallenge: {
       upsert: async ({ where, create, update }: {
@@ -225,6 +238,7 @@ async function buildApp() {
   await app.register(metricsRoutes, { prefix: '/metrics' });
   await app.register(adminRoutes, { prefix: '/api/admin' });
   await app.register(notificationRoutes, { prefix: '/api/notifications' });
+  await app.register(walletRoutes, { prefix: '/api/wallet' });
   return { app, fake };
 }
 
@@ -515,4 +529,80 @@ test('GET /metrics returns prometheus text with zis_ series', async () => {
   assert.match(body, /zis_users_total 1/);
   assert.match(body, /zis_sessions_active 1/);
   assert.match(body, /zis_auth_verify_total\{method="ed25519",result="ok"\} 1/);
+});
+
+// ── Wallet proxy → L2 auth forwarding ────────────────────────────────
+
+test('wallet proxy forwards Bearer token to L2 Authorization header', async () => {
+  const { app, fake } = await buildApp();
+  const auth = addAuthedUser(app, fake, 'walletuser1');
+  const captured: Record<string, string> = {};
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = (async (_url: unknown, init: { headers?: Record<string, string> }) => {
+    Object.assign(captured, init?.headers ?? {});
+    return new Response(JSON.stringify({ userId: 'walletuser1' }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  }) as typeof fetch;
+  try {
+    const res = await app.inject({ method: 'GET', url: '/api/wallet/me', headers: auth });
+    assert.equal(res.statusCode, 200);
+    const token = auth.authorization.slice(7);
+    assert.equal(captured.Authorization, `Bearer ${token}`);
+    assert.equal(captured.Cookie, undefined, 'bearer callers must not leak a cookie');
+  } finally {
+    globalThis.fetch = origFetch;
+    await app.close();
+  }
+});
+
+test('wallet proxy forwards signed zion_session cookie to L2 Cookie header', async () => {
+  const { app, fake } = await buildApp();
+  const jti = 'jti-cookieuser1';
+  fake._state.users.set('cookieuser1', {
+    id: 'cookieuser1',
+    primaryAddress: 'zion1cookieuser1',
+    displayName: null,
+    email: null,
+    avatar: null,
+    bio: null,
+    role: 'user',
+    createdAt: new Date(),
+    lastLogin: null,
+    loginCount: 0,
+  });
+  fake._state.sessions.set(jti, {
+    id: 'sess-cookieuser1',
+    userId: 'cookieuser1',
+    jwtJti: jti,
+    expiresAt: new Date(Date.now() + 3600_000),
+    revoked: false,
+    createdAt: new Date(),
+  });
+  const rawToken = app.jwt.sign({ sub: 'cookieuser1', addr: 'zion1cookieuser1', jti });
+  const signed = app.signCookie(rawToken);
+
+  const captured: Record<string, string> = {};
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = (async (_url: unknown, init: { headers?: Record<string, string> }) => {
+    Object.assign(captured, init?.headers ?? {});
+    return new Response(JSON.stringify({ userId: 'cookieuser1' }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  }) as typeof fetch;
+  try {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/wallet/me',
+      headers: { cookie: `zion_session=${signed}` },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.equal(captured.Cookie, `zion_session=${signed}`);
+    assert.equal(captured.Authorization, undefined, 'cookie callers must not get Bearer');
+  } finally {
+    globalThis.fetch = origFetch;
+    await app.close();
+  }
 });
