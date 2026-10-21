@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import PageLayout from "../components/PageLayout";
 
 type Hashrate = { rate: number; unit: string; a: number; r: number };
@@ -180,6 +180,7 @@ export default function Dashboard() {
   const [logs, setLogs] = useState<Record<number, string>>({});
   const [logsOpen, setLogsOpen] = useState<Record<number, string>>({});
   const [chatAns, setChatAns] = useState<Record<number, string>>({});
+  const [open, setOpen] = useState<Record<number, boolean>>({});
   const [tab, setTab] = useState<"mining" | "ai" | "market">("mining");
   useEffect(() => {
     const h = window.location.hash.replace("#", "");
@@ -609,31 +610,70 @@ export default function Dashboard() {
         )}
 
         {tab === "mining" && (
-        <section className="mx-auto grid w-full max-w-7xl min-w-0 grid-cols-1 gap-4 pb-8 sm:grid-cols-2 sm:gap-5 lg:pb-12">
-          {rigs.map((r) => (
-            <div
-              key={r.id}
-              className="w-full min-w-0 max-w-full rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-4 backdrop-blur transition hover:border-[#fcd116]/30 sm:p-5"
-            >
-              {/* rig header */}
-              <div className="flex min-w-0 items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <span
-                    className={`inline-block h-2.5 w-2.5 rounded-full ${
-                      r.error ? "bg-[#ff7b72]" : "bg-[#34d399]"
-                    } shadow-[0_0_8px_currentColor]`}
-                  />
-                  <b className="shrink-0 text-base text-white sm:text-lg">#{r.id}</b>
-                  <span className="truncate text-sm text-white/70">{r.gpu_name}</span>
-                </div>
-                <span className="shrink-0 rounded-full border border-white/15 px-2.5 py-1 text-[10px] text-white/60 sm:text-xs">
-                  ${r.dph.toFixed(4)}/h
-                </span>
-              </div>
-              <div className="mt-2 break-words text-[11px] leading-relaxed text-white/40 sm:text-xs">
-                {r.geo} · gpu {r.gpu?.util ?? "?"} · {r.gpu?.power ?? "?"} ·{" "}
-                {r.gpu?.temp ?? "?"} · vram {r.gpu?.mem ?? "?"}
-              </div>
+        <section className="mx-auto w-full max-w-7xl pb-8 lg:pb-12">
+          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01]">
+            <table className="w-full min-w-[840px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-white/10 bg-white/[0.03] text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  <th className="px-3 py-2.5">Rig</th>
+                  <th className="px-3 py-2.5">Status</th>
+                  <th className="px-3 py-2.5">Cost</th>
+                  <th className="px-3 py-2.5">Mining</th>
+                  <th className="px-3 py-2.5">Shares</th>
+                  <th className="px-3 py-2.5">GPU</th>
+                  <th className="w-8 px-3 py-2.5" aria-label="expand" />
+                </tr>
+              </thead>
+              <tbody>
+          {rigs.map((r) => {
+            const expanded = !!open[r.id];
+            const act = r.miners.filter((m) => m.hashrate);
+            const totA = act.reduce((s, m) => s + (m.hashrate?.a ?? 0), 0);
+            return (
+            <Fragment key={r.id}>
+              <tr
+                onClick={() => setOpen((p) => ({ ...p, [r.id]: !p[r.id] }))}
+                className="cursor-pointer border-b border-white/[0.05] transition hover:bg-white/[0.04]"
+              >
+                <td className="px-3 py-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                        r.error ? "bg-[#ff7b72]" : "bg-[#34d399]"
+                      } shadow-[0_0_8px_currentColor]`}
+                    />
+                    <b className="shrink-0 text-sm text-white">#{r.id}</b>
+                    <span className="truncate text-xs text-white/60">{r.gpu_name}</span>
+                  </div>
+                  <div className="mt-0.5 truncate text-[10px] text-white/35">{r.geo} · {r.ssh}</div>
+                </td>
+                <td className="px-3 py-3">
+                  <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold ${act.length ? "border-[#34d399]/30 text-[#34d399]" : "border-white/10 text-white/30"}`}>
+                    {act.length ? `${act.length} live` : "idle"}
+                  </span>
+                </td>
+                <td className="whitespace-nowrap px-3 py-3 text-xs text-white/60">${r.dph.toFixed(4)}/h</td>
+                <td className="px-3 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {act.map((m, i) => {
+                      const c = coinOf(m);
+                      return (
+                        <span key={i} className="whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold" style={{ background: `${c.c}15`, color: c.c }}>
+                          {c.name} {fmt(m.hashrate)}
+                        </span>
+                      );
+                    })}
+                    {!act.length && <span className="text-white/25">—</span>}
+                  </div>
+                </td>
+                <td className="whitespace-nowrap px-3 py-3 text-xs text-white/50">A{totA}</td>
+                <td className="whitespace-nowrap px-3 py-3 text-xs text-white/50">{r.gpu?.util ?? "?"} · {r.gpu?.temp ?? "?"}</td>
+                <td className="px-3 py-3 text-white/40">{expanded ? "▴" : "▾"}</td>
+              </tr>
+              {expanded && (
+              <tr className="border-b border-white/10">
+                <td colSpan={7} className="bg-black/30 p-3 sm:p-4">
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 sm:p-4">
               {r.error && <div role="alert" className="mt-2 break-words rounded-lg bg-[#ff7b72]/[0.07] p-2 text-xs text-[#ff9b93]">{r.error}</div>}
               {r.net && Object.values(r.net).some((v) => !v) && (
                 <div role="alert" className="mt-2 flex items-start gap-2 break-words rounded-lg border border-[#ff7b72]/30 bg-[#ff7b72]/[0.08] p-2 text-xs text-[#ff9b93]">
@@ -700,7 +740,7 @@ export default function Dashboard() {
                                   </span>
                                   <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-white">{fmt(m.hashrate)}</span>
                                   {m.etime && <span className="shrink-0 text-[10px] text-white/35">up {m.etime}</span>}
-                                  <Spark data={m.hist} color={coin.c} />
+                                  <Spark data={m.hist} color={coin.c} w={150} h={32} />
                                 </div>
                                 {(m.pool || m.worker) && (
                                   <div className="mt-1 truncate text-[10px] text-white/30" title={`${m.pool || ""} ${m.worker || ""}`}>
@@ -815,16 +855,26 @@ export default function Dashboard() {
                   </div>
                 );
               })()}
-            </div>
-          ))}
+                  </div>
+                </td>
+              </tr>
+              )}
+            </Fragment>
+            );
+          })}
           {!rigs.length && !err && (
-            <div className="col-span-full rounded-2xl border border-dashed border-white/10 p-8 text-center sm:p-12">
-              <div className="text-sm font-semibold text-white/65">Fleet data is not available yet</div>
-              <p className="mt-2 text-xs leading-relaxed text-white/40">
-                {err ? "The status feed could not be loaded. Check the connection and try again." : "Waiting for the Vast status daemon to publish its first snapshot…"}
-              </p>
-            </div>
+            <tr>
+              <td colSpan={7} className="p-8 text-center sm:p-12">
+                <div className="text-sm font-semibold text-white/65">Fleet data is not available yet</div>
+                <p className="mt-2 text-xs leading-relaxed text-white/40">
+                  {err ? "The status feed could not be loaded. Check the connection and try again." : "Waiting for the Vast status daemon to publish its first snapshot…"}
+                </p>
+              </td>
+            </tr>
           )}
+              </tbody>
+            </table>
+          </div>
         </section>
         )}
 
