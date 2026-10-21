@@ -3946,21 +3946,19 @@ impl StratumServer {
 
         if let Some(tip) = current_chain_height(&endpoints).await {
             if block.header.height != tip.saturating_add(1) {
-                tracing::warn!(
-                    "stale block height={} (tip={}), treating as orphan",
+                // Do NOT pre-orphan here: the tip query may be stale (follower
+                // lag) or the node's tip may move between this query and the
+                // submit. The node's own submitBlock performs the real
+                // consensus check (prev-hash / height) — a genuine orphan is
+                // rejected there with "previous hash mismatch" and recorded
+                // via the Err arm below. Pre-rejecting here discarded real
+                // PoW blocks during the 2026-10-21 stall (tip 89952 while
+                // tip+2 work was legitimately in flight).
+                tracing::info!(
+                    "block height={} vs queried tip={} — submitting anyway, node decides",
                     block.header.height,
                     tip
                 );
-                self.record_block_orphaned(
-                    block_height,
-                    &miner_id,
-                    &worker_name,
-                    share_difficulty,
-                    network_difficulty,
-                    &block.header.header_hash().to_hex(),
-                );
-                self.notifier.notify_orphan(block_height);
-                return Ok(());
             }
         }
 

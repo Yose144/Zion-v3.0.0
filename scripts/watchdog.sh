@@ -282,14 +282,20 @@ check_v31() {
 
   # getTemplate probe: the template path can wedge (deadlock in node) while
   # the rest of the RPC stays alive — getNodeInfo/getChainInfo keep answering.
-  # A 15s bound catches it. A single failure is NOT enough to restart: the
-  # node recovers from short template stalls on its own (utxo_set lock
-  # contention during block import) and a restart costs ~10s of full RPC
-  # outage plus UTXO rebuild, which is worse than the stall. Restart only
-  # after 2 consecutive failures (watchdog runs ~60s apart → restart on a
-  # sustained >60s wedge that does not self-recover).
+  # The bound is 30s (was 15s): under the Edge host's CPU saturation
+  # (4 cores, 3 L1 nodes ~80-99% each + bitcoind IBD) a healthy getTemplate
+  # legitimately takes 15-25s and the old bound produced false "wedged"
+  # restarts — each restart rolls the tip back and orphans in-flight work.
+  # A single failure is NOT enough to restart: the node recovers from short
+  # template stalls on its own (utxo_set lock contention during block
+  # import) and a restart costs ~10s of full RPC outage plus UTXO rebuild,
+  # which is worse than the stall. Restart only after 3 consecutive
+  # failures (watchdog runs ~60s apart → restart on a sustained >2-3min
+  # wedge that does not self-recover). Both knobs are env-overridable.
+  local tpl_bound="${ZION_WATCHDOG_TEMPLATE_TIMEOUT_S:-30}"
+  local tpl_max_fails="${ZION_WATCHDOG_TEMPLATE_MAX_FAILS:-3}"
   local tpl_code
-  tpl_code=$(curl -s -o /dev/null -w '%{http_code}' -m 15 -X POST \
+  tpl_code=$(curl -s -o /dev/null -w '%{http_code}' -m "$tpl_bound" -X POST \
     "http://127.0.0.1:${V31_RPC_PORT}" -H 'content-type: application/json' \
     -d '{"jsonrpc":"2.0","id":1,"method":"getTemplate","params":{"miner_address":"zion1test"}}' \
     2>/dev/null || echo "000")
@@ -304,12 +310,12 @@ check_v31() {
   if [[ "$tpl_code" != "200" ]]; then
     tpl_fails=$((tpl_fails + 1))
     echo "$tpl_fails" > "$tpl_state"
-    if [[ "$tpl_fails" -ge 2 ]]; then
+    if [[ "$tpl_fails" -ge "$tpl_max_fails" ]]; then
       echo 0 > "$tpl_state"
       restart_service "$NODE_SERVICE" "V31 getTemplate wedged ${tpl_fails}x consecutively (http=${tpl_code})"
       return
     fi
-    log "WARN: getTemplate probe failed (http=${tpl_code}) — fail ${tpl_fails}/2, waiting for self-recovery"
+    log "WARN: getTemplate probe failed (http=${tpl_code}) — fail ${tpl_fails}/${tpl_max_fails}, waiting for self-recovery"
   else
     [[ "$tpl_fails" -gt 0 ]] && echo 0 > "$tpl_state"
   fi

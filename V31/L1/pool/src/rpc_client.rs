@@ -67,6 +67,22 @@ pub struct L1Endpoints {
     last_good: Arc<AtomicUsize>,
 }
 
+/// Per-attempt RPC bound. Overridable via `ZION_L1_RPC_TIMEOUT_MS`
+/// (milliseconds); default 12 s — raised from 4 s after Edge G8 analysis
+/// showed that under CPU saturation all three L1 nodes could simultaneously
+/// exceed the old bound, dropping real block submits.
+fn attempt_timeout() -> Duration {
+    static CACHED: std::sync::OnceLock<Duration> = std::sync::OnceLock::new();
+    *CACHED.get_or_init(|| {
+        let ms = std::env::var("ZION_L1_RPC_TIMEOUT_MS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .filter(|v| *v >= 500)
+            .unwrap_or(12_000);
+        Duration::from_millis(ms)
+    })
+}
+
 impl L1Endpoints {
     /// Parse a (possibly comma-separated) URL list.  Entries that fail to
     /// parse are skipped; returns None only when nothing parses.
@@ -98,19 +114,25 @@ impl L1Endpoints {
     }
 
     /// Try the last-answering endpoint first, then walk the rest.
-    /// Each attempt is bounded to 4s so a wedged endpoint can't stall the
-    /// caller; the first responder becomes the new last_good.
+    /// Each attempt is bounded to `attempt_timeout()` so a wedged endpoint
+    /// can't stall the caller; the first responder becomes the new last_good.
+    ///
+    /// On a CPU-saturated host (Edge: 4 cores, 3 L1 nodes ~80-99 % CPU each)
+    /// the default 4 s bound produced "all 3 endpoints failed" bursts during
+    /// which real PoW block submits were dropped. The bound is now 12 s and
+    /// overridable via `ZION_L1_RPC_TIMEOUT_MS`.
     pub async fn call(&self, request: &Value) -> Result<Value> {
         let n = self.addrs.len();
         if n == 0 {
             return Err(anyhow!("no L1 RPC endpoints configured"));
         }
+        let timeout = attempt_timeout();
         let start = self.last_good.load(Ordering::Relaxed) % n;
         let mut last_err = anyhow!("no endpoints");
         for i in 0..n {
             let idx = (start + i) % n;
             let addr = self.addrs[idx];
-            match tokio::time::timeout(Duration::from_secs(4), jsonrpc_call(addr, request)).await {
+            match tokio::time::timeout(timeout, jsonrpc_call(addr, request)).await {
                 Ok(Ok(v)) => {
                     if idx != start {
                         self.last_good.store(idx, Ordering::Relaxed);
@@ -122,7 +144,7 @@ impl L1Endpoints {
                     tracing::debug!("l1 rpc {} failed: {}", addr, last_err);
                 }
                 Err(_) => {
-                    last_err = anyhow!("l1 rpc {} timed out after 4s", addr);
+                    last_err = anyhow!("l1 rpc {} timed out after {:?}", addr, timeout);
                     tracing::debug!("{}", last_err);
                 }
             }
