@@ -28,6 +28,7 @@ import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import redirect_stderr, redirect_stdout
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
@@ -790,6 +791,79 @@ def readonly():
     return os.environ.get("VASTCTL_READONLY") == "1"
 
 
+def same_origin_request(origin, host):
+    if not origin or not host:
+        return False
+    parsed = urlparse(origin)
+    return (
+        parsed.scheme in {"http", "https"}
+        and bool(parsed.netloc)
+        and parsed.netloc.lower() == host.lower()
+        and not parsed.username
+        and not parsed.password
+        and parsed.path in {"", "/"}
+        and not parsed.query
+        and not parsed.fragment
+    )
+
+
+def inference_action(action, query):
+    import io
+    import vast_inference
+
+    instance_id = query.get("id", [""])[0]
+    if action == "deploy":
+        if query.get("confirm") != ["1"]:
+            raise ValueError("deployment requires explicit confirmation")
+        args = argparse.Namespace(
+            name=query.get("name", [vast_inference.DEFAULT_CONTAINER])[0],
+            port=int(query.get("port", [vast_inference.REMOTE_API_PORT])[0]),
+            gpu_memory_utilization=float(
+                query.get("gpu_memory_utilization", [
+                    str(vast_inference.DEFAULT_GPU_MEMORY_UTILIZATION)
+                ])[0]
+            ),
+            max_model_len=int(query.get("max_model_len", [
+                str(vast_inference.DEFAULT_MAX_MODEL_LEN)
+            ])[0]),
+            model=query.get("model", [""])[0],
+            image=query.get("image", [vast_inference.DEFAULT_VLLM_IMAGE])[0],
+        )
+        script = vast_inference.build_deploy_script(args)
+    elif action == "status":
+        name = query.get("name", [vast_inference.DEFAULT_CONTAINER])[0]
+        port = int(query.get("port", [str(vast_inference.REMOTE_API_PORT)])[0])
+        script = vast_inference.build_status_script(name, port)
+    elif action == "stop":
+        if query.get("confirm") != ["1"]:
+            raise ValueError("stopping inference requires explicit confirmation")
+        name = query.get("name", [vast_inference.DEFAULT_CONTAINER])[0]
+        script = vast_inference.build_stop_script(name)
+    elif action == "tunnel":
+        local_port = int(query.get("local_port", [
+            str(vast_inference.REMOTE_API_PORT)
+        ])[0])
+        remote_port = int(query.get("remote_port", [
+            str(vast_inference.REMOTE_API_PORT)
+        ])[0])
+        instance = vast_inference.get_running_instance(instance_id)
+        command = vast_inference.tunnel_command(instance, local_port, remote_port)
+        return (
+            f"{command}\n"
+            f"LLM_BASE_URL=http://127.0.0.1:{local_port}/v1",
+            200,
+        )
+    else:
+        raise ValueError("unknown inference action")
+
+    instance = vast_inference.get_running_instance(instance_id)
+    stdout, stderr = io.StringIO(), io.StringIO()
+    with redirect_stdout(stdout), redirect_stderr(stderr):
+        rc = vast_inference.execute_ssh(instance, script)
+    output = (stdout.getvalue() + stderr.getvalue()).strip()
+    return output or f"(exit {rc})", (200 if rc == 0 else 502)
+
+
 class Handler(BaseHTTPRequestHandler):
     cfg_path = DEFAULT_XMRIG_CONFIG
 
@@ -844,7 +918,24 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         u = urlparse(self.path)
         q = parse_qs(u.query)
-        if u.path == "/api/deploy-xmrig":
+        if u.path.startswith("/api/inference/"):
+            if readonly():
+                self._send("readonly mode", 403, "text/plain")
+                return
+            if not same_origin_request(
+                    self.headers.get("Origin"), self.headers.get("Host")):
+                self._send("same-origin request required", 403, "text/plain")
+                return
+            action = u.path.removeprefix("/api/inference/")
+            try:
+                body, code = inference_action(action, q)
+                self._send(body, code, "text/plain; charset=utf-8")
+            except ValueError as e:
+                self._send(str(e), 400, "text/plain; charset=utf-8")
+            except (SystemExit, json.JSONDecodeError) as e:
+                self._send(f"Vast instance lookup failed: {e}",
+                           502, "text/plain; charset=utf-8")
+        elif u.path == "/api/deploy-xmrig":
             if readonly():
                 self._send("readonly mode", 403, "text/plain")
                 return

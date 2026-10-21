@@ -205,6 +205,47 @@ mining and inference can still contend for GPU time. No 80/20 scheduler,
 automatic miner pause, model deployment, or automatic Vast rental is provided
 by this pilot.
 
+### Opt-in vLLM on an existing instance
+
+`tools/vast/vast_inference.py` can start a version-tagged vLLM Docker image on an
+already-running Vast instance. It never searches/rents offers, installs a
+public-facing service, or changes miner processes. Prerequisites on the rig are
+Docker with NVIDIA Container Toolkit, a working `nvidia-smi`, SSH access, and
+enough GPU memory for both the model and anything already using the GPU.
+
+```bash
+cd tools/vast
+
+# Start a model only after reviewing the instance and model cost/VRAM needs.
+python3 vast_inference.py deploy INSTANCE_ID \
+  --model Qwen/Qwen2.5-Coder-3B-Instruct \
+  --gpu-memory-utilization 0.6
+
+# Check status; stop only the inference container when finished.
+python3 vast_inference.py status INSTANCE_ID
+python3 vast_inference.py stop INSTANCE_ID
+
+# Print the SSH forwarding command; run it in a separate terminal.
+python3 vast_inference.py tunnel INSTANCE_ID --local-port 18000
+```
+
+The deploy command prompts before using GPU resources; `--yes` is required for
+non-interactive use. It defaults to a 60% vLLM GPU memory target, refuses to
+replace an existing named container, binds the API on the remote host to
+`127.0.0.1`, restricts the image to the version-tagged official
+`vllm/vllm-openai` repository, and reports Docker/SSH failures. After starting
+the printed SSH tunnel, configure the Hiran client with
+`LLM_BASE_URL=http://127.0.0.1:18000/v1`. Keep the SSH tunnel private and do not
+publish the inference port through a firewall or reverse proxy.
+
+`--gpu-memory-utilization` limits vLLM's allocation target; it does **not**
+guarantee a matching mining/inference compute split or prevent contention and
+OOM if another process already occupies VRAM. Stop inference if mining becomes
+unstable. This deploy helper runs one model server on one host; it does not
+combine VRAM across separate Vast machines or implement distributed model
+parallelism, model scheduling, or automatic rental. Private/gated model
+downloads requiring a Hugging Face token are not configured by this helper.
+
 ## 6. CPU mining — XMRig (Monero `rx/0`) vedle GPU minerů
 
 GPU dělá SRBMiner/zion-miner, **CPU na vast instancích jinak idluje** — XMRig

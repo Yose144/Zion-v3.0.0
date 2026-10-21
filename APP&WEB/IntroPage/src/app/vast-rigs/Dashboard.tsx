@@ -63,6 +63,8 @@ const COIN: Record<string, { name: string; c: string }> = {
   pearlhash: { name: "PRL", c: "#34d399" },
   "rx/0": { name: "XMR", c: "#fb923c" },
 };
+const VLLM_IMAGE = "vllm/vllm-openai:v0.8.5";
+
 function coinOf(m: Miner) {
   const a = (m.algo || "").toLowerCase();
   for (const [k, v] of Object.entries(COIN)) if (a.includes(k)) return v;
@@ -103,6 +105,8 @@ export default function Dashboard() {
   const [ai, setAi] = useState<AiStatus | null>(null);
   const [aiErr, setAiErr] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [inferenceModel, setInferenceModel] = useState("Qwen/Qwen2.5-Coder-3B-Instruct");
+  const [inferenceMemory, setInferenceMemory] = useState("0.6");
 
   const loadAiStatus = useCallback(async () => {
     setAiLoading(true);
@@ -181,6 +185,53 @@ export default function Dashboard() {
       setBusy("");
     }
   };
+  const inferenceAction = async (
+    action: "deploy" | "status" | "stop" | "tunnel",
+    rig: AiRig,
+  ) => {
+    if (action === "deploy" && !confirm(
+      `Deploy ${inferenceModel} on Vast rig #${rig.id}?\n\n` +
+      `This starts vLLM (${VLLM_IMAGE}) and uses up to ${Math.round(Number(inferenceMemory) * 100)}% ` +
+      `of GPU memory. It can reduce mining performance. No new instance will be rented.`,
+    )) return;
+    if (action === "stop" && !confirm(
+      `Stop the hiran-vllm container on rig #${rig.id}?`,
+    )) return;
+
+    const key = `inference:${rig.id}:${action}`;
+    const query = new URLSearchParams({ id: String(rig.id) });
+    if (action === "deploy") {
+      query.set("confirm", "1");
+      query.set("model", inferenceModel.trim());
+      query.set("gpu_memory_utilization", inferenceMemory);
+      query.set("image", VLLM_IMAGE);
+    }
+    if (action === "stop") query.set("confirm", "1");
+    setBusy(key);
+    try {
+      const response = await fetch(`/vast-ops/api/inference/${action}?${query.toString()}`, {
+        method: "POST",
+      });
+      const text = await response.text();
+      if (!response.ok) throw new Error(text || `HTTP ${response.status}`);
+      if (action === "tunnel") {
+        const [command, baseUrl] = text.split("\n");
+        try {
+          await navigator.clipboard.writeText(command);
+          show(true, `SSH tunnel command copied. Configure Hiran with ${baseUrl}`);
+        } catch {
+          show(true, text);
+        }
+      } else {
+        show(true, text);
+        if (action === "deploy" || action === "stop") await loadAiStatus();
+      }
+    } catch (e) {
+      show(false, String(e));
+    } finally {
+      setBusy("");
+    }
+  };
 
   const totals: Record<string, { v: number; unit: string; a: number; c: string }> = {};
   for (const r of rigs)
@@ -239,13 +290,13 @@ export default function Dashboard() {
                   <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#a371f7]/30 bg-[#a371f7]/10 text-lg text-[#d2a8ff]" aria-hidden="true">
                     ✦
                   </span>
-                  <h2 className="text-lg font-bold text-white sm:text-xl">AI inference capacity</h2>
-                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/45">
-                    read only
+                  <h2 className="text-lg font-bold text-white sm:text-xl">AI inference workers</h2>
+                  <span className="rounded-full border border-[#a371f7]/25 bg-[#a371f7]/[0.07] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#d2a8ff]/70">
+                    vLLM · SSH only
                   </span>
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-white/50 sm:text-sm">
-                  GPU inventory and local OpenAI-compatible API status · port {ai?.ai_api_port ?? 8000}
+                  Deploy Hiran-compatible inference on an existing running rig. No automatic rental.
                 </p>
               </div>
               <button
@@ -264,6 +315,48 @@ export default function Dashboard() {
               </div>
             ) : ai ? (
               <>
+                <div className="mt-5 rounded-xl border border-[#a371f7]/20 bg-black/20 p-3 sm:p-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">Worker setup</h3>
+                      <p className="mt-1 text-[11px] leading-relaxed text-white/40">
+                        Model API binds to rig loopback only · {VLLM_IMAGE}
+                      </p>
+                    </div>
+                    <span className="rounded-full border border-[#34d399]/20 bg-[#34d399]/[0.05] px-2.5 py-1 text-[10px] text-[#6ee7b7]">
+                      Existing rigs only
+                    </span>
+                  </div>
+                  <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                    <label className="min-w-0 text-[10px] font-semibold uppercase tracking-wider text-white/45">
+                      Hugging Face model
+                      <input
+                        value={inferenceModel}
+                        onChange={(event) => setInferenceModel(event.target.value)}
+                        maxLength={200}
+                        spellCheck={false}
+                        className="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-white/15 bg-black/40 px-3 text-xs normal-case text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none focus:ring-1 focus:ring-[#a371f7]/40 sm:text-sm"
+                      />
+                    </label>
+                    <label className="text-[10px] font-semibold uppercase tracking-wider text-white/45">
+                      vLLM VRAM target
+                      <select
+                        value={inferenceMemory}
+                        onChange={(event) => setInferenceMemory(event.target.value)}
+                        className="mt-1 min-h-11 w-full rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white focus:border-[#a371f7]/50 focus:outline-none focus:ring-1 focus:ring-[#a371f7]/40"
+                      >
+                        <option value="0.4">40%</option>
+                        <option value="0.6">60% · default</option>
+                        <option value="0.75">75% · high contention</option>
+                      </select>
+                    </label>
+                    <div className="flex items-end">
+                      <span className="min-h-11 content-center text-[10px] text-white/35">
+                        Check GPU memory first
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-6">
                   {[
                     ["GPUs", ai.totals.gpu_count],
@@ -285,7 +378,7 @@ export default function Dashboard() {
                 </p>
                 <div className="mt-3 grid min-w-0 gap-2 sm:grid-cols-2">
                   {ai.rigs.map((rig) => (
-                    <div key={rig.id} className="min-w-0 rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4">
+                      <div key={rig.id} className="min-w-0 rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4">
                       <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <b className="truncate text-sm text-white">Rig #{rig.id} · {rig.gpu_name}</b>
                         <span className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold sm:text-xs ${
@@ -335,6 +428,36 @@ export default function Dashboard() {
                         </div>
                       )}
                       {rig.error && <div className="mt-2 break-words text-xs text-[#ff7b72]">{rig.error}</div>}
+                      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/[0.06] pt-3">
+                        <button
+                          onClick={() => inferenceAction("deploy", rig)}
+                          disabled={!!busy || !inferenceModel.trim()}
+                          className="min-h-10 rounded-lg border border-[#a371f7]/35 bg-[#a371f7]/10 px-2 py-2 text-xs font-semibold text-[#d2a8ff] transition hover:bg-[#a371f7]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2a8ff] disabled:cursor-wait disabled:opacity-40"
+                        >
+                          {busy === `inference:${rig.id}:deploy` ? "Starting…" : "Deploy worker"}
+                        </button>
+                        <button
+                          onClick={() => inferenceAction("status", rig)}
+                          disabled={!!busy}
+                          className="min-h-10 rounded-lg border border-white/15 bg-white/[0.03] px-2 py-2 text-xs font-semibold text-white/65 transition hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40"
+                        >
+                          {busy === `inference:${rig.id}:status` ? "Checking…" : "Check worker"}
+                        </button>
+                        <button
+                          onClick={() => inferenceAction("tunnel", rig)}
+                          disabled={!!busy}
+                          className="min-h-10 rounded-lg border border-[#34d399]/20 bg-[#34d399]/[0.04] px-2 py-2 text-xs font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6ee7b7] disabled:cursor-wait disabled:opacity-40"
+                        >
+                          {busy === `inference:${rig.id}:tunnel` ? "Preparing…" : "Copy SSH tunnel"}
+                        </button>
+                        <button
+                          onClick={() => inferenceAction("stop", rig)}
+                          disabled={!!busy}
+                          className="min-h-10 rounded-lg border border-[#ff7b72]/20 bg-[#ff7b72]/[0.04] px-2 py-2 text-xs font-semibold text-[#ff9b93] transition hover:bg-[#ff7b72]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9b93] disabled:cursor-wait disabled:opacity-40"
+                        >
+                          {busy === `inference:${rig.id}:stop` ? "Stopping…" : "Stop worker"}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -414,21 +537,40 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* ops controls */}
+              {/* ops controls — one-button full deploy + logs */}
               <div className="mt-4 border-t border-white/5 pt-3">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/35">Mining presets</p>
-                <div className="grid grid-cols-2 gap-2 min-[480px]:grid-cols-4">
-                {(["srb", "zion", "xmr", "all"] as const).map((m) => (
+                <div className="grid grid-cols-[1fr_auto] gap-2">
                   <button
-                    key={m}
                     disabled={!!busy}
-                    onClick={() => confirm(`launch ${m} on ${r.id}?`) && ops(`launch?id=${r.id}&m=${m}`, "POST")}
-                    className="min-h-10 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition hover:border-[#fcd116]/50 hover:text-[#fcd116] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
+                    onClick={() => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → installed (standby)\n• zion-miner → PRL/QTU 50/50 via pool\n• xmrig → CPU rx/0`) && ops(`launch?id=${r.id}&m=full`, "POST")}
+                    className="min-h-11 rounded-lg border border-[#fcd116]/50 bg-[#fcd116]/10 px-3 py-2 text-xs font-semibold text-[#fcd116] transition hover:bg-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
                   >
-                    {busy === `launch?id=${r.id}&m=${m}` ? "Starting…" : `Start ${m}`}
+                    {busy === `launch?id=${r.id}&m=full` ? "Deploying…" : "▸ Full deploy — dual PRL/QTU + CPU XMR"}
                   </button>
-                ))}
+                  <button
+                    onClick={() => toggleLogs(r.id)}
+                    className="min-h-11 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white/70 transition hover:border-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                  >
+                    {logsOpen[r.id] ? "▾ logs" : "▸ logs"}
+                  </button>
                 </div>
+                <div className="mt-2 flex gap-1.5">
+                  {(["srb", "zion", "xmr"] as const).map((m) => (
+                    <button
+                      key={m}
+                      disabled={!!busy}
+                      onClick={() => confirm(`launch ${m} on ${r.id}?`) && ops(`launch?id=${r.id}&m=${m}`, "POST")}
+                      className="rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] text-white/45 transition hover:border-white/30 hover:text-white/80 disabled:opacity-40"
+                    >
+                      only {m}
+                    </button>
+                  ))}
+                </div>
+                {logsOpen[r.id] && (
+                  <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/50 p-3 text-[10px] leading-relaxed text-white/60">
+                    {logs[r.id] ?? "loading…"}
+                  </pre>
+                )}
                 <form
                   className="mt-3 flex min-w-0 gap-2"
                   onSubmit={(e) => {

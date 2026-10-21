@@ -2,7 +2,8 @@
 
 **Datum:** 21. 10. 2026
 
-**Stav:** změny pushnuty do `origin/main`; statická stránka nasazena na Edge
+**Stav:** základní Vast dashboard je pushnutý a nasazený; inference worker UI
+a ovládací API jsou doplněná v této iteraci
 
 ## Cíl
 
@@ -44,6 +45,17 @@ garantovaný inference výkon.
 - **Dokumentace** v
   [`VASTAI-MINING.md`](./VASTAI-MINING.md): popis AI status pilotu a omezení
   sdílené VRAM a GPU výkonu.
+- **Vast inference worker ovládání** v
+  [`tools/vast/vast_inference.py`](./tools/vast/vast_inference.py) a
+  [`tools/vast/vastctl.py`](./tools/vast/vastctl.py): potvrzené deploy/stop/
+  status akce a příkaz pro SSH port-forward. Akce cílí pouze na již běžící
+  instanci; deployment váže vLLM host port na loopback a povoluje jen oficiální
+  version-tagged vLLM image.
+- **Sjednocené inference UI** v
+  [`APP&WEB/IntroPage/src/app/vast-rigs/Dashboard.tsx`](./APP&WEB/IntroPage/src/app/vast-rigs/Dashboard.tsx):
+  přehledný worker setup panel, výběr modelu a VRAM cíle a responsivní tlačítka
+  Deploy, Check, Copy SSH tunnel a Stop na kartě každého rigu. Deploy a Stop
+  vyžadují potvrzení; tunnel příkaz lze zkopírovat do clipboardu.
 
 ## Ověření
 
@@ -51,7 +63,8 @@ garantovaný inference výkon.
   staticky generovaná stránka.
 - `tsc --noEmit` v `APP&WEB/IntroPage` — bez TypeScript chyb.
 - `python3 -m unittest discover -s tools/vast -p 'test_*.py' -v` — všech
-  **6 testů prošlo**.
+  **15 testů prošlo** (loopback bind, origin ochrana, potvrzení akcí, validace
+  instance/modelu/image a SSH tunnel command).
 - `git diff --check` — bez whitespace chyb.
 - Smoke test `http://127.0.0.1:8088/api/ai/status` — HTTP 200; odpověď obsahuje
   `ai_api_port`, `note`, `rigs`, `totals` a `ts`.
@@ -72,10 +85,15 @@ garantovaný inference výkon.
   `bdbf805516f78e6e5337b5a5fc52b4ccfa7aa663`
   (`Improve Vast rigs responsive dashboard`).
 
-## Co zbývá
+## Provozní bezpečnost a zbývající práce
 
-Tento release pouze monitoruje dostupný stav. Nezavádí vzdálené spouštění
-modelů, plánování mezi Vast instancemi, dělení modelu přes více GPU, správu
-podílů těžba/inference ani automatické přesměrování požadavků Hirana. Tyto
-funkce vyžadují další návrh orchestrace, bezpečné správy přístupů a limitů
-výkonu.
+Tato iterace přidává ovládání jednoho inference workeru na jednom hostu, ale
+během vývoje nebyla pronajata ani změněna žádná instance. Reálné nasazení
+vyžaduje uživatelem potvrzenou akci, Docker + NVIDIA runtime na rigu a ruční
+spuštění vygenerovaného SSH tunelu. `gpu-memory-utilization` je limit alokace
+vLLM, nikoliv garance časového rozdělení výkonu s těžbou.
+
+Zbývá reálný end-to-end test na vybrané existující Vast instanci a následné
+napojení tunelovaného `LLM_BASE_URL` do běžící Hiran služby. Modely na různých
+Vast hostech nesdílejí VRAM; distribuované model parallelism, routing/fallback
+mezi workery a scheduler těžba/inference zůstávají samostatnými úkoly.
