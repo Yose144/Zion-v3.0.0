@@ -1,13 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
+import { getAdminSession } from '@/lib/admin-session';
+import { assertSameOrigin } from '@/lib/csrf';
+
+function keyMatches(provided: string, expected: string): boolean {
+  if (!provided || provided.length !== expected.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(provided, 'utf8'), Buffer.from(expected, 'utf8'));
+  } catch {
+    return false;
+  }
+}
 
 /**
- * Timing-safe comparison for the admin API key.
- * Returns null if the key is valid, otherwise a 401/500 response.
+ * Require admin privileges. Accepts, in order:
+ *   1. `x-api-key` / `Authorization: Bearer` == ADMIN_API_KEY (server-to-server)
+ *   2. `zion_admin_session` httpOnly cookie (browser, set by /api/admin/login)
+ * Cookie-authenticated mutations also pass through the same-origin check.
+ * Returns null if authorized, otherwise a 401/403/500 response.
  */
-export function requireAdminAuth(
-  request: NextRequest
-): NextResponse | null {
+export function requireAdminAuth(request: NextRequest): NextResponse | null {
   const expected = process.env.ADMIN_API_KEY;
+
+  const provided =
+    request.headers.get('x-api-key') ??
+    (request.headers.get('authorization')?.startsWith('Bearer ')
+      ? request.headers.get('authorization')!.slice(7)
+      : '');
+
+  if (expected && keyMatches(provided, expected)) return null;
+
+  const session = getAdminSession(request);
+  if (session) {
+    const csrf = assertSameOrigin(request);
+    if (csrf) return csrf;
+    return null;
+  }
+
   if (!expected) {
     console.error('ADMIN_API_KEY is not configured');
     return NextResponse.json(
@@ -15,30 +44,5 @@ export function requireAdminAuth(
       { status: 500 }
     );
   }
-
-  const provided = request.headers.get('x-api-key') ?? '';
-  if (provided.length !== expected.length) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
-  const a = Buffer.from(provided, 'utf8');
-  const b = Buffer.from(expected, 'utf8');
-  try {
-    if (!require('crypto').timingSafeEqual(a, b)) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-  } catch {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
-  return null;
+  return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { getAdminKey } from '@/lib/admin-auth';
+import { checkAdminSession, isAuthenticated } from '@/lib/admin-auth';
 import { useLangT } from '@/lib/useTranslation';
 
 type ShopTheme = 'rasta' | 'zion';
@@ -16,18 +16,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const key = getAdminKey();
-    if (!key && pathname !== '/admin/login') {
-      router.replace('/admin/login');
+    if (pathname === '/admin/login') {
+      setReady(true);
+      return;
     }
-    setReady(true);
+    // Fast UI gate via marker cookie, then verify the real session.
+    if (!isAuthenticated()) {
+      router.replace('/admin/login');
+      setReady(true);
+      return;
+    }
+    checkAdminSession().then((ok) => {
+      if (!ok) router.replace('/admin/login');
+      setReady(true);
+    });
   }, [pathname, router]);
 
   useEffect(() => {
-    if (pathname === '/admin/login') return;
-    const key = getAdminKey();
-    if (!key) return;
-    fetch('/api/admin/settings', { headers: { 'X-API-Key': key } })
+    if (pathname === '/admin/login' || !isAuthenticated()) return;
+    fetch('/api/admin/settings')
       .then((res) => res.json())
       .then((json) => {
         const themeValue = json?.data?.theme;
@@ -39,10 +46,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const saveTheme = async (next: ShopTheme) => {
     setSaving(true);
     try {
-      const key = getAdminKey();
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
-        headers: { 'content-type': 'application/json', 'X-API-Key': key ?? '' },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ theme: next }),
       });
       const json = await res.json();

@@ -3,6 +3,7 @@ import { uploadArtifactMetadata, uploadFile } from '@/lib/ipfs';
 import { requireMarketAuth, isAuthDenied } from '@/lib/zis';
 import { requireAdminAuth } from '@/lib/admin-guard';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { assertSameOrigin } from '@/lib/csrf';
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -10,6 +11,9 @@ const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
 // Requires ZIS session (or admin key) + rate limited — open uploads would
 // let anyone pin arbitrary content through our gateway credentials.
 export async function POST(req: NextRequest) {
+  const csrf = assertSameOrigin(req);
+  if (csrf) return csrf;
+
   const rl = rateLimit(`ipfs:${clientIp(req)}`, 20, 60_000);
   if (!rl.ok) {
     return NextResponse.json(

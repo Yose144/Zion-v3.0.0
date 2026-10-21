@@ -116,6 +116,8 @@ model Bid {
   listingId String
   bidder    String
   amount    BigInt
+  txHash    String?
+  logIndex  Int?
   createdAt DateTime @default(now())
 
   listing   Listing  @relation(fields: [listingId], references: [id])

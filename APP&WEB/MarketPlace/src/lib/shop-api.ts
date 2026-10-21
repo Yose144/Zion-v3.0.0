@@ -1,11 +1,9 @@
-import { getAdminKey } from './admin-auth';
+// Admin calls authenticate via the httpOnly `zion_admin_session` cookie
+// (same-origin requests send it automatically) — no API key in JS.
 import type { ShopProductData, CartItem, ShippingMethod, ShopOrderInput } from '@/types/shop';
 
 function adminHeaders(): Record<string, string> {
-  const key = getAdminKey();
-  const headers: Record<string, string> = { Accept: 'application/json' };
-  if (key) headers['X-API-Key'] = key;
-  return headers;
+  return { Accept: 'application/json' };
 }
 
 export interface ShopProductsResponse {

@@ -1,20 +1,36 @@
-const STORAGE_KEY = 'zion_market_admin_key';
+// Client-side admin auth helpers.
+// The real credential is the httpOnly `zion_admin_session` cookie set by
+// /api/admin/login — JS cannot read it. `zion_admin_ui` is a non-httpOnly
+// marker cookie used only for UI gating (server always re-verifies).
 
-export function getAdminKey(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(STORAGE_KEY);
+const MARKER = 'zion_admin_ui';
+
+function hasMarker(): boolean {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split(';').some((c) => c.trim().startsWith(`${MARKER}=`));
 }
 
-export function setAdminKey(key: string): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, key);
-}
-
-export function clearAdminKey(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(STORAGE_KEY);
-}
-
+/** UI gate only — the server verifies the httpOnly session cookie. */
 export function isAuthenticated(): boolean {
-  return Boolean(getAdminKey());
+  return hasMarker();
+}
+
+/** Server truth — asks the API whether the session cookie is valid. */
+export async function checkAdminSession(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/admin/session', { credentials: 'same-origin' });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function adminLogout(): Promise<void> {
+  try {
+    await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' });
+  } finally {
+    if (typeof document !== 'undefined') {
+      document.cookie = `${MARKER}=; path=/; max-age=0`;
+    }
+  }
 }

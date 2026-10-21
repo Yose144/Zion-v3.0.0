@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireMarketAuth, isAuthDenied } from '@/lib/zis';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { assertSameOrigin } from '@/lib/csrf';
 import { getPublicClient, MARKETPLACE_ADDR, contractsConfigured } from '@/lib/server-chain';
 import { MARKETPLACE_ABI } from '@/lib/contracts';
 
@@ -19,6 +20,9 @@ export const runtime = 'nodejs';
  * Body: { chainListingId: string|number, txHash?: string }
  */
 export async function POST(req: NextRequest) {
+  const csrf = assertSameOrigin(req);
+  if (csrf) return csrf;
+
   const rl = rateLimit(`lreg:${clientIp(req)}`, 30, 60_000);
   if (!rl.ok) {
     return NextResponse.json(

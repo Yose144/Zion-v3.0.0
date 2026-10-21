@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireMarketAuth, isAuthDenied } from '@/lib/zis';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { assertSameOrigin } from '@/lib/csrf';
 import { getWalletClient, getMinterAccount, getPublicClient, NFT_ADDR, contractsConfigured } from '@/lib/server-chain';
 import { ARTIFACT_NFT_ABI } from '@/lib/contracts';
 
@@ -29,6 +30,9 @@ function toBytes32(input: string): `0x${string}` {
  * Body: { to, tokenId?, amount?, category, rarity, name?, description?, imageUri?, metadataUri?, stats? }
  */
 export async function POST(req: NextRequest) {
+  const csrf = assertSameOrigin(req);
+  if (csrf) return csrf;
+
   const rl = rateLimit(`mint:${clientIp(req)}`, 20, 60_000);
   if (!rl.ok) {
     return NextResponse.json(

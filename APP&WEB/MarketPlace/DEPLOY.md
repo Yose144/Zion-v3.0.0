@@ -107,12 +107,49 @@ invoice + QR + encrypted custodial wallet; Stripe webhook requires
 - [x] MINTER_ROLE granted to server minter wallet (not the deployer)
 - [x] systemd: `zion-marketplace.service` + `zion-l2-indexer.timer`
 - [x] nginx proxy → `127.0.0.1:3100` (edge ingress → zion-chain-tunnel → EDGE2)
-- [ ] RELAYER_ROLE for l1-watcher wallet — only needed when L1 hybrid path is enabled
+- [x] RELAYER_ROLE granted to dedicated relayer wallet
+  `0xee6997F76C3419B5249d3e19785c161D877393EA` (funded 0.00015 ETH,
+  key in EDGE2 `.env` as `L2_RELAYER_PRIV_KEY`)
+- [x] `zion-l1-watcher.service` on EDGE2 — `node scripts/l1-watcher.ts`
+  (Node 22 type-strips TS; L1 RPC `127.0.0.1:9445`, finality 60 blocks)
 - [ ] Valid `NEXT_PUBLIC_WC_PROJECT_ID` (Reown/WalletConnect) — dev placeholder 403s
 - [ ] Paid/provider RPC preferred over public endpoints for the indexer
 
+## Admin auth (2026-10-21 redesign)
+
+`/api/admin/login` no longer returns the raw `ADMIN_API_KEY`. It verifies
+`ADMIN_USERS` credentials (plaintext or `sha256:<hex>`) and issues an
+HMAC-signed httpOnly cookie `zion_admin_session` (8 h TTL, secret =
+`ADMIN_SESSION_SECRET ?? ADMIN_API_KEY`) + a non-httpOnly `zion_admin_ui`
+marker for UI gating. `requireAdminAuth` accepts either the session cookie
+(browser) or `x-api-key`/`Bearer` (server-to-server back-compat).
+`/api/admin/session` probes validity, `/api/admin/logout` clears both
+cookies. Login is rate-limited (5/min/IP).
+
+## CSRF protection
+
+`src/lib/csrf.ts#assertSameOrigin` — mutating requests carrying a session
+cookie (`zion_session` or `zion_admin_session`) must present a matching
+`Origin`/`Referer` host (same host or `*.zionterranova.com`), else 403.
+Applied to `/api/mint`, `/api/ipfs/upload`, `/api/listings/register` and
+inside `requireAdminAuth` for cookie-authed admin calls. API-key callers
+(no cookies) are unaffected.
+
+## Indexer reorg handling
+
+`ShopSetting.l2_indexer_chain` stores the last 128 processed tip
+`{block, hash}` points. Each tick compares the stored hash at the cursor
+with the live chain; on mismatch it walks back to the common ancestor and
+`rollbackTo()` undoes derived rows (deletes orphaned listings/sales/bids
+via txHash, restores quantities/status, recomputes `activePrice`), deletes
+orphaned `EventLog` rows, and resets the cursor — the next scan re-applies
+canonical events. A reorg deeper than the tracked window triggers a rescan
+from the oldest tracked block.
+
 ## Known TODOs before full production
 
-- Admin login still returns raw `ADMIN_API_KEY` (move to signed session)
-- ZIS session cookie auth has no CSRF token (SameSite=Lax mitigates)
-- Reorg handling: indexer rolls forward; deep reorgs need manual cursor reset
+- ~~Admin login returns raw `ADMIN_API_KEY`~~ — done (HMAC session)
+- ~~ZIS mutace bez CSRF~~ — done (Origin/Referer same-origin check)
+- ~~Indexer reorg handling~~ — done (hash chain + rollbackTo)
+- `ADMIN_USERS` still env-stored (sha256 supported; argon2/bcrypt would need a dep)
+- indexer public RPC is best-effort — paid provider recommended

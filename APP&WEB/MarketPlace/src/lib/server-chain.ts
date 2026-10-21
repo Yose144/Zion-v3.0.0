@@ -1,7 +1,7 @@
 // ── Server-side chain clients (Base L2) ──────────────────────────────
 // Used by API routes / indexer. Chain follows NEXT_PUBLIC_CHAIN_ID.
 
-import { createPublicClient, createWalletClient, http } from 'viem';
+import { createPublicClient, createWalletClient, fallback, http } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { CHAIN_ID, ZION_MARKETPLACE_ADDRESS, ZION_ARTIFACT_NFT_ADDRESS, WZION_ADDRESS } from '@/lib/contracts';
@@ -12,12 +12,32 @@ export const RPC_URL =
   process.env.NEXT_PUBLIC_BASE_RPC_URL ??
   (activeChain.id === 84532 ? 'https://sepolia.base.org' : 'https://mainnet.base.org');
 
+/**
+ * Ordered RPC list — first wins, others are automatic fallbacks.
+ * `BASE_RPC_URLS` (comma-separated) takes precedence; otherwise
+ * BASE_RPC_URL followed by sensible public defaults.
+ */
+export const RPC_URLS: string[] = (() => {
+  const env = process.env.BASE_RPC_URLS;
+  if (env) return env.split(',').map((u) => u.trim()).filter(Boolean);
+  const defaults =
+    activeChain.id === 84532
+      ? ['https://sepolia.base.org', 'https://base-sepolia-rpc.publicnode.com']
+      : ['https://base-rpc.publicnode.com', 'https://mainnet.base.org', 'https://base.drpc.org'];
+  return [RPC_URL, ...defaults.filter((u) => u !== RPC_URL)];
+})();
+
+function transport() {
+  const endpoints = RPC_URLS.map((url) => http(url, { timeout: 15_000 }));
+  return endpoints.length === 1 ? endpoints[0] : fallback(endpoints, { rank: false });
+}
+
 // Infer the concrete client type from the builder — the union chain type and
 // viem/wagmi type duplication make the generic PublicClient annotation brittle.
 function buildPublicClient() {
   return createPublicClient({
     chain: activeChain,
-    transport: http(RPC_URL, { timeout: 15_000 }),
+    transport: transport(),
   });
 }
 export type ServerPublicClient = ReturnType<typeof buildPublicClient>;
@@ -39,7 +59,7 @@ export function getWalletClient() {
   return createWalletClient({
     account: getMinterAccount(),
     chain: activeChain,
-    transport: http(RPC_URL, { timeout: 15_000 }),
+    transport: transport(),
   });
 }
 export type ServerWalletClient = ReturnType<typeof getWalletClient>;

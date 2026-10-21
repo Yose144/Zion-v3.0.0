@@ -88,9 +88,19 @@ interface RpcResponse<T> {
   error?: unknown;
 }
 
+function l1RpcEndpoint(): { host: string; port: number } {
+  // L1_RPC_URL is "host:port" (raw TCP JSON-RPC). A bare string would be
+  // interpreted by net.createConnection as a unix-socket path.
+  const raw = L1_RPC_URL.replace(/^tcp:\/\//, '').replace(/\/+$/, '');
+  const idx = raw.lastIndexOf(':');
+  if (idx <= 0) return { host: raw || '127.0.0.1', port: 9445 };
+  return { host: raw.slice(0, idx), port: parseInt(raw.slice(idx + 1), 10) || 9445 };
+}
+
 async function l1Rpc<T>(method: string, params: unknown): Promise<T> {
   return new Promise((resolve, reject) => {
-    const sock = net.createConnection(L1_RPC_URL, () => {
+    const { host, port } = l1RpcEndpoint();
+    const sock = net.createConnection({ host, port }, () => {
       const req = JSON.stringify({
         jsonrpc: '2.0',
         method,

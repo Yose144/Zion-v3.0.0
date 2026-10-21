@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { setAdminKey } from '@/lib/admin-auth';
 import { useLangT } from '@/lib/useTranslation';
 
 export default function AdminLoginPage() {
@@ -25,10 +24,9 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = (await res.json()) as { success: boolean; apiKey?: string; error?: string };
+      const data = (await res.json()) as { success: boolean; error?: string };
 
-      if (res.ok && data.success && data.apiKey) {
-        setAdminKey(data.apiKey);
+      if (res.ok && data.success) {
         router.replace('/admin/orders');
       } else {
         setError(data.error ?? t('admin.invalidCredentials'));
