@@ -167,7 +167,7 @@ test.describe('Passkey WebAuthn E2E', () => {
 
     // Contract: verify payload carries ceremonyId + a real attestation response.
     expect(verifyPayload).not.toBeNull();
-    const payload = verifyPayload as { ceremonyId?: string; response?: { id?: string; response?: { attestationObject?: string; clientDataJSON?: string } } };
+    const payload = verifyPayload as unknown as { ceremonyId?: string; response?: { id?: string; response?: { attestationObject?: string; clientDataJSON?: string } } };
     expect(payload.ceremonyId).toBe('e2e-reg-1');
     expect(payload.response?.response?.attestationObject).toBeTruthy();
     expect(payload.response?.response?.clientDataJSON).toBeTruthy();

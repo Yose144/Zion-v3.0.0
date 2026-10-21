@@ -216,7 +216,7 @@ export default function StarfieldBackground({
         draw(); // single static frame — no recurring RAF
         return;
       }
-      if (!animationFrameId && document.visibilityState !== 'hidden') {
+      if (!animationFrameId) {
         animationFrameId = requestAnimationFrame(animate);
       }
     };

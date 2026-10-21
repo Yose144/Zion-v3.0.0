@@ -137,7 +137,7 @@ export async function GET(_req: NextRequest) {
     addr ? pearlWallet(addr) : Promise.resolve(null),
   ]);
 
-  const rpcOk = typeof blocks === 'number' && !blocks?._error;
+  const rpcOk = typeof blocks === 'number';
   const node = {
     ok: rpcOk && !!chainInfo && !chainInfo._error,
     height: typeof blocks === 'number' ? blocks : (chainInfo?.blocks ?? null),

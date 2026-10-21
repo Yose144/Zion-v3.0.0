@@ -119,5 +119,10 @@ name = "pearl_pool_probe"
 path = "src/bin/pearl_pool_probe.rs"
 required-features = ["gpu-cuda"]
 
+[[bin]]
+name = "qpow_probe"
+path = "src/bin/qpow_probe.rs"
+required-features = ["gpu-opencl"]
+
 [build-dependencies]
 cc = "1.0"

@@ -268,6 +268,7 @@ impl AppState {
             ncl_state: NclAppState {
                 scheduler: Arc::new(Mutex::new(JobScheduler::new(1000))),
                 reputation: Arc::new(Mutex::new(ReputationRegistry::new())),
+                store: None,
             },
             ncl_pricing: PricingEngine::with_defaults(),
         }

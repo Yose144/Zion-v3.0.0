@@ -23,7 +23,7 @@
 //!
 //! let scheduler = Arc::new(Mutex::new(JobScheduler::new(1000)));
 //! let reputation = Arc::new(Mutex::new(ReputationRegistry::new()));
-//! let state = NclAppState { scheduler, reputation };
+//! let state = NclAppState { scheduler, reputation, store: None };
 //! let app = create_router(state);
 //! // axum::serve(listener, app).await.unwrap();
 //! ```
