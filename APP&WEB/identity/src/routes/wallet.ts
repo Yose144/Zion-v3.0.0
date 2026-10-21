@@ -74,7 +74,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   // ── GET /me — full wallet snapshot ──────────────────────────────────
   app.get('/me', { preHandler: [requireAuth] }, async (req, reply) => {
     const payload = req.user as { sub: string; addr: string };
-    const token = extractToken(req);
+    const token = extractForwardCookie(req);
 
     let l2Snapshot: any = null;
     try {
@@ -120,7 +120,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
     const payload = req.user as { sub: string };
-    const token = extractToken(req);
+    const token = extractForwardCookie(req);
     const { chain, chainId, purpose } = parsed.data;
 
     let derived: any;
@@ -170,7 +170,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   // ── GET /balances — all balances ───────────────────────────────────
   app.get('/balances', { preHandler: [requireAuth] }, async (req, reply) => {
     const payload = req.user as { sub: string };
-    const token = extractToken(req);
+    const token = extractForwardCookie(req);
 
     let l2Balances: any = null;
     try {
@@ -200,7 +200,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
     const payload = req.user as { sub: string };
-    const token = extractToken(req);
+    const token = extractForwardCookie(req);
     const { from, to, amount, minAmountOut, recipient } = parsed.data;
 
     const fromAsset = parseAssetId(from);
@@ -254,7 +254,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   // ── GET /orders — order history ────────────────────────────────────
   app.get('/orders', { preHandler: [requireAuth] }, async (req, reply) => {
     const payload = req.user as { sub: string };
-    const token = extractToken(req);
+    const token = extractForwardCookie(req);
 
     let l2Orders: any = null;
     try {
@@ -320,7 +320,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
-    const token = extractToken(req);
+    const token = extractForwardCookie(req);
     const { asset, amount, recipient } = parsed.data;
 
     let result: any;
@@ -335,7 +335,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
 
   // ── GET /deposits — deposit history ────────────────────────────────
   app.get('/deposits', { preHandler: [requireAuth] }, async (req, reply) => {
-    const token = extractToken(req);
+    const token = extractForwardCookie(req);
     let result: any;
     try {
       result = await l2Request('GET', '/v1/wallet/deposits', undefined, token);
@@ -347,7 +347,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
 
   // ── GET /withdrawals — withdrawal history ──────────────────────────
   app.get('/withdrawals', { preHandler: [requireAuth] }, async (req, reply) => {
-    const token = extractToken(req);
+    const token = extractForwardCookie(req);
     let result: any;
     try {
       result = await l2Request('GET', '/v1/wallet/withdrawals', undefined, token);
@@ -386,17 +386,18 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-/** Extract the raw JWT token from the request (cookie or Authorization header). */
-function extractToken(req: FastifyRequest): string {
+/** Extract the caller credential to forward to L2 (zion_session cookie). */
+function extractForwardCookie(req: FastifyRequest): string {
+  // L2 resolves callers by replaying the zion_session cookie through ZIS
+  // /api/auth/me — forward the raw (signed) cookie value so the same
+  // session authenticates on the L2 service. Bearer callers keep Bearer.
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.slice(7);
+    return `bearer:${authHeader.slice(7)}`;
   }
-  // The signed cookie is decoded by @fastify/jwt during verification; we
-  // forward the raw cookie value so L2 can re-verify if needed.
   const cookie = req.headers.cookie ?? '';
   const match = cookie.match(/zion_session=([^;]+)/);
-  return match ? match[1] : '';
+  return match ? `cookie:${match[1]}` : '';
 }
 
 /** Make an authenticated request to the L2 multichain API. */
@@ -404,13 +405,15 @@ async function l2Request(
   method: string,
   path: string,
   body: unknown,
-  userToken: string,
+  forward: string,
 ): Promise<any> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  if (userToken) {
-    headers.Authorization = `Bearer ${userToken}`;
+  if (forward.startsWith('cookie:')) {
+    headers.Cookie = `zion_session=${forward.slice(7)}`;
+  } else if (forward.startsWith('bearer:')) {
+    headers.Authorization = `Bearer ${forward.slice(7)}`;
   }
 
   const res = await fetch(`${L2_API_URL}${path}`, {

@@ -17,12 +17,23 @@
 
 // ── Types ────────────────────────────────────────────────────────────
 
+/** Chain types a linked address can carry. */
+export type ZisAddressChainType =
+  | 'zion-l1'
+  | 'evm'
+  | 'bitcoin'
+  | 'solana'
+  | 'quantus'
+  | 'pearl'
+  | 'google'
+  | (string & {});
+
 /** A linked wallet address on a ZION user account. */
 export interface ZisLinkedAddress {
   id: string;
   userId: string;
   address: string;
-  chainType: 'zion-l1' | 'evm' | 'bitcoin' | string;
+  chainType: ZisAddressChainType;
   chainId?: string | null;
   verifiedAt: string;
 }
@@ -57,6 +68,8 @@ export interface ZisUser {
   createdAt: string;
   lastLogin?: string | null;
   loginCount: number;
+  emailVerifiedAt?: string | null;
+  googleId?: string | null;
   linkedAddresses?: ZisLinkedAddress[];
   oasisPlayer?: ZisOasisPlayer | null;
 }
@@ -170,12 +183,12 @@ export interface ZisApiKey {
 /** Challenge nonce response from POST /api/auth/challenge. */
 export interface ZisChallenge {
   challenge: string;
-  chainType: 'zion-l1' | 'evm';
+  chainType: ZisChainType;
   expiresInMs: number;
 }
 
-/** Chain type for challenge requests. */
-export type ZisChainType = 'zion-l1' | 'evm';
+/** Chain type for challenge/link requests. */
+export type ZisChainType = ZisAddressChainType;
 
 // ── Config ───────────────────────────────────────────────────────────
 
@@ -403,15 +416,26 @@ export async function updateProfile(
 /**
  * Link an additional address to the authenticated user's account.
  * POST /api/auth/link  (requires zion_session cookie)
+ *
+ * Body shape depends on chainType:
+ *   zion-l1   — {address, publicKey, signature}
+ *   evm       — {address, signature, message}
+ *   bitcoin   — {address, signature}
+ *   solana    — {address, signature}
+ *   quantus   — {address: qz…, zionAddress, publicKey, signature}
+ *   pearl     — {address: prl1…, zionAddress, publicKey, signature}
+ *   google    — {idToken} (address derived server-side)
  */
 export async function linkAddress(
   body: {
-    address: string;
+    address?: string;
     chainType: ZisChainType;
     chainId?: string;
     publicKey?: string;
-    signature: string;
+    signature?: string;
     message?: string;
+    idToken?: string;
+    zionAddress?: string;
   },
   options?: { cookieHeader?: string; baseUrl?: string },
 ): Promise<{ linked: ZisLinkedAddress; user: ZisUser }> {
@@ -419,6 +443,99 @@ export async function linkAddress(
     method: 'POST',
     body,
     headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Unlink a secondary address (not the primary, not the last one).
+ * DELETE /api/auth/link/:address  (requires zion_session cookie)
+ */
+export async function unlinkAddress(
+  address: string,
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ ok: boolean; unlinked: string }> {
+  return zisFetch<{ ok: boolean; unlinked: string }>(
+    `/api/auth/link/${encodeURIComponent(address)}`,
+    {
+      method: 'DELETE',
+      headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+      baseUrl: options?.baseUrl,
+    },
+  );
+}
+
+/**
+ * Move the primary address to another linked address.
+ * POST /api/auth/primary  (requires zion_session cookie)
+ */
+export async function setPrimaryAddress(
+  address: string,
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<ZisUser> {
+  return zisFetch<ZisUser>('/api/auth/primary', {
+    method: 'POST',
+    body: { address },
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Delete the account permanently. Requires a fresh proof-of-key for any
+ * linked address (or a Google idToken for google-bound accounts).
+ * DELETE /api/auth/me  (requires zion_session cookie)
+ */
+export async function deleteAccount(
+  body: {
+    chainType: ZisChainType;
+    address?: string;
+    publicKey?: string;
+    signature?: string;
+    message?: string;
+    idToken?: string;
+    zionAddress?: string;
+  },
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ ok: boolean; deleted: boolean; sessionsRevoked: number }> {
+  return zisFetch('/api/auth/me', {
+    method: 'DELETE',
+    body,
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Request an e-mail verification link (rate-limited; needs ZIS_EMAIL_ENABLED).
+ * POST /api/auth/email/verify/request  (requires zion_session cookie)
+ */
+export async function requestEmailVerification(
+  email: string,
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ ok: boolean }> {
+  return zisFetch<{ ok: boolean }>('/api/auth/email/verify/request', {
+    method: 'POST',
+    body: { email },
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Verify via the method dispatcher (same handlers as the per-method routes).
+ * POST /api/auth/verify
+ */
+export async function verify(
+  body:
+    | { method: 'ed25519'; address: string; publicKey: string; signature: string }
+    | { method: 'siwe'; address: string; message: string; signature: string }
+    | { method: 'google'; idToken: string },
+  options?: { baseUrl?: string },
+): Promise<ZisSession> {
+  return zisFetch<ZisSession>('/api/auth/verify', {
+    method: 'POST',
+    body,
     baseUrl: options?.baseUrl,
   });
 }
