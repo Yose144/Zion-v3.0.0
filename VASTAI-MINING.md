@@ -222,6 +222,33 @@ Web UI: karty per instance (GPU util/power/temp, minery + hashrate + A/R,
 $/den součet), per-rig exec box + **deploy xmrig** tlačítko.
 Hashrate se čte ze SRBMiner logů (`/root/srb-*.log`) a XMRig API —
 minery bez log redirectu ukážou `—` (spusť s `> /root/srb-qtu.log 2>&1 &`).
+`VASTCTL_READONLY=1` vypne exec/deploy endpointy (veřejný serve mód).
+
+### Daemon — autonomní fleet loop (DEPLOYED)
+
+`vastctl daemon` každých 60 s: probe všech instancí → `status.json`
+(s 90bodovou hashrate historií pro sparklines) → `scp` push do edge
+webrootu + `--autodeploy-xmrig` (rig bez xmrig → automaticky config+
+binárka+launch, fail backoff 10 min).
+
+Live setup (systemd **user** unit `vastctl-daemon.service`, copy v
+`tools/vast/`): běží na zionserveru, pushne JSON do
+`/var/www/zion-maintenance/vast-rigs/status.json` na edge.
+
+```bash
+systemctl --user enable --now vastctl-daemon   # + loginctl enable-linger (už je)
+journalctl --user -u vastctl-daemon -f
+```
+
+### Skrytá veřejná stránka
+
+`https://zionterranova.com/vast-rigs/` — unlisted ops dashboard
+(noindex, nikde nelinkovaná): IntroPage `src/app/vast-rigs/` — client-side
+fetch `/vast-rigs/status.json` každých 30 s → karty per rig (GPU metriky,
+minery s hashrate + A/R + **sparkline** historie, $/den součet).
+Placeholder `public/vast-rigs/status.json` drží adresář v static exportu
+(`rsync --delete` by ho jinak smazal). Deploy: `npm run build` +
+`ZION_EDGE_HOST=zion-v6 bash deploy/deploy-intro.sh`.
 
 ## 7. Vypnutí instance (důležité — jinak utíkají peníze!)
 

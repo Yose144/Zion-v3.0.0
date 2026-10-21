@@ -251,6 +251,14 @@ def snapshot(ids=None):
     }
 
 
+def snapshot_from(rigs):
+    return {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "total_dph": round(sum(r["dph"] for r in rigs), 4),
+        "rigs": rigs,
+    }
+
+
 def _write_json_atomic(path, payload):
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -374,6 +382,21 @@ function deploy(id){{if(!confirm('deploy xmrig on '+id+'?'))return;fetch('/api/d
 </script>"""
 
 
+_serve_cache = {"ts": 0.0, "rigs": []}
+SERVE_CACHE_TTL = 30.0
+
+
+def cached_rigs():
+    if time.time() - _serve_cache["ts"] > SERVE_CACHE_TTL:
+        _serve_cache["rigs"] = status_all()
+        _serve_cache["ts"] = time.time()
+    return _serve_cache["rigs"]
+
+
+def readonly():
+    return os.environ.get("VASTCTL_READONLY") == "1"
+
+
 class Handler(BaseHTTPRequestHandler):
     cfg_path = DEFAULT_XMRIG_CONFIG
 
@@ -392,8 +415,11 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         q = parse_qs(u.query)
         if u.path == "/api/status":
-            self._send(json.dumps(status_all()), ctype="application/json")
+            self._send(json.dumps(snapshot_from(cached_rigs())), ctype="application/json")
         elif u.path == "/api/exec":
+            if readonly():
+                self._send("readonly mode", 403, "text/plain")
+                return
             iid, cmd = q.get("id", [""])[0], q.get("cmd", [""])[0]
             inst = [i for i in instances() if str(i["id"]) == iid]
             if not inst or not cmd:
@@ -402,13 +428,15 @@ class Handler(BaseHTTPRequestHandler):
             rc, out, err = ssh(inst[0], cmd, timeout=60)
             self._send((out + err).strip() or f"(exit {rc})", ctype="text/plain")
         else:
-            rigs = status_all()
-            self._send(render_dashboard(rigs, time.strftime("%H:%M:%S")))
+            self._send(render_dashboard(cached_rigs(), time.strftime("%H:%M:%S")))
 
     def do_POST(self):
         u = urlparse(self.path)
         q = parse_qs(u.query)
         if u.path == "/api/deploy-xmrig":
+            if readonly():
+                self._send("readonly mode", 403, "text/plain")
+                return
             iid = q.get("id", [""])[0]
             try:
                 ns = argparse.Namespace(id=iid, config=self.cfg_path)
@@ -449,6 +477,13 @@ def main():
     p.add_argument("cmd", nargs=argparse.REMAINDER)
     p = sub.add_parser("logs")
     p.add_argument("id")
+    p = sub.add_parser("daemon")
+    p.add_argument("--interval", type=int, default=60)
+    p.add_argument("--json-out", default="status.json")
+    p.add_argument("--push", default="",
+                   help="scp target host:/path for the status json (e.g. root@edge:/var/www/site/vast-rigs/status.json)")
+    p.add_argument("--autodeploy-xmrig", action="store_true",
+                   help="auto-deploy+launch xmrig on rigs that don't run it")
     args = ap.parse_args()
     if args.cmd == "status":
         return cmd_status(args)
@@ -460,6 +495,8 @@ def main():
         return cmd_exec(args)
     if args.cmd == "logs":
         return cmd_logs(args)
+    if args.cmd == "daemon":
+        return cmd_daemon(args)
 
 
 if __name__ == "__main__":
