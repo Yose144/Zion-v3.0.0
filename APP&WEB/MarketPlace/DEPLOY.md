@@ -14,7 +14,22 @@ L2 events ──► l2-indexer (API tick or daemon) ──► Prisma DB
 On-chain state is canonical for listings/payments; Postgres is the indexed
 read-model + metadata store + eShop database.
 
-## Deployed contracts — Base Sepolia (chainId 84532)
+## Deployed contracts — Base Mainnet (chainId 8453) — PRODUCTION
+
+Deployed 2026-10-21, deploy block `52911841`. Deployer `0xdde17…89D186`.
+
+| Contract | Address | Tx |
+|---|---|---|
+| ZIONArtifact (ERC-1155) | `0x70f1f4442a939468f66342e587f4bce09e8fd676` | `0x1f1c07d7…aa2a` |
+| ZIONMarketplace | `0x59651e1Fb5cDe96Adee5A08d3F5CA99607afF754` | `0xdaa1ef4f…5088` |
+| wZION (real) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | (pre-existing) |
+
+On-chain config (verified):
+- `marketplace.wzion()` → real wZION above
+- `marketplace.feeRecipient()` → Treasury `0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD`
+- `nft.hasRole(MINTER_ROLE, 0xbF82f801F273d6030eCDC6b3274A3C084ba50183)` → backend `/api/mint` wallet
+
+## Deployed contracts — Base Sepolia (chainId 84532) — staging
 
 | Contract | Address |
 |---|---|
@@ -23,7 +38,6 @@ read-model + metadata store + eShop database.
 | wZION (test faucet token) | `0x4F68fD4994C5097Db7c2C3764F80e376748edD3b` |
 
 Deployer: `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` (edge `validator.key`).
-Mainnet wZION: `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`.
 
 ## Local setup
 
@@ -58,8 +72,16 @@ Post-deploy admin calls:
 
 - **API**: `POST /api/indexer/tick` (Bearer `INDEXER_SECRET` or `x-api-key` admin).
   Cursor stored in `ShopSetting.l2_indexer_block`. Cron-friendly.
-- **Daemon**: `tsx scripts/l2-indexer.ts` — loops ticks; run under systemd.
-- `INDEXER_LOG_CHUNK` — public Base RPC limits getLogs to ~200 blocks.
+- **EDGE2 production**: `zion-l2-indexer.timer` (15 s interval) fires a oneshot
+  `zion-l2-indexer.service` that curl-POSTs the tick — no long-running daemon,
+  no tsx on the server.
+- **Daemon** (alternative): `tsx scripts/l2-indexer.ts` — loops ticks.
+- `INDEXER_LOG_CHUNK=200` — public Base RPCs limit `eth_getLogs` ranges;
+  `mainnet.base.org` also rate-limits heavily → EDGE2 uses
+  `https://base-rpc.publicnode.com` (server-side `BASE_RPC_URL`).
+- Cursor seeding for a fresh deployment: insert
+  `ShopSetting(key='l2_indexer_block', value=<deploy block - 1>)` so the indexer
+  does not rescan from genesis.
 
 ## E2E flows
 
@@ -74,16 +96,20 @@ indexer syncs `ListingCreated` → item page buys via `chainListingId` →
 invoice + QR + encrypted custodial wallet; Stripe webhook requires
 `STRIPE_WEBHOOK_SECRET` in production.
 
-## Production checklist
+## Production checklist (EDGE2 status 2026-10-21)
 
-- [ ] `NODE_ENV=production` + `WALLET_SEED_KEY` (64-hex) — orders fail closed without it
-- [ ] `ADMIN_API_KEY`, `SHOP_SEED_SECRET`, `INDEXER_SECRET` set (no defaults)
-- [ ] `STRIPE_WEBHOOK_SECRET` set — unsigned webhooks rejected in prod
-- [ ] `NEXT_PUBLIC_CHAIN_ID=8453` + mainnet addresses + real wZION
-- [ ] `setFeeRecipient` called on-chain
-- [ ] MINTER_ROLE granted to server minter wallet (not the deployer)
-- [ ] systemd: `zion-marketplace.service` + `zion-l2-indexer.service` (scripts/l2-indexer.ts)
-- [ ] nginx proxy → `127.0.0.1:3100` (set `PORT=3100`)
+- [x] `NODE_ENV=production` + `WALLET_SEED_KEY` (64-hex) — orders fail closed without it
+- [x] `ADMIN_API_KEY`, `SHOP_SEED_SECRET`, `INDEXER_SECRET` set (no defaults)
+- [x] `NEXT_PUBLIC_CHAIN_ID=8453` + mainnet addresses + real wZION
+  (systemd drop-in `/etc/systemd/system/zion-marketplace.service.d/zz-mainnet.conf`
+  — `Environment=` beats `EnvironmentFile=`, chain config lives there)
+- [x] `setFeeRecipient` called on-chain (Treasury multisig)
+- [x] MINTER_ROLE granted to server minter wallet (not the deployer)
+- [x] systemd: `zion-marketplace.service` + `zion-l2-indexer.timer`
+- [x] nginx proxy → `127.0.0.1:3100` (edge ingress → zion-chain-tunnel → EDGE2)
+- [ ] RELAYER_ROLE for l1-watcher wallet — only needed when L1 hybrid path is enabled
+- [ ] Valid `NEXT_PUBLIC_WC_PROJECT_ID` (Reown/WalletConnect) — dev placeholder 403s
+- [ ] Paid/provider RPC preferred over public endpoints for the indexer
 
 ## Known TODOs before full production
 

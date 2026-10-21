@@ -25,3 +25,6 @@ Thumbs.db
 *.swp
 *.swo
 tsconfig.tsbuildinfo
+
+# Foundry broadcast receipts (per-environment, contain deployment tx data)
+broadcast/
