@@ -114,6 +114,31 @@ an address bound to an account always signs in as that account ("owner wins").
 | `GET` | `/api/wallet/withdrawals` | Withdrawal history |
 | `GET` | `/api/wallet/quote` | Swap quote (public) |
 
+The proxy forwards the caller's credential to L2 (`L2_MULTICHAIN_URL`,
+default `http://127.0.0.1:8454`): cookie sessions go as
+`Cookie: zion_session=<signed value>`, Bearer callers as
+`Authorization`. L2 resolves the cookie by introspection through
+`/api/auth/me` — a raw JWT is *not* accepted there.
+
+## Production topology
+
+Two ZIS instances share one PostgreSQL database and one Ed25519 key:
+
+- **edge** (vmi3425821) — public `auth.zionterranova.com` via nginx →
+  `127.0.0.1:8096`
+- **EDGE2** (vmi3684458) — local `127.0.0.1:8096` serving the EDGE2
+  `warpd` multichain (`ZION_MULTICHAIN_ZIS_AUTH=1`,
+  `ZIS_URL=http://127.0.0.1:8096`); no public vhost
+
+The L2 `warpd` runs only on EDGE2 — the edge wallet proxy reaches it
+through the SSH tunnel at `127.0.0.1:8454`. The systemd unit must run
+`/usr/local/bin/node` (Node 22); `/usr/bin/node` is Node 18 and fails
+on the Ed25519 PKCS8 key. Store `JWT_PRIVATE_KEY` base64-encoded in
+the EnvironmentFile — literal `\n` escapes break `createPrivateKey`.
+
+Deploy: `deploy/deploy-zis.sh` (build → sync → `prisma db push` +
+`generate` → restart → health smoke).
+
 ### Admin (role `admin` or `x-service-key`)
 
 | Method | Path | Description |
