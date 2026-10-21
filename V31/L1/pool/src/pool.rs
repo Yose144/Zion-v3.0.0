@@ -42,6 +42,9 @@ pub struct CoinRevenueOutcome {
     /// Sum of emitted amounts — equals `amount` only when every share
     /// holder had a valid payout address on the coin's chain.
     pub emitted_total: u64,
+    /// Generated native payouts, persisted to the SQLite outbox by the API
+    /// before the PPLNS snapshot is committed.
+    pub payouts: Vec<(u64, PayoutEntry)>,
 }
 
 /// Stratum connection/session counters shared between every
@@ -84,9 +87,6 @@ pub struct Pool {
     pub sent_payouts: HashSet<(u64, String)>,
     /// Block heights that have already been processed for payout (idempotency guard).
     paid_block_heights: HashSet<u64>,
-    /// Revenue event ids already distributed (`on_coin_revenue` dedup —
-    /// the oracle may retry a POST after a timeout).
-    seen_revenue_events: HashSet<String>,
     /// Shared per-worker telemetry registry (hashrate, shares, blocks).
     pub telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
     pub(crate) pearl: Option<Arc<crate::pearl_gateway::PearlRuntime>>,
@@ -139,7 +139,6 @@ impl Pool {
             pending_payouts: Vec::new(),
             sent_payouts: HashSet::new(),
             paid_block_heights: HashSet::new(),
-            seen_revenue_events: HashSet::new(),
             telemetry,
             pearl: crate::pearl_gateway::PearlRuntime::from_env(),
         })
@@ -407,7 +406,7 @@ impl Pool {
         if !self.pplns.is_native_payout_coin(&coin) {
             return Err(PoolError::CoinNotNative);
         }
-        if event_id.is_empty() || !self.seen_revenue_events.insert(event_id.to_string()) {
+        if event_id.is_empty() || self.pplns.has_applied_revenue_event(event_id) {
             return Err(PoolError::DuplicateRevenueEvent);
         }
 
@@ -415,18 +414,25 @@ impl Pool {
         let mut entries = self
             .pplns
             .compute_miner_payouts_for_coin(&coin, amount_native, &chain);
-        let emitted_total: u64 = entries.iter().map(|p| p.amount).sum();
         for entry in &mut entries {
             entry.revenue_event = Some(event_id.to_string());
         }
-        for entry in entries.iter() {
-            self.pending_payouts.push((ref_height, entry.clone()));
-        }
+        let payouts: Vec<_> = entries
+            .into_iter()
+            .map(|entry| (ref_height, entry))
+            .collect();
+        self.pending_payouts.extend(payouts.iter().cloned());
+        self.pplns.mark_revenue_event_applied(event_id);
+        let emitted_total = payouts
+            .iter()
+            .map(|(_, payout)| payout.amount)
+            .fold(0u64, u64::saturating_add);
         Ok(CoinRevenueOutcome {
             coin,
             amount: amount_native,
-            emitted: entries.len(),
+            emitted: payouts.len(),
             emitted_total,
+            payouts,
         })
     }
 
@@ -603,6 +609,14 @@ impl Pool {
             .iter()
             .map(|(_, p)| p)
             .filter(|p| p.chain() == chain)
+            .collect()
+    }
+
+    pub fn pending_revenue_payouts(&self, event_id: &str) -> Vec<(u64, PayoutEntry)> {
+        self.pending_payouts
+            .iter()
+            .filter(|(_, payout)| payout.revenue_event.as_deref() == Some(event_id))
+            .cloned()
             .collect()
     }
 

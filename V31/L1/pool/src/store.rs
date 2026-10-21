@@ -11,10 +11,13 @@
 
 use anyhow::{Context, Result};
 use rusqlite::{params, Connection, OptionalExtension};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
 use tracing::{debug, info};
+
+use crate::v3_pplns::PayoutEntry;
 
 /// Current schema version.  Increment when adding migrations.
 /// v2 (F2): `coin` columns on shares/payouts/blocks + composite
@@ -22,7 +25,8 @@ use tracing::{debug, info};
 /// v3 (F3): `coin_revenue` audit table — each native-coin revenue event
 /// posted by the treasury oracle, keyed by event id for restart-safe
 /// dedup.
-const SCHEMA_VERSION: u32 = 4;
+/// v5: revenue event prepare/commit journal and durable native payout outbox.
+const SCHEMA_VERSION: u32 = 5;
 
 /// A thread-safe wrapper around a SQLite connection.  SQLite with
 /// `serialized` mode (default for `bundled`) supports multi-thread access,
@@ -270,6 +274,28 @@ impl ShareStore {
             .context("failed to migrate schema to v4")?;
         }
 
+        if current < 5 {
+            conn.execute_batch(
+                r#"
+                ALTER TABLE coin_revenue
+                    ADD COLUMN status TEXT NOT NULL DEFAULT 'committed';
+                CREATE TABLE IF NOT EXISTS coin_revenue_outbox (
+                    id          TEXT PRIMARY KEY,
+                    event_id    TEXT NOT NULL,
+                    chain       TEXT NOT NULL,
+                    height      INTEGER NOT NULL,
+                    payout_json TEXT NOT NULL,
+                    status      TEXT NOT NULL DEFAULT 'pending',
+                    created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
+                    acked_at    INTEGER
+                );
+                CREATE INDEX IF NOT EXISTS idx_coin_revenue_outbox_pending
+                    ON coin_revenue_outbox(chain, status, created_at);
+                "#,
+            )
+            .context("failed to migrate schema to v5")?;
+        }
+
         conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
         info!("share_store: schema migration complete v{SCHEMA_VERSION}");
         Ok(())
@@ -475,12 +501,216 @@ impl ShareStore {
                 |row| row.get::<_, String>(0),
             )
             .optional()?;
-        Ok(row.and_then(|s| s.parse::<u64>().ok()))
+        row.map(|s| s.parse::<u64>().context("invalid amount_native in coin_revenue"))
+            .transpose()
     }
 
-    /// Record a distributed coin revenue event (F3 audit + dedup).
-    /// `amount_native`/`emitted_total` are stored as TEXT — native base
-    /// units can exceed i64 on high-decimal chains.
+    /// Durably create or retrieve a native revenue journal event.
+    /// Existing ids keep their original payload so retries cannot mutate an
+    /// event that may already have been applied.
+    pub fn begin_coin_revenue(
+        &self,
+        event_id: &str,
+        coin: &str,
+        amount_native: u64,
+        ref_height: u64,
+    ) -> Result<CoinRevenueEvent> {
+        let ref_height = i64::try_from(ref_height).context("revenue ref_height exceeds i64")?;
+        let mut conn = self.conn.lock().expect("share store lock poisoned");
+        let tx = conn.transaction()?;
+        tx.execute(
+            "INSERT OR IGNORE INTO coin_revenue \
+             (id, coin, amount_native, ref_height, emitted, emitted_total, status) \
+             VALUES (?1, ?2, ?3, ?4, 0, '0', 'pending')",
+            params![event_id, coin, amount_native.to_string(), ref_height],
+        )?;
+        let event = tx.query_row(
+            "SELECT id, coin, amount_native, ref_height, emitted, emitted_total, status \
+             FROM coin_revenue WHERE id = ?1",
+            params![event_id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, i64>(3)?,
+                    row.get::<_, i64>(4)?,
+                    row.get::<_, String>(5)?,
+                    row.get::<_, String>(6)?,
+                ))
+            },
+        )?;
+        tx.commit()?;
+        Ok(CoinRevenueEvent {
+            event_id: event.0,
+            coin: event.1,
+            amount_native: event
+                .2
+                .parse()
+                .context("invalid amount_native in coin_revenue")?,
+            ref_height: u64::try_from(event.3).context("negative ref_height in coin_revenue")?,
+            emitted: usize::try_from(event.4).context("negative emitted count in coin_revenue")?,
+            emitted_total: event
+                .5
+                .parse()
+                .context("invalid emitted_total in coin_revenue")?,
+            status: event.6,
+        })
+    }
+
+    /// Persist the result and payout entries for a prepared journal event.
+    /// This is idempotent so startup replay can safely reconstruct an event
+    /// if the process stopped before the PPLNS snapshot was written.
+    pub fn prepare_coin_revenue(
+        &self,
+        event_id: &str,
+        emitted: usize,
+        emitted_total: u64,
+        payouts: &[(u64, PayoutEntry)],
+    ) -> Result<()> {
+        let mut conn = self.conn.lock().expect("share store lock poisoned");
+        let tx = conn.transaction()?;
+        let status = tx
+            .query_row(
+                "SELECT status FROM coin_revenue WHERE id = ?1",
+                params![event_id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .context("coin revenue journal event does not exist")?;
+        if status == "committed" {
+            tx.commit()?;
+            return Ok(());
+        }
+
+        for (height, payout) in payouts {
+            let height_i64 = i64::try_from(*height).context("payout height exceeds i64")?;
+            let chain = payout.chain();
+            let id = format!("{event_id}:{chain}:{}", payout.miner_id);
+            let payout_json = serde_json::to_string(payout)?;
+            tx.execute(
+                "INSERT OR IGNORE INTO coin_revenue_outbox \
+                 (id, event_id, chain, height, payout_json, status) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, 'pending')",
+                params![id, event_id, chain, height_i64, payout_json],
+            )?;
+        }
+        tx.execute(
+            "UPDATE coin_revenue SET emitted = ?2, emitted_total = ?3 \
+             WHERE id = ?1 AND status = 'pending'",
+            params![
+                event_id,
+                i64::try_from(emitted).context("emitted count exceeds i64")?,
+                emitted_total.to_string()
+            ],
+        )?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Commit a revenue event after its result has been durably snapshotted.
+    pub fn complete_coin_revenue(&self, event_id: &str) -> Result<()> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let changed = conn.execute(
+            "UPDATE coin_revenue SET status = 'committed' \
+             WHERE id = ?1 AND status = 'pending'",
+            params![event_id],
+        )?;
+        if changed == 0
+            && !conn.query_row(
+                "SELECT EXISTS(SELECT 1 FROM coin_revenue WHERE id = ?1)",
+                params![event_id],
+                |row| row.get::<_, bool>(0),
+            )?
+        {
+            anyhow::bail!("coin revenue journal event does not exist");
+        }
+        Ok(())
+    }
+
+    pub fn pending_coin_revenue(&self) -> Result<Vec<CoinRevenueEvent>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT id, coin, amount_native, ref_height, emitted, emitted_total, status \
+             FROM coin_revenue WHERE status = 'pending' ORDER BY ts, id",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, i64>(3)?,
+                row.get::<_, i64>(4)?,
+                row.get::<_, String>(5)?,
+                row.get::<_, String>(6)?,
+            ))
+        })?;
+        rows.map(|row| {
+            let row = row?;
+            Ok(CoinRevenueEvent {
+                event_id: row.0,
+                coin: row.1,
+                amount_native: row
+                    .2
+                    .parse()
+                    .context("invalid amount_native in coin_revenue")?,
+                ref_height: u64::try_from(row.3).context("negative ref_height in coin_revenue")?,
+                emitted: usize::try_from(row.4).context("negative emitted count in coin_revenue")?,
+                emitted_total: row
+                    .5
+                    .parse()
+                    .context("invalid emitted_total in coin_revenue")?,
+                status: row.6,
+            })
+        })
+        .collect()
+    }
+
+    /// Return pending durable payouts for one chain. Consumers ACK only after
+    /// their own idempotent payout ledger has recorded each outbox id.
+    pub fn pending_coin_revenue_payouts(&self, chain: &str) -> Result<Vec<CoinRevenuePayout>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT id, height, payout_json FROM coin_revenue_outbox \
+             WHERE chain = ?1 AND status = 'pending' ORDER BY created_at, id",
+        )?;
+        let rows = stmt.query_map(params![chain], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, String>(2)?,
+            ))
+        })?;
+        rows.map(|row| {
+            let row = row?;
+            Ok(CoinRevenuePayout {
+                id: row.0,
+                height: u64::try_from(row.1).context("negative payout height in outbox")?,
+                payout: serde_json::from_str(&row.2).context("invalid payout in revenue outbox")?,
+            })
+        })
+        .collect()
+    }
+
+    /// Acknowledge payouts after the downstream ledger has durably recorded
+    /// them. Repeated acknowledgements are harmless.
+    pub fn ack_coin_revenue_payouts(&self, chain: &str, ids: &[String]) -> Result<usize> {
+        let mut conn = self.conn.lock().expect("share store lock poisoned");
+        let tx = conn.transaction()?;
+        let mut acked = 0;
+        for id in ids {
+            acked += tx.execute(
+                "UPDATE coin_revenue_outbox SET status = 'acked', acked_at = unixepoch() \
+                 WHERE id = ?1 AND chain = ?2 AND status = 'pending'",
+                params![id, chain],
+            )?;
+        }
+        tx.commit()?;
+        Ok(acked)
+    }
+
+    /// Record an already-applied legacy revenue event (F3 audit + dedup).
+    /// New requests use `begin_coin_revenue` and its prepare/commit lifecycle.
     pub fn record_coin_revenue(
         &self,
         event_id: &str,
@@ -492,8 +722,9 @@ impl ShareStore {
     ) -> Result<()> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         conn.execute(
-            "INSERT OR IGNORE INTO coin_revenue (id, coin, amount_native, ref_height, emitted, emitted_total)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT OR IGNORE INTO coin_revenue \
+             (id, coin, amount_native, ref_height, emitted, emitted_total, status) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'committed')",
             params![
                 event_id,
                 coin,
@@ -936,6 +1167,24 @@ pub struct MinerStatsRow {
     pub accepted_shares: u64,
     pub rejected_shares: u64,
     pub total_paid_flowers: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct CoinRevenueEvent {
+    pub event_id: String,
+    pub coin: String,
+    pub amount_native: u64,
+    pub ref_height: u64,
+    pub emitted: usize,
+    pub emitted_total: u64,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoinRevenuePayout {
+    pub id: String,
+    pub height: u64,
+    pub payout: PayoutEntry,
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────

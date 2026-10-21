@@ -565,6 +565,97 @@ def fetch_smos_rigs():
     return rigs
 
 
+# ── external pool stats (luckypool QTU/PRL + nanopool XMR) ───────────────
+XMR_WALLET = "42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK"
+_ext_cache = {"ts": 0.0, "data": None}
+EXT_CACHE_TTL = 55
+LUCKY_UNITS = {"quantus": 1e12, "pearl": 1e8}
+
+
+def _http_json(url, timeout=12):
+    import urllib.request
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "vastctl/1.0", "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read().decode())
+
+
+def _lucky_stats(coin, wallet):
+    """LuckyPool stats_address → normalized {hashrate, balances, workers[]}."""
+    d = _http_json(f"https://{coin}.luckypool.io/api/stats_address?address={wallet}")
+    st = d.get("stats") or {}
+    u = LUCKY_UNITS[coin]
+    def coin_units(v):
+        try:
+            return round(int(v) / u, 6)
+        except (TypeError, ValueError):
+            return 0
+    workers = []
+    for w in d.get("workers", []):
+        avg = w.get("hashrateAvg") or {}
+        workers.append({
+            "name": w.get("name") or "?",
+            "hashrate": w.get("hashrate") or 0,
+            "h1": avg.get("1h") or 0, "h6": avg.get("6h") or 0,
+            "h24": avg.get("24h") or 0,
+            "accepted": int(w.get("acceptedShares") or 0),
+            "last": int(w.get("lastShare") or 0) // 1000,
+            "agent": w.get("agent") or w.get("minerAgent") or "",
+        })
+    return {
+        "hashrate": st.get("hashrate") or 0,
+        "avg": st.get("hashrateAvg") or {},
+        "accepted": int(st.get("acceptedShares") or 0),
+        "rejected": int(st.get("rejectedShares") or 0),
+        "unlocked": coin_units(st.get("unlocked")),
+        "locked": coin_units(st.get("locked")),
+        "paid": coin_units(st.get("paid")),
+        "workers": workers,
+        "url": f"https://{coin}.luckypool.io/miner-stats/{wallet}",
+    }
+
+
+def _xmr_stats():
+    base = f"https://api.nanopool.org/v1/xmr"
+    bal = _http_json(f"{base}/balance/{XMR_WALLET}")
+    hr = _http_json(f"{base}/hashrate/{XMR_WALLET}")
+    avg = _http_json(f"{base}/avghashrate/{XMR_WALLET}")
+    ws = _http_json(f"{base}/workers/{XMR_WALLET}")
+    a = avg.get("data") or {}
+    return {
+        "hashrate": hr.get("data") or 0,
+        "avg": {"1h": a.get("h1") or 0, "6h": a.get("h6") or 0, "24h": a.get("h24") or 0},
+        "balance": bal.get("data") or 0,
+        "workers": [{"name": w.get("id") or "?", "hashrate": w.get("hashrate") or 0,
+                     "last": w.get("lastShare") or 0, "rating": w.get("rating") or 0}
+                    for w in (ws.get("data") or [])],
+        "url": f"https://xmr.nanopool.org/account/{XMR_WALLET}",
+    }
+
+
+def fetch_ext_pools():
+    """External pool balances/workers → {qtu, prl, xmr} (None per-coin on failure)."""
+    now = time.time()
+    if now - _ext_cache["ts"] < EXT_CACHE_TTL:
+        return _ext_cache["data"]
+    out = {}
+    try:
+        out["qtu"] = _lucky_stats("quantus", QTU_WALLET)
+    except Exception:
+        out["qtu"] = None
+    try:
+        out["prl"] = _lucky_stats("pearl", PRL_WALLET)
+    except Exception:
+        out["prl"] = None
+    try:
+        out["xmr"] = _xmr_stats()
+    except Exception:
+        out["xmr"] = None
+    _ext_cache["ts"] = now
+    _ext_cache["data"] = out
+    return out
+
+
 def fetch_pool_miners():
     """Pool /miners via edge loopback API → normalized worker list (None = unreachable)."""
     now = time.time()
@@ -624,6 +715,7 @@ def snapshot(ids=None):
         "rigs": rigs,
         "pool": fetch_pool_miners(),
         "smos": fetch_smos_rigs(),
+        "ext": fetch_ext_pools(),
     }
 
 
@@ -668,6 +760,7 @@ def snapshot_from(rigs):
         "rigs": rigs,
         "pool": fetch_pool_miners(),
         "smos": fetch_smos_rigs(),
+        "ext": fetch_ext_pools(),
     }
 
 

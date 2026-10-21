@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLang } from '@/lib/i18n';
 import AuthButton from '@/components/AuthButton';
 
@@ -20,10 +20,49 @@ export default function Nav() {
   const pathname = usePathname();
   const { lang, setLang, t } = useLang();
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     document.body.classList.toggle('rasta-menu-open', open);
     return () => document.body.classList.remove('rasta-menu-open');
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const first = menuRef.current?.querySelector<HTMLElement>(
+      'button:not([disabled]), a[href]',
+    );
+    first?.focus({ preventScroll: true });
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab' || !menuRef.current) return;
+
+      const focusable = menuRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href]',
+      );
+      if (!focusable.length) return;
+      const firstFocusable = focusable[0];
+      const lastFocusable = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === firstFocusable) {
+        event.preventDefault();
+        lastFocusable.focus();
+      } else if (!event.shiftKey && document.activeElement === lastFocusable) {
+        event.preventDefault();
+        firstFocusable.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      menuButtonRef.current?.focus({ preventScroll: true });
+    };
   }, [open]);
 
   const isActive = (href: string) =>
@@ -86,9 +125,13 @@ export default function Nav() {
               <AuthButton />
             </div>
             <button
+              ref={menuButtonRef}
+              type="button"
               className="rasta-hamburger"
               onClick={() => setOpen(!open)}
-              aria-label="menu"
+              aria-label={open ? t('Zavřít menu', 'Close menu') : t('Otevřít menu', 'Open menu')}
+              aria-expanded={open}
+              aria-controls="pool-mobile-menu"
             >
               {open ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -97,17 +140,36 @@ export default function Nav() {
       </nav>
 
       {/* Mobile slide-in menu */}
-      <div className={`rasta-mobile-menu ${open ? 'open' : ''}`}>
+      <div
+        ref={menuRef}
+        id="pool-mobile-menu"
+        className={`rasta-mobile-menu ${open ? 'open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pool-mobile-menu-title"
+        aria-hidden={!open}
+        inert={!open}
+      >
         <div className="rasta-mobile-brand">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/zion-symbol.png"
-            alt="ZION"
-            width={34}
-            height={34}
-            className="rasta-nav-logo-img"
-          />
-          <span className="rasta-nav-brand">ZION Pool</span>
+          <div className="flex min-w-0 items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/zion-symbol.png"
+              alt=""
+              width={34}
+              height={34}
+              className="rasta-nav-logo-img"
+            />
+            <span id="pool-mobile-menu-title" className="rasta-nav-brand">ZION Pool</span>
+          </div>
+          <button
+            type="button"
+            className="rasta-mobile-close"
+            onClick={() => setOpen(false)}
+            aria-label={t('Zavřít menu', 'Close menu')}
+          >
+            <X size={19} />
+          </button>
         </div>
         {LINKS.map((l) => (
           <Link
@@ -143,7 +205,7 @@ export default function Nav() {
       </div>
       {open && (
         <div
-          className="fixed inset-0 z-[48] bg-black/60 backdrop-blur-sm md:hidden"
+          className="rasta-mobile-backdrop fixed inset-0 z-[48] bg-black/60 backdrop-blur-sm"
           onClick={() => setOpen(false)}
         />
       )}

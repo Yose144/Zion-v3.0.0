@@ -80,7 +80,7 @@ export default function NavAuthButton() {
             className="rounded-lg"
             initial={initial}
           />
-          <span className="hidden lg:inline text-[11px] font-mono text-zion-gold/85 max-w-[140px] truncate">{shortAddr}</span>
+          <span className="hidden xl:inline text-[11px] font-mono text-zion-gold/85 max-w-[140px] truncate">{shortAddr}</span>
           <ChevronDown className={`w-3.5 h-3.5 text-zion-gold/70 transition-transform ${showMenu ? 'rotate-180' : ''}`} />
         </button>
         {showMenu && (

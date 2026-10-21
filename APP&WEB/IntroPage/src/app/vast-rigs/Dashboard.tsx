@@ -27,7 +27,21 @@ type Rig = {
   net?: Record<string, boolean>;
   sessions?: string[];
 };
-type Snap = { ts: string | null; total_dph: number; rigs: Rig[]; pool?: PoolMiner[] | null; smos?: SmosRig[] | null };
+type Snap = { ts: string | null; total_dph: number; rigs: Rig[]; pool?: PoolMiner[] | null; smos?: SmosRig[] | null; ext?: ExtPools };
+type ExtWorker = { name: string; hashrate: number; h1?: number; h6?: number; h24?: number; accepted?: number; last: number; agent?: string; rating?: number };
+type ExtPool = {
+  hashrate: number;
+  avg: Record<string, number>;
+  accepted?: number;
+  rejected?: number;
+  unlocked?: number;
+  locked?: number;
+  paid?: number;
+  balance?: number;
+  workers: ExtWorker[];
+  url: string;
+};
+type ExtPools = { qtu: ExtPool | null; prl: ExtPool | null; xmr: ExtPool | null };
 type SmosRig = {
   id: number;
   name: string;
@@ -210,9 +224,9 @@ export default function Dashboard() {
         .then((j: Snap) => !stop && (setSnap(j), setErr("")))
         .catch((e) => !stop && setErr(String(e)));
     load();
-    const t = setInterval(load, 30000);
+    const t = setInterval(load, 10000);
     loadAiStatus();
-    const aiTimer = setInterval(loadAiStatus, 30000);
+    const aiTimer = setInterval(loadAiStatus, 10000);
     return () => ((stop = true), clearInterval(t), clearInterval(aiTimer));
   }, [loadAiStatus]);
 
@@ -1060,6 +1074,75 @@ export default function Dashboard() {
             </div>
             )}
           </div>
+
+          {/* external pools: earnings + workers per coin */}
+          {snap?.ext && (
+          <div className="mb-5 grid gap-4 lg:grid-cols-3">
+            {([
+              ["qtu", "QTC · Quantus", "#fcd116", "luckypool"],
+              ["prl", "PRL · Pearl", "#34d399", "luckypool"],
+              ["xmr", "XMR · Monero", "#fb923c", "nanopool"],
+            ] as const).map(([k, label, color, poolName]) => {
+              const p = snap.ext?.[k];
+              return (
+                <div key={k} className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-xs font-bold" style={{ color }}>{label}</h4>
+                    {p && (
+                      <a href={p.url} target="_blank" rel="noreferrer" className="text-[10px] text-white/35 underline decoration-dotted hover:text-white/70">
+                        {poolName} ↗
+                      </a>
+                    )}
+                  </div>
+                  {!p ? (
+                    <div className="mt-3 text-[11px] text-white/35">pool API unreachable</div>
+                  ) : (
+                    <>
+                      <div className="mt-3 flex items-end justify-between gap-2">
+                        <div>
+                          <div className="text-lg font-bold text-white">{fmtHps(p.hashrate)}</div>
+                          <div className="text-[10px] text-white/40">
+                            {p.avg["24h"] ? `24h ${fmtHps(p.avg["24h"])}` : ""}
+                            {p.avg["1h"] ? ` · 1h ${fmtHps(p.avg["1h"])}` : ""}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold" style={{ color }}>
+                            {p.unlocked != null ? `${p.unlocked.toFixed(4)}` : p.balance != null ? `${p.balance.toFixed(4)}` : "—"}
+                          </div>
+                          <div className="text-[10px] text-white/40">
+                            {p.unlocked != null ? "unlocked" : "balance"}
+                            {p.locked != null && p.locked > 0 ? ` · ${p.locked.toFixed(4)} locked` : ""}
+                            {p.paid != null && p.paid > 0 ? ` · paid ${p.paid.toFixed(4)}` : ""}
+                          </div>
+                        </div>
+                      </div>
+                      {p.accepted != null && (
+                        <div className="mt-2 text-[10px] text-white/40">A{p.accepted}{p.rejected ? ` · R${p.rejected}` : ""} shares</div>
+                      )}
+                      <div className="mt-3 space-y-1 border-t border-white/[0.06] pt-2">
+                        {p.workers.filter((w) => w.hashrate > 0 || w.last > 0).slice(0, 6).map((w) => (
+                          <div key={w.name} className="flex items-center justify-between gap-2 text-[11px]">
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${w.hashrate > 0 ? "bg-[#34d399]" : "bg-white/20"}`} />
+                              <span className="truncate text-white/70" title={w.agent}>{w.name}</span>
+                            </span>
+                            <span className="shrink-0 text-white/50">
+                              {w.hashrate > 0 ? <b className="text-white/80">{fmtHps(w.hashrate)}</b> : w.last ? agoS(w.last) : "—"}
+                            </span>
+                          </div>
+                        ))}
+                        {p.workers.filter((w) => w.hashrate > 0 || w.last > 0).length === 0 && (
+                          <div className="text-[10px] text-white/25">no active workers</div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          )}
 
           {/* pool workers */}
           <div className="overflow-x-auto rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01]">

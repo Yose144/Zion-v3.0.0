@@ -317,7 +317,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem;
   padding: 0.35rem 0.5rem;
   border-radius: 9999px;
@@ -396,8 +396,8 @@ body {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(4, 6, 16, 0.55);
@@ -413,7 +413,8 @@ body {
   width: min(320px, 85vw);
   height: 100vh;
   height: 100dvh;
-  padding: 5.5rem 1.5rem 2rem;
+  box-sizing: border-box;
+  padding: calc(5.5rem + env(safe-area-inset-top, 0px)) 1.5rem calc(2rem + env(safe-area-inset-bottom, 0px));
   gap: 0.5rem;
   background: rgba(4, 8, 18, 0.98);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
@@ -435,6 +436,19 @@ body {
   padding-bottom: 1rem;
   margin-bottom: 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rasta-mobile-close {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .rasta-mobile-menu .rasta-nav-link {
@@ -459,7 +473,11 @@ body.rasta-menu-open {
   overflow: hidden;
 }
 
-@media (max-width: 868px) {
+.rasta-mobile-backdrop {
+  display: block;
+}
+
+@media (max-width: 1100px) {
   .rasta-nav {
     padding: 0.5rem 0.75rem;
   }
@@ -482,6 +500,12 @@ body.rasta-menu-open {
     font-size: 0.95rem;
   }
   .rasta-nav-kicker {
+    display: none;
+  }
+}
+
+@media (min-width: 1101px) {
+  .rasta-mobile-backdrop {
     display: none;
   }
 }

@@ -225,7 +225,7 @@ export default function Navigation() {
   /* Close on resize from mobile to desktop */
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth >= 1024) setIsOpen(false);
+      if (window.innerWidth >= 1280) setIsOpen(false);
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -268,14 +268,14 @@ export default function Navigation() {
             </div>
             <div className="flex flex-col leading-none transition-all duration-300">
               <span className="text-sm sm:text-base font-bold text-gradient-soft tracking-tight">ZION</span>
-              <span className="text-[6px] sm:text-[7px] px-1 sm:px-1 py-0.5 mt-0.5 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.18em] text-white/60">
+              <span className="hidden sm:inline text-[6px] sm:text-[7px] px-1 sm:px-1 py-0.5 mt-0.5 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.18em] text-white/60">
                 {SITE_RELEASE_LABEL}
               </span>
             </div>
           </Link>
 
           {/* 4 HERO icons — BIG, rasta colored, inline in main bar */}
-          <div className="hidden lg:flex items-center justify-center gap-1.5">
+          <div className="hidden xl:flex items-center justify-center gap-1.5">
             {heroIcons.map((ml) => {
               const isActive = navItemMatches(ml.href);
               return (
@@ -309,7 +309,7 @@ export default function Navigation() {
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-              className={`flex items-center gap-1 rounded-lg border border-white/15 bg-black/75 text-[10px] font-semibold hover:border-white/30 hover:bg-black transition-colors text-zion-gold/85 hover:text-white ${scrolled ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-1'}`}
+              className={`hidden sm:flex items-center gap-1 rounded-lg border border-white/15 bg-black/75 text-[10px] font-semibold hover:border-white/30 hover:bg-black transition-colors text-zion-gold/85 hover:text-white ${scrolled ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-1'}`}
               title={lang === 'cs' ? tr('nav', 'switch_to_en', lang) : tr('nav', 'switch_to_cs', lang)}
             >
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
@@ -319,7 +319,7 @@ export default function Navigation() {
               target="_blank"
               rel="noreferrer"
               title="GitHub"
-              className={`hidden sm:inline-flex rounded-lg border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-zion-gold/8 items-center justify-center shadow-[0_0_10px_rgba(252, 209, 22,0.12)] hover:shadow-[0_0_18px_rgba(252, 209, 22,0.28)] hover:border-zion-gold/50 transition-all group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
+              className={`hidden xl:inline-flex rounded-lg border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-zion-gold/8 items-center justify-center shadow-[0_0_10px_rgba(252, 209, 22,0.12)] hover:shadow-[0_0_18px_rgba(252, 209, 22,0.28)] hover:border-zion-gold/50 transition-all group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
             >
               <Github className={`text-zion-gold transition-all duration-300 ${scrolled ? 'w-4 h-4' : 'w-3.5 h-3.5'}`} />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-zion-gold/20 rounded px-2 py-0.5 text-zion-gold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">GitHub</span>
@@ -329,7 +329,7 @@ export default function Navigation() {
             <Link
               prefetch={false} href="/dashboard"
               title={tr('nav', 'dashboard', lang)}
-              className={`hidden sm:inline-flex rounded-lg border border-white/15 bg-black/85 items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
+              className={`hidden xl:inline-flex rounded-lg border border-white/15 bg-black/85 items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
             >
               <LayoutDashboard className={`text-white transition-all duration-300 ${scrolled ? 'w-4 h-4' : 'w-3.5 h-3.5'}`} />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-zion-gold/85 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
@@ -340,7 +340,7 @@ export default function Navigation() {
           <button
             ref={menuButtonRef}
             onClick={() => setIsOpen(!isOpen)}
-            className="text-white p-2 rounded-xl border border-white/20 bg-white/5 hover:border-white/40 active:scale-95 transition-all min-w-[40px] min-h-[40px] flex items-center justify-center lg:hidden"
+            className="text-white p-2 rounded-xl border border-white/20 bg-white/5 hover:border-white/40 active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center xl:hidden"
             aria-label={isOpen ? tr('nav', 'close_menu', lang) : tr('nav', 'open_menu', lang)}
             aria-expanded={isOpen}
             aria-controls="mobile-nav-drawer"
@@ -351,7 +351,7 @@ export default function Navigation() {
         </div>
 
         {/* ═══ FLOOR 2 — TEXT MENU (group dropdowns) ═══ */}
-        <div className="hidden lg:flex items-center justify-center gap-2 relative rounded-full border border-white/[0.06] bg-black/25 backdrop-blur-md px-3 py-1 shadow-none transition-all duration-300 mt-1.5 h-auto opacity-100 overflow-visible">
+        <div className="hidden xl:flex items-center justify-center gap-2 relative rounded-full border border-white/[0.06] bg-black/25 backdrop-blur-md px-3 py-1 shadow-none transition-all duration-300 mt-1.5 h-auto opacity-100 overflow-visible">
           <div className="flex items-center gap-2 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
             {/* Group dropdown buttons */}
             {navGroups.map((group) => {
@@ -435,12 +435,20 @@ export default function Navigation() {
               id="mobile-nav-drawer"
               role="dialog"
               aria-modal="true"
-              aria-label={tr('nav', 'menu_title', lang)}
-              className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(6, 105, 40,0.4), rgba(252, 209, 22,0.5), rgba(228, 30, 43,0.4)) 1' }}
+              aria-labelledby="mobile-nav-title"
+              className="fixed inset-y-0 right-0 flex h-screen w-[min(420px,94vw)] flex-col overflow-hidden border-l-2 border-zion-gold/30 bg-black/95 backdrop-blur-xl z-50 animate-[slideIn_0.25s_ease-out]"
+              style={{
+                height: '100dvh',
+                maxHeight: '100vh',
+                borderImage: 'linear-gradient(to bottom, rgba(6, 105, 40,0.4), rgba(252, 209, 22,0.5), rgba(228, 30, 43,0.4)) 1',
+              }}
               onKeyDown={handleDrawerKeyDown}
             >
-              <div className="flex items-center justify-between p-4 border-b border-white/10">
-                <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
+              <div
+                className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 pb-4"
+                style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
+              >
+                <span id="mobile-nav-title" className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-2 rounded-xl border border-white/20 hover:border-zion-gold/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -451,7 +459,10 @@ export default function Navigation() {
               </div>
               {/* Rasta accent line */}
               <div className="h-0.5 w-full bg-linear-to-r from-zion-cyan/50 via-zion-gold/60 to-zion-purple/40" />
-              <div className="p-4 space-y-2">
+              <div
+                className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-2"
+                style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+              >
                 {/* Home shortcut — always visible */}
                 <Link
                   prefetch={false} href="/"
@@ -494,7 +505,7 @@ export default function Navigation() {
                                 <Link
                                   prefetch={false} key={child.href + child.label}
                                   href={child.href}
-                                  className={`rounded-xl pl-7 pr-3 py-2.5 text-sm transition min-h-[40px] flex items-center ${
+                                  className={`rounded-xl pl-7 pr-3 py-3 text-sm transition min-h-[44px] flex items-center ${
                                     pathname === child.href ? 'bg-white/10 text-white' : 'text-zion-gold/75 hover:bg-white/5 active:bg-white/10'
                                   }`}
                                   onClick={() => setIsOpen(false)}
@@ -519,7 +530,7 @@ export default function Navigation() {
                     {lang === 'cs' ? tr('nav', 'language_toggle_mobile_cs', lang) : tr('nav', 'language_toggle_mobile_en', lang)}
                   </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <Link
                     prefetch={false} href="/explorer"
                     onClick={() => setIsOpen(false)}

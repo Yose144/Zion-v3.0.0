@@ -381,6 +381,8 @@ pub struct PplnsEngine {
     unpaid_native: HashMap<(u32, u16), u64>,
     /// Total native-unit payouts emitted per coin (lifetime stat).
     total_paid_native: HashMap<u16, u128>,
+    /// Native revenue events included in state and durable snapshots.
+    applied_revenue_events: HashSet<String>,
     /// Total block rewards distributed via this engine (flowers).
     total_paid_flowers: u128,
     /// Number of payout rounds executed.
@@ -425,6 +427,11 @@ pub struct PplnsSnapshot {
     #[serde(default)]
     #[serde(with = "u128_str::map")]
     pub total_paid_native: HashMap<String, u128>,
+    /// Revenue event ids already included in this snapshot. This lets the
+    /// SQLite journal distinguish an event applied before a crash from one
+    /// that still needs replay.
+    #[serde(default)]
+    pub applied_revenue_events: HashSet<String>,
     #[serde(with = "u128_str::map")]
     pub paid_per_miner: HashMap<String, u128>,
     pub shares_per_miner: HashMap<String, MinerShareStats>,
@@ -457,6 +464,7 @@ impl PplnsEngine {
             coin_share_counts: HashMap::new(),
             unpaid_native: HashMap::new(),
             total_paid_native: HashMap::new(),
+            applied_revenue_events: HashSet::new(),
             total_paid_flowers: 0,
             payout_rounds: 0,
             fee_humanitarian_flowers: 0,
@@ -558,6 +566,7 @@ impl PplnsEngine {
                 .iter()
                 .map(|(idx, n)| (self.coin_registry.key_for(*idx).to_string(), *n))
                 .collect(),
+            applied_revenue_events: self.applied_revenue_events.clone(),
             unpaid,
             paid_per_miner,
             shares_per_miner,
@@ -665,6 +674,7 @@ impl PplnsEngine {
             .into_iter()
             .map(|(key, n)| (self.coin_registry.lookup_or_register(&key), n))
             .collect();
+        self.applied_revenue_events = snap.applied_revenue_events;
 
         // Restore per-miner data.
         for (id, addr) in snap.addresses {
@@ -698,6 +708,15 @@ impl PplnsEngine {
         self.fee_issobella_flowers = snap.fee_issobella_flowers;
         self.fee_pool_flowers = snap.fee_pool_flowers;
         self.dirty = false;
+    }
+
+    pub fn has_applied_revenue_event(&self, event_id: &str) -> bool {
+        self.applied_revenue_events.contains(event_id)
+    }
+
+    pub fn mark_revenue_event_applied(&mut self, event_id: &str) {
+        self.applied_revenue_events.insert(event_id.to_string());
+        self.dirty = true;
     }
 
     /// Save engine state to a JSON file (atomic + durable write via temp + fsync + rename).
