@@ -3740,7 +3740,7 @@ fn create_qpow_gpu_miner(
                 match crate::gpu::qpow_cuda::QpowCudaMiner::new_with_device(work_size, d) {
                     Ok(m) => miners.push(crate::gpu::QpowGpuMiner::Cuda(m)),
                     Err(e) => {
-                        crate::ext_warn!("gpu_qpow_cuda_sub_init device=\"{name}\" failed: {e}")
+                        crate::ext_warn!("gpu_qpow_cuda_sub_init device=\"{name}\" failed: {e}");
                     }
                 }
             }

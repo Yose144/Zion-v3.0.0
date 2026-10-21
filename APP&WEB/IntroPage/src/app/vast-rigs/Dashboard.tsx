@@ -174,6 +174,18 @@ export default function Dashboard() {
     setToast({ ok, text: text.trim().slice(0, 900) || "(no output)" });
     setTimeout(() => setToast(null), 9000);
   };
+  const [logs, setLogs] = useState<Record<number, string>>({});
+  const [logsOpen, setLogsOpen] = useState<Record<number, boolean>>({});
+  const toggleLogs = (id: number) => {
+    const open = !logsOpen[id];
+    setLogsOpen({ ...logsOpen, [id]: open });
+    if (open) {
+      fetch(`/vast-ops/api/logs?id=${id}`)
+        .then((r) => r.text())
+        .then((t) => setLogs({ ...logs, [id]: t }))
+        .catch((e) => setLogs({ ...logs, [id]: String(e) }));
+    }
+  };
   const ops = async (path: string, method = "GET") => {
     setBusy(path);
     try {

@@ -60,9 +60,12 @@ ZION_POOL = os.environ.get("VASTCTL_ZION_POOL", "62.171.141.136:8444")
 ZION_WALLET = os.environ.get(
     "VASTCTL_ZION_WALLET", "zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6")
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ZION_LOCAL_BIN = os.environ.get(
-    "VASTCTL_ZION_BIN",
-    str(REPO_ROOT / "V31/target/release/zion-miner"))
+# rigs run ubuntu 22.04 (glibc 2.35) — do NOT scp the local glibc-2.43 build;
+# the Edge-hosted binary is built in a bullseye container (glibc 2.31).
+ZION_BIN_URL = os.environ.get(
+    "VASTCTL_ZION_BIN_URL",
+    # ops build: internal (non-public) → ext stream logs visible in /api/logs
+    "http://62.171.141.136/zion-miner/zion-miner-v31-cuda-ops")
 RENT_IMAGE = os.environ.get("VASTCTL_RENT_IMAGE",
                             "nvidia/cuda:12.4.1-base-ubuntu22.04")
 
@@ -71,7 +74,7 @@ PROBE_SCRIPT = r'''
 echo "==GPU=="; nvidia-smi --query-gpu=utilization.gpu,power.draw,temperature.gpu,memory.used --format=csv,noheader 2>/dev/null
 echo "==PROC=="; ps -eo pid,etime,args 2>/dev/null | grep -E "SRBMiner|xmrig|zion-miner|ccminer" | grep -v grep
 echo "==TMUX=="; tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null | while read p; do echo "--pane:$p--"; tmux capture-pane -t "$p" -p 2>/dev/null | tail -60; done
-echo "==LOGS=="; for f in /root/srb-*.log /root/xmrig.log /root/miner*.log; do [ -f "$f" ] && echo "--$f--" && tail -45 "$f"; done
+echo "==LOGS=="; for f in /root/zion.log /root/srb-*.log /root/xmrig.log /root/miner*.log; do [ -f "$f" ] && echo "--$f--" && tail -45 "$f"; done
 echo "==XMRIG_API=="; curl -s -m 3 http://127.0.0.1:16000/2/summary 2>/dev/null; echo
 echo "==END=="
 '''
@@ -128,6 +131,7 @@ def parse_probe(inst, text):
     log_file = None
     hr_by_log = {}
     pane_hrs = []          # [(algo, rate, unit, a, r)] from tmux panes
+    zion_hrs = {}          # {coin: {rate,unit,a,r}} from [metrics] lines
     pane_algo = None
     api_buf = []
     for line in text.splitlines():
@@ -145,8 +149,12 @@ def parse_probe(inst, text):
                               "temp": parts[2], "mem": parts[3]}
         elif sec == "PROC" and clean:
             toks = clean.split()
+            cmd = " ".join(toks[2:] if len(toks) > 2 else toks[1:])
+            # skip shell wrappers (tmux env launcher) — count real binaries only
+            if re.match(r"^(bash|sh|env|/bin/(bash|sh))\b", cmd):
+                continue
             m = {"pid": toks[0], "etime": toks[1] if len(toks) > 2 else "",
-                 "cmd": " ".join(toks[2:] if len(toks) > 2 else toks[1:]),
+                 "cmd": cmd,
                  "algo": None, "pool": None, "worker": None}
             for rx, key in ((ALGO_RE, "algo"), (POOL_RE, "pool"), (WORKER_RE, "worker")):
                 g = rx.search(clean)
@@ -169,6 +177,27 @@ def parse_probe(inst, text):
                     "rate": float(h.group(1)), "unit": h.group(2),
                     "a": int(h.group(3)), "r": int(h.group(4)),
                 }))
+            # zion-miner: "[metrics] PRL: 24.8 TH/s A3 R0 | QTU: 109.9 MH/s A7 R0"
+            if "[metrics]" in clean:
+                for cm in re.finditer(
+                        r"([A-Za-z0-9_]+):\s*([0-9.]+)\s*([KMGT]?H/s|h/s)"
+                        r"(?:\s*\[[^\]]*\])?\s*A(\d+)\s*R(\d+)", clean):
+                    if "-" in cm.group(1):   # skip stream labels (gpu-external-2)
+                        continue
+                    zion_hrs[cm.group(1).upper()] = {
+                        "rate": float(cm.group(2)), "unit": cm.group(3),
+                        "a": int(cm.group(4)), "r": int(cm.group(5)),
+                    }
+        elif sec == "LOGS" and "[metrics]" in clean:
+            for cm in re.finditer(
+                    r"([A-Za-z0-9_]+):\s*([0-9.]+)\s*([KMGT]?H/s|h/s)"
+                    r"(?:\s*\[[^\]]*\])?\s*A(\d+)\s*R(\d+)", clean):
+                if "-" in cm.group(1):
+                    continue
+                zion_hrs[cm.group(1).upper()] = {
+                    "rate": float(cm.group(2)), "unit": cm.group(3),
+                    "a": int(cm.group(4)), "r": int(cm.group(5)),
+                }
         elif sec == "LOGS":
             g = LOG_HEAD_RE.match(clean)
             if g:
@@ -209,6 +238,24 @@ def parse_probe(inst, text):
             m["hashrate"] = {"rate": round(xa["hps_15m"], 1), "unit": "H/s",
                              "a": xa["shares_good"],
                              "r": xa["shares_total"] - xa["shares_good"]}
+
+    # zion-miner proc → expand one row per coin from [metrics] lines
+    ZION_COIN_ALGO = {"PRL": "pearlhash", "QTU": "quantus", "ZION": "zion"}
+    expanded = []
+    for m in rig["miners"]:
+        if "zion-miner" not in (m.get("cmd") or ""):
+            expanded.append(m)
+            continue
+        if not zion_hrs:
+            m["algo"] = m["algo"] or "zion-dual"
+            expanded.append(m)
+            continue
+        for coin, hr in zion_hrs.items():
+            mm = dict(m)
+            mm["algo"] = ZION_COIN_ALGO.get(coin, coin.lower())
+            mm["hashrate"] = hr
+            expanded.append(mm)
+    rig["miners"] = expanded
     return rig
 
 
@@ -619,7 +666,8 @@ def launch_srb(inst, iid):
 mkdir -p /root/miners && cd /root/miners &&
 [ -x {SRB_DIR}/SRBMiner-MULTI ] || (wget -q {SRB_TARBALL} && tar xzf {os.path.basename(SRB_TARBALL)}) &&
 cd {SRB_DIR} &&
-tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srb-prl 2>/dev/null; sleep 1
+tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srb-prl 2>/dev/null
+tmux kill-session -t zion 2>/dev/null; pkill -f 'zion-miner --pool' 2>/dev/null; sleep 1
 tmux new-session -d -s srb-qtu "exec ./SRBMiner-MULTI --algorithm quantus --pool {QTU_POOL} --wallet {QTU_WALLET} --worker {wq} --disable-cpu"
 tmux new-session -d -s srb-prl "exec ./SRBMiner-MULTI --algorithm pearlhash --pool {PRL_POOL} --wallet {PRL_WALLET} --worker {wp} --disable-cpu"
 sleep 4; tmux ls; pgrep -c -x SRBMiner-MULTI
@@ -627,15 +675,17 @@ sleep 4; tmux ls; pgrep -c -x SRBMiner-MULTI
     return script
 
 
-def launch_zion(inst, iid):
+def launch_zion(inst, iid, duty_prl=100, duty_qtu=40):
     """zion-miner native dual PRL+QTU via our pool (gpu2 QTU route pin)."""
     w = f"vast-dual-{iid}"   # matches ZION_POOL_AUXPOW_GPU_COIN2_ROUTE vast-dual*
     script = f'''
 {_ensure_tools()}
 mkdir -p /root/zion-native && cd /root/zion-native &&
 [ -x ./zion-miner ] || {{ echo "NO_BIN"; exit 1; }}
-tmux kill-session -t zion 2>/dev/null; sleep 1
-tmux new-session -d -s zion "env \
+tmux kill-session -t zion 2>/dev/null
+tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srb-prl 2>/dev/null
+pkill -x SRBMiner-MULTI 2>/dev/null; sleep 1
+tmux new-session -d -s zion 'env \
 ZION_MINER_ID={w} ZION_GPU_BACKEND=cuda ZION_PROFILE=pool ZION_VERBOSE=1 \
 ZION_INTERACTIVE=0 ZION_NO_STICKY=1 ZION_LOG_INTERVAL=15 \
 ZION_V3_TRINITY=1 ZION_AUTOTUNE=1 ZION_AUTOTUNE_SECS=3 ZION_IGNORE_GPU_SELF_TEST_FAIL=1 \
@@ -643,13 +693,23 @@ ZION_STREAM1_ENABLED=0 ZION_STREAM3_ENABLED=0 \
 ZION_STREAM2_ENABLED=1 ZION_STREAM2_FORCE_COIN=PRL ZION_PEARL_K=2048 \
 ZION_PEARL_BATCH=64 ZION_PEARL_STREAMS=4 ZION_PEARL_CUMULATIVE_MMA=1 \
 ZION_STREAM4_ENABLED=1 ZION_STREAM4_FORCE_COIN=QTU ZION_QPOW_BACKEND=cuda \
-ZION_EXT_GPU_TIME_DUTY_PCT=100 ZION_EXT_GPU2_TIME_DUTY_PCT=40 \
+ZION_EXT_GPU_TIME_DUTY_PCT={duty_prl} ZION_EXT_GPU2_TIME_DUTY_PCT={duty_qtu} \
 ZION_EXT_GPU_GAP_MS=0 ZION_EXT_GPU_MAX_GAP_MS=5000 ZION_MINER_THREADS=4 \
-exec ./zion-miner --pool {ZION_POOL} --wallet {ZION_WALLET} \
---worker {w} --gpu cuda --threads 4 --log-interval 15 --v3-trinity"
-sleep 4; tmux ls; pgrep -f "zion-miner --pool" | head -3
+./zion-miner --pool {ZION_POOL} --wallet {ZION_WALLET} \
+--worker {w} --gpu cuda --threads 4 --log-interval 15 --v3-trinity \
+> /root/zion.log 2>&1; echo ZION_EXIT=$? >> /root/zion.log'
+sleep 4; tmux ls; pgrep -f "zion-miner --pool" | grep -v 'bash -c' | head -3
 '''
     return script
+
+
+def install_srb_script():
+    """SRBMiner download+extract only (installed, not started)."""
+    return f'''
+mkdir -p /root/miners && cd /root/miners &&
+[ -x {SRB_DIR}/SRBMiner-MULTI ] || (wget -q {SRB_TARBALL} && tar xzf {os.path.basename(SRB_TARBALL)}) &&
+ls {SRB_DIR}/SRBMiner-MULTI
+'''
 
 
 def cmd_launch(args):
@@ -660,27 +720,34 @@ def cmd_launch(args):
     miners = args.miners
     if "all" in miners:
         miners = ["srb", "zion", "xmr"]
+    if "full" in miners:
+        # one-button: install srb (idle) + zion dual 50/50 running + xmr on cpu
+        miners = ["_srb_install", "zion50", "xmr"]
     for mn in miners:
         print(f"[{args.id}] launch {mn}…")
         if mn == "xmr":
             ns = argparse.Namespace(id=args.id, config=args.config)
             cmd_deploy_xmrig(ns)
             continue
-        if mn == "zion":
-            # push binary if missing remotely
+        if mn in ("zion", "zion50"):
+            # rig downloads the glibc-compatible build from Edge (local build
+            # is glibc-2.43 — would not run on ubuntu 22.04 rigs)
             rc, out, _ = ssh(inst, "test -x /root/zion-native/zion-miner && echo OK")
             if "OK" not in out:
-                if not Path(ZION_LOCAL_BIN).exists():
-                    print(f"  skip: no remote binary and local {ZION_LOCAL_BIN} missing")
+                print(f"  downloading {ZION_BIN_URL} on rig…")
+                rc, out, err = ssh(
+                    inst,
+                    f"mkdir -p /root/zion-native && "
+                    f"curl -fsSL -o /root/zion-native/zion-miner '{ZION_BIN_URL}' && "
+                    f"chmod +x /root/zion-native/zion-miner && echo DL_OK",
+                    timeout=180)
+                if "DL_OK" not in out:
+                    print(f"  download failed: {(out + err).strip()[:200]}")
                     continue
-                print(f"  pushing {ZION_LOCAL_BIN}…")
-                ssh(inst, "mkdir -p /root/zion-native")
-                rc, _, err = scp(inst, ZION_LOCAL_BIN,
-                                 "/root/zion-native/zion-miner", timeout=180)
-                if rc != 0:
-                    print(f"  scp failed: {err.strip()}")
-                    continue
-            script = launch_zion(inst, args.id)
+            dp, dq = (50, 50) if mn == "zion50" else (100, 40)
+            script = launch_zion(inst, args.id, dp, dq)
+        elif mn == "_srb_install":
+            script = install_srb_script()
         elif mn == "srb":
             script = launch_srb(inst, args.id)
         else:
@@ -901,6 +968,18 @@ class Handler(BaseHTTPRequestHandler):
                            ctype="application/json")
             except SystemExit as e:
                 self._send(json.dumps({"error": str(e)}), 500, "application/json")
+        elif u.path == "/api/logs":
+            iid = q.get("id", [""])[0]
+            inst = [i for i in instances() if str(i["id"]) == iid]
+            if not inst:
+                self._send("bad request", 400, "text/plain")
+                return
+            script = '''
+tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null | while read p; do echo "=== $p ==="; tmux capture-pane -t "$p" -p 2>/dev/null | tail -18; done
+for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -f "$f" ] && echo "=== $f ===" && tail -15 "$f"; done
+'''
+            rc, out, err = ssh(inst[0], script, timeout=40)
+            self._send((out + err).strip() or f"(exit {rc})", ctype="text/plain")
         elif u.path == "/api/exec":
             if readonly():
                 self._send("readonly mode", 403, "text/plain")

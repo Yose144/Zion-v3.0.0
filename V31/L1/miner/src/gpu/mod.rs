@@ -2804,10 +2804,17 @@ pub fn create_gpu_backend(
     create_gpu_backend_inner(kind, work_size, algorithm, coin, None)
 }
 
+/// `ocl::Platform::list()` panics internally when no OpenCL ICD is installed
+/// (e.g. CUDA-only vast.ai containers) — contain the panic, return empty.
+#[cfg(feature = "gpu-opencl")]
+pub(crate) fn safe_platform_list() -> Vec<ocl::Platform> {
+    std::panic::catch_unwind(ocl::Platform::list).unwrap_or_default()
+}
+
 /// Count the number of OpenCL GPU devices across all platforms.
 #[cfg(feature = "gpu-opencl")]
 fn count_opencl_gpu_devices() -> usize {
-    let platforms = ocl::Platform::list();
+    let platforms = safe_platform_list();
     let mut count = 0;
     for platform in &platforms {
         if let Ok(devs) = ocl::Device::list(*platform, Some(ocl::flags::DeviceType::GPU)) {
@@ -3024,7 +3031,7 @@ fn device_name_matches_filter(device_name: &str, filter: &str) -> bool {
 /// Enumerate all OpenCL GPU devices with detailed info for multi-GPU assignment.
 #[cfg(feature = "gpu-opencl")]
 pub(crate) fn enumerate_opencl_gpu_devices() -> Vec<GpuDeviceInfo> {
-    let platforms = ocl::Platform::list();
+    let platforms = safe_platform_list();
     let mut devices = Vec::new();
     let mut global_idx = 0;
     for (pidx, platform) in platforms.into_iter().enumerate() {
@@ -3924,7 +3931,7 @@ pub mod opencl_deeksha_lite {
         }
 
         fn pick_device() -> Result<(Platform, Device, String, String)> {
-            let platforms = Platform::list();
+            let platforms = safe_platform_list();
             if platforms.is_empty() {
                 anyhow::bail!("no OpenCL platforms found");
             }
@@ -5776,7 +5783,7 @@ pub fn detect_gpus() -> Vec<String> {
 
     #[cfg(feature = "gpu-opencl")]
     {
-        let platforms = ocl::Platform::list();
+        let platforms = safe_platform_list();
         for platform in platforms {
             if let Ok(devs) = ocl::Device::list_all(platform) {
                 for dev in devs {
@@ -5870,7 +5877,7 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
         return out;
     }
 
-    let platforms = ocl::Platform::list();
+    let platforms = safe_platform_list();
     for platform in platforms {
         let platform_name = platform.name().unwrap_or_else(|_| "unknown".to_string());
         if let Ok(devs) = ocl::Device::list_all(platform) {

@@ -613,7 +613,7 @@ mod opencl_impl {
 
     impl GpuMiner {
         fn pick_device() -> Result<(Platform, Device, String, String)> {
-            let platforms = Platform::list();
+            let platforms = crate::gpu::safe_platform_list();
             if platforms.is_empty() {
                 anyhow::bail!("no OpenCL platforms found");
             }
