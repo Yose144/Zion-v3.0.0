@@ -6852,7 +6852,7 @@ async function loadLayer(layer){
                 <div class="text-[10px] text-gray-400">${escapeHtml(s.kind)} · ${escapeHtml(s.id)}</div>
               </div>
             </div>
-            <span class="text-[10px] px-2 py-0.5 rounded-full ${s.alive ? 'bg-emerald-700 text-emerald-300' : (notDeployed ? 'bg-gray-700 text-gray-300' : 'bg-red-700 text-red-300')}">${aliveText}</span>
+            <div class="flex items-center gap-1">${siteBadge}<span class="text-[10px] px-2 py-0.5 rounded-full ${s.alive ? 'bg-emerald-700 text-emerald-300' : (retired || notDeployed ? 'bg-gray-700 text-gray-300' : 'bg-red-700 text-red-300')}">${aliveText}</span></div>
           </div>
           <div class="text-xs text-gray-300 mb-2">${escapeHtml(s.purpose)}</div>
           <div class="flex flex-wrap gap-1 mb-2">
@@ -6860,6 +6860,7 @@ async function loadLayer(layer){
             ${s.depends_on && s.depends_on.length > 0 ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-300">Depends: ' + s.depends_on.join(', ') + '</span>' : ''}
           </div>
           ${ports}
+          ${s.ports_remote_open && s.ports_remote_open.length > 0 ? '<div class="text-[10px] text-violet-400">EDGE2: ' + s.ports_remote_open.join(', ') + '</div>' : ''}
           ${dbSection}
           ${logPreview}
         </div>

@@ -353,7 +353,7 @@ if _legacy_user and _legacy_pass:
     DASHBOARD_USERS[_legacy_user] = _sha256(_legacy_pass)
 
 # Endpoints that skip auth (health checks, static assets)
-AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/v31/favicon.ico", "/v31/symbol-200x200.png", "/api/poc/html", "/api/poc/status", "/api/pool/miners-dashboard", "/stats", "/g8", "/api/g8", "/api/history"}
+AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/api/backup-beacon", "/api/rig-beacon", "/v31/favicon.ico", "/v31/symbol-200x200.png", "/api/poc/html", "/api/poc/status", "/api/pool/miners-dashboard", "/stats", "/g8", "/api/g8", "/api/history"}
 
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "127.0.0.1"   # Dashboard runs on same server (v3.0.4)
@@ -403,10 +403,11 @@ def _run_edge_cmd_remote(cmd: str, timeout: int = 8) -> subprocess.CompletedProc
     )
 
 # EDGE2 = second server (vmi3684458, 207.180.217.100) — primary chain+app core.
-# Dashboard probes it via SSH using the zion user's dedicated probe key
-# (installed on edge at /home/zion/.ssh/id_ed25519, authorized on EDGE2 root).
+# Dashboard probes it via SSH using the zion user's dedicated probe key.
+# Key lives in /etc/zion/keys/ because the unit runs ProtectHome=yes and
+# cannot read /home/zion/.ssh.
 EDGE2_HOST = os.environ.get("ZION_EDGE2_HOST", "207.180.217.100")
-EDGE2_SSH_KEY = os.environ.get("ZION_EDGE2_SSH_KEY", "/home/zion/.ssh/id_ed25519")
+EDGE2_SSH_KEY = os.environ.get("ZION_EDGE2_SSH_KEY", "/etc/zion/keys/edge2-probe")
 
 def _run_edge2_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     """Run a command on EDGE2 via SSH (always remote)."""
@@ -1369,7 +1370,7 @@ def auto_backup_if_needed():
 
 SERVICE_REGISTRY_EDGE_PRIMARY = [
     # ── L1: Consensus (v3.0.4 — new server, all on 127.0.0.1) ──────────
-    {"id": "edge-node1", "name": "ZION Node (Primary / Genesis)", "icon": "🌍", "level": "L1", "kind": "node",
+    {"id": "edge-node1", "site": "legacy", "retired": True, "name": "ZION Node (Primary / Genesis)", "icon": "🌍", "level": "L1", "kind": "node",
      "ports": {"p2p": 8333, "rpc": 9443, "metrics": 9100},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1378,7 +1379,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Primary / Genesis node — P2P 8333, RPC 9443, metrics 9100. Fresh genesis v3.0.4.",
      "child_says": "🌍 The king node — source of chain truth!",
      "depends_on": []},
-    {"id": "edge-node2", "name": "ZION Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
+    {"id": "edge-node2", "site": "legacy", "retired": True, "name": "ZION Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
      "ports": {"p2p": 8334, "rpc": 8448, "metrics": 9116},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1387,8 +1388,9 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Follower node — P2P 8334, RPC 8448. Syncs from Node 1 for redundancy.",
      "child_says": "🔶 Follows Node 1 to keep a backup copy!",
      "depends_on": ["edge-node1"]},
-    {"id": "v31-node", "name": "V31 Node (PROD)", "icon": "🚀", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8335, "rpc": 9445},
+    {"id": "v31-node", "site": "edge2", "name": "V31 Node (PROD)", "icon": "🚀", "level": "L1", "kind": "node",
+     "ports": {"rpc": 9445},
+     "ports_remote": {"p2p": 8335},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "critical", "autoheal": False,
@@ -1396,7 +1398,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 Mainnet Alpha 3.2.0-beta (protocol 3.2.0-alpha) — PROD node. P2P 8335, RPC 9445. Independent of V3. systemd zion-v31-node.service.",
      "child_says": "🚀 V31 PROD node — mainnet alpha!",
      "depends_on": []},
-    {"id": "v31-node2", "name": "V31 Node 2 (Follower)", "icon": "🛰️", "level": "L1", "kind": "node",
+    {"id": "v31-node2", "site": "edge", "name": "V31 Node 2 (Follower)", "icon": "🛰️", "level": "L1", "kind": "node",
      "ports": {"p2p": 8336, "rpc": 9446},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1405,7 +1407,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 follower node 2 — P2P 8336, RPC 9446. Syncs from primary 8335; L1 RPC failover target for the pool. systemd zion-v31-node2.service.",
      "child_says": "🛰️ Backup copy of the chain — failover ready!",
      "depends_on": ["v31-node"]},
-    {"id": "v31-node3", "name": "V31 Node 3 (Follower)", "icon": "📡", "level": "L1", "kind": "node",
+    {"id": "v31-node3", "site": "edge", "name": "V31 Node 3 (Follower)", "icon": "📡", "level": "L1", "kind": "node",
      "ports": {"p2p": 8337, "rpc": 9447},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1414,7 +1416,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 follower node 3 — P2P 8337, RPC 9447. Syncs from primary 8335; L1 RPC failover target for the pool. systemd zion-v31-node3.service.",
      "child_says": "📡 Second backup copy of the chain!",
      "depends_on": ["v31-node"]},
-    {"id": "v31-pool", "name": "V31 Pool (PROD)", "icon": "🌐", "level": "L1", "kind": "pool",
+    {"id": "v31-pool", "site": "edge", "name": "V31 Pool (PROD)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1423,7 +1425,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 PROD pool — stratum 8444, validates shares, → Node RPC 9445. systemd zion-v31-pool.service.",
      "child_says": "🌐 V31 PROD pool — miners connect here!",
      "depends_on": ["v31-node"]},
-    {"id": "v31-miner", "name": "V31 Miner (PROD)", "icon": "⛏️", "level": "L1", "kind": "miner",
+    {"id": "v31-miner", "site": "edge", "name": "V31 Miner (PROD)", "icon": "⛏️", "level": "L1", "kind": "miner",
      "ports": {},
      "log": None, "start": None, "stop": None,
      "health_method": "systemd", "severity": "warning", "autoheal": False,
@@ -1431,7 +1433,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 PROD CPU miner — 2 threads, ~500-950 kH/s. → Pool 127.0.0.1:8444. systemd zion-v31-miner.service.",
      "child_says": "⛏️ V31 PROD miner — digs for ZION!",
      "depends_on": ["v31-pool"]},
-    {"id": "v31-multichain", "name": "V31 Multichain (PROD)", "icon": "🌀", "level": "L2", "kind": "multichain",
+    {"id": "v31-multichain", "site": "edge2", "name": "V31 Multichain (PROD)", "icon": "🌀", "level": "L2", "kind": "multichain",
      "ports": {"api": 8453},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1440,7 +1442,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 PROD multichain — bridge/warp/swap unified. API 8453 → Node RPC 9445. systemd zion-v31-multichain.service.",
      "child_says": "🌀 V31 PROD multichain — cross-chain hub!",
      "depends_on": ["v31-node"]},
-    {"id": "v31-dao", "name": "V31 DAO (PROD)", "icon": "🗳️", "level": "L2", "kind": "dao",
+    {"id": "v31-dao", "site": "edge2", "name": "V31 DAO (PROD)", "icon": "🗳️", "level": "L2", "kind": "dao",
      "ports": {"api": 8456},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1449,7 +1451,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 PROD DAO — governance, proposals, treasury. API 8456. systemd zion-v31-dao.service.",
      "child_says": "🗳️ V31 PROD DAO — vote on the future of ZION!",
      "depends_on": ["v31-node"]},
-    {"id": "v31-oasis", "name": "V31 OASIS Game (PROD)", "icon": "🪷", "level": "L4", "kind": "app",
+    {"id": "v31-oasis", "site": "edge2", "name": "V31 OASIS Game (PROD)", "icon": "🪷", "level": "L4", "kind": "app",
      "ports": {"api": 8094, "metrics": 9102},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1458,7 +1460,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 OASIS L4 game API — avatars, quests, guilds, territories. Port 8094. systemd zion-v31-oasis.service.",
      "child_says": "🪷 V31 OASIS — the avatar consciousness game!",
      "depends_on": ["v31-node"]},
-    {"id": "v31-free-world", "name": "V31 Free World (PROD)", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
+    {"id": "v31-free-world", "site": "edge2", "name": "V31 Free World (PROD)", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
      "ports": {"api": 8095},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1467,7 +1469,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 Free World L5 humanitarian fund tracker. Scans coinbase for zion1y3w...hv8c8 and submits grant proposals to DAO. systemd zion-v31-free-world.service.",
      "child_says": "🕊️ V31 Free World — humanitarian fund tracker!",
      "depends_on": ["v31-node", "v31-dao"]},
-    {"id": "v31-issobella", "name": "V31 Issobella (PROD)", "icon": "🚀", "level": "L6", "kind": "space",
+    {"id": "v31-issobella", "site": "edge2", "name": "V31 Issobella (PROD)", "icon": "🚀", "level": "L6", "kind": "space",
      "ports": {"api": 8097},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1476,7 +1478,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 Issobella L6 space fund tracker. Scans coinbase for zion1z4s...l0f0 and submits mission proposals to DAO. systemd zion-v31-issobella.service.",
      "child_says": "🚀 V31 Issobella — space fund tracker!",
      "depends_on": ["v31-node", "v31-dao"]},
-    {"id": "pool-edge", "name": "V3 Pool (DISABLED)", "icon": "⛔", "level": "L1", "kind": "pool",
+    {"id": "pool-edge", "site": "edge", "name": "V3 Pool (DISABLED)", "icon": "⛔", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1485,7 +1487,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V3 pool — DISABLED, replaced by V31 Pool. Kept for reference.",
      "child_says": "⛔ V3 pool — disabled, use V31 Pool!",
      "depends_on": ["edge-node1"]},
-    {"id": "miner", "name": "V3 Miner (ARCHIVED)", "icon": "📦", "level": "L1", "kind": "miner",
+    {"id": "miner", "site": "edge", "name": "V3 Miner (ARCHIVED)", "icon": "📦", "level": "L1", "kind": "miner",
      "ports": {},
      "log": "miner.log", "start": None, "stop": None,
      "health_method": "log", "severity": "info", "autoheal": False,
@@ -1495,7 +1497,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "depends_on": ["pool-edge"]},
 
     # ── L2: Bridge & DAO (running on new server) ────────────────────────
-    {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
+    {"id": "bridge", "site": "edge2", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
      "ports": {"api": 8453},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1503,7 +1505,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (6 chains). Metrics on 9101.",
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
      "depends_on": ["edge-node1"]},
-    {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
+    {"id": "dao", "site": "edge2", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
      "ports": {"api": 8456},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1511,7 +1513,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8456.",
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["edge-node1"]},
-    {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
+    {"id": "atomic-swap", "site": "edge2", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
      "ports": {"api": 8453},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1519,7 +1521,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Trustless cross-chain atomic swaps via HTLC. API on 8453 (V31 multichain).",
      "child_says": "🔄 Swap ZION for other coins without a middleman!",
      "depends_on": ["edge-node1"]},
-    {"id": "dex", "name": "ZionDex Router", "icon": "💱", "level": "L2", "kind": "dex",
+    {"id": "dex", "site": "edge2", "name": "ZionDex Router", "icon": "💱", "level": "L2", "kind": "dex",
      "ports": {"api": 8454},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1529,7 +1531,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "depends_on": ["edge-node1"]},
 
     # ── L3: WARP Relay (running on new server) ───────────────────────────
-    {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
+    {"id": "warp", "site": "edge2", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
      "ports": {"api": 8453},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1539,7 +1541,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "depends_on": ["edge-node1"]},
 
     # ── L4-L6: Apps (not yet deployed on new server — placeholder) ──────
-    {"id": "oasis", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
+    {"id": "oasis", "site": "edge2", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
      "ports": {"api": 8094},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1547,7 +1549,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Avatar registry, guilds, territories, consciousness XP. API on 8094. (Not yet deployed)",
      "child_says": "🪷 A garden where your ZION avatar lives and helps the world!",
      "depends_on": ["edge-node1"]},
-    {"id": "free-world", "name": "Free World Humanitarian", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
+    {"id": "free-world", "site": "edge2", "name": "Free World Humanitarian", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
      "ports": {"api": 8095},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1555,7 +1557,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Humanitarian aid coordination — mesh networks, medical tables, community DAOs. (Not yet deployed)",
      "child_says": "🕊️ Helps people in need through decentralized aid and community support!",
      "depends_on": ["edge-node1"]},
-    {"id": "issobella", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
+    {"id": "issobella", "site": "edge2", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
      "ports": {"api": 8097},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1565,7 +1567,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "depends_on": ["edge-node1"]},
 
     # ── Infrastructure ───────────────────────────────────────────────────
-    {"id": "dashboard", "name": "ZION Dashboard", "icon": "📋", "level": "Infra", "kind": "dashboard",
+    {"id": "dashboard", "site": "edge", "name": "ZION Dashboard", "icon": "📋", "level": "Infra", "kind": "dashboard",
      "ports": {"web": 8766},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1573,7 +1575,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Operational control plane — this UI. Port 8766 behind nginx + Basic Auth.",
      "child_says": "📋 The control room where we watch everything!",
      "depends_on": ["v31-node"]},
-    {"id": "nginx", "name": "Nginx Reverse Proxy", "icon": "🔒", "level": "Infra", "kind": "proxy",
+    {"id": "nginx", "site": "edge", "name": "Nginx Reverse Proxy", "icon": "🔒", "level": "Infra", "kind": "proxy",
      "ports": {"http": 80, "https": 443},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1581,7 +1583,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Reverse proxy + SSL termination (Let's Encrypt). Serves zionterranova.com + dashboard.zionterranova.com.",
      "child_says": "🔒 The gatekeeper that protects our websites!",
      "depends_on": []},
-    {"id": "web-next", "name": "Next.js Website", "icon": "🌐", "level": "Infra", "kind": "web",
+    {"id": "web-next", "site": "edge2", "name": "Next.js Website", "icon": "🌐", "level": "Infra", "kind": "web",
      "ports": {"http": 3000},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1589,7 +1591,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Next.js 16.2.9 website — 73+ routes, Docker container zion-web:nextjs. Port 3000 (host network).",
      "child_says": "🌐 The public face of ZION — our website!",
      "depends_on": ["nginx"]},
-    {"id": "marketplace", "name": "OASIS Marketplace", "icon": "🏪", "level": "Infra", "kind": "web",
+    {"id": "marketplace", "site": "edge2", "name": "OASIS Marketplace", "icon": "🏪", "level": "Infra", "kind": "web",
      "ports": {"http": 3100},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1597,7 +1599,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "OASIS Artifact Marketplace (Next.js + ERC-1155). Port 3100 behind nginx.",
      "child_says": "🏪 Buy and sell OASIS artifacts!",
      "depends_on": ["nginx"]},
-    {"id": "prometheus", "name": "Prometheus", "icon": "📈", "level": "Infra", "kind": "metrics",
+    {"id": "prometheus", "site": "edge", "name": "Prometheus", "icon": "📈", "level": "Infra", "kind": "metrics",
      "ports": {"metrics": 9090},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1605,7 +1607,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Metrics scraper — V31 pool, node exporter, system targets. Port 9090.",
      "child_says": "📈 Scrapes metrics for dashboards!",
      "depends_on": []},
-    {"id": "grafana", "name": "Grafana", "icon": "📊", "level": "Infra", "kind": "metrics",
+    {"id": "grafana", "site": "edge", "name": "Grafana", "icon": "📊", "level": "Infra", "kind": "metrics",
      "ports": {"web": 3001},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1617,7 +1619,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
 
 SERVICE_REGISTRY_LOCAL_DEV = [
     # ── L1: Consensus (Local-dev topology) ───────────────────────────────
-    {"id": "node1", "name": "Node 1 (Genesis)", "icon": "🔷", "level": "L1", "kind": "node",
+    {"id": "node1", "site": "legacy", "retired": True, "name": "Node 1 (Genesis)", "icon": "🔷", "level": "L1", "kind": "node",
      "ports": {"p2p": 8333, "rpc": 9443, "metrics": 9115},
      "log": "node1.log", "start": "start-node1", "stop": None,
      "health_method": "rpc", "severity": "critical", "autoheal": False,
@@ -1625,7 +1627,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "purpose": "Genesis node — source of chain truth in local dev mode.",
      "child_says": "🔷 The genesis node starts the chain!",
      "depends_on": []},
-    {"id": "node2", "name": "Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
+    {"id": "node2", "site": "legacy", "retired": True, "name": "Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
      "ports": {"p2p": 8334, "rpc": 8446, "metrics": 9116},
      "log": "node2.log", "start": "start-node2", "stop": None,
      "health_method": "rpc", "severity": "warning", "autoheal": False,
@@ -1633,14 +1635,14 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "purpose": "Follower node — syncs from node1 for redundancy.",
      "child_says": "🔶 Follows node1 to keep a backup copy!",
      "depends_on": ["node1"]},
-    {"id": "pool", "name": "Local Pool", "icon": "🌐", "level": "L1", "kind": "pool",
+    {"id": "pool", "site": "edge", "name": "Local Pool", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444, "metrics": 9550},
      "log": "pool.log", "start": "start-pool", "stop": None,
      "health_method": "tcp", "severity": "critical", "autoheal": False,
      "purpose": "Local pool — accepts miners, validates shares, distributes payouts (89/5/5 burn model).",
      "child_says": "🌐 The local pool manages mining rewards!",
      "depends_on": ["node1"]},
-    {"id": "miner", "name": "GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
+    {"id": "miner", "site": "edge", "name": "GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
      "ports": {},
      "log": "miner.log", "start": "start-miner", "stop": None,
      "health_method": "log", "severity": "warning", "autoheal": True,
@@ -1649,28 +1651,28 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": ["pool"]},
 
     # ── L2: Bridge & DAO ────────────────────────────────────────────────
-    {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
+    {"id": "bridge", "site": "edge2", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
      "ports": {"metrics": 9102},
      "log": "bridge.log", "start": "start-bridge", "stop": "stop-bridge",
      "health_method": "tcp", "severity": "warning", "autoheal": False,
      "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Base). Metrics on 9102.",
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
      "depends_on": ["node1"]},
-    {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
+    {"id": "dao", "site": "edge2", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
      "ports": {"api": 8456},
      "log": "dao.log", "start": "start-dao", "stop": "stop-dao",
      "health_method": "tcp", "severity": "warning", "autoheal": False,
      "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8456.",
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["node1"]},
-    {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
+    {"id": "atomic-swap", "site": "edge2", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
      "ports": {"api": 8888},
      "log": "atomic-swap.log", "start": "start-atomic-swap", "stop": "stop-atomic-swap",
      "health_method": "tcp", "severity": "warning", "autoheal": False,
      "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8888.",
      "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
      "depends_on": ["node1"]},
-    {"id": "swap-aggregator", "name": "Swap Aggregator", "icon": "💱", "level": "L2", "kind": "aggregator",
+    {"id": "swap-aggregator", "site": "edge2", "name": "Swap Aggregator", "icon": "💱", "level": "L2", "kind": "aggregator",
      "ports": {"api": 8456},
      "log": "swap-aggregator.log", "start": "start-swap-aggregator", "stop": "stop-swap-aggregator",
      "health_method": "tcp", "severity": "warning", "autoheal": False,
@@ -1679,21 +1681,21 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": ["bridge", "node1"]},
 
     # ── L3: Advanced ─────────────────────────────────────────────────────
-    {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
+    {"id": "warp", "site": "edge2", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
      "ports": {"api": 8453},
      "log": "warp.log", "start": "start-warp", "stop": "stop-warp",
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Multi-chain relay for fast cross-chain messaging.",
      "child_says": "🌀 A super-fast message tube between blockchains!",
      "depends_on": []},
-    {"id": "ncl", "name": "NCL Compute Layer", "icon": "🧠", "level": "L3", "kind": "gateway",
+    {"id": "ncl", "site": "edge2", "name": "NCL Compute Layer", "icon": "🧠", "level": "L3", "kind": "gateway",
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Neural Compute Layer — job scheduler, worker reputation, pricing. Integrated into Hiranyagarbha at /ncl/*.",
      "child_says": "🧠 Helps many computers think together as one big brain!",
      "depends_on": ["hiranyagarbha"]},
-    {"id": "hiranyagarbha", "name": "Hiranyagarbha API", "icon": "🧬", "level": "L3", "kind": "ai",
+    {"id": "hiranyagarbha", "site": "edge", "name": "Hiranyagarbha API", "icon": "🧬", "level": "L3", "kind": "ai",
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
@@ -1701,7 +1703,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "purpose": "Orchestrator API — agent lifecycle, task dispatch, RAG, consciousness engine. Port 8001.",
      "child_says": "🧬 The brain that coordinates all AI agents in ZION!",
      "depends_on": []},
-    {"id": "ai-native", "name": "Hiran Inference", "icon": "🤖", "level": "L3", "kind": "ai",
+    {"id": "ai-native", "site": "edge2", "name": "Hiran Inference", "icon": "🤖", "level": "L3", "kind": "ai",
      "ports": {"api": 8002},
      "log": "hiran-inference.log", "start": "start-hiran-inference", "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
@@ -1711,7 +1713,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": []},
 
     # ── L4: Apps ─────────────────────────────────────────────────────────
-    {"id": "oasis", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
+    {"id": "oasis", "site": "edge2", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
      "ports": {"api": 8094},
      "log": "oasis.log", "start": "start-oasis", "stop": "stop-oasis",
      "health_method": "tcp", "severity": "info", "autoheal": False,
@@ -1720,7 +1722,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": ["node1"]},
 
     # ── L5: Free World Humanitarian ──────────────────────────────────────
-    {"id": "free-world", "name": "Free World Humanitarian", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
+    {"id": "free-world", "site": "edge2", "name": "Free World Humanitarian", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
      "ports": {"api": 8095},
      "log": "free-world.log", "start": "start-humanitarian", "stop": "stop-humanitarian",
      "health_method": "tcp", "severity": "info", "autoheal": False,
@@ -1729,7 +1731,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": ["node1"]},
 
     # ── L6: Issobella Space ──────────────────────────────────────────────
-    {"id": "issobella", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
+    {"id": "issobella", "site": "edge2", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
      "ports": {"api": 8097},
      "log": "issobella.log", "start": "start-space", "stop": "stop-space",
      "health_method": "tcp", "severity": "info", "autoheal": False,
@@ -1739,7 +1741,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
 
     # ── Infrastructure ───────────────────────────────────────────────────
     # Prometheus/Grafana removed — replaced by built-in pool metrics on :{V31_POOL_API_PORT}
-    {"id": "node-exporter", "name": "Node Exporter", "icon": "🔧", "level": "Infra", "kind": "metrics",
+    {"id": "node-exporter", "site": "edge", "name": "Node Exporter", "icon": "🔧", "level": "Infra", "kind": "metrics",
      "ports": {"metrics": 9100},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
@@ -1747,7 +1749,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "purpose": "Edge host system metrics (CPU, RAM, disk, network).",
      "child_says": "🔧 Tells us how hard the computer is working!",
      "depends_on": []},
-    {"id": "dashboard", "name": "ZION Dashboard", "icon": "📋", "level": "Infra", "kind": "dashboard",
+    {"id": "dashboard", "site": "edge", "name": "ZION Dashboard", "icon": "📋", "level": "Infra", "kind": "dashboard",
      "ports": {"web": 8766},
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
@@ -1840,6 +1842,11 @@ def check_service_health(svc: dict) -> dict:
     if cached and now - cached["ts"] < HEALTH_TTL:
         return cached
 
+    if svc.get("retired"):
+        res = {"alive": False, "status": "retired", "details": "retired (migrated/legacy)",
+               "site": svc.get("site", "legacy"), "ports_open": [], "ports_closed": [], "ports_remote_open": []}
+        HEALTH_CACHE[sid] = {"ts": now, **res}
+        return res
     method = svc.get("health_method", "log")
     host = svc.get("host", "127.0.0.1")
     # When dashboard runs ON Edge, use localhost for all Edge services
@@ -1849,6 +1856,15 @@ def check_service_health(svc: dict) -> dict:
     ports = svc.get("ports", {})
     open_ports = []
     closed_ports = []
+    # Remote ports ziji na EDGE2 (ne pres tunnel) — probe proti EDGE2 IP,
+    # neblokuji alive: jsou informativni (p2p, quic apod.)
+    remote_open = []
+    for pname, port in (svc.get("ports_remote") or {}).items():
+        try:
+            if tcp_probe(EDGE2_HOST, port, timeout=1.0):
+                remote_open.append(f"{pname}:{port}@edge2")
+        except Exception:
+            pass
 
     # ── TCP probes (used by tcp, rpc, http methods) ──────────────────────
     if ports:
@@ -2030,6 +2046,8 @@ def check_service_health(svc: dict) -> dict:
         "severity": svc.get("severity", "info"),
         "autoheal": svc.get("autoheal", False),
         "health_method": method,
+        "site": svc.get("site", "edge"),
+        "ports_remote_open": remote_open,
     }
     HEALTH_CACHE[sid] = result
     return result
@@ -3749,13 +3767,13 @@ def _build_status_edge_primary() -> dict:
         return ("v31", combined)
 
     def _v31_systemd_call():
-        # V31 systemd service status
+        # V31 systemd service status — primary lives on EDGE2 (split-v3);
+        # edge unit is .retired so probe EDGE2 via SSH.
         try:
-            import subprocess as _sp
-            r = _sp.run(
-                ["systemctl", "show", "zion-v31-node.service",
-                 "--property=ActiveState,SubState,MainPID,MemoryCurrent"],
-                capture_output=True, text=True, timeout=3
+            r = _run_edge2_cmd(
+                "systemctl show zion-v31-node.service "
+                "--property=ActiveState,SubState,MainPID,MemoryCurrent",
+                timeout=6
             )
             props = {}
             for line in r.stdout.strip().split("\n"):
@@ -4070,6 +4088,30 @@ def _build_status_edge_primary() -> dict:
         "zion-v31-oasis.service", "zion-v31-free-world.service",
         "zion-v31-issobella.service",
     ])
+    # Split-v3: app units run on EDGE2 — merge their ActiveState so the
+    # service cards reflect the real state instead of retired local units.
+    try:
+        _e2_units = ["zion-v31-multichain.service", "zion-v31-dao.service",
+                     "zion-v31-oasis.service", "zion-v31-free-world.service",
+                     "zion-v31-issobella.service", "zion-v31-ncl.service",
+                     "zion-zis.service", "zion-db-sync.service",
+                     "zion-website.service", "zion-marketplace.service",
+                     "zion-v31-ai-native.service", "zion-btcunlock-coord.service",
+                     "zion-bitcoind.service", "zion-quantus-node.service",
+                     "zion-pearld.service", "zion-pearl-oyster.service",
+                     "zion-pearl-gateway.service", "postgresql.service"]
+        _r2 = _run_edge2_cmd(
+            "for u in " + " ".join(_e2_units) + "; do echo $u=$(systemctl is-active $u); done",
+            timeout=8)
+        if _r2.returncode == 0 or _r2.stdout:
+            for _ln in (_r2.stdout or "").splitlines():
+                if "=" in _ln:
+                    _u, _st = _ln.strip().split("=", 1)
+                    _sysd.setdefault(_u, {})
+                    if _st:
+                        _sysd[_u]["ActiveState"] = _st
+    except Exception:
+        pass
 
     # ── V31 Pool (PROD) — systemd + share count from journald ──────────────
     v31_pool_sys = _sysd.get("zion-v31-pool.service", {})
@@ -14767,6 +14809,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "metrics_count": len(m.get("metrics", {})),
                     "log_tail": log_tail,
                     "depends_on": svc.get("depends_on", []),
+                    "site": svc.get("site", "edge"),
+                    "retired": bool(svc.get("retired")),
+                    "status": h.get("status"),
+                    "ports_remote_open": h.get("ports_remote_open", []),
                 })
             self._json({"layer": layer, "services": result, "count": len(result)})
         # ── Service log tail ─────────────────────────────────────────────────
