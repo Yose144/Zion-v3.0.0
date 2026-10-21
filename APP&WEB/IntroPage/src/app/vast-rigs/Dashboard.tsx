@@ -393,9 +393,9 @@ export default function Dashboard() {
             <b className="text-white">{rigs.length}</b> active rigs
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/75 sm:px-4 sm:text-sm">
-            ${snap ? snap.total_dph.toFixed(4) : "—"}/h
+            {snap ? snap.total_dph.toFixed(4) : "—"}/h
             <span className="text-white/35">·</span>
-            ${snap ? (snap.total_dph * 24).toFixed(2) : "—"}/day
+            {snap ? (snap.total_dph * 24).toFixed(2) : "—"}/day
           </span>
           {Object.entries(totals).map(([name, t]) => (
             <span
