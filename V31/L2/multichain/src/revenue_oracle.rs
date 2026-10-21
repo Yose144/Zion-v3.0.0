@@ -56,14 +56,10 @@ impl RevenueOracleConfig {
         }
         let pool_api = std::env::var("REVENUE_ORACLE_POOL_API")
             .or_else(|_| std::env::var("QTC_PAYOUT_POOL_API"))
-            .map_err(|_| {
-                MultichainError::Config("REVENUE_ORACLE_POOL_API not set".into())
-            })?;
+            .map_err(|_| MultichainError::Config("REVENUE_ORACLE_POOL_API not set".into()))?;
         let admin_key = std::env::var("REVENUE_ORACLE_ADMIN_KEY")
             .or_else(|_| std::env::var("QTC_PAYOUT_ADMIN_KEY"))
-            .map_err(|_| {
-                MultichainError::Config("REVENUE_ORACLE_ADMIN_KEY not set".into())
-            })?;
+            .map_err(|_| MultichainError::Config("REVENUE_ORACLE_ADMIN_KEY not set".into()))?;
         let coins: Vec<String> = std::env::var("REVENUE_ORACLE_COINS")
             .unwrap_or_default()
             .split(',')
@@ -93,7 +89,10 @@ impl RevenueOracleConfig {
 /// A watched treasury: how to read the coin's balance + height.
 enum TreasurySource {
     /// Quantus treasury — SS58 account via `system_account` storage.
-    Qtc { adapter: QuantusAdapter, address: Address },
+    Qtc {
+        adapter: QuantusAdapter,
+        address: Address,
+    },
     /// Pearl treasury — oyster wallet `getbalance`/`getblockcount`.
     Prl {
         http: reqwest::Client,
@@ -118,10 +117,11 @@ impl TreasurySource {
                 user,
                 pass,
             } => {
-                let bal: f64 = oyster_call(http, url, user, pass, "getbalance", serde_json::json!([]))
-                    .await?
-                    .as_f64()
-                    .unwrap_or(0.0);
+                let bal: f64 =
+                    oyster_call(http, url, user, pass, "getbalance", serde_json::json!([]))
+                        .await?
+                        .as_f64()
+                        .unwrap_or(0.0);
                 let height = oyster_call(
                     http,
                     url,
@@ -166,7 +166,10 @@ async fn oyster_call(
     if let Some(err) = resp.get("error").filter(|e| !e.is_null()) {
         return Err(MultichainError::Internal(format!("oyster {method}: {err}")));
     }
-    Ok(resp.get("result").cloned().unwrap_or(serde_json::Value::Null))
+    Ok(resp
+        .get("result")
+        .cloned()
+        .unwrap_or(serde_json::Value::Null))
 }
 
 /// Build the watch list from env.  Unknown/under-configured coins warn
@@ -181,9 +184,7 @@ fn build_sources(coins: &[String]) -> Vec<(String, TreasurySource)> {
                     Err(_) => {
                         // Default: the payout signer's own account — the
                         // node is expected to mine to the same treasury.
-                        match QuantusAdapter::new("")
-                            .signer_ss58()
-                        {
+                        match QuantusAdapter::new("").signer_ss58() {
                             Ok(s) => s,
                             Err(e) => {
                                 warn!("revenue_oracle: qtu skipped — no ORACLE_QTU_ADDRESS and signer unavailable: {e}");
@@ -192,9 +193,8 @@ fn build_sources(coins: &[String]) -> Vec<(String, TreasurySource)> {
                         }
                     }
                 };
-                let adapter = QuantusAdapter::new(
-                    std::env::var("ORACLE_QTU_RPC").unwrap_or_default(),
-                );
+                let adapter =
+                    QuantusAdapter::new(std::env::var("ORACLE_QTU_RPC").unwrap_or_default());
                 let (acct, _pfx) = match crate::chain::adapters::quantus::ss58_decode(&addr) {
                     Ok(v) => v,
                     Err(e) => {
@@ -205,14 +205,17 @@ fn build_sources(coins: &[String]) -> Vec<(String, TreasurySource)> {
                 match Address::new(ChainId::Quantus, acct.to_vec(), addr) {
                     Ok(a) => out.push((
                         "qtu".to_string(),
-                        TreasurySource::Qtc { adapter, address: a },
+                        TreasurySource::Qtc {
+                            adapter,
+                            address: a,
+                        },
                     )),
                     Err(e) => warn!("revenue_oracle: qtu address build failed: {e}"),
                 }
             }
             "prl" | "pearl" => {
-                let url = std::env::var("ORACLE_PRL_RPC_URL")
-                    .or_else(|_| std::env::var("PRL_RPC_URL"));
+                let url =
+                    std::env::var("ORACLE_PRL_RPC_URL").or_else(|_| std::env::var("PRL_RPC_URL"));
                 match url {
                     Ok(u) => out.push((
                         "prl".to_string(),
@@ -231,7 +234,9 @@ fn build_sources(coins: &[String]) -> Vec<(String, TreasurySource)> {
                         },
                     )),
                     Err(_) => {
-                        warn!("revenue_oracle: prl skipped — ORACLE_PRL_RPC_URL/PRL_RPC_URL not set")
+                        warn!(
+                            "revenue_oracle: prl skipped — ORACLE_PRL_RPC_URL/PRL_RPC_URL not set"
+                        )
                     }
                 }
             }

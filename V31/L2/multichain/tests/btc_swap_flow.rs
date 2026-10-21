@@ -33,8 +33,11 @@ use std::time::{Duration, Instant};
 use bitcoin::{Network, OutPoint, Txid};
 use sha2::Digest as _;
 use zion_l1_types::{Address, Amount, Asset, ChainId, Hash};
+use zion_multichain::chain::adapters::ZionL1Adapter;
+use zion_multichain::chain::ChainAdapter as L1ChainAdapter;
 use zion_multichain::swap::htlc::{HtlcSwap, SwapState};
 use zion_multichain::types::{Transfer, TransferDirection, TransferEndpoint};
+use zion_multichain::wallet::Keyring;
 use zion_multichain::warp::adapter::bitcoin::{BitcoinAdapter, BtcHtlcSpend};
 use zion_multichain::warp::adapter::ChainAdapter;
 use zion_multichain::warp::btc_htlc::HtlcUtxo;
@@ -42,9 +45,6 @@ use zion_multichain::warp::btc_signer::BtcSigner;
 use zion_multichain::warp::btc_swap::{
     BtcSwapConfig, BtcSwapFlow, BtcSwapPhase, OfferBtcToZion, OfferZionToBtc,
 };
-use zion_multichain::chain::adapters::ZionL1Adapter;
-use zion_multichain::chain::ChainAdapter as L1ChainAdapter;
-use zion_multichain::wallet::Keyring;
 use zion_multichain::{db::Db, ChainAdapterRegistry};
 
 const POLL_SECS: u64 = 5;
@@ -103,7 +103,10 @@ where
         if let Some(v) = f().await {
             return v;
         }
-        assert!(start.elapsed() < WAIT_TIMEOUT, "timed out waiting for {what}");
+        assert!(
+            start.elapsed() < WAIT_TIMEOUT,
+            "timed out waiting for {what}"
+        );
         eprintln!("[e2e] waiting for {what}…");
         tokio::time::sleep(Duration::from_secs(POLL_SECS)).await;
     }
@@ -139,8 +142,12 @@ async fn poll_until(
 
 fn zion_endpoint(address: &str, amount: u64) -> TransferEndpoint {
     TransferEndpoint {
-        address: Address::new(ChainId::ZionL1, address.as_bytes().to_vec(), address.to_string())
-            .expect("zion endpoint"),
+        address: Address::new(
+            ChainId::ZionL1,
+            address.as_bytes().to_vec(),
+            address.to_string(),
+        )
+        .expect("zion endpoint"),
         asset: Asset::native(ChainId::ZionL1, "ZION", 6, "ZION"),
         amount: Amount::new(amount as u128),
     }
@@ -225,9 +232,15 @@ async fn e2e_flow_btc_to_zion() {
     let rec = flow.record(&swap_id).await.unwrap();
     assert!(rec.btc_lock.is_some(), "btc lock not recorded");
     assert!(rec.zion_lock_tx.is_some(), "zion lock not recorded");
-    let coord = swaps.get_record(&swap_id).await.expect("coordinator record");
+    let coord = swaps
+        .get_record(&swap_id)
+        .await
+        .expect("coordinator record");
     assert_eq!(coord.state, SwapState::Pending);
-    assert!(coord.source_confirmed, "user BTC lock not confirmed in coord");
+    assert!(
+        coord.source_confirmed,
+        "user BTC lock not confirmed in coord"
+    );
     eprintln!("[e2e] orchestrator locked ZION leg (coord record)");
 
     // 3. User claims ZION through the production coordinator path — this is
@@ -273,7 +286,10 @@ async fn e2e_flow_btc_to_zion() {
         BtcHtlcSpend::Claim { txid, preimage: p } => {
             assert_eq!(txid, settle_tx);
             assert_eq!(p, preimage, "witness preimage mismatch");
-            eprintln!("[e2e] BTC→ZION swap SETTLED — claim {txid}, preimage {}", hex::encode(p));
+            eprintln!(
+                "[e2e] BTC→ZION swap SETTLED — claim {txid}, preimage {}",
+                hex::encode(p)
+            );
         }
         other => panic!("expected Claim spend, got {other:?}"),
     }
@@ -344,7 +360,10 @@ async fn e2e_flow_zion_to_btc() {
     .await;
     let rec = flow.record(&swap_id).await.unwrap();
     let lock = rec.btc_lock.clone().expect("no btc lock recorded");
-    eprintln!("[e2e] operator locked {} sats in {}:{}", lock.value_sats, lock.txid, lock.vout);
+    eprintln!(
+        "[e2e] operator locked {} sats in {}:{}",
+        lock.value_sats, lock.txid, lock.vout
+    );
     mine_blocks(1).await;
 
     // 3. User claims the operator's BTC lock — reveals the preimage on-chain.
@@ -353,7 +372,14 @@ async fn e2e_flow_zion_to_btc() {
         value_sats: lock.value_sats,
     };
     let claim_tx = user
-        .claim_htlc(&client, &api, &utxo, &rec.btc_htlc, preimage, user.address())
+        .claim_htlc(
+            &client,
+            &api,
+            &utxo,
+            &rec.btc_htlc,
+            preimage,
+            user.address(),
+        )
         .await
         .expect("user claim_htlc");
     eprintln!("[e2e] user claimed BTC → {claim_tx}");
@@ -367,15 +393,24 @@ async fn e2e_flow_zion_to_btc() {
     let rec = flow.record(&swap_id).await.unwrap();
     assert_eq!(rec.phase, BtcSwapPhase::Settled);
 
-    let coord = swaps.get_record(&swap_id).await.expect("coordinator record");
+    let coord = swaps
+        .get_record(&swap_id)
+        .await
+        .expect("coordinator record");
     assert_eq!(coord.state, SwapState::Claimed);
     assert_eq!(
         swaps.revealed_preimage(&swap_id).await,
         Some(preimage),
         "coordinator preimage mismatch"
     );
-    assert_eq!(coord.release_recipient.as_deref(), Some(op_zion_addr.as_str()));
-    eprintln!("[e2e] ZION→BTC swap SETTLED — coord claimed to {}", op_zion_addr);
+    assert_eq!(
+        coord.release_recipient.as_deref(),
+        Some(op_zion_addr.as_str())
+    );
+    eprintln!(
+        "[e2e] ZION→BTC swap SETTLED — coord claimed to {}",
+        op_zion_addr
+    );
 }
 
 /// User locks ZION → operator locks BTC → user never claims → BTC CLTV
@@ -442,7 +477,10 @@ async fn e2e_flow_zion_to_btc_refund() {
     .await;
     let rec = flow.record(&swap_id).await.unwrap();
     let lock = rec.btc_lock.clone().expect("no btc lock recorded");
-    eprintln!("[e2e] operator locked {} sats in {}:{}", lock.value_sats, lock.txid, lock.vout);
+    eprintln!(
+        "[e2e] operator locked {} sats in {}:{}",
+        lock.value_sats, lock.txid, lock.vout
+    );
 
     // Advance the tip past the CLTV; the next poll must refund on-chain.
     let need = cltv.saturating_sub(btc.current_height().await.unwrap()) + 1;
@@ -562,7 +600,10 @@ async fn e2e_flow_btc_to_zion_refund() {
         *p == BtcSwapPhase::Refunded
     })
     .await;
-    let coord = swaps.get_record(&swap_id).await.expect("coordinator record");
+    let coord = swaps
+        .get_record(&swap_id)
+        .await
+        .expect("coordinator record");
     assert_eq!(coord.state, SwapState::Refunded);
     eprintln!("[e2e] orchestrator refunded ZION leg (coord Refunded)");
 
@@ -654,7 +695,12 @@ async fn e2e_flow_btc_to_zion_restart() {
         Arc::new(ChainAdapterRegistry::new()),
         db1.clone(),
     ));
-    let mut flow1 = BtcSwapFlow::new(btc.clone(), Arc::new(op.clone()), swaps1.clone(), cfg.clone());
+    let mut flow1 = BtcSwapFlow::new(
+        btc.clone(),
+        Arc::new(op.clone()),
+        swaps1.clone(),
+        cfg.clone(),
+    );
     flow1.set_db(db1.clone());
 
     let rec = flow1
@@ -702,7 +748,10 @@ async fn e2e_flow_btc_to_zion_restart() {
     let rec2 = flow2.record(&swap_id).await.expect("record after restart");
     assert_eq!(rec2.phase, BtcSwapPhase::Locked);
     assert!(rec2.btc_lock.is_some(), "btc lock not restored");
-    let coord = swaps2.get_record(&swap_id).await.expect("coord after restart");
+    let coord = swaps2
+        .get_record(&swap_id)
+        .await
+        .expect("coord after restart");
     assert!(coord.source_confirmed, "source lock flag not restored");
     eprintln!("[e2e] restart recovered swap {swap_id} (phase Locked)");
 
@@ -788,7 +837,13 @@ async fn zion_rpc_utxos(
         .get("chain_height")
         .and_then(|v| v.as_u64())
         .unwrap_or(0);
-    let r = zion_rpc_call(client, rpc, "getUtxos", serde_json::json!({"address": address})).await;
+    let r = zion_rpc_call(
+        client,
+        rpc,
+        "getUtxos",
+        serde_json::json!({"address": address}),
+    )
+    .await;
     r.get("utxos")
         .and_then(|v| v.as_array())
         .cloned()
@@ -802,15 +857,13 @@ async fn zion_rpc_utxos(
             output_index: u["output_index"].as_u64().unwrap_or(0) as u32,
             amount: u["amount"].as_u64().unwrap_or(0),
             address: address.to_string(),
-            script: hex::decode(u["script_hex"].as_str().unwrap_or_default())
-                .unwrap_or_default(),
+            script: hex::decode(u["script_hex"].as_str().unwrap_or_default()).unwrap_or_default(),
             block_height: u["block_height"].as_u64().unwrap_or(0),
             is_coinbase: u["is_coinbase"].as_bool().unwrap_or(false),
         })
         .filter(|u| {
             !u.is_coinbase
-                || tip.saturating_sub(u.block_height)
-                    >= zion_core::emission::COINBASE_MATURITY
+                || tip.saturating_sub(u.block_height) >= zion_core::emission::COINBASE_MATURITY
         })
         .collect()
 }
@@ -832,7 +885,9 @@ async fn zion_rpc_submit(
     if !r.get("accepted").and_then(|v| v.as_bool()).unwrap_or(false) {
         return Err(format!(
             "submitUtxoTransaction rejected: {}",
-            r.get("reason").and_then(|v| v.as_str()).unwrap_or("unknown")
+            r.get("reason")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
         ));
     }
     r.get("tx_id")
@@ -891,10 +946,7 @@ async fn e2e_flow_zion_to_btc_live_zion() {
         .unwrap()
         .try_into()
         .unwrap();
-    let user_zion_addr = user_kr
-        .address(ChainId::ZionL1, 0, 0)
-        .unwrap()
-        .encoded;
+    let user_zion_addr = user_kr.address(ChainId::ZionL1, 0, 0).unwrap().encoded;
 
     // Ephemeral operator — claim spends only the lock UTXO, no balance needed.
     // Mnemonic printed so the claimed amount stays recoverable.
@@ -953,11 +1005,7 @@ async fn e2e_flow_zion_to_btc_live_zion() {
         .and_then(|v| v.parse().ok())
         .unwrap_or(64);
     let mut utxos = zion_rpc_utxos(&client, &rpc, &user_zion_addr).await;
-    utxos.sort_by(|a, b| {
-        b.amount
-            .cmp(&a.amount)
-            .then(a.tx_hash.cmp(&b.tx_hash))
-    });
+    utxos.sort_by(|a, b| b.amount.cmp(&a.amount).then(a.tx_hash.cmp(&b.tx_hash)));
     let spend_utxos: Vec<zion_core::v31_wallet::SpendableUtxo> =
         utxos.into_iter().skip(skip).collect();
     eprintln!(
@@ -1026,7 +1074,10 @@ async fn e2e_flow_zion_to_btc_live_zion() {
     .await;
     let rec = flow.record(&swap_id).await.unwrap();
     let lock = rec.btc_lock.clone().expect("no btc lock recorded");
-    eprintln!("[e2e] operator locked {} sats in {}:{}", lock.value_sats, lock.txid, lock.vout);
+    eprintln!(
+        "[e2e] operator locked {} sats in {}:{}",
+        lock.value_sats, lock.txid, lock.vout
+    );
     mine_blocks(1).await;
 
     // 3. User claims the operator's BTC lock — reveals preimage on-chain.
@@ -1035,7 +1086,14 @@ async fn e2e_flow_zion_to_btc_live_zion() {
         value_sats: lock.value_sats,
     };
     let claim_tx = user
-        .claim_htlc(&client, &api, &utxo, &rec.btc_htlc, preimage, user.address())
+        .claim_htlc(
+            &client,
+            &api,
+            &utxo,
+            &rec.btc_htlc,
+            preimage,
+            user.address(),
+        )
         .await
         .expect("user claim_htlc");
     eprintln!("[e2e] user claimed BTC → {claim_tx}");
@@ -1046,9 +1104,15 @@ async fn e2e_flow_zion_to_btc_live_zion() {
         *p == BtcSwapPhase::Settled
     })
     .await;
-    let coord = swaps.get_record(&swap_id).await.expect("coordinator record");
+    let coord = swaps
+        .get_record(&swap_id)
+        .await
+        .expect("coordinator record");
     assert_eq!(coord.state, SwapState::Claimed);
-    assert_eq!(coord.release_recipient.as_deref(), Some(op_zion_addr.as_str()));
+    assert_eq!(
+        coord.release_recipient.as_deref(),
+        Some(op_zion_addr.as_str())
+    );
     assert_eq!(swaps.revealed_preimage(&swap_id).await, Some(preimage));
     let release_tx = coord.release_tx_id.clone().expect("no zion release tx");
     eprintln!("[e2e] operator claimed user zion lock on L1 → {release_tx}");
@@ -1058,7 +1122,11 @@ async fn e2e_flow_zion_to_btc_live_zion() {
     wait_for("zion claim conf", {
         let op_side = &op_side;
         move || async move {
-            op_side.confirmations(&release_hash).await.ok().filter(|c| *c >= 1)
+            op_side
+                .confirmations(&release_hash)
+                .await
+                .ok()
+                .filter(|c| *c >= 1)
         }
     })
     .await;

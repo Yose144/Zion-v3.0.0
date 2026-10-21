@@ -107,12 +107,7 @@ impl SwapExecutor {
 
     /// Return the best quote for a swap, falling back to an on-chain Uniswap V3
     /// quote for same-chain EVM pairs when no in-memory AMM route exists.
-    pub async fn quote(
-        &self,
-        from: &Asset,
-        to: &Asset,
-        amount: Amount,
-    ) -> MultichainResult<Quote> {
+    pub async fn quote(&self, from: &Asset, to: &Asset, amount: Amount) -> MultichainResult<Quote> {
         {
             let router = self.router.read().await;
             match router.quote_multi(from, to, amount, 1, 4) {
@@ -127,20 +122,17 @@ impl SwapExecutor {
 
         // No AMM route: try a direct Uniswap V3 quote for same-chain EVM pairs.
         if from.id.chain == to.id.chain && from.id.chain.family() == ChainFamily::Evm {
-            let contracts = ZionContracts::for_chain(from.id.chain.as_str())
-                .ok_or_else(|| MultichainError::Unsupported(format!("no contracts for {}", from.id.chain.as_str())))?;
-            let v3 = contracts
-                .v3_dex
-                .get("uniswap")
-                .ok_or_else(|| MultichainError::Unsupported("uniswap config missing".to_string()))?;
-            let adapter = self
-                .adapters
-                .get(from.id.chain)
-                .ok_or_else(|| MultichainError::AdapterNotFound(from.id.chain.as_str().to_string()))?;
+            let contracts = ZionContracts::for_chain(from.id.chain.as_str()).ok_or_else(|| {
+                MultichainError::Unsupported(format!("no contracts for {}", from.id.chain.as_str()))
+            })?;
+            let v3 = contracts.v3_dex.get("uniswap").ok_or_else(|| {
+                MultichainError::Unsupported("uniswap config missing".to_string())
+            })?;
+            let adapter = self.adapters.get(from.id.chain).ok_or_else(|| {
+                MultichainError::AdapterNotFound(from.id.chain.as_str().to_string())
+            })?;
             let fee = contracts.v3_fee_for_pair(&from.id.ticker, &to.id.ticker);
-            let expected_out = adapter
-                .v3_quote(&v3.quoter, from, to, amount, fee)
-                .await?;
+            let expected_out = adapter.v3_quote(&v3.quoter, from, to, amount, fee).await?;
             if expected_out.0 > 0 {
                 return Ok(Quote {
                     route: vec![from.id.clone(), to.id.clone()],
@@ -212,13 +204,15 @@ impl SwapExecutor {
         }
 
         // 1. Debit input from the user's ledger (atomic journal if available).
-        self.debit(user_id, from, amount, "swap", Some(&order_id)).await?;
+        self.debit(user_id, from, amount, "swap", Some(&order_id))
+            .await?;
 
         // 2. Quote and execute against the router or Uniswap V3.
         let quote = match self.quote(from, to, amount).await {
             Ok(q) => q,
             Err(e) => {
-                self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
+                self.credit(user_id, from, amount, "swap_refund", Some(&order.id))
+                    .await?;
                 order.status = DexOrderStatus::Failed;
                 self.save_order(&order).await?;
                 return Err(e);
@@ -226,7 +220,8 @@ impl SwapExecutor {
         };
 
         if quote.expected_out < min_amount_out {
-            self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
+            self.credit(user_id, from, amount, "swap_refund", Some(&order.id))
+                .await?;
             order.status = DexOrderStatus::Failed;
             self.save_order(&order).await?;
             return Err(MultichainError::Validation(format!(
@@ -240,8 +235,8 @@ impl SwapExecutor {
         // For same-chain EVM swaps, try Uniswap V3 first (exactInputSingle).
         // If no V3 pool is configured, fall back to the in-memory AMM execution.
         // The deprecated V2 `amm_swap` path is no longer used.
-        let same_chain_evm = from.id.chain == to.id.chain
-            && from.id.chain.family() == ChainFamily::Evm;
+        let same_chain_evm =
+            from.id.chain == to.id.chain && from.id.chain.family() == ChainFamily::Evm;
 
         let chain_contracts = ZionContracts::for_chain(from.id.chain.as_str());
         let v3_config = chain_contracts
@@ -277,7 +272,8 @@ impl SwapExecutor {
                 .unwrap_or(Amount::ZERO);
 
             if v3_quote_out.0 > 0 && v3_quote_out < min_amount_out {
-                self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
+                self.credit(user_id, from, amount, "swap_refund", Some(&order.id))
+                    .await?;
                 order.status = DexOrderStatus::Failed;
                 self.save_order(&order).await?;
                 return Err(MultichainError::Validation(format!(
@@ -322,7 +318,8 @@ impl SwapExecutor {
                     current
                 }
                 Err(e) => {
-                    self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
+                    self.credit(user_id, from, amount, "swap_refund", Some(&order.id))
+                        .await?;
                     order.status = DexOrderStatus::Failed;
                     self.save_order(&order).await?;
                     return Err(e);
@@ -344,7 +341,8 @@ impl SwapExecutor {
                 current = match router.execute(&hop_from, &hop_to, current) {
                     Ok(out) => out,
                     Err(e) => {
-                        self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
+                        self.credit(user_id, from, amount, "swap_refund", Some(&order.id))
+                            .await?;
                         order.status = DexOrderStatus::Failed;
                         self.save_order(&order).await?;
                         return Err(e);
@@ -356,7 +354,8 @@ impl SwapExecutor {
 
         if amount_out < min_amount_out {
             // This should not happen after the quote check, but keep the user safe.
-            self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
+            self.credit(user_id, from, amount, "swap_refund", Some(&order.id))
+                .await?;
             order.status = DexOrderStatus::Failed;
             self.save_order(&order).await?;
             return Err(MultichainError::Validation(
@@ -372,7 +371,8 @@ impl SwapExecutor {
         // 3. On-chain settlement if a recipient was supplied.
         if let Some(recipient) = recipient {
             if recipient.chain != to.id.chain {
-                self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
+                self.credit(user_id, from, amount, "swap_refund", Some(&order.id))
+                    .await?;
                 order.status = DexOrderStatus::Failed;
                 self.save_order(&order).await?;
                 return Err(MultichainError::Validation(format!(
@@ -386,7 +386,11 @@ impl SwapExecutor {
             // output was sent directly to the recipient — no additional
             // transfer needed. We detect this by checking if tx_hash was set
             // during the V3 swap (not the fallback in-memory path).
-            if order.tx_hash.is_some() && same_chain_evm && v3_config.is_some() && quote.route.len() == 2 {
+            if order.tx_hash.is_some()
+                && same_chain_evm
+                && v3_config.is_some()
+                && quote.route.len() == 2
+            {
                 // Verify the tx_hash was set by V3 (not by transfer_token below).
                 // In the V3 path, tx_hash is set before settlement. In the
                 // fallback in-memory path, tx_hash is None at this point.
@@ -405,7 +409,8 @@ impl SwapExecutor {
                     Err(e) => {
                         // Credit the output token to the user's internal ledger so
                         // the swap is not lost; the operator can retry withdrawal.
-                        self.credit(user_id, to, amount_out, "swap_output", Some(&order.id)).await?;
+                        self.credit(user_id, to, amount_out, "swap_output", Some(&order.id))
+                            .await?;
                         order.status = DexOrderStatus::Failed;
                         self.save_order(&order).await?;
                         return Err(e);
@@ -414,7 +419,8 @@ impl SwapExecutor {
             }
         } else {
             // 4. Keep the output on the internal ledger.
-            self.credit(user_id, to, amount_out, "swap_output", Some(&order.id)).await?;
+            self.credit(user_id, to, amount_out, "swap_output", Some(&order.id))
+                .await?;
         }
 
         self.save_order(&order).await?;
@@ -437,7 +443,9 @@ impl SwapExecutor {
         reference_id: Option<&str>,
     ) -> MultichainResult<()> {
         if let Some(ref journal) = self.journal {
-            journal.debit(user_id, asset, amount, reason, reference_id).await
+            journal
+                .debit(user_id, asset, amount, reason, reference_id)
+                .await
         } else {
             self.ledger.debit(user_id, asset, amount).await
         }
@@ -454,7 +462,9 @@ impl SwapExecutor {
         reference_id: Option<&str>,
     ) -> MultichainResult<()> {
         if let Some(ref journal) = self.journal {
-            journal.credit(user_id, asset, amount, reason, reference_id).await
+            journal
+                .credit(user_id, asset, amount, reason, reference_id)
+                .await
         } else {
             self.ledger.credit(user_id, asset, amount).await
         }
@@ -1281,25 +1291,17 @@ mod tests {
     struct EvmDepositMockAdapter {
         family: ChainFamily,
         /// Deposits to emit when `watch_addresses` is called.
-        pending_deposits: std::sync::Arc<
-            std::sync::Mutex<Vec<DepositEvent>>,
-        >,
+        pending_deposits: std::sync::Arc<std::sync::Mutex<Vec<DepositEvent>>>,
         /// Recorded outbound `transfer_token` calls.
-        transfer_calls: std::sync::Arc<
-            std::sync::Mutex<Vec<(String, String, u128)>>,
-        >,
+        transfer_calls: std::sync::Arc<std::sync::Mutex<Vec<(String, String, u128)>>>,
     }
 
     impl EvmDepositMockAdapter {
         fn new() -> Self {
             Self {
                 family: ChainFamily::Evm,
-                pending_deposits: std::sync::Arc::new(
-                    std::sync::Mutex::new(Vec::new()),
-                ),
-                transfer_calls: std::sync::Arc::new(
-                    std::sync::Mutex::new(Vec::new()),
-                ),
+                pending_deposits: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+                transfer_calls: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
             }
         }
 
@@ -1349,11 +1351,7 @@ mod tests {
             Ok(100)
         }
 
-        async fn send_payment(
-            &self,
-            _to: &Address,
-            _amount: Amount,
-        ) -> MultichainResult<Hash> {
+        async fn send_payment(&self, _to: &Address, _amount: Amount) -> MultichainResult<Hash> {
             Ok(Hash([0xAA; 32]))
         }
 
@@ -1397,16 +1395,8 @@ mod tests {
 
         // --- Setup DEX with tZION/tUSDT AMM pool ---
         let base = ChainId::Base;
-        let tzion = evm_asset(
-            base,
-            "tZION",
-            "0xC5E79b8C6475137aC3a982651097a219B63b0c33",
-        );
-        let tusdt = evm_asset(
-            base,
-            "tUSDT",
-            "0x677693fbFDe6a9EeA655033fffF93054B559552C",
-        );
+        let tzion = evm_asset(base, "tZION", "0xC5E79b8C6475137aC3a982651097a219B63b0c33");
+        let tusdt = evm_asset(base, "tUSDT", "0x677693fbFDe6a9EeA655033fffF93054B559552C");
 
         let mut dex = DexRouter::new();
         dex.add_pool(Pool {
@@ -1437,20 +1427,18 @@ mod tests {
         );
 
         // --- Setup DepositWatcher ---
-        let deposit_watcher =
-            crate::multichain_wallet::deposits::DepositWatcher::new(
-                Arc::clone(&db),
-                Arc::clone(&adapters),
-                ledger.clone(),
-            );
+        let deposit_watcher = crate::multichain_wallet::deposits::DepositWatcher::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            ledger.clone(),
+        );
 
         // --- Setup WithdrawalProcessor ---
-        let withdrawal_processor =
-            crate::multichain_wallet::withdrawals::WithdrawalProcessor::new(
-                Arc::clone(&db),
-                Arc::clone(&adapters),
-                ledger.clone(),
-            );
+        let withdrawal_processor = crate::multichain_wallet::withdrawals::WithdrawalProcessor::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            ledger.clone(),
+        );
 
         let user_id = "e2e_user";
 
@@ -1530,8 +1518,7 @@ mod tests {
 
         let tusdt_after_swap = ledger.balance(user_id, &tusdt).await.unwrap();
         assert_eq!(
-            tusdt_after_swap.0,
-            order.amount_out.0,
+            tusdt_after_swap.0, order.amount_out.0,
             "tUSDT should be credited with swap output"
         );
 

@@ -40,9 +40,12 @@ const AMM_GET_RESERVES_SIG: &str = "getReserves()";
 const AMM_TOKEN0_SIG: &str = "token0()";
 const AMM_TOKEN1_SIG: &str = "token1()";
 const AMM_GET_AMOUNT_OUT_SIG: &str = "getAmountOut(uint256,uint256,uint256)";
-const AMM_ROUTER_SWAP_SIG: &str = "swapExactTokensForTokens(uint256,uint256,address[],address,uint256)";
-const AMM_ROUTER_ADD_LIQ_SIG: &str = "addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)";
-const AMM_ROUTER_REMOVE_LIQ_SIG: &str = "removeLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)";
+const AMM_ROUTER_SWAP_SIG: &str =
+    "swapExactTokensForTokens(uint256,uint256,address[],address,uint256)";
+const AMM_ROUTER_ADD_LIQ_SIG: &str =
+    "addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)";
+const AMM_ROUTER_REMOVE_LIQ_SIG: &str =
+    "removeLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)";
 const AMM_ROUTER_GET_AMOUNTS_OUT_SIG: &str = "getAmountsOut(uint256,address[])";
 const AMM_FACTORY_PAIR_FOR_SIG: &str = "pairFor(address,address)";
 const ERC20_APPROVE_SIG: &str = "approve(address,uint256)";
@@ -51,9 +54,12 @@ const HTLC_CLAIM_SIG: &str = "claim(bytes32,bytes32)";
 const HTLC_REFUND_SIG: &str = "refund(bytes32)";
 
 // Uniswap V3 function signatures
-const V3_QUOTE_EXACT_INPUT_SINGLE_SIG: &str = "quoteExactInputSingle((address,address,uint256,uint24,uint160))";
-const V3_EXACT_INPUT_SINGLE_SIG: &str = "exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))";
-const V3_QUOTE_EXACT_INPUT_SINGLE_LEGACY_SIG: &str = "quoteExactInputSingle(address,address,uint256,uint24,uint160)";
+const V3_QUOTE_EXACT_INPUT_SINGLE_SIG: &str =
+    "quoteExactInputSingle((address,address,uint256,uint24,uint160))";
+const V3_EXACT_INPUT_SINGLE_SIG: &str =
+    "exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))";
+const V3_QUOTE_EXACT_INPUT_SINGLE_LEGACY_SIG: &str =
+    "quoteExactInputSingle(address,address,uint256,uint24,uint160)";
 
 /// EVM adapter configured for a specific RPC, optional signer and contracts.
 pub struct EvmAdapter {
@@ -826,8 +832,9 @@ impl ChainAdapter for EvmAdapter {
             .map_err(|e| MultichainError::Validation(format!("invalid pair address: {e}")))?;
 
         let token_in_addr = match token_in.id.contract.as_deref() {
-            Some(addr) => EthAddress::from_str(addr)
-                .map_err(|e| MultichainError::Validation(format!("invalid token_in contract: {e}")))?,
+            Some(addr) => EthAddress::from_str(addr).map_err(|e| {
+                MultichainError::Validation(format!("invalid token_in contract: {e}"))
+            })?,
             None => {
                 return Err(MultichainError::Validation(format!(
                     "token_in contract address required for {}",
@@ -837,8 +844,9 @@ impl ChainAdapter for EvmAdapter {
         };
 
         let _token_out_addr = match token_out.id.contract.as_deref() {
-            Some(addr) => EthAddress::from_str(addr)
-                .map_err(|e| MultichainError::Validation(format!("invalid token_out contract: {e}")))?,
+            Some(addr) => EthAddress::from_str(addr).map_err(|e| {
+                MultichainError::Validation(format!("invalid token_out contract: {e}"))
+            })?,
             None => {
                 return Err(MultichainError::Validation(format!(
                     "token_out contract address required for {}",
@@ -865,10 +873,13 @@ impl ChainAdapter for EvmAdapter {
         let token0_data = Self::function_selector(AMM_TOKEN0_SIG).to_vec();
         let token0_result = self
             .provider
-            .call(&ethers::types::TransactionRequest::new()
-                .to(pair)
-                .data(token0_data.clone())
-                .into(), None)
+            .call(
+                &ethers::types::TransactionRequest::new()
+                    .to(pair)
+                    .data(token0_data.clone())
+                    .into(),
+                None,
+            )
             .await
             .map_err(|e| MultichainError::Internal(format!("token0() call failed: {e}")))?;
         let token0 = decode(&[ParamType::Address], &token0_result)
@@ -884,19 +895,43 @@ impl ChainAdapter for EvmAdapter {
         let reserves_data = Self::function_selector(AMM_GET_RESERVES_SIG).to_vec();
         let reserves_result = self
             .provider
-            .call(&ethers::types::TransactionRequest::new()
-                .to(pair)
-                .data(reserves_data.clone())
-                .into(), None)
+            .call(
+                &ethers::types::TransactionRequest::new()
+                    .to(pair)
+                    .data(reserves_data.clone())
+                    .into(),
+                None,
+            )
             .await
             .map_err(|e| MultichainError::Internal(format!("getReserves() call failed: {e}")))?;
-        let reserves_tokens = decode(&[ParamType::Uint(112), ParamType::Uint(112), ParamType::Uint(32)], &reserves_result)
-            .map_err(|e| MultichainError::Internal(format!("getReserves() decode failed: {e}")))?;
-        let reserve0: U256 = reserves_tokens.get(0).and_then(|t| t.clone().into_uint()).unwrap_or_default();
-        let reserve1: U256 = reserves_tokens.get(1).and_then(|t| t.clone().into_uint()).unwrap_or_default();
+        let reserves_tokens = decode(
+            &[
+                ParamType::Uint(112),
+                ParamType::Uint(112),
+                ParamType::Uint(32),
+            ],
+            &reserves_result,
+        )
+        .map_err(|e| MultichainError::Internal(format!("getReserves() decode failed: {e}")))?;
+        let reserve0: U256 = reserves_tokens
+            .get(0)
+            .and_then(|t| t.clone().into_uint())
+            .unwrap_or_default();
+        let reserve1: U256 = reserves_tokens
+            .get(1)
+            .and_then(|t| t.clone().into_uint())
+            .unwrap_or_default();
 
-        let reserve_in = if token_in_is_token0 { reserve0 } else { reserve1 };
-        let reserve_out = if token_in_is_token0 { reserve1 } else { reserve0 };
+        let reserve_in = if token_in_is_token0 {
+            reserve0
+        } else {
+            reserve1
+        };
+        let reserve_out = if token_in_is_token0 {
+            reserve1
+        } else {
+            reserve0
+        };
 
         // 3. Calculate expected output via getAmountOut
         let amount_out = {
@@ -908,20 +943,31 @@ impl ChainAdapter for EvmAdapter {
             ]));
             let result = self
                 .provider
-                .call(&ethers::types::TransactionRequest::new()
-                    .to(pair)
-                    .data(data.clone())
-                    .into(), None)
+                .call(
+                    &ethers::types::TransactionRequest::new()
+                        .to(pair)
+                        .data(data.clone())
+                        .into(),
+                    None,
+                )
                 .await
-                .map_err(|e| MultichainError::Internal(format!("getAmountOut() call failed: {e}")))?;
-            let tokens = decode(&[ParamType::Uint(256)], &result)
-                .map_err(|e| MultichainError::Internal(format!("getAmountOut() decode failed: {e}")))?;
-            let out: U256 = tokens.get(0).and_then(|t| t.clone().into_uint()).unwrap_or_default();
+                .map_err(|e| {
+                    MultichainError::Internal(format!("getAmountOut() call failed: {e}"))
+                })?;
+            let tokens = decode(&[ParamType::Uint(256)], &result).map_err(|e| {
+                MultichainError::Internal(format!("getAmountOut() decode failed: {e}"))
+            })?;
+            let out: U256 = tokens
+                .get(0)
+                .and_then(|t| t.clone().into_uint())
+                .unwrap_or_default();
             Amount(out.as_u128())
         };
 
         if amount_out.0 == 0 {
-            return Err(MultichainError::Validation("AMM swap: zero output".to_string()));
+            return Err(MultichainError::Validation(
+                "AMM swap: zero output".to_string(),
+            ));
         }
 
         // 4. Transfer input token to the pair contract
@@ -1016,11 +1062,14 @@ impl ChainAdapter for EvmAdapter {
 
         // 1. Approve the router to spend the input token.
         let token_in_addr = match path[0].id.contract.as_deref() {
-            Some(addr) => EthAddress::from_str(addr)
-                .map_err(|e| MultichainError::Validation(format!("invalid token_in contract: {e}")))?,
-            None => return Err(MultichainError::Validation(
-                "amm_router_swap: input token has no contract address".to_string(),
-            )),
+            Some(addr) => EthAddress::from_str(addr).map_err(|e| {
+                MultichainError::Validation(format!("invalid token_in contract: {e}"))
+            })?,
+            None => {
+                return Err(MultichainError::Validation(
+                    "amm_router_swap: input token has no contract address".to_string(),
+                ))
+            }
         };
 
         let mut approve_data = Self::function_selector(ERC20_APPROVE_SIG).to_vec();
@@ -1028,7 +1077,8 @@ impl ChainAdapter for EvmAdapter {
             Token::Address(router),
             Token::Uint(U256::from(amount_in.0)),
         ]));
-        self.send_transaction(token_in_addr, approve_data, U256::zero()).await?;
+        self.send_transaction(token_in_addr, approve_data, U256::zero())
+            .await?;
 
         // 2. Call swapExactTokensForTokens on the router.
         let mut swap_data = Self::function_selector(AMM_ROUTER_SWAP_SIG).to_vec();
@@ -1040,7 +1090,9 @@ impl ChainAdapter for EvmAdapter {
             Token::Uint(U256::from(ts)),
         ]));
 
-        let tx_hash = self.send_transaction(router, swap_data, U256::zero()).await?;
+        let tx_hash = self
+            .send_transaction(router, swap_data, U256::zero())
+            .await?;
 
         // 3. Query getAmountsOut to determine the actual output amount.
         let mut query_path: Vec<Token> = Vec::with_capacity(path.len());
@@ -1064,15 +1116,21 @@ impl ChainAdapter for EvmAdapter {
 
         let amounts_result = self
             .provider
-            .call(&ethers::types::TransactionRequest::new()
-                .to(router)
-                .data(amounts_data.clone())
-                .into(), None)
+            .call(
+                &ethers::types::TransactionRequest::new()
+                    .to(router)
+                    .data(amounts_data.clone())
+                    .into(),
+                None,
+            )
             .await
             .map_err(|e| MultichainError::Internal(format!("getAmountsOut() call failed: {e}")))?;
 
-        let amounts_tokens = decode(&[ParamType::Array(Box::new(ParamType::Uint(256)))], &amounts_result)
-            .map_err(|e| MultichainError::Internal(format!("getAmountsOut() decode failed: {e}")))?;
+        let amounts_tokens = decode(
+            &[ParamType::Array(Box::new(ParamType::Uint(256)))],
+            &amounts_result,
+        )
+        .map_err(|e| MultichainError::Internal(format!("getAmountsOut() decode failed: {e}")))?;
 
         let amount_out = amounts_tokens
             .into_iter()
@@ -1102,21 +1160,27 @@ impl ChainAdapter for EvmAdapter {
             .map_err(|e| MultichainError::Validation(format!("invalid quoter address: {e}")))?;
 
         let token_in_addr = match token_in.id.contract.as_deref() {
-            Some(addr) => EthAddress::from_str(addr)
-                .map_err(|e| MultichainError::Validation(format!("invalid token_in contract: {e}")))?,
-            None => return Err(MultichainError::Validation(format!(
-                "v3_quote: token_in {} has no contract address",
-                token_in.id
-            ))),
+            Some(addr) => EthAddress::from_str(addr).map_err(|e| {
+                MultichainError::Validation(format!("invalid token_in contract: {e}"))
+            })?,
+            None => {
+                return Err(MultichainError::Validation(format!(
+                    "v3_quote: token_in {} has no contract address",
+                    token_in.id
+                )))
+            }
         };
 
         let token_out_addr = match token_out.id.contract.as_deref() {
-            Some(addr) => EthAddress::from_str(addr)
-                .map_err(|e| MultichainError::Validation(format!("invalid token_out contract: {e}")))?,
-            None => return Err(MultichainError::Validation(format!(
-                "v3_quote: token_out {} has no contract address",
-                token_out.id
-            ))),
+            Some(addr) => EthAddress::from_str(addr).map_err(|e| {
+                MultichainError::Validation(format!("invalid token_out contract: {e}"))
+            })?,
+            None => {
+                return Err(MultichainError::Validation(format!(
+                    "v3_quote: token_out {} has no contract address",
+                    token_out.id
+                )))
+            }
         };
 
         // Try QuoterV2 struct-encoded signature first.
@@ -1133,14 +1197,21 @@ impl ChainAdapter for EvmAdapter {
 
         let result = self
             .provider
-            .call(&TransactionRequest::new().to(quoter).data(data.clone()).into(), None)
+            .call(
+                &TransactionRequest::new()
+                    .to(quoter)
+                    .data(data.clone())
+                    .into(),
+                None,
+            )
             .await;
 
         let bytes = match result {
             Ok(b) => b,
             Err(_) => {
                 // Fallback: QuoterV1 flat-args signature.
-                let mut legacy_data = Self::function_selector(V3_QUOTE_EXACT_INPUT_SINGLE_LEGACY_SIG).to_vec();
+                let mut legacy_data =
+                    Self::function_selector(V3_QUOTE_EXACT_INPUT_SINGLE_LEGACY_SIG).to_vec();
                 legacy_data.extend_from_slice(&encode(&[
                     Token::Address(token_in_addr),
                     Token::Address(token_out_addr),
@@ -1149,18 +1220,36 @@ impl ChainAdapter for EvmAdapter {
                     Token::Uint(U256::zero()),
                 ]));
                 self.provider
-                    .call(&TransactionRequest::new().to(quoter).data(legacy_data).into(), None)
+                    .call(
+                        &TransactionRequest::new()
+                            .to(quoter)
+                            .data(legacy_data)
+                            .into(),
+                        None,
+                    )
                     .await
-                    .map_err(|e| MultichainError::Internal(format!("v3_quote: both quoter signatures failed: {e}")))?
+                    .map_err(|e| {
+                        MultichainError::Internal(format!(
+                            "v3_quote: both quoter signatures failed: {e}"
+                        ))
+                    })?
             }
         };
 
         // QuoterV2 returns (uint256 amount_out, uint160 sqrtPriceX96_after, uint32 initializedTicksCrossed, uint256 gasEstimate).
         // QuoterV1 returns (uint256 amount_out, uint160 sqrtPriceX96_after, uint32 initializedTicksCrossed, uint256 gasEstimate).
         // In both cases the first return value is the output amount.
-        let tokens = decode(&[ParamType::Uint(256), ParamType::Uint(160), ParamType::Uint(32), ParamType::Uint(256)], &bytes)
-            .or_else(|_| decode(&[ParamType::Uint(256)], &bytes))
-            .map_err(|e| MultichainError::Internal(format!("v3_quote: decode failed: {e}")))?;
+        let tokens = decode(
+            &[
+                ParamType::Uint(256),
+                ParamType::Uint(160),
+                ParamType::Uint(32),
+                ParamType::Uint(256),
+            ],
+            &bytes,
+        )
+        .or_else(|_| decode(&[ParamType::Uint(256)], &bytes))
+        .map_err(|e| MultichainError::Internal(format!("v3_quote: decode failed: {e}")))?;
 
         let amount_out = tokens
             .first()
@@ -1191,30 +1280,38 @@ impl ChainAdapter for EvmAdapter {
             .map_err(|e| MultichainError::Validation(format!("invalid V3 router address: {e}")))?;
 
         let token_in_addr = match token_in.id.contract.as_deref() {
-            Some(addr) => EthAddress::from_str(addr)
-                .map_err(|e| MultichainError::Validation(format!("invalid token_in contract: {e}")))?,
-            None => return Err(MultichainError::Validation(format!(
-                "v3_swap: token_in {} has no contract address",
-                token_in.id
-            ))),
+            Some(addr) => EthAddress::from_str(addr).map_err(|e| {
+                MultichainError::Validation(format!("invalid token_in contract: {e}"))
+            })?,
+            None => {
+                return Err(MultichainError::Validation(format!(
+                    "v3_swap: token_in {} has no contract address",
+                    token_in.id
+                )))
+            }
         };
 
         let token_out_addr = match token_out.id.contract.as_deref() {
-            Some(addr) => EthAddress::from_str(addr)
-                .map_err(|e| MultichainError::Validation(format!("invalid token_out contract: {e}")))?,
-            None => return Err(MultichainError::Validation(format!(
-                "v3_swap: token_out {} has no contract address",
-                token_out.id
-            ))),
+            Some(addr) => EthAddress::from_str(addr).map_err(|e| {
+                MultichainError::Validation(format!("invalid token_out contract: {e}"))
+            })?,
+            None => {
+                return Err(MultichainError::Validation(format!(
+                    "v3_swap: token_out {} has no contract address",
+                    token_out.id
+                )))
+            }
         };
 
         let recipient_eth = if recipient.encoded.is_empty() {
             self.wallet
                 .as_ref()
                 .map(|w| EthAddress::from(w.address()))
-                .ok_or_else(|| MultichainError::Unsupported(
-                    "v3_swap: no wallet configured for custodial recipient".to_string(),
-                ))?
+                .ok_or_else(|| {
+                    MultichainError::Unsupported(
+                        "v3_swap: no wallet configured for custodial recipient".to_string(),
+                    )
+                })?
         } else {
             self.to_eth_address(recipient)?
         };
@@ -1231,7 +1328,8 @@ impl ChainAdapter for EvmAdapter {
             Token::Address(router),
             Token::Uint(U256::from(amount_in.0)),
         ]));
-        self.send_transaction(token_in_addr, approve_data, U256::zero()).await?;
+        self.send_transaction(token_in_addr, approve_data, U256::zero())
+            .await?;
 
         // 2. Call exactInputSingle on the router.
         let params = Token::Tuple(vec![
@@ -1248,7 +1346,9 @@ impl ChainAdapter for EvmAdapter {
         let mut swap_data = Self::function_selector(V3_EXACT_INPUT_SINGLE_SIG).to_vec();
         swap_data.extend_from_slice(&encode(&[params]));
 
-        let tx_hash = self.send_transaction(router, swap_data, U256::zero()).await?;
+        let tx_hash = self
+            .send_transaction(router, swap_data, U256::zero())
+            .await?;
 
         // 3. Quote the output amount using the quoter (best-effort).
         let amount_out = if let Some(contracts) = &self.contracts {
@@ -1282,14 +1382,16 @@ impl ChainAdapter for EvmAdapter {
         let router = EthAddress::from_str(router_address)
             .map_err(|e| MultichainError::Validation(format!("invalid router address: {e}")))?;
 
-        let token_a_addr = EthAddress::from_str(token_a.id.contract.as_deref().ok_or_else(|| {
-            MultichainError::Validation("token_a has no contract address".to_string())
-        })?)
+        let token_a_addr =
+            EthAddress::from_str(token_a.id.contract.as_deref().ok_or_else(|| {
+                MultichainError::Validation("token_a has no contract address".to_string())
+            })?)
             .map_err(|e| MultichainError::Validation(format!("invalid token_a address: {e}")))?;
 
-        let token_b_addr = EthAddress::from_str(token_b.id.contract.as_deref().ok_or_else(|| {
-            MultichainError::Validation("token_b has no contract address".to_string())
-        })?)
+        let token_b_addr =
+            EthAddress::from_str(token_b.id.contract.as_deref().ok_or_else(|| {
+                MultichainError::Validation("token_b has no contract address".to_string())
+            })?)
             .map_err(|e| MultichainError::Validation(format!("invalid token_b address: {e}")))?;
 
         let recipient_eth = if recipient.encoded.is_empty() {
@@ -1312,13 +1414,17 @@ impl ChainAdapter for EvmAdapter {
         };
 
         // 1. Approve the router for both tokens.
-        for (token_addr, amount) in [(token_a_addr, amount_a_desired), (token_b_addr, amount_b_desired)] {
+        for (token_addr, amount) in [
+            (token_a_addr, amount_a_desired),
+            (token_b_addr, amount_b_desired),
+        ] {
             let mut approve_data = Self::function_selector(ERC20_APPROVE_SIG).to_vec();
             approve_data.extend_from_slice(&encode(&[
                 Token::Address(router),
                 Token::Uint(U256::from(amount.0)),
             ]));
-            self.send_transaction(token_addr, approve_data, U256::zero()).await?;
+            self.send_transaction(token_addr, approve_data, U256::zero())
+                .await?;
         }
 
         // 2. Call addLiquidity on the router.
@@ -1334,7 +1440,9 @@ impl ChainAdapter for EvmAdapter {
             Token::Uint(U256::from(ts)),
         ]));
 
-        let tx_hash = self.send_transaction(router, liq_data, U256::zero()).await?;
+        let tx_hash = self
+            .send_transaction(router, liq_data, U256::zero())
+            .await?;
 
         // Return estimated amounts (actual amounts come from event logs;
         // for now return the desired amounts as upper bounds).
@@ -1356,14 +1464,16 @@ impl ChainAdapter for EvmAdapter {
         let router = EthAddress::from_str(router_address)
             .map_err(|e| MultichainError::Validation(format!("invalid router address: {e}")))?;
 
-        let token_a_addr = EthAddress::from_str(token_a.id.contract.as_deref().ok_or_else(|| {
-            MultichainError::Validation("token_a has no contract address".to_string())
-        })?)
+        let token_a_addr =
+            EthAddress::from_str(token_a.id.contract.as_deref().ok_or_else(|| {
+                MultichainError::Validation("token_a has no contract address".to_string())
+            })?)
             .map_err(|e| MultichainError::Validation(format!("invalid token_a address: {e}")))?;
 
-        let token_b_addr = EthAddress::from_str(token_b.id.contract.as_deref().ok_or_else(|| {
-            MultichainError::Validation("token_b has no contract address".to_string())
-        })?)
+        let token_b_addr =
+            EthAddress::from_str(token_b.id.contract.as_deref().ok_or_else(|| {
+                MultichainError::Validation("token_b has no contract address".to_string())
+            })?)
             .map_err(|e| MultichainError::Validation(format!("invalid token_b address: {e}")))?;
 
         let recipient_eth = if recipient.encoded.is_empty() {
@@ -1410,10 +1520,13 @@ impl ChainAdapter for EvmAdapter {
         let factory_data = Self::function_selector("factory()").to_vec();
         let factory_result = self
             .provider
-            .call(&ethers::types::TransactionRequest::new()
-                .to(router)
-                .data(factory_data)
-                .into(), None)
+            .call(
+                &ethers::types::TransactionRequest::new()
+                    .to(router)
+                    .data(factory_data)
+                    .into(),
+                None,
+            )
             .await
             .map_err(|e| MultichainError::Internal(format!("factory() call failed: {e}")))?;
 
@@ -1422,7 +1535,9 @@ impl ChainAdapter for EvmAdapter {
             .into_iter()
             .next()
             .and_then(|t| t.into_address())
-            .ok_or_else(|| MultichainError::Internal("factory() returned no address".to_string()))?;
+            .ok_or_else(|| {
+                MultichainError::Internal("factory() returned no address".to_string())
+            })?;
 
         // Get pair address.
         let mut pair_for_data = Self::function_selector(AMM_FACTORY_PAIR_FOR_SIG).to_vec();
@@ -1432,10 +1547,13 @@ impl ChainAdapter for EvmAdapter {
         ]));
         let pair_result = self
             .provider
-            .call(&ethers::types::TransactionRequest::new()
-                .to(factory_addr)
-                .data(pair_for_data)
-                .into(), None)
+            .call(
+                &ethers::types::TransactionRequest::new()
+                    .to(factory_addr)
+                    .data(pair_for_data)
+                    .into(),
+                None,
+            )
             .await
             .map_err(|e| MultichainError::Internal(format!("pairFor() call failed: {e}")))?;
 
@@ -1444,7 +1562,9 @@ impl ChainAdapter for EvmAdapter {
             .into_iter()
             .next()
             .and_then(|t| t.into_address())
-            .ok_or_else(|| MultichainError::Internal("pairFor() returned no address".to_string()))?;
+            .ok_or_else(|| {
+                MultichainError::Internal("pairFor() returned no address".to_string())
+            })?;
 
         if pair_addr == EthAddress::zero() {
             return Err(MultichainError::Validation(
@@ -1458,7 +1578,8 @@ impl ChainAdapter for EvmAdapter {
             Token::Address(router),
             Token::Uint(U256::from(liquidity.0)),
         ]));
-        self.send_transaction(pair_addr, approve_data, U256::zero()).await?;
+        self.send_transaction(pair_addr, approve_data, U256::zero())
+            .await?;
 
         // Call removeLiquidity on the router.
         let mut remove_data = Self::function_selector(AMM_ROUTER_REMOVE_LIQ_SIG).to_vec();
@@ -1472,7 +1593,9 @@ impl ChainAdapter for EvmAdapter {
             Token::Uint(U256::from(ts)),
         ]));
 
-        let tx_hash = self.send_transaction(router, remove_data, U256::zero()).await?;
+        let tx_hash = self
+            .send_transaction(router, remove_data, U256::zero())
+            .await?;
 
         // Return estimated minimums as actual amounts (real amounts come from events).
         Ok((tx_hash, amount_a_min, amount_b_min))
@@ -1488,14 +1611,16 @@ impl ChainAdapter for EvmAdapter {
         let factory = EthAddress::from_str(factory_address)
             .map_err(|e| MultichainError::Validation(format!("invalid factory address: {e}")))?;
 
-        let token_a_addr = EthAddress::from_str(token_a.id.contract.as_deref().ok_or_else(|| {
-            MultichainError::Validation("token_a has no contract address".to_string())
-        })?)
+        let token_a_addr =
+            EthAddress::from_str(token_a.id.contract.as_deref().ok_or_else(|| {
+                MultichainError::Validation("token_a has no contract address".to_string())
+            })?)
             .map_err(|e| MultichainError::Validation(format!("invalid token_a address: {e}")))?;
 
-        let token_b_addr = EthAddress::from_str(token_b.id.contract.as_deref().ok_or_else(|| {
-            MultichainError::Validation("token_b has no contract address".to_string())
-        })?)
+        let token_b_addr =
+            EthAddress::from_str(token_b.id.contract.as_deref().ok_or_else(|| {
+                MultichainError::Validation("token_b has no contract address".to_string())
+            })?)
             .map_err(|e| MultichainError::Validation(format!("invalid token_b address: {e}")))?;
 
         let mut data = Self::function_selector(AMM_FACTORY_PAIR_FOR_SIG).to_vec();
@@ -1506,10 +1631,13 @@ impl ChainAdapter for EvmAdapter {
 
         let result = self
             .provider
-            .call(&ethers::types::TransactionRequest::new()
-                .to(factory)
-                .data(data)
-                .into(), None)
+            .call(
+                &ethers::types::TransactionRequest::new()
+                    .to(factory)
+                    .data(data)
+                    .into(),
+                None,
+            )
             .await
             .map_err(|e| MultichainError::Internal(format!("pairFor() call failed: {e}")))?;
 
@@ -1518,7 +1646,9 @@ impl ChainAdapter for EvmAdapter {
             .into_iter()
             .next()
             .and_then(|t| t.into_address())
-            .ok_or_else(|| MultichainError::Internal("pairFor() returned no address".to_string()))?;
+            .ok_or_else(|| {
+                MultichainError::Internal("pairFor() returned no address".to_string())
+            })?;
 
         if pair_addr == EthAddress::zero() {
             Ok(None)
@@ -1539,11 +1669,7 @@ impl ChainAdapter for EvmAdapter {
         Ok(Amount::new(wei.as_u128()))
     }
 
-    async fn token_balance(
-        &self,
-        asset: &Asset,
-        address: &Address,
-    ) -> MultichainResult<Amount> {
+    async fn token_balance(&self, asset: &Asset, address: &Address) -> MultichainResult<Amount> {
         // Native asset (no contract) → fall back to ETH balance.
         let contract_str = match asset.id.contract.as_ref() {
             Some(c) => c.as_str(),

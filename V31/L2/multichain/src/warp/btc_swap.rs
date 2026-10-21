@@ -94,10 +94,7 @@ pub enum BtcSwapPhase {
 
 impl BtcSwapPhase {
     pub fn is_terminal(&self) -> bool {
-        matches!(
-            self,
-            Self::Settled | Self::Refunded | Self::Failed(_)
-        )
+        matches!(self, Self::Settled | Self::Refunded | Self::Failed(_))
     }
 }
 
@@ -670,7 +667,11 @@ fn parse_htlc_script(script: &[u8]) -> Option<([u8; 32], u64, [u8; 32], [u8; 32]
 /// Minimal zion-node JSON-RPC call (TCP newline-delimited, same wire protocol
 /// as `ZionL1Adapter::call`). Kept standalone so the orchestrator can verify
 /// user locks without reaching through the adapter registry.
-async fn zion_rpc_call(rpc: &str, method: &str, params: serde_json::Value) -> WarpResult<serde_json::Value> {
+async fn zion_rpc_call(
+    rpc: &str,
+    method: &str,
+    params: serde_json::Value,
+) -> WarpResult<serde_json::Value> {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
     use tokio::net::TcpStream;
 
@@ -796,7 +797,9 @@ impl BtcSwapFlow {
             .as_ref()
             .ok_or_else(|| err("quote signing not configured"))?;
         if self.zion_per_sat == 0 {
-            return Err(err("quote rate not configured (WARP_BTC_SWAP_ZION_PER_SAT)"));
+            return Err(err(
+                "quote rate not configured (WARP_BTC_SWAP_ZION_PER_SAT)",
+            ));
         }
         if direction != "btc_to_zion" && direction != "zion_to_btc" {
             return Err(err(format!("unknown direction '{direction}'")));
@@ -810,7 +813,11 @@ impl BtcSwapFlow {
 
         // Owed units: btc_to_zion obliges ZION flowers, zion_to_btc obliges
         // BTC sats the operator counter-locks.
-        let owed = if direction == "btc_to_zion" { zion_flowers } else { btc_sats };
+        let owed = if direction == "btc_to_zion" {
+            zion_flowers
+        } else {
+            btc_sats
+        };
         let cap = if direction == "btc_to_zion" {
             self.cfg.max_quote_outstanding_zion
         } else {
@@ -829,12 +836,12 @@ impl BtcSwapFlow {
             .map(|l| l.owed)
             .sum();
         for rec in self.records.lock().await.values() {
-            if rec.phase == BtcSwapPhase::AwaitingUserLock
-                && rec.direction.as_str() == direction
-            {
-                outstanding = outstanding.saturating_add(
-                    if direction == "btc_to_zion" { rec.zion_flowers } else { rec.btc_sats },
-                );
+            if rec.phase == BtcSwapPhase::AwaitingUserLock && rec.direction.as_str() == direction {
+                outstanding = outstanding.saturating_add(if direction == "btc_to_zion" {
+                    rec.zion_flowers
+                } else {
+                    rec.btc_sats
+                });
             }
         }
 
@@ -862,7 +869,8 @@ impl BtcSwapFlow {
                     .get("utxos")
                     .and_then(|v| v.as_array())
                     .map(|utxos| {
-                        utxos.iter()
+                        utxos
+                            .iter()
                             .filter_map(|u| u.get("amount").and_then(|a| a.as_u64()))
                             .sum()
                     })
@@ -968,7 +976,10 @@ impl BtcSwapFlow {
                 Ok(rec) => {
                     records.insert(rec.swap_id.clone(), rec);
                 }
-                Err(e) => warn!("[WARP][btc-swap] skipping corrupt record {}: {e}", snap.swap_id),
+                Err(e) => warn!(
+                    "[WARP][btc-swap] skipping corrupt record {}: {e}",
+                    snap.swap_id
+                ),
             }
         }
         Ok(n)
@@ -1025,12 +1036,8 @@ impl BtcSwapFlow {
         if p.zion_timeout_ts <= now_ts {
             return Err(err("zion_timeout_ts must be in the future"));
         }
-        let cltv = cltv_from_zion_timeout(
-            p.zion_timeout_ts,
-            now_ts,
-            btc_tip,
-            self.cfg.margin_blocks,
-        );
+        let cltv =
+            cltv_from_zion_timeout(p.zion_timeout_ts, now_ts, btc_tip, self.cfg.margin_blocks);
         let htlc = BtcHtlc::new(
             p.hashlock,
             *self.signer.public_key_btc(), // claimant = operator
@@ -1081,16 +1088,12 @@ impl BtcSwapFlow {
     ) -> WarpResult<BtcSwapRecord> {
         self.check_amount(p.btc_sats)?;
         // Our BTC leg must expire strictly *before* the user's ZION timeout.
-        let cltv = cltv_before_zion_timeout(
-            p.zion_timeout_ts,
-            now_ts,
-            btc_tip,
-            self.cfg.margin_blocks,
-        )?;
+        let cltv =
+            cltv_before_zion_timeout(p.zion_timeout_ts, now_ts, btc_tip, self.cfg.margin_blocks)?;
         let htlc = BtcHtlc::new(
             p.hashlock,
-            p.user_btc_claim,                 // claimant = user
-            *self.signer.public_key_btc(),    // refund = operator
+            p.user_btc_claim,              // claimant = user
+            *self.signer.public_key_btc(), // refund = operator
             cltv,
             self.cfg.btc_network,
         )?;
@@ -1141,10 +1144,7 @@ impl BtcSwapFlow {
 
     pub async fn insert_record(&self, rec: BtcSwapRecord) {
         self.persist(&rec).await;
-        self.records
-            .lock()
-            .await
-            .insert(rec.swap_id.clone(), rec);
+        self.records.lock().await.insert(rec.swap_id.clone(), rec);
     }
 
     pub async fn record(&self, swap_id: &str) -> Option<BtcSwapRecord> {
@@ -1226,21 +1226,29 @@ impl BtcSwapFlow {
         );
         if let Some(phases) = m.get("phases").and_then(|p| p.as_object()) {
             for (phase, n) in phases {
-                out.push_str(&format!(
-                    "warp_btc_swap_total{{phase=\"{phase}\"}} {n}\n"
-                ));
+                out.push_str(&format!("warp_btc_swap_total{{phase=\"{phase}\"}} {n}\n"));
             }
         }
         for (name, key) in [
             ("warp_btc_swap_active", "active"),
-            ("warp_btc_swap_oldest_active_age_secs", "oldest_active_age_secs"),
+            (
+                "warp_btc_swap_oldest_active_age_secs",
+                "oldest_active_age_secs",
+            ),
             ("warp_btc_swap_max_idle_secs", "max_active_idle_secs"),
-            ("warp_btc_swap_next_deadline_secs", "next_zion_deadline_secs"),
+            (
+                "warp_btc_swap_next_deadline_secs",
+                "next_zion_deadline_secs",
+            ),
             ("warp_btc_swap_near_deadline", "swaps_near_deadline"),
             ("warp_btc_swap_stale", "swaps_stale"),
         ] {
             let v = m.get(key).cloned().unwrap_or(serde_json::Value::Null);
-            let num = if v.is_null() { "0".into() } else { v.to_string() };
+            let num = if v.is_null() {
+                "0".into()
+            } else {
+                v.to_string()
+            };
             out.push_str(&format!("# TYPE {name} gauge\n{name} {num}\n"));
         }
         out.push_str("# TYPE warp_btc_swap_enabled gauge\nwarp_btc_swap_enabled 1\n");
@@ -1400,10 +1408,7 @@ impl BtcSwapFlow {
 
         rec.updated_at = Utc::now();
         self.persist(&rec).await;
-        self.records
-            .lock()
-            .await
-            .insert(rec.swap_id.clone(), rec);
+        self.records.lock().await.insert(rec.swap_id.clone(), rec);
 
         Ok(PollOutcome {
             swap_id: swap_id.to_string(),
@@ -1460,7 +1465,11 @@ impl BtcSwapFlow {
 
     /// Coordinator bookkeeping for the operator's BTC lock — idempotent, safe
     /// to re-run after a crash/restart.
-    async fn register_coordinator(&self, rec: &BtcSwapRecord, lock: &BtcHtlcLock) -> WarpResult<()> {
+    async fn register_coordinator(
+        &self,
+        rec: &BtcSwapRecord,
+        lock: &BtcHtlcLock,
+    ) -> WarpResult<()> {
         let hash = Hash::new(rec.btc_htlc.hashlock);
         self.swaps
             .register_external_lock(
@@ -1483,8 +1492,8 @@ impl BtcSwapFlow {
                     &rec.user_zion_address,
                     "zion-l1",
                     rec.zion_flowers,
-                    Some(rec.user_zion_pubkey),           // user refund key
-                    Some(self.cfg.operator_zion_pubkey),  // we claim
+                    Some(rec.user_zion_pubkey),          // user refund key
+                    Some(self.cfg.operator_zion_pubkey), // we claim
                 )
                 .await
                 .map_err(mc_err)?;
@@ -1526,7 +1535,10 @@ impl BtcSwapFlow {
     async fn verify_user_zion_lock(&self, rec: &BtcSwapRecord) -> WarpResult<LockCheck> {
         let Some(rpc) = self.cfg.zion_rpc_url.as_deref() else {
             // Offline/test path — production wiring always sets the URL.
-            warn!("[WARP][btc-swap] {} zion_rpc_url unset — user lock NOT verified", rec.swap_id);
+            warn!(
+                "[WARP][btc-swap] {} zion_rpc_url unset — user lock NOT verified",
+                rec.swap_id
+            );
             return Ok(LockCheck::Verified);
         };
         let Some(txid) = rec.user_zion_lock_txid.as_deref() else {
@@ -1569,7 +1581,9 @@ impl BtcSwapFlow {
             .unwrap_or_default();
         let script = hex::decode(script_hex).unwrap_or_default();
         let Some((hashlock, timeout, claimant, refund)) = parse_htlc_script(&script) else {
-            return Ok(LockCheck::Invalid("lock output is not an HTLC script".into()));
+            return Ok(LockCheck::Invalid(
+                "lock output is not an HTLC script".into(),
+            ));
         };
         if hashlock != rec.btc_htlc.hashlock {
             return Ok(LockCheck::Invalid("hashlock mismatch".into()));
@@ -1580,9 +1594,7 @@ impl BtcSwapFlow {
             ));
         }
         if refund != rec.user_zion_pubkey {
-            return Ok(LockCheck::Invalid(
-                "refund pubkey is not the user's".into(),
-            ));
+            return Ok(LockCheck::Invalid("refund pubkey is not the user's".into()));
         }
         if timeout != rec.zion_timeout_ts {
             return Ok(LockCheck::Invalid(format!(
@@ -2148,7 +2160,10 @@ mod tests {
             rec2.btc_htlc.witness_script.as_bytes(),
             rec.btc_htlc.witness_script.as_bytes()
         );
-        assert_eq!(rec2.btc_htlc.address.to_string(), rec.btc_htlc.address.to_string());
+        assert_eq!(
+            rec2.btc_htlc.address.to_string(),
+            rec.btc_htlc.address.to_string()
+        );
         assert_eq!(rec2.btc_htlc.cltv_timeout, rec.btc_htlc.cltv_timeout);
         assert_eq!(rec2.btc_lock.unwrap().txid, "aa".repeat(32));
         assert_eq!(rec2.preimage, Some([0x42; 32]));
@@ -2172,8 +2187,14 @@ mod tests {
 
         let snap = rec.to_snapshot();
         let stored = snap.preimage_hex.clone().unwrap();
-        assert!(stored.starts_with("enc:"), "preimage must be wrapped: {stored}");
-        assert!(!stored.contains(&"42".repeat(32)), "must not leak plaintext");
+        assert!(
+            stored.starts_with("enc:"),
+            "preimage must be wrapped: {stored}"
+        );
+        assert!(
+            !stored.contains(&"42".repeat(32)),
+            "must not leak plaintext"
+        );
 
         let rec2 = BtcSwapRecord::from_snapshot(&snap).unwrap();
         assert_eq!(rec2.preimage, Some([0x42; 32]));
@@ -2299,10 +2320,9 @@ mod tests {
         let mut preimage = [0u8; 32];
         rand::rngs::OsRng.fill_bytes(&mut preimage);
         let hashlock: [u8; 32] = sha2::Sha256::digest(preimage).into();
-        flow.insert_record(btc_to_zion_rec_at(&signer(), &cfg(), hashlock)).await;
-        let dup = flow
-            .check_offer_admission(&hex::encode(hashlock))
+        flow.insert_record(btc_to_zion_rec_at(&signer(), &cfg(), hashlock))
             .await;
+        let dup = flow.check_offer_admission(&hex::encode(hashlock)).await;
         assert!(dup.is_err());
     }
 
@@ -2427,9 +2447,8 @@ mod tests {
     #[test]
     fn htlc_script_parse_roundtrip() {
         let (hashlock, claimant, refund) = ([0x11; 32], [0x22; 32], [0x33; 32]);
-        let script = zion_core::v31_wallet::htlc_output_script(
-            &hashlock, 1_800_000_000, &claimant, &refund,
-        );
+        let script =
+            zion_core::v31_wallet::htlc_output_script(&hashlock, 1_800_000_000, &claimant, &refund);
         let (h, t, c, r) = parse_htlc_script(&script).unwrap();
         assert_eq!(h, hashlock);
         assert_eq!(t, 1_800_000_000);
@@ -2453,9 +2472,11 @@ mod tests {
             &c.operator_zion_pubkey,
             &rec.user_zion_pubkey,
         );
-        let rpc = mock_zion_rpc(serde_json::json!([
-            utxo_json(&"ab".repeat(32), &script, rec.zion_flowers)
-        ]))
+        let rpc = mock_zion_rpc(serde_json::json!([utxo_json(
+            &"ab".repeat(32),
+            &script,
+            rec.zion_flowers
+        )]))
         .await;
         c.zion_rpc_url = Some(rpc);
         let flow = BtcSwapFlow::new(
@@ -2523,7 +2544,7 @@ mod tests {
         );
         let txid = "ab".repeat(32);
         let cases: Vec<(Vec<u8>, u64)> = vec![
-            (vec![0x00; 20], rec.zion_flowers),   // not an HTLC script
+            (vec![0x00; 20], rec.zion_flowers), // not an HTLC script
             (wrong_hashlock, rec.zion_flowers),
             (wrong_claimant, rec.zion_flowers),
             (wrong_refund, rec.zion_flowers),
@@ -2540,7 +2561,10 @@ mod tests {
                 c.clone(),
             );
             let check = flow.verify_user_zion_lock(&rec).await.unwrap();
-            assert!(matches!(check, LockCheck::Invalid(_)), "case {i} must be Invalid");
+            assert!(
+                matches!(check, LockCheck::Invalid(_)),
+                "case {i} must be Invalid"
+            );
         }
     }
 
@@ -2750,31 +2774,64 @@ mod tests {
         q.direction = "zion_to_btc".into();
         assert!(verify_quote(&q, &pk, "btc_to_zion", 100_000, 50_000_000, 1_800_000_000).is_err());
 
-        assert!(
-            verify_quote(&good, &pk, "btc_to_zion", 100_001, 50_000_000, 1_800_000_000).is_err()
-        );
-        assert!(
-            verify_quote(&good, &pk, "btc_to_zion", 100_000, 50_000_001, 1_800_000_000).is_err()
-        );
+        assert!(verify_quote(
+            &good,
+            &pk,
+            "btc_to_zion",
+            100_001,
+            50_000_000,
+            1_800_000_000
+        )
+        .is_err());
+        assert!(verify_quote(
+            &good,
+            &pk,
+            "btc_to_zion",
+            100_000,
+            50_000_001,
+            1_800_000_000
+        )
+        .is_err());
         // Expired.
-        assert!(
-            verify_quote(&good, &pk, "btc_to_zion", 100_000, 50_000_000, 1_900_000_001).is_err()
-        );
+        assert!(verify_quote(
+            &good,
+            &pk,
+            "btc_to_zion",
+            100_000,
+            50_000_000,
+            1_900_000_001
+        )
+        .is_err());
 
         // Signed by an unknown key.
         let other = ed25519_dalek::SigningKey::from_bytes(&[0x99; 32]);
         let forged = sign_quote(&other, "btc_to_zion", 100_000, 50_000_000, 1_900_000_000);
-        let e = verify_quote(&forged, &pk, "btc_to_zion", 100_000, 50_000_000, 1_800_000_000)
-            .unwrap_err()
-            .to_string();
+        let e = verify_quote(
+            &forged,
+            &pk,
+            "btc_to_zion",
+            100_000,
+            50_000_000,
+            1_800_000_000,
+        )
+        .unwrap_err()
+        .to_string();
         assert!(e.contains("unknown key"), "{e}");
 
         // Claimed signer pubkey swapped to the attacker's key while the
         // signature stays the operator's — must fail signature check.
         let mut q = good.clone();
         q.signer_pubkey_hex = hex::encode(other.verifying_key().to_bytes());
-        let e = verify_quote(&q, &other.verifying_key().to_bytes(), "btc_to_zion", 100_000,
-            50_000_000, 1_800_000_000).unwrap_err().to_string();
+        let e = verify_quote(
+            &q,
+            &other.verifying_key().to_bytes(),
+            "btc_to_zion",
+            100_000,
+            50_000_000,
+            1_800_000_000,
+        )
+        .unwrap_err()
+        .to_string();
         assert!(e.contains("signature invalid"), "{e}");
 
         // Corrupted signature bytes.

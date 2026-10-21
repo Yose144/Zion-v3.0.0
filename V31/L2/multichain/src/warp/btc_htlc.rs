@@ -101,7 +101,10 @@ impl BtcHtlc {
 
         // Canonical layout — see module doc.
         if ins.len() != 13 {
-            return Err(err(format!("HTLC script has {} ops, expected 13", ins.len())));
+            return Err(err(format!(
+                "HTLC script has {} ops, expected 13",
+                ins.len()
+            )));
         }
 
         fn op(ins: &Instruction) -> Option<bitcoin::blockdata::opcodes::Opcode> {
@@ -133,19 +136,17 @@ impl BtcHtlc {
         let hashlock: [u8; 32] = push(&ins[2])
             .and_then(|b| b.try_into().ok())
             .ok_or_else(|| err("hashlock must be 32 bytes"))?;
-        let claimant = PublicKey::from_slice(
-            push(&ins[4]).ok_or_else(|| err("missing claimant pubkey"))?,
-        )
-        .map_err(|e| err(format!("claimant pubkey: {e}")))?;
-        let refund = PublicKey::from_slice(
-            push(&ins[10]).ok_or_else(|| err("missing refund pubkey"))?,
-        )
-        .map_err(|e| err(format!("refund pubkey: {e}")))?;
+        let claimant =
+            PublicKey::from_slice(push(&ins[4]).ok_or_else(|| err("missing claimant pubkey"))?)
+                .map_err(|e| err(format!("claimant pubkey: {e}")))?;
+        let refund =
+            PublicKey::from_slice(push(&ins[10]).ok_or_else(|| err("missing refund pubkey"))?)
+                .map_err(|e| err(format!("refund pubkey: {e}")))?;
 
         // Timeout is a minimally-encoded script number (ins[7]).
         let timeout_bytes = push(&ins[7]).ok_or_else(|| err("missing cltv timeout"))?;
-        let cltv_timeout = script_num_to_u32(timeout_bytes)
-            .ok_or_else(|| err("cltv timeout out of range"))?;
+        let cltv_timeout =
+            script_num_to_u32(timeout_bytes).ok_or_else(|| err("cltv timeout out of range"))?;
 
         let htlc = Self::new(hashlock, claimant, refund, cltv_timeout, network)?;
         // Round-trip guard: rebuilt script must be byte-identical to the input.
@@ -163,8 +164,8 @@ pub fn build_witness_script(
     refund: &PublicKey,
     cltv_timeout: u32,
 ) -> ScriptBuf {
-    let h = PushBytesBuf::try_from(hashlock.to_vec())
-        .expect("32-byte hashlock always fits PushBytes");
+    let h =
+        PushBytesBuf::try_from(hashlock.to_vec()).expect("32-byte hashlock always fits PushBytes");
     Builder::new()
         .push_opcode(opcodes::OP_IF)
         .push_opcode(opcodes::OP_SHA256)
@@ -343,8 +344,8 @@ pub fn spend_htlc_tx(
         .map_err(|e| err(format!("p2wsh sighash: {e}")))?;
 
     let secp = Secp256k1::new();
-    let msg =
-        Message::from_digest_slice(sighash.as_ref()).map_err(|e| err(format!("sighash msg: {e}")))?;
+    let msg = Message::from_digest_slice(sighash.as_ref())
+        .map_err(|e| err(format!("sighash msg: {e}")))?;
     let sig = secp.sign_ecdsa(&msg, &signing_key.inner);
     let mut sig_bytes = sig.serialize_der().to_vec();
     sig_bytes.push(EcdsaSighashType::All.to_u32() as u8);
@@ -468,7 +469,10 @@ impl BtcSigner {
 
         let raw_hex = hex::encode(serialize(&tx));
         let txid = crate::warp::btc_signer::broadcast_tx(client, api_urls, &raw_hex).await?;
-        info!("[WARP][bitcoin] HTLC lock broadcast: {} ({} sats)", txid, amount_sats);
+        info!(
+            "[WARP][bitcoin] HTLC lock broadcast: {} ({} sats)",
+            txid, amount_sats
+        );
         Ok((txid, 0, amount_sats))
     }
 
@@ -539,8 +543,11 @@ mod tests {
     use sha2::{Digest as _, Sha256};
 
     fn test_signer() -> BtcSigner {
-        BtcSigner::from_wif("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn", Network::Bitcoin)
-            .unwrap()
+        BtcSigner::from_wif(
+            "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn",
+            Network::Bitcoin,
+        )
+        .unwrap()
     }
 
     fn other_key() -> PrivateKey {
@@ -558,8 +565,8 @@ mod tests {
         let secp = Secp256k1::new();
         let htlc = BtcHtlc::new(
             hashlock,
-            other.public_key(&secp),       // claimant = counterparty
-            *signer.public_key_btc(),      // refund = us
+            other.public_key(&secp),  // claimant = counterparty
+            *signer.public_key_btc(), // refund = us
             850_000,
             Network::Bitcoin,
         )
@@ -570,8 +577,11 @@ mod tests {
     #[test]
     fn script_build_parse_roundtrip() {
         let (htlc, _) = sample_htlc();
-        let parsed = BtcHtlc::from_witness_script(&htlc.witness_script.as_bytes().to_vec(), Network::Bitcoin)
-            .unwrap();
+        let parsed = BtcHtlc::from_witness_script(
+            &htlc.witness_script.as_bytes().to_vec(),
+            Network::Bitcoin,
+        )
+        .unwrap();
         assert_eq!(parsed.hashlock, htlc.hashlock);
         assert_eq!(parsed.claimant, htlc.claimant);
         assert_eq!(parsed.refund, htlc.refund);
@@ -743,8 +753,8 @@ mod tests {
             )
             .unwrap();
         let sig_raw = tx.input[0].witness.iter().next().unwrap();
-        let sig = bitcoin::secp256k1::ecdsa::Signature::from_der(&sig_raw[..sig_raw.len() - 1])
-            .unwrap();
+        let sig =
+            bitcoin::secp256k1::ecdsa::Signature::from_der(&sig_raw[..sig_raw.len() - 1]).unwrap();
         let msg = Message::from_digest_slice(sighash.as_ref()).unwrap();
         let secp = Secp256k1::new();
         let pk = secp256k1_pubkey();

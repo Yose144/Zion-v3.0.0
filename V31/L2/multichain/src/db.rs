@@ -6,11 +6,11 @@ use zion_l1_types::{Address, Amount, ChainId};
 use crate::audit::{AuditLog, AuditResult};
 use crate::error::MultichainError;
 use crate::error::MultichainResult;
+use crate::multichain_wallet::journal::{parse_journal_entry, JournalEntry};
 use crate::multichain_wallet::types::{
     AddressPurpose, DepositRecord, DepositStatus, DexOrder, DexOrderStatus, WalletAccount,
     WalletAddress, WithdrawalRecord, WithdrawalStatus,
 };
-use crate::multichain_wallet::journal::{parse_journal_entry, JournalEntry};
 use crate::reconciliation::ReconciliationReport;
 use crate::swap::dex::intent::{SolverBid, SwapIntent};
 use crate::swap::dex::Pool;
@@ -358,9 +358,7 @@ impl Db {
 
         // Backfill fee_native column on ext_payout_records created before
         // the QTC payout-fee field existed.
-        let mut stmt = self
-            .conn
-            .prepare("PRAGMA table_info(ext_payout_records)")?;
+        let mut stmt = self.conn.prepare("PRAGMA table_info(ext_payout_records)")?;
         let mut has_fee_native = false;
         {
             let mut rows = stmt.query([])?;
@@ -421,10 +419,8 @@ impl Db {
         drop(rows);
         drop(stmt);
         if !has_quote_id {
-            self.conn.execute(
-                "ALTER TABLE btc_swap_records ADD COLUMN quote_id TEXT",
-                [],
-            )?;
+            self.conn
+                .execute("ALTER TABLE btc_swap_records ADD COLUMN quote_id TEXT", [])?;
         }
         self.conn.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_btc_swap_quote
@@ -576,9 +572,7 @@ impl Db {
     }
 
     /// List all BTC swap snapshots, newest first.
-    pub fn list_btc_swaps(
-        &self,
-    ) -> MultichainResult<Vec<crate::warp::btc_swap::BtcSwapSnapshot>> {
+    pub fn list_btc_swaps(&self) -> MultichainResult<Vec<crate::warp::btc_swap::BtcSwapSnapshot>> {
         let mut stmt = self
             .conn
             .prepare("SELECT data_json FROM btc_swap_records ORDER BY updated_at DESC")?;
@@ -1005,9 +999,9 @@ impl Db {
             ],
         )?;
 
-        let amount_val = amount.parse::<u128>().map_err(|e| {
-            MultichainError::Internal(format!("invalid credit amount: {e}"))
-        })?;
+        let amount_val = amount
+            .parse::<u128>()
+            .map_err(|e| MultichainError::Internal(format!("invalid credit amount: {e}")))?;
 
         // Current balance (0 if none).
         let current = read_balance(&tx, user_id, asset_key)?;
@@ -1042,9 +1036,9 @@ impl Db {
         let tx = self.conn.transaction()?;
         let now = chrono::Utc::now().to_rfc3339();
 
-        let amount_val = amount.parse::<u128>().map_err(|e| {
-            MultichainError::Internal(format!("invalid debit amount: {e}"))
-        })?;
+        let amount_val = amount
+            .parse::<u128>()
+            .map_err(|e| MultichainError::Internal(format!("invalid debit amount: {e}")))?;
 
         // Current balance (0 if none).
         let current = read_balance(&tx, user_id, asset_key)?;
@@ -1236,8 +1230,9 @@ impl Db {
         let mut stmt = self
             .conn
             .prepare("SELECT asset_key, amount FROM deposits WHERE status = 'credited'")?;
-        let rows = stmt
-            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
         let mut out: HashMap<String, Amount> = HashMap::new();
         for row in rows {
             let (asset, amount) = row?;
@@ -1253,8 +1248,9 @@ impl Db {
         let mut stmt = self
             .conn
             .prepare("SELECT asset_key, amount FROM withdrawals WHERE status = 'sent'")?;
-        let rows = stmt
-            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
         let mut out: HashMap<String, Amount> = HashMap::new();
         for row in rows {
             let (asset, amount) = row?;
@@ -1767,9 +1763,7 @@ fn parse_datetime(s: &str) -> MultichainResult<chrono::DateTime<chrono::Utc>> {
 
 /// Public wrapper around [`parse_datetime`] for cross-module use (e.g. the
 /// journal ledger reconstructing `JournalEntry` rows).
-pub(crate) fn parse_datetime_pub(
-    s: &str,
-) -> MultichainResult<chrono::DateTime<chrono::Utc>> {
+pub(crate) fn parse_datetime_pub(s: &str) -> MultichainResult<chrono::DateTime<chrono::Utc>> {
     parse_datetime(s)
 }
 
@@ -1780,9 +1774,8 @@ fn read_balance(
     user_id: &str,
     asset_key: &str,
 ) -> MultichainResult<u128> {
-    let mut stmt = conn.prepare(
-        "SELECT amount FROM wallet_balances WHERE user_id = ?1 AND asset_key = ?2",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT amount FROM wallet_balances WHERE user_id = ?1 AND asset_key = ?2")?;
     let mut rows = stmt.query(rusqlite::params![user_id, asset_key])?;
     if let Some(row) = rows.next()? {
         let s: String = row.get(0)?;

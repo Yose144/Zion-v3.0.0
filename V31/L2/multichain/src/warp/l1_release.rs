@@ -48,10 +48,7 @@ pub struct L1Releaser {
 impl L1Releaser {
     /// Create a releaser bound to `l1_rpc_addr` with the given keys.
     pub fn new(rpc_addr: String, keys: Vec<(String, SigningKey)>) -> Self {
-        Self {
-            rpc_addr,
-            keys,
-        }
+        Self { rpc_addr, keys }
     }
 
     /// Load release keys from `WARP_L1_RELEASE_KEYS` (comma-separated hex,
@@ -112,9 +109,7 @@ impl L1Releaser {
     pub fn public_keys(&self) -> Vec<String> {
         self.keys
             .iter()
-            .map(|(_, k)| {
-                hex::encode(VerifyingKey::from(k).to_encoded_point(true).as_bytes())
-            })
+            .map(|(_, k)| hex::encode(VerifyingKey::from(k).to_encoded_point(true).as_bytes()))
             .collect()
     }
 
@@ -139,11 +134,7 @@ impl L1Releaser {
         let mut proofs = Vec::new();
         for (id, key) in &self.keys {
             let signature: Signature = key.sign(operation_message.as_bytes());
-            let pubkey_hex = hex::encode(
-                VerifyingKey::from(key)
-                    .to_encoded_point(true)
-                    .as_bytes(),
-            );
+            let pubkey_hex = hex::encode(VerifyingKey::from(key).to_encoded_point(true).as_bytes());
             proofs.push(json!({
                 "validator_id": id,
                 "validator_address": Value::Null,
@@ -199,7 +190,9 @@ impl L1Releaser {
             }
         });
 
-        let result = self.rpc_call("submitBridgeUnlock", request["params"].clone()).await?;
+        let result = self
+            .rpc_call("submitBridgeUnlock", request["params"].clone())
+            .await?;
 
         // Node returns { accepted, tx_id, reason? } (TransactionResult).
         let accepted = result
@@ -238,19 +231,21 @@ impl L1Releaser {
         });
 
         let work = async {
-            let mut stream = TcpStream::connect(&addr).await.map_err(|e| {
-                WarpError::AdapterError {
-                    chain: "zion-l1".into(),
-                    reason: format!("connect {addr}: {e}"),
-                }
-            })?;
+            let mut stream =
+                TcpStream::connect(&addr)
+                    .await
+                    .map_err(|e| WarpError::AdapterError {
+                        chain: "zion-l1".into(),
+                        reason: format!("connect {addr}: {e}"),
+                    })?;
             let payload = serde_json::to_string(&request).unwrap() + "\n";
-            stream.write_all(payload.as_bytes()).await.map_err(|e| {
-                WarpError::AdapterError {
+            stream
+                .write_all(payload.as_bytes())
+                .await
+                .map_err(|e| WarpError::AdapterError {
                     chain: "zion-l1".into(),
                     reason: format!("write: {e}"),
-                }
-            })?;
+                })?;
             let (reader, _) = stream.split();
             let mut line = String::new();
             BufReader::new(reader)
@@ -270,12 +265,11 @@ impl L1Releaser {
                 reason: format!("RPC timeout after {RPC_TIMEOUT_SECS}s"),
             })??;
 
-        let resp: Value = serde_json::from_str(line.trim()).map_err(|e| {
-            WarpError::AdapterError {
+        let resp: Value =
+            serde_json::from_str(line.trim()).map_err(|e| WarpError::AdapterError {
                 chain: "zion-l1".into(),
                 reason: format!("response parse: {e}"),
-            }
-        })?;
+            })?;
         if let Some(err) = resp.get("error").filter(|e| !e.is_null()) {
             let msg = err
                 .get("message")
@@ -286,10 +280,12 @@ impl L1Releaser {
                 reason: format!("RPC error: {msg}"),
             });
         }
-        resp.get("result").cloned().ok_or_else(|| WarpError::AdapterError {
-            chain: "zion-l1".into(),
-            reason: "RPC returned null result".into(),
-        })
+        resp.get("result")
+            .cloned()
+            .ok_or_else(|| WarpError::AdapterError {
+                chain: "zion-l1".into(),
+                reason: "RPC returned null result".into(),
+            })
     }
 
     /// Strip `http(s)://` — the L1 RPC is raw TCP, not HTTP.

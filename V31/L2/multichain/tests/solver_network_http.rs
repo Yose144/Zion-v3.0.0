@@ -92,14 +92,12 @@ async fn http_solver_client_bids_and_buyer_executes() {
     });
 
     // --- Buyer node --------------------------------------------------------
-    let buyer_service = build_service_with_solvers(vec![
-        zion_multichain::config::SolverEntry {
-            name: "zion-solver".to_string(),
-            url: solver_url.clone(),
-            reputation: 100,
-            api_key: Some(TEST_API_KEY.to_string()),
-        },
-    ]);
+    let buyer_service = build_service_with_solvers(vec![zion_multichain::config::SolverEntry {
+        name: "zion-solver".to_string(),
+        url: solver_url.clone(),
+        reputation: 100,
+        api_key: Some(TEST_API_KEY.to_string()),
+    }]);
     let buyer_server = ApiServer::new(test_server_config(), Arc::clone(&buyer_service));
     let buyer_app = buyer_server.router();
 

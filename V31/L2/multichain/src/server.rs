@@ -1529,8 +1529,7 @@ async fn htlc_claim(
     // but the payout is pinned to the claimant committed in the HTLC record
     // and `target_address` is ignored. Admin sessions keep the override as
     // an operator rescue path.
-    let is_admin =
-        require_admin(&state, user.as_ref().map(|u| &u.0), &headers).is_ok();
+    let is_admin = require_admin(&state, user.as_ref().map(|u| &u.0), &headers).is_ok();
     let to_id = chain_name_to_id(&req.to).map_err(|e| bad_request(&e.to_string()))?;
     let hashlock = Hash::from_hex(&req.hash_hex).ok_or_else(|| bad_request("invalid hash_hex"))?;
     let record = state
@@ -1549,15 +1548,15 @@ async fn htlc_claim(
             .unwrap_or_else(|| record.counterparty_addr.clone())
     } else {
         let pinned = match record.claimant_pubkey {
-            Some(pk) if to_id == ChainId::ZionL1 => {
-                zion_core::crypto::derive_address(&pk)
-            }
+            Some(pk) if to_id == ChainId::ZionL1 => zion_core::crypto::derive_address(&pk),
             _ => record.counterparty_addr.clone(),
         };
         if pinned.is_empty() {
             return Err((
                 StatusCode::FORBIDDEN,
-                Json(serde_json::json!({"message": "HTLC has no committed claimant — admin required"})),
+                Json(
+                    serde_json::json!({"message": "HTLC has no committed claimant — admin required"}),
+                ),
             ));
         }
         pinned
@@ -1623,8 +1622,7 @@ async fn htlc_refund(
     // Public callers may trigger a refund (the timelock expiry check lives
     // in `refund()`), but the payout is pinned to the committed locker —
     // `source_address` is only honored for admin sessions.
-    let is_admin =
-        require_admin(&state, user.as_ref().map(|u| &u.0), &headers).is_ok();
+    let is_admin = require_admin(&state, user.as_ref().map(|u| &u.0), &headers).is_ok();
     let from_id = chain_name_to_id(&req.from).map_err(|e| bad_request(&e.to_string()))?;
     let hashlock = Hash::from_hex(&req.hash_hex).ok_or_else(|| bad_request("invalid hash_hex"))?;
     let record = state
@@ -1639,7 +1637,8 @@ async fn htlc_refund(
             )
         })?;
     let locker = if is_admin {
-        req.source_address.unwrap_or_else(|| record.locker_address.clone())
+        req.source_address
+            .unwrap_or_else(|| record.locker_address.clone())
     } else {
         record.locker_address.clone()
     };
@@ -1728,13 +1727,10 @@ fn btc_swap_flow(
     })
 }
 
-fn decode_btc_pubkey(
-    s: &str,
-) -> Result<bitcoin::PublicKey, (StatusCode, Json<serde_json::Value>)> {
+fn decode_btc_pubkey(s: &str) -> Result<bitcoin::PublicKey, (StatusCode, Json<serde_json::Value>)> {
     let bytes = hex::decode(s.trim()).map_err(|_| bad_request("invalid user_btc_pubkey_hex"))?;
-    bitcoin::PublicKey::from_slice(&bytes).map_err(|e| {
-        bad_request(&format!("invalid BTC pubkey: {e}"))
-    })
+    bitcoin::PublicKey::from_slice(&bytes)
+        .map_err(|e| bad_request(&format!("invalid BTC pubkey: {e}")))
 }
 
 fn constant_time_key_eq(expected: &str, provided: &str) -> bool {
@@ -1814,7 +1810,9 @@ async fn btc_swap_offer(
     let operator_ok = require_btc_swap_offer_key(
         state.btc_swap_offer_key.as_deref(),
         state.btc_swap_offer_key_prev.as_deref(),
-        headers.get("x-warp-key").and_then(|value| value.to_str().ok()),
+        headers
+            .get("x-warp-key")
+            .and_then(|value| value.to_str().ok()),
     )
     .is_ok();
     let flow = btc_swap_flow(&state)?;
@@ -1906,10 +1904,7 @@ async fn btc_swap_list(State(state): State<AppState>) -> Json<serde_json::Value>
 /// Prometheus text exposition when the client asks for it (Accept:
 /// text/plain / openmetrics) so Prometheus can scrape this endpoint
 /// directly; otherwise JSON.
-async fn btc_swap_metrics(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> impl IntoResponse {
+async fn btc_swap_metrics(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
     let wants_prom = headers
         .get(header::ACCEPT)
         .and_then(|v| v.to_str().ok())
@@ -1940,8 +1935,7 @@ async fn btc_swap_metrics(
                         header::CONTENT_TYPE,
                         HeaderValue::from_static("text/plain; version=0.0.4; charset=utf-8"),
                     )],
-                    "# TYPE warp_btc_swap_enabled gauge\nwarp_btc_swap_enabled 0\n"
-                        .to_string(),
+                    "# TYPE warp_btc_swap_enabled gauge\nwarp_btc_swap_enabled 0\n".to_string(),
                 )
                     .into_response();
             }
@@ -2624,11 +2618,7 @@ async fn get_ext_payouts(
     require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     match state
         .service
-        .ext_payout_records(
-            query.chain.as_deref(),
-            query.status.as_deref(),
-            query.limit,
-        )
+        .ext_payout_records(query.chain.as_deref(), query.status.as_deref(), query.limit)
         .await
     {
         Ok(rows) => Ok(Json(rows)),
@@ -2748,18 +2738,12 @@ mod tests {
     #[test]
     fn btc_swap_offer_key_rotation_accepts_prev() {
         // During rotation the previous key is still honoured.
-        assert!(require_btc_swap_offer_key(
-            Some("new-key"),
-            Some("old-key"),
-            Some("old-key")
-        )
-        .is_ok());
-        assert!(require_btc_swap_offer_key(
-            Some("new-key"),
-            Some("old-key"),
-            Some("new-key")
-        )
-        .is_ok());
+        assert!(
+            require_btc_swap_offer_key(Some("new-key"), Some("old-key"), Some("old-key")).is_ok()
+        );
+        assert!(
+            require_btc_swap_offer_key(Some("new-key"), Some("old-key"), Some("new-key")).is_ok()
+        );
         // An unrelated key stays rejected.
         assert_eq!(
             require_btc_swap_offer_key(Some("new-key"), Some("old-key"), Some("third"))
@@ -2833,7 +2817,10 @@ mod tests {
     fn bearer_headers(key: Option<&str>) -> HeaderMap {
         let mut h = HeaderMap::new();
         if let Some(k) = key {
-            h.insert(header::AUTHORIZATION, format!("Bearer {k}").parse().unwrap());
+            h.insert(
+                header::AUTHORIZATION,
+                format!("Bearer {k}").parse().unwrap(),
+            );
         }
         h
     }
@@ -2916,20 +2903,17 @@ mod tests {
             b = b.header("authorization", format!("Bearer {k}"));
         }
         let mut req = b
-            .body(Body::from(
-                body.map(|v| v.to_string()).unwrap_or_default(),
-            ))
+            .body(Body::from(body.map(|v| v.to_string()).unwrap_or_default()))
             .expect("valid request");
         req.extensions_mut()
-            .insert(ConnectInfo(std::net::SocketAddr::from(([127, 0, 0, 1], 1234))));
+            .insert(ConnectInfo(std::net::SocketAddr::from((
+                [127, 0, 0, 1],
+                1234,
+            ))));
         if let Some(u) = user {
             req.extensions_mut().insert(u);
         }
-        app.clone()
-            .oneshot(req)
-            .await
-            .expect("response")
-            .status()
+        app.clone().oneshot(req).await.expect("response").status()
     }
 
     fn zion_asset() -> serde_json::Value {
@@ -3017,15 +3001,7 @@ mod tests {
             )
             .await;
             assert_eq!(status, StatusCode::FORBIDDEN, "{method} {uri} non-admin");
-            let status = call(
-                &app,
-                method,
-                uri,
-                body,
-                Some(test_zis_user("admin")),
-                None,
-            )
-            .await;
+            let status = call(&app, method, uri, body, Some(test_zis_user("admin")), None).await;
             assert!(
                 status != StatusCode::UNAUTHORIZED && status != StatusCode::FORBIDDEN,
                 "{method} {uri} admin must pass auth, got {status}"
@@ -3039,7 +3015,11 @@ mod tests {
         let app = test_router(false, None);
         for (method, uri, body) in admin_route_cases() {
             let status = call(&app, method, uri, body, None, Some("anything")).await;
-            assert_eq!(status, StatusCode::FORBIDDEN, "{method} {uri} no key configured");
+            assert_eq!(
+                status,
+                StatusCode::FORBIDDEN,
+                "{method} {uri} no key configured"
+            );
         }
         // Key configured: wrong -> 401, right -> passes auth.
         let app = test_router(false, Some("test-key"));
@@ -3069,8 +3049,7 @@ mod tests {
             )
             .expect("in-memory service builds"),
         );
-        let app = ApiServer::new(ServerConfig::default(), service.clone())
-            .build_router(true, None);
+        let app = ApiServer::new(ServerConfig::default(), service.clone()).build_router(true, None);
         (service, app)
     }
 
@@ -3119,7 +3098,11 @@ mod tests {
             "target_address": "zion1attacker",
         });
         let status = call(&app, "POST", claim_uri, Some(body), None, None).await;
-        assert_eq!(status, StatusCode::OK, "public claim with valid preimage must pass");
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "public claim with valid preimage must pass"
+        );
         let rec = service.htlc().get_record(&hash_hex).await.unwrap();
         assert_eq!(
             rec.release_recipient.as_deref(),
@@ -3243,7 +3226,11 @@ mod tests {
             "source_address": "zion1attacker",
         });
         let status = call(&app, "POST", refund_uri, Some(early), None, None).await;
-        assert_eq!(status, StatusCode::BAD_REQUEST, "unexpired refund must fail");
+        assert_eq!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "unexpired refund must fail"
+        );
 
         // Expired lock: public refund succeeds, payout stays with the locker.
         let dead_hashlock = Hash::new(sha2::Sha256::digest([0x52u8; 32]).into());

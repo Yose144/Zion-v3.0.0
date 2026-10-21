@@ -75,7 +75,10 @@ where
         if let Some(v) = f().await {
             return v;
         }
-        assert!(start.elapsed() < WAIT_TIMEOUT, "timed out waiting for {what}");
+        assert!(
+            start.elapsed() < WAIT_TIMEOUT,
+            "timed out waiting for {what}"
+        );
         eprintln!("[e2e] waiting for {what}…");
         tokio::time::sleep(Duration::from_secs(POLL_SECS)).await;
     }
@@ -102,7 +105,11 @@ async fn faucet_request() {
         .send()
         .await;
     match resp {
-        Ok(r) => eprintln!("dispense: {} {}", r.status(), r.text().await.unwrap_or_default()),
+        Ok(r) => eprintln!(
+            "dispense: {} {}",
+            r.status(),
+            r.text().await.unwrap_or_default()
+        ),
         Err(e) => eprintln!("dispense error: {e}"),
     }
 }

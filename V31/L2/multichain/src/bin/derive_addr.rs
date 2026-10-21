@@ -36,9 +36,7 @@ use ethers::core::types::PathOrString;
 use ethers::signers::{coins_bip39::English, MnemonicBuilder, Signer};
 use sha2::{Digest, Sha512};
 use zion_l1_types::ChainId;
-use zion_multichain::chain::adapters::quantus::{
-    QuantusAdapter, QuantusKeypair,
-};
+use zion_multichain::chain::adapters::quantus::{QuantusAdapter, QuantusKeypair};
 use zion_multichain::wallet::{derive_zion_address, Keyring};
 
 const DEFAULT_QUANTUS_RPC: &str = "https://rpc.zionterranova.com/qtc";
@@ -77,14 +75,8 @@ fn main() {
         }
         Some("--sign") => {
             let chain = args.get(2).map(String::as_str).unwrap_or_else(|| usage());
-            let account = args
-                .get(3)
-                .and_then(|s| s.parse::<u32>().ok())
-                .unwrap_or(0);
-            let index = args
-                .get(4)
-                .and_then(|s| s.parse::<u32>().ok())
-                .unwrap_or(0);
+            let account = args.get(3).and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
+            let index = args.get(4).and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
             let mnemonic = lines.next().unwrap_or("").trim().to_string();
             let msg_hex = lines.next().unwrap_or("").trim().to_string();
             let msg = match hex::decode(msg_hex.trim_start_matches("0x")) {
@@ -109,8 +101,8 @@ fn main() {
                 .and_then(|s| s.parse().ok())
                 .unwrap_or_else(|| usage());
             let mnemonic = lines.next().unwrap_or("").trim().to_string();
-            let rpc = std::env::var("QUANTUS_RPC")
-                .unwrap_or_else(|_| DEFAULT_QUANTUS_RPC.to_string());
+            let rpc =
+                std::env::var("QUANTUS_RPC").unwrap_or_else(|_| DEFAULT_QUANTUS_RPC.to_string());
             let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
             let res = rt.block_on(async {
                 let kr = Keyring::from_mnemonic(&mnemonic).map_err(|e| e.to_string())?;
@@ -130,18 +122,15 @@ fn main() {
         }
         Some("--qtc-balance") => {
             let addr = args.get(2).cloned().unwrap_or_else(|| usage());
-            let rpc = std::env::var("QUANTUS_RPC")
-                .unwrap_or_else(|_| DEFAULT_QUANTUS_RPC.to_string());
+            let rpc =
+                std::env::var("QUANTUS_RPC").unwrap_or_else(|_| DEFAULT_QUANTUS_RPC.to_string());
             let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
             let res = rt.block_on(async {
                 use zion_multichain::chain::adapter::ChainAdapter;
                 let adapter = QuantusAdapter::new(rpc);
                 let parsed = zion_l1_types::Address::new(ChainId::Quantus, Vec::new(), addr)
                     .map_err(|e| e.to_string())?;
-                adapter
-                    .balance(&parsed)
-                    .await
-                    .map_err(|e| e.to_string())
+                adapter.balance(&parsed).await.map_err(|e| e.to_string())
             });
             match res {
                 Ok(amt) => println!("balance={} planks ({} QTC)", amt.0, amt.0 as f64 / 1e12),
@@ -152,24 +141,15 @@ fn main() {
             }
         }
         Some("--qtc-wormhole-secret") => {
-            let index: u32 = args
-                .get(2)
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(0);
+            let index: u32 = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
             let mnemonic = lines.next().unwrap_or("").trim().to_string();
             let path = format!("m/44'/189189189'/{}'/0'/0'", index);
-            match qp_rusty_crystals_hdwallet::derive_wormhole_from_mnemonic(
-                &mnemonic,
-                None,
-                &path,
-            ) {
+            match qp_rusty_crystals_hdwallet::derive_wormhole_from_mnemonic(&mnemonic, None, &path)
+            {
                 Ok(pair) => {
                     println!(
                         "address={}",
-                        zion_multichain::chain::adapters::quantus::ss58_encode(
-                            pair.address(),
-                            189
-                        )
+                        zion_multichain::chain::adapters::quantus::ss58_encode(pair.address(), 189)
                     );
                     println!("inner_hash=0x{}", hex::encode(pair.first_hash()));
                     println!("secret=0x{}", hex::encode(pair.secret().as_bytes()));
@@ -365,14 +345,8 @@ fn sign_message(
             let (priv_key, _pub) = kr
                 .bitcoin_key_pair(bitcoin::Network::Bitcoin, account, index)
                 .map_err(|e| e.to_string())?;
-            let digest = sha2::Sha256::digest(
-                [
-                    b"ZION-BTC-LINK-V1".as_slice(),
-                    &[0u8],
-                    msg,
-                ]
-                .concat(),
-            );
+            let digest =
+                sha2::Sha256::digest([b"ZION-BTC-LINK-V1".as_slice(), &[0u8], msg].concat());
             let secp = bitcoin::secp256k1::Secp256k1::new();
             let m = bitcoin::secp256k1::Message::from_digest(digest.into());
             let sig = secp.sign_ecdsa_recoverable(&m, &priv_key.inner);

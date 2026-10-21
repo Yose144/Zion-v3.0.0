@@ -140,7 +140,10 @@ impl InboundReleaser {
 
     /// Run the release loop forever (call via `tokio::spawn`).
     pub async fn run(mut self) {
-        info!("[inbound] Inbound releaser started — poll every {}s", POLL_SECS);
+        info!(
+            "[inbound] Inbound releaser started — poll every {}s",
+            POLL_SECS
+        );
         let mut interval = tokio::time::interval(Duration::from_secs(POLL_SECS));
         loop {
             interval.tick().await;
@@ -180,10 +183,7 @@ impl InboundReleaser {
 
         for transfer in inbound {
             if let Err(e) = self.step(&transfer).await {
-                error!(
-                    "[inbound] transfer {} step failed: {}",
-                    transfer.id, e
-                );
+                error!("[inbound] transfer {} step failed: {}", transfer.id, e);
             }
         }
         Ok(())
@@ -213,7 +213,11 @@ impl InboundReleaser {
             }
         };
         let confs = adapter.confirmations(&source_tx).await.unwrap_or_else(|e| {
-            debug!("[inbound] confirmations({}) failed: {}", &source_tx[..16.min(source_tx.len())], e);
+            debug!(
+                "[inbound] confirmations({}) failed: {}",
+                &source_tx[..16.min(source_tx.len())],
+                e
+            );
             0
         });
         let required = transfer.source_chain.finality_blocks.max(1);
@@ -273,13 +277,7 @@ impl InboundReleaser {
         self.advance(id, WarpStatus::Executing).await;
 
         match releaser
-            .release(
-                &transfer.recipient,
-                net,
-                &source_name,
-                &burn_id,
-                &source_tx,
-            )
+            .release(&transfer.recipient, net, &source_name, &burn_id, &source_tx)
             .await
         {
             Ok(tx_id) => {

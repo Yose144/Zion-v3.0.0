@@ -358,10 +358,7 @@ pub(crate) async fn fetch_utxos(
                 Err(e) => {
                     last_err = WarpError::AdapterError {
                         chain: "bitcoin".into(),
-                        reason: format!(
-                            "bitcoin backend #{} response decode failed: {e}",
-                            idx + 1
-                        ),
+                        reason: format!("bitcoin backend #{} response decode failed: {e}", idx + 1),
                     };
                 }
             },

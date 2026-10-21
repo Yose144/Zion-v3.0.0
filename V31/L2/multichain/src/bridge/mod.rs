@@ -120,7 +120,8 @@ impl Bridge {
             // Fail closed if we don't have enough keys for quorum.
             if !consensus.can_sign_quorum_locally() {
                 return Err(MultichainError::Validation(
-                    "bridge consensus: insufficient local validator keys for quorum (FIND-026)".to_string(),
+                    "bridge consensus: insufficient local validator keys for quorum (FIND-026)"
+                        .to_string(),
                 ));
             }
             consensus
@@ -362,10 +363,7 @@ mod tests {
 
         let result = bridge.submit(&mut transfer).await;
 
-        assert!(matches!(
-            result,
-            Err(MultichainError::Validation(_))
-        ));
+        assert!(matches!(result, Err(MultichainError::Validation(_))));
     }
 
     #[tokio::test]

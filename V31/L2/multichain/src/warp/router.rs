@@ -130,7 +130,7 @@ impl WarpRouter {
         }
     }
 
-     fn update_transfer_db(&self, id: Uuid) {
+    fn update_transfer_db(&self, id: Uuid) {
         if let Some(db) = &self.db {
             if let Some(t) = self.transfers.get(&id) {
                 if let Err(e) = db.save(t) {
@@ -164,16 +164,25 @@ impl WarpRouter {
         };
 
         // --- getTransaction -------------------------------------------------
-        let tx_info: serde_json::Value =
-            match self.rpc_call_sync(addr, "getTransaction", serde_json::json!({"txid": &proof.tx_hash})) {
-                Ok(v) => v,
-                Err(e) => return Err(WarpError::Validation(format!(
+        let tx_info: serde_json::Value = match self.rpc_call_sync(
+            addr,
+            "getTransaction",
+            serde_json::json!({"txid": &proof.tx_hash}),
+        ) {
+            Ok(v) => v,
+            Err(e) => {
+                return Err(WarpError::Validation(format!(
                     "deposit proof verification failed: getTransaction error: {e}"
-                ))),
-            };
+                )))
+            }
+        };
 
         // Verify the transaction exists and is confirmed.
-        if !tx_info.get("confirmed").and_then(|v| v.as_bool()).unwrap_or(false) {
+        if !tx_info
+            .get("confirmed")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
             return Err(WarpError::Validation(format!(
                 "deposit proof verification failed: tx {} not confirmed",
                 proof.tx_hash
@@ -183,20 +192,27 @@ impl WarpRouter {
         let block_height = tx_info
             .get("block_height")
             .and_then(|v| v.as_u64())
-            .ok_or_else(|| WarpError::Validation("getTransaction response missing block_height".into()))?;
+            .ok_or_else(|| {
+                WarpError::Validation("getTransaction response missing block_height".into())
+            })?;
 
         // --- getChainInfo ---------------------------------------------------
-        let chain_info: serde_json::Value = match self.rpc_call_sync(addr, "getChainInfo", serde_json::json!([])) {
-            Ok(v) => v,
-            Err(e) => return Err(WarpError::Validation(format!(
-                "deposit proof verification failed: getChainInfo error: {e}"
-            ))),
-        };
+        let chain_info: serde_json::Value =
+            match self.rpc_call_sync(addr, "getChainInfo", serde_json::json!([])) {
+                Ok(v) => v,
+                Err(e) => {
+                    return Err(WarpError::Validation(format!(
+                        "deposit proof verification failed: getChainInfo error: {e}"
+                    )))
+                }
+            };
 
         let tip = chain_info
             .get("chain_height")
             .and_then(|v| v.as_u64())
-            .ok_or_else(|| WarpError::Validation("getChainInfo response missing chain_height".into()))?;
+            .ok_or_else(|| {
+                WarpError::Validation("getChainInfo response missing chain_height".into())
+            })?;
 
         let confirmations = tip.saturating_sub(block_height) + 1;
         if confirmations < self.l1_finality_blocks {
@@ -279,7 +295,7 @@ impl WarpRouter {
         }
     }
 
-     /// Process an outbound transfer (ZION L1 → external chain).
+    /// Process an outbound transfer (ZION L1 → external chain).
     pub fn initiate_outbound(&mut self, proof: DepositProof) -> WarpResult<Uuid> {
         // 0. Verify deposit proof against ZION L1 source chain (FIND-008).
         self.verify_deposit_proof(&proof)?;
@@ -379,7 +395,10 @@ impl WarpRouter {
         // burn_id comes from the source event (EVM BridgeBurn topic); fall
         // back to the tx hash — the L1 replay key just needs a stable unique
         // identifier: `{source_chain}:{burn_id}:{tx_hash}`.
-        transfer.burn_id = proof.burn_id.clone().or_else(|| Some(proof.tx_hash.clone()));
+        transfer.burn_id = proof
+            .burn_id
+            .clone()
+            .or_else(|| Some(proof.tx_hash.clone()));
         transfer.status = WarpStatus::Detected;
 
         let transfer_id = transfer.id;
@@ -493,7 +512,7 @@ mod tests {
     use std::sync::Arc;
     use tokio::sync::Mutex;
 
-     fn test_router() -> WarpRouter {
+    fn test_router() -> WarpRouter {
         let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(3)));
         WarpRouter::new(
             ChainRegistry::with_defaults(),
@@ -785,7 +804,10 @@ mod tests {
         let mut router = test_router_with_rpc("127.0.0.1:1");
         let proof = test_deposit(1_000_000, "WARP:1:solana:7xKXtg2CW87d97T");
         let result = router.initiate_outbound(proof);
-        assert!(result.is_err(), "proof verification should fail without L1 node");
+        assert!(
+            result.is_err(),
+            "proof verification should fail without L1 node"
+        );
         assert!(result
             .unwrap_err()
             .to_string()

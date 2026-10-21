@@ -162,9 +162,9 @@ pub(crate) fn parse_journal_entry(
     reference_id: Option<&str>,
     created_at: &str,
 ) -> MultichainResult<JournalEntry> {
-    let amount = amount.parse::<u128>().map_err(|e| {
-        MultichainError::Internal(format!("invalid journal amount: {e}"))
-    })?;
+    let amount = amount
+        .parse::<u128>()
+        .map_err(|e| MultichainError::Internal(format!("invalid journal amount: {e}")))?;
     Ok(JournalEntry {
         id: id.to_string(),
         user_id: user_id.to_string(),
@@ -194,11 +194,20 @@ mod tests {
         let asset = make_asset();
 
         ledger
-            .credit("alice", &asset, Amount::new(1_000), "deposit", Some("dep-1"))
+            .credit(
+                "alice",
+                &asset,
+                Amount::new(1_000),
+                "deposit",
+                Some("dep-1"),
+            )
             .await
             .unwrap();
 
-        assert_eq!(ledger.balance("alice", &asset).await.unwrap(), Amount::new(1_000));
+        assert_eq!(
+            ledger.balance("alice", &asset).await.unwrap(),
+            Amount::new(1_000)
+        );
 
         let entries = ledger.entries_for_user("alice", 10).await.unwrap();
         assert_eq!(entries.len(), 1);
@@ -222,7 +231,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(ledger.balance("bob", &asset).await.unwrap(), Amount::new(300));
+        assert_eq!(
+            ledger.balance("bob", &asset).await.unwrap(),
+            Amount::new(300)
+        );
 
         let entries = ledger.entries_for_user("bob", 10).await.unwrap();
         assert_eq!(entries.len(), 2);
@@ -243,7 +255,11 @@ mod tests {
         assert!(res.is_err());
 
         // No journal entry should have been recorded.
-        assert!(ledger.entries_for_user("carol", 10).await.unwrap().is_empty());
+        assert!(ledger
+            .entries_for_user("carol", 10)
+            .await
+            .unwrap()
+            .is_empty());
         assert_eq!(ledger.balance("carol", &asset).await.unwrap(), Amount::ZERO);
     }
 }

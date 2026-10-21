@@ -156,7 +156,9 @@ impl SolvencyGuard {
         guard
             .pools()
             .iter()
-            .filter(|p| p.asset_a.id.to_string() == asset_key || p.asset_b.id.to_string() == asset_key)
+            .filter(|p| {
+                p.asset_a.id.to_string() == asset_key || p.asset_b.id.to_string() == asset_key
+            })
             .fold(Amount::ZERO, |acc, p| {
                 let reserve = if p.asset_a.id.to_string() == asset_key {
                     p.reserve_a
@@ -299,11 +301,7 @@ impl SolvencyGuard {
     /// amount again would double-count it — a full-balance withdrawal would
     /// always fail on an exactly-solvent wallet. `Amount::ZERO` still applies
     /// the configured margin headroom.
-    pub async fn verify_withdrawal(
-        &self,
-        asset: &Asset,
-        _amount: Amount,
-    ) -> MultichainResult<()> {
+    pub async fn verify_withdrawal(&self, asset: &Asset, _amount: Amount) -> MultichainResult<()> {
         self.check(asset, Amount::ZERO).await.map(|_| ())
     }
 
@@ -438,11 +436,7 @@ mod tests {
             Ok(self.native_balance)
         }
 
-        async fn token_balance(
-            &self,
-            asset: &Asset,
-            _addr: &Address,
-        ) -> MultichainResult<Amount> {
+        async fn token_balance(&self, asset: &Asset, _addr: &Address) -> MultichainResult<Amount> {
             if asset.id.contract.is_none() {
                 return Ok(self.native_balance);
             }
@@ -452,13 +446,7 @@ mod tests {
     }
 
     fn usdc_asset() -> Asset {
-        Asset::with_contract(
-            ChainId::Base,
-            "USDC",
-            "0xA0b86a33E6B8",
-            6,
-            "USD Coin",
-        )
+        Asset::with_contract(ChainId::Base, "USDC", "0xA0b86a33E6B8", 6, "USD Coin")
     }
 
     #[tokio::test]
@@ -504,7 +492,9 @@ mod tests {
 
         // Withdrawal of 6M should fail: 10M ledger claims + 6M new = 16M required,
         // but on-chain only 5M.
-        let result = guard.verify_withdrawal(&asset, Amount::new(6_000_000)).await;
+        let result = guard
+            .verify_withdrawal(&asset, Amount::new(6_000_000))
+            .await;
         assert!(result.is_err(), "should reject insufficient withdrawal");
         match result.unwrap_err() {
             MultichainError::InsufficientSolvency { deficit, .. } => {
@@ -552,7 +542,9 @@ mod tests {
         );
 
         // Withdrawal of 5M: 10M claims + 5M new = 15M required, 20M on-chain → OK.
-        let result = guard.verify_withdrawal(&asset, Amount::new(5_000_000)).await;
+        let result = guard
+            .verify_withdrawal(&asset, Amount::new(5_000_000))
+            .await;
         assert!(result.is_ok(), "should allow sufficient withdrawal");
     }
 
@@ -653,7 +645,10 @@ mod tests {
         );
 
         let result = guard.verify_withdrawal(&usdc, Amount::new(3_000_000)).await;
-        assert!(result.is_ok(), "withdrawal relocates an existing claim — solvent");
+        assert!(
+            result.is_ok(),
+            "withdrawal relocates an existing claim — solvent"
+        );
 
         // Drop on-chain to 9M < claims 10M → insolvent even for a small withdrawal.
         token_balances
@@ -661,7 +656,10 @@ mod tests {
             .unwrap()
             .insert(usdc.id.to_string(), Amount::new(9_000_000));
         let result = guard.verify_withdrawal(&usdc, Amount::new(1_000_000)).await;
-        assert!(result.is_err(), "should reject when claims exceed on-chain balance");
+        assert!(
+            result.is_err(),
+            "should reject when claims exceed on-chain balance"
+        );
     }
 
     #[tokio::test]

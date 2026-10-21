@@ -34,7 +34,17 @@ fn main() {
 
     // The seed is network-agnostic; the derivation path determines coin type.
     let xpriv = ExtendedPrivKey::new_master(Network::Bitcoin, &seed).unwrap();
-    derive(&xpriv, "m/84'/1'/0'/0/0", Network::Testnet, "TESTNET (BIP84 coin 1)");
+    derive(
+        &xpriv,
+        "m/84'/1'/0'/0/0",
+        Network::Testnet,
+        "TESTNET (BIP84 coin 1)",
+    );
     println!();
-    derive(&xpriv, "m/84'/0'/0'/0/0", Network::Bitcoin, "MAINNET (BIP84 coin 0)");
+    derive(
+        &xpriv,
+        "m/84'/0'/0'/0/0",
+        Network::Bitcoin,
+        "MAINNET (BIP84 coin 0)",
+    );
 }

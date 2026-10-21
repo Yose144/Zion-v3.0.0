@@ -469,7 +469,7 @@ mod tests {
     #[test]
     fn test_bid_signature_roundtrip() {
         use crate::swap::dex::intent_engine::IntentEngine;
-        use ed25519_dalek::{Signature, SigningKey, Signer, Verifier, VerifyingKey};
+        use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
         use rand::rngs::OsRng;
 
         let (zion, usdc) = zion_usdc();
@@ -521,25 +521,35 @@ mod tests {
         assert!(!unsigned.verify_signature(&pubkey));
 
         // Wrong pubkey → false
-        let wrong_key = SigningKey::generate(&mut OsRng).verifying_key().to_bytes().to_vec();
+        let wrong_key = SigningKey::generate(&mut OsRng)
+            .verifying_key()
+            .to_bytes()
+            .to_vec();
         assert!(!bid.verify_signature(&wrong_key));
 
         // Submit with registered pubkey and correct signature → accepted
         let mut engine = IntentEngine::new();
-        engine.registry_mut().register_with_pubkey(
-            "solver-a",
-            None,
-            100,
-            Some(pubkey.clone()),
-        );
-         engine.open_intent(intent.clone());
+        engine
+            .registry_mut()
+            .register_with_pubkey("solver-a", None, 100, Some(pubkey.clone()));
+        engine.open_intent(intent.clone());
         assert!(engine.submit_bid(bid.clone()).unwrap());
         assert_eq!(intent.status, IntentStatus::Pending);
 
         // Submit with wrong signature → rejected
         let mut bad_bid = bid.clone();
-        bad_bid.signature = SigningKey::generate(&mut OsRng).sign(bid.signing_hash().as_slice()).to_vec();
-        let intent2 = SwapIntent::new("zion1user", zion_usdc().0, zion_usdc().1, Amount::new(1_000_000), Amount::new(900_000), u64::MAX, 2);
+        bad_bid.signature = SigningKey::generate(&mut OsRng)
+            .sign(bid.signing_hash().as_slice())
+            .to_vec();
+        let intent2 = SwapIntent::new(
+            "zion1user",
+            zion_usdc().0,
+            zion_usdc().1,
+            Amount::new(1_000_000),
+            Amount::new(900_000),
+            u64::MAX,
+            2,
+        );
         engine.open_intent(intent2.clone());
         assert!(engine.submit_bid(bad_bid).is_err());
     }
@@ -601,12 +611,9 @@ mod tests {
                 amount_out: Amount::new(490_000),
             },
         ];
-        let err = PathHop::validate_path_amounts(
-            &path,
-            Amount::new(1_000_000),
-            Amount::new(490_000),
-        )
-        .unwrap_err();
+        let err =
+            PathHop::validate_path_amounts(&path, Amount::new(1_000_000), Amount::new(490_000))
+                .unwrap_err();
         assert!(err.to_string().contains("discontinuity"));
     }
 
@@ -619,15 +626,12 @@ mod tests {
             from_token: zion.clone(),
             to_token: usdc.clone(),
             is_bridge: false,
-            amount_in: Amount::new(500_000),  // != intent amount_in (1_000_000)
+            amount_in: Amount::new(500_000), // != intent amount_in (1_000_000)
             amount_out: Amount::new(950_000),
         }];
-        let err = PathHop::validate_path_amounts(
-            &path,
-            Amount::new(1_000_000),
-            Amount::new(950_000),
-        )
-        .unwrap_err();
+        let err =
+            PathHop::validate_path_amounts(&path, Amount::new(1_000_000), Amount::new(950_000))
+                .unwrap_err();
         assert!(err.to_string().contains("first hop"));
     }
 
@@ -641,24 +645,18 @@ mod tests {
             to_token: usdc,
             is_bridge: false,
             amount_in: Amount::new(1_000_000),
-            amount_out: Amount::new(900_000),  // != bid amount_out (950_000)
+            amount_out: Amount::new(900_000), // != bid amount_out (950_000)
         }];
-        let err = PathHop::validate_path_amounts(
-            &path,
-            Amount::new(1_000_000),
-            Amount::new(950_000),
-        )
-        .unwrap_err();
+        let err =
+            PathHop::validate_path_amounts(&path, Amount::new(1_000_000), Amount::new(950_000))
+                .unwrap_err();
         assert!(err.to_string().contains("last hop"));
     }
 
     #[test]
     fn test_path_amount_validation_empty_path() {
-        let result = PathHop::validate_path_amounts(
-            &[],
-            Amount::new(1_000_000),
-            Amount::new(1_000_000),
-        );
+        let result =
+            PathHop::validate_path_amounts(&[], Amount::new(1_000_000), Amount::new(1_000_000));
         assert!(result.is_err());
     }
 }

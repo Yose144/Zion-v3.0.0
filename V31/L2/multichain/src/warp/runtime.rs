@@ -138,10 +138,8 @@ impl WarpRuntime {
         // Inbound releaser: drives external→L1 burns through finality and
         // submits `submitBridgeUnlock` with local release keys (when
         // WARP_L1_RELEASE_KEYS provides ≥3 validator keys).
-        let inbound = crate::warp::inbound::InboundReleaser::from_config(
-            &self.config,
-            self.router.clone(),
-        );
+        let inbound =
+            crate::warp::inbound::InboundReleaser::from_config(&self.config, self.router.clone());
         let inbound_handle = tokio::spawn(inbound.run());
 
         let timelock = TimelockMonitor::default(self.router.clone());

@@ -150,8 +150,9 @@ impl ZionContracts {
     pub fn for_chain(chain: &str) -> Option<Self> {
         match chain.to_lowercase().as_str() {
             "base" => Some(Self::base_mainnet()),
-            "arbitrum" | "bsc" | "polygon" | "optimism" | "avalanche" | "avax"
-            | "robinhood" => Some(Self::non_base()),
+            "arbitrum" | "bsc" | "polygon" | "optimism" | "avalanche" | "avax" | "robinhood" => {
+                Some(Self::non_base())
+            }
             _ => None,
         }
     }
@@ -193,7 +194,10 @@ const WZION_V3_POOLS: &[(&str, &str, u32)] = &[
 ];
 
 impl ZionContracts {
-    fn wzion_pair_lookup<'a>(ticker_a: &'a str, ticker_b: &'a str) -> Option<&'static (&'static str, &'static str, u32)> {
+    fn wzion_pair_lookup<'a>(
+        ticker_a: &'a str,
+        ticker_b: &'a str,
+    ) -> Option<&'static (&'static str, &'static str, u32)> {
         let a = ticker_a.to_ascii_uppercase();
         let b = ticker_b.to_ascii_uppercase();
         let has_wzion = a == "WZION" || b == "WZION";
@@ -214,8 +218,7 @@ impl ZionContracts {
 
     /// Return the canonical Uniswap V3 pool address for a token pair, if known.
     pub fn v3_pool_address(&self, ticker_a: &str, ticker_b: &str) -> Option<String> {
-        Self::wzion_pair_lookup(ticker_a, ticker_b)
-            .map(|(_, addr, _)| addr.to_string())
+        Self::wzion_pair_lookup(ticker_a, ticker_b).map(|(_, addr, _)| addr.to_string())
     }
 }
 

@@ -117,9 +117,7 @@ pub fn create_router(mut state: WarpState) -> Router {
     // An explicitly-configured key on the state wins (used by tests/embedders);
     // otherwise fall back to the WARP_API_KEY environment variable.
     if state.api_key.is_none() {
-        state.api_key = std::env::var("WARP_API_KEY")
-            .ok()
-            .filter(|k| !k.is_empty());
+        state.api_key = std::env::var("WARP_API_KEY").ok().filter(|k| !k.is_empty());
     }
     if state.api_key.is_none() {
         tracing::warn!("[warpd] WARP_API_KEY unset — mutating API routes disabled");
@@ -274,7 +272,10 @@ fn require_warp_key(
     if warp_key_eq(expected, provided) {
         Ok(())
     } else {
-        Err(ApiErr::with_status(StatusCode::UNAUTHORIZED, "unauthorized"))
+        Err(ApiErr::with_status(
+            StatusCode::UNAUTHORIZED,
+            "unauthorized",
+        ))
     }
 }
 
@@ -597,7 +598,9 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
-        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["ok"], false);
         assert_eq!(json["error"], "unauthorized");

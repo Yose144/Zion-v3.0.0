@@ -61,13 +61,7 @@ impl SolanaAdapter {
     }
 
     fn zion_asset(&self) -> Asset {
-        Asset::with_contract(
-            self.chain,
-            "ZION",
-            self.zion_mint.clone(),
-            6,
-            "ZION (SPL)",
-        )
+        Asset::with_contract(self.chain, "ZION", self.zion_mint.clone(), 6, "ZION (SPL)")
     }
 
     async fn rpc(&self, method: &str, params: Value) -> MultichainResult<Value> {
@@ -101,7 +95,9 @@ impl SolanaAdapter {
 
     /// Get current slot height.
     async fn get_slot(&self) -> MultichainResult<u64> {
-        let v = self.rpc("getSlot", json!([{"commitment": "confirmed"}])).await?;
+        let v = self
+            .rpc("getSlot", json!([{"commitment": "confirmed"}]))
+            .await?;
         v.as_u64()
             .ok_or_else(|| MultichainError::Internal("solana getSlot: not a number".into()))
     }
@@ -118,9 +114,16 @@ impl SolanaAdapter {
     }
 
     /// Get recent signatures for an address (token account or wallet).
-    async fn get_signatures_for_address(&self, address: &str, limit: usize) -> MultichainResult<Vec<SigInfo>> {
+    async fn get_signatures_for_address(
+        &self,
+        address: &str,
+        limit: usize,
+    ) -> MultichainResult<Vec<SigInfo>> {
         let v = self
-            .rpc("getSignaturesForAddress", json!([address, {"limit": limit}]))
+            .rpc(
+                "getSignaturesForAddress",
+                json!([address, {"limit": limit}]),
+            )
             .await?;
         let sigs: Vec<SigInfo> = serde_json::from_value(v)
             .map_err(|e| MultichainError::Internal(format!("solana signatures decode: {e}")))?;
@@ -136,9 +139,7 @@ impl SolanaAdapter {
             )
             .await?;
 
-        let accounts = v
-            .get("value")
-            .and_then(|a| a.as_array());
+        let accounts = v.get("value").and_then(|a| a.as_array());
 
         if let Some(arr) = accounts {
             if let Some(first) = arr.first() {
@@ -200,7 +201,11 @@ impl SolanaAdapter {
         }
 
         // Also check inner instructions (for multi-instruction transactions).
-        if let Some(inner_ixs) = tx.get("meta").and_then(|m| m.get("innerInstructions")).and_then(|i| i.as_array()) {
+        if let Some(inner_ixs) = tx
+            .get("meta")
+            .and_then(|m| m.get("innerInstructions"))
+            .and_then(|i| i.as_array())
+        {
             for inner in inner_ixs {
                 if let Some(instructions) = inner.get("instructions").and_then(|i| i.as_array()) {
                     for ix in instructions {
@@ -339,7 +344,10 @@ impl ChainAdapter for SolanaAdapter {
                     Ok(Some(t)) => t,
                     Ok(None) => continue,
                     Err(e) => {
-                        debug!("[multichain][solana] getTransaction({}) failed: {e}", sig.signature);
+                        debug!(
+                            "[multichain][solana] getTransaction({}) failed: {e}",
+                            sig.signature
+                        );
                         continue;
                     }
                 };
@@ -419,12 +427,12 @@ impl ChainAdapter for SolanaAdapter {
     async fn balance(&self, address: &Address) -> MultichainResult<Amount> {
         // Native SOL balance.
         let v = self
-            .rpc("getBalance", json!([address.encoded, {"commitment": "confirmed"}]))
+            .rpc(
+                "getBalance",
+                json!([address.encoded, {"commitment": "confirmed"}]),
+            )
             .await?;
-        let lamports = v
-            .get("value")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
+        let lamports = v.get("value").and_then(|v| v.as_u64()).unwrap_or(0);
         Ok(Amount(lamports as u128))
     }
 

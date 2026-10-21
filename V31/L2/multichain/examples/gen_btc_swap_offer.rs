@@ -15,10 +15,8 @@
 
 use rand::RngCore;
 use std::str::FromStr;
-use zion_multichain::warp::btc_swap::{
-    BtcSwapConfig, BtcSwapFlow, OfferBtcToZion,
-};
 use zion_multichain::warp::btc_signer::BtcSigner;
+use zion_multichain::warp::btc_swap::{BtcSwapConfig, BtcSwapFlow, OfferBtcToZion};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -56,9 +56,12 @@ impl WarpWatcher {
         router: Arc<Mutex<WarpRouter>>,
         db: Option<TransferDb>,
     ) -> Self {
-        Self::with_validators(config, router, db, Arc::new(Mutex::new(
-            crate::warp::validator::WarpValidatorSet::new(0),
-        )))
+        Self::with_validators(
+            config,
+            router,
+            db,
+            Arc::new(Mutex::new(crate::warp::validator::WarpValidatorSet::new(0))),
+        )
     }
 
     /// Build a watcher with an explicit validator set (needed for auto-advance).

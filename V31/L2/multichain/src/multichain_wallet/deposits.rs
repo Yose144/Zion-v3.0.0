@@ -49,8 +49,8 @@ impl DepositWatcher {
         finality.insert(ChainId::Linea, 12);
         finality.insert(ChainId::Robinhood, 12);
         finality.insert(ChainId::Solana, 32); // ~32 slots ≈ 13s at 400ms/slot
-        // Quantus QPoW has a probabilistic finality gadget; 30 blocks is the
-        // conservative deposit threshold documented in the spike.
+                                              // Quantus QPoW has a probabilistic finality gadget; 30 blocks is the
+                                              // conservative deposit threshold documented in the spike.
         finality.insert(ChainId::Quantus, 30);
 
         Self {

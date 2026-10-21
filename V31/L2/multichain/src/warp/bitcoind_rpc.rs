@@ -190,10 +190,7 @@ async fn ensure_address(client: &Client, ep: &BtcRpc, addr: &str) -> Result<(), 
         .get("iswatchonly")
         .and_then(Value::as_bool)
         .unwrap_or(false)
-        || info
-            .get("ismine")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
+        || info.get("ismine").and_then(Value::as_bool).unwrap_or(false);
     if !watched {
         return Err(import_error
             .map(|error| format!("importdescriptors({addr}): {error}"))
@@ -384,13 +381,7 @@ async fn address_utxos(client: &Client, ep: &BtcRpc, addr: &str) -> Result<Strin
                 .unwrap_or_else(|| "?".into())
         ));
     }
-    let unspent = wallet_rpc(
-        client,
-        ep,
-        "listunspent",
-        json!([0, 9999999, [addr], true]),
-    )
-    .await?;
+    let unspent = wallet_rpc(client, ep, "listunspent", json!([0, 9999999, [addr], true])).await?;
     let utxos: Vec<Value> = unspent
         .as_array()
         .cloned()
@@ -435,7 +426,10 @@ async fn tx_status(client: &Client, ep: &BtcRpc, txid: &str) -> Result<String, S
     }
     // Not a wallet tx — try raw mempool (no txindex on pruned node).
     let raw = rpc(client, ep, "getrawtransaction", json!([txid, true]), false).await?;
-    let confs = raw.get("confirmations").and_then(|c| c.as_i64()).unwrap_or(0);
+    let confs = raw
+        .get("confirmations")
+        .and_then(|c| c.as_i64())
+        .unwrap_or(0);
     serde_json::to_string(&json!({
         "confirmed": confs > 0,
         "block_height": raw.get("blockheight"),
@@ -509,11 +503,7 @@ pub(crate) async fn backend_watch_address(
 
 /// POST raw tx hex (`/tx`) — `sendrawtransaction` on bitcoind, plain POST
 /// on esplora. Returns the txid.
-pub async fn backend_post_tx(
-    client: &Client,
-    base: &str,
-    raw_hex: &str,
-) -> Result<String, String> {
+pub async fn backend_post_tx(client: &Client, base: &str, raw_hex: &str) -> Result<String, String> {
     if !is_bitcoind(base) {
         let url = format!("{base}/tx");
         let resp = client
@@ -531,14 +521,7 @@ pub async fn backend_post_tx(
         return Ok(body.trim().to_string());
     }
     let ep = parse(base)?;
-    let v = rpc(
-        client,
-        &ep,
-        "sendrawtransaction",
-        json!([raw_hex]),
-        false,
-    )
-    .await?;
+    let v = rpc(client, &ep, "sendrawtransaction", json!([raw_hex]), false).await?;
     v.as_str()
         .map(|s| s.to_string())
         .ok_or_else(|| format!("sendrawtransaction: bad result {v}"))
@@ -600,7 +583,8 @@ mod tests {
                 "scriptPubKey": {"asm": "OP_RETURN 6a", "hex": "6a", "type": "nulldata"}
             }]
         });
-        let meta = json!({"confirmations": 3, "blockheight": 100, "blockhash": "ff", "blocktime": 7});
+        let meta =
+            json!({"confirmations": 3, "blockheight": 100, "blockhash": "ff", "blocktime": 7});
         let tx = decoded_to_mempool_tx(&decoded, &meta);
         assert_eq!(tx["txid"], "aa11");
         assert_eq!(tx["status"]["confirmed"], true);
@@ -623,13 +607,19 @@ mod tests {
     #[test]
     fn spk_type_mapping() {
         assert_eq!(map_spk_type("nulldata"), "op_return");
-        assert_eq!(map_spk_type("witness_v0_scripthash"), "witness_v0_scripthash");
+        assert_eq!(
+            map_spk_type("witness_v0_scripthash"),
+            "witness_v0_scripthash"
+        );
     }
 
     #[test]
     fn import_timestamp_is_strict() {
         assert_eq!(import_timestamp(None).unwrap(), Value::from("now"));
-        assert_eq!(import_timestamp(Some("12345")).unwrap(), Value::from(12345u64));
+        assert_eq!(
+            import_timestamp(Some("12345")).unwrap(),
+            Value::from(12345u64)
+        );
         assert!(import_timestamp(Some("not-a-time")).is_err());
         assert!(import_timestamp(Some("")).is_err());
     }
@@ -648,7 +638,9 @@ mod tests {
         assert!(!err.contains("test-user"), "leaked user: {err}");
         assert!(!err.contains("test-secret"), "leaked secret: {err}");
 
-        let err = backend_post_tx(&client, base, "deadbeef").await.unwrap_err();
+        let err = backend_post_tx(&client, base, "deadbeef")
+            .await
+            .unwrap_err();
         assert!(!err.contains("test-user"), "leaked user: {err}");
         assert!(!err.contains("test-secret"), "leaked secret: {err}");
     }

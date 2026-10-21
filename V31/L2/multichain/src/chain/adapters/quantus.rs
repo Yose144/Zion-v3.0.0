@@ -162,10 +162,7 @@ fn compact_decode(b: &[u8]) -> MultichainResult<(u128, usize)> {
     }
     match b[0] & 0b11 {
         0 => Ok(((b[0] >> 2) as u128, 1)),
-        1 => Ok((
-            (u16::from_le_bytes([b[0], b[1]]) >> 2) as u128,
-            2,
-        )),
+        1 => Ok(((u16::from_le_bytes([b[0], b[1]]) >> 2) as u128, 2)),
         2 => Ok((
             (u32::from_le_bytes([b[0], b[1], b[2], b[3]]) >> 2) as u128,
             4,
@@ -187,8 +184,8 @@ fn mortal_era(period: u64, current: u64) -> [u8; 2] {
     let period = period.max(4).next_power_of_two();
     let quantize = (period >> 12).max(1);
     let phase = (current % period) / quantize * quantize;
-    let encoded = ((period.trailing_zeros() as u16 - 1) | ((phase / quantize) as u16) << 4)
-        .min(0xffff);
+    let encoded =
+        ((period.trailing_zeros() as u16 - 1) | ((phase / quantize) as u16) << 4).min(0xffff);
     encoded.to_le_bytes()
 }
 
@@ -205,9 +202,7 @@ impl QuantusKeypair {
     pub fn from_seed(seed: [u8; 32]) -> Self {
         let mut e = seed;
         Self {
-            inner: qp_rusty_crystals_dilithium::ml_dsa_87::Keypair::generate(
-                (&mut e).into(),
-            ),
+            inner: qp_rusty_crystals_dilithium::ml_dsa_87::Keypair::generate((&mut e).into()),
         }
     }
 
@@ -300,10 +295,16 @@ impl QuantusAdapter {
         let keypair = self.signer()?;
         let sender_acct = keypair.account_id();
         let nonce = self.account_nonce(&sender_acct).await?;
-        let (spec, txv, genesis, anchor_hash, anchor_height) =
-            self.signing_context().await?;
+        let (spec, txv, genesis, anchor_hash, anchor_height) = self.signing_context().await?;
         let ext = Self::build_transfer_extrinsic(
-            &keypair, &dest32, amount, nonce, spec, txv, &genesis, &anchor_hash,
+            &keypair,
+            &dest32,
+            amount,
+            nonce,
+            spec,
+            txv,
+            &genesis,
+            &anchor_hash,
             anchor_height,
         )?;
         let ext_hex = format!("0x{}", hex::encode(&ext));
@@ -342,10 +343,16 @@ impl QuantusAdapter {
         let keypair = self.signer()?;
         let sender_acct = keypair.account_id();
         let nonce = self.account_nonce(&sender_acct).await?;
-        let (spec, txv, genesis, anchor_hash, anchor_height) =
-            self.signing_context().await?;
+        let (spec, txv, genesis, anchor_hash, anchor_height) = self.signing_context().await?;
         let ext = Self::build_transfer_extrinsic(
-            &keypair, &dest32, amount, nonce, spec, txv, &genesis, &anchor_hash,
+            &keypair,
+            &dest32,
+            amount,
+            nonce,
+            spec,
+            txv,
+            &genesis,
+            &anchor_hash,
             anchor_height,
         )?;
         let ext_hex = format!("0x{}", hex::encode(&ext));
@@ -475,8 +482,8 @@ impl QuantusAdapter {
         let txv = rv["transactionVersion"].as_u64().unwrap_or(0) as u32;
 
         let genesis_hex: Option<String> = self.rpc("chain_getBlockHash", json!([0])).await?;
-        let genesis_hex = genesis_hex
-            .ok_or_else(|| MultichainError::Internal("no genesis hash".into()))?;
+        let genesis_hex =
+            genesis_hex.ok_or_else(|| MultichainError::Internal("no genesis hash".into()))?;
         let genesis = decode_hex32(&genesis_hex)?;
 
         // Anchor the mortal era at GENESIS. The Quantus runtime rejects eras
@@ -493,9 +500,7 @@ impl QuantusAdapter {
         // system_accountNextIndex takes the SS58 address in older nodes, or
         // the AccountId hex — Planck accepts ss58 string.
         let addr = ss58_encode(account32, QUANTUS_SS58_PREFIX);
-        let n: serde_json::Value = self
-            .rpc("system_accountNextIndex", json!([addr]))
-            .await?;
+        let n: serde_json::Value = self.rpc("system_accountNextIndex", json!([addr])).await?;
         n.as_u64()
             .or_else(|| n.as_str().and_then(|s| s.parse().ok()))
             .map(|v| v as u32)
@@ -724,12 +729,10 @@ impl ChainAdapter for QuantusAdapter {
         // so a 128-block lookback is plenty.
         let target = format!("0x{}", hex::encode(tx_hash.0));
         let mut head_hex: String = self.rpc("chain_getFinalizedHead", json!([])).await?;
-        let head_hdr: serde_json::Value =
-            self.rpc("chain_getHeader", json!([head_hex])).await?;
+        let head_hdr: serde_json::Value = self.rpc("chain_getHeader", json!([head_hex])).await?;
         let mut num = parse_block_number(&head_hdr)?;
         for _ in 0..128u64 {
-            let block: serde_json::Value =
-                self.rpc("chain_getBlock", json!([head_hex])).await?;
+            let block: serde_json::Value = self.rpc("chain_getBlock", json!([head_hex])).await?;
             let exts = block["block"]["extrinsics"]
                 .as_array()
                 .cloned()
@@ -783,17 +786,17 @@ impl ChainAdapter for QuantusAdapter {
 
         let mut events = Vec::new();
         for num in from..=finalized {
-            let hash_hex: Option<String> =
-                self.rpc("chain_getBlockHash", json!([num])).await?;
+            let hash_hex: Option<String> = self.rpc("chain_getBlockHash", json!([num])).await?;
             let Some(hash_hex) = hash_hex else { continue };
-            let block: serde_json::Value =
-                self.rpc("chain_getBlock", json!([hash_hex])).await?;
+            let block: serde_json::Value = self.rpc("chain_getBlock", json!([hash_hex])).await?;
             let exts = block["block"]["extrinsics"]
                 .as_array()
                 .cloned()
                 .unwrap_or_default();
             for ext_hex in &exts {
-                let Some(hexstr) = ext_hex.as_str() else { continue };
+                let Some(hexstr) = ext_hex.as_str() else {
+                    continue;
+                };
                 let Ok(raw) = hex::decode(hexstr.trim_start_matches("0x")) else {
                     continue;
                 };
@@ -833,11 +836,17 @@ impl ChainAdapter for QuantusAdapter {
         let keypair = self.signer()?;
         let sender_acct = keypair.account_id();
         let nonce = self.account_nonce(&sender_acct).await?;
-        let (spec, txv, genesis, anchor_hash, anchor_height) =
-            self.signing_context().await?;
+        let (spec, txv, genesis, anchor_hash, anchor_height) = self.signing_context().await?;
 
         let ext = Self::build_transfer_extrinsic(
-            &keypair, &dest32, amount.0, nonce, spec, txv, &genesis, &anchor_hash,
+            &keypair,
+            &dest32,
+            amount.0,
+            nonce,
+            spec,
+            txv,
+            &genesis,
+            &anchor_hash,
             anchor_height,
         )?;
         let ext_hex = format!("0x{}", hex::encode(&ext));
@@ -858,9 +867,7 @@ impl ChainAdapter for QuantusAdapter {
         let acct32 = Self::decode_address(address)?;
         let key = Self::system_account_key(&acct32);
         let key_hex = format!("0x{}", hex::encode(key));
-        let storage: Option<String> = self
-            .rpc("state_getStorage", json!([key_hex]))
-            .await?;
+        let storage: Option<String> = self.rpc("state_getStorage", json!([key_hex])).await?;
         match storage {
             Some(hexstr) => {
                 let raw = hex::decode(hexstr.trim_start_matches("0x"))
@@ -904,8 +911,6 @@ fn parse_block_number(hdr: &serde_json::Value) -> MultichainResult<u64> {
         .map_err(|e| MultichainError::Internal(format!("block number: {e}")))
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -947,12 +952,11 @@ mod tests {
         // Blake2b-512 instead of true Blake2b-16 — both produced storage
         // keys that never match on-chain state. Vectors captured from a
         // live Quantus dev node (state_getKeysPaged + state_getStorage).
-        let acct: [u8; 32] = hex::decode(
-            "0a90beba4cce4a8020e016a6ffa365722255f66f8a9163d7fc89977a6fbfc82e",
-        )
-        .unwrap()
-        .try_into()
-        .unwrap();
+        let acct: [u8; 32] =
+            hex::decode("0a90beba4cce4a8020e016a6ffa365722255f66f8a9163d7fc89977a6fbfc82e")
+                .unwrap()
+                .try_into()
+                .unwrap();
         let key = QuantusAdapter::system_account_key(&acct);
         let expected = "26aa394eea5630e07c48ae0c9558cef7\
             b99d880ec681799c0cf30e8886371da9\
@@ -966,10 +970,8 @@ mod tests {
         // Blake2b with N-byte output ≠ truncated Blake2b-512 — the digest
         // length is in the parameter block. Vector = acct32 above hashed
         // by the live node (blake2_128_concat suffix of its storage key).
-        let acct = hex::decode(
-            "0a90beba4cce4a8020e016a6ffa365722255f66f8a9163d7fc89977a6fbfc82e",
-        )
-        .unwrap();
+        let acct = hex::decode("0a90beba4cce4a8020e016a6ffa365722255f66f8a9163d7fc89977a6fbfc82e")
+            .unwrap();
         assert_eq!(
             hex::encode(blake2_128(&acct)),
             "f9c070ee7f8344932d86d18809be78b4"
@@ -992,7 +994,15 @@ mod tests {
         let genesis = [0u8; 32];
         let ckpt = [0u8; 32];
         let ext = QuantusAdapter::build_transfer_extrinsic(
-            &kp, &dest, 1_000_000_000_000, 0, 153, 6, &genesis, &ckpt, 100,
+            &kp,
+            &dest,
+            1_000_000_000_000,
+            0,
+            153,
+            6,
+            &genesis,
+            &ckpt,
+            100,
         )
         .unwrap();
         // outer: compact len (2-3B) + 0x84 + addr(33) + sig_variant(1) + 7219 + extra + call
@@ -1002,7 +1012,7 @@ mod tests {
         assert_eq!(body[1], 0x00); // MultiAddress::Id
         assert_eq!(&body[2..34], kp.account_id().as_slice());
         assert_eq!(body[34], 0x00); // Dilithium variant
-        // sig at body[35..35+7219]; body = 1+33+1+7219+extra(5)+call(~40)
+                                    // sig at body[35..35+7219]; body = 1+33+1+7219+extra(5)+call(~40)
         assert_eq!(body.len(), 1 + 33 + 1 + 7219 + 5 + 40);
     }
 
@@ -1023,8 +1033,12 @@ mod tests {
         // balance() on a spike-derived account (may be 0 — exercises the
         // full ss58→storage-key→AccountInfo decode path on live chain)
         let kp = QuantusKeypair::from_seed([7u8; 32]);
-        let addr = Address::new(ChainId::Quantus, kp.account_id().to_vec(), kp.ss58_address())
-            .unwrap();
+        let addr = Address::new(
+            ChainId::Quantus,
+            kp.account_id().to_vec(),
+            kp.ss58_address(),
+        )
+        .unwrap();
         let bal = adapter.balance(&addr).await.unwrap();
         eprintln!("balance({}): {} planks", kp.ss58_address(), bal.0);
     }
@@ -1043,15 +1057,21 @@ mod tests {
         let adapter = QuantusAdapter::new("");
         let kp = QuantusKeypair::from_seed([7u8; 32]);
         let dest = [3u8; 32];
-        let (spec, txv, genesis, fin_hash, fin_height) =
-            adapter.signing_context().await.unwrap();
-        eprintln!("ctx: spec={spec} txv={txv} anchor_height={fin_height} anchor={}", hex::encode(fin_hash));
+        let (spec, txv, genesis, fin_hash, fin_height) = adapter.signing_context().await.unwrap();
+        eprintln!(
+            "ctx: spec={spec} txv={txv} anchor_height={fin_height} anchor={}",
+            hex::encode(fin_hash)
+        );
         let ext = QuantusAdapter::build_transfer_extrinsic(
             &kp, &dest, 1_000_000, 0, spec, txv, &genesis, &fin_hash, fin_height,
         )
         .unwrap();
         let ext_hex = format!("0x{}", hex::encode(&ext));
-        eprintln!("extrinsic {} bytes tail {}", ext.len(), &ext_hex[ext_hex.len()-120..]);
+        eprintln!(
+            "extrinsic {} bytes tail {}",
+            ext.len(),
+            &ext_hex[ext_hex.len() - 120..]
+        );
 
         // payment_queryInfo decodes the extrinsic + returns fee/weight
         let info: serde_json::Value = adapter
@@ -1081,7 +1101,7 @@ mod tests {
         .unwrap();
         std::env::remove_var("QTC_ERA_PERIOD");
         let ext2_hex = format!("0x{}", hex::encode(&ext2));
-        eprintln!("ext2 tail {}", &ext2_hex[ext2_hex.len()-120..]);
+        eprintln!("ext2 tail {}", &ext2_hex[ext2_hex.len() - 120..]);
         let dry2: serde_json::Value = adapter
             .rpc("system_dryRun", json!([ext2_hex]))
             .await
@@ -1142,7 +1162,10 @@ mod tests {
         assert!(est.partial_fee > 0 && est.partial_fee < bal.0);
 
         // Send dust; verify the tx hash parses and confirmations accrue.
-        let hash = adapter.send_payment(&dest, Amount(1_000_000)).await.unwrap();
+        let hash = adapter
+            .send_payment(&dest, Amount(1_000_000))
+            .await
+            .unwrap();
         eprintln!("submitted tx {}", hash.to_hex());
         let mut confs = adapter.confirmations(&hash).await.unwrap_or(0);
         for _ in 0..20 {
@@ -1156,14 +1179,9 @@ mod tests {
         assert!(confs >= 1, "tx did not finalize within ~4 minutes");
 
         // Deposit watcher sees the finalized transfer.
-        let events = adapter
-            .watch_addresses(&[dest.clone()])
-            .await
-            .unwrap();
+        let events = adapter.watch_addresses(&[dest.clone()]).await.unwrap();
         assert!(
-            events
-                .iter()
-                .any(|e| e.recipient.as_str() == dest.as_str()),
+            events.iter().any(|e| e.recipient.as_str() == dest.as_str()),
             "deposit scan did not find the sent transfer"
         );
         eprintln!("deposit scan found {} event(s)", events.len());
@@ -1179,7 +1197,15 @@ mod tests {
         let genesis = [0x11u8; 32];
         let checkpoint = [0x22u8; 32];
         let ext = QuantusAdapter::build_transfer_extrinsic(
-            &kp, &dest, 5_000_000_000_000, 0, 153, 6, &genesis, &checkpoint, 10940,
+            &kp,
+            &dest,
+            5_000_000_000_000,
+            0,
+            153,
+            6,
+            &genesis,
+            &checkpoint,
+            10940,
         )
         .unwrap();
 
@@ -1208,8 +1234,7 @@ mod tests {
         };
 
         let pub_arr: [u8; 2592] = pub_bytes.try_into().unwrap();
-        let pk = qp_rusty_crystals_dilithium::ml_dsa_87::PublicKey::from_bytes(&pub_arr)
-            .unwrap();
+        let pk = qp_rusty_crystals_dilithium::ml_dsa_87::PublicKey::from_bytes(&pub_arr).unwrap();
         assert!(
             pk.verify(msg, sig_bytes, Some(QUANTUS_EXTRINSIC_CTX)),
             "self-built extrinsic signature does not verify under QUANTUS_EXTRINSIC ctx"

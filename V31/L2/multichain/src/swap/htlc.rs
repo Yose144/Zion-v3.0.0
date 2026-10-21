@@ -505,11 +505,7 @@ impl HtlcSwap {
         // unconfirmed, the record lets the next `initiate` adopt this lock
         // (entry check above) instead of broadcasting a duplicate.
         if let Some(adapter) = live_adapter {
-            let confirmed = adapter
-                .confirmations(&lock_tx)
-                .await
-                .unwrap_or(0)
-                >= 1;
+            let confirmed = adapter.confirmations(&lock_tx).await.unwrap_or(0) >= 1;
             if !confirmed {
                 return Err(MultichainError::Validation(format!(
                     "HTLC lock {} broadcast, awaiting confirmation",
@@ -586,7 +582,13 @@ impl HtlcSwap {
     /// Return the revealed 32-byte preimage for a claimed record, if any.
     /// Handles the FIND-002 `enc:` at-rest encryption transparently.
     pub async fn revealed_preimage(&self, hash_hex: &str) -> Option<[u8; 32]> {
-        let stored = self.records.lock().await.get(hash_hex)?.preimage_hex.clone()?;
+        let stored = self
+            .records
+            .lock()
+            .await
+            .get(hash_hex)?
+            .preimage_hex
+            .clone()?;
         let plain = decrypt_preimage_at_rest(&stored);
         let bytes = hex::decode(plain).ok()?;
         bytes.try_into().ok()

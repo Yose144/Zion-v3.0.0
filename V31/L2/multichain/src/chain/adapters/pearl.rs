@@ -57,7 +57,9 @@ fn bech32_checksum(hrp: &str, data: &[u8], spec_const: u32) -> Vec<u8> {
     values.extend_from_slice(data);
     values.extend_from_slice(&[0; 6]);
     let polymod = bech32_polymod(&values) ^ spec_const;
-    (0..6).map(|i| ((polymod >> (5 * (5 - i))) & 0x1f) as u8).collect()
+    (0..6)
+        .map(|i| ((polymod >> (5 * (5 - i))) & 0x1f) as u8)
+        .collect()
 }
 
 fn bech32_verify_checksum(hrp: &str, data: &[u8]) -> Option<u32> {
@@ -129,7 +131,9 @@ fn bech32_encode(hrp: &str, version: u8, program: &[u8], spec_const: u32) -> Str
 fn segwit_decode(addr: &str) -> MultichainResult<(String, u8, Vec<u8>, u32)> {
     let addr = addr.trim();
     if addr.is_empty() || addr.len() > 90 || addr.bytes().any(|b| !(33..=126).contains(&b)) {
-        return Err(MultichainError::Unsupported("invalid address charset".into()));
+        return Err(MultichainError::Unsupported(
+            "invalid address charset".into(),
+        ));
     }
     let lower = addr.to_ascii_lowercase();
     if addr.chars().any(|c| c.is_ascii_uppercase()) && lower != addr {
@@ -164,14 +168,18 @@ fn segwit_decode(addr: &str) -> MultichainResult<(String, u8, Vec<u8>, u32)> {
     let program = convert_bits_5to8(&data[1..data.len() - 6])
         .ok_or_else(|| MultichainError::Unsupported("bech32 padding".into()))?;
     if program.len() < 2 || program.len() > 40 {
-        return Err(MultichainError::Unsupported("witness program length".into()));
+        return Err(MultichainError::Unsupported(
+            "witness program length".into(),
+        ));
     }
     if version == 0 && !(program.len() == 20 || program.len() == 32) {
         return Err(MultichainError::Unsupported("v0 program length".into()));
     }
     // v0 must be bech32; v1+ must be bech32m (BIP350).
     if (version == 0) != (spec == BECH32_CONST) {
-        return Err(MultichainError::Unsupported("bech32/bech32m mismatch".into()));
+        return Err(MultichainError::Unsupported(
+            "bech32/bech32m mismatch".into(),
+        ));
     }
     Ok((hrp.to_string(), version, program, spec))
 }
@@ -204,7 +212,8 @@ pub fn pearl_address_from_key(output_key: &[u8; 32]) -> MultichainResult<Address
     bytes.push(0x51);
     bytes.push(0x20);
     bytes.extend_from_slice(output_key);
-    Address::new(ChainId::Pearl, bytes, encoded).map_err(|e| MultichainError::Internal(e.to_string()))
+    Address::new(ChainId::Pearl, bytes, encoded)
+        .map_err(|e| MultichainError::Internal(e.to_string()))
 }
 
 /// BIP86 key-tweak: compute the P2TR output key for an internal x-only key.
@@ -273,8 +282,12 @@ mod tests {
 
     #[test]
     fn rejects_wrong_hrp_and_corrupt() {
-        assert!(!is_valid_pearl_address("bc1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5m"));
-        assert!(!is_valid_pearl_address("prl1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5x"));
+        assert!(!is_valid_pearl_address(
+            "bc1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5m"
+        ));
+        assert!(!is_valid_pearl_address(
+            "prl1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5x"
+        ));
         assert!(!is_valid_pearl_address(""));
         assert!(!is_valid_pearl_address("qz5abc"));
     }

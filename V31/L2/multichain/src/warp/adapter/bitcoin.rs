@@ -174,7 +174,11 @@ fn find_lock_output(
 /// Scan `txs` for a transaction spending the `lock` outpoint. If the witness
 /// carries our exact HTLC script on the claim branch, extract the preimage;
 /// a spend through the else-branch (or an unparseable witness) is a refund.
-fn classify_htlc_spend(txs: &[MempoolTx], lock: &BtcHtlcLock, htlc: &BtcHtlc) -> Option<BtcHtlcSpend> {
+fn classify_htlc_spend(
+    txs: &[MempoolTx],
+    lock: &BtcHtlcLock,
+    htlc: &BtcHtlc,
+) -> Option<BtcHtlcSpend> {
     for tx in txs {
         for vin in tx.vin.iter().flatten() {
             if vin.txid.as_deref() == Some(lock.txid.as_str()) && vin.vout == Some(lock.vout) {
@@ -187,8 +191,8 @@ fn classify_htlc_spend(txs: &[MempoolTx], lock: &BtcHtlcLock, htlc: &BtcHtlc) ->
                 let witness = Witness::from_slice(&items);
                 // Only accept a claim if the revealed script is *our* HTLC
                 // script and the preimage really opens our hashlock.
-                let our_script = items.last().map(|s| s.as_slice())
-                    == Some(htlc.witness_script.as_bytes());
+                let our_script =
+                    items.last().map(|s| s.as_slice()) == Some(htlc.witness_script.as_bytes());
                 if our_script {
                     if let Some(preimage) = extract_preimage(&witness) {
                         if Sha256::digest(preimage)[..] == htlc.hashlock[..] {
@@ -207,7 +211,6 @@ fn classify_htlc_spend(txs: &[MempoolTx], lock: &BtcHtlcLock, htlc: &BtcHtlc) ->
     }
     None
 }
-
 
 /// Bitcoin adapter — HTLC watch + OP_RETURN memo parsing via mempool.space API.
 pub struct BitcoinAdapter {
@@ -734,12 +737,16 @@ mod tests {
         let preimage = [0x42u8; 32];
         let hashlock: [u8; 32] = Sha256::digest(preimage).into();
         let secp = Secp256k1::new();
-        let claimant =
-            PrivateKey::new(SecretKey::from_slice(&[0x03; 32]).unwrap(), Network::Bitcoin)
-                .public_key(&secp);
-        let refund =
-            PrivateKey::new(SecretKey::from_slice(&[0x04; 32]).unwrap(), Network::Bitcoin)
-                .public_key(&secp);
+        let claimant = PrivateKey::new(
+            SecretKey::from_slice(&[0x03; 32]).unwrap(),
+            Network::Bitcoin,
+        )
+        .public_key(&secp);
+        let refund = PrivateKey::new(
+            SecretKey::from_slice(&[0x04; 32]).unwrap(),
+            Network::Bitcoin,
+        )
+        .public_key(&secp);
         (
             BtcHtlc::new(hashlock, claimant, refund, 850_000, Network::Bitcoin).unwrap(),
             preimage,
@@ -826,8 +833,10 @@ mod tests {
             confirmations: 3,
             block_height: 840_000,
         };
-        let claim_key =
-            PrivateKey::new(SecretKey::from_slice(&[0x03; 32]).unwrap(), Network::Bitcoin);
+        let claim_key = PrivateKey::new(
+            SecretKey::from_slice(&[0x03; 32]).unwrap(),
+            Network::Bitcoin,
+        );
         let dest = Address::from_str("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
             .unwrap()
             .assume_checked();
@@ -844,7 +853,10 @@ mod tests {
         )
         .unwrap();
         let items: Vec<Vec<u8>> = tx.input[0].witness.iter().map(|w| w.to_vec()).collect();
-        let txs = vec![funding_tx(&htlc, 150_000, 840_000, true), spend_tx(&lock, items)];
+        let txs = vec![
+            funding_tx(&htlc, 150_000, 840_000, true),
+            spend_tx(&lock, items),
+        ];
         match classify_htlc_spend(&txs, &lock, &htlc) {
             Some(BtcHtlcSpend::Claim { preimage: p, .. }) => assert_eq!(p, preimage),
             other => panic!("expected claim, got {other:?}"),
@@ -866,8 +878,10 @@ mod tests {
             confirmations: 3,
             block_height: 840_000,
         };
-        let refund_key =
-            PrivateKey::new(SecretKey::from_slice(&[0x04; 32]).unwrap(), Network::Bitcoin);
+        let refund_key = PrivateKey::new(
+            SecretKey::from_slice(&[0x04; 32]).unwrap(),
+            Network::Bitcoin,
+        );
         let dest = Address::from_str("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
             .unwrap()
             .assume_checked();
@@ -937,10 +951,14 @@ mod tests {
     async fn prepare_htlc_watch_fails_closed_for_unavailable_bitcoind() {
         let (htlc, _preimage) = test_htlc();
         let mut adapter = BitcoinAdapter::new();
-        adapter.api_urls = vec!["bitcoind+rpc://test-user:test-secret@127.0.0.1:1/warpwatch".into()];
+        adapter.api_urls =
+            vec!["bitcoind+rpc://test-user:test-secret@127.0.0.1:1/warpwatch".into()];
         let err = adapter.prepare_htlc_watch(&htlc).await.unwrap_err();
         let msg = err.to_string();
-        assert!(msg.contains("bitcoin backend #1"), "unexpected error: {msg}");
+        assert!(
+            msg.contains("bitcoin backend #1"),
+            "unexpected error: {msg}"
+        );
         assert!(!msg.contains("test-user"), "leaked user: {msg}");
         assert!(!msg.contains("test-secret"), "leaked secret: {msg}");
     }
@@ -1020,7 +1038,11 @@ mod failover_tests {
             .expect("fall through to populated endpoint");
         assert_eq!(txs.len(), 1);
         assert_eq!(txs[0].txid, txid);
-        assert_eq!(adapter.primary.load(Ordering::Relaxed), 1, "populated promoted");
+        assert_eq!(
+            adapter.primary.load(Ordering::Relaxed),
+            1,
+            "populated promoted"
+        );
     }
 
     #[tokio::test]

@@ -225,11 +225,7 @@ impl MultichainService {
     /// Resolve a 'stalled' payout record: `action` = `"resubmit"` (back to
     /// 'queued', attempts reset) or `"dismiss"` (mark 'failed', no pay).
     /// Fail-closed: only 'stalled' rows are actionable.
-    pub async fn ext_payout_resolve(
-        &self,
-        id: &str,
-        action: &str,
-    ) -> MultichainResult<bool> {
+    pub async fn ext_payout_resolve(&self, id: &str, action: &str) -> MultichainResult<bool> {
         let new_status = match action {
             "resubmit" => "queued",
             "dismiss" => "failed",
@@ -538,9 +534,7 @@ impl MultichainService {
             .pools_mut()
             .into_iter()
             .find(|p| p.id == pool_id)
-            .ok_or_else(|| {
-                MultichainError::Validation(format!("pool id {} not found", pool_id))
-            })?;
+            .ok_or_else(|| MultichainError::Validation(format!("pool id {} not found", pool_id)))?;
 
         pool.amm_pair = amm_pair;
         pool.amm_factory = amm_factory;
@@ -566,9 +560,10 @@ impl MultichainService {
         recipient: Option<Address>,
         deadline: u64,
     ) -> MultichainResult<(Hash, Amount, Amount, Amount)> {
-        let adapter = self.adapters.get(chain).ok_or_else(|| {
-            MultichainError::AdapterNotFound(chain.as_str().to_string())
-        })?;
+        let adapter = self
+            .adapters
+            .get(chain)
+            .ok_or_else(|| MultichainError::AdapterNotFound(chain.as_str().to_string()))?;
 
         let recipient_addr = recipient.unwrap_or(Address {
             chain,
@@ -604,9 +599,10 @@ impl MultichainService {
         recipient: Option<Address>,
         deadline: u64,
     ) -> MultichainResult<(Hash, Amount, Amount)> {
-        let adapter = self.adapters.get(chain).ok_or_else(|| {
-            MultichainError::AdapterNotFound(chain.as_str().to_string())
-        })?;
+        let adapter = self
+            .adapters
+            .get(chain)
+            .ok_or_else(|| MultichainError::AdapterNotFound(chain.as_str().to_string()))?;
 
         let recipient_addr = recipient.unwrap_or(Address {
             chain,
@@ -636,11 +632,14 @@ impl MultichainService {
         token_a: &Asset,
         token_b: &Asset,
     ) -> MultichainResult<Option<String>> {
-        let adapter = self.adapters.get(chain).ok_or_else(|| {
-            MultichainError::AdapterNotFound(chain.as_str().to_string())
-        })?;
+        let adapter = self
+            .adapters
+            .get(chain)
+            .ok_or_else(|| MultichainError::AdapterNotFound(chain.as_str().to_string()))?;
 
-        adapter.amm_get_pair(factory_address, token_a, token_b).await
+        adapter
+            .amm_get_pair(factory_address, token_a, token_b)
+            .await
     }
 
     /// Returns a snapshot of health for every registered chain.
@@ -1065,10 +1064,7 @@ impl MultichainService {
                 tick.tick().await;
                 let outcomes = flow.poll_once().await;
                 for o in outcomes {
-                    if !matches!(
-                        o.action,
-                        crate::warp::btc_swap::NextAction::Wait
-                    ) {
+                    if !matches!(o.action, crate::warp::btc_swap::NextAction::Wait) {
                         tracing::info!(
                             "[WARP][btc-swap] {} → {:?} {}",
                             o.swap_id,
@@ -1638,7 +1634,11 @@ fn build_adapter(
             ))
         }
         "solana" => {
-            let rpc = if cfg.rpc_url.is_empty() { None } else { Some(cfg.rpc_url.as_str()) };
+            let rpc = if cfg.rpc_url.is_empty() {
+                None
+            } else {
+                Some(cfg.rpc_url.as_str())
+            };
             Ok(Box::new(SolanaAdapter::new(rpc, None)?))
         }
         _ => {
@@ -1707,11 +1707,9 @@ mod tests {
     #[test]
     fn warp_operator_keyring_none_without_env() {
         assert!(resolve_warp_operator_keyring(None, None).unwrap().is_none());
-        assert!(
-            resolve_warp_operator_keyring(Some(""), Some("  "))
-                .unwrap()
-                .is_none()
-        );
+        assert!(resolve_warp_operator_keyring(Some(""), Some("  "))
+            .unwrap()
+            .is_none());
     }
 
     #[test]
@@ -1763,9 +1761,7 @@ mod tests {
     #[test]
     fn warp_operator_keyring_invalid_rejected() {
         assert!(resolve_warp_operator_keyring(Some("nothex"), None).is_err());
-        assert!(
-            resolve_warp_operator_keyring(Some(&hex::encode([1u8; 16])), None).is_err()
-        );
+        assert!(resolve_warp_operator_keyring(Some(&hex::encode([1u8; 16])), None).is_err());
         assert!(resolve_warp_operator_keyring(None, Some("bogus mnemonic words")).is_err());
     }
 }

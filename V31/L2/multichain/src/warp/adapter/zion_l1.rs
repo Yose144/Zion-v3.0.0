@@ -257,7 +257,9 @@ impl ChainAdapter for ZionL1Adapter {
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
         let tip = self.get_tip_height().await?;
-        let last = self.last_polled_height.load(std::sync::atomic::Ordering::Relaxed);
+        let last = self
+            .last_polled_height
+            .load(std::sync::atomic::Ordering::Relaxed);
         // On first run catch up from genesis; otherwise scan from last poll or
         // the last 200 blocks (whichever is lower) to handle small reorgs.
         let from = if last == 0 {
@@ -274,10 +276,7 @@ impl ChainAdapter for ZionL1Adapter {
 
         // Use getBridgeLocks RPC (V31 native) instead of scanning V3 blocks.
         let locks_result = self
-            .rpc_call(
-                "getBridgeLocks",
-                serde_json::json!([from, to]),
-            )
+            .rpc_call("getBridgeLocks", serde_json::json!([from, to]))
             .await?;
 
         let empty = Vec::new();
@@ -290,9 +289,15 @@ impl ChainAdapter for ZionL1Adapter {
         for lock in locks {
             let txid = lock.get("txid").and_then(|v| v.as_str()).unwrap_or("");
             let sender = lock.get("sender").and_then(|v| v.as_str()).unwrap_or("");
-            let amount_flowers = lock.get("amount_flowers").and_then(|v| v.as_u64()).unwrap_or(0);
+            let amount_flowers = lock
+                .get("amount_flowers")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
             let memo = lock.get("memo").and_then(|v| v.as_str()).unwrap_or("");
-            let block_height = lock.get("block_height").and_then(|v| v.as_u64()).unwrap_or(0);
+            let block_height = lock
+                .get("block_height")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
 
             // Parse BRIDGE:<chain>:<recipient> memo
             if let Some(rest) = memo.strip_prefix("BRIDGE:") {
@@ -324,7 +329,8 @@ impl ChainAdapter for ZionL1Adapter {
             .get("to_height")
             .and_then(|v| v.as_u64())
             .unwrap_or(to);
-        self.last_polled_height.store(to_height + 1, std::sync::atomic::Ordering::Relaxed);
+        self.last_polled_height
+            .store(to_height + 1, std::sync::atomic::Ordering::Relaxed);
 
         Ok(proofs)
     }

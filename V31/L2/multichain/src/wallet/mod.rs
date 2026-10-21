@@ -444,8 +444,7 @@ mod tests {
         let a = keyring.address(ChainId::Quantus, 0, 0).unwrap();
         let b = keyring.address(ChainId::Quantus, 0, 0).unwrap();
         assert_eq!(a.encoded, b.encoded);
-        let (acct, prefix) =
-            crate::chain::adapters::quantus::ss58_decode(&a.encoded).unwrap();
+        let (acct, prefix) = crate::chain::adapters::quantus::ss58_decode(&a.encoded).unwrap();
         assert_eq!(prefix, crate::chain::adapters::quantus::QUANTUS_SS58_PREFIX);
         assert_eq!(acct.to_vec(), a.bytes);
         // different index → different address
@@ -477,7 +476,9 @@ mod tests {
     #[test]
     fn quantus_sign_returns_4627_byte_dilithium_signature() {
         let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
-        let sig = keyring.sign(ChainId::Quantus, b"test payload", 0, 0).unwrap();
+        let sig = keyring
+            .sign(ChainId::Quantus, b"test payload", 0, 0)
+            .unwrap();
         assert_eq!(sig.len(), 4627);
     }
 

@@ -161,10 +161,9 @@ impl IntentEngine {
     /// Submit a bid for an intent. The solver must be on the whitelist.
     /// If the solver has a registered pubkey, the bid signature is verified (FIND-012).
     pub fn submit_bid(&mut self, bid: SolverBid) -> MultichainResult<bool> {
-        let solver_info = self
-            .registry
-            .get(&bid.solver)
-            .ok_or_else(|| MultichainError::Validation(format!("solver {} is not registered", bid.solver)))?;
+        let solver_info = self.registry.get(&bid.solver).ok_or_else(|| {
+            MultichainError::Validation(format!("solver {} is not registered", bid.solver))
+        })?;
 
         if let Some(pubkey) = &solver_info.pubkey {
             if !bid.verify_signature(pubkey) {

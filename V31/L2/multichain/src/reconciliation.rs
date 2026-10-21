@@ -123,7 +123,10 @@ fn classify_drift(
     let thr = threshold.0 as i128;
     let diff = on_chain.0 as i128 - expected.0 as i128;
     if diff < -thr {
-        return (true, Some("deficit: on-chain below ledger+pool".to_string()));
+        return (
+            true,
+            Some("deficit: on-chain below ledger+pool".to_string()),
+        );
     }
     let upper = expected.0.max(deposits_credited.0) as i128;
     if on_chain.0 as i128 > upper + thr {

@@ -108,8 +108,8 @@ async fn service_reports_health_and_balances() {
     let _ = std::fs::remove_file(&db_path);
     let mut config = MultichainConfig::default();
     config.database.path = db_path.to_string_lossy().into();
-    let service = MultichainService::new_with_adapters(config, registry)
-        .expect("in-memory service builds");
+    let service =
+        MultichainService::new_with_adapters(config, registry).expect("in-memory service builds");
 
     let health = service.health().await;
     assert!(health.get("base").copied().unwrap_or(false));
@@ -138,7 +138,7 @@ async fn intent_lifecycle_creates_bids_settles_and_executes() {
     // Deploy a ZION/USDC pool.
     let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
     let usdc = Asset::native(ChainId::ZionL1, "USDC", 6, "USD Coin");
-     service
+    service
         .deploy_pool(Pool {
             id: 1,
             asset_a: zion.clone(),
@@ -268,7 +268,7 @@ async fn intent_engine_loads_from_db_on_restart() {
 
     // Deploy the pool and execute the loaded intent/bid end-to-end.
     service2
-         .deploy_pool(Pool {
+        .deploy_pool(Pool {
             id: 1,
             asset_a: zion,
             asset_b: usdc,
@@ -464,7 +464,7 @@ async fn intent_broadcast_collects_and_submits_solver_bids() {
 
     // Deploy the pool and execute the auto-submitted bid.
     service
-         .deploy_pool(Pool {
+        .deploy_pool(Pool {
             id: 1,
             asset_a: zion,
             asset_b: usdc,
@@ -555,7 +555,7 @@ async fn e2e_deposit_swap_withdraw() {
         .expect("ledger balance");
     assert_eq!(balance.0, 1_000_000);
 
-     // 4. Deploy a ZION/USDC pool on ZionL1.
+    // 4. Deploy a ZION/USDC pool on ZionL1.
     let usdc = Asset::native(ChainId::ZionL1, "USDC", 6, "USD Coin");
     service
         .deploy_pool(Pool {

@@ -183,11 +183,7 @@ pub trait ChainAdapter: Send + Sync {
 
     /// Query the balance of a specific token (ERC-20 / analogous) for `address`.
     /// For native assets (no contract), this falls back to `balance()`.
-    async fn token_balance(
-        &self,
-        asset: &Asset,
-        address: &Address,
-    ) -> MultichainResult<Amount> {
+    async fn token_balance(&self, asset: &Asset, address: &Address) -> MultichainResult<Amount> {
         if asset.id.contract.is_none() {
             return self.balance(address).await;
         }
