@@ -24,6 +24,7 @@ type Rig = {
   gpu: { util?: string; power?: string; temp?: string; mem?: string };
   miners: Miner[];
   error: string | null;
+  net?: Record<string, boolean>;
 };
 type Snap = { ts: string | null; total_dph: number; rigs: Rig[] };
 type AiGpu = {
@@ -522,6 +523,12 @@ export default function Dashboard() {
                 {r.gpu?.temp ?? "?"} · vram {r.gpu?.mem ?? "?"}
               </div>
               {r.error && <div role="alert" className="mt-2 break-words rounded-lg bg-[#ff7b72]/[0.07] p-2 text-xs text-[#ff9b93]">{r.error}</div>}
+              {r.net && Object.values(r.net).some((v) => !v) && (
+                <div role="alert" className="mt-2 flex items-start gap-2 break-words rounded-lg border border-[#ff7b72]/30 bg-[#ff7b72]/[0.08] p-2 text-xs text-[#ff9b93]">
+                  <span className="shrink-0">⚠</span>
+                  <span>Pools unreachable from this rig — host egress firewall blocks stratum ports: {Object.entries(r.net).filter(([, ok]) => !ok).map(([hp]) => hp).join(", ")}</span>
+                </div>
+              )}
 
               {/* engine cards — unified status + controls */}
               {(() => {
@@ -598,23 +605,14 @@ export default function Dashboard() {
                   <div className="mt-4 border-t border-white/5 pt-3">
                     <button
                       disabled={!!busy}
-                      onClick={() => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → installed (standby)\n• zion-miner → PRL/QTU 50/50 via pool\n• xmrig → CPU rx/0`) && ops(`launch?id=${r.id}&m=full`, "POST")}
+                      onClick={() => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → PRL+QTU dual → upstream pools (max hashrate)\n• xmrig → CPU rx/0\n• zion-miner → binary installed (standby)`) && ops(`launch?id=${r.id}&m=full`, "POST")}
                       className="w-full rounded-xl border border-[#fcd116]/40 bg-gradient-to-r from-[#fcd116]/[0.14] to-transparent px-4 py-2.5 text-left transition hover:border-[#fcd116]/70 hover:from-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
                     >
                       <div className="text-sm font-bold text-[#fcd116]">{isB(`launch?id=${r.id}&m=full`) ? "Deploying…" : "▸ Full deploy"}</div>
-                      <div className="mt-0.5 text-[10px] text-white/40">SRBMiner standby · zion PRL/QTU 50/50 → pool · XMRig CPU</div>
+                      <div className="mt-0.5 text-[10px] text-white/40">SRBMiner PRL+QTU dual → upstream pools · XMRig CPU · zion standby</div>
                     </button>
                     <div className="mt-2.5 space-y-2">
-                      <Engine title="zion-miner · project pool" accent="#fcd116" ms={zionM}>
-                        <Pill k={`launch?id=${r.id}&m=zion`} onClick={launch("zion", `launch zion 50/50 on ${r.id}?`)}>50/50</Pill>
-                        <Pill k={`launch?id=${r.id}&m=zionmax`} onClick={launch("zionmax", `launch zion 100/40 on ${r.id}?`)}>100/40</Pill>
-                        <Pill k={`launch?id=${r.id}&m=prl`} onClick={launch("prl", `launch PRL-only on ${r.id}?`)}>PRL</Pill>
-                        <Pill k={`launch?id=${r.id}&m=qtu`} onClick={launch("qtu", `launch QTU-only on ${r.id}?`)}>QTU</Pill>
-                        <span className="flex-1" />
-                        <Pill k={`stop?id=${r.id}&m=zion`} tone="danger" onClick={stopFn("zion")}>■</Pill>
-                        <Lg src="zion" />
-                      </Engine>
-                      <Engine title="SRBMiner · upstream diag" accent="#34d399" ms={srbM}>
+                      <Engine title="SRBMiner · PRL+QTU upstream" accent="#34d399" ms={srbM}>
                         <Pill k={`launch?id=${r.id}&m=srb`} onClick={launch("srb", `launch SRB dual on ${r.id}?`)}>dual</Pill>
                         <Pill k={`launch?id=${r.id}&m=srb-prl`} onClick={launch("srb-prl", `launch SRB PRL on ${r.id}?`)}>prl</Pill>
                         <Pill k={`launch?id=${r.id}&m=srb-qtu`} onClick={launch("srb-qtu", `launch SRB QTU on ${r.id}?`)}>qtu</Pill>
@@ -627,6 +625,15 @@ export default function Dashboard() {
                         <span className="flex-1" />
                         <Pill k={`stop?id=${r.id}&m=xmr`} tone="danger" onClick={stopFn("xmr")}>■</Pill>
                         <Lg src="xmr" />
+                      </Engine>
+                      <Engine title="zion-miner · pool (dev)" accent="#fcd116" ms={zionM}>
+                        <Pill k={`launch?id=${r.id}&m=zion`} onClick={launch("zion", `launch zion 50/50 on ${r.id}?\n\nNOTE: kills SRBMiner sessions for exclusive GPU`)}>50/50</Pill>
+                        <Pill k={`launch?id=${r.id}&m=zionmax`} onClick={launch("zionmax", `launch zion 100/40 on ${r.id}?`)}>100/40</Pill>
+                        <Pill k={`launch?id=${r.id}&m=prl`} onClick={launch("prl", `launch PRL-only on ${r.id}?`)}>PRL</Pill>
+                        <Pill k={`launch?id=${r.id}&m=qtu`} onClick={launch("qtu", `launch QTU-only on ${r.id}?`)}>QTU</Pill>
+                        <span className="flex-1" />
+                        <Pill k={`stop?id=${r.id}&m=zion`} tone="danger" onClick={stopFn("zion")}>■</Pill>
+                        <Lg src="zion" />
                       </Engine>
                       {otherM.length > 0 && (
                         <div className="truncate rounded-lg border border-white/[0.06] px-2.5 py-1.5 text-[10px] text-white/35">

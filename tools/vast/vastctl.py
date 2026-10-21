@@ -76,6 +76,7 @@ echo "==PROC=="; ps -eo pid,etime,args 2>/dev/null | grep -E "SRBMiner|xmrig|zio
 echo "==TMUX=="; tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null | while read p; do echo "--pane:$p--"; tmux capture-pane -t "$p" -p 2>/dev/null | tail -60; done
 echo "==LOGS=="; for f in /root/zion.log /root/srb-*.log /root/xmrig.log /root/miner*.log; do [ -f "$f" ] && echo "--$f--" && tail -45 "$f"; done
 echo "==XMRIG_API=="; curl -s -m 3 http://127.0.0.1:16000/2/summary 2>/dev/null; echo
+echo "==NET=="; for hp in eu.lproute.com:5660 pearl-eu2.luckypool.io:3360 62.171.141.136:8444 xmr-eu2.nanopool.org:10300; do h=${hp%:*}; p=${hp#*:}; timeout 3 bash -c "</dev/tcp/$h/$p" 2>/dev/null && echo "net:$hp:ok" || echo "net:$hp:fail"; done
 echo "==END=="
 '''
 
@@ -109,7 +110,15 @@ def ssh(inst, script, timeout=30):
     host, port = inst.get("ssh_host"), inst.get("ssh_port")
     if not host or not port:
         return 1, "", "no ssh endpoint"
-    return run(SSH_BASE + ["-p", str(port), f"root@{host}", script], timeout=timeout)
+    # Script goes on stdin (`bash -s`) — long multi-line scripts passed as a
+    # remote command argument were being dropped by sshd (rc 255, no output).
+    try:
+        p = subprocess.run(
+            SSH_BASE + ["-p", str(port), f"root@{host}", "bash", "-s"],
+            input=script, capture_output=True, text=True, timeout=timeout)
+        return p.returncode, p.stdout, p.stderr
+    except subprocess.TimeoutExpired:
+        return 124, "", "timeout"
 
 
 def scp(inst, local, remote, timeout=60):
@@ -126,6 +135,7 @@ def parse_probe(inst, text):
         "dph": inst.get("dph_total", 0), "geo": inst.get("geolocation", "?"),
         "ssh": f"{inst.get('ssh_host')}:{inst.get('ssh_port')}",
         "gpu": {}, "miners": [], "xmrig_api": None, "error": None,
+        "net": {},
     }
     sec = None
     log_file = None
@@ -141,6 +151,11 @@ def parse_probe(inst, text):
             if sec == "XMRIG_API":
                 _parse_xmrig_api(rig, api_buf)
             sec = clean.strip("=")
+            continue
+        if sec == "NET" and clean.startswith("net:"):
+            parts = clean[4:].split(":")
+            if len(parts) >= 2:
+                rig["net"][":".join(parts[:-1])] = parts[-1] == "ok"
             continue
         if sec == "GPU" and "," in clean and not rig["gpu"]:
             parts = [p.strip() for p in clean.split(",")]
@@ -699,7 +714,7 @@ mkdir -p /root/zion-native && cd /root/zion-native &&
 tmux kill-session -t zion 2>/dev/null
 tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srb-prl 2>/dev/null
 pkill -x SRBMiner-MULTI 2>/dev/null; sleep 1
-tmux new-session -d -s zion 'env \
+tmux new-session -d -s zion 'while true; do env \
 ZION_MINER_ID={w} ZION_GPU_BACKEND=cuda ZION_PROFILE=pool ZION_VERBOSE=1 \
 ZION_INTERACTIVE=0 ZION_NO_STICKY=1 ZION_LOG_INTERVAL=15 \
 ZION_V3_TRINITY=1 ZION_AUTOTUNE=1 ZION_AUTOTUNE_SECS=3 ZION_IGNORE_GPU_SELF_TEST_FAIL=1 \
@@ -711,7 +726,7 @@ ZION_EXT_GPU_TIME_DUTY_PCT={prl_pct} ZION_EXT_GPU2_TIME_DUTY_PCT={qtu_pct} \
 ZION_EXT_GPU_GAP_MS=0 ZION_EXT_GPU_MAX_GAP_MS=5000 ZION_MINER_THREADS=4 \
 ./zion-miner --pool {ZION_POOL} --wallet {ZION_WALLET} \
 --worker {w} --gpu cuda --threads 4 --log-interval 15 --v3-trinity \
-> /root/zion.log 2>&1; echo ZION_EXIT=$? >> /root/zion.log'
+>> /root/zion.log 2>&1; echo "ZION_EXIT=$? respawn in 5s" >> /root/zion.log; sleep 5; done'
 sleep 4; tmux ls; pgrep -f "zion-miner --pool" | grep -v 'bash -c' | head -3
 '''
     return script
@@ -754,8 +769,9 @@ def cmd_launch(args):
     if "all" in miners:
         miners = ["srb", "zion", "xmr"]
     if "full" in miners:
-        # one-button: install srb (idle) + zion dual 50/50 running + xmr on cpu
-        miners = ["_srb_install", "zion", "xmr"]
+        # one-button: SRBMiner PRL+QTU dual (production hashrate) + xmr cpu
+        # + zion binary installed standby (native stream still in dev)
+        miners = ["srb", "xmr", "_zion_install"]
     ZION_DUTY = {"zion": (50, 50), "zion50": (50, 50), "zionmax": (100, 40),
                  "prl": (100, 0), "qtu": (0, 100)}
     for mn in miners:
@@ -764,7 +780,7 @@ def cmd_launch(args):
             ns = argparse.Namespace(id=args.id, config=args.config)
             cmd_deploy_xmrig(ns)
             continue
-        if mn in ZION_DUTY:
+        if mn in ZION_DUTY or mn == "_zion_install":
             # rig downloads the glibc-compatible build from Edge (local build
             # is glibc-2.43 — would not run on ubuntu 22.04 rigs)
             rc, out, _ = ssh(inst, "test -x /root/zion-native/zion-miner && echo OK")
@@ -779,6 +795,9 @@ def cmd_launch(args):
                 if "DL_OK" not in out:
                     print(f"  download failed: {(out + err).strip()[:200]}")
                     continue
+            if mn == "_zion_install":
+                print("  zion-miner installed (standby — launch via zion modes)")
+                continue
             script = launch_zion(inst, args.id, *ZION_DUTY[mn])
         elif mn == "_srb_install":
             script = install_srb_script()
