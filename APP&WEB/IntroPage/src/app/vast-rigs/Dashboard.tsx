@@ -102,13 +102,18 @@ export default function Dashboard() {
 
   // ── ops calls → /vast-ops/api/* (same realm → browser sends basic auth) ──
   const [busy, setBusy] = useState("");
+  const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(null);
+  const show = (ok: boolean, text: string) => {
+    setToast({ ok, text: text.trim().slice(0, 900) || "(no output)" });
+    setTimeout(() => setToast(null), 9000);
+  };
   const ops = async (path: string, method = "GET") => {
     setBusy(path);
     try {
       const r = await fetch(`/vast-ops/api/${path}`, { method });
-      alert(await r.text());
+      show(r.ok, await r.text());
     } catch (e) {
-      alert(String(e));
+      show(false, String(e));
     } finally {
       setBusy("");
     }
@@ -205,9 +210,9 @@ export default function Dashboard() {
                         <Spark data={m.hist} color={coin.c} />
                       </div>
                       <div className="mt-1.5 text-base">{fmt(m.hashrate)}</div>
-                      <div className="mt-1 flex items-center justify-between text-[11px] text-white/35">
+                      <div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-[11px] text-white/35">
                         <span className="truncate">{m.pool || "—"}</span>
-                        {m.etime && <span>up {m.etime}</span>}
+                        {m.etime && <span className="shrink-0">up {m.etime}</span>}
                       </div>
                     </div>
                   );
@@ -220,19 +225,19 @@ export default function Dashboard() {
               </div>
 
               {/* ops controls */}
-              <div className="mt-3 flex flex-wrap gap-1.5">
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-white/5 pt-3">
                 {(["srb", "zion", "xmr", "all"] as const).map((m) => (
                   <button
                     key={m}
                     disabled={!!busy}
                     onClick={() => confirm(`launch ${m} on ${r.id}?`) && ops(`launch?id=${r.id}&m=${m}`, "POST")}
-                    className="rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-white/80 transition hover:border-[#fcd116]/50 hover:text-[#fcd116] disabled:opacity-40"
+                    className="rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs text-white/80 transition hover:border-[#fcd116]/50 hover:text-[#fcd116] disabled:opacity-40"
                   >
                     ▸ {m}
                   </button>
                 ))}
                 <form
-                  className="ml-auto flex gap-1"
+                  className="flex min-w-0 basis-full gap-1 sm:basis-auto sm:flex-1 sm:justify-end"
                   onSubmit={(e) => {
                     e.preventDefault();
                     const inp = (e.target as HTMLFormElement).elements.namedItem("c") as HTMLInputElement;
@@ -243,9 +248,9 @@ export default function Dashboard() {
                   <input
                     name="c"
                     placeholder="ssh cmd…"
-                    className="w-32 rounded-md border border-white/15 bg-black/40 px-2 py-1 text-xs text-white placeholder-white/30 focus:border-[#fcd116]/50 focus:outline-none"
+                    className="min-w-0 flex-1 rounded-md border border-white/15 bg-black/40 px-2 py-1.5 text-xs text-white placeholder-white/30 focus:border-[#fcd116]/50 focus:outline-none sm:w-36 sm:flex-none"
                   />
-                  <button className="rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs text-white/70 hover:border-[#34d399]/50 hover:text-[#34d399]">
+                  <button className="shrink-0 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs text-white/70 hover:border-[#34d399]/50 hover:text-[#34d399]">
                     run
                   </button>
                 </form>
@@ -333,6 +338,19 @@ export default function Dashboard() {
           </div>
         </section>
       </article>
+
+      {/* toast */}
+      {toast && (
+        <div
+          className={`fixed bottom-4 right-4 z-50 max-w-md whitespace-pre-wrap rounded-xl border p-4 text-xs backdrop-blur-md shadow-2xl ${
+            toast.ok
+              ? "border-[#34d399]/40 bg-black/80 text-[#d1fae5]"
+              : "border-[#ff7b72]/50 bg-black/85 text-[#fecaca]"
+          }`}
+        >
+          {toast.text}
+        </div>
+      )}
     </PageLayout>
   );
 }

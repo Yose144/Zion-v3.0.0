@@ -349,11 +349,18 @@ def cmd_daemon(args):
             _write_json_atomic(args.json_out, snap)
             if args.push:
                 host, _, rpath = args.push.partition(":")
+                tmp = rpath + ".tmp"
                 rc, _, err = run(["scp", "-o", "StrictHostKeyChecking=no",
                                   "-o", "ConnectTimeout=10", args.json_out,
-                                  f"{host}:{rpath}"], timeout=30)
+                                  f"{host}:{tmp}"], timeout=30)
                 if rc != 0:
                     print(f"[daemon] push failed: {err.strip()}")
+                else:
+                    rc2, _, err2 = run(SSH_BASE + [host,
+                                       f"mv {shlex.quote(tmp)} {shlex.quote(rpath)}"],
+                                       timeout=15)
+                    if rc2 != 0:
+                        print(f"[daemon] push rename failed: {err2.strip()}")
             if args.autodeploy_xmrig:
                 for r in snap["rigs"]:
                     if r["error"] or r["status"] != "running":
@@ -375,8 +382,17 @@ def cmd_daemon(args):
         time.sleep(args.interval)
 
 
-def cmd_deploy_xmrig(args):
+def _cfg_path(args):
     cfg = Path(args.config)
+    if not cfg.exists():
+        alt = REPO_ROOT / args.config
+        if alt.exists():
+            cfg = alt
+    return cfg
+
+
+def cmd_deploy_xmrig(args):
+    cfg = _cfg_path(args)
     if not cfg.exists():
         raise SystemExit(f"config not found: {cfg}")
     inst = [i for i in instances() if str(i["id"]) == args.id]
