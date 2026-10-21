@@ -700,12 +700,14 @@ export default function Dashboard() {
                   <button
                     disabled={!!busy}
                     onClick={onClick}
-                    className={`min-h-7 rounded-md border px-2 py-0.5 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40 ${
+                    className={`inline-flex min-h-7 items-center gap-1 rounded-lg border px-2.5 py-0.5 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40 ${
                       tone === "danger"
-                        ? "border-[#ff7b72]/25 text-[#ff9b93] hover:bg-[#ff7b72]/10"
-                        : tone === "ghost"
-                          ? "border-white/10 text-white/40 hover:border-white/30 hover:text-white/75"
-                          : "border-white/15 bg-white/[0.05] text-white/75 hover:border-white/35 hover:text-white"
+                        ? "border-[#ff7b72]/30 bg-[#ff7b72]/[0.06] text-[#ff9b93] hover:border-[#ff7b72]/55 hover:bg-[#ff7b72]/15"
+                        : tone === "info"
+                          ? "border-[#60a5fa]/25 bg-[#60a5fa]/[0.05] text-[#93c5fd] hover:border-[#60a5fa]/50 hover:bg-[#60a5fa]/15"
+                          : tone === "ghost"
+                            ? "border-white/10 bg-black/20 text-white/45 hover:border-white/30 hover:text-white/80"
+                            : "border-[#34d399]/30 bg-[#34d399]/[0.07] text-[#6ee7b7] hover:border-[#34d399]/60 hover:bg-[#34d399]/15"
                     }`}
                   >
                     {isB(k) ? "…" : children}
@@ -758,7 +760,7 @@ export default function Dashboard() {
                   );
                 };
                 const Lg = ({ src }: { src: string }) => (
-                  <Pill k="" tone={logsOpen[r.id] === src ? "" : "ghost"} onClick={() => toggleLogs(r.id, src)}>
+                  <Pill k="" tone="info" onClick={() => toggleLogs(r.id, src)}>
                     {logsOpen[r.id] === src ? "▾ log" : "▤ log"}
                   </Pill>
                 );
@@ -782,45 +784,45 @@ export default function Dashboard() {
                     </button>
                     <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-3">
                       <Engine title="SRBMiner · PRL+QTU upstream" accent="#34d399" ms={srbM}>
-                        <Pill k={`launch?id=${r.id}&m=srb`} onClick={launch("srb", `launch SRB dual on ${r.id}?`)}>dual</Pill>
-                        <Pill k={`launch?id=${r.id}&m=srb-prl`} onClick={launch("srb-prl", `launch SRB PRL on ${r.id}?`)}>prl</Pill>
-                        <Pill k={`launch?id=${r.id}&m=srb-qtu`} onClick={launch("srb-qtu", `launch SRB QTU on ${r.id}?`)}>qtu</Pill>
+                        <Pill k={`launch?id=${r.id}&m=srb`} onClick={launch("srb", `launch SRB dual on ${r.id}?`)}>▸ dual</Pill>
+                        <Pill k={`launch?id=${r.id}&m=srb-prl`} onClick={launch("srb-prl", `launch SRB PRL on ${r.id}?`)}>▸ prl</Pill>
+                        <Pill k={`launch?id=${r.id}&m=srb-qtu`} onClick={launch("srb-qtu", `launch SRB QTU on ${r.id}?`)}>▸ qtu</Pill>
                         <span className="flex-1" />
-                        <Pill k={`stop?id=${r.id}&m=srb`} tone="danger" onClick={stopFn("srb")}>■</Pill>
+                        <Pill k={`stop?id=${r.id}&m=srb`} tone="danger" onClick={stopFn("srb")}>■ stop</Pill>
                         <Lg src="srb" />
                       </Engine>
                       <Engine title="XMRig · cpu rx/0" accent="#fb923c" ms={xmrM}>
                         <Pill k={`launch?id=${r.id}&m=xmr`} onClick={launch("xmr")}>▸ start</Pill>
                         <span className="flex-1" />
-                        <Pill k={`stop?id=${r.id}&m=xmr`} tone="danger" onClick={stopFn("xmr")}>■</Pill>
+                        <Pill k={`stop?id=${r.id}&m=xmr`} tone="danger" onClick={stopFn("xmr")}>■ stop</Pill>
                         <Lg src="xmr" />
                       </Engine>
                       <Engine title="zion-miner · pool (dev)" accent="#fcd116" ms={zionM}>
-                        <Pill k={`launch?id=${r.id}&m=zion`} onClick={launch("zion", `launch zion 50/50 on ${r.id}?\n\nNOTE: kills SRBMiner sessions for exclusive GPU`)}>50/50</Pill>
-                        <Pill k={`launch?id=${r.id}&m=zionmax`} onClick={launch("zionmax", `launch zion 100/40 on ${r.id}?`)}>100/40</Pill>
-                        <Pill k={`launch?id=${r.id}&m=prl`} onClick={launch("prl", `launch PRL-only on ${r.id}?`)}>PRL</Pill>
-                        <Pill k={`launch?id=${r.id}&m=qtu`} onClick={launch("qtu", `launch QTU-only on ${r.id}?`)}>QTU</Pill>
+                        <Pill k={`launch?id=${r.id}&m=zion`} onClick={launch("zion", `launch zion 50/50 on ${r.id}?\n\nNOTE: kills SRBMiner sessions for exclusive GPU`)}>▸ 50/50</Pill>
+                        <Pill k={`launch?id=${r.id}&m=zionmax`} onClick={launch("zionmax", `launch zion 100/40 on ${r.id}?`)}>▸ 100/40</Pill>
+                        <Pill k={`launch?id=${r.id}&m=prl`} onClick={launch("prl", `launch PRL-only on ${r.id}?`)}>▸ PRL</Pill>
+                        <Pill k={`launch?id=${r.id}&m=qtu`} onClick={launch("qtu", `launch QTU-only on ${r.id}?`)}>▸ QTU</Pill>
                         <input
                           id={`dprl-${r.id}`}
                           inputMode="numeric"
                           placeholder="PRL%"
                           aria-label="PRL duty percent"
-                          className="min-h-8 w-14 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-center text-[11px] text-white placeholder-white/25 focus:border-white/30 focus:outline-none"
+                          className="min-h-7 w-12 rounded-md border border-white/10 bg-black/40 px-1.5 py-0.5 text-center text-[11px] text-white placeholder-white/25 focus:border-[#fcd116]/40 focus:outline-none"
                         />
                         <input
                           id={`dqtu-${r.id}`}
                           inputMode="numeric"
                           placeholder="QTU%"
                           aria-label="QTU duty percent"
-                          className="min-h-8 w-14 rounded-md border border-white/10 bg-black/40 px-2 py-1 text-center text-[11px] text-white placeholder-white/25 focus:border-white/30 focus:outline-none"
+                          className="min-h-7 w-12 rounded-md border border-white/10 bg-black/40 px-1.5 py-0.5 text-center text-[11px] text-white placeholder-white/25 focus:border-[#fcd116]/40 focus:outline-none"
                         />
                         <Pill k="" tone="ghost" onClick={() => {
                           const p = (document.getElementById(`dprl-${r.id}`) as HTMLInputElement)?.value || "50";
                           const q = (document.getElementById(`dqtu-${r.id}`) as HTMLInputElement)?.value || "50";
                           if (confirm(`launch zion ${p}/${q} on ${r.id}?`)) ops(`launch?id=${r.id}&m=zion&prl=${encodeURIComponent(p)}&qtu=${encodeURIComponent(q)}`, "POST");
-                        }}>custom</Pill>
+                        }}>▸ custom</Pill>
                         <span className="flex-1" />
-                        <Pill k={`stop?id=${r.id}&m=zion`} tone="danger" onClick={stopFn("zion")}>■</Pill>
+                        <Pill k={`stop?id=${r.id}&m=zion`} tone="danger" onClick={stopFn("zion")}>■ stop</Pill>
                         <Lg src="zion" />
                       </Engine>
                       {otherM.length > 0 && (
@@ -849,16 +851,16 @@ export default function Dashboard() {
                           name="c"
                           aria-label={`SSH command for rig ${r.id}`}
                           placeholder="ssh cmd…"
-                          className="min-h-8 min-w-0 flex-1 rounded-md border border-white/10 bg-black/40 px-2.5 py-1 text-[11px] text-white placeholder-white/25 focus:border-white/30 focus:outline-none"
+                          className="min-h-7 min-w-0 flex-1 rounded-md border border-white/10 bg-black/40 px-2.5 py-0.5 font-mono text-[11px] text-white placeholder-white/25 focus:border-white/30 focus:outline-none"
                         />
                         <button
                           disabled={!!busy}
-                          className="min-h-8 shrink-0 rounded-md border border-white/10 px-3 py-1 text-[11px] font-medium text-white/50 transition hover:border-white/30 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40"
+                          className="min-h-7 shrink-0 rounded-md border border-[#60a5fa]/25 bg-[#60a5fa]/[0.05] px-3 py-0.5 text-[11px] font-semibold text-[#93c5fd] transition hover:border-[#60a5fa]/50 hover:bg-[#60a5fa]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40"
                         >
                           {busy.startsWith("exec?") && busy.includes(`id=${r.id}&`) ? "…" : "run"}
                         </button>
                       </form>
-                      <Pill k={`stop?id=${r.id}&m=all`} tone="danger" onClick={stopFn("all")}>■ all</Pill>
+                      <Pill k={`stop?id=${r.id}&m=all`} tone="danger" onClick={stopFn("all")}>■ stop all</Pill>
                       <Lg src="all" />
                     </div>
                   </div>
