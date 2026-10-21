@@ -523,135 +523,152 @@ export default function Dashboard() {
               </div>
               {r.error && <div role="alert" className="mt-2 break-words rounded-lg bg-[#ff7b72]/[0.07] p-2 text-xs text-[#ff9b93]">{r.error}</div>}
 
-              {/* miners */}
-              <div className="mt-4 space-y-3">
-                {r.miners.map((m, i) => {
-                  const coin = coinOf(m);
-                  return (
-                    <div
-                      key={i}
-                      className="min-w-0 rounded-xl border p-3"
-                      style={{ borderColor: `${coin.c}30`, background: `${coin.c}08` }}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span
-                          className="rounded-full border px-2.5 py-0.5 text-xs font-bold"
-                          style={{ borderColor: `${coin.c}55`, color: coin.c }}
-                        >
-                          {coin.name}
-                        </span>
-                        <Spark data={m.hist} color={coin.c} />
-                      </div>
-                      <div className="mt-1.5 text-base">{fmt(m.hashrate)}</div>
-                      <div className="mt-1 flex min-w-0 flex-col justify-between gap-1 text-[11px] text-white/35 min-[420px]:flex-row min-[420px]:items-center">
-                        <span className="truncate" title={m.pool || undefined}>{m.pool || "—"}</span>
-                        {m.etime && <span className="shrink-0">up {m.etime}</span>}
-                      </div>
-                    </div>
-                  );
-                })}
-                {!r.miners.length && (
-                  <div className="rounded-lg border border-dashed border-white/10 p-4 text-center text-sm text-white/30">
-                    idle — no miners
-                  </div>
-                )}
-              </div>
-
-              {/* ops controls — organized per miner engine */}
+              {/* engine cards — unified status + controls */}
               {(() => {
-                const hasZion = r.miners.some((m) => (m.cmd || "").includes("zion-miner"));
-                const srbAlgos = new Set(r.miners.filter((m) => (m.cmd || "").includes("SRBMiner")).map((m) => m.algo).filter((a): a is string => !!a));
-                const hasXmr = r.miners.some((m) => (m.cmd || "").toLowerCase().includes("xmrig"));
-                const b = (label: string, key: string, fn: () => void, cls = "") => (
+                const zionM = r.miners.filter((m) => (m.cmd || "").includes("zion-miner"));
+                const srbM = r.miners.filter((m) => (m.cmd || "").includes("SRBMiner"));
+                const xmrM = r.miners.filter((m) => (m.cmd || "").toLowerCase().includes("xmrig"));
+                const otherM = r.miners.filter((m) => !zionM.includes(m) && !srbM.includes(m) && !xmrM.includes(m));
+                const isB = (k: string) => busy === k;
+                const launch = (m: string, ask?: string) => () => {
+                  if (!ask || confirm(ask)) ops(`launch?id=${r.id}&m=${m}`, "POST");
+                };
+                const stopFn = (m: string) => () => {
+                  if (confirm(`stop ${m} on ${r.id}?`)) ops(`stop?id=${r.id}&m=${m}`, "POST");
+                };
+                const Pill = ({ k, onClick, tone = "", children }: { k: string; onClick: () => void; tone?: string; children: React.ReactNode }) => (
                   <button
-                    key={key}
                     disabled={!!busy}
-                    onClick={fn}
-                    className={`min-h-9 rounded-md border px-2.5 py-1.5 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40 ${cls}`}
+                    onClick={onClick}
+                    className={`min-h-8 rounded-md border px-2.5 py-1 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40 ${
+                      tone === "danger"
+                        ? "border-[#ff7b72]/25 text-[#ff9b93] hover:bg-[#ff7b72]/10"
+                        : tone === "ghost"
+                          ? "border-white/10 text-white/40 hover:border-white/30 hover:text-white/75"
+                          : "border-white/15 bg-white/[0.05] text-white/75 hover:border-white/35 hover:text-white"
+                    }`}
                   >
-                    {busy === key ? "…" : label}
+                    {isB(k) ? "…" : children}
                   </button>
                 );
-                const launch = (m: string) =>
-                  b(m, `launch?id=${r.id}&m=${m}`,
-                    () => confirm(`launch ${m} on ${r.id}?`) && ops(`launch?id=${r.id}&m=${m}`, "POST"),
-                    "border-white/15 bg-white/5 text-white/75 hover:border-[#fcd116]/50 hover:text-[#fcd116]");
-                const stop = (m: string) =>
-                  b(`■ ${m}`, `stop?id=${r.id}&m=${m}`,
-                    () => confirm(`stop ${m} on ${r.id}?`) && ops(`stop?id=${r.id}&m=${m}`, "POST"),
-                    "border-[#ff7b72]/25 bg-[#ff7b72]/[0.05] text-[#ff9b93] hover:bg-[#ff7b72]/15");
-                const logBtn = (src: string, label = "logs") =>
-                  b(logsOpen[r.id] === src ? `▾ ${label}` : `▸ ${label}`, "",
-                    () => toggleLogs(r.id, src),
-                    logsOpen[r.id] === src
-                      ? "border-white/40 bg-white/10 text-white"
-                      : "border-white/15 bg-white/[0.03] text-white/50 hover:border-white/35 hover:text-white/80");
-                const Sec = ({ title, on, children }: { title: string; on: boolean; children: React.ReactNode }) => (
-                  <div className="rounded-xl border border-white/[0.07] bg-black/20 p-2.5">
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className={`h-1.5 w-1.5 rounded-full ${on ? "bg-[#34d399] shadow-[0_0_6px_#34d399]" : "bg-white/20"}`} />
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/45">{title}</span>
+                const Engine = ({ title, accent, ms, children }: { title: string; accent: string; ms: Miner[]; children: React.ReactNode }) => {
+                  const on = ms.length > 0;
+                  return (
+                    <div className={`rounded-xl border p-3 transition ${on ? "border-white/[0.12] bg-white/[0.04]" : "border-white/[0.06] bg-black/25"}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span
+                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ background: on ? accent : "rgba(255,255,255,0.2)", boxShadow: on ? `0 0 6px ${accent}` : "none" }}
+                          />
+                          <span className="truncate text-[11px] font-bold uppercase tracking-wider" style={{ color: on ? accent : "rgba(255,255,255,0.45)" }}>
+                            {title}
+                          </span>
+                        </div>
+                        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${on ? "border-[#34d399]/30 text-[#34d399]" : "border-white/10 text-white/25"}`}>
+                          {on ? "running" : "stopped"}
+                        </span>
+                      </div>
+                      {!!ms.length && (
+                        <div className="mt-2 space-y-1.5">
+                          {ms.map((m, i) => {
+                            const coin = coinOf(m);
+                            return (
+                              <div key={i} className="flex min-w-0 items-center gap-2 rounded-lg bg-black/30 px-2 py-1.5">
+                                <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ background: `${coin.c}18`, color: coin.c }}>
+                                  {coin.name}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-white">{fmt(m.hashrate)}</span>
+                                <Spark data={m.hist} color={coin.c} />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">{children}</div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">{children}</div>
-                  </div>
+                  );
+                };
+                const Lg = ({ src }: { src: string }) => (
+                  <Pill k="" tone={logsOpen[r.id] === src ? "" : "ghost"} onClick={() => toggleLogs(r.id, src)}>
+                    {logsOpen[r.id] === src ? "▾ log" : "▤ log"}
+                  </Pill>
                 );
                 return (
-                  <div className="mt-4 space-y-2 border-t border-white/5 pt-3">
-                    <div className="flex gap-2">
-                      {b("▸ Full deploy — PRL/QTU 50/50 + CPU", `launch?id=${r.id}&m=full`,
-                        () => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → installed (standby)\n• zion-miner → PRL/QTU 50/50 via pool\n• xmrig → CPU rx/0`) && ops(`launch?id=${r.id}&m=full`, "POST"),
-                        "flex-1 border-[#fcd116]/50 bg-[#fcd116]/10 font-semibold text-[#fcd116] hover:bg-[#fcd116]/20")}
-                      {b("■ all", `stop?id=${r.id}&m=all`,
-                        () => confirm(`stop ALL miners on ${r.id}?`) && ops(`stop?id=${r.id}&m=all`, "POST"),
-                        "border-[#ff7b72]/30 bg-[#ff7b72]/[0.07] text-[#ff9b93] hover:bg-[#ff7b72]/15")}
-                      {logBtn("all")}
+                  <div className="mt-4 border-t border-white/5 pt-3">
+                    <button
+                      disabled={!!busy}
+                      onClick={() => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → installed (standby)\n• zion-miner → PRL/QTU 50/50 via pool\n• xmrig → CPU rx/0`) && ops(`launch?id=${r.id}&m=full`, "POST")}
+                      className="w-full rounded-xl border border-[#fcd116]/40 bg-gradient-to-r from-[#fcd116]/[0.14] to-transparent px-4 py-2.5 text-left transition hover:border-[#fcd116]/70 hover:from-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
+                    >
+                      <div className="text-sm font-bold text-[#fcd116]">{isB(`launch?id=${r.id}&m=full`) ? "Deploying…" : "▸ Full deploy"}</div>
+                      <div className="mt-0.5 text-[10px] text-white/40">SRBMiner standby · zion PRL/QTU 50/50 → pool · XMRig CPU</div>
+                    </button>
+                    <div className="mt-2.5 space-y-2">
+                      <Engine title="zion-miner · project pool" accent="#fcd116" ms={zionM}>
+                        <Pill k={`launch?id=${r.id}&m=zion`} onClick={launch("zion", `launch zion 50/50 on ${r.id}?`)}>50/50</Pill>
+                        <Pill k={`launch?id=${r.id}&m=zionmax`} onClick={launch("zionmax", `launch zion 100/40 on ${r.id}?`)}>100/40</Pill>
+                        <Pill k={`launch?id=${r.id}&m=prl`} onClick={launch("prl", `launch PRL-only on ${r.id}?`)}>PRL</Pill>
+                        <Pill k={`launch?id=${r.id}&m=qtu`} onClick={launch("qtu", `launch QTU-only on ${r.id}?`)}>QTU</Pill>
+                        <span className="flex-1" />
+                        <Pill k={`stop?id=${r.id}&m=zion`} tone="danger" onClick={stopFn("zion")}>■</Pill>
+                        <Lg src="zion" />
+                      </Engine>
+                      <Engine title="SRBMiner · upstream diag" accent="#34d399" ms={srbM}>
+                        <Pill k={`launch?id=${r.id}&m=srb`} onClick={launch("srb", `launch SRB dual on ${r.id}?`)}>dual</Pill>
+                        <Pill k={`launch?id=${r.id}&m=srb-prl`} onClick={launch("srb-prl", `launch SRB PRL on ${r.id}?`)}>prl</Pill>
+                        <Pill k={`launch?id=${r.id}&m=srb-qtu`} onClick={launch("srb-qtu", `launch SRB QTU on ${r.id}?`)}>qtu</Pill>
+                        <span className="flex-1" />
+                        <Pill k={`stop?id=${r.id}&m=srb`} tone="danger" onClick={stopFn("srb")}>■</Pill>
+                        <Lg src="srb" />
+                      </Engine>
+                      <Engine title="XMRig · cpu rx/0" accent="#fb923c" ms={xmrM}>
+                        <Pill k={`launch?id=${r.id}&m=xmr`} onClick={launch("xmr")}>▸ start</Pill>
+                        <span className="flex-1" />
+                        <Pill k={`stop?id=${r.id}&m=xmr`} tone="danger" onClick={stopFn("xmr")}>■</Pill>
+                        <Lg src="xmr" />
+                      </Engine>
+                      {otherM.length > 0 && (
+                        <div className="truncate rounded-lg border border-white/[0.06] px-2.5 py-1.5 text-[10px] text-white/35">
+                          other: {otherM.map((m) => m.algo || (m.cmd || "").split(" ")[0]).join(", ")}
+                        </div>
+                      )}
                     </div>
-                    <Sec title="Native zion-miner · pool" on={hasZion}>
-                      {launch("zion")}{b("dual 100/40", `launch?id=${r.id}&m=zionmax`,
-                        () => confirm("launch zion 100/40 on " + r.id + "?") && ops(`launch?id=${r.id}&m=zionmax`, "POST"),
-                        "border-white/10 bg-white/[0.03] text-white/50 hover:border-[#fcd116]/40 hover:text-[#fcd116]")}
-                      {launch("prl")}{launch("qtu")}{stop("zion")}{logBtn("zion")}
-                    </Sec>
-                    <Sec title={`SRBMiner · upstream${srbAlgos.size ? " (" + Array.from(srbAlgos).join("+") + ")" : ""}`} on={srbAlgos.size > 0}>
-                      {launch("srb")}{launch("srb-prl")}{launch("srb-qtu")}
-                      {srbAlgos.has("pearlhash") && stop("srb-prl")}
-                      {srbAlgos.has("quantus") && stop("srb-qtu")}
-                      {stop("srb")}{logBtn("srb")}
-                    </Sec>
-                    <Sec title="CPU · XMRig" on={hasXmr}>
-                      {b("▸ start xmr", `launch?id=${r.id}&m=xmr`,
-                        () => ops(`launch?id=${r.id}&m=xmr`, "POST"),
-                        "border-white/15 bg-white/5 text-white/75 hover:border-[#fb923c]/50 hover:text-[#fb923c]")}
-                      {stop("xmr")}{logBtn("xmr")}
-                    </Sec>
                     {logsOpen[r.id] && (
-                      <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/50 p-3 text-[10px] leading-relaxed text-white/60">
+                      <pre className="mt-2.5 max-h-64 overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/50 p-3 text-[10px] leading-relaxed text-white/60">
                         <span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-white/35">logs · {logsOpen[r.id]}</span>
                         {logs[r.id] ?? "loading…"}
                       </pre>
                     )}
+                    <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                      <form
+                        className="flex min-w-0 flex-1 gap-1.5"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const inp = (e.target as HTMLFormElement).elements.namedItem("c") as HTMLInputElement;
+                          if (inp.value.trim()) ops(`exec?id=${r.id}&cmd=${encodeURIComponent(inp.value)}`);
+                          inp.value = "";
+                        }}
+                      >
+                        <input
+                          name="c"
+                          aria-label={`SSH command for rig ${r.id}`}
+                          placeholder="ssh cmd…"
+                          className="min-h-8 min-w-0 flex-1 rounded-md border border-white/10 bg-black/40 px-2.5 py-1 text-[11px] text-white placeholder-white/25 focus:border-white/30 focus:outline-none"
+                        />
+                        <button
+                          disabled={!!busy}
+                          className="min-h-8 shrink-0 rounded-md border border-white/10 px-3 py-1 text-[11px] font-medium text-white/50 transition hover:border-white/30 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:cursor-wait disabled:opacity-40"
+                        >
+                          {busy.startsWith("exec?") && busy.includes(`id=${r.id}&`) ? "…" : "run"}
+                        </button>
+                      </form>
+                      <Pill k={`stop?id=${r.id}&m=all`} tone="danger" onClick={stopFn("all")}>■ all</Pill>
+                      <Lg src="all" />
+                    </div>
                   </div>
                 );
               })()}
-                <form
-                  className="mt-3 flex min-w-0 gap-2"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const inp = (e.target as HTMLFormElement).elements.namedItem("c") as HTMLInputElement;
-                    if (inp.value.trim()) ops(`exec?id=${r.id}&cmd=${encodeURIComponent(inp.value)}`);
-                    inp.value = "";
-                  }}
-                >
-                  <input
-                    name="c"
-                    aria-label={`SSH command for rig ${r.id}`}
-                    placeholder="Run SSH command…"
-                    className="min-h-11 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-white/30 focus:border-[#fcd116]/50 focus:outline-none focus:ring-1 focus:ring-[#fcd116]/40"
-                  />
-                  <button disabled={!!busy} className="min-h-11 shrink-0 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/70 transition hover:border-[#34d399]/50 hover:text-[#34d399] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34d399] disabled:cursor-wait disabled:opacity-40">
-                    {busy.startsWith("exec?") && busy.includes(`id=${r.id}&`) ? "Running…" : "Run"}
-                  </button>
-                </form>
             </div>
           ))}
           {!rigs.length && !err && (
