@@ -73,7 +73,9 @@ const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
 // Legacy alias
 const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
-const DEFAULT_RPC_URL = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
+// Public read-only JSON-RPC over HTTPS — reachable by all desktop agents.
+// The raw TCP RPC on :8443 is behind an operator IP allowlist.
+const DEFAULT_RPC_URL = 'https://rpc.zionterranova.com/jsonrpc';
 const DESKTOP_PURE_ZION_DEFAULT = true;
 const DECOMMISSIONED_POOL_HOSTS = new Set(['77.42.71.94', '100.76.16.108']);
 
@@ -6178,7 +6180,7 @@ function initBridgeView() {
       try {
         // Reuse wallet-send IPC with memo field (bridge lock TX)
         const result = await window.electronAPI?.walletSendTransaction?.({
-          rpcUrl: 'http://62.171.141.136:8443/jsonrpc',
+          rpcUrl: DEFAULT_RPC_URL,
           from,
           to: BRIDGE_VAULT,
           amount: amt,

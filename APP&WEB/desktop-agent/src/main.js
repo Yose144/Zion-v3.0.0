@@ -54,9 +54,10 @@ const PRIMARY_RPC_PORT = 8443;
 const EDGE_VPN_HOST = '62.171.141.136';
 // Legacy alias kept for internal fallback references
 const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
-// Default to public Edge read-only RPC for public miners.
-// Users with local Core node can override via Settings → RPC URL.
-const DEFAULT_RPC_URL = 'http://62.171.141.136:8443/jsonrpc';
+// Default to the public read-only RPC for public miners (HTTPS JSON-RPC
+// proxy — the raw TCP port :8443 is behind an operator IP allowlist).
+// Users with a local Core node can override via Settings → RPC URL.
+const DEFAULT_RPC_URL = 'https://rpc.zionterranova.com/jsonrpc';
 
 // ── Public HTTPS API (app.zionterranova.com) ────────────────────────────────
 // The TCP RPC port 8443 is behind an nginx IP allowlist (operator-only).
@@ -66,6 +67,9 @@ const PUBLIC_API_BASE = 'https://app.zionterranova.com';
 const PUBLIC_API_ADDRESS = `${PUBLIC_API_BASE}/api/blockchain/address`;
 const PUBLIC_API_BROADCAST = `${PUBLIC_API_BASE}/api/blockchain/broadcast`;
 const PUBLIC_API_POOL_STATS = `${PUBLIC_API_BASE}/api/pool/stats`;
+// Public read-only JSON-RPC over HTTPS (nginx → EDGE2 node). Unlike the raw
+// TCP RPC on :8443 this endpoint is reachable by all desktop agents.
+const PUBLIC_RPC_URL = DEFAULT_RPC_URL;
 
 // ── Logging: only miner metrics + errors go to console.log.
 // Everything else uses dbg() which outputs console.debug only when ZION_DEBUG=1.
@@ -1899,23 +1903,6 @@ const MAINNET_SERVERS = [
 // Legacy alias for compatibility
 const TESTNET_SERVERS = MAINNET_SERVERS;
 
-async function checkServerPort(host, port, timeout = 3000) {
-  const net = require('net');
-  return new Promise((resolve) => {
-    const start = Date.now();
-    const socket = new net.Socket();
-    socket.setTimeout(timeout);
-    socket.on('connect', () => {
-      const latency = Date.now() - start;
-      socket.destroy();
-      resolve({ online: true, latency, port });
-    });
-    socket.on('timeout', () => { socket.destroy(); resolve({ online: false, latency: -1, port }); });
-    socket.on('error', () => { socket.destroy(); resolve({ online: false, latency: -1, port }); });
-    socket.connect(port, host);
-  });
-}
-
 /**
  * Deep stratum health check — connects AND verifies the pool responds
  * to a mining.subscribe JSON-RPC message. Catches cases where TCP is open
@@ -1973,13 +1960,30 @@ async function checkStratumHealth(host, port = 8444, timeout = 5000) {
   });
 }
 
+/**
+ * Deep RPC health check via the public HTTPS JSON-RPC proxy. The raw TCP port
+ * :8443 accepts connections for everyone but is IP-allowlisted at the nginx
+ * stream layer, so a bare TCP probe would report "online" for public users
+ * while the RPC itself rejects them.
+ */
+async function checkRpcHealth() {
+  const start = Date.now();
+  try {
+    const info = await zionRpcCall(PUBLIC_RPC_URL, 'getChainInfo', {});
+    const online = !!(info && (info.chain_height || info.height));
+    return { online, latency: online ? Date.now() - start : -1, port: PRIMARY_RPC_PORT };
+  } catch {
+    return { online: false, latency: -1, port: PRIMARY_RPC_PORT };
+  }
+}
+
 async function getAllServersStatus() {
   const results = await Promise.all(
     TESTNET_SERVERS.map(async (server) => {
       const poolPort = server.poolPort || PRIMARY_POOL_PORT;
       const [poolStatus, rpcStatus] = await Promise.all([
         checkStratumHealth(server.host, poolPort),  // stratum hello probe
-        checkServerPort(server.host, PRIMARY_RPC_PORT)
+        checkRpcHealth()  // public HTTPS JSON-RPC probe
       ]);
       return {
         ...server,
@@ -2022,7 +2026,6 @@ async function autoSelectBestPool() {
 
     if (config.pool?.host !== best.host) {
       config.pool = { host: best.host, port: best.poolPort || PRIMARY_POOL_PORT };
-      config.rpcUrl = `http://${best.host}:${PRIMARY_RPC_PORT}/jsonrpc`;
       saveConfig(config);
       dbg(`[auto-select] Config updated to ${best.host}`);
     }
@@ -5290,14 +5293,14 @@ async function nodeRpc(method, params = {}) {
   return zionRpcCall(NODE_RPC_URL, method, params);
 }
 
-/** Try local node, then remote Edge, to get current height for heartbeats. */
+/** Try local node, then the public node, to get current height for heartbeats. */
 async function getNodeRewardHeight() {
   try {
     const info = await nodeRpc('getChainInfo');
     return info?.chain_height ?? 0;
   } catch (e) {
     try {
-      const info = await zionRpcCall(`${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}`, 'getChainInfo', {});
+      const info = await zionRpcCall(PUBLIC_RPC_URL, 'getChainInfo', {});
       return info?.chain_height ?? 0;
     } catch (e2) {
       return 0;
@@ -5395,10 +5398,9 @@ ipcMain.handle('node-get-status', async () => {
       chainInfo,
     };
   } catch (e) {
-    // Local node not running — fall back to remote Edge node status
+    // Local node not running — fall back to the public node status
     try {
-      const rpcUrl = `${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}`;
-      const info = await zionRpcCall(rpcUrl, 'getChainInfo', {});
+      const info = await zionRpcCall(PUBLIC_RPC_URL, 'getChainInfo', {});
       if (info && info.chain_height) {
         return {
           success: true,
@@ -5434,11 +5436,10 @@ ipcMain.handle('node-get-peers', async () => {
     const peerInfo = await nodeRpc('getPeerInfo');
     return { success: true, local: true, ...peerInfo };
   } catch (e) {
-    // Fall back to remote Edge node
+    // Fall back to the public node via HTTPS RPC
     try {
-      const rpcUrl = `${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}`;
-      const result = await zionRpcCall(rpcUrl, 'getPeerInfo', {});
-      const peers = result?.peers || [];
+      const result = await zionRpcCall(PUBLIC_RPC_URL, 'getPeerInfo', {});
+      const peers = result?.peers || result?.active || [];
       return {
         success: true,
         local: false,
@@ -5721,22 +5722,38 @@ ipcMain.handle('get-network-metrics', async () => {
     const nodes = await Promise.all(
       TESTNET_SERVERS.map(async (server) => {
         const node = { ...server, online: false, height: 0, hashrate: 0, miners: 0, blocks: 0 };
-        // RPC getChainInfo → height (TCP JSON-RPC)
+        // RPC getChainInfo → height (public HTTPS JSON-RPC)
         try {
-          const rpcUrl = `http://${server.host}:${PRIMARY_RPC_PORT}/jsonrpc`;
-          const info = await zionRpcCall(rpcUrl, 'getChainInfo', {});
+          const info = await zionRpcCall(PUBLIC_RPC_URL, 'getChainInfo', {});
           node.height = info?.chain_height || info?.height || 0;
           node.online = node.height > 0;
           dbg(`[NET-METRICS] ${server.name} RPC: height=${node.height}, online=${node.online}`);
         } catch (e) { dbg(`[NET-METRICS] ${server.name} RPC failed:`, e.message); }
-        // Pool API /stats → hashrate, miners, blocks
+        // Pool API → hashrate, miners, blocks. The raw :8080/stats endpoint is
+        // LAN/operator-only; public agents use the website's /api/pool/stats.
         try {
           const ctrl = new AbortController();
           const timer = setTimeout(() => ctrl.abort(), 5000);
-          const res = await fetch(`http://${server.host}:8080/stats`, { signal: ctrl.signal });
+          let pool = null;
+          try {
+            const res = await fetch(`http://${server.host}:8080/stats`, { signal: ctrl.signal });
+            if (res.ok) pool = await res.json();
+          } catch { /* operator path only — fall through to public API */ }
+          if (!pool) {
+            const res = await fetch(PUBLIC_API_POOL_STATS, { signal: ctrl.signal });
+            if (res.ok) {
+              const pub = await res.json();
+              const agg = pub?.aggregate || {};
+              pool = {
+                hashrate: { pool: agg.hashrate || 0 },
+                miners: { active: agg.active_miners || 0 },
+                blocks: { found: agg.blocks_found || 0 },
+                blockchain: { height: agg.chain_height || 0 },
+              };
+            }
+          }
           clearTimeout(timer);
-          if (res.ok) {
-            const pool = await res.json();
+          if (pool) {
             node.hashrate = pool.hashrate?.pool || 0;
             node.miners = pool.miners?.active || 0;
             node.blocks = pool.blocks?.found || 0;
@@ -5794,13 +5811,15 @@ ipcMain.handle('get-peer-list', async () => {
 
     for (const server of TESTNET_SERVERS) {
       try {
-        const rpcUrl = `http://${server.host}:${PRIMARY_RPC_PORT}/jsonrpc`;
-        const result = await zionRpcCall(rpcUrl, 'getPeerList', []);
-        const peers = result?.peers || [];
+        // The node RPC exposes getPeerInfo (getPeerList does not exist).
+        // Entries in `active` are connected peers; `peers` keeps the local-node shape.
+        const result = await zionRpcCall(PUBLIC_RPC_URL, 'getPeerInfo', {});
+        const peers = result?.peers || result?.active || [];
         for (const peer of peers) {
           if (!seenAddresses.has(peer.address)) {
             seenAddresses.add(peer.address);
             allPeers.push({
+              connected: true,
               ...peer,
               source_node: server.name,
               source_host: server.host,
@@ -6487,6 +6506,28 @@ async function zionRpcCall(rpcUrl, method, params) {
     throw new Error('RPC URL is missing');
   }
 
+  // HTTPS URLs use the public JSON-RPC-over-HTTP proxy (rpc.zionterranova.com).
+  // Everything else stays raw TCP — V31 core node speaks newline-delimited
+  // JSON-RPC over plain TCP, not HTTP.
+  if (/^https:/i.test(url)) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 'zion-desktop-agent', method, params }),
+        signal: ctrl.signal,
+      });
+      if (!res.ok) throw new Error(`RPC HTTP ${res.status} calling ${method} on ${url}`);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message ?? JSON.stringify(json.error));
+      return json.result ?? null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   // V31 core uses raw TCP JSON-RPC (not HTTP). Parse host:port from URL.
   let host, port;
   try {
@@ -6567,6 +6608,33 @@ async function zionRpcCall(rpcUrl, method, params) {
   });
 }
 
+// Ordered list of RPC endpoints to try: public HTTPS proxy first (reachable by
+// everyone), then the user-configured endpoint and the raw TCP fallbacks on
+// :8443 which only work for operator-allowlisted IPs and local nodes.
+function rpcFallbackCandidates(rpcUrl) {
+  const baseRpcUrl = normalizeRpcUrl(rpcUrl);
+  let baseHost = '', baseProtocol = 'http:', basePort = '8443';
+  try {
+    const parsed = new URL(baseRpcUrl);
+    baseHost = parsed.hostname || '';
+    baseProtocol = parsed.protocol || 'http:';
+    basePort = parsed.port || '8443';
+  } catch { /* keep defaults */ }
+
+  const seen = new Set();
+  return [
+    PUBLIC_RPC_URL,
+    baseRpcUrl,
+    baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
+    ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
+    ...MAINNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
+  ].filter((u) => {
+    if (!u || seen.has(u)) return false;
+    seen.add(u);
+    return true;
+  });
+}
+
 ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
   try {
     const addr = (address || '').toString().trim();
@@ -6594,29 +6662,9 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       dbg(`[wallet-get-balance] Public API failed: ${rpcError}`);
     }
 
-    // ── Fallback: direct TCP RPC (operator-only, localhost or allowed IP) ──
+    // ── Fallback: public HTTPS RPC, then direct TCP RPC ────────────────
     if (!snap && rpcUrl) {
-      const baseRpcUrl = normalizeRpcUrl(rpcUrl);
-      const parsedBase = (() => {
-        try { return new URL(baseRpcUrl); } catch { return null; }
-      })();
-      const baseHost = parsedBase?.hostname || '';
-      const baseProtocol = parsedBase?.protocol || 'http:';
-      const basePort = parsedBase?.port || '8443';
-
-      const rpcCandidates = [
-        baseRpcUrl,
-        baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
-        ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
-        ...MAINNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
-      ].filter(Boolean);
-
-      const seenRpc = new Set();
-      const uniqueRpcCandidates = rpcCandidates.filter((url) => {
-        if (!url || seenRpc.has(url)) return false;
-        seenRpc.add(url);
-        return true;
-      });
+      const uniqueRpcCandidates = rpcFallbackCandidates(rpcUrl);
 
       let rpcResult = null;
       for (const candidateUrl of uniqueRpcCandidates) {
@@ -6634,8 +6682,9 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       }
 
       if (rpcResult) {
-        // Normalize RPC result to the public API shape
-        const balanceFlowersStr = rpcResult.balance_flowers ?? '0';
+        // Normalize RPC result to the public API shape — the node returns
+        // `balance_flowers` (TCP) or `balance` (HTTPS proxy), both in flowers.
+        const balanceFlowersStr = rpcResult.balance_flowers ?? rpcResult.balance ?? '0';
         let balanceZion = 0;
         try { balanceZion = Number(BigInt(balanceFlowersStr)) / 1_000_000; }
         catch { balanceZion = Number(balanceFlowersStr) / 1_000_000; }
@@ -6836,29 +6885,9 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       console.warn('[MAIN wallet-send-transaction] Public API UTXO fetch failed:', lastRpcError);
     }
 
-    // Fallback: direct TCP RPC
+    // Fallback: public HTTPS RPC, then direct TCP RPC
     if (!utxos && rpcUrl) {
-      const baseRpcUrl = normalizeRpcUrl(rpcUrl);
-      const parsedBase = (() => {
-        try { return new URL(baseRpcUrl); } catch { return null; }
-      })();
-      const baseHost = parsedBase?.hostname || '';
-      const baseProtocol = parsedBase?.protocol || 'http:';
-      const basePort = parsedBase?.port || '8443';
-
-      const rpcCandidates = [
-        baseRpcUrl,
-        baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
-        ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
-        ...MAINNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
-      ].filter(Boolean);
-
-      const seenRpc = new Set();
-      const uniqueRpcCandidates = rpcCandidates.filter((url) => {
-        if (!url || seenRpc.has(url)) return false;
-        seenRpc.add(url);
-        return true;
-      });
+      const uniqueRpcCandidates = rpcFallbackCandidates(rpcUrl);
 
       for (const candidateUrl of uniqueRpcCandidates) {
         try {
@@ -6974,29 +7003,9 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       }
     }
 
-    // Fallback: direct TCP RPC (operator/local nodes only)
+    // Fallback: public HTTPS RPC, then direct TCP RPC (operator/local nodes)
     if (!result && rpcUrl) {
-      const baseRpcUrl = normalizeRpcUrl(rpcUrl);
-      const parsedBase = (() => {
-        try { return new URL(baseRpcUrl); } catch { return null; }
-      })();
-      const baseHost = parsedBase?.hostname || '';
-      const baseProtocol = parsedBase?.protocol || 'http:';
-      const basePort = parsedBase?.port || '8443';
-
-      const rpcCandidates = [
-        baseRpcUrl,
-        baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
-        ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
-        ...MAINNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
-      ].filter(Boolean);
-
-      const seenRpc = new Set();
-      const uniqueRpcCandidates = rpcCandidates.filter((url) => {
-        if (!url || seenRpc.has(url)) return false;
-        seenRpc.add(url);
-        return true;
-      });
+      const uniqueRpcCandidates = rpcFallbackCandidates(rpcUrl);
 
       const submitMethod = txModel === 'account' ? 'submitAccountTransaction' : 'submitUtxoTransaction';
       for (const candidateUrl of uniqueRpcCandidates) {
@@ -7053,9 +7062,18 @@ ipcMain.handle('wallet-get-transaction', async (event, { rpcUrl, txId }) => {
     const id = (txId || '').toString().trim();
     if (!id) return { success: false, error: 'Transaction ID is required' };
 
-    const normalizedUrl = normalizeRpcUrl(rpcUrl);
-    const result = await zionRpcCall(normalizedUrl, 'getTransaction', { txid: id });
-    if (result?.error) return { success: false, error: result.error };
+    let result = null;
+    let lastErr = '';
+    for (const candidateUrl of rpcFallbackCandidates(rpcUrl)) {
+      try {
+        const res = await zionRpcCall(candidateUrl, 'getTransaction', { txid: id });
+        if (res && !res.error) { result = res; break; }
+        if (res?.error) { lastErr = typeof res.error === 'string' ? res.error : JSON.stringify(res.error); }
+      } catch (err) {
+        lastErr = err?.message || String(err);
+      }
+    }
+    if (!result) return { success: false, error: lastErr || 'transaction not found' };
     return { success: true, tx: result };
   } catch (error) {
     return { success: false, error: error?.message || String(error) };
@@ -7081,11 +7099,12 @@ ipcMain.handle('wallet-generate-qr', async (event, { text }) => {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// AUTO-UPDATER — License-gated updates via custom update server
-// Server: https://updates.zionterranova.com/api/releases
-// electron-updater generic provider + X-License-Key header
+// AUTO-UPDATER — electron-updater GitHub provider
+// Feed: github.com/Zion-TerraNova/v3-Mainnet releases tagged v*-desktop,
+// each carrying latest.yml / latest-mac.yml / latest-linux.yml metadata.
 // ═══════════════════════════════════════════════════════════════════
-const UPDATE_SERVER_URL = 'https://updates.zionterranova.com/api/releases';
+const GITHUB_RELEASES_API = 'https://api.github.com/repos/Zion-TerraNova/v3-Mainnet/releases';
+const DESKTOP_RELEASE_TAG_RE = /^v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)-desktop$/;
 let _autoUpdaterAvailable = false;
 let _autoUpdater = null;
 let _updateReady = false;
@@ -7168,26 +7187,21 @@ function _initAutoUpdater() {
   }
 }
 
-// IPC: Check for updates — uses license-gated update server
+// IPC: Check for updates — public GitHub releases feed (no license required)
 ipcMain.handle('check-for-updates', async () => {
   try {
     const cfg = loadConfig();
-    if (!cfg?.licenseKey) {
-      return {
-        success: false,
-        error: 'No license key configured. Enter your license key in Settings → Updates.',
-        needsLicense: true,
-      };
-    }
 
     const updater = _initAutoUpdater();
     if (!updater) {
-      // Dev mode fallback: check update server API directly
-      return await _checkUpdateServer(cfg.licenseKey);
+      // Dev mode fallback: check the releases API directly
+      return await _checkUpdateServer(cfg?.licenseKey);
     }
 
-    // Update requestHeaders with current license key (in case it changed)
-    updater.requestHeaders = { 'X-License-Key': cfg.licenseKey };
+    // Optional supporter license key (unused by the public GitHub feed)
+    if (cfg?.licenseKey) {
+      updater.requestHeaders = { 'X-License-Key': cfg.licenseKey };
+    }
 
     const result = await updater.checkForUpdates();
     return {
@@ -7203,9 +7217,7 @@ ipcMain.handle('check-for-updates', async () => {
     // Fallback to direct API check
     try {
       const cfg = loadConfig();
-      if (cfg?.licenseKey) {
-        return await _checkUpdateServer(cfg.licenseKey);
-      }
+      return await _checkUpdateServer(cfg?.licenseKey);
     } catch { /* ignore */ }
     return { success: false, error: err?.message || String(err) };
   }
@@ -7311,67 +7323,46 @@ ipcMain.handle('validate-license', async (event, key) => {
   }
 });
 
-// Fallback: Check update server API directly (works in dev mode without electron-updater)
+// Fallback: query the GitHub releases API directly (works in dev mode without
+// electron-updater). License validation requires the (not yet deployed)
+// license server, so validate-only checks report as unavailable.
 async function _checkUpdateServer(licenseKey, validateOnly = false) {
+  if (validateOnly) {
+    return { success: false, licenseValid: false, error: 'License validation is not available yet' };
+  }
   try {
-    const https = require('https');
-    const http = require('http');
-    const url = new URL(UPDATE_SERVER_URL.replace('/api/releases', '/api/check-update'));
-    const client = url.protocol === 'https:' ? https : http;
-
-    const body = JSON.stringify({
-      licenseKey,
-      platform: process.platform,
-      arch: process.arch,
-      currentVersion: app.getVersion(),
-    });
-
-    const data = await new Promise((resolve, reject) => {
-      const req = client.request(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(body),
-          'X-License-Key': licenseKey,
-        },
-        timeout: 15000,
-      }, (res) => {
-        let respBody = '';
-        res.on('data', (chunk) => respBody += chunk);
-        res.on('end', () => {
-          try { resolve({ status: res.statusCode, json: JSON.parse(respBody) }); }
-          catch { reject(new Error('Invalid JSON response')); }
-        });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    let releases;
+    try {
+      const res = await fetch(GITHUB_RELEASES_API, {
+        headers: { 'Accept': 'application/vnd.github+json', 'User-Agent': 'zion-desktop-agent' },
+        signal: ctrl.signal,
       });
-      req.on('error', reject);
-      req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
-      req.write(body);
-      req.end();
-    });
-
-    if (data.status === 403) {
-      return { success: false, error: data.json.error || 'Invalid or revoked license', licenseValid: false };
-    }
-    if (data.status === 404) {
-      return { success: false, error: data.json.error || 'No releases available', licenseValid: true };
-    }
-    if (data.status !== 200) {
-      return { success: false, error: data.json.error || `HTTP ${data.status}`, licenseValid: false };
+      if (!res.ok) throw new Error(`GitHub releases HTTP ${res.status}`);
+      releases = await res.json();
+    } finally {
+      clearTimeout(timer);
     }
 
-    if (validateOnly) {
-      return { success: true, licenseValid: true, ...data.json };
+    // Releases arrive newest-first; pick the first desktop-tagged release.
+    const desktop = (Array.isArray(releases) ? releases : [])
+      .find(r => DESKTOP_RELEASE_TAG_RE.test(r?.tag_name || '') && !r?.draft);
+    if (!desktop) {
+      return { success: false, error: 'No desktop release found', currentVersion: app.getVersion() };
     }
 
+    const latestVersion = desktop.tag_name.match(DESKTOP_RELEASE_TAG_RE)[1];
+    const currentVersion = app.getVersion();
     return {
       success: true,
       licenseValid: true,
-      updateAvailable: data.json.updateAvailable,
-      currentVersion: data.json.currentVersion || app.getVersion(),
-      latestVersion: data.json.latestVersion || app.getVersion(),
-      releaseNotes: data.json.releaseNotes || '',
-      releaseDate: data.json.releaseDate || '',
-      downloadUrl: data.json.downloadUrl || '',
+      updateAvailable: latestVersion !== currentVersion,
+      currentVersion,
+      latestVersion,
+      releaseNotes: desktop.body || '',
+      releaseDate: desktop.published_at || '',
+      downloadUrl: desktop.html_url || '',
     };
   } catch (err) {
     return { success: false, error: err?.message || String(err), currentVersion: app.getVersion() };
@@ -8302,25 +8293,20 @@ app.whenReady().then(async () => {
   createTray();
 
   // Auto-check for updates on startup (delayed 8s to not block UI)
-  // Requires license key — if not set, show "enter license" status
+  // Public GitHub releases feed — no license required.
   setTimeout(() => {
     try {
       const startupCfg = loadConfig();
       if (startupCfg?.autoCheckUpdates !== false) {
-        if (!startupCfg?.licenseKey) {
-          dbg('[startup] No license key set — skipping auto-update check');
-          _sendUpdateStatus('no-license', { message: 'Enter your license key to check for updates' });
-          return;
-        }
-        dbg('[startup] Auto-checking for updates (license-gated)...');
+        dbg('[startup] Auto-checking for updates...');
         const updater = _initAutoUpdater();
         if (updater) {
           updater.checkForUpdates().catch(err => {
             dbg('[startup] Update check failed:', err?.message);
           });
         } else {
-          // Dev mode fallback: check update server API directly
-          _checkUpdateServer(startupCfg.licenseKey).then(result => {
+          // Dev mode fallback: check the releases API directly
+          _checkUpdateServer(startupCfg?.licenseKey).then(result => {
             if (result?.updateAvailable) {
               _sendUpdateStatus('available', {
                 version: result.latestVersion,
