@@ -1,19 +1,23 @@
 #!/bin/bash
 # Deploy ZIS (ZION Identity Service) to the Edge server
 # Usage: ./deploy-zis.sh [--build-only]
+#
+# Target host: zion-v6 by default (zion-new is CGNAT/unreliable — see
+# AGENTS.md). Override with ZIS_DEPLOY_HOST=<alias>.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 ZIS_DIR="/opt/zion/identity"
-SSH_CMD="ssh zion-new"
+DEPLOY_HOST="${ZIS_DEPLOY_HOST:-zion-v6}"
+SSH_CMD="ssh $DEPLOY_HOST"
 
-echo "=== ZIS Deploy ==="
+echo "=== ZIS Deploy → $DEPLOY_HOST ==="
 
 # 1. Build locally
-echo "[1/5] Building ZIS..."
+echo "[1/6] Building ZIS..."
 cd "$REPO_ROOT/APP&WEB/identity"
-npm install --production=false
+npm ci
 npm run build
 echo "  Build complete."
 
@@ -23,52 +27,55 @@ if [[ "${1:-}" == "--build-only" ]]; then
 fi
 
 # 2. Sync files to server
-echo "[2/5] Syncing to server..."
-$SSH_CMD "mkdir -p $ZIS_DIR/src $ZIS_DIR/deploy"
+echo "[2/6] Syncing to server..."
+$SSH_CMD "mkdir -p $ZIS_DIR/deploy"
 rsync -avz --delete \
     --exclude node_modules \
     --exclude .env \
     -e "ssh" \
     "$REPO_ROOT/APP&WEB/identity/package.json" \
+    "$REPO_ROOT/APP&WEB/identity/package-lock.json" \
     "$REPO_ROOT/APP&WEB/identity/tsconfig.json" \
     "$REPO_ROOT/APP&WEB/identity/dist/" \
     "$REPO_ROOT/APP&WEB/identity/.env.example" \
-    "zion-new:$ZIS_DIR/"
+    "$DEPLOY_HOST:$ZIS_DIR/"
 
 # 2a. Sync the shared schema to the server-wide shared location.
 $SSH_CMD "mkdir -p /opt/zion/shared/prisma"
-rsync -avz --delete -e "ssh" \
+rsync -avz -e "ssh" \
     "$REPO_ROOT/APP&WEB/shared/prisma/schema.prisma" \
-    "zion-new:/opt/zion/shared/prisma/"
+    "$DEPLOY_HOST:/opt/zion/shared/prisma/"
 
-# 3. Install production deps on server
-echo "[3/5] Installing production dependencies..."
-$SSH_CMD "cd $ZIS_DIR && npm install --production"
+# 3. Install production deps on server (lockfile-pinned)
+echo "[3/6] Installing production dependencies..."
+$SSH_CMD "cd $ZIS_DIR && npm ci --omit=dev"
 
-# 3a. Generate the Prisma client into the ZIS package.
-#     The shared schema output is configured to write to ../identity/node_modules.
-echo "[3a/5] Generating Prisma client..."
-$SSH_CMD "cd $ZIS_DIR && npx prisma generate --schema /opt/zion/shared/prisma/schema.prisma"
+# 3a. Apply the shared schema (additive tables only) + generate the client.
+#     prisma CLI is a devDependency — fetch it pinned via npx on the server.
+echo "[3a/6] Prisma db push + generate..."
+$SSH_CMD "cd $ZIS_DIR && npx -y prisma@5.22.0 db push --schema /opt/zion/shared/prisma/schema.prisma --skip-generate"
+$SSH_CMD "cd $ZIS_DIR && npx -y prisma@5.22.0 generate --schema /opt/zion/shared/prisma/schema.prisma"
 
 # 4. Setup systemd service
-echo "[4/5] Installing systemd service..."
+echo "[4/6] Installing systemd service..."
 scp "$REPO_ROOT/APP&WEB/identity/deploy/zion-zis.service" \
-    "zion-new:/etc/systemd/system/zion-zis.service"
+    "$DEPLOY_HOST:/etc/systemd/system/zion-zis.service"
 $SSH_CMD "systemctl daemon-reload"
 
 # 5. Setup nginx
-echo "[5/5] Installing nginx config..."
+echo "[5/6] Installing nginx config..."
 scp "$REPO_ROOT/APP&WEB/identity/deploy/nginx-zis.conf" \
-    "zion-new:/etc/nginx/sites-available/auth.zionterranova.com"
+    "$DEPLOY_HOST:/etc/nginx/sites-available/auth.zionterranova.com"
 $SSH_CMD "ln -sf /etc/nginx/sites-available/auth.zionterranova.com /etc/nginx/sites-enabled/auth.zionterranova.com"
 $SSH_CMD "nginx -t && systemctl reload nginx"
 
-# Start service
-echo "Starting ZIS service..."
+# 6. Restart + smoke check
+echo "[6/6] Restarting ZIS service..."
 $SSH_CMD "systemctl enable zion-zis"
 $SSH_CMD "systemctl restart zion-zis"
-sleep 2
+sleep 3
 $SSH_CMD "systemctl is-active zion-zis"
+$SSH_CMD "curl -sf http://127.0.0.1:8096/health && echo"
 
 echo ""
 echo "=== ZIS Deploy Complete ==="
@@ -76,9 +83,10 @@ echo "  Service:  zion-zis.service"
 echo "  URL:      https://auth.zionterranova.com"
 echo "  Health:   https://auth.zionterranova.com/health"
 echo ""
-echo "  Next steps:"
-echo "    1. Create .env on server: cp $ZIS_DIR/.env.example $ZIS_DIR/.env"
-echo "    2. Set DATABASE_URL to PostgreSQL connection string"
-echo "    3. Set JWT_SECRET to a random 32+ char string"
-echo "    4. Run: cd $ZIS_DIR && npx prisma db push --schema ../shared/prisma/schema.prisma"
-echo "    5. Restart: systemctl restart zion-zis"
+echo "  Post-deploy checklist:"
+echo "    1. .env must set DATABASE_URL, COOKIE_DOMAIN, ZIS_SERVICE_KEY"
+echo "    2. EdDSA JWT: generate a key once and add JWT_PRIVATE_KEY to .env:"
+echo "       node -e \"const{generateKeyPairSync}=require('crypto');console.log(generateKeyPairSync('ed25519').privateKey.export({format:'pem',type:'pkcs8'}))\""
+echo "    3. Keep JWT_SECRET set — it verifies pre-migration HS256 sessions"
+echo "    4. Optional: ZIS_EMAIL_ENABLED=1 after postfix is confirmed"
+echo "    5. Verify: curl https://auth.zionterranova.com/.well-known/jwks.json"

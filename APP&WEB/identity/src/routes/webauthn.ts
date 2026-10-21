@@ -22,6 +22,8 @@ import type {
 } from '@simplewebauthn/server';
 
 import { requireAuth, type JwtPayload } from '../lib/auth.js';
+import { auditBg } from '../lib/audit.js';
+import { inc, M } from '../lib/metrics.js';
 import { issueSessionForUser } from '../lib/session-issue.js';
 import { getWebAuthnConfig, createCeremony, takeCeremony } from '../lib/webauthn.js';
 
@@ -122,7 +124,7 @@ export async function webauthnRoutes(
         },
       });
 
-      const ceremonyId = createCeremony('register', options.challenge, user.id);
+      const ceremonyId = await createCeremony(app.prisma, 'register', options.challenge, user.id);
       return { ceremonyId, options };
     },
   );
@@ -140,7 +142,7 @@ export async function webauthnRoutes(
       const payload = req.user as JwtPayload;
       const cfg = getWebAuthnConfig();
 
-      const ceremony = takeCeremony(ceremonyId, 'register');
+      const ceremony = await takeCeremony(app.prisma, ceremonyId, 'register');
       if (!ceremony || ceremony.userId !== payload.sub) {
         return reply.code(400).send({ error: 'CEREMONY_INVALID', message: 'Unknown or expired ceremony' });
       }
@@ -175,6 +177,7 @@ export async function webauthnRoutes(
             label: label ?? null,
           },
         });
+        auditBg(app, req, { kind: 'passkey_add', userId: payload.sub, meta: { credentialId: credential.credentialId } });
         return { credential: toSummary(credential) };
       } catch (err) {
         if ((err as { code?: string }).code === 'P2002') {
@@ -196,7 +199,7 @@ export async function webauthnRoutes(
         userVerification: 'preferred',
         allowCredentials: [],
       });
-      const ceremonyId = createCeremony('login', options.challenge);
+      const ceremonyId = await createCeremony(app.prisma, 'login', options.challenge);
       return { ceremonyId, options };
     },
   );
@@ -213,7 +216,7 @@ export async function webauthnRoutes(
       const { ceremonyId, response } = parsed.data;
       const cfg = getWebAuthnConfig();
 
-      const ceremony = takeCeremony(ceremonyId, 'login');
+      const ceremony = await takeCeremony(app.prisma, ceremonyId, 'login');
       if (!ceremony) {
         return reply.code(400).send({ error: 'CEREMONY_INVALID', message: 'Unknown or expired ceremony' });
       }
@@ -244,8 +247,10 @@ export async function webauthnRoutes(
         return reply.code(401).send({ error: 'AUTH_FAILED', message: 'Passkey verification failed' });
       }
       if (!verification.verified) {
+        inc(M.authVerify, { method: 'passkey', result: 'fail' });
         return reply.code(401).send({ error: 'AUTH_FAILED', message: 'Passkey verification failed' });
       }
+      inc(M.authVerify, { method: 'passkey', result: 'ok' });
 
       await app.prisma.webAuthnCredential.update({
         where: { id: credential.id },
@@ -283,6 +288,7 @@ export async function webauthnRoutes(
     if (result.count === 0) {
       return reply.code(404).send({ error: 'NOT_FOUND', message: 'Passkey not found' });
     }
+    auditBg(app, req, { kind: 'passkey_remove', userId: payload.sub, meta: { credentialId: id } });
     return { ok: true };
   });
 }

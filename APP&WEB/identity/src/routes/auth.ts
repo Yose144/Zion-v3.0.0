@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
 import {
@@ -15,12 +15,22 @@ import { requireAuth } from '../lib/auth.js';
 import { issueSessionForUser } from '../lib/session-issue.js';
 import { renderAvatarSvg, AVATAR_STYLES } from '../lib/avatar.js';
 import { loadNftConfig, resolveNftAvatar, NftError } from '../lib/nft.js';
+import {
+  getEmailConfig,
+  requestEmailVerification,
+  consumeEmailVerification,
+  EmailError,
+} from '../lib/email.js';
+import { auditBg } from '../lib/audit.js';
+import { inc, M } from '../lib/metrics.js';
 import { createHash } from 'node:crypto';
+
+const CHAIN_TYPES = ['zion-l1', 'evm', 'bitcoin', 'solana', 'quantus', 'pearl'] as const;
 
 const ChallengeSchema = z.object({
   address: z.string().min(8),
   chainType: z
-    .enum(['zion-l1', 'evm', 'bitcoin', 'solana', 'quantus', 'pearl'])
+    .enum(CHAIN_TYPES)
     .default('zion-l1'),
 });
 
@@ -39,6 +49,18 @@ const VerifySiweSchema = z.object({
 
 const VerifyGoogleSchema = z.object({
   idToken: z.string().min(1),
+});
+
+// Unified verify dispatcher — the endpoint advertised by
+// /.well-known/zion-identity. `method` selects the verifier, the rest of
+// the body mirrors the per-method routes.
+const VerifyDispatchSchema = z.object({
+  method: z.enum(['ed25519', 'siwe', 'google']),
+  address: z.string().optional(),
+  publicKey: z.string().optional(),
+  signature: z.string().optional(),
+  message: z.string().optional(),
+  idToken: z.string().optional(),
 });
 
 const UpdateProfileSchema = z.object({
@@ -66,18 +88,91 @@ const NftAvatarSchema = z.object({
 
 const LinkAddressSchema = z.object({
   address: z.string().min(8),
-  chainType: z.enum(['zion-l1', 'evm', 'bitcoin', 'solana', 'quantus', 'pearl']),
+  chainType: z.enum([...CHAIN_TYPES, 'google']),
   chainId: z.string().optional(),
   // Ed25519 linking
   publicKey: z.string().optional(),
-  signature: z.string().min(1),
+  signature: z.string().min(1).optional(),
   // SIWE linking
   message: z.string().optional(),
-  // Quantus attestation: the challenge is issued for this ZION address and
-  // the signature binds `challenge + "\nquantus:" + address`.
+  // Google linking
+  idToken: z.string().optional(),
+  // Quantus/Pearl attestation: the challenge is issued for this ZION
+  // address and the signature binds `challenge + "\n<chain>:" + address`.
   zionAddress: z.string().optional(),
   zionPublicKey: z.string().optional(),
 });
+
+const DeleteAccountSchema = z.object({
+  address: z.string().min(8),
+  chainType: z.enum([...CHAIN_TYPES, 'google']),
+  publicKey: z.string().optional(),
+  signature: z.string().min(1).optional(),
+  message: z.string().optional(),
+  idToken: z.string().optional(),
+  zionAddress: z.string().optional(),
+  zionPublicKey: z.string().optional(),
+});
+
+const SetPrimarySchema = z.object({
+  address: z.string().min(8),
+});
+
+const EmailVerifyRequestSchema = z.object({
+  email: z.string().email().max(255),
+});
+
+/**
+ * Run the proof-of-key verifier appropriate for `chainType`.
+ * Returns true when the caller proved control of `address`.
+ */
+async function verifyOwnership(
+  app: FastifyInstance,
+  input: {
+    address: string;
+    chainType: string;
+    signature?: string;
+    publicKey?: string;
+    message?: string;
+    idToken?: string;
+    zionAddress?: string;
+    zionPublicKey?: string;
+  },
+): Promise<boolean> {
+  const prisma = app.prisma;
+  const { address, chainType, signature, publicKey, message, idToken, zionAddress, zionPublicKey } = input;
+  switch (chainType) {
+    case 'zion-l1':
+      if (!signature || !publicKey) return false;
+      return verifyEd25519(prisma, address, signature, publicKey);
+    case 'evm':
+      if (!signature || !message) return false;
+      return verifySiwe(prisma, address, signature, message);
+    case 'bitcoin':
+      if (!signature) return false;
+      return verifyBitcoin(prisma, address, signature);
+    case 'solana':
+      if (!signature) return false;
+      return verifySolana(prisma, address, signature);
+    case 'quantus':
+      if (!signature || !zionAddress || !zionPublicKey) return false;
+      return verifyQuantusAttestation(prisma, zionAddress, zionPublicKey, signature, address);
+    case 'pearl':
+      if (!signature || !zionAddress || !zionPublicKey) return false;
+      return verifyPearlAttestation(prisma, zionAddress, zionPublicKey, signature, address);
+    case 'google': {
+      if (!idToken) return false;
+      try {
+        const g = await verifyGoogleIdToken(idToken);
+        return `google:${g.sub}` === address;
+      } catch {
+        return false;
+      }
+    }
+    default:
+      return false;
+  }
+}
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   // ── GET /avatar/:file.svg ───────────────────────────────────────
@@ -266,7 +361,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
     const { address, chainType } = parsed.data;
-    const challenge = createChallenge(address);
+    const challenge = await createChallenge(app.prisma, address);
+    inc(M.authChallenge, { chain: chainType });
     return {
       challenge,
       chainType,
@@ -274,43 +370,57 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     };
   });
 
-  // ── POST /verify/ed25519 ────────────────────────────────────────
-  app.post('/verify/ed25519', async (req, reply) => {
-    const parsed = VerifyEd25519Schema.safeParse(req.body);
+  // ── Shared verify helpers ───────────────────────────────────────
+  async function verifyEd25519Handler(
+    req: FastifyRequest,
+    reply: FastifyReply,
+    body: unknown,
+  ) {
+    const parsed = VerifyEd25519Schema.safeParse(body);
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
     const { address, publicKey, signature } = parsed.data;
 
-    const ok = await verifyEd25519(address, signature, publicKey);
+    const ok = await verifyEd25519(app.prisma, address, signature, publicKey);
     if (!ok) {
+      inc(M.authVerify, { method: 'ed25519', result: 'fail' });
+      auditBg(app, req, { kind: 'login_failed', address, chainType: 'zion-l1' });
       return reply.code(401).send({ error: 'AUTH_FAILED', message: 'Invalid signature' });
     }
-
+    inc(M.authVerify, { method: 'ed25519', result: 'ok' });
     return issueSession(app, req, reply, address, 'zion-l1');
-  });
+  }
 
-  // ── POST /verify/siwe ───────────────────────────────────────────
-  app.post('/verify/siwe', async (req, reply) => {
-    const parsed = VerifySiweSchema.safeParse(req.body);
+  async function verifySiweHandler(
+    req: FastifyRequest,
+    reply: FastifyReply,
+    body: unknown,
+  ) {
+    const parsed = VerifySiweSchema.safeParse(body);
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
     const { address, message, signature } = parsed.data;
 
-    const ok = await verifySiwe(address, signature, message);
+    const ok = await verifySiwe(app.prisma, address, signature, message);
     if (!ok) {
+      inc(M.authVerify, { method: 'siwe', result: 'fail' });
+      auditBg(app, req, { kind: 'login_failed', address, chainType: 'evm' });
       return reply.code(401).send({ error: 'AUTH_FAILED', message: 'SIWE verification failed' });
     }
-
+    inc(M.authVerify, { method: 'siwe', result: 'ok' });
     // Normalize the EVM address to lowercase so 0xABC… and 0xabc… cannot
     // create duplicate accounts for the same wallet.
     return issueSession(app, req, reply, address.toLowerCase(), 'evm');
-  });
+  }
 
-  // ── POST /verify/google ──────────────────────────────────────────
-  app.post('/verify/google', async (req, reply) => {
-    const parsed = VerifyGoogleSchema.safeParse(req.body);
+  async function verifyGoogleHandler(
+    req: FastifyRequest,
+    reply: FastifyReply,
+    body: unknown,
+  ) {
+    const parsed = VerifyGoogleSchema.safeParse(body);
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
@@ -320,47 +430,95 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     try {
       googleUser = await verifyGoogleIdToken(idToken);
     } catch (err) {
+      inc(M.authVerify, { method: 'google', result: 'fail' });
       return reply.code(401).send({
         error: 'AUTH_FAILED',
         message: err instanceof Error ? err.message : 'Google verification failed',
       });
     }
+    inc(M.authVerify, { method: 'google', result: 'ok' });
 
     const primaryAddress = `google:${googleUser.sub}`;
     const email = googleUser.email ?? undefined;
 
-    const user = await app.prisma.user.upsert({
-      where: { primaryAddress },
-      update: {
-        lastLogin: new Date(),
-        loginCount: { increment: 1 },
-        ...(email ? { email } : {}),
-        ...(googleUser.name ? { displayName: googleUser.name } : {}),
-        ...(googleUser.picture ? { avatar: googleUser.picture } : {}),
-      },
-      create: {
-        primaryAddress,
-        googleId: googleUser.sub,
-        email: email ?? null,
-        displayName: googleUser.name ?? null,
-        avatar: googleUser.picture ?? null,
-        loginCount: 1,
-        lastLogin: new Date(),
-      },
+    // Owner-wins: if `google:<sub>` is already linked to an account (e.g.
+    // via POST /link on a wallet account), the session lands there — not
+    // on a fresh google-primary account.
+    const linked = await app.prisma.linkedAddress.findUnique({
+      where: { address: primaryAddress },
     });
 
-    await app.prisma.linkedAddress.upsert({
-      where: { address: primaryAddress },
-      update: {},
-      create: {
-        userId: user.id,
-        address: primaryAddress,
-        chainType: 'google',
-        chainId: 'google',
-      },
-    });
+    const enrich = {
+      lastLogin: new Date(),
+      loginCount: { increment: 1 },
+      ...(email ? { email } : {}),
+      ...(googleUser.name ? { displayName: googleUser.name } : {}),
+      ...(googleUser.picture ? { avatar: googleUser.picture } : {}),
+    };
+
+    let user;
+    if (linked) {
+      user = await app.prisma.user.update({
+        where: { id: linked.userId },
+        data: enrich,
+      });
+      // Back-fill googleId on accounts that linked Google before it was
+      // a first-class field.
+      if (!user.googleId) {
+        user = await app.prisma.user.update({
+          where: { id: linked.userId },
+          data: { googleId: googleUser.sub },
+        });
+      }
+    }
+    if (!user) {
+      user = await app.prisma.user.upsert({
+        where: { primaryAddress },
+        update: enrich,
+        create: {
+          primaryAddress,
+          googleId: googleUser.sub,
+          email: email ?? null,
+          displayName: googleUser.name ?? null,
+          avatar: googleUser.picture ?? null,
+          loginCount: 1,
+          lastLogin: new Date(),
+        },
+      });
+      await app.prisma.linkedAddress.upsert({
+        where: { address: primaryAddress },
+        update: {},
+        create: {
+          userId: user.id,
+          address: primaryAddress,
+          chainType: 'google',
+          chainId: 'google',
+        },
+      });
+    }
 
     return issueSessionForUser(app, req, reply, user, primaryAddress, 'google');
+  }
+
+  // ── POST /verify/ed25519 ────────────────────────────────────────
+  app.post('/verify/ed25519', async (req, reply) => verifyEd25519Handler(req, reply, req.body));
+
+  // ── POST /verify/siwe ───────────────────────────────────────────
+  app.post('/verify/siwe', async (req, reply) => verifySiweHandler(req, reply, req.body));
+
+  // ── POST /verify/google ─────────────────────────────────────────
+  app.post('/verify/google', async (req, reply) => verifyGoogleHandler(req, reply, req.body));
+
+  // ── POST /verify — dispatcher advertised by /.well-known ────────
+  app.post('/verify', async (req, reply) => {
+    const parsed = VerifyDispatchSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
+    }
+    const { method, ...rest } = parsed.data;
+    if (method === 'ed25519') return verifyEd25519Handler(req, reply, rest);
+    if (method === 'siwe') return verifySiweHandler(req, reply, rest);
+    return verifyGoogleHandler(req, reply, rest);
   });
 
   // ── GET /me ─────────────────────────────────────────────────────
@@ -386,7 +544,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const data = parsed.data;
     const update: Record<string, unknown> = {};
     if ('displayName' in data) update.displayName = data.displayName;
-    if ('email' in data) update.email = data.email;
+    if ('email' in data) {
+      update.email = data.email;
+      // A changed address is unverified until the mail flow completes.
+      update.emailVerifiedAt = null;
+    }
     if ('avatar' in data) update.avatar = data.avatar;
     if ('avatar3d' in data) update.avatar3d = data.avatar3d ?? null;
     if ('bio' in data) update.bio = data.bio;
@@ -399,6 +561,71 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     return user;
   });
 
+  // ── DELETE /me — account self-deletion ──────────────────────────
+  // Requires a fresh proof-of-key for any address linked to the account
+  // (ed25519/siwe/bitcoin/solana/quantus/pearl signature, or a Google
+  // idToken for google-bound accounts). Deletes the user row — cascades
+  // take linked addresses, sessions, keys, passkeys and avatar assets;
+  // auth events survive with userId=NULL.
+  app.delete('/me', { preHandler: [requireAuth] }, async (req, reply) => {
+    const parsed = DeleteAccountSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
+    }
+    const payload = req.user as { sub: string };
+    const userId = payload.sub;
+    const input = parsed.data;
+
+    // For google the proof address is implied by the idToken sub.
+    let proofAddress = input.address;
+    if (input.chainType === 'google') {
+      if (!input.idToken) {
+        return reply.code(400).send({ error: 'BAD_REQUEST', message: 'idToken is required for google' });
+      }
+      try {
+        const g = await verifyGoogleIdToken(input.idToken);
+        proofAddress = `google:${g.sub}`;
+      } catch {
+        return reply.code(401).send({ error: 'AUTH_FAILED', message: 'Google verification failed' });
+      }
+    }
+
+    // The proof address must belong to this user.
+    const owned = await app.prisma.linkedAddress.findFirst({
+      where: { userId, address: input.chainType === 'evm' ? proofAddress.toLowerCase() : proofAddress },
+    });
+    if (!owned) {
+      return reply.code(403).send({ error: 'FORBIDDEN', message: 'Proof address is not linked to this account' });
+    }
+
+    const ok = input.chainType === 'google'
+      ? true // idToken already verified above
+      : await verifyOwnership(app, { ...input, address: proofAddress });
+    if (!ok) {
+      auditBg(app, req, { kind: 'login_failed', userId, address: proofAddress, chainType: input.chainType, meta: { context: 'account_delete' } });
+      return reply.code(401).send({ error: 'AUTH_FAILED', message: 'Invalid proof-of-key' });
+    }
+
+    // Audit: the FK SetNulls userId when the user row is deleted below,
+    // so the deleted id is duplicated into meta to survive the cascade.
+    await app.prisma.authEvent.create({
+      data: {
+        kind: 'account_delete',
+        userId,
+        address: proofAddress,
+        chainType: input.chainType,
+        ip: req.ip ?? null,
+        userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
+        meta: { deletedUserId: userId },
+      },
+    }).catch(() => {});
+
+    const sessions = await app.prisma.session.deleteMany({ where: { userId } });
+    await app.prisma.user.delete({ where: { id: userId } });
+    reply.clearCookie('zion_session', { domain: app.cookieDomain });
+    return { ok: true, deleted: true, sessionsRevoked: sessions.count };
+  });
+
   // ── POST /logout ────────────────────────────────────────────────
   // Always clears the cookie — even when the session was already revoked or
   // the token is invalid — so stale credentials never linger client-side.
@@ -409,10 +636,13 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       if (payload?.jti && payload?.sub) {
         // Only revoke a session that actually belongs to the token subject —
         // a forged token must not be able to kill another user's session.
-        await app.prisma.session.updateMany({
+        const res = await app.prisma.session.updateMany({
           where: { jwtJti: payload.jti, userId: payload.sub },
           data: { revoked: true },
         });
+        if (res.count > 0) {
+          auditBg(app, req, { kind: 'logout', userId: payload.sub, meta: { jti: payload.jti } });
+        }
       }
     } catch {
       // invalid/expired token — still clear the cookie below
@@ -423,85 +653,66 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
   // ── POST /link ──────────────────────────────────────────────────
   // Link an additional address to the authenticated user's account.
-  // The caller must sign a fresh ZIS challenge for the address they want to link.
+  // The caller must sign a fresh ZIS challenge for the address they want
+  // to link — or present a Google idToken for chainType 'google'.
   app.post('/link', { preHandler: [requireAuth] }, async (req, reply) => {
     const parsed = LinkAddressSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
-    const {
-      address: rawAddress,
-      chainType,
-      chainId,
-      publicKey,
-      signature,
-      message,
-      zionAddress,
-      zionPublicKey,
-    } = parsed.data;
-    // Normalize EVM addresses to lowercase for storage/lookup consistency.
-    const address = chainType === 'evm' ? rawAddress.toLowerCase() : rawAddress;
+    const input = parsed.data;
     const payload = req.user as { sub: string };
 
-    let ok = false;
-    if (chainType === 'zion-l1') {
-      if (!publicKey) {
-        return reply.code(400).send({ error: 'BAD_REQUEST', message: 'publicKey is required for zion-l1' });
+    // Resolve the effective linked address (google derives it from the token).
+    let address: string;
+    let googleSub: string | null = null;
+    if (input.chainType === 'google') {
+      if (!input.idToken) {
+        return reply.code(400).send({ error: 'BAD_REQUEST', message: 'idToken is required for google' });
       }
-      ok = await verifyEd25519(address, signature, publicKey);
-    } else if (chainType === 'evm') {
-      if (!message) {
-        return reply.code(400).send({ error: 'BAD_REQUEST', message: 'message is required for evm' });
+      try {
+        const g = await verifyGoogleIdToken(input.idToken);
+        googleSub = g.sub;
+        address = `google:${g.sub}`;
+      } catch {
+        inc(M.link, { chain: 'google', result: 'fail' });
+        return reply.code(401).send({ error: 'AUTH_FAILED', message: 'Google verification failed' });
       }
-      ok = await verifySiwe(address, signature, message);
-    } else if (chainType === 'bitcoin') {
-      // Custom proof-of-key: recoverable ECDSA over
-      // sha256("ZION-BTC-LINK-V1"‖0x00‖challenge); server recomputes the
-      // P2WPKH address from the recovered pubkey.
-      ok = await verifyBitcoin(address, signature);
-    } else if (chainType === 'solana') {
-      // Solana address = base58(ed25519 pubkey) — the signature verifies
-      // against the address itself.
-      ok = await verifySolana(address, signature);
-    } else if (chainType === 'quantus') {
-      // ML-DSA-87 has no JS implementation — the client attests with the
-      // ZION key derived from the same mnemonic.
-      if (!zionAddress || !zionPublicKey) {
-        return reply.code(400).send({
-          error: 'BAD_REQUEST',
-          message: 'zionAddress and zionPublicKey are required for quantus',
-        });
-      }
-      ok = await verifyQuantusAttestation(zionAddress, zionPublicKey, signature, address);
-    } else if (chainType === 'pearl') {
-      // XMSS has no JS implementation — the client attests with the ZION
-      // key derived from the same mnemonic (same model as quantus).
-      if (!zionAddress || !zionPublicKey) {
-        return reply.code(400).send({
-          error: 'BAD_REQUEST',
-          message: 'zionAddress and zionPublicKey are required for pearl',
-        });
-      }
-      ok = await verifyPearlAttestation(zionAddress, zionPublicKey, signature, address);
     } else {
-      return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Unsupported chainType' });
+      address = input.chainType === 'evm' ? input.address.toLowerCase() : input.address;
     }
 
-    if (!ok) {
-      return reply.code(401).send({ error: 'AUTH_FAILED', message: 'Invalid signature or expired challenge' });
-    }
-
-    // Prevent linking an address that already belongs to another user.
+    // Conflict checks before the (challenge-consuming) verification.
     const existing = await app.prisma.linkedAddress.findUnique({ where: { address } });
     if (existing && existing.userId !== payload.sub) {
       return reply.code(409).send({ error: 'CONFLICT', message: 'Address is already linked to another account' });
     }
+    if (googleSub) {
+      const gowner = await app.prisma.user.findUnique({ where: { googleId: googleSub } });
+      if (gowner && gowner.id !== payload.sub) {
+        return reply.code(409).send({ error: 'CONFLICT', message: 'Google account is already bound to another user' });
+      }
+    }
+
+    const ok = input.chainType === 'google'
+      ? true // idToken already verified
+      : await verifyOwnership(app, { ...input, address });
+    if (!ok) {
+      inc(M.link, { chain: input.chainType, result: 'fail' });
+      return reply.code(401).send({ error: 'AUTH_FAILED', message: 'Invalid signature or expired challenge' });
+    }
+    inc(M.link, { chain: input.chainType, result: 'ok' });
 
     const linked = await app.prisma.linkedAddress.upsert({
       where: { address },
-      update: { userId: payload.sub, chainType, chainId: chainId ?? null },
-      create: { userId: payload.sub, address, chainType, chainId: chainId ?? null },
+      update: { userId: payload.sub, chainType: input.chainType, chainId: input.chainId ?? null },
+      create: { userId: payload.sub, address, chainType: input.chainType, chainId: input.chainId ?? null },
     });
+    if (googleSub) {
+      await app.prisma.user.update({ where: { id: payload.sub }, data: { googleId: googleSub } });
+    }
+
+    auditBg(app, req, { kind: 'link', userId: payload.sub, address, chainType: input.chainType });
 
     const user = await app.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -513,6 +724,118 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     return { linked, user };
   });
+
+  // ── DELETE /link/:address — unlink a secondary address ─────────
+  // The primary address and the last remaining linked address cannot be
+  // removed (POST /primary moves the primary first).
+  app.delete('/link/:address', { preHandler: [requireAuth] }, async (req, reply) => {
+    const payload = req.user as { sub: string };
+    const raw = decodeURIComponent((req.params as { address: string }).address);
+    const user = await app.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: { linkedAddresses: true },
+    });
+    if (!user) return reply.code(404).send({ error: 'NOT_FOUND' });
+
+    const candidates = [raw, raw.toLowerCase()];
+    const link = user.linkedAddresses.find((l) => candidates.includes(l.address));
+    if (!link) {
+      return reply.code(404).send({ error: 'NOT_FOUND', message: 'Address is not linked to this account' });
+    }
+    if (link.address === user.primaryAddress) {
+      return reply.code(409).send({ error: 'CONFLICT', message: 'Cannot unlink the primary address — set a new primary first' });
+    }
+    if (user.linkedAddresses.length <= 1) {
+      return reply.code(409).send({ error: 'CONFLICT', message: 'Cannot unlink the last remaining address' });
+    }
+
+    await app.prisma.linkedAddress.delete({ where: { id: link.id } });
+    if (link.chainType === 'google' && user.googleId && link.address === `google:${user.googleId}`) {
+      await app.prisma.user.update({ where: { id: payload.sub }, data: { googleId: null } });
+    }
+    auditBg(app, req, { kind: 'unlink', userId: payload.sub, address: link.address, chainType: link.chainType });
+    return { ok: true, unlinked: link.address };
+  });
+
+  // ── POST /primary — move the primary address ────────────────────
+  // The target must be a linked address owned by the caller.
+  app.post('/primary', { preHandler: [requireAuth] }, async (req, reply) => {
+    const parsed = SetPrimarySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
+    }
+    const payload = req.user as { sub: string };
+    const raw = parsed.data.address;
+    const link = await app.prisma.linkedAddress.findFirst({
+      where: { userId: payload.sub, address: { in: [raw, raw.toLowerCase()] } },
+    });
+    if (!link) {
+      return reply.code(404).send({ error: 'NOT_FOUND', message: 'Address is not linked to this account' });
+    }
+    const previous = (await app.prisma.user.findUnique({ where: { id: payload.sub } }))?.primaryAddress;
+    const user = await app.prisma.user.update({
+      where: { id: payload.sub },
+      data: { primaryAddress: link.address },
+      include: { linkedAddresses: true, oasisPlayer: true },
+    });
+    auditBg(app, req, {
+      kind: 'primary_change',
+      userId: payload.sub,
+      address: link.address,
+      meta: { previous },
+    });
+    return user;
+  });
+
+  // ── POST /email/verify/request — send a verification mail ──────
+  app.post(
+    '/email/verify/request',
+    { preHandler: [requireAuth], config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
+    async (req, reply) => {
+      const parsed = EmailVerifyRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
+      }
+      const cfg = getEmailConfig();
+      if (!cfg.enabled) {
+        return reply.code(503).send({ error: 'EMAIL_DISABLED', message: 'E-mail verification is not enabled' });
+      }
+      const payload = req.user as { sub: string };
+      try {
+        await requestEmailVerification(app.prisma, payload.sub, parsed.data.email);
+        inc(M.emailSent, { result: 'ok' });
+        auditBg(app, req, { kind: 'email_verify_request', userId: payload.sub, meta: { email: parsed.data.email } });
+        return { ok: true };
+      } catch (e) {
+        if (e instanceof EmailError) {
+          inc(M.emailSent, { result: 'fail' });
+          const status = e.code === 'COOLDOWN' ? 429 : e.code === 'DISABLED' ? 503 : 502;
+          return reply.code(status).send({ error: e.code, message: e.message });
+        }
+        throw e;
+      }
+    },
+  );
+
+  // ── GET /email/verify — consume a verification token ────────────
+  // Linked from the mail; redirects back to the app on success.
+  app.get('/email/verify', async (req, reply) => {
+    const { token } = req.query as { token?: string };
+    const cfg = getEmailConfig();
+    if (!token || token.length > 128) {
+      return reply.code(400).send({ error: 'BAD_REQUEST' });
+    }
+    try {
+      const { userId, email } = await consumeEmailVerification(app.prisma, token);
+      auditBg(app, null, { kind: 'email_verify', userId, meta: { email } });
+      return reply.redirect(`${cfg.redirectUrl}?email_verified=1`);
+    } catch (e) {
+      if (e instanceof EmailError) {
+        return reply.redirect(`${cfg.redirectUrl}?email_verified=0&error=${encodeURIComponent(e.code)}`);
+      }
+      throw e;
+    }
+  });
 }
 
 async function issueSession(
@@ -522,12 +845,25 @@ async function issueSession(
   address: string,
   chainType: string,
 ) {
-  // Upsert user
-  const user = await app.prisma.user.upsert({
-    where: { primaryAddress: address },
-    update: { lastLogin: new Date(), loginCount: { increment: 1 } },
-    create: { primaryAddress: address, loginCount: 1, lastLogin: new Date() },
-  });
+  // Owner-wins: an address already linked to an account authenticates as
+  // that account — even when the link is secondary rather than primary.
+  // Without this, logging in with a secondary address would silently
+  // create a second user owning the same address.
+  const existing = await app.prisma.linkedAddress.findUnique({ where: { address } });
+  let user;
+  if (existing) {
+    user = await app.prisma.user.update({
+      where: { id: existing.userId },
+      data: { lastLogin: new Date(), loginCount: { increment: 1 } },
+    });
+  } else {
+    // Upsert user
+    user = await app.prisma.user.upsert({
+      where: { primaryAddress: address },
+      update: { lastLogin: new Date(), loginCount: { increment: 1 } },
+      create: { primaryAddress: address, loginCount: 1, lastLogin: new Date() },
+    });
+  }
 
   return issueSessionForUser(app, req, reply, user, address, chainType);
 }

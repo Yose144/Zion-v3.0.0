@@ -1,7 +1,7 @@
 // ZIS — ZION Identity Service
 // auth.zionterranova.com
 //
-// Ed25519 (ZION L1 native) + EVM SIWE (Sign-In with Ethereum) auth.
+// Ed25519 (ZION L1 native) + EVM SIWE + Google OIDC + WebAuthn auth.
 // Issues JWTs valid across all *.zionterranova.com apps (SSO).
 
 import Fastify, { type FastifyError } from 'fastify';
@@ -10,8 +10,6 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import { PrismaClient } from '@prisma/client';
-import { z } from 'zod';
-import { createHash, timingSafeEqual } from 'node:crypto';
 
 import { authRoutes } from './routes/auth.js';
 import { webauthnRoutes } from './routes/webauthn.js';
@@ -21,7 +19,16 @@ import { notificationRoutes } from './routes/notifications.js';
 import { walletRoutes } from './routes/wallet.js';
 import { healthRoutes } from './routes/health.js';
 import { wellKnownRoutes } from './routes/wellknown.js';
+import { adminRoutes } from './routes/admin.js';
+import { metricsRoutes } from './routes/metrics.js';
 import { logger } from './lib/logger.js';
+import { getJwtConfig, verifyLegacyToken } from './lib/keys.js';
+import { extractSessionToken, isServiceRequest } from './lib/auth.js';
+import { registerMetrics } from './lib/metrics.js';
+import { pruneChallenges } from './lib/challenge.js';
+import { pruneCeremonies } from './lib/webauthn.js';
+import { pruneVerificationTokens } from './lib/email.js';
+import { pruneAuthEvents } from './lib/audit.js';
 
 const prisma = new PrismaClient();
 
@@ -35,13 +42,16 @@ const HOST = process.env.HOST ?? '0.0.0.0';
 const JWT_SECRET = process.env.JWT_SECRET ?? 'change-me-in-production';
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN ?? '.zionterranova.com';
 
-if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'change-me-in-production') {
-  throw new Error('JWT_SECRET must be set in production');
+const jwtCfg = getJwtConfig();
+if (jwtCfg.mode === 'hs256' && process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_PRIVATE_KEY or JWT_SECRET must be set in production');
 }
 
 async function start() {
   // ── Plugins ─────────────────────────────────────────────────────
   await app.register(cookie, {
+    // The cookie-signing secret is independent of the JWT algorithm —
+    // HS256→EdDSA migration does not invalidate cookie signatures.
     secret: JWT_SECRET,
   });
 
@@ -59,8 +69,7 @@ async function start() {
   });
 
   await app.register(jwt, {
-    secret: JWT_SECRET,
-    sign: { expiresIn: '7d' },
+    ...jwtCfg.pluginOptions,
     cookie: {
       cookieName: 'zion_session',
       signed: true,
@@ -78,24 +87,18 @@ async function start() {
     // mining pool's /api/keys/verify probes) get their own service bucket so
     // service traffic never competes with the caller's IP bucket.
     keyGenerator: (req) => {
-      const svc = process.env.ZIS_SERVICE_KEY;
-      const hdr = req.headers['x-service-key'];
-      if (svc && typeof hdr === 'string' && hdr.length > 0 && hdr.length === svc.length) {
-        const a = createHash('sha256').update(hdr).digest();
-        const b = createHash('sha256').update(svc).digest();
-        if (timingSafeEqual(a, b)) return `svc:${a.subarray(0, 8).toString('hex')}`;
+      if (isServiceRequest(req)) {
+        const hdr = req.headers['x-service-key'] as string;
+        return `svc:${hdr.slice(0, 12)}`;
       }
-      const raw = req.cookies?.zion_session;
-      const bearer = req.headers.authorization?.startsWith('Bearer ')
-        ? req.headers.authorization.slice(7)
-        : null;
-      const unsigned = raw ? req.unsignCookie(raw) : null;
-      const token = unsigned?.valid && unsigned.value ? unsigned.value : bearer;
+      const token = extractSessionToken(req);
       if (token) {
         try {
           const payload = app.jwt.verify<{ sub?: string }>(token);
           if (payload?.sub) return `sess:${payload.sub}`;
-        } catch { /* fall through to per-IP bucket */ }
+        } catch { /* try legacy */ }
+        const legacy = verifyLegacyToken(token);
+        if (legacy?.sub) return `sess:${String(legacy.sub)}`;
       }
       return req.ip;
     },
@@ -105,14 +108,19 @@ async function start() {
   app.decorate('prisma', prisma);
   app.decorate('cookieDomain', COOKIE_DOMAIN);
 
+  // ── Metrics (counters + gauges + per-route http_requests hook) ────
+  registerMetrics(app);
+
   // ── Routes ──────────────────────────────────────────────────────
   await app.register(healthRoutes, { prefix: '/health' });
+  await app.register(metricsRoutes, { prefix: '/metrics' });
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(webauthnRoutes, { prefix: '/api/auth/webauthn' });
   await app.register(sessionRoutes, { prefix: '/api/session' });
   await app.register(apiKeyRoutes, { prefix: '/api/keys' });
   await app.register(notificationRoutes, { prefix: '/api/notifications' });
   await app.register(walletRoutes, { prefix: '/api/wallet' });
+  await app.register(adminRoutes, { prefix: '/api/admin' });
   await app.register(wellKnownRoutes, { prefix: '/.well-known' });
 
   // ── Error handler ───────────────────────────────────────────────
@@ -124,9 +132,34 @@ async function start() {
     });
   });
 
+  // ── Prune job ───────────────────────────────────────────────────
+  // Hourly: expired challenges/ceremonies/tokens, dead sessions, old
+  // audit events. Runs unref'd — never keeps the process alive.
+  const prune = async () => {
+    try {
+      const [ch, ce, vt, sess, ev] = await Promise.all([
+        pruneChallenges(prisma),
+        pruneCeremonies(prisma),
+        pruneVerificationTokens(prisma),
+        prisma.session.deleteMany({
+          where: { expiresAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+        }),
+        pruneAuthEvents(prisma, 180),
+      ]);
+      const counts = { challenges: ch, ceremonies: ce, tokens: vt, sessions: sess.count, events: ev };
+      if (Object.values(counts).some((n) => n > 0)) {
+        app.log.info(counts, 'prune job removed expired rows');
+      }
+    } catch (err) {
+      app.log.warn({ err }, 'prune job failed');
+    }
+  };
+  setInterval(prune, 60 * 60 * 1000).unref();
+  setTimeout(prune, 30 * 1000).unref(); // first pass shortly after boot
+
   // ── Start ───────────────────────────────────────────────────────
   await app.listen({ port: PORT, host: HOST });
-  app.log.info(`ZIS listening on ${HOST}:${PORT}`);
+  app.log.info(`ZIS listening on ${HOST}:${PORT} (jwt=${jwtCfg.mode}, kid=${jwtCfg.kid})`);
 }
 
 start()

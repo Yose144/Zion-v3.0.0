@@ -1,4 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { createHash, timingSafeEqual } from 'node:crypto';
+import { verifyLegacyToken } from './keys.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -15,13 +17,57 @@ export interface JwtPayload {
   exp: number;
 }
 
+/**
+ * Extract the raw session JWT from the request — the signed zion_session
+ * cookie first, then an Authorization: Bearer header. Returns null when
+ * no credential is present.
+ */
+export function extractSessionToken(req: FastifyRequest): string | null {
+  const raw = req.cookies?.zion_session;
+  const bearer = req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.slice(7)
+    : null;
+  const unsigned = raw ? req.unsignCookie(raw) : null;
+  return unsigned?.valid && unsigned.value ? unsigned.value : bearer;
+}
+
+/**
+ * Verify the request's session token. Tries the active key (EdDSA in
+ * production) first, then — during the legacy grace period — the old
+ * HS256 secret. On success the payload is assigned to req.user.
+ */
+async function verifySessionToken(req: FastifyRequest): Promise<boolean> {
+  try {
+    await req.jwtVerify();
+    return true;
+  } catch {
+    // fall through to legacy
+  }
+  const token = extractSessionToken(req);
+  if (!token) return false;
+  const legacy = verifyLegacyToken(token);
+  if (!legacy?.sub || !legacy.jti) return false;
+  (req as unknown as { user: unknown }).user = legacy;
+  return true;
+}
+
+/** Constant-time check of the x-service-key header against ZIS_SERVICE_KEY. */
+export function isServiceRequest(req: FastifyRequest): boolean {
+  const svc = process.env.ZIS_SERVICE_KEY;
+  const hdr = req.headers['x-service-key'];
+  if (!svc || typeof hdr !== 'string' || hdr.length === 0 || hdr.length !== svc.length) {
+    return false;
+  }
+  const a = createHash('sha256').update(hdr).digest();
+  const b = createHash('sha256').update(svc).digest();
+  return timingSafeEqual(a, b);
+}
+
 export async function requireAuth(
   req: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  try {
-    await req.jwtVerify();
-  } catch {
+  if (!(await verifySessionToken(req))) {
     return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid or missing token' });
   }
 
@@ -78,25 +124,62 @@ export async function requireAuth(
   }
 }
 
+/**
+ * requireAdmin — session auth + user.role === 'admin', or a service-key
+ * caller (x-service-key). Used by /api/admin/*.
+ */
+export async function requireAdmin(
+  req: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  if (isServiceRequest(req)) {
+    (req as unknown as { serviceCaller: boolean }).serviceCaller = true;
+    return;
+  }
+  await requireAuth(req, reply);
+  if (reply.sent) return;
+  const payload = req.user as JwtPayload;
+  const user = await (req.server as FastifyInstance).prisma.user.findUnique({
+    where: { id: payload.sub },
+    select: { role: true },
+  });
+  if (user?.role !== 'admin') {
+    return reply.code(403).send({ error: 'FORBIDDEN', message: 'Admin role required' });
+  }
+}
+
+/** requireServiceKey — machine-to-machine auth for /api/notifications push etc. */
+export async function requireServiceKey(
+  req: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  if (!isServiceRequest(req)) {
+    return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Valid x-service-key required' });
+  }
+}
+
 export async function optionalAuth(
   req: FastifyRequest,
   _reply: FastifyReply,
 ): Promise<void> {
   try {
-    await req.jwtVerify();
-    const payload = req.user as JwtPayload;
-    if (payload?.jti) {
-      const session = await (req.server as FastifyInstance).prisma.session.findUnique({
-        where: { jwtJti: payload.jti },
-      });
-      if (
-        !session ||
-        session.revoked ||
-        session.expiresAt < new Date() ||
-        session.userId !== payload.sub
-      ) {
-        (req as unknown as Record<string, unknown>).user = undefined;
+    if (await verifySessionToken(req)) {
+      const payload = req.user as JwtPayload;
+      if (payload?.jti) {
+        const session = await (req.server as FastifyInstance).prisma.session.findUnique({
+          where: { jwtJti: payload.jti },
+        });
+        if (
+          !session ||
+          session.revoked ||
+          session.expiresAt < new Date() ||
+          session.userId !== payload.sub
+        ) {
+          (req as unknown as Record<string, unknown>).user = undefined;
+        }
       }
+    } else {
+      (req as unknown as Record<string, unknown>).user = undefined;
     }
   } catch {
     // ignore — anonymous allowed

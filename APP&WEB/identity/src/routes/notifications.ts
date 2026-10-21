@@ -1,14 +1,60 @@
 import type { FastifyInstance } from 'fastify';
-import { requireAuth } from '../lib/auth.js';
+import { z } from 'zod';
+import { requireAuth, requireServiceKey } from '../lib/auth.js';
+import { auditBg } from '../lib/audit.js';
+import { inc, M } from '../lib/metrics.js';
+
+const PushNotificationSchema = z.object({
+  userId: z.string().min(1).optional(),
+  address: z.string().min(8).optional(),
+  type: z.string().min(1).max(64),
+  title: z.string().min(1).max(255),
+  body: z.string().max(4096).default(''),
+  data: z.record(z.unknown()).optional(),
+});
 
 /**
  * /api/notifications — cross-app notification inbox.
  *
  * Backed by the shared `Notification` model (APP&WEB/shared/prisma).
- * Producers live in the apps / db-sync service; this route only exposes
- * read + mark-read for the authenticated user.
+ * Read + mark-read require the authenticated user; producing a
+ * notification is service-to-service via x-service-key.
  */
 export async function notificationRoutes(app: FastifyInstance): Promise<void> {
+  // Push a notification — service callers only (x-service-key).
+  // Target the user by userId directly, or by any linked/primary address.
+  app.post('/', { preHandler: [requireServiceKey] }, async (req, reply) => {
+    const parsed = PushNotificationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
+    }
+    const { userId, address, type, title, body, data } = parsed.data;
+    if (!userId && !address) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', message: 'userId or address required' });
+    }
+
+    let targetId = userId ?? null;
+    if (!targetId && address) {
+      const link = await app.prisma.linkedAddress.findUnique({ where: { address } });
+      if (link) {
+        targetId = link.userId;
+      } else {
+        const u = await app.prisma.user.findUnique({ where: { primaryAddress: address } });
+        targetId = u?.id ?? null;
+      }
+    }
+    if (!targetId) {
+      return reply.code(404).send({ error: 'NOT_FOUND', message: 'Target user not found' });
+    }
+
+    const notification = await app.prisma.notification.create({
+      data: { userId: targetId, type, title, body, data: data as never },
+    });
+    inc(M.notificationPush);
+    auditBg(app, req, { kind: 'notification_push', userId: targetId, meta: { type } });
+    return { ok: true, id: notification.id };
+  });
+
   // List notifications for current user, newest first.
   // Query: ?limit=1..100 (default 50) &offset=0 &unread=1
   app.get('/', { preHandler: [requireAuth] }, async (req) => {

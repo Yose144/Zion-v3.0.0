@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { requireAuth } from '../lib/auth.js';
+import { auditBg } from '../lib/audit.js';
 
 export async function sessionRoutes(app: FastifyInstance): Promise<void> {
   // List active sessions for current user
@@ -26,16 +27,18 @@ export async function sessionRoutes(app: FastifyInstance): Promise<void> {
       where: { jwtJti: jti },
       data: { revoked: true },
     });
+    auditBg(app, req, { kind: 'session_revoke', userId: payload.sub, meta: { jti } });
     return { ok: true };
   });
 
   // Revoke all sessions (logout everywhere)
   app.post('/revoke-all', { preHandler: [requireAuth] }, async (req) => {
     const payload = req.user as { sub: string };
-    await app.prisma.session.updateMany({
+    const res = await app.prisma.session.updateMany({
       where: { userId: payload.sub, revoked: false },
       data: { revoked: true },
     });
-    return { ok: true };
+    auditBg(app, req, { kind: 'session_revoke', userId: payload.sub, meta: { all: true, count: res.count } });
+    return { ok: true, revoked: res.count };
   });
 }

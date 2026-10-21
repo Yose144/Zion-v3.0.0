@@ -4,10 +4,13 @@
 //   register — an authenticated user adds a passkey to their account
 //   login    — an anonymous caller authenticates with a discoverable passkey
 //
-// Each ceremony is bound to a server-generated challenge and a one-shot
-// ceremonyId. Ceremonies expire after 5 minutes and are consumed on read.
+// Each ceremony is a row in the WebAuthnCeremony table, bound to a
+// server-generated challenge and a one-shot ceremonyId. Ceremonies expire
+// after 5 minutes and are consumed on read — they survive restarts and can
+// be shared across instances (unlike the previous in-memory map).
 
 import { randomUUID } from 'node:crypto';
+import type { PrismaClient } from '@prisma/client';
 
 const CEREMONY_TTL_MS = 5 * 60 * 1000; // 5 min
 
@@ -54,7 +57,20 @@ export interface WebAuthnCeremony {
   expires: number;
 }
 
-const ceremonies = new Map<string, WebAuthnCeremony>();
+/** Narrow store interface — real PrismaClient or the in-memory test fake. */
+export interface CeremonyStore {
+  create(args: {
+    data: { id: string; kind: string; challenge: string; userId: string | null; expiresAt: Date };
+  }): Promise<unknown>;
+  delete(args: {
+    where: { id: string };
+  }): Promise<{ id: string; kind: string; challenge: string; userId: string | null; expiresAt: Date }>;
+  deleteMany(args: { where: { expiresAt: { lt: Date } } }): Promise<{ count: number }>;
+}
+
+function store(prisma: PrismaClient): CeremonyStore {
+  return prisma.webAuthnCeremony as unknown as CeremonyStore;
+}
 
 // Injectable clock for tests.
 let nowFn: () => number = () => Date.now();
@@ -63,41 +79,53 @@ export function setWebAuthnClock(fn: () => number): void {
   nowFn = fn;
 }
 
-// Periodic cleanup
-setInterval(() => {
-  const now = nowFn();
-  for (const [k, v] of ceremonies) {
-    if (v.expires < now) ceremonies.delete(k);
-  }
-}, 60_000).unref();
-
-export function createCeremony(
+export async function createCeremony(
+  prisma: PrismaClient,
   kind: 'register' | 'login',
   challenge: string,
   userId?: string,
-): string {
+): Promise<string> {
   const ceremonyId = randomUUID();
-  ceremonies.set(ceremonyId, {
-    kind,
-    challenge,
-    userId,
-    expires: nowFn() + CEREMONY_TTL_MS,
+  await store(prisma).create({
+    data: {
+      id: ceremonyId,
+      kind,
+      challenge,
+      userId: userId ?? null,
+      expiresAt: new Date(nowFn() + CEREMONY_TTL_MS),
+    },
   });
   return ceremonyId;
 }
 
 /**
- * One-shot ceremony read: returns the ceremony and deletes it, or null if
- * the id is unknown, expired, or of the wrong kind.
+ * One-shot ceremony read: deletes the row and returns it, or null if the
+ * id is unknown, expired, or of the wrong kind.
  */
-export function takeCeremony(
+export async function takeCeremony(
+  prisma: PrismaClient,
   ceremonyId: string,
   kind: 'register' | 'login',
-): WebAuthnCeremony | null {
-  const entry = ceremonies.get(ceremonyId);
-  ceremonies.delete(ceremonyId);
-  if (!entry || entry.kind !== kind || entry.expires < nowFn()) {
+): Promise<WebAuthnCeremony | null> {
+  let row;
+  try {
+    row = await store(prisma).delete({ where: { id: ceremonyId } });
+  } catch {
+    return null; // unknown id
+  }
+  if (!row || row.kind !== kind || row.expiresAt.getTime() < nowFn()) {
     return null;
   }
-  return entry;
+  return {
+    kind: row.kind as 'register' | 'login',
+    challenge: row.challenge,
+    userId: row.userId ?? undefined,
+    expires: row.expiresAt.getTime(),
+  };
+}
+
+/** Delete expired ceremonies — called by the periodic prune job. */
+export async function pruneCeremonies(prisma: PrismaClient): Promise<number> {
+  const res = await store(prisma).deleteMany({ where: { expiresAt: { lt: new Date() } } });
+  return res.count;
 }

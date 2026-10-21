@@ -36,6 +36,7 @@ model User {
   googleId        String?  @unique // Google OpenID Connect `sub` claim
   displayName     String?
   email           String?
+  emailVerifiedAt DateTime? // set by /api/auth/email/verify; cleared on email change
   avatar          String?
   avatar3d        Json?    // OASIS in-world avatar config {callsign, bodyType, neonColor, augmentation}
   bio             String?
@@ -60,6 +61,8 @@ model User {
   multichainOrders        MultichainOrder[]
 
   avatarAsset     AvatarAsset?
+  authEvents      AuthEvent[]
+  verificationTokens VerificationToken[]
 
   @@index([role])
 }
@@ -82,7 +85,7 @@ model LinkedAddress {
   id          String   @id @default(cuid())
   userId      String
   address     String   @unique
-  chainType   String // "zion-l1" | "evm" | "bitcoin"
+  chainType   String // "zion-l1" | "evm" | "bitcoin" | "solana" | "quantus" | "pearl" | "google"
   chainId     String? // "base" | "ethereum" | etc.
   verifiedAt  DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -132,6 +135,70 @@ model WebAuthnCredential {
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ── Auth challenges (ZIS login/link proof-of-key) ────────────────────
+// Single active challenge per address — a fresh /api/auth/challenge
+// request replaces the previous one. Rows are consumed (deleted) on
+// successful verification or expire via the prune job.
+model AuthChallenge {
+  address   String   @id // lowercased address the challenge was issued for
+  challenge String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+// ── WebAuthn ceremonies ──────────────────────────────────────────────
+// One-shot ceremony state for passkey register/login flows. Keyed by a
+// server-generated ceremonyId; consumed on read, pruned after expiry.
+model WebAuthnCeremony {
+  id        String   @id // ceremonyId (uuid)
+  kind      String // "register" | "login"
+  challenge String
+  userId    String? // bound user for register ceremonies
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+// ── Auth audit log ───────────────────────────────────────────────────
+// Security-relevant events (logins, links, revocations, admin actions).
+// userId goes NULL on account deletion — the audit trail survives.
+model AuthEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  kind      String // "login" | "login_failed" | "logout" | "link" | "unlink" | "primary_change" | "session_revoke" | "apikey_create" | "apikey_revoke" | "passkey_add" | "passkey_remove" | "account_delete" | "email_verify" | "admin_role_change" | "admin_user_delete" | "notification_push"
+  address   String?
+  chainType String?
+  ip        String?
+  userAgent String?
+  meta      Json?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([kind, createdAt])
+  @@index([createdAt])
+}
+
+// ── Verification tokens ──────────────────────────────────────────────
+// Single-purpose tokens (e-mail verification, future account recovery).
+// `token` stores SHA-256 of the raw token — the DB never holds the secret.
+model VerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique // sha256 hex of the raw token
+  userId    String
+  kind      String // "email_verify"
+  payload   String? // e.g. the e-mail address being verified
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // ════════════════════════════════════════════════════════════════════

@@ -20,7 +20,9 @@ tags:
   - name: webauthn
   - name: session
   - name: keys
+  - name: notifications
   - name: wallet
+  - name: admin
   - name: meta
 
 paths:
@@ -76,7 +78,7 @@ paths:
                 address: { type: string, minLength: 8 }
                 chainType:
                   type: string
-                  enum: [zion-l1, evm, bitcoin]
+                  enum: [zion-l1, evm, bitcoin, solana, quantus, pearl, google]
                   default: zion-l1
       responses:
         '200':
@@ -153,6 +155,25 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /api/auth/verify:
+    post:
+      tags: [auth]
+      summary: Method dispatcher — routes to ed25519 / siwe / google by `method`
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method]
+              properties:
+                method: { type: string, enum: [ed25519, siwe, google] }
+      responses:
+        '200': { description: Session issued; returns user object }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /api/auth/me:
     get:
       tags: [auth]
@@ -177,6 +198,31 @@ paths:
         '200': { $ref: '#/components/schemas/User' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [auth]
+      summary: Delete the account (requires fresh proof-of-key or Google idToken)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chainType]
+              properties:
+                chainType:
+                  type: string
+                  enum: [zion-l1, evm, bitcoin, solana, quantus, pearl, google]
+                address: { type: string, description: linked address used as proof }
+                publicKey: { type: string }
+                signature: { type: string }
+                message: { type: string, description: SIWE message for evm }
+                idToken: { type: string, description: Google idToken for google }
+                zionAddress: { type: string, description: attesting ZION address (quantus/pearl) }
+      responses:
+        '200': { description: '{ ok, deleted, sessionsRevoked } — cookie cleared' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: FORBIDDEN — proof address not linked to this account }
 
   /api/auth/logout:
     post:
@@ -196,18 +242,149 @@ paths:
           application/json:
             schema:
               type: object
-              required: [address, chainType, signature]
+              required: [chainType]
               properties:
                 address: { type: string }
-                chainType: { type: string, enum: [zion-l1, evm, bitcoin] }
+                chainType:
+                  type: string
+                  enum: [zion-l1, evm, bitcoin, solana, quantus, pearl, google]
                 chainId: { type: string }
                 publicKey: { type: string, description: Ed25519 linking }
                 signature: { type: string }
                 message: { type: string, description: SIWE linking }
+                idToken: { type: string, description: Google idToken for google }
+                zionAddress: { type: string, description: attesting ZION address (quantus/pearl) }
+      responses:
+        '200': { description: '{ linked, user }' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { description: CONFLICT — address already linked to another account }
+
+  /api/auth/link/{address}:
+    delete:
+      tags: [auth]
+      summary: Unlink a secondary address (not the primary, not the last one)
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: '{ ok, unlinked }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Address not linked to this account }
+        '409': { description: CONFLICT — primary or last remaining address }
+
+  /api/auth/primary:
+    post:
+      tags: [auth]
+      summary: Move the primary address to another linked address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address]
+              properties:
+                address: { type: string }
       responses:
         '200': { $ref: '#/components/schemas/User' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Address not linked to this account }
+
+  /api/auth/email/verify/request:
+    post:
+      tags: [auth]
+      summary: Send an e-mail verification link (rate-limited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { description: '{ ok: true }' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { description: COOLDOWN — resend too soon }
+        '503': { description: EMAIL_DISABLED — mail flow not enabled }
+
+  /api/auth/email/verify:
+    get:
+      tags: [auth]
+      summary: Consume an e-mail verification token (mail link target)
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '302': { description: Redirect to the app with email_verified flag }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /api/auth/avatar/u/{userId}:
+    get:
+      tags: [auth]
+      summary: Public avatar image for a user (SVG or uploaded asset)
+      security: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Avatar image bytes }
+        '404': { description: Not found }
+
+  /api/auth/avatar/upload:
+    post:
+      tags: [auth]
+      summary: Upload a custom avatar image (≤256 KiB, magic-byte sniffed)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200': { description: '{ avatar: url }' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [auth]
+      summary: Remove the uploaded avatar (falls back to deterministic SVG)
+      responses:
+        '200': { description: '{ ok: true }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/avatar/nft:
+    post:
+      tags: [auth]
+      summary: Bind an ERC-1155 NFT as avatar (ownership checked on linked EVM addresses)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contract, tokenId]
+              properties:
+                contract: { type: string }
+                tokenId: { type: string }
+                chainId: { type: string }
+      responses:
+        '200': { description: '{ avatar: url }' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: NOT_OWNER — no linked address holds the token }
 
   /api/auth/webauthn/register/options:
     post:
@@ -367,6 +544,29 @@ paths:
         '401': { description: Invalid key }
 
   /api/notifications:
+    post:
+      tags: [notifications]
+      summary: Push a notification (service-to-service, x-service-key)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, title]
+              properties:
+                userId: { type: string }
+                address: { type: string, description: any linked/primary address }
+                type: { type: string, maxLength: 64 }
+                title: { type: string, maxLength: 255 }
+                body: { type: string, maxLength: 4096 }
+                data: { type: object }
+      responses:
+        '200': { description: '{ ok, id }' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { description: Invalid or missing x-service-key }
+        '404': { description: Target user not found }
     get:
       tags: [notifications]
       summary: List notifications for the current user (newest first)
@@ -529,6 +729,92 @@ paths:
         '200': { description: Quote }
         '400': { $ref: '#/components/responses/BadRequest' }
 
+  /api/admin/users:
+    get:
+      tags: [admin]
+      summary: Paginated user list with optional substring search (role=admin or x-service-key)
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, maximum: 200 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        '200': { description: '{ users[], total, limit, offset }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: FORBIDDEN — admin role required }
+  /api/admin/users/{id}:
+    get:
+      tags: [admin]
+      summary: Full user detail + recent auth events
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: '{ user, events }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: FORBIDDEN }
+        '404': { description: Not found }
+    delete:
+      tags: [admin]
+      summary: Delete a user account (audited; self-delete goes via DELETE /api/auth/me)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: '{ ok, deleted, sessionsRevoked }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: FORBIDDEN }
+        '404': { description: Not found }
+        '409': { description: SELF_DELETE }
+  /api/admin/users/{id}/role:
+    post:
+      tags: [admin]
+      summary: Set a user's role (audited; last-admin demote refused)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { type: string, enum: [user, admin, moderator] }
+      responses:
+        '200': { description: '{ user }' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: FORBIDDEN }
+        '404': { description: Not found }
+        '409': { description: LAST_ADMIN }
+  /api/admin/stats:
+    get:
+      tags: [admin]
+      summary: Headline numbers (users, sessions, logins, pending challenges)
+      responses:
+        '200': { description: Stats object }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: FORBIDDEN }
+  /api/admin/events:
+    get:
+      tags: [admin]
+      summary: Audit log view (filter by userId / kind)
+      parameters:
+        - { name: userId, in: query, schema: { type: string } }
+        - { name: kind, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, maximum: 200 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        '200': { description: '{ events[], total, limit, offset }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: FORBIDDEN }
+
+  /metrics:
+    get:
+      tags: [meta]
+      summary: Prometheus text exposition (scraped by edge Prometheus)
+      security: []
+      responses:
+        '200': { description: text/plain; version=0.0.4 }
+
 components:
   securitySchemes:
     sessionCookie:
@@ -557,7 +843,9 @@ components:
             type: object
             properties:
               address: { type: string }
-              chainType: { type: string, enum: [zion-l1, evm, bitcoin, google] }
+              chainType:
+                type: string
+                enum: [zion-l1, evm, bitcoin, solana, quantus, pearl, google]
               chainId: { type: string, nullable: true }
   responses:
     BadRequest:

@@ -1,5 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { randomUUID } from 'node:crypto';
+import { auditBg } from './audit.js';
+import { inc, M } from './metrics.js';
 
 export async function issueSessionForUser(
   app: FastifyInstance,
@@ -24,6 +26,9 @@ export async function issueSessionForUser(
   await app.prisma.session.create({
     data: { userId: user.id, jwtJti: jti, expiresAt, userAgent, ipAddress },
   });
+
+  inc(M.sessionIssued, { method: chainType });
+  auditBg(app, req, { kind: 'login', userId: user.id, address, chainType, meta: { jti } });
 
   const token = app.jwt.sign({ sub: user.id, addr: address, jti });
   reply.setCookie('zion_session', token, {

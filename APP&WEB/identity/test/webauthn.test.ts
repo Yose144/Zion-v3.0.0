@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import Fastify, { type FastifyInstance } from 'fastify';
 import cookie from '@fastify/cookie';
 import jwt from '@fastify/jwt';
+import type { PrismaClient } from '@prisma/client';
 
 import { webauthnRoutes, type WebAuthnDeps } from '../src/routes/webauthn.js';
 import {
@@ -25,11 +26,13 @@ function makeFakePrisma() {
   const credentials = new Map<string, Record<string, unknown>>();
   const sessions = new Map<string, Record<string, unknown>>(); // key: jwtJti
   const linkedAddresses = new Map<string, Record<string, unknown>>(); // key: address
+  const ceremonies = new Map<string, Record<string, unknown>>(); // key: id
+  const authEvents: Record<string, unknown>[] = [];
   let idCounter = 0;
   const nextId = () => `id-${++idCounter}`;
 
   return {
-    _state: { users, credentials, sessions, linkedAddresses },
+    _state: { users, credentials, sessions, linkedAddresses, ceremonies, authEvents },
     user: {
       findUnique: async ({ where }: { where: { id?: string; primaryAddress?: string } }) => {
         if (where.id) return users.get(where.id) ?? null;
@@ -108,6 +111,40 @@ function makeFakePrisma() {
         if (s) Object.assign(s, data);
         return s;
       },
+    },
+    webAuthnCeremony: {
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        ceremonies.set(data.id as string, { ...data });
+        return data;
+      },
+      delete: async ({ where }: { where: { id: string } }) => {
+        const row = ceremonies.get(where.id);
+        if (!row) {
+          const err = new Error('Record not found') as Error & { code: string };
+          err.code = 'P2025';
+          throw err;
+        }
+        ceremonies.delete(where.id);
+        return row;
+      },
+      deleteMany: async ({ where }: { where: { expiresAt: { lt: Date } } }) => {
+        let count = 0;
+        for (const [k, c] of ceremonies) {
+          if ((c.expiresAt as Date).getTime() < where.expiresAt.lt.getTime()) {
+            ceremonies.delete(k);
+            count++;
+          }
+        }
+        return { count };
+      },
+    },
+    authEvent: {
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        const row = { id: nextId(), createdAt: new Date(), ...data };
+        authEvents.push(row);
+        return row;
+      },
+      deleteMany: async () => ({ count: 0 }),
     },
     linkedAddress: {
       upsert: async ({ where, create }: {
@@ -267,7 +304,12 @@ test('register/verify with a ceremony owned by another user → 400 CEREMONY_INV
     verifyRegistrationResponse: (async () => VERIFY_OK_REG) as WebAuthnDeps['verifyRegistrationResponse'],
   });
   const { headers } = makeAuthedUser(app, fake);
-  const ceremonyId = createCeremony('register', 'some-challenge', 'other-user-id');
+  const ceremonyId = await createCeremony(
+    fake as unknown as PrismaClient,
+    'register',
+    'some-challenge',
+    'other-user-id',
+  );
 
   const res = await app.inject({
     method: 'POST',

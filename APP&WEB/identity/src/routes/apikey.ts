@@ -2,6 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { createHash, randomBytes } from 'node:crypto';
 import { requireAuth } from '../lib/auth.js';
+import { auditBg } from '../lib/audit.js';
+import { inc, M } from '../lib/metrics.js';
 
 const CreateKeySchema = z.object({
   label: z.string().min(1).max(64),
@@ -27,6 +29,7 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
       where: { keyHash },
     });
     if (!apiKey) {
+      inc(M.apikeyVerify, { result: 'fail' });
       return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid API key' });
     }
     await app.prisma.apiKey.update({
@@ -38,8 +41,10 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
       include: { linkedAddresses: true, oasisPlayer: true },
     });
     if (!user) {
+      inc(M.apikeyVerify, { result: 'fail' });
       return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'User not found' });
     }
+    inc(M.apikeyVerify, { result: 'ok' });
     return { valid: true, user };
   });
 
@@ -53,9 +58,10 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
     const rawKey = `zis_${randomBytes(24).toString('hex')}`;
     const keyHash = createHash('sha256').update(rawKey).digest('hex');
 
-    await app.prisma.apiKey.create({
+    const created = await app.prisma.apiKey.create({
       data: { userId: payload.sub, keyHash, label: parsed.data.label },
     });
+    auditBg(app, req, { kind: 'apikey_create', userId: payload.sub, meta: { keyId: created.id, label: parsed.data.label } });
 
     // Return the raw key only once
     return { apiKey: rawKey, label: parsed.data.label };
@@ -81,6 +87,7 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(404).send({ error: 'NOT_FOUND' });
     }
     await app.prisma.apiKey.delete({ where: { id } });
+    auditBg(app, req, { kind: 'apikey_revoke', userId: payload.sub, meta: { keyId: id, label: key.label } });
     return { ok: true };
   });
 }

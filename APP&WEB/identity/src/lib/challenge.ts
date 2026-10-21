@@ -1,4 +1,10 @@
 // Auth challenge + verification for both ZION L1 (Ed25519) and EVM (SIWE).
+//
+// Challenges live in the AuthChallenge table (one active row per
+// lowercased address) — a service restart no longer kills in-flight
+// logins and the store can be shared by multiple instances. Rows are
+// consumed on successful verification and expired rows are pruned by
+// the periodic prune job in server.ts.
 
 import * as ed from 'noble-ed25519';
 import { sha256 } from '@noble/hashes/sha256';
@@ -7,22 +13,31 @@ import { blake2b } from '@noble/hashes/blake2b';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { randomBytes } from 'node:crypto';
 import { SiweMessage } from 'siwe';
+import type { PrismaClient } from '@prisma/client';
 
 const CHALLENGE_TTL_MS = 5 * 60 * 1000; // 5 min
 const ZION_PREFIX = 'zion1';
 const ZION_BASE32 = '023456789acdefghjklmnpqrstuvwxyz';
 
-const challenges = new Map<string, { challenge: string; expires: number }>();
+/** Narrow store interface — real PrismaClient or the in-memory test fake. */
+export interface ChallengeStore {
+  upsert(args: {
+    where: { address: string };
+    create: { address: string; challenge: string; expiresAt: Date };
+    update: { challenge: string; expiresAt: Date };
+  }): Promise<unknown>;
+  findUnique(args: {
+    where: { address: string };
+  }): Promise<{ challenge: string; expiresAt: Date } | null>;
+  delete(args: { where: { address: string } }): Promise<unknown>;
+  deleteMany(args: { where: { expiresAt: { lt: Date } } }): Promise<{ count: number }>;
+}
 
-// Periodic cleanup
-setInterval(() => {
-  const now = Date.now();
-  for (const [k, v] of challenges) {
-    if (v.expires < now) challenges.delete(k);
-  }
-}, 60_000).unref();
+function store(prisma: PrismaClient): ChallengeStore {
+  return prisma.authChallenge as unknown as ChallengeStore;
+}
 
-export function createChallenge(address: string): string {
+export async function createChallenge(prisma: PrismaClient, address: string): Promise<string> {
   const nonce = randomBytes(16).toString('hex');
   const issued = new Date().toISOString();
   const challenge = [
@@ -33,24 +48,35 @@ export function createChallenge(address: string): string {
     `ttl: ${CHALLENGE_TTL_MS}ms`,
   ].join('\n');
 
-  challenges.set(address.toLowerCase(), {
-    challenge,
-    expires: Date.now() + CHALLENGE_TTL_MS,
+  const expiresAt = new Date(Date.now() + CHALLENGE_TTL_MS);
+  await store(prisma).upsert({
+    where: { address: address.toLowerCase() },
+    create: { address: address.toLowerCase(), challenge, expiresAt },
+    update: { challenge, expiresAt },
   });
   return challenge;
 }
 
-export function getChallenge(address: string): string | null {
-  const entry = challenges.get(address.toLowerCase());
-  if (!entry || entry.expires < Date.now()) {
-    challenges.delete(address.toLowerCase());
+/** Non-consuming read: returns the active challenge or null when missing/expired. */
+export async function getChallenge(prisma: PrismaClient, address: string): Promise<string | null> {
+  const row = await store(prisma).findUnique({ where: { address: address.toLowerCase() } });
+  if (!row) return null;
+  if (row.expiresAt < new Date()) {
+    await store(prisma).delete({ where: { address: address.toLowerCase() } }).catch(() => {});
     return null;
   }
-  return entry.challenge;
+  return row.challenge;
 }
 
-export function clearChallenge(address: string): void {
-  challenges.delete(address.toLowerCase());
+/** Consume the challenge after a successful verification. */
+export async function clearChallenge(prisma: PrismaClient, address: string): Promise<void> {
+  await store(prisma).delete({ where: { address: address.toLowerCase() } }).catch(() => {});
+}
+
+/** Delete expired challenges — called by the periodic prune job. */
+export async function pruneChallenges(prisma: PrismaClient): Promise<number> {
+  const res = await store(prisma).deleteMany({ where: { expiresAt: { lt: new Date() } } });
+  return res.count;
 }
 
 /**
@@ -88,11 +114,12 @@ function publicKeyToAddress(publicKey: Uint8Array): string {
  * Signature is over the challenge bytes (UTF-8).
  */
 export async function verifyEd25519(
+  prisma: PrismaClient,
   address: string,
   signatureHex: string,
   publicKeyHex: string,
 ): Promise<boolean> {
-  const challenge = getChallenge(address);
+  const challenge = await getChallenge(prisma, address);
   if (!challenge) return false;
 
   const messageBytes = Buffer.from(challenge, 'utf8');
@@ -104,7 +131,7 @@ export async function verifyEd25519(
   if (expectedAddr !== address) return false;
 
   const ok = await ed.verify(sig, messageBytes, pub);
-  if (ok) clearChallenge(address);
+  if (ok) await clearChallenge(prisma, address);
   return ok;
 }
 
@@ -115,11 +142,12 @@ export async function verifyEd25519(
  * and ensures the nonce matches a challenge issued by this service.
  */
 export async function verifySiwe(
+  prisma: PrismaClient,
   address: string,
   signature: string,
   message: string,
 ): Promise<boolean> {
-  const challenge = getChallenge(address);
+  const challenge = await getChallenge(prisma, address);
   if (!challenge) return false;
 
   let parsed: SiweMessage;
@@ -154,7 +182,7 @@ export async function verifySiwe(
   if (!success || !data) return false;
   if (data.address.toLowerCase() !== address.toLowerCase()) return false;
 
-  clearChallenge(address);
+  await clearChallenge(prisma, address);
   return true;
 }
 
@@ -223,10 +251,11 @@ function bech32EncodeP2wpkh(prog20: Uint8Array): string {
  * address itself (no pubkey→address derivation needed).
  */
 export async function verifySolana(
+  prisma: PrismaClient,
   address: string,
   signatureHex: string,
 ): Promise<boolean> {
-  const challenge = getChallenge(address);
+  const challenge = await getChallenge(prisma, address);
   if (!challenge) return false;
   let pub: Uint8Array;
   try {
@@ -240,7 +269,7 @@ export async function verifySolana(
     Buffer.from(challenge, 'utf8'),
     Buffer.from(pub),
   );
-  if (ok) clearChallenge(address);
+  if (ok) await clearChallenge(prisma, address);
   return ok;
 }
 
@@ -252,10 +281,11 @@ export async function verifySolana(
  * compares it to the claimed one — real key ownership, no BIP-322 machinery.
  */
 export async function verifyBitcoin(
+  prisma: PrismaClient,
   address: string,
   signatureHex: string,
 ): Promise<boolean> {
-  const challenge = getChallenge(address);
+  const challenge = await getChallenge(prisma, address);
   if (!challenge) return false;
   try {
     const sig = Buffer.from(signatureHex, 'hex');
@@ -271,7 +301,7 @@ export async function verifyBitcoin(
       .toRawBytes(true);
     const derived = bech32EncodeP2wpkh(ripemd160(sha256(pub)));
     if (derived !== address.trim()) return false;
-    clearChallenge(address);
+    await clearChallenge(prisma, address);
     return true;
   } catch {
     return false;
@@ -285,19 +315,20 @@ export async function verifyBitcoin(
  * issued for the ZION address. The qz address itself is ss58-189 validated.
  */
 export async function verifyQuantusAttestation(
+  prisma: PrismaClient,
   zionAddress: string,
   zionPublicKey: string,
   signatureHex: string,
   qzAddress: string,
 ): Promise<boolean> {
-  const challenge = getChallenge(zionAddress);
+  const challenge = await getChallenge(prisma, zionAddress);
   if (!challenge) return false;
   if (!isValidQuantusAddress(qzAddress)) return false;
   const pub = Buffer.from(zionPublicKey, 'hex');
   if (publicKeyToAddress(Uint8Array.from(pub)) !== zionAddress) return false;
   const message = Buffer.from(`${challenge}\nquantus:${qzAddress}`, 'utf8');
   const ok = await ed.verify(Buffer.from(signatureHex, 'hex'), message, pub);
-  if (ok) clearChallenge(zionAddress);
+  if (ok) await clearChallenge(prisma, zionAddress);
   return ok;
 }
 
@@ -324,19 +355,20 @@ export function isValidQuantusAddress(addr: string): boolean {
  * for the ZION address. The prl1 address itself is bech32m-validated.
  */
 export async function verifyPearlAttestation(
+  prisma: PrismaClient,
   zionAddress: string,
   zionPublicKey: string,
   signatureHex: string,
   prlAddress: string,
 ): Promise<boolean> {
-  const challenge = getChallenge(zionAddress);
+  const challenge = await getChallenge(prisma, zionAddress);
   if (!challenge) return false;
   if (!isValidPearlAddress(prlAddress)) return false;
   const pub = Buffer.from(zionPublicKey, 'hex');
   if (publicKeyToAddress(Uint8Array.from(pub)) !== zionAddress) return false;
   const message = Buffer.from(`${challenge}\npearl:${prlAddress}`, 'utf8');
   const ok = await ed.verify(Buffer.from(signatureHex, 'hex'), message, pub);
-  if (ok) clearChallenge(zionAddress);
+  if (ok) await clearChallenge(prisma, zionAddress);
   return ok;
 }
 
