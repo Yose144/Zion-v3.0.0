@@ -130,6 +130,22 @@ impl QpowCudaMiner {
         )
             .map_err(|e| anyhow::anyhow!("PTX load failed for qpow: {e}"))?;
 
+        // Occupancy probe for kernel tuning: ZION_QPOW_OCC_DEBUG=1 prints
+        // max active blocks/SM for each kernel entry at TPB=256.
+        if std::env::var_os("ZION_QPOW_OCC_DEBUG").is_some() {
+            for name in [QPOW_KERNEL, QPOW_SINGLE_NONCE_KERNEL, QPOW_DUAL_KERNEL] {
+                match dev.get_func(QPOW_MODULE, name) {
+                    Some(f) => {
+                        match f.occupancy_max_active_blocks_per_multiprocessor(256, 0, None) {
+                            Ok(b) => eprintln!("[qpow-occ] {name}: {b} blocks/SM @256thr"),
+                            Err(e) => eprintln!("[qpow-occ] {name}: {e}"),
+                        }
+                    }
+                    None => eprintln!("[qpow-occ] {name}: missing"),
+                }
+            }
+        }
+
         // Read once at init — never promoted, never re-parsed per batch.
         let single_nonce =
             single_nonce_enabled(std::env::var("ZION_QPOW_SINGLE_NONCE").ok().as_deref());

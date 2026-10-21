@@ -1,6 +1,12 @@
 # AGENTS.md — V31 Mainnet Alpha
 
 
+## 2026-10-21 — PEARL `ZION_PEARL_SUBTREE` sweep + QPOW `EUNROLL` — both rejected; per-card baselines on RTX 3060 #3 (vast 57022777, 170 W)
+
+- New opt-in `ZION_PEARL_SUBTREE` (pow2 16..1024, default 128) on `pearl_gen_chunk_merkle_fused`: block size = subtree leaf count, NVRTC `-DPEARL_SUBTREE`, module suffix `_stN`, root buffers sized per value. Sweep st{32,64,256} vs 128 → **3347/3359/3393 vs 3458 att/s = −3.2/−2.9/−1.9 %, parity PASS all** → REJECTED; 4 streams already put ~128 blocks in flight. Knob stays opt-in.
+- `QPOW_EUNROLL=2` (external-round unroll): **147.7 vs 153.2 MH/s = −3.5 %** → rejected, EUNROLL=1 stays.
+- Card baselines (170 W): native pearl v6c1+cum **~3458 att/s ≈ 23.9 TH/s** vs SRB **52.85 TH/s** (~2.2×); native qpow **~156.5 MH/s** vs SRB ~220–224 (~1.42×). Ratios consistent across cards — both kernels remain at their measured issue-rate plateaus; detail `PEARL-OPTIMIZATION.md` §19 + `QPOW-CUDA-TUNING.md` Appendix F.
+
 ## 2026-10-18 (2) — Pearl v7/v11 measured on SM86: both rejected, v6c1 stays champion
 
 - `pearl_pouw_mine_native_v11` added (sm_80+ opt-in): per-lane cp.async B prefetch ring, zero __syncthreads — measured **−14.5 %** vs v6c1 (LDS/STS overhead + 16 KiB smem occupancy cost > latency saved).

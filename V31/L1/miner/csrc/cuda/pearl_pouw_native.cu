@@ -65,9 +65,11 @@ __constant__ const uint MSG_SCHEDULE[7][16] = {
 #define KEYED_HASH  16u
 
 // Leaves per block subtree in pearl_gen_chunk_merkle_fused — equals the
-// launch block size. 256 balances SM coverage (2048 chunks → 8 blocks per
-// tree) against smem (8KB) and reduction depth (8 levels).
+// launch block size. Overridable at NVRTC time (ZION_PEARL_SUBTREE) —
+// must stay a power of two for the pairwise smem reduce.
+#ifndef PEARL_SUBTREE
 #define PEARL_SUBTREE 128u
+#endif
 
 // ─── BLAKE3 compression (single block) ──────────────────────────────────────
 

@@ -752,3 +752,32 @@ PRL fill all remaining gaps: effective split ≈ 4 / ~50 / ~46.
   duty control across processes). Per-device check on the 1070 Ti before
   rolling `ZION_GPU_WORK_SIZE=2048`.
 
+
+## 19. Session 10 — `ZION_PEARL_SUBTREE` sweep + per-card baselines (2026-10-21, RTX 3060 #3, vast 57022777, 170 W)
+
+New opt-in `ZION_PEARL_SUBTREE=N` (power of two, 16..=1024, default 128):
+NVRTC `-DPEARL_SUBTREE=N` on `pearl_gen_chunk_merkle_fused` — block size IS
+the subtree leaf count; module suffix `_stN`, `subtree_{a,b}` buffers sized
+per configured value. Hypothesis: 2048 chunks/tree → only 32 blocks (2×16)
+at st=128 may under-fill SMs for the serial BLAKE3 leaf chains.
+
+**Measured (solo, cum-MMA on, interleaved 2 rounds, parity PASS all):**
+
+| subtree | avg att/s | vs 128 |
+|---|---|---|
+| **128 (default)** | **3458.4** | — |
+| 32 | 3347.2 | **−3.2 %** |
+| 64 | 3359.2 | −2.9 % |
+| 256 | 3392.8 | −1.9 % |
+
+**Verdict: REJECTED — keep 128.** With 4 streams the launch already puts
+~128 blocks in flight; per-block smem-reduce overhead grows faster than
+the extra TLP wins. Knob stays opt-in for future shapes.
+
+**Per-card baselines on this instance (170 W limit):**
+native v6c1+cum ≈ **3458 att/s ≈ 23.9 TH/s**; SRBMiner pearlhash ≈
+**52.85 TH/s** → gap **~2.2×** (unchanged ratio across cards).
+native QPoW sustained ≈ **156.5 MH/s**; SRBMiner quantus ≈ 220–224 MH/s →
+gap **~1.42×**. `QPOW_EUNROLL=2` A/B: 147.7 vs 153.2 = **−3.5 %** →
+external-round unrolling hurts (register pressure); `QPOW_EUNROLL=1`
+stays.

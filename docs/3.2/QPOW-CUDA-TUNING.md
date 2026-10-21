@@ -335,3 +335,14 @@ The sponge per-thread state is inherently serial; interleaving requires
 a second full state which doesn't fit the register budget. Remaining
 ~1.5x SRB gap is structural (their instruction mix is unknown,
 closed-source) — native ~145 MH/s is the measured plateau.
+
+## Appendix F — `QPOW_EUNROLL` external-round unroll sweep (2026-10-21, RTX 3060 #3, 170 W)
+
+`QPOW_EUNROLL` (default 1) unrolls the *external* round loop in all three
+kernels. A/B via `QPOW_NVRTC_OPTS="-DQPOW_EUNROLL=2"` on the sustained
+windows bench: **147.7 vs 153.2 MH/s = −3.5 %** — same register-pressure
+pattern as the internal unroll ceiling (21 stays the best IUNROLL).
+Rejected; `QPOW_EUNROLL=1` remains default.
+
+Per-card re-baseline on this instance: native sustained **~156.5 MH/s**
+(vs SRBMiner quantus ~220–224 MH/s → gap ~1.42×, unchanged).

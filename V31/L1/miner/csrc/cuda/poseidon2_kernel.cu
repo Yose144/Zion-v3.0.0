@@ -33,9 +33,10 @@ typedef unsigned long long u64;
 #ifndef QPOW_LB_MIN
 #define QPOW_LB_MIN 2
 #endif
-// Internal Poseidon2 round loop unroll factor (21 rounds).
+// Internal Poseidon2 round loop unroll factor (21 rounds). SM86 measured:
+// 21 beats 3 by ~+0.6% median (150.0 vs 149.3 MH/s, interleaved x3).
 #ifndef QPOW_IUNROLL
-#define QPOW_IUNROLL 3
+#define QPOW_IUNROLL 21
 #endif
 // External (initial/terminal) 4-round loop unroll factor.
 #ifndef QPOW_EUNROLL

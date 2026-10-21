@@ -253,6 +253,9 @@ pub struct PearlCudaMiner {
     /// metadata only (the init log reports the actual flag at runtime).
     #[cfg(test)]
     cumulative_mma: bool,
+    /// Leaves per block in pearl_gen_chunk_merkle_fused — equals the
+    /// kernel's PEARL_SUBTREE define and the launch block size.
+    subtree: u32,
     f_gen_matrix: CudaFunction,
     f_chunk_hash: CudaFunction,
     f_merge: CudaFunction,
@@ -322,14 +325,28 @@ impl PearlCudaMiner {
             .and_then(|v| v.parse::<u32>().ok())
             .filter(|v| (1..=16).contains(v))
             .unwrap_or(0);
+        // Opt-in subtree width for the fused gen+chunk+merkle kernel —
+        // the block size IS the subtree leaf count, so smaller values
+        // raise block count / per-SM warp occupancy for the serial
+        // BLAKE3 chunk chains. Power of two in 16..=1024; default 128.
+        let subtree = std::env::var("ZION_PEARL_SUBTREE")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .filter(|v| v.is_power_of_two() && (16..=1024).contains(v))
+            .unwrap_or(128);
         // The variant gets its own module name so a shared device never
         // aliases functions between the two flavors.
         let module: String = format!(
-            "{}{}{}",
+            "{}{}{}{}",
             MODULE,
             if cumulative_mma { "_cumulative" } else { "" },
             if v6_maxblk > 0 {
                 format!("_mb{}", v6_maxblk)
+            } else {
+                String::new()
+            },
+            if subtree != 128 {
+                format!("_st{}", subtree)
             } else {
                 String::new()
             }
@@ -345,6 +362,7 @@ impl PearlCudaMiner {
                     "--std=c++14".to_string(),
                     format!("-DPEARL_CUMULATIVE_MMA={}", cumulative_mma as u32),
                     format!("-DPEARL_V6_MAXB={}", v6_maxblk),
+                    format!("-DPEARL_SUBTREE={}u", subtree),
                 ],
                 ..Default::default()
             },
@@ -437,7 +455,7 @@ impl PearlCudaMiner {
         );
 
         crate::ext_info!(
-            "gpu_pearl_cuda_init device=\"{}\" work_size={} streams={} cc={}.{} cumulative_mma={} v6_maxblk={}",
+            "gpu_pearl_cuda_init device=\"{}\" work_size={} streams={} cc={}.{} cumulative_mma={} v6_maxblk={} subtree={}",
             device_name,
             work_size,
             streams.len(),
@@ -445,6 +463,7 @@ impl PearlCudaMiner {
             compute_capability.1,
             cumulative_mma,
             v6_maxblk,
+            subtree,
         );
         if compute_capability == (7, 5) {
             crate::ext_info!(
@@ -459,6 +478,7 @@ impl PearlCudaMiner {
             compute_capability,
             #[cfg(test)]
             cumulative_mma,
+            subtree,
             f_gen_matrix,
             f_chunk_hash,
             f_merge,
@@ -566,8 +586,8 @@ impl PearlCudaMiner {
                 matrix_a: az(num_chunks_a * 1024)?,
                 matrix_bt: az(num_chunks_b * 1024)?,
                 chunk_hashes: azu(max_chunks * 32)?,
-                subtree_a: azu(max_chunks.div_ceil(1024).max(1) * 32)?,
-                subtree_b: azu(max_chunks.div_ceil(1024).max(1) * 32)?,
+                subtree_a: azu(max_chunks.div_ceil(self.subtree as usize).max(1) * 32)?,
+                subtree_b: azu(max_chunks.div_ceil(self.subtree as usize).max(1) * 32)?,
                 merkle: azu(max_chunks * 32)?,
                 merkle2: azu(max_chunks * 32)?,
                 merkle_b: azu(max_chunks * 32)?,
@@ -759,15 +779,15 @@ impl PearlCudaMiner {
         // raw chunk-leaf layer.
         // PEARL_SUBTREE must equal the .cu define — the launch block size
         // IS the subtree leaf capacity.
-        let nsb_a = num_chunks_a.div_ceil(128);
-        let nsb_b = num_chunks_b.div_ceil(128);
+        let nsb_a = num_chunks_a.div_ceil(self.subtree as usize);
+        let nsb_b = num_chunks_b.div_ceil(self.subtree as usize);
         if gen_chunk_fused {
             // gen + chunk-hash + in-block subtree Merkle in ONE launch.
             klaunch!(
                 &self.f_gcm_fused,
                 LaunchConfig {
                     grid_dim: ((nsb_a + nsb_b) as u32, 1, 1),
-                    block_dim: (128, 1, 1),
+                    block_dim: (self.subtree, 1, 1),
                     shared_mem_bytes: 0,
                 },
                 (
