@@ -1,7 +1,11 @@
 # DNS — `zionterranova.com` — přesun web tieru Edge → EDGE2
 
 > Registrar/DNS: **WebGlobe** (ns1/ns2.webglobe.cz, ns3.webglobe.com)
-> Stav zóny: snapshot z **2026-10-22** (zone #591384, serial 2026070701)
+> Stav: ✅ **Fáze 1 PROVEDENA 2026-10-22** — 9 flipů propagováno a ověřeno
+> (dig @8.8.8.8 → všechny na EDGE2; HTTPS smoke: 200 na všech webech,
+> auth /health OK, app /api/health OK, oasis/freeworld/rpc OK).
+> Edge ops subdomény (grafana/dashboard/testnet/mining) ověřeny nedotčené.
+> Raw zone soubor pro WebGlobe: `zionterranova.com.zone` v rootu repa.
 > Cíl: veřejné weby na **EDGE2 `207.180.217.100`**, ops/chain infra zůstává na **EDGE `62.171.141.136`**
 
 ---

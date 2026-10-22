@@ -8,12 +8,12 @@
 > **Jak číst:** sekce níže jsou *pravidla a runbooky* (načíst celé, ~130 KB).
 > Historický provozní log byl odsunut do [`docs/3.2/ops/AGENTS-CHRONOLOGY.md`](docs/3.2/ops/AGENTS-CHRONOLOGY.md) — odkazy ve tvaru „AGENTS.md 2026-09-14“ v korpusu dokumentů vedou tam. Superseded reference (V3-era topologie, v3.0.4 porty) je v [`docs/3.2/ops/AGENTS-LEGACY-SERVER.md`](docs/3.2/ops/AGENTS-LEGACY-SERVER.md).
 
-## Aktuální živá topologie (2026-10-21)
+## Aktuální živá topologie (2026-10-22 — po web-tier cutoveru)
 
 | Role | Host | Služby / porty |
 |---|---|---|
-| **EDGE2 — primary** | `207.180.217.100` (vmi3684458, 6c EPYC / 11 G / 193 G) | V31 primary node (RPC 9445, P2P 8335), bitcoind mainnet (8332, pruned), quantus (9944 + QUIC 9833), pearl stack (44207 / 8477), PostgreSQL 16 (5432), WARP (8453/8454), ZIS (8096), db-sync, DAO (8456), OASIS (8094), free-world (8095), issobella (8097), NCL (8098), website (3000), marketplace (3100), ai-native (8001), btcunlock (8779) |
-| **EDGE — ingress + pool** | `62.171.141.136` (vmi3425821, 4c / 8 G / 145 G) | nginx ingress (všechny veřejné vhosty), pool 8444/8445 (stratum + TLS) + API 8080, fallback-miner, node2 (9446) + node3 (9447) followeři, regtest BTC, dashboard (8766), grafana, prometheus, fail2ban |
+| **EDGE2 — primary + web ingress** | `207.180.217.100` (vmi3684458, 6c EPYC / 11 G / 193 G) | **nginx :80/:443 — veřejné vhosty: apex/www, app., auth., freeworld., market., oasis., pool., rpc. (DNS cutover 2026-10-22)** · V31 primary node (RPC 9445, P2P 8335), bitcoind mainnet (8332, pruned), quantus (9944 + QUIC 9833), pearl stack (44207 / 8477), PostgreSQL 16 (5432), WARP (8453/8454), ZIS (8096), db-sync, DAO (8456), OASIS (8094), free-world (8095), issobella (8097), NCL (8098), website (3000), marketplace (3100), ai-native (8001), btcunlock (8779) |
+| **EDGE — ops + pool + stray subs** | `62.171.141.136` (vmi3425821, 4c / 8 G / 145 G) | nginx — jen ops/legacy vhosty (grafana., dashboard., api., explorer., mining., testnet., newearth.cz, wildcard `*`), pool 8444/8445 (stratum + TLS) + API 8080, fallback-miner, node2 (9446) + node3 (9447) followeři, regtest BTC, dashboard (8766), grafana, prometheus, fail2ban. **Web ingress přesunut na EDGE2 — Edge nginx = fallback.** |
 | **Tunely** | edge → EDGE2: `zion-chain-tunnel` (`chaintunnel`, `permitopen` whitelist: 9445, 9944, 44207, 8332, 8477, 8453, 8454, 8456, 8094–8098, 5432, 3000, 3100, 8001) · EDGE2 → edge: `zion-edge-tunnel` (`edgetunnel`: 8080, 8003, 9446, 9447) | latence edge↔EDGE2 ≈ 1 ms → cross-box RPC je prakticky lokální |
 
 - **Chain:** ~90 400+ bloků. EDGE2 = source of truth; node2/node3 = followeři peerující EDGE2:8335.
