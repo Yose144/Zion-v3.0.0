@@ -10,7 +10,7 @@
 # Prerequisites:
 #   - Docker + docker compose installed
 #   - nginx reverse proxy (not Caddy — Edge uses nginx)
-#   - Repo cloned at /root/zion/2.9.6  (matches edge-deploy/setup-edge.sh)
+#   - Repo cloned at /root/zion/2.9.6  (matches infra/edge-deploy/setup-edge.sh)
 #   - For --rsync mode: dev machine has already run:
 #       npm run build           # in APP&WEB/website-v2.9
 #       rsync -az .next/standalone/  zion-new:/root/zion-web-build/

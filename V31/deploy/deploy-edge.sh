@@ -113,7 +113,7 @@ else
         --exclude='.git' --exclude='data' --exclude='logs' --exclude='target' \
         --exclude='node_modules' --exclude='.next' --exclude='out' \
         -C "${REPO_ROOT}" \
-        V31/ ZION_OS/ edge-deploy/ scripts/ 2>/dev/null | \
+        V31/ ZION_OS/ infra/edge-deploy/ scripts/ 2>/dev/null | \
         ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "mkdir -p '${REMOTE_ROOT}' && cd '${REMOTE_ROOT}' && tar xzf -"
 fi
 
