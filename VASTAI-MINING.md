@@ -662,7 +662,7 @@ systemctl --user stop  zion-qwen14-cuda.service
 systemctl --user start zion-qwen-cuda.service
 ```
 
-
+### 5.12 „Message exceeds context limit" — příčina a fix
 
 Chybu hází **sám Continue** (`gui/assets/index.js` → `inlineErrorMessage ===
 "out-of-context"`): porovná délku promptu s `contextLength` modelu v configu
