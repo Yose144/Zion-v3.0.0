@@ -155,10 +155,15 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 **Batch 5 ✅:** `edge-deploy`→`infra/edge-deploy` (48 souborů, 2 ref fixy).
 **Batch 6 ✅ (2026-10-22, `eaa919b11`):** `APP&WEB`→`apps/` — ~5000 souborů, 2075 sed-rewrites; chráněny remote `/opt/zion/APP&WEB/*` a `REMOTE_ROOT}/APP&WEB/*` (systemd WorkingDirectory, rsync targety, .env cesty = produkce nedotčena). Verifikováno: `.gitignore`, workflows (`apps/desktop-agent`), AGENTS.md public/private sekce; všech 21 residual `APP&WEB` = remote/historické. **Incident během batchu:** `git` objektová korupce (3 corrupt packy, disk write-path corruption na boxu — `/tmp`=tmpfs čisté vs `/` poškozené). Repair: mirror clone origin+public → alternates → dead refs prunuty (3 auto-stash commity, `local-changes`, `public-split-now`, 10× dependabot, 3× agent checkpoints — všechny tipy unreachable z remote, ztracené objekty zalogovány `/tmp/dead_refs_report.txt`), index rebuild přes tmpfs, packy na disk verified-copy (sha1 match). fsck clean, `main` pushed. **HW varování: zápisy na `/` se intermitentně poškozují — provider ticket/memtest doporučen.**
 
-**Zbývá (velké, vyžaduje koordinaci — dedikované kroky):**
-- `V31`→`chain/` — cargo workspace (member paths jsou relativní = OK), `.github/workflows`, ~tisíce odkazů, untracked `target/` zůstane; crate názvy `v31-*` zůstávají
-- `scripts/`→`infra/scripts/` (359 souborů) — **POZOR:** servery volají `/opt/zion/scripts/...` přímo (systemd/cron/watchdog) — vyžaduje mapping strategii ve F5, ne jen mv
-- `ZION_OS/` (292) + `tools/` (7) → `infra/` — ops dashboard/skripty
+**Batch 7 ✅ (2026-10-22, `040d73c41`+fixy):** `tools/`→`infra/tools` (vast.ai ops) — refs fixnuty (.gitignore, AGENTS, docs); **+runtime fix:** vastctl user systemd units přepsány na nové cesty + restartovány (daemon píše status.json do `infra/tools/vast/`, push na edge webroot funguje); watchdog wrapper v `infra/edge-deploy/` = probe `../scripts` (server) ∨ `../../scripts` (repo) — funguje na obou místech; stale SRBMiner orphan z `APP&WEB/` cesty zabit (nový běží z `apps/` pod agentem).
+
+**ODLOŽENO na F5 (server-runtime třída — lokální přesun mění remote layout přes whole-root rsync deploy, nebo `/opt/zion/*` je voláno přímo systemd/cronem):**
+- `V31`→`chain/` — **NEDĚLAT (rozhodnutí uživatele 2026-10-22)** — rozsekává cargo/systemd/workflow/.github závislosti
+- `scripts/`→`infra/scripts/` (359 souborů) — ~40 skriptů resolvuje root přes `$(dirname $0)/..` = `/opt/zion` na serverech správně, `infra/` lokálně špatně; servery volají `/opt/zion/scripts/` přímo → mapping strategie ve F5
+- `ZION_OS/`→`infra/` — `deploy-edge.sh` rsyncuje `${REPO_ROOT}/` celý → remote dostane `infra/ZION_OS/` místo `/opt/zion/ZION_OS/` → rozbije remote binary paths (`zion-agent`, `zionos-dashboard`)
+- `V3/`→archive — `.gitmodules` submodule `V3/L2/bridge/contracts/lib/openzeppelin-contracts` — git mv neaktualizuje submodule path → ruční .gitmodules koordinace nutná; `archive/V3` už existuje a diverguje (deduplikace k posouzení)
+- `BTCunlock/` — referencovaný živým kódem (`apps/desktop-agent/renderer.js`, `ZION_OS/dashboard/*`)
+- `Hiran/` (325M) — referencovaný `V31/L3/ai-native/src/*.rs`, `V31/cli`, `ZION_OS/dashboard/*.js`, `scripts/openclaw-coding.sh`
 - untracked root dirs (`backups/`16G, `PUBLIC/`klon, `venv-hiran/`, `logs/`, `BACKUP/`, `AuXpow/`, `dashboard/`, `data/` runtime) — filesystem úklid, ne git; rozhodnout přemístění mimo workspace vs. nechat + zdokumentovat
 7. Aktualizovat `.github/`, `AGENTS.md`, všechny `deploy-*.sh` cesty
 
