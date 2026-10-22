@@ -1071,25 +1071,42 @@ def _pool_url(pool):
     return "stratum+tcp://" + p
 
 
+def _pool_wallet(pool, merged_wallet, plain_wallet):
+    """Pick the wallet form a pool accepts.
+
+    LuckyPool Pearl takes the merged `PRL+NOCK` wallet (Nockchain merge
+    mining). Our own pool validates the wallet as a plain bech32 PRL
+    address — the "+" form is not valid bech32 and is rejected as an
+    invalid wallet.
+    """
+    if "luckypool" in str(pool).lower():
+        return merged_wallet
+    return plain_wallet
+
+
 def launch_srb(inst, iid, coins=("qtu", "prl")):
     """SRBMiner sessions: PRL → luckypool, QTU → lproute, one tmux each."""
     wq, wp = f"vast-{iid}-qtu", f"vast-{iid}-prl"
     kills = ("tmux kill-session -t zion 2>/dev/null; "
              "pkill -f 'zion-miner --pool' 2>/dev/null\n")
     sessions = []
+    # tmux sessions start in $HOME — the binary lives under /root/miners, so
+    # the session has to cd there itself.
+    srb_cd = f"cd /root/miners/{SRB_DIR} &&"
     if "qtu" in coins:
         kills += "tmux kill-session -t srb-qtu 2>/dev/null\n"
         sessions.append(
-            f'tmux new-session -d -s srb-qtu "cd {SRB_DIR} && '
+            f'tmux new-session -d -s srb-qtu "{srb_cd} '
             f'exec ./SRBMiner-MULTI '
             f'--algorithm quantus --pool {_pool_url(QTU_POOL)} --wallet {QTU_WALLET} '
             f'--worker {wq} --disable-cpu"')
     if "prl" in coins:
         kills += "tmux kill-session -t srb-prl 2>/dev/null\n"
         sessions.append(
-            f'tmux new-session -d -s srb-prl "cd {SRB_DIR} && '
+            f'tmux new-session -d -s srb-prl "{srb_cd} '
             f'exec ./SRBMiner-MULTI '
-            f'--algorithm pearlhash --pool {_pool_url(PRL_POOL)} --wallet {PRL_WALLET} '
+            f'--algorithm pearlhash --pool {_pool_url(PRL_POOL)} '
+            f'--wallet {_pool_wallet(PRL_POOL, PRL_WALLET, PRL_ADDRESS)} '
             f'--worker {wp} --disable-cpu"')
     script = f'''
 {_ensure_tools()}
