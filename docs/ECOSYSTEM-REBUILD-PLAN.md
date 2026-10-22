@@ -180,7 +180,10 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
   - ✅ **F3c rasta-nav (2026-10-22, `9cf440f0d`):** `apps/shared/ui/rasta-nav.css` = kanonický superset — MP/IP nav-core (ty dvě kopie byly identické) + pool-ui extras (`mobile-close`, `mobile-backdrop`); breakpoint sjednocen na **868px** (pool-ui 1100px→868px); `cart/lang/wallet/orbs/hero` zůstávají lokální per-app; IntroPage (PageLayout+VzestupNav), pool-ui, MarketPlace importují shared soubor; buildy OK
   - zbývá: website-v2.9 `Navigation.tsx` (587L vlastní zion impl — buď migrovat na rasta-nav nebo zdokumentovat jako separátní chrome), sdílený Footer, FloatingUtilities/HiranChat (jen web), i18n (3 impl: `tr(sec,key)` web/MP × `lib/i18n` pool-ui × inline IntroPage)
 - **ZIS:** canon — rozšířit session na všechny portály (cookie `.zionterranova.com` už je); pool-ui přidat ZIS (má už simplewebauthn dep)
+  - ✅ **Ověřeno (2026-10-22):** ZIS už běží na všech portálech — pool-ui má vlastní `lib/zis.ts` + `auth.tsx` + `AuthButton` (same-origin `/api/auth/*` proxy → ZIS, sdílená `zion_session` cookie na `.zionterranova.com`), MarketPlace `zis-client.ts` + `api/auth/[...zis]`, OasisWeb `AuthContext` + webauthn, website-v2.9 plná integrace; IntroPage = statický intro (link na login)
 - **Copy audit:** CS+EN parita, žádné interní názvy (V31, ZionStart, PoC-lab…), `npm run check:links --strict`
+  - ✅ **Sweep interních názvů (2026-10-22):** čistý — žádné `V31|ZionStart|PoC-lab|HiranV2|edge-deploy|/opt/zion|server IP` v user-facing copy napříč 5 appkami (jen code komentáře + veřejné názvy `ZION v3.2.0`, `Hiranyagarbha`, `L3 Hiran` lore); CS/EN parita spot-check OK
+  - zbývá: dead-link čištění (390) + systematická CS/EN parita audit
   - 📊 **Naměřeno (2026-10-22):** 780 souborů, **390 dead links** — převážně repo-interní cesty (`../../3.2/*`, `../L1/*`, `../Ruze/*`, `LEVEL_*`, `PART_*`) v publikovaném `public/docs/` korpusu; live web degraduje gracefuly (docLinks resolver → muted non-link, ne 404) — čištění = copy pass, ne outage fix. Log: `docs/3.2/REPORTS/check-links-2026-10-22.txt`
 
 ### F4 — Konsolidace překryvů (naměřené duplicity)
