@@ -120,11 +120,24 @@ zůstane **prázdný**:
 | 300 | ~1 100 znaků | **prázdný** | stejně |
 | 800 | 1 623 znaků | ✅ **plná odpověď** (553 tokenů) | bezpečná hodnota |
 
-**Pravidlo:** pro Gemma 4 E4B vždy `maxTokens ≥ 800` (Continue: 4096 ✅).
-`reasoning: true` + `reasoningBudgetTokens` v Continue oddělí reasoning od
-odpovědi, ale **maxTokens musí pokrýt obojí**.
+**Pravidlo:** pro Gemma 4 E4B vždy `maxTokens ≥ 800` (Continue: 2048 ✅).
 
 ---
+
+## 2.3 Kde běží co (stav po incidentu 2026-10-22 18:00)
+
+| Role | Kde | Detail |
+|---|---|---|
+| **primární LLM** | **1070 Ti na PC** (`zion-hiran-cuda.service`) | CUDA sm_61, `hiran-v2.3mini` 8B Q5_K_M, `-ngl 37` (celý model na GPU) → **28 tok/s** |
+| **záložní LLM** | Vast 57054247 | CUDA sm_86, `gemma-4-e4b`, 5 tok/s (sdílená GPU s těžbou) |
+| **3. úroveň** | EDGE2 CPU (`zion-hiran-inference.service`) | týž GGUF, 2.4 tok/s, vždy dostupná |
+| **lokální hub** | LM Studio na PC (`:1234`) | CUDA backend; Gemma 4 E4B se na 8 GB kartu nevejde současně s produkčním modelem → viz `VASTAI-MINING.md` §5.8–5.9 |
+
+> **Proč Vast není primární:** 1070 Ti je na stejném stroji jako LM Studio,
+> Continue a desktop agent — plná GPU obsluha bez WAN závislosti a 5× rychlejší.
+> Vast je **záloha** (a druhý chat model pro Continue, když 1070 Ti drží
+> produkční model).
+
 
 
 Předpoklad: instance s Dockerem + NVIDIA container toolkitem.

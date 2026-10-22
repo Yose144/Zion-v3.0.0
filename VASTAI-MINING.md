@@ -496,6 +496,112 @@ Výkon: **5.0 tok/s** generování / 40.8 tok/s prefill (sdílená GPU s 2× SRB
 Kompletní runbook (výběr image, build, deploy, panel, pasti) →
 [`Vast-Inference.md`](Vast-Inference.md).
 
+### 5.8 LLM řetězec produkce (2026-10-22 večer) — 1070 Ti primární, Vast záloha
+
+**Incident:** v 06:12 **AMD karta (RADV „Vega 64") zmizela z PCI busu** —
+kernel přeregistroval `amdgpu` pro Navi (minor 1) a karta se už neobjevila
+v `lspci`. Vulkan backend `llama-server` se tak přesunul na NVIDIA
+(nvidia_icd) a **LM Studio backend i hiran-core spadly** → veřejný chat = 503.
+Lesson: **GPU nesmí být jediná věc v řetězci** → třívrstvý LLM řetězec.
+
+| Vrstva | Kdo | Rychlost | Dostupnost |
+|---|---|---|---|
+| **primární** | **1070 Ti na tomhle PC** (`zion-hiran-cuda.service`, CUDA sm_61, `-ngl 37`) → EDGE2 `:8004` | **28 tok/s** (prefill 490) | PC musí běžet |
+| **záloha** | **Vast RTX 3060** (57054247) → PC `:18000` → Edge `:8006` → EDGE2 `:8006` | 5 tok/s | placený rig |
+| 3. | EDGE2 CPU (`zion-hiran-inference.service`, `:8002`) | 2.4 tok/s | vždy |
+
+```
+web /api/ai-chat → EDGE2 ai-native :8001
+   LLM_BASE_URL   = http://127.0.0.1:8004/v1   ← 1070 Ti (primární)
+   LLM_FALLBACK_URL = http://127.0.0.1:8006/v1 ← Vast (záloha)
+   (3. úroveň: http://127.0.0.1:8002/v1 = EDGE2 CPU, kdyby záloha selhala)
+```
+
+Veřejný chat po přepojení: **200 za ~7 s** (před incidentem 503 / 120 s timeout).
+
+**CUDA build pro 1070 Ti** (`~/llama-cpp-cuda/`) — na PC není CUDA toolkit
+(a gcc 15 = nekompatibilní s CUDA 12.4), proto se binárka **zkompilovala na
+Vast instanci** (má CUDA 12.4 + gcc 11) a přenesla se:
+
+```bash
+# na Vast instanci
+cmake -S . -B build-sm61 -DGGML_CUDA=ON -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CUDA_ARCHITECTURES=61 -DGGML_CUDA_FA_ALL_QUANTS=OFF \
+  -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON
+cmake --build build-sm61 --config Release -j 16 --target llama-server
+
+# na PC (Vast -> PC ~6 MB/s, ~2 min pro 690 MB knihoven)
+rsync -a -e "ssh -p 23934" root@ssh1.vast.ai:/opt/llama.cpp/build-sm61/bin/ ~/llama-cpp-cuda/
+rsync -a -e "ssh -p 23934" root@ssh1.vast.ai:/usr/local/cuda/lib64/libcudart.so.12.4.127 \
+                             root@ssh1.vast.ai:/usr/local/cuda/lib64/libcublas.so.12.4.5.8 \
+                             root@ssh1.vast.ai:/usr/local/cuda/lib64/libcublasLt.so.12.4.5.8 \
+                             root@ssh1.vast.ai:/usr/lib/x86_64-linux-gnu/libnccl.so.2.21.5 \
+                             ~/llama-cpp-cuda/
+```
+
+> ⚠️ **`-ngl 37` je zásadní.** Při `-ngl 30` zůstalo 6 vrstev + `lm_head`
+> (1.24 GB) na CPU → **0.9 tok/s** (CPU vytížený miningem). `-ngl 37`
+> (vše na GPU) → **28.5 tok/s**. Stejné pravidlo platí pro LM Studio: model,
+> který se na GPU nevejde, se rozdělí a CPU-side vrstvy šlápou.
+
+### 5.9 LM Studio na 1070 Ti — tři pasti (2026-10-22)
+
+LM Studio běží jako user unit `lm-studio.service` (automaticky po startu
+session). Aby se rozjel a používal CUDA, bylo nutné opravit tři věci:
+
+| Pasta | Příznak | Řešení |
+|---|---|---|
+| **Electron singleton lock** po hard-killu | app tiše odchází (exit 0, žádný log) | smazat `~/.config/LM Studio/Singleton{Lock,Cookie,Socket}` + `~/.lmstudio/.internal/llmster-pid.lock` |
+| **chybějící temp adresář** | `ENOENT: mkdtemp '.../.internal/temp/lmstudio-chat-template-XXX'` | `mkdir -p ~/.lmstudio/.internal/temp` |
+| **zastaralý device pin** | `error while handling environment variable "LLAMA_ARG_DEVICE": invalid device: Vulkan0` → engine exit 1 | smazat Vulkan blok z `~/.lmstudio/.internal/hardware-config.json` (nebo restart procesu, ať přezrál hardware) |
+
+Výběr backendu: `~/.lmstudio/.internal/backend-preferences-v1.json`
+→ `llama.cpp-linux-x86_64-nvidia-cuda-avx2` (verze 2.62.1).
+Runtime jsou v `~/.lmstudio/extensions/backends/` — CUDA i Vulkan varianta
+jsou nainstalované, takže přepnutí je jen volba v configu.
+
+**KV cache mimo GPU:** `hardware-config.json` →
+`llm.load.offloadKVCacheToGpu = false` → KV cache v systémové RAM (62 GB),
+na GPU zůstane místo pro váhy. Bez toho se Gemma na 8 GB kartu nevejde.
+
+**Kapacita 1070 Ti (8 GB, ~1.5 GB si bere desktop):**
+
+| Model | Kontext | Kde běží | Výsledek |
+|---|---|---|---|
+| hiran-v2.3mini (8B Q5_K_M, 5.5 GB) | 4096 | GPU celý (`-ngl 37`) | **28 tok/s** ✅ produkce |
+| Gemma 4 E4B (Q4_K_M, 5.3 GB) | 16384 | ~12/24 vrstev GPU | 10 tok/s ⚠️ |
+| Gemma 4 E4B | 32768 | 12/24 vrstev GPU | 10 tok/s ⚠️ |
+| Gemma 4 E4B | 65536 | — | **nejde** (compute buffery) |
+
+> Obě velké modely se na 8 GB kartu **nevejdou současně** (5.5 + 5.3 GB).
+> Proto: 1070 Ti = produkční `hiran-core`, LM Studio Gemma = alternativa
+> (a její chat role v Continue je přesměrovaná na Vast).
+
+**Continue (`~/.continue/config.yaml`)** — finální podoba (schema v1):
+
+| Model | Provider / apiBase | Role | ctx | maxTokens |
+|---|---|---|---|---|
+| Gemma 4 E4B (Vast RTX 3060) | `lmstudio` → `127.0.0.1:18000/v1` | chat, edit, apply | 32768 | 2048 |
+| Gemma 4 E4B (LM Studio) | `lmstudio` → `127.0.0.1:1234/v1` | chat, edit, apply | 16384 | 2048 |
+| Qwen2.5-Coder 1.5B | `ollama` → `127.0.0.1:11434` | autocomplete | — | — |
+| Nomic Embed | `lmstudio` → `127.0.0.1:1234/v1` | embed | — | — |
+
+Všechny čtyři role ověřeny reálnými požadavky: chat 200 (správná odpověď
+o ZION), autocomplete 200 (doplnění kódu), embed 200 (768 dimenzí).
+
+### 5.10 OpenSSH `permitlisten` nebere čárku
+
+`authorized_keys` pro tunelový účet **nesmí** mít
+`permitlisten="a:1,b:2"` — OpenSSH to neumí parsovat a **celý klíč se odmítne**
+(„Permission denied (publickey)"). Musí být dvě samostatné volby:
+
+```
+restrict,port-forwarding,permitlisten="127.0.0.1:8002",permitlisten="127.0.0.1:8006",permitopen="127.0.0.1:9",command="/usr/sbin/nologin" ssh-ed25519 AAAA... 
+```
+
+Navíc `ssh` musí nabídnout jen jeden klíč jinak spadne na `MaxAuthTries`:
+`-o IdentitiesOnly=yes` + `-i <klíč>`.
+
 ## 6. CPU mining — XMRig (Monero `rx/0`) vedle GPU minerů
 
 GPU dělá SRBMiner/zion-miner, **CPU na vast instancích jinak idluje** — XMRig
