@@ -1408,9 +1408,15 @@ const DEFAULT_CONFIG = {
   extGpuBackend: 'cuda',
   extGpuDutyPct: 50,
   extGpuBatchSize: 262144,
-  // Settings → Compute → Multi-GPU. true = ZION mines on every detected
-  // OpenCL GPU (miner default); false = single card only.
+  // Dashboard → Mining Hardware. false = CPU mining off (GPU-only mode,
+  // --threads 0). Absent = CPU on.
+  cpu: true,
+  // Multi-GPU — derived from the per-card selection: true = ZION may mine
+  // on every detected OpenCL GPU (miner default); false = single card only.
   multiGpu: true,
+  // gpuDevices: explicit list of enabled GPU device tokens (banner device
+  // names, or index for duplicate names). null/absent = all cards.
+  gpuDevices: null,
   // minerApi: SRBMiner-compatible HTTP stats API bind address.
   //   ''       = disabled (default)
   //   '21550'  = listen on 0.0.0.0:21550 (LAN monitoring tools)
@@ -1751,6 +1757,95 @@ function detectGPU() {
   return result;
 }
 
+// ── GPU enumeration probe ──────────────────────────────────────────────────
+// The V31 miner prints one `gpu[N] name | CUs | MHz | GiB VRAM` banner row
+// per OpenCL device right at startup — the same enumeration (and device
+// names) the ZION_GPU_DEVICES filter matches against. We spawn the miner
+// against a dead pool, scrape the banner rows, and kill it once the banner
+// ends ("streams"/"backend" sentinel) or after a timeout. OpenCL device
+// listing is read-only, so probing while a real miner is running is safe.
+let gpuDeviceListCache = null;
+let gpuDeviceListAt = 0;
+let gpuEnumInFlight = null;
+function enumerateGpuDevices(opts) {
+  const force = !!(opts && opts.force);
+  const now = Date.now();
+  if (!force && gpuDeviceListCache && now - gpuDeviceListAt < 60000) {
+    return Promise.resolve(gpuDeviceListCache);
+  }
+  if (gpuEnumInFlight) return gpuEnumInFlight;
+  gpuEnumInFlight = new Promise((resolve) => {
+    const finish = (list) => {
+      gpuDeviceListCache = list;
+      gpuDeviceListAt = Date.now();
+      gpuEnumInFlight = null;
+      try { logApp('gpu-enum', JSON.stringify({ count: list.length, devices: list })); } catch {}
+      resolve(list);
+    };
+    if (!MINER_PATH || !fs.existsSync(MINER_PATH)) return finish([]);
+    let child;
+    try {
+      child = spawn(MINER_PATH,
+        ['--pool', '127.0.0.1:1', '--wallet', 'zion1probe', '--worker', 'gpu-probe', '--threads', '1'],
+        {
+          // NOTE: no ZION_NO_FANCY here — it suppresses the whole banner,
+          // including the gpu[N] rows this probe exists to scrape.
+          env: { ...process.env, RUST_LOG: 'error' },
+          stdio: ['ignore', 'pipe', 'pipe']
+        });
+    } catch {
+      return finish([]);
+    }
+    const devices = [];
+    const seenIdx = new Set();
+    let buf = '';
+    let done = false;
+    const hardTimer = setTimeout(() => endProbe(), 8000);
+    const endProbe = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(hardTimer);
+      try { child.kill('SIGKILL'); } catch {}
+      finish(devices);
+    };
+    const ansiRe = /\x1b\[[0-9;]*m/g;
+    const gpuRe = /gpu\[(\d+)\]\s+(.+?)\s*\|\s*(\d+)\s*CUs?\s*\|\s*([\d.]+)\s*MHz\s*\|\s*([\d.]+)\s*GiB/i;
+    const endRe = /^\s*(streams|backend|algorithm)\s/;
+    const onData = (chunk) => {
+      buf += chunk.toString('utf8');
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).replace(ansiRe, '');
+        buf = buf.slice(nl + 1);
+        const m = line.match(gpuRe);
+        if (m) {
+          const idx = Number(m[1]);
+          if (!seenIdx.has(idx)) {
+            seenIdx.add(idx);
+            devices.push({
+              index: idx,
+              name: m[2].trim(),
+              cus: Number(m[3]),
+              mhz: Number(m[4]),
+              vramMb: Math.round(Number(m[5]) * 1024)
+            });
+          }
+          continue;
+        }
+        if (endRe.test(line) || /^\s*gpu\s+(none|disabled)/i.test(line)) {
+          endProbe();
+          return;
+        }
+      }
+    };
+    child.stdout.on('data', onData);
+    child.stderr.on('data', onData);
+    child.on('error', endProbe);
+    child.on('exit', endProbe);
+  });
+  return gpuEnumInFlight;
+}
+
 function detectGpuForStartupFast(config) {
   const now = Date.now();
   if (cachedGpuInfo && (now - gpuInfoLastProbeMs) < 60000) return cachedGpuInfo;
@@ -1904,7 +1999,11 @@ function applyCudaTuning(gpuInfo, tuningConfig) {
  * stronger card is left for inference).
  */
 function resolveOpenclMiningVramMb(gpuInfo, config) {
-  const pin = String(config?.gpuDevice || '').trim().toLowerCase();
+  const pin = (
+    Array.isArray(config?.gpuDevices) && config.gpuDevices.length
+      ? String(config.gpuDevices[0])
+      : String(config?.gpuDevice || '')
+  ).trim().toLowerCase();
   const detectedName = String(gpuInfo?.name || '').toLowerCase();
   const detectedMb = parseGpuMemoryMb(gpuInfo);
   const detectedIsAmd = gpuInfo?.type === 'amd' || /amd|radeon|gfx|vega|navi/.test(detectedName);
@@ -2969,7 +3068,10 @@ function startMiningV31(config, v31Path) {
   log(`[V31-FAST] Binary: ${v31Path}\n`);
 
   // ── 5. Compute threads and GPU ─────────────────────────────────────────────
-  const effectiveThreads = computeEffectiveThreads(config);
+  // CPU toggle (Dashboard hardware panel): config.cpu===false runs the miner
+  // GPU-only — the V31 miner explicitly supports --threads 0 as GPU-only mode.
+  const wantsCpu = config?.cpu !== false;
+  const effectiveThreads = wantsCpu ? computeEffectiveThreads(config) : 0;
   const poolHost = config?.pool?.host || PRIMARY_TESTNET_HOST;
   const poolPort = config?.pool?.port || PRIMARY_POOL_PORT;
   const pool = `${poolHost}:${poolPort}`;
@@ -3064,7 +3166,7 @@ function startMiningV31(config, v31Path) {
   // small GPU duty) + CPU stream; the card otherwise belongs to SRBMiner.
   const useSrbQtc = wantsGpu && !gpuCoinAuto && srbEngineWanted(config);
   if (tripleStreamEnabled) {
-    if (cpuCoinOff) {
+    if (!wantsCpu || cpuCoinOff) {
       env.ZION_STREAM3_ENABLED = '0';
     } else {
       // public_build miners hide the CPU external stream by default
@@ -3210,20 +3312,24 @@ function startMiningV31(config, v31Path) {
     if (Number.isFinite(s4Batch) && s4Batch >= 262144) {
         env.ZION_STREAM4_BATCH = String(Math.floor(s4Batch));
     }
-    // 2026-10-22: volitelný pin GPU (name substring nebo index).
-    // Používá se, když na stroji běží i lokální inference (llama.cpp Vulkan)
-    // a chceme těžit jen na druhé kartě — inference pak nemá prefillovat do
-    // GTT paměti a nepadá na "device lost" (amdgpu TDR).
-    const gpuDevicePin = String(config?.gpuDevice || '').trim();
-    if (gpuDevicePin) {
-        env.ZION_GPU_DEVICES = gpuDevicePin;
-        env.ZION_QPOW_OCL_DEVICES = gpuDevicePin;
+    // Per-card selection (Dashboard → Mining Hardware). config.gpuDevices
+    // is the list of enabled device tokens (banner name, or global index
+    // for duplicate names); absent/null = all detected cards. The legacy
+    // config.gpuDevice pin still works as a single-entry fallback.
+    const gpuDeviceSel = Array.isArray(config?.gpuDevices)
+      ? config.gpuDevices.map(s => String(s).trim()).filter(Boolean)
+      : (String(config?.gpuDevice || '').trim() ? [String(config.gpuDevice).trim()] : []);
+    if (gpuDeviceSel.length) {
+        const pin = gpuDeviceSel.join(',');
+        env.ZION_GPU_DEVICES = pin;
+        env.ZION_QPOW_OCL_DEVICES = pin;
     }
-    // Settings → Compute → Multi-GPU. The miner auto-enables its
-    // MultiGpuMiner whenever >1 OpenCL device is enumerated — '0' forces
-    // the single-device path (mixed AMD+NVIDIA rigs: the secondary card
+    // Multi-GPU: the miner auto-enables its MultiGpuMiner whenever >1
+    // OpenCL device is enumerated. Force the single-device path when the
+    // user unchecked multi-GPU, or when the per-card selection resolves
+    // to exactly one device (mixed AMD+NVIDIA rigs: the secondary card
     // can fail kernel launches / hang the shared context).
-    env.ZION_MULTI_GPU = config?.multiGpu === false ? '0' : '1';
+    env.ZION_MULTI_GPU = (config?.multiGpu === false || gpuDeviceSel.length === 1) ? '0' : '1';
     // Opt-in stream-3 batch (VerusHash CPU nonces per scan round) —
     // smaller batches refresh upstream jobs sooner, cutting stale
     // "job not found" rejects on fast-rotating pools (LuckPool ~15-60s).
@@ -5174,6 +5280,24 @@ ipcMain.handle('get-system-info', () => {
   const cpuCount = Array.isArray(os.cpus?.()) ? os.cpus().length : 1;
   return {
     cpuCount: Math.max(1, cpuCount)
+  };
+});
+
+// Mining device inventory for the Dashboard "Mining Hardware" panel —
+// CPU info + every OpenCL GPU the bundled miner can see (same names the
+// ZION_GPU_DEVICES filter matches). `force` bypasses the 60 s probe cache.
+ipcMain.handle('list-mining-devices', async (_event, opts) => {
+  const cpus = Array.isArray(os.cpus?.()) ? os.cpus() : [];
+  let gpus = [];
+  try {
+    gpus = await enumerateGpuDevices({ force: !!(opts && opts.force) });
+  } catch { /* leave empty */ }
+  return {
+    cpu: {
+      model: (cpus[0] && cpus[0].model) || 'CPU',
+      cores: Math.max(1, cpus.length || 1)
+    },
+    gpus
   };
 });
 

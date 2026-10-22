@@ -7,6 +7,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   // System info
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+  listMiningDevices: (opts) => ipcRenderer.invoke('list-mining-devices', opts),
 
   // First-run / quick setup
   isFirstRun: () => ipcRenderer.invoke('is-first-run'),

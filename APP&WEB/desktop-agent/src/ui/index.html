@@ -1996,6 +1996,123 @@
       color: rgba(255,255,255,0.5);
       font-size: 11px;
     }
+
+    /* ═══ Mining Hardware — stacked per-device rows with on/off switch ═══ */
+    .hw-panel {
+      margin-bottom: 14px;
+      padding: 14px 18px;
+      flex-shrink: 0;
+    }
+    .hw-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .hw-head-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.75);
+    }
+    .hw-head-title .icon { width: 14px; height: 14px; color: var(--rasta-gold); }
+    .hw-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .hw-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+    }
+    .hw-row.on { border-color: rgba(6,105,40,0.55); }
+    .hw-row.off { opacity: 0.55; }
+    .hw-row:hover { background: rgba(255,255,255,0.07); }
+    .hw-icon {
+      width: 36px; height: 36px;
+      flex: 0 0 36px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px;
+      background: rgba(252,209,22,0.12);
+      border: 1px solid rgba(252,209,22,0.25);
+    }
+    .hw-icon .icon { width: 18px; height: 18px; color: var(--rasta-gold); }
+    .hw-icon.gpu { background: rgba(0,255,65,0.08); border-color: rgba(0,255,65,0.22); }
+    .hw-icon.gpu .icon { color: var(--matrix-green); }
+    .hw-info { flex: 1 1 auto; min-width: 0; }
+    .hw-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600;
+      color: rgba(255,255,255,0.92);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hw-vendor {
+      flex: 0 0 auto;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+      padding: 1px 6px; border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .hw-vendor.amd { color: #ff6b6b; background: rgba(255,80,80,0.12); }
+    .hw-vendor.nvidia { color: #76ff7a; background: rgba(118,255,122,0.10); }
+    .hw-vendor.cpu { color: var(--rasta-gold); background: rgba(252,209,22,0.12); }
+    .hw-sub {
+      font-size: 10.5px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hw-metrics {
+      display: flex; flex-wrap: wrap; gap: 4px 14px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.72);
+      font-variant-numeric: tabular-nums;
+    }
+    .hw-metrics .m { display: inline-flex; align-items: baseline; gap: 4px; }
+    .hw-metrics .m b { font-weight: 600; color: rgba(255,255,255,0.9); }
+    .hw-metrics .m .lbl { color: rgba(255,255,255,0.42); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .hw-metrics .dim { color: rgba(255,255,255,0.35); }
+    /* iOS-style toggle */
+    .hw-switch { position: relative; width: 46px; height: 26px; flex: 0 0 46px; cursor: pointer; }
+    .hw-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .hw-slider {
+      position: absolute; inset: 0;
+      border-radius: 26px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.16);
+      transition: background 0.18s, border-color 0.18s;
+    }
+    .hw-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      left: 3px; top: 3px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.85);
+      transition: transform 0.18s, background 0.18s;
+    }
+    .hw-switch input:checked + .hw-slider {
+      background: var(--rasta-green);
+      border-color: rgba(0,255,65,0.35);
+    }
+    .hw-switch input:checked + .hw-slider::before {
+      transform: translateX(20px);
+      background: #fff;
+    }
+    .hw-switch input:focus-visible + .hw-slider { outline: 2px solid var(--rasta-gold); outline-offset: 2px; }
+    .hw-switch:hover .hw-slider { border-color: rgba(255,255,255,0.32); }
+
     /* ── CH3 Multi-Stream allocation bar ────────────────────────────────── */
     .ms-segment {
       border-radius: 5px;
@@ -5081,6 +5198,22 @@
           </div>
         </div>
 
+        <!-- ═══ Mining Hardware — auto-detected devices, per-device on/off ═══ -->
+        <div class="control-panel hw-panel" id="hw-panel">
+          <div class="hw-head">
+            <div class="hw-head-title">
+              <svg class="icon" aria-hidden="true"><use href="#i-cpu"></use></svg>
+              <span>Mining Hardware</span>
+              <span class="pill pill-compact" id="hw-detect-status" style="text-transform:none;letter-spacing:0">detecting…</span>
+            </div>
+            <button class="btn btn-ghost" id="hw-rescan-btn" title="Re-detect mining devices">
+              <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh"></use></svg>
+              <span>Rescan</span>
+            </button>
+          </div>
+          <div class="hw-list" id="hw-device-list"></div>
+        </div>
+
         <!-- Stats Grid — XMRig-style Professional Metrics -->
         <div class="stats-grid">
 
@@ -7224,16 +7357,7 @@
               </div>
               <div class="slider-hint">Enable GPU mining if a compatible device is detected</div>
 
-              <div class="actions-row" style="margin-top:10px">
-                <label class="mode-pill" style="flex:1;cursor:pointer">
-                  <input type="checkbox" id="multigpu-checkbox" style="width:18px;height:18px" checked />
-                  <div>
-                    <div class="mode-title">Multi-GPU</div>
-                    <p>Split work across all detected cards</p>
-                  </div>
-                </label>
-              </div>
-              <div class="slider-hint">On = ZION mines on every detected OpenCL GPU (nonce ranges split per card). Off = single card only — recommended on mixed AMD + NVIDIA rigs and when a <code>gpuDevice</code> pin selects one card for mining (e.g. the other GPU serves local AI inference).</div>
+              <div class="slider-hint" style="margin-top:10px">Per-card enable/disable lives on the Dashboard → <b>Mining Hardware</b> panel (auto-detected). Checking a single card forces the single-device path; multiple checked cards split nonce ranges across them.</div>
             </section>
 
             <section class="settings-card">

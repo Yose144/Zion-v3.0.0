@@ -1193,7 +1193,6 @@ function setupControls() {
   const gpuCoin2Select = document.getElementById('gpu-coin2-select');
   const gpuCoin2SelectDashboard = document.getElementById('gpu-coin2-select-dashboard');
   const tripleStreamCheckbox = document.getElementById('trinity-checkbox');
-  const multiGpuCheckbox = document.getElementById('multigpu-checkbox');
 
   // Populate all coin selects from the canonical registry so the option
   // set can never drift between Home and Settings. Unserved coins (pool
@@ -1506,15 +1505,239 @@ function setupControls() {
     }
   }
 
-  if (multiGpuCheckbox) {
-    multiGpuCheckbox.addEventListener('change', () => {
-      config.multiGpu = multiGpuCheckbox.checked;
-      void applyMiningSelection(`multiGpu=${multiGpuCheckbox.checked}`);
-    });
-    if (typeof config.multiGpu === 'boolean') {
-      multiGpuCheckbox.checked = config.multiGpu;
+  // ═══ Mining Hardware — Dashboard per-device toggles ═══
+  // CPU + every detected OpenCL GPU get an on/off checkbox. Checked state
+  // maps to config.cpu / config.gpuDevices (token = banner device name, or
+  // global index when two cards share a name) and applies via the same
+  // hot-restart pipeline as the coin selectors. At least one device must
+  // stay enabled — turning the last one off is reverted.
+  const hwDeviceListEl = document.getElementById('hw-device-list');
+  const hwRescanBtn = document.getElementById('hw-rescan-btn');
+  let hwDeviceData = null;
+
+  const hwGpuToken = (dev) => {
+    const gpus = hwDeviceData?.gpus || [];
+    return gpus.filter(g => g.name === dev.name).length > 1
+      ? String(dev.index)
+      : dev.name;
+  };
+  const hwTokenMatches = (token, dev) => {
+    const t = String(token).trim().toLowerCase();
+    if (!t) return false;
+    if (t === String(dev.index)) return true;
+    return dev.name.toLowerCase().includes(t);
+  };
+  // Tokens of currently enabled GPUs — null means "all detected".
+  const hwSelectedGpuTokens = () => {
+    if (Array.isArray(config.gpuDevices)) return config.gpuDevices; // [] = none
+    const pin = String(config.gpuDevice || '').trim();
+    if (pin) return [pin]; // legacy single-card pin
+    if (config.multiGpu === false && hwDeviceData?.gpus?.length) {
+      return [hwGpuToken(hwDeviceData.gpus[0])];
     }
+    return null;
+  };
+  const hwIsGpuChecked = (dev) => {
+    if (config.gpu === false) return false;
+    const sel = hwSelectedGpuTokens();
+    if (sel === null) return true;
+    return sel.some(t => hwTokenMatches(t, dev));
+  };
+  const hwShortName = (name) => String(name || '').replace(/:xnack.*$/i, '').trim();
+
+  const applyHwSelection = (reason, changedCb) => {
+    const cpuCb = hwDeviceListEl?.querySelector('input[data-hw="cpu"]');
+    const gpuCbs = hwDeviceListEl
+      ? [...hwDeviceListEl.querySelectorAll('input[data-hw="gpu"]')]
+      : [];
+    const cpuOn = cpuCb ? cpuCb.checked : config.cpu !== false;
+    const checkedTokens = gpuCbs.filter(c => c.checked).map(c => c.dataset.hwToken);
+
+    // Guard: at least one device must keep mining.
+    if (!cpuOn && checkedTokens.length === 0) {
+      if (changedCb) changedCb.checked = true;
+      addLogEntry('Mining needs at least one device — keep CPU or a GPU enabled', 'warn');
+      return;
+    }
+
+    config.cpu = cpuOn;
+    if (checkedTokens.length === 0) {
+      config.gpu = false;
+      config.gpuDevices = [];
+    } else {
+      config.gpu = true;
+      // null = "all detected" (default); a subset writes explicit tokens.
+      config.gpuDevices = checkedTokens.length === gpuCbs.length ? null : checkedTokens;
+      config.multiGpu = checkedTokens.length > 1;
+      // Legacy single-card pin stays coherent for older builds/consumers.
+      config.gpuDevice = checkedTokens.length === 1 ? checkedTokens[0] : '';
+    }
+    config.miningMode = config.gpu ? (cpuOn ? 'dual' : 'gpu') : 'cpu';
+    if (gpuCheckbox) gpuCheckbox.checked = config.miningMode !== 'cpu';
+    void applyMiningSelection(reason);
+  };
+
+  const renderHwDevices = () => {
+    if (!hwDeviceListEl) return;
+    hwDeviceListEl.innerHTML = '';
+    const mkRow = ({ kind, title, vendorCls, vendorLabel, sub, checked, token }) => {
+      const row = document.createElement('div');
+      row.className = `hw-row ${checked ? 'on' : 'off'}`;
+      row.dataset.hwRow = kind;
+      if (token != null) row.dataset.hwToken = token;
+
+      const iconWrap = document.createElement('div');
+      iconWrap.className = `hw-icon ${kind === 'gpu' ? 'gpu' : ''}`;
+      iconWrap.innerHTML = `<svg class="icon" aria-hidden="true"><use href="#${kind === 'gpu' ? 'i-spark' : 'i-cpu'}"></use></svg>`;
+
+      const info = document.createElement('div');
+      info.className = 'hw-info';
+      const titleEl = document.createElement('div');
+      titleEl.className = 'hw-title';
+      titleEl.textContent = title;
+      const badge = document.createElement('span');
+      badge.className = `hw-vendor ${vendorCls}`;
+      badge.textContent = vendorLabel;
+      titleEl.appendChild(badge);
+      const subEl = document.createElement('div');
+      subEl.className = 'hw-sub';
+      subEl.textContent = sub;
+      const metricsEl = document.createElement('div');
+      metricsEl.className = 'hw-metrics';
+      metricsEl.innerHTML = '<span class="m dim">—</span>';
+      info.appendChild(titleEl);
+      info.appendChild(subEl);
+      info.appendChild(metricsEl);
+
+      const sw = document.createElement('label');
+      sw.className = 'hw-switch';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!checked;
+      cb.dataset.hw = kind;
+      if (token != null) cb.dataset.hwToken = token;
+      const slider = document.createElement('span');
+      slider.className = 'hw-slider';
+      sw.appendChild(cb);
+      sw.appendChild(slider);
+      cb.addEventListener('change', () => {
+        applyHwSelection(kind === 'cpu' ? `cpu=${cb.checked}` : `gpu[${token}]=${cb.checked}`, cb);
+      });
+      // Keep row state in sync with the checkbox without a full re-render.
+      cb.addEventListener('change', () => {
+        row.classList.toggle('on', cb.checked);
+        row.classList.toggle('off', !cb.checked);
+      });
+
+      row.appendChild(iconWrap);
+      row.appendChild(info);
+      row.appendChild(sw);
+      hwDeviceListEl.appendChild(row);
+    };
+
+    const cpu = hwDeviceData?.cpu || { model: 'CPU', cores: 1 };
+    const cpuCores = cpu.cores || 1;
+    const shortCpu = String(cpu.model || 'CPU').replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    mkRow({
+      kind: 'cpu',
+      title: `CPU · ${cpuCores} threads`,
+      vendorCls: 'cpu',
+      vendorLabel: 'CPU',
+      sub: shortCpu,
+      checked: config.cpu !== false
+    });
+    (hwDeviceData?.gpus || []).forEach((dev) => {
+      const name = String(dev.name || '');
+      const isAmd = /gfx|radeon|amd|navi|vega|polaris/i.test(name);
+      const isNv = /nvidia|geforce|rtx|gtx|quadro|tesla/i.test(name);
+      mkRow({
+        kind: 'gpu',
+        title: `GPU ${dev.index} · ${hwShortName(name)}`,
+        vendorCls: isAmd ? 'amd' : (isNv ? 'nvidia' : 'cpu'),
+        vendorLabel: isAmd ? 'AMD' : (isNv ? 'NVIDIA' : 'GPU'),
+        sub: `${dev.cus} CUs · ${dev.mhz} MHz · ${(dev.vramMb / 1024).toFixed(1)} GiB VRAM`,
+        checked: hwIsGpuChecked(dev),
+        token: hwGpuToken(dev)
+      });
+    });
+    if (!hwDeviceData || !hwDeviceData.gpus?.length) {
+      const note = document.createElement('div');
+      note.className = 'hw-sub';
+      note.style.padding = '4px 2px';
+      note.textContent = 'No OpenCL GPU detected — CPU only';
+      hwDeviceListEl.appendChild(note);
+    }
+  };
+
+  // Live metrics refresh — called from the stats pipeline with the latest
+  // stats payload. Matches SRBMiner per-card telemetry (stats.gpus) to the
+  // enumerated devices by index; CPU row shows the CPU hashrate stream.
+  const updateHwMetrics = (stats) => {
+    if (!hwDeviceListEl || !hwDeviceData) return;
+    const s = stats || {};
+    const cpuRow = hwDeviceListEl.querySelector('.hw-row[data-hw-row="cpu"] .hw-metrics');
+    if (cpuRow) {
+      const cpuOn = config.cpu !== false;
+      const thr = Number(s.cpu_threads) || hwDeviceData.cpu?.cores || 0;
+      cpuRow.innerHTML = cpuOn
+        ? `<span class="m"><b>${fmtHashrate(s.hashrate_cpu)}</b><span class="lbl">hashrate</span></span>
+           <span class="m"><b>${thr}</b><span class="lbl">threads</span></span>`
+        : '<span class="m dim">disabled</span>';
+    }
+    const srbGpus = Array.isArray(s.gpus) ? s.gpus : [];
+    (hwDeviceData.gpus || []).forEach((dev) => {
+      const metrics = hwDeviceListEl.querySelector(
+        `.hw-row[data-hw-row="gpu"][data-hw-token="${CSS.escape(hwGpuToken(dev))}"] .hw-metrics`);
+      if (!metrics) return;
+      if (!hwIsGpuChecked(dev)) {
+        metrics.innerHTML = '<span class="m dim">disabled</span>';
+        return;
+      }
+      // SRBMiner telemetry is indexed by its own OpenCL order — same order
+      // as the miner banner on single-platform rigs.
+      const tel = srbGpus.find(g => Number(g.idx) === Number(dev.index))
+        || srbGpus[dev.index];
+      const zion = Number(s.hashrate_gpu) || 0;
+      const parts = [];
+      if (tel && Number(tel.hashrate) > 0) {
+        parts.push(`<span class="m"><b>${fmtHashrate(tel.hashrate)}</b><span class="lbl">${tel.engine || 'gpu'}</span></span>`);
+      }
+      if (zion > 0) {
+        parts.push(`<span class="m"><b>${fmtHashrate(zion)}</b><span class="lbl">zion total</span></span>`);
+      }
+      if (tel?.temp_c != null) parts.push(`<span class="m"><b>${Math.round(tel.temp_c)}°C</b><span class="lbl">temp</span></span>`);
+      if (tel?.fan_rpm != null) parts.push(`<span class="m"><b>${Math.round(tel.fan_rpm)}</b><span class="lbl">rpm</span></span>`);
+      if (tel?.power_w != null) parts.push(`<span class="m"><b>${Math.round(tel.power_w)} W</b><span class="lbl">power</span></span>`);
+      metrics.innerHTML = parts.length ? parts.join('') : '<span class="m dim">idle — start mining for metrics</span>';
+    });
+  };
+  _hwMetricsUpdater = updateHwMetrics;
+
+  const refreshHwDevices = async (force) => {
+    if (!hwDeviceListEl) return;
+    const statusEl = document.getElementById('hw-detect-status');
+    if (typeof window.electronAPI.listMiningDevices !== 'function') {
+      if (statusEl) statusEl.textContent = 'device list unavailable';
+      return;
+    }
+    try {
+      hwDeviceData = await window.electronAPI.listMiningDevices({ force: !!force });
+      renderHwDevices();
+      const n = hwDeviceData?.gpus?.length || 0;
+      if (statusEl) statusEl.textContent = n ? `CPU + ${n} GPU${n > 1 ? 's' : ''}` : 'CPU only';
+      updateHwMetrics(_latestStatsForHw);
+    } catch {
+      if (statusEl) statusEl.textContent = 'scan failed';
+    }
+  };
+  if (hwRescanBtn) {
+    hwRescanBtn.addEventListener('click', () => {
+      const statusEl = document.getElementById('hw-detect-status');
+      if (statusEl) statusEl.textContent = 'rescanning…';
+      void refreshHwDevices(true);
+    });
   }
+  void refreshHwDevices(false);
 
   startBtn.addEventListener('click', async () => {
     if (!config.wallet) {
@@ -1593,8 +1816,11 @@ function setupControls() {
     }
     
     const pureZionMode = isPureZionDesktopMode(config);
+    // Master GPU checkbox (any card enabled) + CPU state → miningMode.
     const selectedMode = normalizeMiningMode(
-      document.getElementById('gpu-checkbox')?.checked ? 'dual' : 'cpu',
+      document.getElementById('gpu-checkbox')?.checked
+        ? (config.cpu !== false ? 'dual' : 'gpu')
+        : 'cpu',
     );
     const revenueCpuCoin = (document.getElementById('revenue-cpu-coin')?.value || 'auto').toLowerCase();
     const revenueGpuCoinsRaw = document.getElementById('revenue-gpu-coins')?.value || '';
@@ -1648,7 +1874,11 @@ function setupControls() {
       miningMode: selectedMode,
       // Trinity / triple-stream configuration
       tripleStream: tripleStreamCheckbox ? tripleStreamCheckbox.checked : config.tripleStream,
-      multiGpu: multiGpuCheckbox ? multiGpuCheckbox.checked : config.multiGpu !== false,
+      multiGpu: config.multiGpu !== false,
+      // Mining Hardware panel state (Dashboard per-device toggles)
+      cpu: config.cpu !== false,
+      gpu: config.gpu !== false,
+      gpuDevices: Array.isArray(config.gpuDevices) ? config.gpuDevices : (config.gpuDevices ?? null),
       cpuCoin: cpuCoinSelect ? cpuCoinSelect.value : config.cpuCoin,
       gpuCoin: gpuCoinSelect ? gpuCoinSelect.value : config.gpuCoin,
       gpuCoin2: gpuCoin2Select ? gpuCoin2Select.value : (config.gpuCoin2 || ''),
@@ -1858,9 +2088,13 @@ function updateSettingsUI() {
   if (trinityEl && typeof config.tripleStream === 'boolean') {
     trinityEl.checked = config.tripleStream;
   }
-  const multiGpuEl = document.getElementById('multigpu-checkbox');
-  if (multiGpuEl) {
-    multiGpuEl.checked = config.multiGpu !== false;
+  const gpuElHw = document.getElementById('gpu-checkbox');
+  if (gpuElHw) {
+    // Master GPU switch mirrors the per-card selection — any card enabled
+    // (or the default "all") counts as GPU on.
+    const gpuOff = config.gpu === false
+      || (Array.isArray(config.gpuDevices) && config.gpuDevices.length === 0);
+    gpuElHw.checked = !gpuOff;
   }
 }
 
@@ -3027,7 +3261,16 @@ const getEl = (id) => {
   return _elementCache.get(id);
 };
 
+// Mining Hardware panel — registered by the setup closure; invoked from
+// updateStats so per-device metrics refresh with the same payload.
+let _hwMetricsUpdater = null;
+let _latestStatsForHw = null;
+
 function updateStats(stats) {
+  _latestStatsForHw = stats;
+  if (typeof _hwMetricsUpdater === 'function') {
+    try { _hwMetricsUpdater(stats); } catch { /* panel not ready */ }
+  }
   // Keep lite backend indicator in sync with real backend (robust even if IPC event was missed).
   try {
     const resolved = stats?.minerBackendResolved;
