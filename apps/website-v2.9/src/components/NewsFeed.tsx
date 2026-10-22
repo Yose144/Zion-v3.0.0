@@ -420,7 +420,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       cs: 'Nová /wiki landing page a reorganizace navigace do 3 skupin (Info, Vrstvy, Wiki). Přímý přístup k TerraNova knize, Genesis specifikaci a dokumentaci.',
       en: 'New /wiki landing page and navigation reorganized into 3 groups (Info, Layers, Wiki). Direct access to TerraNova book, Genesis spec, and documentation.',
     },
-    href: '/wiki',
+    href: '/docs',
   },
   {
     slug: 'l4-oasis-page',

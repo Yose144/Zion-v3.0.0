@@ -15,7 +15,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // ── Core / conversion ────────────────────────────────────────────
     r('/', 1.0, 'weekly'),
     r('/download', 0.9, 'monthly'),
-    r('/onboard', 0.9, 'monthly'),
     r('/mining', 0.8, 'monthly'),
     r('/roadmap', 0.8, 'weekly'),
 
@@ -90,7 +89,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/news/launch-postponed', 0.6, 'monthly'),
     r('/news/v3-internal-audit', 0.6, 'monthly'),
     r('/docs', 0.7, 'weekly'),
-    r('/wiki', 0.7, 'weekly'),
     r('/whitepapers', 0.7, 'monthly'),
     r('/api-reference', 0.6, 'monthly'),
     r('/quantum-revolution', 0.6, 'monthly'),

@@ -35,7 +35,7 @@ export default function Navigation() {
   }, []);
 
   const navItemMatches = (href: string) =>
-    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/quantum-revolution' && pathname.startsWith('/quantum-revolution')) || (href === '/tree-of-life' && pathname.startsWith('/tree-of-life')) || (href === '/wiki' && pathname === '/wiki');
+    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/quantum-revolution' && pathname.startsWith('/quantum-revolution')) || (href === '/tree-of-life' && pathname.startsWith('/tree-of-life'));
 
   /* ── 4 menu groups ── */
   const navGroups: NavGroup[] = [

@@ -53,11 +53,10 @@ export default function Footer() {
       hover: 'hover:text-white',
       bar: 'from-zion-gold',
       links: [
-        { href: '/wiki', label: tr('nav', 'wiki_group', lang) },
+        { href: '/docs', label: tr('nav', 'docs', lang) },
         { href: '/terranova', label: tr('nav', 'terranova', lang) },
         { href: '/tree-of-life', label: tr('nav', 'tree_of_life', lang) },
         { href: '/genesis', label: tr('nav', 'genesis', lang) },
-        { href: '/docs', label: tr('nav', 'docs', lang) },
       ],
     },
   ];

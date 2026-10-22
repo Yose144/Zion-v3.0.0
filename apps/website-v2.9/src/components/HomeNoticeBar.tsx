@@ -70,7 +70,7 @@ export default function HomeNoticeBar() {
           </Link>
           {/* rasta green — Onboard */}
           <Link
-            href="/onboard"
+            href="/mining"
             className="inline-flex items-center gap-1.5 rounded-full border border-[#2ea44f]/60 bg-[#066928]/80 px-3 py-1 text-[11px] font-bold text-emerald-50 shadow-[0_0_14px_rgba(6,105,40,0.4)] transition-all hover:bg-[#0a8a36] hover:shadow-[0_0_22px_rgba(6,105,40,0.6)]"
           >
             <Compass className="h-3 w-3" />

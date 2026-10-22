@@ -120,6 +120,12 @@ const nextConfig: NextConfig = {
       { source: '/pool/benchmarks', destination: '/pool', permanent: true },
       { source: '/zohar', destination: '/tree-of-life', permanent: true },
       { source: '/zohar/:path*', destination: '/tree-of-life/:path*', permanent: true },
+      // F3 IA canonization — orphan routes -> canonical sections (docs/F3-IA-MAP.md)
+      { source: '/roadmap-295', destination: '/roadmap', permanent: true },
+      { source: '/wiki', destination: '/docs', permanent: true },
+      { source: '/onboard', destination: '/mining', permanent: true },
+      { source: '/kompas', destination: '/terranova', permanent: true },
+      { source: '/cesta', destination: '/maitreya#cesta', permanent: true },
       // Corpus + legacy link fixes
       { source: '/oasis', destination: '/l4-oasis', permanent: true },
       { source: '/oasis/:path*', destination: '/l4-oasis', permanent: true },
