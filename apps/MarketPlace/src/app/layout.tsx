@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import '../../../shared/ui/tokens.css';
+import '../../../shared/ui/rasta-nav.css';
 import './globals.css';
 import { Providers } from './providers';
 import Link from 'next/link';

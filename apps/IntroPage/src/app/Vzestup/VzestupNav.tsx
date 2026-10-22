@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import "../components/rasta-nav.css";
+import "../../../../shared/ui/rasta-nav.css";
 
 const navItems = [
   { id: "hero", label: "Úvod" },

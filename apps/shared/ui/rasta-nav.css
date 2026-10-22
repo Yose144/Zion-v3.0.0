@@ -1,7 +1,10 @@
-/* ── Canonical Rasta navigation — extracted F3c from website/pool-ui globals.
-   Three divergent copies existed: IntroPage/components/rasta-nav.css,
-   MarketPlace globals L699+, pool-ui globals L235+. Consumers rewire in F3c. ── */
+/* ── Canonical Rasta navigation — shared/ui (F3c).
+   Champion = MarketPlace globals nav-core (identical to IntroPage copy).
+   Extras merged: pool-ui .rasta-mobile-close + .rasta-mobile-backdrop.
+   Canonical breakpoint: 868px. Consumers: website-v2.9 (zion impl — oddelene),
+   pool-ui, MarketPlace, IntroPage. App-specific: cart/lang/wallet stay local. ── */
 
+/* Header shell */
 .rasta-nav {
   position: sticky;
   top: 0;
@@ -9,6 +12,7 @@
   padding: 0.75rem 1rem;
 }
 
+/* Floating pill */
 .rasta-nav-pill {
   position: relative;
   display: flex;
@@ -31,6 +35,7 @@
   backdrop-filter: blur(22px) saturate(140%);
 }
 
+/* Logo */
 .rasta-nav-logo-link {
   display: inline-flex;
   align-items: center;
@@ -80,12 +85,13 @@
   color: rgba(252, 209, 22, 0.85);
 }
 
+/* Pill menu (red/gold/green outer) */
 .rasta-nav-menu {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.35rem 0.5rem;
   border-radius: 9999px;
@@ -111,6 +117,7 @@
   z-index: 1;
 }
 
+/* Nav links */
 .rasta-nav-link {
   display: inline-flex;
   align-items: center;
@@ -122,7 +129,6 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   color: #f7f7f7;
-  text-decoration: none;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(4, 6, 16, 0.55);
   transition: all 0.25s ease;
@@ -147,6 +153,7 @@
   box-shadow: 0 0 18px rgba(252, 209, 22, 0.35);
 }
 
+/* Right-side actions */
 .rasta-nav-right {
   display: flex;
   align-items: center;
@@ -160,18 +167,51 @@
   gap: 0.5rem;
 }
 
+
+/* Hamburger */
 .rasta-hamburger {
   display: none;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(4, 6, 16, 0.55);
-  color: rgba(255, 255, 255, 0.75);
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
+.rasta-hamburger:hover,
+.rasta-hamburger:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.rasta-hamburger .bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.rasta-hamburger.active .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.rasta-hamburger.active .bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.rasta-hamburger.active .bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Mobile menu */
 .rasta-mobile-menu {
   display: flex;
   flex-direction: column;
@@ -181,8 +221,7 @@
   width: min(320px, 85vw);
   height: 100vh;
   height: 100dvh;
-  box-sizing: border-box;
-  padding: calc(5.5rem + env(safe-area-inset-top, 0px)) 1.5rem calc(2rem + env(safe-area-inset-bottom, 0px));
+  padding: 5.5rem 1.5rem 2rem;
   gap: 0.5rem;
   background: rgba(4, 8, 18, 0.98);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
@@ -206,6 +245,83 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.rasta-mobile-menu .rasta-nav-link {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.rasta-mobile-actions {
+  display: none;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.rasta-menu-open {
+  overflow: hidden;
+}
+
+/* Responsive */
+@media (max-width: 868px) {
+  .rasta-nav {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .rasta-nav-pill {
+    padding: 0.5rem 0.75rem;
+    border-radius: 22px;
+  }
+
+  .rasta-desktop-menu,
+  .rasta-nav-actions {
+    display: none;
+  }
+
+  .rasta-hamburger {
+    display: flex;
+  }
+
+  .rasta-mobile-actions {
+    display: flex;
+  }
+
+  .rasta-nav-logo-img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .rasta-nav-brand {
+    font-size: 0.95rem;
+  }
+
+  .rasta-nav-kicker {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .rasta-nav-pill {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .rasta-nav-logo-img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .rasta-hamburger {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+/* pool-ui extras — mobile close button + backdrop toggle */
 .rasta-mobile-close {
   display: inline-flex;
   flex: 0 0 44px;
@@ -219,62 +335,12 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-.rasta-mobile-menu .rasta-nav-link {
-  width: 100%;
-  justify-content: flex-start;
-  padding: 0.85rem 1rem;
-  border-radius: 14px;
-  font-size: 0.82rem;
-  text-align: left;
-}
-
-.rasta-mobile-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-body.rasta-menu-open {
-  overflow: hidden;
-}
-
 .rasta-mobile-backdrop {
   display: block;
 }
 
-@media (max-width: 1100px) {
-  .rasta-nav {
-    padding: 0.5rem 0.75rem;
-  }
-  .rasta-nav-pill {
-    padding: 0.5rem 0.75rem;
-    border-radius: 22px;
-  }
-  .rasta-desktop-menu,
-  .rasta-nav-actions {
-    display: none;
-  }
-  .rasta-hamburger {
-    display: flex;
-  }
-  .rasta-nav-logo-img {
-    width: 34px;
-    height: 34px;
-  }
-  .rasta-nav-brand {
-    font-size: 0.95rem;
-  }
-  .rasta-nav-kicker {
-    display: none;
-  }
-}
-
-@media (min-width: 1101px) {
+@media (min-width: 869px) {
   .rasta-mobile-backdrop {
     display: none;
   }
 }
-

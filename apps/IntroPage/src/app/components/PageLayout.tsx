@@ -5,7 +5,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
-import "./rasta-nav.css";
+import "../../../../shared/ui/rasta-nav.css";
 
 function normalize(p: string) {
   return p.replace(/\/$/, "") || "/";

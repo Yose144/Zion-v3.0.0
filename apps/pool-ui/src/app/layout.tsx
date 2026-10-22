@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import '../../../shared/ui/tokens.css';
+import '../../../shared/ui/rasta-nav.css';
 import './globals.css';
 import { LangProvider } from '@/lib/i18n';
 import { AuthProvider } from '@/lib/auth';
