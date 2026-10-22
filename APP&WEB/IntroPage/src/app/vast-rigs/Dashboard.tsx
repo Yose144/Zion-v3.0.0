@@ -41,7 +41,7 @@ type ExtPool = {
   workers: ExtWorker[];
   url: string;
 };
-type ExtPools = { qtu: ExtPool | null; prl: ExtPool | null; xmr: ExtPool | null };
+type ExtPools = { qtu: ExtPool | null; prl: ExtPool | null; nock: ExtPool | null; xmr: ExtPool | null };
 type SmosRig = {
   id: number;
   name: string;
@@ -1077,10 +1077,11 @@ export default function Dashboard() {
 
           {/* external pools: earnings + workers per coin */}
           {snap?.ext && (
-          <div className="mb-5 grid gap-4 lg:grid-cols-3">
+          <div className="mb-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
             {([
               ["qtu", "QTC · Quantus", "#fcd116", "luckypool"],
               ["prl", "PRL · Pearl", "#34d399", "luckypool"],
+              ["nock", "NOCK · Nockchain", "#a78bfa", "luckypool"],
               ["xmr", "XMR · Monero", "#fb923c", "nanopool"],
             ] as const).map(([k, label, color, poolName]) => {
               const p = snap.ext?.[k];

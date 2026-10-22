@@ -49,9 +49,20 @@ SRB_TARBALL = ("https://github.com/doktor83/SRBMiner-Multi/releases/"
                "download/3.7.9/SRBMiner-Multi-3-7-9-Linux.tar.gz")
 PRL_POOL = os.environ.get("VASTCTL_PRL_POOL", "pearl-eu2.luckypool.io:3360")
 QTU_POOL = os.environ.get("VASTCTL_QTU_POOL", "eu.lproute.com:5660")
+# Pearl + Nockchain merge mining (LuckyPool): the native Nockchain address is
+# appended to the Pearl wallet with "+". Pearl stays the payout identity and
+# Pearl rewards are unchanged; the pool pays NOCK on Nockchain itself to the
+# appended address. A Nock address is base58 (letters/digits, no 0/O/I/l) —
+# never a 0x wrapped-NOCK address on Base.
+PRL_ADDRESS = os.environ.get(
+    "VASTCTL_PRL_ADDRESS",
+    "prl1pwqx7esdehf58j4yqq68q0kts3zy5j2cf8c9gnn9tc3qaj6ptaq6qy35v6h")
+NOCK_ADDRESS = os.environ.get(
+    "VASTCTL_NOCK_ADDRESS",
+    "58CRHqNYCGcDZLUga3YB3NRJwH6Hri7d778aVo5DVifWNusb4Lnc2E7")
 PRL_WALLET = os.environ.get(
     "VASTCTL_PRL_WALLET",
-    "prl1pwqx7esdehf58j4yqq68q0kts3zy5j2cf8c9gnn9tc3qaj6ptaq6qy35v6h")
+    f"{PRL_ADDRESS}+{NOCK_ADDRESS}" if NOCK_ADDRESS else PRL_ADDRESS)
 QTU_WALLET = os.environ.get(
     "VASTCTL_QTU_WALLET",
     "qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb")
@@ -587,7 +598,7 @@ def fetch_smos_rigs():
 XMR_WALLET = "42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK"
 _ext_cache = {"ts": 0.0, "data": None}
 EXT_CACHE_TTL = 55
-LUCKY_UNITS = {"quantus": 1e12, "pearl": 1e8}
+LUCKY_UNITS = {"quantus": 1e12, "pearl": 1e8, "nock": 65536}
 
 
 def _http_json(url, timeout=12):
@@ -652,7 +663,7 @@ def _xmr_stats():
 
 
 def fetch_ext_pools():
-    """External pool balances/workers → {qtu, prl, xmr} (None per-coin on failure)."""
+    """External pool balances/workers → {qtu, prl, xmr, nock} (None per-coin on failure)."""
     now = time.time()
     if now - _ext_cache["ts"] < EXT_CACHE_TTL:
         return _ext_cache["data"]
@@ -662,13 +673,19 @@ def fetch_ext_pools():
     except Exception:
         out["qtu"] = None
     try:
-        out["prl"] = _lucky_stats("pearl", PRL_WALLET)
+        # plain PRL address — the merged "+NOCK" wallet is only for stratum
+        # login; a "+" in a query string would decode to a space.
+        out["prl"] = _lucky_stats("pearl", PRL_ADDRESS)
     except Exception:
         out["prl"] = None
     try:
         out["xmr"] = _xmr_stats()
     except Exception:
         out["xmr"] = None
+    try:
+        out["nock"] = _lucky_stats("nock", NOCK_ADDRESS)
+    except Exception:
+        out["nock"] = None
     _ext_cache["ts"] = now
     _ext_cache["data"] = out
     return out
