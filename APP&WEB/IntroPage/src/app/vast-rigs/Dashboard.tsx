@@ -661,6 +661,48 @@ export default function Dashboard() {
       .catch((e) => setSmosLog((p) => ({ ...p, [id]: String(e) })));
   };
   const [chatAns, setChatAns] = useState<Record<number, string>>({});
+  const [routerAns, setRouterAns] = useState("");
+  const [routerModel, setRouterModel] = useState("");
+  const routerChat = async () => {
+    const inp = document.getElementById("router-chat") as HTMLInputElement;
+    const prompt = (inp?.value || "").trim();
+    if (!prompt) return;
+    setBusy("router:chat");
+    setRouterAns("…");
+    try {
+      const q = new URLSearchParams({ prompt });
+      if (routerModel) q.set("model", routerModel);
+      const res = await fetch(`/vast-ops/api/inference/auto-chat?${q}`, { method: "POST" });
+      const text = await res.text();
+      setRouterAns(text || "(empty reply)");
+    } catch (e) {
+      setRouterAns(`error: ${e}`);
+    } finally {
+      setBusy("");
+    }
+  };
+  const autoDeploy = async () => {
+    const model = inferenceModel.trim();
+    if (!model) return;
+    if (!confirm(
+      `Auto-deploy ${model}?\n\nThe backend picks the rig with the most free ` +
+      `VRAM and starts vLLM there (up to ${Math.round(Number(inferenceMemory) * 100)}% ` +
+      `of GPU memory). It can reduce mining performance.`,
+    )) return;
+    setBusy("router:autodeploy");
+    try {
+      const q = new URLSearchParams({
+        confirm: "1", model, gpu_memory_utilization: inferenceMemory, image: VLLM_IMAGE,
+      });
+      const res = await fetch(`/vast-ops/api/inference/auto-deploy?${q}`, { method: "POST" });
+      const text = await res.text();
+      show(res.ok, text);
+    } catch (e) {
+      show(false, String(e));
+    } finally {
+      setBusy("");
+    }
+  };
   const [hiranAns, setHiranAns] = useState("");
   const hiranChat = async () => {
     const inp = document.getElementById("hiran-chat") as HTMLInputElement;
@@ -954,6 +996,83 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
+                {(() => {
+                  const eps = [
+                    ...ai.rigs.filter((r) => r.inference_reachable).flatMap((r) =>
+                      r.models.map((m) => ({ model: m, where: `rig #${r.id}` }))),
+                    ...(ai.hiran?.reachable ? (ai.hiran.models || []).map((m) => ({ model: m, where: "hiran/smos" })) : []),
+                  ];
+                  return (
+                    <div className="mt-4 rounded-xl border border-[#a371f7]/25 bg-[#a371f7]/[0.05] p-3 sm:p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-semibold text-white">Model router</h3>
+                        <span className="rounded-full border border-white/15 bg-black/30 px-2.5 py-0.5 text-[10px] text-white/45">
+                          {eps.length} model{eps.length === 1 ? "" : "s"} online
+                        </span>
+                        <button
+                          onClick={autoDeploy}
+                          disabled={!!busy || !inferenceModel.trim()}
+                          className="ml-auto min-h-8 rounded-lg border border-[#34d399]/35 bg-[#34d399]/10 px-3 text-xs font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:cursor-wait disabled:opacity-40"
+                        >
+                          {busy === "router:autodeploy" ? "Deploying…" : "⚡ Auto deploy"}
+                        </button>
+                      </div>
+                      {eps.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {eps.map((e, i) => (
+                            <button
+                              key={`${e.model}-${i}`}
+                              onClick={() => setRouterModel(e.model)}
+                              title={`${e.model} @ ${e.where}`}
+                              className={`max-w-full truncate rounded-full border px-2.5 py-0.5 font-mono text-[10px] transition ${
+                                routerModel === e.model
+                                  ? "border-[#a371f7]/60 bg-[#a371f7]/20 text-[#d8b4fe]"
+                                  : "border-white/10 bg-black/30 text-white/55 hover:border-white/25 hover:text-white/85"
+                              }`}
+                            >
+                              {e.model.split("/").pop()} <span className="opacity-50">@{e.where}</span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-[11px] text-white/40">
+                          No models loaded — pick a model above and hit Auto deploy, or deploy per-rig below.
+                        </p>
+                      )}
+                      <div className="mt-3 flex gap-1.5">
+                        <select
+                          value={routerModel}
+                          onChange={(e) => setRouterModel(e.target.value)}
+                          className="min-h-9 w-44 shrink-0 rounded-lg border border-white/15 bg-black/40 px-2 text-xs text-white focus:border-[#a371f7]/50 focus:outline-none"
+                        >
+                          <option value="">auto · first online</option>
+                          {Array.from(new Set(eps.map((e) => e.model))).map((m) => (
+                            <option key={m} value={m}>{m.split("/").pop()}</option>
+                          ))}
+                        </select>
+                        <input
+                          id="router-chat"
+                          placeholder={eps.length ? "Ask any loaded model…" : "Nothing online to ask"}
+                          disabled={!eps.length}
+                          className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none disabled:opacity-40"
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); routerChat(); } }}
+                        />
+                        <button
+                          disabled={!!busy || !eps.length}
+                          onClick={routerChat}
+                          className="min-h-9 shrink-0 rounded-lg border border-[#a371f7]/35 bg-[#a371f7]/10 px-3 text-xs font-semibold text-[#d2a8ff] transition hover:bg-[#a371f7]/20 disabled:cursor-wait disabled:opacity-40"
+                        >
+                          {busy === "router:chat" ? "…" : "Ask"}
+                        </button>
+                      </div>
+                      {routerAns !== "" && (
+                        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[#a371f7]/15 bg-black/40 p-3 text-[11px] leading-relaxed text-[#d2a8ff]">
+                          {routerAns}
+                        </pre>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div className="mt-4 rounded-xl border border-[#79c0ff]/25 bg-[#79c0ff]/[0.06] p-3 sm:p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-sm font-semibold text-white">Hiran · SMOS endpoint</h3>

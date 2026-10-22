@@ -491,6 +491,30 @@ def ai_status():
     }
 
 
+_AI_CACHE = {"ts": 0.0, "data": None}
+
+
+def ai_status_cached(ttl=30):
+    if _AI_CACHE["data"] is None or time.time() - _AI_CACHE["ts"] > ttl:
+        _AI_CACHE["data"] = ai_status()
+        _AI_CACHE["ts"] = time.time()
+    return _AI_CACHE["data"]
+
+
+def model_endpoints():
+    """Unified inventory of loaded models across Vast vLLM rigs + Hiran."""
+    eps = []
+    for rig in ai_status_cached()["rigs"]:
+        if rig["inference_reachable"]:
+            free_mib = sum(g["memory_free_mib"] for g in rig["gpus"])
+            for m in rig["models"]:
+                eps.append({"model": m, "kind": "vast", "rig": rig["id"],
+                            "free_mib": free_mib})
+    for m in (hiran_probe().get("models") or []):
+        eps.append({"model": m, "kind": "hiran", "rig": None, "free_mib": None})
+    return eps
+
+
 def fmt_rate(hr):
     if not hr:
         return "—"
@@ -1699,10 +1723,49 @@ def inference_action(action, query):
             " c=d[\"choices\"][0]\n"
             " print(c[\"message\"][\"content\"])\n"
             " u=d.get(\"usage\",{})\n"
-            " if u: print(f\"\\n-- {u.get('completion_tokens','?')} tok out / {u.get('prompt_tokens','?')} in\")\n"
+            " if u: print(\"\\n-- \"+str(u.get(\"completion_tokens\",\"?\"))+"
+            "\" tok out / \"+str(u.get(\"prompt_tokens\",\"?\"))+\" in\")\n"
             "except Exception:\n"
             " print(\"(no/invalid reply)\")'\n"
         )
+    elif action == "auto-chat":
+        prompt = query.get("prompt", [""])[0].strip()
+        if not prompt:
+            raise ValueError("prompt required")
+        want = query.get("model", [""])[0].strip()
+        eps = model_endpoints()
+        if want:
+            eps = [e for e in eps if e["model"] == want]
+            if not eps:
+                return f"model '{want}' not loaded on any endpoint", 502
+        if not eps:
+            return "no model loaded on any endpoint", 502
+        ep = eps[0]
+        if ep["kind"] == "hiran":
+            return inference_action(
+                "hiran-chat", {**query, "model": [ep["model"]]})
+        return inference_action(
+            "chat", {**query, "id": [str(ep["rig"])]})
+    elif action == "auto-deploy":
+        if query.get("confirm") != ["1"]:
+            raise ValueError("deployment requires explicit confirmation")
+        want = query.get("model", [""])[0].strip()
+        if not want:
+            raise ValueError("model required")
+        st = ai_status_cached()
+        for rig in st["rigs"]:
+            if rig["inference_reachable"] and want in rig["models"]:
+                return (f"model already loaded on rig #{rig['id']} — "
+                        f"nothing to do", 200)
+        cands = [(sum(g["memory_free_mib"] for g in r["gpus"]), r)
+                 for r in st["rigs"] if r["gpus"] and not r["error"]]
+        if not cands:
+            return "no running rig with GPU inventory", 502
+        free_mib, best = max(cands, key=lambda c: c[0])
+        out, code = inference_action(
+            "deploy", {**query, "id": [str(best["id"])]})
+        return (f"[auto-deploy] picked rig #{best['id']} "
+                f"({free_mib / 1024:.1f} GiB free VRAM)\n{out}", code)
     elif action == "hiran-chat":
         prompt = query.get("prompt", [""])[0].strip()
         if not prompt:
@@ -1711,8 +1774,9 @@ def inference_action(action, query):
         hp = hiran_probe()
         if not hp["reachable"] or not hp["model"]:
             return "no model loaded on the hiran endpoint (SMOS rig offline?)", 502
+        model = query.get("model", [""])[0].strip() or hp["model"]
         raw = _http_post(f"{HIRAN_API}/v1/chat/completions", {
-            "model": hp["model"],
+            "model": model,
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tok, "temperature": 0.7})
         try:
@@ -1776,6 +1840,13 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(json.dumps({"error": str(e)}), 500, "application/json")
             except (SystemExit, json.JSONDecodeError) as e:
                 self._send(json.dumps({"error": str(e)}), 502, "application/json")
+        elif u.path == "/api/inference/models":
+            try:
+                self._send(json.dumps(model_endpoints()),
+                           ctype="application/json")
+            except (SystemExit, json.JSONDecodeError) as e:
+                self._send(json.dumps({"error": str(e)}), 502,
+                           "application/json")
         elif u.path == "/api/offers":
             try:
                 os_ = search_offers(q.get("gpu", ["RTX_3060"])[0],
