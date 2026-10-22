@@ -129,6 +129,20 @@
 
 Zbývá rozhodnout/provést: `/cex`→`/market` (stránka má vlastní obsah — open Q), `/download /node-setup→/mining`, `/monitoring /miner-stats /g8→/network`, `/dashboard/*(public)→/network`, `/nirvana→/maitreya#nirvana`, `/api-reference→/docs`, `/dashboard/dao-tree→/dao`.
 
+### Verifikace redirectů (2026-10-22, standalone build, PORT=3199)
+
+Všech 15 testovaných cest → `308` do správných cílů (`/multichain[/wallet]`→`/market[/wallet]`, `/defi[/staking]`→`/market`, `/bridge`+`/warp`→`/market#bridge`, `/swap`→`/market#swap`, `/dex[/liquidity]`+`/ziondex`→`/market#dex`, fáze-1: `/roadmap-295`→`/roadmap`, `/wiki`→`/docs`, `/onboard`→`/mining`, `/kompas`→`/terranova`, `/cesta`→`/maitreya#cesta`); `/world` + `/market` → `200`. **Live deployment čeká na deploy-web2.9.sh.**
+
+## Chrome — stav a rozhodnutí (2026-10-22)
+
+| Prvek | Stav |
+|---|---|
+| `rasta-nav.css` | ✅ shared `apps/shared/ui/` — IntroPage, MarketPlace, pool-ui importují |
+| website-v2.9 `Navigation.tsx` | **Zůstává separátní chrome** — 587L zion-style nav (skupiny, sidebar, search, theme, wallet, lang) je produktově bohatší než rasta-nav satelitů; migrace na rasta-nav = vizuální/produktové rozhodnutí, ne mechanická extrakce |
+| Footer | **Per-app zůstává** — 4 rozdílné markup implementace (nepodobné kopie); případná extrakce = nový shared komponent, design práce |
+| `FloatingUtilities`/HiranChat | web-only — zůstává v website-v2.9 |
+| i18n | 3 impl (`tr(sec,key)` web/MP, `lib/i18n` pool-ui, inline IntroPage) — konsolidace = vlastní workstream (migration klíčů) |
+
 ### Poznámka k /l* a obsahem stránek
 
 `/l3-hiran`, `/l4-oasis`, `/l5-free-world`, `/l6-issobella`, `/ekam`, `/ai-native` **zůstávají živé samostatné stránky** — jejich obsah není ve `/world` (hub jen odkazuje). Redirect `/l*→/world` by obsah smazal; kanonizace tady znamená: `/world` = vstupní bod, l* = obsahové sub-destinace (nav už je seskupuje pod Layers/World). Totéž platí pro `/download`, `/monitoring`, `/miner-stats`, `/g8`, `/cex`, `/nirvana` a `/api-reference` — přímé 301 je možné teprve poté, co cílová sekce jejich obsah skutečně absorbuje (nebo po produktovém rozhodnutí obsah zahodit).
