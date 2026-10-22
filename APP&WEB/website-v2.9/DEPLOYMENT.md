@@ -34,6 +34,7 @@ npx next build --webpack
 - `public/` — public assets
 
 The project is therefore deployed by **building locally**, syncing the standalone output to the server, and running a tiny **runtime-only** Docker image.
+The website systemd service starts `.next/standalone/server.js`, so static assets must also exist at `.next/standalone/.next/static/`. The deploy script checks this directory is present and non-empty before syncing.
 
 ## OASIS Intro Landing Page (current public page)
 

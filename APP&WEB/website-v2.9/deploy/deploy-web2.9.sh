@@ -23,6 +23,12 @@ echo "[deploy-web2.9] Building locally..."
 cd "$ROOT_DIR"
 npm run build
 
+STANDALONE_STATIC_DIR="${ROOT_DIR}/.next/standalone/.next/static"
+if [[ ! -d "$STANDALONE_STATIC_DIR" ]] || [[ -z "$(find "$STANDALONE_STATIC_DIR" -type f -print -quit)" ]]; then
+  echo "[deploy-web2.9] ERROR: standalone build is missing .next/static assets" >&2
+  exit 1
+fi
+
 echo "[deploy-web2.9] Syncing to ${EDGE_HOST}:${REMOTE_DIR}"
 rsync -avz --delete \
   --exclude='node_modules' \
