@@ -1544,6 +1544,32 @@ function setupControls() {
     return sel.some(t => hwTokenMatches(t, dev));
   };
   const hwShortName = (name) => String(name || '').replace(/:xnack.*$/i, '').trim();
+  // gfx codename → marketing name when the driver doesn't report one
+  // (SRB telemetry model wins when available — it carries the real name).
+  const HW_GFX_NAME_MAP = {
+    gfx900: 'Vega 56/64', gfx1010: 'RX 5600/5700 XT', gfx1012: 'RX 5500',
+    gfx1030: 'RX 6700–6900 XT', gfx1031: 'RX 6700 XT', gfx1032: 'RX 6600 XT',
+    gfx1034: 'RX 6500 XT', gfx1035: 'RX 6800/6900',
+    gfx1100: 'RX 7900 XTX/XT', gfx1101: 'RX 7800/7700 XT', gfx1102: 'RX 7600',
+    gfx1103: 'RX 7800M/7700S'
+  };
+  const hwGpuDisplayName = (dev) => {
+    const name = hwShortName(dev.name);
+    const gfx = (name.match(/gfx\d{4}/i) || [])[0]?.toLowerCase();
+    const mapped = gfx && HW_GFX_NAME_MAP[gfx];
+    if (!mapped) return name;
+    // Prefer the real model string from SRB telemetry when present.
+    const tel = (_latestStatsForHw?.gpus || []).find(g => Number(g.idx) === Number(dev.index));
+    if (tel?.model) {
+      // "amd radeon rx 5600 xt" → "Radeon RX 5600 XT"
+      return String(tel.model)
+        .replace(/^amd\s+/i, '')
+        .replace(/\b\w+/g, w => /^(rx|xt|xtx|gtx|rtx|vega|pro|geforce|quadro|tesla|ti|super|hd|m)$/i.test(w)
+          ? w.toUpperCase()
+          : w[0].toUpperCase() + w.slice(1));
+    }
+    return `${mapped} (${name})`;
+  };
 
   const applyHwSelection = (reason, changedCb) => {
     const cpuCb = hwDeviceListEl?.querySelector('input[data-hw="cpu"]');
@@ -1640,10 +1666,10 @@ function setupControls() {
     const shortCpu = String(cpu.model || 'CPU').replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
     mkRow({
       kind: 'cpu',
-      title: `CPU · ${cpuCores} threads`,
+      title: `CPU · ${shortCpu}`,
       vendorCls: 'cpu',
       vendorLabel: 'CPU',
-      sub: shortCpu,
+      sub: `${cpuCores} threads`,
       checked: config.cpu !== false
     });
     (hwDeviceData?.gpus || []).forEach((dev) => {
@@ -1652,7 +1678,7 @@ function setupControls() {
       const isNv = /nvidia|geforce|rtx|gtx|quadro|tesla/i.test(name);
       mkRow({
         kind: 'gpu',
-        title: `GPU ${dev.index} · ${hwShortName(name)}`,
+        title: `GPU ${dev.index} · ${hwGpuDisplayName(dev)}`,
         vendorCls: isAmd ? 'amd' : (isNv ? 'nvidia' : 'cpu'),
         vendorLabel: isAmd ? 'AMD' : (isNv ? 'NVIDIA' : 'GPU'),
         sub: `${dev.cus} CUs · ${dev.mhz} MHz · ${(dev.vramMb / 1024).toFixed(1)} GiB VRAM`,
@@ -1670,20 +1696,43 @@ function setupControls() {
   };
 
   // Live metrics refresh — called from the stats pipeline with the latest
-  // stats payload. Matches SRBMiner per-card telemetry (stats.gpus) to the
-  // enumerated devices by index; CPU row shows the CPU hashrate stream.
+  // stats payload. Per-device rates come from stats.streams[] (the miner's
+  // trinity per-stream telemetry): stream 3 = cpu-external, stream 1 = ZION
+  // (the GPU stream — attributed to the first enabled card; multi-GPU rigs
+  // can't split it per card in this payload). Per-card temp/fan/power and
+  // the SRBMiner engine rate come from stats.gpus[] matched by index.
   const updateHwMetrics = (stats) => {
     if (!hwDeviceListEl || !hwDeviceData) return;
     const s = stats || {};
+    const streams = Array.isArray(s.streams) ? s.streams : [];
+    const streamByIdx = (i) => streams.find(x => Number(x.index) === i);
+    const sZion = streamByIdx(1);
+    const sCpu = streamByIdx(3);
+    const zionHr = Number(sZion?.hashrate_10s) || 0;
+    const cpuOn = config.cpu !== false;
+    const enabledGpus = (hwDeviceData.gpus || []).filter(d => hwIsGpuChecked(d));
+
     const cpuRow = hwDeviceListEl.querySelector('.hw-row[data-hw-row="cpu"] .hw-metrics');
     if (cpuRow) {
-      const cpuOn = config.cpu !== false;
-      const thr = Number(s.cpu_threads) || hwDeviceData.cpu?.cores || 0;
-      cpuRow.innerHTML = cpuOn
-        ? `<span class="m"><b>${fmtHashrate(s.hashrate_cpu)}</b><span class="lbl">hashrate</span></span>
-           <span class="m"><b>${thr}</b><span class="lbl">threads</span></span>`
-        : '<span class="m dim">disabled</span>';
+      if (!cpuOn) {
+        cpuRow.innerHTML = '<span class="m dim">disabled</span>';
+      } else {
+        const parts = [];
+        const cpuHr = Number(sCpu?.hashrate_10s) || 0;
+        if (cpuHr > 0) {
+          parts.push(`<span class="m"><b>${fmtHashrate(cpuHr)}</b><span class="lbl">${(sCpu.coin || 'cpu').toLowerCase()}</span></span>`);
+        }
+        // No GPU enabled → the ZION stream runs on CPU.
+        if (!enabledGpus.length && zionHr > 0) {
+          parts.push(`<span class="m"><b>${fmtHashrate(zionHr)}</b><span class="lbl">zion</span></span>`);
+        }
+        const thr = Number(s.cpu_threads) || hwDeviceData.cpu?.cores || 0;
+        parts.push(`<span class="m"><b>${thr}</b><span class="lbl">threads</span></span>`);
+        if (parts.length === 1) parts.unshift('<span class="m dim">idle — start mining for metrics</span>');
+        cpuRow.innerHTML = parts.join('');
+      }
     }
+
     const srbGpus = Array.isArray(s.gpus) ? s.gpus : [];
     (hwDeviceData.gpus || []).forEach((dev) => {
       const metrics = hwDeviceListEl.querySelector(
@@ -1693,17 +1742,39 @@ function setupControls() {
         metrics.innerHTML = '<span class="m dim">disabled</span>';
         return;
       }
-      // SRBMiner telemetry is indexed by its own OpenCL order — same order
-      // as the miner banner on single-platform rigs.
       const tel = srbGpus.find(g => Number(g.idx) === Number(dev.index))
         || srbGpus[dev.index];
-      const zion = Number(s.hashrate_gpu) || 0;
-      const parts = [];
-      if (tel && Number(tel.hashrate) > 0) {
-        parts.push(`<span class="m"><b>${fmtHashrate(tel.hashrate)}</b><span class="lbl">${tel.engine || 'gpu'}</span></span>`);
+      // Title self-heal: once SRB telemetry reports the real marketing
+      // name, upgrade "RX 5600/5700 XT (gfx1010)" → "Radeon RX 5600 XT".
+      const rowEl = metrics.closest('.hw-row');
+      const titleEl = rowEl?.querySelector('.hw-title');
+      if (titleEl?.firstChild && tel?.model) {
+        const pretty = String(tel.model)
+          .replace(/^amd\s+/i, '')
+          .replace(/\b\w+/g, w => /^(rx|xt|xtx|gtx|rtx|vega|pro|geforce|quadro|tesla|ti|super|hd|m)$/i.test(w)
+            ? w.toUpperCase()
+            : w[0].toUpperCase() + w.slice(1));
+        const next = `GPU ${dev.index} · ${pretty}`;
+        if (titleEl.firstChild.textContent !== next) titleEl.firstChild.textContent = next;
       }
-      if (zion > 0) {
-        parts.push(`<span class="m"><b>${fmtHashrate(zion)}</b><span class="lbl">zion total</span></span>`);
+      const parts = [];
+      // Aggregate stream rates can only be attributed to the first enabled
+      // card — single-card rigs (the common case) get exact values.
+      const primary = enabledGpus[0] === dev;
+      if (primary && zionHr > 0) {
+        parts.push(`<span class="m"><b>${fmtHashrate(zionHr)}</b><span class="lbl">zion</span></span>`);
+      }
+      if (primary) {
+        for (const i of [2, 4]) {
+          const st = streamByIdx(i);
+          if (st?.active && st.engine !== 'srbminer' && Number(st.hashrate_10s) > 0) {
+            parts.push(`<span class="m"><b>${fmtHashrate(st.hashrate_10s)}</b><span class="lbl">${(st.coin || `s${i}`).toLowerCase()}</span></span>`);
+          }
+        }
+      }
+      if (tel && Number(tel.hashrate) > 0) {
+        const lbl = (tel.coin || tel.engine || 'gpu').toLowerCase();
+        parts.push(`<span class="m"><b>${fmtHashrate(tel.hashrate)}</b><span class="lbl">${lbl}</span></span>`);
       }
       if (tel?.temp_c != null) parts.push(`<span class="m"><b>${Math.round(tel.temp_c)}°C</b><span class="lbl">temp</span></span>`);
       if (tel?.fan_rpm != null) parts.push(`<span class="m"><b>${Math.round(tel.fan_rpm)}</b><span class="lbl">rpm</span></span>`);

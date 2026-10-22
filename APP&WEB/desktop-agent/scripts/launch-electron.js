@@ -25,6 +25,10 @@ if (process.platform === 'linux') {
   // aborts with a SUID-sandbox FATAL. Local app renders only bundled content.
   args.push('--ozone-platform=x11', '--disable-gpu-sandbox', '--no-sandbox');
 }
+// Optional DevTools/CDP port for local debugging (unset = off).
+if (process.env.ZION_DEBUG_PORT) {
+  args.push(`--remote-debugging-port=${process.env.ZION_DEBUG_PORT}`);
+}
 
 try {
   execFileSync(electronPath, args, {
