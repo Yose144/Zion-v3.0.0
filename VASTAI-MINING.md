@@ -268,6 +268,185 @@ combine VRAM across separate Vast machines or implement distributed model
 parallelism, model scheduling, or automatic rental. Private/gated model
 downloads requiring a Hugging Face token are not configured by this helper.
 
+### 5.1 Gemma na Vast instanci (llama.cpp + CUDA) — cesta bez Dockeru
+
+Ověřeno 2026-10-22 na instanci **57054247** (RTX 3060 12 GB, `ssh1.vast.ai:23934`):
+
+| Věc | Stav na instanci |
+|---|---|
+| Docker | **chybí** → `vast_inference.py deploy` (vLLM v kontejneru) nepoužitelný |
+| CUDA | 12.4.131 (`/usr/local/cuda/bin/nvcc`) |
+| Toolchain | cmake 3.22.1, gcc 11.4.0, git 2.34.1 |
+| CPU / RAM / disk | 16 vCPU / 62 GB / 32 GB |
+| GPU | RTX 3060, 12288 MiB, **compute capability 8.6** |
+| Těžba | 2× SRBMiner (quantus → `eu.lproute.com:5660`, pearlhash → `pearl-eu2.luckypool.io:3360`) |
+
+**Build — pozor na CUDA architektury.** llama.cpp defaultně kompiluje CUDA
+backend pro `compute_50,61,70,75,80,86,89,90` → každý ze 71 `.cu` souborů se
+kompiluje 8× (build trval > 2 h a byl na 23 %). RTX 3060 je **sm_86**, stačí
+jediná architektura:
+
+```bash
+export PATH=/usr/local/cuda/bin:$PATH
+cd /opt/llama.cpp
+cmake -S . -B build -DGGML_CUDA=ON -DCMAKE_BUILD_TYPE=Release \
+      -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON \
+      -DCMAKE_CUDA_ARCHITECTURES=86
+cmake --build build --config Release -j 16 --target llama-server
+# -> /opt/llama.cpp/build/bin/llama-server
+```
+
+**Model — stahovat přímo na instanci, ne uploadem z PC.** Upload z PC šel
+~1 MB/s (1,5 h pro 5 GB), stažení z HuggingFace přímo na instanci 3,8–30 MB/s
+(~3 min):
+
+```bash
+B=https://huggingface.co/lmstudio-community/gemma-4-E4B-it-GGUF/resolve/main
+curl -L -C - -o /opt/models/gemma-4-E4B-it-Q4_K_M.gguf   $B/gemma-4-E4B-it-Q4_K_M.gguf
+curl -L -C - -o /opt/models/mmproj-gemma-4-E4B-it-BF16.gguf $B/mmproj-gemma-4-E4B-it-BF16.gguf
+```
+
+> **Model zůstává v LM Studio na PC jako primární (hub) + lokální inference.**
+> Vast je *čistá výpočetní kapacita* — bez vlastní kopie vah by remote GPU
+> inference nešla (llama.cpp potřebuje váhy vedle GPU). Kopie GGUF na instanci
+> je tedy unavoidable, ale **catalog a primární obsluha zůstávají na PC**.
+
+**Start — pouze loopback** (panel i tunel k němu přistupují přes SSH):
+
+```bash
+/opt/llama.cpp/build/bin/llama-server \
+  -m /opt/models/gemma-4-E4B-it-Q4_K_M.gguf \
+  --mmproj /opt/models/mmproj-gemma-4-E4B-it-BF16.gguf \
+  --host 127.0.0.1 --port 8000 --alias gemma-4-e4b \
+  -c 32768 --parallel 1 -ngl 999 --flash-attn on \
+  --cache-type-k q8_0 --cache-type-v q8_0 -t 8
+```
+
+`vastctl.py` panel probeuje defaultně `http://127.0.0.1:8000/v1/models`
+(přepínač `VASTCTL_AI_PORT`), takže **port 8000 na instanci je kontrakt** —
+jinak panel ukáže `inference_reachable: false` a `models: []`.
+
+### 5.2 Přístup k Vast inferenci z PC (SSH tunel)
+
+```bash
+cd tools/vast
+python3 vast_inference.py tunnel 57054247 --local-port 18000
+# -> ssh -N -L 18000:127.0.0.1:8000 -p 23934 root@ssh1.vast.ai
+curl -s http://127.0.0.1:18000/v1/models
+```
+
+Tunel dává lokální OpenAI-compatible endpoint — stejný tvar jako LM Studio,
+takže se do něj dá nasměrovat Continue, ai-native i game agenti.
+
+### 5.3 LM Studio = lokální hub + Continue (VS Code)
+
+**LM Studio** na PC: OpenAI-compatible API na `127.0.0.1:1234`, model
+`google/gemma-4-e4b` (VLM, Q4_K_M, 4.97 GB), VRAM ~2.4 GB.
+
+Klíčové konfigy (2026-10-22 ověřeno a opraveno):
+
+| Soubor | Klíč | Hodnota | Proč |
+|---|---|---|---|
+| `~/.lmstudio/.internal/http-server-config.json` | `justInTimeModelLoading` | `false` | JIT při požadavku spustil **novou** instanci s default ctx 8192 → kontext se resetoval |
+| `~/.lmstudio/settings.json` | `defaultContextLength` | `65536` | default kontext pro nově načtené modely |
+| `~/.lmstudio/apps/bionic/settings.json` | `defaultContextLength` | `65536` | druhý profil (bionic) — jinak fallback na 8192 |
+
+**Past: Gemma 4 je reasoning model.** Bez správného bugetu je odpověď
+**prázdná** — celý `max_tokens` spadne do `reasoning_content`:
+
+| `max_tokens` | reasoning | content |
+|---|---|---|
+| 120 | 117 | **0 (prázdná odpověď)** |
+| 800 | 0 | 56 (správná odpověď) |
+
+**Continue** (`~/.continue/config.yaml`, schema `v1`, extension
+`continue.continue-2.0.0`): model `provider: lmstudio` + `apiBase:
+http://127.0.0.1:1234/v1` + `apiKey: lm-studio`. Důležitá pole (z
+`config-yaml-schema.json`): `maxTokens`, `contextLength`, `capabilities`,
+`defaultCompletionOptions.{reasoning, reasoningBudgetTokens, temperature}`.
+
+```yaml
+- name: Gemma 4 E4B (LM Studio)
+  provider: lmstudio
+  model: google/gemma-4-e4b
+  apiBase: http://127.0.0.1:1234/v1
+  apiKey: lm-studio
+  contextLength: 65536
+  maxTokens: 4096
+  defaultCompletionOptions:
+    reasoning: true
+    reasoningBudgetTokens: 2048
+    temperature: 0.2
+  roles: [chat, edit, apply]
+  capabilities: [tool_use]
+```
+
+`reasoning: true` + `reasoningBudgetTokens` je to, co oddělí reasoning od
+odpovědi — bez toho Continue dostane prázdný `content`.
+
+### 5.4 Cílová architektura: PC = hub, Vast = inference kapacita
+
+```
+VS Code / Continue ──┐
+marketplace agenti ──┼──> LM Studio  127.0.0.1:1234   (Gemma 4 E4B, lokální GPU)
+ai-native (EDGE2) ───┘         │
+                              ├──> PC GPU: hiran-core :8070 (ZION fine-tuned 8B)
+                              └──> ssh -L tunel -> Vast RTX 3060 :8000 (Gemma, CUDA)
+```
+
+Každý konzument mluví na **jednom** OpenAI-compatible endpointu (LM Studio),
+a provider se přepíná podle potřeby (lokální GPU / Vast burst / CPU záloha).
+
+### 5.5 VRAM a TDR pravidla na PC
+
+Vega 64 (8.1 GB) je sdílená třemi věcmi — rozpočet je těsný:
+
+| Proces | VRAM |
+|---|---|
+| `hiran-core` (8B Q5_K_M, `-ngl 30`, ctx 4096) | ~4.25 GB |
+| LM Studio Gemma 4 E4B (ctx 65536) | ~2.4 GB |
+| Firefox + Electron GPU | ~0.5 GB |
+| **rezerva** | **~0.6 GB** |
+
+Pravidla (odvozená z TDR incidentů — viz `AGENTS.md` 2026-10-22):
+
+- **`-ngl` držet pod volnou VRAM.** `-ngl 34` s Gemma naloženým dávalo jen
+  379 MiB rezervy → riziko `amdgpu ring comp timeout` → `device lost` → core dump.
+  `-ngl 30` = 638 MiB rezervy, dlouhý RAG prompt (2620 tok) projde bez TDR.
+- **`GGML_VULKAN_DEVICE` se v llama.cpp ignoruje** → vždy `--device Vulkan0`
+  (RX Vega) / `Vulkan1` (RX 5600 XT), jinak se model rozdělí mezi obě karty.
+- **`-ub 256`** — logits buffer `[ubatch × vocab] f32` je jinak 311 MB @512
+  a při dlouhém promptu přeteče do GTT host paměti.
+- **Nedouhat dvě instance téhož modelu.** Osiřelý LM Studio backend
+  (`llama-server` bez rodice) držel 2107 MiB VRAM → ukončit.
+  Kontrola: `ps -eo pid,ppid,args | grep llama-server` — backend s `ppid=1`
+  je sirotek.
+
+### 5.6 Game agenti (OASIS L4 / Issobella L6) jako „marketplace AI agents“
+
+Oba servisy mají v repu **Hiran bridge** (OpenAI-compatible `/v1/chat/completions`),
+ale v produkci jsou **vypnuté**:
+
+| Služba | Zapnutí | Endpoint |
+|---|---|---|
+| OASIS (EDGE2 `:8094`) | `hiran_enabled = true` v config TOML | `hiran_endpoint` (default `http://localhost:8002`) |
+| Issobella (EDGE2 `:8097`) | `ISSOBELLA_HIRAN_ENABLED=true` | `ISSOBELLA_HIRAN_URL` |
+
+Endpointy ověřené z EDGE2 (2026-10-22):
+
+- `http://127.0.0.1:8002/v1/models` → `zion-l3` (lokální CPU, fine-tuned
+  Hiran v2.3mini) — **záloha, nikdy nedostupná**
+- `http://127.0.0.1:8004/v1/models` → `hiran-core` (PC GPU přes tunel) — **primární**
+
+> **Pozor na zastaralé defaulty** v `V31/L4/oasis/src/config.rs`:
+> `ai_native_endpoint = "http://localhost:8091"` a `ncl_endpoint =
+> "http://localhost:8090"` — reálné porty na EDGE2 jsou **8094** (OASIS) a
+> **8098** (NCL). Před zapnutím mostů je přepsat.
+
+Mosty nepotřebují změnu kódu — stačí endpoint + enable flag. Bridge volá
+`{base_url}/v1/chat/completions` s `max_tokens: 400`, takže fungují s jakýmkoli
+OpenAI-compatible serverem (LM Studio, Vast, ai-native záloha).
+
 ## 6. CPU mining — XMRig (Monero `rx/0`) vedle GPU minerů
 
 GPU dělá SRBMiner/zion-miner, **CPU na vast instancích jinak idluje** — XMRig
