@@ -153,6 +153,21 @@ type AiGpu = {
   temperature_c: number;
   power_w: number | null;
 };
+type CatEntry = {
+  hf: string;
+  params: string;
+  vram_gb: number;
+  tags: string[];
+  desc: string;
+  gated?: boolean;
+};
+type HfResult = {
+  hf: string;
+  likes: number;
+  downloads: number;
+  gated: boolean;
+  tags: string[];
+};
 type AiRig = {
   id: number;
   gpu_name: string;
@@ -579,6 +594,24 @@ export default function Dashboard() {
   const [aiLoading, setAiLoading] = useState(false);
   const [inferenceModel, setInferenceModel] = useState("Qwen/Qwen2.5-Coder-3B-Instruct");
   const [inferenceMemory, setInferenceMemory] = useState("0.6");
+  const [catalog, setCatalog] = useState<CatEntry[]>([]);
+  const [hfQ, setHfQ] = useState("");
+  const [hfRes, setHfRes] = useState<HfResult[] | null>(null);
+  const hfSearch = async () => {
+    const q = hfQ.trim();
+    if (!q) return;
+    setBusy("hf:search");
+    setHfRes(null);
+    try {
+      const res = await fetch(`/vast-ops/api/inference/hf-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      setHfRes(Array.isArray(data) ? data : []);
+    } catch {
+      setHfRes([]);
+    } finally {
+      setBusy("");
+    }
+  };
 
   const loadAiStatus = useCallback(async () => {
     setAiLoading(true);
@@ -604,6 +637,10 @@ export default function Dashboard() {
         .catch((e) => !stop && setErr(String(e)));
     load();
     const t = setInterval(load, 10000);
+    fetch("/vast-ops/api/inference/catalog")
+      .then((r) => r.json())
+      .then((d) => Array.isArray(d) && setCatalog(d))
+      .catch(() => {});
     loadAiStatus();
     const aiTimer = setInterval(loadAiStatus, 10000);
     return () => ((stop = true), clearInterval(t), clearInterval(aiTimer));
@@ -681,8 +718,8 @@ export default function Dashboard() {
       setBusy("");
     }
   };
-  const autoDeploy = async () => {
-    const model = inferenceModel.trim();
+  const autoDeploy = async (modelArg?: string) => {
+    const model = (modelArg || inferenceModel).trim();
     if (!model) return;
     if (!confirm(
       `Auto-deploy ${model}?\n\nThe backend picks the rig with the most free ` +
@@ -953,29 +990,6 @@ export default function Dashboard() {
                         <option value="Qwen/Qwen2.5-Coder-7B-Instruct">7B · code</option>
                         <option value="mistralai/Mistral-7B-Instruct-v0.3">7B · mistral</option>
                       </datalist>
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {[
-                          ["Qwen/Qwen2.5-1.5B-Instruct", "1.5B"],
-                          ["Qwen/Qwen2.5-Coder-3B-Instruct", "3B code"],
-                          ["Qwen/Qwen2.5-3B-Instruct", "3B"],
-                          ["Qwen/Qwen2.5-7B-Instruct", "7B"],
-                          ["Qwen/Qwen2.5-Coder-7B-Instruct", "7B code"],
-                        ].map(([id, tag]) => (
-                          <button
-                            key={id}
-                            type="button"
-                            onClick={() => setInferenceModel(id)}
-                            title={id}
-                            className={`rounded-full border px-2 py-0.5 text-[10px] transition-colors ${
-                              inferenceModel === id
-                                ? "border-[#a371f7]/60 bg-[#a371f7]/20 text-[#d8b4fe]"
-                                : "border-white/10 bg-black/30 text-white/50 hover:border-white/25 hover:text-white/80"
-                            }`}
-                          >
-                            {tag}
-                          </button>
-                        ))}
-                      </div>
                     </label>
                     <label className="text-[10px] font-semibold uppercase tracking-wider text-white/45">
                       vLLM VRAM target
@@ -997,6 +1011,106 @@ export default function Dashboard() {
                   </div>
                 </div>
                 {(() => {
+                  const freeGiB = ai.rigs.filter((r) => !r.error).flatMap((r) =>
+                    r.gpus.map((g) => g.memory_free_mib / 1024));
+                  const bestFree = freeGiB.length ? Math.max(...freeGiB) : 0;
+                  return (
+                    <div className="mt-4 rounded-xl border border-[#a371f7]/20 bg-black/20 p-3 sm:p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-semibold text-white">Model catalog</h3>
+                        <span className="rounded-full border border-white/15 bg-black/30 px-2.5 py-0.5 text-[10px] text-white/45">
+                          {catalog.length} curated · weights pull from HuggingFace on deploy
+                        </span>
+                        <span className="ml-auto text-[10px] text-white/30">
+                          best rig free VRAM: {bestFree.toFixed(1)} GiB
+                        </span>
+                      </div>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {catalog.map((m) => {
+                          const fits = m.vram_gb <= bestFree;
+                          const sel = inferenceModel === m.hf;
+                          return (
+                            <div
+                              key={m.hf}
+                              className={`min-w-0 rounded-lg border p-2.5 transition ${
+                                sel
+                                  ? "border-[#a371f7]/60 bg-[#a371f7]/15"
+                                  : "border-white/10 bg-black/30 hover:border-white/25"
+                              }`}
+                            >
+                              <button onClick={() => setInferenceModel(m.hf)} className="block w-full min-w-0 text-left">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="min-w-0 truncate text-xs font-semibold text-white">{m.hf.split("/").pop()}</span>
+                                  <span className="shrink-0 rounded-full border border-white/15 px-1.5 py-px text-[9px] text-white/50">{m.params}</span>
+                                  {m.gated && <span className="shrink-0 rounded-full border border-[#fcd116]/30 px-1.5 py-px text-[9px] text-[#fcd116]" title="requires HF token">gated</span>}
+                                </div>
+                                <div className="mt-1 truncate text-[10px] text-white/40">{m.desc}</div>
+                                <div className="mt-1.5 flex items-center gap-1">
+                                  {m.tags.map((t) => (
+                                    <span key={t} className="rounded-full bg-white/[0.06] px-1.5 py-px text-[9px] text-white/45">{t}</span>
+                                  ))}
+                                  <span className={`ml-auto rounded-full border px-1.5 py-px text-[9px] font-semibold ${
+                                    fits ? "border-[#34d399]/40 text-[#6ee7b7]" : "border-[#ff7b72]/40 text-[#ff9b93]"
+                                  }`}>
+                                    ~{m.vram_gb} GB {fits ? "· fits" : "· tight"}
+                                  </span>
+                                </div>
+                              </button>
+                              <div className="mt-2 flex gap-1 border-t border-white/[0.06] pt-2">
+                                <button
+                                  onClick={() => autoDeploy(m.hf)}
+                                  disabled={!!busy}
+                                  className="min-h-7 flex-1 rounded-md border border-[#34d399]/35 bg-[#34d399]/10 text-[10px] font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:cursor-wait disabled:opacity-40"
+                                >
+                                  ▸ deploy
+                                </button>
+                                <a
+                                  href={`https://huggingface.co/${m.hf}`}
+                                  target="_blank" rel="noreferrer"
+                                  className="min-h-7 content-center rounded-md border border-white/10 px-2 text-[10px] text-white/40 transition hover:border-white/25 hover:text-white/70"
+                                >HF ↗</a>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-3 flex gap-1.5 border-t border-white/[0.06] pt-3">
+                        <input
+                          value={hfQ}
+                          onChange={(e) => setHfQ(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); hfSearch(); } }}
+                          placeholder="Search HuggingFace — e.g. qwen3, deepseek, codestral…"
+                          className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none"
+                        />
+                        <button
+                          onClick={hfSearch}
+                          disabled={!!busy || !hfQ.trim()}
+                          className="min-h-9 shrink-0 rounded-lg border border-white/20 bg-white/[0.04] px-3 text-xs font-semibold text-white/70 transition hover:border-white/35 hover:text-white disabled:opacity-40"
+                        >
+                          {busy === "hf:search" ? "…" : "Search HF"}
+                        </button>
+                      </div>
+                      {hfRes !== null && (
+                        <div className="mt-2 max-h-52 overflow-auto rounded-lg border border-white/10 bg-black/30">
+                          {hfRes.length === 0 && <div className="p-3 text-[11px] text-white/40">no results</div>}
+                          {hfRes.map((m) => (
+                            <button
+                              key={m.hf}
+                              onClick={() => { setInferenceModel(m.hf); setHfRes(null); }}
+                              className="flex w-full items-center gap-2 border-b border-white/[0.04] px-3 py-2 text-left text-xs transition hover:bg-white/[0.04]"
+                            >
+                              <span className="min-w-0 flex-1 truncate font-mono text-white/80">{m.hf}</span>
+                              {m.gated && <span className="shrink-0 rounded-full border border-[#fcd116]/30 px-1.5 text-[9px] text-[#fcd116]">gated</span>}
+                              {m.tags.map((t) => <span key={t} className="shrink-0 rounded-full bg-white/[0.06] px-1.5 text-[9px] text-white/40">{t}</span>)}
+                              <span className="shrink-0 text-[9px] text-white/30">♥{m.likes} ↓{(m.downloads / 1000).toFixed(0)}k</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                {(() => {
                   const eps = [
                     ...ai.rigs.filter((r) => r.inference_reachable).flatMap((r) =>
                       r.models.map((m) => ({ model: m, where: `rig #${r.id}` }))),
@@ -1010,7 +1124,7 @@ export default function Dashboard() {
                           {eps.length} model{eps.length === 1 ? "" : "s"} online
                         </span>
                         <button
-                          onClick={autoDeploy}
+                          onClick={() => autoDeploy()}
                           disabled={!!busy || !inferenceModel.trim()}
                           className="ml-auto min-h-8 rounded-lg border border-[#34d399]/35 bg-[#34d399]/10 px-3 text-xs font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:cursor-wait disabled:opacity-40"
                         >

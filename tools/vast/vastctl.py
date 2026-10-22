@@ -491,6 +491,72 @@ def ai_status():
     }
 
 
+# Curated vLLM-ready model catalog. vLLM pulls weights from HuggingFace
+# on the rig at deploy time — this is metadata only.
+MODEL_CATALOG = [
+    {"hf": "Qwen/Qwen2.5-1.5B-Instruct", "params": "1.5B", "vram_gb": 4,
+     "tags": ["tiny", "chat"], "desc": "fast, fits beside dual mining"},
+    {"hf": "Qwen/Qwen2.5-3B-Instruct", "params": "3B", "vram_gb": 8,
+     "tags": ["chat"], "desc": "best small all-rounder"},
+    {"hf": "Qwen/Qwen2.5-Coder-3B-Instruct", "params": "3B", "vram_gb": 8,
+     "tags": ["code"], "desc": "code completion + review"},
+    {"hf": "microsoft/Phi-3.5-mini-instruct", "params": "3.8B", "vram_gb": 9,
+     "tags": ["chat", "reasoning"], "desc": "strong reasoning per GB"},
+    {"hf": "Qwen/Qwen2.5-7B-Instruct", "params": "7B", "vram_gb": 16,
+     "tags": ["chat"], "desc": "needs ~60%+ VRAM on 12GB+ cards"},
+    {"hf": "Qwen/Qwen2.5-Coder-7B-Instruct", "params": "7B", "vram_gb": 16,
+     "tags": ["code"], "desc": "best open coder under 10B"},
+    {"hf": "mistralai/Mistral-7B-Instruct-v0.3", "params": "7B", "vram_gb": 16,
+     "tags": ["chat"], "desc": "classic instruct baseline"},
+    {"hf": "google/gemma-2-9b-it", "params": "9B", "vram_gb": 20,
+     "tags": ["chat"], "gated": True, "desc": "needs HF token (gated)"},
+    {"hf": "meta-llama/Llama-3.1-8B-Instruct", "params": "8B", "vram_gb": 18,
+     "tags": ["chat"], "gated": True, "desc": "needs HF token (gated)"},
+    {"hf": "Qwen/Qwen2.5-14B-Instruct", "params": "14B", "vram_gb": 30,
+     "tags": ["chat", "reasoning"], "desc": "3090/4090-class GPU"},
+    {"hf": "Qwen/Qwen2.5-Coder-14B-Instruct", "params": "14B", "vram_gb": 30,
+     "tags": ["code", "reasoning"], "desc": "3090/4090-class GPU"},
+    {"hf": "Qwen/Qwen2.5-32B-Instruct", "params": "32B", "vram_gb": 66,
+     "tags": ["chat", "reasoning"], "desc": "A100/H100 only"},
+]
+
+_HF_CACHE = {"ts": 0.0, "q": "", "data": None}
+
+
+def hf_search(query, limit=12):
+    """Live HuggingFace search proxy — find any text-generation model."""
+    query = (query or "").strip()
+    if not query:
+        return []
+    if (_HF_CACHE["data"] is not None and _HF_CACHE["q"] == query
+            and time.time() - _HF_CACHE["ts"] < 120):
+        return _HF_CACHE["data"]
+    url = ("https://huggingface.co/api/models?"
+           f"search={urllib.parse.quote(query)}&filter=text-generation"
+           f"&sort=likes&direction=-1&limit={int(limit)}")
+    try:
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "vastctl/1.0"})
+        with urllib.request.urlopen(req, timeout=12) as r:
+            raw = json.loads(r.read().decode())
+    except Exception as e:
+        raise SystemExit(f"hf search failed: {e}")
+    out = []
+    for m in raw:
+        if not isinstance(m, dict) or not m.get("id"):
+            continue
+        out.append({
+            "hf": m["id"],
+            "likes": m.get("likes", 0),
+            "downloads": m.get("downloads", 0),
+            "gated": bool(m.get("gated")),
+            "tags": [t for t in (m.get("tags") or [])
+                     if t in {"gguf", "vllm", "awq", "gptq", "text-generation"}],
+        })
+    _HF_CACHE.update({"ts": time.time(), "q": query, "data": out})
+    return out
+
+
 _AI_CACHE = {"ts": 0.0, "data": None}
 
 
@@ -1845,6 +1911,15 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(json.dumps(model_endpoints()),
                            ctype="application/json")
             except (SystemExit, json.JSONDecodeError) as e:
+                self._send(json.dumps({"error": str(e)}), 502,
+                           "application/json")
+        elif u.path == "/api/inference/catalog":
+            self._send(json.dumps(MODEL_CATALOG), ctype="application/json")
+        elif u.path == "/api/inference/hf-search":
+            try:
+                self._send(json.dumps(hf_search(q.get("q", [""])[0])),
+                           ctype="application/json")
+            except SystemExit as e:
                 self._send(json.dumps({"error": str(e)}), 502,
                            "application/json")
         elif u.path == "/api/offers":
