@@ -170,7 +170,11 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 ### F3 — Kanonizace webu
 
 - **IA:** mapovat ~60 sekcí → 7 kanonických; redirect tabulka pro sirotky (Next `next.config.ts` redirects — mechanismus už existuje pro `/dex`→`/multichain#dex`)
-- **Design tokens → `apps/shared/ui`:** gold `#ffd700`, purple `#9333ea`, cyan `#06b6d4`, blue `#1e3a8a`, `.zion-rainbow-card`, `.zion-section`, `.zion-button-*`, `.zion-kicker`, `.zion-cta-banner`, `.zion-docs-prose` — tailwind preset + css variables exportované jako balíček; konzumují: web, intro, oasis, marketplace, pool-ui → **jednotný vizuální produkt**
+  - ✅ **F3a (2026-10-22, `3ed130c0f`):** [`docs/F3-IA-MAP.md`](F3-IA-MAP.md) — kompletní mapa 130 rout→7 sekcí + 2-fázová redirect tabulka; fáze-1 redirecty nasazeny (`/roadmap-295→/roadmap`, `/wiki→/docs`, `/onboard→/mining`, `/kompas→/terranova`, `/cesta→/maitreya#cesta`), interní linky + sitemap zkanonizovány, dead in-page redirecty smazány
+  - fáze 2 čeká na vznik hubů `/market` + `/world` (mapa §"fáze 2")
+- **Design tokens → `apps/shared/ui`:** ~~gold `#ffd700`…~~ *(plánovaná paleta se v appkách nevyskytuje — kanon = rasta)* `.zion-*` classy + brand sloty
+  - ✅ **F3b (2026-10-22, `b31349ba6`):** `apps/shared/ui/` vytvořeno — `tokens.css` (canonical superset z website-v2.9: zion-gold/purple/cyan/blue sloty = rasta, `cyber`+`matrix-light` themy, radius/surface/shadow) + `tailwind.preset.cjs` (TW3) + `tokens.ts`; **pool-ui = první consumer** (preset+import, drift `#078930`→`#066928` konvergován, build OK)
+  - zbývá konzumovat: IntroPage, MarketPlace (divergentní rainbow-card geometrie + `zion.blue` nekonzistence), OasisWeb (TW4 — tokens.css+`@theme` vzor); website-v2.9 = referenční zdroj (hodnoty identické, `@layer` riziko → zůstává autoritativní kopie)
 - **Chrome:** sdílené Navigation/Footer/FloatingUtilities komponenty (dnes zkopírované per app?)
 - **ZIS:** canon — rozšířit session na všechny portály (cookie `.zionterranova.com` už je); pool-ui přidat ZIS (má už simplewebauthn dep)
 - **Copy audit:** CS+EN parita, žádné interní názvy (V31, ZionStart, PoC-lab…), `npm run check:links --strict`
