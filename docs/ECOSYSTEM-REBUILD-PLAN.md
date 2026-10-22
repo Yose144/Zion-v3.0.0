@@ -145,11 +145,21 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 3. **V31 → chain/:** jen adresář (crate názvy zůstávají `v31-*` — rozhodnout §4.4)
 4. **docs/WP-Mainet → canon/books/:** přesun knih; ~100+ odkazů k přepsání (README, AGENTS, docs/3.2, .gitignore, pdf skripty) — dedikovaný commit
 5. **infra/:** sesbírat `edge-deploy/`, deploy skripty z `apps/*/deploy/`, systemd unity ze `ZION_OS/infra/systemd/`, nginx z repa `V31/deploy/nginx/`
-6. **canon/l*/:** `L2data`–`L6data` + `L5Projects` jsou kanon/dokumenty + source artwork, NE runtime data → `canon/l2..l6` (**provedeno v batch 1**); `data/` u kořene = untracked runtime DBs, zůstává; `canon/brand/` → `canon/brand/` (26 odkazů — dedikovaný commit)
+6. **canon/l*/:** `L2data`–`L6data` + `L5Projects` jsou kanon/dokumenty + source artwork, NE runtime data → `canon/l2..l6` (**provedeno v batch 1**); `data/` u kořene = untracked runtime DBs, zůstává; `LOGO/` → `canon/brand/` (**provedeno batch 2**)
 
 **F2 batch 1 ✅ (2026-10-22):** `L2data`→`canon/l2`, `L3data`→`canon/l3`, `L4data`→`canon/l4`, `L5Projects`→`canon/l5`, `config/`→`archive/config/`; fixnuto: `freeworld/tools/images.py`, `freeworld/AGENTS.md`, `BohemiaDao.md` linky.
-**Batch 1b ✅:** `WarpBeta`→`archive/WarpBeta` (7 souborů opraveno), `config/`→`archive/config/`.
-**Zbývá:** `L6data`→canon/l6 (71 odkazů), `LOGO`→canon/brand (26), `WP-Mainet`→canon/books (100+), pak velké: `APP&WEB`→apps, `V31`→chain, `edge-deploy`+`scripts`+`ZION_OS`→infra.
+**Batch 1b ✅:** `WarpBeta`→`archive/WarpBeta` (7 souborů opraveno).
+**Batch 2 ✅:** `L6data`→`canon/l6`, `LOGO`→`canon/brand` (~30 souborů, root→root sed).
+**Batch 3 ✅:** `docs/WP-Mainet`→`canon/books` — 96 souborů externě + interní `../../` úniky → `../../../docs/` + `../WP-Mainet` externí rel. linky + `.gitignore`.
+**Batch 4 ✅:** loose soubory — `xmrig-vast-cpu.json`→`infra/vast/`, `warp.toml`→`infra/config/`, teamredminer zips (LFS)→`infra/mining/`, `.git_commit_msg.txt`→`archive/misc/`, 2 reporty+JSON→`docs/3.2/REPORTS/`.
+**Batch 5 ✅:** `edge-deploy`→`infra/edge-deploy` (48 souborů, 2 ref fixy).
+
+**Zbývá (velké, vyžaduje koordinaci — dedikované kroky):**
+- `APP&WEB`→`apps/` — deploy skripty používají lokální cestu `APP&WEB/*`; v jednom commitu: git mv + fix `deploy/*.sh` LOCAL paths (remote `/opt/zion/APP&WEB/` může zůstat), ~stovky doc odkazů, `next.config`/AGENTS
+- `V31`→`chain/` — cargo workspace (member paths jsou relativní = OK), `.github/workflows`, ~tisíce odkazů, untracked `target/` zůstane; crate názvy `v31-*` zůstávají
+- `scripts/`→`infra/scripts/` (359 souborů) — **POZOR:** servery volají `/opt/zion/scripts/...` přímo (systemd/cron/watchdog) — vyžaduje mapping strategii ve F5, ne jen mv
+- `ZION_OS/` (292) + `tools/` (7) → `infra/` — ops dashboard/skripty
+- untracked root dirs (`backups/`16G, `PUBLIC/`klon, `venv-hiran/`, `logs/`, `BACKUP/`, `AuXpow/`, `dashboard/`, `data/` runtime) — filesystem úklid, ne git; rozhodnout přemístění mimo workspace vs. nechat + zdokumentovat
 7. Aktualizovat `.github/`, `AGENTS.md`, všechny `deploy-*.sh` cesty
 
 ### F3 — Kanonizace webu
