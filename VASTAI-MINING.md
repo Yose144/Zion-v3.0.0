@@ -599,30 +599,55 @@ přepis kódu), autocomplete 200 (doplnění kódu), embed 200 (768 dimenzí).
 Qwen3-4B běží s `--reasoning-budget 0` → odpověď jde rovnou do `content`
 (u reasoning modelu by jinak obsah skončil v `reasoning_content`).
 
-### 5.10 Qwen3.8-27B (16 GB) — proč lokálně ne, proč na Vastu ano
+### 5.10 Qwen3.8-27B (16.8 GB) — na naše karty se nevejde
 
-Model `Qwen3.8-27B-Q4_K_M.gguf` = **16.8 GB** (+ 931 MB `mmproj` pro vision).
-Na 8 GB kartě se do VRAM vejde jen ~6.3 GB → zbytek (~9.4 GB) jde na CPU →
-**1.3 tok/s** a odpověď je prázdná (celý budget v reasoning).
+Model `Qwen3.8-27B-Q4_K_M.gguf` = **16.8 GB**. Existují jen kvanty
+**Q4_K_M / Q6_K / Q8_0** (žádný menší) → na 8 GB (1070 Ti) ani 12 GB
+(RTX 3060) se **nevejde** s použitelnou rychlostí:
 
-- **Lokálně** (LM Studio, CUDA, ctx 8192) = „trpělivý“ model pro těžké úlohy.
-  Load vyžaduje **text-only**: s `mmproj` (BF16) engine padá na
+| Kde | Rozdělení | Rychlost |
+|---|---|---|
+| 1070 Ti (8 GB) | 6.3 GB GPU + 9.4 GB RAM | **1.3 tok/s** (a prázdný content) |
+| Vast RTX 3060 (12 GB, auto-fit) | 10.6 GB GPU + ~5 GB RAM | **<1 tok/s** (CPU vrstvy + těžba sdílená) |
+
+Pro plný výkon je potřeba **A100 40/80 GB nebo H100** (vast.ai ~1 $/h) —
+tam se model vejde celý na GPU.
+
+Drobnosti k tomuto modelu:
+- **text-only load**: s `mmproj` (vision projektor, BF16) engine padá na
   `mtmd_init_from_file → ggml_abort` (BF16 není podporovaný na sm_61) →
-  soubor `mmproj-Qwen3.8-27B-BF16.gguf` je třeba odsunout/odpojit.
-  Navíc zabere ~6.3 GB VRAM → potřeba mít volnou 1070 Ti (nejde současně
-  s Qwen3-4B ani s hiran-core).
-- **Na Vastu** (RTX 3060, 12 GB) = 11.6 GB modelu na GPU, ~4.4 GB v RAM →
-  použitelný. Stažení 16 GB přímo na instanci (14–30 MB/s ≈ 15 min),
-  `llama-server` na `:8002`, tunel z PC na `:18002`.
+  soubor `mmproj-Qwen3.8-27B-BF16.gguf` odsunout/odpojit.
+- Je to reasoning model → bez dostatečného `maxTokens` je `content` prázdný.
 
-| Model | Kde | VRAM | tok/s |
-|---|---|---|---|
-| Qwen3-4B | 1070 Ti (lokálně) | 2.3 GB | **44** |
-| Qwen3.8-27B | 1070 Ti (lokálně) | 6.3 GB + 9.4 GB RAM | 1.3 |
-| Qwen3.8-27B | Vast RTX 3060 | ~11.6 GB | viz `Vast-Inference.md` §2.3 |
+Do té doby je pracovní model pro kódování **Qwen3-4B lokálně (47 tok/s)** a
+na Vastu **Gemma 4 E4B** (32k kontext).
+
+### 5.11 „Message exceeds context limit" — příčina a fix
+
+Chybu hází **sám Continue** (`gui/assets/index.js` → `inlineErrorMessage ===
+"out-of-context"`): porovná délku promptu s `contextLength` modelu v configu
+a odmítne to, aniž by požadavek odeslal.
+
+Dva limity musí sedět:
+
+```
+Continue contextLength  +  maxTokens   ≤   server -c
+        28672           +    2048      ≤    32768   ✅
+```
+
+Původně bylo `contextLength: 16384` a server `-c 16384` → prompt nad 16k
+tokenů (system prompt + historie chatu + @-mentionované soubory) spadl.
+Fix: server `-c 32768` (KV q8_0 = 2.4 GB, na 8 GB kartě se vešlo) a
+`contextLength: 28672` v `~/.continue/config.yaml` (aby prompt + výstup
+nepřekročil serverový limit).
+
+> **Tip:** pokud to padá i teď, je to historie chatu — `~/.continue/config.yaml`
+> má `disableIndexing: true` (repo se neindexuje), ale @-mentionované soubory
+> a předchozí zprávy se sčítají. Nový chat to vyřeší; pro dlouhé kontexty
+> přepni na Gemma na Vastu (32k).
 
 
-### 5.11 OpenSSH `permitlisten` nebere čárku
+### 5.12 OpenSSH `permitlisten` nebere čárku
 
 `authorized_keys` pro tunelový účet **nesmí** mít
 `permitlisten="a:1,b:2"` — OpenSSH to neumí parsovat a **celý klíč se odmítne**
