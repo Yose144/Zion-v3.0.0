@@ -1,15 +1,21 @@
 #!/bin/bash
-# Deploy ZIS (ZION Identity Service) to the Edge server
+# Deploy ZIS (ZION Identity Service) — service + optional nginx
 # Usage: ./deploy-zis.sh [--build-only]
 #
-# Target host: zion-v6 by default (zion-new is CGNAT/unreliable — see
-# AGENTS.md). Override with ZIS_DEPLOY_HOST=<alias>.
+# Two distinct hosts (previously conflated on the old Edge):
+#   ZIS_DEPLOY_HOST — where zion-zis.service runs. Default zion-edge2
+#                     (service lives on EDGE2 at /opt/zion/identity).
+#   ZIS_NGINX_HOST  — where auth.zionterranova.com TLS termination lives.
+#                     Default zion-new (Edge) while DNS points there;
+#                     switch to zion-edge2 after the F1 DNS move.
+#                     Set ZIS_SKIP_NGINX=1 to skip the nginx step entirely.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 ZIS_DIR="/opt/zion/identity"
-DEPLOY_HOST="${ZIS_DEPLOY_HOST:-zion-v6}"
+DEPLOY_HOST="${ZIS_DEPLOY_HOST:-zion-edge2}"
+NGINX_HOST="${ZIS_NGINX_HOST:-zion-new}"
 SSH_CMD="ssh $DEPLOY_HOST"
 
 echo "=== ZIS Deploy → $DEPLOY_HOST ==="
@@ -63,12 +69,16 @@ scp "$REPO_ROOT/APP&WEB/identity/deploy/zion-zis.service" \
     "$DEPLOY_HOST:/etc/systemd/system/zion-zis.service"
 $SSH_CMD "systemctl daemon-reload"
 
-# 5. Setup nginx
-echo "[5/6] Installing nginx config..."
-scp "$REPO_ROOT/APP&WEB/identity/deploy/nginx-zis.conf" \
-    "$DEPLOY_HOST:/etc/nginx/sites-available/auth.zionterranova.com"
-$SSH_CMD "ln -sf /etc/nginx/sites-available/auth.zionterranova.com /etc/nginx/sites-enabled/auth.zionterranova.com"
-$SSH_CMD "nginx -t && systemctl reload nginx"
+# 5. Setup nginx (on the TLS-termination host — may differ from the service host)
+if [[ "${ZIS_SKIP_NGINX:-0}" == "1" ]]; then
+    echo "[5/6] Skipping nginx (ZIS_SKIP_NGINX=1)"
+else
+    echo "[5/6] Installing nginx config on ${NGINX_HOST}..."
+    scp "$REPO_ROOT/APP&WEB/identity/deploy/nginx-zis.conf" \
+        "$NGINX_HOST:/etc/nginx/sites-available/auth.zionterranova.com"
+    ssh "$NGINX_HOST" "ln -sf /etc/nginx/sites-available/auth.zionterranova.com /etc/nginx/sites-enabled/auth.zionterranova.com"
+    ssh "$NGINX_HOST" "nginx -t && systemctl reload nginx"
+fi
 
 # 6. Restart + smoke check
 echo "[6/6] Restarting ZIS service..."
