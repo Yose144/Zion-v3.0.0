@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 const config = {
+  presets: [require('../shared/ui/tailwind.preset.cjs')],
   corePlugins: {
     preflight: false,
   },
@@ -11,15 +12,8 @@ const config = {
   theme: {
     extend: {
       colors: {
-        'zion-gold': '#fcd116',
-        'zion-purple': '#e41e2b',
-        'zion-cyan': '#078930',
-        'zion-blue': '#0d0d0d',
         'zion-dark': '#0a0a0f',
         'zion-black': '#050508',
-        'rasta-red': '#e41e2b',
-        'rasta-gold': '#fcd116',
-        'rasta-green': '#078930',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

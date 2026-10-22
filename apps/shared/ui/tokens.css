@@ -1,0 +1,62 @@
+/**
+ * ZION canonical design tokens — single source of truth.
+ * Canonical superset extracted from apps/website-v2.9/src/app/globals.css (F3b).
+ *
+ * Semantic brand slots (theme-able): zion-gold / zion-purple / zion-cyan / zion-blue.
+ * Default theme = Rasta (gold / red / green / black). NOTE: slot names are
+ * historical — `zion-purple` carries Rasta Red and `zion-cyan` carries Rasta
+ * Green in the default theme. Use slots, not raw hexes, in components.
+ *
+ * Known drift being converged: 4 apps use rasta-green #078930; canonical
+ * flagship value is #066928 (website-v2.9). Consumers importing this file
+ * converge on #066928.
+ */
+
+:root {
+  /* ── Brand slots (rgb triplets for alpha compositing) ── */
+  --color-zion-gold: 252 209 22;     /* #fcd116 — Rasta Gold */
+  --color-zion-purple: 228 30 43;    /* #e41e2b — Rasta Red (slot: "purple") */
+  --color-zion-cyan: 6 105 40;       /* #066928 — Rasta Green (slot: "cyan") */
+  --color-zion-blue: 13 13 13;       /* #0d0d0d — Rasta Black (slot: "blue") */
+  --color-bg: 0 0 0;
+  --color-fg: 255 255 255;
+
+  /* ── Direct rasta hexes (non-theme accents) ── */
+  --rasta-red: #e41e2b;
+  --rasta-gold: #fcd116;
+  --rasta-green: #066928;
+  --rasta-dark: #1a1a1a;
+  --rasta-black: #0d0d0d;
+  --quantum-blue: #00d4ff;
+  --matrix-green: #00ff41;
+
+  /* ── Geometry / surfaces ── */
+  --zion-radius-sm: 0.85rem;
+  --zion-radius-md: 1.2rem;
+  --zion-radius-lg: 1.65rem;
+  --zion-radius-xl: 2rem;
+  --zion-border-subtle: rgba(255, 255, 255, 0.1);
+  --zion-border-strong: rgba(255, 255, 255, 0.18);
+  --zion-surface: rgba(13, 13, 13, 0.28);
+  --zion-surface-soft: rgba(255, 255, 255, 0.025);
+  --zion-surface-hover: rgba(255, 255, 255, 0.045);
+  --zion-shadow-panel: 0 24px 90px rgba(0, 0, 0, 0.42);
+  --zion-shadow-glow: 0 0 42px rgba(252, 209, 22, 0.28);
+}
+
+/* Alternate themes — brand slots swap, geometry stays. */
+[data-theme="cyber"] {
+  --color-zion-gold: 255 0 128;    /* neon magenta */
+  --color-zion-purple: 168 85 247; /* violet */
+  --color-zion-cyan: 34 211 238;   /* cyan */
+  --color-bg: 6 8 20;              /* deep navy */
+  --color-fg: 230 255 255;
+}
+
+[data-theme="matrix-light"] {
+  --color-zion-gold: 180 255 200;  /* mint */
+  --color-zion-purple: 34 197 94;  /* green */
+  --color-zion-cyan: 74 222 128;   /* light green */
+  --color-bg: 5 8 5;               /* very dark green */
+  --color-fg: 230 255 240;
+}

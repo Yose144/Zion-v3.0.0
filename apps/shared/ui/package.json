@@ -1,0 +1,12 @@
+{
+  "name": "@zion/ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ZION canonical design tokens + shared UI (F3) — rasta theme tokens.css, tailwind preset, chrome components",
+  "type": "module",
+  "exports": {
+    ".": "./tokens.ts",
+    "./tokens.css": "./tokens.css",
+    "./tailwind-preset": "./tailwind.preset.cjs"
+  }
+}
