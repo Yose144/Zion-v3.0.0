@@ -1776,8 +1776,16 @@ function enumerateGpuDevices(opts) {
   if (gpuEnumInFlight) return gpuEnumInFlight;
   gpuEnumInFlight = new Promise((resolve) => {
     const finish = (list) => {
-      gpuDeviceListCache = list;
-      gpuDeviceListAt = Date.now();
+      // A transient empty probe (spawned while the real miner restarts or
+      // OpenCL is busy) must not evict a known-good list — keep last-good
+      // and re-probe in ~5 s instead of serving "CPU only" for a minute.
+      if (list.length || !gpuDeviceListCache || !gpuDeviceListCache.length) {
+        gpuDeviceListCache = list;
+        gpuDeviceListAt = Date.now();
+      } else {
+        gpuDeviceListAt = Date.now() - 55000;
+        list = gpuDeviceListCache;
+      }
       gpuEnumInFlight = null;
       try { logApp('gpu-enum', JSON.stringify({ count: list.length, devices: list })); } catch {}
       resolve(list);
@@ -1844,6 +1852,288 @@ function enumerateGpuDevices(opts) {
     child.on('exit', endProbe);
   });
   return gpuEnumInFlight;
+}
+
+// ── GPU health guard ────────────────────────────────────────────────────
+// A card can pass the banner probe yet fail every kernel launch at
+// runtime — e.g. this rig's NVIDIA GTX 1070 Ti hits
+// CL_INVALID_WORK_GROUP_SIZE on every batch, produces 0 KH/s, and can
+// destabilize the healthy AMD card in the shared process. The guard
+// watches `multi_gpu: sub-miner[N] batch error` stderr lines and the
+// per-device hashrates in `[metrics] ... [name=rate name=rate]` lines.
+// A persistently failing device is quarantined: removed from
+// config.gpuDevices, persisted, the miner hot-restarted without it, and
+// the renderer notified so the card renders "auto-disabled". Toggling
+// the card back on clears the quarantine and retries once.
+const gpuHealth = {
+  active: [],            // enabled devices in banner order (sub-miner order)
+  errors: new Map(),     // dev index -> batch error count this run
+  zeroSince: new Map(),  // dev index -> ts first seen at ~0 rate
+  sawRate: new Map(),    // dev index -> true once any rate >0 observed
+  enabledAt: new Map(),  // token -> ts when it entered the selection
+  strikes: new Map(),    // token -> crash strikes attributed to that card
+  startedAt: 0,
+  timer: null,
+  quarantining: new Set() // tokens currently being quarantined (re-entry guard)
+};
+
+const GPU_HEALTH_ERROR_LIMIT = 12;   // batch errors before quarantine
+const GPU_HEALTH_ZERO_MS = 120000;   // ~0 rate tolerated for 2 min
+const GPU_HEALTH_TICK_MS = 20000;
+const GPU_STRIKE_LIMIT = 2;          // crashes attributed to a new card
+
+// Selection-token ↔ device matching, same semantics as the miner's
+// ZION_GPU_DEVICES filter: numeric = global index, otherwise a
+// case-insensitive substring of the banner name.
+function gpuDeviceMatchesToken(token, dev) {
+  const t = String(token || '').trim().toLowerCase();
+  if (!t) return false;
+  if (t === String(dev.index)) return true;
+  const name = String(dev.name || '').toLowerCase();
+  const short = name.split(':')[0].trim();
+  return name.includes(t) || (!!short && (short.includes(t) || t.includes(short)));
+}
+
+// The token used for a device inside gpuDevices/quarantine maps —
+// index string only when the name is ambiguous (duplicate cards).
+function gpuSelectionToken(dev, allDevices) {
+  const dupes = (allDevices || []).filter(d => d.name === dev.name).length > 1;
+  return dupes ? String(dev.index) : String(dev.name || '');
+}
+
+// Effective selected device objects for a config — resolved against the
+// last banner enumeration (order = sub-miner order in MultiGpuMiner).
+// null/absent selection = all enumerated devices.
+function resolveSelectedGpuDevices(config) {
+  const all = Array.isArray(gpuDeviceListCache) ? gpuDeviceListCache : [];
+  if (!all.length) return [];
+  const sel = Array.isArray(config?.gpuDevices)
+    ? config.gpuDevices.map(s => String(s).trim()).filter(Boolean)
+    : (String(config?.gpuDevice || '').trim() ? [String(config.gpuDevice).trim()] : null);
+  const quarantine = (config && config.gpuQuarantine) || {};
+  const picked = sel === null ? all : all.filter(d => sel.some(t => gpuDeviceMatchesToken(t, d)));
+  return picked.filter(d => !quarantine[gpuSelectionToken(d, all)]);
+}
+
+// Keep enabledAt in sync with the currently-active set — newly-present
+// tokens get stamped "now" (used by crash attribution), departed tokens
+// drop out.
+function syncGpuHealthEnabledAt() {
+  const nowTokens = new Set(gpuHealth.active.map(d => gpuSelectionToken(d, gpuDeviceListCache)));
+  for (const tok of gpuHealth.enabledAt.keys()) {
+    if (!nowTokens.has(tok)) gpuHealth.enabledAt.delete(tok);
+  }
+  for (const tok of nowTokens) {
+    if (!gpuHealth.enabledAt.has(tok)) gpuHealth.enabledAt.set(tok, Date.now());
+  }
+}
+
+function resetGpuHealth(config) {
+  gpuHealth.active = resolveSelectedGpuDevices(config);
+  gpuHealth.errors = new Map();
+  gpuHealth.zeroSince = new Map();
+  gpuHealth.sawRate = new Map();
+  gpuHealth.startedAt = Date.now();
+  syncGpuHealthEnabledAt();
+  // The banner cache may be cold if the panel hasn't probed yet — warm it
+  // in the background and re-resolve once the device list lands.
+  if (!gpuHealth.active.length) {
+    try {
+      Promise.resolve(enumerateGpuDevices()).then(() => {
+        if (minerProcess) {
+          gpuHealth.active = resolveSelectedGpuDevices(loadConfig());
+          syncGpuHealthEnabledAt();
+        }
+      }).catch(() => {});
+    } catch {}
+  }
+}
+
+// Feed one miner output chunk into the health tracker (called from
+// parseMinerOutput on both stdout and stderr).
+function trackGpuHealthOutput(output) {
+  const now = Date.now();
+  // The live miner's own startup banner is ground truth for the device
+  // list — refresh the enum cache from it (a probe can transiently fail
+  // during restarts, the running miner's banner cannot).
+  const bannerRows = [];
+  for (const m of output.matchAll(/gpu\[(\d+)\]\s+(.+?)\s*\|\s*(\d+)\s*CUs?\s*\|\s*([\d.]+)\s*MHz\s*\|\s*([\d.]+)\s*GiB/gi)) {
+    bannerRows.push({
+      index: Number(m[1]), name: m[2].trim(), cus: Number(m[3]),
+      mhz: Number(m[4]), vramMb: Math.round(Number(m[5]) * 1024)
+    });
+  }
+  if (bannerRows.length) {
+    gpuDeviceListCache = bannerRows;
+    gpuDeviceListAt = Date.now();
+    if (!gpuHealth.active.length) {
+      gpuHealth.active = resolveSelectedGpuDevices(loadConfig());
+      syncGpuHealthEnabledAt();
+    }
+  }
+  if (!gpuHealth.active.length) return;
+  for (const m of output.matchAll(/sub-miner\[(\d+)\]\s+(?:raw\s+)?batch\s+error/gi)) {
+    const subIdx = Number(m[1]);
+    const dev = gpuHealth.active[subIdx];
+    if (!dev) continue;
+    gpuHealth.errors.set(dev.index, (gpuHealth.errors.get(dev.index) || 0) + 1);
+    gpuHealth.sawRate.set(dev.index, true); // device is being exercised
+  }
+  // Single-device selection runs the non-multi path which reports kernel
+  // failures without a sub-miner index — attribute them to the one card.
+  if (gpuHealth.active.length === 1
+      && !/sub-miner\[\d+\]/.test(output)
+      && /CL_INVALID|batch error|kernel.*(?:error|fail)|enqueueNDRange/i.test(output)) {
+    const dev = gpuHealth.active[0];
+    const hits = output.match(/CL_INVALID|batch error|enqueueNDRange/gi)?.length || 1;
+    gpuHealth.errors.set(dev.index, (gpuHealth.errors.get(dev.index) || 0) + hits);
+  }
+  // [metrics] zion: 339.3 KH/s [gfx1010=2.31M NVIDIA GeForce GTX 1070 Ti=0K] ...
+  for (const m of output.matchAll(/\[metrics\][^\n]*\[([^\]]+)\]/g)) {
+    const inner = m[1];
+    for (const dm of inner.matchAll(/([^=\s][^=]*?)\s*=\s*([\d.]+)\s*([KMG])/g)) {
+      const devName = String(dm[1] || '').trim();
+      const mult = { K: 1e3, M: 1e6, G: 1e9 }[dm[3]] || 1;
+      const rate = parseFloat(dm[2]) * mult;
+      const dev = gpuHealth.active.find(d => {
+        const n = String(d.name || '');
+        const short = n.split(':')[0].trim();
+        return devName === n || devName === short || n.startsWith(devName) || devName.startsWith(short);
+      });
+      if (!dev) continue;
+      gpuHealth.sawRate.set(dev.index, true);
+      if (rate > 0) {
+        gpuHealth.zeroSince.delete(dev.index);
+      } else if (!gpuHealth.zeroSince.has(dev.index)) {
+        gpuHealth.zeroSince.set(dev.index, now);
+      }
+    }
+  }
+}
+
+// Attribute a miner crash to recently-enabled devices — a card that
+// hangs the shared GPU context kills the whole miner (SIGABRT) without
+// ever emitting batch errors. Two attributed crashes → quarantine.
+function gpuHealthOnMinerExit(code, signal) {
+  // Clean stops arrive as SIGTERM/SIGKILL (code is null in that case — a
+  // signal kill reports code=null, not 0). Anything else is abnormal.
+  const sig = String(signal || '');
+  const abnormal = sig ? (sig !== 'SIGTERM' && sig !== 'SIGKILL') : code !== 0;
+  if (!abnormal) return;
+  const now = Date.now();
+  const runtime = now - (gpuHealth.startedAt || now);
+  for (const dev of gpuHealth.active) {
+    const tok = gpuSelectionToken(dev, gpuDeviceListCache);
+    const enabledAt = gpuHealth.enabledAt.get(tok) || 0;
+    const errs = gpuHealth.errors.get(dev.index) || 0;
+    // Only blame a card that joined recently (<10 min ago) and is already
+    // suspect (errors, stuck at 0, or the run died very young).
+    const suspect = errs > 0
+      || (gpuHealth.zeroSince.has(dev.index) && !gpuHealth.sawRate.has(dev.index))
+      || (enabledAt && now - enabledAt < 600000 && runtime < 120000);
+    if (!suspect) continue;
+    const s = (gpuHealth.strikes.get(tok) || 0) + 1;
+    gpuHealth.strikes.set(tok, s);
+    try { logApp('gpu-health-strike', JSON.stringify({ token: tok, strikes: s, code, signal, runtimeMs: runtime })); } catch {}
+    if (s >= GPU_STRIKE_LIMIT) {
+      quarantineGpuDevice(dev, `repeated crashes after enabling (${signal || 'exit ' + code})`);
+    }
+  }
+}
+
+function startGpuHealthTimer() {
+  if (gpuHealth.timer) return;
+  gpuHealth.timer = setInterval(evaluateGpuHealth, GPU_HEALTH_TICK_MS);
+  if (gpuHealth.timer.unref) gpuHealth.timer.unref();
+}
+function stopGpuHealthTimer() {
+  if (gpuHealth.timer) { clearInterval(gpuHealth.timer); gpuHealth.timer = null; }
+}
+
+function evaluateGpuHealth() {
+  if (!minerProcess || !gpuHealth.active.length) return;
+  const now = Date.now();
+  const anyProducing = gpuHealth.active.some(d => !gpuHealth.zeroSince.has(d.index) && gpuHealth.sawRate.get(d.index));
+  for (const dev of gpuHealth.active) {
+    const tok = gpuSelectionToken(dev, gpuDeviceListCache);
+    if (gpuHealth.quarantining.has(tok)) continue;
+    const errs = gpuHealth.errors.get(dev.index) || 0;
+    if (errs >= GPU_HEALTH_ERROR_LIMIT) {
+      quarantineGpuDevice(dev, `persistent kernel errors (${errs} batch errors)`);
+      continue;
+    }
+    // Zero rate for 2+ min while a sibling card produces → dead weight.
+    const zeroSince = gpuHealth.zeroSince.get(dev.index);
+    if (zeroSince && now - zeroSince > GPU_HEALTH_ZERO_MS && anyProducing) {
+      quarantineGpuDevice(dev, 'produces 0 H/s while other devices mine');
+    }
+  }
+}
+
+// Remove the device from the effective selection, mark it quarantined in
+// config, persist, hot-restart the miner, and tell the renderer.
+function quarantineGpuDevice(dev, reason) {
+  const tok = gpuSelectionToken(dev, gpuDeviceListCache);
+  if (!tok || gpuHealth.quarantining.has(tok)) return;
+  gpuHealth.quarantining.add(tok);
+  try {
+    const config = loadConfig();
+    const all = Array.isArray(gpuDeviceListCache) ? gpuDeviceListCache : [];
+    const quarantine = { ...(config.gpuQuarantine || {}) };
+    quarantine[tok] = { reason, ts: Date.now(), auto: true };
+    config.gpuQuarantine = quarantine;
+    // Expand "all" (null) into an explicit list first, then drop the card.
+    const sel = Array.isArray(config.gpuDevices)
+      ? config.gpuDevices.map(s => String(s).trim()).filter(Boolean)
+      : (String(config.gpuDevice || '').trim()
+          ? [String(config.gpuDevice).trim()]
+          : all.map(d => gpuSelectionToken(d, all)));
+    const remaining = sel.filter(t => !gpuDeviceMatchesToken(t, dev));
+    config.gpuDevices = remaining;
+    // Legacy single-card pin must not resurrect the quarantined card.
+    if (String(config.gpuDevice || '').trim() && gpuDeviceMatchesToken(config.gpuDevice, dev)) {
+      config.gpuDevice = '';
+    }
+    // Guard: never leave the rig with zero mining devices.
+    if (!remaining.length && config.cpu === false) config.cpu = true;
+    config.gpu = remaining.length > 0;
+    config.miningMode = remaining.length ? (config.cpu !== false ? 'dual' : 'gpu') : 'cpu';
+    config.multiGpu = remaining.length > 1;
+    saveConfig(config);
+    try { logApp('gpu-quarantine', JSON.stringify({ token: tok, name: dev.name, reason })); } catch {}
+    try {
+      sendToRenderer('mining-device-health', {
+        token: tok, name: dev.name, index: dev.index,
+        quarantined: true, reason
+      });
+    } catch {}
+    // The crash-loop that got this card quarantined may have exhausted the
+    // failover budget — clear it so the restart below isn't suppressed.
+    poolFailoverCount = 0;
+    if (minerProcess && !minerStopping) {
+      const stop = () => {
+        try { const fresh = loadConfig(); startMining(fresh); }
+        catch (err) { logErr(`[gpu-health] restart failed: ${err?.message}\n`); }
+        finally { gpuHealth.quarantining.delete(tok); }
+      };
+      Promise.resolve(stopMiningAsync()).then(stop, stop);
+    } else if (!minerStopping && !minerUserStopRequested && !poolFailoverTimer) {
+      // Quarantined from the close handler after failover gave up — the
+      // session is still wanted, so restart it ourselves on the new config.
+      setTimeout(() => {
+        gpuHealth.quarantining.delete(tok);
+        // Failover (5 s) restarts on the fixed config — let it win.
+        if (minerProcess || minerStopping || minerUserStopRequested || poolFailoverTimer) return;
+        try { const fresh = loadConfig(); startMining(fresh); }
+        catch (err) { logErr(`[gpu-health] restart failed: ${err?.message}\n`); }
+      }, 3000);
+    } else {
+      gpuHealth.quarantining.delete(tok);
+    }
+  } catch (err) {
+    gpuHealth.quarantining.delete(tok);
+    try { logErr(`[gpu-health] quarantine failed: ${err?.message}\n`); } catch {}
+  }
 }
 
 function detectGpuForStartupFast(config) {
@@ -3316,9 +3606,22 @@ function startMiningV31(config, v31Path) {
     // is the list of enabled device tokens (banner name, or global index
     // for duplicate names); absent/null = all detected cards. The legacy
     // config.gpuDevice pin still works as a single-entry fallback.
-    const gpuDeviceSel = Array.isArray(config?.gpuDevices)
+    // Quarantined devices (runtime health guard) are excluded even when
+    // the selection is "all".
+    const _gpuQuarantine = config?.gpuQuarantine || {};
+    const _quarantined = Object.keys(_gpuQuarantine);
+    let gpuDeviceSel = Array.isArray(config?.gpuDevices)
       ? config.gpuDevices.map(s => String(s).trim()).filter(Boolean)
       : (String(config?.gpuDevice || '').trim() ? [String(config.gpuDevice).trim()] : []);
+    if (_quarantined.length && Array.isArray(gpuDeviceListCache) && gpuDeviceListCache.length) {
+      if (!gpuDeviceSel.length) {
+        // "all" — expand to explicit tokens so quarantined cards drop out.
+        gpuDeviceSel = gpuDeviceListCache.map(d => gpuSelectionToken(d, gpuDeviceListCache));
+      }
+      gpuDeviceSel = gpuDeviceSel.filter(t =>
+        !_quarantined.some(q => gpuDeviceListCache.some(d =>
+          gpuDeviceMatchesToken(t, d) && gpuDeviceMatchesToken(q, d))));
+    }
     if (gpuDeviceSel.length) {
         const pin = gpuDeviceSel.join(',');
         env.ZION_GPU_DEVICES = pin;
@@ -3377,6 +3680,10 @@ function startMiningV31(config, v31Path) {
   logApp('v31-fast-spawn', JSON.stringify({ pid: minerProcess?.pid, args, pool, wallet: minerWallet.slice(0, 12) + '...', payoutCoin: String(config?.payoutCoin || 'zion'), threads: effectiveThreads }));
 
   resetMinerTelemetryForNewSpawn();
+  // Health guard: resolve which banner devices this selection maps to and
+  // start watching for per-device failures (batch errors / zero rate).
+  try { resetGpuHealth(config); } catch {}
+  startGpuHealthTimer();
 
   // ── 11. Grace period → miner-started ───────────────────────────────────────
   const myStartToken = ++minerStartToken;
@@ -3416,6 +3723,7 @@ function startMiningV31(config, v31Path) {
     maybeEmitBlockFound(output);
     maybeEmitShareEvent(output);
     parseMinerOutput(output);
+    try { trackGpuHealthOutput(output); } catch {}
   });
 
   // ── 15. Stderr handler ─────────────────────────────────────────────────────
@@ -3425,6 +3733,7 @@ function startMiningV31(config, v31Path) {
     if (!skip) safeMinerLogWriteV3(`[STDERR] ${output}`);
     if (!skip) enqueueMinerOutputToRenderer('stderr', output);
     parseMinerOutput(output);
+    try { trackGpuHealthOutput(output); } catch {}
   });
 
   // ── 16. Close handler ──────────────────────────────────────────────────────
@@ -3438,6 +3747,8 @@ function startMiningV31(config, v31Path) {
     flushMinerOutputToRenderer();
     minerStats = { ...minerStats, hashrate: 0 };
     updateTrayMenu(minerStats);
+    try { gpuHealthOnMinerExit(code, signal); } catch {}
+    stopGpuHealthTimer();
     try { sendToRenderer('miner-stopped', { code, signal: signal || null }); } catch {}
 
     // Auto-restart on crash (pool failover)
@@ -5292,6 +5603,19 @@ ipcMain.handle('list-mining-devices', async (_event, opts) => {
   try {
     gpus = await enumerateGpuDevices({ force: !!(opts && opts.force) });
   } catch { /* leave empty */ }
+  // Annotate quarantined cards (runtime health guard auto-disabled them)
+  // so the panel can render the reason instead of a plain "off" state.
+  let quarantine = {};
+  try { quarantine = loadConfig()?.gpuQuarantine || {}; } catch {}
+  const qTokens = Object.keys(quarantine);
+  if (qTokens.length) {
+    gpus = gpus.map(d => {
+      const hit = qTokens.find(q => gpuDeviceMatchesToken(q, d));
+      return hit
+        ? { ...d, quarantined: true, quarantineReason: quarantine[hit]?.reason || 'auto-disabled' }
+        : d;
+    });
+  }
   return {
     cpu: {
       model: (cpus[0] && cpus[0].model) || 'CPU',
@@ -5317,6 +5641,27 @@ ipcMain.handle('start-mining', (event, config) => {
 let applyMiningConfigInProgress = false;
 ipcMain.handle('apply-mining-config', async (_event, patch) => {
   const merged = { ...loadConfig(), ...(patch || {}) };
+  // Explicitly re-selecting a quarantined card = user retry — drop the
+  // quarantine entry (and its crash strikes) so the card gets one clean
+  // run. If it fails again, the health guard re-quarantines it.
+  if (patch && Object.prototype.hasOwnProperty.call(patch, 'gpuDevices') && merged.gpuQuarantine) {
+    const sel = Array.isArray(merged.gpuDevices)
+      ? merged.gpuDevices.map(s => String(s).trim()).filter(Boolean)
+      : [];
+    if (sel.length && Array.isArray(gpuDeviceListCache) && gpuDeviceListCache.length) {
+      const q = { ...merged.gpuQuarantine };
+      let changed = false;
+      for (const tok of Object.keys(q)) {
+        const dev = gpuDeviceListCache.find(d => gpuDeviceMatchesToken(tok, d));
+        if (dev && sel.some(t => gpuDeviceMatchesToken(t, dev))) {
+          delete q[tok];
+          gpuHealth.strikes.delete(tok);
+          changed = true;
+        }
+      }
+      if (changed) merged.gpuQuarantine = q;
+    }
+  }
   saveConfig(merged);
 
   const running = !!minerProcess || startMiningInProgress;

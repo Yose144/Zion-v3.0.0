@@ -1539,6 +1539,9 @@ function setupControls() {
   };
   const hwIsGpuChecked = (dev) => {
     if (config.gpu === false) return false;
+    // Quarantined cards are never "enabled" — even when the selection is
+    // "all" they render off until the user retries them via the toggle.
+    if (dev?.quarantined) return false;
     const sel = hwSelectedGpuTokens();
     if (sel === null) return true;
     return sel.some(t => hwTokenMatches(t, dev));
@@ -1597,6 +1600,17 @@ function setupControls() {
       config.multiGpu = checkedTokens.length > 1;
       // Legacy single-card pin stays coherent for older builds/consumers.
       config.gpuDevice = checkedTokens.length === 1 ? checkedTokens[0] : '';
+      // Re-checking a quarantined card = retry: clear its quarantine
+      // entry so the apply path gives it one clean run.
+      if (config.gpuQuarantine && typeof config.gpuQuarantine === 'object') {
+        const gpus = hwDeviceData?.gpus || [];
+        for (const qt of Object.keys(config.gpuQuarantine)) {
+          const qd = gpus.find(d => hwTokenMatches(qt, d));
+          if (qd && checkedTokens.some(t => hwTokenMatches(t, qd))) {
+            delete config.gpuQuarantine[qt];
+          }
+        }
+      }
     }
     config.miningMode = config.gpu ? (cpuOn ? 'dual' : 'gpu') : 'cpu';
     if (gpuCheckbox) gpuCheckbox.checked = config.miningMode !== 'cpu';
@@ -1606,9 +1620,9 @@ function setupControls() {
   const renderHwDevices = () => {
     if (!hwDeviceListEl) return;
     hwDeviceListEl.innerHTML = '';
-    const mkRow = ({ kind, title, vendorCls, vendorLabel, sub, checked, token }) => {
+    const mkRow = ({ kind, title, vendorCls, vendorLabel, sub, checked, token, quarantined, quarantineReason }) => {
       const row = document.createElement('div');
-      row.className = `hw-row ${checked ? 'on' : 'off'}`;
+      row.className = `hw-row ${checked ? 'on' : 'off'}${quarantined ? ' quarantined' : ''}`;
       row.dataset.hwRow = kind;
       if (token != null) row.dataset.hwToken = token;
 
@@ -1630,7 +1644,9 @@ function setupControls() {
       subEl.textContent = sub;
       const metricsEl = document.createElement('div');
       metricsEl.className = 'hw-metrics';
-      metricsEl.innerHTML = '<span class="m dim">—</span>';
+      metricsEl.innerHTML = quarantined
+        ? `<span class="m bad">auto-disabled</span><span class="m dim">${String(quarantineReason || 'device errors')} — toggle to retry</span>`
+        : '<span class="m dim">—</span>';
       info.appendChild(titleEl);
       info.appendChild(subEl);
       info.appendChild(metricsEl);
@@ -1683,7 +1699,9 @@ function setupControls() {
         vendorLabel: isAmd ? 'AMD' : (isNv ? 'NVIDIA' : 'GPU'),
         sub: `${dev.cus} CUs · ${dev.mhz} MHz · ${(dev.vramMb / 1024).toFixed(1)} GiB VRAM`,
         checked: hwIsGpuChecked(dev),
-        token: hwGpuToken(dev)
+        token: hwGpuToken(dev),
+        quarantined: !!dev.quarantined,
+        quarantineReason: dev.quarantineReason
       });
     });
     if (!hwDeviceData || !hwDeviceData.gpus?.length) {
@@ -1739,7 +1757,9 @@ function setupControls() {
         `.hw-row[data-hw-row="gpu"][data-hw-token="${CSS.escape(hwGpuToken(dev))}"] .hw-metrics`);
       if (!metrics) return;
       if (!hwIsGpuChecked(dev)) {
-        metrics.innerHTML = '<span class="m dim">disabled</span>';
+        metrics.innerHTML = dev.quarantined
+          ? `<span class="m bad">auto-disabled</span><span class="m dim">${String(dev.quarantineReason || 'device errors')} — toggle to retry</span>`
+          : '<span class="m dim">disabled</span>';
         return;
       }
       const tel = srbGpus.find(g => Number(g.idx) === Number(dev.index))
@@ -1806,6 +1826,22 @@ function setupControls() {
       const statusEl = document.getElementById('hw-detect-status');
       if (statusEl) statusEl.textContent = 'rescanning…';
       void refreshHwDevices(true);
+    });
+  }
+  // GPU health guard — a card was auto-disabled at runtime. Sync config
+  // (it now carries gpuQuarantine + the reduced gpuDevices list), refresh
+  // the rows, and surface the reason in the activity log.
+  if (typeof window.electronAPI.onMiningDeviceHealth === 'function') {
+    window.electronAPI.onMiningDeviceHealth(async (ev) => {
+      try {
+        if (typeof window.electronAPI.getConfig === 'function') {
+          const fresh = await window.electronAPI.getConfig();
+          if (fresh && typeof fresh === 'object') Object.assign(config, fresh);
+        }
+      } catch {}
+      const name = ev?.name || ev?.token || 'GPU';
+      addLogEntry(`GPU auto-disabled: ${name} — ${ev?.reason || 'unstable'}. Toggle the card to retry.`, 'warn');
+      void refreshHwDevices(false);
     });
   }
   void refreshHwDevices(false);

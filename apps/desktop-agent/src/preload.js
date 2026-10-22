@@ -139,6 +139,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onQuadVramWarning: (callback) => {
     ipcRenderer.on('quad-vram-warning', (event, data) => callback(data));
   },
+  // GPU health guard — a card auto-disabled at runtime (kernel errors,
+  // zero hashrate, crash attribution). Payload: {token,name,index,reason}.
+  onMiningDeviceHealth: (callback) => {
+    ipcRenderer.on('mining-device-health', (event, data) => callback(data));
+  },
 
 
 
