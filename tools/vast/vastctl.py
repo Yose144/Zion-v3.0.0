@@ -182,6 +182,13 @@ def parse_probe(inst, text):
                     m[key] = g.group(1)
             if "xmrig" in clean.lower():
                 m["algo"] = m["algo"] or "rx/0"
+            # fallback: derive algo from tmux session name in cmd
+            # (e.g. "tmux new-session -d -s srb-qtu exec ./SRBMiner-MULTI ...")
+            if not m["algo"]:
+                if "srb-qtu" in clean or "quantus" in clean:
+                    m["algo"] = "quantus"
+                elif "srb-prl" in clean or "pearlhash" in clean:
+                    m["algo"] = "pearlhash"
             rig["miners"].append(m)
         elif sec == "TMUX":
             g = re.match(r"^--pane:(.+)--$", clean)
