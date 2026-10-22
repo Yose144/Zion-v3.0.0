@@ -24,6 +24,8 @@ import json
 import os
 import re
 import shlex
+import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -807,6 +809,38 @@ def _write_json_atomic(path, payload):
     tmp.rename(p)
 
 
+def _local_ip_addrs():
+    """Every IP assigned to this machine (loopback + all interfaces)."""
+    ips = {"127.0.0.1", "::1"}
+    try:
+        ips.update(socket.gethostbyname_ex(socket.gethostname())[2])
+    except Exception:
+        pass
+    # scan every interface — hostname alone often resolves to loopback only
+    try:
+        rc, out, _ = run(["ip", "-o", "addr", "show"], timeout=5)
+        if rc == 0:
+            for tok in out.split():
+                if "/" in tok and re.match(r"^[0-9a-fA-F:.]+/\d+$", tok):
+                    ips.add(tok.split("/")[0])
+    except Exception:
+        pass
+    return ips
+
+
+def _is_local_host(host):
+    """True when the push host is this machine — self-push must not use SSH.
+
+    Edge listens on port 2222 only (22 is closed), so the scp/ssh push path
+    fails with "Connection refused" when the daemon pushes to its own host.
+    """
+    try:
+        resolved = {ai[4][0] for ai in socket.getaddrinfo(host, None)}
+    except socket.gaierror:
+        return False
+    return bool(resolved & _local_ip_addrs())
+
+
 def cmd_daemon(args):
     """Autonomous loop: probe → json-out (+push) → optional xmrig autodeploy."""
     print(f"[daemon] interval={args.interval}s out={args.json_out} push={args.push or '-'} autodeploy={args.autodeploy_xmrig}")
@@ -816,18 +850,36 @@ def cmd_daemon(args):
             _write_json_atomic(args.json_out, snap)
             if args.push:
                 host, _, rpath = args.push.partition(":")
-                tmp = rpath + ".tmp"
-                rc, _, err = run(["scp", "-o", "StrictHostKeyChecking=no",
-                                  "-o", "ConnectTimeout=10", args.json_out,
-                                  f"{host}:{tmp}"], timeout=30)
-                if rc != 0:
-                    print(f"[daemon] push failed: {err.strip()}")
+                if _is_local_host(host):
+                    # self-push: plain local copy, no SSH involved
+                    try:
+                        dst = Path(rpath)
+                        dst.parent.mkdir(parents=True, exist_ok=True)
+                        tmp = dst.with_suffix(dst.suffix + ".tmp")
+                        shutil.copyfile(args.json_out, tmp)
+                        tmp.replace(dst)
+                    except Exception as e:
+                        print(f"[daemon] local push failed: {e}")
                 else:
-                    rc2, _, err2 = run(SSH_BASE + [host,
-                                       f"mv {shlex.quote(tmp)} {shlex.quote(rpath)}"],
-                                       timeout=15)
-                    if rc2 != 0:
-                        print(f"[daemon] push rename failed: {err2.strip()}")
+                    tmp = rpath + ".tmp"
+                    push_port = os.environ.get("VASTCTL_PUSH_SSH_PORT")
+                    scp_cmd = ["scp", "-o", "StrictHostKeyChecking=no",
+                               "-o", "ConnectTimeout=10"]
+                    if push_port:
+                        scp_cmd += ["-P", push_port]
+                    rc, _, err = run(scp_cmd + [args.json_out,
+                                        f"{host}:{tmp}"], timeout=30)
+                    if rc != 0:
+                        print(f"[daemon] push failed: {err.strip()}")
+                    else:
+                        mv_cmd = SSH_BASE + [host,
+                                   f"mv {shlex.quote(tmp)} {shlex.quote(rpath)}"]
+                        if push_port:
+                            mv_cmd = SSH_BASE + ["-p", push_port, host,
+                                   f"mv {shlex.quote(tmp)} {shlex.quote(rpath)}"]
+                        rc2, _, err2 = run(mv_cmd, timeout=15)
+                        if rc2 != 0:
+                            print(f"[daemon] push rename failed: {err2.strip()}")
             if args.autodeploy_xmrig:
                 for r in snap["rigs"]:
                     if r["error"] or r["status"] != "running":
