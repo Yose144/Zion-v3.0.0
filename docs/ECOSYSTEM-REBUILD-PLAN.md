@@ -171,7 +171,8 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 
 - **IA:** mapovat ~60 sekcí → 7 kanonických; redirect tabulka pro sirotky (Next `next.config.ts` redirects — mechanismus už existuje pro `/dex`→`/multichain#dex`)
   - ✅ **F3a (2026-10-22, `3ed130c0f`):** [`docs/F3-IA-MAP.md`](F3-IA-MAP.md) — kompletní mapa 130 rout→7 sekcí + 2-fázová redirect tabulka; fáze-1 redirecty nasazeny (`/roadmap-295→/roadmap`, `/wiki→/docs`, `/onboard→/mining`, `/kompas→/terranova`, `/cesta→/maitreya#cesta`), interní linky + sitemap zkanonizovány, dead in-page redirecty smazány
-  - fáze 2 čeká na vznik hubů `/market` + `/world` (mapa §"fáze 2")
+  - ✅ **F3d huby (2026-10-22, `2ff61b679` + e2e `4a9d8c773`):** `/market` vznikl přejmenováním `/multichain` hubu (impl `defi/page.tsx`→`market/page.tsx`, metadata→"Trh", redirecty `/multichain|/defi|/dex*|/ziondex|/swap|/bridge|/warp`→`/market[#*]`); `/world` hub nově vytvořen (L3/L4/L5/L6 + TerraNova + Ekam + AI Native) + nav položka + sitemap; build+typecheck OK
+  - zbývající redirecty = content-merges vyžadující rozhodnutí (l*/download/monitoring/monitoring→viz mapa §"fáze 2" poznámka — živé stránky s unikátním obsahem, huby je neabsorbují)
 - **Design tokens → `apps/shared/ui`:** ~~gold `#ffd700`…~~ *(plánovaná paleta se v appkách nevyskytuje — kanon = rasta)* `.zion-*` classy + brand sloty
   - ✅ **F3b (2026-10-22, `b31349ba6`):** `apps/shared/ui/` vytvořeno — `tokens.css` (canonical superset z website-v2.9: zion-gold/purple/cyan/blue sloty = rasta, `cyber`+`matrix-light` themy, radius/surface/shadow) + `tailwind.preset.cjs` (TW3) + `tokens.ts`; **pool-ui = první consumer** (preset+import, drift `#078930`→`#066928` konvergován, build OK)
   - ✅ **F3b2 (2026-10-22):** napojeni zbývající consumeri — **IntroPage** (preset+import, 48 str. build OK), **MarketPlace** (preset+import, drift `#078930`/`#0f172a`→kanon v config+globals, 28 str. build OK), **OasisWeb** (import+`#078930`→`#066928`, 13 str. build OK; pre-existing missing `@simplewebauthn/browser` doinstalován)
@@ -183,7 +184,8 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
   - ✅ **Ověřeno (2026-10-22):** ZIS už běží na všech portálech — pool-ui má vlastní `lib/zis.ts` + `auth.tsx` + `AuthButton` (same-origin `/api/auth/*` proxy → ZIS, sdílená `zion_session` cookie na `.zionterranova.com`), MarketPlace `zis-client.ts` + `api/auth/[...zis]`, OasisWeb `AuthContext` + webauthn, website-v2.9 plná integrace; IntroPage = statický intro (link na login)
 - **Copy audit:** CS+EN parita, žádné interní názvy (V31, ZionStart, PoC-lab…), `npm run check:links --strict`
   - ✅ **Sweep interních názvů (2026-10-22):** čistý — žádné `V31|ZionStart|PoC-lab|HiranV2|edge-deploy|/opt/zion|server IP` v user-facing copy napříč 5 appkami (jen code komentáře + veřejné názvy `ZION v3.2.0`, `Hiranyagarbha`, `L3 Hiran` lore); CS/EN parita spot-check OK
-  - zbývá: dead-link čištění (390) + systematická CS/EN parita audit
+  - ✅ **CS/EN parita (2026-10-22):** systematický scan — 0 souborů s nerovnováhou `cs:`/`en:` copy klíčů napříč 5 appkami
+  - zbývá: dead-link čištění (390) — copy/content pass
   - 📊 **Naměřeno (2026-10-22):** 780 souborů, **390 dead links** — převážně repo-interní cesty (`../../3.2/*`, `../L1/*`, `../Ruze/*`, `LEVEL_*`, `PART_*`) v publikovaném `public/docs/` korpusu; live web degraduje gracefuly (docLinks resolver → muted non-link, ne 404) — čištění = copy pass, ne outage fix. Log: `docs/3.2/REPORTS/check-links-2026-10-22.txt`
 
 ### F4 — Konsolidace překryvů (naměřené duplicity)
