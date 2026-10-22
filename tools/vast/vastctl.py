@@ -499,13 +499,24 @@ def ai_status():
 # `internal` marks ZION's own Hiran weights — served via llama.cpp
 # (hiran-core / SMOS rig), not deployable through vLLM.
 MODEL_CATALOG = [
-    # ── internal: Hiran (mockup — see HIRAN-MARKETPLACE-PLAN.md) ──
-    {"hf": "zion/hiran-v2.3mini-Q5_K_M", "params": "4B", "vram_gb": 3,
-     "tags": ["hiran", "gguf", "chat"], "internal": True,
-     "desc": "fine-tuned Hiran mini · live on hiran-core / SMOS llama.cpp"},
-    {"hf": "zion/hiran-v3-coder-Q4_K_M", "params": "8B", "vram_gb": 5,
-     "tags": ["hiran", "gguf", "code"], "internal": True, "mockup": True,
-     "desc": "planned: Hiran code-tuned GGUF build"},
+    # ── internal: Hiran family (ZION's own GGUF builds, llama.cpp) ──
+    # Named after the corpus figures; see HIRAN-MARKETPLACE-PLAN.md.
+    # live  = served now (hiran-core PC / SMOS llama.cpp / EDGE2 CPU)
+    # mockup = planned fine-tune, shown for roadmap visibility
+    {"hf": "zion/hiran-v2.3mini-Q5_K_M", "params": "8B", "vram_gb": 6,
+     "tags": ["hiran", "gguf", "chat", "live"], "internal": True,
+     "desc": "Qwen3-8B + LoRA r32/a64 · live on hiran-core + EDGE2 fallback"},
+    {"hf": "zion/hiran-amitabha-Q4_K_M", "params": "14B", "vram_gb": 9,
+     "tags": ["hiran", "gguf", "thinking"], "internal": True, "mockup": True,
+     "desc": "\"the Voice\" — deep reasoning tier, planned on Qwen3-14B"},
+    {"hf": "zion/hiran-issobella-Q4_K_M", "params": "30B MoE", "vram_gb": 19,
+     "tags": ["hiran", "gguf", "code", "agentic"], "internal": True,
+     "mockup": True,
+     "desc": "code/agentic tier, planned on Qwen3-Coder-30B-A3B GGUF"},
+    {"hf": "zion/hiran-maitreya-Q5_K_M", "params": "27B", "vram_gb": 20,
+     "tags": ["hiran", "gguf", "rag", "lore"], "internal": True,
+     "mockup": True,
+     "desc": "teacher/oracle over the book corpus, planned on gemma-4/27B"},
     # ── ≤10 GB — runs beside dual mining ──
     {"hf": "Qwen/Qwen3-4B-Instruct-2507", "params": "4B", "vram_gb": 9,
      "tags": ["chat"], "desc": "2507 refresh · fast beside mining"},

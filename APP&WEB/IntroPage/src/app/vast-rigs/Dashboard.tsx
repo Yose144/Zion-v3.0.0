@@ -1028,8 +1028,10 @@ export default function Dashboard() {
                           best rig free VRAM: {bestFree.toFixed(1)} GiB
                         </span>
                       </div>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {catalog.map((m) => {
+                      {(() => {
+                        const internal = catalog.filter((m) => m.internal);
+                        const pub = catalog.filter((m) => !m.internal);
+                        const card = (m: CatEntry) => {
                           const fits = m.vram_gb <= bestFree;
                           const sel = inferenceModel === m.hf;
                           return (
@@ -1088,8 +1090,32 @@ export default function Dashboard() {
                               </div>
                             </div>
                           );
-                        })}
-                      </div>
+                        };
+                        return (
+                          <>
+                            {internal.length > 0 && (
+                              <>
+                                <div className="mt-3 flex items-center gap-2">
+                                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#fcd116]/80">ZION · Hiran models</span>
+                                  <span className="h-px flex-1 bg-[#fcd116]/15" />
+                                  <span className="text-[9px] text-white/30">own GGUF builds · llama.cpp</span>
+                                </div>
+                                <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                  {internal.map(card)}
+                                </div>
+                              </>
+                            )}
+                            <div className="mt-4 flex items-center gap-2">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/45">Public models</span>
+                              <span className="h-px flex-1 bg-white/[0.07]" />
+                              <span className="text-[9px] text-white/30">vLLM · weights pull from HF</span>
+                            </div>
+                            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                              {pub.map(card)}
+                            </div>
+                          </>
+                        );
+                      })()}
                       <div className="mt-3 flex gap-1.5 border-t border-white/[0.06] pt-3">
                         <input
                           value={hfQ}

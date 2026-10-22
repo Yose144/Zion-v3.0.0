@@ -1,81 +1,77 @@
-# HIRAN Marketplace — plan
+# HIRAN Marketplace — plán
 
-> ZION vlastní modely (Hiran) nabízené přes Marketplace servisu na EDGE2
-> (`127.0.0.1:3100`, veřejně `zionterranova.com` sekce marketplace).
-> Stav: **draft** — vygenerováno 2026-10-22.
+> ZION vlastní modely (rodina **Hiran**) nabízené přes Marketplace na EDGE2
+> (`127.0.0.1:3100`) a veřejný AI stack (`app.zionterranova.com/api/ai-chat`).
+> Stav: **draft v2** — 2026-10-22. Souvisí: `tools/vast/vastctl.py`
+> `MODEL_CATALOG`, dashboard `/vast-rigs/` → AI tab.
 
-## Cíl
+---
 
-Z nasazené inference vrstvy (hiran-core na operátorském PC + SMOS rig
-llama.cpp + Vast vLLM) udělat **produkt**: katalog modelů pod značkou
-Hiran, servírovaný přes OpenAI-compatible API, proplacený přes ZION.
+## 1 · Modelová rodina (interní)
 
-## Co už existuje (infra)
+Pojmenováno podle korpus figurek. Všechny = GGUF buildy pro llama.cpp
+(servíruje `hiran-core`, SMOS rig, EDGE2 CPU fallback).
 
-| Kus | Stav |
+| Alias | Model (GGUF) | Base | Role | Stav |
+|---|---|---|---|---|
+| `hiran-mini` | `hiran-v2.3mini-Q5_K_M` (8B, 5.5 GB) | Qwen3-8B + LoRA r32/α64 | core chat + RAG (39 docs/138 chunků) | **live** |
+| `hiran-amitabha` | `hiran-amitabha-Q4_K_M` (14B, ~9 GB) | Qwen3-14B thinking | „Hlas" — deep reasoning, dlouhé odpovědi | mockup |
+| `hiran-issobella` | `hiran-issobella-Q4_K_M` (30B MoE, ~19 GB) | Qwen3-Coder-30B-A3B | code + agentic tier | mockup |
+| `hiran-maitreya` | `hiran-maitreya-Q5_K_M` (27B, ~20 GB) | gemma-4-31B / Qwen3.8-27B | teacher/oracle nad knižním korpusem | mockup |
+
+Veřejný název značky = **Hiranyagarbha** (public copy nesmí obsahovat
+interní verze/model id — viz `APP&WEB/website-v2.9/AGENTS.md` §2).
+
+## 2 · Veřejné modely (vLLM fleet)
+
+Kurátorský katalog — váhy se tahají z HuggingFace při deployi na rig.
+Tiered podle VRAM; `latest_vllm` = pinned image v0.8.5 neumí arch →
+auto-deploy posílá `vllm-openai:latest`.
+
+| Tier | Modely |
 |---|---|
-| `hiran-core.service` (PC, RX Vega 64, llama.cpp Vulkan) | běží — `hiran-v2.3mini-Q5_K_M`, PC `:8070` → Edge `:8002` → EDGE2 `:8004` |
-| `zion-hiran-inference.service` (EDGE2 CPU fallback) | běží — `LLM_FALLBACK_URL=127.0.0.1:8002/v1`, ~2.4 tok/s |
-| SMOS rig 518837 llama.cpp (`Qwen3-4B-Q4_K_M`, :8003 → Edge) | **offline** — reverse tunnel nahoře až rig zapne |
-| Dashboard AI tab (`/vast-rigs/`) | status + chat + multi-model router + katalog |
-| `zion-v31-ai-native` (EDGE2 :8001) | Maestro v2.4, BM25 RAG 39 docs, konstituční prompt |
-| Marketplace service (EDGE2 :3100) | běží — bez AI sekce |
+| ≤10 GB (vedle těžby) | Qwen3-4B-Instruct-2507 · Qwen3-8B-AWQ · Qwen3-14B-AWQ · gemma-3-4b-it |
+| 12–20 GB | gpt-oss-20b (MXFP4) · LFM2.5-8B-A1B · DeepSeek-R1-0528-Qwen3-8B · phi-4 |
+| 24–48 GB | Qwen3-32B-AWQ · Qwen3-Coder-30B-A3B-FP8 · Devstral-Small-2 |
+| 48 GB+ | Qwen3.8-27B · gemma-4-31B-it · GLM-4.7-Flash |
 
-## Roadmapa
+## 3 · Topologie servírování (live)
 
-### F1 — Vnitřní katalog (tento sprint, část hotová)
+```
+app/api/ai-chat → EDGE2 ai-native :8001
+  ├─ primární:  :8004 → Edge :8002 → PC :8070 hiran-core (Vega64 Vulkan)
+  ├─ fallback:  EDGE2 :8002 llama.cpp CPU (2.4 tok/s)
+  └─ SMOS rig:  Edge :8003 llama.cpp (OFFLINE — rig 518837 down)
+vast-rigs/ AI tab → vastctl-serve :8088 → rig SSH / Edge :8003
+```
 
-- [x] `MODEL_CATALOG` v `vastctl.py` — veřejné modely (Qwen3, gpt-oss-20b,
-      Devstral 2, Qwen3-Coder-30B, GLM-4.7, Gemma 4, Phi-4, LFM2.5)
-- [x] Hiran položky `internal: true` — `zion/hiran-v2.3mini-Q5_K_M` (live),
-      `zion/hiran-v3-coder-Q4_K_M` (mockup)
-- [x] `/vast-ops/api/inference/catalog` — catalog JSON pro frontend
-- [ ] catalog karta: Hiran položky zlaté `ZION` badge, bez vLLM deploy
-      (llama.cpp serving), link → interní docs místo HF
+## 4 · Roadmapa
 
-### F2 — Jediný gateway (OpenAI-compatible)
+- **F1 — katalog v UI** *(dnes)*: veřejné + interní sekce, fits badge,
+  HF search, auto-deploy/auto-chat router. ✅
+- **F2 — gateway**: jednotný `GET /v1/models` na Edge agregující
+  hiran-core + SMOS + Vast vLLM; alias router (`model=hiran-mini` →
+  backend); API klíč + rate limit jako pool API :8080.
+- **F3 — Marketplace listing**: položka per model-alias (params, ctx,
+  $/1M tok z `gpu$/h ÷ tok/s × marže`, live dostupnost z
+  `model_endpoints()`, trial chat widget). Settlement ZION/L2, dry-run.
+- **F4 — provoz**: `inference_live` do G8 probe; fallback chain
+  hiran-core → EDGE2 CPU → Vast; uptime badge z `ai_status` historie;
+  GGUF fine-tune pipeline (LoRA → merge → quant Q4_K_M/Q5_K_M → eval).
 
-- `GET /v1/models` na Edge — agregace zařízení: hiran-core (PC), SMOS
-  llama.cpp, Vast vLLM rigy → jednotný `model=id` router (backend už má
-  `model_endpoints()` + `auto-chat` — přenést do trvalé služby)
-- Model naming: `hiran-mini` → v2.3mini, `hiran-code` → v3-coder,
-  `hiran-max` → největší veřejný model na aktuálním rigu
-- Rate limit + API klíč pro externí uživatele (stejný mechanismus jako
-  pool API na Edge :8080)
+## 5 · Otevřené body
 
-### F3 — Marketplace listing
+- [ ] Licence: interní-only vs veřejný GGUF release pod `zion-terranova`
+      HF org
+- [ ] Data pro fine-tune: korpus knih (Maitreya/Nirvana/Ekam) + faq —
+      kolik lze legálně publikovat v trénovacím setu
+- [ ] SMOS rig 518837: opravit a vrátit do rotace, nebo retirement
+- [ ] Marketplace = přímý prodej inference vs "Hiran inside" badge
+- [ ] vLLM default image bump po smoke-testu nového tagu
 
-- Marketplace položka per model: název, params, quant, kontext,
-  `$ / 1M tok`, dostupnost (live z `model_endpoints()`), trial chat widget
-- Cenotvorba: `cost = gpu_usd_per_hour / (tok_per_sec × 3600) × 1e6 × margin`
-  — např. RTX 3060 $0.073/h, ~40 tok/s Q4 4B → ~$0.0005/1K tok raw;
-  prodáváme s marží (cca $0.10–0.50/1M tok na malých modelech)
-- Platba: ZION interní settlement (pool balance → marketplace credit)
-  nebo L2 invoice; dry-run flag jako u PRL payouts
+## 6 · Rizika
 
-### F4 — SLA a monitoring
-
-- Endpoint health do G8 probe (`chain_live` pattern) — `inference_live`
-- Fallback řetězec: hiran-core → EDGE2 CPU → (Vast rig vLLM)
-- Uptime badge v marketplace položce z `ai_status` historie
-
-## Rozhodnutí k prodiskutování
-
-- [ ] Hiran v2.3mini licence — interní only nebo veřejný release (GGUF na
-      HF pod `zion-terranova` org?)
-- [ ] Kdo nese přesný `gguf` pipeline: fine-tune skripty, eval harness,
-      version tagging (`hiran-vX.Y`)
-- [ ] Marketplace = přímý prodej inference, nebo jen "Hiran inside" badge
-      u existujících položek
-- [ ] SMOS rig 518837 obnovit (offline 15h+) nebo inference plně přenést
-      na PC + EDGE2 fallback — rozhoduje latenci a kapacitu
-
-## Rizika
-
-- **vLLM image verze**: pinned `v0.8.5` neumí gpt-oss/Devstral2/GLM-4.7/
-  Qwen3.8 — auto-deploy pro ně posílá `vllm-openai:latest` (`latest_vllm`
-  flag v katalogu). Dlouhodobě: bumpnout default image po smoke-testu.
-- **VRAM contention**: těžba + inference na jedné GPU — `fits` badge v
-  katalogu počítá live free VRAM; <60% VRAM target doporučeno při miningu.
-- **Gated modely** (gemma/llama rodiny) vyžadují HF token na rigu —
-  katalog je označuje, deploy bez tokenu selže s 401 z HF.
+- VRAM contention mining↔inference (duty scheduler, `fits` badge)
+- gated HF modely bez tokenu = deploy 401 (katalog označuje)
+- `latest` vLLM image pro new-gen modely je floating — po validaci
+  pinnout konkrétní tag
