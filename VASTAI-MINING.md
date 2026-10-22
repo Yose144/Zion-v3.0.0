@@ -622,7 +622,47 @@ Drobnosti k tomuto modelu:
 Do té doby je pracovní model pro kódování **Qwen3-4B lokálně (47 tok/s)** a
 na Vastu **Gemma 4 E4B** (32k kontext).
 
-### 5.11 „Message exceeds context limit" — příčina a fix
+### 5.10b Jaký model pro lokální kódování (benchmark 2026-10-22, RTX 1070 Ti)
+
+Všech 8 modelů z LM Studia bylo změřeno na 1070 Ti (CUDA, 8 GB) na dvou
+reálných kódovacích úlohách (TypeScript `chunkArray` + React hook
+`useFetchWithRetry` s AbortController/retry/backoff/loading):
+
+| Model | KVant | VRAM | tok/s | wall (React hook) | Kvalita kódu |
+|---|---|---|---|---|---|
+| **Qwen3-4B** | Q4_K_M 2.4 GB | celý na GPU | **48** | **6.7 s** | ✅ všechno (retry + backoff + AbortController), typy `any` |
+| Gemma 4 E4B | Q4_K_M 5.0 GB | celý na GPU | 7.0 | 72 s | ✅✅ typované `FetchState<T>` + dokumentace |
+| Qwen3-14B | Q4_K_M 8.4 GB | ~6.5 GB GPU + 2 GB RAM | 2.1 | 178 s | ✅ ale **chybí backoff** |
+| Qwen3.8-27B | Q4_K_M 16.8 GB | 6.3 GB GPU + 9.4 GB RAM | 1.3 | >260 s | ❌ nepraktický (viz §5.10) |
+| Bonsai-27B | Q1_0 3.6 GB | — | — | — | 1 bit/param → pro kód slabý |
+| GLM-4.7-Flash / flint | 17–23 GB | — | — | — | nevejdou se |
+
+**Rozhodnutí — rozdělení rolí:**
+
+| Role | Model | Proč |
+|---|---|---|
+| **chat / edit / apply** | **Qwen3-4B (lokálně, CUDA, :8070)** | 48 tok/s → interaktivní smyčka; kód je kompletní, jen méně typovaný |
+| **těžké one-shot refaktory** | Qwen3-14B (:8073) | nejlepší kvalita, ale ~2 tok/s → jen na složité úlohy |
+| **autocomplete (inline)** | ollama `qwen2.5-coder:1.5b-base` | **0.09–0.16 s** warm (117 tok/s), první request 6 s (cold start) |
+| **embed** | nomic (LM Studio) | 768 dim, 0.03 s |
+| alternativa | Gemma 4 E4B (Vast :18000) | 32k kontext, 7 tok/s, nejlepší typy |
+
+> **Autocomplete musí jít přes ollama** — malý model na CPU (ollama 1.5B) je po
+> cold startu rychlejší než GPU model (0.09 s vs 0.6 s) a nezabírá VRAM těžbě.
+> GPU varianta (Qwen3-1.7B na Navi přes Vulkan, 29 tok/s) byla zkoumána jako
+> alternativa, ale 0.6 s na inline completion je horší než 0.09 s z ollama.
+
+**Přepínání těžkého modelu** (Qwen3-4B ↔ Qwen3-14B sdílejí VRAM):
+
+```bash
+systemctl --user stop  zion-qwen-cuda.service      # uvolní 1070 Ti
+systemctl --user start zion-qwen14-cuda.service    # 14B na :8073 (auto-fit)
+# ...a zpět:
+systemctl --user stop  zion-qwen14-cuda.service
+systemctl --user start zion-qwen-cuda.service
+```
+
+
 
 Chybu hází **sám Continue** (`gui/assets/index.js` → `inlineErrorMessage ===
 "out-of-context"`): porovná délku promptu s `contextLength` modelu v configu
@@ -647,7 +687,7 @@ nepřekročil serverový limit).
 > přepni na Gemma na Vastu (32k).
 
 
-### 5.12 OpenSSH `permitlisten` nebere čárku
+### 5.13 OpenSSH `permitlisten` nebere čárku
 
 `authorized_keys` pro tunelový účet **nesmí** mít
 `permitlisten="a:1,b:2"` — OpenSSH to neumí parsovat a **celý klíč se odmítne**
