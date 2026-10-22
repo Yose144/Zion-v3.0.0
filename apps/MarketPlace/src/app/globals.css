@@ -5,14 +5,14 @@
 /* ═══════════════════════════════════════════════════════════════
    ZION Theme Design System — OASIS MarketPlace
    Aligned with website-v2.9 design tokens for unified ZION visual.
-   Core: Gold #fcd116 · Purple #e41e2b · Cyan #078930 · Blue #0f172a
+   Core: Gold #fcd116 · Purple #e41e2b · Cyan #066928 · Blue #0d0d0d
    ═══════════════════════════════════════════════════════════════ */
 
 @layer base {
   :root {
     --color-zion-gold: 252 209 22;
     --color-zion-purple: 228 30 43;
-    --color-zion-cyan: 7 137 48;
+    --color-zion-cyan: 6 105 40;
     --color-zion-blue: 13 13 13;
 
     --zion-radius-sm: 0.85rem;
@@ -259,7 +259,7 @@
   /* ── ZION gradient text ── */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #e41e2b, #fcd116, #078930);
+    background-image: linear-gradient(90deg, #e41e2b, #fcd116, #066928);
     background-size: 200% auto;
   }
   .text-gradient-gold {
@@ -269,11 +269,11 @@
   }
   .text-gradient-cyan {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #078930, #34d399);
+    background-image: linear-gradient(90deg, #066928, #34d399);
   }
   .text-gradient-animated {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #e41e2b, #fcd116, #078930, #e41e2b);
+    background-image: linear-gradient(90deg, #e41e2b, #fcd116, #066928, #e41e2b);
     background-size: 300% auto;
     animation: gradientX 6s ease infinite;
   }
@@ -282,7 +282,7 @@
   .zion-button-primary,
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white transition-all duration-200 relative overflow-hidden;
-    background: linear-gradient(110deg, #e41e2b, #fcd116 48%, #078930);
+    background: linear-gradient(110deg, #e41e2b, #fcd116 48%, #066928);
     background-size: 200% auto;
     box-shadow: 0 18px 45px rgba(252, 209, 22, 0.34);
   }
@@ -401,18 +401,18 @@
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border backdrop-blur-sm;
   }
   .rarity-common { color: #a1a1aa; border-color: rgba(161,161,170,0.5); background: rgba(161,161,170,0.1); }
-  .rarity-uncommon { color: #078930; border-color: rgba(7,137,48,0.5); background: rgba(7,137,48,0.1); box-shadow: 0 0 8px rgba(7,137,48,0.15); }
+  .rarity-uncommon { color: #066928; border-color: rgba(7,137,48,0.5); background: rgba(7,137,48,0.1); box-shadow: 0 0 8px rgba(7,137,48,0.15); }
   .rarity-rare { color: #fcd116; border-color: rgba(252,209,22,0.5); background: rgba(252,209,22,0.1); box-shadow: 0 0 8px rgba(252,209,22,0.15); }
   .rarity-epic { color: #e41e2b; border-color: rgba(228,30,43,0.5); background: rgba(228,30,43,0.1); box-shadow: 0 0 10px rgba(228,30,43,0.2); }
   .rarity-legendary { color: #fcd116; border-color: rgba(252,209,22,0.5); background: rgba(252,209,22,0.1); box-shadow: 0 0 10px rgba(252,209,22,0.2); }
   .rarity-mythic { color: #e41e2b; border-color: rgba(228,30,43,0.5); background: rgba(228,30,43,0.1); box-shadow: 0 0 12px rgba(228,30,43,0.25); }
-  .rarity-unique { color: #078930; border-color: rgba(7,137,48,0.5); background: rgba(7,137,48,0.1); box-shadow: 0 0 12px rgba(7,137,48,0.25); }
+  .rarity-unique { color: #066928; border-color: rgba(7,137,48,0.5); background: rgba(7,137,48,0.1); box-shadow: 0 0 12px rgba(7,137,48,0.25); }
 
   /* ── Status dots ── */
   .status-dot {
     @apply inline-block w-2 h-2 rounded-full;
   }
-  .status-active { background: #078930; box-shadow: 0 0 6px #078930, 0 0 12px rgba(7,137,48,0.3); }
+  .status-active { background: #066928; box-shadow: 0 0 6px #066928, 0 0 12px rgba(7,137,48,0.3); }
   .status-pending { background: #fcd116; box-shadow: 0 0 6px #fcd116, 0 0 12px rgba(252,209,22,0.3); }
   .status-inactive { @apply bg-zinc-600; }
 
@@ -683,7 +683,7 @@
 :root {
   --rasta-red: #e41e2b;
   --rasta-gold: #fcd116;
-  --rasta-green: #078930;
+  --rasta-green: #066928;
   --rasta-black: #0d0d0d;
   --rasta-dark: #1a1a1a;
 }
@@ -900,7 +900,7 @@
   min-width: 1.15rem;
   height: 1.15rem;
   border-radius: 9999px;
-  background: radial-gradient(circle at 30% 0, #ffffff, #078930);
+  background: radial-gradient(circle at 30% 0, #ffffff, #066928);
   color: #041016;
   font-size: 0.65rem;
   font-weight: 800;
@@ -1409,7 +1409,7 @@ body.zion-shell {
 .info-content h3 {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #078930;
+  color: #066928;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
 }
@@ -1521,7 +1521,7 @@ body.zion-shell {
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: clamp(2px, 0.6vw, 6px);
-  background: linear-gradient(90deg, #e41e2b, #fcd116, #078930);
+  background: linear-gradient(90deg, #e41e2b, #fcd116, #066928);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1573,7 +1573,7 @@ body.zion-shell {
 
 .rasta-info-content h3 {
   font-size: 1.15rem;
-  color: #078930;
+  color: #066928;
   margin-top: 1.75rem;
   margin-bottom: 0.75rem;
   font-weight: 700;
@@ -1635,7 +1635,7 @@ body.zion-shell {
 
 .rasta-info-content .highlight-box {
   background: rgba(7, 137, 48, 0.1);
-  border-left: 4px solid #078930;
+  border-left: 4px solid #066928;
   padding: 1.25rem 1.5rem;
   border-radius: 0 0.75rem 0.75rem 0;
   margin: 1.25rem 0;
@@ -1667,7 +1667,7 @@ body.zion-shell {
 }
 
 .rasta-info-content th {
-  background: linear-gradient(90deg, #e41e2b, #fcd116, #078930);
+  background: linear-gradient(90deg, #e41e2b, #fcd116, #066928);
   color: #000;
   font-weight: 700;
 }
@@ -1707,7 +1707,7 @@ body.zion-shell {
 }
 
 .rasta-info-toc a {
-  color: #078930;
+  color: #066928;
   text-decoration: none;
 }
 
@@ -1749,7 +1749,7 @@ body.zion-shell {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #e41e2b, #fcd116, #078930);
+  background: linear-gradient(90deg, #e41e2b, #fcd116, #066928);
 }
 
 .pillar-card:hover {

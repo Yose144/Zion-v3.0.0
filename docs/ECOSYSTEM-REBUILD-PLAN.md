@@ -174,7 +174,8 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
   - fáze 2 čeká na vznik hubů `/market` + `/world` (mapa §"fáze 2")
 - **Design tokens → `apps/shared/ui`:** ~~gold `#ffd700`…~~ *(plánovaná paleta se v appkách nevyskytuje — kanon = rasta)* `.zion-*` classy + brand sloty
   - ✅ **F3b (2026-10-22, `b31349ba6`):** `apps/shared/ui/` vytvořeno — `tokens.css` (canonical superset z website-v2.9: zion-gold/purple/cyan/blue sloty = rasta, `cyber`+`matrix-light` themy, radius/surface/shadow) + `tailwind.preset.cjs` (TW3) + `tokens.ts`; **pool-ui = první consumer** (preset+import, drift `#078930`→`#066928` konvergován, build OK)
-  - zbývá konzumovat: IntroPage, MarketPlace (divergentní rainbow-card geometrie + `zion.blue` nekonzistence), OasisWeb (TW4 — tokens.css+`@theme` vzor); website-v2.9 = referenční zdroj (hodnoty identické, `@layer` riziko → zůstává autoritativní kopie)
+  - ✅ **F3b2 (2026-10-22):** napojeni zbývající consumeri — **IntroPage** (preset+import, 48 str. build OK), **MarketPlace** (preset+import, drift `#078930`/`#0f172a`→kanon v config+globals, 28 str. build OK), **OasisWeb** (import+`#078930`→`#066928`, 13 str. build OK; pre-existing missing `@simplewebauthn/browser` doinstalován)
+  - website-v2.9 = referenční zdroj (hodnoty identické, `@layer` riziko → zůstává autoritativní kopie); MarketPlace `rainbow-card` geometrie diverguje → řeší chrome extrakce (F3c)
 - **Chrome:** sdílené Navigation/Footer/FloatingUtilities komponenty (dnes zkopírované per app?)
 - **ZIS:** canon — rozšířit session na všechny portály (cookie `.zionterranova.com` už je); pool-ui přidat ZIS (má už simplewebauthn dep)
 - **Copy audit:** CS+EN parita, žádné interní názvy (V31, ZionStart, PoC-lab…), `npm run check:links --strict`

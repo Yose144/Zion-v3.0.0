@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import '../../../shared/ui/tokens.css';
 import './globals.css';
 import ToastContainer from '@/components/Toast';
 import { AuthProvider } from '@/contexts/AuthContext';

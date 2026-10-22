@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 const config = {
+  presets: [require('../shared/ui/tailwind.preset.cjs')],
   corePlugins: {
     preflight: false,
   },
@@ -10,13 +11,6 @@ const config = {
   ],
   theme: {
     extend: {
-      colors: {
-        'rasta-red': '#e41e2b',
-        'rasta-gold': '#fcd116',
-        'rasta-green': '#078930',
-        'rasta-dark': '#1a1a1a',
-        'rasta-black': '#0d0d0d',
-      },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],

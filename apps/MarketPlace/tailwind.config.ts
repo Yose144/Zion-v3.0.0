@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  presets: [require('../shared/ui/tailwind.preset.cjs')],
   content: [
     './src/app/**/*.{ts,tsx}',
     './src/components/**/*.{ts,tsx}',
@@ -11,7 +12,7 @@ const config: Config = {
         // Rasta brand palette
         'rasta-red': '#e41e2b',
         'rasta-gold': '#fcd116',
-        'rasta-green': '#078930',
+        'rasta-green': '#066928',
         'rasta-black': '#0d0d0d',
         'rasta-dark': '#1a1a1a',
         // CSS-variable based brand colors (now mapped to Rasta)
@@ -22,12 +23,12 @@ const config: Config = {
         // Legacy OASIS/ZION aliases remapped to Rasta
         oasis: {
           black: '#090A0F',
-          cyan: '#078930',
+          cyan: '#066928',
           purple: '#e41e2b',
-          emerald: '#078930',
+          emerald: '#066928',
           gold: '#fcd116',
           rose: '#e41e2b',
-          blue: '#0f172a',
+          blue: '#0d0d0d',
         },
         zion: {
           dark: '#090A0F',
@@ -35,8 +36,8 @@ const config: Config = {
           border: '#1a1d2e',
           gold: '#fcd116',
           purple: '#e41e2b',
-          cyan: '#078930',
-          blue: '#0f172a',
+          cyan: '#066928',
+          blue: '#0d0d0d',
         },
       },
       fontFamily: {

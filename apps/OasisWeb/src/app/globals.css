@@ -4,14 +4,14 @@
   /* ═══ RASTA PALETTE — Red / Gold / Green / Black ═══ */
   --color-zion-gold: #fcd116;
   --color-zion-purple: #e41e2b;
-  --color-zion-cyan: #078930;
+  --color-zion-cyan: #066928;
   --color-zion-blue: #0d0d0d;
 
   /* OASIS aliases mapped to Rasta theme */
   --color-oasis-black: #0d0d0d;
-  --color-oasis-cyan: #078930;
+  --color-oasis-cyan: #066928;
   --color-oasis-purple: #e41e2b;
-  --color-oasis-emerald: #078930;
+  --color-oasis-emerald: #066928;
   --color-oasis-gold: #fcd116;
 
   /* Functional colors */
@@ -22,7 +22,7 @@
   /* Direct rasta tokens */
   --color-rasta-red: #e41e2b;
   --color-rasta-gold: #fcd116;
-  --color-rasta-green: #078930;
+  --color-rasta-green: #066928;
   --color-rasta-dark: #1a1a1a;
   --color-rasta-black: #0d0d0d;
 }
@@ -221,7 +221,7 @@ input, textarea, select {
     justify-content: center;
     gap: 0.55rem;
     border-radius: var(--zion-radius-md);
-    background-image: linear-gradient(110deg, #fcd116, #e41e2b 52%, #078930);
+    background-image: linear-gradient(110deg, #fcd116, #e41e2b 52%, #066928);
     padding: 0.75rem 1.1rem;
     font-weight: 700;
     color: white;
@@ -355,7 +355,7 @@ input, textarea, select {
   .zion-badge-cyan {
     border-color: rgba(7, 137, 48, 0.35);
     background: rgba(7, 137, 48, 0.1);
-    color: #078930;
+    color: #066928;
   }
 
   .zion-badge-purple {
@@ -367,7 +367,7 @@ input, textarea, select {
   .zion-badge-green {
     border-color: rgba(7, 137, 48, 0.35);
     background: rgba(7, 137, 48, 0.1);
-    color: #078930;
+    color: #066928;
   }
 
   .zion-badge-amber {
@@ -393,7 +393,7 @@ input, textarea, select {
   .zion-progress > * {
     height: 100%;
     border-radius: 9999px;
-    background: linear-gradient(90deg, #fcd116, #e41e2b, #078930);
+    background: linear-gradient(90deg, #fcd116, #e41e2b, #066928);
     transition: width 400ms ease;
   }
 
@@ -401,14 +401,14 @@ input, textarea, select {
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
-    background-image: linear-gradient(to right, #fcd116, #e41e2b, #078930);
+    background-image: linear-gradient(to right, #fcd116, #e41e2b, #066928);
   }
 
   .text-gradient-soft {
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
-    background-image: linear-gradient(110deg, #fcd116, #fcd116, #078930);
+    background-image: linear-gradient(110deg, #fcd116, #fcd116, #066928);
   }
 
   .glow {
