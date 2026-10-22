@@ -179,6 +179,7 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 - **Chrome:** sdílené Navigation/Footer/FloatingUtilities komponenty (dnes zkopírované per app?)
 - **ZIS:** canon — rozšířit session na všechny portály (cookie `.zionterranova.com` už je); pool-ui přidat ZIS (má už simplewebauthn dep)
 - **Copy audit:** CS+EN parita, žádné interní názvy (V31, ZionStart, PoC-lab…), `npm run check:links --strict`
+  - 📊 **Naměřeno (2026-10-22):** 780 souborů, **390 dead links** — převážně repo-interní cesty (`../../3.2/*`, `../L1/*`, `../Ruze/*`, `LEVEL_*`, `PART_*`) v publikovaném `public/docs/` korpusu; live web degraduje gracefuly (docLinks resolver → muted non-link, ne 404) — čištění = copy pass, ne outage fix. Log: `docs/3.2/REPORTS/check-links-2026-10-22.txt`
 
 ### F4 — Konsolidace překryvů (naměřené duplicity)
 

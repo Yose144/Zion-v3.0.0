@@ -1,0 +1,417 @@
+
+> zion-web-v3.2.0@3.2.0 check:links
+> node scripts/check-doc-links.mjs --strict
+
+
+ZION docs link audit — 780 files scanned
+  resolved: 2515   in-page anchors (unverified external): 197   app-route guesses: 0
+  dead links: 390
+
+  LEGAL_DISCLAIMER.md
+      → ./security/SECURITY_DISCLOSURE_2026-07.md
+  WARP_LIGHTNING_PLAN.md
+      → ../Li.Fi-L2.md
+  WP/ZION_Technical_Whitepaper_v3.1_CZ.md
+      → ../security/SECURITY_DISCLOSURE_2026-07.md
+      → ../../V3/
+  WP/ZION_Technical_Whitepaper_v3.1_EN.md
+      → ../security/SECURITY_DISCLOSURE_2026-07.md
+      → ../../V3/
+  Zohar/01-SEFIROT-VRSTVY.md
+      → ../../GENESIS_REGENERATION_RUNBOOK.md
+      → ../../V3/docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md
+      → ../../V3/README.md
+      → ../../V3/docs/ZION_3.0.4_DEPLOY_RUNBOOK.md
+      → ../3.0.4.md
+      → ../../HIRAN_LOCAL_SETUP.md
+      → ../../V3/L4/docs/README.md
+      → ../docs2.9/ZION_OASIS/V3_L4_INTEGRATION.md
+      → ../../V3/L5/docs/COMMUNITIES/te-piko-ora.md
+  Zohar/02-ROADMAP.md
+      → ../../V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md
+      → ../../apps/website-v2.9/src/components/InteractiveTreeOfLife.tsx
+      → ../../apps/website-v2.9/src/components/ConsciousnessTreeKabbalah.tsx
+      → ../../AGENTS.md
+  books/kralovstvi-srdce/kapitoly/00-README.md
+      → ../Maitreya/EPILOG.md
+  books/kralovstvi-srdce/kapitoly/10-Epilog-Kde-Lod-Kotvi.md
+      → ../Maitreya/EPILOG.md
+  books/nirvana/kapitoly/00-README.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../../../ROADMAP.md
+  books/nirvana/kapitoly/00-README_EN.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../../../ROADMAP.md
+  books/surta-srdce/kapitoly/00-README.md
+      → ../README.md
+  cs/v2.9.6/README.md
+      → legal/
+  cs/v2.9.7/changelog.md
+      → ../v2.9.5/
+  cs/whitepaper/COSMIC_MAP_2.8.5_PUBLIC_EDITION.md
+      → PART_9_TECHNIKY.md
+      → PART_5_GENETIKA.md
+      → INDEX_v2.8.0.md
+      → COSMIC_MAP_v2.8.0_APPENDIX_A_GLOSAR.md
+      → COSMIC_MAP_v2.8.0_PART_5_GENETIKA.md
+      → COSMIC_MAP_v2.8.0_PART_7_ZEME.md
+  cs/whitepaper/ZION_V3_Whitepaper.md
+      → ../L1/core/src/genesis.rs
+      → ../L1/core/src/emission.rs
+      → ../L1/core/src/difficulty.rs
+      → ../L1/cosmic-harmony/src/deeksha.rs
+      → ../L2/dao/src/proposal.rs
+      → ../ROADMAP.md
+  cs/whitepaper/ZION_Whitepaper_v2.8.5.md
+      → ../../HUMANITARIAN_TITHE/README.md
+      → ./README.md
+      → ./whitepaper.pdf
+      → ./README_CZ.md
+  cs/whitepaper/ZION_Whitepaper_v2.9.5_FULL.md
+      → 03_CONSCIOUSNESS_MINING.md
+      → 05_FAIR_LAUNCH.md
+      → 07_HUMANITARIAN_TITHE.md
+      → 08_NCL_NEURAL_COMPUTE.md
+      → 09_ROADMAP.md
+      → 10_CONCLUSION.md
+  en/books/nirvana/kapitoly/00-README.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../../../ROADMAP.md
+  en/v2.9.6/README.md
+      → ../whitepaper/
+      → ../RUN_NODE.md
+      → ../MINING_GUIDE.md
+      → ../API_REFERENCE.md
+      → legal/
+      → LICENSE
+  en/v2.9.6/changelog.md
+      → ../v2.9.5/
+  en/v2.9.7/changelog.md
+      → ../v2.9.5/
+  en/whitepaper/HUMANITARIAN_TITHE_2.8.5.md
+      → ../ZION_OASIS_2.8.5.md
+      → ../SACRED_KNOWLEDGE_2.8.5.md
+      → ../WHITEPAPER_2025/README.md
+      → ../contracts/
+      → ../api/
+  en/whitepaper/SACRED_KNOWLEDGE_2.8.5.md
+      → LEVEL_1_AWAKENING.md
+      → LEVEL_2_ATLANTIS.md
+      → LEVEL_3_LIGHTWORKERS.md
+      → LEVEL_4_WINGMAKERS.md
+      → LEVEL_5_KARMA_DHARMA.md
+      → LEVEL_6_SACRED_GEOMETRY.md
+      → LEVEL_7_PROPHECIES.md
+      → LEVEL_8_EGO_DEATH.md
+      → LEVEL_9_GOLDEN_AGE.md
+  en/whitepaper/ZION_OASIS_2.8.5.md
+      → AAA_MMORPG_PLAN.md
+      → DEVELOPMENT_PLAN.md
+      → AVATAR_ROSTER.md
+      → ../GOLDEN_EGG_GAME/GAME_DESIGN_GOLDEN_EGG.md
+      → ../SACRED_TRINITY/
+      → ../GOLDEN_EGG_GAME/SACRED_LIBRARY_COMPLETE.md
+  en/whitepaper/ZION_V3_Whitepaper.md
+      → ../L1/core/src/genesis.rs
+      → ../L1/core/src/emission.rs
+      → ../../legal/TOKEN_NOT_SECURITY.md
+      → ../../legal/RISK_DISCLOSURE.md
+      → ../L1/core/src/difficulty.rs
+      → ../L1/cosmic-harmony/src/deeksha.rs
+      → ../L2/dao/src/proposal.rs
+      → ../ROADMAP.md
+  en/whitepaper/ZION_Whitepaper_v2.8.5.md
+      → ../../HUMANITARIAN_TITHE/README.md
+      → ./README.md
+      → ./whitepaper.pdf
+      → ./README_CZ.md
+  genesis.md
+      → ../V3/L1/core/src/genesis.rs
+      → ../V3/L1/core/src/GENESIS_MESSAGE.txt
+      → ./security/SECURITY_DISCLOSURE_2026-07.md
+  korpus/BodhiGaia/00-README.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/L5_L6_ACTIVATION_PLAN.md
+      → ../../../public/V3/L5/docs/README.md
+  korpus/BodhiGaia/00-README_EN.md
+      → ../nirvana/00-README_EN.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../../../public/V3/L5/docs/README.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/L5_L6_ACTIVATION_PLAN.md
+  korpus/BodhiGaia/03-Zahrada-Genesis.md
+      → ../Ruze/Epilog-Zahrada-Genesis.md
+      → ./pilots/GENESIS-ROSE-001.md
+  korpus/BodhiGaia/07-Zahrada-v-Oasis-a-na-Webu.md
+      → ./pilots/GENESIS-ROSE-001.md
+  korpus/BodhiGaia/09-Kotva-Pravdy-a-Hranice.md
+      → ./pilots/GENESIS-ROSE-001.md
+      → ../Ruze/Epilog-Zahrada-Genesis.md
+  korpus/BodhiGaia/12-Ruze-v-Zahrade-Genesis.md
+      → ./pilots/GENESIS-ROSE-001.md
+      → ../Ruze/Epilog-Zahrada-Genesis.md
+  korpus/BodhiGaia/13-Nova-Amerika.md
+      → ../../TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md
+  korpus/BodhiGaia/full.md
+      → ../Ruze/Epilog-Zahrada-Genesis.md
+      → ./pilots/GENESIS-ROSE-001.md
+      → ../../TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md
+  korpus/HUMANITARIAN_TITHE/01_OVERVIEW.md
+      → ../WHITEPAPER_2025/README.md
+  korpus/HUMANITARIAN_TITHE/07_IMPACT_METRICS.md
+      → ../WHITEPAPER_2025/README.md
+  korpus/HUMANITARIAN_TITHE/README.md
+      → ../WHITEPAPER_2025/README.md
+      → ../AI_SAFETY_PROTOCOLS.md
+      → ../SUCCESSION_PROTOCOL.md
+  korpus/Issobella/00-README.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../../../L6data/README.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/CHANGES_L6_ISSOBELLA.md
+      → ../../3.2/L5_L6_ACTIVATION_PLAN.md
+  korpus/Issobella/00-README_EN.md
+      → ../nirvana/00-README_EN.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../../../L6data/README.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/CHANGES_L6_ISSOBELLA.md
+      → ../../3.2/L5_L6_ACTIVATION_PLAN.md
+  korpus/Issobella/06-Pet-Procent-Nahoru.md
+      → ../../3.2/CHANGES_L6_ISSOBELLA.md
+      → ../../3.2/L5_L6_ACTIVATION_PLAN.md
+  korpus/KralovstviSrdce/00-README.md
+      → ../Maitreya/EPILOG.md
+  korpus/KralovstviSrdce/10-Epilog-Kde-Lod-Kotvi.md
+      → ../Maitreya/EPILOG.md
+  korpus/Lumi/00-README.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../../../L6data/README.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/L5_L6_ACTIVATION_PLAN.md
+      → ../../3.2/ROADMAP.md
+      → ../../3.2/L2contracts.md
+  korpus/MariaCaminho/00-README.md
+      → ../../3.2/L5MariaDelCamino.md
+      → ../../3.2/L5Ekam.md
+      → ../../3.2/L5BoaEsperanca.md
+      → ../../3.2/StatusV3.md
+  korpus/MariaCaminho/02-Cervena-Marie.md
+      → ../../3.2/L5MariaDelCamino.md
+  korpus/MariaCaminho/03-Prvni-Plachetnice.md
+      → ../../3.2/L5MariaDelCamino.md
+  korpus/MariaCaminho/05-Nevesta-z-Pacifiku.md
+      → ../../3.2/L5MariaDelCamino.md
+  korpus/MariaCaminho/06-Most-Lumi.md
+      → ../../3.2/L5MariaDelCamino.md
+  korpus/MariaCaminho/07-Zlata-Marie.md
+      → ../../3.2/L5MariaDelCamino.md
+  korpus/MariaCaminho/08-Treti-Marie.md
+      → ../../3.2/L5MariaDelCamino.md
+      → ../../3.2/L5Ekam.md
+  korpus/MariaCaminho/09-Dokonceni-a-Obrat.md
+      → ../../3.2/L5Ekam.md
+      → ../../3.2/L5BoaEsperanca.md
+      → ../../3.2/L5MariaDelCamino.md
+  korpus/MariaCaminho/10-Compostela.md
+      → ../../3.2/L5MariaDelCamino.md
+  korpus/MariaCaminho/Epilog-More-Nekonci.md
+      → ../../3.2/L5MariaDelCamino.md
+  korpus/MariaCaminho/full.md
+      → ../../3.2/L5MariaDelCamino.md
+      → ../../3.2/L5Ekam.md
+      → ../../3.2/L5BoaEsperanca.md
+  korpus/Miriam/00-README.md
+      → ../../TerraNova/public/Full.md
+      → ../../3.2/StatusV3.md
+      → ../../docs2.9/ZION_OASIS/SACRED_TRINITY/18_MERIAM_ROSE.md
+      → ../../3.2/L2contracts.md
+  korpus/Miriam/03-Zahradnik.md
+      → ../../../WarpBeta/ARCHITECTURE.md
+  korpus/Miriam/09-Zena-Odena-Sluncem.md
+      → ../../TerraNova/public/Full.md
+  korpus/Miriam/10-Svatba-na-Konci-Knihy.md
+      → ../BodhiGaia/
+      → ../nirvana/
+  korpus/Miriam/11-Mesto-jako-Nevesta.md
+      → ../MiseAmenti/
+  korpus/MiseAmenti/03-Zivy-Zaklad-3.3.md
+      → ../../3.2/StatusV3.md
+  korpus/MiseAmenti/04-Exekucni-Charta-3.3.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+  korpus/MiseAmenti/07-Registr-Dukazu.md
+      → ../Ruze/Epilog-Zahrada-Genesis.md
+      → ../BodhiGaia/pilots/GENESIS-ROSE-001.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../Ruze/10-Kotva-Pribehu.md
+  korpus/MiseAmenti/CHANGELOG.md
+      → ../Ruze/Epilog-Zahrada-Genesis.md
+      → ../BodhiGaia/pilots/GENESIS-ROSE-001.md
+  korpus/MiseAmenti/README.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+  korpus/MiseAmenti/README_EN.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+  korpus/NaCeste/00-README.md
+      → ../../TerraNova/BASE_FINAL/README.md
+      → ../README.md
+  korpus/NaCeste/02-Kotva-Pravdy.md
+      → ../../3.2/StatusV3.md
+      → ../../TerraNova/BASE_FINAL/00-PROLOG.md
+  korpus/NirvanaCloud/00-README.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../../3.0.6/HIRAN_OVERVIEW.md
+      → ../../../public/docs/ZION_CODEX_BODHISATTVA.md
+      → ../../docs2.9/ZION_OASIS/WORLDS/WORLD_TIBET.md
+  korpus/NirvanaCloud/00-README_EN.md
+      → ../../3.2/StatusV3.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+      → ../nirvana/00-README_EN.md
+      → ../../3.0.6/HIRAN_OVERVIEW.md
+      → ../../../public/docs/ZION_CODEX_BODHISATTVA.md
+      → ../../docs2.9/ZION_OASIS/WORLDS/WORLD_TIBET.md
+  korpus/NirvanaCloud/07-Stoleti-Plan-2026-2126.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+  korpus/NirvanaCloud/07-Stoleti-Plan-2026-2126_EN.md
+      → ../../3.2/V33_NIRVANA_MASTER_PLAN.md
+  korpus/SulZeme/00-README.md
+      → ./Onboarding.md
+      → ../marketing/RASTA_ONBOARD_3.2_ONE_LOVE_CZ.md
+      → ./ZION_ONBOARDING.md
+      → ./ZION_ONBOARDING_EN.md
+  korpus/SulZeme/00-README_EN.md
+      → ../marketing/RASTA_ONBOARD_3.2_ONE_LOVE_EN.md
+  korpus/SurtaSrdce/00-README.md
+      → ../README.md
+  korpus/ZION_ONBOARDING_PUBLIC_CZ.md
+      → ./SulZeme/ZION_ONBOARDING.md
+      → ./marketing/RASTA_ONBOARD_3.2_ONE_LOVE_CZ.md
+      → ../3.2/StatusV3.md
+  korpus/ZION_ONBOARDING_PUBLIC_EN.md
+      → ./SulZeme/ZION_ONBOARDING_EN.md
+      → ./marketing/RASTA_ONBOARD_3.2_ONE_LOVE_EN.md
+      → ../3.2/StatusV3.md
+  korpus/docs2.9/genesis/09.5-CHAPTER-9-Three-Marian-Apparitions.md
+      → 09-CHAPTER-8-Mainnet-Dawn.md
+      → 10-EPILOGUE.md
+  l6/Pozemni_Stanice_Kostarika.md
+      → ../docs/TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md
+  legal/legal-disclaimer.md
+      → ./security/SECURITY_DISCLOSURE_2026-07.md
+  legal/terms-of-use.md
+      → ../LICENSE
+      → ../CONTRIBUTING.md
+  terranova/04-AI-NATIVE.md
+      → ./05-MEDICAL.md
+  terranova/11-PROROCTVI.md
+      → ./08-ISSOBELLA.md
+  terranova/KOMPAS.md
+      → ./ORG/07-ZLATY-KOMPAS.md
+      → ./ORG/TerraNova-CTENARSKA-EDICE.md
+  terranova/README.md
+      → ./FINAL/README.md
+      → ./composer/README.md
+      → ./composer/edition/Full.md
+      → ./composer/edition/Full-en.md
+      → ./ORG/Full.md
+      → ./ORG/TerraNova-CTENARSKA-EDICE.md
+      → ./composer/SOURCES_AND_LINEAGE.md
+  terranova/bodhi-lanka.cs.md
+      → #
+  terranova/bodhi-lanka.en.md
+      → #
+  terranova/golden-republic-bohemia.cs.md
+      → #
+  terranova/golden-republic-bohemia.en.md
+      → #
+  v2.9.6/README.md
+      → ../whitepaper/
+      → ../RUN_NODE.md
+      → ../MINING_GUIDE.md
+      → ../API_REFERENCE.md
+      → legal/
+      → LICENSE
+  v2.9.7/changelog.md
+      → ../v2.9.5/
+  v3.0.1/ROADMAP.md
+      → ../StatusV3.md
+      → ../docs/docs2.9/ZION_OASIS/
+      → ../docs/TerraNova/
+      → ../HiranV2.1/Hiran_v2.1.md
+      → ./docs/BRIDGE_READINESS_100.md
+  whitepaper.md
+      → ./security/SECURITY_DISCLOSURE_2026-07.md
+      → ../V3/
+      → ../V3/docs/MAINNET_CONSTANTS.md
+      → ../V3/docs/CLI_REFERENCE.md
+  whitepaper/COSMIC_MAP_2.8.5_PUBLIC_EDITION.md
+      → PART_9_TECHNIKY.md
+      → PART_5_GENETIKA.md
+      → INDEX_v2.8.0.md
+      → COSMIC_MAP_v2.8.0_APPENDIX_A_GLOSAR.md
+      → COSMIC_MAP_v2.8.0_PART_5_GENETIKA.md
+      → COSMIC_MAP_v2.8.0_PART_7_ZEME.md
+  whitepaper/HUMANITARIAN_TITHE_2.8.5.md
+      → ../ZION_OASIS_2.8.5.md
+      → ../SACRED_KNOWLEDGE_2.8.5.md
+      → ../WHITEPAPER_2025/README.md
+      → ../contracts/
+      → ../api/
+  whitepaper/PART_1_ARCHITEKTURA.md
+      → PART_9_TECHNIKY.md
+  whitepaper/PART_4_VZESTUP.md
+      → PART_5_GENETIKA.md
+  whitepaper/SACRED_KNOWLEDGE_2.8.5.md
+      → LEVEL_1_AWAKENING.md
+      → LEVEL_2_ATLANTIS.md
+      → LEVEL_3_LIGHTWORKERS.md
+      → LEVEL_4_WINGMAKERS.md
+      → LEVEL_5_KARMA_DHARMA.md
+      → LEVEL_6_SACRED_GEOMETRY.md
+      → LEVEL_7_PROPHECIES.md
+      → LEVEL_8_EGO_DEATH.md
+      → LEVEL_9_GOLDEN_AGE.md
+  whitepaper/WHITEPAPER_2025/04_ECONOMIC_MODEL.md
+      → ../../HUMANITARIAN_TITHE/README.md
+  whitepaper/WHITEPAPER_2025/12_CONCLUSION.md
+      → ./whitepaper.pdf
+      → ./README_CZ.md
+  whitepaper/WHITEPAPER_2025/ZION_Whitepaper_v1.0_Full.md
+      → ../../HUMANITARIAN_TITHE/README.md
+      → ./whitepaper.pdf
+      → ./README_CZ.md
+  whitepaper/ZION_OASIS_2.8.5.md
+      → AAA_MMORPG_PLAN.md
+      → DEVELOPMENT_PLAN.md
+      → AVATAR_ROSTER.md
+      → ../GOLDEN_EGG_GAME/GAME_DESIGN_GOLDEN_EGG.md
+      → ../SACRED_TRINITY/
+      → ../GOLDEN_EGG_GAME/SACRED_LIBRARY_COMPLETE.md
+  whitepaper/ZION_V3_Whitepaper.md
+      → ../L1/core/src/genesis.rs
+      → ../L1/core/src/emission.rs
+      → ../../legal/DISCLAIMER.md
+      → ../../legal/TOKEN_NOT_SECURITY.md
+      → ../../legal/RISK_DISCLOSURE.md
+      → ../L1/core/src/difficulty.rs
+      → ../L1/cosmic-harmony/src/deeksha.rs
+      → ../L2/dao/src/proposal.rs
+      → ../ROADMAP.md
+  whitepaper/ZION_Whitepaper_v2.8.5.md
+      → ../../HUMANITARIAN_TITHE/README.md
+      → ./README.md
+      → ./whitepaper.pdf
+      → ./README_CZ.md
+  whitepaper/ZION_Whitepaper_v2.9.5_FULL.md
+      → 03_CONSCIOUSNESS_MINING.md
+      → 05_FAIR_LAUNCH.md
+      → 07_HUMANITARIAN_TITHE.md
+      → 08_NCL_NEURAL_COMPUTE.md
+      → 09_ROADMAP.md
+      → 10_CONCLUSION.md
