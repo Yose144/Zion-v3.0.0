@@ -286,7 +286,7 @@ function fmtNum(n?: number | null) {
   return n.toLocaleString("en-US");
 }
 
-function PoolStatsPanel({ p }: { p: PoolStats }) {
+function PoolStatsPanel({ p, miners }: { p: PoolStats; miners?: PoolMiner[] | null }) {
   const up = p.pearl?.upstream || {};
   const rt = p.routing || { groups: [], sources: [] };
   const ppl = p.pplns || {};
@@ -503,6 +503,68 @@ function PoolStatsPanel({ p }: { p: PoolStats }) {
           <Kpi label="Shares accepted" value={fmtNum(p.shares?.accepted)} sub={`${fmtNum(p.shares?.rejected)} rejected`} />
         </div>
       </div>
+
+      {/* ── top pool miners ── */}
+      {miners && miners.length > 0 ? (
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
+            <h3 className="text-sm font-bold text-white">Pool miners by hashrate</h3>
+            <span className="text-[10px] text-white/35">
+              {miners.length} workers · valid / invalid shares per stream
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  <th className="px-4 py-2">Worker</th>
+                  <th className="px-3 py-2 text-right">Hashrate</th>
+                  <th className="px-3 py-2 text-right">1 h</th>
+                  <th className="px-3 py-2 text-right">Streams (valid/invalid)</th>
+                  <th className="px-3 py-2 text-right">Blocks</th>
+                  <th className="px-4 py-2 text-right">Paid</th>
+                </tr>
+              </thead>
+              <tbody>
+                {miners
+                  .slice()
+                  .sort((a, b) => (b.hps || 0) - (a.hps || 0))
+                  .slice(0, 12)
+                  .map((m) => (
+                    <tr key={m.worker} className="border-b border-white/[0.03] text-xs">
+                      <td className="max-w-[260px] truncate px-4 py-2 font-mono text-white/75" title={m.worker}>
+                        {m.worker || "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-white/70">
+                        {m.hps ? `${(m.hps / 1e12).toFixed(2)} TH/s` : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-white/45">
+                        {m.hps_1h ? `${(m.hps_1h / 1e12).toFixed(2)} TH/s` : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono">
+                        {Object.keys(m.streams || {}).length === 0 ? (
+                          <span className="text-white/25">—</span>
+                        ) : (
+                          Object.entries(m.streams).map(([coin, s]) => (
+                            <span key={coin} className="mr-2">
+                              <span style={{ color: POOL_COIN[coin.toLowerCase()] || "#c9d1d9" }}>{coin}</span>
+                              <span className="text-emerald-300/90"> {s.v}</span>
+                              <span className="text-rose-300/70">/{s.i}</span>
+                            </span>
+                          ))
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-white/60">{fmtNum(m.blocks)}</td>
+                      <td className="px-4 py-2 text-right font-mono text-white/50">
+                        {m.paid ? `${(m.paid / 1e6).toFixed(3)} ZION` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1304,7 +1366,7 @@ export default function Dashboard() {
         <section className="mx-auto w-full max-w-7xl pb-12 sm:pb-20">
           {/* our own ZION pool — live routing / auxpow / PPLNS */}
           {snap?.poolstats ? (
-            <PoolStatsPanel p={snap.poolstats} />
+            <PoolStatsPanel p={snap.poolstats} miners={snap.pool} />
           ) : (
             <div className="mb-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] px-4 py-5 text-center text-xs text-amber-200/80">
               Pool API unavailable — the status daemon could not reach the pool HTTP API on Edge (:8080).

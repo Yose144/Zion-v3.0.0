@@ -697,38 +697,40 @@ def fetch_ext_pools():
 
 
 def fetch_pool_miners():
-    """Pool /miners via edge loopback API → normalized worker list (None = unreachable)."""
+    """Pool /miners via the local pool API → normalized worker list (None = unreachable).
+
+    The pool API listens on 127.0.0.1 on the same host, so this is a direct
+    HTTP call — the previous variant shelled out over SSH without a port
+    (Edge only listens on 2222) and therefore always came back empty.
+    """
     now = time.time()
     if now - _pool_cache["ts"] < POOL_CACHE_TTL:
         return _pool_cache["miners"]
     miners = None
     try:
-        rc, out, _ = run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=6",
-                          EDGE_SSH, "curl -sm8 http://127.0.0.1:8080/miners?limit=200"],
-                         timeout=15)
-        if rc == 0 and out.strip().startswith("{"):
-            data = json.loads(out)
-            miners = []
-            for m in data.get("miners", []):
-                w = m.get("worker") or ""
-                if w.startswith("probe"):
-                    continue
-                miners.append({
-                    "worker": w,
-                    "address": m.get("address") or "",
-                    "streams": {
-                        c: {"v": s.get("valid_shares", 0),
-                            "i": s.get("invalid_shares", 0),
-                            "t": s.get("last_share_time", 0)}
-                        for c, s in (m.get("streams") or {}).items()
-                    },
-                    "hps": m.get("hashrate_hps") or 0,
-                    "hps_1h": m.get("hashrate_1h_hps") or 0,
-                    "last_seen": m.get("last_seen_s") or 0,
-                    "first_seen": m.get("first_seen_s") or 0,
-                    "blocks": m.get("blocks_found") or 0,
-                    "paid": m.get("paid_total_atomic") or 0,
-                })
+        with urllib.request.urlopen(f"{POOL_API}/miners?limit=200", timeout=10) as r:
+            data = json.loads(r.read().decode())
+        miners = []
+        for m in data.get("miners", []):
+            w = m.get("worker") or ""
+            if w.startswith("probe"):
+                continue
+            miners.append({
+                "worker": w,
+                "address": m.get("address") or "",
+                "streams": {
+                    c: {"v": s.get("valid_shares", 0),
+                        "i": s.get("invalid_shares", 0),
+                        "t": s.get("last_share_time", 0)}
+                    for c, s in (m.get("streams") or {}).items()
+                },
+                "hps": m.get("hashrate_hps") or 0,
+                "hps_1h": m.get("hashrate_1h_hps") or 0,
+                "last_seen": m.get("last_seen_s") or 0,
+                "first_seen": m.get("first_seen_s") or 0,
+                "blocks": m.get("blocks_found") or 0,
+                "paid": m.get("paid_total_atomic") or 0,
+            })
     except Exception:
         miners = None
     _pool_cache["ts"] = now
