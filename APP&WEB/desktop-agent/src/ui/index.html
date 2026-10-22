@@ -7223,6 +7223,17 @@
                 </label>
               </div>
               <div class="slider-hint">Enable GPU mining if a compatible device is detected</div>
+
+              <div class="actions-row" style="margin-top:10px">
+                <label class="mode-pill" style="flex:1;cursor:pointer">
+                  <input type="checkbox" id="multigpu-checkbox" style="width:18px;height:18px" checked />
+                  <div>
+                    <div class="mode-title">Multi-GPU</div>
+                    <p>Split work across all detected cards</p>
+                  </div>
+                </label>
+              </div>
+              <div class="slider-hint">On = ZION mines on every detected OpenCL GPU (nonce ranges split per card). Off = single card only — recommended on mixed AMD + NVIDIA rigs and when a <code>gpuDevice</code> pin selects one card for mining (e.g. the other GPU serves local AI inference).</div>
             </section>
 
             <section class="settings-card">

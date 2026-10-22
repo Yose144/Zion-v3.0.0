@@ -1408,6 +1408,9 @@ const DEFAULT_CONFIG = {
   extGpuBackend: 'cuda',
   extGpuDutyPct: 50,
   extGpuBatchSize: 262144,
+  // Settings → Compute → Multi-GPU. true = ZION mines on every detected
+  // OpenCL GPU (miner default); false = single card only.
+  multiGpu: true,
   // minerApi: SRBMiner-compatible HTTP stats API bind address.
   //   ''       = disabled (default)
   //   '21550'  = listen on 0.0.0.0:21550 (LAN monitoring tools)
@@ -3216,6 +3219,11 @@ function startMiningV31(config, v31Path) {
         env.ZION_GPU_DEVICES = gpuDevicePin;
         env.ZION_QPOW_OCL_DEVICES = gpuDevicePin;
     }
+    // Settings → Compute → Multi-GPU. The miner auto-enables its
+    // MultiGpuMiner whenever >1 OpenCL device is enumerated — '0' forces
+    // the single-device path (mixed AMD+NVIDIA rigs: the secondary card
+    // can fail kernel launches / hang the shared context).
+    env.ZION_MULTI_GPU = config?.multiGpu === false ? '0' : '1';
     // Opt-in stream-3 batch (VerusHash CPU nonces per scan round) —
     // smaller batches refresh upstream jobs sooner, cutting stale
     // "job not found" rejects on fast-rotating pools (LuckPool ~15-60s).

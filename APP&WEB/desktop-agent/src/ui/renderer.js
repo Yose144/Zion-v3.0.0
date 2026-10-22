@@ -1193,6 +1193,7 @@ function setupControls() {
   const gpuCoin2Select = document.getElementById('gpu-coin2-select');
   const gpuCoin2SelectDashboard = document.getElementById('gpu-coin2-select-dashboard');
   const tripleStreamCheckbox = document.getElementById('trinity-checkbox');
+  const multiGpuCheckbox = document.getElementById('multigpu-checkbox');
 
   // Populate all coin selects from the canonical registry so the option
   // set can never drift between Home and Settings. Unserved coins (pool
@@ -1505,6 +1506,16 @@ function setupControls() {
     }
   }
 
+  if (multiGpuCheckbox) {
+    multiGpuCheckbox.addEventListener('change', () => {
+      config.multiGpu = multiGpuCheckbox.checked;
+      void applyMiningSelection(`multiGpu=${multiGpuCheckbox.checked}`);
+    });
+    if (typeof config.multiGpu === 'boolean') {
+      multiGpuCheckbox.checked = config.multiGpu;
+    }
+  }
+
   startBtn.addEventListener('click', async () => {
     if (!config.wallet) {
       await openOneClickWizard();
@@ -1637,6 +1648,7 @@ function setupControls() {
       miningMode: selectedMode,
       // Trinity / triple-stream configuration
       tripleStream: tripleStreamCheckbox ? tripleStreamCheckbox.checked : config.tripleStream,
+      multiGpu: multiGpuCheckbox ? multiGpuCheckbox.checked : config.multiGpu !== false,
       cpuCoin: cpuCoinSelect ? cpuCoinSelect.value : config.cpuCoin,
       gpuCoin: gpuCoinSelect ? gpuCoinSelect.value : config.gpuCoin,
       gpuCoin2: gpuCoin2Select ? gpuCoin2Select.value : (config.gpuCoin2 || ''),
@@ -1845,6 +1857,10 @@ function updateSettingsUI() {
   const trinityEl = document.getElementById('trinity-checkbox');
   if (trinityEl && typeof config.tripleStream === 'boolean') {
     trinityEl.checked = config.tripleStream;
+  }
+  const multiGpuEl = document.getElementById('multigpu-checkbox');
+  if (multiGpuEl) {
+    multiGpuEl.checked = config.multiGpu !== false;
   }
 }
 
