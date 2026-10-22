@@ -143,9 +143,12 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 1. **archive/ konsolidace:** `V3/`, `WarpBeta/`, `BACKUP/`, `backups/` (16G! rozhodnout: ven z repa), `logs/`, `PUBLIC/` (klon → samostatný checkout mimo repo), `venv-hiran/`, `website-v2.9-backup-*.tar.gz`, `AuXpow/` (posoudit), `src/lib.rs` (1 soubor — smazat/zařadit), `dashboard/` (pokud nahrazeno ZION_OS/dashboard), `config/` (1 soubor)
 2. **APP&WEB → apps/:** postupně per app; u `website-v2.9` opravit cesty v deploy skriptech + AGENTS.md + `next.config.ts` assetPrefix pokud existuje
 3. **V31 → chain/:** jen adresář (crate názvy zůstávají `v31-*` — rozhodnout §4.4)
-4. **docs/WP-Mainet → canon/:** přesun knih; aktualizovat odkazy v docs
+4. **docs/WP-Mainet → canon/books/:** přesun knih; ~100+ odkazů k přepsání (README, AGENTS, docs/3.2, .gitignore, pdf skripty) — dedikovaný commit
 5. **infra/:** sesbírat `edge-deploy/`, deploy skripty z `apps/*/deploy/`, systemd unity ze `ZION_OS/infra/systemd/`, nginx z repa `V31/deploy/nginx/`
-6. **data/:** `L2data`–`L6data`, `L5Projects`, `data/` → `data/`; `LOGO/` → `data/brand/`?
+6. **canon/l*/:** `L2data`–`L6data` + `L5Projects` jsou kanon/dokumenty + source artwork, NE runtime data → `canon/l2..l6` (**provedeno v batch 1**); `data/` u kořene = untracked runtime DBs, zůstává; `LOGO/` → `canon/brand/` (26 odkazů — dedikovaný commit)
+
+**F2 batch 1 ✅ (2026-10-22):** `L2data`→`canon/l2`, `L3data`→`canon/l3`, `L4data`→`canon/l4`, `L5Projects`→`canon/l5`, `config/`→`archive/config/`; fixnuto: `freeworld/tools/images.py`, `freeworld/AGENTS.md`, `BohemiaDao.md` linky.
+**Zbývá:** `WarpBeta`→archive (14 odkazů), `L6data`→canon/l6 (71), `LOGO`→canon/brand (26), `WP-Mainet`→canon/books (100+), pak velké: `APP&WEB`→apps, `V31`→chain, `edge-deploy`+`scripts`+`ZION_OS`→infra.
 7. Aktualizovat `.github/`, `AGENTS.md`, všechny `deploy-*.sh` cesty
 
 ### F3 — Kanonizace webu

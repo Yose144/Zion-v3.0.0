@@ -324,9 +324,9 @@ Hiran v této vizi **analyzuje a připravuje drafty návrhů**; každý návrh p
 
 ---
 
-## 10. Sbírka plánů — `L2data/dao/plany/`
+## 10. Sbírka plánů — `canon/l2/dao/plany/`
 
-Detailní dokumenty žijí v **[`L2data/dao/plany/`](../../L2data/dao/plany/00-README.md)**:
+Detailní dokumenty žijí v **[`canon/l2/dao/plany/`](../../canon/l2/dao/plany/00-README.md)**:
 
 | Dokument | Obsah |
 |----------|-------|
@@ -349,11 +349,11 @@ Detailní dokumenty žijí v **[`L2data/dao/plany/`](../../L2data/dao/plany/00-R
 | **Fond** | L5 má 2 premine sloty = 3.3B ZION (Bohemia share 500M), tithe 5 %/blok akumuluje | žádná disbursement cesta — jen tracking |
 | **Fyzikální** | koncept pavilonů, rozpočet F0 60k EUR | žádná půda, žádný kruh, žádný zvolený orgán |
 | **Právní** | rešerše z.s./z.ú./nadace | žádná entita neregistrována |
-| **Parlament** | tento plán + L2data/dao/plany sbírka | žádná volba, žádný session se nekonaly |
+| **Parlament** | tento plán + canon/l2/dao/plany sbírka | žádná volba, žádný session se nekonaly |
 
 > *„Zlatá republika nezrušila staré státy. Nabídla lepší alternativu — a lidé si vybrali."*
 > Zlatý dům je místo, kde se ta alternativa píše — jeden consent za druhým, jeden blok za druhým.
 
 ---
 
-*[→ Sbírka plánů: L2data/dao/plany/](../../L2data/dao/plany/00-README.md) · [← L5 Bohemia koncept](../WP-Mainet/BodhiGaia/10-Golden-Republic-Bohemia.md) · [← Zlatá republika §6.6](../TerraNova/06-L5-SVOBODA.md)*
+*[→ Sbírka plánů: canon/l2/dao/plany/](../../canon/l2/dao/plany/00-README.md) · [← L5 Bohemia koncept](../WP-Mainet/BodhiGaia/10-Golden-Republic-Bohemia.md) · [← Zlatá republika §6.6](../TerraNova/06-L5-SVOBODA.md)*

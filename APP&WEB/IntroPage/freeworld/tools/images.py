@@ -6,7 +6,7 @@ from PIL import Image
 
 DIST = Path(sys.argv[1])
 REPO = Path(__file__).resolve().parents[4]
-IMG = REPO / 'L5Projects/img'
+IMG = REPO / 'canon/l5/img'
 WEB_IMG = REPO / 'APP&WEB/website-v2.9/public/images'
 
 # slug -> (render source, board source)
