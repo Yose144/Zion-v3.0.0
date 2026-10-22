@@ -126,6 +126,10 @@ const nextConfig: NextConfig = {
       { source: '/onboard', destination: '/mining', permanent: true },
       { source: '/kompas', destination: '/terranova', permanent: true },
       { source: '/cesta', destination: '/maitreya#cesta', permanent: true },
+      // In-page redirects promoted to 301 (pages deleted)
+      { source: '/node-setup', destination: '/mining#node-setup', permanent: true },
+      { source: '/mining/node-setup', destination: '/mining#node-setup', permanent: true },
+      { source: '/nirvana', destination: '/maitreya#nirvana', permanent: true },
       // Corpus + legacy link fixes
       { source: '/oasis', destination: '/l4-oasis', permanent: true },
       { source: '/oasis/:path*', destination: '/l4-oasis', permanent: true },
