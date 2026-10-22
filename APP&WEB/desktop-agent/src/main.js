@@ -1889,6 +1889,46 @@ function applyCudaTuning(gpuInfo, tuningConfig) {
   return result;
 }
 
+/**
+ * VRAM of the card that will actually run the OpenCL ZION workload.
+ *
+ * detectGPU() returns the FIRST usable GPU (nvidia-smi wins when present),
+ * so with `gpuDevice` pinning mining to a different card, gpuInfo.memory
+ * describes the wrong device. On Linux we read amdgpu's sysfs
+ * mem_info_vram_total instead — it exists only on amdgpu devices, so the
+ * minimum across entries is a conservative pick when several AMD cards are
+ * installed (the pin usually selects the weaker one for mining while the
+ * stronger card is left for inference).
+ */
+function resolveOpenclMiningVramMb(gpuInfo, config) {
+  const pin = String(config?.gpuDevice || '').trim().toLowerCase();
+  const detectedName = String(gpuInfo?.name || '').toLowerCase();
+  const detectedMb = parseGpuMemoryMb(gpuInfo);
+  const detectedIsAmd = gpuInfo?.type === 'amd' || /amd|radeon|gfx|vega|navi/.test(detectedName);
+  const pinLooksAmd = /gfx|radeon|rx|amd|vega|navi|polaris/.test(pin);
+
+  if (!pin || (detectedIsAmd && (!pinLooksAmd || detectedName.includes(pin)))) {
+    if (detectedMb > 0) return detectedMb;
+  }
+  if (process.platform === 'linux' && (!pin || pinLooksAmd || detectedIsAmd)) {
+    try {
+      const dir = '/sys/bus/pci/devices';
+      let minMb = 0;
+      for (const dev of fs.readdirSync(dir)) {
+        try {
+          const bytes = Number(fs.readFileSync(path.join(dir, dev, 'mem_info_vram_total'), 'utf8').trim());
+          if (bytes > 0) {
+            const mb = Math.floor(bytes / (1024 * 1024));
+            if (!minMb || mb < minMb) minMb = mb;
+          }
+        } catch {}
+      }
+      if (minMb > 0) return minMb;
+    } catch {}
+  }
+  return 0;
+}
+
 // ============================================================================
 // CH3 MULTI-STREAM: Dual/Triple Mining Support
 // ZION (50% CPU) + Best GPU Coin (25% GPU, direct to external pool) +
@@ -3096,6 +3136,26 @@ function startMiningV31(config, v31Path) {
         ? Math.max(32, Math.min(512, configuredLocalSize))
         : recommendedOpenclLocalSize(gpuInfo);
       env.ZION_OCL_LOCAL_SIZE = String(localSize);
+
+      // ZION_GPU_WORK_SIZE is the knob the V31 miner actually reads
+      // (runtime.rs) for the stream-1 OpenCL workload — the ekam-deeksha
+      // lite kernel allocates 512 KiB of scratchpad PER THREAD, so this
+      // directly sets the VRAM footprint (8192 → 4 GiB). The miner's
+      // auto-tune assumes exclusive card ownership; when the SRBMiner
+      // sidecar shares the same card it sees only ~1.5 GiB free, VRAM
+      // saturates and amdgpu raises a "GPU Hang" → SIGABRT crash loop.
+      // Size the budget so ZION + SRBMiner (~2.5 GiB) + driver fit.
+      const cfgWorkSize = Number(config?.zionGpuWorkSize);
+      if (Number.isFinite(cfgWorkSize) && cfgWorkSize >= 64) {
+        env.ZION_GPU_WORK_SIZE = String(Math.floor(cfgWorkSize));
+      } else if (useSrbQtc) {
+        const vramMb = resolveOpenclMiningVramMb(gpuInfo, config) || 6144;
+        const threadsByVram = Math.floor(Math.max(0, vramMb - 3072) * 1024 * 1024 / (512 * 1024 + 128));
+        let ws = 1024;
+        while (ws * 2 <= Math.min(4096, threadsByVram)) ws *= 2;
+        env.ZION_GPU_WORK_SIZE = String(ws);
+        log(`[V31-FAST] SRBMiner shares the card — ZION_GPU_WORK_SIZE=${ws} (${Math.round(ws / 2)} MiB scratchpad)\n`);
+      }
     }
 
     // Stale-job prevention: cap GPU batch to avoid pool job rotation.
