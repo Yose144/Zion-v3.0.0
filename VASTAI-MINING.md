@@ -568,28 +568,61 @@ na GPU zůstane místo pro váhy. Bez toho se Gemma na 8 GB kartu nevejde.
 
 | Model | Kontext | Kde běží | Výsledek |
 |---|---|---|---|
-| hiran-v2.3mini (8B Q5_K_M, 5.5 GB) | 4096 | GPU celý (`-ngl 37`) | **28 tok/s** ✅ produkce |
+| **Qwen3-4B** (Q4_K_M, 2.33 GB) | 16384 | GPU celý (`-ngl 37`) | **44 tok/s** ✅ hlavní kodovací model |
+| hiran-v2.3mini (8B Q5_K_M, 5.45 GB) | 4096 | GPU celý (`-ngl 37`) | **28 tok/s** ✅ produkce (ZION odpovědi) |
 | Gemma 4 E4B (Q4_K_M, 5.3 GB) | 16384 | ~12/24 vrstev GPU | 10 tok/s ⚠️ |
 | Gemma 4 E4B | 32768 | 12/24 vrstev GPU | 10 tok/s ⚠️ |
 | Gemma 4 E4B | 65536 | — | **nejde** (compute buffery) |
 
-> Obě velké modely se na 8 GB kartu **nevejdou současně** (5.5 + 5.3 GB).
-> Proto: 1070 Ti = produkční `hiran-core`, LM Studio Gemma = alternativa
-> (a její chat role v Continue je přesměrovaná na Vast).
+> **Qwen3-4B a hiran-core se na 8 GB kartu nevejdou současně**
+> (2.33 + 5.45 > 8 GB) → přepíná se mezi nimi:
+> `zion-qwen-cuda.service` (Qwen3-4B, :8070) ⇄ `zion-hiran-cuda.service`
+> (hiran-core, :8070). Oba používají port 8070, takže **tunelová konfigurace
+> zůstává stejná** a stačí `systemctl --user stop/start` druhé jednotky.
+>
+> *Režim „kódování“: Qwen3-4B (Continue, 44 tok/s) + produkce na Vastu/EDGE2 CPU.*
+> *Režim „produkce“: hiran-core (28 tok/s) + Continue chat přes Vast.*
 
 **Continue (`~/.continue/config.yaml`)** — finální podoba (schema v1):
 
-| Model | Provider / apiBase | Role | ctx | maxTokens |
-|---|---|---|---|---|
-| Gemma 4 E4B (Vast RTX 3060) | `lmstudio` → `127.0.0.1:18000/v1` | chat, edit, apply | 32768 | 2048 |
-| Gemma 4 E4B (LM Studio) | `lmstudio` → `127.0.0.1:1234/v1` | chat, edit, apply | 16384 | 2048 |
-| Qwen2.5-Coder 1.5B | `ollama` → `127.0.0.1:11434` | autocomplete | — | — |
-| Nomic Embed | `lmstudio` → `127.0.0.1:1234/v1` | embed | — | — |
+| Model | Provider / apiBase | Role | ctx | maxTokens | Rychlost |
+|---|---|---|---|---|---|
+| **Qwen3-4B (local CUDA)** | `lmstudio` → `127.0.0.1:8070/v1` | chat, edit, apply | 16384 | 2048 | **44 tok/s** ✅ hlavní |
+| Qwen3.8-27B (Vast RTX 3060) | `lmstudio` → `127.0.0.1:18002/v1` | chat, edit, apply | 16384 | 2048 | těžké úlohy |
+| Qwen3.8-27B (LM Studio) | `lmstudio` → `127.0.0.1:1234/v1` | chat, edit, apply | 8192 | 2048 | ~1.3 tok/s ⚠️ |
+| Gemma 4 E4B (Vast RTX 3060) | `lmstudio` → `127.0.0.1:18000/v1` | chat, edit, apply | 32768 | 2048 | ~5 tok/s |
+| Qwen2.5-Coder 1.5B | `ollama` → `127.0.0.1:11434` | autocomplete | — | — | ~2 tok/s (CPU) |
+| Nomic Embed | `lmstudio` → `127.0.0.1:1234/v1` | embed | — | — | 0.03 s |
 
-Všechny čtyři role ověřeny reálnými požadavky: chat 200 (správná odpověď
-o ZION), autocomplete 200 (doplnění kódu), embed 200 (768 dimenzí).
+Všechny role ověřeny reálnými požadavky: chat/edit 200 (2.9 s, korektní
+přepis kódu), autocomplete 200 (doplnění kódu), embed 200 (768 dimenzí).
+Qwen3-4B běží s `--reasoning-budget 0` → odpověď jde rovnou do `content`
+(u reasoning modelu by jinak obsah skončil v `reasoning_content`).
 
-### 5.10 OpenSSH `permitlisten` nebere čárku
+### 5.10 Qwen3.8-27B (16 GB) — proč lokálně ne, proč na Vastu ano
+
+Model `Qwen3.8-27B-Q4_K_M.gguf` = **16.8 GB** (+ 931 MB `mmproj` pro vision).
+Na 8 GB kartě se do VRAM vejde jen ~6.3 GB → zbytek (~9.4 GB) jde na CPU →
+**1.3 tok/s** a odpověď je prázdná (celý budget v reasoning).
+
+- **Lokálně** (LM Studio, CUDA, ctx 8192) = „trpělivý“ model pro těžké úlohy.
+  Load vyžaduje **text-only**: s `mmproj` (BF16) engine padá na
+  `mtmd_init_from_file → ggml_abort` (BF16 není podporovaný na sm_61) →
+  soubor `mmproj-Qwen3.8-27B-BF16.gguf` je třeba odsunout/odpojit.
+  Navíc zabere ~6.3 GB VRAM → potřeba mít volnou 1070 Ti (nejde současně
+  s Qwen3-4B ani s hiran-core).
+- **Na Vastu** (RTX 3060, 12 GB) = 11.6 GB modelu na GPU, ~4.4 GB v RAM →
+  použitelný. Stažení 16 GB přímo na instanci (14–30 MB/s ≈ 15 min),
+  `llama-server` na `:8002`, tunel z PC na `:18002`.
+
+| Model | Kde | VRAM | tok/s |
+|---|---|---|---|
+| Qwen3-4B | 1070 Ti (lokálně) | 2.3 GB | **44** |
+| Qwen3.8-27B | 1070 Ti (lokálně) | 6.3 GB + 9.4 GB RAM | 1.3 |
+| Qwen3.8-27B | Vast RTX 3060 | ~11.6 GB | viz `Vast-Inference.md` §2.3 |
+
+
+### 5.11 OpenSSH `permitlisten` nebere čárku
 
 `authorized_keys` pro tunelový účet **nesmí** mít
 `permitlisten="a:1,b:2"` — OpenSSH to neumí parsovat a **celý klíč se odmítne**
