@@ -89,11 +89,33 @@ Nesrovnatelné 1:1 s in-process schedulerem `zion-miner`.
 ```bash
 cd ~/miners/SRBMiner-Multi-3-7-9
 nohup ./SRBMiner-MULTI --algorithm pearlhash --pool pearl-eu2.luckypool.io:3360 \
-  --wallet prl1pwqx7esdehf58j4yqq68q0kts3zy5j2cf8c9gnn9tc3qaj6ptaq6qy35v6h --worker rig1-prl > ~/srb-prl.log 2>&1 &
+  --wallet prl1pwqx7esdehf58j4yqq68q0kts3zy5j2cf8c9gnn9tc3qaj6ptaq6qy35v6h+58CRHqNYCGcDZLUga3YB3NRJwH6Hri7d778aVo5DVifWNusb4Lnc2E7 --worker rig1-prl > ~/srb-prl.log 2>&1 &
 nohup ./SRBMiner-MULTI --algorithm quantus --pool eu.lproute.com:5660 \
   --wallet qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb --worker rig1-qtu \
   > ~/srb-qtu.log 2>&1 &
 ```
+
+#### Nockchain merge mining (PRL + NOCK)
+
+LuckyPool Pearl běží jako **Nockchain merge pool**: k Pearl walletu se
+připojí **nativní Nockchain adresa** oddělená `+` a stejný Pearl hash
+pak kromě PRL vydělává i NOCK, vyplácený **na Nockchain** na připojenou
+adresu.
+
+| Pravidlo | Detail |
+|---|---|
+| Formát loginu | `PRL_ADDRESS+NOCK_ADDRESS` (worker jako `PRL_ADDRESS+NOCK_ADDRESS.WORKER`) |
+| Nock adresa | **nativní Nockchain**, base58 (písmena/číslice, bez `0`, `O`, `I`, `l`) — **ne** `0x…` wrapped NOCK na Base |
+| Payout | Pearl jde na PRL adresu beze změny, NOCK na Nockchain adresu |
+| Solo | `solo:PRL_ADDRESS+NOCK_ADDRESS` |
+| Staty | `https://nock.luckypool.io/miner-stats/<NOCK>` |
+| Wire | Luckypool Pearl **vyžaduje `mining.authorize` s object params** (`type: "v2"`); array params → `params must be an object` |
+| Job | Merged i plain login dostávají **identický 76B header, `cert_version: 3`** — SRBMiner merge podporuje bez speciálního kernelu |
+
+NOCK credit se zobrazí jako **samostatný worker** na Nockchain straně poolu
+(`nock.luckypool.io/api/stats_address?address=<NOCK>`) a vyplácí se
+při nalezení bloku. Pool pro NOCK PRL wallet používá `+NOCK` i ve
+vlastním upstream legu (`ZION_POOL_PEARL_UPSTREAM_WALLET`).
 
 **Změřeno (RTX 3060 @170 W, 4 min steady):** PRL **~24.9 TH/s** +
 QTU **~107 MH/s** současně (každý ~47–49 % svého solo výkonu).

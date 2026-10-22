@@ -2388,7 +2388,12 @@ const SRB_MAX_RESTARTS = 3;
 const SRB_DEFAULT_POOL = 'eu.lproute.com:5660';
 const SRB_DEFAULT_WALLET = 'qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb';
 const SRB_DEFAULT_PRL_POOL = 'pearl-eu2.luckypool.io:3360';
-const SRB_DEFAULT_PRL_WALLET = 'prl1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5m';
+// Pearl + Nockchain merge mining: the native Nockchain address is appended
+// to the Pearl wallet with "+" so the same Pearl hash also earns NOCK, paid
+// on Nockchain to the appended address. The Pearl address stays the payout
+// identity and Pearl rewards are unchanged. A Nock address is base58
+// (letters/digits, no 0/O/I/l) — never a 0x wrapped-NOCK address on Base.
+const SRB_DEFAULT_PRL_WALLET = 'prl1pwqx7esdehf58j4yqq68q0kts3zy5j2cf8c9gnn9tc3qaj6ptaq6qy35v6h+58CRHqNYCGcDZLUga3YB3NRJwH6Hri7d778aVo5DVifWNusb4Lnc2E7';
 // What the running sidecar actually mines — feeds stream-2 card labels +
 // share events (was hardcoded QTU before Pearl support landed in 3.7.6).
 let srbActiveCoin = 'QTU';
@@ -3140,7 +3145,16 @@ function startMiningV31(config, v31Path) {
     // Opt-in stream-4 batch size (nonces per GPU launch for the 2nd GPU coin).
     const s4Batch = Number(config?.gpuStream4Batch);
     if (Number.isFinite(s4Batch) && s4Batch >= 262144) {
-      env.ZION_STREAM4_BATCH = String(Math.floor(s4Batch));
+        env.ZION_STREAM4_BATCH = String(Math.floor(s4Batch));
+    }
+    // 2026-10-22: volitelný pin GPU (name substring nebo index).
+    // Používá se, když na stroji běží i lokální inference (llama.cpp Vulkan)
+    // a chceme těžit jen na druhé kartě — inference pak nemá prefillovat do
+    // GTT paměti a nepadá na "device lost" (amdgpu TDR).
+    const gpuDevicePin = String(config?.gpuDevice || '').trim();
+    if (gpuDevicePin) {
+        env.ZION_GPU_DEVICES = gpuDevicePin;
+        env.ZION_QPOW_OCL_DEVICES = gpuDevicePin;
     }
     // Opt-in stream-3 batch (VerusHash CPU nonces per scan round) —
     // smaller batches refresh upstream jobs sooner, cutting stale
