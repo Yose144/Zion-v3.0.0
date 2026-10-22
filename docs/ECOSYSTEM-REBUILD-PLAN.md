@@ -164,7 +164,7 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 - `V3/`→archive — `.gitmodules` submodule `V3/L2/bridge/contracts/lib/openzeppelin-contracts` — git mv neaktualizuje submodule path → ruční .gitmodules koordinace nutná; `archive/V3` už existuje a diverguje (deduplikace k posouzení)
 - `BTCunlock/` — referencovaný živým kódem (`apps/desktop-agent/renderer.js`, `ZION_OS/dashboard/*`)
 - `Hiran/` (325M) — referencovaný `V31/L3/ai-native/src/*.rs`, `V31/cli`, `ZION_OS/dashboard/*.js`, `scripts/openclaw-coding.sh`
-- untracked root dirs (`backups/`16G, `PUBLIC/`klon, `venv-hiran/`, `logs/`, `BACKUP/`, `AuXpow/`, `dashboard/`, `data/` runtime) — filesystem úklid, ne git; rozhodnout přemístění mimo workspace vs. nechat + zdokumentovat
+- untracked root dirs (`backups/`16G, `PUBLIC/`klon, `venv-hiran/`, `logs/`, `BACKUP/`, `AuXpow/`, `dashboard/`, `data/` runtime) — **ROZHODNUTO 2026-10-22: všechno zůstává v repu**, zdokumentováno v [`REPO-MAP.md`](../REPO-MAP.md) §3 (runtime/artefakt mapa + kdo je používá)
 7. Aktualizovat `.github/`, `AGENTS.md`, všechny `deploy-*.sh` cesty
 
 ### F3 — Kanonizace webu
