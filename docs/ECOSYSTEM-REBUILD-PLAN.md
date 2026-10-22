@@ -115,22 +115,26 @@ auth., rpc., grafana., dashboard. — servisní subdomény (nezasáhne IA)
 
 ### F0 — Inventarizace ✅ HOTOVO (tento dokument + INVENTORY.md)
 
-### F1 — Web tier na edge2 (nejviditelnější zisk)
+### F1 — Web tier na edge2 ✅ HOTOVO (2026-10-22)
 
-**Proč:** −1 hop na každý request, eliminace SSH-session SPOF ve veřejné cestě, TLS u aplikace. `rpc.` už dokazuje, že edge2 servíruje veřejně.
+**Proč:** −1 hop na každý request, eliminace SSH-session SPOF ve veřejné cestě, TLS u aplikace.
 
-**Předpoklady:** edge2 nemá nginx/certbot → nainstalovat (`apt install nginx certbot python3-certbot-nginx`); otevřít :80/:443 ve firewallu (teď jen SSH :22 veřejné).
+**Provedeno:**
+1. ✅ `infra/nginx/` — `edge-current/` baseline snapshot + `edge2/` 9 vhostů + `catchall.conf`; všechny proxy → lokální porty (žádný tunel v request cestě)
+2. ✅ edge2: nginx 1.24 + certbot 2.9; ufw :80/:443 otevřeny; `/etc/letsencrypt` přeneseno (11 certů)
+3. ✅ Statické weby na edge2: `/var/www/zion-maintenance` (441M apex intro), `/var/www/oasis`, `/var/www/pool`, `/var/www/freeworld`, `/var/www/zion-miner` (3.3G), `/var/www/downloads`
+4. ✅ `/zion-miner/` + `/downloads/` = lokální aliasy; `/rig-output/` = přechodný proxy → Edge (rig logger tam žije)
+5. ✅ Rate-limit zóny `conf.d/rate-limit.conf` načtené; http2 sjednoceno na všech :443 (žádné warnings)
+6. ✅ **Certbot renew dry-run: všech 8 zionterranova certů SUCCESS** (apex webroot + nginx auth ověřeny); `dashboard`+`newearth` renewal na edge2 `.disabled` (jejich DNS = Edge, renewal patří tam)
+7. ✅ **DNS switch proveden** — 9 explicitních flipů (apex/www/app/auth/freeworld/market/oasis/pool/rpc) → 207.180.217.100; wildcard zůstává na Edge (ops subs)
+8. ✅ Live smoke: všech 9 domén 200; ZIS `/health`, app `/api/health` (node 91942+pool), oasis `/health`, freeworld API data, pool `/public/v1/blocks` live, rpc JSON-RPC; nginx error.log čistý
 
-**Kroky:**
-1. `infra/nginx/` — kanonizovat vhosty z edge do repa (12 domén + nové)
-2. edge2: nginx + certbot; přenést vhosty: app, apex(intro), oasis, freeworld, market, auth, pool, rpc, dashboard, (grafana volitelně)
-3. Statické weby na edge2: `/var/www/intro` (z `zion-maintenance` 441M — ⚠️ proč tak velké? audit), `/var/www/oasis` 17M, `/var/www/pool` 1.7M, `/var/www/freeworld` 6.1M
-4. Certy: LE na edge2 pro všech 10 domén (dry-run, pak reálné)
-5. **DNS switch** (TTL předem →300s): postupně app→freeworld→oasis→market→auth→dashboard→apex→pool; rpc. už jede přímo
-6. Zkrátit chain-tunel: edge už nepotřebuje :3000/:3100/:8096 — nechat jen to, co edge interně volá (zion-rpc :9445? qtc? — ověřit, kdo na edge tyto porty konzumuje)
-7. Smoke: `curl -I https://<každá-doména>/` + 3 assety + 2 API před/po každém DNS flipu
+**Zbývá (F1 residual, není blocker):**
+- chain-tunel legs na edge: :3000/:3100/:8096 už edge nepotřebuje pro web — redukovat až po stabilizaci
+- `zion-maintenance` 441M audit (proč tak velké?)
+- Edge nginx vhosty = fallback, vypnout až ve F6
 
-**Rollback:** DNS zpět na 62.171.141.136 (TTL 300s), edge nginx vhosty ponechané jako fallback po dobu přechodu.
+**Rollback:** DNS 9 záznamů zpět na `62.171.141.136`; edge vhosty živé. **Rollback window ≈ do 25.11.2026** (expirace auth certu na Edge — edge už flipnuté domény nepřeobnoví, http-01 jde na edge2).
 
 ### F2 — Repo reorganizace
 
