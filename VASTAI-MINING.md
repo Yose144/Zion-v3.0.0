@@ -662,6 +662,49 @@ systemctl --user stop  zion-qwen14-cuda.service
 systemctl --user start zion-qwen-cuda.service
 ```
 
+### 5.11 Kódovací specialista: Qwen2.5-Coder-7B (2026-10-22)
+
+Pro **reálné kódování** je obecný Qwen3-4B slabý — na testovací úloze
+„najdi chybu“ si vymyslel bug ve funkci `chunk` (která je správná) a přehlédl
+skutečný bug v `dedupe` (`.id` na dict řádku). Specializovaný kódovací model
+je tu lepší:
+
+| Model | tok/s (1070 Ti) | Bug-fix test | Poznámka |
+|---|---|---|---|
+| Qwen3-4B (obecný) | 49 | ❌ vymyslel si bug, pravý přehlédl | vyřazený jako primár |
+| **Qwen2.5-Coder-7B** | **33** | kód specialista (HumanEval ~88 %) | ✅ **primární model** |
+| Gemma 4 E4B | 7 | ✅ typovaný kód | alternativa, 32k kontext (Vast) |
+| Qwen3-14B | 1.8 | ✅ správně odmítl falešný předpoklad | ruční swap, 2 tok/s |
+
+**Qwen2.5-Coder-7B** (`~/zion-hiran/models/qwen2.5-coder-7b-instruct-Q4_K_M.gguf`,
+4.36 GB) se **vejde celý na 1070 Ti** (celý model na GPU, 33 tok/s, 256k kontext)
+→ jednotka `zion-qwen-cuda.service` na portu 8070.
+
+> **Qwen3-4B na Navi padal na TDR** (`device lost`) — 2.4 GB modelu + KV na 6 GB
+> kartě, kde těžba drží 2.9 GB → compute buffery přetekly do GTT. Proto je
+> jednotka `zion-qwen-fast.service` (:8074) vypnutá a z Continue odstraněna.
+
+### 5.11b Robustní model (Qwen3-Coder-30B-A3B) — potřeba 24 GB karta
+
+Pro opravdu robustní kódování je třeba **Qwen3-Coder-30B-A3B** (Q4_K_M
+**17.28 GB**, MoE se 3B aktivními parametry → rychlý i chytrý, 256k kontext).
+Nevejde se na 8 GB ani 12 GB kartu → **pronájem 24 GB RTX 3090 na Vast.ai
+($0.15–0.26/h)**.
+
+Pokus 2026-10-22 (3 různé hosty) **skončil neúspěchem**:
+
+| Offer | $/h | Výsledek |
+|---|---|---|
+| 57030135 (US, 99.8 %) | 0.176 | visel v `loading` ~20 min |
+| 55620874 (Quebec) | 0.173 | **OCI chyba hostu**: `failed to create task for container ... error modifying OCI specification` → `cur_state: stopped` |
+| 51515504 (California) | 0.193 | visel v `loading` |
+
+→ všechny tři instance zničeny (`vastai destroy instance <id> -y`), zůstává jen
+**57054247 (RTX 3060, $0.0729/h)**. Když se na Vastu objeví funkční 24 GB
+host, postup je: `vastctl.py rent <offer> --disk 60` → copy `llama.cpp` CUDA
+build ze stávající instance (sm_86) → stáhnout GGUF (30 MB/s ≈ 10 min) →
+`llama-server -m ... --port 8000` → tunel z PC → entry v `~/.continue/config.yaml`.
+
 ### 5.12 „Message exceeds context limit" — příčina a fix
 
 Chybu hází **sám Continue** (`gui/assets/index.js` → `inlineErrorMessage ===
