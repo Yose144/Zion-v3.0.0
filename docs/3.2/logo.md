@@ -8,13 +8,13 @@ This file tracks where the **original company logo** (historic ZION mark) and th
 |------|----------------|-------|
 | **Original company logo** | `APP&WEB/MarketPlace/public/logo144.png` (500×500 PNG) | Also copied to `APP&WEB/website-v2.9/public/images/logo144.png` |
 | **Stargate / portal Z** | `APP&WEB/website-v2.9/public/stargate/Z.gif` (+ `Z.webp`) | Grayscale/contrast animated Z used in the stargate/portal |
-| **Canonical ZION symbol** | `LOGO/ZionLogo.png` | Master raster source (2026 rasta Z-Tree mark) |
-| | `LOGO/org/symbol-1024x1024.png` | Master transparent PNG |
-| | `LOGO/org/symbol-200x200.png` | CoinMarketCap / favicon / apple-touch |
-| | `LOGO/org/favicon.ico` | Multi-resolution ICO |
-| | `LOGO/org/zion-social-banner.png` | OpenGraph / Twitter banner |
-| | `LOGO/org/zion-desktop.ico` / `zion-desktop.icns` | Desktop agent Windows / macOS icons |
-| | `LOGO/org/zion-mobile-adaptive-icon.png` / `zion-mobile-splash.png` | Mobile Expo icons |
+| **Canonical ZION symbol** | `canon/brand/ZionLogo.png` | Master raster source (2026 rasta Z-Tree mark) |
+| | `canon/brand/org/symbol-1024x1024.png` | Master transparent PNG |
+| | `canon/brand/org/symbol-200x200.png` | CoinMarketCap / favicon / apple-touch |
+| | `canon/brand/org/favicon.ico` | Multi-resolution ICO |
+| | `canon/brand/org/zion-social-banner.png` | OpenGraph / Twitter banner |
+| | `canon/brand/org/zion-desktop.ico` / `zion-desktop.icns` | Desktop agent Windows / macOS icons |
+| | `canon/brand/org/zion-mobile-adaptive-icon.png` / `zion-mobile-splash.png` | Mobile Expo icons |
 
 ## Where the original company logo is used
 
@@ -36,22 +36,22 @@ This file tracks where the **original company logo** (historic ZION mark) and th
 - `APP&WEB/website-v2.9/public/maintenance.html` → favicon + apple-touch (`symbol-200x200.png`)
 - `APP&WEB/website-v2.9/public/maintenance.html` → OpenGraph (`zion-social-banner.png`)
 - `APP&WEB/website-v2.9/public/tokenlists/wzion.tokenlist.json` → token logoURI (`https://zionterranova.com/symbol-200x200.png`)
-- `APP&WEB/mobile-app/assets/` → `icon.png`, `splash.png`, `adaptive-icon.png` generated from `LOGO/org/`
-- `APP&WEB/desktop-agent/src/assets/` → `icon.png`, `icon.ico`, `icon.icns`, `tray-icon.png`, `logo.png` generated from `LOGO/org/`
+- `APP&WEB/mobile-app/assets/` → `icon.png`, `splash.png`, `adaptive-icon.png` generated from `canon/brand/org/`
+- `APP&WEB/desktop-agent/src/assets/` → `icon.png`, `icon.ico`, `icon.icns`, `tray-icon.png`, `logo.png` generated from `canon/brand/org/`
 - `archive/DesktopAgentP3.0.6/src/assets/` → archived desktop agent copies
 - `ZION_OS/dashboard/dashboard.html` + `v31/index.html` → `/v31/favicon.ico` + `/v31/symbol-200x200.png` header icon
 - `ZION_OS/dashboard/app.py` → `AUTH_EXEMPT_ROUTES` for `/v31/favicon.ico` and `/v31/symbol-200x200.png`
 
 ## Build and deploy workflow
 
-1. Place the master raster in `LOGO/ZionLogo.png`.
-2. Run `python3 LOGO/org/build_org_logos.py` to regenerate `LOGO/org/`.
+1. Place the master raster in `canon/brand/ZionLogo.png`.
+2. Run `python3 canon/brand/org/build_org_logos.py` to regenerate `canon/brand/org/`.
 3. Copy the generated assets to the targets (website, marketplace, OasisWeb, mobile, desktop, dashboard).
 4. See `docs/3.1/logo.md` for the full step-by-step workflow.
 
 ## Recent changes (2026-08-07)
 
-1. Re-generated the `LOGO/org/` brand package from the new `LOGO/ZionLogo.png`.
+1. Re-generated the `canon/brand/org/` brand package from the new `canon/brand/ZionLogo.png`.
 2. Replaced canonical symbol assets across website-v2.9, MarketPlace, OasisWeb, mobile app, desktop agent and dashboard.
 3. Added `.ico`, `.icns` and mobile splash to the build script.
 4. Updated this inventory to point at the new canonical source.

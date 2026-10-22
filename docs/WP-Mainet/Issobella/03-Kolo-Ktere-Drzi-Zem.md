@@ -33,7 +33,7 @@ Poutníci model chvíli drželi v ruce a předávali si ho. Byl lehký — ale k
 
 **Umělá gravitace je první „ekologie" Issobelly.** Bodhi Gaia se učí žít s půdou; Issobella se učí žít **bez ní** — a proto musí gravitaci vyrobit. Jediná známá cesta, která nepotřebuje zázrak, je rotace: odstředivé zrychlení ve velkém, pomalém toru.
 
-Z výzkumného balíku `L6data/Umela_Gravitace.md` vycházejí konkrétní volby, které nejsou náhodné:
+Z výzkumného balíku `canon/l6/Umela_Gravitace.md` vycházejí konkrétní volby, které nejsou náhodné:
 
 - **0,38 g jako domov.** Ne plná zemská váha — přibližně marsovská. Dost na to, aby tělo neodplývalo, a zároveň příprava na světy, kde je gravitace nižší.
 - **200 m průměr, ~2 RPM.** Větší prstenec = nižší otáčky = méně Coriolisových efektů a gradientu mezi hlavou a nohama. Pomalost je vlastnost, ne kompromis.
@@ -48,12 +48,12 @@ Tři varianty stavby (velký torus, lanová centrifuga, hybrid) jsou v balíku r
 
 | Obraz / tvrzení | Stav | Kotva |
 |---|---|---|
-| Cílová umělá gravitace 0,38 g (Mars-like) pro dlouhý pobyt | **HORIZONT** (designová volba) | `L6data/Umela_Gravitace.md` §4 (hlavní torus 0,38 g; Měsíc 0,16 g pro experimenty) |
-| Torus ~200 m průměr (r=100 m), ~1,9–2,1 RPM pro 0,38–0,5 g | **HORIZONT** (výpočty) | `L6data/Umela_Gravitace.md` §2–3 (tabulka RPM/poloměr; pravidlo „nižší RPM = menší Coriolis") |
-| Rehabilitační centrifuga 1,0 g, ~20 min denně | **HORIZONT** | `L6data/Umela_Gravitace.md` §4 (r=12 m, 12 RPM) |
-| Spin-up 0,1 → 1,0 RPM za 24 h pro adaptaci posádky | **HORIZONT** | `L6data/Umela_Gravitace.md` §4 (tabulka) |
-| Tři varianty: velký torus (Von Braun), lano, hybrid | **HORIZONT** | `L6data/Umela_Gravitace.md` §3 (vč. příkladu Von Braun 76 m, 80 lidí, 1950s) |
-| LEO 400–550 km, napájení 100 kW → 1 MW+ | **HORIZONT** | `L6data/Architektura.md` §2 (parametry dráhy a energie) |
+| Cílová umělá gravitace 0,38 g (Mars-like) pro dlouhý pobyt | **HORIZONT** (designová volba) | `canon/l6/Umela_Gravitace.md` §4 (hlavní torus 0,38 g; Měsíc 0,16 g pro experimenty) |
+| Torus ~200 m průměr (r=100 m), ~1,9–2,1 RPM pro 0,38–0,5 g | **HORIZONT** (výpočty) | `canon/l6/Umela_Gravitace.md` §2–3 (tabulka RPM/poloměr; pravidlo „nižší RPM = menší Coriolis") |
+| Rehabilitační centrifuga 1,0 g, ~20 min denně | **HORIZONT** | `canon/l6/Umela_Gravitace.md` §4 (r=12 m, 12 RPM) |
+| Spin-up 0,1 → 1,0 RPM za 24 h pro adaptaci posádky | **HORIZONT** | `canon/l6/Umela_Gravitace.md` §4 (tabulka) |
+| Tři varianty: velký torus (Von Braun), lano, hybrid | **HORIZONT** | `canon/l6/Umela_Gravitace.md` §3 (vč. příkladu Von Braun 76 m, 80 lidí, 1950s) |
+| LEO 400–550 km, napájení 100 kW → 1 MW+ | **HORIZONT** | `canon/l6/Architektura.md` §2 (parametry dráhy a energie) |
 | Fyzika rotující gravitace (g_eff = ω²r/g₀) | **ŽIVÉ** (fyzika) | Klasická mechanika; veřejně ověřitelné |
 | „Kolo" jako příběhový obraz + model v táboře | **MÝTUS** | Narativní stylizace pro tuto knihu |
 

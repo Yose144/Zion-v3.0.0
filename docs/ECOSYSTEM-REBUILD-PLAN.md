@@ -145,7 +145,7 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 3. **V31 → chain/:** jen adresář (crate názvy zůstávají `v31-*` — rozhodnout §4.4)
 4. **docs/WP-Mainet → canon/books/:** přesun knih; ~100+ odkazů k přepsání (README, AGENTS, docs/3.2, .gitignore, pdf skripty) — dedikovaný commit
 5. **infra/:** sesbírat `edge-deploy/`, deploy skripty z `apps/*/deploy/`, systemd unity ze `ZION_OS/infra/systemd/`, nginx z repa `V31/deploy/nginx/`
-6. **canon/l*/:** `L2data`–`L6data` + `L5Projects` jsou kanon/dokumenty + source artwork, NE runtime data → `canon/l2..l6` (**provedeno v batch 1**); `data/` u kořene = untracked runtime DBs, zůstává; `LOGO/` → `canon/brand/` (26 odkazů — dedikovaný commit)
+6. **canon/l*/:** `L2data`–`L6data` + `L5Projects` jsou kanon/dokumenty + source artwork, NE runtime data → `canon/l2..l6` (**provedeno v batch 1**); `data/` u kořene = untracked runtime DBs, zůstává; `canon/brand/` → `canon/brand/` (26 odkazů — dedikovaný commit)
 
 **F2 batch 1 ✅ (2026-10-22):** `L2data`→`canon/l2`, `L3data`→`canon/l3`, `L4data`→`canon/l4`, `L5Projects`→`canon/l5`, `config/`→`archive/config/`; fixnuto: `freeworld/tools/images.py`, `freeworld/AGENTS.md`, `BohemiaDao.md` linky.
 **Batch 1b ✅:** `WarpBeta`→`archive/WarpBeta` (7 souborů opraveno), `config/`→`archive/config/`.

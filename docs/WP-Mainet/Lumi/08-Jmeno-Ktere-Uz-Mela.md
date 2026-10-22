@@ -85,10 +85,10 @@ Světlo se zúžilo a Lumi viděla, co roku 2026 z té noci skutečně existuje.
 | „*Iso + bella*" jako původ názvu stanice | **MÝTUS** | `Issobella/01` (kanonická mytologie Knihy Nebe, ne lingvistika) | — |
 | Ztotožnění: Lumi = rybářova dcera z hřebene = kněžka s lucernou = Elizabeth; stanice nese její jméno | **MÝTUS** (kanonické rozhodnutí této knihy) | kap. 13 §1; `Issobella/01` („dcera rybáře, která se jmenovala podle babičky a ne podle hvězdy") | — |
 | Historický původ názvu „Issobella" v projektu | **NEDOLOŽENO** (kniha ho netvrdí) | `Issobella/10` §„Známé nesrovnalosti" — původ v git historii nedokumentován | rozhodnutí autorů, zda a jak původ zdokumentovat |
-| Stanice Issobella existuje / má termín startu | **HORIZONT** | `Issobella/10`; `L6data/`; web `/l6-issobella` (roadmapa označená jako vize) | feasibility, partneři, roky práce; žádný modul neexistuje |
+| Stanice Issobella existuje / má termín startu | **HORIZONT** | `Issobella/10`; `canon/l6/`; web `/l6-issobella` (roadmapa označená jako vize) | feasibility, partneři, roky práce; žádný modul neexistuje |
 | „Rok 2040. Orbitální stanice Issobella. 420 kilometrů nad Zemí." | **ŽIVÉ** (v dokumentaci) — narativní scéna, sama označená „HORIZONT 2040" | `docs/TerraNova/BASE_FINAL/00-PROLOG.md` | — |
 | Kosmologický princip: vesmír je na velkých škálách homogenní a izotropní | **ŽIVÉ** (fyzika) | veřejně ověřitelné (izotropie CMB, struktura na škálách > 100 Mpc) | — |
-| Název „Issobella" se v knihách a na webu používá pro vrstvu L6 | **ŽIVÉ** (v dokumentaci) | `nirvana/11`; `L6data/README.md`; web `/l6-issobella`; služba `zion-v31-issobella` | — |
+| Název „Issobella" se v knihách a na webu používá pro vrstvu L6 | **ŽIVÉ** (v dokumentaci) | `nirvana/11`; `canon/l6/README.md`; web `/l6-issobella`; služba `zion-v31-issobella` | — |
 | Hřeben, Sádhu, oheň, babička z pobřeží s holí | **MÝTUS** | `Issobella/01` + tato kniha (babička je nová postava, bezejmenná) | — |
 
 ---

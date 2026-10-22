@@ -4,7 +4,7 @@
 > **Status:** DRAFT narativně-technická série (L6 / STAVBA · HORIZONT · MÝTUS), navržená ke kanonizaci podle [`MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) (třída E — kulturní / veřejná komunikace; pasáže o fondu a governance třída C).
 > **Vznik:** 2026-09-12 pro verzi **3.3 „Nirvana"**.
 > **Místo v kompasu:** kniha směru *Nad* (Nebe — hledí) — hluboké rozšíření epizody 11 série Nirvana [*Kvantový oheň Issobella*](../nirvana/11-Kvantovy-Ohen-Issobella.md) a prologu TerraNova (stanice na oběžné dráze, rok 2040).
-> **Staví na:** [`Sůl této země`](../SulZeme/00-README.md), [`Nirvana`](../nirvana/00-README.md), [`NirvanaCloud`](../NirvanaCloud/00-README.md), [`BodhiGaia`](../BodhiGaia/00-README.md), [`Mise Amenti`](../MiseAmenti/README.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) a výzkumném balíku [`L6data/`](../../../L6data/README.md).
+> **Staví na:** [`Sůl této země`](../SulZeme/00-README.md), [`Nirvana`](../nirvana/00-README.md), [`NirvanaCloud`](../NirvanaCloud/00-README.md), [`BodhiGaia`](../BodhiGaia/00-README.md), [`Mise Amenti`](../MiseAmenti/README.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) a výzkumném balíku [`canon/l6/`](../../../canon/l6/README.md).
 > **Jazyk:** čeština (kanonická), index v angličtině: [`00-README_EN.md`](./00-README_EN.md). Překlady nesmí zesilovat jistotu, emoce ani finanční význam oproti českému originálu (`MiseAmenti/08` §5.7).
 > **Pravidlo textu:** *Příběh → Co to znamená → Kotva pravdy*. Kde text mluví o síti, fondu, adresách nebo kódu, vítězí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../3.2/StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md) a živý repozitář před příběhem.
 
@@ -50,10 +50,10 @@ Je to nejvzdálenější kniha série — a proto musí být **nejpřísnější
 | Premine slot 6 drží 2,5 mld ZION pro L6 na `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, time-lock do bloku 144 000. | **ŽIVÉ** | `V31/L1/core/src/v3_compat.rs`, [`CHANGES_L6_ISSOBELLA.md`](../../3.2/CHANGES_L6_ISSOBELLA.md), `StatusV3.md` 2026-09-12 | Nezávislý block-explorer pohled |
 | `zion-issobella` tracker běží na Edge (`127.0.0.1:8097`), skenuje coinbase, vystavuje zůstatek fondu / návrhy / metriky. | **ŽIVÉ** (read-only) | `V31/L6/issobella/`, `zion-v31-issobella.service`, `StatusV3.md` 2026-08-23 | Veřejný portál; vynucení API klíče |
 | Fond dnes vyplácí granty. | **NEPLATNÉ TVRZENÍ** (dnes) | Gate G10: žádná automatická dispozice; cesta přes DAO je zatím sumarizační ([`L5_L6_ACTIVATION_PLAN.md`](../../3.2/L5_L6_ACTIVATION_PLAN.md)) | DAO UI, payout flow, guardian multisig, první projekt |
-| Výzkumný balík L6 (architektura stanice, kvantový motor, umělá gravitace, lidské faktory, historie) je veřejný a servírovaný. | **ŽIVÉ** (dokumentace) | [`L6data/`](../../../L6data/README.md), mirror `APP&WEB/website-v2.9/public/docs/l6/`, katalog `/docs` → `l6-*` | Peer review, externí experti |
-| Pozemní uzel Kostarika — výzkumný kampus a budoucí TT&C ground station, sdílený pozemek s L5 Novou Amerikou. | **HORIZONT** | [`11-Pozemni-Uzel-Kostarika.md`](./11-Pozemni-Uzel-Kostarika.md), `L6data/Pozemni_Stanice_Kostarika.md` | Site survey, akvizice, povolení SUTEL, hardware; žádná anténa nestojí |
-| Orbitální stanice na dráze 400–550 km s umělou gravitací a posádkou. | **HORIZONT** | Prolog TerraNova (2040), `L6data/Architektura.md`, `/l6-issobella` (roadmapa 2030→2045+) | Feasibility studie, partneři, roky práce; žádný modul neexistuje |
-| Kvantový motor / energetika (demonstrátor 2033, CubeSat 2035). | **HORIZONT / HYPOTÉZA** | `L6data/Kvantovy_Motor.md` (TRL, bezpečnostní brány), roadmapa na webu | Výzkum, laborator, ověření; žádný hardware |
+| Výzkumný balík L6 (architektura stanice, kvantový motor, umělá gravitace, lidské faktory, historie) je veřejný a servírovaný. | **ŽIVÉ** (dokumentace) | [`canon/l6/`](../../../canon/l6/README.md), mirror `APP&WEB/website-v2.9/public/docs/l6/`, katalog `/docs` → `l6-*` | Peer review, externí experti |
+| Pozemní uzel Kostarika — výzkumný kampus a budoucí TT&C ground station, sdílený pozemek s L5 Novou Amerikou. | **HORIZONT** | [`11-Pozemni-Uzel-Kostarika.md`](./11-Pozemni-Uzel-Kostarika.md), `canon/l6/Pozemni_Stanice_Kostarika.md` | Site survey, akvizice, povolení SUTEL, hardware; žádná anténa nestojí |
+| Orbitální stanice na dráze 400–550 km s umělou gravitací a posádkou. | **HORIZONT** | Prolog TerraNova (2040), `canon/l6/Architektura.md`, `/l6-issobella` (roadmapa 2030→2045+) | Feasibility studie, partneři, roky práce; žádný modul neexistuje |
+| Kvantový motor / energetika (demonstrátor 2033, CubeSat 2035). | **HORIZONT / HYPOTÉZA** | `canon/l6/Kvantovy_Motor.md` (TRL, bezpečnostní brány), roadmapa na webu | Výzkum, laborator, ověření; žádný hardware |
 | Alcubierre–Ekam metrika, Φ rezonance, toroidní stojaté vlny. | **HYPOTÉZA / MÝTUS** | [`nirvana/11`](../nirvana/11-Kvantovy-Ohen-Issobella.md) jako narativní rámec | Žádný fyzikální důkaz; číst jako poezii vědy |
 | Jméno Issobella, Hiranyagarbha, „dům na hvězdné cestě", postavy knihy. | **MÝTUS** | Archetypy a obrazy vytvořené pro tuto sérii | — |
 
@@ -65,7 +65,7 @@ Je to nejvzdálenější kniha série — a proto musí být **nejpřísnější
 - **Není slib, že stanice poletí.** Roadmapa 2030–2045+ je horizont, ne harmonogram s garancí.
 - **Není fyzikální teorie.** Kvantový oheň je obraz a otevřená otázka; tam, kde nemáme důkaz, píšeme *HYPOTÉZA*.
 - **Není militarizace.** Žádná část L6 výzkumu není určena k ozbrojení; bezpečnostní brány jsou součástí designu, ne pozdější náplast.
-- **Není náhrada `StatusV3.md`, `MiseAmenti/07` ani `L6data/`.** Kde se liší, vítězí ony.
+- **Není náhrada `StatusV3.md`, `MiseAmenti/07` ani `canon/l6/`.** Kde se liší, vítězí ony.
 
 ---
 
@@ -73,7 +73,7 @@ Je to nejvzdálenější kniha série — a proto musí být **nejpřísnější
 
 - **Kanonický integrační korpus 3.3:** [`../MiseAmenti/README.md`](../MiseAmenti/README.md) · Registr důkazů: [`07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) · Workstream M5: [`04-Exekucni-Charta-3.3.md`](../MiseAmenti/04-Exekucni-Charta-3.3.md)
 - **Rozhodnutí G10 (režim běhu L5/L6):** [`docs/3.2/L5_L6_ACTIVATION_PLAN.md`](../../3.2/L5_L6_ACTIVATION_PLAN.md)
-- **Výzkumný balík L6:** [`L6data/`](../../../L6data/README.md) · veřejný mirror: `APP&WEB/website-v2.9/public/docs/l6/`
+- **Výzkumný balík L6:** [`canon/l6/`](../../../canon/l6/README.md) · veřejný mirror: `APP&WEB/website-v2.9/public/docs/l6/`
 - **Implementace trackeru:** [`V31/L6/issobella/`](../../../V31/L6/issobella/README.md) (včetně `docs/` — časová osa, CLI, financování, stanice, V31 software)
 - **Změna premine slotu 6:** [`CHANGES_L6_ISSOBELLA.md`](../../3.2/CHANGES_L6_ISSOBELLA.md)
 - **Technický plán 3.3:** [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md)

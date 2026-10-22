@@ -84,7 +84,7 @@ Changed `nonces_searched` from `found_nonce + 1` to `batch_size` in both:
 
 ### Assets Created
 
-- `public/tokens/zion.png` — 128×128 PNG, 35KB (resized from `LOGO/ZionLogo.png`)
+- `public/tokens/zion.png` — 128×128 PNG, 35KB (resized from `canon/brand/ZionLogo.png`)
 - `public/tokens/zion-64.png` — 64×64 PNG, 10KB
 - Copied to both `website-v2.9/public/tokens/` and `MarketPlace/public/tokens/`
 

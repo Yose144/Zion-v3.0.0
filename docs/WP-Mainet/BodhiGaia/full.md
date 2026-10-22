@@ -1778,7 +1778,7 @@ Nad nimi, večerním nebem, se začaly objevovat první hvězdy. A někde za hor
 
 ### Sdílený pozemek s L6 Issobella
 
-Nová Amerika sdílí lokalitu s **pozemní stanicí Issobella** (`L6data/Pozemni_Stanice_Kostarika.md`, `Issobella/11`). Jeden pozemek, dvě vrstvy: L5 pečuje o zem a lidi, L6 staví pozemní segment a výzkumný kampus. Správkyní fondu L6 je **Aelan Vaast** — Polynésanky, která do 18. narozenin Sarah Hubalkové řídí fond samostatně, poté s ní spolupracuje. Spojení obou projektů na jednom místě je záměr, ne náhoda: *Bodhi Gaia pečuje o zemi pod námi, Issobella hlídá nebe nad námi — v Kostarice si drží ruce.*
+Nová Amerika sdílí lokalitu s **pozemní stanicí Issobella** (`canon/l6/Pozemni_Stanice_Kostarika.md`, `Issobella/11`). Jeden pozemek, dvě vrstvy: L5 pečuje o zem a lidi, L6 staví pozemní segment a výzkumný kampus. Správkyní fondu L6 je **Aelan Vaast** — Polynésanky, která do 18. narozenin Sarah Hubalkové řídí fond samostatně, poté s ní spolupracuje. Spojení obou projektů na jednom místě je záměr, ne náhoda: *Bodhi Gaia pečuje o zemi pod námi, Issobella hlídá nebe nad námi — v Kostarice si drží ruce.*
 
 ### Infrastruktura a ekonomika (Fáze 1 → 2)
 
@@ -1825,7 +1825,7 @@ Nová Amerika sdílí lokalitu s **pozemní stanicí Issobella** (`L6data/Pozemn
 | **První národy a Ley Indígena 6172** | **ŽIVÉ** (právní/kulturní fakty) | 24 indiánských teritorií; Bribri, Cabécar, Boruca, Ngäbe, Maleku, Huetar, Chorotega, Térraba; zákon z 1977 | Žádné partnerství ani MOU neexistuje |
 | **Kostarický vesmírný ekosystém** | **ŽIVÉ** (veřejné fakty) | Agencia Espacial Costarricense (2021); satelit Irazú (2018); Ad Astra Rocket Company v Liberii (VASIMR) | Žádná spolupráce není doložena |
 | **Alokace 500M ZION z L5 rezervy** | **ZÁMĚR** (interní listina) | `docs/private/` — účelové označení; on-chain zůstává na adresách slotů 4/5 | DAO proces + multisig pro skutečný spend |
-| **L6 pozemní stanice na sdíleném pozemku** | **HORIZONT** | `L6data/Pozemni_Stanice_Kostarika.md`, `Issobella/11` | Pozemek, povolení, hardware |
+| **L6 pozemní stanice na sdíleném pozemku** | **HORIZONT** | `canon/l6/Pozemni_Stanice_Kostarika.md`, `Issobella/11` | Pozemek, povolení, hardware |
 | **Sibö, kruh starších, stařena na pláži** | **MÝTUS** | Sibö je skutečný stvořitel v bribri/cabécar kosmologii; postavy v příběhu jsou archetypy | — |
 | **Nová Amerika projekt** | **HORIZONT** | Tato kapitola; projektový list `TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md` | Pozemek, entita, tým, FPIC proces, financování |
 

@@ -127,7 +127,7 @@ V31/L1/core (emission, v3_template, v3_compat, difficulty, genesis); V31/L1/cosm
 APP&WEB/identity; APP&WEB/zion-wallet-sdk; V31/L2/multichain, L2contracts.md, warp.example.toml;
 V31/L3/ai-native, docs/3.0.6/HIRAN_OVERVIEW.md; V31/L4/oasis/data/avatars.json,
 APP&WEB/OasisWeb (BabylonIntro.tsx, worlds.ts, WorldPanel.tsx); V31/L5/free-world; V31/L6/issobella;
-L6data/; docs/3.2/L5_L6_ACTIVATION_PLAN.md (G10), docs/3.2/ROADMAP.md (G8/G9); docs/genesis.md;
+canon/l6/; docs/3.2/L5_L6_ACTIVATION_PLAN.md (G10), docs/3.2/ROADMAP.md (G8/G9); docs/genesis.md;
 StatusV3.md, V31/STATUS.md, AGENTS.md (2026-08-22, 2026-09-07, 2026-09-14); MiseAmenti/01, 04, 06, 07;
 ZION_ONBOARDING_PUBLIC_CZ.md; ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md §6; snímek sítě 2026-09-14.
 

@@ -81,14 +81,14 @@ Světlo se zúžilo a prstenec zmizel. Lumi viděla, co roku 2026 ze stromu nad 
 
 | Tvrzení / obraz | Stav | Kotva | Co ještě chybí |
 |---|---|---|---|
-| Pomalé kolo: cíl 0,38 g; torus ~200 m průměru (r = 100 m), ~1,9–2,1 RPM pro 0,38–0,5 g | **HORIZONT** (designová volba / výpočty) | `L6data/Umela_Gravitace.md` §2–4; `Issobella/03` | feasibility, partneři |
-| Malé kolo: rehabilitační centrifuga 1,0 g, ~20 min denně (r = 12 m, 12 RPM); spin-up 0,1 → 1,0 RPM za 24 h | **HORIZONT** | `L6data/Umela_Gravitace.md` §4; `Issobella/03` | — |
-| Dráha a příkon: LEO 400–550 km, napájení 100 kW → 1 MW+ | **HORIZONT** | `L6data/Architektura.md` §2 | — |
-| Rozpis těla: odpor 30′, chůze/běh 30′, centrifuga 20′, protahování 15′; soukromí mysli; rituály | **HORIZONT** (doporučený design) / **STAVBA** (princip privacy) | `L6data/Lidske_Faktory.md`; `Issobella/04` | — |
-| Analogové mise Mars-500 / HI-SEAS jako zdroj poznatků o izolaci | **ŽIVÉ** (historie vědy) | `L6data/Lidske_Faktory.md`; veřejně zdokumentované experimenty | — |
-| Galerie předků: Saljut, Skylab, Mir, ISS, Freedom, Dual Keel | **ŽIVÉ** (historie) | `L6data/Histori.md`; `Issobella/05` | — |
+| Pomalé kolo: cíl 0,38 g; torus ~200 m průměru (r = 100 m), ~1,9–2,1 RPM pro 0,38–0,5 g | **HORIZONT** (designová volba / výpočty) | `canon/l6/Umela_Gravitace.md` §2–4; `Issobella/03` | feasibility, partneři |
+| Malé kolo: rehabilitační centrifuga 1,0 g, ~20 min denně (r = 12 m, 12 RPM); spin-up 0,1 → 1,0 RPM za 24 h | **HORIZONT** | `canon/l6/Umela_Gravitace.md` §4; `Issobella/03` | — |
+| Dráha a příkon: LEO 400–550 km, napájení 100 kW → 1 MW+ | **HORIZONT** | `canon/l6/Architektura.md` §2 | — |
+| Rozpis těla: odpor 30′, chůze/běh 30′, centrifuga 20′, protahování 15′; soukromí mysli; rituály | **HORIZONT** (doporučený design) / **STAVBA** (princip privacy) | `canon/l6/Lidske_Faktory.md`; `Issobella/04` | — |
+| Analogové mise Mars-500 / HI-SEAS jako zdroj poznatků o izolaci | **ŽIVÉ** (historie vědy) | `canon/l6/Lidske_Faktory.md`; veřejně zdokumentované experimenty | — |
+| Galerie předků: Saljut, Skylab, Mir, ISS, Freedom, Dual Keel | **ŽIVÉ** (historie) | `canon/l6/Histori.md`; `Issobella/05` | — |
 | Fyzika rotující gravitace (g_eff = ω²r) | **ŽIVÉ** (fyzika) | klasická mechanika; veřejně ověřitelné | — |
-| Balík papírů je veřejný: výzkumný balík L6 servírovaný v katalogu `/docs` | **ŽIVÉ** (dokumentace) | `L6data/README.md`; `APP&WEB/website-v2.9/public/docs/l6/`; katalog `/docs` → `l6-*` | peer review, externí experti |
+| Balík papírů je veřejný: výzkumný balík L6 servírovaný v katalogu `/docs` | **ŽIVÉ** (dokumentace) | `canon/l6/README.md`; `APP&WEB/website-v2.9/public/docs/l6/`; katalog `/docs` → `l6-*` | peer review, externí experti |
 | Web s prstencem a roadmapou (2030 → 2045+) | **ŽIVÉ** (web) / obsah **HORIZONT** | web `/l6-issobella` („Vize 2035+", „Vize 2040+") | — |
 | Obydlený prstenec, skleník, strom pod stropem, posádka, Korma s konvičkou | **HORIZONT / MÝTUS** | obraz možné budoucnosti; `Issobella/04` (Korma) | žádný modul, žádný člen posádky neexistuje |
 | Záznamy o konkrétních členech posádky Issobelly | — | neexistují — posádka není vybrána; stanice neexistuje | — |

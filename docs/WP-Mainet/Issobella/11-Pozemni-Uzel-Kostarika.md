@@ -79,14 +79,14 @@ Utrácení z premine slotu 6 nadále vyžaduje 3-of-3 admin multisig + DAO vote 
 |---|---|---|---|
 | **Kostarika ~9–10° s. š., dva oceány, bez armády** | **ŽIVÉ** (geografie/politika) | Veřejně ověřitelné údaje | — |
 | **ACE, Irazú, Ad Astra/VASIMR v CR** | **ŽIVÉ** (veřejné fakty) | Agencia Espacial Costarricense (2021); Irazú CubeSat (2018); Ad Astra Rocket Company, Liberia, Guanacaste | Žádná spolupráce není doložena |
-| **Pozemní segment jako první stavitelná část L6** | **HORIZONT** | Tato kapitola; `L6data/Pozemni_Stanice_Kostarika.md` | Site survey, povolení, rozpočet |
+| **Pozemní segment jako první stavitelná část L6** | **HORIZONT** | Tato kapitola; `canon/l6/Pozemni_Stanice_Kostarika.md` | Site survey, povolení, rozpočet |
 | **Sdílený pozemek s L5 LUMI (Nová Amerika)** | **HORIZONT** | `BodhiGaia/13-Nova-Amerika.md`, `TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md` | Akvizice, MOU, FPIC |
 | **Správkyně fondu Aelan Vaast** | **ŽIVÉ** (interní rozhodnutí) | `docs/private/` — darovací listina, succession plan | Její podpis, bydliště, formální přijetí |
-| **TT&C antény, laboratoř, observatoř** | **HORIZONT** | `L6data/Pozemni_Stanice_Kostarika.md` | Hardware, povolení SUTEL, financování |
+| **TT&C antény, laboratoř, observatoř** | **HORIZONT** | `canon/l6/Pozemni_Stanice_Kostarika.md` | Hardware, povolení SUTEL, financování |
 | **Jen-že, kružnice v písku, stanice-mezerá** | **MÝTUS** | Archetypy této knihy | — |
 
 ---
 
 *„Stanice, která nemá kde přistát v myslích lidí, poletí naprázdno. Proto stavíme nejdřív zem, která s ní bude mluvit."*
 
-**Navigace:** [← Kapitola 10: Kotva pravdy a hranice](./10-Kotva-Pravdy-a-Hranice.md) · [Kniha Nebe — index](./00-README.md) · [Technický dokument → `L6data/Pozemni_Stanice_Kostarika.md`](../../L6data/Pozemni_Stanice_Kostarika.md)
+**Navigace:** [← Kapitola 10: Kotva pravdy a hranice](./10-Kotva-Pravdy-a-Hranice.md) · [Kniha Nebe — index](./00-README.md) · [Technický dokument → `canon/l6/Pozemni_Stanice_Kostarika.md`](../../canon/l6/Pozemni_Stanice_Kostarika.md)

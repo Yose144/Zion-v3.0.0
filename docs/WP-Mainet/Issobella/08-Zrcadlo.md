@@ -33,7 +33,7 @@ A pak ukázal na třetí obrázek — seznam dokumentů. *„A tady je zrcadlo n
 - premine kartu: 2,5 mld ZION, time-lock blok 144 000, admin multisig 3-of-3 + DAO vote,
 - dokumentové karty vedoucí do katalogu.
 
-**Katalog `/docs`** — servíruje celý výzkumný balík: `l6-readme`, `l6-architecture`, `l6-quantum-motor`, `l6-artificial-gravity`, `l6-human-factors`, `l6-history` — vše mapované na `APP&WEB/website-v2.9/public/docs/l6/*.md` (mirror `L6data/`).
+**Katalog `/docs`** — servíruje celý výzkumný balík: `l6-readme`, `l6-architecture`, `l6-quantum-motor`, `l6-artificial-gravity`, `l6-human-factors`, `l6-history` — vše mapované na `APP&WEB/website-v2.9/public/docs/l6/*.md` (mirror `canon/l6/`).
 
 **Dashboard** — operátorský pohled: L6 tracker (zůstatek fondu, metriky) v `ZION_OS/dashboard/app.py` a veřejné `MissionControlDashboard`. Read-only — dashboard ukazuje fond, ale fond neutrácí.
 
@@ -49,7 +49,7 @@ A pak ukázal na třetí obrázek — seznam dokumentů. *„A tady je zrcadlo n
 |---|---|---|
 | Veřejná stránka `/l6-issobella` existuje, zobrazuje stanici jako vizi (400–550 km, AG, kvantová laboratoř) | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/l6-issobella/page.tsx` (copy „Vize 2035+/2040+", premine karta) |
 | Roadmapa 2030 → 2035 → 2045+ na webu | **ŽIVÉ** (jako zobrazený horizont) | `page.tsx` (timeline položky `planned`/`vision`) |
-| Dokumenty `L6data/` servírované v katalogu `/docs` jako `l6-*` | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/docs/page.tsx` (mapování `l6-*` → `APP&WEB/website-v2.9/public/docs/l6/*.md`); samotné soubory v `APP&WEB/website-v2.9/public/docs/l6/` |
+| Dokumenty `canon/l6/` servírované v katalogu `/docs` jako `l6-*` | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/docs/page.tsx` (mapování `l6-*` → `APP&WEB/website-v2.9/public/docs/l6/*.md`); samotné soubory v `APP&WEB/website-v2.9/public/docs/l6/` |
 | Premine karta: 2,5 mld, lock 144 000, multisig 3-of-3 + DAO | **ŽIVÉ** | `page.tsx` (`genesisPremineAmount`, `genesisPremineDesc`); `v3_compat.rs` |
 | Dashboard ukazuje L6 metriky (fond, tracker) | **ŽIVÉ** (operátorský pohled) | `StatusV3.md` 2026-08-23; `ZION_OS/dashboard/app.py` |
 | L6 svět v OASIS | **STAVBA / HORIZONT** | OASIS drží L4 světy; L6 nemá vlastní provozní svět v `worlds.ts` |

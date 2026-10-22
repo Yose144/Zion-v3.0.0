@@ -94,7 +94,7 @@ Sloty 4 a 5 (`zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708` + `zion1x535z563d3p6
 
 Slot 6 (`zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, 2 500 000 000 ZION, admin + time-lock 144k) je určen pro **L6 Issobella — Orbital Station & Quantum Research Fund**.
 
-Součástí rozsahu L6 je nově i **pozemní segment v Kostarice** — výzkumný kampus a budoucí TT&C ground station na pozemku sdíleném s L5 uzlem LUMI (Nová Amerika) (HORIZONT; dokumentace `L6data/Pozemni_Stanice_Kostarika.md`, kapitola 11 Knihy Nebe `docs/WP-Mainet/Issobella/11-Pozemni-Uzel-Kostarika.md`). Je to první fyzická doména fondu — kampus, který se dá stavět zaživa, zatímco orbitální stanice zůstává horizontem.
+Součástí rozsahu L6 je nově i **pozemní segment v Kostarice** — výzkumný kampus a budoucí TT&C ground station na pozemku sdíleném s L5 uzlem LUMI (Nová Amerika) (HORIZONT; dokumentace `canon/l6/Pozemni_Stanice_Kostarika.md`, kapitola 11 Knihy Nebe `docs/WP-Mainet/Issobella/11-Pozemni-Uzel-Kostarika.md`). Je to první fyzická doména fondu — kampus, který se dá stavět zaživa, zatímco orbitální stanice zůstává horizontem.
 
 | Role | Osoba / pravidlo |
 |------|------------------|

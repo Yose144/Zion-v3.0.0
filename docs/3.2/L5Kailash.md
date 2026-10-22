@@ -58,7 +58,7 @@ Epilog knihy („Jiný oheň", „Tvé jedenácté poleno", „144 000 ohňů") 
 Korpus už Šambhalu zpracovává striktně symbolicky (`NirvanaCloud/04-Prorocstvi-Digitalni-Sambhaly`, `08-Kotva-Pravdy`): **šambhalský válečník nemá nepřítele, má meč rozlišující moudrosti**. Kailash tuto vrstvu dotváří fyzicky — ne jako „vstup do skrytého království" (doslovné čtení korpus odmítá), ale jako zeměpisný záchytný bod tradice: Kálačakra tantra vzniká a žije v oběhu kolem této hory.
 
 ### Tři povahy ohně — kotva do Kvantové revoluce
-Kruh tiskařů pravdy v `Issobella/02-Kvantovy-Ohen` učí: **oheň má tři povahy — plamen, uhlí a popel.** Plamen se vidí v obrazech a snech; uhlí drží teplo po setmění; popel je to, z čeho se rodí půda. Kailash drží **uhlí**: kvantový oheň, který epizoda `nirvana/11` vznítila jako symbol a L6 Issobella zkoumá jako **hypotézu** (TRL brány, žádný hardware — `L6data/Kvantovy_Motor.md`), tu v příběhu sítě hoří jako krbová teplota custodiánů. Tesař z onoho kruhu je ten samý tesař, který u prastarého ohně sedí. *„Hořet, ne vyhořet — a počítat i s popelem."*
+Kruh tiskařů pravdy v `Issobella/02-Kvantovy-Ohen` učí: **oheň má tři povahy — plamen, uhlí a popel.** Plamen se vidí v obrazech a snech; uhlí drží teplo po setmění; popel je to, z čeho se rodí půda. Kailash drží **uhlí**: kvantový oheň, který epizoda `nirvana/11` vznítila jako symbol a L6 Issobella zkoumá jako **hypotézu** (TRL brány, žádný hardware — `canon/l6/Kvantovy_Motor.md`), tu v příběhu sítě hoří jako krbová teplota custodiánů. Tesař z onoho kruhu je ten samý tesař, který u prastarého ohně sedí. *„Hořet, ne vyhořet — a počítat i s popelem."*
 
 ## 4. Role v síti
 
@@ -93,7 +93,7 @@ Ne stavba — **vztah a respekt**:
 | Milarepa v jeskyních Tisé; legenda závodu s Naro Bönchungem | **ŽIVÉ + MÝTUS** | tradiční poutní příběh, ne historický záznam |
 | Kruh přítomnosti, prastarý oheň, scháziště mistrů, jedenácté poleno, Šambhala jako kraj | **MÝTUS** | rámcové dějiště publikované Kvantové revoluce — literární obraz, ne geologie |
 | Poušť jako Nāgárjunova prázdnota — „vakuum, které je plné" | **INTERPRETACE** | poetická paralela, ne fyzikální tvrzení |
-| Kvantový oheň jako výzkumná osa L6 Issobella | **HYPOTÉZA** | otevřená otázka, ne slib — `L6data/Kvantovy_Motor.md` |
+| Kvantový oheň jako výzkumná osa L6 Issobella | **HYPOTÉZA** | otevřená otázka, ne slib — `canon/l6/Kvantovy_Motor.md` |
 | Uzel L5, fáze vztahu, razítko credencialu | **VIZE** | záměr sítě — neexistuje žádná parcela ani harmonogram |
 
 ## 8. Otevřené otázky
@@ -115,7 +115,7 @@ Ne stavba — **vztah a respekt**:
 - `docs/QUANTUM_REVOLUTION.md` — digest publikované knihy (10 polen/kapitol, prolog+epilog na Kailáše); samotná kniha `APP&WEB/public_html/V2/books/QuantumRevolution{CZ,_EN,…}.pdf` — prolog „Místo nad světem"/„Kruh u věčného ohně", epilog „Jiný oheň"/„Tvé jedenácté poleno"/„144 000 ohňů"
 - `docs/docs2.9/books/quantum-revolution/BOOK_CONTEXT.md` — Kvantová revoluce jako lyrický překlad technické osy projektu
 - `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/73_MILAREPA.md` — avatar #73, jeskyně Tisé (Kailáš)
-- `L6data/Kvantovy_Motor.md` — výzkumná osa kvantového ohně (HYPOTÉZA, TRL brány)
+- `canon/l6/Kvantovy_Motor.md` — výzkumná osa kvantového ohně (HYPOTÉZA, TRL brány)
 - `docs/TerraNova/*/geography/asia/tibet/00-STRECHA-SVETA.md` — Ngari/Kailash v geografické knize; śūnyatá ↔ kvantová superpozice
 - `MiseAmenti/08-Protokol-Zmen.md` — pravidlo MÝTUS vs KANON pro Bábadžího/Šambhalu vrstvu
 - Reální kotvy: Autobiography of a Yogi (Bábadží), Kálačakra tantra, kora/Manasarovar tradice, legenda Milarepa vs Naro Bönchung, UNESCO-free sacred status (hora sama vynucuje „no climb")

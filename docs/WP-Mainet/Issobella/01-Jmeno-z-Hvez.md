@@ -63,7 +63,7 @@ Je to také korektiv k pýchše. Příběh říká nahlas to, co se ve vesmírn�
 | Kosmologický princip — vesmír je na velkých škálách homogenní a izotropní; žádný bod není středem | **ŽIVÉ** (fyzika) | Veřejně ověřitelná kosmologie (CMB izotropie, struktura na škálách >100 Mpc) |
 | Stanice s jménem Issobella existuje na oběžné dráze | **MÝTUS / HORIZONT** | Jméno a fikční scéna vytvořené pro tuto sérii; stanice samotná je horizont ([kap. 10](./10-Kotva-Pravdy-a-Hranice.md)) |
 | Prolog TerraNova zmiňuje orbitální stanici v roce 2040 | **ŽIVÉ** (v dokumentaci) | `docs/TerraNova/BASE_FINAL/00-PROLOG.md` („Rok 2040. Výška 420 kilometrů"), `docs/TerraNova/BASE_FINAL/09-ISSOBELLA.md` — narativní scéna, ne technický plán |
-| Název „Issobella" se v eposech používá pro L6 vrstvu | **ŽIVÉ** (v dokumentaci) | [`nirvana/11-Kvantovy-Ohen-Issobella.md`](../nirvana/11-Kvantovy-Ohen-Issobella.md), `L6data/README.md`, web `/l6-issobella` |
+| Název „Issobella" se v eposech používá pro L6 vrstvu | **ŽIVÉ** (v dokumentaci) | [`nirvana/11-Kvantovy-Ohen-Issobella.md`](../nirvana/11-Kvantovy-Ohen-Issobella.md), `canon/l6/README.md`, web `/l6-issobella` |
 | Etymologie *iso + bella* je „oficiální" původ názvu | **MÝTUS** | Kanonická mytologie této knihy — obraz, ne lingvistický fakt |
 | Dítě, rybářova dcera, Sádhu na hřebeni | **MÝTUS** | Postavy série; Sádhu převzat ze Sůli této země / BodhiGaia |
 

@@ -167,7 +167,7 @@ Zdrojový stav uvádí tuto sadu:
 - [HOTOVO — ROZHODNUTÍ 2026-09-19] Správkyní fondu **L6 Issobella** (Orbital Station & Quantum Research Fund, slot 6, adresa `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`) je **Aelan Vaast** — profesionální surfařka z Tahiti, ambasadorka Alpina Watches (Instagram [@aelanvaast](https://www.instagram.com/aelanvaast/), LinkedIn [aelan-vaast](https://www.linkedin.com/in/aelan-vaast)). Fotografie: `docs/private/aelan_vaast.jpg`.
 - [HOTOVO — ROZHODNUTÍ] Aelan řídí projekt do 18. narozenin **Sarah Hubalkové**; poté Sarah a Aelan fond spravují společně.
 - [HOTOVO — REPO] Utrácení ze slotu 6 vyžaduje 3-of-3 admin multisig + DAO vote + time-lock 144 000 — správkyně fondu sama o sobě nemá disbursement pravomoc.
-- [HOTOVO — ROZHODNUTÍ 2026-09-20] Do rozsahu L6 zařazen **pozemní segment v Kostarice** — výzkumný kampus a budoucí TT&C ground station na pozemku sdíleném s L5 uzlem LUMI (Nová Amerika) (HORIZONT; `L6data/Pozemni_Stanice_Kostarika.md`, `docs/WP-Mainet/Issobella/11-Pozemni-Uzel-Kostarika.md`). První fyzická doména správkyně fondu.
+- [HOTOVO — ROZHODNUTÍ 2026-09-20] Do rozsahu L6 zařazen **pozemní segment v Kostarice** — výzkumný kampus a budoucí TT&C ground station na pozemku sdíleném s L5 uzlem LUMI (Nová Amerika) (HORIZONT; `canon/l6/Pozemni_Stanice_Kostarika.md`, `docs/WP-Mainet/Issobella/11-Pozemni-Uzel-Kostarika.md`). První fyzická doména správkyně fondu.
 - [PENDING] Ověřit, že `zion-v31-issobella` tracker (port 8097) je aktivní a read-only.
 - [PENDING] Doplnit bydliště Aelan Vaast a získat její podpis na prohlášení o přijetí v `ZION_DAROVACI_LISTINA_A_PLNA_MOC.md`.
 

@@ -37,12 +37,12 @@ Jen-že se podíval k obloze, kde se nad táborem začínaly objevovat první hv
 | Premine slot 6 = 2,5 mld ZION, `zion1f5h5k6t8...`, lock 144 000 | **ŽIVÉ** | `v3_compat.rs`, `CHANGES_L6_ISSOBELLA.md`, `StatusV3.md` 2026-09-12 | Nezávislý explorer pohled |
 | `zion-issobella` tracker na Edge, `:8097`, `/api/issobella/` | **ŽIVÉ** (read-only) | `V31/L6/issobella/`, `zion-v31-issobella.service`, `StatusV3.md` 2026-08-23 | Veřejný portál; API-key enforcement |
 | Fond vyplácí granty | **NEPLATNÉ** (dnes) | G10 read-only; DAO cesta čeká na UI | DAO UI, payout flow, multisig, první projekt |
-| Výzkumný balík `L6data/` veřejný v `/docs` | **ŽIVÉ** (dokumentace) | `L6data/README.md`, `APP&WEB/website-v2.9/public/docs/l6/`, `APP&WEB/website-v2.9/src/app/docs/page.tsx` | Peer review, externí experti |
-| Orbitální stanice 400–550 km, AG 0,38 g, posádka | **HORIZONT** | `L6data/Architektura.md`, `Umela_Gravitace.md`, `Lidske_Faktory.md`, `/l6-issobella` | Feasibility, partneři, roky práce |
-| Kvantový motor: demonstrátor 2033, CubeSat 2035 | **HORIZONT / HYPOTÉZA** | `L6data/Kvantovy_Motor.md`, `/l6-issobella` roadmapa | Výzkum, lab, ověření; hardware |
+| Výzkumný balík `canon/l6/` veřejný v `/docs` | **ŽIVÉ** (dokumentace) | `canon/l6/README.md`, `APP&WEB/website-v2.9/public/docs/l6/`, `APP&WEB/website-v2.9/src/app/docs/page.tsx` | Peer review, externí experti |
+| Orbitální stanice 400–550 km, AG 0,38 g, posádka | **HORIZONT** | `canon/l6/Architektura.md`, `Umela_Gravitace.md`, `Lidske_Faktory.md`, `/l6-issobella` | Feasibility, partneři, roky práce |
+| Kvantový motor: demonstrátor 2033, CubeSat 2035 | **HORIZONT / HYPOTÉZA** | `canon/l6/Kvantovy_Motor.md`, `/l6-issobella` roadmapa | Výzkum, lab, ověření; hardware |
 | Alcubierre–Ekam warp, Φ rezonance, toroidní vlny | **HYPOTÉZA / MÝTUS** | `nirvana/11` jako narativní rámec | Fyzikální důkaz — číst jako poezii |
 | L6 svět v OASIS | **HORIZONT** | Žádný provozní L6 svět v `worlds.ts` | Design, integrace |
-| Historie stanic (Saljut, Skylab, ISS, Dual Keel, Freedom) | **ŽIVÉ** (historie) | `L6data/Histori.md`; veřejně zdokumentováno | — |
+| Historie stanic (Saljut, Skylab, ISS, Dual Keel, Freedom) | **ŽIVÉ** (historie) | `canon/l6/Histori.md`; veřejně zdokumentováno | — |
 | Jméno Issobella, izotropie, Hiranyagarbha, postavy | **MÝTUS** | Kanonická mytologie této knihy | — |
 
 ### Co Issobella není
@@ -51,7 +51,7 @@ Jen-že se podíval k obloze, kde se nad táborem začínaly objevovat první hv
 - **Není slib, že poletí** — roadmapa 2030–2050 je horizont, ne garance.
 - **Není fyzikální teorie** — kvantový oheň je otázka, ne závěr.
 - **Není militarizace** — L6 se nevěnuje zbrojení; bezpečnostní brány jsou součást designu.
-- **Není náhrada `StatusV3.md` / `MiseAmenti/07` / `L6data/`** — kde se liší, vítězí kanon.
+- **Není náhrada `StatusV3.md` / `MiseAmenti/07` / `canon/l6/`** — kde se liší, vítězí kanon.
 - **Není nástupce ISS, NASA, ESA ani žádného jiného programu** — čerpá poučení z historie, ne dědictví.
 
 ### Známé nesrovnalosti a otevřené otázky
@@ -64,7 +64,7 @@ Jen-že se podíval k obloze, kde se nad táborem začínaly objevovat první hv
 
 ### Návrh změny (class E → kanonizace)
 
-Tato kniha je navržena ke kanonizaci jako **narativně-technická série L6** podle `MiseAmenti/08-Protokol-Zmen.md` (třída E — kulturní / veřejná komunikace; pasáže o fondu/governance třída C). Kanonizace vyžaduje: (1) doplnění `07-Registr-Dukazu.md` o L6 řádky z této tabulky, (2) revizi `nirvana/11` pro rozlišení subsidy vs. premine, (3) potvrzení M5 workstream vlastníkem, (4) veřejný peer-review průchod `L6data/` před jakýmkoli „ŽIVÉ" přeřazením.
+Tato kniha je navržena ke kanonizaci jako **narativně-technická série L6** podle `MiseAmenti/08-Protokol-Zmen.md` (třída E — kulturní / veřejná komunikace; pasáže o fondu/governance třída C). Kanonizace vyžaduje: (1) doplnění `07-Registr-Dukazu.md` o L6 řádky z této tabulky, (2) revizi `nirvana/11` pro rozlišení subsidy vs. premine, (3) potvrzení M5 workstream vlastníkem, (4) veřejný peer-review průchod `canon/l6/` před jakýmkoli „ŽIVÉ" přeřazením.
 
 ---
 

@@ -27,7 +27,7 @@ A pak bylo ještě jedno pravidlo, tišší: **rituály**. Společné jídlo. T�
 
 ## Co to znamená
 
-**Posádka Issobelly není osádka — je to mikrospolečnost.** Výzkumný balík `L6data/Lidske_Faktory.md` spojuje medicínu, psychologii a sociologii do jednoho poznání: v uzavřeném světě se technika a mysl vzájemně překládají. Zlomená komunikace zabíjí stejně spolehlivě jako zlomený ventil.
+**Posádka Issobelly není osádka — je to mikrospolečnost.** Výzkumný balík `canon/l6/Lidske_Faktory.md` spojuje medicínu, psychologii a sociologii do jednoho poznání: v uzavřeném světě se technika a mysl vzájemně překládají. Zlomená komunikace zabíjí stejně spolehlivě jako zlomený ventil.
 
 Z balíku vychází konkrétní disciplína:
 
@@ -44,11 +44,11 @@ A jeden princip, který kniha přebírá jako heslo: **posádka není výběr do
 
 | Obraz / tvrzení | Stav | Kotva |
 |---|---|---|
-| Denní cvičební režim (odpor 30′, běh 30′, centrifuga 20′, jóga 15′) | **HORIZONT** (doporučený design) | `L6data/Lidske_Faktory.md` (tabulka tréninku při 0,38 g / 1,0 g) |
-| Analogové mise Mars-500 / HI-SEAS jako zdroj poznatků o izolaci | **ŽIVÉ** (historie vědy) | `L6data/Lidske_Faktory.md`; veřejně zdokumentované experimenty |
-| „Mental health privacy" — psychologická data posádky jsou chráněná | **STAVBA** (princip) | `L6data/Lidske_Faktory.md` (zásady soukromí) |
-| Rostliny jako psychotechnologie + vazba na L5 (stromy, Hanuman) | **HORIZONT** | `L6data/Lidske_Faktory.md` (bioregenerativní systémy); vazba na BodhiGaia/Hanuman v této knize |
-| Dlouhodobý výzkum zdraví při 0,38 g (1/3/5 let, biomarkery) | **HORIZONT** (výzkumná otázka) | `L6data/Lidske_Faktory.md` (otázky k výzkumu) |
+| Denní cvičební režim (odpor 30′, běh 30′, centrifuga 20′, jóga 15′) | **HORIZONT** (doporučený design) | `canon/l6/Lidske_Faktory.md` (tabulka tréninku při 0,38 g / 1,0 g) |
+| Analogové mise Mars-500 / HI-SEAS jako zdroj poznatků o izolaci | **ŽIVÉ** (historie vědy) | `canon/l6/Lidske_Faktory.md`; veřejně zdokumentované experimenty |
+| „Mental health privacy" — psychologická data posádky jsou chráněná | **STAVBA** (princip) | `canon/l6/Lidske_Faktory.md` (zásady soukromí) |
+| Rostliny jako psychotechnologie + vazba na L5 (stromy, Hanuman) | **HORIZONT** | `canon/l6/Lidske_Faktory.md` (bioregenerativní systémy); vazba na BodhiGaia/Hanuman v této knize |
+| Dlouhodobý výzkum zdraví při 0,38 g (1/3/5 let, biomarkery) | **HORIZONT** (výzkumná otázka) | `canon/l6/Lidske_Faktory.md` (otázky k výzkumu) |
 | Postava Korma, „rozpis těla", pravidla soukromí mysli | **MÝTUS** | Narativní stylizace pro tuto knihu |
 | Záznamy o konkrétních členech posádky Issobelly | **—** | Neexistují — posádka ještě není vybrána; stanice neexistuje |
 

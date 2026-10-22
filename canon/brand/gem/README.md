@@ -1,6 +1,6 @@
 # ZION Brand Identity — GEM Collection (v3.0.7)
 
-> **Location:** `LOGO/gem/`  
+> **Location:** `canon/brand/gem/`  
 > **Brand Concept:** The sacred **Tree of Life** (`logo.jpeg`) integrated with the iconic **Matrix Z** (`Z.gif`).
 
 ---
@@ -47,7 +47,7 @@
 All assets are generated deterministically via the included Python pipeline:
 
 ```bash
-python3 LOGO/gem/build_gem_logos.py
+python3 canon/brand/gem/build_gem_logos.py
 ```
 
 *Prerequisites: `python3`, `rsvg-convert` (`brew install librsvg`), `Pillow` (`pip install Pillow`).*

@@ -55,7 +55,7 @@ A hranice, kterou sedmá brána nese nahlas: **žádná z bran neprodává cestu
 |---|---|---|
 | Pozorování: `/l6-issobella` je veřejná stránka | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/l6-issobella/page.tsx` |
 | Čtení: výzkumný balík servírován v `/docs` (`l6-*`) | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/docs/page.tsx` mapování; `APP&WEB/website-v2.9/public/docs/l6/*.md` |
-| Výzkumník (DeSci): reálné zapojení do výzkumu L6 | **STAVBA** | Záměr v `L6data/`; zatím žádný formální program / board |
+| Výzkumník (DeSci): reálné zapojení do výzkumu L6 | **STAVBA** | Záměr v `canon/l6/`; zatím žádný formální program / board |
 | Těžař: 5 % každého subsidy jde na L6 automaticky | **ŽIVÉ** | `emission.rs` (`ISSOBELLA_PCT = 5`) |
 | Volič: hlasování o výdajích L6 fondu | **STAVBA** | G10: DAO cesta je read-only, čeká na DAO UI; volba dnes neexistuje |
 | Dárce: dar do L6 fondu | **HORIZONT** | Žádný veřejný darovací mechanismus |

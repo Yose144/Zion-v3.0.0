@@ -129,14 +129,14 @@ EDGE ◄────── permitlisten :8322,:8003 ────── RIG
 | `L5Projects/` | 68M | 55 | 2026-10-21 | živé — L5 artwork/projekty |
 | `BTCunlock/` | 1.2G | 4k | 2026-10-19 | živé — puzzle #71 koordinátor |
 | `Hiran/` | 325M | 131 | 2026-10-18 | živé — LLM trénink pipeline |
-| `L2data`–`L6data/` | ~14M | ~56 | 09–10/2026 | data exporty per vrstva |
+| `L2data`–`canon/l6/` | ~14M | ~56 | 09–10/2026 | data exporty per vrstva |
 | `logs/` | 466M | 214 | never | runtime logy (gitignored?) |
 | `backups/` | 16G | 61 | never | **lokální zálohy → ven z repa?** |
 | `BACKUP/` | 112M | 17 | never | stará záloha |
 | `PUBLIC/` | 855M | 3.6k | never | **samostatný git klon public repa** |
 | `public/` | 28M | 1.5k | 2026-10-21 | public subtree mirror → `public` remote |
 | `venv-hiran/` | 36M | 1.9k | never | python venv |
-| `LOGO/` | 91M | 169 | 2026-09-16 | brand zdrojáky |
+| `canon/brand/` | 91M | 169 | 2026-09-16 | brand zdrojáky |
 | `tools/` | 336K | 12 | 2026-10-22 | utility |
 | `AuXpow/` | 688K | 10 | 2026-08-04 | auxpow experiment? |
 | `config/` | 8K | 1 | 2026-07-31 | 1 soubor |

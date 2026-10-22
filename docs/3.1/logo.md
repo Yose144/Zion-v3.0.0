@@ -4,17 +4,17 @@
 
 ## Zdrojové logo
 
-Kanonický zdroj je `LOGO/ZionLogo.png` (rastr 1024×1024, ideálně čtverec). Staré logo `LOGO/symbol.png` zůstává v repu jako fallback.
+Kanonický zdroj je `canon/brand/ZionLogo.png` (rastr 1024×1024, ideálně čtverec). Staré logo `canon/brand/symbol.png` zůstává v repu jako fallback.
 
 ## Build brand package
 
 Z kořene repa spusť:
 
 ```bash
-python3 LOGO/org/build_org_logos.py
+python3 canon/brand/org/build_org_logos.py
 ```
 
-Skript vygeneruje / přepíše celou adresářovou strukturu `LOGO/org/`:
+Skript vygeneruje / přepíše celou adresářovou strukturu `canon/brand/org/`:
 
 - transparentní `symbol-*.png`
 - favikony a `.ico`
@@ -24,10 +24,10 @@ Skript vygeneruje / přepíše celou adresářovou strukturu `LOGO/org/`:
 - `.icns` pro macOS, `.ico` pro desktop Windows
 - mobile splash a adaptive icon
 
-Pokud chceš znovu vyrobit balíček z původního `LOGO/symbol.png`:
+Pokud chceš znovu vyrobit balíček z původního `canon/brand/symbol.png`:
 
 ```bash
-python3 LOGO/org/build_org_logos.py --source LOGO/symbol.png --legacy-symbol
+python3 canon/brand/org/build_org_logos.py --source canon/brand/symbol.png --legacy-symbol
 ```
 
 ## Deploy do aplikací
@@ -38,7 +38,7 @@ Po buildu zkopíruj aktualizované assety. Bezpečnější je to udělat přes P
 import shutil
 from pathlib import Path
 
-ORG = Path("LOGO/org")
+ORG = Path("canon/brand/org")
 
 copies = [
     # website-v2.9
@@ -91,8 +91,8 @@ for src, dst in copies:
 
 ## Ověření
 
-- `file LOGO/org/symbol-200x200.png` → 200×200 RGBA
-- `file LOGO/org/favicon.ico` → multi-res ICO
+- `file canon/brand/org/symbol-200x200.png` → 200×200 RGBA
+- `file canon/brand/org/favicon.ico` → multi-res ICO
 - `file APP&WEB/desktop-agent/src/assets/icon.icns` → macOS icon
 - `git status` nesmí obsahovat neočekávané změny v `logo144.png`
 
@@ -100,8 +100,8 @@ for src, dst in copies:
 
 ```bash
 git add -A
-git commit -m "Rebrand: regenerate LOGO/org from LOGO/ZionLogo.png and deploy"
+git commit -m "Rebrand: regenerate canon/brand/org from canon/brand/ZionLogo.png and deploy"
 git push origin main
 ```
 
-Viz také `logo.md` (přehled použití) a `LOGO/org/README.md` (popis všech výstupů).
+Viz také `logo.md` (přehled použití) a `canon/brand/org/README.md` (popis všech výstupů).

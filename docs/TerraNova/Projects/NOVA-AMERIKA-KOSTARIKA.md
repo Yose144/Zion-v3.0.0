@@ -28,7 +28,7 @@ Projekt prototypuje **Most protokol** — komunitu, která není „novou koloni
 - **FPIC** — Free, Prior and Informed Consent: žádná spolupráce s indiánskými komunitami bez svobodného, předchozího a informovaného souhlasu
 - **Pevninský most** — Kostarika jako geografický a kulturní středobod obou Amerik; uzel propojující severní a jižní nativní tradice
 - **Živá knihovna prvních národů** — jazyky, semena, medicína, wayfinding; dokumentace jen se souhlasem vlastníků tradice
-- **Spolupráce s L6** — sdílený pozemek s pozemní stanicí Issobella (viz `L6data/Pozemni_Stanice_Kostarika.md`): Země pod námi + nebe nad námi na jednom místě
+- **Spolupráce s L6** — sdílený pozemek s pozemní stanicí Issobella (viz `canon/l6/Pozemni_Stanice_Kostarika.md`): Země pod námi + nebe nad námi na jednom místě
 
 ---
 
@@ -115,4 +115,4 @@ Projekt prototypuje **Most protokol** — komunitu, která není „novou koloni
 - **Koordinátor:** TBD
 - **Správkyně fondu L6 (sdílený pozemek):** Aelan Vaast
 - **ZION:** https://github.com/Zion-TerraNova
-- **Související:** `BodhiGaia/13-Nova-Amerika.md` (kapitola Knihy Země), `L6data/Pozemni_Stanice_Kostarika.md` (L6 technický dokument)
+- **Související:** `BodhiGaia/13-Nova-Amerika.md` (kapitola Knihy Země), `canon/l6/Pozemni_Stanice_Kostarika.md` (L6 technický dokument)

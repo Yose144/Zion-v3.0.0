@@ -97,7 +97,7 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ### Důkaz
 
-- Technické nároky převzaty beze změny stavu z `07-Registr-Dukazu.md`, `BodhiGaia/09`, `Issobella/10`; zdroje: `V31/L1/core/src/{emission,v3_template,v3_compat,difficulty}.rs`, `V31/L1/cosmic-harmony`, `APP&WEB/identity`, `APP&WEB/zion-wallet-sdk`, `L2contracts.md`, `warp.example.toml`, `V31/L3/ai-native` + `docs/3.0.6/HIRAN_OVERVIEW.md`, `V31/L4/oasis/data/avatars.json` (avatar id 40 „Elizabet"), `APP&WEB/OasisWeb` (`BabylonIntro.tsx`, `worlds.ts` `ELIZABET`), `V31/L5/free-world`, `V31/L6/issobella`, `L6data/`, `docs/3.2/L5_L6_ACTIVATION_PLAN.md` (G10), `docs/3.2/ROADMAP.md` (G8/G9), `docs/genesis.md`, `StatusV3.md`, `AGENTS.md` (2026-08-22, 2026-09-07, 2026-09-14); přímý probe `getStatus` na Edge 2026-09-14 (výška 43 500+, 7 aktivních peerů).
+- Technické nároky převzaty beze změny stavu z `07-Registr-Dukazu.md`, `BodhiGaia/09`, `Issobella/10`; zdroje: `V31/L1/core/src/{emission,v3_template,v3_compat,difficulty}.rs`, `V31/L1/cosmic-harmony`, `APP&WEB/identity`, `APP&WEB/zion-wallet-sdk`, `L2contracts.md`, `warp.example.toml`, `V31/L3/ai-native` + `docs/3.0.6/HIRAN_OVERVIEW.md`, `V31/L4/oasis/data/avatars.json` (avatar id 40 „Elizabet"), `APP&WEB/OasisWeb` (`BabylonIntro.tsx`, `worlds.ts` `ELIZABET`), `V31/L5/free-world`, `V31/L6/issobella`, `canon/l6/`, `docs/3.2/L5_L6_ACTIVATION_PLAN.md` (G10), `docs/3.2/ROADMAP.md` (G8/G9), `docs/genesis.md`, `StatusV3.md`, `AGENTS.md` (2026-08-22, 2026-09-07, 2026-09-14); přímý probe `getStatus` na Edge 2026-09-14 (výška 43 500+, 7 aktivních peerů).
 - Jazykový fakt Isabel = Elizabeth: veřejná etymologie; v repozitáři `docs/docs2.9/genesis/09.5-CHAPTER-9-Three-Marian-Apparitions.md`.
 
 ### Dopad na stav tvrzení

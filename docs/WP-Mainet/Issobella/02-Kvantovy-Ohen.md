@@ -33,7 +33,7 @@ Poutníci si odnesli ze stanů zvláštní klid: **oheň nemusí shořet, aby st
 
 **Kvantový oheň Issobelly není produkt — je to disciplína výzkumu.** Kde epizoda 11 Nirvany oheň vznítila jako symbol, tato kapitola ho ukazuje jako **program**: soubor cest, u kterých se předem píše, jak poznáme, že vedou do zdi.
 
-Výzkumný balík `L6data/` to formuluje odborně: TRL (technology readiness levels), bezpečnostní brány, roadmapa 2030→2033→2035→2045. V knize to znamená jednoduché pravidlo: **každá hypotéza se zapisuje i se svým pohřebem** — tedy s tím, jaké pozorování by ji vyvrátilo. Kdo to neudělá, neprodává vědu; prodává naději převlečenou za jistotu.
+Výzkumný balík `canon/l6/` to formuluje odborně: TRL (technology readiness levels), bezpečnostní brány, roadmapa 2030→2033→2035→2045. V knize to znamená jednoduché pravidlo: **každá hypotéza se zapisuje i se svým pohřebem** — tedy s tím, jaké pozorování by ji vyvrátilo. Kdo to neudělá, neprodává vědu; prodává naději převlečenou za jistotu.
 
 Tři kameny z příběhu odpovídají třem skutečným výzkumným osám:
 
@@ -49,12 +49,12 @@ A ještě jedna věc, kterou kruh tiskařů pravdy opakoval pořád: **bezpečno
 
 | Obraz / tvrzení | Stav | Kotva |
 |---|---|---|
-| L6 udržuje veřejný výzkumný dokument o kvantovém pohonu / energetice | **ŽIVÉ** (dokumentace) | `L6data/Kvantovy_Motor.md` → servírováno jako `APP&WEB/website-v2.9/public/docs/l6/Kvantovy_Motor.md`, karta `l6-quantum-motor` v katalogu `/docs` |
+| L6 udržuje veřejný výzkumný dokument o kvantovém pohonu / energetice | **ŽIVÉ** (dokumentace) | `canon/l6/Kvantovy_Motor.md` → servírováno jako `APP&WEB/website-v2.9/public/docs/l6/Kvantovy_Motor.md`, karta `l6-quantum-motor` v katalogu `/docs` |
 | Roadmapa kvantového programu: 2030 L5 laboratoř, 2033 demonstrátor, 2035 CubeSat, 2045 komponenty stanice | **HORIZONT** | Web `/l6-issobella` (`Vize 2035+`, `Vize 2040+`); `L6data` časová osa | 
 | „Quantum Motor Bay" jako modul stanice | **HORIZONT** (koncept) | Popisek modulu na `/l6-issobella`; žádný hardware neexistuje |
 | Alcubierre–Ekam warp metrika, Φ rezonance, toroidní stojaté vlny | **HYPOTÉZA / MÝTUS** | [`nirvana/11`](../nirvana/11-Kvantovy-Ohen-Issobella.md) — narativní rámec; žádný fyzikální důkaz v repu ani mimo něj |
-| „Tři kameny" (reakce, vakuum, metrika) jako reálné výzkumné osy ZION | **STAVBA** (rámcově) | Motiv v `L6data/Kvantovy_Motor.md`; konkrétní experimenty nejsou zadány |
-| Bezpečnostní brány a TRL jako metoda L6 výzkumu | **STAVBA** | Uvedeno v `L6data/Kvantovy_Motor.md` jako metodika |
+| „Tři kameny" (reakce, vakuum, metrika) jako reálné výzkumné osy ZION | **STAVBA** (rámcově) | Motiv v `canon/l6/Kvantovy_Motor.md`; konkrétní experimenty nejsou zadány |
+| Bezpečnostní brány a TRL jako metoda L6 výzkumu | **STAVBA** | Uvedeno v `canon/l6/Kvantovy_Motor.md` jako metodika |
 | Postava Draha a „tiskaři pravdy" | **MÝTUS** | Postavy vytvořené pro tuto knihu |
 
 ---

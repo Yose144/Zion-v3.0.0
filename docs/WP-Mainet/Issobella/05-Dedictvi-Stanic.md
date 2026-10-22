@@ -29,7 +29,7 @@ Korma ukázal na prázdné místo na stěně. *„Tam se píše až to, co se st
 
 ## Co to znamená
 
-**Historie stanic je jediná knihovna, kterou Issobella nesmí přeskočit.** Výzkumný balík `L6data/Histori.md` je nejobšírnější dokument L6 — a není to náhoda. L6 nerefaktoring fyziky; studuje **chyby**.
+**Historie stanic je jediná knihovna, kterou Issobella nesmí přeskočit.** Výzkumný balík `canon/l6/Histori.md` je nejobšírnější dokument L6 — a není to náhoda. L6 nerefaktoring fyziky; studuje **chyby**.
 
 Pět listů ze síně jmen odpovídá pěti lekcím, které historie skutečně nabízí:
 
@@ -47,12 +47,12 @@ Z této knihovny kniha odvozuje heslo L6: **nejedeme rychleji, levněji a líp �
 
 | Obraz / tvrzení | Stav | Kotva |
 |---|---|---|
-| Saljut 1 (1971) — první stanice; zónový interiér navržený G. Balašovou; skleník OAZA; tragédie Sojuzu 11 | **ŽIVÉ** (historie) | `L6data/Histori.md`; veřejně zdokumentováno |
-| Skylab zanikl v atmosféře 1979 | **ŽIVÉ** (historie) | `L6data/Histori.md`; veřejně zdokumentováno |
-| Power Tower (122 m) a Dual Keel (1985) — návrhy, které nebyly postaveny | **ŽIVÉ** (historie) | `L6data/Histori.md` (vč. vývoje: gravitační gradient → redesign) |
-| Stanice Freedom — krácení rozpočtu, posádka 8→4, výkon 75→37 kW | **ŽIVÉ** (historie) | `L6data/Histori.md`; veřejně zdokumentováno |
-| ISS 1998 — Zarja + Unity; nepřetržitá posádka 25+ let; IGA 1988 „pro mírové účely" | **ŽIVÉ** (historie) | `L6data/Histori.md`; veřejně zdokumentováno |
-| Von Braunovo rotační kolo (76 m, 3 patra, 80 lidí, 1950s) | **ŽIVÉ** (historie konceptu) | `L6data/Histori.md`, `Umela_Gravitace.md` §3.1 |
+| Saljut 1 (1971) — první stanice; zónový interiér navržený G. Balašovou; skleník OAZA; tragédie Sojuzu 11 | **ŽIVÉ** (historie) | `canon/l6/Histori.md`; veřejně zdokumentováno |
+| Skylab zanikl v atmosféře 1979 | **ŽIVÉ** (historie) | `canon/l6/Histori.md`; veřejně zdokumentováno |
+| Power Tower (122 m) a Dual Keel (1985) — návrhy, které nebyly postaveny | **ŽIVÉ** (historie) | `canon/l6/Histori.md` (vč. vývoje: gravitační gradient → redesign) |
+| Stanice Freedom — krácení rozpočtu, posádka 8→4, výkon 75→37 kW | **ŽIVÉ** (historie) | `canon/l6/Histori.md`; veřejně zdokumentováno |
+| ISS 1998 — Zarja + Unity; nepřetržitá posádka 25+ let; IGA 1988 „pro mírové účely" | **ŽIVÉ** (historie) | `canon/l6/Histori.md`; veřejně zdokumentováno |
+| Von Braunovo rotační kolo (76 m, 3 patra, 80 lidí, 1950s) | **ŽIVÉ** (historie konceptu) | `canon/l6/Histori.md`, `Umela_Gravitace.md` §3.1 |
 | „Síň jmen" v táboře tiskařů pravdy | **MÝTUS** | Narativní stylizace pro tuto knihu |
 | Issobella jako nástupce jakéhokoli historického programu | **NEPLATNÉ TVRZENÍ** | Žádná formální návaznost na NASA/ESA/Roskosmos neexistuje — kniha čerpá poučení, ne dědictví |
 

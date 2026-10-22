@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the ZION Davinci brand package from LOGO/Davinci.png.
+"""Build the ZION Davinci brand package from canon/brand/Davinci.png.
 
 Davinci.png is a 3D rendered raster master (2048x2048, white background,
 JPEG despite .png extension). This script produces the standard brand
@@ -25,7 +25,7 @@ import io
 import subprocess
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageChops
 
-SRC = Path("/Users/yeshuae/Projects/2.9.6/LOGO/Davinci.png")
+SRC = Path("/Users/yeshuae/Projects/2.9.6/canon/brand/Davinci.png")
 OUT = Path(__file__).parent
 
 # Brand colours extracted from Davinci.png
