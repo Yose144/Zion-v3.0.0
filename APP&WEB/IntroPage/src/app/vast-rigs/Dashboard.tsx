@@ -961,318 +961,249 @@ export default function Dashboard() {
               </div>
             ) : ai ? (
               <>
-                <div className="mt-5 rounded-xl border border-[#a371f7]/20 bg-black/20 p-3 sm:p-4">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <h3 className="text-sm font-semibold text-white">Worker setup</h3>
-                      <p className="mt-1 text-[11px] leading-relaxed text-white/40">
-                        Model API binds to rig loopback only · {VLLM_IMAGE}
-                      </p>
-                    </div>
-                    <span className="rounded-full border border-[#34d399]/20 bg-[#34d399]/[0.05] px-2.5 py-1 text-[10px] text-[#6ee7b7]">
-                      Existing rigs only
-                    </span>
-                  </div>
-                  <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-                    <label className="min-w-0 text-[10px] font-semibold uppercase tracking-wider text-white/45">
-                      Hugging Face model
-                      <input
-                        value={inferenceModel}
-                        onChange={(event) => setInferenceModel(event.target.value)}
-                        maxLength={200}
-                        spellCheck={false}
-                        list="ai-model-presets"
-                        className="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-white/15 bg-black/40 px-3 text-xs normal-case text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none focus:ring-1 focus:ring-[#a371f7]/40 sm:text-sm"
-                      />
-                      <datalist id="ai-model-presets">
-                        <option value="Qwen/Qwen3-4B-Instruct-2507">4B · fast</option>
-                        <option value="Qwen/Qwen3-8B-AWQ">8B · thinking AWQ</option>
-                        <option value="Qwen/Qwen3-14B-AWQ">14B · thinking AWQ</option>
-                        <option value="openai/gpt-oss-20b">21B MoE · OpenAI</option>
-                        <option value="Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8">30B MoE · code</option>
-                        <option value="Qwen/Qwen3.8-27B">27B · flagship</option>
-                        <option value="mistralai/Devstral-Small-2-24B-Instruct-2512">24B · agentic code</option>
-                      </datalist>
-                    </label>
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-white/45">
-                      vLLM VRAM target
-                      <select
-                        value={inferenceMemory}
-                        onChange={(event) => setInferenceMemory(event.target.value)}
-                        className="mt-1 min-h-11 w-full rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white focus:border-[#a371f7]/50 focus:outline-none focus:ring-1 focus:ring-[#a371f7]/40"
-                      >
-                        <option value="0.4">40%</option>
-                        <option value="0.6">60% · default</option>
-                        <option value="0.75">75% · high contention</option>
-                      </select>
-                    </label>
-                    <div className="flex items-end">
-                      <span className="min-h-11 content-center text-[10px] text-white/35">
-                        Check GPU memory first
-                      </span>
-                    </div>
-                  </div>
-                </div>
                 {(() => {
                   const freeGiB = ai.rigs.filter((r) => !r.error).flatMap((r) =>
                     r.gpus.map((g) => g.memory_free_mib / 1024));
                   const bestFree = freeGiB.length ? Math.max(...freeGiB) : 0;
-                  return (
-                    <div className="mt-4 rounded-xl border border-[#a371f7]/20 bg-black/20 p-3 sm:p-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-sm font-semibold text-white">Model catalog</h3>
-                        <span className="rounded-full border border-white/15 bg-black/30 px-2.5 py-0.5 text-[10px] text-white/45">
-                          {catalog.length} curated · weights pull from HuggingFace on deploy
-                        </span>
-                        <span className="ml-auto text-[10px] text-white/30">
-                          best rig free VRAM: {bestFree.toFixed(1)} GiB
-                        </span>
-                      </div>
-                      {(() => {
-                        const internal = catalog.filter((m) => m.internal);
-                        const pub = catalog.filter((m) => !m.internal);
-                        const card = (m: CatEntry) => {
-                          const fits = m.vram_gb <= bestFree;
-                          const sel = inferenceModel === m.hf;
-                          return (
-                            <div
-                              key={m.hf}
-                              className={`min-w-0 rounded-lg border p-2.5 transition ${
-                                sel
-                                  ? "border-[#a371f7]/60 bg-[#a371f7]/15"
-                                  : m.internal
-                                    ? "border-[#fcd116]/25 bg-[#fcd116]/[0.04] hover:border-[#fcd116]/40"
-                                    : "border-white/10 bg-black/30 hover:border-white/25"
-                              }`}
-                            >
-                              <button onClick={() => setInferenceModel(m.hf)} className="block w-full min-w-0 text-left">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="min-w-0 truncate text-xs font-semibold text-white">{m.hf.split("/").pop()}</span>
-                                  <span className="shrink-0 rounded-full border border-white/15 px-1.5 py-px text-[9px] text-white/50">{m.params}</span>
-                                  {m.internal && <span className="shrink-0 rounded-full border border-[#fcd116]/40 bg-[#fcd116]/10 px-1.5 py-px text-[9px] font-semibold text-[#fcd116]">ZION</span>}
-                                  {m.mockup && <span className="shrink-0 rounded-full border border-white/20 px-1.5 py-px text-[9px] italic text-white/40">mockup</span>}
-                                  {m.gated && <span className="shrink-0 rounded-full border border-[#fcd116]/30 px-1.5 py-px text-[9px] text-[#fcd116]" title="requires HF token">gated</span>}
-                                  {m.latest_vllm && <span className="shrink-0 rounded-full border border-[#79c0ff]/30 px-1.5 py-px text-[9px] text-[#79c0ff]" title="pinned vLLM 0.8.5 can't load this — auto-deploy uses vllm-openai:latest">new vLLM</span>}
-                                </div>
-                                <div className="mt-1 truncate text-[10px] text-white/40">{m.desc}</div>
-                                <div className="mt-1.5 flex items-center gap-1">
-                                  {m.tags.map((t) => (
-                                    <span key={t} className="rounded-full bg-white/[0.06] px-1.5 py-px text-[9px] text-white/45">{t}</span>
-                                  ))}
-                                  <span className={`ml-auto rounded-full border px-1.5 py-px text-[9px] font-semibold ${
-                                    fits ? "border-[#34d399]/40 text-[#6ee7b7]" : "border-[#ff7b72]/40 text-[#ff9b93]"
-                                  }`}>
-                                    ~{m.vram_gb} GB {fits ? "· fits" : "· tight"}
-                                  </span>
-                                </div>
-                              </button>
-                              <div className="mt-2 flex gap-1 border-t border-white/[0.06] pt-2">
-                                {m.internal ? (
-                                  <span className="min-h-7 flex-1 content-center text-[10px] italic text-white/35">
-                                    llama.cpp · hiran-core / SMOS :8003
-                                  </span>
-                                ) : (
-                                  <button
-                                    onClick={() => autoDeploy(m.hf)}
-                                    disabled={!!busy}
-                                    className="min-h-7 flex-1 rounded-md border border-[#34d399]/35 bg-[#34d399]/10 text-[10px] font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:cursor-wait disabled:opacity-40"
-                                  >
-                                    ▸ deploy
-                                  </button>
-                                )}
-                                {!m.internal && (
-                                  <a
-                                    href={`https://huggingface.co/${m.hf}`}
-                                    target="_blank" rel="noreferrer"
-                                    className="min-h-7 content-center rounded-md border border-white/10 px-2 text-[10px] text-white/40 transition hover:border-white/25 hover:text-white/70"
-                                  >HF ↗</a>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        };
-                        return (
-                          <>
-                            {internal.length > 0 && (
-                              <>
-                                <div className="mt-3 flex items-center gap-2">
-                                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#fcd116]/80">ZION · Hiran models</span>
-                                  <span className="h-px flex-1 bg-[#fcd116]/15" />
-                                  <span className="text-[9px] text-white/30">own GGUF builds · llama.cpp</span>
-                                </div>
-                                <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                  {internal.map(card)}
-                                </div>
-                              </>
-                            )}
-                            <div className="mt-4 flex items-center gap-2">
-                              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/45">Public models</span>
-                              <span className="h-px flex-1 bg-white/[0.07]" />
-                              <span className="text-[9px] text-white/30">vLLM · weights pull from HF</span>
-                            </div>
-                            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                              {pub.map(card)}
-                            </div>
-                          </>
-                        );
-                      })()}
-                      <div className="mt-3 flex gap-1.5 border-t border-white/[0.06] pt-3">
-                        <input
-                          value={hfQ}
-                          onChange={(e) => setHfQ(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); hfSearch(); } }}
-                          placeholder="Search HuggingFace — e.g. qwen3, deepseek, codestral…"
-                          className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none"
-                        />
-                        <button
-                          onClick={hfSearch}
-                          disabled={!!busy || !hfQ.trim()}
-                          className="min-h-9 shrink-0 rounded-lg border border-white/20 bg-white/[0.04] px-3 text-xs font-semibold text-white/70 transition hover:border-white/35 hover:text-white disabled:opacity-40"
-                        >
-                          {busy === "hf:search" ? "…" : "Search HF"}
-                        </button>
-                      </div>
-                      {hfRes !== null && (
-                        <div className="mt-2 max-h-52 overflow-auto rounded-lg border border-white/10 bg-black/30">
-                          {hfRes.length === 0 && <div className="p-3 text-[11px] text-white/40">no results</div>}
-                          {hfRes.map((m) => (
-                            <button
-                              key={m.hf}
-                              onClick={() => { setInferenceModel(m.hf); setHfRes(null); }}
-                              className="flex w-full items-center gap-2 border-b border-white/[0.04] px-3 py-2 text-left text-xs transition hover:bg-white/[0.04]"
-                            >
-                              <span className="min-w-0 flex-1 truncate font-mono text-white/80">{m.hf}</span>
-                              {m.gated && <span className="shrink-0 rounded-full border border-[#fcd116]/30 px-1.5 text-[9px] text-[#fcd116]">gated</span>}
-                              {m.tags.map((t) => <span key={t} className="shrink-0 rounded-full bg-white/[0.06] px-1.5 text-[9px] text-white/40">{t}</span>)}
-                              <span className="shrink-0 text-[9px] text-white/30">♥{m.likes} ↓{(m.downloads / 1000).toFixed(0)}k</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-                {(() => {
+                  const internal = catalog.filter((m) => m.internal);
+                  const pub = catalog.filter((m) => !m.internal);
                   const eps = [
                     ...ai.rigs.filter((r) => r.inference_reachable).flatMap((r) =>
                       r.models.map((m) => ({ model: m, where: `rig #${r.id}` }))),
-                    ...(ai.hiran?.reachable ? (ai.hiran.models || []).map((m) => ({ model: m, where: "hiran/smos" })) : []),
+                    ...(ai.hiran?.reachable ? (ai.hiran.models || []).map((m) => ({ model: m, where: "hiran" })) : []),
                   ];
-                  return (
-                    <div className="mt-4 rounded-xl border border-[#a371f7]/25 bg-[#a371f7]/[0.05] p-3 sm:p-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-sm font-semibold text-white">Model router</h3>
-                        <span className="rounded-full border border-white/15 bg-black/30 px-2.5 py-0.5 text-[10px] text-white/45">
-                          {eps.length} model{eps.length === 1 ? "" : "s"} online
-                        </span>
-                        <button
-                          onClick={() => autoDeploy()}
-                          disabled={!!busy || !inferenceModel.trim()}
-                          className="ml-auto min-h-8 rounded-lg border border-[#34d399]/35 bg-[#34d399]/10 px-3 text-xs font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:cursor-wait disabled:opacity-40"
-                        >
-                          {busy === "router:autodeploy" ? "Deploying…" : "⚡ Auto deploy"}
-                        </button>
-                      </div>
-                      {eps.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {eps.map((e, i) => (
-                            <button
-                              key={`${e.model}-${i}`}
-                              onClick={() => setRouterModel(e.model)}
-                              title={`${e.model} @ ${e.where}`}
-                              className={`max-w-full truncate rounded-full border px-2.5 py-0.5 font-mono text-[10px] transition ${
-                                routerModel === e.model
-                                  ? "border-[#a371f7]/60 bg-[#a371f7]/20 text-[#d8b4fe]"
-                                  : "border-white/10 bg-black/30 text-white/55 hover:border-white/25 hover:text-white/85"
-                              }`}
-                            >
-                              {e.model.split("/").pop()} <span className="opacity-50">@{e.where}</span>
-                            </button>
-                          ))}
+                  const card = (m: CatEntry) => {
+                    const fits = m.vram_gb <= bestFree;
+                    const sel = inferenceModel === m.hf;
+                    return (
+                      <div
+                        key={m.hf}
+                        onClick={() => setInferenceModel(m.hf)}
+                        className={`group min-w-0 cursor-pointer rounded-xl border p-3 transition ${
+                          sel
+                            ? "border-[#a371f7]/70 bg-[#a371f7]/15 shadow-lg shadow-[#a371f7]/5"
+                            : m.internal
+                              ? "border-[#fcd116]/25 bg-[#fcd116]/[0.04] hover:border-[#fcd116]/45"
+                              : "border-white/10 bg-black/30 hover:border-white/30 hover:bg-black/40"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="min-w-0 truncate text-xs font-semibold text-white">{m.hf.split("/").pop()}</span>
+                              {m.internal && <span className="shrink-0 rounded-full border border-[#fcd116]/40 bg-[#fcd116]/10 px-1.5 py-px text-[9px] font-semibold text-[#fcd116]">ZION</span>}
+                              {m.tags.includes("live") && <span className="shrink-0 rounded-full border border-[#34d399]/50 bg-[#34d399]/10 px-1.5 py-px text-[9px] font-semibold text-[#6ee7b7]">● live</span>}
+                              {m.mockup && <span className="shrink-0 rounded-full border border-white/15 px-1.5 py-px text-[9px] italic text-white/40">planned</span>}
+                            </div>
+                            <div className="mt-0.5 text-[10px] leading-snug text-white/40">{m.desc}</div>
+                          </div>
+                          <span className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-medium text-white/55">{m.params}</span>
                         </div>
-                      ) : (
-                        <p className="mt-2 text-[11px] text-white/40">
-                          No models loaded — pick a model above and hit Auto deploy, or deploy per-rig below.
-                        </p>
-                      )}
-                      <div className="mt-3 flex gap-1.5">
-                        <select
-                          value={routerModel}
-                          onChange={(e) => setRouterModel(e.target.value)}
-                          className="min-h-9 w-44 shrink-0 rounded-lg border border-white/15 bg-black/40 px-2 text-xs text-white focus:border-[#a371f7]/50 focus:outline-none"
-                        >
-                          <option value="">auto · first online</option>
-                          {Array.from(new Set(eps.map((e) => e.model))).map((m) => (
-                            <option key={m} value={m}>{m.split("/").pop()}</option>
+                        <div className="mt-2 flex flex-wrap items-center gap-1">
+                          {m.tags.filter((t) => t !== "live").map((t) => (
+                            <span key={t} className="rounded-full bg-white/[0.06] px-1.5 py-px text-[9px] text-white/45">{t}</span>
                           ))}
-                        </select>
-                        <input
-                          id="router-chat"
-                          placeholder={eps.length ? "Ask any loaded model…" : "Nothing online to ask"}
-                          disabled={!eps.length}
-                          className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none disabled:opacity-40"
-                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); routerChat(); } }}
-                        />
-                        <button
-                          disabled={!!busy || !eps.length}
-                          onClick={routerChat}
-                          className="min-h-9 shrink-0 rounded-lg border border-[#a371f7]/35 bg-[#a371f7]/10 px-3 text-xs font-semibold text-[#d2a8ff] transition hover:bg-[#a371f7]/20 disabled:cursor-wait disabled:opacity-40"
-                        >
-                          {busy === "router:chat" ? "…" : "Ask"}
-                        </button>
+                          {m.gated && <span className="rounded-full border border-[#fcd116]/30 px-1.5 py-px text-[9px] text-[#fcd116]">gated</span>}
+                          {m.latest_vllm && <span className="rounded-full border border-[#79c0ff]/30 px-1.5 py-px text-[9px] text-[#79c0ff]" title="needs newer vLLM — auto-deploy uses vllm-openai:latest">new vLLM</span>}
+                          <span className={`ml-auto rounded-full border px-1.5 py-px text-[9px] font-semibold ${
+                            fits ? "border-[#34d399]/40 text-[#6ee7b7]" : "border-[#ff7b72]/40 text-[#ff9b93]"
+                          }`}>
+                            {m.vram_gb} GB {fits ? "fits" : "tight"}
+                          </span>
+                        </div>
+                        <div className="mt-2.5 flex items-center gap-1.5 border-t border-white/[0.06] pt-2">
+                          {m.internal ? (
+                            <span className="text-[10px] italic text-white/35">llama.cpp · hiran-core / SMOS :8003</span>
+                          ) : (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); autoDeploy(m.hf); }}
+                              disabled={!!busy}
+                              className="min-h-7 flex-1 rounded-md border border-[#34d399]/35 bg-[#34d399]/10 text-[10px] font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:cursor-wait disabled:opacity-40"
+                            >
+                              ▸ deploy
+                            </button>
+                          )}
+                          {!m.internal && (
+                            <a
+                              href={`https://huggingface.co/${m.hf}`}
+                              target="_blank" rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="min-h-7 content-center rounded-md border border-white/10 px-2 text-[10px] text-white/40 transition hover:border-white/25 hover:text-white/70"
+                            >HF ↗</a>
+                          )}
+                        </div>
                       </div>
-                      {routerAns !== "" && (
-                        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[#a371f7]/15 bg-black/40 p-3 text-[11px] leading-relaxed text-[#d2a8ff]">
-                          {routerAns}
-                        </pre>
-                      )}
-                    </div>
+                    );
+                  };
+                  return (
+                    <>
+                      {/* ── Deploy panel ── */}
+                      <div className="mt-5 overflow-hidden rounded-xl border border-[#a371f7]/20 bg-black/20">
+                        <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] bg-white/[0.02] px-3 py-2.5 sm:px-4">
+                          <h3 className="text-sm font-semibold text-white">Model catalog</h3>
+                          <span className="text-[10px] text-white/35">
+                            {catalog.length} models · best rig {bestFree.toFixed(1)} GiB free
+                          </span>
+                          <div className="ml-auto flex items-center gap-1.5">
+                            <label className="flex items-center gap-1 text-[10px] text-white/40">
+                              VRAM
+                              <select
+                                value={inferenceMemory}
+                                onChange={(e) => setInferenceMemory(e.target.value)}
+                                className="min-h-7 rounded-md border border-white/15 bg-black/40 px-1.5 text-[10px] text-white focus:border-[#a371f7]/50 focus:outline-none"
+                              >
+                                <option value="0.4">40%</option>
+                                <option value="0.6">60%</option>
+                                <option value="0.75">75%</option>
+                              </select>
+                            </label>
+                            <button
+                              onClick={() => autoDeploy()}
+                              disabled={!!busy || !inferenceModel.trim()}
+                              title={inferenceModel}
+                              className="min-h-8 rounded-lg border border-[#34d399]/40 bg-[#34d399]/10 px-3 text-xs font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:cursor-wait disabled:opacity-40"
+                            >
+                              {busy === "router:autodeploy" ? "Deploying…" : "⚡ Deploy selected"}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="p-3 sm:p-4">
+                          <div className="flex gap-1.5">
+                            <input
+                              value={inferenceModel}
+                              onChange={(e) => setInferenceModel(e.target.value)}
+                              maxLength={200}
+                              spellCheck={false}
+                              placeholder="HF model id — pick a card or type custom…"
+                              className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 font-mono text-xs text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none"
+                            />
+                            <input
+                              value={hfQ}
+                              onChange={(e) => setHfQ(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); hfSearch(); } }}
+                              placeholder="Search HuggingFace…"
+                              className="min-h-9 w-44 min-w-0 rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none max-sm:w-32"
+                            />
+                            <button
+                              onClick={hfSearch}
+                              disabled={!!busy || !hfQ.trim()}
+                              className="min-h-9 shrink-0 rounded-lg border border-white/20 bg-white/[0.04] px-3 text-xs font-semibold text-white/70 transition hover:border-white/35 hover:text-white disabled:opacity-40"
+                            >
+                              {busy === "hf:search" ? "…" : "Search"}
+                            </button>
+                          </div>
+                          {hfRes !== null && (
+                            <div className="mt-2 max-h-52 overflow-auto rounded-lg border border-white/10 bg-black/30">
+                              {hfRes.length === 0 && <div className="p-3 text-[11px] text-white/40">no results</div>}
+                              {hfRes.map((m) => (
+                                <button
+                                  key={m.hf}
+                                  onClick={() => { setInferenceModel(m.hf); setHfRes(null); }}
+                                  className="flex w-full items-center gap-2 border-b border-white/[0.04] px-3 py-2 text-left text-xs transition last:border-0 hover:bg-white/[0.04]"
+                                >
+                                  <span className="min-w-0 flex-1 truncate font-mono text-white/80">{m.hf}</span>
+                                  {m.gated && <span className="shrink-0 rounded-full border border-[#fcd116]/30 px-1.5 text-[9px] text-[#fcd116]">gated</span>}
+                                  <span className="shrink-0 text-[9px] text-white/30">♥{m.likes} ↓{(m.downloads / 1000).toFixed(0)}k</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {internal.length > 0 && (
+                            <>
+                              <div className="mt-3 flex items-center gap-2">
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#fcd116]/80">Hiran</span>
+                                <span className="h-px flex-1 bg-[#fcd116]/15" />
+                                <span className="text-[9px] text-white/30">own GGUF · llama.cpp</span>
+                              </div>
+                              <div className="mt-2 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2">
+                                {internal.map(card)}
+                              </div>
+                            </>
+                          )}
+                          <div className="mt-3 flex items-center gap-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/45">Public</span>
+                            <span className="h-px flex-1 bg-white/[0.07]" />
+                            <span className="text-[9px] text-white/30">vLLM · HF weights on deploy</span>
+                          </div>
+                          <div className="mt-2 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2">
+                            {pub.map(card)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Chat panel ── */}
+                      <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-black/20">
+                        <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] bg-white/[0.02] px-3 py-2.5 sm:px-4">
+                          <h3 className="text-sm font-semibold text-white">Chat</h3>
+                          <span className="text-[10px] text-white/35">{eps.length} endpoint{eps.length === 1 ? "" : "s"} online</span>
+                          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold ${
+                            ai.hiran?.reachable
+                              ? "border-[#34d399]/40 bg-[#34d399]/10 text-[#6ee7b7]"
+                              : "border-white/15 bg-black/30 text-white/40"
+                          }`}>
+                            hiran {ai.hiran ? (ai.hiran.reachable ? "●" : "○ off") : "…"}
+                          </span>
+                          <span className="ml-auto text-[9px] text-white/30">routed via model · vLLM rig → SSH · hiran → :8003</span>
+                        </div>
+                        <div className="p-3 sm:p-4">
+                          {eps.length > 0 ? (
+                            <div className="mb-2.5 flex flex-wrap gap-1.5">
+                              {eps.map((e, i) => (
+                                <button
+                                  key={`${e.model}-${i}`}
+                                  onClick={() => setRouterModel(e.model)}
+                                  title={`${e.model} @ ${e.where}`}
+                                  className={`max-w-full truncate rounded-full border px-2.5 py-1 font-mono text-[10px] transition ${
+                                    routerModel === e.model
+                                      ? "border-[#a371f7]/60 bg-[#a371f7]/20 text-[#d8b4fe]"
+                                      : "border-white/10 bg-black/30 text-white/55 hover:border-white/25 hover:text-white/85"
+                                  }`}
+                                >
+                                  {e.model.split("/").pop()} <span className="opacity-50">@{e.where}</span>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mb-2.5 text-[11px] text-white/40">
+                              Nothing loaded — deploy a model above, or bring the SMOS rig online for hiran.
+                            </p>
+                          )}
+                          <div className="flex gap-1.5">
+                            <select
+                              value={routerModel}
+                              onChange={(e) => setRouterModel(e.target.value)}
+                              className="min-h-9 w-40 min-w-0 shrink-0 rounded-lg border border-white/15 bg-black/40 px-2 text-xs text-white focus:border-[#a371f7]/50 focus:outline-none max-sm:w-28"
+                            >
+                              <option value="">auto</option>
+                              {Array.from(new Set(eps.map((e) => e.model))).map((m) => (
+                                <option key={m} value={m}>{m.split("/").pop()}</option>
+                              ))}
+                            </select>
+                            <input
+                              id="router-chat"
+                              placeholder={eps.length ? "Ask any loaded model…" : "Nothing online to ask"}
+                              disabled={!eps.length}
+                              className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none disabled:opacity-40"
+                              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); routerChat(); } }}
+                            />
+                            <button
+                              disabled={!!busy || !eps.length}
+                              onClick={routerChat}
+                              className="min-h-9 shrink-0 rounded-lg border border-[#a371f7]/40 bg-[#a371f7]/10 px-4 text-xs font-semibold text-[#d2a8ff] transition hover:bg-[#a371f7]/20 disabled:cursor-wait disabled:opacity-40"
+                            >
+                              {busy === "router:chat" ? "…" : "Ask"}
+                            </button>
+                          </div>
+                          {routerAns !== "" && (
+                            <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[#a371f7]/15 bg-black/40 p-3 text-[11px] leading-relaxed text-[#d2a8ff]">
+                              {routerAns}
+                            </pre>
+                          )}
+                        </div>
+                      </div>
+                    </>
                   );
                 })()}
-                <div className="mt-4 rounded-xl border border-[#79c0ff]/25 bg-[#79c0ff]/[0.06] p-3 sm:p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold text-white">Hiran · SMOS endpoint</h3>
-                    <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
-                      ai.hiran?.reachable
-                        ? "border-[#34d399]/40 bg-[#34d399]/10 text-[#6ee7b7]"
-                        : "border-[#ff7b72]/40 bg-[#ff7b72]/10 text-[#ff9b93]"
-                    }`}>
-                      {ai.hiran ? (ai.hiran.reachable ? "API online" : "rig offline") : "probe…"}
-                    </span>
-                    {ai.hiran?.model && (
-                      <span className="truncate rounded-full border border-[#79c0ff]/30 bg-black/30 px-2.5 py-0.5 font-mono text-[10px] text-[#79c0ff]">
-                        {ai.hiran.model}
-                      </span>
-                    )}
-                    <span className="ml-auto text-[10px] text-white/30">llama.cpp · SMOS rig → Edge :8003</span>
-                  </div>
-                  {ai.hiran && !ai.hiran.reachable && (
-                    <p className="mt-2 text-[11px] leading-relaxed text-white/45">
-                      SMOS rig nebo jeho reverse tunel na Edge neběží — endpoint se sám objeví, až rig přejde online.
-                    </p>
-                  )}
-                  <div className="mt-3 flex gap-1.5">
-                    <input
-                      id="hiran-chat"
-                      placeholder={ai.hiran?.reachable ? "Ask Hiran…" : "Waiting for the SMOS rig…"}
-                      disabled={!ai.hiran?.reachable}
-                      className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-white/25 focus:border-[#79c0ff]/50 focus:outline-none disabled:opacity-40"
-                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); hiranChat(); } }}
-                    />
-                    <button
-                      disabled={!!busy || !ai.hiran?.reachable}
-                      onClick={hiranChat}
-                      className="min-h-9 shrink-0 rounded-lg border border-[#79c0ff]/35 bg-[#79c0ff]/10 px-3 text-xs font-semibold text-[#a5d6ff] transition hover:bg-[#79c0ff]/20 disabled:cursor-wait disabled:opacity-40"
-                    >
-                      {busy === "hiran:chat" ? "…" : "Ask"}
-                    </button>
-                  </div>
-                  {hiranAns !== "" && (
-                    <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[#79c0ff]/15 bg-black/40 p-3 text-[11px] leading-relaxed text-[#a5d6ff]">
-                      {hiranAns}
-                    </pre>
-                  )}
-                </div>
                 <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-6">
                   {[
                     ["GPUs", ai.totals.gpu_count],
