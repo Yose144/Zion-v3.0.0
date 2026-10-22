@@ -118,7 +118,7 @@ phase_sync() {
 
   log "Syncing website code..."
   tar czf - --exclude='node_modules' --exclude='.next' --exclude='out' \
-    -C "${ROOT_DIR}/APP\&WEB" website-v2.9/ 2>/dev/null | \
+    -C "${ROOT_DIR}/apps" website-v2.9/ 2>/dev/null | \
     ssh_run "mkdir -p /root/APP\&WEB && cd /root/APP\&WEB && tar xzf -"
 
   log "Sync OK"

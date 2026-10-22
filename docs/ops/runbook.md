@@ -309,7 +309,7 @@ docker compose -f docker/docker-compose.testnet.yml up -d
 # From local machine:
 rsync -avz --delete \
   -e "ssh -i ~/.ssh/zion_hetzner_key" \
-  APP\&WEB/website-v2.9/ root@91.98.122.165:/root/zion-web-deploy/website-v2.9/ \
+  apps/website-v2.9/ root@91.98.122.165:/root/zion-web-deploy/website-v2.9/ \
   --exclude node_modules --exclude .next --exclude .git
 
 # On server — rebuild:

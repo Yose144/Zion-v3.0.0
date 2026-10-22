@@ -114,7 +114,7 @@ Search command to find remaining offenders:
 
 ```sh
 grep -nE "atomic|/\\s*1e6|\\* 1e6|FLOWERS_PER_ZION|ATOMIC" \
-  -r APP\&WEB/website-v2.9/src
+  -r apps/website-v2.9/src
 ```
 
 ---

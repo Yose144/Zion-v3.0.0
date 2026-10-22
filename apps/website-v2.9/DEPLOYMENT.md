@@ -43,7 +43,7 @@ The file `public/maintenance.html` is the canonical one-page intro for the ZION 
 ### Deploy OASIS Web
 
 ```bash
-cd APP\&WEB/OasisWeb
+cd apps/OasisWeb
 bash deploy/deploy-oasis-web.sh
 ```
 
@@ -52,7 +52,7 @@ This builds the static Next.js export and rsyncs it to `/var/www/oasis/` on the 
 ### Deploy Web2.9 (Next.js)
 
 ```bash
-cd APP\&WEB/website-v2.9
+cd apps/website-v2.9
 bash deploy/deploy-web2.9.sh
 ```
 
@@ -61,7 +61,7 @@ This builds locally with `npm run build` (using `--webpack`), rsyncs the result 
 ### Deploy the OASIS intro
 
 ```bash
-cd APP\&WEB/website-v2.9
+cd apps/website-v2.9
 bash deploy/deploy-oasis-intro.sh
 ```
 
@@ -106,7 +106,7 @@ bash deploy/deploy-web2.9.sh
 Builds locally (`npm run build` with `--webpack`), rsyncs source + `.next` to `/opt/zion/APP&WEB/website-v2.9/`, fixes ownership for the `zion` user, and restarts `zion-website.service`.
 
 ```bash
-cd APP\&WEB/website-v2.9
+cd apps/website-v2.9
 bash deploy/deploy-web2.9.sh
 ```
 
@@ -115,7 +115,7 @@ bash deploy/deploy-web2.9.sh
 Rsyncs `public/maintenance.html` + `public/stargate/` to `/var/www/maintenance/`, validates nginx, and reloads.
 
 ```bash
-cd APP\&WEB/website-v2.9
+cd apps/website-v2.9
 bash deploy/deploy-oasis-intro.sh
 ```
 
@@ -124,7 +124,7 @@ bash deploy/deploy-oasis-intro.sh
 Builds `apps/OasisWeb` as a static Next.js export and rsyncs `dist/` to `/var/www/oasis/`, then reloads nginx.
 
 ```bash
-cd APP\&WEB/OasisWeb
+cd apps/OasisWeb
 bash deploy/deploy-oasis-web.sh
 ```
 
@@ -133,7 +133,7 @@ bash deploy/deploy-oasis-web.sh
 Deploys `apps/public_html` (legacy V2 web archive) to `/var/www/newearth/` on Edge, installs `nginx-newearth.conf`, obtains/renews Let's Encrypt certificate for `newearth.cz` + `www.newearth.cz`, and reloads nginx. Root `/` redirects to `https://zionterranova.com/`; `/V2/` paths are served directly.
 
 ```bash
-cd APP\&WEB/public_html
+cd apps/public_html
 bash deploy/deploy-newearth.sh
 ```
 

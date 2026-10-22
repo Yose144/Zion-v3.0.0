@@ -37,7 +37,7 @@ cd apps/website-v2.9 && npm run build
 rsync -az --delete -e "ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29" \
   src .next public package.json next.config.ts tsconfig.json \
   postcss.config.mjs tailwind.config.ts \
-  zion-new:/opt/zion/APP\&WEB/website-v2.9/
+  zion-new:/opt/zion/apps/website-v2.9/
 
 # Oprávnění (pokud rsync zachoval lokální ownera)
 ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new \
@@ -61,7 +61,7 @@ ssh zion-post-wipe "cp '/opt/zion/APP&WEB/website-v2.9/public/docs/books/maitrey
 
 # Intro hub deploy (jen maintenance.html)
 scp -i ~/.ssh/zion-edge-post-wipe-2026-07-29 \
-  APP\&WEB/website-v2.9/public/maintenance.html \
+  apps/website-v2.9/public/maintenance.html \
   zion-new:/var/www/maintenance/maintenance.html
 ```
 

@@ -1387,7 +1387,7 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **Full deploy from local repo:**
 
   ```bash
-  cd APP\&WEB/website-v2.9
+  cd apps/website-v2.9
   # Sync source and public assets (exclude node_modules/.next/.git/downloads)
   tar czf - --exclude=node_modules --exclude=.next --exclude=.git --exclude=public/downloads src/ public/ \
     | ssh zion-new 'cd /root/zion-web-build && rm -rf src public && tar xzf -'

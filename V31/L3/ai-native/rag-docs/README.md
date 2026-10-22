@@ -26,7 +26,7 @@ způsoboval halucinované/mystické odpovědi ve veřejném chatu.
 
 ```bash
 # na stroji s repo checkoutem (docs se skládají z website public/docs)
-D=APP\&WEB/website-v2.9/public/docs
+D=apps/website-v2.9/public/docs
 T=/tmp/hiran-rag-docs && rm -rf $T && mkdir -p $T
 for f in faq getting-started mining-guide pool-setup whitepaper-lite \
          roadmap-lite community index setup; do

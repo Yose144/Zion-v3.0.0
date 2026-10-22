@@ -153,9 +153,9 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 **Batch 3 ✅:** `docs/WP-Mainet`→`canon/books` — 96 souborů externě + interní `../../` úniky → `../../../docs/` + `../WP-Mainet` externí rel. linky + `.gitignore`.
 **Batch 4 ✅:** loose soubory — `xmrig-vast-cpu.json`→`infra/vast/`, `warp.toml`→`infra/config/`, teamredminer zips (LFS)→`infra/mining/`, `.git_commit_msg.txt`→`archive/misc/`, 2 reporty+JSON→`docs/3.2/REPORTS/`.
 **Batch 5 ✅:** `edge-deploy`→`infra/edge-deploy` (48 souborů, 2 ref fixy).
+**Batch 6 ✅ (2026-10-22, `eaa919b11`):** `APP&WEB`→`apps/` — ~5000 souborů, 2075 sed-rewrites; chráněny remote `/opt/zion/APP&WEB/*` a `REMOTE_ROOT}/APP&WEB/*` (systemd WorkingDirectory, rsync targety, .env cesty = produkce nedotčena). Verifikováno: `.gitignore`, workflows (`apps/desktop-agent`), AGENTS.md public/private sekce; všech 21 residual `APP&WEB` = remote/historické. **Incident během batchu:** `git` objektová korupce (3 corrupt packy, disk write-path corruption na boxu — `/tmp`=tmpfs čisté vs `/` poškozené). Repair: mirror clone origin+public → alternates → dead refs prunuty (3 auto-stash commity, `local-changes`, `public-split-now`, 10× dependabot, 3× agent checkpoints — všechny tipy unreachable z remote, ztracené objekty zalogovány `/tmp/dead_refs_report.txt`), index rebuild přes tmpfs, packy na disk verified-copy (sha1 match). fsck clean, `main` pushed. **HW varování: zápisy na `/` se intermitentně poškozují — provider ticket/memtest doporučen.**
 
 **Zbývá (velké, vyžaduje koordinaci — dedikované kroky):**
-- `apps`→`apps/` — deploy skripty používají lokální cestu `apps/*`; v jednom commitu: git mv + fix `deploy/*.sh` LOCAL paths (remote `/opt/zion/APP&WEB/` může zůstat), ~stovky doc odkazů, `next.config`/AGENTS
 - `V31`→`chain/` — cargo workspace (member paths jsou relativní = OK), `.github/workflows`, ~tisíce odkazů, untracked `target/` zůstane; crate názvy `v31-*` zůstávají
 - `scripts/`→`infra/scripts/` (359 souborů) — **POZOR:** servery volají `/opt/zion/scripts/...` přímo (systemd/cron/watchdog) — vyžaduje mapping strategii ve F5, ne jen mv
 - `ZION_OS/` (292) + `tools/` (7) → `infra/` — ops dashboard/skripty

@@ -10,7 +10,7 @@
 #
 # Requirements:
 #   - V31 workspace built: cd V31 && cargo build --release -p zion-oasis
-#   - OasisWeb deps installed: cd APP\&WEB/OasisWeb && npm install
+#   - OasisWeb deps installed: cd apps/OasisWeb && npm install
 
 set -euo pipefail
 

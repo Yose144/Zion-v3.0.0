@@ -126,7 +126,7 @@ Unikátní feature: kupující může platit buď:
 
 ### Build
 ```bash
-cd APP\&WEB/MarketPlace
+cd apps/MarketPlace
 npm install
 npx prisma generate
 npm run build
@@ -136,7 +136,7 @@ npm run build
 ```bash
 rsync -avz --exclude 'node_modules' --exclude '.next' --exclude '.env' \
   -e "ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222" \
-  ./ root@zionterranova.com:/opt/zion/APP\&WEB/MarketPlace/
+  ./ root@zionterranova.com:/opt/zion/apps/MarketPlace/
 
 ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@zionterranova.com \
   "cd '/opt/zion/APP&WEB/MarketPlace' && npm run build && systemctl restart zion-marketplace.service"
