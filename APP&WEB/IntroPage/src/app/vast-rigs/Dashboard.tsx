@@ -982,13 +982,13 @@ export default function Dashboard() {
                         className="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-white/15 bg-black/40 px-3 text-xs normal-case text-white placeholder-white/25 focus:border-[#a371f7]/50 focus:outline-none focus:ring-1 focus:ring-[#a371f7]/40 sm:text-sm"
                       />
                       <datalist id="ai-model-presets">
-                        <option value="Qwen/Qwen2.5-1.5B-Instruct">1.5B · tiny</option>
-                        <option value="Qwen/Qwen2.5-Coder-3B-Instruct">3B · code</option>
-                        <option value="Qwen/Qwen2.5-3B-Instruct">3B · general</option>
-                        <option value="meta-llama/Llama-3.2-3B-Instruct">3B · llama (gated)</option>
-                        <option value="Qwen/Qwen2.5-7B-Instruct">7B · general</option>
-                        <option value="Qwen/Qwen2.5-Coder-7B-Instruct">7B · code</option>
-                        <option value="mistralai/Mistral-7B-Instruct-v0.3">7B · mistral</option>
+                        <option value="Qwen/Qwen3-4B-Instruct-2507">4B · fast</option>
+                        <option value="Qwen/Qwen3-8B-AWQ">8B · thinking AWQ</option>
+                        <option value="Qwen/Qwen3-14B-AWQ">14B · thinking AWQ</option>
+                        <option value="openai/gpt-oss-20b">21B MoE · OpenAI</option>
+                        <option value="Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8">30B MoE · code</option>
+                        <option value="Qwen/Qwen3.8-27B">27B · flagship</option>
+                        <option value="mistralai/Devstral-Small-2-24B-Instruct-2512">24B · agentic code</option>
                       </datalist>
                     </label>
                     <label className="text-[10px] font-semibold uppercase tracking-wider text-white/45">
