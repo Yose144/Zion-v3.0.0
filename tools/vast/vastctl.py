@@ -29,6 +29,7 @@ import socket
 import subprocess
 import sys
 import time
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import redirect_stderr, redirect_stdout
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -50,6 +51,8 @@ SRB_DIR = "SRBMiner-Multi-3-7-9"
 SRB_TARBALL = ("https://github.com/doktor83/SRBMiner-Multi/releases/"
                "download/3.7.9/SRBMiner-Multi-3-7-9-Linux.tar.gz")
 PRL_POOL = os.environ.get("VASTCTL_PRL_POOL", "pearl-eu2.luckypool.io:3360")
+# our own ZION pool HTTP API (Edge :8080) — live pool/routing/auxpow stats
+POOL_API = os.environ.get("VASTCTL_POOL_API", "http://127.0.0.1:8080")
 QTU_POOL = os.environ.get("VASTCTL_QTU_POOL", "eu.lproute.com:5660")
 # Pearl + Nockchain merge mining (LuckyPool): the native Nockchain address is
 # appended to the Pearl wallet with "+". Pearl stays the payout identity and
@@ -733,6 +736,58 @@ def fetch_pool_miners():
     return miners
 
 
+def fetch_pool_stats():
+    """Live stats from our own ZION pool (Edge :8080) — sessions, share
+    routing, auxpow legs, PPLNS window, Pearl upstream counters.
+
+    Returns None when the pool API is unreachable so the dashboard can show
+    "pool API unavailable" instead of an empty card.
+    """
+    try:
+        with urllib.request.urlopen(f"{POOL_API}/stats", timeout=8) as r:
+            d = json.loads(r.read().decode())
+    except Exception:
+        return None
+    if not isinstance(d, dict) or not d.get("ok"):
+        return None
+    aux = d.get("auxpow") or {}
+    pearl = aux.get("pearl") or {}
+    routing = d.get("routing") or {}
+    out = {
+        "sessions": d.get("sessions"),
+        "total_connections": d.get("total_connections"),
+        "uptime_s": d.get("uptime_s"),
+        "config": d.get("pool") or {},
+        "shares": d.get("shares") or {},
+        "pplns": d.get("pplns") or {},
+        "external_payouts": d.get("external_payouts") or {},
+        "routing": {
+            "total_submits": routing.get("total_submits"),
+            "total_accepted": routing.get("total_accepted"),
+            "total_rejected": routing.get("total_rejected"),
+            "total_stale": routing.get("total_stale"),
+            "total_accept_rate_pct": routing.get("total_accept_rate_pct"),
+            "groups": routing.get("groups") or [],
+            "sources": routing.get("sources") or [],
+        },
+        "pearl": {
+            "upstream": pearl.get("upstream") or {},
+            "native": pearl.get("native") or {},
+            "served_upstream": pearl.get("served_upstream"),
+            "served_native": pearl.get("served_native"),
+        },
+        "coins": [{
+            "ticker": c.get("ticker"),
+            "algorithm": c.get("algorithm"),
+            "device": c.get("device"),
+            "upstream": c.get("upstream"),
+            "job_fresh": c.get("job_fresh"),
+            "job_age_ms": c.get("job_age_ms"),
+        } for c in (aux.get("coin_details") or []) if isinstance(c, dict)],
+    }
+    return out
+
+
 def snapshot(ids=None):
     rigs = status_all(ids)
     for r in rigs:
@@ -751,6 +806,7 @@ def snapshot(ids=None):
         "total_dph": round(sum(r["dph"] for r in rigs), 4),
         "rigs": rigs,
         "pool": fetch_pool_miners(),
+        "poolstats": fetch_pool_stats(),
         "smos": fetch_smos_rigs(),
         "ext": fetch_ext_pools(),
     }
@@ -796,6 +852,7 @@ def snapshot_from(rigs):
         "total_dph": round(sum(r["dph"] for r in rigs), 4),
         "rigs": rigs,
         "pool": fetch_pool_miners(),
+        "poolstats": fetch_pool_stats(),
         "smos": fetch_smos_rigs(),
         "ext": fetch_ext_pools(),
     }

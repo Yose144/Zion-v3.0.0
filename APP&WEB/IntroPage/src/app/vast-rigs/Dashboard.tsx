@@ -27,7 +27,68 @@ type Rig = {
   net?: Record<string, boolean>;
   sessions?: string[];
 };
-type Snap = { ts: string | null; total_dph: number; rigs: Rig[]; pool?: PoolMiner[] | null; smos?: SmosRig[] | null; ext?: ExtPools };
+type PoolStats = {
+  sessions: number | null;
+  total_connections: number | null;
+  uptime_s: number | null;
+  config: { fee_bps?: number; humanitarian_pct?: number; miner_pct?: number; issobella_pct?: number; port?: number };
+  shares: { accepted?: number; rejected?: number; total?: number };
+  pplns: {
+    registered_miners?: number;
+    miners_with_unpaid?: number;
+    window_size?: number;
+    window_used?: number;
+    window_total_difficulty?: string;
+    total_paid_flowers?: string;
+    total_unpaid_flowers?: string;
+    payout_rounds?: number;
+  };
+  external_payouts: Record<string, unknown>;
+  routing: {
+    total_submits?: number;
+    total_accepted?: number;
+    total_rejected?: number;
+    total_stale?: number;
+    total_accept_rate_pct?: number;
+    groups: { group: string; submits: number; accepted: number; pct: number }[];
+    sources: { source: string; submits: number; accepted: number; accept_rate_pct: number }[];
+  };
+  pearl: {
+    upstream: {
+      connected?: boolean;
+      enabled?: boolean;
+      submits?: number;
+      accepted?: number;
+      rejected?: number;
+      stale_dropped?: number;
+      unknown?: number;
+      busy?: number;
+      pending_submits?: number;
+      job_id?: string;
+      job_age_ms?: number;
+    };
+    native: { enabled?: boolean; job_age_ms?: number; job_id?: string; share_pct?: number };
+    served_upstream?: number;
+    served_native?: number;
+  };
+  coins: {
+    ticker: string;
+    algorithm: string;
+    device: string;
+    upstream: string;
+    job_fresh: boolean;
+    job_age_ms: number;
+  }[];
+};
+type Snap = {
+  ts: string | null;
+  total_dph: number;
+  rigs: Rig[];
+  pool?: PoolMiner[] | null;
+  poolstats?: PoolStats | null;
+  smos?: SmosRig[] | null;
+  ext?: ExtPools;
+};
 type ExtWorker = { name: string; hashrate: number; h1?: number; h6?: number; h24?: number; accepted?: number; last: number; agent?: string; rating?: number };
 type ExtPool = {
   hashrate: number;
@@ -188,6 +249,261 @@ function fmt(hr?: Hashrate) {
         A{hr.a}·R{hr.r}
       </span>
     </>
+  );
+}
+
+function Kpi({ label, value, sub, tone }: { label: string; value: React.ReactNode; sub?: string; tone?: string }) {
+  return (
+    <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-3.5 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-white/35">{label}</div>
+      <div className={`mt-1 text-lg font-bold leading-tight ${tone || "text-white"}`}>{value}</div>
+      {sub ? <div className="mt-0.5 text-[10px] text-white/35">{sub}</div> : null}
+    </div>
+  );
+}
+
+function Bar({ pct, tone }: { pct: number; tone: string }) {
+  const w = Math.max(0, Math.min(100, pct));
+  return (
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
+      <div className={`h-full rounded-full ${tone}`} style={{ width: `${w}%` }} />
+    </div>
+  );
+}
+
+function fmtDur(s?: number | null) {
+  if (!s && s !== 0) return "—";
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d) return `${d}d ${h}h`;
+  if (h) return `${h}h ${m}m`;
+  return `${m}m ${Math.floor(s % 60)}s`;
+}
+
+function fmtNum(n?: number | null) {
+  if (n === null || n === undefined) return "—";
+  return n.toLocaleString("en-US");
+}
+
+function PoolStatsPanel({ p }: { p: PoolStats }) {
+  const up = p.pearl?.upstream || {};
+  const rt = p.routing || { groups: [], sources: [] };
+  const ppl = p.pplns || {};
+  const upRate = up.submits ? ((up.accepted || 0) / up.submits) * 100 : null;
+  const winPct = ppl.window_size ? ((ppl.window_used || 0) / ppl.window_size) * 100 : null;
+  const topSources = (rt.sources || []).slice().sort((a, b) => (b.submits || 0) - (a.submits || 0)).slice(0, 10);
+  const groups = (rt.groups || []).slice().sort((a, b) => (b.submits || 0) - (a.submits || 0));
+
+  return (
+    <div className="mb-5 space-y-4">
+      {/* ── headline KPIs ── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <Kpi label="Sessions" value={fmtNum(p.sessions)} sub="live stratum" />
+        <Kpi label="Uptime" value={fmtDur(p.uptime_s)} sub="pool process" />
+        <Kpi label="Connections" value={fmtNum(p.total_connections)} sub="cumulative" />
+        <Kpi
+          label="Accept rate"
+          value={rt.total_accept_rate_pct !== undefined ? `${rt.total_accept_rate_pct.toFixed(1)} %` : "—"}
+          sub={`${fmtNum(rt.total_accepted)} acc / ${fmtNum(rt.total_submits)} sub`}
+          tone={rt.total_accept_rate_pct !== undefined && rt.total_accept_rate_pct < 95 ? "text-amber-300" : "text-emerald-300"}
+        />
+        <Kpi
+          label="PPLNS miners"
+          value={fmtNum(ppl.registered_miners)}
+          sub={`${fmtNum(ppl.miners_with_unpaid)} with unpaid balance`}
+        />
+        <Kpi
+          label="Pool fee"
+          value={p.config?.fee_bps !== undefined ? `${(p.config.fee_bps / 100).toFixed(2)} %` : "—"}
+          sub={`miner ${p.config?.miner_pct ?? "?"} · charity ${p.config?.humanitarian_pct ?? "?"} %`}
+        />
+      </div>
+
+      {/* ── Pearl upstream leg (Nockchain merge path) ── */}
+      <div className="rounded-2xl border border-[#34d399]/15 bg-gradient-to-br from-[#34d399]/[0.05] to-white/[0.02]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
+          <h3 className="text-sm font-bold text-white">Pearl upstream leg → LuckyPool</h3>
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
+                up.connected
+                  ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+                  : "border-rose-400/40 bg-rose-400/10 text-rose-300"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${up.connected ? "bg-emerald-400" : "bg-rose-400"}`} />
+              {up.connected ? "connected" : "disconnected"}
+            </span>
+            <span className="text-[10px] text-white/35">
+              job {up.job_id ? up.job_id.slice(0, 18) : "—"} · age {up.job_age_ms ? `${Math.round(up.job_age_ms / 1000)}s` : "—"}
+            </span>
+          </div>
+        </div>
+        <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Kpi label="Submits" value={fmtNum(up.submits)} sub="to upstream pool" />
+          <Kpi label="Accepted" value={fmtNum(up.accepted)} tone="text-emerald-300" sub="accepted upstream" />
+          <Kpi label="Rejected" value={fmtNum(up.rejected)} tone={up.rejected ? "text-rose-300" : undefined} sub="rejected upstream" />
+          <Kpi label="Stale dropped" value={fmtNum(up.stale_dropped)} tone={up.stale_dropped ? "text-amber-300" : undefined} sub="job expired" />
+        </div>
+        <div className="px-4 pb-4">
+          <div className="mb-1.5 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-white/35">
+            <span>Upstream accept rate</span>
+            <span className={upRate !== null && upRate < 95 ? "text-amber-300" : "text-emerald-300"}>
+              {upRate !== null ? `${upRate.toFixed(1)} %` : "—"}
+            </span>
+          </div>
+          <Bar pct={upRate ?? 0} tone="bg-gradient-to-r from-[#34d399] to-emerald-400" />
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <Kpi label="Served upstream jobs" value={fmtNum(p.pearl?.served_upstream)} sub="prlu: jobs sent to miners" />
+            <Kpi label="Served native jobs" value={fmtNum(p.pearl?.served_native)} sub="local PRL leg" />
+            <Kpi label="Pending submits" value={fmtNum(up.pending_submits)} sub="in flight" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* ── routing by group ── */}
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+          <div className="border-b border-white/[0.06] px-4 py-2.5">
+            <h3 className="text-sm font-bold text-white">Share routing by group</h3>
+          </div>
+          {!groups.length ? (
+            <div className="p-6 text-center text-xs text-white/40">No routing data.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[420px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                    <th className="px-4 py-2">Group</th>
+                    <th className="px-3 py-2 text-right">Submits</th>
+                    <th className="px-3 py-2 text-right">Accepted</th>
+                    <th className="px-3 py-2 text-right">Share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groups.map((g) => (
+                    <tr key={g.group} className="border-b border-white/[0.03] text-xs">
+                      <td className="px-4 py-2 font-semibold" style={{ color: POOL_COIN[g.group] || "#c9d1d9" }}>
+                        {g.group}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-white/70">{fmtNum(g.submits)}</td>
+                      <td className="px-3 py-2 text-right font-mono text-emerald-300/90">{fmtNum(g.accepted)}</td>
+                      <td className="px-3 py-2 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="font-mono text-white/50">{g.pct?.toFixed(1) ?? "—"}%</span>
+                          <div className="w-14">
+                            <Bar pct={g.pct ?? 0} tone="bg-white/40" />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* ── sources ── */}
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+          <div className="border-b border-white/[0.06] px-4 py-2.5">
+            <h3 className="text-sm font-bold text-white">Top sources by submits</h3>
+          </div>
+          {!topSources.length ? (
+            <div className="p-6 text-center text-xs text-white/40">No source data.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[420px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                    <th className="px-4 py-2">Source</th>
+                    <th className="px-3 py-2 text-right">Submits</th>
+                    <th className="px-3 py-2 text-right">Accepted</th>
+                    <th className="px-3 py-2 text-right">Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topSources.map((s) => (
+                    <tr key={s.source} className="border-b border-white/[0.03] text-xs">
+                      <td className="max-w-[220px] truncate px-4 py-2 font-mono text-white/75" title={s.source}>
+                        {s.source}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-white/70">{fmtNum(s.submits)}</td>
+                      <td className="px-3 py-2 text-right font-mono text-emerald-300/90">{fmtNum(s.accepted)}</td>
+                      <td
+                        className={`px-3 py-2 text-right font-mono ${
+                          s.accept_rate_pct < 95 ? "text-amber-300" : "text-white/60"
+                        }`}
+                      >
+                        {s.accept_rate_pct?.toFixed(1) ?? "—"}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── auxpow legs ── */}
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
+          <h3 className="text-sm font-bold text-white">AuxPoW legs</h3>
+          <span className="text-[10px] text-white/35">{(p.coins || []).length} coins · job freshness</span>
+        </div>
+        {!p.coins?.length ? (
+          <div className="p-6 text-center text-xs text-white/40">No auxpow legs reported.</div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2.5 p-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {p.coins.map((c) => {
+              const color = POOL_COIN[c.ticker?.toLowerCase() || ""] || "#79c0ff";
+              return (
+                <div key={c.ticker} className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold" style={{ color }}>
+                      {c.ticker}
+                    </span>
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${c.job_fresh ? "bg-emerald-400" : "bg-amber-400"}`}
+                      title={c.job_fresh ? "job fresh" : "job stale"}
+                    />
+                  </div>
+                  <div className="mt-0.5 truncate text-[10px] text-white/40" title={c.algorithm}>
+                    {c.algorithm || "—"}
+                  </div>
+                  <div className="mt-0.5 truncate text-[10px] text-white/25" title={c.upstream}>
+                    {c.upstream || "—"}
+                  </div>
+                  <div className="mt-1 text-[10px] text-white/30">
+                    job age {c.job_age_ms ? `${Math.round(c.job_age_ms / 1000)}s` : "—"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── pplns window ── */}
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-white">PPLNS window</h3>
+          <span className="text-[10px] text-white/35">
+            {fmtNum(ppl.window_used)} / {fmtNum(ppl.window_size)} entries
+            {ppl.window_total_difficulty ? ` · diff ${ppl.window_total_difficulty}` : ""}
+          </span>
+        </div>
+        <Bar pct={winPct ?? 0} tone="bg-gradient-to-r from-[#7dd3fc] to-[#a371f7]" />
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Kpi label="Registered miners" value={fmtNum(ppl.registered_miners)} />
+          <Kpi label="With unpaid balance" value={fmtNum(ppl.miners_with_unpaid)} />
+          <Kpi label="Payout rounds" value={fmtNum(ppl.payout_rounds)} />
+          <Kpi label="Shares accepted" value={fmtNum(p.shares?.accepted)} sub={`${fmtNum(p.shares?.rejected)} rejected`} />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -986,6 +1302,15 @@ export default function Dashboard() {
         {/* ── pool workers (SMOS / external rigs on the project pool) ── */}
         {tab === "pool" && (
         <section className="mx-auto w-full max-w-7xl pb-12 sm:pb-20">
+          {/* our own ZION pool — live routing / auxpow / PPLNS */}
+          {snap?.poolstats ? (
+            <PoolStatsPanel p={snap.poolstats} />
+          ) : (
+            <div className="mb-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] px-4 py-5 text-center text-xs text-amber-200/80">
+              Pool API unavailable — the status daemon could not reach the pool HTTP API on Edge (:8080).
+            </div>
+          )}
+
           {/* SMOS rigs card */}
           <div className="mb-5 rounded-2xl border border-[#fcd116]/15 bg-gradient-to-br from-[#fcd116]/[0.05] to-white/[0.02]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
