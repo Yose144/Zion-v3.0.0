@@ -972,67 +972,70 @@ export default function Dashboard() {
                       r.models.map((m) => ({ model: m, where: `rig #${r.id}` }))),
                     ...(ai.hiran?.reachable ? (ai.hiran.models || []).map((m) => ({ model: m, where: "hiran" })) : []),
                   ];
-                  const card = (m: CatEntry) => {
+                  const row = (m: CatEntry) => {
                     const fits = m.vram_gb <= bestFree;
                     const sel = inferenceModel === m.hf;
                     return (
-                      <div
+                      <tr
                         key={m.hf}
                         onClick={() => setInferenceModel(m.hf)}
-                        className={`group min-w-0 cursor-pointer rounded-xl border p-3 transition ${
+                        className={`cursor-pointer border-t border-white/[0.05] transition ${
                           sel
-                            ? "border-[#a371f7]/70 bg-[#a371f7]/15 shadow-lg shadow-[#a371f7]/5"
-                            : m.internal
-                              ? "border-[#fcd116]/25 bg-[#fcd116]/[0.04] hover:border-[#fcd116]/45"
-                              : "border-white/10 bg-black/30 hover:border-white/30 hover:bg-black/40"
+                            ? "bg-[#a371f7]/15"
+                            : m.internal ? "bg-[#fcd116]/[0.03] hover:bg-[#fcd116]/[0.07]" : "hover:bg-white/[0.03]"
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="min-w-0 truncate text-xs font-semibold text-white">{m.hf.split("/").pop()}</span>
-                              {m.internal && <span className="shrink-0 rounded-full border border-[#fcd116]/40 bg-[#fcd116]/10 px-1.5 py-px text-[9px] font-semibold text-[#fcd116]">ZION</span>}
-                              {m.tags.includes("live") && <span className="shrink-0 rounded-full border border-[#34d399]/50 bg-[#34d399]/10 px-1.5 py-px text-[9px] font-semibold text-[#6ee7b7]">● live</span>}
-                              {m.mockup && <span className="shrink-0 rounded-full border border-white/15 px-1.5 py-px text-[9px] italic text-white/40">planned</span>}
-                            </div>
-                            <div className="mt-0.5 text-[10px] leading-snug text-white/40">{m.desc}</div>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`truncate font-mono text-xs font-semibold ${m.internal ? "text-[#fcd116]" : "text-white"}`}>
+                              {m.hf.split("/").pop()}
+                            </span>
+                            {m.internal && <span className="shrink-0 rounded-full border border-[#fcd116]/40 bg-[#fcd116]/10 px-1.5 py-px text-[8px] font-semibold text-[#fcd116]">ZION</span>}
+                            {m.tags.includes("live") && <span className="shrink-0 rounded-full border border-[#34d399]/50 bg-[#34d399]/10 px-1.5 py-px text-[8px] font-semibold text-[#6ee7b7]">live</span>}
+                            {m.mockup && <span className="shrink-0 text-[8px] italic text-white/35">planned</span>}
                           </div>
-                          <span className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-medium text-white/55">{m.params}</span>
-                        </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-1">
-                          {m.tags.filter((t) => t !== "live").map((t) => (
-                            <span key={t} className="rounded-full bg-white/[0.06] px-1.5 py-px text-[9px] text-white/45">{t}</span>
-                          ))}
-                          {m.gated && <span className="rounded-full border border-[#fcd116]/30 px-1.5 py-px text-[9px] text-[#fcd116]">gated</span>}
-                          {m.latest_vllm && <span className="rounded-full border border-[#79c0ff]/30 px-1.5 py-px text-[9px] text-[#79c0ff]" title="needs newer vLLM — auto-deploy uses vllm-openai:latest">new vLLM</span>}
-                          <span className={`ml-auto rounded-full border px-1.5 py-px text-[9px] font-semibold ${
+                          <div className="truncate text-[10px] text-white/35">{m.hf.split("/")[0]} · {m.desc}</div>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2 text-[10px] font-medium text-white/55">{m.params}</td>
+                        <td className="whitespace-nowrap px-3 py-2">
+                          <span className={`rounded-full border px-1.5 py-px text-[9px] font-semibold ${
                             fits ? "border-[#34d399]/40 text-[#6ee7b7]" : "border-[#ff7b72]/40 text-[#ff9b93]"
                           }`}>
                             {m.vram_gb} GB {fits ? "fits" : "tight"}
                           </span>
-                        </div>
-                        <div className="mt-2.5 flex items-center gap-1.5 border-t border-white/[0.06] pt-2">
+                        </td>
+                        <td className="px-3 py-2 max-lg:hidden">
+                          <div className="flex flex-wrap gap-1">
+                            {m.tags.filter((t) => t !== "live").map((t) => (
+                              <span key={t} className="rounded-full bg-white/[0.06] px-1.5 py-px text-[9px] text-white/45">{t}</span>
+                            ))}
+                            {m.gated && <span className="rounded-full border border-[#fcd116]/30 px-1.5 py-px text-[9px] text-[#fcd116]">gated</span>}
+                            {m.latest_vllm && <span className="rounded-full border border-[#79c0ff]/30 px-1.5 py-px text-[9px] text-[#79c0ff]" title="auto-deploy uses vllm-openai:latest">new vLLM</span>}
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2 text-right">
                           {m.internal ? (
-                            <span className="text-[10px] italic text-white/35">llama.cpp · hiran-core / SMOS :8003</span>
+                            <span className="text-[9px] italic text-white/30">llama.cpp</span>
                           ) : (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); autoDeploy(m.hf); }}
-                              disabled={!!busy}
-                              className="min-h-7 flex-1 rounded-md border border-[#34d399]/35 bg-[#34d399]/10 text-[10px] font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:cursor-wait disabled:opacity-40"
-                            >
-                              ▸ deploy
-                            </button>
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); autoDeploy(m.hf); }}
+                                disabled={!!busy}
+                                className="min-h-7 rounded-md border border-[#34d399]/35 bg-[#34d399]/10 px-2.5 text-[10px] font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:opacity-40"
+                              >
+                                ▸ deploy
+                              </button>
+                              {" "}
+                              <a
+                                href={`https://huggingface.co/${m.hf}`}
+                                target="_blank" rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-[10px] text-white/35 transition hover:text-white/70"
+                              >HF↗</a>
+                            </>
                           )}
-                          {!m.internal && (
-                            <a
-                              href={`https://huggingface.co/${m.hf}`}
-                              target="_blank" rel="noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="min-h-7 content-center rounded-md border border-white/10 px-2 text-[10px] text-white/40 transition hover:border-white/25 hover:text-white/70"
-                            >HF ↗</a>
-                          )}
-                        </div>
-                      </div>
+                        </td>
+                      </tr>
                     );
                   };
                   return (
@@ -1108,25 +1111,23 @@ export default function Dashboard() {
                               ))}
                             </div>
                           )}
-                          {internal.length > 0 && (
-                            <>
-                              <div className="mt-3 flex items-center gap-2">
-                                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#fcd116]/80">Hiran</span>
-                                <span className="h-px flex-1 bg-[#fcd116]/15" />
-                                <span className="text-[9px] text-white/30">own GGUF · llama.cpp</span>
-                              </div>
-                              <div className="mt-2 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2">
-                                {internal.map(card)}
-                              </div>
-                            </>
-                          )}
-                          <div className="mt-3 flex items-center gap-2">
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/45">Public</span>
-                            <span className="h-px flex-1 bg-white/[0.07]" />
-                            <span className="text-[9px] text-white/30">vLLM · HF weights on deploy</span>
-                          </div>
-                          <div className="mt-2 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2">
-                            {pub.map(card)}
+                          <div className="mt-3 -mx-1 overflow-x-auto">
+                            <table className="w-full min-w-[680px] text-left">
+                              <tbody>
+                                <tr className="border-y border-[#fcd116]/15 bg-[#fcd116]/[0.04]">
+                                  <td colSpan={5} className="px-3 py-1.5 text-[9px] font-semibold uppercase tracking-wider text-[#fcd116]/80">
+                                    Hiran · own GGUF · llama.cpp
+                                  </td>
+                                </tr>
+                                {internal.map(row)}
+                                <tr className="border-y border-white/[0.08] bg-white/[0.02]">
+                                  <td colSpan={5} className="px-3 py-1.5 text-[9px] font-semibold uppercase tracking-wider text-white/45">
+                                    Public · vLLM · HF weights on deploy
+                                  </td>
+                                </tr>
+                                {pub.map(row)}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       </div>
