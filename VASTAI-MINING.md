@@ -560,9 +560,11 @@ Výběr backendu: `~/.lmstudio/.internal/backend-preferences-v1.json`
 Runtime jsou v `~/.lmstudio/extensions/backends/` — CUDA i Vulkan varianta
 jsou nainstalované, takže přepnutí je jen volba v configu.
 
-**KV cache mimo GPU:** `hardware-config.json` →
-`llm.load.offloadKVCacheToGpu = false` → KV cache v systémové RAM (62 GB),
-na GPU zůstane místo pro váhy. Bez toho se Gemma na 8 GB kartu nevejde.
+**Klíčová konfigurace pro rychlost (2026-10-22):** `hardware-config.json` →
+`llm.load.offloadKVCacheToGpu = true` (KV cache na GPU) a
+`load.gpuStrictVramCap = false` (neomezovat VRAM). S `offloadKVCacheToGpu=false`
+běžel Qwen2.5-Coder-7B jen **12 tok/s**, po přepnutí **31 tok/s** — KV cache
+v systémové RAM je na 8 GB kartě s 1.5 GB desktopu největší brzda.
 
 **Kapacita 1070 Ti (8 GB, ~1.5 GB si bere desktop):**
 
@@ -676,9 +678,12 @@ je tu lepší:
 | Gemma 4 E4B | 7 | ✅ typovaný kód | alternativa, 32k kontext (Vast) |
 | Qwen3-14B | 1.8 | ✅ správně odmítl falešný předpoklad | ruční swap, 2 tok/s |
 
-**Qwen2.5-Coder-7B** (`~/zion-hiran/models/qwen2.5-coder-7b-instruct-Q4_K_M.gguf`,
-4.36 GB) se **vejde celý na 1070 Ti** (celý model na GPU, 33 tok/s, 256k kontext)
-→ jednotka `zion-qwen-cuda.service` na portu 8070.
+**Qwen2.5-Coder-7B** (Q4_K_M, 4.36 GB) se **vejde celý na 1070 Ti**
+(celý model na GPU, **31 tok/s**, 256k kontext) a **obsluhuje ho LM Studio**
+(CUDA backend, `~/.lmstudio/models/Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/`,
+model key `qwen2.5-coder-7b-instruct`, API na **:1234**). Continue tedy jde
+přímo přes LM Studio — jednotka `zion-qwen-coder.service` (standalone
+llama-server na :8070) je vypnutá, aby se o VRAM neprali.
 
 > **Qwen3-4B na Navi padal na TDR** (`device lost`) — 2.4 GB modelu + KV na 6 GB
 > kartě, kde těžba drží 2.9 GB → compute buffery přetekly do GTT. Proto je
