@@ -54,13 +54,13 @@ export default function Navigation() {
       title: tr('nav', 'defi_group', lang),
       color: '252, 209, 22',
       items: [
-        { href: '/multichain', label: tr('nav', 'overview', lang), children: [
-          { href: '/multichain#swap', label: tr('nav', 'swap', lang) },
-          { href: '/multichain#bridge', label: tr('nav', 'bridge', lang) },
-          { href: '/multichain#dex', label: tr('nav', 'dex', lang) },
-          { href: '/multichain#bridge', label: tr('nav', 'warp', lang) },
-          { href: '/multichain#earn', label: tr('nav', 'earn', lang) },
-          { href: '/multichain#auction', label: tr('nav', 'auction', lang) },
+        { href: '/market', label: tr('nav', 'overview', lang), children: [
+          { href: '/market#swap', label: tr('nav', 'swap', lang) },
+          { href: '/market#bridge', label: tr('nav', 'bridge', lang) },
+          { href: '/market#dex', label: tr('nav', 'dex', lang) },
+          { href: '/market#bridge', label: tr('nav', 'warp', lang) },
+          { href: '/market#earn', label: tr('nav', 'earn', lang) },
+          { href: '/market#auction', label: tr('nav', 'auction', lang) },
         ] },
         { href: '/dao', label: tr('nav', 'dao_governance', lang) },
         { href: '/cex', label: tr('nav', 'cex', lang) },
@@ -71,6 +71,7 @@ export default function Navigation() {
       title: tr('nav', 'layers_group', lang),
       color: '228, 30, 43',
       items: [
+        { href: '/world', label: tr('nav', 'world', lang) },
         { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
         { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang) },
         {

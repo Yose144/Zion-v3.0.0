@@ -951,7 +951,7 @@ export default function RoadmapPage() {
             ))}
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/multichain" className="zion-button-primary">
+            <Link href="/market" className="zion-button-primary">
               <Activity className="h-4 w-4" /> {tr('nav', 'multichain', lang)}
             </Link>
             <Link href="/docs" className="zion-button-secondary">

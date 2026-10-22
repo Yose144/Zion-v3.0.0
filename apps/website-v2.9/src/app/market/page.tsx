@@ -674,7 +674,7 @@ export default function DefiPage() {
                 </span>
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
-                <Link href="/multichain#dex" className="zion-button-primary text-sm">
+                <Link href="/market#dex" className="zion-button-primary text-sm">
                   <Zap className="h-4 w-4" />
                   {DefiCopy.ziondexSwap[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-3 w-3" />
@@ -1392,7 +1392,7 @@ export default function DefiPage() {
 
           <div className="grid gap-5 md:grid-cols-2">
             <Link
-              href="/multichain#bridge"
+              href="/market#bridge"
               className="zion-rainbow-card p-6 transition-transform duration-200 hover:scale-[1.01] block"
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >

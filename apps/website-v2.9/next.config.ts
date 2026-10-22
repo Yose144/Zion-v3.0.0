@@ -135,15 +135,18 @@ const nextConfig: NextConfig = {
       { source: '/explorer/tx/:hash', destination: '/explorer/tx?hash=:hash', permanent: true },
       { source: '/explorer/address/:addr', destination: '/explorer/address?addr=:addr', permanent: true },
       { source: '/explorer/block/:id', destination: '/explorer/block?id=:id', permanent: true },
-      // Single Multichain Hub at /multichain — product pages are sections
-      { source: '/defi', destination: '/multichain', permanent: true },
-      { source: '/defi/:path+', destination: '/multichain', permanent: true },
-      { source: '/bridge', destination: '/multichain#bridge', permanent: true },
-      { source: '/warp', destination: '/multichain#bridge', permanent: true },
-      { source: '/swap', destination: '/multichain#swap', permanent: true },
-      { source: '/dex', destination: '/multichain#dex', permanent: true },
-      { source: '/dex/:path*', destination: '/multichain#dex', permanent: true },
-      { source: '/ziondex', destination: '/multichain#dex', permanent: true },
+      // F3: Trh section — canonical market hub at /market (ex /multichain)
+      { source: '/multichain', destination: '/market', permanent: true },
+      { source: '/multichain/:path*', destination: '/market/:path*', permanent: true },
+      // Product pages are sections of the market hub
+      { source: '/defi', destination: '/market', permanent: true },
+      { source: '/defi/:path+', destination: '/market', permanent: true },
+      { source: '/bridge', destination: '/market#bridge', permanent: true },
+      { source: '/warp', destination: '/market#bridge', permanent: true },
+      { source: '/swap', destination: '/market#swap', permanent: true },
+      { source: '/dex', destination: '/market#dex', permanent: true },
+      { source: '/dex/:path*', destination: '/market#dex', permanent: true },
+      { source: '/ziondex', destination: '/market#dex', permanent: true },
       // dao.zionterranova.com (Phase A): once DNS+nginx route the host here,
       // canonicalize onto the app domain under /dao. Order matters: the
       // explicit /dao passthrough must precede the catch-all path map.

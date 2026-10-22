@@ -135,7 +135,7 @@ export default function DexPage() {
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
-                  href="/multichain"
+                  href="/market"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
                   style={{ '--rc': '6, 105, 40' } as CSSProperties}
                 >
@@ -159,7 +159,7 @@ export default function DexPage() {
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
-                  href="/multichain#earn"
+                  href="/market#earn"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
                   style={{ '--rc': '6, 105, 40' } as CSSProperties}
                 >

@@ -27,7 +27,7 @@ export const NIRVANA_WORKSTREAMS: NirvanaWorkstream[] = [
       en: 'A demonstrated deposit → swap → withdrawal with recovery, refund and clearly explained risks; Passkeys only after an identity-security review.',
     },
     prerequisite: { cs: 'Stabilní základ 3.2', en: 'A stable 3.2 foundation' },
-    layerHref: '/multichain',
+    layerHref: '/market',
     chapterSlug: '06-Mosty-Pres-Propast',
   },
   {

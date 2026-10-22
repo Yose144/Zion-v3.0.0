@@ -159,7 +159,7 @@ async function getProvider(preferMetaMaskWallet = true): Promise<{
   return null;
 }
 
-const EVM_PATHS = ['/multichain', '/defi', '/dex', '/bridge', '/swap', '/warp', '/wallet', '/account'];
+const EVM_PATHS = ['/market', '/defi', '/dex', '/bridge', '/swap', '/warp', '/wallet', '/account'];
 
 function needsEvmWallet(pathname: string | null): boolean {
   if (!pathname) return false;

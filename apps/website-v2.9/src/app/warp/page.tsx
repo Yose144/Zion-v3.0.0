@@ -364,7 +364,7 @@ export default function WarpPage() {
                 {WarpCopy.warpBridgeCovers13ChainFamilie[cs ? 'cs' : 'en']}
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/multichain" className="zion-button-primary">
+                <Link href="/market" className="zion-button-primary">
                   {WarpCopy.openDefiHub[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -496,7 +496,7 @@ export default function WarpPage() {
                     {pair.eta}
                   </div>
                   {pair.status === 'live' && (
-                    <Link href="/multichain" className="mt-3 inline-flex items-center gap-1 text-xs text-zion-cyan hover:text-white transition-colors">
+                    <Link href="/market" className="mt-3 inline-flex items-center gap-1 text-xs text-zion-cyan hover:text-white transition-colors">
                       {WarpCopy.openSwap[cs ? 'cs' : 'en']} <ArrowRight className="h-3 w-3" />
                     </Link>
                   )}

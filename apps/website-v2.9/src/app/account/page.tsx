@@ -594,7 +594,7 @@ export default function AccountPage() {
               <Link href="/explorer" className="zion-button-secondary">
                 <Globe2 className="h-4 w-4" /> Explorer
               </Link>
-              <Link href="/multichain" className="zion-button-secondary">
+              <Link href="/market" className="zion-button-secondary">
                 <TrendingUp className="h-4 w-4" /> Multichain Hub
               </Link>
             </div>

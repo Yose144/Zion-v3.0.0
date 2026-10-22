@@ -251,7 +251,7 @@ const getPillars = (cs: boolean) => [
     chips: ['13 chain families', '499 tests', 'EVM live'],
     color: 'text-zion-purple',
     rc: '147, 51, 234',
-    href: '/multichain#bridge',
+    href: '/market#bridge',
   },
 ];
 
@@ -1276,7 +1276,7 @@ export default function L3HiranPage() {
             <Link href="/ai-native" className="inline-flex items-center gap-2 rounded-2xl border border-zion-purple/30 bg-zion-purple/5 px-6 py-3 text-sm font-semibold text-purple-200 hover:bg-zion-purple/10 transition-colors">
               <Brain className="h-4 w-4" /> AI Native
             </Link>
-            <Link href="/multichain#bridge" className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 px-6 py-3 text-sm font-semibold text-cyan-200 hover:bg-zion-cyan/10 transition-colors">
+            <Link href="/market#bridge" className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 px-6 py-3 text-sm font-semibold text-cyan-200 hover:bg-zion-cyan/10 transition-colors">
               <Globe className="h-4 w-4" /> L3 WARP
             </Link>
             <Link href="/mining" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>

@@ -50,7 +50,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/explorer/api-docs', 0.5, 'monthly'),
 
     // ── Ecosystem / product ──────────────────────────────────────────
-    r('/multichain', 0.7, 'weekly'),
+    r('/market', 0.7, 'weekly'),
     r('/dao', 0.7, 'weekly'),
     r('/wallet', 0.6, 'monthly'),
     r('/wallet/multichain', 0.5, 'monthly'),
@@ -59,6 +59,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/cex', 0.6, 'monthly'),
 
     // ── Layer pages ──────────────────────────────────────────────────
+    r('/world', 0.7, 'weekly'),
     r('/l3-hiran', 0.7, 'monthly'),
     r('/l4-oasis', 0.7, 'monthly'),
     r('/l5-free-world', 0.7, 'monthly'),

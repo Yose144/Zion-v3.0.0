@@ -212,7 +212,7 @@ export default function ZionDexDashboard() {
               Trustless HTLC atomic swaps between Bitcoin and ZION L1. No custodian.
             </p>
             <Link
-              href="/multichain#warp"
+              href="/market#warp"
               className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 rounded-xl bg-zion-gold/15 text-zion-gold border border-zion-gold/30 hover:bg-zion-gold/25 transition-colors"
             >
               Open WARP Swap

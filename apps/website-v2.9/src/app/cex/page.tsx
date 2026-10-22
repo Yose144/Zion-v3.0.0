@@ -654,7 +654,7 @@ export default function CexPage() {
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <a
-              href="/multichain"
+              href="/market"
               className="zion-button-primary"
             >
               {CexCopy.defiHub[cs ? 'cs' : 'en']}
