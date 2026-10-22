@@ -121,9 +121,13 @@
 | `/kompas` | `/terranova` | 301 | přesun z in-page redirect |
 | `/cesta` | `/maitreya#cesta` | 301 | přesun z in-page redirect |
 
-## Redirect tabulka — fáze 2 (po vzniku `/market` + `/world` hubů)
+## Redirect tabulka — fáze 2 (částečně provedeno 2026-10-22, `2ff61b679`)
 
-`/multichain`→`/market`, retarget `/dex*/ziondex/swap/defi/bridge/warp`→`/market#*`, `/cex`→`/market`, `/l3-hiran /l4-oasis /l5-free-world /l6-issobella /ekam /ai-native`→`/world#*`, `/download /node-setup /onboard→/mining`, `/monitoring /miner-stats /g8→/network`, `/dashboard/*(public)→/network`, `/nirvana→/maitreya#nirvana`, `/api-reference /wiki→/docs`, `/dashboard/dao-tree→/dao`.
+✅ `/multichain`→`/market` (hub přejmenován; implementace přesunuta `defi/page.tsx`→`market/page.tsx`), retarget `/dex*/ziondex/swap/defi/bridge/warp`→`/market#*`, nav skupina → "Trh/Market".
+
+✅ `/world` hub vytvořen (L3/L4/L5/L6 + TerraNova + Ekam + AI Native, nav + sitemap).
+
+Zbývá rozhodnout/provést: `/cex`→`/market` (stránka má vlastní obsah — open Q), `/l*`→`/world#*` (l* stránky zatím zůstávají samostatné — jejich obsah není ve /world, jen odkazy), `/download /node-setup→/mining` (redirect připraven), `/monitoring /miner-stats /g8→/network`, `/dashboard/*(public)→/network`, `/nirvana→/maitreya#nirvana`, `/api-reference→/docs`, `/dashboard/dao-tree→/dao`.
 
 ## K posouzení (otevřené)
 
