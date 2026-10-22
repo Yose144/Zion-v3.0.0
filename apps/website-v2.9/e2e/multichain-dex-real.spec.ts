@@ -6,7 +6,7 @@ test.describe('Multichain /dex swap widget — real Edge', () => {
 
   const MNEMONIC = process.env.ZION_WALLET_MNEMONIC;
 
-  test('loads /multichain#dex and fetches a real DEX quote', async ({ page }) => {
+  test('loads /market#dex and fetches a real DEX quote', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
     page.on('console', (msg) => {
@@ -18,7 +18,7 @@ test.describe('Multichain /dex swap widget — real Edge', () => {
       errors.push(`console: ${text}`);
     });
 
-    await page.goto('/multichain#dex');
+    await page.goto('/market#dex');
 
     await expect(page.getByRole('heading', { name: /ZionDex Swap/i })).toBeVisible({ timeout: 15_000 });
 
@@ -57,7 +57,7 @@ test.describe('Multichain /dex swap widget — real Edge', () => {
       errors.push(`console: ${text}`);
     });
 
-    await page.goto('/multichain#dex');
+    await page.goto('/market#dex');
 
     // Wait for auth to resolve and the widget to show the authenticated swap UI.
     await expect(page.getByRole('heading', { name: /ZionDex Swap/i })).toBeVisible({ timeout: 15_000 });

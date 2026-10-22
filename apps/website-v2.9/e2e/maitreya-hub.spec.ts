@@ -22,7 +22,7 @@ test.beforeEach(async ({ context }) => {
   await context.route(/^https?:\/\/(?!127\.0\.0\.1|localhost)/, (route) => route.abort());
 });
 
-const KNOWN_WARN = /same key.*\/multichain#bridge|non-unique keys/i;
+const KNOWN_WARN = /same key.*\/market#bridge|non-unique keys/i;
 
 function watchPageErrors(page: Page) {
   const errors: string[] = [];

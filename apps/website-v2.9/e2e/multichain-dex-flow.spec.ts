@@ -82,7 +82,7 @@ test.describe('Multichain /dex swap widget', () => {
       });
     });
 
-    await page.goto('/multichain#dex');
+    await page.goto('/market#dex');
 
     await test.step('widget loads and fetches quote', async () => {
       await expect(page.getByRole('heading', { name: /ZionDex Swap/i })).toBeVisible({ timeout: 15_000 });

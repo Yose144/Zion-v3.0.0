@@ -4,7 +4,7 @@ const BASE = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3100';
 
 test.use({ channel: 'chrome', navigationTimeout: 90_000 });
 
-const KNOWN_WARN = /same key.*multichain#bridge|non-unique keys|DevTools|Download the React/i;
+const KNOWN_WARN = /same key.*market#bridge|non-unique keys|DevTools|Download the React/i;
 function watchErrors(page: Page) {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message.slice(0, 200)}`));
