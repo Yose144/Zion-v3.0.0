@@ -445,6 +445,19 @@ def ai_probe(inst, port):
     return parse_ai_probe(inst, out, rc, err)
 
 
+HIRAN_API = os.environ.get("VASTCTL_HIRAN_API", "http://127.0.0.1:8003")
+
+
+def hiran_probe():
+    """SMOS rig llama.cpp (Hiran) via Edge-tunnel loopback :8003."""
+    try:
+        d = _http_json(f"{HIRAN_API}/v1/models", timeout=8)
+        models = [m.get("id") for m in d.get("data", []) if isinstance(m, dict)]
+        return {"reachable": True, "models": models, "model": models[0] if models else None}
+    except Exception:
+        return {"reachable": False, "models": [], "model": None}
+
+
 def ai_status():
     port = ai_api_port()
     insts = instances()
@@ -470,6 +483,7 @@ def ai_status():
             ),
             "inference_rigs": sum(rig["inference_reachable"] for rig in rigs),
         },
+        "hiran": hiran_probe(),
         "note": (
             "VRAM totals are inventory only. GPUs on separate Vast hosts do not "
             "form shared memory for one model."
@@ -658,6 +672,15 @@ def _http_json(url, timeout=12):
         "User-Agent": "vastctl/1.0", "Accept": "application/json"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return json.loads(r.read().decode())
+
+
+def _http_post(url, payload, timeout=180):
+    import urllib.request
+    req = urllib.request.Request(
+        url, data=json.dumps(payload).encode(), method="POST",
+        headers={"Content-Type": "application/json", "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read().decode()
 
 
 def _lucky_stats(coin, wallet):
@@ -1680,6 +1703,28 @@ def inference_action(action, query):
             "except Exception:\n"
             " print(\"(no/invalid reply)\")'\n"
         )
+    elif action == "hiran-chat":
+        prompt = query.get("prompt", [""])[0].strip()
+        if not prompt:
+            raise ValueError("prompt required")
+        max_tok = int(query.get("max_tokens", ["256"])[0])
+        hp = hiran_probe()
+        if not hp["reachable"] or not hp["model"]:
+            return "no model loaded on the hiran endpoint (SMOS rig offline?)", 502
+        raw = _http_post(f"{HIRAN_API}/v1/chat/completions", {
+            "model": hp["model"],
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": max_tok, "temperature": 0.7})
+        try:
+            d = json.loads(raw)
+            out = d["choices"][0]["message"]["content"]
+            u = d.get("usage") or {}
+            if u:
+                out += (f"\n-- {u.get('completion_tokens', '?')} tok out / "
+                        f"{u.get('prompt_tokens', '?')} in")
+            return out, 200
+        except Exception:
+            return "(no/invalid reply)", 502
     elif action == "tunnel":
         local_port = int(query.get("local_port", [
             str(vast_inference.REMOTE_API_PORT)

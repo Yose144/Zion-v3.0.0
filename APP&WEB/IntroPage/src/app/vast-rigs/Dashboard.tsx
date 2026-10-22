@@ -175,6 +175,7 @@ type AiStatus = {
     gpu_utilization_pct: number | null;
     inference_rigs: number;
   };
+  hiran?: { reachable: boolean; models: string[]; model: string | null };
   note: string;
 };
 
@@ -660,6 +661,23 @@ export default function Dashboard() {
       .catch((e) => setSmosLog((p) => ({ ...p, [id]: String(e) })));
   };
   const [chatAns, setChatAns] = useState<Record<number, string>>({});
+  const [hiranAns, setHiranAns] = useState("");
+  const hiranChat = async () => {
+    const inp = document.getElementById("hiran-chat") as HTMLInputElement;
+    const prompt = (inp?.value || "").trim();
+    if (!prompt) return;
+    setBusy("hiran:chat");
+    setHiranAns("…");
+    try {
+      const res = await fetch(`/vast-ops/api/inference/hiran-chat?prompt=${encodeURIComponent(prompt)}`, { method: "POST" });
+      const text = await res.text();
+      setHiranAns(text || "(empty reply)");
+    } catch (e) {
+      setHiranAns(`error: ${e}`);
+    } finally {
+      setBusy("");
+    }
+  };
   const [open, setOpen] = useState<Record<number, boolean>>({});
   const [tab, setTab] = useState<"mining" | "ai" | "market" | "pool">("mining");
   useEffect(() => {
@@ -935,6 +953,50 @@ export default function Dashboard() {
                       </span>
                     </div>
                   </div>
+                </div>
+                <div className="mt-4 rounded-xl border border-[#79c0ff]/25 bg-[#79c0ff]/[0.06] p-3 sm:p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold text-white">Hiran · SMOS endpoint</h3>
+                    <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
+                      ai.hiran?.reachable
+                        ? "border-[#34d399]/40 bg-[#34d399]/10 text-[#6ee7b7]"
+                        : "border-[#ff7b72]/40 bg-[#ff7b72]/10 text-[#ff9b93]"
+                    }`}>
+                      {ai.hiran ? (ai.hiran.reachable ? "API online" : "rig offline") : "probe…"}
+                    </span>
+                    {ai.hiran?.model && (
+                      <span className="truncate rounded-full border border-[#79c0ff]/30 bg-black/30 px-2.5 py-0.5 font-mono text-[10px] text-[#79c0ff]">
+                        {ai.hiran.model}
+                      </span>
+                    )}
+                    <span className="ml-auto text-[10px] text-white/30">llama.cpp · SMOS rig → Edge :8003</span>
+                  </div>
+                  {ai.hiran && !ai.hiran.reachable && (
+                    <p className="mt-2 text-[11px] leading-relaxed text-white/45">
+                      SMOS rig nebo jeho reverse tunel na Edge neběží — endpoint se sám objeví, až rig přejde online.
+                    </p>
+                  )}
+                  <div className="mt-3 flex gap-1.5">
+                    <input
+                      id="hiran-chat"
+                      placeholder={ai.hiran?.reachable ? "Ask Hiran…" : "Waiting for the SMOS rig…"}
+                      disabled={!ai.hiran?.reachable}
+                      className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-white/25 focus:border-[#79c0ff]/50 focus:outline-none disabled:opacity-40"
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); hiranChat(); } }}
+                    />
+                    <button
+                      disabled={!!busy || !ai.hiran?.reachable}
+                      onClick={hiranChat}
+                      className="min-h-9 shrink-0 rounded-lg border border-[#79c0ff]/35 bg-[#79c0ff]/10 px-3 text-xs font-semibold text-[#a5d6ff] transition hover:bg-[#79c0ff]/20 disabled:cursor-wait disabled:opacity-40"
+                    >
+                      {busy === "hiran:chat" ? "…" : "Ask"}
+                    </button>
+                  </div>
+                  {hiranAns !== "" && (
+                    <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[#79c0ff]/15 bg-black/40 p-3 text-[11px] leading-relaxed text-[#a5d6ff]">
+                      {hiranAns}
+                    </pre>
+                  )}
                 </div>
                 <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-6">
                   {[
