@@ -264,7 +264,37 @@ Desktop agent běží jako `zion-desktop-agent.service` (user unit) →
 
 ---
 
-## 8. Změněné soubory
+## 8. Git + veřejné zrcadlo
+
+| Repo | Stav |
+|---|---|
+| `origin` (privátní `Yose144/Zion-v3.0.0`) | `17b256786` (AI-native) + `c348d4824` (deploy guard) pushnuto ✅ |
+| `public` (`Zion-TerraNova/v3-Mainnet`) | `b3fba30a9..b9c711fb5` — **18 souborů** (L5 community docs, `docs/genesis.md` premine slot 6 = LUMI/Nová Amerika 500M, security disclosure) ✅ |
+
+**Dvě věci, které je potřeba vědět:**
+
+1. **`git subtree push` nešel použít.** Veřejný remote drží *pre-rewrite* historii
+   (SHA remap z 2026-10-21), takže push by vyžadoval **force-push = history rewrite
+   veřejného repa**. Bez výslovného schválení to nedělám. Místo toho byl obsahový
+   delta zveřejněn **neinvazivně**: v dočasném worktree na vrcholu `public/main`
+   aplikován rozdíl (18 souborů) + jeden commit + fast-forward push. Výsledný strom
+   je **bitem shodný** s `public/` v privátním repozitáři (`git diff` = prázdný).
+   *Pokud chceš čistý subtree push s přepisem historie, je potřeba schválení a pak:
+   `git subtree push --prefix=public public main --force`.*
+
+2. **`public/docs/genesis.md.sig` je neplatný už teď** (ne moje změna):
+   `gpg --verify` vrací **BAD signature** i proti verzi z remote (`public/main`).
+   Tvůrčí klíč (`GNUPGHOME=/tmp/zion_gpg/`) **v repozitáři neexistuje** (tmp
+   resetovaný) a v default gpg store žádný secret key není → **přesignovat nelze**.
+   Podle pravidel repo (`AGENTS.md` → *public/ edits*) se `docs/genesis.md` po úpravě
+   musí znovu podepsat → nutno obnovit klíč (flash disk / heslomazna).
+
+Audit delty před zveřejněním: žádné interní IP (`207.180.217.100`, `62.171.141.136`,
+IPv6), žádné private keys / mnemonics / seed fráze ✅.
+
+---
+
+## 9. Změněné soubory
 
 ```
 AGENTS.md                                                   (+ architektura + open items)
@@ -283,7 +313,7 @@ ZION_OS/dashboard/dashboard.{html,js}.gz                    (regenerace, sync se
 
 ---
 
-## 9. Reference
+## 10. Reference
 
 - `V31/L1/core/src/emission.rs` — rozdělení odměny 89/5/5/1
 - `V31/L3/ai-native/rag-docs/SCOPE.md` — pravidla kurace RAG korpusu
