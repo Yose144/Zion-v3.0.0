@@ -17,8 +17,16 @@ impl IssobellaHiranBridge {
             .hiran_endpoint
             .clone()
             .unwrap_or_else(|| "http://localhost:8002".to_string());
+        // Generation timeout: a reasoning-capable local model needs ~400 tokens
+        // for a mission review, which is well over the old fixed 30 s on a
+        // 3-6 tok/s endpoint. Keep it configurable and generous; the bridge
+        // must not cut the answer off mid-generation.
+        let timeout_secs = std::env::var("ISSOBELLA_HIRAN_TIMEOUT_SECS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(150);
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(timeout_secs))
             .build()
             .expect("HTTP client build failed");
         Self {

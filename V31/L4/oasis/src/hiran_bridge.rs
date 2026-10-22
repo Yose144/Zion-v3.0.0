@@ -17,8 +17,14 @@ impl OasisHiranBridge {
             .hiran_endpoint
             .clone()
             .unwrap_or_else(|| "http://localhost:8002".to_string());
+        // See the Issobella twin: a 400-token mission narrative needs far more
+        // than 30 s on a local 3-6 tok/s endpoint.
+        let timeout_secs = std::env::var("OASIS_HIRAN_TIMEOUT_SECS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(150);
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(timeout_secs))
             .build()
             .expect("HTTP client build failed");
         Self {

@@ -447,6 +447,55 @@ Mosty nepotřebují změnu kódu — stačí endpoint + enable flag. Bridge vol�
 `{base_url}/v1/chat/completions` s `max_tokens: 400`, takže fungují s jakýmkoli
 OpenAI-compatible serverem (LM Studio, Vast, ai-native záloha).
 
+**Timeout mostu byl zvednut z 30 s na 150 s** (2026-10-22) — 400 tokenů na
+3–6 tok/s endpointu = 70–130 s, pevných 30 s odpověď vždy odřízlo:
+
+| Služba | Proměnná | Default |
+|---|---|---|
+| Issobella | `ISSOBELLA_HIRAN_TIMEOUT_SECS` | 150 |
+| OASIS | `OASIS_HIRAN_TIMEOUT_SECS` | 150 |
+
+Ověřeno: `POST /api/v1/ai/evaluate-mission` na Issobella (EDGE2 `:8097`) →
+**plná odpověď za 2 min 10 s** (dřív „Hiran nedosažitelný" po 30 s).
+
+**Jak zapnout na OASIS:** `zion-v31-oasis` načítá konfiguraci z TOML, ale
+`main.rs` umí i env (`OASIS_HIRAN_ENABLED`, `OASIS_HIRAN_ENDPOINT`) — stačí
+přidat do `/etc/zion/edge-environment.sh` a restartovat službu.
+
+```bash
+# /etc/zion/edge-environment.sh
+ISSOBELLA_HIRAN_ENABLED=true
+ISSOBELLA_HIRAN_URL=http://127.0.0.1:8004     # primární: PC GPU přes tunel
+ISSOBELLA_HIRAN_TIMEOUT_SECS=150
+OASIS_HIRAN_ENABLED=true
+OASIS_HIRAN_ENDPOINT=http://127.0.0.1:8004
+OASIS_HIRAN_TIMEOUT_SECS=150
+```
+
+> **Pozor na zastaralé defaulty** v `V31/L4/oasis/src/config.rs`:
+> `ai_native_endpoint = "http://localhost:8091"` a `ncl_endpoint =
+> "http://localhost:8090"` — reálné porty na EDGE2 jsou **8094** (OASIS) a
+> **8098** (NCL). Před zapnutím mostů je přepsat.
+
+### 5.7 Vast instance jako inference zdroj (stav 2026-10-22)
+
+Instance **57054247** běží s `llama-server` (CUDA, sm_86) + `gemma-4-e4b`
+na `127.0.0.1:8000`; panel `vast-rigs` to vidí jako
+`models: ["gemma-4-e4b"], inference_reachable: true`.
+Z PC je dostupný přes user unit `vast-inference-tunnel.service`
+→ `http://127.0.0.1:18000/v1`.
+
+Výkon: **5.0 tok/s** generování / 40.8 tok/s prefill (sdílená GPU s 2× SRBMiner,
+100 % util, 76 °C). Bez těžby lze očekávat ~2× víc.
+
+> ⚠️ **Gemma 4 E4B je reasoning model** — `--reasoning off` ani
+> `enable_thinking:false` ho nezastaví. Při `max_tokens` 200–300 se celý
+> budget spotřebuje na `reasoning_content` a `content` je **prázdný**.
+> Vždy `maxTokens ≥ 800` (Continue: 4096).
+
+Kompletní runbook (výběr image, build, deploy, panel, pasti) →
+[`Vast-Inference.md`](Vast-Inference.md).
+
 ## 6. CPU mining — XMRig (Monero `rx/0`) vedle GPU minerů
 
 GPU dělá SRBMiner/zion-miner, **CPU na vast instancích jinak idluje** — XMRig

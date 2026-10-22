@@ -80,7 +80,52 @@ neautentizovaný model API na veřejný internet.
 
 ---
 
-## 3. Varianta A — Docker + vLLM (doporučená, ~10 min)
+## 2.1 Ověřený stav (2026-10-22, instance 57054247)
+
+| Věc | Výsledek |
+|---|---|
+| Build llama.cpp CUDA | `rust:1.97`-style CUDA build **hotov** (`-DCMAKE_CUDA_ARCHITECTURES=86 -DGGML_CUDA_FA_ALL_QUANTS=OFF`); 120 FA template instancí → 13 |
+| Model | `gemma-4-E4B-it-Q4_K_M.gguf` (5.3 GB) + `mmproj-…-BF16.gguf` (991 MB) staženy z HF na instanci (~3 min) |
+| Server | `llama-server` běží, **5.0 tok/s** generování / 40.8 tok/s prefill (CUDA, sm_86) |
+| VRAM | 5 057 MiB / 12 288 (Gemma ~4.7 GB + 2× SRBMiner ~0.35 GB) |
+| Panel `vast-rigs` | `models: ["gemma-4-e4b"]`, **`inference_reachable: true`** ✅ |
+| Tunel z PC | `vast-inference-tunnel.service` (user unit) → `http://127.0.0.1:18000/v1` ✅ |
+| Rychlost s těžbou | 5.0 tok/s; **bez těžby lze očekávat ~2× víc** (těžba bere 100 % GPU) |
+| Odpověď | `ZION je Proof-of-Work (PoW) L1 blockchain vyvinutý v Rustu … (89/5/5/1)` ✅ |
+
+**Start příkaz (kompletní, ověřený):**
+
+```bash
+cd /opt/llama.cpp/build/bin
+setsid nohup ./llama-server \
+  -m /opt/models/gemma-4-E4B-it-Q4_K_M.gguf \
+  --mmproj /opt/models/mmproj-gemma-4-E4B-it-BF16.gguf \
+  --host 127.0.0.1 --port 8000 --alias gemma-4-e4b \
+  -c 32768 --parallel 1 -ngl 999 --flash-attn on \
+  --cache-type-k q8_0 --cache-type-v q8_0 -t 8 \
+  --reasoning off --chat-template-kwargs '{"enable_thinking":false}' \
+  > /tmp/llama-server.log 2>&1 < /dev/null &
+echo $! > /tmp/llama-server.pid
+```
+
+### 2.2 Gemma 4 E4B je reasoning model — `maxTokens` musí být velký
+
+`--reasoning off` i `enable_thinking:false` **nepomáhají** (šablona modelu si myslí
+vždy). Místo toho se celý budget spotřebuje na `reasoning_content` a `content`
+zůstane **prázdný**:
+
+| `max_tokens` | reasoning | content | poznámka |
+|---|---|---|---|
+| 200 | ~620 znaků | **prázdný** | agent/Continue by dostal prázdnou odpověď |
+| 300 | ~1 100 znaků | **prázdný** | stejně |
+| 800 | 1 623 znaků | ✅ **plná odpověď** (553 tokenů) | bezpečná hodnota |
+
+**Pravidlo:** pro Gemma 4 E4B vždy `maxTokens ≥ 800` (Continue: 4096 ✅).
+`reasoning: true` + `reasoningBudgetTokens` v Continue oddělí reasoning od
+odpovědi, ale **maxTokens musí pokrýt obojí**.
+
+---
+
 
 Předpoklad: instance s Dockerem + NVIDIA container toolkitem.
 
@@ -303,7 +348,7 @@ zastavuje **minery**, ne instanci; zrušení pronájmu = Vast UI/API
 | Server | `--host 0.0.0.0` = veřejný neautentizovaný LLM | vždy `127.0.0.1` + SSH tunel |
 | Panel | `utilization 100 %` = těžba, ne inference | rozlišovat v UI (doplnit) |
 | Agent | bridge timeout 30 s vs 400 tokenů | rychlá GPU cesta nebo zvýšit timeout v kódu |
-| Model | Gemma 4 = reasoning model | `maxTokens` + `reasoning: true` + `reasoningBudgetTokens` |
+| Model | Gemma 4 E4B = reasoning model | `maxTokens ≥ 800`; `--reasoning off` **nepomáhá** |
 | VRAM (PC) | dvě instance téhož modelu | `ps -eo pid,ppid,args \| grep llama-server` → sirotek s `ppid=1` zabít |
 | VRAM (PC) | TDR `amdgpu ring comp timeout` | `-ngl` pod volnou VRAM, `--device VulkanN`, `-ub 256` |
 
