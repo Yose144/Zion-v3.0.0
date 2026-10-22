@@ -1,8 +1,6 @@
 $TTL 3600
-; Zone: zionterranova.com. (#591384) — EDGE2 cutover, fáze 1 (2026-10-22)
-; 9 explicitních flipů → 207.180.217.100 (EDGE2 web tier)
-; wildcard + ops subdomény zůstávají na 62.171.141.136 (Edge)
-; Detail + diff + runbook: infra/dns/zionterranova.com.zone.md
+; Zone: zionterranova.com. (#591384)
+; File written on Thu Oct 22 16:02:11 2026
 $ORIGIN zionterranova.com.
 
 @	IN SOA	ns1.webglobe.cz. root.webglobe.cz. (
