@@ -151,12 +151,12 @@ Every address must be updated in the codebase. The following files contain hardc
 | `scripts/launch-local-backup.ps1` | Same 3 addresses |
 | `scripts/deploy_zion_smos.py` | Pool wallet address |
 | `scripts/audit/pool_payout_consistency.py` | `pool_wallet` |
-| `APP&WEB/website-v2.9/src/lib/constants.ts` | `HUMANITARIAN_WALLET`, `ISSOBELLA_WALLET`, `POOL_WALLET` |
-| `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` | `HUMANITARIAN_WALLET` |
-| `APP&WEB/website-v2.9/src/app/l6-issobella/page.tsx` | `ISSOBELLA_WALLET` |
-| `APP&WEB/website-v2.9/src/components/GuardianDashboard.tsx` | 4 fee split addresses |
-| `APP&WEB/website-v2.9/src/components/DashboardMain.tsx` | 4 fee split addresses |
-| `APP&WEB/website-v2.9/public/docs/legal/token-disclosure.md` | DAO treasury + canonical wallet addresses |
+| `apps/website-v2.9/src/lib/constants.ts` | `HUMANITARIAN_WALLET`, `ISSOBELLA_WALLET`, `POOL_WALLET` |
+| `apps/website-v2.9/src/app/l5-free-world/page.tsx` | `HUMANITARIAN_WALLET` |
+| `apps/website-v2.9/src/app/l6-issobella/page.tsx` | `ISSOBELLA_WALLET` |
+| `apps/website-v2.9/src/components/GuardianDashboard.tsx` | 4 fee split addresses |
+| `apps/website-v2.9/src/components/DashboardMain.tsx` | 4 fee split addresses |
+| `apps/website-v2.9/public/docs/legal/token-disclosure.md` | DAO treasury + canonical wallet addresses |
 | `ZION_OS/desktop/src/api/wallets.ts` | `canonicalPool` address |
 
 > **Note:** `.next/` compiled JS and `ZION_OS/desktop/dist/` will still have old addresses. They are cleared on the next rebuild/deploy (§7).
@@ -379,9 +379,9 @@ Old addresses persist in compiled artifacts. Rebuild and redeploy:
 
 ```bash
 # Website
-cd ~/2.9.6-main/APP&WEB/website-v2.9
+cd ~/2.9.6-main/apps/website-v2.9
 npm run build
-# Deploy per APP&WEB/website-v2.9/AGENTS.md §1
+# Deploy per apps/website-v2.9/AGENTS.md §1
 
 # Desktop
 cd ~/2.9.6-main/ZION_OS/desktop

@@ -298,7 +298,7 @@ docker run -d \
 | `zion-pool:v3-mainnet` | V3 workspace | `cargo build --release -p zion-pool` |
 | `zion-miner:v3-mainnet` | V3 workspace | `cargo build --release -p zion-miner` |
 | `zion-v3-bridge:latest` | V3 workspace | `cargo build --release -p zion-bridge` |
-| `zion-website:2.9.10` | `APP&WEB/website-v2.9` | `docker build -t zion-website:2.9.10 .` |
+| `zion-website:2.9.10` | `apps/website-v2.9` | `docker build -t zion-website:2.9.10 .` |
 | `zion-ai-native:v3-mainnet` | V3 workspace | `cargo build --release -p zion-ai-native` |
 
 **Website build závislosti:**
@@ -357,7 +357,7 @@ docker network connect zion-net zion-v3-node
 **Příčina:** `package.json` reference `file:../zion-wallet-sdk/...` nefunguje v Docker build contextu (soubor je mimo context).
 
 **Oprava:**
-1. Zkopírovat `zion-wallet-sdk-1.0.0.tgz` do build contextu (`APP&WEB/website-v2.9/`)
+1. Zkopírovat `zion-wallet-sdk-1.0.0.tgz` do build contextu (`apps/website-v2.9/`)
 2. Upravit `package.json`: `"zion-wallet-sdk": "file:./zion-wallet-sdk-1.0.0.tgz"`
 3. Upravit Dockerfile:
    ```dockerfile
@@ -459,7 +459,7 @@ Helsinki: ZION_SEED_PEERS="prague:8333,usa:8333,singapore:8333"
 - `V3/docker/docker-compose.yml` — Docker Compose definice
 - `V3/docker/docker-compose.v3-mainnet.yml` — Mainnet profil
 - `V3/docker/docker-compose.monitoring.yml` — Monitoring stack
-- `APP&WEB/website-v2.9/Dockerfile` — Web build
+- `apps/website-v2.9/Dockerfile` — Web build
 - `V3/L2/bridge/config/bridge-mainnet.toml` — Bridge konfigurace
 
 ---

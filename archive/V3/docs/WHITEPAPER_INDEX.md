@@ -28,7 +28,7 @@ These are the authoritative documents for the V3 mainnet line. Treat all others 
 
 Historical iterations preserved for audit trail and migration context.
 
-### v2.9.5 Full Whitepaper (`APP&WEB/website-v2.9/public/docs/en/whitepaper/`)
+### v2.9.5 Full Whitepaper (`apps/website-v2.9/public/docs/en/whitepaper/`)
 
 | # | Document | Lang | Notes |
 |---|----------|------|-------|
@@ -162,8 +162,8 @@ Found in `docs/docs2.9/` — migration source material and philosophical roots.
 
 | # | Document | Lang | Content |
 |---|----------|------|---------|
-| 114 | `APP&WEB/public_html/V2/whitepaper-en.html` | EN | HTML whitepaper V2 |
-| 115 | `APP&WEB/public_html/V2/whitepaper.html` | CS | HTML whitepaper V2 Czech |
+| 114 | `apps/public_html/V2/whitepaper-en.html` | EN | HTML whitepaper V2 |
+| 115 | `apps/public_html/V2/whitepaper.html` | CS | HTML whitepaper V2 Czech |
 
 ---
 

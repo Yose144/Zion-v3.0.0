@@ -24,7 +24,7 @@ cargo build --release -p zion-miner \
 # Mac: rsync zdroje na Edge
 cd /Users/yeshuae/Projects/2.9.6
 rsync -avz --exclude='.git' --exclude='target' --exclude='node_modules' \
-  --exclude='.next' --exclude='APP&WEB' --exclude='public' --exclude='docs' \
+  --exclude='.next' --exclude='apps' --exclude='public' --exclude='docs' \
   --exclude='ZION_OS' --exclude='ZionDex' --exclude='ZionStart' \
   --exclude='PoC-lab' --exclude='HiranV2.x' --exclude='edge-deploy' \
   --exclude='*.log' --exclude='*.db' --exclude='*.db-wal' --exclude='*.db-shm' \

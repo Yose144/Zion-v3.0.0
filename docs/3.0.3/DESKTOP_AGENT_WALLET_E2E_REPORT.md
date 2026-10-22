@@ -7,12 +7,12 @@
 
 ## 🔥 Status: **E2E WALLET WORKFLOW FUNGUJE**
 
-**Desktop agent** (`APP&WEB/desktop-agent/`):
+**Desktop agent** (`apps/desktop-agent/`):
 - ✅ Edge mainnet ACCEPTED live account transaction (commit `413c3762`)
 - ✅ UTXO + Account model auto-detect
 - ✅ V2 preimage hash (BLAKE3) od genesis
 
-**Mobile app** (`APP&WEB/mobile-app/`):
+**Mobile app** (`apps/mobile-app/`):
 - ✅ V3 compatible wallet (commit `919c6429`)
 - ✅ BLAKE3 v2 transaction hash
 - ✅ @noble/ed25519 v3.1.0 (same as desktop)
@@ -21,8 +21,8 @@
 - ✅ Edge mainnet ACCEPTED mobile account transaction (live verification)
 
 **Struktura:**
-- ✅ Jeden zdroj pravdy v `APP&WEB/` (APPS/ smazáno, commit `bea96483`)
-- ✅ `zion-wallet-sdk` sjednocen do `APP&WEB/` (commit `868a8b0a`)
+- ✅ Jeden zdroj pravdy v `apps/` (APPS/ smazáno, commit `bea96483`)
+- ✅ `zion-wallet-sdk` sjednocen do `apps/` (commit `868a8b0a`)
 
 ---
 
@@ -49,7 +49,7 @@
 ### 1. Instalace závislostí
 
 ```bash
-cd "APP&WEB/desktop-agent"
+cd "apps/desktop-agent"
 npm install
 # ✅ 435 packages, žádná chyba
 ```
@@ -57,7 +57,7 @@ npm install
 ### 2. Headless wallet E2E test
 
 ```bash
-cd "APP&WEB/desktop-agent"
+cd "apps/desktop-agent"
 npm run test:wallet
 ```
 
@@ -99,7 +99,7 @@ Both UTXO and Account transaction models are working.
 ```powershell
 # Windows PowerShell - důležitý krok: unset env var
 $env:ELECTRON_RUN_AS_NODE = $null
-cd "APP&WEB/desktop-agent"
+cd "apps/desktop-agent"
 npm run dev:wallet
 ```
 
@@ -123,7 +123,7 @@ Edge RPC akceptoval account tx s `accepted: true` — **transaction je naživu v
 ### Rychlý wallet-only režim (bez buildu miner/node binárek)
 
 ```bash
-cd "APP&WEB/desktop-agent"
+cd "apps/desktop-agent"
 $env:ELECTRON_RUN_AS_NODE = $null    # POUZE pro PowerShell
 npm run dev:wallet
 ```
@@ -133,7 +133,7 @@ npm run dev:wallet
 ### Headless E2E smoke test
 
 ```bash
-cd "APP&WEB/desktop-agent"
+cd "apps/desktop-agent"
 npm run test:wallet
 ```
 
@@ -142,7 +142,7 @@ Provozuje 9 kroků: generování, šifrování, mnemonic recovery, balance looku
 ### Plný režim s lokálním minerem/nodem
 
 ```bash
-cd "APP&WEB/desktop-agent"
+cd "apps/desktop-agent"
 $env:ELECTRON_RUN_AS_NODE = $null
 npm start
 ```
@@ -263,7 +263,7 @@ Zobrazení v Send tab:
 
 ### Co bylo opraveno (commit `919c6429`)
 
-`APP&WEB/mobile-app/src/services/TransactionBuilder.js` byl kompletně přepsán:
+`apps/mobile-app/src/services/TransactionBuilder.js` byl kompletně přepsán:
 
 | Původní (v3.0.0) | Opraveno (v3.0.2) |
 |---|---|
@@ -297,7 +297,7 @@ for each output: amount(u64 LE) + addr_len(u32 LE) + address + memo_tag(0/1) + [
 
 **Verifikace:**
 ```
-$ cd APP&WEB/mobile-app && node -e "..."
+$ cd apps/mobile-app && node -e "..."
 pubKey len: 32
 blake3 hash: e7e584cc7b25ac316b05a1738a809a0d...
 version: 2
@@ -380,10 +380,10 @@ Edge format accept: ✅
 
 ## Struktura repozitáře
 
-### Kanonický adresář: `APP&WEB/`
+### Kanonický adresář: `apps/`
 
 ```
-APP&WEB/
+apps/
 ├── desktop-agent/          ← v3.0.2 (Electron, wallet E2E ✅)
 ├── mobile-app/             ← v3.0.2 (React Native + Expo, wallet V3 ✅)
 ├── website-v2.9/           ← v3.0.0 (Next.js produkční)
@@ -401,7 +401,7 @@ APP&WEB/
 | `APPS/Websites/` (IntuitivSpace) | ❌ smazáno | ~8.5 MB |
 | `APPS/desktop-dashboard/` (prázdný cache) | ❌ smazáno | ~0.2 KB |
 | `APPS/website-v3.0-concept/` | ❌ smazáno | ~0.3 MB |
-| `APPS/zion-wallet-sdk/` | ❌ smazáno (přesunut do APP&WEB) | ~0.3 MB |
+| `APPS/zion-wallet-sdk/` | ❌ smazáno (přesunut do apps) | ~0.3 MB |
 
 **Celkem uvolněno: ~2.2 GB duplicit.**
 
@@ -436,7 +436,7 @@ Pokud máš prázdnou adresu, potřebuješ nějakým způsobem získat UTXO:
 
 | Komponenta | Path | Stav |
 |---|---|---|
-| Desktop agent | `APP&WEB/desktop-agent/` | ✅ v3.0.2 |
+| Desktop agent | `apps/desktop-agent/` | ✅ v3.0.2 |
 | Desktop Account builder | `desktop-agent/src/account-builder.js` | ✅ |
 | UTXO builder (desktop) | `desktop-agent/src/utxo-builder.js` | ✅ v2 BLAKE3 |
 | UTXO builder (mobile) | `mobile-app/src/services/TransactionBuilder.js` | ✅ v2 BLAKE3 |
@@ -447,8 +447,8 @@ Pokud máš prázdnou adresu, potřebuješ nějakým způsobem získat UTXO:
 | Mobile CryptoService | `mobile-app/src/services/CryptoService.js` | ✅ |
 | E2E smoke test (desktop) | `desktop-agent/scripts/test-wallet-e2e.js` | ✅ 9 kroků |
 | E2E test (mobile account) | `mobile-app/test_account_builder_standalone.js` | ✅ |
-| Wallet SDK | `APP&WEB/zion-wallet-sdk/` | ✅ TS shared lib |
-| Mobile app | `APP&WEB/mobile-app/` | ✅ v3.0.2 |
+| Wallet SDK | `apps/zion-wallet-sdk/` | ✅ TS shared lib |
+| Mobile app | `apps/mobile-app/` | ✅ v3.0.2 |
 | V3 node binaries | `V3/target_e2e/release/` | ✅ |
 | Edge RPC (live) | `77.42.71.94:8443` | ✅ |
 
@@ -462,7 +462,7 @@ Pokud máš prázdnou adresu, potřebuješ nějakým způsobem získat UTXO:
 - [x] **Edge live acceptance** — mobile account tx akceptován (tx_id: `6823b84b...`) ✅
 - [x] Desktop Account model (commit `413c3762`) ✅
 - [x] Mobile V3 wallet (commit `919c6429`) ✅
-- [x] Jeden zdroj pravdy APP&WEB/ (commit `bea96483`) ✅
+- [x] Jeden zdroj pravdy apps/ (commit `bea96483`) ✅
 
 ### Krátkodobě
 

@@ -179,15 +179,15 @@ PS C:\Users\yosef\Desktop\Zion\2.9.6-main> zion-agent code "Fix the loadBridgeSt
   Lint:  cargo clippy --manifest-path V3/Cargo.toml --workspace
 
 ▶ search {"query":"loadBridgeStatus","path":"."}
-◀ Found 3 occurrences in APP&WEB/dashboard/src/dashboard.js
+◀ Found 3 occurrences in apps/dashboard/src/dashboard.js
 
-▶ read_file {"path":"APP&WEB/dashboard/src/dashboard.js","offset":120,"limit":10}
+▶ read_file {"path":"apps/dashboard/src/dashboard.js","offset":120,"limit":10}
 ◀ function switchTab(tab) {
       loadBridgeStatus();   // ← typo here
       ...
     }
 
-▶ edit_file {"path":"APP&WEB/dashboard/src/dashboard.js","offset":121,"old":"loadBridgeStatus","new":"loadBridgeStats"}
+▶ edit_file {"path":"apps/dashboard/src/dashboard.js","offset":121,"old":"loadBridgeStatus","new":"loadBridgeStats"}
 ◀ Applied edit at offset 121
 
 ℹ Auto-running build after file edit...
@@ -199,7 +199,7 @@ PS C:\Users\yosef\Desktop\Zion\2.9.6-main> zion-agent code "Fix the loadBridgeSt
 ◀ No warnings.
 
 ▶ git_diff {}
-◀ diff --git a/APP&WEB/dashboard/src/dashboard.js b/APP&WEB/dashboard/src/dashboard.js
+◀ diff --git a/apps/dashboard/src/dashboard.js b/apps/dashboard/src/dashboard.js
   - loadBridgeStatus();
   + loadBridgeStats();
 

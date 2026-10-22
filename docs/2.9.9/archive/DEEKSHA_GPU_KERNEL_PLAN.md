@@ -223,7 +223,7 @@ First 4 bytes of the hash interpreted as little-endian u32, compared against poo
 ### 4.1 File Structure
 
 ```
-APP&WEB/desktop-agent/resources/mining/
+apps/desktop-agent/resources/mining/
 ├── cosmic_harmony_deeksha_canonical.cl   ← NEW: Canonical GPU kernel (1045 lines)
 ├── deeksha_npu_weights.bin               ← NEW: Pre-computed NPU weights (16,960 B)
 ├── cosmic_harmony_v42_gpu.py             ← MODIFIED: OpenCL + Metal backend wrapper
@@ -620,14 +620,14 @@ Decision rule:
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_canonical.cl` | 1,045 | Canonical OpenCL GPU kernel |
-| `APP&WEB/desktop-agent/resources/mining/deeksha_npu_weights.bin` | — | NPU weights binary (16,960 B) |
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` | ~1,100 | GPU backend wrapper + auto-detection |
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha.metal` | ~800 | Canonical native Metal shader |
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42.metal` | ~800 | Synced legacy alias of canonical Metal shader |
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py` | ~600 | Stratum miner + re-verification + accepted-share telemetry |
-| `APP&WEB/desktop-agent/src/main.js` | ~2,000 | Electron orchestrator |
-| `APP&WEB/desktop-agent/src/ui/renderer.js` | ~500 | Dashboard UI |
+| `apps/desktop-agent/resources/mining/cosmic_harmony_deeksha_canonical.cl` | 1,045 | Canonical OpenCL GPU kernel |
+| `apps/desktop-agent/resources/mining/deeksha_npu_weights.bin` | — | NPU weights binary (16,960 B) |
+| `apps/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` | ~1,100 | GPU backend wrapper + auto-detection |
+| `apps/desktop-agent/resources/mining/cosmic_harmony_deeksha.metal` | ~800 | Canonical native Metal shader |
+| `apps/desktop-agent/resources/mining/cosmic_harmony_v42.metal` | ~800 | Synced legacy alias of canonical Metal shader |
+| `apps/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py` | ~600 | Stratum miner + re-verification + accepted-share telemetry |
+| `apps/desktop-agent/src/main.js` | ~2,000 | Electron orchestrator |
+| `apps/desktop-agent/src/ui/renderer.js` | ~500 | Dashboard UI |
 | `L1/miner/src/miner/gpu/benchmark.rs` | ~200 | Rust GPU benchmark + effective dispatch accounting |
 | `L1/miner/src/miner/gpu/metal.rs` | ~180 | Rust Metal backend wrapper |
 | `L1/miner/src/miner/gpu/opencl.rs` | ~380 | Rust canonical Deeksha OpenCL backend |
@@ -678,8 +678,8 @@ operations and increased Cosmic Fusion rounds:
 | `L1/native-libs/all/cosmic_harmony_deeksha.cu` | +550 lines: Blake3 + full Ekam + host API |
 | `L1/cosmic-harmony/src/gpu/metal_miner.rs` | +160 lines: Ekam pipelines + 3 methods |
 | `L1/cosmic-harmony/src/gpu/opencl_kernel.rs` | Ekam kernel name export + test |
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` | `EkamDeekshaOpenCLBackend` + CHv42GPU auto-detection |
-| `APP&WEB/desktop-agent/resources/zion_native_miner_v2_9.py` | `Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA` + dispatch |
+| `apps/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` | `EkamDeekshaOpenCLBackend` + CHv42GPU auto-detection |
+| `apps/desktop-agent/resources/zion_native_miner_v2_9.py` | `Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA` + dispatch |
 
 ### Canonical Test Vector
 

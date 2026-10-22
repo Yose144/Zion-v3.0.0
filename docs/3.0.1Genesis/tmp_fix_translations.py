@@ -1,6 +1,6 @@
 import re
 
-path = r"C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9\src\lib\translations.ts"
+path = r"C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9\src\lib\translations.ts"
 with open(path, "r", encoding="utf-8") as f:
     content = f.read()
 

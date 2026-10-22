@@ -135,7 +135,7 @@ Goal: ship `v3.2.0` and prepare public mainnet launch.
 | G1 | **Feature freeze** | product | No new coins, algorithms, or chain adapters after this point. | `DEFERRED_3.2.md` frozen. |
 | G2 | **GitHub `v3.2.0` release** | release | Linux x86_64, Windows x86_64, macOS arm64/x86_64 binaries; SHA256SUMS; signed tag. | Release page. |
 | G3 | **SMOS package** | release | `zion-miner-v3.2.0-mainnet-stable.zip` tested on a reference rig. | SMOS group config. |
-| G4 | **Desktop App bundle** | APP&WEB | Linux build GO. `v3.2.0-desktop` with V31 binaries; builds and passes tests on macOS/Windows/Linux. | Release assets. |
+| G4 | **Desktop App bundle** | apps | Linux build GO. `v3.2.0-desktop` with V31 binaries; builds and passes tests on macOS/Windows/Linux. | Release assets. |
 | G5 | **Public docs update** | docs | `public/README.md` and translations reflect 3.2.0 status. | Public subtree commit. |
 | G6 | **Community + bug bounty** | community | Beta announcement, Discord/Telegram channels, bug bounty process published. | Posts + process doc. |
 | G7 | **Monitoring & alerting** | ops | Grafana/alertmanager or equivalent; page on downtime; runbooks updated. | Dashboard alert test. |
@@ -663,8 +663,8 @@ Week 10: G2-G7 release and launch readiness
 | # | Task | Priority | Acceptance | Evidence |
 |---|------|----------|------------|----------|
 | I1 | **Design ZIS API** | CRITICAL | OpenAPI spec for: `/auth/nonce`, `/auth/wallet-verify` (Ed25519), `/auth/evm-verify` (EIP-4361), `/auth/session`, `/auth/refresh`, `/auth/logout`, `/profile`, `/profile/:address`. | OpenAPI spec committed. |
-| I2 | **Implement ZIS server** | CRITICAL | Next.js 16 app at `APP&WEB/identity/`. Uses `jose` for JWT (same as Web 2.9). Supports both ZION L1 Ed25519 and EVM wallet challenges. | `npm run dev` works, auth flow tested. |
-| I3 | **Unified Prisma schema** | CRITICAL | Single `schema.prisma` in `APP&WEB/shared/prisma/` covering: User, Session, OasisPlayer, OasisAchievement, OasisInventory, Artifact, Listing, Sale, MiningWorker, MiningStats, DaoProposal, DaoVote, BridgeTransaction, DexOrder, Notification. Merges Market's existing schema + new tables. | `prisma migrate dev` succeeds. |
+| I2 | **Implement ZIS server** | CRITICAL | Next.js 16 app at `apps/identity/`. Uses `jose` for JWT (same as Web 2.9). Supports both ZION L1 Ed25519 and EVM wallet challenges. | `npm run dev` works, auth flow tested. |
+| I3 | **Unified Prisma schema** | CRITICAL | Single `schema.prisma` in `apps/shared/prisma/` covering: User, Session, OasisPlayer, OasisAchievement, OasisInventory, Artifact, Listing, Sale, MiningWorker, MiningStats, DaoProposal, DaoVote, BridgeTransaction, DexOrder, Notification. Merges Market's existing schema + new tables. | `prisma migrate dev` succeeds. |
 | I4 | **Deploy ZIS on Edge** | HIGH | `auth.zionterranova.com` nginx vhost → `127.0.0.1:3101`. systemd `zion-identity.service`. TLS via Let's Encrypt. | `curl https://auth.zionterranova.com/health` = 200. |
 | I5 | **Cross-domain cookie config** | HIGH | JWT cookie domain = `.zionterranova.com` (all subdomains). httpOnly, secure, sameSite=lax. 7-day expiry with refresh. | Browser devtools show cookie on all subdomains. |
 | I6 | **EVM wallet auth (EIP-4361)** | MEDIUM | "Sign-In with Ethereum" for Market users. Uses `siwe` library. Binds EVM address to ZION user profile. | MetaMask login flow works. |

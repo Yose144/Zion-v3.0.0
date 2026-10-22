@@ -488,12 +488,12 @@ Tato část je interní orientace pro budoucí práci, nikoli text k zobrazení 
 
 | Ověřená opora | Co skutečně dokládá | Co z ní nevyvozujeme |
 |---|---|---|
-| [Text u brány v BabylonIntro](../../APP&WEB/OasisWeb/src/components/BabylonIntro.tsx) | Rádha a Elizabeth jsou v úvodním textu; jedna nese lucernu budoucnosti. | Nedokládá hotový film, detailní model Lumi ani implementovanou cestu DOMŮ. |
-| [Záznam ELIZABET ve světech](../../APP&WEB/OasisWeb/src/domain/config/worlds.ts) | Existující položka s popisem strážkyně; v datech je vedena jako planet / layer 3. | Identifikátor světa není automaticky identifikátorem avatara a tento návrh jej nepřejmenovává. |
-| [GameView](../../APP&WEB/OasisWeb/src/components/GameView.tsx) | Režim avatars propojuje panel a scénu avatárů; existuje také připojení dalších herních režimů. | Neznamená to, že nový filmový obsah je již do těchto režimů zapojený. |
-| [Avatar Codex — panel](../../APP&WEB/OasisWeb/src/app/%28game%29/avatars/Panel.tsx) | Panel načítá avatary a zobrazuje jméno, roli, quest line, teaching a ability. | Z pouhé existence komponenty nelze určit, zda aktuální API už vrací Elizabet/Lumi. |
-| [Avatar scéna](../../APP&WEB/OasisWeb/src/app/%28game%29/avatars/Scene.tsx) | Existuje výběr avatarových uzlů; zobrazení používá jednoduché koule. | To není hotová animovaná postava z filmu. |
-| [API typy a funkce](../../APP&WEB/OasisWeb/src/lib/api.ts) | AvatarDef používá číselné id; jsou definované funkce pro avatary a questy. | Nelze bez kontroly dat zaměnit řetězec ELIZABET za avatarové id nebo tvrdit, že existuje nová herní linka. |
+| [Text u brány v BabylonIntro](../../apps/OasisWeb/src/components/BabylonIntro.tsx) | Rádha a Elizabeth jsou v úvodním textu; jedna nese lucernu budoucnosti. | Nedokládá hotový film, detailní model Lumi ani implementovanou cestu DOMŮ. |
+| [Záznam ELIZABET ve světech](../../apps/OasisWeb/src/domain/config/worlds.ts) | Existující položka s popisem strážkyně; v datech je vedena jako planet / layer 3. | Identifikátor světa není automaticky identifikátorem avatara a tento návrh jej nepřejmenovává. |
+| [GameView](../../apps/OasisWeb/src/components/GameView.tsx) | Režim avatars propojuje panel a scénu avatárů; existuje také připojení dalších herních režimů. | Neznamená to, že nový filmový obsah je již do těchto režimů zapojený. |
+| [Avatar Codex — panel](../../apps/OasisWeb/src/app/%28game%29/avatars/Panel.tsx) | Panel načítá avatary a zobrazuje jméno, roli, quest line, teaching a ability. | Z pouhé existence komponenty nelze určit, zda aktuální API už vrací Elizabet/Lumi. |
+| [Avatar scéna](../../apps/OasisWeb/src/app/%28game%29/avatars/Scene.tsx) | Existuje výběr avatarových uzlů; zobrazení používá jednoduché koule. | To není hotová animovaná postava z filmu. |
+| [API typy a funkce](../../apps/OasisWeb/src/lib/api.ts) | AvatarDef používá číselné id; jsou definované funkce pro avatary a questy. | Nelze bez kontroly dat zaměnit řetězec ELIZABET za avatarové id nebo tvrdit, že existuje nová herní linka. |
 
 ### Před budoucí implementací
 
@@ -587,10 +587,10 @@ Z veřejně schválené podoby převést bránu, lucernu a charakter Lumi do mal
 - [Elizabet — původní nápad](./Elizabet.md).
 - [DOMŮ — návrh žádosti a čtyři podoby předání](./ring.md).
 - [Osobní příspěvek o budoucnosti a věnování Issobelly](../post.md).
-- [Archiv evoluZionu — rok 2008 a věnování Ericce](../../APP&WEB/IntroPage/src/app/data/evoluzion-data.json).
-- [Projekt New Earth — počátek portugalské cesty](../../APP&WEB/IntroPage/public/legacy/blog/full/projekt-new-earth.html).
-- [Hledání Nové Země — pokračování cesty a osobní přelom](../../APP&WEB/IntroPage/public/legacy/blog/full/finding-new-earth.html).
-- [Příběh Růže — osobní blogový text, identita růže není v návrhu potvrzena](../../APP&WEB/IntroPage/public/legacy/blog/full/pribeh-ruze.html).
+- [Archiv evoluZionu — rok 2008 a věnování Ericce](../../apps/IntroPage/src/app/data/evoluzion-data.json).
+- [Projekt New Earth — počátek portugalské cesty](../../apps/IntroPage/public/legacy/blog/full/projekt-new-earth.html).
+- [Hledání Nové Země — pokračování cesty a osobní přelom](../../apps/IntroPage/public/legacy/blog/full/finding-new-earth.html).
+- [Příběh Růže — osobní blogový text, identita růže není v návrhu potvrzena](../../apps/IntroPage/public/legacy/blog/full/pribeh-ruze.html).
 - [Kniha Nebe — narativní souvislost, nikoli důkaz realizované stanice](../../canon/books/Issobella/00-README.md).
 - [Výzkumné podklady L6](../README.md).
 

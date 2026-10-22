@@ -8,7 +8,7 @@
 > - **Dashboard:** EDGE2 karta (`/api/edge2-status`), `/api/health` = 28 služeb / 0 not-up (health map přepsaná na TCP probe přes tunel).
 > - **Externě:** zionterranova.com, pool, oasis, rpc `/getinfo` = 200; pool legy all connected.
 > - **Rollback:** `/root/cutover-*-rollback.sh` na edge pro každé okno (P2, chains, btc, apps, warp, web, btcunlock).
-> - **Zbývá:** observační období → edge cleanup ~62G zdrojových dat (quantus 13G, pearl 18G, bitcoin 31G, APP&WEB 13G — NEMAZAT bez potvrzení); `PRL_PAYOUT_DRY_RUN=1` zůstává; `WARP_API_KEY` unset (pre-existing).
+> - **Zbývá:** observační období → edge cleanup ~62G zdrojových dat (quantus 13G, pearl 18G, bitcoin 31G, apps 13G — NEMAZAT bez potvrzení); `PRL_PAYOUT_DRY_RUN=1` zůstává; `WARP_API_KEY` unset (pre-existing).
 
 > **⚠️ PŮVODNÍ SPLIT-V2 STATUS (2026-10-21 12:35, historicky — fáze v3-A):**
 > - **v3-A HOTOVO (2026-10-21 13:00):** quantus + pearl stack (pearld, oyster, gateway) běží na EDGE2 na loopbacku. Edge se připojuje přes `zion-chain-tunnel` (SSH `-L` na 9944/44207/8477, účet `chaintunnel@EDGE2`, permitopen jen tyto porty). QTC native leg jde přímo UDP/QUIC na `207.180.217.100:9833` (UFW allow jen z edge IP). Všechny legy poolu `up`.

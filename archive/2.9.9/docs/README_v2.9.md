@@ -219,7 +219,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin wallet
 ├── L4/                # 🎮 OASIS
 ├── L5/                # 🌍 ZION Free World (vision 2030)
 ├── L6/                # 🔭 ZION Issobella (vision 2040+)
-├── APP&WEB/               # Frontend applications
+├── apps/               # Frontend applications
 │   ├── zion-wallet-sdk/ #    Unified TypeScript Wallet SDK (address, keypair, crypto, tx, RPC)
 │   ├── desktop-agent/   #    Electron desktop agent + mining GUI
 │   ├── mobile-app/      #    React Native + Expo mobile app

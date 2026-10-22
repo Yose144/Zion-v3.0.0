@@ -87,7 +87,7 @@ npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base
 ## Po deployi — aktualizuj web konfiguraci
 
 ```typescript
-// APP&WEB/website-v2.9/src/lib/defi-contracts.ts
+// apps/website-v2.9/src/lib/defi-contracts.ts
 // Base Mainnet (deployed 3.0.4)
 ZIONStaking:    '0x<from deployed-defi.json>',
 ZIONFarm:       '0x<from deployed-farm-base.json>',

@@ -1,13 +1,13 @@
 ---
-description: "Use when working on APP&WEB/desktop-agent, Electron main process, mining fallback scripts, prepare-rust-miner packaging, or desktop mining UX."
-applyTo: "APP&WEB/desktop-agent/**"
+description: "Use when working on apps/desktop-agent, Electron main process, mining fallback scripts, prepare-rust-miner packaging, or desktop mining UX."
+applyTo: "apps/desktop-agent/**"
 ---
 
 # Desktop Agent Instructions
 
 ## What This Area Owns
 
-- APP&WEB/desktop-agent is the Electron desktop mining client.
+- apps/desktop-agent is the Electron desktop mining client.
 - src/main.js is the runtime orchestrator for windows, tray, miner processes, logging, IPC, and pool/miner lifecycle.
 - resources/mining contains Python and GPU fallback paths that must stay aligned with the Rust miner capabilities.
 - scripts/prepare-rust-miner.js and package.json are packaging gates for shipping the bundled miner correctly.
@@ -21,9 +21,9 @@ applyTo: "APP&WEB/desktop-agent/**"
 
 ## Validation For Desktop-Agent Changes
 
-- If src/main.js changed: run node --check APP&WEB/desktop-agent/src/main.js.
+- If src/main.js changed: run node --check apps/desktop-agent/src/main.js.
 - If a Python miner fallback changed: run python3 -m py_compile on the touched file or files.
-- If packaging inputs changed: inspect APP&WEB/desktop-agent/package.json and scripts/prepare-rust-miner.js together.
+- If packaging inputs changed: inspect apps/desktop-agent/package.json and scripts/prepare-rust-miner.js together.
 - If the task affects Deeksha mining behavior: verify references to cosmic_harmony_deeksha_fallback.py and related resource selection logic.
 
 ## Known Project Context
@@ -42,4 +42,4 @@ applyTo: "APP&WEB/desktop-agent/**"
 - Python dispatch: `EkamDeekshaOpenCLBackend` in `cosmic_harmony_v42_gpu.py`, `Algorithm.COSMIC_HARMONY_EKAM_DEEKSHA` in `zion_native_miner_v2_9.py`
 - Canonical CPU reference: `cosmic_harmony_ekam_deeksha()` in `L1/cosmic-harmony/src/deeksha.rs`
 - Test vector: `6339f2fb178fe2957a10d9e2a84cf9d5e340064f0d165e845b6a54eaf7924fbd`
-- When editing Ekam GPU kernels, keep all 4 copies in sync: `L1/cosmic-harmony/src/gpu/kernels/`, `L1/miner/src/miner/gpu/kernels/`, `L1/native-libs/all/`, `APP&WEB/desktop-agent/resources/mining/`
+- When editing Ekam GPU kernels, keep all 4 copies in sync: `L1/cosmic-harmony/src/gpu/kernels/`, `L1/miner/src/miner/gpu/kernels/`, `L1/native-libs/all/`, `apps/desktop-agent/resources/mining/`

@@ -70,7 +70,7 @@ Nepotřebuje změnu schématu — `avatar` už je `z.string().url().max(512)`.
 
 ## Generátor
 
-`APP&WEB/identity/src/lib/avatar.ts` — čistá funkce, bez závislostí:
+`apps/identity/src/lib/avatar.ts` — čistá funkce, bez závislostí:
 
 - `seed → SHA-256(seed + ":" + variant + ":" + style)` → prvních N bajtů
   jako parametry + `mulberry32` PRNG.

@@ -30,7 +30,7 @@
 🌍 Africa Circle (10) — orisha / Kemet / Západ & Střed; konsultace; `docs/TerraNova/africa`
 🏛️ Atlantis Circle (10) — Plato *Critias/Timaeus* literární mýtus, **ne historie**; `docs/TerraNova/atlantis`
 🌫️ Lemuria Circle (10) — vědecká historie hypotézy + ekologie × **zakázané rasové hierarchie**; `docs/TerraNova/lemuria`
-🌠 Cosmic / Vzestup Circle (10) — COSMIC MAP + archiv `APP&WEB/public_html/V2/Vzestup/`; **ne medicína**; `docs/TerraNova/cosmic`
+🌠 Cosmic / Vzestup Circle (10) — COSMIC MAP + archiv `apps/public_html/V2/Vzestup/`; **ne medicína**; `docs/TerraNova/cosmic`
 ⚔️ Norse–Celtic Circle (10) — Valhalla diegesis + severské + keltské prameny; **bez extremistické symboliky**; `docs/TerraNova/norse-celtic`
 🏺 Ancient Egypt Circle (10) — faraonské archetypy doplňující **#06 / #149–150**; **žádné loot crate muzea**; `docs/TerraNova/ancient-egypt`
 🌳 Maya Circle (1) — bůh devíti kroků, cyklický přechod; **ne doomsday**; `docs/TerraNova/maya`
@@ -1531,7 +1531,7 @@
 
 ## 🌠 COSMIC / VZESTUP CIRCLE — METAFORY VĚDOMÍ (10 Avatars)
 
-> Viz [`docs/TerraNova/cosmic/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/cosmic/KONCEPT-AVATARI-OASIS.md) + [`GALAKTICKA_FEDERACE.md`](../../TerraNova/cosmic/GALAKTICKA_FEDERACE.md) — **instituční hierarchie galaktického lore** jen zde. **COSMIC MAP** v `docs/docs2.9/` · **ne medicína** · archiv Vzestup: `APP&WEB/public_html/V2/Vzestup/` (mimo jiné `f_plamen/`; živé tsl.org URL se mohly změnit).
+> Viz [`docs/TerraNova/cosmic/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/cosmic/KONCEPT-AVATARI-OASIS.md) + [`GALAKTICKA_FEDERACE.md`](../../TerraNova/cosmic/GALAKTICKA_FEDERACE.md) — **instituční hierarchie galaktického lore** jen zde. **COSMIC MAP** v `docs/docs2.9/` · **ne medicína** · archiv Vzestup: `apps/public_html/V2/Vzestup/` (mimo jiné `f_plamen/`; živé tsl.org URL se mohly změnit).
 
 ### **172. Great Central Sun Steward** (Cosmic clock / consensus frame)
 **Ray:** Gold + White · **Role:** single logical tempo / DAO alignment lore · **Quest:** Radial Sync Briefing · **Ability:** Corona Consensus Pulse · **CL:** 5–9 · **NFT:** Legendary + non-medical metadata

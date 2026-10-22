@@ -308,12 +308,12 @@ Chains:         8453, 1, 42161, 56, 137, 10, 43114
 
 | Soubor | Účel |
 |--------|------|
-| `APP&WEB/website-v2.9/src/components/LiFiWidget.tsx` | LI.FI iframe widget komponenta |
-| `APP&WEB/website-v2.9/src/app/defi/page.tsx` | DeFi page — swap tab s LiFiWidget + SwapWidget |
-| `APP&WEB/website-v2.9/src/components/SwapWidget.tsx` | Původní Uniswap V3 swap (zachován) |
-| `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` | Kontrakty, tokeny, ABIs |
-| `APP&WEB/website-v2.9/src/lib/bridge-api.ts` | Bridge kontrakty per chain |
-| `APP&WEB/website-v2.9/package.json` | Dependencies (@lifi/sdk, @lifi/widget, viem) |
+| `apps/website-v2.9/src/components/LiFiWidget.tsx` | LI.FI iframe widget komponenta |
+| `apps/website-v2.9/src/app/defi/page.tsx` | DeFi page — swap tab s LiFiWidget + SwapWidget |
+| `apps/website-v2.9/src/components/SwapWidget.tsx` | Původní Uniswap V3 swap (zachován) |
+| `apps/website-v2.9/src/lib/defi-contracts.ts` | Kontrakty, tokeny, ABIs |
+| `apps/website-v2.9/src/lib/bridge-api.ts` | Bridge kontrakty per chain |
+| `apps/website-v2.9/package.json` | Dependencies (@lifi/sdk, @lifi/widget, viem) |
 | `V3/L2/bridge/config/bridge-mainnet.toml` | Bridge relay multi-chain config |
 | `V3/L2/contracts/hardhat/sol/wZION.sol` | wZION ERC-20 contract (deploy na nové chainy) |
 | `V3/L2/contracts/hardhat/sol/ZIONBridge.sol` | Bridge contract (deploy na nové chainy) |

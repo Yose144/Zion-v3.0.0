@@ -66,7 +66,7 @@ ZION je **Layer 1 blockchain** s:
 | **L3** | WARP (cross-chain relay) | `V3/L3/` |
 | **L4** | AI (Hiran) — inference layer | `HiranV2.2/` |
 | **L5** | Communities (genesis garden, OASIS) | `V3/L5/` |
-| **L6** | Apps (website, mobile, desktop) | `APP&WEB/` |
+| **L6** | Apps (website, mobile, desktop) | `apps/` |
 
 ---
 

@@ -55,7 +55,7 @@ else
 fi
 
 if [[ "$NODE_OK" -eq 1 ]]; then
-    WEB_DIR="$REPO_ROOT/APP&WEB/website-v2.9"
+    WEB_DIR="$REPO_ROOT/apps/website-v2.9"
     if [[ -f "$WEB_DIR/package.json" ]]; then
         log "[4/5] Installing website-v2.9 npm dependencies..."
         cd "$WEB_DIR"

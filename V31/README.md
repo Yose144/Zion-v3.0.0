@@ -22,7 +22,7 @@ Workspace se nachází v `/home/zionserver/2.9.6-main/V31/`; V3 produkční slu�
 | `L2/dao` | `zion-dao` | Návrh/quorum/timelock typy, smoke test, zapojený do workspace. |
 | `L3/ncl` | `zion-ncl` | NCL compute marketplace — scaffold s unit testy. |
 | `L3/ai-native` | `zion-ai-native` | AI-native orchestrace a agenti — scaffold s unit testy. |
-| `L4/oasis` | `zion-oasis` | Oasis game — 200 avatarů, questy, CORS API, `APP&WEB/OasisWeb` Next.js 16 client s live HUD. |
+| `L4/oasis` | `zion-oasis` | Oasis game — 200 avatarů, questy, CORS API, `apps/OasisWeb` Next.js 16 client s live HUD. |
 | `L5/free-world` | `zion-free-world` | Free World vrstva — funkcionální scaffold s unit testy. |
 | `L6/issobella` | `zion-issobella` | Issobella superstruktura — funkcionální scaffold s unit testy. |
 | `sdk` | `zion-sdk` | SDK pro integrace třetích stran a interních nástrojů. |
@@ -98,7 +98,7 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 
 - **GPU OpenCL build verification** — `zion-miner` se buildne s `gpu-opencl` (a `gpu-cuda`, pokud je `libnvrtc`), test `tests/gpu_opencl_detect.rs` ověřuje detekci platformy a spuštění Deeksha jádra na lokální GPU.
 
-- **Desktop Agent V31 binaries** — `APP&WEB/desktop-agent` balí V31 `zion-miner`, `zion-universal-miner`, `zion-node`/`node` a CLI `zion`. Příprava: `npm run prepare:rust-miner`; build balíčků: `npm run build:linux` → `.AppImage` a `.deb`.
+- **Desktop Agent V31 binaries** — `apps/desktop-agent` balí V31 `zion-miner`, `zion-universal-miner`, `zion-node`/`node` a CLI `zion`. Příprava: `npm run prepare:rust-miner`; build balíčků: `npm run build:linux` → `.AppImage` a `.deb`.
 
 ## Co ještě běží / E2E
 

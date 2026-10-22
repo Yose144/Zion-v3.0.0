@@ -36,7 +36,7 @@
 | 3.1 | Legacy root trees archived (`L1/`, `L2/`, `L3/` no longer in `main`) | ✅ done | Devin | `L1/2/3` absent from working tree |
 | 3.2 | Philosophical / marketing books separated or moved | ⏳ pending | owner | `docs/philosophy/` or separate repo |
 | 3.3 | Research / PoC separated (`PoC-lab/`, `HiranV2.x/`) | ⏳ pending | owner | `research/` or separate repo |
-| 3.4 | Old `APP&WEB/website-v2.9/` archived if replaced | ⏳ pending | owner | Archive tag / git history |
+| 3.4 | Old `apps/website-v2.9/` archived if replaced | ⏳ pending | owner | Archive tag / git history |
 | 3.5 | Duplicate docs merged; versioned reports under `docs/3.0.x/` | 🟡 in progress | Devin | `LAUNCH_CHECKLIST.md` created |
 | 3.6 | `pre-purification-3.0.9` tag before any destructive purge | ✅ done | Devin | Tag `pre-purification-3.0.9` pushed to origin |
 

@@ -212,7 +212,7 @@ export default class ZionSignMessage extends AbstractMethod {
 ### 4.4 ZION SDK Update
 
 ```typescript
-// APP&WEB/zion-wallet-sdk/src/hardware/trezor-wallet.ts
+// apps/zion-wallet-sdk/src/hardware/trezor-wallet.ts
 
 async signTransaction(txHash: Uint8Array, path: string = DEFAULT_TREZOR_PATH): Promise<Uint8Array> {
     // After firmware fork + Connect update:

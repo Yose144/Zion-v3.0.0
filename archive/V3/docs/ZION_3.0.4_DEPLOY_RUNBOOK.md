@@ -132,7 +132,7 @@ npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base
 ### Step 7: Update website config
 
 After deploy, read the addresses from `deployed-defi.json` and `deployed-farm-base.json`,
-then update `APP&WEB/website-v2.9/src/lib/defi-contracts.ts`:
+then update `apps/website-v2.9/src/lib/defi-contracts.ts`:
 
 ```typescript
 export const CONTRACTS = {
@@ -152,7 +152,7 @@ export const GOVERNANCE_DEPLOYED = true;
 ### Step 8: Verify website
 
 ```bash
-cd APP&WEB/website-v2.9
+cd apps/website-v2.9
 npm run build
 # Check /defi/staking page — "Deploy pending" banner should disappear
 # Check /defi/farming page — "Deploy pending" banner should disappear

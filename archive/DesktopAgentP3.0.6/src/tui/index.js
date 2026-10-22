@@ -35,7 +35,7 @@ const os = require('os');
 const { spawn } = require('child_process');
 
 // ── Paths ──
-// src/tui -> src -> desktop-agent -> APP&WEB -> repo root
+// src/tui -> src -> desktop-agent -> apps -> repo root
 const APP_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 const IS_PACKAGED = !!process.versions.electron;
 const HOME = os.homedir();
@@ -88,7 +88,7 @@ function findRustMiner() {
         // resources/ copy during development.
         path.join(APP_ROOT, 'V31', 'target', 'release'),
         path.join(APP_ROOT, 'target', 'release'),
-        path.join(APP_ROOT, 'APP&WEB', 'desktop-agent', 'resources'),
+        path.join(APP_ROOT, 'apps', 'desktop-agent', 'resources'),
         path.join(APP_ROOT, 'V31', 'L1', 'miner', 'target', 'release'),
       ];
   for (const name of names) {

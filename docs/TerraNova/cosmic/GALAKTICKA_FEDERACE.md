@@ -37,7 +37,7 @@ Primární herní háček je v profilu **[179 — Galactic Convenor](../../docs2
 
 ## Sladění s archivem Vzestup / COSMIC MAP
 
-Starší kopie materiálů (`APP&WEB/public_html/V2/Vzestup/`, dokumenty COSMIC MAP) někdy mluví o **„světelných hierarchiích“**.  
+Starší kopie materiálů (`apps/public_html/V2/Vzestup/`, dokumenty COSMIC MAP) někdy mluví o **„světelných hierarchiích“**.  
 Merge pravidlo v OASIS: takové pasáže se **přemapují na stupně instituce této federace + UI disclaimer** („ústav federace přichází před flotilem“).
 
 ---

@@ -47,7 +47,7 @@
 
 ### Files Updated
 
-- `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` — ZIONDex addresses + pair address
+- `apps/website-v2.9/src/lib/defi-contracts.ts` — ZIONDex addresses + pair address
 - `V31/contracts/ZIONDex/README.md` — contract address table
 - `V31/contracts/ZIONDex/deploy-zisgate.js` — gas estimate + deploy script
 - `V31/contracts/ZIONDex/add-liquidity.js` — router-based liquidity script

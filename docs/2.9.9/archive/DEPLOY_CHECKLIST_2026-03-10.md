@@ -9,7 +9,7 @@
 ## 1) Upload to server (local shell)
 
 ```powershell
-scp -i "$HOME/.ssh/zion_hetzner_key" -r "C:\Users\anaha\Desktop\ZION\2.9.6-main\APP&WEB\website-v2.9" root@91.98.122.165:/root/zion-web-deploy/
+scp -i "$HOME/.ssh/zion_hetzner_key" -r "C:\Users\anaha\Desktop\ZION\2.9.6-main\apps\website-v2.9" root@91.98.122.165:/root/zion-web-deploy/
 scp -i "$HOME/.ssh/zion_hetzner_key" "C:\Users\anaha\Desktop\ZION\2.9.6-main\docker\docker-compose.website.yml" root@91.98.122.165:/root/zion-web-deploy/docker/
 ssh -i "$HOME/.ssh/zion_hetzner_key" root@91.98.122.165
 ```

@@ -48,12 +48,12 @@ on:
       - 'desktop-v*'
 
 env:
-  DESKTOP_DIR: 'APP&WEB/desktop-agent'
+  DESKTOP_DIR: 'apps/desktop-agent'
   PUBLIC_REPO: Zion-TerraNova/v3-Mainnet
 
 defaults:
   run:
-    working-directory: APP&WEB/desktop-agent
+    working-directory: apps/desktop-agent
 
 jobs:
   build-linux:
@@ -67,7 +67,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: APP&WEB/desktop-agent/package-lock.json
+          cache-dependency-path: apps/desktop-agent/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -89,9 +89,9 @@ jobs:
         with:
           name: desktop-linux
           path: |
-            APP&WEB/desktop-agent/dist/*.AppImage
-            APP&WEB/desktop-agent/dist/*.deb
-            APP&WEB/desktop-agent/dist/latest-linux.yml
+            apps/desktop-agent/dist/*.AppImage
+            apps/desktop-agent/dist/*.deb
+            apps/desktop-agent/dist/latest-linux.yml
           if-no-files-found: error
 
   build-windows:
@@ -105,7 +105,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: APP&WEB/desktop-agent/package-lock.json
+          cache-dependency-path: apps/desktop-agent/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -151,10 +151,10 @@ jobs:
         with:
           name: desktop-windows
           path: |
-            APP&WEB/desktop-agent/dist/*.exe
-            APP&WEB/desktop-agent/dist/*.zip
-            APP&WEB/desktop-agent/dist/*.exe.blockmap
-            APP&WEB/desktop-agent/dist/latest.yml
+            apps/desktop-agent/dist/*.exe
+            apps/desktop-agent/dist/*.zip
+            apps/desktop-agent/dist/*.exe.blockmap
+            apps/desktop-agent/dist/latest.yml
           if-no-files-found: error
 
   build-macos:
@@ -168,7 +168,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: APP&WEB/desktop-agent/package-lock.json
+          cache-dependency-path: apps/desktop-agent/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -185,9 +185,9 @@ jobs:
         with:
           name: desktop-macos
           path: |
-            APP&WEB/desktop-agent/dist/*.dmg
-            APP&WEB/desktop-agent/dist/*.dmg.blockmap
-            APP&WEB/desktop-agent/dist/latest-mac.yml
+            apps/desktop-agent/dist/*.dmg
+            apps/desktop-agent/dist/*.dmg.blockmap
+            apps/desktop-agent/dist/latest-mac.yml
           if-no-files-found: error
 
   release:
@@ -235,7 +235,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
           DRAFT_FLAG: ${{ inputs.draft == true && '--draft' || '' }}
-          NOTES_FILE: ${{ github.workspace }}/APP&WEB/desktop-agent/RELEASE_NOTES.md
+          NOTES_FILE: ${{ github.workspace }}/apps/desktop-agent/RELEASE_NOTES.md
         run: |
           set -e
           mapfile -t assets < <(find . -maxdepth 1 -type f -printf '%P\n' | sort)

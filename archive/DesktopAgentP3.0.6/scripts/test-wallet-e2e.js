@@ -11,7 +11,7 @@
  *   - Account-model transaction building
  *   - Account tx submission against Edge RPC
  *
- * Usage (from APP&WEB/desktop-agent):
+ * Usage (from apps/desktop-agent):
  *   node scripts/test-wallet-e2e.js
  */
 

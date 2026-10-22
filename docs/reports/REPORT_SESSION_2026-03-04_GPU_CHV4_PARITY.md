@@ -125,7 +125,7 @@ test result: ok. 64 passed; 0 failed; 0 ignored; 0 filtered out
 
 ## Další změny v session
 
-### `APP&WEB/desktop-agent/src/wallet-generator.js` — address validation fix
+### `apps/desktop-agent/src/wallet-generator.js` — address validation fix
 
 Validace `zion1` adresy zpřísněna tak, aby odpovídala L1 Rust validaci:
 - Před: délka 40–90, regex `[0-9a-z]+`

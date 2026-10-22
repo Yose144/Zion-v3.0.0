@@ -32,7 +32,7 @@ Koncept PoC není nový. Je rozprostřen napříč celou ZION historií:
 | TerraNova — Zlatý zárodek | `docs/TerraNova/gemini/01-ZLATY-ZARODEK-A-VODY-CHAOSU.md` | *„Architektura Proof-of-Care. Těžba neudržovala v chodu jen síť, udržovala v chodu naději.“* |
 | TerraNova — AI a péče | `docs/TerraNova/ORG/en/04-AI-A-PECE.md` | *„Care is the centre of architecture, because without it every society disintegrates faster than it admits.“* |
 | TerraNova — Zjevení | `docs/TerraNova/ORG/C-ZJEVENI.md` | PoC jako inženýrské řešení problému oddělenosti a extrakce. |
-| bookData.ts | `APP&WEB/website-v2.9/src/app/terranova/bookData.ts` | *„L1 cares for the trustworthiness of the foundation… L6 cares for the long horizon of humanity.“* |
+| bookData.ts | `apps/website-v2.9/src/app/terranova/bookData.ts` | *„L1 cares for the trustworthiness of the foundation… L6 cares for the long horizon of humanity.“* |
 | L5 Governance | `V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md` | Bodhisattva Vow — *„care for this land as I would care for my own body“*. |
 
 ---

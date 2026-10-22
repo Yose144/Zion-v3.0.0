@@ -54,7 +54,7 @@ struct StreamStatsInfo {
 
 **Bug fix (pre-existing, blocking build):** `JobPackage` v main.rs:4158 — přidáno chybějící pole `share_target_bytes: target_bytes` (necommittednuté AuXpow změny přidaly field do structu, ale usage nebyl updatenut → `cargo check` fail).
 
-### 2. Agent main.js (`APP&WEB/desktop-agent/src/main.js`)
+### 2. Agent main.js (`apps/desktop-agent/src/main.js`)
 
 **DEFAULT_CONFIG** — nová pole:
 ```js
@@ -79,7 +79,7 @@ tripleStream: true,   // master toggle
 - `resetMinerTelemetryForNewSpawn()` — resetuje `streams` na `[]`
 - `composeStatsPayload()` — automaticky forwarduje `streams` do rendereru (přes spread `...minerStats`)
 
-### 3. Agent UI (`APP&WEB/desktop-agent/src/ui/index.html`)
+### 3. Agent UI (`apps/desktop-agent/src/ui/index.html`)
 
 **Dashboard Quick Controls** (index.html:4015-4034) — 2 nové selecty vedle algo selectu:
 - `gpu-coin-select-dashboard` — 12 GPU coinů: Auto, KAS, ALPH, DCR, ERG, ETC, RVN, CLORE, MEWC, EVR, FLUX, EPIC
@@ -100,7 +100,7 @@ tripleStream: true,   // master toggle
 - Active/inactive/skipped stavy
 - Responsive (1 sloupec pod 900px)
 
-### 4. Agent renderer.js (`APP&WEB/desktop-agent/src/ui/renderer.js`)
+### 4. Agent renderer.js (`apps/desktop-agent/src/ui/renderer.js`)
 
 **Coin select binding** (renderer.js:833-861):
 - `syncCoinSelect()` helper — binduje select na `config[key]` + mirror do druhého selectu
@@ -209,7 +209,7 @@ sudo systemctl restart zion-edge-miner
 
 ### Agent build (pro distribuci)
 ```bash
-cd APP&WEB/desktop-agent
+cd apps/desktop-agent
 npm run prepare:rust-miner   # buildí V3 miner s GPU featurami
 npm run build                # electron-builder (mac/win/linux)
 ```
@@ -233,9 +233,9 @@ git subtree push --prefix=public public main
 | Soubor | Změna |
 |--------|-------|
 | `V3/L1/miner/src/main.rs` | +`StreamStatsInfo` struct, +`streams` pole v `MinerMetricsSnapshot`, +`set_streams()`, exponováno v stats file + HTTP /stats, bug fix `share_target_bytes` |
-| `APP&WEB/desktop-agent/src/main.js` | +`cpuCoin`/`gpuCoin`/`tripleStream` v DEFAULT_CONFIG, +CLI flagy `--algorithm`/`--cpu-coin`/`--gpu-coin`, `ZION_ENABLE_STREAM_SWITCH=1`, čtení `streams` z /stats + stats file |
-| `APP&WEB/desktop-agent/src/ui/index.html` | +2 coin selecty v dashboardu, +Trinity Panel (3 karty), +Trinity settings card, +CSS |
-| `APP&WEB/desktop-agent/src/ui/renderer.js` | +`updateTripleStreamPanel()`, +coin select binding, +streams v `buildStatsSignature()` |
+| `apps/desktop-agent/src/main.js` | +`cpuCoin`/`gpuCoin`/`tripleStream` v DEFAULT_CONFIG, +CLI flagy `--algorithm`/`--cpu-coin`/`--gpu-coin`, `ZION_ENABLE_STREAM_SWITCH=1`, čtení `streams` z /stats + stats file |
+| `apps/desktop-agent/src/ui/index.html` | +2 coin selecty v dashboardu, +Trinity Panel (3 karty), +Trinity settings card, +CSS |
+| `apps/desktop-agent/src/ui/renderer.js` | +`updateTripleStreamPanel()`, +coin select binding, +streams v `buildStatsSignature()` |
 | `agentdeskupdate.md` | tento dokument |
 
 ---

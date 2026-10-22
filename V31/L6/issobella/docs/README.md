@@ -61,7 +61,7 @@ L6 Issobella  ──>  TATO VRSTVA (orbitální stanice)
 | DAO client | Propojení s L2 DAO |
 | Hiran AI bridge | Volitelný AI pro posuzování misí a návrhů |
 | Testy | Unit + integrační |
-| Web UI | [`APP&WEB/website-v2.9/src/app/l6-issobella/page.tsx`](../../../APP&WEB/website-v2.9/src/app/l6-issobella/page.tsx) |
+| Web UI | [`apps/website-v2.9/src/app/l6-issobella/page.tsx`](../../../apps/website-v2.9/src/app/l6-issobella/page.tsx) |
 | Orbitální hardware | Dlouhodobá vize (2040+) |
 
 ---

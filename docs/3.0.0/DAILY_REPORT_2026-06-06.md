@@ -72,7 +72,7 @@
 
 **Commit `07059717`** (druhý, finální):
 - `ZION_OS/dashboard/app.py`: komplexní performance fix
-- `APP&WEB/website-v2.9/src/app/dashboard/ch3/page.tsx`: ch3 color updates
+- `apps/website-v2.9/src/app/dashboard/ch3/page.tsx`: ch3 color updates
 
 ### 5. HTTP JSON-RPC Transaction Relay Bug Fix
 

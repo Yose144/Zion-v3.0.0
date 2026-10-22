@@ -297,7 +297,7 @@ Alertmanager fires: bridge.active_validators < 4
 | Krok | Co | Soubor | Estimace |
 |------|-----|--------|----------|
 | 4.1 | **LlamaCppBackend FFI** (lokální inference bez NVIDIA NIM) | `llm_backend.rs` (edit) | +200 řádků |
-| 4.2 | **Dashboard integration** (orchestrator tab) | `APP&WEB/...` | 400 řádků |
+| 4.2 | **Dashboard integration** (orchestrator tab) | `apps/...` | 400 řádků |
 | 4.3 | **Load test** (100 concurrent users) | `tests/load_test.rs` | 200 řádků |
 | 4.4 | **Security audit** (Dharma Validator bypass test) | `tests/security.rs` | 200 řádků |
 

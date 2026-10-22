@@ -56,7 +56,7 @@ if (-not (Test-InstalledWinget -Id Microsoft.VisualStudio.2022.BuildTools)) {
     Write-Host "[ok] Microsoft.VisualStudio.2022.BuildTools already installed"
 }
 
-# 4. Node.js LTS (used by APP&WEB, ZionDex, hardhat contracts, update-server)
+# 4. Node.js LTS (used by apps, ZionDex, hardhat contracts, update-server)
 Install-WingetIfMissing -Id OpenJS.NodeJS.LTS
 
 # 5. Docker Desktop (runs the V3 service stack and Redis container)

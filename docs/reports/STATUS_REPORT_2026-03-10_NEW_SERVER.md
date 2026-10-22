@@ -207,7 +207,7 @@ Dokumenty `docs/2.9.7` popisuji pre-mainnet baseline, CHv4 readiness a revenue/N
 
 Soubor:
 
-- `APP&WEB/website-v2.9/src/app/api/health/route.ts`
+- `apps/website-v2.9/src/app/api/health/route.ts`
 
 Problem:
 
@@ -223,7 +223,7 @@ Dusledek:
 
 Soubor:
 
-- `APP&WEB/website-v2.9/src/lib/network-config.ts`
+- `apps/website-v2.9/src/lib/network-config.ts`
 
 Problem:
 
@@ -254,8 +254,8 @@ To muze byt legitimni, pokud web nese starsi product branding, ale musi to byt e
 
 ### Doporucene hned po tom
 
-1. Opravit `APP&WEB/website-v2.9/src/app/api/health/route.ts`, aby novy host nehlasila jako `down`.
-2. Opravit `APP&WEB/website-v2.9/src/lib/network-config.ts`, aby defaulty odpovidaly nove topologii nebo byly plne env-driven.
+1. Opravit `apps/website-v2.9/src/app/api/health/route.ts`, aby novy host nehlasila jako `down`.
+2. Opravit `apps/website-v2.9/src/lib/network-config.ts`, aby defaulty odpovidaly nove topologii nebo byly plne env-driven.
 3. Doplnit do `docs/2.9.8/DEPLOY_REPORT_2.9.8.md`, ze jde o historicky 3-server snapshot, ne o aktualni live infra stav.
 4. Rozhodnout, zda `zion-website:2.9.6` je zamerny release label, nebo ma byt sjednocen s runtime 2.9.8 vetvi.
 

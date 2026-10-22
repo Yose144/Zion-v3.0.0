@@ -130,7 +130,7 @@ Boot persistence: `loginctl show-user zionserver -p Linger` → yes.
 - `ZION_OS/dashboard/dashboard.html|js` — green Stream-4 card in the Trinity
   panel: keys/s, tested, coverage, full-range ETA, hits; grays out when the
   service is unreachable. `?v=132` cache-buster; `.gz` assets regenerated.
-- `APP&WEB/desktop-agent` — main-process poller (`main.js`) → new
+- `apps/desktop-agent` — main-process poller (`main.js`) → new
   `keyscan-status` IPC channel (`preload.js:onKeyscanStatus`) → Stream-4 card
   (`index.html` `.stream-ks`, auto-fit grid, `renderer.js:updateKeyscanCard`).
 - Dashboard auth unchanged (ZIS SSO / Basic Auth); `/api/keyscan` is behind it.

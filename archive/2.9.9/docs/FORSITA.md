@@ -122,7 +122,7 @@ Pokud něco nevíš, vrať se sem.
 ├── L1/ … L6/                   ← Legacy vrstvy (referenční historický kód)
 │                                  ⚠️ Nový kód se píše do V3/, ne sem!
 │
-├── APP&WEB/                    ← Frontendové aplikace
+├── apps/                    ← Frontendové aplikace
 │   ├── desktop-agent/          ←   Electron desktop app
 │   ├── mobile-app/             ←   React Native + Expo
 │   └── website-v2.9/           ←   Next.js 16 web
@@ -383,7 +383,7 @@ cd 2.9.6
 # Spusť V3 wallet generator
 cargo run --release --manifest-path V3/Cargo.toml -p zion-cli -- wallet new
 # Nebo přes desktop agenta:
-cd APP&WEB/desktop-agent && npm install && npm start
+cd apps/desktop-agent && npm install && npm start
 ```
 
 Generator ti dá:

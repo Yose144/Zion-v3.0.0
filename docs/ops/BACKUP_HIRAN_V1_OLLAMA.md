@@ -16,7 +16,7 @@ Deploy konfigurace (`zion.toml`) zmiňuje `default_server = "prague"` — SSH al
 
 ## 1. Kde dnes web čeká Ollama
 
-V repozitáři je výchozí URL pro Next.js proxy (`APP&WEB/website-v2.9/src/app/api/ai-chat/route.ts`):
+V repozitáři je výchozí URL pro Next.js proxy (`apps/website-v2.9/src/app/api/ai-chat/route.ts`):
 
 - `OLLAMA_API_URL` — pokud není v `.env`, fallback je `http://91.150.160.38:11764`
 - modelový tag ve fallbacku: **`zion-expert`**

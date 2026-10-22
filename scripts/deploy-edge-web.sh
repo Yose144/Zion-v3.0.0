@@ -12,7 +12,7 @@
 #   - nginx reverse proxy (not Caddy — Edge uses nginx)
 #   - Repo cloned at /root/zion/2.9.6  (matches infra/edge-deploy/setup-edge.sh)
 #   - For --rsync mode: dev machine has already run:
-#       npm run build           # in APP&WEB/website-v2.9
+#       npm run build           # in apps/website-v2.9
 #       rsync -az .next/standalone/  zion-new:/root/zion-web-build/
 #       rsync -az .next/static/      zion-new:/root/zion-web-build/.next/static/
 #       rsync -az public/            zion-new:/root/zion-web-build/public/
@@ -32,7 +32,7 @@
 set -euo pipefail
 
 REPO_DIR="/root/zion/2.9.6"
-WEB_DIR="$REPO_DIR/APP&WEB/website-v2.9"
+WEB_DIR="$REPO_DIR/apps/website-v2.9"
 COMPOSE_DIR="/root/zion-web"
 BUILD_DIR="/root/zion-web-build"
 VERSION="${1:-}"
@@ -69,7 +69,7 @@ if [ $RSYNC_MODE = 1 ]; then
   if [ ! -f "$BUILD_DIR/server.js" ]; then
     echo "ERROR: --rsync mode requires pre-built artifacts at $BUILD_DIR/server.js"
     echo "       Run on dev machine:"
-    echo "         cd APP&WEB/website-v2.9 && npm run build"
+    echo "         cd apps/website-v2.9 && npm run build"
     echo "         rsync -az .next/standalone/  zion-new:$BUILD_DIR/"
     echo "         rsync -az .next/static/      zion-new:$BUILD_DIR/.next/static/"
     echo "         rsync -az public/            zion-new:$BUILD_DIR/public/"

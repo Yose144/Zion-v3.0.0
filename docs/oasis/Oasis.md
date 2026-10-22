@@ -3,7 +3,7 @@
 > **Poslední update:** 2026-07-31
 > **Aktivní workspace:** `V31/` (3.1.0-alpha.2) — Mainnet Alpha
 > **Produkční runtime:** `V3/` na Edge (`zionterranova.com`)
-> **Lokální OASIS Game:** `cargo run -p zion-oasis` (port 8094) + `APP&WEB/OasisWeb` (Next.js 16, port 3000) — 200 avatarů, live HUD, CORS.
+> **Lokální OASIS Game:** `cargo run -p zion-oasis` (port 8094) + `apps/OasisWeb` (Next.js 16, port 3000) — 200 avatarů, live HUD, CORS.
 > **OASIS Web vizuál v0.0.1:** live na `https://oasis.zionterranova.com` — spirálová galaxie 30k částic, 3D Strom života, bloom.
 > **Veřejný web trio:** `https://zionterranova.com` (intro) → `https://oasis.zionterranova.com` (OASIS web) ; `https://app.zionterranova.com` (web2.9).
 
@@ -54,23 +54,23 @@ Live na: `https://oasis.zionterranova.com`
   - Inspirace: CodePen / Three.js Journey galaxy (`branches`, `spin`, `randomnessPower`).
   - Barevný přechod: zlaté jádro → fialový okraj.
   - Měkká kulatá particle textura, `AdditiveBlending`, rotace.
-  - Soubor: [`APP&WEB/OasisWeb/src/components/Galaxy.tsx`](APP&WEB/OasisWeb/src/components/Galaxy.tsx)
+  - Soubor: [`apps/OasisWeb/src/components/Galaxy.tsx`](apps/OasisWeb/src/components/Galaxy.tsx)
 - **Strom života (v0.0.1):**
   - Procedurální fraktální strom s 3D trubičkovými větvemi (`TubeGeometry`).
   - Zlaté větve s `emissive`, 9 svítících plodů, fialové kořeny, glow aura sprite.
-  - Soubor: [`APP&WEB/OasisWeb/src/components/TreeOfLife.tsx`](APP&WEB/OasisWeb/src/components/TreeOfLife.tsx)
+  - Soubor: [`apps/OasisWeb/src/components/TreeOfLife.tsx`](apps/OasisWeb/src/components/TreeOfLife.tsx)
 - **Další vizuální prvky:** `GalaxyCore` (zářící jádro), `Nebula` (průhledné sprite oblaky), `TerritoryRing` (8 světů kolem stromu), `World` (interaktivní planety).
 
 ### 2.3 OASIS intro landing page (zionterranova.com)
 
 - **Není maintenance — je to vstupní portál do OASIS a celého ZION ekosystému.**
 - Live na: `https://zionterranova.com` (systémový nginx servuje `maintenance.html` z `/var/www/maintenance/`).
-- Zdroj: [`APP&WEB/website-v2.9/public/maintenance.html`](APP&WEB/website-v2.9/public/maintenance.html)
+- Zdroj: [`apps/website-v2.9/public/maintenance.html`](apps/website-v2.9/public/maintenance.html)
 - Hlavní prvek: interaktivní Stargate → `https://oasis.zionterranova.com/`.
 - Obsah: hero s glass/rainbow card, L1–L6 mikro karty (2 řady po 3), status bar, CTA tlačítka, glass footer.
 - Současně běží plný Next.js web2.9 na `https://app.zionterranova.com` (oddělená doména, systemd `zion-website.service` → nginx proxy → `127.0.0.1:3000`).
-- Deploy intro: `bash APP&WEB/website-v2.9/deploy/deploy-oasis-intro.sh` (rsync + `nginx -s reload`).
-- Deploy web2.9: `bash APP&WEB/website-v2.9/deploy/deploy-web2.9.sh` (build, rsync, restart `zion-website.service`).
+- Deploy intro: `bash apps/website-v2.9/deploy/deploy-oasis-intro.sh` (rsync + `nginx -s reload`).
+- Deploy web2.9: `bash apps/website-v2.9/deploy/deploy-web2.9.sh` (build, rsync, restart `zion-website.service`).
 
 ### 2.4 Dokumentace
 
@@ -108,7 +108,7 @@ cargo build --release
 ./scripts/run-oasis-local.sh
 
 # Nebo ručně:
-cd APP&WEB/OasisWeb
+cd apps/OasisWeb
 npm install
 npm run build
 npm run start
@@ -126,9 +126,9 @@ npm run start
 | **Globální AGENTS / provoz** | [`AGENTS.md`](AGENTS.md) |
 | **Live status** | [`StatusV3.md`](StatusV3.md) |
 | **Kořenový README** | [`README.md`](README.md) |
-| **OASIS web zdroj** | [`APP&WEB/OasisWeb/`](APP&WEB/OasisWeb/) |
-| **OASIS intro page** | [`APP&WEB/website-v2.9/public/maintenance.html`](APP&WEB/website-v2.9/public/maintenance.html) |
-| **Web2.9 source** | [`APP&WEB/website-v2.9/`](APP&WEB/website-v2.9/) |
+| **OASIS web zdroj** | [`apps/OasisWeb/`](apps/OasisWeb/) |
+| **OASIS intro page** | [`apps/website-v2.9/public/maintenance.html`](apps/website-v2.9/public/maintenance.html) |
+| **Web2.9 source** | [`apps/website-v2.9/`](apps/website-v2.9/) |
 | **3.0.7 archiv** | [`docs/3.0.7/`](docs/3.0.7/) |
 | **3.0.8 / V31 prep archiv** | [`docs/3.0.8/`](docs/3.0.8/) |
 | **3.0.6 archiv** | [`docs/3.0.6/`](docs/3.0.6/) |
@@ -153,4 +153,4 @@ npm run start
 
 ---
 
-**Pokud nevíš, kde začít — začni ve [`V31/README.md`](V31/README.md) a pak [`V31/ALPHA_BUILD_PLAN.md`](V31/ALPHA_BUILD_PLAN.md). Pro webovou OASIS viz [`APP&WEB/OasisWeb/README.md`](APP&WEB/OasisWeb/README.md).**
+**Pokud nevíš, kde začít — začni ve [`V31/README.md`](V31/README.md) a pak [`V31/ALPHA_BUILD_PLAN.md`](V31/ALPHA_BUILD_PLAN.md). Pro webovou OASIS viz [`apps/OasisWeb/README.md`](apps/OasisWeb/README.md).**

@@ -68,7 +68,7 @@ Každá fáze se uzavírá validací. Nepokračovat bez zelených testů.
 - [x] **D1** — `L1/cosmic-harmony/src/gpu/kernels/` — Ekam kernely přítomny ✅
 - [x] **D2** — `L1/miner/src/miner/gpu/kernels/` — v sync ✅
 - [x] **D3** — `L1/native-libs/all/` — v sync ✅
-- [x] **D4** — `APP&WEB/desktop-agent/resources/mining/` — v sync ✅
+- [x] **D4** — `apps/desktop-agent/resources/mining/` — v sync ✅
 - [x] **D5** — Legacy kopie zachovány (archivní strategie), identifikovány:
   - `cosmic_harmony_deeksha.metal` (406 řádků, legacy CHv4.2 Merkabah, 0 ekam refs)
   - vs `metal_shader.metal` / `cosmic_harmony_ekam_deeksha.metal` (1640 řádků, 21 ekam refs)

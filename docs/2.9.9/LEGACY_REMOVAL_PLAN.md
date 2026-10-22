@@ -158,7 +158,7 @@ Po každém TIER kroku:
 1. `cargo test -p zion-cosmic-harmony-v3 --lib` — 96+ testů PASS
 2. `cargo test -p zion-pool --test chv4_e2e` — 11+ testů PASS
 3. `cargo build -p zion-miner --features metal --release` — kompilace bez chyb
-4. `node --check APP&WEB/desktop-agent/src/main.js` — syntax OK
+4. `node --check apps/desktop-agent/src/main.js` — syntax OK
 5. Benchmark: `cargo run -p zion-miner --features metal --release -- benchmark` → ≥25 kH/s na M1
 6. Kanonický test vektor: hash `6339f2fb...` musí projít na všech cestách
 

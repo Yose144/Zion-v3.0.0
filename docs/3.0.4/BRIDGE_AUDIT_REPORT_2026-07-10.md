@@ -103,8 +103,8 @@ This derives to **`0xA737B512B5EEc5B9E3E3f2476Eb1cFDF6750BA12`** — a Set C add
 | `V3/L2/bridge/tests/mainnet_readiness.rs` | Test assertions → Set A |
 | `public/V3/L2/bridge/tests/mainnet_readiness.rs` | Same |
 | `DefiL2.md` | Validator table → Set A, ZIONAtomicSwap address → `0x3DE9...` |
-| `APP&WEB/website-v2.9/src/app/api/bridge/status/route.ts` | `bridge_contract` → `0x72c8f0Dc...`, `chains_active` 6→4 |
-| `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` | Added `ZIONAtomicSwap: '0x3DE9...'` to mainnet |
+| `apps/website-v2.9/src/app/api/bridge/status/route.ts` | `bridge_contract` → `0x72c8f0Dc...`, `chains_active` 6→4 |
+| `apps/website-v2.9/src/lib/defi-contracts.ts` | Added `ZIONAtomicSwap: '0x3DE9...'` to mainnet |
 
 ### Commit `c65f42607` — sync remaining docs (3 files)
 

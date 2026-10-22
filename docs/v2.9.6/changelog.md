@@ -105,7 +105,7 @@
 - `Algorithm.COSMIC_HARMONY_V4 = "cosmic_harmony"` — nový alias; V3 označen jako deprecated
 - Pool endpoints: `POOL_HELSINKI`, `POOL_USA`, `POOL_ASIA` konstanty
 
-### 🖥️ Desktop Agent (`APP&WEB/desktop-agent/src/main.js`)
+### 🖥️ Desktop Agent (`apps/desktop-agent/src/main.js`)
 
 - Všechny výchozí hodnoty/fallbacky `'cosmic_harmony_v3'` → `'cosmic_harmony'` (5 míst)
 - Přidány module-level konstanty:

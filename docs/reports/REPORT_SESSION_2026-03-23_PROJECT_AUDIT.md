@@ -61,11 +61,11 @@ Aktuální problémy jsou méně o rozbitém runtime a více o:
 **Soubory:**
 
 - `Cargo.toml`
-- `APP&WEB/website-v2.9/package.json`
-- `APP&WEB/website-v2.9/src/lib/site.ts`
-- `APP&WEB/desktop-agent/package.json`
+- `apps/website-v2.9/package.json`
+- `apps/website-v2.9/src/lib/site.ts`
+- `apps/desktop-agent/package.json`
 - `docker/docker-compose.website.yml`
-- `APP&WEB/website-v2.9/public/docs/v2.9.6/README.md`
+- `apps/website-v2.9/public/docs/v2.9.6/README.md`
 
 **Aktuální stav:**
 
@@ -95,10 +95,10 @@ Aktuální problémy jsou méně o rozbitém runtime a více o:
 
 **Soubory:**
 
-- `APP&WEB/website-v2.9/src/app/api/network/route.ts`
-- `APP&WEB/website-v2.9/src/lib/network-config.ts`
-- `APP&WEB/website-v2.9/src/lib/zion-rpc.ts`
-- `APP&WEB/website-v2.9/src/lib/site.ts`
+- `apps/website-v2.9/src/app/api/network/route.ts`
+- `apps/website-v2.9/src/lib/network-config.ts`
+- `apps/website-v2.9/src/lib/zion-rpc.ts`
+- `apps/website-v2.9/src/lib/site.ts`
 
 **Co se děje:**
 
@@ -125,7 +125,7 @@ Aktuální problémy jsou méně o rozbitém runtime a více o:
 
 **Soubory:**
 
-- `APP&WEB/desktop-agent/package.json`
+- `apps/desktop-agent/package.json`
 
 **Aktuální stav:**
 
@@ -223,7 +223,7 @@ Tím padá dřívější hypotéza, že Metal Ekam path v aktuálním stromu chy
 
 ### ✅ P-03 — Desktop packaging script stále drží důležitou sync logiku pohromadě
 
-`APP&WEB/desktop-agent/scripts/prepare-rust-miner.js` pořád plní roli hlavního bundling gate pro Rust miner a resource sync. To zůstává správný směr i po nových změnách.
+`apps/desktop-agent/scripts/prepare-rust-miner.js` pořád plní roli hlavního bundling gate pro Rust miner a resource sync. To zůstává správný směr i po nových změnách.
 
 ---
 

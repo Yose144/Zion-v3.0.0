@@ -34,7 +34,7 @@ Opraveny 7 chyb napříč Rust workspace (V31) a TypeScript frontendy (website-v
 
 ---
 
-## 2. TypeScript — `website-v2.9` (`APP&WEB/website-v2.9/`)
+## 2. TypeScript — `website-v2.9` (`apps/website-v2.9/`)
 
 ### 2.1 `src/app/api/prl/route.ts:140` — redundantní `_error` check na narrowed typu
 
@@ -42,7 +42,7 @@ Opraveny 7 chyb napříč Rust workspace (V31) a TypeScript frontendy (website-v
 
 **Oprava:** `const rpcOk = typeof blocks === 'number'`.
 
-**Soubor:** `APP&WEB/website-v2.9/src/app/api/prl/route.ts`
+**Soubor:** `apps/website-v2.9/src/app/api/prl/route.ts`
 
 ### 2.2 `src/app/maitreya/library.ts:144` — neexistující vlastnost `desc`
 
@@ -50,7 +50,7 @@ Opraveny 7 chyb napříč Rust workspace (V31) a TypeScript frontendy (website-v
 
 **Oprava:** Přejmenováno na `description`.
 
-**Soubor:** `APP&WEB/website-v2.9/src/app/maitreya/library.ts`
+**Soubor:** `apps/website-v2.9/src/app/maitreya/library.ts`
 
 ### 2.3 `src/components/StarfieldBackground.tsx:219` — redundantní podmínka po early return
 
@@ -58,7 +58,7 @@ Opraveny 7 chyb napříč Rust workspace (V31) a TypeScript frontendy (website-v
 
 **Oprava:** Odstraněna redundantní podmínka `&& document.visibilityState !== 'hidden'`.
 
-**Soubor:** `APP&WEB/website-v2.9/src/components/StarfieldBackground.tsx`
+**Soubor:** `apps/website-v2.9/src/components/StarfieldBackground.tsx`
 
 ### 2.4 `e2e/passkey.spec.ts:170` — `as` cast z potenciálně `null`
 
@@ -66,7 +66,7 @@ Opraveny 7 chyb napříč Rust workspace (V31) a TypeScript frontendy (website-v
 
 **Oprava:** `as unknown as { ... }`.
 
-**Soubor:** `APP&WEB/website-v2.9/e2e/passkey.spec.ts`
+**Soubor:** `apps/website-v2.9/e2e/passkey.spec.ts`
 
 ---
 
@@ -103,7 +103,7 @@ Opraveny 7 chyb napříč Rust workspace (V31) a TypeScript frontendy (website-v
 1. `V31/L1/miner/Cargo.toml` — `required-features` pro `qpow_probe`
 2. `V31/L3/ai-native/src/bin/zion-ai-native-api.rs` — `store: None` v `NclAppState`
 3. `V31/L3/ncl/src/api.rs` — `store: None` v doctestu
-4. `APP&WEB/website-v2.9/src/app/api/prl/route.ts` — odstraněn `blocks?._error`
-5. `APP&WEB/website-v2.9/src/app/maitreya/library.ts` — `desc` → `description`
-6. `APP&WEB/website-v2.9/src/components/StarfieldBackground.tsx` — odstraněna redundantní podmínka
-7. `APP&WEB/website-v2.9/e2e/passkey.spec.ts` — `as unknown as` cast
+4. `apps/website-v2.9/src/app/api/prl/route.ts` — odstraněn `blocks?._error`
+5. `apps/website-v2.9/src/app/maitreya/library.ts` — `desc` → `description`
+6. `apps/website-v2.9/src/components/StarfieldBackground.tsx` — odstraněna redundantní podmínka
+7. `apps/website-v2.9/e2e/passkey.spec.ts` — `as unknown as` cast

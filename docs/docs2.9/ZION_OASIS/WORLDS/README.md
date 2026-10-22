@@ -2,9 +2,9 @@
 
 Tento adresář obsahuje koncepty jednotlivých světů, dimenzí a prostorů OASIS.
 
-> **Hlavní vizi najdeš v:** [`APP&WEB/OasisWeb/OASIS_UNIVERSE.md`](../../../APP&WEB/OasisWeb/OASIS_UNIVERSE.md)  
+> **Hlavní vizi najdeš v:** [`apps/OasisWeb/OASIS_UNIVERSE.md`](../../../apps/OasisWeb/OASIS_UNIVERSE.md)  
 > **Technická pravidla pro UE5 import:** [`AGENTS.md`](../../../AGENTS.md)  
-> **Vygenerovaný registr světů:** [`APP&WEB/OasisWeb/src/domain/config/worlds.ts`](../../../APP&WEB/OasisWeb/src/domain/config/worlds.ts)
+> **Vygenerovaný registr světů:** [`apps/OasisWeb/src/domain/config/worlds.ts`](../../../apps/OasisWeb/src/domain/config/worlds.ts)
 
 ---
 
@@ -96,4 +96,4 @@ Pro nové světy použij šablonu [`TEMPLATE.md`](TEMPLATE.md).
 
 ---
 
-> **Toto je živý index.** Světy se budou neustále přidávat. Každý soubor má být samostatný koncept, který se dá později převést do `src/domain/config/worlds.ts` a UE5. Tento index se regeneruje skriptem `APP&WEB/OasisWeb/scripts/generate-worlds-config.py`.
+> **Toto je živý index.** Světy se budou neustále přidávat. Každý soubor má být samostatný koncept, který se dá později převést do `src/domain/config/worlds.ts` a UE5. Tento index se regeneruje skriptem `apps/OasisWeb/scripts/generate-worlds-config.py`.

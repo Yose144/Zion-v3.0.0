@@ -80,7 +80,7 @@ GET /api/bridge/history      → [{tx_hash, from, to, amount, status, timestamp}
 GET /api/bridge/validators   → [{address, online, last_signature}]
 ```
 
-### 3.2 Website (Next.js, APP&WEB/website-v2.9)
+### 3.2 Website (Next.js, apps/website-v2.9)
 
 **Nová stránka: `/bridge`**
 

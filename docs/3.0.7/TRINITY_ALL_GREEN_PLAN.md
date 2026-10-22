@@ -162,7 +162,7 @@
 | # | Task | Status | Details |
 |---|------|--------|---------|
 | 7.1 | ~~Implement explorer API routes~~ | ✅ DONE | `/block`, `/tx`, `/address`, `/broadcast`, `/verify-message` all exist |
-| 7.2 | ~~Build V4 frontend pages~~ | ✅ DONE | All routes exist in `APP&WEB/website-v2.9/src/app/explorer/` |
+| 7.2 | ~~Build V4 frontend pages~~ | ✅ DONE | All routes exist in `apps/website-v2.9/src/app/explorer/` |
 | 7.3 | ~~Wire SSE live feed~~ | ✅ DONE | SSE Phase 4 deployed (commit `d096d72b9`) |
 | 7.4 | ~~Deploy behind `/explorer`~~ | ✅ DONE | Live at `https://zionterranova.com/explorer` (200) |
 | 7.5 | Verify block/tx detail pages render with live data | 🔲 TODO | Navigate to `/explorer/block/<hash>` and `/explorer/tx/<hash>` on live site |

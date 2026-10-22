@@ -574,7 +574,7 @@ npx hardhat run scripts/verify-base-mainnet-basescan.ts --network base
 ### Krok 8 — Aktualizuj `defi-contracts.ts`
 
 ```typescript
-// APP&WEB/website-v2.9/src/lib/defi-contracts.ts
+// apps/website-v2.9/src/lib/defi-contracts.ts
 // Base Mainnet (deployed 3.0.4)
 ZIONStaking:    '0x<STAKING>',
 ZIONFarm:       '0x<FARM>',
@@ -715,7 +715,7 @@ curl -s http://localhost:8450/api/dao/proposals/3/votes | python3 -m json.tool
 
 ## P4 — WARP UI Transfer Formulář
 
-### Co přidat do `APP&WEB/website-v2.9/src/app/warp/page.tsx`
+### Co přidat do `apps/website-v2.9/src/app/warp/page.tsx`
 
 Nová sekce "Initiate WARP Transfer" se stavebními bloky:
 
@@ -728,14 +728,14 @@ Nová sekce "Initiate WARP Transfer" se stavebními bloky:
 ### Přidej WARP do `core-endpoints.ts`
 
 ```typescript
-// APP&WEB/website-v2.9/src/lib/core-endpoints.ts
+// apps/website-v2.9/src/lib/core-endpoints.ts
 /** WARP daemon — runs locally on Edge (port 8453) */
 warp: `http://127.0.0.1:8453`,
 ```
 
 ### Vytvoř API proxy route
 
-Soubor: `APP&WEB/website-v2.9/src/app/api/warp/[...path]/route.ts`
+Soubor: `apps/website-v2.9/src/app/api/warp/[...path]/route.ts`
 (vzor: zkopírovat ze `src/app/api/dao/[...path]/route.ts`, změnit upstream na WARP port 8453)
 
 ---
@@ -749,7 +749,7 @@ Soubor: `APP&WEB/website-v2.9/src/app/api/warp/[...path]/route.ts`
 
 ### Co přidat
 
-V `APP&WEB/website-v2.9/src/app/bridge/page.tsx` — tab `'lock'`:
+V `apps/website-v2.9/src/app/bridge/page.tsx` — tab `'lock'`:
 
 1. **Vault adresa** (copy button): `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7`
 2. **Memo generátor**: zadej MetaMask adresu → vygeneruj `BRIDGE:<evm_addr>`

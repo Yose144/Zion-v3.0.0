@@ -27,7 +27,7 @@ garantovaný inference výkon.
 ## Provedené změny
 
 - **Responzivní UI Vast rigs** v
-  [`APP&WEB/IntroPage/src/app/vast-rigs/Dashboard.tsx`](./APP&WEB/IntroPage/src/app/vast-rigs/Dashboard.tsx):
+  [`apps/IntroPage/src/app/vast-rigs/Dashboard.tsx`](./apps/IntroPage/src/app/vast-rigs/Dashboard.tsx):
   upravené rozvržení rig karet a ovládání pro úzké displeje, nabídky GPU pro
   mobilní zobrazení a tabulky pro širší obrazovky. Opravena také mobilní šířka
   karet a horizontální přetékání.
@@ -51,16 +51,16 @@ garantovaný inference výkon.
   instanci; deployment váže vLLM host port na loopback a povoluje jen oficiální
   version-tagged vLLM image.
 - **Sjednocené inference UI** v
-  [`APP&WEB/IntroPage/src/app/vast-rigs/Dashboard.tsx`](./APP&WEB/IntroPage/src/app/vast-rigs/Dashboard.tsx):
+  [`apps/IntroPage/src/app/vast-rigs/Dashboard.tsx`](./apps/IntroPage/src/app/vast-rigs/Dashboard.tsx):
   přehledný worker setup panel, výběr modelu a VRAM cíle a responsivní tlačítka
   Deploy, Check, Copy SSH tunnel a Stop na kartě každého rigu. Deploy a Stop
   vyžadují potvrzení; tunnel příkaz lze zkopírovat do clipboardu.
 
 ## Ověření
 
-- `npm run build` v `APP&WEB/IntroPage` — úspěšný build; `/vast-rigs` je
+- `npm run build` v `apps/IntroPage` — úspěšný build; `/vast-rigs` je
   staticky generovaná stránka.
-- `tsc --noEmit` v `APP&WEB/IntroPage` — bez TypeScript chyb.
+- `tsc --noEmit` v `apps/IntroPage` — bez TypeScript chyb.
 - `python3 -m unittest discover -s tools/vast -p 'test_*.py' -v` — všech
   **15 testů prošlo** (loopback bind, origin ochrana, potvrzení akcí, validace
   instance/modelu/image a SSH tunnel command).
@@ -83,7 +83,7 @@ garantovaný inference výkon.
   změny. Byly vráceny v `2c7f7d906` před produkčním buildem a nasazením.
 - Všechny změny byly pushnuty fast-forwardem na `origin/main`, bez force push.
 - Čistý statický build z commitu `2c7f7d906` byl nasazen skriptem
-  [`APP&WEB/IntroPage/deploy/deploy-intro.sh`](./APP&WEB/IntroPage/deploy/deploy-intro.sh)
+  [`apps/IntroPage/deploy/deploy-intro.sh`](./apps/IntroPage/deploy/deploy-intro.sh)
   do `/var/www/zion-maintenance` na Edge; `nginx -t` uspěl a nginx byl reloadnut.
 - Uživatelská služba `vastctl-serve.service` běží z
   `~/.local/share/vastctl-release/tools/vast` a Edge reverse tunnel API smoke

@@ -25,7 +25,7 @@
 | Canonical dispatch | `cosmic_harmony_with_height` používá Deeksha od výšky 0 | ✅ PASS | `CHV_DEEKSHA_FORK_HEIGHT = 0`, dispatch testy v `deeksha.rs` |
 | Pool E2E semantika | E2E testy odpovídají Deeksha-first modelu | ✅ PASS | `cargo test -p zion-pool --test chv4_e2e` → **11/11 PASS** |
 | Deeksha unit testy | Determinismus, avalanche, dispatch parity, vektor | ✅ PASS | `cargo test -p zion-cosmic-harmony-v3 deeksha::tests::` → **9/9 PASS** |
-| Desktop agent syntax | JS syntax validní | ✅ PASS | `node --check APP&WEB/desktop-agent/src/main.js` |
+| Desktop agent syntax | JS syntax validní | ✅ PASS | `node --check apps/desktop-agent/src/main.js` |
 | Native backend ABI | Metal/OpenCL/CUDA wrappers používají Deeksha-native symboly s legacy fallbackem | ✅ PASS | `zion_deeksha_batch_mine` + fallback na `cosmic_harmony_v4_2_batch_mine` |
 | Alias kompatibilita | `cosmic_harmony/chv4/deeksha` aliasy pro pool flow | ✅ PASS | parser + validator coverage v `L1/pool/tests/chv4_e2e.rs` |
 | Produkční mining acceptance | Live accepted shares na Helsinki/USA/Asia rostou | ✅ PASS | 2026-03-09 10:44 UTC: shares ACCEPTED, algo=cosmic_harmony, job=h1-e673f633 |

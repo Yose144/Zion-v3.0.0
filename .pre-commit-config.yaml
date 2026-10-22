@@ -82,11 +82,11 @@ repos:
         name: node --check (desktop-agent main.js)
         language: system
         entry: node --check
-        files: ^APP&WEB/desktop-agent/src/.*\.js$
+        files: ^apps/desktop-agent/src/.*\.js$
 
       # Quick py compile check for desktop-agent Python fallbacks (cheap).
       - id: desktop-agent-py-compile
         name: python3 -m py_compile (desktop-agent *.py)
         language: system
         entry: python3 -m py_compile
-        files: ^APP&WEB/desktop-agent/.*\.py$
+        files: ^apps/desktop-agent/.*\.py$

@@ -16,7 +16,7 @@ Historicky zaklad narativni linie projektu.
 
 Relevantni stopy v repozitari:
 
-1. publikovane PDF edice ve `APP&WEB/public_html/V2/books/`,
+1. publikovane PDF edice ve `apps/public_html/V2/books/`,
 2. analyza souladu knihy s technickou realitou v `docs/docs2.9/2.9.2/ANALYSIS_BOOK_VS_REALITY.md`,
 3. mapovani kapitol knihy na konkretni implementace v `docs/docs2.9/2.9.3/root-md/SPIRITUAL_CODE_MAPPING_2026-01-15.md`.
 
@@ -31,7 +31,7 @@ Nova navazujici kniha, ktera ma vyrustat primo z osy Quantove Revoluce a rozsiri
 
 ### 3. V2 Books a Sacred Library
 
-Publikovana knizni vrstva ve slozce APP&WEB/public_html/V2/books je samostatna historicka osa artefaktu, kterou AI Native nema ignorovat. Zaroven je ale potreba odlisit samotne PDF publikace od textovych proxy zdroju vhodnych pro training a RAG.
+Publikovana knizni vrstva ve slozce apps/public_html/V2/books je samostatna historicka osa artefaktu, kterou AI Native nema ignorovat. Zaroven je ale potreba odlisit samotne PDF publikace od textovych proxy zdroju vhodnych pro training a RAG.
 
 Proto je pro AI ingest kanonicky doplnen manifest:
 

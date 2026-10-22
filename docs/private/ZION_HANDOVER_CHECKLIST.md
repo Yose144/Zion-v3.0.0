@@ -55,7 +55,7 @@
 
 Každou položku označit jako **vlastněná Yosefem**, **vlastněná společností**, **licencovaná třetí stranou**, nebo **pouze přístup / provozní oprávnění**.
 
-- [PENDING] Zdrojový kód V31, archivní V3, `APP&WEB`, `ZION_OS`, CLI, SDK, smart kontrakty a build/release skripty.
+- [PENDING] Zdrojový kód V31, archivní V3, `apps`, `ZION_OS`, CLI, SDK, smart kontrakty a build/release skripty.
 - [PENDING] Dokumentace, whitepapery, marketing, překlady, grafika, logo, názvy a vizuální identita.
 - [PENDING] Ochranné známky a případné přihlášky známek.
 - [PENDING] Obchodní podíl a majetek `OMNITY.ONE s.r.o.`.
@@ -190,7 +190,7 @@ Stav níže je převzatý z `V31/STATUS.md`, `StatusV3.md`, `docs/3.2/ROADMAP.md
 || CUDA DAG cache | [HOTOVO — REPO] | Cache v `~/.zion/dag-cache` | Ověřit vlastnictví a velikost |
 || Native TX/address index | [HOTOVO — REPO] | `tx_index`, `output_index`, `address_tx_index`, backfill | Live integrity SQLite |
 || UTXO v2 wallet/CLI/pool | [HOTOVO — HISTORICKY] | V2 hash, `submitUtxoTransaction`, wallet SDK, CLI | Wallet send test s neprodukční částkou |
-|| Wallet SDK TypeScript | [HOTOVO — REPO] | `APP&WEB/zion-wallet-sdk` `npm run build` prošel | Uložit záměrný commit/snapshot |
+|| Wallet SDK TypeScript | [HOTOVO — REPO] | `apps/zion-wallet-sdk` `npm run build` prošel | Uložit záměrný commit/snapshot |
 || Website build/lint/typecheck | [HOTOVO — REPO / WARNINGS] | `npm run build` prošel, 114 routes; lint 0 errors, 6 warnings | Odstranit/zdokumentovat warnings |
 || ZIS | [HOTOVO — HISTORICKY] | `zion-zis.service`, `auth.zionterranova.com` | `/health`, env, DB, OAuth recovery |
 || DEX `/dex` UI | [HOTOVO — HISTORICKY] | TDZ/debounce fix, mock E2E 8/8, quote real E2E | Funded execute/withdraw E2E |

@@ -92,7 +92,7 @@ A tracked DEX pair with genuine depth and organic volume is the strongest signal
 
 #### 1.7 Technical check
 - Confirm the bridge mints 1:1 wZION and that the bridge contract is verified on BaseScan.
-- Update `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` and `src/lib/market.ts` when new pools are added.
+- Update `apps/website-v2.9/src/lib/defi-contracts.ts` and `src/lib/market.ts` when new pools are added.
 
 ---
 

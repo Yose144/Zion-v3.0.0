@@ -14,10 +14,10 @@ Převést celý veřejný web `app.zionterranova.com` (Next.js 16.2.9) z součas
 kosmického pozadí pro OASIS onboarding sekci (budeme řešit následně).
 
 ### Reference materiály
-- `APP&WEB/public_html/V2/rasta.css` — 1805 řádků kompletního rasta CSS (hero, cards, timeline, tables, buttons, stats, dashboard)
-- `APP&WEB/public_html/V2/Folio/assets/css/rasta-overrides.css` — rasta color tokens
-- `APP&WEB/public_html/V2/Folio/assets/css/v2-rasta-shell.css` — navbar rasta shell
-- `APP&WEB/MarketPlace/src/app/globals.css` — **už má rasta paletu nasazenou** (gold #fcd116, red #e41e2b, green #078930)
+- `apps/public_html/V2/rasta.css` — 1805 řádků kompletního rasta CSS (hero, cards, timeline, tables, buttons, stats, dashboard)
+- `apps/public_html/V2/Folio/assets/css/rasta-overrides.css` — rasta color tokens
+- `apps/public_html/V2/Folio/assets/css/v2-rasta-shell.css` — navbar rasta shell
+- `apps/MarketPlace/src/app/globals.css` — **už má rasta paletu nasazenou** (gold #fcd116, red #e41e2b, green #078930)
 - `docs/3.0.3/ZIONTHEME.md` — kompletní design system dokumentace
 - `docs/3.0.3/ZIONTHEME_CHEATSHEET.md` — rychlý přehled
 

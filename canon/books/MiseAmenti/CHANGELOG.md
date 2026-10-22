@@ -72,7 +72,7 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 - L1: `V31/L1/core/src/{emission,v3_template,v3_compat}.rs` (5 % → `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8`).
 - L5 služba: `V31/L5/free-world/` (`config.rs` má kanonický default, `db.rs` tabulky `grants/projects/communities/fund_balance`), `zion-v31-free-world.service`, `StatusV3.md` 2026-08-23, `docs/3.2/L5_L6_ACTIVATION_PLAN.md` (G10).
-- Komunity: `public/V3/L5/docs/COMMUNITIES/{genesis-garden,dharma-temple,te-piko-ora}.md`; web `APP&WEB/website-v2.9/src/app/terranova/**`, `public/docs/terranova/dharma-temple.{cs,en}.md`; OASIS `APP&WEB/OasisWeb/src/components/WorldPanel.tsx`, `src/domain/config/worlds.ts`.
+- Komunity: `public/V3/L5/docs/COMMUNITIES/{genesis-garden,dharma-temple,te-piko-ora}.md`; web `apps/website-v2.9/src/app/terranova/**`, `public/docs/terranova/dharma-temple.{cs,en}.md`; OASIS `apps/OasisWeb/src/components/WorldPanel.tsx`, `src/domain/config/worlds.ts`.
 
 ### Dopad na stav tvrzení
 
@@ -97,7 +97,7 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ### Důkaz
 
-- Technické nároky převzaty beze změny stavu z `07-Registr-Dukazu.md`, `BodhiGaia/09`, `Issobella/10`; zdroje: `V31/L1/core/src/{emission,v3_template,v3_compat,difficulty}.rs`, `V31/L1/cosmic-harmony`, `APP&WEB/identity`, `APP&WEB/zion-wallet-sdk`, `L2contracts.md`, `warp.example.toml`, `V31/L3/ai-native` + `docs/3.0.6/HIRAN_OVERVIEW.md`, `V31/L4/oasis/data/avatars.json` (avatar id 40 „Elizabet"), `APP&WEB/OasisWeb` (`BabylonIntro.tsx`, `worlds.ts` `ELIZABET`), `V31/L5/free-world`, `V31/L6/issobella`, `canon/l6/`, `docs/3.2/L5_L6_ACTIVATION_PLAN.md` (G10), `docs/3.2/ROADMAP.md` (G8/G9), `docs/genesis.md`, `StatusV3.md`, `AGENTS.md` (2026-08-22, 2026-09-07, 2026-09-14); přímý probe `getStatus` na Edge 2026-09-14 (výška 43 500+, 7 aktivních peerů).
+- Technické nároky převzaty beze změny stavu z `07-Registr-Dukazu.md`, `BodhiGaia/09`, `Issobella/10`; zdroje: `V31/L1/core/src/{emission,v3_template,v3_compat,difficulty}.rs`, `V31/L1/cosmic-harmony`, `apps/identity`, `apps/zion-wallet-sdk`, `L2contracts.md`, `warp.example.toml`, `V31/L3/ai-native` + `docs/3.0.6/HIRAN_OVERVIEW.md`, `V31/L4/oasis/data/avatars.json` (avatar id 40 „Elizabet"), `apps/OasisWeb` (`BabylonIntro.tsx`, `worlds.ts` `ELIZABET`), `V31/L5/free-world`, `V31/L6/issobella`, `canon/l6/`, `docs/3.2/L5_L6_ACTIVATION_PLAN.md` (G10), `docs/3.2/ROADMAP.md` (G8/G9), `docs/genesis.md`, `StatusV3.md`, `AGENTS.md` (2026-08-22, 2026-09-07, 2026-09-14); přímý probe `getStatus` na Edge 2026-09-14 (výška 43 500+, 7 aktivních peerů).
 - Jazykový fakt Isabel = Elizabeth: veřejná etymologie; v repozitáři `docs/docs2.9/genesis/09.5-CHAPTER-9-Three-Marian-Apparitions.md`.
 
 ### Dopad na stav tvrzení
@@ -170,12 +170,12 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 - `canon/books/Ruze/` — přidán epilog [`Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) mezi kapitolu 9 a kotvu 10: Lumi s alabastrovou nádobou dorazí do skromné Zahrady Genesis u Atlantiku a s Anou zasadí druhé semínko na okraj záhonu; `00-README` (tabulka + řád E), navigace v `09`, registry a review v `10-Kotva-Pribehu.md`.
 - `canon/books/BodhiGaia/` — nová [kapitola 12](../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) (Ana, následující ráno, odmítnutí „posvátné růže", zápis do pracovního sešitu) + návrh fyzického pilotu [`pilots/GENESIS-ROSE-001.md`](../BodhiGaia/pilots/GENESIS-ROSE-001.md): gaty A–D (souhlas a místo, botanika a bezpečnost, péče, finance a tvrzení), záznamová pole, evidence Day 0, prahy D30/D90/D365, stavové přechody; integrace v `00-README` (dvanáct kapitol + mapa zdrojů), `03` (most + kotva), `07` (OASIS zrcadlo + kotva), `09` (registry + krok 13), `11` a `full.md`.
-- `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa `GENESIS_GARDEN` nesou výslovně označenou Rose lore (MYTH): změněny pouze `vibe`, `summary`, `tags`; žádný deploy.
+- `apps/OasisWeb/src/domain/config/worlds.ts` — metadata světa `GENESIS_GARDEN` nesou výslovně označenou Rose lore (MYTH): změněny pouze `vibe`, `summary`, `tags`; žádný deploy.
 - `canon/books/README.md` (položka Příběh Růže + epilog), `MiseAmenti/02` (věta: OASIS zrcadlí MÝTUS, pilot HORIZONT, žádná nová brána), `MiseAmenti/07` (nový řádek L5 evidence + rozšířené pravidlo 7).
 
 ### Důkaz
 
-- `Ruze/Epilog-Zahrada-Genesis.md` + `Ruze/10-Kotva-Pribehu.md` §2/§6; `BodhiGaia/12`, `BodhiGaia/03` (most + kotva), `BodhiGaia/07` (OASIS metadata), `BodhiGaia/09` (registry + krok 13); `BodhiGaia/pilots/GENESIS-ROSE-001.md`; `APP&WEB/OasisWeb/src/domain/config/worlds.ts` (`GENESIS_GARDEN`).
+- `Ruze/Epilog-Zahrada-Genesis.md` + `Ruze/10-Kotva-Pribehu.md` §2/§6; `BodhiGaia/12`, `BodhiGaia/03` (most + kotva), `BodhiGaia/07` (OASIS metadata), `BodhiGaia/09` (registry + krok 13); `BodhiGaia/pilots/GENESIS-ROSE-001.md`; `apps/OasisWeb/src/domain/config/worlds.ts` (`GENESIS_GARDEN`).
 
 ### Dopad na stav tvrzení
 

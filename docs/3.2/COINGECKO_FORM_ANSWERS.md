@@ -200,7 +200,7 @@ https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/docs/LEGAL/PREMINE_DISCLO
 
 | Pole | Soubor k nahrání |
 |------|------------------|
-| Token Image (200×200 PNG, transparent) | `APP&WEB/website-v2.9/public/brand/zion/icon-on-dark-200.png` |
+| Token Image (200×200 PNG, transparent) | `apps/website-v2.9/public/brand/zion/icon-on-dark-200.png` |
 | Project Banner (min 1360×430, PNG, <2MB) | `canon/brand/banner/zion-banner-1360x714.png` ✅ vygenerováno (1360×714, 996 KB) |
 
 ## 17. Additional Information

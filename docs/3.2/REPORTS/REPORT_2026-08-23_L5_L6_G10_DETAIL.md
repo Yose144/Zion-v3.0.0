@@ -26,7 +26,7 @@ This confirms the decision in `L5_L6_ACTIVATION_PLAN.md`: for 3.2.0, L5/L6 shoul
 
 ## 2. Methodology
 
-- Source review of `V31/L5/free-world`, `V31/L6/issobella`, `V31/L2/dao`, `V31/L1/core`, `V31/cli`, `APP&WEB/website-v2.9`, `ZION_OS/dashboard`, `V31/deploy/config`, `ZION_OS/infra/scripts`.
+- Source review of `V31/L5/free-world`, `V31/L6/issobella`, `V31/L2/dao`, `V31/L1/core`, `V31/cli`, `apps/website-v2.9`, `ZION_OS/dashboard`, `V31/deploy/config`, `ZION_OS/infra/scripts`.
 - Build and test verification with `cargo check` and `cargo test` for both L5/L6 crates.
 - Static analysis of L1 coinbase construction in `V31/L1/core/src/node.rs` and `V31/L1/core/src/rpc.rs::get_native_block`.
 - Comparison of DAO request/response types in `V31/L2/dao/src/api.rs` with the DAO client in `V31/L5/free-world/src/dao_client.rs`.
@@ -374,7 +374,7 @@ Both `config.rs` files default to `0.0.0.0`. The V31 `AGENTS.md` security model 
 
 ### 10.1 Website pages
 
-`APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` and `l6-issobella/page.tsx` contain stale V3/placeholder addresses that do not match the canonical V31 addresses. Since these pages are not being made public before 3.2.0, this is not a launch blocker, but the addresses should be aligned to avoid drift.
+`apps/website-v2.9/src/app/l5-free-world/page.tsx` and `l6-issobella/page.tsx` contain stale V3/placeholder addresses that do not match the canonical V31 addresses. Since these pages are not being made public before 3.2.0, this is not a launch blocker, but the addresses should be aligned to avoid drift.
 
 ### 10.2 CLI stubs
 
@@ -432,7 +432,7 @@ These should be updated to reflect the new passive-tracker status and point to t
 - [ ] `ZION_OS/infra/scripts/backup-edge.sh` — add DB files
 - [ ] `ZION_OS/dashboard/app.py` — mark services deployable
 - [ ] `V31/cli/src/commands/free_world.rs` and `issobella.rs` — update messages
-- [ ] `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` and `l6-issobella/page.tsx` — update addresses
+- [ ] `apps/website-v2.9/src/app/l5-free-world/page.tsx` and `l6-issobella/page.tsx` — update addresses
 - [ ] `V31/STATUS.md` / `StatusV3.md` — record L5/L6 passive tracker status
 
 ### 12.3 Verification

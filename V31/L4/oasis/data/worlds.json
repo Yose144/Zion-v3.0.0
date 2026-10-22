@@ -6672,8 +6672,8 @@
   "category": "dimension",
   "layer": 4,
   "location": "OASIS archive realm",
-  "vibe": "Název odkazuje k praxi tube of light známé z řady vzestupových materiálů ( APP&WEB/public_html/V2/Vzestup/ ).",
-  "summary": "*Název odkazuje k praxi „tube of light\" známé z řady vzestupových materiálů (`APP&WEB/public_html/V2/Vzestup/…`). Nepředstavuje léčení ani náhradu bezpečnostní hygieny.*",
+  "vibe": "Název odkazuje k praxi tube of light známé z řady vzestupových materiálů ( apps/public_html/V2/Vzestup/ ).",
+  "summary": "*Název odkazuje k praxi „tube of light\" známé z řady vzestupových materiálů (`apps/public_html/V2/Vzestup/…`). Nepředstavuje léčení ani náhradu bezpečnostní hygieny.*",
   "tags": [
    "dimension",
    "cosmicvzestupframe",

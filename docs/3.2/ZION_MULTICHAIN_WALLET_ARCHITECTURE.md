@@ -308,7 +308,7 @@ Initial liquidity provided by:
 ### 6.1 New Modules
 
 ```
-APP&WEB/zion-wallet-sdk/src/
+apps/zion-wallet-sdk/src/
 ├── core/                    # existing L1 wallet
 │   ├── address.ts
 │   ├── keypair.ts
@@ -420,7 +420,7 @@ GET  /api/wallet/withdrawals     → withdrawal history
 - Add initial liquidity
 
 ### Track C: TypeScript SDK
-**Files:** `APP&WEB/zion-wallet-sdk/src/`
+**Files:** `apps/zion-wallet-sdk/src/`
 - `multichain/wallet-client.ts` — L2 API client
 - `multichain/swap.ts` — DEX swap
 - `multichain/bridge.ts` — cross-chain bridge
@@ -430,7 +430,7 @@ GET  /api/wallet/withdrawals     → withdrawal history
 - Tests
 
 ### Track D: ZIS Integration
-**Files:** `APP&WEB/identity/src/routes/wallet.ts` + `APP&WEB/shared/`
+**Files:** `apps/identity/src/routes/wallet.ts` + `apps/shared/`
 - New wallet routes in ZIS
 - Linked address → deposit address flow
 - ZIS proxy to L2 wallet API

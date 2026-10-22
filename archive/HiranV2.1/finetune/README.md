@@ -107,7 +107,7 @@ Výstupem je `HiranV2.1/finetune/data/hiran_curriculum_v2.1.jsonl` — stejný s
 Volitelně do stejného adresáře **`HiranV2.1/data/shards/`** přidej kurátorované **SFT** rozšíření: `zion_train_oer_sciences.jsonl` (OER vědy), `zion_train_vedic_guided.jsonl` (BBT/Vedabase — viz plán), **`zion_train_buddhism_guided.jsonl`** (orientace v **klasickém** a **tibetském** buddhismu); plná hloubka přes RAG indexy `buddhism-classical` / `buddhism-tibetan` v [`Hiran_v2.1.md`](../../HiranV2.1/Hiran_v2.1.md) § 3.6.
 
 Poznamka k V2 books:
-- publikovane PDF ve `APP&WEB/public_html/V2/books/` se nemaji brat jako primarni ingest format,
+- publikovane PDF ve `apps/public_html/V2/books/` se nemaji brat jako primarni ingest format,
 - collector je uci pres repo-local textove proxy vrstvy jako `docs/docs2.9/books/`, `docs/docs2.9/ZION_OASIS/GOLDEN_EGG_GAME/`, `docs/docs2.9/SACRED_KNOWLEDGE/`, `docs/docs2.9/COSMIC_MAP/` a `docs/docs2.9/deployment/AMENTI_LOG_INDEX.md`,
 - kanonicky prehled teto strategie drzi `docs/docs2.9/books/V2_BOOKS_AI_NATIVE_CORPUS.md`.
 

@@ -1,7 +1,7 @@
 # Report: Website docs / public subtree sync, wallet public-API fix, and deploy
 
 **Date:** 2026-08-18  
-**Scope:** `APP&WEB/website-v2.9`, `public/` subtree, `canon/books/`, desktop-agent wallet API, live web deploy  
+**Scope:** `apps/website-v2.9`, `public/` subtree, `canon/books/`, desktop-agent wallet API, live web deploy  
 **Authors:** Devin (agent) + estrelaisabellazion3  
 **Status:** Done, deployed, pushed
 
@@ -52,7 +52,7 @@ Updated all stale genesis hashes and protocol versions:
 
 All references to the three historical hashes (`08a94fb0...`, `21e2b274...`, `4f75a0df...`) were replaced with the current `961094...` V31 native hash and `4cf756...` V3 compat hash where the dual-hash table exists.
 
-### 3.2 Live website public docs (`APP&WEB/website-v2.9/public/docs/`)
+### 3.2 Live website public docs (`apps/website-v2.9/public/docs/`)
 
 - `index.md` / `cs/index.md` — updated `Genesis #0` line to **1 January 2026 (block timestamp)** + One Love hard reset **6 August 2026**.
 - `WP/ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_*.md` — `First block` set to **1 Jan 2026** / **1. 1. 2026**.
@@ -84,7 +84,7 @@ All references to the three historical hashes (`08a94fb0...`, `21e2b274...`, `4f
 
 A separate commit (`163c16a8a`) fixed the desktop-agent wallet section that was failing for public users because it tried to reach the operator-only TCP JSON-RPC (`62.171.141.136:8443`) behind nginx IP allowlist:
 
-- Files: `APP&WEB/desktop-agent/src/main.js`, `archive/DesktopAgentP3.0.6/src/main.js`.
+- Files: `apps/desktop-agent/src/main.js`, `archive/DesktopAgentP3.0.6/src/main.js`.
 - Added public HTTPS API constants:
   - `GET /api/blockchain/address?address=...`
   - `POST /api/blockchain/broadcast`
@@ -100,7 +100,7 @@ A separate commit (`163c16a8a`) fixed the desktop-agent wallet section that was 
 ### 4.1 Website
 
 ```bash
-cd APP&WEB/website-v2.9 && npm run build
+cd apps/website-v2.9 && npm run build
 ```
 
 Result: **PASS** — 110 static pages generated successfully.
@@ -115,7 +115,7 @@ Result: **PASS** — 195 + 165 + 4 + 3 tests, 0 failures, plus doc-tests.
 
 ### 4.3 Deploy health checks
 
-After running `APP&WEB/website-v2.9/deploy/deploy-web2.9.sh`:
+After running `apps/website-v2.9/deploy/deploy-web2.9.sh`:
 
 | Check | HTTP code | Status |
 |-------|-----------|--------|

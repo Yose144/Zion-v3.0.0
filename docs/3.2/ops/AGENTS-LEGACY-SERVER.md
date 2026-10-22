@@ -749,10 +749,10 @@ curl -s http://127.0.0.1:9443/jsonrpc -d '{"jsonrpc":"2.0","method":"getSupplyIn
 journalctl -u zion-node --no-pager -n 50 | grep tip_hash_hex | tail -1
 
 # Deploy web2.9 (Next.js) to app.zionterranova.com
-cd <repo>/APP&WEB/website-v2.9 && bash deploy/deploy-web2.9.sh  # build, rsync to /opt/zion/APP&WEB/website-v2.9, chown, restart zion-website.service
+cd <repo>/apps/website-v2.9 && bash deploy/deploy-web2.9.sh  # build, rsync to /opt/zion/APP&WEB/website-v2.9, chown, restart zion-website.service
 
 # Update OASIS intro landing page (served from /var/www/maintenance)
-cd <repo>/APP&WEB/website-v2.9 && bash deploy/deploy-oasis-intro.sh  # rsync public/maintenance.html + stargate/ + reload nginx
+cd <repo>/apps/website-v2.9 && bash deploy/deploy-oasis-intro.sh  # rsync public/maintenance.html + stargate/ + reload nginx
 
 # View logs
 journalctl -u zion-node -f
@@ -882,8 +882,8 @@ systemctl restart zion-node zion-pool zion-bridge zion-dao zion-warp
 
 ### OASIS web (2026-07-30)
 
-- **Location:** `APP&WEB/OasisWeb`
+- **Location:** `apps/OasisWeb`
 - **Stack:** Next.js 16 + React 19 + TypeScript, Tailwind CSS v4, React Three Fiber (`@react-three/fiber` + `@react-three/drei`), `three`, `zustand`, `framer-motion`.
 - **Purpose:** Interactive 3D multiverse portal — display and explore OASIS worlds.
-- **Build:** `cd APP&WEB/OasisWeb && npm install && npm run build`.
+- **Build:** `cd apps/OasisWeb && npm install && npm run build`.
 - **Deploy (static export):** `dist/` is exported to `/var/www/oasis` on Edge; nginx serves `https://oasis.zionterranova.com` (Let’s Encrypt SSL, HTTP/2).

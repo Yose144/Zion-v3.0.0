@@ -262,7 +262,7 @@ magick /tmp/stargate-trimmed.png -resize 48x48 -strip public/stargate-nav.png
 ## Deploy
 
 ```bash
-cd APP&WEB/website-v2.9
+cd apps/website-v2.9
 REMOTE_HOST=mainnetedge SSH_KEY="" npm run deploy
 
 # Na serveru (build s --no-cache, jinak se CSS neaktualizuje):

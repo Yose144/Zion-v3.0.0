@@ -150,7 +150,7 @@ This repository has one source of truth per topic:
 | **V3 archive** | [`archive/V3/README.md`](archive/V3/README.md) |
 | **EDGE → EDGE2 split plan + rollback** | [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md) |
 | **V3.3 NIRVANA execution checklist** | [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) |
-| **MarketPlace ZION L1 bonus payout** | [`APP&WEB/MarketPlace/PAYOUT.md`](APP&WEB/MarketPlace/PAYOUT.md) |
+| **MarketPlace ZION L1 bonus payout** | [`apps/MarketPlace/PAYOUT.md`](apps/MarketPlace/PAYOUT.md) |
 | **Operator runbook + pravidla** | [`AGENTS.md`](AGENTS.md) |
 | **Provozní log (2026-07-08 → 2026-10-21)** | [`docs/3.2/ops/AGENTS-CHRONOLOGY.md`](docs/3.2/ops/AGENTS-CHRONOLOGY.md) |
 | **Historical incidents + backup rules** | [`AGENTS.md`](AGENTS.md) |

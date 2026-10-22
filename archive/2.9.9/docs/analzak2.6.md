@@ -231,7 +231,7 @@ Vetsina je legitimni (FFI volani C knihoven v `native-ffi` a OpenCL v `miner`), 
 | Legacy (root) | V3 (active) | Status |
 |---------------|-------------|--------|
 | `L1/`--`L6/` | `V3/L1/`--`L3/` | Migrace hotova, legacy = reference |
-| `APP&WEB/` starsi | `V3/DesktopApp/` | DesktopApp existuje jako clean shell |
+| `apps/` starsi | `V3/DesktopApp/` | DesktopApp existuje jako clean shell |
 | Korenove docs | `V3/docs/` | Aktivni dokumentace |
 | `HiranV2.1/` | `HiranV2.3/` + `V3/L3/ai-native/` | v2.3 je aktualni |
 

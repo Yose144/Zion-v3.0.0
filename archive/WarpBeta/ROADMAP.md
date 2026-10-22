@@ -42,7 +42,7 @@
 - [x] 1× úspěšný refund na každé straně — regtest (ZionToBtc: RefundBtc po CLTV; BtcToZion: RefundZion + user BTC refund)
 - [x] Historický full baseline byl zelený (666 testů); aktuální hardening má cílené testy green
 - [x] Aktuální full `zion-multichain` suite green (677 lib + integrace, 0 failed) + clippy čistý kromě zdokumentovaných pre-existing warningů
-- [x] WARP/root/ops plaintext credentials sanitizovány; tři legacy `APP&WEB/public_html` credential literals byly ponechány mimo tento batch, externí rotace a Git history zůstávají samostatný operátorský úkol
+- [x] WARP/root/ops plaintext credentials sanitizovány; tři legacy `apps/public_html` credential literals byly ponechány mimo tento batch, externí rotace a Git history zůstávají samostatný operátorský úkol
 - [x] Hardened Edge redeploy (2026-09-20): `warpd` = hardened working tree, backup `warpd.bak-20260920-hardening`, flow disabled + offer fail-closed
 - [ ] **Capped mainnet pilot** — až po externím auditu, signed quote/pricing protocolu, offer key, hardened deployi, dokončeném IBD, production WIF review a explicitním schválení; žádné funding kroky nyní
 

@@ -87,13 +87,13 @@ Lumi vešla. A od tohoto kroku už nešla po Nové zemi roku 2026 — šla po ze
 |---|---|---|---|
 | Brána stojí: OASIS backend `zion-oasis` (Rust/Axum) a OASIS Web běží (`oasis.zionterranova.com`, služba `zion-v31-oasis`) | **ŽIVÉ** | `StatusV3.md`; `V31/L4/oasis`; `ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md` §6 | UX/security/privacy evidence pro každou veřejnou schopnost (M4) |
 | Průlet mlhou, galaxie 55 světů, kniha avatarů: warp intro, 3D galaxie, Avatar Codex | **ŽIVÉ** (preview ve výstavbě) | `ZION_ONBOARDING_PUBLIC_CZ.md` §4 „Hráč" | obsah, questy i progrese se mohou měnit či resetovat |
-| Dvě kněžky u brány: „At the gate to Oasis stand two priestesses — Radha and Elizabeth. One holds salt and honey; the other, a lantern of the future." | **ŽIVÉ** (text klienta) | `APP&WEB/OasisWeb/src/components/BabylonIntro.tsx` (řádek 149) | — |
+| Dvě kněžky u brány: „At the gate to Oasis stand two priestesses — Radha and Elizabeth. One holds salt and honey; the other, a lantern of the future." | **ŽIVÉ** (text klienta) | `apps/OasisWeb/src/components/BabylonIntro.tsx` (řádek 149) | — |
 | Kniha avatarů, číslo čtyřicet: avatar `Elizabet` — subtitle *Royal Healer*, ray *Pink*, role *Compassionate Leader*, location *Royal Court (ZION City)*, quest *„The Queen's Heart"*, teaching *„Rule with love, not fear"*, level 5 *Quantum*, rarity *Rare* | **ŽIVÉ** (data) | `V31/L4/oasis/data/avatars.json` (id 40) | vazba questů na herní mechaniku je HORIZONT |
-| Svět se jménem Lumi: `ELIZABET` — „Věštkyně Hvězdných Bran · Posel Stvořitele · Strážkyně Věčnosti", `goldenEggClue: 40` | **ŽIVÉ** (data) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` | svět veden jako `layer: 3` — otevřená otázka (kap. 13 §3) |
+| Svět se jménem Lumi: `ELIZABET` — „Věštkyně Hvězdných Bran · Posel Stvořitele · Strážkyně Věčnosti", `goldenEggClue: 40` | **ŽIVÉ** (data) | `apps/OasisWeb/src/domain/config/worlds.ts` | svět veden jako `layer: 3` — otevřená otázka (kap. 13 §3) |
 | Lumi = dětská podoba Elizabeth; avatar 40 a svět ELIZABET jsou stopy jedné postavy | **MÝTUS** (kanonické rozhodnutí této knihy) | kap. 13 §1 | případná adaptace v OASIS až po review (M4), bez duplicitní identity |
 | Zlaté vejce k nalezení, plná herní ekonomika, odměny za questy | **HORIZONT** | `ZION_ONBOARDING_PUBLIC_CZ.md` §4 („Golden Egg a plná herní ekonomika jsou budoucnost"); `MiseAmenti/04` M4 | — |
 | Světy k nerozeznání od skutečnosti: Unreal Engine 5.7, Nanite/Lumen/MetaHuman, WebGPU, Pixel Streaming | **HORIZONT** | `MiseAmenti/07` §5 (audit nenalezl UE/WebGPU/Pixel Streaming klient); `04` M4 | POC, licenční, GPU, streamingová a škálovací analýza |
-| Zrcadlo L4 ↔ L5/L6: panel „Nová Země" se třemi projekty L5, svět Dharma Temple; žádný svět L6 | **ŽIVÉ** (klient) / statusy ručně psané | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx`; `worlds.ts`; `BodhiGaia/07`; `Issobella/08` | napojení statusů na L5 API; svět L6 |
+| Zrcadlo L4 ↔ L5/L6: panel „Nová Země" se třemi projekty L5, svět Dharma Temple; žádný svět L6 | **ŽIVÉ** (klient) / statusy ručně psané | `apps/OasisWeb/src/components/WorldPanel.tsx`; `worlds.ts`; `BodhiGaia/07`; `Issobella/08` | napojení statusů na L5 API; svět L6 |
 | Ornament na sloupu, kolečko v trávě, rozhovor Lumi s Elizabeth | **MÝTUS** | tato kniha | — |
 
 ---

@@ -80,7 +80,7 @@ The bridge is functional but it does **not** hold wZION; it mints to the recipie
 
 ## 4. What was already fixed in this session
 
-### Frontend (`APP&WEB/website-v2.9`)
+### Frontend (`apps/website-v2.9`)
 
 - `MetaMaskWalletPanel.tsx` — `zion-l1` mapping, Base SIWE chain `8453`.
 - `MultichainWalletContext.tsx` — `zion-l1` mapping, `BigInt(10) ** BigInt(decimals)`, derivation guard.
@@ -98,7 +98,7 @@ The bridge is functional but it does **not** hold wZION; it mints to the recipie
 
 ### Verification
 
-- `npm run build` in `APP&WEB/website-v2.9` passed.
+- `npm run build` in `apps/website-v2.9` passed.
 - `cargo test -p zion-multichain` passed (`583 passed, 1 ignored, 0 failed`).
 
 ---
@@ -192,8 +192,8 @@ The current `ZionDexZis.md` phases 0–7 are implemented in code, but phase 3 (s
 - In-memory AMM: `V31/L2/multichain/src/swap/dex.rs`
 - Swap executor: `V31/L2/multichain/src/swap/dex/swap_executor.rs`
 - EVM adapter: `V31/L2/multichain/src/chain/adapters/evm.rs`
-- Frontend swap widget: `APP&WEB/website-v2.9/src/components/dex/CrossChainSwapWidget.tsx`
-- Contract addresses (TS source): `APP&WEB/website-v2.9/src/lib/defi-contracts.ts`
+- Frontend swap widget: `apps/website-v2.9/src/components/dex/CrossChainSwapWidget.tsx`
+- Contract addresses (TS source): `apps/website-v2.9/src/lib/defi-contracts.ts`
 
 ---
 

@@ -270,7 +270,7 @@ Stratum authorize format: `BTC_ADDRESS.worker_name` — pool auto-detects BTC pa
 
 ### Admin Panel (`/admin/revenue-v3`)
 
-`APP&WEB/website-v2.9/src/app/admin/revenue-v3/page.tsx`
+`apps/website-v2.9/src/app/admin/revenue-v3/page.tsx`
 
 - NCL AI settings (NPU allocation, target share)
 - ZION Native Chain (target share)
@@ -280,7 +280,7 @@ Stratum authorize format: `BTC_ADDRESS.worker_name` — pool auto-detects BTC pa
 
 ### API Endpoint (`/api/v2.9/revenue/config`)
 
-`APP&WEB/website-v2.9/src/app/api/v2.9/revenue/config/route.ts`
+`apps/website-v2.9/src/app/api/v2.9/revenue/config/route.ts`
 
 - **GET:** load JSON config from `config/ch3_revenue_settings.json`
 - **POST:** merge + save config (deep merge on `streams`)
@@ -327,8 +327,8 @@ Stratum authorize format: `BTC_ADDRESS.worker_name` — pool auto-detects BTC pa
 | `V3/L1/core/src/lib.rs` | CoreRuntime revenue integration |
 | `V3/docs/DCR.md` | DCR dual-mining specification |
 | `config/ch3_revenue_settings.json` | Revenue configuration JSON |
-| `APP&WEB/website-v2.9/src/app/admin/revenue-v3/page.tsx` | Web admin UI |
-| `APP&WEB/website-v2.9/src/app/api/v2.9/revenue/config/route.ts` | Config REST API |
+| `apps/website-v2.9/src/app/admin/revenue-v3/page.tsx` | Web admin UI |
+| `apps/website-v2.9/src/app/api/v2.9/revenue/config/route.ts` | Config REST API |
 
 ---
 

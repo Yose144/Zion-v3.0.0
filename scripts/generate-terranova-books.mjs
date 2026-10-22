@@ -10,9 +10,9 @@ const EDITIONS = [
   { id: 'final', name: 'Kanonická větev', dir: path.join(ROOT, 'docs/TerraNova/BASE_FINAL'), color: '#00BFFF', rgb: '0,191,255' },
 ];
 
-const OUT_PATH = path.join(ROOT, 'APP&WEB/website-v2.9/src/app/terranova/generatedEditions.ts');
+const OUT_PATH = path.join(ROOT, 'apps/website-v2.9/src/app/terranova/generatedEditions.ts');
 // Live data consumed by TerraNovaBookClient via fetch('/terranova-editions.json')
-const OUT_JSON_PATH = path.join(ROOT, 'APP&WEB/website-v2.9/public/terranova-editions.json');
+const OUT_JSON_PATH = path.join(ROOT, 'apps/website-v2.9/public/terranova-editions.json');
 
 function parseMarkdownToSections(text) {
   // Spiliting by ##, > limits, etc. Simplest is split by \n\n and making them sections

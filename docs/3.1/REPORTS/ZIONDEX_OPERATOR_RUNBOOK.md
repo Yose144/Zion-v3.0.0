@@ -310,9 +310,9 @@ The deployer wallet (`0xdde17506...`) needs ETH for gas on Base. Current balance
 | `V31/contracts/ZIONDex/add-wzion-liquidity.js` | wZION/USDC liquidity script |
 | `V31/contracts/ZIONDex/add-liquidity.js` | Router-based liquidity script |
 | `V31/contracts/ZIONDex/add-liquidity-direct.js` | Direct pair liquidity script |
-| `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` | Contract address registry (frontend) |
-| `APP&WEB/website-v2.9/src/lib/dex-api.ts` | DEX API helpers (frontend) |
-| `APP&WEB/website-v2.9/src/app/dex/portfolio/page.tsx` | Portfolio UI with LP positions |
+| `apps/website-v2.9/src/lib/defi-contracts.ts` | Contract address registry (frontend) |
+| `apps/website-v2.9/src/lib/dex-api.ts` | DEX API helpers (frontend) |
+| `apps/website-v2.9/src/app/dex/portfolio/page.tsx` | Portfolio UI with LP positions |
 | `V31/L2/multichain/src/contracts.rs` | L2 token registry (Rust) |
 | `V31/L2/multichain/src/swap/dex.rs` | DEX router logic (Rust) |
 | `V31/L2/multichain/src/swap/dex/swap_executor.rs` | Swap executor (Rust) |

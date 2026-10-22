@@ -216,7 +216,7 @@ cargo build --release -p zion-miner -p zion-pool
 
 ## 5. CHv3 implementace do Desktop Agenta (`fff2061`)
 
-**Soubory:** `APP&WEB/desktop-agent/src/main.js`, `APP&WEB/desktop-agent/src/ui/renderer.js`, `APP&WEB/desktop-agent/src/ui/index.html`  
+**Soubory:** `apps/desktop-agent/src/main.js`, `apps/desktop-agent/src/ui/renderer.js`, `apps/desktop-agent/src/ui/index.html`  
 **Rozsah:** +204 −19 lines (3 soubory)
 
 ### main.js — backend změny:

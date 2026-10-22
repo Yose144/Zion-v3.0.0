@@ -145,7 +145,7 @@ Toto ukáže:
 
 **Datum:** aktuální session  
 **Platforma:** Apple M1, macOS (developer machine)  
-**Binárka:** `APP&WEB/desktop-agent/resources/zion-universal-miner` (arm64 Mach-O, 4.8 MB, self-contained Rust)
+**Binárka:** `apps/desktop-agent/resources/zion-universal-miner` (arm64 Mach-O, 4.8 MB, self-contained Rust)
 
 ### Symptom
 
@@ -398,7 +398,7 @@ native-all = [..., "native-verushash"]           # přidáno
 
 ### 2. GPU Revenue spawn (agent)
 
-Přidán třetí miner proces `gpuRevenueProcess` v `APP&WEB/desktop-agent/src/main.js`:
+Přidán třetí miner proces `gpuRevenueProcess` v `apps/desktop-agent/src/main.js`:
 - Proměnná `gpuRevenueProcess = null` deklarována (line 373)
 - Spawn blok za CPU revenue procesem: spustí se pokud `config.gpuRevenue && effectiveGpu && rustGroupSupported`
 - **macOS Metal:** `algorithm = cosmic_harmony`, `--gpu` flag (Metal aktivuje automaticky) ✅
@@ -485,7 +485,7 @@ RandomX not initialized - call init_randomx() first (algo=RandomX)
 
 ### Oprava (commit `85c76b3`)
 
-**1. `APP&WEB/desktop-agent/src/main.js`** — odstraněn `--algorithm randomx`:
+**1. `apps/desktop-agent/src/main.js`** — odstraněn `--algorithm randomx`:
 ```javascript
 // DŘÍVE:
 revenueArgs.push('--algorithm', 'randomx'); // způsobovalo "RandomX not initialized"
@@ -567,4 +567,4 @@ IP address are temporarily suspended from mining (10 minutes max)"})
 - **Pool:** Helsinki 77.42.31.72:3333 (Docker zion-pool:2.9.6-testnet)
 - **SSH:** `ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72`
 - **Build (Linux):** `cargo build --release -p zion-miner --features gpu`
-- **Deploy (Linux):** Copy `target/release/zion-miner.exe` → `APP&WEB/desktop-agent/resources/zion-universal-miner.exe`
+- **Deploy (Linux):** Copy `target/release/zion-miner.exe` → `apps/desktop-agent/resources/zion-universal-miner.exe`

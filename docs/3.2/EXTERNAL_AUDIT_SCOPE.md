@@ -30,8 +30,8 @@ ZION is a Layer-1 blockchain: UTXO/hybrid transaction model, Ed25519 signatures,
 | 6 | Bridge, HTLC, DEX/intents/solvers, WARP runtime + BTC swap (feature disabled) | L2 | Rust | `V31/L2/multichain/src/bridge/`, `swap/htlc.rs`, `swap/dex/`, `warp/` |
 | 7 | Custodial wallet, deposit/withdrawal ledger, reconciliation, solvency | L2 | Rust | `V31/L2/multichain/src/multichain_wallet/`, `wallet/`, `reconciliation.rs`, `solvency.rs` |
 | 8 | DAO service and treasury lock | L2 | Rust | `V31/L2/dao/` |
-| 9 | ZIS identity: sessions, WebAuthn/passkeys, API keys | — | TypeScript | `APP&WEB/identity/` |
-| 10 | Public web API routes and proxies | — | TypeScript | `APP&WEB/website-v2.9/src/app/api/` |
+| 9 | ZIS identity: sessions, WebAuthn/passkeys, API keys | — | TypeScript | `apps/identity/` |
+| 10 | Public web API routes and proxies | — | TypeScript | `apps/website-v2.9/src/app/api/` |
 | 11 | L3 AI-native API + RAG (public chat proxy, prompt-injection and data exposure) | L3 | Rust | `V31/L3/ai-native/`, `V31/L3/ncl/` |
 | 12 | L4 OASIS, L5 Free World (projects, quadratic voting), L6 Issobella services | L4–L6 | Rust | `V31/L4/oasis/`, `V31/L5/free-world/`, `V31/L6/issobella/` |
 | 13 | Contracts (bridge token, DEX, intent settlement) | L2 | Solidity | `V31/L2/multichain/contracts/src/`, `V31/contracts/` |

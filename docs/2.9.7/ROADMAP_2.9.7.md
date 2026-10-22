@@ -263,7 +263,7 @@ F-05 (GPU kernel)
 
 ## Co začínáme hned — F-05 GPU kernel
 
-Soubor ke změně: `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v3_gpu.py`
+Soubor ke změně: `apps/desktop-agent/resources/mining/cosmic_harmony_v3_gpu.py`
 
 Aktuální stav kernelu: 5 fází (MatrixMix → MemoryHard → CosmicFusion → WaveCollapse → MerkleWeave)
 
@@ -296,7 +296,7 @@ Aktivace: pouze pokud `height >= 200_000` (podmínka v hosta, ne v kernelu samot
 | `libcosmic_harmony.dylib` (51 KiB ARM64) | `L1/` | ✅ sestaveno |
 | Rust thread-local scratchpad | `L1/cosmic-harmony/src/scratchpad.rs` | ✅ ~25% speedup |
 | `cosmic_harmony_v4_parallel` (rayon) | `L1/cosmic-harmony/src/algorithms_opt.rs` | ✅ feature=parallel |
-| Python CHv4 miner multi-threaded | `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v4_native.py` | ✅ 70 H/s @ 8 vláken |
+| Python CHv4 miner multi-threaded | `apps/desktop-agent/resources/mining/cosmic_harmony_v4_native.py` | ✅ 70 H/s @ 8 vláken |
 
 ### Hashrate benchmark (macOS ARM64):
 

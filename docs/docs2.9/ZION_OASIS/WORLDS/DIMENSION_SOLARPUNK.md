@@ -358,4 +358,4 @@ Tajná zahrada, kde roste Solar Seed; zde je hlavní stopa k vejci.
 ---
 
 > **Poznámka:** Tento koncept je open-source v rámci OASIS. Cokoliv přidáš — lore, questy, frakce, místa — piš sem.
-> Hlavní vize OASIS: [`APP&WEB/OasisWeb/OASIS_UNIVERSE.md`](../../../APP&WEB/OasisWeb/OASIS_UNIVERSE.md)
+> Hlavní vize OASIS: [`apps/OasisWeb/OASIS_UNIVERSE.md`](../../../apps/OasisWeb/OASIS_UNIVERSE.md)

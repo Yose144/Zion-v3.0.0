@@ -25,8 +25,8 @@ Dokumenty z 2.9.7 jsou pro historický kontext, ne pro aktivní plánování 2.9
 - canonical public host: `91.98.122.165`
 - website + desktop + ops dokumentace byly přepnuty na single-primary-host model
 - `cargo check -p zion-core -p zion-cosmic-harmony-v3 -p zion-pool -p zion-miner` → PASS
-- `node --check APP&WEB/desktop-agent/src/main.js` → PASS
-- `node --check APP&WEB/desktop-agent/src/ui/renderer.js` → PASS
+- `node --check apps/desktop-agent/src/main.js` → PASS
+- `node --check apps/desktop-agent/src/ui/renderer.js` → PASS
 - release verdict v `GO_NO_GO_2.9.8.md` je GO, ale repo ještě potřebuje stabilizační cleanup po pullu a sjednocení CI gates
 
 ---
@@ -50,8 +50,8 @@ Dokumenty z 2.9.7 jsou pro historický kontext, ne pro aktivní plánování 2.9
 - `cargo test -p zion-cosmic-harmony-v3 --lib` → **96/96 PASS** (Ekam Deeksha Tier 2 canonical)
 - `cargo test -p zion-pool --test chv4_e2e` → **11/11 PASS**
 - `cargo check -p zion-core -p zion-cosmic-harmony-v3 -p zion-pool -p zion-miner` → **PASS (0 warnings)**
-- `node --check APP&WEB/desktop-agent/src/main.js` → **PASS**
-- `node --check APP&WEB/desktop-agent/src/ui/renderer.js` → **PASS**
+- `node --check apps/desktop-agent/src/main.js` → **PASS**
+- `node --check apps/desktop-agent/src/ui/renderer.js` → **PASS**
 - Desktop canonical GPU entrypoint: `resources/mining/cosmic_harmony_deeksha_gpu.py` (fallback na legacy `cosmic_harmony_v42_gpu.py`)
 - Ekam Deeksha benchmark: **1.20 kH/s 1T, 5.43 kH/s 8T** (2.3–2.5× vs original)
 

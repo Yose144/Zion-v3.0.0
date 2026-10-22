@@ -20,7 +20,7 @@ Pojmenováno podle korpus figurek. Všechny = GGUF buildy pro llama.cpp
 | `hiran-maitreya` | `hiran-maitreya-Q5_K_M` (27B, ~20 GB) | gemma-4-31B / Qwen3.8-27B | teacher/oracle nad knižním korpusem | mockup |
 
 Veřejný název značky = **Hiranyagarbha** (public copy nesmí obsahovat
-interní verze/model id — viz `APP&WEB/website-v2.9/AGENTS.md` §2).
+interní verze/model id — viz `apps/website-v2.9/AGENTS.md` §2).
 
 ## 2 · Veřejné modely (vLLM fleet)
 

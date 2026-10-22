@@ -20,7 +20,7 @@
 | CLI (`zion` binary) | ✅ Hotovo | ✅ 20+ subcommandů | Match |
 | Hiran v2.2 CLI integrace | ✅ Hotovo | ✅ `V3/cli/src/commands/hiran.rs` (352 řádků) | Match |
 | Monitoring (Prometheus + Grafana) | ✅ Hotovo | ✅ 3 dashboardy | Match |
-| Desktop dashboard (Tauri v2) | ✅ Hotovo | ✅ `APP&WEB/desktop-dashboard/` | Match |
+| Desktop dashboard (Tauri v2) | ✅ Hotovo | ✅ `apps/desktop-dashboard/` | Match |
 | Core+Edge topologie | ✅ Hotovo | ✅ Docker compose + systemd | Match |
 | Alert rules (Prometheus) | ✅ Hotovo | ✅ 10+ pravidel | Match |
 | L5/L6 daemon crates | ✅ Hotovo | ✅ `zion-free-world`, `zion-issobella` | Match |

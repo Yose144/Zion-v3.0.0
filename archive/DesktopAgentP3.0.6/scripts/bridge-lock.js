@@ -2,14 +2,14 @@
 //
 // Usage (mnemonic — value read from env, never passed as CLI arg):
 //   ZION_BRIDGE_MNEMONIC="12 or 24 words" \
-//     node APP&WEB/desktop-agent/scripts/bridge-lock.js \
+//     node apps/desktop-agent/scripts/bridge-lock.js \
 //     --to-evm 0xfd445bcff4649aa6afbab4eb6105cfdd119b0f62 \
 //     --amount 100
 //
 // Or decrypt an existing desktop-agent wallet JSON:
 //   ZION_BRIDGE_WALLET_FILE="~/Library/Application Support/zion-desktop-agent/wallets/zion1....json" \
 //   ZION_BRIDGE_WALLET_PASSWORD="..." \
-//     node APP&WEB/desktop-agent/scripts/bridge-lock.js \
+//     node apps/desktop-agent/scripts/bridge-lock.js \
 //     --to-evm 0x... --amount 100
 //
 // Sends native ZION to the canonical bridge vault with a BRIDGE:base:<evm> memo.

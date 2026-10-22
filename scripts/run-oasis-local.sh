@@ -45,7 +45,7 @@ for i in {1..30}; do
 done
 
 # Start OasisWeb
-cd "$ROOT/APP&WEB/OasisWeb"
+cd "$ROOT/apps/OasisWeb"
 NEXT_PUBLIC_OASIS_API_URL=http://127.0.0.1:8094 npm run dev &
 WEB_PID=$!
 

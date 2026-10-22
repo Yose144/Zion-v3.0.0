@@ -25,10 +25,10 @@
 ### Nasazené webové komponenty
 
 ```
-APP&WEB/website-v2.9/src/app/api/ai-chat/route.ts    — Next.js proxy route
-APP&WEB/website-v2.9/src/components/HiranyagarbhaChat.tsx — Chat UI
-APP&WEB/website-v2.9/src/components/MarketplacePlaceholder.tsx — Marketplace
-APP&WEB/website-v2.9/src/app/ai-native/page.tsx      — AI Native stránka
+apps/website-v2.9/src/app/api/ai-chat/route.ts    — Next.js proxy route
+apps/website-v2.9/src/components/HiranyagarbhaChat.tsx — Chat UI
+apps/website-v2.9/src/components/MarketplacePlaceholder.tsx — Marketplace
+apps/website-v2.9/src/app/ai-native/page.tsx      — AI Native stránka
 ```
 
 ### Aktuální omezení (v1.0)

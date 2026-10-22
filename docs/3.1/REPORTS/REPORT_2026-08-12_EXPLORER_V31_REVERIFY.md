@@ -1,7 +1,7 @@
 # Report: V31 Explorer Re-verification & Backend/Frontend Fixes
 
 **Date:** 2026-08-12  
-**Scope:** `APP&WEB/website-v2.9` (Next.js explorer) + `V31/L1/core` (Rust node)  
+**Scope:** `apps/website-v2.9` (Next.js explorer) + `V31/L1/core` (Rust node)  
 **Deployed to:** `https://app.zionterranova.com`  
 
 ## Summary
@@ -25,7 +25,7 @@ Re-verified the deployed V31 explorer after the previous data-accuracy round. Fo
   - Uses `active_set` to flag truly active/connected peers.
   - Includes `source`, `good`, `bad`, `idle_seconds` from `PeerInfo`.
 
-### Frontend (`APP&WEB/website-v2.9`)
+### Frontend (`apps/website-v2.9`)
 
 - `src/lib/zion-rpc.ts`
   - `ZionPeer` interface extended with `source`, `idle_seconds`, `good`, `bad`, `connected`.

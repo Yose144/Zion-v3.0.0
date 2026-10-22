@@ -23,7 +23,7 @@
 
   Notes:
     - Requires Rust toolchain + cargo in PATH
-    - Output binaries are placed in APP&WEB/desktop-agent/resources/
+    - Output binaries are placed in apps/desktop-agent/resources/
 */
 
 const fs = require('fs');

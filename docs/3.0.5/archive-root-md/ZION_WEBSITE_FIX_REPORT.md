@@ -1,7 +1,7 @@
 # ZION Website Fix Report
 
 > Generated: 2026-07-10
-> Scope: `APP&WEB/website-v2.9/` (Next.js 16, standalone Docker runtime)
+> Scope: `apps/website-v2.9/` (Next.js 16, standalone Docker runtime)
 > Live URL: https://zionterranova.com
 > Host: 62.171.141.136 (zion-new)
 

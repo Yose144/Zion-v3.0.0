@@ -63,7 +63,7 @@ Příklady (ne vyčerpávající):
 
 | Umístění | Role |
 |----------|------|
-| **`APP&WEB/website-v2.9/src/app/terranova/`** | UI knihy; kapitoly v TS (`public/chapters/*.ts`). Metadata: **`bookMetaPublic.ts`**. |
+| **`apps/website-v2.9/src/app/terranova/`** | UI knihy; kapitoly v TS (`public/chapters/*.ts`). Metadata: **`bookMetaPublic.ts`**. |
 | **`docs/reports/PLAN_2026-04-21_TERRANOVA_WEB_AND_CLI.md`** | Provozní plán webu / CLI — kontext distribuce. |
 
 Synchronizace web ↔ Markdown je samostatný úkol; Composer manifest uvádí očekávané ID kapitol.

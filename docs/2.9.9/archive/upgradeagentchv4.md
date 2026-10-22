@@ -63,7 +63,7 @@ Výsledek: `libcosmic_harmony.dylib` + `libcosmic_harmony_v4.dylib` zkopírován
 
 ### C. Bundle dylib do agent resources
 
-**Cíl:** `APP&WEB/desktop-agent/resources/native-libs/libcosmic_harmony.dylib`
+**Cíl:** `apps/desktop-agent/resources/native-libs/libcosmic_harmony.dylib`
 
 **Postup:**
 1. Přidání `L1/libcosmic_harmony.dylib` jako explicitní search path do `prepare-rust-miner.js`
@@ -74,7 +74,7 @@ Výsledek: `libcosmic_harmony.dylib` + `libcosmic_harmony_v4.dylib` zkopírován
 
 ### D. prepare-rust-miner.js — oprava bundlování dylib
 
-**Soubor:** `APP&WEB/desktop-agent/scripts/prepare-rust-miner.js`
+**Soubor:** `apps/desktop-agent/scripts/prepare-rust-miner.js`
 
 Přidat do `nativeSearchPaths`:
 ```js
@@ -95,7 +95,7 @@ if (fs.existsSync(explicitDylib)) {
 
 ### E. Python miner upgrade — CHv4 native jako primární hash engine
 
-**Soubor:** `APP&WEB/desktop-agent/resources/zion_native_miner_v2_9.py`
+**Soubor:** `apps/desktop-agent/resources/zion_native_miner_v2_9.py`
 
 **Změny:**
 1. Import `cosmic_harmony_v4_native.py` (CosmicHarmonyV4Native) jako **primární** hash engine
@@ -116,8 +116,8 @@ CosmicHarmonyV3Python (pure Python)   ← ZÁLOHA
 ```bash
 cd /Users/yeshuae/Projects/2.9.6
 cargo build -p zion-miner --release --features metal,parallel
-cp target/release/zion-miner "APP&WEB/desktop-agent/resources/zion-universal-miner"
-chmod +x "APP&WEB/desktop-agent/resources/zion-universal-miner"
+cp target/release/zion-miner "apps/desktop-agent/resources/zion-universal-miner"
+chmod +x "apps/desktop-agent/resources/zion-universal-miner"
 ```
 
 **Přidané schopnosti:**
@@ -134,14 +134,14 @@ cargo test -p zion-cosmic-harmony-v3 --release -- parity 2>&1
 
 Pokud test neexistuje, spustit manuální validaci:
 ```bash
-python3 APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v4_native.py test
+python3 apps/desktop-agent/resources/mining/cosmic_harmony_v4_native.py test
 ```
 
 ---
 
 ### H. main.js — Python CHv4 mining path
 
-**Soubor:** `APP&WEB/desktop-agent/src/main.js`
+**Soubor:** `apps/desktop-agent/src/main.js`
 
 **Stav:** Python mining path existuje, ale odkazuje na `cosmic_harmony_v3_python.py`.  
 **Změna:** Prioritizovat `cosmic_harmony_v4_native.py` + dylib cestu.
@@ -172,10 +172,10 @@ Klíčový řádek 1241:
 | Soubor | Změna |
 |---|---|
 | `L1/miner/src/miner/mod.rs` | `is_gpu_mineable`: CosmicHarmony → true na Metal |
-| `APP&WEB/desktop-agent/scripts/prepare-rust-miner.js` | přidat L1/ do dylib search paths |
-| `APP&WEB/desktop-agent/resources/zion_native_miner_v2_9.py` | upgrade CHv3→CHv4 hash engine |
-| `APP&WEB/desktop-agent/resources/zion-universal-miner` | rebuild s metal+parallel features |
-| `APP&WEB/desktop-agent/resources/native-libs/libcosmic_harmony.dylib` | nový soubor (bundled) |
+| `apps/desktop-agent/scripts/prepare-rust-miner.js` | přidat L1/ do dylib search paths |
+| `apps/desktop-agent/resources/zion_native_miner_v2_9.py` | upgrade CHv3→CHv4 hash engine |
+| `apps/desktop-agent/resources/zion-universal-miner` | rebuild s metal+parallel features |
+| `apps/desktop-agent/resources/native-libs/libcosmic_harmony.dylib` | nový soubor (bundled) |
 
 ---
 

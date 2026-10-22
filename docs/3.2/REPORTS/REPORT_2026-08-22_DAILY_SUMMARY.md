@@ -151,7 +151,7 @@ Kompletní bridge round-trip test úspěšně dokončen: **Lock → Mint → Bur
 | `bc87f2187` | feat(bridge): E4 Base mainnet round-trip complete — lock→mint→burn→unlock |
 | `a98178dc7` | feat(ops): add F2 transaction fuzzing harness to scripts/ops/ |
 | `2dea50ee4` | feat(ops): H5 AuxPoW E2E test script for XMR/RandomX CryptonoteStratum |
-| `ca2d3d6a8` | WIP: latest V31, pool, multichain, and APP&WEB explorer changes |
+| `ca2d3d6a8` | WIP: latest V31, pool, multichain, and apps explorer changes |
 | `553ca03c0` | Wire XMR / RandomX AuxPoW path through MoneroOcean (G5/E8) |
 | `a5b83daa2` | status: V31 consensus/pool security hardening and Edge redeploy |
 | `7a8aadff5` | feat(listing,api): live DEX price in CoinGecko/CMC feeds and active API rate limiting |

@@ -95,7 +95,7 @@ RSYNC_EXCLUDES=(
     '--exclude=/archive'
     '--exclude=/update-server'
     '--exclude=/zion-miner-smos'
-    '--exclude=/APP&WEB'
+    '--exclude=/apps'
     '--exclude=/config'
     '--exclude=/V3/config'
 )
@@ -197,7 +197,7 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
 
 # ── Step 6: Deploy website via Docker ──
 log "Deploying website (Docker)..."
-WEB_DEPLOY_SCRIPT="${REPO_ROOT}/APP&WEB/website-v2.9/scripts/deploy.sh"
+WEB_DEPLOY_SCRIPT="${REPO_ROOT}/apps/website-v2.9/scripts/deploy.sh"
 if [[ -x "$WEB_DEPLOY_SCRIPT" ]]; then
     # The dedicated web deploy script rsyncs source, rebuilds the image, and recreates the container.
     REMOTE_HOST="$EDGE_HOST" REMOTE_USER="$EDGE_USER" SSH_KEY="$SSH_KEY" \

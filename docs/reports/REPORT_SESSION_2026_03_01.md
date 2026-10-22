@@ -19,7 +19,7 @@ Soubor `monitoring/alertmanager/alertmanager.yml` plně přepsán:
 
 ### 2. Mainnet Launch Banner (`0a0e282`)
 
-`APP&WEB/public_html/mainnet-launch.html`:
+`apps/public_html/mainnet-launch.html`:
 - 1200×630 static HTML banner (stejná paleta jako existující `banner.html`)
 - Warp-grid pozadí, animované neon bubbles, live pulsing status pill "MainNet LIVE"
 - Discord invite + GitHub link buttons

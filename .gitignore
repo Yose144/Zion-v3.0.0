@@ -4,8 +4,8 @@ L2wallet.md
 secrets/
 keys/
 # Exception: website ZIS API key proxy route
-!APP&WEB/website-v2.9/src/app/api/keys/
-!APP&WEB/website-v2.9/src/app/api/keys/**
+!apps/website-v2.9/src/app/api/keys/
+!apps/website-v2.9/src/app/api/keys/**
 *.key
 zion-validator-key.env
 newzionssh.md
@@ -16,9 +16,9 @@ zion-edge-*-2026-07-29.pub
 
 # Scripts with hardcoded private keys / mnemonics — DO NOT COMMIT
 revoke_old_bridge.js
-APP&WEB/desktop-agent/atomic-swap-e2e.js
-APP&WEB/desktop-agent/dao-vote-test.js
-APP&WEB/desktop-agent/send-to-escrow.js
+apps/desktop-agent/atomic-swap-e2e.js
+apps/desktop-agent/dao-vote-test.js
+apps/desktop-agent/send-to-escrow.js
 
 # Temporary scratch files (Devin sessions, ad-hoc scripts)
 .tmp_*
@@ -94,13 +94,13 @@ dashboard/
 !.env.example
 !dashboard/.env.example
 # But track the website dashboard pages
-!APP&WEB/website-v2.9/src/app/dashboard/
-!APP&WEB/website-v2.9/src/app/dashboard/**
-!APP&WEB/website-v2.9/src/components/dashboard/
-!APP&WEB/website-v2.9/src/components/dashboard/**
+!apps/website-v2.9/src/app/dashboard/
+!apps/website-v2.9/src/app/dashboard/**
+!apps/website-v2.9/src/components/dashboard/
+!apps/website-v2.9/src/components/dashboard/**
 # And track OasisWeb dashboard
-!APP&WEB/OasisWeb/src/app/(game)/dashboard/
-!APP&WEB/OasisWeb/src/app/(game)/dashboard/**
+!apps/OasisWeb/src/app/(game)/dashboard/
+!apps/OasisWeb/src/app/(game)/dashboard/**
 
 # Runtime / misc
 /APP/
@@ -137,7 +137,7 @@ V3-src*.tar
 V3-src*.zip
 V3_upload*.zip
 
-# Data (runtime) — only root-level; nested dirs like APP&WEB/**/data/ are allowed
+# Data (runtime) — only root-level; nested dirs like apps/**/data/ are allowed
 /data/
 *.db
 *.lmdb
@@ -153,12 +153,12 @@ yarn-error.log*
 **/.next/
 
 # Electron build (rebuild with npm run dist)
-APP&WEB/desktop-agent/dist/
-APP&WEB/desktop-agent/resources/native-libs/
-APP&WEB/desktop-agent/resources/*.dylib
+apps/desktop-agent/dist/
+apps/desktop-agent/resources/native-libs/
+apps/desktop-agent/resources/*.dylib
 
 # Release binaries (host on GitHub Releases, not in repo)
-APP&WEB/website-v2.9/public/downloads/
+apps/website-v2.9/public/downloads/
 
 # Large local training/doc bundles (GitHub rejects >100 MB; use Releases/LFS if needed)
 /zion_deep_learning_package.zip
@@ -299,7 +299,7 @@ Cargo.lock
 htmlcov/
 
 # Large V2 book archives — not tracked in git (685MB+)
-APP&WEB/public_html/V2/books/Old/
+apps/public_html/V2/books/Old/
 
 # Misc
 *.tmp
@@ -323,21 +323,21 @@ dist/
 *.so
 *.dylib
 # Výjimky: nativní knihovny dodávané s agentem (one-click)
-!APP&WEB/desktop-agent/resources/mining/*.dylib
+!apps/desktop-agent/resources/mining/*.dylib
 !L1/native-libs/all/libcosmic_harmony_v42.dylib
 # Desktop agent resource binaries (distributed with app)
-!APP&WEB/desktop-agent/resources/node.exe
+!apps/desktop-agent/resources/node.exe
 # Do NOT commit built binaries — use GitHub Releases
-APP&WEB/desktop-agent/resources/zion*
+apps/desktop-agent/resources/zion*
 APPS/desktop-agent/resources/zion*
 HiranV2.3/models/**
 
 # Build logs
 build-check.log
 next-build.log$LOG
-APP&WEB/website-v2.9/SeedDE
-APP&WEB/website-v2.9/next-build*.tar.gz
-APP&WEB/website-v2.9/*build*.tar.gz
+apps/website-v2.9/SeedDE
+apps/website-v2.9/next-build*.tar.gz
+apps/website-v2.9/*build*.tar.gz
 
 test_out.txt
 TITHE_WALLETS_BACKUP.txt
@@ -420,8 +420,8 @@ foundry.lock
 # OpenZeppelin submodule (vendored, not tracked)
 
 # Explorer dashboard stubs (temporary build workaround)
-!APP&WEB/website-v2.9/src/components/explorer/v4/dashboard/
-!APP&WEB/website-v2.9/src/components/explorer/v4/dashboard/**
+!apps/website-v2.9/src/components/explorer/v4/dashboard/
+!apps/website-v2.9/src/components/explorer/v4/dashboard/**
 V3/L2/bridge/contracts/lib/openzeppelin-contracts/
 ZionDex/router/target/
 ZionDex/sdk/node_modules/
@@ -452,7 +452,7 @@ scripts/backup-beacon.env
 # SRBMiner sidecar binary (downloaded release, not built)
 SRBMiner-MULTI
 SRBMiner-MULTI.exe
-APP&WEB/desktop-agent/resources/srbminer/Autotune/
+apps/desktop-agent/resources/srbminer/Autotune/
 
 # IDE/MCP lokalni konfigurace (neni soucast repozitare)
 .continue/

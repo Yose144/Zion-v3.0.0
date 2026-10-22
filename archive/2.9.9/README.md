@@ -4,7 +4,7 @@
 >
 > Kept for reference, audit trail, and migration evidence. Not actively maintained.
 >
-> Active development is in [`V3/`](../../V3/) and [`APP&WEB/`](../../APP&WEB/).
+> Active development is in [`V3/`](../../V3/) and [`apps/`](../../apps/).
 
 ---
 

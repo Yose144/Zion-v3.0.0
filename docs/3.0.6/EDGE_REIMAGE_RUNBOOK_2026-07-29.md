@@ -59,7 +59,7 @@ All backups are on this Mac at `~/2.9.6-main/backups/edge/` with `MANIFEST-2026-
 
 6. **Recompile binaries from source**
    - `cargo build --release` in `V3/` to produce clean `node`, `server`, `zion-dao`, `zion-bridge`, `zion-atomic-swap`, `zion-warp-server`, `zion-miner`, `zion-oasis`.
-   - Build the web Docker image from `APP&WEB/website-v2.9` (or wherever the canonical source is now).
+   - Build the web Docker image from `apps/website-v2.9` (or wherever the canonical source is now).
 
 7. **Rotate exposed secrets**
    Because the attacker had root, treat the following as **potentially compromised** and rotate them:

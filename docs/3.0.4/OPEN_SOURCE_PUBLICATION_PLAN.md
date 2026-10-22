@@ -90,7 +90,7 @@ zion-v3/                         # PUBLIC REPO
 
 | Cesta | Duvod |
 |-------|-------|
-| `APP&WEB/` | Website zdrojáky — zůstanou private |
+| `apps/` | Website zdrojáky — zůstanou private |
 | `ZION_OS/` | Dashboard s hardcoded hesly |
 | `HiranV2.1/`, `HiranV2.2/` | AI model training data — IP |
 | `archive/` | Legacy kód, historické secrets |

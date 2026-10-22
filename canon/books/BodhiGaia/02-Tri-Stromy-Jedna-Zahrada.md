@@ -89,7 +89,7 @@ V [`docs/Zohar/01-SEFIROT-VRSTVY.md`](../../../docs/Zohar/01-SEFIROT-VRSTVY.md) 
 | **Éter — Bodhi Lanka** | **HORIZONT** | Bhakti protokol, Ajurvéda, Sri Maha Bodhi jako archetyp; web `/terranova/bodhi-lanka`. | Pozemek, právní entita, partner v Srí Lance, tým; Fáze 0 plánována 2027–2028. |
 | **Sdílené fáze 0–4** | **ŽIVÉ** (rámec) | Tabulka fází v `public/V3/L5/docs/README.md` a shodně na webových stránkách všech projektů. | Evidence přechodu mezi fázemi pro každý uzel (impact packet). |
 | **„Jeden kořen" — sdílené protokoly** | **HORIZONT** | Specifikace v `public/V3/L5/docs/{TECH,GOVERNANCE,PROTOCOLS}/`. | Žádný Guardian Node ani mesh v L5 komunitě dnes neběží (instalace plánována Fáze 2: 2027–2028). |
-| **Panel „Nová Země" v OASIS** | **ŽIVÉ** (klient) | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx` — `NOVA_ZEME_PROJECTS` s uzly, statusy `Active / Prep / Planned` a odkazy na web. | Statusy jsou ručně psané konstanty; nemají zdroj v L5 API. |
+| **Panel „Nová Země" v OASIS** | **ŽIVÉ** (klient) | `apps/OasisWeb/src/components/WorldPanel.tsx` — `NOVA_ZEME_PROJECTS` s uzly, statusy `Active / Prep / Planned` a odkazy na web. | Statusy jsou ručně psané konstanty; nemají zdroj v L5 API. |
 | **Hanuman zalévá tři sazenice** | **MÝTUS** | Archetyp Služebníka Života (Seva) ze Sůl této země, ep. 10. | — |
 | **Yesod ↔ L5** | **MÝTUS** | `docs/Zohar/01-SEFIROT-VRSTVY.md`, sekce 9. | — |
 

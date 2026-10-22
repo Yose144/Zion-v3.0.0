@@ -29,7 +29,7 @@
 | **Grafana inference dashboard** | `Hiran/2.3/inference/grafana-dashboard.json` | ✅ |
 | **Archive ai-native snapshots** | `archive/V3/L3/ai-native` (v2.4-era snapshot), `archive/2.9.9/legacy-code/L3/ai-native` (pre-Maestro) | ✅ ref |
 | **Učebnice** | `docs/book/ekam-deeksha/UCEBNICE-09-HIRANYAGARBHA.md` + nirvana/gemini chapters | ✅ |
-| **Public page** | `APP&WEB/website-v2.9/src/app/l3-hiran/page.tsx` (v2.3 + AI Native + Amitabha v2.5 popis) | ✅ live |
+| **Public page** | `apps/website-v2.9/src/app/l3-hiran/page.tsx` (v2.3 + AI Native + Amitabha v2.5 popis) | ✅ live |
 
 ## Co je ztraceno (regenerovatelné)
 

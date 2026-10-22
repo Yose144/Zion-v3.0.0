@@ -34,7 +34,7 @@ This document defines the integration architecture, current limitations, and pat
 └─────────────────────────────────────────────────────────────┘
 ```
 
-All hardware wallet implementations live in `APP&WEB/zion-wallet-sdk/src/hardware/`.
+All hardware wallet implementations live in `apps/zion-wallet-sdk/src/hardware/`.
 
 ---
 

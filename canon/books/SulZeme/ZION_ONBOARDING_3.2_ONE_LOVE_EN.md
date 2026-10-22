@@ -128,7 +128,7 @@ The book *Salt of the Earth* guides the pilgrim through twelve archetypal stages
 | **L1** | Hull | Terra Nova L1 Rust blockchain, Ekam Deeksha PoW | `V31/L1/core`, `cosmic-harmony`, `miner`, `pool` |
 | **L2** | Sails & Rigging | wZION Bridge, DeFi, DAO governance, Atomic Swaps | `V31/L2/multichain`, `V31/L1/dao` |
 | **L3** | Navigation | WARP multichain, ZionDex router, Solver Network, NCL AI | `V31/L2/multichain`, `V31/L3/ai-native` |
-| **L4** | Deck Garden | OASIS metaverse, avatars, quests, ERC-1155 MarketPlace | `V31/L4/oasis`, `APP&WEB/MarketPlace` |
+| **L4** | Deck Garden | OASIS metaverse, avatars, quests, ERC-1155 MarketPlace | `V31/L4/oasis`, `apps/MarketPlace` |
 | **L5** | Cargo & Care | Free World, humanitarian tithe, community grants | `V31/L5` (ready) |
 | **L6** | Crown & Outlook | Issobella, space research, science, earth view | `V31/L6` (ready) |
 

@@ -84,7 +84,7 @@ These addresses are hard-coded in `V31/L1/core/src/v3_compat.rs` and confirmed b
 | **Issobella / L6 (5 %)** | `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0` | `V31/L1/core/src/v3_compat.rs`, `docs/PREMINE_ADDRESSES_PUBLIC.txt` |
 | Pool fee / node reward (1 %) | `zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0` | `V31/L1/core/src/v3_compat.rs` |
 
-> Note: `archive/V3/L6/issobella/docs/README.md` and the public Next.js pages `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` / `l6-issobella/page.tsx` currently contain **stale V3 placeholder addresses** and must be updated to the V31 canonical addresses above.
+> Note: `archive/V3/L6/issobella/docs/README.md` and the public Next.js pages `apps/website-v2.9/src/app/l5-free-world/page.tsx` / `l6-issobella/page.tsx` currently contain **stale V3 placeholder addresses** and must be updated to the V31 canonical addresses above.
 
 ### 3.2 Fee Split
 
@@ -248,7 +248,7 @@ Source: `V31/cli/src/commands/free_world.rs`, `V31/cli/src/commands/issobella.rs
 | 8 | **DAO execution is summary-only** — it does not build or broadcast a payout transaction. | Critical for disbursement | `V31/L2/dao/src/runtime.rs:294-364` |
 | 9 | **Systemd / env / nginx / backup config prepared** for L5/L6; Edge start complete. | Production deployment complete | `V31/deploy/systemd/`, `V31/deploy/config/edge-environment.sh`, `V31/deploy/nginx/zion-nginx.conf` |
 | 10 | **CLI subcommands** `zion free-world` and `zion issobella` are wired for `start/status/stop` (systemd passthrough). | Medium | `V31/cli/src/commands/free_world.rs`, `issobella.rs` |
-| 11 | **Public website pages** `l5-free-world` and `l6-issobella` updated to canonical V31 fund addresses. | Medium | `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx`, `l6-issobella/page.tsx` |
+| 11 | **Public website pages** `l5-free-world` and `l6-issobella` updated to canonical V31 fund addresses. | Medium | `apps/website-v2.9/src/app/l5-free-world/page.tsx`, `l6-issobella/page.tsx` |
 | 12 | **No Hiran service** — AI bridge endpoints would fail if enabled. | Low | `hiran` not in Edge service list |
 | 13 | **Resonance / consciousness / L5 physical community features** are vision-only and not implemented. | Out of 3.2.0 scope | `archive/V3/L5/docs/PROTOCOLS/resonance-protocol.md` |
 
@@ -392,7 +392,7 @@ Run locally against a local node and verify:
 | A5 | No automatic L1 spend or disbursement is performed by the service. | Code audit: no `submitUtxoTransaction` / `build_and_sign` calls in L5/L6. |
 | A6 | DAO proposal bridge (optional for 3.2.0) submits a proposal with correct payload. | Manual `POST .../submit-to-dao` and verify `proposal_id` returned by DAO. |
 | A7 | Systemd, env, nginx, and backup are configured or explicitly documented as post-3.2. | Check `V31/deploy/systemd/` and `ZION_OS/infra/scripts/backup-edge.sh`. |
-| A8 | Website canonical addresses are updated OR documented as post-3.2. | `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` and `l6-issobella/page.tsx`. |
+| A8 | Website canonical addresses are updated OR documented as post-3.2. | `apps/website-v2.9/src/app/l5-free-world/page.tsx` and `l6-issobella/page.tsx`. |
 
 ---
 
@@ -433,7 +433,7 @@ Run locally against a local node and verify:
 - `archive/V3/L5/docs/` and `archive/V3/L6/issobella/docs/` — historical vision and governance docs.
 - `public/V3/L5/docs/` — current L5 engineering directory (communities, protocols, governance, tech specs).
 - `canon/books/BodhiGaia/` — **DRAFT** narrative + L5 truth anchor (Kniha Země): unifies the six communities, protocols of Earth, OASIS/web mirror, onboarding to L5, and a full L5 evidence registry with status of every claim and known discrepancies to fix. Companion to this plan; does not supersede it.
-- `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` and `l6-issobella/page.tsx` — public web pages.
+- `apps/website-v2.9/src/app/l5-free-world/page.tsx` and `l6-issobella/page.tsx` — public web pages.
 - `HARD_RESET_PLAYBOOK.md` — address rotation checklist.
 
 ---

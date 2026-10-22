@@ -62,8 +62,8 @@ HTLC specifické testy ve `zion-core`:
 
 ## UI integrace
 
-- `APP&WEB/website-v2.9/src/app/api/swap/[...path]/route.ts` proxy nyní přesměrovává `/api/swap/htlc/*` na `/v1/multichain/swaps/htlc/*`.
-- `APP&WEB/website-v2.9/src/lib/swap-api.ts` aktualizováno:
+- `apps/website-v2.9/src/app/api/swap/[...path]/route.ts` proxy nyní přesměrovává `/api/swap/htlc/*` na `/v1/multichain/swaps/htlc/*`.
+- `apps/website-v2.9/src/lib/swap-api.ts` aktualizováno:
   - `getHtlcStatus`, `getPendingHtlcs`, `getEscrowAddress`, `submitClaim`, `submitRefund` volají `/api/swap/htlc/...`.
   - Přidána `submitLock()` s parametry `from`, `to`, `amount`, `hashHex`, `timelock`, `sourcePubkeyHex`, `targetPubkeyHex`.
 - `V31/L2/multichain/src/server.rs` rozšířen o `GET /v1/multichain/swaps/htlc/pending` a `GET /v1/multichain/swaps/htlc/escrow`.
@@ -149,10 +149,10 @@ Nasazeno na live Edge serveru (`62.171.141.136`):
 - `V31/L1/miner/src/runtime.rs`
 - `V31/L1/pool/src/payout.rs`
 - `V31/L1/pool/src/deferred_payout.rs`
-- `APP&WEB/website-v2.9/src/app/swap/page.tsx`
-- `APP&WEB/website-v2.9/src/lib/swap-api.ts`
-- `APP&WEB/website-v2.9/src/lib/swap-helpers.ts` (new)
-- `APP&WEB/website-v2.9/src/app/api/swap/[...path]/route.ts`
+- `apps/website-v2.9/src/app/swap/page.tsx`
+- `apps/website-v2.9/src/lib/swap-api.ts`
+- `apps/website-v2.9/src/lib/swap-helpers.ts` (new)
+- `apps/website-v2.9/src/app/api/swap/[...path]/route.ts`
 
 ## Poznámky
 

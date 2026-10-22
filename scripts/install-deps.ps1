@@ -71,7 +71,7 @@ if (-not $nodeOk) {
     Write-Log "  MISSING: Node.js / npm not found."
     Write-Log "  ACTION : Please install from https://nodejs.org/"
 } else {
-    $webDir = "$repoDir\APP&WEB\website-v2.9"
+    $webDir = "$repoDir\apps\website-v2.9"
     if (Test-Path "$webDir\package.json") {
         Write-Log "[4/5] Installing website-v2.9 npm dependencies..."
         Push-Location $webDir

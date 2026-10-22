@@ -92,4 +92,4 @@ replacements = [
      'className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"'),
 ]
 
-apply_replacements('APP&WEB/website-v2.9/src/app/terranova/te-piko-ora/page.tsx', replacements)
+apply_replacements('apps/website-v2.9/src/app/terranova/te-piko-ora/page.tsx', replacements)

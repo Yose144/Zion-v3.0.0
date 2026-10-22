@@ -1,7 +1,7 @@
 # ZION Identity Service (ZIS) Full-Stack Integration Plan
 
 **Date:** 2026-08-23
-**Scope:** L2 multichain (`V31/L2/multichain`), L4 OASIS (`V31/L4/oasis` + `APP&WEB/OasisWeb`), and Web 2.9 (`APP&WEB/website-v2.9`)
+**Scope:** L2 multichain (`V31/L2/multichain`), L4 OASIS (`V31/L4/oasis` + `apps/OasisWeb`), and Web 2.9 (`apps/website-v2.9`)
 **Author:** Devin
 **Status:** In progress — all four phases implemented locally, pending final smoke tests, commit and deploy
 
@@ -9,7 +9,7 @@
 
 ## 1. Executive summary
 
-The ZION Identity Service (`APP&WEB/identity/`) is live on `https://auth.zionterranova.com` and already powers Web 2.9 login and session management. This plan closes the remaining gaps:
+The ZION Identity Service (`apps/identity/`) is live on `https://auth.zionterranova.com` and already powers Web 2.9 login and session management. This plan closes the remaining gaps:
 
 1. **L2 multichain** currently relies only on an operator API key for mutating routes. It must learn to trust and enforce ZIS sessions / API keys, resolve the caller's `ZisUser`, and use that identity for address derivation and transaction attribution.
 2. **L4 OASIS** has its own player database but no SSO gate. OASIS Web is a separate Next.js app that re-exports the shared ZIS client but does not use it yet. We need to bind OASIS player profiles to ZIS users and require authentication for gameplay.
@@ -28,14 +28,14 @@ The plan is split into four implementation phases plus a final testing and deplo
 - Signed `zion_session` cookie scoped to `.zionterranova.com` enables SSO across subdomains.
 - Prisma schema unifies `User`, `LinkedAddress`, `Session`, `ApiKey`, `OasisPlayer`, `DexOrder`, `BridgeTransaction`, and `Notification`.
 
-<ref_file file="/home/zionserver/2.9.6-main/APP&WEB/identity/src/routes/auth.ts" />
-<ref_file file="/home/zionserver/2.9.6-main/APP&WEB/shared/prisma/schema.prisma" />
+<ref_file file="/home/zionserver/2.9.6-main/apps/identity/src/routes/auth.ts" />
+<ref_file file="/home/zionserver/2.9.6-main/apps/shared/prisma/schema.prisma" />
 
 ### 2.2 Shared client (ready for all consumers)
 
-`APP&WEB/shared/zis-client.ts` exposes the full API surface: challenge/verify, `getCurrentUser`, profile, session, API-key, and `useZisAuth` React hook. It works both browser-side (cookie credentials) and server-side (cookie header forwarding).
+`apps/shared/zis-client.ts` exposes the full API surface: challenge/verify, `getCurrentUser`, profile, session, API-key, and `useZisAuth` React hook. It works both browser-side (cookie credentials) and server-side (cookie header forwarding).
 
-<ref_file file="/home/zionserver/2.9.6-main/APP&WEB/shared/zis-client.ts" />
+<ref_file file="/home/zionserver/2.9.6-main/apps/shared/zis-client.ts" />
 
 ### 2.3 L2 multichain (auth implemented)
 
@@ -46,10 +46,10 @@ The Axum server in `V31/L2/multichain/src/server.rs` now resolves callers via th
 
 ### 2.4 L4 OASIS (auth implemented)
 
-The OASIS backend in `V31/L4/oasis/src/server.rs` now wraps sensitive POST routes with `require_auth` and resolves ZIS sessions / API keys (`src/zis_auth.rs`). It verifies the caller owns the `:address` path parameter and syncs `player.user_id` to the ZIS user. `APP&WEB/OasisWeb/src/contexts/AuthContext.tsx` provides ZIS-backed auth and uses the player's ZION address.
+The OASIS backend in `V31/L4/oasis/src/server.rs` now wraps sensitive POST routes with `require_auth` and resolves ZIS sessions / API keys (`src/zis_auth.rs`). It verifies the caller owns the `:address` path parameter and syncs `player.user_id` to the ZIS user. `apps/OasisWeb/src/contexts/AuthContext.tsx` provides ZIS-backed auth and uses the player's ZION address.
 
 <ref_file file="/home/zionserver/2.9.6-main/V31/L4/oasis/src/server.rs" />
-<ref_file file="/home/zionserver/2.9.6-main/APP&WEB/OasisWeb/src/lib/zis.ts" />
+<ref_file file="/home/zionserver/2.9.6-main/apps/OasisWeb/src/lib/zis.ts" />
 
 ### 2.5 website-v2.9 (auth integration)
 
@@ -61,8 +61,8 @@ Web 2.9 now has:
 - `CrossChainSwapWidget` sends `credentials: 'include'`, pre-fills the source address from linked addresses, and prompts for login before swap execution.
 - `NavAuthButton`, `LoginModal`, and `AccountPage`.
 
-<ref_file file="/home/zionserver/2.9.6-main/APP&WEB/website-v2.9/src/contexts/AuthContext.tsx" />
-<ref_file file="/home/zionserver/2.9.6-main/APP&WEB/website-v2.9/src/proxy.ts" />
+<ref_file file="/home/zionserver/2.9.6-main/apps/website-v2.9/src/contexts/AuthContext.tsx" />
+<ref_file file="/home/zionserver/2.9.6-main/apps/website-v2.9/src/proxy.ts" />
 
 ---
 
@@ -179,7 +179,7 @@ Current `wallet_address` derives from the multichain service seed. We want an au
 
 The Prisma schema already has `DexOrder` and `BridgeTransaction`. Store order/bridge records when `swap_execute`, `create_intent`, or `bridge_submit` succeeds, keyed by `userId`.
 
-- Add `DexOrder` and `BridgeTransaction` models to `APP&WEB/shared/prisma/schema.prisma` if not already in the generated client.
+- Add `DexOrder` and `BridgeTransaction` models to `apps/shared/prisma/schema.prisma` if not already in the generated client.
 - Expose a new ZIS route `POST /api/orders/dex` and `POST /api/orders/bridge` for the multichain service to report completed operations.
 - Multichain service calls these routes with a service-to-service API key.
 
@@ -221,11 +221,11 @@ The OASIS SQLite schema uses `address` as the player primary key. Add a `user_id
 - `V31/L4/oasis/src/db.rs` — add `user_id` column to `players` and helper `save_player_user_id`.
 - `V31/L4/oasis/src/server.rs` — player GET/POST handlers.
 - `V31/L4/oasis/src/player.rs` — add `user_id` field to `Player`.
-- `APP&WEB/identity/src/routes/auth.ts` or a new `oasis.ts` — add `GET /api/oasis/player` and `POST /api/oasis/player` (or use `/api/auth/me` with `include.oasisPlayer`).
+- `apps/identity/src/routes/auth.ts` or a new `oasis.ts` — add `GET /api/oasis/player` and `POST /api/oasis/player` (or use `/api/auth/me` with `include.oasisPlayer`).
 
 ### 6.3 OASIS Web SSO
 
-`APP&WEB/OasisWeb` is a Next.js app with a landing page and game routes under `app/(game)/`.
+`apps/OasisWeb` is a Next.js app with a landing page and game routes under `app/(game)/`.
 
 - Wrap the app in an `OasisAuthProvider` that calls `checkOasisAuth()`.
 - Add a login modal (reuse the shared `getChallenge` / `verifyEd25519` / `verifySiwe` flow from `src/lib/zis.ts`).
@@ -235,12 +235,12 @@ The OASIS SQLite schema uses `address` as the player primary key. Add a `user_id
 
 **Files to change**
 
-- `APP&WEB/OasisWeb/src/lib/zis.ts` (already exists, may need small helpers).
-- `APP&WEB/OasisWeb/src/contexts/AuthContext.tsx` (new).
-- `APP&WEB/OasisWeb/src/components/LoginModal.tsx` (new, can mirror Web 2.9 UI).
-- `APP&WEB/OasisWeb/src/app/(game)/layout.tsx`.
-- `APP&WEB/OasisWeb/src/app/(landing)/page.tsx`.
-- `APP&WEB/OasisWeb/src/store/gameStore.ts`.
+- `apps/OasisWeb/src/lib/zis.ts` (already exists, may need small helpers).
+- `apps/OasisWeb/src/contexts/AuthContext.tsx` (new).
+- `apps/OasisWeb/src/components/LoginModal.tsx` (new, can mirror Web 2.9 UI).
+- `apps/OasisWeb/src/app/(game)/layout.tsx`.
+- `apps/OasisWeb/src/app/(landing)/page.tsx`.
+- `apps/OasisWeb/src/store/gameStore.ts`.
 
 ### 6.4 Phase 2 acceptance criteria
 
@@ -273,7 +273,7 @@ Keep public pages unprotected:
 
 **Files to change**
 
-- `APP&WEB/website-v2.9/src/proxy.ts`.
+- `apps/website-v2.9/src/proxy.ts`.
 
 ### 7.2 Unify `NavAuthButton` redirect behavior
 
@@ -285,14 +285,14 @@ Keep public pages unprotected:
 
 **Files to change**
 
-- `APP&WEB/website-v2.9/src/components/NavAuthButton.tsx`.
-- `APP&WEB/website-v2.9/src/app/login/page.tsx`.
+- `apps/website-v2.9/src/components/NavAuthButton.tsx`.
+- `apps/website-v2.9/src/app/login/page.tsx`.
 
 ### 7.3 Feed authenticated identity into DeFi / DEX widgets
 
 `CrossChainSwapWidget` currently calls the local `/api/swap/quote/multi` route or the multichain API directly. It needs to include the `zion_session` cookie and, where useful, the resolved `ZisUser` address.
 
-- In `APP&WEB/website-v2.9/src/lib/zis.ts` and `AuthContext`, make the user's primary address and `linkedAddresses` easily available.
+- In `apps/website-v2.9/src/lib/zis.ts` and `AuthContext`, make the user's primary address and `linkedAddresses` easily available.
 - `WalletContext` (rewritten in the recent DEX audit) should prefer the user's linked addresses if the user is logged in.
 - `CrossChainSwapWidget` should:
   - Call L2 API with `credentials: 'include'`.
@@ -302,10 +302,10 @@ Keep public pages unprotected:
 
 **Files to change**
 
-- `APP&WEB/website-v2.9/src/contexts/AuthContext.tsx`.
-- `APP&WEB/website-v2.9/src/components/dex/CrossChainSwapWidget.tsx`.
-- `APP&WEB/website-v2.9/src/contexts/WalletContext.tsx`.
-- `APP&WEB/website-v2.9/src/lib/zis.ts`.
+- `apps/website-v2.9/src/contexts/AuthContext.tsx`.
+- `apps/website-v2.9/src/components/dex/CrossChainSwapWidget.tsx`.
+- `apps/website-v2.9/src/contexts/WalletContext.tsx`.
+- `apps/website-v2.9/src/lib/zis.ts`.
 
 ### 7.4 Surface linked addresses and API keys in the account dashboard
 
@@ -317,13 +317,13 @@ The `SecurityPanel` already shows active sessions and API keys. Add a "Linked Ad
 
 **Files to change**
 
-- `APP&WEB/website-v2.9/src/components/dashboard/SecurityPanel.tsx`.
-- `APP&WEB/website-v2.9/src/components/dashboard/WalletOverview.tsx`.
-- `APP&WEB/website-v2.9/src/app/account/page.tsx`.
+- `apps/website-v2.9/src/components/dashboard/SecurityPanel.tsx`.
+- `apps/website-v2.9/src/components/dashboard/WalletOverview.tsx`.
+- `apps/website-v2.9/src/app/account/page.tsx`.
 
 ### 7.5 Phase 3 acceptance criteria
 
-- `npm run build` in `APP&WEB/website-v2.9` completes with 106 static pages.
+- `npm run build` in `apps/website-v2.9` completes with 106 static pages.
 - Edge middleware redirects unauthenticated requests to `/dex` and `/bridge` to `/login?redirect=/dex`.
 - `NavAuthButton` always preserves the current page in `redirect`.
 - `CrossChainSwapWidget` sends the `zion_session` cookie to L2; a logged-out user sees the login modal on swap execution.
@@ -337,7 +337,7 @@ The `SecurityPanel` already shows active sessions and API keys. Add a "Linked Ad
 
 Backend services (L2, L4) cannot verify a ZIS API key without a database lookup or a new endpoint.
 
-**Proposal:** add `POST /api/keys/verify` to `APP&WEB/identity/src/routes/apikey.ts`.
+**Proposal:** add `POST /api/keys/verify` to `apps/identity/src/routes/apikey.ts`.
 
 Request:
 
@@ -357,8 +357,8 @@ Response:
 
 **Files to change**
 
-- `APP&WEB/identity/src/routes/apikey.ts`.
-- `APP&WEB/shared/zis-client.ts` — add `verifyApiKey(apiKey)` helper for consumers.
+- `apps/identity/src/routes/apikey.ts`.
+- `apps/shared/zis-client.ts` — add `verifyApiKey(apiKey)` helper for consumers.
 
 ### 8.2 Support linked-address verification for all chain types
 
@@ -371,9 +371,9 @@ Currently `LinkedAddress` records are created at first login. We also need expli
 
 **Files to change**
 
-- `APP&WEB/identity/src/routes/auth.ts`.
-- `APP&WEB/shared/zis-client.ts` — add `linkAddress(...)`.
-- `APP&WEB/identity/src/lib/challenge.ts` — ensure the challenge is bound to the address and chain.
+- `apps/identity/src/routes/auth.ts`.
+- `apps/shared/zis-client.ts` — add `linkAddress(...)`.
+- `apps/identity/src/lib/challenge.ts` — ensure the challenge is bound to the address and chain.
 
 ### 8.3 Session refresh / short-term token rotation
 
@@ -385,12 +385,12 @@ The current session is a 7-day signed JWT. Add an optional refresh:
 
 **Files to change**
 
-- `APP&WEB/identity/src/lib/auth.ts` (`requireAuth` preHandler).
-- `APP&WEB/identity/src/routes/session.ts`.
+- `apps/identity/src/lib/auth.ts` (`requireAuth` preHandler).
+- `apps/identity/src/routes/session.ts`.
 
 ### 8.4 Phase 4 acceptance criteria
 
-- `npm run build` in `APP&WEB/identity` succeeds.
+- `npm run build` in `apps/identity` succeeds.
 - `POST /api/keys/verify` returns the owner for a valid key and `401` for an invalid key.
 - Linking a second address updates `ZisUser.linkedAddresses`.
 - Rolling refresh works: the cookie expiry extends on activity.
@@ -403,7 +403,7 @@ The current session is a 7-day signed JWT. Add an optional refresh:
 
 | Service | Change |
 |---------|--------|
-| `zion-zis.service` | Ensure `APP&WEB/identity` can reach L2 and L4 only if needed for service-to-service calls. |
+| `zion-zis.service` | Ensure `apps/identity` can reach L2 and L4 only if needed for service-to-service calls. |
 | `zion-v31-multichain.service` | Add `ZIS_URL=https://auth.zionterranova.com` and `ZION_MULTICHAIN_CORS_ORIGINS` updated with `https://app.zionterranova.com,https://oasis.zionterranova.com` and dev origins. |
 | `zion-v31-oasis.service` | Add `ZIS_URL` and `ZION_OASIS_ALLOWED_ORIGINS`. |
 | `zion-website.service` | Add `ZIS_URL` and `NEXT_PUBLIC_ZIS_URL` env vars (already done for Web 2.9). |
@@ -422,9 +422,9 @@ The current session is a 7-day signed JWT. Add an optional refresh:
 |------|------|----------|
 | L2 unit tests | `cargo test -p zion-multichain` | all pass |
 | L4 unit tests | `cargo test -p zion-oasis` | all pass |
-| Identity tests | `cd APP&WEB/identity && npm test` | pass |
-| Web 2.9 build | `cd APP&WEB/website-v2.9 && npm run build` | 106 pages, no type errors |
-| OASIS Web build | `cd APP&WEB/OasisWeb && npm run build` | success |
+| Identity tests | `cd apps/identity && npm test` | pass |
+| Web 2.9 build | `cd apps/website-v2.9 && npm run build` | 106 pages, no type errors |
+| OASIS Web build | `cd apps/OasisWeb && npm run build` | success |
 | Auth E2E (L2) | `curl -b zion_session=... -X POST https://zionterranova.com/api/multichain/v1/swap/execute` | returns quote/result for authenticated user |
 | Auth E2E (L4) | `curl -b zion_session=... -X POST https://oasis.zionterranova.com/api/v1/oasis/player/:address/xp` | 200 and updates player |
 | Logout cross-domain | Log out on Web 2.9, refresh OASIS Web | OASIS Web shows login CTA |
@@ -435,7 +435,7 @@ The current session is a 7-day signed JWT. Add an optional refresh:
 
 ### 11.1 Order of deploy
 
-1. ZIS (`APP&WEB/identity`) — add `/api/keys/verify` and `/api/auth/link`.
+1. ZIS (`apps/identity`) — add `/api/keys/verify` and `/api/auth/link`.
 2. L2 multichain — deploy new binary, restart `zion-v31-multichain.service`.
 3. L4 OASIS — deploy new binary, restart `zion-v31-oasis.service`.
 4. Web 2.9 — `npm run build`, rsync, restart `zion-website.service`.
@@ -464,16 +464,16 @@ The current session is a 7-day signed JWT. Add an optional refresh:
 
 ### Identity service
 
-- `APP&WEB/identity/src/routes/auth.ts`
-- `APP&WEB/identity/src/routes/apikey.ts`
-- `APP&WEB/identity/src/routes/session.ts`
-- `APP&WEB/identity/src/lib/auth.ts`
-- `APP&WEB/identity/src/lib/challenge.ts`
+- `apps/identity/src/routes/auth.ts`
+- `apps/identity/src/routes/apikey.ts`
+- `apps/identity/src/routes/session.ts`
+- `apps/identity/src/lib/auth.ts`
+- `apps/identity/src/lib/challenge.ts`
 
 ### Shared client
 
-- `APP&WEB/shared/zis-client.ts`
-- `APP&WEB/shared/prisma/schema.prisma`
+- `apps/shared/zis-client.ts`
+- `apps/shared/prisma/schema.prisma`
 
 ### L2 multichain
 
@@ -492,28 +492,28 @@ The current session is a 7-day signed JWT. Add an optional refresh:
 
 ### L4 OASIS web
 
-- `APP&WEB/OasisWeb/src/lib/zis.ts`
-- `APP&WEB/OasisWeb/src/app/(game)/layout.tsx`
-- `APP&WEB/OasisWeb/src/app/(landing)/page.tsx`
-- `APP&WEB/OasisWeb/src/store/gameStore.ts`
+- `apps/OasisWeb/src/lib/zis.ts`
+- `apps/OasisWeb/src/app/(game)/layout.tsx`
+- `apps/OasisWeb/src/app/(landing)/page.tsx`
+- `apps/OasisWeb/src/store/gameStore.ts`
 
 ### Web 2.9
 
-- `APP&WEB/website-v2.9/src/proxy.ts`
-- `APP&WEB/website-v2.9/src/contexts/AuthContext.tsx`
-- `APP&WEB/website-v2.9/src/lib/zis.ts`
-- `APP&WEB/website-v2.9/src/components/NavAuthButton.tsx`
-- `APP&WEB/website-v2.9/src/components/LoginModal.tsx`
-- `APP&WEB/website-v2.9/src/app/login/page.tsx`
-- `APP&WEB/website-v2.9/src/app/account/page.tsx`
-- `APP&WEB/website-v2.9/src/components/dex/CrossChainSwapWidget.tsx`
-- `APP&WEB/website-v2.9/src/contexts/WalletContext.tsx`
+- `apps/website-v2.9/src/proxy.ts`
+- `apps/website-v2.9/src/contexts/AuthContext.tsx`
+- `apps/website-v2.9/src/lib/zis.ts`
+- `apps/website-v2.9/src/components/NavAuthButton.tsx`
+- `apps/website-v2.9/src/components/LoginModal.tsx`
+- `apps/website-v2.9/src/app/login/page.tsx`
+- `apps/website-v2.9/src/app/account/page.tsx`
+- `apps/website-v2.9/src/components/dex/CrossChainSwapWidget.tsx`
+- `apps/website-v2.9/src/contexts/WalletContext.tsx`
 
 ---
 
 ## 12. Progress log
 
 - **2026-08-23 (Web 2.9 auth migration):** Legacy local JWT routes removed; `src/proxy.ts` now validates protected pages against ZIS. `ZION_JWT_SECRET` no longer required by website code.
-- **2026-08-23 (Plan update):** Status moved to *In progress*. `POST /api/keys/verify` already exists in `APP&WEB/identity/src/routes/apikey.ts`. `DexOrder` and `BridgeTransaction` models exist in the shared Prisma schema.
+- **2026-08-23 (Plan update):** Status moved to *In progress*. `POST /api/keys/verify` already exists in `apps/identity/src/routes/apikey.ts`. `DexOrder` and `BridgeTransaction` models exist in the shared Prisma schema.
 
 *Next: finish Phase 4 hardening (`/api/auth/link`, session refresh, shared client helpers), then close remaining gaps in Phases 1–3.*

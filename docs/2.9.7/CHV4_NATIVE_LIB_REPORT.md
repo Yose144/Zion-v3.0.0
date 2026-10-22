@@ -130,7 +130,7 @@ if let Some((nonce, hash)) = cosmic_harmony_v4_find_nonce_parallel(
 
 ### 2.3 Python — `cosmic_harmony_v4_native.py`
 
-**Soubor:** `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v4_native.py`
+**Soubor:** `apps/desktop-agent/resources/mining/cosmic_harmony_v4_native.py`
 
 **Vlastnosti:**
 - Načítá `libcosmic_harmony.dylib` / `libcosmic_harmony.so.2.9.0` přes ctypes
@@ -247,7 +247,7 @@ L1/native-libs/all/build_macos.sh               (upraven, CHv4 sekce)
 L1/cosmic-harmony/src/scratchpad.rs             (thread-local buffer)
 L1/cosmic-harmony/src/algorithms_opt.rs         (cosmic_harmony_v4_parallel + find_nonce)
 L1/cosmic-harmony/src/lib.rs                    (re-export parallel funkce)
-APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v4_native.py  (nový)
+apps/desktop-agent/resources/mining/cosmic_harmony_v4_native.py  (nový)
 ```
 
 ## 7. Soubory parity fix — commit `f0ebf20` (2026-03-04)

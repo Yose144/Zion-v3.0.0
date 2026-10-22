@@ -21,8 +21,8 @@ Po tomto status reportu byla dokončena další důležitá vrstva 2.9.8 desktop
 
 Aktuální ověřený stav:
 
-- `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` nyní preferuje Ekam shader a entrypointy místo legacy CHv4 symbolů.
-- `APP&WEB/desktop-agent/scripts/prepare-rust-miner.js` synchronizuje canonical GPU assety z `L1/native-libs/all/` do desktop resources.
+- `apps/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` nyní preferuje Ekam shader a entrypointy místo legacy CHv4 symbolů.
+- `apps/desktop-agent/scripts/prepare-rust-miner.js` synchronizuje canonical GPU assety z `L1/native-libs/all/` do desktop resources.
 - Metal shader `cosmic_harmony_ekam_deeksha.metal` byl opraven tak, aby se na Apple Silicon korektně kompiloval i při runtime build path.
 - Desktop-agent bench přes `resources/mining/cosmic_harmony_deeksha_gpu.py` úspěšně inicializoval backend Metal s entrypointem `cosmic_harmony_ekam_mine`.
 - Ověřený výsledek na Apple M1 je přibližně **5575.5 H/s**.
@@ -38,10 +38,10 @@ To se propsalo do těchto oblastí:
 - SERVERS.md
 - docs/ops/runbook.md
 - docker/docker-compose.testnet.yml
-- APP&WEB/website-v2.9/src/lib/site.ts
-- APP&WEB/website-v2.9/src/lib/network-config.ts
-- APP&WEB/website-v2.9/src/app/api/health/route.ts
-- APP&WEB/website-v2.9/src/app/api/mission-data/data/route.ts
+- apps/website-v2.9/src/lib/site.ts
+- apps/website-v2.9/src/lib/network-config.ts
+- apps/website-v2.9/src/app/api/health/route.ts
+- apps/website-v2.9/src/app/api/mission-data/data/route.ts
 
 Praktický dopad:
 
@@ -124,11 +124,11 @@ Tento soubor je dnes klíčovým konfiguračním bodem pro čistý pool runtime.
 
 ## 5. Desktop-agent: dnešní hlavní práce
 
-Desktop klient v APP&WEB/desktop-agent byl výrazně srovnán s novým backendem.
+Desktop klient v apps/desktop-agent byl výrazně srovnán s novým backendem.
 
 ### 5.1 Main process
 
-Soubor APP&WEB/desktop-agent/src/main.js byl upraven tak, aby:
+Soubor apps/desktop-agent/src/main.js byl upraven tak, aby:
 
 - používal kanonický host 91.98.122.165 jako výchozí pool, RPC a API backend
 - rozpoznal pure-ZION desktop mode
@@ -141,7 +141,7 @@ Z pohledu runtime orchestrace to znamená, že desktop už defaultně nemigruje 
 
 ### 5.2 Renderer a UI
 
-Soubory APP&WEB/desktop-agent/src/ui/renderer.js a APP&WEB/desktop-agent/src/ui/index.html byly upraveny tak, aby UI odpovídalo runtime chování.
+Soubory apps/desktop-agent/src/ui/renderer.js a apps/desktop-agent/src/ui/index.html byly upraveny tak, aby UI odpovídalo runtime chování.
 
 Co se změnilo:
 
@@ -165,12 +165,12 @@ Praktický výsledek:
 
 Změny zasáhly také tyto soubory a artefakty:
 
-- APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py
-- APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py
-- APP&WEB/desktop-agent/resources/mining/libcosmic_harmony.dylib
-- APP&WEB/desktop-agent/resources/mining/libzion_cosmic_harmony_v3.dylib
-- APP&WEB/desktop-agent/resources/mining/libcosmic_harmony_deeksha.dylib
-- APP&WEB/desktop-agent/scripts/prepare-rust-miner.js
+- apps/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py
+- apps/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py
+- apps/desktop-agent/resources/mining/libcosmic_harmony.dylib
+- apps/desktop-agent/resources/mining/libzion_cosmic_harmony_v3.dylib
+- apps/desktop-agent/resources/mining/libcosmic_harmony_deeksha.dylib
+- apps/desktop-agent/scripts/prepare-rust-miner.js
 
 To znamená, že dnešní práce nebyla jen UI patch, ale i reálné zarovnání packaged miner resource vrstvy s Deeksha/pure-ZION směrem.
 
@@ -178,8 +178,8 @@ To znamená, že dnešní práce nebyla jen UI patch, ale i reálné zarovnání
 
 Byly přidány dva pomocné testy:
 
-- APP&WEB/desktop-agent/test/test_deeksha_share_parsing.js
-- APP&WEB/desktop-agent/test_deeksha_target.py
+- apps/desktop-agent/test/test_deeksha_share_parsing.js
+- apps/desktop-agent/test_deeksha_target.py
 
 Účel:
 
@@ -193,7 +193,7 @@ Tyto testy pomáhají chránit dvě citlivé vrstvy:
 
 ## 7. Website vrstva
 
-Website v APP&WEB/website-v2.9 byla současně posunuta do nového public směru.
+Website v apps/website-v2.9 byla současně posunuta do nového public směru.
 
 ### 7.1 Live status a topologie
 
@@ -235,11 +235,11 @@ Hlavní posun:
 
 Přidané soubory:
 
-- APP&WEB/website-v2.9/src/app/ekam/layout.tsx
-- APP&WEB/website-v2.9/src/app/ekam/page.tsx
-- APP&WEB/website-v2.9/src/components/EkamMuseumLanding.tsx
-- APP&WEB/website-v2.9/public/docs/mainnet/genesis-book.md
-- APP&WEB/website-v2.9/public/docs/v2.9.6/dns.md
+- apps/website-v2.9/src/app/ekam/layout.tsx
+- apps/website-v2.9/src/app/ekam/page.tsx
+- apps/website-v2.9/src/components/EkamMuseumLanding.tsx
+- apps/website-v2.9/public/docs/mainnet/genesis-book.md
+- apps/website-v2.9/public/docs/v2.9.6/dns.md
 
 Další navazující úpravy:
 
@@ -288,8 +288,8 @@ Význam:
 
 U desktop-agent změn byly provedeny alespoň tyto kontroly:
 
-- node --check APP&WEB/desktop-agent/src/main.js
-- node --check APP&WEB/desktop-agent/src/ui/renderer.js
+- node --check apps/desktop-agent/src/main.js
+- node --check apps/desktop-agent/src/ui/renderer.js
 
 Renderer i main process syntax check prošly.
 

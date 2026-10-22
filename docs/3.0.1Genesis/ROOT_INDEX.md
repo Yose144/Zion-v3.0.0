@@ -14,7 +14,7 @@
 | **Read project docs** | [`docs/`](docs/) or [`docs/TerraNova/`](docs/TerraNova/) |
 | **Deploy with Docker** | [`V3/docker/`](V3/docker/) |
 | **Run AI model (Hiran)** | [`HiranV2.3/`](HiranV2.3/) |
-| **Web / mobile apps** | [`APP&WEB/`](APP&WEB/) |
+| **Web / mobile apps** | [`apps/`](apps/) |
 | **Deploy scripts** | [`scripts/`](scripts/) |
 | **Check status** | [`StatusV3.md`](StatusV3.md) |
 | **Agent guidance** | [`AGENTS.md`](AGENTS.md) |
@@ -68,7 +68,7 @@
 │   ├── src/bin/                       ← Benchmarks: lite, optimized, fire_optimized, compare_all
 │   └── Cargo.toml                     ← Standalone crate (depends on zion-cosmic-harmony)
 │
-├── APP&WEB/                           ← Frontend applications
+├── apps/                           ← Frontend applications
 │   ├── desktop-agent/                 ← Electron desktop agent + mining fallback
 │   ├── mobile-app/                    ← React Native mobile app
 │   └── website-v2.9/                  ← Next.js marketing + explorer website
@@ -305,9 +305,9 @@ Historical docs, roadmaps, and analysis moved to [`archive/2.9.9/docs/`](archive
 
 | App | Path | Stack | Status |
 |-----|------|-------|--------|
-| Website | `APP&WEB/website-v2.9/` | Next.js | 🟡 Active |
-| Mobile App | `APP&WEB/mobile-app/` | React Native | 🔵 Planned |
-| Desktop Agent | `APP&WEB/desktop-agent/` | Electron + Python | 🟡 Active |
+| Website | `apps/website-v2.9/` | Next.js | 🟡 Active |
+| Mobile App | `apps/mobile-app/` | React Native | 🔵 Planned |
+| Desktop Agent | `apps/desktop-agent/` | Electron + Python | 🟡 Active |
 | Desktop Dashboard | `ZION_OS/desktop/` | Tauri v2 + React | 🟡 Active |
 | Web Dashboard | `ZION_OS/dashboard/` | Python + JS | 🟡 Active |
 | AI Agent CLI | `ZION_OS/agent-cli/` | Rust (TUI) | 🟡 Active |

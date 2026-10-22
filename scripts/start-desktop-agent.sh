@@ -3,7 +3,7 @@
 # (graphical-session.target) — also still callable manually / from .desktop.
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-cd "/home/zionserver/2.9.6-main/APP&WEB/desktop-agent" || exit 1
+cd "/home/zionserver/2.9.6-main/apps/desktop-agent" || exit 1
 
 # If we were started outside the session (e.g. linger, early boot), pull the
 # display env out of the live gnome-shell process so Electron can connect.

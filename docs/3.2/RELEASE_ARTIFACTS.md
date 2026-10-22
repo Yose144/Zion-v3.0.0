@@ -15,7 +15,7 @@
 | L1 miner | `zion-miner` (CPU + CUDA + OpenCL) | workspace |
 | L2 multichain | `warpd` (bridge, HTLC, DEX, solver) | workspace |
 | DAO | `zion-dao` binary + unit | workspace |
-| Identity (ZIS) | Node.js service `APP&WEB/identity` (`dist/`) | its own `package.json` (not a Cargo workspace member) |
+| Identity (ZIS) | Node.js service `apps/identity` (`dist/`) | its own `package.json` (not a Cargo workspace member) |
 | Website / app | Next.js bundle + nginx conf | `package.json` 3.2.0 |
 | Docs / config | `docs/3.2/`, deploy scripts | tagged commit |
 

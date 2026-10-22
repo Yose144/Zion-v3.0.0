@@ -1,7 +1,7 @@
 # Report: ZIS authentication integration for Web 2.9 (Phases 1–4)
 
 **Date:** 2026-08-23  
-**Scope:** `APP&WEB/identity` (ZION Identity Service), `APP&WEB/website-v2.9` (Next.js), `APP&WEB/shared/zis-client.ts`, `APP&WEB/shared/prisma/schema.prisma`  
+**Scope:** `apps/identity` (ZION Identity Service), `apps/website-v2.9` (Next.js), `apps/shared/zis-client.ts`, `apps/shared/prisma/schema.prisma`  
 **Authors:** Devin (agent)  
 **Status:** Done, deployed to Edge, pushed to `origin/main`
 
@@ -59,9 +59,9 @@ Next.js middleware (src/proxy.ts) ─ protects /account and /dashboard/private
 
 ### What changed
 
-- `APP&WEB/website-v2.9/src/lib/zis.ts` — new browser/client wrappers for all ZIS endpoints.
-- `APP&WEB/website-v2.9/src/app/api/auth/[...zis]/route.ts` — catch-all proxy that forwards body, headers and cookies to ZIS and passes the `Set-Cookie` response back.
-- `APP&WEB/website-v2.9/src/contexts/AuthContext.tsx` — re-implemented `loginWithWallet` to get a ZIS challenge, sign it with the Zion Wallet private key, call `verify/ed25519`, then fetch the full ZIS user.
+- `apps/website-v2.9/src/lib/zis.ts` — new browser/client wrappers for all ZIS endpoints.
+- `apps/website-v2.9/src/app/api/auth/[...zis]/route.ts` — catch-all proxy that forwards body, headers and cookies to ZIS and passes the `Set-Cookie` response back.
+- `apps/website-v2.9/src/contexts/AuthContext.tsx` — re-implemented `loginWithWallet` to get a ZIS challenge, sign it with the Zion Wallet private key, call `verify/ed25519`, then fetch the full ZIS user.
 
 ### Result
 
@@ -75,21 +75,21 @@ Next.js middleware (src/proxy.ts) ─ protects /account and /dashboard/private
 
 ### What changed
 
-- `APP&WEB/identity/src/lib/auth.ts` — `issueSession` now sets the cookie with the correct `domain`, `path`, `httpOnly`, `secure`, `sameSite=None` flags.
-- `APP&WEB/identity/src/routes/auth.ts` —
+- `apps/identity/src/lib/auth.ts` — `issueSession` now sets the cookie with the correct `domain`, `path`, `httpOnly`, `secure`, `sameSite=None` flags.
+- `apps/identity/src/routes/auth.ts` —
   - `GET /me` returns the user with `linkedAddresses`.
   - `POST /logout` revokes the current session in the `Session` table.
   - `PATCH /me` updates `displayName`, `email`, `avatar`, `bio`.
-- `APP&WEB/identity/src/routes/session.ts` —
+- `apps/identity/src/routes/session.ts` —
   - `GET /sessions` lists active sessions for the current user.
   - `DELETE /sessions/:id` revokes one session.
   - `DELETE /sessions` revokes all sessions for the user.
-- `APP&WEB/identity/src/routes/apikey.ts` —
+- `apps/identity/src/routes/apikey.ts` —
   - `GET /keys` lists API keys.
   - `POST /keys` creates a key and returns the raw key once.
   - `DELETE /keys/:id` revokes a key.
-- `APP&WEB/shared/zis-client.ts` — new TypeScript interfaces (`ZisActiveSession`, `ZisApiKey`, `ZisLinkedAddress`) and functions.
-- `APP&WEB/shared/prisma/schema.prisma` — added `Session`, `ApiKey` and expanded `User` with profile fields.
+- `apps/shared/zis-client.ts` — new TypeScript interfaces (`ZisActiveSession`, `ZisApiKey`, `ZisLinkedAddress`) and functions.
+- `apps/shared/prisma/schema.prisma` — added `Session`, `ApiKey` and expanded `User` with profile fields.
 
 ### Result
 
@@ -102,15 +102,15 @@ Next.js middleware (src/proxy.ts) ─ protects /account and /dashboard/private
 
 ### What changed
 
-- `APP&WEB/website-v2.9/src/components/dashboard/SecurityPanel.tsx` (new)
+- `apps/website-v2.9/src/components/dashboard/SecurityPanel.tsx` (new)
   - Three sections: **Linked addresses**, **Active sessions**, **API keys**.
   - Create / revoke API keys with one-time copy.
   - Revoke individual session or all sessions.
   - Bilingual copy (EN / CS).
-- `APP&WEB/website-v2.9/src/app/account/page.tsx` — added a `security` tab.
-- `APP&WEB/website-v2.9/src/contexts/AuthContext.tsx` — `AuthUser` now carries `linkedAddresses`.
-- `APP&WEB/website-v2.9/src/lib/zis.ts` — added wrappers for session and API key endpoints.
-- `APP&WEB/website-v2.9/src/app/api/session/[[...path]]/route.ts` and `src/app/api/keys/[[...path]]/route.ts` — proxy routes for the new backend endpoints.
+- `apps/website-v2.9/src/app/account/page.tsx` — added a `security` tab.
+- `apps/website-v2.9/src/contexts/AuthContext.tsx` — `AuthUser` now carries `linkedAddresses`.
+- `apps/website-v2.9/src/lib/zis.ts` — added wrappers for session and API key endpoints.
+- `apps/website-v2.9/src/app/api/session/[[...path]]/route.ts` and `src/app/api/keys/[[...path]]/route.ts` — proxy routes for the new backend endpoints.
 
 ### Result
 
@@ -123,13 +123,13 @@ Next.js middleware (src/proxy.ts) ─ protects /account and /dashboard/private
 
 ### What changed
 
-- `APP&WEB/identity/src/lib/challenge.ts` — `verifySiwe` is now secure:
+- `apps/identity/src/lib/challenge.ts` — `verifySiwe` is now secure:
   - Parses the SIWE message with the `siwe` package.
   - Verifies the EIP-191 signature and recovers the signer address.
   - Checks the nonce against the active ZIS challenge.
   - Only succeeds if recovered address equals the claimed address.
-- `APP&WEB/identity/src/routes/auth.ts` — `POST /verify/siwe` now calls the new `verifySiwe` and no longer trusts a client-supplied `recoveredAddress`.
-- `APP&WEB/website-v2.9/src/contexts/AuthContext.tsx` — added `loginWithSiwe`:
+- `apps/identity/src/routes/auth.ts` — `POST /verify/siwe` now calls the new `verifySiwe` and no longer trusts a client-supplied `recoveredAddress`.
+- `apps/website-v2.9/src/contexts/AuthContext.tsx` — added `loginWithSiwe`:
   - Detects `window.ethereum`.
   - Requests `eth_requestAccounts`.
   - Fetches a ZIS challenge with `chainType: 'evm'`.
@@ -137,7 +137,7 @@ Next.js middleware (src/proxy.ts) ─ protects /account and /dashboard/private
   - Signs via `personal_sign`.
   - Submits to `/api/auth/verify/siwe` through the proxy.
   - Fetches the full user from ZIS.
-- `APP&WEB/website-v2.9/src/app/login/page.tsx` and `src/components/LoginModal.tsx` — added **Sign in with MetaMask** buttons and loader/error states.
+- `apps/website-v2.9/src/app/login/page.tsx` and `src/components/LoginModal.tsx` — added **Sign in with MetaMask** buttons and loader/error states.
 
 ### Result
 
@@ -150,7 +150,7 @@ Next.js middleware (src/proxy.ts) ─ protects /account and /dashboard/private
 
 ### What changed
 
-- `APP&WEB/website-v2.9/src/proxy.ts` — refactored:
+- `apps/website-v2.9/src/proxy.ts` — refactored:
   - `PROTECTED_PATHS = ['/account', '/dashboard/private']`.
   - `isProtected()` and `requireAuthRedirect()` helpers.
   - Verifies the `zion_session` JWT with `ZION_JWT_SECRET`.
@@ -169,13 +169,13 @@ Next.js middleware (src/proxy.ts) ─ protects /account and /dashboard/private
 
 ### Build
 
-- `APP&WEB/identity` → `npm run build` (tsc) passes.
-- `APP&WEB/website-v2.9` → `npm run build` (Next.js 16.2.9) generates 113 pages, including the new proxy routes.
+- `apps/identity` → `npm run build` (tsc) passes.
+- `apps/website-v2.9` → `npm run build` (Next.js 16.2.9) generates 113 pages, including the new proxy routes.
 
 ### Deploy
 
-- `APP&WEB/identity/dist/` rsynced to `zion-new:/opt/zion/identity/dist/`, `zion-zis.service` restarted.
-- `APP&WEB/website-v2.9/` `.next/standalone`, `public`, `src`, config and `package.json` rsynced to `zion-new:/opt/zion/APP&WEB/website-v2.9/`, `zion-website.service` restarted.
+- `apps/identity/dist/` rsynced to `zion-new:/opt/zion/identity/dist/`, `zion-zis.service` restarted.
+- `apps/website-v2.9/` `.next/standalone`, `public`, `src`, config and `package.json` rsynced to `zion-new:/opt/zion/APP&WEB/website-v2.9/`, `zion-website.service` restarted.
 
 ### Live verification performed
 
@@ -196,35 +196,35 @@ Next.js middleware (src/proxy.ts) ─ protects /account and /dashboard/private
 
 ### ZIS backend
 
-- `APP&WEB/identity/src/lib/auth.ts`
-- `APP&WEB/identity/src/lib/challenge.ts`
-- `APP&WEB/identity/src/routes/auth.ts`
-- `APP&WEB/identity/src/routes/session.ts` (new)
-- `APP&WEB/identity/src/routes/apikey.ts` (new)
-- `APP&WEB/identity/package.json`
-- `APP&WEB/identity/deploy/deploy-zis.sh`
+- `apps/identity/src/lib/auth.ts`
+- `apps/identity/src/lib/challenge.ts`
+- `apps/identity/src/routes/auth.ts`
+- `apps/identity/src/routes/session.ts` (new)
+- `apps/identity/src/routes/apikey.ts` (new)
+- `apps/identity/package.json`
+- `apps/identity/deploy/deploy-zis.sh`
 
 ### Shared client
 
-- `APP&WEB/shared/zis-client.ts`
-- `APP&WEB/shared/prisma/schema.prisma`
+- `apps/shared/zis-client.ts`
+- `apps/shared/prisma/schema.prisma`
 
 ### Website
 
-- `APP&WEB/website-v2.9/src/app/api/auth/[...zis]/route.ts`
-- `APP&WEB/website-v2.9/src/app/api/session/[[...path]]/route.ts` (new)
-- `APP&WEB/website-v2.9/src/app/api/keys/[[...path]]/route.ts` (new)
-- `APP&WEB/website-v2.9/src/lib/zis-proxy.ts` (new)
-- `APP&WEB/website-v2.9/src/lib/zis.ts`
-- `APP&WEB/website-v2.9/src/contexts/AuthContext.tsx`
-- `APP&WEB/website-v2.9/src/components/dashboard/SecurityPanel.tsx` (new)
-- `APP&WEB/website-v2.9/src/app/account/page.tsx`
-- `APP&WEB/website-v2.9/src/app/login/page.tsx`
-- `APP&WEB/website-v2.9/src/components/LoginModal.tsx`
-- `APP&WEB/website-v2.9/src/proxy.ts`
-- `APP&WEB/website-v2.9/.gitignore`
-- `APP&WEB/website-v2.9/AGENTS.md`
-- `APP&WEB/website-v2.9/deploy/deploy-web2.9.sh`
+- `apps/website-v2.9/src/app/api/auth/[...zis]/route.ts`
+- `apps/website-v2.9/src/app/api/session/[[...path]]/route.ts` (new)
+- `apps/website-v2.9/src/app/api/keys/[[...path]]/route.ts` (new)
+- `apps/website-v2.9/src/lib/zis-proxy.ts` (new)
+- `apps/website-v2.9/src/lib/zis.ts`
+- `apps/website-v2.9/src/contexts/AuthContext.tsx`
+- `apps/website-v2.9/src/components/dashboard/SecurityPanel.tsx` (new)
+- `apps/website-v2.9/src/app/account/page.tsx`
+- `apps/website-v2.9/src/app/login/page.tsx`
+- `apps/website-v2.9/src/components/LoginModal.tsx`
+- `apps/website-v2.9/src/proxy.ts`
+- `apps/website-v2.9/.gitignore`
+- `apps/website-v2.9/AGENTS.md`
+- `apps/website-v2.9/deploy/deploy-web2.9.sh`
 
 ---
 
@@ -239,5 +239,5 @@ Next.js middleware (src/proxy.ts) ─ protects /account and /dashboard/private
 
 ## 11. References
 
-- `APP&WEB/website-v2.9/AGENTS.md` — build and deploy commands.
+- `apps/website-v2.9/AGENTS.md` — build and deploy commands.
 - Previous conversation summary: `/Users/yeshuae/.local/share/devin/cli/summaries/history_ad75392d74b741f8.md`

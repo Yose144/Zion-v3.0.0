@@ -23,7 +23,7 @@ Remove-Item -Path 'C:\Users\yosef\AppData\Local\Temp\zion-node-state.db*' -Error
 Remove-Item -Recurse -Path 'C:\Users\yosef\AppData\Local\Temp\zion-node-state.db' -ErrorAction SilentlyContinue
 
 $nodeExe     = "$RepoRoot\V3\target\release\node.exe"
-$nodeSource  = "$RepoRoot\APP&WEB\desktop-agent\resources\node.exe"
+$nodeSource  = "$RepoRoot\apps\desktop-agent\resources\node.exe"
 
 # Auto-sync: zkopiruj kanonicky binary z resources, pokud je novejsi nebo chybi
 New-Item -ItemType Directory -Path "$RepoRoot\V3\target\release" -Force | Out-Null
@@ -45,7 +45,7 @@ if (Test-Path $nodeSource) {
 }
 
 if (-not (Test-Path $nodeExe)) {
-    Write-Error "[ERROR] Binary not found: $nodeExe`n        Zkopiruj rucne z APP&WEB\desktop-agent\resources\node.exe"
+    Write-Error "[ERROR] Binary not found: $nodeExe`n        Zkopiruj rucne z apps\desktop-agent\resources\node.exe"
     exit 1
 }
 

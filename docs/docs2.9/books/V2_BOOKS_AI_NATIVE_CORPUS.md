@@ -1,6 +1,6 @@
 # V2 Books - AI Native Corpus Manifest
 
-Tento soubor je kanonicky textovy most mezi publikovanou knizni vrstvou ve slozce APP&WEB/public_html/V2/books a AI Native knowledge/training pipeline.
+Tento soubor je kanonicky textovy most mezi publikovanou knizni vrstvou ve slozce apps/public_html/V2/books a AI Native knowledge/training pipeline.
 
 Jeho smysl je prosty:
 
@@ -10,7 +10,7 @@ Jeho smysl je prosty:
 
 ## 1. Publikacni vrstva ve V2/books
 
-V APP&WEB/public_html/V2/books jsou dolozene zejmena tyto publikovane artefakty:
+V apps/public_html/V2/books jsou dolozene zejmena tyto publikovane artefakty:
 
 ### 1.1 Quantova Revoluce
 

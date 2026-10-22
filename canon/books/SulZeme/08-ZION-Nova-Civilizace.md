@@ -219,7 +219,7 @@ Začíná tím, že různí lidé — tesař, poutník, pastýř, král v lese, 
 
 - [ZION Technical Whitepaper v3.1 (CZ)](../ZION_Technical_Whitepaper_v3.1_CZ.md)
 - [ZION Master Whitepaper v3.1 (CZ)](../ZION_MASTER_WHITEPAPER_3.1_CZ.md)
-- [L4 Oasis — Consciousness Levels & XP](../../../APP&WEB/website-v2.9/public/docs/ai-native/oasis.md)
+- [L4 Oasis — Consciousness Levels & XP](../../../apps/website-v2.9/public/docs/ai-native/oasis.md)
 - [Veřejný repozitář](https://github.com/Zion-TerraNova/v3-Mainnet)
 
 ### Nezávislé a regulační zdroje použité pro principy pozvánky

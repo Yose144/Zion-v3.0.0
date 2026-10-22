@@ -6,10 +6,10 @@ These instructions apply to the whole repository. Prefer more specific file-leve
 
 ## Repo Shape
 
-- This is a multi-layer monorepo. L1 contains chain, miner, pool, and hashing crates. APP&WEB contains the Electron desktop agent, mobile app, and website.
+- This is a multi-layer monorepo. L1 contains chain, miner, pool, and hashing crates. apps contains the Electron desktop agent, mobile app, and website.
 - `V3/` is the active clean-room mainnet code line. Treat it as operationally separate from the legacy root tree.
 - Server deployment source-of-truth lives in docker/ and scripts/. Do not patch live server state conceptually without updating these files too.
-- There are often unrelated frontend changes in the working tree. Avoid touching APP&WEB website files unless the task requires them.
+- There are often unrelated frontend changes in the working tree. Avoid touching apps website files unless the task requires them.
 
 ## Default Workflow
 
@@ -31,7 +31,7 @@ These instructions apply to the whole repository. Prefer more specific file-leve
 ## Validation
 
 - For Rust miner/core/pool changes, prefer targeted cargo test or cargo test --no-run before broad workspace validation.
-- For desktop agent JavaScript changes, run node --check on APP&WEB/desktop-agent/src/main.js when that file changes.
+- For desktop agent JavaScript changes, run node --check on apps/desktop-agent/src/main.js when that file changes.
 - For desktop agent Python mining fallback changes, run python3 -m py_compile on the touched Python miner files.
 - scripts/autopilot-2.9.8.sh already encodes the expected validation sequence for miner and desktop-agent deploy readiness; follow it unless the task explicitly needs a different path.
 

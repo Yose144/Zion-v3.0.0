@@ -781,7 +781,7 @@ Pokud reset selže:
 - `dashboard/` — operativní monitoring
 - `docs/` security reporty (F1, F5, TeamViewer incident)
 - `HARDRESETOFFICIAL.md` — tento plán
-- `APP&WEB/` — aplikace (můžou být public zvlášť později)
+- `apps/` — aplikace (můžou být public zvlášť později)
 - `HiranV2.2/` — AI model
 - Osobní docs (Genesis book, wallet backups, runbooky s IP adresami)
 - Admin klíče (Rama, Sita, Hanuman) — offline only

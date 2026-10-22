@@ -30,7 +30,7 @@
 ## Phase A — SRBMiner original download ✅
 
 - `SRBMiner-MULTI 3.7.4` (release 2026-10-09) staged at
-  `APP&WEB/desktop-agent/resources/srbminer/SRBMiner-MULTI`
+  `apps/desktop-agent/resources/srbminer/SRBMiner-MULTI`
   (archive + `VERSION.txt` alongside; binary is git-ignored).
 - MD5 of the tarball verified against the official release page:
   `c000bcaaa10a7a82a4456ae4b7617ccd`.

@@ -50,7 +50,7 @@ ZionDex/
 │       ├── liquidity.ts      # Pool browser + LP management
 │       └── ziondex.ts        # Main SDK entry point
 │
-└── (frontend in APP&WEB/)
+└── (frontend in apps/)
     ├── website-v2.9/src/app/dex/           # Next.js /dex page
     │   ├── page.tsx                        # Main swap page
     │   ├── layout.tsx
@@ -72,7 +72,7 @@ ZionDex/
 
 ### Website (Next.js)
 ```bash
-cd APP&WEB/website-v2.9
+cd apps/website-v2.9
 npm install
 # Set env: NEXT_PUBLIC_ZIONDEX_ROUTER_URL=http://localhost:8454
 npm run dev
@@ -86,7 +86,7 @@ Pages:
 
 ### Mobile App (React Native)
 ```bash
-cd APP&WEB/mobile-app
+cd apps/mobile-app
 npm install
 npx react-native run-android  # or run-ios
 # ZionDex tab in bottom navigation
@@ -94,7 +94,7 @@ npx react-native run-android  # or run-ios
 
 ### Desktop Agent (Electron)
 ```bash
-cd APP&WEB/desktop-agent
+cd apps/desktop-agent
 npm install
 npm start
 # ZionDex tab in left sidebar

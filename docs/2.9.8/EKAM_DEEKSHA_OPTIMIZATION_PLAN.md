@@ -16,7 +16,7 @@ Na desktop-agentu je nyní srovnané i pojmenování a resource dispatch: Electr
 
 - Native GPU podpora pro Ekam je ověřená na **Metal** backendu přímo přes desktop-agent mining resources.
 - `cosmic_harmony_v42_gpu.py` nyní preferuje shader `cosmic_harmony_ekam_deeksha.metal` a entrypoint `cosmic_harmony_ekam_mine`, teprve potom padá zpět na legacy symboly.
-- `prepare-rust-miner.js` explicitně synchronizuje canonical GPU assety z `L1/native-libs/all/` do `APP&WEB/desktop-agent/resources/mining/`, aby packaging a lokální runtime používaly stejný zdroj pravdy.
+- `prepare-rust-miner.js` explicitně synchronizuje canonical GPU assety z `L1/native-libs/all/` do `apps/desktop-agent/resources/mining/`, aby packaging a lokální runtime používaly stejný zdroj pravdy.
 - Metal shader `cosmic_harmony_ekam_deeksha.metal` byl opraven o forward declarations helper funkcí, aby runtime kompilace na Apple Silicon nepadala na neznámých symbolech.
 - Workspace Python prostředí pro tento path vyžaduje `pyobjc-framework-Metal` a `numpy`; bez nich Metal benchmark neproběhne.
 
@@ -934,8 +934,8 @@ Poznámka: Více běhů ukazuje variabilitu ~2.3–2.5× v rozsahu kvůli therma
 | `L1/miner/src/miner/mod.rs` | MODIF | Ekam aliasy v `from_str` |
 | `L1/pool/src/shares/validator.rs` | MODIF | Ekam aliasy, auto-routing přes `cosmic_harmony_with_height()` |
 | `L1/pool/tests/chv4_e2e.rs` | MODIF | 3 testy aktualizovány pro Ekam dispatch |
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py` | MODIF | Ekam FFI bindings, pure-Python pipeline, canonical vector |
-| `APP&WEB/desktop-agent/src/main.js` | MODIF | `normalizeAlgorithmName()` + Ekam aliasy |
+| `apps/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py` | MODIF | Ekam FFI bindings, pure-Python pipeline, canonical vector |
+| `apps/desktop-agent/src/main.js` | MODIF | `normalizeAlgorithmName()` + Ekam aliasy |
 
 ### 15.6 Testy — souhrn
 

@@ -51,7 +51,7 @@ Aktualni stav: **Praha node bezi** (vyska ~27 000 bloku), security cleanup prove
   - Bhagavad Gita jako pruvodce akci bez pripoutanosti
   - Hiranyagarbha Sukta (Rigveda 10.121) — zlaty zarodek vesmiru
   - Prechod z Kali Yugy do Satya Yugy (zlateho veku)
-- **Forma:** Ucebnice a duchovni pruvodce, castecne dostupna v `APP&WEB/website-v2.9/public/docs/books/ekam-deeksha/`
+- **Forma:** Ucebnice a duchovni pruvodce, castecne dostupna v `apps/website-v2.9/public/docs/books/ekam-deeksha/`
 - **Vztah k ZION:** Technologie nemeni vedomi, ale vedomi meni technologii. DAO bez probuzenych lidi je jen jina oligarchie.
 
 ### 2.4 Terra Nova (ctvrta kniha) — Zlaty Kompas Nove Zeme
@@ -158,7 +158,7 @@ Terra Nova je první knihou komplexu, ktera se **nespokojuje s vizí ani s diagn
 ### 4.1 Layer breakdown
 
 ```
-APP&WEB/  — Electron desktop, React Native mobile, Next.js website
+apps/  — Electron desktop, React Native mobile, Next.js website
             + zion-wallet-sdk (TypeScript)
             |
 V3/cli    — `zion` operatersky binar (20+ subprikazu)
@@ -287,8 +287,8 @@ V3/L1/    — core (node, mempool, RPC), pool (PPLNS Stratum), miner (CPU/GPU),
 | `V3/README.md` + `V3/ROADMAP.md` | Technicky popis V3 workspace |
 | `docs/TerraNova/FINAL/Full.md` | Kanonicka verze knihy Terra Nova |
 | `docs/TerraNova/FINAL/README.md` | Struktura a navod ke cteni |
-| `APP&WEB/website-v2.9/public/docs/books/quantum-revolution.md` | Druha kniha (Kvantova Revoluce) |
-| `APP&WEB/website-v2.9/public/docs/books/ekam-deeksha/` | Treti kniha (Ekam Deeksha) |
+| `apps/website-v2.9/public/docs/books/quantum-revolution.md` | Druha kniha (Kvantova Revoluce) |
+| `apps/website-v2.9/public/docs/books/ekam-deeksha/` | Treti kniha (Ekam Deeksha) |
 | `HIRAN_V2.2_CLI_INTEGRATION.md` | Hiran AI integrace |
 | `V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md` | Auditni akcni plan |
 

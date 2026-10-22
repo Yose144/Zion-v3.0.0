@@ -47,7 +47,7 @@ Na server byly potvrzeny tyto klíčové změny:
 - `L1/cosmic-harmony/src/deeksha.rs`
 - `L1/cosmic-harmony/src/scratchpad_ekam.rs`
 - GPU kernel assets pro OpenCL/CUDA/Metal
-- Python mining wrapper soubory v `APP&WEB/desktop-agent/resources/mining/`
+- Python mining wrapper soubory v `apps/desktop-agent/resources/mining/`
 
 ### 2. Nalezený build blocker v poolu
 

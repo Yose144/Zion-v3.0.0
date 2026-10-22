@@ -31,11 +31,11 @@
 - WARP signers pro **12 chainů**: evm, btc, solana, sui, aptos, cardano, cosmos, near, stellar, tron, ton, lightning
 - DEX stack: `solver_network.rs`, `intent_engine.rs`, `swap_executor.rs` (UniV3 quote + in-memory AMM fallback + HTLC)
 - Produkce: wZION/USDT UniV3 pool na Base live (19 USDT + 151,867 wZION, NFT #5952162), Robinhood Chain deterministicky ověřen (čeká ETH funding deployera)
-- ZIS (`APP&WEB/identity`): Ed25519 challenge auth + SIWE + Google OAuth, `/derive` route s DB persistencí per-chain adres
+- ZIS (`apps/identity`): Ed25519 challenge auth + SIWE + Google OAuth, `/derive` route s DB persistencí per-chain adres
 - BTC swap: kompletní HTLC + `bitcoind_rpc` backend, 6/6 regtest E2E PASS — **ale `WARP_BTC_SWAP_ENABLED=0`** (safety hold od 2026-09-20, čeká externí audit + bitcoind IBD)
 
 **Chybí / plán přestřeluje:**
-- 🔄 WebAuthn/Passkey — **kód hotový 2026-09-28** (`APP&WEB/identity/src/routes/webauthn.ts`, model `WebAuthnCredential`, 10 testů; web: passkey login v `LoginModal`/`/login`, správa v `SecurityPanel`). **Nenasazeno:** čeká `prisma db push` na produkční Postgres + deploy ZIS/webu.
+- 🔄 WebAuthn/Passkey — **kód hotový 2026-09-28** (`apps/identity/src/routes/webauthn.ts`, model `WebAuthnCredential`, 10 testů; web: passkey login v `LoginModal`/`/login`, správa v `SecurityPanel`). **Nenasazeno:** čeká `prisma db push` na produkční Postgres + deploy ZIS/webu.
 - ❌ SUI/Aptos **chain adaptéry** — pouze signers, ne plné adaptéry
 - ❌ AMM pooly `ZION/BTC`, `ZION/USDC`, `ZION/SOL` — jen wZION/USDT existuje
 - ❌ Agent sub-accounts s budgety, Zero-Knowledge Dharma proofs

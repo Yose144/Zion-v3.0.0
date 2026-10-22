@@ -23,7 +23,7 @@ The Edge server is running a **V31 mainnet-alpha deployment** built from local w
    - `edge-v31-pool-environment.sh` still references stale port `8446` and window `10000`, while the live service uses `8444` and `500000000`.
 4. **Public RPC `getStatus` returns `chain_height: 0` / `protocol_version: "3.0.5"`** while `getUtxos` on the same endpoint returns valid V31-native data. This indicates a stale or default response path.
 5. **OASIS logs show a persistent JSON parse error** (`floating point 5400.067, expected u64`) on every new block.
-6. **Several plaintext secrets remain on the Edge filesystem** (private keys, API keys, token, dev seed) in `edge-environment.sh`, `dao-v31.toml`, and `APP&WEB/MarketPlace/.env`. They are not in the tracked git working tree, but they are on the production host.
+6. **Several plaintext secrets remain on the Edge filesystem** (private keys, API keys, token, dev seed) in `edge-environment.sh`, `dao-v31.toml`, and `apps/MarketPlace/.env`. They are not in the tracked git working tree, but they are on the production host.
 7. **The `ANKR` API key** from `docs/3.0.0/KeyForMainetLaunch.md` was previously committed in plaintext (per `SECURITY_AUDIT_REPORT.md`) and still needs rotation.
 8. **UFW exposes many more ports to `Anywhere`** than the V31/AGENTS.md port matrix describes (e.g., `8445`, `8452-8454`, `8461-8463`, `9443`, `9999`), increasing attack surface while multichain/bridge are not actually listening.
 9. **`logrotate.service` and `zion-dashboard-web.service` are failed** — system state is `degraded`.

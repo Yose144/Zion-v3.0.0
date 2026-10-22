@@ -8,7 +8,7 @@ Quantova Revoluce je v historicke vetvi 2.9 vedena jako existujici kniha a refer
 
 ### 1. Publikovane edice
 
-Kniha je vedena jako vydany nebo publikovany artefakt ve slozce `APP&WEB/public_html/V2/books/` vcetne vice jazykovych variant.
+Kniha je vedena jako vydany nebo publikovany artefakt ve slozce `apps/public_html/V2/books/` vcetne vice jazykovych variant.
 
 ### 2. Reality check vuci technickemu projektu
 

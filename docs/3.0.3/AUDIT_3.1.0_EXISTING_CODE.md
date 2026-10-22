@@ -10,14 +10,14 @@
 
 | Komponenta | Existuje | 3.0.3 compatible | Co chybí |
 |------------|----------|------------------|----------|
-| Wallet SDK | ✅ `APP&WEB/zion-wallet-sdk/` | ✅ Fixed (`5416b637`) | Mobile features (QR, biometrics, BLE) |
-| Mobile App | ✅ `APP&WEB/mobile-app/` | ✅ Fixed (`5416b637`) | QR, biometrics, deep linking, device build |
+| Wallet SDK | ✅ `apps/zion-wallet-sdk/` | ✅ Fixed (`5416b637`) | Mobile features (QR, biometrics, BLE) |
+| Mobile App | ✅ `apps/mobile-app/` | ✅ Fixed (`5416b637`) | QR, biometrics, deep linking, device build |
 | TX History RPC | ✅ `getTransactionHistory` v rpc.rs | ✅ Fixed (`9fda39dc`, Edge deployed) | Address index (optional), height range |
 | L4 Oasis | ✅ `V3/L4/oasis/` | ⚠️ Needs audit | Backend completion, UE5 content |
 
 ---
 
-## 1. Wallet SDK (`APP&WEB/zion-wallet-sdk/`)
+## 1. Wallet SDK (`apps/zion-wallet-sdk/`)
 
 ### Co existuje (v1.0.0, 19 source files, 6 test files)
 
@@ -63,7 +63,7 @@
 
 ---
 
-## 2. Mobile App (`APP&WEB/mobile-app/`)
+## 2. Mobile App (`apps/mobile-app/`)
 
 ### Co existuje (React Native, 12 screens)
 

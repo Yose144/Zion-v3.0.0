@@ -54,12 +54,12 @@ kabalistický strom se 10 sefirot propojenými s ZION vrstvami.
 viděla, že ZION není "jen blockchain", ale organismus s 10 aspekty.
 
 **Kde:**
-- `APP&WEB/website-v2.9/src/app/zohar/page.tsx` — route ✅
-- `APP&WEB/website-v2.9/src/app/zohar/ZoharPageClient.tsx` — komponenta ✅
-- `APP&WEB/website-v2.9/src/components/HomeTreePortal.tsx` — vylepšeno o ZION vrstvy na hover + CTA na /zohar ✅
-- `APP&WEB/website-v2.9/src/components/Navigation.tsx` — /zohar v learn_group ✅
-- `APP&WEB/website-v2.9/src/components/Footer.tsx` — /zohar v wiki group ✅
-- `APP&WEB/website-v2.9/src/lib/translations.ts` — `zohar` key ✅
+- `apps/website-v2.9/src/app/zohar/page.tsx` — route ✅
+- `apps/website-v2.9/src/app/zohar/ZoharPageClient.tsx` — komponenta ✅
+- `apps/website-v2.9/src/components/HomeTreePortal.tsx` — vylepšeno o ZION vrstvy na hover + CTA na /zohar ✅
+- `apps/website-v2.9/src/components/Navigation.tsx` — /zohar v learn_group ✅
+- `apps/website-v2.9/src/components/Footer.tsx` — /zohar v wiki group ✅
+- `apps/website-v2.9/src/lib/translations.ts` — `zohar` key ✅
 
 **Funkce:**
 - SVG strom se 10 sefirot + Da'at (skrytá, přerušovaná)
@@ -143,8 +143,8 @@ jako health score 0-100, plus živou vizualizaci na `/zohar`.
 Ne "je ZION online?" ale "které aspekty organismu jsou zdravé, které nemocné?".
 
 **Kde:**
-- `APP&WEB/website-v2.9/src/app/api/zohar/tree-health/route.ts` — API endpoint ✅
-- `APP&WEB/website-v2.9/src/app/zohar/ZoharPageClient.tsx` — živá vizualizace ✅
+- `apps/website-v2.9/src/app/api/zohar/tree-health/route.ts` — API endpoint ✅
+- `apps/website-v2.9/src/app/zohar/ZoharPageClient.tsx` — živá vizualizace ✅
 
 **Funkce:**
 - Agreguje data z existujících API: `/api/blockchain/stats`, `/api/defi/status`,
@@ -226,8 +226,8 @@ Fáze 0 (manifest) ✅
 | TerraNova kniha | [`docs/TerraNova/README.md`](../TerraNova/README.md) | Filosofie péče, 4 knihy ZION |
 | NPU Mining Theory | [`docs/NPU_HARDWARE_MINING_THEORY.md`](../NPU_HARDWARE_MINING_THEORY.md) | Chokmah technický základ |
 | L5 governance | [`V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md`](../../V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md) | Care vow základ pro Fázi 2 |
-| InteractiveTreeOfLife | [`APP&WEB/website-v2.9/src/components/InteractiveTreeOfLife.tsx`](../../APP&WEB/website-v2.9/src/components/InteractiveTreeOfLife.tsx) | Inspirační zdroj pro Fázi 1 |
-| ConsciousnessTreeKabbalah | [`APP&WEB/website-v2.9/src/components/ConsciousnessTreeKabbalah.tsx`](../../APP&WEB/website-v2.9/src/components/ConsciousnessTreeKabbalah.tsx) | Kabala strom již na webu |
+| InteractiveTreeOfLife | [`apps/website-v2.9/src/components/InteractiveTreeOfLife.tsx`](../../apps/website-v2.9/src/components/InteractiveTreeOfLife.tsx) | Inspirační zdroj pro Fázi 1 |
+| ConsciousnessTreeKabbalah | [`apps/website-v2.9/src/components/ConsciousnessTreeKabbalah.tsx`](../../apps/website-v2.9/src/components/ConsciousnessTreeKabbalah.tsx) | Kabala strom již na webu |
 | AGENTS.md L1 Protocol | [`AGENTS.md`](../../AGENTS.md) §L1 Protocol Security | Omezení pro Fázi 3 |
 
 ---

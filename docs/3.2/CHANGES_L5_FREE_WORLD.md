@@ -73,7 +73,7 @@ Sloty 4 (Level-Up Bonuses) a 5 (Reserve) byly přepsány na L5 Free World Projec
 ### Root
 - `AGENTS.md` — OASIS 4,95B reference
 
-### Web (APP&WEB/website-v2.9/)
+### Web (apps/website-v2.9/)
 - `src/lib/explorer/known-addresses.ts` — Slot 4/5 labely → L5
 - `src/app/l4-oasis/page.tsx`, `src/app/roadmap/page.tsx`
 - `src/components/MissionControlDashboard.tsx`, `src/components/NewsFeed.tsx`
@@ -86,7 +86,7 @@ Sloty 4 (Level-Up Bonuses) a 5 (Reserve) byly přepsány na L5 Free World Projec
 - `dashboard/dashboard.js` — `l5_free_world` kategorie přidána
 
 ### Desktop agent
-- `APP&WEB/desktop-agent/renderer.js` — Slot 4/5 → L5 Free World Projects
+- `apps/desktop-agent/renderer.js` — Slot 4/5 → L5 Free World Projects
 
 ### Private (docs/private/ — gitignored)
 - `ZION_SUCCESSION_AND_IP_TRANSFER_PLAN.md` — darovací listina + plná moc s L5 projekty a správci

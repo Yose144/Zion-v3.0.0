@@ -589,7 +589,7 @@ impl M1AgentMiner {
     fn find_npu_bridge_script() -> Option<std::path::PathBuf> {
         // Hledej cosmic_harmony_v42_ane_bridge.py vedle fallback scriptu
         let candidates = [
-            "APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42_ane_bridge.py",
+            "apps/desktop-agent/resources/mining/cosmic_harmony_v42_ane_bridge.py",
             "resources/mining/cosmic_harmony_v42_ane_bridge.py",
             "mining/cosmic_harmony_v42_ane_bridge.py",
         ];

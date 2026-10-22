@@ -246,7 +246,7 @@ curl -L -C - -o /opt/models/mmproj-gemma-4-E4B-it-BF16.gguf  $B/mmproj-gemma-4-E
 
 ## 5. Panel `https://zionterranova.com/vast-rigs/`
 
-Panel běží jako `APP&WEB/IntroPage/src/app/vast-rigs/page.tsx` (+ `Dashboard.tsx`),
+Panel běží jako `apps/IntroPage/src/app/vast-rigs/page.tsx` (+ `Dashboard.tsx`),
 data zajišťuje `tools/vast/vastctl.py` na `127.0.0.1:8088`
 (`zion-desktop-agent`-prostředí: user unit `vastctl-serve.service`),
 přes nginx `location /vast-ops/` → **basic auth** (`/etc/nginx/.htpasswd-vast`).
@@ -376,7 +376,7 @@ zastavuje **minery**, ne instanci; zrušení pronájmu = Vast UI/API
 | `tools/vast/vastctl.py` | Panel backend + `serve` (`:8088`), `offers`, `rent`, `launch`, `stop`, `daemon` |
 | `tools/vast/vast_inference.py` | Docker/vLLM deploy helper (validace, loopback, health) |
 | `tools/vast/vastctl-serve.service` | user unit pro panelové API |
-| `APP&WEB/IntroPage/src/app/vast-rigs/` | UI panelu (`page.tsx`, `Dashboard.tsx`) |
+| `apps/IntroPage/src/app/vast-rigs/` | UI panelu (`page.tsx`, `Dashboard.tsx`) |
 | `~/.continue/config.yaml` | Continue (VS Code) — modely, reasoning budget |
 | `~/.lmstudio/.internal/http-server-config.json` | LM Studio API (port, JIT on/off) |
 | `~/.lmstudio/settings.json`, `~/.lmstudio/apps/bionic/settings.json` | default kontext modelů (65536) |

@@ -69,10 +69,10 @@ L1/miner/
 
 ---
 
-## APP&WEB/desktop-agent — Desktop mining klient
+## apps/desktop-agent — Desktop mining klient
 
 ```
-APP&WEB/desktop-agent/
+apps/desktop-agent/
 ├── package.json
 ├── src/
 │   ├── main.js                      # Electron orchestrace (Rust → Python fallback)
@@ -117,7 +117,7 @@ L1/cosmic-harmony/src/gpu/kernels/    ← zdroj pravdy
     ↓ (prepare-rust-miner.js sync)
 L1/miner/src/miner/gpu/kernels/       ← build-time kopie
 L1/native-libs/all/                    ← packaging kopie
-APP&WEB/desktop-agent/resources/mining/ ← runtime kopie
+apps/desktop-agent/resources/mining/ ← runtime kopie
 ```
 
 ---

@@ -10,7 +10,7 @@ This document audits unit naming and conversion consistency across:
 - L1 core (`V3/L1/core`)
 - Pool + wallet RPC
 - ZionOS dashboard (`ZION_OS/dashboard/app.py`)
-- Website (`APP&WEB/website-v2.9`)
+- Website (`apps/website-v2.9`)
 - Bridge / DAO / Atomic-Swap / WARP daemons
 
 It also captures the verified backend endpoint matrix that the website
@@ -45,8 +45,8 @@ end with `_flowers`. UI/dashboard converts at the rendering boundary.
 | L1 core | `V3/L1/core/src/emission.rs:11` | `FLOWERS_PER_ZION: u64 = 1_000_000` |
 | L1 wallet | `V3/L1/core/src/wallet.rs:156` | `FLOWERS_PER_ZION` |
 | Pool | `V3/L1/pool/src/payout.rs` | `FLOWERS_PER_ZION` |
-| Website | `APP&WEB/website-v2.9/src/lib/constants.ts` | `FLOWERS_PER_ZION` (added 2026-06-25); `ATOMIC_UNITS_PER_ZION` retained as deprecated alias |
-| Website RPC | `APP&WEB/website-v2.9/src/lib/zion-rpc.ts` | `ATOMIC_PER_ZION` (local) — to migrate to `FLOWERS_PER_ZION` |
+| Website | `apps/website-v2.9/src/lib/constants.ts` | `FLOWERS_PER_ZION` (added 2026-06-25); `ATOMIC_UNITS_PER_ZION` retained as deprecated alias |
+| Website RPC | `apps/website-v2.9/src/lib/zion-rpc.ts` | `ATOMIC_PER_ZION` (local) — to migrate to `FLOWERS_PER_ZION` |
 
 ### Conversion helpers (TS)
 
@@ -446,6 +446,6 @@ ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94 -- \
 
 - `AGENTS.md` → "Canonical Units (FLOWERS_PER_ZION)" section
 - `V3/L1/core/src/emission.rs` — canonical Rust constant
-- `APP&WEB/website-v2.9/src/lib/constants.ts` — canonical TS constant
+- `apps/website-v2.9/src/lib/constants.ts` — canonical TS constant
 - `ZION_OS/dashboard/app.py` — dashboard endpoint inventory
 - `ZIONTHEME.md` §11 — accompanying site-wide theme rollout

@@ -39,7 +39,7 @@
 |---|---|---|
 | **`V3/`** | aktivní clean‑room mainnet (workspace `3.0.0`) | **production target** |
 | `L1`..`L6` (root) | legacy 2.9.6 cargo workspace, archiv/migrace | reference only |
-| `APP&WEB/` | desktop‑agent (Electron), mobile‑app (RN), website‑v2.9, public_html (689 MB) | mimo scope auditu |
+| `apps/` | desktop‑agent (Electron), mobile‑app (RN), website‑v2.9, public_html (689 MB) | mimo scope auditu |
 | `docs/`, `V3/docs/` | 43 MB dokumentace + whitepapers + status reporty | mimo scope auditu |
 | `docker/`, `V3/docker/` | compose stacky | OK |
 
@@ -620,7 +620,7 @@ Pokud C kód předpokládá min. velikost `header` (např. 32 bajtů hash) a Rus
 - ❌ DAO governance smart contracts (jen Rust off‑chain part).
 - ❌ Live testnet/mainnet behavior.
 - ❌ Network‑level (DDoS, eclipse attacks).
-- ❌ APP&WEB frontend / desktop‑agent.
+- ❌ apps frontend / desktop‑agent.
 - ❌ Solidity contracts (deployed na Base, mimo V3 Rust workspace).
 - ❌ Performance/benchmark numbers.
 

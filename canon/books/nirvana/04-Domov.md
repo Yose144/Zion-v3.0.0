@@ -40,7 +40,7 @@ V technologické realitě to znamená prostředí, kde uživatel není produktem
 | Prvek příběhu | Co je na síti ZION ověřitelné |
 |---|---|
 | **Jednotný a bezpečný vchod** | ZIS běží na `auth.zionterranova.com` (Fastify + Prisma + Ed25519/SIWE); health endpoint vrací `200 OK`. |
-| **Dveře bez petlice** | Veřejné SDK (`APP&WEB/zion-wallet-sdk`) s plnou podporou lokální generace klíčů BIP39/Ed25519. |
+| **Dveře bez petlice** | Veřejné SDK (`apps/zion-wallet-sdk`) s plnou podporou lokální generace klíčů BIP39/Ed25519. |
 | **Teplo krbu (Pool)** | PPLNS pool na portu `8444` s nulovým podílem neoprávněně zadržených odměn; 442 000+ accepted shares. |
 | **Sůl na stole** | Transparentní rozdělení poplatků přímo v coinbase výstupech, kontrolovatelné přes jakýkoliv L1 block explorer. |
 | **Svoboda odchodu i příchodu** | Žádný vendor lock-in — uživatel má vždy plnou kontrolu nad svými privátními klíči a může kdykoliv migrovat. |

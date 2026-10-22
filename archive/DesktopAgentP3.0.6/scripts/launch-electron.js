@@ -2,7 +2,7 @@
 /**
  * Cross-platform Electron launcher.
  * Bypasses the npm → cmd.exe shell which breaks on paths containing '&'
- * (e.g. APP&WEB).  This script calls electron directly via Node child_process.
+ * (e.g. apps).  This script calls electron directly via Node child_process.
  */
 
 const { execFileSync } = require('child_process');

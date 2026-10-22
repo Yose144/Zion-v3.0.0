@@ -2,7 +2,7 @@
 
 ## Scope
 
-Tento handoff shrnuje praci na stabilizaci `APP&WEB/website-v2.9` po velkem pullu a API/topology zmenach.
+Tento handoff shrnuje praci na stabilizaci `apps/website-v2.9` po velkem pullu a API/topology zmenach.
 
 Cil byl:
 - opravit realne rozbite website API kontrakty,
@@ -31,11 +31,11 @@ Problem:
 
 Fix:
 - pridana route proxy:
-  - `APP&WEB/website-v2.9/src/app/api/dao/[...path]/route.ts`
+  - `apps/website-v2.9/src/app/api/dao/[...path]/route.ts`
 - pridana canonical DAO URL konstanta:
-  - `APP&WEB/website-v2.9/src/lib/site.ts`
+  - `apps/website-v2.9/src/lib/site.ts`
 - DAO client prepnuty na internal proxy default:
-  - `APP&WEB/website-v2.9/src/lib/dao-api.ts`
+  - `apps/website-v2.9/src/lib/dao-api.ts`
 
 ### 2) Revenue admin page volala neexistujici endpoint
 
@@ -44,9 +44,9 @@ Problem:
 
 Fix:
 - frontend prepnuty na interni endpoint:
-  - `APP&WEB/website-v2.9/src/app/admin/revenue-v3/page.tsx`
+  - `apps/website-v2.9/src/app/admin/revenue-v3/page.tsx`
 - pridana file-backed API route:
-  - `APP&WEB/website-v2.9/src/app/api/v2.9/revenue/config/route.ts`
+  - `apps/website-v2.9/src/app/api/v2.9/revenue/config/route.ts`
 - route cte/savuje aktivni config s fallback kandidaty:
   - `config/ch3_zion_only_settings.json`
   - `config/ch3_revenue_settings.json`
@@ -58,7 +58,7 @@ Problem:
 
 Fix:
 - normalizace hash inputu:
-  - `APP&WEB/website-v2.9/src/app/api/blockchain/transactions/route.ts`
+  - `apps/website-v2.9/src/app/api/blockchain/transactions/route.ts`
 
 ### 4) Explorer transactions page potichu prazdna
 
@@ -67,15 +67,15 @@ Problem:
 
 Fix:
 - robustni parsing payloadu + mapovani `tx_hash/tx_id`:
-  - `APP&WEB/website-v2.9/src/app/explorer/transactions/TransactionsPageClient.tsx`
+  - `apps/website-v2.9/src/app/explorer/transactions/TransactionsPageClient.tsx`
 
 ### 5) Chybne explorer odkazy
 
 Fixy:
 - payout TX link v miner dashboardu opraven na TX detail:
-  - `APP&WEB/website-v2.9/src/components/MinerDashboard.tsx`
+  - `apps/website-v2.9/src/components/MinerDashboard.tsx`
 - `RecentBlocks` link opraven z neexistujiciho `/blocks` na `/explorer/blocks`:
-  - `APP&WEB/website-v2.9/src/components/RecentBlocks.tsx`
+  - `apps/website-v2.9/src/components/RecentBlocks.tsx`
 
 ### 6) Deploy blocker v compose (critical)
 
@@ -84,7 +84,7 @@ Problem:
 
 Fix:
 - `docker/docker-compose.website.yml`
-  - build context opraven na `../APP&WEB/website-v2.9`
+  - build context opraven na `../apps/website-v2.9`
 
 ## Validation status
 
@@ -109,7 +109,7 @@ Code je pushnuty, deploy z tohoto VS Code agent terminalu nebyl dokonceny.
 Pouzit normalni lokalni shell (mimo tento agent terminal), pak:
 
 ```powershell
-scp -i "$HOME/.ssh/zion_hetzner_key" -r "C:\Users\anaha\Desktop\ZION\2.9.6-main\APP&WEB\website-v2.9" root@91.98.122.165:/root/zion-web-deploy/
+scp -i "$HOME/.ssh/zion_hetzner_key" -r "C:\Users\anaha\Desktop\ZION\2.9.6-main\apps\website-v2.9" root@91.98.122.165:/root/zion-web-deploy/
 scp -i "$HOME/.ssh/zion_hetzner_key" "C:\Users\anaha\Desktop\ZION\2.9.6-main\docker\docker-compose.website.yml" root@91.98.122.165:/root/zion-web-deploy/docker/
 ssh -i "$HOME/.ssh/zion_hetzner_key" root@91.98.122.165
 ```

@@ -286,5 +286,5 @@ Hráč musí projít všemi deseti zónami, získat jejich mandáty a sjednotit 
 ---
 
 > **Poznámka:** Tento koncept je open-source v rámci OASIS. Cokoliv přidáš — lore, questy, frakce, místa — piš sem.  
-> Hlavní vize OASIS: [`APP&WEB/OasisWeb/OASIS_UNIVERSE.md`](../../../APP&WEB/OasisWeb/OASIS_UNIVERSE.md)  
+> Hlavní vize OASIS: [`apps/OasisWeb/OASIS_UNIVERSE.md`](../../../apps/OasisWeb/OASIS_UNIVERSE.md)  
 > Atlantis Circle avatáři: [`docs/TerraNova/atlantis/KONCEPT-AVATARI-OASIS.md`](../../../TerraNova/atlantis/KONCEPT-AVATARI-OASIS.md)

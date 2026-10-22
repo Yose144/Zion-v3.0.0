@@ -20,7 +20,7 @@ docker run --name "${CONTAINER}" \
     mkdir -p /build && rsync -a \
       --exclude=".venv" --exclude="target" --exclude="node_modules" \
       --exclude=".git" --exclude="__pycache__" --exclude="*.pyc" \
-      --exclude="APP&WEB" --exclude="ZionDex" --exclude="PoC-lab" \
+      --exclude="apps" --exclude="ZionDex" --exclude="PoC-lab" \
       --exclude="HiranV2.x" --exclude="edge-deploy" --exclude="docs" \
       --exclude="archive" --exclude="ZION_OS" --exclude="ZionStart" \
       --exclude="public" --exclude="*.db" --exclude="*.db-wal" \

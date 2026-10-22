@@ -15,7 +15,7 @@ Generates:
 
 Then copies them into:
   - public/docs/WP/
-  - APP&WEB/website-v2.9/public/docs/WP/
+  - apps/website-v2.9/public/docs/WP/
 
 The script reuses the content from the existing generate_genesis_pdfs.py and
 generate_wplite_pdfs.py modules but monkey-patches their renderer class to
@@ -40,7 +40,7 @@ from zion_pdf import ZionPDF
 
 REPO_ROOT = WP_DIR.parent.parent
 PUBLIC_WP = REPO_ROOT / "public" / "docs" / "WP"
-WEB_WP = REPO_ROOT / "APP&WEB" / "website-v2.9" / "public" / "docs" / "WP"
+WEB_WP = REPO_ROOT / "apps" / "website-v2.9" / "public" / "docs" / "WP"
 
 PDFS = {
     "ZION_Book_of_Genesis_v3.0_EN.pdf",

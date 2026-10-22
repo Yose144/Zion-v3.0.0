@@ -202,7 +202,7 @@ COSMIC_V42_GPU_AVAILABLE = False
 _chv42_gpu = None
 try:
     import sys as _sys, os as _os
-    _sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', 'APP&WEB', 'desktop-agent', 'resources', 'mining'))
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), '..', 'apps', 'desktop-agent', 'resources', 'mining'))
     from cosmic_harmony_v42_gpu import CHv42GPU, detect_best_backend as _chv42_detect_backend
     _chv42_gpu = CHv42GPU(backend="auto")
     COSMIC_V42_GPU_AVAILABLE = True

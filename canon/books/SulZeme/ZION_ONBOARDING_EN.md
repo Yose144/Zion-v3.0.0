@@ -258,7 +258,7 @@ Not everything in the vision is ready yet. **Oasis Web is a live preview — not
 - Golden Egg is currently a collection of clues and story; the 108 clues and reward pools are not fully active.
 - Dharma Credits e-shop and the full 202 avatars in the web client are still being completed.
 
-> **Source:** [`APP&WEB/OasisWeb/README.md`](../../../APP&WEB/OasisWeb/README.md), [`OASIS_WEB_JOURNAL.md`](../../../docs/oasis/OASIS_WEB_JOURNAL.md), live API `https://oasis.zionterranova.com/api/v1/oasis/*`.
+> **Source:** [`apps/OasisWeb/README.md`](../../../apps/OasisWeb/README.md), [`OASIS_WEB_JOURNAL.md`](../../../docs/oasis/OASIS_WEB_JOURNAL.md), live API `https://oasis.zionterranova.com/api/v1/oasis/*`.
 
 ### 202 avatars
 
@@ -526,7 +526,7 @@ Easiest path for beginners:
 3. Install and allow in system settings.
 4. Create a wallet, set pool `pool.zionterranova.com:8444`, worker name and start mining.
 
-> **Source:** `AGENTS.md`, Public Miner & Desktop release build section; `APP&WEB/website-v2.9/public/docs/onboard/desktop.md`.
+> **Source:** `AGENTS.md`, Public Miner & Desktop release build section; `apps/website-v2.9/public/docs/onboard/desktop.md`.
 
 ### Bridge
 

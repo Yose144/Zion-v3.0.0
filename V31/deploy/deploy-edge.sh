@@ -98,7 +98,7 @@ RSYNC_EXCLUDES=(
     '--exclude=/archive'
     '--exclude=/update-server'
     '--exclude=/zion-miner-smos'
-    '--exclude=/APP&WEB'
+    '--exclude=/apps'
     '--exclude=/config'
 )
 
@@ -206,7 +206,7 @@ if ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "test -x '${WEB_DEPLOY_SCRIPT}'" 2>
     REMOTE_HOST="$EDGE_HOST" REMOTE_USER="$EDGE_USER" SSH_KEY="$SSH_KEY" \
         bash "$WEB_DEPLOY_SCRIPT" --remote-src "$REMOTE_WEB" --remote-compose "$REMOTE_WEB"
 else
-    warn "Website deploy script not found on Edge at ${WEB_DEPLOY_SCRIPT} — skipping web deploy (APP&WEB excluded from rsync)"
+    warn "Website deploy script not found on Edge at ${WEB_DEPLOY_SCRIPT} — skipping web deploy (apps excluded from rsync)"
 fi
 
 # ── Step 7: Install systemd services and timers ──
@@ -340,16 +340,16 @@ fi
 # ── Step 9b: Deploy ZION Identity Service (ZIS) ──
 log "Deploying ZION Identity Service (auth.zionterranova.com)..."
 REPO_ROOT_REAL="$(cd "${REPO_ROOT}/.." && pwd)"
-if [[ -f "${REPO_ROOT_REAL}/APP&WEB/identity/deploy/deploy-zis.sh" ]]; then
-    if bash "${REPO_ROOT_REAL}/APP&WEB/identity/deploy/deploy-zis.sh" --build-only; then
+if [[ -f "${REPO_ROOT_REAL}/apps/identity/deploy/deploy-zis.sh" ]]; then
+    if bash "${REPO_ROOT_REAL}/apps/identity/deploy/deploy-zis.sh" --build-only; then
         # deploy-zis.sh --build-only builds locally; run the full deploy separately to
-        # avoid pulling in APP&WEB via the main rsync exclude list.
-        bash "${REPO_ROOT_REAL}/APP&WEB/identity/deploy/deploy-zis.sh" || warn "ZIS deploy step had issues (continuing)"
+        # avoid pulling in apps via the main rsync exclude list.
+        bash "${REPO_ROOT_REAL}/apps/identity/deploy/deploy-zis.sh" || warn "ZIS deploy step had issues (continuing)"
     else
         warn "ZIS build failed; skipping ZIS deploy"
     fi
 else
-    warn "ZIS deploy script not found at APP&WEB/identity/deploy/deploy-zis.sh"
+    warn "ZIS deploy script not found at apps/identity/deploy/deploy-zis.sh"
 fi
 
 # ── Step 10: Wait and verify ──

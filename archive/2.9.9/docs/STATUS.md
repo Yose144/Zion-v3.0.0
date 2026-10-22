@@ -9,8 +9,8 @@
 | Miner (CPU) | ✅ Mining | Prague 91.98.122.165 |
 | Seed node | ✅ Running | Prague 91.98.122.165 |
 | Prometheus + Grafana | ✅ Running | Prague 91.98.122.165 |
-| Desktop Agent (Electron) | ✅ Packaged | APP&WEB/desktop-agent |
-| Website | ✅ Live | APP&WEB/website-v2.9 |
+| Desktop Agent (Electron) | ✅ Packaged | apps/desktop-agent |
+| Website | ✅ Live | apps/website-v2.9 |
 
 ## Chain State
 

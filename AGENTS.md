@@ -22,7 +22,7 @@
 - **Rollback:** `/root/cutover-*-rollback.sh` na EDGI — jedno okno = jeden skript. Zpětnovazné zobrazení kroků v [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md).
 - **Health:** `/api/health` = 28 služeb / 0 not-up; dashboard karta EDGE2 (`/api/edge2-status`).
 - **G8 30-day continuous-run gate (2026-10-21):** Cíl ≥99.9% uptime, žádný critical incident (≥900 s). Run #3 (`g8-20261010T063655Z`) skončil `failed` (94.87%) — 10.1 h `chain_live` outage (2026-10-10T23:00 → 10-11T09:07, 36 420 s) + 24 min výpadek všech 6 služeb (10-18T16:34). **RCA:** G8 probe sledoval port **9445 = EDGE2 primary přes `zion-chain-tunnel` (SSH `-L`)**. Když se tunel zhroutil (SSH `ServerAliveCountMax=3` / 15 s), probe přestal odpovídat a `chain_live=0` až do obnovení tunelu. Žádný skutečný výpadek uzel — jen single-point-of-failure v monitorování. **Oprava:** G8 probe na Edge nyní sleduje **lokální followery `9446,9447` + primární `9445`** (`G8_NODE_RPC_PORTS=9446,9447,9445`), restart `zion-g8-probe.service`. EDGE2 (primární uzel) nyní má vlastní G8 probe (`zion-g8-probe.service`, port 9105, `G8_NODE_RPC_PORTS=9445`) a `zion-edge-watchdog.timer` (120 s). Run #4 (`g8-20261021T151308Z`) spuštěn, gate `pending`. Zároveň nasazen pool fix `ZION_L1_RPC_TIMEOUT_MS` (per-attempt 12 s, `L1Endpoints` 4→12 s na Edge; EDGE2 pool binárka je stále stará, ale EDGE2 nemá lokální pool — tunelovaný z Edge).
-- **ZIS hardening 2026-10-21 (kompletně nasazené, oba boxy):** `APP&WEB/identity` přepsáno na produkční úroveň — **EdDSA/Ed25519 JWT** (`JWT_PRIVATE_KEY` v env **jako base64**, plain PEM/escaped-`\n` padá v `createPrivateKey`), reálné JWKS `/.well-known/jwks.json` (`kid=zis-4c28033ed681216f`), legacy HS256 verify přes `JWT_SECRET` do expirace starých session. DB-backed `AuthChallenge`/`WebAuthnCeremony`/`AuthEvent`/`VerificationToken` (+hourly prune), audit log (SetNull na delete), `/metrics`, admin API (`role=admin` nebo `x-service-key`), service-key notifikace, e-mail verify přes sendmail/postfix (`ZIS_EMAIL_ENABLED=1`), unlink/primary/delete/google-link/owner-wins login. **Systemd unit = `/usr/local/bin/node` (Node 22)** — `/usr/bin/node` je Node 18 a crashuje. **Dvě instance, jedna DB+jedna klíč:** edge (public `auth.zionterranova.com` přes nginx) + EDGE2 `127.0.0.1:8096` (lokální pro warpd `ZION_MULTICHAIN_ZIS_AUTH=1`); deploy script `deploy/deploy-zis.sh` syncne obě strany, rsync `/opt/zion/identity` mezi boxy. **L2 auth = cookie introspekce** přes `/api/auth/me` — wallet proxy musí forwardovat `Cookie: zion_session=<signed>` (fix `374548faf`, regresní testy `6f81ec8cf`); Bearer projde jen pro `zis_*` API klíče. **Pearl chainType fix** (`ef398ab5a`): `zis_chain_type` bucketoval Utxo→"bitcoin" a skrýval `pearl` linked adresy — Utxo teď `chain.as_str()`. warpd běží **jen na EDGE2** (edge1 unit inactive; edge1 8454 = SSH tunnel do EDGE2). **Monitoring:** Prometheus job `zis` + rules `/etc/prometheus/rules/zis.rules.yml` (ZisDown/HighErrorRate/PendingChallenges/AuthFailureSpike). **UI:** website-v2.9 (EDGE2 `/opt/zion/APP&WEB/website-v2.9`) SecurityPanel má link form ZION/EVM/**Quantus/Pearl** (ZION-key attestation `challenge\n<chain>:<addr>`). Testy: identity 45/45, multichain 736/736.
+- **ZIS hardening 2026-10-21 (kompletně nasazené, oba boxy):** `apps/identity` přepsáno na produkční úroveň — **EdDSA/Ed25519 JWT** (`JWT_PRIVATE_KEY` v env **jako base64**, plain PEM/escaped-`\n` padá v `createPrivateKey`), reálné JWKS `/.well-known/jwks.json` (`kid=zis-4c28033ed681216f`), legacy HS256 verify přes `JWT_SECRET` do expirace starých session. DB-backed `AuthChallenge`/`WebAuthnCeremony`/`AuthEvent`/`VerificationToken` (+hourly prune), audit log (SetNull na delete), `/metrics`, admin API (`role=admin` nebo `x-service-key`), service-key notifikace, e-mail verify přes sendmail/postfix (`ZIS_EMAIL_ENABLED=1`), unlink/primary/delete/google-link/owner-wins login. **Systemd unit = `/usr/local/bin/node` (Node 22)** — `/usr/bin/node` je Node 18 a crashuje. **Dvě instance, jedna DB+jedna klíč:** edge (public `auth.zionterranova.com` přes nginx) + EDGE2 `127.0.0.1:8096` (lokální pro warpd `ZION_MULTICHAIN_ZIS_AUTH=1`); deploy script `deploy/deploy-zis.sh` syncne obě strany, rsync `/opt/zion/identity` mezi boxy. **L2 auth = cookie introspekce** přes `/api/auth/me` — wallet proxy musí forwardovat `Cookie: zion_session=<signed>` (fix `374548faf`, regresní testy `6f81ec8cf`); Bearer projde jen pro `zis_*` API klíče. **Pearl chainType fix** (`ef398ab5a`): `zis_chain_type` bucketoval Utxo→"bitcoin" a skrýval `pearl` linked adresy — Utxo teď `chain.as_str()`. warpd běží **jen na EDGE2** (edge1 unit inactive; edge1 8454 = SSH tunnel do EDGE2). **Monitoring:** Prometheus job `zis` + rules `/etc/prometheus/rules/zis.rules.yml` (ZisDown/HighErrorRate/PendingChallenges/AuthFailureSpike). **UI:** website-v2.9 (EDGE2 `/opt/zion/APP&WEB/website-v2.9`) SecurityPanel má link form ZION/EVM/**Quantus/Pearl** (ZION-key attestation `challenge\n<chain>:<addr>`). Testy: identity 45/45, multichain 736/736.
 - **AI-native + Hiran inference (2026-10-22, obnoveno po výpadku rigu):** `zion-v31-ai-native` běží na **EDGE2** `:8001` (binárka přebudovaná v `rust:1.97-bullseye`, max GLIBC 2.30) — **Maestro v2.4 live** (`/v2/info`, `/v2/health-matrix`, `/v2/plan`; mutations default OFF + `requires_approval` gate), BM25 RAG **39 docs / 138 chunků** v `/opt/zion/data/l3-rag-docs` (EDGE2), **konstituční systémový prompt** (fee split 89/5/5/1, 1 ZION = 1e6 flowers, PoW/L1/L2–L6) — bez něj 8B model halucinoval. **Primární inference = operátorský PC** (karty RX 5600 XT + GTX **1070 Ti**; `hiran-v2.3mini-Q5_K_M.gguf` běží na **standalone `zion-hiran-cuda.service`** = `~/llama-cpp-cuda/llama-server` (sm_61 custom build) na `127.0.0.1:8071`, `-ngl 30 -c 12288 -ctk/-ctv q8_0 -fa on --reasoning off --alias zion-l3,hiran-v2.3mini`, ~6.9 GB VRAM trvale — LM Studio neumí KV-quant flagy → ctx 4096 f16 byl strop, q8 KV → 12288; ai-native `LLM_MODEL=zion-l3` obslouží alias; **`zion-hiran-proxy.service` `:1235` routuje podle `model` pole: zion-l3/hiran* → `:8071`, `qwen2.5-coder-7b-instruct` → `:8072` (`zion-coder-cuda.service`, GPU ctx 16384 — fallback `:1234` když neběží), ostatní → LM Studio `:1234`** + injektuje `reasoning_effort:"none"` do POST chat requestů bez parametru): PC `:1235` → `:8071` → reverse tunnel `zion-hiran-tunnel` → Edge `:8002` → `zion-edge-tunnel` → EDGE2 `:8004` → `LLM_BASE_URL`. **LM Studio `:1234` = CPU-ONLY** — `CUDA_VISIBLE_DEVICES=""` v `lm-studio.service` → JIT/UI load libovolného modelu nemůže OOMnout/SIGABRTnout o VRAM; GPU modely = jen standalone pair (use-hiran.sh ↔ use-coder.sh se vzájemně stopnou; `lms-use.sh <id>` = CPU load s ctx bound, heavy modely >15 GB jen po jednom — RAM 30 GB). Continue: všechny chat modely → `:1235`, embed → `:1234`. **Záloha = EDGE2 CPU** (`zion-hiran-inference.service`, `LLM_FALLBACK_URL=http://127.0.0.1:8002/v1`, 2.4 tok/s) — chat nepadne, když PC vypne. Timeouty: primární 90 s, fallback 180 s (jinak visel mrtvý tunel 300 s). Veřejný `app.zionterranova.com/api/ai-chat` = **200** (dřív 503). **Mining vs inference na PC:** nový desktop-agent config key **`gpuDevice`** pinuje mining na RX 5600 XT (`gfx1010`) + `srbminerGpuId="0"` + `threads=5` (Vega 64 od 22.10 odpoledne mimo PC — inference patří GTX 1070 Ti přes standalone llama.cpp :8071; `lm_head` dřív na CPU → 0.25 → 6+ tok/s). **TDR past:** `GGML_VULKAN_DEVICE` se ignoruje (backend štěpí model mezi karty) a příliš vysoké `-ngl` při plné VRAM = `amdgpu ring comp timeout` → `device lost` → core dump.
 - **Open items:** edge cleanup ~62 G zdrojových dat (až po observačním období — **NEMAZAT bez potvrzení**) · `PRL_PAYOUT_DRY_RUN=1` (dry-run) · `WARP_API_KEY` unset (pre-existing) · `WARP_BTC_SWAP_ENABLED=0` (safety hold do externího auditu) · EDGE2 G8 evidence + watchdog nyní nasazeny (viz výše) · **SMOS rig 518837 je offline** (Edge `:8003`/`:8322` refused) → produkční inference přesunuta na PC + EDGE2 CPU zálohu; rig obnovit nebo úplně převezmout.
 
@@ -50,7 +50,7 @@
 - Treat legacy root trees (`L1/`, `L2/`, `L3/`, older docs/archive content) as migration/reference material unless a task explicitly targets them.
 - For `V31` work, prefer changing only `V31/**` unless the task explicitly requires cross-tree sync. `V3/` is now at `archive/V3/` (read-only reference).
 - **V3.1 / V31 status (updated 2026-08-10):** `V31/` workspace (`3.1.0-beta`, protocol `3.1.0-alpha`) is **PRODUCTION** — V31 cutover complete. `cargo test --workspace` passes (2178 tests, 0 failures), `cargo clippy --workspace` clean (pre-existing warnings only). **Phase B+C+S COMPLETE**, **D.2 Cutover COMPLETE**, **D.3 Post-cutover D3.1-D3.4 PASS**. V31 node (`zion-v31-node.service`, P2P 8335, RPC 9445) is production — public RPC 8443 → V31, chain height 1000+. V31 pool (`zion-v31-pool.service`, Stratum 8444, HTTP API 8080) is production — shares accepted, payout confirmation sweep active; **2026-08-10: Edge pool binár rebuildnut a redeploynut s aktuálními `auxpow_bridge`/`auxpow_runtime` fixy, VRSC/ZANO share nyní acceptovány upstream (`fe175794f`). V31 multichain (`zion-v31-multichain.service`, port 8453/8454) — /health 200 OK. V31 DAO (`zion-v31-dao.service`, port 8456) and V31 OASIS (`zion-v31-oasis.service`, port 8094) are active. V31 miner binary (stratum v1 client) mining live. V3 pool/node disabled. Tag `pre-v31-cutover` marks last V3-production commit. `V3/`, `AuXpow/`, `ZionDex/` archived to `archive/`. **L2:** bridge/warp/atomic-swap/ziondex/swap-aggregator unified into **Multi-Chain** crate (`V31/L2/multichain`). See [`PLAN_TO_3.1.md`](./docs/3.1/PLAN_TO_3.1.md), [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) and [`V3.1_INTEGRATION_PLAN.md`](./docs/3.0.6/V3.1_INTEGRATION_PLAN.md).
-- Avoid incidental edits in `APP&WEB/**` when the task is unrelated to website, desktop, or mobile work.
+- Avoid incidental edits in `apps/**` when the task is unrelated to website, desktop, or mobile work.
 - If deployment behavior changes, update every source of operational truth together: compose files, Docker docs, runbooks, scripts, and status docs.
 - If docs disagree, use this order of truth: `docs/3.2/StatusV3.md` → `ROADMAP.md` / `V31/README.md` / `V31/STATUS.md` → `V31/docs/**` → older `STATUS.md`, root README, and archived docs.
 - Root README / older plans may still mention historical multi-server topology. Verify live topology against `StatusV3.md` before making operational claims.
@@ -90,7 +90,7 @@ The public repo contains a **curated subset** of the private repo — only files
 
 ### What's NOT in public/ (stays private)
 
-- `APP&WEB/` — website, desktop agent, mobile app source
+- `apps/` — website, desktop agent, mobile app source
 - `ZION_OS/` — dashboard, monitoring, operational scripts
 - `ZionStart/` — bootstrap tooling
 - `PoC-lab/` — research/proof-of-concept code
@@ -135,9 +135,9 @@ For future releases (e.g. v3.0.4-beta, v3.1.0, etc.):
 
 There are **two separate public releases** on `github.com/Zion-TerraNova/v3-Mainnet`:
 
-- **Desktop App** — source in `APP&WEB/desktop-agent/`, release tag `v3.1.0-desktop`.
+- **Desktop App** — source in `apps/desktop-agent/`, release tag `v3.1.0-desktop`.
   - Packages: `*.dmg` (macOS arm64), `*.AppImage`, `*.deb` (Linux x86_64), `*.exe` + `*.zip` (Windows x64).
-  - Build: `npm run build:all` in `APP&WEB/desktop-agent/` on an Apple Silicon Mac, or via `.github/workflows/desktop-release.yml`.
+  - Build: `npm run build:all` in `apps/desktop-agent/` on an Apple Silicon Mac, or via `.github/workflows/desktop-release.yml`.
   - Bundles `zion-miner`, `zion-universal-miner`, `node`, `zion` inside the Electron app.
 
 - **Terminal Miner** — source in `V31/L1/miner/`, release tag `v3.1.0-cli`.
@@ -213,13 +213,13 @@ public/ README files (EN + 4 translations) include a **Network Status** section 
 - **WARP Lightning Network bridge (2026-06-30):** [`docs/WARP_LIGHTNING_PLAN.md`](./docs/WARP_LIGHTNING_PLAN.md) — Native ZION L1 ↔ BTC Lightning bridge via BOLT11 invoices. BOLT11 parser + LND REST client + adapter implemented (`bolt11.rs`, `lightning_signer.rs`, `adapter/lightning.rs`). **Fáze A COMPLETE (2026-07-12):** Docker setup created at `V3/L3/warp/docker/lightning/` (bitcoind testnet + LND v0.18.2 + Redis), channel management scripts at `V3/L3/warp/scripts/lightning/`, systemd service `edge-deploy/systemd/zion-edge-lnd.service`. `lightning.rs` updated with Docker-aware errors + enhanced health_check (LND connectivity, channel balance, on-chain balance). Pending: deploy to Edge (`docker compose up`), sync testnet, open channels, extract macaroon.
 - **ZionDex L3 WARP Integration + Non-EVM Contracts + Cross-Chain AMM Routing (2026-07-12):** [`docs/3.0.5/archive-root-md/ZionDex.md`](./docs/3.0.5/archive-root-md/ZionDex.md) + [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) — ZionDex Router integrated with L3 WARP API (port 8453). `executor.rs` uses POST /transfers/outbound + /transfers/inbound + polling. `aggregator.rs` (~740 lines) — LiquidityAggregator with Dijkstra path finding, returns top 3 optimal cross-chain paths, 30s price cache. `quote.rs` — MultiPathQuote. `api.rs` — GET /quote/multi. 28/28 Rust tests. Web UI live at `/dex` and `/ziondex` on zionterranova.com. **Non-EVM ZION token contracts created** for 9 chains (Solana SPL, Tron TRC-20, Stellar asset, Cardano Plutus, Cosmos CW20, Aptos Move, Sui Move, NEAR NEP-141, TON jetton) in `V3/L2/bridge/contracts/non-evm/` — all implement bridgeMint/bridgeBurn with 5/5 quorum. Pending: deploy contracts to mainnet, ZionDex Router service on Edge (port 8454), relay keys. Contract address template: [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) — vyplň adresy po deploy.
 - **Vision documents (2026-06-30):** [`docs/3.0.3/nativeZion.md`](./docs/3.0.3/nativeZion.md) (WARP token naming: wZION EVM, ZION non-EVM) + [`docs/3.0.3/ZionDex.md`](./docs/3.0.3/ZionDex.md) (cross-chain DEX concept powered by WARP — path to Top 100) + [`docs/3.0.3/evoluZion.md`](./docs/3.0.3/evoluZion.md) (ZION as Tree of Life — evolution from PoW to Proof-of-Care / Protokol Péče, NPU-based caring computation, with full source references to TerraNova book + NPU_HARDWARE_MINING_THEORY.md + cosmic-harmony NPU Mix code).
-- **Zohar — kabalistický Strom života ZIONu (2026-07-03):** [`docs/Zohar/README.md`](./docs/Zohar/README.md) · [`docs/Zohar/01-SEFIROT-VRSTVY.md`](./docs/Zohar/01-SEFIROT-VRSTVY.md) · [`docs/Zohar/02-ROADMAP.md`](./docs/Zohar/02-ROADMAP.md) · [`docs/Zohar/03-O-KNIZE-ZOHAR.md`](./docs/Zohar/03-O-KNIZE-ZOHAR.md) — Mapování 10 sefirot + Da'at na ZION vrstvy L1-L6 (Keter=L1 Consensus, Chokmah=L1 PoW, Binah=L1 Validation, Chesed=L2 Multichain, Gevurah=L2 DAO, Tiferet=L3 WARP, Netzach=L3 AI/Hiran, Hod=L4 Oasis, Yesod=L5 Komunity, Malkhut=L6 Issobella). Tři pilíře: Milosrdenství (dávání) / Přísnost (disciplína) / Rovnováha (manifestace). Syntéza evoluZion.md (Strom života metafora) + TerraNova kniha (filosofie péče) v jazyce kabaly. **Fáze 0 (manifest) + Fáze 1 (web /app/zohar) + Fáze 2 (sefirot vow — [`V3/L5/docs/GOVERNANCE/sefirot-vow.md`](./archive/V3/L5/docs/GOVERNANCE/sefirot-vow.md), 11 slibů pro validátory) + Fáze 4 (getTreeHealth API — [`/api/zohar/tree-health`](./APP&WEB/website-v2.9/src/app/api/tree-of-life/tree-health/route.ts), živá data z blockchain/DeFi/bridge/NCL API mapovaná na 10 sefirot health score) hotové.** Fáze 2 on-chain: `SefirotVowToken` (soulbound ERC-721, [`V3/L2/contracts/hardhat/sol/SefirotVowToken.sol`](./archive/V3/L2/contracts/hardhat/sol/SefirotVowToken.sol), 19 tests pass) + `SefirotVowRegistry` (proposal lifecycle, [`V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol`](./archive/V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol), 10 tests pass) — kompilováno, deploy na Base mainnet pending (vyžaduje owner approval + gas). Fáze 3 (care task kategorie pro Protokol Péče) horizont — závisí na L1 consensus (2028+). Čistá dokumentační/web/governance/L2-contract vrstva — netýká se L1 consensus kódu.
+- **Zohar — kabalistický Strom života ZIONu (2026-07-03):** [`docs/Zohar/README.md`](./docs/Zohar/README.md) · [`docs/Zohar/01-SEFIROT-VRSTVY.md`](./docs/Zohar/01-SEFIROT-VRSTVY.md) · [`docs/Zohar/02-ROADMAP.md`](./docs/Zohar/02-ROADMAP.md) · [`docs/Zohar/03-O-KNIZE-ZOHAR.md`](./docs/Zohar/03-O-KNIZE-ZOHAR.md) — Mapování 10 sefirot + Da'at na ZION vrstvy L1-L6 (Keter=L1 Consensus, Chokmah=L1 PoW, Binah=L1 Validation, Chesed=L2 Multichain, Gevurah=L2 DAO, Tiferet=L3 WARP, Netzach=L3 AI/Hiran, Hod=L4 Oasis, Yesod=L5 Komunity, Malkhut=L6 Issobella). Tři pilíře: Milosrdenství (dávání) / Přísnost (disciplína) / Rovnováha (manifestace). Syntéza evoluZion.md (Strom života metafora) + TerraNova kniha (filosofie péče) v jazyce kabaly. **Fáze 0 (manifest) + Fáze 1 (web /app/zohar) + Fáze 2 (sefirot vow — [`V3/L5/docs/GOVERNANCE/sefirot-vow.md`](./archive/V3/L5/docs/GOVERNANCE/sefirot-vow.md), 11 slibů pro validátory) + Fáze 4 (getTreeHealth API — [`/api/zohar/tree-health`](./apps/website-v2.9/src/app/api/tree-of-life/tree-health/route.ts), živá data z blockchain/DeFi/bridge/NCL API mapovaná na 10 sefirot health score) hotové.** Fáze 2 on-chain: `SefirotVowToken` (soulbound ERC-721, [`V3/L2/contracts/hardhat/sol/SefirotVowToken.sol`](./archive/V3/L2/contracts/hardhat/sol/SefirotVowToken.sol), 19 tests pass) + `SefirotVowRegistry` (proposal lifecycle, [`V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol`](./archive/V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol), 10 tests pass) — kompilováno, deploy na Base mainnet pending (vyžaduje owner approval + gas). Fáze 3 (care task kategorie pro Protokol Péče) horizont — závisí na L1 consensus (2028+). Čistá dokumentační/web/governance/L2-contract vrstva — netýká se L1 consensus kódu.
 - **Public web quartet (2026-08-01):** Čtyři nezávislé veřejné služby běží současně:
-  - **Intro:** `https://zionterranova.com` — [`APP&WEB/website-v2.9/public/maintenance.html`](./APP&WEB/website-v2.9/public/maintenance.html), nasazený v `/var/www/maintenance/maintenance.html`, servírovaný systémovým nginxem. Stargate portál do OASIS.
-  - **Web2.9:** `https://app.zionterranova.com` — plný Next.js 16.2.9 web (`website-v2.9`), systemd `zion-website.service` na `127.0.0.1:3000`, proxy přes nginx. Deploy: [`APP&WEB/website-v2.9/deploy/deploy-web2.9.sh`](./APP&WEB/website-v2.9/deploy/deploy-web2.9.sh) (lokální build → rsync → `systemctl restart zion-website.service`).
-  - **OASIS Web:** `https://oasis.zionterranova.com` — separátní vizuální OASIS prezentace (`APP&WEB/OasisWeb`), build nasazený v `/var/www/oasis/`. Deploy: [`APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh`](./APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh) (Next.js export → rsync → `nginx -s reload`).
-  - **MarketPlace:** `https://market.zionterranova.com` — OASIS Artifact Marketplace (`APP&WEB/MarketPlace/`), Next.js 14 + ERC-1155 + Base L2. systemd `zion-marketplace.service` na `127.0.0.1:3100`, proxy přes nginx. Deploy: rsync → `npm install && npm run build` → `systemctl restart zion-marketplace.service`.
-- **Website design system unification (2026-07-03):** `APP&WEB/website-v2.9/src/app/globals.css` definuje unified design třídy: `.zion-container` (max-w-80rem wrapper), `.zion-section` (rounded panel s border + blur), `.zion-tile` (soft inner grid item s hover), `.zion-cta-banner` (gradient CTA sekce), `.zion-rainbow-card` / `.zion-rainbow-sub` (hero/feature cards s per-color `--rc` CSS variable). Audit 73 page.tsx souborů hotový. Refaktorované: `/ai-native`, `/roadmap-295`, `/admin/revenue-v3` (ad-hoc `bg-black/60 backdrop-blur-xl` → `zion-section`/`zion-tile`), `/account` (přidány CZ/EN překlady), `/login` (grid-cols-3 → responsive). Referenční implementace: `/admin/page.tsx`.
+  - **Intro:** `https://zionterranova.com` — [`apps/website-v2.9/public/maintenance.html`](./apps/website-v2.9/public/maintenance.html), nasazený v `/var/www/maintenance/maintenance.html`, servírovaný systémovým nginxem. Stargate portál do OASIS.
+  - **Web2.9:** `https://app.zionterranova.com` — plný Next.js 16.2.9 web (`website-v2.9`), systemd `zion-website.service` na `127.0.0.1:3000`, proxy přes nginx. Deploy: [`apps/website-v2.9/deploy/deploy-web2.9.sh`](./apps/website-v2.9/deploy/deploy-web2.9.sh) (lokální build → rsync → `systemctl restart zion-website.service`).
+  - **OASIS Web:** `https://oasis.zionterranova.com` — separátní vizuální OASIS prezentace (`apps/OasisWeb`), build nasazený v `/var/www/oasis/`. Deploy: [`apps/OasisWeb/deploy/deploy-oasis-web.sh`](./apps/OasisWeb/deploy/deploy-oasis-web.sh) (Next.js export → rsync → `nginx -s reload`).
+  - **MarketPlace:** `https://market.zionterranova.com` — OASIS Artifact Marketplace (`apps/MarketPlace/`), Next.js 14 + ERC-1155 + Base L2. systemd `zion-marketplace.service` na `127.0.0.1:3100`, proxy přes nginx. Deploy: rsync → `npm install && npm run build` → `systemctl restart zion-marketplace.service`.
+- **Website design system unification (2026-07-03):** `apps/website-v2.9/src/app/globals.css` definuje unified design třídy: `.zion-container` (max-w-80rem wrapper), `.zion-section` (rounded panel s border + blur), `.zion-tile` (soft inner grid item s hover), `.zion-cta-banner` (gradient CTA sekce), `.zion-rainbow-card` / `.zion-rainbow-sub` (hero/feature cards s per-color `--rc` CSS variable). Audit 73 page.tsx souborů hotový. Refaktorované: `/ai-native`, `/roadmap-295`, `/admin/revenue-v3` (ad-hoc `bg-black/60 backdrop-blur-xl` → `zion-section`/`zion-tile`), `/account` (přidány CZ/EN překlady), `/login` (grid-cols-3 → responsive). Referenční implementace: `/admin/page.tsx`.
 - **PoC-lab Fáze 3 — Hiran HTTP integrace, MockHiranServer, live llama-server (2026-07-08):** [`PoC-lab/`](./archive/PoC-lab/) — standalone Rust workspace (mimo `V3/`) implementující Proof-of-Care prototyp. **Fáze 1 (commit `2936fcb1`)** — kompletní základ: INT8 NPU VM (`poc-npu`), multi-backend cross-validace (`poc-verifier`), validator registry + Sefirot Vow lifecycle (`poc-registry`), reward split + slashing (`poc-economics`), E2E síťový simulátor s guardian/Bodhisattva Vow demo (`poc-sim`). **Fáze 2 (commit `9c12f362`)** — 119 testů PASS: `DharmaValidator` (5-pilířový pipeline) + `HiranAwareVerifier` + `NclReputationRegistry` + `ConsciousnessLevel` enum + multi-epoch stress testy + CLI. **Fáze 3 (commit `89115185` + nový commit)** — 145 testů PASS: `poc-hiran` nový crate (`HiranClient` trait, `LiveHiranClient` via `ureq` + `/v1/chat/completions`, `StubHiranClient`, `build_client()` factory, `MockHiranServer` via `tiny_http` na náhodném portu); `HiranNpuBackend` v `poc-npu` nyní volá živý HTTP endpoint; `poc-sim` výstup zobrazuje `hiran[live]` vs `hiran[stub]`; integrační testy `poc-sim/tests/integration_mock_hiran.rs` (6 testů — MockServer spawn/shutdown, 3 validátoři, multi-epoch, guardian bonus). **Live Hiran:** llama-server v2.2 Q4_K_M spuštěn lokálně na portu 8002 (`~5 tok/s` CPU), `poc-sim --hiran-url http://127.0.0.1:8002` ověřeno. Spec: [`docs/3.0.4/POC_HIRAN_INTEGRATION_SPEC.md`](./docs/3.0.4/POC_HIRAN_INTEGRATION_SPEC.md). Konceptuální základ: [`docs/3.0.4/PoC_CONCEPT.md`](./docs/3.0.4/PoC_CONCEPT.md). **Netýká se L1 consensus — čistě výzkumný prototyp.**
 
 ## Copilot agent quick-start (per-session checklist)
@@ -227,7 +227,7 @@ public/ README files (EN + 4 translations) include a **Network Status** section 
 When a new Copilot/Kimi/Devin session opens against this repo:
 
 1. **Read [`docs/3.0.3/COPILOT_COLLAB_PLAYBOOK.md`](./docs/3.0.3/COPILOT_COLLAB_PLAYBOOK.md) §3 (Capability Map)** to know what kind of task you're being asked for and what tier it belongs to.
-2. **Scope the task to one folder** (e.g. `V3/L1/pool/`, `APP&WEB/website-v2.9/`). Do not start with a workspace-wide `semantic_search` unless the task is genuinely cross-cutting.
+2. **Scope the task to one folder** (e.g. `V3/L1/pool/`, `apps/website-v2.9/`). Do not start with a workspace-wide `semantic_search` unless the task is genuinely cross-cutting.
 3. **Check `/memories/repo/` first** — canonical ports, build commands, edge services facts are seeded there to avoid re-grepping AGENTS.md every session.
 4. **Use the `Explore` subagent** for read-heavy investigation (≥ 5 files to open). Main thread stays focused; you get back one summary.
 5. **Never edit L1 consensus code** (`V3/L1/core/src/consensus.rs`, `genesis.rs`, `emission.rs`, `fee.rs`, `crypto.rs`, `cosmic-harmony/**`) without explicit human approval — see L1 Protocol section below.
@@ -440,24 +440,24 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
 ### App/Web subprojects (when task explicitly targets them)
 
 - Website:
-  - `npm --prefix "APP&WEB/website-v2.9" install`
-  - `npm --prefix "APP&WEB/website-v2.9" run dev`
-  - `npm --prefix "APP&WEB/website-v2.9" run lint`
+  - `npm --prefix "apps/website-v2.9" install`
+  - `npm --prefix "apps/website-v2.9" run dev`
+  - `npm --prefix "apps/website-v2.9" run lint`
   - **Production build:** `npx next build --webpack` (MUST use `--webpack` — Next.js 16 Turbopack cannot resolve local `.tgz` deps)
-  - **Theme system:** `.zion-rainbow-card` / `.zion-rainbow-sub` CSS classes with inline `style={{ '--rc': 'R, G, B' } as React.CSSProperties}`. Each page has its own accent color. See `APP&WEB/website-v2.9/README.md` for the full color map.
+  - **Theme system:** `.zion-rainbow-card` / `.zion-rainbow-sub` CSS classes with inline `style={{ '--rc': 'R, G, B' } as React.CSSProperties}`. Each page has its own accent color. See `apps/website-v2.9/README.md` for the full color map.
   - **Production web trio (2026-07-31):** Tři služby běží současně:
-    - `https://zionterranova.com` — OASIS intro landing page z `/var/www/maintenance/maintenance.html` (systémový nginx, `zion.conf`). Deploy: `bash APP&WEB/website-v2.9/deploy/deploy-oasis-intro.sh`.
-    - `https://app.zionterranova.com` — web2.9 Next.js (`zion-website.service` → `127.0.0.1:3000`, nginx proxy). Deploy: `bash APP&WEB/website-v2.9/deploy/deploy-web2.9.sh`.
-    - `https://oasis.zionterranova.com` — separátní OASIS web v `/var/www/oasis/` (systémový nginx). Deploy: `bash APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh`.
-    - Full guide: `APP&WEB/website-v2.9/DEPLOYMENT.md`
+    - `https://zionterranova.com` — OASIS intro landing page z `/var/www/maintenance/maintenance.html` (systémový nginx, `zion.conf`). Deploy: `bash apps/website-v2.9/deploy/deploy-oasis-intro.sh`.
+    - `https://app.zionterranova.com` — web2.9 Next.js (`zion-website.service` → `127.0.0.1:3000`, nginx proxy). Deploy: `bash apps/website-v2.9/deploy/deploy-web2.9.sh`.
+    - `https://oasis.zionterranova.com` — separátní OASIS web v `/var/www/oasis/` (systémový nginx). Deploy: `bash apps/OasisWeb/deploy/deploy-oasis-web.sh`.
+    - Full guide: `apps/website-v2.9/DEPLOYMENT.md`
 - Mobile app:
-  - `npm --prefix "APP&WEB/mobile-app" install`
-  - `npm --prefix "APP&WEB/mobile-app" run test`
-  - `npm --prefix "APP&WEB/mobile-app" run lint`
+  - `npm --prefix "apps/mobile-app" install`
+  - `npm --prefix "apps/mobile-app" run test`
+  - `npm --prefix "apps/mobile-app" run lint`
 - Desktop agent (legacy Electron):
-  - `npm --prefix "APP&WEB/desktop-agent" install`
-  - `npm --prefix "APP&WEB/desktop-agent" run start`
-  - `npm --prefix "APP&WEB/desktop-agent" run test`
+  - `npm --prefix "apps/desktop-agent" install`
+  - `npm --prefix "apps/desktop-agent" run start`
+  - `npm --prefix "apps/desktop-agent" run test`
 - Desktop dashboard (Tauri v2 + React — new):
   - `npm --prefix "ZION_OS/desktop" install`
   - `cargo tauri dev --manifest-path "ZION_OS/desktop/src-tauri/Cargo.toml"`
@@ -474,7 +474,7 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
 
 ## OASIS Web / UE5 — 3D universe portability rules
 
-`APP&WEB/OasisWeb` is the **living sketch / prototype** for the ZION OASIS 3D universe. The long-term target is **Unreal Engine 5 (UE5)**. TypeScript code must therefore be written as a portable game design that can later be:
+`apps/OasisWeb` is the **living sketch / prototype** for the ZION OASIS 3D universe. The long-term target is **Unreal Engine 5 (UE5)**. TypeScript code must therefore be written as a portable game design that can later be:
 
 - executed inside UE5 via a TypeScript runtime such as **Puerts** or **Unreal.js**, or
 - hand-ported to C++/Blueprints with minimal friction.
@@ -484,7 +484,7 @@ The codebase is split into **domain** (engine-agnostic design) and **adapters** 
 ### Target directory layout (move toward this over time)
 
 ```
-APP&WEB/OasisWeb/src
+apps/OasisWeb/src
   domain/           # canonical game universe — no React/Three/DOM/browser APIs
     models/         # DTOs: Player, Avatar, Quest, Territory, Clue, Zone, etc.
     config/         # static data: zones, territories, clues, onboarding, galaxy, assets
@@ -616,7 +616,7 @@ sudo systemctl enable --now zion-agent
 - License key UI in Settings → Updates (input + Activate button)
 - IPC: `getLicenseKey`, `setLicenseKey`, `validateLicense`
 - Startup auto-check requires valid license key
-- Files: `APP&WEB/desktop-agent/src/main.js`, `preload.js`, `ui/index.html`, `ui/renderer.js`
+- Files: `apps/desktop-agent/src/main.js`, `preload.js`, `ui/index.html`, `ui/renderer.js`
 
 **Mobile App IAP (BUILT + TESTED):**
 - `react-native-iap` for StoreKit 2 (iOS) + Google Play Billing (Android)
@@ -640,7 +640,7 @@ sudo systemctl enable --now zion-agent
 - `V31/` is the active mainnet code line and the operational core (workspace `3.1.0-beta`).
 - `V3/` is archived since 2026-08-04 (read-only reference; `archive/V3/` is the frozen copy).
 - Legacy root (`L1`..`L6`, older docs, archived WARP docs) remains valuable for migration history and audit evidence, but not default implementation target.
-- `APP&WEB/` hosts operator-facing applications (desktop agent, mobile app, website) and is loosely coupled to the V31 Rust runtime.
+- `apps/` hosts operator-facing applications (desktop agent, mobile app, website) and is loosely coupled to the V31 Rust runtime.
 
 
 ## 5) Validation workflow expectations
@@ -648,7 +648,7 @@ sudo systemctl enable --now zion-agent
 - For Rust changes in `V31`, start with targeted crate tests, then escalate to workspace checks.
 - For doc-only changes, at minimum run `git diff --check`; run `pre-commit validate-config` when touching `.pre-commit-config.yaml`.
 - For desktop-agent JS changes, run:
-  - `node --check "APP&WEB/desktop-agent/src/main.js"`
+  - `node --check "apps/desktop-agent/src/main.js"`
 - For desktop-agent Python mining fallback changes, run:
   - `python3 -m py_compile <touched_python_file>`
 - `scripts/autopilot-2.9.8.sh` encodes a practical validation/deploy sequence when tasks touch miner/desktop-agent/deploy pipelines.
@@ -1381,7 +1381,7 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 
 - **Build server:** `/root/zion-web-build` (Next.js source + `public/`)
 - **Runtime dir:** `/root/zion-web-runtime` (Docker build context)
-- **Dockerfile:** `APP&WEB/website-v2.9/Dockerfile.runtime` copies `standalone`, `.next/static`, and `public/`
+- **Dockerfile:** `apps/website-v2.9/Dockerfile.runtime` copies `standalone`, `.next/static`, and `public/`
 - **Full deploy from local repo:**
 
   ```bash
@@ -1405,7 +1405,7 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
   ```
 
 - **Important:** `public/` must be copied into the runtime directory; otherwise static files (e.g. `/docs/WP/*.md`, images, icons) are not served by the container.
-- **Public assets `public/docs/WP/`** must stay in sync with the public `docs/WP` subtree. Use `canon/books/regenerate_pdfs.py` (requires `fpdf2`) to regenerate PDFs and copy them to `public/docs/WP/` and `APP&WEB/website-v2.9/public/docs/WP/`. After editing `public/`, run `git subtree push --prefix=public public main`.
+- **Public assets `public/docs/WP/`** must stay in sync with the public `docs/WP` subtree. Use `canon/books/regenerate_pdfs.py` (requires `fpdf2`) to regenerate PDFs and copy them to `public/docs/WP/` and `apps/website-v2.9/public/docs/WP/`. After editing `public/`, run `git subtree push --prefix=public public main`.
 - **Service worker:** `public/sw.js` is intentionally a kill-switch that clears all caches and unregisters itself. `ServiceWorkerRegistration.tsx` unregisters any existing SWs. Do not re-enable aggressive `cache-first` SW strategies — they caused blank pages after deploy when stale HTML referenced removed `/_next/static/` assets.
 
 
@@ -1457,7 +1457,7 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 
 ## MarketPlace ↔ OASIS integration
 
-MarketPlace (`APP&WEB/MarketPlace/`) pulls live OASIS game data and surfaces it as tradeable artifacts.
+MarketPlace (`apps/MarketPlace/`) pulls live OASIS game data and surfaces it as tradeable artifacts.
 
 - **OASIS API source:** `http://127.0.0.1:8094` on the Edge server (browser via public proxy `https://oasis.zionterranova.com`). Endpoints used: `/api/v1/oasis/avatars`, `/quests`, `/prize-tiers`, `/map`.
 - **Client library:** `src/lib/oasis-api.ts` defines `AvatarDef`, `QuestDef`, `PrizeTier`, `Territory` and mapping helpers (`avatarToArtifactMetadata`, `questToArtifactMetadata`, `prizeTierToArtifactMetadata`, `territoryToArtifactMetadata`). The mappings read optional `image_url` and `market_url` fields and fall back to sensible category defaults.
@@ -1465,13 +1465,13 @@ MarketPlace (`APP&WEB/MarketPlace/`) pulls live OASIS game data and surfaces it 
 - **Mint route:** `src/app/api/oasis/mint/route.ts` (POST) builds artifact metadata, uploads to IPFS when Pinata keys are configured, and returns `mintParams` for client-side `ZIONArtifact.mint(...)`.
 - **Market API:** `src/lib/market-api.ts` transforms `Artifact` rows (and active `Listing` rows) into `ArtifactCardData` / `ItemDetailData`. It exposes `externalUrl` linking each artifact back to its OASIS category page (`/avatars`, `/quests`, `/golden-egg`, `/territories`). `getItems` and `getItem` call `/api/items` and `/api/items/{id}`.
 - **Fallback UI:** If an artifact has no `imageUri` (or the image fails to load), `src/components/ArtifactPlaceholder.tsx` renders a category-specific Lucide icon colored by the artifact rarity. This replaces the previous generic "Z" placeholder.
-- **Deploy:** after any change, run `npm run build` in `APP&WEB/MarketPlace/`, then `rsync -az --delete APP&WEB/MarketPlace/.next zion-new:/opt/zion/APP&WEB/MarketPlace/` and `systemctl restart zion-marketplace.service`.
+- **Deploy:** after any change, run `npm run build` in `apps/MarketPlace/`, then `rsync -az --delete apps/MarketPlace/.next zion-new:/opt/zion/APP&WEB/MarketPlace/` and `systemctl restart zion-marketplace.service`.
 
 ## MarketPlace ZION L1 Bonus Payout
 
 MarketPlace can pay customer ZION token bonuses directly on ZION L1.
 
-- **Docs:** [`APP&WEB/MarketPlace/PAYOUT.md`](./APP&WEB/MarketPlace/PAYOUT.md)
+- **Docs:** [`apps/MarketPlace/PAYOUT.md`](./apps/MarketPlace/PAYOUT.md)
 - **Library:** `src/lib/zion-l1.ts` — BIP39 seed generation, Ed25519 key derivation, `zion1` address encoding, and `zion wallet send` wrapper.
 - **Customer flow:** Each order with `zionTokens > 0` gets a fresh `zion1` address + 12-word seed stored in `ShopOrder.customerWallet*`. The seed is emailed to the customer.
 - **Admin flow:** `/admin/orders` shows the customer address and a **Distribuovat tokeny** button. Clicking it calls `/api/admin/tokens/distribute/{id}`, which broadcasts a UTXO transaction from the pool wallet and records the tx hash.
@@ -1483,12 +1483,12 @@ MarketPlace can pay customer ZION token bonuses directly on ZION L1.
 
 Implemented Google OAuth login and MetaMask one-click deposit/withdraw for the ZIS-backed multichain wallet.
 
-- **ZIS backend:** `APP&WEB/identity/src/lib/google.ts` verifies Google ID tokens. New route `POST /api/auth/verify/google` creates `google:{sub}` users and stores `email`, `displayName`, `avatar`.
+- **ZIS backend:** `apps/identity/src/lib/google.ts` verifies Google ID tokens. New route `POST /api/auth/verify/google` creates `google:{sub}` users and stores `email`, `displayName`, `avatar`.
 - **Prisma schema:** `User.googleId` added for Google OpenID linking; run `npx prisma db push` (or `prisma migrate dev`) against the ZIS database after deploy.
-- **Web login:** `APP&WEB/website-v2.9/src/components/GoogleSignInButton.tsx` loads Google Identity Services. Set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (web bundle) and `GOOGLE_CLIENT_ID` (ZIS backend). ZIS must have the same Google Client ID.
-- **MetaMask panel:** `APP&WEB/website-v2.9/src/components/MetaMaskWalletPanel.tsx` on `/wallet/multichain` links an EVM address via SIWE, derives a Base deposit address, deposits wZION/USDT/USDC/WETH from MetaMask, and withdraws ledger balances to the linked address.
+- **Web login:** `apps/website-v2.9/src/components/GoogleSignInButton.tsx` loads Google Identity Services. Set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (web bundle) and `GOOGLE_CLIENT_ID` (ZIS backend). ZIS must have the same Google Client ID.
+- **MetaMask panel:** `apps/website-v2.9/src/components/MetaMaskWalletPanel.tsx` on `/wallet/multichain` links an EVM address via SIWE, derives a Base deposit address, deposits wZION/USDT/USDC/WETH from MetaMask, and withdraws ledger balances to the linked address.
 - **Multichain deploy checklist:**
-  1. Rsync `APP&WEB/identity/` to Edge, run `npm install && npm run build`.
+  1. Rsync `apps/identity/` to Edge, run `npm install && npm run build`.
   2. Apply DB migration (`User.googleId` column).
   3. Add `GOOGLE_CLIENT_ID=...` to the ZIS env (`/etc/zion/edge-environment.sh` or systemd `EnvironmentFile`) and restart `zion-zis.service`.
   4. Add `NEXT_PUBLIC_GOOGLE_CLIENT_ID=...` to the web build env and rebuild/restart `zion-website.service`.

@@ -1,6 +1,6 @@
 # OASIS Web — Build Journal & Roadmap
 
-> Location: `APP&WEB/OasisWeb/`  
+> Location: `apps/OasisWeb/`  
 > Live URL: https://oasis.zionterranova.com  
 > Edge server: `zionterranova.com` / `oasis.zionterranova.com` → `/var/www/oasis`  
 > Last update: 2026-08-15 16:00 CEST  
@@ -301,7 +301,7 @@ The next work was explicitly requested as a slow, careful pass through these six
 
 Local:
 ```bash
-cd APP&WEB/OasisWeb
+cd apps/OasisWeb
 npm install   # if needed
 npm run build
 python3 -m http.server 3001 --directory dist
@@ -309,7 +309,7 @@ python3 -m http.server 3001 --directory dist
 
 Deploy to Edge:
 ```bash
-bash APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh
+bash apps/OasisWeb/deploy/deploy-oasis-web.sh
 ```
 
 The script will:
@@ -325,7 +325,7 @@ The script will:
 
 - The old Edge server `77.42.71.94` is **decommissioned**; all deployment uses `zionterranova.com`.
 - SSH key: `~/.ssh/zion-edge-post-wipe-2026-07-29`, port `2222`.
-- `APP&WEB/` is **private** and must never be pushed to the public `Zion-TerraNova/v3-Mainnet` subtree.
+- `apps/` is **private** and must never be pushed to the public `Zion-TerraNova/v3-Mainnet` subtree.
 - `OasisHud` API base is controlled by `NEXT_PUBLIC_OASIS_API_URL`.
   - Dev: `.env.local` uses `http://127.0.0.1:8094`.
   - Edge: deploy script sets it to empty string → relative same-origin calls.
@@ -346,7 +346,7 @@ The script will:
 ## 10. 2026-08-15 — Static Export, Deploy & World Action API
 
 ### Deploy fix
-- Switched `APP&WEB/OasisWeb/next.config.ts` from `output: 'standalone'` to `output: 'export'`.
+- Switched `apps/OasisWeb/next.config.ts` from `output: 'standalone'` to `output: 'export'`.
 - Updated `deploy/nginx-oasis.conf` to serve static files from `/var/www/oasis` instead of proxying a Node server.
 - Removed obsolete `deploy/zion-oasis-web.service`; `zion-oasis-web` is now disabled on Edge.
 - `deploy/deploy-oasis-web.sh` now uses static export, supports `ZION_EDGE_USE_IPV6=1`, and treats optional desktop artifacts as non-fatal.

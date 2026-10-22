@@ -2,7 +2,7 @@
 
 > **Stav:** DRAFT / koncept — podklad pro jednání s portugalskými institucemi. `v0.1` · 2026-10-07
 > **Součást:** L5 Terra Nova — Genesis Garden (Sabacheira, concelho Tomar)
-> **Vazby:** `L5MariaDelCamino.md` (onboarding na Tres Marias), `canon/books/MariaCaminho/`, `APP&WEB/website-v2.9/src/components/CaminhoDoJardimMap.tsx`
+> **Vazby:** `L5MariaDelCamino.md` (onboarding na Tres Marias), `canon/books/MariaCaminho/`, `apps/website-v2.9/src/components/CaminhoDoJardimMap.tsx`
 
 ---
 

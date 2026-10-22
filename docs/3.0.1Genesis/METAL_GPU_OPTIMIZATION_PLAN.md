@@ -137,7 +137,7 @@ No `block` crate, no `ConcreteBlock`, no async command buffer handling.
 | `V3/L1/miner/src/ekam_deeksha.metal` | `b3_load_words_global` fast path |
 | `V3/L1/miner/src/deeksha_lite_fire.metal` | **NEW** Fire Metal kernel (OpenCL→Metal translation) |
 | `V3/L1/miner/Cargo.toml` | Added `block` crate for Metal async handlers |
-| `APP&WEB/desktop-agent/src/main.js` | No `--threads` when GPU mining (previous session) |
+| `apps/desktop-agent/src/main.js` | No `--threads` when GPU mining (previous session) |
 
 ---
 

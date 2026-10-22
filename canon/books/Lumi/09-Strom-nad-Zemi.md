@@ -88,7 +88,7 @@ Světlo se zúžilo a prstenec zmizel. Lumi viděla, co roku 2026 ze stromu nad 
 | Analogové mise Mars-500 / HI-SEAS jako zdroj poznatků o izolaci | **ŽIVÉ** (historie vědy) | `canon/l6/Lidske_Faktory.md`; veřejně zdokumentované experimenty | — |
 | Galerie předků: Saljut, Skylab, Mir, ISS, Freedom, Dual Keel | **ŽIVÉ** (historie) | `canon/l6/Histori.md`; `Issobella/05` | — |
 | Fyzika rotující gravitace (g_eff = ω²r) | **ŽIVÉ** (fyzika) | klasická mechanika; veřejně ověřitelné | — |
-| Balík papírů je veřejný: výzkumný balík L6 servírovaný v katalogu `/docs` | **ŽIVÉ** (dokumentace) | `canon/l6/README.md`; `APP&WEB/website-v2.9/public/docs/l6/`; katalog `/docs` → `l6-*` | peer review, externí experti |
+| Balík papírů je veřejný: výzkumný balík L6 servírovaný v katalogu `/docs` | **ŽIVÉ** (dokumentace) | `canon/l6/README.md`; `apps/website-v2.9/public/docs/l6/`; katalog `/docs` → `l6-*` | peer review, externí experti |
 | Web s prstencem a roadmapou (2030 → 2045+) | **ŽIVÉ** (web) / obsah **HORIZONT** | web `/l6-issobella` („Vize 2035+", „Vize 2040+") | — |
 | Obydlený prstenec, skleník, strom pod stropem, posádka, Korma s konvičkou | **HORIZONT / MÝTUS** | obraz možné budoucnosti; `Issobella/04` (Korma) | žádný modul, žádný člen posádky neexistuje |
 | Záznamy o konkrétních členech posádky Issobelly | — | neexistují — posádka není vybrána; stanice neexistuje | — |

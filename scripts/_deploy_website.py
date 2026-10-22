@@ -19,7 +19,7 @@ KEY_PATH = os.path.expanduser("~/.ssh/zion_hetzner_key")
 REMOTE_BASE = "/root/zion-2.9.6"
 LOCAL_BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-WEBSITE_DIR = os.path.join(LOCAL_BASE, "APP&WEB", "website-v2.9")
+WEBSITE_DIR = os.path.join(LOCAL_BASE, "apps", "website-v2.9")
 DOCKER_DIR = os.path.join(LOCAL_BASE, "docker")
 
 # Files/dirs to include from website-v2.9
@@ -53,7 +53,7 @@ def create_tarball(tar_path: str) -> None:
         for item in WEBSITE_INCLUDE:
             full = os.path.join(WEBSITE_DIR, item)
             if os.path.exists(full):
-                arcname = f"APP&WEB/website-v2.9/{item}"
+                arcname = f"apps/website-v2.9/{item}"
                 if os.path.isdir(full):
                     for root, dirs, files in os.walk(full):
                         dirs[:] = [d for d in dirs if d not in WEBSITE_EXCLUDE_DIRS]

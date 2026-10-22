@@ -18,7 +18,7 @@
 ### Co chybí (podle docs/DEFI_FULL_ROADMAP.md):
 - **✅ RPC rozšíření (6 nových metod)** - getTransactionHistory, getAddressInfo, estimateFee, getBlockRange, getNetworkStats, getTokenInfo
 - **✅ WebSocket subscriptions** (new blocks, pending TX) - IMPLEMENTOVáno 2026-05-13
-- **✅ Wallet SDK** (TypeScript/JS library) - `APP&WEB/zion-wallet-sdk/`, integrováno do webu, desktop agenta a mobilní appky
+- **✅ Wallet SDK** (TypeScript/JS library) - `apps/zion-wallet-sdk/`, integrováno do webu, desktop agenta a mobilní appky
 - **✅ Swap Aggregator backend** (orchestrace bridge+swap) — `V3/L2/swap-aggregator/` Rust crate s Axum REST API, SQLite persistencí, orchestrací pipeline (lock→bridge→swap) a quote endpointem
 - **✅ Price feed / oracle** (Uni V3 TWAP) — `/api/defi/price` endpoint čte slot0 z wZION/WETH poolu, vrací cenu v WETH i USD (Chainlink WETH/USD), zobrazeno na DeFi stránce
 - **✅ Bridge Tracker** (live view lock→bridge→mint) — `/explorer/bridge` stránka s relay metrikami, pipeline vizualizací L1↔Base a contract links
@@ -75,7 +75,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 - [x] Implement getNetworkStats RPC
 - [x] Implement getTokenInfo RPC
 - [x] WebSocket subscriptions (new blocks, pending TX) - IMPLEMENTOVáno 2026-05-13
-- [x] TypeScript Wallet SDK package — `APP&WEB/zion-wallet-sdk/` (address, keypair, crypto, tx, RPC, storage, wallet-manager)
+- [x] TypeScript Wallet SDK package — `apps/zion-wallet-sdk/` (address, keypair, crypto, tx, RPC, storage, wallet-manager)
 - [x] Multi-wallet management — integrováno do website-v2.9 (`ZionWalletContext.tsx` + `/wallet` stránka)
 
 ### Fáze 3: Swap Aggregator (2 týdny)
@@ -159,6 +159,6 @@ Pro systematický vývoj:
 
 **Reference:**
 - Detailní dokumentace: [`docs/DEFI_FULL_ROADMAP.md`](docs/DEFI_FULL_ROADMAP.md)
-- Aktuální web: [`APP&WEB/website-v2.9/`](APP&WEB/website-v2.9/)
+- Aktuální web: [`apps/website-v2.9/`](apps/website-v2.9/)
 - Hlavní roadmap: [`ROADMAP.md`](ROADMAP.md)
 - V3 status: [`StatusV3.md`](StatusV3.md)

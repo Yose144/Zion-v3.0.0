@@ -71,8 +71,8 @@ L1/miner/src/miner/gpu/kernels/cosmic_harmony_v3.cl             ✏️  upraveno
 L1/miner/src/miner/gpu/kernels/cosmic_harmony_v3.cu             ✏️  upraveno
 L1/native-libs/all/cosmic_harmony_v4_native.c                   ✏️  upraveno
 L1/native-libs/all/cosmic_harmony_v4_metal.metal                ✏️  upraveno
-APP&WEB/desktop-agent/resources/cosmic_harmony_v4_metal.metal   ✏️  upraveno
-APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v3_gpu.py ✏️  upraveno
+apps/desktop-agent/resources/cosmic_harmony_v4_metal.metal   ✏️  upraveno
+apps/desktop-agent/resources/mining/cosmic_harmony_v3_gpu.py ✏️  upraveno
 config/testnet.toml  (chv4_2_fork_height = 10000)               ✏️  upraveno
 config/mainnet.toml  (# chv4_2_fork_height = TBD)               ✏️  komentář
 ```

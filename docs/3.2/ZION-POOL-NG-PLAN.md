@@ -221,7 +221,7 @@ Operátor: **úplně nové UI na dedikované doméně**, v enginu podobném
 intro webu. Rozhodnutí vychází z IntroPage/freeworld vzoru:
 
 **Stack (kopie IntroPage modelu):**
-- Nový projekt **`APP&WEB/pool-ui/`** — Next.js **static export**
+- Nový projekt **`apps/pool-ui/`** — Next.js **static export**
   (`next build` → `dist/`), React + Tailwind + framer-motion +
   ZION theme (gold→purple→cyan, `zion-rainbow-card` atd. —
   viz `docs/3.0.3/ZIONTHEME.md`).
@@ -292,7 +292,7 @@ intro webu. Rozhodnutí vychází z IntroPage/freeworld vzoru:
 | **F2** Unified accounting + ZIS napříč dialektami | ShareStore schema v2 (`coin` sloupec, payouts per-coin units); per-coin PPLNS okna; `zis_<token>` v password poli všech dialektů; ZIS `linkedAddresses` += pearl | ZIS-bound session na QTU i PRL portu; shares per coin |
 | **F3** QTU+PRL payouty | `QtcPayout` (quantus-cli batch z node wallet), `PrlPayout` (oystercli), bridged batch z upstream wallets; reuse deferred queue; balance oracle; ZIS linked fallback | testnet/regtest payout dávka E2E per coin |
 | **F4** Public surface + `/public/v1` | Dedikované porty, TLS, wallet-formát validace, ban ladder, limits; **public API tier**; revenue-lane policy (opt-in only); miner+agent+SMOS defaulty | externí miner connect; `/public/v1/coins` servíruje |
-| **F5** pool.zionterranova.com | `APP&WEB/pool-ui/` static export + nginx vhost + DNS + certbot + deploy script; stránky dle §6 | web live, miner lookup přes coiny, zero interních detailů |
+| **F5** pool.zionterranova.com | `apps/pool-ui/` static export + nginx vhost + DNS + certbot + deploy script; stránky dle §6 | web live, miner lookup přes coiny, zero interních detailů |
 | **F6** HA | Standby pool + node failover (`share_relay` Edge→Core primitiv existuje — unified PPLNS základ); docs runbook | později |
 
 F1–F2 jsou pure refactor — lze dělat bez dotknutí produkce (binárka se
@@ -330,7 +330,7 @@ na regtest QTU/PRL izolovaně (stejný model jako pearl regtest E2E).
 
 ## 11. Implementační stav (2026-10-19)
 
-**Mock UI** `APP&WEB/pool-ui/` — Next.js 14 static export, 12 stránek
+**Mock UI** `apps/pool-ui/` — Next.js 14 static export, 12 stránek
 (home/start/miner dashboard/blocks/payouts/stats/faq, CS+EN), mock data
 layer se shapem `/public/v1/*` (swap = `USE_MOCK` konstanta).
 
@@ -429,7 +429,7 @@ Testy: `zion-pool` 314/314, `zion-multichain` 731/731.
   `/public/v1/` proxy → `127.0.0.1:8080` (jediný proxied prefix;
   `/api/`+`/admin` explicitní 404), `limit_req`, security headers,
   Certbot-managed TLS bloky.
-- `APP&WEB/pool-ui/deploy/deploy-pool.sh` — `npm run build` → rsync
+- `apps/pool-ui/deploy/deploy-pool.sh` — `npm run build` → rsync
   `dist/` → `/var/www/pool`; `--nginx` instaluje+reloadne vhost;
   `--build-only` pro lokální build.
 - `GET /public/v1/blocks?coin=` — globální blocks feed (per-coin feed

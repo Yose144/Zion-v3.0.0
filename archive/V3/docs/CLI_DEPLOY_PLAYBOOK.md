@@ -96,7 +96,7 @@ zion logs website
 If local web source changed, also validate with:
 
 ```bash
-cd APP&WEB/website-v2.9
+cd apps/website-v2.9
 npm run build
 ```
 

@@ -266,7 +266,7 @@ tick:         -182_328
 ETH potřeba (doporučeno 60M wZION):  ≥ 0.80 ETH (~$1 300)
 ```
 
-Konstanty jsou v `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` jako
+Konstanty jsou v `apps/website-v2.9/src/lib/defi-contracts.ts` jako
 `SEED_PRICE_USD`, `SEED_SQRT_PRICE_X96`, `SEED_TICK`.
 
 ---
@@ -1641,7 +1641,7 @@ GET /api/bridge/validators  → {validators: [...], threshold, total}
 | E4 | "How to Bridge" instructions | ✅ Done |
 | E5 | Open in Browser link to website `/bridge` | ✅ Done |
 
-**Files:** `APP&WEB/desktop-agent/src/ui/index.html`, `APP&WEB/desktop-agent/src/ui/renderer.js`.
+**Files:** `apps/desktop-agent/src/ui/index.html`, `apps/desktop-agent/src/ui/renderer.js`.
 
 #### 26d: Contract Hardening (Runbooks & Scripts Ready)
 

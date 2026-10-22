@@ -21,10 +21,10 @@ Smyslem teto kombinace neni dokazovat jednu jedinou ortodoxii, ale postavit poct
 
 ### 2.1 Materska kniha a jeji publikacni stopy
 
-1. `APP&WEB/public_html/V2/books/QuantumRevolutionCZ.pdf`
-2. `APP&WEB/public_html/V2/books/QuantumRevolution_EN.pdf`
-3. `APP&WEB/public_html/V2/books/QuantumRevolution.zip`
-4. `APP&WEB/public_html/V2/books/Bonus/Quantova Revoluce Claude.pdf`
+1. `apps/public_html/V2/books/QuantumRevolutionCZ.pdf`
+2. `apps/public_html/V2/books/QuantumRevolution_EN.pdf`
+3. `apps/public_html/V2/books/QuantumRevolution.zip`
+4. `apps/public_html/V2/books/Bonus/Quantova Revoluce Claude.pdf`
 
 Tyto soubory potvrzuji, ze Quantova Revoluce nebyla jen pracovni poznamka, ale publikovany artefakt historicke vetve projektu.
 
@@ -40,9 +40,9 @@ Tyto dokumenty jsou pro Ekam Deeksha zasadni, protoze potvrzuji dve veci:
 
 ### 2.3 Verejne webove stopy publikace Quantove Revoluce
 
-1. `APP&WEB/public_html/V2/halls.html`
-2. `APP&WEB/public_html/V2/halls-en.html`
-3. `APP&WEB/public_html/V2/blog/full/native-awakening-quantum-revolution.html`
+1. `apps/public_html/V2/halls.html`
+2. `apps/public_html/V2/halls-en.html`
+3. `apps/public_html/V2/blog/full/native-awakening-quantum-revolution.html`
 
 Tyto soubory potvrzuji, ze kniha byla ve verejnem prostoru vedena jako hotovy artefakt a jako soucast Amenti knihovny.
 
@@ -162,12 +162,12 @@ Poznamka: verejna Kajabi struktura se muze v case menit. Pro dalsi redakci je pr
 
 ### 8.2 Repo-interni verejne publikacni stopy
 
-1. APP&WEB/public_html/V2/halls.html
-2. APP&WEB/public_html/V2/halls-en.html
-3. APP&WEB/public_html/V2/blog/full/native-awakening-quantum-revolution.html
-4. APP&WEB/public_html/V2/links.html
-5. APP&WEB/public_html/V2/links-en.html
-6. APP&WEB/public_html/V2/blog/5.html
+1. apps/public_html/V2/halls.html
+2. apps/public_html/V2/halls-en.html
+3. apps/public_html/V2/blog/full/native-awakening-quantum-revolution.html
+4. apps/public_html/V2/links.html
+5. apps/public_html/V2/links-en.html
+6. apps/public_html/V2/blog/5.html
 
 Tyto soubory jsou dulezite, protoze dokladaji, jak byla linie Ekam, Oneness, Hiranyagarbha a Quantova Revoluce interpretovana primo uvnitr vlastniho ekosystemu 2.9.
 

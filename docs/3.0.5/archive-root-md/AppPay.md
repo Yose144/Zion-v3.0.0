@@ -277,7 +277,7 @@ Same `IAPService.js` — `react-native-iap` library handles both platforms:
 
 ```bash
 # Install IAP library
-cd APP&WEB/mobile-app
+cd apps/mobile-app
 npm install react-native-iap
 ```
 
@@ -747,6 +747,6 @@ mobile-app/
 - [`update-server/README.md`](./update-server/README.md) — Update server documentation
 - [`3.0.5.md`](./3.0.5.md) — Current mainnet status
 - [`ROADMAP.md`](./ROADMAP.md) — Forward roadmap
-- [`APP&WEB/mobile-app/RELEASE_CHECKLIST.md`](./APP&WEB/mobile-app/RELEASE_CHECKLIST.md) — Mobile release checklist
-- [`APP&WEB/mobile-app/eas.json`](./APP&WEB/mobile-app/eas.json) — EAS build configuration
+- [`apps/mobile-app/RELEASE_CHECKLIST.md`](./apps/mobile-app/RELEASE_CHECKLIST.md) — Mobile release checklist
+- [`apps/mobile-app/eas.json`](./apps/mobile-app/eas.json) — EAS build configuration
 - [`AGENTS.md`](./AGENTS.md) — Agent operating guidance

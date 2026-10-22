@@ -128,7 +128,7 @@ Kniha *Sůl této země* provází poutníka dvanácti obrazy z lidské paměti 
 | **L1** | Trup lodi | Terra Nova L1 blockchain v Rustu, Ekam Deeksha PoW | `V31/L1/core`, `cosmic-harmony`, `miner`, `pool` |
 | **L2** | Plachty a lanoví | wZION Bridge, DeFi, DAO governance, Atomic Swaps | `V31/L2/multichain`, `V31/L1/dao` |
 | **L3** | Hvězdná navigace | WARP multichain, ZionDex router, Solver Network, NCL AI | `V31/L2/multichain`, `V31/L3/ai-native` |
-| **L4** | Zahrada na palubě | OASIS metaverse, avataři, questy, ERC-1155 MarketPlace | `V31/L4/oasis`, `APP&WEB/MarketPlace` |
+| **L4** | Zahrada na palubě | OASIS metaverse, avataři, questy, ERC-1155 MarketPlace | `V31/L4/oasis`, `apps/MarketPlace` |
 | **L5** | Skladiště a lékárna | Free World, humanitární tithe, komunitní granty | `V31/L5` (připraveno) |
 | **L6** | Koruna a kukaň | Issobella, vesmírný výzkum, věda, pohled na Zemi | `V31/L6` (připraveno) |
 

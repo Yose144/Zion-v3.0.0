@@ -988,9 +988,9 @@ Total Rust:       ~114,520 LOC
 
 | Dokument | Účel |
 |----------|------|
-| `APP&WEB/desktop-agent/AI_NATIVE_README.md` | AI Native integrace |
-| `APP&WEB/desktop-agent/AI_NATIVE_UI_GUIDE.md` | UI design |
-| `APP&WEB/desktop-agent/AI_NATIVE_INTEGRATION_README.md` | IPC + Python bridge |
+| `apps/desktop-agent/AI_NATIVE_README.md` | AI Native integrace |
+| `apps/desktop-agent/AI_NATIVE_UI_GUIDE.md` | UI design |
+| `apps/desktop-agent/AI_NATIVE_INTEGRATION_README.md` | IPC + Python bridge |
 
 ---
 

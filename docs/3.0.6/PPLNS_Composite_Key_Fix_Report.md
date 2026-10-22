@@ -3,7 +3,7 @@
 > **Status:** DEPLOYED & VERIFIED on Edge (62.171.141.136)
 > **Date:** 2026-07-14
 > **Severity:** CRITICAL — payout misrouting (funds sent to wrong miner)
-> **Related:** `StatusV3.md`, `AGENTS.md` § "PPLNS Composite Key Fix", `V3/L1/pool/src/bin/server.rs`, `ZION_OS/dashboard/app.py`, `APP&WEB/website-v2.9/src/components/PoolDashboard.tsx`
+> **Related:** `StatusV3.md`, `AGENTS.md` § "PPLNS Composite Key Fix", `V3/L1/pool/src/bin/server.rs`, `ZION_OS/dashboard/app.py`, `apps/website-v2.9/src/components/PoolDashboard.tsx`
 
 ## 1. Summary
 
@@ -98,7 +98,7 @@ labels (split from composite key).
 
 `dashboard.js` `payoutByKey` updated to use composite key for payout display.
 
-### 3.3 Web Frontend (`APP&WEB/website-v2.9/`)
+### 3.3 Web Frontend (`apps/website-v2.9/`)
 
 **Commit `a84beda96`** — Composite key support for pool miner display:
 
@@ -228,9 +228,9 @@ Barker's old balance of 3,743,089 ZION is from pre-fix misrouted payouts.
 | `V3/L1/pool/src/bin/server.rs` | `826ce2abf`, `28ea5cc5b`, `e35ccdd21` |
 | `ZION_OS/dashboard/app.py` | `6f806b987` |
 | `ZION_OS/dashboard/dashboard.js` | `6f806b987` |
-| `APP&WEB/website-v2.9/src/app/api/pool/stats/route.ts` | `a84beda96` |
-| `APP&WEB/website-v2.9/src/components/PoolDashboard.tsx` | `a84beda96` |
-| `APP&WEB/website-v2.9/src/components/pool/PoolMinersClient.tsx` | `a84beda96` |
+| `apps/website-v2.9/src/app/api/pool/stats/route.ts` | `a84beda96` |
+| `apps/website-v2.9/src/components/PoolDashboard.tsx` | `a84beda96` |
+| `apps/website-v2.9/src/components/pool/PoolMinersClient.tsx` | `a84beda96` |
 | `public/V3/L1/pool/src/bin/server.rs` | `97a579c54` |
 | `StatusV3.md` | `ca0fbb0ba` |
 | `AGENTS.md` | `ca0fbb0ba` |

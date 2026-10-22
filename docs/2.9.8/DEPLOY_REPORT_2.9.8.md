@@ -144,7 +144,7 @@ ssh -i ~/.ssh/zion_hetzner_key root@<ip>
 - `docker/docker-compose.testnet.yml` — image tagy 2.9.8, algoritmus, MINER_CPUS
 - `docker/docker-compose.mainnet.yml` — image tagy 2.9.8
 - `L1/cosmic-harmony/src/algorithms_npu.rs` — compile fix
-- `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` — Deeksha text labels
+- `apps/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py` — Deeksha text labels
 
 ### Nové soubory
 - `docs/2.9.8/DEPLOY_REPORT_2.9.8.md` — tento report

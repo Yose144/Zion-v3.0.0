@@ -233,7 +233,7 @@ Kovář ho ten večer vzal za archu, tam, kde les přecházel v něco, co vypada
 > - L5 Free World: humanitární mise s on-chain auditovatelným dopadem
 > - L6 Issobella: orbitální výzkumný horizont
 >
-> > **Zdroj:** `APP&WEB/OasisWeb/README.md`, `OASIS_WEB_JOURNAL.md`, live API `https://oasis.zionterranova.com/api/v1/oasis/*`. Oasis XP nikdy neovlivňuje konsensus ani odměnu za blok — je to vrstva navrch, ne náhrada PoW.
+> > **Zdroj:** `apps/OasisWeb/README.md`, `OASIS_WEB_JOURNAL.md`, live API `https://oasis.zionterranova.com/api/v1/oasis/*`. Oasis XP nikdy neovlivňuje konsensus ani odměnu za blok — je to vrstva navrch, ne náhrada PoW.
 
 ---
 

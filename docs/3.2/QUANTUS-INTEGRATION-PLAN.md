@@ -307,7 +307,7 @@ Dvě vrstvy:
       a) **WASM build `qp-rusty-crystals-dilithium`** (crate je no-std,
          kompiluje do wasm32) — preferované: `quantus-wallet-wasm` mini
          crate (keygen z 32B entropy → pubkey → ss58, sign) → bundlovat
-         do `APP&WEB/desktop-agent/src/`; 
+         do `apps/desktop-agent/src/`; 
       b) shell-out na `quantus` CLI binary (bundle jako resource —
          ~10 MB, jednoduché, ale závislost na upstream binary);
       c) HD seed pod ZIS accountem: agent drží jen mnemonic, derivace
@@ -624,9 +624,9 @@ V31/L2/multichain/src/qtc_payout.rs                NOVÝ sweeper (✅)
 V31/L2/multichain/src/db.rs                        + ext_payout_records (✅)
 V31/L1/pool/src/store.rs                           + ext_share_credits tabulka
 V31/L1/cosmic-harmony/src/profit.rs                (příp. QBC re-ticker)
-APP&WEB/desktop-agent/src/wallet-generator.js      + generateQuantusWallet
-APP&WEB/desktop-agent/src/ui/renderer.js + index.html  QTC wallet tab + preset
-APP&WEB/desktop-agent/src/zis-client.js            + chain_type quantus
+apps/desktop-agent/src/wallet-generator.js      + generateQuantusWallet
+apps/desktop-agent/src/ui/renderer.js + index.html  QTC wallet tab + preset
+apps/desktop-agent/src/zis-client.js            + chain_type quantus
 edge-deploy/config/edge-environment.sh             + QUANTUS_* placeholders
 docs/quantus-spike.md                              NOVÝ (F0 výstup)
 ```

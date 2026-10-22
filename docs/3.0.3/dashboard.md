@@ -12,7 +12,7 @@
 Tento dokument shrnuje veškerou práci provedenou v této session na:
 1. **ZionOS Dashboard** (`ZION_OS/dashboard/`) — Python Flask backend + JS frontend
 2. **Pool Server** (`V3/L1/pool/src/pplns.rs`) — Rust pool payout logika
-3. **Website v2.9 Web CLI** (`APP&WEB/website-v2.9/`) — Next.js API + React terminal
+3. **Website v2.9 Web CLI** (`apps/website-v2.9/`) — Next.js API + React terminal
 
 Cílem bylo:
 - Opravit nesprávný "Total Paid (ZION)" na dashboardu (19.98T ZION > total supply)
@@ -144,7 +144,7 @@ Pool server nepersistuje lifetime statistiky — po restartu začíná od nuly. 
 
 ---
 
-## 6. Website v2.9 Web CLI (`APP&WEB/website-v2.9/`)
+## 6. Website v2.9 Web CLI (`apps/website-v2.9/`)
 
 ### Architektura
 - **Frontend:** `src/components/WebTerminal.tsx` — React terminal s quick commands, autocomplete, history
@@ -191,7 +191,7 @@ Pool server nepersistuje lifetime statistiky — po restartu začíná od nuly. 
 ### Deploy (Docker na Edge)
 ```bash
 # Build Docker image
-cd /root/zion-2.9.6-main/APP&WEB/website-v2.9
+cd /root/zion-2.9.6-main/apps/website-v2.9
 docker build -f Dockerfile.production -t zion-website:2.9.9 .
 
 # Restart container
@@ -294,17 +294,17 @@ ssh root@100.76.16.108 "systemctl restart zion-pool-server"
 ### Website (Next.js)
 ```bash
 # Lokální build (na Core PC)
-cd APP&WEB/website-v2.9
+cd apps/website-v2.9
 npm run build
 
 # Deploy na Edge (Docker)
-scp src/lib/constants.ts root@100.76.16.108:/root/zion-2.9.6-main/APP&WEB/website-v2.9/src/lib/
-scp src/app/api/cli/route.ts root@100.76.16.108:/root/zion-2.9.6-main/APP&WEB/website-v2.9/src/app/api/cli/
-scp src/app/api/pool/stats/route.ts root@100.76.16.108:/root/zion-2.9.6-main/APP&WEB/website-v2.9/src/app/api/pool/stats/
-scp src/components/WebTerminal.tsx root@100.76.16.108:/root/zion-2.9.6-main/APP&WEB/website-v2.9/src/components/
+scp src/lib/constants.ts root@100.76.16.108:/root/zion-2.9.6-main/apps/website-v2.9/src/lib/
+scp src/app/api/cli/route.ts root@100.76.16.108:/root/zion-2.9.6-main/apps/website-v2.9/src/app/api/cli/
+scp src/app/api/pool/stats/route.ts root@100.76.16.108:/root/zion-2.9.6-main/apps/website-v2.9/src/app/api/pool/stats/
+scp src/components/WebTerminal.tsx root@100.76.16.108:/root/zion-2.9.6-main/apps/website-v2.9/src/components/
 
 # Docker rebuild na Edge
-ssh root@100.76.16.108 "cd /root/zion-2.9.6-main/APP&WEB/website-v2.9 && \
+ssh root@100.76.16.108 "cd /root/zion-2.9.6-main/apps/website-v2.9 && \
   docker build -f Dockerfile.production -t zion-website:2.9.9 . && \
   docker stop zion-website && docker rm zion-website && \
   docker run -d --name zion-website --restart unless-stopped --network host \
@@ -352,10 +352,10 @@ ssh root@100.76.16.108 "rm -f /root/zion-2.9.6-main/V3/data/dashboard-payout-hig
 - `ZION_OS/dashboard/dashboard.html` — fee wallet balance elements
 
 ### Website v2.9 (TypeScript/React)
-- `APP&WEB/website-v2.9/src/lib/constants.ts` — canonical wallets, genesis premine
-- `APP&WEB/website-v2.9/src/app/api/pool/stats/route.ts` — sanity clamp, fee balances, cache
-- `APP&WEB/website-v2.9/src/app/api/cli/route.ts` — v2.1.0, INTERNAL_BASE, fetchJsonSlow, pool payouts, help, error handling
-- `APP&WEB/website-v2.9/src/components/WebTerminal.tsx` — pool payouts quick command, v2.1.0
+- `apps/website-v2.9/src/lib/constants.ts` — canonical wallets, genesis premine
+- `apps/website-v2.9/src/app/api/pool/stats/route.ts` — sanity clamp, fee balances, cache
+- `apps/website-v2.9/src/app/api/cli/route.ts` — v2.1.0, INTERNAL_BASE, fetchJsonSlow, pool payouts, help, error handling
+- `apps/website-v2.9/src/components/WebTerminal.tsx` — pool payouts quick command, v2.1.0
 
 ---
 

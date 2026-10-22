@@ -1,7 +1,7 @@
 # ZION MarketPlace — System Overview
 
 > One document covering the OASIS Artifact Marketplace, e-shop, admin dashboard, invoices, emails, theming, and deployment.
-> Source: `APP&WEB/MarketPlace/`
+> Source: `apps/MarketPlace/`
 > Live URL: `https://market.zionterranova.com`
 > Runtime: `systemd zion-marketplace.service` on Edge (`zionterranova.com`), port `3100`
 
@@ -38,7 +38,7 @@ Both flows share the same Next.js app, PostgreSQL database, admin dashboard, and
 ## 3. Project Structure
 
 ```
-APP&WEB/MarketPlace/
+apps/MarketPlace/
 ├── .env.example                  # Required environment variables
 ├── next.config.*                 # Next.js config (standalone output for deploy)
 ├── package.json
@@ -294,7 +294,7 @@ Active theme is stored in `ShopSetting` table under key `shop_theme`.
 
 ## 10. Environment Variables
 
-See `APP&WEB/MarketPlace/.env.example` for full list.
+See `apps/MarketPlace/.env.example` for full list.
 
 Critical ones:
 
@@ -315,7 +315,7 @@ Critical ones:
 ### 11.1 Local Build
 
 ```bash
-cd APP&WEB/MarketPlace
+cd apps/MarketPlace
 npm install
 npx prisma generate
 npm run build
@@ -325,7 +325,7 @@ npm run build
 
 ```bash
 rsync -az --delete -e 'ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29' \
-  APP&WEB/MarketPlace/.next \
+  apps/MarketPlace/.next \
   zion-new:'/opt/zion/APP&WEB/MarketPlace/'
 
 ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new \

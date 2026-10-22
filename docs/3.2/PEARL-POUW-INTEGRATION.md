@@ -797,7 +797,7 @@ pool local verify + PPLNS credit → `is_block` detection → async
   `4bbe92e9eb090a9ee70a2accdd36126c`, binary SHA256 `0c3353a7…`) —
   staged on Edge `/var/www/zion-miner/SRBMiner-MULTI` (SMOS wrapper
   download path; 3.7.4 backup kept), bundled in
-  `APP&WEB/desktop-agent/resources/srbminer/` (gitignored binary,
+  `apps/desktop-agent/resources/srbminer/` (gitignored binary,
   `VERSION.txt` SHA256 updated — the agent refuses a mismatched bundle),
   and deployed to rig 518837.
 - Measured QTU: rig GTX 1070 Ti 39.9 → **40.6 MH/s**; local AMD

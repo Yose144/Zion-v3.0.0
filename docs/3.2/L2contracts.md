@@ -7,7 +7,7 @@
 > **Runtime truth (Edge):** Only `zion-l1` and `base` are enabled in the live multichain runtime (`/v1/multichain/chains` returns `["zion-l1", "base"]`). Contract bundles and deterministic addresses listed in this file are **not** proof of deployment or enablement — Robinhood remains pending/disabled until contracts are deployed and the chain is enabled.
 >
 > **Rule:** When a contract is deployed or updated, update this file FIRST, then propagate to:
-> - Frontend: `APP&WEB/website-v2.9/src/lib/defi-contracts.ts`
+> - Frontend: `apps/website-v2.9/src/lib/defi-contracts.ts`
 > - Rust L2: `V31/L2/multichain/src/contracts.rs`
 > - Status: `StatusV3.md` §4
 
@@ -170,10 +170,10 @@ These are software components, not contracts. They make ZIS work as a multichain
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| ZIS (Identity Service) | `APP&WEB/identity/` | Auth (Google/Ed25519/SIWE), session JWT, wallet API proxy |
+| ZIS (Identity Service) | `apps/identity/` | Auth (Google/Ed25519/SIWE), session JWT, wallet API proxy |
 | L2 Multichain Service | `V31/L2/multichain/` | Address derivation, deposit watching, ledger, swaps, withdrawals |
-| Wallet SDK | `APP&WEB/zion-wallet-sdk/` | TypeScript SDK for desktop/mobile apps |
-| Web Wallet UI | `APP&WEB/website-v2.9/src/contexts/MultichainWalletContext.tsx` | React state for `/wallet/multichain` |
+| Wallet SDK | `apps/zion-wallet-sdk/` | TypeScript SDK for desktop/mobile apps |
+| Web Wallet UI | `apps/website-v2.9/src/contexts/MultichainWalletContext.tsx` | React state for `/wallet/multichain` |
 | DEX integration | Uniswap V3 (external) | Swap execution via SwapRouter02 |
 
 See [`ZIS_WALLET_PLAN.md`](./ZIS_WALLET_PLAN.md) for the full wallet architecture.
@@ -184,7 +184,7 @@ See [`ZIS_WALLET_PLAN.md`](./ZIS_WALLET_PLAN.md) for the full wallet architectur
 
 When updating addresses in this file, propagate to:
 
-- [ ] `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` — frontend contract registry
+- [ ] `apps/website-v2.9/src/lib/defi-contracts.ts` — frontend contract registry
 - [ ] `V31/L2/multichain/src/contracts.rs` — Rust L2 token registry
 - [ ] `StatusV3.md` §4 — canonical status doc
 

@@ -33,9 +33,9 @@ Srovnat veřejný web tak, aby Terra Nova, Zlatý Kompas a ZION CLI byly prezent
 
 ## Konkrétní edit anchors
 
-- `APP&WEB/website-v2.9/src/components/TerraNovaHomeMilestones.tsx`
-- `APP&WEB/website-v2.9/src/components/download/DownloadToolBrowser.tsx`
-- `APP&WEB/website-v2.9/src/app/download/page.tsx`
+- `apps/website-v2.9/src/components/TerraNovaHomeMilestones.tsx`
+- `apps/website-v2.9/src/components/download/DownloadToolBrowser.tsx`
+- `apps/website-v2.9/src/app/download/page.tsx`
 - `docs/TerraNova/public/README.md`
 - `docs/TerraNova/public/07-ARCHITEKTURA.md`
 - `docs/TerraNova/public/11-KOMPAS.md`

@@ -294,5 +294,5 @@ Hráč musí projít devíti „vlnami" (devět oblastí/kořenů Yggdrasilu), o
 ---
 
 > **Poznámka:** Tento koncept je open-source v rámci OASIS. Cokoliv přidáš — lore, questy, frakce, místa — piš sem.  
-> Hlavní vize OASIS: [`APP&WEB/OasisWeb/OASIS_UNIVERSE.md`](../../../APP&WEB/OasisWeb/OASIS_UNIVERSE.md)  
+> Hlavní vize OASIS: [`apps/OasisWeb/OASIS_UNIVERSE.md`](../../../apps/OasisWeb/OASIS_UNIVERSE.md)  
 > Norse–Celtic Circle avatáři: [`docs/TerraNova/norse-celtic/KONCEPT-AVATARI-OASIS.md`](../../../TerraNova/norse-celtic/KONCEPT-AVATARI-OASIS.md)

@@ -72,8 +72,8 @@
 
 - `V3/config/bridge-mainnet.toml`
 - `V3/L2/bridge/config/bridge-mainnet.toml`
-- `APP&WEB/website-v2.9/src/lib/bridge-api.ts`
-- `APP&WEB/website-v2.9/src/lib/defi-contracts.ts`
+- `apps/website-v2.9/src/lib/bridge-api.ts`
+- `apps/website-v2.9/src/lib/defi-contracts.ts`
 
 ---
 
@@ -90,8 +90,8 @@
 | Swap aggregator backend | `V3/L2/swap-aggregator` | ✅ Active | Rust/Axum + SQLite |
 | Atomic swap HTLC | `V3/L2/atomic-swap` | ✅ Active | E2E tests |
 | DAO treasury | `V3/L2/dao` | ✅ Active | 65 tests |
-| Website DeFi UI | `APP&WEB/website-v2.9` | 🔄 Needs deploy | Updated to mainnet |
-| Bridge burn widget | `APP&WEB/website-v2.9/src/components/BridgeBurnWidget.tsx` | 🔄 Needs deploy | Points to new mainnet |
+| Website DeFi UI | `apps/website-v2.9` | 🔄 Needs deploy | Updated to mainnet |
+| Bridge burn widget | `apps/website-v2.9/src/components/BridgeBurnWidget.tsx` | 🔄 Needs deploy | Points to new mainnet |
 | Staking UI | `/defi/staking` | 🔄 Placeholder | 12% APR, 7d cooldown |
 | Farming UI | `/defi/farming` | 🔄 Placeholder | Farm pool cards |
 
@@ -113,7 +113,7 @@
 
 | # | Task | Status | Path |
 |---|------|--------|------|
-| 1 | Build website with new mainnet contracts | ✅ Code ready | `APP&WEB/website-v2.9` |
+| 1 | Build website with new mainnet contracts | ✅ Code ready | `apps/website-v2.9` |
 | 2 | Deploy website to production (`zionterranova.com/defi`) | ❌ | Edge server |
 | 3 | Verify swap quotes on Base Mainnet | ❌ | `/defi/swap` |
 | 4 | Verify bridge burn widget on Base Mainnet | ❌ | Bridge widget |
@@ -167,14 +167,14 @@
 
 1. Build website:
    ```bash
-   cd APP&WEB/website-v2.9
+   cd apps/website-v2.9
    npm install
    npm run build
    ```
 2. Deploy to Edge server (`77.42.71.94`):
    ```bash
    # On Edge server
-   cd /root/zion-2.9.6-main/APP&WEB/website-v2.9
+   cd /root/zion-2.9.6-main/apps/website-v2.9
    npm install
    npm run build
    docker build -t zion-website:v3.0.2 .
@@ -198,7 +198,7 @@ Per `AGENTS.md` and project topology:
 
 ```bash
 ssh root@77.42.71.94
-cd /root/zion-2.9.6-main/APP&WEB/website-v2.9
+cd /root/zion-2.9.6-main/apps/website-v2.9
 git pull origin main
 npm install
 npm run build
@@ -241,7 +241,7 @@ cargo test --manifest-path V3/Cargo.toml -p zion-bridge
 ### Website
 
 ```bash
-cd APP&WEB/website-v2.9
+cd apps/website-v2.9
 npm install
 npm run dev      # local dev
 npm run build    # production build

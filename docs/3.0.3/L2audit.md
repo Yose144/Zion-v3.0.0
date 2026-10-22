@@ -2,7 +2,7 @@
 
 > **Date:** 2026-06-22  
 > **Auditor:** Devin (automated source review)  
-> **Scope:** `V3/L2/bridge/`, `V3/config/bridge-*.toml`, `APP&WEB/website-v2.9/src/lib/bridge-api.ts`, related docs  
+> **Scope:** `V3/L2/bridge/`, `V3/config/bridge-*.toml`, `apps/website-v2.9/src/lib/bridge-api.ts`, related docs  
 > **Target:** Determine what is production-ready and what must be fixed before mainnet launch.
 
 ---
@@ -50,7 +50,7 @@ There are **four different bridge configs** in the repo, each with different con
 | `scripts/bridge-testnet-fixed.toml` | testnet | 1/2 | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | Legacy helper config; still uses old Praha RPC |
 | `V3/config/bridge-mainnet.toml` | mainnet | 5/5 | `0x0000...0000` | `0x0000...0000` | ✅ Template — placeholders, `enabled=false` |
 | `V3/L2/bridge/config/bridge-mainnet.toml` | mainnet | 5/5 | `0x0000...0000` | `0x0000...0000` | ✅ Template — placeholders, `enabled=false` |
-| `APP&WEB/website-v2.9/src/lib/bridge-api.ts` | testnet | — | `0xF4BF85443...Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Fixed — now points to Sepolia contracts |
+| `apps/website-v2.9/src/lib/bridge-api.ts` | testnet | — | `0xF4BF85443...Cedca1` | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Fixed — now points to Sepolia contracts |
 
 **Impact:** Running any of these configs as-is will either fail to start, connect to the wrong contracts, or operate with unsafe single-sig / placeholder validators.
 
@@ -102,7 +102,7 @@ This contradicts the repo configs (which still use zero placeholders / `enabled=
 1. Treat the existing mainnet bridge as emergency-only / pause it.
 2. Deploy a new `ZIONBridge` with the intended 5/5 validator threshold.
 3. Migrate wZION ownership/minter rights to the new bridge.
-4. Update `V3/config/bridge-mainnet.toml`, `V3/L2/bridge/config/bridge-mainnet.toml`, and `APP&WEB/website-v2.9/src/lib/bridge-api.ts` with the new mainnet bridge address.
+4. Update `V3/config/bridge-mainnet.toml`, `V3/L2/bridge/config/bridge-mainnet.toml`, and `apps/website-v2.9/src/lib/bridge-api.ts` with the new mainnet bridge address.
 5. Update `V3/docs/BRIDGE_MAINNET_DEPLOY.md` and `L2audit.md` to reflect the real deployed state.
 
 ### 3.8 Website Points to Zero-Address Mainnet Contracts ✅ FIXED

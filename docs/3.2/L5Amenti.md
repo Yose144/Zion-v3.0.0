@@ -113,7 +113,7 @@ Ne stavba — **vztah a respekt**:
 - `docs/docs2.9/books/quantum-revolution/BOOK_CONTEXT.md` + `docs/QUANTUM_REVOLUTION.md` — Smaragdové desky jako kořen #1 Stromu života („jak nahoře, tak dole" = zrcadlová struktura blockchainu)
 - `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/194_THOTH_SCRIBE.md` — avatar #194 Merkle písař
 - `docs/TerraNova/ancient-egypt/01-RAMEC-A-ETIKA.md` + `02-PRAMENY-A-KOSMOLOGIE.md` — egyptologická etika: akademický rámec primární, žádné „Atlantida=Egypt", hieroglyfy jen s kontrolou významu
-- `APP&WEB/IntroPage/src/app/amenti/page.tsx` + `src/app/data/amenti-data.json` — živá Amenti Library (Síně Amenti) na apexu
+- `apps/IntroPage/src/app/amenti/page.tsx` + `src/app/data/amenti-data.json` — živá Amenti Library (Síně Amenti) na apexu
 - Reálné kotvy: Giza plateau (SCA), Sphinx, Nil, knihovna Alexandrie (ztracená), Hermopolis/Djehuty kult, Smaragdové desky (new-age, non-egyptological)
 
 ---

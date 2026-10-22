@@ -430,7 +430,7 @@ SEED_PAIRS = [
             "  6. Cosmic Fusion: 8 kol AES-CBC s rotujícím klíčem\n"
             "Krok 4 zajišťuje ASIC rezistenci — vyžaduje rychlou paměť. "
             "V Rust crate je implementován v ekam_deeksha.rs, "
-            "Metal GPU verze v APP&WEB/desktop-agent/resources/mining/ekam_deeksha.metal."
+            "Metal GPU verze v apps/desktop-agent/resources/mining/ekam_deeksha.metal."
         ),
     },
     {
@@ -889,7 +889,7 @@ SEED_PAIRS = [
         ),
     },
     {
-        "user": "Jake knihy z APP&WEB/public_html/V2/books ma AI Native brat jako soucast book corpus?",
+        "user": "Jake knihy z apps/public_html/V2/books ma AI Native brat jako soucast book corpus?",
         "assistant": (
             "Published V2 books vrstva zahrnuje minimalne dve osy. Prvni je Quantova Revoluce jako historicka materska kniha, dolozena PDF edicemi a navazujicim book contextem v docs/docs2.9/books/. "
             "Druhou je Sacred Library / Amenti knihovna, kde jsou ve verejne publikacni vrstve vedeny napriklad Cosmic Egg, Emerald Tablets, Dohrmanovo proroctvi, Omnity One Love, Starobyly sip a Tajemstvi Amenti. "
@@ -975,7 +975,7 @@ SEED_PAIRS = [
     {
         "user": "Co je ZION Desktop Agent?",
         "assistant": (
-            "ZION Desktop Agent je Electron aplikace v APP&WEB/desktop-agent/:\n"
+            "ZION Desktop Agent je Electron aplikace v apps/desktop-agent/:\n"
             "  - Electron main process: src/main.js\n"
             "  - Mining UI: grafické rozhraní pro GPU/CPU mining\n"
             "  - Python mining fallback: pro systémy bez Rust mineru\n"

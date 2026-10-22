@@ -27,8 +27,8 @@ Zion Multichain je L2 služba (`V31/L2/multichain`), která přidává uživatel
 | `ZionL1Adapter` | `V31/L2/multichain/src/chain/adapters/zion_l1.rs` | ZION L1 adapter |
 | `SwapExecutor` | `V31/L2/multichain/src/swap/dex/swap_executor.rs` | DEX swap workflow |
 | `DexRouter` | `V31/L2/multichain/src/swap/dex.rs` | interní AMM quote engine |
-| `MultichainWalletContext` | `APP&WEB/website-v2.9/src/contexts/MultichainWalletContext.tsx` | UI stav |
-| `CrossChainSwapWidget` | `APP&WEB/website-v2.9/src/components/dex/CrossChainSwapWidget.tsx` | swap UI |
+| `MultichainWalletContext` | `apps/website-v2.9/src/contexts/MultichainWalletContext.tsx` | UI stav |
+| `CrossChainSwapWidget` | `apps/website-v2.9/src/components/dex/CrossChainSwapWidget.tsx` | swap UI |
 
 ---
 

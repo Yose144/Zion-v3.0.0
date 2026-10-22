@@ -318,12 +318,12 @@ fan curve (e.g., 80% fan at 70°C).
 | `V3/L1/miner/src/gpu_backend.rs` | nvidia-smi/rocm-smi helpers, v5 async copies, v6 launch_batch/collect_batch, PTXAS opts, batch size fix (local + pipeline mode), CUDA runtime probe |
 | `V3/L1/miner/src/cosmic_harmony_deeksha.cu` | __launch_bounds__(256) on all kernels |
 | `V3/L1/miner/build.rs` | V3/L1/native-libs link search path |
-| `APP&WEB/desktop-agent/src/main.js` | GPU field parsing, share event parsing, IPC, ZION_GPU_MAX_BATCH env setup, NVRTC runtime probe |
-| `APP&WEB/desktop-agent/src/preload.js` | onShareEvent IPC channel |
-| `APP&WEB/desktop-agent/src/ui/renderer.js` | GPU panel, share log, sparkline rendering, static Session Metrics panel, Trinity detail rows, 2000-line log buffer |
-| `APP&WEB/desktop-agent/src/ui/index.html` | GPU rows, share log panel, sparkline canvas, CSS, Session Metrics panel, Trinity detail rows |
-| `APP&WEB/desktop-agent/scripts/prepare-rust-miner.js` | Fix duplicate `const base` SyntaxError, NVRTC runtime warning |
-| `APP&WEB/desktop-agent/resources/zion-miner.exe` | Rebuilt with CUDA + OpenCL + nvrtc DLLs |
+| `apps/desktop-agent/src/main.js` | GPU field parsing, share event parsing, IPC, ZION_GPU_MAX_BATCH env setup, NVRTC runtime probe |
+| `apps/desktop-agent/src/preload.js` | onShareEvent IPC channel |
+| `apps/desktop-agent/src/ui/renderer.js` | GPU panel, share log, sparkline rendering, static Session Metrics panel, Trinity detail rows, 2000-line log buffer |
+| `apps/desktop-agent/src/ui/index.html` | GPU rows, share log panel, sparkline canvas, CSS, Session Metrics panel, Trinity detail rows |
+| `apps/desktop-agent/scripts/prepare-rust-miner.js` | Fix duplicate `const base` SyntaxError, NVRTC runtime warning |
+| `apps/desktop-agent/resources/zion-miner.exe` | Rebuilt with CUDA + OpenCL + nvrtc DLLs |
 
 ---
 

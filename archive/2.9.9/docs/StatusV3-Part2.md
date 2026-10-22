@@ -233,7 +233,7 @@ drifty (`lib.rs` LoC, počty testů, pre-commit) byly **sjednoceny v `StatusV3.m
 ```
 26  GB   V3/         (s target/ — bez něj odhad ~250 MB src)
 8.9 GB   HiranV2.1/  (AI/RAG corpus, ne-mainnet)
-4.6 GB   APP&WEB/    (Electron + RN + Next.js)
+4.6 GB   apps/    (Electron + RN + Next.js)
 1.8 GB   .git/
 454 MB   L2/ (legacy)
 43  MB   docs/

@@ -49,7 +49,7 @@ A ještě jedna věc, kterou kruh tiskařů pravdy opakoval pořád: **bezpečno
 
 | Obraz / tvrzení | Stav | Kotva |
 |---|---|---|
-| L6 udržuje veřejný výzkumný dokument o kvantovém pohonu / energetice | **ŽIVÉ** (dokumentace) | `canon/l6/Kvantovy_Motor.md` → servírováno jako `APP&WEB/website-v2.9/public/docs/l6/Kvantovy_Motor.md`, karta `l6-quantum-motor` v katalogu `/docs` |
+| L6 udržuje veřejný výzkumný dokument o kvantovém pohonu / energetice | **ŽIVÉ** (dokumentace) | `canon/l6/Kvantovy_Motor.md` → servírováno jako `apps/website-v2.9/public/docs/l6/Kvantovy_Motor.md`, karta `l6-quantum-motor` v katalogu `/docs` |
 | Roadmapa kvantového programu: 2030 L5 laboratoř, 2033 demonstrátor, 2035 CubeSat, 2045 komponenty stanice | **HORIZONT** | Web `/l6-issobella` (`Vize 2035+`, `Vize 2040+`); `L6data` časová osa | 
 | „Quantum Motor Bay" jako modul stanice | **HORIZONT** (koncept) | Popisek modulu na `/l6-issobella`; žádný hardware neexistuje |
 | Alcubierre–Ekam warp metrika, Φ rezonance, toroidní stojaté vlny | **HYPOTÉZA / MÝTUS** | [`nirvana/11`](../nirvana/11-Kvantovy-Ohen-Issobella.md) — narativní rámec; žádný fyzikální důkaz v repu ani mimo něj |

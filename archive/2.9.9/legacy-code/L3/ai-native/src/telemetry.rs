@@ -261,7 +261,7 @@ pub struct TelemetryStats {
 
 // ─── Node config helpers ─────────────────────────────────────────────────────
 
-/// Runtime node descriptor — mirrors the config in `APP&WEB/website-v2.9`.
+/// Runtime node descriptor — mirrors the config in `apps/website-v2.9`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeConfig {
     pub id: String,

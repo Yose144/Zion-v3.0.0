@@ -352,6 +352,6 @@ Whenever a new CLI command or service target is added, update the following in t
 
 - `V3/docs/CLI_GUIDE.md`
 - `V3/docs/CLI_FAQ.md`
-- public docs mirror under `APP&WEB/website-v2.9/public/docs/`
+- public docs mirror under `apps/website-v2.9/public/docs/`
 
 That keeps the operator surface auditable and prevents the CLI from outgrowing its docs again.

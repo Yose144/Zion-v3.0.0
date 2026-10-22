@@ -14,11 +14,11 @@ Co je hotové:
   (11434).
 
 Deploy blokován: SSH klíč ~/.ssh/zion_hetzner_key je serverem odmítnut (Permission denied (publickey)). Build a Docker recreate musí proběhnout na serveru (77.42.71.94), protože
-lokální Windows path APP&WEB obsahuje &, což rozbíjí Next.js module resolution.
+lokální Windows path apps obsahuje &, což rozbíjí Next.js module resolution.
 
 Postup pro deploy: Můžeš ho udělat ručně přes SSH na serveru:
 
-cd ~/zion-2.9.6-main/APP&WEB/website-v2.9
+cd ~/zion-2.9.6-main/apps/website-v2.9
 git pull
 docker compose -f ../../docker/docker-compose.website.yml build --no-cache website
 docker compose -f ../../docker/docker-compose.website.yml up -d website
@@ -33,9 +33,9 @@ deployi — data se persistují do JSON souborů přímo v kontejneru.
 
 Nejprve zkontroluji, jestli soubory stále existují, a podívám se do git logu, jestli nebyly omylem smazány.
 
-● Found files matching **/*Tahiti* in .\APP&WEB\website-v2.9\src
+● Found files matching **/*Tahiti* in .\apps\website-v2.9\src
 
-● Found files matching **/*Stargate* in .\APP&WEB\website-v2.9\src
+● Found files matching **/*Stargate* in .\apps\website-v2.9\src
 
 ● Searched for aloha|Aloha in .\
   ✗ max_results is not supported for files_with_matches output mode
@@ -48,7 +48,7 @@ Podívám se na git log, jestli některé soubory nebyly smazány, a zkontroluji
   │ $ git log --diff-filter=D --summary -10
   │ Date:   Fri May 15 12:53:19 2026 +0200
   │     security(scrub): remove backup files from working tree before rescrub
-  │  delete mode 100644 APP&WEB/public_html/V2/api/config.php.backup.20251222
+  │  delete mode 100644 apps/public_html/V2/api/config.php.backup.20251222
   └ Exited with code 0
 
 ● Ran command
@@ -62,34 +62,34 @@ Podívám se na git log, jestli některé soubory nebyly smazány, a zkontroluji
 
 Chápu — myslíš "Tiare Tahiti květ + Stargate brána + schovávací VisionBar panel" z commitu d8ebc744. Podívám se, jestli je to stále v kódu nebo někdo smazal z layout.tsx/Hero.tsx.
 
-● Read lines 1-100 in .\APP&WEB\website-v2.9\src\app\layout.tsx
+● Read lines 1-100 in .\apps\website-v2.9\src\app\layout.tsx
   └ 78 lines
 
-● Read .\APP&WEB\website-v2.9\src\components\HeroSection.tsx
+● Read .\apps\website-v2.9\src\components\HeroSection.tsx
   └ 39 lines
 
-● Read lines 1-100 in .\APP&WEB\website-v2.9\src\components\Hero.tsx
+● Read lines 1-100 in .\apps\website-v2.9\src\components\Hero.tsx
   └ 100 lines
 
-● Read lines 1-30 in .\APP&WEB\website-v2.9\src\components\VisionBar.tsx
+● Read lines 1-30 in .\apps\website-v2.9\src\components\VisionBar.tsx
   └ 30 lines
 
 Soubory vypadají, že existují v repu. Zkusím se podívat na git status konkrétně pro tyto komponenty a zjistit, jestli nebyly lokálně přepsány/smazané.
 
-● Ran command in .\APP&WEB\website-v2.9\src\components
+● Ran command in .\apps\website-v2.9\src\components
   │ $ git status --short TahitiFlower.tsx VisionBar.tsx StargateGate.tsx HeroSection.tsx
   └ Exited with code 0
 
 ● Ran command
-  │ $ git log --diff-filter=D --summary -- "APP&WEB/website-v2.9/src/components" -10
+  │ $ git log --diff-filter=D --summary -- "apps/website-v2.9/src/components" -10
   └ Exited with code 0
 
 Podívám se na homepage, jestli tyto komponenty nebyly odstraněny z page.tsx.
 
-● Read .\APP&WEB\website-v2.9\src\app\page.tsx
+● Read .\apps\website-v2.9\src\app\page.tsx
   └ 33 lines
 
-● Found files matching **/textures/* in .\APP&WEB\website-v2.9\public
+● Found files matching **/textures/* in .\apps\website-v2.9\public
 
 ● Ran command
   │ $ git log --all --diff-filter=D --summary -- "*aloha*" "*brana*" "*panel*" "*gate*" "*tahiti*" "*vision*" "*stargate*" -10
@@ -130,8 +130,8 @@ Případně můžeš zkopírovat část kódu nebo popsat, co to mělo dělat? P
 Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten souhrn na začátku vlákna. Ale podívám se přímo do git historie těch souborů a porovnám je se starší verzí, jestliněco nezmizelo.
 
 ● Ran command
-  │ $ git log --oneline -5 -- "APP&WEB/website-v2.9/src/components/TahitiFlower.tsx" "APP&WEB/website-v2.9/src/components/VisionBar.tsx" "APP&WEB/website-v2.9/src/components/
-  │   StargateGate.tsx" "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
+  │ $ git log --oneline -5 -- "apps/website-v2.9/src/components/TahitiFlower.tsx" "apps/website-v2.9/src/components/VisionBar.tsx" "apps/website-v2.9/src/components/
+  │   StargateGate.tsx" "apps/website-v2.9/src/components/HeroSection.tsx"
   │ 48e006c9 feat(stargate): polished portal + ZION Oasis link underneath
   │ c18cf7cc feat(website): refresh roadmap for v3.0.0 mainnet readiness + hero polish
   │ d8ebc744 feat(hero): collapsible hero — Tiare Tahiti unlocks VisionBar + Stargate
@@ -140,8 +140,8 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
   └ Exited with code 0
 
 ● Ran command
-  │ $ git diff 48e006c9 HEAD -- "APP&WEB/website-v2.9/src/components/TahitiFlower.tsx" "APP&WEB/website-v2.9/src/components/VisionBar.tsx" "APP&WEB/website-v2.9/src/components/
-  │   StargateGate.tsx" "APP&WEB/website-v2.9/src/components/HeroSection.tsx" "APP&WEB/website-v2.9/src/app/layout.tsx" "APP&WEB/website-v2.9/src/components/Hero.tsx"
+  │ $ git diff 48e006c9 HEAD -- "apps/website-v2.9/src/components/TahitiFlower.tsx" "apps/website-v2.9/src/components/VisionBar.tsx" "apps/website-v2.9/src/components/
+  │   StargateGate.tsx" "apps/website-v2.9/src/components/HeroSection.tsx" "apps/website-v2.9/src/app/layout.tsx" "apps/website-v2.9/src/components/Hero.tsx"
   │ +            </div>
   │ +
   │              <div className="zion-panel relative rounded-[28px] p-6 space-y-5">
@@ -150,15 +150,15 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
   └ Exited with code 0
 
 ● Ran command
-  │ $ git diff 48e006c9 HEAD -- "APP&WEB/website-v2.9/src/app/page.tsx"
+  │ $ git diff 48e006c9 HEAD -- "apps/website-v2.9/src/app/page.tsx"
   └ Exited with code 0
 
 ● Ran command
-  │ $ git log --diff-filter=D --summary HEAD...48e006c9 -- "APP&WEB/website-v2.9/src" "APP&WEB/website-v2.9/public"
+  │ $ git log --diff-filter=D --summary HEAD...48e006c9 -- "apps/website-v2.9/src" "apps/website-v2.9/public"
   └ Exited with code 0
 
 ● Ran command
-  │ $ git diff 4ecdb847 HEAD -- "APP&WEB/website-v2.9/src/app/page.tsx" "APP&WEB/website-v2.9/src/app/layout.tsx"
+  │ $ git diff 4ecdb847 HEAD -- "apps/website-v2.9/src/app/page.tsx" "apps/website-v2.9/src/app/layout.tsx"
   └ Exited with code 0
 
 ● Ran command
@@ -202,11 +202,11 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
 
 ● Ran command
   │ $ find . -iname "*aloha*" -not -path "./.git/*" -not -path "./docs/*"
-  │ ./APP&WEB/public_html/V2/_archive/old-dev/develop/Dev/portal/fiizalohacss
-  │ ./APP&WEB/public_html/V2/_archive/old-dev/develop/Dev/portal/stargate/zaloha.css
-  │ ./APP&WEB/public_html/V2/_archive/old-dev/develop/Dev/portal/stargate/zalohaorg.css
-  │ ./APP&WEB/public_html/V2/_archive/old-dev/develop/zalohaDev.html
-  │ ./APP&WEB/public_html/V2/_archive/zalohaindex.html
+  │ ./apps/public_html/V2/_archive/old-dev/develop/Dev/portal/fiizalohacss
+  │ ./apps/public_html/V2/_archive/old-dev/develop/Dev/portal/stargate/zaloha.css
+  │ ./apps/public_html/V2/_archive/old-dev/develop/Dev/portal/stargate/zalohaorg.css
+  │ ./apps/public_html/V2/_archive/old-dev/develop/zalohaDev.html
+  │ ./apps/public_html/V2/_archive/zalohaindex.html
   └ Exited with code 0
 
 ● Ran command
@@ -219,11 +219,11 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
   └ Exited with code 0
 
 ● Ran command
-  │ $ git log --all --name-only -- "APP&WEB/website-v2.9/src/components/*" | grep -i aloha
+  │ $ git log --all --name-only -- "apps/website-v2.9/src/components/*" | grep -i aloha
   └ Exited with code 1
 
 ● Ran command
-  │ $ git diff b3eaea0d HEAD -- "APP&WEB/website-v2.9/src/components/TahitiFlower.tsx"
+  │ $ git diff b3eaea0d HEAD -- "apps/website-v2.9/src/components/TahitiFlower.tsx"
   │ +        </span>
   │ +      </motion.div>
   │        {/* hover tooltip */}
@@ -237,7 +237,7 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
   └ Exited with code 0
 
 ● Ran command
-  │ $ git log --all --oneline -- "APP&WEB/website-v2.9/src/app/page.tsx"
+  │ $ git log --all --oneline -- "apps/website-v2.9/src/app/page.tsx"
   │ def43b3e web: fix client crash path, unify homepage flow, and wire V3 whitepaper docs
   │ 76eb45a1 Homepage News section: DeFi Hub launch + CoinGecko listing + testnet + bridge articles
   │ 7e69312e 2.9.8 web: streamline deeksha site and homepage
@@ -247,7 +247,7 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
 
 ● Ran command
   │ $ git diff origin/main HEAD --name-only
-  │ APP&WEB/website-v2.9/src/components/MissionControlDashboard.tsx
+  │ apps/website-v2.9/src/components/MissionControlDashboard.tsx
   │ StatusV3.md
   │ dashboard/dashboard.html
   │ dashboard/dashboard.js
@@ -255,8 +255,8 @@ Promiň, nemám přístup k interní historii chatu Devina — vidím jen ten so
   └ Exited with code 0
 
 ● Ran command
-  │ $ git diff origin/main HEAD -- "APP&WEB/website-v2.9/src/components/TahitiFlower.tsx" "APP&WEB/website-v2.9/src/components/VisionBar.tsx" "APP&WEB/website-v2.9/src/components/
-  │   StargateGate.tsx" "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
+  │ $ git diff origin/main HEAD -- "apps/website-v2.9/src/components/TahitiFlower.tsx" "apps/website-v2.9/src/components/VisionBar.tsx" "apps/website-v2.9/src/components/
+  │   StargateGate.tsx" "apps/website-v2.9/src/components/HeroSection.tsx"
   └ Exited with code 0
 
 Promiň, nemám přístup k interní historii předchozích chatů Devina — vidím jen ten souhrn na začátku vlákna. Provedl jsem ale detailní kontrolu gitu a všech souborů. Zde je situace:
@@ -289,7 +289,7 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
 ❭ zkuz najit v hitorii gitu zion oasis portal , ci neco podobneho ... prozkoumej to, kdyz se kliklo na kvetinu, baner se mel schovavat, uz to bylo vvytvorene 
 
 ● Ran command
-  │ $ git show 48e006c9 -- "APP&WEB/website-v2.9/src/components/StargateGate.tsx"
+  │ $ git show 48e006c9 -- "apps/website-v2.9/src/components/StargateGate.tsx"
   │ +        </Link>
   │ +      </motion.div>
   │ +    </div>
@@ -297,29 +297,29 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
   │  }
   └ Exited with code 0
 
-● Read lines 180-239 in .\APP&WEB\website-v2.9\src\components\StargateGate.tsx
+● Read lines 180-239 in .\apps\website-v2.9\src\components\StargateGate.tsx
   └ 60 lines
 
-● Read lines 237-266 in .\APP&WEB\website-v2.9\src\components\StargateGate.tsx
+● Read lines 237-266 in .\apps\website-v2.9\src\components\StargateGate.tsx
   └ 23 lines
 
 ● Ran command
-  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show 48e006c9:APP&WEB/website-v2.9/src/components/HeroSection.tsx
+  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show 48e006c9:apps/website-v2.9/src/components/HeroSection.tsx
   │ bash: line 1: WEB/website-v2.9/src/components/HeroSection.tsx: No such file or directory
   └ Exited with code 127
 
 ● Ran command
-  │ $ git show 48e006c9 -- "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
+  │ $ git show 48e006c9 -- "apps/website-v2.9/src/components/HeroSection.tsx"
   └ Exited with code 0
 
 ● Ran command
-  │ $ git log --all --oneline -- "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
+  │ $ git log --all --oneline -- "apps/website-v2.9/src/components/HeroSection.tsx"
   │ c18cf7cc feat(website): refresh roadmap for v3.0.0 mainnet readiness + hero polish
   │ d8ebc744 feat(hero): collapsible hero — Tiare Tahiti unlocks VisionBar + Stargate
   └ Exited with code 0
 
 ● Ran command
-  │ $ git show d8ebc744 -- "APP&WEB/website-v2.9/src/components/HeroSection.tsx"
+  │ $ git show d8ebc744 -- "apps/website-v2.9/src/components/HeroSection.tsx"
   │ +        )}
   │ +      </AnimatePresence>
   │ +    </div>
@@ -328,22 +328,22 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
   └ Exited with code 0
 
 ● Ran command
-  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show d8ebc744^:APP&WEB/website-v2.9/src/app/layout.tsx | grep -n -A5 -B5 "Tahiti\|VisionBar\|Oasis\|Stargate"
+  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show d8ebc744^:apps/website-v2.9/src/app/layout.tsx | grep -n -A5 -B5 "Tahiti\|VisionBar\|Oasis\|Stargate"
   │ bash: line 1: WEB/website-v2.9/src/app/layout.tsx: No such file or directory
   │ fatal: path 'APP' does not exist in 'd8ebc744^'
   └ Exited with code 1
 
 ● Ran command
-  │ $ git show d8ebc744^ -- "APP&WEB/website-v2.9/src/app/layout.tsx" | grep -n -A5 -B5 "Tahiti\|VisionBar\|Oasis\|Stargate"
+  │ $ git show d8ebc744^ -- "apps/website-v2.9/src/app/layout.tsx" | grep -n -A5 -B5 "Tahiti\|VisionBar\|Oasis\|Stargate"
   └ Exited with code 1
 
 ● Ran command
-  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show bffbd3a9:APP&WEB/website-v2.9/src/app/layout.tsx | grep -n -A3 -B3 "Tahiti\|VisionBar\|Oasis\|Stargate\|Banner"
+  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show bffbd3a9:apps/website-v2.9/src/app/layout.tsx | grep -n -A3 -B3 "Tahiti\|VisionBar\|Oasis\|Stargate\|Banner"
   │ bash: line 1: WEB/website-v2.9/src/app/layout.tsx: No such file or directory
   └ Exited with code 1
 
 ● Ran command
-  │ $ git show bffbd3a9 -- 'APP&WEB/website-v2.9/src/app/layout.tsx' | grep -n -A3 -B3 "Tahiti\|VisionBar\|Oasis\|Stargate\|Banner"
+  │ $ git show bffbd3a9 -- 'apps/website-v2.9/src/app/layout.tsx' | grep -n -A3 -B3 "Tahiti\|VisionBar\|Oasis\|Stargate\|Banner"
   │ 47:                         <VisionBar />
   │ 48:+                        <OasisBanner />
   │ 49-                       </div>
@@ -365,11 +365,11 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
   │     - Removed OasisBanner (replaced by Stargate)
   │     OasisBanner:
   │     - Tiare Tahiti centered under nav, then VisionBar, then OasisBanner
-  │ APP&WEB/website-v2.9/src/components/OasisBanner.tsx
+  │ apps/website-v2.9/src/components/OasisBanner.tsx
   └ Exited with code 0
 
 ● Ran command
-  │ $ git log --all --oneline -- "APP&WEB/website-v2.9/src/components/OasisBanner.tsx"
+  │ $ git log --all --oneline -- "apps/website-v2.9/src/components/OasisBanner.tsx"
   │ bffbd3a9 feat(layout): remove L5, enrich 3 vision cards + add Oasis banner
   └ Exited with code 0
 
@@ -380,12 +380,12 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
   └ Exited with code 0
 
 ● Ran command
-  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show bffbd3a9:APP&WEB/website-v2.9/src/components/OasisBanner.tsx
+  │ $ cd "C:\Users\yosef\Desktop\Zion\2.9.6-main" && git show bffbd3a9:apps/website-v2.9/src/components/OasisBanner.tsx
   │ bash: line 1: WEB/website-v2.9/src/components/OasisBanner.tsx: No such file or directory
   └ Exited with code 127
 
 ● Ran command
-  │ $ git show bffbd3a9 -- 'APP&WEB/website-v2.9/src/components/OasisBanner.tsx'
+  │ $ git show bffbd3a9 -- 'apps/website-v2.9/src/components/OasisBanner.tsx'
   │ +        </div>
   │ +      </Link>
   │ +    </motion.div>
@@ -394,7 +394,7 @@ Případně pokud víš, že to existovalo v nějakém starším commitu, dej mi
   └ Exited with code 0
 
 ● Ran command
-  │ $ git diff bffbd3a9 d8ebc744 -- 'APP&WEB/website-v2.9/src/app/layout.tsx' 'APP&WEB/website-v2.9/src/components/TahitiFlower.tsx'
+  │ $ git diff bffbd3a9 d8ebc744 -- 'apps/website-v2.9/src/app/layout.tsx' 'apps/website-v2.9/src/components/TahitiFlower.tsx'
   │ +        </span>
   │ +      </motion.div>
   │        {/* hover tooltip */}
@@ -449,7 +449,7 @@ Jak to funguje:
 
 Všechno se schovává/zobrazuje kliknutím na květinu — animace AnimatePresence s opacity + scale + y.
 
-Můžeš to ověřit v souborech: C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9\src\components\HeroSection.tsx C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9\src\components\StargateGate.tsx C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9\src\components\TahitiFlower.tsx
+Můžeš to ověřit v souborech: C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9\src\components\HeroSection.tsx C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9\src\components\StargateGate.tsx C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9\src\components\TahitiFlower.tsx
 
 Pokud ti na webu něco nefunguje nebo chybí, problém bude pravděpodobně v tom, že poslední změny nejsou deploynuté na server — commit s E2E API integrací čeká na deploy. Chceš, abych
 zkusil jiný způsob deploye?
@@ -703,13 +703,13 @@ Případně mohu připravit přesný návod pro ruční deploy - stačí ho zkop
   │ 11 +  cat <<'COMMANDS'
   │ 12 +  
   │ 13 +  # 1. Go to repo and pull latest changes
-  │ 14 +  cd ~/zion-2.9.6-main/APP&WEB/website-v2.9 || cd ~/zion-web/APP&WEB/website-v2.9 || cd ~/zion-web
+  │ 14 +  cd ~/zion-2.9.6-main/apps/website-v2.9 || cd ~/zion-web/apps/website-v2.9 || cd ~/zion-web
   │ 15 +  git pull origin main
   │ 16 +  
   │ 17 +  # 2. Install dependencies
   │ 18 +  npm install
   │ 19 +  
-  │ 20 +  # 3. Build (on server, Linux path handles APP&WEB correctly)
+  │ 20 +  # 3. Build (on server, Linux path handles apps correctly)
   │ 21 +  npm run build
   │ 22 +  
   │ 23 +  # 4. Build Docker image
@@ -735,7 +735,7 @@ Vytvořil jsem soubor DEPLOY_NOW.sh s přesnými příkazy, které stačí spust
 Option A — ruční deploy na serveru:
 
 # Přihlas se na Edge server a spusť:
-cd ~/zion-2.9.6-main/APP&WEB/website-v2.9
+cd ~/zion-2.9.6-main/apps/website-v2.9
 git pull origin main
 npm install
 npm run build
@@ -845,7 +845,7 @@ Rozumím! Dashboard běží na Core PC (100.86.102.5), ne na tomto Windows stroj
 Deploy musíš udělat z Core PC (lokální PC):
 
 # Přihlas se na Core PC a spusť:
-cd ~/zion-2.9.6-main/APP&WEB/website-v2.9
+cd ~/zion-2.9.6-main/apps/website-v2.9
 git pull origin main
 npm install
 npm run build
@@ -1102,13 +1102,13 @@ Deploy příkazy (spustí se automaticky po rebuildu):
 # 1. SSH připojení a deploy
 ssh -i "ssh-key-zion-edge" -o StrictHostKeyChecking=no root@77.42.71.94 << 'EOF'
 # 2. Go to repo and pull latest changes
-cd ~/zion-2.9.6-main/APP&WEB/website-v2.9 || cd ~/zion-web/APP&WEB/website-v2.9 || cd ~/zion-web
+cd ~/zion-2.9.6-main/apps/website-v2.9 || cd ~/zion-web/apps/website-v2.9 || cd ~/zion-web
 git pull origin main
 
 # 3. Install dependencies
 npm install
 
-# 4. Build (on server, Linux path handles APP&WEB correctly)
+# 4. Build (on server, Linux path handles apps correctly)
 npm run build
 
 # 5. Build Docker image
@@ -1145,11 +1145,11 @@ Rebuild trvá obvykle 2-5 minut. Zatímco čekáme, shrnu co se děje:
 
 Chceš počkat na dokončení rebuildu, nebo chceš deploy provést jiným způsobem?
 
-❭ PS C:\Users\yosef\Desktop\Zion\2.9.6-main> cd '.\APP&WEB\'
-  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB> cd .\Websites\
-  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\Websites> cd ..
-  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB> cd .\website-v2.9\
-  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9> npm install
+❭ PS C:\Users\yosef\Desktop\Zion\2.9.6-main> cd '.\apps\'
+  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\apps> cd .\Websites\
+  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\Websites> cd ..
+  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\apps> cd .\website-v2.9\
+  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9> npm install
 
   up to date, audited 583 packages in 7s
 
@@ -1165,7 +1165,7 @@ Chceš počkat na dokončení rebuildu, nebo chceš deploy provést jiným způs
     npm audit fix --force
 
   Run `npm audit` for details.
-  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9> npm audit fix 
+  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9> npm audit fix 
 
   up to date, audited 583 packages in 11s
 
@@ -1273,7 +1273,7 @@ Chceš počkat na dokončení rebuildu, nebo chceš deploy provést jiným způs
 
   To address all issues (including breaking changes), run:
     npm audit fix --force
-  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9> npm run dev
+  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9> npm run dev
 
   > zion-web-v3.0.0@3.0.0 dev
   > next dev
@@ -1298,7 +1298,7 @@ Chceš počkat na dokončení rebuildu, nebo chceš deploy provést jiným způs
   }
 
   Node.js v24.15.0
-  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9> npm build
+  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9> npm build
   Unknown command: "build"
 
 
@@ -1306,7 +1306,7 @@ Chceš počkat na dokončení rebuildu, nebo chceš deploy provést jiným způs
     npm run build # run the "build" package script
   To see a list of supported npm commands, run:
     npm help
-  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9> npm buila
+  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9> npm buila
   Unknown command: "buila"
 
 
@@ -1314,7 +1314,7 @@ Chceš počkat na dokončení rebuildu, nebo chceš deploy provést jiným způs
     npm run build # run the "build" package script
   To see a list of supported npm commands, run:
     npm help
-  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9> npm run dev 
+  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9> npm run dev 
 
   > zion-web-v3.0.0@3.0.0 dev
   > next dev
@@ -1339,9 +1339,9 @@ Chceš počkat na dokončení rebuildu, nebo chceš deploy provést jiným způs
   }
 
   Node.js v24.15.0
-  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9> 
+  PS C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9> 
 
-Vidím problém - Windows cesta APP&WEB obsahuje znak &, který rozbíjí Next.js module resolution. To je přesně ten problém, který byl zmíněn v dement.md.
+Vidím problém - Windows cesta apps obsahuje znak &, který rozbíjí Next.js module resolution. To je přesně ten problém, který byl zmíněn v dement.md.
 
 Řešením je build na serveru (Linux), kde cesty fungují správně. Zkontroluji stav rebuildu serveru:
 
@@ -1505,7 +1505,7 @@ Ruční deploy přes Hetzner konzoli:
   3. Klikni na "Console"
   4. Spuť tyto příkazy:
 
-cd ~/zion-2.9.6-main/APP&WEB/website-v2.9 || cd ~/zion-web/APP&WEB/website-v2.9 || cd ~/zion-web
+cd ~/zion-2.9.6-main/apps/website-v2.9 || cd ~/zion-web/apps/website-v2.9 || cd ~/zion-web
 git pull origin main
 npm install
 npm run build
@@ -1520,9 +1520,9 @@ Chceš počkat na dokončení rebuildu a automatický deploy, nebo spustit ručn
 
 ❭ ne spust me zatim web2.9 na lokalu a pak zkusime na edge 
 
-Dobře, spustím website-v2.9 lokálně. Problém je s Windows cestou APP&WEB obsahující znak &. Zkusím to obejít přes Docker nebo jiný způsob.
+Dobře, spustím website-v2.9 lokálně. Problém je s Windows cestou apps obsahující znak &. Zkusím to obejít přes Docker nebo jiný způsob.
 
-● Ran command in .\APP&WEB\website-v2.9
+● Ran command in .\apps\website-v2.9
   │ $ npm run build
   │ Session: local_build
   │   code: 'MODULE_NOT_FOUND',
@@ -1534,7 +1534,7 @@ Dobře, spustím website-v2.9 lokálně. Problém je s Windows cestou APP&WEB ob
 Windows cesta s & rozbíjí Next.js. Zkopíruji website-v2.9 do adresáře bez znaku &:
 
 ● Ran command
-  │ $ cp -r "C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9" "C:\Users\yosef\Desktop\Zion\website-v2.9"
+  │ $ cp -r "C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9" "C:\Users\yosef\Desktop\Zion\website-v2.9"
   │ Session: copy_website
   └ Timed out. Running in background shell copy_website
 
@@ -1550,7 +1550,7 @@ Windows cesta s & rozbíjí Next.js. Zkopíruji website-v2.9 do adresáře bez z
   └ Shell copy_website terminated successfully
 
 ● Ran command
-  │ $ powershell -Command "Copy-Item -Path 'C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\website-v2.9' -Destination 'C:\Users\yosef\Desktop\Zion\website-v2.9' -Recurse -Force"
+  │ $ powershell -Command "Copy-Item -Path 'C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\website-v2.9' -Destination 'C:\Users\yosef\Desktop\Zion\website-v2.9' -Recurse -Force"
   │ Session: ps_copy
   └ Timed out. Running in background shell ps_copy
 
@@ -1575,37 +1575,37 @@ Zkusím použít Docker k obejití problému s Windows cestami:
 
 ● Found files matching website* in .\
 
-Zkusím přejmenovat adresář APP&WEB na APP_WEB, aby se odstranil znak &:
+Zkusím přejmenovat adresář apps na APP_WEB, aby se odstranil znak &:
 
 ● Ran command
-  │ $ mv "APP&WEB" "APP_WEB"
+  │ $ mv "apps" "APP_WEB"
   │ Session: rename_dir
-  │ mv: cannot move 'APP&WEB' to 'APP_WEB': Permission denied
+  │ mv: cannot move 'apps' to 'APP_WEB': Permission denied
   └ Exited with code 1
 
 ● Ran command
-  │ $ powershell -Command "Rename-Item -Path 'C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB' -NewName 'APP_WEB'"
+  │ $ powershell -Command "Rename-Item -Path 'C:\Users\yosef\Desktop\Zion\2.9.6-main\apps' -NewName 'APP_WEB'"
   │ Session: ps_rename
   └ Exited with code 1
 
 ● Ran command
-  │ $ powershell -Command "New-Item -ItemType SymbolicLink -Path 'C:\Users\yosef\Desktop\Zion\APP_WEB' -Target 'C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB'"
+  │ $ powershell -Command "New-Item -ItemType SymbolicLink -Path 'C:\Users\yosef\Desktop\Zion\APP_WEB' -Target 'C:\Users\yosef\Desktop\Zion\2.9.6-main\apps'"
   │ Session: create_symlink
   │ At line:1 char:1
   │ + New-Item -ItemType SymbolicLink -Path 'C:\Users\yosef\Desktop\Zion\AP ...
   │ + ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  │     + CategoryInfo          : PermissionDenied: (C:\Users\yosef\....6-main\APP&WEB:String) [New-Item], UnauthorizedAccessException
+  │     + CategoryInfo          : PermissionDenied: (C:\Users\yosef\....6-main\apps:String) [New-Item], UnauthorizedAccessException
   │     + FullyQualifiedErrorId : NewItemSymbolicLinkElevationRequired,Microsoft.PowerShell.Commands.NewItemCommand
   └ Exited with code 1
 
 Zkusím použít Docker compose k obejití problému s Windows cestami. Podívám se na Dockerfile website:
 
-● Read .\APP&WEB\website-v2.9\Dockerfile
+● Read .\apps\website-v2.9\Dockerfile
   └ 30 lines
 
 Zkusím použít Docker k lokálnímu běhu website. Tím se obejde problém s Windows cestami:
 
-● Ran command in .\APP&WEB\website-v2.9
+● Ran command in .\apps\website-v2.9
   │ $ docker build -t zion-website-local .
   │ Session: docker_build
   └ Timed out. Running in background shell docker_build
@@ -1670,26 +1670,26 @@ Zatím počkám na dokončení obou procesů. Docker build trvá déle kvůli st
 
 Docker build selhal kvůli chybějícímu souboru zion-wallet-sdk/zion-wallet-sdk-1.0.0.tgz. Zkontroluji package.json:
 
-● Read .\APP&WEB\website-v2.9\package.json
+● Read .\apps\website-v2.9\package.json
   └ 45 lines
 
 ● Ran command
-  │ $ ls -la "C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB\"
+  │ $ ls -la "C:\Users\yosef\Desktop\Zion\2.9.6-main\apps\"
   │ Session: list_appweb
   │ bash: -c: line 1: unexpected EOF while looking for matching `"'
   └ Exited with code 2
 
 ● Ran command
-  │ $ ls -la "C:\Users\yosef\Desktop\Zion\2.9.6-main\APP&WEB"
+  │ $ ls -la "C:\Users\yosef\Desktop\Zion\2.9.6-main\apps"
   │ Session: list_appweb
   │ Failed to run command. This shell may not be functional. Please try again using a new shell id.
   ✗ Internal detail: Command already running
 
-● Found files matching zion-wallet-sdk* in .\APP&WEB
+● Found files matching zion-wallet-sdk* in .\apps
 
 Zion-wallet-sdk existuje, ale chybí .tgz soubor. Musím ho vygenerovat:
 
-● Ran command in .\APP&WEB\zion-wallet-sdk
+● Ran command in .\apps\zion-wallet-sdk
   │ $ npm pack
   │ Session: pack_sdk
   │ npm notice shasum: 46a97d3437e1d3bd947563ababa869756862a442
@@ -1699,7 +1699,7 @@ Zion-wallet-sdk existuje, ale chybí .tgz soubor. Musím ho vygenerovat:
   │ zion-wallet-sdk-1.0.0.tgz
   └ Exited with code 0
 
-● Ran command in .\APP&WEB\website-v2.9
+● Ran command in .\apps\website-v2.9
   │ $ docker build -t zion-website-local .
   │ Session: docker_build_retry
   │ #10 1.634 npm warn EBADENGINE }
@@ -1709,7 +1709,7 @@ Zion-wallet-sdk existuje, ale chybí .tgz soubor. Musím ho vygenerovat:
 
 Docker build stále selhal kvůli zion-wallet-sdk dependency. Musím upravit Dockerfile, aby zkopíroval i zion-wallet-sdk:
 
-● Edited .\APP&WEB\website-v2.9\Dockerfile
+● Edited .\apps\website-v2.9\Dockerfile
   │  3    WORKDIR /app
   │  4
   │  5    COPY package*.json ./
@@ -1718,10 +1718,10 @@ Docker build stále selhal kvůli zion-wallet-sdk dependency. Musím upravit Doc
   │  8
   └  9    COPY . .
 
-To nebude fungovat - Dockerfile nemůže přistupovat k souborům mimo build context. Zkusím jiný přístup - použít .dockerignore k vyloučení zbytečných souborů a zkopírovat celý APP&WEB
+To nebude fungovat - Dockerfile nemůže přistupovat k souborům mimo build context. Zkusím jiný přístup - použít .dockerignore k vyloučení zbytečných souborů a zkopírovat celý apps
 kontext:
 
-● Edited .\APP&WEB\website-v2.9\Dockerfile
+● Edited .\apps\website-v2.9\Dockerfile
   │  3    WORKDIR /app
   │  4
   │  5    COPY package*.json ./
@@ -1731,9 +1731,9 @@ kontext:
   │  8
   └  9    COPY . .
 
-To nebude fungovat - Docker nemůže přistupovat k souborům mimo build context. Musím změnit build context na APP&WEB:
+To nebude fungovat - Docker nemůže přistupovat k souborům mimo build context. Musím změnit build context na apps:
 
-● Ran command in .\APP&WEB
+● Ran command in .\apps
   │ $ docker build -f website-v2.9/Dockerfile -t zion-website-local .
   │ Session: docker_build_context
   │ #8 [internal] load build context
@@ -1913,13 +1913,13 @@ Zkusím SSH znovu, možná už funguje po chvíli od rebuildu:
 
 SSH se stále zasekává. Zkusím static export website, který by měl fungovat bez problémů s Windows cestami:
 
-● Read .\APP&WEB\website-v2.9\next.config.ts
+● Read .\apps\website-v2.9\next.config.ts
   └ 81 lines
 
 Souhrn situace:
 
   1. SSH připojení - se stále zasekává, možná server se ještě plně nespustil po rebuildu
-  2. Windows cesta APP&WEB - rozbíjí Next.js kvůli znaku &
+  2. Windows cesta apps - rozbíjí Next.js kvůli znaku &
   3. Docker build - byl příliš pomalý kvůli velkému kontextu
   4. WSSL kopírování - také selhalo
 
@@ -1927,7 +1927,7 @@ Doporučený postup:
 
 Pro lokální běh website bych doporučil:
 
-  1. Přejmenovat adresář APP&WEB na APP_WEB (to vyžaduje admin práva)
+  1. Přejmenovat adresář apps na APP_WEB (to vyžaduje admin práva)
   2. Nebo použít Hetzner Console pro ruční deploy na server
 
 Pro deploy na Edge server:
@@ -2005,7 +2005,7 @@ Doporučený postup:
 
 Ruční deploy příkazy pro Hetzner Console:
 
-cd ~/zion-2.9.6-main/APP&WEB/website-v2.9 || cd ~/zion-web/APP&WEB/website-v2.9 || cd ~/zion-web
+cd ~/zion-2.9.6-main/apps/website-v2.9 || cd ~/zion-web/apps/website-v2.9 || cd ~/zion-web
 git pull origin main
 npm install
 npm run build

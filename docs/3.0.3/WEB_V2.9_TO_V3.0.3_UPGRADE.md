@@ -2,7 +2,7 @@
 
 > **Datum:** 2026-06-27
 > **Status:** ✅ DEPLOYED — Edge server běží na 3.0.3, web upgrade pending
-> **Cíl:** Aktualizovat `APP&WEB/website-v2.9/` z 12-decimal (1e12) na 6-decimal (1e6) flowers per ZION
+> **Cíl:** Aktualizovat `apps/website-v2.9/` z 12-decimal (1e12) na 6-decimal (1e6) flowers per ZION
 
 ---
 
@@ -19,7 +19,7 @@
 | `protocol_version_numeric` | (n/a) | `2` |
 | RPC fields | `amount_atomic` | `amount_flowers` (canonical), `amount_atomic`/`amount_zion` (deprecated aliases) |
 
-## 2. Soubory k aktualizaci v `APP&WEB/website-v2.9/`
+## 2. Soubory k aktualizaci v `apps/website-v2.9/`
 
 ### Kritické (constants a RPC)
 

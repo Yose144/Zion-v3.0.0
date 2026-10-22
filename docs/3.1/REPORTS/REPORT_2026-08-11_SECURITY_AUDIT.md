@@ -92,8 +92,8 @@
 - **Riziko:** kompromitace jedné služby = exfiltrace všech klíčů.
 - **Doporučení:** rozděl do `dao-v31.env`, `swap-v31.env`, `pool-payout.env` a přiřaď každé službě jen její `EnvironmentFile`.
 
-### 2.5 Nízké: `APP&WEB/OasisWeb/.env.local` je 644
-- **Důkaz:** `APP&WEB/OasisWeb/.env.local` má `ls -la` `-rw-r--r--` (644).
+### 2.5 Nízké: `apps/OasisWeb/.env.local` je 644
+- **Důkaz:** `apps/OasisWeb/.env.local` má `ls -la` `-rw-r--r--` (644).
 - **Doporučení:** `chmod 600`.
 
 ---
@@ -102,8 +102,8 @@
 
 ### 3.1 Kritické: `/api/dao/[...path]/route.ts` a `/api/warp/[...path]/route.ts` — fallback na serverový admin klíč
 - **Důkaz:**
-  - `APP&WEB/website-v2.9/src/app/api/dao/[...path]/route.ts:25`: `const apiKey = request.headers.get('x-dao-key') ?? process.env.ZION_DAO_API_KEY;`
-  - `APP&WEB/website-v2.9/src/app/api/warp/[...path]/route.ts:31`: `const apiKey = request.headers.get('x-warp-key') ?? process.env.ZION_WARP_API_KEY;`
+  - `apps/website-v2.9/src/app/api/dao/[...path]/route.ts:25`: `const apiKey = request.headers.get('x-dao-key') ?? process.env.ZION_DAO_API_KEY;`
+  - `apps/website-v2.9/src/app/api/warp/[...path]/route.ts:31`: `const apiKey = request.headers.get('x-warp-key') ?? process.env.ZION_WARP_API_KEY;`
 - **Riziko:** pokud bude v environment `ZION_DAO_API_KEY`/`ZION_WARP_API_KEY` nastaveno, jakýkoli veřejný POST bez hlavičky se autentizuje admin klíčem. Je to latentní backdoor. V současnosti website env tyto proměnné nenastavuje, ale kód je připravený k aktivaci.
 - **Doporučení:** odeber fallback na `process.env.*`. Pro mutace vyžaduj `x-dao-key`/`x-warp-key` od klienta. Pokud má být admin proxy interní, použij IP allowlist a samostatný route mimo `/api/*`.
 
@@ -118,17 +118,17 @@
 - **Doporučení:** nahraď `AllowOrigin::any()` konkrétními originy (`https://app.zionterranova.com`, `https://oasis.zionterranova.com`, `https://market.zionterranova.com`).
 
 ### 3.4 Vysoké: `ADMIN_PASSWORD` je ukládán a porovnáván v plaintextu
-- **Důkaz:** `APP&WEB/website-v2.9/src/proxy.ts:103-127` — `process.env.ADMIN_PASSWORD` se porovnává s plaintextem z Basic Auth.
+- **Důkaz:** `apps/website-v2.9/src/proxy.ts:103-127` — `process.env.ADMIN_PASSWORD` se porovnává s plaintextem z Basic Auth.
 - **Riziko:** standardní pro Basic Auth, ale `.env.production.example` ukládá `ADMIN_PASSWORD=CHANGE_ME_STRONG_RANDOM` a v konzoli/logu není skryté.
 - **Doporučení:** ujisti se, že `ADMIN_PASSWORD` není v `website-v31-environment.sh` a je v samostatném souboru s `chmod 600`. Zvaž přechod na hashed creds (bcrypt/argon2) nebo OAuth.
 
 ### 3.5 Střední: `/admin` rate-limiter věří `X-Forwarded-For`/`X-Real-IP`
-- **Důkaz:** `APP&WEB/website-v2.9/src/proxy.ts:76-78`.
+- **Důkaz:** `apps/website-v2.9/src/proxy.ts:76-78`.
 - **Riziko:** pokud je Next.js dostupný přímo (bypass nginx), může útočník poslat libovolnou IP a obejít rate-limity.
 - **Doporučení:** použij `request.ip` z Next.js nebo ověř, že `X-Forwarded-For` pochází z důvěryhodného proxy. Lepší je rate-limiting řešit na nginx/Cloudflare.
 
 ### 3.6 Střední: `ZION_JWT_SECRET` vyžadován, ale `secure` cookie závisí na `NODE_ENV`
-- **Důkaz:** `APP&WEB/website-v2.9/src/lib/auth.ts:58-59`.
+- **Důkaz:** `apps/website-v2.9/src/lib/auth.ts:58-59`.
 - **Riziko:** pokud by někdo spustil Next.js bez `NODE_ENV=production` na Edge, cookie bude `secure: false` a může být odesíláno přes HTTP.
 - **Doporučení:** vynuť `secure: true` a `sameSite: 'strict'` pro produkci, nezávisle na `NODE_ENV`.
 
@@ -206,7 +206,7 @@
 
 ## 7. Git a lokální workspace
 
-### 7.1 Střední: mnoho necommitnutých změn v `APP&WEB/website-v2.9` a `ZION_OS/dashboard`
+### 7.1 Střední: mnoho necommitnutých změn v `apps/website-v2.9` a `ZION_OS/dashboard`
 - **Důkaz:** `git status` ukazuje 16 modifikovaných souborů, včetně `src/app/api/dao/[...path]/route.ts` a `src/proxy.ts`.
 - **Riziko:** změny neprošly review/testy; mohou zavést nové zranitelnosti.
 - **Doporučení:** commitni až po review, spusť `npm run build`, `npm run lint` a e2e testy.
@@ -238,7 +238,7 @@
 | # | Akce | Priorita | Odpovědnost |
 |---|------|----------|-------------|
 | 1 | Otoč všechny klíče z `/opt/zion/backups/restore-extract/config_20260729_165425/edge-environment.sh` a odstraň tento adresář. | Kritická | Ops |
-| 2 | Oprav `APP&WEB/website-v2.9/src/app/api/dao/[...path]/route.ts` a `api/warp/[...path]/route.ts` — odeber fallback na `process.env.*` pro mutace. | Kritická | Dev |
+| 2 | Oprav `apps/website-v2.9/src/app/api/dao/[...path]/route.ts` a `api/warp/[...path]/route.ts` — odeber fallback na `process.env.*` pro mutace. | Kritická | Dev |
 | 3 | Přidej IP allowlist nebo autentizaci na public RPC TCP stream `8443`. | Kritická | Ops |
 | 4 | Bindni dashboard, website, marketplace na `127.0.0.1` a uprav `ufw`. | Vysoká | Ops |
 | 5 | Zaved povinný API klíč a omez CORS v `zion-multichain`. | Vysoká | Dev |
@@ -286,6 +286,6 @@ Následující kritické a vysoké nálezy byly opraveny a ověřeny:
 - `find /etc/zion /opt/zion -type f -perm /o+r`
 - `grep -E '^[A-Z0-9_]+='` pro env soubory (hodnoty byly redigovány)
 - `cd V31 && cargo audit`
-- `cd APP&WEB/website-v2.9 && npm install --package-lock-only && npm audit`
+- `cd apps/website-v2.9 && npm install --package-lock-only && npm audit`
 - `git status --ignored --short`, `git check-ignore`
 - Testovací curl na `https://zionterranova.com/...`, `http://62.171.141.136:...`

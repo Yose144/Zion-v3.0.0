@@ -11,13 +11,13 @@ echo ""
 cat <<'COMMANDS'
 
 # 1. Go to repo and pull latest changes
-cd ~/zion-2.9.6-main/APP&WEB/website-v2.9 || cd ~/zion-web/APP&WEB/website-v2.9 || cd ~/zion-web
+cd ~/zion-2.9.6-main/apps/website-v2.9 || cd ~/zion-web/apps/website-v2.9 || cd ~/zion-web
 git pull origin main
 
 # 2. Install dependencies
 npm install
 
-# 3. Build (on server, Linux path handles APP&WEB correctly)
+# 3. Build (on server, Linux path handles apps correctly)
 npm run build
 
 # 4. Build Docker image

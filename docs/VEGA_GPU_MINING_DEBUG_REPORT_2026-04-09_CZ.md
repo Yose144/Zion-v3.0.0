@@ -159,9 +159,9 @@ To odpovídá přibližně **4.0x až 5.1x** proti původnímu lokálnímu bench
 ### Co ten skok skutečně způsobilo
 
 1. **Oprava výběru binárky v desktop-agentu**
-	- `findRustMiner()` v `APP&WEB/desktop-agent/src/main.js` dříve v dev režimu preferoval starší build output před čerstvou bundlovanou binárkou.
+	- `findRustMiner()` v `apps/desktop-agent/src/main.js` dříve v dev režimu preferoval starší build output před čerstvou bundlovanou binárkou.
 	- Výsledek byl, že bench validoval nový miner, ale live session často startovala starší `zion-miner.exe` bez aktuálních oprav.
-	- Po úpravě se nyní preferují `APP&WEB/desktop-agent/resources` a čerstvé build outputy; při shodě rozhoduje novější `mtime`.
+	- Po úpravě se nyní preferují `apps/desktop-agent/resources` a čerstvé build outputy; při shodě rozhoduje novější `mtime`.
 
 2. **Vega tuning: OpenCL local size `64` místo `256`**
 	- Pro GCN/Vega wave64 se ukázalo, že `local_ws=64` je stabilnější a výkonnější než generický default `256`.

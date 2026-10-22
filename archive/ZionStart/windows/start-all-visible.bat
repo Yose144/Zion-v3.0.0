@@ -12,7 +12,7 @@ if not exist "V3\target\release" mkdir "V3\target\release"
 
 :: ── Auto-sync node.exe + zion-miner.exe z desktop-agent resources ──────────
 :: Zdrojove binarky (canonical, aktualizovane s kazdym releaesem)
-set RESOURCES_DIR=APP&WEB\desktop-agent\resources
+set RESOURCES_DIR=apps\desktop-agent\resources
 set RELEASE_DIR=V3\target\release
 
 :: node.exe
@@ -42,7 +42,7 @@ if exist "%RESOURCES_DIR%\zion-miner.exe" (
 :: Kontrola - node.exe musi existovat
 if not exist "%RELEASE_DIR%\node.exe" (
     echo [ERROR] node.exe nenalezen ani v resources ani v release dir!
-    echo         Zkopiruj rucne: copy APP&WEB\desktop-agent\resources\node.exe V3\target\release\
+    echo         Zkopiruj rucne: copy apps\desktop-agent\resources\node.exe V3\target\release\
     pause
     exit /b 1
 )

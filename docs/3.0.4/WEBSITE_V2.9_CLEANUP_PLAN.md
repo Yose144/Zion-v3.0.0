@@ -2,7 +2,7 @@
 
 **Created:** 2026-07-06  
 **Updated:** 2026-07-07  
-**Scope:** `APP&WEB/website-v2.9/` (Next.js 15 frontend + API routes)  
+**Scope:** `apps/website-v2.9/` (Next.js 15 frontend + API routes)  
 **Goal:** Make the codebase audit-ready for (a) production security review, (b) potential open-source publication, and (c) legal/IP compliance.  
 **Overall Risk Level:** MEDIUM-HIGH (4 CRITICAL, 6 HIGH, 5 MEDIUM, 3 LOW)
 

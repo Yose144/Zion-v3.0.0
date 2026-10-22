@@ -9,7 +9,7 @@
 ## 1. Executive Summary
 
 - **ZIS is live on Edge.** `zion-zis.service` is `active`, `/health` returns OK both locally and via `https://auth.zionterranova.com`.
-- **UTXO v2 transaction hashing and `submitUtxoTransaction` are wired end-to-end** through `APP&WEB/zion-wallet-sdk`, `V31/cli`, and `V31/L1/pool`.
+- **UTXO v2 transaction hashing and `submitUtxoTransaction` are wired end-to-end** through `apps/zion-wallet-sdk`, `V31/cli`, and `V31/L1/pool`.
 - **WARP G2 non-EVM hardening is complete and committed.** `ChainConfig`/`ChainRegistry`/`WarpError` carry `disabled_reason`; runtime builds from `warp.toml`; `/chains` API exposes chain status with reasons.
 - **`cargo test -p zion-multichain` is stable again** after serializing NEAR env-var tests that were racing on `WARP_NEAR_RPC`.
 
@@ -19,7 +19,7 @@
 
 ### 2.1 Source
 
-- Location: `APP&WEB/identity/`
+- Location: `apps/identity/`
 - Stack: Fastify 4 + Prisma + PostgreSQL + `noble-ed25519`
 - Edge path: `/opt/zion/identity`
 - Public endpoint: `https://auth.zionterranova.com` (nginx → `127.0.0.1:8096`)
@@ -48,9 +48,9 @@ curl -sk https://auth.zionterranova.com/health
 
 ### 2.4 Files Changed
 
-- `APP&WEB/identity/package.json`
-- `APP&WEB/identity/package-lock.json`
-- `APP&WEB/identity/deploy/zion-zis.service`
+- `apps/identity/package.json`
+- `apps/identity/package-lock.json`
+- `apps/identity/deploy/zion-zis.service`
 
 ---
 
@@ -65,7 +65,7 @@ Wallet SDK, CLI, and pool were using mismatched transaction builders and RPC met
 
 ### 3.2 Changes
 
-1. **Wallet SDK (`APP&WEB/zion-wallet-sdk/src/core/transaction.ts`)**
+1. **Wallet SDK (`apps/zion-wallet-sdk/src/core/transaction.ts`)**
    - `calculateTxHash` now uses the v2 length-prefixed preimage matching `V31/L1/core/src/v3_tx.rs`:
      - `ZION_TX_V2\0` domain tag
      - `fee` and `timestamp` before inputs/outputs
@@ -73,7 +73,7 @@ Wallet SDK, CLI, and pool were using mismatched transaction builders and RPC met
      - explicit memo-present / memo-absent tags
    - `transactionToRpcPayload` now sends byte arrays instead of hex strings.
 
-2. **Wallet SDK RPC (`APP&WEB/zion-wallet-sdk/src/rpc/zion-rpc.ts`)**
+2. **Wallet SDK RPC (`apps/zion-wallet-sdk/src/rpc/zion-rpc.ts`)**
    - `broadcastTransaction` now calls `submitUtxoTransaction`.
 
 3. **CLI (`V31/cli/src/main.rs`)**

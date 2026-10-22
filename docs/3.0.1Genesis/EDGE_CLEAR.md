@@ -178,8 +178,8 @@ if (navigator.userAgent.includes('iPhone') || navigator.platform.includes('iPhon
 ```
 
 ### **Deployment Path:**
-- **Source:** `/root/zion-2.9.6-main/APP&WEB/website-v2.9/`
-- **PM2 Target:** `/root/APP&WEB/website-v2.9/`
+- **Source:** `/root/zion-2.9.6-main/apps/website-v2.9/`
+- **PM2 Target:** `/root/apps/website-v2.9/`
 - **Process:** PM2 fork mode (PID: varies)
 - **URLs:** 
   - Local: http://localhost:3000
@@ -283,7 +283,7 @@ pm2 list
 pm2 logs zion-website --lines 20
 
 # Rebuild if needed
-cd /root/APP&WEB/website-v2.9
+cd /root/apps/website-v2.9
 rm -rf .next
 npm run build
 pm2 restart zion-website

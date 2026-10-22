@@ -198,7 +198,7 @@ Zbývající otevřený krok není návrh algoritmu, ale praktické **end-to-end
 ## Session 55 — 24. 2. 2026 (AI Afterburner + GPU power/efficiency monitoring)
 
 **Commit:** `30005af`  
-**Soubory:** `APP&WEB/desktop-agent/ai/__init__.py` (nový), `APP&WEB/desktop-agent/ai/zion_ai_afterburner.py` (nový, 813 řádků), `APP&WEB/desktop-agent/resources/afterburner_service.py`, `APP&WEB/desktop-agent/src/main.js`
+**Soubory:** `apps/desktop-agent/ai/__init__.py` (nový), `apps/desktop-agent/ai/zion_ai_afterburner.py` (nový, 813 řádků), `apps/desktop-agent/resources/afterburner_service.py`, `apps/desktop-agent/src/main.js`
 
 ### Cíl
 
@@ -433,7 +433,7 @@ Oba seed nody Usa + Asia měly 2 kritické chyby:
 55. ✅ **GPU revenue bez forced algo** — z `gpuRevenueProcess` odebrán `--algorithm`; algoritmus je nyní `pool-assigned` (dle StreamScheduleru)
 56. ✅ **Startup auto-select pool guard** — auto přepnutí poolu při startu je defaultně vypnuto (`autoSelectPool: false`), aby se host nepřepisoval mimo Helsinki
 57. ✅ **GPU revenue health fail-safe** — při `8+` rejectech bez jediného accepted share během prvních 3 minut se `gpu_rev` proces automaticky vypne; hlavní GPU mining pokračuje bez přerušení
-58. ✅ **Runtime validace bez syntax chyb** — `APP&WEB/desktop-agent/src/main.js` prošel kontrolou bez nových errors
+58. ✅ **Runtime validace bez syntax chyb** — `apps/desktop-agent/src/main.js` prošel kontrolou bez nových errors
 
 ### Session 15 — L2 wZION test coverage rozšíření (únor 2026)
 59. ✅ **wZION test suite rozšířena: 27→48 testů (+21)** — nové describe bloky: Supply cap, Decimal invariant, L1 address edge cases, bridgeBurn extra guards, Multi-user flow, EIP-2612 Permit, Role management
@@ -707,7 +707,7 @@ l1_rpc_token = "<token>"   # stejný jako ZION_RPC_TOKEN na L1
 - `cargo check -p zion-bridge` ✅ čistý (0 errors)
 - `cargo check -p zion-dao` ✅ čistý (0 errors)
 
-### WEB-01 — Bridge stránka `/bridge` (APP&WEB/website-v2.9)
+### WEB-01 — Bridge stránka `/bridge` (apps/website-v2.9)
 - Nový soubor `src/lib/bridge-api.ts` — typy `BridgeStatus`, `BridgeContractInfo`, `getBridgeStatus()`, `formatUptime()`, `bridgeEfficiency()`, `BRIDGE_CONTRACTS` (reálné adresy wZION + ZIONBridge z Base Sepolia)
 - Nová Next.js API route `src/app/api/bridge/status/route.ts` — server-side proxy: fetchuje Prometheus text z `:9100/metrics` → parsuje 11 metrik → vrací JSON; graceful offline fallback (3s AbortTimeout)
 - Nová stránka `src/app/bridge/page.tsx` — plné UI:
@@ -915,8 +915,8 @@ cargo check -p zion-pool: Finished 3.53s ✅ (0 errors, 1 future-incompat warnin
 
 | Soubor | Změna |
 |--------|-------|
-| `APP&WEB/website-v2.9/src/lib/dao-api.ts` | Přepsán pro Rust `/api/dao/*` API — `daoFetch()` timeout wrapper, `mapProposal()`, `PLACEHOLDER_STATS`, env `NEXT_PUBLIC_DAO_API_URL` |
-| `APP&WEB/website-v2.9/src/app/dao/page.tsx` | Odstraněn červený error banner, přidáno modré info "DAO Daemon — Phase 2", `daemonOnline` state |
+| `apps/website-v2.9/src/lib/dao-api.ts` | Přepsán pro Rust `/api/dao/*` API — `daoFetch()` timeout wrapper, `mapProposal()`, `PLACEHOLDER_STATS`, env `NEXT_PUBLIC_DAO_API_URL` |
+| `apps/website-v2.9/src/app/dao/page.tsx` | Odstraněn červený error banner, přidáno modré info "DAO Daemon — Phase 2", `daemonOnline` state |
 
 **Rust DAO endpoint (port 8080):**
 - `GET /api/dao/stats` → `{total_proposals, active, passed, executed, treasury_total_zion, voting_period_days, quorum_percent, multisig}`
@@ -1080,7 +1080,7 @@ Docker image timeline na Helsinki:
 
 ## Desktop Agent — Comprehensive Audit & Update (23. února 2026)
 
-> **Rozsah:** Hloubkový audit celého `APP&WEB/desktop-agent/`, migrace na 5-node topologii, oprava CSP, verze v2.9.5→v2.9.6.
+> **Rozsah:** Hloubkový audit celého `apps/desktop-agent/`, migrace na 5-node topologii, oprava CSP, verze v2.9.5→v2.9.6.
 
 ### Souhrn
 
@@ -1345,8 +1345,8 @@ Benchmark proběhne (59 MH/s), ale `return` = miner se UKONČÍ bez těžby!
 
 | Soubor | Změny |
 |--------|-------|
-| `APP&WEB/desktop-agent/src/main.js` | +156 (GPU exclusive, auto-tune fix, pool failover, stratum health, autoSelectPool) |
-| `APP&WEB/desktop-agent/src/ui/renderer.js` | +35 (balance auto-refresh, getRpcUrl fix) |
+| `apps/desktop-agent/src/main.js` | +156 (GPU exclusive, auto-tune fix, pool failover, stratum health, autoSelectPool) |
+| `apps/desktop-agent/src/ui/renderer.js` | +35 (balance auto-refresh, getRpcUrl fix) |
 | `L1/cosmic-harmony/src/algorithms_opt.rs` | +6 (Keccak RC revert) |
 | `L1/miner/src/miner/gpu/kernels/cosmic_harmony_v3.cl` | +4 (Keccak RC revert) |
 
@@ -1442,7 +1442,7 @@ Snížit logging overhead — miner metriky a statická data zůstanou v LOGS, v
 
 **Datum:** 23. února 2026  
 **Commit:** `5a2867d`  
-**Soubor:** `APP&WEB/desktop-agent/src/main.js`
+**Soubor:** `apps/desktop-agent/src/main.js`
 
 ### Problém
 
@@ -1823,15 +1823,15 @@ Binary nasazen do `zion-pool` kontejneru. ERG miner po restartu: subscribe ✅, 
 | Soubor | Oprava |
 |--------|--------|
 | `L1/cosmic-harmony/src/ffi.rs` | `cosmic_harmony_v3_hash_with_height()` nyní volá `cosmic_harmony_v3_with_height()` (height-aware selector) |
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_native.py` | Přidáno `hash_with_height()` + detekce `cosmic_harmony_v3_hash_with_height` |
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v3_python.py` | Nový pure-Python fallback (Keccak-256 → SHA3-512 → Golden Matrix → Cosmic Fusion) |
-| `APP&WEB/desktop-agent/resources/zion_native_miner_v2_9.py` | CPU/GPU verify používá height-aware hash; fallback na Python při blokaci DLL |
+| `apps/desktop-agent/resources/mining/cosmic_harmony_native.py` | Přidáno `hash_with_height()` + detekce `cosmic_harmony_v3_hash_with_height` |
+| `apps/desktop-agent/resources/mining/cosmic_harmony_v3_python.py` | Nový pure-Python fallback (Keccak-256 → SHA3-512 → Golden Matrix → Cosmic Fusion) |
+| `apps/desktop-agent/resources/zion_native_miner_v2_9.py` | CPU/GPU verify používá height-aware hash; fallback na Python při blokaci DLL |
 
 ### Miner stabilita
 
 - `target_cosmic32` sjednocen na `((2^32 - 1) / difficulty)` (odstraněna nekonzistentní parser logika pool targetu).
 - Rust DLL přebuilděna a nasazena do desktop-agent resources:
-  - `target/release/zion_cosmic_harmony_v3.dll` → `APP&WEB/desktop-agent/resources/mining/zion_cosmic_harmony_v3.dll`
+  - `target/release/zion_cosmic_harmony_v3.dll` → `apps/desktop-agent/resources/mining/zion_cosmic_harmony_v3.dll`
 
 ### CH3 Revenue systém — desktop-agent wiring dokončen
 
@@ -1889,7 +1889,7 @@ Binary nasazen do `zion-pool` kontejneru. ERG miner po restartu: subscribe ✅, 
 
 ### Resources cleanup
 
-**Odstraněno:** 20+ mrtvých souborů z `APP&WEB/desktop-agent/resources/`:
+**Odstraněno:** 20+ mrtvých souborů z `apps/desktop-agent/resources/`:
 
 | Kategorie | Soubory |
 |-----------|---------|
@@ -2026,7 +2026,7 @@ Předchozí styling commits (Session 35) přidaly CSS třídy, ale vizuální zm
 | **Utility classes** | `card-glow`, `hud-grid` z web2.9 `globals.css` |
 
 ### Web2.9 design reference
-- **Zdrojový soubor:** `APP&WEB/website-v2.9/src/app/globals.css` (475 řádků)
+- **Zdrojový soubor:** `apps/website-v2.9/src/app/globals.css` (475 řádků)
 - **Karta pattern z Features.tsx:** `rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur hover:border-white/30 transition`
 - **Barvy:** gold `#FFD700`, purple `#9333EA`, cyan `#06B6D4`
 
@@ -2216,7 +2216,7 @@ start_block = 38057800  # Bridge deploy 23.2.2026 — skip genesis scan
 ## Session 41 — Website-style section tabs: Wallet, Network, About (commit `a06368e`)
 
 **Commit:** `a06368e`  
-**Soubory:** `APP&WEB/desktop-agent/src/ui/index.html` (1 soubor, +523 −211 řádků)
+**Soubory:** `apps/desktop-agent/src/ui/index.html` (1 soubor, +523 −211 řádků)
 
 ### Problém
 Všechny views (Wallet, Network, About) měly plochý vertikální layout — uživatel musel scrollovat stovky pixelů bez orientace čím prochází.
@@ -2342,7 +2342,7 @@ Přidán nový navigační item **OASIS** do desktop agenta — kompletní hern�
 ## Session 45 — Bridge security fix + 119 testů + Website bridge page rebuild
 
 **Commity:** `d3ca8c0` (bridge), `db8457c` (website)  
-**Soubory:** `L2/bridge/src/db.rs`, `l1_watcher.rs`, `config.rs`, `evm_watcher.rs`, `tests/mainnet_readiness.rs`, `APP&WEB/website-v2.9/src/app/bridge/page.tsx`, `api/bridge/status/route.ts`, `docker/docker-compose.bridge-testnet.yml`, `docker/docker-compose.website.yml`
+**Soubory:** `L2/bridge/src/db.rs`, `l1_watcher.rs`, `config.rs`, `evm_watcher.rs`, `tests/mainnet_readiness.rs`, `apps/website-v2.9/src/app/bridge/page.tsx`, `api/bridge/status/route.ts`, `docker/docker-compose.bridge-testnet.yml`, `docker/docker-compose.website.yml`
 
 ### Bezpečnostní bug — Replay attack přes INSERT OR REPLACE
 
@@ -2479,7 +2479,7 @@ test result: ok. 40 passed; 0 failed
 
 ## Session 47 — DAO website v2.9 treasury multisig integrace (24. února 2026)
 
-**Soubory:** `APP&WEB/website-v2.9/src/lib/dao-api.ts`, `APP&WEB/website-v2.9/src/app/dao/page.tsx`
+**Soubory:** `apps/website-v2.9/src/lib/dao-api.ts`, `apps/website-v2.9/src/app/dao/page.tsx`
 
 ### Co bylo dokončeno
 
@@ -2507,7 +2507,7 @@ test result: ok. 40 passed; 0 failed
 ### Validace
 
 - ✅ Editor/TypeScript kontrola bez chyb v obou upravených souborech
-- ⚠️ `npm run lint` v tomto workspace nebyl spolehlivě dokončen kvůli Windows path + npm/cmd quoting konfliktu pro složku `APP&WEB`
+- ⚠️ `npm run lint` v tomto workspace nebyl spolehlivě dokončen kvůli Windows path + npm/cmd quoting konfliktu pro složku `apps`
 
 ### Stav
 
@@ -2516,11 +2516,11 @@ test result: ok. 40 passed; 0 failed
 
 ## Session 48 — Website lint workflow fix na Windows (24. února 2026)
 
-**Soubory:** `APP&WEB/website-v2.9/.npmrc`, `APP&WEB/website-v2.9/src/lib/dao-api.ts`
+**Soubory:** `apps/website-v2.9/.npmrc`, `apps/website-v2.9/src/lib/dao-api.ts`
 
 ### Co bylo dokončeno
 
-1. ✅ **Fix npm scripts shell pro cestu s `APP&WEB`**
+1. ✅ **Fix npm scripts shell pro cestu s `apps`**
   - přidán project-level npm config: `script-shell=powershell.exe`
   - odstraněn cmd quoting problém, kvůli kterému dříve padaly lifecycle skripty při cestě obsahující `&`
 
@@ -2540,7 +2540,7 @@ test result: ok. 40 passed; 0 failed
 ## Session 49 — GPU kernel unroll fix + miner rebuild (24. února 2026)
 
 **Commit:** `d5f5120`  
-**Soubory:** `L1/cosmic-harmony/src/opencl.rs` (OpenCL kernel), `APP&WEB/desktop-agent/resources/zion-universal-miner.exe`
+**Soubory:** `L1/cosmic-harmony/src/opencl.rs` (OpenCL kernel), `apps/desktop-agent/resources/zion-universal-miner.exe`
 
 ### Problém
 
@@ -2618,7 +2618,7 @@ Pool log: 🎚️  VarDiff retarget: diff 314 → 511
 ## Session 55 — AI Afterburner + GPU power/efficiency monitoring (24. února 2026)
 
 **Commit:** `30005af`  
-**Soubory:** `APP&WEB/desktop-agent/ai/__init__.py` (nový), `APP&WEB/desktop-agent/ai/zion_ai_afterburner.py` (nový, 813 ř.), `APP&WEB/desktop-agent/resources/afterburner_service.py`, `APP&WEB/desktop-agent/src/main.js`
+**Soubory:** `apps/desktop-agent/ai/__init__.py` (nový), `apps/desktop-agent/ai/zion_ai_afterburner.py` (nový, 813 ř.), `apps/desktop-agent/resources/afterburner_service.py`, `apps/desktop-agent/src/main.js`
 
 ### Cíl
 
@@ -2677,7 +2677,7 @@ h/W stable: 396699 H/W  (59.5 MH/s @ 150W [estimated (100% util)])
 ## Session 55 — AI Afterburner + GPU power/efficiency monitoring (24. února 2026)
 
 **Commit:** `30005af`  
-**Soubory:** `APP&WEB/desktop-agent/ai/__init__.py` (nový), `APP&WEB/desktop-agent/ai/zion_ai_afterburner.py` (nový, 813 ř.), `APP&WEB/desktop-agent/resources/afterburner_service.py`, `APP&WEB/desktop-agent/src/main.js`
+**Soubory:** `apps/desktop-agent/ai/__init__.py` (nový), `apps/desktop-agent/ai/zion_ai_afterburner.py` (nový, 813 ř.), `apps/desktop-agent/resources/afterburner_service.py`, `apps/desktop-agent/src/main.js`
 
 ### Cíl
 

@@ -123,7 +123,7 @@ Prague server (91.98.122.165) byl na 95% (4.2 GB volno / 75 GB disk).
 
 ## 7. Website UI Update (2026-04-01)
 
-46 souborů v `APP&WEB/website-v2.9/`: Explorer komponenty, Dashboard, Mining, Network page, BridgeBurnWidget, a další. 2087 insertions, 1785 deletions. Build projde (`next build` OK).
+46 souborů v `apps/website-v2.9/`: Explorer komponenty, Dashboard, Mining, Network page, BridgeBurnWidget, a další. 2087 insertions, 1785 deletions. Build projde (`next build` OK).
 
 ---
 

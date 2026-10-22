@@ -115,7 +115,7 @@ Memory-hard algorithms benefit from **fewer** concurrent threads with better cac
 
 ## 5. Desktop Agent — [METRICS] in LOGS Panel
 
-**Files:** `APP&WEB/desktop-agent/src/main.js`, `APP&WEB/desktop-agent/src/ui/renderer.js`
+**Files:** `apps/desktop-agent/src/main.js`, `apps/desktop-agent/src/ui/renderer.js`
 
 ### 5.1 [METRICS] line emitted every 10s
 ```
@@ -154,11 +154,11 @@ Memory-hard algorithms benefit from **fewer** concurrent threads with better cac
 |------|--------|
 | `V3/L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl` | NPU_MAX_DIM, WGS, B3_G macro, scalar permute, buffer reuse |
 | `V3/L1/miner/src/gpu_backend.rs` | VRAM 25%, local_size 256, epoch recompile, env vars |
-| `APP&WEB/desktop-agent/src/main.js` | [METRICS] emitter, mining-metrics in agent log |
-| `APP&WEB/desktop-agent/src/ui/renderer.js` | [METRICS] colorizer, unblock from console filter |
-| `APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha.cl` | Synced kernel copy |
-| `APP&WEB/desktop-agent/resources/gpu-tuning-config.json` | Updated tuning defaults |
-| `APP&WEB/desktop-agent/resources/v3_gpu_miner.py` | New V3 GPU miner Python fallback |
+| `apps/desktop-agent/src/main.js` | [METRICS] emitter, mining-metrics in agent log |
+| `apps/desktop-agent/src/ui/renderer.js` | [METRICS] colorizer, unblock from console filter |
+| `apps/desktop-agent/resources/mining/cosmic_harmony_deeksha.cl` | Synced kernel copy |
+| `apps/desktop-agent/resources/gpu-tuning-config.json` | Updated tuning defaults |
+| `apps/desktop-agent/resources/v3_gpu_miner.py` | New V3 GPU miner Python fallback |
 | `V3/L1/pool/Cargo.toml` | Pool dependency updates |
 | `V3/L1/pool/src/bin/server.rs` | Pool server updates |
 | `V3/L1/pool/src/pplns.rs` | PPLNS reward calculation updates |

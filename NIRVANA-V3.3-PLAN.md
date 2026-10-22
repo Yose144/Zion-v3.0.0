@@ -1,7 +1,7 @@
 # ZION V3.3 "NIRVANA" — Komplexní Execution Plán
 
 > **Datum:** 2026-10-21 · **Autor:** Devin (hluboký scan repo + Edge)
-> **Vstup:** [`docs/3.2/V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md) (vision/blueprint, fáze N1–N6), [`docs/3.2/V33_GAP_ANALYSIS.md`](docs/3.2/V33_GAP_ANALYSIS.md) (snapshot 2026-09-28), [`docs/3.2/StatusV3.md`](docs/3.2/StatusV3.md), [`V31/AGENTS.md`](V31/AGENTS.md), [`APP&WEB/website-v2.9/src/lib/nirvana-roadmap.ts`](APP&WEB/website-v2.9/src/lib/nirvana-roadmap.ts) (kanonické veřejné workstreamy), živý stav Edge `vmi3425821` ověřen přes SSH.
+> **Vstup:** [`docs/3.2/V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md) (vision/blueprint, fáze N1–N6), [`docs/3.2/V33_GAP_ANALYSIS.md`](docs/3.2/V33_GAP_ANALYSIS.md) (snapshot 2026-09-28), [`docs/3.2/StatusV3.md`](docs/3.2/StatusV3.md), [`V31/AGENTS.md`](V31/AGENTS.md), [`apps/website-v2.9/src/lib/nirvana-roadmap.ts`](apps/website-v2.9/src/lib/nirvana-roadmap.ts) (kanonické veřejné workstreamy), živý stav Edge `vmi3425821` ověřen přes SSH.
 > **Značky stavu:** **ŽIVÉ** = běží v produkci s důkazem · **STAVBA** = kód existuje, částečně nasazeno · **HORIZONT** = stub/koncept · **HYPOTÉZA** = jen dokumentace.
 > **Rozpor kód vs. docs:** vždy vítězí kód/on-chain data. Tento dokument je execution plán — Master Plan zůstává vision vrstvou, `nirvana-roadmap.ts` veřejnou podobou.
 
@@ -16,7 +16,7 @@ Změřeno na Edge (`zion-v6`, `vmi3425821`) + lokální repo HEAD `92ef9e1aa`:
 | L1 core+miner+pool | ~200k | **ŽIVÉ** | height **89 940**, 3 nody (9445 primár + 9446/9447 followeři), `node_version=3.2.0`, pool přijímá ZION+QTU shary |
 | Pool NG (F1–F6) | v `L1/pool` 29k | **ŽIVÉ** | `https://pool.zionterranova.com` (UI + `/public/v1`), TLS stratum **8445**, L1 RPC failover otestován stop-primary testem |
 | L2 multichain+dao | ~69k | **ŽIVÉ (s holdem)** | warpd active, wZION/USDT UniV3 na Base live; **BTC swap `WARP_BTC_SWAP_ENABLED=0`** (safety hold od 2026-09-20); DAO treasury 1.5B ZION time-lock 144 000 |
-| ZIS | `APP&WEB/identity` | **ŽIVÉ** | Fastify 5, Ed25519+SIWE+Google+**WebAuthn routes nasazeny** (ověřeno: `POST /api/auth/webauthn/register/options` → 401 auth-gate na produkci), session SSO, API keys |
+| ZIS | `apps/identity` | **ŽIVÉ** | Fastify 5, Ed25519+SIWE+Google+**WebAuthn routes nasazeny** (ověřeno: `POST /api/auth/webauthn/register/options` → 401 auth-gate na produkci), session SSO, API keys |
 | L3 ai-native+ncl | ~19k | **ŽIVÉ (základ)** | `zion-v31-ai-native` active, uptime 60h+, `/api/ai-chat` public, LLM přes rig tunnel (llama.cpp Qwen3-4B @ GTX 1070 Ti, ~12–14 tok/s), Maestro CLI existuje |
 | L4 oasis | ~9.6k + OasisWeb | **ŽIVÉ (Rust backend)** | `zion-v31-oasis` active (worlds/quests/combat/XP/golden-egg), `oasis.zionterranova.com`, marketplace sync live; UE5.7/pixel streaming **= 0 %** |
 | L5 free-world | ~4k | **ŽIVÉ** | `zion-v31-free-world` active, 5% coinbase stream trackován — **akumulováno ~24.26M ZION**, `freeworld.zionterranova.com` portal LIVE (nginx vhost), QV balloty přes ZIS session |
@@ -196,7 +196,7 @@ Původní N1–N6 z Master Planu přeuspořádané podle skutečné připravenos
 | `docs/3.2/L5_L6_ACTIVATION_PLAN.md` | L5/L6 run-mód (passive trackers → tento plán je rozšiřuje) |
 | `docs/3.2/EXTERNAL_AUDIT_SCOPE.md` | audit scope draft v2.0 |
 | `canon/books/nirvana/` + `NirvanaCloud/` | narativní korpus (kniha Nirvana, stoletý plán) |
-| `APP&WEB/website-v2.9/src/lib/nirvana-roadmap.ts` | **kanonické veřejné workstreamy** — public copy se nesmí rozcházet |
+| `apps/website-v2.9/src/lib/nirvana-roadmap.ts` | **kanonické veřejné workstreamy** — public copy se nesmí rozcházet |
 | `docs/3.2/REPORTS/INTERNAL_AUDIT_2026-10-05.md` | interní audit IA-01..22 |
 | Starší `docs/**/ROADMAP*.md` (~80 souborů) | historické — pouze reference, nekonzultovat pro execution |
 

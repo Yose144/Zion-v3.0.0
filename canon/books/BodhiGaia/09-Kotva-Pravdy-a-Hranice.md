@@ -45,9 +45,9 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Zahrada Genesis přijímá hosty. | **STAVBA** | Plán: první platící hosté Q3 2026; kanály a ceník §11. | Potvrzené rezervace, pojištění, pravidla výměny. |
 | Fyzická růže byla v Zahradě Genesis zasazena. | **NEDOLOŽENO** | Žádný Day 0 packet ani jiná evidence výsadby neexistuje; scéna v epilogu *Příběhu Růže* je MÝTUS. | Splnění Gate A–D návrhu [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) (**HORIZONT / NEZAHÁJENO**) + kompletní Day 0 packet. |
 | Dharma Temple je připravovaná svatyně na La Palmě. | **STAVBA (dokumentace) / HORIZONT (fyzicky)** | `dharma-temple.md` (🔵 Preparation; Fáze 0 2026 Q2–Q4 🔵); web `/terranova/dharma-temple` (3D koncept, půdorys, dokumentace). | Pozemek, entita, 5 zakládajících strážců, financování 60 000 EUR Fáze 1. |
-| Architektura Dharma Temple: Merkaba, 7 kopulí, Strom života. | **HORIZONT** (koncept) | `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`; `DharmaTemplePreviewLazy`; `/images/dharma-temple/concept-og.png`. | Statika, povolení, rozpočet stavby. |
+| Architektura Dharma Temple: Merkaba, 7 kopulí, Strom života. | **HORIZONT** (koncept) | `apps/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`; `DharmaTemplePreviewLazy`; `/images/dharma-temple/concept-og.png`. | Statika, povolení, rozpočet stavby. |
 | Te Pīko Ora je plánovaný pacifický uzel. | **HORIZONT** | `te-piko-ora.md` (🔵 Vision / Preparation; Fáze 0 2026–2027); web `/terranova/te-piko-ora` (*Plánováno 2027+*). | Polynéský partner, ostrov, entita, tým, rozpočet 80 000 EUR. |
-| Golden Republic Bohemia je plánovaný governance uzel v Čechách. | **HORIZONT** | `APP&WEB/website-v2.9/public/docs/terranova/golden-republic-bohemia.cs.md` (koncept, půdorys, fáze); [Kapitola 10](./10-Golden-Republic-Bohemia.md); `docs/TerraNova/06-L5-SVOBODA.md` §6.6 (Zlatá republika, 8 principů). | Pozemek (Říp region / Vysočina), entita (z.s. / z.ú.), tým 3–5 strážců, rozpočet 60 000 EUR, kulturní review. |
+| Golden Republic Bohemia je plánovaný governance uzel v Čechách. | **HORIZONT** | `apps/website-v2.9/public/docs/terranova/golden-republic-bohemia.cs.md` (koncept, půdorys, fáze); [Kapitola 10](./10-Golden-Republic-Bohemia.md); `docs/TerraNova/06-L5-SVOBODA.md` §6.6 (Zlatá republika, 8 principů). | Pozemek (Říp region / Vysočina), entita (z.s. / z.ú.), tým 3–5 strážců, rozpočet 60 000 EUR, kulturní review. |
 | Bodhi Lanka je plánovaný akáša uzel na Srí Lance. | **HORIZONT** | [Kapitola 11](./11-Bodhi-Lanka.md); Sri Maha Bodhi (Anurádhapura, UNESCO, 288 př. n. l.) — veřejně ověřitelné; Rámájana a Ráma Setu (Adamův most) — veřejně doložené. | Pozemek (Anurádhapura vs hill country vs south coast), entita (srí lanská NGO), tým 3–5 strážců, rozpočet 80 000 EUR, kulturní review Rámájany a buddhistických motivů, partnerství s buddhistickou sáňghou. |
 | Komunity provozují Guardian node. | **NEPLATNÝ NÁROK** (dnes) | Všech pět dokumentů: instalace Fáze 2 (2027 / 2028 / 2028 / 2028 / 2029). | Hardware, konektivita, pokladna. |
 | Komunity mají multisig pokladnu 3-z-5. | **HORIZONT** | Struktura v §5.2 každého dokumentu. | Skutečné peněženky, podepisovatelé, transparentní účet. |
@@ -60,12 +60,12 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 
 | Nárok | Stav | Důkaz či zdroj | Co je stále nutné |
 |---|---|---|---|
-| Web `/terranova`, `/terranova/genesis`, `/terranova/dharma-temple`, `/terranova/te-piko-ora`, `/l5-free-world` existují a běží. | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/terranova/**`, `l5-free-world/page.tsx`; `zion-website.service` active. | Štítky stavu (koncept / stavba) přímo v UI. |
+| Web `/terranova`, `/terranova/genesis`, `/terranova/dharma-temple`, `/terranova/te-piko-ora`, `/l5-free-world` existují a běží. | **ŽIVÉ** | `apps/website-v2.9/src/app/terranova/**`, `l5-free-world/page.tsx`; `zion-website.service` active. | Štítky stavu (koncept / stavba) přímo v UI. |
 | OASIS ukazuje pět L5 projektů a čtyři světy. | **ŽIVÉ** (klient) | `WorldPanel.tsx` (`NOVA_ZEME_PROJECTS` — pět projektů), `worlds.ts` (`GENESIS_GARDEN`, `DHARMA_TEMPLE_LA_PALMA`, `GOLDEN_REPUBLIC_BOHEMIA`, `BODHI_LANKA`; všechny `layer: 5`). | Napojení statusů na L5 API; ověření deploy nových metadat. |
 | Avataři Sítá a Hanuman mají questy do L5. | **ŽIVÉ (dokument) / HORIZONT (mechanika)** | `SulZeme/10` §II. | Implementace v `V31/L4/oasis`. |
 | OASIS quest odměňuje fyzickou návštěvu zahrady. | **HORIZONT** | Nápad v `genesis-garden.md` §11.2, `dharma-temple.md` §15. | Ověření, privacy, M5 gate. |
 | OASIS je fotorealistický UE 5.7 svět s instant preview. | **HORIZONT** | `MiseAmenti/07` §5. | POC (M4). |
-| Svět `GENESIS_GARDEN` v OASIS obsahuje Rose lore. | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH); [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md). | Lore nesmí být čtena jako evidence fyzické rostliny ani infrastruktury; fyzická růže = NEDOLOŽENO, pilot = HORIZONT; ověření veřejného klienta po deploy. |
+| Svět `GENESIS_GARDEN` v OASIS obsahuje Rose lore. | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `apps/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH); [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md). | Lore nesmí být čtena jako evidence fyzické rostliny ani infrastruktury; fyzická růže = NEDOLOŽENO, pilot = HORIZONT; ověření veřejného klienta po deploy. |
 
 ### 2.5 Příběh a symbolika
 
@@ -98,7 +98,7 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 |---|---|---|---|---|
 | 1 | Humanitární podíl uveden jako **10 %** místo kanonických **5 % L5 + 5 % L6**. | `docs/TerraNova/06-L5-SVOBODA.md` §6.2 (a odhad „777 600 ZION/den") | Označit kapitolu jako historickou / opravit na 5 % a odstranit cenový odhad (porušuje zákaz predikcí ceny). | B + E |
 | 2 | ~~Lokalita Genesis Garden jako **Střední Evropa** místo **Algarve**~~ → **VYŘEŠENO 2026-10-07:** správná lokalita je **Sabacheira, concelho Tomar** — sjednoceno napříč `/l5-free-world`, `/terranova/genesis`, kartami, OASIS, mapami i registry. | — | Zápis ponechán jako historie rozhodnutí. | A |
-| 3 | Svět Dharma Temple byl označen `layer: 3` — ve zdroji již opraveno. | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` (`DHARMA_TEMPLE_LA_PALMA` má `layer: 5` + tag `layer 5`) | Ověřit deploy veřejného klienta; přidat štítek „koncept". | A |
+| 3 | Svět Dharma Temple byl označen `layer: 3` — ve zdroji již opraveno. | `apps/OasisWeb/src/domain/config/worlds.ts` (`DHARMA_TEMPLE_LA_PALMA` má `layer: 5` + tag `layer 5`) | Ověřit deploy veřejného klienta; přidat štítek „koncept". | A |
 | 4 | Lokalita Te Pīko Ora: web/OASIS **Tahiti**, komunitní dokument preferuje **Raiatea** (Tahiti jako záloha). | `PioneerProjectCards.tsx`, `WorldPanel.tsx` vs `te-piko-ora.md` §3.3 | Uvést „Raiatea / Tahiti (výběr probíhá)" všude stejně. | A |
 | 5 | Komunitní dokumenty datovány **2026-05-21**; timeline Genesis Fáze 1 „první hosté Q3 2026" — Q3 2026 již probíhá bez evidence. | `public/V3/L5/docs/COMMUNITIES/*.md` | Refresh stavů a dat; přidat sekci „Evidence" s odkazy. | B |
 | 6 | Nirvana ep. 10 uvádí konkrétní čísla („přes 23 600 plateb") a „živý graf" na `/l5-free-world`. | `canon/books/nirvana/10-Prameny-Zivota.md` | Čísla označit jako snímek s datem; „živý graf" ověřit nebo změnit na „stránka s adresou fondu". | B |
@@ -159,8 +159,8 @@ Sdílené protokoly: HORIZONT. Příběh a symbolika: MÝTUS.
 
 ## Důkaz
 V31/L1/core (emission, v3_template, v3_compat); V31/L5/free-world; V31/deploy;
-public/V3/L5/docs/**; APP&WEB/website-v2.9/src/app/terranova/**, l5-free-world;
-APP&WEB/OasisWeb (WorldPanel, worlds.ts); docs/3.2/L5_L6_ACTIVATION_PLAN.md;
+public/V3/L5/docs/**; apps/website-v2.9/src/app/terranova/**, l5-free-world;
+apps/OasisWeb (WorldPanel, worlds.ts); docs/3.2/L5_L6_ACTIVATION_PLAN.md;
 MiseAmenti/03, 04 (M5), 05, 07; StatusV3.md.
 
 ## Rizika

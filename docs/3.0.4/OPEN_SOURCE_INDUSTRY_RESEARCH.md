@@ -182,7 +182,7 @@ v3-Mainnet/
 | `AGENTS.md` | Internal AI agent instructions (contains server IPs, SSH info) |
 | `PoC-lab/` | Research prototype (not production) |
 | `HiranV2.*/` | AI model training (not blockchain) |
-| `APP&WEB/` | Website/mobile app (separate repos) |
+| `apps/` | Website/mobile app (separate repos) |
 
 ### 4.3 Genesis key handling
 

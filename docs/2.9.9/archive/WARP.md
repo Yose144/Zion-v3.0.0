@@ -370,7 +370,7 @@ ZION L1 is the universal truth. `WARP:1:<chain>:<addr>` is the teleport instruct
 **Q: Was there Python in the old WARP bridge?**
 No Python in the L3 Rust codebase. The only Python in the repo is:
 - `scripts/fix_bridge_addr.py` — one-off maintenance script (13 lines, unrelated to WARP)
-- `APP&WEB/public_html/V2/api/php-python-bridge.php` — web layer PHP→Python helper
+- `apps/public_html/V2/api/php-python-bridge.php` — web layer PHP→Python helper
 - `tests/mock_stratum_server.py` — stratum mining mock
 
 **Q: What is the `zion-warp` daemon?**

@@ -31,9 +31,9 @@ ZIS → L2 multichain API
 
 | Komponenta | Co dělá | Stav |
 |-----------|---------|------|
-| **ZIS** (`APP&WEB/identity/`) | Auth (Google/Ed25519/SIWE), JWT session, wallet API proxy | ✅ Deployed na Edge |
+| **ZIS** (`apps/identity/`) | Auth (Google/Ed25519/SIWE), JWT session, wallet API proxy | ✅ Deployed na Edge |
 | **L2 Multichain** (`V31/L2/multichain/`) | Adresy, ledger, deposits, swaps, withdrawals, reconciliation | ✅ Implementováno |
-| **Wallet SDK** (`APP&WEB/zion-wallet-sdk/`) | TS SDK — WalletManager, ZisClient, MultichainWalletClient | ✅ Build ready |
+| **Wallet SDK** (`apps/zion-wallet-sdk/`) | TS SDK — WalletManager, ZisClient, MultichainWalletClient | ✅ Build ready |
 | **Web UI** (`/wallet/multichain`) | React — balanc, swap, send, receive | ✅ Implementováno |
 | **Uniswap V3** (external) | wZION/USDT pool s likviditou | ✅ Aktivní |
 | **ZIONBridge** (contract) | L1↔L2 bridge, 4/5 multisig | ✅ Deployed, verified |
@@ -124,7 +124,7 @@ ZIS → L2 multichain API
 | Co | Akce |
 |----|------|
 | `V31/contracts/ZIONDex/` (4 .sol soubory) | Označit deprecated v README |
-| `APP&WEB/MarketPlace/contracts/` (NFT + marketplace) | Označit deprecated |
+| `apps/MarketPlace/contracts/` (NFT + marketplace) | Označit deprecated |
 | `V31/L2/multichain/contracts/non-evm/` (7 custom kontraktů) | Označit deprecated — použít existující standardy |
 
 ### Kód (refactor později)

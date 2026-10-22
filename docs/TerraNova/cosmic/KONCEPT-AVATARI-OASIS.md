@@ -5,7 +5,7 @@ Souhrnná tabulka: **[`../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md`](../../docs2.9
 ## Repozitární zdroje (kanon + archiv)
 
 - **ZION COSMIC MAP (textová kanonizace v docs):** např. [`../../docs2.9/2.8.2/ZION_COSMIC_MAP_V2_COMPLETE.md`](../../docs2.9/2.8.2/ZION_COSMIC_MAP_V2_COMPLETE.md), [`../../docs2.9/COSMIC_MAP/COSMIC_MAP/PART_4_VZESTUP.md`](../../docs2.9/COSMIC_MAP/COSMIC_MAP/PART_4_VZESTUP.md).
-- **Vzestup — statický archiv webu:** `APP&WEB/public_html/V2/Vzestup/` (např. `vzestup.webpark.cz/f_plamen/` — deklarace, „tube of light“, violet/spiral odkazy v názvech souborů; část cest ukazuje na dnes přesunuté tsl.org stránky — používej jako **historické zrcadlo**, ne jako jediný HTTPS zdroj).
+- **Vzestup — statický archiv webu:** `apps/public_html/V2/Vzestup/` (např. `vzestup.webpark.cz/f_plamen/` — deklarace, „tube of light“, violet/spiral odkazy v názvech souborů; část cest ukazuje na dnes přesunuté tsl.org stránky — používej jako **historické zrcadlo**, ne jako jediný HTTPS zdroj).
 
 ## Mapa slotů → soubor
 

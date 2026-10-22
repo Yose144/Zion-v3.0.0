@@ -3,10 +3,10 @@ set -euo pipefail
 
 REMOTE_HOST="77.42.71.94"
 REMOTE_USER="root"
-REMOTE_SRC="/root/zion-2.9.6-main/APP&WEB/website-v2.9"
+REMOTE_SRC="/root/zion-2.9.6-main/apps/website-v2.9"
 REMOTE_COMPOSE="/root/zion-2.9.6-main/docker"
 SSH_KEY="/mnt/c/Users/yosef/.ssh/zion_hetzner_key"
-LOCAL_DIR="/mnt/c/Users/yosef/Desktop/Zion/2.9.6-main/APP&WEB/website-v2.9"
+LOCAL_DIR="/mnt/c/Users/yosef/Desktop/Zion/2.9.6-main/apps/website-v2.9"
 
 echo "Creating remote directory..."
 ssh -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new "$REMOTE_USER@$REMOTE_HOST" "mkdir -p '$REMOTE_SRC'"

@@ -57,7 +57,7 @@ cargo test -p zion-pool          # 333 passed
 cargo test -p zion-ncl           # 42 passed
 
 # Web app
-cd APP&WEB/website-v2.9
+cd apps/website-v2.9
 npm ci && npm run build          # Next.js 16.2.9, output: standalone
 ```
 
@@ -80,7 +80,7 @@ npm ci && npm run build          # Next.js 16.2.9, output: standalone
 | L3 ai-native / ncl | 15,576 / 2,088 |
 | L4 oasis / L5 free-world / L6 issobella | 8,656 / 2,782 / 2,105 |
 | Web API routes (`website-v2.9/src/app/api`) | 9,447 |
-| ZIS identity TS (`APP&WEB/identity`, excl. generated) | 5,091 |
+| ZIS identity TS (`apps/identity`, excl. generated) | 5,091 |
 | Solidity live contracts (`contracts/src` + `V31/contracts`) | 4,934 |
 
 Changes vs scope doc v2.0 (`7a4d7791f`): pool +12.4k (Pool NG F1–F6 + PRL/QTC legs), miner +19k, ncl +0.8k (daemon). Re-verify before kickoff if HEAD moves.

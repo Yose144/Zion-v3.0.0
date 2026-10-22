@@ -229,8 +229,8 @@ User (authenticated)
 | `V31/L2/multichain/src/multichain_wallet/journal.rs` | Atomic journal ledger |
 | `V31/L2/multichain/src/swap/dex/swap_executor.rs` | SwapExecutor with JournalLedger |
 | `V31/L2/multichain/src/service.rs` | MultichainService wiring |
-| `APP&WEB/identity/src/routes/wallet.ts` | ZIS wallet routes (9 endpoints) |
-| `APP&WEB/shared/prisma/schema.prisma` | 4 new Prisma models |
-| `APP&WEB/zion-wallet-sdk/` | SDK v2.0.0 (multichain/evm/zis) |
-| `APP&WEB/website-v2.9/src/components/dex/` | ZionDex web UI components |
-| `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` | Contract address registry |
+| `apps/identity/src/routes/wallet.ts` | ZIS wallet routes (9 endpoints) |
+| `apps/shared/prisma/schema.prisma` | 4 new Prisma models |
+| `apps/zion-wallet-sdk/` | SDK v2.0.0 (multichain/evm/zis) |
+| `apps/website-v2.9/src/components/dex/` | ZionDex web UI components |
+| `apps/website-v2.9/src/lib/defi-contracts.ts` | Contract address registry |

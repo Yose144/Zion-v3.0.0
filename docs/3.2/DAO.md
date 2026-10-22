@@ -1,7 +1,7 @@
 # ZION DAO — Governance, Treasury & Guardian Approval Model
 
 > **Stav:** ŽIVÉ na produkci (Edge `62.171.141.136`), služba `zion-v31-dao`, API `127.0.0.1:8456`, veřejný proxy prefix `https://app.zionterranova.com/api/dao`.
-> **Kód:** `V31/L2/dao` (Rust, axum, rusqlite/SQLite, tokio). UI: `APP&WEB/website-v2.9/src/app/dao/page.tsx`.
+> **Kód:** `V31/L2/dao` (Rust, axum, rusqlite/SQLite, tokio). UI: `apps/website-v2.9/src/app/dao/page.tsx`.
 > **Verze:** `zion-dao 3.1.0-alpha` · **Poslední velký update:** 2026-09-25 (treasury lock truth + DAO Parlament / Síť Země UI; deployed). **Merged v `main` 2026-09-29, na Edge nenasazeno:** D3 on-chain guardian registry + governance rotace, D4 append-only event/audit log, D5 param-execution (governable params se aplikují při execute), D6 on-chain vote delegation, D13 per-client write rate-limit + per-proposer spam cap, kryptografická treasury pipeline (`treasury_tx.rs` — Ed25519 guardian sigy + reálný L1 UTXO spend přes `ZION_DAO_TREASURY_KEY`), DAO UI proposal detail `/dao/proposals/[id]` + delegated weight. Edge `zion-dao` binárka je build 2026-09-25 — proto např. `GET /api/dao/guardians` na Edge vrací 404. Viz `L2checkpoints.md`.
 > **Kanonický provozní stav:** vždy ověřit proti `StatusV3.md` a live API — dokumentace nesmí být napřed před realitou.
 
@@ -155,7 +155,7 @@ ssh … 'cd /root/build/V31 && /root/.cargo/bin/cargo build --release -p zion-da
 ssh … 'cp /opt/zion/V31/target/release/zion-dao{,.bak-$(date +%Y%m%d)}; systemctl stop zion-v31-dao; cp /root/build/V31/target/release/zion-dao /opt/zion/V31/target/release/; systemctl start zion-v31-dao'
 
 # Web deploy
-cd APP&WEB/website-v2.9 && npm run build
+cd apps/website-v2.9 && npm run build
 rsync -az --delete -e "ssh -i … -p 2222" src .next public package.json next.config.ts tsconfig.json postcss.config.mjs tailwind.config.ts 'root@62.171.141.136:/opt/zion/APP&WEB/website-v2.9/'
 ssh … 'chown -R zion:zion "/opt/zion/APP&WEB/website-v2.9"; systemctl restart zion-website'
 curl -s -o /dev/null -w '%{http_code}' https://app.zionterranova.com/dao   # = 200

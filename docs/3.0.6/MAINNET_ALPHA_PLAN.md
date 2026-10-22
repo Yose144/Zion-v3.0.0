@@ -12,7 +12,7 @@
 Současné repo je **míchanice**:
 - `V3/` je aktivní mainnet-track kód,
 - staré rootové `L1/`, `L2/`, `L3/` jsou legacy reference,
-- `APP&WEB/`, `ZION_OS/`, `PoC-lab/`, `HiranV2.x/`, `archive/`, `docs/TerraNova/` a desítky reportů tvoří historický sediment,
+- `apps/`, `ZION_OS/`, `PoC-lab/`, `HiranV2.x/`, `archive/`, `docs/TerraNova/` a desítky reportů tvoří historický sediment,
 - dokumentace je rozházená napříč rootem a `docs/3.0.x/`.
 
 Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyčistí, 3.1.0 bude čistý Mainnet Alpha.**
@@ -26,7 +26,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 | Ops | `scripts/`, `edge-deploy/`, `ZionStart/` | Ponechat, ale zdokumentovat v `ops/` nebo `docs/ops/` |
 | Filozofie / TerraNova | `docs/TerraNova/`, `docs/Zohar/`, `evoluZionV2.md` | Přesunout do `docs/philosophy/` nebo oddělit do jiného repo |
 | Research / PoC | `PoC-lab/`, `HiranV2.x/` | Přesunout do `research/` nebo oddělit do jiného repo |
-| Legacy code | `L1/`, `L2/`, `L3/`, `APP&WEB/` staré verze | Archivovat do `archive/` a následně smazat z mainu |
+| Legacy code | `L1/`, `L2/`, `L3/`, `apps/` staré verze | Archivovat do `archive/` a následně smazat z mainu |
 
 ---
 
@@ -123,7 +123,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 | 3.1 | Legacy root trees | `L1/`, `L2/`, `L3/` → `archive/legacy-code/` a následně smazat z mainu |
 | 3.2 | Filozofické a marketingové knihy | `docs/TerraNova/`, `docs/Zohar/`, `evoluZionV2.md` → `docs/philosophy/` nebo nové repo |
 | 3.3 | Research / PoC | `PoC-lab/`, `HiranV2.x/` → `research/` nebo nové repo |
-| 3.4 | Staré APP&WEB verze | `APP&WEB/website-v2.9/` → archiv, pokud je nahrazeno novým |
+| 3.4 | Staré apps verze | `apps/website-v2.9/` → archiv, pokud je nahrazeno novým |
 | 3.5 | Duplicitní docs | Sloučit `V3/docs/` a rootové reporty; všechny verzované reporty pod `docs/3.0.x/` |
 | 3.6 | Cleanup scripts | Přesunout ops utility pod `scripts/` nebo `ops/` s README |
 
@@ -224,7 +224,7 @@ Tento plán říká: **3.0.8 všechno zprovozní, 3.0.9 všechno ztvrdne a vyči
 │   ├── 3.1.0/
 │   └── philosophy/           # přesunuté TerraNova/Zohar (optional)
 ├── public/                   # git subtree public repo
-└── archive/                  # legacy code, APP&WEB old, research
+└── archive/                  # legacy code, apps old, research
     └── (pouze v historii, ne v mainu)
 ```
 

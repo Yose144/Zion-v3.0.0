@@ -13,7 +13,7 @@ import ctypes, os, struct, time
 
 DYLIB = os.path.join(os.path.dirname(__file__), "libcosmic_harmony_v4_metal.dylib")
 if not os.path.exists(DYLIB):
-    DYLIB = os.path.join(os.path.dirname(__file__), "../../APP&WEB/desktop-agent/resources/libcosmic_harmony_v4_metal.dylib")
+    DYLIB = os.path.join(os.path.dirname(__file__), "../../apps/desktop-agent/resources/libcosmic_harmony_v4_metal.dylib")
 
 lib = ctypes.CDLL(DYLIB)
 

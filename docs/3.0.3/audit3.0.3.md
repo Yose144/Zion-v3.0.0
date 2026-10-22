@@ -16,13 +16,13 @@ Nejvetsi riziko je address drift u bridge kontraktu mezi webem a dalsimi klienty
 
 - Problem: cast klientu stale ukazuje/stavi akce na stary bridge 0x895..., zatimco produkcni flow je uz na 0x72c8...
 - Dukaz (stara adresa v klientu):
-  - [APP&WEB/mobile-app/src/constants/config.js](APP&WEB/mobile-app/src/constants/config.js#L162)
-  - [APP&WEB/desktop-agent/renderer.js](APP&WEB/desktop-agent/renderer.js#L3555)
-  - [APP&WEB/desktop-agent/renderer.js](APP&WEB/desktop-agent/renderer.js#L3574)
-  - [APP&WEB/desktop-agent/src/ui/index.html](APP&WEB/desktop-agent/src/ui/index.html#L3993)
-  - [APP&WEB/desktop-agent/src/ui/index.html](APP&WEB/desktop-agent/src/ui/index.html#L3994)
+  - [apps/mobile-app/src/constants/config.js](apps/mobile-app/src/constants/config.js#L162)
+  - [apps/desktop-agent/renderer.js](apps/desktop-agent/renderer.js#L3555)
+  - [apps/desktop-agent/renderer.js](apps/desktop-agent/renderer.js#L3574)
+  - [apps/desktop-agent/src/ui/index.html](apps/desktop-agent/src/ui/index.html#L3993)
+  - [apps/desktop-agent/src/ui/index.html](apps/desktop-agent/src/ui/index.html#L3994)
 - Dukaz (nova adresa v aktivnim web/L2 stacku):
-  - [APP&WEB/website-v2.9/src/lib/bridge-api.ts](APP&WEB/website-v2.9/src/lib/bridge-api.ts#L44)
+  - [apps/website-v2.9/src/lib/bridge-api.ts](apps/website-v2.9/src/lib/bridge-api.ts#L44)
   - [V3/config/bridge-mainnet.toml](V3/config/bridge-mainnet.toml#L39)
   - [V3/L2/bridge/config/bridge-mainnet.toml](V3/L2/bridge/config/bridge-mainnet.toml#L40)
 - Dopad: uzivatel v mobile/desktop muze jit na nekanonicky kontrakt nebo failnout write flow.
@@ -35,9 +35,9 @@ Nejvetsi riziko je address drift u bridge kontraktu mezi webem a dalsimi klienty
   - [ZION_3.0.3_DECIMAL_FORK_PLAN.md](ZION_3.0.3_DECIMAL_FORK_PLAN.md#L212)
   - [ZION_3.0.3_DECIMAL_FORK_PLAN.md](ZION_3.0.3_DECIMAL_FORK_PLAN.md#L215)
 - Kontrast (aktualni canonical pooly v app stacku):
-  - [APP&WEB/website-v2.9/src/lib/defi-contracts.ts](APP&WEB/website-v2.9/src/lib/defi-contracts.ts#L68)
-  - [APP&WEB/website-v2.9/src/lib/defi-contracts.ts](APP&WEB/website-v2.9/src/lib/defi-contracts.ts#L69)
-  - [APP&WEB/website-v2.9/src/lib/defi-contracts.ts](APP&WEB/website-v2.9/src/lib/defi-contracts.ts#L70)
+  - [apps/website-v2.9/src/lib/defi-contracts.ts](apps/website-v2.9/src/lib/defi-contracts.ts#L68)
+  - [apps/website-v2.9/src/lib/defi-contracts.ts](apps/website-v2.9/src/lib/defi-contracts.ts#L69)
+  - [apps/website-v2.9/src/lib/defi-contracts.ts](apps/website-v2.9/src/lib/defi-contracts.ts#L70)
 - Dopad: ops/readme-driven run muze validovat spatny kontrakt.
 - Doporuceni: prepsat 3b.1 v planu na aktualni bridge/pool mapping.
 

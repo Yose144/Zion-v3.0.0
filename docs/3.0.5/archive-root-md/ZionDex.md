@@ -70,16 +70,16 @@ With ZionDex + WARP:
 | **ZionDex Solver Daemon** | `ZionDex/solver/` | ✅ **Built** — 19/19 tests, off-chain solver, FixedMargin + Competitive strategies, REST API (port 8455) |
 | **ZionDex AMM Contracts** | `ZionDex/contracts/` | ✅ **Built** — 20/20 Foundry tests (7 PoolManager + 13 IntentSettlement), PoolManager + Hooks + Router + ZDX + Staking + SolverRegistry + IntentSettlement |
 | **TypeScript SDK** | `ZionDex/sdk/` | ✅ **Built** — `@zion/dex-sdk`, full type defs, swap + liquidity managers |
-| **Web Landing Page** | `APP&WEB/website-v2.9/src/app/ziondex/page.tsx` | ✅ **Live Beta** — marketing page, architecture, roadmap, CTA → `/dex` |
-| **Web Swap UI** | `APP&WEB/website-v2.9/src/app/dex/page.tsx` | ✅ **Live Beta** — CrossChainSwapWidget, PriceChart, RecentSwaps, Quick Links |
-| **Liquidity UI** | `APP&WEB/website-v2.9/src/app/dex/liquidity/page.tsx` | ✅ **Built** — PoolList + AddLiquidity + RemoveLiquidity |
-| **Portfolio UI** | `APP&WEB/website-v2.9/src/app/dex/portfolio/page.tsx` | ✅ **Built** — LP positions + swap history + stats |
-| **Mobile Swap** | `APP&WEB/mobile-app/src/screens/DexScreen.js` | ✅ **Built** — React Native, bottom nav tab |
-| **Desktop Swap** | `APP&WEB/desktop-agent/src/ui/` | ✅ **Built** — Electron dex-view, sidebar nav |
+| **Web Landing Page** | `apps/website-v2.9/src/app/ziondex/page.tsx` | ✅ **Live Beta** — marketing page, architecture, roadmap, CTA → `/dex` |
+| **Web Swap UI** | `apps/website-v2.9/src/app/dex/page.tsx` | ✅ **Live Beta** — CrossChainSwapWidget, PriceChart, RecentSwaps, Quick Links |
+| **Liquidity UI** | `apps/website-v2.9/src/app/dex/liquidity/page.tsx` | ✅ **Built** — PoolList + AddLiquidity + RemoveLiquidity |
+| **Portfolio UI** | `apps/website-v2.9/src/app/dex/portfolio/page.tsx` | ✅ **Built** — LP positions + swap history + stats |
+| **Mobile Swap** | `apps/mobile-app/src/screens/DexScreen.js` | ✅ **Built** — React Native, bottom nav tab |
+| **Desktop Swap** | `apps/desktop-agent/src/ui/` | ✅ **Built** — Electron dex-view, sidebar nav |
 | Swap Aggregator (legacy) | `V3/L2/swap-aggregator/` | ⚠️ Skeleton — superseded by ZionDex Router |
-| LI.FI Widget | `APP&WEB/website-v2.9/src/app/defi/page.tsx` | ✅ Live, aggregates 30+ DEX + 20+ bridges |
-| Atomic Swap UI | `APP&WEB/website-v2.9/src/app/swap/page.tsx` | ✅ Live, HTLC initiation/claim/refund |
-| Bridge UI | `APP&WEB/website-v2.9/src/app/bridge/page.tsx` | ✅ Live, burn wZION → unlock ZION |
+| LI.FI Widget | `apps/website-v2.9/src/app/defi/page.tsx` | ✅ Live, aggregates 30+ DEX + 20+ bridges |
+| Atomic Swap UI | `apps/website-v2.9/src/app/swap/page.tsx` | ✅ Live, HTLC initiation/claim/refund |
+| Bridge UI | `apps/website-v2.9/src/app/bridge/page.tsx` | ✅ Live, burn wZION → unlock ZION |
 
 > **Implementation Status (2026-07-13):** ZionDex is **Live Beta** — backend (Router 37 tests, AMM 7 tests, SDK), frontend (`/dex` swap UI + `/dex/liquidity` + `/dex/portfolio`, mobile (React Native), desktop (Electron), L3 WARP integration, cross-chain AMM routing (aggregator.rs), and **Phase 4 Intent-Based Execution** (intent crate 12 tests, solver daemon 19 tests, IntentSettlement + SolverRegistry contracts 13 tests, Router intent API 9 tests — **88 tests total**) all complete. Landing page at `/ziondex`. **Non-EVM ZION tokens deployed: 2/9** (Solana SPL `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H`, Stellar native `ZION:GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`). Lightning LND Docker stack deployed on Edge (testnet, syncing). ZionDex Router deployed on Edge (port 8454, nginx `/dex-api` proxy, health OK). Remaining: deploy IntentSettlement + SolverRegistry on Base (needs ETH), provision solver keys + start solver daemon (port 8455), deploy 7 more non-EVM contracts (Tron, Cardano, Cosmos, Aptos, Sui, NEAR, TON), frontend intent UI, security audit. See `ZionDex/README.md` and [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) for full details.
 
@@ -530,7 +530,7 @@ pub struct Solver {
 
 ## 5. UI Plan
 
-### 5.1 Web (Next.js) — `APP&WEB/website-v2.9/`
+### 5.1 Web (Next.js) — `apps/website-v2.9/`
 
 #### Page: `/dex` — Main ZionDex Interface
 
@@ -574,7 +574,7 @@ pub struct Solver {
 **Components to build:**
 
 ```
-APP&WEB/website-v2.9/src/app/dex/
+apps/website-v2.9/src/app/dex/
 ├── page.tsx                      # Main DEX page
 ├── swap/
 │   ├── page.tsx                  # Swap tab
@@ -671,7 +671,7 @@ APP&WEB/website-v2.9/src/app/dex/
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 5.2 Mobile (React Native) — `APP&WEB/mobile-app/`
+### 5.2 Mobile (React Native) — `apps/mobile-app/`
 
 ```
 ┌─────────────────────────────┐
@@ -704,7 +704,7 @@ APP&WEB/website-v2.9/src/app/dex/
 - WalletConnect v2 for EVM chains
 - Phantom wallet for Solana
 
-### 5.3 Desktop Agent (Electron) — `APP&WEB/desktop-agent/`
+### 5.3 Desktop Agent (Electron) — `apps/desktop-agent/`
 
 **Features:**
 - GPU-accelerated mining + DEX in one app
@@ -1234,9 +1234,9 @@ V3/L3/warp/scripts/lightning/        # ✅ CREATED — Channel management
 edge-deploy/systemd/
 └── zion-edge-lnd.service            # ✅ CREATED — LND systemd service
 
-APP&WEB/website-v2.9/src/app/dex/   # ✅ Live Beta — swap UI + liquidity + portfolio
-APP&WEB/website-v2.9/src/app/ziondex/ # ✅ Live Beta — landing page
-APP&WEB/mobile-app/src/screens/DexScreen.js # ✅ Built — React Native swap screen
+apps/website-v2.9/src/app/dex/   # ✅ Live Beta — swap UI + liquidity + portfolio
+apps/website-v2.9/src/app/ziondex/ # ✅ Live Beta — landing page
+apps/mobile-app/src/screens/DexScreen.js # ✅ Built — React Native swap screen
 ```
 
 ---
@@ -1837,9 +1837,9 @@ forge script script/DeployBase.s.sol --rpc-url $BASE_RPC --broadcast --verify
 - **Bridge config:** `V3/L2/bridge/config/bridge-mainnet.toml`
 - **Swap aggregator:** `V3/L2/swap-aggregator/src/orchestrator.rs`
 - **Atomic swap:** `V3/L2/atomic-swap/src/types.rs`
-- **DeFi UI:** `APP&WEB/website-v2.9/src/app/defi/page.tsx`
-- **Swap UI:** `APP&WEB/website-v2.9/src/app/swap/page.tsx`
-- **Bridge UI:** `APP&WEB/website-v2.9/src/app/bridge/page.tsx`
+- **DeFi UI:** `apps/website-v2.9/src/app/defi/page.tsx`
+- **Swap UI:** `apps/website-v2.9/src/app/swap/page.tsx`
+- **Bridge UI:** `apps/website-v2.9/src/app/bridge/page.tsx`
 - **Mainnet constants:** `V3/docs/MAINNET_CONSTANTS.md`
 - **Uniswap V4 docs:** https://docs.uniswap.org/contracts/v4/
 - **THORChain docs:** https://docs.thorchain.org/

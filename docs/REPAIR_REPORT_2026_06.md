@@ -118,7 +118,7 @@ Přepsán s reálnými počty LOC/testů (staré čísla byly nafouklé/chybné)
 ## 4. Co zbývá
 
 ### Kritické (P0)
-- [ ] **Sync z Helsinki** — server má novější kód pro L1 i APP&WEB
+- [ ] **Sync z Helsinki** — server má novější kód pro L1 i apps
 - [ ] **verushash-native** — potřebuje `download_sources.sh` pro C zdrojáky
 - [ ] **L1/core deficit** — ~20K LOC chybí oproti tvrzením (ztraceno?)
 

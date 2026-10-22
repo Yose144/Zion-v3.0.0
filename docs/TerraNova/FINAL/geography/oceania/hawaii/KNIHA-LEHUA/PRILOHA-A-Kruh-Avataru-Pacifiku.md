@@ -20,7 +20,7 @@ V repozitáři **ZION OASIS** je nyní rozšířený roster **201 avatarů** *(2
 - **+10 Africa Circle** *(142–151)* — `docs/TerraNova/africa/KONCEPT-AVATARI-OASIS.md`
 - **+10 Atlantis Circle (literární Platón)** *(152–161)* — `docs/TerraNova/atlantis/KONCEPT-AVATARI-OASIS.md`
 - **+10 Lemuria Circle (syntetická pedagogika)** *(162–171)* — `docs/TerraNova/lemuria/KONCEPT-AVATARI-OASIS.md`
-- **+10 Cosmic / Vzestup Circle** *(172–181)* — `docs/TerraNova/cosmic/KONCEPT-AVATARI-OASIS.md` *(+ archiv `APP&WEB/public_html/V2/Vzestup/`; ne medicína)*
+- **+10 Cosmic / Vzestup Circle** *(172–181)* — `docs/TerraNova/cosmic/KONCEPT-AVATARI-OASIS.md` *(+ archiv `apps/public_html/V2/Vzestup/`; ne medicína)*
 - **+10 Norse–Celtic Circle** *(182–191)* — `docs/TerraNova/norse-celtic/KONCEPT-AVATARI-OASIS.md` *(Valhalla jen guild metafora; žádná rasová pýcha)*
 - **+10 Ancient Egypt Circle** *(192–201)* — `docs/TerraNova/ancient-egypt/KONCEPT-AVATARI-OASIS.md` *(doplňuje #06 / #149–150; žádné muzejní loot NFT)*
 

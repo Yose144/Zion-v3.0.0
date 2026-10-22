@@ -25,10 +25,10 @@
 | Část | Stav | Zdroj |
 |------|------|-------|
 | `quote` a `quote/multi` | reálně počítá cesty z poolů v `DexRouter` | `V31/L2/multichain/src/swap/dex.rs:166` |
-| UI výběr chainů/tokenů | widget zobrazuje BTC/Lightning/ZION/EVM tokeny | `APP&WEB/website-v2.9/src/components/dex/` |
-| ZIS auth proxy | `zion_session` cookie se přeposílá z webu přes Next.js do multichain | `APP&WEB/website-v2.9/src/app/api/swap/[...path]/route.ts` |
+| UI výběr chainů/tokenů | widget zobrazuje BTC/Lightning/ZION/EVM tokeny | `apps/website-v2.9/src/components/dex/` |
+| ZIS auth proxy | `zion_session` cookie se přeposílá z webu přes Next.js do multichain | `apps/website-v2.9/src/app/api/swap/[...path]/route.ts` |
 | Chain adapters | `BitcoinAdapter`, `EvmAdapter`, `ZionL1Adapter` umí reálně posílat tx, číst zůstatky a sledovat deposit events | `V31/L2/multichain/src/chain/adapters/` |
-| ZIS linked addresses | uživatel může mít `zion-l1` nebo `evm` adresy, bitcoin podpora není dořešena | `APP&WEB/identity/src/routes/auth.ts` |
+| ZIS linked addresses | uživatel může mít `zion-l1` nebo `evm` adresy, bitcoin podpora není dořešena | `apps/identity/src/routes/auth.ts` |
 | Intent / solver engine | existuje `IntentEngine`, `Executor` a `Bridge`, ale cross-chain execution je vypnutá | `V31/L2/multichain/src/swap/dex/intent_engine.rs:201`, `V31/L2/multichain/src/swap/dex/executor.rs:34` |
 
 ### 1.2 Proč dnešní `/v1/swap/execute` není E2E
@@ -107,7 +107,7 @@ Plán předpokládá **fázovaný přístup**:
 
 ## 3. Datový model
 
-### 3.1 Nové tabulky ve `APP&WEB/shared/prisma/schema.prisma`
+### 3.1 Nové tabulky ve `apps/shared/prisma/schema.prisma`
 
 ```prisma
 // Přiřazený BIP44 účet v L2 keyringu (auto-increment, unikátní pro user).
@@ -324,7 +324,7 @@ POST /v1/swap/intent                // ponechat, ale provázat s wallet
 - `Aggregator` (`swap/dex/aggregator.rs`) je skoro hotový — zapojit ho do
   `SwapExecutor` místo přímého `DexRouter`.
 
-### 4.7 `APP&WEB/identity` — ZIS wallet API
+### 4.7 `apps/identity` — ZIS wallet API
 
 Nové routy v `src/routes/wallet.ts`:
 
@@ -338,14 +338,14 @@ GET  /api/wallet/withdrawals         // historie výběrů
 POST /api/wallet/withdraw            // založit withdraw request
 ```
 
-Rozšířit `ZisChainType` (`APP&WEB/shared/zis-client.ts:105`) o `bitcoin`,
+Rozšířit `ZisChainType` (`apps/shared/zis-client.ts:105`) o `bitcoin`,
 `lightning`, `solana`, atd.
 
-Rozšířit `/api/auth/link` (`APP&WEB/identity/src/routes/auth.ts:136`) aby:
+Rozšířit `/api/auth/link` (`apps/identity/src/routes/auth.ts:136`) aby:
 - podporoval `bitcoin` a `lightning` s ověřením podpisu (BIP-322 / LNURL),
 - nebo umožnil watch-only link s manuálním potvrzením pro withdraw.
 
-### 4.8 `APP&WEB/website-v2.9` — UI
+### 4.8 `apps/website-v2.9` — UI
 
 1. **Nový context** `MultichainWalletContext.tsx`:
    - načítá balances, deposit adresy, orders.
@@ -381,7 +381,7 @@ nemění existující bridge/HTLC funkcionalitu.
 
 ### Fáze 1 — ZIS datový model a per-user derivace (1–2 týdny)
 
-1. Migrovat Prisma schema (`APP&WEB/shared/prisma/schema.prisma`):
+1. Migrovat Prisma schema (`apps/shared/prisma/schema.prisma`):
    - `MultichainWallet`, `MultichainWalletAddress`, `MultichainBalance`.
    - Rozšířit `DexOrder` o `walletId`, `routeJson`, `withdrawTxHash`.
 2. Vytvořit `db-sync.ts`/`prisma db push` a ověřit na dev DB.
@@ -489,7 +489,7 @@ na deploy a validaci.
 
 ### Fáze 7 — UI, testování, tvrdé hardening (2 týdny)
 
-1. ✅ `MultichainWalletContext` (`APP&WEB/website-v2.9/src/contexts/MultichainWalletContext.tsx`)
+1. ✅ `MultichainWalletContext` (`apps/website-v2.9/src/contexts/MultichainWalletContext.tsx`)
    a `/wallet/multichain` stránka s přehledem zůstatků, adres, vkladů,
    výběrů a DEX objednávek; prolink z `/wallet`. Rozšíření swap proxy o
    `/api/multichain/[...path]` (mapuje `/v1/wallet/*` a `/v1/swap/*`).
@@ -497,7 +497,7 @@ na deploy a validaci.
    `V31/L2/multichain/tests/service.rs::e2e_deposit_swap_withdraw`. Používá
    `MultichainService` s mock `ChainAdapter`, `DepositWatcher`, `SwapExecutor`
    a `WithdrawalProcessor` na dočasné DB.
-   ✅ Playwright smoke test `APP&WEB/website-v2.9/e2e/wallet-multichain.spec.ts`
+   ✅ Playwright smoke test `apps/website-v2.9/e2e/wallet-multichain.spec.ts`
    ověřuje rendering `/wallet/multichain`, sign-in prompt a navigaci.
    ⏳ Plnohodnotný UI flow (deposit → swap → withdraw) a reálný on-chain
    regtest/testnet E2E vyžadují autentizovaný test účet a mock/testnet backend.
@@ -583,20 +583,20 @@ na deploy a validaci.
 
 ### ZIS (Node/TS)
 
-- `APP&WEB/shared/prisma/schema.prisma` — nové tabulky.
-- `APP&WEB/identity/src/server.ts` — registrovat `walletRoutes`.
-- `APP&WEB/identity/src/routes/wallet.ts` — **nové routy**.
-- `APP&WEB/identity/src/routes/auth.ts` — podpora bitcoin/lightning linking.
-- `APP&WEB/shared/zis-client.ts` — nové typy a funkce.
+- `apps/shared/prisma/schema.prisma` — nové tabulky.
+- `apps/identity/src/server.ts` — registrovat `walletRoutes`.
+- `apps/identity/src/routes/wallet.ts` — **nové routy**.
+- `apps/identity/src/routes/auth.ts` — podpora bitcoin/lightning linking.
+- `apps/shared/zis-client.ts` — nové typy a funkce.
 
 ### Web (Next.js)
 
-- `APP&WEB/website-v2.9/src/contexts/MultichainWalletContext.tsx` — **nový**.
-- `APP&WEB/website-v2.9/src/components/dex/CrossChainSwapWidget.tsx` —
+- `apps/website-v2.9/src/contexts/MultichainWalletContext.tsx` — **nový**.
+- `apps/website-v2.9/src/components/dex/CrossChainSwapWidget.tsx` —
   balances, deposit/withdraw, order status.
-- `APP&WEB/website-v2.9/src/app/api/swap/[...path]/route.ts` — nové cesty.
-- `APP&WEB/website-v2.9/src/app/wallet/multichain/page.tsx` — **nová stránka**.
-- `APP&WEB/website-v2.9/src/lib/defi-contracts.ts` — token metadata pro BTC,
+- `apps/website-v2.9/src/app/api/swap/[...path]/route.ts` — nové cesty.
+- `apps/website-v2.9/src/app/wallet/multichain/page.tsx` — **nová stránka**.
+- `apps/website-v2.9/src/lib/defi-contracts.ts` — token metadata pro BTC,
   Lightning, wZION mapping.
 
 ---
@@ -617,7 +617,7 @@ na deploy a validaci.
    on-chain zůstatky L2 hot walletů.
 7. **Auth**: všechny operace vyžadují platný `zion_session` nebo `zis_` API
    klíč.
-8. **Build**: `V31/L2/multichain` buildí bez chyb; `APP&WEB/website-v2.9`
+8. **Build**: `V31/L2/multichain` buildí bez chyb; `apps/website-v2.9`
    `npm run build` produkuje static pages úspěšně.
 
 ---

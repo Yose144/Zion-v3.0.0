@@ -248,7 +248,7 @@ H+1 ≈ 18 983, so the treasury stays locked for ~125 000 more blocks
 |-----------|------|--------|
 | HTLC daemon | `V3/L2/atomic-swap` | ✅ Active |
 | E2E tests | `V3/L2/atomic-swap/tests/` | ✅ Pass |
-| Web UI (`/swap`) | `APP&WEB/website-v2.9` | ✅ Code ready |
+| Web UI (`/swap`) | `apps/website-v2.9` | ✅ Code ready |
 
 ### 3b.5 L3 WARP — ✅ COMPLETE
 
@@ -391,13 +391,13 @@ Phase 5) BEFORE any code change.
 
 | Component | Action |
 |-----------|--------|
-| `APP&WEB/website-v2.9/src/lib/constants.ts` | `FLOWERS_PER_ZION = 1_000_000` (was `1_000_000_000_000`). `flowersToZion` / `zionToFlowers` already correct via constant. Deprecated aliases (`ATOMIC_UNITS_PER_ZION`) follow automatically. |
-| `APP&WEB/website-v2.9/src/lib/zion-rpc.ts` | drop local `ATOMIC_PER_ZION`, import from `constants.ts` |
-| `APP&WEB/website-v2.9/src/lib/dao-api.ts` | rename `available_atomic` / `amount_atomic` → `available_flowers` / `amount_flowers` (matches new DAO API) |
-| `APP&WEB/website-v2.9/src/components/MinerDashboard.tsx` | replace raw `/ 1e12` with `flowersToZion(x)` |
-| `APP&WEB/desktop-agent/**` | any `FLOWERS_PER_ZION` constant → `1_000_000` |
-| `APP&WEB/mobile-app/src/constants/blockchain.js` | `FLOWERS_PER_ZION` → `1_000_000` |
-| `APP&WEB/zion-wallet-sdk/**` | same |
+| `apps/website-v2.9/src/lib/constants.ts` | `FLOWERS_PER_ZION = 1_000_000` (was `1_000_000_000_000`). `flowersToZion` / `zionToFlowers` already correct via constant. Deprecated aliases (`ATOMIC_UNITS_PER_ZION`) follow automatically. |
+| `apps/website-v2.9/src/lib/zion-rpc.ts` | drop local `ATOMIC_PER_ZION`, import from `constants.ts` |
+| `apps/website-v2.9/src/lib/dao-api.ts` | rename `available_atomic` / `amount_atomic` → `available_flowers` / `amount_flowers` (matches new DAO API) |
+| `apps/website-v2.9/src/components/MinerDashboard.tsx` | replace raw `/ 1e12` with `flowersToZion(x)` |
+| `apps/desktop-agent/**` | any `FLOWERS_PER_ZION` constant → `1_000_000` |
+| `apps/mobile-app/src/constants/blockchain.js` | `FLOWERS_PER_ZION` → `1_000_000` |
+| `apps/zion-wallet-sdk/**` | same |
 | `ZION_OS/dashboard/app.py` | any `1e12` or `1_000_000_000_000` literal → `1_000_000` |
 | `ZION_OS/desktop/**` (Tauri Rust) | import from `zion-core` |
 

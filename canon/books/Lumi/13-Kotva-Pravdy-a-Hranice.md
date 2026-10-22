@@ -36,9 +36,9 @@ Kniha prohlašuje za **jednu postavu napříč časem** šest stop, které v kor
 | Dítě na přídi archy, které ukázalo první paprsek | [`nirvana/01`](../nirvana/01-Prvni-Paprsek.md) | „Dítě se jmenovalo **Lumi**." | **MÝTUS** — výchozí bod knihy |
 | Dítě po boku poutníka ve Velkém sjednocení | [`nirvana/12`](../nirvana/12-Velke-Sjednoceni.md) | „poutník s dítětem Lumi po boku" | **MÝTUS** |
 | Rybářova dcera, která pojmenovala stanici | [`Issobella/01`](../Issobella/01-Jmeno-z-Hvez.md) | „jmenovala se podle babičky a ne podle hvězdy"; složila *iso + bella* | **MÝTUS** — kap. 08 |
-| Kněžka budoucnosti s lucernou u brány OASIS | [`ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`](../ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md) §6; `APP&WEB/OasisWeb/src/components/BabylonIntro.tsx` | „Elizabeth — kněžka budoucnosti a dědictví. Drží lucernu pro ty, kdo přijdou za sto let." / „a lantern of the future" | **MÝTUS** — kap. 05, 12 |
+| Kněžka budoucnosti s lucernou u brány OASIS | [`ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`](../ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md) §6; `apps/OasisWeb/src/components/BabylonIntro.tsx` | „Elizabeth — kněžka budoucnosti a dědictví. Drží lucernu pro ty, kdo přijdou za sto let." / „a lantern of the future" | **MÝTUS** — kap. 05, 12 |
 | OASIS avatar č. 40 „Elizabet" | `V31/L4/oasis/data/avatars.json` | Royal Healer · Pink ray · Compassionate Leader · quest „The Queen's Heart" · teaching „Rule with love, not fear" · Rare · level 5 „Quantum" | **ŽIVÉ** (data) / ztotožnění **MÝTUS** |
-| Svět „ELIZABET" v galaxii OASIS | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` | „Věštkyně Hvězdných Bran · Posel Stvořitele · Strážkyně Věčnosti"; `goldenEggClue: 40` | **ŽIVÉ** (data) / ztotožnění **MÝTUS** |
+| Svět „ELIZABET" v galaxii OASIS | `apps/OasisWeb/src/domain/config/worlds.ts` | „Věštkyně Hvězdných Bran · Posel Stvořitele · Strážkyně Věčnosti"; `goldenEggClue: 40` | **ŽIVÉ** (data) / ztotožnění **MÝTUS** |
 | Jméno: Elizabeth = Isabel; význam „Bůh je má přísaha" | veřejná etymologie; `docs/docs2.9/genesis/09.5-CHAPTER-9-Three-Marian-Apparitions.md` („Issobel = Elizabeth") | Isabel je iberská forma jména Elisabeth | **ŽIVÉ** (jazykový fakt) |
 
 **Pravidlo zjevené budoucnosti.** Kapitoly 05–10 se odehrávají ve světě, kde je nová civilizace rozkvetlá. Každý takový obraz je HORIZONT nebo MÝTUS a nikdy nedostane termín ani slib. V každé kapitole 02–12 je odstavec *„Lucerna ukázala dnešek"*, který popisuje skutečný stav sítě k datu snímku (2026-09-14), a kotva pravdy pod kapitolou rozděluje řádky podle štítků. Kdo cituje z této knihy obraz budoucnosti bez štítku, cituje ji špatně.
@@ -76,7 +76,7 @@ Registr M0 vyžaduje hlásit rozpory bez obrany identity projektu. Toto jsou ná
 | 5 | [`nirvana/12`](../nirvana/12-Velke-Sjednoceni.md) kotva | „Všech 6 vrstev běží plně synchronizováno"; „DAO Governance Runtime řídí parametry sítě a alokaci fondů bez jediného privilegovaného klíče" | L3/L4/L6 jsou STAVBA/HORIZONT; admin multisig 3-of-3 a guardians 5-of-7 existují (`docs/genesis.md`; `AGENTS.md` 2026-09-14) — formulace „bez privilegovaného klíče" je nepřesná | B |
 | 6 | [`Issobella/06`](../Issobella/06-Pet-Procent-Nahoru.md) | „Devadesát procent jde tomu, kdo našel nonce" | kanonicky 89 % těžař + 1 % (burn před aktivací / node reward po ní) | A |
 | 7 | [`Issobella/10`](../Issobella/10-Kotva-Pravdy-a-Hranice.md) §Známé nesrovnalosti | otevřená otázka etymologie „Issobella" | vyřešeno **na úrovni MÝTU** v kap. 08 (Isabel = Elizabeth jako jazykový fakt; ztotožnění jako mýtus); historický původ názvu kniha netvrdí — zůstává NEDOLOŽENO | E |
-| 8 | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — `ELIZABET` | `layer: 3`, kategorie `planet`; kněžka brány je archetyp L4 | otevřená otázka pro OASIS data (co znamená `layer`); neupravovat bez review (srov. `BodhiGaia/09` §4 #3 — Dharma Temple `layer: 3`) | A |
+| 8 | `apps/OasisWeb/src/domain/config/worlds.ts` — `ELIZABET` | `layer: 3`, kategorie `planet`; kněžka brány je archetyp L4 | otevřená otázka pro OASIS data (co znamená `layer`); neupravovat bez review (srov. `BodhiGaia/09` §4 #3 — Dharma Temple `layer: 3`) | A |
 | 9 | [`nirvana/00-README`](../nirvana/00-README.md) řádek ep. 9 | „L4 Unreal Engine 5.7 · Nanite/Lumen fotorealismus, okamžitý WebGPU/Pixel Streaming preview" jako popis epizody bez štítku | HORIZONT (`MiseAmenti/07` §5) — doplnit štítek při příštím review | B |
 | 10 | [`NirvanaCloud/00-README`](../NirvanaCloud/00-README.md) | „stovky nezávislých uzlů po světě" jako technický fakt | NEDOLOŽENO (`MiseAmenti/07` §2; snímek 2026-09-14: 7 aktivních peerů) | B |
 
@@ -124,9 +124,9 @@ ztotožnění Lumi = MÝTUS; Isabel = Elizabeth = ŽIVÉ (jazykový fakt); obraz
 
 ## Důkaz
 V31/L1/core (emission, v3_template, v3_compat, difficulty, genesis); V31/L1/cosmic-harmony;
-APP&WEB/identity; APP&WEB/zion-wallet-sdk; V31/L2/multichain, L2contracts.md, warp.example.toml;
+apps/identity; apps/zion-wallet-sdk; V31/L2/multichain, L2contracts.md, warp.example.toml;
 V31/L3/ai-native, docs/3.0.6/HIRAN_OVERVIEW.md; V31/L4/oasis/data/avatars.json,
-APP&WEB/OasisWeb (BabylonIntro.tsx, worlds.ts, WorldPanel.tsx); V31/L5/free-world; V31/L6/issobella;
+apps/OasisWeb (BabylonIntro.tsx, worlds.ts, WorldPanel.tsx); V31/L5/free-world; V31/L6/issobella;
 canon/l6/; docs/3.2/L5_L6_ACTIVATION_PLAN.md (G10), docs/3.2/ROADMAP.md (G8/G9); docs/genesis.md;
 StatusV3.md, V31/STATUS.md, AGENTS.md (2026-08-22, 2026-09-07, 2026-09-14); MiseAmenti/01, 04, 06, 07;
 ZION_ONBOARDING_PUBLIC_CZ.md; ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md §6; snímek sítě 2026-09-14.

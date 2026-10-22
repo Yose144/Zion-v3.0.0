@@ -107,7 +107,7 @@ Doplňkově **NEDOLOŽENO** (raná evidence chybí — nesmí se používat jako
 - **Kámen:** evangelia (Mk, Mt, Lk, Jan) · Evangelium podle Marie (Berlínský kodex 8502 + řecké zlomky P.Oxy. 3525, P.Ryl. 463) · Evangelium Filipovo · Pistis Sofia · Hippolytos, *Komentář k Písni písní* (~235) · Eusebios, *Církevní dějiny* III,19–20 (Hegesippos o desposyni) · Řehoř Veliký, *Homilie 33* (591) · liturgická reforma 1969 / dekret 2016 · Zjevení Janovo.
 - **Hlína:** provensálská tradice (Saintes-Maries-de-la-Mer, Sainte-Baume, Saint-Maximin, Vézelay) · romská pouť k Sáře e Kali · černé madony · středověké grálové romány.
 - **Sen:** *Holy Blood, Holy Grail* (1982) · „Dossiers secrets" / Prieuré de Sion (prokázaný padělek) · Da Vinciho kód (2003).
-- **Živá síť:** [`StatusV3.md`](../../../docs/3.2/StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md) · [`L2contracts.md`](../../../docs/3.2/L2contracts.md) · [`docs/genesis.md`](../../../docs/genesis.md) (zpráva v genesis, jméno Meriam) · `V31/L4/oasis/data/avatars.json` (avatar 18, 19, 38, 40) · `APP&WEB/OasisWeb` (dvě kněžky, světy) · `V31/L1/core` (emise, split, timelock 144 000) · [`TerraNova/Full.md` příloha C](../../../docs/TerraNova/public/Full.md) (Zjevení jako blueprints).
+- **Živá síť:** [`StatusV3.md`](../../../docs/3.2/StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md) · [`L2contracts.md`](../../../docs/3.2/L2contracts.md) · [`docs/genesis.md`](../../../docs/genesis.md) (zpráva v genesis, jméno Meriam) · `V31/L4/oasis/data/avatars.json` (avatar 18, 19, 38, 40) · `apps/OasisWeb` (dvě kněžky, světy) · `V31/L1/core` (emise, split, timelock 144 000) · [`TerraNova/Full.md` příloha C](../../../docs/TerraNova/public/Full.md) (Zjevení jako blueprints).
 
 ---
 

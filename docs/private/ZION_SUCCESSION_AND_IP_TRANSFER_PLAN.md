@@ -129,7 +129,7 @@ Součástí rozsahu L6 je nově i **pozemní segment v Kostarice** — výzkumn�
 
 - Root `LICENSE` a `public/LICENSE`: `Copyright (c) 2024-2026 ZION TerraNova Contributors`.
 - `V31/Cargo.toml`, root `Cargo.toml`: `authors = ["Yose144"]`.
-- `APP&WEB/zion-wallet-sdk/package.json`: `"author": "ZION TerraNova"`.
+- `apps/zion-wallet-sdk/package.json`: `"author": "ZION TerraNova"`.
 - Některé `package.json`: `ZION TerraNova Core Team <contact@zionterranova.com>`.
 - Git autoři: `Yose144`, `Josef Hubalek` aj. Yosef je v praxi dominantním autorem.
 
@@ -224,7 +224,7 @@ Pokud by se podíl převáděl už za života, je nutné nejprve ověřit výpis
 - `V31/L4/oasis/src/rewards.rs` — OASIS reward pool: 3 sloty, 4,95B ZION.
 - `docs/docs2.9/legal/WHITEPAPER_ZION_TOKEN_CZ.md` — emitent `Omnity.One s.r.o.`.
 - `docs/docs2.9/legal/TERMS_AND_CONDITIONS_CZ.md` — ochranné známky a práva k IP.
-- `APP&WEB/website-v2.9/public/docs/legal/disclaimer.md` — sekce „Intelektuální vlastnictví".
+- `apps/website-v2.9/public/docs/legal/disclaimer.md` — sekce „Intelektuální vlastnictví".
 
 ---
 

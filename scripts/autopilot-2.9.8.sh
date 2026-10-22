@@ -355,14 +355,14 @@ phase_miners() {
   cargo test -p zion-miner --no-run
 
   python3 -m py_compile \
-    "APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py" \
-    "APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_gpu.py" \
-    "APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py"
+    "apps/desktop-agent/resources/mining/cosmic_harmony_v42_gpu.py" \
+    "apps/desktop-agent/resources/mining/cosmic_harmony_deeksha_gpu.py" \
+    "apps/desktop-agent/resources/mining/cosmic_harmony_deeksha_fallback.py"
 
-  node --check "APP&WEB/desktop-agent/src/main.js"
+  node --check "apps/desktop-agent/src/main.js"
 
   # Ekam Deeksha kernel sync check
-  if ! grep -q "ekam_deeksha_mine" "APP&WEB/desktop-agent/resources/mining/cosmic_harmony_deeksha_canonical.cl" 2>/dev/null; then
+  if ! grep -q "ekam_deeksha_mine" "apps/desktop-agent/resources/mining/cosmic_harmony_deeksha_canonical.cl" 2>/dev/null; then
     warn "Ekam Deeksha kernel not found in canonical .cl — sync needed"
   fi
   if ! grep -q "ekam_deeksha_mine" "L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl" 2>/dev/null; then

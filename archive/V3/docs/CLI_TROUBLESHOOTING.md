@@ -91,13 +91,13 @@ That means repo docs alone are not enough.
 
 When public docs are stale, verify both:
 
-1. the markdown exists under `APP&WEB/website-v2.9/public/docs/`,
+1. the markdown exists under `apps/website-v2.9/public/docs/`,
 2. the docs page navigation references it.
 
 Typical local validation:
 
 ```bash
-cd APP&WEB/website-v2.9
+cd apps/website-v2.9
 npm run build
 ```
 

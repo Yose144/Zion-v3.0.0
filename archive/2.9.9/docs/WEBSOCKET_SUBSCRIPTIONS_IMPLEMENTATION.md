@@ -225,7 +225,7 @@ ZION_WEBSOCKET_BIND=0.0.0.0:8445 cargo run --release --manifest-path V3/Cargo.to
 ### Frontend
 ```bash
 # Start dev server
-cd APP&WEB/website-v2.9
+cd apps/website-v2.9
 npm run dev
 
 # Test v browser console

@@ -96,7 +96,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | G1 | Feature freeze | product | `DEFERRED_3.2.md` frozen |
 | G2 | GitHub `v3.2.0` release | release | Linux/Windows/macOS binaries, SHA256SUMS, signed tag — 🔄 in progress (workflows + scripts ready, tags pending) |
 | G3 | SMOS package | release | tested on reference rig |
-| G4 | Desktop app bundle | APP&WEB | builds and passes tests on all platforms — 🔄 in progress (v3.2.0 desktop workflow + release notes ready) |
+| G4 | Desktop app bundle | apps | builds and passes tests on all platforms — 🔄 in progress (v3.2.0 desktop workflow + release notes ready) |
 | G5 | Public docs update | docs | `public/README.md` and translations reflect 3.2.0 — 🔄 in progress (download page metadata and release notes updated) |
 | G6 | Community + bug bounty | community | channels and process published |
 | G7 | Monitoring & alerting | ops | alerts tested, runbooks updated |
@@ -118,9 +118,9 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 
 | # | Task | Status |
 |---|------|--------|
-| I1 | ZIS OpenAPI design | ✅ Complete — `APP&WEB/identity/openapi.yaml` covers all live routes (auth, session, keys, wallet proxy, health, well-known) |
-| I2 | ZIS server implementation (`APP&WEB/identity/`) | ✅ Complete — Fastify 4 server with Ed25519 + SIWE verify, sessions, API keys, rate limiting deployed on Edge |
-| I3 | Unified Prisma schema | ✅ Complete — `APP&WEB/shared/prisma/schema.prisma` covers User, LinkedAddress, Session, ApiKey, OASIS, Marketplace, DAO, Mining, Bridge, DEX, Notifications |
+| I1 | ZIS OpenAPI design | ✅ Complete — `apps/identity/openapi.yaml` covers all live routes (auth, session, keys, wallet proxy, health, well-known) |
+| I2 | ZIS server implementation (`apps/identity/`) | ✅ Complete — Fastify 4 server with Ed25519 + SIWE verify, sessions, API keys, rate limiting deployed on Edge |
+| I3 | Unified Prisma schema | ✅ Complete — `apps/shared/prisma/schema.prisma` covers User, LinkedAddress, Session, ApiKey, OASIS, Marketplace, DAO, Mining, Bridge, DEX, Notifications |
 | I4 | Deploy ZIS on Edge | ✅ Complete — `zion-zis.service` active, `https://auth.zionterranova.com/health` 200 |
 | I5 | Cross-domain cookie SSO | ✅ Complete — `zion_session` cookie on `.zionterranova.com`, httpOnly, secure, signed, 7-day expiry |
 | I6 | EVM wallet auth (SIWE) | ✅ Complete — `POST /api/auth/verify/siwe` verifies EIP-4361 messages with `siwe` library |
@@ -137,7 +137,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | J4 | Dashboard → ZIS | ✅ Complete — ZIS SSO cookie v `_check_auth()` + `/api/me` endpoint (2026-09-02) |
 | J5 | OASIS ↔ Marketplace artifact sync | ✅ Complete — `/api/oasis/sync` + `/api/oasis/reverse-sync` live na marketplace (3100); ověřeno 2026-09-14: `sync?type=avatars` → 200 avatars do Prisma DB |
 | J6 | Dashboard "My Ecosystem" view | ✅ Complete — `/ecosystem` page + `/api/ecosystem` na dashboardu (8766): ZIS user → linked zion-l1 adresy → L1 UTXO balances, pool mining payouts (`pool-store.db`), DAO votes (`dao.db`), marketplace counts (Postgres). Basic-auth operátoři dostanou "sign in with ZIS" (2026-09-14) |
-| J7 | Mining / DAO → shared DB | ✅ Complete — `zion-db-sync.service` on Edge (active since 2026-09-28) polls pool `/stats`+`/miners`, DAO `/api/proposals` and WARP `/transfers` every 30 s and upserts `MiningWorker`/`MiningStats`/`DaoProposal`/`BridgeTransaction` into the shared Postgres (`APP&WEB/shared/db-sync.ts`) |
+| J7 | Mining / DAO → shared DB | ✅ Complete — `zion-db-sync.service` on Edge (active since 2026-09-28) polls pool `/stats`+`/miners`, DAO `/api/proposals` and WARP `/transfers` every 30 s and upserts `MiningWorker`/`MiningStats`/`DaoProposal`/`BridgeTransaction` into the shared Postgres (`apps/shared/db-sync.ts`) |
 
 ---
 

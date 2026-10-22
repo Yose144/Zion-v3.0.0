@@ -48,7 +48,7 @@
 | DB | `postgresql@16-main` → :5432 |
 | Monitoring | prometheus :9090 + node-exporter :9100 |
 | Misc | python3 :8779 (dashboard API?), :9105 (g8 exporter) |
-| /opt/zion | `APP&WEB/` (mirror repa: website-v2.9 4.1G, MarketPlace 2.8G, OasisWeb 902M, IntroPage 435M, public_html 428M), `identity/` 166M (ZIS deploy), `hiran-models/` 5.5G, `V31/` 4.5G, `bitcoin/` 80M, `data/` 1.8G |
+| /opt/zion | `apps/` (mirror repa: website-v2.9 4.1G, MarketPlace 2.8G, OasisWeb 902M, IntroPage 435M, public_html 428M), `identity/` 166M (ZIS deploy), `hiran-models/` 5.5G, `V31/` 4.5G, `bitcoin/` 80M, `data/` 1.8G |
 | Disk | 193G, 50% used |
 
 ### Rig (SMOS, ID 518837 / group 1780844)
@@ -107,7 +107,7 @@ EDGE ◄────── permitlisten :8322,:8003 ────── RIG
 | `rpc.zionterranova.com` | veřejné RPC | → edge2:9445 (zion) + :9944 (qtc) |
 | `api.zionterranova.com` | DNS existuje | ? |
 
-**+1 doména mimo zionterranova:** `newearth.cz` → `/var/www/newearth` (428M static, z APP&WEB/public_html).
+**+1 doména mimo zionterranova:** `newearth.cz` → `/var/www/newearth` (428M static, z apps/public_html).
 
 ---
 
@@ -117,7 +117,7 @@ EDGE ◄────── permitlisten :8322,:8003 ────── RIG
 
 | Dir | Size | Files | Posl. commit | Hodnocení |
 |---|---|---|---|---|
-| `APP&WEB/` | 12G | 379k | 2026-10-22 | **živé — všechny appky** |
+| `apps/` | 12G | 379k | 2026-10-22 | **živé — všechny appky** |
 | `V31/` | 4.6G | 14k | 2026-10-22 | **živé — chain L1-L6** |
 | `docs/` | 75M | 3.2k | 2026-10-22 | **živé — kanon + plány** |
 | `ZION_OS/` | 211M | 10k | 2026-10-22 | živé — infra/dashboard/skripty |
@@ -144,7 +144,7 @@ EDGE ◄────── permitlisten :8322,:8003 ────── RIG
 | `data/` | 616K | 8 | never | lokální sqlite (bridge/dao/warp/revenue) |
 | `src/` | 8K | 1 | 2026-08-05 | 1 soubor `lib.rs` (zbytek?) |
 
-### APP&WEB aplikace (všechny živé, posl. commity 21–22.10.)
+### apps aplikace (všechny živé, posl. commity 21–22.10.)
 
 | App | Stack | Deploy | Stav |
 |---|---|---|---|
@@ -172,7 +172,7 @@ EDGE ◄────── permitlisten :8322,:8003 ────── RIG
 
 ## 5. ZIS — ZION Identity Service (kanon, již nasazené)
 
-`auth.zionterranova.com` → edge nginx → upstream `zion_zis` (127.0.0.1:8096) → **tunel** → edge2 `zion-zis.service` → `/opt/zion/identity/server.js` (repo `APP&WEB/identity`).
+`auth.zionterranova.com` → edge nginx → upstream `zion_zis` (127.0.0.1:8096) → **tunel** → edge2 `zion-zis.service` → `/opt/zion/identity/server.js` (repo `apps/identity`).
 
 Metody: Ed25519 (L1 native) · SIWE · Google OIDC · WebAuthn/passkeys → JWT EdDSA httpOnly cookie `.zionterranova.com`. Spotřebitelé: app (cookie), market (cookie+API key), oasis (cookie), dashboard (cookie).
 

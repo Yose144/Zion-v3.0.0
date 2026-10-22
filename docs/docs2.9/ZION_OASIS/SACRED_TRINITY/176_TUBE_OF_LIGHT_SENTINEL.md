@@ -1,6 +1,6 @@
 # 176. TUBE OF LIGHT SENTINEL — Ochranný sloup světla (inspirace vzestupový archivem) 🔦
 
-*Název odkazuje k praxi **„tube of light"** známé z řady vzestupových materiálů (`APP&WEB/public_html/V2/Vzestup/…`). **Nepředstavuje léčení** ani náhradu bezpečnostní hygieny.*
+*Název odkazuje k praxi **„tube of light"** známé z řady vzestupových materiálů (`apps/public_html/V2/Vzestup/…`). **Nepředstavuje léčení** ani náhradu bezpečnostní hygieny.*
 
 ---
 

@@ -50,8 +50,8 @@ After deploy, update these files with **real mainnet addresses**:
 | File | Fields to update |
 |------|-----------------|
 | `V3/config/bridge-mainnet.toml` | `wzion_address`, `bridge_contract_address`, `enabled = true` |
-| `APP&WEB/website-v2.9/src/lib/bridge-api.ts` | `BRIDGE_CONTRACTS_MAINNET.wzion_address`, `bridge_address` |
-| `APP&WEB/mobile-app/src/constants/config.js` | `MAINNET.WZION_ADDRESS`, `MAINNET.BRIDGE_ADDRESS` |
+| `apps/website-v2.9/src/lib/bridge-api.ts` | `BRIDGE_CONTRACTS_MAINNET.wzion_address`, `bridge_address` |
+| `apps/mobile-app/src/constants/config.js` | `MAINNET.WZION_ADDRESS`, `MAINNET.BRIDGE_ADDRESS` |
 | `V3/L2/bridge/tests/mainnet_readiness.rs` | Test constants |
 | `V3/L3/warp/src/adapter/evm.rs` | `base` entry in chain addresses |
 | `V3/docs/BRIDGE_MAINNET_DEPLOY.md` | Deployment summary |

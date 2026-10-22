@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-23
 **Scope:** `archive/DesktopAgentP3.0.6/` (public release = `zion-public-miner` v3.2.0)
-**Reference:** VIP version at `APP&WEB/desktop-agent/` (`zion-desktop-agent` v3.2.0)
+**Reference:** VIP version at `apps/desktop-agent/` (`zion-desktop-agent` v3.2.0)
 
 ---
 

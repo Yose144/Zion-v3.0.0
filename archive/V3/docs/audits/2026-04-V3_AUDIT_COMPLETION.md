@@ -241,7 +241,7 @@ Ordered by criticality (step-by-step playbook: [`V3/docs/operational/AUDIT_CLOSE
 - Per-adapter L3/warp signer review (Stellar, BTC, Tron).
 - DAO governance Solidity contracts deployed on Base.
 - Live network behavior (DDoS, eclipse, sync-withholding).
-- APP&WEB Electron / RN / website.
+- apps Electron / RN / website.
 - Benchmark / performance characterization.
 
 These remain on the list for the external audit engagement.

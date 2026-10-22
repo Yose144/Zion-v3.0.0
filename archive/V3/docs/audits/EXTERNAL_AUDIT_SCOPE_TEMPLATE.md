@@ -47,7 +47,7 @@ Interní audit (`2026-04-V3_INTERNAL_AUDIT.md` + completion doc) **není** náhr
 
 ## 6. Explicitně mimo základní scope (uvést v SOW)
 
-- APP&WEB (Electron / RN / marketing web).
+- apps (Electron / RN / marketing web).
 - Živá síťová bezpečnost (DDoS, eclipse) bez laboratorní reprodukce.
 - Formální cryptanalýza Ekam Deeksha v2.
 

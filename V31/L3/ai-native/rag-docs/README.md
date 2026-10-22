@@ -9,7 +9,7 @@ způsoboval halucinované/mystické odpovědi ve veřejném chatu.
 ## Zásady kurace
 
 - Pouze **public-vetted** obsah — většina souborů je kopie z
-  `APP&WEB/website-v2.9/public/docs/` (cs_*/en_* prefixy).
+  `apps/website-v2.9/public/docs/` (cs_*/en_* prefixy).
 - Žádné interní plány, reporty, test scripty, lore kroniky
   (`onboard_LITE.md` vypuštěn — čistá narativní poezie rozbíjela
   faktické QA), žádné souborové cesty a služby.

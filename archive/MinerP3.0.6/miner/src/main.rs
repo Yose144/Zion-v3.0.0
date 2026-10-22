@@ -729,7 +729,7 @@ fn serve_miner_metrics(bind_addr: &str, metrics: Arc<Mutex<MinerMetricsSnapshot>
 }
 
 /// Write a JSON stats file compatible with the desktop agent's `tryUpdateStatsFromFile()`.
-/// Fields are mapped to match what the agent expects (see APP&WEB/desktop-agent/src/main.js).
+/// Fields are mapped to match what the agent expects (see apps/desktop-agent/src/main.js).
 fn write_stats_file(path: &str, snapshot: &MinerMetricsSnapshot) {
     let payload = serde_json::json!({
         // Hashrate (agent reads: hashrate_10s, hashrate_60s, hashrate_15m, hashrate, hashrate_max)

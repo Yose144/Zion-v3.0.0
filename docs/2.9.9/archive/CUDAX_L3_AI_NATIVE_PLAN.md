@@ -266,7 +266,7 @@ GPU compute capability se váže na consciousness level:
 
 ## 6. Desktop Agent integrace
 
-Desktop agent (`APP&WEB/desktop-agent`) bude mít **dual mode:**
+Desktop agent (`apps/desktop-agent`) bude mít **dual mode:**
 
 ```
 ┌───────────────────────────────────────────┐

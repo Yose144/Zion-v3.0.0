@@ -1,7 +1,7 @@
 //! OASIS World Registry — canonical world metadata shared with the web client.
 //!
 //! Data is loaded from `data/worlds.json` (generated from
-//! `APP&WEB/OasisWeb/src/domain/config/worlds.ts`) so the API can serve
+//! `apps/OasisWeb/src/domain/config/worlds.ts`) so the API can serve
 //! the same world list the frontend uses.
 
 use serde::{Deserialize, Serialize};

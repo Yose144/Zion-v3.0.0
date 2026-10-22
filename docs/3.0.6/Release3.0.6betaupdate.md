@@ -195,7 +195,7 @@ git fetch public
 
 ### What is NOT in public/ (stays private)
 
-- `APP&WEB/` — website, desktop agent, mobile app source
+- `apps/` — website, desktop agent, mobile app source
 - `ZION_OS/` — dashboard, monitoring, operational scripts
 - `ZionStart/` — bootstrap tooling
 - `PoC-lab/` — research/proof-of-concept code

@@ -50,7 +50,7 @@ It is the most distant book of the series — and therefore must be the strictes
 | Premine slot 6 holds 2.5B ZION for L6 at `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, time-locked until block 144,000. | **LIVE** | `V31/L1/core/src/v3_compat.rs`, [`CHANGES_L6_ISSOBELLA.md`](../../../docs/3.2/CHANGES_L6_ISSOBELLA.md), `StatusV3.md` 2026-09-12 | Independent block-explorer view |
 | `zion-issobella` tracker runs on Edge (`127.0.0.1:8097`), scans coinbase, exposes fund balance / proposals / metrics. | **LIVE** (read-only) | `V31/L6/issobella/`, `zion-v31-issobella.service`, `StatusV3.md` 2026-08-23 | Public portal; API-key enforcement |
 | The fund disburses grants today. | **INVALID CLAIM** (today) | Gate G10: no automatic disbursement; DAO path is summary-only ([`L5_L6_ACTIVATION_PLAN.md`](../../../docs/3.2/L5_L6_ACTIVATION_PLAN.md)) | DAO UI, payout flow, guardian multisig, first project |
-| The L6 research pack (station architecture, quantum motor, artificial gravity, human factors, history) is public and served. | **LIVE** (documentation) | [`canon/l6/`](../../../canon/l6/README.md), mirror `APP&WEB/website-v2.9/public/docs/l6/`, catalog `/docs` → `l6-*` | Peer review, external experts |
+| The L6 research pack (station architecture, quantum motor, artificial gravity, human factors, history) is public and served. | **LIVE** (documentation) | [`canon/l6/`](../../../canon/l6/README.md), mirror `apps/website-v2.9/public/docs/l6/`, catalog `/docs` → `l6-*` | Peer review, external experts |
 | Costa Rica ground node — research campus and future TT&C ground station, land shared with L5 LUMI (Nová Amerika). | **HORIZON** | [`11-Pozemni-Uzel-Kostarika.md`](./11-Pozemni-Uzel-Kostarika.md), `canon/l6/Pozemni_Stanice_Kostarika.md` | Site survey, land acquisition, SUTEL permits, hardware; no antenna stands |
 | Orbital station at 400–550 km with artificial gravity and crew. | **HORIZON** | TerraNova prologue (2040), `canon/l6/Architektura.md`, `/l6-issobella` (roadmap 2030→2045+) | Feasibility studies, partners, years of work; no module exists |
 | Quantum motor / power (demonstrator 2033, CubeSat 2035). | **HORIZON / HYPOTHESIS** | `canon/l6/Kvantovy_Motor.md` (TRL, safety gates), website roadmap | Research, lab, verification; no hardware |
@@ -73,7 +73,7 @@ It is the most distant book of the series — and therefore must be the strictes
 
 - **Canonical 3.3 integration corpus:** [`../MiseAmenti/README_EN.md`](../MiseAmenti/README_EN.md) · Evidence registry: [`07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) · Workstream M5: [`04-Exekucni-Charta-3.3.md`](../MiseAmenti/04-Exekucni-Charta-3.3.md)
 - **G10 decision (L5/L6 run mode):** [`docs/3.2/L5_L6_ACTIVATION_PLAN.md`](../../../docs/3.2/L5_L6_ACTIVATION_PLAN.md)
-- **L6 research pack:** [`canon/l6/`](../../../canon/l6/README.md) · public mirror: `APP&WEB/website-v2.9/public/docs/l6/`
+- **L6 research pack:** [`canon/l6/`](../../../canon/l6/README.md) · public mirror: `apps/website-v2.9/public/docs/l6/`
 - **Tracker implementation:** [`V31/L6/issobella/`](../../../V31/L6/issobella/README.md) (incl. `docs/` — timeline, CLI, financing, station, V31 software)
 - **Premine slot 6 change:** [`CHANGES_L6_ISSOBELLA.md`](../../../docs/3.2/CHANGES_L6_ISSOBELLA.md)
 - **Technical 3.3 plan:** [`V33_NIRVANA_MASTER_PLAN.md`](../../../docs/3.2/V33_NIRVANA_MASTER_PLAN.md)

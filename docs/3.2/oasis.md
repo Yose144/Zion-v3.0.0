@@ -1,7 +1,7 @@
 # OASIS — Status & Roadmap Report
 
 > **Poslední update:** 2026-08-15
-> **Aktivní workspace:** `V31/L4/oasis` + `APP&WEB/OasisWeb`
+> **Aktivní workspace:** `V31/L4/oasis` + `apps/OasisWeb`
 > **Produkční runtime:** `https://oasis.zionterranova.com` (Next.js 16 static export, nginx)
 > **OASIS API:** `https://oasis.zionterranova.com/api/v1/oasis` → `zion-oasis` na Edge (`127.0.0.1:8094`)
 
@@ -14,7 +14,7 @@ OASIS je L4 herní vrstva ZION TerraNova. Spojuje blockchainový stav (XP, consc
 Hlavní komponenty:
 
 - **Backend:** `zion-oasis` (`V31/L4/oasis`) — Axum server s SQLite perzistencí, WebSocket hubem a auth.
-- **Frontend:** `APP&WEB/OasisWeb` — Next.js 16 static export, 3D galaxie, interaktivní světy, HUD.
+- **Frontend:** `apps/OasisWeb` — Next.js 16 static export, 3D galaxie, interaktivní světy, HUD.
 - **World registry:** `V31/L4/oasis/data/worlds.json` — kanonická data pro 73 světů.
 - **Dokumentace vývoje:** `docs/oasis/OASIS_WEB_JOURNAL.md` — deník změn a nasazení.
 
@@ -65,10 +65,10 @@ Hlavní komponenty:
 | Backend server | [`V31/L4/oasis/src/server.rs`](../../V31/L4/oasis/src/server.rs) |
 | WebSocket hub | [`V31/L4/oasis/src/websocket.rs`](../../V31/L4/oasis/src/websocket.rs) |
 | World registry modul | [`V31/L4/oasis/src/worlds.rs`](../../V31/L4/oasis/src/worlds.rs) |
-| Frontend | [`APP&WEB/OasisWeb/`](../../APP&WEB/OasisWeb/) |
-| API client | [`APP&WEB/OasisWeb/src/lib/api.ts`](../../APP&WEB/OasisWeb/src/lib/api.ts) |
-| Game store | [`APP&WEB/OasisWeb/src/store/gameStore.ts`](../../APP&WEB/OasisWeb/src/store/gameStore.ts) |
-| 3D scéna | [`APP&WEB/OasisWeb/src/components/OasisScene.tsx`](../../APP&WEB/OasisWeb/src/components/OasisScene.tsx) |
+| Frontend | [`apps/OasisWeb/`](../../apps/OasisWeb/) |
+| API client | [`apps/OasisWeb/src/lib/api.ts`](../../apps/OasisWeb/src/lib/api.ts) |
+| Game store | [`apps/OasisWeb/src/store/gameStore.ts`](../../apps/OasisWeb/src/store/gameStore.ts) |
+| 3D scéna | [`apps/OasisWeb/src/components/OasisScene.tsx`](../../apps/OasisWeb/src/components/OasisScene.tsx) |
 | Deník | [`docs/oasis/OASIS_WEB_JOURNAL.md`](../oasis/OASIS_WEB_JOURNAL.md) |
 | Archiv (world lore) | [`docs/docs2.9/ZION_OASIS/`](../docs2.9/ZION_OASIS/) |
 
@@ -105,7 +105,7 @@ cd V31
 cargo run -p zion-oasis
 
 # Lokální frontend
-cd APP&WEB/OasisWeb
+cd apps/OasisWeb
 npm install
 npm run build
 npm run start
@@ -115,7 +115,7 @@ cd V31
 cargo test -p zion-oasis
 
 # Deploy (frontend)
-bash APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh
+bash apps/OasisWeb/deploy/deploy-oasis-web.sh
 ```
 
 ---

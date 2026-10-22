@@ -62,7 +62,7 @@ Nezasadily důkaz. Zasadily otázku — a důkaz měl teprve vyrůst.
 ## Hranice epilogu
 
 - **Celá scéna je MÝTUS.** Lumi, Ana, druhé semínko i rozhovor u první olivy jsou literární bajka — nic z toho se nestalo.
-- **Repozitářový fakt:** v repozitáři existují projektové dokumenty Zahrady Genesis ([`../BodhiGaia/03-Zahrada-Genesis.md`](../BodhiGaia/03-Zahrada-Genesis.md)), metadata OASIS světa `GENESIS_GARDEN` (`APP&WEB/OasisWeb/src/domain/config/worlds.ts`) a navazující kapitola [`../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md`](../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md). Jejich existence je ověřitelná; jejich obsah vypráví příběh.
+- **Repozitářový fakt:** v repozitáři existují projektové dokumenty Zahrady Genesis ([`../BodhiGaia/03-Zahrada-Genesis.md`](../BodhiGaia/03-Zahrada-Genesis.md)), metadata OASIS světa `GENESIS_GARDEN` (`apps/OasisWeb/src/domain/config/worlds.ts`) a navazující kapitola [`../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md`](../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md). Jejich existence je ověřitelná; jejich obsah vypráví příběh.
 - **Fyzická růže v Portugalsku: NEDOLOŽENO.** Žádná růže v Zahradě Genesis nebyla doloženě zasazena — ani tímto textem.
 - **Pilot: HORIZONT / NEZAHÁJENO.** Návrh fyzického zasazení je dokument [`../BodhiGaia/pilots/GENESIS-ROSE-001.md`](../BodhiGaia/pilots/GENESIS-ROSE-001.md) — nezahájený, bez potvrzeného místa, souhlasu ani financí.
 

@@ -298,5 +298,5 @@ Pole kukuřice, fazolí a dýní; denní questy o udržitelném zemědělství.
 ---
 
 > **Poznámka:** Tento koncept je open-source v rámci OASIS. Cokoliv přidáš — lore, questy, frakce, místa — piš sem.  
-> Hlavní vize OASIS: [`APP&WEB/OasisWeb/OASIS_UNIVERSE.md`](../../../APP&WEB/OasisWeb/OASIS_UNIVERSE.md)  
+> Hlavní vize OASIS: [`apps/OasisWeb/OASIS_UNIVERSE.md`](../../../apps/OasisWeb/OASIS_UNIVERSE.md)  
 > Maya Circle avatáři: [`docs/TerraNova/maya/KONCEPT-AVATARI-OASIS.md`](../../../TerraNova/maya/KONCEPT-AVATARI-OASIS.md)

@@ -55,7 +55,7 @@ The ZION V3 mainnet dashboard is a **Python stdlib-only HTTP server** with a ric
 | `AGENTS.md` | `003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923` | MATCH |
 | `StatusV3.md` | `003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923` | MATCH |
 | `V3/cli/src/commands/topology.rs` | `003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923` | MATCH |
-| `APP&WEB/mobile-app/src/constants/blockchain.js` | `003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923` | MATCH |
+| `apps/mobile-app/src/constants/blockchain.js` | `003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923` | MATCH |
 
 **Genesis hash is consistent across all 8 files in the repository.**
 

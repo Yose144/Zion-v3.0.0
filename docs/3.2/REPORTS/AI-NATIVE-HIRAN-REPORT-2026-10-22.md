@@ -150,7 +150,7 @@ přidáno `architecture/{README,consensus,mining,overview}`, `consciousness-leve
 
 ### 4.4 Mining na PC (konkurence s inference)
 
-- **nový config key `gpuDevice`** v `APP&WEB/desktop-agent/src/main.js`
+- **nový config key `gpuDevice`** v `apps/desktop-agent/src/main.js`
   → exportuje `ZION_GPU_DEVICES` + `ZION_QPOW_OCL_DEVICES` (index nebo name
   substring: `gfx1010`, `5600xt`, `vega`);
 - `srbminerGpuId: "0"` (SRB/QTU jen 1 zařízení), `srbminerExtraArgs: "--gpu-intensity 30 --no-watchdog"`;
@@ -255,7 +255,7 @@ Desktop agent běží jako `zion-desktop-agent.service` (user unit) →
 3. **8B model občas popírá vlastní roli** („Hiranyagarbha není entita v ZION“),
    i když RAG kontext i system prompt jsou správné → artefakt velikosti modelu.
 4. **RAG korpus je stále úzký** (39 public docs). Rozšíření = kurátorování
-   `APP&WEB/website-v2.9/public/docs/**` (ne interní lore ze `docs/3.2/`).
+   `apps/website-v2.9/public/docs/**` (ne interní lore ze `docs/3.2/`).
 5. `ZION_OS/dashboard/dashboard.{html,js}.gz` v gitu byly **zastaralé** (před
    splitem EDGE → EDGE2); regenerace je zahrnuta v tomto commitu.
 6. `LLM_MODEL=zion-l3` v jednotce je kosmetický alias — reálně běží
@@ -305,8 +305,8 @@ V31/L3/ai-native/src/bin/zion-ai-native-api.rs             (fallback chain + kon
 V31/L3/ai-native/rag-docs/README.md                        (rozšířený korpus)
 V31/deploy/local/hiran-core.service                        (NOVÝ)
 V31/deploy/systemd/zion-hiran-inference.service            (NOVÝ)
-APP&WEB/desktop-agent/src/main.js                          (gpuDevice pin)
-APP&WEB/desktop-agent/GPU_REVENUE_MINING_README.md         (dokumentace pinu)
+apps/desktop-agent/src/main.js                          (gpuDevice pin)
+apps/desktop-agent/GPU_REVENUE_MINING_README.md         (dokumentace pinu)
 ZION_OS/dashboard/dashboard.{html,js}.gz                    (regenerace, sync se zdrojem)
 .gitignore                                                  (+ .continue/)
 ```

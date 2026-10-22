@@ -49,7 +49,7 @@ Nové v3.0 Mainnet repo vznikne čistou migrací ověřeného kódu — žádný
 │      L1/pool/            (stratum, template, revenue)       │
 │      L1/miner/           (GPU dispatch, native algos)       │
 │  - Nový Cargo.toml workspace (version = "3.0.0")           │
-│  - Žádné APP&WEB, žádné docs/2.9.x, žádné legacy scripts  │
+│  - Žádné apps, žádné docs/2.9.x, žádné legacy scripts  │
 │  → Výstup: v3.0.0-rc1 tag                                  │
 ├─────────────────────────────────────────────────────────────┤
 │  FÁZE 3: Mainnet Genesis                                    │
@@ -92,7 +92,7 @@ Nové v3.0 Mainnet repo vznikne čistou migrací ověřeného kódu — žádný
 
 | Oblast | Důvod |
 |--------|-------|
-| `APP&WEB/` (website, desktop-agent, mobile-app) | Oddělený frontend lifecycle |
+| `apps/` (website, desktop-agent, mobile-app) | Oddělený frontend lifecycle |
 | `docs/2.9.5/` – `docs/2.9.8/` | Historický kontext |
 | `Zion-2.9.5-main/` | Archaická kopie |
 | Legacy Python skripty | Archivovány, nevolány z produkce |

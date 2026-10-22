@@ -210,7 +210,7 @@ Příklad: `MARKETBUY:42:0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1:1`
 ## Soubory
 
 ```
-APP&WEB/MarketPlace/
+apps/MarketPlace/
 ├── contracts/
 │   ├── ZIONArtifact.sol          # ERC-1155 artifact NFT
 │   ├── ZIONMarketplace.sol       # Marketplace + hybrid L1/L2

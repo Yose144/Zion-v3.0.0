@@ -104,7 +104,7 @@ Public Metrics: 8455
 
 ### Tauri Desktop Dashboard
 
-- **Cesta:** `APP&WEB/desktop-dashboard/`
+- **Cesta:** `apps/desktop-dashboard/`
 - **Stack:** Tauri v2 + React + Tailwind + Recharts
 - **Funkce:**
   - System tray s Quit/Show menu, hide-on-close
@@ -215,7 +215,7 @@ $env:ZION_MINER_ID="gpu-miner-local-01"
 | `dashboard/dashboard.html` | Přidán Sync Gap do realtime baru |
 | `dashboard/dashboard.js` | `populateL1()` rozšířen o collector data, sync gap |
 | `dashboard/metrics-collector/` | Standalone Rust metrics collector |
-| `APP&WEB/desktop-dashboard/` | Tauri v2 desktop dashboard s L1–L6 panely |
+| `apps/desktop-dashboard/` | Tauri v2 desktop dashboard s L1–L6 panely |
 
 ---
 

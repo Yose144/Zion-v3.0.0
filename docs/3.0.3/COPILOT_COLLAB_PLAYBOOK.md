@@ -162,7 +162,7 @@ Konkrétní akční položky. Drobné, ale zvládnutelné za 1 session.
 |---|------|-----|--------|--------|
 | 1 | Vytvořit `.github/instructions/pool.instructions.md` (applyTo: `V3/L1/pool/**`) — minimum payouts, share validation, PPLNS rules | Já s tvým review | 15 min | Vysoké |
 | 2 | Vytvořit `.github/instructions/bridge.instructions.md` (applyTo: `V3/L2/bridge/**`) — wei factor, 3/5 validators, validator key ops | Já | 15 min | Vysoké |
-| 3 | Vytvořit `.github/instructions/website.instructions.md` (applyTo: `APP&WEB/website-v2.9/**`) — Next.js conventions, `constants.ts` rules, Caddy/PM2 deploy chain | Já | 10 min | Střední |
+| 3 | Vytvořit `.github/instructions/website.instructions.md` (applyTo: `apps/website-v2.9/**`) — Next.js conventions, `constants.ts` rules, Caddy/PM2 deploy chain | Já | 10 min | Střední |
 | 4 | Vytvořit `.github/instructions/dashboard.instructions.md` (applyTo: `ZION_OS/dashboard/**`) — TABS array sync rule, payout API mapping, control endpoint signature | Já | 10 min | Střední |
 | 5 | Vytvořit `.github/instructions/edge-ops.instructions.md` (applyTo: `edge-deploy/**`) — log mgmt rules, systemd units list, GLIBC compat rule | Já | 10 min | Vysoké |
 | 6 | `/memories/repo/canonical-ports.md` — všech ~25 portů na jednom místě | Já jednou | 5 min | Vysoké |

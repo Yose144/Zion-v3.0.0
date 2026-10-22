@@ -113,17 +113,17 @@ docker compose -f V3/docker/docker-compose.yml --profile mainnet up -d bridge
 ## Step 7: Website Sync
 
 Update these files with mainnet addresses:
-- `APP&WEB/website-v2.9/src/lib/bridge-api.ts`
+- `apps/website-v2.9/src/lib/bridge-api.ts`
   - `BRIDGE_CONTRACTS.chain_id = 8453`
   - `BRIDGE_CONTRACTS.network = "Base Mainnet"`
   - `BRIDGE_CONTRACTS.explorer_base = "https://basescan.org/address/"`
   - `BASE_SEPOLIA_CHAIN_ID` → rename back to `BASE_CHAIN_ID = 8453`
   - `switchToBaseSepolia()` → `switchToBase()` with mainnet RPC
 
-- `APP&WEB/website-v2.9/src/app/bridge/page.tsx`
+- `apps/website-v2.9/src/app/bridge/page.tsx`
   - All "Base Sepolia Testnet" → "Base Mainnet"
 
-- `APP&WEB/desktop-agent/src/ui/index.html`
+- `apps/desktop-agent/src/ui/index.html`
   - `bridge-status-chip` text
 
 ## Step 8: Monitor & Alert

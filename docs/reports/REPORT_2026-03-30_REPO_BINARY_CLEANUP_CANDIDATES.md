@@ -11,7 +11,7 @@ Aktuální repo už bylo očištěno od GGUF modelových blobů, ale git histori
 
 Nejbližší bezpečný cleanup v `HEAD`:
 
-- přestat trackovat `APP&WEB/website-v2.9/next-build-only.tar.gz`
+- přestat trackovat `apps/website-v2.9/next-build-only.tar.gz`
 
 Další fáze pro history rewrite:
 
@@ -28,7 +28,7 @@ Další fáze pro history rewrite:
 
 | Cesta | Velikost | Důvod |
 |------|----------|-------|
-| `APP&WEB/website-v2.9/next-build-only.tar.gz` | ~14 MB | build výstup, nenašla se žádná živá reference v kódu ani deploy flow |
+| `apps/website-v2.9/next-build-only.tar.gz` | ~14 MB | build výstup, nenašla se žádná živá reference v kódu ani deploy flow |
 
 Poznámka:
 
@@ -73,16 +73,16 @@ Poznámka:
 
 | Cesta | Stav | Důvod |
 |------|------|-------|
-| `APP&WEB/public_html/V2/books/QuantumRevolution.zip` | ponechat | je živě linkovaný z webu a download endpointů |
-| `APP&WEB/public_html/images/...` | ponechat | jsou to runtime web assets |
-| `APP&WEB/public_html/V2/...pdf/mp4` | ponechat selektivně | část je součást veřejného web obsahu |
+| `apps/public_html/V2/books/QuantumRevolution.zip` | ponechat | je živě linkovaný z webu a download endpointů |
+| `apps/public_html/images/...` | ponechat | jsou to runtime web assets |
+| `apps/public_html/V2/...pdf/mp4` | ponechat selektivně | část je součást veřejného web obsahu |
 
 ### B. Aktivní desktop-agent runtime binárky
 
 | Cesta | Stav | Důvod |
 |------|------|-------|
-| `APP&WEB/desktop-agent/resources/zion_native_miner_v2_9.exe` | ponechat do separátního packaging refaktoru | aktuální desktop-agent na něj odkazuje |
-| `APP&WEB/desktop-agent/resources/zion_native_miner_v2_9_macos` | ponechat do separátního packaging refaktoru | je součást desktop-agent resource modelu |
+| `apps/desktop-agent/resources/zion_native_miner_v2_9.exe` | ponechat do separátního packaging refaktoru | aktuální desktop-agent na něj odkazuje |
+| `apps/desktop-agent/resources/zion_native_miner_v2_9_macos` | ponechat do separátního packaging refaktoru | je součást desktop-agent resource modelu |
 
 Poznámka:
 
@@ -99,6 +99,6 @@ Poznámka:
 
 ## 5. Doporučené pořadí dalšího cleanupu
 
-1. Odtrackovat `APP&WEB/website-v2.9/next-build-only.tar.gz` a ignorovat budoucí build tarbally v tomto adresáři.
+1. Odtrackovat `apps/website-v2.9/next-build-only.tar.gz` a ignorovat budoucí build tarbally v tomto adresáři.
 2. Připravit samostatný history rewrite plán pouze pro legacy snapshoty a historické release balíky pod `Zion-2.9.5-main*`.
 3. Nechat web assets a desktop-agent resources mimo tento rewrite, dokud nebude hotový separátní packaging a website asset audit.

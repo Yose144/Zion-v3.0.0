@@ -56,13 +56,13 @@ Dnes jsme úspěšně dokončili **kompletní E2E wallet workflow** pro desktop 
 **Commit:** `868a8b0a` - Obnovit mobile-app v3.0.2 + sjednotit zion-wallet-sdk
 
 **Co bylo provedeno:**
-- Obnovil `APP&WEB/mobile-app/` z commitu `6e8c3d...` (2026-05)
+- Obnovil `apps/mobile-app/` z commitu `6e8c3d...` (2026-05)
 - Zvýšil verzi z 3.0.0 na 3.0.2
-- Sjednotil `zion-wallet-sdk` do `APP&WEB/` (z APPS/)
+- Sjednotil `zion-wallet-sdk` do `apps/` (z APPS/)
 
 **Structure:**
 ```
-APP&WEB/mobile-app/
+apps/mobile-app/
 ├── src/
 │   ├── services/
 │   │   ├── TransactionBuilder.js (V3 BLAKE3 v2)
@@ -87,7 +87,7 @@ APP&WEB/mobile-app/
 
 **Verification:**
 ```bash
-cd APP&WEB/mobile-app
+cd apps/mobile-app
 node test/test_account_builder_standalone.js
 ```
 
@@ -134,7 +134,7 @@ Výsledek: ✅ V2 BLAKE3 preimage matches desktop agent
 
 **Import script:**
 ```bash
-cd APP&WEB/desktop-agent
+cd apps/desktop-agent
 node scripts/import-genesis-creator.js
 ```
 
@@ -187,14 +187,14 @@ node scripts/import-genesis-creator.js
 
 **Uvolněno:** ~2.2 GB
 
-**Výsledek:** Jeden zdroj pravdy v `APP&WEB/`
+**Výsledek:** Jeden zdroj pravdy v `apps/`
 
 ### 🔄 Obnova mobile-app
 
 **Commit:** `868a8b0a` - Obnovit mobile-app z historie
 
 **Proces:**
-- Vygeneroval nový mobile-app projekt v `APP&WEB/`
+- Vygeneroval nový mobile-app projekt v `apps/`
 - Přenesl src/ z git historie
 - Aktualizoval package.json a závislosti
 - Verze: 3.0.0 → 3.0.2
@@ -235,7 +235,7 @@ node scripts/import-genesis-creator.js
 - bridge/config/bridge-*.toml
 - bridge/contracts/BridgeValidator.sol
 - bridge/src/relayer.rs, evm_watcher.rs, etc.
-- APP&WEB/website/src/lib/bridge-api.ts
+- apps/website/src/lib/bridge-api.ts
 
 **Finding:** Všechny komponenty jsou production-ready
 
@@ -313,7 +313,7 @@ node scripts/import-genesis-creator.js
 2. **Mobile App V3** - Compatible with V3 mainnet (BLAKE3 v2 hash)
 3. **Genesis Projects Import** - 590M ZION wallet successfully imported
 4. **Canonical Units** - Complete documentation and verification
-5. **Structural Consolidation** - One source of truth in APP&WEB/
+5. **Structural Consolidation** - One source of truth in apps/
 6. **Live Mainnet Verification** - All transactions accepted on Edge
 
 ### ✅ Documentation
@@ -352,7 +352,7 @@ Dnes byla úspěšně dokončena komplexní série úkolů:
 ✅ **Canonical units** - kompletní dokumentace  
 ✅ **Live mainnet verification** - všechny transakce accepted  
 
-Všechny cíle byly dosaženy. Desktop agent a mobile app jsou nyní plně funkční pro UTXO i account transactions. Genesis Projects wallet je připravená pro použití. Repozitář je konsolidovaný s jedním zdrojem pravdy v `APP&WEB/`.
+Všechny cíle byly dosaženy. Desktop agent a mobile app jsou nyní plně funkční pro UTXO i account transactions. Genesis Projects wallet je připravená pro použití. Repozitář je konsolidovaný s jedním zdrojem pravdy v `apps/`.
 
 ---
 

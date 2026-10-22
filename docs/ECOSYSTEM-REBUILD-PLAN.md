@@ -55,16 +55,16 @@ JEDINÉ potřebné tunely po přestavbě:
 ```
 /                                    repo root
 ├── apps/                            všechny deployable appky
-│   ├── web/                         ← APP&WEB/website-v2.9
-│   ├── intro/                       ← APP&WEB/IntroPage
-│   ├── oasis/                       ← APP&WEB/OasisWeb
-│   ├── marketplace/                 ← APP&WEB/MarketPlace
-│   ├── pool-ui/                     ← APP&WEB/pool-ui
-│   ├── identity/                    ← APP&WEB/identity (ZIS)
-│   ├── desktop-agent/               ← APP&WEB/desktop-agent
-│   ├── mobile-app/                  ← APP&WEB/mobile-app
-│   ├── wallet-sdk/                  ← APP&WEB/zion-wallet-sdk
-│   └── shared/                      ← APP&WEB/shared (+ nový ui kit)
+│   ├── web/                         ← apps/website-v2.9
+│   ├── intro/                       ← apps/IntroPage
+│   ├── oasis/                       ← apps/OasisWeb
+│   ├── marketplace/                 ← apps/MarketPlace
+│   ├── pool-ui/                     ← apps/pool-ui
+│   ├── identity/                    ← apps/identity (ZIS)
+│   ├── desktop-agent/               ← apps/desktop-agent
+│   ├── mobile-app/                  ← apps/mobile-app
+│   ├── wallet-sdk/                  ← apps/zion-wallet-sdk
+│   └── shared/                      ← apps/shared (+ nový ui kit)
 ├── chain/                           ← V31/ (L1–L6; interní jména v kódu zůstávají)
 ├── canon/                           ← canon/books/ (knihy)
 ├── docs/                            dev docs, plány, inventář
@@ -141,7 +141,7 @@ auth., rpc., grafana., dashboard. — servisní subdomény (nezasáhne IA)
 Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 
 1. **archive/ konsolidace:** `V3/`, `WarpBeta/`, `BACKUP/`, `backups/` (16G! rozhodnout: ven z repa), `logs/`, `PUBLIC/` (klon → samostatný checkout mimo repo), `venv-hiran/`, `website-v2.9-backup-*.tar.gz`, `AuXpow/` (posoudit), `src/lib.rs` (1 soubor — smazat/zařadit), `dashboard/` (pokud nahrazeno ZION_OS/dashboard), `config/` (1 soubor)
-2. **APP&WEB → apps/:** postupně per app; u `website-v2.9` opravit cesty v deploy skriptech + AGENTS.md + `next.config.ts` assetPrefix pokud existuje
+2. **apps → apps/:** postupně per app; u `website-v2.9` opravit cesty v deploy skriptech + AGENTS.md + `next.config.ts` assetPrefix pokud existuje
 3. **V31 → chain/:** jen adresář (crate názvy zůstávají `v31-*` — rozhodnout §4.4)
 4. **docs/WP-Mainet → canon/books/:** přesun knih; ~100+ odkazů k přepsání (README, AGENTS, docs/3.2, .gitignore, pdf skripty) — dedikovaný commit
 5. **infra/:** sesbírat `edge-deploy/`, deploy skripty z `apps/*/deploy/`, systemd unity ze `ZION_OS/infra/systemd/`, nginx z repa `V31/deploy/nginx/`
@@ -155,7 +155,7 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 **Batch 5 ✅:** `edge-deploy`→`infra/edge-deploy` (48 souborů, 2 ref fixy).
 
 **Zbývá (velké, vyžaduje koordinaci — dedikované kroky):**
-- `APP&WEB`→`apps/` — deploy skripty používají lokální cestu `APP&WEB/*`; v jednom commitu: git mv + fix `deploy/*.sh` LOCAL paths (remote `/opt/zion/APP&WEB/` může zůstat), ~stovky doc odkazů, `next.config`/AGENTS
+- `apps`→`apps/` — deploy skripty používají lokální cestu `apps/*`; v jednom commitu: git mv + fix `deploy/*.sh` LOCAL paths (remote `/opt/zion/APP&WEB/` může zůstat), ~stovky doc odkazů, `next.config`/AGENTS
 - `V31`→`chain/` — cargo workspace (member paths jsou relativní = OK), `.github/workflows`, ~tisíce odkazů, untracked `target/` zůstane; crate názvy `v31-*` zůstávají
 - `scripts/`→`infra/scripts/` (359 souborů) — **POZOR:** servery volají `/opt/zion/scripts/...` přímo (systemd/cron/watchdog) — vyžaduje mapping strategii ve F5, ne jen mv
 - `ZION_OS/` (292) + `tools/` (7) → `infra/` — ops dashboard/skripty
@@ -174,7 +174,7 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 
 | Duplicita | Rozhodnutí |
 |---|---|
-| `/pool` + `APP&WEB/pool-ui` + `/var/www/pool` + `pool.zionterranova.com` | 1 pool povrch — pool-ui jako tab v `/network`, nebo subdomain → redirect |
+| `/pool` + `apps/pool-ui` + `/var/www/pool` + `pool.zionterranova.com` | 1 pool povrch — pool-ui jako tab v `/network`, nebo subdomain → redirect |
 | `OasisWeb` (3D) + `/var/www/oasis` + `/l4-oasis` v hlavním webu | `/l4-oasis` = popis/landing → odkaz do portálu; portál = hra |
 | `market.` app + `/multichain` + `/dex` + `/ziondex` + `/swap` + `/defi` | Jeden Trh v appu (taby), market app = admin/backend? (§4.1) |
 | `dashboard.zionterranova.com` + `/dashboard/*` (10 str.) + `/monitoring` + `/g8` + `mission-control` | Rozdělit: veřejný stav → `/network`; ops → za ZIS na dashboard. |

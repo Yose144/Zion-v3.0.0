@@ -1,7 +1,7 @@
 # Desktop Agent V3 Cleanup - Daily Report (2026-04-02)
 
 ## Scope
-Cleanup and stabilization of `APP&WEB/desktop-agent` toward V3-only runtime surface.
+Cleanup and stabilization of `apps/desktop-agent` toward V3-only runtime surface.
 
 ## Files Updated
 - `src/main.js`

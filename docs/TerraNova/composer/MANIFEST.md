@@ -41,7 +41,7 @@ bash docs/TerraNova/composer/scripts/build-full-en-md.sh
 
 ## Mapování na web (public TS edice)
 
-Export **`CHAPTERS_PUBLIC`**: `APP&WEB/website-v2.9/src/app/terranova/public/chapters/index.ts`. Metadata: `bookMetaPublic.ts`.
+Export **`CHAPTERS_PUBLIC`**: `apps/website-v2.9/src/app/terranova/public/chapters/index.ts`. Metadata: `bookMetaPublic.ts`.
 
 | TS modul | Markdown Composer (`UNIFIED/`) |
 |----------|-------------------------------|

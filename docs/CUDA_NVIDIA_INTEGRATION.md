@@ -43,7 +43,7 @@ Desktop Agent (Electron)
 
 ## 2. Components
 
-### 2.1 Desktop Agent (`APP&WEB/desktop-agent/`)
+### 2.1 Desktop Agent (`apps/desktop-agent/`)
 
 | File | Function | Purpose |
 |------|----------|---------|
@@ -315,5 +315,5 @@ vastai destroy instance INSTANCE_ID
 | `V3/L1/miner/src/main.rs` | Miner CLI, pool mining loop, GPU init at line 757/1021 |
 | `V3/L1/miner/Cargo.toml` | Feature gates: gpu-cuda, gpu-opencl, gpu-metal |
 | `V3/L1/cosmic-harmony/src/algorithms_npu.rs` | NPU weights: chv4_npu_weights_packed, MlpTopology |
-| `APP&WEB/desktop-agent/src/main.js` | Electron: detectGPU, chooseGpuBatchSize, applyCudaTuning, startMiningV3 |
-| `APP&WEB/desktop-agent/resources/gpu-tuning-config.json` | CUDA/OpenCL tier config |
+| `apps/desktop-agent/src/main.js` | Electron: detectGPU, chooseGpuBatchSize, applyCudaTuning, startMiningV3 |
+| `apps/desktop-agent/resources/gpu-tuning-config.json` | CUDA/OpenCL tier config |

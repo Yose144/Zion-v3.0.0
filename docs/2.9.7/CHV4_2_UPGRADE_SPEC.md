@@ -512,8 +512,8 @@ L1/native-libs/all/cosmic_harmony_v4_native_p1.c       → C fáze 1 HIC
 L1/native-libs/all/cosmic_harmony_v4_native_p2.c       → C fáze 2 backward
 L1/native-libs/all/cosmic_harmony_v4_metal.metal       → Metal HIC + backward
 L1/native-libs/all/cosmic_harmony_v4_gpu_metal.m       → ObjC wrapper update
-APP&WEB/desktop-agent/resources/cosmic_harmony_v4_metal.metal → Desktop GPU
-APP&WEB/desktop-agent/resources/mining/cosmic_harmony_v3_gpu.py → Python CL
+apps/desktop-agent/resources/cosmic_harmony_v4_metal.metal → Desktop GPU
+apps/desktop-agent/resources/mining/cosmic_harmony_v3_gpu.py → Python CL
 config/mainnet.toml                            → CHV4_2_FORK_HEIGHT
 config/testnet.toml                            → CHV4_2_FORK_HEIGHT = 10000
 ```

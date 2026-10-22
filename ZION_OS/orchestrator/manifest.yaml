@@ -374,8 +374,8 @@ services:
     layer: L6
     description: "Next.js website - production build"
     binary: npm
-    args: ["--prefix", "APP&WEB/website-v2.9", "run", "dev"]
-    source: APP&WEB/website-v2.9
+    args: ["--prefix", "apps/website-v2.9", "run", "dev"]
+    source: apps/website-v2.9
     ports:
       http: 3000
     health_check:
@@ -398,12 +398,12 @@ services:
   zion-wallet-sdk:
     layer: SDK
     description: "Wallet SDK for integration"
-    source: APP&WEB/zion-wallet-sdk
+    source: apps/zion-wallet-sdk
     type: library
     language: TypeScript
     health_check:
       type: build
-      command: "npm --prefix APP&WEB/zion-wallet-sdk run build"
+      command: "npm --prefix apps/zion-wallet-sdk run build"
       interval: 300s
 
 # ============================================================================

@@ -279,5 +279,5 @@ Hráč doprovází sluneční bárku Réa napříč Duatem, musí rozsvítit 14 
 ---
 
 > **Poznámka:** Tento koncept je open-source v rámci OASIS. Cokoliv přidáš — lore, questy, frakce, místa — piš sem.  
-> Hlavní vize OASIS: [`APP&WEB/OasisWeb/OASIS_UNIVERSE.md`](../../../APP&WEB/OasisWeb/OASIS_UNIVERSE.md)  
+> Hlavní vize OASIS: [`apps/OasisWeb/OASIS_UNIVERSE.md`](../../../apps/OasisWeb/OASIS_UNIVERSE.md)  
 > Faraonský kruh avatárů: [`docs/TerraNova/ancient-egypt/KONCEPT-AVATARI-OASIS.md`](../../../TerraNova/ancient-egypt/KONCEPT-AVATARI-OASIS.md)

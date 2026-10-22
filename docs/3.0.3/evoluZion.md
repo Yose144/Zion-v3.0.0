@@ -429,7 +429,7 @@ Detailní technická studie o NPU mining. Klíčové koncepty:
 
 ### 4. Website — Proof-of-Care DAO jako "planned"
 
-**`APP&WEB/website-v2.9/src/app/terranova/genesis/page.tsx`**:
+**`apps/website-v2.9/src/app/terranova/genesis/page.tsx`**:
 ```tsx
 { label: 'Proof-of-Care DAO', status: 'planned', icon: Users }
 { label: 'ZION DAO', val: 'Plánováno — Proof-of-Care governance' }
@@ -439,7 +439,7 @@ Proof-of-Care je už na website jako "planned" feature pro ZION DAO governance.
 
 ### 5. TerraNova bookData — Architecture as hierarchy of care
 
-**`APP&WEB/website-v2.9/src/app/terranova/bookData.ts`**:
+**`apps/website-v2.9/src/app/terranova/bookData.ts`**:
 > *"L1 cares for the trustworthiness of the foundation. L2 cares for the passage of value. L3 cares for coordination and intelligence. L4 cares for culture and imagination. L5 cares for life in the physical world. L6 cares for the long horizon of humanity. That is how a technical stack begins to resemble a civilizational organism."*
 
 > *"The 89 / 5 / 5 / 1 split means the protocol's foundation carries four streams: freedom for those who computationally sustain the network, care for the humanitarian stream, horizon for Issobella, operational discipline for infrastructure. This is no longer mere tokenomics. It is philosophy translated into network rules."*
@@ -488,8 +488,8 @@ NPU Mix je už implementován v současném PoW algoritmu — INT8 MLP s residua
 | TerraNova — Zjevení | `docs/TerraNova/ORG/C-ZJEVENI.md` | Filozofie | 2026 |
 | TerraNova Opus 4.7 — Volná energie | `docs/TerraNova/Opus4.7/03-VOLNA-ENERGIE.md` | Filozofie + tech | 2026-05 |
 | TerraNova Opus 4.7 — NVIDIA | `docs/TerraNova/Opus4.7/A-NVIDIA.md` | Filozofie + tech | 2026-05 |
-| Website genesis page | `APP&WEB/website-v2.9/src/app/terranova/genesis/page.tsx` | UI | 2026 |
-| Website bookData | `APP&WEB/website-v2.9/src/app/terranova/bookData.ts` | UI | 2026 |
+| Website genesis page | `apps/website-v2.9/src/app/terranova/genesis/page.tsx` | UI | 2026 |
+| Website bookData | `apps/website-v2.9/src/app/terranova/bookData.ts` | UI | 2026 |
 | L5 Governance framework | `V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md` | Governance | 2026 |
 | Cosmic Harmony NPU Mix | `V3/L1/cosmic-harmony/src/algorithms_npu.rs` | Kód | 2026 |
 | evoluZion.md (tento dokument) | `evoluZion.md` | Syntéza + evoluce | 2026-06-30 |

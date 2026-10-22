@@ -222,7 +222,7 @@ Ne všechno z vize je už hotové. **Oasis Web je živý preview — ne plná hr
 - Golden Egg je zatím sbírka nápověd a příběh; 108 stop a odměnové pooly nejsou plně aktivní.
 - Dharma Credits eShop a kompletní 202 avatárů ve webovém klientovi se teprve dokončují.
 
-> **Zdroj:** [`APP&WEB/OasisWeb/README.md`](../../../APP&WEB/OasisWeb/README.md), [`OASIS_WEB_JOURNAL.md`](../../../docs/oasis/OASIS_WEB_JOURNAL.md), live API `https://oasis.zionterranova.com/api/v1/oasis/*`.
+> **Zdroj:** [`apps/OasisWeb/README.md`](../../../apps/OasisWeb/README.md), [`OASIS_WEB_JOURNAL.md`](../../../docs/oasis/OASIS_WEB_JOURNAL.md), live API `https://oasis.zionterranova.com/api/v1/oasis/*`.
 
 ### 202 avatáři
 
@@ -489,7 +489,7 @@ Nejjednodušší cesta pro začátečníky:
 3. Nainstaluj, povol v systémových nastaveních.
 4. Vytvoř peněženku, nastav pool `pool.zionterranova.com:8444`, worker name a spusť těžbu.
 
-> **Zdroj:** AGENTS.md, sekce Public Miner & Desktop release build; `APP&WEB/website-v2.9/public/docs/onboard/desktop.md`.
+> **Zdroj:** AGENTS.md, sekce Public Miner & Desktop release build; `apps/website-v2.9/public/docs/onboard/desktop.md`.
 
 ### Bridge
 

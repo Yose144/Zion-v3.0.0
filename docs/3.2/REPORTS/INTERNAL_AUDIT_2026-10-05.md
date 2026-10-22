@@ -43,8 +43,8 @@
 | L6 Issobella | `V31/L6/issobella` | 2,270 | 11 |
 | CLI / SDK / smoke | `V31/cli`, `V31/sdk`, `V31/smoke` | 5,245 | 34 |
 | **Rust total (in scope)** | | **188,061** | |
-| ZIS identity (TS) | `APP&WEB/identity` | 2,509 | 18 |
-| Website + API routes (TS/TSX) | `APP&WEB/website-v2.9/src` | 136,781 | 519 |
+| ZIS identity (TS) | `apps/identity` | 2,509 | 18 |
+| Website + API routes (TS/TSX) | `apps/website-v2.9/src` | 136,781 | 519 |
 | Solidity (live) | `V31/L2/multichain/contracts`, `V31/contracts` | 4,790 | 24 |
 | Ops scripts / dashboard / deploy | `scripts/*.py`, `ZION_OS/dashboard`, `V31/deploy` | 43,541 | 216 |
 
@@ -77,7 +77,7 @@ Vendored reference C sources (`V31/L1/miner/csrc/ref`, ~381k lines), `archive/`,
 | Multichain ApiServer authorization (`V31/L2/multichain/src/server.rs`, `rate_limit.rs`, `zis_auth.rs`) | Deep | every route classified |
 | WARP runtime HTTP API (`V31/L2/multichain/src/warp/server.rs`) | Deep | |
 | L1 P2P sync / reorg (`V31/L1/core/src/p2p.rs`, `node.rs` rollback) | Deep | + production journal |
-| ZIS sessions (`APP&WEB/identity/src/lib/auth.ts`, `server.ts`, `session-issue.ts`) | Deep | WebAuthn ceremony not re-reviewed |
+| ZIS sessions (`apps/identity/src/lib/auth.ts`, `server.ts`, `session-issue.ts`) | Deep | WebAuthn ceremony not re-reviewed |
 | Website API routes (`src/app/api/**`, all 18 mutating routes) | Targeted | proxies, CLI, wallet, revenue config |
 | nginx / ufw / fail2ban on Edge | Targeted | |
 | Backups (`ZION_OS/infra/scripts/backup-edge.sh`, archive contents) | Targeted | |
@@ -127,7 +127,7 @@ Severity is about impact on the production system as deployed on 2026-10-05. Sta
 ### IA-01 — Production ZIS secret in the public repository (Critical)
 
 - **Where:** `V31/contracts/ZIONDex/configure-zisgate.js` (committed 2026-09-02). It hardcoded a 64-hex `jwtSecret`, which it used only to derive an on-chain placeholder value for the ZISGate contract.
-- **Verification:** a sha256 comparison showed that the value was identical to the production `JWT_SECRET` in the ZIS environment, and to the running process. That secret signs both the `zion_session` JWT and the signed cookie (`APP&WEB/identity/src/server.ts:43-66`).
+- **Verification:** a sha256 comparison showed that the value was identical to the production `JWT_SECRET` in the ZIS environment, and to the running process. That secret signs both the `zion_session` JWT and the signed cookie (`apps/identity/src/server.ts:43-66`).
 - **Impact:** forging ZIS sessions. Combined with IA-02, this means impersonating any account, including admin accounts, and through ZIS reaching every service that trusts it (multichain, DAO, L5 voting, custodial wallet routes).
 - **Action:**
   - Secret rotated on Edge at 12:20 UTC (128 hex chars, value never printed). The running process was verified to use the new value; `/health` returns 200 and `/api/auth/me` without a session returns 401.
@@ -137,7 +137,7 @@ Severity is about impact on the production system as deployed on 2026-10-05. Sta
 
 ### IA-02 — Session not bound to the subject (High)
 
-- **Where:** `APP&WEB/identity/src/lib/auth.ts` `requireAuth` / `optionalAuth`.
+- **Where:** `apps/identity/src/lib/auth.ts` `requireAuth` / `optionalAuth`.
 - **Problem:** the code verifies the JWT signature and checks that a session with `jwtJti` exists and is not revoked or expired. It never checks that the session belongs to `payload.sub`. Downstream code trusts `sub`.
 - **Exploitability:** requires knowing the signing secret (IA-01).
 - **Fix G:** reject when the session's user differs from `sub`; also applied to other session lookups.
@@ -188,7 +188,7 @@ Severity is about impact on the production system as deployed on 2026-10-05. Sta
 
 ### IA-05 — Public unauthenticated config write (Critical)
 
-- **Where:** `APP&WEB/website-v2.9/src/app/api/v2.9/revenue/config/route.ts`. `POST` merged arbitrary JSON into a server-side file and returned the file's absolute path.
+- **Where:** `apps/website-v2.9/src/app/api/v2.9/revenue/config/route.ts`. `POST` merged arbitrary JSON into a server-side file and returned the file's absolute path.
 - **Verification:** public GET returned 200. No miner or pool consumes the file; it is read only by two legacy dashboard pages. The production file is unchanged since 2026-08-25.
 - **Action:** nginx hotfix (GET-only). Fix E removes the POST handler and makes the pages read-only.
 
@@ -246,7 +246,7 @@ The 417 regex hits were triaged:
 - **Actionable:**
   - a cloud-GPU provider API key in two `docs/3.0.1Genesis/HIRAN_*` guides. Validity was not tested; **revoke it**.
   - a 2.9-era wallet-ledger API key in two `docs/docs2.9/2.9/` files. It matches no current production variable.
-  - the secret key of a 3.0.x-era "slot 11" premine wallet in `APP&WEB/desktop-agent/scripts/import-genesis-creator.js` (+ archive copy). The address is **not** part of the current genesis, and its on-chain balance is 0 per node RPC.
+  - the secret key of a 3.0.x-era "slot 11" premine wallet in `apps/desktop-agent/scripts/import-genesis-creator.js` (+ archive copy). The address is **not** part of the current genesis, and its on-chain balance is 0 per node RPC.
   - two 12-word mnemonics in a WARP e2e config and in mobile-app tests. Neither is a known test vector, and neither matches any production variable.
 - **Not secrets:** mainnet-format WIFs inside `btc_signer.rs` test modules (test vectors) and `Cargo.lock` checksums.
 - **False positives:** `docs/docs2.9/2.8.3/SECURITY_AUDIT_REPORT.txt` contains grep output with PEM header strings but no key bodies. Credentials-in-URL hits are placeholders.

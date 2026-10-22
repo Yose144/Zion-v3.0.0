@@ -173,7 +173,7 @@ curl http://100.76.16.108:8452/swap/<hash_hex>
 
 ## E2E Test Script
 
-See: `APP&WEB/desktop-agent/atomic-swap-e2e.js` (create ad-hoc or use desktop-agent wallet UI)
+See: `apps/desktop-agent/atomic-swap-e2e.js` (create ad-hoc or use desktop-agent wallet UI)
 
 Manual E2E flow:
 1. Generate random 32-byte preimage → SHA-256 → hashlock

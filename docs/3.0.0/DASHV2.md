@@ -61,7 +61,7 @@
 - **Přístup:** Vite dev server (pro vývojáře DAO teamu)
 - **Bezpečnost:** Žádná autentizace v MVP — později API key
 
-### Guardian Portal (`APP&WEB/website-v2.9/dashboard/guardian/` — Next.js)
+### Guardian Portal (`apps/website-v2.9/dashboard/guardian/` — Next.js)
 - **Host:** `zionterranova.com/dashboard/guardian` (public)
 - **Účel:** Read-only monitoring pro Guardian tým — pool stats, treasury, alerts, NCL
 - **Autentizace:** ZION wallet connect (MetaMask / ZION L1 SDK)
@@ -419,7 +419,7 @@ Všechny existující `/api/*` endpointy zůstávají. Nové endpointy:
 - Legacy dashboard (`dashboard/app.py` + `dashboard.html` + `dashboard.js`) zůstává jako fallback
 - Build produkuje `dashboard/v2/dist/` které Python servuje jako SPA
 - ZION gold (#FFD700), purple (#9333EA), cyan (#06B6D4) — barvy zůstávají
-- Zdrojový design systém: `APP&WEB/website-v2.9/src/app/globals.css`
+- Zdrojový design systém: `apps/website-v2.9/src/app/globals.css`
 
 ---
 

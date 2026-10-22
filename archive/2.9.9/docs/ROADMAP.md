@@ -16,7 +16,7 @@
 | **Mining** | ✅ Pool PPLNS, fee-split **89/5/5/1** (on-chain ověřeno ve V3 éře) |
 | **L2 Bridge** | ✅ Relayer **fail-closed** (žádné syntetické proof sloty); **staging** konfigurace validátorů stále **1/2** → produkce **3/5** + provisioning klíčů (viz `V3/L2/bridge/config/bridge-mainnet.toml`, `StatusV3.md` §1.4) |
 | **Smart kontrakty** | ✅ wZION, ZIONBridge, ZIONStaking, ZIONGovernance, ZIONFarm na Base (viz bridge docs) |
-| **Explorer / web** | ✅ Provozní stack dle nasazení; web v `APP&WEB/` |
+| **Explorer / web** | ✅ Provozní stack dle nasazení; web v `apps/` |
 | **Desktop Agent** | ✅ Electron — mining GUI + wallet |
 | **Mobile App** | ✅ React Native |
 | **Testy (V3 workspace)** | ✅ řádově **~1 470+** testů, 0 fail při posledním clean gate (`StatusV3.md` §5) |
@@ -85,7 +85,7 @@ Detailní plán: [`docs/DEFI_FULL_ROADMAP.md`](docs/DEFI_FULL_ROADMAP.md)
 - [x] HTTP REST wrapper pro node RPC — 15+ API routes (`/api/blockchain/*`, `/api/defi/*`)
 - [x] WebSocket subscriptions — new blocks + pending TX streaming
 - [x] Rozšířené RPC metody (getTransactionHistory, estimateFee, getAddressInfo, getBlockRange, getNetworkStats, getTokenInfo)
-- [x] Wallet SDK (TypeScript) — `APP&WEB/zion-wallet-sdk/` with V3 address derivation, keypair, crypto, tx builder, RPC client, storage adapters
+- [x] Wallet SDK (TypeScript) — `apps/zion-wallet-sdk/` with V3 address derivation, keypair, crypto, tx builder, RPC client, storage adapters
 
 **Wave 3 — DEX & Swap (květen—červen)**
 - [ ] Uniswap V3 seed likvidita (wZION/ETH)

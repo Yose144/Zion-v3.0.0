@@ -6,7 +6,7 @@ exec > "$LOG" 2>&1
 cd /root/zion-web-deploy
 
 echo "[1/4] chmod docs..."
-chmod -R 755 "APP&WEB/website-v2.9/public/docs/"
+chmod -R 755 "apps/website-v2.9/public/docs/"
 
 echo "[2/4] building image..."
 docker compose -f docker/docker-compose.website.yml build website

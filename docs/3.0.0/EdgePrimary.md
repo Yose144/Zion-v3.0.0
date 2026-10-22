@@ -415,7 +415,7 @@ Register-ScheduledTask -TaskName "ZION Dashboard" -Action $action -Trigger $trig
 ### 4.7 File Layout
 
 ```
-APP&WEB/desktop-agent-v2/          # or new top-level folder
+apps/desktop-agent-v2/          # or new top-level folder
 ├── src-tauri/                       # Rust backend (Tauri)
 │   ├── Cargo.toml
 │   └── src/

@@ -235,7 +235,7 @@ Adresa, escrow, port 8452, L1 + EVM watchery, memo parsing — vše konzistentn�
 
 ---
 
-## 4. Web Frontend (`APP&WEB/website-v2.9`)
+## 4. Web Frontend (`apps/website-v2.9`)
 
 ### 4.1 `/defi/staking` a `/defi/farming` přesměrovávají na `/defi` — LOW
 

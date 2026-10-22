@@ -292,18 +292,18 @@ Poučení do device-matrix: WebGPU preview **vždy testovat headed na cílovém 
 
 | Soubor | Role |
 |---|---|
-| `APP&WEB/OasisWeb/src/components/OasisScene.tsx` | R3F scéna — `gl` factory + backend výběr (nasazeno) |
-| `APP&WEB/OasisWeb/src/lib/gpuBackend.ts` | **G1** detekce + flag resolve + `GpuBackendContext` |
-| `APP&WEB/OasisWeb/src/lib/tsl.ts` | **G2** lazy loader `three/tsl` (jednotný ~724K chunk) |
-| `APP&WEB/OasisWeb/src/components/gpu/WebGpuPostFX.tsx` | **G2** TSL PostProcessing (bloom+vignette) |
-| `APP&WEB/OasisWeb/src/components/gpu/TslStars.tsx` | **G2** PointsNodeMaterial starfield |
-| `APP&WEB/OasisWeb/src/components/gpu/TslAtmosphere.tsx` | **G2** fresnel atmosphere node |
-| `APP&WEB/OasisWeb/src/components/gpu/TslVortex.tsx` | **G2** spiral warp-gate vortex |
-| `APP&WEB/OasisWeb/src/types/three-webgpu.d.ts` | ambient deklarace `three/webgpu`+`three/tsl` |
-| `APP&WEB/OasisWeb/src/components/BabylonIntro.tsx` | stargate — `WebGPUEngine` fallback chain (nasazeno) |
-| `APP&WEB/OasisWeb/src/lib/zis.ts` | ZIS klient vč. WebAuthn (hotovo) |
-| `APP&WEB/OasisWeb/src/contexts/AuthContext.tsx` | `loginWithPasskey`/`registerPasskey` (hotovo) |
-| `APP&WEB/OasisWeb/deploy/nginx-oasis.conf` | `/api/auth/*` proxy → ZIS (živé) |
+| `apps/OasisWeb/src/components/OasisScene.tsx` | R3F scéna — `gl` factory + backend výběr (nasazeno) |
+| `apps/OasisWeb/src/lib/gpuBackend.ts` | **G1** detekce + flag resolve + `GpuBackendContext` |
+| `apps/OasisWeb/src/lib/tsl.ts` | **G2** lazy loader `three/tsl` (jednotný ~724K chunk) |
+| `apps/OasisWeb/src/components/gpu/WebGpuPostFX.tsx` | **G2** TSL PostProcessing (bloom+vignette) |
+| `apps/OasisWeb/src/components/gpu/TslStars.tsx` | **G2** PointsNodeMaterial starfield |
+| `apps/OasisWeb/src/components/gpu/TslAtmosphere.tsx` | **G2** fresnel atmosphere node |
+| `apps/OasisWeb/src/components/gpu/TslVortex.tsx` | **G2** spiral warp-gate vortex |
+| `apps/OasisWeb/src/types/three-webgpu.d.ts` | ambient deklarace `three/webgpu`+`three/tsl` |
+| `apps/OasisWeb/src/components/BabylonIntro.tsx` | stargate — `WebGPUEngine` fallback chain (nasazeno) |
+| `apps/OasisWeb/src/lib/zis.ts` | ZIS klient vč. WebAuthn (hotovo) |
+| `apps/OasisWeb/src/contexts/AuthContext.tsx` | `loginWithPasskey`/`registerPasskey` (hotovo) |
+| `apps/OasisWeb/deploy/nginx-oasis.conf` | `/api/auth/*` proxy → ZIS (živé) |
 | `V31/L4/oasis` | Rust backend — stabilizovat `/api` contract před G3 |
 
 ---

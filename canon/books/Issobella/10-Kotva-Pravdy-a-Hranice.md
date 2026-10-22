@@ -37,7 +37,7 @@ Jen-že se podíval k obloze, kde se nad táborem začínaly objevovat první hv
 | Premine slot 6 = 2,5 mld ZION, `zion1f5h5k6t8...`, lock 144 000 | **ŽIVÉ** | `v3_compat.rs`, `CHANGES_L6_ISSOBELLA.md`, `StatusV3.md` 2026-09-12 | Nezávislý explorer pohled |
 | `zion-issobella` tracker na Edge, `:8097`, `/api/issobella/` | **ŽIVÉ** (read-only) | `V31/L6/issobella/`, `zion-v31-issobella.service`, `StatusV3.md` 2026-08-23 | Veřejný portál; API-key enforcement |
 | Fond vyplácí granty | **NEPLATNÉ** (dnes) | G10 read-only; DAO cesta čeká na UI | DAO UI, payout flow, multisig, první projekt |
-| Výzkumný balík `canon/l6/` veřejný v `/docs` | **ŽIVÉ** (dokumentace) | `canon/l6/README.md`, `APP&WEB/website-v2.9/public/docs/l6/`, `APP&WEB/website-v2.9/src/app/docs/page.tsx` | Peer review, externí experti |
+| Výzkumný balík `canon/l6/` veřejný v `/docs` | **ŽIVÉ** (dokumentace) | `canon/l6/README.md`, `apps/website-v2.9/public/docs/l6/`, `apps/website-v2.9/src/app/docs/page.tsx` | Peer review, externí experti |
 | Orbitální stanice 400–550 km, AG 0,38 g, posádka | **HORIZONT** | `canon/l6/Architektura.md`, `Umela_Gravitace.md`, `Lidske_Faktory.md`, `/l6-issobella` | Feasibility, partneři, roky práce |
 | Kvantový motor: demonstrátor 2033, CubeSat 2035 | **HORIZONT / HYPOTÉZA** | `canon/l6/Kvantovy_Motor.md`, `/l6-issobella` roadmapa | Výzkum, lab, ověření; hardware |
 | Alcubierre–Ekam warp, Φ rezonance, toroidní vlny | **HYPOTÉZA / MÝTUS** | `nirvana/11` jako narativní rámec | Fyzikální důkaz — číst jako poezii |

@@ -1,6 +1,6 @@
 # V31 Mainnet Alpha — průběžný report (2026-07-28)
 
-> **Poznámka k rozsahu:** Tato práce probíhá v `V31/` jako čistá přípravná větev pro budoucí migraci. Dle `AGENTS.md` je aktivní mainnet-track zatím `V3/` a plná V31 migrace je plánována až po `3.0.9`. Všechny změny v tomto souhrnu jsou v `V31/`; `V3/`, `AuXpow/` a `APP&WEB/` zůstaly nedotčené.
+> **Poznámka k rozsahu:** Tato práce probíhá v `V31/` jako čistá přípravná větev pro budoucí migraci. Dle `AGENTS.md` je aktivní mainnet-track zatím `V3/` a plná V31 migrace je plánována až po `3.0.9`. Všechny změny v tomto souhrnu jsou v `V31/`; `V3/`, `AuXpow/` a `apps/` zůstaly nedotčené.
 
 ## Super shrnutí posledních autonomních kroků
 
@@ -287,5 +287,5 @@ Rozpis testů:
 ## Bezpečnost / provozní poznámky
 
 - Žádné privátní klíče, mnemonics ani server credentials nebyly commitnuty.
-- `V3/`, `AuXpow/`, `APP&WEB/` zůstaly beze změn; všechny náhodné subagent-edity v těchto stromech byly před commitem vráceny.
+- `V3/`, `AuXpow/`, `apps/` zůstaly beze změn; všechny náhodné subagent-edity v těchto stromech byly před commitem vráceny.
 - Pool TCP server a bridge outbound txs jsou zatím scaffoldy — před mainnet nasazením je potřeba real RPC + signer.

@@ -6,8 +6,8 @@ This file tracks where the **original company logo** (historic ZION mark) and th
 
 | Logo | Source file(s) | Notes |
 |------|----------------|-------|
-| **Original company logo** | `APP&WEB/MarketPlace/public/logo144.png` (500×500 PNG) | Also copied to `APP&WEB/website-v2.9/public/images/logo144.png` |
-| **Stargate / portal Z** | `APP&WEB/website-v2.9/public/stargate/Z.gif` (+ `Z.webp`) | Grayscale/contrast animated Z used in the stargate/portal |
+| **Original company logo** | `apps/MarketPlace/public/logo144.png` (500×500 PNG) | Also copied to `apps/website-v2.9/public/images/logo144.png` |
+| **Stargate / portal Z** | `apps/website-v2.9/public/stargate/Z.gif` (+ `Z.webp`) | Grayscale/contrast animated Z used in the stargate/portal |
 | **Canonical ZION symbol** | `canon/brand/ZionLogo.png` | Master raster source (2026 rasta Z-Tree mark) |
 | | `canon/brand/org/symbol-1024x1024.png` | Master transparent PNG |
 | | `canon/brand/org/symbol-200x200.png` | CoinMarketCap / favicon / apple-touch |
@@ -18,26 +18,26 @@ This file tracks where the **original company logo** (historic ZION mark) and th
 
 ## Where the original company logo is used
 
-- `APP&WEB/MarketPlace/public/logo144.png` → served as `/logo144.png`
-- `APP&WEB/MarketPlace/src/app/layout.tsx` → footer logo image
-- `APP&WEB/website-v2.9/public/images/logo144.png` → served as `/images/logo144.png`
-- `APP&WEB/website-v2.9/public/maintenance.html` → footer logo (`images/logo144.png`)
-- `APP&WEB/website-v2.9/public/maintenance.html` → stargate center logo (`stargate/Z.gif`)
-- `APP&WEB/website-v2.9/src/components/StargateLogo.tsx` → homepage stargate center (`stargate/Z.gif`)
+- `apps/MarketPlace/public/logo144.png` → served as `/logo144.png`
+- `apps/MarketPlace/src/app/layout.tsx` → footer logo image
+- `apps/website-v2.9/public/images/logo144.png` → served as `/images/logo144.png`
+- `apps/website-v2.9/public/maintenance.html` → footer logo (`images/logo144.png`)
+- `apps/website-v2.9/public/maintenance.html` → stargate center logo (`stargate/Z.gif`)
+- `apps/website-v2.9/src/components/StargateLogo.tsx` → homepage stargate center (`stargate/Z.gif`)
 
 ## Where the canonical ZION symbol is used
 
-- `APP&WEB/OasisWeb/src/app/layout.tsx` → favicon (`/favicon.ico`) + apple-touch (`/symbol-200x200.png`)
-- `APP&WEB/MarketPlace/src/components/Navbar.tsx` → top-left nav image (`/symbol-200x200.png`)
-- `APP&WEB/MarketPlace/src/app/layout.tsx` → favicon (`/favicon.ico`) + apple-touch (`/symbol-200x200.png`)
-- `APP&WEB/MarketPlace/public/symbol-200x200.png` + `zion-social-banner.png`
-- `APP&WEB/website-v2.9/src/components/Navigation.tsx` → top-left nav image (`/symbol-200x200.png`)
-- `APP&WEB/website-v2.9/src/app/layout.tsx` → OpenGraph (`/zion-social-banner.png`)
-- `APP&WEB/website-v2.9/public/maintenance.html` → favicon + apple-touch (`symbol-200x200.png`)
-- `APP&WEB/website-v2.9/public/maintenance.html` → OpenGraph (`zion-social-banner.png`)
-- `APP&WEB/website-v2.9/public/tokenlists/wzion.tokenlist.json` → token logoURI (`https://zionterranova.com/symbol-200x200.png`)
-- `APP&WEB/mobile-app/assets/` → `icon.png`, `splash.png`, `adaptive-icon.png` generated from `canon/brand/org/`
-- `APP&WEB/desktop-agent/src/assets/` → `icon.png`, `icon.ico`, `icon.icns`, `tray-icon.png`, `logo.png` generated from `canon/brand/org/`
+- `apps/OasisWeb/src/app/layout.tsx` → favicon (`/favicon.ico`) + apple-touch (`/symbol-200x200.png`)
+- `apps/MarketPlace/src/components/Navbar.tsx` → top-left nav image (`/symbol-200x200.png`)
+- `apps/MarketPlace/src/app/layout.tsx` → favicon (`/favicon.ico`) + apple-touch (`/symbol-200x200.png`)
+- `apps/MarketPlace/public/symbol-200x200.png` + `zion-social-banner.png`
+- `apps/website-v2.9/src/components/Navigation.tsx` → top-left nav image (`/symbol-200x200.png`)
+- `apps/website-v2.9/src/app/layout.tsx` → OpenGraph (`/zion-social-banner.png`)
+- `apps/website-v2.9/public/maintenance.html` → favicon + apple-touch (`symbol-200x200.png`)
+- `apps/website-v2.9/public/maintenance.html` → OpenGraph (`zion-social-banner.png`)
+- `apps/website-v2.9/public/tokenlists/wzion.tokenlist.json` → token logoURI (`https://zionterranova.com/symbol-200x200.png`)
+- `apps/mobile-app/assets/` → `icon.png`, `splash.png`, `adaptive-icon.png` generated from `canon/brand/org/`
+- `apps/desktop-agent/src/assets/` → `icon.png`, `icon.ico`, `icon.icns`, `tray-icon.png`, `logo.png` generated from `canon/brand/org/`
 - `archive/DesktopAgentP3.0.6/src/assets/` → archived desktop agent copies
 - `ZION_OS/dashboard/dashboard.html` + `v31/index.html` → `/v31/favicon.ico` + `/v31/symbol-200x200.png` header icon
 - `ZION_OS/dashboard/app.py` → `AUTH_EXEMPT_ROUTES` for `/v31/favicon.ico` and `/v31/symbol-200x200.png`

@@ -555,12 +555,12 @@
   - `zion-bridge` skenuje `account_transactions` na locky do `bridge_address` s `BRIDGE:<chain>:<evm>` memo.
   - `zion-dao` skenuje `account_transactions` pro `DAO:vote` / `DAO:propose` / `DAO:execute` memo.
   - `zion-atomic-swap` skenuje `account_transactions` na `SWAP:LOCK/CLAIM/REFUND` memo.
-- APP&WEB account builders (zion-wallet-sdk, mobile-app, desktop-agent) podporují memo a validují ASCII/256B.
+- apps account builders (zion-wallet-sdk, mobile-app, desktop-agent) podporují memo a validují ASCII/256B.
 
 ### Website rebuild v3.6.3
 
 - Build na lokálním PC (Edge build nefungoval — chybějící Ledger/Trezor deps, Turbopack `&` v cestě)
-- `npx next build --webpack` (Turbopack problematický s `APP&WEB` cestou)
+- `npx next build --webpack` (Turbopack problematický s `apps` cestou)
 - TypeScript fix: `as const` literal comparison → cast na `string`
 - Docker image `zion-website:v3.6.3` buildnut na Edge, `chmod -R 755 /app/.next` pro EACCES fix
 - `/defi/staking` a `/defi/farming` pages nyní zobrazují live data z kontraktů
@@ -713,7 +713,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 - `V3/L2/atomic-swap/src/config.rs` — `api_bearer_token()` env var override
 - `V3/L2/atomic-swap/Cargo.toml` — socket2 dependency
 - `V3/L2/atomic-swap/config/swap-mainnet.toml` — DB cesta
-- `APP&WEB/website-v2.9/src/lib/core-endpoints.ts` — atomicSwap port 8452
+- `apps/website-v2.9/src/lib/core-endpoints.ts` — atomicSwap port 8452
 
 ---
 
@@ -882,7 +882,7 @@ Viz [Session 10 detail](#session-10--uniswap-v4-migration--defi-audit-2026-06-30
 
 ### Mobile Deep Links — detaily
 
-**Soubory:** `APP&WEB/mobile-app/app.json`, `APP&WEB/mobile-app/eas.json`, `APP&WEB/website-v2.9/public/.well-known/`
+**Soubory:** `apps/mobile-app/app.json`, `apps/mobile-app/eas.json`, `apps/website-v2.9/public/.well-known/`
 
 **iOS Universal Links:**
 - `applinks:zionterranova.com`, `applinks:www.zionterranova.com`
@@ -2919,18 +2919,18 @@ GET /api/bridge/validators  → {validators: [{address, online, last_signature}]
 
 | Soubor | Změna |
 |--------|-------|
-| `APP&WEB/website-v2.9/src/app/bridge/page.tsx` | Base Sepolia Testnet · Replay-safe hero, Lock&Mint + Burn&Unlock směry, FAQ, Memo builder, Relay stats, Architecture diagram, Readiness checklist, Contract addresses |
-| `APP&WEB/website-v2.9/src/components/BridgeBurnWidget.tsx` | MetaMask + ethers v5 burn widget pro Base Sepolia; fix explorer link na `sepolia.basescan.org` |
-| `APP&WEB/website-v2.9/src/lib/bridge-api.ts` | `BRIDGE_CONTRACTS` → Base Sepolia adresy (chain 84532); `switchToBaseSepolia()` pro MetaMask switch |
-| `APP&WEB/website-v2.9/src/app/api/bridge/status/route.ts` | Prometheus metrics proxy na port 9101 |
+| `apps/website-v2.9/src/app/bridge/page.tsx` | Base Sepolia Testnet · Replay-safe hero, Lock&Mint + Burn&Unlock směry, FAQ, Memo builder, Relay stats, Architecture diagram, Readiness checklist, Contract addresses |
+| `apps/website-v2.9/src/components/BridgeBurnWidget.tsx` | MetaMask + ethers v5 burn widget pro Base Sepolia; fix explorer link na `sepolia.basescan.org` |
+| `apps/website-v2.9/src/lib/bridge-api.ts` | `BRIDGE_CONTRACTS` → Base Sepolia adresy (chain 84532); `switchToBaseSepolia()` pro MetaMask switch |
+| `apps/website-v2.9/src/app/api/bridge/status/route.ts` | Prometheus metrics proxy na port 9101 |
 
 #### 26c: Desktop Agent Bridge Tab
 
 | Soubor | Změna |
 |--------|-------|
-| `APP&WEB/desktop-agent/src/ui/index.html` | Nový `bridge-view` s Readiness checklist, Contract addresses (copy buttons), How-to instrukce, Open in Browser link |
-| `APP&WEB/desktop-agent/src/ui/renderer.js` | `initBridgeView()` — populace checklist gridu, fetch stavu z dashboard API (`:8766/api/bridge/status`), `copyToClipboard()` helper |
-| `APP&WEB/desktop-agent/src/ui/index.html` | Nový dock item `Bridge` s `i-bridge` SVG ikonou |
+| `apps/desktop-agent/src/ui/index.html` | Nový `bridge-view` s Readiness checklist, Contract addresses (copy buttons), How-to instrukce, Open in Browser link |
+| `apps/desktop-agent/src/ui/renderer.js` | `initBridgeView()` — populace checklist gridu, fetch stavu z dashboard API (`:8766/api/bridge/status`), `copyToClipboard()` helper |
+| `apps/desktop-agent/src/ui/index.html` | Nový dock item `Bridge` s `i-bridge` SVG ikonou |
 
 #### 26d: Contract Hardening (Runbooks Ready)
 
@@ -3060,10 +3060,10 @@ zion hiran deploy --model --platform             # Deployment
 | **Public RPC** | ✅ Hotovo | Desktop agent default RPC URL = `http://77.42.71.94:8443` (veřejný read-only endpoint) |
 
 **Soubory:**
-- `APP&WEB/desktop-agent/src/ui/index.html` — Hiran AI + Payouts UI
-- `APP&WEB/desktop-agent/src/ui/renderer.js` — AI chat handler, pool metrics, payout history
-- `APP&WEB/desktop-agent/src/main.js` — IPC `ai-chat-ask`/`ai-chat-status`, public RPC URL
-- `APP&WEB/desktop-agent/src/preload.js` — `aiChatAsk`, `aiChatStatus` expose
+- `apps/desktop-agent/src/ui/index.html` — Hiran AI + Payouts UI
+- `apps/desktop-agent/src/ui/renderer.js` — AI chat handler, pool metrics, payout history
+- `apps/desktop-agent/src/main.js` — IPC `ai-chat-ask`/`ai-chat-status`, public RPC URL
+- `apps/desktop-agent/src/preload.js` — `aiChatAsk`, `aiChatStatus` expose
 
 #### Build Verification (2026-05-23)
 
@@ -3612,10 +3612,10 @@ smoke na **novém** deploy cíli (legacy Pražský uzel k 2026-05-07 deprecated)
 | **Performance charts** | ✅ Hotovo | `PerformanceCharts.tsx` — Recharts line/bar charts |
 
 **Soubory:**
-- `APP&WEB/desktop-dashboard/` — Tauri v2 + React + Tailwind + Recharts
-- `APP&WEB/desktop-dashboard/src-tauri/src/main.rs` — Rust backend with tray, IPC commands, process control
-- `APP&WEB/desktop-dashboard/src/App.tsx` — Hybrid frontend refresh path
-- `APP&WEB/desktop-dashboard/src/components/` — Panel components
+- `apps/desktop-dashboard/` — Tauri v2 + React + Tailwind + Recharts
+- `apps/desktop-dashboard/src-tauri/src/main.rs` — Rust backend with tray, IPC commands, process control
+- `apps/desktop-dashboard/src/App.tsx` — Hybrid frontend refresh path
+- `apps/desktop-dashboard/src/components/` — Panel components
 
 ### Edge Server Fix (2026-06-03)
 
@@ -3865,9 +3865,9 @@ nebo má konkrétní aktivační plán v
 | §15.3 — BURN_ADDRESS regression test | 🟢 Low | ✅ PR #25 |
 | Relayer — `synthetic: true` placeholder proofy | 🟡 Medium | ✅ PR #27 (2026-05-02) |
 
-### 1.9 APP&WEB / Wallet SDK (2026-05-13)
+### 1.9 apps / Wallet SDK (2026-05-13)
 
-- **zion-wallet-sdk** — TypeScript knihovna v `APP&WEB/zion-wallet-sdk/`:
+- **zion-wallet-sdk** — TypeScript knihovna v `apps/zion-wallet-sdk/`:
   - V3-compatible `zion1` address derivation (SHA-256 → RIPEMD-160 → custom base32 + 4-char checksum)
   - Ed25519 keypair generation via `@noble/ed25519` + BIP39 mnemonic
   - AES-256-GCM encryption with PBKDF2
@@ -4003,7 +4003,7 @@ nebo má konkrétní aktivační plán v
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ APP&WEB/  — Electron desktop, RN mobile, Next.js website    │
+│ apps/  — Electron desktop, RN mobile, Next.js website    │
 │           + zion-wallet-sdk (TS lib: address, keypair,     │
 │             crypto, tx builder, RPC, storage adapters)      │
 └──────────────────────┬──────────────────────────────────────┘

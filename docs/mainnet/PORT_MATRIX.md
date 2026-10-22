@@ -58,4 +58,4 @@
 
 - `8080` je rezervovaný pro pool API.
 - DAO daemon má vlastní port `8450` (aby nekolidoval s pool API).
-- Jakákoli změna portů musí aktualizovat: `config/*.toml`, `docker/*.yml`, `APP&WEB/website-v2.9/.env*.example`, E2E testy a tento soubor.
+- Jakákoli změna portů musí aktualizovat: `config/*.toml`, `docker/*.yml`, `apps/website-v2.9/.env*.example`, E2E testy a tento soubor.

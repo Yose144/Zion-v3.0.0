@@ -25,8 +25,8 @@ Projekt je **multi-layer monorepo** — kryptoměna ZION s vlastním PoW konsenz
 |--------|---------|------------|------|
 | **V3/** (aktivní mainnet) | 157 `.rs` souborů | **86 694** | 2.1 GB (vč. target/) |
 | **L1/** (legacy) | 187 `.rs` souborů | **76 601** | 6.0 MB |
-| **APP&WEB/website** | 6 458 `.ts/.tsx` | — | 3.8 GB (vč. node_modules) |
-| **APP&WEB/desktop-agent** | 25 `.js` + 143 `.py` | — | (obsaženo v APP&WEB) |
+| **apps/website** | 6 458 `.ts/.tsx` | — | 3.8 GB (vč. node_modules) |
+| **apps/desktop-agent** | 25 `.js` + 143 `.py` | — | (obsaženo v apps) |
 | **docs/** | 3 076 `.md` souborů | — | 38 MB |
 | **docker/** | 10 compose + 6 Dockerfiles | — | 112 KB |
 | **scripts/** | ~20 deploy/ops skriptů | — | 3.5 MB |
@@ -76,7 +76,7 @@ Projekt je **multi-layer monorepo** — kryptoměna ZION s vlastním PoW konsenz
 
 ---
 
-## 5. APP&WEB — Klientské aplikace
+## 5. apps — Klientské aplikace
 
 ### Desktop Agent (Electron, v2.9.9)
 
