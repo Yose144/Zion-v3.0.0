@@ -493,36 +493,61 @@ def ai_status():
 
 # Curated vLLM-ready model catalog. vLLM pulls weights from HuggingFace
 # on the rig at deploy time — this is metadata only.
+# Tiered by VRAM. `vram_gb` = approx weights footprint (bf16 ≈ 2 GB/1B;
+# AWQ ≈ 4-bit, FP8 ≈ 8-bit, MXFP4 native). `latest_vllm` marks models the
+# pinned v0.8.5 image cannot load — auto-deploy passes `image` then.
+# `internal` marks ZION's own Hiran weights — served via llama.cpp
+# (hiran-core / SMOS rig), not deployable through vLLM.
 MODEL_CATALOG = [
+    # ── internal: Hiran (mockup — see HIRAN-MARKETPLACE-PLAN.md) ──
+    {"hf": "zion/hiran-v2.3mini-Q5_K_M", "params": "4B", "vram_gb": 3,
+     "tags": ["hiran", "gguf", "chat"], "internal": True,
+     "desc": "fine-tuned Hiran mini · live on hiran-core / SMOS llama.cpp"},
+    {"hf": "zion/hiran-v3-coder-Q4_K_M", "params": "8B", "vram_gb": 5,
+     "tags": ["hiran", "gguf", "code"], "internal": True, "mockup": True,
+     "desc": "planned: Hiran code-tuned GGUF build"},
+    # ── ≤10 GB — runs beside dual mining ──
     {"hf": "Qwen/Qwen3-4B-Instruct-2507", "params": "4B", "vram_gb": 9,
      "tags": ["chat"], "desc": "2507 refresh · fast beside mining"},
     {"hf": "google/gemma-3-4b-it", "params": "4B", "vram_gb": 9,
      "tags": ["chat", "vision"], "desc": "google small, multimodal"},
     {"hf": "Qwen/Qwen3-8B-AWQ", "params": "8B", "vram_gb": 6,
      "tags": ["thinking", "reasoning"], "desc": "hybrid thinking on 12 GB"},
-    {"hf": "LiquidAI/LFM2.5-8B-A1B", "params": "8B MoE", "vram_gb": 16,
-     "tags": ["chat", "fast"], "desc": "edge MoE, fastest tok/s per GB"},
     {"hf": "Qwen/Qwen3-14B-AWQ", "params": "14B", "vram_gb": 10,
      "tags": ["thinking", "reasoning"], "desc": "best quality on consumer GPU"},
+    # ── 12-20 GB ──
     {"hf": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B", "params": "8B", "vram_gb": 16,
      "tags": ["reasoning"], "desc": "R1 reasoning distilled into Qwen3"},
     {"hf": "openai/gpt-oss-20b", "params": "21B MoE", "vram_gb": 14,
-     "tags": ["chat", "tools"], "desc": "OpenAI open weights, MXFP4 native"},
+     "tags": ["chat", "tools"], "latest_vllm": True,
+     "desc": "OpenAI open weights, MXFP4 native (needs latest vLLM)"},
+    {"hf": "LiquidAI/LFM2.5-8B-A1B", "params": "8B MoE", "vram_gb": 16,
+     "tags": ["chat", "fast"], "latest_vllm": True,
+     "desc": "edge MoE, fastest tok/s per GB"},
     {"hf": "microsoft/phi-4", "params": "14B", "vram_gb": 28,
      "tags": ["reasoning"], "desc": "strong STEM reasoning"},
+    # ── 24-48 GB (4090/A5000 class) ──
     {"hf": "Qwen/Qwen3-32B-AWQ", "params": "32B", "vram_gb": 19,
      "tags": ["thinking", "reasoning"], "desc": "single 4090-class card"},
-    {"hf": "mistralai/Devstral-Small-2-24B-Instruct-2512", "params": "24B",
-     "vram_gb": 48, "tags": ["code", "agentic"], "desc": "agentic coding, Dec 2025"},
     {"hf": "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8", "params": "30B MoE",
-     "vram_gb": 31, "tags": ["code", "agentic"], "desc": "coding daily driver, 3B active"},
+     "vram_gb": 31, "tags": ["code", "agentic"], "latest_vllm": True,
+     "desc": "coding daily driver, 3B active params"},
+    {"hf": "mistralai/Devstral-Small-2-24B-Instruct-2512", "params": "24B",
+     "vram_gb": 48, "tags": ["code", "agentic"], "latest_vllm": True,
+     "desc": "agentic coding, Dec 2025"},
+    # ── 48 GB+ (A100/H100) ──
     {"hf": "Qwen/Qwen3.8-27B", "params": "27B", "vram_gb": 54,
-     "tags": ["thinking", "reasoning"], "desc": "current-cycle flagship dense"},
+     "tags": ["thinking", "reasoning"], "latest_vllm": True,
+     "desc": "current-cycle flagship dense"},
     {"hf": "google/gemma-4-31B-it", "params": "31B", "vram_gb": 62,
-     "tags": ["chat", "vision"], "desc": "Gemma 4 gen, Apr 2026"},
+     "tags": ["chat", "vision"], "latest_vllm": True,
+     "desc": "Gemma 4 gen, Apr 2026"},
     {"hf": "zai-org/GLM-4.7-Flash", "params": "30B MoE", "vram_gb": 60,
-     "tags": ["chat", "tools"], "desc": "Z.ai flash MoE, current gen"},
+     "tags": ["chat", "tools"], "latest_vllm": True,
+     "desc": "Z.ai flash MoE, current gen"},
 ]
+
+LATEST_VLLM_IMAGE = "vllm/vllm-openai:latest"
 
 _HF_CACHE = {"ts": 0.0, "q": "", "data": None}
 
@@ -1832,8 +1857,13 @@ def inference_action(action, query):
         if not cands:
             return "no running rig with GPU inventory", 502
         free_mib, best = max(cands, key=lambda c: c[0])
-        out, code = inference_action(
-            "deploy", {**query, "id": [str(best["id"])]})
+        q = dict(query)
+        q["id"] = [str(best["id"])]
+        if "image" not in q:
+            entry = next((m for m in MODEL_CATALOG if m["hf"] == want), None)
+            if entry and entry.get("latest_vllm"):
+                q["image"] = [LATEST_VLLM_IMAGE]
+        out, code = inference_action("deploy", q)
         return (f"[auto-deploy] picked rig #{best['id']} "
                 f"({free_mib / 1024:.1f} GiB free VRAM)\n{out}", code)
     elif action == "hiran-chat":

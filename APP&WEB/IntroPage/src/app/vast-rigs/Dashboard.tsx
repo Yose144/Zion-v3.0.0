@@ -160,6 +160,9 @@ type CatEntry = {
   tags: string[];
   desc: string;
   gated?: boolean;
+  internal?: boolean;
+  mockup?: boolean;
+  latest_vllm?: boolean;
 };
 type HfResult = {
   hf: string;
@@ -1035,14 +1038,19 @@ export default function Dashboard() {
                               className={`min-w-0 rounded-lg border p-2.5 transition ${
                                 sel
                                   ? "border-[#a371f7]/60 bg-[#a371f7]/15"
-                                  : "border-white/10 bg-black/30 hover:border-white/25"
+                                  : m.internal
+                                    ? "border-[#fcd116]/25 bg-[#fcd116]/[0.04] hover:border-[#fcd116]/40"
+                                    : "border-white/10 bg-black/30 hover:border-white/25"
                               }`}
                             >
                               <button onClick={() => setInferenceModel(m.hf)} className="block w-full min-w-0 text-left">
                                 <div className="flex items-center gap-1.5">
                                   <span className="min-w-0 truncate text-xs font-semibold text-white">{m.hf.split("/").pop()}</span>
                                   <span className="shrink-0 rounded-full border border-white/15 px-1.5 py-px text-[9px] text-white/50">{m.params}</span>
+                                  {m.internal && <span className="shrink-0 rounded-full border border-[#fcd116]/40 bg-[#fcd116]/10 px-1.5 py-px text-[9px] font-semibold text-[#fcd116]">ZION</span>}
+                                  {m.mockup && <span className="shrink-0 rounded-full border border-white/20 px-1.5 py-px text-[9px] italic text-white/40">mockup</span>}
                                   {m.gated && <span className="shrink-0 rounded-full border border-[#fcd116]/30 px-1.5 py-px text-[9px] text-[#fcd116]" title="requires HF token">gated</span>}
+                                  {m.latest_vllm && <span className="shrink-0 rounded-full border border-[#79c0ff]/30 px-1.5 py-px text-[9px] text-[#79c0ff]" title="pinned vLLM 0.8.5 can't load this — auto-deploy uses vllm-openai:latest">new vLLM</span>}
                                 </div>
                                 <div className="mt-1 truncate text-[10px] text-white/40">{m.desc}</div>
                                 <div className="mt-1.5 flex items-center gap-1">
@@ -1057,18 +1065,26 @@ export default function Dashboard() {
                                 </div>
                               </button>
                               <div className="mt-2 flex gap-1 border-t border-white/[0.06] pt-2">
-                                <button
-                                  onClick={() => autoDeploy(m.hf)}
-                                  disabled={!!busy}
-                                  className="min-h-7 flex-1 rounded-md border border-[#34d399]/35 bg-[#34d399]/10 text-[10px] font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:cursor-wait disabled:opacity-40"
-                                >
-                                  ▸ deploy
-                                </button>
-                                <a
-                                  href={`https://huggingface.co/${m.hf}`}
-                                  target="_blank" rel="noreferrer"
-                                  className="min-h-7 content-center rounded-md border border-white/10 px-2 text-[10px] text-white/40 transition hover:border-white/25 hover:text-white/70"
-                                >HF ↗</a>
+                                {m.internal ? (
+                                  <span className="min-h-7 flex-1 content-center text-[10px] italic text-white/35">
+                                    llama.cpp · hiran-core / SMOS :8003
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => autoDeploy(m.hf)}
+                                    disabled={!!busy}
+                                    className="min-h-7 flex-1 rounded-md border border-[#34d399]/35 bg-[#34d399]/10 text-[10px] font-semibold text-[#6ee7b7] transition hover:bg-[#34d399]/20 disabled:cursor-wait disabled:opacity-40"
+                                  >
+                                    ▸ deploy
+                                  </button>
+                                )}
+                                {!m.internal && (
+                                  <a
+                                    href={`https://huggingface.co/${m.hf}`}
+                                    target="_blank" rel="noreferrer"
+                                    className="min-h-7 content-center rounded-md border border-white/10 px-2 text-[10px] text-white/40 transition hover:border-white/25 hover:text-white/70"
+                                  >HF ↗</a>
+                                )}
                               </div>
                             </div>
                           );
