@@ -790,6 +790,43 @@ def fetch_pool_stats():
     return out
 
 
+_HR_UNITS = {"h/s": 1.0, "kh/s": 1e3, "mh/s": 1e6, "gh/s": 1e9, "th/s": 1e12, "ph/s": 1e15}
+
+
+def _attach_rig_hashrate(rigs, pool_miners):
+    """Give external-coin pool workers a real hashrate.
+
+    The pool's telemetry estimator only covers the ZION difficulty scale, so
+    PRL/QTU workers come back with hps=0 (the comment in
+    telemetry::record_external_share says so explicitly). The rig monitor
+    already knows the true rate because it is read straight from the
+    miner, so map the pool worker onto the rig worker by suffix.
+    """
+    if not pool_miners:
+        return
+    rig_hr = {}
+    for r in rigs or []:
+        for m in r.get("miners", []):
+            hr = m.get("hashrate") or {}
+            rate = hr.get("rate")
+            unit = (hr.get("unit") or "").lower()
+            if not rate or unit not in _HR_UNITS:
+                continue
+            w = m.get("worker") or ""
+            if w:
+                rig_hr[w] = rate * _HR_UNITS[unit]
+    for pm in pool_miners:
+        w = pm.get("worker") or ""
+        if not w:
+            continue
+        for rw, hps in rig_hr.items():
+            if w.endswith(rw) or rw in w:
+                pm["hps"] = hps
+                pm["hps_1h"] = hps
+                pm["rig_worker"] = rw
+                break
+
+
 def snapshot(ids=None):
     rigs = status_all(ids)
     for r in rigs:
@@ -803,11 +840,13 @@ def snapshot(ids=None):
                 m["hist"] = list(h)
         # xmrig_api hist is covered by the rx/0 miner row (hashrate attached)
 
+    pool_miners = fetch_pool_miners()
+    _attach_rig_hashrate(rigs, pool_miners)
     return {
         "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "total_dph": round(sum(r["dph"] for r in rigs), 4),
         "rigs": rigs,
-        "pool": fetch_pool_miners(),
+        "pool": pool_miners,
         "poolstats": fetch_pool_stats(),
         "smos": fetch_smos_rigs(),
         "ext": fetch_ext_pools(),
@@ -849,11 +888,13 @@ _EXPECT_PROC = {"srb": "SRBMiner", "xmr": "xmrig", "zion": "zion-miner"}
 
 
 def snapshot_from(rigs):
+    pool_miners = fetch_pool_miners()
+    _attach_rig_hashrate(rigs, pool_miners)
     return {
         "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "total_dph": round(sum(r["dph"] for r in rigs), 4),
         "rigs": rigs,
-        "pool": fetch_pool_miners(),
+        "pool": pool_miners,
         "poolstats": fetch_pool_stats(),
         "smos": fetch_smos_rigs(),
         "ext": fetch_ext_pools(),
