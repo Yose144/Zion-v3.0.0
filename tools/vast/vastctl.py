@@ -202,7 +202,9 @@ def parse_probe(inst, text):
             if ga:
                 pane_algo = ga.group(1)
             h = HR_RE.search(clean)
-            if h and pane_algo and pane_ok:
+            if h and pane_algo:
+                # pane_ok is only required for [metrics] parsing (zion-miner),
+                # not for generic Hashrate lines from SRBMiner/xmrig panes.
                 pane_hrs.append((pane_algo, {
                     "rate": float(h.group(1)), "unit": h.group(2),
                     "a": int(h.group(3)), "r": int(h.group(4)),
