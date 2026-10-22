@@ -191,11 +191,11 @@ def parse_probe(inst, text):
                 # Extract algo from pane name when tmux capture-pane doesn't
                 # emit [stats A1 - <algo>] header (e.g. SRBMiner sessions).
                 pn = g.group(1)
-                if pn.startswith("srb-qtu"):
+                if "srb-qtu" in pn:
                     pane_algo = "quantus"
-                elif pn.startswith("srb-prl"):
+                elif "srb-prl" in pn:
                     pane_algo = "pearlhash"
-                elif pn.startswith("zion"):
+                elif "zion" in pn:
                     pane_algo = "zion"
                 continue
             ga = re.search(r"\[\s*A\d+\s*-\s*(\S+)\s*\]", clean)
