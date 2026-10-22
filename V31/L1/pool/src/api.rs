@@ -2493,6 +2493,7 @@ mod tests {
                 password: "x".to_string(),
                 job_ttl: Duration::from_millis(90_000),
                 fwd_max: Duration::from_millis(90_000),
+                ring_cap: crate::pearl_upstream::DEFAULT_JOB_RING_CAP,
             });
         let rt = crate::pearl_gateway::PearlRuntime::for_test_hybrid(
             "127.0.0.1:1",

@@ -1070,6 +1070,7 @@ mod tests {
             password: "x".to_string(),
             job_ttl: Duration::from_millis(90_000),
             fwd_max: Duration::from_millis(90_000),
+            ring_cap: crate::pearl_upstream::DEFAULT_JOB_RING_CAP,
         });
         up.seed_job(UpstreamPearlJob {
             served_id: format!("{}{raw_id}", crate::pearl_upstream::UPSTREAM_JOB_PREFIX),

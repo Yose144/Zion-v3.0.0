@@ -31,7 +31,15 @@ const MAX_CONSECUTIVE_TIMEOUTS: u32 = 10;
 /// Recent upstream jobs kept for `job_by_served_id` matching. Upstream pools
 /// rotate templates; a share built on the previous job must still resolve
 /// (and forward) inside the staleness window instead of dying `Stale`.
-const JOB_RING_CAP: usize = 4;
+///
+/// The ring has to cover the *share search latency*, not the template
+/// rotation period: a Pearl share is found minutes after the job was
+/// served, and the upstream rotates templates every few seconds. With a
+/// 4-entry ring the job was evicted long before the miner finished
+/// searching, so ~24 % of all shares died `StaleForward` before ever
+/// reaching the upstream pool. 64 entries covers tens of minutes of
+/// rotation at the observed rate while keeping the lookup O(1)-ish.
+pub const DEFAULT_JOB_RING_CAP: usize = 64;
 
 #[derive(Clone)]
 pub struct PearlUpstreamConfig {
@@ -41,6 +49,7 @@ pub struct PearlUpstreamConfig {
     pub password: String,
     pub job_ttl: Duration,
     pub fwd_max: Duration,
+    pub ring_cap: usize,
 }
 
 impl PearlUpstreamConfig {
@@ -87,6 +96,11 @@ impl PearlUpstreamConfig {
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(DEFAULT_FWD_MAX_MS),
         );
+        let ring_cap = std::env::var("ZION_POOL_PEARL_JOB_RING_CAP")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+            .filter(|n| *n > 0)
+            .unwrap_or(DEFAULT_JOB_RING_CAP);
         Some(Self {
             endpoint,
             wallet,
@@ -94,6 +108,7 @@ impl PearlUpstreamConfig {
             password,
             job_ttl,
             fwd_max,
+            ring_cap,
         })
     }
 }
@@ -166,6 +181,7 @@ pub struct PearlUpstream {
     password: String,
     job_ttl: Duration,
     fwd_max: Duration,
+    ring_cap: usize,
     jobs: Arc<RwLock<VecDeque<UpstreamPearlJob>>>,
     connected: Arc<AtomicBool>,
     submit_tx: mpsc::Sender<SubmitReq>,
@@ -190,6 +206,7 @@ impl PearlUpstream {
             password: cfg.password,
             job_ttl: cfg.job_ttl,
             fwd_max: cfg.fwd_max,
+            ring_cap: cfg.ring_cap,
             jobs: Arc::new(RwLock::new(VecDeque::new())),
             connected: Arc::new(AtomicBool::new(false)),
             submit_tx,
@@ -365,7 +382,7 @@ impl PearlUpstream {
             cached.cert_version,
             &hex::encode(cached.target_be)[..16]
         );
-        if ring.len() >= JOB_RING_CAP {
+        if ring.len() >= self.ring_cap {
             ring.pop_front();
         }
         ring.push_back(cached);
@@ -506,7 +523,7 @@ impl PearlUpstream {
     #[cfg(test)]
     pub fn seed_job(&self, job: UpstreamPearlJob) {
         let mut ring = self.jobs.write().unwrap();
-        if ring.len() >= JOB_RING_CAP {
+        if ring.len() >= self.ring_cap {
             ring.pop_front();
         }
         ring.push_back(job);
@@ -535,6 +552,7 @@ mod tests {
             password: "x".to_string(),
             job_ttl: Duration::from_millis(90_000),
             fwd_max: Duration::from_millis(90_000),
+            ring_cap: DEFAULT_JOB_RING_CAP,
         }
     }
 
@@ -598,15 +616,16 @@ mod tests {
     #[tokio::test]
     async fn served_id_ring_covers_rotation_window_and_caps() {
         let up = PearlUpstream::new(test_cfg("127.0.0.1:1"));
-        for i in 0..JOB_RING_CAP {
+        let cap = up.ring_cap;
+        for i in 0..cap {
             up.seed_job(ujob(&format!("job-{i}"), Duration::ZERO));
         }
         assert_eq!(
             up.latest_fresh().unwrap().served_id,
-            format!("prlu:job-{}", JOB_RING_CAP - 1)
+            format!("prlu:job-{}", cap - 1)
         );
         // Every job in the ring resolves, not just the newest.
-        for i in 0..JOB_RING_CAP {
+        for i in 0..cap {
             assert!(up.job_by_served_id(&format!("prlu:job-{i}")).is_some());
         }
         // Pushing past the cap evicts the oldest entry.
@@ -617,6 +636,19 @@ mod tests {
         up.seed_job(ujob("job-old", Duration::from_millis(91_000)));
         assert!(up.job_by_served_id("prlu:job-old").is_none());
         assert!(up.latest_fresh().is_none());
+    }
+
+    #[tokio::test]
+    async fn ring_cap_covers_share_search_latency() {
+        // Regression guard: the ring used to hold 4 jobs while a Pearl share
+        // is found minutes later, so ~24 % of shares died StaleForward
+        // before reaching the upstream pool.
+        let up = PearlUpstream::new(test_cfg("127.0.0.1:1"));
+        assert!(
+            up.ring_cap >= 32,
+            "job ring too small for share search latency: {}",
+            up.ring_cap
+        );
     }
 
     #[tokio::test]

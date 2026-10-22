@@ -6039,6 +6039,7 @@ mod tests {
                 password: "x".to_string(),
                 job_ttl: Duration::from_millis(90_000),
                 fwd_max: Duration::from_millis(90_000),
+                ring_cap: crate::pearl_upstream::DEFAULT_JOB_RING_CAP,
             });
         assert!(up.ensure_started());
         tokio::time::timeout(Duration::from_secs(5), async {
