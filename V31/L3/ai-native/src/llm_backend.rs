@@ -473,8 +473,25 @@ impl RemoteHttpBackend {
         model: impl Into<String>,
         api_key: Option<String>,
     ) -> Result<Self, LlmError> {
+        Self::new_with_timeout(base_url, model, api_key, 300)
+    }
+
+    /// Creates a backend with an explicit request timeout (seconds).
+    ///
+    /// The timeout bounds how long a single generation may take. It matters for
+    /// the fallback chain: a remote host that accepts the TCP connection but
+    /// never answers (e.g. an SSH tunnel whose far end is dead) would otherwise
+    /// block the whole request for the full timeout before the secondary
+    /// backend is tried.
+    pub fn new_with_timeout(
+        base_url: impl Into<String>,
+        model: impl Into<String>,
+        api_key: Option<String>,
+        timeout_secs: u64,
+    ) -> Result<Self, LlmError> {
         let client = reqwest::blocking::Client::builder()
-            .timeout(std::time::Duration::from_secs(300))
+            .timeout(std::time::Duration::from_secs(timeout_secs.max(1)))
+            .connect_timeout(std::time::Duration::from_secs(10))
             .build()
             .map_err(|e| LlmError::InternalError(e.to_string()))?;
 

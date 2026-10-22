@@ -453,3 +453,6 @@ scripts/backup-beacon.env
 SRBMiner-MULTI
 SRBMiner-MULTI.exe
 APP&WEB/desktop-agent/resources/srbminer/Autotune/
+
+# IDE/MCP lokalni konfigurace (neni soucast repozitare)
+.continue/

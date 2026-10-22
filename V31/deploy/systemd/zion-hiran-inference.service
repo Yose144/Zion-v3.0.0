@@ -1,0 +1,33 @@
+[Unit]
+Description=ZION Hiran inference (llama.cpp CPU fallback, hiran-v2.3mini Q5_K_M)
+# Fallback LLM for zion-v31-ai-native: LLM_FALLBACK_URL=http://127.0.0.1:8002/v1
+# Runs on the same box as the ai-native service so the chat survives the GPU
+# host being offline. The model file is the fine-tuned Hiran v2.3mini GGUF
+# (same weights as the GPU host), CPU-only — EDGE2 has no GPU.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion
+ExecStart=/opt/zion/llama-b11065/llama-server \
+  -m /opt/zion/hiran-models/hiran-v2.3mini-Q5_K_M.gguf \
+  --host 127.0.0.1 --port 8002 --alias zion-l3 \
+  -c 2048 --parallel 1 -ngl 0 -t 5 -fa on \
+  --cache-type-k q8_0 --cache-type-v q8_0 \
+  --reasoning-budget 0 --chat-template-kwargs "{\"enable_thinking\":false}" --no-webui
+Restart=on-failure
+RestartSec=10
+Nice=5
+CPUQuota=400%
+MemoryMax=7G
+MemoryHigh=6G
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/zion/data
+
+[Install]
+WantedBy=multi-user.target

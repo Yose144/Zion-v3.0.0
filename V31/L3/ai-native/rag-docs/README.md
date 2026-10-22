@@ -34,14 +34,23 @@ for f in faq getting-started mining-guide pool-setup whitepaper-lite \
 done
 for l in cs en; do for f in README oasis ncl; do
   cp "$D/$l/ai-native/$f.md" "$T/${l}_ai-native_${f}.md"; done
+  # 2026-10-22: +architecture (L1/consensus/mining/overview), consciousness-levels, api
+  for f in README consensus mining overview; do
+    cp "$D/$l/architecture/$f.md" "$T/${l}_architecture_${f}.md"; done
+  cp "$D/$l/consciousness-levels.md" "$T/${l}_consciousness-levels.md"
+  cp "$D/$l/api.md" "$T/${l}_api.md"
   cp "$D/cs/v3.2.0/README.md" "$T/cs_v320_README.md"; done
 cp V31/L3/ai-native/rag-docs/{HIRANYAGARBHA,SCOPE}.md $T/
-# sanitizer v cs_v320_README (viz pozn. výše) + rsync na Edge + restart
-rsync -a --delete $T/ zion-new:/tmp/l3-rag-docs-new/
-ssh zion-new 'sudo rsync -a --delete /tmp/l3-rag-docs-new/ \
+# sanitizer v cs_v320_README (viz pozn. výše) + rsync na EDGE2 + restart
+rsync -a --delete $T/ zion-edge2:/tmp/l3-rag-docs-new/
+ssh zion-edge2 'sudo rsync -a --delete /tmp/l3-rag-docs-new/ \
   /opt/zion/data/l3-rag-docs/ && sudo chown -R zion:zion \
   /opt/zion/data/l3-rag-docs && sudo systemctl restart zion-v31-ai-native'
 ```
 
 Po reseedu ověřit `journalctl -u zion-v31-ai-native` (`loaded_docs_from_disk
 count=`, `seeding_rag_complete total=`) a otestovat `/rag/query` + `/chat`.
+
+> **Poznámka k hostingu (2026-10-22):** od splitu EDGE → EDGE2 běží
+> `zion-v31-ai-native` na **EDGE2** (`207.180.217.100`), ne na Edge. RAG docs
+> tedy žijí v `/opt/zion/data/l3-rag-docs` na EDGE2.

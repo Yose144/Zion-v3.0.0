@@ -31,9 +31,34 @@ The ZION Desktop Agent v2.9.5 now supports advanced GPU revenue mining with auto
 }
 ```
 
+### GPU device pinning (`gpuDevice`, since 2026-10-22)
+
+`gpuDevice` restricts the miner (ZION stream **and** the QPoW/Quantus OpenCL
+stream) to a single GPU. It is exported to the miner as `ZION_GPU_DEVICES` and
+`ZION_QPOW_OCL_DEVICES`, so it accepts the same syntax as those variables:
+a numeric index or a name/class substring (`gfx1010`, `5600xt`, `vega`).
+
+```json
+{
+  "gpu": true,
+  "gpuDevice": "gfx1010",
+  "srbminerGpuId": "0",
+  "threads": 5
+}
+```
+
+Use it when the machine also runs a local LLM (llama.cpp Vulkan). The
+inference server pins itself to one card with `--device VulkanN`; the mining
+then runs on the other card. Without the pin, both processes land on the same
+GPU, the VRAM gets oversubscribed and the Vulkan context dies with
+`amdgpu: ring comp timeout` / `device lost` (the miner also starves the
+inference CPU threads — the `lm_head` projection runs on the CPU, so
+`threads` matters for latency).
+
 ### Environment Variables
 - `ZION_GPU_REVENUE=1`: Enable GPU revenue mining
 - `ZION_GPU_REVENUE_COINS=ERG,RVN,KAS,ALPH`: Comma-separated list of coins
+- `ZION_GPU_DEVICES` / `ZION_QPOW_OCL_DEVICES`: GPU selector (index or name substring)
 
 ## Architecture
 

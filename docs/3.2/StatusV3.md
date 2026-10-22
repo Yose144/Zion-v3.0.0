@@ -167,7 +167,8 @@
 | zion-v31-ncl | 8098 (HTTP API) | 127.0.0.1 | L3 | active (SQLite persistence, re-hydrate po restartu) |
 | zion-website | 3000 | 127.0.0.1 | — | active (Next.js, app.zionterranova.com) |
 | zion-marketplace | 3100 | 127.0.0.1 | — | active (Next.js, market.zionterranova.com) |
-| zion-ai-native | 8001 | 127.0.0.1 | L3 | active |
+| zion-ai-native | 8001 | 127.0.0.1 | L3 | active (Maestro v2.4: `/v2/info`, `/v2/health-matrix`, `/v2/plan`; RAG 39 docs / 138 chunků; LLM primárně přes `8004` = GPU host, fallback `8002` = lokální CPU) |
+| zion-hiran-inference | 8002 | 127.0.0.1 | L3 | active (llama.cpp CPU, `hiran-v2.3mini-Q5_K_M`, 2.4 tok/s — fallback pro `LLM_FALLBACK_URL`) |
 | zion-btcunlock-coord | 8779 | 127.0.0.1 | L3 | active (batch coordinator) |
 
 ### EDGE — Public ingress + pool: `62.171.141.136`

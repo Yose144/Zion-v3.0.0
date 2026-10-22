@@ -45,6 +45,10 @@ struct AppState {
     started_at: Instant,
     started_at_rfc3339: String,
     remote_backend: Option<RemoteHttpBackend>,
+    /// Secondary LLM endpoint used when the primary fails (e.g. GPU host is
+    /// down — `LLM_FALLBACK_URL`). Keeps the chat service alive instead of
+    /// degrading to the RAG echo.
+    fallback_backend: Option<RemoteHttpBackend>,
     remote_base_url: Option<String>,
     model: String,
     backend_mode: String,
@@ -221,13 +225,49 @@ impl AppState {
         let backend_pref =
             std::env::var("HIRANYAGARBHA_BACKEND").unwrap_or_else(|_| "auto".to_string());
 
+        // Request timeouts. The primary host is normally a GPU box reached
+        // through an SSH tunnel; if that tunnel dies the TCP connect succeeds
+        // but no answer ever comes, so the primary needs a bounded timeout for
+        // the fallback chain to kick in.
+        let llm_timeout_secs = std::env::var("LLM_TIMEOUT_SECS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(90);
+        let llm_fallback_timeout_secs = std::env::var("LLM_FALLBACK_TIMEOUT_SECS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(180);
+
         let remote_backend = if backend_pref.eq_ignore_ascii_case("echo") {
             None
         } else {
-            base_url
-                .as_ref()
-                .and_then(|url| RemoteHttpBackend::new(url.clone(), model.clone(), api_key).ok())
+            base_url.as_ref().and_then(|url| {
+                RemoteHttpBackend::new_with_timeout(
+                    url.clone(),
+                    model.clone(),
+                    api_key.clone(),
+                    llm_timeout_secs,
+                )
+                .ok()
+            })
         };
+
+        // Secondary endpoint — used when the primary LLM host is unreachable.
+        let fallback_backend = std::env::var("LLM_FALLBACK_URL")
+            .ok()
+            .filter(|v| !v.trim().is_empty())
+            .and_then(|url| {
+                RemoteHttpBackend::new_with_timeout(
+                    url.clone(),
+                    model.clone(),
+                    api_key.clone(),
+                    llm_fallback_timeout_secs,
+                )
+                .ok()
+            });
+        if fallback_backend.is_some() {
+            tracing::info!(fallback = %std::env::var("LLM_FALLBACK_URL").unwrap_or_default(), "fallback_backend_ready");
+        }
 
         let backend_mode = backend_pref.clone();
 
@@ -240,6 +280,7 @@ impl AppState {
             started_at: Instant::now(),
             started_at_rfc3339: Utc::now().to_rfc3339(),
             remote_backend,
+            fallback_backend,
             remote_base_url: base_url,
             model,
             backend_mode,
@@ -508,7 +549,23 @@ fn record_event(
 }
 
 /// The default system prompt — used whenever autotune is off (the default).
-const DEFAULT_SYSTEM_PROMPT: &str = "Jsi Hiranyagarbha, AI asistent sítě ZION (L3). Odpovídej stručně, ve stejném jazyce jako dotaz (česky nebo anglicky). Vycházej z KONTEXTU; pokud v něm odpověď není, řekni to na rovinu. Nikdy si nevymýšlej čísla, adresy, ceny, termíny ani stav sítě.";
+///
+/// Includes the *constitutional* layer: the immutable protocol facts that the
+/// model must never get wrong. Without it the small local models drift into
+/// generic answers (e.g. answering about the biblical Mount Zion, or inventing
+/// fee-split percentages). Sources: `V31/L1/core/src/emission.rs` (fee split),
+/// `V31/L1/core/src/cosmic-harmony` (PoW), root `AGENTS.md` (unit scale).
+const DEFAULT_SYSTEM_PROMPT: &str = "\
+Jsi Hiranyagarbha, AI asistent sítě ZION (L3). Odpovídej stručně (max ~6 vět), ve stejném jazyce jako dotaz (česky nebo anglicky). \
+Vycházej z KONTEXTU; pokud v něm odpověď není, řekni to na rovinu. Nikdy si nevymýšlej čísla, adresy, ceny, termíny ani stav sítě.
+
+KONSTITUČNÍ FAKTY (platí vždy, nijdy je nevyhrazuj):
+- ZION je blockchain Layer 1 postavený od nuly v Rustu, Proof-of-Work konsenzus (EkamDeeksha / Cosmic Harmony v3), 6vrstvá architektura L1-L6.
+- ZION není biblický Sion ani žádná investiční platforma — jde o vlastní síť s vlastní monetární politikou.
+- Rozdělení odměny za blok: 89 % horník, 5 % humanitární fond, 5 % fond Issobella, 1 % odměna za uzel (pool fee).
+- 1 ZION = 1 000 000 flowerů (flowers jsou interní jednotka, 1e6 = 1 ZION).
+- Odměna za blok klesá (emission decay); celkový plán distribuce je omezený a neinflaceční.
+- mining pool, RAG dokumentace a veřejné RPC jsou jediné věci, o kterých mluvíš jako o ověřitelných službách.";
 
 /// Build the LLM request for a chat prompt.
 ///
@@ -567,12 +624,41 @@ fn generate_answer(
     if let Some(remote) = state.remote_backend.as_ref() {
         match remote.generate(request.clone()) {
             Ok(resp) => return Ok((resp.content, resp.backend_id, None)),
-            Err(err) => {
+            Err(primary_err) => {
+                // Secondary endpoint — e.g. the GPU host is unreachable and the
+                // local CPU inference on the same machine takes over.
+                if let Some(fallback) = state.fallback_backend.as_ref() {
+                    match fallback.generate(request.clone()) {
+                        Ok(resp) => {
+                            tracing::warn!(
+                                error = %primary_err,
+                                "primary_llm_failed_using_fallback"
+                            );
+                            return Ok((resp.content, resp.backend_id, None));
+                        }
+                        Err(fallback_err) => {
+                            let fallback = state
+                                .echo_backend
+                                .generate(request)
+                                .map_err(|e| e.to_string())?;
+                            let degraded = format!(
+                                "remote backend unavailable: {} (fallback: {})",
+                                primary_err, fallback_err
+                            );
+                            let content = format!(
+                                "Hiranyagarbha bezi v degradovanem rezimu. Remote LLM neni dostupne, proto vracim lokalni fallback odpoved.\n\n{}",
+                                fallback.content
+                            );
+                            return Ok((content, fallback.backend_id, Some(degraded)));
+                        }
+                    }
+                }
+
                 let fallback = state
                     .echo_backend
                     .generate(request)
                     .map_err(|e| e.to_string())?;
-                let degraded = format!("remote backend unavailable: {}", err);
+                let degraded = format!("remote backend unavailable: {}", primary_err);
                 let content = format!(
                     "Hiranyagarbha bezi v degradovanem rezimu. Remote LLM neni dostupne, proto vracim lokalni fallback odpoved.\n\n{}",
                     fallback.content

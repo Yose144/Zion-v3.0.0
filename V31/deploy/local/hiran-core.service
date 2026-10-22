@@ -1,0 +1,34 @@
+[Unit]
+Description=ZION L3 Hiran core inference (llama.cpp Vulkan, fine-tuned hiran-v2.3mini)
+# GPU host for the production LLM. Reaches EDGE2 through the reverse tunnel
+# (zion-hiran-tunnel) -> Edge :8002 -> zion-edge-tunnel -> EDGE2 :8004 ->
+# zion-v31-ai-native (LLM_BASE_URL).
+#
+# 2026-10-22 (root cause of the "device lost" crash loops):
+#   * GGML_VULKAN_DEVICE is IGNORED by llama.cpp b11065 — the Vulkan backend
+#     enumerates ALL devices and splits the model across them. Pin explicitly
+#     with --device (Vulkan0 = RX Vega 64, Vulkan1 = RX 5600 XT).
+#   * -ngl too high for the free VRAM -> amdgpu "ring comp_1.1.0 timeout" (TDR)
+#     -> "device lost" -> core dump. Keep weights + KV + compute buffer below
+#     the free VRAM of the dedicated card.
+#   * -ub 256 keeps the logits buffer ([ubatch x vocab] f32) small enough that
+#     long RAG prompts do not spill into GTT host memory.
+
+[Service]
+Type=simple
+WorkingDirectory=%h/zion-hiran
+Environment=GGML_VULKAN_DEVICE=0
+ExecStart=%h/zion-hiran/bin/llama-b11065/llama-server \
+  -m %h/zion-hiran/models/hiran-v2.3mini-Q5_K_M.gguf \
+  --host 127.0.0.1 --port 8070 --alias hiran-core \
+  --device Vulkan0 \
+  -c 4096 --parallel 1 -ngl 34 -fa on -b 1024 -ub 256 \
+  --cache-type-k q8_0 --cache-type-v q8_0 -t 4
+Nice=5
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:%h/zion-hiran/logs/llm-8070.log
+StandardError=append:%h/zion-hiran/logs/llm-8070.log
+
+[Install]
+WantedBy=default.target
