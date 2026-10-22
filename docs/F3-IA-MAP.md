@@ -127,7 +127,11 @@
 
 ✅ `/world` hub vytvořen (L3/L4/L5/L6 + TerraNova + Ekam + AI Native, nav + sitemap).
 
-Zbývá rozhodnout/provést: `/cex`→`/market` (stránka má vlastní obsah — open Q), `/l*`→`/world#*` (l* stránky zatím zůstávají samostatné — jejich obsah není ve /world, jen odkazy), `/download /node-setup→/mining` (redirect připraven), `/monitoring /miner-stats /g8→/network`, `/dashboard/*(public)→/network`, `/nirvana→/maitreya#nirvana`, `/api-reference→/docs`, `/dashboard/dao-tree→/dao`.
+Zbývá rozhodnout/provést: `/cex`→`/market` (stránka má vlastní obsah — open Q), `/download /node-setup→/mining`, `/monitoring /miner-stats /g8→/network`, `/dashboard/*(public)→/network`, `/nirvana→/maitreya#nirvana`, `/api-reference→/docs`, `/dashboard/dao-tree→/dao`.
+
+### Poznámka k /l* a obsahem stránek
+
+`/l3-hiran`, `/l4-oasis`, `/l5-free-world`, `/l6-issobella`, `/ekam`, `/ai-native` **zůstávají živé samostatné stránky** — jejich obsah není ve `/world` (hub jen odkazuje). Redirect `/l*→/world` by obsah smazal; kanonizace tady znamená: `/world` = vstupní bod, l* = obsahové sub-destinace (nav už je seskupuje pod Layers/World). Totéž platí pro `/download`, `/monitoring`, `/miner-stats`, `/g8`, `/cex`, `/nirvana` a `/api-reference` — přímé 301 je možné teprve poté, co cílová sekce jejich obsah skutečně absorbuje (nebo po produktovém rozhodnutí obsah zahodit).
 
 ## K posouzení (otevřené)
 
