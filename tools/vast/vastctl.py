@@ -1062,6 +1062,15 @@ def _ensure_tools():
             "(apt-get update -qq && apt-get install -y -qq tmux >/dev/null 2>&1)")
 
 
+def _pool_url(pool):
+    """SRBMiner needs an explicit stratum scheme — a bare host:port is not
+    reliably accepted (our pool on :8444 included)."""
+    p = str(pool).strip()
+    if "://" in p:
+        return p
+    return "stratum+tcp://" + p
+
+
 def launch_srb(inst, iid, coins=("qtu", "prl")):
     """SRBMiner sessions: PRL → luckypool, QTU → lproute, one tmux each."""
     wq, wp = f"vast-{iid}-qtu", f"vast-{iid}-prl"
@@ -1071,14 +1080,16 @@ def launch_srb(inst, iid, coins=("qtu", "prl")):
     if "qtu" in coins:
         kills += "tmux kill-session -t srb-qtu 2>/dev/null\n"
         sessions.append(
-            f'tmux new-session -d -s srb-qtu "exec ./SRBMiner-MULTI '
-            f'--algorithm quantus --pool {QTU_POOL} --wallet {QTU_WALLET} '
+            f'tmux new-session -d -s srb-qtu "cd {SRB_DIR} && '
+            f'exec ./SRBMiner-MULTI '
+            f'--algorithm quantus --pool {_pool_url(QTU_POOL)} --wallet {QTU_WALLET} '
             f'--worker {wq} --disable-cpu"')
     if "prl" in coins:
         kills += "tmux kill-session -t srb-prl 2>/dev/null\n"
         sessions.append(
-            f'tmux new-session -d -s srb-prl "exec ./SRBMiner-MULTI '
-            f'--algorithm pearlhash --pool {PRL_POOL} --wallet {PRL_WALLET} '
+            f'tmux new-session -d -s srb-prl "cd {SRB_DIR} && '
+            f'exec ./SRBMiner-MULTI '
+            f'--algorithm pearlhash --pool {_pool_url(PRL_POOL)} --wallet {PRL_WALLET} '
             f'--worker {wp} --disable-cpu"')
     script = f'''
 {_ensure_tools()}
