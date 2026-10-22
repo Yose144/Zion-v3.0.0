@@ -147,6 +147,7 @@ EDGE2_UNITS = {
     "zion-marketplace", "zion-website", "zion-bitcoind", "zion-quantus-node",
     "zion-pearld", "zion-pearl-oyster", "zion-pearl-gateway", "zion-v31-ai-native",
     "zion-btcunlock-coord", "zion-db-sync", "zion-v31-warp",
+    "zion-l1-watcher",
 }
 
 

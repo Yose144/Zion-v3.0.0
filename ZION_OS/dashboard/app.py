@@ -1442,6 +1442,38 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 PROD multichain — bridge/warp/swap unified. API 8453 → Node RPC 9445. systemd zion-v31-multichain.service.",
      "child_says": "🌀 V31 PROD multichain — cross-chain hub!",
      "depends_on": ["v31-node"]},
+    {"id": "edge2-hiran-llm", "site": "edge2", "name": "Hiran LLM EDGE2 (PROD)", "icon": "🦙", "level": "L3", "kind": "ai",
+     "ports": {}, "ports_remote": {},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "systemd", "systemd_unit": "zion-hiran-inference.service", "severity": "warning", "autoheal": False,
+     "purpose": "llama.cpp inference server na EDGE2 :8002 (zion-l3, Q5_K_M, CPU). Backend pro /api/hiran a AI-native.",
+     "child_says": "🦙 Hiran LLM — AI mozek na EDGE2!",
+     "depends_on": []},
+    {"id": "edge2-g8-probe", "site": "edge2", "name": "G8 Probe EDGE2", "icon": "📡", "level": "Infra", "kind": "monitor",
+     "ports": {},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "systemd", "systemd_unit": "zion-g8-probe.service", "severity": "info", "autoheal": False,
+     "purpose": "G8 30-day run probe exporter na EDGE2 :9105 — hlídá EDGE2 služby (dao, zis, ...).",
+     "child_says": "📡 G8 sonda — hlídá EDGE2!",
+     "depends_on": []},
+    {"id": "edge2-l1-watcher", "site": "edge2", "name": "Marketplace L1 Watcher", "icon": "👁️", "level": "L4", "kind": "watcher",
+     "ports": {},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "systemd", "systemd_unit": "zion-l1-watcher.service", "severity": "warning", "autoheal": False,
+     "purpose": "MARKETBUY memo watcher — L1 chain → relayerSettle na Base. Marketplace settlement pipeline.",
+     "child_says": "👁️ L1 watcher — hlídá prodeje na chainu!",
+     "depends_on": ["v31-node", "marketplace"]},
+    {"id": "edge2-nginx", "site": "edge2", "name": "Nginx EDGE2 Ingress", "icon": "🛡️", "level": "Infra", "kind": "proxy",
+     "ports": {}, "ports_remote": {"https": 443, "http": 80},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "systemd", "systemd_unit": "nginx.service", "severity": "critical", "autoheal": False,
+     "purpose": "NGINX na EDGE2 :80/:443 — web ingress cutover (catch-all + nové vhosty, DNS flips).",
+     "child_says": "🛡️ EDGE2 brána — nový ingress!",
+     "depends_on": []},
     {"id": "v31-zis", "site": "edge2", "name": "ZIS Identity (PROD)", "icon": "🪪", "level": "L2", "kind": "identity",
      "ports": {"api": 8096},
      "host": "127.0.0.1",
@@ -2005,22 +2037,27 @@ def check_service_health(svc: dict) -> dict:
             details_parts.append("no PID file")
 
     elif method == "systemd":
-        # Check systemd service status for V31 services
+        # Check systemd service status — per-svc systemd_unit override, EDGE2 via SSH
         systemd_map = {
             "v31-miner": "zion-v31-miner.service",
             "v31-pool": "zion-v31-pool.service",
             "v31-node": "zion-v31-node.service",
             "v31-multichain": "zion-v31-multichain.service",
         }
-        svc_name = systemd_map.get(sid)
+        svc_name = svc.get("systemd_unit") or systemd_map.get(sid)
         if svc_name:
             try:
-                r = subprocess.run(["systemctl", "is-active", svc_name],
-                                 capture_output=True, text=True, timeout=2)
-                active = r.stdout.strip() == "active"
+                if svc.get("site") == "edge2":
+                    r = _run_edge2_cmd(f"systemctl is-active {svc_name}", timeout=8)
+                    out = (r.stdout if r else "").strip()
+                else:
+                    r = subprocess.run(["systemctl", "is-active", svc_name],
+                                     capture_output=True, text=True, timeout=2)
+                    out = r.stdout.strip()
+                active = out == "active"
                 alive = active
                 status = "running" if active else "stopped"
-                details_parts.append(f"systemd {svc_name}: {r.stdout.strip()}")
+                details_parts.append(f"systemd {svc_name}: {out}")
             except Exception as e:
                 details_parts.append(f"systemd check failed: {e}")
         else:
@@ -2109,7 +2146,7 @@ def all_services_health() -> list:
             "id": svc["id"], "name": svc["name"], "icon": svc["icon"],
             "level": svc["level"], "kind": svc["kind"],
             "purpose": svc["purpose"], "child_says": svc["child_says"],
-            "ports": svc["ports"], "depends_on": svc["depends_on"],
+            "ports": svc.get("ports", {}), "depends_on": svc.get("depends_on", []),
             "log": svc["log"], "start": svc["start"],
             "alive": h["alive"], "status": h.get("status", "unknown"),
             "details": h["details"], "severity": h.get("severity", "info"),
@@ -4109,7 +4146,9 @@ def _build_status_edge_primary() -> dict:
                      "zion-v31-ai-native.service", "zion-btcunlock-coord.service",
                      "zion-bitcoind.service", "zion-quantus-node.service",
                      "zion-pearld.service", "zion-pearl-oyster.service",
-                     "zion-pearl-gateway.service", "postgresql.service"]
+                     "zion-pearl-gateway.service", "postgresql.service",
+                     "zion-hiran-inference.service", "zion-g8-probe.service",
+                     "zion-l1-watcher.service"]
         _r2 = _run_edge2_cmd(
             "for u in " + " ".join(_e2_units) + "; do echo $u=$(systemctl is-active $u); done",
             timeout=8)
@@ -8547,6 +8586,7 @@ EDGE2_JOURNAL_UNITS = {
     "zion-marketplace", "zion-website", "zion-bitcoind", "zion-quantus-node",
     "zion-pearld", "zion-pearl-oyster", "zion-pearl-gateway", "zion-v31-ai-native",
     "zion-btcunlock-coord", "zion-db-sync", "zion-v31-warp", "warpd",
+    "zion-l1-watcher",
 }
 
 def _pool_coin_override_get(stream: str) -> dict:
