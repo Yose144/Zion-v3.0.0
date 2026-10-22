@@ -2,7 +2,7 @@
 
 > ZION vlastní modely (rodina **Hiran**) nabízené přes Marketplace na EDGE2
 > (`127.0.0.1:3100`) a veřejný AI stack (`app.zionterranova.com/api/ai-chat`).
-> Stav: **draft v2** — 2026-10-22. Souvisí: `tools/vast/vastctl.py`
+> Stav: **draft v2** — 2026-10-22. Souvisí: `infra/tools/vast/vastctl.py`
 > `MODEL_CATALOG`, dashboard `/vast-rigs/` → AI tab.
 
 ---

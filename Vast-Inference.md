@@ -22,7 +22,7 @@ Build na cudě **neobcházej** (viz §5) — rozhoduje **image (template)**.
 
 | Varianta | Co dostaneme | Čas do funkčního LLM | Kdy zvolit |
 |---|---|---|---|
-| **A. Docker + vLLM** | image s `docker: true` → `tools/vast/vast_inference.py deploy` (HF model → vLLM → loopback `:8000`) | **~10 min** (žádný build, jen stahování modelu) | ✅ **výchozí volba** |
+| **A. Docker + vLLM** | image s `docker: true` → `infra/tools/vast/vast_inference.py deploy` (HF model → vLLM → loopback `:8000`) | **~10 min** (žádný build, jen stahování modelu) | ✅ **výchozí volba** |
 | **B. CUDA + llama.cpp** | image `nvidia/cuda_12.4.1-devel-ubuntu22.04/ssh` (bez Dockeru) → build llama.cpp → GGUF → llama-server | **~45–90 min** | když chceme lokální GGUF (fine-tuned ZION model) nebo image nemá Docker |
 | **C. Docker instalovaný ručně** | `apt install docker.io` + NVIDIA container toolkit na existující instanci | ~20 min + vLLM image pull | nechceme přegenerovat instanci |
 
@@ -143,7 +143,7 @@ zůstane **prázdný**:
 Předpoklad: instance s Dockerem + NVIDIA container toolkitem.
 
 ```bash
-cd tools/vast
+cd infra/tools/vast
 
 # 1) najdi a pronájmi instanci (RTX 3060 / 12 GB)
 python3 vastctl.py offers --gpu RTX_3060 --max-dph 0.09
@@ -247,7 +247,7 @@ curl -L -C - -o /opt/models/mmproj-gemma-4-E4B-it-BF16.gguf  $B/mmproj-gemma-4-E
 ## 5. Panel `https://zionterranova.com/vast-rigs/`
 
 Panel běží jako `apps/IntroPage/src/app/vast-rigs/page.tsx` (+ `Dashboard.tsx`),
-data zajišťuje `tools/vast/vastctl.py` na `127.0.0.1:8088`
+data zajišťuje `infra/tools/vast/vastctl.py` na `127.0.0.1:8088`
 (`zion-desktop-agent`-prostředí: user unit `vastctl-serve.service`),
 přes nginx `location /vast-ops/` → **basic auth** (`/etc/nginx/.htpasswd-vast`).
 
@@ -308,7 +308,7 @@ vrstvu do `generate_answer()` ve `V31/L3/ai-native/src/bin/zion-ai-native-api.rs
 curl -s http://127.0.0.1:8088/api/ai/status | python3 -m json.tool | head -30
 
 # 1) je instance zaplacená a běží?
-cd tools/vast && python3 vastctl.py status
+cd infra/tools/vast && python3 vastctl.py status
 
 # 2) ssh na instanci
 python3 -c "import sys; sys.path.insert(0,'.'); import vast_inference as v; \
@@ -373,9 +373,9 @@ zastavuje **minery**, ne instanci; zrušení pronájmu = Vast UI/API
 |---|---|
 | [`VASTAI-MINING.md`](VASTAI-MINING.md) §5 | Panel, vLLM helper, **LM Studio + Continue**, VRAM/TDR, game agenti |
 | [`AI-NATIVE-HIRAN-REPORT-2026-10-22.md`](AI-NATIVE-HIRAN-REPORT-2026-10-22.md) | Produkční LLM řetězec PC ↔ EDGE2, fallback chain, konstytuční prompt |
-| `tools/vast/vastctl.py` | Panel backend + `serve` (`:8088`), `offers`, `rent`, `launch`, `stop`, `daemon` |
-| `tools/vast/vast_inference.py` | Docker/vLLM deploy helper (validace, loopback, health) |
-| `tools/vast/vastctl-serve.service` | user unit pro panelové API |
+| `infra/tools/vast/vastctl.py` | Panel backend + `serve` (`:8088`), `offers`, `rent`, `launch`, `stop`, `daemon` |
+| `infra/tools/vast/vast_inference.py` | Docker/vLLM deploy helper (validace, loopback, health) |
+| `infra/tools/vast/vastctl-serve.service` | user unit pro panelové API |
 | `apps/IntroPage/src/app/vast-rigs/` | UI panelu (`page.tsx`, `Dashboard.tsx`) |
 | `~/.continue/config.yaml` | Continue (VS Code) — modely, reasoning budget |
 | `~/.lmstudio/.internal/http-server-config.json` | LM Studio API (port, JIT on/off) |

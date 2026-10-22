@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 // Hidden unlisted ops page — data comes from /vast-rigs/status.json
-// written by the vastctl daemon (tools/vast/vastctl.py).
+// written by the vastctl daemon (infra/tools/vast/vastctl.py).
 export default function VastRigsPage() {
   return <Dashboard />;
 }

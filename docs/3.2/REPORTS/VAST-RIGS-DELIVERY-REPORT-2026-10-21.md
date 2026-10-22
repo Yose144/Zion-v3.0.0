@@ -32,21 +32,21 @@ garantovaný inference výkon.
   mobilní zobrazení a tabulky pro širší obrazovky. Opravena také mobilní šířka
   karet a horizontální přetékání.
 - **Read-only AI status API** v
-  [`tools/vast/vastctl.py`](./tools/vast/vastctl.py): endpoint
+  [`infra/tools/vast/vastctl.py`](./infra/tools/vast/vastctl.py): endpoint
   `/api/ai/status` agreguje dostupné rig/GPU údaje a stav lokálního
   OpenAI-kompatibilního inference API. Zobrazuje GPU metriky (například VRAM,
   vytížení, teplotu a příkon, pokud je instance poskytne) a modely dostupné přes
   inference API. Probe endpointu je omezen na lokální adresu a číselný port.
 - **Backend testy** v
-  [`tools/vast/test_vastctl.py`](./tools/vast/test_vastctl.py): parsování
+  [`infra/tools/vast/test_vastctl.py`](./infra/tools/vast/test_vastctl.py): parsování
   GPU/modelů, agregace stavu, případ bez model serveru, selhání probe,
   validace lokálního URL a portu.
 - **Dokumentace** v
   [`VASTAI-MINING.md`](./VASTAI-MINING.md): popis AI status pilotu a omezení
   sdílené VRAM a GPU výkonu.
 - **Vast inference worker ovládání** v
-  [`tools/vast/vast_inference.py`](./tools/vast/vast_inference.py) a
-  [`tools/vast/vastctl.py`](./tools/vast/vastctl.py): potvrzené deploy/stop/
+  [`infra/tools/vast/vast_inference.py`](./infra/tools/vast/vast_inference.py) a
+  [`infra/tools/vast/vastctl.py`](./infra/tools/vast/vastctl.py): potvrzené deploy/stop/
   status akce a příkaz pro SSH port-forward. Akce cílí pouze na již běžící
   instanci; deployment váže vLLM host port na loopback a povoluje jen oficiální
   version-tagged vLLM image.
@@ -61,7 +61,7 @@ garantovaný inference výkon.
 - `npm run build` v `apps/IntroPage` — úspěšný build; `/vast-rigs` je
   staticky generovaná stránka.
 - `tsc --noEmit` v `apps/IntroPage` — bez TypeScript chyb.
-- `python3 -m unittest discover -s tools/vast -p 'test_*.py' -v` — všech
+- `python3 -m unittest discover -s infra/tools/vast -p 'test_*.py' -v` — všech
   **15 testů prošlo** (loopback bind, origin ochrana, potvrzení akcí, validace
   instance/modelu/image a SSH tunnel command).
 - `git diff --check` — bez whitespace chyb.
@@ -86,7 +86,7 @@ garantovaný inference výkon.
   [`apps/IntroPage/deploy/deploy-intro.sh`](./apps/IntroPage/deploy/deploy-intro.sh)
   do `/var/www/zion-maintenance` na Edge; `nginx -t` uspěl a nginx byl reloadnut.
 - Uživatelská služba `vastctl-serve.service` běží z
-  `~/.local/share/vastctl-release/tools/vast` a Edge reverse tunnel API smoke
+  `~/.local/share/vastctl-release/infra/tools/vast` a Edge reverse tunnel API smoke
   test vrátil HTTP 200. Žádná Vast instance nebyla nasazena, zastavena ani
   jinak změněna.
 

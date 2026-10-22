@@ -38,7 +38,7 @@
 | [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md) | Plán i execution log splitu EDGE → EDGE2 (v3 okna, rollback skripty). |
 | [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) | V3.3 NIRVANA execution checklist (N0–N7) + fronta autonomních úkolů. |
 | [`V31/AGENTS.md`](V31/AGENTS.md) | V31 workspace pravidla (build, cutover, GPU/bench). |
-| [`VASTAI-MINING.md`](VASTAI-MINING.md) · [`VastRTX.md`](VastRTX.md) | vast.ai fleet + multi-mining (PRL/QTU/XMR) runbooky, `tools/vast/vastctl.py`. |
+| [`VASTAI-MINING.md`](VASTAI-MINING.md) · [`VastRTX.md`](VastRTX.md) | vast.ai fleet + multi-mining (PRL/QTU/XMR) runbooky, `infra/tools/vast/vastctl.py`. |
 | [`PEARL-OPTIMIZATION.md`](PEARL-OPTIMIZATION.md) | Pearl PoUW kernel optimalizace (v13 default na SM80+). |
 | [`docs/3.2/AUDIT_PACKAGE.md`](docs/3.2/AUDIT_PACKAGE.md) | Audit package pro externí audit (pinned commit manifest, repro build). |
 | [`docs/3.2/REPORTS/`](docs/3.2/REPORTS/) | Incident/audit reporty (G8 stall RCA, edge disk audit, …). |

@@ -208,7 +208,7 @@ nvidia-smi                               # ~95-100 % util, ~135-170 W
 ## 5. AI inference capacity dashboard (read-only pilot)
 
 `/vast-rigs/` includes an AI status panel backed by
-`tools/vast/vastctl.py` at `/vast-ops/api/ai/status`. The backend probes each
+`infra/tools/vast/vastctl.py` at `/vast-ops/api/ai/status`. The backend probes each
 active instance over SSH for NVIDIA GPU memory, utilization, temperature and
 power, then checks a loopback OpenAI-compatible `GET /v1/models` endpoint.
 The probe does not install or start models and does not modify mining processes.
@@ -229,14 +229,14 @@ is an explicit per-instance opt-in below.
 
 ### Opt-in vLLM on an existing instance
 
-`tools/vast/vast_inference.py` can start a version-tagged vLLM Docker image on an
+`infra/tools/vast/vast_inference.py` can start a version-tagged vLLM Docker image on an
 already-running Vast instance. It never searches/rents offers, installs a
 public-facing service, or changes miner processes. Prerequisites on the rig are
 Docker with NVIDIA Container Toolkit, a working `nvidia-smi`, SSH access, and
 enough GPU memory for both the model and anything already using the GPU.
 
 ```bash
-cd tools/vast
+cd infra/tools/vast
 
 # Start a model only after reviewing the instance and model cost/VRAM needs.
 python3 vast_inference.py deploy INSTANCE_ID \
@@ -329,7 +329,7 @@ jinak panel ukáže `inference_reachable: false` a `models: []`.
 ### 5.2 Přístup k Vast inferenci z PC (SSH tunel)
 
 ```bash
-cd tools/vast
+cd infra/tools/vast
 python3 vast_inference.py tunnel 57054247 --local-port 18000
 # -> ssh -N -L 18000:127.0.0.1:8000 -p 23934 root@ssh1.vast.ai
 curl -s http://127.0.0.1:18000/v1/models
@@ -771,11 +771,11 @@ curl -s localhost:16000/2/summary | python3 -m json.tool   # JSON staty
 
 ## 7. vastctl — správa multi-mining rigů + web UI
 
-`tools/vast/vastctl.py` — jednosouborový Python (stdlib only, jen `vastai` CLI
+`infra/tools/vast/vastctl.py` — jednosouborový Python (stdlib only, jen `vastai` CLI
 + ssh). Inventarizace instancí + probe minerů přes jeden SSH round-trip.
 
 ```bash
-cd tools/vast
+cd infra/tools/vast
 python3 vastctl.py status                # tabulka: ID, GPU, $/h, util, minery, hashraty
 python3 vastctl.py logs 57025771         # tail miner logů na rigu
 python3 vastctl.py exec 57025771 -- nvidia-smi
@@ -790,7 +790,7 @@ minery bez log redirectu ukážou `—` (spusť s `> /root/srb-qtu.log 2>&1 &`).
 `VASTCTL_READONLY=1` vypne exec/deploy endpointy (veřejný serve mód).
 
 The deployed `vastctl-serve.service` runs a committed release snapshot from
-`~/.local/share/vastctl-release/tools/vast`, not directly from the working
+`~/.local/share/vastctl-release/infra/tools/vast`, not directly from the working
 checkout. This keeps service restarts isolated from unrelated uncommitted
 changes. The Edge reverse tunnel remains loopback-only; `/vast-ops/` is
 protected by nginx Basic Auth.
@@ -803,7 +803,7 @@ webrootu + `--autodeploy-xmrig` (rig bez xmrig → automaticky config+
 binárka+launch, fail backoff 10 min).
 
 Live setup (systemd **user** unit `vastctl-daemon.service`, copy v
-`tools/vast/`): běží na zionserveru, pushne JSON do
+`infra/tools/vast/`): běží na zionserveru, pushne JSON do
 `/var/www/zion-maintenance/vast-rigs/status.json` na edge.
 
 ```bash
