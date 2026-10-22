@@ -1,7 +1,7 @@
 # L2 Checklist — co máme vs. co chybí k plně funkčnímu WARP + DAO
 
 > **Vytvořeno:** 2026-10-02 · Audit proti kódu `V31/L2/` + live stav Edge (`vmi3425821`)
-> **Kanonické zdroje:** `L2contracts.md`, `DAO.md`, `archive/WarpBeta/STATUS.md`, `archive/WarpBeta/AUDIT_PREP.md`, `V33_GAP_ANALYSIS.md`, `Multichain-Report.md`, `docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md`
+> **Kanonické zdroje:** `L2contracts.md`, `DAO.md`, `archive/WarpBeta/STATUS.md`, `archive/WarpBeta/AUDIT_PREP.md`, `V33_GAP_ANALYSIS.md`, `Multichain-Report.md`, `canon/books/MiseAmenti/07-Registr-Dukazu.md`
 
 **Legenda:**
 

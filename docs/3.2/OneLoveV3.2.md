@@ -184,7 +184,7 @@ The code-vs-docs audit from [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](../3.1/PLAN_T
 
 ## 4. Marketing & Public Positioning
 
-Full marketing kit: [`docs/WP-Mainet/marketing/MARKETING_PR_LITE_EN.md`](../WP-Mainet/marketing/MARKETING_PR_LITE_EN.md).
+Full marketing kit: [`canon/books/marketing/MARKETING_PR_LITE_EN.md`](../../canon/books/marketing/MARKETING_PR_LITE_EN.md).
 
 ### 4.1 Elevator Pitch (20 seconds)
 
@@ -233,9 +233,9 @@ ZION is an independent Layer 1 blockchain in Rust: Proof-of-Work, fair launch, n
 
 ## 5. Onboarding
 
-Full onboarding guide: [`docs/WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md`](../WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md).  
-Czech version: [`docs/WP-Mainet/SulZeme/ZION_ONBOARDING.md`](../WP-Mainet/SulZeme/ZION_ONBOARDING.md).  
-Oasis onboarding: [`docs/WP-Mainet/SulZeme/OASIS_ONBOARDING.md`](../WP-Mainet/SulZeme/OASIS_ONBOARDING.md).
+Full onboarding guide: [`canon/books/SulZeme/ZION_ONBOARDING_EN.md`](../../canon/books/SulZeme/ZION_ONBOARDING_EN.md).  
+Czech version: [`canon/books/SulZeme/ZION_ONBOARDING.md`](../../canon/books/SulZeme/ZION_ONBOARDING.md).  
+Oasis onboarding: [`canon/books/SulZeme/OASIS_ONBOARDING.md`](../../canon/books/SulZeme/OASIS_ONBOARDING.md).
 
 ### 5.1 What is ZION in 30 seconds
 
@@ -319,7 +319,7 @@ CMC submission: https://support.coinmarketcap.com/hc/en-us/requests/new (select 
 | Mainnet genesis | 2026-07-06; public launch postponed (TBD) |
 | Max supply | 144,000,000,000 ZION |
 | Block explorer | https://zionterranova.com/explorer |
-| Whitepaper (EN) | https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md |
+| Whitepaper (EN) | https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/canon/books/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md |
 | GitHub | https://github.com/Zion-TerraNova/v3-Mainnet |
 
 ### 6.3 Pre-Submission Checklist
@@ -411,7 +411,7 @@ Links
 
 Website:    https://zionterranova.com
 Explorer:   https://zionterranova.com/explorer
-Whitepaper: https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md
+Whitepaper: https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/canon/books/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md
 GitHub:     https://github.com/Zion-TerraNova/v3-Mainnet
 Discord:    https://discord.gg/wvxJ7DhZ8
 Telegram:   https://t.me/zionterranova
@@ -461,9 +461,9 @@ The network is in Mainnet Beta and may contain bugs. This is not financial advic
 
 ### Whitepapers
 
-- [`docs/WP-Mainet/ZION_Technical_Whitepaper_v3.1_EN.md`](../WP-Mainet/ZION_Technical_Whitepaper_v3.1_EN.md)
-- [`docs/WP-Mainet/ZION_MASTER_WHITEPAPER_3.1_EN.md`](../WP-Mainet/ZION_MASTER_WHITEPAPER_3.1_EN.md)
-- [`docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`](../WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md)
+- [`canon/books/ZION_Technical_Whitepaper_v3.1_EN.md`](../../canon/books/ZION_Technical_Whitepaper_v3.1_EN.md)
+- [`canon/books/ZION_MASTER_WHITEPAPER_3.1_EN.md`](../../canon/books/ZION_MASTER_WHITEPAPER_3.1_EN.md)
+- [`canon/books/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`](../../canon/books/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md)
 
 ---
 
@@ -500,9 +500,9 @@ The network is in Mainnet Beta and may contain bugs. This is not financial advic
 - Technical plan: [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)
 - Live status: [`StatusV3.md`](StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
 - 3.1 plan archive: [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](../3.1/PLAN_TO_3.1_RECONCILED.md)
-- Marketing kit: [`docs/WP-Mainet/marketing/MARKETING_PR_LITE_EN.md`](../WP-Mainet/marketing/MARKETING_PR_LITE_EN.md)
-- Onboarding: [`docs/WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md`](../WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md)
-- Oasis onboarding: [`docs/WP-Mainet/SulZeme/OASIS_ONBOARDING.md`](../WP-Mainet/SulZeme/OASIS_ONBOARDING.md)
+- Marketing kit: [`canon/books/marketing/MARKETING_PR_LITE_EN.md`](../../canon/books/marketing/MARKETING_PR_LITE_EN.md)
+- Onboarding: [`canon/books/SulZeme/ZION_ONBOARDING_EN.md`](../../canon/books/SulZeme/ZION_ONBOARDING_EN.md)
+- Oasis onboarding: [`canon/books/SulZeme/OASIS_ONBOARDING.md`](../../canon/books/SulZeme/OASIS_ONBOARDING.md)
 - CoinGecko: [`docs/listings/COINGECKO.md`](../listings/COINGECKO.md)
 - CoinMarketCap: [`docs/listings/COINMARKETCAP.md`](../listings/COINMARKETCAP.md)
 - Bitcointalk ANN: [`docs/3.0.5/archive-root-md/BITCOINTALK_ANNOUNCEMENT.md`](../3.0.5/archive-root-md/BITCOINTALK_ANNOUNCEMENT.md)

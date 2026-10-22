@@ -120,7 +120,7 @@ Orbitální stanice Issobella má tři segmenty: vesmírný (HORIZONT 2040+), u�
 
 - [`README.md`](README.md) — index L6data
 - [`Architektura.md`](Architektura.md) — vesmírný segment stanice
-- [`../docs/WP-Mainet/Issobella/11-Pozemni-Uzel-Kostarika.md`](../docs/WP-Mainet/Issobella/11-Pozemni-Uzel-Kostarika.md) — narativní kapitola Knihy Nebe
+- [`../canon/books/Issobella/11-Pozemni-Uzel-Kostarika.md`](../canon/books/Issobella/11-Pozemni-Uzel-Kostarika.md) — narativní kapitola Knihy Nebe
 - [`../docs/TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md`](../docs/TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md) — sdílený L5 pozemek
 
 > *„Izotropní krása potřebuje konkrétní bod, ze kterého se dívá."*

@@ -35,7 +35,7 @@ on-chain infrastruktura (`zion-dao` na Edge) a tato textová sbírka.
 
 Kanonické reference v repozitáři:
 - `docs/TerraNova/06-L5-SVOBODA.md` §6.6 — Zlatá republika, 8 principů
-- `docs/WP-Mainet/BodhiGaia/10-Golden-Republic-Bohemia.md` — kapitola Bohemia
+- `canon/books/BodhiGaia/10-Golden-Republic-Bohemia.md` — kapitola Bohemia
 - `docs/ZION_CODEX_BODHISATTVA.md` — sliby a patroni domén
 - `docs/3.0.4/AI_NATIVE_VOW.md` — slib AI Guardiana
 - `archive/V3/L5/docs/GOVERNANCE/*` — multi-layer DAO, community framework, admission

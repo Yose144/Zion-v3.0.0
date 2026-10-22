@@ -33,7 +33,7 @@ Tato kapitola shrnuje na jedno místo etické mantinely, které se jinak objevuj
 
 - ZION, jako žádná jiná kryptoměna, **nezaručuje výnos, ochranu před ztrátou hodnoty ani budoucí cenu.**
 - Vlastní správa privátních klíčů znamená svobodu i odpovědnost — ztracený klíč nemusí být možné obnovit.
-- Pokud se veřejná komunikace o ZIONu jednou stane součástí nabídky kryptoaktiva v Evropské unii, musí být zjevně označená jako marketingová, férová, jasná a neklamavá, v souladu s čl. 7 nařízení **MiCA** (Markets in Crypto-Assets) — stejný požadavek, který si `docs/WP-Mainet/marketing/ROAD_TO_ZION_CZ.md` už dřív uložil pro celou sérii Road to Zion. `NirvanaCloud` je psán jako **pozvání k ověření**, ne jako pobídka ke koupi.
+- Pokud se veřejná komunikace o ZIONu jednou stane součástí nabídky kryptoaktiva v Evropské unii, musí být zjevně označená jako marketingová, férová, jasná a neklamavá, v souladu s čl. 7 nařízení **MiCA** (Markets in Crypto-Assets) — stejný požadavek, který si `canon/books/marketing/ROAD_TO_ZION_CZ.md` už dřív uložil pro celou sérii Road to Zion. `NirvanaCloud` je psán jako **pozvání k ověření**, ne jako pobídka ke koupi.
 
 ---
 

@@ -1,6 +1,6 @@
 # MAITREYA — Kniha Pátá · index
 
-> **Status: lite verze / mockup.** Plné kapitoly se píší v repozitáři (`docs/WP-Mainet/Maitreya/`).
+> **Status: lite verze / mockup.** Plné kapitoly se píší v repozitáři (`canon/books/Maitreya/`).
 
 ## Co číst
 

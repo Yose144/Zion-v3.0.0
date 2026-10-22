@@ -102,7 +102,7 @@ This 89/5/5/1 split is hardcoded in consensus and cannot be altered by governanc
 | Website | https://zionterranova.com |
 | Block explorer | https://zionterranova.com/explorer |
 | Whitepaper (EN) | https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/V3/docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md |
-| Whitepaper (CZ) | https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md |
+| Whitepaper (CZ) | https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/canon/books/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md |
 | Source code / GitHub | https://github.com/Zion-TerraNova/v3-Mainnet |
 | Announcement / blog | https://zionterranova.com/blog (TBD) |
 | Discord | https://discord.gg/wvxJ7DhZ8 |

@@ -1,7 +1,7 @@
 # MAITREYA — Kniha Pátá
 
 > **Lite verze · mockup draft.** Zhuštěný průchod celou knihou — každá kapitola jako esence.
-> Plné texty se píší v `docs/WP-Mainet/Maitreya/`. Toto je ochutnávka oblouku, ne finální text.
+> Plné texty se píší v `canon/books/Maitreya/`. Toto je ochutnávka oblouku, ne finální text.
 
 ---
 
@@ -100,5 +100,5 @@ Sestra u iluminátoru stanice svého jména — Issobelly. Pod ní flotila, za n
 
 ---
 
-> **Status:** první draft. Plné kapitoly: `docs/WP-Mainet/Maitreya/`. EN verze: `/docs/en/books/maitreya/MAITREYA-LITE.md`.
+> **Status:** první draft. Plné kapitoly: `canon/books/Maitreya/`. EN verze: `/docs/en/books/maitreya/MAITREYA-LITE.md`.
 > **Hranice:** postavy jsou archetypy veřejného kanonu — literární inspirace, ne teologický nárok.

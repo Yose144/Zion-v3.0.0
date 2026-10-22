@@ -129,7 +129,7 @@ Zjevení je v této knize **mapa**, ne **předpověď**:
 Tato kniha je **DRAFT**. Návrh na zařazení do korpusu:
 
 1. **Třída revize:** E (kulturní/komunikační) — narativní dokument, žádné custody, žádné prostředky, žádná governance. Pokud by se objevily nároky na fondy/klíče/governance → eskalovat na C.
-2. **Umístění:** `docs/WP-Mainet/Miriam/` jako šestá kniha sekvence — po `Lumi`, před budoucími; v `docs/WP-Mainet/README.md` přidat jako `DRAFT / HORIZONT` narativní vstup, ne jako kanonický stav.
+2. **Umístění:** `canon/books/Miriam/` jako šestá kniha sekvence — po `Lumi`, před budoucími; v `canon/books/README.md` přidat jako `DRAFT / HORIZONT` narativní vstup, ne jako kanonický stav.
 3. **Registr důkazů:** do `MiseAmenti/07-Registr-Dukazu.md` navrhuji přidat řádek: *„Miriam — Kniha Růže: narativní kniha; listiny a tradice označené kámen/hlína/sen; žádný provozní nárok"* — typ `Příběh`, stav `DRAFT`.
 4. **Kontroly před kanonizací:** (a) konzistence odkazů, (b) revize historických tvrzení proti pramenům, (c) česká jazyková korektura, (d) kulturní citlivost — Miriam jako židovská žena prvního století; romská tradice ctěna jako jejich vlastní; křesťanské texty bez posměchu i bez nároku, (e) žádný finanční ani religiózní tlak.
 5. **Co nesmí být výsledkem:** narativní „fakta" nesmí vstoupit do `StatusV3.md` ani `L2contracts.md`; obrazy zůstávají v knize.

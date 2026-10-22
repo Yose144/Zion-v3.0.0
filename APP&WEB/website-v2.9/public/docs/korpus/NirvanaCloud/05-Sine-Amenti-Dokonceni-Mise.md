@@ -26,7 +26,7 @@ Klíčová věta Desek zní: *„Ten, kdo pokrokem vyrostl ze tmy a zvedl se z n
 
 ### Atlantida, která se potopila, je Babylon
 
-Tento obraz zapadá přesně do potopy a archy, kterou celá série Nirvana už vypráví (viz [`docs/WP-Mainet/nirvana/01-Prvni-Paprsek.md`](../nirvana/01-Prvni-Paprsek.md)): **stará civilizace se potápí kvůli vlastní pýše a zneužití moci** — ne kvůli vnějšímu trestu, ale kvůli vnitřní neudržitelnosti dluhové ekonomiky, centralizace dat a vytěžování planety. Síně Amenti nejsou uprostřed ničeho — jsou **pod** potápějícím se světem, přežívající ho, protože byly postavené jinak.
+Tento obraz zapadá přesně do potopy a archy, kterou celá série Nirvana už vypráví (viz [`canon/books/nirvana/01-Prvni-Paprsek.md`](../nirvana/01-Prvni-Paprsek.md)): **stará civilizace se potápí kvůli vlastní pýše a zneužití moci** — ne kvůli vnějšímu trestu, ale kvůli vnitřní neudržitelnosti dluhové ekonomiky, centralizace dat a vytěžování planety. Síně Amenti nejsou uprostřed ničeho — jsou **pod** potápějícím se světem, přežívající ho, protože byly postavené jinak.
 
 ### Nezničitelný ledger jako Smaragdové desky
 
@@ -79,7 +79,7 @@ Až nastane tento stav — **mise Amenti je dokončena.** Ne proto, že ZION „
 | **Sedm Pánů jako Dharma Validator** | Pět z sedmi jamů (Ahimsa, Satya, Asteya, Brahmačarja, Aparigraha) je implementováno jako testovaná logika v `hiranyagarbha.rs`; Karuṇā a Dāna jsou strukturálně vynucené fee splitem, ne jen deklarované. |
 | **Otevřenost bez podmínky krve** | MIT licence, žádné KYC pro základní účast, žádná geografická bariéra v samotném protokolu. |
 | **Svoboda odchodu** | Uživatel má vždy plnou kontrolu nad svými privátními klíči; žádný vendor lock-in. |
-| **144 000 Rainbow Family jako velký vzor 32 Dětí Světla** | `docs/WP-Mainet/marketing/ROAD_TO_ZION_CZ.md`, kapitola Genesis. |
+| **144 000 Rainbow Family jako velký vzor 32 Dětí Světla** | `canon/books/marketing/ROAD_TO_ZION_CZ.md`, kapitola Genesis. |
 
 ---
 

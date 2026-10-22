@@ -108,10 +108,10 @@ Ne stavba — **vztah a respekt**:
 
 - `L5MariaDelCamino.md` §4 — Velká cesta: prázdný slot iniciace 8; uzel mimo oceánskou trasu
 - `L5BoaEsperanca.md` — vzor „vision/0" vztahového uzlu; Kailash = scháziště na suchu, protějšek scháziště na vodě
-- `docs/WP-Mainet/NirvanaCloud/04-Prorocstvi-Digitalni-Sambhaly.md` + `08-Kotva-Pravdy-Eticke-Hranice.md` — Šambhala striktně symbolicky; hranice užití tradice
-- `docs/WP-Mainet/BodhiGaia/` — postava **tesaře** (vyřezává znaky do trámů; mistr u ohně) — zázemí „od tesaře až po Babajiho"
-- `docs/WP-Mainet/Issobella/02-Kvantovy-Ohen.md` — tři povahy ohně (plamen/uhlí/popel), kruh tiskařů pravdy, „oheň nemusí shořet, aby stálo za to ho nést"
-- `docs/WP-Mainet/nirvana/11-Kvantovy-Ohen-Issobella.md` — epizoda, kde se kvantový oheň vznítil jako symbol
+- `canon/books/NirvanaCloud/04-Prorocstvi-Digitalni-Sambhaly.md` + `08-Kotva-Pravdy-Eticke-Hranice.md` — Šambhala striktně symbolicky; hranice užití tradice
+- `canon/books/BodhiGaia/` — postava **tesaře** (vyřezává znaky do trámů; mistr u ohně) — zázemí „od tesaře až po Babajiho"
+- `canon/books/Issobella/02-Kvantovy-Ohen.md` — tři povahy ohně (plamen/uhlí/popel), kruh tiskařů pravdy, „oheň nemusí shořet, aby stálo za to ho nést"
+- `canon/books/nirvana/11-Kvantovy-Ohen-Issobella.md` — epizoda, kde se kvantový oheň vznítil jako symbol
 - `docs/QUANTUM_REVOLUTION.md` — digest publikované knihy (10 polen/kapitol, prolog+epilog na Kailáše); samotná kniha `APP&WEB/public_html/V2/books/QuantumRevolution{CZ,_EN,…}.pdf` — prolog „Místo nad světem"/„Kruh u věčného ohně", epilog „Jiný oheň"/„Tvé jedenácté poleno"/„144 000 ohňů"
 - `docs/docs2.9/books/quantum-revolution/BOOK_CONTEXT.md` — Kvantová revoluce jako lyrický překlad technické osy projektu
 - `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/73_MILAREPA.md` — avatar #73, jeskyně Tisé (Kailáš)

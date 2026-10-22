@@ -124,7 +124,7 @@ The `notify_oasis_block_mined` function shells out to `curl` for a fire-and-forg
 
 ## 8. INFO: Whitepaper Factual Accuracy
 
-The canonical whitepapers (`docs/WP-Mainet/ZION_TerraNova_Whitepaper_v3.0.md` and `v3.0_CZ.md`) correctly reference `V3/L1/core/src/emission.rs` for the fee split. **However**, the whitepapers state the split is "hardcoded in `emission.rs`", which is accurate for the on-chain constants, but the *pool enforcement* of the split relies on the duplicated constants in `revenue.rs` and `pplns.rs`. This distinction should be clarified in a footnote to avoid giving readers a false sense of single-source enforcement.
+The canonical whitepapers (`canon/books/ZION_TerraNova_Whitepaper_v3.0.md` and `v3.0_CZ.md`) correctly reference `V3/L1/core/src/emission.rs` for the fee split. **However**, the whitepapers state the split is "hardcoded in `emission.rs`", which is accurate for the on-chain constants, but the *pool enforcement* of the split relies on the duplicated constants in `revenue.rs` and `pplns.rs`. This distinction should be clarified in a footnote to avoid giving readers a false sense of single-source enforcement.
 
 ---
 

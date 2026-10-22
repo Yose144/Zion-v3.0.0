@@ -591,7 +591,7 @@ Z veřejně schválené podoby převést bránu, lucernu a charakter Lumi do mal
 - [Projekt New Earth — počátek portugalské cesty](../../APP&WEB/IntroPage/public/legacy/blog/full/projekt-new-earth.html).
 - [Hledání Nové Země — pokračování cesty a osobní přelom](../../APP&WEB/IntroPage/public/legacy/blog/full/finding-new-earth.html).
 - [Příběh Růže — osobní blogový text, identita růže není v návrhu potvrzena](../../APP&WEB/IntroPage/public/legacy/blog/full/pribeh-ruze.html).
-- [Kniha Nebe — narativní souvislost, nikoli důkaz realizované stanice](../../docs/WP-Mainet/Issobella/00-README.md).
+- [Kniha Nebe — narativní souvislost, nikoli důkaz realizované stanice](../../canon/books/Issobella/00-README.md).
 - [Výzkumné podklady L6](../README.md).
 
 ### Filmové reference

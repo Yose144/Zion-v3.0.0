@@ -157,7 +157,7 @@ ZION is open-source, experimental technology released under the MIT license. It 
 - **Genesis block:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 - **RPC supply endpoint:** `curl -X POST https://rpc.zionterranova.com:8443/jsonrpc -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"getSupply","params":{}}'`
 - **Whitepaper (canonical v3.0.5 EN):** `V3/docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md`
-- **Whitepaper (canonical v3.0.5 CZ):** `docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`
+- **Whitepaper (canonical v3.0.5 CZ):** `canon/books/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`
 - **Status doc:** `StatusV3.md`
 - **Roadmap:** `V3/ROADMAP.md`
 - **Contract verification:** All 7 Base contracts verified on Basescan (see `docs/3.0.4/BASESCAN_VERIFY_REPORT.md`)

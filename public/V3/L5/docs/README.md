@@ -163,7 +163,7 @@ To update an existing community:
 
 A unified narrative + technical series that mirrors this directory and adds a full L5 truth anchor (status of every claim, discrepancies to fix, evidence registry) is maintained at:
 
-→ [`docs/WP-Mainet/BodhiGaia/00-README.md`](../../../../docs/WP-Mainet/BodhiGaia/00-README.md) (CZ, 13 chapters + EN index)
+→ [`canon/books/BodhiGaia/00-README.md`](../../../../canon/books/BodhiGaia/00-README.md) (CZ, 13 chapters + EN index)
 
 The series is **DRAFT** pending technical, security, factual and cultural review per `MiseAmenti/08-Protokol-Zmen.md` §2 (class E + C). It does not supersede this engineering directory; it provides the narrative bridge and the public-facing truth ledger for L5.
 

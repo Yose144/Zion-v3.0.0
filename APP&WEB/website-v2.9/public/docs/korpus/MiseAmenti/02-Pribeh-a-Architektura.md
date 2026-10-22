@@ -20,11 +20,11 @@ ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z j
 | **Onboarding** | *Jak vstoupím bezpečně?* | Dává novému člověku postup: nejdřív pozorovat, ptát se, ověřit, až pak volit účast. | Explorer, lokální peněženka, node/miner, dokumentace a nápověda v kontextu. |
 | **Nirvana a NirvanaCloud** | *Kam směřujeme, když nestavíme jen na příští kvartál?* | Představuje horizont Terra Nova, bardo změny, Šambhalu a Amenti jako obrazy dlouhé odpovědnosti. | Horizont L1–L6 a 2026–2126; nikdy release claim. |
 | **Mise Amenti** | *Jak to vše držíme pohromadě přes generace?* | Převádí příběh na měřitelné závazky pravdy, svobody, péče, odolnosti a předání dál. | Tento corpus, evidence registr, release gates, bezpečnost a změnový protokol. |
-| **Bodhi Gaia / Kniha Země** | *Jak se L5 dotkne hlíny?* | Sjednocuje tři fyzické zahrady L5 (Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora), protokoly Země a úplný registr pravdy L5. | `docs/WP-Mainet/BodhiGaia/` (DRAFT); zrcadlí `public/V3/L5/docs/`, web `/terranova/*`, OASIS `WorldPanel`/`worlds.ts`. |
-| **Lumi / Cesta domů** | *Jak se všechny brány stanou jednou cestou?* | Sjednocuje Nirvanu, Knihu Země a Knihu Nebe do příběhu jednoho dítěte s lucernou, které prochází L1–L6 a stoletým horizontem; každá kapitola ukazuje zjevenou budoucnost i skutečný dnešek. | `docs/WP-Mainet/Lumi/` (DRAFT); navazuje na onboarding, `BodhiGaia/09`, `Issobella/10`, `07-Registr-Dukazu.md`. |
-| **Miriam / Kniha Růže** | *Kdo nese příběh skrze čas — a jak se pozná, co v něm je pravda?* | Vodoravná osa korpusu: svědek, paměť a linie od jezera ke zahradě; mechanismus „kámen / hlína / sen" učí čtenáře rozlišovat listinu, tradici a mýtus — včetně pojmenování prokázaných podvrhů. | `docs/WP-Mainet/Miriam/` (DRAFT); navazuje na `Lumi/`, `SulZeme/`, `07-Registr-Dukazu.md` §6 pravidlo 6. |
+| **Bodhi Gaia / Kniha Země** | *Jak se L5 dotkne hlíny?* | Sjednocuje tři fyzické zahrady L5 (Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora), protokoly Země a úplný registr pravdy L5. | `canon/books/BodhiGaia/` (DRAFT); zrcadlí `public/V3/L5/docs/`, web `/terranova/*`, OASIS `WorldPanel`/`worlds.ts`. |
+| **Lumi / Cesta domů** | *Jak se všechny brány stanou jednou cestou?* | Sjednocuje Nirvanu, Knihu Země a Knihu Nebe do příběhu jednoho dítěte s lucernou, které prochází L1–L6 a stoletým horizontem; každá kapitola ukazuje zjevenou budoucnost i skutečný dnešek. | `canon/books/Lumi/` (DRAFT); navazuje na onboarding, `BodhiGaia/09`, `Issobella/10`, `07-Registr-Dukazu.md`. |
+| **Miriam / Kniha Růže** | *Kdo nese příběh skrze čas — a jak se pozná, co v něm je pravda?* | Vodoravná osa korpusu: svědek, paměť a linie od jezera ke zahradě; mechanismus „kámen / hlína / sen" učí čtenáře rozlišovat listinu, tradici a mýtus — včetně pojmenování prokázaných podvrhů. | `canon/books/Miriam/` (DRAFT); navazuje na `Lumi/`, `SulZeme/`, `07-Registr-Dukazu.md` §6 pravidlo 6. |
 
-**Příběh Růže není dvanáctá brána.** Malá kniha [`docs/WP-Mainet/Ruze/`](../Ruze/00-README.md) (*Příběh Růže — Co nelze vlastnit*, DRAFT) je zahrada v průsečíku dvou os: vodoravné Miriam (paměť, čas) a svislé Lumi (světlo, vrstvy). Vypráví o vztahu dítěte s lucernou a růže u řeky — péči bez vlastnění, hranici místo odmítnutí a vodě, která není zbožím. Nemá technologický protějšek, nepřidává vrstvu ani nárok a celý její děj je MÝTUS; proto zde nemá řádek v tabulce bran. OASIS jej zrcadlí výslovně jako MÝTUS (Rose lore ve světě `GENESIS_GARDEN` — existence zdrojového řádku je repozitářový fakt, nová klientská metadata jsou STAVBA do deploy) a návrh fyzického pilotu `GENESIS-ROSE-001` je HORIZONT / NEZAHÁJENO — ani jedno z toho nevytváří technologický protějšek ani novou bránu.
+**Příběh Růže není dvanáctá brána.** Malá kniha [`canon/books/Ruze/`](../Ruze/00-README.md) (*Příběh Růže — Co nelze vlastnit*, DRAFT) je zahrada v průsečíku dvou os: vodoravné Miriam (paměť, čas) a svislé Lumi (světlo, vrstvy). Vypráví o vztahu dítěte s lucernou a růže u řeky — péči bez vlastnění, hranici místo odmítnutí a vodě, která není zbožím. Nemá technologický protějšek, nepřidává vrstvu ani nárok a celý její děj je MÝTUS; proto zde nemá řádek v tabulce bran. OASIS jej zrcadlí výslovně jako MÝTUS (Rose lore ve světě `GENESIS_GARDEN` — existence zdrojového řádku je repozitářový fakt, nová klientská metadata jsou STAVBA do deploy) a návrh fyzického pilotu `GENESIS-ROSE-001` je HORIZONT / NEZAHÁJENO — ani jedno z toho nevytváří technologický protějšek ani novou bránu.
 
 ---
 
@@ -86,11 +86,11 @@ Kanonická cesta z [`ZION — Nová civilizace`](../SulZeme/08-ZION-Nova-Civiliz
 
 ### Nirvana — západní horizont
 
-[`docs/WP-Mainet/nirvana/`](../nirvana/00-README.md) je kniha cesty od paprsku Lumi přes Ararat a dům až ke globálnímu horizontu. Jejím úkolem je odpovědět na otázku: **„Jak vypadá svět, který stojí za dlouhodobé stavění?“**
+[`canon/books/nirvana/`](../nirvana/00-README.md) je kniha cesty od paprsku Lumi přes Ararat a dům až ke globálnímu horizontu. Jejím úkolem je odpovědět na otázku: **„Jak vypadá svět, který stojí za dlouhodobé stavění?“**
 
 ### NirvanaCloud — hluboká mapa stavů
 
-[`docs/WP-Mainet/NirvanaCloud/`](../NirvanaCloud/00-README.md) přidává Bhavačakru, pět Buddhů moudrosti, Bardo Thödol, Šambhalu a Síně Amenti jako **mapy stavů a přechodů**, ne jako doktrínu ani historickou autoritu.
+[`canon/books/NirvanaCloud/`](../NirvanaCloud/00-README.md) přidává Bhavačakru, pět Buddhů moudrosti, Bardo Thödol, Šambhalu a Síně Amenti jako **mapy stavů a přechodů**, ne jako doktrínu ani historickou autoritu.
 
 Následující je kanonické rozlišení:
 

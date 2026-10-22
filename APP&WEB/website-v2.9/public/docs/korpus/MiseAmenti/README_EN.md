@@ -39,7 +39,7 @@ Source documents remain in their original locations to prevent stale copies. Mis
 | 3 | [`03-Zivy-Zaklad-3.3.md`](./03-Zivy-Zaklad-3.3.md) and [`07-Registr-Dukazu.md`](./07-Registr-Dukazu.md) | Curated representation of 3.3's actual baseline and evidence |
 | 4 | [`04-Exekucni-Charta-3.3.md`](./04-Exekucni-Charta-3.3.md) | What may be called active work, target, or release gate |
 | 5 | [`../V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) | Technical predecessor and detailed working material for 3.3 |
-| 6 | `docs/WP-Mainet/` whitepapers, onboarding, Salt of the Earth, Nirvana, and NirvanaCloud | Explanation, public invitation, story, and inspiration |
+| 6 | `canon/books/` whitepapers, onboarding, Salt of the Earth, Nirvana, and NirvanaCloud | Explanation, public invitation, story, and inspiration |
 
 **Code and operations always win over this corpus.** A contradiction is a documentation defect to correct, not a spiritual or political dispute.
 
@@ -63,7 +63,7 @@ Source documents remain in their original locations to prevent stale copies. Mis
 | **Observer** | [`01-Kanon-a-Ustava.md`](./01-Kanon-a-Ustava.md) | [`03-Zivy-Zaklad-3.3.md`](./03-Zivy-Zaklad-3.3.md), public onboarding |
 | **Builder / developer** | [`04-Exekucni-Charta-3.3.md`](./04-Exekucni-Charta-3.3.md) | [`07-Registr-Dukazu.md`](./07-Registr-Dukazu.md), `interní repozitář` |
 | **Operator / security reviewer** | [`05-Autonomie-a-Bezpecnost.md`](./05-Autonomie-a-Bezpecnost.md) | `AGENTS.md`, `interní repozitář`, `StatusV3.md` |
-| **Narrative reader** | [`02-Pribeh-a-Architektura.md`](./02-Pribeh-a-Architektura.md) | `docs/WP-Mainet/SulZeme/`, `nirvana/`, `NirvanaCloud/` |
+| **Narrative reader** | [`02-Pribeh-a-Architektura.md`](./02-Pribeh-a-Architektura.md) | `canon/books/SulZeme/`, `nirvana/`, `NirvanaCloud/` |
 | **Generation Z / future community member** | [`06-Generacni-Kompas-2026-2126.md`](./06-Generacni-Kompas-2026-2126.md) | `NirvanaCloud/06` and `NirvanaCloud/07` |
 | **Editor / future canon steward** | [`08-Protokol-Zmen.md`](./08-Protokol-Zmen.md) | [`CHANGELOG.md`](./CHANGELOG.md) |
 

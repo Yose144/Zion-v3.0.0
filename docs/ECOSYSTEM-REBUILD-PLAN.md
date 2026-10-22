@@ -66,7 +66,7 @@ JEDINÉ potřebné tunely po přestavbě:
 │   ├── wallet-sdk/                  ← APP&WEB/zion-wallet-sdk
 │   └── shared/                      ← APP&WEB/shared (+ nový ui kit)
 ├── chain/                           ← V31/ (L1–L6; interní jména v kódu zůstávají)
-├── canon/                           ← docs/WP-Mainet/ (knihy)
+├── canon/                           ← canon/books/ (knihy)
 ├── docs/                            dev docs, plány, inventář
 ├── infra/                           kanonizovaná infrastruktura
 │   ├── nginx/                       vhost per doména (jediný zdroj pravdy)

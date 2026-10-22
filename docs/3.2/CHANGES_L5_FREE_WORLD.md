@@ -68,7 +68,7 @@ Sloty 4 (Level-Up Bonuses) a 5 (Reserve) byly přepsány na L5 Free World Projec
 - `docs/PREMINE_ADDRESSES_PUBLIC.txt` — Slot 4/5 labely → L5
 - `docs/3.2/HARD_RESET_PLAYBOOK.md` — aktualizováno
 - `docs/GENESIS_REGENERATION_RUNBOOK.md` — aktualizováno
-- `docs/WP-Mainet/*.md` — 17 whitepaper a marketing souborů aktualizováno (CZ + EN)
+- `canon/books/*.md` — 17 whitepaper a marketing souborů aktualizováno (CZ + EN)
 
 ### Root
 - `AGENTS.md` — OASIS 4,95B reference

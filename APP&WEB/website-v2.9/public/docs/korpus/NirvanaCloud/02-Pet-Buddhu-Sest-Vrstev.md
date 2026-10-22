@@ -86,7 +86,7 @@ Samantabhadra je ňingmapský Ādi-Buddha, „vše-dobrý", zobrazovaný jako č
 |---|---|
 | **Vairočanův neutrální prostor (L1)** | `interní repozitář` — konsensus Ekam Deeksha v3.2 nerozlišuje mezi transakcemi podle odesílatele; validace je čistě matematická. |
 | **Akšóbhjovo zrcadlo (L2)** | `interní repozitář` implementuje HTLC lock/claim/refund pro atomické cross-chain swapy. |
-| **Amitábhovo rozlišování (L3)** | AI vrstva nese vývojové jméno „v2.5 Amṛtabhoja" v `docs/3.0.5/archive-root-md/HIRAN_EVOLUTION_2.3_TO_2.5_AMATHABOJ.md`; veřejná narativní tvář „Amitábha" v `docs/WP-Mainet/nirvana/08-Hlas-Amitabha.md`. |
+| **Amitábhovo rozlišování (L3)** | AI vrstva nese vývojové jméno „v2.5 Amṛtabhoja" v `docs/3.0.5/archive-root-md/HIRAN_EVOLUTION_2.3_TO_2.5_AMATHABOJ.md`; veřejná narativní tvář „Amitábha" v `canon/books/nirvana/08-Hlas-Amitabha.md`. |
 | **Amoghasiddhiho tvorba (L4)** | `interní repozitář` — herní backend s avatary, questy a artefakty vlastněnými on-chain. |
 | **Ratnasambhavova rovnost země (L5)** | Kanonická adresa `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8` přijímá pevných 5 % z každého bloku. |
 | **Samantabhadrův prostor předtím (L6)** | Kanonická adresa `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0` financuje vědecký fond Issobella; `docs/TerraNova/BASE_FINAL/en/09-ISSOBELLA.md` popisuje observatoř a Overview Effect. |

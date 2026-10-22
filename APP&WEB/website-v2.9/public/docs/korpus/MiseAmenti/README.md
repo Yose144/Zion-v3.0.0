@@ -39,7 +39,7 @@ To neznamená, že se sem kopíruje celý repozitář. Naopak: **zdrojové dokum
 | 3 | [`03-Zivy-Zaklad-3.3.md`](./03-Zivy-Zaklad-3.3.md) a [`07-Registr-Dukazu.md`](./07-Registr-Dukazu.md) | Kurátorovaný obraz skutečného stavu 3.3 a podkladů |
 | 4 | [`04-Exekucni-Charta-3.3.md`](./04-Exekucni-Charta-3.3.md) | Co se smí označit jako aktivní práce, cíl nebo release gate |
 | 5 | [`../V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) | Technický předchůdce a detailní pracovní materiál pro 3.3 |
-| 6 | `docs/WP-Mainet/` — whitepapery, onboarding, Sůl Země, Nirvana a NirvanaCloud | Výklad, veřejné pozvání, příběh a inspirace |
+| 6 | `canon/books/` — whitepapery, onboarding, Sůl Země, Nirvana a NirvanaCloud | Výklad, veřejné pozvání, příběh a inspirace |
 
 **Kód a provoz vždy vítězí nad tímto corpus.** Pokud je zde rozpor, je to dokumentační chyba, kterou je třeba opravit — ne duchovní či politický spor.
 
@@ -63,7 +63,7 @@ To neznamená, že se sem kopíruje celý repozitář. Naopak: **zdrojové dokum
 | **Pozorovatel** | [`01-Kanon-a-Ustava.md`](./01-Kanon-a-Ustava.md) | [`03-Zivy-Zaklad-3.3.md`](./03-Zivy-Zaklad-3.3.md), veřejný onboarding |
 | **Stavitel / vývojář** | [`04-Exekucni-Charta-3.3.md`](./04-Exekucni-Charta-3.3.md) | [`07-Registr-Dukazu.md`](./07-Registr-Dukazu.md), `interní repozitář` |
 | **Operátor / bezpečnostní reviewer** | [`05-Autonomie-a-Bezpecnost.md`](./05-Autonomie-a-Bezpecnost.md) | `AGENTS.md`, `interní repozitář`, `StatusV3.md` |
-| **Čtenář příběhu** | [`02-Pribeh-a-Architektura.md`](./02-Pribeh-a-Architektura.md) | `docs/WP-Mainet/SulZeme/`, `nirvana/`, `NirvanaCloud/` |
+| **Čtenář příběhu** | [`02-Pribeh-a-Architektura.md`](./02-Pribeh-a-Architektura.md) | `canon/books/SulZeme/`, `nirvana/`, `NirvanaCloud/` |
 | **Člověk z Generace Z / budoucí komunity** | [`06-Generacni-Kompas-2026-2126.md`](./06-Generacni-Kompas-2026-2126.md) | `NirvanaCloud/06` a `NirvanaCloud/07` |
 | **Editor či budoucí správce canonu** | [`08-Protokol-Zmen.md`](./08-Protokol-Zmen.md) | [`CHANGELOG.md`](./CHANGELOG.md) |
 

@@ -195,7 +195,7 @@ Původní N1–N6 z Master Planu přeuspořádané podle skutečné připravenos
 | `docs/3.2/ZIS_INTEGRATION_PLAN.md` + `ZIS_WALLET_PLAN.md` | identita |
 | `docs/3.2/L5_L6_ACTIVATION_PLAN.md` | L5/L6 run-mód (passive trackers → tento plán je rozšiřuje) |
 | `docs/3.2/EXTERNAL_AUDIT_SCOPE.md` | audit scope draft v2.0 |
-| `docs/WP-Mainet/nirvana/` + `NirvanaCloud/` | narativní korpus (kniha Nirvana, stoletý plán) |
+| `canon/books/nirvana/` + `NirvanaCloud/` | narativní korpus (kniha Nirvana, stoletý plán) |
 | `APP&WEB/website-v2.9/src/lib/nirvana-roadmap.ts` | **kanonické veřejné workstreamy** — public copy se nesmí rozcházet |
 | `docs/3.2/REPORTS/INTERNAL_AUDIT_2026-10-05.md` | interní audit IA-01..22 |
 | Starší `docs/**/ROADMAP*.md` (~80 souborů) | historické — pouze reference, nekonzultovat pro execution |

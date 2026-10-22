@@ -1,7 +1,7 @@
 # MAITREYA — Book Five
 
 > **Lite version · mockup draft.** A condensed walk through the whole book — each chapter as essence.
-> Full texts are being written in `docs/WP-Mainet/Maitreya/` (Czech). This is a taste of the arc, not the final text.
+> Full texts are being written in `canon/books/Maitreya/` (Czech). This is a taste of the arc, not the final text.
 
 ---
 
@@ -100,5 +100,5 @@ A sister at the porthole of the station bearing her name — Issobella. Below he
 
 ---
 
-> **Status:** first draft lite. Full chapters: `docs/WP-Mainet/Maitreya/` (Czech). This EN version is a translation of the lite edition.
+> **Status:** first draft lite. Full chapters: `canon/books/Maitreya/` (Czech). This EN version is a translation of the lite edition.
 > **Boundary:** the figures are archetypes of the public canon — literary inspiration, not a theological claim.

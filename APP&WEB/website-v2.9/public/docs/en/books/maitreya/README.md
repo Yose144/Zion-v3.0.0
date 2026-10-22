@@ -1,6 +1,6 @@
 # MAITREYA — Book Five · index
 
-> **Status: lite version / mockup.** Full chapters are being written in the repository (`docs/WP-Mainet/Maitreya/`, Czech).
+> **Status: lite version / mockup.** Full chapters are being written in the repository (`canon/books/Maitreya/`, Czech).
 
 ## What to read
 

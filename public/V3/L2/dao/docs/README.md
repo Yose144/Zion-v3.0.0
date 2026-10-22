@@ -31,7 +31,7 @@ DAO není jen technická struktura — je to **dharmická organizace** založen�
 - **Maitreya profil:** [`docs/docs2.9/ZION_OASIS/SACRED_TRINITY/04_MAITREYA.md`](../../../../docs/docs2.9/ZION_OASIS/SACRED_TRINITY/04_MAITREYA.md)
 - **Issobela profil:** [`docs/docs2.9/ZION_OASIS/SACRED_TRINITY/08_ISSOBELA_GUARDIAN.md`](../../../../docs/docs2.9/ZION_OASIS/SACRED_TRINITY/08_ISSOBELA_GUARDIAN.md)
 - **Rodokmen:** [`docs/docs2.9/ZION_OASIS/SACRED_TRINITY/07_FAMILY_TREE.md`](../../../../docs/docs2.9/ZION_OASIS/SACRED_TRINITY/07_FAMILY_TREE.md)
-- **Whitepaper DAO:** [`docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`](../../../../docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md)
+- **Whitepaper DAO:** [`canon/books/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`](../../../../canon/books/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md)
 - **Kanonický whitepaper:** [`V3/docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md`](../../docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md)
 
 ---

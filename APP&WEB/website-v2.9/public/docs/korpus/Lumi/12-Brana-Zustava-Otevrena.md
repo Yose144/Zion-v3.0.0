@@ -108,7 +108,7 @@ Nikdo neodpověděl. Nebylo to potřeba. Brána zůstala otevřená.
 | Co ZION neslibuje: zbohatnutí přes noc · garance ceny · hotová AAA hra · pasivní zisk bez práce · náboženské tvrzení | **ŽIVÉ** (závazek) | `ZION_ONBOARDING_PUBLIC_CZ.md` §7 | — |
 | Čtvrté dveře: přeložit workspace, spustit testy, otevřít issue/PR, přinést dovednost | **ŽIVÉ** (cesta) | `ZION_ONBOARDING_PUBLIC_CZ.md` §4 „Stavitel" | — |
 | Vstup do fyzických komunit L5 bez KYC: čtyři brány, děti do 18 zdarma, žádná zkouška víry | **HORIZONT** (rámec) | `BodhiGaia/08`; `public/V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md`; `MiseAmenti/05` §4 | praxe; nikdy jako nástroj vyloučení |
-| Kanonický onboarding je vstupní bod celého korpusu | **ŽIVÉ** (rozhodnutí indexu) | `docs/WP-Mainet/README.md` (Kanonické dokumenty) | — |
+| Kanonický onboarding je vstupní bod celého korpusu | **ŽIVÉ** (rozhodnutí indexu) | `canon/books/README.md` (Kanonické dokumenty) | — |
 | Nováček s batohem, čtyři dveře v prachu, kniha s prázdnou stránkou, otázka Elizabeth | **MÝTUS** | tato kniha; `ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md` §6 (otázka Elizabeth) | — |
 
 ---

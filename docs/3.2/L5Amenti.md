@@ -109,7 +109,7 @@ Ne stavba — **vztah a respekt**:
 
 - `L5MariaDelCamino.md` §4 — Velká cesta: iniciace 12 jako capstone mimo oceánskou posloupnost; Alexandria jako možný středomořský leg
 - `L5BoaEsperanca.md`, `L5Kailash.md` — vzor „vision/0" vztahového uzlu; Amenti = síně, kterou síť uzavírá
-- `docs/WP-Mainet/NirvanaCloud/05-Sine-Amenti-Dokonceni-Mise.md` — kanonická Amenti kapitola: Desky, 32 Dětí, 7 Pánů = 7 ctností, dokončení mise, Kotva pravdy
+- `canon/books/NirvanaCloud/05-Sine-Amenti-Dokonceni-Mise.md` — kanonická Amenti kapitola: Desky, 32 Dětí, 7 Pánů = 7 ctností, dokončení mise, Kotva pravdy
 - `docs/docs2.9/books/quantum-revolution/BOOK_CONTEXT.md` + `docs/QUANTUM_REVOLUTION.md` — Smaragdové desky jako kořen #1 Stromu života („jak nahoře, tak dole" = zrcadlová struktura blockchainu)
 - `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/194_THOTH_SCRIBE.md` — avatar #194 Merkle písař
 - `docs/TerraNova/ancient-egypt/01-RAMEC-A-ETIKA.md` + `02-PRAMENY-A-KOSMOLOGIE.md` — egyptologická etika: akademický rámec primární, žádné „Atlantida=Egypt", hieroglyfy jen s kontrolou významu

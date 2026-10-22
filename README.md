@@ -18,7 +18,7 @@
 - **Active mainnet track:** `V31/` workspace — verze `3.2.0`, protokol `zion-v3-node/3.1.0-alpha`. V31 cutover (2026-08-04) dokončen, V3 archivován v `archive/V3/`.
 - **Chain:** ~90 400+ bloků, difficulty ~16k (LWMA-60, `MIN_SOLVE_TIME=6`, `MAX_SOLVE_TIME=360`, ±50 % clamp na blok). Genesis hash (V31 native): `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` · (V3 compat): `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`.
 - **Public RPC:** `rpc.zionterranova.com:8443` → V31 (přes edge nginx). **Pool stratum:** `pool.zionterranova.com:8444` (+ TLS 8445), `https://pool.zionterranova.com/public/v1` public API tier.
-- **V3.2 "One Love" canonical docs:** Public whitepapers a onboarding (CZ/EN) jsou kanonizované v [`docs/WP-Mainet/`](docs/WP-Mainet/README.md); launch plán [`OneLoveV3.2.md`](docs/3.2/OneLoveV3.2.md), technický execution plán [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md).
+- **V3.2 "One Love" canonical docs:** Public whitepapers a onboarding (CZ/EN) jsou kanonizované v [`canon/books/`](canon/books/README.md); launch plán [`OneLoveV3.2.md`](docs/3.2/OneLoveV3.2.md), technický execution plán [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md).
 - **V3.3 "NIRVANA" execution:** stav a jednotlivé gate jsou v [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md). Důležité otevřené blokátory: nové schválené 30denní G8 okno, externí bezpečnostní audit a rozhodnutí o vydání v3.2.0. **BTC swap zůstává vypnutý** (`WARP_BTC_SWAP_ENABLED=0`) do dokončení hardeningu, auditu a výslovného schválení pilotu; **PRL payout zůstává v dry-run** (`PRL_PAYOUT_DRY_RUN=1`) a vyžaduje kontrolu dávky i operátorský souhlas. Stav UI či hotový kód samy o sobě tyto provozní gate neuzavírají.
 - **ZIS Multichain Wallet:** ZIS → L2 multichain → Uniswap V3 architektura v [`docs/3.2/ZIS_WALLET_PLAN.md`](docs/3.2/ZIS_WALLET_PLAN.md). (Původní [`ZionDexZis.md`](docs/3.2/ZionDexZis.md) plán je superseded — historický.)
 - **Hard genesis reset (2026-08-06):** kompletní rotace klíčů — nové premine, canonical, admin, DAO guardian a EVM validator klíče. Viz [`HARD_RESET_PLAYBOOK.md`](docs/3.2/HARD_RESET_PLAYBOOK.md).
@@ -36,7 +36,7 @@
 | **V31 operational rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
 | **3.2 "One Love" launch & marketing plan** | [`OneLoveV3.2.md`](docs/3.2/OneLoveV3.2.md) |
 | **3.2 technical execution plan** | [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md) |
-| **Canonical public docs / whitepapers** | [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) |
+| **Canonical public docs / whitepapers** | [`canon/books/README.md`](canon/books/README.md) |
 | **Live status + topology** | [`StatusV3.md`](docs/3.2/StatusV3.md) |
 | **EDGE → EDGE2 split plan + execution log** | [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md) |
 | **V3.3 NIRVANA execution checklist** | [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) |
@@ -143,7 +143,7 @@ This repository has one source of truth per topic:
 | **V31 security / ops rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
 | **3.2 "One Love" launch plan** | [`OneLoveV3.2.md`](docs/3.2/OneLoveV3.2.md) |
 | **3.2 technical execution plan** | [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md) |
-| **Canonical public docs / whitepapers** | [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) |
+| **Canonical public docs / whitepapers** | [`canon/books/README.md`](canon/books/README.md) |
 | **3.1 archived reports** | [`docs/3.1/README.md`](docs/3.1/README.md) |
 | **Post-cutover execution plan** | [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V31 detailed status** | [`V31/STATUS.md`](V31/STATUS.md) |
@@ -163,4 +163,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-10-21 · Version: 3.2.0 (V31 Mainnet Alpha, protocol 3.1.0-alpha) · Topologie: EDGE2 primary + EDGE ingress/pool (viz [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md)) · 3.3 NIRVANA: [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · 3.2 "One Love" docs: [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) · 3.1 archived reports: [`docs/3.1/README.md`](docs/3.1/README.md) · Live status: [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*
+*Last updated: 2026-10-21 · Version: 3.2.0 (V31 Mainnet Alpha, protocol 3.1.0-alpha) · Topologie: EDGE2 primary + EDGE ingress/pool (viz [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md)) · 3.3 NIRVANA: [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · 3.2 "One Love" docs: [`canon/books/README.md`](canon/books/README.md) · 3.1 archived reports: [`docs/3.1/README.md`](docs/3.1/README.md) · Live status: [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*

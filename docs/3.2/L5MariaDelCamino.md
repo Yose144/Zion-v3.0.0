@@ -352,7 +352,7 @@ Flotila nejezdí naprázdno: každý leg nese **nákladní manifest** mezi uzly.
 ## 8. Vazby na existující docs
 
 - `docs/docs2.9/genesis/09.5-CHAPTER-9-Three-Marian-Apparitions.md` — kanonická kotva trasy (tři zjevení, časová linie poutníka)
-- `docs/WP-Mainet/Miriam/06-Lod-bez-Plachet.md` — legenda lodi bez plachet (tři Marie → Saintes-Maries-de-la-Mer)
+- `canon/books/Miriam/06-Lod-bez-Plachet.md` — legenda lodi bez plachet (tři Marie → Saintes-Maries-de-la-Mer)
 - `public/V3/L5/docs/README.md` — pentagram + LUMI + role uzlů (při realizaci přidat řádek „María del Camino — Passage/The Way")
 - `COMMUNITIES/te-piko-ora.md` — va'a/DAO metafora, wayfinding
 - `COMMUNITIES/nova-amerika.md` — LUMI bridge → loď je jeho pohyblivý protějšek
@@ -360,7 +360,7 @@ Flotila nejezdí naprázdno: každý leg nese **nákladní manifest** mezi uzly.
 - `docs/book/ekam-deeksha/` — celá kniha + učebnice (`UCEBNICE-08-EKAM-CHRAM.md` — architektura, Zlatá koule, inaugurace 2008)
 - `docs/genesis.md` — genesis sign-off: *„Om Namo Hiranyagarbha & Ekam Deeksha ! Thx Kalki/AmmaBhagavan !"*
 - `docs/TerraNova/06-L5-SVOBODA.md` §6.4 — předpokládaná výzkumná spolupráce s Oneness University (deeksha data)
-- `docs/WP-Mainet/BodhiGaia/00-README.md` — Ekam Deeksha jako otázka „Kdo se musí proměnit?"
+- `canon/books/BodhiGaia/00-README.md` — Ekam Deeksha jako otázka „Kdo se musí proměnit?"
 - `TECH/mesh-network.md`, `TECH/zion-node-spec.md` — Guardian node + LoRa specifikace pro palubní instalaci
 - `PROTOCOLS/resonance-protocol.md` — resonance před rozhodnutím posádky; Fibonacci Time Capsule plující mezi uzly je přirozený nosič
 - `V31/L5/free-world/src/api.rs` — `status: "vision"` je po Uluru podporovaný; `budget_zion: 0` OK

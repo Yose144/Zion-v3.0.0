@@ -1,6 +1,6 @@
 # ZION Roadmap
 
-> **Účel tohoto dokumentu:** Vysokoúrovňová časová osa a navigační rozcestník. Detailní pravomoci, důkazy a statusové štítky jsou v [`MiseAmenti/`](docs/WP-Mainet/MiseAmenti/README.md).
+> **Účel tohoto dokumentu:** Vysokoúrovňová časová osa a navigační rozcestník. Detailní pravomoci, důkazy a statusové štítky jsou v [`MiseAmenti/`](canon/books/MiseAmenti/README.md).
 >
 > **Aktuální stabilní baseline:** 3.2.0 "One Love" (pro ověření live statusu viz `StatusV3.md` / operace).
 >
@@ -8,13 +8,13 @@
 
 > **Aktuální live baseline:** 3.2.0 "One Love" (V31 Mainnet Alpha, protokol `zion-v3-node/3.1.0-alpha`) — ověřitelné na Edge a v `StatusV3.md`.
 >
-> **Vývojový horizont:** 3.3.0 "Nirvana" (Global Assimilation / Attention) — cíl, nikoli dosažený release; status a evidence v [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md).
+> **Vývojový horizont:** 3.3.0 "Nirvana" (Global Assimilation / Attention) — cíl, nikoli dosažený release; status a evidence v [`MiseAmenti/07-Registr-Dukazu.md`](canon/books/MiseAmenti/07-Registr-Dukazu.md).
 >
 > **Aspirativní veřejný horizont:** odložen (TBD) — není závazný datum launchi.
 >
 > **Naposledy upraveno:** 2026-08-31
 >
-> **Kanonický integrační corpus:** [`MiseAmenti/`](docs/WP-Mainet/MiseAmenti/README.md)
+> **Kanonický integrační corpus:** [`MiseAmenti/`](canon/books/MiseAmenti/README.md)
 >
 > **Technický execution companion 3.3:** [`V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md)
 >
@@ -64,7 +64,7 @@ Historical 3.1 reports are archived in [`docs/3.1/REPORTS/`](./docs/3.1/REPORTS/
 4. **L5 Free World** — Dedicated web portal, live 5% L1 coinbase treasury tracker, global water & permaculture projects.
 5. **L6 Issobella** — Quantum warp engine theoretical research (Alcubierre-Ekam metric), DeSci repository, NCL-powered physics simulations.
 
-See the complete technical blueprint in [`V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md), and its deep mythological/philosophical companion — the six worlds, the bardo of transition, Shambhala, the Halls of Amenti, and the 100-year plan for Generation Z — in [`docs/WP-Mainet/NirvanaCloud/`](./docs/WP-Mainet/NirvanaCloud/00-README.md).
+See the complete technical blueprint in [`V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md), and its deep mythological/philosophical companion — the six worlds, the bardo of transition, Shambhala, the Halls of Amenti, and the 100-year plan for Generation Z — in [`canon/books/NirvanaCloud/`](./canon/books/NirvanaCloud/00-README.md).
 
 ---
 

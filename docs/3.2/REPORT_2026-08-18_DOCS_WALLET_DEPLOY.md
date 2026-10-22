@@ -1,7 +1,7 @@
 # Report: Website docs / public subtree sync, wallet public-API fix, and deploy
 
 **Date:** 2026-08-18  
-**Scope:** `APP&WEB/website-v2.9`, `public/` subtree, `docs/WP-Mainet/`, desktop-agent wallet API, live web deploy  
+**Scope:** `APP&WEB/website-v2.9`, `public/` subtree, `canon/books/`, desktop-agent wallet API, live web deploy  
 **Authors:** Devin (agent) + estrelaisabellazion3  
 **Status:** Done, deployed, pushed
 
@@ -12,7 +12,7 @@
 Completed a full sweep to align all public and master documentation with the current V3.2.0 **One Love / Mainnet Stable** canonical state:
 
 - Genesis hashes, protocol version, consensus algorithm, and genesis/block dates.
-- Synchronized `public/` (MIT public repo subtree), the live `app.zionterranova.com` Next.js public docs, and the internal `docs/WP-Mainet/` master sources.
+- Synchronized `public/` (MIT public repo subtree), the live `app.zionterranova.com` Next.js public docs, and the internal `canon/books/` master sources.
 - Picked up and committed the pending desktop-agent wallet fix (public HTTPS API fallback) that was already prepared in the working tree.
 - Rebuilt and deployed the website to the Edge server.
 - Pushed all commits to the private `origin/main` and the `public/` subtree remote.
@@ -71,7 +71,7 @@ All references to the three historical hashes (`08a94fb0...`, `21e2b274...`, `4f
 - `src/app/roadmap/page.tsx` — `MainNet Genesis TerraNova` updated to **6. 8. 2026 (One Love)** / **6 Aug 2026 (One Love)**.
 - `src/app/ai-native/page.tsx` and `src/components/docs/PhilosophyContent.tsx` — narrative genesis dates moved to 1 Jan 2026.
 
-### 3.4 Internal master docs (`docs/WP-Mainet/`)
+### 3.4 Internal master docs (`canon/books/`)
 
 - Master whitepapers 3.1, 3.2, v3.0.5, v3.0, Technical 3.1, TerraNova 3.0.
 - `SulZeme/` onboarding source files.

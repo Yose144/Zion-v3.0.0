@@ -246,8 +246,8 @@ PDFs are generated on Linux via `fpdf2` + DejaVu fonts:
 pip3 install --user --break-system-packages fpdf2
 
 # Generate all 4 PDFs (CZ + EN)
-python3 docs/WP-Mainet/generate_genesis_pdfs.py
-python3 docs/WP-Mainet/generate_wplite_pdfs.py
+python3 canon/books/generate_genesis_pdfs.py
+python3 canon/books/generate_wplite_pdfs.py
 ```
 
 ---

@@ -37,7 +37,7 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 - `MiseAmenti/` je **primární integrační canon** pro plánování a komunikaci ZION 3.3 „Nirvana“.
 - `V33_NIRVANA_MASTER_PLAN.md` zůstává technickým execution companionem; živý kód, síť, `StatusV3.md` a `interní repozitář` nadále mají vyšší prioritu.
-- Příběhové materiály `docs/WP-Mainet/nirvana/` a `docs/WP-Mainet/NirvanaCloud/` zůstávají kanonickým narativním zdrojem, ale jejich faktické nároky se interpretují podle evidence registru.
+- Příběhové materiály `canon/books/nirvana/` a `canon/books/NirvanaCloud/` zůstávají kanonickým narativním zdrojem, ale jejich faktické nároky se interpretují podle evidence registru.
 
 ### Opravené vymezení nároků
 
@@ -50,9 +50,9 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 - `V33_NIRVANA_MASTER_PLAN.md` — upraveno na technický execution companion; přidána čtecí smlouva, statusové štítky L2–L6 a odkaz na `MiseAmenti/07-Registr-Dukazu.md`.
 - `ROADMAP.md` — přidán odkaz na `MiseAmenti/` a upřesněn rozdíl mezi live baseline 3.2 a vývojovým horizontem 3.3.
-- `docs/WP-Mainet/nirvana/00-README.md` a `00-README_EN.md` — označeny jako MÝTUS-HORIZONT a propojeny s `MiseAmenti/` a `StatusV3.md`.
-- `docs/WP-Mainet/NirvanaCloud/00-README.md` a `00-README_EN.md` — převedeny na narativní společník s hierarchií důkazů vedenou `MiseAmenti/`.
-- `docs/WP-Mainet/NirvanaCloud/08-Kotva-Pravdy-Eticke-Hranice.md` — doplněn odkaz na `MiseAmenti/07-Registr-Dukazu.md` jako kotva technické pravdy.
+- `canon/books/nirvana/00-README.md` a `00-README_EN.md` — označeny jako MÝTUS-HORIZONT a propojeny s `MiseAmenti/` a `StatusV3.md`.
+- `canon/books/NirvanaCloud/00-README.md` a `00-README_EN.md` — převedeny na narativní společník s hierarchií důkazů vedenou `MiseAmenti/`.
+- `canon/books/NirvanaCloud/08-Kotva-Pravdy-Eticke-Hranice.md` — doplněn odkaz na `MiseAmenti/07-Registr-Dukazu.md` jako kotva technické pravdy.
 - Vytvořen `docs/3.1/REPORTS/README.md` jako index historických reportů; opraven jeden rozbitý odkaz v `REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`.
 - Cílený link check kanonických dokumentů a `git diff --check` proběhly bez nálezů.
 
@@ -62,9 +62,9 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ### Změněno
 
-- Přidána nová narativně-technická řada [`docs/WP-Mainet/BodhiGaia/`](../BodhiGaia/00-README.md) (CZ, 9 kapitol + EN index): Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora, Protokoly Země, zrcadlo L4 ↔ L5, onboarding do L5 a úplný L5 registr pravdy. Řada sjednocuje existující materiál z `public/V3/L5/docs/`, webu `/terranova/*` a `/l5-free-world`, OASIS (`WorldPanel`, `worlds.ts`), Sůl země (Sítá, Hanuman), TerraNova (kap. 3, 6, Hawaii) a Zohar (Yesod ↔ L5).
-- `docs/WP-Mainet/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)".
-- `docs/WP-Mainet/nirvana/00-README.md`, `00-README_EN.md`, `10-Prameny-Zivota.md` — odkaz „sestup k hlíně" na Knihu Země.
+- Přidána nová narativně-technická řada [`canon/books/BodhiGaia/`](../BodhiGaia/00-README.md) (CZ, 9 kapitol + EN index): Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora, Protokoly Země, zrcadlo L4 ↔ L5, onboarding do L5 a úplný L5 registr pravdy. Řada sjednocuje existující materiál z `public/V3/L5/docs/`, webu `/terranova/*` a `/l5-free-world`, OASIS (`WorldPanel`, `worlds.ts`), Sůl země (Sítá, Hanuman), TerraNova (kap. 3, 6, Hawaii) a Zohar (Yesod ↔ L5).
+- `canon/books/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)".
+- `canon/books/nirvana/00-README.md`, `00-README_EN.md`, `10-Prameny-Zivota.md` — odkaz „sestup k hlíně" na Knihu Země.
 - `07-Registr-Dukazu.md` — sekce 5 rozšířena o L5 řádky (komunity, Guardian Node, OASIS zrcadlo, dopad) s odkazem na detailní registr v `BodhiGaia/09`.
 - `02-Pribeh-a-Architektura.md` — přidána devátá brána „Bodhi Gaia / Kniha Země" do mapy bran.
 
@@ -89,10 +89,10 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ### Změněno
 
-- Přidána nová narativně-technická řada [`docs/WP-Mainet/Lumi/`](../Lumi/00-README.md) (CZ, README + 13 kapitol): sjednocuje `nirvana/` (L1–L6 horizont), `BodhiGaia/` (L5) a `Issobella/` (L6) do jednoho příběhu navazujícího na kanonický onboarding (`ZION_ONBOARDING_PUBLIC_CZ.md`, `ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md` §6). Osou je postava Lumi / Elizabeth — dítě na přídi (`nirvana/01`), rybářova dcera (`Issobella/01`) a kněžka s lucernou u brány OASIS — čtená jako jedna postava napříč časem. Kapitoly: archa (L1), Dům jmen (ZIS), mosty (L2), hlas bez klíče (L3), brána (L4), dvě kapitoly L5, tři kapitoly L6, 3.3 + šest epoch 2026–2126, návrat k bráně (onboarding), registr.
+- Přidána nová narativně-technická řada [`canon/books/Lumi/`](../Lumi/00-README.md) (CZ, README + 13 kapitol): sjednocuje `nirvana/` (L1–L6 horizont), `BodhiGaia/` (L5) a `Issobella/` (L6) do jednoho příběhu navazujícího na kanonický onboarding (`ZION_ONBOARDING_PUBLIC_CZ.md`, `ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md` §6). Osou je postava Lumi / Elizabeth — dítě na přídi (`nirvana/01`), rybářova dcera (`Issobella/01`) a kněžka s lucernou u brány OASIS — čtená jako jedna postava napříč časem. Kapitoly: archa (L1), Dům jmen (ZIS), mosty (L2), hlas bez klíče (L3), brána (L4), dvě kapitoly L5, tři kapitoly L6, 3.3 + šest epoch 2026–2126, návrat k bráně (onboarding), registr.
 - Zavedeno zařízení „lucerna ukazuje dnešek": kapitoly 05–10 se odehrávají ve „zjevené budoucnosti" (HORIZONT / MÝTUS, nikdy termín ani slib) a každá kapitola 02–12 obsahuje odstavec se skutečným stavem sítě ke snímku 2026-09-14 plus kotvu pravdy se štítky.
-- `docs/WP-Mainet/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)".
-- `docs/WP-Mainet/nirvana/00-README.md`, `00-README_EN.md` — odkaz „celá cesta jako jeden příběh" a řádek ve zdrojích pravdy.
+- `canon/books/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)".
+- `canon/books/nirvana/00-README.md`, `00-README_EN.md` — odkaz „celá cesta jako jeden příběh" a řádek ve zdrojích pravdy.
 - `02-Pribeh-a-Architektura.md` — přidána desátá brána „Lumi / Cesta domů" do mapy bran („devět bran" → „deset bran").
 
 ### Důkaz
@@ -115,9 +115,9 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ### Změněno
 
-- Přidána nová narativní řada [`docs/WP-Mainet/Miriam/`](../Miriam/00-README.md) (CZ, README + 13 kapitol): kniha vodoravné osy korpusu — paměť, linie a svědectví skrze dvacet století — jako protějšek svislé osy `Lumi/` (světlo skrze vrstvy). Rámcový příběh: stará Miriam v jeskyni nad mořem vypráví dívce Sáře (Sara e Kali) tři oblouky — **U jezera** (01–04: Magdala, alabastrová nádobka, zahradník u hrobu, Evangelium podle Marie), **Podzemní řeka** (05–09: Řehořovo slití 591 / opravy 1969 a 2016, provensálská legenda o lodi a Sáře, desposyni s mozoly před Domitianem, grálové romance a podvrh Prieuré de Sion, žena oděná sluncem Zj 12) a **Město, které sestupuje** (10–13: svatba Beránkova, město jako nevěsta, řeka a strom života, setkání s Lumi na břehu, registr pravdy).
+- Přidána nová narativní řada [`canon/books/Miriam/`](../Miriam/00-README.md) (CZ, README + 13 kapitol): kniha vodoravné osy korpusu — paměť, linie a svědectví skrze dvacet století — jako protějšek svislé osy `Lumi/` (světlo skrze vrstvy). Rámcový příběh: stará Miriam v jeskyni nad mořem vypráví dívce Sáře (Sara e Kali) tři oblouky — **U jezera** (01–04: Magdala, alabastrová nádobka, zahradník u hrobu, Evangelium podle Marie), **Podzemní řeka** (05–09: Řehořovo slití 591 / opravy 1969 a 2016, provensálská legenda o lodi a Sáře, desposyni s mozoly před Domitianem, grálové romance a podvrh Prieuré de Sion, žena oděná sluncem Zj 12) a **Město, které sestupuje** (10–13: svatba Beránkova, město jako nevěsta, řeka a strom života, setkání s Lumi na břehu, registr pravdy).
 - Zaveden mechanismus „kámen / hlína / sen" — každá kapitola rozděluje příběh na doložený text (listina), živou tradici (legenda) a literární sen — s tabulkou Kotva pravdy a štítky ŽIVÉ / NEDOLOŽENO / NEPLATNÝ NÁROK / MÝTUS ve stejném významu jako `07-Registr-Dukazu.md`.
-- `docs/WP-Mainet/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)".
+- `canon/books/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)".
 - `07-Registr-Dukazu.md` §6 — přidáno pravidlo 6: příběh Miriam se čte podle vlastních štítků; narativní „fakta" z ní nesmí vstupovat do provozních dokumentů.
 
 ### Důkaz
@@ -140,16 +140,16 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ### Změněno
 
-- Přidána nová samostatná literární bajka [`docs/WP-Mainet/Ruze/`](../Ruze/00-README.md) (CZ, README + 9 souvislých kapitol + kotvící kapitola 10): malá kniha o Lumi a růži u řeky za otevřenou bránou. V kompasu korpusu zaujímá **průsečík — vztah**: roste mezi vodorovnou osou Miriam (paměť/čas) a svislou osou Lumi (světlo/vrstvy); **není dvanáctou branou** ani technologickou vrstvou. Oblouk: prázdná nádoba od Sáry, jméno bez titulu, trn jako hranice, zahradník zrcadel, kupec s vůní, zahrada mnoha růží, vzájemná péče za sucha, svoboda odejít, návrat na oba břehy.
+- Přidána nová samostatná literární bajka [`canon/books/Ruze/`](../Ruze/00-README.md) (CZ, README + 9 souvislých kapitol + kotvící kapitola 10): malá kniha o Lumi a růži u řeky za otevřenou bránou. V kompasu korpusu zaujímá **průsečík — vztah**: roste mezi vodorovnou osou Miriam (paměť/čas) a svislou osou Lumi (světlo/vrstvy); **není dvanáctou branou** ani technologickou vrstvou. Oblouk: prázdná nádoba od Sáry, jméno bez titulu, trn jako hranice, zahradník zrcadel, kupec s vůní, zahrada mnoha růží, vzájemná péče za sucha, svoboda odejít, návrat na oba břehy.
 - Literární klíč: *Malý princ* je přiznanou vzdálenou inspirací pouze formou (filosofická bajka, dítě a růže); žádná postava, scéna ani věta není převzata. Etika knihy: péče bez vlastnění, souhlas, svoboda, vzájemnost — vztah bez svobody je klec (`SulZeme/11`).
-- `docs/WP-Mainet/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)" za Miriam.
+- `canon/books/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)" za Miriam.
 - `Miriam/13-Kotva-Pravdy-a-Hranice.md` — do poslední navigace přidán odkaz na Příběh Růže; jinak beze změny.
 - `02-Pribeh-a-Architektura.md` — za tabulku bran přidán odstavec „Příběh Růže není dvanáctá brána" (počet bran beze změny).
 - `07-Registr-Dukazu.md` §6 — přidáno pravidlo 7: `Ruze/` je celý literární MÝTUS a nepovyšuje starší Meriam Rose / esoterické nároky.
 
 ### Důkaz
 
-- Repo kotvy: `docs/WP-Mainet/Miriam/13` (předání prázdné nádoby Sáře), `Miriam/12` (setkání u řeky, semínko růže), `Lumi/12` (otevřená brána, lucerna), `SulZeme/11` (růžová zahrada, „vztah bez svobody je klec"), `interní repozitář` (avatar id 18 „Meriam Rose", Jerusalem Garden, „True devotion sees beyond form").
+- Repo kotvy: `canon/books/Miriam/13` (předání prázdné nádoby Sáře), `Miriam/12` (setkání u řeky, semínko růže), `Lumi/12` (otevřená brána, lucerna), `SulZeme/11` (růžová zahrada, „vztah bez svobody je klec"), `interní repozitář` (avatar id 18 „Meriam Rose", Jerusalem Garden, „True devotion sees beyond form").
 - Existence těchto řádků je repozitářový fakt, ne historická/duchovní pravda — roztříděno v `Ruze/10-Kotva-Pribehu.md`.
 
 ### Dopad na stav tvrzení
@@ -168,10 +168,10 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ### Změněno
 
-- `docs/WP-Mainet/Ruze/` — přidán epilog [`Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) mezi kapitolu 9 a kotvu 10: Lumi s alabastrovou nádobou dorazí do skromné Zahrady Genesis u Atlantiku a s Anou zasadí druhé semínko na okraj záhonu; `00-README` (tabulka + řád E), navigace v `09`, registry a review v `10-Kotva-Pribehu.md`.
-- `docs/WP-Mainet/BodhiGaia/` — nová [kapitola 12](../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) (Ana, následující ráno, odmítnutí „posvátné růže", zápis do pracovního sešitu) + návrh fyzického pilotu [`pilots/GENESIS-ROSE-001.md`](../BodhiGaia/pilots/GENESIS-ROSE-001.md): gaty A–D (souhlas a místo, botanika a bezpečnost, péče, finance a tvrzení), záznamová pole, evidence Day 0, prahy D30/D90/D365, stavové přechody; integrace v `00-README` (dvanáct kapitol + mapa zdrojů), `03` (most + kotva), `07` (OASIS zrcadlo + kotva), `09` (registry + krok 13), `11` a `full.md`.
+- `canon/books/Ruze/` — přidán epilog [`Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) mezi kapitolu 9 a kotvu 10: Lumi s alabastrovou nádobou dorazí do skromné Zahrady Genesis u Atlantiku a s Anou zasadí druhé semínko na okraj záhonu; `00-README` (tabulka + řád E), navigace v `09`, registry a review v `10-Kotva-Pribehu.md`.
+- `canon/books/BodhiGaia/` — nová [kapitola 12](../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) (Ana, následující ráno, odmítnutí „posvátné růže", zápis do pracovního sešitu) + návrh fyzického pilotu [`pilots/GENESIS-ROSE-001.md`](../BodhiGaia/pilots/GENESIS-ROSE-001.md): gaty A–D (souhlas a místo, botanika a bezpečnost, péče, finance a tvrzení), záznamová pole, evidence Day 0, prahy D30/D90/D365, stavové přechody; integrace v `00-README` (dvanáct kapitol + mapa zdrojů), `03` (most + kotva), `07` (OASIS zrcadlo + kotva), `09` (registry + krok 13), `11` a `full.md`.
 - `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa `GENESIS_GARDEN` nesou výslovně označenou Rose lore (MYTH): změněny pouze `vibe`, `summary`, `tags`; žádný deploy.
-- `docs/WP-Mainet/README.md` (položka Příběh Růže + epilog), `MiseAmenti/02` (věta: OASIS zrcadlí MÝTUS, pilot HORIZONT, žádná nová brána), `MiseAmenti/07` (nový řádek L5 evidence + rozšířené pravidlo 7).
+- `canon/books/README.md` (položka Příběh Růže + epilog), `MiseAmenti/02` (věta: OASIS zrcadlí MÝTUS, pilot HORIZONT, žádná nová brána), `MiseAmenti/07` (nový řádek L5 evidence + rozšířené pravidlo 7).
 
 ### Důkaz
 

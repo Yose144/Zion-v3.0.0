@@ -156,4 +156,4 @@ Key covered behaviours:
 - `V31/L1/miner/src/pool_message.rs:51-66` — `CoinPreference` wire format
 - `V31/L1/cosmic-harmony/src/profit.rs` — `ExternalCoin`, `CoinProfile`, `ProfitRouter`
 - `docs/3.2/SECURITY_AUDIT_3.2.md` — `MIN-001` forced-coin validation note
-- `docs/WP-Mainet/Trinity_Engine.md` — high-level Trinity / Boost stream overview
+- `canon/books/Trinity_Engine.md` — high-level Trinity / Boost stream overview

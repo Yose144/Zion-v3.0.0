@@ -28,7 +28,7 @@ Tato dokumentace je jediným zdrojem pravdy pro L6 — integruje data z legacy v
 - **Legacy L6 README:** [`L6/README.md`](../../../../L6/README.md)
 - **Guardian profil Issobely:** [`docs/docs2.9/ZION_OASIS/SACRED_TRINITY/08_ISSOBELA_GUARDIAN.md`](../../../../docs/docs2.9/ZION_OASIS/SACRED_TRINITY/08_ISSOBELA_GUARDIAN.md)
 - **Layer architektura:** [`docs/v2.9.6/layer-architecture.md`](../../../../docs/v2.9.6/layer-architecture.md)
-- **Whitepaper (CZ):** [`docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`](../../../../docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md)
+- **Whitepaper (CZ):** [`canon/books/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`](../../../../canon/books/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md)
 - **Kanonický whitepaper:** [`V3/docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md`](../../docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md)
 
 ---
