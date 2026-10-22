@@ -19,6 +19,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import base64
 import html
 import json
 import os
@@ -597,6 +598,51 @@ def fetch_smos_rigs():
     _smos_cache["ts"] = now
     _smos_cache["rigs"] = rigs
     return rigs
+
+
+SMOS_ACTIONS = ("reboot", "pause", "resume", "reload", "shutdown",
+                "command", "rig-detect", "rig-gpu-detect", "clear-counter")
+
+
+def _smos_req(method, path, body=None):
+    import urllib.request
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(
+        f"{SMOS_BASE}{path}", data=data, method=method,
+        headers={"X-AUTH-TOKEN": SMOS_API_KEY,
+                 "Content-Type": "application/merge-patch+json",
+                 "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return r.read().decode()
+
+
+def smos_action(rig_id, action, extra=None):
+    """PATCH /rigs/execute-<action> {rigIds:[id]}. Returns response text."""
+    if not SMOS_API_KEY:
+        raise SystemExit("VASTCTL_SMOS_KEY not configured")
+    if action not in SMOS_ACTIONS:
+        raise ValueError(f"bad action {action!r}; one of {SMOS_ACTIONS}")
+    body = {"rigIds": [int(rig_id)]}
+    if extra:
+        body.update(extra)
+    return _smos_req("PATCH", f"/rigs/execute-{action}", body) or "ok"
+
+
+def smos_console(rig_id):
+    """GET /rigs/{id}/console → decoded plain-text miner console."""
+    if not SMOS_API_KEY:
+        raise SystemExit("VASTCTL_SMOS_KEY not configured")
+    raw = _smos_req("GET", f"/rigs/{int(rig_id)}/console")
+    try:
+        htmltxt = base64.b64decode(json.loads(raw)["console"]).decode("utf-8", "replace")
+    except Exception:
+        return raw
+    # strip tags → readable console text
+    txt = re.sub(r"<br\s*/?>", "\n", htmltxt)
+    txt = re.sub(r"</p>", "\n", txt)
+    txt = re.sub(r"<[^>]+>", "", txt)
+    import html as _h
+    return _h.unescape(txt)
 
 
 # ── external pool stats (luckypool QTU/PRL + nanopool XMR) ───────────────
@@ -1722,6 +1768,14 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
 '''
             rc, out, err = ssh(inst[0], script, timeout=40)
             self._send((out + err).strip() or f"(exit {rc})", ctype="text/plain")
+        elif u.path == "/api/smos/console":
+            iid = q.get("id", [""])[0]
+            try:
+                self._send(smos_console(iid), ctype="text/plain")
+            except (SystemExit, ValueError) as e:
+                self._send(f"failed: {e}", 400, "text/plain")
+            except Exception as e:
+                self._send(f"failed: {e}", 500, "text/plain")
         elif u.path == "/api/exec":
             if readonly():
                 self._send("readonly mode", 403, "text/plain")
@@ -1756,6 +1810,21 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
             except (SystemExit, json.JSONDecodeError) as e:
                 self._send(f"Vast instance lookup failed: {e}",
                            502, "text/plain; charset=utf-8")
+        elif u.path == "/api/smos/action":
+            if readonly():
+                self._send("readonly mode", 403, "text/plain")
+                return
+            if not same_origin_request(
+                    self.headers.get("Origin"), self.headers.get("Host")):
+                self._send("same-origin request required", 403, "text/plain")
+                return
+            iid, act = q.get("id", [""])[0], q.get("act", [""])[0]
+            try:
+                self._send(smos_action(iid, act), ctype="text/plain")
+            except (SystemExit, ValueError) as e:
+                self._send(f"failed: {e}", 400, "text/plain")
+            except Exception as e:
+                self._send(f"failed: {e}", 500, "text/plain")
         elif u.path == "/api/deploy-xmrig":
             if readonly():
                 self._send("readonly mode", 403, "text/plain")

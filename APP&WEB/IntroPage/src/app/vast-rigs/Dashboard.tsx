@@ -647,6 +647,18 @@ export default function Dashboard() {
   };
   const [logs, setLogs] = useState<Record<number, string>>({});
   const [logsOpen, setLogsOpen] = useState<Record<number, string>>({});
+  const [smosLog, setSmosLog] = useState<Record<number, string>>({});
+  const [smosLogOpen, setSmosLogOpen] = useState<Record<number, boolean>>({});
+  const toggleSmosLog = (id: number) => {
+    const opening = !smosLogOpen[id];
+    setSmosLogOpen({ ...smosLogOpen, [id]: opening });
+    if (!opening) return;
+    setSmosLog({ ...smosLog, [id]: "loading console…" });
+    fetch(`/vast-ops/api/smos/console?id=${id}`)
+      .then((r) => r.text())
+      .then((t) => setSmosLog((p) => ({ ...p, [id]: t })))
+      .catch((e) => setSmosLog((p) => ({ ...p, [id]: String(e) })));
+  };
   const [chatAns, setChatAns] = useState<Record<number, string>>({});
   const [open, setOpen] = useState<Record<number, boolean>>({});
   const [tab, setTab] = useState<"mining" | "ai" | "market" | "pool">("mining");
@@ -1400,11 +1412,13 @@ export default function Dashboard() {
                   <th className="px-3 py-2">Hashrate</th>
                   <th className="px-3 py-2">GPU</th>
                   <th className="px-3 py-2">Uptime</th>
+                  <th className="px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {snap.smos.map((r) => (
-                  <tr key={r.id} className="border-b border-white/[0.04] align-top transition hover:bg-white/[0.03]">
+                  <Fragment key={r.id}>
+                  <tr className="border-b border-white/[0.04] align-top transition hover:bg-white/[0.03]">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className={`inline-block h-2 w-2 shrink-0 rounded-full shadow-[0_0_8px_currentColor] ${r.online ? "bg-[#34d399]" : "bg-[#ff7b72]"}`} />
@@ -1454,7 +1468,38 @@ export default function Dashboard() {
                       {r.uptime ? <div>{r.uptime}</div> : "—"}
                       <div className="text-[10px] text-white/30">upd {agoS(Math.floor(Date.now() / 1000) - (r.last_update || 0))}</div>
                     </td>
+                    <td className="whitespace-nowrap px-3 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        <button
+                          onClick={() => toggleSmosLog(r.id)}
+                          className="rounded-lg border border-[#7dd3fc]/40 bg-[#7dd3fc]/10 px-2 py-1 text-[10px] font-semibold text-[#7dd3fc] transition hover:bg-[#7dd3fc]/20"
+                        >▤ console</button>
+                        {r.paused ? (
+                          <button
+                            onClick={() => ops(`smos/action?id=${r.id}&act=resume`, "POST")}
+                            className="rounded-lg border border-[#34d399]/40 bg-[#34d399]/10 px-2 py-1 text-[10px] font-semibold text-[#34d399] transition hover:bg-[#34d399]/20"
+                          >▶ resume</button>
+                        ) : (
+                          <button
+                            onClick={() => ops(`smos/action?id=${r.id}&act=pause`, "POST")}
+                            className="rounded-lg border border-[#fcd116]/40 bg-[#fcd116]/10 px-2 py-1 text-[10px] font-semibold text-[#fcd116] transition hover:bg-[#fcd116]/20"
+                          >⏸ pause</button>
+                        )}
+                        <button
+                          onClick={() => confirm(`Reboot SMOS rig ${r.name} (#${r.id})?`) && ops(`smos/action?id=${r.id}&act=reboot`, "POST")}
+                          className="rounded-lg border border-[#ff7b72]/40 bg-[#ff7b72]/10 px-2 py-1 text-[10px] font-semibold text-[#ff7b72] transition hover:bg-[#ff7b72]/20"
+                        >↻ reboot</button>
+                      </div>
+                    </td>
                   </tr>
+                  {smosLogOpen[r.id] && (
+                    <tr className="border-b border-white/[0.06]">
+                      <td colSpan={7} className="bg-black/40 px-4 py-2">
+                        <pre className="max-h-72 overflow-auto whitespace-pre-wrap text-[11px] leading-snug text-white/75">{smosLog[r.id] || "loading…"}</pre>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
