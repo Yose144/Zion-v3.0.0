@@ -148,7 +148,8 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 6. **canon/l*/:** `L2data`–`L6data` + `L5Projects` jsou kanon/dokumenty + source artwork, NE runtime data → `canon/l2..l6` (**provedeno v batch 1**); `data/` u kořene = untracked runtime DBs, zůstává; `LOGO/` → `canon/brand/` (26 odkazů — dedikovaný commit)
 
 **F2 batch 1 ✅ (2026-10-22):** `L2data`→`canon/l2`, `L3data`→`canon/l3`, `L4data`→`canon/l4`, `L5Projects`→`canon/l5`, `config/`→`archive/config/`; fixnuto: `freeworld/tools/images.py`, `freeworld/AGENTS.md`, `BohemiaDao.md` linky.
-**Zbývá:** `WarpBeta`→archive (14 odkazů), `L6data`→canon/l6 (71), `LOGO`→canon/brand (26), `WP-Mainet`→canon/books (100+), pak velké: `APP&WEB`→apps, `V31`→chain, `edge-deploy`+`scripts`+`ZION_OS`→infra.
+**Batch 1b ✅:** `WarpBeta`→`archive/WarpBeta` (7 souborů opraveno), `config/`→`archive/config/`.
+**Zbývá:** `L6data`→canon/l6 (71 odkazů), `LOGO`→canon/brand (26), `WP-Mainet`→canon/books (100+), pak velké: `APP&WEB`→apps, `V31`→chain, `edge-deploy`+`scripts`+`ZION_OS`→infra.
 7. Aktualizovat `.github/`, `AGENTS.md`, všechny `deploy-*.sh` cesty
 
 ### F3 — Kanonizace webu

@@ -35,7 +35,7 @@
 
 ## 3. BTC swap (WARP Beta) — SAFETY HOLD `WARP_BTC_SWAP_ENABLED=0`
 
-Re-enable checklist stav (kanonicky v `WarpBeta/STATUS.md`):
+Re-enable checklist stav (kanonicky v `archive/WarpBeta/STATUS.md`):
 
 | Bloker | Kód | Edge | Poznámka |
 |---|---|---|---|
@@ -86,7 +86,7 @@ Live produkce (build 9/25): quorum 15 %, voting 14 dní, timelock 72 h, threshol
 
 ## 6. Doc dluh vyřešený touto revizí (2026-09-30)
 
-- `WarpBeta/STATUS.md` — doplněn 9/30 snapshot: blockers v kódu vs Edge deploy pending; re-enable checklist aktualizován (IBD ~80,4 %).
+- `archive/WarpBeta/STATUS.md` — doplněn 9/30 snapshot: blockers v kódu vs Edge deploy pending; re-enable checklist aktualizován (IBD ~80,4 %).
 - `DAO.md` — treasury sekce opravena z "crypto execution pending" na merged-vs-deployed pravdu; D1/D2 tabulky anotovány stavy.
 - `docs/3.2/3.2.1-3.2.9_PLAN.md` — Passkeys ❌→🔄 (backend `webauthn.ts` + 10/10 testů + web UI existují; produkční rollout je 3.3 scope).
 

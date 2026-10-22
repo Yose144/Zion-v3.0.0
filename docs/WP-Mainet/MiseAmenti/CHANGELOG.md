@@ -123,7 +123,7 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 ### Důkaz
 
 - Historické kořeny knihy: evangelia (Mk 15–16; Lk 7–8, 24; Jan 12, 19–20; Mt 1, 26–28) · Evangelium podle Marie (Berlínský kodex 8502 + P.Oxy. 3525 + P.Ryl. 463) · Evangelium Filipovo (NHC II) · Pistis Sofia · Hippolytos (~235, „apostola apostolorum") · Eusebios III.19–20 (Hegesippos o desposyni) · Řehoř Veliký Homilie 33 (591) · liturgická reforma 1969 / dekret 10. 6. 2016 · *Legenda aurea* (~1260) a provensálská/romská tradice · grálové romance (Chrétien ~1180, Wolfram, Robert de Boron) · Dossiers secrets / Prieuré de Sion (prokázaný podvod, přiznání 1993) · Zjevení 12, 19, 21–22.
-- Repo kotvy: `docs/genesis.md` (jméno Meriam v genesis zprávě), `V31/L4/oasis/data/avatars.json` (avatar 18 Meriam Rose), `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/18_MERIAM_ROSE.md`, `docs/TerraNova/public/Full.md` (příloha C — Zjevení jako blueprints), `V31/L1/core/src/emission.rs` (TOTAL_SUPPLY 144 mld, split 89/5/5/1), `WarpBeta/ARCHITECTURE.md` (HTLC preimage), kontinuita `SulZeme/`, `nirvana/`, `BodhiGaia/`, `Issobella/`, `Lumi/`.
+- Repo kotvy: `docs/genesis.md` (jméno Meriam v genesis zprávě), `V31/L4/oasis/data/avatars.json` (avatar 18 Meriam Rose), `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/18_MERIAM_ROSE.md`, `docs/TerraNova/public/Full.md` (příloha C — Zjevení jako blueprints), `V31/L1/core/src/emission.rs` (TOTAL_SUPPLY 144 mld, split 89/5/5/1), `archive/WarpBeta/ARCHITECTURE.md` (HTLC preimage), kontinuita `SulZeme/`, `nirvana/`, `BodhiGaia/`, `Issobella/`, `Lumi/`.
 
 ### Dopad na stav tvrzení
 

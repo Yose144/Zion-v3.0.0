@@ -144,6 +144,10 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Install 7-Zip
+        shell: pwsh
+        run: choco install 7zip -y
+
       - name: Install OpenCL via vcpkg
         shell: pwsh
         run: |

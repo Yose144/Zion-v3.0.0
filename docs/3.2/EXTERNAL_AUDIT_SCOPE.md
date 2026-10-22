@@ -90,6 +90,6 @@ ZION is a Layer-1 blockchain: UTXO/hybrid transaction model, Ed25519 signatures,
 ## 7. Reference documents
 
 - `docs/3.2/SECURITY_AUDIT_3.2.md`, `docs/3.2/REPORTS/INTERNAL_AUDIT_2026-10-05.md`
-- `WarpBeta/AUDIT_PREP.md` (WARP / BTC swap preparation)
+- `archive/WarpBeta/AUDIT_PREP.md` (WARP / BTC swap preparation)
 - `docs/3.2/ROADMAP.md` (gate definitions)
 - G8 stability-run status (public): https://app.zionterranova.com/g8
