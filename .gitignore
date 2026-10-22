@@ -108,7 +108,7 @@ lact-*.deb
 node.pid
 
 # vastctl daemon runtime snapshot (regenerated every 60 s, pushed to edge webroot)
-infra/infra/tools/vast/status.json
+infra/tools/vast/status.json
 
 # Logs
 *.log
