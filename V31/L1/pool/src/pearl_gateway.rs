@@ -564,7 +564,11 @@ impl PearlRuntime {
             self.served_native.fetch_add(1, Ordering::Relaxed);
             return Some(self.ext_stream_for(&job));
         }
-        if let Some(job) = self.upstream.as_ref().and_then(|u| u.latest_fresh()) {
+        if let Some(job) = self
+            .upstream
+            .as_ref()
+            .and_then(|u| u.latest_forwardable().or_else(|| u.latest_fresh()))
+        {
             self.served_upstream.fetch_add(1, Ordering::Relaxed);
             return Some(job.ext_stream_job());
         }

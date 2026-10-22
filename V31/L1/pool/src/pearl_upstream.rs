@@ -39,7 +39,9 @@ const MAX_CONSECUTIVE_TIMEOUTS: u32 = 10;
 /// searching, so ~24 % of all shares died `StaleForward` before ever
 /// reaching the upstream pool. 64 entries covers tens of minutes of
 /// rotation at the observed rate while keeping the lookup O(1)-ish.
-pub const DEFAULT_JOB_RING_CAP: usize = 64;
+/// The ring is evicted by age (see `cache_job`), so this is only a safety
+/// net against an unbounded number of retained templates.
+pub const DEFAULT_JOB_RING_CAP: usize = 4096;
 
 #[derive(Clone)]
 pub struct PearlUpstreamConfig {
@@ -249,6 +251,22 @@ impl PearlUpstream {
         }
     }
 
+    /// Newest job that is still inside the forward window.
+    ///
+    /// `latest_fresh` only reports jobs younger than `job_ttl` (30 s on
+    /// Edge), which is far shorter than the time a miner needs to find a
+    /// Pearl share (minutes at diff 1.5M). Serving only "fresh" jobs left
+    /// miners holding an old template whenever the upstream rotated slower
+    /// than the TTL, and the share they eventually submitted was dropped as
+    /// StaleForward. The upstream keeps the job alive for the whole forward
+    /// window, so the job we hand out may be as old as `fwd_max`.
+    pub fn latest_forwardable(&self) -> Option<UpstreamPearlJob> {
+        match self.jobs.read().unwrap().back() {
+            Some(j) if j.received_at.elapsed() <= self.fwd_max => Some(j.clone()),
+            _ => None,
+        }
+    }
+
     /// Resolve a served `prlu:` id against the recent-job ring — newest
     /// first. Entries past `job_ttl` never match, so only the staleness
     /// window around a template rotation is covered.
@@ -382,6 +400,19 @@ impl PearlUpstream {
             cached.cert_version,
             &hex::encode(cached.target_be)[..16]
         );
+        // Evict by age, not by count: a job must stay resolvable for as
+        // long as we are willing to forward it (fwd_max). Evicting by
+        // count dropped the job while the miner was still searching for a
+        // share, which is what made ~24 % of the shares die as
+        // StaleForward before they ever reached the upstream pool. The
+        // ring cap is only a safety net now.
+        while let Some(front) = ring.front() {
+            if front.received_at.elapsed() > self.fwd_max {
+                ring.pop_front();
+            } else {
+                break;
+            }
+        }
         if ring.len() >= self.ring_cap {
             ring.pop_front();
         }
@@ -523,6 +554,13 @@ impl PearlUpstream {
     #[cfg(test)]
     pub fn seed_job(&self, job: UpstreamPearlJob) {
         let mut ring = self.jobs.write().unwrap();
+        while let Some(front) = ring.front() {
+            if front.received_at.elapsed() > self.fwd_max {
+                ring.pop_front();
+            } else {
+                break;
+            }
+        }
         if ring.len() >= self.ring_cap {
             ring.pop_front();
         }
@@ -649,6 +687,29 @@ mod tests {
             "job ring too small for share search latency: {}",
             up.ring_cap
         );
+    }
+
+    #[tokio::test]
+    async fn forwardable_job_outlives_job_ttl() {
+        // Regression guard: the pool used to hand out only jobs younger
+        // than job_ttl (30 s on Edge). A Pearl share is found minutes
+        // later, so whenever the upstream rotated slower than the TTL the
+        // miner kept an old template and the share died StaleForward.
+        // The job has to stay servable for the whole forward window.
+        let mut cfg = test_cfg("127.0.0.1:1");
+        cfg.job_ttl = Duration::from_millis(30_000);
+        cfg.fwd_max = Duration::from_millis(900_000);
+        let up = PearlUpstream::new(cfg);
+        up.seed_job(ujob("job-old", Duration::from_millis(120_000)));
+        assert!(up.latest_fresh().is_none(), "job is past job_ttl");
+        assert_eq!(
+            up.latest_forwardable().unwrap().served_id,
+            "prlu:job-old",
+            "job inside the forward window must still be servable"
+        );
+        // Beyond the forward window it is no longer servable.
+        up.seed_job(ujob("job-expired", Duration::from_millis(1_000_000)));
+        assert!(up.latest_forwardable().is_none());
     }
 
     #[tokio::test]
