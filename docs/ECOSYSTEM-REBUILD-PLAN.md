@@ -104,7 +104,7 @@ Přesměrovat sirotky: /roadmap-295→/roadmap, /wiki→/docs, /onboard→/minin
 
 oasis.zionterranova.com   OASIS portál (hra) — sdílené chrome + ZIS cookie
 freeworld.zionterranova.com L5 portál — proxy do /world sekce
-pool.zionterranova.com    → redirect na app./network#pool? (rozhodnout)
+pool.zionterranova.com    → ✅ ROZHODNUTO 2026-10-24: NEredirect — oba povrchy (public portál + in-app /pool dashboard) zůstávají
 market.zionterranova.com  → zůstane samostatná app? (otázka §4)
 auth., rpc., grafana., dashboard. — servisní subdomény (nezasáhne IA)
 ```
@@ -140,7 +140,7 @@ auth., rpc., grafana., dashboard. — servisní subdomény (nezasáhne IA)
 
 Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 
-1. **archive/ konsolidace:** `V3/`, `WarpBeta/`, `BACKUP/`, `backups/` (16G! rozhodnout: ven z repa), `logs/`, `PUBLIC/` (klon → samostatný checkout mimo repo), `venv-hiran/`, `website-v2.9-backup-*.tar.gz`, `AuXpow/` (posoudit), `src/lib.rs` (1 soubor — smazat/zařadit), `dashboard/` (pokud nahrazeno ZION_OS/dashboard), `config/` (1 soubor)
+1. **archive/ konsolidace:** `V3/`, `WarpBeta/`, `BACKUP/`, `backups/` (16G! rozhodnout: ven z repa), `logs/`, ~~`PUBLIC/`~~ (**hotovo 2026-10-24: →`archive/PUBLIC/`**), `venv-hiran/`, `website-v2.9-backup-*.tar.gz`, `AuXpow/` (posoudit), `src/lib.rs` (1 soubor — smazat/zařadit), `dashboard/` (pokud nahrazeno ZION_OS/dashboard), `config/` (1 soubor)
 2. **apps → apps/:** postupně per app; u `website-v2.9` opravit cesty v deploy skriptech + AGENTS.md + `next.config.ts` assetPrefix pokud existuje
 3. **V31 → chain/:** jen adresář (crate názvy zůstávají `v31-*` — rozhodnout §4.4)
 4. **docs/WP-Mainet → canon/books/:** přesun knih; ~100+ odkazů k přepsání (README, AGENTS, docs/3.2, .gitignore, pdf skripty) — dedikovaný commit
@@ -208,7 +208,7 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 - ✅ `infra/RUNBOOK.md` + `infra/deploy/README.md` (2026-10-24): host/alias tabulka, restart per služba, rollback (`.next.bak-*`), "co dělat když" (404 obrázky = standalone/public; tunely = které služby; cert renewal edge2; disk full), deploy kontrakt + registry.
 - ✅ SSH alias `zion-edge2` (207.180.217.100:22) — chyběl lokálně, kanonické skripty bez něj nefungovaly.
 - ✅ `deploy-marketplace.sh` vytvořen (2026-10-24) — prisma generate před build (debian engine do standalone), rsync→edge2, `zion-marketplace` restart, smoke :3100+live
-- CI: `npm run build` + `check:links` na push? (rozhodnout)
+- CI: `npm run build` + `check:links` na push? → **ROZHODNUTO 2026-10-24: NE** (vynecháno)
 
 ### F6 — Edge → čistý chain tier
 
