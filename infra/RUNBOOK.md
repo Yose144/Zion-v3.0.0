@@ -69,3 +69,10 @@ Health: `curl https://app.zionterranova.com/api/health` (28 služeb), `https://a
 - **Statické weby:** rsync `--delete` → rollback = redeploy předchozího commitu (nebo `/var/www/*.bak-*` adresáře pokud existují).
 - **Celý web-tier na Edge:** DNS 9 záznamů zpět na `62.171.141.136` — fallback vhosty na Edgi žijí (stale). Okno ≈ do expirace auth certu na Edgi.
 - **nginx změna:** `nginx -t` vždy před reload; zálohy confů **mimo** `sites-enabled/` (include glob `*` načte i `.bak` → duplicate `server_name`).
+
+## Ops lessons (2026-10-24)
+
+- **`/etc/nginx/sites-enabled/*.bak` se PARSEUJE** — `include sites-enabled/*` bere všechny soubory. Zálohy confů vždy mimo: `/etc/nginx/backups/`.
+- **Edge catch-all:** `zion-edge-download.conf` = `server_name 62.171.141.136` + `_`→`return 444` (IPv4+IPv6). IP `/zion-miner/` + `/rig-output/` zůstávají; neznámé Host = connection closed.
+- **Service user ≠ root:** `zion-edge-backup` běží jako `zion` — soubory root:600 (`/data/zion/g8_run.json`) mu číst nejdou. Perms kontrolovat.
+- **macOS case-insensitive FS:** `PUBLIC/` a `public/` = jeden adresář — při auditu duplicit rozlišovat `git ls-files`, ne `find`.
