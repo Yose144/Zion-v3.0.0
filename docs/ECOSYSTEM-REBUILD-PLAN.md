@@ -172,7 +172,7 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 - **IA:** mapovat ~60 sekcí → 7 kanonických; redirect tabulka pro sirotky (Next `next.config.ts` redirects — mechanismus už existuje pro `/dex`→`/multichain#dex`)
   - ✅ **F3a (2026-10-22, `3ed130c0f`):** [`docs/F3-IA-MAP.md`](F3-IA-MAP.md) — kompletní mapa 130 rout→7 sekcí + 2-fázová redirect tabulka; fáze-1 redirecty nasazeny (`/roadmap-295→/roadmap`, `/wiki→/docs`, `/onboard→/mining`, `/kompas→/terranova`, `/cesta→/maitreya#cesta`), interní linky + sitemap zkanonizovány, dead in-page redirecty smazány
   - ✅ **F3d huby (2026-10-22, `2ff61b679` + e2e `4a9d8c773`):** `/market` vznikl přejmenováním `/multichain` hubu (impl `defi/page.tsx`→`market/page.tsx`, metadata→"Trh", redirecty `/multichain|/defi|/dex*|/ziondex|/swap|/bridge|/warp`→`/market[#*]`); `/world` hub nově vytvořen (L3/L4/L5/L6 + TerraNova + Ekam + AI Native) + nav položka + sitemap; build+typecheck OK
-  - zbývající redirecty = content-merges vyžadující rozhodnutí (l*/download/monitoring/monitoring→viz mapa §"fáze 2" poznámka — živé stránky s unikátním obsahem, huby je neabsorbují)
+  - ✅ **F3 residual ROZHODNUTO (2026-10-24):** žádné další redirecty — zbývající stránky = obsahové sub-stránky (precedent /l*); nav: `/network` += children (`/monitoring`, `/g8`, `/miner-stats`), layers_group += `/ai-native`; všechny "K posouzení" otázky v mapě uzavřené
 - **Design tokens → `apps/shared/ui`:** ~~gold `#ffd700`…~~ *(plánovaná paleta se v appkách nevyskytuje — kanon = rasta)* `.zion-*` classy + brand sloty
   - ✅ **F3b (2026-10-22, `b31349ba6`):** `apps/shared/ui/` vytvořeno — `tokens.css` (canonical superset z website-v2.9: zion-gold/purple/cyan/blue sloty = rasta, `cyber`+`matrix-light` themy, radius/surface/shadow) + `tailwind.preset.cjs` (TW3) + `tokens.ts`; **pool-ui = první consumer** (preset+import, drift `#078930`→`#066928` konvergován, build OK)
   - ✅ **F3b2 (2026-10-22):** napojeni zbývající consumeri — **IntroPage** (preset+import, 48 str. build OK), **MarketPlace** (preset+import, drift `#078930`/`#0f172a`→kanon v config+globals, 28 str. build OK), **OasisWeb** (import+`#078930`→`#066928`, 13 str. build OK; pre-existing missing `@simplewebauthn/browser` doinstalován)
@@ -192,10 +192,10 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 
 | Duplicita | Rozhodnutí |
 |---|---|
-| `/pool` + `apps/pool-ui` + `/var/www/pool` + `pool.zionterranova.com` | 1 pool povrch — pool-ui jako tab v `/network`, nebo subdomain → redirect — **open: obě plochy živé, pool-ui je veřejný portál, `/pool` v appce má 7 tabů vč. QTC/PRL** |
+| `/pool` + `apps/pool-ui` + `/var/www/pool` + `pool.zionterranova.com` | ✅ **ROZHODNUTO 2026-10-24: oba zůstávají** — pool. = veřejný portál, `/pool` v appce = in-app dashboard (7 tabů vč. QTC/PRL) |
 | `OasisWeb` (3D) + `/var/www/oasis` + `/l4-oasis` v hlavním webu | ✅ **již tak je (2026-10-24 ověřeno):** `/l4-oasis` (803 ř.) = landing → `oasis.zionterranova.com` portál |
-| `market.` app + `/multichain` + `/dex` + `/ziondex` + `/swap` + `/defi` | ✅ redirecty live (F3d); **open: `/market` hub neodkazuje na market. app** (§4.1) — přidat kanonický link |
-| `dashboard.zionterranova.com` + `/dashboard/*` (10 str.) + `/monitoring` + `/g8` + `mission-control` | Rozdělit: veřejný stav → `/network`; ops → za ZIS na dashboard. **Ops subdoména už 401 allowlist ✅; public stránky = obsahové, mimo nav — open: absorbovat do `/network` nebo nechat** |
+| `market.` app + `/multichain` + `/dex` + `/ziondex` + `/swap` + `/defi` | ✅ redirecty live (F3d) + **`/market` overview má canonical link card → market.zionterranova.com** (2026-10-24, deployed) |
+| `dashboard.zionterranova.com` + `/dashboard/*` (10 str.) + `/monitoring` + `/g8` + `mission-control` | ✅ split je realita: ops subdoména = 401 allowlist; public `/dashboard`, `/monitoring`, `/g8` = obsahové stránky pod Síť (nav `/network` children 2026-10-24) |
 | `explorer/` 24 str. | jádro `/network` — nechat, jen přeskupit nav — ✅ v nav pod Síť |
 | `PUBLIC/` klon vs `public/` subtree | ✅ **rekonziliováno s F2 rozhodnutím (2026-10-22):** `PUBLIC/` je untracked klon (32M, nikdy se necommití), `public/` subtree = jediný tracked zdroj → push na `public` remote. F2: "všechno untracked zůstává" — zdokumentováno v REPO-MAP §3 |
 | `newearth.cz` | ✅ **retired 2026-10-20** — vhost+cert off, odkazy → `/legacy/`; residual: `apps/public_html/` + edge `/var/www/newearth` (F6 cleanup) |

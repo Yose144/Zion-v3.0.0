@@ -43,7 +43,11 @@ export default function Navigation() {
       title: tr('nav', 'network_group', lang),
       color: '6, 105, 40',
       items: [
-        { href: '/network', label: tr('nav', 'network', lang) },
+        { href: '/network', label: tr('nav', 'network', lang), children: [
+          { href: '/monitoring', label: tr('nav', 'monitoring', lang) },
+          { href: '/g8', label: tr('nav', 'g8', lang) },
+          { href: '/miner-stats', label: tr('nav', 'miner_stats', lang) },
+        ] },
         { href: '/explorer', label: tr('nav', 'explorer', lang) },
         { href: '/pool', label: tr('nav', 'pool', lang) },
         { href: '/mining', label: tr('nav', 'mining', lang) },
@@ -93,6 +97,7 @@ export default function Navigation() {
           ],
         },
         { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },
+        { href: '/ai-native', label: tr('nav', 'ai_native', lang) },
       ],
     },
     {

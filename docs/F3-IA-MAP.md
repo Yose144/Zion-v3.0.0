@@ -129,7 +129,7 @@
 
 ✅ již provedeno dřív (config redirecty live): `/node-setup`+`/mining/node-setup`→`/mining#node-setup`, `/nirvana`→`/maitreya#nirvana` (čtečka `/nirvana/cist` zůstává). Ověřeno v `next.config.ts` + live 2026-10-24.
 
-Zbývá rozhodnout/provést: `/cex`→`/market` (675 řádků vlastního obsahu — open Q), `/download`→`/mining` (428 ř. obsahu), `/monitoring /miner-stats /g8`→`/network` (reálné obsahové stránky — hub jejich obsah NEabsorbuje; jsou mimo nav, linkované z `/network` komponent a `/dashboard`), `/dashboard/*(public)`→`/network`, `/api-reference`→`/docs` (378 ř. obsahu), `/dashboard/dao-tree`→`/dao`.
+✅ **ROZHODNUTO 2026-10-24:** žádné další redirecty — všechny zbývající stránky jsou **obsahové sub-stránky** (precedent `/l*` pod `/world` — hub = vstupní bod, ne náhrada obsahu). `/monitoring`, `/miner-stats`, `/g8`, `/dashboard/*`, `/download`, `/cex`, `/api-reference`, `/dashboard/dao-tree` zůstávají live pod svými sekcemi. **Implementováno:** `/network` nav položka dostala children (`/monitoring`, `/g8`, `/miner-stats` — dřív mimo nav), `/ai-native` přidáno do layers_group (Svět). Pool: `pool.zionterranova.com` i `/pool` v appce zůstávají (portál vs in-app dashboard).
 
 ### Verifikace redirectů (2026-10-22, standalone build, PORT=3199)
 
@@ -149,12 +149,12 @@ Všech 15 testovaných cest → `308` do správných cílů (`/multichain[/walle
 
 `/l3-hiran`, `/l4-oasis`, `/l5-free-world`, `/l6-issobella`, `/ekam`, `/ai-native` **zůstávají živé samostatné stránky** — jejich obsah není ve `/world` (hub jen odkazuje). Redirect `/l*→/world` by obsah smazal; kanonizace tady znamená: `/world` = vstupní bod, l* = obsahové sub-destinace (nav už je seskupuje pod Layers/World). Totéž platí pro `/download`, `/monitoring`, `/miner-stats`, `/g8`, `/cex`, `/nirvana` a `/api-reference` — přímé 301 je možné teprve poté, co cílová sekce jejich obsah skutečně absorbuje (nebo po produktovém rozhodnutí obsah zahodit).
 
-## K posouzení (otevřené)
+## K posouzení — ROZHODNUTO 2026-10-24
 
-1. `/terranova` (17 str.) — Příběh vs Svět; plán zmiňuje obojí
-2. `/whitepapers` — Příběh vs Docs
-3. `/ekam` standalone vs `/terranova/ekam`
-4. `/ai-native` — Svět vs Docs
-5. `/wallet`, `/account`, `/cex` — Trh vs top-level utility
-6. `/team`, `/news`, `/roadmap` — meta úroveň (footer), ne sekce
-7. pool.zionterranova.com — redirect na `/network#pool`? (plán §4)
+1. `/terranova` (17 str.) — ✅ split zůstává: index v Learn skupině (lore vstup), 12 nodes jako children pod `/l5-free-world` (Svět)
+2. `/whitepapers` — ✅ zůstává v Learn skupině (ta obsahuje i `/docs`; technické papíry = Docs povrch)
+3. `/ekam` standalone vs `/terranova/ekam` — ✅ obě zůstávají: `/ekam` = EkamMuseumLanding (museum landing), `/terranova/ekam` = 631ř. node stránka — různý obsah, různý účel
+4. `/ai-native` — ✅ Svět (layers_group) — produktová stránka ekosystémové vrstvy
+5. `/wallet`, `/account`, `/cex` — ✅ Trh skupina (`/wallet`, `/cex` v nav) + `/account` = top-level ZIS utility mimo sekce
+6. `/team`, `/news`, `/roadmap` — ✅ meta úroveň v Learn skupině (ne sekce)
+7. pool.zionterranova.com — ✅ **zůstává samostatný portál**; `/market` hub už na market. app odkazuje (canonical link card 2026-10-24)

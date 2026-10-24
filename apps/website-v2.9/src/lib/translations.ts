@@ -36,6 +36,7 @@ const t = {
     philosophy: { cs: 'Filozofie',   en: 'Philosophy' },
     ai_native:  { cs: 'AI Native',   en: 'AI Native' },
     monitoring: { cs: 'Monitoring',  en: 'Monitoring' },
+    g8:         { cs: 'G8 Run',      en: 'G8 Run' },
     multichain: { cs: 'Multichain Hub',    en: 'Multichain Hub' },
     defi:       { cs: 'Multichain',        en: 'Multichain' },
     meme_lab:   { cs: 'Meme Lab',    en: 'Meme Lab' },
