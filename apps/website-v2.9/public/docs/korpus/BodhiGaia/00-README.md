@@ -4,7 +4,7 @@
 > **Stav:** DRAFT narativně-technická řada (L5 / STAVBA · HORIZONT · MÝTUS), navržená ke kanonizaci podle [`MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) (třída E — kulturní/veřejná komunikace; části o fondu a governance třída C).
 > **Vytvořeno:** 2026-09-02 pro verzi **3.3 „Nirvana"**.
 > **Místo v kompasu:** Západní kniha (*Terra Nova — Směr a Cíl*) — rozšíření epizody 10 knihy Nirvana [*Prameny Života*](../nirvana/10-Prameny-Zivota.md) a epizody 3 [*Nová země*](../nirvana/03-Nova-Zeme.md).
-> **Navazuje na:** [`Sůl této země`](../SulZeme/00-README.md) (ep. 4 *Cesta nevyšlapaná* — Ráma, Sítá, Hanuman; ep. 10 *První svět Oasis* — Sítá jako Matka Země, Hanuman jako Služebník Života), [`Onboarding`](../ZION_ONBOARDING_PUBLIC_CZ.md), [`Nirvana`](../nirvana/00-README.md), [`NirvanaCloud`](../NirvanaCloud/00-README.md), [`Mise Amenti`](../MiseAmenti/README.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) (kap. 6 — L5 Free World) a knihu [`TerraNova`](../../TerraNova/06-L5-SVOBODA.md).
+> **Navazuje na:** [`Sůl této země`](../SulZeme/00-README.md) (ep. 4 *Cesta nevyšlapaná* — Ráma, Sítá, Hanuman; ep. 10 *První svět Oasis* — Sítá jako Matka Země, Hanuman jako Služebník Života), [`Onboarding`](../ZION_ONBOARDING_PUBLIC_CZ.md), [`Nirvana`](../../books/nirvana/kapitoly/00-README.md), [`NirvanaCloud`](../NirvanaCloud/00-README.md), [`Mise Amenti`](../MiseAmenti/README.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) (kap. 6 — L5 Free World) a knihu [`TerraNova`](../../TerraNova/06-L5-SVOBODA.md).
 > **Jazyk:** čeština — anglický index: [`00-README_EN.md`](./00-README_EN.md).
 > **Pravidlo textu:** stejné jako v celé řadě Nirvana a Sůl Země — *Příběh → Co to znamená → Kotva pravdy*. Kde text mluví o síti, fondu, adresách nebo kódu, platí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../3.2/StatusV3.md) a živý repozitář — ne příběh.
 
@@ -106,7 +106,7 @@ Tato kniha nevytváří nový svět. **Sjednocuje to, co už v repozitáři, na 
 - **Technické komunitní dokumenty L5:** [`public/V3/L5/docs/README.md`](../../../public/V3/L5/docs/README.md)
 - **Technický plán 3.3, kap. 6:** [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md)
 - **Aktuální stav sítě:** [`StatusV3.md`](../../3.2/StatusV3.md) · [`interní repozitář`](../../../interní repozitář)
-- **Narativní kořeny:** [`Sůl této země`](../SulZeme/00-README.md) · [`Nirvana`](../nirvana/00-README.md) · [`NirvanaCloud`](../NirvanaCloud/00-README.md) · [`Road to Zion`](../marketing/ROAD_TO_ZION_CZ.md)
+- **Narativní kořeny:** [`Sůl této země`](../SulZeme/00-README.md) · [`Nirvana`](../../books/nirvana/kapitoly/00-README.md) · [`NirvanaCloud`](../NirvanaCloud/00-README.md) · [`Road to Zion`](../marketing/ROAD_TO_ZION_CZ.md)
 - **Veřejný onboarding:** [`ZION_ONBOARDING_PUBLIC_CZ.md`](../ZION_ONBOARDING_PUBLIC_CZ.md)
 
 ---

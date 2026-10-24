@@ -185,8 +185,8 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 - **Copy audit:** CS+EN parita, žádné interní názvy (V31, ZionStart, PoC-lab…), `npm run check:links --strict`
   - ✅ **Sweep interních názvů (2026-10-22):** čistý — žádné `V31|ZionStart|PoC-lab|HiranV2|edge-deploy|/opt/zion|server IP` v user-facing copy napříč 5 appkami (jen code komentáře + veřejné názvy `ZION v3.2.0`, `Hiranyagarbha`, `L3 Hiran` lore); CS/EN parita spot-check OK
   - ✅ **CS/EN parita (2026-10-22):** systematický scan — 0 souborů s nerovnováhou `cs:`/`en:` copy klíčů napříč 5 appkami
-  - zbývá: dead-link čištění (390) — copy/content pass
-  - 📊 **Naměřeno (2026-10-22):** 780 souborů, **390 dead links** — převážně repo-interní cesty (`../../3.2/*`, `../L1/*`, `../Ruze/*`, `LEVEL_*`, `PART_*`) v publikovaném `public/docs/` korpusu; live web degraduje gracefuly (docLinks resolver → muted non-link, ne 404) — čištění = copy pass, ne outage fix. Log: `docs/3.2/REPORTS/check-links-2026-10-22.txt`
+  - 🔧 **F3f triáž (2026-10-24):** 390→**383** dead links po opravě 7 cross-book odkazů (`../Maitreya/EPILOG.md`×4 → `books/maitreya/kapitoly/epilog.md`, `../nirvana/00-README*`×3 → `books/nirvana/kapitoly/`). **Zbývající 383 = ne mechanický úkol:** ~200 interních repo-referencí (3.2 plány, L1/L2 zdrojáky, `canon/` cesty, SECURITY_DISCLOSURE záměrně nepublikovaný) → muted non-link je **správné** chování; ~170 chybějící obsah (Ruze book, `PART_*`/`LEVEL_*` kapitoly, `whitepaper.pdf`, pilots/) = content gap, editoriální rozhodnutí per-item (publikovat vs. přepsat text); ~10 adresářových odkazů. Basename-match test: 0 unikátních cílů → žádný bezpečný bulk-rewrite. Copy pass = per-file review, ne sed job.
+  - 📊 **Naměřeno (2026-10-22):** 780 souborů — převážně repo-interní cesty (`../../3.2/*`, `../L1/*`, `../Ruze/*`, `LEVEL_*`, `PART_*`) v publikovaném `public/docs/` korpusu; live web degraduje gracefuly (docLinks resolver → muted non-link, ne 404). Log: `docs/3.2/REPORTS/check-links-2026-10-22.txt`
 
 ### F4 — Konsolidace překryvů (naměřené duplicity)
 

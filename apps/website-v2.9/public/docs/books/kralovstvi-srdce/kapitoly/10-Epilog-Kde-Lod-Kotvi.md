@@ -35,6 +35,6 @@ Vzkaz z přídě pro posádku, která teď vyráží — pro Surtu a jeho Santa 
 *Konec — a zároveň pokračování:*
 
 - [→ Zpět na rejstřík](./00-README.md)
-- [→ Mantra, kterou kniha rozšiřuje — Maitreya Epilog](../Maitreya/EPILOG.md)
+- [→ Mantra, kterou kniha rozšiřuje — Maitreya Epilog](../../maitreya/kapitoly/epilog.md)
 - [→ Loď, která čeká — Surta Srdce](../SurtaSrdce/00-README.md)
 - [→ Flotila — Nirvana 13: Tres Marías](../nirvana/13-Tres-Marias.md)

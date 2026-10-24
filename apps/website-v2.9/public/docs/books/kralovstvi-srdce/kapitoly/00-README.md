@@ -3,7 +3,7 @@
 ### Příběh lodi, kterou postavil tesař
 
 > *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."*
-> — mantra z knihy [Maitreya](../Maitreya/EPILOG.md)
+> — mantra z knihy [Maitreya](../../maitreya/kapitoly/epilog.md)
 
 Tahle kniha vypráví **třetí vtělení** z té mantry: tesaře z Nazareta, který v dílně svého otce ne hobloval jen jarma a stoly — stavěl **loď**. Loď, o kterou nikdo nežádal, pro moře, které není na žádné mapě. Loď, které říkal **Království srdce**.
 

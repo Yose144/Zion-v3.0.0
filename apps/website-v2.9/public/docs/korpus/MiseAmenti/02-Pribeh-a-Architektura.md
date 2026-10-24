@@ -86,7 +86,7 @@ Kanonická cesta z [`ZION — Nová civilizace`](../SulZeme/08-ZION-Nova-Civiliz
 
 ### Nirvana — západní horizont
 
-[`canon/books/nirvana/`](../nirvana/00-README.md) je kniha cesty od paprsku Lumi přes Ararat a dům až ke globálnímu horizontu. Jejím úkolem je odpovědět na otázku: **„Jak vypadá svět, který stojí za dlouhodobé stavění?“**
+[`canon/books/nirvana/`](../../books/nirvana/kapitoly/00-README.md) je kniha cesty od paprsku Lumi přes Ararat a dům až ke globálnímu horizontu. Jejím úkolem je odpovědět na otázku: **„Jak vypadá svět, který stojí za dlouhodobé stavění?“**
 
 ### NirvanaCloud — hluboká mapa stavů
 

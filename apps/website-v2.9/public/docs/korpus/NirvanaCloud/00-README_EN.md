@@ -69,7 +69,7 @@ Each chapter has three layers, exactly like the rest of the Nirvana and Salt of 
 
 - **Canonical integration corpus (L1–L6, truth, ethics, 100 years):** [`../../../MiseAmenti/README_EN.md`](../MiseAmenti/README_EN.md)
 - **Canonical technical plan 3.3 Nirvana (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md)
-- **Narrative book Nirvana (concept/horizon):** [`../nirvana/00-README_EN.md`](../nirvana/00-README_EN.md)
+- **Narrative book Nirvana (concept/horizon):** [`../nirvana/00-README_EN.md`](../../books/nirvana/kapitoly/00-README_EN.md)
 - **The Salt of this Earth (roots):** [`../SulZeme/00-README_EN.md`](../SulZeme/00-README_EN.md)
 - **Road to Zion — the four books:** [`../marketing/ROAD_TO_ZION_EN.md`](../marketing/ROAD_TO_ZION_EN.md)
 - **Live network status:** [`../../../StatusV3.md`](../../3.2/StatusV3.md)

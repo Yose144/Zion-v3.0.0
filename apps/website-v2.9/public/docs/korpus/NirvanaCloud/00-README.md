@@ -69,7 +69,7 @@ Každá kapitola má tři vrstvy, stejně jako zbytek série Nirvana a Sůl Zem�
 
 - **Kanonický integrační corpus (L1–L6, pravda, etika, 100 let):** [`../../../MiseAmenti/README.md`](../MiseAmenti/README.md)
 - **Kanonický technický plán 3.3 Nirvana (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md)
-- **Narativní kniha Nirvana (koncept/horizont):** [`../nirvana/00-README.md`](../nirvana/00-README.md)
+- **Narativní kniha Nirvana (koncept/horizont):** [`../nirvana/00-README.md`](../../books/nirvana/kapitoly/00-README.md)
 - **Sůl této země (kořeny):** [`../SulZeme/00-README.md`](../SulZeme/00-README.md)
 - **Road to Zion — čtyři knihy:** [`../marketing/ROAD_TO_ZION_CZ.md`](../marketing/ROAD_TO_ZION_CZ.md)
 - **Aktuální stav sítě:** [`../../../StatusV3.md`](../../3.2/StatusV3.md)

@@ -77,7 +77,7 @@ Registr M0 vyžaduje hlásit rozpory bez obrany identity projektu. Toto jsou ná
 | 6 | [`Issobella/06`](../Issobella/06-Pet-Procent-Nahoru.md) | „Devadesát procent jde tomu, kdo našel nonce" | kanonicky 89 % těžař + 1 % (burn před aktivací / node reward po ní) | A |
 | 7 | [`Issobella/10`](../Issobella/10-Kotva-Pravdy-a-Hranice.md) §Známé nesrovnalosti | otevřená otázka etymologie „Issobella" | vyřešeno **na úrovni MÝTU** v kap. 08 (Isabel = Elizabeth jako jazykový fakt; ztotožnění jako mýtus); historický původ názvu kniha netvrdí — zůstává NEDOLOŽENO | E |
 | 8 | `apps/OasisWeb/src/domain/config/worlds.ts` — `ELIZABET` | `layer: 3`, kategorie `planet`; kněžka brány je archetyp L4 | otevřená otázka pro OASIS data (co znamená `layer`); neupravovat bez review (srov. `BodhiGaia/09` §4 #3 — Dharma Temple `layer: 3`) | A |
-| 9 | [`nirvana/00-README`](../nirvana/00-README.md) řádek ep. 9 | „L4 Unreal Engine 5.7 · Nanite/Lumen fotorealismus, okamžitý WebGPU/Pixel Streaming preview" jako popis epizody bez štítku | HORIZONT (`MiseAmenti/07` §5) — doplnit štítek při příštím review | B |
+| 9 | [`nirvana/00-README`](../../books/nirvana/kapitoly/00-README.md) řádek ep. 9 | „L4 Unreal Engine 5.7 · Nanite/Lumen fotorealismus, okamžitý WebGPU/Pixel Streaming preview" jako popis epizody bez štítku | HORIZONT (`MiseAmenti/07` §5) — doplnit štítek při příštím review | B |
 | 10 | [`NirvanaCloud/00-README`](../NirvanaCloud/00-README.md) | „stovky nezávislých uzlů po světě" jako technický fakt | NEDOLOŽENO (`MiseAmenti/07` §2; snímek 2026-09-14: 7 aktivních peerů) | B |
 
 ---
