@@ -2,8 +2,9 @@
 # ZION OASIS Web deploy — Next.js static export to oasis.zionterranova.com
 #
 # Builds apps/OasisWeb as a static export, rsyncs dist/ to /var/www/oasis
-# on the Edge server, installs/updates the nginx site, reloads nginx and
-# runs a health check.
+# on EDGE2 (web ingress after the 2026-10-22 cutover), installs/updates the
+# nginx site from infra/nginx/edge2/, reloads nginx and runs a health check.
+# Edge (zion-v6) still holds a stale fallback copy — see infra/RUNBOOK.md.
 #
 # Usage:
 #   bash apps/OasisWeb/deploy/deploy-oasis-web.sh
@@ -11,15 +12,19 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EDGE_HOST="${ZION_EDGE_HOST:-62.171.141.136}"
-EDGE_PORT="${ZION_EDGE_PORT:-2222}"
+REPO_ROOT="$(cd "${ROOT_DIR}/../.." && pwd)"
+EDGE_HOST="${ZION_EDGE_HOST:-zion-edge2}"
+EDGE_PORT="${ZION_EDGE_PORT:-22}"
 EDGE_USE_IPV6="${ZION_EDGE_USE_IPV6:-0}"
 SSH_KEY="${ZION_EDGE_SSH_KEY:-$HOME/.ssh/zion-edge-post-wipe-2026-07-29}"
 REMOTE="root@${EDGE_HOST}"
 REMOTE_DIR="/var/www/oasis"
-NGINX_CONF="/etc/nginx/sites-enabled/oasis.zionterranova.com.conf"
+# Canonical vhost source is the EDGE2 variant (local ZIS/backend proxies,
+# no tunnel hairpin). deploy/nginx-oasis.conf is the legacy Edge one.
+NGINX_SRC="${REPO_ROOT}/infra/nginx/edge2/oasis.zionterranova.com.conf"
+NGINX_CONF="/etc/nginx/sites-available/oasis.zionterranova.com.conf"
 
-SSH_OPTS="-i ${SSH_KEY} -p ${EDGE_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SSH_OPTS="-i ${SSH_KEY} -p ${EDGE_PORT} -o StrictHostKeyChecking=accept-new"
 [[ "$EDGE_USE_IPV6" == "1" ]] && SSH_OPTS="${SSH_OPTS} -6"
 
 echo "[deploy-oasis-web] Building Next.js static export..."
@@ -36,7 +41,8 @@ ssh ${SSH_OPTS} "${REMOTE}" "mkdir -p ${REMOTE_DIR}"
 rsync -avz --delete -e "ssh ${SSH_OPTS}" "${ROOT_DIR}/dist/" "${REMOTE}:${REMOTE_DIR}/"
 
 echo "[deploy-oasis-web] Updating nginx config..."
-rsync -avz -e "ssh ${SSH_OPTS}" "${ROOT_DIR}/deploy/nginx-oasis.conf" "${REMOTE}:${NGINX_CONF}"
+rsync -avz -e "ssh ${SSH_OPTS}" "${NGINX_SRC}" "${REMOTE}:${NGINX_CONF}"
+ssh ${SSH_OPTS} "${REMOTE}" "ln -sfn ${NGINX_CONF} /etc/nginx/sites-enabled/oasis.zionterranova.com.conf"
 
 echo "[deploy-oasis-web] Disabling stale zion-oasis-web service and reloading nginx..."
 ssh ${SSH_OPTS} "${REMOTE}" "systemctl disable zion-oasis-web.service 2>/dev/null || true; systemctl stop zion-oasis-web.service 2>/dev/null || true; nginx -t && nginx -s reload"

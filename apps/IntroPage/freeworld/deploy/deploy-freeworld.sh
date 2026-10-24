@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # ZION Free World (L5) static site deploy
 #
-# Deploys apps/FreeWorld/dist to the Edge server at /var/www/freeworld
-# (served by the freeworld.zionterranova.com nginx vhost — see
-# V31/deploy/nginx/freeworld.zionterranova.com.conf). The vhost keeps
+# Deploys apps/FreeWorld/dist to EDGE2 (web ingress after the 2026-10-22
+# cutover) at /var/www/freeworld
+# (served by the freeworld.zionterranova.com nginx vhost — canonical source:
+# infra/nginx/edge2/freeworld.zionterranova.com.conf). The vhost keeps
 # proxying /api/ to the Next.js app on 127.0.0.1:3000.
 #
 # Usage:
@@ -12,7 +13,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EDGE_HOST="${ZION_EDGE_HOST:-zion-new}"
+EDGE_HOST="${ZION_EDGE_HOST:-zion-edge2}"
 EDGE_USER="${ZION_EDGE_USER:-root}"
 SSH_KEY="${ZION_SSH_KEY:-$HOME/.ssh/zion-edge-post-wipe-2026-07-29}"
 SSH_EXTRA="${ZION_SSH_OPTS:-}"

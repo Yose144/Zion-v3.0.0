@@ -6,8 +6,8 @@
 #   ZIS_DEPLOY_HOST — where zion-zis.service runs. Default zion-edge2
 #                     (service lives on EDGE2 at /opt/zion/identity).
 #   ZIS_NGINX_HOST  — where auth.zionterranova.com TLS termination lives.
-#                     Default zion-new (Edge) while DNS points there;
-#                     switch to zion-edge2 after the F1 DNS move.
+#                     Default zion-edge2 (F1 DNS move done 2026-10-22).
+#                     Edge (zion-v6) keeps a fallback vhost — see infra/RUNBOOK.md.
 #                     Set ZIS_SKIP_NGINX=1 to skip the nginx step entirely.
 
 set -euo pipefail
@@ -15,7 +15,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 ZIS_DIR="/opt/zion/identity"
 DEPLOY_HOST="${ZIS_DEPLOY_HOST:-zion-edge2}"
-NGINX_HOST="${ZIS_NGINX_HOST:-zion-new}"
+NGINX_HOST="${ZIS_NGINX_HOST:-zion-edge2}"
 SSH_CMD="ssh $DEPLOY_HOST"
 
 echo "=== ZIS Deploy → $DEPLOY_HOST ==="

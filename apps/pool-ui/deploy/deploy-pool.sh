@@ -5,18 +5,19 @@
 #   --build-only  build the static export, skip rsync/nginx
 #   --nginx       also install + reload the nginx vhost (needs sudo)
 #
-# Static export lands at /var/www/pool; the vhost proxies /public/v1/*
-# to the zion-pool API on 127.0.0.1:8080 (ZION_POOL_API_BIND).
+# Static export lands at /var/www/pool on EDGE2 (web ingress after the
+# 2026-10-22 cutover); the vhost proxies /public/v1/* to the pool API on
+# 127.0.0.1:8080 (edge2→edge tunnel leg — stratum/API stays on Edge).
+# Edge (zion-v6) still holds a stale fallback copy — see infra/RUNBOOK.md.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 UI_DIR="$REPO_ROOT/apps/pool-ui"
 WEB_ROOT="/var/www/pool"
-# IPv4 egress to edge is CGNAT-blocked; zion-v6 (IPv6 :2222) is the reliable alias.
-SSH_HOST="${POOL_DEPLOY_HOST:-zion-v6}"
+SSH_HOST="${POOL_DEPLOY_HOST:-zion-edge2}"
 SSH_CMD="ssh $SSH_HOST"
-NGINX_SRC="$REPO_ROOT/V31/deploy/nginx/pool.zionterranova.com.conf"
+NGINX_SRC="$REPO_ROOT/infra/nginx/edge2/pool.zionterranova.com.conf"
 NGINX_DST="/etc/nginx/sites-available/pool.zionterranova.com.conf"
 NGINX_LINK="/etc/nginx/sites-enabled/pool.zionterranova.com.conf"
 
@@ -52,7 +53,13 @@ else
     echo "[3/4] Skipping nginx (pass --nginx to install the vhost)."
 fi
 
-# 4. First-deploy reminder: cert + DNS.
-echo "[4/4] Done."
-echo "  First deploy only: point pool.zionterranova.com A -> 62.171.141.136,"
-echo "  then run on edge: certbot --nginx -d pool.zionterranova.com"
+# 4. Smoke check — public site + proxied pool API through the vhost.
+echo "[4/4] Smoke check..."
+code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 'https://pool.zionterranova.com/')
+api=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 'https://pool.zionterranova.com/public/v1/coins')
+if [[ "$code" == "200" && "$api" == "200" ]]; then
+  echo "  OK  site=$code api=$api — deploy verified."
+else
+  echo "  FAIL site=$code api=$api (want 200/200)" >&2
+  exit 1
+fi

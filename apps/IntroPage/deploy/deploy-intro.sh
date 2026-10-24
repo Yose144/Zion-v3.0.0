@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # ZION Intro landing deploy
 #
-# Deploys the static export of apps/IntroPage to the Edge server
-# at /var/www/zion-maintenance and reloads nginx.
+# Deploys the static export of apps/IntroPage to EDGE2 (web ingress after the
+# 2026-10-22 cutover) at /var/www/zion-maintenance and reloads nginx.
+# Edge (zion-v6) still holds a stale fallback copy — see infra/RUNBOOK.md.
 #
 # Usage:
 #   bash apps/IntroPage/deploy/deploy-intro.sh
@@ -10,7 +11,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EDGE_HOST="${ZION_EDGE_HOST:-zion-new}"
+EDGE_HOST="${ZION_EDGE_HOST:-zion-edge2}"
 EDGE_USER="${ZION_EDGE_USER:-root}"
 SSH_KEY="${ZION_SSH_KEY:-$HOME/.ssh/zion-edge-post-wipe-2026-07-29}"
 SSH_EXTRA="${ZION_SSH_OPTS:-}"

@@ -2,10 +2,10 @@
 
 Pravidla pro agenty (Devin, Copilot, WARP) pracující na veřejném ZION webu.
 
-> **Služba:** `app.zionterranova.com` — Next.js 16.2.9, běží jako systemd `zion-website.service` na Edge (`62.171.141.136`), WorkingDirectory `/opt/zion/APP&WEB/website-v2.9`, proxy na `127.0.0.1:3000`.
+> **Služba:** `app.zionterranova.com` — Next.js 16.2.9, běží jako systemd `zion-website.service` na **EDGE2** (`207.180.217.100`, alias `zion-edge2`) — web ingress po cutoveru 2026-10-22. WorkingDirectory `/opt/zion/APP&WEB/website-v2.9`, proxy na `127.0.0.1:3000`.
 > **Intro hub:** `zionterranova.com` — statický export projektu `apps/IntroPage` (source `src/app/maintenance.html`), deploy přes `apps/IntroPage/deploy/deploy-intro.sh` do `/var/www/zion-maintenance/`, servírovaný systémovým nginxem (ne Next.js). Legacy kopie `public/maintenance.html` v tomto repozitáři se na apex nepoužívá.
 > **OASIS Web:** `oasis.zionterranova.com` — samostatná aplikace v `/var/www/oasis/`.
-> **Free World portál:** `freeworld.zionterranova.com` — dedikovaný nginx vhost (repo `V31/deploy/nginx/freeworld.zionterranova.com.conf`) proxy na `127.0.0.1:3000`; `/` mapuje na `/l5-free-world`, cert přes certbot. Portál používá `/api/free-world/[[...path]]` proxy → L5 daemon `127.0.0.1:8095` (GET public; POST jen QV ballots se ZIS session — `voter_id` je server-side `zis:<user.id>`, `X-API-Key` z env `FREE_WORLD_API_KEY`). L5 API jednotky: všechna `*_zion` pole = flowers (1e-6 ZION). Web backup: `/opt/zion/APP&WEB/website-v2.9/.next.bak-20260929T134241Z-l5-portal`.
+> **Free World portál:** `freeworld.zionterranova.com` — dedikovaný nginx vhost (repo `infra/nginx/edge2/freeworld.zionterranova.com.conf`) proxy na `127.0.0.1:3000`; `/` mapuje na `/l5-free-world`, cert přes certbot. Portál používá `/api/free-world/[[...path]]` proxy → L5 daemon `127.0.0.1:8095` (GET public; POST jen QV ballots se ZIS session — `voter_id` je server-side `zis:<user.id>`, `X-API-Key` z env `FREE_WORLD_API_KEY`). L5 API jednotky: všechna `*_zion` pole = flowers (1e-6 ZION). Web backup: `/opt/zion/APP&WEB/website-v2.9/.next.bak-20260929T134241Z-l5-portal`.
 >
 > **Deploy 2026-10-19 — Homepage/background/responsiveness performance pass (LIVE):** ⭐ ROOT CAUSE "občas se stránka/pozadí nenačte" = **`src/app/loading.tsx`** — root loading boundary (`<Suspense>` kolem `{children}`) posílala obsah **každé** stránky do `S:0` streamu, reveal jen přes JS `$RC` → bez/při pomalém JS věčný "Loading..." spinner. Odstraněna; Suspense přesunut do segmentů co ho potřebují (`login/loading.tsx`, `explorer/loading.tsx` — kvůli `useSearchParams`). Live `S:N=0`, no-JS h1 painted. Opaque CSS fallback (html `#050505`); ThemeProvider guarded storage; StarfieldBackground — první frame vždy, static mode reduced-motion/saveData; HolographicEarthLazy — statický poster + opt-in 3D, contextlost→poster; HeroSlider — mount jen displayed+pending, swap po decode, visibility-gated autoplay; HomeInteractiveSection lazy-mount widgetů (IO 400px); Navigation — scroll-lock/focus/dup keys; FloatingUtilities z-40 (bg bottom-4, chat bottom-20, safe-area); `@config "../../tailwind.config.ts"` v globals.css — **Tailwind 4 teď skutečně generuje `text-zion-gold`/`text-zion-cyan` utility** (dřív chyběly = šedý text); badge_chv4 public copy; `overflow-x: clip`; odstraněné globální mobile grid/padding hacky; prefetch={false} nav/footer/hero. Měření (localhost standalone, kontrolované API 503): JS −62 % (704→266 KB), obrázky −89 %, mobilní LCP −27 % (5.7→4.2 s); lokální FCP metrika pessimistická (node serializace statiků — produkční nginx servíruje různě). Backup `.next.bak-home-perf-20261019T151545Z`. Deploy rsync standalone+src+public+e2e přes `zion-v6`, restart `zion-website`, live vše 200. Dřívější detailní entry: Opaque CSS fallback (html literal `#050505`, odstraněný inline `background:transparent` + ClientBackgrounds transparent writes); ThemeProvider guarded localStorage (denied storage už nepadá do error boundary, persisted theme se aplikuje v effectu); StarfieldBackground — první frame vždy, static mode pro reduced-motion/saveData, matchMedia+visibility lifecycle; HolographicEarthLazy — statický texturovaný poster + opt-in "Prozkoumat ve 3D" na všech zařízeních, lokální error boundary, onReady/onUnavailable, paralelní optional textury, frameloop never offscreen; HeroSlider — mount jen displayed+pending, swap až po load, autoplay jen při intersection+visible+no-reduce/saveData, pause tlačítko, caption pod obrázkem; HomeInteractiveSection (IO 400px) lazy-mountuje WebTerminal/LiveDashboard/GoldenEgg; Navigation — route-close jen při reálné změně, scroll-lock se zachováním scrollY, dialog aria+fokus trap, dup keys, Maitreya v Learn; FloatingUtilities — bg toggle + chat z-40 (bg bottom/right 1rem, chat bottom 5rem), chat polling jen open+visible; prefetch={false} nav/footer/hero CTA; odstraněné globální mobile grid/padding hacky. Rework: statické home importy (žádný S:0 carrier — H1 viditelné bez JS), @config tailwind.config.ts (zion-gold/cyan utilities aktivní), badge_chv4 public copy, slider visibility/decode-swap/hitbox fixy, EarthLazy bez eager WebGL probu (opt-in only), ThemeContext persist jen v setTheme, nav scroll/focus/key fixy, safe-area floating controls. Build EXIT:0 (181 str), e2e/home-shell 10/10 (EXIT:0, /tmp/home-shell-final.log); build log /tmp/zion-home-candidate2-build.log.
 >
@@ -29,22 +29,17 @@ Pravidla pro agenty (Devin, Copilot, WARP) pracující na veřejném ZION webu.
 
 ## 1. Build & Deploy
 
+**Kanonický deploy:** `bash apps/website-v2.9/deploy/deploy-web2.9.sh` — build → kopie `public/` do standalone → rsync na **EDGE2** (`zion-edge2` = `207.180.217.100`, web ingress po cutoveru 2026-10-22) `/opt/zion/APP&WEB/website-v2.9` → `chown zion:zion` → `systemctl restart zion-website` → smoke check. Runbook + ostatní povrchy: `infra/RUNBOOK.md`. Edge (`zion-v6`/`zion-new`) je fallback, deploy tam nemíří.
+
 ```bash
 # Build (lokálně)
 cd apps/website-v2.9 && npm run build
 
-# Deploy na Edge
-rsync -az --delete -e "ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29" \
-  src .next public package.json next.config.ts tsconfig.json \
+# Manuální deploy (bez skriptu)
+rsync -az --delete src .next public package.json next.config.ts tsconfig.json \
   postcss.config.mjs tailwind.config.ts \
-  zion-new:/opt/zion/apps/website-v2.9/
-
-# Oprávnění (pokud rsync zachoval lokální ownera)
-ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new \
-  "chown -R zion:zion '/opt/zion/APP&WEB/website-v2.9'"
-
-# Restart služby
-ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new "systemctl restart zion-website"
+  zion-edge2:/opt/zion/APP&WEB/website-v2.9/
+ssh zion-edge2 "chown -R zion:zion '/opt/zion/APP&WEB/website-v2.9' && systemctl restart zion-website"
 ```
 
 ⚠️ **`output: "standalone"` — `public/` se servíruje z `.next/standalone/public/`, ne `public/`:** Při hot-file deployi (např. jen změněný markdown v `public/docs/…`) je potřeba soubor zkopírovat na obě místa — `public/…` i `.next/standalone/public/…` — jinak HTTP vrací starý obsah. Plný deploy přes `deploy-web2.9.sh` rsyncuje celý `.next`, takže se to řeší samo.
@@ -54,18 +49,13 @@ ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new "systemctl restart zion-we
 ```bash
 # Hot markdown deploy (bez buildu) — příklad
 rsync -avzs -e ssh "public/docs/books/maitreya/kapitoly/epilog.md" \
-  "zion-post-wipe:/opt/zion/APP&WEB/website-v2.9/public/docs/books/maitreya/kapitoly/epilog.md"
-ssh zion-post-wipe "cp '/opt/zion/APP&WEB/website-v2.9/public/docs/books/maitreya/kapitoly/epilog.md' \
+  "zion-edge2:/opt/zion/APP&WEB/website-v2.9/public/docs/books/maitreya/kapitoly/epilog.md"
+ssh zion-edge2 "cp '/opt/zion/APP&WEB/website-v2.9/public/docs/books/maitreya/kapitoly/epilog.md' \
   '/opt/zion/APP&WEB/website-v2.9/.next/standalone/public/docs/books/maitreya/kapitoly/epilog.md' \
   && chown zion:zion '/opt/zion/APP&WEB/website-v2.9/.next/standalone/public/docs/books/maitreya/kapitoly/epilog.md'"
-
-# Intro hub deploy (jen maintenance.html)
-scp -i ~/.ssh/zion-edge-post-wipe-2026-07-29 \
-  apps/website-v2.9/public/maintenance.html \
-  zion-new:/var/www/maintenance/maintenance.html
 ```
 
-**Pozor:** `npm install --omit=dev` na Edge vynechá dev dependencies. Pokud `next.config.ts` importuje dev-only balíčky (např. `@next/bundle-analyzer`), je potřeba je doinstalovat na Edge: `npm install @next/bundle-analyzer`.
+**Pozor:** `npm install --omit=dev` na EDGE2 vynechá dev dependencies. Pokud `next.config.ts` importuje dev-only balíčky (např. `@next/bundle-analyzer`), je potřeba je doinstalovat na EDGE2: `npm install @next/bundle-analyzer`.
 
 ---
 
