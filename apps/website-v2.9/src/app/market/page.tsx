@@ -31,6 +31,7 @@ import {
   Zap,
   ShieldCheck,
   HelpCircle,
+  Gem,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
@@ -105,6 +106,9 @@ const DefiCopy = {
   tradeWzion: { cs: `Obchoduj wZION`, en: `Trade wZION` },
   wzionIsAvailableOnUniswapV3Bas: { cs: `wZION je k dispozici na Uniswap V3 (Base). Primární pool wZION/USDT s 0.3% fee.`, en: `wZION is available on Uniswap V3 (Base). Primary wZION/USDT pool with 0.3% fee.` },
   openUniswap: { cs: `Otevřít Uniswap`, en: `Open Uniswap` },
+  artifactMarketplace: { cs: `Artifact Marketplace`, en: `Artifact Marketplace` },
+  artifactMarketplaceDesc: { cs: `OASIS tržiště artefaktů — samostatná aplikace s vlastními aukcemi a sbírkami.`, en: `OASIS artifact marketplace — standalone app with its own auctions and collections.` },
+  openMarketplace: { cs: `Otevřít marketplace`, en: `Open marketplace` },
   trade: { cs: `Obchodování`, en: `Trade` },
   swapTradeOnDexAndTrackTheWzion: { cs: `Swapuj, obchoduj na DEX a sleduj cenu wZION na Base Mainnet.`, en: `Swap, trade on DEX, and track the wZION price on Base Mainnet.` },
   swapWzion: { cs: `Swap wZION`, en: `Swap wZION` },
@@ -1125,6 +1129,31 @@ export default function DefiPage() {
               </a>
             </div>
           </motion.div>
+        </section>
+
+        {/* ═══════ ARTIFACT MARKETPLACE (market. app — canonical link) ═══════ */}
+        <section className="zion-container relative z-10 mt-10">
+          <a
+            href="https://market.zionterranova.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="zion-rainbow-sub p-5 flex items-center justify-between gap-4 group"
+            style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-zion-gold/10 border border-zion-gold/20">
+                <Gem className="h-5 w-5 text-zion-gold" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-white">{DefiCopy.artifactMarketplace[cs ? 'cs' : 'en']}</h3>
+                <p className="text-xs text-gray-400">{DefiCopy.artifactMarketplaceDesc[cs ? 'cs' : 'en']}</p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-zion-gold shrink-0">
+              {DefiCopy.openMarketplace[cs ? 'cs' : 'en']}
+              <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </a>
         </section>
       </>
       )}

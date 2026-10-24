@@ -6,7 +6,7 @@
 
 ## 0. Shrnutí diagnózy (z inventáře)
 
-**Křehké místo dneška:** veřejný request jede `DNS→edge nginx→SSH tunel→edge2:3000`. Tunel je jediná `ssh -N` session (18 forwardů); když spadne, celý web je down — flap pozorován 22.10. Deploy skript hlavního webu navíc **cílí na mrtvý box** (`zion-post-wipe` = old edge, kde `zion-website.service` je retired). Přitom `rpc.zionterranova.com` už jede **přímo** na edge2:9445 — precedens přímého obsluhování existuje.
+**Křehké místo dneška:** veřejný request jede `DNS→edge nginx→SSH tunel→edge2:3000`. Tunel je jediná `ssh -N` session (18 forwardů); když spadne, celý web je down — flap pozorován 22.10. Deploy skript hlavního webu navíc **cílí na mrtvý box** (`zion-post-wipe` = old edge, kde `zion-website.service` je retired). Přitom `rpc.zionterranova.com` už jede **přímo** na edge2:9445 — precedens přímého obsluhování existuje. *(Oba body vyřešeny F1 + F5-retarget 2026-10-24.)*
 
 **Roztrhanost:** 30+ top-level dirs v repu, 12 DNS subdomén, 3 pool povrchy, 3 OASIS povrchy, 2 dashboardy, PUBLIC/ klon vs public/ subtree, newearth.cz na stejném boxu, deploy skripty s různými targety.
 
@@ -192,20 +192,22 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 
 | Duplicita | Rozhodnutí |
 |---|---|
-| `/pool` + `apps/pool-ui` + `/var/www/pool` + `pool.zionterranova.com` | 1 pool povrch — pool-ui jako tab v `/network`, nebo subdomain → redirect |
-| `OasisWeb` (3D) + `/var/www/oasis` + `/l4-oasis` v hlavním webu | `/l4-oasis` = popis/landing → odkaz do portálu; portál = hra |
-| `market.` app + `/multichain` + `/dex` + `/ziondex` + `/swap` + `/defi` | Jeden Trh v appu (taby), market app = admin/backend? (§4.1) |
-| `dashboard.zionterranova.com` + `/dashboard/*` (10 str.) + `/monitoring` + `/g8` + `mission-control` | Rozdělit: veřejný stav → `/network`; ops → za ZIS na dashboard. |
-| `explorer/` 24 str. | jádro `/network` — nechat, jen přeskupit nav |
-| `PUBLIC/` klon vs `public/` subtree | jediný zdroj: `public/` subtree → push na `public` remote; `PUBLIC/` přesunout mimo repo |
-| `newearth.cz` | jiný projekt — přesunout na jiný box/repo, nebo jasně oddělit vhost |
-| `edge-deploy/` + `scripts/` + `ZION_OS/` deploy části | → `infra/` |
+| `/pool` + `apps/pool-ui` + `/var/www/pool` + `pool.zionterranova.com` | 1 pool povrch — pool-ui jako tab v `/network`, nebo subdomain → redirect — **open: obě plochy živé, pool-ui je veřejný portál, `/pool` v appce má 7 tabů vč. QTC/PRL** |
+| `OasisWeb` (3D) + `/var/www/oasis` + `/l4-oasis` v hlavním webu | ✅ **již tak je (2026-10-24 ověřeno):** `/l4-oasis` (803 ř.) = landing → `oasis.zionterranova.com` portál |
+| `market.` app + `/multichain` + `/dex` + `/ziondex` + `/swap` + `/defi` | ✅ redirecty live (F3d); **open: `/market` hub neodkazuje na market. app** (§4.1) — přidat kanonický link |
+| `dashboard.zionterranova.com` + `/dashboard/*` (10 str.) + `/monitoring` + `/g8` + `mission-control` | Rozdělit: veřejný stav → `/network`; ops → za ZIS na dashboard. **Ops subdoména už 401 allowlist ✅; public stránky = obsahové, mimo nav — open: absorbovat do `/network` nebo nechat** |
+| `explorer/` 24 str. | jádro `/network` — nechat, jen přeskupit nav — ✅ v nav pod Síť |
+| `PUBLIC/` klon vs `public/` subtree | ✅ **rekonziliováno s F2 rozhodnutím (2026-10-22):** `PUBLIC/` je untracked klon (32M, nikdy se necommití), `public/` subtree = jediný tracked zdroj → push na `public` remote. F2: "všechno untracked zůstává" — zdokumentováno v REPO-MAP §3 |
+| `newearth.cz` | ✅ **retired 2026-10-20** — vhost+cert off, odkazy → `/legacy/`; residual: `apps/public_html/` + edge `/var/www/newearth` (F6 cleanup) |
+| `edge-deploy/` + `scripts/` + `ZION_OS/` deploy části | → `infra/` — ✅ `edge-deploy`→`infra/edge-deploy` (F2b5); `scripts/`+`ZION_OS/` deferred (mapping strategie, server-runtime refs) |
 
 ### F5 — Deploy kanonizace
 
-- `infra/deploy/deploy-web.sh` — **fix target** (`ZION_EDGE_HOST` default → edge2!), build → rsync `.next`+`public`+**`.next/standalone/public`** (dnešní bug — standalone neservíruje `public/` samo) → restart → post-deploy smoke (`/`, 3 obrázky, 2 API, 1 docs md)
-- Stejný vzor: `deploy-intro.sh`, `deploy-oasis.sh`, `deploy-marketplace.sh`, `deploy-pool-ui.sh`, `deploy-zis.sh` — jednotný interface, jednotný smoke check
-- `infra/RUNBOOK.md`: restart per služba, rollback (`.next.bak-*` konvence), "co dělat když" (404 obrázky = standalone/public; tunel down = které služby; disk full)
+- ✅ `deploy-web2.9.sh` — už kanonický vzor (edge2 + standalone/public fix + smoke). **Ověřeno 2026-10-24: cílí správně.**
+- ✅ **Retarget po cutoveru (2026-10-24):** všechny deploy skripty mířily na Edge = nasazovaly na fallback, ne produkci. Opraveno: `deploy-intro.sh` + `deploy-freeworld.sh` (`zion-new`→`zion-edge2`), `deploy-oasis-web.sh` (`62.171.141.136:2222`→`zion-edge2:22`, + nginx conf zdroj `deploy/nginx-oasis.conf`→`infra/nginx/edge2/` — app-kopie by vhost regresovala na auth. hairpin), `deploy-pool.sh` (`zion-v6`→`zion-edge2` + NGINX_SRC→`infra/nginx/edge2/` + smoke `/`+`/public/v1/coins`), `deploy-zis.sh` (`ZIS_NGINX_HOST`→`zion-edge2`). Edge fallback webroot zůstává stale záměrně (do F6).
+- ✅ `infra/RUNBOOK.md` + `infra/deploy/README.md` (2026-10-24): host/alias tabulka, restart per služba, rollback (`.next.bak-*`), "co dělat když" (404 obrázky = standalone/public; tunely = které služby; cert renewal edge2; disk full), deploy kontrakt + registry.
+- ✅ SSH alias `zion-edge2` (207.180.217.100:22) — chyběl lokálně, kanonické skripty bez něj nefungovaly.
+- ✅ `deploy-marketplace.sh` vytvořen (2026-10-24) — prisma generate před build (debian engine do standalone), rsync→edge2, `zion-marketplace` restart, smoke :3100+live
 - CI: `npm run build` + `check:links` na push? (rozhodnout)
 
 ### F6 — Edge → čistý chain tier

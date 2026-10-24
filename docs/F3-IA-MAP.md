@@ -127,11 +127,13 @@
 
 ✅ `/world` hub vytvořen (L3/L4/L5/L6 + TerraNova + Ekam + AI Native, nav + sitemap).
 
-Zbývá rozhodnout/provést: `/cex`→`/market` (stránka má vlastní obsah — open Q), `/download /node-setup→/mining`, `/monitoring /miner-stats /g8→/network`, `/dashboard/*(public)→/network`, `/nirvana→/maitreya#nirvana`, `/api-reference→/docs`, `/dashboard/dao-tree→/dao`.
+✅ již provedeno dřív (config redirecty live): `/node-setup`+`/mining/node-setup`→`/mining#node-setup`, `/nirvana`→`/maitreya#nirvana` (čtečka `/nirvana/cist` zůstává). Ověřeno v `next.config.ts` + live 2026-10-24.
+
+Zbývá rozhodnout/provést: `/cex`→`/market` (675 řádků vlastního obsahu — open Q), `/download`→`/mining` (428 ř. obsahu), `/monitoring /miner-stats /g8`→`/network` (reálné obsahové stránky — hub jejich obsah NEabsorbuje; jsou mimo nav, linkované z `/network` komponent a `/dashboard`), `/dashboard/*(public)`→`/network`, `/api-reference`→`/docs` (378 ř. obsahu), `/dashboard/dao-tree`→`/dao`.
 
 ### Verifikace redirectů (2026-10-22, standalone build, PORT=3199)
 
-Všech 15 testovaných cest → `308` do správných cílů (`/multichain[/wallet]`→`/market[/wallet]`, `/defi[/staking]`→`/market`, `/bridge`+`/warp`→`/market#bridge`, `/swap`→`/market#swap`, `/dex[/liquidity]`+`/ziondex`→`/market#dex`, fáze-1: `/roadmap-295`→`/roadmap`, `/wiki`→`/docs`, `/onboard`→`/mining`, `/kompas`→`/terranova`, `/cesta`→`/maitreya#cesta`); `/world` + `/market` → `200`. **Live deployment čeká na deploy-web2.9.sh.**
+Všech 15 testovaných cest → `308` do správných cílů (`/multichain[/wallet]`→`/market[/wallet]`, `/defi[/staking]`→`/market`, `/bridge`+`/warp`→`/market#bridge`, `/swap`→`/market#swap`, `/dex[/liquidity]`+`/ziondex`→`/market#dex`, fáze-1: `/roadmap-295`→`/roadmap`, `/wiki`→`/docs`, `/onboard`→`/mining`, `/kompas`→`/terranova`, `/cesta`→`/maitreya#cesta`); `/world` + `/market` → `200`. **Live ověřeno 2026-10-24** — `app.zionterranova.com/market`+`/world` 200, `/multichain`→308→`/market`, `/dex`→308→`/market#dex`, `/wiki`→308→`/docs`, `/roadmap-295`→308→`/roadmap`.
 
 ## Chrome — stav a rozhodnutí (2026-10-22)
 
