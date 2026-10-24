@@ -214,8 +214,8 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 
 - Po stabilizaci F1: edge nginx nechat jen servisní (případně vypnout web vhosty úplně)
 - chain-tunel legs redukovat na nutné (co edge reálně konzumuje z edge2)
-- úklid: `/opt/zion/website-v2.9` stale (161M), `/opt/zion/APP&WEB/` neexistuje — ověřit, `wt-main`/`wt-f5` worktrees, `canonical-main` (2.6G divergentní — review před delete)
-- `zion-edge-download.conf` `server_name _` catch-all → utáhnout (explicitní server_name)
+- ✅ **Úklid proveden (2026-10-24, archive-first):** EDGE — stale `/opt/zion/website-v2.9` (161M) tar+rm, worktrees `wt-f5`/`wt-main` (3.4G, clean) `worktree remove`, `pool-F5` prunable pruned, `zion-nginx.conf.bak-*` přesunut ze sites-enabled (nginx parsuje vše v dirs!), prázdné `app_state_*`/`config_*` husky rm, `oasis.bak-*`+`oasis.prev`+`newearth` (464M) tar+rm → `/opt/zion/archive/cleanup-20261024/` (381M). EDGE2 — `.next.bak-*` 11→2 (616M→~110M), `public_html` (428M, žádný vhost neservíruje) tar+rm, `oasis.bak-*`+`oasis.prev`+`newearth` tar+rm → `/opt/zion/archive/cleanup-20261024/` (601M). **Nález:** `zion-edge-backup.service` failoval 10:53 na `chmod 600 root /data/zion/g8_run.json` (service user=zion) → `chmod 644` fix, re-run prošel místo crashu. `backups/` 36G = legit rolling v31_data retention 14 — ponecháno. `canonical-main`+`warpd-zis` worktrees ponechány (aktivní registry). Smoke: všechny public povrchy 200, služby beze změny.
+- zbývá: `zion-edge-download.conf` `server_name _` catch-all → utáhnout (explicitní server_name); `zion-v31-multichain.service` stale CORS origin `newearth.cz` (cosmetic, při příštím restartu)
 
 ---
 
