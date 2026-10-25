@@ -103,7 +103,14 @@ struct TronBlockRaw {
 #[serde(rename_all = "camelCase")]
 struct TronTxInfo {
     block_number: Option<u64>,
-    confirmations: Option<u64>,
+    #[serde(default)]
+    receipt: Option<TronReceipt>,
+}
+
+#[derive(Deserialize)]
+struct TronReceipt {
+    /// `"SUCCESS"` / `"REVERT"` / `"OUT_OF_ENERGY"` …
+    result: Option<String>,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -236,6 +243,16 @@ impl TronAdapter {
     }
 }
 
+/// Inclusion block for a `/v1/transactions/{id}/info` record — requires
+/// a positive `block_number` and `receipt.result == "SUCCESS"` (the
+/// optional node-reported `confirmations` count alone is not trusted).
+fn tron_inclusion_block(info: &TronTxInfo) -> Option<u64> {
+    if info.receipt.as_ref().and_then(|r| r.result.as_deref()) != Some("SUCCESS") {
+        return None;
+    }
+    info.block_number.filter(|b| *b > 0)
+}
+
 #[async_trait]
 impl ChainAdapter for TronAdapter {
     fn family(&self) -> ChainFamily {
@@ -326,17 +343,22 @@ impl ChainAdapter for TronAdapter {
                 chain: "tron".into(),
                 reason: e.to_string(),
             })?
+            .error_for_status()
+            .map_err(|e| WarpError::AdapterError {
+                chain: "tron".into(),
+                reason: e.to_string(),
+            })?
             .json()
             .await
             .map_err(|e| WarpError::AdapterError {
                 chain: "tron".into(),
                 reason: e.to_string(),
             })?;
-        if let Some(c) = resp.confirmations {
-            return Ok(c);
-        }
-        let tip = self.get_now_block().await.unwrap_or(0);
-        Ok(tip.saturating_sub(resp.block_number.unwrap_or(tip)))
+        let Some(block) = tron_inclusion_block(&resp) else {
+            return Ok(0);
+        };
+        let tip = self.get_now_block().await?;
+        Ok(tip.saturating_sub(block))
     }
 }
 
@@ -403,5 +425,35 @@ mod tests {
             warp_message_hash: String::new(),
         };
         assert!(TronAdapter::new().execute_mint(&inst).await.is_err());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    fn info(b: Option<u64>, r: Option<&str>) -> TronTxInfo {
+        TronTxInfo {
+            block_number: b,
+            receipt: r.map(|s| TronReceipt {
+                result: Some(s.to_string()),
+            }),
+        }
+    }
+
+    #[test]
+    fn tron_inclusion_table() {
+        assert_eq!(
+            tron_inclusion_block(&info(Some(70), Some("SUCCESS"))),
+            Some(70)
+        );
+        for t in [
+            info(Some(70), Some("REVERT")),
+            info(Some(70), None),
+            info(Some(0), Some("SUCCESS")),
+            info(None, Some("SUCCESS")),
+        ] {
+            assert_eq!(tron_inclusion_block(&t), None);
+        }
     }
 }

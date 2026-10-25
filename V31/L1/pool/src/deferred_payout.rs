@@ -89,11 +89,89 @@ fn rpc_request(method: &str, params: serde_json::Value) -> serde_json::Value {
     })
 }
 
+/// First 20 characters of a tx id for logs — char-boundary safe
+/// (`&tx_id[..20]` panics on multi-byte input).
+fn short_tx_id(tx_id: &str) -> String {
+    tx_id.chars().take(20).collect()
+}
+
+/// Parse a `submitUtxoTransaction` RPC envelope and return the accepted
+/// tx_id.
+///
+/// `L1Endpoints::call` surfaces the raw envelope — a JSON-RPC `error`
+/// field still arrives as `Ok`, so it must be rejected here explicitly.
+/// Both `execute_fee_payout` and the deferred-payout processor share this
+/// parser so a rejected or malformed submit can never be mistaken for a
+/// paid-out batch.
+///
+/// Accepted forms:
+/// * `{"result": {"accepted": true, "tx_id": "<hex>"}}` — canonical
+/// * `{"result": "<tx_id>"}` — legacy bare-string success
+///
+/// Everything else is an error: a non-null `error` (even alongside a
+/// `result`), a missing/null `result`, an object without an explicit
+/// `accepted: true`, or a missing/wrong-type/blank `tx_id`.
+fn parse_payout_submit_response(resp: &Value) -> anyhow::Result<String> {
+    if let Some(err) = resp.get("error").filter(|e| !e.is_null()) {
+        return Err(anyhow!("payout submit rejected by node: {err}"));
+    }
+    let result = resp
+        .get("result")
+        .filter(|r| !r.is_null())
+        .ok_or_else(|| anyhow!("payout submit returned no result: {resp}"))?;
+
+    // Legacy form: the node returns the tx id as a bare string.
+    if let Some(tx_id) = result.as_str() {
+        let tx_id = tx_id.trim();
+        if tx_id.is_empty() {
+            return Err(anyhow!("payout submit returned an empty tx_id"));
+        }
+        return Ok(tx_id.to_string());
+    }
+
+    // Canonical form: an object that explicitly accepted the tx.
+    if result.get("accepted").and_then(|v| v.as_bool()) != Some(true) {
+        let reason = result
+            .get("reason")
+            .and_then(|v| v.as_str())
+            .unwrap_or("no reason given");
+        return Err(anyhow!("payout submit not accepted: {reason}"));
+    }
+    let tx_id = result
+        .get("tx_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| anyhow!("payout submit accepted but has no tx_id: {resp}"))?;
+    Ok(tx_id.to_string())
+}
+
+/// Inclusion height + block hash from a `getTransaction` `result`.
+///
+/// Only a `confirmed: true` record with a positive `block_height` counts
+/// as chain evidence (v3_rpc sets `confirmed`; a missing/false/non-bool
+/// flag means the node is not attesting inclusion).
+fn parse_tx_inclusion(result: &Value) -> Option<(u64, String)> {
+    if result.get("confirmed").and_then(|v| v.as_bool()) != Some(true) {
+        return None;
+    }
+    let height = result
+        .get("block_height")
+        .and_then(|v| v.as_u64())
+        .filter(|h| *h > 0)?;
+    let block_hash = result
+        .get("block_hash")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    Some((height, block_hash))
+}
+
 /// Check if a transaction is on-chain.
 ///
-/// Returns the block height and block hash (hex) if the node reports the
-/// transaction in a confirmed block. The response is read from the JSON-RPC
-/// `result` envelope.
+/// Returns the block height and block hash (hex) only when the node
+/// reports the transaction as `confirmed` at a positive `block_height`.
+/// The response is read from the JSON-RPC `result` envelope.
 pub async fn check_tx_on_chain(
     rpc_addr: &str,
     tx_id: &str,
@@ -105,16 +183,7 @@ pub async fn check_tx_on_chain(
         .await?;
 
     let result = resp.get("result").cloned().unwrap_or(Value::Null);
-    if result.is_null() {
-        return Ok(None);
-    }
-    let height = result.get("block_height").and_then(|v| v.as_u64());
-    let block_hash = result
-        .get("block_hash")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    Ok(height.map(|h| (h, block_hash)))
+    Ok(parse_tx_inclusion(&result))
 }
 
 /// Get the current chain height from the node.
@@ -268,33 +337,13 @@ pub async fn execute_fee_payout(
     // `L1Endpoints::call` returns the raw envelope — a JSON-RPC `error`
     // field still arrives as Ok. A rejected submit must not fabricate a
     // tx_id and look like a paid-out batch to the caller.
-    if let Some(err) = resp.get("error").filter(|e| !e.is_null()) {
-        return Err(anyhow!("fee payout submit rejected by node: {err}"));
-    }
-    let result = resp
-        .get("result")
-        .ok_or_else(|| anyhow!("fee payout submit returned no result: {resp}"))?;
-    if let Some(accepted) = result.get("accepted").and_then(|v| v.as_bool()) {
-        if !accepted {
-            let reason = result
-                .get("reason")
-                .and_then(|v| v.as_str())
-                .unwrap_or("no reason given");
-            return Err(anyhow!("fee payout not accepted: {reason}"));
-        }
-    }
-    let tx_id = result
-        .get("tx_id")
-        .and_then(|v| v.as_str())
-        .or_else(|| result.as_str())
-        .ok_or_else(|| anyhow!("fee payout accepted but response has no tx_id: {resp}"))?
-        .to_string();
+    let tx_id = parse_payout_submit_response(&resp)?;
 
     info!(
         "fee_payout_executed height={} recipients={} tx_id={}",
         height,
         recipients.len(),
-        &tx_id[..tx_id.len().min(20)]
+        short_tx_id(&tx_id)
     );
 
     Ok(tx_id)
@@ -467,52 +516,28 @@ pub fn spawn_deferred_payout_processor(
                                 Ok(resp) => {
                                     // `L1Endpoints::call` returns the raw
                                     // envelope — a JSON-RPC `error` field
-                                    // still surfaces as Ok. Without this
-                                    // check every response (rejections
-                                    // included) was dropped from the queue
-                                    // as a success.
-                                    if let Some(err) =
-                                        resp.get("error").filter(|e| !e.is_null())
-                                    {
-                                        if retry % 10 == 0 || retry <= 3 {
-                                            info!(
-                                                "payout_deferred_retry height={} miners={} retry={} error=rpc_rejected: {}",
-                                                height,
-                                                payouts.len(),
-                                                retry,
-                                                err
-                                            );
-                                        }
-                                        continue;
-                                    }
-                                    let result = resp.get("result");
-                                    let tx_id = result
-                                        .and_then(|r| r.get("tx_id"))
-                                        .and_then(|v| v.as_str())
-                                        .or_else(|| result.and_then(|r| r.as_str()));
-                                    let accepted = result
-                                        .and_then(|r| r.get("accepted"))
-                                        .and_then(|v| v.as_bool())
-                                        .unwrap_or(true);
-                                    match (accepted, tx_id) {
-                                        (true, Some(tx_id)) => {
+                                    // still surfaces as Ok. The queue entry
+                                    // is only dropped after the shared
+                                    // parser confirms an accepted tx_id.
+                                    match parse_payout_submit_response(&resp) {
+                                        Ok(tx_id) => {
                                             info!(
                                                 "payout_deferred_success height={} miners={} tx_id={} retry={}",
                                                 height,
                                                 payouts.len(),
-                                                &tx_id[..tx_id.len().min(20)],
+                                                short_tx_id(&tx_id),
                                                 retry
                                             );
                                             queue.lock().unwrap().remove(0);
                                         }
-                                        _ => {
+                                        Err(e) => {
                                             if retry % 10 == 0 || retry <= 3 {
                                                 info!(
                                                     "payout_deferred_retry height={} miners={} retry={} error=unexpected_response: {}",
                                                     height,
                                                     payouts.len(),
                                                     retry,
-                                                    resp
+                                                    e
                                                 );
                                             }
                                         }
@@ -560,17 +585,42 @@ pub fn spawn_deferred_payout_processor(
 
 // ── Payout confirmation sweep ──────────────────────────────────────
 
-/// Check whether a transaction is present in the chain by looking for one of
-/// its outputs in the recipient's UTXO set.
+/// Inclusion height of `tx_id` on a UTXO entry: the entry's `tx_hash`
+/// must match exactly and `block_height` must be a positive integer.
+/// Entries with a missing, null, malformed or zero height are ignored —
+/// they prove nothing about where the tx was included.
+fn utxo_inclusion_height(utxo: &Value, tx_id: &str) -> Option<u64> {
+    if utxo.get("tx_hash").and_then(|v| v.as_str())? != tx_id {
+        return None;
+    }
+    utxo.get("block_height")
+        .and_then(|v| v.as_u64())
+        .filter(|h| *h > 0)
+}
+
+/// Confirmations for a tx included at `inclusion_height` when the chain
+/// tip is `chain_height`. A future inclusion height (or 0) yields 0;
+/// the result saturates at `u32::MAX`.
+fn confirmations_at(chain_height: u64, inclusion_height: u64) -> u32 {
+    if inclusion_height == 0 || inclusion_height > chain_height {
+        return 0;
+    }
+    (chain_height - inclusion_height + 1).min(u32::MAX as u64) as u32
+}
+
+/// Return the inclusion height of `tx_id` as recorded on a matching
+/// output in `address`'s UTXO set.
 ///
-/// This is a fallback for nodes where `getTransaction` is not implemented or
-/// returns null.  The UTXO `tx_hash` equals the transaction id, so a matching
-/// unspent output proves the tx is on-chain.
+/// This is a fallback for nodes where `getTransaction` is not implemented
+/// or returns null.  The UTXO `tx_hash` equals the transaction id and the
+/// output's positive `block_height` is the tx's actual inclusion height —
+/// using the payout's earning height instead would overstate
+/// confirmations by the blocks between earning and broadcast.
 async fn check_tx_on_chain_via_utxos(
     rpc_addr: &str,
     address: &str,
     tx_id: &str,
-) -> anyhow::Result<bool> {
+) -> anyhow::Result<Option<u64>> {
     let eps = crate::rpc_client::L1Endpoints::from_urls(rpc_addr)
         .ok_or_else(|| anyhow::anyhow!("invalid L1 RPC URL: {}", rpc_addr))?;
     let request = rpc_request("getUtxos", json!({ "address": address }));
@@ -582,24 +632,22 @@ async fn check_tx_on_chain_via_utxos(
         .and_then(|v| v.as_array())
     {
         for utxo in utxos {
-            if let Some(tx_hash) = utxo.get("tx_hash").and_then(|v| v.as_str()) {
-                if tx_hash == tx_id {
-                    return Ok(true);
-                }
+            if let Some(height) = utxo_inclusion_height(utxo, tx_id) {
+                return Ok(Some(height));
             }
         }
     }
-    Ok(false)
+    Ok(None)
 }
 
 /// Spawn a background task that periodically checks submitted payouts
 /// against the chain and marks them as confirmed.
 ///
-/// Confirmations are computed from the payout block height when the exact
-/// transaction block height is unavailable.  This is intentionally conservative:
-/// a payout transaction can only appear in a block *at or after* the block it
-/// pays out, so `chain_height - payout_height + 1` is a safe upper bound on the
-/// number of confirmations.
+/// Confirmations are computed from the transaction's actual inclusion
+/// height — `block_height` from `getTransaction`, or the `block_height`
+/// recorded on the matching output in the recipient's UTXO set. A UTXO
+/// entry without a positive `block_height` is not treated as evidence and
+/// the payout's earning height is never used as an inclusion height.
 pub fn spawn_payout_confirmation_sweep(
     rpc_addr: Option<String>,
     interval_secs: u64,
@@ -663,13 +711,14 @@ pub fn spawn_payout_confirmation_sweep(
                 let (tx_height, block_hash) = match check_tx_on_chain(&rpc, &tx_id).await {
                     Ok(Some((h, hash))) => (h, hash),
                     Ok(None) => {
-                        // Fallback: look for the tx hash in any recipient UTXO set.
+                        // Fallback: the tx's inclusion height as recorded on
+                        // a matching output in the recipient's UTXO set.
                         let representative = &group[0];
                         match check_tx_on_chain_via_utxos(&rpc, &representative.address, &tx_id)
                             .await
                         {
-                            Ok(true) => (representative.height, String::new()),
-                            Ok(false) => continue,
+                            Ok(Some(h)) => (h, String::new()),
+                            Ok(None) => continue,
                             Err(e) => {
                                 tracing::debug!("payout_confirmation_sweep: getUtxos fallback failed for {}: {e}", representative.address);
                                 continue;
@@ -685,11 +734,7 @@ pub fn spawn_payout_confirmation_sweep(
                     }
                 };
 
-                let confirmations = if chain_height >= tx_height {
-                    (chain_height - tx_height + 1) as u32
-                } else {
-                    0u32
-                };
+                let confirmations = confirmations_at(chain_height, tx_height);
 
                 if confirmations >= maturity_confirmations {
                     let confirm = if block_hash.is_empty() {
@@ -777,5 +822,181 @@ mod tests {
         assert_eq!(queue.lock().unwrap().len(), 1);
         assert_eq!(queue.lock().unwrap()[0].height, 42);
         assert_eq!(queue.lock().unwrap()[0].retry_count, 0);
+    }
+
+    // ── parse_payout_submit_response ─────────────────────────────────
+
+    #[test]
+    fn parse_submit_accepts_canonical_object() {
+        let resp = json!({"result": {"accepted": true, "tx_id": "abc123"}});
+        assert_eq!(parse_payout_submit_response(&resp).unwrap(), "abc123");
+    }
+
+    #[test]
+    fn parse_submit_accepts_legacy_string() {
+        let resp = json!({"result": "deadbeef"});
+        assert_eq!(parse_payout_submit_response(&resp).unwrap(), "deadbeef");
+    }
+
+    #[test]
+    fn parse_submit_rejects_table() {
+        // (envelope, why it must be rejected)
+        let cases = vec![
+            // Non-null envelope error — even alongside a valid result.
+            (
+                json!({"error": {"code": -1, "message": "rejected"}, "result": {"accepted": true, "tx_id": "x"}}),
+                "error+result",
+            ),
+            (json!({"error": "bad tx"}), "error only"),
+            (json!({}), "missing result"),
+            (json!({"result": null}), "null result"),
+            (
+                json!({"result": {"accepted": false, "tx_id": "x", "reason": "dup"}}),
+                "accepted false",
+            ),
+            (json!({"result": {"tx_id": "x"}}), "accepted missing"),
+            (
+                json!({"result": {"accepted": "true", "tx_id": "x"}}),
+                "accepted wrong type",
+            ),
+            (json!({"result": {"accepted": true}}), "tx_id missing"),
+            (
+                json!({"result": {"accepted": true, "tx_id": 42}}),
+                "tx_id wrong type",
+            ),
+            (
+                json!({"result": {"accepted": true, "tx_id": ""}}),
+                "tx_id empty",
+            ),
+            (
+                json!({"result": {"accepted": true, "tx_id": "   "}}),
+                "tx_id whitespace",
+            ),
+            (json!({"result": ""}), "legacy empty string"),
+            (json!({"result": "   "}), "legacy whitespace string"),
+            (
+                json!({"result": {"accepted": true, "tx_id": null}}),
+                "tx_id null",
+            ),
+        ];
+        for (resp, why) in cases {
+            assert!(
+                parse_payout_submit_response(&resp).is_err(),
+                "must reject: {why} ({resp})"
+            );
+        }
+    }
+
+    #[test]
+    fn short_tx_id_is_char_safe() {
+        // Multibyte chars must not panic the way `&s[..20]` does.
+        let id = "žžžžžžžžžžšššššššššššš";
+        assert_eq!(short_tx_id(id).chars().count(), 20);
+        assert_eq!(short_tx_id("abc"), "abc");
+    }
+
+    // ── payout confirmation inclusion/confirmation math ──────────────
+
+    #[test]
+    fn utxo_inclusion_height_requires_match_and_positive_height() {
+        let tx = "aa11";
+        // Matched tx + positive height → actual inclusion height.
+        assert_eq!(
+            utxo_inclusion_height(&json!({"tx_hash": tx, "block_height": 199}), tx),
+            Some(199)
+        );
+        // Missing / zero / malformed heights are not evidence.
+        assert_eq!(
+            utxo_inclusion_height(&json!({"tx_hash": tx}), tx),
+            None,
+            "missing block_height"
+        );
+        assert_eq!(
+            utxo_inclusion_height(&json!({"tx_hash": tx, "block_height": 0}), tx),
+            None,
+            "zero block_height"
+        );
+        assert_eq!(
+            utxo_inclusion_height(&json!({"tx_hash": tx, "block_height": "199"}), tx),
+            None,
+            "string block_height"
+        );
+        assert_eq!(
+            utxo_inclusion_height(&json!({"tx_hash": tx, "block_height": null}), tx),
+            None,
+            "null block_height"
+        );
+        // Different tx → not a match.
+        assert_eq!(
+            utxo_inclusion_height(&json!({"tx_hash": "bb22", "block_height": 199}), tx),
+            None
+        );
+    }
+
+    #[test]
+    fn confirmations_use_actual_inclusion_height() {
+        // Payout earned at 100, tx included at 199, tip at 200 → 2
+        // confirmations (the old earning-height fallback claimed 101).
+        let inclusion =
+            utxo_inclusion_height(&json!({"tx_hash": "t", "block_height": 199}), "t").unwrap();
+        assert_eq!(confirmations_at(200, inclusion), 2);
+        assert_ne!(
+            confirmations_at(200, 100),
+            2,
+            "earning height must not be used"
+        );
+    }
+
+    #[test]
+    fn confirmations_immature_below_threshold() {
+        let maturity = 6;
+        // Included at 199: needs tip >= 204 for 6 confirmations.
+        assert!(confirmations_at(203, 199) < maturity);
+        assert!(confirmations_at(204, 199) >= maturity);
+    }
+
+    #[test]
+    fn confirmations_future_height_is_zero() {
+        // Inclusion above the tip (reorg/bad data) → 0, never inflated.
+        assert_eq!(confirmations_at(200, 250), 0);
+        assert_eq!(confirmations_at(200, 0), 0);
+        assert_eq!(confirmations_at(200, 200), 1);
+    }
+
+    #[test]
+    fn confirmations_saturate_at_u32_max() {
+        assert_eq!(confirmations_at(u64::MAX, 1), u32::MAX);
+    }
+
+    #[test]
+    fn tx_inclusion_requires_confirmed_and_positive_height() {
+        // False confirmed → not chain evidence.
+        assert_eq!(
+            parse_tx_inclusion(
+                &json!({"confirmed": false, "block_height": 199, "block_hash": "h"})
+            ),
+            None
+        );
+        // Missing confirmed → not evidence.
+        assert_eq!(
+            parse_tx_inclusion(&json!({"block_height": 199, "block_hash": "h"})),
+            None
+        );
+        // Wrong-type confirmed → not evidence.
+        assert_eq!(
+            parse_tx_inclusion(&json!({"confirmed": "yes", "block_height": 199})),
+            None
+        );
+        // Confirmed but zero/missing height → not evidence.
+        assert_eq!(
+            parse_tx_inclusion(&json!({"confirmed": true, "block_height": 0})),
+            None
+        );
+        assert_eq!(parse_tx_inclusion(&json!({"confirmed": true})), None);
+        // Valid record → (height, hash).
+        assert_eq!(
+            parse_tx_inclusion(&json!({"confirmed": true, "block_height": 199, "block_hash": "h"})),
+            Some((199, "h".to_string()))
+        );
     }
 }

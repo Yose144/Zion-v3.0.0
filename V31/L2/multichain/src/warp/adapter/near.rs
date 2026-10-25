@@ -174,6 +174,10 @@ struct NearReceipt {
 struct TxStatusResp {
     transaction: Option<NearTx>,
     status: Value,
+    /// `FINAL` once the tx is finalized — required before the execution
+    /// status can be treated as authoritative.
+    #[serde(default)]
+    final_execution_status: Option<String>,
     receipts: Vec<NearReceipt>,
 }
 
@@ -344,6 +348,19 @@ impl NearAdapter {
 // ─────────────────────────────────────────────────────────────────────────────
 // ChainAdapter impl
 // ─────────────────────────────────────────────────────────────────────────────
+/// True only when `final_execution_status` is exactly `FINAL` AND the
+/// `status` object contains `SuccessValue` — `Failure`, a missing final
+/// flag, or an unknown shape is never a confirmation.
+fn near_final_success(resp: &TxStatusResp) -> bool {
+    if resp.final_execution_status.as_deref() != Some("FINAL") {
+        return false;
+    }
+    match &resp.status {
+        Value::Object(map) => map.contains_key("SuccessValue") && !map.contains_key("Failure"),
+        _ => false,
+    }
+}
+
 #[async_trait]
 impl ChainAdapter for NearAdapter {
     fn family(&self) -> ChainFamily {
@@ -496,29 +513,15 @@ impl ChainAdapter for NearAdapter {
     }
 
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
-        // NEAR finality: a TX is final once the block it's in is finalized.
-        // We query the TX status; if `status` is `FinalExecutionStatus` with
-        // `SuccessValue` or `Failure`, the TX has been included and finalized.
+        // NEAR finality: a TX counts only when `final_execution_status` is
+        // exactly `FINAL` AND the `status` object reports `SuccessValue` —
+        // `Failure` is NEVER a confirmation.
         // The sender account id is required by the `tx` RPC method — we read
         // it from env (the relay account) as a best-effort.
         let sender = std::env::var("WARP_NEAR_ACCOUNT").unwrap_or_else(|_| "warp.near".into());
 
         let tx_status = self.get_tx_status(tx_hash, &sender).await?;
-
-        // Check the execution status.  If the status object indicates
-        // success/failure (i.e. the TX has been executed), we treat it as
-        // finalized (NEAR finality ≈ 2 blocks, so 1 confirmation = final).
-        let is_final = match &tx_status.status {
-            Value::Object(map) => map.contains_key("SuccessValue") || map.contains_key("Failure"),
-            Value::String(s) => s == "SuccessValue" || s == "Failure",
-            _ => false,
-        };
-
-        if is_final {
-            Ok(1)
-        } else {
-            Ok(0)
-        }
+        Ok(if near_final_success(&tx_status) { 1 } else { 0 })
     }
 }
 
@@ -785,5 +788,38 @@ mod tests {
         let r: RpcResp = serde_json::from_value(json).unwrap();
         assert!(r.result.is_some());
         assert!(r.error.is_none());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    fn resp(fin: Option<&str>, status: Value) -> TxStatusResp {
+        TxStatusResp {
+            transaction: None,
+            status,
+            final_execution_status: fin.map(|s| s.to_string()),
+            receipts: vec![],
+        }
+    }
+
+    #[test]
+    fn near_final_success_table() {
+        assert!(near_final_success(&resp(
+            Some("FINAL"),
+            json!({"SuccessValue": ""})
+        )));
+        // Failure is never a confirmation — even at FINAL.
+        for r in [
+            resp(Some("FINAL"), json!({"Failure": {}})),
+            resp(Some("FINAL"), json!({"SuccessValue": "", "Failure": {}})),
+            resp(Some("FINAL"), json!({})),
+            resp(Some("EXECUTED"), json!({"SuccessValue": ""})),
+            resp(None, json!({"SuccessValue": ""})),
+            resp(Some("FINAL"), json!("SuccessValue")),
+        ] {
+            assert!(!near_final_success(&r));
+        }
     }
 }

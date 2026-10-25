@@ -133,7 +133,11 @@ impl WarpRuntime {
         );
         let watcher_handle = tokio::spawn(watcher.run());
 
-        let executor = OutboundExecutor::new(self.router.clone(), self.validators.clone());
+        let executor = OutboundExecutor::from_config(
+            &self.config,
+            self.router.clone(),
+            self.validators.clone(),
+        );
         let executor_handle = tokio::spawn(executor.run());
 
         // Inbound releaser: drives external→L1 burns through finality and

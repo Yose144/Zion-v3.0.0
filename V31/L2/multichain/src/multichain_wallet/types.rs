@@ -119,6 +119,9 @@ pub struct DepositRecord {
 #[serde(rename_all = "snake_case")]
 pub enum WithdrawalStatus {
     Pending,
+    /// Claimed for broadcast — the submission outcome may be uncertain;
+    /// never auto-retried (manual operator reconciliation).
+    Executing,
     Sent,
     Failed,
 }
@@ -127,6 +130,7 @@ impl std::fmt::Display for WithdrawalStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Pending => write!(f, "pending"),
+            Self::Executing => write!(f, "executing"),
             Self::Sent => write!(f, "sent"),
             Self::Failed => write!(f, "failed"),
         }
@@ -139,6 +143,7 @@ impl std::str::FromStr for WithdrawalStatus {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "pending" => Ok(Self::Pending),
+            "executing" => Ok(Self::Executing),
             "sent" => Ok(Self::Sent),
             "failed" => Ok(Self::Failed),
             _ => Err(format!("unknown withdrawal status: {s}")),

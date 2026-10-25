@@ -13,7 +13,7 @@ pub mod tron;
 pub mod zion_l1;
 
 use crate::warp::config::{ChainConfig, WarpConfig};
-use crate::warp::error::WarpResult;
+use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::types::ChainFamily;
 use async_trait::async_trait;
@@ -41,6 +41,19 @@ pub trait ChainAdapter: Send + Sync {
 
     /// Get confirmation count for a specific transaction.
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64>;
+
+    /// Verify that the source-chain burn referenced by an inbound transfer
+    /// actually exists on-chain and authorizes *this* transfer's stored
+    /// recipient/amount/burn_id. Finality alone is not authorization.
+    ///
+    /// Default: not implemented — callers must treat `Err` as a hold, not
+    /// as evidence either way.
+    async fn verify_burn(&self, _transfer: &crate::warp::types::WarpTransfer) -> WarpResult<()> {
+        Err(WarpError::AdapterNotImplemented(format!(
+            "{} burn proof verification",
+            self.name()
+        )))
+    }
 }
 
 /// Factory function — create an adapter by chain name.

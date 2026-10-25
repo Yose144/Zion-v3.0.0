@@ -271,6 +271,30 @@ impl CosmosAdapter {
     }
 }
 
+/// Inclusion height for a `cosmos/tx/v1beta1/txs` response — requires an
+/// explicit `tx_response.code` of 0 (number or decimal string) and a
+/// positive `height` (decimal string or number). Missing/invalid fields
+/// are not evidence.
+fn cosmos_inclusion_height(v: &Value) -> Option<u64> {
+    let r = v.get("tx_response")?;
+    let code = r.get("code").and_then(|c| {
+        c.as_u64()
+            .or_else(|| c.as_str().and_then(|s| s.parse().ok()))
+    })?;
+    if code != 0 {
+        return None;
+    }
+    let h = r.get("height").and_then(|h| {
+        h.as_str()
+            .and_then(|s| s.parse::<u64>().ok())
+            .or(h.as_u64())
+    })?;
+    if h == 0 {
+        return None;
+    }
+    Some(h)
+}
+
 #[async_trait]
 impl ChainAdapter for CosmosAdapter {
     fn family(&self) -> ChainFamily {
@@ -357,17 +381,21 @@ impl ChainAdapter for CosmosAdapter {
                 chain: "cosmos".into(),
                 reason: e.to_string(),
             })?
+            .error_for_status()
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cosmos".into(),
+                reason: e.to_string(),
+            })?
             .json()
             .await
             .map_err(|e| WarpError::AdapterError {
                 chain: "cosmos".into(),
                 reason: e.to_string(),
             })?;
-        let tx_height: u64 = resp["tx_response"]["height"]
-            .as_str()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(0);
-        let tip = self.latest_height().await.unwrap_or(tx_height);
+        let Some(tx_height) = cosmos_inclusion_height(&resp) else {
+            return Ok(0);
+        };
+        let tip = self.latest_height().await?;
         Ok(tip.saturating_sub(tx_height))
     }
 }
@@ -436,5 +464,34 @@ mod tests {
             warp_message_hash: String::new(),
         };
         assert!(CosmosAdapter::new().execute_mint(&inst).await.is_err());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn cosmos_inclusion_table() {
+        assert_eq!(
+            cosmos_inclusion_height(&json!({"tx_response": {"code": 0, "height": "7000000"}})),
+            Some(7_000_000)
+        );
+        assert_eq!(
+            cosmos_inclusion_height(&json!({"tx_response": {"code": "0", "height": "5"}})),
+            Some(5)
+        );
+        for v in [
+            json!({"tx_response": {"code": 5, "height": "7000000"}}),
+            json!({"tx_response": {"code": "5", "height": "7000000"}}),
+            json!({"tx_response": {"height": "7000000"}}),
+            json!({"tx_response": {"code": 0}}),
+            json!({"tx_response": {"code": 0, "height": "0"}}),
+            json!({"tx_response": {"code": 0, "height": "abc"}}),
+            json!({}),
+        ] {
+            assert_eq!(cosmos_inclusion_height(&v), None, "{v}");
+        }
     }
 }

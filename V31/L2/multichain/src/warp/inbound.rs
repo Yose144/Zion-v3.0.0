@@ -196,13 +196,19 @@ impl InboundReleaser {
     /// went out, so we refuse to re-submit (the L1 dedupes on burn_id, so a
     /// manual resubmit is safe — but an auto-resubmit that raced the first
     /// broadcast would only produce a replay rejection anyway).
-    async fn resume_executing(&mut self, transfer: &crate::warp::types::WarpTransfer) {
+    async fn resume_executing(
+        &mut self,
+        transfer: &crate::warp::types::WarpTransfer,
+    ) -> WarpResult<()> {
         let id = transfer.id;
         match &transfer.dest_tx_hash {
             Some(tx_id) => {
-                info!("[inbound] resuming Executing transfer {} (tx {})", id, tx_id);
+                info!(
+                    "[inbound] resuming Executing transfer {} (tx {})",
+                    id, tx_id
+                );
                 let tx_id = tx_id.clone();
-                self.confirm_l1(id, &tx_id).await;
+                self.confirm_l1(id, &tx_id).await
             }
             None => {
                 self.warn_throttled(&format!(
@@ -210,6 +216,7 @@ impl InboundReleaser {
                      not have broadcast; operator recovery via zion-bridge-unlock",
                     id
                 ));
+                Ok(())
             }
         }
     }
@@ -221,8 +228,7 @@ impl InboundReleaser {
         // Executing = already released (or possibly released) — resume, do
         // not re-drive the finality/quorum path.
         if transfer.status == WarpStatus::Executing {
-            self.resume_executing(transfer).await;
-            return Ok(());
+            return self.resume_executing(transfer).await;
         }
 
         let source_tx = match &transfer.source_tx_hash {
@@ -257,7 +263,7 @@ impl InboundReleaser {
         if confs < required {
             // Not final yet — park in AwaitingFinality.
             if transfer.status == WarpStatus::Detected {
-                self.advance(id, WarpStatus::AwaitingFinality).await;
+                self.advance(id, WarpStatus::AwaitingFinality).await?;
             }
             debug!(
                 "[inbound] {} waiting finality {}/{} on {}",
@@ -266,9 +272,15 @@ impl InboundReleaser {
             return Ok(());
         }
 
-        // 2. Finality reached — advance toward quorum.
+        // 2. Burn authenticity gate — the on-chain burn event must
+        //    authorize THIS transfer's stored recipient/amount/burn_id.
+        //    Existence+finality of an arbitrary tx is not authorization.
+        //    Adapters without `verify_burn` hold the transfer here (Err).
+        adapter.verify_burn(transfer).await?;
+
+        // 3. Finality reached — advance toward quorum.
         for status in [WarpStatus::AwaitingFinality, WarpStatus::Validating] {
-            self.advance(id, status).await;
+            self.advance(id, status).await?;
         }
 
         // 3. Quorum = enough local release keys (L1 enforces ≥3 distinct
@@ -295,7 +307,7 @@ impl InboundReleaser {
             }
             return Ok(());
         }
-        self.advance(id, WarpStatus::QuorumReached).await;
+        self.advance(id, WarpStatus::QuorumReached).await?;
 
         // 4. Build + submit the unlock.
         let burn_id = transfer
@@ -304,10 +316,18 @@ impl InboundReleaser {
             .unwrap_or_else(|| source_tx.clone());
         let net = transfer.net_amount();
         if net == 0 {
-            self.advance(id, WarpStatus::Failed).await;
+            self.advance(id, WarpStatus::Failed).await?;
             return Ok(());
         }
-        self.advance(id, WarpStatus::Executing).await;
+        // Executing is the irreversible claim on the release. Use the
+        // STRICT router transition (not the idempotent helper): only a
+        // real QuorumReached→Executing advance authorizes the submit — a
+        // stale snapshot, an already-Executing transfer, or a persist
+        // failure must never reach `releaser.release`.
+        {
+            let mut router = self.router.lock().await;
+            router.advance_transfer(id, WarpStatus::Executing)?;
+        }
 
         match releaser
             .release(&transfer.recipient, net, &source_name, &burn_id, &source_tx)
@@ -320,15 +340,15 @@ impl InboundReleaser {
                 );
                 {
                     let mut router = self.router.lock().await;
-                    router.set_dest_tx(&id, tx_id.clone());
+                    router.set_dest_tx(&id, tx_id.clone())?;
                 }
-                self.confirm_l1(id, &tx_id).await;
+                self.confirm_l1(id, &tx_id).await?;
             }
             Err(l1_release::ReleaseError::Rejected(reason)) => {
                 // Permanent verdict (bad proofs, replay, invalid recipient)
                 // — the manual zion-bridge-unlock path remains as fallback.
                 error!("[inbound] {} release rejected: {}", id, reason);
-                self.advance(id, WarpStatus::Failed).await;
+                self.advance(id, WarpStatus::Failed).await?;
             }
             Err(l1_release::ReleaseError::Transport(e)) => {
                 // Ambiguous: the unlock may already be broadcast. Stay in
@@ -346,8 +366,11 @@ impl InboundReleaser {
     }
 
     /// Advance `id` to `status` only when it is a forward step from the
-    /// transfer's current persisted status (ignores stale/duplicate moves).
-    async fn advance(&self, id: uuid::Uuid, status: WarpStatus) {
+    /// transfer's current persisted status (duplicate/already-past moves
+    /// are a no-op). Invalid transitions and persistence failures
+    /// propagate — an unpersisted `Executing` must never reach
+    /// `releaser.release`.
+    async fn advance(&self, id: uuid::Uuid, status: WarpStatus) -> WarpResult<()> {
         let mut router = self.router.lock().await;
         let current = router.get_transfer(&id).map(|t| t.status);
         let order = |s: WarpStatus| match s {
@@ -361,33 +384,32 @@ impl InboundReleaser {
             WarpStatus::TimelockHold => 1,
         };
         if current.map(order).unwrap_or(0) >= order(status) {
-            return; // already at/past this stage
+            return Ok(()); // already at/past this stage
         }
-        if let Err(e) = router.advance_transfer(id, status) {
-            debug!("[inbound] advance {}→{:?} rejected: {}", id, status, e);
-        }
+        router.advance_transfer(id, status)
     }
 
     /// Poll the L1 adapter until the unlock tx reaches the required depth
-    /// (bounded: ~10 min), then mark Completed.
-    async fn confirm_l1(&mut self, id: uuid::Uuid, tx_id: &str) {
-        let Some(l1) = &self.l1 else {
-            // No L1 adapter — trust the node's acceptance and complete.
-            let mut router = self.router.lock().await;
-            let _ = router.advance_transfer(id, WarpStatus::Completed);
-            return;
-        };
+    /// (bounded: ~10 min), then mark Completed. Without an L1 confirmation
+    /// adapter the transfer stays `Executing` — submit acceptance alone is
+    /// not completion evidence.
+    async fn confirm_l1(&mut self, id: uuid::Uuid, tx_id: &str) -> WarpResult<()> {
+        if self.l1.is_none() {
+            self.warn_throttled(&format!(
+                "[inbound] {id} has no L1 confirmation adapter — holding Executing \
+                 (not marking Completed on acceptance alone)"
+            ));
+            return Ok(());
+        }
+        let l1 = self.l1.as_deref().unwrap();
         for _ in 0..60 {
             tokio::time::sleep(Duration::from_secs(10)).await;
             match l1.confirmations(tx_id).await {
                 Ok(c) if c >= L1_CONFIRMATIONS_REQUIRED => {
                     let mut router = self.router.lock().await;
-                    if let Err(e) = router.advance_transfer(id, WarpStatus::Completed) {
-                        error!("[inbound] {} completion transition failed: {}", id, e);
-                    } else {
-                        info!("[inbound] {} completed (tx {})", id, tx_id);
-                    }
-                    return;
+                    router.advance_transfer(id, WarpStatus::Completed)?;
+                    info!("[inbound] {} completed (tx {})", id, tx_id);
+                    return Ok(());
                 }
                 Ok(_) => continue,
                 Err(e) => {
@@ -400,5 +422,307 @@ impl InboundReleaser {
             "[inbound] {} unlock tx {} not confirmed after ~10min — left Executing",
             id, tx_id
         );
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use super::*;
+    use crate::warp::fees::FeeEngine;
+    use crate::warp::protocol::{DepositProof, MintInstruction};
+    use crate::warp::registry::ChainRegistry;
+    use crate::warp::types::ChainFamily;
+    use crate::warp::validator::WarpValidatorSet;
+
+    /// Confirms deeply but cannot verify burns (default impl → Err hold).
+    struct HoldAdapter;
+    #[async_trait::async_trait]
+    impl ChainAdapter for HoldAdapter {
+        fn family(&self) -> ChainFamily {
+            ChainFamily::Evm
+        }
+        fn name(&self) -> &str {
+            "base"
+        }
+        async fn health_check(&self) -> WarpResult<bool> {
+            Ok(true)
+        }
+        async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
+            Ok(vec![])
+        }
+        async fn execute_mint(&self, _i: &MintInstruction) -> WarpResult<String> {
+            Err(crate::warp::error::WarpError::AdapterNotImplemented(
+                "mint".into(),
+            ))
+        }
+        async fn current_height(&self) -> WarpResult<u64> {
+            Ok(1_000_000)
+        }
+        async fn confirmations(&self, _tx: &str) -> WarpResult<u64> {
+            Ok(10_000)
+        }
+    }
+
+    pub(crate) fn router() -> Arc<Mutex<WarpRouter>> {
+        Arc::new(Mutex::new(WarpRouter::new(
+            ChainRegistry::with_defaults(),
+            FeeEngine::with_defaults(),
+            Arc::new(Mutex::new(WarpValidatorSet::new(3))),
+        )))
+    }
+
+    fn releaser(r: Arc<Mutex<WarpRouter>>, l1: Option<Box<dyn ChainAdapter>>) -> InboundReleaser {
+        let mut adapters: HashMap<String, Box<dyn ChainAdapter>> = HashMap::new();
+        adapters.insert("base".into(), Box::new(HoldAdapter));
+        InboundReleaser {
+            router: r,
+            releaser: None,
+            adapters,
+            l1,
+            warned_no_keys: false,
+            warned_below_quorum: false,
+            last_warn: std::time::Instant::now(),
+        }
+    }
+
+    pub(crate) fn proof() -> DepositProof {
+        DepositProof {
+            tx_hash: "0x".to_string() + &"a".repeat(64),
+            block_height: 1,
+            block_hash: "b".into(),
+            sender: "0x".to_string() + &"1".repeat(40),
+            amount_flowers: 1_000_000,
+            memo: "x".into(),
+            confirmations: 99,
+            burn_id: None,
+        }
+    }
+
+    /// A source adapter that confirms but cannot verify the burn must not
+    /// let the transfer progress toward quorum/release.
+    #[tokio::test]
+    async fn step_holds_when_burn_verification_unsupported() {
+        let r = router();
+        let id = {
+            let mut g = r.lock().await;
+            g.initiate_inbound("base", proof(), "zion1r").unwrap()
+        };
+        let mut rel = releaser(r.clone(), None);
+        let t = { r.lock().await.get_transfer(&id).unwrap().clone() };
+        let res = rel.step(&t).await;
+        assert!(res.is_err(), "verify_burn hold must propagate");
+        let g = r.lock().await;
+        assert_eq!(g.get_transfer(&id).unwrap().status, WarpStatus::Detected);
+    }
+
+    /// Executing with a dest tx but no L1 confirmation adapter: hold in
+    /// Executing — never mark Completed on acceptance alone.
+    #[tokio::test]
+    async fn executing_holds_without_l1_adapter() {
+        let r = router();
+        let id = {
+            let mut g = r.lock().await;
+            let id = g.initiate_inbound("base", proof(), "zion1r").unwrap();
+            for s in [
+                WarpStatus::AwaitingFinality,
+                WarpStatus::Validating,
+                WarpStatus::QuorumReached,
+                WarpStatus::Executing,
+            ] {
+                g.advance_transfer(id, s).unwrap();
+            }
+            g.set_dest_tx(&id, "l1tx".into()).unwrap();
+            id
+        };
+        let mut rel = releaser(r.clone(), None);
+        let t = { r.lock().await.get_transfer(&id).unwrap().clone() };
+        rel.step(&t).await.unwrap();
+        assert_eq!(
+            r.lock().await.get_transfer(&id).unwrap().status,
+            WarpStatus::Executing
+        );
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::tests::*;
+    use super::*;
+    use crate::warp::fees::FeeEngine;
+    use crate::warp::l1_release::L1Releaser;
+    use crate::warp::protocol::{DepositProof, MintInstruction};
+    use crate::warp::registry::ChainRegistry;
+    use crate::warp::types::ChainFamily;
+    use crate::warp::validator::WarpValidatorSet;
+    use k256::ecdsa::SigningKey;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    /// Confirms deeply AND accepts burn proofs — reaches the Executing claim.
+    struct VerifyAdapter;
+    #[async_trait::async_trait]
+    impl ChainAdapter for VerifyAdapter {
+        fn family(&self) -> ChainFamily {
+            ChainFamily::Evm
+        }
+        fn name(&self) -> &str {
+            "base"
+        }
+        async fn health_check(&self) -> WarpResult<bool> {
+            Ok(true)
+        }
+        async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
+            Ok(vec![])
+        }
+        async fn execute_mint(&self, _i: &MintInstruction) -> WarpResult<String> {
+            Err(crate::warp::error::WarpError::AdapterNotImplemented(
+                "mint".into(),
+            ))
+        }
+        async fn current_height(&self) -> WarpResult<u64> {
+            Ok(1_000_000)
+        }
+        async fn confirmations(&self, _tx: &str) -> WarpResult<u64> {
+            Ok(10_000)
+        }
+        async fn verify_burn(&self, _t: &crate::warp::types::WarpTransfer) -> WarpResult<()> {
+            Ok(())
+        }
+    }
+
+    /// Line-delimited JSON-RPC listener that counts connections — if
+    /// `release()` is ever called, the count goes up. Always rejects so
+    /// a wrongly-issued release fails fast instead of hanging ~10 min.
+    /// Async task scoped to the test runtime — torn down with it.
+    fn counting_l1(counter: Arc<AtomicUsize>) -> String {
+        let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        l.set_nonblocking(true).unwrap();
+        let port = l.local_addr().unwrap().port();
+        let listener = tokio::net::TcpListener::from_std(l).unwrap();
+        tokio::spawn(async move {
+            loop {
+                let Ok((mut s, _)) = listener.accept().await else {
+                    break;
+                };
+                counter.fetch_add(1, Ordering::SeqCst);
+                tokio::spawn(async move {
+                    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+                    let (r, mut w) = s.split();
+                    let mut line = String::new();
+                    let mut reader = BufReader::new(r);
+                    let _ = reader.read_line(&mut line).await;
+                    let _ = w
+                        .write_all(
+                            b"{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"accepted\":false,\"reason\":\"test reject\"}}\n",
+                        )
+                        .await;
+                });
+            }
+        });
+        format!("127.0.0.1:{port}")
+    }
+
+    fn releaser_with_verify(r: Arc<Mutex<WarpRouter>>, l1_addr: String) -> InboundReleaser {
+        let keys: Vec<(String, SigningKey)> = (1u8..=3)
+            .map(|b| (format!("v{b}"), SigningKey::from_slice(&[b; 32]).unwrap()))
+            .collect();
+        let mut adapters: HashMap<String, Box<dyn ChainAdapter>> = HashMap::new();
+        adapters.insert("base".into(), Box::new(VerifyAdapter));
+        InboundReleaser {
+            router: r,
+            releaser: Some(L1Releaser::new(l1_addr, keys)),
+            adapters,
+            l1: None,
+            warned_no_keys: false,
+            warned_below_quorum: false,
+            last_warn: std::time::Instant::now(),
+        }
+    }
+
+    /// A stale `QuorumReached` snapshot of a transfer that is already
+    /// `Executing` must NOT drive a second release: the strict
+    /// `advance_transfer(Executing)` transition fails before submit.
+    #[tokio::test]
+    async fn stale_quorum_snapshot_cannot_rerelease() {
+        let r = router();
+        let (id, stale) = {
+            let mut g = r.lock().await;
+            let id = g.initiate_inbound("base", proof(), "zion1r").unwrap();
+            for s in [
+                WarpStatus::AwaitingFinality,
+                WarpStatus::Validating,
+                WarpStatus::QuorumReached,
+            ] {
+                g.advance_transfer(id, s).unwrap();
+            }
+            let stale = g.get_transfer(&id).unwrap().clone();
+            // "Another caller" claims the release first.
+            g.advance_transfer(id, WarpStatus::Executing).unwrap();
+            (id, stale)
+        };
+        let reqs = Arc::new(AtomicUsize::new(0));
+        let addr = counting_l1(reqs.clone());
+        let mut rel = releaser_with_verify(r.clone(), addr);
+        let res = rel.step(&stale).await;
+        assert!(res.is_err(), "stale snapshot must fail the strict claim");
+        assert_eq!(reqs.load(Ordering::SeqCst), 0, "release must never fire");
+        assert_eq!(
+            r.lock().await.get_transfer(&id).unwrap().status,
+            WarpStatus::Executing
+        );
+    }
+
+    /// If persisting `Executing` fails, `releaser.release` must not run
+    /// and the durable status stays `QuorumReached`.
+    #[tokio::test]
+    async fn failing_executing_save_blocks_release() {
+        let path = std::env::temp_dir()
+            .join(format!("warp-inb-{}.db", uuid::Uuid::new_v4()))
+            .to_string_lossy()
+            .into_owned();
+        let tdb = crate::warp::db::TransferDb::open(&path).unwrap();
+        let r = Arc::new(Mutex::new(
+            WarpRouter::with_db(
+                ChainRegistry::with_defaults(),
+                FeeEngine::with_defaults(),
+                Arc::new(Mutex::new(WarpValidatorSet::new(3))),
+                tdb,
+                Some("127.0.0.1:1".into()),
+                1,
+            )
+            .unwrap(),
+        ));
+        let id = {
+            let mut g = r.lock().await;
+            let id = g.initiate_inbound("base", proof(), "zion1r").unwrap();
+            for s in [
+                WarpStatus::AwaitingFinality,
+                WarpStatus::Validating,
+                WarpStatus::QuorumReached,
+            ] {
+                g.advance_transfer(id, s).unwrap();
+            }
+            id
+        };
+        // Fail every future `transfers` INSERT.
+        let conn = rusqlite::Connection::open(&path).unwrap();
+        conn.execute_batch(
+            "CREATE TRIGGER fail_save BEFORE INSERT ON transfers BEGIN SELECT RAISE(FAIL,'x'); END;",
+        )
+        .unwrap();
+        drop(conn);
+
+        let reqs = Arc::new(AtomicUsize::new(0));
+        let addr = counting_l1(reqs.clone());
+        let mut rel = releaser_with_verify(r.clone(), addr);
+        let snap = { r.lock().await.get_transfer(&id).unwrap().clone() };
+        let res = rel.step(&snap).await;
+        assert!(res.is_err());
+        assert_eq!(reqs.load(Ordering::SeqCst), 0, "release must never fire");
+        assert_eq!(
+            r.lock().await.get_transfer(&id).unwrap().status,
+            WarpStatus::QuorumReached
+        );
+        std::fs::remove_file(&path).ok();
     }
 }

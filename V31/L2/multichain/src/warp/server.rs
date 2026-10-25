@@ -83,7 +83,7 @@ impl WarpState {
     /// Create state with SQLite persistence at `db_path`.
     pub fn with_db(config: WarpConfig, db_path: &str) -> crate::warp::error::WarpResult<Self> {
         let db = TransferDb::open(db_path)?;
-        let registry = ChainRegistry::with_defaults();
+        let registry = ChainRegistry::from_config(&config.chains)?;
         let fee_engine = FeeEngine::with_defaults();
         let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(config.quorum)));
         // WarpRouter::with_db loads existing transfers from the DB.
@@ -671,5 +671,49 @@ mod tests {
         assert!(json["version"].as_str().is_some());
         assert_eq!(json["transfers_total"], 0);
         assert_eq!(json["transfers_pending"], 0);
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+    use crate::warp::config::ChainConfig;
+    use crate::warp::protocol::DepositProof;
+
+    /// `with_db` must gate on configured `enabled` flags — a disabled
+    /// chain cannot be initiated through this constructor.
+    #[tokio::test]
+    async fn with_db_respects_disabled_chain() {
+        let mut cfg = WarpConfig::default();
+        cfg.chains = vec![ChainConfig {
+            name: "base".into(),
+            family: "evm".into(),
+            enabled: false,
+            rpc_url: String::new(),
+            contract_address: None,
+            finality_blocks: 1,
+            disabled_reason: Some("test-disabled".into()),
+        }];
+        let path = std::env::temp_dir()
+            .join(format!("warp-state-{}.db", uuid::Uuid::new_v4()))
+            .to_string_lossy()
+            .into_owned();
+        let state = WarpState::with_db(cfg, &path).unwrap();
+        let proof = DepositProof {
+            tx_hash: format!("0x{}", "f".repeat(64)),
+            block_height: 1,
+            block_hash: "h".into(),
+            sender: "s".into(),
+            amount_flowers: 1,
+            memo: "m".into(),
+            confirmations: 0,
+            burn_id: None,
+        };
+        let res = {
+            let mut r = state.router.lock().await;
+            r.initiate_inbound("base", proof, "zion1dest")
+        };
+        assert!(res.is_err(), "disabled chain must not initiate");
+        std::fs::remove_file(&path).ok();
     }
 }

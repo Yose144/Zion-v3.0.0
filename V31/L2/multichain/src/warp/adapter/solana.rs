@@ -255,6 +255,24 @@ impl SolanaAdapter {
     }
 }
 
+/// Inclusion slot from a `getSignatureStatuses` result — requires an
+/// actual `value[0]` object with a positive `slot`, an explicit
+/// `"err": null`, and `confirmationStatus` of `confirmed`/`finalized`.
+/// `processed`/null/missing entries are not inclusion evidence.
+fn signature_status_inclusion_slot(v: &Value) -> Option<u64> {
+    let entry = v.get("value")?.as_array()?.first()?.as_object()?;
+    if !matches!(entry.get("err"), Some(Value::Null)) {
+        return None;
+    }
+    if !matches!(
+        entry.get("confirmationStatus").and_then(|s| s.as_str()),
+        Some("confirmed") | Some("finalized")
+    ) {
+        return None;
+    }
+    entry.get("slot")?.as_u64().filter(|s| *s > 0)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Serde helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -402,9 +420,11 @@ impl ChainAdapter for SolanaAdapter {
             json!([[tx_hash], {"searchTransactionHistory": true}]),
         )
         .await?;
-        let slot_now = self.get_slot().await.unwrap_or(0);
-        let tx_slot = v["value"][0]["slot"].as_u64().unwrap_or(slot_now);
-        Ok(slot_now.saturating_sub(tx_slot))
+        let slot_now = self.get_slot().await?;
+        Ok(match signature_status_inclusion_slot(&v) {
+            Some(tx_slot) if slot_now >= tx_slot => slot_now - tx_slot,
+            _ => 0,
+        })
     }
 }
 
@@ -481,5 +501,30 @@ mod tests {
             }),
         };
         assert!(adapter.parse_bridge_burn_log(&tx, "SIG", 100).is_none());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    #[test]
+    fn sig_status_inclusion_table() {
+        // valid: confirmed + err:null + positive slot
+        let good = json!({"value":[{"slot":100,"err":null,"confirmationStatus":"confirmed"}]});
+        assert_eq!(signature_status_inclusion_slot(&good), Some(100));
+        let fin = json!({"value":[{"slot":7,"err":null,"confirmationStatus":"finalized"}]});
+        assert_eq!(signature_status_inclusion_slot(&fin), Some(7));
+        for bad in [
+            json!({"value":[{"slot":100,"err":null,"confirmationStatus":"processed"}]}),
+            json!({"value":[null]}),
+            json!({"value":[{"slot":100,"confirmationStatus":"confirmed"}]}), // missing err
+            json!({"value":[{"slot":100,"err":{"x":1},"confirmationStatus":"finalized"}]}),
+            json!({"value":[{"slot":0,"err":null,"confirmationStatus":"confirmed"}]}),
+            json!({"value":[]}),
+            json!({}),
+        ] {
+            assert_eq!(signature_status_inclusion_slot(&bad), None, "{bad}");
+        }
     }
 }

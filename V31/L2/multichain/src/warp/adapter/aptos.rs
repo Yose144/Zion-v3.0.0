@@ -495,6 +495,16 @@ impl AptosAdapter {
 // ─────────────────────────────────────────────────────────────────────────────
 // ChainAdapter impl
 // ─────────────────────────────────────────────────────────────────────────────
+/// Inclusion (ledger) version for a transaction — requires a committed,
+/// successful tx: not `pending_transaction`, `success == true`, and a
+/// version string that parses as u64.
+fn aptos_inclusion_version(tx: &AptosTx) -> Option<u64> {
+    if tx.tx_type == "pending_transaction" || tx.success != Some(true) {
+        return None;
+    }
+    tx.version.as_deref()?.parse::<u64>().ok()
+}
+
 #[async_trait]
 impl ChainAdapter for AptosAdapter {
     fn family(&self) -> ChainFamily {
@@ -632,14 +642,13 @@ impl ChainAdapter for AptosAdapter {
     }
 
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
-        let tx = self.get_transaction(tx_hash).await?;
-        let tx_version: u64 = match tx.as_ref().and_then(|t| t.version.as_deref()) {
-            Some(v) => v.parse().unwrap_or(0),
-            None => 0,
+        let Some(tx) = self.get_transaction(tx_hash).await? else {
+            return Ok(0);
         };
-        // Confirmations = current ledger version - tx version (Aptos finality
-        // is single-slot; any positive diff means confirmed).
-        let current = self.current_height().await.unwrap_or(tx_version);
+        let Some(tx_version) = aptos_inclusion_version(&tx) else {
+            return Ok(0);
+        };
+        let current = self.current_height().await?;
         Ok(current.saturating_sub(tx_version))
     }
 }
@@ -925,5 +934,37 @@ mod tests {
         };
         let result = a.current_height().await;
         assert!(result.is_err());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    fn tx(t: &str, ok: Option<bool>, v: Option<&str>) -> AptosTx {
+        AptosTx {
+            hash: "h".into(),
+            tx_type: t.into(),
+            success: ok,
+            version: v.map(|s| s.to_string()),
+            vm_status: None,
+        }
+    }
+
+    #[test]
+    fn aptos_inclusion_table() {
+        assert_eq!(
+            aptos_inclusion_version(&tx("user_transaction", Some(true), Some("99"))),
+            Some(99)
+        );
+        for t in [
+            tx("pending_transaction", Some(true), Some("99")),
+            tx("user_transaction", Some(false), Some("99")),
+            tx("user_transaction", None, Some("99")),
+            tx("user_transaction", Some(true), None),
+            tx("user_transaction", Some(true), Some("x")),
+        ] {
+            assert_eq!(aptos_inclusion_version(&t), None);
+        }
     }
 }

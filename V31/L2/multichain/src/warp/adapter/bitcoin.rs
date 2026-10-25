@@ -521,6 +521,15 @@ impl BitcoinAdapter {
     }
 }
 
+/// Inclusion height for a mempool `/tx/{id}/status` — requires
+/// `confirmed: true` and a positive `block_height`.
+fn mempool_inclusion_height(s: &MempoolTxStatus) -> Option<u64> {
+    if !s.confirmed {
+        return None;
+    }
+    s.block_height.filter(|h| *h > 0)
+}
+
 #[async_trait]
 impl ChainAdapter for BitcoinAdapter {
     fn family(&self) -> ChainFamily {
@@ -631,12 +640,11 @@ impl ChainAdapter for BitcoinAdapter {
                 chain: "bitcoin".into(),
                 reason: e.to_string(),
             })?;
-        if !status.confirmed {
+        let Some(tx_block) = mempool_inclusion_height(&status) else {
             return Ok(0);
-        }
-        let tx_block = status.block_height.unwrap_or(0);
-        let tip = self.get_tip_height().await.unwrap_or(tx_block);
-        Ok(tip.saturating_sub(tx_block) + 1)
+        };
+        let tip = self.get_tip_height().await?;
+        Ok(inclusion_depth(tx_block, tip))
     }
 }
 
@@ -1058,5 +1066,62 @@ mod failover_tests {
         let urls = parse_endpoints(" https://a.example/api/ ,https://b.example/api ,, ");
         assert_eq!(urls, vec!["https://a.example/api", "https://b.example/api"]);
         assert!(parse_endpoints(" , ,").is_empty());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    #[test]
+    fn mempool_inclusion_table() {
+        let ok = MempoolTxStatus {
+            confirmed: true,
+            block_height: Some(900),
+            block_hash: None,
+        };
+        assert_eq!(mempool_inclusion_height(&ok), Some(900));
+        for s in [
+            MempoolTxStatus {
+                confirmed: false,
+                block_height: Some(900),
+                block_hash: None,
+            },
+            MempoolTxStatus {
+                confirmed: true,
+                block_height: Some(0),
+                block_hash: None,
+            },
+            MempoolTxStatus {
+                confirmed: true,
+                block_height: None,
+                block_hash: None,
+            },
+        ] {
+            assert_eq!(mempool_inclusion_height(&s), None);
+        }
+    }
+}
+
+/// Depth = `tip - inclusion + 1`; future inclusion height is not
+/// evidence and yields 0.
+fn inclusion_depth(inclusion: u64, tip: u64) -> u64 {
+    if tip < inclusion {
+        0
+    } else {
+        tip.saturating_sub(inclusion).saturating_add(1)
+    }
+}
+
+#[cfg(test)]
+mod audit2_tests {
+    use super::*;
+
+    #[test]
+    fn inclusion_depth_future_current_normal() {
+        assert_eq!(inclusion_depth(900, 905), 6);
+        assert_eq!(inclusion_depth(905, 905), 1);
+        assert_eq!(inclusion_depth(906, 905), 0); // future -> 0
+        assert_eq!(inclusion_depth(1, u64::MAX), u64::MAX); // no overflow
     }
 }

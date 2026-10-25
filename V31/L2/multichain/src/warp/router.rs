@@ -129,22 +129,15 @@ impl WarpRouter {
         Ok(router)
     }
 
-    fn save_transfer(&self, transfer: &WarpTransfer) {
+    /// Persist a transfer to the DB. A `None` DB is a no-op (tests/dev).
+    /// A `Some` DB failure is propagated — callers must not publish the
+    /// transfer into in-memory state until this returns `Ok`, so memory
+    /// can never run ahead of the durable record.
+    fn save_transfer(&self, transfer: &WarpTransfer) -> WarpResult<()> {
         if let Some(db) = &self.db {
-            if let Err(e) = db.save(transfer) {
-                warn!(transfer_id = %transfer.id, "[Router] DB save failed: {}", e);
-            }
+            db.save(transfer)?;
         }
-    }
-
-    fn update_transfer_db(&self, id: Uuid) {
-        if let Some(db) = &self.db {
-            if let Some(t) = self.transfers.get(&id) {
-                if let Err(e) = db.save(t) {
-                    warn!(transfer_id = %id, "[Router] DB update failed: {}", e);
-                }
-            }
-        }
+        Ok(())
     }
 
     /// Verify a `DepositProof` against the ZION L1 source chain (FIND-008).
@@ -323,11 +316,11 @@ impl WarpRouter {
             .map(|outs| {
                 outs.iter()
                     .filter(|o| {
-                        o.get("address")
-                            .and_then(|a| {
-                                a.get("encoded").and_then(|e| e.as_str()).or_else(|| a.as_str())
-                            })
-                            == Some(vault)
+                        o.get("address").and_then(|a| {
+                            a.get("encoded")
+                                .and_then(|e| e.as_str())
+                                .or_else(|| a.as_str())
+                        }) == Some(vault)
                     })
                     .filter_map(|o| o.get("amount").and_then(Self::json_u128))
                     .sum()
@@ -480,14 +473,16 @@ impl WarpRouter {
             transfer.status = WarpStatus::Detected;
         }
 
-        // 7. Track
+        // 7. Persist BEFORE publishing into in-memory state — the durable
+        //    record must exist before the transfer becomes executable, so a
+        //    crash can never strand a transfer the router has accepted.
+        self.save_transfer(&transfer)?;
+
         let sm = TransferStateMachine::new(transfer.status);
         self.transfers.insert(transfer_id, transfer.clone());
         self.state_machines.insert(transfer_id, sm);
         *self.daily_volume.entry(chain_name.clone()).or_insert(0) += proof.amount_flowers;
 
-        // Persist to DB
-        self.save_transfer(&transfer);
         // Persist daily volume so it survives restarts (FIND-009).
         if let Some(db) = &self.db {
             if let Err(e) = db.record_daily_volume(&chain_name, proof.amount_flowers) {
@@ -565,12 +560,14 @@ impl WarpRouter {
         transfer.status = WarpStatus::Detected;
 
         let transfer_id = transfer.id;
+
+        // Persist before publishing into in-memory state (same ordering as
+        // initiate_outbound — no executable transfer without a durable row).
+        self.save_transfer(&transfer)?;
+
         let sm = TransferStateMachine::new(transfer.status);
         self.transfers.insert(transfer_id, transfer.clone());
         self.state_machines.insert(transfer_id, sm);
-
-        // Persist to DB
-        self.save_transfer(&transfer);
 
         self.metrics.record_transfer_initiated();
         info!(transfer_id = %transfer_id, "Inbound WARP transfer initiated");
@@ -579,29 +576,36 @@ impl WarpRouter {
     }
 
     /// Advance a transfer to the next state.
+    ///
+    /// The transition is validated and applied on candidate clones and
+    /// persisted *first*; only after the DB write succeeds are the
+    /// in-memory maps swapped. A persistence failure leaves memory, DB,
+    /// XP events and metrics all at the previous state.
     pub fn advance_transfer(&mut self, id: Uuid, new_status: WarpStatus) -> WarpResult<()> {
-        let sm = self
+        let mut sm = self
             .state_machines
-            .get_mut(&id)
+            .get(&id)
+            .cloned()
             .ok_or_else(|| WarpError::TransferNotFound(id.to_string()))?;
         sm.transition(new_status)?;
 
-        let transfer = self
+        let mut candidate = self
             .transfers
-            .get_mut(&id)
+            .get(&id)
+            .cloned()
             .ok_or_else(|| WarpError::TransferNotFound(id.to_string()))?;
-        transfer.status = new_status;
-        transfer.updated_at = chrono::Utc::now();
+        candidate.status = new_status;
+        candidate.updated_at = chrono::Utc::now();
 
-        // Persist state change to DB
-        self.update_transfer_db(id);
+        self.save_transfer(&candidate)?;
+
+        self.state_machines.insert(id, sm);
+        self.transfers.insert(id, candidate.clone());
 
         if new_status == WarpStatus::Completed {
             self.metrics.record_transfer_completed();
             // Emit XP event for AI-native bridge
-            if let Some(t) = self.transfers.get(&id) {
-                self.xp_events.push(WarpXpEvent::from_transfer(t));
-            }
+            self.xp_events.push(WarpXpEvent::from_transfer(&candidate));
         } else if new_status == WarpStatus::Failed {
             self.metrics.record_transfer_failed();
         }
@@ -611,12 +615,19 @@ impl WarpRouter {
 
     /// Record the destination-chain tx hash (persisted) for a transfer.
     /// Used by the inbound releaser after `submitBridgeUnlock` is accepted.
-    pub fn set_dest_tx(&mut self, id: &Uuid, tx_hash: String) {
-        if let Some(t) = self.transfers.get_mut(id) {
-            t.dest_tx_hash = Some(tx_hash);
-            t.updated_at = chrono::Utc::now();
-        }
-        self.update_transfer_db(*id);
+    /// Persists a candidate clone first so a DB failure leaves the stored
+    /// transfer untouched and the caller can retry safely.
+    pub fn set_dest_tx(&mut self, id: &Uuid, tx_hash: String) -> WarpResult<()> {
+        let mut candidate = self
+            .transfers
+            .get(id)
+            .cloned()
+            .ok_or_else(|| WarpError::TransferNotFound(id.to_string()))?;
+        candidate.dest_tx_hash = Some(tx_hash);
+        candidate.updated_at = chrono::Utc::now();
+        self.save_transfer(&candidate)?;
+        self.transfers.insert(*id, candidate);
+        Ok(())
     }
 
     pub fn get_transfer(&self, id: &Uuid) -> Option<&WarpTransfer> {
@@ -835,7 +846,9 @@ mod tests {
         p1.burn_id = Some("burn_1".into());
         let mut p2 = test_deposit(2_000_000, "b2");
         p2.burn_id = Some("burn_2".into());
-        router.initiate_inbound("base", p1.clone(), "zion1r").unwrap();
+        router
+            .initiate_inbound("base", p1.clone(), "zion1r")
+            .unwrap();
         router.initiate_inbound("base", p2, "zion1r").unwrap();
         // Replaying burn_1 must fail even with a different amount.
         p1.amount_flowers = 9;
@@ -1068,5 +1081,214 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("deposit proof verification"));
+    }
+
+    // ── Fail-closed persistence tests ────────────────────────────────
+    //
+    // A failing save must never leave an executable transfer or a state
+    // the DB doesn't have. These tests use a real file DB (an in-memory
+    // DB cannot be reached by the second connection that installs the
+    // fault trigger).
+
+    fn temp_db_path() -> String {
+        std::env::temp_dir()
+            .join(format!("zion-warp-router-test-{}.db", Uuid::new_v4()))
+            .to_string_lossy()
+            .into_owned()
+    }
+
+    /// Router over a fresh file DB.
+    fn file_router(db: &TransferDb) -> WarpRouter {
+        let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(3)));
+        WarpRouter::with_db(
+            ChainRegistry::with_defaults(),
+            FeeEngine::with_defaults(),
+            validator_set,
+            db.clone(),
+            None,
+            12,
+        )
+        .unwrap()
+    }
+
+    /// Independent connection that installs a trigger failing every
+    /// `INSERT OR REPLACE` save on `transfers` (BEFORE INSERT fires for
+    // the REPLACE-as-delete+insert path too).
+    fn install_fail_trigger(path: &str) -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open(path).unwrap();
+        conn.execute_batch(
+            "CREATE TRIGGER fail_transfer_save BEFORE INSERT ON transfers \
+             BEGIN SELECT RAISE(FAIL, 'forced save failure'); END;",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn drop_fail_trigger(conn: &rusqlite::Connection) {
+        conn.execute_batch("DROP TRIGGER fail_transfer_save")
+            .unwrap();
+    }
+
+    #[test]
+    fn test_initiate_fails_closed_on_save_error() {
+        let path = temp_db_path();
+        let db = TransferDb::open(&path).unwrap();
+        let _trigger_conn = install_fail_trigger(&path);
+        let mut router = file_router(&db);
+
+        let err = router
+            .initiate_outbound(test_deposit(1_000_000, "WARP:1:base:0xR"))
+            .unwrap_err();
+        assert!(matches!(err, WarpError::Database(_)), "got {err:?}");
+
+        // Nothing published: no in-memory transfer, no DB row, no metrics.
+        assert_eq!(router.transfer_count(), 0);
+        assert_eq!(db.count().unwrap(), 0);
+        assert_eq!(router.metrics.transfers_initiated(), 0);
+        // (daily_volume is seeded from the DB for all chains — it must not
+        // have accrued this rejected amount.)
+        assert_eq!(router.daily_volume.get("base").copied().unwrap_or(0), 0);
+
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn test_advance_fails_closed_keeps_previous_status() {
+        let path = temp_db_path();
+        let db = TransferDb::open(&path).unwrap();
+        let mut router = file_router(&db);
+        let id = router
+            .initiate_outbound(test_deposit(1_000_000, "WARP:1:base:0xR"))
+            .unwrap();
+        router
+            .advance_transfer(id, WarpStatus::AwaitingFinality)
+            .unwrap();
+
+        let conn = install_fail_trigger(&path);
+        let err = router
+            .advance_transfer(id, WarpStatus::Validating)
+            .unwrap_err();
+        assert!(matches!(err, WarpError::Database(_)), "got {err:?}");
+
+        // Memory and DB both still at the previous status.
+        assert_eq!(
+            router.get_transfer(&id).unwrap().status,
+            WarpStatus::AwaitingFinality
+        );
+        assert_eq!(
+            db.load(&id).unwrap().unwrap().status,
+            WarpStatus::AwaitingFinality
+        );
+
+        // Removing the trigger lets the same transition succeed — the
+        // in-memory state machine was not left half-advanced.
+        drop_fail_trigger(&conn);
+        router.advance_transfer(id, WarpStatus::Validating).unwrap();
+        assert_eq!(
+            router.get_transfer(&id).unwrap().status,
+            WarpStatus::Validating
+        );
+        assert_eq!(
+            db.load(&id).unwrap().unwrap().status,
+            WarpStatus::Validating
+        );
+        assert_eq!(router.state_machines[&id].history().len(), 3);
+
+        // A failed Completed transition must not emit metrics/XP.
+        router
+            .advance_transfer(id, WarpStatus::QuorumReached)
+            .unwrap();
+        router.advance_transfer(id, WarpStatus::Executing).unwrap();
+        let conn2 = install_fail_trigger(&path);
+        assert!(router.advance_transfer(id, WarpStatus::Completed).is_err());
+        assert_eq!(router.metrics.transfers_completed(), 0);
+        assert!(router.drain_xp_events().is_empty());
+        assert_eq!(
+            router.get_transfer(&id).unwrap().status,
+            WarpStatus::Executing
+        );
+        drop_fail_trigger(&conn2);
+        router.advance_transfer(id, WarpStatus::Completed).unwrap();
+        assert_eq!(router.metrics.transfers_completed(), 1);
+        assert_eq!(router.drain_xp_events().len(), 1);
+
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn test_set_dest_tx_fails_closed_and_retries() {
+        let path = temp_db_path();
+        let db = TransferDb::open(&path).unwrap();
+        let mut router = file_router(&db);
+        let id = router
+            .initiate_outbound(test_deposit(1_000_000, "WARP:1:base:0xR"))
+            .unwrap();
+        for s in [
+            WarpStatus::AwaitingFinality,
+            WarpStatus::Validating,
+            WarpStatus::QuorumReached,
+            WarpStatus::Executing,
+        ] {
+            router.advance_transfer(id, s).unwrap();
+        }
+
+        // Missing transfer id → TransferNotFound.
+        assert!(matches!(
+            router.set_dest_tx(&Uuid::new_v4(), "x".into()),
+            Err(WarpError::TransferNotFound(_))
+        ));
+
+        let conn = install_fail_trigger(&path);
+        let err = router
+            .set_dest_tx(&id, "dest_tx_hash_1".into())
+            .unwrap_err();
+        assert!(matches!(err, WarpError::Database(_)), "got {err:?}");
+
+        // Hash stays unset in memory and DB — a retry is safe.
+        assert!(router.get_transfer(&id).unwrap().dest_tx_hash.is_none());
+        assert!(db.load(&id).unwrap().unwrap().dest_tx_hash.is_none());
+
+        drop_fail_trigger(&conn);
+        router.set_dest_tx(&id, "dest_tx_hash_1".into()).unwrap();
+        assert_eq!(
+            router.get_transfer(&id).unwrap().dest_tx_hash.as_deref(),
+            Some("dest_tx_hash_1")
+        );
+        assert_eq!(
+            db.load(&id).unwrap().unwrap().dest_tx_hash.as_deref(),
+            Some("dest_tx_hash_1")
+        );
+
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn test_executing_transfer_reloads_with_dest_tx() {
+        let path = temp_db_path();
+        let db = TransferDb::open(&path).unwrap();
+        let id;
+        {
+            let mut router = file_router(&db);
+            id = router
+                .initiate_outbound(test_deposit(1_000_000, "WARP:1:base:0xR"))
+                .unwrap();
+            for s in [
+                WarpStatus::AwaitingFinality,
+                WarpStatus::Validating,
+                WarpStatus::QuorumReached,
+                WarpStatus::Executing,
+            ] {
+                router.advance_transfer(id, s).unwrap();
+            }
+            router.set_dest_tx(&id, "broadcast_hash".into()).unwrap();
+        }
+
+        // Fresh router over the same DB retains Executing + tx hash.
+        let router = file_router(&db);
+        let t = router.get_transfer(&id).unwrap();
+        assert_eq!(t.status, WarpStatus::Executing);
+        assert_eq!(t.dest_tx_hash.as_deref(), Some("broadcast_hash"));
+
+        std::fs::remove_file(&path).ok();
     }
 }

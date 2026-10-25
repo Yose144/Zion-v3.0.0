@@ -147,6 +147,20 @@ struct SuiTxBlock {
     /// Checkpoint sequence number the TX was included in (string).
     #[serde(default)]
     checkpoint: Option<String>,
+    /// Execution effects (requested via `showEffects`) — the authoritative
+    /// success signal. The top-level `status` string is NOT.
+    #[serde(default)]
+    effects: Option<SuiEffects>,
+}
+
+#[derive(Deserialize)]
+struct SuiEffects {
+    status: Option<SuiStatus>,
+}
+
+#[derive(Deserialize)]
+struct SuiStatus {
+    status: Option<String>,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -536,6 +550,22 @@ fn parse_seq_string(v: &Value) -> WarpResult<u64> {
 // ─────────────────────────────────────────────────────────────────────────────
 // ChainAdapter impl
 // ─────────────────────────────────────────────────────────────────────────────
+/// Inclusion checkpoint for a tx block — only when
+/// `effects.status.status` is explicitly `"success"` and `checkpoint`
+/// parses as u64 ("0" is valid; missing/malformed is not evidence).
+fn sui_inclusion_checkpoint(tx: &SuiTxBlock) -> Option<u64> {
+    let ok = tx
+        .effects
+        .as_ref()
+        .and_then(|e| e.status.as_ref())
+        .and_then(|s| s.status.as_deref())
+        == Some("success");
+    if !ok {
+        return None;
+    }
+    tx.checkpoint.as_deref()?.parse::<u64>().ok()
+}
+
 #[async_trait]
 impl ChainAdapter for SuiAdapter {
     fn family(&self) -> ChainFamily {
@@ -668,33 +698,14 @@ impl ChainAdapter for SuiAdapter {
     }
 
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
-        let tx =
-            self.get_transaction_block(tx_hash)
-                .await?
-                .ok_or_else(|| WarpError::AdapterError {
-                    chain: "sui".into(),
-                    reason: format!("transaction {} not found", tx_hash),
-                })?;
-
-        // Sui finality ladder: EXECUTED → CHECKPOINTED → CONFIRMED → FINAL.
-        // Treat CHECKPOINTED+ as having a checkpoint number we can diff against
-        // the latest checkpoint to report "confirmations".
-        let tx_checkpoint = tx
-            .checkpoint
-            .as_deref()
-            .and_then(|s| s.parse::<u64>().ok())
-            .unwrap_or(0);
-
-        let latest = self.get_latest_checkpoint().await.unwrap_or(tx_checkpoint);
-        let confs = latest.saturating_sub(tx_checkpoint);
-
-        // If the TX has not yet reached a checkpoint, surface 0 confirmations
-        // (the caller can retry). A `FINAL` status is the strongest signal but
-        // we still report the checkpoint delta for observability.
-        match tx.status.as_deref() {
-            Some("EXECUTED") => Ok(0),
-            _ => Ok(confs),
-        }
+        let Some(tx) = self.get_transaction_block(tx_hash).await? else {
+            return Ok(0);
+        };
+        let Some(cp) = sui_inclusion_checkpoint(&tx) else {
+            return Ok(0);
+        };
+        let latest = self.get_latest_checkpoint().await?;
+        Ok(latest.saturating_sub(cp))
     }
 }
 
@@ -970,5 +981,47 @@ mod tests {
             bcs: None,
         };
         assert!(a.parse_deposit_event(&ev, 50).is_none());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    fn tx(effects: Option<SuiEffects>, cp: Option<&str>) -> SuiTxBlock {
+        SuiTxBlock {
+            digest: "d".into(),
+            status: None,
+            checkpoint: cp.map(|s| s.to_string()),
+            effects,
+        }
+    }
+    fn eff(st: Option<&str>) -> Option<SuiEffects> {
+        Some(SuiEffects {
+            status: Some(SuiStatus {
+                status: st.map(|s| s.to_string()),
+            }),
+        })
+    }
+
+    #[test]
+    fn sui_inclusion_table() {
+        assert_eq!(
+            sui_inclusion_checkpoint(&tx(eff(Some("success")), Some("42"))),
+            Some(42)
+        );
+        assert_eq!(
+            sui_inclusion_checkpoint(&tx(eff(Some("success")), Some("0"))),
+            Some(0)
+        );
+        for t in [
+            tx(eff(Some("failure")), Some("42")),
+            tx(eff(None), Some("42")),
+            tx(None, Some("42")),
+            tx(eff(Some("success")), None),
+            tx(eff(Some("success")), Some("abc")),
+        ] {
+            assert_eq!(sui_inclusion_checkpoint(&t), None);
+        }
     }
 }

@@ -92,6 +92,9 @@ struct BFTxDetails {
     block: Option<String>,
     block_height: Option<u64>,
     index: Option<u64>,
+    /// Phase-2 script validation flag — `false` means the tx's contracts
+    /// failed validation (not usable as inclusion evidence).
+    valid_contract: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -314,6 +317,20 @@ impl CardanoAdapter {
     }
 }
 
+/// Inclusion height for a Blockfrost tx record — requires a positive
+/// `block_height` AND a nonempty `block` hash. `valid_contract: false`
+/// excludes the tx; `None` is allowed (pre-Alonzo API responses).
+fn cardano_inclusion_height(tx: &BFTxDetails) -> Option<u64> {
+    if tx.valid_contract == Some(false) {
+        return None;
+    }
+    let h = tx.block_height.filter(|h| *h > 0)?;
+    match tx.block.as_deref() {
+        Some(b) if !b.is_empty() => Some(h),
+        _ => None,
+    }
+}
+
 #[async_trait]
 impl ChainAdapter for CardanoAdapter {
     fn family(&self) -> ChainFamily {
@@ -424,14 +441,28 @@ impl ChainAdapter for CardanoAdapter {
                 chain: "cardano".into(),
                 reason: e.to_string(),
             })?
+            .error_for_status()
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: e.to_string(),
+            })?
             .json()
             .await
             .map_err(|e| WarpError::AdapterError {
                 chain: "cardano".into(),
                 reason: e.to_string(),
             })?;
-        let tx_block = tx.block_height.unwrap_or(0);
-        let tip = self.get_latest_block().await?.height.unwrap_or(tx_block);
+        let Some(tx_block) = cardano_inclusion_height(&tx) else {
+            return Ok(0);
+        };
+        let tip = self
+            .get_latest_block()
+            .await?
+            .height
+            .ok_or_else(|| WarpError::AdapterError {
+                chain: "cardano".into(),
+                reason: "latest block has no height".into(),
+            })?;
         Ok(tip.saturating_sub(tx_block))
     }
 }
@@ -487,5 +518,41 @@ mod tests {
             warp_message_hash: String::new(),
         };
         assert!(CardanoAdapter::new().execute_mint(&inst).await.is_err());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    fn tx(h: Option<u64>, block: Option<&str>, vc: Option<bool>) -> BFTxDetails {
+        BFTxDetails {
+            hash: None,
+            block: block.map(|s| s.to_string()),
+            block_height: h,
+            index: None,
+            valid_contract: vc,
+        }
+    }
+
+    #[test]
+    fn cardano_inclusion_table() {
+        assert_eq!(
+            cardano_inclusion_height(&tx(Some(50), Some("bh"), None)),
+            Some(50)
+        );
+        assert_eq!(
+            cardano_inclusion_height(&tx(Some(50), Some("bh"), Some(true))),
+            Some(50)
+        );
+        for t in [
+            tx(Some(50), Some("bh"), Some(false)),
+            tx(Some(0), Some("bh"), None),
+            tx(None, Some("bh"), None),
+            tx(Some(50), None, None),
+            tx(Some(50), Some(""), None),
+        ] {
+            assert_eq!(cardano_inclusion_height(&t), None);
+        }
     }
 }

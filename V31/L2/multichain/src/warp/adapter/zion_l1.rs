@@ -232,6 +232,18 @@ impl ZionL1Adapter {
     }
 }
 
+/// Inclusion height from a `getTransaction` result — requires an explicit
+/// `confirmed: true` and a positive `block_height`.
+fn zion_tx_inclusion_height(result: &Value) -> Option<u64> {
+    if result.get("confirmed").and_then(|v| v.as_bool()) != Some(true) {
+        return None;
+    }
+    result
+        .get("block_height")
+        .and_then(|v| v.as_u64())
+        .filter(|h| *h > 0)
+}
+
 #[async_trait]
 impl ChainAdapter for ZionL1Adapter {
     fn family(&self) -> ChainFamily {
@@ -356,17 +368,12 @@ impl ChainAdapter for ZionL1Adapter {
             .rpc_call("getTransaction", serde_json::json!({"txid": tx_hash}))
             .await?;
 
-        let tx_height = result
-            .get("block_height")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
-
-        if tx_height == 0 {
+        let Some(tx_height) = zion_tx_inclusion_height(&result) else {
             return Ok(0);
-        }
+        };
 
         let tip = self.get_tip_height().await?;
-        Ok(tip.saturating_sub(tx_height) + 1)
+        Ok(inclusion_depth(tx_height, tip))
     }
 }
 
@@ -396,5 +403,50 @@ mod tests {
         assert!(adapter.parse_warp_memo("BRIDGE:1:base:0xabc").is_none());
         assert!(adapter.parse_warp_memo("WARP:2:base:0xabc").is_none());
         assert!(adapter.parse_warp_memo("WARP:1:base").is_none());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    #[test]
+    fn zion_inclusion_table() {
+        assert_eq!(
+            zion_tx_inclusion_height(&serde_json::json!({"confirmed": true, "block_height": 50})),
+            Some(50)
+        );
+        for v in [
+            serde_json::json!({"confirmed": false, "block_height": 50}),
+            serde_json::json!({"block_height": 50}),
+            serde_json::json!({"confirmed": true, "block_height": 0}),
+            serde_json::json!({"confirmed": true}),
+            serde_json::json!(null),
+        ] {
+            assert_eq!(zion_tx_inclusion_height(&v), None, "{v}");
+        }
+    }
+}
+
+/// Depth = `tip - inclusion + 1`; future inclusion height is not
+/// evidence and yields 0.
+fn inclusion_depth(inclusion: u64, tip: u64) -> u64 {
+    if tip < inclusion {
+        0
+    } else {
+        tip.saturating_sub(inclusion).saturating_add(1)
+    }
+}
+
+#[cfg(test)]
+mod audit2_tests {
+    use super::*;
+
+    #[test]
+    fn inclusion_depth_future_current_normal() {
+        assert_eq!(inclusion_depth(50, 55), 6);
+        assert_eq!(inclusion_depth(55, 55), 1);
+        assert_eq!(inclusion_depth(56, 55), 0); // future -> 0, not 1
+        assert_eq!(inclusion_depth(1, u64::MAX), u64::MAX);
     }
 }

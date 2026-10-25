@@ -292,6 +292,16 @@ impl StellarAdapter {
     }
 }
 
+/// Inclusion ledger for a Horizon tx response — requires
+/// `successful == true` and a positive integer `ledger`; a missing field
+/// must not imply genesis inclusion.
+fn stellar_inclusion_ledger(v: &Value) -> Option<u64> {
+    if v.get("successful").and_then(|s| s.as_bool()) != Some(true) {
+        return None;
+    }
+    v.get("ledger")?.as_u64().filter(|l| *l > 0)
+}
+
 #[async_trait]
 impl ChainAdapter for StellarAdapter {
     fn family(&self) -> ChainFamily {
@@ -387,14 +397,21 @@ impl ChainAdapter for StellarAdapter {
                 chain: "stellar".into(),
                 reason: e.to_string(),
             })?
+            .error_for_status()
+            .map_err(|e| WarpError::AdapterError {
+                chain: "stellar".into(),
+                reason: e.to_string(),
+            })?
             .json()
             .await
             .map_err(|e| WarpError::AdapterError {
                 chain: "stellar".into(),
                 reason: e.to_string(),
             })?;
-        let tx_ledger = resp["ledger"].as_u64().unwrap_or(0);
-        let latest = self.latest_ledger().await.unwrap_or(tx_ledger);
+        let Some(tx_ledger) = stellar_inclusion_ledger(&resp) else {
+            return Ok(0);
+        };
+        let latest = self.latest_ledger().await?;
         Ok(latest.saturating_sub(tx_ledger))
     }
 }
@@ -487,5 +504,27 @@ mod tests {
             .await
             .expect("live Stellar payment should succeed");
         assert!(!tx_hash.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    #[test]
+    fn stellar_inclusion_table() {
+        assert_eq!(
+            stellar_inclusion_ledger(&json!({"successful": true, "ledger": 500})),
+            Some(500)
+        );
+        for v in [
+            json!({"successful": false, "ledger": 500}),
+            json!({"ledger": 500}),
+            json!({"successful": true}),
+            json!({"successful": true, "ledger": 0}),
+            json!({"successful": true, "ledger": "500"}),
+        ] {
+            assert_eq!(stellar_inclusion_ledger(&v), None, "{v}");
+        }
     }
 }

@@ -1337,6 +1337,102 @@ impl Db {
         Ok(out)
     }
 
+    /// Atomically claim a `pending` withdrawal for broadcast — a
+    /// `pending` → `executing` CAS. Returns `true` iff this call won the
+    /// claim; `false` means another worker owns it or the row is already
+    /// past pending, and the caller must skip it.
+    pub fn claim_withdrawal(&self, id: &str) -> MultichainResult<bool> {
+        let changed = self.conn.execute(
+            "UPDATE withdrawals SET status = 'executing' WHERE id = ?1 AND status = 'pending'",
+            rusqlite::params![id],
+        )?;
+        Ok(changed == 1)
+    }
+
+    /// Atomically debit the user's wallet balance AND record the
+    /// withdrawal request in a single SQLite transaction: balance read →
+    /// positive-amount/insufficient-funds check → `INSERT` withdrawal
+    /// (never REPLACE — a duplicate id errors) → exactly one journal
+    /// debit (`reason = "withdraw"`, `reference_id = record.id`, entry id
+    /// `withdraw:{id}`) → balance update. Any failure rolls back all
+    /// writes — no debit/record crash window, no credit-back needed.
+    pub fn atomic_debit_and_record_withdrawal(
+        &mut self,
+        record: &WithdrawalRecord,
+    ) -> MultichainResult<()> {
+        let tx = self.conn.transaction()?;
+        let now = chrono::Utc::now().to_rfc3339();
+
+        if record.amount.0 == 0 {
+            return Err(MultichainError::Validation(format!(
+                "withdrawal {} amount must be positive",
+                record.id
+            )));
+        }
+
+        let current = read_balance(&tx, &record.user_id, &record.asset_key)?;
+        if current < record.amount.0 {
+            return Err(MultichainError::Validation(format!(
+                "insufficient balance for {} {}: have {current}, need {}",
+                record.user_id, record.asset_key, record.amount.0
+            )));
+        }
+
+        tx.execute(
+            r#"
+            INSERT INTO withdrawals
+            (id, user_id, asset_key, amount, recipient_address, tx_hash, status, created_at, sent_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+            "#,
+            rusqlite::params![
+                record.id,
+                record.user_id,
+                record.asset_key,
+                record.amount.0.to_string(),
+                record.recipient_address,
+                record.tx_hash,
+                record.status.to_string(),
+                record.created_at.to_rfc3339(),
+                record.sent_at.map(|t| t.to_rfc3339()),
+            ],
+        )?;
+
+        tx.execute(
+            r#"
+            INSERT INTO ledger_entries
+            (id, user_id, asset_key, entry_type, amount, reason, reference_id, created_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+            "#,
+            rusqlite::params![
+                format!("withdraw:{}", record.id),
+                record.user_id,
+                record.asset_key,
+                "debit",
+                record.amount.0.to_string(),
+                "withdraw",
+                record.id,
+                now,
+            ],
+        )?;
+
+        tx.execute(
+            r#"
+            INSERT OR REPLACE INTO wallet_balances
+            (user_id, asset_key, amount, updated_at)
+            VALUES (?1, ?2, ?3, ?4)
+            "#,
+            rusqlite::params![
+                record.user_id,
+                record.asset_key,
+                (current - record.amount.0).to_string(),
+                now
+            ],
+        )?;
+
+        tx.commit()?;
+        Ok(())
+    }
+
     /// Record a new withdrawal request.
     pub fn record_withdrawal(&self, withdrawal: &WithdrawalRecord) -> MultichainResult<()> {
         let created_at = withdrawal.created_at.to_rfc3339();

@@ -312,6 +312,9 @@ impl TonAdapter {
     }
 
     /// `getTransactionInformation` → transaction details by hash.
+    /// Retained for callers that need raw tx data; `lt` is logical time and
+    /// is NOT valid confirmation evidence (see `confirmations`).
+    #[allow(dead_code)]
     async fn get_transaction_info(&self, hash: &str) -> WarpResult<Value> {
         self.rpc("getTransactionInformation", json!({ "hash": hash }))
             .await
@@ -557,15 +560,14 @@ impl ChainAdapter for TonAdapter {
         self.get_masterchain_seqno().await
     }
 
-    async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
-        let tx_info = self.get_transaction_info(tx_hash).await?;
-        // The transaction's logical time (lt) gives an ordering hint; TON
-        // finality is governed by masterchain block references. We approximate
-        // confirmations as the difference between the current masterchain
-        // seqno and the seqno at which the TX was included (if present).
-        let tx_seqno = tx_info["transaction_id"]["lt"].as_u64().unwrap_or(0);
-        let now_seqno = self.get_masterchain_seqno().await.unwrap_or(tx_seqno);
-        Ok(now_seqno.saturating_sub(tx_seqno))
+    async fn confirmations(&self, _tx_hash: &str) -> WarpResult<u64> {
+        // TON `lt` is logical time, NOT a masterchain seqno — the previous
+        // lt-vs-seqno subtraction was meaningless and could fabricate
+        // confirmation depth. Until this adapter has an authoritative
+        // masterchain inclusion reference, fail closed.
+        Err(WarpError::AdapterNotImplemented(
+            "ton confirmations: no authoritative masterchain inclusion reference".into(),
+        ))
     }
 }
 
@@ -898,5 +900,22 @@ mod tests {
             bridge_account: None,
         };
         assert!(adapter.confirmations("abc").await.is_err());
+    }
+}
+
+#[cfg(test)]
+mod audit_tests {
+    use super::*;
+
+    /// Fail-closed: lt is not masterchain inclusion evidence — must never
+    /// fabricate a depth. No HTTP call is made.
+    #[tokio::test]
+    async fn ton_confirmations_fail_closed() {
+        let a = TonAdapter::new();
+        let r = a.confirmations("any").await;
+        assert!(
+            matches!(r, Err(WarpError::AdapterNotImplemented(_))),
+            "{r:?}"
+        );
     }
 }
