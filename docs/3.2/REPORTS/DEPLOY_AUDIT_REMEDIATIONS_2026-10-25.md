@@ -89,9 +89,14 @@ load within minutes of rollout — no synthetic transactions were needed:
   `check_tx_on_chain failed`, `payout_sweep_failed`, `requeue`, errors or
   panics in the post-restart journal.
 - **Confirmation sweep live-verified:** `payout_confirmed` log entries confirm
-  transactions on-chain under the new binary (heights 96134, 96137, and later
-  heights as they reached maturity) — the reworked response-handling path
-  works against the real node.
+  transactions on-chain under the new binary — including the first payout
+  broadcast by the new code itself (`db411a4c…`, height 96143, 6
+  confirmations, `confirmed=1`). Older pre-restart payouts reaching maturity
+  confirmed the same way (96134–96142); 9 `payout_confirmed` events in the
+  first ~20 min, zero `check_tx_on_chain` failures.
+- **Note:** one `submitBlock failed … consensus error` WARN at 19:49 is a
+  normal mining-share rejection path (block template raced the next tip),
+  unrelated to the payout changes.
 - **Durable payout sidecar functioning:** `pool-pplns.json.payouts.json` was
   created by the new code on the first post-deploy block and tracks
   `paid_block_heights:6, sent_payouts:5, pending_payouts:1` — the at-most-once
