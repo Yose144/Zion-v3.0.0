@@ -76,6 +76,33 @@ start service; both DB backups were taken with `sqlite3` online backup API.
   legs and qtc_native jobs flowing.
 - `zion-v31-node2`/`node3` (PIDs 1418682/1418683) untouched and active.
 
+## 4b. Post-deploy live evidence (~19:35–19:50 UTC)
+
+The new binaries exercised the remediated money paths under real production
+load within minutes of rollout — no synthetic transactions were needed:
+
+- **Real payout cycle under new code:** the fallback miner found blocks at
+  heights 96143–96147 post-restart. Each block drove the full new path:
+  `payout_sweep_started` → `payout_broadcast` → `payout_submitted` with valid
+  64-hex `tx_id`s (e.g. `9cb1e973…`, `4053508a…`, `020ea82d…`, `61afe279…`),
+  rows recorded in `pool-store.db`. Zero `payout_deferred_queued`,
+  `check_tx_on_chain failed`, `payout_sweep_failed`, `requeue`, errors or
+  panics in the post-restart journal.
+- **Confirmation sweep live-verified:** `payout_confirmed` log entries confirm
+  transactions on-chain under the new binary (heights 96134, 96137, and later
+  heights as they reached maturity) — the reworked response-handling path
+  works against the real node.
+- **Durable payout sidecar functioning:** `pool-pplns.json.payouts.json` was
+  created by the new code on the first post-deploy block and tracks
+  `paid_block_heights:6, sent_payouts:5, pending_payouts:1` — the at-most-once
+  guard is persisting real state, not fabricated history (only post-deploy
+  heights present).
+- **WARP state stable:** still exactly 7 `completed` transfers, withdrawals
+  `6 sent / 2 failed` (unchanged), deposits `3 credited`, zero new transfers
+  or releases — no financial drift attributable to the new code.
+- **Miner recovery:** 3 stratum sessions re-established (zion fallback miner
+  + PRL vast rig), 24/24 shares accepted, 0 rejected.
+
 ## 5. What was verified (and what was not)
 
 Verified: binary hashes match staged artifacts exactly on both hosts;
