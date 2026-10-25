@@ -1216,6 +1216,12 @@ impl MultichainService {
         };
 
         for payout in &payouts {
+            // `last_payouts` snapshots the whole queue — external-chain legs
+            // (quantus/pearl) are drained by their own sweepers via
+            // `take_external_payouts`; this path is ZionL1-only.
+            if payout.chain() != "zion" {
+                continue;
+            }
             let key = (block_height, payout.address.clone());
             {
                 let processed = self.processed_payouts.lock().unwrap();
@@ -1257,8 +1263,8 @@ impl MultichainService {
             match adapter.send_payment(&address, amount).await {
                 Ok(hash) => {
                     if let Err(e) = self.credits.debit(&address, amount) {
-                        tracing::warn!(
-                            "payout debit failed after settlement: block={} to={} amount={} error={}",
+                        tracing::error!(
+                            "payout debit failed after settlement: block={} to={} amount={} error={}; escrow credit remains",
                             block_height,
                             payout.address,
                             payout.amount,
@@ -1273,10 +1279,25 @@ impl MultichainService {
                         hash.to_hex()
                     );
                     self.processed_payouts.lock().unwrap().insert(key);
+                    if let Ok(mut pool) = pool.lock() {
+                        pool.settle_payout(block_height, &payout.address);
+                    }
                 }
                 Err(e) => {
+                    // Undo the escrow credit — the entry is retried on the
+                    // next tick, and without the debit-back each failed
+                    // attempt would leave a phantom credit behind.
+                    if let Err(de) = self.credits.debit(&address, amount) {
+                        tracing::error!(
+                            "payout escrow undo failed: block={} to={} amount={} error={}; phantom credit remains",
+                            block_height,
+                            payout.address,
+                            payout.amount,
+                            de
+                        );
+                    }
                     tracing::warn!(
-                        "payout settlement failed: block={} to={} amount={} error={}; credit retained",
+                        "payout settlement failed: block={} to={} amount={} error={}; credit reverted",
                         block_height,
                         payout.address,
                         payout.amount,

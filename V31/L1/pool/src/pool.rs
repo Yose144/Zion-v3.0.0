@@ -741,6 +741,21 @@ impl Pool {
             .insert((block_height, address.to_string()));
         self.persist_payout_ledger();
     }
+
+    /// Mark a ZION payout settled AND remove it from the pending queue.
+    /// Used by the service-level `execute_payouts` path, which pays from the
+    /// `last_payouts` snapshot instead of draining the queue — without the
+    /// removal the paid entry would sit in `pending_payouts` forever
+    /// (unbounded queue/sidecar growth and a latent double-pay if any
+    /// future path drains zion entries in the same process).
+    pub fn settle_payout(&mut self, block_height: u64, address: &str) {
+        self.pending_payouts.retain(|(h, p)| {
+            !(*h == block_height && p.address == address && p.chain() == "zion")
+        });
+        self.sent_payouts
+            .insert((block_height, address.to_string()));
+        self.persist_payout_ledger();
+    }
 }
 
 pub fn recover_pending_coin_revenue(pool: &mut Pool, store: &ShareStore) -> anyhow::Result<usize> {
@@ -1117,6 +1132,47 @@ mod tests {
             0,
             "requeue of drained payouts after idempotent on_block_found should not duplicate"
         );
+    }
+
+    #[test]
+    fn settle_payout_drains_zion_and_keeps_external() {
+        let mut pool = Pool::new(
+            PoolConfig {
+                min_payout_flowers: 0,
+                ..config()
+            },
+            telemetry(),
+        );
+        pool.pplns.register_address("alice", "z1alice");
+        pool.pplns.record_share_with_diff("alice", "rig", 1, 100);
+        pool.on_block_found(100, 1_000_000);
+
+        // Queue also holds an external-chain entry the zion path must not
+        // touch.
+        pool.pending_payouts.push((
+            100,
+            PayoutEntry {
+                miner_id: "bob".into(),
+                address: "qtu1bob".into(),
+                amount: 42,
+                share_count: 1,
+                payout_chain: Some("quantus".into()),
+                native_units: true,
+                coin: Some("qtu".into()),
+                revenue_event: None,
+            },
+        ));
+
+        let pending_before = pool.pending_payouts.len();
+        pool.settle_payout(100, "z1alice");
+
+        // ZION entry drained + marked sent; external entry untouched.
+        assert_eq!(pool.pending_payouts.len(), pending_before - 1);
+        assert!(pool
+            .pending_payouts
+            .iter()
+            .all(|(_, p)| p.chain() == "quantus"));
+        assert!(pool.sent_payouts.contains(&(100, "z1alice".to_string())));
     }
 
     #[test]
