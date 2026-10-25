@@ -14,9 +14,9 @@
 |---|---|
 | Repository | `github.com/Yose144/Zion-v3.0.0` (public mirror is a subset — auditors should work from the full tree) |
 | Branch | `main` |
-| Pinned HEAD | `63d29ff567c65b22f21310f1a21a1972062f5c07` |
-| Short | `63d29ff56` |
-| Supersedes | `ebde4bd2af333ca0063f1bc0c6ed614268c52565` (+4 commits: ZIS secret removal, IA-17 API scrub, warning cleanup, wallet.ts hardening) |
+| Pinned HEAD | `13e57f62492c8b835723a560d0a43079e09f1bb6` |
+| Short | `13e57f624` |
+| Supersedes | `63d29ff567c65b22f21310f1a21a1972062f5c07` (+4 commits: QTU/PRL attestation binding, withdraw credit-back, deposit atomic credit) |
 
 **Production-relevant commits in the +169 delta (highlights):**
 
@@ -34,10 +34,13 @@
 | `b49494ed9` | **IA-17/IA-05:** public API scrub — private/loopback peers masked, `error.message` no longer echoed (transport errors embed internal RPC URLs), `ncl/status` POST requires `ZION_NCL_STATUS_KEY` |
 | `ddf56ca30` | Warning cleanup — workspace compiles warning-free |
 | `63d29ff56` | **ZIS wallet.ts:** integer-amount validation (BigInt throw → 400 not 500), order-cache userId guard |
+| `1efc5d37c` | **ZIS attestation binding:** QTU/PRL link + account-delete re-proof now require the attesting `zionAddress` to be linked to the account (any-ZION-key bypass closed) |
+| `5f868dac6` | **Withdrawal credit-back:** `request_withdraw` debited the ledger before `record_withdrawal`; a DB write failure propagated without restoring balance — now credits back (logs error if credit-back also fails) |
+| `13e57f624` | **Deposit atomicity (double-credit fix):** ledger credit ran BEFORE `record_deposit` — a crash/DB failure between them caused re-credit on next poll. Now record-first + `atomic_credit_and_mark_deposit_credited` in one SQLite tx; replay is a no-op |
 
 **⚠️ Deployed-vs-source divergence auditors must know:**
 - Old-Edge pool binary is built from worktree `/root/build/pool-F5`, not `/opt/zion` checkout. EDGE2 services are built from clean checkouts on EDGE2 — `INFRA-SPLIT-PLAN.md`.
-- The remediation commits (`ebde4bd2a`…`63d29ff56` + vendored-deps) are **source-only at pin time** — not deployed to production services.
+- The remediation commits (`ebde4bd2a`…`13e57f624` + vendored-deps) are **source-only at pin time** — not deployed to production services.
 - `zion-v31-ncl` on old Edge is a stopgap deployment; P3 migrates it to EDGE2.
 
 ## 2. Reproducible build procedure
@@ -48,7 +51,7 @@
 # Package verified with: rustc 1.95.0 + cargo 1.95.0, also checked on 1.90 (macOS, dev)
 # Host: Ubuntu 24.04, x86_64, glibc 2.39
 
-git clone <repo> && cd Zion-v3.0.0 && git checkout 63d29ff567c65b22f21310f1a21a1972062f5c07
+git clone <repo> && cd Zion-v3.0.0 && git checkout 13e57f62492c8b835723a560d0a43079e09f1bb6
 cd V31
 
 # Full workspace check (fast) — verified green at pin
@@ -83,7 +86,7 @@ npm ci && npm run build          # Next.js 16.2.9, output: standalone
 - WASM/site builds are NOT bit-reproducible yet (no pinned Node toolchain) — flag in scope as ops finding if required.
 - Other foundry projects (`archive/*`, `apps/MarketPlace`) still do not build from archives — out of external scope; only `V31/L2/multichain/contracts` is in-scope and was fixed.
 
-## 3. Scope size — measured at pinned HEAD `63d29ff56` (figures from `ebde4bd2a` re-measurement; the +4 delta touches only the rows noted)
+## 3. Scope size — measured at pinned HEAD `13e57f624` (figures from `ebde4bd2a` re-measurement; subsequent deltas touch only the rows noted)
 
 Method: `git grep -c . HEAD -- <path>` (non-blank lines of tracked files), summed per area.
 
@@ -128,14 +131,18 @@ Changes vs previous pin (`663c10be2`): cosmic-harmony +1,109; pool +1,270 (pearl
 7. NCL daemon: first-eligible-worker scheduling (no live reputation registry — by design).
 8. **ZIS identity review notes (post-pin rewrite):**
    - ~~`keys.ts` `'change-me-in-production'` HS256 fallback~~ — **fixed `f0b129c16`**: no default secret exists; `JWT_PRIVATE_KEY` or `JWT_SECRET` required; EdDSA cookie secret derived from private key; tests assert missing-config failure.
-   - Quantus/pearl account-link attestation proves **ZION-key ownership only** (ZION key signs `challenge\n<chain>:<addr>`); the claimed external-chain address itself is not proven (`zion-l1` links are proven — `verifyEd25519` derives pubkey→address). Current consumers resolve the user's *own* wallet address (`server.rs` wallet_address) or check `can_act_as_zion_address` for zion-l1 only, so impact today is limited: **address squatting** — an attacker can link a victim's QTU/PRL address first, and the `address`-unique `linkedAddresses` row permanently blocks the real owner (409 CONFLICT). **Must be resolved before any flow treats linked QTU/PRL addresses as ownership proof** (rewards claims, payout attribution). Fix direction: require an on-chain proof or a signature under the external-chain key.
+   - Quantus/pearl account-link attestation proves **ZION-key ownership only** (ZION key signs `challenge\n<chain>:<addr>`); the claimed external-chain address itself is not proven (`zion-l1` links are proven — `verifyEd25519` derives pubkey→address). Current consumers resolve the user's *own* wallet address (`server.rs` wallet_address) or check `can_act_as_zion_address` for zion-l1 only, so impact today is limited: **address squatting** — an attacker can link a victim's QTU/PRL address first, and the `address`-unique `linkedAddresses` row permanently blocks the real owner (409 CONFLICT). **Must be resolved before any flow treats linked QTU/PRL addresses as ownership proof** (rewards claims, payout attribution). Fix direction: require an on-chain proof or a signature under the external-chain key. **Partially mitigated `1efc5d37c`:** the attesting `zionAddress` must now be linked to the account (closes the any-ZION-key bypass on `/link` and `DELETE /me`); the unproven-external-address gap above remains by design (no JS ML-DSA/XMSS impl).
    - Sessions are DB-backed with `jti↔sub` binding + revocation — verified correct in `lib/auth.ts`.
    - `admin.ts` — clean: all routes behind `requireAdmin`, allowlisted selects, last-admin lockout + self-delete guards, audit events.
    - `wallet.ts` — **fixed `63d29ff56`**: non-numeric `amount` threw unhandled `BigInt` → 500 (now 400 via zod); order-cache upserts now guard `userId` on orderId collision.
-9. **Pool payout sweep ordering:** `take_pending_payouts` persists the drain *before* the batch tx submission — at-most-once by design (see IA-14 note). External sweeps (`prl_payout`/`qtc_payout`) use the SQLite outbox with ledger-before-ACK — verified consistent.
-10. ~~Ignored `Result` in `server.rs` `p.restore()`~~ — fixed `ebde4bd2a`; compiler warnings all cleaned `ddf56ca30` (workspace now warning-free).
-11. **IA-17 public-response leaks — remediated `b49494ed9`:** `blockchain/peers` masks private/loopback peers (counted, addresses hidden); `network` returns generic `unreachable` instead of raw `error.message` (leaked `ECONNREFUSED 127.0.0.1:port`); `ncl/status` scrubs loopback in proxied JSON + POST gated by `ZION_NCL_STATUS_KEY` (IA-05 defense-in-depth — nginx remains the external block) and no longer echoes fs paths; `wallet/qtc/prl/health/defi/cex/verify-message/tx/block` no longer echo `error.message` (transport errors embed internal RPC URLs) — real errors still logged server-side. **Env note:** `ZION_NCL_STATUS_KEY` is unset on EDGE2 → POST currently denied by default (fail-closed); set it if a legitimate writer exists.
-12. Operator-owned items unchanged: IA-07 carrier /16 allowlists (CGNAT), IA-08 plaintext secrets in same-host backups / no off-site copy, IA-09 burned keys in public history pending revocation, IA-10 ops details in public repo, IA-19 chain-liveness single-miner dependency (G8 run #4 pending).
+9. **L2 ledger atomicity — remediated `5f868dac6` + `13e57f624`:**
+   - **Withdrawal** (`request_withdraw`): debited the ledger before `record_withdrawal`; a DB write failure propagated without restoring balance → silent funds loss. Now credits back on record-write failure (error log if credit-back also fails). Post-debit sweep/swap paths already compensated (`process_one` credit-back, swap_refund).
+   - **Deposit** (`DepositWatcher::process_event`): credited the ledger BEFORE `record_deposit` — a crash/DB failure between them left no record, so the next poll **double-credited**; `atomic_credit`/`JournalLedger::credit` had no reference-id dedup. Now the durable record is persisted first (pending) and credit+mark happens in one SQLite tx (`atomic_credit_and_mark_deposit_credited`); replay on an already-credited row is a no-op. Regression tests: `deposit_replay_is_idempotent`, `pending_deposit_credits_once_at_finality` (746/746 lib tests).
+   - Residual: `reference_id` is still not unique at the `ledger_entries` level — dedup is enforced at the deposit-status transition. A `UNIQUE(reference_id)` partial index would add defense-in-depth (schema migration, operator decision).
+10. **Pool payout sweep ordering:** `take_pending_payouts` persists the drain *before* the batch tx submission — at-most-once by design (see IA-14 note). External sweeps (`prl_payout`/`qtc_payout`) use the SQLite outbox with ledger-before-ACK — verified consistent.
+11. ~~Ignored `Result` in `server.rs` `p.restore()`~~ — fixed `ebde4bd2a`; compiler warnings all cleaned `ddf56ca30` (workspace now warning-free).
+12. **IA-17 public-response leaks — remediated `b49494ed9`:** `blockchain/peers` masks private/loopback peers (counted, addresses hidden); `network` returns generic `unreachable` instead of raw `error.message` (leaked `ECONNREFUSED 127.0.0.1:port`); `ncl/status` scrubs loopback in proxied JSON + POST gated by `ZION_NCL_STATUS_KEY` (IA-05 defense-in-depth — nginx remains the external block) and no longer echoes fs paths; `wallet/qtc/prl/health/defi/cex/verify-message/tx/block` no longer echo `error.message` (transport errors embed internal RPC URLs) — real errors still logged server-side. **Env note:** `ZION_NCL_STATUS_KEY` is unset on EDGE2 → POST currently denied by default (fail-closed); set it if a legitimate writer exists.
+13. Operator-owned items unchanged: IA-07 carrier /16 allowlists (CGNAT), IA-08 plaintext secrets in same-host backups / no off-site copy, IA-09 burned keys in public history pending revocation, IA-10 ops details in public repo, IA-19 chain-liveness single-miner dependency (G8 run #4 pending).
 
 ## 5. Ops facts auditors need
 
