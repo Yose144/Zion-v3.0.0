@@ -14,8 +14,8 @@
 |---|---|
 | Repository | `github.com/Yose144/Zion-v3.0.0` (public mirror is a subset — auditors should work from the full tree) |
 | Branch | `main` |
-| Pinned HEAD | `7cdb330abcb2823334c2db6274dabb65868d189c` |
-| Short | `7cdb330ab` |
+| Pinned HEAD | `e9088b128fbccaf493c3e786360002a6025aa957` |
+| Short | `e9088b128` |
 | Supersedes | `bffc3d51e5f21216873889723eded05883782e5a` (+7 commits: BtcToZion min-duration, WARP executor/inbound crash-safety, deposit-proof verification, release-error classification, chain-scoped dedup, quorum signer dedup, timelock base) |
 
 **Production-relevant commits in the +169 delta (highlights):**
@@ -46,10 +46,12 @@
 | `0017a5084` | **Chain-scoped seen-tx dedup:** `seen_txs` keyed on `tx_hash` alone — cross-chain hash collisions dropped deposits, and `mark_seen` for a second chain silently no-oped → reprocessing. Composite PK `(tx_hash, chain)` + idempotent table rebuild; in-memory fallback keyed `chain:hash` |
 | `61ec0ce01` | **Quorum duplicate-signer counting:** `verify_quorum` counted each `(id, sig)` entry — one valid signature repeated quorum-times satisfied quorum. Now each validator counts once (covers `bridge/consensus.rs` too, same code path) |
 | `7cdb330ab` | **Timelock base:** hold duration measured from `created_at` — a transfer entering `TimelockHold` long after creation released instantly; now uses `updated_at` (bumped on every status transition = hold entry) |
+| `3d559964c` | **Inbound replay dedup:** `/transfers/inbound` bypassed watcher dedup — one source burn could spawn multiple transfers. `initiate_inbound` dedupes on `burn_id` (distinct burns per tx allowed) with `tx_hash` fallback + representation-shift guard |
+| `e9088b128` | **Deferred/fee payout response handling:** processor dropped payouts on first retry — read `tx_id` at envelope top level (node returns `result.tx_id`) and never checked the `error` field, so rejections were removed as "success". `execute_fee_payout` fabricated `Ok("unknown")` likewise |
 
 **⚠️ Deployed-vs-source divergence auditors must know:**
 - Old-Edge pool binary is built from worktree `/root/build/pool-F5`, not `/opt/zion` checkout. EDGE2 services are built from clean checkouts on EDGE2 — `INFRA-SPLIT-PLAN.md`.
-- The remediation commits (`ebde4bd2a`…`7cdb330ab` + vendored-deps) are **source-only at pin time** — not deployed to production services.
+- The remediation commits (`ebde4bd2a`…`e9088b128` + vendored-deps) are **source-only at pin time** — not deployed to production services.
 - `zion-v31-ncl` on old Edge is a stopgap deployment; P3 migrates it to EDGE2.
 
 ## 2. Reproducible build procedure
@@ -60,7 +62,7 @@
 # Package verified with: rustc 1.95.0 + cargo 1.95.0, also checked on 1.90 (macOS, dev)
 # Host: Ubuntu 24.04, x86_64, glibc 2.39
 
-git clone <repo> && cd Zion-v3.0.0 && git checkout 7cdb330abcb2823334c2db6274dabb65868d189c
+git clone <repo> && cd Zion-v3.0.0 && git checkout e9088b128fbccaf493c3e786360002a6025aa957
 cd V31
 
 # Full workspace check (fast) — verified green at pin
@@ -95,7 +97,7 @@ npm ci && npm run build          # Next.js 16.2.9, output: standalone
 - WASM/site builds are NOT bit-reproducible yet (no pinned Node toolchain) — flag in scope as ops finding if required.
 - Other foundry projects (`archive/*`, `apps/MarketPlace`) still do not build from archives — out of external scope; only `V31/L2/multichain/contracts` is in-scope and was fixed.
 
-## 3. Scope size — measured at pinned HEAD `7cdb330ab` (figures from `ebde4bd2a` re-measurement; subsequent deltas touch only the rows noted)
+## 3. Scope size — measured at pinned HEAD `e9088b128` (figures from `ebde4bd2a` re-measurement; subsequent deltas touch only the rows noted)
 
 Method: `git grep -c . HEAD -- <path>` (non-blank lines of tracked files), summed per area.
 
@@ -159,6 +161,10 @@ Changes vs previous pin (`663c10be2`): cosmic-harmony +1,109; pool +1,270 (pearl
     - **Error classification:** a `submitBridgeUnlock` node rejection is terminal (`Failed`); a transport failure is ambiguous and holds `Executing` for operator recovery — L1 dedupes unlocks on `burn_id` at consensus, so a double unlock is impossible.
     - **Quorum + dedup correctness:** `verify_quorum` no longer counts repeated `(validator_id, sig)` pairs (one sig could reach quorum); watcher dedup is now per-chain `(tx_hash, chain)` composite key (+SQLite table rebuild on open); timelock duration is measured from hold entry.
     - **Residual / for the external auditor:** dest-chain mint dedup is assumed at contract level keyed by `warp_message_hash` (deterministic now) — verify on each adapter's target contract; `signing_hash` binds transfer_id/chains/recipient/amounts/nonce/proof-hash (no domain-separation tag — assess cross-protocol ambiguity); `Executing`-without-`dest_tx_hash` requires manual settlement by design (safety over liveness); `WARP_BTC_SWAP_ENABLED=0` holds in prod pending this audit.
+15. **Payout response-handling + WARP adapter parity — `3d559964c`…`e9088b128`:**
+    - **Deferred payouts dropped on first retry (was silent abandonment):** `L1Endpoints::call` returns the raw JSON-RPC envelope (callers must check `error`; `payout.rs`/stratum did — `deferred_payout.rs` did not). The processor read `tx_id` at top level while the node returns `result.tx_id`, so every response — success or rejection — produced `"unknown"` and **removed the payout from the queue**. Now `error` ⇒ keep queued + log; success requires `result.tx_id` (+`accepted` when present). Same fix in `execute_fee_payout`, which previously fabricated `Ok("unknown")` on rejections.
+    - **Inbound replay at router level:** `/transfers/inbound` bypassed watcher dedup — one source burn could create multiple transfers (L1 consensus `burn_id` dedup was the only backstop). `initiate_inbound` now dedupes on `burn_id` (multiple burns per source tx allowed) with `tx_hash` fallback; a no-`burn_id` proof is rejected once the same tx stored a real `burn_id` (representation-shift guard).
+    - **Residual (adapter parity — contract-level):** only the EVM adapter binds `warp_message_hash` into the on-chain mint (`bridgeMint(addr,amt,bytes32)`). TON/SUI/Solana/Stellar/Tron/Cardano/Cosmos/Aptos/NEAR all call `mint(recipient, amount)` with **no replay anchor** — contract-level dedup cannot exist there until each destination program accepts and enforces a message hash. The `Executing`-without-hash operator-recovery path is the only current backstop on those chains. Minor: TON `query_id` hardcoded `1`, seqno fetch falls back to `0`.
 
 ## 5. Ops facts auditors need
 
