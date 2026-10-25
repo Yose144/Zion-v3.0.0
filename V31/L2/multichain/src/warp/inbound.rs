@@ -324,11 +324,22 @@ impl InboundReleaser {
                 }
                 self.confirm_l1(id, &tx_id).await;
             }
-            Err(e) => {
-                // Permanent rejections (bad proofs, replay) → Failed; the
-                // manual zion-bridge-unlock path remains as fallback.
-                error!("[inbound] {} release failed: {}", id, e);
+            Err(l1_release::ReleaseError::Rejected(reason)) => {
+                // Permanent verdict (bad proofs, replay, invalid recipient)
+                // — the manual zion-bridge-unlock path remains as fallback.
+                error!("[inbound] {} release rejected: {}", id, reason);
                 self.advance(id, WarpStatus::Failed).await;
+            }
+            Err(l1_release::ReleaseError::Transport(e)) => {
+                // Ambiguous: the unlock may already be broadcast. Stay in
+                // Executing — resume_executing keeps warning; the operator
+                // settles it via zion-bridge-unlock (L1 dedupes on burn_id,
+                // so an eventual double-submit is impossible).
+                warn!(
+                    "[inbound] {} release transport error (outcome unknown, \
+                     holding in Executing for operator recovery): {}",
+                    id, e
+                );
             }
         }
         Ok(())

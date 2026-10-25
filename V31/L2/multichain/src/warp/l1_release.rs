@@ -39,6 +39,23 @@ pub const BRIDGE_MIN_VALIDATOR_PROOFS: usize = 3;
 
 const RPC_TIMEOUT_SECS: u64 = 15;
 
+/// Outcome of a `submitBridgeUnlock` attempt.
+///
+/// The distinction matters because L1 dedupes unlocks by `burn_id` at
+/// consensus: a `Rejected` answer is a permanent verdict (bad proofs,
+/// replay, invalid recipient), while a `Transport` failure is ambiguous —
+/// the request may or may not have reached the node, so the unlock may
+/// already be broadcast.
+#[derive(Debug, thiserror::Error)]
+pub enum ReleaseError {
+    /// The node evaluated and definitively rejected the unlock.
+    #[error("submitBridgeUnlock rejected: {0}")]
+    Rejected(String),
+    /// Transport/encoding failure — on-chain outcome unknown.
+    #[error(transparent)]
+    Transport(#[from] WarpError),
+}
+
 /// Builds + submits `submitBridgeUnlock` requests against the L1 node.
 pub struct L1Releaser {
     rpc_addr: String,
@@ -159,12 +176,11 @@ impl L1Releaser {
         source_chain: &str,
         burn_id: &str,
         source_tx_hash: &str,
-    ) -> WarpResult<String> {
+    ) -> Result<String, ReleaseError> {
         if self.keys.is_empty() {
-            return Err(WarpError::AdapterError {
-                chain: "zion-l1".into(),
-                reason: "no WARP_L1_RELEASE_KEYS configured".into(),
-            });
+            return Err(ReleaseError::Rejected(
+                "no WARP_L1_RELEASE_KEYS configured".into(),
+            ));
         }
 
         let operation_message = Self::operation_message(
@@ -192,7 +208,8 @@ impl L1Releaser {
 
         let result = self
             .rpc_call("submitBridgeUnlock", request["params"].clone())
-            .await?;
+            .await
+            .map_err(ReleaseError::Transport)?;
 
         // Node returns { accepted, tx_id, reason? } (TransactionResult).
         let accepted = result
@@ -204,17 +221,16 @@ impl L1Releaser {
                 .get("reason")
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown rejection");
-            return Err(WarpError::AdapterError {
-                chain: "zion-l1".into(),
-                reason: format!("submitBridgeUnlock rejected: {reason}"),
-            });
+            return Err(ReleaseError::Rejected(reason.to_string()));
         }
         let tx_id = result
             .get("tx_id")
             .and_then(|v| v.as_str())
-            .ok_or_else(|| WarpError::AdapterError {
-                chain: "zion-l1".into(),
-                reason: "submitBridgeUnlock accepted but missing tx_id".into(),
+            .ok_or_else(|| {
+                ReleaseError::Transport(WarpError::AdapterError {
+                    chain: "zion-l1".into(),
+                    reason: "submitBridgeUnlock accepted but missing tx_id".into(),
+                })
             })?;
         Ok(tx_id.to_string())
     }
