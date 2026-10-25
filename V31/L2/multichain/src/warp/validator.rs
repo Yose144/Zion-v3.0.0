@@ -175,6 +175,7 @@ impl WarpValidatorSet {
     ) -> WarpResult<bool> {
         let msg_hash = message.signing_hash();
         let mut valid_count = 0;
+        let mut counted: std::collections::HashSet<&str> = std::collections::HashSet::new();
 
         for (validator_id, sig_bytes) in signatures {
             let validator =
@@ -185,6 +186,12 @@ impl WarpValidatorSet {
                     })?;
 
             if !validator.active {
+                continue;
+            }
+
+            // A validator may appear only once — without this, one signature
+            // repeated quorum-times would be counted as quorum.
+            if !counted.insert(validator_id.as_str()) {
                 continue;
             }
 
@@ -315,6 +322,31 @@ mod tests {
 
         let result = vs.verify_quorum(&msg, &signatures);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_verify_quorum_rejects_duplicate_signer() {
+        let mut vs = WarpValidatorSet::new(3);
+        let (v, sk) = make_validator("v1");
+        vs.add_validator(v);
+
+        let msg = WarpMessage {
+            transfer_id: uuid::Uuid::nil(),
+            source_chain: "zion-l1".into(),
+            dest_chain: "base".into(),
+            recipient: "0x".into(),
+            amount_flowers: 1_000_000,
+            fee_flowers: 100,
+            nonce: 1,
+            timestamp: 1700000000,
+            deposit_proof_hash: "h".into(),
+        };
+
+        use ed25519_dalek::Signer;
+        let sig = sk.sign(&msg.signing_hash()).to_bytes().to_vec();
+        // One signature repeated quorum-times must NOT satisfy quorum.
+        let sigs: Vec<(String, Vec<u8>)> = (0..3).map(|_| ("v1".into(), sig.clone())).collect();
+        assert!(vs.verify_quorum(&msg, &sigs).is_err());
     }
 
     #[test]
