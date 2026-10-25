@@ -66,9 +66,39 @@ interface RichListEntry {
   percentage: number;
 }
 
+const CACHE_TTL = 60_000;
+const MAX_LIMIT = 500;
+let cache: { json: any; ts: number } | null = null;
+
+function buildPayload(richList: RichListEntry[], totalCirculating: number, limit: number) {
+  const list = richList.slice(0, limit);
+  const totalInRichList = list.reduce((sum, e) => sum + e.balance, 0);
+  return {
+    rich_list: list,
+    stats: {
+      total_addresses: list.length,
+      total_balance: totalInRichList,
+      total_balance_display: formatBalance(totalInRichList),
+      circulating_supply: totalCirculating,
+      top_10_percentage: list.slice(0, 10).reduce((s, e) => s + e.percentage, 0),
+      premine_addresses: list.filter((e) => e.type === 'premine').length,
+      miner_addresses: list.filter((e) => e.type === 'miner' || e.type === 'pool').length,
+      gini_coefficient: calculateGini(list.map((e) => e.balance)),
+    },
+    timestamp: new Date().toISOString(),
+  };
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const limit = Math.min(Number(searchParams.get('limit') || 100), 500);
+  const limit = Math.min(Number(searchParams.get('limit') || 100), MAX_LIMIT);
+
+  if (cache && Date.now() - cache.ts < CACHE_TTL) {
+    return NextResponse.json(
+      { ...cache.json, ...buildPayload(cache.json.rich_list, cache.json.total_circulating, limit), timestamp: cache.json.timestamp },
+      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } },
+    );
+  }
 
   try {
     const poolMiners = await fetchPoolMiners();
@@ -78,7 +108,7 @@ export async function GET(request: Request) {
     let richList: RichListEntry[] = [];
 
     // Try RPC rich list first
-    const utxoResult = await rpc('getRichList', [limit]);
+    const utxoResult = await rpc('getRichList', [MAX_LIMIT]);
 
     if (utxoResult && Array.isArray(utxoResult) && utxoResult.length > 0) {
       richList = utxoResult.map((entry: any, idx: number) => {
@@ -137,7 +167,7 @@ export async function GET(request: Request) {
         })
         .filter((e): e is RichListEntry => e !== null)
         .sort((a, b) => b.balance - a.balance)
-        .slice(0, limit)
+        .slice(0, MAX_LIMIT)
         .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
 
       // If still empty, return an honest empty state with known addresses listed
@@ -154,28 +184,14 @@ export async function GET(request: Request) {
             percentage: ((k.expected_balance_zion || 0) / totalCirculating) * 100,
           }))
           .sort((a, b) => b.balance - a.balance)
-          .slice(0, limit);
+          .slice(0, MAX_LIMIT);
       }
     }
 
-    const totalInRichList = richList.reduce((sum, e) => sum + e.balance, 0);
-    const premineCount = richList.filter((e) => e.type === 'premine').length;
-    const minerCount = richList.filter((e) => e.type === 'miner' || e.type === 'pool').length;
+    const json = { rich_list: richList, total_circulating: totalCirculating };
+    cache = { json, ts: Date.now() };
 
-    return NextResponse.json({
-      rich_list: richList,
-      stats: {
-        total_addresses: richList.length,
-        total_balance: totalInRichList,
-        total_balance_display: formatBalance(totalInRichList),
-        circulating_supply: totalCirculating,
-        top_10_percentage: richList.slice(0, 10).reduce((s, e) => s + e.percentage, 0),
-        premine_addresses: premineCount,
-        miner_addresses: minerCount,
-        gini_coefficient: calculateGini(richList.map((e) => e.balance)),
-      },
-      timestamp: new Date().toISOString(),
-    }, {
+    return NextResponse.json(buildPayload(richList, totalCirculating, limit), {
       headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
     });
   } catch (error) {

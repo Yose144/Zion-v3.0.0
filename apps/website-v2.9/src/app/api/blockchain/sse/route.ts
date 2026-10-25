@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
             height: currentHeight,
             tip_hash: (info as any).tip_hash ?? info.top_block_hash ?? '',
             difficulty: info.difficulty ?? 0,
-            network_hashrate: (info as any).network_hashrate ?? (info as any).hashrate ?? 0,
+            network_hashrate: (info as any).network_hashrate ?? (info as any).hashrate ?? (info.difficulty ?? 0) / (info.target || 60),
             mempool_size: mempoolCount,
             mempool_bytes: mempoolSize,
             protocol_version: (info as any).protocol_version ?? info.version ?? '',
