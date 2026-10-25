@@ -14,9 +14,9 @@
 |---|---|
 | Repository | `github.com/Yose144/Zion-v3.0.0` (public mirror is a subset — auditors should work from the full tree) |
 | Branch | `main` |
-| Pinned HEAD | `bffc3d51e5f21216873889723eded05883782e5a` |
-| Short | `bffc3d51e` |
-| Supersedes | `13e57f62492c8b835723a560d0a43079e09f1bb6` (+1 commit: execute_payouts queue-drain/escrow/chain-scope) |
+| Pinned HEAD | `7cdb330abcb2823334c2db6274dabb65868d189c` |
+| Short | `7cdb330ab` |
+| Supersedes | `bffc3d51e5f21216873889723eded05883782e5a` (+7 commits: BtcToZion min-duration, WARP executor/inbound crash-safety, deposit-proof verification, release-error classification, chain-scoped dedup, quorum signer dedup, timelock base) |
 
 **Production-relevant commits in the +169 delta (highlights):**
 
@@ -38,10 +38,18 @@
 | `5f868dac6` | **Withdrawal credit-back:** `request_withdraw` debited the ledger before `record_withdrawal`; a DB write failure propagated without restoring balance — now credits back (logs error if credit-back also fails) |
 | `13e57f624` | **Deposit atomicity (double-credit fix):** ledger credit ran BEFORE `record_deposit` — a crash/DB failure between them caused re-credit on next poll. Now record-first + `atomic_credit_and_mark_deposit_credited` in one SQLite tx; replay is a no-op |
 | `bffc3d51e` | **`execute_payouts` triple fix:** paid zion entries never left `pending_payouts` (latent double-pay + unbounded queue), escrow credit leaked on settlement failure (phantom credits per failed tick), and external-chain legs were iterated through the ZionL1 adapter — now `settle_payout` drains+marks+persists, failure debits back, zion-only filter |
+| `2add3e93e` | **BtcToZion min-duration:** `offer_btc_to_zion` accepted near-future `zion_timeout_ts` — now requires remaining duration `> margin_blocks * BTC_BLOCK_SECS`, symmetric with the ZionToBtc direction |
+| `c000a5d3c` | **WARP outbound executor crash-safety:** mint ran before `Executing` was persisted — a crash between broadcast and persist re-minted on restart, and persisted `Executing` transfers were never resumed. Now advance-before-mint, deterministic nonce/message hash, `dest_tx_hash` persisted immediately after submission, `Executing` resumes via confirmation; `Executing` without tx hash is held for operator recovery (no blind resubmission) |
+| `490df2b71` | **WARP inbound Executing resume:** `poll_once` ignored persisted `Executing` transfers — a restart after `submitBridgeUnlock` stranded them forever; now resumes confirmation on stored `dest_tx_hash`, else holds for `zion-bridge-unlock` |
+| `a0eeb3b5e` | **WARP deposit-proof binding:** `verify_deposit_proof` only checked existence+finality and its amount cross-check read a nonexistent field — any confirmed tx could be claimed as a vault deposit with a fabricated memo, and one tx_hash could be replayed. Now verifies the on-chain `transaction` body: vault-payment (`l1_vault_address`), memo equality, amount ≥ claim, sender match (account model) + `source_tx_hash` uniqueness |
+| `d0ce0fe5c` | **Release error classification:** every `release()` failure → `Failed`, including transport timeouts where the unlock may already be broadcast. `ReleaseError::{Rejected,Transport}` — rejected is terminal (Failed), transport holds Executing for operator recovery (L1 dedupes on `burn_id`) |
+| `0017a5084` | **Chain-scoped seen-tx dedup:** `seen_txs` keyed on `tx_hash` alone — cross-chain hash collisions dropped deposits, and `mark_seen` for a second chain silently no-oped → reprocessing. Composite PK `(tx_hash, chain)` + idempotent table rebuild; in-memory fallback keyed `chain:hash` |
+| `61ec0ce01` | **Quorum duplicate-signer counting:** `verify_quorum` counted each `(id, sig)` entry — one valid signature repeated quorum-times satisfied quorum. Now each validator counts once (covers `bridge/consensus.rs` too, same code path) |
+| `7cdb330ab` | **Timelock base:** hold duration measured from `created_at` — a transfer entering `TimelockHold` long after creation released instantly; now uses `updated_at` (bumped on every status transition = hold entry) |
 
 **⚠️ Deployed-vs-source divergence auditors must know:**
 - Old-Edge pool binary is built from worktree `/root/build/pool-F5`, not `/opt/zion` checkout. EDGE2 services are built from clean checkouts on EDGE2 — `INFRA-SPLIT-PLAN.md`.
-- The remediation commits (`ebde4bd2a`…`bffc3d51e` + vendored-deps) are **source-only at pin time** — not deployed to production services.
+- The remediation commits (`ebde4bd2a`…`7cdb330ab` + vendored-deps) are **source-only at pin time** — not deployed to production services.
 - `zion-v31-ncl` on old Edge is a stopgap deployment; P3 migrates it to EDGE2.
 
 ## 2. Reproducible build procedure
@@ -52,7 +60,7 @@
 # Package verified with: rustc 1.95.0 + cargo 1.95.0, also checked on 1.90 (macOS, dev)
 # Host: Ubuntu 24.04, x86_64, glibc 2.39
 
-git clone <repo> && cd Zion-v3.0.0 && git checkout bffc3d51e5f21216873889723eded05883782e5a
+git clone <repo> && cd Zion-v3.0.0 && git checkout 7cdb330abcb2823334c2db6274dabb65868d189c
 cd V31
 
 # Full workspace check (fast) — verified green at pin
@@ -87,7 +95,7 @@ npm ci && npm run build          # Next.js 16.2.9, output: standalone
 - WASM/site builds are NOT bit-reproducible yet (no pinned Node toolchain) — flag in scope as ops finding if required.
 - Other foundry projects (`archive/*`, `apps/MarketPlace`) still do not build from archives — out of external scope; only `V31/L2/multichain/contracts` is in-scope and was fixed.
 
-## 3. Scope size — measured at pinned HEAD `bffc3d51e` (figures from `ebde4bd2a` re-measurement; subsequent deltas touch only the rows noted)
+## 3. Scope size — measured at pinned HEAD `7cdb330ab` (figures from `ebde4bd2a` re-measurement; subsequent deltas touch only the rows noted)
 
 Method: `git grep -c . HEAD -- <path>` (non-blank lines of tracked files), summed per area.
 
@@ -98,7 +106,7 @@ Method: `git grep -c . HEAD -- <path>` (non-blank lines of tracked files), summe
 | L1 pool | 28,340 | `V31/L1/pool/src` |
 | L1 miner (Rust src) | 56,510 | `V31/L1/miner/src` |
 | L1 miner GPU kernels | 64,329 | `*.cu/.cl/.metal` under `V31/L1/miner` |
-| L2 multichain | 49,672 | `V31/L2/multichain/src` |
+| L2 multichain | 50,318 | `V31/L2/multichain/src` |
 | L2 DAO | 9,276 | `V31/L2/dao/src` |
 | L3 ai-native | 15,675 | `V31/L3/ai-native/src` |
 | L3 ncl | 2,088 | `V31/L3/ncl/src` |
@@ -145,6 +153,12 @@ Changes vs previous pin (`663c10be2`): cosmic-harmony +1,109; pool +1,270 (pearl
 11. ~~Ignored `Result` in `server.rs` `p.restore()`~~ — fixed `ebde4bd2a`; compiler warnings all cleaned `ddf56ca30` (workspace now warning-free).
 12. **IA-17 public-response leaks — remediated `b49494ed9`:** `blockchain/peers` masks private/loopback peers (counted, addresses hidden); `network` returns generic `unreachable` instead of raw `error.message` (leaked `ECONNREFUSED 127.0.0.1:port`); `ncl/status` scrubs loopback in proxied JSON + POST gated by `ZION_NCL_STATUS_KEY` (IA-05 defense-in-depth — nginx remains the external block) and no longer echoes fs paths; `wallet/qtc/prl/health/defi/cex/verify-message/tx/block` no longer echo `error.message` (transport errors embed internal RPC URLs) — real errors still logged server-side. **Env note:** `ZION_NCL_STATUS_KEY` is unset on EDGE2 → POST currently denied by default (fail-closed); set it if a legitimate writer exists.
 13. Operator-owned items unchanged: IA-07 carrier /16 allowlists (CGNAT), IA-08 plaintext secrets in same-host backups / no off-site copy, IA-09 burned keys in public history pending revocation, IA-10 ops details in public repo, IA-19 chain-liveness single-miner dependency (G8 run #4 pending).
+14. **WARP bridge money-path review — remediated `2add3e93e`…`7cdb330ab`:**
+    - **Crash-safety (double-mint/stranded):** both executors now persist `Executing` BEFORE the irreversible submit (mint / `submitBridgeUnlock`); restarts resume stored `dest_tx_hash` into confirmation and refuse blind resubmission without one (operator recovery via `zion-bridge-unlock`). Outbound nonce/message derivation is deterministic per transfer so the destination contract sees the same `warp_message_hash` on any retry.
+    - **Deposit-proof binding (was FIND-008 verified only):** any confirmed L1 tx could be presented as a bridge deposit — existence+finality were checked but not vault payment, memo, or sender, and `tx_hash` replayed freely. Now the on-chain `transaction` body must pay `l1_vault_address` ≥ claimed amount with the exact memo, sender cross-checked for account-model txs, one `source_tx_hash` = one transfer.
+    - **Error classification:** a `submitBridgeUnlock` node rejection is terminal (`Failed`); a transport failure is ambiguous and holds `Executing` for operator recovery — L1 dedupes unlocks on `burn_id` at consensus, so a double unlock is impossible.
+    - **Quorum + dedup correctness:** `verify_quorum` no longer counts repeated `(validator_id, sig)` pairs (one sig could reach quorum); watcher dedup is now per-chain `(tx_hash, chain)` composite key (+SQLite table rebuild on open); timelock duration is measured from hold entry.
+    - **Residual / for the external auditor:** dest-chain mint dedup is assumed at contract level keyed by `warp_message_hash` (deterministic now) — verify on each adapter's target contract; `signing_hash` binds transfer_id/chains/recipient/amounts/nonce/proof-hash (no domain-separation tag — assess cross-protocol ambiguity); `Executing`-without-`dest_tx_hash` requires manual settlement by design (safety over liveness); `WARP_BTC_SWAP_ENABLED=0` holds in prod pending this audit.
 
 ## 5. Ops facts auditors need
 
