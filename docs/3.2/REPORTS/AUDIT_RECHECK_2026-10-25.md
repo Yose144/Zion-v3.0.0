@@ -39,8 +39,10 @@ was not inspected in this pass.
 | R6-06 | High | Withdrawal creation debited before inserting the request. Its credit-back error branch awaited the same database mutex while holding it. Submission also preceded a durable claim and generic submit errors could trigger an unsafe refund. | Debit, request and journal entry commit atomically. Claim before submission; ambiguous outcomes and failed post-broadcast persistence remain `executing`, with neither automatic resend nor unproven refund. |
 | R6-07 | Medium | Deferred/fee submit handling lacked response regression coverage and could accept incomplete success objects. Payout maturity fallback used the earning block instead of the transaction's actual inclusion block. | Share a strict submit parser; remove queued work only on a recognized success response. Compute maturity from actual transaction/UTXO inclusion height, never earning height. |
 
-The reviewed source is `4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4`. These
-remediations are source-only; this table is not deployment evidence.
+The reviewed source is `4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4`. At review
+time these remediations were source-only; they were subsequently deployed to
+production `warpd` (EDGE2) and `zion-pool` (EDGE) on 2026-10-25 — see
+`DEPLOY_AUDIT_REMEDIATIONS_2026-10-25.md` for host/service/hash evidence.
 
 ## Verification
 

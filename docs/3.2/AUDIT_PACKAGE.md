@@ -50,10 +50,8 @@
 | `e9088b128` | **Deferred/fee payout response handling:** processor dropped payouts on first retry — read `tx_id` at envelope top level (node returns `result.tx_id`) and never checked the `error` field, so rejections were removed as "success". `execute_fee_payout` fabricated `Ok("unknown")` likewise |
 | `4108a52d0` | **Money-path recheck R6-01...R6-07:** authoritative EVM burn verification and ABI/units fix; fail-closed router persistence; direction/config-driven execution; strict confirmation parsing and non-EVM/TON safety holds; atomic withdrawal creation plus durable pre-submit claim; payout response/maturity regressions |
 
-**⚠️ Deployed-vs-source divergence auditors must know:**
-- Old-Edge pool binary is built from worktree `/root/build/pool-F5`, not `/opt/zion` checkout. EDGE2 services are built from clean checkouts on EDGE2 — `INFRA-SPLIT-PLAN.md`.
-- The remediation commits (`ebde4bd2a`…`e9088b128` + vendored-deps) are **source-only at pin time** — not deployed to production services.
-- `4108a52d0` is also **source-only, not deployed**. Non-EVM inbound sources now hold without a burn verifier; TON confirmation is unsupported; ambiguous withdrawals stay `executing` without auto-refund/resend. Rollout requires reconciliation and review of these deliberate behavior changes.
+**Deployed-vs-source divergence auditors must know:**
+- **Deployed 2026-10-25 ~19:30 UTC** (see `REPORTS/DEPLOY_AUDIT_REMEDIATIONS_2026-10-25.md`): `warpd` SHA256 `bbc353c32b…e54f` on EDGE2 (`zion-v31-multichain`) and `zion-pool` SHA256 `968f56aae…dc36c` on EDGE (`zion-v31-pool`), both built from `6c8165d4a` (source identical to `4108a52d0`). All remediation commits `ebde4bd2a`…`4108a52d0` are now live on those two services. Deliberate behavior changes verified active on EDGE2: non-EVM inbound holds without a burn verifier (`no WARP_L1_RELEASE_KEYS → AwaitingFinality`), TON confirmations unsupported, `WARP_API_KEY` unset (mutating routes disabled), `WARP_BTC_SWAP_ENABLED=0`, `PRL_PAYOUT_DRY_RUN=1`.
 - `zion-v31-ncl` on old Edge is a stopgap deployment; P3 migrates it to EDGE2.
 
 ## 2. Reproducible build procedure
@@ -139,7 +137,7 @@ GPU pathspecs are `:(glob)V31/L1/miner/**/*.cu`, `:(glob)V31/L1/miner/**/*.cl`, 
 
 ## 4. Updated known-issue baseline (verify these)
 
-**Remediated since the previous pin (source-only at pin time, undeployed):**
+**Remediated since the previous pin (deployed 2026-10-25 to `warpd`/`zion-pool` — see `REPORTS/DEPLOY_AUDIT_REMEDIATIONS_2026-10-25.md`):**
 
 - ~~IA-13~~ **FIXED** — XOR "encryption" of HTLC preimages → ChaCha20-Poly1305 AEAD (`enc1:` format, random nonce, `ZION_HTLC_PREIMAGE_KEY`); legacy `enc:` rows decode + migrate on write. Tamper/wrong-key fail closed. **BTC swap remains disabled** (`WARP_BTC_SWAP_ENABLED=0` on prod env, verified 2026-10-25) — enable only after external review of the full swap path.
 - **IA-14 PARTIAL / REOPENED** — `<state_path>.payouts.json` improves restart recovery, but writes are best-effort and unreadable/corrupt state loads an empty guard. An unconditional **at-most-once** guarantee is withdrawn. Durable claims, failure handling and post-broadcast reconciliation remain open; see `REPORTS/AUDIT_RECHECK_2026-10-25.md`.
