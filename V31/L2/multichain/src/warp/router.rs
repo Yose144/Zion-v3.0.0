@@ -511,6 +511,36 @@ impl WarpRouter {
         let source_chain = self.registry.get(source_chain_name)?.clone();
         let dest_chain = ChainId::zion_l1();
 
+        // Replay protection: one source-chain burn = one inbound transfer.
+        // The L1 also dedupes unlocks on `burn_id` at consensus, but zombie
+        // transfers must not be creatable via `/transfers/inbound` (which
+        // bypasses the watcher's seen_txs). Keyed on burn_id when present —
+        // one tx may emit several distinct burns — and on tx_hash for
+        // chains without a dedicated burn identifier.
+        let is_dup = self.transfers.values().any(|t| {
+            if t.source_chain.name != source_chain.name {
+                return false;
+            }
+            let burn_ids_match = match (&t.burn_id, &proof.burn_id) {
+                (Some(a), Some(b)) => a == b,
+                _ => false,
+            };
+            // tx_hash dedup applies unless the stored transfer carries a
+            // real (non-fallback) burn_id — multi-burn txs stay allowed —
+            // and the new proof supplies one too. A proof without burn_id
+            // is ambiguous and always collides on tx_hash.
+            let stored_uses_fallback = t.burn_id.as_deref() == t.source_tx_hash.as_deref();
+            let tx_match = (stored_uses_fallback || proof.burn_id.is_none())
+                && t.source_tx_hash.as_deref() == Some(proof.tx_hash.as_str());
+            burn_ids_match || tx_match
+        });
+        if is_dup {
+            return Err(WarpError::Validation(format!(
+                "burn {:?} on {source_chain_name} already used for a WARP transfer",
+                proof.burn_id.as_deref().unwrap_or(proof.tx_hash.as_str())
+            )));
+        }
+
         let fee = self
             .fee_engine
             .calculate_fee(source_chain_name, proof.amount_flowers)?;
@@ -782,6 +812,46 @@ mod tests {
             .unwrap();
         let t = router.get_transfer(&id).unwrap();
         assert_eq!(t.status, WarpStatus::Detected);
+    }
+
+    #[test]
+    fn test_inbound_rejects_duplicate_burn() {
+        let mut router = test_router();
+        // No burn_id → dedup on tx_hash.
+        let proof = test_deposit(1_000_000, "burn_event");
+        router
+            .initiate_inbound("base", proof.clone(), "zion1recipient")
+            .unwrap();
+        assert!(router
+            .initiate_inbound("base", proof, "zion1recipient")
+            .is_err());
+    }
+
+    #[test]
+    fn test_inbound_multiburn_tx_allowed_but_same_burn_rejected() {
+        let mut router = test_router();
+        // Same tx_hash, two distinct burn_ids → two legitimate burns.
+        let mut p1 = test_deposit(1_000_000, "b1");
+        p1.burn_id = Some("burn_1".into());
+        let mut p2 = test_deposit(2_000_000, "b2");
+        p2.burn_id = Some("burn_2".into());
+        router.initiate_inbound("base", p1.clone(), "zion1r").unwrap();
+        router.initiate_inbound("base", p2, "zion1r").unwrap();
+        // Replaying burn_1 must fail even with a different amount.
+        p1.amount_flowers = 9;
+        assert!(router.initiate_inbound("base", p1, "zion1r").is_err());
+    }
+
+    #[test]
+    fn test_inbound_ambiguous_proof_rejected_on_tx_match() {
+        let mut router = test_router();
+        // First stored with a real burn_id; a later proof for the same tx
+        // WITHOUT burn_id is ambiguous → reject.
+        let mut p1 = test_deposit(1_000_000, "b1");
+        p1.burn_id = Some("burn_1".into());
+        router.initiate_inbound("base", p1, "zion1r").unwrap();
+        let p2 = test_deposit(1_000_000, "dup");
+        assert!(router.initiate_inbound("base", p2, "zion1r").is_err());
     }
 
     #[test]
