@@ -76,6 +76,7 @@ impl WarpRuntime {
         )?;
         router.daily_limit = config.daily_limit_flowers();
         router.timelock_threshold = config.timelock_threshold_flowers();
+        router.l1_vault_address = Some(config.l1_vault_address.clone());
 
         Ok(Self {
             config,

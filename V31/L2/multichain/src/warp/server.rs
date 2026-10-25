@@ -63,13 +63,14 @@ impl WarpState {
         });
         let fee_engine = FeeEngine::with_defaults();
         let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(config.quorum)));
-        let router = WarpRouter::with_options(
+        let mut router = WarpRouter::with_options(
             registry,
             fee_engine,
             validator_set.clone(),
             Some(config.l1_rpc_url.clone()),
             12,
         );
+        router.l1_vault_address = Some(config.l1_vault_address.clone());
 
         Self {
             router: Arc::new(Mutex::new(router)),
@@ -92,7 +93,7 @@ impl WarpState {
             .find(|c| c.name == "zion-l1")
             .map(|c| c.finality_blocks)
             .unwrap_or(12);
-        let router = WarpRouter::with_db(
+        let mut router = WarpRouter::with_db(
             registry,
             fee_engine,
             validator_set,
@@ -100,6 +101,7 @@ impl WarpState {
             Some(config.l1_rpc_url.clone()),
             finality_blocks,
         )?;
+        router.l1_vault_address = Some(config.l1_vault_address.clone());
         Ok(Self {
             router: Arc::new(Mutex::new(router)),
             config,

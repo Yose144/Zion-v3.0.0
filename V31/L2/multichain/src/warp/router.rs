@@ -9,6 +9,7 @@ use crate::warp::types::{ChainId, WarpStatus, WarpTransfer};
 use crate::warp::validator::WarpValidatorSet;
 use crate::warp::xp_bridge::WarpXpEvent;
 
+use serde_json::Value;
 use std::collections::HashMap;
 use std::io::Write;
 use std::sync::Arc;
@@ -39,6 +40,11 @@ pub struct WarpRouter {
     l1_rpc_url: Option<String>,
     /// Required number of confirmations on ZION L1 for a deposit to be valid.
     l1_finality_blocks: u64,
+    /// Bridge vault address that deposits must pay on L1. When `Some` and
+    /// L1 verification is enabled, `verify_deposit_proof` requires the
+    /// on-chain transaction to pay this address with a matching memo.
+    /// `None` skips the vault binding (unit tests).
+    pub l1_vault_address: Option<String>,
 }
 
 impl WarpRouter {
@@ -74,6 +80,7 @@ impl WarpRouter {
             xp_events: Vec::new(),
             l1_rpc_url,
             l1_finality_blocks: finality_blocks,
+            l1_vault_address: None,
         }
     }
 
@@ -223,9 +230,57 @@ impl WarpRouter {
             });
         }
 
-        // Cross-check amount if the node exposes it.
-        if let Some(onchain_amt) = tx_info.get("amount_flowers").and_then(|v| v.as_u64()) {
-            if onchain_amt != proof.amount_flowers {
+        // Cross-check the proof fields against the on-chain transaction body.
+        // Without these, any confirmed tx (e.g. a payment to oneself) could be
+        // presented as a bridge deposit with a fabricated memo/recipient.
+        let tx = tx_info.get("transaction").cloned().unwrap_or(Value::Null);
+
+        // Sender binding: account-model txs expose `from`; reject a proof
+        // whose claimed sender does not match what is on-chain.
+        if let Some(from) = tx.get("from").and_then(|v| v.as_str()) {
+            if from != proof.sender {
+                return Err(WarpError::Validation(format!(
+                    "deposit proof sender mismatch: proof={} on-chain={}",
+                    proof.sender, from
+                )));
+            }
+        }
+
+        // Memo binding: the on-chain memo must equal the supplied proof memo
+        // (it carries the `WARP:<ver>:<chain>:<recipient>` routing). UTXO txs
+        // serialize `memo` as a byte array; tolerate string forms as well.
+        let onchain_memo = Self::json_memo_bytes(tx.get("memo"));
+        if let Some(bytes) = onchain_memo {
+            if bytes != proof.memo.as_bytes() {
+                return Err(WarpError::Validation(
+                    "deposit proof memo does not match on-chain transaction memo".into(),
+                ));
+            }
+        } else if !proof.memo.is_empty() {
+            return Err(WarpError::Validation(
+                "deposit proof supplies a memo but the on-chain transaction has none".into(),
+            ));
+        }
+
+        // Vault + amount binding (fail-closed when a vault is configured).
+        if let Some(vault) = &self.l1_vault_address {
+            let paid = Self::vault_payment_amount(&tx, vault);
+            if paid == 0 {
+                return Err(WarpError::Validation(format!(
+                    "deposit tx {} does not pay the bridge vault {vault}",
+                    proof.tx_hash
+                )));
+            }
+            if paid < proof.amount_flowers as u128 {
+                return Err(WarpError::Validation(format!(
+                    "deposit proof amount mismatch: proof={} on-chain vault payment={}",
+                    proof.amount_flowers, paid
+                )));
+            }
+        } else if let Some(onchain_amt) = Self::tx_declared_amount(&tx) {
+            // Vault unset (tests): still bound the claimed amount when the
+            // node exposes one, closing the previous dead top-level lookup.
+            if onchain_amt < proof.amount_flowers as u128 {
                 return Err(WarpError::Validation(format!(
                     "deposit proof amount mismatch: proof={} on-chain={}",
                     proof.amount_flowers, onchain_amt
@@ -234,6 +289,71 @@ impl WarpRouter {
         }
 
         Ok(())
+    }
+
+    /// Extract memo bytes from a serialized tx `memo` field.
+    /// `Vec<u8>` serializes as a JSON number array; accept UTF-8/hex strings too.
+    fn json_memo_bytes(v: Option<&Value>) -> Option<Vec<u8>> {
+        match v? {
+            Value::Array(items) => Some(
+                items
+                    .iter()
+                    .filter_map(|b| b.as_u64().map(|n| n as u8))
+                    .collect(),
+            ),
+            Value::String(s) => hex::decode(s.strip_prefix("0x").unwrap_or(s))
+                .ok()
+                .or_else(|| Some(s.as_bytes().to_vec())),
+            _ => None,
+        }
+    }
+
+    /// Sum of tx amounts paid to `vault` (flowers). Handles account-model
+    /// (`to`/`amount_zion`) and UTXO-model (`outputs[].address.encoded`) txs.
+    fn vault_payment_amount(tx: &Value, vault: &str) -> u128 {
+        if tx.get("to").and_then(|v| v.as_str()) == Some(vault) {
+            return tx
+                .get("amount_zion")
+                .or_else(|| tx.get("amount_flowers"))
+                .and_then(Self::json_u128)
+                .unwrap_or(0);
+        }
+        tx.get("outputs")
+            .and_then(|v| v.as_array())
+            .map(|outs| {
+                outs.iter()
+                    .filter(|o| {
+                        o.get("address")
+                            .and_then(|a| {
+                                a.get("encoded").and_then(|e| e.as_str()).or_else(|| a.as_str())
+                            })
+                            == Some(vault)
+                    })
+                    .filter_map(|o| o.get("amount").and_then(Self::json_u128))
+                    .sum()
+            })
+            .unwrap_or(0)
+    }
+
+    /// Declared tx amount regardless of recipient (fallback amount check).
+    fn tx_declared_amount(tx: &Value) -> Option<u128> {
+        tx.get("amount_zion")
+            .or_else(|| tx.get("amount_flowers"))
+            .and_then(Self::json_u128)
+            .or_else(|| {
+                tx.get("outputs").and_then(|v| v.as_array()).map(|outs| {
+                    outs.iter()
+                        .filter_map(|o| o.get("amount").and_then(Self::json_u128))
+                        .sum()
+                })
+            })
+    }
+
+    /// Parse a JSON value as u128 (number or decimal string).
+    fn json_u128(v: &Value) -> Option<u128> {
+        v.as_u64()
+            .map(|n| n as u128)
+            .or_else(|| v.as_str().and_then(|s| s.parse().ok()))
     }
 
     /// Perform a synchronous JSON-RPC call over raw TCP (newline-delimited JSON).
@@ -299,6 +419,19 @@ impl WarpRouter {
     pub fn initiate_outbound(&mut self, proof: DepositProof) -> WarpResult<Uuid> {
         // 0. Verify deposit proof against ZION L1 source chain (FIND-008).
         self.verify_deposit_proof(&proof)?;
+
+        // 0b. Replay protection: one L1 deposit tx = one transfer. Persisted
+        // transfers reload into `transfers`, so this survives restarts.
+        if self
+            .transfers
+            .values()
+            .any(|t| t.source_tx_hash.as_deref() == Some(proof.tx_hash.as_str()))
+        {
+            return Err(WarpError::Validation(format!(
+                "deposit tx {} already used for a WARP transfer",
+                proof.tx_hash
+            )));
+        }
 
         // 1. Parse memo
         let (chain_name, recipient) = parse_warp_memo(&proof.memo)?;
@@ -558,6 +691,57 @@ mod tests {
     }
 
     #[test]
+    fn test_outbound_rejects_duplicate_tx_hash() {
+        let mut router = test_router();
+        let proof = test_deposit(1_000_000, "WARP:1:solana:7xKXtg2CW87d97T");
+        router.initiate_outbound(proof.clone()).unwrap();
+        // Same L1 deposit tx must not mint a second transfer.
+        assert!(router.initiate_outbound(proof).is_err());
+    }
+
+    #[test]
+    fn test_json_memo_bytes_array_and_string() {
+        let arr = serde_json::json!([87, 65, 82, 80]);
+        assert_eq!(
+            WarpRouter::json_memo_bytes(Some(&arr)).as_deref(),
+            Some(b"WARP".as_slice())
+        );
+        let s = serde_json::json!("WARP:1:base:0xR");
+        assert_eq!(
+            WarpRouter::json_memo_bytes(Some(&s)).as_deref(),
+            Some(b"WARP:1:base:0xR".as_slice())
+        );
+        assert!(WarpRouter::json_memo_bytes(Some(&serde_json::json!(null))).is_none());
+    }
+
+    #[test]
+    fn test_vault_payment_amount_utxo_outputs() {
+        let vault = "zion1warp_vault";
+        let tx = serde_json::json!({
+            "outputs": [
+                {"amount": 500, "address": {"encoded": "zion1other"}},
+                {"amount": 300, "address": {"encoded": vault}},
+                {"amount": 200, "address": {"encoded": vault}}
+            ]
+        });
+        assert_eq!(WarpRouter::vault_payment_amount(&tx, vault), 500);
+        assert_eq!(WarpRouter::vault_payment_amount(&tx, "zion1none"), 0);
+    }
+
+    #[test]
+    fn test_vault_payment_amount_account_tx() {
+        let vault = "zion1warp_vault";
+        let tx = serde_json::json!({
+            "to": vault,
+            "amount_zion": "1000000"
+        });
+        assert_eq!(WarpRouter::vault_payment_amount(&tx, vault), 1_000_000);
+        // `to` is someone else → zero vault payment.
+        let tx2 = serde_json::json!({"to": "zion1self", "amount_zion": "1000000"});
+        assert_eq!(WarpRouter::vault_payment_amount(&tx2, vault), 0);
+    }
+
+    #[test]
     fn test_outbound_transfer_timelock() {
         let mut router = test_router();
         router.timelock_threshold = 500_000; // 0.5 ZION
@@ -631,8 +815,10 @@ mod tests {
     fn test_transfer_count() {
         let mut router = test_router();
         assert_eq!(router.transfer_count(), 0);
-        let proof1 = test_deposit(100_000, "WARP:1:solana:a");
-        let proof2 = test_deposit(200_000, "WARP:1:base:b");
+        let mut proof1 = test_deposit(100_000, "WARP:1:solana:a");
+        let mut proof2 = test_deposit(200_000, "WARP:1:base:b");
+        proof1.tx_hash = "tx_1".into();
+        proof2.tx_hash = "tx_2".into();
         router.initiate_outbound(proof1).unwrap();
         router.initiate_outbound(proof2).unwrap();
         assert_eq!(router.transfer_count(), 2);
