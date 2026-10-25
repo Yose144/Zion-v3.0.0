@@ -65,7 +65,11 @@ impl TimelockMonitor {
                 .into_iter()
                 .filter(|t| t.status == WarpStatus::TimelockHold)
                 .filter(|t| {
-                    let hold_start = t.created_at.timestamp() as u64;
+                    // Hold duration counts from when the transfer entered
+                    // TimelockHold (its last status change), not from transfer
+                    // creation — created_at would under-hold transfers that
+                    // entered the hold long after being initiated.
+                    let hold_start = t.updated_at.timestamp() as u64;
                     now.saturating_sub(hold_start) >= self.hold_duration_secs
                 })
                 .map(|t| t.id)
