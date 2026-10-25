@@ -18,7 +18,8 @@ async function checkRpc(): Promise<DependencyStatus> {
     const info = await rpc.getInfo();
     return { healthy: true, meta: { height: info.height, status: info.status } };
   } catch (e) {
-    return { healthy: false, error: e instanceof Error ? e.message : 'rpc check failed' };
+    console.error('rpc health check failed:', e);
+    return { healthy: false, error: 'rpc check failed' };
   }
 }
 
@@ -28,7 +29,8 @@ async function checkPool(): Promise<DependencyStatus> {
     const stats = await rpc.getPoolStats();
     return { healthy: !!stats, meta: { accepted: stats?.routing?.accepted ?? 0 } };
   } catch (e) {
-    return { healthy: false, error: e instanceof Error ? e.message : 'pool check failed' };
+    console.error('pool health check failed:', e);
+    return { healthy: false, error: 'pool check failed' };
   }
 }
 

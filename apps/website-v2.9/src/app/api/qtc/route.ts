@@ -33,7 +33,9 @@ async function rpc(method: string, params: unknown[] = [], timeoutMs = 4000): Pr
     const j = await res.json();
     return j.error ? { _error: j.error.message || j.error } : j.result;
   } catch (e) {
-    return { _error: e instanceof Error ? e.message.slice(0, 120) : 'rpc failed' };
+    // Transport errors embed the internal RPC URL — never echo (IA-17).
+    console.error('qtc rpc failed:', e);
+    return { _error: 'unavailable' };
   } finally {
     clearTimeout(t);
   }

@@ -285,8 +285,9 @@ export async function GET() {
       fetchedAt: Date.now(),
     }, { headers: HEADERS });
   } catch (error) {
+    console.error('DeFi fetch failed:', error);
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : 'Failed to fetch DeFi data' },
+      { ok: false, error: 'Failed to fetch DeFi data' },
       { status: 502, headers: HEADERS },
     );
   }

@@ -227,7 +227,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to fetch block:', error);
-    const msg = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: `Failed to fetch block: ${msg}` }, { status: 503 });
+    return NextResponse.json({ error: 'Failed to fetch block' }, { status: 503 });
   }
 }

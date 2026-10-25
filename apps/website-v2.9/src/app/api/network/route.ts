@@ -79,8 +79,10 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
       status.hashrate = info.difficulty ? info.difficulty / (info.target || 60) : 0;
     }
     status.online = info.status === 'OK';
-  } catch (e) {
-    status.error = e instanceof Error ? e.message : 'RPC error';
+  } catch {
+    // Never echo raw errors — exception text leaks internal endpoints
+    // (e.g. 'connect ECONNREFUSED 127.0.0.1:9445'). IA-17.
+    status.error = 'unreachable';
   }
 
   // V3 pool metrics via TCP — only primary runs the pool

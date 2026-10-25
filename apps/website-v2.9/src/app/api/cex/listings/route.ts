@@ -143,7 +143,7 @@ export async function GET() {
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch CEX data',
+        error: 'Failed to fetch CEX data',
         cex: { listings: CEX_LISTINGS, summary: { total_exchanges: CEX_LISTINGS.length, listed: 0, applied: 0, planned: CEX_LISTINGS.length, total_pairs: 0 } },
         dex: { source: 'error', pairs: 0, total_volume_24h: 0, total_liquidity_usd: 0 },
       },

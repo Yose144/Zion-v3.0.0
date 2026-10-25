@@ -195,7 +195,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Verify message failed:', error);
-    const msg = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: `Verify message failed: ${msg}` }, { status: 503 });
+    return NextResponse.json({ error: 'Verify message failed' }, { status: 503 });
   }
 }

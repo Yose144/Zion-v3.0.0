@@ -96,8 +96,9 @@ export async function GET(request: NextRequest) {
       { headers: HEADERS },
     );
   } catch (error) {
+    console.error('Wallet RPC unavailable:', error);
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : 'Wallet RPC unavailable' },
+      { ok: false, error: 'Wallet RPC unavailable' },
       { status: 502, headers: HEADERS },
     );
   }
@@ -133,8 +134,9 @@ export async function POST(request: NextRequest) {
       { headers: HEADERS },
     );
   } catch (error) {
+    console.error('Transaction submit failed:', error);
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : 'Transaction submit failed' },
+      { ok: false, error: 'Transaction submit failed' },
       { status: 502, headers: HEADERS },
     );
   }
