@@ -38,7 +38,6 @@ const ERC20_TRANSFER_EVENT_SIG: &str = "Transfer(address,address,uint256)";
 const AMM_SWAP_SIG: &str = "swap(uint256,uint256,address)";
 const AMM_GET_RESERVES_SIG: &str = "getReserves()";
 const AMM_TOKEN0_SIG: &str = "token0()";
-const AMM_TOKEN1_SIG: &str = "token1()";
 const AMM_GET_AMOUNT_OUT_SIG: &str = "getAmountOut(uint256,uint256,uint256)";
 const AMM_ROUTER_SWAP_SIG: &str =
     "swapExactTokensForTokens(uint256,uint256,address[],address,uint256)";

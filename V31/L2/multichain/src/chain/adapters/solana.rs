@@ -29,7 +29,6 @@ fn default_rpc(cluster: &str) -> &'static str {
 /// Solana adapter for the multichain wallet.
 pub struct SolanaAdapter {
     chain: ChainId,
-    cluster: String,
     rpc_url: String,
     client: reqwest::Client,
     zion_mint: String,
@@ -50,7 +49,6 @@ impl SolanaAdapter {
 
         Ok(Self {
             chain: ChainId::Solana,
-            cluster,
             rpc_url,
             client: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(15))
@@ -260,8 +258,6 @@ struct SigInfo {
     err: Option<Value>,
     #[serde(default)]
     slot: Option<u64>,
-    #[serde(default)]
-    block_time: Option<u64>,
 }
 
 #[async_trait]

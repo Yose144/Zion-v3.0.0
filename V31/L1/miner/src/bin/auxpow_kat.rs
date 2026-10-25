@@ -10,6 +10,7 @@
 /// Enumerate satisfying assignments of a sign-encoded 3-SAT instance via
 /// DPLL with unit propagation. `cb(assignment_bits)` is invoked per
 /// solution; returning false stops enumeration early.
+#[allow(dead_code)]
 fn dynex_enum_solutions(lits: &[i32], nv: usize, cb: &mut dyn FnMut(u64) -> bool) {
     let clauses: Vec<[i32; 3]> = lits.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect();
 
@@ -222,16 +223,19 @@ fn main() {
 
 /// GhostRider CPU ref via native-ffi (sphlib + CryptoNight).
 #[cfg(feature = "native-ghostrider")]
+#[allow(dead_code)]
 fn ghostrider_cpu(h: &[u8], n: u64) -> anyhow::Result<[u8; 32]> {
     Ok(zion_native_ffi::ghostrider::hash(h, n))
 }
 #[cfg(not(feature = "native-ghostrider"))]
+#[allow(dead_code)]
 fn ghostrider_cpu(_h: &[u8], _n: u64) -> anyhow::Result<[u8; 32]> {
     anyhow::bail!("no CPU ref; build with native-all")
 }
 
 /// Verthash CPU ref — loads verthash.dat once (same candidate paths as the
 /// GPU setup below).
+#[allow(dead_code)]
 fn verthash_cpu(h: &[u8], n: u64) -> anyhow::Result<[u8; 32]> {
     static DAT: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
     let data = DAT.get_or_init(|| {
