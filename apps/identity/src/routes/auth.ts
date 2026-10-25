@@ -598,6 +598,20 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(403).send({ error: 'FORBIDDEN', message: 'Proof address is not linked to this account' });
     }
 
+    // Quantus/pearl attestation must also bind an account-owned zionAddress —
+    // otherwise any ZION keypair satisfies the re-proof (see /link).
+    if (input.chainType === 'quantus' || input.chainType === 'pearl') {
+      const zionOwned = await app.prisma.linkedAddress.findFirst({
+        where: { userId, address: input.zionAddress ?? '' },
+      });
+      const delUser = await app.prisma.user.findUnique({
+        where: { id: userId }, select: { primaryAddress: true },
+      });
+      if (!zionOwned && delUser?.primaryAddress !== input.zionAddress) {
+        return reply.code(403).send({ error: 'FORBIDDEN', message: 'Attesting zionAddress is not linked to this account' });
+      }
+    }
+
     const ok = input.chainType === 'google'
       ? true // idToken already verified above
       : await verifyOwnership(app, { ...input, address: proofAddress });
@@ -691,6 +705,21 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       const gowner = await app.prisma.user.findUnique({ where: { googleId: googleSub } });
       if (gowner && gowner.id !== payload.sub) {
         return reply.code(409).send({ error: 'CONFLICT', message: 'Google account is already bound to another user' });
+      }
+    }
+
+    // Quantus/pearl attestation proves control of `zionAddress`, which must
+    // itself belong to this account — otherwise any ZION keypair (not bound
+    // to the caller's identity) could attest a link.
+    if (input.chainType === 'quantus' || input.chainType === 'pearl') {
+      const zionLinked = await app.prisma.linkedAddress.findFirst({
+        where: { userId: payload.sub, address: input.zionAddress ?? '' },
+      });
+      const zionIsPrimary = (await app.prisma.user.findUnique({
+        where: { id: payload.sub }, select: { primaryAddress: true },
+      }))?.primaryAddress === input.zionAddress;
+      if (!zionLinked && !zionIsPrimary) {
+        return reply.code(403).send({ error: 'FORBIDDEN', message: 'Attesting zionAddress is not linked to this account' });
       }
     }
 
