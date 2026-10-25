@@ -144,11 +144,12 @@ impl WarpWatcher {
     }
 
     /// Check if a tx hash has already been processed (DB or in-memory fallback).
-    fn is_seen(&self, tx_hash: &str) -> bool {
+    /// Scoped per chain — tx identifiers are only unique within one chain.
+    fn is_seen(&self, tx_hash: &str, chain: &str) -> bool {
         if let Some(db) = &self.db {
-            db.is_seen(tx_hash).unwrap_or(false)
+            db.is_seen(tx_hash, chain).unwrap_or(false)
         } else {
-            self.seen.contains(tx_hash)
+            self.seen.contains(&format!("{chain}:{tx_hash}"))
         }
     }
 
@@ -165,7 +166,7 @@ impl WarpWatcher {
                     SEEN_CACHE_MAX
                 );
             }
-            self.seen.insert(tx_hash.to_string());
+            self.seen.insert(format!("{chain}:{tx_hash}"));
         }
     }
 
@@ -176,7 +177,7 @@ impl WarpWatcher {
     /// external chain → release on ZION L1).
     async fn handle_proof(&mut self, chain_name: String, proof: DepositProof) {
         // Dedup: skip if we already processed this tx hash
-        if self.is_seen(&proof.tx_hash) {
+        if self.is_seen(&proof.tx_hash, &chain_name) {
             debug!(
                 "[Watcher][{}] Duplicate tx {}, skipping",
                 chain_name, proof.tx_hash
@@ -445,11 +446,13 @@ mod tests {
         let w = WarpWatcher::from_config(make_config_no_chains(), router, Some(db));
 
         // DB-based dedup: initially nothing seen
-        assert!(!w.is_seen("0xabc"));
+        assert!(!w.is_seen("0xabc", "base"));
         // Can't call mark_seen without &mut, but we can test via DB directly
         w.db.as_ref().unwrap().mark_seen("0xabc", "base").unwrap();
-        assert!(w.is_seen("0xabc"));
-        assert!(!w.is_seen("0xdef"));
+        assert!(w.is_seen("0xabc", "base"));
+        // Same hash on another chain is a different deposit.
+        assert!(!w.is_seen("0xabc", "solana"));
+        assert!(!w.is_seen("0xdef", "base"));
     }
 
     #[test]

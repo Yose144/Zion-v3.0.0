@@ -43,11 +43,13 @@ CREATE INDEX IF NOT EXISTS idx_transfers_status     ON transfers(status);
 CREATE INDEX IF NOT EXISTS idx_transfers_created    ON transfers(created_at);
 
 -- Dedup table: tracks source-chain tx hashes already processed by the watcher.
--- Survives restarts (unlike in-memory HashSet).
+-- Survives restarts (unlike in-memory HashSet). Composite key: tx identifiers
+-- are only unique within a single chain namespace.
 CREATE TABLE IF NOT EXISTS seen_txs (
-    tx_hash      TEXT    PRIMARY KEY,
+    tx_hash      TEXT    NOT NULL,
     chain        TEXT    NOT NULL,
-    seen_at      TEXT    NOT NULL
+    seen_at      TEXT    NOT NULL,
+    PRIMARY KEY (tx_hash, chain)
 );
 CREATE INDEX IF NOT EXISTS idx_seen_txs_chain ON seen_txs(chain);
 CREATE INDEX IF NOT EXISTS idx_seen_txs_seen  ON seen_txs(seen_at);
@@ -95,6 +97,41 @@ impl TransferDb {
     fn init(&self) -> WarpResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute_batch(SCHEMA).map_err(db_err)?;
+        self.migrate_seen_txs_composite_key(&conn)?;
+        Ok(())
+    }
+
+    /// Rebuild `seen_txs` with a composite `(tx_hash, chain)` key when an
+    /// existing database still has the single-column `tx_hash PRIMARY KEY`.
+    /// Idempotent; a no-op once the composite schema is in place.
+    fn migrate_seen_txs_composite_key(&self, conn: &Connection) -> WarpResult<()> {
+        let pk_cols: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('seen_txs') WHERE pk > 0",
+                [],
+                |r| r.get(0),
+            )
+            .map_err(db_err)?;
+        if pk_cols >= 2 {
+            return Ok(());
+        }
+        conn.execute_batch(
+            r#"
+            CREATE TABLE IF NOT EXISTS seen_txs_v2 (
+                tx_hash      TEXT    NOT NULL,
+                chain        TEXT    NOT NULL,
+                seen_at      TEXT    NOT NULL,
+                PRIMARY KEY (tx_hash, chain)
+            );
+            INSERT OR IGNORE INTO seen_txs_v2
+                SELECT tx_hash, chain, seen_at FROM seen_txs;
+            DROP TABLE seen_txs;
+            ALTER TABLE seen_txs_v2 RENAME TO seen_txs;
+            CREATE INDEX IF NOT EXISTS idx_seen_txs_chain ON seen_txs(chain);
+            CREATE INDEX IF NOT EXISTS idx_seen_txs_seen  ON seen_txs(seen_at);
+            "#,
+        )
+        .map_err(db_err)?;
         Ok(())
     }
 
@@ -216,12 +253,15 @@ impl TransferDb {
     // ─────────────────────────────────────────────────────────────────────────
 
     /// Check if a source-chain tx hash has already been processed.
-    pub fn is_seen(&self, tx_hash: &str) -> WarpResult<bool> {
+    /// Scoped per chain — tx identifiers are only unique within one chain
+    /// namespace, so a hash seen on `ethereum` must not mask the same
+    /// string arriving from `solana`.
+    pub fn is_seen(&self, tx_hash: &str, chain: &str) -> WarpResult<bool> {
         let conn = self.conn.lock().unwrap();
         let n: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM seen_txs WHERE tx_hash=?1",
-                params![tx_hash],
+                "SELECT COUNT(*) FROM seen_txs WHERE tx_hash=?1 AND chain=?2",
+                params![tx_hash, chain],
                 |r| r.get(0),
             )
             .map_err(db_err)?;
@@ -455,14 +495,19 @@ mod tests {
         let db = TransferDb::in_memory().unwrap();
 
         // Initially nothing is seen
-        assert!(!db.is_seen("0xabc").unwrap());
+        assert!(!db.is_seen("0xabc", "base").unwrap());
 
         // Mark as seen
         db.mark_seen("0xabc", "base").unwrap();
-        assert!(db.is_seen("0xabc").unwrap());
+        assert!(db.is_seen("0xabc", "base").unwrap());
+
+        // Same hash on a different chain is a distinct deposit.
+        assert!(!db.is_seen("0xabc", "solana").unwrap());
+        db.mark_seen("0xabc", "solana").unwrap();
+        assert!(db.is_seen("0xabc", "solana").unwrap());
 
         // Different tx not seen
-        assert!(!db.is_seen("0xdef").unwrap());
+        assert!(!db.is_seen("0xdef", "base").unwrap());
     }
 
     #[test]
@@ -471,7 +516,7 @@ mod tests {
         db.mark_seen("0xabc", "base").unwrap();
         // Second mark should not error (INSERT OR IGNORE)
         db.mark_seen("0xabc", "base").unwrap();
-        assert!(db.is_seen("0xabc").unwrap());
+        assert!(db.is_seen("0xabc", "base").unwrap());
     }
 
     #[test]
@@ -485,8 +530,8 @@ mod tests {
         // depending on sub-second timing. Use a negative approach: purge(30) should remove nothing.
         let deleted = db.purge_seen_old(30).unwrap();
         assert_eq!(deleted, 0);
-        assert!(db.is_seen("0xold").unwrap());
-        assert!(db.is_seen("0xnew").unwrap());
+        assert!(db.is_seen("0xold", "base").unwrap());
+        assert!(db.is_seen("0xnew", "solana").unwrap());
     }
 
     #[test]
