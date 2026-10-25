@@ -349,8 +349,9 @@ impl BtcSwapRecord {
             user_zion_lock_txid: self.user_zion_lock_txid.clone(),
             btc_lock: self.btc_lock.clone(),
             zion_lock_tx: self.zion_lock_tx.clone(),
-            // FIND-002: encrypt at rest (XOR vs ZION_HTLC_PREIMAGE_KEY);
-            // plaintext fallback only when the env key is unset.
+            // FIND-002/IA-13: encrypt at rest (`enc1:` ChaCha20-Poly1305 AEAD
+            // keyed from ZION_HTLC_PREIMAGE_KEY); plaintext fallback only when
+            // the env key is unset.
             preimage_hex: self
                 .preimage
                 .map(|p| crate::swap::htlc::encrypt_preimage_at_rest(&hex::encode(p))),
@@ -2174,8 +2175,8 @@ mod tests {
     /// process-global, so parallel tests would race.
     static PREIMAGE_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-    /// FIND-002: with ZION_HTLC_PREIMAGE_KEY set, a stored preimage is
-    /// `enc:`-wrapped at rest and decrypts transparently on load.
+    /// FIND-002/IA-13: with ZION_HTLC_PREIMAGE_KEY set, a stored preimage is
+    /// `enc1:`-wrapped (AEAD) at rest and decrypts transparently on load.
     #[test]
     fn snapshot_encrypts_preimage_at_rest() {
         let _guard = PREIMAGE_ENV_LOCK.lock().unwrap();
@@ -2188,8 +2189,8 @@ mod tests {
         let snap = rec.to_snapshot();
         let stored = snap.preimage_hex.clone().unwrap();
         assert!(
-            stored.starts_with("enc:"),
-            "preimage must be wrapped: {stored}"
+            stored.starts_with("enc1:"),
+            "preimage must be AEAD-wrapped: {stored}"
         );
         assert!(
             !stored.contains(&"42".repeat(32)),

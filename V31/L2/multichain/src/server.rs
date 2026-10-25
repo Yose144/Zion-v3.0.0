@@ -178,7 +178,12 @@ impl ApiServer {
 
         {
             let mut p = pool.lock().unwrap();
-            p.restore();
+            if let Err(e) = p.restore() {
+                tracing::warn!(
+                    "pool state restore failed ({}), starting with empty state",
+                    e
+                );
+            }
         }
 
         let port = pool.lock().unwrap().config.port;

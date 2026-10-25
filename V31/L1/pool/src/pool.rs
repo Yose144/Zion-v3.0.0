@@ -1,9 +1,11 @@
 use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use anyhow::Context;
 use ed25519_dalek::SigningKey;
+use serde::{Deserialize, Serialize};
 use zion_cosmic_harmony::ExternalCoin;
 use zion_l1_types::{Address, ChainId};
 
@@ -57,6 +59,30 @@ pub struct SessionCounters {
     pub active_sessions: Arc<AtomicU64>,
     /// Cumulative accepted connections since start.
     pub total_connections: Arc<AtomicU64>,
+}
+
+/// Durable payout-idempotency ledger persisted next to the PPLNS state file
+/// (`<state_path>.payouts.json`). Covers the crash/restart window where the
+/// in-memory `paid_block_heights`/`sent_payouts`/`pending_payouts` guards
+/// would otherwise be dropped (IA-14, POL-002 follow-up).
+///
+/// Semantics after restart: pending entries are restored and re-swept;
+/// `sent_payouts` suppresses resubmission of payouts already accepted by the
+/// node. The residual window — a crash after the node accepted the batch but
+/// before `mark_payout_sent` persisted — is at-most-once safe: the height is
+/// already in `paid_block_heights`, so the block is never re-distributed, and
+/// the submitted tx is the only payout attempt.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct PayoutLedgerState {
+    /// Block heights already processed by `on_block_found`.
+    #[serde(default)]
+    pub paid_block_heights: Vec<u64>,
+    /// `(block_height, address)` pairs already submitted on-chain.
+    #[serde(default)]
+    pub sent_payouts: Vec<(u64, String)>,
+    /// Payouts queued (or in-flight at last save) awaiting submission.
+    #[serde(default)]
+    pub pending_payouts: Vec<(u64, PayoutEntry)>,
 }
 
 #[derive(Debug)]
@@ -123,6 +149,7 @@ impl Pool {
             let arr = <[u8; 32]>::try_from(bytes).ok()?;
             Some(SigningKey::from_bytes(&arr))
         });
+        let ledger = Self::load_payout_ledger(config.state_path.as_deref());
         Ok(Self {
             config,
             pplns,
@@ -137,12 +164,73 @@ impl Pool {
             worker_ext_payouts: HashMap::new(),
             last_payouts: None,
             signing_key,
-            pending_payouts: Vec::new(),
-            sent_payouts: HashSet::new(),
-            paid_block_heights: HashSet::new(),
+            pending_payouts: ledger.pending_payouts,
+            sent_payouts: ledger.sent_payouts.into_iter().collect(),
+            paid_block_heights: ledger.paid_block_heights.into_iter().collect(),
             telemetry,
             pearl: crate::pearl_gateway::PearlRuntime::from_env(),
         })
+    }
+
+    /// Sidecar path for the payout ledger (`<state_path>.payouts.json`).
+    fn payout_state_path(&self) -> Option<PathBuf> {
+        self.config
+            .state_path
+            .as_ref()
+            .map(|p| PathBuf::from(format!("{p}.payouts.json")))
+    }
+
+    /// Load the payout ledger sidecar, if present and parseable.
+    /// Corrupt or unreadable files fail open (empty ledger) with a warning —
+    /// losing the guards is recoverable by operator inspection, a pool that
+    /// refuses to start is not.
+    fn load_payout_ledger(state_path: Option<&str>) -> PayoutLedgerState {
+        let Some(path) =
+            state_path.map(|p| PathBuf::from(format!("{p}.payouts.json")))
+        else {
+            return PayoutLedgerState::default();
+        };
+        match std::fs::read_to_string(&path) {
+            Ok(raw) => match serde_json::from_str::<PayoutLedgerState>(&raw) {
+                Ok(s) => s,
+                Err(e) => {
+                    tracing::warn!(
+                        "payout ledger {} unparsable ({}), starting empty",
+                        path.display(),
+                        e
+                    );
+                    PayoutLedgerState::default()
+                }
+            },
+            Err(_) => PayoutLedgerState::default(),
+        }
+    }
+
+    /// Persist the payout ledger next to the PPLNS state file. Best-effort:
+    /// write failures are logged and counted, never fatal — the pool must
+    /// keep serving miners even if the disk hiccups.
+    fn persist_payout_ledger(&mut self) {
+        let Some(path) = self.payout_state_path() else {
+            return;
+        };
+        let state = PayoutLedgerState {
+            paid_block_heights: self.paid_block_heights.iter().copied().collect(),
+            sent_payouts: self.sent_payouts.iter().cloned().collect(),
+            pending_payouts: self.pending_payouts.clone(),
+        };
+        let write = || -> std::io::Result<()> {
+            let tmp = path.with_extension("payouts.json.tmp");
+            let body = serde_json::to_vec(&state)
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            std::fs::write(&tmp, body)?;
+            std::fs::rename(&tmp, &path)?;
+            Ok(())
+        };
+        if let Err(e) = write() {
+            self.pplns_persist_failures_total =
+                self.pplns_persist_failures_total.saturating_add(1);
+            tracing::warn!("payout ledger persist failed {}: {}", path.display(), e);
+        }
     }
 
     pub fn next_job_id(&self) -> u64 {
@@ -382,6 +470,9 @@ impl Pool {
                 .map(|(_, p)| p.clone())
                 .collect(),
         ));
+        // Persist before the sweeper can drain — the at-most-once guarantee
+        // depends on `paid_block_heights` surviving a restart.
+        self.persist_payout_ledger();
     }
 
     /// Apply a native-coin revenue event (F3): the treasury oracle observed
@@ -423,6 +514,7 @@ impl Pool {
             .map(|entry| (ref_height, entry))
             .collect();
         self.pending_payouts.extend(payouts.iter().cloned());
+        self.persist_payout_ledger();
         self.pplns.mark_revenue_event_applied(event_id);
         let emitted_total = payouts
             .iter()
@@ -480,17 +572,30 @@ impl Pool {
                 self.pplns.restore(snap);
             }
         }
+        let ledger = Self::load_payout_ledger(self.config.state_path.as_deref());
+        self.paid_block_heights = ledger.paid_block_heights.into_iter().collect();
+        self.sent_payouts = ledger.sent_payouts.into_iter().collect();
+        self.pending_payouts = ledger.pending_payouts;
         Ok(())
     }
 
     /// Drain and return the queued ZION payouts for the sweep thread.
     /// External-chain entries (e.g. Quantus) stay queued — they are drained
     /// via [`take_external_payouts`].
+    ///
+    /// The drain is persisted immediately: a restart during the in-flight
+    /// submission must not find these entries in the restored queue (they
+    /// were already handed to the sweeper, which re-runs them only on
+    /// failure). At-most-once on purpose — a lost payout can be re-triggered
+    /// by the operator, a duplicated payout cannot be recalled.
     pub fn take_pending_payouts(&mut self) -> Vec<(u64, PayoutEntry)> {
         let (zion, ext): (Vec<_>, Vec<_>) = std::mem::take(&mut self.pending_payouts)
             .into_iter()
             .partition(|(_, p)| p.chain() == "zion");
         self.pending_payouts = ext;
+        if !zion.is_empty() {
+            self.persist_payout_ledger();
+        }
         zion
     }
 
@@ -600,6 +705,9 @@ impl Pool {
             .into_iter()
             .partition(|(_, p)| p.chain() == chain);
         self.pending_payouts = kept;
+        if !taken.is_empty() {
+            self.persist_payout_ledger();
+        }
         taken
     }
 
@@ -624,12 +732,14 @@ impl Pool {
     /// Put payouts back into the queue for a later retry.
     pub fn requeue_payouts(&mut self, payouts: Vec<(u64, PayoutEntry)>) {
         self.pending_payouts.extend(payouts);
+        self.persist_payout_ledger();
     }
 
     /// Mark a payout as successfully submitted so it is not re-sent.
     pub fn mark_payout_sent(&mut self, block_height: u64, address: &str) {
         self.sent_payouts
             .insert((block_height, address.to_string()));
+        self.persist_payout_ledger();
     }
 }
 
@@ -1007,6 +1117,81 @@ mod tests {
             0,
             "requeue of drained payouts after idempotent on_block_found should not duplicate"
         );
+    }
+
+    #[test]
+    fn payout_ledger_survives_restart() {
+        let dir = std::env::temp_dir().join(format!(
+            "zion-pool-ledger-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let state_path = dir.join("pplns.json");
+        let cfg = PoolConfig {
+            state_path: Some(state_path.to_string_lossy().into_owned()),
+            min_payout_flowers: 0,
+            ..config()
+        };
+
+        // First process lifetime: block found, one payout queued and sent.
+        {
+            let mut pool = Pool::new(cfg.clone(), telemetry());
+            pool.pplns.register_address("alice", "z1alice");
+            pool.pplns.record_share_with_diff("alice", "rig", 1, 100);
+            pool.on_block_found(100, 1_000_000);
+            let pending = pool.take_pending_payouts();
+            assert_eq!(pending.len(), 1);
+            pool.mark_payout_sent(100, &pending[0].1.address);
+        }
+
+        // Restart: guards restored, reprocessing the height is a no-op.
+        {
+            let mut pool = Pool::new(cfg.clone(), telemetry());
+            assert!(pool.paid_block_heights.contains(&100));
+            assert_eq!(pool.sent_payouts.len(), 1);
+            pool.on_block_found(100, 1_000_000);
+            assert!(
+                pool.take_pending_payouts().is_empty(),
+                "height 100 must not re-pay after restart"
+            );
+        }
+
+        // Requeue persists — a crashed sweep restores pending entries.
+        {
+            let mut pool = Pool::new(cfg.clone(), telemetry());
+            pool.on_block_found(101, 1_000_000);
+            let pending = pool.take_pending_payouts();
+            // PPLNS window was not snapshotted (no save()), so height 101 may
+            // emit nothing — enqueue directly to exercise the ledger path.
+            if pending.is_empty() {
+                pool.requeue_payouts(vec![(
+                    101,
+                    PayoutEntry {
+                        miner_id: "alice".into(),
+                        address: "z1alice".into(),
+                        amount: 42,
+                        share_count: 1,
+                        payout_chain: None,
+                        native_units: false,
+                        coin: None,
+                        revenue_event: None,
+                    },
+                )]);
+            } else {
+                pool.requeue_payouts(pending);
+            }
+        }
+        {
+            let mut pool = Pool::new(cfg, telemetry());
+            let pending = pool.take_pending_payouts();
+            assert_eq!(pending.len(), 1, "requeued payout must survive restart");
+        }
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

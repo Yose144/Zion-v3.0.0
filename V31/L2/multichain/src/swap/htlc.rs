@@ -371,15 +371,43 @@ impl HtlcSwap {
     }
 
     /// Load all records from DB into memory.
+    ///
+    /// Migrates legacy `enc:` (XOR) preimages to the `enc1:` AEAD scheme and
+    /// persists the upgrade (IA-13).
     pub async fn load_from_db(&self) -> MultichainResult<()> {
         let db = self
             .db
             .as_ref()
             .ok_or_else(|| MultichainError::Internal("no HTLC database configured".to_string()))?;
         let stored = db.lock().await.list_htlc()?;
+        let env_key = preimage_env_key();
+        let mut migrated = 0usize;
         let mut records = self.records.lock().await;
-        for r in stored {
+        for mut r in stored {
+            if let (Some(key), Some(stored_preimage)) =
+                (env_key.as_ref(), r.preimage_hex.as_deref())
+            {
+                if let Some(upgraded) = migrate_preimage_encryption(key, stored_preimage) {
+                    r.preimage_hex = Some(upgraded);
+                    migrated += 1;
+                    let db = db.lock().await;
+                    if let Err(e) = db.save_htlc(&r) {
+                        tracing::warn!(
+                            "[HtlcSwap] preimage re-encryption persist failed {}: {}",
+                            r.hash_hex,
+                            e
+                        );
+                    }
+                }
+            }
             records.insert(r.hash_hex.clone(), r);
+        }
+        drop(records);
+        if migrated > 0 {
+            tracing::info!(
+                "[HtlcSwap] migrated {} preimage(s) from legacy `enc:` to `enc1:` AEAD",
+                migrated
+            );
         }
         Ok(())
     }
@@ -960,74 +988,131 @@ fn hash_sha256(data: &[u8]) -> Hash {
 }
 
 // ---------------------------------------------------------------------------
-// FIND-002: Preimage encryption at rest
+// FIND-002 / IA-13: Preimage encryption at rest
 // ---------------------------------------------------------------------------
+//
+// Scheme versions embedded in the stored value:
+//   `enc1:<nonce_hex>:<ct_hex>` — ChaCha20-Poly1305 AEAD (current). Random
+//       96-bit nonce per record, Poly1305 integrity tag. The AEAD key is
+//       derived from `ZION_HTLC_PREIMAGE_KEY` (32-byte hex env) via
+//       SHA-256 domain separation so it is independent of the legacy scheme.
+//   `enc:<hex>` — legacy fixed-key XOR (IA-13: many-time pad + no integrity).
+//       Decrypt-only; rows are migrated to `enc1:` by `HtlcSwap::load_from_db`.
+//   anything else — plaintext (insecure; only when the env key is unset).
 
-/// Encrypt (or decrypt) a hex-encoded preimage at rest using XOR with a key
-/// from `ZION_HTLC_PREIMAGE_KEY` env var. If the key is not set, the preimage
-/// is stored as plaintext but a warning is logged. The key should be a
-/// hex-encoded 32-byte value.
-///
-/// XOR is used because the preimage is exactly 32 bytes and the key is 32
-/// bytes — this provides equivalent protection to a one-time pad when the key
-/// is unique and secret. The same function decrypts (XOR is symmetric).
+const PREIMAGE_KEY_ENV: &str = "ZION_HTLC_PREIMAGE_KEY";
+const ENC_AEAD_PREFIX: &str = "enc1:";
+const ENC_XOR_PREFIX: &str = "enc:";
+const AEAD_KEY_CONTEXT: &[u8] = b"ZION-HTLC-PREIMAGE-AEAD-v1";
+
+/// Read and validate `ZION_HTLC_PREIMAGE_KEY` (32-byte hex).
+fn preimage_env_key() -> Option<[u8; 32]> {
+    let key_hex = std::env::var(PREIMAGE_KEY_ENV).ok()?;
+    let bytes = hex::decode(key_hex.trim()).ok()?;
+    bytes.try_into().ok()
+}
+
+/// Derive the AEAD key from the env secret with domain separation from the
+/// legacy XOR keystream.
+fn aead_key(env_key: &[u8; 32]) -> [u8; 32] {
+    let mut h = Sha256::new();
+    h.update(AEAD_KEY_CONTEXT);
+    h.update(env_key);
+    h.finalize().into()
+}
+
+fn aead_encrypt(env_key: &[u8; 32], plaintext: &[u8]) -> Option<String> {
+    use chacha20poly1305::aead::{Aead, KeyInit};
+    use chacha20poly1305::{ChaCha20Poly1305, Nonce};
+    let cipher = ChaCha20Poly1305::new((&aead_key(env_key)).into());
+    let nonce_bytes: [u8; 12] = rand::random();
+    let nonce = Nonce::from(nonce_bytes);
+    let ct = cipher.encrypt(&nonce, plaintext).ok()?;
+    Some(format!(
+        "{}{}:{}",
+        ENC_AEAD_PREFIX,
+        hex::encode(nonce_bytes),
+        hex::encode(ct)
+    ))
+}
+
+fn aead_decrypt(env_key: &[u8; 32], nonce_hex: &str, ct_hex: &str) -> Option<Vec<u8>> {
+    use chacha20poly1305::aead::{Aead, KeyInit};
+    use chacha20poly1305::{ChaCha20Poly1305, Nonce};
+    let nonce_bytes: [u8; 12] = hex::decode(nonce_hex).ok()?.try_into().ok()?;
+    let nonce = Nonce::from(nonce_bytes);
+    let ct = hex::decode(ct_hex).ok()?;
+    let cipher = ChaCha20Poly1305::new((&aead_key(env_key)).into());
+    cipher.decrypt(&nonce, ct.as_ref()).ok()
+}
+
+/// Legacy FIND-002 XOR decryption (`enc:` rows). Kept for migration only.
+fn xor_decrypt(env_key: &[u8; 32], enc_hex: &str) -> Option<Vec<u8>> {
+    let encrypted = hex::decode(enc_hex).ok()?;
+    // Same semantics as the original: plain zip truncates to the shorter side
+    // (preimage and key are both 32 bytes in practice).
+    Some(
+        encrypted
+            .iter()
+            .zip(env_key.iter())
+            .map(|(e, k)| e ^ k)
+            .collect(),
+    )
+}
+
+/// Encrypt a hex-encoded preimage for at-rest storage. Uses the `enc1:` AEAD
+/// scheme when `ZION_HTLC_PREIMAGE_KEY` (32-byte hex) is set; otherwise logs a
+/// warning and stores plaintext (insecure — FIND-002).
 pub(crate) fn encrypt_preimage_at_rest(preimage_hex: &str) -> String {
-    match std::env::var("ZION_HTLC_PREIMAGE_KEY") {
-        Ok(key_hex) => {
-            let key = match hex::decode(key_hex.trim()) {
-                Ok(k) if k.len() == 32 => k,
-                _ => {
-                    tracing::warn!(
-                        "ZION_HTLC_PREIMAGE_KEY invalid (expected 32-byte hex) — \
-                         storing preimage as plaintext (FIND-002)"
-                    );
-                    return preimage_hex.to_string();
-                }
-            };
-            let preimage = match hex::decode(preimage_hex) {
-                Ok(p) => p,
-                Err(_) => return preimage_hex.to_string(),
-            };
-            let encrypted: Vec<u8> = preimage
-                .iter()
-                .zip(key.iter())
-                .map(|(p, k)| p ^ k)
-                .collect();
-            format!("enc:{}", hex::encode(&encrypted))
-        }
-        Err(_) => {
-            tracing::warn!(
-                "ZION_HTLC_PREIMAGE_KEY not set — storing preimage as plaintext (FIND-002)"
-            );
+    let Some(env_key) = preimage_env_key() else {
+        tracing::warn!(
+            "ZION_HTLC_PREIMAGE_KEY not set or invalid (expected 32-byte hex) — \
+             storing preimage as plaintext (FIND-002)"
+        );
+        return preimage_hex.to_string();
+    };
+    let Ok(preimage) = hex::decode(preimage_hex) else {
+        return preimage_hex.to_string();
+    };
+    match aead_encrypt(&env_key, &preimage) {
+        Some(enc) => enc,
+        None => {
+            tracing::warn!("preimage AEAD encryption failed — storing plaintext (FIND-002)");
             preimage_hex.to_string()
         }
     }
 }
 
-/// Decrypt a preimage that was encrypted with `encrypt_preimage_at_rest`.
-/// Returns the plaintext hex. If the stored value is not encrypted (no `enc:`
-/// prefix), returns it as-is.
+/// Decrypt a stored preimage value. Handles `enc1:` (AEAD), legacy `enc:`
+/// (XOR), and plaintext passthrough. On undecryptable values returns the
+/// stored string unchanged (callers validate the result as hex).
 pub(crate) fn decrypt_preimage_at_rest(stored: &str) -> String {
-    let Some(enc_hex) = stored.strip_prefix("enc:") else {
+    let Some(env_key) = preimage_env_key() else {
         return stored.to_string();
     };
-    let key = match std::env::var("ZION_HTLC_PREIMAGE_KEY") {
-        Ok(k) => match hex::decode(k.trim()) {
-            Ok(kb) if kb.len() == 32 => kb,
-            _ => return stored.to_string(),
-        },
-        Err(_) => return stored.to_string(),
-    };
-    let encrypted = match hex::decode(enc_hex) {
-        Ok(e) => e,
-        Err(_) => return stored.to_string(),
-    };
-    let decrypted: Vec<u8> = encrypted
-        .iter()
-        .zip(key.iter())
-        .map(|(e, k)| e ^ k)
-        .collect();
-    hex::encode(&decrypted)
+    if let Some(rest) = stored.strip_prefix(ENC_AEAD_PREFIX) {
+        let mut parts = rest.splitn(2, ':');
+        match (parts.next(), parts.next()) {
+            (Some(n), Some(c)) => aead_decrypt(&env_key, n, c)
+                .map(|pt| hex::encode(pt))
+                .unwrap_or_else(|| stored.to_string()),
+            _ => stored.to_string(),
+        }
+    } else if let Some(enc_hex) = stored.strip_prefix(ENC_XOR_PREFIX) {
+        xor_decrypt(&env_key, enc_hex)
+            .map(|pt| hex::encode(pt))
+            .unwrap_or_else(|| stored.to_string())
+    } else {
+        stored.to_string()
+    }
+}
+
+/// Re-encrypt a stored value from the legacy `enc:` scheme to `enc1:`.
+/// Returns `Some(new_value)` when the input was a legacy row.
+fn migrate_preimage_encryption(env_key: &[u8; 32], stored: &str) -> Option<String> {
+    let enc_hex = stored.strip_prefix(ENC_XOR_PREFIX)?;
+    let plaintext = xor_decrypt(env_key, enc_hex)?;
+    aead_encrypt(env_key, &plaintext)
 }
 
 // ---------------------------------------------------------------------------
@@ -1365,6 +1450,65 @@ mod tests {
         let hex = preimage.to_hex();
         let recovered = SwapPreimage::from_hex(&hex).unwrap();
         assert_eq!(preimage.0, recovered.0);
+    }
+
+    // ── Preimage at-rest encryption (IA-13) ─────────────────────────────────
+
+    #[test]
+    fn preimage_aead_roundtrip() {
+        let key = [0x11; 32];
+        let preimage = [0x42; 32];
+        let stored = aead_encrypt(&key, &preimage).unwrap();
+        assert!(stored.starts_with("enc1:"));
+        let rest = stored.strip_prefix("enc1:").unwrap();
+        let (nonce_hex, ct_hex) = rest.split_once(':').unwrap();
+        let pt = aead_decrypt(&key, nonce_hex, ct_hex).unwrap();
+        assert_eq!(pt, preimage);
+    }
+
+    #[test]
+    fn preimage_aead_random_nonce_unique_ciphertexts() {
+        let key = [0x11; 32];
+        let preimage = [0x42; 32];
+        let a = aead_encrypt(&key, &preimage).unwrap();
+        let b = aead_encrypt(&key, &preimage).unwrap();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn preimage_aead_rejects_tampered_ciphertext() {
+        let key = [0x11; 32];
+        let stored = aead_encrypt(&key, &[0x42; 32]).unwrap();
+        let rest = stored.strip_prefix("enc1:").unwrap();
+        let (nonce_hex, ct_hex) = rest.split_once(':').unwrap();
+        let mut ct = hex::decode(ct_hex).unwrap();
+        ct[0] ^= 0x01;
+        assert!(aead_decrypt(&key, nonce_hex, &hex::encode(ct)).is_none());
+        // Wrong key likewise fails closed.
+        assert!(aead_decrypt(&[0x22; 32], nonce_hex, ct_hex).is_none());
+    }
+
+    #[test]
+    fn preimage_legacy_xor_still_decodable_and_migrates() {
+        let key = [0x33; 32];
+        let preimage = [0x07; 32];
+        // Reproduce the original FIND-002 encoding: enc: + hex(pt XOR key).
+        let xor_ct: Vec<u8> = preimage.iter().zip(key.iter()).map(|(p, k)| p ^ k).collect();
+        let legacy = format!("enc:{}", hex::encode(&xor_ct));
+
+        let upgraded = migrate_preimage_encryption(&key, &legacy).unwrap();
+        assert!(upgraded.starts_with("enc1:"));
+        let rest = upgraded.strip_prefix("enc1:").unwrap();
+        let (nonce_hex, ct_hex) = rest.split_once(':').unwrap();
+        assert_eq!(aead_decrypt(&key, nonce_hex, ct_hex).unwrap(), preimage);
+    }
+
+    #[test]
+    fn preimage_migrate_ignores_non_legacy_values() {
+        let key = [0x33; 32];
+        let enc1 = aead_encrypt(&key, &[0x07; 32]).unwrap();
+        assert!(migrate_preimage_encryption(&key, &enc1).is_none());
+        assert!(migrate_preimage_encryption(&key, "00aa").is_none());
     }
 
     // ── HTLC persistence tests ─────────────────────────────────────────────

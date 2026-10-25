@@ -174,7 +174,13 @@ impl DexRouter {
     }
 
     pub fn add_pool(&mut self, pool: Pool) {
-        self.pools.push(pool);
+        // Idempotent by pool id: re-loading persisted pools must not duplicate
+        // entries (warpd + ApiServer both hydrate the router — IA-18).
+        if let Some(existing) = self.pools.iter_mut().find(|p| p.id == pool.id) {
+            *existing = pool;
+        } else {
+            self.pools.push(pool);
+        }
     }
 
     pub fn pools(&self) -> &[Pool] {
@@ -537,6 +543,31 @@ mod tests {
 
         let out = router.execute(&zion, &usdc, amount).unwrap();
         assert_eq!(out, quote.expected_out);
+    }
+
+    #[test]
+    fn add_pool_is_idempotent_by_id() {
+        let zion = asset(ChainId::ZionL1, "ZION", 6);
+        let usdc = asset(ChainId::Base, "USDC", 6);
+        let mk = |reserve_a: u128| Pool {
+            id: 1,
+            asset_a: zion.clone(),
+            asset_b: usdc.clone(),
+            reserve_a: Amount::new(reserve_a),
+            reserve_b: Amount::new(1_000_000_000_000),
+            fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
+        };
+
+        let mut router = DexRouter::new();
+        router.add_pool(mk(100_000_000_000));
+        // Simulates the double hydration (warpd startup + ApiServer::run) that
+        // produced duplicated pools in GET /v1/swap/pools (IA-18).
+        router.add_pool(mk(200_000_000_000));
+
+        assert_eq!(router.pools().len(), 1);
+        assert_eq!(router.pools()[0].reserve_a, Amount::new(200_000_000_000));
     }
 
     #[test]

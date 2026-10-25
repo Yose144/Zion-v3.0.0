@@ -37,6 +37,7 @@ bs58 = "0.5"
 bip39 = "2.0"
 bitcoin = { version = "0.31", default-features = false, features = ["std", "secp-recovery"] }
 aes = "=0.9.1"
+chacha20poly1305 = "0.10"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive", "env"] }
 ed25519-dalek = { version = "2", features = ["rand_core", "serde"] }
