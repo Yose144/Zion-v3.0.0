@@ -2,45 +2,52 @@
 
 > **Status:** prepared for operator hand-off — auditors NOT yet engaged (👤 selects firm, budget, NDA, kickoff)
 > **Companion docs:** `EXTERNAL_AUDIT_SCOPE.md` (v2.0 scope), `SECURITY_AUDIT_3.2.md` + `REPORTS/INTERNAL_AUDIT_2026-10-05.md` (baseline findings)
-> **Generated:** 2026-10-21
+> **Generated:** 2026-10-25 — **re-pinned to current HEAD** (previous pin `663c10be2` was 169 commits behind; post-pin history includes the ZIS rewrite, pearl PoUW, pool/outbox rework and contract-tree changes, so a fresh baseline was required)
 
 ---
 
 ## 1. Pinned commit manifest
 
-> **⚠️ History rewrite 2026-10-21:** the repository history was rewritten with `git filter-repo` to purge committed build/backup artifacts (`V3/target2..target4`, `V3/target-check`, `V3/target-vega-fix`, `scripts/finetune/outputs`, `ZION_OS/dashboard/infra/target`, `BACKUP/`). All commit IDs after those points changed. The pinned commit below is the **rewritten equivalent** of the previously pinned `adfbd4f2a78dc0220c2318dcab683632a7801dc5` (identical source content, new object ID). Auditors who obtained SHA references from earlier revisions of this package must re-resolve them against the current `main` — the full old→new mapping is committed at [`docs/3.2/ops/SHA-REMAP-2026-10-21.json`](ops/SHA-REMAP-2026-10-21.json) (711 commits).
+> **⚠️ History rewrite 2026-10-21:** the repository history was rewritten with `git filter-repo` to purge committed build/backup artifacts (`V3/target2..target4`, `V3/target-check`, `V3/target-vega-fix`, `scripts/finetune/outputs`, `ZION_OS/dashboard/infra/target`, `BACKUP/`). All commit IDs after those points changed. Auditors holding SHA references from earlier revisions must re-resolve them against current `main` — the full old→new mapping is committed at [`docs/3.2/ops/SHA-REMAP-2026-10-21.json`](ops/SHA-REMAP-2026-10-21.json) (711 commits).
 
 | Item | Value |
 |---|---|
 | Repository | `github.com/Yose144/Zion-v3.0.0` (public mirror is a subset — auditors should work from the full tree) |
 | Branch | `main` |
-| Pinned HEAD | `663c10be2d75cffe14081dbd6029fbf9ee947170` |
-| Short | `663c10be2` |
+| Pinned HEAD | `ebde4bd2af333ca0063f1bc0c6ed614268c52565` |
+| Short | `ebde4bd2a` |
+| Supersedes | `663c10be2d75cffe14081dbd6029fbf9ee947170` (+169 commits) |
 
-**Production-relevant commits included in HEAD:**
+**Production-relevant commits in the +169 delta (highlights):**
 
 | Commit | Content |
 |---|---|
-| `edb7ddbaf` | Pool L1 RPC timeout 4s→12s (`ZION_L1_RPC_TIMEOUT_MS`), pool-side pre-orphan removal, watchdog 15s/2f→30s/3f; G8 stall RCA + disk audit reports |
-| `6c28d4524` | `zion-ncl` daemon binary + SQLite job persistence + systemd unit |
-| `becd6ec13` | `scripts/prl-payout-review.sh` PRL payout readiness audit |
-| `663c10be2` | Checklist updates (EDGE2 topology guard, QV/map verified live) |
+| `edb7ddbaf` | Pool L1 RPC timeout 4s→12s, pre-orphan removal, watchdog 15s/2f→30s/3f (carried from previous pin) |
+| ZIS hardening 21.10 | `apps/identity` full rewrite — EdDSA/Ed25519 JWT + JWKS, DB-backed challenges/sessions, audit log, admin API, `/metrics` |
+| Pearl PoUW | v13 packed-k kernels promoted default on SM80+, `pearl_gateway`/`pearl_upstream` in pool |
+| Pool/PPLNS | `v3_pplns` native-coin legs, coin-revenue oracle + SQLite outbox, `pearl_gateway`, `qtc_native`, stratum v3/ZIS binding |
+| Multichain | warp btc_swap rework, `prl_payout`/`qtc_payout` durable-outbox sweepers, evm/quantus/solana adapter refreshes |
+| `b1d9e2118` | Alpha→beta (3.2.0-beta.1), repo F0–F6 cleanup, `PUBLIC/` → `archive/PUBLIC` |
+| `ebde4bd2a` | **Audit remediations (this baseline):** IA-13 AEAD preimage store, IA-14 durable payout ledger, IA-18 pool dedup |
+| vendored deps commit | **IA-22:** `contracts/lib/` minimal subtrees vendored → `git archive` exports reproduce `forge build`/`forge test` offline |
 
 **⚠️ Deployed-vs-source divergence auditors must know:**
-- Old-Edge pool binary is built from worktree `/root/build/pool-F5`, not `/opt/zion` checkout (the latter is a stale pre-PoolNG tree). After EDGE2 cutover all builds originate on EDGE2 from a clean checkout — `INFRA-SPLIT-PLAN.md`.
+- Old-Edge pool binary is built from worktree `/root/build/pool-F5`, not `/opt/zion` checkout. EDGE2 services are built from clean checkouts on EDGE2 — `INFRA-SPLIT-PLAN.md`.
+- The remediation commits (`ebde4bd2a` + vendored-deps) are **source-only at pin time** — not deployed to production services.
 - `zion-v31-ncl` on old Edge is a stopgap deployment; P3 migrates it to EDGE2.
 
 ## 2. Reproducible build procedure
 
 ```bash
 # Toolchain (no rust-toolchain.toml pinned — record used version)
-rustc 1.95.0 (59807616e 2026-04-14) · cargo 1.95.0
+# Production binaries: rust:1.97-bullseye container (glibc 2.30 constraint)
+# Package verified with: rustc 1.95.0 + cargo 1.95.0, also checked on 1.90 (macOS, dev)
 # Host: Ubuntu 24.04, x86_64, glibc 2.39
 
-git clone <repo> && cd Zion-v3.0.0 && git checkout 663c10be2
+git clone <repo> && cd Zion-v3.0.0 && git checkout ebde4bd2a
 cd V31
 
-# Full workspace check (fast)
+# Full workspace check (fast) — verified green at pin
 cargo check --workspace --locked
 
 # Production binaries
@@ -52,9 +59,13 @@ cargo build --release --locked -p zion-ncl       # NCL job daemon
 cargo build --release --locked -p zion-free-world
 cargo build --release --locked -p zion-cli
 
-# Test suites (currently green on amd64)
-cargo test -p zion-pool          # 333 passed
-cargo test -p zion-ncl           # 42 passed
+# Test suites (verified at pin)
+cargo test -p zion-pool --lib       # 345 passed (incl. payout_ledger_survives_restart)
+cargo test -p zion-multichain --lib # 744 passed, 4 ignored
+
+# Contracts — buildable from a bare `git archive` export since IA-22:
+cd V31/L2/multichain/contracts
+forge build && forge test            # 48 passed; OZ contracts/ + forge-std src/ vendored in-tree
 
 # Web app
 cd apps/website-v2.9
@@ -63,42 +74,66 @@ npm ci && npm run build          # Next.js 16.2.9, output: standalone
 
 **Notes for reproducibility:**
 - `Cargo.lock` is committed — use `--locked`.
+- `new_chacha20poly1305` dep added in `ebde4bd2a` — lockfile updated in the same commit.
 - GPU kernels (`*.cu`/`*.cl`/`*.metal`) are compiled at runtime via NVRTC/driver; audit the sources in `V31/L1/miner/csrc/` and `src/gpu/kernels/`.
 - WASM/site builds are NOT bit-reproducible yet (no pinned Node toolchain) — flag in scope as ops finding if required.
+- Other foundry projects (`archive/*`, `apps/MarketPlace`) still do not build from archives — out of external scope; only `V31/L2/multichain/contracts` is in-scope and was fixed.
 
-## 3. Scope size — measured at pinned HEAD (non-blank lines)
+## 3. Scope size — measured at pinned HEAD `ebde4bd2a`
 
-| Area | Lines |
-|---|---:|
-| L1 core (`V31/L1/core/src`) | 29,736 |
-| L1 cosmic-harmony (PoW) | 9,658 |
-| L1 pool | 27,070 |
-| L1 miner (Rust src) | 54,801 |
-| L1 miner GPU kernels (.cu/.cl/.metal) | 64,585 |
-| L2 multichain | 49,007 |
-| L2 DAO | 9,276 |
-| L3 ai-native / ncl | 15,576 / 2,088 |
-| L4 oasis / L5 free-world / L6 issobella | 8,656 / 2,782 / 2,105 |
-| Web API routes (`website-v2.9/src/app/api`) | 9,447 |
-| ZIS identity TS (`apps/identity`, excl. generated) | 5,091 |
-| Solidity live contracts (`contracts/src` + `V31/contracts`) | 4,934 |
+Method: `git grep -c . HEAD -- <path>` (non-blank lines of tracked files), summed per area.
 
-Changes vs scope doc v2.0 (`7a4d7791f`): pool +12.4k (Pool NG F1–F6 + PRL/QTC legs), miner +19k, ncl +0.8k (daemon). Re-verify before kickoff if HEAD moves.
+| Area | Lines | Path measured |
+|---|---:|---|
+| L1 core | 29,769 | `V31/L1/core/src` |
+| L1 cosmic-harmony (PoW) | 10,767 | `V31/L1/cosmic-harmony/src` |
+| L1 pool | 28,340 | `V31/L1/pool/src` |
+| L1 miner (Rust src) | 56,506 | `V31/L1/miner/src` |
+| L1 miner GPU kernels | 64,329 | `*.cu/.cl/.metal` under `V31/L1/miner` |
+| L2 multichain | 49,677 | `V31/L2/multichain/src` |
+| L2 DAO | 9,276 | `V31/L2/dao/src` |
+| L3 ai-native | 15,675 | `V31/L3/ai-native/src` |
+| L3 ncl | 2,088 | `V31/L3/ncl/src` |
+| L4 oasis | 8,662 | `V31/L4/oasis/src` |
+| L5 free-world | 2,782 | `V31/L5/free-world/src` |
+| L6 issobella | 2,113 | `V31/L6/issobella/src` |
+| Web API routes | 9,449 | `website-v2.9/src/app/api` |
+| ZIS identity TS | 3,730 | `apps/identity/src` (source only; 5,177 incl. tests) |
+| Solidity live | 6,109 | `V31/L2/multichain/contracts/src` + `V31/contracts` (excl. vendored `lib/`) |
+
+Changes vs previous pin (`663c10be2`): cosmic-harmony +1,109; pool +1,270 (pearl gateway/upstream, qtc_native, outbox); miner +1,705; multichain +670 (warp rework, payout sweepers); ai-native +99; issobella +8; identity **−1,361** (rewrite is leaner: EdDSA lib extraction); Solidity +1,175 (dex/evm split dirs). Vendored `contracts/lib/` is dependency material, not authored scope.
 
 ## 4. Updated known-issue baseline (verify these)
 
-Carried over from scope v2.0, plus new items since:
+**Remediated since the previous pin (source-only at pin time, undeployed):**
+
+- ~~IA-13~~ **FIXED** — XOR "encryption" of HTLC preimages → ChaCha20-Poly1305 AEAD (`enc1:` format, random nonce, `ZION_HTLC_PREIMAGE_KEY`); legacy `enc:` rows decode + migrate on write. Tamper/wrong-key fail closed. **BTC swap remains disabled** (`WARP_BTC_SWAP_ENABLED=0` on prod env, verified 2026-10-25) — enable only after external review of the full swap path.
+- ~~IA-14~~ **FIXED** — pool payout idempotency now durable: `<state_path>.payouts.json` sidecar persists `paid_block_heights`/`sent_payouts`/`pending_payouts` on every mutation; restored at start. Semantics: **at-most-once** — a crash between node-accept and mark-sent cannot re-pay (height guard survives); residual = a payout lost in that window requires operator re-trigger (by design: lost payout recoverable, duplicated payout not).
+- ~~IA-18~~ **FIXED** — `DexRouter::add_pool` idempotent by pool id; double-load (warpd + ApiServer) no longer duplicates `/v1/swap/pools`.
+- ~~IA-22~~ **FIXED (in-scope project)** — `V31/L2/multichain/contracts/lib/` minimal subtrees vendored (`oz contracts/`, `forge-std src/`, ~3.5 MB); `git archive` → `forge build`/`forge test` verified. Other foundry projects (archive/*, MarketPlace) remain non-building from exports — out of scope.
+- ~~IA-16~~ **VERIFIED FIXED on hosts** — zero `.bak` files under `sites-enabled` on Edge and EDGE2 (2026-10-25 re-check).
+
+**Carried over / still open:**
 
 1. `MAX_REORG_DEPTH` still has three values (10 / 64 / 500) — reconcile.
 2. DAO premine `unlock_height` 144,000 vs admin-lock-only premine outputs.
-3. **NEW — pool submit path (2026-10-21):** pre-orphan check removed by design — node consensus now decides validity of `submitBlock`. Auditor should confirm no DoS/amplification surface (submit flood → node validation cost).
-4. **NEW — watchdog policy:** `getTemplate` timeout 30 s / 3 consecutive fails triggers node restart (configurable). Verify restart logic cannot be gamed into a restart loop.
-5. **NEW — BTC swap feature-disabled:** `WARP_BTC_SWAP_ENABLED=0` on prod; signed-quote path (`btc_swap.rs`, ed25519, `WARP_BTC_SWAP_OFFER_KEY` + `_PREV` rotation, outstanding caps) is dormant — audit before mainnet pilot.
-6. **NEW — PRL payout dry-run:** `PRL_PAYOUT_ENABLED=1, DRY_RUN=1`, revenue oracle watching oyster; zero PRL miners so far → payout path untested with real volume. QTC payouts deferred (treasury_free=0).
-7. **NEW — NCL daemon:** persistence + scheduler use first-eligible-worker (no shared live reputation registry — by design, documented in `zion-ncl.rs`).
+3. Pool submit path: pre-orphan check removed by design — node consensus decides `submitBlock` validity. Confirm no DoS/amplification surface (submit flood → node validation cost).
+4. Watchdog policy: `getTemplate` timeout 30 s / 3 consecutive fails → node restart. Verify restart logic cannot be gamed into a restart loop.
+5. BTC swap dormant path: signed-quote flow (`btc_swap.rs`, ed25519 `WARP_BTC_SWAP_OFFER_KEY`+`_PREV`, outstanding caps) — audit before mainnet pilot; preimage store is now AEAD.
+6. PRL payout dry-run: `PRL_PAYOUT_ENABLED=1, DRY_RUN=1` (verified on EDGE2 env 2026-10-25); durable drain→ledger→ack protocol now in place; zero real PRL volume sent. QTC payouts deferred (treasury_free=0). **Note:** drained entries below `min_units` are ledgered as `dust` and ACKed — permanently dropped by design; confirm acceptable.
+7. NCL daemon: first-eligible-worker scheduling (no live reputation registry — by design).
+8. **NEW — ZIS identity review notes (post-pin rewrite):**
+   - `apps/identity/src/lib/keys.ts` keeps a `'change-me-in-production'` HS256 fallback reachable when `JWT_PRIVATE_KEY` is unset AND `NODE_ENV != 'production'`; a misconfigured production env would silently sign forgeable sessions. Recommend removing the literal default.
+   - Quantus/pearl account-link attestation proves **ZION-key ownership only** (ZION key signs `challenge\n<chain>:<addr>`); the claimed external-chain address itself is not proven. An attacker can link a victim's pearl/quantus address to their own ZIS account — assess what linked addresses gate before mainnet.
+   - Sessions are DB-backed with `jti↔sub` binding + revocation — verified correct in `lib/auth.ts`.
+9. **NEW — pool payout sweep ordering:** `take_pending_payouts` persists the drain *before* the batch tx submission — at-most-once by design (see IA-14 note). External sweeps (`prl_payout`/`qtc_payout`) use the SQLite outbox with ledger-before-ACK — verified consistent.
+10. Ignored `Result` in `server.rs` `p.restore()` — fixed (warn log) in `ebde4bd2a`; other non-fatal compiler warnings remain (unused EVM const, solana fields, `auxpow_kat` dead code).
+11. Operator-owned items unchanged: IA-07 carrier /16 allowlists (CGNAT), IA-08 plaintext secrets in same-host backups / no off-site copy, IA-09 burned keys in public history pending revocation, IA-10 ops details in public repo, IA-19 chain-liveness single-miner dependency (G8 run #4 pending).
 
 ## 5. Ops facts auditors need
 
-- Production topology is mid-migration old Edge → EDGE2 (`INFRA-SPLIT-PLAN.md`); audit the target-state units in `edge-deploy/systemd/`.
+- Production topology is mid-migration old Edge → EDGE2 (`INFRA-SPLIT-PLAN.md`); audit the target-state units in `edge-deploy/systemd/`. **EDGE2 is now the primary + web ingress** (apex cutover 2026-10-22).
 - Secrets live in `/etc/zion/edge-environment.sh` (not in repo) — verify handling, not contents.
 - UFW allowlists (not SSH tunnels) for cross-host RPC per split plan.
+- Nginx hazard confirmed fixed but worth a regression check in any deployment audit: `.bak` files inside `sites-enabled/` are parsed by the wildcard include (historical copies live in `/etc/nginx/backups/`).
+- `/vast-rigs/status.json` on EDGE2 is refreshed by `zion-vastrigs-sync.timer` pulling `127.0.0.1:8088/api/status` over the existing reverse tunnel (installed 2026-10-25).
