@@ -25,7 +25,8 @@ use crate::types::{Transfer, TransferDirection, TransferEndpoint};
 use crate::warp::adapter::bitcoin::{BitcoinAdapter, BtcHtlcLock, BtcHtlcSpend};
 use crate::warp::adapter::ChainAdapter;
 use crate::warp::btc_htlc::{
-    cltv_before_zion_timeout, cltv_from_zion_timeout, BtcHtlc, HtlcUtxo, DEFAULT_MARGIN_BLOCKS,
+    cltv_before_zion_timeout, cltv_from_zion_timeout, BtcHtlc, HtlcUtxo, BTC_BLOCK_SECS,
+    DEFAULT_MARGIN_BLOCKS,
 };
 use crate::warp::btc_signer::BtcSigner;
 use crate::warp::error::{WarpError, WarpResult};
@@ -1034,8 +1035,17 @@ impl BtcSwapFlow {
         btc_tip: u64,
     ) -> WarpResult<BtcSwapRecord> {
         self.check_amount(p.btc_sats)?;
-        if p.zion_timeout_ts <= now_ts {
-            return Err(err("zion_timeout_ts must be in the future"));
+        // Our ZION lock is the user's claim window — require the same
+        // minimum duration the opposite direction enforces, so we never
+        // accept an offer whose lock would expire before the user could
+        // reasonably claim (previously any `> now` value was accepted and
+        // the swap merely failed later at LockZion).
+        let remaining = p.zion_timeout_ts.saturating_sub(now_ts);
+        if remaining <= self.cfg.margin_blocks as u64 * BTC_BLOCK_SECS {
+            return Err(err(format!(
+                "zion_timeout_ts too close ({remaining}s left, need > {}s)",
+                self.cfg.margin_blocks as u64 * BTC_BLOCK_SECS
+            )));
         }
         let cltv =
             cltv_from_zion_timeout(p.zion_timeout_ts, now_ts, btc_tip, self.cfg.margin_blocks);
