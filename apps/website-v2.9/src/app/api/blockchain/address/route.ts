@@ -104,6 +104,31 @@ export async function GET(request: NextRequest) {
           status: tx.confirmed ? 'confirmed' : 'pending',
         };
       });
+
+      // Per-output attribution: txHistory.amount_zion is the WHOLE tx sum,
+      // which overstates amounts on multi-output txs (coinbase 89/5/5/1
+      // splits, genesis premine). Fetch outputs in parallel and keep only
+      // this address's share.
+      const details = await Promise.all(
+        transactions.map((tx) =>
+          rpc.rpcCall<any>('getTransaction', { txid: tx.tx_hash }).catch(() => null),
+        ),
+      );
+      transactions.forEach((tx, i) => {
+        const outs = details[i]?.transaction?.outputs;
+        if (!Array.isArray(outs) || outs.length === 0) return;
+        const toMe = outs
+          .filter((o: any) => (o?.address?.encoded ?? o?.address) === address)
+          .reduce((s: number, o: any) => s + Number(o?.amount ?? 0), 0) / 1_000_000;
+        const allOut = outs.reduce((s: number, o: any) => s + Number(o?.amount ?? 0), 0) / 1_000_000;
+        if (involvesAddress(tx.to)) {
+          tx.amount = toMe;
+        } else if (involvesAddress(tx.from)) {
+          // Outgoing: amount that left this address = all outputs minus
+          // outputs that came back (UTXO change).
+          tx.amount = Math.max(0, allOut - toMe);
+        }
+      });
       totalReceived = transactions
         .filter((tx) => involvesAddress(tx.to))
         .reduce((sum, tx) => sum + tx.amount, 0);
@@ -180,11 +205,13 @@ export async function GET(request: NextRequest) {
       } : null,
 
       // Transactions
-      transactions,
+      transactions: transactions.slice(0, 50),
       recent_transactions: transactions.slice(0, 10),
 
-      // UTXO list
-      utxos: utxoList,
+      // UTXO list — capped; active pool/mining wallets can hold tens of
+      // thousands of outputs and serializing all of them stalls the page.
+      utxos: utxoList.slice(0, 200),
+      utxos_truncated: utxoList.length > 200,
       transaction_model: walletSnapshot?.transaction_model ?? (address.startsWith('zion1') ? 'utxo' : 'account'),
     };
 
