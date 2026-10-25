@@ -2125,12 +2125,15 @@ def all_services_health() -> list:
     ex = ThreadPoolExecutor(max_workers=min(8, len(SERVICE_REGISTRY) or 1))
     try:
         futures = {ex.submit(check_service_health, svc): svc["id"] for svc in SERVICE_REGISTRY}
-        for fut in as_completed(futures, timeout=3.0):
-            sid = futures[fut]
-            try:
-                raw[sid] = fut.result()
-            except Exception:
-                raw[sid] = {"alive": False, "status": "error", "details": "health check failed"}
+        try:
+            for fut in as_completed(futures, timeout=3.0):
+                sid = futures[fut]
+                try:
+                    raw[sid] = fut.result()
+                except Exception:
+                    raw[sid] = {"alive": False, "status": "error", "details": "health check failed"}
+        except TimeoutError:
+            pass
     finally:
         ex.shutdown(wait=False, cancel_futures=True)
     # Fill in any timed-out entries
