@@ -157,13 +157,13 @@ Per-adresář `git mv` (zachová historii), od nejjednoduššího:
 
 **Batch 7 ✅ (2026-10-22, `040d73c41`+fixy):** `tools/`→`infra/tools` (vast.ai ops) — refs fixnuty (.gitignore, AGENTS, docs); **+runtime fix:** vastctl user systemd units přepsány na nové cesty + restartovány (daemon píše status.json do `infra/tools/vast/`, push na edge webroot funguje); watchdog wrapper v `infra/edge-deploy/` = probe `../scripts` (server) ∨ `../../scripts` (repo) — funguje na obou místech; stale SRBMiner orphan z `APP&WEB/` cesty zabit (nový běží z `apps/` pod agentem).
 
-**ODLOŽENO na F5 (server-runtime třída — lokální přesun mění remote layout přes whole-root rsync deploy, nebo `/opt/zion/*` je voláno přímo systemd/cronem):**
+**ODLOŽENO na F5 → vyhodnoceno a UZAVŘENO 2026-10-25 (server-runtime třída — lokální přesun mění remote layout přes whole-root rsync deploy, nebo `/opt/zion/*` je voláno přímo systemd/cronem):**
 - `V31`→`chain/` — **NEDĚLAT (rozhodnutí uživatele 2026-10-22)** — rozsekává cargo/systemd/workflow/.github závislosti
-- `scripts/`→`infra/scripts/` (359 souborů) — ~40 skriptů resolvuje root přes `$(dirname $0)/..` = `/opt/zion` na serverech správně, `infra/` lokálně špatně; servery volají `/opt/zion/scripts/` přímo → mapping strategie ve F5
-- `ZION_OS/`→`infra/` — `deploy-edge.sh` rsyncuje `${REPO_ROOT}/` celý → remote dostane `infra/ZION_OS/` místo `/opt/zion/ZION_OS/` → rozbije remote binary paths (`zion-agent`, `zionos-dashboard`)
-- `V3/`→archive — `.gitmodules` submodule `V3/L2/bridge/contracts/lib/openzeppelin-contracts` — git mv neaktualizuje submodule path → ruční .gitmodules koordinace nutná; `archive/V3` už existuje a diverguje (deduplikace k posouzení)
-- `BTCunlock/` — referencovaný živým kódem (`apps/desktop-agent/renderer.js`, `ZION_OS/dashboard/*`)
-- `Hiran/` (325M) — referencovaný `V31/L3/ai-native/src/*.rs`, `V31/cli`, `ZION_OS/dashboard/*.js`, `scripts/openclaw-coding.sh`
+- `scripts/`→`infra/scripts/` (359 souborů) — **ROZHODNUTO ZŮSTÁT:** ~40 skriptů resolvuje root přes `$(dirname $0)/..` = `/opt/zion` správně na serverech, `infra/` lokálně špatně; servery volají `/opt/zion/scripts/` přímo → move = churn bez zisku, root cesta je kanonická
+- `ZION_OS/`→`infra/` — **ROZHODNUTO ZŮSTÁT:** `deploy-edge.sh` rsyncuje `${REPO_ROOT}/` celý → remote dostane `infra/ZION_OS/` místo `/opt/zion/ZION_OS/` → rozbije remote binary paths (`zion-agent`, `zionos-dashboard`)
+- `V3/`→archive — ✅ **HOTOVO (2026-10-25, `d6bb9d654`):** stale kopie smazána, 3 unikátní miner utility (`opencl_diag`, `opencl_smoke`, `sha3_debug`) → `archive/V3/L1/miner/src/`; `.gitmodules` už ukazoval do archive/V3
+- `BTCunlock/` — **ROZHODNUTO ZŮSTÁT:** repo refs (`apps/desktop-agent/renderer.js`, `dashboard.html` join-cmd `BTCunlock/btcunlock-worker.py`) + server `/opt/zion/btcunlock` vlastní kopie → move = ref churn za nulový zisk
+- `Hiran/` (5.8G) — **ROZHODNUTO ZŮSTÁT:** live refs `V31/L3/ai-native/src/*.rs`, `V31/cli`, dashboard — případný move vyžaduje cargo+service koordinaci, mimo scope sjednocení
 - untracked root dirs (`backups/`16G, `PUBLIC/`klon, `venv-hiran/`, `logs/`, `BACKUP/`, `AuXpow/`, `dashboard/`, `data/` runtime) — **ROZHODNUTO 2026-10-22: všechno zůstává v repu**, zdokumentováno v [`REPO-MAP.md`](../REPO-MAP.md) §3 (runtime/artefakt mapa + kdo je používá)
 7. Aktualizovat `.github/`, `AGENTS.md`, všechny `deploy-*.sh` cesty
 
