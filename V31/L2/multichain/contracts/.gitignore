@@ -4,7 +4,23 @@ cache/
 broadcast/
 
 # Dependency directories (install with `forge install`)
-lib/
+# IA-22: the subtrees needed by `forge build`/`forge test` are vendored
+# (tracked) so `git archive` exports reproduce contract builds offline;
+# everything else under lib/ stays untracked.
+lib/*
+!lib/forge-std/
+!lib/openzeppelin-contracts/
+lib/forge-std/*
+!lib/forge-std/src/
+!lib/forge-std/foundry.toml
+!lib/forge-std/LICENSE-APACHE
+!lib/forge-std/LICENSE-MIT
+!lib/forge-std/README.md
+lib/openzeppelin-contracts/*
+!lib/openzeppelin-contracts/contracts/
+!lib/openzeppelin-contracts/foundry.toml
+!lib/openzeppelin-contracts/LICENSE
+!lib/openzeppelin-contracts/README.md
 
 # Deployment artifacts
 deployments/
