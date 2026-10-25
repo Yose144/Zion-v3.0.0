@@ -1,8 +1,8 @@
 # ZION 3.2 "One Love" — External Security Audit Scope (DRAFT)
 
-> **Version:** 2.1 (measurements refreshed 2026-10-25 against `ebde4bd2a`) · **Status:** DRAFT — **not sent; no audit firm selected or engaged**
+> **Version:** 2.2 (measurements refreshed 2026-10-25 against `4108a52d0`) · **Status:** DRAFT — **not sent; no audit firm selected or engaged**
 > **Contact / SLA:** _to be filled in by the operator before sending_ (v1.0 contained an invented address and SLA — withdrawn)
-> **Repository:** https://github.com/Yose144/Zion-v3.0.0 (public) — **pinned commit `ebde4bd2af333ca0063f1bc0c6ed614268c52565`** (see `AUDIT_PACKAGE.md`; re-pin at kickoff if HEAD moves)
+> **Repository:** https://github.com/Yose144/Zion-v3.0.0 (public) — **pinned source commit `4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4`** (see `AUDIT_PACKAGE.md`; the subsequent manifest commit is documentation-only)
 
 ---
 
@@ -43,24 +43,24 @@ ZION is a Layer-1 blockchain: UTXO/hybrid transaction model, Ed25519 signatures,
 - `archive/`, `public/` mirror
 - marketing pages (non-API)
 
-## 3. Measured size (non-blank lines incl. inline tests, `git grep -c .`, commit `ebde4bd2a`)
+## 3. Measured size (nonempty tracked text lines incl. inline tests, commit `4108a52d0`)
 
 | Area | Lines |
 |---|---:|
 | L1 core | 29,769 |
-| L1 cosmic-harmony (PoW) | 10,767 |
-| L1 pool | 28,340 |
-| L1 miner (Rust) | 56,506 |
-| L1 miner GPU/C kernels (excluding vendored reference) | 64,329 |
-| L2 multichain | 49,677 |
+| L1 cosmic-harmony (PoW) | 10,742 |
+| L1 pool | 28,649 |
+| L1 miner (tracked src) | 56,510 |
+| L1 miner GPU kernels (excluding vendored reference) | 64,141 |
+| L2 multichain | 52,953 |
 | L2 DAO | 9,276 |
 | L3 ai-native / ncl | 15,675 / 2,088 |
 | L4 / L5 / L6 | 8,662 / 2,782 / 2,113 |
-| Web API routes (`website-v2.9/src/app/api`) | 9,449 |
-| ZIS identity (TS, `apps/identity/src`) | 3,730 |
-| Solidity (live contracts, excl. vendored `lib/`) | 6,109 |
+| Web API routes (`apps/website-v2.9/src/app/api`) | 9,501 |
+| ZIS identity (`apps/identity/src`) | 3,796 |
+| Authored contract trees (excl. vendored `lib/`) | 6,109 |
 
-Exact path boundaries and the measurement command are documented in `AUDIT_PACKAGE.md` §3 — figures there are authoritative. (v2.0 figures used `7a4d7791f` and pre-PoolNG pool code; deltas are documented in the package.)
+Exact path boundaries and commands are documented in `AUDIT_PACKAGE.md` §3. Rows can overlap and are not a unique LOC total; the contract-tree count is not a Solidity-only count. These measurements supersede carried-forward values in older versions.
 
 ## 4. Baseline: known issues the auditor should verify
 
@@ -71,11 +71,12 @@ Exact path boundaries and the measurement command are documented in `AUDIT_PACKA
    - ZIS session-binding fix and secret rotation
    - P2P fork-choice fix
    - open operator items: allowlists, backups, secrets in history, dependencies
-   - **Remediated at `ebde4bd2a` (source-only, not yet deployed):** IA-13 (AEAD preimage store), IA-14 (durable payout idempotency ledger), IA-18 (DEX pool dedup), IA-22 (vendored contract deps → archive builds reproduce); IA-16 re-verified on hosts.
+   - **Source remediations at `ebde4bd2a`:** IA-13 (AEAD), IA-18 (DEX pool dedup), IA-22 (vendored contract dependencies). **IA-14 is partially remediated/reopened:** best-effort sidecar writes and fail-open loading do not establish unconditional at-most-once payout safety.
 3. Constants the auditor should reconcile:
    - Three different `MAX_REORG_DEPTH` values exist: 10 (`v3_chain.rs`, V3-compat path), 64 (`p2p.rs`, native sync), 500 (`node_runtime.rs`).
    - The DAO treasury premine output has `unlock_height` 144,000 (`v3_compat.rs`). The other premine outputs have no height lock and depend on admin-lock rules.
 4. New review notes from the 2026-10-25 remediation pass (`AUDIT_PACKAGE.md` §4 items 8–10): ZIS HS256 fallback literal; QTU/PRL link attestation proves ZION-key ownership only; pearl `dust` entries are ACKed/dropped permanently; Quantus genesis-anchored mortal era untested against mainnet semantics (QTC payouts disabled).
+5. `REPORTS/AUDIT_RECHECK_2026-10-25.md` supersedes overstated money-path conclusions: burn authorization is separate from confirmations; router writes must succeed before submission; non-EVM inbound/TON safety holds and uncertain-withdrawal reconciliation require rollout review. Pool durability, deferred outbox and daily-cap atomicity remain source risks, not operator-only tasks.
 
 ## 5. Deliverables requested
 

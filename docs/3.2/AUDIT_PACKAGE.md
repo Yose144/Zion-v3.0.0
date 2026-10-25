@@ -1,8 +1,8 @@
 # ZION — External Audit Package (commit manifest + reproducible build)
 
 > **Status:** prepared for operator hand-off — auditors NOT yet engaged (👤 selects firm, budget, NDA, kickoff)
-> **Companion docs:** `EXTERNAL_AUDIT_SCOPE.md` (v2.0 scope), `SECURITY_AUDIT_3.2.md` + `REPORTS/INTERNAL_AUDIT_2026-10-05.md` (baseline findings)
-> **Generated:** 2026-10-25 — **re-pinned to current HEAD** (previous pin `663c10be2` was 169 commits behind; post-pin history includes the ZIS rewrite, pearl PoUW, pool/outbox rework and contract-tree changes, so a fresh baseline was required)
+> **Companion docs:** `EXTERNAL_AUDIT_SCOPE.md`, `SECURITY_AUDIT_3.2.md` + `REPORTS/INTERNAL_AUDIT_2026-10-05.md` (historical baseline), `REPORTS/AUDIT_RECHECK_2026-10-25.md` (money-path corrections and remaining risks)
+> **Generated:** 2026-10-25 — pinned to the reviewed source commit. The manifest/report commit follows as documentation only; a document cannot contain its own commit hash.
 
 ---
 
@@ -14,9 +14,9 @@
 |---|---|
 | Repository | `github.com/Yose144/Zion-v3.0.0` (public mirror is a subset — auditors should work from the full tree) |
 | Branch | `main` |
-| Pinned HEAD | `e9088b128fbccaf493c3e786360002a6025aa957` |
-| Short | `e9088b128` |
-| Supersedes | `bffc3d51e5f21216873889723eded05883782e5a` (+7 commits: BtcToZion min-duration, WARP executor/inbound crash-safety, deposit-proof verification, release-error classification, chain-scoped dedup, quorum signer dedup, timelock base) |
+| Pinned source HEAD | `4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4` |
+| Short | `4108a52d0` |
+| Supersedes | `e9088b128fbccaf493c3e786360002a6025aa957` (wave-5 documentation plus the money-path recheck) |
 
 **Production-relevant commits in the +169 delta (highlights):**
 
@@ -48,10 +48,12 @@
 | `7cdb330ab` | **Timelock base:** hold duration measured from `created_at` — a transfer entering `TimelockHold` long after creation released instantly; now uses `updated_at` (bumped on every status transition = hold entry) |
 | `3d559964c` | **Inbound replay dedup:** `/transfers/inbound` bypassed watcher dedup — one source burn could spawn multiple transfers. `initiate_inbound` dedupes on `burn_id` (distinct burns per tx allowed) with `tx_hash` fallback + representation-shift guard |
 | `e9088b128` | **Deferred/fee payout response handling:** processor dropped payouts on first retry — read `tx_id` at envelope top level (node returns `result.tx_id`) and never checked the `error` field, so rejections were removed as "success". `execute_fee_payout` fabricated `Ok("unknown")` likewise |
+| `4108a52d0` | **Money-path recheck R6-01...R6-07:** authoritative EVM burn verification and ABI/units fix; fail-closed router persistence; direction/config-driven execution; strict confirmation parsing and non-EVM/TON safety holds; atomic withdrawal creation plus durable pre-submit claim; payout response/maturity regressions |
 
 **⚠️ Deployed-vs-source divergence auditors must know:**
 - Old-Edge pool binary is built from worktree `/root/build/pool-F5`, not `/opt/zion` checkout. EDGE2 services are built from clean checkouts on EDGE2 — `INFRA-SPLIT-PLAN.md`.
 - The remediation commits (`ebde4bd2a`…`e9088b128` + vendored-deps) are **source-only at pin time** — not deployed to production services.
+- `4108a52d0` is also **source-only, not deployed**. Non-EVM inbound sources now hold without a burn verifier; TON confirmation is unsupported; ambiguous withdrawals stay `executing` without auto-refund/resend. Rollout requires reconciliation and review of these deliberate behavior changes.
 - `zion-v31-ncl` on old Edge is a stopgap deployment; P3 migrates it to EDGE2.
 
 ## 2. Reproducible build procedure
@@ -62,31 +64,32 @@
 # Package verified with: rustc 1.95.0 + cargo 1.95.0, also checked on 1.90 (macOS, dev)
 # Host: Ubuntu 24.04, x86_64, glibc 2.39
 
-git clone <repo> && cd Zion-v3.0.0 && git checkout e9088b128fbccaf493c3e786360002a6025aa957
-cd V31
+git clone <repo> && cd Zion-v3.0.0 && git checkout 4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4
+REPO_ROOT="$(pwd)"
+cd "$REPO_ROOT/V31"
 
-# Full workspace check (fast) — verified green at pin
+# Workspace verification (dependency cache required for offline execution)
 cargo check --workspace --locked
 
-# Production binaries
-cargo build --release --locked -p zion-node      # L1 node
+# Build recipes, not evidence of a release build in this recheck
+cargo build --release --locked -p zion-core --bin zion-node
 cargo build --release --locked -p zion-pool      # stratum pool (F6 failover + 12s timeout)
 cargo build --release --locked -p zion-miner     # miner (CPU; GPU kernels need CUDA/OpenCL/Metal SDKs)
-cargo build --release --locked -p warpd          # multichain/WARP daemon
+cargo build --release --locked -p zion-multichain --bin warpd
 cargo build --release --locked -p zion-ncl       # NCL job daemon
 cargo build --release --locked -p zion-free-world
 cargo build --release --locked -p zion-cli
 
-# Test suites (verified at pin)
-cargo test -p zion-pool --lib       # 345 passed (incl. payout_ledger_survives_restart)
-cargo test -p zion-multichain --lib # 744 passed, 4 ignored
+# Local library checks; do not run ignored live-chain transaction tests
+cargo test --offline --locked -p zion-pool --lib -- --test-threads=1
+cargo test --offline --locked -p zion-multichain --lib -- --test-threads=1 --skip test_evm_health_check_integ
 
-# Contracts — buildable from a bare `git archive` export since IA-22:
-cd V31/L2/multichain/contracts
-forge build && forge test            # 48 passed; OZ contracts/ + forge-std src/ vendored in-tree
+# Contracts: separate recipe; not re-executed in this money-path recheck
+cd "$REPO_ROOT/V31/L2/multichain/contracts"
+forge build && forge test
 
 # Web app
-cd apps/website-v2.9
+cd "$REPO_ROOT/apps/website-v2.9"
 npm ci && npm run build          # Next.js 16.2.9, output: standalone
 ```
 
@@ -97,36 +100,49 @@ npm ci && npm run build          # Next.js 16.2.9, output: standalone
 - WASM/site builds are NOT bit-reproducible yet (no pinned Node toolchain) — flag in scope as ops finding if required.
 - Other foundry projects (`archive/*`, `apps/MarketPlace`) still do not build from archives — out of external scope; only `V31/L2/multichain/contracts` is in-scope and was fixed.
 
-## 3. Scope size — measured at pinned HEAD `e9088b128` (figures from `ebde4bd2a` re-measurement; subsequent deltas touch only the rows noted)
+### Verification Evidence For This Recheck
 
-Method: `git grep -c . HEAD -- <path>` (non-blank lines of tracked files), summed per area.
+- `cargo check --offline --locked --workspace`: exit 0; native-ffi emits its existing build-configuration notice.
+- `zion-multichain --lib`: 802 passed, 4 ignored, 1 filtered (`test_evm_health_check_integ` performs external RPC and was deliberately skipped).
+- `zion-pool --lib`: 356 passed. Both library suites use `--test-threads=1`.
+- The broad suites precede a final assertion-only strengthening, test-listener cleanup and log-whitespace change. The affected claim-failure test (1/1) and inbound tests (4/4) passed afterward; workspace check also passed afterward.
+- All 22 changed Rust files pass targeted rustfmt. Workspace `cargo fmt --all --check` exits 1 on legacy formatting drift outside this patch; the unchanged `node.rs` baseline also fails directly from the pre-change HEAD. No claim of a globally clean formatting gate.
+- `git diff --check`: exit 0. No full workspace test suite, clippy, dependency-advisory refresh, release build, contract build, web build or production probe was performed in this recheck.
+
+Local raw evidence: `/tmp/audit-batch1-evidence/final-gate.log` (broad suite results), `gate-evidence.log` (actual check/format exits), `test-batch2.log` (targeted reruns). These are local artifacts, not committed CI or deployment evidence. Earlier failed attempts remain in older logs and are not counted as final passes.
+
+## 3. Scope size — re-measured at pinned source HEAD `4108a52d0`
+
+Method: `git grep -c -I . 4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4 -- <path>`, summed per area. Counts are **nonempty tracked text lines**, including inline tests and any other tracked files inside the stated trees, not language-only executable LOC. Rows can overlap (notably miner src and GPU kernels); do not sum them into a unique total.
 
 | Area | Lines | Path measured |
 |---|---:|---|
 | L1 core | 29,769 | `V31/L1/core/src` |
-| L1 cosmic-harmony (PoW) | 10,767 | `V31/L1/cosmic-harmony/src` |
-| L1 pool | 28,340 | `V31/L1/pool/src` |
-| L1 miner (Rust src) | 56,510 | `V31/L1/miner/src` |
-| L1 miner GPU kernels | 64,329 | `*.cu/.cl/.metal` under `V31/L1/miner` |
-| L2 multichain | 50,318 | `V31/L2/multichain/src` |
+| L1 cosmic-harmony (PoW) | 10,742 | `V31/L1/cosmic-harmony/src` |
+| L1 pool | 28,649 | `V31/L1/pool/src` |
+| L1 miner (tracked src) | 56,510 | `V31/L1/miner/src` |
+| L1 miner GPU kernels | 64,141 | `*.cu/.cl/.metal` under `V31/L1/miner`, excluding `csrc/ref` |
+| L2 multichain | 52,953 | `V31/L2/multichain/src` |
 | L2 DAO | 9,276 | `V31/L2/dao/src` |
 | L3 ai-native | 15,675 | `V31/L3/ai-native/src` |
 | L3 ncl | 2,088 | `V31/L3/ncl/src` |
 | L4 oasis | 8,662 | `V31/L4/oasis/src` |
 | L5 free-world | 2,782 | `V31/L5/free-world/src` |
 | L6 issobella | 2,113 | `V31/L6/issobella/src` |
-| Web API routes | 9,501 | `website-v2.9/src/app/api` |
-| ZIS identity TS | 3,769 | `apps/identity/src` (source only) |
-| Solidity live | 6,109 | `V31/L2/multichain/contracts/src` + `V31/contracts` (excl. vendored `lib/`) |
+| Web API routes | 9,501 | `apps/website-v2.9/src/app/api` |
+| ZIS identity src | 3,796 | `apps/identity/src` |
+| Authored contract trees | 6,109 | `V31/L2/multichain/contracts/src` + `V31/contracts` (excl. vendored `lib/`) |
 
-Changes vs previous pin (`663c10be2`): cosmic-harmony +1,109; pool +1,270 (pearl gateway/upstream, qtc_native, outbox); miner +1,705; multichain +670 (warp rework, payout sweepers); ai-native +99; issobella +8; identity **−1,361** (rewrite is leaner: EdDSA lib extraction); Solidity +1,175 (dex/evm split dirs). Vendored `contracts/lib/` is dependency material, not authored scope.
+Every row was re-read from the pinned tree; older carried-forward figures are superseded, not assumed to match. The source patch touches only pool/multichain; changes to other reported figures correct the measurement baseline, not code in those areas. Vendored `contracts/lib/` is dependency material, not authored scope.
+
+GPU pathspecs are `:(glob)V31/L1/miner/**/*.cu`, `:(glob)V31/L1/miner/**/*.cl`, `:(glob)V31/L1/miner/**/*.metal`, `:(exclude)V31/L1/miner/csrc/ref/**`. Contract-tree exclusions use `:(glob,exclude)**/lib/**`. Append these as separate quoted arguments after `--`. Local machine-readable measurements, exact commands and matching-file counts are captured in `/tmp/audit-batch1-evidence/scope-4108a52d0.json`.
 
 ## 4. Updated known-issue baseline (verify these)
 
 **Remediated since the previous pin (source-only at pin time, undeployed):**
 
 - ~~IA-13~~ **FIXED** — XOR "encryption" of HTLC preimages → ChaCha20-Poly1305 AEAD (`enc1:` format, random nonce, `ZION_HTLC_PREIMAGE_KEY`); legacy `enc:` rows decode + migrate on write. Tamper/wrong-key fail closed. **BTC swap remains disabled** (`WARP_BTC_SWAP_ENABLED=0` on prod env, verified 2026-10-25) — enable only after external review of the full swap path.
-- ~~IA-14~~ **FIXED** — pool payout idempotency now durable: `<state_path>.payouts.json` sidecar persists `paid_block_heights`/`sent_payouts`/`pending_payouts` on every mutation; restored at start. Semantics: **at-most-once** — a crash between node-accept and mark-sent cannot re-pay (height guard survives); residual = a payout lost in that window requires operator re-trigger (by design: lost payout recoverable, duplicated payout not).
+- **IA-14 PARTIAL / REOPENED** — `<state_path>.payouts.json` improves restart recovery, but writes are best-effort and unreadable/corrupt state loads an empty guard. An unconditional **at-most-once** guarantee is withdrawn. Durable claims, failure handling and post-broadcast reconciliation remain open; see `REPORTS/AUDIT_RECHECK_2026-10-25.md`.
 - ~~IA-18~~ **FIXED** — `DexRouter::add_pool` idempotent by pool id; double-load (warpd + ApiServer) no longer duplicates `/v1/swap/pools`.
 - ~~IA-22~~ **FIXED (in-scope project)** — `V31/L2/multichain/contracts/lib/` minimal subtrees vendored (`oz contracts/`, `forge-std src/`, ~3.5 MB); `git archive` → `forge build`/`forge test` verified. Other foundry projects (archive/*, MarketPlace) remain non-building from exports — out of scope.
 - ~~IA-16~~ **VERIFIED FIXED on hosts** — zero `.bak` files under `sites-enabled` on Edge and EDGE2 (2026-10-25 re-check).
@@ -137,7 +153,7 @@ Changes vs previous pin (`663c10be2`): cosmic-harmony +1,109; pool +1,270 (pearl
 2. DAO premine `unlock_height` 144,000 vs admin-lock-only premine outputs.
 3. Pool submit path: pre-orphan check removed by design — node consensus decides `submitBlock` validity. Confirm no DoS/amplification surface (submit flood → node validation cost).
 4. Watchdog policy: `getTemplate` timeout 30 s / 3 consecutive fails → node restart. Verify restart logic cannot be gamed into a restart loop.
-5. BTC swap dormant path: signed-quote flow (`btc_swap.rs`, ed25519 `WARP_BTC_SWAP_OFFER_KEY`+`_PREV`, outstanding caps) — **reviewed post-pin: state machine sound** (CLTV ordering correct both directions, `zion_blocks > margin` enforced for ZionToBtc, on-chain verification of counterparty ZION lock before counter-lock, idempotent coordinator, crash-recovery, AEAD preimage at rest). Minor: `BtcToZion` offer accepts a near-future `zion_timeout_ts` (only `> now` required) — fails safely at LockZion if expired, but a minimum-duration check would be cleaner. Still gated `WARP_BTC_SWAP_ENABLED=0` — audit before mainnet pilot stands.
+5. BTC swap dormant path: targeted prior review covered CLTV ordering, lock checks, coordinator idempotency and AEAD storage; it is not an independent security verdict. The former `BtcToZion` minimum-duration gap was fixed by `2add3e93e`, symmetrically with `ZionToBtc`. `WARP_BTC_SWAP_ENABLED=0` remains the documented safety hold; this local pass does not change or refresh production configuration.
 6. PRL payout dry-run: `PRL_PAYOUT_ENABLED=1, DRY_RUN=1` (verified on EDGE2 env 2026-10-25); durable drain→ledger→ack protocol now in place; zero real PRL volume sent. QTC payouts deferred (treasury_free=0). **Note:** drained entries below `min_units` are ledgered as `dust` and ACKed — permanently dropped by design; confirm acceptable.
 7. NCL daemon: first-eligible-worker scheduling (no live reputation registry — by design).
 8. **ZIS identity review notes (post-pin rewrite):**
@@ -151,20 +167,21 @@ Changes vs previous pin (`663c10be2`): cosmic-harmony +1,109; pool +1,270 (pearl
    - **Deposit** (`DepositWatcher::process_event`): credited the ledger BEFORE `record_deposit` — a crash/DB failure between them left no record, so the next poll **double-credited**; `atomic_credit`/`JournalLedger::credit` had no reference-id dedup. Now the durable record is persisted first (pending) and credit+mark happens in one SQLite tx (`atomic_credit_and_mark_deposit_credited`); replay on an already-credited row is a no-op. Regression tests: `deposit_replay_is_idempotent`, `pending_deposit_credits_once_at_finality` (746/746 lib tests).
    - Residual: `reference_id` is still not unique at the `ledger_entries` level — dedup is enforced at the deposit-status transition. A `UNIQUE(reference_id)` partial index would add defense-in-depth (schema migration, operator decision).
    - **`execute_payouts`** (service-level miner payouts, `bffc3d51e`): paid zion entries were never removed from `pending_payouts`/`sent_payouts` (latent double-pay + queue growth), the pre-settlement escrow credit leaked on settlement failure (phantom credit per failed 30 s tick), and all snapshot entries — including quantus/pearl legs owned by external sweepers — were iterated through the ZionL1 adapter. Now: zion-only filter, debit-back on send failure, `Pool::settle_payout` drains+marks+persists on success.
-10. **Pool payout sweep ordering:** `take_pending_payouts` persists the drain *before* the batch tx submission — at-most-once by design (see IA-14 note). External sweeps (`prl_payout`/`qtc_payout`) use the SQLite outbox with ledger-before-ACK — verified consistent.
+10. **Pool payout sweep ordering:** `take_pending_payouts` attempts to persist the drain before batch submission, but sidecar I/O is best-effort; this alone is not an at-most-once guarantee (see reopened IA-14). External sweeps (`prl_payout`/`qtc_payout`) use separate SQLite outboxes; their earlier review is not new verification of every ambiguity/failure boundary.
 11. ~~Ignored `Result` in `server.rs` `p.restore()`~~ — fixed `ebde4bd2a`; compiler warnings all cleaned `ddf56ca30` (workspace now warning-free).
 12. **IA-17 public-response leaks — remediated `b49494ed9`:** `blockchain/peers` masks private/loopback peers (counted, addresses hidden); `network` returns generic `unreachable` instead of raw `error.message` (leaked `ECONNREFUSED 127.0.0.1:port`); `ncl/status` scrubs loopback in proxied JSON + POST gated by `ZION_NCL_STATUS_KEY` (IA-05 defense-in-depth — nginx remains the external block) and no longer echoes fs paths; `wallet/qtc/prl/health/defi/cex/verify-message/tx/block` no longer echo `error.message` (transport errors embed internal RPC URLs) — real errors still logged server-side. **Env note:** `ZION_NCL_STATUS_KEY` is unset on EDGE2 → POST currently denied by default (fail-closed); set it if a legitimate writer exists.
 13. Operator-owned items unchanged: IA-07 carrier /16 allowlists (CGNAT), IA-08 plaintext secrets in same-host backups / no off-site copy, IA-09 burned keys in public history pending revocation, IA-10 ops details in public repo, IA-19 chain-liveness single-miner dependency (G8 run #4 pending).
 14. **WARP bridge money-path review — remediated `2add3e93e`…`7cdb330ab`:**
-    - **Crash-safety (double-mint/stranded):** both executors now persist `Executing` BEFORE the irreversible submit (mint / `submitBridgeUnlock`); restarts resume stored `dest_tx_hash` into confirmation and refuse blind resubmission without one (operator recovery via `zion-bridge-unlock`). Outbound nonce/message derivation is deterministic per transfer so the destination contract sees the same `warp_message_hash` on any retry.
+    - **Crash-safety (double-mint/stranded):** the earlier ordering change requested `Executing` before submission; the router still swallowed SQLite failures. The follow-up recheck makes successful persistence a prerequisite. Restarts resume stored `dest_tx_hash`; absent hashes hold for reconciliation, not blind resubmission.
     - **Deposit-proof binding (was FIND-008 verified only):** any confirmed L1 tx could be presented as a bridge deposit — existence+finality were checked but not vault payment, memo, or sender, and `tx_hash` replayed freely. Now the on-chain `transaction` body must pay `l1_vault_address` ≥ claimed amount with the exact memo, sender cross-checked for account-model txs, one `source_tx_hash` = one transfer.
-    - **Error classification:** a `submitBridgeUnlock` node rejection is terminal (`Failed`); a transport failure is ambiguous and holds `Executing` for operator recovery — L1 dedupes unlocks on `burn_id` at consensus, so a double unlock is impossible.
+    - **Error classification:** a `submitBridgeUnlock` node rejection is terminal (`Failed`); a transport failure is ambiguous and holds `Executing` for operator recovery. L1 replay protection depends on the exact canonical source-chain/burn/transaction identity; it does not prove that a submitted source transaction actually burned the stated amount for the stated recipient.
     - **Quorum + dedup correctness:** `verify_quorum` no longer counts repeated `(validator_id, sig)` pairs (one sig could reach quorum); watcher dedup is now per-chain `(tx_hash, chain)` composite key (+SQLite table rebuild on open); timelock duration is measured from hold entry.
     - **Residual / for the external auditor:** dest-chain mint dedup is assumed at contract level keyed by `warp_message_hash` (deterministic now) — verify on each adapter's target contract; `signing_hash` binds transfer_id/chains/recipient/amounts/nonce/proof-hash (no domain-separation tag — assess cross-protocol ambiguity); `Executing`-without-`dest_tx_hash` requires manual settlement by design (safety over liveness); `WARP_BTC_SWAP_ENABLED=0` holds in prod pending this audit.
 15. **Payout response-handling + WARP adapter parity — `3d559964c`…`e9088b128`:**
-    - **Deferred payouts dropped on first retry (was silent abandonment):** `L1Endpoints::call` returns the raw JSON-RPC envelope (callers must check `error`; `payout.rs`/stratum did — `deferred_payout.rs` did not). The processor read `tx_id` at top level while the node returns `result.tx_id`, so every response — success or rejection — produced `"unknown"` and **removed the payout from the queue**. Now `error` ⇒ keep queued + log; success requires `result.tx_id` (+`accepted` when present). Same fix in `execute_fee_payout`, which previously fabricated `Ok("unknown")` on rejections.
+    - **Deferred payouts dropped on first retry (was silent abandonment):** `L1Endpoints::call` returns the raw JSON-RPC envelope. The original processor read top-level `tx_id` and could remove rejected work as `"unknown"`. The shared regression-tested parser now requires an explicit `accepted:true` and nonblank `result.tx_id` for object responses, or the legacy nonblank string result. Non-null RPC errors and incomplete/malformed successes remain queued subject to the existing retry limit. This is not a durable-outbox guarantee.
     - **Inbound replay at router level:** `/transfers/inbound` bypassed watcher dedup — one source burn could create multiple transfers (L1 consensus `burn_id` dedup was the only backstop). `initiate_inbound` now dedupes on `burn_id` (multiple burns per source tx allowed) with `tx_hash` fallback; a no-`burn_id` proof is rejected once the same tx stored a real `burn_id` (representation-shift guard).
-    - **Residual (adapter parity — contract-level):** only the EVM adapter binds `warp_message_hash` into the on-chain mint (`bridgeMint(addr,amt,bytes32)`). TON/SUI/Solana/Stellar/Tron/Cardano/Cosmos/Aptos/NEAR all call `mint(recipient, amount)` with **no replay anchor** — contract-level dedup cannot exist there until each destination program accepts and enforces a message hash. The `Executing`-without-hash operator-recovery path is the only current backstop on those chains. Minor: TON `query_id` hardcoded `1`, seqno fetch falls back to `0`.
+    - **Residual (adapter parity):** the EVM payload binds `warp_message_hash` into `bridgeMint(addr,amt,bytes32)`. Equivalent transfer-specific replay binding has not been established for the non-EVM payloads. Their calls and destination semantics differ; the earlier blanket claim that all call a two-argument mint and cannot have any deduplication is withdrawn. Audit each deployed program/interface independently. No destination contract is changed in this pass.
+16. **Money-path recheck and corrected conclusions:** `REPORTS/AUDIT_RECHECK_2026-10-25.md` records R6-01 through R6-07, scoped evidence, non-EVM inbound/TON safety holds, and remaining source risks. In particular, confirmations are not burn authorization; the EVM event ABI/18-to-6-decimal conversion must match the contract; SQLite errors must stop pre-submit claims; and ambiguous withdrawals require reconciliation rather than resend/refund.
 
 ## 5. Ops facts auditors need
 
