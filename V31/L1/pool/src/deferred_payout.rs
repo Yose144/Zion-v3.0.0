@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use anyhow::anyhow;
 use serde_json::{json, Value};
 use tracing::{info, warn};
 
@@ -264,12 +265,29 @@ pub async fn execute_fee_payout(
         ))
         .await?;
 
-    let tx_id = resp
+    // `L1Endpoints::call` returns the raw envelope — a JSON-RPC `error`
+    // field still arrives as Ok. A rejected submit must not fabricate a
+    // tx_id and look like a paid-out batch to the caller.
+    if let Some(err) = resp.get("error").filter(|e| !e.is_null()) {
+        return Err(anyhow!("fee payout submit rejected by node: {err}"));
+    }
+    let result = resp
         .get("result")
-        .and_then(|r| r.get("tx_id"))
+        .ok_or_else(|| anyhow!("fee payout submit returned no result: {resp}"))?;
+    if let Some(accepted) = result.get("accepted").and_then(|v| v.as_bool()) {
+        if !accepted {
+            let reason = result
+                .get("reason")
+                .and_then(|v| v.as_str())
+                .unwrap_or("no reason given");
+            return Err(anyhow!("fee payout not accepted: {reason}"));
+        }
+    }
+    let tx_id = result
+        .get("tx_id")
         .and_then(|v| v.as_str())
-        .or_else(|| resp.get("result").and_then(|r| r.as_str()))
-        .unwrap_or("unknown")
+        .or_else(|| result.as_str())
+        .ok_or_else(|| anyhow!("fee payout accepted but response has no tx_id: {resp}"))?
         .to_string();
 
     info!(
@@ -447,20 +465,58 @@ pub fn spawn_deferred_payout_processor(
                                 .await
                             {
                                 Ok(resp) => {
-                                    let tx_id = resp
-                                        .get("tx_id")
+                                    // `L1Endpoints::call` returns the raw
+                                    // envelope — a JSON-RPC `error` field
+                                    // still surfaces as Ok. Without this
+                                    // check every response (rejections
+                                    // included) was dropped from the queue
+                                    // as a success.
+                                    if let Some(err) =
+                                        resp.get("error").filter(|e| !e.is_null())
+                                    {
+                                        if retry % 10 == 0 || retry <= 3 {
+                                            info!(
+                                                "payout_deferred_retry height={} miners={} retry={} error=rpc_rejected: {}",
+                                                height,
+                                                payouts.len(),
+                                                retry,
+                                                err
+                                            );
+                                        }
+                                        continue;
+                                    }
+                                    let result = resp.get("result");
+                                    let tx_id = result
+                                        .and_then(|r| r.get("tx_id"))
                                         .and_then(|v| v.as_str())
-                                        .or_else(|| resp.as_str())
-                                        .unwrap_or("unknown")
-                                        .to_string();
-                                    info!(
-                                        "payout_deferred_success height={} miners={} tx_id={} retry={}",
-                                        height,
-                                        payouts.len(),
-                                        &tx_id[..tx_id.len().min(20)],
-                                        retry
-                                    );
-                                    queue.lock().unwrap().remove(0);
+                                        .or_else(|| result.and_then(|r| r.as_str()));
+                                    let accepted = result
+                                        .and_then(|r| r.get("accepted"))
+                                        .and_then(|v| v.as_bool())
+                                        .unwrap_or(true);
+                                    match (accepted, tx_id) {
+                                        (true, Some(tx_id)) => {
+                                            info!(
+                                                "payout_deferred_success height={} miners={} tx_id={} retry={}",
+                                                height,
+                                                payouts.len(),
+                                                &tx_id[..tx_id.len().min(20)],
+                                                retry
+                                            );
+                                            queue.lock().unwrap().remove(0);
+                                        }
+                                        _ => {
+                                            if retry % 10 == 0 || retry <= 3 {
+                                                info!(
+                                                    "payout_deferred_retry height={} miners={} retry={} error=unexpected_response: {}",
+                                                    height,
+                                                    payouts.len(),
+                                                    retry,
+                                                    resp
+                                                );
+                                            }
+                                        }
+                                    }
                                 }
                                 Err(e) => {
                                     if retry % 10 == 0 || retry <= 3 {
