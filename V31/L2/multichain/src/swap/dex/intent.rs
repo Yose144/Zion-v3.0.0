@@ -469,7 +469,7 @@ mod tests {
     #[test]
     fn test_bid_signature_roundtrip() {
         use crate::swap::dex::intent_engine::IntentEngine;
-        use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
+        use ed25519_dalek::{Signer, SigningKey};
         use rand::rngs::OsRng;
 
         let (zion, usdc) = zion_usdc();

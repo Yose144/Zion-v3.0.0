@@ -103,7 +103,17 @@ impl WithdrawalProcessor {
 
         {
             let db = self.db.lock().await;
-            db.record_withdrawal(&record)?;
+            if let Err(e) = db.record_withdrawal(&record) {
+                // The ledger was already debited — credit the amount back or
+                // the failure silently burns the user's balance (no record).
+                if let Err(ce) = self.ledger.credit(user_id, asset, amount).await {
+                    tracing::error!(
+                        "withdrawal {id}: record write failed ({e}) AND credit-back failed ({ce}) \
+                         — user {user_id} debited {amount} with no record"
+                    );
+                }
+                return Err(e);
+            }
         }
 
         Ok(id)
