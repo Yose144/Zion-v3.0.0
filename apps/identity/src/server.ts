@@ -39,20 +39,21 @@ const app = Fastify({
 
 const PORT = Number(process.env.PORT ?? 8096);
 const HOST = process.env.HOST ?? '0.0.0.0';
-const JWT_SECRET = process.env.JWT_SECRET ?? 'change-me-in-production';
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN ?? '.zionterranova.com';
 
 const jwtCfg = getJwtConfig();
-if (jwtCfg.mode === 'hs256' && process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  throw new Error('JWT_PRIVATE_KEY or JWT_SECRET must be set in production');
-}
+// Cookie signature priority: dedicated COOKIE_SECRET, then JWT_SECRET, then
+// the key-derived fallback (eddsa). All are real secrets — no literal
+// fallback exists anywhere in the process.
+const COOKIE_SECRET =
+  process.env.COOKIE_SECRET ?? process.env.JWT_SECRET ?? jwtCfg.cookieSecret;
 
 async function start() {
   // ── Plugins ─────────────────────────────────────────────────────
   await app.register(cookie, {
     // The cookie-signing secret is independent of the JWT algorithm —
     // HS256→EdDSA migration does not invalidate cookie signatures.
-    secret: JWT_SECRET,
+    secret: COOKIE_SECRET,
   });
 
   await app.register(cors, {

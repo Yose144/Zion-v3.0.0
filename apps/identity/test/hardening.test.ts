@@ -331,8 +331,9 @@ test('eddsa mode: JWKS exposes the public JWK only, legacy HS256 token still ver
 });
 
 test('hs256 mode: empty JWKS, legacy verifier disabled', async () => {
-  const saved = { priv: process.env.JWT_PRIVATE_KEY };
+  const saved = { priv: process.env.JWT_PRIVATE_KEY, secret: process.env.JWT_SECRET };
   delete process.env.JWT_PRIVATE_KEY;
+  process.env.JWT_SECRET = 'explicit-hs256-test-secret';
   resetJwtConfigCache();
   try {
     const cfg = getJwtConfig();
@@ -343,6 +344,22 @@ test('hs256 mode: empty JWKS, legacy verifier disabled', async () => {
     assert.equal(verifyLegacyToken(sign({ sub: 'u', jti: 'j' })), null);
   } finally {
     if (saved.priv !== undefined) process.env.JWT_PRIVATE_KEY = saved.priv;
+    if (saved.secret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = saved.secret;
+    resetJwtConfigCache();
+  }
+});
+
+test('no JWT_PRIVATE_KEY/JWT_SECRET → getJwtConfig throws (no default secret)', async () => {
+  const saved = { priv: process.env.JWT_PRIVATE_KEY, secret: process.env.JWT_SECRET };
+  delete process.env.JWT_PRIVATE_KEY;
+  delete process.env.JWT_SECRET;
+  resetJwtConfigCache();
+  try {
+    assert.throws(() => getJwtConfig(), /no default secret/);
+  } finally {
+    if (saved.priv !== undefined) process.env.JWT_PRIVATE_KEY = saved.priv;
+    if (saved.secret !== undefined) process.env.JWT_SECRET = saved.secret;
     resetJwtConfigCache();
   }
 });

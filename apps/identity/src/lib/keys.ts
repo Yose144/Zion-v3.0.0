@@ -26,6 +26,14 @@ export interface ZisJwtConfig {
   /** Public JWK for jwks.json (eddsa) or null (hs256 — nothing publishable). */
   jwk: Record<string, unknown> | null;
   kid: string;
+  /**
+   * Fallback secret for @fastify/cookie when neither COOKIE_SECRET nor
+   * JWT_SECRET is configured. In eddsa mode it is derived deterministically
+   * from the private key (cookie sigs stay valid across restarts without
+   * copying the JWT key into the env a second time); in hs256 mode it is the
+   * JWT secret itself. Never a hardcoded literal.
+   */
+  cookieSecret: string;
 }
 
 let cached: ZisJwtConfig | null = null;
@@ -77,6 +85,13 @@ function loadEdDsaConfig(privPemRaw: string): ZisJwtConfig {
       kid,
     },
     kid,
+    // Deterministic cookie-secret fallback derived from the private key.
+    // Domain-separated from the JWT signing use; the private key's blast
+    // radius already covers cookie forgery, so derivation adds no new risk.
+    cookieSecret: createHash('sha256')
+      .update('zis-cookie-v1\n')
+      .update(privPem)
+      .digest('hex'),
   };
 }
 
@@ -90,17 +105,23 @@ function loadHs256Config(secret: string): ZisJwtConfig {
     },
     jwk: null,
     kid: 'zis-hs256',
+    cookieSecret: secret,
   };
 }
 
 export function getJwtConfig(): ZisJwtConfig {
   if (!cached) {
     const priv = process.env.JWT_PRIVATE_KEY;
-    const secret = process.env.JWT_SECRET ?? 'change-me-in-production';
-    cached = priv ? loadEdDsaConfig(priv) : loadHs256Config(secret);
-    if (!priv && process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-      throw new Error('JWT_PRIVATE_KEY or JWT_SECRET must be set in production');
+    const secret = process.env.JWT_SECRET;
+    // No hardcoded fallback exists on purpose — a default signing secret
+    // silently produces forgeable sessions if it ever reaches production
+    // (IA-01 class). Dev/test environments must set JWT_SECRET explicitly.
+    if (!priv && !secret) {
+      throw new Error(
+        'JWT_PRIVATE_KEY or JWT_SECRET must be set — there is no default secret'
+      );
     }
+    cached = priv ? loadEdDsaConfig(priv) : loadHs256Config(secret as string);
   }
   return cached;
 }
