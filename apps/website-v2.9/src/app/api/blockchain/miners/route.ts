@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { buildMinersLeaderboard } from '@/lib/miners/helpers';
 
-const CACHE_TTL = 15_000;
+const CACHE_TTL = 60_000;
 let cache: { json: any; ts: number } | null = null;
 
 export async function GET(request: NextRequest) {

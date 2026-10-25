@@ -14,7 +14,7 @@ import { getBlockHistory } from '@/lib/block-history';
 type ChartType = 'difficulty' | 'blocktime' | 'hashrate' | 'emission' | 'blocksize' | 'txcount';
 
 // In-memory cache — charts are expensive (hundreds of RPC calls)
-const CACHE_TTL = 10_000; // 10 seconds
+const CACHE_TTL = 60_000; // 60 seconds — block cadence ~40s, charts don't need 10s freshness
 const chartCache = new Map<string, { json: any; ts: number }>();
 
 export async function GET(request: NextRequest) {
