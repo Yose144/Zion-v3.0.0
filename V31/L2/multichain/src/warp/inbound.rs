@@ -176,6 +176,7 @@ impl InboundReleaser {
                             | WarpStatus::AwaitingFinality
                             | WarpStatus::Validating
                             | WarpStatus::QuorumReached
+                            | WarpStatus::Executing
                     )
                 })
                 .collect()
@@ -189,9 +190,41 @@ impl InboundReleaser {
         Ok(())
     }
 
+    /// Resume a transfer stuck in `Executing` after a restart. The unlock
+    /// may already be accepted on L1 — with `dest_tx_hash` we simply finish
+    /// confirmation watching; without it we cannot tell whether the release
+    /// went out, so we refuse to re-submit (the L1 dedupes on burn_id, so a
+    /// manual resubmit is safe — but an auto-resubmit that raced the first
+    /// broadcast would only produce a replay rejection anyway).
+    async fn resume_executing(&mut self, transfer: &crate::warp::types::WarpTransfer) {
+        let id = transfer.id;
+        match &transfer.dest_tx_hash {
+            Some(tx_id) => {
+                info!("[inbound] resuming Executing transfer {} (tx {})", id, tx_id);
+                let tx_id = tx_id.clone();
+                self.confirm_l1(id, &tx_id).await;
+            }
+            None => {
+                self.warn_throttled(&format!(
+                    "[inbound] {} stuck Executing with no dest_tx_hash — unlock may or may \
+                     not have broadcast; operator recovery via zion-bridge-unlock",
+                    id
+                ));
+            }
+        }
+    }
+
     /// Advance one inbound transfer as far as possible this poll.
     async fn step(&mut self, transfer: &crate::warp::types::WarpTransfer) -> WarpResult<()> {
         let id = transfer.id;
+
+        // Executing = already released (or possibly released) — resume, do
+        // not re-drive the finality/quorum path.
+        if transfer.status == WarpStatus::Executing {
+            self.resume_executing(transfer).await;
+            return Ok(());
+        }
+
         let source_tx = match &transfer.source_tx_hash {
             Some(h) => h.clone(),
             None => {
