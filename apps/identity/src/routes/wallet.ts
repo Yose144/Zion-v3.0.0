@@ -45,17 +45,21 @@ const DeriveSchema = z.object({
   purpose: z.enum(['deposit', 'withdraw', 'linked']).default('deposit'),
 });
 
+// Amounts are integer base units (flowers/sats) — BigInt() throws on
+// non-numeric input, which must surface as 400, not an unhandled 500.
+const AmountString = z.string().regex(/^\d+$/, 'amount must be integer base units');
+
 const SwapSchema = z.object({
   from: z.string().min(1),
   to: z.string().min(1),
-  amount: z.string().min(1),
-  minAmountOut: z.string().optional(),
+  amount: AmountString,
+  minAmountOut: AmountString.optional(),
   recipient: z.string().optional(),
 });
 
 const WithdrawSchema = z.object({
   asset: z.string().min(1),
-  amount: z.string().min(1),
+  amount: AmountString,
   recipient: z.string().min(1),
 });
 
@@ -222,9 +226,17 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(502).send(l2Error(err));
     }
 
-    // Cache the order in the DB.
+    // Cache the order in the DB. orderId is globally unique but only
+    // server-generated — if it collides with another user's cached order,
+    // skip the write rather than mutating their metadata.
     const orderId = result.orderId ?? result.order_id ?? result.id ?? result.txHash ?? `unknown-${Date.now()}`;
-    const order = await app.prisma.multichainOrder.upsert({
+    const existing = await app.prisma.multichainOrder.findUnique({
+      where: { orderId: String(orderId) },
+      select: { userId: true },
+    });
+    const order = existing && existing.userId !== payload.sub
+      ? existing
+      : await app.prisma.multichainOrder.upsert({
       where: { orderId: String(orderId) },
       update: {
         fromAsset: from,
@@ -269,6 +281,12 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
         const orderId = o.orderId ?? o.order_id ?? o.id;
         if (!orderId) continue;
         try {
+          const existing = await app.prisma.multichainOrder.findUnique({
+            where: { orderId: String(orderId) },
+            select: { userId: true },
+          });
+          // Never overwrite another user's cached order on id collision.
+          if (existing && existing.userId !== payload.sub) continue;
           await app.prisma.multichainOrder.upsert({
             where: { orderId: String(orderId) },
             update: {
