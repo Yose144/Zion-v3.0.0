@@ -129,7 +129,7 @@ impl JournalLedger {
 }
 
 /// Generate a unique journal entry id (ULID-style timestamp + random suffix).
-fn new_entry_id() -> String {
+pub(crate) fn new_entry_id() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
     let ts = SystemTime::now()
         .duration_since(UNIX_EPOCH)

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use rusqlite::{Connection, Row};
+use rusqlite::{Connection, OptionalExtension, Row};
 use zion_l1_types::{Address, Amount, ChainId};
 
 use crate::audit::{AuditLog, AuditResult};
@@ -1079,6 +1079,82 @@ impl Db {
 
         tx.commit()?;
         Ok(())
+    }
+
+    /// Atomically credit `amount` to `user_id`/`asset_key` AND mark the deposit
+    /// `deposit_id` credited — one transaction, so a failure rolls back the
+    /// ledger mutation and the deposit stays 'pending' for a safe retry
+    /// (prevents the credit-then-record crash window that double-credited).
+    /// Only transitions 'pending' → 'credited': re-running on an
+    /// already-credited deposit is a no-op (idempotent).
+    /// `confirmations` is folded in with MAX so a retry never regresses it.
+    pub fn atomic_credit_and_mark_deposit_credited(
+        &mut self,
+        deposit_id: &str,
+        user_id: &str,
+        asset_key: &str,
+        amount: &str,
+        entry_id: &str,
+        reference_id: Option<&str>,
+        confirmations: i64,
+    ) -> MultichainResult<bool> {
+        let tx = self.conn.transaction()?;
+        let now = chrono::Utc::now().to_rfc3339();
+
+        // Guard: only a 'pending' deposit may be credited. If the row is
+        // already credited (crash/retry after the tx committed), do nothing.
+        let status: Option<String> = tx
+            .query_row(
+                "SELECT status FROM deposits WHERE id = ?1",
+                rusqlite::params![deposit_id],
+                |r| r.get(0),
+            )
+            .optional()?;
+        match status.as_deref() {
+            Some("pending") => {}
+            Some("credited") => {
+                tx.rollback()?;
+                return Ok(false); // already credited — idempotent no-op
+            }
+            other => {
+                tx.rollback()?;
+                return Err(MultichainError::Internal(format!(
+                    "deposit {deposit_id} in unexpected state {other:?} — refusing credit"
+                )));
+            }
+        }
+
+        let amount_val = amount
+            .parse::<u128>()
+            .map_err(|e| MultichainError::Internal(format!("invalid credit amount: {e}")))?;
+
+        tx.execute(
+            r#"
+            INSERT INTO ledger_entries
+            (id, user_id, asset_key, entry_type, amount, reason, reference_id, created_at)
+            VALUES (?1, ?2, ?3, 'credit', ?4, 'deposit', ?5, ?6)
+            "#,
+            rusqlite::params![entry_id, user_id, asset_key, amount, reference_id, now],
+        )?;
+
+        let current = read_balance(&tx, user_id, asset_key)?;
+        let new_balance = current.saturating_add(amount_val);
+        tx.execute(
+            r#"
+            INSERT OR REPLACE INTO wallet_balances
+            (user_id, asset_key, amount, updated_at)
+            VALUES (?1, ?2, ?3, ?4)
+            "#,
+            rusqlite::params![user_id, asset_key, new_balance.to_string(), now],
+        )?;
+
+        tx.execute(
+            "UPDATE deposits SET status = 'credited', credited_at = ?2, confirmations = MAX(confirmations, ?3) WHERE id = ?1",
+            rusqlite::params![deposit_id, now, confirmations],
+        )?;
+
+        tx.commit()?;
+        Ok(true)
     }
 
     // ------------------------------------------------------------------------

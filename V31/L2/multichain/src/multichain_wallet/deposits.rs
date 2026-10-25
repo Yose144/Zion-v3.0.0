@@ -24,7 +24,9 @@ use crate::multichain_wallet::types::{
 pub struct DepositWatcher {
     db: Arc<Mutex<Db>>,
     adapters: Arc<ChainAdapterRegistry>,
-    ledger: WalletLedger,
+    /// Kept for constructor/API compatibility; crediting now goes through
+    /// `Db::atomic_credit_and_mark_deposit_credited` for crash atomicity.
+    _ledger: WalletLedger,
     poll_interval: Duration,
     finality: HashMap<ChainId, u64>,
 }
@@ -56,7 +58,7 @@ impl DepositWatcher {
         Self {
             db,
             adapters,
-            ledger,
+            _ledger: ledger,
             poll_interval: Duration::from_secs(30),
             finality,
         }
@@ -149,54 +151,63 @@ impl DepositWatcher {
                 return Ok(());
             }
 
-            let mut updated = existing.clone();
-            updated.confirmations = confirmations;
-
+            // Atomic: journal credit + balance bump + status→credited in one
+            // transaction. If it fails, the deposit stays 'pending' and the
+            // next poll retries — no credit-then-record double-credit window.
             if confirmations >= finality && existing.status == DepositStatus::Pending {
-                self.ledger
-                    .credit(&wallet_address.user_id, &asset, event.amount)
-                    .await?;
-                updated.status = DepositStatus::Credited;
-                updated.credited_at = Some(chrono::Utc::now());
+                let mut db = self.db.lock().await;
+                db.atomic_credit_and_mark_deposit_credited(
+                    &deposit_id,
+                    &wallet_address.user_id,
+                    &asset_key,
+                    &event.amount.0.to_string(),
+                    &crate::multichain_wallet::journal::new_entry_id(),
+                    Some(&deposit_id),
+                    confirmations as i64,
+                )?;
+            } else {
+                let mut updated = existing.clone();
+                updated.confirmations = confirmations;
+                let db = self.db.lock().await;
+                db.record_deposit(&updated)?;
             }
-
-            let db = self.db.lock().await;
-            db.record_deposit(&updated)?;
             return Ok(());
         }
 
-        // New deposit observation.
-        let status = if confirmations >= finality {
-            self.ledger
-                .credit(&wallet_address.user_id, &asset, event.amount)
-                .await?;
-            DepositStatus::Credited
-        } else {
-            DepositStatus::Pending
-        };
-
-        let credited_at = if status == DepositStatus::Credited {
-            Some(chrono::Utc::now())
-        } else {
-            None
-        };
-
+        // New deposit observation — persist the durable record FIRST (status
+        // 'pending'), then atomically credit if already final. A crash
+        // between the two leaves a pending row the next poll picks up.
         let deposit = DepositRecord {
-            id: deposit_id,
+            id: deposit_id.clone(),
             user_id: wallet_address.user_id,
             chain,
             chain_id: wallet_address.chain_id.clone(),
             tx_hash: event.tx_hash.to_hex(),
-            asset_key,
+            asset_key: asset_key.clone(),
             amount: event.amount,
             confirmations,
-            status,
+            status: DepositStatus::Pending,
             created_at: chrono::Utc::now(),
-            credited_at,
+            credited_at: None,
         };
 
-        let db = self.db.lock().await;
-        db.record_deposit(&deposit)?;
+        {
+            let db = self.db.lock().await;
+            db.record_deposit(&deposit)?;
+        }
+
+        if confirmations >= finality {
+            let mut db = self.db.lock().await;
+            db.atomic_credit_and_mark_deposit_credited(
+                &deposit_id,
+                &deposit.user_id,
+                &asset_key,
+                &event.amount.0.to_string(),
+                &crate::multichain_wallet::journal::new_entry_id(),
+                Some(&deposit_id),
+                confirmations as i64,
+            )?;
+        }
         Ok(())
     }
 
@@ -336,6 +347,126 @@ mod tests {
         let db = db.lock().await;
         let deposits = db.load_pending_deposits().unwrap();
         assert!(deposits.iter().all(|d| d.status == DepositStatus::Credited));
+    }
+
+    /// Regression: replaying the same observed deposit (e.g. after a restart
+    /// or a credit→record crash) must not double-credit the ledger.
+    #[tokio::test]
+    async fn deposit_replay_is_idempotent() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+
+        let user_id = "user1";
+        let chain = ChainId::ZionL1;
+        let address = Address::new(chain, vec![], "zion1replay").unwrap();
+        let wallet_address = WalletAddress {
+            address: address.clone(),
+            user_id: user_id.to_string(),
+            chain,
+            chain_id: None,
+            purpose: AddressPurpose::Deposit,
+            public_key: None,
+            derivation_path: "m/44'/9999'/0'/0/0".to_string(),
+            is_external: false,
+            created_at: chrono::Utc::now(),
+        };
+        {
+            let db = db.lock().await;
+            db.save_wallet_address(&wallet_address).unwrap();
+        }
+
+        let event = crate::chain::adapter::DepositEvent {
+            chain,
+            tx_hash: Hash::from_hex(&"1".repeat(64)).unwrap(),
+            recipient: address,
+            amount: Amount::new(500_000),
+            memo: None,
+            confirmations: 5,
+            asset: None,
+        };
+
+        let watcher = DepositWatcher::new(
+            Arc::clone(&db),
+            Arc::new(ChainAdapterRegistry::new()),
+            ledger.clone(),
+        );
+
+        // First observation credits; replays must not.
+        for _ in 0..3 {
+            watcher.process_event(chain, &event).await.unwrap();
+        }
+
+        let asset = Asset::native(chain, "ZION", 8, "ZION");
+        assert_eq!(ledger.balance(user_id, &asset).await.unwrap().0, 500_000);
+
+        let db = db.lock().await;
+        let deposits = db.load_deposits_for_user(user_id).unwrap();
+        assert_eq!(deposits.len(), 1);
+        assert_eq!(deposits[0].status, DepositStatus::Credited);
+        let entries = db.load_ledger_entries(user_id, 10).unwrap();
+        assert_eq!(entries.len(), 1);
+    }
+
+    /// Pending → final transition credits exactly once; a post-crash retry
+    /// (record persisted, credit applied) does not duplicate the credit.
+    #[tokio::test]
+    async fn pending_deposit_credits_once_at_finality() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+
+        let user_id = "user2";
+        let chain = ChainId::ZionL1;
+        let address = Address::new(chain, vec![], "zion1pend").unwrap();
+        let wallet_address = WalletAddress {
+            address: address.clone(),
+            user_id: user_id.to_string(),
+            chain,
+            chain_id: None,
+            purpose: AddressPurpose::Deposit,
+            public_key: None,
+            derivation_path: "m/44'/9999'/0'/0/0".to_string(),
+            is_external: false,
+            created_at: chrono::Utc::now(),
+        };
+        {
+            let db = db.lock().await;
+            db.save_wallet_address(&wallet_address).unwrap();
+        }
+
+        let tx_hash = Hash::from_hex(&"2".repeat(64)).unwrap();
+        let mut event = crate::chain::adapter::DepositEvent {
+            chain,
+            tx_hash,
+            recipient: address,
+            amount: Amount::new(250_000),
+            memo: None,
+            confirmations: 0,
+            asset: None,
+        };
+
+        let watcher = DepositWatcher::new(
+            Arc::clone(&db),
+            Arc::new(ChainAdapterRegistry::new()),
+            ledger.clone(),
+        );
+        let asset = Asset::native(chain, "ZION", 8, "ZION");
+
+        // Not final yet → pending, no credit.
+        watcher.process_event(chain, &event).await.unwrap();
+        assert_eq!(ledger.balance(user_id, &asset).await.unwrap().0, 0);
+
+        // Reaches finality (ZionL1 finality = 1) → credited once.
+        event.confirmations = 1;
+        watcher.process_event(chain, &event).await.unwrap();
+        assert_eq!(ledger.balance(user_id, &asset).await.unwrap().0, 250_000);
+
+        // Retry after finality → still exactly one credit entry.
+        watcher.process_event(chain, &event).await.unwrap();
+        assert_eq!(ledger.balance(user_id, &asset).await.unwrap().0, 250_000);
+
+        let db = db.lock().await;
+        let entries = db.load_ledger_entries(user_id, 10).unwrap();
+        assert_eq!(entries.len(), 1);
     }
 }
 
