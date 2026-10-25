@@ -10,7 +10,6 @@ use crate::warp::router::WarpRouter;
 use crate::warp::types::WarpStatus;
 use crate::warp::validator::WarpValidatorSet;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
@@ -19,12 +18,19 @@ use tracing::{debug, error, info};
 /// How often to check for executable transfers (seconds)
 const EXECUTOR_POLL_SECS: u64 = 10;
 
+/// Deterministic per-transfer nonce: first 8 bytes of the transfer UUID.
+/// Re-issuing the same mint (resume/retry) must produce an identical
+/// WarpMessage — a process-counter nonce would give every attempt a
+/// different msg_hash and defeat on-chain dedup.
+fn deterministic_nonce(transfer_id: uuid::Uuid) -> u64 {
+    u64::from_le_bytes(transfer_id.as_bytes()[..8].try_into().unwrap())
+}
+
 /// Outbound executor that processes transfers ready for execution
 pub struct OutboundExecutor {
     router: Arc<Mutex<WarpRouter>>,
     validators: Arc<Mutex<WarpValidatorSet>>,
     adapters: HashMap<String, Box<dyn ChainAdapter>>,
-    nonce_counter: AtomicU64,
 }
 
 impl OutboundExecutor {
@@ -64,7 +70,6 @@ impl OutboundExecutor {
             router,
             validators,
             adapters,
-            nonce_counter: AtomicU64::new(0),
         }
     }
 
@@ -81,28 +86,25 @@ impl OutboundExecutor {
         }
     }
 
-    /// Single poll iteration: find QuorumReached transfers and execute them
+    /// Single poll iteration: execute QuorumReached transfers and resume
+    /// Executing transfers stranded by a restart (a mint already broadcast
+    /// still needs its confirmations watched).
     async fn poll_once(&self) -> WarpResult<()> {
-        // Collect transfer IDs that are ready for execution
-        let to_execute: Vec<_> = {
+        let (to_execute, to_resume) = {
             let router = self.router.lock().await;
-            router
-                .list_pending()
-                .into_iter()
+            let pending = router.list_pending();
+            let to_execute: Vec<_> = pending
+                .iter()
                 .filter(|t| t.status == WarpStatus::QuorumReached)
                 .map(|t| t.id)
-                .collect()
+                .collect();
+            let to_resume: Vec<_> = pending
+                .iter()
+                .filter(|t| t.status == WarpStatus::Executing)
+                .map(|t| t.id)
+                .collect();
+            (to_execute, to_resume)
         };
-
-        if to_execute.is_empty() {
-            debug!("[Executor] No transfers in QuorumReached state");
-            return Ok(());
-        }
-
-        info!(
-            "[Executor] Found {} transfer(s) ready for execution",
-            to_execute.len()
-        );
 
         for transfer_id in to_execute {
             if let Err(e) = self.execute_transfer(transfer_id).await {
@@ -110,18 +112,75 @@ impl OutboundExecutor {
                     "[Executor] Failed to execute transfer {}: {}",
                     transfer_id, e
                 );
+                // Leave the transfer in Executing for operator recovery —
+                // a mint may already be on-chain, and marking Failed would
+                // record a false terminal state.
+            }
+        }
 
-                // Mark as failed
-                let mut router = self.router.lock().await;
-                let _ = router.advance_transfer(transfer_id, WarpStatus::Failed);
+        for transfer_id in to_resume {
+            if let Err(e) = self.resume_transfer(transfer_id).await {
+                error!(
+                    "[Executor] Failed to resume transfer {}: {}",
+                    transfer_id, e
+                );
             }
         }
 
         Ok(())
     }
 
+    /// Resume a transfer stuck in `Executing` (crash after the state was
+    /// persisted). If `dest_tx_hash` is set, the mint was broadcast — just
+    /// finish watching confirmations. If it is not set we cannot tell
+    /// whether the mint went out, so we refuse to re-issue it (a stranded
+    /// transfer is operator-recoverable; a double-mint is not).
+    async fn resume_transfer(&self, transfer_id: uuid::Uuid) -> WarpResult<()> {
+        let (dest_chain_name, tx_hash) = {
+            let router = self.router.lock().await;
+            let transfer = router
+                .get_transfer(&transfer_id)
+                .ok_or_else(|| WarpError::TransferNotFound(transfer_id.to_string()))?;
+            (transfer.dest_chain.name.clone(), transfer.dest_tx_hash.clone())
+        };
+
+        let Some(tx_hash) = tx_hash else {
+            error!(
+                "[Executor] Transfer {} stuck in Executing with no dest_tx_hash — \
+                 mint may or may not have broadcast; requires operator recovery",
+                transfer_id
+            );
+            return Ok(());
+        };
+
+        let adapter = self
+            .adapters
+            .get(&dest_chain_name)
+            .ok_or_else(|| WarpError::UnsupportedChain(dest_chain_name.clone()))?;
+
+        self.wait_for_confirmations(transfer_id, adapter.as_ref(), &tx_hash)
+            .await?;
+
+        let mut router = self.router.lock().await;
+        router.advance_transfer(transfer_id, WarpStatus::Completed)?;
+        info!(
+            "[Executor] Resumed transfer {} completed on {}",
+            transfer_id, dest_chain_name
+        );
+        Ok(())
+    }
+
     /// Execute a single outbound transfer
     async fn execute_transfer(&self, transfer_id: uuid::Uuid) -> WarpResult<()> {
+        // Claim the transfer BEFORE the irreversible mint: persist the
+        // QuorumReached->Executing transition first so a crash can never
+        // re-enter this path (poll_once only re-drives QuorumReached, and
+        // Executing transfers go through resume_transfer).
+        {
+            let mut router = self.router.lock().await;
+            router.advance_transfer(transfer_id, WarpStatus::Executing)?;
+        }
+
         // Get transfer details and sign the WarpMessage
         let (transfer, warp_message, signatures) = {
             let router = self.router.lock().await;
@@ -130,7 +189,11 @@ impl OutboundExecutor {
                 .ok_or_else(|| WarpError::TransferNotFound(transfer_id.to_string()))?
                 .clone();
 
-            // Build WarpMessage for signing
+            // Deterministic message per transfer: nonce and timestamp are
+            // derived from the transfer itself (not a process counter or
+            // wall clock) so any re-issued mint produces the SAME
+            // warp_message_hash — the destination contract's dedup on
+            // msg_hash is the last line of defense against double-mint.
             let warp_message = WarpMessage {
                 transfer_id,
                 source_chain: transfer.source_chain.name.clone(),
@@ -138,8 +201,8 @@ impl OutboundExecutor {
                 recipient: transfer.recipient.clone(),
                 amount_flowers: transfer.amount_flowers,
                 fee_flowers: transfer.fee_flowers,
-                nonce: self.nonce_counter.fetch_add(1, Ordering::SeqCst),
-                timestamp: chrono::Utc::now().timestamp() as u64,
+                nonce: deterministic_nonce(transfer_id),
+                timestamp: transfer.created_at.timestamp() as u64,
                 deposit_proof_hash: transfer.source_tx_hash.clone().unwrap_or_default(),
             };
 
@@ -209,13 +272,11 @@ impl OutboundExecutor {
 
         let tx_hash = adapter.execute_mint(&mint_instruction).await?;
 
-        // Update transfer status to Executing
+        // Persist the broadcast tx hash (Executing was already set before
+        // the mint — resume_transfer picks up from here after a restart).
         {
             let mut router = self.router.lock().await;
-            router.advance_transfer(transfer_id, WarpStatus::Executing)?;
-            if let Some(t) = router.get_transfer_mut(&transfer_id) {
-                t.dest_tx_hash = Some(tx_hash.clone());
-            }
+            router.set_dest_tx(&transfer_id, tx_hash.clone());
         }
 
         // Wait for confirmations on destination chain
@@ -289,6 +350,61 @@ mod tests {
                 validator_set.clone(),
             ))),
             validator_set,
+        );
+    }
+
+    #[test]
+    fn deterministic_nonce_is_stable_per_transfer() {
+        let id = uuid::Uuid::new_v4();
+        assert_eq!(deterministic_nonce(id), deterministic_nonce(id));
+        assert_ne!(deterministic_nonce(id), deterministic_nonce(uuid::Uuid::new_v4()));
+    }
+
+    /// A transfer stuck in `Executing` with no dest_tx_hash (crash between
+    /// the state transition and the mint broadcast) must NOT be re-issued —
+    /// the mint may already be on-chain. It stays Executing for the
+    /// operator instead of risking a double-mint.
+    #[tokio::test]
+    async fn resume_executing_without_tx_hash_stays_for_operator() {
+        let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(3)));
+        let router = Arc::new(Mutex::new(WarpRouter::new(
+            crate::warp::registry::ChainRegistry::with_defaults(),
+            crate::warp::fees::FeeEngine::with_defaults(),
+            validator_set.clone(),
+        )));
+
+        let id = {
+            let mut r = router.lock().await;
+            let proof = crate::warp::protocol::DepositProof {
+                tx_hash: "tx_resume".into(),
+                block_height: 1,
+                block_hash: "b".into(),
+                sender: "zion1sender".into(),
+                amount_flowers: 1_000_000,
+                memo: "WARP:1:base:0xRecipient".into(),
+                confirmations: 60,
+                burn_id: None,
+            };
+            let id = r.initiate_outbound(proof).unwrap();
+            for s in [
+                WarpStatus::AwaitingFinality,
+                WarpStatus::Validating,
+                WarpStatus::QuorumReached,
+                WarpStatus::Executing,
+            ] {
+                r.advance_transfer(id, s).unwrap();
+            }
+            id
+        };
+
+        let executor = OutboundExecutor::new(router.clone(), validator_set);
+        executor.resume_transfer(id).await.unwrap();
+
+        let r = router.lock().await;
+        assert_eq!(
+            r.get_transfer(&id).unwrap().status,
+            WarpStatus::Executing,
+            "no-tx-hash Executing transfer must remain for operator recovery"
         );
     }
 }
