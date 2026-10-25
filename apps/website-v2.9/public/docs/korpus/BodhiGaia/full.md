@@ -221,7 +221,7 @@ Toho večera zasadili společně první strom — olivu, protože vydrží sucho
 
 Tesař vyřezal do kůlu u brány tři znaky: vlnu, motyku a olivový list. Pod ně napsal: **Base Camp**.
 
-O mnoho příběhů později — v jiné knize této řady — došla k téhle zátoce jiná poutnice: dítě s lucernou, které neslo alabastrovou nádobu s druhým semínkem. Co se stalo na okraji záhonu, vypráví [epilog *Příběhu Růže*](../Ruze/Epilog-Zahrada-Genesis.md) a [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) této knihy — a celá ta scéna je **MÝTUS**, ne záznam skutečné události.
+O mnoho příběhů později — v jiné knize této řady — došla k téhle zátoce jiná poutnice: dítě s lucernou, které neslo alabastrovou nádobu s druhým semínkem. Co se stalo na okraji záhonu, vypráví [epilog *Příběhu Růže*](./12-Ruze-v-Zahrade-Genesis.md) a [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) této knihy — a celá ta scéna je **MÝTUS**, ne záznam skutečné události.
 
 ---
 
@@ -298,7 +298,7 @@ Sucho a nedostatek vody (vrt + déšť + šedá voda), **letní požáry** (prot
 | **Semenná knihovna** | **STAVBA** | Web `/terranova/genesis` uvádí *Seed Library — active*; dokument: „neformální výměna" → katalog. | Katalog odrůd, partneři výměny (Banco Português de Germoplasma Vegetal), první výměna s Dharma Temple (cíl 2028). |
 | **Ekonomika: 50 000 EUR / 120 nocí** | **HYPOTÉZA** | Break-even a příjmový model v §4 komunitního dokumentu; marketingové persony, kanály a sezónní ceník (§11); EU granty LEADER / Erasmus+ / LIFE ve fázi rešerše (§12). | Skutečné účetnictví po první sezóně; žádná z grantových žádostí není podána. |
 | **Ana, olivový list na kůlu** | **MÝTUS** | Postava vytvořená pro tuto knihu; motiv „biologický čas" je citát z komunitního dokumentu a webu. | — |
-| **Lumi a Ana sázejí druhé semínko růže** | **MÝTUS** | Epilog [`Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna, ne událost. | — |
+| **Lumi a Ana sázejí druhé semínko růže** | **MÝTUS** | Epilog [`Ruze/Epilog-Zahrada-Genesis.md`](./12-Ruze-v-Zahrade-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna, ne událost. | — |
 | **Fyzická růže zasazená v Sabacheiře** | **NEDOLOŽENO** | Žádná evidence výsadby neexistuje; návrh [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) je **HORIZONT / NEZAHÁJENO**. | Splnění Gate A–D + Day 0 packet podle pilotního rámce. |
 
 > **Známý rozpor k opravě:** lokalita Genesis Garden byla historicky uváděna jako *Algarve* i jako *Střední Evropa* — od 2026-10-07 je sjednocena na **Sabacheira, concelho Tomar** (freguesie mezi Fátimou a Tomarem; viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
@@ -1099,7 +1099,7 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Bodhi Gaia = „probuzená Země". | **MÝTUS** | Obraz z návrhu Dharma Temple, rozšířený na L5. Není nábožensky závazný. |
 | Merkaba, 7 čaker, piko, tatau, wayfinding, Přemysl/Libuše, Zlatá bula, sůl smlouvy, Ráma/Sítá, Sri Maha Bodhi, Ráma Setu, akáša, prema/bhakti. | **MÝTUS / kulturní fakt** | Kulturní tradice jsou citovány s úctou; použití pro L5 vyžaduje kulturní review (třída E), zejména polynéské, české, hinduistické a buddhistické prvky — souhlas místních komunit a citlivé zacházení s posvátnými texty a náboženskými objekty. |
 | Yesod ↔ L5, slib péče. | **MÝTUS** | `docs/Zohar/01-SEFIROT-VRSTVY.md`. |
-| Lumi, Ana a zasazení druhého semínka u Nabão. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
+| Lumi, Ana a zasazení druhého semínka u Nabão. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](./12-Ruze-v-Zahrade-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
 
 ---
 
@@ -1691,7 +1691,7 @@ Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stan
 
 | Prvek příběhu | Stav | Co je ověřitelné | Co ještě chybí |
 |---|---|---|---|
-| **Epilog a scéna: Lumi, Ana, semínko u sudu** | **MÝTUS** | [`Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md); tato kapitola — literární bajka, žádná událost. | — |
+| **Epilog a scéna: Lumi, Ana, semínko u sudu** | **MÝTUS** | [`Ruze/Epilog-Zahrada-Genesis.md`](./12-Ruze-v-Zahrade-Genesis.md); tato kapitola — literární bajka, žádná událost. | — |
 | **Zahrada Genesis jako projekt** | **STAVBA** | Stejná evidence jako [Kapitola 3](./03-Zahrada-Genesis.md): `public/V3/L5/docs/COMMUNITIES/genesis-garden.md` (Fáze 0 ✅, Fáze 1 🟡), web `/terranova/genesis`, OASIS panel *Active*. | Pozemek, entita, nezávislé ověření — stejné jako kap. 3. |
 | **OASIS svět `GENESIS_GARDEN` obsahuje Rose lore** | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `apps/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH), ne evidence na místě. | Deploy a ověření veřejného klienta; napojení metadat na L5 API je HORIZONT (kap. 7). |
 | **Fyzická růže byla v Sabacheiře zasazena** | **NEDOLOŽENO** | Žádný Day 0 packet, foto s původem, svědek ani záznam neexistuje; pilot dokument to sám potvrzuje. | Splnění Gate A–D + kompletní Day 0 packet. |

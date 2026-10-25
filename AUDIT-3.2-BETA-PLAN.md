@@ -43,7 +43,7 @@
 - ZIS/SSO na všech portálech (`.zionterranova.com` cookie)
 
 ### 1.8 Zbylé nálezy (neblokující)
-- Dead links 383: ~200 interních refs (muted = správně) + ~170 content gaps → editorial pass (vynecháno záměrně)
+- Dead links 383->370: ~200 interních refs (muted = správně) + ~170 content gaps → editorial pass (vynecháno záměrně)
 - `L4data/img/OasisMaitreya.png` untracked — čeká umístění
 - i18n ×3 impl + Footer unifikace = nice-to-have
 - Root `Cargo.toml` = `3.1.0-alpha.2` = **jediný alpha marker v repu** (meta-package stub)

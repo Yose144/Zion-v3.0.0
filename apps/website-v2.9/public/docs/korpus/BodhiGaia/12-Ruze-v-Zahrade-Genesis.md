@@ -76,7 +76,7 @@ Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stan
 
 | Prvek příběhu | Stav | Co je ověřitelné | Co ještě chybí |
 |---|---|---|---|
-| **Epilog a scéna: Lumi, Ana, semínko u sudu** | **MÝTUS** | [`Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md); tato kapitola — literární bajka, žádná událost. | — |
+| **Epilog a scéna: Lumi, Ana, semínko u sudu** | **MÝTUS** | [`Ruze/Epilog-Zahrada-Genesis.md`](./12-Ruze-v-Zahrade-Genesis.md); tato kapitola — literární bajka, žádná událost. | — |
 | **Zahrada Genesis jako projekt** | **STAVBA** | Stejná evidence jako [Kapitola 3](./03-Zahrada-Genesis.md): `public/V3/L5/docs/COMMUNITIES/genesis-garden.md` (Fáze 0 ✅, Fáze 1 🟡), web `/terranova/genesis`, OASIS panel *Active*. | Pozemek, entita, nezávislé ověření — stejné jako kap. 3. |
 | **OASIS svět `GENESIS_GARDEN` obsahuje Rose lore** | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `apps/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH), ne evidence na místě. | Deploy a ověření veřejného klienta; napojení metadat na L5 API je HORIZONT (kap. 7). |
 | **Fyzická růže byla v Sabacheiře zasazena** | **NEDOLOŽENO** | Žádný Day 0 packet, foto s původem, svědek ani záznam neexistuje; pilot dokument to sám potvrzuje. | Splnění Gate A–D + kompletní Day 0 packet. |

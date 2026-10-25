@@ -695,5 +695,5 @@ Welcome home. 🏡
 
 ---
 
-*Download PDF (coming soon): [whitepaper.pdf](./whitepaper.pdf)*  
+*Download PDF (coming soon): whitepaper.pdf*  
 *Česká verze: [README_CZ.md](./README_CZ.md)*

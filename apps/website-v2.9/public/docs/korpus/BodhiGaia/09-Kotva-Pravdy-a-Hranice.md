@@ -75,7 +75,7 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Bodhi Gaia = „probuzená Země". | **MÝTUS** | Obraz z návrhu Dharma Temple, rozšířený na L5. Není nábožensky závazný. |
 | Merkaba, 7 čaker, piko, tatau, wayfinding, Přemysl/Libuše, Zlatá bula, sůl smlouvy, Ráma/Sítá, Sri Maha Bodhi, Ráma Setu, akáša, prema/bhakti. | **MÝTUS / kulturní fakt** | Kulturní tradice jsou citovány s úctou; použití pro L5 vyžaduje kulturní review (třída E), zejména polynéské, české, hinduistické a buddhistické prvky — souhlas místních komunit a citlivé zacházení s posvátnými texty a náboženskými objekty. |
 | Yesod ↔ L5, slib péče. | **MÝTUS** | `docs/Zohar/01-SEFIROT-VRSTVY.md`. |
-| Lumi, Ana a zasazení druhého semínka u Nabão. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
+| Lumi, Ana a zasazení druhého semínka u Nabão. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](./12-Ruze-v-Zahrade-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
 
 ---
 

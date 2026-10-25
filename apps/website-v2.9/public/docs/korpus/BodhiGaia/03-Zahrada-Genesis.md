@@ -29,7 +29,7 @@ Toho večera zasadili společně první strom — olivu, protože vydrží sucho
 
 Tesař vyřezal do kůlu u brány tři znaky: vlnu, motyku a olivový list. Pod ně napsal: **Base Camp**.
 
-O mnoho příběhů později — v jiné knize této řady — došla k téhle zátoce jiná poutnice: dítě s lucernou, které neslo alabastrovou nádobu s druhým semínkem. Co se stalo na okraji záhonu, vypráví [epilog *Příběhu Růže*](../Ruze/Epilog-Zahrada-Genesis.md) a [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) této knihy — a celá ta scéna je **MÝTUS**, ne záznam skutečné události.
+O mnoho příběhů později — v jiné knize této řady — došla k téhle zátoce jiná poutnice: dítě s lucernou, které neslo alabastrovou nádobu s druhým semínkem. Co se stalo na okraji záhonu, vypráví [epilog *Příběhu Růže*](./12-Ruze-v-Zahrade-Genesis.md) a [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) této knihy — a celá ta scéna je **MÝTUS**, ne záznam skutečné události.
 
 ---
 
@@ -106,7 +106,7 @@ Sucho a nedostatek vody (vrt + déšť + šedá voda), **letní požáry** (prot
 | **Semenná knihovna** | **STAVBA** | Web `/terranova/genesis` uvádí *Seed Library — active*; dokument: „neformální výměna" → katalog. | Katalog odrůd, partneři výměny (Banco Português de Germoplasma Vegetal), první výměna s Dharma Temple (cíl 2028). |
 | **Ekonomika: 50 000 EUR / 120 nocí** | **HYPOTÉZA** | Break-even a příjmový model v §4 komunitního dokumentu; marketingové persony, kanály a sezónní ceník (§11); EU granty LEADER / Erasmus+ / LIFE ve fázi rešerše (§12). | Skutečné účetnictví po první sezóně; žádná z grantových žádostí není podána. |
 | **Ana, olivový list na kůlu** | **MÝTUS** | Postava vytvořená pro tuto knihu; motiv „biologický čas" je citát z komunitního dokumentu a webu. | — |
-| **Lumi a Ana sázejí druhé semínko růže** | **MÝTUS** | Epilog [`Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna, ne událost. | — |
+| **Lumi a Ana sázejí druhé semínko růže** | **MÝTUS** | Epilog [`Ruze/Epilog-Zahrada-Genesis.md`](./12-Ruze-v-Zahrade-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna, ne událost. | — |
 | **Fyzická růže zasazená v Sabacheiře** | **NEDOLOŽENO** | Žádná evidence výsadby neexistuje; návrh [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) je **HORIZONT / NEZAHÁJENO**. | Splnění Gate A–D + Day 0 packet podle pilotního rámce. |
 
 > **Známý rozpor k opravě:** lokalita Genesis Garden byla historicky uváděna jako *Algarve* i jako *Střední Evropa* — od 2026-10-07 je sjednocena na **Sabacheira, concelho Tomar** (freguesie mezi Fátimou a Tomarem; viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
