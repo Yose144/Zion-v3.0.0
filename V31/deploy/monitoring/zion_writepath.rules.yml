@@ -1,0 +1,79 @@
+groups:
+  - name: zion_writepath
+    rules:
+      # P0-1 lesson (2026-10-26): L5 scanner was systemd-active but its write
+      # path dead for 5 days. Alert on the write path, not is-active.
+      - alert: ZionScannerApiDown
+        expr: zion_scanner_api_ok == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.layer }} scanner API down on EDGE2"
+          description: "The {{ $labels.layer }} (free-world/issobella) fund-balance API has been unreachable for over 5 minutes — scanner is wedged or service down."
+
+      - alert: ZionScannerLag
+        expr: zion_scanner_lag_blocks > 30
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.layer }} scanner lagging {{ $value }} blocks"
+          description: "{{ $labels.layer }} scanner last_block_height trails chain tip by over 30 blocks for 15+ minutes (normal ~7). Likely stalled write path — check service journal, DB inode/link health."
+
+      # P0-2 lesson: db-sync was active but PG auth failed for 5 days.
+      - alert: ZionDbSyncAuthFailed
+        expr: zion_dbsync_pg_ok == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "db-sync cannot authenticate to PostgreSQL"
+          description: "The zion-db-sync DATABASE_URL credentials fail auth against localhost:5432 for 5+ minutes — J6/J8 sync is dead (P0-2 recurrence)."
+
+      - alert: ZionDbSyncStale
+        expr: zion_dbsync_worker_last_share_age_seconds > 14400
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "db-sync MiningWorker data stale {{ $value }}s"
+          description: "No MiningWorker.lastShareAt write for over 4h — db-sync upserts may be silently failing (or all workers idle)."
+
+      - alert: ZionWritepathServiceDown
+        expr: zion_service_active == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} service not active on EDGE2"
+          description: "systemd reports {{ $labels.service }} (l5/l6/dbsync) not active for 5+ minutes."
+
+      - alert: ZionWritepathProbeMissing
+        expr: absent(zion_chain_tip_ok)
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "write-path probe metrics missing"
+          description: "zion_writepath textfile metrics absent for 10+ minutes — the probe timer on EDGE2 is not running."
+
+      # 2026-10-26 lesson: pool /stats hung ~1h on pool.lock() while
+      # /metrics kept scraping fine — ApiDown could not see it.
+      - alert: ZionPoolStatsApiUnresponsive
+        expr: zion_pool_stats_api_ok == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "pool /stats endpoint not responding"
+          description: "Pool API /stats has timed out (>8s) for 10+ minutes — likely a pool.lock() critical-section stall. /metrics and stratum may still look healthy; check pool journal and consider restart."
+
+      - alert: ZionPoolStatsApiSlow
+        expr: zion_pool_stats_api_latency_seconds > 3
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "pool /stats latency {{ $value }}s"
+          description: "Pool /stats responding but slower than 3s for 15+ minutes — early sign of lock contention."

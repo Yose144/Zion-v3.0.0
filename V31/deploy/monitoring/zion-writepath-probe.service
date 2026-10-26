@@ -1,0 +1,8 @@
+[Unit]
+Description=ZION write-path health probe (L5/L6 scanner lag, db-sync PG) -> node_exporter textfile
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/zion-writepath-probe.py
+Nice=19
