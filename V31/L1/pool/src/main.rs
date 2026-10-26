@@ -210,6 +210,9 @@ async fn main() -> anyhow::Result<()> {
     let server = StratumServer::new(pool.clone())
         .with_share_store(share_store.clone())
         .with_block_tracker(block_tracker.clone());
+    // Captured before `server` is moved into its run task — the HTTP API
+    // reports the same template height for est. earnings.
+    let current_height = server.current_height();
 
     // ── Notifications (Telegram/SMTP/OASIS/webhook) ───────────────────────
     let notif_config = NotificationsConfig::from_env();
@@ -415,7 +418,8 @@ async fn main() -> anyhow::Result<()> {
         let bind = ep.bind_addr.clone();
         let server_clone = StratumServer::new(pool.clone())
             .with_share_store(share_store.clone())
-            .with_block_tracker(block_tracker.clone());
+            .with_block_tracker(block_tracker.clone())
+            .with_current_height(current_height.clone());
         tokio::spawn(async move {
             match TcpListener::bind(&bind).await {
                 Ok(listener) => {
@@ -440,7 +444,8 @@ async fn main() -> anyhow::Result<()> {
                 let tls_bind = tls_cfg.bind.clone();
                 let server_clone = StratumServer::new(pool.clone())
                     .with_share_store(share_store.clone())
-                    .with_block_tracker(block_tracker.clone());
+                    .with_block_tracker(block_tracker.clone())
+                    .with_current_height(current_height.clone());
                 tokio::spawn(async move {
                     match TcpListener::bind(&tls_bind).await {
                         Ok(listener) => {
@@ -494,11 +499,13 @@ async fn main() -> anyhow::Result<()> {
     let api_bridge = multi_bridge.clone();
     let api_share_store = share_store.clone();
     let api_block_tracker = block_tracker.clone();
+    let api_current_height = current_height.clone();
     let api_handle = tokio::task::spawn_blocking(move || {
         let api = Arc::new(
             PoolApi::new(api_pool, api_share_store, Some(api_bridge))
                 .with_routing_stats(api_routing_stats)
-                .with_block_tracker(api_block_tracker),
+                .with_block_tracker(api_block_tracker)
+                .with_current_height(api_current_height),
         );
         if let Err(e) = api.serve(&api_bind) {
             tracing::error!("pool API server error: {}", e);

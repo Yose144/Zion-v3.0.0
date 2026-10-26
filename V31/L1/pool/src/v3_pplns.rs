@@ -1055,6 +1055,19 @@ impl PplnsEngine {
         out
     }
 
+    /// Miner's difficulty weight inside `coin`'s window slice — the same
+    /// incremental counter `distribute_*` uses, so `weight / coin_weight`
+    /// is exactly the miner's share of the next payout for that coin.
+    pub fn window_weight_for_miner(&self, miner_id: &str, coin: &str) -> u128 {
+        let (Some(m), Some(c)) = (
+            self.registry.lookup(miner_id),
+            self.coin_registry.lookup(coin),
+        ) else {
+            return 0;
+        };
+        self.miner_coin_weights.get(&(m, c)).copied().unwrap_or(0)
+    }
+
     /// Current window weight of a single coin (`"qtu"` → its slice only).
     pub fn window_weight_for_coin(&self, coin: &str) -> u128 {
         self.coin_registry

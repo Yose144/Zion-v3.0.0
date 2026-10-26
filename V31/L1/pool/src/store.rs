@@ -993,6 +993,19 @@ impl ShareStore {
         Ok(out)
     }
 
+    /// Total payout amount emitted for `coin` since `since_ts` (unix
+    /// seconds). Units follow the coin (flowers for zion, native base
+    /// units otherwise — same convention as `PayoutRow.amount_flowers`).
+    pub fn payouts_amount_sum_since(&self, coin: &str, since_ts: i64) -> Result<u64> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let total: i64 = conn.query_row(
+            "SELECT COALESCE(SUM(amount_flowers),0) FROM payouts WHERE coin = ?1 AND ts >= ?2",
+            params![coin, since_ts],
+            |row| row.get(0),
+        )?;
+        Ok(total as u64)
+    }
+
     /// Return the lifetime paid total (flowers) for a payout address.
     pub fn payout_total_by_address(&self, address: &str) -> Result<u64> {
         let conn = self.conn.lock().expect("share store lock poisoned");

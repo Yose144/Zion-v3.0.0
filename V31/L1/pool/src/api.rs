@@ -74,6 +74,8 @@ pub struct PoolApi {
     /// Shared block tracker (luck, pending, orphans) — same instance the
     /// stratum listeners write to.
     block_tracker: Option<Arc<std::sync::Mutex<crate::block_tracker::BlockTracker>>>,
+    /// Latest broadcast ZION template height — for `est_per_block`.
+    current_height: Option<Arc<std::sync::atomic::AtomicU64>>,
     /// Ring buffer of periodic pool snapshots (60s cadence, 24h cap).
     history: Arc<Mutex<std::collections::VecDeque<HistorySample>>>,
     /// `(window_start_s, count)` per client IP for `/public/v1` requests.
@@ -120,6 +122,7 @@ impl PoolApi {
             auxpow_bridge,
             routing_stats: None,
             block_tracker: None,
+            current_height: None,
             history: Arc::new(Mutex::new(h)),
             public_rate: Mutex::new(std::collections::HashMap::new()),
             auth_fail_rate: Mutex::new(std::collections::HashMap::new()),
@@ -163,6 +166,12 @@ impl PoolApi {
         tracker: Arc<std::sync::Mutex<crate::block_tracker::BlockTracker>>,
     ) -> Self {
         self.block_tracker = Some(tracker);
+        self
+    }
+
+    /// Attach the shared template-height counter for `est_per_block`.
+    pub fn with_current_height(mut self, height: Arc<std::sync::atomic::AtomicU64>) -> Self {
+        self.current_height = Some(height);
         self
     }
 
@@ -1753,6 +1762,47 @@ impl PoolApi {
             (total, "native")
         };
 
+        // Estimated earnings — the miner's weight fraction of the coin's
+        // PPLNS slice, scaled by the pool's empirical daily emission
+        // (24h payout sum from the store) and, for zion, by the
+        // deterministic next-block miner subsidy. `window_share` is 0 when
+        // the wallet has no weight in that coin's slice; `est_daily` is
+        // null without a store; `est_per_block` is zion-only because
+        // external legs pay from oracle revenue events, not block subsidy.
+        let coin_key = if coin.is_empty() {
+            "zion"
+        } else {
+            coin.as_str()
+        };
+        let miner_weight: u128 = miner_ids
+            .iter()
+            .map(|m| pool.pplns.window_weight_for_miner(m, coin_key))
+            .sum();
+        let coin_weight = pool.pplns.window_weight_for_coin(coin_key);
+        let window_share = if coin_weight > 0 {
+            miner_weight as f64 / coin_weight as f64
+        } else {
+            0.0
+        };
+        let est_daily = self
+            .share_store
+            .as_ref()
+            .and_then(|s| {
+                s.payouts_amount_sum_since(coin_key, now_s.saturating_sub(86_400) as i64)
+                    .ok()
+            })
+            .map(|sum| (sum as f64 * window_share).min(u64::MAX as f64) as u64);
+        let est_per_block = if coin_key == "zion" {
+            self.current_height.as_ref().map(|h| {
+                let next_h = h.load(Ordering::Relaxed).saturating_add(1);
+                let miner_reward =
+                    zion_core::emission::fee_split(zion_core::emission::block_subsidy(next_h)).0;
+                (miner_reward as f64 * window_share).min(u64::MAX as f64) as u64
+            })
+        } else {
+            None
+        };
+
         json!({
             "ok": true,
             "coin": coin,
@@ -1762,6 +1812,9 @@ impl PoolApi {
             "shares": {"accepted": valid, "rejected": invalid},
             "unpaid": unpaid.to_string(),
             "unpaid_unit": unpaid_unit,
+            "window_share": window_share,
+            "est_daily": est_daily,
+            "est_per_block": est_per_block,
             "last_seen_s": last_seen,
             "active": last_seen > 0 && now_s.saturating_sub(last_seen) < 600,
         })
@@ -2872,7 +2925,13 @@ mod tests {
             "worker row carries the short name"
         );
         assert_eq!(payload["unpaid_unit"], "native");
-        // Unknown wallet → zeroed payload, not an error.
+        // Earnings estimate fields are always present: the wallet holds no
+        // qtu window weight in this fixture → share 0; no store/height
+        // handles → nulls, not errors.
+        assert_eq!(payload["window_share"], 0.0);
+        assert!(payload["est_daily"].is_null());
+        assert!(payload["est_per_block"].is_null()); // qtu — no subsidy path
+                                                     // Unknown wallet → zeroed payload, not an error.
         let unknown: serde_json::Value = serde_json::from_str(
             &api.build_public_miner_payload("qtu", "prl1qqqqqqqqqqqqqqqqqqqqqq"),
         )

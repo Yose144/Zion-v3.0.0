@@ -380,6 +380,20 @@ impl StratumServer {
         Arc::clone(&self.block_tracker)
     }
 
+    /// Latest broadcast ZION template height — lets the HTTP API compute
+    /// the next block's subsidy for est. earnings.
+    pub fn current_height(&self) -> Arc<AtomicU64> {
+        Arc::clone(&self.current_height)
+    }
+
+    /// Share the template-height counter across listeners — otherwise a
+    /// miner submitting to a listener that hasn't broadcast yet gets
+    /// external-share credit booked at height 0.
+    pub fn with_current_height(mut self, height: Arc<AtomicU64>) -> Self {
+        self.current_height = height;
+        self
+    }
+
     /// Get a reference to the notifier (for payout.rs to use).
     pub fn notifier(&self) -> &Arc<Notifier> {
         &self.notifier
