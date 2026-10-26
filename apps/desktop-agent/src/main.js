@@ -1988,6 +1988,17 @@ function trackGpuHealthOutput(output) {
     const hits = output.match(/CL_INVALID|batch error|enqueueNDRange/gi)?.length || 1;
     gpuHealth.errors.set(dev.index, (gpuHealth.errors.get(dev.index) || 0) + hits);
   }
+  // multi_gpu_sub_init device_idx=N device="name" class=... failed: err
+  // A card that fails INIT produces nothing for the whole run and never
+  // appears in [metrics] (only successful sub-miners are listed) — the
+  // zero-rate path can't catch it, so fail it straight to quarantine.
+  for (const m of output.matchAll(/multi_gpu_sub_init\s+device_idx=(\d+)\s+device="([^"]+)"[^\n]*failed/gi)) {
+    const dev = gpuHealth.active.find(d => d.index === Number(m[1]) || String(d.name) === m[2]);
+    if (dev) {
+      gpuHealth.errors.set(dev.index, GPU_HEALTH_ERROR_LIMIT);
+      gpuHealth.sawRate.set(dev.index, true);
+    }
+  }
   // [metrics] zion: 339.3 KH/s [gfx1010=2.31M NVIDIA GeForce GTX 1070 Ti=0K] ...
   for (const m of output.matchAll(/\[metrics\][^\n]*\[([^\]]+)\]/g)) {
     const inner = m[1];
@@ -2175,17 +2186,6 @@ function parseGpuMemoryMb(gpuInfo) {
   }
 }
 
-function recommendedOpenclLocalSize(gpuInfo) {
-  const name = String(gpuInfo?.name || '').toLowerCase();
-  const type = String(gpuInfo?.type || '').toLowerCase();
-
-  if (type === 'amd' && /vega|gfx9|gfx8|gfx7|gfx6/.test(name)) {
-    return 64;
-  }
-
-  return 256;
-}
-
 function chooseGpuBatchSize(gpuInfo, configuredBatch) {
   const kind = String(gpuInfo?.backendPreferred || gpuInfo?.type || '').toLowerCase();
   const memoryMb = parseGpuMemoryMb(gpuInfo);
@@ -2318,6 +2318,48 @@ function resolveOpenclMiningVramMb(gpuInfo, config) {
       if (minMb > 0) return minMb;
     } catch {}
   }
+  return 0;
+}
+
+/**
+ * FREE VRAM (MiB) of a specific enumerated GPU — used to size the global
+ * ZION_GPU_WORK_SIZE so the scratchpad fits the tightest selected card.
+ * nvidia-smi reports the same marketing name the OpenCL banner does;
+ * amdgpu free = mem_info_vram_total - mem_info_vram_used (min across
+ * cards, conservative when the exact card can't be told apart).
+ */
+function freeVramMbForDevice(dev) {
+  const name = String(dev?.name || '');
+  try {
+    if (/nvidia|geforce|gtx|rtx|quadro|tesla/i.test(name)) {
+      const out = execFileSync('nvidia-smi', [
+        '--query-gpu=name,memory.free', '--format=csv,noheader,nounits'
+      ], { timeout: 4000, encoding: 'utf8' });
+      const rows = out.trim().split('\n').map((l) => {
+        const m = l.match(/^(.*),\s*(\d+)\s*$/);
+        return m ? { name: m[1].trim(), freeMb: Number(m[2]) } : null;
+      }).filter(Boolean);
+      const exact = rows.find((r) => r.name === name);
+      if (exact) return exact.freeMb;
+      const fuzzy = rows.find((r) => name.includes(r.name) || r.name.includes(name));
+      if (fuzzy) return fuzzy.freeMb;
+      if (rows.length === 1) return rows[0].freeMb;
+    } else if (process.platform === 'linux') {
+      const dir = '/sys/bus/pci/devices';
+      let minFree = 0;
+      for (const p of fs.readdirSync(dir)) {
+        try {
+          const total = Number(fs.readFileSync(path.join(dir, p, 'mem_info_vram_total'), 'utf8').trim());
+          const used = Number(fs.readFileSync(path.join(dir, p, 'mem_info_vram_used'), 'utf8').trim());
+          if (total > 0) {
+            const free = Math.floor((total - used) / (1024 * 1024));
+            if (!minFree || free < minFree) minFree = free;
+          }
+        } catch {}
+      }
+      if (minFree > 0) return minFree;
+    }
+  } catch {}
   return 0;
 }
 
@@ -3526,30 +3568,55 @@ function startMiningV31(config, v31Path) {
         const pct = Math.max(10, Math.min(90, Number(config.gpuVramPercent) || 25));
         env.ZION_OCL_VRAM_PCT = String(pct);
       }
+      // ZION_OCL_LOCAL_SIZE is NOT set by default: it overrides the enqueue
+      // local size but NOT the compiled -DLOCAL_SIZE (reqd_work_group_size),
+      // and any mismatch fails every launch with CL_INVALID_WORK_GROUP_SIZE
+      // on cards whose family tuning differs (NVIDIA compiles 128, AMD RDNA
+      // 256 — a global 256 used to kill every NVIDIA batch). The miner's
+      // per-device auto-tune picks the right value per card. An explicit
+      // gpuLocalSize override is honored only for single-device selections,
+      // where a mismatch can't hit a second card.
+      const _selCount = Array.isArray(config?.gpuDevices)
+        ? config.gpuDevices.length
+        : (String(config?.gpuDevice || '').trim() ? 1 : 0);
       const configuredLocalSize = Number(config?.gpuLocalSize);
-      const localSize = Number.isFinite(configuredLocalSize) && configuredLocalSize > 0
-        ? Math.max(32, Math.min(512, configuredLocalSize))
-        : recommendedOpenclLocalSize(gpuInfo);
-      env.ZION_OCL_LOCAL_SIZE = String(localSize);
+      if (Number.isFinite(configuredLocalSize) && configuredLocalSize > 0 && _selCount <= 1) {
+        env.ZION_OCL_LOCAL_SIZE = String(Math.max(32, Math.min(512, configuredLocalSize)));
+      }
 
       // ZION_GPU_WORK_SIZE is the knob the V31 miner actually reads
       // (runtime.rs) for the stream-1 OpenCL workload — the ekam-deeksha
       // lite kernel allocates 512 KiB of scratchpad PER THREAD, so this
-      // directly sets the VRAM footprint (8192 → 4 GiB). The miner's
-      // auto-tune assumes exclusive card ownership; when the SRBMiner
-      // sidecar shares the same card it sees only ~1.5 GiB free, VRAM
-      // saturates and amdgpu raises a "GPU Hang" → SIGABRT crash loop.
-      // Size the budget so ZION + SRBMiner (~2.5 GiB) + driver fit.
+      // directly sets the VRAM footprint per card (8192 → 4 GiB). It's a
+      // single global value applied to EVERY sub-miner, so it must fit the
+      // weakest SELECTED card's FREE VRAM — e.g. the NVIDIA here shares
+      // its 8 GiB with llama.cpp inference (~1.6 GiB free), and the AMD
+      // shares with the SRBMiner sidecar. Free VRAM is measured at spawn
+      // time so resident tenants are already accounted for.
       const cfgWorkSize = Number(config?.zionGpuWorkSize);
       if (Number.isFinite(cfgWorkSize) && cfgWorkSize >= 64) {
         env.ZION_GPU_WORK_SIZE = String(Math.floor(cfgWorkSize));
-      } else if (useSrbQtc) {
-        const vramMb = resolveOpenclMiningVramMb(gpuInfo, config) || 6144;
-        const threadsByVram = Math.floor(Math.max(0, vramMb - 3072) * 1024 * 1024 / (512 * 1024 + 128));
-        let ws = 1024;
-        while (ws * 2 <= Math.min(4096, threadsByVram)) ws *= 2;
-        env.ZION_GPU_WORK_SIZE = String(ws);
-        log(`[V31-FAST] SRBMiner shares the card — ZION_GPU_WORK_SIZE=${ws} (${Math.round(ws / 2)} MiB scratchpad)\n`);
+      } else {
+        const selDevs = resolveSelectedGpuDevices(config);
+        let threadsMin = Infinity;
+        for (const d of selDevs) {
+          const freeMb = freeVramMbForDevice(d);
+          if (freeMb > 0) {
+            const t = Math.floor(Math.max(0, freeMb - 640) * 1048576 / (512 * 1024 + 128));
+            threadsMin = Math.min(threadsMin, t);
+          }
+        }
+        if (!Number.isFinite(threadsMin) && useSrbQtc) {
+          const vramMb = resolveOpenclMiningVramMb(gpuInfo, config) || 6144;
+          threadsMin = Math.floor(Math.max(0, vramMb - 3072) * 1048576 / (512 * 1024 + 128));
+        }
+        if ((useSrbQtc || selDevs.length > 1) && threadsMin >= 128) {
+          const cap = useSrbQtc ? 4096 : 8192;
+          let ws = 128;
+          while (ws * 2 <= Math.min(cap, threadsMin)) ws *= 2;
+          env.ZION_GPU_WORK_SIZE = String(ws);
+          log(`[V31-FAST] GPU work_size=${ws} (~${Math.round(ws / 2)} MiB scratchpad/card — free-VRAM budget)\n`);
+        }
       }
     }
 
@@ -3633,6 +3700,24 @@ function startMiningV31(config, v31Path) {
     // to exactly one device (mixed AMD+NVIDIA rigs: the secondary card
     // can fail kernel launches / hang the shared context).
     env.ZION_MULTI_GPU = (config?.multiGpu === false || gpuDeviceSel.length === 1) ? '0' : '1';
+    // The single-device path picks via ZION_OCL_DEVICE_NAME/_IDX — it does
+    // NOT honor ZION_GPU_DEVICES (pick_device only reads its own vars and
+    // otherwise scores AMD +1000, silently mining the wrong card). Pin the
+    // resolved device explicitly whenever the single-device path is used.
+    if (env.ZION_MULTI_GPU === '0' && gpuDeviceSel.length) {
+      const dev0 = (gpuDeviceListCache || []).find(d => gpuDeviceMatchesToken(gpuDeviceSel[0], d));
+      const pinName = String(dev0?.name || gpuDeviceSel[0]).trim();
+      if (/^\d+$/.test(pinName)) {
+        env.ZION_OCL_DEVICE_IDX = pinName;
+        delete env.ZION_OCL_DEVICE_NAME;
+      } else {
+        env.ZION_OCL_DEVICE_NAME = pinName;
+        delete env.ZION_OCL_DEVICE_IDX;
+      }
+    } else {
+      delete env.ZION_OCL_DEVICE_NAME;
+      delete env.ZION_OCL_DEVICE_IDX;
+    }
     // Opt-in stream-3 batch (VerusHash CPU nonces per scan round) —
     // smaller batches refresh upstream jobs sooner, cutting stale
     // "job not found" rejects on fast-rotating pools (LuckPool ~15-60s).
