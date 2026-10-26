@@ -179,7 +179,7 @@ impl Pool {
             let arr = <[u8; 32]>::try_from(bytes).ok()?;
             Some(SigningKey::from_bytes(&arr))
         });
-        let ledger = Self::load_payout_ledger(config.state_path.as_deref());
+        let ledger = Self::load_payout_ledger(config.state_path.as_deref())?;
         Ok(Self {
             config,
             pplns,
@@ -213,27 +213,51 @@ impl Pool {
             .map(|p| PathBuf::from(format!("{p}.payouts.json")))
     }
 
-    /// Load the payout ledger sidecar, if present and parseable.
-    /// Corrupt or unreadable files fail open (empty ledger) with a warning —
-    /// losing the guards is recoverable by operator inspection, a pool that
-    /// refuses to start is not.
-    fn load_payout_ledger(state_path: Option<&str>) -> PayoutLedgerState {
+    /// Load the payout ledger. Missing file = fresh state (first run).
+    ///
+    /// IA-14: a **corrupt** ledger is fail-CLOSED — the file is quarantined
+    /// to `<path>.corrupt-<unix>` and an error propagates up through
+    /// `restore()`, refusing startup. Silently starting empty would drop all
+    /// idempotency guards (`paid_block_heights`/`sent_payouts`/`pending`) and
+    /// re-open the double-payout window; an operator must inspect the
+    /// quarantined file and either repair or delete it deliberately.
+    fn load_payout_ledger(state_path: Option<&str>) -> std::io::Result<PayoutLedgerState> {
         let Some(path) = state_path.map(|p| PathBuf::from(format!("{p}.payouts.json"))) else {
-            return PayoutLedgerState::default();
+            return Ok(PayoutLedgerState::default());
         };
         match std::fs::read_to_string(&path) {
             Ok(raw) => match serde_json::from_str::<PayoutLedgerState>(&raw) {
-                Ok(s) => s,
+                Ok(s) => Ok(s),
                 Err(e) => {
-                    tracing::warn!(
-                        "payout ledger {} unparsable ({}), starting empty",
+                    let ts = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map(|d| d.as_secs())
+                        .unwrap_or(0);
+                    let quarantine = path.with_extension(format!("corrupt-{ts}"));
+                    let _ = std::fs::rename(&path, &quarantine);
+                    tracing::error!(
+                        "payout ledger {} unparsable ({}) — quarantined to {}. \
+                         Refusing to start: starting with empty payout guards \
+                         re-opens the double-payout window. Inspect the file, \
+                         then repair or remove it.",
                         path.display(),
-                        e
+                        e,
+                        quarantine.display()
                     );
-                    PayoutLedgerState::default()
+                    Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!(
+                            "corrupt payout ledger {} (quarantined to {})",
+                            path.display(),
+                            quarantine.display()
+                        ),
+                    ))
                 }
             },
-            Err(_) => PayoutLedgerState::default(),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                Ok(PayoutLedgerState::default())
+            }
+            Err(e) => Err(e),
         }
     }
 
@@ -249,12 +273,29 @@ impl Pool {
             sent_payouts: self.sent_payouts.iter().cloned().collect(),
             pending_payouts: self.pending_payouts.clone(),
         };
+        // IA-14: tmp-write + fsync(file) + rename + fsync(parent dir) — the
+        // drain-persist must be durable, otherwise a power loss resurrects
+        // already-handed payouts in the restored queue (double-pay window).
         let write = || -> std::io::Result<()> {
             let tmp = path.with_extension("payouts.json.tmp");
             let body = serde_json::to_vec(&state)
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-            std::fs::write(&tmp, body)?;
+            {
+                use std::io::Write;
+                let mut f = std::fs::File::create(&tmp)?;
+                f.write_all(&body)?;
+                f.flush()?;
+                f.sync_all()?;
+            }
             std::fs::rename(&tmp, &path)?;
+            #[cfg(unix)]
+            {
+                let parent = path
+                    .parent()
+                    .filter(|p| !p.as_os_str().is_empty())
+                    .unwrap_or_else(|| std::path::Path::new("."));
+                std::fs::File::open(parent)?.sync_all()?;
+            }
             Ok(())
         };
         if let Err(e) = write() {
@@ -783,7 +824,7 @@ impl Pool {
                 self.pplns.restore(snap);
             }
         }
-        let ledger = Self::load_payout_ledger(self.config.state_path.as_deref());
+        let ledger = Self::load_payout_ledger(self.config.state_path.as_deref())?;
         self.paid_block_heights = ledger.paid_block_heights.into_iter().collect();
         self.sent_payouts = ledger.sent_payouts.into_iter().collect();
         self.pending_payouts = ledger.pending_payouts;
@@ -1851,5 +1892,65 @@ mod tests {
         assert_eq!(find("qtu").window_weight, 6);
         assert_eq!(find("prl").accepted_total, 1);
         assert_eq!(find("prl").window_weight, 8);
+    }
+
+    #[test]
+    fn corrupt_payout_ledger_fails_closed_and_quarantines() {
+        let root = std::env::temp_dir().join(format!(
+            "zion_pool_ledger_corrupt_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let state_path = root.join("pplns.json");
+        let ledger_path = PathBuf::from(format!("{}.payouts.json", state_path.display()));
+        std::fs::write(&ledger_path, b"{ not valid json !!!").unwrap();
+
+        let res = Pool::load_payout_ledger(Some(&state_path.to_string_lossy()));
+        assert!(res.is_err(), "corrupt ledger must fail closed");
+        assert!(!ledger_path.exists(), "corrupt file must be quarantined");
+        let quarantined = std::fs::read_dir(&root)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .any(|e| e.file_name().to_string_lossy().starts_with("pplns.json.payouts.corrupt-"));
+        assert!(quarantined, "quarantine file must exist for operator inspection");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn missing_payout_ledger_is_fresh_state() {
+        let res = Pool::load_payout_ledger(Some("/nonexistent/dir/state.json"));
+        assert!(res.is_ok());
+        let ledger = res.unwrap();
+        assert!(ledger.paid_block_heights.is_empty());
+        assert!(ledger.sent_payouts.is_empty());
+        assert!(ledger.pending_payouts.is_empty());
+    }
+
+    #[test]
+    fn payout_ledger_roundtrip_via_pool() {
+        let root = std::env::temp_dir().join(format!(
+            "zion_pool_ledger_rt_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let state_path = root.join("pplns.json");
+        let config = PoolConfig {
+            state_path: Some(state_path.to_string_lossy().into_owned()),
+            ..config()
+        };
+        let mut pool = Pool::new(config.clone(), telemetry());
+        pool.paid_block_heights.insert(42);
+        pool.persist_payout_ledger();
+        let ledger = Pool::load_payout_ledger(config.state_path.as_deref()).unwrap();
+        assert_eq!(ledger.paid_block_heights, vec![42]);
+        let _ = std::fs::remove_dir_all(&root);
     }
 }
