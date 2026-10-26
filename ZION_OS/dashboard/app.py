@@ -3477,6 +3477,38 @@ _RIG_BEACONS: dict = {}
 _RIG_BEACON_LOCK = threading.Lock()
 RIG_BEACON_TTL_SEC: float = 180.0  # offline if no beacon for 3 min
 
+# ── Pool share-rejection rolling window ───────────────────────────────────
+# zion_pool_shares_* counters reset on every pool restart. Right after a
+# restart the rejected/accepted ratio is dominated by the stale-job flush
+# burst (miners submitting against pre-restart job ids → "job not found"),
+# which produced false "High share rejection rate" alerts for hours.
+# Sample the counters per build_status() and evaluate the DELTA over the
+# last ~15 min instead of since-restart totals.
+_SHARE_SAMPLES = deque(maxlen=600)  # (ts, accepted, rejected)
+_SHARE_WINDOW_SEC = 900.0
+_SHARE_MIN_DELTA_ACCEPTED = 30
+
+def _share_rejection_rate(now: float, accepted: int, rejected: int):
+    """Recent-window rejection rate. Returns (rate, d_accepted, d_rejected) or None."""
+    if _SHARE_SAMPLES and (accepted < _SHARE_SAMPLES[-1][1] or rejected < _SHARE_SAMPLES[-1][2]):
+        _SHARE_SAMPLES.clear()  # counters reset (pool restart)
+    if not _SHARE_SAMPLES or _SHARE_SAMPLES[-1][1:] != (accepted, rejected):
+        _SHARE_SAMPLES.append((now, accepted, rejected))
+    # oldest sample inside the window; fall back to oldest available ≥5 min old
+    base = None
+    for ts, a, r in _SHARE_SAMPLES:
+        if now - ts >= _SHARE_WINDOW_SEC:
+            base = (ts, a, r)
+    if base is None and _SHARE_SAMPLES and now - _SHARE_SAMPLES[0][0] >= 300.0:
+        base = _SHARE_SAMPLES[0]
+    if base is None:
+        return None
+    d_acc = accepted - base[1]
+    d_rej = rejected - base[2]
+    if d_acc < _SHARE_MIN_DELTA_ACCEPTED:
+        return None
+    return (d_rej / max(1, d_acc), d_acc, d_rej)
+
 def build_status() -> dict:
     global _STATUS_CACHE, _STATUS_CACHE_TIME
     # The lock covers the whole build: the 5 s sampler, the WS push loop and
@@ -5188,10 +5220,11 @@ def build_alerts(status: dict) -> list:
                        "action": None})
 
     if pool["running"] and pool["shares_rejected"] > 0 and pool["shares_accepted"]:
-        ratio = pool["shares_rejected"] / max(1, pool["shares_accepted"])
-        if ratio > 0.15:
+        _rr = _share_rejection_rate(time.time(), pool["shares_accepted"], pool["shares_rejected"])
+        if _rr and _rr[0] > 0.15:
+            _ratio, _d_acc, _d_rej = _rr
             alerts.append({"severity": _sev("pool", "warning"), "title": "High share rejection rate",
-                           "detail": f"{pool['shares_rejected']} rejected vs {pool['shares_accepted']} accepted ({ratio*100:.1f}%)",
+                           "detail": f"{_d_rej} rejected vs {_d_acc} accepted ({_ratio*100:.1f}%) in last ~15 min",
                            "action": None})
 
     # Only surface recent, non-benign node errors
