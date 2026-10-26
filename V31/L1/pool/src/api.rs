@@ -71,6 +71,9 @@ pub struct PoolApi {
     share_store: Option<Arc<ShareStore>>,
     auxpow_bridge: Option<MultiAuxPowBridge>,
     routing_stats: Option<Arc<std::sync::Mutex<crate::routing::RoutingStats>>>,
+    /// Shared block tracker (luck, pending, orphans) — same instance the
+    /// stratum listeners write to.
+    block_tracker: Option<Arc<std::sync::Mutex<crate::block_tracker::BlockTracker>>>,
     /// Ring buffer of periodic pool snapshots (60s cadence, 24h cap).
     history: Arc<Mutex<std::collections::VecDeque<HistorySample>>>,
     /// `(window_start_s, count)` per client IP for `/public/v1` requests.
@@ -116,6 +119,7 @@ impl PoolApi {
             share_store,
             auxpow_bridge,
             routing_stats: None,
+            block_tracker: None,
             history: Arc::new(Mutex::new(h)),
             public_rate: Mutex::new(std::collections::HashMap::new()),
             auth_fail_rate: Mutex::new(std::collections::HashMap::new()),
@@ -151,6 +155,34 @@ impl PoolApi {
     ) -> Self {
         self.routing_stats = Some(stats);
         self
+    }
+
+    /// Attach the shared `BlockTracker` (luck, pending, orphans).
+    pub fn with_block_tracker(
+        mut self,
+        tracker: Arc<std::sync::Mutex<crate::block_tracker::BlockTracker>>,
+    ) -> Self {
+        self.block_tracker = Some(tracker);
+        self
+    }
+
+    /// Snapshot of luck/orphan counters shared with the stratum listeners.
+    fn block_tracker_json(&self) -> serde_json::Value {
+        let Some(ref t) = self.block_tracker else {
+            return serde_json::Value::Null;
+        };
+        let s = match t.try_lock() {
+            Ok(g) => g.stats(),
+            Err(_) => return serde_json::Value::Null,
+        };
+        json!({
+            "found": s.total_blocks,
+            "confirmed": s.total_confirmed,
+            "orphaned": s.total_orphans,
+            "pending": s.pending_count,
+            "luck_100": s.pool_luck_100,
+            "luck_500": s.pool_luck_500,
+        })
     }
 
     /// Serve HTTP requests. Each connection is handled on its own thread so a
@@ -1091,6 +1123,7 @@ impl PoolApi {
                 "issobella_pct": fees.issobella_pct,
                 "port": pool.config.port
             },
+            "blocks": self.block_tracker_json(),
             "external_payouts": {
                 "quantus": {
                     "pending": pool.pending_external_payouts("quantus").len()
@@ -1621,7 +1654,10 @@ impl PoolApi {
             }
         };
 
-        json!({
+        // Luck/orphan counters only apply to the coin whose blocks this
+        // pool actually finds — ZION. External legs never produce blocks
+        // here, so their payload omits the field entirely.
+        let mut out = json!({
             "ok": true,
             "coin": coin,
             "miners_online": online,
@@ -1630,8 +1666,11 @@ impl PoolApi {
             "window_weight": window_weight,
             "accepted_total": accepted_total,
             "hashrate": hashrate,
-        })
-        .to_string()
+        });
+        if coin == "zion" {
+            out["blocks"] = self.block_tracker_json();
+        }
+        out.to_string()
     }
 
     /// `/public/v1/miner/{coin}/{wallet}` — wallet-scoped dashboard data.
@@ -2772,6 +2811,36 @@ mod tests {
         let z = api.build_public_coin_stats_payload("zion");
         let zp: serde_json::Value = serde_json::from_str(&z).unwrap();
         assert!(zp["hashrate"].is_object());
+        // No tracker attached → the zion blocks field is null.
+        assert!(zp["blocks"].is_null());
+    }
+
+    #[test]
+    fn public_coin_stats_zion_reports_luck_and_orphans() {
+        let pool = test_pool();
+        let tracker = std::sync::Arc::new(std::sync::Mutex::new(
+            crate::block_tracker::BlockTracker::new(),
+        ));
+        {
+            let mut t = tracker.lock().unwrap();
+            t.record_share();
+            t.record_share();
+            // net_diff/share_diff = 100 expected shares, 2 actual → very lucky.
+            t.record_block_found(50, "m", "w", 1000, 100_000, true);
+            t.record_block_found(51, "m", "w", 1000, 100_000, false);
+        }
+        let api = PoolApi::new(pool, None, None).with_block_tracker(tracker);
+        let zp: serde_json::Value =
+            serde_json::from_str(&api.build_public_coin_stats_payload("zion")).unwrap();
+        let blocks = zp["blocks"].as_object().expect("blocks object");
+        assert_eq!(blocks["found"], 2);
+        assert_eq!(blocks["orphaned"], 1);
+        let luck = blocks["luck_100"].as_f64().expect("luck_100");
+        assert!(luck > 1000.0, "expected huge luck, got {luck}");
+        // External coins never expose the blocks field.
+        let q: serde_json::Value =
+            serde_json::from_str(&api.build_public_coin_stats_payload("qtu")).unwrap();
+        assert!(q.get("blocks").is_none());
     }
 
     #[test]

@@ -204,7 +204,12 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    let server = StratumServer::new(pool.clone()).with_share_store(share_store.clone());
+    // One block tracker shared by every listener + the HTTP API — a
+    // per-listener tracker fragments luck and shares-since-block counters.
+    let block_tracker = Arc::new(Mutex::new(zion_pool::block_tracker::BlockTracker::new()));
+    let server = StratumServer::new(pool.clone())
+        .with_share_store(share_store.clone())
+        .with_block_tracker(block_tracker.clone());
 
     // ── Notifications (Telegram/SMTP/OASIS/webhook) ───────────────────────
     let notif_config = NotificationsConfig::from_env();
@@ -408,7 +413,9 @@ async fn main() -> anyhow::Result<()> {
             ep.bind_addr, ep.label, ep.default_difficulty
         );
         let bind = ep.bind_addr.clone();
-        let server_clone = StratumServer::new(pool.clone()).with_share_store(share_store.clone());
+        let server_clone = StratumServer::new(pool.clone())
+            .with_share_store(share_store.clone())
+            .with_block_tracker(block_tracker.clone());
         tokio::spawn(async move {
             match TcpListener::bind(&bind).await {
                 Ok(listener) => {
@@ -431,8 +438,9 @@ async fn main() -> anyhow::Result<()> {
         match zion_pool::tls::load_tls_acceptor(&tls_cfg.cert_path, &tls_cfg.key_path) {
             Ok(acceptor) => {
                 let tls_bind = tls_cfg.bind.clone();
-                let server_clone =
-                    StratumServer::new(pool.clone()).with_share_store(share_store.clone());
+                let server_clone = StratumServer::new(pool.clone())
+                    .with_share_store(share_store.clone())
+                    .with_block_tracker(block_tracker.clone());
                 tokio::spawn(async move {
                     match TcpListener::bind(&tls_bind).await {
                         Ok(listener) => {
@@ -485,10 +493,12 @@ async fn main() -> anyhow::Result<()> {
     let api_bind = args.api_bind.clone();
     let api_bridge = multi_bridge.clone();
     let api_share_store = share_store.clone();
+    let api_block_tracker = block_tracker.clone();
     let api_handle = tokio::task::spawn_blocking(move || {
         let api = Arc::new(
             PoolApi::new(api_pool, api_share_store, Some(api_bridge))
-                .with_routing_stats(api_routing_stats),
+                .with_routing_stats(api_routing_stats)
+                .with_block_tracker(api_block_tracker),
         );
         if let Err(e) = api.serve(&api_bind) {
             tracing::error!("pool API server error: {}", e);

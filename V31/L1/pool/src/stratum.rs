@@ -367,6 +367,19 @@ impl StratumServer {
         self
     }
 
+    /// Share one `BlockTracker` across all listeners (plain/TLS/extra
+    /// ports) and the HTTP API — otherwise each listener keeps its own
+    /// luck/shares-since-block counters and the reported luck fragments.
+    pub fn with_block_tracker(mut self, tracker: Arc<Mutex<BlockTracker>>) -> Self {
+        self.block_tracker = tracker;
+        self
+    }
+
+    /// Handle to the shared block tracker (luck, pending, orphans).
+    pub fn block_tracker(&self) -> Arc<Mutex<BlockTracker>> {
+        Arc::clone(&self.block_tracker)
+    }
+
     /// Get a reference to the notifier (for payout.rs to use).
     pub fn notifier(&self) -> &Arc<Notifier> {
         &self.notifier
