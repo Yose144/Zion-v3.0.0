@@ -1738,10 +1738,12 @@ mod tests {
     #[tokio::test]
     async fn health_reports_package_version_and_beta_stage() {
         let Json(body) = health().await;
-        assert_eq!(body["status"], "ok");
-        assert_eq!(body["service"], "zion-dao");
-        assert_eq!(body["version"], env!("CARGO_PKG_VERSION"));
-        assert_eq!(body["release_stage"], "beta");
+        assert_eq!(body["success"], true);
+        let data = &body["data"];
+        assert_eq!(data["status"], "ok");
+        assert_eq!(data["service"], "zion-dao");
+        assert_eq!(data["version"], env!("CARGO_PKG_VERSION"));
+        assert_eq!(data["release_stage"], "beta");
     }
 
     #[test]
