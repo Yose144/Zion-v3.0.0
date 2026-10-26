@@ -379,6 +379,20 @@ impl MinerTelemetryRegistry {
         if accepted {
             stats.valid_shares = stats.valid_shares.saturating_add(1);
             stats.last_share_time_s = now_s;
+            // Same work accounting as `record_external_share` — without this
+            // `stream_hashrate` returns 0 for native (ZION) shares and the
+            // coin is absent from `hashrate_by_coin` / `miner_history` hps.
+            if attempted_hashes > 0 {
+                stats.work.push_back(WorkSample {
+                    completed_at_s: now_s,
+                    attempted_hashes,
+                    elapsed_ms,
+                });
+                while matches!(stats.work.front(), Some(s) if s.completed_at_s.saturating_add(HASHRATE_WINDOW_24H_S) < now_s)
+                {
+                    stats.work.pop_front();
+                }
+            }
         } else {
             stats.invalid_shares = stats.invalid_shares.saturating_add(1);
         }
@@ -699,6 +713,26 @@ mod tests {
         assert_eq!(s.invalid_shares, 1);
         // Aggregate ZION estimator is untouched by external shares.
         assert_eq!(m.hashrate_live(now_s), 0.0);
+    }
+
+    #[test]
+    fn test_stream_hashrate_native_zion() {
+        // Regression: record_job_result_stream must push work samples so the
+        // native "zion" stream is visible to stream_hashrate /
+        // hashrate_by_coin / miner_history (previously external-only).
+        let mut reg = MinerTelemetryRegistry::new();
+        reg.record_job_result("m", "w", true, 2_000_000, 100);
+        reg.record_job_result("m", "w", true, 2_000_000, 100);
+        reg.record_job_result("m", "w", false, 2_000_000, 100);
+        let now_s = now_unix_seconds();
+        let m = reg.get_miner("m/w").expect("miner");
+        let hps = m.stream_hashrate("zion", HASHRATE_WINDOW_LIVE_S, now_s);
+        assert!(
+            (hps - 4e6 / HASHRATE_WINDOW_LIVE_S as f64).abs() < 1.0,
+            "zion hps={hps}"
+        );
+        let rates = m.stream_hashrates(HASHRATE_WINDOW_LIVE_S, now_s);
+        assert!(rates.contains_key("zion"), "zion key missing: {rates:?}");
     }
 
     #[test]
