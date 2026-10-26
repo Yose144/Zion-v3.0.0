@@ -60,8 +60,25 @@ struct HistorySample {
     miners_online: u64,
     /// Miners online per coin stream (e.g. {"zion": 3, "qtu": 1}).
     online_by_coin: std::collections::HashMap<String, u64>,
+    /// Pool-wide live (10-minute trailing) hashrate per coin stream —
+    /// external coins finally got a real series once shares started
+    /// carrying expected-work samples (A1.1).
+    #[serde(default)]
+    hashrate_by_coin: std::collections::HashMap<String, f64>,
     /// Cumulative accepted/rejected share counters at sample time —
     /// per-interval deltas are derived client-side.
+    accepted: u64,
+    rejected: u64,
+}
+
+/// Per-miner history row drained to the store alongside each pool sample —
+/// the persisted wallet-scoped hashrate timeseries behind
+/// `/public/v1/miner/{coin}/{wallet}/history`.
+struct MinerHistoryRow {
+    miner_id: String,
+    worker: String,
+    /// `{coin: expected-hashes/sec}` for streams with recent work.
+    hps: std::collections::HashMap<String, f64>,
     accepted: u64,
     rejected: u64,
 }
@@ -98,13 +115,15 @@ impl PoolApi {
         if let Some(store) = &share_store {
             match store.load_history(HISTORY_CAP as u32) {
                 Ok(rows) => {
-                    for (ts, hashrate, miners_online, json, accepted, rejected) in rows {
+                    for (ts, hashrate, miners_online, json, hbc_json, accepted, rejected) in rows {
                         let online_by_coin = serde_json::from_str(&json).unwrap_or_default();
+                        let hashrate_by_coin = serde_json::from_str(&hbc_json).unwrap_or_default();
                         h.push_back(HistorySample {
                             ts,
                             hashrate,
                             miners_online,
                             online_by_coin,
+                            hashrate_by_coin,
                             accepted,
                             rejected,
                         });
@@ -210,20 +229,40 @@ impl PoolApi {
             let history = Arc::clone(&self.history);
             let store = self.share_store.clone();
             std::thread::spawn(move || loop {
-                let sample = sample_history(&pool);
+                let (sample, miner_rows) = sample_history(&pool);
                 if let Some(store) = &store {
                     let json = serde_json::to_string(&sample.online_by_coin)
                         .unwrap_or_else(|_| "{}".to_string());
+                    let hbc_json = serde_json::to_string(&sample.hashrate_by_coin)
+                        .unwrap_or_else(|_| "{}".to_string());
+                    let retain = HISTORY_INTERVAL_S * HISTORY_CAP as u64;
                     if let Err(e) = store.record_history_sample(
                         sample.ts,
                         sample.hashrate,
                         sample.miners_online,
                         &json,
+                        &hbc_json,
                         sample.accepted,
                         sample.rejected,
-                        HISTORY_INTERVAL_S * HISTORY_CAP as u64,
+                        retain,
                     ) {
                         warn!("history: persist failed: {e}");
+                    }
+                    for row in &miner_rows {
+                        let hps_json =
+                            serde_json::to_string(&row.hps).unwrap_or_else(|_| "{}".to_string());
+                        if let Err(e) = store.record_miner_history_sample(
+                            &row.miner_id,
+                            &row.worker,
+                            sample.ts,
+                            &hps_json,
+                            row.accepted,
+                            row.rejected,
+                            retain,
+                        ) {
+                            warn!("miner_history: persist failed: {e}");
+                            break; // one store error → stop hammering this round
+                        }
                     }
                 }
                 let mut h = history.lock().expect("history lock poisoned");
@@ -528,6 +567,29 @@ impl PoolApi {
                             "payouts": serialize_public_payouts_json(&payouts),
                         })
                         .to_string();
+                        ("200 OK", "application/json", body)
+                    }
+                    None => (
+                        "503 Service Unavailable",
+                        "application/json",
+                        "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
+                    ),
+                }
+            }
+            p if p.starts_with("/public/v1/miner/") && p.ends_with("/history") => {
+                let parts: Vec<&str> = p
+                    .trim_start_matches("/public/v1/miner/")
+                    .trim_end_matches("/history")
+                    .split('/')
+                    .collect();
+                let (coin, wallet) = (
+                    parts.first().copied().unwrap_or(""),
+                    parts.get(1).copied().unwrap_or(""),
+                );
+                let limit = parse_query_limit(raw_path, HISTORY_CAP as u32) as usize;
+                match &self.share_store {
+                    Some(_) => {
+                        let body = self.build_public_miner_history(coin, wallet, limit);
                         ("200 OK", "application/json", body)
                     }
                     None => (
@@ -1821,6 +1883,66 @@ impl PoolApi {
         .to_string()
     }
 
+    /// Persisted per-wallet hashrate timeseries —
+    /// `/public/v1/miner/{coin}/{wallet}/history`. Aggregates the
+    /// `miner_history` rows of every worker/login bound to the wallet
+    /// (dotted login names + PPLNS address bindings), so a restart or
+    /// worker rename doesn't fragment the series. `hps` is the
+    /// expected-hashes/sec sum for the requested coin; `accepted`/`rejected`
+    /// are the wallet's summed cumulative counters at sample time
+    /// (per-interval deltas derived client-side; counters reset on pool
+    /// restart, so the series may dip once per bounce).
+    fn build_public_miner_history(&self, coin: &str, wallet: &str, limit: usize) -> String {
+        let coin_key = if coin.is_empty() { "zion" } else { coin };
+        let now_s = now_unix_seconds();
+        let (extra_ids, store) = {
+            let pool = self.pool.lock().expect("pool lock poisoned");
+            (
+                pool.pplns
+                    .miner_ids_for_address(wallet)
+                    .into_iter()
+                    .map(str::to_string)
+                    .collect::<Vec<String>>(),
+                self.share_store.clone(),
+            )
+        };
+        let Some(store) = store else {
+            return json!({"ok": false, "error": "database not configured"}).to_string();
+        };
+        let since = now_s.saturating_sub(HISTORY_INTERVAL_S * HISTORY_CAP as u64);
+        // limit applies to aggregated ts points; fetch up to 4× rows so
+        // multi-worker wallets don't truncate early.
+        let rows = store
+            .load_miner_history(wallet, &extra_ids, since, (limit.saturating_mul(4)) as u32)
+            .unwrap_or_default();
+        let mut by_ts: std::collections::BTreeMap<u64, (f64, u64, u64)> =
+            std::collections::BTreeMap::new();
+        for (_miner_id, _worker, ts, hps_json, accepted, rejected) in rows {
+            let hps_map: std::collections::HashMap<String, f64> =
+                serde_json::from_str(&hps_json).unwrap_or_default();
+            let entry = by_ts.entry(ts).or_default();
+            entry.0 += hps_map.get(coin_key).copied().unwrap_or(0.0);
+            entry.1 = entry.1.saturating_add(accepted);
+            entry.2 = entry.2.saturating_add(rejected);
+        }
+        let skip = by_ts.len().saturating_sub(limit.min(by_ts.len()));
+        let samples: Vec<serde_json::Value> = by_ts
+            .into_iter()
+            .skip(skip)
+            .map(|(ts, (hps, accepted, rejected))| {
+                json!({"ts": ts, "hps": hps, "accepted": accepted, "rejected": rejected})
+            })
+            .collect();
+        json!({
+            "ok": true,
+            "coin": coin,
+            "wallet": wallet,
+            "interval_s": HISTORY_INTERVAL_S,
+            "samples": samples,
+        })
+        .to_string()
+    }
+
     fn build_prometheus_payload(&self) -> String {
         let (
             accepted,
@@ -2141,7 +2263,9 @@ fn split_worker(username: &str) -> (String, String) {
 /// Mirrors the online-share logic in `build_public_coin_stats_payload`:
 /// a miner is online for a coin when its stream's last share is inside
 /// `ONLINE_WINDOW_S`.
-fn sample_history(pool: &Arc<Mutex<Pool>>) -> HistorySample {
+/// Snapshot the pool history sample plus per-miner rows in one registry
+/// lock — the per-miner rows feed `miner_history` for wallet timeseries.
+fn sample_history(pool: &Arc<Mutex<Pool>>) -> (HistorySample, Vec<MinerHistoryRow>) {
     let now_s = now_unix_seconds();
     let pool = pool.lock().expect("pool lock poisoned");
     let (accepted, rejected) = pool.stats();
@@ -2149,9 +2273,13 @@ fn sample_history(pool: &Arc<Mutex<Pool>>) -> HistorySample {
     let hashrate = reg.pool_hashrate_live();
     let mut online_by_coin: std::collections::HashMap<String, u64> =
         std::collections::HashMap::new();
+    let mut hashrate_by_coin: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
     let mut miners_online = 0u64;
-    for (_, miner) in reg.all_miners() {
+    let mut miner_rows = Vec::new();
+    for (key, miner) in reg.all_miners() {
         let mut any_online = false;
+        let mut hps: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
         for (coin, s) in miner.streams.iter() {
             if s.last_share_time_s > 0
                 && now_s.saturating_sub(s.last_share_time_s) < ONLINE_WINDOW_S
@@ -2159,19 +2287,42 @@ fn sample_history(pool: &Arc<Mutex<Pool>>) -> HistorySample {
                 *online_by_coin.entry(coin.clone()).or_insert(0) += 1;
                 any_online = true;
             }
+            let rate = miner.stream_hashrate(coin, crate::telemetry::HASHRATE_WINDOW_LIVE_S, now_s);
+            if rate > 0.0 {
+                *hashrate_by_coin.entry(coin.clone()).or_insert(0.0) += rate;
+                hps.insert(coin.clone(), rate);
+            }
         }
         if any_online {
             miners_online += 1;
         }
+        // Only persist miners seen inside the retention window — sampling
+        // long-dead entries would just rewrite rows the pruner deletes.
+        if !hps.is_empty()
+            || now_s.saturating_sub(miner.last_seen_s) < HISTORY_INTERVAL_S * HISTORY_CAP as u64
+        {
+            let (miner_id, worker) = split_worker_key(key);
+            miner_rows.push(MinerHistoryRow {
+                miner_id,
+                worker,
+                hps,
+                accepted: miner.valid_shares,
+                rejected: miner.invalid_shares,
+            });
+        }
     }
-    HistorySample {
-        ts: now_s,
-        hashrate,
-        miners_online,
-        online_by_coin,
-        accepted,
-        rejected,
-    }
+    (
+        HistorySample {
+            ts: now_s,
+            hashrate,
+            miners_online,
+            online_by_coin,
+            hashrate_by_coin,
+            accepted,
+            rejected,
+        },
+        miner_rows,
+    )
 }
 
 /// Split a telemetry registry key "{miner_id}/{worker_name}".
@@ -2971,6 +3122,52 @@ mod tests {
         assert_eq!(zion["reject_reasons"]["stale"], 1);
         // accept_rate still present alongside reasons.
         assert!(qtu["accept_rate"].as_f64().unwrap() > 0.0);
+    }
+
+    #[test]
+    fn public_miner_history_aggregates_wallet_workers() {
+        let store = std::sync::Arc::new(ShareStore::open_in_memory().unwrap());
+        let now = crate::telemetry::now_unix_seconds();
+        // Two workers under one wallet — series merges per ts.
+        store
+            .record_miner_history_sample("w1", "rigA", now - 120, r#"{"qtu":1e6}"#, 5, 0, 86400)
+            .unwrap();
+        store
+            .record_miner_history_sample(
+                "w1.rigB",
+                "rigB",
+                now - 120,
+                r#"{"qtu":2e6}"#,
+                3,
+                1,
+                86400,
+            )
+            .unwrap();
+        store
+            .record_miner_history_sample("w1", "rigA", now - 60, r#"{"qtu":1.5e6}"#, 8, 0, 86400)
+            .unwrap();
+        // Foreign miner excluded; old row pruned by since filter.
+        store
+            .record_miner_history_sample("w9", "rigZ", now - 60, r#"{"qtu":9e9}"#, 1, 0, 86400)
+            .unwrap();
+
+        let api = PoolApi::new(test_pool(), Some(store), None);
+        let payload: serde_json::Value =
+            serde_json::from_str(&api.build_public_miner_history("qtu", "w1", 100)).unwrap();
+        assert_eq!(payload["ok"], true);
+        assert_eq!(payload["coin"], "qtu");
+        let samples = payload["samples"].as_array().unwrap();
+        assert_eq!(samples.len(), 2, "one point per ts across workers");
+        // First point merges both workers' qtu hps + share counters.
+        assert_eq!(samples[0]["hps"].as_f64().unwrap(), 3e6);
+        assert_eq!(samples[0]["accepted"], 8);
+        assert_eq!(samples[0]["rejected"], 1);
+        assert_eq!(samples[1]["hps"].as_f64().unwrap(), 1.5e6);
+
+        // Unknown wallet → empty series, still ok:true.
+        let empty: serde_json::Value =
+            serde_json::from_str(&api.build_public_miner_history("qtu", "nobody", 100)).unwrap();
+        assert_eq!(empty["samples"].as_array().unwrap().len(), 0);
     }
 
     #[test]

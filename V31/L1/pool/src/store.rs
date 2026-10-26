@@ -27,7 +27,9 @@ use crate::v3_pplns::PayoutEntry;
 /// dedup.
 /// v4: persistent pool history samples.
 /// v5: revenue event prepare/commit journal and durable native payout outbox.
-const SCHEMA_VERSION: u32 = 5;
+/// v6: per-coin pool hashrate in history samples + per-miner hashrate
+/// history table (wallet-scoped timeseries for the public miner dashboard).
+const SCHEMA_VERSION: u32 = 6;
 
 /// A thread-safe wrapper around a SQLite connection.  SQLite with
 /// `serialized` mode (default for `bundled`) supports multi-thread access,
@@ -319,6 +321,50 @@ impl ShareStore {
                 "#
             })
             .context("failed to migrate schema to v5")?;
+        }
+
+        if current < 6 {
+            // v6: per-coin pool hashrate column on the existing pool
+            // snapshots, plus a per-miner hashrate history table so the
+            // public miner dashboard can render wallet timeseries that
+            // survive restarts (same 60s cadence / 24h retention as the
+            // pool history feed). The history table is probed first —
+            // hand-built fixtures may not carry it.
+            let history_exists = conn.query_row(
+                "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='history'",
+                [],
+                |r| r.get::<_, i64>(0),
+            )? > 0;
+            if history_exists {
+                let has_hbc = {
+                    let mut stmt = conn.prepare("PRAGMA table_info(history)")?;
+                    let cols = stmt
+                        .query_map([], |row| row.get::<_, String>(1))?
+                        .collect::<rusqlite::Result<Vec<_>>>()?;
+                    cols.iter().any(|c| c == "hashrate_by_coin")
+                };
+                if !has_hbc {
+                    conn.execute_batch(
+                        "ALTER TABLE history ADD COLUMN hashrate_by_coin TEXT NOT NULL DEFAULT '{}'",
+                    )
+                    .context("failed to add history.hashrate_by_coin")?;
+                }
+            }
+            conn.execute_batch(
+                r#"
+                CREATE TABLE IF NOT EXISTS miner_history (
+                    miner_id  TEXT NOT NULL,
+                    worker    TEXT NOT NULL,
+                    ts        INTEGER NOT NULL,
+                    hps       TEXT NOT NULL DEFAULT '{}',
+                    accepted  INTEGER NOT NULL DEFAULT 0,
+                    rejected  INTEGER NOT NULL DEFAULT 0,
+                    PRIMARY KEY (miner_id, worker, ts)
+                );
+                CREATE INDEX IF NOT EXISTS idx_miner_history_ts ON miner_history(ts);
+                "#,
+            )
+            .context("failed to migrate schema to v6")?;
         }
 
         conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
@@ -1134,21 +1180,26 @@ impl ShareStore {
 
     /// Append one history sample. Rows older than `retain_secs` are pruned
     /// in the same call so the table stays bounded at ~24h of 60s samples.
+    /// `hashrate_by_coin_json` carries the per-coin pool hashrate map
+    /// (`{"zion": 685000.0, "qtu": 3.8e7}`) introduced in schema v6 —
+    /// older rows read back as `"{}"`.
+    #[allow(clippy::too_many_arguments)]
     pub fn record_history_sample(
         &self,
         ts: u64,
         hashrate: f64,
         miners_online: u64,
         online_by_coin_json: &str,
+        hashrate_by_coin_json: &str,
         accepted: u64,
         rejected: u64,
         retain_secs: u64,
     ) -> Result<()> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         conn.execute(
-            "INSERT OR REPLACE INTO history (ts, hashrate, miners_online, online_by_coin, accepted, rejected)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![ts as i64, hashrate, miners_online as i64, online_by_coin_json, accepted as i64, rejected as i64],
+            "INSERT OR REPLACE INTO history (ts, hashrate, miners_online, online_by_coin, hashrate_by_coin, accepted, rejected)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![ts as i64, hashrate, miners_online as i64, online_by_coin_json, hashrate_by_coin_json, accepted as i64, rejected as i64],
         )?;
         conn.execute(
             "DELETE FROM history WHERE ts < ?1",
@@ -1158,17 +1209,114 @@ impl ShareStore {
     }
 
     /// Load the newest `limit` history samples, ascending by ts.
-    /// Returns `(ts, hashrate, miners_online, online_by_coin_json, accepted, rejected)`.
-    pub fn load_history(&self, limit: u32) -> Result<Vec<(u64, f64, u64, String, u64, u64)>> {
+    /// Returns `(ts, hashrate, miners_online, online_by_coin_json,
+    /// hashrate_by_coin_json, accepted, rejected)`.
+    pub fn load_history(
+        &self,
+        limit: u32,
+    ) -> Result<Vec<(u64, f64, u64, String, String, u64, u64)>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, hashrate, miners_online, online_by_coin, accepted, rejected
+            "SELECT ts, hashrate, miners_online, online_by_coin, hashrate_by_coin, accepted, rejected
              FROM (SELECT * FROM history ORDER BY ts DESC LIMIT ?1) ORDER BY ts ASC",
         )?;
         let rows = stmt.query_map(params![limit as i64], |row| {
             Ok((
                 row.get::<_, i64>(0)? as u64,
                 row.get::<_, f64>(1)?,
+                row.get::<_, i64>(2)? as u64,
+                row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
+                row.get::<_, i64>(5)? as u64,
+                row.get::<_, i64>(6)? as u64,
+            ))
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    }
+
+    // ── Per-miner history snapshots (schema v6) ────────────────────────
+
+    /// Append one per-miner hashrate sample. `hps_json` is the miner's
+    /// expected-hashes/sec per coin stream (`{"zion": 685e3, "qtu": 38e6}`).
+    /// Rows older than `retain_secs` are pruned in the same call.
+    pub fn record_miner_history_sample(
+        &self,
+        miner_id: &str,
+        worker: &str,
+        ts: u64,
+        hps_json: &str,
+        accepted: u64,
+        rejected: u64,
+        retain_secs: u64,
+    ) -> Result<()> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        conn.execute(
+            "INSERT OR REPLACE INTO miner_history (miner_id, worker, ts, hps, accepted, rejected)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                miner_id,
+                worker,
+                ts as i64,
+                hps_json,
+                accepted as i64,
+                rejected as i64
+            ],
+        )?;
+        conn.execute(
+            "DELETE FROM miner_history WHERE ts < ?1",
+            params![ts.saturating_sub(retain_secs) as i64],
+        )?;
+        Ok(())
+    }
+
+    /// Load per-miner history rows for wallet-scoped aggregation, ascending
+    /// by ts. Matches `miner_id` exactly, dotted `miner_id` suffixes
+    /// (`wallet.worker` login names), and any extra linked miner ids the
+    /// caller resolved (e.g. PPLNS address bindings).
+    /// Returns `(miner_id, worker, ts, hps_json, accepted, rejected)`.
+    pub fn load_miner_history(
+        &self,
+        wallet: &str,
+        extra_miner_ids: &[String],
+        since_ts: u64,
+        limit: u32,
+    ) -> Result<Vec<(String, String, u64, String, u64, u64)>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        // miner_id = wallet, or starts with "wallet." (login-name workers),
+        // or is one of the resolved linked ids. LIKE specials in the wallet
+        // are escaped so `w_…` ids can't widen the prefix match.
+        let like_prefix = wallet
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_");
+        let mut sql = String::from(
+            "SELECT miner_id, worker, ts, hps, accepted, rejected FROM miner_history
+             WHERE ts >= ?1 AND (miner_id = ?2 OR miner_id LIKE (?3 || '.%') ESCAPE '\\'",
+        );
+        let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = vec![
+            Box::new(since_ts as i64),
+            Box::new(wallet.to_string()),
+            Box::new(like_prefix),
+        ];
+        for id in extra_miner_ids {
+            sql.push_str(&format!(" OR miner_id = ?{}", params_vec.len() + 1));
+            params_vec.push(Box::new(id.clone()));
+        }
+        sql.push_str(") ORDER BY ts ASC LIMIT ?");
+        sql.push_str(&(params_vec.len() + 1).to_string());
+        params_vec.push(Box::new(limit as i64));
+
+        let params_refs: Vec<&dyn rusqlite::ToSql> =
+            params_vec.iter().map(|p| p.as_ref()).collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_refs.as_slice(), |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
                 row.get::<_, i64>(2)? as u64,
                 row.get::<_, String>(3)?,
                 row.get::<_, i64>(4)? as u64,
@@ -1757,10 +1905,28 @@ mod history_tests {
     fn history_sample_roundtrip_and_retention() {
         let store = ShareStore::open_in_memory().unwrap();
         store
-            .record_history_sample(1000, 250.5, 3, r#"{"zion":3}"#, 10, 1, 86400)
+            .record_history_sample(
+                1000,
+                250.5,
+                3,
+                r#"{"zion":3}"#,
+                r#"{"zion":2.5e5}"#,
+                10,
+                1,
+                86400,
+            )
             .unwrap();
         store
-            .record_history_sample(2000, 300.0, 4, r#"{"zion":4,"qtu":1}"#, 20, 2, 86400)
+            .record_history_sample(
+                2000,
+                300.0,
+                4,
+                r#"{"zion":4,"qtu":1}"#,
+                r#"{"zion":3e5,"qtu":1e7}"#,
+                20,
+                2,
+                86400,
+            )
             .unwrap();
         let rows = store.load_history(10).unwrap();
         assert_eq!(rows.len(), 2);
@@ -1768,13 +1934,73 @@ mod history_tests {
         assert_eq!(rows[1].0, 2000);
         assert_eq!(rows[1].2, 4);
         assert!(rows[1].3.contains("qtu"));
+        assert!(rows[1].4.contains("qtu"), "hashrate_by_coin roundtrip");
 
         // Retention: a new sample at ts=90000 prunes rows older than 3600s.
         store
-            .record_history_sample(90000, 1.0, 1, "{}", 30, 3, 3600)
+            .record_history_sample(90000, 1.0, 1, "{}", "{}", 30, 3, 3600)
             .unwrap();
         let rows = store.load_history(10).unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].0, 90000);
+    }
+
+    #[test]
+    fn miner_history_wallet_scoped_roundtrip() {
+        let store = ShareStore::open_in_memory().unwrap();
+        // Two workers on the wallet + one foreign miner + one linked-id row.
+        store
+            .record_miner_history_sample("w_wallet", "rig1", 1000, r#"{"qtu":1e6}"#, 5, 0, 86400)
+            .unwrap();
+        store
+            .record_miner_history_sample(
+                "w_wallet.rig2",
+                "rig2",
+                1000,
+                r#"{"qtu":2e6}"#,
+                3,
+                1,
+                86400,
+            )
+            .unwrap();
+        store
+            .record_miner_history_sample("other_miner", "rig9", 1000, r#"{"qtu":9e9}"#, 7, 0, 86400)
+            .unwrap();
+        store
+            .record_miner_history_sample(
+                "linked-login",
+                "rig3",
+                1000,
+                r#"{"qtu":4e6}"#,
+                2,
+                0,
+                86400,
+            )
+            .unwrap();
+
+        // Wallet match: own rows + dotted login + explicit linked id.
+        let rows = store
+            .load_miner_history("w_wallet", &["linked-login".to_string()], 0, 100)
+            .unwrap();
+        assert_eq!(rows.len(), 3, "foreign miner excluded");
+        assert!(rows.iter().all(|r| r.0 != "other_miner"));
+
+        // Prefix match alone (no linked id) — "other_miner" still out.
+        let rows = store.load_miner_history("w_wallet", &[], 0, 100).unwrap();
+        assert_eq!(rows.len(), 2);
+
+        // since_ts filter.
+        let rows = store
+            .load_miner_history("w_wallet", &[], 1001, 100)
+            .unwrap();
+        assert_eq!(rows.len(), 0);
+
+        // Retention: ts=90000 prunes everything older than 3600s back.
+        store
+            .record_miner_history_sample("w_wallet", "rig1", 90000, "{}", 9, 0, 3600)
+            .unwrap();
+        let rows = store.load_miner_history("w_wallet", &[], 0, 100).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].2, 90000);
     }
 }
