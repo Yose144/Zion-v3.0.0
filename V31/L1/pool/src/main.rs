@@ -532,10 +532,11 @@ async fn main() -> anyhow::Result<()> {
     // ── Payout sweeper ────────────────────────────────────────────────────
     let sweep_pool = Arc::clone(&pool);
     let sweep_share_store = share_store.clone();
+    let sweep_notifier = notifier.clone();
     let sweep_handle = tokio::spawn(async move {
         let interval = Duration::from_secs(args.payout_interval_s);
         PayoutSweeper::new(sweep_pool, interval)
-            .with_notifier(notifier.clone())
+            .with_notifier(sweep_notifier)
             .with_share_store(sweep_share_store)
             .run()
             .await;
@@ -559,6 +560,64 @@ async fn main() -> anyhow::Result<()> {
                 }
             })
             .await;
+        }
+    });
+
+    // ── Job-freshness alerting (A4.4) ──────────────────────────────────
+    // Poll every leg's job_age_ms; a leg over threshold means its
+    // upstream stopped delivering fresh work (miners keep grinding a
+    // dead job and waste shares). Alert via Notifier once per leg per
+    // cooldown; a recovered leg is re-armed so the next outage alerts
+    // again. The zion leg reports no job_age and is skipped naturally.
+    let stale_threshold_ms = std::env::var("ZION_POOL_JOB_STALE_MS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(120_000);
+    let stale_cooldown_s = std::env::var("ZION_POOL_JOB_STALE_COOLDOWN_S")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(600);
+    let stale_pool = Arc::clone(&pool);
+    let stale_bridge = multi_bridge.clone();
+    let stale_notifier = notifier.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(30));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        let mut alerted: std::collections::HashMap<String, std::time::Instant> =
+            std::collections::HashMap::new();
+        loop {
+            interval.tick().await;
+            let legs = {
+                let p = match stale_pool.lock() {
+                    Ok(p) => p,
+                    Err(_) => continue,
+                };
+                p.leg_statuses(&stale_bridge)
+            };
+            for leg in legs {
+                if !leg.enabled {
+                    continue;
+                }
+                let Some(age) = leg.job_age_ms else { continue };
+                if age <= stale_threshold_ms {
+                    alerted.remove(&leg.leg_id);
+                    continue;
+                }
+                let recent = alerted
+                    .get(&leg.leg_id)
+                    .map(|t| t.elapsed().as_secs() < stale_cooldown_s)
+                    .unwrap_or(false);
+                if recent {
+                    continue;
+                }
+                alerted.insert(leg.leg_id.clone(), std::time::Instant::now());
+                let n = stale_notifier.clone();
+                let (coin, id) = (leg.coin.clone(), leg.leg_id.clone());
+                let _ = tokio::task::spawn_blocking(move || {
+                    n.notify_job_stale(&coin, &id, age, stale_threshold_ms);
+                })
+                .await;
+            }
         }
     });
 

@@ -206,6 +206,27 @@ impl Notifier {
         }
     }
 
+    /// Notify that a mining leg's job has gone stale — the upstream feed
+    /// stopped delivering fresh work (Telegram). Callers rate-limit per
+    /// leg; this helper itself is fire-and-forget.
+    pub fn notify_job_stale(&self, coin: &str, leg_id: &str, age_ms: u64, threshold_ms: u64) {
+        warn!(
+            "notify_job_stale coin={} leg={} age={}ms threshold={}ms",
+            coin, leg_id, age_ms, threshold_ms
+        );
+
+        if self.config.telegram_enabled() {
+            let msg = format!(
+                "⏱️ Stale Job\nCoin: {}\nLeg: {}\nJob age: {:.1}s (threshold {}s)",
+                coin,
+                leg_id,
+                age_ms as f64 / 1000.0,
+                threshold_ms / 1000
+            );
+            self.send_telegram(&msg);
+        }
+    }
+
     /// Notify that a payout failed (Telegram + SMTP).
     pub fn notify_payout_failed(&self, height: u64, error_msg: &str) {
         error!("notify_payout_failed height={} error={}", height, error_msg);
