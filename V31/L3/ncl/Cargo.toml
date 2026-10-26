@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "NCL — Neural Compute Layer: Decentralized AI task marketplace (V31 Mainnet Alpha)"
+description = "NCL — Neural Compute Layer: Decentralized AI task marketplace (V31 Mainnet Beta)"
 
 [dependencies]
 axum = { workspace = true }

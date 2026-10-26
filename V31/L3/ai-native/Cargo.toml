@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "AI-Native — Autonomous agent framework on ZION blockchain (V31 Mainnet Alpha)"
+description = "AI-Native — Autonomous agent framework on ZION blockchain (V31 Mainnet Beta)"
 
 [dependencies]
 zion-ncl = { workspace = true }

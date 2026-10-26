@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Unified Multi-Chain L2 for ZION Mainnet Alpha: bridge, swap, DEX, wallet, credits."
+description = "Unified Multi-Chain L2 for ZION Mainnet Beta: bridge, swap, DEX, wallet, credits."
 
 [dependencies]
 zion-core = { workspace = true }
