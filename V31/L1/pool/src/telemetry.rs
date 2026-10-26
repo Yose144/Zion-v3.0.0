@@ -58,6 +58,32 @@ pub struct StreamStats {
     /// own expected work (`2^(8*len(target))/target`) instead of using the
     /// ZION job estimator.
     pub work: VecDeque<WorkSample>,
+    /// Reject counts by normalized bucket — see
+    /// [`MinerTelemetryRegistry::record_reject_reason`]. Bounded to ~6 keys.
+    pub reject_reasons: HashMap<String, u64>,
+}
+
+/// Normalize a reject reason string into a stable, bounded bucket label —
+/// upstream pools return free-form error text, so bucketing keeps the
+/// per-stream map small regardless of wording.
+pub fn reject_bucket(reason: &str) -> &'static str {
+    let r = reason.to_ascii_lowercase();
+    if r.contains("duplic") {
+        "duplicate"
+    } else if r.contains("difficult")
+        || r.split(|c: char| !c.is_ascii_alphanumeric())
+            .any(|t| t == "low")
+    {
+        "low_difficulty"
+    } else if r.contains("stale") || r.contains("job") || r.contains("unknown") {
+        "stale"
+    } else if r.contains("unauthor") || r.contains("rate_limit") || r.contains("banned") {
+        "unauthorized"
+    } else if r.contains("solution") || r.contains("parse") || r.contains("malform") {
+        "malformed"
+    } else {
+        "other"
+    }
 }
 
 /// Expected hashes per share for a big-endian target byte string:
@@ -399,6 +425,31 @@ impl MinerTelemetryRegistry {
         }
     }
 
+    /// Increment a stream's reject-reason bucket. Called alongside the
+    /// `accepted=false` paths of `record_job_result*`/`record_external_share`
+    /// with the protocol-level reason string; the reason is normalized by
+    /// [`reject_bucket`].
+    pub fn record_reject_reason(
+        &mut self,
+        miner_id: &str,
+        worker_name: &str,
+        stream: &str,
+        reason: &str,
+    ) {
+        let key = format!("{miner_id}/{worker_name}");
+        let Some(miner) = self.miners.get_mut(&key) else {
+            return;
+        };
+        let stats = miner
+            .streams
+            .entry(stream.to_ascii_lowercase())
+            .or_default();
+        *stats
+            .reject_reasons
+            .entry(reject_bucket(reason).to_string())
+            .or_insert(0) += 1;
+    }
+
     /// Record a block found by the miner.
     pub fn record_block_found(&mut self, miner_id: &str, worker_name: &str) {
         let now_s = now_unix_seconds();
@@ -683,6 +734,74 @@ mod tests {
             (pool_hr - 3_000_000.0).abs() < 1.0,
             "pool_hashrate={pool_hr}"
         );
+    }
+
+    #[test]
+    fn test_reject_reason_buckets() {
+        let mut reg = MinerTelemetryRegistry::new();
+        reg.record_external_share("m", "w", "qtu", false, 0.0);
+        reg.record_reject_reason("m", "w", "qtu", "rejected:low difficulty");
+        reg.record_reject_reason("m", "w", "qtu", "duplicate");
+        reg.record_reject_reason("m", "w", "qtu", "stale");
+        // Accepted share must not enter reject buckets.
+        reg.record_external_share("m", "w", "qtu", true, 1e6);
+        let m = reg.get_miner("m/w").expect("miner");
+        let s = m.streams.get("qtu").expect("qtu stream");
+        assert_eq!(s.reject_reasons.get("low_difficulty"), Some(&1));
+        assert_eq!(s.reject_reasons.get("duplicate"), Some(&1));
+        assert_eq!(s.reject_reasons.get("stale"), Some(&1));
+        assert_eq!(s.reject_reasons.len(), 3);
+        assert_eq!(s.valid_shares, 1);
+        assert_eq!(s.invalid_shares, 1);
+    }
+
+    #[test]
+    fn test_reject_reason_independent_per_stream() {
+        let mut reg = MinerTelemetryRegistry::new();
+        reg.record_external_share("m", "w", "qtu", false, 0.0);
+        reg.record_external_share("m", "w", "prl", false, 0.0);
+        reg.record_reject_reason("m", "w", "qtu", "timeout");
+        reg.record_reject_reason("m", "w", "prl", "rejected:bad proof");
+        let m = reg.get_miner("m/w").expect("miner");
+        assert_eq!(
+            m.streams["qtu"].reject_reasons.get("other"),
+            Some(&1),
+            "qtu timeout buckets to 'other' (no keyword match)"
+        );
+        assert_eq!(m.streams["prl"].reject_reasons.get("other"), Some(&1));
+        assert!(m.streams["qtu"]
+            .reject_reasons
+            .get("low_difficulty")
+            .is_none());
+    }
+
+    #[test]
+    fn test_reject_bucket_normalization() {
+        assert_eq!(reject_bucket("duplicate"), "duplicate");
+        assert_eq!(reject_bucket("Job is a duplicate"), "duplicate");
+        assert_eq!(reject_bucket("low difficulty"), "low_difficulty");
+        assert_eq!(
+            reject_bucket("rejected:difficulty too low"),
+            "low_difficulty"
+        );
+        assert_eq!(reject_bucket("below_target"), "other");
+        assert_eq!(reject_bucket("stale"), "stale");
+        assert_eq!(reject_bucket("unknown job"), "stale");
+        assert_eq!(reject_bucket("job not found"), "stale");
+        assert_eq!(reject_bucket("unauthorized_miner"), "unauthorized");
+        assert_eq!(reject_bucket("rate_limited"), "unauthorized");
+        assert_eq!(
+            reject_bucket("banned: too many invalid shares"),
+            "unauthorized"
+        );
+        assert_eq!(reject_bucket("invalid solution"), "malformed");
+        assert_eq!(reject_bucket("parse error"), "malformed");
+        // Upstream free-form strings must stay bounded.
+        assert_eq!(reject_bucket("some exotic upstream text"), "other");
+        assert_eq!(reject_bucket("timeout"), "other");
+        assert_eq!(reject_bucket("not_connected"), "other");
+        assert_eq!(reject_bucket("channel_closed"), "other");
+        assert_eq!(reject_bucket("external_not_enabled"), "other");
     }
 
     #[test]

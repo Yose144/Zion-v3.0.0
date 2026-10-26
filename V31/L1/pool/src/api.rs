@@ -2209,6 +2209,9 @@ fn miner_to_json(
                         json!(stats.valid_shares as f64 / total as f64),
                     );
                 }
+                if !stats.reject_reasons.is_empty() {
+                    obj.insert("reject_reasons".to_string(), json!(stats.reject_reasons));
+                }
                 if !stats.work.is_empty() {
                     obj.insert(
                         "hps_live".to_string(),
@@ -2938,6 +2941,36 @@ mod tests {
         .unwrap();
         assert_eq!(unknown["worker_count"], 0);
         assert_eq!(unknown["shares"]["accepted"], 0);
+    }
+
+    #[test]
+    fn miners_payload_serializes_reject_reasons() {
+        let pool = test_pool();
+        {
+            let pool = pool.lock().unwrap();
+            let mut reg = pool.telemetry.lock().unwrap();
+            reg.record_external_share("miner-a", "w1", "qtu", false, 0.0);
+            reg.record_external_share("miner-a", "w1", "qtu", true, 5e6);
+            reg.record_reject_reason("miner-a", "w1", "qtu", "rejected:low difficulty");
+            reg.record_reject_reason("miner-a", "w1", "qtu", "duplicate");
+            reg.record_reject_reason("miner-a", "w1", "zion", "stale");
+        }
+        let api = PoolApi::new(pool, None, None);
+        let payload: serde_json::Value =
+            serde_json::from_str(&api.build_miners_payload(50)).unwrap();
+        let miner = &payload["miners"][0];
+        let streams = miner["streams"].as_object().expect("streams object");
+        let qtu = streams["qtu"].as_object().expect("qtu stream");
+        let reasons = qtu["reject_reasons"].as_object().expect("reject_reasons");
+        assert_eq!(reasons["low_difficulty"], 1);
+        assert_eq!(reasons["duplicate"], 1);
+        assert_eq!(reasons.len(), 2);
+        // The zion stream got a reject reason even with no recorded shares —
+        // bucket map lives on the stream entry.
+        let zion = streams["zion"].as_object().expect("zion stream");
+        assert_eq!(zion["reject_reasons"]["stale"], 1);
+        // accept_rate still present alongside reasons.
+        assert!(qtu["accept_rate"].as_f64().unwrap() > 0.0);
     }
 
     #[test]

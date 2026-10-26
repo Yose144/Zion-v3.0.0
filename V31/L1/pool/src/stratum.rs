@@ -813,13 +813,17 @@ impl StratumServer {
                     worker_name,
                     nonce_hex
                 );
-                self.telemetry.lock().unwrap().record_job_result(
-                    &miner_id,
-                    &worker_short,
-                    false,
-                    attempted_hashes,
-                    elapsed_ms,
-                );
+                {
+                    let mut t = self.telemetry.lock().unwrap();
+                    t.record_job_result(
+                        &miner_id,
+                        &worker_short,
+                        false,
+                        attempted_hashes,
+                        elapsed_ms,
+                    );
+                    t.record_reject_reason(&miner_id, &worker_short, "zion", "low_difficulty");
+                }
                 if self.v1_invalid_share_ban(ctx) {
                     return rejected_response(id, "banned: too many invalid shares");
                 }
@@ -833,13 +837,17 @@ impl StratumServer {
                     nonce_hex,
                     e
                 );
-                self.telemetry.lock().unwrap().record_job_result(
-                    &miner_id,
-                    &worker_short,
-                    false,
-                    attempted_hashes,
-                    elapsed_ms,
-                );
+                {
+                    let mut t = self.telemetry.lock().unwrap();
+                    t.record_job_result(
+                        &miner_id,
+                        &worker_short,
+                        false,
+                        attempted_hashes,
+                        elapsed_ms,
+                    );
+                    t.record_reject_reason(&miner_id, &worker_short, "zion", &e.to_string());
+                }
                 if self.v1_invalid_share_ban(ctx) {
                     return rejected_response(id, "banned: too many invalid shares");
                 }
@@ -1798,6 +1806,11 @@ impl StratumServer {
                 login.login,
                 job_id
             );
+            {
+                let mut t = self.telemetry.lock().unwrap();
+                t.record_external_share(&login.wallet, &login.login, "QTU", false, 0.0);
+                t.record_reject_reason(&login.wallet, &login.login, "qtu", "stale");
+            }
             return Err("stale".to_string());
         };
 
@@ -1828,26 +1841,26 @@ impl StratumServer {
         let (accepted, status) = match bridge_result {
             Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
                 crate::share_forwarder::ShareForwardResult::Accepted,
-            )) => (true, "accepted"),
+            )) => (true, "accepted".to_string()),
             Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
                 crate::share_forwarder::ShareForwardResult::Unknown,
-            )) => (true, "accepted_unknown"),
+            )) => (true, "accepted_unknown".to_string()),
             Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
                 crate::share_forwarder::ShareForwardResult::BelowTarget,
-            )) => (false, "below_target"),
+            )) => (false, "below_target".to_string()),
             Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
                 crate::share_forwarder::ShareForwardResult::Rejected(reason),
-            )) => return Err(format!("rejected:{reason}")),
+            )) => (false, format!("rejected:{reason}")),
             Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
                 crate::share_forwarder::ShareForwardResult::NotConnected,
-            )) => return Err("not_connected".to_string()),
+            )) => (false, "not_connected".to_string()),
             Some(crate::auxpow_bridge::ShareForwardOutcome::NotEnabled) => {
-                return Err("external_not_enabled".to_string())
+                (false, "external_not_enabled".to_string())
             }
             Some(crate::auxpow_bridge::ShareForwardOutcome::ChannelClosed) => {
-                return Err("channel_closed".to_string())
+                (false, "channel_closed".to_string())
             }
-            None => return Err("timeout".to_string()),
+            None => (false, "timeout".to_string()),
         };
 
         tracing::info!(
@@ -1878,13 +1891,19 @@ impl StratumServer {
                 return Err("duplicate".to_string());
             }
         }
-        self.telemetry.lock().unwrap().record_external_share(
-            &login.wallet,
-            &login.login,
-            "QTU",
-            accepted,
-            crate::telemetry::expected_hashes_for_target_hex(&pkg.target_hex),
-        );
+        {
+            let mut t = self.telemetry.lock().unwrap();
+            t.record_external_share(
+                &login.wallet,
+                &login.login,
+                "QTU",
+                accepted,
+                crate::telemetry::expected_hashes_for_target_hex(&pkg.target_hex),
+            );
+            if !accepted {
+                t.record_reject_reason(&login.wallet, &login.login, "qtu", &status);
+            }
+        }
         let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci("qpow-poseidon2")
             .unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
         let group = resolve_session_group(&login.wallet, &login.login);
@@ -1894,9 +1913,13 @@ impl StratumServer {
             .record(group, rev_source, accepted);
 
         if accepted {
-            Ok(status)
+            Ok(if status == "accepted_unknown" {
+                "accepted_unknown"
+            } else {
+                "accepted"
+            })
         } else {
-            Err(status.to_string())
+            Err(status)
         }
     }
 
@@ -1909,6 +1932,9 @@ impl StratumServer {
         hs: Option<u64>,
     ) -> (bool, String) {
         let Some(pearl) = &self.pearl else {
+            let mut t = self.telemetry.lock().unwrap();
+            t.record_external_share(miner_id, worker_name, "PRL", false, 0.0);
+            t.record_reject_reason(miner_id, worker_name, "prl", "external_not_enabled");
             return (false, "pearl_not_enabled".to_string());
         };
         fn map_upstream_reply(reply: crate::pearl_upstream::UpstreamSubmitReply) -> (bool, String) {
@@ -2008,13 +2034,13 @@ impl StratumServer {
                 return (false, "duplicate".to_string());
             }
         }
-        self.telemetry.lock().unwrap().record_external_share(
-            miner_id,
-            worker_name,
-            "PRL",
-            accepted,
-            share_eh,
-        );
+        {
+            let mut t = self.telemetry.lock().unwrap();
+            t.record_external_share(miner_id, worker_name, "PRL", accepted, share_eh);
+            if !accepted {
+                t.record_reject_reason(miner_id, worker_name, "prl", &status);
+            }
+        }
         let group = resolve_session_group(miner_id, worker_name);
         self.routing_stats.lock().unwrap().record(
             group,
@@ -2733,6 +2759,26 @@ impl StratumServer {
                                                 };
                                                 let _ = write_v3_message(writer, &set_diff).await;
                                             }
+                                        } else {
+                                            let reason = match &result {
+                                                Err(e) => e.to_string(),
+                                                Ok(false) => "low_difficulty".to_string(),
+                                                Ok(true) => "rejected".to_string(),
+                                            };
+                                            let mut t = self.telemetry.lock().unwrap();
+                                            t.record_job_result(
+                                                &submit_miner,
+                                                &submit_worker,
+                                                false,
+                                                attempted_h,
+                                                elapsed_ms,
+                                            );
+                                            t.record_reject_reason(
+                                                &submit_miner,
+                                                &submit_worker,
+                                                "zion",
+                                                &reason,
+                                            );
                                         }
 
                                         // If block found, submit to node
@@ -3346,12 +3392,23 @@ impl StratumServer {
                                         }
                                     }
                                 } else {
-                                    self.telemetry.lock().unwrap().record_job_result(
+                                    let reason = match &result {
+                                        Err(e) => e.to_string(),
+                                        _ => "low_difficulty".to_string(),
+                                    };
+                                    let mut t = self.telemetry.lock().unwrap();
+                                    t.record_job_result(
                                         &submit_miner,
                                         &submit_worker,
                                         false,
                                         attempted_h,
                                         elapsed_ms,
+                                    );
+                                    t.record_reject_reason(
+                                        &submit_miner,
+                                        &submit_worker,
+                                        "zion",
+                                        &reason,
                                     );
                                 }
 
@@ -3782,13 +3839,24 @@ impl StratumServer {
                                 // Route external shares to the coin's own telemetry
                                 // stream so they appear under `streams` in /miners
                                 // without polluting ZION share/hashrate stats.
-                                self.telemetry.lock().unwrap().record_external_share(
-                                    &sub_miner_id,
-                                    &sub_worker_name,
-                                    &coin,
-                                    accepted,
-                                    share_eh,
-                                );
+                                {
+                                    let mut t = self.telemetry.lock().unwrap();
+                                    t.record_external_share(
+                                        &sub_miner_id,
+                                        &sub_worker_name,
+                                        &coin,
+                                        accepted,
+                                        share_eh,
+                                    );
+                                    if !accepted {
+                                        t.record_reject_reason(
+                                            &sub_miner_id,
+                                            &sub_worker_name,
+                                            &coin,
+                                            &status,
+                                        );
+                                    }
+                                }
                                 let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci(
                                     &submit_algorithm
                                 ).unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);

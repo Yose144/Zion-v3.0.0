@@ -477,12 +477,23 @@ impl ShareStore {
     }
 
     /// Record a block (or update status if already present).
+    ///
+    /// One row per (coin, height): several pool candidates can race for the
+    /// same height — a losing submission (`orphaned`) typically lands *after*
+    /// the winner's `confirmed` write (2026-10-26 RCA: ~21 % of candidates).
+    /// `confirmed` is therefore sticky and a late confirmed write refreshes
+    /// hash/miner to the winning candidate.
     pub fn record_block(&self, rec: &BlockRecord) -> Result<()> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         conn.execute(
             "INSERT INTO blocks (coin, height, hash, miner_id, worker_name, share_difficulty, network_difficulty, status, ts)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, unixepoch())
-             ON CONFLICT(coin, height) DO UPDATE SET status = ?8",
+             ON CONFLICT(coin, height) DO UPDATE SET
+                status = CASE WHEN blocks.status = 'confirmed' THEN 'confirmed' ELSE excluded.status END,
+                hash = CASE WHEN excluded.status = 'confirmed' THEN excluded.hash ELSE blocks.hash END,
+                miner_id = CASE WHEN excluded.status = 'confirmed' THEN excluded.miner_id ELSE blocks.miner_id END,
+                worker_name = CASE WHEN excluded.status = 'confirmed' THEN excluded.worker_name ELSE blocks.worker_name END,
+                confirmed_at = CASE WHEN excluded.status = 'confirmed' THEN unixepoch() ELSE blocks.confirmed_at END",
             params![
                 rec.coin,
                 rec.height as i64,
@@ -1536,6 +1547,59 @@ mod tests {
 
         let blocks = store.query_blocks(10).unwrap();
         assert_eq!(blocks.len(), 1);
+    }
+
+    /// 2026-10-26 orphan-race RCA: a losing candidate's `orphaned` write
+    /// must never downgrade an already `confirmed` row for the same height,
+    /// and a late `confirmed` write must still win (and record the winner's
+    /// hash/miner).
+    #[test]
+    fn block_orphan_write_does_not_downgrade_confirmed() {
+        let store = ShareStore::open_in_memory().unwrap();
+        let winner = BlockRecord {
+            coin: "zion".to_string(),
+            height: 300,
+            hash: "winner".to_string(),
+            miner_id: "m1".to_string(),
+            worker_name: "w1".to_string(),
+            share_difficulty: 1,
+            network_difficulty: 1,
+            status: "confirmed".to_string(),
+        };
+        store.record_block(&winner).unwrap();
+        store
+            .record_block(&BlockRecord {
+                hash: "loser".to_string(),
+                status: "orphaned".to_string(),
+                ..winner.clone()
+            })
+            .unwrap();
+        let row = store.get_block("zion", 300).unwrap().unwrap();
+        assert_eq!(row.status, "confirmed");
+        assert_eq!(row.hash, "winner");
+
+        // Reverse order: orphan first, late confirmed still wins the row.
+        store
+            .record_block(&BlockRecord {
+                height: 301,
+                hash: "loser".to_string(),
+                status: "orphaned".to_string(),
+                ..winner.clone()
+            })
+            .unwrap();
+        store
+            .record_block(&BlockRecord {
+                height: 301,
+                hash: "winner".to_string(),
+                miner_id: "m2".to_string(),
+                status: "confirmed".to_string(),
+                ..winner.clone()
+            })
+            .unwrap();
+        let row = store.get_block("zion", 301).unwrap().unwrap();
+        assert_eq!(row.status, "confirmed");
+        assert_eq!(row.hash, "winner");
+        assert_eq!(row.miner_id, "m2");
     }
 
     #[test]
