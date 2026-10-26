@@ -3,6 +3,8 @@
 > **Datum:** 2026-10-21 · **Autor:** Devin (hluboký scan repo + Edge)
 > **Vstup:** [`docs/3.2/V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md) (vision/blueprint, fáze N1–N6), [`docs/3.2/V33_GAP_ANALYSIS.md`](docs/3.2/V33_GAP_ANALYSIS.md) (snapshot 2026-09-28), [`docs/3.2/StatusV3.md`](docs/3.2/StatusV3.md), [`V31/AGENTS.md`](V31/AGENTS.md), [`apps/website-v2.9/src/lib/nirvana-roadmap.ts`](apps/website-v2.9/src/lib/nirvana-roadmap.ts) (kanonické veřejné workstreamy), živý stav Edge `vmi3425821` ověřen přes SSH.
 > **Značky stavu:** **ŽIVÉ** = běží v produkci s důkazem · **STAVBA** = kód existuje, částečně nasazeno · **HORIZONT** = stub/koncept · **HYPOTÉZA** = jen dokumentace.
+>
+> **⚠️ Aktualizace 2026-10-26:** §1 a §3 níže jsou snapshot k 21. 10. (před dokončením splitu na EDGE2 a před G8 run #5). Aktuální stav, registr všech v3.3 plánů, crosswalk N/M/R/V33/W, ekosystémová matice a rozhodovací fronta: [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md). Proveditelný checklist: [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md). Fáze N0 (cesta 3.2 ALPHA → BETA → Mainnet Stable) je rozepsaná v [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Fáze a DoD V33-1…9 tohoto dokumentu platí; navržené doplňky V33-10 (OASIS review) a V33-11 (nezávislý operátor + restore) viz mapa §3.1.
 > **Rozpor kód vs. docs:** vždy vítězí kód/on-chain data. Tento dokument je execution plán — Master Plan zůstává vision vrstvou, `nirvana-roadmap.ts` veřejnou podobou.
 
 ---
@@ -184,10 +186,14 @@ Původní N1–N6 z Master Planu přeuspořádané podle skutečné připravenos
 
 | Dokument | Role pro v3.3 |
 |---|---|
+| `NIRVANA-V3.3-MAP.md` + `NIRVANA-V3.3-CHECKLIST.md` | **aktuální mapa + checklist (2026-10-26)** — úplný registr plánů je v mapě §1 |
+| `docs/3.2/3.2.1-3.2.9_PLAN.md` | N0: soupis prací ALPHA → BETA → RC → Mainnet Stable (9 sekcí, ID položek) |
+| `POOL-FLEET-EXPANSION-PLAN.md` | N2: pro-pool parity + Fleet OS (W1–W7) |
+| `AUDIT-REPORT.md` + `AUDIT-3.2-BETA-PLAN.md` | interní audit vlny 1–7 + alpha → beta gate |
+| `canon/books/MiseAmenti/04-Exekucni-Charta-3.3.md` | kanonický rámec M0–M8 + release gates R1–R9 |
 | `docs/3.2/V33_NIRVANA_MASTER_PLAN.md` | vision/blueprint (N1–N6, DoD draft) |
 | `docs/3.2/V33_GAP_ANALYSIS.md` | předchozí gap scan 2026-09-28 (tento dokument jej aktualizuje) |
 | `docs/3.2/ROADMAP.md` + `V31/PLAN_TO_3.2.md` | 3.2 gate registry (G1–G11, fáze E–J) |
-| `docs/3.2/3.2.1-3.2.9_PLAN.md` | detailní execution v rámci 3.2.x |
 | `docs/3.2/ZION-POOL-NG-PLAN.md` | pool refaktor F1–F6 (vetšina nasazena) |
 | `docs/3.2/QUANTUS-INTEGRATION-PLAN.md` | QTC×ZION most |
 | `docs/3.2/MULTI-ALGO-ROADMAP.md` | 33-coin ExternalCoin inventář |

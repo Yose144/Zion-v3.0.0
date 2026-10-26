@@ -18,6 +18,8 @@
 >
 > **Technický execution companion 3.3:** [`V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md)
 >
+> **Aktuální plánování (2026-10-26):** mapa 3.3 [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) · checklist 3.3 [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · cesta 3.2 ALPHA → BETA → Mainnet Stable [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) — sekce „Where we are now" níže je historický snapshot k 2026-08-31.
+>
 > **Canonical 3.2 forward plan:** [`docs/3.2/ROADMAP.md`](./docs/3.2/ROADMAP.md)
 >
 > **Detailní plán 3.2.1–3.2.9:** [`docs/3.2/3.2.1-3.2.9_PLAN.md`](./docs/3.2/3.2.1-3.2.9_PLAN.md)
