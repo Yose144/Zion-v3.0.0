@@ -151,11 +151,11 @@ export const BLOCKS: BlockRow[] = [
 ];
 
 export const PAYOUTS: PayoutRow[] = [
-  { coin: 'zion', ts: now - 1_800, address: 'zion1wq2m…x9p40', amount: 183.42, unit: 'ZION', tx: 'tx4f…9aa2', confirmations: 61, confirmed: true },
-  { coin: 'zion', ts: now - 5_400, address: 'zion1j8pq…u2v88', amount: 96.10, unit: 'ZION', tx: 'tx1b…77cd', confirmations: 174, confirmed: true },
-  { coin: 'qtc', ts: now - 10_800, address: 'qz7xk…m2', amount: 4.812_000_000_001, unit: 'QTC', tx: '0x8f2e…c1', confirmations: 44, confirmed: true },
-  { coin: 'zion', ts: now - 14_400, address: 'zion1n4k4…hf8c2', amount: 512.77, unit: 'ZION', tx: 'tx90…41fe', confirmations: 402, confirmed: true },
-  { coin: 'prl', ts: now - 86_400, address: 'prl1q9…zz21', amount: 2.5, unit: 'PRL', tx: 'dry-run', confirmations: 0, confirmed: false },
+  { coin: 'zion', ts: now - 1_800, address: 'zion1wq2m…x9p40', amount: 183.42, unit: 'ZION', tx: 'tx4f…9aa2', confirmations: 61, confirmed: true, status: 'confirmed' },
+  { coin: 'zion', ts: now - 5_400, address: 'zion1j8pq…u2v88', amount: 96.10, unit: 'ZION', tx: 'tx1b…77cd', confirmations: 174, confirmed: true, status: 'confirmed' },
+  { coin: 'qtc', ts: now - 10_800, address: 'qz7xk…m2', amount: 4.812_000_000_001, unit: 'QTC', tx: '0x8f2e…c1', confirmations: 44, confirmed: true, status: 'confirmed' },
+  { coin: 'zion', ts: now - 14_400, address: 'zion1n4k4…hf8c2', amount: 512.77, unit: 'ZION', tx: 'tx90…41fe', confirmations: 402, confirmed: true, status: 'confirmed' },
+  { coin: 'prl', ts: now - 86_400, address: 'prl1q9…zz21', amount: 2.5, unit: 'PRL', tx: 'dry-run', confirmations: 0, confirmed: false, status: 'sent' },
 ];
 
 const hist = (base: number, spread: number, n = 48) =>
@@ -180,8 +180,8 @@ export const DEMO_MINER: Record<string, MinerStats> = {
     total_paid: 2_814.55,
     unit: 'ZION',
     payouts: [
-      { coin: 'zion', ts: now - 14_400, address: 'zion1n4k4…hf8c2', amount: 512.77, unit: 'ZION', tx: 'tx90…41fe', confirmations: 402, confirmed: true },
-      { coin: 'zion', ts: now - 100_800, address: 'zion1n4k4…hf8c2', amount: 488.02, unit: 'ZION', tx: 'tx5e…90ab', confirmations: 1_922, confirmed: true },
+      { coin: 'zion', ts: now - 14_400, address: 'zion1n4k4…hf8c2', amount: 512.77, unit: 'ZION', tx: 'tx90…41fe', confirmations: 402, confirmed: true, status: 'confirmed' },
+      { coin: 'zion', ts: now - 100_800, address: 'zion1n4k4…hf8c2', amount: 488.02, unit: 'ZION', tx: 'tx5e…90ab', confirmations: 1_922, confirmed: true, status: 'confirmed' },
     ],
     active: true,
     window_share: 0.612,
@@ -202,7 +202,7 @@ export const DEMO_MINER: Record<string, MinerStats> = {
     total_paid: 4.812,
     unit: 'QTC',
     payouts: [
-      { coin: 'qtc', ts: now - 10_800, address: 'qz7xk…m2', amount: 4.812, unit: 'QTC', tx: '0x8f2e…c1', confirmations: 44, confirmed: true },
+      { coin: 'qtc', ts: now - 10_800, address: 'qz7xk…m2', amount: 4.812, unit: 'QTC', tx: '0x8f2e…c1', confirmations: 44, confirmed: true, status: 'confirmed' },
     ],
     active: true,
     window_share: 0.087,

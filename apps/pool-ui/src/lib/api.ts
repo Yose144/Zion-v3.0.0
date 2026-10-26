@@ -4,7 +4,7 @@
 // deliberately serves only live operational data.
 
 import * as mock from './mock';
-import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, MinerStats, PayoutRow, PoolOverview } from './types';
+import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, MinerStats, PayoutRow, PayoutStatus, PoolOverview } from './types';
 
 const USE_MOCK = false;
 const API_BASE = '/public/v1';
@@ -102,8 +102,8 @@ interface ApiBlock {
   network_difficulty?: number; share_difficulty?: number; confirmed_at?: number | null;
 }
 interface ApiPayout {
-  coin: string; ts: number; address: string; amount_flowers?: number;
-  tx_id?: string; confirmations?: number; confirmed?: boolean;
+  coin: string; ts: number | null; address: string; amount_flowers?: number;
+  tx_id?: string; confirmations?: number; confirmed?: boolean; status?: string;
 }
 interface ApiWorker {
   name: string; worker: string; accepted: number; rejected: number;
@@ -129,12 +129,23 @@ function normalizeAmount(coin: CoinId, raw: number, unit: string): { amount: num
 
 function toPayoutRow(coin: CoinId, p: ApiPayout): PayoutRow {
   const { amount, unit } = normalizeAmount(coin, Number(p.amount_flowers ?? 0), 'native');
+  const tx = p.tx_id ?? '';
+  const confirmed = p.confirmed ?? false;
+  const status: PayoutStatus =
+    p.status === 'queued' || p.status === 'sent' || p.status === 'confirmed'
+      ? p.status
+      : confirmed
+        ? 'confirmed'
+        : tx
+          ? 'sent'
+          : 'queued';
   return {
     coin, ts: p.ts, address: p.address,
     amount, unit,
-    tx: p.tx_id ?? '',
+    tx,
     confirmations: p.confirmations ?? 0,
-    confirmed: p.confirmed ?? false,
+    confirmed,
+    status,
   };
 }
 

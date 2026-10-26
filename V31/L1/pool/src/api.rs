@@ -560,11 +560,18 @@ impl PoolApi {
                             .filter(|r| r.coin == coin || coin.is_empty())
                             .take(limit as usize)
                             .collect();
+                        let mut rows = queued_payouts_snapshot(&self.pool, coin, Some(wallet));
+                        if let serde_json::Value::Array(db) =
+                            serialize_public_payouts_json(&payouts)
+                        {
+                            rows.extend(db);
+                        }
+                        rows.truncate(limit as usize);
                         let body = json!({
                             "ok": true,
                             "coin": coin,
                             "wallet": wallet,
-                            "payouts": serialize_public_payouts_json(&payouts),
+                            "payouts": rows,
                         })
                         .to_string();
                         ("200 OK", "application/json", body)
@@ -649,9 +656,16 @@ impl PoolApi {
                             .filter(|r| coin.is_empty() || r.coin == coin)
                             .take(limit as usize)
                             .collect();
+                        let mut rows = queued_payouts_snapshot(&self.pool, &coin, None);
+                        if let serde_json::Value::Array(db) =
+                            serialize_public_payouts_json(&payouts)
+                        {
+                            rows.extend(db);
+                        }
+                        rows.truncate(limit as usize);
                         let body = json!({
                             "ok": true,
-                            "payouts": serialize_public_payouts_json(&payouts),
+                            "payouts": rows,
                         })
                         .to_string();
                         ("200 OK", "application/json", body)
@@ -2525,6 +2539,67 @@ fn serialize_public_blocks_json(blocks: &[crate::store::DbBlockRow]) -> serde_js
     )
 }
 
+/// Lifecycle label for one payout row: queued (computed, awaiting
+/// broadcast — lives in `pool.pplns.pending_payouts`), sent (tx broadcast,
+/// awaiting confirmations), confirmed (chain-confirmed).
+fn payout_lifecycle(confirmed: bool, tx_id: &str) -> &'static str {
+    if confirmed {
+        "confirmed"
+    } else if tx_id.is_empty() {
+        "queued"
+    } else {
+        "sent"
+    }
+}
+
+/// Queued (not-yet-broadcast) payouts from the in-memory PPLNS queue,
+/// serialized in the same shape as DB rows so clients can render one
+/// feed. `payout_chain` maps to the public coin id.
+fn queued_payout_json(height: u64, e: &crate::v3_pplns::PayoutEntry) -> serde_json::Value {
+    let coin = match e.coin.as_deref() {
+        Some(c) => c.to_ascii_lowercase(),
+        None => match e.payout_chain.as_deref() {
+            None | Some("") | Some("zion") => "zion".to_string(),
+            Some("quantus") => "qtu".to_string(),
+            Some(c) => c.to_ascii_lowercase(),
+        },
+    };
+    json!({
+        "ts": null,
+        "height": height,
+        "address": e.address,
+        "coin": coin,
+        "amount_flowers": e.amount,
+        "tx_id": null,
+        "confirmations": 0,
+        "confirmed": false,
+        "status": "queued",
+    })
+}
+
+/// Snapshot of queued (not-yet-broadcast) payouts as public JSON rows.
+/// Short pool lock — only clones the pending vec, no I/O under lock.
+fn queued_payouts_snapshot(
+    pool: &Arc<Mutex<crate::pool::Pool>>,
+    coin_filter: &str,
+    address_filter: Option<&str>,
+) -> Vec<serde_json::Value> {
+    let pending = match pool.lock() {
+        Ok(guard) => guard.pending_payouts.clone(),
+        Err(_) => return Vec::new(),
+    };
+    pending
+        .iter()
+        .map(|(h, e)| queued_payout_json(*h, e))
+        .filter(|row| {
+            let c = row["coin"].as_str().unwrap_or_default();
+            let a = row["address"].as_str().unwrap_or_default();
+            (coin_filter.is_empty() || c == coin_filter)
+                && address_filter.map(|w| a == w).unwrap_or(true)
+        })
+        .collect()
+}
+
 /// Public payouts feed — bare array; `address` is authoritative, `miner_id`
 /// (worker-suffixed) stays internal.
 fn serialize_public_payouts_json(payouts: &[crate::store::PayoutRow]) -> serde_json::Value {
@@ -2542,6 +2617,7 @@ fn serialize_public_payouts_json(payouts: &[crate::store::PayoutRow]) -> serde_j
                     "block_hash": p.block_hash,
                     "confirmations": p.confirmations,
                     "confirmed": p.confirmed,
+                    "status": payout_lifecycle(p.confirmed, &p.tx_id),
                 })
             })
             .collect(),
@@ -2581,6 +2657,7 @@ fn serialize_payouts_json(payouts: &[crate::store::PayoutRow]) -> String {
             "block_hash": p.block_hash,
             "confirmations": p.confirmations,
             "confirmed": p.confirmed,
+            "status": payout_lifecycle(p.confirmed, &p.tx_id),
         })).collect::<Vec<_>>(),
     })
     .to_string()
@@ -2620,6 +2697,82 @@ mod tests {
         let (miner, limit) = parse_query_miner_limit("/payouts?miner=abc&limit=20", 50);
         assert_eq!(miner, Some("abc".to_string()));
         assert_eq!(limit, 20);
+    }
+
+    #[test]
+    fn public_payouts_report_queued_sent_confirmed_lifecycle() {
+        let pool = test_pool();
+        {
+            let mut p = pool.lock().unwrap();
+            p.pending_payouts.push((
+                97_500,
+                crate::v3_pplns::PayoutEntry {
+                    miner_id: "alice".into(),
+                    address: "zion1alice".into(),
+                    amount: 1_500_000,
+                    share_count: 12,
+                    payout_chain: None,
+                    native_units: false,
+                    coin: None,
+                    revenue_event: None,
+                },
+            ));
+        }
+        let store = Arc::new(ShareStore::open_in_memory().unwrap());
+        store
+            .record_payout(&crate::store::PayoutRecord {
+                miner_id: "bob".into(),
+                address: "zion1bob".into(),
+                amount_flowers: 2_000_000,
+                tx_id: "tx_sent".into(),
+                height: 97_400,
+                block_hash: "bh".into(),
+                coin: "zion".into(),
+            })
+            .unwrap();
+        store
+            .record_payout(&crate::store::PayoutRecord {
+                miner_id: "carol".into(),
+                address: "zion1carol".into(),
+                amount_flowers: 3_000_000,
+                tx_id: "tx_conf".into(),
+                height: 97_300,
+                block_hash: "bh2".into(),
+                coin: "zion".into(),
+            })
+            .unwrap();
+        store.confirm_payout("tx_conf", 30).unwrap();
+        let api = PoolApi::new(pool, Some(store), None);
+
+        let resp = request(&api, "GET", "/public/v1/payouts?limit=50", "");
+        assert!(resp.starts_with("HTTP/1.1 200 OK"), "{resp}");
+        let body: serde_json::Value =
+            serde_json::from_str(resp.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+        let rows = body["payouts"].as_array().unwrap();
+        assert_eq!(rows.len(), 3, "{body}");
+
+        let queued = rows
+            .iter()
+            .find(|r| r["address"] == "zion1alice")
+            .expect("queued row present");
+        assert_eq!(queued["status"], "queued");
+        assert!(queued["tx_id"].is_null());
+        assert_eq!(queued["coin"], "zion");
+        assert_eq!(queued["height"], 97_500);
+
+        let sent = rows
+            .iter()
+            .find(|r| r["tx_id"] == "tx_sent")
+            .expect("sent row present");
+        assert_eq!(sent["status"], "sent");
+        assert_eq!(sent["confirmed"], false);
+
+        let conf = rows
+            .iter()
+            .find(|r| r["tx_id"] == "tx_conf")
+            .expect("confirmed row present");
+        assert_eq!(conf["status"], "confirmed");
+        assert_eq!(conf["confirmed"], true);
     }
 
     #[test]

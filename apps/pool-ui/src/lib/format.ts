@@ -68,3 +68,22 @@ export function fmtDuration(s: number): string {
 export function shortAddr(a: string): string {
   return a.length > 18 ? `${a.slice(0, 10)}…${a.slice(-6)}` : a;
 }
+
+// Payout lifecycle — queued (computed, awaiting broadcast) → sent (tx
+// broadcast) → confirmed. Shared badge styling + bilingual labels.
+import type { PayoutStatus } from './types';
+
+export const PAYOUT_STATUS_CLASS: Record<PayoutStatus, string> = {
+  queued: 'text-gold border-gold/40 bg-gold/10',
+  sent: 'text-cyan border-cyan/40 bg-cyan/10',
+  confirmed: 'text-green border-green/40 bg-green/10',
+};
+
+export function payoutStatusLabel(
+  status: PayoutStatus,
+  t: (cs: string, en: string) => string,
+): string {
+  if (status === 'queued') return t('ve frontě', 'queued');
+  if (status === 'sent') return t('odesláno', 'sent');
+  return t('potvrzeno', 'confirmed');
+}

@@ -57,15 +57,18 @@ export interface BlockRow {
   confirmed_at: number | null;
 }
 
+export type PayoutStatus = 'queued' | 'sent' | 'confirmed';
+
 export interface PayoutRow {
   coin: CoinId;
-  ts: number;
+  ts: number | null;
   address: string;
   amount: number;
   unit: string;
   tx: string;
   confirmations: number;
   confirmed: boolean;
+  status: PayoutStatus;
 }
 
 export interface WorkerRow {

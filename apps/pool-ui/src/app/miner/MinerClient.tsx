@@ -12,6 +12,8 @@ import {
   fmtHashrate,
   fmtInt,
   shortAddr,
+  PAYOUT_STATUS_CLASS,
+  payoutStatusLabel,
 } from '@/lib/format';
 import { useLang } from '@/lib/i18n';
 import type { CoinId, MinerStats } from '@/lib/types';
@@ -270,6 +272,7 @@ export default function MinerClient({
                 <tr>
                   <th>{t('čas', 'time')}</th>
                   <th>{t('částka', 'amount')}</th>
+                  <th>{t('stav', 'status')}</th>
                   <th>tx</th>
                   <th>{t('konf.', 'conf.')}</th>
                 </tr>
@@ -277,11 +280,18 @@ export default function MinerClient({
               <tbody>
                 {m.payouts.map((p, i) => (
                   <tr key={i}>
-                    <td className="text-dim">{fmtAgo(p.ts, lang)}</td>
+                    <td className="text-dim">{p.ts ? fmtAgo(p.ts, lang) : '—'}</td>
                     <td className="text-white">{fmtAmount(p.amount, p.unit)}</td>
-                    <td className="text-dim">{shortAddr(p.tx)}</td>
+                    <td>
+                      <span
+                        className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${PAYOUT_STATUS_CLASS[p.status]}`}
+                      >
+                        {payoutStatusLabel(p.status, t)}
+                      </span>
+                    </td>
+                    <td className="text-dim">{p.tx ? shortAddr(p.tx) : '—'}</td>
                     <td className={p.confirmed ? 'text-green' : 'text-gold'}>
-                      {p.confirmed ? fmtInt(p.confirmations) : t('čeká', 'pending')}
+                      {p.status === 'queued' ? '—' : fmtInt(p.confirmations)}
                     </td>
                   </tr>
                 ))}
