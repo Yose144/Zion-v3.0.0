@@ -88,8 +88,9 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 Wave 7 pool security (P-01…P-06) + hotfix validace proti job targetu (accept 44 % → 95.7 %)
 - [x] 🤖 W1 A1.1 — hashrate externích coinů (nasazeno 26. 10. 08:27)
 - [x] 🤖 W1 A1.2 (částečně: per-stream accept rate) + A1.4 luck/effort se sdíleným `BlockTracker` (nasazeno 26. 10. 11:39)
-- [ ] 🤖 W1 dokončit: A1.2 reason buckets, A1.3 timeseries, A1.5 est. earnings, A3.2 pending estimate (2.B4)
-- [ ] 🤖 **Stale-block RCA** — 15–21 % řešení `previous hash mismatch` (trvá i po A1.2/A1.4) → cíl <2 % (2.B1)
+- [x] 🤖 W1 A1.2 reason buckets (commit `0796497e2`) + A1.5 est. earnings (nasazeno, `est_daily`/`window_share` ve veřejném API) + A1.3 timeseries (`fcbf2aec0`: `hashrate_by_coin` + `miner_history` tabulka, `/public/v1/miner/{coin}/{wallet}/history`)
+- [ ] 🤖 W1 zbytek: A3.2 pending estimate; luck persistence přes restart (2.B4)
+- [x] 🤖 **Stale-block RCA uzavřena 26. 10.** — `REPORT_2026-10-26_POOL_ORPHAN_RCA.md`: 21,4 % = interní souběhy na stejnou výšku (Poisson), externí ztráty 0/24 h, ekonomika ~0. Reálný bug = `confirmed`→`orphaned` downgrade → sticky fix `0796497e2` + reg. test (deploy pending 🔀). Metrika předefinována na external-loss rate
 - [ ] 🤖 W2: dedup persist (A4.1), drain restart + canary deploy gate (A4.3 / 2.B2), alerting (A4.4/A4.5), payout lifecycle UI (A3.1)
 - [ ] 🔀 PRL payout `DRY_RUN=0` — 🤖 dry-batch report, 👤 flip (2.B6)
   - [ ] 👤 Revenue→oyster: sweep z BIP86 vs. přesměrování upstream walletu
