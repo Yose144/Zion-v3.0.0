@@ -207,6 +207,10 @@ pub struct StratumServer {
     /// verifies/forwards `PearlSubmit` shares. `None` unless
     /// `ZION_POOL_PEARL_GATEWAY` is set.
     pearl: Option<Arc<crate::pearl_gateway::PearlRuntime>>,
+    /// `true` on the dedicated SOLO listener — sessions get normal job
+    /// feeds and share validation, but their shares never weight the
+    /// PPLNS window and a found block pays winner-take-all to the finder.
+    solo_mode: bool,
 }
 
 /// Decrements the shared active-session counter when the session task
@@ -340,7 +344,21 @@ impl StratumServer {
                 .map(|v| v.trim() == "1")
                 .unwrap_or(false),
             pearl,
+            solo_mode: false,
         }
+    }
+
+    /// Mark this listener as the dedicated SOLO port: shares still validate
+    /// and feed telemetry/dedup, but they never weight the PPLNS window and
+    /// an accepted block pays winner-take-all to the submitter.
+    pub fn with_solo_mode(mut self) -> Self {
+        self.solo_mode = true;
+        self
+    }
+
+    /// Whether this listener is the SOLO port.
+    pub fn solo_mode(&self) -> bool {
+        self.solo_mode
     }
 
     /// Set the MultiAuxPowBridge (called from main.rs when auxpow is enabled).
@@ -729,6 +747,7 @@ impl StratumServer {
             job_id: job_id.clone(),
             nonce_hex: nonce_hex.clone(),
             difficulty: share_difficulty,
+            solo: self.solo_mode,
         };
 
         let worker_name = submission.worker.clone();
@@ -2756,6 +2775,7 @@ impl StratumServer {
                                             job_id: job_key.clone(),
                                             nonce_hex: format!("{:016x}", nonce),
                                             difficulty: share_diff,
+                                            solo: self.solo_mode,
                                         };
                                         let result = self.pool.lock().unwrap().submit_zion_with_target(submission, &header, height, &share_target);
                                         let accepted = matches!(result, Ok(true));
@@ -3310,6 +3330,7 @@ impl StratumServer {
                                     job_id: job_key.clone(),
                                     nonce_hex: format!("{:016x}", nonce),
                                     difficulty: share_difficulty,
+                                    solo: self.solo_mode,
                                 };
 
                                 let result = self.pool.lock().unwrap().submit_zion_with_target(
@@ -4199,10 +4220,11 @@ impl StratumServer {
         network_difficulty: u64,
         block_hash: &str,
     ) {
-        self.pool
-            .lock()
-            .unwrap()
-            .on_block_found(block_height, block_reward);
+        self.pool.lock().unwrap().on_block_found(
+            block_height,
+            block_reward,
+            self.solo_mode.then_some(miner_id),
+        );
         let shares_since_prev = self.block_tracker.lock().unwrap().record_block_found(
             block_height,
             miner_id,

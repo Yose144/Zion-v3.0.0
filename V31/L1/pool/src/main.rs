@@ -439,6 +439,23 @@ async fn main() -> anyhow::Result<()> {
             .await;
     });
 
+    // ── SOLO listener (winner-take-all, opt-in via env) ───────────────────
+    // `ZION_POOL_SOLO_PORT=8446` (or `host:port`) binds a dedicated stratum
+    // listener whose shares never weight the PPLNS window — an accepted
+    // block pays the whole protocol miner share to the submitter. The
+    // server is cloned BEFORE `server` moves into the primary-listener
+    // task so the solo port keeps notifier/auxpow/routing parity.
+    let solo_listener: Option<(String, StratumServer)> =
+        std::env::var("ZION_POOL_SOLO_PORT").ok().map(|raw| {
+            let raw = raw.trim();
+            let bind = if raw.contains(':') {
+                raw.to_string()
+            } else {
+                format!("0.0.0.0:{raw}")
+            };
+            (bind, server.clone().with_solo_mode())
+        });
+
     let run_shutdown = shutdown_rx.clone();
     let run_handle = tokio::spawn(async move {
         let _ = server.run_with_shutdown(listener, run_shutdown).await;
@@ -465,6 +482,22 @@ async fn main() -> anyhow::Result<()> {
                 }
                 Err(e) => {
                     warn!("extra_port: failed to bind {}: {}", bind, e);
+                }
+            }
+        });
+    }
+
+    if let Some((bind, solo_server)) = solo_listener {
+        info!("solo_port: binding {} (winner-take-all)", bind);
+        let solo_shutdown = shutdown_rx.clone();
+        tokio::spawn(async move {
+            match TcpListener::bind(&bind).await {
+                Ok(listener) => {
+                    info!("solo_port: listening on {}", bind);
+                    let _ = solo_server.run_with_shutdown(listener, solo_shutdown).await;
+                }
+                Err(e) => {
+                    warn!("solo_port: failed to bind {}: {}", bind, e);
                 }
             }
         });

@@ -16,4 +16,8 @@ pub struct ShareSubmission {
     /// Defaults to 1 for tests; callers should set this to the session's
     /// vardiff value or the network difficulty for non-vardiff protocols.
     pub difficulty: u64,
+    /// `true` when the session connected on the SOLO port — solo miners are
+    /// paid winner-take-all for blocks they find and must not weight the
+    /// shared PPLNS window.
+    pub solo: bool,
 }

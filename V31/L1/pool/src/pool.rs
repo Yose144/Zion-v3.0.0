@@ -388,6 +388,14 @@ impl Pool {
     }
 
     fn record_share(&mut self, submission: &ShareSubmission, height: u64, coin: &str) {
+        if submission.solo {
+            // SOLO port sessions validate shares and feed telemetry/dedup,
+            // but must never enter the PPLNS registry — even a zero-weight
+            // registration would emit zero-amount payout entries. Their
+            // reward is winner-take-all paid by `on_block_found(.., Some(..))`,
+            // which registers the payout target at win time.
+            return;
+        }
         let worker = &submission.worker;
         let (chain, address) = self.worker_payout_target(worker);
         self.pplns
@@ -617,12 +625,49 @@ impl Pool {
         self.pplns.compute_miner_payouts(miner_share)
     }
 
-    /// Record a found block and compute PPLNS payouts for it.
-    pub fn on_block_found(&mut self, block_height: u64, block_reward: u64) {
+    /// Winner-take-all payout for a SOLO-port block: the entire protocol
+    /// miner share (89% slice — the node coinbase already split the fees)
+    /// goes to the miner who submitted the winning share. Payout-chain
+    /// resolution follows the same wallet rules as normal PPLNS entries so
+    /// a solo miner registered for a native external chain is paid there.
+    fn solo_payout(&mut self, miner_id: &str, block_reward: u64) -> Option<PayoutEntry> {
+        let (chain, address) = self.worker_payout_target(miner_id);
+        self.pplns
+            .register_address_with_chain(miner_id, &address, &chain);
+        let miner_share = zion_core::emission::fee_split(block_reward).0;
+        Some(PayoutEntry {
+            miner_id: miner_id.to_string(),
+            address,
+            amount: miner_share,
+            share_count: 1,
+            payout_chain: (chain != "zion").then_some(chain),
+            native_units: false,
+            coin: None,
+            revenue_event: None,
+        })
+    }
+
+    /// Record a found block and compute payouts for it.
+    ///
+    /// `solo_miner` is `Some(miner_id)` when the block was submitted through
+    /// the dedicated SOLO listener — the whole protocol miner share is queued
+    /// for that miner (winner-take-all) instead of PPLNS distribution.
+    pub fn on_block_found(
+        &mut self,
+        block_height: u64,
+        block_reward: u64,
+        solo_miner: Option<&str>,
+    ) {
         if !self.paid_block_heights.insert(block_height) {
             return;
         }
-        let payouts = self.payouts(block_reward);
+        let payouts = match solo_miner {
+            Some(miner_id) => self
+                .solo_payout(miner_id, block_reward)
+                .into_iter()
+                .collect(),
+            None => self.payouts(block_reward),
+        };
         for payout in payouts {
             let key = (block_height, payout.address.clone());
             if !self.sent_payouts.contains(&key) {
@@ -1200,6 +1245,7 @@ mod tests {
             job_id: "zion_1".into(),
             nonce_hex: format!("{:016x}", nonce),
             difficulty: 1,
+            solo: false,
         };
         assert!(pool.submit_zion(submission, header, 0).unwrap());
         assert_eq!(pool.stats(), (1, 0));
@@ -1213,6 +1259,7 @@ mod tests {
             job_id: "zion_1".into(),
             nonce_hex: "not_a_nonce".into(),
             difficulty: 1,
+            solo: false,
         };
         assert!(pool.submit_zion(submission, b"header", 0).is_err());
     }
@@ -1225,6 +1272,7 @@ mod tests {
             job_id: "aux_1".into(),
             nonce_hex: "0000000000000000".into(),
             difficulty: 1,
+            solo: false,
         };
         assert!(pool
             .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header", 0)
@@ -1246,6 +1294,7 @@ mod tests {
             job_id: "aux_1".into(),
             nonce_hex: "0000000000000000".into(),
             difficulty: 1,
+            solo: false,
         };
         assert!(pool
             .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header", 0)
@@ -1302,6 +1351,7 @@ mod tests {
                 job_id: format!("zion_{i}"),
                 nonce_hex: format!("{:016x}", i),
                 difficulty: 1,
+                solo: false,
             };
             pool.submit_zion(submission, header, 1).unwrap();
         }
@@ -1315,9 +1365,9 @@ mod tests {
     #[test]
     fn on_block_found_is_idempotent() {
         let mut pool = Pool::new(config(), telemetry());
-        pool.on_block_found(100, 1_000_000);
+        pool.on_block_found(100, 1_000_000, None);
         let pending1 = pool.take_pending_payouts();
-        pool.on_block_found(100, 1_000_000);
+        pool.on_block_found(100, 1_000_000, None);
         let pending2 = pool.take_pending_payouts();
         assert_eq!(
             pending2.len(),
@@ -1334,6 +1384,93 @@ mod tests {
     }
 
     #[test]
+    fn solo_block_pays_winner_take_all() {
+        let mut pool = Pool::new(
+            PoolConfig {
+                min_payout_flowers: 0,
+                ..config()
+            },
+            telemetry(),
+        );
+        // A PPLNS miner holds real window shares — a SOLO-port block must
+        // not pay them anything; the whole miner share goes to the finder.
+        pool.pplns.register_address("pplns_miner", "z1pplns");
+        pool.pplns
+            .record_share_with_diff("pplns_miner", "rig", 1, 100);
+
+        pool.on_block_found(100, 1_000_000, Some("solo1win"));
+
+        let pending = pool.take_pending_payouts();
+        assert_eq!(pending.len(), 1, "solo block must queue exactly one entry");
+        let (height, entry) = &pending[0];
+        assert_eq!(*height, 100);
+        assert_eq!(entry.miner_id, "solo1win");
+        assert_eq!(
+            entry.amount,
+            zion_core::emission::fee_split(1_000_000).0,
+            "solo payout = full protocol miner share"
+        );
+        assert_eq!(entry.chain(), "zion");
+        assert!(entry.payout_chain.is_none());
+        assert!(!entry.native_units);
+        assert!(entry.coin.is_none());
+        assert!(entry.revenue_event.is_none());
+        // PPLNS miner's window balance is untouched by the solo block.
+        assert_eq!(pool.pplns.unpaid_balance("pplns_miner"), 0);
+    }
+
+    #[test]
+    fn solo_block_is_idempotent() {
+        let mut pool = Pool::new(config(), telemetry());
+        pool.on_block_found(100, 1_000_000, Some("solo1win"));
+        let first = pool.take_pending_payouts();
+        assert_eq!(first.len(), 1);
+        pool.on_block_found(100, 1_000_000, Some("solo1win"));
+        assert!(
+            pool.take_pending_payouts().is_empty(),
+            "duplicate solo block height must not produce new payouts"
+        );
+    }
+
+    #[test]
+    fn solo_shares_never_weight_pplns_window() {
+        let mut pool = Pool::new(
+            PoolConfig {
+                min_payout_flowers: 0,
+                ..config()
+            },
+            telemetry(),
+        );
+        pool.pplns.register_address("pplns_miner", "z1pplns");
+        pool.pplns
+            .record_share_with_diff("pplns_miner", "rig", 1, 100);
+
+        // Solo-port submissions register the payout target but must not
+        // enter the shared PPLNS window.
+        let solo_sub = ShareSubmission {
+            worker: "solo1m".into(),
+            job_id: "zion_1".into(),
+            nonce_hex: "0000000000000000".into(),
+            difficulty: 1000,
+            solo: true,
+        };
+        assert!(
+            pool.submit_zion(solo_sub, b"h", 1).unwrap(),
+            "solo share must still validate — only its PPLNS weight is skipped"
+        );
+
+        // A normal (PPLNS-port) block distributes only to window holders.
+        pool.on_block_found(1, 1_000_000, None);
+        let pending = pool.take_pending_payouts();
+        assert!(!pending.is_empty());
+        assert!(
+            pending.iter().all(|(_, e)| e.miner_id == "pplns_miner"),
+            "solo miner must not appear in PPLNS distribution: {pending:?}"
+        );
+        assert_eq!(pool.pplns.unpaid_balance("solo1m"), 0);
+    }
+
+    #[test]
     fn settle_payout_drains_zion_and_keeps_external() {
         let mut pool = Pool::new(
             PoolConfig {
@@ -1344,7 +1481,7 @@ mod tests {
         );
         pool.pplns.register_address("alice", "z1alice");
         pool.pplns.record_share_with_diff("alice", "rig", 1, 100);
-        pool.on_block_found(100, 1_000_000);
+        pool.on_block_found(100, 1_000_000, None);
 
         // Queue also holds an external-chain entry the zion path must not
         // touch.
@@ -1397,7 +1534,7 @@ mod tests {
             let mut pool = Pool::new(cfg.clone(), telemetry());
             pool.pplns.register_address("alice", "z1alice");
             pool.pplns.record_share_with_diff("alice", "rig", 1, 100);
-            pool.on_block_found(100, 1_000_000);
+            pool.on_block_found(100, 1_000_000, None);
             let pending = pool.take_pending_payouts();
             assert_eq!(pending.len(), 1);
             pool.mark_payout_sent(100, &pending[0].1.address);
@@ -1408,7 +1545,7 @@ mod tests {
             let mut pool = Pool::new(cfg.clone(), telemetry());
             assert!(pool.paid_block_heights.contains(&100));
             assert_eq!(pool.sent_payouts.len(), 1);
-            pool.on_block_found(100, 1_000_000);
+            pool.on_block_found(100, 1_000_000, None);
             assert!(
                 pool.take_pending_payouts().is_empty(),
                 "height 100 must not re-pay after restart"
@@ -1418,7 +1555,7 @@ mod tests {
         // Requeue persists — a crashed sweep restores pending entries.
         {
             let mut pool = Pool::new(cfg.clone(), telemetry());
-            pool.on_block_found(101, 1_000_000);
+            pool.on_block_found(101, 1_000_000, None);
             let pending = pool.take_pending_payouts();
             // PPLNS window was not snapshotted (no save()), so height 101 may
             // emit nothing — enqueue directly to exercise the ledger path.
@@ -1593,16 +1730,18 @@ mod tests {
             job_id: "zion_1".into(),
             nonce_hex: "0000000000000000".into(),
             difficulty: 1,
+            solo: false,
         };
         let sub_zion = ShareSubmission {
             worker: "zion1miner".into(),
             job_id: "zion_2".into(),
             nonce_hex: "0000000000000001".into(),
             difficulty: 1,
+            solo: false,
         };
         pool.submit_zion(sub_qtc, b"h", 1).unwrap();
         pool.submit_zion(sub_zion, b"h", 1).unwrap();
-        pool.on_block_found(1, 1_000_000);
+        pool.on_block_found(1, 1_000_000, None);
 
         // ZION drain must leave the quantus entry behind.
         let zion = pool.take_pending_payouts();
@@ -1675,6 +1814,7 @@ mod tests {
             job_id: "j1".into(),
             nonce_hex: "0000000000000000".into(),
             difficulty: 1,
+            solo: false,
         };
         pool.submit_zion(sub, b"h", 1).unwrap();
 
@@ -1683,6 +1823,7 @@ mod tests {
             job_id: "j2".into(),
             nonce_hex: "0000000000000000".into(),
             difficulty: 2,
+            solo: false,
         };
         pool.submit_auxpow(ExternalCoin::Quantus, sub, b"h", 1)
             .unwrap();
