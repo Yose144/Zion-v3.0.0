@@ -44,10 +44,16 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'ZION v3.2 "One Love" — Mainnet Beta',
     },
     summary: {
-      cs: 'Síť 3.2.0 „One Love" přechází z Mainnet Alpha do Mainnet Beta — jde o stupeň vývoje a testování, nikoli Mainnet Stable. Toto sjednocení stupně nevydává nové klientské instalátory; stávající veřejní klienti zůstávají dostupní. Mainnet Stable vyžaduje čistý 30denní stabilitní run (aktuálně probíhá — monitoring na /g8), nezávislý externí audit a plný test obnovy ze záloh. Těžba a transakce probíhají na vlastní riziko.',
-      en: 'The 3.2.0 "One Love" network moves from Mainnet Alpha to Mainnet Beta — a development and testing stage, not Mainnet Stable. This stage alignment does not publish new client installers; existing public clients remain available. Mainnet Stable requires a clean 30-day stability run (currently in progress — monitoring on /g8), an independent external audit and a full backup-restore drill. Mining and transacting remain at your own risk.',
+      cs: 'ZION 3.2.0 „One Love" přechází do Mainnet Beta — celý ekosystém v jednom kroku: multichain pool těží ZION, Quantus i Pearl nativně jedním minerem, mapa L5 Free World je kompletní (dvanáct bodů) a do knihovny přibyla pátá kniha Maitreya. Beta je stupeň vývoje a testování, nikoli Stable — ten vyžaduje čistý 30denní run (probíhá, monitoring na /g8), externí audit a test obnovy. Těžba a transakce na vlastní riziko.',
+      en: 'ZION 3.2.0 "One Love" enters Mainnet Beta — the whole ecosystem in one step: the multichain pool mines ZION, Quantus and Pearl natively with a single miner, the L5 Free World map is complete (twelve points), and the library gained its fifth book, Maitreya. Beta is a development and testing stage, not Stable — that requires a clean 30-day run (in progress, monitored on /g8), an external audit and a restore drill. Mining and transacting at your own risk.',
     },
-    href: '/roadmap',
+    href: '/news/mainnet-beta',
+    image: '/images/news/beta-maitreya.webp',
+    imageSrcSet: '/images/news/beta-maitreya-m.webp 960w, /images/news/beta-maitreya.webp 1672w',
+    imageAlt: {
+      cs: 'ZION Mainnet Beta — ekosystém L1–L6, Maitreya a multichain pool ZION / QTC / PEARL',
+      en: 'ZION Mainnet Beta — L1–L6 ecosystem, Maitreya and the ZION / QTC / PEARL multichain pool',
+    },
   },
   {
     slug: 'pearl-quantus-new-mining-wave',
@@ -69,6 +75,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       cs: 'Quantus + Pearl — dva blockchainy nové generace nativně v ZION',
       en: 'Quantus + Pearl — two next-generation blockchains native to ZION',
     },
+    homepage: false,
   },
   {
     slug: 'l5-vision-complete-12-nodes',
@@ -90,6 +97,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       cs: 'Mapa L5 Free World — dvanáct bodů a vrstvy L1–L6',
       en: 'L5 Free World map — twelve points and layers L1–L6',
     },
+    homepage: false,
   },
   {
     slug: 'zion-v320-alpha-beta-stable-path',

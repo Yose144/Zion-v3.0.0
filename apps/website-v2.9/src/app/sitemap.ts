@@ -88,6 +88,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // ── Content / docs (SEO surface) ─────────────────────────────────
     r('/news', 0.8, 'weekly'),
     r('/news/launch-postponed', 0.6, 'monthly'),
+    r('/news/mainnet-beta', 0.7, 'monthly'),
     r('/news/v3-internal-audit', 0.6, 'monthly'),
     r('/docs', 0.7, 'weekly'),
     r('/whitepapers', 0.7, 'monthly'),
