@@ -62,6 +62,7 @@ Health: `curl https://app.zionterranova.com/api/health` (28 služeb), `https://a
 - **Cert renewal** → všechny veřejné domény obnovuje certbot na **EDGE2** (`certbot renew --dry-run`); `dashboard.` + `newearth` renewal je na Edgi (DNS tam ukazuje).
 - **Disk full** → `df -h`, `journalctl --vacuum-size=500M`, staré `.next.bak-*` a `oasis.bak-*` v `/var/www`, `docker system df`.
 - **fail2ban lockout operátora** → jail `sshd` na Edgi umí zabanovat vlastní IP při rychlých SSH auditech — `OPERATOR_IPS` v `V31/AGENTS.md`.
+- **Pool DoS / stratum flood / session churn** → layered vrstvy + kernel tuning + incident checklist: [`docs/3.2/POOL-DOS-LAYERS.md`](../docs/3.2/POOL-DOS-LAYERS.md).
 
 ## Rollback
 
