@@ -4351,6 +4351,9 @@ function setupWalletControls() {
     linkInput: document.getElementById('qtc-link-input'),
     linkBtn: document.getElementById('qtc-link-btn'),
     generateBtn: document.getElementById('qtc-generate-btn'),
+    deriveRow: document.getElementById('qtc-derive-row'),
+    seedPassword: document.getElementById('qtc-seed-password'),
+    deriveBtn: document.getElementById('qtc-derive-btn'),
     copyBtn: document.getElementById('qtc-copy-btn'),
     refreshBtn: document.getElementById('qtc-refresh-btn'),
     newMnemonic: document.getElementById('qtc-new-mnemonic'),
@@ -4394,21 +4397,24 @@ function setupWalletControls() {
     });
   }
 
-  const walletQtcFor = async (zionAddr) => {
+  // wallet-get-links merges wallet-file fields and the external-links store,
+  // so a bare payout address (no wallet file) links just the same.
+  const walletLinksFor = async (zionAddr) => {
     try {
-      const res = await window.electronAPI.listWallets();
-      const w = (res?.wallets || []).find(x => x.address === zionAddr);
-      return w?.qtcAddress || null;
+      const res = await window.electronAPI.walletGetLinks(zionAddr);
+      return res?.success ? res : null;
     } catch { return null; }
   };
 
   const refreshQtcCard = async () => {
     if (!qtcEls.card) return;
     const zionAddr = getActiveAddress();
-    activeQtcAddress = zionAddr ? await walletQtcFor(zionAddr) : null;
+    const links = zionAddr ? await walletLinksFor(zionAddr) : null;
+    activeQtcAddress = links?.qtcAddress || null;
     const linked = !!activeQtcAddress;
     if (qtcEls.linked) qtcEls.linked.style.display = linked ? '' : 'none';
     if (qtcEls.unlinked) qtcEls.unlinked.style.display = linked ? 'none' : '';
+    if (qtcEls.deriveRow) qtcEls.deriveRow.style.display = !linked && links?.hasMnemonic ? '' : 'none';
     if (qtcEls.newMnemonic) qtcEls.newMnemonic.style.display = 'none';
     if (qtcEls.address) qtcEls.address.textContent = activeQtcAddress || '';
     if (!linked) {
@@ -4539,6 +4545,51 @@ function setupWalletControls() {
     if (qtcEls.newMnemonic) qtcEls.newMnemonic.style.display = '';
   });
 
+  // Derive-from-seed: decrypts the wallet mnemonic and derives the chain
+  // address deterministically — same custodial path as ZIS, so one seed
+  // backs every chain. Only offered when a seed-backed wallet file exists.
+  const bindDeriveFromSeed = ({ btn, pwdInput, chain, statusEl, refresh, label }) => {
+    const run = async () => {
+      const zionAddr = getActiveAddress();
+      if (!zionAddr) {
+        if (statusEl) statusEl.textContent = 'Set an active ZION wallet first.';
+        return;
+      }
+      const password = pwdInput?.value || '';
+      if (!password) {
+        if (statusEl) statusEl.textContent = 'Enter the wallet password to unlock the seed.';
+        pwdInput?.focus();
+        return;
+      }
+      if (statusEl) statusEl.textContent = 'Deriving…';
+      let res;
+      try {
+        res = await window.electronAPI.walletDeriveChain({ zionAddress: zionAddr, password, chain });
+      } catch (e) {
+        if (statusEl) statusEl.textContent = `Derive failed: ${e?.message || 'ipc error'}`;
+        return;
+      }
+      if (!res?.success) {
+        if (statusEl) statusEl.textContent = `Derive failed: ${res?.error || 'unknown error'}`;
+        return;
+      }
+      if (pwdInput) pwdInput.value = '';
+      addLogEntry(`${label} address derived from wallet seed: ${res.address}`, 'info');
+      refresh();
+    };
+    btn?.addEventListener('click', run);
+    pwdInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+  };
+
+  bindDeriveFromSeed({
+    btn: qtcEls.deriveBtn,
+    pwdInput: qtcEls.seedPassword,
+    chain: 'qtc',
+    statusEl: qtcEls.status,
+    refresh: refreshQtcCard,
+    label: 'QTC'
+  });
+
   // Kick once at init and whenever the balance card refreshes.
   refreshQtcCard();
   document.querySelector('.section-tab[data-section="wallet-overview"]')
@@ -4555,6 +4606,9 @@ function setupWalletControls() {
     linkInput: document.getElementById('prl-link-input'),
     linkBtn: document.getElementById('prl-link-btn'),
     generateBtn: document.getElementById('prl-generate-btn'),
+    deriveRow: document.getElementById('prl-derive-row'),
+    seedPassword: document.getElementById('prl-seed-password'),
+    deriveBtn: document.getElementById('prl-derive-btn'),
     copyBtn: document.getElementById('prl-copy-btn'),
     refreshBtn: document.getElementById('prl-refresh-btn'),
     newMnemonic: document.getElementById('prl-new-mnemonic'),
@@ -4573,21 +4627,15 @@ function setupWalletControls() {
     });
   }
 
-  const walletPrlFor = async (zionAddr) => {
-    try {
-      const res = await window.electronAPI.listWallets();
-      const w = (res?.wallets || []).find(x => x.address === zionAddr);
-      return w?.prlAddress || null;
-    } catch { return null; }
-  };
-
   const refreshPrlCard = async () => {
     if (!prlEls.card) return;
     const zionAddr = getActiveAddress();
-    activePrlAddress = zionAddr ? await walletPrlFor(zionAddr) : null;
+    const links = zionAddr ? await walletLinksFor(zionAddr) : null;
+    activePrlAddress = links?.prlAddress || null;
     const linked = !!activePrlAddress;
     if (prlEls.linked) prlEls.linked.style.display = linked ? '' : 'none';
     if (prlEls.unlinked) prlEls.unlinked.style.display = linked ? 'none' : '';
+    if (prlEls.deriveRow) prlEls.deriveRow.style.display = !linked && links?.hasMnemonic ? '' : 'none';
     if (prlEls.newMnemonic) prlEls.newMnemonic.style.display = 'none';
     if (prlEls.address) prlEls.address.textContent = activePrlAddress || '';
     if (!linked) {
@@ -4716,6 +4764,15 @@ function setupWalletControls() {
     addLogEntry(`PRL wallet generated: ${w.address}`, 'info');
     refreshPrlCard();
     if (prlEls.newMnemonic) prlEls.newMnemonic.style.display = '';
+  });
+
+  bindDeriveFromSeed({
+    btn: prlEls.deriveBtn,
+    pwdInput: prlEls.seedPassword,
+    chain: 'prl',
+    statusEl: prlEls.status,
+    refresh: refreshPrlCard,
+    label: 'PRL'
   });
 
   refreshPrlCard();

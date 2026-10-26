@@ -1201,6 +1201,7 @@ if (rustMinerPath) {
 const CONFIG_PATH = path.join(USER_DATA_PATH, 'miner_config.json');
 const LOG_PATH = path.join(USER_DATA_PATH, 'miner.log');
 const WALLETS_PATH = path.join(USER_DATA_PATH, 'wallets');
+const EXTERNAL_LINKS_PATH = path.join(USER_DATA_PATH, 'external-links.json');
 const STATS_PATH = path.join(USER_DATA_PATH, 'miner_stats.json');
 
 // Miner log rotation limits
@@ -6666,6 +6667,47 @@ ipcMain.handle('list-wallets', () => {
   }
 });
 
+// ── External-chain link store ───────────────────────────────────────────────
+// The active "wallet" may be a bare payout address with no wallet file —
+// linking would otherwise fail with 'wallet not found'. File-backed wallets
+// store qtc/prl inside the wallet JSON; anything else lands in
+// external-links.json keyed by ZION address.
+
+function readExternalLinks() {
+  try {
+    if (!fs.existsSync(EXTERNAL_LINKS_PATH)) return {};
+    const data = JSON.parse(fs.readFileSync(EXTERNAL_LINKS_PATH, 'utf8'));
+    return data && typeof data === 'object' ? data : {};
+  } catch { return {}; }
+}
+
+function writeExternalLink(zionAddress, key, value) {
+  const links = readExternalLinks();
+  const entry = links[zionAddress] && typeof links[zionAddress] === 'object'
+    ? links[zionAddress] : {};
+  entry[key] = value;
+  links[zionAddress] = entry;
+  fs.writeFileSync(EXTERNAL_LINKS_PATH, JSON.stringify(links, null, 2));
+}
+
+// Find the wallet file record for an address, or null when the active
+// wallet is a bare address. Returns {filePath, data} so callers can read
+// or update fields.
+function findWalletFile(zionAddress) {
+  try {
+    if (!fs.existsSync(WALLETS_PATH)) return null;
+    for (const file of fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'))) {
+      const filePath = path.join(WALLETS_PATH, file);
+      let data;
+      try {
+        data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      } catch { continue; }
+      if (data?.address === zionAddress) return { filePath, data };
+    }
+  } catch { /* fall through */ }
+  return null;
+}
+
 // Link (or re-link) a Quantus QTC address to an existing ZION wallet file —
 // for wallets created before QTC support, or linking a separately generated
 // QTC account.  Only the address is stored; no keys.
@@ -6687,9 +6729,63 @@ ipcMain.handle('wallet-set-qtc', (event, { zionAddress, qtcAddress }) => {
       if (data?.address !== zionAddress) continue;
       data.qtcAddress = qtcAddress;
       fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-      return { success: true, qtcAddress };
+      return { success: true, qtcAddress, linked: 'file' };
     }
-    return { success: false, error: 'wallet not found' };
+    // Bare payout address — persist the link in the external-links store.
+    writeExternalLink(zionAddress, 'qtcAddress', qtcAddress);
+    return { success: true, qtcAddress, linked: 'external' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Resolve the linked external addresses for a ZION address: wallet file
+// fields first, external-links store as fallback. Also reports whether a
+// seed-backed wallet file exists (enables derive-from-seed in the UI).
+ipcMain.handle('wallet-get-links', (event, zionAddress) => {
+  try {
+    const found = findWalletFile(zionAddress);
+    const ext = readExternalLinks()[zionAddress] || {};
+    return {
+      success: true,
+      zionAddress,
+      qtcAddress: found?.data?.qtcAddress || ext.qtcAddress || null,
+      prlAddress: found?.data?.prlAddress || ext.prlAddress || null,
+      hasFile: !!found,
+      hasMnemonic: !!found?.data?.encryptedMnemonic
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Derive the external-chain address from the wallet's own seed — the same
+// custodial derivation ZIS uses, so one ZION mnemonic backs every chain.
+// Requires the wallet password (encryptedMnemonic is AES-256-GCM/PBKDF2).
+// Links the derived address to the wallet file on success.
+ipcMain.handle('wallet-derive-chain', (event, { zionAddress, password, chain }) => {
+  try {
+    const found = findWalletFile(zionAddress);
+    if (!found) return { success: false, error: 'wallet file not found — no seed to derive from' };
+    if (!found.data.encryptedMnemonic) {
+      return { success: false, error: 'wallet has no stored mnemonic (created before seed backup)' };
+    }
+    let mnemonic;
+    try {
+      mnemonic = WalletGenerator.decryptPrivateKey(found.data.encryptedMnemonic, password);
+    } catch {
+      return { success: false, error: 'wrong password' };
+    }
+    const derive = chain === 'prl'
+      ? PearlWallet.derivePearlAddressDetailed(mnemonic, APP_ROOT, IS_PACKAGED)
+      : QuantusWallet.deriveQuantusAddressDetailed(mnemonic, APP_ROOT, IS_PACKAGED);
+    if (!derive.address) {
+      return { success: false, error: derive.error || 'derivation failed' };
+    }
+    const key = chain === 'prl' ? 'prlAddress' : 'qtcAddress';
+    found.data[key] = derive.address;
+    fs.writeFileSync(found.filePath, JSON.stringify(found.data, null, 2));
+    return { success: true, chain, address: derive.address };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -6985,9 +7081,11 @@ ipcMain.handle('wallet-set-prl', (event, { zionAddress, prlAddress }) => {
       if (data?.address !== zionAddress) continue;
       data.prlAddress = prlAddress;
       fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-      return { success: true, prlAddress };
+      return { success: true, prlAddress, linked: 'file' };
     }
-    return { success: false, error: 'wallet not found' };
+    // Bare payout address — persist the link in the external-links store.
+    writeExternalLink(zionAddress, 'prlAddress', prlAddress);
+    return { success: true, prlAddress, linked: 'external' };
   } catch (error) {
     return { success: false, error: error.message };
   }

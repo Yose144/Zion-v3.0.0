@@ -60,6 +60,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   prlNetworkStatus: (addr) => ipcRenderer.invoke('prl-network-status', addr),
   walletSetPrl: (data) => ipcRenderer.invoke('wallet-set-prl', data),
 
+  // External-chain links (QTC/PRL ↔ ZION address) + seed derivation
+  walletGetLinks: (zionAddress) => ipcRenderer.invoke('wallet-get-links', zionAddress),
+  walletDeriveChain: (data) => ipcRenderer.invoke('wallet-derive-chain', data),
+
   // Native multichain wallet (derived from the ZION mnemonic, non-custodial)
   nativeDeriveAddresses: (data) => ipcRenderer.invoke('native-derive-addresses', data),
   nativeGetBalances: (data) => ipcRenderer.invoke('native-balances', data),
