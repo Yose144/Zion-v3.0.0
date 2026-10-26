@@ -169,3 +169,13 @@ rig volá control plane ven (funguje i za NAT, bez SSH), CP drží desired-state
 - **Control plane:** rozšíření `vastctl serve` o fleet API — žádný nový stack
 - **Payouts:** zůstává jen PPLNS (žádný SOLO/PPS+)
 - **Scope:** implementovat všechny vlny W1–W7 postupně
+
+## Status
+
+| Item | Stav |
+|---|---|
+| A1.1 ext-coin hashrate | ✅ `dde4f5a34` + deployed — target-derived `hps_live`/`hps_1h` v `/miners` + `/public/v1/coins/{c}/stats` |
+| A1.2 share-quality (partial) | ✅ `ad8ab5895` — per-stream `accept_rate`; reason buckets pending |
+| A1.4 luck / effort | ✅ `ad8ab5895` — shared `BlockTracker` (byl fragmentovaný per-listener), `blocks{luck_100,luck_500,found,confirmed,orphaned,pending}` v `/stats` + zion coin-stats; luck=0 dokud pool nenajde blok (in-memory) |
+| A1.5 est. earnings | ⬜ |
+| A1.3 history depth | ⬜ (základ `/public/v1/history` existuje) |
