@@ -412,20 +412,18 @@ mod tests {
     /// numbers the tracker would report had it never restarted.
     #[test]
     fn test_restore_rebuilds_luck_and_counter() {
-        let row = |height: u64, shares: u64, nd: u64, status: &str| {
-            crate::store::DbBlockRow {
-                coin: "zion".to_string(),
-                height,
-                hash: "h".to_string(),
-                miner_id: "m".to_string(),
-                worker_name: "w".to_string(),
-                share_difficulty: 1000,
-                network_difficulty: nd,
-                shares_since_prev: shares,
-                status: status.to_string(),
-                ts: 1_700_000_000 + height as i64,
-                confirmed_at: None,
-            }
+        let row = |height: u64, shares: u64, nd: u64, status: &str| crate::store::DbBlockRow {
+            coin: "zion".to_string(),
+            height,
+            hash: "h".to_string(),
+            miner_id: "m".to_string(),
+            worker_name: "w".to_string(),
+            share_difficulty: 1000,
+            network_difficulty: nd,
+            shares_since_prev: shares,
+            status: status.to_string(),
+            ts: 1_700_000_000 + height as i64,
+            confirmed_at: None,
         };
         let mut tracker = BlockTracker::new();
         tracker.restore(

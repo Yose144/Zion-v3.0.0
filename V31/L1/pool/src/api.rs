@@ -2218,10 +2218,7 @@ impl PoolApi {
                         e.0 += 1;
                         e.1 = e.1.saturating_add(r.amount_flowers);
                     }
-                    body.push_str(&format!(
-                        "zion_pool_payouts_unconfirmed {}\n",
-                        rows.len()
-                    ));
+                    body.push_str(&format!("zion_pool_payouts_unconfirmed {}\n", rows.len()));
                     body.push_str(&format!(
                         "zion_pool_payouts_unconfirmed_flowers {}\n",
                         total
@@ -2240,10 +2237,7 @@ impl PoolApi {
                     }
                 }
                 Err(e) => {
-                    body.push_str(&format!(
-                        "# payout backlog query failed: {}\n",
-                        e
-                    ));
+                    body.push_str(&format!("# payout backlog query failed: {}\n", e));
                 }
             }
         }
