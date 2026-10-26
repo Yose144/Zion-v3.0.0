@@ -187,6 +187,8 @@ export const DEMO_MINER: Record<string, MinerStats> = {
     window_share: 0.612,
     est_daily: 58.4,
     est_per_block: 0.041,
+    min_payout: 50,
+    payout_eta_s: 14_400,
   },
   'qtc:qz7xkm2demo': {
     coin: 'qtc',
@@ -208,6 +210,8 @@ export const DEMO_MINER: Record<string, MinerStats> = {
     window_share: 0.087,
     est_daily: 1.24,
     est_per_block: null,
+    min_payout: 1,
+    payout_eta_s: null,
   },
   'prl:prl1pzdemo': {
     coin: 'prl',
@@ -227,6 +231,8 @@ export const DEMO_MINER: Record<string, MinerStats> = {
     window_share: 0,
     est_daily: null,
     est_per_block: null,
+    min_payout: null,
+    payout_eta_s: null,
   },
 };
 

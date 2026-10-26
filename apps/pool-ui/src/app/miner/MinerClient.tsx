@@ -9,6 +9,7 @@ import { fetchMiner, fetchMinerHistory } from '@/lib/api';
 import {
   fmtAgo,
   fmtAmount,
+  fmtDuration,
   fmtHashrate,
   fmtInt,
   shortAddr,
@@ -191,7 +192,18 @@ export default function MinerClient({
           {[
             {
               k: t('Čeká na výplatu', 'Pending payout'),
-              v: fmtAmount(m.pending, m.unit),
+              v: m.min_payout != null
+                ? `${fmtAmount(m.pending, m.unit)} / ${fmtAmount(m.min_payout, m.unit)}`
+                : fmtAmount(m.pending, m.unit),
+            },
+            {
+              k: t('Výplata za', 'Payout in'),
+              v:
+                m.payout_eta_s != null
+                  ? m.payout_eta_s === 0
+                    ? t('další dávka', 'next batch')
+                    : `~${fmtDuration(m.payout_eta_s)}`
+                  : '—',
             },
             {
               k: t('Celkem vyplaceno', 'Total paid'),

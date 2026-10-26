@@ -114,6 +114,7 @@ interface ApiMiner {
   shares: { accepted: number; rejected: number };
   unpaid: string; unpaid_unit: string; last_seen_s: number; active: boolean;
   window_share: number; est_daily: number | null; est_per_block: number | null;
+  min_payout?: string; payout_eta_s?: number | null;
 }
 
 // ZION base unit: 1 ZION = 1e6 flowers. Other coins' `native` amounts are
@@ -256,6 +257,8 @@ export async function fetchMiner(
       window_share: m.window_share ?? 0,
       est_daily: m.est_daily == null ? null : normalizeAmount(coin, Number(m.est_daily), m.unpaid_unit).amount,
       est_per_block: m.est_per_block == null ? null : normalizeAmount(coin, Number(m.est_per_block), m.unpaid_unit).amount,
+      min_payout: m.min_payout == null ? null : normalizeAmount(coin, Number(m.min_payout), m.unpaid_unit).amount,
+      payout_eta_s: m.payout_eta_s ?? null,
     };
   } catch {
     return null;

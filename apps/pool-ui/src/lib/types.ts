@@ -99,6 +99,11 @@ export interface MinerStats {
   est_daily: number | null;
   /** Estimated per-block earning, ZION only (null elsewhere). */
   est_per_block: number | null;
+  /** Min payout threshold in `unit` (null when absent from payload). */
+  min_payout: number | null;
+  /** Seconds until `pending` crosses `min_payout` at the estimated accrual
+      rate; 0 = eligible for the next batch; null = rate unknown. */
+  payout_eta_s: number | null;
 }
 
 export interface PoolOverview {
