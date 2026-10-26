@@ -1026,8 +1026,60 @@ def _attach_rig_hashrate(rigs, pool_miners):
                 break
 
 
+_LAST = {}          # section name → last-good payload (per-process)
+
+
+def _section(name, fn, fresh, errors):
+    """Fetch one snapshot section; on failure reuse the last-good payload.
+
+    `fresh[name]` is True only when this call returned live data, so the
+    dashboard can flag sections serving cached values. A clean ``None``
+    (unconfigured source, API timeout inside the fetcher) also falls back
+    to last-good when one exists; an exception is recorded in ``errors``.
+    """
+    try:
+        val = fn()
+    except BaseException as e:      # SystemExit from instances() too
+        errors[name] = str(e)[:300]
+        val = None
+    if val is not None:
+        _LAST[name] = val
+        fresh[name] = True
+        return val
+    fresh[name] = False
+    return _LAST.get(name)
+
+
+def _build_snapshot(rigs, fresh, errors):
+    pool_miners = _section("pool", fetch_pool_miners, fresh, errors)
+    _attach_rig_hashrate(rigs, pool_miners or [])
+    snap = {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "total_dph": round(sum(r["dph"] for r in rigs), 4),
+        "rigs": rigs,
+        "pool": pool_miners,
+        "poolstats": _section("poolstats", fetch_pool_stats, fresh, errors),
+        "smos": _section("smos", fetch_smos_rigs, fresh, errors),
+        "ext": _section("ext", fetch_ext_pools, fresh, errors),
+        "fresh": fresh,
+    }
+    if errors:
+        snap["errors"] = errors
+    return snap
+
+
 def snapshot(ids=None):
-    rigs = status_all(ids)
+    fresh, errors = {}, {}
+    try:
+        rigs = status_all(ids)
+        _LAST["rigs"] = rigs
+        fresh["rigs"] = True
+    except BaseException as e:
+        # vast.ai API/CLI outage must not kill the whole snapshot — keep
+        # publishing pool/smos/ext legs and reuse the last-good fleet list
+        errors["rigs"] = str(e)[:300]
+        rigs = _LAST.get("rigs") or []
+        fresh["rigs"] = False
     for r in rigs:
         for m in r["miners"]:
             hr = m.get("hashrate")
@@ -1039,17 +1091,7 @@ def snapshot(ids=None):
                 m["hist"] = list(h)
         # xmrig_api hist is covered by the rx/0 miner row (hashrate attached)
 
-    pool_miners = fetch_pool_miners()
-    _attach_rig_hashrate(rigs, pool_miners)
-    return {
-        "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        "total_dph": round(sum(r["dph"] for r in rigs), 4),
-        "rigs": rigs,
-        "pool": pool_miners,
-        "poolstats": fetch_pool_stats(),
-        "smos": fetch_smos_rigs(),
-        "ext": fetch_ext_pools(),
-    }
+    return _build_snapshot(rigs, fresh, errors)
 
 
 STATE_FILE = os.path.expanduser("~/.local/share/vastctl-state.json")
@@ -1086,18 +1128,12 @@ def _launch_group(mn):
 _EXPECT_PROC = {"srb": "SRBMiner", "xmr": "xmrig", "zion": "zion-miner"}
 
 
-def snapshot_from(rigs):
-    pool_miners = fetch_pool_miners()
-    _attach_rig_hashrate(rigs, pool_miners)
-    return {
-        "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        "total_dph": round(sum(r["dph"] for r in rigs), 4),
-        "rigs": rigs,
-        "pool": pool_miners,
-        "poolstats": fetch_pool_stats(),
-        "smos": fetch_smos_rigs(),
-        "ext": fetch_ext_pools(),
-    }
+def snapshot_from(rigs, rigs_live=True):
+    fresh, errors = {}, {}
+    fresh["rigs"] = rigs_live
+    if not rigs_live:
+        errors["rigs"] = "rig probe failed — serving cached fleet"
+    return _build_snapshot(rigs, fresh, errors)
 
 
 def _write_json_atomic(path, payload):
@@ -1143,9 +1179,15 @@ def _is_local_host(host):
 def cmd_daemon(args):
     """Autonomous loop: probe → json-out (+push) → optional xmrig autodeploy."""
     print(f"[daemon] interval={args.interval}s out={args.json_out} push={args.push or '-'} autodeploy={args.autodeploy_xmrig}")
+    daemon_state = {"pid": os.getpid(), "cycle": 0, "interval_s": args.interval,
+                    "last_error": None}
     while True:
         try:
+            t0 = time.time()
             snap = snapshot()
+            daemon_state["cycle"] += 1
+            snap["daemon"] = dict(daemon_state,
+                                  cycle_ms=int((time.time() - t0) * 1000))
             _write_json_atomic(args.json_out, snap)
             if args.push:
                 host, _, rpath = args.push.partition(":")
@@ -1253,6 +1295,7 @@ def cmd_daemon(args):
                             print(f"[watchdog] relaunch failed {rid}/{grp}: {e}")
             print(f"[daemon] {snap['ts']} rigs={len(snap['rigs'])} ${snap['total_dph']:.4f}/h")
         except Exception as e:
+            daemon_state["last_error"] = str(e)[:300]
             print(f"[daemon] cycle error: {e}")
         time.sleep(args.interval)
 
@@ -1741,15 +1784,27 @@ function rent(oid){{if(!confirm('RENT offer '+oid+'? this bills your vast.ai acc
 </script>"""
 
 
-_serve_cache = {"ts": 0.0, "rigs": []}
+_serve_cache = {"ts": 0.0, "ok_ts": 0.0, "rigs": []}
 SERVE_CACHE_TTL = 30.0
 
 
 def cached_rigs():
+    """Fleet list for the serve endpoints — keeps last-good on probe failure
+    so /api/status degrades to a marked-stale snapshot instead of a 500."""
     if time.time() - _serve_cache["ts"] > SERVE_CACHE_TTL:
-        _serve_cache["rigs"] = status_all()
         _serve_cache["ts"] = time.time()
+        try:
+            _serve_cache["rigs"] = status_all()
+            _serve_cache["ok_ts"] = _serve_cache["ts"]
+        except BaseException:
+            pass
     return _serve_cache["rigs"]
+
+
+def rigs_cache_live():
+    """True when the cached fleet list was refreshed by the last attempt."""
+    c = _serve_cache
+    return c["ok_ts"] == c["ts"] and c["ok_ts"] > 0
 
 
 def readonly():
@@ -1943,7 +1998,8 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         q = parse_qs(u.query)
         if u.path == "/api/status":
-            self._send(json.dumps(snapshot_from(cached_rigs())), ctype="application/json")
+            self._send(json.dumps(snapshot_from(cached_rigs(), rigs_live=rigs_cache_live())),
+                       ctype="application/json")
         elif u.path == "/api/ai/status":
             try:
                 self._send(json.dumps(ai_status()), ctype="application/json")

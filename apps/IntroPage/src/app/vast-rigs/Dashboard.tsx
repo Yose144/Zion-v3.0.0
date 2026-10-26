@@ -88,6 +88,15 @@ type Snap = {
   poolstats?: PoolStats | null;
   smos?: SmosRig[] | null;
   ext?: ExtPools;
+  fresh?: Record<string, boolean>;
+  errors?: Record<string, string>;
+  daemon?: {
+    pid?: number;
+    cycle?: number;
+    interval_s?: number;
+    cycle_ms?: number;
+    last_error?: string | null;
+  };
 };
 type ExtWorker = { name: string; hashrate: number; h1?: number; h6?: number; h24?: number; accepted?: number; last: number; agent?: string; rating?: number };
 type ExtPool = {
@@ -253,6 +262,34 @@ function fmtAge(s: number | null) {
   return `${Math.floor(s / 3600)}h ago`;
 }
 
+/** Section health from the daemon snapshot's `fresh` map: "live" data came
+ * from this cycle, "cached" is the daemon's last-good fallback, "missing"
+ * means the section is absent (unconfigured or never fetched). */
+type SecState = "live" | "cached" | "missing";
+
+function secState(
+  snap: Snap | null | undefined,
+  name: "rigs" | "pool" | "poolstats" | "smos" | "ext",
+): SecState {
+  if (!snap) return "missing";
+  const data = name === "rigs" ? snap.rigs : snap[name];
+  if (data === null || data === undefined) return "missing";
+  if (snap.fresh && snap.fresh[name] === false) return "cached";
+  return "live";
+}
+
+function SecBadge({ state }: { state: SecState }) {
+  if (state !== "cached") return null;
+  return (
+    <span
+      className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
+      title="Serving the daemon's last-good data — the source did not answer this cycle"
+    >
+      cached
+    </span>
+  );
+}
+
 /** Merge pool miner rows that share one payout wallet — the pool exposes a
  * row per session identity (bare wallet, wallet.worker, wallet.wallet.worker),
  * which duplicates the same miner. One row per wallet, streams/hps merged. */
@@ -382,7 +419,7 @@ function fmtNum(n?: number | null) {
   return n.toLocaleString("en-US");
 }
 
-function PoolStatsPanel({ p, miners }: { p: PoolStats; miners?: PoolMiner[] | null }) {
+function PoolStatsPanel({ p, miners, stale, minersStale }: { p: PoolStats; miners?: PoolMiner[] | null; stale?: boolean; minersStale?: boolean }) {
   const up = p.pearl?.upstream || {};
   const rt = p.routing || { groups: [], sources: [] };
   const ppl = p.pplns || {};
@@ -419,7 +456,10 @@ function PoolStatsPanel({ p, miners }: { p: PoolStats; miners?: PoolMiner[] | nu
       {/* ── Pearl upstream leg (Nockchain merge path) ── */}
       <div className="rounded-2xl border border-[#34d399]/15 bg-gradient-to-br from-[#34d399]/[0.05] to-white/[0.02]">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
-          <h3 className="text-sm font-bold text-white">Pearl upstream leg → LuckyPool</h3>
+          <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+            Pearl upstream leg → LuckyPool
+            {stale && <SecBadge state="cached" />}
+          </h3>
           <div className="flex items-center gap-2">
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
@@ -604,7 +644,10 @@ function PoolStatsPanel({ p, miners }: { p: PoolStats; miners?: PoolMiner[] | nu
       {miners && miners.length > 0 ? (
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02]">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
-            <h3 className="text-sm font-bold text-white">Pool miners by hashrate</h3>
+            <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+              Pool miners by hashrate
+              {minersStale && <SecBadge state="cached" />}
+            </h3>
             <span className="text-[10px] text-white/35">
               {miners.length} workers · valid / invalid shares per stream
             </span>
@@ -710,10 +753,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     let stop = false;
+    // hydrate the last-good snapshot so a hard reload during a feed outage
+    // still renders the fleet — the snapshot's own ts drives the stale flag
+    try {
+      const raw = localStorage.getItem("vast-rigs:last-snap");
+      if (raw) setSnap(JSON.parse(raw) as Snap);
+    } catch {}
     const load = () =>
       fetch("/vast-rigs/status.json", { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-        .then((j: Snap) => !stop && (setSnap(j), setErr("")))
+        .then((j: Snap) => {
+          if (stop) return;
+          setSnap(j);
+          setErr("");
+          try {
+            localStorage.setItem("vast-rigs:last-snap", JSON.stringify(j));
+          } catch {}
+        })
         .catch((e) => !stop && setErr(String(e)));
     load();
     const t = setInterval(load, 10000);
@@ -984,6 +1040,16 @@ export default function Dashboard() {
           </span>
           {feedStale && <span className="ml-1 text-amber-300">· feed stale</span>}
           {" · refreshes every 10 seconds"}
+          {snap?.errors && Object.keys(snap.errors).length > 0 && (
+            <span
+              className="ml-2 cursor-help text-rose-300"
+              title={Object.entries(snap.errors)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join("\n")}
+            >
+              · {Object.keys(snap.errors).length} section{Object.keys(snap.errors).length > 1 ? "s" : ""} degraded
+            </span>
+          )}
           {err && <span className="ml-2 text-[#ff7b72]">· {err}</span>}
         </p>
       </section>
@@ -1449,6 +1515,15 @@ export default function Dashboard() {
 
         {tab === "mining" && (
         <section className="mx-auto w-full max-w-7xl pb-8 lg:pb-12">
+          {secState(snap, "rigs") === "cached" && (
+            <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3 py-2 text-[11px] text-amber-200/80">
+              <SecBadge state="cached" />
+              <span title={snap?.errors?.rigs}>
+                Rig probe failing — showing the daemon&apos;s last-good fleet
+                {snap?.errors?.rigs ? ` (${snap.errors.rigs.slice(0, 90)})` : ""}
+              </span>
+            </div>
+          )}
           <div className="overflow-x-auto rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01]">
             <table className="w-full min-w-[840px] border-collapse text-left">
               <thead>
@@ -1714,18 +1789,22 @@ export default function Dashboard() {
             <tr>
               <td colSpan={7} className="p-8 text-center sm:p-12">
                 <div className="text-sm font-semibold text-white/65">
-                  {err && !snap
-                    ? "Fleet feed unavailable"
-                    : snap
-                      ? "No vast.ai rigs running"
-                      : "Loading fleet data…"}
+                  {snap?.errors?.rigs
+                    ? "Fleet probe failing"
+                    : err && !snap
+                      ? "Fleet feed unavailable"
+                      : snap
+                        ? "No vast.ai rigs running"
+                        : "Loading fleet data…"}
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-white/40">
-                  {err && !snap
-                    ? "The status feed could not be loaded. Check the connection and try again."
-                    : snap
-                      ? "All rented instances are stopped or destroyed — the fleet is idle. Spin one up from the GPU market tab."
-                      : "Waiting for the Vast status daemon to publish its first snapshot…"}
+                  {snap?.errors?.rigs
+                    ? `The daemon could not list vast.ai instances (${snap.errors.rigs}). Retrying automatically.`
+                    : err && !snap
+                      ? "The status feed could not be loaded. Check the connection and try again."
+                      : snap
+                        ? "All rented instances are stopped or destroyed — the fleet is idle. Spin one up from the GPU market tab."
+                        : "Waiting for the Vast status daemon to publish its first snapshot…"}
                 </p>
                 {snap && !err && (
                   <button
@@ -1749,26 +1828,38 @@ export default function Dashboard() {
         <section className="mx-auto w-full max-w-7xl pb-12 sm:pb-20">
           {/* our own ZION pool — live routing / auxpow / PPLNS */}
           {snap?.poolstats ? (
-            <PoolStatsPanel p={snap.poolstats} miners={snap.pool} />
+            <PoolStatsPanel
+              p={snap.poolstats}
+              miners={snap.pool}
+              stale={secState(snap, "poolstats") === "cached"}
+              minersStale={secState(snap, "pool") === "cached"}
+            />
           ) : (
             <div className="mb-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] px-4 py-5 text-center text-xs text-amber-200/80">
-              Pool API unavailable — the status daemon could not reach the pool HTTP API on Edge (:8080).
+              {snap?.errors?.poolstats
+                ? `Pool stats error — ${snap.errors.poolstats}`
+                : "Pool API unavailable — the status daemon could not reach the pool HTTP API on Edge (:8080)."}
             </div>
           )}
 
           {/* SMOS rigs card */}
           <div className="mb-5 rounded-2xl border border-[#fcd116]/15 bg-gradient-to-br from-[#fcd116]/[0.05] to-white/[0.02]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
-              <h3 className="text-sm font-bold text-white">SimpleMining rigs</h3>
+              <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                SimpleMining rigs
+                <SecBadge state={secState(snap, "smos")} />
+              </h3>
               <span className="text-[10px] text-white/35">
                 {snap?.smos ? `${snap.smos.filter((r) => r.online).length}/${snap.smos.length} online · api.simplemining.net` : "simplemining.net"}
               </span>
             </div>
             {snap?.smos === null || snap?.smos === undefined ? (
               <div className="p-6 text-center text-xs text-white/40">
-                {snap?.smos === null
-                  ? "SMOS API unavailable — check VASTCTL_SMOS_KEY in vastctl env."
-                  : "SMOS data pending — waiting for the next daemon snapshot (≤60 s)."}
+                {snap?.errors?.smos
+                  ? `SMOS API error — ${snap.errors.smos}`
+                  : snap?.smos === null
+                    ? "SMOS API unavailable — check VASTCTL_SMOS_KEY in vastctl env."
+                    : "SMOS data pending — waiting for the next daemon snapshot (≤60 s)."}
               </div>
             ) : snap.smos.length === 0 ? (
               <div className="p-6 text-center text-xs text-white/40">No SimpleMining rigs on this account.</div>
@@ -1879,6 +1970,14 @@ export default function Dashboard() {
           </div>
 
           {/* external pools: earnings + workers per coin */}
+          {snap?.ext && secState(snap, "ext") === "cached" && (
+            <div className="mb-2 flex items-center gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3 py-2 text-[11px] text-amber-200/80">
+              <SecBadge state="cached" />
+              <span title={snap?.errors?.ext}>
+                External pool APIs not answering — showing last-good balances/workers
+              </span>
+            </div>
+          )}
           {snap?.ext && (
           <div className="mb-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
             {([
@@ -1956,7 +2055,10 @@ export default function Dashboard() {
             return (
           <div className="overflow-x-auto rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
-              <h3 className="text-sm font-bold text-white">Pool workers</h3>
+              <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                Pool workers
+                <SecBadge state={secState(snap, "pool")} />
+              </h3>
               <span className="text-[10px] text-white/35">
                 {poolGroups
                   ? `${poolGroups.length} wallets · ${sessionCount} sessions · edge:8444`
@@ -1965,9 +2067,11 @@ export default function Dashboard() {
             </div>
             {snap?.pool === null || snap?.pool === undefined ? (
               <div className="p-8 text-center text-sm text-white/45">
-                {snap?.pool === null
-                  ? "Pool API unreachable — daemon could not fetch /miners from the edge loopback."
-                  : "Pool data pending — waiting for the next daemon snapshot (≤60 s)."}
+                {snap?.errors?.pool
+                  ? `Pool miners error — ${snap.errors.pool}`
+                  : snap?.pool === null
+                    ? "Pool API unreachable — daemon could not fetch /miners from the edge loopback."
+                    : "Pool data pending — waiting for the next daemon snapshot (≤60 s)."}
               </div>
             ) : !poolGroups?.length ? (
               <div className="p-8 text-center text-sm text-white/45">No pool workers connected.</div>

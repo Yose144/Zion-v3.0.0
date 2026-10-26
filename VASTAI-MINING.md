@@ -802,24 +802,52 @@ protected by nginx Basic Auth.
 webrootu + `--autodeploy-xmrig` (rig bez xmrig → automaticky config+
 binárka+launch, fail backoff 10 min).
 
-Live setup (systemd **user** unit `vastctl-daemon.service`, copy v
-`infra/tools/vast/`): běží na zionserveru, pushne JSON do
-`/var/www/zion-maintenance/vast-rigs/status.json` na edge.
+Live setup (2026-10-26, robustní pipeline): **system unit na Edgi**
+`/etc/systemd/system/vastctl-daemon.service` (WorkingDirectory
+`/root/build/warpd-zis/tools/vast`, kopie `infra/tools/vast/vastctl.py` —
+deploy = scp souboru + `systemctl restart vastctl-daemon`), interval 60 s,
+`--autodeploy-xmrig`, self-push (local copy) do
+`/var/www/zion-maintenance/vast-rigs/status.json` na Edgi.
+
+**Veřejný feed na EDGE2** (`zionterranova.com/vast-rigs/status.json`) má
+dva nezávislé zdroje — `zion-vastrigs-sync.timer` (60 s,
+`/usr/local/sbin/vastrigs-sync.sh`, remote-only skript) zkusí postupně:
+
+1. `http://127.0.0.1:8088/api/status` — reverse tunnel `zion-edge2:8088 →
+   zionserver:8088` (`vastctl-tunnel-edge2` + `vastctl-serve` user units na
+   operátorském PC; serve generuje snapshot přes `snapshot_from(cached_rigs())`).
+2. Fallback: SSH forced-command `vastrigs-pull` klíč
+   (`/root/.ssh/vastrigs-pull` na EDGE2 →
+   `command="/bin/cat /var/www/zion-maintenance/vast-rigs/status.json"`
+   na Edgi, port 2222, `from="207.180.217.100"` + no-pty/no-forward) —
+   vrátí kopii Edge daemonu. Odstraňuje SPOF operátorského PC.
+
+Snapshot nese sekční telemetrii: `fresh.{rigs,pool,poolstats,smos,ext}`
+(false = last-good cache), `errors.{section}` při výjimce a `daemon`
+{pid, cycle, interval_s, cycle_ms, last_error} (jen Edge daemon varianta).
+Pád jednoho zdroje (vast.ai API, pool API, SMOS, ext pooly) už nezabije
+celý snapshot — sekce se izolují a publikuje se last-good s flagem.
+`snapshot()`/`snapshot_from()`/`_section()`/`_LAST` v vastctl.py.
 
 ```bash
-systemctl --user enable --now vastctl-daemon   # + loginctl enable-linger (už je)
-journalctl --user -u vastctl-daemon -f
+systemctl status vastctl-daemon            # edge (system unit)
+journalctl -u vastctl-daemon -f            # edge
+systemctl list-timers zion-vastrigs-sync.timer   # edge2
+journalctl -u zion-vastrigs-sync.service -n 20   # edge2
 ```
 
 ### Skrytá veřejná stránka
 
 `https://zionterranova.com/vast-rigs/` — unlisted ops dashboard
 (noindex, nikde nelinkovaná): IntroPage `src/app/vast-rigs/` — client-side
-fetch `/vast-rigs/status.json` každých 30 s → karty per rig (GPU metriky,
-minery s hashrate + A/R + **sparkline** historie, $/den součet).
+fetch `/vast-rigs/status.json` každých **10 s** → karty per rig (GPU metriky,
+minery s hashrate + A/R + **sparkline** historie, $/den součet), pool
+worker rows grupované podle payout walletu, per-section `cached` badge +
+`sections degraded` indikátor podle `fresh`/`errors` klíčů, stale feed
+flag při ts >120 s, localStorage last-good snapshot při výpadku feedu.
 Placeholder `public/vast-rigs/status.json` drží adresář v static exportu
-(`rsync --delete` by ho jinak smazal). Deploy: `npm run build` +
-`ZION_EDGE_HOST=zion-v6 bash deploy/deploy-intro.sh`.
+(`rsync --delete` by ho jinak smazal; deploy script ho vylučuje z push).
+Deploy: `npm run build` + `bash deploy/deploy-intro.sh` (default `zion-edge2`).
 
 ## 8. Vypnutí instance (důležité — jinak utíkají peníze!)
 
