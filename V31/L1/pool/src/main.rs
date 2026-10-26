@@ -219,10 +219,14 @@ async fn main() -> anyhow::Result<()> {
         match store.query_blocks_for_coin("zion", 1000) {
             Ok(mut rows) => {
                 rows.reverse(); // newest-first → oldest-first
-                let last_ts = rows.last().map(|r| r.ts).unwrap_or(0);
                 let count = rows.len();
+                // The `shares` table is unused in production — the live
+                // counter is flushed to pool_state on an interval (and at
+                // drain), so restore the last flushed value.
                 let counter = store
-                    .accepted_shares_since("zion", last_ts)
+                    .get_state("shares_since_last_block")
+                    .ok()
+                    .flatten()
                     .unwrap_or(0);
                 block_tracker
                     .lock()
@@ -657,6 +661,31 @@ async fn main() -> anyhow::Result<()> {
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .unwrap_or(1500);
+
+    // Flush the live shares-since-last-block counter to pool_state on an
+    // interval — the `shares` table is unused in production, so this kv
+    // is the only restart-visible copy. One row every 30s, off the
+    // per-share path (the dedup wedge lesson).
+    if let Some(store) = share_store.clone() {
+        let tracker = block_tracker.clone();
+        tokio::spawn(async move {
+            let mut tick = tokio::time::interval(Duration::from_secs(30));
+            tick.tick().await; // skip the immediate first tick
+            loop {
+                tick.tick().await;
+                let n = tracker
+                    .lock()
+                    .map(|t| t.shares_since_last_block())
+                    .unwrap_or(0);
+                if let Err(e) = store.set_state("shares_since_last_block", n) {
+                    tracing::debug!("pool_state counter flush failed: {}", e);
+                }
+            }
+        });
+    }
+
+    let drain_tracker = block_tracker.clone();
+    let drain_store = share_store.clone();
     let drain_handle = tokio::spawn(async move {
         wait_for_terminate().await;
         drain_flag.store(true, std::sync::atomic::Ordering::SeqCst);
@@ -674,6 +703,10 @@ async fn main() -> anyhow::Result<()> {
                     Ok(false) => info!("drain: pplns state already clean"),
                     Err(e) => warn!("drain: final pplns flush failed: {}", e),
                 }
+            }
+            // Final counter flush — survives the process exit below.
+            if let (Some(store), Ok(t)) = (drain_store, drain_tracker.lock()) {
+                let _ = store.set_state("shares_since_last_block", t.shares_since_last_block());
             }
         })
         .await;

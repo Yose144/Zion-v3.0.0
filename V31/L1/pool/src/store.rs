@@ -34,9 +34,11 @@ use crate::v3_pplns::PayoutEntry;
 /// replayed external share could double-credit PPLNS after a bounce.
 /// v8: `blocks.shares_since_prev` — per-block share count at find time.
 /// The in-memory BlockTracker loses its luck window on restart; with the
-/// column persisted, boot restores the full luck_100/luck_500 view plus
-/// the shares-since-last-block counter.
-const SCHEMA_VERSION: u32 = 8;
+/// column persisted, boot restores the full luck_100/luck_500 view.
+/// v9: `pool_state` kv — the running shares-since-last-block counter is
+/// flushed here periodically (the `shares` table is not populated by the
+/// production submit path, so there is no per-share trail to recount).
+const SCHEMA_VERSION: u32 = 9;
 
 /// A thread-safe wrapper around a SQLite connection.  SQLite with
 /// `serialized` mode (default for `bundled`) supports multi-thread access,
@@ -419,6 +421,20 @@ impl ShareStore {
                 "ALTER TABLE blocks ADD COLUMN shares_since_prev INTEGER NOT NULL DEFAULT 0;",
             )
             .context("failed to migrate schema to v8")?;
+        }
+
+        if current < 9 {
+            // v9: kv store for the shares-since-last-block counter —
+            // production never INSERTs into `shares`, so the counter
+            // cannot be rebuilt from per-share rows.
+            conn.execute_batch(
+                "CREATE TABLE pool_state (
+                    key   TEXT PRIMARY KEY,
+                    value INTEGER NOT NULL,
+                    ts    INTEGER NOT NULL DEFAULT (unixepoch())
+                );",
+            )
+            .context("failed to migrate schema to v9")?;
         }
 
         conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
@@ -967,17 +983,29 @@ impl ShareStore {
         Ok(out)
     }
 
-    /// Accepted shares for `coin` recorded after `ts` (unix seconds) —
-    /// rebuilds the tracker's shares-since-last-block counter at boot
-    /// without any extra write path. Bounded by share retention.
-    pub fn accepted_shares_since(&self, coin: &str, ts: i64) -> Result<u64> {
+    /// Read a `pool_state` counter — `None` before the first flush.
+    pub fn get_state(&self, key: &str) -> Result<Option<u64>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
-        let n: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM shares WHERE coin = ?1 AND accepted = 1 AND ts > ?2",
-            params![coin, ts],
-            |row| row.get(0),
+        let v = conn
+            .query_row(
+                "SELECT value FROM pool_state WHERE key = ?1",
+                params![key],
+                |row| row.get::<_, i64>(0),
+            )
+            .optional()?;
+        Ok(v.map(|n| n.max(0) as u64))
+    }
+
+    /// Upsert a `pool_state` counter — single-row write, cheap enough to
+    /// flush on a short interval (kept off the per-share path).
+    pub fn set_state(&self, key: &str, value: u64) -> Result<()> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        conn.execute(
+            "INSERT INTO pool_state (key, value, ts) VALUES (?1, ?2, unixepoch())
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value, ts = excluded.ts",
+            params![key, value as i64],
         )?;
-        Ok(n as u64)
+        Ok(())
     }
 
     /// Query recent payouts for a miner.
@@ -2356,36 +2384,21 @@ mod history_tests {
         assert_eq!(row.height, 42);
     }
 
-    /// `accepted_shares_since` counts only accepted shares for the coin
-    /// recorded after the watermark — the tracker counter rebuild input.
+    /// v9 `pool_state` kv: round-trip, overwrite, missing-key.
     #[test]
-    fn accepted_shares_since_counts_window() {
+    fn pool_state_counter_roundtrips() {
         let store = ShareStore::open_in_memory().unwrap();
-        let mk = |nonce: u64, accepted: bool| ShareRecord {
-            miner_id: "m".to_string(),
-            worker_name: "w".to_string(),
-            job_id: nonce,
-            nonce,
-            hash_hex: "h".to_string(),
-            height: 1,
-            accepted,
-            share_difficulty: 1,
-            network_difficulty: 1,
-            is_block: false,
-            source: "zion".to_string(),
-            coin: "zion".to_string(),
-        };
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs() as i64;
-        store.record_share(&mk(1, true)).unwrap();
-        store.record_share(&mk(2, true)).unwrap();
-        store.record_share(&mk(3, false)).unwrap();
-        assert_eq!(store.accepted_shares_since("zion", now).unwrap(), 0);
+        assert_eq!(store.get_state("shares_since_last_block").unwrap(), None);
+        store.set_state("shares_since_last_block", 55).unwrap();
         assert_eq!(
-            store.accepted_shares_since("zion", now - 3600).unwrap(),
-            2
+            store.get_state("shares_since_last_block").unwrap(),
+            Some(55)
         );
+        store.set_state("shares_since_last_block", 0).unwrap();
+        assert_eq!(
+            store.get_state("shares_since_last_block").unwrap(),
+            Some(0)
+        );
+        assert_eq!(store.get_state("other_key").unwrap(), None);
     }
 }

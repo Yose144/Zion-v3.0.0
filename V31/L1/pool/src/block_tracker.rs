@@ -255,6 +255,12 @@ impl BlockTracker {
         Some((total_expected / total_actual) * 100.0)
     }
 
+    /// Accepted shares counted since the last block — persisted
+    /// periodically (pool_state kv) so a restart restores the counter.
+    pub fn shares_since_last_block(&self) -> u64 {
+        self.shares_since_last_block
+    }
+
     /// Pending blocks (found but not yet confirmed/orphaned).
     pub fn pending_blocks(&self) -> Vec<&BlockRecord> {
         self.blocks
