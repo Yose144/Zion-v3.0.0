@@ -1212,10 +1212,20 @@
       border-color: rgba(255,255,255,0.12);
     }
     .stream-card.inactive { opacity: 0.55; }
+    .stream-card.stream-off { opacity: 0.45; }
+    .stream-card.stream-off .stream-hashrate,
+    .stream-card.stream-off .stream-algo,
+    .stream-card.stream-off .stream-detail { filter: grayscale(0.8); }
+    /* Compact ON/OFF switch in stream card headers (same pill style as the
+       Mining Hardware rows, scaled down). */
+    .stream-switch { margin-left: auto; width: 34px; height: 19px; flex: 0 0 34px; }
+    .stream-switch .hw-slider { border-radius: 19px; }
+    .stream-switch .hw-slider::before { width: 13px; height: 13px; top: 2px; left: 2px; }
+    .stream-switch input:checked + .hw-slider::before { transform: translateX(15px); }
     .stream-card-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 6px;
       font-size: 11px;
     }
     .stream-label {
@@ -5301,6 +5311,10 @@
               <div class="stream-card-header">
                 <span class="stream-label">Stream 1 · ZION</span>
                 <span class="stream-coin" id="stream-1-coin">ZION</span>
+                <label class="hw-switch stream-switch" title="ZION stream on/off">
+                  <input type="checkbox" id="stream-toggle-1" checked>
+                  <span class="hw-slider"></span>
+                </label>
               </div>
               <div class="stream-card-body">
                 <div class="stream-hashrate" id="stream-1-hashrate">—</div>
@@ -5330,6 +5344,10 @@
               <div class="stream-card-header">
                 <span class="stream-label">Stream 2 · GPU</span>
                 <span class="stream-coin" id="stream-2-coin">—</span>
+                <label class="hw-switch stream-switch" title="Stream 2 — GPU external coin on/off">
+                  <input type="checkbox" id="stream-toggle-2" checked>
+                  <span class="hw-slider"></span>
+                </label>
               </div>
               <div class="stream-card-body">
                 <div class="stream-hashrate" id="stream-2-hashrate">—</div>
@@ -5359,6 +5377,10 @@
               <div class="stream-card-header">
                 <span class="stream-label">Stream 3 · VRSC</span>
                 <span class="stream-coin" id="stream-3-coin">—</span>
+                <label class="hw-switch stream-switch" title="Stream 3 — CPU external coin on/off">
+                  <input type="checkbox" id="stream-toggle-3" checked>
+                  <span class="hw-slider"></span>
+                </label>
               </div>
               <div class="stream-card-body">
                 <div class="stream-hashrate" id="stream-3-hashrate">—</div>
@@ -5389,6 +5411,10 @@
               <div class="stream-card-header">
                 <span class="stream-label">Stream 4 · GPU</span>
                 <span class="stream-coin" id="stream-5-coin">—</span>
+                <label class="hw-switch stream-switch" title="Stream 4 — second GPU external coin on/off">
+                  <input type="checkbox" id="stream-toggle-4" checked>
+                  <span class="hw-slider"></span>
+                </label>
               </div>
               <div class="stream-card-body">
                 <div class="stream-hashrate" id="stream-5-hashrate">—</div>

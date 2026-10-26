@@ -1505,6 +1505,52 @@ function setupControls() {
     }
   }
 
+  // ═══ Per-stream ON/OFF toggles (Trinity card header switches) ═══
+  // stream1 = ZION, 2/3 = trinity external, 4 = quad (also needs gpuCoin2).
+  // Enabling an external stream auto-enables tripleStream (same as the
+  // coin selectors). At least one stream must stay on — and stream1 can
+  // only go off when an external stream remains to keep the rig mining.
+  const streamToggleFor = (i) => document.getElementById(`stream-toggle-${i}`);
+  const bindStreamToggle = (i) => {
+    const t = streamToggleFor(i);
+    if (!t) return;
+    t.addEventListener('change', () => {
+      const on = t.checked;
+      const revert = (msg) => {
+        t.checked = !on;
+        if (msg) addLogEntry(msg, 'warn');
+      };
+      if (!on) {
+        const othersOn = [1, 2, 3, 4].some(j => j !== i && config[`stream${j}`] !== false);
+        if (!othersOn) {
+          return revert('At least one stream must stay enabled');
+        }
+        if (i === 1 && (config.tripleStream !== true
+          || ![2, 3, 4].some(j => config[`stream${j}`] !== false))) {
+          return revert('ZION stream can only go off when an external stream is active');
+        }
+      }
+      config[`stream${i}`] = on;
+      if (on && i > 1 && config.tripleStream !== true) {
+        config.tripleStream = true;
+        if (tripleStreamCheckbox) tripleStreamCheckbox.checked = true;
+        addLogEntry('Trinity enabled automatically (stream toggled on)', 'info');
+      }
+      // Stream 4 needs a coin — pick a default when enabling with none.
+      if (on && i === 4) {
+        const c2 = String(config.gpuCoin2 || '').trim();
+        const g1 = String(config.gpuCoin || '').toUpperCase();
+        if (!c2 || c2.toLowerCase() === 'auto' || c2.toUpperCase() === g1) {
+          config.gpuCoin2 = g1 === 'ZANO' ? 'QTU' : 'ZANO';
+        }
+      }
+      syncStreamToggles();
+      void applyMiningSelection(`stream${i}=${on ? 'on' : 'off'}`);
+    });
+  };
+  for (let i = 1; i <= 4; i++) bindStreamToggle(i);
+  syncStreamToggles();
+
   // ═══ Mining Hardware — Dashboard per-device toggles ═══
   // CPU + every detected OpenCL GPU get an on/off checkbox. Checked state
   // maps to config.cpu / config.gpuDevices (token = banner device name, or
@@ -2069,6 +2115,7 @@ function formatHashrate(valueHs) {
 
 function updateSettingsUI() {
   document.getElementById('wallet-input').value = config.wallet || '';
+  syncStreamToggles();
   
   // Pool selection - set correct radio button
   const poolAddress = `${config.pool?.host || PRIMARY_TESTNET_HOST}:${config.pool?.port || PRIMARY_POOL_PORT}`;
@@ -5519,6 +5566,19 @@ function updateSrbConsole(stats) {
         `${pwr ? `<span>${pwr}${eff}</span>` : ''}` +
         `${g.dipping ? '<span class="c-dip">DIP</span>' : ''}</span>`;
     }).join('');
+  }
+}
+
+// Sync the per-stream header switches + card dimming from config.
+// stream N (mining index) → DOM card id: 1→1, 2→2, 3→3, 4→5 (slot 4 is the
+// BTCunlock service card — not a pool stream).
+function syncStreamToggles() {
+  for (let i = 1; i <= 4; i++) {
+    const on = config[`stream${i}`] !== false;
+    const t = document.getElementById(`stream-toggle-${i}`);
+    const card = document.getElementById(`stream-card-${i === 4 ? 5 : i}`);
+    if (t) t.checked = on;
+    if (card) card.classList.toggle('stream-off', !on);
   }
 }
 

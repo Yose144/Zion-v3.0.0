@@ -1404,6 +1404,21 @@ const DEFAULT_CONFIG = {
   //   the second stream on collision.
   gpuCoin2: '',
   tripleStream: false,
+  // Per-stream on/off — dashboard Trinity card switches.
+  //   stream1 = ZION stream (the primary, can only be off when an external
+  //     stream is active — miner accepts ZION_STREAM1_ENABLED=0 for
+  //     ext-only operation).
+  //   stream2/3 = trinity external streams (require tripleStream).
+  //   stream4   = quad stream (additionally requires a gpuCoin2 coin).
+  stream1: true,
+  stream2: true,
+  stream3: true,
+  stream4: true,
+  // First-run hardware autodetect: on first launch the agent probes the
+  // OpenCL device list and fills gpuDevices/gpu/cpu defaults to match the
+  // installed hardware (public users get a working out-of-box config),
+  // then flips this flag so later manual edits are respected.
+  hwDetectDone: false,
   // Triple-stream tuning (CUDA primary + ext coin)
   extGpuBackend: 'cuda',
   extGpuDutyPct: 50,
@@ -1869,7 +1884,8 @@ const gpuHealth = {
   active: [],            // enabled devices in banner order (sub-miner order)
   errors: new Map(),     // dev index -> batch error count this run
   zeroSince: new Map(),  // dev index -> ts first seen at ~0 rate
-  sawRate: new Map(),    // dev index -> true once any rate >0 observed
+  sawRate: new Map(),    // dev index -> true once any rate sample observed
+  producedOnce: new Map(), // dev index -> true once a >0 rate was observed
   enabledAt: new Map(),  // token -> ts when it entered the selection
   strikes: new Map(),    // token -> crash strikes attributed to that card
   startedAt: 0,
@@ -1915,6 +1931,43 @@ function resolveSelectedGpuDevices(config) {
   return picked.filter(d => !quarantine[gpuSelectionToken(d, all)]);
 }
 
+// First-run hardware autodetect (public users): probe the OpenCL device
+// list and fill hardware defaults to match what is actually installed —
+// every detected card enabled, CPU on, GPU off when nothing was found.
+// Runs once; the hwDetectDone flag makes later manual edits stick.
+async function firstRunHardwareDetect() {
+  const config = loadConfig();
+  if (config.hwDetectDone === true) return;
+  let gpus = [];
+  try {
+    gpus = await enumerateGpuDevices({ force: true });
+  } catch { /* leave empty */ }
+  const list = Array.isArray(gpus) ? gpus : [];
+  const patch = { hwDetectDone: true };
+  if (!Array.isArray(config.gpuDevices) || !config.gpuDevices.length) {
+    patch.gpuDevices = list.map(d => gpuSelectionToken(d, list));
+  }
+  const effectiveSel = patch.gpuDevices || config.gpuDevices || [];
+  if (!list.length) {
+    // GPU-less machine: CPU-only defaults so the miner doesn't fail init.
+    patch.gpu = false;
+    patch.cpu = true;
+    patch.miningMode = 'cpu';
+    patch.multiGpu = false;
+  } else if (config.gpu !== false) {
+    // Never auto-flip an explicit gpu:false back on.
+    patch.gpu = true;
+    patch.multiGpu = effectiveSel.length > 1;
+    if (!config.miningMode || config.miningMode === 'cpu') {
+      patch.miningMode = 'dual';
+    }
+  }
+  saveConfig({ ...config, ...patch });
+  try {
+    logApp('hw-autodetect', JSON.stringify({ detected: list.length, ...patch }));
+  } catch {}
+}
+
 // Keep enabledAt in sync with the currently-active set — newly-present
 // tokens get stamped "now" (used by crash attribution), departed tokens
 // drop out.
@@ -1933,6 +1986,7 @@ function resetGpuHealth(config) {
   gpuHealth.errors = new Map();
   gpuHealth.zeroSince = new Map();
   gpuHealth.sawRate = new Map();
+  gpuHealth.producedOnce = new Map();
   gpuHealth.startedAt = Date.now();
   syncGpuHealthEnabledAt();
   // The banner cache may be cold if the panel hasn't probed yet — warm it
@@ -2015,6 +2069,7 @@ function trackGpuHealthOutput(output) {
       gpuHealth.sawRate.set(dev.index, true);
       if (rate > 0) {
         gpuHealth.zeroSince.delete(dev.index);
+        gpuHealth.producedOnce.set(dev.index, true);
       } else if (!gpuHealth.zeroSince.has(dev.index)) {
         gpuHealth.zeroSince.set(dev.index, now);
       }
@@ -2073,9 +2128,14 @@ function evaluateGpuHealth() {
       quarantineGpuDevice(dev, `persistent kernel errors (${errs} batch errors)`);
       continue;
     }
-    // Zero rate for 2+ min while a sibling card produces → dead weight.
+    // Zero rate for 2+ min while a sibling card produces → dead weight,
+    // but ONLY for a card that never produced anything. A card that
+    // produced once is proven working — dropping to 0 afterwards means
+    // duty starvation (e.g. it time-shares with the SRBMiner sidecar on
+    // the same silicon), not a broken kernel.
     const zeroSince = gpuHealth.zeroSince.get(dev.index);
-    if (zeroSince && now - zeroSince > GPU_HEALTH_ZERO_MS && anyProducing) {
+    if (zeroSince && now - zeroSince > GPU_HEALTH_ZERO_MS && anyProducing
+        && !gpuHealth.producedOnce.get(dev.index)) {
       quarantineGpuDevice(dev, 'produces 0 H/s while other devices mine');
     }
   }
@@ -3496,9 +3556,20 @@ function startMiningV31(config, v31Path) {
   // the internal OpenCL QPoW stream — SRB's lane-parallel kernel is ~1.7x
   // faster on RDNA. Disable stream2 so zion-miner keeps only ZION (stream1,
   // small GPU duty) + CPU stream; the card otherwise belongs to SRBMiner.
-  const useSrbQtc = wantsGpu && !gpuCoinAuto && srbEngineWanted(config);
+  const useSrbQtc = wantsGpu && config.stream2 !== false
+    && !gpuCoinAuto && srbEngineWanted(config);
+  // Per-stream switches (Trinity card toggles). Stream1 can only be off
+  // when an external stream remains — both the UI and this guard ensure
+  // the miner never ends up with zero active streams.
+  if (config.stream1 === false && tripleStreamEnabled
+      && (config.stream2 !== false || config.stream3 !== false || config.stream4 !== false)) {
+    env.ZION_STREAM1_ENABLED = '0';
+  }
+  if (config.stream2 === false) {
+    env.ZION_STREAM2_ENABLED = '0';
+  }
   if (tripleStreamEnabled) {
-    if (!wantsCpu || cpuCoinOff) {
+    if (!wantsCpu || cpuCoinOff || config.stream3 === false) {
       env.ZION_STREAM3_ENABLED = '0';
     } else {
       // public_build miners hide the CPU external stream by default
@@ -3510,7 +3581,7 @@ function startMiningV31(config, v31Path) {
         _activeExtCoins.cpu = cpuCoin.toUpperCase();
       }
     }
-    if (wantsGpu && !gpuCoinAuto) {
+    if (wantsGpu && config.stream2 !== false && !gpuCoinAuto) {
       if (useSrbQtc) {
         env.ZION_STREAM2_ENABLED = '0';
         _activeExtCoins.gpu = srbCoinIsExternal(gpuCoin)
@@ -3524,7 +3595,8 @@ function startMiningV31(config, v31Path) {
     // Quad mode: second GPU external stream. Requires tripleStream + GPU
     // and a coin different from gpuCoin (pool dedups on collision).
     const gpuCoin2 = String(config.gpuCoin2 || '').trim();
-    const gpuCoin2Valid = gpuCoin2 && gpuCoin2.toLowerCase() !== 'auto'
+    const gpuCoin2Valid = config.stream4 !== false
+      && gpuCoin2 && gpuCoin2.toLowerCase() !== 'auto'
       && gpuCoin2.toUpperCase() !== gpuCoin.toUpperCase();
     if (wantsGpu && gpuCoin2Valid) {
       // VRAM preflight: a DAG-family coin on stream4 (e.g. ZANO ProgPoW
@@ -3699,7 +3771,8 @@ function startMiningV31(config, v31Path) {
     // user unchecked multi-GPU, or when the per-card selection resolves
     // to exactly one device (mixed AMD+NVIDIA rigs: the secondary card
     // can fail kernel launches / hang the shared context).
-    env.ZION_MULTI_GPU = (config?.multiGpu === false || gpuDeviceSel.length === 1) ? '0' : '1';
+    env.ZION_MULTI_GPU = (gpuDeviceSel.length === 1
+      || (gpuDeviceSel.length === 0 && config?.multiGpu === false)) ? '0' : '1';
     // The single-device path picks via ZION_OCL_DEVICE_NAME/_IDX — it does
     // NOT honor ZION_GPU_DEVICES (pick_device only reads its own vars and
     // otherwise scores AMD +1000, silently mining the wrong card). Pin the
@@ -8927,6 +9000,18 @@ app.whenReady().then(async () => {
   
   createWindow();
   createTray();
+
+  // First-run hardware autodetect (public users): probe the OpenCL device
+  // list once and fill gpuDevices/gpu/cpu defaults to match the installed
+  // hardware. Delayed so the miner banner/probe can complete first; the
+  // hwDetectDone flag makes it a one-shot.
+  setTimeout(() => {
+    firstRunHardwareDetect().then(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('config-updated');
+      }
+    }).catch(() => {});
+  }, 3000);
 
   // Auto-check for updates on startup (delayed 8s to not block UI)
   // Public GitHub releases feed — no license required.
