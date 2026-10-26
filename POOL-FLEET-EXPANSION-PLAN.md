@@ -177,5 +177,6 @@ rig volá control plane ven (funguje i za NAT, bez SSH), CP drží desired-state
 | A1.1 ext-coin hashrate | ✅ `dde4f5a34` + deployed — target-derived `hps_live`/`hps_1h` v `/miners` + `/public/v1/coins/{c}/stats` |
 | A1.2 share-quality (partial) | ✅ `ad8ab5895` — per-stream `accept_rate`; reason buckets pending |
 | A1.4 luck / effort | ✅ `ad8ab5895` — shared `BlockTracker` (byl fragmentovaný per-listener), `blocks{luck_100,luck_500,found,confirmed,orphaned,pending}` v `/stats` + zion coin-stats; luck=0 dokud pool nenajde blok (in-memory) |
-| A1.5 est. earnings | ⬜ |
+| A1.5 est. earnings | ✅ `1e992a9cf` + deployed — `window_share`, `est_daily` (empirický 24h payout rate), `est_per_block` (zion subsidy) v `/public/v1/miner/...`; bonus: shared `current_height` across listeners (ext credit height-0 bug) |
 | A1.3 history depth | ⬜ (základ `/public/v1/history` existuje) |
+| Edge drift (bonus fix) | ✅ `1e992a9cf` deploy syncnul 6 divergentních souborů — Edge teď nese i `e9e0c5066` durable outbox, `4108a52d0` fail-closed payout proofs, `f0da65bb0` revenue journal (dřív na Edge chyběly) |
