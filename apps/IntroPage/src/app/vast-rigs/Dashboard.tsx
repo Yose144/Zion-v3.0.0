@@ -238,6 +238,83 @@ function agoS(t: number) {
   return `${Math.floor(d / 3600)}h ago`;
 }
 
+/** Age in seconds of an ISO-ish daemon timestamp ("2026-10-26T07:08:41+0100"). */
+function snapAgeS(ts?: string | null): number | null {
+  if (!ts) return null;
+  const ms = Date.parse(ts);
+  if (Number.isNaN(ms)) return null;
+  return Math.max(0, Math.floor((Date.now() - ms) / 1000));
+}
+
+function fmtAge(s: number | null) {
+  if (s === null) return "—";
+  if (s < 90) return `${s}s ago`;
+  if (s < 5400) return `${Math.floor(s / 60)}m ago`;
+  return `${Math.floor(s / 3600)}h ago`;
+}
+
+/** Merge pool miner rows that share one payout wallet — the pool exposes a
+ * row per session identity (bare wallet, wallet.worker, wallet.wallet.worker),
+ * which duplicates the same miner. One row per wallet, streams/hps merged. */
+type PoolWorkerGroup = {
+  address: string;
+  names: string[];
+  kinds: { label: string; cls: string }[];
+  streams: Record<string, PoolStream>;
+  hps: number;
+  hps_1h: number;
+  last_seen: number;
+  first_seen: number;
+  blocks: number;
+  paid: number;
+  sessions: number;
+};
+
+function groupPoolWorkers(pool: PoolMiner[]): PoolWorkerGroup[] {
+  const byAddr: Record<string, PoolMiner[]> = {};
+  for (const m of pool) {
+    const key = m.address || m.worker;
+    (byAddr[key] ||= []).push(m);
+  }
+  const groups: PoolWorkerGroup[] = [];
+  for (const address of Object.keys(byAddr)) {
+    const rows = byAddr[address];
+    const names = rows
+      .map((r) => workerName(r.worker))
+      .filter((n, i, a) => a.indexOf(n) === i)
+      .sort((a, b) => a.length - b.length);
+    const kinds = names
+      .map(workerKind)
+      .filter((k, i, a) => a.findIndex((x) => x.label === k.label) === i);
+    const streams: Record<string, PoolStream> = {};
+    for (const r of rows)
+      for (const [c, s] of Object.entries(r.streams)) {
+        const cur = streams[c];
+        streams[c] = cur
+          ? { v: cur.v + s.v, i: cur.i + s.i, t: Math.max(cur.t, s.t) }
+          : { ...s };
+      }
+    groups.push({
+      address,
+      names,
+      kinds,
+      streams,
+      hps: rows.reduce((s, r) => s + (r.hps || 0), 0),
+      hps_1h: rows.reduce((s, r) => s + (r.hps_1h || 0), 0),
+      last_seen: rows.reduce((mx, r) => Math.max(mx, r.last_seen || 0), 0),
+      first_seen: rows.reduce(
+        (min, r) => (r.first_seen && (!min || r.first_seen < min) ? r.first_seen : min),
+        0,
+      ),
+      blocks: rows.reduce((s, r) => s + (r.blocks || 0), 0),
+      paid: rows.reduce((s, r) => s + (r.paid || 0), 0),
+      sessions: rows.length,
+    });
+  }
+  groups.sort((a, b) => b.last_seen - a.last_seen);
+  return groups;
+}
+
 function coinOf(m: Miner) {
   const a = (m.algo || "").toLowerCase();
   for (const [k, v] of Object.entries(COIN)) if (a.includes(k)) return v;
@@ -650,6 +727,8 @@ export default function Dashboard() {
   }, [loadAiStatus]);
 
   const rigs = snap?.rigs || [];
+  const feedAge = snapAgeS(snap?.ts);
+  const feedStale = feedAge !== null && feedAge > 120;
 
   // ── market ──
   type Offer = {
@@ -899,7 +978,12 @@ export default function Dashboard() {
           ))}
         </div>
         <p className="text-xs text-white/40">
-          Updated {snap?.ts || "—"} · refreshes every 30 seconds
+          Updated{" "}
+          <span title={snap?.ts ?? undefined} className={feedStale ? "font-semibold text-amber-300" : undefined}>
+            {snap ? fmtAge(feedAge) : "—"}
+          </span>
+          {feedStale && <span className="ml-1 text-amber-300">· feed stale</span>}
+          {" · refreshes every 10 seconds"}
           {err && <span className="ml-2 text-[#ff7b72]">· {err}</span>}
         </p>
       </section>
@@ -1626,13 +1710,31 @@ export default function Dashboard() {
             </Fragment>
             );
           })}
-          {!rigs.length && !err && (
+          {!rigs.length && (
             <tr>
               <td colSpan={7} className="p-8 text-center sm:p-12">
-                <div className="text-sm font-semibold text-white/65">Fleet data is not available yet</div>
+                <div className="text-sm font-semibold text-white/65">
+                  {err && !snap
+                    ? "Fleet feed unavailable"
+                    : snap
+                      ? "No vast.ai rigs running"
+                      : "Loading fleet data…"}
+                </div>
                 <p className="mt-2 text-xs leading-relaxed text-white/40">
-                  {err ? "The status feed could not be loaded. Check the connection and try again." : "Waiting for the Vast status daemon to publish its first snapshot…"}
+                  {err && !snap
+                    ? "The status feed could not be loaded. Check the connection and try again."
+                    : snap
+                      ? "All rented instances are stopped or destroyed — the fleet is idle. Spin one up from the GPU market tab."
+                      : "Waiting for the Vast status daemon to publish its first snapshot…"}
                 </p>
+                {snap && !err && (
+                  <button
+                    onClick={() => goTab("market")}
+                    className="mt-4 rounded-lg border border-[#fcd116]/40 bg-[#fcd116]/10 px-4 py-2 text-xs font-semibold text-[#fcd116] transition hover:border-[#fcd116]/70 hover:bg-[#fcd116]/20"
+                  >
+                    → Browse GPU market
+                  </button>
+                )}
               </td>
             </tr>
           )}
@@ -1846,11 +1948,20 @@ export default function Dashboard() {
           </div>
           )}
 
-          {/* pool workers */}
+          {/* pool workers — grouped by payout wallet (the pool emits a row per
+             session identity; one wallet can carry several session names) */}
+          {(() => {
+            const poolGroups = snap?.pool ? groupPoolWorkers(snap.pool) : null;
+            const sessionCount = snap?.pool?.length ?? 0;
+            return (
           <div className="overflow-x-auto rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
               <h3 className="text-sm font-bold text-white">Pool workers</h3>
-              <span className="text-[10px] text-white/35">{snap?.pool ? `${snap.pool.length} workers · edge:8444` : "edge pool"}</span>
+              <span className="text-[10px] text-white/35">
+                {poolGroups
+                  ? `${poolGroups.length} wallets · ${sessionCount} sessions · edge:8444`
+                  : "edge pool"}
+              </span>
             </div>
             {snap?.pool === null || snap?.pool === undefined ? (
               <div className="p-8 text-center text-sm text-white/45">
@@ -1858,13 +1969,13 @@ export default function Dashboard() {
                   ? "Pool API unreachable — daemon could not fetch /miners from the edge loopback."
                   : "Pool data pending — waiting for the next daemon snapshot (≤60 s)."}
               </div>
-            ) : snap.pool.length === 0 ? (
+            ) : !poolGroups?.length ? (
               <div className="p-8 text-center text-sm text-white/45">No pool workers connected.</div>
             ) : (
             <table className="w-full min-w-[760px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.03] text-[10px] font-semibold uppercase tracking-wider text-white/40">
-                  <th className="px-3 py-2.5">Worker</th>
+                  <th className="px-3 py-2.5">Wallet / workers</th>
                   <th className="px-3 py-2.5">Type</th>
                   <th className="px-3 py-2.5">Streams</th>
                   <th className="px-3 py-2.5">Hashrate</th>
@@ -1873,30 +1984,41 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {[...snap.pool]
-                  .sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0))
-                  .map((m) => {
-                    const name = workerName(m.worker);
-                    const kind = workerKind(name);
-                    const online = m.last_seen > 0 && Date.now() / 1000 - m.last_seen < 600;
-                    const totV = Object.values(m.streams).reduce((s, x) => s + x.v, 0);
+                {poolGroups.map((g) => {
+                    const online = g.last_seen > 0 && Date.now() / 1000 - g.last_seen < 600;
+                    const totV = Object.values(g.streams).reduce((s, x) => s + x.v, 0);
                     return (
-                      <tr key={m.worker} className="border-b border-white/[0.05] align-top transition hover:bg-white/[0.03]">
+                      <tr key={g.address} className="border-b border-white/[0.05] align-top transition hover:bg-white/[0.03]">
                         <td className="px-3 py-3">
                           <div className="flex min-w-0 items-center gap-2">
                             <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${online ? "bg-[#34d399]" : "bg-white/20"} shadow-[0_0_8px_currentColor]`} />
-                            <b className="truncate text-sm text-white" title={m.worker}>{name}</b>
-                          </div>
-                          <div className="mt-0.5 truncate text-[10px] text-white/35" title={m.address}>
-                            {m.address.length > 14 ? `${m.address.slice(0, 8)}…${m.address.slice(-6)}` : m.address}
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1">
+                                {g.names.map((n) => (
+                                  <b key={n} className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[11px] font-semibold text-white" title={n}>
+                                    {n.length > 18 ? `${n.slice(0, 8)}…${n.slice(-4)}` : n}
+                                  </b>
+                                ))}
+                                {g.sessions > g.names.length && (
+                                  <span className="text-[9px] text-white/30">×{g.sessions} sessions</span>
+                                )}
+                              </div>
+                              <div className="mt-0.5 truncate text-[10px] text-white/35" title={g.address}>
+                                {g.address.length > 14 ? `${g.address.slice(0, 8)}…${g.address.slice(-6)}` : g.address}
+                              </div>
+                            </div>
                           </div>
                         </td>
                         <td className="px-3 py-3">
-                          <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold ${kind.cls}`}>{kind.label}</span>
+                          <div className="flex flex-wrap gap-1">
+                            {g.kinds.map((k) => (
+                              <span key={k.label} className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold ${k.cls}`}>{k.label}</span>
+                            ))}
+                          </div>
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex flex-wrap gap-1.5">
-                            {Object.entries(m.streams).map(([c, s]) => (
+                            {Object.entries(g.streams).map(([c, s]) => (
                               <span
                                 key={c}
                                 className="whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[10px] font-semibold"
@@ -1916,11 +2038,11 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-3 text-xs text-white/70">
-                          {fmtHps(m.hps)}
-                          {m.hps_1h > 0 && <span className="ml-1 text-[10px] text-white/35">1h {fmtHps(m.hps_1h)}</span>}
+                          {fmtHps(g.hps)}
+                          {g.hps_1h > 0 && <span className="ml-1 text-[10px] text-white/35">1h {fmtHps(g.hps_1h)}</span>}
                         </td>
-                        <td className="px-3 py-3 text-xs text-white/70">{m.blocks > 0 ? <span className="text-[#fcd116]">{m.blocks} ◆</span> : "—"}</td>
-                        <td className="whitespace-nowrap px-3 py-3 text-xs text-white/50">{agoS(m.last_seen)}</td>
+                        <td className="px-3 py-3 text-xs text-white/70">{g.blocks > 0 ? <span className="text-[#fcd116]">{g.blocks} ◆</span> : "—"}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-xs text-white/50">{agoS(g.last_seen)}</td>
                       </tr>
                     );
                   })}
@@ -1928,6 +2050,8 @@ export default function Dashboard() {
             </table>
             )}
           </div>
+            );
+          })()}
           <p className="mt-2 px-1 text-[10px] text-white/30">
             Workers connected to the project pool (edge:8444). SMOS = SimpleMining rigs, vast = this dashboard's fleet, infra = pool edge services.
           </p>
