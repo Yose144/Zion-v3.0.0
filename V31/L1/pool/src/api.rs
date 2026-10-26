@@ -1879,6 +1879,21 @@ impl PoolApi {
             None
         };
 
+        // Payout ETA — seconds until `unpaid` crosses the coin's min-payout
+        // threshold at the estimated accrual rate (est_daily). `0` = at or
+        // above threshold (eligible for the next batch); `null` = the rate
+        // can't be estimated (no store history yet).
+        let min_payout = pool.pplns.min_payout_for(coin_key);
+        let payout_eta_s = if unpaid >= min_payout {
+            Some(0u64)
+        } else {
+            est_daily.and_then(|d| {
+                (d > 0).then(|| {
+                    ((min_payout - unpaid) as f64 * 86_400.0 / d as f64).min(u64::MAX as f64) as u64
+                })
+            })
+        };
+
         json!({
             "ok": true,
             "coin": coin,
@@ -1888,6 +1903,8 @@ impl PoolApi {
             "shares": {"accepted": valid, "rejected": invalid},
             "unpaid": unpaid.to_string(),
             "unpaid_unit": unpaid_unit,
+            "min_payout": min_payout.to_string(),
+            "payout_eta_s": payout_eta_s,
             "window_share": window_share,
             "est_daily": est_daily,
             "est_per_block": est_per_block,
@@ -2100,10 +2117,13 @@ impl PoolApi {
                 std::collections::HashMap::new();
             let mut coin_online: std::collections::HashMap<String, u64> =
                 std::collections::HashMap::new();
+            let mut coin_unverified: std::collections::HashMap<String, u64> =
+                std::collections::HashMap::new();
             for (_, miner) in reg.all_miners() {
                 for (coin, s) in &miner.streams {
                     *coin_valid.entry(coin.clone()).or_default() += s.valid_shares;
                     *coin_invalid.entry(coin.clone()).or_default() += s.invalid_shares;
+                    *coin_unverified.entry(coin.clone()).or_default() += s.unverified_shares;
                     if s.last_share_time_s > 0 && now_s.saturating_sub(s.last_share_time_s) < 600 {
                         *coin_online.entry(coin.clone()).or_default() += 1;
                     }
@@ -2124,6 +2144,14 @@ impl PoolApi {
                     "zion_pool_coin_miners_online{{coin=\"{}\"}} {}\n",
                     sanitize_prometheus_label(coin),
                     coin_online.get(coin).copied().unwrap_or(0)
+                ));
+                // P-05 audit residual: accepts credited on unverifiable
+                // upstream replies (accepted_unknown/stale) — upstream-
+                // quality gauge, 0 in healthy operation.
+                body.push_str(&format!(
+                    "zion_pool_coin_shares_unverified{{coin=\"{}\"}} {}\n",
+                    sanitize_prometheus_label(coin),
+                    coin_unverified.get(coin).copied().unwrap_or(0)
                 ));
             }
         }
@@ -2376,6 +2404,12 @@ fn miner_to_json(
                 }
                 if !stats.reject_reasons.is_empty() {
                     obj.insert("reject_reasons".to_string(), json!(stats.reject_reasons));
+                }
+                if stats.unverified_shares > 0 {
+                    obj.insert(
+                        "unverified_shares".to_string(),
+                        json!(stats.unverified_shares),
+                    );
                 }
                 if !stats.work.is_empty() {
                     obj.insert(
@@ -3245,6 +3279,65 @@ mod tests {
         .unwrap();
         assert_eq!(unknown["worker_count"], 0);
         assert_eq!(unknown["shares"]["accepted"], 0);
+    }
+
+    #[test]
+    fn public_miner_payload_reports_min_payout_and_eta() {
+        let telemetry = Arc::new(Mutex::new(crate::telemetry::MinerTelemetryRegistry::new()));
+        let pool = Arc::new(Mutex::new(Pool::new(
+            crate::config::PoolConfig {
+                min_payout_flowers: 1_000_000,
+                ..Default::default()
+            },
+            telemetry,
+        )));
+        const WALLET: &str = "zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2";
+        {
+            let mut p = pool.lock().unwrap();
+            p.pplns.register_address("miner1", WALLET);
+            p.pplns.record_share_at("miner1", "rig", 1, 1000);
+            // 400k reward → 89% miner share = 356k, below the 1M
+            // threshold → stays in unpaid balance.
+            let payouts = p.pplns.compute_payouts(400_000);
+            assert!(payouts.is_empty());
+        }
+        // Store history: 100k paid in 24h; sole-weight miner → est_daily 100k.
+        let store = Arc::new(ShareStore::open_in_memory().unwrap());
+        store
+            .record_payout(&crate::store::PayoutRecord {
+                miner_id: "miner1".into(),
+                address: WALLET.into(),
+                amount_flowers: 100_000,
+                tx_id: "tx_hist".into(),
+                height: 97_000,
+                block_hash: "bh".into(),
+                coin: "zion".into(),
+            })
+            .unwrap();
+        let api = PoolApi::new(pool, Some(store), None);
+
+        let payload: serde_json::Value =
+            serde_json::from_str(&api.build_public_miner_payload("zion", WALLET)).unwrap();
+        assert_eq!(payload["unpaid"], "356000");
+        assert_eq!(payload["min_payout"], "1000000");
+        assert_eq!(payload["est_daily"], 100_000);
+        // (1_000_000 - 356_000) / 100_000 = 6.44 days → 556_416 s.
+        assert_eq!(payload["payout_eta_s"], 556_416);
+
+        // Zero-balance wallet is still eligible → eta 0 (0 >= 0 short-circuit
+        // means threshold met only when unpaid reaches it; unpaid 0 < 1M
+        // threshold → falls to the est_daily branch which is present).
+        let store2 = Arc::new(ShareStore::open_in_memory().unwrap());
+        let api2 = PoolApi::new(test_pool(), Some(store2), None);
+        let unknown: serde_json::Value = serde_json::from_str(
+            &api2
+                .build_public_miner_payload("zion", "zion1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"),
+        )
+        .unwrap();
+        assert_eq!(unknown["unpaid"], "0");
+        // No payout history → est_daily null → eta null.
+        assert!(unknown["payout_eta_s"].is_null());
+        assert_eq!(unknown["min_payout"].as_str().is_some(), true);
     }
 
     #[test]

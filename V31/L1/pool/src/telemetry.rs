@@ -61,6 +61,11 @@ pub struct StreamStats {
     /// Reject counts by normalized bucket — see
     /// [`MinerTelemetryRegistry::record_reject_reason`]. Bounded to ~6 keys.
     pub reject_reasons: HashMap<String, u64>,
+    /// Accepts credited on an unverifiable upstream reply
+    /// (`accepted_unknown` / `accepted_stale_upstream`) — the
+    /// upstream-quality metric the 2026-10-26 pool audit asked for
+    /// (P-05 residual); these count inside `valid_shares` too.
+    pub unverified_shares: u64,
 }
 
 /// Normalize a reject reason string into a stable, bounded bucket label —
@@ -439,6 +444,22 @@ impl MinerTelemetryRegistry {
         }
     }
 
+    /// Count a share credited despite an unverifiable upstream outcome
+    /// (`accepted_unknown`/`accepted_stale_upstream`). Called alongside
+    /// `record_external_share` on those status strings — the counter feeds
+    /// the per-stream `unverified_shares` field in `/miners` and is the
+    /// upstream-quality signal for alert tuning.
+    pub fn record_unverified_credit(&mut self, miner_id: &str, worker_name: &str, stream: &str) {
+        let key = format!("{miner_id}/{worker_name}");
+        if let Some(miner) = self.miners.get_mut(&key) {
+            let stats = miner
+                .streams
+                .entry(stream.to_ascii_lowercase())
+                .or_default();
+            stats.unverified_shares = stats.unverified_shares.saturating_add(1);
+        }
+    }
+
     /// Increment a stream's reject-reason bucket. Called alongside the
     /// `accepted=false` paths of `record_job_result*`/`record_external_share`
     /// with the protocol-level reason string; the reason is normalized by
@@ -787,6 +808,26 @@ mod tests {
         assert_eq!(s.reject_reasons.len(), 3);
         assert_eq!(s.valid_shares, 1);
         assert_eq!(s.invalid_shares, 1);
+    }
+
+    /// P-05 audit residual: unverifiable upstream accepts count in
+    /// `unverified_shares` (and stay inside `valid_shares` — they ARE
+    /// credited, just flagged as upstream-quality signal).
+    #[test]
+    fn test_unverified_credit_counter() {
+        let mut reg = MinerTelemetryRegistry::new();
+        reg.record_external_share("m", "w", "prl", true, 1e6);
+        reg.record_unverified_credit("m", "w", "prl");
+        reg.record_external_share("m", "w", "prl", true, 1e6);
+        reg.record_unverified_credit("m", "w", "prl");
+        // A fully verified accept must not bump the counter.
+        reg.record_external_share("m", "w", "prl", true, 1e6);
+        let s = reg.get_miner("m/w").unwrap().streams["prl"].clone();
+        assert_eq!(s.unverified_shares, 2);
+        assert_eq!(s.valid_shares, 3);
+        // Unknown miner key is a no-op (credit recorded before telemetry
+        // in some orderings must not panic).
+        reg.record_unverified_credit("nobody", "w", "qtu");
     }
 
     #[test]

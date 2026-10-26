@@ -1877,7 +1877,11 @@ impl StratumServer {
             // Dedup key binds credit to this exact (job, nonce, result) —
             // replays return false and draw no second credit.
             let h = self.current_height.load(Ordering::Relaxed);
-            let w = auxpow_share_weight("QTU");
+            let w = if is_unverified_credit(&status) {
+                auxpow_share_weight("QTU") * unverified_credit_weight_pct() / 100
+            } else {
+                auxpow_share_weight("QTU")
+            };
             let credited = self.pool.lock().unwrap().record_external_share(
                 &login.wallet,
                 &login.login,
@@ -1900,6 +1904,9 @@ impl StratumServer {
                 accepted,
                 crate::telemetry::expected_hashes_for_target_hex(&pkg.target_hex),
             );
+            if is_unverified_credit(&status) {
+                t.record_unverified_credit(&login.wallet, &login.login, "qtu");
+            }
             if !accepted {
                 t.record_reject_reason(&login.wallet, &login.login, "qtu", &status);
             }
@@ -2020,7 +2027,11 @@ impl StratumServer {
         );
         if accepted {
             let h = self.current_height.load(Ordering::Relaxed);
-            let w = auxpow_share_weight("PRL");
+            let w = if is_unverified_credit(&status) {
+                auxpow_share_weight("PRL") * unverified_credit_weight_pct() / 100
+            } else {
+                auxpow_share_weight("PRL")
+            };
             let credited = self.pool.lock().unwrap().record_external_share(
                 miner_id,
                 worker_name,
@@ -2037,6 +2048,9 @@ impl StratumServer {
         {
             let mut t = self.telemetry.lock().unwrap();
             t.record_external_share(miner_id, worker_name, "PRL", accepted, share_eh);
+            if is_unverified_credit(&status) {
+                t.record_unverified_credit(miner_id, worker_name, "prl");
+            }
             if !accepted {
                 t.record_reject_reason(miner_id, worker_name, "prl", &status);
             }
@@ -3831,7 +3845,13 @@ impl StratumServer {
                                     let h = self
                                         .current_height
                                         .load(Ordering::Relaxed);
-                                    let w = auxpow_share_weight(&coin);
+                                    let w = if is_unverified_credit(&status) {
+                                        auxpow_share_weight(&coin)
+                                            * unverified_credit_weight_pct()
+                                            / 100
+                                    } else {
+                                        auxpow_share_weight(&coin)
+                                    };
                                     let credited = self
                                         .pool
                                         .lock()
@@ -3870,6 +3890,13 @@ impl StratumServer {
                                         accepted,
                                         share_eh,
                                     );
+                                    if is_unverified_credit(&status) {
+                                        t.record_unverified_credit(
+                                            &sub_miner_id,
+                                            &sub_worker_name,
+                                            &coin,
+                                        );
+                                    }
                                     if !accepted {
                                         t.record_reject_reason(
                                             &sub_miner_id,
@@ -4439,6 +4466,27 @@ fn auxpow_share_weight(coin: &str) -> u64 {
         })
         .unwrap_or(500u64)
         .max(1)
+}
+
+/// Weight multiplier (percent) for shares credited on an unverifiable
+/// upstream outcome (`accepted_unknown`/`accepted_stale_upstream`) —
+/// P-05 residual from the 2026-10-26 pool audit. Default 100 keeps the
+/// established economics; the operator drops it (e.g. 50) when upstream
+/// quality degrades. `ZION_POOL_UNVERIFIED_CREDIT_PCT`, clamped 0..=100.
+fn unverified_credit_weight_pct() -> u64 {
+    std::env::var("ZION_POOL_UNVERIFIED_CREDIT_PCT")
+        .ok()
+        .and_then(|s| s.trim().parse().ok())
+        .unwrap_or(100u64)
+        .min(100)
+}
+
+/// A share status is "unverified credit" when the local proof passed but
+/// the upstream answer cannot confirm acceptance — `accepted_unknown`
+/// (unparsable/absent reply) and `accepted_stale_upstream` (retired job,
+/// never forwarded). Plain `accepted` is fully verified.
+fn is_unverified_credit(status: &str) -> bool {
+    status != "accepted" && status.starts_with("accepted_")
 }
 
 /// Case-insensitive `*` glob: `vega*`, `*smos`, `vega-*-rig`, plain
@@ -6692,5 +6740,40 @@ mod tests {
             });
         });
         handle.join().unwrap();
+    }
+
+    /// P-05 residual: only the two unverifiable accept statuses get the
+    /// reduced credit weight; every other status is classified plainly.
+    #[test]
+    fn unverified_credit_classification() {
+        assert!(!is_unverified_credit("accepted"));
+        assert!(is_unverified_credit("accepted_unknown"));
+        assert!(is_unverified_credit("accepted_stale_upstream"));
+        // Rejects and protocol noise never classify as unverified credit.
+        for s in [
+            "duplicate",
+            "below_target",
+            "rejected:low difficulty",
+            "not_connected",
+            "timeout",
+            "busy",
+        ] {
+            assert!(!is_unverified_credit(s), "{s} must not be unverified");
+        }
+    }
+
+    #[test]
+    fn unverified_credit_weight_pct_defaults_to_100() {
+        // Env unset (tests run in the ambient suite env) → full weight.
+        std::env::remove_var("ZION_POOL_UNVERIFIED_CREDIT_PCT");
+        assert_eq!(unverified_credit_weight_pct(), 100);
+        std::env::set_var("ZION_POOL_UNVERIFIED_CREDIT_PCT", "50");
+        assert_eq!(unverified_credit_weight_pct(), 50);
+        // Over-100 input clamps to 100 — never amplifies credit.
+        std::env::set_var("ZION_POOL_UNVERIFIED_CREDIT_PCT", "140");
+        assert_eq!(unverified_credit_weight_pct(), 100);
+        std::env::set_var("ZION_POOL_UNVERIFIED_CREDIT_PCT", "junk");
+        assert_eq!(unverified_credit_weight_pct(), 100);
+        std::env::remove_var("ZION_POOL_UNVERIFIED_CREDIT_PCT");
     }
 }
