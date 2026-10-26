@@ -96,7 +96,8 @@ impl BlockTracker {
         self.shares_since_last_block += 1;
     }
 
-    /// Record a block found.
+    /// Record a block found. Returns the accepted-share count since the
+    /// previous block — callers persist it as the luck input (v8).
     pub fn record_block_found(
         &mut self,
         height: u64,
@@ -105,7 +106,7 @@ impl BlockTracker {
         share_difficulty: u64,
         network_difficulty: u64,
         node_accepted: bool,
-    ) {
+    ) -> u64 {
         let shares = self.shares_since_last_block;
         let now = now_unix_seconds();
         self.blocks.push_back(BlockRecord {
@@ -133,6 +134,48 @@ impl BlockTracker {
         while self.blocks.len() > 1000 {
             self.blocks.pop_front();
         }
+        shares
+    }
+
+    /// Rebuild the tracker from persisted block rows + the live share
+    /// counter. Called once at boot after migrations — restores the full
+    /// luck window (luck_100/luck_500), all-time totals and the pending
+    /// set. Rows must arrive oldest-first.
+    pub fn restore(&mut self, rows: Vec<crate::store::DbBlockRow>, shares_since_last_block: u64) {
+        self.shares_since_last_block = shares_since_last_block;
+        for row in rows {
+            let status = match row.status.as_str() {
+                "confirmed" => BlockStatus::Confirmed,
+                "orphaned" => BlockStatus::Orphaned,
+                _ => BlockStatus::Pending,
+            };
+            self.blocks.push_back(BlockRecord {
+                height: row.height,
+                miner_id: row.miner_id,
+                worker_name: row.worker_name,
+                found_at_unix: row.ts.max(0) as u64,
+                share_difficulty: row.share_difficulty,
+                network_difficulty: row.network_difficulty,
+                shares_since_prev_block: row.shares_since_prev,
+                node_accepted: status != BlockStatus::Orphaned,
+                status,
+                confirmed_at_chain_height: 0,
+            });
+        }
+        while self.blocks.len() > 1000 {
+            self.blocks.pop_front();
+        }
+        self.total_blocks = self.blocks.len() as u64;
+        self.total_confirmed = self
+            .blocks
+            .iter()
+            .filter(|b| b.status == BlockStatus::Confirmed)
+            .count() as u64;
+        self.total_orphans = self
+            .blocks
+            .iter()
+            .filter(|b| b.status == BlockStatus::Orphaned)
+            .count() as u64;
     }
 
     /// Mark a block as confirmed or orphaned by height.
@@ -356,5 +399,54 @@ mod tests {
         assert_eq!(pending.len(), 1);
         assert_eq!(pending[0].height, 2);
         assert_eq!(pending[0].status, BlockStatus::Pending);
+    }
+
+    /// v8 restart path: restoring persisted rows rebuilds the luck
+    /// window, totals, pending set and the live share counter — same
+    /// numbers the tracker would report had it never restarted.
+    #[test]
+    fn test_restore_rebuilds_luck_and_counter() {
+        let row = |height: u64, shares: u64, nd: u64, status: &str| {
+            crate::store::DbBlockRow {
+                coin: "zion".to_string(),
+                height,
+                hash: "h".to_string(),
+                miner_id: "m".to_string(),
+                worker_name: "w".to_string(),
+                share_difficulty: 1000,
+                network_difficulty: nd,
+                shares_since_prev: shares,
+                status: status.to_string(),
+                ts: 1_700_000_000 + height as i64,
+                confirmed_at: None,
+            }
+        };
+        let mut tracker = BlockTracker::new();
+        tracker.restore(
+            vec![
+                row(1, 100, 100_000, "confirmed"), // expected=100 actual=100
+                row(2, 120, 100_000, "orphaned"),  // expected=100 actual=120
+                row(3, 0, 100_000, "pending"),     // row predating v8
+            ],
+            55, // shares accepted after block 3
+        );
+        assert_eq!(tracker.shares_since_last_block, 55);
+        assert_eq!(tracker.total_blocks, 3);
+        assert_eq!(tracker.total_confirmed, 1);
+        assert_eq!(tracker.total_orphans, 1);
+        assert_eq!(tracker.pending_blocks().len(), 1);
+        // expected=200, actual=220 → luck ≈ 90.9% (v8-less row ignored).
+        let luck = tracker.pool_luck_pct(10).expect("luck restored");
+        assert!((luck - 90.9).abs() < 0.1, "got {luck}");
+        let stats = tracker.stats();
+        assert_eq!(stats.total_blocks, 3);
+        assert!(stats.pool_luck_100.is_some());
+        // New shares keep counting on the restored counter.
+        tracker.record_share();
+        assert_eq!(tracker.shares_since_last_block, 56);
+        // A new block captures the restored counter and resets it.
+        let n = tracker.record_block_found(4, "m", "w", 1000, 100_000, true);
+        assert_eq!(n, 56);
+        assert_eq!(tracker.shares_since_last_block, 0);
     }
 }

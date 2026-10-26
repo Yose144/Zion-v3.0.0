@@ -32,7 +32,11 @@ use crate::v3_pplns::PayoutEntry;
 /// v7: persisted share-dedup marks — the in-memory (job → nonce) seen-set
 /// evaporates on restart; upstream-keyed `ext:` job ids outlive it, so a
 /// replayed external share could double-credit PPLNS after a bounce.
-const SCHEMA_VERSION: u32 = 7;
+/// v8: `blocks.shares_since_prev` — per-block share count at find time.
+/// The in-memory BlockTracker loses its luck window on restart; with the
+/// column persisted, boot restores the full luck_100/luck_500 view plus
+/// the shares-since-last-block counter.
+const SCHEMA_VERSION: u32 = 8;
 
 /// A thread-safe wrapper around a SQLite connection.  SQLite with
 /// `serialized` mode (default for `bundled`) supports multi-thread access,
@@ -95,6 +99,9 @@ pub struct BlockRecord {
     pub worker_name: String,
     pub share_difficulty: u64,
     pub network_difficulty: u64,
+    /// Accepted shares counted since the previous block — the luck input
+    /// (v8). Zero for records predating the column.
+    pub shares_since_prev: u64,
     pub status: String,
 }
 
@@ -120,6 +127,17 @@ impl ShareStore {
     pub fn open_in_memory() -> Result<Self> {
         let conn = Connection::open_in_memory()?;
         conn.pragma_update(None, "foreign_keys", "ON")?;
+        let store = Self {
+            conn: Mutex::new(conn),
+        };
+        store.run_migrations()?;
+        Ok(store)
+    }
+
+    /// Wrap a caller-prepared connection (tests seed an older schema, then
+    /// run the migration path end-to-end).
+    #[cfg(test)]
+    fn from_connection_for_test(conn: Connection) -> Result<Self> {
         let store = Self {
             conn: Mutex::new(conn),
         };
@@ -394,6 +412,15 @@ impl ShareStore {
             .context("failed to migrate schema to v7")?;
         }
 
+        if current < 8 {
+            // v8: per-block share count at find time — restores the
+            // in-memory luck window (luck_100/luck_500) after restart.
+            conn.execute_batch(
+                "ALTER TABLE blocks ADD COLUMN shares_since_prev INTEGER NOT NULL DEFAULT 0;",
+            )
+            .context("failed to migrate schema to v8")?;
+        }
+
         conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
         info!("share_store: schema migration complete v{SCHEMA_VERSION}");
         Ok(())
@@ -559,13 +586,14 @@ impl ShareStore {
     pub fn record_block(&self, rec: &BlockRecord) -> Result<()> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         conn.execute(
-            "INSERT INTO blocks (coin, height, hash, miner_id, worker_name, share_difficulty, network_difficulty, status, ts)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, unixepoch())
+            "INSERT INTO blocks (coin, height, hash, miner_id, worker_name, share_difficulty, network_difficulty, shares_since_prev, status, ts)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, unixepoch())
              ON CONFLICT(coin, height) DO UPDATE SET
                 status = CASE WHEN blocks.status = 'confirmed' THEN 'confirmed' ELSE excluded.status END,
                 hash = CASE WHEN excluded.status = 'confirmed' THEN excluded.hash ELSE blocks.hash END,
                 miner_id = CASE WHEN excluded.status = 'confirmed' THEN excluded.miner_id ELSE blocks.miner_id END,
                 worker_name = CASE WHEN excluded.status = 'confirmed' THEN excluded.worker_name ELSE blocks.worker_name END,
+                shares_since_prev = CASE WHEN excluded.shares_since_prev > 0 THEN excluded.shares_since_prev ELSE blocks.shares_since_prev END,
                 confirmed_at = CASE WHEN excluded.status = 'confirmed' THEN unixepoch() ELSE blocks.confirmed_at END",
             params![
                 rec.coin,
@@ -575,6 +603,7 @@ impl ShareStore {
                 rec.worker_name,
                 rec.share_difficulty as i64,
                 rec.network_difficulty as i64,
+                rec.shares_since_prev as i64,
                 rec.status,
             ],
         )?;
@@ -877,7 +906,7 @@ impl ShareStore {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let row = conn
             .query_row(
-                "SELECT coin, height, hash, miner_id, worker_name, share_difficulty, network_difficulty, status, ts, confirmed_at
+                "SELECT coin, height, hash, miner_id, worker_name, share_difficulty, network_difficulty, shares_since_prev, status, ts, confirmed_at
                  FROM blocks WHERE coin = ?1 AND height = ?2",
                 params![coin, height as i64],
                 |row| {
@@ -889,9 +918,10 @@ impl ShareStore {
                         worker_name: row.get(4)?,
                         share_difficulty: row.get::<_, i64>(5)? as u64,
                         network_difficulty: row.get::<_, i64>(6)? as u64,
-                        status: row.get(7)?,
-                        ts: row.get(8)?,
-                        confirmed_at: row.get::<_, Option<i64>>(9)?,
+                        shares_since_prev: row.get::<_, i64>(7)? as u64,
+                        status: row.get(8)?,
+                        ts: row.get(9)?,
+                        confirmed_at: row.get::<_, Option<i64>>(10)?,
                     })
                 },
             )
@@ -912,7 +942,7 @@ impl ShareStore {
     fn query_blocks_inner(&self, coin: Option<&str>, limit: u32) -> Result<Vec<DbBlockRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT coin, height, hash, miner_id, worker_name, share_difficulty, network_difficulty, status, ts, confirmed_at
+            "SELECT coin, height, hash, miner_id, worker_name, share_difficulty, network_difficulty, shares_since_prev, status, ts, confirmed_at
              FROM blocks WHERE (?1 IS NULL OR coin = ?1) ORDER BY height DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![coin, limit as i64], |row| {
@@ -924,9 +954,10 @@ impl ShareStore {
                 worker_name: row.get(4)?,
                 share_difficulty: row.get::<_, i64>(5)? as u64,
                 network_difficulty: row.get::<_, i64>(6)? as u64,
-                status: row.get(7)?,
-                ts: row.get(8)?,
-                confirmed_at: row.get::<_, Option<i64>>(9)?,
+                shares_since_prev: row.get::<_, i64>(7)? as u64,
+                status: row.get(8)?,
+                ts: row.get(9)?,
+                confirmed_at: row.get::<_, Option<i64>>(10)?,
             })
         })?;
         let mut out = Vec::new();
@@ -934,6 +965,19 @@ impl ShareStore {
             out.push(r?);
         }
         Ok(out)
+    }
+
+    /// Accepted shares for `coin` recorded after `ts` (unix seconds) —
+    /// rebuilds the tracker's shares-since-last-block counter at boot
+    /// without any extra write path. Bounded by share retention.
+    pub fn accepted_shares_since(&self, coin: &str, ts: i64) -> Result<u64> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let n: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM shares WHERE coin = ?1 AND accepted = 1 AND ts > ?2",
+            params![coin, ts],
+            |row| row.get(0),
+        )?;
+        Ok(n as u64)
     }
 
     /// Query recent payouts for a miner.
@@ -1482,7 +1526,11 @@ pub enum DedupOp {
 /// Drain `rx` and persist dedup ops in batches. Runs on its own thread;
 /// owns an `Arc<ShareStore>` clone so the store outlives the pool.
 /// Exits when every sender is dropped (i.e., pool teardown).
-pub fn dedup_writer_loop(store: std::sync::Arc<ShareStore>, rx: std::sync::mpsc::Receiver<DedupOp>, retain_secs: u64) {
+pub fn dedup_writer_loop(
+    store: std::sync::Arc<ShareStore>,
+    rx: std::sync::mpsc::Receiver<DedupOp>,
+    retain_secs: u64,
+) {
     use std::sync::mpsc::RecvTimeoutError;
     use std::time::{Duration, Instant};
 
@@ -1574,6 +1622,9 @@ pub struct DbBlockRow {
     pub worker_name: String,
     pub share_difficulty: u64,
     pub network_difficulty: u64,
+    /// Accepted shares counted since the previous block — luck input
+    /// (v8; zero for rows predating the column).
+    pub shares_since_prev: u64,
     pub status: String,
     pub ts: i64,
     pub confirmed_at: Option<i64>,
@@ -1724,6 +1775,19 @@ mod tests {
                 emitted INTEGER NOT NULL DEFAULT 0,
                 emitted_total TEXT NOT NULL DEFAULT '0',
                 ts INTEGER NOT NULL DEFAULT (unixepoch())
+            );
+            CREATE TABLE blocks (
+                coin TEXT NOT NULL DEFAULT 'zion',
+                height INTEGER NOT NULL,
+                hash TEXT NOT NULL,
+                miner_id TEXT NOT NULL,
+                worker_name TEXT NOT NULL,
+                share_difficulty INTEGER NOT NULL DEFAULT 0,
+                network_difficulty INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'pending',
+                ts INTEGER NOT NULL DEFAULT (unixepoch()),
+                confirmed_at INTEGER,
+                PRIMARY KEY (coin, height)
             );
             INSERT INTO coin_revenue (id, coin, amount_native, ref_height)
                 VALUES ('qtu:legacy:1', 'qtu', '77', 9);
@@ -1882,6 +1946,7 @@ mod tests {
             worker_name: "w1".to_string(),
             share_difficulty: 5000,
             network_difficulty: 1_000_000,
+            shares_since_prev: 42,
             status: "pending".to_string(),
         };
         store.record_block(&block).unwrap();
@@ -1910,6 +1975,7 @@ mod tests {
             worker_name: "w1".to_string(),
             share_difficulty: 1,
             network_difficulty: 1,
+            shares_since_prev: 0,
             status: "confirmed".to_string(),
         };
         store.record_block(&winner).unwrap();
@@ -2078,6 +2144,7 @@ mod tests {
                 worker_name: "w2".to_string(),
                 share_difficulty: 1,
                 network_difficulty: 1,
+                shares_since_prev: 0,
                 status: "pending".to_string(),
             })
             .unwrap();
@@ -2097,7 +2164,8 @@ mod tests {
 
 #[cfg(test)]
 mod history_tests {
-    use super::ShareStore;
+    use super::{BlockRecord, ShareRecord, ShareStore};
+    use rusqlite::Connection;
 
     #[test]
     fn history_sample_roundtrip_and_retention() {
@@ -2232,5 +2300,92 @@ mod history_tests {
         store.record_dedup_mark("fresh", 1, now, 3600).unwrap();
         let rows = store.load_dedup_marks(512, 3600).unwrap();
         assert!(rows.iter().all(|(b, _)| b != "old"));
+    }
+
+    /// v8: `shares_since_prev` round-trips through `record_block` /
+    /// `query_blocks`, and an existing row keeps its value when a status
+    /// update lands with the zero default (sticky-confirmed path).
+    #[test]
+    fn block_shares_since_prev_persists() {
+        let store = ShareStore::open_in_memory().unwrap();
+        store
+            .record_block(&BlockRecord {
+                coin: "zion".to_string(),
+                height: 500,
+                hash: "h".to_string(),
+                miner_id: "m1".to_string(),
+                worker_name: "w1".to_string(),
+                share_difficulty: 1,
+                network_difficulty: 1,
+                shares_since_prev: 777,
+                status: "confirmed".to_string(),
+            })
+            .unwrap();
+        let row = store.query_blocks_for_coin("zion", 1).unwrap()[0].clone();
+        assert_eq!(row.shares_since_prev, 777);
+    }
+
+    /// v8 migration: a pre-v8 blocks table gains `shares_since_prev`
+    /// without data loss.
+    #[test]
+    fn schema_v8_migration_adds_shares_since_prev() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE blocks (
+                coin TEXT NOT NULL DEFAULT 'zion',
+                height INTEGER NOT NULL,
+                hash TEXT NOT NULL,
+                miner_id TEXT NOT NULL,
+                worker_name TEXT NOT NULL,
+                share_difficulty INTEGER NOT NULL DEFAULT 0,
+                network_difficulty INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'pending',
+                ts INTEGER NOT NULL DEFAULT (unixepoch()),
+                confirmed_at INTEGER,
+                PRIMARY KEY (coin, height)
+            );
+            INSERT INTO blocks (coin, height, hash, miner_id, worker_name, status)
+            VALUES ('zion', 42, 'old', 'm', 'w', 'confirmed');
+            PRAGMA user_version = 7;",
+        )
+        .unwrap();
+        let store = ShareStore::from_connection_for_test(conn).unwrap();
+        let row = store.query_blocks_for_coin("zion", 1).unwrap()[0].clone();
+        assert_eq!(row.shares_since_prev, 0);
+        assert_eq!(row.status, "confirmed");
+        assert_eq!(row.height, 42);
+    }
+
+    /// `accepted_shares_since` counts only accepted shares for the coin
+    /// recorded after the watermark — the tracker counter rebuild input.
+    #[test]
+    fn accepted_shares_since_counts_window() {
+        let store = ShareStore::open_in_memory().unwrap();
+        let mk = |nonce: u64, accepted: bool| ShareRecord {
+            miner_id: "m".to_string(),
+            worker_name: "w".to_string(),
+            job_id: nonce,
+            nonce,
+            hash_hex: "h".to_string(),
+            height: 1,
+            accepted,
+            share_difficulty: 1,
+            network_difficulty: 1,
+            is_block: false,
+            source: "zion".to_string(),
+            coin: "zion".to_string(),
+        };
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        store.record_share(&mk(1, true)).unwrap();
+        store.record_share(&mk(2, true)).unwrap();
+        store.record_share(&mk(3, false)).unwrap();
+        assert_eq!(store.accepted_shares_since("zion", now).unwrap(), 0);
+        assert_eq!(
+            store.accepted_shares_since("zion", now - 3600).unwrap(),
+            2
+        );
     }
 }

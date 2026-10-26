@@ -213,6 +213,30 @@ async fn main() -> anyhow::Result<()> {
     // One block tracker shared by every listener + the HTTP API — a
     // per-listener tracker fragments luck and shares-since-block counters.
     let block_tracker = Arc::new(Mutex::new(zion_pool::block_tracker::BlockTracker::new()));
+    if let Some(store) = share_store.as_ref() {
+        // Restore the luck window + shares-since-last-block counter so a
+        // restart does not zero pool_luck_100/500 or pending blocks.
+        match store.query_blocks_for_coin("zion", 1000) {
+            Ok(mut rows) => {
+                rows.reverse(); // newest-first → oldest-first
+                let last_ts = rows.last().map(|r| r.ts).unwrap_or(0);
+                let count = rows.len();
+                let counter = store
+                    .accepted_shares_since("zion", last_ts)
+                    .unwrap_or(0);
+                block_tracker
+                    .lock()
+                    .expect("block tracker lock poisoned")
+                    .restore(rows, counter);
+                info!(
+                    restored = count,
+                    shares_since_last_block = counter,
+                    "block tracker restored from store"
+                );
+            }
+            Err(e) => tracing::warn!("block tracker restore skipped: {}", e),
+        }
+    }
     let server = StratumServer::new(pool.clone())
         .with_share_store(share_store.clone())
         .with_block_tracker(block_tracker.clone());

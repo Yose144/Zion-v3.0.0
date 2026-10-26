@@ -4176,7 +4176,7 @@ impl StratumServer {
             .lock()
             .unwrap()
             .on_block_found(block_height, block_reward);
-        self.block_tracker.lock().unwrap().record_block_found(
+        let shares_since_prev = self.block_tracker.lock().unwrap().record_block_found(
             block_height,
             miner_id,
             worker_name,
@@ -4201,6 +4201,7 @@ impl StratumServer {
                 worker_name: worker_name.to_string(),
                 share_difficulty,
                 network_difficulty,
+                shares_since_prev,
                 status: "confirmed".to_string(),
             };
             if let Err(e) = store.record_block(&rec) {
@@ -4218,7 +4219,7 @@ impl StratumServer {
         network_difficulty: u64,
         block_hash: &str,
     ) {
-        self.block_tracker.lock().unwrap().record_block_found(
+        let shares_since_prev = self.block_tracker.lock().unwrap().record_block_found(
             block_height,
             miner_id,
             worker_name,
@@ -4237,6 +4238,7 @@ impl StratumServer {
                 worker_name: worker_name.to_string(),
                 share_difficulty,
                 network_difficulty,
+                shares_since_prev,
                 status: "orphaned".to_string(),
             };
             if let Err(e) = store.record_block(&rec) {
