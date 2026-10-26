@@ -397,21 +397,23 @@ async fn main() -> anyhow::Result<()> {
         info!("ncl_gateway_enabled=false (set ZION_NCL_GATEWAY_URL to enable)");
     }
 
-    let (_shutdown_tx, shutdown_rx) = watch::channel(false);
+    let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
     // Extract routing_stats handle before server is moved into run_handle
     let api_routing_stats = server.routing_stats_handle();
 
     let feed_server = server.clone();
     let feed_l1_rpc_url = l1_rpc_url.clone();
+    let feed_shutdown = shutdown_rx.clone();
     let feed_handle = tokio::spawn(async move {
         feed_server
-            .template_feed_loop(feed_l1_rpc_url, args.miner_address, shutdown_rx)
+            .template_feed_loop(feed_l1_rpc_url, args.miner_address, feed_shutdown)
             .await;
     });
 
+    let run_shutdown = shutdown_rx.clone();
     let run_handle = tokio::spawn(async move {
-        let _ = server.run(listener).await;
+        let _ = server.run_with_shutdown(listener, run_shutdown).await;
     });
 
     // ── Extra port listeners (difficulty stratification) ──────────────────
@@ -426,11 +428,12 @@ async fn main() -> anyhow::Result<()> {
             .with_share_store(share_store.clone())
             .with_block_tracker(block_tracker.clone())
             .with_current_height(current_height.clone());
+        let ep_shutdown = shutdown_rx.clone();
         tokio::spawn(async move {
             match TcpListener::bind(&bind).await {
                 Ok(listener) => {
                     info!("extra_port: listening on {}", bind);
-                    let _ = server_clone.run(listener).await;
+                    let _ = server_clone.run_with_shutdown(listener, ep_shutdown).await;
                 }
                 Err(e) => {
                     warn!("extra_port: failed to bind {}: {}", bind, e);
@@ -452,35 +455,43 @@ async fn main() -> anyhow::Result<()> {
                     .with_share_store(share_store.clone())
                     .with_block_tracker(block_tracker.clone())
                     .with_current_height(current_height.clone());
+                let mut tls_shutdown = shutdown_rx.clone();
                 tokio::spawn(async move {
                     match TcpListener::bind(&tls_bind).await {
                         Ok(listener) => {
                             info!("tls: listening on {}", tls_bind);
                             loop {
-                                match listener.accept().await {
-                                    Ok((socket, peer)) => {
-                                        let acceptor = acceptor.clone();
-                                        let server = server_clone.clone();
-                                        tokio::spawn(async move {
-                                            match acceptor.accept(socket).await {
-                                                Ok(tls_stream) => {
-                                                    server
-                                                        .handle_tls_connection(tls_stream, peer)
-                                                        .await;
-                                                }
-                                                Err(e) => {
-                                                    warn!(
-                                                        "tls handshake failed from {}: {}",
-                                                        peer, e
-                                                    );
-                                                }
+                                let (socket, peer) = tokio::select! {
+                                    res = listener.accept() => match res {
+                                        Ok(conn) => conn,
+                                        Err(e) => {
+                                            warn!("tls accept error: {}", e);
+                                            break;
+                                        }
+                                    },
+                                    _ = tls_shutdown.changed() => {
+                                        if *tls_shutdown.borrow() {
+                                            info!("tls: drain — listener stopped accepting");
+                                            break;
+                                        }
+                                        continue;
+                                    }
+                                };
+                                {
+                                    let acceptor = acceptor.clone();
+                                    let server = server_clone.clone();
+                                    tokio::spawn(async move {
+                                        match acceptor.accept(socket).await {
+                                            Ok(tls_stream) => {
+                                                server
+                                                    .handle_tls_connection(tls_stream, peer)
+                                                    .await;
                                             }
-                                        });
-                                    }
-                                    Err(e) => {
-                                        warn!("tls accept error: {}", e);
-                                        break;
-                                    }
+                                            Err(e) => {
+                                                warn!("tls handshake failed from {}: {}", peer, e);
+                                            }
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -551,14 +562,77 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
+    // ── Graceful drain (A4.3) ───────────────────────────────────────────
+    // SIGTERM/SIGINT → broadcast shutdown to every accept loop + the
+    // template feed, give in-flight submits a short grace window, then a
+    // final PPLNS flush so a restart loses no credited shares. Bounded by
+    // systemd TimeoutStopSec; ZION_POOL_DRAIN_GRACE_MS tunes the window.
+    let drain_pool = Arc::clone(&pool);
+    let drain_grace_ms = std::env::var("ZION_POOL_DRAIN_GRACE_MS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(1500);
+    let drain_handle = tokio::spawn(async move {
+        wait_for_terminate().await;
+        info!(
+            "drain: shutdown signal — refusing new sessions, {}ms grace",
+            drain_grace_ms
+        );
+        let _ = shutdown_tx.send(true);
+        tokio::time::sleep(Duration::from_millis(drain_grace_ms)).await;
+        let pool2 = Arc::clone(&drain_pool);
+        let _ = tokio::task::spawn_blocking(move || {
+            if let Ok(mut p) = pool2.lock() {
+                match p.save() {
+                    Ok(true) => info!("drain: final pplns flush persisted"),
+                    Ok(false) => info!("drain: pplns state already clean"),
+                    Err(e) => warn!("drain: final pplns flush failed: {}", e),
+                }
+            }
+        })
+        .await;
+        info!("drain: complete");
+    });
+
     tokio::select! {
         _ = feed_handle => {},
         _ = run_handle => {},
         _ = api_handle => {},
         _ = sweep_handle => {},
         _ = persist_handle => {},
+        _ = drain_handle => {},
     }
 
     info!("zion-pool stopped");
     Ok(())
+}
+
+/// Resolve once SIGTERM or SIGINT arrives (Ctrl-C on non-unix).
+async fn wait_for_terminate() {
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{signal, SignalKind};
+        let mut term = match signal(SignalKind::terminate()) {
+            Ok(s) => s,
+            Err(e) => {
+                warn!("failed to install SIGTERM handler: {}", e);
+                return;
+            }
+        };
+        let mut int = match signal(SignalKind::interrupt()) {
+            Ok(s) => s,
+            Err(e) => {
+                warn!("failed to install SIGINT handler: {}", e);
+                return;
+            }
+        };
+        tokio::select! {
+            _ = term.recv() => {},
+            _ = int.recv() => {},
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = tokio::signal::ctrl_c().await;
+    }
 }

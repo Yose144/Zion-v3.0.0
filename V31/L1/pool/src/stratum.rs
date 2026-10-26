@@ -2241,13 +2241,35 @@ impl StratumServer {
     }
 
     pub async fn run(&self, listener: TcpListener) -> std::io::Result<()> {
+        let (_tx, rx) = tokio::sync::watch::channel(false);
+        self.run_with_shutdown(listener, rx).await
+    }
+
+    /// Accept loop with a graceful-stop channel: when `shutdown` fires the
+    /// listener stops accepting new sessions and returns. Existing session
+    /// tasks are left running — the caller's drain grace window covers
+    /// in-flight submits before the process exits.
+    pub async fn run_with_shutdown(
+        &self,
+        listener: TcpListener,
+        mut shutdown: tokio::sync::watch::Receiver<bool>,
+    ) -> std::io::Result<()> {
         if let Some(pearl) = &self.pearl {
             pearl.ensure_started();
         }
         let limiter = IpRateLimiter::new(self.config.reconnect_rate_limit);
         let session_id_counter = Arc::new(AtomicU64::new(1));
         loop {
-            let (socket, peer) = listener.accept().await?;
+            let (socket, peer) = tokio::select! {
+                res = listener.accept() => res?,
+                _ = shutdown.changed() => {
+                    if *shutdown.borrow() {
+                        tracing::info!("stratum: drain — listener stopped accepting");
+                        return Ok(());
+                    }
+                    continue;
+                }
+            };
 
             // Check NoSolution ban
             let banned = {
@@ -5484,6 +5506,34 @@ mod tests {
 
         tokio::time::advance(Duration::from_secs(61)).await;
         assert!(limiter.allow(ip));
+    }
+
+    #[tokio::test]
+    async fn run_with_shutdown_stops_accepting_on_signal() {
+        let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
+        let pool = Arc::new(Mutex::new(Pool::new(PoolConfig::default(), telemetry)));
+        let server = StratumServer::new(pool);
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        let (tx, rx) = tokio::sync::watch::channel(false);
+        let task = tokio::spawn(async move { server.run_with_shutdown(listener, rx).await });
+
+        // Connection is accepted while running.
+        let sock = tokio::net::TcpStream::connect(addr).await.unwrap();
+        assert!(sock.peer_addr().is_ok());
+        drop(sock);
+
+        // Fire the drain signal — the accept loop must return Ok.
+        tx.send(true).unwrap();
+        let res = tokio::time::timeout(Duration::from_secs(5), task)
+            .await
+            .expect("listener did not drain within 5s")
+            .unwrap();
+        assert!(res.is_ok());
+
+        // And the port is closed for new sessions.
+        assert!(tokio::net::TcpStream::connect(addr).await.is_err());
     }
 
     #[test]
