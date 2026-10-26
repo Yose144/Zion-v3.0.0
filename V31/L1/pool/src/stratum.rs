@@ -675,7 +675,7 @@ impl StratumServer {
             return error_response(Some(id), -33000, "worker not authorized");
         }
 
-        let (header, _share_target, block_target, reward, template) = {
+        let (header, job_share_target, block_target, reward, template) = {
             let jobs = self.jobs.lock().unwrap();
             match jobs.get(&job_id) {
                 Some((h, st, bt, r, tpl)) => (h.clone(), *st, *bt, *r, tpl.clone()),
@@ -688,11 +688,14 @@ impl StratumServer {
             Err(_) => return error_response(Some(id), -32602, "invalid nonce"),
         };
 
-        // Use the session's current vardiff target for share validation.
-        // (Stratum v1 jobs are broadcast with the global start difficulty, and
-        // per-session vardiff retarget is queued via mining.set_difficulty.)
-        let share_target = ctx.vardiff.share_target();
-        let share_difficulty = ctx.vardiff.current();
+        // Validate against the target issued WITH this job — validating
+        // against the live session vardiff rejects honest work whenever a
+        // retarget lands between job issue and submit (~50% rejects seen
+        // in production). Replay protection is handled by share_seen dedup,
+        // and credit is recorded at the job's own difficulty.
+        let share_target = job_share_target;
+        let share_difficulty =
+            crate::telemetry::expected_hashes_for_target(&job_share_target).max(1.0) as u64;
 
         let submission = ShareSubmission {
             worker,
@@ -2651,13 +2654,14 @@ impl StratumServer {
 
                                     let job_key = format!("zion_{}", job_id);
                                     let job_data = self.jobs.lock().unwrap().get(&job_key).cloned();
-                                    if let Some((header, _job_share_target, block_target, reward, template)) = job_data {
+                                    if let Some((header, job_share_target, block_target, reward, template)) = job_data {
                                         let (height, difficulty) = template.as_ref().map(|t| (t.height, t.difficulty)).unwrap_or((0, 1));
-                                        // Session vardiff target — a static job
-                                        // target would let replayed shares keep
-                                        // passing while credit ratchets up.
-                                        let share_target = vardiff.share_target();
-                                        let share_diff = vardiff.current().max(1);
+                                        // Validate at the target issued WITH
+                                        // the job — session vardiff ratchets
+                                        // between issue and submit and was
+                                        // rejecting ~50% of honest shares.
+                                        let share_target = job_share_target;
+                                        let share_diff = crate::telemetry::expected_hashes_for_target(&job_share_target).max(1.0) as u64;
                                         let submission = ShareSubmission {
                                             worker: submit_worker.clone(),
                                             job_id: job_key.clone(),
@@ -3165,7 +3169,7 @@ impl StratumServer {
 
                                 let job_key = format!("zion_{}", job_id);
                                 let job_data = self.jobs.lock().unwrap().get(&job_key).cloned();
-                                let (header, _job_share_target, block_target, reward, template) = match job_data {
+                                let (header, job_share_target, block_target, reward, template) = match job_data {
                                     Some(d) => d,
                                     None => {
                                         let result = PoolMessage::Result {
@@ -3184,12 +3188,14 @@ impl StratumServer {
                                     .map(|t| (t.height, t.difficulty))
                                     .unwrap_or((0, 1));
 
-                                // Validate against the *session* vardiff
-                                // target (same as v1) — the static job target
-                                // would let a replayed share keep passing
-                                // while the credited difficulty ratchets up.
-                                let share_target = vardiff.share_target();
-                                let share_difficulty = vardiff.current().max(1);
+                                // Validate against the target issued WITH
+                                // this job — the live session vardiff target
+                                // ratchets between issue and submit and was
+                                // rejecting ~50% of honest shares. Replay is
+                                // covered by share_seen dedup; credit uses
+                                // the job's own difficulty.
+                                let share_target = job_share_target;
+                                let share_difficulty = crate::telemetry::expected_hashes_for_target(&job_share_target).max(1.0) as u64;
                                 let submission = ShareSubmission {
                                     worker: submit_worker.clone(),
                                     job_id: job_key.clone(),
