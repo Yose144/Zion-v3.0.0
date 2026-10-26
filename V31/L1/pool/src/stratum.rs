@@ -1853,6 +1853,7 @@ impl StratumServer {
             &login.login,
             "QTU",
             accepted,
+            crate::telemetry::expected_hashes_for_target_hex(&pkg.target_hex),
         );
         let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci("qpow-poseidon2")
             .unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
@@ -1899,6 +1900,10 @@ impl StratumServer {
                 }
             }
         }
+        // Expected work per accepted share — resolved job target drives
+        // the per-coin hashrate estimator (upstream = served target_be,
+        // native = eased share target).
+        let mut share_eh = 0f64;
         let (accepted, status) = if coin_leg::route_job_id(external_job_id)
             == JobRoute::PearlUpstream
         {
@@ -1907,6 +1912,7 @@ impl StratumServer {
                 .await
             {
                 Ok((ujob, _outcome)) => {
+                    share_eh = crate::telemetry::expected_hashes_for_target(&ujob.target_be);
                     map_upstream_reply(pearl.upstream_submit(&ujob, proof_b64, hs).await)
                 }
                 // Proof in a serialization we cannot decode (e.g. SRBMiner):
@@ -1925,6 +1931,8 @@ impl StratumServer {
         } else {
             match pearl.verify_submission(external_job_id, proof_b64).await {
                 Ok((job, outcome)) => {
+                    share_eh =
+                        crate::telemetry::expected_hashes_for_u256(&pearl.share_target(&job));
                     if outcome.is_block {
                         tracing::info!(
                             "pearl_block_candidate miner={} job={} jackpot={} forwarding",
@@ -1975,6 +1983,7 @@ impl StratumServer {
             worker_name,
             "PRL",
             accepted,
+            share_eh,
         );
         let group = resolve_session_group(miner_id, worker_name);
         self.routing_stats.lock().unwrap().record(
@@ -3487,8 +3496,15 @@ impl StratumServer {
                                         .or_else(|| self.multi_bridge.native_job_by_id(&external_job_id))
                                 };
 
+                                // Expected work per accepted share — the
+                                // resolved job's target drives the per-coin
+                                // hashrate estimator.
+                                let mut share_eh = 0f64;
                                 let bridge_result = match job_pkg_opt {
                                     Some(job_pkg) => {
+                                        share_eh = crate::telemetry::expected_hashes_for_target_hex(
+                                            &job_pkg.target_hex,
+                                        );
                                         // Build ntime/solution/extranonce1 from the matching bridge job.
                                         let ntime_hex = if !submit_ntime_hex.is_empty() {
                                             submit_ntime_hex
@@ -3738,6 +3754,7 @@ impl StratumServer {
                                     &sub_worker_name,
                                     &coin,
                                     accepted,
+                                    share_eh,
                                 );
                                 let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci(
                                     &submit_algorithm

@@ -53,6 +53,50 @@ pub struct StreamStats {
     pub valid_shares: u64,
     pub invalid_shares: u64,
     pub last_share_time_s: u64,
+    /// Expected-hashes samples for accepted shares on this stream. External
+    /// algos have incompatible difficulty scales, so each share carries its
+    /// own expected work (`2^(8*len(target))/target`) instead of using the
+    /// ZION job estimator.
+    pub work: VecDeque<WorkSample>,
+}
+
+/// Expected hashes per share for a big-endian target byte string:
+/// `2^(8*len)/target`. Width-aware — a 32-byte target divides the 2^256
+/// space, a 64-byte (poseidon2) target divides 2^512. Returns 0.0 for
+/// empty/zero targets so callers can skip the sample.
+pub fn expected_hashes_for_target(target_be: &[u8]) -> f64 {
+    use num_bigint::BigUint;
+    if target_be.is_empty() || target_be.iter().all(|b| *b == 0) {
+        return 0.0;
+    }
+    let space = BigUint::from(1u8) << (target_be.len() * 8);
+    let target = BigUint::from_bytes_be(target_be);
+    let eh = space / target;
+    eh.iter_u64_digits()
+        .rev()
+        .fold(0.0f64, |acc, d| acc * 18446744073709551616.0 + d as f64)
+}
+
+/// Hex convenience wrapper for [`expected_hashes_for_target`].
+pub fn expected_hashes_for_target_hex(target_hex: &str) -> f64 {
+    hex::decode(target_hex.trim_start_matches("0x"))
+        .map(|b| expected_hashes_for_target(&b))
+        .unwrap_or(0.0)
+}
+
+/// U256 variant (pearl share targets are `BigUint` in the 2^256 space) —
+/// pads the big-endian encoding to 32 bytes so the width is always right.
+pub fn expected_hashes_for_u256(target: &num_bigint::BigUint) -> f64 {
+    let bytes = target.to_bytes_be();
+    if bytes.is_empty() {
+        return 0.0;
+    }
+    if bytes.len() >= 32 {
+        return expected_hashes_for_target(&bytes);
+    }
+    let mut padded = [0u8; 32];
+    padded[32 - bytes.len()..].copy_from_slice(&bytes);
+    expected_hashes_for_target(&padded)
 }
 
 /// A payout record tracked through its lifecycle (pending → submitted →
@@ -196,6 +240,32 @@ impl MinerTelemetry {
     pub fn hashrate_live(&self, now_s: u64) -> f64 {
         self.hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s)
     }
+
+    /// Expected hashes/sec for one coin stream over `window_s`. Each
+    /// accepted external share contributes its own expected work, so
+    /// different algos yield honest rates despite incompatible scales.
+    pub fn stream_hashrate(&self, stream: &str, window_s: u64, now_s: u64) -> f64 {
+        let Some(s) = self.streams.get(stream) else {
+            return 0.0;
+        };
+        let mut work = 0f64;
+        for sample in s.work.iter().rev() {
+            if sample.completed_at_s.saturating_add(window_s) < now_s {
+                break;
+            }
+            work += sample.attempted_hashes as f64;
+        }
+        work / window_s as f64
+    }
+
+    /// Per-stream live (10-minute) hashrates — `{coin: hps}`.
+    pub fn stream_hashrates(&self, window_s: u64, now_s: u64) -> HashMap<String, f64> {
+        self.streams
+            .iter()
+            .filter(|(_, s)| !s.work.is_empty())
+            .map(|(name, _)| (name.clone(), self.stream_hashrate(name, window_s, now_s)))
+            .collect()
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -291,13 +361,16 @@ impl MinerTelemetryRegistry {
     /// Record an external (AuxPoW) share result on a named coin stream.
     /// Unlike `record_job_result_stream`, this does not touch the aggregate
     /// valid/invalid totals or the ZION hashrate estimator — external shares
-    /// use different difficulty/hashrate scales.
+    /// use different difficulty/hashrate scales. `expected_hashes` is the
+    /// per-share work of the served target (0 = unknown, skips sampling);
+    /// it drives the per-stream hashrate estimator.
     pub fn record_external_share(
         &mut self,
         miner_id: &str,
         worker_name: &str,
         coin: &str,
         accepted: bool,
+        expected_hashes: f64,
     ) {
         let now_s = now_unix_seconds();
         let key = format!("{miner_id}/{worker_name}");
@@ -310,6 +383,17 @@ impl MinerTelemetryRegistry {
         if accepted {
             stats.valid_shares = stats.valid_shares.saturating_add(1);
             stats.last_share_time_s = now_s;
+            if expected_hashes > 0.0 {
+                stats.work.push_back(WorkSample {
+                    completed_at_s: now_s,
+                    attempted_hashes: expected_hashes.min(u64::MAX as f64) as u64,
+                    elapsed_ms: 0,
+                });
+                while matches!(stats.work.front(), Some(s) if s.completed_at_s.saturating_add(HASHRATE_WINDOW_24H_S) < now_s)
+                {
+                    stats.work.pop_front();
+                }
+            }
         } else {
             stats.invalid_shares = stats.invalid_shares.saturating_add(1);
         }
@@ -541,6 +625,50 @@ mod tests {
         let m = reg.get_miner("minerB/w2").expect("miner exists");
         assert_eq!(m.blocks_found, 2);
         assert_eq!(reg.total_blocks_found(), 2);
+    }
+
+    #[test]
+    fn test_stream_hashrate_external() {
+        let mut reg = MinerTelemetryRegistry::new();
+        // Two accepted shares at 5e6 expected-hashes each inside the live
+        // window ≈ 10e6/window hps; rejected shares contribute no work.
+        reg.record_external_share("m", "w", "qtu", true, 5e6);
+        reg.record_external_share("m", "w", "qtu", true, 5e6);
+        reg.record_external_share("m", "w", "qtu", false, 5e6);
+        let now_s = now_unix_seconds();
+        let m = reg.get_miner("m/w").expect("miner");
+        let hps = m.stream_hashrate("qtu", HASHRATE_WINDOW_LIVE_S, now_s);
+        assert!(hps > 0.0);
+        assert!(
+            (hps - 1e7 / HASHRATE_WINDOW_LIVE_S as f64).abs() < 1.0,
+            "hps={hps}"
+        );
+        let s = m.streams.get("qtu").unwrap();
+        assert_eq!(s.valid_shares, 2);
+        assert_eq!(s.invalid_shares, 1);
+        // Aggregate ZION estimator is untouched by external shares.
+        assert_eq!(m.hashrate_live(now_s), 0.0);
+    }
+
+    #[test]
+    fn test_expected_hashes_for_target() {
+        // 32-byte target = full 2^256 space → 1 expected hash.
+        let mut t = [0xFFu8; 32];
+        let eh = expected_hashes_for_target(&t);
+        assert!((eh - 1.0).abs() < 1e-12, "eh={eh}");
+        // Halving the target doubles expected work.
+        t[0] = 0x7F;
+        let eh2 = expected_hashes_for_target(&t);
+        assert!(eh2 > 1.9 && eh2 < 2.2, "eh2={eh2}");
+        // Width-aware: 64-byte (poseidon2) full target → 1 hash.
+        assert_eq!(expected_hashes_for_target(&[0xFFu8; 64]), 1.0);
+        // Zero / empty → 0 (caller skips the sample).
+        assert_eq!(expected_hashes_for_target(&[0u8; 32]), 0.0);
+        assert_eq!(expected_hashes_for_target(&[]), 0.0);
+        // Hex wrapper + u256 padding.
+        assert_eq!(expected_hashes_for_target_hex(&"ff".repeat(32)), 1.0);
+        let big = num_bigint::BigUint::from(1u8) << 255;
+        assert_eq!(expected_hashes_for_u256(&big), 2.0);
     }
 
     #[test]

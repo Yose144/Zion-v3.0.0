@@ -1594,12 +1594,31 @@ impl PoolApi {
             })
             .unwrap_or_else(|| ("0".into(), 0, 0));
 
-        // Hashrate is only meaningful for ZION (external shares don't feed
-        // the estimator — different difficulty scales).
-        let hashrate = if coin == "zion" {
-            json!({"live": pool.telemetry.lock().expect("telemetry lock").pool_hashrate_live()})
-        } else {
-            serde_json::Value::Null
+        // ZION uses the job-work estimator; external coins sum their
+        // per-stream expected-work samples (each share carries its own
+        // difficulty — see telemetry::record_external_share).
+        let hashrate = {
+            let reg = pool.telemetry.lock().expect("telemetry lock");
+            if coin == "zion" {
+                json!({
+                    "live": reg.pool_hashrate_live(),
+                    "1h": reg.pool_hashrate_1h(),
+                })
+            } else {
+                let live: f64 = reg
+                    .all_miners()
+                    .map(|(_, m)| {
+                        m.stream_hashrate(&coin, crate::telemetry::HASHRATE_WINDOW_LIVE_S, now_s)
+                    })
+                    .sum();
+                let h1: f64 = reg
+                    .all_miners()
+                    .map(|(_, m)| {
+                        m.stream_hashrate(&coin, crate::telemetry::HASHRATE_WINDOW_1H_S, now_s)
+                    })
+                    .sum();
+                json!({"live": live, "1h": h1})
+            }
         };
 
         json!({
@@ -1672,7 +1691,11 @@ impl PoolApi {
                 "hashrate": if coin.is_empty() || coin == "zion" {
                     json!(miner.hashrate_live(now_s))
                 } else {
-                    serde_json::Value::Null
+                    json!(miner.stream_hashrate(
+                        &coin,
+                        crate::telemetry::HASHRATE_WINDOW_LIVE_S,
+                        now_s
+                    ))
                 },
             }));
         }
@@ -2087,6 +2110,31 @@ fn miner_to_json(
                     "last_share_time".to_string(),
                     json!(stats.last_share_time_s),
                 );
+                let total = stats.valid_shares.saturating_add(stats.invalid_shares);
+                if total > 0 {
+                    obj.insert(
+                        "accept_rate".to_string(),
+                        json!(stats.valid_shares as f64 / total as f64),
+                    );
+                }
+                if !stats.work.is_empty() {
+                    obj.insert(
+                        "hps_live".to_string(),
+                        json!(m.stream_hashrate(
+                            stream,
+                            crate::telemetry::HASHRATE_WINDOW_LIVE_S,
+                            now_s
+                        )),
+                    );
+                    obj.insert(
+                        "hps_1h".to_string(),
+                        json!(m.stream_hashrate(
+                            stream,
+                            crate::telemetry::HASHRATE_WINDOW_1H_S,
+                            now_s
+                        )),
+                    );
+                }
                 streams.insert(stream.clone(), serde_json::Value::Object(obj));
             }
             json!({
@@ -2704,9 +2752,9 @@ mod tests {
         {
             let pool = pool.lock().unwrap();
             let mut reg = pool.telemetry.lock().unwrap();
-            reg.record_external_share("miner-a", "w1", "qtu", true);
-            reg.record_external_share("miner-b", "w2", "qtu", true);
-            reg.record_external_share("miner-c", "w3", "vrsc", false);
+            reg.record_external_share("miner-a", "w1", "qtu", true, 5e6);
+            reg.record_external_share("miner-b", "w2", "qtu", true, 5e6);
+            reg.record_external_share("miner-c", "w3", "vrsc", false, 0.0);
         }
         let api = PoolApi::new(pool, None, None);
         let payload: serde_json::Value =
@@ -2715,9 +2763,11 @@ mod tests {
         assert_eq!(payload["shares"]["accepted"], 2);
         assert_eq!(payload["shares"]["rejected"], 0);
         assert_eq!(payload["miners_online"], 2);
-        // Non-ZION coins report null hashrate (external shares don't feed
-        // the ZION estimator — different difficulty scale).
-        assert_eq!(payload["hashrate"], serde_json::Value::Null);
+        // External coins now report an honest expected-hashes/sec rate
+        // (each share carries its own work — two 5e6-hash shares inside
+        // the live window ≈ 16.7 kH/s).
+        let hr = payload["hashrate"].as_object().expect("hashrate object");
+        assert!(hr["live"].as_f64().unwrap() > 0.0);
 
         let z = api.build_public_coin_stats_payload("zion");
         let zp: serde_json::Value = serde_json::from_str(&z).unwrap();
@@ -2735,8 +2785,9 @@ mod tests {
                 "rig1",
                 "qtu",
                 true,
+                5e6,
             );
-            reg.record_external_share("other-miner", "rig9", "qtu", true);
+            reg.record_external_share("other-miner", "rig9", "qtu", true, 5e6);
         }
         let api = PoolApi::new(pool, None, None);
         let payload: serde_json::Value =
