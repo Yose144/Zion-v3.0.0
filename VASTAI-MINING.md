@@ -62,7 +62,7 @@ chmod +x SRBMiner-MULTI &&
 ### Pearl místo Quantus
 
 ```bash
-./SRBMiner-MULTI --algorithm pearlhash --pool pearl-eu2.luckypool.io:3360 --wallet PRL_WALLET --worker rig1
+./SRBMiner-MULTI --algorithm pearlhash --pool pearl-eu2.luckypool.io:3360 --wallet prl1pwqx7esdehf58j4yqq68q0kts3zy5j2cf8c9gnn9tc3qaj6ptaq6qy35v6h --worker rig1
 ```
 
 ### Těžba na pozadí (přežije odpojení SSH)

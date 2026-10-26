@@ -1,3 +1,8 @@
+---
+# Continue: ne-injektovat automaticky do promptu (soubor ~45k toku)
+alwaysApply: false
+---
+
 > **🆕 2026-10-25 EXPLORER AUDIT + FIXES (app.zionterranova.com/explorer):** Probe všech 22 stránek + 17 API endpointů — většina OK. **Fixy:** (1) `api/blockchain/sse/route.ts` — `network_hashrate` vždy 0 (`info.network_hashrate` pole daemon neposílá) → fallback `difficulty/target`, live ověřeno 36.1 H/s. (2) `api/blockchain/richlist/route.ts` — **27 s per-request** (getRichList full-scan, žádná cache) → in-memory TTL 60 s cache na MAX_LIMIT=500 + per-request slice/stats (pattern z `miners/route.ts`); live 27 s→0.22 s. **Bez defektu:** `/api/supply` 404 na rootu = záměr (jen `/total`+`/circulating` leafs); detail endpointy = query-param API (`?hash=`,`?addr=`), ne path segments; `/explorer/richlist`→`/explorer#richlist` anchor existuje; mempool=0 + bridge/txs prázdné = skutečný stav chainu, ne bug. Deploy = `npm run build` na EDGE2 (první pokus failnul ENOTEMPTY na stale `.next/standalone` — `rm -rf` + rebuild OK; backup `.next.bak-explorer-*`).
 
 >
