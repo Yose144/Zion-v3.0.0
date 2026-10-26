@@ -568,12 +568,15 @@ async fn main() -> anyhow::Result<()> {
     // final PPLNS flush so a restart loses no credited shares. Bounded by
     // systemd TimeoutStopSec; ZION_POOL_DRAIN_GRACE_MS tunes the window.
     let drain_pool = Arc::clone(&pool);
+    let drain_started = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let drain_flag = drain_started.clone();
     let drain_grace_ms = std::env::var("ZION_POOL_DRAIN_GRACE_MS")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .unwrap_or(1500);
     let drain_handle = tokio::spawn(async move {
         wait_for_terminate().await;
+        drain_flag.store(true, std::sync::atomic::Ordering::SeqCst);
         info!(
             "drain: shutdown signal — refusing new sessions, {}ms grace",
             drain_grace_ms
@@ -591,7 +594,13 @@ async fn main() -> anyhow::Result<()> {
             }
         })
         .await;
-        info!("drain: complete");
+        info!("drain: complete — exiting");
+        // The drain task owns process exit: runtime teardown waits on
+        // detached blocking tasks (the std-blocking API listener) until
+        // TimeoutStopSec SIGKILLs — process::exit skips that entirely;
+        // all durable state is already on disk.
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        std::process::exit(0);
     });
 
     tokio::select! {
@@ -600,7 +609,14 @@ async fn main() -> anyhow::Result<()> {
         _ = api_handle => {},
         _ = sweep_handle => {},
         _ = persist_handle => {},
-        _ = drain_handle => {},
+    }
+
+    // A listener arm can win the select race the instant its accept loop
+    // drains — keep main() alive so runtime teardown cannot drop the
+    // drain task mid-grace. The task exits the process itself; the
+    // timeout only bounds a pathological hang.
+    if drain_started.load(std::sync::atomic::Ordering::SeqCst) {
+        let _ = tokio::time::timeout(Duration::from_secs(10), drain_handle).await;
     }
 
     info!("zion-pool stopped");
