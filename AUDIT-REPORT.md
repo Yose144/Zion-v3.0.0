@@ -1,8 +1,8 @@
 # ZION 3.2 — Kompletní audit report
 
-> **Datum:** 2026-10-25 · **Stav:** remediace nasazeny do produkce, ověřeny live
-> **Zdrojový pin:** `4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4`
-> **Docs/deployment pin:** `d0e219f1a` (vše pushnuto na `origin/main`)
+> **Datum:** 2026-10-26 · **Stav:** remediace vlny 7 (pool stratum/API) implementovány + testy PASS; produkční redeploy poolu PENDING
+> **Zdrojový pin vlny 1–6:** `4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4` (nasazeno, ověřeno live)
+> **Vlna 7 (pool):** nálezy P-01…P-06 opraveny na HEAD (detail [`docs/3.2/REPORTS/POOL_AUDIT_2026-10-26.md`](docs/3.2/REPORTS/POOL_AUDIT_2026-10-26.md))
 > **Externí auditor:** neangažován (G9 otevřený) — tento report je interní audit, ne nezávislý posudek.
 
 Tento dokument shrnuje kompletní autonomní audit money-paths repozitáře
@@ -91,12 +91,31 @@ produkční nasazení a zůstávající rizika. Detailní podklady:
 | R6-06 | Withdrawal claim nebyl atomický; ambiguous submit → unsafe refund/resend | Atomic debit+record+journal; `pending→executing` claim před broadcast; ambiguous → `executing` bez auto-resend/refund |
 | R6-07 | Payout maturity z earning height místo inclusion; submit parser bez regression coverage | Shared strict parser; maturity z actual tx inclusion height |
 
+### Vlna 7 — pool stratum + `pool.zionterranova.com` povrch (2026-10-26, P-01…P-06)
+
+Detail: [`docs/3.2/REPORTS/POOL_AUDIT_2026-10-26.md`](docs/3.2/REPORTS/POOL_AUDIT_2026-10-26.md).
+
+| ID | Nález | Fix |
+|---|---|---|
+| P-01 | **CRITICAL — share replay:** žádný `(job, nonce/proof)` dedup na žádné submit cestě (v1, v3-plain, v3-TLS, externí legs). v3-plain validoval proti statickému job targetu, ale kreditoval rostoucí `vardiff.current()` → line-rate replay = PPLNS kredit o řády nad poctivými minery ≈ celé okno | Bounded dedup `HashMap<job_bucket → HashSet<u64>>` (512 bucketů FIFO / 500k tagů, fail-closed); probe před validátorem, mark po úspěšné validaci; externí legs `record_external_share(coin, job, tag)`; v3 plain+TLS validace proti **session** targetu + per-session `ShareRateLimiter` |
+| P-02 | **HIGH — submit bez authorize:** v1 `mining.submit` nekontroloval `ctx.authorized`; worker/miner identity z params, ne session → anonymní submit + telemetry poisoning | `!ctx.authorized` → `unauthorized`; `split_worker(worker).0` musí sedět na `ctx.session.miner_id`; v3 plain+TLS identity bound na Hello (`unauthorized_miner`/`unauthorized_worker`) |
+| P-03 | **MEDIUM — `/public/v1` rate limit = globální kvóta:** tunelovaný traffic = peer `127.0.0.1` pro všechny | `client_ip`: loopback peer → `X-Forwarded-For`/`X-Real-IP`; tabulka bounded 4096 + GC, plná = fail-closed |
+| P-04 | **MEDIUM — JSON injection:** ruční `format!` serializery interpolovaly miner-controlled `worker_name`/`miner_id`/`status` z DB neescapované | Všechny serializery přepsány na `serde_json::json!`/`Value`; zůstává jen sanitizovaný Prometheus text |
+| P-05 | **MEDIUM — externí legs bez dedupu** (`Unknown`/`StaleForward` kreditovatelné opakovaně) | Externí dedup keys P-01 pokrývá; `Unknown`-credit samotný = designová volba (residuum §5) |
+| P-06 | **LOW — HTTP :8080:** `read_line` bez capu, žádný 401 limiter | `take(8 KiB)` na request line i header, max 64 headerů; auth-fail throttle 20/60 s per IP → drop |
+
+**Ověřeno v pořádku (beze změny):** payout pipeline po vlnách 3/5 (persist-
+before-drain, strict tx parse, at-most-once, fee cap, maturity), server-side
+block revalidace, session/IP limity, NoSolution ban, nginx vhost (jen
+`/public/v1/`, `/api`+`/admin` 404, security headers), ZIS auth, pool-ui bez
+XSS/secretů.
+
 ## 3. Testovací a build evidence
 
 | Gate | Výsledek |
 |---|---|
 | `cargo test -p zion-multichain --lib` | **802 passed**, 0 failed, 4 ignored, 1 filtered (`test_evm_health_check_integ` — vyžaduje live RPC) |
-| `cargo test -p zion-pool --lib` | **356 passed**, 0 failed |
+| `cargo test -p zion-pool --lib` | **359 passed**, 0 failed (vlna 6: 356; +`rejects_replayed_share`, `rejects_unauthorized_submit`, `rejects_foreign_worker_submit`, external replay assert) |
 | `cargo check --workspace --locked` | exit 0 |
 | ZIS identity suite | 46/46 |
 | `git diff --check` | exit 0 |
@@ -142,6 +161,12 @@ non-EVM inbound bez burn verifieru hold; TON confirmations unsupported hold.
 - `MAX_REORG_DEPTH` tři hodnoty (10/64/500); DAO premine `unlock_height`
   144 000 vs admin-lock; pool submit-flood DoS review; watchdog restart-
   loop gaming; `UNIQUE(reference_id)` defense-in-depth.
+- **Pool redeploy pending:** produkční `zion-v31-pool` na Edgi běží ještě
+  na `6c8165d4a` — vlna-7 fixy (P-01 replay dedup je payout-theft vektor)
+  vyžadují rebuild+restart; dedup okno je in-memory, restart ho resetuje.
+- **`Unknown`/`StaleForward` external share credit** — credited weight za
+  unverifikovanou upstream odpověď (od re-credit útoku dělí dedup;
+  kandidát na oddělený bucket / sníženou váhu).
 
 **Product/design rozhodnutí:**
 - **QTU/PRL external-address attestation:** ML-DSA-87/XMSS nemají JS impl —
@@ -164,8 +189,10 @@ Nejzávažnější třídy nalezené a opravené: **fabricated bridge deposits**
 **double-mint/double-pay okna** (crash-safety, queue drain, atomicity),
 **silent payout drops** (RPC envelope parsing), **replay dedup díry**
 (tx_hash/burn_id/composite keys), **slabé confirmation evidence** (fail-
-closed přes 12 adaptérů). Všechny opravy jsou fail-closed směrem — kde
-důkaz chybí, transfer čeká, nepokračuje.
+closed přes 12 adaptérů), a ve vlně 7 **share-replay PPLNS inflace**
+(pool P-01) + **unauthenticated stratum submits** (P-02). Všechny opravy
+jsou fail-closed směrem — kde důkaz chybí, transfer/share čeká nebo je
+odmítnut, nepokračuje.
 
 **Co tento report NENÍ:** nezávislý externí audit (G9), důkaz produkční
 bezpečnosti jako celku, coverage live-chain integrace, nebo záruka nad

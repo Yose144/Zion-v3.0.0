@@ -19,6 +19,14 @@ use zion_cosmic_harmony::ExternalCoin;
 const PUBLIC_RATE_LIMIT: u32 = 120;
 const PUBLIC_RATE_WINDOW_S: u64 = 60;
 const PUBLIC_RATE_TABLE_MAX: usize = 4096;
+/// Auth-failure throttle for `/api` + `/admin`: repeated bad keys from one
+/// client IP get the connection dropped rather than another 401.
+const AUTH_FAIL_LIMIT: u32 = 20;
+const AUTH_FAIL_WINDOW_S: u64 = 60;
+/// Request-line and per-header caps — a peer that never sends '\n' must not
+/// grow `read_line`'s buffer unboundedly.
+const MAX_HTTP_LINE: u64 = 8 * 1024;
+const MAX_HTTP_HEADERS: usize = 64;
 
 /// History sampler cadence + retention: one sample per minute, 24h kept.
 const HISTORY_INTERVAL_S: u64 = 60;
@@ -67,6 +75,9 @@ pub struct PoolApi {
     history: Arc<Mutex<std::collections::VecDeque<HistorySample>>>,
     /// `(window_start_s, count)` per client IP for `/public/v1` requests.
     public_rate: Mutex<std::collections::HashMap<std::net::IpAddr, (u64, u32)>>,
+    /// `(window_start_s, failures)` per client IP for `/api` + `/admin`
+    /// authentication failures.
+    auth_fail_rate: Mutex<std::collections::HashMap<std::net::IpAddr, (u64, u32)>>,
     started_at: Instant,
 }
 
@@ -107,6 +118,7 @@ impl PoolApi {
             routing_stats: None,
             history: Arc::new(Mutex::new(h)),
             public_rate: Mutex::new(std::collections::HashMap::new()),
+            auth_fail_rate: Mutex::new(std::collections::HashMap::new()),
             started_at: Instant::now(),
         }
     }
@@ -201,6 +213,57 @@ impl PoolApi {
         Ok(())
     }
 
+    /// Resolve the effective client IP.  Pool API traffic arrives through
+    /// the edge2→edge SSH tunnel and nginx, so `peer_addr` is always
+    /// loopback — for a loopback peer the first `X-Forwarded-For` hop (or
+    /// `X-Real-IP`) is the real client; a non-loopback peer is keyed on its
+    /// own address and XFF is ignored (untrusted when directly connected).
+    fn client_ip(
+        &self,
+        stream: &TcpStream,
+        xff: Option<&str>,
+        x_real_ip: Option<&str>,
+    ) -> std::net::IpAddr {
+        let peer = stream
+            .peer_addr()
+            .map(|a| a.ip())
+            .unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
+        if !peer.is_loopback() {
+            return peer;
+        }
+        xff.and_then(|v| v.split(',').next())
+            .map(str::trim)
+            .or(x_real_ip.map(str::trim))
+            .and_then(|s| s.parse::<std::net::IpAddr>().ok())
+            .unwrap_or(peer)
+    }
+
+    /// `true` when this IP exhausted its auth-failure budget — the caller
+    /// then drops the connection without another response.
+    fn auth_fail_limited(&self, ip: std::net::IpAddr) -> bool {
+        let now_s = now_unix_seconds();
+        let mut table = self.auth_fail_rate.lock().expect("auth-fail lock poisoned");
+        if let Some((start, count)) = table.get(&ip) {
+            if now_s.saturating_sub(*start) < AUTH_FAIL_WINDOW_S && *count >= AUTH_FAIL_LIMIT {
+                return true;
+            }
+        }
+        if table.len() > PUBLIC_RATE_TABLE_MAX / 2 {
+            table.retain(|_, (start, _)| now_s.saturating_sub(*start) < AUTH_FAIL_WINDOW_S);
+        }
+        false
+    }
+
+    fn note_auth_failure(&self, ip: std::net::IpAddr) {
+        let now_s = now_unix_seconds();
+        let mut table = self.auth_fail_rate.lock().expect("auth-fail lock poisoned");
+        let entry = table.entry(ip).or_insert((now_s, 0));
+        if now_s.saturating_sub(entry.0) >= AUTH_FAIL_WINDOW_S {
+            *entry = (now_s, 0);
+        }
+        entry.1 = entry.1.saturating_add(1);
+    }
+
     fn handle_request(&self, mut stream: TcpStream) -> Result<()> {
         // Bound all socket I/O so a connect-and-stall client cannot hold this
         // handler (and its thread) forever.
@@ -209,37 +272,32 @@ impl PoolApi {
         let _ = stream.set_write_timeout(Some(io_timeout));
         let mut reader = BufReader::new(&stream);
         let mut request_line = String::new();
-        if reader.read_line(&mut request_line).is_err() {
-            return Ok(());
+        // Bounded line read — an over-long or never-terminated request line
+        // is truncated rather than growing the buffer without limit.
+        match reader
+            .by_ref()
+            .take(MAX_HTTP_LINE)
+            .read_line(&mut request_line)
+        {
+            Ok(0) | Err(_) => return Ok(()),
+            Ok(_) => {}
         }
         let parts: Vec<&str> = request_line.split_whitespace().collect();
         let method = *parts.first().unwrap_or(&"GET");
         let raw_path = *parts.get(1).unwrap_or(&"/stats");
         let path = raw_path.split('?').next().unwrap_or(raw_path);
 
-        // Rate-limit the unauthenticated public tier per client IP.
-        if path.starts_with("/public/v1") {
-            let ip = stream
-                .peer_addr()
-                .map(|a| a.ip())
-                .unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
-            if self.public_rate_limited(ip) {
-                let body = "{\"ok\":false,\"error\":\"rate limited\"}";
-                let _ = write!(stream,
-                    "HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}",
-                    body.len(), body);
-                return Ok(());
-            }
-        }
-
         let mut content_length = 0usize;
         let mut api_key_header = None;
         let mut admin_key_header = None;
         let mut auth_bearer = None;
-        loop {
+        let mut xff: Option<String> = None;
+        let mut x_real_ip: Option<String> = None;
+        for _ in 0..MAX_HTTP_HEADERS {
             let mut header = String::new();
-            if reader.read_line(&mut header).is_err() {
-                break;
+            match reader.by_ref().take(MAX_HTTP_LINE).read_line(&mut header) {
+                Ok(0) | Err(_) => break,
+                Ok(_) => {}
             }
             if header.trim().is_empty() {
                 break;
@@ -267,7 +325,34 @@ impl PoolApi {
                 if let Some(token) = val.trim().strip_prefix("Bearer ") {
                     auth_bearer = Some(token.to_string());
                 }
+            } else if let Some(val) = trimmed
+                .strip_prefix("X-Forwarded-For:")
+                .or_else(|| trimmed.strip_prefix("x-forwarded-for:"))
+            {
+                xff = Some(val.trim().to_string());
+            } else if let Some(val) = trimmed
+                .strip_prefix("X-Real-IP:")
+                .or_else(|| trimmed.strip_prefix("x-real-ip:"))
+            {
+                x_real_ip = Some(val.trim().to_string());
             }
+        }
+
+        let client_ip = self.client_ip(&stream, xff.as_deref(), x_real_ip.as_deref());
+
+        // Throttled auth abusers get dropped before any further processing —
+        // avoids handing them unlimited oracle 401s forever.
+        if self.auth_fail_limited(client_ip) {
+            return Ok(());
+        }
+
+        // Rate-limit the unauthenticated public tier per real client IP.
+        if path.starts_with("/public/v1") && self.public_rate_limited(client_ip) {
+            let body = "{\"ok\":false,\"error\":\"rate limited\"}";
+            let _ = write!(stream,
+                "HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}",
+                body.len(), body);
+            return Ok(());
         }
         let mut request_body = String::new();
         if method == "POST" && content_length > 0 {
@@ -300,6 +385,7 @@ impl PoolApi {
                         || auth_bearer.as_deref() == api_key.as_deref())
             };
             if !ok {
+                self.note_auth_failure(client_ip);
                 let body = "{\"ok\":false,\"error\":\"unauthorized\"}";
                 let response = format!(
                     "HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -360,11 +446,12 @@ impl PoolApi {
                 match &self.share_store {
                     Some(store) => {
                         let blocks = store.query_blocks_for_coin(coin, limit).unwrap_or_default();
-                        let body = format!(
-                            "{{\"ok\":true,\"coin\":\"{}\",\"blocks\":{}}}",
-                            coin,
-                            serialize_public_blocks_json(&blocks)
-                        );
+                        let body = json!({
+                            "ok": true,
+                            "coin": coin,
+                            "blocks": serialize_public_blocks_json(&blocks),
+                        })
+                        .to_string();
                         ("200 OK", "application/json", body)
                     }
                     None => (
@@ -393,12 +480,13 @@ impl PoolApi {
                             .filter(|r| r.coin == coin || coin.is_empty())
                             .take(limit as usize)
                             .collect();
-                        let body = format!(
-                            "{{\"ok\":true,\"coin\":\"{}\",\"wallet\":\"{}\",\"payouts\":{}}}",
-                            coin,
-                            wallet,
-                            serialize_public_payouts_json(&payouts)
-                        );
+                        let body = json!({
+                            "ok": true,
+                            "coin": coin,
+                            "wallet": wallet,
+                            "payouts": serialize_public_payouts_json(&payouts),
+                        })
+                        .to_string();
                         ("200 OK", "application/json", body)
                     }
                     None => (
@@ -432,10 +520,11 @@ impl PoolApi {
                                 .query_blocks_for_coin(&coin, limit)
                                 .unwrap_or_default()
                         };
-                        let body = format!(
-                            "{{\"ok\":true,\"blocks\":{}}}",
-                            serialize_public_blocks_json(&blocks)
-                        );
+                        let body = json!({
+                            "ok": true,
+                            "blocks": serialize_public_blocks_json(&blocks),
+                        })
+                        .to_string();
                         ("200 OK", "application/json", body)
                     }
                     None => (
@@ -457,10 +546,11 @@ impl PoolApi {
                             .filter(|r| coin.is_empty() || r.coin == coin)
                             .take(limit as usize)
                             .collect();
-                        let body = format!(
-                            "{{\"ok\":true,\"payouts\":{}}}",
-                            serialize_public_payouts_json(&payouts)
-                        );
+                        let body = json!({
+                            "ok": true,
+                            "payouts": serialize_public_payouts_json(&payouts),
+                        })
+                        .to_string();
                         ("200 OK", "application/json", body)
                     }
                     None => (
@@ -2118,88 +2208,105 @@ fn public_miner_id(miner_id: &str) -> &str {
 
 /// Public blocks feed — bare array (the route adds the {"ok":..} envelope) and
 /// no worker names / raw miner ids.
-fn serialize_public_blocks_json(blocks: &[crate::store::DbBlockRow]) -> String {
-    let mut out = String::from("[");
-    for (i, b) in blocks.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push_str(&format!(
-            "{{\"coin\":\"{}\",\"height\":{},\"hash\":\"{}\",\"miner\":\"{}\",\"share_difficulty\":{},\"network_difficulty\":{},\"status\":\"{}\",\"ts\":{},\"confirmed_at\":{}}}",
-            b.coin, b.height, b.hash, public_miner_id(&b.miner_id),
-            b.share_difficulty, b.network_difficulty, b.status, b.ts,
-            b.confirmed_at.map(|t| t.to_string()).unwrap_or_else(|| "null".to_string())
-        ));
-    }
-    out.push(']');
-    out
+fn serialize_public_blocks_json(blocks: &[crate::store::DbBlockRow]) -> serde_json::Value {
+    // serde_json escapes all DB-controlled strings — worker/miner names are
+    // miner-supplied and must never be interpolated raw.
+    serde_json::Value::Array(
+        blocks
+            .iter()
+            .map(|b| {
+                json!({
+                    "coin": b.coin,
+                    "height": b.height,
+                    "hash": b.hash,
+                    "miner": public_miner_id(&b.miner_id),
+                    "share_difficulty": b.share_difficulty,
+                    "network_difficulty": b.network_difficulty,
+                    "status": b.status,
+                    "ts": b.ts,
+                    "confirmed_at": b.confirmed_at,
+                })
+            })
+            .collect(),
+    )
 }
 
 /// Public payouts feed — bare array; `address` is authoritative, `miner_id`
 /// (worker-suffixed) stays internal.
-fn serialize_public_payouts_json(payouts: &[crate::store::PayoutRow]) -> String {
-    let mut out = String::from("[");
-    for (i, p) in payouts.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push_str(&format!(
-            "{{\"ts\":{},\"address\":\"{}\",\"coin\":\"{}\",\"amount_flowers\":{},\"tx_id\":\"{}\",\"height\":{},\"block_hash\":\"{}\",\"confirmations\":{},\"confirmed\":{}}}",
-            p.ts, p.address, p.coin, p.amount_flowers,
-            p.tx_id, p.height, p.block_hash, p.confirmations, p.confirmed
-        ));
-    }
-    out.push(']');
-    out
+fn serialize_public_payouts_json(payouts: &[crate::store::PayoutRow]) -> serde_json::Value {
+    serde_json::Value::Array(
+        payouts
+            .iter()
+            .map(|p| {
+                json!({
+                    "ts": p.ts,
+                    "address": p.address,
+                    "coin": p.coin,
+                    "amount_flowers": p.amount_flowers,
+                    "tx_id": p.tx_id,
+                    "height": p.height,
+                    "block_hash": p.block_hash,
+                    "confirmations": p.confirmations,
+                    "confirmed": p.confirmed,
+                })
+            })
+            .collect(),
+    )
 }
 
 fn serialize_blocks_json(blocks: &[crate::store::DbBlockRow]) -> String {
-    let mut out = String::from("{\"ok\":true,\"blocks\":[");
-    for (i, b) in blocks.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push_str(&format!(
-            "{{\"coin\":\"{}\",\"height\":{},\"hash\":\"{}\",\"miner_id\":\"{}\",\"worker_name\":\"{}\",\"share_difficulty\":{},\"network_difficulty\":{},\"status\":\"{}\",\"ts\":{},\"confirmed_at\":{}}}",
-            b.coin, b.height, b.hash, b.miner_id, b.worker_name,
-            b.share_difficulty, b.network_difficulty, b.status, b.ts,
-            b.confirmed_at.map(|t| t.to_string()).unwrap_or_else(|| "null".to_string())
-        ));
-    }
-    out.push_str("]}");
-    out
+    json!({
+        "ok": true,
+        "blocks": blocks.iter().map(|b| json!({
+            "coin": b.coin,
+            "height": b.height,
+            "hash": b.hash,
+            "miner_id": b.miner_id,
+            "worker_name": b.worker_name,
+            "share_difficulty": b.share_difficulty,
+            "network_difficulty": b.network_difficulty,
+            "status": b.status,
+            "ts": b.ts,
+            "confirmed_at": b.confirmed_at,
+        })).collect::<Vec<_>>(),
+    })
+    .to_string()
 }
 
 fn serialize_payouts_json(payouts: &[crate::store::PayoutRow]) -> String {
-    let mut out = String::from("{\"ok\":true,\"payouts\":[");
-    for (i, p) in payouts.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push_str(&format!(
-            "{{\"ts\":{},\"miner_id\":\"{}\",\"address\":\"{}\",\"coin\":\"{}\",\"amount_flowers\":{},\"tx_id\":\"{}\",\"height\":{},\"block_hash\":\"{}\",\"confirmations\":{},\"confirmed\":{}}}",
-            p.ts, p.miner_id, p.address, p.coin, p.amount_flowers,
-            p.tx_id, p.height, p.block_hash, p.confirmations, p.confirmed
-        ));
-    }
-    out.push_str("]}");
-    out
+    json!({
+        "ok": true,
+        "payouts": payouts.iter().map(|p| json!({
+            "ts": p.ts,
+            "miner_id": p.miner_id,
+            "address": p.address,
+            "coin": p.coin,
+            "amount_flowers": p.amount_flowers,
+            "tx_id": p.tx_id,
+            "height": p.height,
+            "block_hash": p.block_hash,
+            "confirmations": p.confirmations,
+            "confirmed": p.confirmed,
+        })).collect::<Vec<_>>(),
+    })
+    .to_string()
 }
 
 fn serialize_miners_json(miners: &[crate::store::MinerStatsRow], total_count: u64) -> String {
-    let mut out = format!("{{\"ok\":true,\"miner_count\":{total_count},\"miners\":[");
-    for (i, m) in miners.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push_str(&format!(
-            "{{\"miner_id\":\"{}\",\"first_seen\":{},\"last_seen\":{},\"total_shares\":{},\"accepted_shares\":{},\"rejected_shares\":{},\"total_paid_flowers\":{}}}",
-            m.miner_id, m.first_seen, m.last_seen,
-            m.total_shares, m.accepted_shares, m.rejected_shares, m.total_paid_flowers
-        ));
-    }
-    out.push_str("]}");
-    out
+    json!({
+        "ok": true,
+        "miner_count": total_count,
+        "miners": miners.iter().map(|m| json!({
+            "miner_id": m.miner_id,
+            "first_seen": m.first_seen,
+            "last_seen": m.last_seen,
+            "total_shares": m.total_shares,
+            "accepted_shares": m.accepted_shares,
+            "rejected_shares": m.rejected_shares,
+            "total_paid_flowers": m.total_paid_flowers,
+        })).collect::<Vec<_>>(),
+    })
+    .to_string()
 }
 
 #[cfg(test)]

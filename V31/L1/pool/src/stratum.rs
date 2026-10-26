@@ -656,10 +656,24 @@ impl StratumServer {
             return rejected_response(id, "share rate limited");
         }
 
+        // P-02: submits must be bound to an authorized identity — an
+        // unauthorized session gets no validation work or telemetry.
+        if !ctx.authorized {
+            return error_response(Some(id), -33000, "unauthorized");
+        }
+
         let (worker, job_id, nonce_hex, _hash_hex) = match Self::parse_submit_params(&params) {
             Ok(v) => v,
             Err(msg) => return error_response(Some(id), -32602, msg),
         };
+
+        // P-02: the submitted worker must belong to the authorized username —
+        // `worker` is the credit key, so a foreign wallet here would only
+        // donate hashrate, but a mismatched miner id still poisons telemetry
+        // (rejected counters, worker names) under someone else's identity.
+        if split_worker(&worker).0 != ctx.session.miner_id {
+            return error_response(Some(id), -33000, "worker not authorized");
+        }
 
         let (header, _share_target, block_target, reward, template) = {
             let jobs = self.jobs.lock().unwrap();
@@ -1817,15 +1831,22 @@ impl StratumServer {
         if accepted {
             // Same accounting as the V3 external-submit path: PPLNS credit
             // at the QTU weight, coin-scoped telemetry, routing stats.
+            // Dedup key binds credit to this exact (job, nonce, result) —
+            // replays return false and draw no second credit.
             let h = self.current_height.load(Ordering::Relaxed);
             let w = auxpow_share_weight("QTU");
-            self.pool.lock().unwrap().record_external_share(
+            let credited = self.pool.lock().unwrap().record_external_share(
                 &login.wallet,
                 &login.login,
                 h,
                 w,
                 "qtu",
+                &job_id,
+                &format!("{nonce_hex}:{result_hex}"),
             );
+            if !credited {
+                return Err("duplicate".to_string());
+            }
         }
         self.telemetry.lock().unwrap().record_external_share(
             &login.wallet,
@@ -1936,10 +1957,18 @@ impl StratumServer {
         if accepted {
             let h = self.current_height.load(Ordering::Relaxed);
             let w = auxpow_share_weight("PRL");
-            self.pool
-                .lock()
-                .unwrap()
-                .record_external_share(miner_id, worker_name, h, w, "prl");
+            let credited = self.pool.lock().unwrap().record_external_share(
+                miner_id,
+                worker_name,
+                h,
+                w,
+                "prl",
+                external_job_id,
+                proof_b64,
+            );
+            if !credited {
+                return (false, "duplicate".to_string());
+            }
         }
         self.telemetry.lock().unwrap().record_external_share(
             miner_id,
@@ -2399,6 +2428,13 @@ impl StratumServer {
         let mut session_gpu_pref: Option<ExternalCoin>;
         let mut session_cpu_pref: Option<ExternalCoin>;
         let mut session_gpu2_pref: Option<ExternalCoin>;
+        // Per-session vardiff + share rate limit + Hello-bound identity —
+        // same submit contract as the plain-TCP path.
+        let mut vardiff = VarDiff::new(&self.vardiff_config);
+        let mut share_rate =
+            ShareRateLimiter::new(env_or_f64("ZION_POOL_SHARE_RATE_PER_SEC", 10.0).max(1.0));
+        let session_miner_id: String;
+        let session_worker_name: String;
 
         // For now, just handle Hello and forward jobs.
         // Full V3 handling over TLS uses the same logic as plain TCP.
@@ -2412,6 +2448,8 @@ impl StratumServer {
                 auth_token,
                 ..
             }) => {
+                session_miner_id = miner_id.clone();
+                session_worker_name = worker_name.clone();
                 tracing::info!(
                     "v3_tls_hello miner={} worker={} algo={} ip={}",
                     miner_id,
@@ -2480,7 +2518,10 @@ impl StratumServer {
                     Self::session_coin_pref(&self.cpu_coin_routes, &miner_id, &worker_name);
                 session_gpu2_pref =
                     Self::session_coin_pref(&self.gpu2_coin_routes, &miner_id, &worker_name);
-                if session_gpu_pref.is_some() || session_cpu_pref.is_some() || session_gpu2_pref.is_some() {
+                if session_gpu_pref.is_some()
+                    || session_cpu_pref.is_some()
+                    || session_gpu2_pref.is_some()
+                {
                     tracing::info!(
                         "v3_coin_route miner={} worker={} gpu={:?} cpu={:?} gpu2={:?}",
                         miner_id,
@@ -2501,8 +2542,8 @@ impl StratumServer {
                     return;
                 }
 
-                let diff = self.vardiff_config.start_difficulty;
-                let target = difficulty_to_target(diff);
+                let diff = vardiff.current();
+                let target = vardiff.share_target();
                 let set_diff = PoolMessage::SetDifficulty {
                     difficulty: diff,
                     target_hex: hex::encode(target),
@@ -2554,11 +2595,60 @@ impl StratumServer {
                         Ok(Some(line)) => {
                             match decode_message(&line) {
                                 Ok(PoolMessage::Submit { job_id, miner_id: submit_miner, worker_name: submit_worker, nonce, attempted_hashes, elapsed_ms, .. }) => {
+                                    // P-01 hardening: per-session share rate limit.
+                                    if !share_rate.allow() {
+                                        let result_msg = PoolMessage::Result {
+                                            accepted: false,
+                                            status: "rate_limited".into(),
+                                            block_found: false,
+                                            block_height: None,
+                                        };
+                                        let _ = write_v3_message(writer, &result_msg).await;
+                                        continue;
+                                    }
+
+                                    // P-02: bind submit identity to the Hello session.
+                                    if !submit_miner.is_empty() && submit_miner != session_miner_id {
+                                        let result_msg = PoolMessage::Result {
+                                            accepted: false,
+                                            status: "unauthorized_miner".into(),
+                                            block_found: false,
+                                            block_height: None,
+                                        };
+                                        let _ = write_v3_message(writer, &result_msg).await;
+                                        continue;
+                                    }
+                                    let submit_worker = if submit_worker.is_empty() {
+                                        session_worker_name.clone()
+                                    } else if submit_worker != session_worker_name
+                                        && !submit_worker.starts_with(&format!("{session_miner_id}."))
+                                    {
+                                        let result_msg = PoolMessage::Result {
+                                            accepted: false,
+                                            status: "unauthorized_worker".into(),
+                                            block_found: false,
+                                            block_height: None,
+                                        };
+                                        let _ = write_v3_message(writer, &result_msg).await;
+                                        continue;
+                                    } else {
+                                        submit_worker
+                                    };
+                                    let submit_miner = if submit_miner.is_empty() {
+                                        session_miner_id.clone()
+                                    } else {
+                                        submit_miner
+                                    };
+
                                     let job_key = format!("zion_{}", job_id);
                                     let job_data = self.jobs.lock().unwrap().get(&job_key).cloned();
-                                    if let Some((header, share_target, block_target, reward, template)) = job_data {
+                                    if let Some((header, _job_share_target, block_target, reward, template)) = job_data {
                                         let (height, difficulty) = template.as_ref().map(|t| (t.height, t.difficulty)).unwrap_or((0, 1));
-                                        let share_diff = self.vardiff_config.start_difficulty.max(1);
+                                        // Session vardiff target — a static job
+                                        // target would let replayed shares keep
+                                        // passing while credit ratchets up.
+                                        let share_target = vardiff.share_target();
+                                        let share_diff = vardiff.current().max(1);
                                         let submission = ShareSubmission {
                                             worker: submit_worker.clone(),
                                             job_id: job_key.clone(),
@@ -2593,6 +2683,16 @@ impl StratumServer {
                                                 elapsed_ms,
                                             );
                                             self.block_tracker.lock().unwrap().record_share();
+                                            // Per-session VarDiff retarget —
+                                            // push a new target when the
+                                            // share rate warrants it.
+                                            if let Some(new_diff) = vardiff.record_submit() {
+                                                let set_diff = PoolMessage::SetDifficulty {
+                                                    difficulty: new_diff,
+                                                    target_hex: hex::encode(vardiff.share_target()),
+                                                };
+                                                let _ = write_v3_message(writer, &set_diff).await;
+                                            }
                                         }
 
                                         // If block found, submit to node
@@ -2650,7 +2750,13 @@ impl StratumServer {
 
                                         let result_msg = PoolMessage::Result {
                                             accepted,
-                                            status: if accepted { "accepted".into() } else { "rejected".into() },
+                                            status: if accepted {
+                                                "accepted".into()
+                                            } else if matches!(result, Err(PoolError::DuplicateShare)) {
+                                                "duplicate".into()
+                                            } else {
+                                                "rejected".into()
+                                            },
                                             block_found,
                                             block_height: if block_found { Some(height) } else { None },
                                         };
@@ -2763,6 +2869,9 @@ impl StratumServer {
         let mut consecutive_no_solution: u32 = 0;
         // Per-session VarDiff
         let mut vardiff = VarDiff::new(&self.vardiff_config);
+        // Per-session share rate limit (same contract as the v1 path).
+        let mut share_rate =
+            ShareRateLimiter::new(env_or_f64("ZION_POOL_SHARE_RATE_PER_SEC", 10.0).max(1.0));
         // Miner identity from Hello
         let miner_id;
         let worker_name;
@@ -2888,7 +2997,10 @@ impl StratumServer {
                     Self::session_coin_pref(&self.cpu_coin_routes, &miner_id, &worker_name);
                 session_gpu2_pref =
                     Self::session_coin_pref(&self.gpu2_coin_routes, &miner_id, &worker_name);
-                if session_gpu_pref.is_some() || session_cpu_pref.is_some() || session_gpu2_pref.is_some() {
+                if session_gpu_pref.is_some()
+                    || session_cpu_pref.is_some()
+                    || session_gpu2_pref.is_some()
+                {
                     tracing::info!(
                         "v3_coin_route miner={} worker={} gpu={:?} cpu={:?} gpu2={:?}",
                         miner_id,
@@ -2995,9 +3107,56 @@ impl StratumServer {
                                 elapsed_ms,
                                 ..
                             }) => {
+                                // P-01 hardening: per-session share rate limit.
+                                if !share_rate.allow() {
+                                    let result = PoolMessage::Result {
+                                        accepted: false,
+                                        status: "rate_limited".to_string(),
+                                        block_found: false,
+                                        block_height: None,
+                                    };
+                                    let _ = write_v3_message(writer, &result).await;
+                                    continue;
+                                }
+
+                                // P-02: bind the submit identity to the Hello
+                                // session — an empty field defaults to the
+                                // bound identity, a foreign one is rejected.
+                                if !submit_miner.is_empty() && submit_miner != miner_id {
+                                    let result = PoolMessage::Result {
+                                        accepted: false,
+                                        status: "unauthorized_miner".to_string(),
+                                        block_found: false,
+                                        block_height: None,
+                                    };
+                                    let _ = write_v3_message(writer, &result).await;
+                                    continue;
+                                }
+                                let submit_worker = if submit_worker.is_empty() {
+                                    worker_name.clone()
+                                } else if submit_worker != worker_name
+                                    && !submit_worker.starts_with(&format!("{miner_id}."))
+                                {
+                                    let result = PoolMessage::Result {
+                                        accepted: false,
+                                        status: "unauthorized_worker".to_string(),
+                                        block_found: false,
+                                        block_height: None,
+                                    };
+                                    let _ = write_v3_message(writer, &result).await;
+                                    continue;
+                                } else {
+                                    submit_worker
+                                };
+                                let submit_miner = if submit_miner.is_empty() {
+                                    miner_id.clone()
+                                } else {
+                                    submit_miner
+                                };
+
                                 let job_key = format!("zion_{}", job_id);
                                 let job_data = self.jobs.lock().unwrap().get(&job_key).cloned();
-                                let (header, share_target, block_target, reward, template) = match job_data {
+                                let (header, _job_share_target, block_target, reward, template) = match job_data {
                                     Some(d) => d,
                                     None => {
                                         let result = PoolMessage::Result {
@@ -3016,6 +3175,11 @@ impl StratumServer {
                                     .map(|t| (t.height, t.difficulty))
                                     .unwrap_or((0, 1));
 
+                                // Validate against the *session* vardiff
+                                // target (same as v1) — the static job target
+                                // would let a replayed share keep passing
+                                // while the credited difficulty ratchets up.
+                                let share_target = vardiff.share_target();
                                 let share_difficulty = vardiff.current().max(1);
                                 let submission = ShareSubmission {
                                     worker: submit_worker.clone(),
@@ -3153,7 +3317,13 @@ impl StratumServer {
 
                                 let result_msg = PoolMessage::Result {
                                     accepted,
-                                    status: if accepted { "accepted".to_string() } else { "rejected".to_string() },
+                                    status: if accepted {
+                                        "accepted".to_string()
+                                    } else if matches!(result, Err(PoolError::DuplicateShare)) {
+                                        "duplicate".to_string()
+                                    } else {
+                                        "rejected".to_string()
+                                    },
                                     block_found,
                                     block_height: block_height_val,
                                 };
@@ -3534,7 +3704,8 @@ impl StratumServer {
                                         .current_height
                                         .load(Ordering::Relaxed);
                                     let w = auxpow_share_weight(&coin);
-                                    self.pool
+                                    let credited = self
+                                        .pool
                                         .lock()
                                         .unwrap()
                                         .record_external_share(
@@ -3543,7 +3714,20 @@ impl StratumServer {
                                             h,
                                             w,
                                             &coin,
+                                            &external_job_id,
+                                            &format!(
+                                                "{nonce}:{nonce_hex:?}:{hash_hex:?}"
+                                            ),
                                         );
+                                    if !credited {
+                                        let result = PoolMessage::ExternalResult {
+                                            accepted: false,
+                                            status: "duplicate".to_string(),
+                                            coin: coin.clone(),
+                                        };
+                                        let _ = write_v3_message(writer, &result).await;
+                                        continue;
+                                    }
                                 }
 
                                 // Route external shares to the coin's own telemetry
@@ -4836,11 +5020,19 @@ mod tests {
             6_000_000,
             "",
         );
-        let resp = server.handle_request(&format!(
-            r#"{{"id":3,"method":"mining.submit","params":["worker","zion_1","{}"]}}"#,
-            nonce_hex
-        ));
-        assert!(resp.contains("true"));
+        let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+        server.handle_request_with_ctx(
+            r#"{"id":2,"method":"mining.authorize","params":["zion1x.w1","x"]}"#,
+            &mut ctx,
+        );
+        let resp = server.handle_request_with_ctx(
+            &format!(
+                r#"{{"id":3,"method":"mining.submit","params":["zion1x.w1","zion_1","{}"]}}"#,
+                nonce_hex
+            ),
+            &mut ctx,
+        );
+        assert!(resp.contains("true"), "resp={resp}");
     }
 
     #[test]
@@ -4866,20 +5058,107 @@ mod tests {
             6_000_000,
             "",
         );
-        let resp = server.handle_request(&format!(
-            r#"{{"id":4,"method":"mining.submit","params":["worker","aux_bitcoin_1","{}"]}}"#,
-            nonce_hex
-        ));
-        assert!(resp.contains("true"));
+        let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+        server.handle_request_with_ctx(
+            r#"{"id":2,"method":"mining.authorize","params":["zion1x.w1","x"]}"#,
+            &mut ctx,
+        );
+        let resp = server.handle_request_with_ctx(
+            &format!(
+                r#"{{"id":4,"method":"mining.submit","params":["zion1x.w1","aux_bitcoin_1","{}"]}}"#,
+                nonce_hex
+            ),
+            &mut ctx,
+        );
+        assert!(resp.contains("true"), "resp={resp}");
     }
 
     #[test]
     fn rejects_unknown_job() {
         let server = make_server();
-        let resp = server.handle_request(
-            r#"{"id":5,"method":"mining.submit","params":["worker","zion_99","0000000000000000"]}"#,
+        let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+        server.handle_request_with_ctx(
+            r#"{"id":2,"method":"mining.authorize","params":["zion1x.w1","x"]}"#,
+            &mut ctx,
         );
-        assert!(resp.contains("unknown job"));
+        let resp = server.handle_request_with_ctx(
+            r#"{"id":5,"method":"mining.submit","params":["zion1x.w1","zion_99","0000000000000000"]}"#,
+            &mut ctx,
+        );
+        assert!(resp.contains("unknown job"), "resp={resp}");
+    }
+
+    /// P-01: resubmitting an identical (job, nonce) must not double-credit.
+    #[test]
+    fn rejects_replayed_share() {
+        let server = make_server();
+        let share_target = crate::vardiff::difficulty_to_target(1000);
+        let share_target_hex = hex::encode(share_target);
+        let header_bytes = vec![0u8; 80];
+        let algo = zion_cosmic_harmony::EkamDeeksha::new();
+        let nonce = zion_cosmic_harmony::PowAlgorithm::find_nonce(
+            &algo,
+            &header_bytes,
+            0,
+            100_000,
+            &share_target,
+        )
+        .expect("nonce for difficulty 1000");
+        let nonce_hex = format!("{:016x}", nonce.0);
+        let header = hex::encode(&header_bytes);
+        server.job_notification(
+            "zion_1",
+            &header,
+            &share_target_hex,
+            &share_target_hex,
+            6_000_000,
+            "",
+        );
+        let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+        server.handle_request_with_ctx(
+            r#"{"id":2,"method":"mining.authorize","params":["zion1x.w1","x"]}"#,
+            &mut ctx,
+        );
+        let submit = format!(
+            r#"{{"id":3,"method":"mining.submit","params":["zion1x.w1","zion_1","{}"]}}"#,
+            nonce_hex
+        );
+        let resp = server.handle_request_with_ctx(&submit, &mut ctx);
+        assert!(resp.contains("true"), "first submit: {resp}");
+        let resp = server.handle_request_with_ctx(&submit, &mut ctx);
+        assert!(
+            resp.contains("duplicate") || resp.contains("share error"),
+            "replay: {resp}"
+        );
+    }
+
+    /// P-02: submits without authorize are rejected outright.
+    #[test]
+    fn rejects_unauthorized_submit() {
+        let server = make_server();
+        let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+        let resp = server.handle_request_with_ctx(
+            r#"{"id":3,"method":"mining.submit","params":["zion1x.w1","zion_1","00"]}"#,
+            &mut ctx,
+        );
+        assert!(resp.contains("unauthorized"), "resp={resp}");
+    }
+
+    /// P-02: a submit carrying a different wallet than the authorized one is
+    /// rejected — telemetry and credit must stay bound to the session.
+    #[test]
+    fn rejects_foreign_worker_submit() {
+        let server = make_server();
+        let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+        server.handle_request_with_ctx(
+            r#"{"id":2,"method":"mining.authorize","params":["zion1x.w1","x"]}"#,
+            &mut ctx,
+        );
+        let resp = server.handle_request_with_ctx(
+            r#"{"id":3,"method":"mining.submit","params":["zion1y.w1","zion_1","00"]}"#,
+            &mut ctx,
+        );
+        assert!(resp.contains("worker not authorized"), "resp={resp}");
     }
 
     #[test]

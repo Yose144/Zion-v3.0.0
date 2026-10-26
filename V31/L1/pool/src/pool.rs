@@ -30,6 +30,10 @@ pub enum PoolError {
     CoinNotNative,
     #[error("revenue event already processed")]
     DuplicateRevenueEvent,
+    /// Same (job, nonce/proof) already accepted once — replayed submissions
+    /// must not draw a second PPLNS credit.
+    #[error("duplicate share")]
+    DuplicateShare,
 }
 
 /// Result of applying a native-coin revenue event (`on_coin_revenue`).
@@ -114,10 +118,24 @@ pub struct Pool {
     pub sent_payouts: HashSet<(u64, String)>,
     /// Block heights that have already been processed for payout (idempotency guard).
     paid_block_heights: HashSet<u64>,
+    /// Bounded (job-bucket → nonce/proof-tag) dedup for accepted shares.
+    /// Buckets track the live job map — entries are evicted FIFO when the
+    /// job-key count exceeds the cap, so memory stays proportional to the
+    /// working set rather than to total submissions.
+    share_dedup: HashMap<String, HashSet<u64>>,
+    share_dedup_order: std::collections::VecDeque<String>,
     /// Shared per-worker telemetry registry (hashrate, shares, blocks).
     pub telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
     pub(crate) pearl: Option<Arc<crate::pearl_gateway::PearlRuntime>>,
 }
+
+/// Job buckets retained for share dedup.  Stratum keeps ~256 live jobs —
+/// this comfortably covers every bucket that can still produce a credit.
+const SHARE_DEDUP_JOB_CAP: usize = 512;
+/// Nonce tags retained per job bucket.  An honest job sees shares in the
+/// thousands; this is headroom, and a saturated bucket fails closed
+/// (treated as duplicate) rather than growing without bound.
+const SHARE_DEDUP_TAG_CAP: usize = 500_000;
 
 impl Pool {
     pub fn new(config: PoolConfig, telemetry: Arc<Mutex<MinerTelemetryRegistry>>) -> Self {
@@ -167,6 +185,8 @@ impl Pool {
             pending_payouts: ledger.pending_payouts,
             sent_payouts: ledger.sent_payouts.into_iter().collect(),
             paid_block_heights: ledger.paid_block_heights.into_iter().collect(),
+            share_dedup: HashMap::new(),
+            share_dedup_order: std::collections::VecDeque::new(),
             telemetry,
             pearl: crate::pearl_gateway::PearlRuntime::from_env(),
         })
@@ -185,9 +205,7 @@ impl Pool {
     /// losing the guards is recoverable by operator inspection, a pool that
     /// refuses to start is not.
     fn load_payout_ledger(state_path: Option<&str>) -> PayoutLedgerState {
-        let Some(path) =
-            state_path.map(|p| PathBuf::from(format!("{p}.payouts.json")))
-        else {
+        let Some(path) = state_path.map(|p| PathBuf::from(format!("{p}.payouts.json"))) else {
             return PayoutLedgerState::default();
         };
         match std::fs::read_to_string(&path) {
@@ -227,14 +245,59 @@ impl Pool {
             Ok(())
         };
         if let Err(e) = write() {
-            self.pplns_persist_failures_total =
-                self.pplns_persist_failures_total.saturating_add(1);
+            self.pplns_persist_failures_total = self.pplns_persist_failures_total.saturating_add(1);
             tracing::warn!("payout ledger persist failed {}: {}", path.display(), e);
         }
     }
 
     pub fn next_job_id(&self) -> u64 {
         self.current_job_id.fetch_add(1, Ordering::Relaxed) + 1
+    }
+
+    /// Read-only dedup probe: `true` when this (job bucket, tag) was already
+    /// credited. Checking before validation (and marking only on success)
+    /// keeps invalid submissions from burning tags that a later valid
+    /// resubmit at a lower session target could still legitimately use.
+    fn share_seen(&self, job_bucket: &str, tag: u64) -> bool {
+        self.share_dedup
+            .get(job_bucket)
+            .is_some_and(|s| s.contains(&tag))
+    }
+
+    /// Dedup mark: `false` when this (job bucket, tag) was already credited
+    /// or the bucket is full (fail closed). First valid submission claims
+    /// the pair; replays fail closed.
+    fn mark_share_seen(&mut self, job_bucket: &str, tag: u64) -> bool {
+        if !self.share_dedup.contains_key(job_bucket) {
+            while self.share_dedup.len() >= SHARE_DEDUP_JOB_CAP {
+                match self.share_dedup_order.pop_front() {
+                    Some(old) => {
+                        self.share_dedup.remove(&old);
+                    }
+                    None => break,
+                }
+            }
+            self.share_dedup_order.push_back(job_bucket.to_string());
+            self.share_dedup
+                .insert(job_bucket.to_string(), HashSet::new());
+        }
+        let set = self
+            .share_dedup
+            .get_mut(job_bucket)
+            .expect("bucket present");
+        if set.len() >= SHARE_DEDUP_TAG_CAP {
+            return false;
+        }
+        set.insert(tag)
+    }
+
+    /// Dedup for external (AuxPoW) legs — `tag` is any stable proof/nonce
+    /// string; it is hashed to u64 for storage. Returns `false` on replay.
+    pub fn mark_external_share_seen(&mut self, coin: &str, job_id: &str, tag: &str) -> bool {
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        tag.hash(&mut h);
+        self.mark_share_seen(&format!("ext:{coin}:{job_id}"), h.finish())
     }
 
     fn parse_nonce(nonce_hex: &str) -> Result<u64, PoolError> {
@@ -264,6 +327,9 @@ impl Pool {
     /// `ZION_POOL_AUXPOW_PPLNS_WEIGHT`, default 500 ≈ the vardiff floor).
     /// The external coin itself stays with the pool as revenue; the ZION
     /// PPLNS credit is what the miner is paid out of.
+    /// Returns `false` when `dedup_key` was already credited — callers must
+    /// pass a stable per-share identifier (e.g. `"{job}:{nonce_hex}"` or the
+    /// upstream proof) so replays cannot double-credit PPLNS.
     pub fn record_external_share(
         &mut self,
         _miner_id: &str,
@@ -271,7 +337,15 @@ impl Pool {
         height: u64,
         weight: u64,
         coin: &str,
-    ) {
+        dedup_job: &str,
+        dedup_tag: &str,
+    ) -> bool {
+        // Bucket on the external job id so the tag space rotates with job
+        // turnover — a single per-coin bucket would exhaust its tag cap on a
+        // long-running pool and fail closed.
+        if !self.mark_external_share_seen(coin, dedup_job, dedup_tag) {
+            return false;
+        }
         let (chain, address) = self.worker_payout_target(worker_name);
         self.pplns
             .register_address_with_chain(worker_name, &address, &chain);
@@ -282,6 +356,7 @@ impl Pool {
             weight.max(1),
             coin,
         );
+        true
     }
 
     /// Resolve a worker string to its `(chain, payout_address)` target.
@@ -402,7 +477,14 @@ impl Pool {
         target: &[u8; 32],
     ) -> Result<bool, PoolError> {
         let nonce = Self::parse_nonce(&submission.nonce_hex)?;
+        // Reject replays before paying the validation hash — a duplicate
+        // (job, nonce) can never draw a second credit.
+        if self.share_seen(&submission.job_id, nonce) {
+            self.rejected.fetch_add(1, Ordering::Relaxed);
+            return Err(PoolError::DuplicateShare);
+        }
         if self.validator.validate_zion(header, nonce, target) {
+            self.mark_share_seen(&submission.job_id, nonce);
             self.record_share(&submission, height, "zion");
             self.accepted.fetch_add(1, Ordering::Relaxed);
             Ok(true)
@@ -432,7 +514,12 @@ impl Pool {
         target: &[u8; 32],
     ) -> Result<bool, PoolError> {
         let nonce = Self::parse_nonce(&submission.nonce_hex)?;
+        if self.share_seen(&format!("aux:{}:{coin}", submission.job_id), nonce) {
+            self.rejected.fetch_add(1, Ordering::Relaxed);
+            return Err(PoolError::DuplicateShare);
+        }
         if self.validator.validate_auxpow(coin, header, nonce, target) {
+            self.mark_share_seen(&format!("aux:{}:{coin}", submission.job_id), nonce);
             self.record_share(&submission, height, coin.as_str());
             self.accepted.fetch_add(1, Ordering::Relaxed);
             Ok(true)
@@ -749,9 +836,8 @@ impl Pool {
     /// (unbounded queue/sidecar growth and a latent double-pay if any
     /// future path drains zion entries in the same process).
     pub fn settle_payout(&mut self, block_height: u64, address: &str) {
-        self.pending_payouts.retain(|(h, p)| {
-            !(*h == block_height && p.address == address && p.chain() == "zion")
-        });
+        self.pending_payouts
+            .retain(|(h, p)| !(*h == block_height && p.address == address && p.chain() == "zion"));
         self.sent_payouts
             .insert((block_height, address.to_string()));
         self.persist_payout_ledger();
@@ -1489,9 +1575,19 @@ mod tests {
             .unwrap();
 
         // Native QTU leg credits via record_external_share with "qtu".
-        pool.record_external_share("wallet", "wallet.rig", 1, 4, "qtu");
+        assert!(pool.record_external_share("wallet", "wallet.rig", 1, 4, "qtu", "job1", "nonce1"));
         // Pearl native leg credits via record_external_share with "prl".
-        pool.record_external_share("wallet2", "wallet2.rig", 1, 8, "prl");
+        assert!(pool.record_external_share(
+            "wallet2",
+            "wallet2.rig",
+            1,
+            8,
+            "prl",
+            "job1",
+            "proof1"
+        ));
+        // P-01: a replayed (job, tag) pair draws no second credit.
+        assert!(!pool.record_external_share("wallet", "wallet.rig", 1, 4, "qtu", "job1", "nonce1"));
 
         let stats = pool.pplns.coin_stats();
         let find = |c: &str| stats.iter().find(|s| s.coin == c).unwrap();
