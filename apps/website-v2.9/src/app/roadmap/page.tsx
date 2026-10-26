@@ -512,7 +512,7 @@ export default function RoadmapPage() {
           </div>
         </motion.section>
 
-        {/* 3.2 PATH — ALPHA → BETA → RC → STABLE */}
+        {/* 3.2 PATH — ALPHA → BETA → STABLE */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -526,6 +526,7 @@ export default function RoadmapPage() {
               <Rocket className="h-7 w-7 text-zion-gold" />
               {cs ? 'Cesta 3.2 „One Love“: Alpha → Beta → RC → Stable' : 'The 3.2 "One Love" path: Alpha → Beta → RC → Stable'}
             </h2>
+            <p className="text-sm text-gray-400">{cs ? 'Aktuální stupeň: Beta. Seznamy popisují zbývající práce a vstupní požadavky — ne tvrzení, že všechny kontroly prošly.' : 'Current stage: Beta. Lists describe remaining work and entry requirements — not a claim that all checks passed.'}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
@@ -554,8 +555,8 @@ export default function RoadmapPage() {
               </div>
               <ul className="text-sm text-gray-300 space-y-1.5 list-disc pl-4">
                 {(cs
-                  ? ['feature freeze (DEFERRED_3.2)', 'release artefakty ověřené z RC commitu', 'čisté G8 okno', 'externí audit v běhu']
-                  : ['feature freeze (DEFERRED_3.2)', 'release artifacts verified from the RC commit', 'clean G8 window', 'external audit in progress']
+                  ? ['feature freeze se zaznamenaným odloženým rozsahem', 'release artefakty ověřené z RC commitu', 'čisté G8 okno', 'externí audit v běhu']
+                  : ['feature freeze with deferred scope recorded', 'release artifacts verified from the RC commit', 'clean G8 window', 'external audit in progress']
                 ).map((item) => <li key={item}>{item}</li>)}
               </ul>
             </div>

@@ -6,6 +6,7 @@
 **Network status: Mainnet Alpha 3.1 → Mainnet Stable 3.2 "One Love" · Public launch: postponed (TBD)**
 **License: MIT for core and pool · This text is manifesto, chronicle, and guide**
 
+> **Note (2026-10-26):** current network stage = **v3.2.0 Mainnet Beta**. Below is a historical document retaining original roadmaps and snapshots; Mainnet Stable is not yet achieved and requires G8 + G9 + DR.
 ---
 
 > *"One good thing about music — when it hits you, you feel no pain.*

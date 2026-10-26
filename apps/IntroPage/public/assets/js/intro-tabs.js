@@ -1,4 +1,3 @@
-// release stage: mainnet beta
 /* ZION Intro floating menu, i18n, and background mode.
    Bottom-right hamburger that expands into a glass panel with
    section links, CZ/EN language toggle, and background switcher. */

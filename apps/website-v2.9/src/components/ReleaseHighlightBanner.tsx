@@ -96,11 +96,11 @@ export default function ReleaseHighlightBanner() {
           <p className="text-base text-zion-gold/80 leading-relaxed mb-5 max-w-3xl">
             {cs ? (
               <>
-                ZION v3.2.0 &quot;One Love&quot; přináší Mainnet Beta: <strong className="text-zion-cyan font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) na <strong className="text-zion-cyan font-semibold">5 platformách</strong> (Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows) — a <strong className="text-zion-cyan font-semibold">Desktop App</strong> — GUI aplikaci s vestavěným minerem, peněženkou a dashboardem v reálném čase. Desktop App dostupná pro <strong className="text-zion-cyan font-semibold">Linux, macOS a Windows</strong>.
+                ZION v3.2.0 &quot;One Love&quot; — síť je v Mainnet Beta; stávající v3.2.0 klienti: <strong className="text-zion-cyan font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) na <strong className="text-zion-cyan font-semibold">5 platformách</strong> (Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows) — a <strong className="text-zion-cyan font-semibold">Desktop App</strong> — GUI aplikaci s vestavěným minerem, peněženkou a dashboardem v reálném čase. Desktop App dostupná pro <strong className="text-zion-cyan font-semibold">Linux, macOS a Windows</strong>.
               </>
             ) : (
               <>
-                ZION v3.2.0 &quot;One Love&quot; brings Mainnet Beta: <strong className="text-zion-cyan font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) on <strong className="text-zion-cyan font-semibold">5 platforms</strong> (Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows) — and <strong className="text-zion-cyan font-semibold">Desktop App</strong> — a GUI app with built-in miner, wallet, and real-time dashboard. Desktop App available for <strong className="text-zion-cyan font-semibold">Linux, macOS and Windows</strong>.
+                ZION v3.2.0 &quot;One Love&quot; — the network is in Mainnet Beta; existing v3.2.0 clients: <strong className="text-zion-cyan font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) on <strong className="text-zion-cyan font-semibold">5 platforms</strong> (Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows) — and <strong className="text-zion-cyan font-semibold">Desktop App</strong> — a GUI app with built-in miner, wallet, and real-time dashboard. Desktop App available for <strong className="text-zion-cyan font-semibold">Linux, macOS and Windows</strong>.
               </>
             )}
           </p>

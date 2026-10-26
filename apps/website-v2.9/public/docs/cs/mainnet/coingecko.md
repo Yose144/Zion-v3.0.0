@@ -1,7 +1,7 @@
 # CoinGecko listing — submission checklist
 
 **Cíl:** Úspěšná registrace ZION na CoinGecko (+ CoinMarketCap)  
-**Stav:** Mainnet Alpha běží od 2026-08-06 (protokol `3.1.0-alpha`) — příprava listing probíhá  
+**Stav:** Mainnet Beta běží — v3.2 (protokol `3.1.0-alpha`) — příprava listing probíhá  
 **Kompletní submission packet:** [`docs/listings/COINGECKO.md`](https://github.com/Zion-TerraNova/v3-Mainnet) (v repozitáři, ověřeno proti zdrojovému kódu)
 
 ---

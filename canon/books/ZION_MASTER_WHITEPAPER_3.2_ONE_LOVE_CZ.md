@@ -7,6 +7,7 @@
 **Licence: MIT pro core a pool · Tento text je manifest, kronika a průvodce**
 **Kanonický zdroj: 2026-08-09**
 
+> **Poznámka (2026-10-26):** aktuální stupeň sítě = **v3.2.0 Mainnet Beta**. Níže je historický dokument s původními roadmapami a snapshoty; Mainnet Stable dosud není dosažen a vyžaduje G8 + G9 + DR.
 > **KANONICKÝ WHITEPAPER (zkanonizováno 2026-08-09):** Tento dokument je hlavní veřejný whitepaper ZION.
 > Nahrazuje [`ZION_MASTER_WHITEPAPER_3.1_CZ.md`](./ZION_MASTER_WHITEPAPER_3.1_CZ.md) a všechny starší master whitepapery.
 > Technický doplněk: [`ZION_Technical_Whitepaper_v3.1_CZ.md`](./ZION_Technical_Whitepaper_v3.1_CZ.md).

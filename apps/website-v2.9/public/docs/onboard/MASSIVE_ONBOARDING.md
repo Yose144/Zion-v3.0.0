@@ -2,7 +2,7 @@
 ## Jedna kniha, jedna síť, jeden riddim — „One Love" 3.2
 
 **Kompletní pozvánka do ZION TerraNova: příběh + whitepaper + mining v jednom dokumentu.**
-**Síť:** Mainnet Alpha `3.1.0-beta` / protokol `zion-v3-node/3.1.0-alpha` → **3.2.0 „One Love" (Mainnet Stable)**
+**Síť:** 3.2.0 „One Love" **Mainnet Beta** / protokol `zion-v3-node/3.1.0-alpha` — Mainnet Stable je budoucí gated cíl
 **Poslední genesis:** 8. 8. 2026 (po dvou hard resetech) — tento chain je **Mainnet Launch — odložený veřejný start (TBD)** · **Licence:** MIT pro kód
 **Jazyk:** čeština — English version
 

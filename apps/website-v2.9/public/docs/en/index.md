@@ -1,7 +1,7 @@
 # ZION TerraNova — Public Docs Hub
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Current public line: v3.2.0 One Love / Mainnet Stable candidate.**
+> **Current public line: v3.2.0 One Love / Mainnet Beta.**
 > Genesis #0: 1 January 2026 (block timestamp); One Love hard reset 6 August 2026.
 > Official public launch: postponed (TBD).
 
@@ -9,7 +9,7 @@
 
 ## Live status — v3.2.0 One Love
 
-ZION Mainnet is live as **Mainnet Stable candidate**. The current runtime is **v3.2.0 Ekam Deeksha v3.2** with 6-decimal flowers and a new genesis hash after the August 2026 hard reset.
+ZION Mainnet is live as **Mainnet Beta**. The current runtime is **v3.2.0 Ekam Deeksha v3.2** with 6-decimal flowers and a new genesis hash after the August 2026 hard reset.
 
 - ✅ Mainnet Core node — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
 - ✅ Pool server active — `stratum+tcp://pool.zionterranova.com:8444`
@@ -72,7 +72,7 @@ ZION Mainnet is live as **Mainnet Stable candidate**. The current runtime is **v
 
 | Version | Role | What changed |
 |---------|------|--------------|
-| **v3.2.0** | **One Love / Mainnet Stable (candidate)** | August 2026 hard reset — complete key rotation, canonical Ekam Deeksha v3.2, V31 native genesis, 5/5 core services active |
+| **v3.2.0** | **One Love / Mainnet Beta** | August 2026 hard reset — complete key rotation, canonical Ekam Deeksha v3.2, V31 native genesis, 5/5 core services active |
 | **v3.1.0** | Mainnet Alpha | V31 cut-over, public RPC/pool/DAO/OASIS/web/marketplace live |
 | **v3.0.5** | **All Green / Mainnet Beta** | New genesis hash after hard reset, 3-node mesh, 11/11 services active, E2E memo tests, F1/F5/F4.7 security fixes deployed |
 | **v3.0.4** | Hard Genesis Reset | New server provisioned, key regeneration, full stack rebuild |
@@ -100,4 +100,4 @@ ZION Mainnet is live as **Mainnet Stable candidate**. The current runtime is **v
 
 ---
 
-*ZION TerraNova public docs hub • v3.2.0 One Love / Mainnet Stable (candidate) • updated 2026-09-30*
+*ZION TerraNova public docs hub • v3.2.0 One Love / Mainnet Beta • updated 2026-10-26*

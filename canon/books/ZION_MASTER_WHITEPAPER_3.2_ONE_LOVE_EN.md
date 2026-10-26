@@ -7,6 +7,7 @@
 **License: MIT for core and pool · This text is manifesto, chronicle, and guide**
 **Canonical source date: 2026-08-09**
 
+> **Note (2026-10-26):** current network stage = **v3.2.0 Mainnet Beta**. Below is a historical document retaining original roadmaps and snapshots; Mainnet Stable is not yet achieved and requires G8 + G9 + DR.
 > **CANONICAL WHITEPAPER (canonized 2026-08-09):** This document is the main public whitepaper of ZION.
 > It supersedes [`ZION_MASTER_WHITEPAPER_3.1_EN.md`](./ZION_MASTER_WHITEPAPER_3.1_EN.md) and all earlier master whitepapers.
 > Technical companion: [`ZION_Technical_Whitepaper_v3.1_EN.md`](./ZION_Technical_Whitepaper_v3.1_EN.md).

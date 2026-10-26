@@ -6,6 +6,7 @@
 **Status sítě: Mainnet Alpha 3.1 → Mainnet Stable 3.2 "One Love" · Veřejný launch: odložen (TBD)**
 **Licence: MIT pro core a pool · Tento text je manifest, kronika a průvodce**
 
+> **Poznámka (2026-10-26):** aktuální stupeň sítě = **v3.2.0 Mainnet Beta**. Níže je historický dokument s původními roadmapami a snapshoty; Mainnet Stable dosud není dosažen a vyžaduje G8 + G9 + DR.
 ---
 
 > *"Jedna dobrá věc na hudbě — když tě zasáhne, necítíš bolest.*

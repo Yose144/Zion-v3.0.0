@@ -12,7 +12,10 @@ pub fn print_banner(threads: usize) {
     #[cfg(not(feature = "public_build"))]
     rows.push(("version".to_string(), "3.2.0 Mainnet Beta".to_string()));
     #[cfg(feature = "public_build")]
-    rows.push(("version".to_string(), "3.2.0 Boost · Mainnet Beta".to_string()));
+    rows.push((
+        "version".to_string(),
+        "3.2.0 Boost · Mainnet Beta".to_string(),
+    ));
     rows.push((
         "consensus".to_string(),
         zion_core::node_runtime::consensus_profile().to_string(),

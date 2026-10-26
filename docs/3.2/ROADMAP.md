@@ -15,7 +15,7 @@
 
 ## 1. Executive summary
 
-V31 Mainnet Beta is **live and producing blocks** — EDGE2 = primary node + web ingress + app stack, EDGE = pool + followers + ops. The workspace compiles, `cargo test --workspace` passes with 0 failures, and the production stack (`zion-node`, `zion-pool`, `zion-miner`, `zion-multichain`, `zion-dao`, `zion-oasis`, web, marketplace, dashboard) is active.
+V31 Mainnet Beta is **live and producing blocks** — EDGE2 = primary node + web ingress + app stack, EDGE = pool + followers + ops. The production stack (`zion-node`, `zion-pool`, `zion-miner`, `zion-multichain`, `zion-dao`, `zion-oasis`, web, marketplace, dashboard) is active. Current execution plan: [`3.2.1-3.2.9_PLAN.md`](3.2.1-3.2.9_PLAN.md); test claims in sections below are dated historical snapshots, not a statement about the current tree.
 
 3.2.0 "One Love" is the track from *production started* to *production exercised and stable*. It is gated by real-world E2E, a 30-day continuous run, security audit, public-subtree sync, and release readiness.
 

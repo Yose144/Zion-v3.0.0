@@ -1,15 +1,15 @@
 # ZION Roadmap — z 3.2 „One Love" k 3.3 „Nirvana"
 
-> **Aktuální stabilní baseline:** 3.2.0 „One Love"  
+> **Aktuální vývojová baseline:** 3.2.0 „One Love" Mainnet Beta  
 > **Aspirativní veřejný launch:** odložen (TBD)  
 > **Vývojový horizont:** 3.3.0 „Nirvana"  
-> **Naposledy upraveno:** 30. září 2026
+> **Naposledy upraveno:** 26. října 2026
 
 ---
 
 ## Kde jsme teď
 
-3.1 Mainnet Alpha / 3.2 „One Love" je **live na mainnetu** a produkuje bloky. Workspace se buildí, všechny testy procházejí a hlavní produkční služby běží:
+3.2 „One Love" **Mainnet Beta** je **live na mainnetu** a produkuje bloky. Hlavní produkční služby běží:
 
 - Výška chainu 63 600+ (září 2026)
 - Všechny mainnet služby aktivní: node, pool, multichain, DAO, OASIS, web, marketplace, dashboard, ZIS

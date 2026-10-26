@@ -36,7 +36,7 @@ class BetaReleaseTest(unittest.TestCase):
                 re.search(r"3\.2\.0[^\n]{0,40}mainnet stable|mainnet stable[^\n]{0,40}3\.2\.0", text, re.I),
                 rel,
             )
-            self.assertRegex(text, r"mainnet beta", rel)
+            self.assertRegex(text, re.compile(r"mainnet beta", re.I), rel)
 
     def test_portal_badges(self):
         for rel in (
@@ -57,6 +57,30 @@ class BetaReleaseTest(unittest.TestCase):
         settings = read("apps/mobile-app/src/screens/SettingsScreen.js")
         self.assertIn("NETWORK_RELEASE_LABEL", settings)
         self.assertIn("CLIENT_STAGE", settings)
+
+    def test_public_docs_current_stage(self):
+        D = "apps/website-v2.9/public/docs/"
+        beta = re.compile(r"mainnet beta", re.I)
+        stable_cur = re.compile(r"current[^\n]{0,80}mainnet stable|aktu[čc]n[^\n]{0,80}mainnet stable|3\.2\.0[^\n]{0,40}mainnet stable|mainnet stable[^\n]{0,40}3\.2\.0", re.I)
+        for rel in (D+"index.md", D+"cs/index.md", D+"en/index.md",
+                    D+"v3.2.0/README.md", D+"cs/v3.2.0/README.md",
+                    D+"v3.2.0/roadmap.md", D+"cs/v3.2.0/roadmap.md",
+                    D+"mainnet/coingecko.md", D+"cs/mainnet/coingecko.md", D+"en/mainnet/coingecko.md",
+                    D+"onboard/LITE.md", D+"onboard/MASSIVE_ONBOARDING.md",
+                    D+"onboard/en/LITE.md", D+"onboard/en/MASSIVE_ONBOARDING.md"):
+            text = read(rel)
+            self.assertRegex(text, beta, rel)
+            self.assertIsNone(re.search(r"is \*\*a Mainnet Stable candidate\*\*|is the \*\*Mainnet Stable candidate\*\*|kandidující na Mainnet Stable|kandidátem na Mainnet Stable", text), rel)
+            head = "\n".join(text.split("\n")[:15])
+            self.assertIsNone(stable_cur.search(head), rel)
+        cg = read(D+"mainnet/coingecko.md")
+        self.assertIn("3.1.0-alpha", cg)
+        self.assertRegex(cg, re.compile(r"alpha[^\n]{0,40}2026-08-06|2026-08-06[^\n]{0,40}alpha", re.I))
+        for base in ("canon/books", "docs/WP", "apps/website-v2.9/public/docs/WP"):
+            for lang in ("CZ", "EN"):
+                text = read(f"{base}/ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_{lang}.md")
+                self.assertRegex(text[:3000], beta, f"{base}/{lang}")
+                self.assertIn("2026-10-26", text[:3000])
 
     def test_news_history_and_beta_announcement(self):
         feed = read("apps/website-v2.9/src/components/NewsFeed.tsx")

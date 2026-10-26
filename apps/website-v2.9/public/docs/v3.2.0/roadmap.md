@@ -1,15 +1,15 @@
 # ZION Roadmap — from 3.2 "One Love" toward 3.3 "Nirvana"
 
-> **Current stable baseline:** 3.2.0 "One Love"  
+> **Current development baseline:** 3.2.0 "One Love" Mainnet Beta  
 > **Public launch target:** postponed (TBD)  
 > **Development horizon:** 3.3.0 "Nirvana"  
-> **Last updated:** 30 September 2026
+> **Last updated:** 26 October 2026
 
 ---
 
 ## Where we are now
 
-3.1 Mainnet Alpha / 3.2 "One Love" is **live on mainnet** and producing blocks. The workspace builds, all workspace tests pass, and the core production services are active:
+3.2 "One Love" **Mainnet Beta** is **live on mainnet** and producing blocks. The core production services are active:
 
 - Chain height 63,600+ (September 2026)
 - All mainnet services active: node, pool, multichain, DAO, OASIS, web, marketplace, dashboard, ZIS

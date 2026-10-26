@@ -1,8 +1,8 @@
-# ZION v3.2.0 "One Love" — Mainnet Stable (kandidát)
+# ZION v3.2.0 "One Love" — Mainnet Beta
 
 > **Vydáno:** 6. srpna 2026  
 > **Aktuální veřejná linka:** v3.2.0 "One Love"  
-> **Stav:** Mainnet Stable (kandidát) — live, pool aktivní, těžba běží, bridge a DEX nasazeny  
+> **Stav:** Mainnet Beta — live, pool aktivní, těžba běží, bridge a DEX nasazeny · Mainnet Stable zůstává budoucí gated cíl (G8/G9/DR) · těžba a transakce na vlastní riziko  
 > **Oficiální veřejný launch:** odložen (TBD)  
 > **Genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 
@@ -18,7 +18,7 @@
 
 ## Co je v3.2.0 "One Love"
 
-v3.2.0 „One Love" je vydání **kandidující na Mainnet Stable** v rámci ZION TerraNova — probíhá 30denní veřejný stability run, sledovaný live na [/g8](/g8). Spojuje Ekam Deeksha proof-of-work konsenzus, jednotnou multichain peněženku, decentralizovanou burzu ZionDex a kompletní protokolové bezpečnostní zpřísnění.
+v3.2.0 „One Love" je vydání **Mainnet Beta** v rámci ZION TerraNova — probíhá 30denní veřejný stability run, sledovaný live na [/g8](/g8). Spojuje Ekam Deeksha proof-of-work konsenzus, jednotnou multichain peněženku, decentralizovanou burzu ZionDex a kompletní protokolové bezpečnostní zpřísnění.
 
 Název „One Love" znamená sjednocení sítě, peněženky a komunitní vrstvy pod jednu runtime linii. Všechny služby jsou aktivní a chain běží nepřetržitě od srpnového hard resetu v roce 2026.
 
@@ -141,7 +141,7 @@ Přímé odkazy najdeš na stránce [Stáhnout](/download).
 
 ## Důležitá upozornění
 
-- Síť je **kandidátem na Mainnet Stable**, ale veřejný launch je odložen (TBD). Projekt potřebuje projít Maturity Gate (Maturitou), zajistit základní likviditu a sestavit tým dobrovolných vývojářů, než oznámíme nové datum.
+- Síť je **Mainnet Beta**, ale veřejný launch je odložen (TBD). Projekt potřebuje projít Maturity Gate (Maturitou), zajistit základní likviditu a sestavit tým dobrovolných vývojářů, než oznámíme nové datum.
 - OASIS je **živý preview ve výstavbě** — obsah, questy i progrese se mohou během vývoje měnit nebo resetovat.
 - Těžba, bridge, swap a účast probíhají **na vlastní riziko**.
 - Jde o experimentální open-source protokol, nikoliv investiční produkt.

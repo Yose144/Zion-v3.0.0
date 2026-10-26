@@ -44,8 +44,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'ZION v3.2 "One Love" — Mainnet Beta',
     },
     summary: {
-      cs: 'Síť 3.2.0 „One Love" přechází z Mainnet Alpha do Mainnet Beta — jde o stupeň vývoje a testování, nikoli Mainnet Stable. Nevydáváme žádné nové binárky ani release; stávající klienti zůstávají. Mainnet Stable vyžaduje čistý 30denní stabilitní run (aktuálně probíhá — monitoring na /g8), nezávislý externí audit a plný test obnovy ze záloh. Těžba a transakce probíhají na vlastní riziko.',
-      en: 'The 3.2.0 "One Love" network moves from Mainnet Alpha to Mainnet Beta — a development and testing stage, not Mainnet Stable. No new binaries or release are published; existing clients remain. Mainnet Stable requires a clean 30-day stability run (currently in progress — monitoring on /g8), an independent external audit and a full backup-restore drill. Mining and transacting remain at your own risk.',
+      cs: 'Síť 3.2.0 „One Love" přechází z Mainnet Alpha do Mainnet Beta — jde o stupeň vývoje a testování, nikoli Mainnet Stable. Toto sjednocení stupně nevydává nové klientské instalátory; stávající veřejní klienti zůstávají dostupní. Mainnet Stable vyžaduje čistý 30denní stabilitní run (aktuálně probíhá — monitoring na /g8), nezávislý externí audit a plný test obnovy ze záloh. Těžba a transakce probíhají na vlastní riziko.',
+      en: 'The 3.2.0 "One Love" network moves from Mainnet Alpha to Mainnet Beta — a development and testing stage, not Mainnet Stable. This stage alignment does not publish new client installers; existing public clients remain available. Mainnet Stable requires a clean 30-day stability run (currently in progress — monitoring on /g8), an independent external audit and a full backup-restore drill. Mining and transacting remain at your own risk.',
     },
     href: '/roadmap',
   },

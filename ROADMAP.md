@@ -2,7 +2,7 @@
 
 > **Účel tohoto dokumentu:** Vysokoúrovňová časová osa a navigační rozcestník. Detailní pravomoci, důkazy a statusové štítky jsou v [`MiseAmenti/`](canon/books/MiseAmenti/README.md).
 >
-> **Aktuální stabilní baseline:** 3.2.0 "One Love" (pro ověření live statusu viz `StatusV3.md` / operace).
+> **Aktuální vývojová baseline:** 3.2.0 "One Love" Mainnet Beta (pro ověření live statusu viz `StatusV3.md` / operace).
 >
 > **Cílová vize:** 3.3.0 "Nirvana" je vývojový a architektonický horizont, nikoli dosažený release, pokud pro něj není evidence v `MiseAmenti/07-Registr-Dukazu.md`.
 
@@ -12,7 +12,7 @@
 >
 > **Aspirativní veřejný horizont:** odložen (TBD) — není závazný datum launchi.
 >
-> **Naposledy upraveno:** 2026-08-31
+> **Naposledy upraveno:** 2026-10-26
 >
 > **Kanonický integrační corpus:** [`MiseAmenti/`](canon/books/MiseAmenti/README.md)
 >
@@ -34,7 +34,7 @@
 
 ---
 
-## Where we are now
+## Where we are now — snapshot 2026-08-31
 
 V31 Mainnet Alpha / 3.2 One Love is **live on Edge** and producing blocks. The workspace builds, all workspace tests pass, and the core production services are active:
 

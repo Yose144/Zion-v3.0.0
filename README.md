@@ -7,7 +7,9 @@
 
 ## Status
 
-> **Last updated: 2026-10-21 (EDGE → EDGE2 split hotov — 2 boxy, EDGE2 = primary + celý app stack, EDGE = ingress + pool + followeři; chain ~90 400 bloků; G8 stall RCA + 3 fixy nasazeny; `zion-ncl` živý na :8098)**
+> **Last updated: 2026-10-26 (lifecycle = 3.2.0 Mainnet Beta — EDGE2 = primary + web ingress + app stack, EDGE = pool + followeři + ops)**
+>
+> **Topologie snapshot 2026-10-21 (EDGE → EDGE2 split hotov — 2 boxy, EDGE2 = primary + celý app stack, EDGE = ingress + pool + followeři; chain ~90 400 bloků; G8 stall RCA + 3 fixy nasazeny; `zion-ncl` živý na :8098)**
 
 - **Topologie (2026-10-21, split v3):**
   - **EDGE2** `207.180.217.100` (vmi3684458, 6c EPYC / 11 G / 193 G) — V31 **primary** node (RPC 9445, P2P 8335), bitcoind mainnet (8332, pruned), quantus (9944 + QUIC 9833), pearl stack (44207/8477), PostgreSQL 16 (5432), WARP (8453/8454), ZIS (8096), db-sync, DAO (8456), OASIS (8094), free-world (8095), issobella (8097), NCL (8098), website (3000), marketplace (3100), ai-native (8001), btcunlock (8779).
@@ -164,4 +166,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-10-21 · Version: 3.2.0 (V31 Mainnet Alpha, protocol 3.1.0-alpha) · Topologie: EDGE2 primary + EDGE ingress/pool (viz [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md)) · 3.3 NIRVANA: [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · 3.2 "One Love" docs: [`canon/books/README.md`](canon/books/README.md) · 3.1 archived reports: [`docs/3.1/README.md`](docs/3.1/README.md) · Live status: [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*
+*Last updated: 2026-10-26 · Version: 3.2.0 (V31 Mainnet Beta, protocol 3.1.0-alpha) · Topologie: EDGE2 primary + web ingress + app stack / EDGE pool + followeři + ops (viz [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md)) · 3.3 NIRVANA: [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · 3.2 "One Love" docs: [`canon/books/README.md`](canon/books/README.md) · 3.1 archived reports: [`docs/3.1/README.md`](docs/3.1/README.md) · Live status: [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*

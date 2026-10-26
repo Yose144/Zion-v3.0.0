@@ -2,7 +2,7 @@
 ## Quick Guide — One Love 3.2
 
 **The quick invitation to ZION TerraNova: story + whitepaper + mining in one document.**
-**Network:** Mainnet Alpha `3.1.0-beta` / protocol `zion-v3-node/3.1.0-alpha` → **3.2.0 "One Love" (Mainnet Stable)**
+**Network:** 3.2.0 "One Love" **Mainnet Beta** / protocol `zion-v3-node/3.1.0-alpha` — Mainnet Stable is a future gated target
 **Last genesis:** August 8, 2026 (after two hard resets) — this chain is the **Mainnet Launch — postponed (TBD)** · **License:** MIT for code
 **Language:** English — Česká verze v záložce *Lite* při přepnutí jazyka
 
