@@ -2192,7 +2192,7 @@ mod tests {
 
 #[cfg(test)]
 mod history_tests {
-    use super::{BlockRecord, ShareRecord, ShareStore};
+    use super::{BlockRecord, ShareStore};
     use rusqlite::Connection;
 
     #[test]
@@ -2395,10 +2395,7 @@ mod history_tests {
             Some(55)
         );
         store.set_state("shares_since_last_block", 0).unwrap();
-        assert_eq!(
-            store.get_state("shares_since_last_block").unwrap(),
-            Some(0)
-        );
+        assert_eq!(store.get_state("shares_since_last_block").unwrap(), Some(0));
         assert_eq!(store.get_state("other_key").unwrap(), None);
     }
 }

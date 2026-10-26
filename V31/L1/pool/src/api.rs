@@ -2201,6 +2201,53 @@ impl PoolApi {
             body.push_str("zion_auxpow_enabled_coins 0\n");
         }
 
+        // Payout backlog (2.B5 residual / 2.B7 visibility): unconfirmed
+        // payout rows in the store — the deferred-queue depth an operator
+        // watches when the treasury runs dry. One indexed scan per scrape.
+        if let Some(ref store) = self.share_store {
+            match store.query_unconfirmed_payouts() {
+                Ok(rows) => {
+                    let total: u64 = rows
+                        .iter()
+                        .map(|r| r.amount_flowers)
+                        .fold(0u64, |a, v| a.saturating_add(v));
+                    let mut by_coin: std::collections::HashMap<String, (u64, u64)> =
+                        std::collections::HashMap::new();
+                    for r in &rows {
+                        let e = by_coin.entry(r.coin.clone()).or_default();
+                        e.0 += 1;
+                        e.1 = e.1.saturating_add(r.amount_flowers);
+                    }
+                    body.push_str(&format!(
+                        "zion_pool_payouts_unconfirmed {}\n",
+                        rows.len()
+                    ));
+                    body.push_str(&format!(
+                        "zion_pool_payouts_unconfirmed_flowers {}\n",
+                        total
+                    ));
+                    for (coin, (n, amt)) in &by_coin {
+                        body.push_str(&format!(
+                            "zion_pool_payouts_unconfirmed_coin{{coin=\"{}\"}} {}\n",
+                            sanitize_prometheus_label(coin),
+                            n
+                        ));
+                        body.push_str(&format!(
+                            "zion_pool_payouts_unconfirmed_coin_flowers{{coin=\"{}\"}} {}\n",
+                            sanitize_prometheus_label(coin),
+                            amt
+                        ));
+                    }
+                }
+                Err(e) => {
+                    body.push_str(&format!(
+                        "# payout backlog query failed: {}\n",
+                        e
+                    ));
+                }
+            }
+        }
+
         // TLS status
         let tls_enabled = std::env::var("ZION_POOL_TLS_BIND").is_ok();
         body.push_str(&format!(
