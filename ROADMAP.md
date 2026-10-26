@@ -6,7 +6,7 @@
 >
 > **Cílová vize:** 3.3.0 "Nirvana" je vývojový a architektonický horizont, nikoli dosažený release, pokud pro něj není evidence v `MiseAmenti/07-Registr-Dukazu.md`.
 
-> **Aktuální live baseline:** 3.2.0 "One Love" (V31 Mainnet Alpha, protokol `zion-v3-node/3.1.0-alpha`) — ověřitelné na Edge a v `StatusV3.md`.
+> **Aktuální live baseline:** 3.2.0 "One Love" (V31 Mainnet Beta, protokol `zion-v3-node/3.1.0-alpha`) — ověřitelné na EDGE2/Edge a v `StatusV3.md`.
 >
 > **Vývojový horizont:** 3.3.0 "Nirvana" (Global Assimilation / Attention) — cíl, nikoli dosažený release; status a evidence v [`MiseAmenti/07-Registr-Dukazu.md`](canon/books/MiseAmenti/07-Registr-Dukazu.md).
 >

@@ -272,7 +272,7 @@ jobs:
           RELEASE_NOTES: |
             ## ZION v3.2.0 — Public CLI
 
-            The unified ZION command-line interface for the V31 Mainnet Alpha network. Use it to create and manage wallets, check balances, send transactions, query node/pool status and bootstrap a local node.
+            The unified ZION command-line interface for the V31 Mainnet Beta network. Use it to create and manage wallets, check balances, send transactions, query node/pool status and bootstrap a local node.
 
             ### Highlights
             - Wallet uses the public HTTPS API by default (falling back to TCP RPC where needed)

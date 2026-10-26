@@ -38,6 +38,8 @@ alwaysApply: false
 > **Operativní příručka pro agenty a operátory ZION TerraNova.**
 > **Aktualizováno: 2026-10-21** — po dokončení splitu EDGE → EDGE2 (viz níže).
 >
+> **Lifecycle (2026-10-26):** aktuální stupeň = **3.2.0 Mainnet Beta** (≠ Stable, žádný nový chain/fork). Handshake `zion-v3-node/3.1.0-alpha` zůstává záměrně — wire ID, ne stupeň zralosti. Konsensus/genesis/emise/ekonomika/síť bez změny.
+>
 > **Jak číst:** sekce níže jsou *pravidla a runbooky* (načíst celé, ~130 KB).
 > Historický provozní log byl odsunut do [`docs/3.2/ops/AGENTS-CHRONOLOGY.md`](docs/3.2/ops/AGENTS-CHRONOLOGY.md) — odkazy ve tvaru „AGENTS.md 2026-09-14“ v korpusu dokumentů vedou tam. Superseded reference (V3-era topologie, v3.0.4 porty) je v [`docs/3.2/ops/AGENTS-LEGACY-SERVER.md`](docs/3.2/ops/AGENTS-LEGACY-SERVER.md).
 

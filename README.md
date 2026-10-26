@@ -1,4 +1,4 @@
-# ZION TerraNova — Mainnet Alpha (V31)
+# ZION TerraNova — Mainnet Beta (V31)
 
 > **Proof of Work Layer 1 for the next 100 years.**
 > From blockchain to the stars.
@@ -15,6 +15,7 @@
   - **Tunely:** `zion-chain-tunnel` (edge→EDGE2) a `zion-edge-tunnel` (EDGE2→edge), oba s `permitopen` whitelist. Latence edge↔EDGE2 ≈ 1 ms.
   - **Pool zůstává na EDGI záměrně** — stratum musí vidět reálné IP minerů (`ZION_POOL_MAX_SESSIONS_PER_IP=10` + IP ban); stream proxy by je sjednotil pod jednu IP a rozbil per-IP limity.
   - Plán + execution log + rollback skripty: [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md).
+- **Lifecycle (2026-10-26):** **3.2.0 Mainnet Beta** — stupeň zralosti, NE Mainnet Stable ani nový chain/fork. Runtime verze zůstává `3.2.0`; handshake ID `zion-v3-node/3.1.0-alpha` je záměrně zachováno (verze protokolu ≠ stupeň). Topologie: **EDGE2** = primary node + web ingress + app stack, **EDGE** = pool + followeři + ops. Detailní plán: [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md).
 - **Active mainnet track:** `V31/` workspace — verze `3.2.0`, protokol `zion-v3-node/3.1.0-alpha`. V31 cutover (2026-08-04) dokončen, V3 archivován v `archive/V3/`.
 - **Chain:** ~90 400+ bloků, difficulty ~16k (LWMA-60, `MIN_SOLVE_TIME=6`, `MAX_SOLVE_TIME=360`, ±50 % clamp na blok). Genesis hash (V31 native): `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` · (V3 compat): `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`.
 - **Public RPC:** `rpc.zionterranova.com:8443` → V31 (přes edge nginx). **Pool stratum:** `pool.zionterranova.com:8444` (+ TLS 8445), `https://pool.zionterranova.com/public/v1` public API tier.

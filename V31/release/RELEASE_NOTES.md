@@ -2,8 +2,10 @@
 
 **Mine ZION. Earn ZION. Grow ZION.**
 
-> **⚠️ Mainnet Alpha — mine and transact at your own risk**
+> **⚠️ Mainnet Beta — mine and transact at your own risk**
 > The V31 network is live and producing blocks. Genesis chain is permanent.
+>
+> **Scope note (2026-10-26):** this document was aligned to the Mainnet Beta stage — label/copy alignment only. G8/G9/DR gates and all safety holds remain open; no new artifacts are published by this change.
 
 ---
 

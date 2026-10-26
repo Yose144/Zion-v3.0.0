@@ -1,8 +1,8 @@
 # ZION 3.2 "One Love" — Mainnet Stable Roadmap
 
 > **Version target:** 3.2.0 "One Love" (Mainnet Stable)  
-> **Current version:** 3.2.0-beta (V31 Mainnet Alpha pre-release), protocol `zion-v3-node/3.1.0-alpha`  
-> **Last updated:** 2026-09-28  
+> **Current version:** 3.2.0-beta (V31 Mainnet Beta pre-release), protocol `zion-v3-node/3.1.0-alpha`  
+> **Last updated:** 2026-10-26  
 > **Public launch target:** postponed (TBD)  
 > **Daily summary:** [`REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md`](./REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md)
 >
@@ -15,7 +15,7 @@
 
 ## 1. Executive summary
 
-V31 Mainnet Alpha is **live and producing blocks on Edge**. The workspace compiles, `cargo test --workspace` passes with 0 failures, and the production stack (`zion-node`, `zion-pool`, `zion-miner`, `zion-multichain`, `zion-dao`, `zion-oasis`, web, marketplace, dashboard) is active.
+V31 Mainnet Beta is **live and producing blocks** — EDGE2 = primary node + web ingress + app stack, EDGE = pool + followers + ops. The workspace compiles, `cargo test --workspace` passes with 0 failures, and the production stack (`zion-node`, `zion-pool`, `zion-miner`, `zion-multichain`, `zion-dao`, `zion-oasis`, web, marketplace, dashboard) is active.
 
 3.2.0 "One Love" is the track from *production started* to *production exercised and stable*. It is gated by real-world E2E, a 30-day continuous run, security audit, public-subtree sync, and release readiness.
 

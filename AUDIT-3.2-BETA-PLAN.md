@@ -46,7 +46,7 @@
 - Dead links 383->370: ~200 interních refs (muted = správně) + ~170 content gaps → editorial pass (vynecháno záměrně)
 - `L4data/img/OasisMaitreya.png` untracked — čeká umístění
 - i18n ×3 impl + Footer unifikace = nice-to-have
-- Root `Cargo.toml` = `3.1.0-alpha.2` = **jediný alpha marker v repu** (meta-package stub)
+- Root `Cargo.toml` = `3.2.0-beta.1` (meta-package stub) — alpha marker již odstraněn; 2026-10-26 doplněno: lifecycle labely napříč weby/portály/klientskými povrchy sjednoceny na **Mainnet Beta** (lokálně, nasazení zvlášť)
 
 ## 2. Beta gate — checklist
 
@@ -63,6 +63,8 @@
 ## 3. Alpha → Beta změna
 
 **Scope:** root `Cargo.toml` `version = "3.1.0-alpha.2"` → `version = "3.2.0-beta.1"` (zarovnání na v3.2 ekosystém; `zion-root` = meta-package stub, žádné runtime závislosti na verzi).
+
+**Scope note (2026-10-26):** následné sjednocení lifecycle labelů (Mainnet Alpha → Mainnet Beta) je čistě stage/copy alignment — žádná změna konsenzu, genesis, emise, ekonomiky, sítě, bezpečnosti ani auth; protokol handshake `zion-v3-node/3.1.0-alpha` zůstává; otevřené položky (P0-3 rotace credentials, PRL dry-run, QTC deficit, G8/G9/DR) beze změny.
 
 **Ověřit po změně:** `cargo metadata` root projde (meta-package, žádné membry na verzi nezávislé), `git grep alpha` = 0 výskytů v manifests.
 

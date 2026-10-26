@@ -5,6 +5,7 @@
 > **Značky vlastníka:** 🤖 = autonomní (kód/testy/dokumenty end-to-end) · 🔀 = autonomní příprava + operátorské schválení/flip · 👤 = operátor (rozhodnutí, peníze, klíče, fyzický svět)
 > **Pravidlo:** Devin nikdy neflipuje produkční money-paths, nevydává verze, nevybírá dodavatele — vždy připraví PR/artefakt/důkaz a počká na 👤 sign-off.
 > **Topologie:** EDGE2 = primary node + web ingress + app stack · EDGE = pool (reálné IP minerů) + followeři + ops. Detail v `AGENTS.md`.
+> **Lifecycle sync (2026-10-26):** public Mainnet Beta labely napříč weby/portály/klientskými povrchy připraveny **lokálně — zatím NENASAZENO**.
 
 ---
 

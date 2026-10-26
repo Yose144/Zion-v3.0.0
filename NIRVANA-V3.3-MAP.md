@@ -1,5 +1,7 @@
 # ZION V3.3 „NIRVANA" — Mapa
 
+> **2026-10-26:** public lifecycle sync (Mainnet Beta labely) připraven lokálně — NENASAZENO; otevřené položky beze změny.
+
 > **Datum:** 2026-10-26 · **Autor:** Devin (scan repa + post-audit verifikace EDGE/EDGE2)
 > **K čemu:** jedna navigační mapa nad všemi plány v3.3 — co existuje, co platí, jak do sebe zapadají číslování (N / M / R / V33 / W / 3.2.x), na čem co závisí a kde je dnes každá komponenta ekosystému.
 > **Sesterské dokumenty:** checklist [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · execution plán [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md) · cesta k 3.2 Stable [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md)
