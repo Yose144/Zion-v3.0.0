@@ -1362,6 +1362,11 @@ impl ShareStore {
     /// Persist one dedup mark `(bucket, tag)` and prune marks older than
     /// `retain_secs` in the same call. `INSERT OR IGNORE` — a mark that is
     /// already persisted is a no-op.
+    ///
+    /// Note: hot-path callers should use the [`DedupOp`] queue instead —
+    /// two fsync-bound commits per share under `pool.lock()` is what
+    /// wedged the API on 2026-10-26. This stays for tests and low-rate
+    /// callers.
     pub fn record_dedup_mark(
         &self,
         bucket: &str,
@@ -1387,6 +1392,44 @@ impl ShareStore {
         let conn = self.conn.lock().expect("share store lock poisoned");
         conn.execute("DELETE FROM share_dedup WHERE bucket = ?1", params![bucket])?;
         Ok(())
+    }
+
+    /// Apply a batch of dedup ops in ONE transaction: insert marks +
+    /// delete evicted buckets. One commit per batch — called by the
+    /// dedup writer thread, never from the share hot path.
+    pub fn apply_dedup_ops(
+        &self,
+        marks: &[(String, u64, u64)],
+        delete_buckets: &[String],
+    ) -> Result<()> {
+        let mut conn = self.conn.lock().expect("share store lock poisoned");
+        let tx = conn.transaction()?;
+        {
+            let mut ins = tx.prepare(
+                "INSERT OR IGNORE INTO share_dedup (bucket, tag, ts) VALUES (?1, ?2, ?3)",
+            )?;
+            for (bucket, tag, ts) in marks {
+                ins.execute(params![bucket, *tag as i64, *ts as i64])?;
+            }
+            let mut del = tx.prepare("DELETE FROM share_dedup WHERE bucket = ?1")?;
+            for bucket in delete_buckets {
+                del.execute(params![bucket])?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Prune marks older than `retain_secs`. The writer thread runs this
+    /// on an interval — per-mark pruning inside every insert was wasted
+    /// work on the hot path.
+    pub fn prune_dedup_marks(&self, retain_secs: u64) -> Result<usize> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let cutoff = crate::telemetry::now_unix_seconds().saturating_sub(retain_secs);
+        Ok(conn.execute(
+            "DELETE FROM share_dedup WHERE ts < ?1",
+            params![cutoff as i64],
+        )?)
     }
 
     /// Load persisted marks for the newest `bucket_limit` buckets (by
@@ -1416,6 +1459,73 @@ impl ShareStore {
             out.push(r?);
         }
         Ok(out)
+    }
+}
+
+// ── Async dedup writer ────────────────────────────────────────────────
+// 2026-10-26 incident: `record_dedup_mark` ran 2 synchronous commits per
+// share INSIDE `pool.lock()` — under disk contention the lock was held
+// nearly continuously, /stats starved for ~1h and the wedged process
+// needed SIGKILL on shutdown. The queue below moves every dedup write
+// off the lock: the share path does a non-blocking try_send; this writer
+// batches ops into one transaction and prunes on an interval.
+
+/// One dedup persistence operation queued from the share hot path.
+#[derive(Debug)]
+pub enum DedupOp {
+    /// Fresh `(bucket, tag, ts)` mark accepted by the in-memory set.
+    Mark { bucket: String, tag: u64, ts: u64 },
+    /// In-memory bucket evicted — drop its persisted marks.
+    DeleteBucket { bucket: String },
+}
+
+/// Drain `rx` and persist dedup ops in batches. Runs on its own thread;
+/// owns an `Arc<ShareStore>` clone so the store outlives the pool.
+/// Exits when every sender is dropped (i.e., pool teardown).
+pub fn dedup_writer_loop(store: std::sync::Arc<ShareStore>, rx: std::sync::mpsc::Receiver<DedupOp>, retain_secs: u64) {
+    use std::sync::mpsc::RecvTimeoutError;
+    use std::time::{Duration, Instant};
+
+    const FLUSH_MS: u64 = 250;
+    const BATCH_CAP: usize = 4096;
+    const PRUNE_EVERY: Duration = Duration::from_secs(60);
+
+    let mut last_prune = Instant::now();
+    loop {
+        // Wait for at least one op, then drain everything queued.
+        let first = match rx.recv_timeout(Duration::from_millis(FLUSH_MS)) {
+            Ok(op) => Some(op),
+            Err(RecvTimeoutError::Timeout) => None,
+            Err(RecvTimeoutError::Disconnected) => return,
+        };
+        let mut marks: Vec<(String, u64, u64)> = Vec::new();
+        let mut deletes: Vec<String> = Vec::new();
+        if let Some(op) = first {
+            match op {
+                DedupOp::Mark { bucket, tag, ts } => marks.push((bucket, tag, ts)),
+                DedupOp::DeleteBucket { bucket } => deletes.push(bucket),
+            }
+        }
+        while marks.len() + deletes.len() < BATCH_CAP {
+            match rx.try_recv() {
+                Ok(DedupOp::Mark { bucket, tag, ts }) => marks.push((bucket, tag, ts)),
+                Ok(DedupOp::DeleteBucket { bucket }) => deletes.push(bucket),
+                Err(_) => break,
+            }
+        }
+        if !marks.is_empty() || !deletes.is_empty() {
+            if let Err(e) = store.apply_dedup_ops(&marks, &deletes) {
+                tracing::warn!("dedup writer: batch persist failed: {e}");
+            }
+        }
+        if last_prune.elapsed() >= PRUNE_EVERY {
+            match store.prune_dedup_marks(retain_secs) {
+                Ok(n) if n > 0 => tracing::debug!("dedup writer: pruned {n} marks"),
+                Ok(_) => {}
+                Err(e) => tracing::warn!("dedup writer: prune failed: {e}"),
+            }
+            last_prune = Instant::now();
+        }
     }
 }
 

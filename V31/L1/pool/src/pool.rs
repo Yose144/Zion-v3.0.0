@@ -127,7 +127,11 @@ pub struct Pool {
     /// Optional persistence for the dedup set — every mark is mirrored to
     /// `share_dedup` in the share store so a restart cannot reopen the
     /// replay window (upstream-keyed `ext:` job ids outlive a bounce).
-    dedup_store: Option<Arc<crate::store::ShareStore>>,
+    /// Ops go through a bounded queue to the dedup writer thread —
+    /// synchronous SQLite under `pool.lock()` wedged the API on
+    /// 2026-10-26; a full queue drops marks (fail-open, in-memory set
+    /// stays authoritative) rather than stalling share processing.
+    dedup_tx: Option<std::sync::mpsc::SyncSender<crate::store::DedupOp>>,
     /// Shared per-worker telemetry registry (hashrate, shares, blocks).
     pub telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
     pub(crate) pearl: Option<Arc<crate::pearl_gateway::PearlRuntime>>,
@@ -195,7 +199,7 @@ impl Pool {
             paid_block_heights: ledger.paid_block_heights.into_iter().collect(),
             share_dedup: HashMap::new(),
             share_dedup_order: std::collections::VecDeque::new(),
-            dedup_store: None,
+            dedup_tx: None,
             telemetry,
             pearl: crate::pearl_gateway::PearlRuntime::from_env(),
         })
@@ -282,11 +286,7 @@ impl Pool {
                 match self.share_dedup_order.pop_front() {
                     Some(old) => {
                         self.share_dedup.remove(&old);
-                        if let Some(store) = &self.dedup_store {
-                            if let Err(e) = store.delete_dedup_bucket(&old) {
-                                tracing::warn!("dedup persist: bucket evict failed: {e}");
-                            }
-                        }
+                        self.queue_dedup_op(crate::store::DedupOp::DeleteBucket { bucket: old });
                     }
                     None => break,
                 }
@@ -305,17 +305,27 @@ impl Pool {
         let claimed = set.insert(tag);
         // Mirror the fresh mark to disk — a restart restores it and the
         // replay window stays closed. Fail-open: the in-memory mark is
-        // authoritative for the live session; a write error only widens
-        // the post-restart window, never rejects an honest share.
+        // authoritative for the live session; a dropped queue entry only
+        // widens the post-restart window, never rejects an honest share.
         if claimed {
-            if let Some(store) = &self.dedup_store {
-                let ts = crate::telemetry::now_unix_seconds();
-                if let Err(e) = store.record_dedup_mark(job_bucket, tag, ts, SHARE_DEDUP_RETAIN_S) {
-                    tracing::warn!("dedup persist: record failed: {e}");
-                }
-            }
+            self.queue_dedup_op(crate::store::DedupOp::Mark {
+                bucket: job_bucket.to_string(),
+                tag,
+                ts: crate::telemetry::now_unix_seconds(),
+            });
         }
         claimed
+    }
+
+    /// Non-blocking hand-off to the dedup writer. A full queue drops the
+    /// op — the in-memory set is authoritative for the live session, so
+    /// this only widens the post-restart replay window, never rejects an
+    /// honest share. Warn at most once per drop burst via a cheap flag.
+    fn queue_dedup_op(&self, op: crate::store::DedupOp) {
+        let Some(tx) = &self.dedup_tx else { return };
+        if tx.try_send(op).is_err() {
+            tracing::warn!("dedup persist: queue full/disconnected — mark dropped");
+        }
     }
 
     /// Attach the share store for dedup persistence and rebuild the
@@ -346,7 +356,18 @@ impl Pool {
             }
             Err(e) => tracing::warn!("dedup persist: restore failed: {e}"),
         }
-        self.dedup_store = Some(store);
+        // Bounded queue to the writer thread — every dedup write stays
+        // off `pool.lock()`. Capacity sized so a stalled writer still
+        // covers a long burst before marks start dropping.
+        let (tx, rx) = std::sync::mpsc::sync_channel::<crate::store::DedupOp>(8192);
+        let writer = Arc::clone(&store);
+        match std::thread::Builder::new()
+            .name("dedup-writer".to_string())
+            .spawn(move || crate::store::dedup_writer_loop(writer, rx, SHARE_DEDUP_RETAIN_S))
+        {
+            Ok(_) => self.dedup_tx = Some(tx),
+            Err(e) => tracing::warn!("dedup persist: writer spawn failed: {e}"),
+        }
     }
 
     /// Dedup for external (AuxPoW) legs — `tag` is any stable proof/nonce
@@ -1240,6 +1261,10 @@ mod tests {
         // First external share credits; the exact replay does not.
         assert!(pool.record_external_share("miner", "w1", 100, 500, "qtu", "job-a", "nonce-1"));
         assert!(!pool.record_external_share("miner", "w1", 100, 500, "qtu", "job-a", "nonce-1"));
+
+        // The mark lands via the queued writer — wait for the batch
+        // flush before the simulated restart attaches.
+        std::thread::sleep(std::time::Duration::from_millis(700));
 
         // A "restarted" pool attaching the same store sees the mark —
         // the replay is rejected before any credit. (ext: job ids are
