@@ -3,6 +3,9 @@
 alwaysApply: false
 ---
 
+> **🆕 2026-10-26 (8) POOL PAYOUT-BACKLOG GAUGES + v9 RE-PROOF:** **`e2ce9bdd1` nasazeno (build `0d3a5a87`)**: `/metrics` nově exportuje `zion_pool_payouts_unconfirmed` + `_flowers` + per-coin `zion_pool_payouts_unconfirmed_coin{,_flowers}` z `payouts` tabulky (1 indexovaný scan/scrape — wedge lekce respektována). **Live:** `931` unconfirmed zion payoutů @ ~1.22e12 flowers — přímá visibility pro 2.B7 treasury deficit (pozor: gauge ukazuje `coin="zion"` řádky; vztah k "918 QTC deferred" ověřit — payout coin ≠ treasury coin nutně). Drain + restore opět čisté: `shares_since_last_block=35` přeneseno přes restart — v9 counter mechanism spolehlivě drží.
+
+>
 > **🆕 2026-10-26 (7) POOL 2.B8 UNVERIFIED-CREDIT BUCKET + DEPLOY RUNBOOK:** **`c731bf0ea` nasazeno (build `4e5313dd`)**: audit P-05 residual — `accepted_unknown`/`accepted_stale_upstream` už nekredituje silently. `is_unverified_credit` klasifikace (jen tyto 2 statusy), `StreamStats.unverified_shares` → `/miners` per-stream + `zion_pool_coin_shares_unverified` Prom gauge (upstream-quality signál, live 0). Knob `ZION_POOL_UNVERIFIED_CREDIT_PCT` (default 100, clamp ≤100 — **žádná tichá ekonomická změna**; operátor sníží váhu až při degradaci) aplikován na všech 3 externích credit místech (qtu stratum, pearl, v3 auxpow). **2.B2 formalizováno:** `V31/deploy/POOL-DEPLOY-RUNBOOK.md` — build-on-EDGE, backup, drain, **15min canary gate** (accept ≥ baseline−5pb), verify, rollback. První canary naživo: zion 396/14 ≈ 96.6 % ✅. Bonus ověření v9: drain restore `shares_since_last_block=6` — counter přenesen přesně. Testy: klasifikace, pct clamp, counter — 3/3 ✅.
 
 >
