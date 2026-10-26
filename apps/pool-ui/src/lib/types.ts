@@ -52,6 +52,9 @@ export interface BlockRow {
   worker: string;
   status: 'pending' | 'confirmed' | 'orphaned';
   effort_pct: number | null;
+  network_difficulty: number | null;
+  share_difficulty: number | null;
+  confirmed_at: number | null;
 }
 
 export interface PayoutRow {
@@ -86,6 +89,13 @@ export interface MinerStats {
   total_paid: number;
   unit: string;
   payouts: PayoutRow[];
+  active: boolean;
+  /** Miner's weight fraction of this coin's PPLNS window (0..1). */
+  window_share: number;
+  /** Estimated daily earnings in `unit` (null when the store is absent). */
+  est_daily: number | null;
+  /** Estimated per-block earning, ZION only (null elsewhere). */
+  est_per_block: number | null;
 }
 
 export interface PoolOverview {

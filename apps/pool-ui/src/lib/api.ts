@@ -98,7 +98,8 @@ function toCoinStats(coin: CoinId, s: ApiCoinStats): CoinStats {
 
 interface ApiBlock {
   coin: string; height: number; hash: string; ts: number;
-  miner: string; status?: string;
+  miner: string; status?: string; worker_name?: string;
+  network_difficulty?: number; share_difficulty?: number; confirmed_at?: number | null;
 }
 interface ApiPayout {
   coin: string; ts: number; address: string; amount_flowers?: number;
@@ -112,12 +113,25 @@ interface ApiMiner {
   coin: string; wallet: string; worker_count: number; workers: ApiWorker[];
   shares: { accepted: number; rejected: number };
   unpaid: string; unpaid_unit: string; last_seen_s: number; active: boolean;
+  window_share: number; est_daily: number | null; est_per_block: number | null;
+}
+
+// ZION base unit: 1 ZION = 1e6 flowers. Other coins' `native` amounts are
+// rendered as-is with the coin ticker — their base-unit scale is coin-specific
+// and the public API doesn't publish decimals.
+const FLOWERS = 1e6;
+const UNIT_LABEL: Record<CoinId, string> = { zion: 'ZION', qtc: 'QTC', prl: 'PRL', multi: '' };
+
+function normalizeAmount(coin: CoinId, raw: number, unit: string): { amount: number; unit: string } {
+  if (unit === 'flowers' || coin === 'zion') return { amount: raw / FLOWERS, unit: 'ZION' };
+  return { amount: raw, unit: unit === 'native' ? UNIT_LABEL[coin] || unit : unit };
 }
 
 function toPayoutRow(coin: CoinId, p: ApiPayout): PayoutRow {
+  const { amount, unit } = normalizeAmount(coin, Number(p.amount_flowers ?? 0), 'native');
   return {
     coin, ts: p.ts, address: p.address,
-    amount: Number(p.amount_flowers ?? 0), unit: '',
+    amount, unit,
     tx: p.tx_id ?? '',
     confirmations: p.confirmations ?? 0,
     confirmed: p.confirmed ?? false,
@@ -172,9 +186,12 @@ export async function fetchBlocks(coin?: CoinId): Promise<BlockRow[]> {
     hash: b.hash,
     ts: b.ts,
     miner: b.miner,
-    worker: '',
+    worker: b.worker_name ?? '',
     status: (b.status as BlockRow['status']) ?? 'confirmed',
     effort_pct: null,
+    network_difficulty: b.network_difficulty ?? null,
+    share_difficulty: b.share_difficulty ?? null,
+    confirmed_at: b.confirmed_at ?? null,
   }));
 }
 
@@ -203,7 +220,8 @@ export async function fetchMiner(
     );
     const totalPaid = payouts
       .filter((p) => p.confirmed)
-      .reduce((sum, p) => sum + Number(p.amount_flowers ?? 0), 0);
+      .reduce((sum, p) => sum + normalizeAmount(coin, Number(p.amount_flowers ?? 0), 'native').amount, 0);
+    const pending = normalizeAmount(coin, Number(m.unpaid), m.unpaid_unit);
     return {
       coin,
       wallet,
@@ -219,12 +237,44 @@ export async function fetchMiner(
       })),
       shares_24h: m.shares,
       immature: 0,
-      pending: Number(m.unpaid),
+      pending: pending.amount,
       total_paid: totalPaid,
-      unit: m.unpaid_unit,
+      unit: pending.unit,
       payouts: payouts.map((p) => toPayoutRow(coin, p)),
+      active: m.active,
+      window_share: m.window_share ?? 0,
+      est_daily: m.est_daily == null ? null : normalizeAmount(coin, Number(m.est_daily), m.unpaid_unit).amount,
+      est_per_block: m.est_per_block == null ? null : normalizeAmount(coin, Number(m.est_per_block), m.unpaid_unit).amount,
     };
   } catch {
     return null;
+  }
+}
+
+export interface MinerHistorySample {
+  ts: number;
+  hps: number;
+  accepted: number;
+  rejected: number;
+}
+
+/** Wallet-scoped hashrate timeseries (schema v6, 60s samples).
+ *  Returns [] when the endpoint predates deployment or the wallet has
+ *  no recorded samples — callers keep the client-accumulated fallback. */
+export async function fetchMinerHistory(
+  coin: CoinId,
+  wallet: string,
+  limit = 720,
+): Promise<MinerHistorySample[]> {
+  if (USE_MOCK) return [];
+  const poolCoin = POOL_COIN[coin];
+  if (!poolCoin) return [];
+  try {
+    const res = await get<{ ok: boolean; samples: MinerHistorySample[] }>(
+      `/miner/${poolCoin}/${encodeURIComponent(wallet)}/history?limit=${limit}`,
+    );
+    return res.samples ?? [];
+  } catch {
+    return [];
   }
 }

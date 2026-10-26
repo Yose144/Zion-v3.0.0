@@ -140,14 +140,14 @@ export const COIN_STATS: Record<string, CoinStats> = {
 };
 
 export const BLOCKS: BlockRow[] = [
-  { coin: 'zion', height: 142_881, hash: '9f3c…a7d21b', ts: now - 42, miner: 'zion1n4k4…hf8c2', worker: 'vega-smos', status: 'confirmed', effort_pct: 41 },
-  { coin: 'zion', height: 142_880, hash: '77be…0c4f9a', ts: now - 108, miner: 'zion1wq2m…x9p40', worker: 'rig-east-2', status: 'confirmed', effort_pct: 88 },
-  { coin: 'qtc', height: 3_912_444, hash: 'Qn2f…aa08c1', ts: now - 3_240, miner: 'qz7xk…m2', worker: 'amd-7900xtx', status: 'confirmed', effort_pct: 132 },
-  { coin: 'zion', height: 142_877, hash: 'c1d0…55e8f3', ts: now - 241, miner: 'zion1n4k4…hf8c2', worker: 'vega-smos', status: 'confirmed', effort_pct: 12 },
-  { coin: 'zion', height: 142_876, hash: '02aa…9b14d7', ts: now - 305, miner: 'zion1j8pq…u2v88', worker: 'homebox', status: 'confirmed', effort_pct: 61 },
-  { coin: 'prl', height: 128_908, hash: 'pearl…demo…pending', ts: now - 19_800, miner: 'prl1pz…ca7a5m', worker: 'pool-leg', status: 'pending', effort_pct: null },
-  { coin: 'qtc', height: 3_912_102, hash: 'Qm91…4f77ba', ts: now - 21_600, miner: 'qz3rt…k9', worker: 'rig-east-2', status: 'confirmed', effort_pct: 97 },
-  { coin: 'zion', height: 142_855, hash: 'e844…7a2c60', ts: now - 1_560, miner: 'zion1n4k4…hf8c2', worker: 'vega-smos', status: 'orphaned', effort_pct: 156 },
+  { coin: 'zion', height: 142_881, hash: '9f3c…a7d21b', ts: now - 42, miner: 'zion1n4k4…hf8c2', worker: 'vega-smos', status: 'confirmed', effort_pct: 41, network_difficulty: 14_211, share_difficulty: 100_000, confirmed_at: now - 30 },
+  { coin: 'zion', height: 142_880, hash: '77be…0c4f9a', ts: now - 108, miner: 'zion1wq2m…x9p40', worker: 'rig-east-2', status: 'confirmed', effort_pct: 88, network_difficulty: 14_198, share_difficulty: 100_000, confirmed_at: now - 95 },
+  { coin: 'qtc', height: 3_912_444, hash: 'Qn2f…aa08c1', ts: now - 3_240, miner: 'qz7xk…m2', worker: 'amd-7900xtx', status: 'confirmed', effort_pct: 132, network_difficulty: 2_940_000, share_difficulty: 60_000, confirmed_at: now - 3_200 },
+  { coin: 'zion', height: 142_877, hash: 'c1d0…55e8f3', ts: now - 241, miner: 'zion1n4k4…hf8c2', worker: 'vega-smos', status: 'confirmed', effort_pct: 12, network_difficulty: 14_144, share_difficulty: 100_000, confirmed_at: now - 230 },
+  { coin: 'zion', height: 142_876, hash: '02aa…9b14d7', ts: now - 305, miner: 'zion1j8pq…u2v88', worker: 'homebox', status: 'confirmed', effort_pct: 61, network_difficulty: 14_109, share_difficulty: 100_000, confirmed_at: now - 290 },
+  { coin: 'prl', height: 128_908, hash: 'pearl…demo…pending', ts: now - 19_800, miner: 'prl1pz…ca7a5m', worker: 'pool-leg', status: 'pending', effort_pct: null, network_difficulty: 88_000_000, share_difficulty: 2_000_000, confirmed_at: null },
+  { coin: 'qtc', height: 3_912_102, hash: 'Qm91…4f77ba', ts: now - 21_600, miner: 'qz3rt…k9', worker: 'rig-east-2', status: 'confirmed', effort_pct: 97, network_difficulty: 2_910_000, share_difficulty: 60_000, confirmed_at: now - 21_500 },
+  { coin: 'zion', height: 142_855, hash: 'e844…7a2c60', ts: now - 1_560, miner: 'zion1n4k4…hf8c2', worker: 'vega-smos', status: 'orphaned', effort_pct: 156, network_difficulty: 13_900, share_difficulty: 100_000, confirmed_at: null },
 ];
 
 export const PAYOUTS: PayoutRow[] = [
@@ -183,6 +183,10 @@ export const DEMO_MINER: Record<string, MinerStats> = {
       { coin: 'zion', ts: now - 14_400, address: 'zion1n4k4…hf8c2', amount: 512.77, unit: 'ZION', tx: 'tx90…41fe', confirmations: 402, confirmed: true },
       { coin: 'zion', ts: now - 100_800, address: 'zion1n4k4…hf8c2', amount: 488.02, unit: 'ZION', tx: 'tx5e…90ab', confirmations: 1_922, confirmed: true },
     ],
+    active: true,
+    window_share: 0.612,
+    est_daily: 58.4,
+    est_per_block: 0.041,
   },
   'qtc:qz7xkm2demo': {
     coin: 'qtc',
@@ -200,6 +204,10 @@ export const DEMO_MINER: Record<string, MinerStats> = {
     payouts: [
       { coin: 'qtc', ts: now - 10_800, address: 'qz7xk…m2', amount: 4.812, unit: 'QTC', tx: '0x8f2e…c1', confirmations: 44, confirmed: true },
     ],
+    active: true,
+    window_share: 0.087,
+    est_daily: 1.24,
+    est_per_block: null,
   },
   'prl:prl1pzdemo': {
     coin: 'prl',
@@ -215,6 +223,10 @@ export const DEMO_MINER: Record<string, MinerStats> = {
     total_paid: 0,
     unit: 'PRL',
     payouts: [],
+    active: false,
+    window_share: 0,
+    est_daily: null,
+    est_per_block: null,
   },
 };
 

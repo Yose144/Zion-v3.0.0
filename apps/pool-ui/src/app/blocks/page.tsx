@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Blocks } from 'lucide-react';
 import { fetchBlocks } from '@/lib/api';
-import { fmtAgo, fmtInt, shortAddr } from '@/lib/format';
+import { fmtAgo, fmtDifficulty, fmtInt, shortAddr } from '@/lib/format';
 import { useLang } from '@/lib/i18n';
 import type { BlockRow, CoinId } from '@/lib/types';
 
@@ -14,9 +14,9 @@ const COIN_COLOR: Record<string, string> = {
 };
 
 const STATUS: Record<string, { cls: string; cs: string; en: string }> = {
-  confirmed: { cls: 'text-green', cs: 'potvrzen', en: 'confirmed' },
-  pending: { cls: 'text-gold', cs: 'čeká', en: 'pending' },
-  orphaned: { cls: 'text-red', cs: 'orphan', en: 'orphaned' },
+  confirmed: { cls: 'pill-native', cs: 'potvrzen', en: 'confirmed' },
+  pending: { cls: 'pill-sync', cs: 'čeká', en: 'pending' },
+  orphaned: { cls: 'pill-down', cs: 'orphan', en: 'orphaned' },
 };
 
 export default function BlocksPage() {
@@ -60,8 +60,7 @@ export default function BlocksPage() {
               <th>{t('výška', 'height')}</th>
               <th>hash</th>
               <th>{t('miner', 'miner')}</th>
-              <th>worker</th>
-              <th>{t('effort', 'effort')}</th>
+              <th>diff</th>
               <th>{t('stav', 'status')}</th>
               <th>{t('čas', 'time')}</th>
             </tr>
@@ -74,13 +73,21 @@ export default function BlocksPage() {
                 </td>
                 <td className="text-white">{fmtInt(b.height)}</td>
                 <td className="text-dim">{shortAddr(b.hash)}</td>
-                <td className="text-dim">{shortAddr(b.miner)}</td>
-                <td className="text-white">{b.worker}</td>
-                <td className="text-dim">
-                  {b.effort_pct != null ? `${b.effort_pct}%` : '—'}
+                <td>
+                  <a
+                    href={`/miner/${b.coin}/${b.miner}/`}
+                    className="text-white/60 underline decoration-white/15 underline-offset-2 transition hover:text-rasta-gold"
+                    title={b.miner}
+                  >
+                    {shortAddr(b.miner)}
+                  </a>
                 </td>
-                <td className={STATUS[b.status].cls}>
-                  {lang === 'cs' ? STATUS[b.status].cs : STATUS[b.status].en}
+                <td className="text-dim">{fmtDifficulty(b.network_difficulty)}</td>
+                <td>
+                  <span className={`pill ${STATUS[b.status].cls}`}>
+                    <span className="dot" />
+                    {lang === 'cs' ? STATUS[b.status].cs : STATUS[b.status].en}
+                  </span>
                 </td>
                 <td className="text-dim">{fmtAgo(b.ts, lang)}</td>
               </tr>

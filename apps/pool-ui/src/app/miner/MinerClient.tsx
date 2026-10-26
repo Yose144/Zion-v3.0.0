@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, Wallet } from 'lucide-react';
 import AreaChart, { pushSample, type SeriesPoint } from '@/components/AreaChart';
 import MinerSearch from '@/components/MinerSearch';
-import { fetchMiner } from '@/lib/api';
+import { fetchMiner, fetchMinerHistory } from '@/lib/api';
 import {
   fmtAgo,
   fmtAmount,
@@ -32,18 +32,34 @@ export default function MinerClient({
   const { t, lang } = useLang();
   const [m, setM] = useState<MinerStats | null | undefined>(undefined);
   const [hrHistory, setHrHistory] = useState<SeriesPoint[]>([]);
+  const [serverHist, setServerHist] = useState<SeriesPoint[]>([]);
 
   useEffect(() => {
     setM(undefined);
+    setServerHist([]);
     const key = `miner-hr-${coin}-${wallet.slice(0, 24)}`;
     const tick = () =>
       fetchMiner(coin as CoinId, wallet).then((stats) => {
         setM(stats);
         if (stats) setHrHistory(pushSample(key, stats.hashrate));
       });
+    // Server-side wallet history (schema v6) — when present it wins over
+    // the localStorage series because it survives restarts and other
+    // devices. Empty while the endpoint predates deployment.
+    const pullHistory = () =>
+      fetchMinerHistory(coin as CoinId, wallet).then((samples) => {
+        if (samples.length) {
+          setServerHist(samples.map((s) => ({ t: s.ts * 1000, v: s.hps })));
+        }
+      });
     tick();
+    pullHistory();
     const iv = setInterval(tick, 15_000);
-    return () => clearInterval(iv);
+    const ivHist = setInterval(pullHistory, 60_000);
+    return () => {
+      clearInterval(iv);
+      clearInterval(ivHist);
+    };
   }, [coin, wallet]);
 
   if (m === undefined) {
@@ -81,16 +97,22 @@ export default function MinerClient({
 
   return (
     <div className="pt-10">
-      <div className="flex flex-wrap items-center gap-3">
-        <Wallet size={20} className="text-zion-gold" />
-        <div>
-          <p className="kicker">
-            {coin.toUpperCase()} · {t('miner', 'miner')}
-          </p>
-          <h1 className="break-all font-mono text-sm font-bold text-white md:text-base">
-            {wallet}
-          </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Wallet size={20} className="text-zion-gold" />
+          <div>
+            <p className="kicker">
+              {coin.toUpperCase()} · {t('miner', 'miner')}
+            </p>
+            <h1 className="break-all font-mono text-sm font-bold text-white md:text-base">
+              {wallet}
+            </h1>
+          </div>
         </div>
+        <span className={`pill ${m.active ? 'pill-live' : 'pill-down'}`}>
+          <span className="dot" />
+          {m.active ? t('online', 'online') : t('offline', 'offline')}
+        </span>
       </div>
 
       {/* KPI */}
@@ -102,14 +124,14 @@ export default function MinerClient({
             c: ACCENT[coin] ?? '#fcd116',
           },
           {
-            k: t('Shary 24h (acc)', 'Shares 24h (acc)'),
-            v: fmtInt(acc),
+            k: t('Odhad / den', 'Est. daily'),
+            v: m.est_daily != null ? fmtAmount(m.est_daily, m.unit) : '—',
             c: '#00ff41',
           },
           {
-            k: t('Reject rate', 'Reject rate'),
-            v: `${rejPct.toFixed(2)}%`,
-            c: rejPct > 3 ? '#e41e2b' : '#fff',
+            k: t('Podíl okna', 'Window share'),
+            v: `${(m.window_share * 100).toFixed(3)}%`,
+            c: '#fff',
           },
           {
             k: t('Workers', 'Workers'),
@@ -132,13 +154,24 @@ export default function MinerClient({
         ))}
       </div>
 
-      {/* Hashrate chart — live series accumulated while the page is open
-          (public API has no history endpoint yet; samples persist in
-          localStorage, ~4 h rolling window) */}
+      {/* Hashrate chart — server-side wallet history (schema v6) when
+          present, else the localStorage series accumulated live. */}
       <div className="pool-card mt-5">
-        <p className="kicker mb-2">{t('Hashrate — poslední 4h', 'Hashrate — last 4h')}</p>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="kicker">
+            {serverHist.length
+              ? t('Hashrate — 24h (server)', 'Hashrate — 24h (server)')
+              : t('Hashrate — poslední 4h', 'Hashrate — last 4h')}
+          </p>
+          <p className="text-[0.62rem] text-white/35">
+            {t(
+              `acc ${fmtInt(acc)} · rej ${fmtInt(rej)} · ${rejPct.toFixed(2)}%`,
+              `acc ${fmtInt(acc)} · rej ${fmtInt(rej)} · ${rejPct.toFixed(2)}%`,
+            )}
+          </p>
+        </div>
         <AreaChart
-          data={hrHistory}
+          data={serverHist.length ? serverHist : hrHistory}
           color={ACCENT[coin] ?? '#fcd116'}
           height={120}
           fmt={(v) => fmtHashrate(v)}
@@ -152,12 +185,8 @@ export default function MinerClient({
       {/* Balances + workers */}
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         <div className="pool-card">
-          <p className="kicker mb-3">{t('Bilance', 'Balance')}</p>
+          <p className="kicker mb-3">{t('Výdělky a bilance', 'Earnings & balance')}</p>
           {[
-            {
-              k: t('Nedozrálé (immature)', 'Immature'),
-              v: fmtAmount(m.immature, m.unit),
-            },
             {
               k: t('Čeká na výplatu', 'Pending payout'),
               v: fmtAmount(m.pending, m.unit),
@@ -166,6 +195,16 @@ export default function MinerClient({
               k: t('Celkem vyplaceno', 'Total paid'),
               v: fmtAmount(m.total_paid, m.unit),
             },
+            {
+              k: t('Odhad / den', 'Est. daily'),
+              v: m.est_daily != null ? fmtAmount(m.est_daily, m.unit) : '—',
+            },
+            ...(m.est_per_block != null
+              ? [{
+                  k: t('Odhad / blok', 'Est. per block'),
+                  v: fmtAmount(m.est_per_block, m.unit),
+                }]
+              : []),
           ].map((r, i) => (
             <div key={i} className="flex items-center justify-between border-b border-white/6 py-2.5 last:border-0">
               <span className="text-xs text-white/50">{r.k}</span>
@@ -185,22 +224,32 @@ export default function MinerClient({
                   <th>hashrate</th>
                   <th>acc</th>
                   <th>rej</th>
+                  <th>acc%</th>
                   <th>{t('naposledy', 'last seen')}</th>
                 </tr>
               </thead>
               <tbody>
-                {m.workers.map((w) => (
-                  <tr key={w.name}>
-                    <td className="text-white">{w.name}</td>
-                    <td className="text-dim">{w.algorithm}</td>
-                    <td style={{ color: ACCENT[coin] }}>{fmtHashrate(w.hashrate)}</td>
-                    <td className="text-green">{fmtInt(w.shares_accepted)}</td>
-                    <td className={w.shares_rejected > 0 ? 'text-red' : 'text-dim'}>
-                      {fmtInt(w.shares_rejected)}
-                    </td>
-                    <td className="text-dim">{fmtAgo(w.last_seen, lang)}</td>
-                  </tr>
-                ))}
+                {m.workers.map((w) => {
+                  const wAcc =
+                    w.shares_accepted + w.shares_rejected > 0
+                      ? (w.shares_accepted / (w.shares_accepted + w.shares_rejected)) * 100
+                      : 100;
+                  return (
+                    <tr key={w.name}>
+                      <td className="text-white">{w.name}</td>
+                      <td className="text-dim">{w.algorithm}</td>
+                      <td style={{ color: ACCENT[coin] }}>{fmtHashrate(w.hashrate)}</td>
+                      <td className="text-green">{fmtInt(w.shares_accepted)}</td>
+                      <td className={w.shares_rejected > 0 ? 'text-red' : 'text-dim'}>
+                        {fmtInt(w.shares_rejected)}
+                      </td>
+                      <td className={wAcc < 97 ? 'text-gold' : 'text-dim'}>
+                        {wAcc.toFixed(1)}%
+                      </td>
+                      <td className="text-dim">{fmtAgo(w.last_seen, lang)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
