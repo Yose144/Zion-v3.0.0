@@ -848,4 +848,32 @@ mod tests {
         let best = router.best().expect("has best");
         assert_ne!(best.coin, ExternalCoin::Kaspa);
     }
+
+    /// 2.B9 invariant: the generic profit router must NEVER select Pearl.
+    /// PRL mining lives on dedicated native legs (pearl_upstream /
+    /// pearl_gateway), not on the placeholder router profile — even if a
+    /// future profile made Pearl the most profitable entry.
+    #[test]
+    fn router_never_selects_pearl() {
+        let profiles = CoinProfile::defaults();
+        let pearl = profiles
+            .iter()
+            .find(|p| p.coin == ExternalCoin::Pearl)
+            .expect("defaults include Pearl profile");
+        assert!(pearl.disabled, "Pearl profile must stay disabled");
+
+        // Even as the top-profit entry, the router must skip it.
+        let entries: Vec<_> = profiles
+            .iter()
+            .map(|p| ProfitEntry::from_profile(p, 1.0))
+            .collect();
+        let router = ProfitRouter::new(entries);
+        for device in [Device::Gpu, Device::Cpu, Device::Both] {
+            assert_ne!(
+                router.best_for(device).map(|e| e.coin),
+                Some(ExternalCoin::Pearl)
+            );
+        }
+        assert_ne!(router.best().map(|e| e.coin), Some(ExternalCoin::Pearl));
+    }
 }
