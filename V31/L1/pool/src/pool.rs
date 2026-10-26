@@ -124,6 +124,10 @@ pub struct Pool {
     /// working set rather than to total submissions.
     share_dedup: HashMap<String, HashSet<u64>>,
     share_dedup_order: std::collections::VecDeque<String>,
+    /// Optional persistence for the dedup set — every mark is mirrored to
+    /// `share_dedup` in the share store so a restart cannot reopen the
+    /// replay window (upstream-keyed `ext:` job ids outlive a bounce).
+    dedup_store: Option<Arc<crate::store::ShareStore>>,
     /// Shared per-worker telemetry registry (hashrate, shares, blocks).
     pub telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
     pub(crate) pearl: Option<Arc<crate::pearl_gateway::PearlRuntime>>,
@@ -136,6 +140,10 @@ const SHARE_DEDUP_JOB_CAP: usize = 512;
 /// thousands; this is headroom, and a saturated bucket fails closed
 /// (treated as duplicate) rather than growing without bound.
 const SHARE_DEDUP_TAG_CAP: usize = 500_000;
+/// How long persisted dedup marks are kept/restored for. Upstream job ids
+/// rotate in minutes; 4h covers restart gaps plus upstream outages without
+/// letting the table accumulate dead buckets.
+const SHARE_DEDUP_RETAIN_S: u64 = 4 * 3600;
 
 impl Pool {
     pub fn new(config: PoolConfig, telemetry: Arc<Mutex<MinerTelemetryRegistry>>) -> Self {
@@ -187,6 +195,7 @@ impl Pool {
             paid_block_heights: ledger.paid_block_heights.into_iter().collect(),
             share_dedup: HashMap::new(),
             share_dedup_order: std::collections::VecDeque::new(),
+            dedup_store: None,
             telemetry,
             pearl: crate::pearl_gateway::PearlRuntime::from_env(),
         })
@@ -273,6 +282,11 @@ impl Pool {
                 match self.share_dedup_order.pop_front() {
                     Some(old) => {
                         self.share_dedup.remove(&old);
+                        if let Some(store) = &self.dedup_store {
+                            if let Err(e) = store.delete_dedup_bucket(&old) {
+                                tracing::warn!("dedup persist: bucket evict failed: {e}");
+                            }
+                        }
                     }
                     None => break,
                 }
@@ -288,7 +302,51 @@ impl Pool {
         if set.len() >= SHARE_DEDUP_TAG_CAP {
             return false;
         }
-        set.insert(tag)
+        let claimed = set.insert(tag);
+        // Mirror the fresh mark to disk — a restart restores it and the
+        // replay window stays closed. Fail-open: the in-memory mark is
+        // authoritative for the live session; a write error only widens
+        // the post-restart window, never rejects an honest share.
+        if claimed {
+            if let Some(store) = &self.dedup_store {
+                let ts = crate::telemetry::now_unix_seconds();
+                if let Err(e) = store.record_dedup_mark(job_bucket, tag, ts, SHARE_DEDUP_RETAIN_S) {
+                    tracing::warn!("dedup persist: record failed: {e}");
+                }
+            }
+        }
+        claimed
+    }
+
+    /// Attach the share store for dedup persistence and rebuild the
+    /// in-memory seen-set from the newest persisted buckets. A restore
+    /// failure is non-fatal — the pool starts with an empty set exactly
+    /// as it did before persistence existed.
+    pub fn attach_dedup_store(&mut self, store: Arc<crate::store::ShareStore>) {
+        match store.load_dedup_marks(SHARE_DEDUP_JOB_CAP, SHARE_DEDUP_RETAIN_S) {
+            Ok(rows) => {
+                let mut restored = 0usize;
+                for (bucket, tag) in rows {
+                    if !self.share_dedup.contains_key(&bucket) {
+                        if self.share_dedup.len() >= SHARE_DEDUP_JOB_CAP {
+                            break;
+                        }
+                        self.share_dedup_order.push_back(bucket.clone());
+                        self.share_dedup.insert(bucket.clone(), HashSet::new());
+                    }
+                    if let Some(set) = self.share_dedup.get_mut(&bucket) {
+                        if set.insert(tag) {
+                            restored += 1;
+                        }
+                    }
+                }
+                if restored > 0 {
+                    tracing::info!(restored, "share dedup restored from store");
+                }
+            }
+            Err(e) => tracing::warn!("dedup persist: restore failed: {e}"),
+        }
+        self.dedup_store = Some(store);
     }
 
     /// Dedup for external (AuxPoW) legs — `tag` is any stable proof/nonce
@@ -1171,6 +1229,36 @@ mod tests {
         assert!(pool
             .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header", 0)
             .is_err());
+    }
+
+    #[test]
+    fn dedup_marks_survive_restart_via_store() {
+        let store = Arc::new(ShareStore::open_in_memory().unwrap());
+        let mut pool = Pool::new(config(), telemetry());
+        pool.attach_dedup_store(store.clone());
+
+        // First external share credits; the exact replay does not.
+        assert!(pool.record_external_share("miner", "w1", 100, 500, "qtu", "job-a", "nonce-1"));
+        assert!(!pool.record_external_share("miner", "w1", 100, 500, "qtu", "job-a", "nonce-1"));
+
+        // A "restarted" pool attaching the same store sees the mark —
+        // the replay is rejected before any credit. (ext: job ids are
+        // upstream-keyed and outlive the process.)
+        let mut restarted = Pool::new(config(), telemetry());
+        restarted.attach_dedup_store(store.clone());
+        assert!(
+            !restarted.record_external_share("miner", "w1", 100, 500, "qtu", "job-a", "nonce-1")
+        );
+        // …but a genuinely new tag on the same upstream job still credits.
+        assert!(restarted.record_external_share("miner", "w1", 100, 500, "qtu", "job-a", "nonce-2"));
+    }
+
+    #[test]
+    fn dedup_store_write_failure_does_not_reject_share() {
+        // No store attached → identical in-memory behavior.
+        let mut pool = Pool::new(config(), telemetry());
+        assert!(pool.record_external_share("miner", "w1", 100, 500, "qtu", "job-a", "tag"));
+        assert!(!pool.record_external_share("miner", "w1", 100, 500, "qtu", "job-a", "tag"));
     }
 
     #[test]

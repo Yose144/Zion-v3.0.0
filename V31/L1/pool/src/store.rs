@@ -29,13 +29,22 @@ use crate::v3_pplns::PayoutEntry;
 /// v5: revenue event prepare/commit journal and durable native payout outbox.
 /// v6: per-coin pool hashrate in history samples + per-miner hashrate
 /// history table (wallet-scoped timeseries for the public miner dashboard).
-const SCHEMA_VERSION: u32 = 6;
+/// v7: persisted share-dedup marks — the in-memory (job → nonce) seen-set
+/// evaporates on restart; upstream-keyed `ext:` job ids outlive it, so a
+/// replayed external share could double-credit PPLNS after a bounce.
+const SCHEMA_VERSION: u32 = 7;
 
 /// A thread-safe wrapper around a SQLite connection.  SQLite with
 /// `serialized` mode (default for `bundled`) supports multi-thread access,
 /// but we use a `Mutex` to avoid contention on the connection handle.
 pub struct ShareStore {
     conn: Mutex<Connection>,
+}
+
+impl std::fmt::Debug for ShareStore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ShareStore").finish_non_exhaustive()
+    }
 }
 
 /// A share record for insertion.
@@ -365,6 +374,24 @@ impl ShareStore {
                 "#,
             )
             .context("failed to migrate schema to v6")?;
+        }
+
+        if current < 7 {
+            // v7: persisted share-dedup marks keyed (bucket, tag). Rows
+            // churn with job turnover — buckets are deleted on evict and
+            // the ts index supports cheap age pruning.
+            conn.execute_batch(
+                r#"
+                CREATE TABLE IF NOT EXISTS share_dedup (
+                    bucket TEXT NOT NULL,
+                    tag    INTEGER NOT NULL,
+                    ts     INTEGER NOT NULL,
+                    PRIMARY KEY (bucket, tag)
+                );
+                CREATE INDEX IF NOT EXISTS idx_share_dedup_ts ON share_dedup(ts);
+                "#,
+            )
+            .context("failed to migrate schema to v7")?;
         }
 
         conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
@@ -1329,6 +1356,67 @@ impl ShareStore {
         }
         Ok(out)
     }
+
+    // ── Share dedup marks (schema v7) ──────────────────────────────────
+
+    /// Persist one dedup mark `(bucket, tag)` and prune marks older than
+    /// `retain_secs` in the same call. `INSERT OR IGNORE` — a mark that is
+    /// already persisted is a no-op.
+    pub fn record_dedup_mark(
+        &self,
+        bucket: &str,
+        tag: u64,
+        ts: u64,
+        retain_secs: u64,
+    ) -> Result<()> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        conn.execute(
+            "INSERT OR IGNORE INTO share_dedup (bucket, tag, ts) VALUES (?1, ?2, ?3)",
+            params![bucket, tag as i64, ts as i64],
+        )?;
+        conn.execute(
+            "DELETE FROM share_dedup WHERE ts < ?1",
+            params![ts.saturating_sub(retain_secs) as i64],
+        )?;
+        Ok(())
+    }
+
+    /// Drop every mark in one bucket — called when the in-memory job
+    /// bucket is evicted so the table stays proportional to the live set.
+    pub fn delete_dedup_bucket(&self, bucket: &str) -> Result<()> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        conn.execute("DELETE FROM share_dedup WHERE bucket = ?1", params![bucket])?;
+        Ok(())
+    }
+
+    /// Load persisted marks for the newest `bucket_limit` buckets (by
+    /// newest mark ts), ordered oldest-first within so the caller's FIFO
+    /// order survives restore. Returns `(bucket, tag)` rows.
+    pub fn load_dedup_marks(
+        &self,
+        bucket_limit: usize,
+        retain_secs: u64,
+    ) -> Result<Vec<(String, u64)>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let now = crate::telemetry::now_unix_seconds();
+        let mut stmt = conn.prepare(
+            "SELECT bucket, tag FROM share_dedup
+             WHERE ts >= ?1 AND bucket IN (
+                 SELECT bucket FROM share_dedup WHERE ts >= ?1
+                 GROUP BY bucket ORDER BY MAX(ts) DESC LIMIT ?2
+             )
+             ORDER BY ts ASC",
+        )?;
+        let rows = stmt.query_map(
+            params![now.saturating_sub(retain_secs) as i64, bucket_limit as i64],
+            |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)? as u64)),
+        )?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    }
 }
 
 // ── Row types for queries ──────────────────────────────────────────────
@@ -2002,5 +2090,37 @@ mod history_tests {
         let rows = store.load_miner_history("w_wallet", &[], 0, 100).unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].2, 90000);
+    }
+
+    #[test]
+    fn share_dedup_roundtrip_evict_and_prune() {
+        let store = ShareStore::open_in_memory().unwrap();
+        let now = crate::telemetry::now_unix_seconds();
+        store.record_dedup_mark("zion_1", 11, now, 86400).unwrap();
+        store.record_dedup_mark("zion_1", 22, now, 86400).unwrap();
+        store
+            .record_dedup_mark("ext:qtu:job-9", 33, now, 86400)
+            .unwrap();
+        // Duplicate insert is a no-op.
+        store.record_dedup_mark("zion_1", 11, now, 86400).unwrap();
+
+        let rows = store.load_dedup_marks(512, 86400).unwrap();
+        assert_eq!(rows.len(), 3);
+        assert!(rows.contains(&("zion_1".to_string(), 11)));
+        assert!(rows.contains(&("ext:qtu:job-9".to_string(), 33)));
+
+        // Bucket evict drops only that bucket's marks.
+        store.delete_dedup_bucket("zion_1").unwrap();
+        let rows = store.load_dedup_marks(512, 86400).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].0, "ext:qtu:job-9");
+
+        // Retention: marks older than retain are neither restored nor kept.
+        store
+            .record_dedup_mark("old", 99, now.saturating_sub(90000), 3600)
+            .unwrap();
+        store.record_dedup_mark("fresh", 1, now, 3600).unwrap();
+        let rows = store.load_dedup_marks(512, 3600).unwrap();
+        assert!(rows.iter().all(|(b, _)| b != "old"));
     }
 }

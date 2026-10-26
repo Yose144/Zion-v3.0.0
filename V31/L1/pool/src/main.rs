@@ -195,6 +195,12 @@ async fn main() -> anyhow::Result<()> {
     let pool = Arc::new(Mutex::new(Pool::try_new(config, telemetry.clone())?));
 
     if let Some(store) = share_store.as_ref() {
+        // Restore persisted share-dedup marks before any submit path can
+        // run — closes the post-restart replay window on upstream-keyed
+        // external job ids.
+        pool.lock()
+            .expect("pool lock poisoned")
+            .attach_dedup_store(store.clone());
         let recovered = zion_pool::pool::recover_pending_coin_revenue(
             &mut pool.lock().expect("pool lock poisoned"),
             store,
