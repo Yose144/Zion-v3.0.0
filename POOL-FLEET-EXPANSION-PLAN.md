@@ -67,7 +67,7 @@
 |---|---|
 | A3.1 | Payout lifecycle UI: queued → sent → confirmed (+tx link) — ledger + sweep data už jsou |
 | A3.2 | Pending estimate: accrued PPLNS hodnota per wallet ("máš ~X ZION nevyplacených, payout za ~Y") |
-| A3.3 | Payout scheme rozhodnutí: držet PPLNS; **vyhodnotit SOLO port** (lehká varianta — dedikovaný port, winner-take-all kredit) a PPS+ (těžké — vyžaduje pool treasury rezervu). Doporučení: SOLO ano (malý diff), PPS+ odložit |
+| A3.3 | ✅ Payout scheme: PPLNS zůstává + **SOLO port live :8446** (`ZION_POOL_SOLO_PORT` opt-in, winner-take-all 89% slice); PPS+ odložit (treasury) — detail v Status |
 | A3.4 | Fee transparence: fee split 89/5/5/1 viditelný na /stats + /faq (už v const promptu) |
 
 ### A4 — Provozní odolnost (pro-pool = 99.9 %)
@@ -167,7 +167,7 @@ rig volá control plane ven (funguje i za NAT, bez SSH), CP drží desired-state
 
 - **Agent:** Python single-file v1 (reuse vastctl probe logiky; Rust binary až dozraje)
 - **Control plane:** rozšíření `vastctl serve` o fleet API — žádný nový stack
-- **Payouts:** zůstává jen PPLNS (žádný SOLO/PPS+)
+- **Payouts:** PPLNS zůstává default schéma; **A3.3 SOLO port implementován jako opt-in** (`ZION_POOL_SOLO_PORT`, live :8446) — předchozí "žádný SOLO" rozhodnutí přehlasováno explicitním úkolem A3.3; PPS+ nadále odloženo (treasury politika)
 - **Scope:** implementovat všechny vlny W1–W7 postupně
 
 ## Status
@@ -186,3 +186,4 @@ rig volá control plane ven (funguje i za NAT, bez SSH), CP drží desired-state
 | A4.6 DoS-layers doc | ✅ `docs/3.2/POOL-DOS-LAYERS.md` — 6 vrstev (L0 edge → L5 state caps): session admission pořadí (ban→rate→per-IP→global), HTTP public/auth rate limity + XFF-trust, share/dedup bounded caps, kernel tabulka (somaxconn/syn_backlog 8192, syncookies, conntrack 262144 — změřeno live), incident checklist + rezidua (per-listener ip_sessions, TLS handshake cost, chybějící nftables rate-limit) |
 | A3.1 payout lifecycle UI | ✅ `d5f3fb718` + deployed — `status` field (`queued`/`sent`/`confirmed`) na `/public/v1/payouts`, `/public/v1/miner/{coin}/{wallet}/payouts` i interním `/api/v1/payouts`; queued řádky se mergují z `pool.pending_payouts` (krátký lock, jen vec clone — žádné I/O pod `pool.lock()`); `payout_lifecycle()` labeluje DB řádky. UI: status badge sloupec na /payouts + miner dashboard (CS/EN), ZION tx → `app.zionterranova.com/explorer/search?q=<txid>` (externí coiny = plain text, foreign chain), nullable `ts` pro queued. Live-ověřeno: `sent` status letí na reálných payout řádcích; test `public_payouts_report_queued_sent_confirmed_lifecycle` pokrývá všechny 3 stavy v jednom feedu |
 | A3.2 pending estimate | ✅ `c731bf0ea` (backend, sloučeno paralelní session) + `4571645be` (UI) + deployed — `/public/v1/miner/{coin}/{wallet}` nově nese `min_payout` (per-coin threshold, stejné jednotky jako `unpaid`) a `payout_eta_s` (sekundy do thresholdu při `est_daily` tempu; `0` = eligible pro další dávku; `null` = nelze odhadnout). Miner dashboard: `Čeká na výplatu` ukazuje `unpaid / min_payout`, nový řádek `Výplata za` (CS/EN, `~fmtDuration` nebo `další dávka`). Live-ověřeno: zion miner `unpaid 58.46 / min 10 ZION → eta 0`; neznámá wallet `eta null`. Test `public_miner_payload_reports_min_payout_and_eta` kryje fee-split (400k→356k) + ETA formuli 556_416 s |
+| A3.3 SOLO port | ✅ `684c17d91` + deployed — **rozhodnutí: PPLNS zůstává default, SOLO jako opt-in dedikovaný port** (`ZION_POOL_SOLO_PORT=0.0.0.0:8446` live na Edgi). `StratumServer.with_solo_mode` (listener-level flag, NE miner-supplied) → `ShareSubmission.solo` na všech 3 zion submit cestách; `record_share` early-return **před** PPLNS registrací (zero-weight registrace by jinak emitovala 0-amount payout entries); `on_block_found(.., Some(miner))` → jediný `PayoutEntry` = plná 89% miner slice přes `worker_payout_target` (chain-aware: zion/quantus/pearl). `paid_block_heights` idempotence + ledger persist beze změny. Live-ověřeno: `solo_port: listening on 0.0.0.0:8446`, TCP probe dostal plný v3 job feed (QTU/VRSC/ZANO streams) — server clone drží notifier/auxpow/routing parity. Testy: `solo_block_pays_winner_take_all` (fee_split amount, PPLNS balance 0), `solo_block_is_idempotent`, `solo_shares_never_weight_pplns_window`. Externí streamy na solo portu stále kreditují normálně (PPLNS credit za upstream work) — SOLO se týká jen ZION bloku. PPS+ nadále odloženo (treasury) |
