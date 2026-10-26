@@ -1,8 +1,8 @@
 # ZION 3.2 — Kompletní audit report
 
-> **Datum:** 2026-10-26 · **Stav:** remediace vlny 7 (pool stratum/API) implementovány + testy PASS; produkční redeploy poolu PENDING
+> **Datum:** 2026-10-26 · **Stav:** remediace všech vln nasazeny do produkce a ověřeny live
 > **Zdrojový pin vlny 1–6:** `4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4` (nasazeno, ověřeno live)
-> **Vlna 7 (pool):** nálezy P-01…P-06 opraveny na HEAD (detail [`docs/3.2/REPORTS/POOL_AUDIT_2026-10-26.md`](docs/3.2/REPORTS/POOL_AUDIT_2026-10-26.md))
+> **Vlna 7 (pool):** nálezy P-01…P-06 opraveny v `103be4e6a`, **nasazeno na Edge** (`zion-v31-pool`, sha256 `9bedf4a2…`, live ověřeno) — detail [`docs/3.2/REPORTS/POOL_AUDIT_2026-10-26.md`](docs/3.2/REPORTS/POOL_AUDIT_2026-10-26.md)
 > **Externí auditor:** neangažován (G9 otevřený) — tento report je interní audit, ne nezávislý posudek.
 
 Tento dokument shrnuje kompletní autonomní audit money-paths repozitáře
@@ -161,9 +161,9 @@ non-EVM inbound bez burn verifieru hold; TON confirmations unsupported hold.
 - `MAX_REORG_DEPTH` tři hodnoty (10/64/500); DAO premine `unlock_height`
   144 000 vs admin-lock; pool submit-flood DoS review; watchdog restart-
   loop gaming; `UNIQUE(reference_id)` defense-in-depth.
-- **Pool redeploy pending:** produkční `zion-v31-pool` na Edgi běží ještě
-  na `6c8165d4a` — vlna-7 fixy (P-01 replay dedup je payout-theft vektor)
-  vyžadují rebuild+restart; dedup okno je in-memory, restart ho resetuje.
+- **Pool dedup okno je in-memory** (512 jobů) — restart ho resetuje;
+  replay okno se po restartu krátce otevře pro staré joby (jobs se rotují
+  s každým templatem — dopad omezený).
 - **`Unknown`/`StaleForward` external share credit** — credited weight za
   unverifikovanou upstream odpověď (od re-credit útoku dělí dedup;
   kandidát na oddělený bucket / sníženou váhu).

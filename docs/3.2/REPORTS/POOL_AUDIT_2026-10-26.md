@@ -1,7 +1,7 @@
 # Pool + pool.zionterranova.com — audit report
 
-> **Datum:** 2026-10-26 · **Stav:** všechny nálezy P-01…P-06 **opraveny** (kód + regresní testy, viz §4); produkční redeploy PENDING
-> **Pin:** `b1d4caeb0` (audit) → remediace na HEAD po `b1d4caeb0` · produkce: pool @ `6c8165d4a` (Edge), web @ EDGE2 `/var/www/pool`
+> **Datum:** 2026-10-26 · **Stav:** všechny nálezy P-01…P-06 **opraveny a nasazeny do produkce** (§4, §5)
+> **Pin:** `b1d4caeb0` (audit) → remediace `103be4e6a` · produkce: pool @ `103be4e6a` (Edge), web @ EDGE2 `/var/www/pool`
 > **Metoda:** manuální code review money/credit-paths + live probe veřejného povrchu.
 > Navazuje na `AUDIT-REPORT.md` (2026-10-25) — payout/deferred atomika už opravena;
 > tento audit cílil na **stratum, share accounting, auxpow, API povrch a statickou appku**.
@@ -157,12 +157,26 @@ Soubory: `V31/L1/pool/src/pool.rs`, `stratum.rs`, `api.rs`. Build clean,
 `rejects_foreign_worker_submit`; `pool.rs`: external-share replay assert
 v `external_payouts_partition_from_zion`.
 
-**Deployment poznámka:** pool binárka na Edgi běží ještě na `6c8165d4a`
-(zranitelná vůči P-01) — doporučen **rebuild + redeploy z tohoto commitu
-přednostně**; postup shodný s `audit-deploy-6c8165d4a-pool-*` (offline build
-v resource-capped unit, `.backup` snapshotů, rollback bak).
+**Deployment:** nasazeno 2026-10-26 ~06:58 UTC — viz §5.
 
-## 5. Zůstatková rizika
+## 5. Produkční nasazení remedií (2026-10-26 ~06:58 UTC)
+
+- **Postup:** 3 změněné zdrojáky (`api.rs`, `pool.rs`, `stratum.rs`) nahrány do
+  `/opt/zion/V31` na Edgi (sha256 ověřeny proti repu); release build
+  `cargo build --release -p zion-pool` offline v resource-capped transient
+  unit (`CPUQuota=300%`, `MemoryMax=6G`, 10m42s); backup
+  `/root/audit-deploy-103be4e6a-pool-20261026T054251Z` (binárka
+  `968f56aa…`, pplns + payouts sidecar, `pool-store.db` .backup, unit).
+- **Nasazená binárka:** sha256 `9bedf4a2adc3389c17de8b0d70e98ed6985c16d963df1a6223a8b1d71c703b93`.
+- **Live ověření po restartu:** unit active; stratum `0.0.0.0:8444` + TLS
+  `:8445`, API `127.0.0.1:8080`; `/health` ok; minery se reconnectly
+  (3 sessions do ~40 s, share accepted v3 cestou); PPLNS state restorován
+  (214 minerů, 95 982 roundů, unpaid zachován); history 1440 samples.
+- **Rollback:** `install /root/audit-deploy-103be4e6a-pool-*/0-zion-pool
+  → /opt/zion/V31/target/release/zion-pool` + `systemctl restart
+  zion-v31-pool` (state soubory zachovány vedle).
+
+## 6. Zůstatková rizika
 
 - **Restart ztratí dedup okno** — `share_dedup` je in-memory (512 jobů).
   Po restartu lze krátce replayovat staré joby dokud jobs tabulka nevyprší;
