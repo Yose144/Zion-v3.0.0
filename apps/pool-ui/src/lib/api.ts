@@ -4,7 +4,7 @@
 // deliberately serves only live operational data.
 
 import * as mock from './mock';
-import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, MinerStats, PayoutRow, PayoutStatus, PoolOverview } from './types';
+import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, FeeSplit, MinerStats, PayoutRow, PayoutStatus, PoolOverview } from './types';
 
 const USE_MOCK = false;
 const API_BASE = '/public/v1';
@@ -152,7 +152,7 @@ function toPayoutRow(coin: CoinId, p: ApiPayout): PayoutRow {
 
 export async function fetchOverview(): Promise<PoolOverview> {
   if (USE_MOCK) return mock.poolOverview();
-  const { coins } = await get<{ ok: boolean; coins: ApiCoin[] }>('/coins');
+  const { coins, fees } = await get<{ ok: boolean; coins: ApiCoin[]; fees?: FeeSplit }>('/coins');
   const infos = coins.map(toCoinInfo).filter((c): c is CoinInfo => c !== null);
   const stats: Record<string, CoinStats> = {};
   await Promise.all(
@@ -163,7 +163,7 @@ export async function fetchOverview(): Promise<PoolOverview> {
       } catch { /* stat failures degrade to absent entries */ }
     }),
   );
-  return { uptime_s: 0, coins: infos, stats };
+  return { uptime_s: 0, coins: infos, stats, fees: fees ?? null };
 }
 
 export interface HistorySample {

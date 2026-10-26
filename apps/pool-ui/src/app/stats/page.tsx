@@ -132,6 +132,28 @@ export default function StatsPage() {
         ))}
       </div>
 
+      {/* Protocol reward split (89/5/5/1) — from /public/v1/coins fees */}
+      {ov.fees && (
+        <div className="pool-card mt-3 p-4">
+          <div className="mb-2 flex justify-between text-[0.65rem] text-white/40">
+            <span>{t('rozdělení odměny za blok', 'block reward split')}</span>
+            <span>{t('pool fee', 'pool fee')} {ov.fees.pool_fee_pct}%</span>
+          </div>
+          <div className="flex h-2 overflow-hidden rounded-full bg-white/5">
+            <div className="h-full bg-rasta-green" style={{ width: `${ov.fees.miner_pct}%` }} />
+            <div className="h-full bg-zion-gold" style={{ width: `${ov.fees.humanitarian_pct}%` }} />
+            <div className="h-full bg-zion-cyan" style={{ width: `${ov.fees.issobella_pct}%` }} />
+            <div className="h-full bg-rasta-red/70" style={{ width: `${ov.fees.pool_fee_pct}%` }} />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.65rem] text-white/50">
+            <span><span className="text-rasta-green">●</span> {ov.fees.miner_pct}% {t('mineři (PPLNS)', 'miners (PPLNS)')}</span>
+            <span><span className="text-zion-gold">●</span> {ov.fees.humanitarian_pct}% {t('humanitární fond', 'humanitarian fund')}</span>
+            <span><span className="text-zion-cyan">●</span> {ov.fees.issobella_pct}% Issobella</span>
+            <span><span className="text-rasta-red/70">●</span> {ov.fees.pool_fee_pct}% {t('pool fee', 'pool fee')}</span>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8 flex flex-col gap-5">
         {ov.coins.map((c) => {
           const s = ov.stats[c.id];

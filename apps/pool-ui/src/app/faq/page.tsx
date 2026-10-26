@@ -35,6 +35,26 @@ const QA: { cs: [string, string]; en: [string, string] }[] = [
   },
   {
     cs: [
+      'Jak se dělí odměna za blok a jaký je pool fee?',
+      'Každý nalezený blok se podle protokolu dělí: 89 % mineři (PPLNS podle sharů) · 5 % humanitární fond · 5 % Issobella · 1 % pool fee. Split provádí coinbase uzlu, pool jen redistribuuje minerskou část. Aktuální hodnoty vidíte na stránce Statistiky a v /public/v1/coins.',
+    ],
+    en: [
+      'How is the block reward split and what is the pool fee?',
+      'Every found block is split by protocol: 89% miners (PPLNS by shares) · 5% humanitarian fund · 5% Issobella · 1% pool fee. The node coinbase performs the split; the pool only redistributes the miner share. Live values are on the Stats page and in /public/v1/coins.',
+    ],
+  },
+  {
+    cs: [
+      'Můžu těžit sólo (winner-take-all)?',
+      'Ano — dedikovaný SOLO port :8446. Kdo najde blok, bere celou 89% minerskou část sám; shary ze SOLO portu se nepočítají do PPLNS okna. Normální pool těžba zůstává na :8444/:8445.',
+    ],
+    en: [
+      'Can I mine solo (winner-take-all)?',
+      'Yes — dedicated SOLO port :8446. Whoever finds a block takes the whole 89% miner share alone; SOLO-port shares do not count toward the PPLNS window. Regular pool mining stays on :8444/:8445.',
+    ],
+  },
+  {
+    cs: [
       'Co je vardiff a proč se mi mění obtížnost?',
       'Pool dynamicky nastavuje share obtížnost podle vašeho hashratu — slabší rig submituje méně často, silnější častěji. Cíl je ~1 submit / 10–30 s. Nemění to vaši odměnu.',
     ],

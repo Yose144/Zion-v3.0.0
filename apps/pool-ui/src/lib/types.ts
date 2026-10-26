@@ -106,8 +106,18 @@ export interface MinerStats {
   payout_eta_s: number | null;
 }
 
+/** Protocol reward split — percentages of each ZION block subsidy. */
+export interface FeeSplit {
+  miner_pct: number;
+  humanitarian_pct: number;
+  issobella_pct: number;
+  pool_fee_pct: number;
+}
+
 export interface PoolOverview {
   uptime_s: number;
   coins: CoinInfo[];
   stats: Record<string, CoinStats>;
+  /** Global fee split from `/coins` — null when the backend predates it. */
+  fees: FeeSplit | null;
 }

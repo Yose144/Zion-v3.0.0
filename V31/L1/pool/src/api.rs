@@ -1673,6 +1673,15 @@ impl PoolApi {
         }
         json!({
             "ok": true,
+            // Protocol reward split (emission 89/5/5/1) — global, applies to
+            // every coin's ZION-reward distribution. Pool fee is the pool
+            // operator slice inside it.
+            "fees": {
+                "miner_pct": fees.miner_pct,
+                "humanitarian_pct": fees.humanitarian_pct,
+                "issobella_pct": fees.issobella_pct,
+                "pool_fee_pct": fees.pool_fee_pct
+            },
             "coins": coins.values().collect::<Vec<_>>()
         })
         .to_string()
@@ -3218,6 +3227,13 @@ mod tests {
         ] {
             assert!(!body.contains(forbidden), "leaked field: {forbidden}");
         }
+
+        // A3.4: the protocol reward split is public on /coins.
+        let fees = &payload["fees"];
+        assert_eq!(fees["miner_pct"], 89);
+        assert_eq!(fees["humanitarian_pct"], 5);
+        assert_eq!(fees["issobella_pct"], 5);
+        assert_eq!(fees["pool_fee_pct"], 1);
     }
 
     #[test]

@@ -243,5 +243,10 @@ export const DEMO_WALLETS: Record<string, string> = {
 };
 
 export function poolOverview(): PoolOverview {
-  return { uptime_s: 2_847_913, coins: COINS, stats: COIN_STATS };
+  return {
+    uptime_s: 2_847_913,
+    coins: COINS,
+    stats: COIN_STATS,
+    fees: { miner_pct: 89, humanitarian_pct: 5, issobella_pct: 5, pool_fee_pct: 1 },
+  };
 }
