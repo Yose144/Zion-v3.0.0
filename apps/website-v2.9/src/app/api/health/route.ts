@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { SITE_VERSION } from '@/lib/site';
+import { SITE_RELEASE_STAGE, SITE_RELEASE_TAGLINE, SITE_VERSION } from '@/lib/site';
 import { getZionRpc } from '@/lib/zion-rpc';
 
 type DependencyStatus = {
@@ -45,6 +45,8 @@ export async function GET() {
   return NextResponse.json({
     status,
     version: process.env.NEXT_PUBLIC_APP_VERSION || SITE_VERSION,
+    release_stage: SITE_RELEASE_STAGE,
+    release_label: SITE_RELEASE_TAGLINE,
     environment: process.env.NODE_ENV || 'production',
     uptime_seconds: Math.floor(process.uptime()),
     dependencies: {

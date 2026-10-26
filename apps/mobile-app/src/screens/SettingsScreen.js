@@ -46,6 +46,8 @@ const SettingsScreen = ({navigation}) => {
             <Text style={styles.appName}>ZION Mobile</Text>
             <Text style={styles.appVersion}>v{CONFIG.VERSION} (Build {CONFIG.BUILD_NUMBER})</Text>
             <Text style={styles.appCodename}>{CONFIG.CODENAME}</Text>
+            <Text style={styles.appCodename}>Mobile preview · {CONFIG.CLIENT_STAGE}</Text>
+            <Text style={styles.appCodename}>{CONFIG.NETWORK_RELEASE_LABEL}</Text>
           </View>
         </View>
         {/* CHv4 Badge */}

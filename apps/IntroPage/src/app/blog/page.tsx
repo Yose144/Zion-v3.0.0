@@ -107,8 +107,8 @@ export default function BlogPage() {
           </div>
           <p className="text-center text-white/70">
             {lang === "cs"
-              ? "Kompletní kronika projektu — od prvního dne cesty v roce 2023 po ZION MAINNET ALPHA 2026."
-              : "The complete chronicle of the project — from the first day of the journey in 2023 to ZION MAINNET ALPHA 2026."}
+              ? "Kompletní kronika projektu — od prvního dne cesty v roce 2023 po ZION MAINNET BETA 2026."
+              : "The complete chronicle of the project — from the first day of the journey in 2023 to ZION MAINNET BETA 2026."}
           </p>
 
           <div className="my-6 flex flex-wrap justify-center gap-2">

@@ -848,8 +848,8 @@ function getFallbackReadinessMap(cs: boolean): ReadinessMap {
       { title: '89/5/5/1 reward split', detail: cs ? 'On-chain od přechodu na mainnet' : 'On-chain since the mainnet cutover' },
     ],
     next_48h: [
-      { title: 'G8 — 30-day continuous run #2', detail: cs ? 'Gate nesplněn (kritické incidenty, vyčerpaný downtime budget). Okno běží do 29. 10. jen pro data; run #3 po plánu liveness těžby.' : 'Gate failed (critical incidents, downtime budget exhausted). Window runs to 29 Oct for data only; run #3 after a mining-liveness plan.' },
-      { title: 'G9 — security audit', detail: cs ? 'Scope auditu celého projektu připraven; externí firma zatím neobjednána.' : 'Whole-project audit scope drafted; external firm not yet engaged.' },
+      { title: 'G8 — 30-day continuous run', detail: cs ? 'Aktuální 30denní stabilitní run probíhá — live monitoring a evidence na /g8.' : 'Current 30-day stability run in progress — live monitoring and evidence on /g8.' },
+      { title: 'G9 — security audit', detail: cs ? 'Scope auditu celého projektu připraven; externí audit odložen rozhodnutím operátora (pending).' : 'Whole-project audit scope drafted; external audit postponed by operator decision (pending).' },
       { title: 'Disaster-recovery drill', detail: cs ? 'Částečný test obnovy jednoho nodu proběhl 5. 10.; plný šifrovaný off-site DR drill stále chybí.' : 'Partial single-node restore test done 2026-10-05; a full encrypted off-site restore drill is still required.' },
       { title: cs ? 'Release artefakty' : 'Release artifacts', detail: cs ? 'Sjednocení verzí, checksumy, podepsaný tag po stabilitě' : 'Version unification, checksums, signed tag after stability' },
     ],
@@ -2295,7 +2295,7 @@ export default function MissionControlDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <Activity className="h-4 w-4" />
-                MAINNET · LIVE · ALPHA
+                MAINNET · LIVE · BETA
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{MissionControlDashboardCopy.liveTelemetry[cs ? 'cs' : 'en']}</p>
@@ -2314,7 +2314,7 @@ export default function MissionControlDashboard() {
                   <span className="w-1.5 h-1.5 rounded-full bg-zion-cyan animate-pulse" /> {MissionControlDashboardCopy.liveData30sRefresh[cs ? 'cs' : 'en']}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-emerald-200">
-                  <CheckCircle2 className="h-3 w-3" /> Mainnet Alpha · Live
+                  <CheckCircle2 className="h-3 w-3" /> Mainnet Beta · Live
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-cyan-200">
                   <Sparkles className="h-3 w-3" /> Network · public pool + consensus
@@ -2437,7 +2437,7 @@ export default function MissionControlDashboard() {
                 <div className="flex items-center gap-3">
                   <p className="text-sm uppercase tracking-[0.4em] text-gray-500">One Love Mainnet</p>
                   <span className="text-[10px] uppercase tracking-widest border border-zion-cyan/40 bg-zion-cyan/10 text-zion-cyan px-2 py-0.5 rounded-full font-semibold">
-                    LIVE · ALPHA
+                    LIVE · BETA
                   </span>
                 </div>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
@@ -2446,8 +2446,8 @@ export default function MissionControlDashboard() {
                 </h2>
                 <p className="text-sm text-gray-400">
                   {cs
-                    ? 'Síťová topologie aktivní. Mainnet Alpha live, G8 run #2 nesplnil gate, genesis artefakty potvrzeny. Veřejný mainnet launch je odložen; nové datum oznámíme po splnění podmínek.'
-                    : 'Network topology active. Mainnet Alpha live, G8 run #2 failed the gate, genesis artifacts confirmed. Public mainnet launch is postponed; a new date will be announced once conditions are met.'
+                    ? 'Síťová topologie aktivní. Mainnet Beta live, aktuální G8 30denní run probíhá (monitoring na /g8), genesis artefakty potvrzeny. Veřejný mainnet launch je odložen; nové datum oznámíme po splnění podmínek.'
+                    : 'Network topology active. Mainnet Beta live, the current G8 30-day run is in progress (monitoring on /g8), genesis artifacts confirmed. Public mainnet launch is postponed; a new date will be announced once conditions are met.'
                   }
                 </p>
               </div>
@@ -2464,8 +2464,8 @@ export default function MissionControlDashboard() {
               </div>
               <div className="mt-4 zion-tile px-5 py-4 text-sm text-gray-300">
                 {cs
-                  ? <><span className="font-semibold text-zion-gold">One Love Mainnet</span> — Mainnet Alpha v testování, G8 run #2 nesplnil gate, genesis artefakty potvrzeny. Síťová topologie v testování.</>
-                  : <><span className="font-semibold text-zion-gold">One Love Mainnet</span> — Mainnet Alpha in testing, G8 run #2 failed the gate, genesis artifacts confirmed. Network topology in testing.</>
+                  ? <><span className="font-semibold text-zion-gold">One Love Mainnet</span> — Mainnet Beta v testování, aktuální G8 30denní run probíhá (/g8), genesis artefakty potvrzeny. Síťová topologie v testování.</>
+                  : <><span className="font-semibold text-zion-gold">One Love Mainnet</span> — Mainnet Beta in testing, the current G8 30-day run is in progress (/g8), genesis artifacts confirmed. Network topology in testing.</>
                 }
               </div>
             </motion.section>
@@ -2543,8 +2543,8 @@ export default function MissionControlDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Network" value="ZION" sub="One Love · L1–L6" color="text-zion-cyan" />
                 <Stat label="Tests" value="2,100+" sub="workspace passing / 0 failing" color="text-zion-cyan" />
-                <Stat label="Launch Mode" value="G8 FAILED" sub="run #2 · run #3 pending" color="text-zion-gold" />
-                <Stat label="Mainnet Status" value="ALPHA LIVE" sub="public launch postponed (TBD)" color="text-zion-gold" />
+                <Stat label="Launch Mode" value="G8 RUNNING" sub="30-day run · monitoring /g8" color="text-zion-gold" />
+                <Stat label="Mainnet Status" value="BETA LIVE" sub="public launch postponed (TBD)" color="text-zion-gold" />
               </div>
             </motion.section>
 
@@ -3095,8 +3095,8 @@ export default function MissionControlDashboard() {
                       { step: 'G1 Rigs E2E', desc: 'Produkční rigy na mainnet poolu — GTX 1070 Ti + SMOS AMD rig, >99% accept', status: 'done', ref: 'closed' },
                       { step: 'G7 Chaos/Load', desc: '10k-miner pool handshake, DEX/bridge overload, P2P storm', status: 'done', ref: 'passed' },
                       { step: 'Public Build', desc: 'public build — Boost branding, protected details', status: 'done', ref: 'v3.2.0' },
-                      { step: 'G8 30-Day Run', desc: 'Run #2 (29. 9. – 29. 10. 2026) nesplnil gate; run #3 po zajištění těžby', status: 'pending', ref: 'run #2 failed' },
-                      { step: 'G9 Security Audit', desc: 'Externí audit před public launchem', status: 'pending', ref: 'scheduled' },
+                      { step: 'G8 30-Day Run', desc: 'Run #2 (29. 9. – 29. 10. 2026) nesplnil gate — historie; aktuální run probíhá, monitoring /g8', status: 'pending', ref: 'run in progress' },
+                      { step: 'G9 Security Audit', desc: 'Externí audit před public launchem — odložen (pending)', status: 'pending', ref: 'postponed' },
                     ].map(row => (
                       <tr key={row.step} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${row.status === 'pending' ? 'bg-zion-gold/5' : ''}`}>
                         <td className="py-3 px-4 font-semibold text-white">{row.step}</td>
@@ -3267,11 +3267,11 @@ export default function MissionControlDashboard() {
                   <Target className="h-7 w-7 text-zion-gold" />
                   Roadmap — Launch Countdown
                 </h2>
-                <p className="text-sm text-gray-400">{cs ? 'Mainnet Alpha live. Gates G1–G7, G10 a G11 hotové; G8 run #2 nesplnil gate, další běh se připravuje. Veřejný launch je odložen (TBD).' : 'Mainnet Alpha live. Gates G1–G7, G10 and G11 complete; G8 run #2 failed, the next run is being prepared. Public launch is postponed (TBD).'}</p>
+                <p className="text-sm text-gray-400">{cs ? 'Mainnet Beta live. Gates G1–G7, G10 a G11 hotové; aktuální G8 30denní run probíhá (monitoring /g8). Veřejný launch je odložen (TBD).' : 'Mainnet Beta live. Gates G1–G7, G10 and G11 complete; the current G8 30-day run is in progress (monitoring /g8). Public launch is postponed (TBD).'}</p>
               </div>
               <div className="relative h-9 zion-section overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-zion-gold via-zion-cyan to-zion-purple" initial={{ width: 0 }} animate={{ width: '85%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · MAINNET ALPHA LIVE · G8 30-DAY RUN · PUBLIC LAUNCH POSTPONED (TBD)</span>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · MAINNET BETA · G8 30-DAY RUN · PUBLIC LAUNCH POSTPONED (TBD)</span>
               </div>
             </motion.section>
 
@@ -3326,13 +3326,13 @@ export default function MissionControlDashboard() {
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 4 — G8 30-Day Continuous Run' : 'Phase 4 — G8 30-Day Continuous Run'} pct={29} status={cs ? 'GATE FAIL · RUN #3 PENDING' : 'GATE FAIL · RUN #3 PENDING'} statusColor="border-zion-gold/30 bg-zion-gold/10 text-amber-200" defaultOpen>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Run #2: 29. 9. – 29. 10. 2026 · uptime cíl ≥ 99,9 % · gate nesplněn (kritické výpadky těžby 3.–5. 10.)' : 'Run #2: 29 Sep – 29 Oct 2026 · uptime target ≥ 99.9% · gate failed (critical mining outages Oct 3–5)'}</p>
+              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 4 — G8 30-Day Continuous Run' : 'Phase 4 — G8 30-Day Continuous Run'} pct={29} status={cs ? 'RUN IN PROGRESS' : 'RUN IN PROGRESS'} statusColor="border-zion-gold/30 bg-zion-gold/10 text-amber-200" defaultOpen>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Run #2: 29. 9. – 29. 10. 2026 · gate nesplněn (kritické výpadky těžby 3.–5. 10.) · aktuální run probíhá — monitoring /g8' : 'Run #2: 29 Sep – 29 Oct 2026 · gate failed (critical mining outages Oct 3–5) · current run in progress — monitoring /g8'}</p>
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
-                  <SprintRow name="4.1 Continuous Run #2" content={cs ? 'Celá ZION síť pod trvalým dohledem — node, pool, bridge, web · okno běží do 29. 10. jen pro evidence' : 'Full ZION network under continuous watch — node, pool, bridge, web · window runs to Oct 29 for evidence only'} status={<span className="text-zion-gold inline-flex items-center gap-1"><XCircle className="h-3.5 w-3.5" /> GATE FAIL</span>} highlight />
+                  <SprintRow name="4.1 Continuous Run #2" content={cs ? 'Celá ZION síť pod trvalým dohledem — node, pool, bridge, web · okno doběhlo 29. 10. jen pro evidence' : 'Full ZION network under continuous watch — node, pool, bridge, web · window ended Oct 29 for evidence only'} status={<span className="text-zion-gold inline-flex items-center gap-1"><XCircle className="h-3.5 w-3.5" /> GATE FAIL</span>} highlight />
                   <SprintRow name="4.2 Mining Liveness Hardening" content={cs ? 'Duplicate-share fix napříč rigy + restart-safe state + duty-cycle tuning — nasazeno 8. 10.' : 'Duplicate-share fix across rigs + restart-safe state + duty-cycle tuning — deployed Oct 8'} status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
                   <SprintRow name="4.3 F2 Transaction Fuzz" content={cs ? '24h transaction fuzz evidence pending' : '24h transaction fuzz evidence pending'} status={<span className="text-zion-gold inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> PENDING</span>} />
-                  <SprintRow name="4.4 Run #3 + Closure Report" content={cs ? 'Nový 30denní běh po stabilizaci těžby — uptime ≥ 99,9 % → G8 COMPLETE' : 'New 30-day run after mining stabilization — uptime ≥ 99.9% → G8 COMPLETE'} status={<Square className="h-4 w-4 text-gray-500" />} />
+                  <SprintRow name="4.4 Current Run + Closure Report" content={cs ? 'Aktuální 30denní běh probíhá — uptime ≥ 99,9 % → G8 COMPLETE · live monitoring /g8' : 'Current 30-day run in progress — uptime ≥ 99.9% → G8 COMPLETE · live monitoring /g8'} status={<span className="text-zion-cyan inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> RUNNING</span>} />
                 </tbody></table></div>
               </PhaseAccordion>
 
@@ -3390,7 +3390,7 @@ export default function MissionControlDashboard() {
                   { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-zion-purple/5', title: 'Consciousness Mining as Gameplay', desc: cs ? 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine' : 'UE5 open-world, XP/Consciousness levels, NFT avatars, Play-to-Mine', tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-zion-purple', active: false, Icon: Gamepad2 },
                   { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-zion-purple/5', title: 'Neural Compute Layer & AI Agents', desc: cs ? 'WARP chain registry config-driven (G2 uzavřen), non-EVM chainy gated, NCL gateway a AI Native SDK navazují' : 'WARP chain registry config-driven (G2 closed), non-EVM chains gated, NCL gateway and AI Native SDK follow', tags: ['WARP Registry', 'NCL Gateway', cs ? 'AI Orchestrátor' : 'AI Orchestrator', cs ? 'GPU za ZION' : 'GPU for ZION'], date: cs ? '2026 Q3 — gated (G2 ✅)' : '2026 Q3 — gated (G2 ✅)', labelColor: 'text-zion-purple', active: true, Icon: Brain },
                   { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-zion-purple/5', title: 'Atomic Swaps, AMM & DAO', desc: cs ? 'wZION bridge live na Base mainnetu — E4 round-trip ověřen; trustless BTC↔ZION HTLC claim/refund nasazen, capped pilot v safety hold' : 'wZION bridge live on Base mainnet — E4 round-trip verified; trustless BTC↔ZION HTLC claim/refund deployed, capped pilot in safety hold', tags: ['HTLC Swaps', 'wZION Bridge', 'BTC↔ZION HTLC', 'Base Mainnet', 'DAO Voting'], date: '2026 Q3 — mainnet live (E4 ✅) · HTLC deployed 10/2026', labelColor: 'text-zion-purple', active: true, Icon: ArrowLeftRight },
-                  { label: cs ? 'L1 — ZION BLOCKCHAIN ← ZDE' : 'L1 — ZION BLOCKCHAIN ← HERE', color: 'border-l-cyan-400 bg-zion-cyan/[0.08] border-2 border-zion-cyan/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Ekam Deeksha v3.2 — Canonical', desc: cs ? 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sekvenční průchody, 128 náhodných čtení, 2 AES rundy — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identické.' : 'UTXO + Ed25519, Decade Decay emission (-20%/decade), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sequential passes, 128 random reads, 2 AES rounds — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identical.', tags: ['Ekam Deeksha v3.2', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Boost Mining'], date: cs ? 'Mainnet Alpha live · public launch odložen (TBD)' : 'Mainnet Alpha live · public launch postponed (TBD)', labelColor: 'text-zion-cyan', active: true, Icon: Link },
+                  { label: cs ? 'L1 — ZION BLOCKCHAIN ← ZDE' : 'L1 — ZION BLOCKCHAIN ← HERE', color: 'border-l-cyan-400 bg-zion-cyan/[0.08] border-2 border-zion-cyan/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Ekam Deeksha v3.2 — Canonical', desc: cs ? 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sekvenční průchody, 128 náhodných čtení, 2 AES rundy — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identické.' : 'UTXO + Ed25519, Decade Decay emission (-20%/decade), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sequential passes, 128 random reads, 2 AES rounds — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identical.', tags: ['Ekam Deeksha v3.2', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Boost Mining'], date: cs ? 'Mainnet Beta live · public launch odložen (TBD)' : 'Mainnet Beta live · public launch postponed (TBD)', labelColor: 'text-zion-cyan', active: true, Icon: Link },
                 ].map((l, idx) => (
                   <motion.div
                     key={l.label}
@@ -3613,7 +3613,7 @@ export default function MissionControlDashboard() {
                   <Shield className="h-7 w-7 text-zion-cyan" />
                   Mainnet Security Gate
                 </h2>
-                <p className="text-sm text-gray-400">{cs ? 'Mainnet Alpha security stack — konsensus hardening, soft-fork, chaos testy a infra zabezpečení nasazené. Před public launchem zbývá externí audit (G9).' : 'Mainnet Alpha security stack — consensus hardening, soft-fork, chaos tests, and infra security deployed. External audit (G9) remains before public launch.'}</p>
+                <p className="text-sm text-gray-400">{cs ? 'Mainnet Beta security stack — konsensus hardening, soft-fork, chaos testy a infra zabezpečení nasazené. Před public launchem zbývá externí audit (G9).' : 'Mainnet Beta security stack — consensus hardening, soft-fork, chaos tests, and infra security deployed. External audit (G9) remains before public launch.'}</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {[
@@ -3642,12 +3642,12 @@ export default function MissionControlDashboard() {
               </div>
               <div className="mt-6 grid gap-3 lg:grid-cols-3">
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-cyan">Mainnet Alpha Active</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-cyan">Mainnet Beta Active</p>
                   <p className="mt-2">{cs ? 'ZION konsensus, Ekam Deeksha v3.2, reward split 89/5/5/1 a payout sweep běží produkčně na mainnetu.' : 'ZION consensus, Ekam Deeksha v3.2, the 89/5/5/1 reward split, and the payout sweep run in production on mainnet.'}</p>
                 </div>
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">Launch Gate · G8 Run #2 Failed</p>
-                  <p className="mt-2">{cs ? 'G8 run #2 (29. 9. — 29. 10. 2026) nesplnil gate kvůli kritickým výpadkům těžby. Run #3 následuje po zajištění spolehlivé těžby; G9 externí audit zatím není objednán.' : 'G8 run #2 (29 Sep — 29 Oct 2026) failed the gate due to critical mining outages. Run #3 follows once reliable mining is secured; the G9 external audit is not yet engaged.'}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">Launch Gate · G8 Run In Progress</p>
+                  <p className="mt-2">{cs ? 'G8 run #2 (29. 9. — 29. 10. 2026) nesplnil gate kvůli kritickým výpadkům těžby — historie. Aktuální 30denní run probíhá, live monitoring na /g8; G9 externí audit odložen (pending).' : 'G8 run #2 (29 Sep — 29 Oct 2026) failed the gate due to critical mining outages — historical. The current 30-day run is in progress, live monitoring on /g8; the G9 external audit is postponed (pending).'}</p>
                 </div>
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-cyan">Pre-Launch</p>
@@ -3689,8 +3689,8 @@ export default function MissionControlDashboard() {
                       { done: true, pct: 100, date: cs ? '7. října 2026' : '7 Oct 2026', title: 'WARP TRUSTLESS HTLC', desc: cs ? 'Veřejný claim/refund s payout pinning nasazen — poslední code blocker BTC↔ZION swapu vyřešen' : 'Public claim/refund with payout pinning deployed — last BTC↔ZION swap code blocker resolved', color: 'text-zion-cyan' },
                       { done: true, pct: 100, date: cs ? '7. – 8. října 2026' : '7 – 8 Oct 2026', title: 'AUXPOW CATALOGUE + BTC LOTTERY FLEET', desc: cs ? 'Merged-mining katalog na poolu, one-click switching v agentu, distribuovaný lottery fleet s SQLite persistence' : 'Merged-mining catalogue on the pool, one-click switching in the agent, distributed lottery fleet with SQLite persistence', color: 'text-zion-cyan' },
                       { done: true, pct: 100, date: cs ? '8. října 2026' : '8 Oct 2026', title: 'MINING LIVENESS HARDENING', desc: cs ? 'Duplicate-share fix napříč rigy nasazen — odstraněn hlavní zdroj rejectů; příprava run #3' : 'Duplicate-share fix deployed across rigs — main reject source eliminated; run #3 preparation', color: 'text-zion-cyan' },
-                      { pct: g8?.progress_percent ?? 29, failed: true, date: cs ? '29. 9. — 29. 10. 2026' : '29 Sep — 29 Oct 2026', title: 'G8 30-DAY RUN #2', desc: cs ? `Gate nesplněn — kritické výpadky těžby (${g8?.incident_count ?? '—'} incidentů, ${g8?.critical_incident_count ?? '—'} kritických); okno dobíhá jen pro evidence, run #3 po stabilizaci` : `Gate failed — critical mining outages (${g8?.incident_count ?? '—'} incidents, ${g8?.critical_incident_count ?? '—'} critical); window runs for evidence only, run #3 after stabilization`, color: 'text-zion-gold' },
-                      { pct: 0, date: cs ? 'po stabilizaci těžby' : 'after mining stabilizes', title: 'G8 RUN #3', desc: cs ? 'Nový 30denní běh s vytvrzeným mining stackem — cíl ≥ 99,9 % uptime' : 'New 30-day run on the hardened mining stack — target ≥ 99.9% uptime', color: 'text-gray-300' },
+                      { failed: true, date: cs ? '29. 9. — 29. 10. 2026' : '29 Sep — 29 Oct 2026', title: 'G8 30-DAY RUN #2', desc: cs ? 'Gate nesplněn — kritické výpadky těžby; historický záznam' : 'Gate failed — critical mining outages; historical record', color: 'text-zion-gold' },
+                      { active: true, pct: g8?.progress_percent ?? 0, date: cs ? 'aktuální run' : 'current run', title: 'G8 30-DAY RUN — CURRENT', desc: cs ? `Aktuální 30denní běh probíhá (${g8?.incident_count ?? '—'} incidentů, ${g8?.critical_incident_count ?? '—'} kritických) — live monitoring a evidence na /g8` : `Current 30-day run in progress (${g8?.incident_count ?? '—'} incidents, ${g8?.critical_incident_count ?? '—'} critical) — live monitoring and evidence on /g8`, color: 'text-zion-cyan' },
                       { active: true, pct: 0, date: cs ? 'TBD' : 'TBD', title: 'PUBLIC LAUNCH', desc: cs ? 'One Love Mainnet public GO — odloženo; nové datum po uzavření G8/G9/G10 a splnění Maturity Gate' : 'One Love Mainnet public GO — postponed; new date after G8/G9/G10 closure and Maturity Gate', color: 'text-zion-cyan' },
                     ] as Array<{ done?: boolean; active?: boolean; failed?: boolean; pct?: number; date: string; title: string; desc: string; color?: string }>).map((item, i) => (
                       <div key={i} className="relative">

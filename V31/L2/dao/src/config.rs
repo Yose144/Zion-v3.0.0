@@ -95,7 +95,7 @@ impl Default for DaoConfig {
     fn default() -> Self {
         Self {
             name: "ZION DAO".into(),
-            version: "3.1.0-alpha.1".into(),
+            version: env!("CARGO_PKG_VERSION").into(),
             api_port: 8080,
             api_key: String::new(),
             db_path: "data/dao.db".into(),

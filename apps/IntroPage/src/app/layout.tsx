@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://zionterranova.com"),
   title: "ZION TerraNova — Native Rust Blockchain & OASIS Ecosystem",
   description:
-    "ZION TerraNova: native Rust Layer-1 blockchain — mining pool, explorer, wallet, multichain bridge, OASIS metaverse, humanitarian fee split. One Love.",
+    "ZION TerraNova: native Rust Layer-1 blockchain — mining pool, explorer, wallet, multichain bridge, OASIS metaverse, humanitarian fee split. One Love · v3.2.0 Mainnet Beta (testing stage).",
   keywords:
     "ZION TerraNova, ZION blockchain, ZION coin, zionterranova, native rust blockchain, OASIS metaverse, consciousness mining, humanitarian crypto",
   alternates: { canonical: "/" },

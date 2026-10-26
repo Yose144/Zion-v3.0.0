@@ -30,9 +30,9 @@ const t = {
     badge: `${SITE_RELEASE_LABEL} · Roadmap`,
     missionControl: 'Mission Control',
     title: 'Plán letu k veřejnému launchi (odloženo)',
-    subtitle: 'One Love Mainnet Alpha — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Veřejný launch je odložen (TBD); nové datum oznámíme po splnění Maturity Gate, zajištění základní likvidity a sestavení týmu dobrovolných vývojářů. 30denní stabilitní run #2 nesplnil gate (kritické výpadky těžby); další běh spustíme po zajištění spolehlivé těžby — průběh na /g8.',
+    subtitle: '3.2 „One Love" Mainnet Beta — nikoli Stable. Node, pool i multichain běží v produkci. Veřejný launch je odložen (TBD). Aktuální 30denní stabilitní run — důkazy na /g8; nezávislý audit a test obnovy ze záloh zůstávají otevřené.',
     subtitleStrong: 'odloženo (TBD)',
-    updated: 'Aktualizováno 5. 10. 2026',
+    updated: 'Aktualizováno 26. 10. 2026',
     publicLaunch: 'Veřejný launch · odloženo (TBD)',
     testsPassing: '2 155+ testů prochází',
     heroStats: [
@@ -106,9 +106,9 @@ const t = {
     badge: `${SITE_RELEASE_LABEL} · Roadmap`,
     missionControl: 'Mission Control',
     title: 'Flight plan to public launch (postponed)',
-    subtitle: 'One Love Mainnet Alpha — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. The public launch is postponed (TBD); a new date will be announced once the Maturity Gate is passed, basic liquidity is secured, and a team of volunteer developers is assembled. The 30-day stability run #2 did not pass the gate (critical mining outages); the next run starts once reliable mining is secured — status on /g8.',
+    subtitle: '3.2 "One Love" Mainnet Beta — not Stable. Node, pool, and multichain run in production. The public launch is postponed (TBD). Current 30-day stability run evidence on /g8; independent audit and recovery drill remain pending.',
     subtitleStrong: 'postponed (TBD)',
-    updated: 'Updated 5 Oct 2026',
+    updated: 'Updated 26 Oct 2026',
     publicLaunch: 'Public launch · postponed (TBD)',
     testsPassing: '2,155+ tests passing',
     heroStats: [
@@ -512,7 +512,7 @@ export default function RoadmapPage() {
           </div>
         </motion.section>
 
-        {/* 3.2 PATH — ALPHA → BETA → STABLE */}
+        {/* 3.2 PATH — ALPHA → BETA → RC → STABLE */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -524,21 +524,21 @@ export default function RoadmapPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Aktuální fáze' : 'Current stage'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Cesta 3.2 „One Love“: Alpha → Beta → Stable' : 'The 3.2 "One Love" path: Alpha → Beta → Stable'}
+              {cs ? 'Cesta 3.2 „One Love“: Alpha → Beta → RC → Stable' : 'The 3.2 "One Love" path: Alpha → Beta → RC → Stable'}
             </h2>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-lg font-semibold text-white">Alpha</p>
-                <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-3 py-1 text-xs font-semibold text-zion-cyan uppercase">{cs ? 'Live' : 'Live'}</span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-3 py-1 text-xs font-semibold text-zion-cyan uppercase">{cs ? 'Dokončeno' : 'Completed'}</span>
               </div>
               <p className="text-sm text-gray-300">{cs ? 'Node, pool, multichain, DAO a OASIS běží v produkci na mainnetu.' : 'Node, pool, multichain, DAO and OASIS run in production on mainnet.'}</p>
             </div>
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-lg font-semibold text-white">Beta</p>
-                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-3 py-1 text-xs font-semibold text-zion-gold uppercase">{cs ? 'Rozpracováno' : 'In progress'}</span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-3 py-1 text-xs font-semibold text-zion-gold uppercase">{cs ? 'Aktuální' : 'Current'}</span>
               </div>
               <ul className="text-sm text-gray-300 space-y-1.5 list-disc pl-4">
                 {(cs
@@ -547,15 +547,27 @@ export default function RoadmapPage() {
                 ).map((item) => <li key={item}>{item}</li>)}
               </ul>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-lg font-semibold text-white">Stable</p>
-                <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-3 py-1 text-xs font-semibold text-zion-purple uppercase">{cs ? 'Plán' : 'Planned'}</span>
+                <p className="text-lg font-semibold text-white">RC</p>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-semibold text-gray-300 uppercase">{cs ? 'Čeká' : 'Pending'}</span>
               </div>
               <ul className="text-sm text-gray-300 space-y-1.5 list-disc pl-4">
                 {(cs
-                  ? ['30denní stabilitní run ≥ 99,9 % bez kritického incidentu (run #2 nesplnil)', 'nezávislý externí bezpečnostní audit a oprava nálezů', 'plný test obnovy ze šifrovaných off-site záloh', 'podepsané release artefakty a kontrolní součty']
-                  : ['30-day stability run ≥99.9% with no critical incident (run #2 failed)', 'independent external security audit and remediation', 'full restore drill from encrypted off-site backups', 'signed release artifacts and checksums']
+                  ? ['feature freeze (DEFERRED_3.2)', 'release artefakty ověřené z RC commitu', 'čisté G8 okno', 'externí audit v běhu']
+                  : ['feature freeze (DEFERRED_3.2)', 'release artifacts verified from the RC commit', 'clean G8 window', 'external audit in progress']
+                ).map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            </div>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-lg font-semibold text-white">Stable</p>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-3 py-1 text-xs font-semibold text-zion-purple uppercase">{cs ? 'Gated' : 'Gated'}</span>
+              </div>
+              <ul className="text-sm text-gray-300 space-y-1.5 list-disc pl-4">
+                {(cs
+                  ? ['30denní stabilitní run ≥ 99,9 % bez kritického incidentu — aktuální run probíhá (/g8)', 'nezávislý externí bezpečnostní audit a oprava nálezů', 'plný test obnovy ze šifrovaných off-site záloh', 'podepsané release artefakty a kontrolní součty']
+                  : ['30-day stability run ≥99.9% with no critical incident — current run in progress (/g8)', 'independent external security audit and remediation', 'full restore drill from encrypted off-site backups', 'signed release artifacts and checksums']
                 ).map((item) => <li key={item}>{item}</li>)}
               </ul>
             </div>

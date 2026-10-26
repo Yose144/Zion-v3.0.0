@@ -53,7 +53,10 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-white/5 px-4 py-4 text-center text-[0.68rem] text-white/30">
-        © 2026 ZION TerraNova · pool.zionterranova.com
+        © 2026 ZION TerraNova · pool.zionterranova.com ·{' '}
+        <a href="https://app.zionterranova.com/roadmap" className="hover:text-white/60">
+          ZION v3.2 · Mainnet Beta
+        </a>
       </div>
     </footer>
   );

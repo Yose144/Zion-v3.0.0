@@ -221,6 +221,8 @@ export const CONFIG = {
   VERSION: '3.0.6',
   BUILD_NUMBER: '8',
   CODENAME: 'Trinity',
+  NETWORK_RELEASE_LABEL: 'ZION v3.2 · Mainnet Beta',
+  CLIENT_STAGE: 'preview',
 };
 
 export default CONFIG;

@@ -24,7 +24,7 @@ import HeroSlider from './HeroSlider';
 import MainnetCountdown from './MainnetCountdown';
 
 const HeroCopy = {
-  mainnetBetaGithub: { cs: `Mainnet Alpha · GitHub`, en: `Mainnet Alpha · GitHub` },
+  mainnetBetaGithub: { cs: `Mainnet Beta · GitHub`, en: `Mainnet Beta · GitHub` },
 };
 
 export default function Hero() {

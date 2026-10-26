@@ -385,7 +385,8 @@ async fn health() -> Json<serde_json::Value> {
     ok(serde_json::json!({
         "status": "ok",
         "service": "zion-dao",
-        "version": "3.1.0-alpha"
+        "version": env!("CARGO_PKG_VERSION"),
+        "release_stage": "beta"
     }))
 }
 
@@ -1732,5 +1733,20 @@ mod tests {
         assert!(status.admin_unlock_known);
         assert!(!status.admin_unlocked);
         assert!(!status.spendable);
+    }
+
+    #[tokio::test]
+    async fn health_reports_package_version_and_beta_stage() {
+        let Json(body) = health().await;
+        assert_eq!(body["status"], "ok");
+        assert_eq!(body["service"], "zion-dao");
+        assert_eq!(body["version"], env!("CARGO_PKG_VERSION"));
+        assert_eq!(body["release_stage"], "beta");
+    }
+
+    #[test]
+    fn dao_config_default_version_matches_package() {
+        let cfg = DaoConfig::default();
+        assert_eq!(cfg.version, env!("CARGO_PKG_VERSION"));
     }
 }

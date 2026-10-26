@@ -25,7 +25,7 @@ use zion_multichain::MultichainService;
 
 #[derive(Parser)]
 #[command(name = "zion")]
-#[command(about = "ZION V31 Mainnet Alpha CLI")]
+#[command(about = "ZION Mainnet Beta CLI")]
 #[command(version)]
 pub struct Cli {
     /// Path to the multichain TOML config.

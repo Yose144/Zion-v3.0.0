@@ -3133,7 +3133,7 @@ function setupEventListeners() {
     addLogEntry('Mining started successfully', 'info');
     // Mining Console banner
     appendMiningConsole('─'.repeat(60));
-    appendMiningConsole(' * ZION V31 Mainnet Alpha v3.1.0 — Mining started');
+    appendMiningConsole(' * ZION v3.2.0 Mainnet Beta — Mining started');
     appendMiningConsole('─'.repeat(60));
   });
   

@@ -697,8 +697,8 @@ const CLI_PRESET = [
 const BOOT_SEQUENCE = [
   {
     command: 'zion version',
-    responseCs: 'zion v3.2.0 "One Love, Mainnet Alpha" · mainnet · 6-decimal flowers · build 2026-08-06',
-    responseEn: 'zion v3.2.0 "One Love, Mainnet Alpha" · mainnet · 6-decimal flowers · build 2026-08-06',
+    responseCs: 'zion v3.2.0 "One Love, Mainnet Beta" · mainnet · 6-decimal flowers',
+    responseEn: 'zion v3.2.0 "One Love, Mainnet Beta" · mainnet · 6-decimal flowers',
   },
   {
     command: 'zion status --layer all',

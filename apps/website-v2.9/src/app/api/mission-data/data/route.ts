@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { NextResponse } from 'next/server';
-import { SITE_VERSION } from '@/lib/site';
+import { SITE_RELEASE_TAGLINE, SITE_VERSION } from '@/lib/site';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { getSeedNodesConfig } from '@/lib/network-config';
 
@@ -366,8 +366,8 @@ export async function GET() {
       { title: 'L2/WARP operations detail', detail: 'Operator panel covering pilot gates, AMM pools, ledger and reconciliation.' },
     ],
     next_48h: [
-      { title: 'G8 — 30-day continuous run #2', detail: 'Gate failed (critical incidents; downtime budget exhausted). Window continues to 2026-10-29 for data only. Run #3 after a mining-liveness plan.' },
-      { title: 'G9 — external security audit', detail: 'Whole-project audit scope drafted; external firm not yet engaged.' },
+      { title: 'G8 — 30-day continuous run', detail: 'Current stability run in progress — monitoring and evidence on /g8.' },
+      { title: 'G9 — external security audit', detail: 'Whole-project audit scope drafted; external audit postponed by operator decision (pending).' },
       { title: 'Disaster-recovery drill', detail: 'Partial single-node restore test done 2026-10-05; a full encrypted off-site restore drill is still required.' },
       { title: 'Release artifacts', detail: 'Version unification, multi-platform builds, checksums and signed tag after the stability run.' },
     ],
@@ -376,9 +376,9 @@ export async function GET() {
   const data = {
     timestamp: new Date().toISOString(),
     environment: {
-      label: 'Mainnet Alpha',
-      current_phase: 'G8 run #2 failed · run #3 pending',
-      public_launch_status: 'G8 RUN #2 FAILED',
+      label: SITE_RELEASE_TAGLINE,
+      current_phase: 'Mainnet Beta · stability verification',
+      public_launch_status: 'POSTPONED (TBD)',
     },
     mainnet_stability_run: mainnetStabilityRun,
     launch_rehearsal: mainnetStabilityRun,

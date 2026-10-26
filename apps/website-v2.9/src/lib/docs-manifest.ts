@@ -64,7 +64,7 @@ export interface Section {
 export const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
   'v3.2.0': {
     tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
-    description: { cs: 'Aktuální veřejná linka — v3.2.0 "One Love", kandidát na Mainnet Stable (stability run #2 nesplnil gate), nový genesis hash po srpnovém hard resetu (kompletní rotace klíčů), 7/7 služeb aktivních, kanonický Ekam Deeksha PoW, DEX a bridge nasazeny', en: 'Current public line — v3.2.0 "One Love", Mainnet Stable candidate (stability run #2 failed the gate), new genesis hash after the August hard reset (complete key rotation), 7/7 services active, canonical Ekam Deeksha PoW, DEX and bridge deployed' },
+    description: { cs: 'Aktuální veřejná linka — v3.2.0 "One Love" Mainnet Beta, 30denní stabilitní run probíhá (důkazy na /g8), nový genesis hash po srpnovém hard resetu (kompletní rotace klíčů), 7/7 služeb aktivních, kanonický Ekam Deeksha PoW, DEX a bridge nasazeny', en: 'Current public line — v3.2.0 "One Love" Mainnet Beta, 30-day stability run in progress (evidence on /g8), new genesis hash after the August hard reset (complete key rotation), 7/7 services active, canonical Ekam Deeksha PoW, DEX and bridge deployed' },
   },
   'v3.1.0': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
@@ -267,7 +267,7 @@ export const versions: Version[] = [
     label: 'v3.2.0',
     tag: 'CURRENT',
     tagColor: 'text-zion-gold border-zion-gold/30 bg-zion-gold/10',
-    description: 'Current public line — v3.2.0 "One Love" Mainnet Alpha, DEX and bridge deployed',
+    description: 'Current public line — v3.2.0 "One Love" Mainnet Beta, DEX and bridge deployed',
     categories: [
       {
         id: 'v320-overview',

@@ -50,12 +50,20 @@ export default function Navbar() {
       className="fixed top-0 left-0 right-0 z-40 border-b border-white/10 bg-oasis-black/60 backdrop-blur-md"
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link
-          href="/"
-          className="bg-gradient-to-r from-oasis-cyan via-oasis-purple to-oasis-gold bg-clip-text text-lg font-bold text-transparent sm:text-xl"
-        >
-          ZION OASIS
-        </Link>
+        <div className="flex flex-col">
+          <Link
+            href="/"
+            className="bg-gradient-to-r from-oasis-cyan via-oasis-purple to-oasis-gold bg-clip-text text-lg font-bold leading-tight text-transparent sm:text-xl"
+          >
+            ZION OASIS
+          </Link>
+          <a
+            href="https://app.zionterranova.com/roadmap"
+            className="text-[10px] leading-tight text-white/40 hover:text-white/70"
+          >
+            ZION v3.2 · Mainnet Beta
+          </a>
+        </div>
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-1 lg:flex">

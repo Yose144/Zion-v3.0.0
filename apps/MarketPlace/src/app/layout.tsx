@@ -92,6 +92,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <p className="mt-6 text-xs text-gray-600">
                 © 2026 {COMPANY.name} · ZION Market
               </p>
+              <p className="mt-2 text-[0.65rem] text-gray-700">
+                <a
+                  href="https://app.zionterranova.com/roadmap"
+                  className="hover:text-rasta-gold transition-colors"
+                >
+                  ZION v3.2 · Mainnet Beta
+                </a>
+              </p>
             </div>
           </footer>
           </CartProvider>

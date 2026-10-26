@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 
 const HomeNoticeBarCopy = {
-  release: { cs: `v3.2.0 „One Love" — Mainnet Alpha`, en: `v3.2.0 "One Love" — Mainnet Alpha` },
+  release: { cs: `v3.2.0 „One Love" — Mainnet Beta`, en: `v3.2.0 "One Love" — Mainnet Beta` },
   download: { cs: `Stáhnout`, en: `Download` },
   onboard: { cs: `Vstoupit na palubu`, en: `Come aboard` },
   whitepapers: { cs: `Whitepapers`, en: `Whitepapers` },
@@ -15,7 +15,7 @@ const HomeNoticeBarCopy = {
   dismiss: { cs: `Zavřit lištu`, en: `Dismiss bar` },
 };
 
-const DISMISS_KEY = 'zion-home-notice-bar-dismissed-v1';
+const DISMISS_KEY = 'zion-home-notice-bar-dismissed-beta-v1';
 
 export default function HomeNoticeBar() {
   const { lang } = useLang();
