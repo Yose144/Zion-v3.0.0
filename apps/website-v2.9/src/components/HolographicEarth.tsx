@@ -948,7 +948,7 @@ function HolographicEarth({
             gl={{
               alpha: true,
               antialias: !low,
-              powerPreference: 'high-performance',
+              powerPreference: low ? 'default' : 'high-performance',
             }}
             onCreated={({ gl }) => {
               gl.setClearColor(0x000000, 0);

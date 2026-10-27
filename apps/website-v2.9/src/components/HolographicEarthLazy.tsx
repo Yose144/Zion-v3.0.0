@@ -11,16 +11,6 @@ const HolographicEarth = dynamic(
   { ssr: false, loading: () => null }
 );
 
-function isWebGLAvailable() {
-  if (typeof window === 'undefined') return false;
-  try {
-    const canvas = document.createElement('canvas');
-    return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-  } catch {
-    return false;
-  }
-}
-
 function EarthStaticFallback({ className }: { className?: string }) {
   return (
     <div
@@ -80,7 +70,6 @@ class EarthErrorBoundary extends Component<
 function HolographicEarthLazy({ className }: { className?: string }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const [requested, setRequested] = useState(false);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [visible, setVisible] = useState(true);
@@ -99,16 +88,10 @@ function HolographicEarthLazy({ className }: { className?: string }) {
     return () => { io.disconnect(); document.removeEventListener('visibilitychange', onVis); };
   }, []);
 
-  const show3D = requested && !failed;
+  const show3D = !failed;
 
-  // Context loss fired during an intentional unmount (user went back to the
-  // poster) must NOT mark 3D as failed — only a loss while mounted counts.
-  const requestedRef = useRef(requested);
-  requestedRef.current = requested;
   const handleUnavailable = () => {
-    if (!requestedRef.current) return;
     setFailed(true);
-    setRequested(false);
     setReady(false);
   };
 
@@ -121,9 +104,9 @@ function HolographicEarthLazy({ className }: { className?: string }) {
         <EarthStaticFallback />
       </div>
 
-      {/* 3D layer mounts only on explicit opt-in; poster stays until the day
-          texture actually rendered (onReady). Bounds match the card area
-          exactly — never covers the control row. */}
+      {/* 3D layer mounts automatically (native mode — no opt-in); poster stays
+          until the day texture actually rendered (onReady). Bounds match the
+          card area exactly — never covers the status row. */}
       {show3D && (
         <div
           className={`absolute inset-x-0 top-0 aspect-[5/4] max-h-[300px] sm:max-h-[340px] transition-opacity duration-300 ${
@@ -141,35 +124,20 @@ function HolographicEarthLazy({ className }: { className?: string }) {
         </div>
       )}
 
-      {/* opt-in / return controls */}
-      <div className="mt-2 flex items-center justify-center gap-3">
-        {!failed && !show3D && (
-          <button
-            type="button"
-            onClick={() => setRequested(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-rasta-gold/30 bg-black/40 px-4 py-1.5 text-xs font-semibold text-rasta-gold transition-colors hover:border-rasta-gold/60 hover:bg-rasta-gold/10"
-          >
-            {cs ? 'Prozkoumat ve 3D' : 'Explore in 3D'}
-          </button>
-        )}
-        {show3D && !ready && (
+      {/* status row — loading note while the scene comes up; failure note
+          when WebGL is unavailable (poster stays as the fallback). */}
+      {!ready && !failed && (
+        <div className="mt-2 flex items-center justify-center">
           <span className="text-xs text-gray-400">{cs ? 'Načítám 3D…' : 'Loading 3D…'}</span>
-        )}
-        {show3D && ready && (
-          <button
-            type="button"
-            onClick={() => { setRequested(false); setReady(false); }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/40 px-4 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-white/35 hover:text-white"
-          >
-            {cs ? 'Zpět na statický náhled' : 'Back to static preview'}
-          </button>
-        )}
-        {failed && (
+        </div>
+      )}
+      {failed && (
+        <div className="mt-2 flex items-center justify-center">
           <span className="text-xs text-gray-500">
-            {cs ? '3D zobrazení není k dispozici' : '3D view is not available'}
+            {cs ? 'Interaktivní 3D není k dispozici' : 'Interactive 3D is not available'}
           </span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
