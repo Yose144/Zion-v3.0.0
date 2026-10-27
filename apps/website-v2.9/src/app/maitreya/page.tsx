@@ -15,6 +15,7 @@ import {
   Sun,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import BookNav from '@/components/books/BookNav';
 import CestaPanel from './panels/CestaPanel';
 import KnihaPanel from './panels/KnihaPanel';
 import NirvanaPanel from './panels/NirvanaPanel';
@@ -56,6 +57,7 @@ const Copy = {
   read: { cs: 'Číst knihu', en: 'Read the book' },
   plan: { cs: 'Plán 3.3', en: 'The 3.3 plan' },
   navLabel: { cs: 'Sekce knihovny', en: 'Library sections' },
+  libraryLabel: { cs: 'Knihovna', en: 'Library' },
   heroAlt: {
     cs: 'Oasis — jedna rodina pod Stromem života: Maitreya, Krišna s flétnou, tesař a děti nové země · One World, One Family',
     en: 'Oasis — one family under the Tree of Life: Maitreya, Krishna with his flute, the carpenter and the children of the new earth · One World, One Family',
@@ -221,10 +223,22 @@ export default function MaitreyaPage() {
             </div>
           </nav>
 
+          {/* mobile library directory — expandable book tree */}
+          <details className="zion-rainbow-card group mb-6 lg:hidden">
+            <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-white [&::-webkit-details-marker]:hidden">
+              <Library className="h-4 w-4 text-zion-gold" />
+              {Copy.libraryLabel[l]}
+              <span className="ml-auto text-xs text-gray-500 transition-transform group-open:rotate-180">▾</span>
+            </summary>
+            <div className="max-h-[60vh] overflow-y-auto border-t border-white/10 p-3">
+              <BookNav lang={l} />
+            </div>
+          </details>
+
           <div className="flex gap-8">
-            {/* desktop sidebar */}
+            {/* desktop sidebar — sections + whole-library directory */}
             <aside className="hidden w-72 shrink-0 lg:block">
-              <div className="sticky top-24">
+              <div className="sticky top-24 space-y-4">
                 <nav
                   aria-label={Copy.navLabel[l]}
                   className="zion-rainbow-card space-y-1 p-3"
@@ -249,6 +263,17 @@ export default function MaitreyaPage() {
                     );
                   })}
                 </nav>
+
+                <div
+                  aria-label={Copy.libraryLabel[l]}
+                  className="zion-rainbow-card max-h-[calc(100vh-420px)] overflow-y-auto p-3"
+                >
+                  <p className="mb-2 flex items-center gap-2 px-3 text-[11px] font-bold uppercase tracking-[0.14em] text-zion-gold">
+                    <Library className="h-3.5 w-3.5" />
+                    {Copy.libraryLabel[l]}
+                  </p>
+                  <BookNav lang={l} expandAll />
+                </div>
               </div>
             </aside>
 

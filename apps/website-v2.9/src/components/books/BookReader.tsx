@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import type { BookDef, BookChapter, Lang } from '@/lib/books/types';
-import { BOOK_NAV, bookNavLabel } from '@/lib/books/registry';
+import BookNav from '@/components/books/BookNav';
 import { splitSingleDoc, type SingleDocBook } from '@/lib/books/singleDoc';
 
 interface Category {
@@ -59,7 +59,6 @@ export default function BookReader({ book }: { book: BookDef }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState<Record<number, boolean>>({ 0: true, 1: true });
   const [czFallback, setCzFallback] = useState(false);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   const currentChapter = chapters.find((c) => c.slug === selectedChapter);
 
@@ -171,99 +170,61 @@ export default function BookReader({ book }: { book: BookDef }) {
     setExpanded((prev) => ({ ...prev, [part]: !prev[part] }));
   };
 
-  const toggleGroup = (id: string) => {
-    setOpenGroups((prev) => ({ ...prev, [id]: !(prev[id] ?? false) }));
-  };
+  /** Active-book slot inside the shared library nav: accent row + inline chapter TOC. */
+  const renderActiveBook = () => (
+    <div className="zion-rainbow-sub" style={accentStyle}>
+      <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white">
+        <HeroIcon className="w-3.5 h-3.5 shrink-0" style={{ color: accentRgb }} />
+        <span className="truncate">{book.title[l]}</span>
+      </div>
+      <div className="pb-1">
+        {categories.map((category) => {
+          const Icon = book.partIcons[category.part] ?? Sparkles;
+          const isExpanded = expanded[category.part];
+          return (
+            <div key={category.part}>
+              <button
+                onClick={() => togglePart(category.part)}
+                className="w-full flex items-center justify-between pl-9 pr-3 py-1.5 text-[11px] text-gray-400 hover:text-white transition-colors"
+              >
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <Icon className="w-3 h-3 shrink-0" style={{ color: accentRgb }} />
+                  <span className="truncate">{parts[category.part]?.[l]}</span>
+                </span>
+                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+              </button>
+              {isExpanded && (
+                <div className="ml-9 border-l border-white/10 pl-1.5 space-y-px pb-1">
+                  {category.chapters.map((ch) => (
+                    <button
+                      key={ch.slug}
+                      onClick={() => handleChapterSelect(ch.slug, category.part)}
+                      className={`w-full text-left px-2.5 py-1.5 text-[11px] rounded transition-all flex items-center gap-1.5 ${
+                        selectedChapter === ch.slug
+                          ? 'bg-white/10 text-amber-200 font-medium'
+                          : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
+                      }`}
+                    >
+                      <FileText className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{ch.num[l]} — {ch.title[l]}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
-  /** Whole-library nav: groups → books; the active book expands to its chapter TOC. */
   const renderNav = (inMenu = false) => (
-    <nav className="space-y-1.5">
-      {BOOK_NAV.map((group) => {
-        const hasActive = group.books.some((b) => b.id === book.id);
-        const isOpen = openGroups[group.id] ?? hasActive;
-        return (
-          <div key={group.id}>
-            <button
-              onClick={() => toggleGroup(group.id)}
-              className={`w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] transition-all rounded-lg ${
-                hasActive ? 'text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-              }`}
-            >
-              <span>{group.label[l]}</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isOpen && (
-              <div className="mt-0.5 space-y-0.5">
-                {group.books.map((b) => {
-                  if (b.id !== book.id) {
-                    return (
-                      <Link
-                        key={b.id}
-                        href={b.href}
-                        prefetch={false}
-                        onClick={() => inMenu && setMobileMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all"
-                      >
-                        <BookOpen className="w-3.5 h-3.5 shrink-0 text-gray-600" />
-                        <span className="truncate">{bookNavLabel(b, l)}</span>
-                      </Link>
-                    );
-                  }
-                  // Active book — accent row + inline chapter TOC
-                  return (
-                    <div key={b.id} className="zion-rainbow-sub" style={accentStyle}>
-                      <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white">
-                        <HeroIcon className="w-3.5 h-3.5 shrink-0" style={{ color: accentRgb }} />
-                        <span className="truncate">{book.title[l]}</span>
-                      </div>
-                      <div className="pb-1">
-                        {categories.map((category) => {
-                          const Icon = book.partIcons[category.part] ?? Sparkles;
-                          const isExpanded = expanded[category.part];
-                          return (
-                            <div key={category.part}>
-                              <button
-                                onClick={() => togglePart(category.part)}
-                                className="w-full flex items-center justify-between pl-9 pr-3 py-1.5 text-[11px] text-gray-400 hover:text-white transition-colors"
-                              >
-                                <span className="flex items-center gap-1.5 min-w-0">
-                                  <Icon className="w-3 h-3 shrink-0" style={{ color: accentRgb }} />
-                                  <span className="truncate">{parts[category.part]?.[l]}</span>
-                                </span>
-                                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                              </button>
-                              {isExpanded && (
-                                <div className="ml-9 border-l border-white/10 pl-1.5 space-y-px pb-1">
-                                  {category.chapters.map((ch) => (
-                                    <button
-                                      key={ch.slug}
-                                      onClick={() => handleChapterSelect(ch.slug, category.part)}
-                                      className={`w-full text-left px-2.5 py-1.5 text-[11px] rounded transition-all flex items-center gap-1.5 ${
-                                        selectedChapter === ch.slug
-                                          ? 'bg-white/10 text-amber-200 font-medium'
-                                          : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
-                                      }`}
-                                    >
-                                      <FileText className="w-3 h-3 shrink-0" />
-                                      <span className="truncate">{ch.num[l]} — {ch.title[l]}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </nav>
+    <BookNav
+      lang={l}
+      activeBookId={book.id}
+      renderActive={renderActiveBook}
+      onNavigate={inMenu ? () => setMobileMenuOpen(false) : undefined}
+    />
   );
 
   const HeroIcon = book.icon;
