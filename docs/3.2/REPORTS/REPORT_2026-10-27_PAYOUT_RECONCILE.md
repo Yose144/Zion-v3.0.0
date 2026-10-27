@@ -88,3 +88,24 @@ envelope → **každý accepted submit** se četl jako "no result" → indetermi
   test s REÁLNÝM node response (shape `{"result":{"accepted":true,
   "model":"v31-native","tx_id":...}}` nyní v test suite pokryt přes
   `parse_submit_accepts_canonical_object` v deferred tests).
+
+### Post-fix evidence (běžící okno)
+
+| Kontrola | Čas (UTC) | Výsledek |
+|---|---|---|
+| Exact-dup re-count (adresář, výška, částka; různé tx_id) od `f5364566` deploye 08:56 | 27. 10. ~09:35 | **0 párů** / 143 payout rows (standby replica EDGE2, read-only — RPO ≤15 min) |
+| `tx_id` NULL/empty post-deploy | 27. 10. ~09:35 | **0** |
+| Indeterminate submits od `f5364566` | 27. 10. | **0** (journal) |
+
+→ Gate 2.S2 counting od 27. 10. 08:56 UTC; autoritativní verdikt po
+24–48 h okně (28.–29. 10.). Early signal čistý.
+
+### Ops incident (mimo payout scope)
+
+- **EDGE sshd :22 refuses new connections** od ~09:30 UTC 27. 10. —
+  refused i z EDGE2 (ne jen ban jedné IP). Established `zion-edge-tunnel`
+  forwardy živé (pool API :8080 odpovídá, replication timer 15 min běží
+  — poslední zápis 10:26), tj. host + služby OK; jen inbound nové SYN
+  na :22. Hypotéza: fail2ban REJECT rule na nové spoje / sshd
+  MaxStartups. Retry diagnostiku po vypršení banu; eskalovat přes
+  provider console, pokud přetrvává.
