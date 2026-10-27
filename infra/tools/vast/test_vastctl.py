@@ -1,3 +1,4 @@
+import time
 import unittest
 from unittest.mock import patch
 
@@ -204,8 +205,88 @@ class AgentRegistryTests(unittest.TestCase):
         rig = fleet["rigs"][0]
         self.assertEqual(rig["group"], "g")
         self.assertEqual(rig["desired"]["miner"], "zion-miner")
+        self.assertRegex(rig["desired"]["hash"], "^[0-9a-f]{12}$")
         self.assertEqual(rig["applied_sheet"]["hash"], "abc")
         self.assertEqual(fleet["sheets"]["groups"]["g"]["miner"], "zion-miner")
+
+    # ── W4: remove / catalog / bulk / offline alerts ───────────────────
+
+    def test_remove_rig_drops_rig_secret_and_sheet(self):
+        vastctl._agents_cache["secrets"]["r1"] = "x"
+        vastctl.agent_heartbeat("r1", {})
+        vastctl.agent_set_sheet("rig", "r1", {"miner": "xmrig"})
+        out = vastctl.agent_remove_rig("r1")
+        self.assertTrue(out["removed"])
+        self.assertNotIn("r1", vastctl._agents_cache["rigs"])
+        self.assertNotIn("r1", vastctl._agents_cache["secrets"])
+        self.assertEqual(vastctl._agents_cache["desired"]["rigs"], {})
+        self.assertFalse(vastctl.agent_remove_rig("r1")["removed"])
+        kinds = [e["kind"] for e in vastctl._agents_cache["events"]]
+        self.assertEqual(kinds[-2:], ["rig_removed", "rig_removed"])
+
+    def test_catalog_set_validate_and_resolve(self):
+        with self.assertRaises(ValueError):
+            vastctl.agent_catalog_set("Bad Name", {"miner": "xmrig"})
+        with self.assertRaises(ValueError):
+            vastctl.agent_catalog_set("ok-name", {"bogus": 1})
+        out = vastctl.agent_catalog_set(
+            "srb-dual", {"miner": "srbminer-dual", "duty": {"prl": 50}})
+        self.assertEqual(out["name"], "srb-dual")
+        # assign by catalog name
+        out = vastctl.agent_set_sheet("rig", "r1", None, catalog="srb-dual")
+        self.assertTrue(out["ok"])
+        self.assertEqual(
+            vastctl._agents_cache["desired"]["rigs"]["r1"]["miner"],
+            "srbminer-dual")
+        with self.assertRaises(ValueError):
+            vastctl.agent_set_sheet("rig", "r1", None, catalog="nope")
+        self.assertTrue(vastctl.agent_catalog_clear("srb-dual")["cleared"])
+        self.assertFalse(vastctl.agent_catalog_clear("srb-dual")["cleared"])
+
+    def test_bulk_task_and_sheet_fan_out(self):
+        for rid in ("r1", "r2", "r3"):
+            vastctl.agent_heartbeat(rid, {})
+        vastctl.agent_set_group("r1", "g")
+        vastctl.agent_set_group("r2", "g")
+        # task to group
+        out = vastctl.agent_bulk(
+            {"group": "g"}, {"task": {"op": "exec", "args": {"cmd": "uptime"}}})
+        self.assertEqual(out["matched"], 2)
+        self.assertIn("task_id", out["results"]["r1"])
+        self.assertIn("task_id", out["results"]["r2"])
+        # sheet to all
+        out = vastctl.agent_bulk(
+            {"all": True}, {"sheet": {"miner": "zion-miner"}})
+        self.assertEqual(out["matched"], 3)
+        self.assertIn("r3", out["results"])
+        self.assertRegex(out["results"]["r1"]["hash"], "^[0-9a-f]{12}$")
+        # catalog assign + clear via bulk
+        vastctl.agent_catalog_set("cat", {"miner": "xmrig"})
+        out = vastctl.agent_bulk({"rigs": ["r1"]}, {"catalog": "cat"})
+        self.assertIn("hash", out["results"]["r1"])
+        out = vastctl.agent_bulk({"rigs": ["r1"]}, {"clear_sheet": True})
+        self.assertTrue(out["results"]["r1"]["cleared"])
+        # unknown action
+        out = vastctl.agent_bulk({"rigs": ["r1"]}, {"wat": 1})
+        self.assertIn("error", out["results"]["r1"])
+
+    def test_offline_alert_dedup_and_recovery(self):
+        vastctl.agent_heartbeat("r1", {})
+        rig = vastctl._agents_cache["rigs"]["r1"]
+        rig["heartbeat"]["server_ts"] = time.time() - 1200
+        fleet = vastctl.agent_fleet()
+        self.assertTrue(fleet["rigs"][0]["offline_alert"])
+        kinds = [e["kind"] for e in fleet["events"]]
+        self.assertEqual(kinds.count("alert_offline"), 1)
+        # second fleet call — dedup, no new event
+        vastctl.agent_fleet()
+        kinds = [e["kind"] for e in vastctl._agents_cache["events"]]
+        self.assertEqual(kinds.count("alert_offline"), 1)
+        # heartbeat → recovered
+        vastctl.agent_heartbeat("r1", {})
+        kinds = [e["kind"] for e in vastctl._agents_cache["events"]]
+        self.assertIn("alert_recovered", kinds)
+        self.assertNotIn("alerted_offline", rig)
 
 
 if __name__ == "__main__":

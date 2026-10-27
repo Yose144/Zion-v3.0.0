@@ -1836,6 +1836,8 @@ def _agent_db():
         _agents_cache.setdefault("rigs", {})
         _agents_cache.setdefault("secrets", {})
         _agents_cache.setdefault("events", [])
+        _agents_cache.setdefault("desired", {"rigs": {}, "groups": {}})
+        _agents_cache.setdefault("catalog", {})
     return _agents_cache
 
 
@@ -1887,17 +1889,15 @@ def _sheet_hash(sheet):
     return _sha256(json.dumps(sheet, sort_keys=True))[:12]
 
 
-def agent_set_sheet(kind, name, sheet):
+def agent_set_sheet(kind, name, sheet, catalog=None):
     """Assign a flight sheet to a rig or group (kind=rig|group)."""
     if kind not in {"rig", "group"}:
         raise ValueError("kind must be rig or group")
-    if not isinstance(sheet, dict):
-        raise ValueError("sheet must be an object")
-    bad = set(sheet) - SHEET_KEYS
-    if bad:
-        raise ValueError(f"unknown sheet keys: {sorted(bad)}")
-    if not sheet.get("miner"):
-        raise ValueError("sheet.miner required")
+    if catalog:
+        sheet = _agent_db().get("catalog", {}).get(str(catalog))
+        if not sheet:
+            raise ValueError(f"catalog '{catalog}' not found")
+    _validate_sheet(sheet)
     with _agents_lock:
         db = _agent_db()
         desired = db.setdefault("desired", {"rigs": {}, "groups": {}})
@@ -1940,6 +1940,136 @@ def _desired_for(db, rig):
     sheet = group and desired.get("groups", {}).get(group)
     if sheet:
         return dict(sheet, _scope="group", _group=group)
+
+
+def agent_remove_rig(rig_id):
+    """Decommission a rig: drops rig state, secret and sheet override."""
+    rid = str(rig_id)
+    with _agents_lock:
+        db = _agent_db()
+        existed = db["rigs"].pop(rid, None) is not None
+        db.get("secrets", {}).pop(rid, None)
+        db.get("desired", {}).get("rigs", {}).pop(rid, None)
+        _agent_event("rig_removed", rid, f"existed={existed}")
+        _write_json_atomic(AGENT_DB_FILE, db)
+        return {"ok": True, "removed": existed}
+
+
+def _validate_sheet(sheet):
+    if not isinstance(sheet, dict):
+        raise ValueError("sheet must be an object")
+    bad = set(sheet) - SHEET_KEYS
+    if bad:
+        raise ValueError(f"unknown sheet keys: {sorted(bad)}")
+    if not sheet.get("miner"):
+        raise ValueError("sheet.miner required")
+
+
+def agent_catalog_set(name, sheet):
+    """Named catalog entry — a vetted preset assignable by name."""
+    name = str(name).strip()
+    if not name or len(name) > 64 or not re.fullmatch(r"[a-z0-9_-]+", name):
+        raise ValueError("catalog name must be [a-z0-9_-]{1,64}")
+    _validate_sheet(sheet)
+    with _agents_lock:
+        db = _agent_db()
+        db.setdefault("catalog", {})[name] = dict(sheet)
+        _agent_event("catalog_set", name, f"miner={sheet.get('miner')}")
+        _write_json_atomic(AGENT_DB_FILE, db)
+        return {"ok": True, "name": name, "hash": _sheet_hash(sheet)}
+
+
+def agent_catalog_clear(name):
+    with _agents_lock:
+        db = _agent_db()
+        existed = db.setdefault("catalog", {}).pop(str(name), None)
+        _agent_event("catalog_clear", str(name),
+                     f"existed={bool(existed)}")
+        _write_json_atomic(AGENT_DB_FILE, db)
+        return {"ok": True, "cleared": bool(existed)}
+
+
+def agent_bulk(target, action):
+    """Fan out one action across rigs: target = {rigs:[..]} | {group:n}
+    | {all:true}; action = {task:{op,args}} | {sheet:{..}|catalog:name}
+    | {clear_sheet:true} | {set_group:name}. Ops-only at the route."""
+    with _agents_lock:
+        db = _agent_db()
+        if target.get("all"):
+            rids = sorted(db["rigs"].keys())
+        elif target.get("group"):
+            g = str(target["group"])
+            rids = sorted(r for r, v in db["rigs"].items()
+                          if v.get("group") == g)
+        else:
+            rids = [str(r) for r in target.get("rigs") or []]
+        if not rids:
+            return {"ok": True, "matched": 0, "results": {}}
+        desired = db.setdefault("desired", {"rigs": {}, "groups": {}})
+        desired.setdefault("rigs", {})
+        results = {}
+        now = time.time()
+        for rid in rids:
+            rig = db["rigs"].setdefault(
+                rid, {"heartbeat": {}, "tasks": [], "results": []})
+            try:
+                if "task" in action:
+                    t = action["task"]
+                    task = {"id": f"task-{_sec_tok(6)}", "op": str(t["op"]),
+                            "args": t.get("args") or {}, "ts": now,
+                            "state": "pending", "bulk": True}
+                    rig["tasks"].append(task)
+                    results[rid] = {"task_id": task["id"]}
+                elif "sheet" in action or "catalog" in action:
+                    sheet = action.get("sheet") or \
+                        db.get("catalog", {}).get(str(action["catalog"]))
+                    if not sheet:
+                        raise ValueError(
+                            f"catalog '{action['catalog']}' not found")
+                    _validate_sheet(sheet)
+                    desired["rigs"][rid] = dict(sheet)
+                    results[rid] = {"hash": _sheet_hash(sheet)}
+                elif action.get("clear_sheet"):
+                    results[rid] = {
+                        "cleared": bool(
+                            desired["rigs"].pop(rid, None))}
+                elif "set_group" in action:
+                    rig["group"] = str(action["set_group"] or "") or None
+                    results[rid] = {"group": rig["group"]}
+                else:
+                    raise ValueError("unknown bulk action")
+            except (KeyError, ValueError) as e:
+                results[rid] = {"error": str(e)}
+        _agent_event("bulk", ",".join(rids),
+                     f"action={sorted(action.keys())} matched={len(rids)}")
+        _write_json_atomic(AGENT_DB_FILE, db)
+        return {"ok": True, "matched": len(rids), "results": results}
+
+
+def _sec_tok(n):
+    import secrets as _s
+    return _s.token_hex(n)
+
+
+AGENT_OFFLINE_AFTER_S = int(
+    os.environ.get("VASTCTL_AGENT_OFFLINE_AFTER", "600"))
+
+
+def _check_offline(db, now):
+    """Emit alert_offline once per rig crossing the threshold (dedup via
+    rig.alerted_offline flag; heartbeat clears it). Called under lock."""
+    changed = False
+    for rid, rig in db["rigs"].items():
+        hb = rig.get("heartbeat") or {}
+        ts = hb.get("server_ts")
+        if ts and now - ts > AGENT_OFFLINE_AFTER_S \
+                and not rig.get("alerted_offline"):
+            rig["alerted_offline"] = True
+            _agent_event("alert_offline", rid,
+                         f"age_s={int(now - ts)}")
+            changed = True
+    if changed:
+        _write_json_atomic(AGENT_DB_FILE, db)
     return None
 
 
@@ -1984,6 +2114,8 @@ def agent_heartbeat(rig_id, payload):
         rig = db["rigs"].setdefault(
             rig_id, {"heartbeat": {}, "tasks": [], "results": []})
         rig["heartbeat"] = dict(payload, server_ts=time.time())
+        if rig.pop("alerted_offline", None):
+            _agent_event("alert_recovered", rig_id)
         _agent_prune(rig)
         due = [t for t in rig["tasks"] if t["state"] == "pending"]
         for t in due:
@@ -2039,15 +2171,21 @@ def agent_fleet():
     with _agents_lock:
         now = time.time()
         db = _agent_db()
+        _check_offline(db, now)
         out = []
         for rid, rig in db["rigs"].items():
             hb = rig["heartbeat"]
+            desired = _desired_for(db, rid)
+            if desired:
+                desired["hash"] = _sheet_hash(
+                    {k: v for k, v in desired.items()
+                     if not k.startswith("_")})
             out.append({
                 "rig_id": rid,
                 "hostname": hb.get("hostname") or rig.get("enroll_hostname"),
                 "enrolled": rid in db.get("secrets", {}),
                 "group": rig.get("group"),
-                "desired": _desired_for(db, rid),
+                "desired": desired,
                 "applied_sheet": hb.get("applied_sheet"),
                 "last_seen": hb.get("server_ts"),
                 "age_s": round(now - hb["server_ts"], 1) if hb else None,
@@ -2058,9 +2196,11 @@ def agent_fleet():
                 "pending": sum(1 for t in rig["tasks"]
                                if t["state"] in {"pending", "delivered"}),
                 "results": len(rig["results"]),
+                "offline_alert": bool(rig.get("alerted_offline")),
                 "payload_keys": sorted(hb.keys())})
         return {"rigs": sorted(out, key=lambda r: r["rig_id"]),
                 "sheets": db.get("desired", {"rigs": {}, "groups": {}}),
+                "catalog": db.get("catalog", {}),
                 "events": db.get("events", [])[-20:]}
 
 
@@ -2409,7 +2549,9 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
             except (KeyError, ValueError, json.JSONDecodeError) as e:
                 self._send(f"bad request: {e}", 400, "text/plain")
         elif u.path in ("/api/agent/sheet", "/api/agent/sheet/clear",
-                        "/api/agent/group"):
+                        "/api/agent/group", "/api/agent/rig/remove",
+                        "/api/agent/catalog", "/api/agent/catalog/clear",
+                        "/api/agent/bulk"):
             if readonly():
                 self._send("readonly mode", 403, "text/plain")
                 return
@@ -2426,16 +2568,29 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
                     name = str(payload.get("rig_id") or payload.get("group") or "")
                     if not name:
                         raise ValueError("rig_id or group required")
-                    out = agent_set_sheet(kind, name, payload.get("sheet"))
+                    out = agent_set_sheet(
+                        kind, name, payload.get("sheet"),
+                        catalog=payload.get("catalog"))
                 elif u.path == "/api/agent/sheet/clear":
                     kind = "rig" if payload.get("rig_id") else "group"
                     name = str(payload.get("rig_id") or payload.get("group") or "")
                     if not name:
                         raise ValueError("rig_id or group required")
                     out = agent_clear_sheet(kind, name)
-                else:
+                elif u.path == "/api/agent/group":
                     out = agent_set_group(
                         str(payload["rig_id"]), payload.get("group"))
+                elif u.path == "/api/agent/rig/remove":
+                    out = agent_remove_rig(str(payload["rig_id"]))
+                elif u.path == "/api/agent/catalog":
+                    out = agent_catalog_set(
+                        str(payload["name"]), payload.get("sheet"))
+                elif u.path == "/api/agent/catalog/clear":
+                    out = agent_catalog_clear(str(payload["name"]))
+                else:
+                    out = agent_bulk(
+                        payload.get("target") or {},
+                        payload.get("action") or {})
                 self._send(json.dumps(out), ctype="application/json")
             except (KeyError, ValueError, json.JSONDecodeError) as e:
                 self._send(f"bad request: {e}", 400, "text/plain")

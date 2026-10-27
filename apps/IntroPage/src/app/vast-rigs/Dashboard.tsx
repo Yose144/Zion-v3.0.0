@@ -117,6 +117,11 @@ type AgentRig = {
   rig_id: string;
   hostname?: string | null;
   enrolled?: boolean;
+  group?: string | null;
+  desired?: { miner?: string; hash?: string; _scope?: string;
+              _group?: string } | null;
+  applied_sheet?: { hash?: string; rc?: number; ts?: number } | null;
+  offline_alert?: boolean;
   last_seen?: number | null;
   age_s?: number | null;
   uptime_s?: number | null;
@@ -2002,6 +2007,7 @@ export default function Dashboard() {
                     <th className="px-4 py-2">Rig</th>
                     <th className="px-3 py-2">GPUs</th>
                     <th className="px-3 py-2">Miners</th>
+                    <th className="px-3 py-2">Sheet</th>
                     <th className="px-3 py-2">Last heartbeat</th>
                     <th className="px-3 py-2">Pending</th>
                     <th className="px-3 py-2">Results</th>
@@ -2025,7 +2031,15 @@ export default function Dashboard() {
                               shared
                             </span>
                           )}
+                          {a.offline_alert && (
+                            <span className="rounded border border-[#ff7b72]/50 bg-[#ff7b72]/10 px-1.5 py-px text-[9px] font-bold uppercase tracking-wider text-[#ff7b72]">
+                              offline
+                            </span>
+                          )}
                         </div>
+                        {a.group && (
+                          <div className="mt-0.5 text-[10px] text-[#7dd3fc]/60">⧉ {a.group}</div>
+                        )}
                         {a.uptime_s != null && (
                           <div className="mt-1 text-[10px] text-white/35">
                             up {agoS(Math.floor(a.uptime_s))}{a.load1 != null ? ` · load ${a.load1}` : ""}
@@ -2041,6 +2055,25 @@ export default function Dashboard() {
                         {a.miners && a.miners.length > 0
                           ? a.miners.map((m, i) => <div key={i} className="max-w-[280px] truncate" title={m}>{m}</div>)
                           : "—"}
+                      </td>
+                      <td className="px-3 py-3 text-[10px] leading-relaxed">
+                        {a.desired?.miner ? (
+                          <>
+                            <div className="whitespace-nowrap text-white/70">
+                              {a.desired.miner}
+                              <span className="text-white/30"> · {a.desired._scope === "group" ? `group:${a.desired._group}` : "rig"}</span>
+                            </div>
+                            {a.desired.hash && (
+                              <div className="text-white/30" title={`desired ${a.desired.hash}`}>
+                                {a.applied_sheet?.hash === a.desired.hash
+                                  ? <span className="text-[#34d399]/70">✓ applied {a.desired.hash.slice(0, 8)}</span>
+                                  : a.applied_sheet?.hash
+                                    ? <span className="text-amber-300/70">⧗ applied {a.applied_sheet.hash.slice(0, 8)}{a.applied_sheet.rc ? ` rc${a.applied_sheet.rc}` : ""}</span>
+                                    : <span className="text-white/25">… apply pending</span>}
+                              </div>
+                            )}
+                          </>
+                        ) : <span className="text-white/25">—</span>}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-xs text-white/60">
                         {a.age_s != null ? `${agoS(Math.floor(a.age_s))} ago` : "—"}
