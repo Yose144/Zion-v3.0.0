@@ -1063,6 +1063,7 @@ def _build_snapshot(rigs, fresh, errors):
         "poolstats": _section("poolstats", fetch_pool_stats, fresh, errors),
         "smos": _section("smos", fetch_smos_rigs, fresh, errors),
         "ext": _section("ext", fetch_ext_pools, fresh, errors),
+        "agents": _section("agents", _agent_fleet_section, fresh, errors),
         "fresh": fresh,
     }
     if errors:
@@ -1916,6 +1917,12 @@ def agent_fleet():
                 "results": len(rig["results"]),
                 "payload_keys": sorted(hb.keys())})
         return {"rigs": sorted(out, key=lambda r: r["rig_id"])}
+
+
+def _agent_fleet_section():
+    """Snapshot section: agent rigs or None when none registered."""
+    rigs = agent_fleet()["rigs"]
+    return rigs or None
 
 
 def readonly():
