@@ -30,9 +30,11 @@ echo ">> $IID → root@$HOST:$PORT (rig_id=$RIG_ID)"
 
 SSH=(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$PORT" "root@$HOST")
 
-# 1. upload agent
+# 1. upload agent + apply hook
 scp -o StrictHostKeyChecking=no -P "$PORT" \
     "$HERE/agent.py" "root@$HOST:/root/zion-vast-agent.py"
+scp -o StrictHostKeyChecking=no -P "$PORT" \
+    "$HERE/zion-sheet-apply.sh" "root@$HOST:/root/zion-sheet-apply.sh"
 
 # 2+3. enroll (idempotent — skips when state file exists) + tmux launch
 "${SSH[@]}" 'bash -s' <<EOF
@@ -41,6 +43,7 @@ export VAST_AGENT_URL="https://zionterranova.com"
 export VAST_AGENT_ENROLL="$VASTCTL_ENROLL_TOKEN"
 export VAST_AGENT_RIG_ID="$RIG_ID"
 export VAST_AGENT_INTERVAL=30
+chmod 755 /root/zion-vast-agent.py /root/zion-sheet-apply.sh
 python3 /root/zion-vast-agent.py --enroll
 tmux kill-session -t vast-agent 2>/dev/null || true
 tmux new-session -d -s vast-agent \\

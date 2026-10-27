@@ -162,6 +162,51 @@ class AgentRegistryTests(unittest.TestCase):
         kinds = [e["kind"] for e in vastctl._agents_cache["events"]]
         self.assertEqual(kinds, ["enroll", "enqueue", "result"])
 
+    # ── flight sheets (B3 v1) ──────────────────────────────────────────
+
+    def test_sheet_set_validates_schema_and_miner(self):
+        with self.assertRaises(ValueError):
+            vastctl.agent_set_sheet("rig", "r1", {"bogus": 1})
+        with self.assertRaises(ValueError):
+            vastctl.agent_set_sheet("rig", "r1", {"coin": "qtu"})
+        with self.assertRaises(ValueError):
+            vastctl.agent_set_sheet("weird", "r1", {"miner": "srbminer"})
+        out = vastctl.agent_set_sheet(
+            "rig", "r1", {"miner": "srbminer", "coin": "qtu",
+                          "duty": {"prl": 40}})
+        self.assertEqual(len(out["hash"]), 12)
+
+    def test_heartbeat_resolves_rig_sheet_over_group(self):
+        vastctl.agent_set_group("r1", "vast-gpu")
+        vastctl.agent_set_sheet("group", "vast-gpu", {"miner": "xmrig"})
+        resp = vastctl.agent_heartbeat("r1", {})
+        self.assertEqual(resp["desired"]["miner"], "xmrig")
+        self.assertEqual(resp["desired"]["_scope"], "group")
+        vastctl.agent_set_sheet("rig", "r1", {"miner": "zion-miner"})
+        resp = vastctl.agent_heartbeat("r1", {})
+        self.assertEqual(resp["desired"]["miner"], "zion-miner")
+        self.assertEqual(resp["desired"]["_scope"], "rig")
+        # hash is a deterministic 12-char hex, independent of scope keys
+        self.assertRegex(resp["desired"]["hash"], "^[0-9a-f]{12}$")
+
+    def test_sheet_clear_removes_desired(self):
+        vastctl.agent_set_sheet("rig", "r1", {"miner": "xmrig"})
+        self.assertTrue(vastctl.agent_clear_sheet("rig", "r1")["cleared"])
+        self.assertNotIn("desired", vastctl.agent_heartbeat("r1", {}))
+        self.assertFalse(vastctl.agent_clear_sheet("rig", "r1")["cleared"])
+
+    def test_fleet_exposes_sheets_and_applied_state(self):
+        vastctl.agent_set_group("r1", "g")
+        vastctl.agent_set_sheet("group", "g", {"miner": "zion-miner"})
+        vastctl.agent_heartbeat(
+            "r1", {"applied_sheet": {"hash": "abc", "rc": 0}})
+        fleet = vastctl.agent_fleet()
+        rig = fleet["rigs"][0]
+        self.assertEqual(rig["group"], "g")
+        self.assertEqual(rig["desired"]["miner"], "zion-miner")
+        self.assertEqual(rig["applied_sheet"]["hash"], "abc")
+        self.assertEqual(fleet["sheets"]["groups"]["g"]["miner"], "zion-miner")
+
 
 if __name__ == "__main__":
     unittest.main()

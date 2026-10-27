@@ -45,6 +45,13 @@ STATE_FILE = Path(os.environ.get(
     "VAST_AGENT_STATE", os.path.expanduser("~/.local/share/vast-agent.json")))
 SEEN_FILE = Path(os.environ.get(
     "VAST_AGENT_SEEN", os.path.expanduser("~/.local/share/vast-agent-seen.json")))
+APPLIED_FILE = Path(os.environ.get(
+    "VAST_AGENT_APPLIED",
+    os.path.expanduser("~/.local/share/vast-agent-applied.json")))
+SHEET_PATH = Path(os.environ.get(
+    "VAST_AGENT_SHEET_PATH", "/root/vast-desired.json"))
+APPLY_HOOK = os.environ.get(
+    "VAST_AGENT_APPLY_HOOK", "/root/zion-sheet-apply.sh")
 SEEN_KEEP = 500
 TASK_TIMEOUT = 600
 
@@ -146,9 +153,58 @@ def _save_seen(seen):
     tmp.rename(SEEN_FILE)
 
 
+def _load_applied():
+    """{hash, rc, ts, out?} — what the last sheet apply produced."""
+    try:
+        return json.loads(APPLIED_FILE.read_text())
+    except Exception:
+        return {}
+
+
+def _save_applied(applied):
+    APPLIED_FILE.parent.mkdir(parents=True, exist_ok=True)
+    tmp = APPLIED_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(applied))
+    tmp.rename(APPLIED_FILE)
+
+
+def apply_desired(desired, applied):
+    """Desired-state apply (B3): CP resolves a sheet per rig; the local
+    apply hook translates it into miner launches. Runs when the resolved
+    hash changes (including transitions to none → hook gets {"miner": "none"}).
+    The hook is argv-invoked (no shell) and lives at a root-owned path —
+    the sheet can only change what an operator-installed hook allows."""
+    want_hash = desired.get("hash") if desired else "none"
+    if want_hash == applied.get("hash"):
+        return applied
+    sheet = {k: v for k, v in (desired or {}).items()
+             if not k.startswith("_") and k != "hash"} or {"miner": "none"}
+    SHEET_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SHEET_PATH.write_text(json.dumps(sheet))
+    if not Path(APPLY_HOOK).exists():
+        applied.update(hash=want_hash, rc=127, ts=time.time(),
+                       note=f"apply hook missing: {APPLY_HOOK}")
+        return applied
+    try:
+        r = subprocess.run(["bash", APPLY_HOOK, str(SHEET_PATH)],
+                           capture_output=True, text=True,
+                           timeout=TASK_TIMEOUT)
+        out = (r.stdout + r.stderr).strip()[-2000:]
+        applied.update(hash=want_hash, rc=r.returncode,
+                       ts=time.time(), out=out or None)
+    except subprocess.TimeoutExpired:
+        applied.update(hash=want_hash, rc=124, ts=time.time(),
+                       note=f"hook timeout ({TASK_TIMEOUT}s)")
+    except Exception as e:
+        applied.update(hash=want_hash, rc=1, ts=time.time(),
+                       note=f"hook error: {e}")
+    return applied
+
+
 def collect():
     hb = {"rig_id": _load_state().get("rig_id") or RIG_ID,
-          "hostname": socket.gethostname(), "ts": time.time()}
+          "hostname": socket.gethostname(), "ts": time.time(),
+          "applied_sheet": _load_applied() or None}
     try:
         hb["uptime_s"] = float(Path("/proc/uptime").read_text().split()[0])
     except Exception:
@@ -213,12 +269,18 @@ def main():
     print(f"vast-agent {RIG_ID} → {URL} every {INTERVAL}s "
           f"(auth: {'per-rig' if _load_state().get('secret') else 'shared'})")
     seen = _load_seen()
+    applied = _load_applied()
     while True:
         try:
             resp = _req("/api/agent/heartbeat", collect())
             for task in resp.get("tasks", []):
                 run_task(task, seen)
             _save_seen(seen)
+            before = applied.get("hash")
+            applied = apply_desired(resp.get("desired"), applied)
+            if applied.get("hash") != before:
+                _save_applied(applied)
+                print(f"desired sheet {applied['hash']} → rc={applied.get('rc')}")
         except Exception as e:
             print(f"heartbeat failed: {e}", file=sys.stderr)
         time.sleep(INTERVAL)

@@ -116,8 +116,13 @@ type ExtPools = { qtu: ExtPool | null; prl: ExtPool | null; nock: ExtPool | null
 type AgentRig = {
   rig_id: string;
   hostname?: string | null;
+  enrolled?: boolean;
   last_seen?: number | null;
   age_s?: number | null;
+  uptime_s?: number | null;
+  load1?: number | null;
+  gpus?: string[];
+  miners?: string[];
   pending: number;
   results: number;
 };
@@ -1995,8 +2000,10 @@ export default function Dashboard() {
                 <thead>
                   <tr className="border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/40">
                     <th className="px-4 py-2">Rig</th>
+                    <th className="px-3 py-2">GPUs</th>
+                    <th className="px-3 py-2">Miners</th>
                     <th className="px-3 py-2">Last heartbeat</th>
-                    <th className="px-3 py-2">Pending tasks</th>
+                    <th className="px-3 py-2">Pending</th>
                     <th className="px-3 py-2">Results</th>
                   </tr>
                 </thead>
@@ -2008,7 +2015,32 @@ export default function Dashboard() {
                           <span className={`inline-block h-2 w-2 shrink-0 rounded-full shadow-[0_0_8px_currentColor] ${(a.age_s ?? 1e9) < 300 ? "bg-[#34d399]" : "bg-[#ff7b72]"}`} />
                           <b className="text-sm text-white">{a.hostname || a.rig_id}</b>
                           <span className="text-[10px] text-white/30">#{a.rig_id}</span>
+                          {a.enrolled === true && (
+                            <span className="rounded border border-[#34d399]/40 bg-[#34d399]/10 px-1.5 py-px text-[9px] font-bold uppercase tracking-wider text-[#34d399]" title="per-rig secret auth">
+                              enrolled
+                            </span>
+                          )}
+                          {a.enrolled === false && (
+                            <span className="rounded border border-amber-400/40 bg-amber-400/10 px-1.5 py-px text-[9px] font-bold uppercase tracking-wider text-amber-300" title="legacy shared-token auth — re-enroll for per-rig secret">
+                              shared
+                            </span>
+                          )}
                         </div>
+                        {a.uptime_s != null && (
+                          <div className="mt-1 text-[10px] text-white/35">
+                            up {agoS(Math.floor(a.uptime_s))}{a.load1 != null ? ` · load ${a.load1}` : ""}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 text-[10px] leading-relaxed text-white/55">
+                        {a.gpus && a.gpus.length > 0
+                          ? a.gpus.map((g, i) => <div key={i} className="whitespace-nowrap">{g}</div>)
+                          : "—"}
+                      </td>
+                      <td className="px-3 py-3 text-[10px] leading-relaxed text-white/55">
+                        {a.miners && a.miners.length > 0
+                          ? a.miners.map((m, i) => <div key={i} className="max-w-[280px] truncate" title={m}>{m}</div>)
+                          : "—"}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-xs text-white/60">
                         {a.age_s != null ? `${agoS(Math.floor(a.age_s))} ago` : "—"}

@@ -1875,6 +1875,74 @@ def _agent_token_ok(headers):
     return False
 
 
+# ── flight sheets / desired state (W3→W4 B3 v1) ────────────────────────
+# Sheet = declarative mining assignment resolved per rig:
+#   rig override  >  group sheet  >  none
+# CP owns the *what*; the rig's local apply hook owns the *how* (vast.ai
+# rigs have no systemd and miner launch differs per box).
+SHEET_KEYS = {"miner", "coin", "pool", "wallet", "args", "duty", "oc", "group"}
+
+
+def _sheet_hash(sheet):
+    return _sha256(json.dumps(sheet, sort_keys=True))[:12]
+
+
+def agent_set_sheet(kind, name, sheet):
+    """Assign a flight sheet to a rig or group (kind=rig|group)."""
+    if kind not in {"rig", "group"}:
+        raise ValueError("kind must be rig or group")
+    if not isinstance(sheet, dict):
+        raise ValueError("sheet must be an object")
+    bad = set(sheet) - SHEET_KEYS
+    if bad:
+        raise ValueError(f"unknown sheet keys: {sorted(bad)}")
+    if not sheet.get("miner"):
+        raise ValueError("sheet.miner required")
+    with _agents_lock:
+        db = _agent_db()
+        desired = db.setdefault("desired", {"rigs": {}, "groups": {}})
+        desired[f"{kind}s"][str(name)] = dict(sheet)
+        _agent_event("sheet_set", name, f"kind={kind} miner={sheet.get('miner')}")
+        _write_json_atomic(AGENT_DB_FILE, db)
+        return {"ok": True, "kind": kind, "name": name,
+                "hash": _sheet_hash(sheet)}
+
+
+def agent_clear_sheet(kind, name):
+    if kind not in {"rig", "group"}:
+        raise ValueError("kind must be rig or group")
+    with _agents_lock:
+        desired = _agent_db().setdefault("desired", {"rigs": {}, "groups": {}})
+        existed = desired[f"{kind}s"].pop(str(name), None)
+        _agent_event("sheet_clear", name, f"kind={kind} existed={bool(existed)}")
+        _write_json_atomic(AGENT_DB_FILE, _agents_cache)
+        return {"ok": True, "cleared": bool(existed)}
+
+
+def agent_set_group(rig_id, group):
+    """Set rig→group membership (sheet resolution picks the group sheet)."""
+    with _agents_lock:
+        rig = _agent_db()["rigs"].setdefault(
+            rig_id, {"heartbeat": {}, "tasks": [], "results": []})
+        rig["group"] = str(group or "") or None
+        _agent_event("group", rig_id, f"group={group}")
+        _write_json_atomic(AGENT_DB_FILE, _agents_cache)
+        return {"ok": True, "rig_id": rig_id, "group": rig["group"]}
+
+
+def _desired_for(db, rig):
+    """Resolve the effective sheet for a rig: rig override > group > none."""
+    desired = db.get("desired", {})
+    sheet = desired.get("rigs", {}).get(rig)
+    if sheet:
+        return dict(sheet, _scope="rig")
+    group = db["rigs"].get(rig, {}).get("group")
+    sheet = group and desired.get("groups", {}).get(group)
+    if sheet:
+        return dict(sheet, _scope="group", _group=group)
+    return None
+
+
 def agent_enroll(enroll_token, rig_id_hint, hostname):
     """One-time enroll: master enroll token → rig_id + per-rig secret.
     Secret plaintext is returned once and never stored (sha256 only)."""
@@ -1910,9 +1978,10 @@ def _agent_prune(rig):
 
 
 def agent_heartbeat(rig_id, payload):
-    """Store heartbeat, claim pending tasks for delivery."""
+    """Store heartbeat, claim pending tasks for delivery, resolve sheet."""
     with _agents_lock:
-        rig = _agent_db()["rigs"].setdefault(
+        db = _agent_db()
+        rig = db["rigs"].setdefault(
             rig_id, {"heartbeat": {}, "tasks": [], "results": []})
         rig["heartbeat"] = dict(payload, server_ts=time.time())
         _agent_prune(rig)
@@ -1920,9 +1989,15 @@ def agent_heartbeat(rig_id, payload):
         for t in due:
             t["state"] = "delivered"
             t["delivered_ts"] = time.time()
-        _write_json_atomic(AGENT_DB_FILE, _agents_cache)
-        return {"ok": True, "tasks": [
+        sheet = _desired_for(db, rig_id)
+        resp = {"ok": True, "tasks": [
             {"id": t["id"], "op": t["op"], "args": t["args"]} for t in due]}
+        if sheet:
+            sheet["hash"] = _sheet_hash(
+                {k: v for k, v in sheet.items() if not k.startswith("_")})
+            resp["desired"] = sheet
+        _write_json_atomic(AGENT_DB_FILE, db)
+        return resp
 
 
 def agent_result(rig_id, task_id, rc, out):
@@ -1971,13 +2046,21 @@ def agent_fleet():
                 "rig_id": rid,
                 "hostname": hb.get("hostname") or rig.get("enroll_hostname"),
                 "enrolled": rid in db.get("secrets", {}),
+                "group": rig.get("group"),
+                "desired": _desired_for(db, rid),
+                "applied_sheet": hb.get("applied_sheet"),
                 "last_seen": hb.get("server_ts"),
                 "age_s": round(now - hb["server_ts"], 1) if hb else None,
+                "uptime_s": hb.get("uptime_s"),
+                "load1": hb.get("load1"),
+                "gpus": hb.get("gpus") or [],
+                "miners": hb.get("miners") or [],
                 "pending": sum(1 for t in rig["tasks"]
                                if t["state"] in {"pending", "delivered"}),
                 "results": len(rig["results"]),
                 "payload_keys": sorted(hb.keys())})
         return {"rigs": sorted(out, key=lambda r: r["rig_id"]),
+                "sheets": db.get("desired", {"rigs": {}, "groups": {}}),
                 "events": db.get("events", [])[-20:]}
 
 
@@ -2325,15 +2408,48 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
                     str(payload.get("out", "")))), ctype="application/json")
             except (KeyError, ValueError, json.JSONDecodeError) as e:
                 self._send(f"bad request: {e}", 400, "text/plain")
+        elif u.path in ("/api/agent/sheet", "/api/agent/sheet/clear",
+                        "/api/agent/group"):
+            if readonly():
+                self._send("readonly mode", 403, "text/plain")
+                return
+            # Ops-only — same reasoning as enqueue: same-origin is not an
+            # auth boundary over the public nginx route.
+            if _agent_token_ok(self.headers) is not True:
+                self._send("ops token required", 403, "text/plain")
+                return
+            body = self._read_body()
+            try:
+                payload = json.loads(body or b"{}")
+                if u.path == "/api/agent/sheet":
+                    kind = "rig" if payload.get("rig_id") else "group"
+                    name = str(payload.get("rig_id") or payload.get("group") or "")
+                    if not name:
+                        raise ValueError("rig_id or group required")
+                    out = agent_set_sheet(kind, name, payload.get("sheet"))
+                elif u.path == "/api/agent/sheet/clear":
+                    kind = "rig" if payload.get("rig_id") else "group"
+                    name = str(payload.get("rig_id") or payload.get("group") or "")
+                    if not name:
+                        raise ValueError("rig_id or group required")
+                    out = agent_clear_sheet(kind, name)
+                else:
+                    out = agent_set_group(
+                        str(payload["rig_id"]), payload.get("group"))
+                self._send(json.dumps(out), ctype="application/json")
+            except (KeyError, ValueError, json.JSONDecodeError) as e:
+                self._send(f"bad request: {e}", 400, "text/plain")
         elif u.path == "/api/agent/enqueue":
             if readonly():
                 self._send("readonly mode", 403, "text/plain")
                 return
-            authed = _agent_token_ok(self.headers) or same_origin_request(
-                self.headers.get("Origin"), self.headers.get("Host"))
-            if not authed:
-                self._send("token or same-origin required", 403,
-                           "text/plain")
+            # Ops-only: shared ops bearer required. same-origin is NOT an
+            # auth boundary here — Origin/Host are both attacker-set over
+            # the public nginx route, so a spoofed curl must never queue
+            # fleet tasks. Per-rig secrets are rejected too (a rig does
+            # not enqueue work for itself).
+            if _agent_token_ok(self.headers) is not True:
+                self._send("ops token required", 403, "text/plain")
                 return
             body = self._read_body()
             try:
