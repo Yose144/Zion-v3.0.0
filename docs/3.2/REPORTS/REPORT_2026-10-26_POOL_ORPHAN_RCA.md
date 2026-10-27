@@ -54,3 +54,25 @@ Původní cíl „<2 % stale" je pro ~52s kandidátní kadenci s ~1s notifikací
 
 - `shares.is_block` se nezapisuje (0 za 24 h) — per-height kandidátní statistika by z něj šla přesně; doplnit při W-dávce telemetrie.
 - Pořadí zápisů do `blocks` je závod winner/loser — D1 fix řeší přesně toto.
+
+---
+
+## Dodatek 27. 10. — RCA revize: follower-tip divergence = reálná ztrátová cesta
+
+Původní závěr „externí ztráty 0/24 h" byl ověřen nad hub submit chybami —
+ale **nezachytil routing defekt**, který dnes (27. 10.) ukázal živý důkaz:
+
+- **Pozorování:** `node2 :9446` = h98195 `4367591c…` vs `node3 :9447` =
+  h98194 `6970f34a…` — followeři divergovali o 1 tip v čase měření.
+- **Mechanismus:** `L1Endpoints::call` routuje na `last_good` — template
+  feed i `submitBlock` sdílí jeden counter → job vystavený z tipu nody A
+  se submitne na nodu B s jiným tipem → `previous hash mismatch`.
+  In-result error se v `call()` chápe jako úspěch → **žádný retry na
+  endpoint, který prev_hash má** → reálný blok zahozen.
+- **Opraveno (`0cc967c53`):** `submit_block_to_node` před submitem probí
+  `getChainInfo` na každém endpointu (`call_addr`, 3s bound) a submitne na
+  ten, jehož `tip_hash`/`native_tip_hash` == `prev_hash` bloku; nenajde-li
+  shodu → původní `last_good` cesta (node rozhodne). `call_addr` test ✅.
+- **Dopad:** submits během lag-oken se přesunou z „jistý mismatch" na
+  „správný node" → méně skutečných orphanů při follower lag; interní
+  souběhy na výšku (D3) zůstávají a jsou neškodné.
