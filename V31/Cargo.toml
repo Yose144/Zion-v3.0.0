@@ -11,6 +11,7 @@ members = [
     "L2/dao",
     "L3/ncl",
     "L3/ai-native",
+    "L3/hiran-gateway",
     "L4/oasis",
     "L5/free-world",
     "L6/issobella",
@@ -48,7 +49,7 @@ qp-poseidon-core = "3.1.0"
 num-bigint = "0.4"
 num-traits = "0.2"
 rand = "0.8"
-reqwest = { version = "0.12", features = ["json", "blocking", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = ["json", "blocking", "rustls-tls", "stream"], default-features = false }
 ripemd = "0.1"
 rlp = "0.5"
 rusqlite = { version = "0.31", features = ["bundled"] }

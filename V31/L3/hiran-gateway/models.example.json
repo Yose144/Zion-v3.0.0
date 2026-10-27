@@ -1,0 +1,21 @@
+[
+  {
+    "alias": "hiran-mini",
+    "context": 4096,
+    "tier": "free",
+    "price_1m_usd": 0.6,
+    "upstreams": [
+      { "base": "http://127.0.0.1:8004/v1", "degraded": false },
+      { "base": "http://127.0.0.1:8002/v1", "degraded": true }
+    ]
+  },
+  {
+    "alias": "hiran-coder",
+    "context": 32768,
+    "tier": "pro",
+    "price_1m_usd": 1.2,
+    "upstreams": [
+      { "base": "http://127.0.0.1:8008/v1", "degraded": false }
+    ]
+  }
+]

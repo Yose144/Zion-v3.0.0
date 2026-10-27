@@ -1,0 +1,35 @@
+[Unit]
+Description=ZION Hiran API Gateway — OpenAI-compatible paid inference (B2B-3)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion
+Environment="RUST_LOG=info,zion_hiran_gateway=info"
+Environment=HIRAN_BIND=127.0.0.1:8007
+Environment=ZIS_VERIFY_URL=http://127.0.0.1:8096/api/keys/verify
+Environment=HIRAN_DB=/opt/zion/data/hiran-gateway.db
+Environment=HIRAN_MODELS=/etc/zion/hiran-models.json
+# HIRAN_ADMIN_KEY must live in an override:
+#   systemctl edit zion-hiran-gateway → Environment=HIRAN_ADMIN_KEY=<secret>
+ExecStart=/opt/zion/V31/target/release/zion-hiran-gateway
+Restart=always
+RestartSec=10
+KillMode=process
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening (unprivileged zion user)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=yes
+ReadWritePaths=/opt/zion/data /opt/zion/logs /var/log/zion
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target
