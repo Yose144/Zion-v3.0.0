@@ -1,0 +1,21 @@
+{
+  "_comment": "SimpleMiningOS custom miner — agent.conf / miner program definition. SMOS 'custom miner' = tarball + exec line under /var/miner/.",
+  "miner": {
+    "name": "zion-miner",
+    "version": "3.1.0",
+    "program": "/var/miner/zion-miner/zion-miner",
+    "package_url": "https://zionterranova.com/fleet/packages/zion-miner-latest.tar.gz",
+    "args": "--pool stratum+tcp://pool.zionterranova.com:8444 --wallet %WALLET% --worker %WORKER% --gpu cuda --threads 4 --v3-trinity",
+    "env": {
+      "ZION_GPU_BACKEND": "cuda",
+      "ZION_PROFILE": "pool",
+      "ZION_INTERACTIVE": "0",
+      "ZION_STREAM2_ENABLED": "1",
+      "ZION_STREAM4_ENABLED": "1",
+      "ZION_EXT_GPU_TIME_DUTY_PCT": "50",
+      "ZION_EXT_GPU2_TIME_DUTY_PCT": "50"
+    },
+    "api_port": null,
+    "hashrate_regex": "total\\s+([0-9.]+)\\s*H/s"
+  }
+}

@@ -37,5 +37,32 @@ class ExecAllowlistTests(unittest.TestCase):
         self.assertFalse(agent.exec_allowed("uptime", allow))
 
 
+class SelfUpdateTests(unittest.TestCase):
+    """self-update op: https + host allowlist + sha256 pin (CP token
+    alone must not be code-signing capability)."""
+
+    def test_valid_update_url_https_and_allowlist(self):
+        self.assertTrue(agent.valid_update_url(
+            "https://raw.githubusercontent.com/x/y/agent.py"))
+        self.assertTrue(agent.valid_update_url(
+            "https://zionterranova.com/fleet/agent.py"))
+        for bad in ("http://zionterranova.com/a.py",          # no https
+                    "https://evil.example.com/a.py",        # off-list
+                    "file:///etc/passwd",                   # no scheme
+                    "https://zionterranova.com.evil.com/x", # suffix spoof
+                    "", "notaurl"):
+            self.assertFalse(agent.valid_update_url(bad), bad)
+
+    def test_self_update_rejects_bad_url_and_hash(self):
+        rc, out = agent.self_update({"url": "https://evil.com/a.py",
+                                     "sha256": "0" * 64})
+        self.assertEqual(rc, 126)
+        self.assertIn("host", out)
+        rc, out = agent.self_update({
+            "url": "https://zionterranova.com/a.py", "sha256": "xyz"})
+        self.assertEqual(rc, 126)
+        self.assertIn("sha256", out)
+
+
 if __name__ == "__main__":
     unittest.main()

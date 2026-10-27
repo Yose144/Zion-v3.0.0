@@ -52,6 +52,13 @@ SHEET_PATH = Path(os.environ.get(
     "VAST_AGENT_SHEET_PATH", "/root/vast-desired.json"))
 APPLY_HOOK = os.environ.get(
     "VAST_AGENT_APPLY_HOOK", "/root/zion-sheet-apply.sh")
+# self-update: the task carries {url, sha256} — the rig only accepts
+# https downloads from an embedded host allowlist (compromising the CP
+# token alone cannot push arbitrary code: the payload must be served
+# from our infrastructure or the public repo mirror).
+UPDATE_HOSTS = set(
+    (os.environ.get("VAST_AGENT_UPDATE_HOSTS") or
+     "zionterranova.com,raw.githubusercontent.com").split(","))
 SEEN_KEEP = 500
 TASK_TIMEOUT = 600
 
@@ -233,11 +240,72 @@ def collect():
     return hb
 
 
+def _sha256_file(path):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def valid_update_url(url):
+    """https-only + host in the rig-embedded allowlist."""
+    from urllib.parse import urlparse
+    try:
+        u = urlparse(str(url))
+    except Exception:
+        return False
+    return u.scheme == "https" and u.hostname in UPDATE_HOSTS
+
+
+def self_update(args):
+    """Builtin op: download agent code pinned by sha256 from an allow-
+    listed host, replace own file atomically, then re-exec in place
+    (keeps the tmux session/PID alive). Returns (rc, out)."""
+    url, want = str(args.get("url", "")), str(args.get("sha256", "")).lower()
+    if not valid_update_url(url):
+        return 126, f"update denied: url host not in {sorted(UPDATE_HOSTS)}"
+    if len(want) != 64 or any(c not in "0123456789abcdef" for c in want):
+        return 126, "update denied: sha256 must be 64 hex chars"
+    me = Path(sys.argv[0]).resolve()
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "vast-agent"})
+        data = urllib.request.urlopen(req, timeout=60).read()
+    except Exception as e:
+        return 1, f"download failed: {e}"
+    tmp = me.with_suffix(".update")
+    tmp.write_bytes(data)
+    got = _sha256_file(tmp)
+    if got != want:
+        tmp.unlink(missing_ok=True)
+        return 126, f"update denied: sha256 mismatch (got {got[:12]}…)"
+    try:
+        import ast
+        ast.parse(data.decode())
+    except Exception as e:
+        tmp.unlink(missing_ok=True)
+        return 126, f"update denied: not valid python: {e}"
+    backup = me.with_suffix(".bak-update")
+    try:
+        os.replace(me, backup)
+        os.replace(tmp, me)
+        os.chmod(me, 0o755)
+    except Exception as e:
+        tmp.unlink(missing_ok=True)
+        return 1, f"install failed: {e}"
+    # re-exec after the result is posted (flag consumed by run_task caller)
+    os.environ["VAST_AGENT_REEXEC"] = "1"
+    return 0, f"updated to {want[:12]} ({len(data)}B), restarting"
+
+
 def run_task(task, seen):
     tid, op, args = task["id"], task["op"], task.get("args", {})
     if tid in seen:
         return
-    if op != "exec":
+    if op == "self-update":
+        rc, out = self_update(args)
+    elif op != "exec":
         rc, out = 2, f"unsupported op {op}"
     elif not exec_allowed(args.get("cmd", "")):
         rc, out = 126, "exec denied: command not in allowlist"
@@ -258,6 +326,9 @@ def run_task(task, seen):
         print(f"result post failed for {tid}: {e}", file=sys.stderr)
         return  # keep unseen → retried on next delivery
     seen.append(tid)
+    if os.environ.pop("VAST_AGENT_REEXEC", None):
+        print("self-update applied — re-exec", flush=True)
+        os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
 def main():

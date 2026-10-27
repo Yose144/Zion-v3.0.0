@@ -1,0 +1,30 @@
+{
+  "_comment": "Seed catalog presets for the fleet control plane. Apply with: for each entry POST /api/agent/catalog {name, sheet} (ops bearer).",
+  "entries": {
+    "zion-dual-5050": {
+      "miner": "zion-miner",
+      "pool": "stratum+tcp://pool.zionterranova.com:8444",
+      "coin": "zion",
+      "duty": {"prl": 50, "qtu": 50}
+    },
+    "zion-solo": {
+      "miner": "zion-miner",
+      "pool": "stratum+tcp://pool.zionterranova.com:8446",
+      "coin": "zion"
+    },
+    "srb-dual-5050": {
+      "miner": "srbminer-dual",
+      "coin": "qtu+prl",
+      "pool": "stratum+tcp://pool.luckypool.io:4434",
+      "duty": {"prl": 50, "qtu": 50}
+    },
+    "xmr-cpu": {
+      "miner": "xmrig",
+      "coin": "xmr",
+      "pool": "pool.supportxmr.com:3333"
+    },
+    "stop-all": {
+      "miner": "none"
+    }
+  }
+}

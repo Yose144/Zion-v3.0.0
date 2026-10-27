@@ -1,0 +1,19 @@
+{
+  "_comment": "HiveOS flight sheet — ZION native miner (v3 trinity, QTU/PRL streams). Import: HiveOS → Flight Sheets → Add → paste miner block as Custom miner.",
+  "items": [
+    {
+      "coin": "ZION",
+      "pool": "pool.zionterranova.com",
+      "wallet": "%WAL%",
+      "miner": "custom",
+      "miner_config": {
+        "custom_miner": "zion-miner",
+        "custom_install_url": "https://zionterranova.com/fleet/packages/zion-miner-latest.tar.gz",
+        "custom_template": "--pool %CUSTOM_URL% --wallet %WAL% --worker %WORKER_NAME% --gpu cuda --threads 4 --log-interval 15 --v3-trinity",
+        "custom_url": "stratum+tcp://pool.zionterranova.com:8444",
+        "custom_pass": "x",
+        "custom_user_config": "ZION_MINER_ID=%WORKER_NAME% ZION_GPU_BACKEND=cuda ZION_PROFILE=pool ZION_INTERACTIVE=0 ZION_STREAM2_ENABLED=1 ZION_STREAM2_FORCE_COIN=PRL ZION_STREAM4_ENABLED=1 ZION_STREAM4_FORCE_COIN=QTU ZION_EXT_GPU_TIME_DUTY_PCT=50 ZION_EXT_GPU2_TIME_DUTY_PCT=50"
+      }
+    }
+  ]
+}

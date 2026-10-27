@@ -1,0 +1,29 @@
+{
+  "_comment": "HiveOS flight sheet — SRBMiner-MULTI dual QTU+PRL duty split. Two items = two flight sheet rows; duty is split by stream assignment inside the miner.",
+  "items": [
+    {
+      "coin": "QTU",
+      "pool": "pool.luckypool.io",
+      "wallet": "%QTU_WAL%",
+      "miner": "custom",
+      "miner_config": {
+        "custom_miner": "srbminer-multi",
+        "custom_install_url": "https://zionterranova.com/fleet/packages/srbminer-multi-2-9-8.tar.gz",
+        "custom_template": "--algorithm quantus --pool %CUSTOM_URL% --wallet %QTU_WAL% --worker %WORKER_NAME%-qtu --disable-cpu",
+        "custom_url": "stratum+tcp://pool.luckypool.io:4434"
+      }
+    },
+    {
+      "coin": "PRL",
+      "pool": "eu.luckypool.io",
+      "wallet": "%PRL_WAL%",
+      "miner": "custom",
+      "miner_config": {
+        "custom_miner": "srbminer-multi",
+        "custom_install_url": "https://zionterranova.com/fleet/packages/srbminer-multi-2-9-8.tar.gz",
+        "custom_template": "--algorithm pearlhash --pool %CUSTOM_URL% --wallet %PRL_WAL% --worker %WORKER_NAME%-prl --disable-cpu",
+        "custom_url": "stratum+tcp://eu.luckypool.io:3110"
+      }
+    }
+  ]
+}
