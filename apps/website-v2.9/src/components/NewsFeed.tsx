@@ -48,8 +48,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'ZION 3.2.0 "One Love" enters Mainnet Beta — the whole ecosystem in one step: the multichain pool mines ZION, Quantus and Pearl natively with a single miner, the L5 Free World map is complete (twelve points), and the library gained its fifth book, Maitreya. Beta is a development and testing stage, not Stable — that requires a clean 30-day run (in progress, monitored on /g8), an external audit and a restore drill. Mining and transacting at your own risk.',
     },
     href: '/news/mainnet-beta',
-    image: '/images/news/beta-maitreya.webp',
-    imageSrcSet: '/images/news/beta-maitreya-m.webp 960w, /images/news/beta-maitreya.webp 1672w',
+    image: '/images/news/beta-cosmic-utopia.webp',
+    imageSrcSet: '/images/news/beta-cosmic-utopia-m.webp 960w, /images/news/beta-cosmic-utopia.webp 1672w',
     imageAlt: {
       cs: 'ZION Mainnet Beta — ekosystém L1–L6, Maitreya a multichain pool ZION / QTC / PEARL',
       en: 'ZION Mainnet Beta — L1–L6 ecosystem, Maitreya and the ZION / QTC / PEARL multichain pool',
