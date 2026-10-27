@@ -82,7 +82,7 @@ NVIDIA GeForce RTX 3060, 12288, 100, 12188, 0, 35, 20.00
 class AgentRegistryTests(unittest.TestCase):
     def setUp(self):
         self._db, self._file = vastctl._agents_cache, vastctl.AGENT_DB_FILE
-        vastctl._agents_cache = {"rigs": {}}
+        vastctl._agents_cache = {"rigs": {}, "secrets": {}, "events": []}
         vastctl.AGENT_DB_FILE = "/tmp/vastctl-agents-test.json"
 
     def tearDown(self):
@@ -116,6 +116,51 @@ class AgentRegistryTests(unittest.TestCase):
         self.assertEqual(fleet["rig_id"], "r2")
         self.assertEqual(fleet["pending"], 2)  # delivered + pending
         self.assertIsNotNone(fleet["age_s"])
+
+    def test_enroll_issues_per_rig_secret_stored_hashed(self):
+        import os
+        os.environ["VASTCTL_ENROLL_TOKEN"] = "enroll-tok"
+        try:
+            out = vastctl.agent_enroll("enroll-tok", "rig-9", "host9")
+        finally:
+            del os.environ["VASTCTL_ENROLL_TOKEN"]
+        self.assertEqual(out["rig_id"], "rig-9")
+        self.assertTrue(out["secret"])
+        # plaintext secret is never stored — sha256 only
+        stored = vastctl._agents_cache["secrets"]["rig-9"]
+        self.assertEqual(len(stored), 64)
+        self.assertNotIn(out["secret"], str(vastctl._agents_cache))
+
+    def test_enroll_rejects_bad_token(self):
+        import os
+        os.environ["VASTCTL_ENROLL_TOKEN"] = "enroll-tok"
+        try:
+            with self.assertRaises(ValueError):
+                vastctl.agent_enroll("wrong", "rig-x", "h")
+        finally:
+            del os.environ["VASTCTL_ENROLL_TOKEN"]
+
+    def test_per_rig_bearer_binds_rig_id(self):
+        vastctl._agents_cache["secrets"]["r1"] = vastctl._sha256("sec1")
+        ok = vastctl._agent_token_ok({"Authorization": "Bearer r1:sec1"})
+        self.assertEqual(ok, "r1")
+        self.assertFalse(vastctl._agent_token_ok(
+            {"Authorization": "Bearer r1:badsec"}))
+        self.assertFalse(vastctl._agent_token_ok(
+            {"Authorization": "Bearer r2:sec1"}))
+        self.assertFalse(vastctl._agent_token_ok({}))
+
+    def test_audit_events_record_enqueue_result_enroll(self):
+        import os
+        os.environ["VASTCTL_ENROLL_TOKEN"] = "et"
+        try:
+            vastctl.agent_enroll("et", "r1", "h")
+        finally:
+            del os.environ["VASTCTL_ENROLL_TOKEN"]
+        t = vastctl.agent_enqueue("r1", "exec", {"cmd": "uptime"})
+        vastctl.agent_result("r1", t["id"], 0, "o")
+        kinds = [e["kind"] for e in vastctl._agents_cache["events"]]
+        self.assertEqual(kinds, ["enroll", "enqueue", "result"])
 
 
 if __name__ == "__main__":

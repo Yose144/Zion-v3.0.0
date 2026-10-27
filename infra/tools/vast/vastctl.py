@@ -1812,13 +1812,15 @@ def rigs_cache_live():
 
 # ── fleet agent registry (push-model, 2.B11) ──────────────────────────
 # Agents POST heartbeats + poll tasks instead of being SSH-probed, so rigs
-# behind NAT stay manageable. All agent-side calls need a shared bearer
-# token; when VASTCTL_AGENT_TOKEN is unset the endpoints fail closed.
+# behind NAT stay manageable. Auth: per-rig `Bearer rig_id:secret` issued
+# by /api/agent/enroll (preferred), or the shared VASTCTL_AGENT_TOKEN
+# bearer (legacy). With neither configured the endpoints fail closed.
 AGENT_DB_FILE = os.environ.get(
     "VASTCTL_AGENT_DB",
     os.path.expanduser("~/.local/share/vastctl-agents.json"))
 AGENT_TASK_TTL_S = int(os.environ.get("VASTCTL_AGENT_TASK_TTL", "3600"))
 AGENT_RESULT_KEEP = 50
+AGENT_EVENTS_KEEP = 200
 _agents_lock = threading.Lock()
 _agents_cache = None
 
@@ -1832,14 +1834,69 @@ def _agent_db():
         except Exception:
             _agents_cache = {"rigs": {}}
         _agents_cache.setdefault("rigs", {})
+        _agents_cache.setdefault("secrets", {})
+        _agents_cache.setdefault("events", [])
     return _agents_cache
 
 
+def _agent_event(kind, rig_id, detail=""):
+    """Append an audit event — caller must hold _agents_lock."""
+    db = _agent_db()
+    ev = db.setdefault("events", [])
+    ev.append({"ts": time.time(), "kind": kind,
+               "rig_id": rig_id, "detail": str(detail)[:500]})
+    db["events"] = ev[-AGENT_EVENTS_KEEP:]
+
+
+def _sha256(s):
+    import hashlib
+    return hashlib.sha256(s.encode()).hexdigest()
+
+
 def _agent_token_ok(headers):
-    token = os.environ.get("VASTCTL_AGENT_TOKEN", "")
-    if not token:
+    """Returns rig_id bound by the bearer (`rig_id:secret` per-rig auth),
+    True for the legacy shared token, or False/None on failure."""
+    auth = headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
         return False
-    return headers.get("Authorization") == f"Bearer {token}"
+    cred = auth[7:]
+    if ":" in cred:
+        # per-rig: bearer carries "rig_id:secret" — verify hash, never
+        # store the plaintext server-side.
+        rid, _, secret = cred.partition(":")
+        if not rid or not secret:
+            return False
+        if _sha256(secret) == _agent_db().get("secrets", {}).get(rid):
+            return rid
+        return False
+    token = os.environ.get("VASTCTL_AGENT_TOKEN", "")
+    if token and cred == token:
+        return True
+    return False
+
+
+def agent_enroll(enroll_token, rig_id_hint, hostname):
+    """One-time enroll: master enroll token → rig_id + per-rig secret.
+    Secret plaintext is returned once and never stored (sha256 only)."""
+    want = os.environ.get("VASTCTL_ENROLL_TOKEN", "")
+    if not want:
+        raise ValueError("enroll disabled (VASTCTL_ENROLL_TOKEN unset)")
+    if not enroll_token or enroll_token != want:
+        raise ValueError("invalid enroll token")
+    import secrets as _sec
+    with _agents_lock:
+        db = _agent_db()
+        rig_id = str(rig_id_hint or "").strip() or f"rig-{_sec.token_hex(4)}"
+        secret = _sec.token_hex(16)
+        db.setdefault("secrets", {})[rig_id] = _sha256(secret)
+        rig = db["rigs"].setdefault(
+            rig_id, {"heartbeat": {}, "tasks": [], "results": []})
+        rig["enrolled_ts"] = time.time()
+        if hostname:
+            rig["enroll_hostname"] = str(hostname)[:120]
+        _agent_event("enroll", rig_id, f"hostname={hostname}")
+        _write_json_atomic(AGENT_DB_FILE, db)
+    return {"ok": True, "rig_id": rig_id, "secret": secret}
 
 
 def _agent_prune(rig):
@@ -1882,6 +1939,7 @@ def agent_result(rig_id, task_id, rc, out):
             "task_id": task_id, "rc": rc,
             "out": out[-8000:] if isinstance(out, str) else "",
             "ts": time.time()})
+        _agent_event("result", rig_id, f"task={task_id} rc={rc}")
         _agent_prune(rig)
         _write_json_atomic(AGENT_DB_FILE, _agents_cache)
         return {"ok": True, "state": state}
@@ -1897,6 +1955,7 @@ def agent_enqueue(rig_id, op, args):
         task = {"id": uuid.uuid4().hex[:12], "op": op, "args": args,
                 "state": "pending", "ts": time.time()}
         rig["tasks"].append(task)
+        _agent_event("enqueue", rig_id, f"task={task['id']} op={op}")
         _write_json_atomic(AGENT_DB_FILE, _agents_cache)
         return task
 
@@ -1904,19 +1963,22 @@ def agent_enqueue(rig_id, op, args):
 def agent_fleet():
     with _agents_lock:
         now = time.time()
+        db = _agent_db()
         out = []
-        for rid, rig in _agent_db()["rigs"].items():
+        for rid, rig in db["rigs"].items():
             hb = rig["heartbeat"]
             out.append({
                 "rig_id": rid,
-                "hostname": hb.get("hostname"),
+                "hostname": hb.get("hostname") or rig.get("enroll_hostname"),
+                "enrolled": rid in db.get("secrets", {}),
                 "last_seen": hb.get("server_ts"),
                 "age_s": round(now - hb["server_ts"], 1) if hb else None,
                 "pending": sum(1 for t in rig["tasks"]
                                if t["state"] in {"pending", "delivered"}),
                 "results": len(rig["results"]),
                 "payload_keys": sorted(hb.keys())})
-        return {"rigs": sorted(out, key=lambda r: r["rig_id"])}
+        return {"rigs": sorted(out, key=lambda r: r["rig_id"]),
+                "events": db.get("events", [])[-20:]}
 
 
 def _agent_fleet_section():
@@ -2214,8 +2276,22 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
     def do_POST(self):
         u = urlparse(self.path)
         q = parse_qs(u.query)
-        if u.path == "/api/agent/heartbeat":
-            if not _agent_token_ok(self.headers):
+        if u.path == "/api/agent/enroll":
+            # Bootstrap endpoint — the enroll token in the body is the gate
+            # (no bearer exists yet). Issues rig_id + per-rig secret.
+            body = self._read_body()
+            try:
+                payload = json.loads(body or b"{}")
+                self._send(json.dumps(agent_enroll(
+                    str(payload.get("enroll_token", "")),
+                    str(payload.get("rig_id", "")),
+                    str(payload.get("hostname", "")))),
+                    ctype="application/json")
+            except (ValueError, json.JSONDecodeError) as e:
+                self._send(f"bad request: {e}", 403, "text/plain")
+        elif u.path == "/api/agent/heartbeat":
+            auth = _agent_token_ok(self.headers)
+            if not auth:
                 self._send("agent token required", 403, "text/plain")
                 return
             body = self._read_body()
@@ -2224,19 +2300,27 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
                 rig_id = str(payload.pop("rig_id", ""))
                 if not rig_id:
                     raise ValueError("rig_id required")
+                # Per-rig bearer binds the claimed rig_id — a rig cannot
+                # report as another rig with its own secret.
+                if isinstance(auth, str) and auth != rig_id:
+                    raise ValueError("rig_id does not match credential")
                 self._send(json.dumps(agent_heartbeat(rig_id, payload)),
                            ctype="application/json")
             except (ValueError, json.JSONDecodeError) as e:
                 self._send(f"bad request: {e}", 400, "text/plain")
         elif u.path == "/api/agent/result":
-            if not _agent_token_ok(self.headers):
+            auth = _agent_token_ok(self.headers)
+            if not auth:
                 self._send("agent token required", 403, "text/plain")
                 return
             body = self._read_body()
             try:
                 payload = json.loads(body or b"{}")
+                rig_id = str(payload["rig_id"])
+                if isinstance(auth, str) and auth != rig_id:
+                    raise ValueError("rig_id does not match credential")
                 self._send(json.dumps(agent_result(
-                    str(payload["rig_id"]), str(payload["task_id"]),
+                    rig_id, str(payload["task_id"]),
                     int(payload.get("rc", 1)),
                     str(payload.get("out", "")))), ctype="application/json")
             except (KeyError, ValueError, json.JSONDecodeError) as e:
