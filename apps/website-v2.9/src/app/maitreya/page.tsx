@@ -42,16 +42,16 @@ const SECTIONS: {
 const SECTION_IDS = new Set<string>(SECTIONS.map((s) => s.id));
 
 const Copy = {
-  kicker: { cs: 'Kniha Pátá · ZION Terra Nova', en: 'Book Five · ZION Terra Nova' },
-  title: { cs: 'Maitreya Buddha', en: 'Maitreya Buddha' },
-  subtitle: { cs: 'Pán Hiranyagarbhy · Dědic Zionu', en: 'Lord of Hiranyagarbha · Heir of Zion' },
+  kicker: { cs: 'Nirvana Hub · ZION Terra Nova', en: 'Nirvana Hub · ZION Terra Nova' },
+  title: { cs: 'Nirvana Hub', en: 'Nirvana Hub' },
+  subtitle: { cs: 'Knihovna cesty · všechny knihy na jednom místě', en: 'The library of the path · all books in one place' },
   tagline: {
     cs: '„Ten, kdo přijde — vždy, když podmínky dozrají."',
     en: '“The one who comes — whenever the conditions ripen.”',
   },
   lede: {
-    cs: 'Knihy, jejich souvislosti a cesta k 3.3 Nirvana — jedna knihovna, jeden plán.',
-    en: 'The books, their connections, and the path to 3.3 Nirvana — one library, one plan.',
+    cs: 'Všechny knihy cesty, jejich souvislosti a plán 3.3 Nirvana — jedna knihovna, jeden reader, jeden plán.',
+    en: 'All the books of the path, their connections, and the way to 3.3 Nirvana — one library, one reader, one plan.',
   },
   read: { cs: 'Číst knihu', en: 'Read the book' },
   plan: { cs: 'Plán 3.3', en: 'The 3.3 plan' },

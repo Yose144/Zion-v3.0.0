@@ -1,8 +1,8 @@
 import { Book, Rocket, Shield, FileText, Sparkles, Globe, Cpu, Map, AlertTriangle, GitBranch, Coins } from 'lucide-react';
-import { MAITREYA_CHAPTERS } from '@/app/maitreya/chapters';
-import { NIRVANA_CHAPTERS } from '@/app/nirvana/chapters';
-import { SURTA_CHAPTERS } from '@/app/surta-srdce/chapters';
-import { KRAL_CHAPTERS } from '@/app/kralovstvi-srdce/chapters';
+import { MAITREYA_CHAPTERS } from '@/lib/books/maitreya';
+import { NIRVANA_CHAPTERS } from '@/lib/books/nirvana';
+import { SURTA_CHAPTERS } from '@/lib/books/surta-srdce';
+import { KRAL_CHAPTERS } from '@/lib/books/kralovstvi-srdce';
 
 /* ═══════════════════════════════════════════
    Docs manifest — single source of truth for

@@ -111,7 +111,7 @@ export default function Navigation() {
         { href: '/team', label: tr('nav', 'team', lang) },
         { href: '/genesis', label: tr('nav', 'genesis', lang) },
         { href: '/terranova', label: tr('nav', 'terranova', lang) },
-        { href: '/maitreya', label: 'Maitreya' },
+        { href: '/maitreya', label: 'Nirvana Hub' },
         { href: '/tree-of-life', label: tr('nav', 'tree_of_life', lang), children: [
           { href: '/tree-of-life#evoluzion', label: 'evoluZion V2' },
           { href: '/tree-of-life#proof-of-care', label: 'Proof-of-Care' },

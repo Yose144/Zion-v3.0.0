@@ -78,7 +78,7 @@ export default function MaitreyaSection() {
                   {cs ? 'Element vzduchu' : 'The element of air'}
                 </span>
                 <Link
-                  href="/nirvana/cist"
+                  href="/maitreya/nirvana/cist"
                   className="zion-kicker border-amber-400/25 bg-amber-400/10 text-amber-300 transition-colors hover:border-amber-400/50"
                 >
                   <Sun className="h-3.5 w-3.5" />

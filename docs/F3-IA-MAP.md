@@ -158,3 +158,25 @@ Všech 15 testovaných cest → `308` do správných cílů (`/multichain[/walle
 5. `/wallet`, `/account`, `/cex` — ✅ Trh skupina (`/wallet`, `/cex` v nav) + `/account` = top-level ZIS utility mimo sekce
 6. `/team`, `/news`, `/roadmap` — ✅ meta úroveň v Learn skupině (ne sekce)
 7. pool.zionterranova.com — ✅ **zůstává samostatný portál**; `/market` hub už na market. app odkazuje (canonical link card 2026-10-24)
+
+## Book Reader kanonizace — Nirvana Hub (2026-10-28)
+
+**Rozhodnutí:** všechny čtečky knih sjednoceny pod `/maitreya` hub (nav label **„Nirvana Hub"**). Jediný shared renderer `src/components/books/BookReader.tsx` (základ = nirvana varianta — nejnovější, EN→CS fallback); chapter data přesunuta do `src/lib/books/` (`maitreya.ts`, `nirvana.ts`, `surta-srdce.ts`, `kralovstvi-srdce.ts`, `registry.ts`, `types.ts`, `singleDoc.ts`).
+
+| Kniha | Kanonický reader | Režim |
+|---|---|---|
+| Maitreya | `/maitreya/cist` | chaptered (`docs/books/maitreya/kapitoly/*.md`) |
+| Nirvana | `/maitreya/nirvana/cist` | chaptered (`docs/korpus/Nirvana/*.md`) |
+| Surta Srdce | `/maitreya/surta-srdce/cist` | chaptered |
+| Království srdce | `/maitreya/kralovstvi-srdce/cist` | chaptered |
+| Ekam Deeksha | `/maitreya/ekam/cist` | chaptered per-part (`docs/books/ekam-deeksha/BOOK-*.md`, CZ+EN) |
+| Kvantová revoluce | `/maitreya/quantum-revolution/cist` | **single-doc** — 1 fetch, `### Kapitola N:` h3 → TOC (`docs/books/quantum-revolution.md`, CZ-only + fallback note) |
+| Genesis | `/genesis` | experience stránka (zůstává — reader neexistoval) |
+
+Landing stránky `/quantum-revolution`, `/ekam` zůstávají živé experience pages (vlastní obsah, ne reader).
+
+**Redirecty (308):** `/nirvana/cist[/:slug]`→`/maitreya/nirvana/cist[#:slug]`, `/surta-srdce[/cist[/:slug]]`→`/maitreya/surta-srdce/cist[#:slug]`, `/kralovstvi-srdce[/cist[/:slug]]`→`/maitreya/kralovstvi-srdce/cist[#:slug]`. Canonical `[slug]` stránky pod novými cestami → `307` na `#slug` deep-link. Smazány route soubory `src/app/{nirvana,surta-srdce,kralovstvi-srdce}/` — **zdrojová markdown data v `public/docs/` zůstávají**.
+
+**Aktualizováno:** `library.ts` readHrefs (QR+Ekam→readery, Genesis→`/genesis`), `docLinks.ts` BOOK_READERS (4 chaptered knihy), `docs-manifest.ts`, `sitemap.ts`, `MaitreyaSection`, `Navigation` („Nirvana Hub"), e2e `maitreya-hub.spec.ts`, hub hero/metadata → Nirvana Hub.
+
+**Verifikace (standalone PORT=3199):** 6 readerů 200 + obsah renderuje (Ekam „Předmluva/Část I", QR 10 kapitol z doc fetch); 14 cest: canonical 200, `[slug]`→307 `#hash`, legacy→308 canonical — ✅ `npm run build` 212 stránek čistý (pozn.: `next build` bez `--webpack` flagu = Turbopack default → selže na `fs`/`net` aliasech; vždy `npm run build`).

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, BookOpen } from 'lucide-react';
-import { MAITREYA_CHAPTERS, MAITREYA_PARTS } from '../chapters';
+import { MAITREYA_CHAPTERS, MAITREYA_PARTS } from '@/lib/books/maitreya';
 import { Panel, PanelHeader, type Lang } from './shared';
 
 const Copy = {

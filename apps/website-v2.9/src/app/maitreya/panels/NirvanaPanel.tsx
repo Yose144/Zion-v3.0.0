@@ -3,7 +3,7 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Sailboat, Sun } from 'lucide-react';
-import { NIRVANA_CHAPTERS } from '../../nirvana/chapters';
+import { NIRVANA_CHAPTERS } from '@/lib/books/nirvana';
 import { Panel, PanelHeader, type Lang } from './shared';
 
 const Copy = {
@@ -94,7 +94,7 @@ export default function NirvanaPanel({ lang }: { lang: Lang }) {
                 {eps.map((ep) => (
                   <li key={ep.slug}>
                     <Link
-                      href={`/nirvana/cist#${ep.slug}`}
+                      href={`/maitreya/nirvana/cist#${ep.slug}`}
                       className="group flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3 transition-colors hover:border-amber-400/30"
                     >
                       <span className="text-xs font-mono text-gray-600">{ep.slug.slice(0, 2)}</span>
@@ -129,7 +129,7 @@ export default function NirvanaPanel({ lang }: { lang: Lang }) {
             <p className="text-sm leading-relaxed text-gray-300">{Copy.bridgeBody[l]}</p>
             <div className="flex flex-wrap items-center gap-2">
               <Link
-                href={`/nirvana/cist#${BRIDGE.slug}`}
+                href={`/maitreya/nirvana/cist#${BRIDGE.slug}`}
                 className="group inline-flex items-center gap-1.5 rounded-lg border border-zion-cyan/40 bg-zion-cyan/10 px-3 py-1.5 text-xs font-semibold text-zion-cyan transition-colors hover:bg-zion-cyan/15"
               >
                 <BookOpen className="h-3.5 w-3.5" />
@@ -164,7 +164,7 @@ export default function NirvanaPanel({ lang }: { lang: Lang }) {
         )}
 
         <div className="flex flex-wrap items-center gap-3">
-          <Link href="/nirvana/cist" className="zion-button-primary group">
+          <Link href="/maitreya/nirvana/cist" className="zion-button-primary group">
             <Sun className="h-5 w-5" />
             {Copy.readBook[l]}
             <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />

@@ -95,7 +95,7 @@ function WorkstreamCard({ w, lang }: { w: NirvanaWorkstream; lang: Lang }) {
           {Copy.layerLink[l]}
         </Link>
         <Link
-          href={`/nirvana/cist#${w.chapterSlug}`}
+          href={`/maitreya/nirvana/cist#${w.chapterSlug}`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/25 px-3 py-1.5 text-xs font-semibold text-amber-300/90 transition-colors hover:border-amber-400/50"
         >
           <BookOpen className="h-3.5 w-3.5" />

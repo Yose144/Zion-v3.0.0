@@ -130,6 +130,15 @@ const nextConfig: NextConfig = {
       { source: '/node-setup', destination: '/mining#node-setup', permanent: true },
       { source: '/mining/node-setup', destination: '/mining#node-setup', permanent: true },
       { source: '/nirvana', destination: '/maitreya#nirvana', permanent: true },
+      // Nirvana Hub — all books under /maitreya/<book>/cist (docs/F3-IA-MAP.md)
+      { source: '/nirvana/cist', destination: '/maitreya/nirvana/cist', permanent: true },
+      { source: '/nirvana/cist/:slug', destination: '/maitreya/nirvana/cist#:slug', permanent: true },
+      { source: '/surta-srdce', destination: '/maitreya/surta-srdce/cist', permanent: true },
+      { source: '/surta-srdce/cist', destination: '/maitreya/surta-srdce/cist', permanent: true },
+      { source: '/surta-srdce/cist/:slug', destination: '/maitreya/surta-srdce/cist#:slug', permanent: true },
+      { source: '/kralovstvi-srdce', destination: '/maitreya/kralovstvi-srdce/cist', permanent: true },
+      { source: '/kralovstvi-srdce/cist', destination: '/maitreya/kralovstvi-srdce/cist', permanent: true },
+      { source: '/kralovstvi-srdce/cist/:slug', destination: '/maitreya/kralovstvi-srdce/cist#:slug', permanent: true },
       // Corpus + legacy link fixes
       { source: '/oasis', destination: '/l4-oasis', permanent: true },
       { source: '/oasis/:path*', destination: '/l4-oasis', permanent: true },

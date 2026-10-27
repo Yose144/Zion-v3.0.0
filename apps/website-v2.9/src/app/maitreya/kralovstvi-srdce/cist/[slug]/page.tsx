@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
-import { SURTA_CHAPTERS } from '../../chapters';
+import { KRAL_CHAPTERS } from '@/lib/books/kralovstvi-srdce';
 
 export function generateStaticParams() {
-  return SURTA_CHAPTERS.map((c) => ({ slug: c.slug }));
+  return KRAL_CHAPTERS.map((c) => ({ slug: c.slug }));
 }
 
 export default async function ChapterRedirect({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  redirect(`/surta-srdce/cist#${slug}`);
+  redirect(`/maitreya/kralovstvi-srdce/cist#${slug}`);
 }

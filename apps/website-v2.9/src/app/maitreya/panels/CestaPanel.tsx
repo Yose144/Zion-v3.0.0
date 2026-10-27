@@ -40,7 +40,7 @@ const COMPASS = [
   { dir: Copy.north, icon: Egg, href: '/genesis', enHref: '/genesis', rc: '252, 209, 22' },
   { dir: Copy.east, icon: Atom, href: '/quantum-revolution', enHref: '/quantum-revolution', rc: '6, 182, 212' },
   { dir: Copy.south, icon: Flame, href: '/ekam', enHref: '/ekam', rc: '168, 85, 247' },
-  { dir: Copy.west, icon: Sun, href: '/nirvana/cist', enHref: '/nirvana/cist', rc: '251, 146, 60' },
+  { dir: Copy.west, icon: Sun, href: '/maitreya/nirvana/cist', enHref: '/maitreya/nirvana/cist', rc: '251, 146, 60' },
   {
     dir: Copy.center,
     icon: Mountain,

@@ -1,7 +1,9 @@
 import manifest from './doc-manifest.json';
 import { DOC_FILE_TO_ID } from './docs-manifest';
-import { MAITREYA_CHAPTERS } from '@/app/maitreya/chapters';
-import { NIRVANA_CHAPTERS } from '@/app/nirvana/chapters';
+import { MAITREYA_CHAPTERS } from '@/lib/books/maitreya';
+import { NIRVANA_CHAPTERS } from '@/lib/books/nirvana';
+import { SURTA_CHAPTERS } from '@/lib/books/surta-srdce';
+import { KRAL_CHAPTERS } from '@/lib/books/kralovstvi-srdce';
 
 /* ═══════════════════════════════════════════════════════════
    ZION Docs Link Engine
@@ -106,7 +108,9 @@ const ANCHOR_ALIASES: Record<string, string> = {
 
 const BOOK_READERS: Record<string, { slugs: Set<string>; reader: string }> = {
   maitreya: { slugs: new Set(MAITREYA_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/cist' },
-  nirvana: { slugs: new Set(NIRVANA_CHAPTERS.map((c) => c.slug)), reader: '/nirvana/cist' },
+  nirvana: { slugs: new Set(NIRVANA_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/nirvana/cist' },
+  'surta-srdce': { slugs: new Set(SURTA_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/surta-srdce/cist' },
+  'kralovstvi-srdce': { slugs: new Set(KRAL_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/kralovstvi-srdce/cist' },
 };
 
 function isMarkdown(path: string) {

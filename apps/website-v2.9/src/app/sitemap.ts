@@ -104,11 +104,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/maitreya/cist', 0.7, 'monthly'),
 
     // ── Nirvana — Book of the West reader (landing lives under /maitreya#nirvana) ──
-    r('/nirvana/cist', 0.7, 'monthly'),
+    r('/maitreya/nirvana/cist', 0.7, 'monthly'),
+    // ── Ekam Deeksha — Book Three, seven parts + glossary ──
+    r('/maitreya/ekam/cist', 0.7, 'monthly'),
+    // ── Kvantová revoluce — Book Two, campfire tale ──
+    r('/maitreya/quantum-revolution/cist', 0.7, 'monthly'),
     // ── Surta Srdce — heart sūtra for Surta (linked from /maitreya#spolecnici) ──
-    r('/surta-srdce/cist', 0.7, 'monthly'),
+    r('/maitreya/surta-srdce/cist', 0.7, 'monthly'),
     // ── Království srdce — the carpenter's boat (linked from /maitreya#spolecnici) ──
-    r('/kralovstvi-srdce/cist', 0.7, 'monthly'),
+    r('/maitreya/kralovstvi-srdce/cist', 0.7, 'monthly'),
 
     // ── Misc real pages ──────────────────────────────────────────────
     r('/ekam', 0.6, 'monthly'),

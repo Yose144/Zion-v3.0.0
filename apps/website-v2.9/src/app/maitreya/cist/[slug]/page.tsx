@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { MAITREYA_CHAPTERS } from '../../chapters';
+import { MAITREYA_CHAPTERS } from '@/lib/books/maitreya';
 
 export function generateStaticParams() {
   return MAITREYA_CHAPTERS.map((c) => ({ slug: c.slug }));

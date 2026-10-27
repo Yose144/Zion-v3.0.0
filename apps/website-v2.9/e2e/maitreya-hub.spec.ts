@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
-import { MAITREYA_CHAPTERS } from '../src/app/maitreya/chapters';
-import { NIRVANA_CHAPTERS } from '../src/app/nirvana/chapters';
+import { MAITREYA_CHAPTERS } from '../src/lib/books/maitreya';
+import { NIRVANA_CHAPTERS } from '../src/lib/books/nirvana';
 import { DOC_IDS, DOC_HASH_ALIASES } from '../src/lib/docs-manifest';
 import { NIRVANA_WORKSTREAMS } from '../src/lib/nirvana-roadmap';
 import { MAIN_BOOKS, COMPANION_GROUPS } from '../src/app/maitreya/library';
@@ -162,9 +162,9 @@ test.describe('maitreya hub', () => {
     const episodes = NIRVANA_CHAPTERS.filter((c) => c.part === 1);
     expect(episodes.length).toBe(12);
     for (const ep of episodes) {
-      expect(hrefs).toContain(`/nirvana/cist#${ep.slug}`);
+      expect(hrefs).toContain(`/maitreya/nirvana/cist#${ep.slug}`);
     }
-    expect(hrefs).toContain('/nirvana/cist#13-Tres-Marias');
+    expect(hrefs).toContain('/maitreya/nirvana/cist#13-Tres-Marias');
     expect(hrefs).toContain('/terranova/maria-del-camino');
 
     // published-book disclaimer present; no fake live/building status chips
@@ -189,7 +189,7 @@ test.describe('maitreya hub', () => {
         .locator('a[href]')
         .evaluateAll((els) => els.map((e) => e.getAttribute('href')));
       expect(cardHrefs).toContain(w.layerHref);
-      expect(cardHrefs).toContain(`/nirvana/cist#${w.chapterSlug}`);
+      expect(cardHrefs).toContain(`/maitreya/nirvana/cist#${w.chapterSlug}`);
     }
 
     // valid list markup — no nested <li> (was a hydration bug)
@@ -286,7 +286,7 @@ test.describe('maitreya hub', () => {
       if (path === '/maitreya/cist' && hash) {
         expect(maitreyaSlugs.has(hash), `maitreya slug #${hash}`).toBeTruthy();
       }
-      if (path === '/nirvana/cist' && hash) {
+      if (path === '/maitreya/nirvana/cist' && hash) {
         expect(nirvanaSlugs.has(hash), `nirvana slug #${hash}`).toBeTruthy();
       }
       if (path === '/maitreya' && hash) {
@@ -350,7 +350,7 @@ test.describe('maitreya hub', () => {
       (res) => res.url().includes('/docs/books/nirvana/kapitoly/13-Tres-Marias.md') && res.status() === 200,
       { timeout: 30000 }
     );
-    await page.goto('/nirvana/cist#13-Tres-Marias', { waitUntil: 'domcontentloaded' });
+    await page.goto('/maitreya/nirvana/cist#13-Tres-Marias', { waitUntil: 'domcontentloaded' });
     await tresMarias;
     await expect(page.locator('body')).toContainText(/flotila Cesty|trupy pro tři oceány/i, {
       timeout: 30000,
