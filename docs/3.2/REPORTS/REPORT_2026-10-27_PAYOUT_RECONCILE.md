@@ -103,14 +103,17 @@ envelope → **každý accepted submit** se četl jako "no result" → indetermi
 
 ### Ops incident (mimo payout scope)
 
-- **EDGE sshd :22 refuses new connections** od ~09:30 UTC 27. 10. —
-  refused i z EDGE2 (ne jen ban jedné IP), trvání **>75 min** — mimo
-  typický fail2ban bantime → **👤 eskalace: provider console / KVM
-  doporučené** (`fail2ban-client` / `sshd` stav, případně firewall
-  REJECT rule na :22). Established `zion-edge-tunnel` forwardy živé
-  (pool API :8080 odpovídá), replication timer běží (sync 10:41) —
-  host + služby OK, jen inbound nové SYN. Vedlejší efekt: vastctl
-  `--push zion-new:` scp na EDGE failuje, ale public `/vast-rigs/
-  status.json` zůstává fresh přes EDGE2 pull path (resilience OK).
-  ⚠️ Vedlejší nález: EDGE wall clock ~+47 min vs EDGE2 (replica
-  mtime) — ověřit NTP po obnovení přístupu.
+- **EDGE „sshd outage" = false alarm, opraveno 10:56 UTC:** `:22`
+  odmítá od ~09:30 UTC — **sshd nikdy neposlouchal na :22**
+  (socket drop-in override = jen `2222` v4+v6, hardening záměr).
+  Dnešní fungující přístupy šly přes přeživší ControlMaster socket;
+  po jeho expiraci nové :22 pokusy refused. Správné aliasy:
+  `zion-new` (62.171.141.136:**2222**), `zion-v6`. Host/služby po
+  celou dobu OK (tunnel, replikace, pool metriky). Vedlejší nález
+  „+47 min clock skew" = omyl — `ls --time-style` ukazuje lokální
+  CET vs `date -u` UTC; `date -u` na EDGE = správný čas.
+- **Reálný incident:** po sérii handshake byl můj zdroj **fail2ban-
+  banned** na EDGE (:2222 refused ~11:10 UTC+) — dokumentovaný
+  vzor z ops poznámek (agresivní ban cadence). Čekám na bantime;
+  pool deploy `f5364566`+`tip-affinity` build čeká na EDGE připraven
+  (`cargo build` dokončen 11:13 CET, 10m40s).
