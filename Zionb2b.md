@@ -1,0 +1,138 @@
+# ZION B2B — monetizační plán
+
+> **Datum:** 2026-10-27 · **Autor:** Devin analýza (na žádost operátora)
+> **Cíl:** převést ekosystém na reálné peníze — likvidita + cashflow.
+> **Pravidlo (stejné jako v plánu 3.2):** reality > docs. Čísla níže jsou změřená naživo 2026-10-27, ne z whitepaperu.
+
+---
+
+## 0. Tvrdá realita — výchozí bod
+
+| Metrika | Stav 27. 10. | Důsledek |
+|---|---|---|
+| wZION/USDT pool (Base, `0x186b…fdda`) | **TVL $38**, cena ~$0.000125/ZION | ZION je fakticky nelikvidní — "příjem v ZION" ≠ cashflow |
+| CoinGecko | listing zamítnut (17 prerekvizit → 9.B7) | žádný organický sell-side kanál |
+| DAO treasury | 1.5B ZION; lock do bloku **144 000 (~27.–28. 11.)** + on-chain 3-of-3 admin unlock + DAO proces | zatím nepoužitelná — žádný seed liquidity |
+| Pool payout backlog | ~931 unconfirmed ZION (~1.22e12 flowers) + ~918 QTC deferred (2.B7) | **dluh minerům** — důvěra pod tlakem; 👤 rozhodnutí |
+| Presale | deprecated — `/api/presale/status` vrací 410 "Fair launch only" | token-sale cesta uzavřená |
+| NCL compute market | daemon live (`V31/L3/ncl`), 10 % protocol fee | **0 workerů, 0 customers** — engine bez trhu |
+| Externí audit (G9) | 👤 posunut na neurčito | enterprise B2B bude ptát — připravit odpověď |
+
+**Fundamentální závěr:** Jediný fiat-konvertibilní příjem, který umíme generovat DNES, je (a) aux-mining externích coinů a (b) fiat e-shop. Vše denominované v ZION je interní účetnictví do okamžiku likvidity.
+
+---
+
+## 1. Inventura aktiv
+
+| Asset | Soubor / provoz | Stav | Monetizační potenciál |
+|---|---|---|---|
+| **Pool NG** | `V31/L1/pool`, produkce 97k+ bloků | multichain TLS stratum, PPLNS, dedup, luck persistence, aux legy (QTU/PRL/ZANO/VRSC/XMR/EVR/KRX/MEWC) | pool-as-a-service, merge-mining hosting, % fee |
+| **Autonomous Profit Router** | `V31/L1/miner/src/autonomous.rs` | code-complete, WhatToMine/NiceHash oracle, hystereze 15 %, default OFF | aux-coin revenue na fiat; i jako B2B feature |
+| **Hiran / Hiranyagarbha AI** | EDGE2 ai-native :8001, hiran-mini 8B GGUF, RAG 39 docs/138 chunků, veřejný `/api/ai-chat` | live; inference PC GPU + EDGE2 CPU fallback; vast fleet + vLLM katalog (`infra/tools/vast/vastctl.py` MODEL_CATALOG) | prodej inference $/1M tok — `HIRAN-MARKETPLACE-PLAN.md` F2–F4 |
+| **MarketPlace + e-shop** | `apps/MarketPlace` (market.zionterranova.com) | Prisma schema (Artifact/Collection/Listing/Bid/Sale + ShopProduct/ShopOrder/Invoice), Stripe checkout+webhook, QR transfer, rasta e-maily, faktury — ~95 % E2E | **fiat rail**; zbývá 5.B6 E2E verify + invoice download route |
+| **NCL daemon** | `V31/L3/ncl` | jobs (LLM/image/train/embed/code/custom), backends ONNX/WASM/TFLite/custom, pricing 0.01 ZION/unit, **10 % protocol fee**, reputation, persistence | sovereign AI compute market — potřebuje demand |
+| **DAO stack** | `V31/L2/dao` | návrhy 5 typů, timelock 72 h, kvórum 15 %, 5-of-7 guardians, treasury ops, events log | governance-as-a-service |
+| **ZIS identity** | `apps/identity` (Fastify) | Ed25519/SIWE/Google, EdDSA JWT+JWKS, passkeys, SSO napříč doménami, 46/46 testů | auth/SSO balíček; slabší priorita (Privy/Clerk konkurence) |
+| **L5/L6 fondy** | coinbase 5 %+5 %; Issobella ~26M ZION (97k) | trackery live, QV kola | grant program → partnerská síť; bez likvidity ne cash |
+| **Content/IP** | `canon/books/` — 13+ knih, artworky, 3D assety, WpStory | kompletní | merch, knihy, licensing |
+| **Emission split** | `V31/L1/core/src/emission.rs` | 89 miner / 5 humanit / 5 issobella / 1 node reward (zatím burn) | pool fee `pool_fee_bps=100` = 1 % ZION payoutů |
+
+---
+
+## 2. B2B návrhy — podle time-to-cash
+
+### A. HNED (0–4 týdny) — fiat příjmy z existujícího
+
+#### B2B-1 · E-shop live (Stripe) — nejrychlejší fiat rail
+- **Co:** dokončit 5.B6 — E2E checkout + `/api/invoice/[id]/download` + `/order-tracking` + nasadit.
+- **Prodávat:** fyzické knihy (canon = 13 titulů), art printy, merch. Inventář = 20 seeded produktů (`POST /api/shop/seed`).
+- **Riziko:** minimální — stack je postavený, jen neotestovaný.
+- **Výsledek:** první CZK/EUR během týdnů. **Jediná cesta, kde peníze přijdou do 48 h provozu.**
+
+#### B2B-2 · Aux-mining → fiat rotace
+- **Co:** (a) vyřešit payout backlog 2.B7 — vyplatit nebo deklarovaná politika + komunikace minerům; (b) `PRL_PAYOUT_DRY_RUN` → 0 + sweep revenue do oyster (2.B6); (c) profit-routing na fiat-konvertibilní coiny (ZANO/VRSC/XMR/KAS) + pravidelný prodej.
+- **Objem:** malý (řádově $/den podle fleet), ale **reálný cashflow hned** — a zároveň opravuje retenci minerů (dluh = největší produktový problém).
+- **Pozn.:** 918 deferred QTC payoutů = důvěra; bez vyřešení se miner základna rozpadne dřív, než cokoliv prodáme.
+
+#### B2B-3 · Hiran API — private beta
+- **Co:** OpenAI-kompatibilní endpoint na vast rigách (vLLM katalog existuje), `X-API-Key` gate přes ZIS, Stripe subscription CZK/EUR, metering přes NCL daemon (pricing engine už počítá).
+- **Positioning:** „EU-hosted LLM" — GDPR/data sovereignty pro české/EU klienty; data neopouští EU, žádný US cloud.
+- **MVP scope:** jeden model tier (8B chat + RAG), $/1M tok nebo flat monthly, `/v1/models` gateway (HIRAN-MARKETPLACE-PLAN F2).
+- **Čas:** 2–4 týdny do prvního MRR.
+
+### B. Krátký horizont (1–3 měsíce) — služby založené na stacku
+
+#### B2B-4 · Pool-as-a-Service (white-label stratum)
+- **Nabídka:** hosted stratum pro malé PoW coiny — TLS, multi-coin PPLNS, dedup, payout ledger, metriky, failover.
+- **Model:** setup fee + 1.5–2 % fee z rewardů; SLA na uptime (G8 monitoring existuje).
+- **Důkaz provozu:** 97k+ bloků, audit vlny 1–7, alerting stack.
+- **Realita:** 1–2 klienti/kvartál = $ stovky–nízké tisíce/měs.; niche trh, ale unikátní schopnost.
+
+#### B2B-5 · Merge-mining hosting / hashrate marketplace
+- **Nabídka:** jiný coin se "připne" jako aux leg ZION poolu (pattern už interně provozovaný pro QTU/PRL/ZANO) → jejich mineři dostanou zaplaceno v jejich tokenu, ZION bere % fee z hostované kapacity.
+- **Synergie s B2B-4:** jeden prodejní balíček, dvě úrovně.
+
+#### B2B-6 · NCL compute marketplace — jen s poptávkou napřed
+- **Nabídka:** „sovereign AI compute" — firmy submittují ONNX/WASM joby (inference, batch embeddings, fine-tune), platí fiat/stable; ZION drží 10 % protocol fee.
+- **Podmínka:** nejdřív 1 poptávkový zákazník, pak workers onboarding. **Stavět nabídku před poptávkou = mrtvý kód.**
+- **B2B lead zdroj:** stejný "EU sovereignty" argument jako B2B-3.
+
+#### B2B-7 · Governance/DAO-as-a-service
+- **Nabídka:** zion-dao stack (proposals, snapshot voting, timelock, guardian multisig, events) self-hosted + support retainer pro jiné chainy/DAO.
+- **Priorita:** nižší — prodejně složitější, malý trh; držet jako attach k B2B-4/5.
+
+### C. Střední/další horizont — podmíněné likviditou
+
+#### B2B-8 · Treasury → likvidita (po ~27.–28. 11.)
+- Po bloku 144 000: DAO proces + 3-of-3 admin unlock → seed pořádného wZION/USDT poolu (+ případně druhého pairu).
+- **Efekt:** ZION nabývá tržní cenu → pool fees, NCL fees, marketplace list prices získají skutečnou hodnotu → body 4–7 fakturují v likvidním tokenu.
+- **Kroky:** 1.B5 dry-run premine unlock na regtestu (výška 144k se blíží — deadline), DAO návrh na LP seed, komunikace bez "unlock" claimů (1.S3).
+
+#### B2B-9 · OASIS artefakty / NFT marketplace
+- Listings v wZION hotové, ale bez likvidity = vášeň. Aktivovat až po B2B-8.
+
+#### B2B-10 · ZIS identity-as-a-service
+- Možný add-on k B2B-4/5/6 (každý klient chce auth). Samostatně slabý prodej.
+
+---
+
+## 3. Doporučené pořadí
+
+```
+1. E-shop fiat (dokončit 5.B6)              → první CZK/EUR ~týden
+2. Aux-mining cash-out + payout backlog      → cashflow + retence minerů
+3. Hiran API subscription                    → 2–4 týdny do prvního MRR
+4. Pool-as-a-service one-pager + outreach    → B2B pipeline 1–3 měs.
+5. NCL marketplace                           → jen na základě reálného leadu
+6. Treasury → likvidita (po unlocku 144k)    → odemyká vše ostatní
+```
+
+## 4. Co nedělat
+
+- **Nepočítat "ZION revenue"** jako cash — při TVL $38 je to číslo v Excelu.
+- **Žádný OTC prodej ZION bez likvidity** — cena zkolabuje + důvěra.
+- **NCL bez zákazníka** — demand first, workers second.
+- **Neprodávat payout backlog** jako problém — je to dluh, ne feature; vyřešit před jakýmkoliv B2B outreach (mineři jsou zároveň budoucí NCL workers).
+- **G9 posunutý** — enterprise klienti se zeptají na audit; odpověď: audit package ready na RC commit, scope v `EXTERNAL_AUDIT_SCOPE.md` v2.2.
+
+## 5. Okamžité akční kroky (tento týden)
+
+| # | Akce | Typ | Závisí na |
+|---|---|---|---|
+| 1 | `5.B6` dokončit: E2E order test (transfer + Stripe), invoice download route, order-tracking, deploy MarketPlace | 🤖 | — |
+| 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤 | 2.B7 |
+| 3 | `PRL_PAYOUT_DRY_RUN=0` po dry-batch review + sweep do oyster | 👤🔀 | 2.B6 |
+| 4 | Hiran API MVP spec: `/v1/models` gateway + `X-API-Key` (ZIS) + Stripe price page | 🤖 | ZIS keys |
+| 5 | One-pager "Pool-as-a-Service" (CS+EN) + seznam 10 cílových PoW coinů | 🤖 | — |
+| 6 | Regtest dry-run `build_admin_unlock_tx` 3-of-3 (1.B5) — před 144k | 🤖 | PREMINE_UNLOCK.md |
+
+## 6. Metriky úspěchu
+
+- **Fiat MRR** (Stripe e-shop + Hiran API): první nenulový měsíc = milník.
+- **Payout backlog** = 0 unconfirmed/deferred (gauge už existuje: `zion_pool_payouts_unconfirmed*`).
+- **B2B pipeline**: ≥1 odpověď na 10 outreachů (pool hosting / Hiran API).
+- **Likvidita**: po unlocku TVL wZION/USDT ≥ $25k seed → pak teprve "ZION revenue" znamená něco.
+
+---
+
+*Souvisí: `docs/3.2/3.2.1-3.2.9_PLAN.md` (položky 2.B6/2.B7/5.B6/1.B5/1.S3), `HIRAN-MARKETPLACE-PLAN.md`, `docs/3.2/ESHOP_WORKFLOW_PLAN.md`, `docs/3.2/PREMINE_UNLOCK.md`, `docs/3.2/DAO.md`.*
