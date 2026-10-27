@@ -173,32 +173,66 @@ impl PayoutSweeper {
             change
         );
 
-        let response = submit_utxo_transaction(&endpoints, &tx).await?;
+        let response = match submit_utxo_transaction(&endpoints, &tx).await {
+            Ok(r) => r,
+            Err(e) => {
+                // Ambiguous outcome: the transport error may mean the node
+                // never saw the tx — or that it accepted it and the reply
+                // was lost. Verify against the inputs before requeueing:
+                // if the batch's selected UTXOs are now spent, the tx
+                // landed and resubmitting would double-pay.
+                if self.inputs_still_unspent(&endpoints, &pool_encoded, &tx).await {
+                    self.requeue(payouts);
+                } else {
+                    warn!(
+                        "payout submit ambiguous: inputs already spent — \
+                         treating as submitted, entries dropped to prevent \
+                         double-pay (operator reconcile required)"
+                    );
+                }
+                return Err(e);
+            }
+        };
 
-        let tx_id = response
-            .get("tx_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-
-        if !Self::is_valid_tx_id(&tx_id) {
-            warn!("payout submit response has invalid tx_id: {}", tx_id);
-            self.requeue(payouts);
-            return Err(anyhow!("invalid tx_id in submit response: {}", tx_id));
-        }
+        let tx_id = match crate::deferred_payout::parse_payout_submit_response(&response) {
+            Ok(id) => id,
+            Err(e) => {
+                // The shared parser distinguishes an explicit node rejection
+                // (safe to requeue — nothing landed) from an indeterminate
+                // envelope (NOT safe — the tx may have been accepted).
+                let rejected = submit_explicitly_rejected(&response);
+                if rejected {
+                    warn!("payout submit rejected by node: {e} — requeueing");
+                    self.requeue(payouts);
+                } else if self.inputs_still_unspent(&endpoints, &pool_encoded, &tx).await {
+                    warn!("payout submit indeterminate but inputs unspent: {e} — requeueing");
+                    self.requeue(payouts);
+                } else {
+                    warn!(
+                        "payout submit indeterminate and inputs spent: {e} — \
+                         holding entries as submitted to prevent double-pay"
+                    );
+                }
+                return Err(e);
+            }
+        };
 
         let block_height = payouts.first().map(|(h, _)| *h).unwrap_or(0);
 
         // Record payouts in the share store so /api/v1/payouts populates.
+        // Each row carries its own entry height — a batch can mix heights
+        // (multiple on_block_found rounds between sweeps), and stamping every
+        // row with the batch head produced phantom duplicates in the ledger
+        // reconcile (same address+height+amount across two different txs).
         if let Some(ref store) = self.share_store {
             let records: Vec<PayoutRecord> = payouts
                 .iter()
-                .map(|(_, p)| PayoutRecord {
+                .map(|(h, p)| PayoutRecord {
                     miner_id: p.miner_id.clone(),
                     address: p.address.clone(),
                     amount_flowers: p.amount,
                     tx_id: tx_id.clone(),
-                    height: block_height,
+                    height: *h,
                     block_hash: String::new(),
                     coin: "zion".to_string(),
                 })
@@ -235,8 +269,31 @@ impl PayoutSweeper {
         Ok(())
     }
 
-    fn is_valid_tx_id(tx_id: &str) -> bool {
-        tx_id.len() == 64 && tx_id.chars().all(|c| c.is_ascii_hexdigit())
+    /// Re-fetch the pool wallet's UTXO set and check whether every input of
+    /// `tx` is still unspent. Used to disambiguate a failed submit: inputs
+    /// gone ⇒ the transaction was accepted (resubmitting would double-pay);
+    /// inputs present ⇒ nothing landed and a requeue is safe. A failed probe
+    /// returns `false` — fail-closed, at-most-once wins over availability.
+    async fn inputs_still_unspent(
+        &self,
+        endpoints: &L1Endpoints,
+        pool_address: &str,
+        tx: &Transaction,
+    ) -> bool {
+        let fresh = match fetch_utxos(endpoints, pool_address, u64::MAX).await {
+            Ok(u) => u,
+            Err(e) => {
+                warn!("payout input-probe failed ({e}) — treating submit as landed");
+                return false;
+            }
+        };
+        let unspent: std::collections::HashSet<([u8; 32], u32)> = fresh
+            .iter()
+            .map(|u| (u.tx_hash, u.output_index))
+            .collect();
+        tx.inputs
+            .iter()
+            .all(|i| unspent.contains(&(i.previous_output.0, i.index)))
     }
 
     fn requeue(&self, payouts: Vec<(u64, PayoutEntry)>) {
@@ -247,6 +304,21 @@ impl PayoutSweeper {
         let mut pool = self.pool.lock().expect("pool lock poisoned");
         pool.requeue_payouts(payouts);
     }
+}
+
+/// True only when the node explicitly refused the transaction (envelope
+/// `error` field, or `result.accepted == false`). An indeterminate envelope —
+/// malformed, missing fields — must NOT be treated as a rejection: the node
+/// may have accepted the tx, and a resubmit would double-pay.
+fn submit_explicitly_rejected(response: &serde_json::Value) -> bool {
+    response
+        .get("result")
+        .and_then(|r| r.get("accepted"))
+        .and_then(|a| a.as_bool())
+        == Some(false)
+        || response
+            .get("error")
+            .is_some_and(|v| !v.is_null() && v != &serde_json::Value::Null)
 }
 
 /// Fetch UTXOs owned by the pool wallet from the L1 node RPC.
@@ -382,4 +454,36 @@ async fn submit_utxo_transaction(
     resp.get("result")
         .cloned()
         .context("missing result in submitUtxoTransaction response")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn rejected_envelope_allows_requeue() {
+        // Explicit node rejection — nothing landed, resubmit is safe.
+        assert!(submit_explicitly_rejected(&json!({
+            "error": {"code": -1, "message": "double spend"}
+        })));
+        assert!(submit_explicitly_rejected(&json!({
+            "result": {"accepted": false, "reason": "bad-txns"}
+        })));
+    }
+
+    #[test]
+    fn indeterminate_envelope_never_counts_as_rejection() {
+        // These shapes may accompany an *accepted* tx — classifying them as
+        // rejections is what produced the historical double-pay window.
+        for resp in [
+            json!({"result": {"tx_id": null}}),
+            json!({"result": {"accepted": true}}),
+            json!({"result": {}}),
+            json!({}),
+            json!({"error": null, "result": {"tx_id": "ab"}}),
+        ] {
+            assert!(!submit_explicitly_rejected(&resp), "{resp}");
+        }
+    }
 }

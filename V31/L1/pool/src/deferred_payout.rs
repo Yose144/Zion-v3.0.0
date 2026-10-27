@@ -111,7 +111,7 @@ fn short_tx_id(tx_id: &str) -> String {
 /// Everything else is an error: a non-null `error` (even alongside a
 /// `result`), a missing/null `result`, an object without an explicit
 /// `accepted: true`, or a missing/wrong-type/blank `tx_id`.
-fn parse_payout_submit_response(resp: &Value) -> anyhow::Result<String> {
+pub fn parse_payout_submit_response(resp: &Value) -> anyhow::Result<String> {
     if let Some(err) = resp.get("error").filter(|e| !e.is_null()) {
         return Err(anyhow!("payout submit rejected by node: {err}"));
     }
