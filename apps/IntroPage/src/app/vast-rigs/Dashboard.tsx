@@ -87,6 +87,7 @@ type Snap = {
   pool?: PoolMiner[] | null;
   poolstats?: PoolStats | null;
   smos?: SmosRig[] | null;
+  agents?: AgentRig[] | null;
   ext?: ExtPools;
   fresh?: Record<string, boolean>;
   errors?: Record<string, string>;
@@ -112,6 +113,14 @@ type ExtPool = {
   url: string;
 };
 type ExtPools = { qtu: ExtPool | null; prl: ExtPool | null; nock: ExtPool | null; xmr: ExtPool | null };
+type AgentRig = {
+  rig_id: string;
+  hostname?: string | null;
+  last_seen?: number | null;
+  age_s?: number | null;
+  pending: number;
+  results: number;
+};
 type SmosRig = {
   id: number;
   name: string;
@@ -269,7 +278,7 @@ type SecState = "live" | "cached" | "missing";
 
 function secState(
   snap: Snap | null | undefined,
-  name: "rigs" | "pool" | "poolstats" | "smos" | "ext",
+  name: "rigs" | "pool" | "poolstats" | "smos" | "agents" | "ext",
 ): SecState {
   if (!snap) return "missing";
   const data = name === "rigs" ? snap.rigs : snap[name];
@@ -1968,6 +1977,53 @@ export default function Dashboard() {
             </div>
             )}
           </div>
+
+          {/* fleet agents (push-model rigs, 2.B11) — only rendered when agents exist */}
+          {snap?.agents && snap.agents.length > 0 && (
+          <div className="mb-5 rounded-2xl border border-[#7dd3fc]/15 bg-gradient-to-br from-[#7dd3fc]/[0.05] to-white/[0.02]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-2.5">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                Fleet agents
+                <SecBadge state={secState(snap, "agents")} />
+              </h3>
+              <span className="text-[10px] text-white/35">
+                {snap.agents.filter((a) => (a.age_s ?? 1e9) < 300).length}/{snap.agents.length} live · push-model heartbeats
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06] text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                    <th className="px-4 py-2">Rig</th>
+                    <th className="px-3 py-2">Last heartbeat</th>
+                    <th className="px-3 py-2">Pending tasks</th>
+                    <th className="px-3 py-2">Results</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {snap.agents.map((a) => (
+                    <tr key={a.rig_id} className="border-b border-white/[0.04] align-top transition hover:bg-white/[0.03]">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-block h-2 w-2 shrink-0 rounded-full shadow-[0_0_8px_currentColor] ${(a.age_s ?? 1e9) < 300 ? "bg-[#34d399]" : "bg-[#ff7b72]"}`} />
+                          <b className="text-sm text-white">{a.hostname || a.rig_id}</b>
+                          <span className="text-[10px] text-white/30">#{a.rig_id}</span>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-xs text-white/60">
+                        {a.age_s != null ? `${agoS(Math.floor(a.age_s))} ago` : "—"}
+                      </td>
+                      <td className="px-3 py-3 text-xs">
+                        <span className={a.pending ? "font-semibold text-amber-300" : "text-white/40"}>{a.pending}</span>
+                      </td>
+                      <td className="px-3 py-3 text-xs text-white/50">{a.results}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          )}
 
           {/* external pools: earnings + workers per coin */}
           {snap?.ext && secState(snap, "ext") === "cached" && (
