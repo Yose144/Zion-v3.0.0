@@ -1,0 +1,10 @@
+[Unit]
+Description=ZION pool HA — watchdog probe every 30 s (A4.2)
+
+[Timer]
+OnBootSec=90s
+OnUnitActiveSec=30s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

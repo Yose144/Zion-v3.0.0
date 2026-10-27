@@ -1,0 +1,25 @@
+[Unit]
+Description=ZION V31 Pool — EDGE2 warm standby (MANUAL failover only, A4.2)
+# Fail-closed gate: refuses to start unless the operator created the
+# ACTIVATED flag during the documented failover procedure — no code path
+# (watchdog, timer, dependency) can promote this unit accidentally.
+ConditionPathExists=/opt/zion/data/v31-standby/ACTIVATED
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Full pool env (API key, miner address, auxpow, telegram) lives in the
+# env file; the four overrides below pin standby-local state/API binding
+# so it can never collide with the EDGE live pool or the tunnel forward.
+EnvironmentFile=/etc/zion/pool-standby.env
+Environment=ZION_PPLNS_STATE_PATH=/opt/zion/data/v31-standby/pool-pplns.json
+Environment=ZION_POOL_STORE_DB_PATH=/opt/zion/data/v31-standby/pool-store.db
+Environment=ZION_POOL_API_BIND=127.0.0.1:8090
+Environment=ZION_L1_RPC_URL=http://127.0.0.1:9445
+ExecStart=/opt/zion/bin/zion-pool-standby
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+# No [Install] WantedBy — never enabled; start is `systemctl start` only,
+# after `touch /opt/zion/data/v31-standby/ACTIVATED` per the runbook.

@@ -1,0 +1,12 @@
+[Unit]
+Description=ZION pool HA — sync pool-store.db snapshot EDGE→EDGE2 (A4.2)
+After=zion-edge-tunnel.service
+Wants=zion-edge-tunnel.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/pool-standby-sync.sh db
+# ~130 MB VACUUM INTO snapshot through a loopback SSH forward — allow headroom.
+TimeoutStartSec=900
+Nice=19
+IOSchedulingClass=idle

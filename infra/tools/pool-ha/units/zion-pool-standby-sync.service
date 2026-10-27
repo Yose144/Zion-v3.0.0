@@ -1,0 +1,12 @@
+[Unit]
+Description=ZION pool HA — sync PPLNS + payout ledger state EDGE→EDGE2 (A4.2)
+# State export is served on EDGE:8080, reachable only through the tunnel.
+After=zion-edge-tunnel.service
+Wants=zion-edge-tunnel.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/pool-standby-sync.sh json
+# Export reads sit outside pool.lock(); give the tunnel a sane ceiling.
+TimeoutStartSec=120
+Nice=10

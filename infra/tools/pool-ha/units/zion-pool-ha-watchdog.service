@@ -1,0 +1,9 @@
+[Unit]
+Description=ZION pool HA — alert-only watchdog (A4.2, never auto-promotes)
+After=zion-edge-tunnel.service
+Wants=zion-edge-tunnel.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/pool-ha-watchdog.sh
+TimeoutStartSec=30
