@@ -94,7 +94,8 @@ envelope → **každý accepted submit** se četl jako "no result" → indetermi
 | Kontrola | Čas (UTC) | Výsledek |
 |---|---|---|
 | Exact-dup re-count (adresář, výška, částka; různé tx_id) od `f5364566` deploye 08:56 | 27. 10. ~09:35 | **0 párů** / 143 payout rows (standby replica EDGE2, read-only — RPO ≤15 min) |
-| `tx_id` NULL/empty post-deploy | 27. 10. ~09:35 | **0** |
+| Exact-dup re-count (~2 h okno) | 27. 10. ~10:45 | **0 párů** / 173 rows |
+| `tx_id` NULL/empty post-deploy | 27. 10. ~10:45 | **0** |
 | Indeterminate submits od `f5364566` | 27. 10. | **0** (journal) |
 
 → Gate 2.S2 counting od 27. 10. 08:56 UTC; autoritativní verdikt po
@@ -103,9 +104,13 @@ envelope → **každý accepted submit** se četl jako "no result" → indetermi
 ### Ops incident (mimo payout scope)
 
 - **EDGE sshd :22 refuses new connections** od ~09:30 UTC 27. 10. —
-  refused i z EDGE2 (ne jen ban jedné IP). Established `zion-edge-tunnel`
-  forwardy živé (pool API :8080 odpovídá, replication timer 15 min běží
-  — poslední zápis 10:26), tj. host + služby OK; jen inbound nové SYN
-  na :22. Hypotéza: fail2ban REJECT rule na nové spoje / sshd
-  MaxStartups. Retry diagnostiku po vypršení banu; eskalovat přes
-  provider console, pokud přetrvává.
+  refused i z EDGE2 (ne jen ban jedné IP), trvání **>75 min** — mimo
+  typický fail2ban bantime → **👤 eskalace: provider console / KVM
+  doporučené** (`fail2ban-client` / `sshd` stav, případně firewall
+  REJECT rule na :22). Established `zion-edge-tunnel` forwardy živé
+  (pool API :8080 odpovídá), replication timer běží (sync 10:41) —
+  host + služby OK, jen inbound nové SYN. Vedlejší efekt: vastctl
+  `--push zion-new:` scp na EDGE failuje, ale public `/vast-rigs/
+  status.json` zůstává fresh přes EDGE2 pull path (resilience OK).
+  ⚠️ Vedlejší nález: EDGE wall clock ~+47 min vs EDGE2 (replica
+  mtime) — ověřit NTP po obnovení přístupu.
