@@ -1,0 +1,17 @@
+[Unit]
+Description=ZION vast fleet agent (push-model heartbeat + task poller)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=VAST_AGENT_URL=http://127.0.0.1:8088
+Environment=VAST_AGENT_TOKEN=CHANGE_ME
+# VAST_AGENT_RIG_ID defaults to hostname; pin to vast instance id if wanted
+Environment=VAST_AGENT_INTERVAL=60
+ExecStart=/usr/bin/python3 /opt/zion/vast/agent.py
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

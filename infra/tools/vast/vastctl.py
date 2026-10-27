@@ -29,8 +29,10 @@ import shutil
 import socket
 import subprocess
 import sys
+import threading
 import time
 import urllib.request
+import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import redirect_stderr, redirect_stdout
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -1807,6 +1809,115 @@ def rigs_cache_live():
     return c["ok_ts"] == c["ts"] and c["ok_ts"] > 0
 
 
+# ── fleet agent registry (push-model, 2.B11) ──────────────────────────
+# Agents POST heartbeats + poll tasks instead of being SSH-probed, so rigs
+# behind NAT stay manageable. All agent-side calls need a shared bearer
+# token; when VASTCTL_AGENT_TOKEN is unset the endpoints fail closed.
+AGENT_DB_FILE = os.environ.get(
+    "VASTCTL_AGENT_DB",
+    os.path.expanduser("~/.local/share/vastctl-agents.json"))
+AGENT_TASK_TTL_S = int(os.environ.get("VASTCTL_AGENT_TASK_TTL", "3600"))
+AGENT_RESULT_KEEP = 50
+_agents_lock = threading.Lock()
+_agents_cache = None
+
+
+def _agent_db():
+    """Lazy registry: {rigs: {rid: {heartbeat, tasks, results}}}."""
+    global _agents_cache
+    if _agents_cache is None:
+        try:
+            _agents_cache = json.loads(Path(AGENT_DB_FILE).read_text())
+        except Exception:
+            _agents_cache = {"rigs": {}}
+        _agents_cache.setdefault("rigs", {})
+    return _agents_cache
+
+
+def _agent_token_ok(headers):
+    token = os.environ.get("VASTCTL_AGENT_TOKEN", "")
+    if not token:
+        return False
+    return headers.get("Authorization") == f"Bearer {token}"
+
+
+def _agent_prune(rig):
+    """Drop finished/expired tasks, cap result history."""
+    now = time.time()
+    rig["tasks"] = [
+        t for t in rig["tasks"]
+        if t["state"] in {"pending", "delivered"}
+        and now - t["ts"] < AGENT_TASK_TTL_S]
+    rig["results"] = rig["results"][-AGENT_RESULT_KEEP:]
+
+
+def agent_heartbeat(rig_id, payload):
+    """Store heartbeat, claim pending tasks for delivery."""
+    with _agents_lock:
+        rig = _agent_db()["rigs"].setdefault(
+            rig_id, {"heartbeat": {}, "tasks": [], "results": []})
+        rig["heartbeat"] = dict(payload, server_ts=time.time())
+        _agent_prune(rig)
+        due = [t for t in rig["tasks"] if t["state"] == "pending"]
+        for t in due:
+            t["state"] = "delivered"
+            t["delivered_ts"] = time.time()
+        _write_json_atomic(AGENT_DB_FILE, _agents_cache)
+        return {"ok": True, "tasks": [
+            {"id": t["id"], "op": t["op"], "args": t["args"]} for t in due]}
+
+
+def agent_result(rig_id, task_id, rc, out):
+    with _agents_lock:
+        rig = _agent_db()["rigs"].setdefault(
+            rig_id, {"heartbeat": {}, "tasks": [], "results": []})
+        state = "done" if rc == 0 else "failed"
+        for t in rig["tasks"]:
+            if t["id"] == task_id:
+                t["state"] = state
+                t["finished_ts"] = time.time()
+                break
+        rig["results"].append({
+            "task_id": task_id, "rc": rc,
+            "out": out[-8000:] if isinstance(out, str) else "",
+            "ts": time.time()})
+        _agent_prune(rig)
+        _write_json_atomic(AGENT_DB_FILE, _agents_cache)
+        return {"ok": True, "state": state}
+
+
+def agent_enqueue(rig_id, op, args):
+    if op != "exec" or not isinstance(args.get("cmd"), str) or not args["cmd"]:
+        raise ValueError("supported ops: exec with args.cmd")
+    with _agents_lock:
+        rig = _agent_db()["rigs"].setdefault(
+            rig_id, {"heartbeat": {}, "tasks": [], "results": []})
+        _agent_prune(rig)
+        task = {"id": uuid.uuid4().hex[:12], "op": op, "args": args,
+                "state": "pending", "ts": time.time()}
+        rig["tasks"].append(task)
+        _write_json_atomic(AGENT_DB_FILE, _agents_cache)
+        return task
+
+
+def agent_fleet():
+    with _agents_lock:
+        now = time.time()
+        out = []
+        for rid, rig in _agent_db()["rigs"].items():
+            hb = rig["heartbeat"]
+            out.append({
+                "rig_id": rid,
+                "hostname": hb.get("hostname"),
+                "last_seen": hb.get("server_ts"),
+                "age_s": round(now - hb["server_ts"], 1) if hb else None,
+                "pending": sum(1 for t in rig["tasks"]
+                               if t["state"] in {"pending", "delivered"}),
+                "results": len(rig["results"]),
+                "payload_keys": sorted(hb.keys())})
+        return {"rigs": sorted(out, key=lambda r: r["rig_id"])}
+
+
 def readonly():
     return os.environ.get("VASTCTL_READONLY") == "1"
 
@@ -1994,10 +2105,21 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b)
 
+    def _read_body(self, limit=65536):
+        try:
+            n = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            n = 0
+        if n <= 0 or n > limit:
+            return None
+        return self.rfile.read(n)
+
     def do_GET(self):
         u = urlparse(self.path)
         q = parse_qs(u.query)
-        if u.path == "/api/status":
+        if u.path == "/api/agent/fleet":
+            self._send(json.dumps(agent_fleet()), ctype="application/json")
+        elif u.path == "/api/status":
             self._send(json.dumps(snapshot_from(cached_rigs(), rigs_live=rigs_cache_live())),
                        ctype="application/json")
         elif u.path == "/api/ai/status":
@@ -2085,7 +2207,54 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
     def do_POST(self):
         u = urlparse(self.path)
         q = parse_qs(u.query)
-        if u.path.startswith("/api/inference/"):
+        if u.path == "/api/agent/heartbeat":
+            if not _agent_token_ok(self.headers):
+                self._send("agent token required", 403, "text/plain")
+                return
+            body = self._read_body()
+            try:
+                payload = json.loads(body or b"{}")
+                rig_id = str(payload.pop("rig_id", ""))
+                if not rig_id:
+                    raise ValueError("rig_id required")
+                self._send(json.dumps(agent_heartbeat(rig_id, payload)),
+                           ctype="application/json")
+            except (ValueError, json.JSONDecodeError) as e:
+                self._send(f"bad request: {e}", 400, "text/plain")
+        elif u.path == "/api/agent/result":
+            if not _agent_token_ok(self.headers):
+                self._send("agent token required", 403, "text/plain")
+                return
+            body = self._read_body()
+            try:
+                payload = json.loads(body or b"{}")
+                self._send(json.dumps(agent_result(
+                    str(payload["rig_id"]), str(payload["task_id"]),
+                    int(payload.get("rc", 1)),
+                    str(payload.get("out", "")))), ctype="application/json")
+            except (KeyError, ValueError, json.JSONDecodeError) as e:
+                self._send(f"bad request: {e}", 400, "text/plain")
+        elif u.path == "/api/agent/enqueue":
+            if readonly():
+                self._send("readonly mode", 403, "text/plain")
+                return
+            authed = _agent_token_ok(self.headers) or same_origin_request(
+                self.headers.get("Origin"), self.headers.get("Host"))
+            if not authed:
+                self._send("token or same-origin required", 403,
+                           "text/plain")
+                return
+            body = self._read_body()
+            try:
+                payload = json.loads(body or b"{}")
+                task = agent_enqueue(
+                    str(payload["rig_id"]), str(payload.get("op", "exec")),
+                    dict(payload.get("args", {})))
+                self._send(json.dumps({"ok": True, "task": task}),
+                           ctype="application/json")
+            except (KeyError, ValueError, json.JSONDecodeError) as e:
+                self._send(f"bad request: {e}", 400, "text/plain")
+        elif u.path.startswith("/api/inference/"):
             if readonly():
                 self._send("readonly mode", 403, "text/plain")
                 return

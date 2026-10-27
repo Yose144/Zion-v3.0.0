@@ -79,5 +79,44 @@ NVIDIA GeForce RTX 3060, 12288, 100, 12188, 0, 35, 20.00
         self.assertNotIn("http://$(", script)
 
 
+class AgentRegistryTests(unittest.TestCase):
+    def setUp(self):
+        self._db, self._file = vastctl._agents_cache, vastctl.AGENT_DB_FILE
+        vastctl._agents_cache = {"rigs": {}}
+        vastctl.AGENT_DB_FILE = "/tmp/vastctl-agents-test.json"
+
+    def tearDown(self):
+        vastctl._agents_cache, vastctl.AGENT_DB_FILE = self._db, self._file
+
+    def test_heartbeat_claims_pending_task_once(self):
+        task = vastctl.agent_enqueue("r1", "exec", {"cmd": "echo hi"})
+        first = vastctl.agent_heartbeat("r1", {"hostname": "h"})
+        self.assertEqual([t["id"] for t in first["tasks"]], [task["id"]])
+        self.assertEqual(vastctl.agent_heartbeat("r1", {})["tasks"], [])
+
+    def test_result_marks_task_and_records_output(self):
+        task = vastctl.agent_enqueue("r1", "exec", {"cmd": "true"})
+        vastctl.agent_heartbeat("r1", {})
+        resp = vastctl.agent_result("r1", task["id"], 0, "ok-out")
+        self.assertEqual(resp["state"], "done")
+        rig = vastctl._agents_cache["rigs"]["r1"]
+        self.assertEqual(rig["results"][-1]["out"], "ok-out")
+
+    def test_enqueue_rejects_non_exec_ops(self):
+        with self.assertRaises(ValueError):
+            vastctl.agent_enqueue("r1", "launch", {})
+        with self.assertRaises(ValueError):
+            vastctl.agent_enqueue("r1", "exec", {})
+
+    def test_fleet_reports_last_seen_and_pending(self):
+        vastctl.agent_enqueue("r2", "exec", {"cmd": "uptime"})
+        vastctl.agent_heartbeat("r2", {"hostname": "rig-two"})
+        vastctl.agent_enqueue("r2", "exec", {"cmd": "uptime"})
+        fleet = vastctl.agent_fleet()["rigs"][0]
+        self.assertEqual(fleet["rig_id"], "r2")
+        self.assertEqual(fleet["pending"], 2)  # delivered + pending
+        self.assertIsNotNone(fleet["age_s"])
+
+
 if __name__ == "__main__":
     unittest.main()
