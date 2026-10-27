@@ -27,13 +27,10 @@ pub struct GatewayConfig {
 impl GatewayConfig {
     pub fn from_env() -> Result<Self> {
         let cfg = Self {
-            bind: std::env::var("HIRAN_BIND")
-                .unwrap_or_else(|_| "127.0.0.1:8007".into()),
-            zis_verify_url: std::env::var("ZIS_VERIFY_URL").unwrap_or_else(|_| {
-                "http://127.0.0.1:8096/api/keys/verify".into()
-            }),
-            db_path: std::env::var("HIRAN_DB")
-                .unwrap_or_else(|_| "./hiran-gateway.db".into()),
+            bind: std::env::var("HIRAN_BIND").unwrap_or_else(|_| "127.0.0.1:8007".into()),
+            zis_verify_url: std::env::var("ZIS_VERIFY_URL")
+                .unwrap_or_else(|_| "http://127.0.0.1:8096/api/keys/verify".into()),
+            db_path: std::env::var("HIRAN_DB").unwrap_or_else(|_| "./hiran-gateway.db".into()),
             models_path: std::env::var("HIRAN_MODELS")
                 .unwrap_or_else(|_| "/etc/zion/hiran-models.json".into()),
             admin_key: std::env::var("HIRAN_ADMIN_KEY")

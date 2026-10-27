@@ -16,7 +16,11 @@ pub struct ApiError {
 
 impl ApiError {
     pub fn new(status: StatusCode, err_type: &'static str, msg: impl Into<String>) -> Self {
-        Self { status, err_type, message: msg.into() }
+        Self {
+            status,
+            err_type,
+            message: msg.into(),
+        }
     }
     pub fn unauthorized(msg: impl Into<String>) -> Self {
         Self::new(StatusCode::UNAUTHORIZED, "authentication_error", msg)

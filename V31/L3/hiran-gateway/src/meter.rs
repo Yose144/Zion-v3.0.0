@@ -84,7 +84,9 @@ impl Meter {
                 updated INTEGER NOT NULL
             );",
         )?;
-        Ok(Self { conn: Mutex::new(conn) })
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 
     pub fn get_plan(&self, kh: &str) -> Plan {
@@ -140,9 +142,15 @@ impl Meter {
               upstream, latency_ms, estimated, ts)
              VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
             params![
-                kh, user_id, model,
-                prompt_tok as i64, completion_tok as i64, total as i64,
-                upstream, latency_ms as i64, estimated as i64,
+                kh,
+                user_id,
+                model,
+                prompt_tok as i64,
+                completion_tok as i64,
+                total as i64,
+                upstream,
+                latency_ms as i64,
+                estimated as i64,
                 now.timestamp()
             ],
         )?;
@@ -210,8 +218,10 @@ mod tests {
         assert_eq!(m.get_plan(&kh), Plan::Free);
         m.set_plan(&kh, Plan::Pro).unwrap();
         assert_eq!(m.get_plan(&kh), Plan::Pro);
-        m.record(&kh, "u1", "hiran-mini", 10, 20, "u1", 500, false).unwrap();
-        m.record(&kh, "u1", "hiran-mini", 5, 5, "u1", 300, true).unwrap();
+        m.record(&kh, "u1", "hiran-mini", 10, 20, "u1", 500, false)
+            .unwrap();
+        m.record(&kh, "u1", "hiran-mini", 5, 5, "u1", 300, true)
+            .unwrap();
         assert_eq!(m.tokens_today(&kh), 40);
         let rows = m.usage_for_key(&kh, 30).unwrap();
         assert_eq!(rows.len(), 1);

@@ -64,7 +64,10 @@ pub async fn chat_completions(
         let obj = body
             .as_object_mut()
             .ok_or_else(|| ApiError::bad_request("body must be a JSON object"))?;
-        let mt = obj.get("max_tokens").and_then(Value::as_u64).unwrap_or(MAX_TOKENS_CAP);
+        let mt = obj
+            .get("max_tokens")
+            .and_then(Value::as_u64)
+            .unwrap_or(MAX_TOKENS_CAP);
         obj.insert("max_tokens".into(), json!(mt.min(MAX_TOKENS_CAP)));
         if stream {
             // Metering must work on streams → force usage chunk.
@@ -75,9 +78,20 @@ pub async fn chat_completions(
     let started = std::time::Instant::now();
     let mut last_err = String::new();
     for (i, up) in def.upstreams.iter().enumerate() {
-        let timeout = if i == 0 { st.timeout } else { st.fallback_timeout };
+        let timeout = if i == 0 {
+            st.timeout
+        } else {
+            st.fallback_timeout
+        };
         let url = format!("{}/chat/completions", up.base.trim_end_matches('/'));
-        let resp = match st.client.post(&url).json(&body).timeout(timeout).send().await {
+        let resp = match st
+            .client
+            .post(&url)
+            .json(&body)
+            .timeout(timeout)
+            .send()
+            .await
+        {
             Ok(r) => r,
             Err(e) => {
                 last_err = format!("{url}: {e}");
@@ -104,15 +118,17 @@ pub async fn chat_completions(
         }
 
         let latency = started.elapsed().as_millis() as u64;
+        let ctx = CallCtx {
+            vk,
+            model,
+            upstream: up.base.clone(),
+            degraded: up.degraded,
+            prompt_est,
+        };
         if stream {
-            return Ok(stream_response(
-                st.clone(), resp, vk, model, up.base.clone(), up.degraded, prompt_est, started,
-            ));
+            return Ok(stream_response(st.clone(), resp, ctx, started));
         }
-        return non_stream(
-            st.clone(), resp, vk, model, up.base.clone(), up.degraded, prompt_est, latency,
-        )
-        .await;
+        return non_stream(st.clone(), resp, ctx, latency).await;
     }
 
     Err(ApiError::overloaded(format!(
@@ -134,7 +150,10 @@ pub async fn completions(
     let mut chat = body;
     let obj = chat.as_object_mut().unwrap();
     obj.remove("prompt");
-    obj.insert("messages".into(), json!([{"role": "user", "content": prompt}]));
+    obj.insert(
+        "messages".into(),
+        json!([{"role": "user", "content": prompt}]),
+    );
     obj.insert("stream".into(), json!(false));
     chat_completions(State(st), headers, Json(chat)).await
 }
@@ -144,26 +163,38 @@ async fn authenticate(st: &AppState, headers: &HeaderMap) -> ApiResult<VerifiedK
     st.auth.verify(&key, &st.meter).await
 }
 
-/// Non-streaming path: forward verbatim, meter from `usage`.
-async fn non_stream(
-    st: Arc<AppState>,
-    resp: reqwest::Response,
+/// Per-request metering context bundled for the response paths.
+struct CallCtx {
     vk: VerifiedKey,
     model: String,
     upstream: String,
     degraded: bool,
     prompt_est: u64,
+}
+
+/// Non-streaming path: forward verbatim, meter from `usage`.
+async fn non_stream(
+    st: Arc<AppState>,
+    resp: reqwest::Response,
+    ctx: CallCtx,
     latency: u64,
 ) -> ApiResult<Response> {
     let bytes = resp
         .bytes()
         .await
         .map_err(|e| ApiError::server(format!("upstream body read failed: {e}")))?;
-    let mut v: Value =
-        serde_json::from_slice(&bytes).map_err(|_| ApiError::server("upstream returned non-JSON"))?;
-    let (pt, ct, est) = usage_of(&v, prompt_est);
-    record(&st, &vk, &model, pt, ct, &upstream, latency, est);
-    if degraded {
+    let mut v: Value = serde_json::from_slice(&bytes)
+        .map_err(|_| ApiError::server("upstream returned non-JSON"))?;
+    let (pt, ct, est) = usage_of(&v, ctx.prompt_est);
+    record(
+        &st,
+        &ctx.vk,
+        &ctx.model,
+        &ctx.upstream,
+        latency,
+        Usage { pt, ct, est },
+    );
+    if ctx.degraded {
         v["x-degraded"] = json!(true);
     }
     Ok(Json(v).into_response())
@@ -173,11 +204,7 @@ async fn non_stream(
 fn stream_response(
     st: Arc<AppState>,
     resp: reqwest::Response,
-    vk: VerifiedKey,
-    model: String,
-    upstream: String,
-    degraded: bool,
-    prompt_est: u64,
+    ctx: CallCtx,
     started: std::time::Instant,
 ) -> Response {
     let acc = Arc::new(Mutex::new(StreamAcc::default()));
@@ -194,7 +221,7 @@ fn stream_response(
                 }
             }
         })
-        .map(|item| item.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)));
+        .map(|item| item.map_err(std::io::Error::other));
 
     let stream = MeteredStream {
         inner: Box::pin(scanned),
@@ -207,10 +234,17 @@ fn stream_response(
                     let a = acc.lock().unwrap();
                     match a.usage {
                         Some((p, c)) => (p, c, false),
-                        None => (prompt_est, a.delta_chars / 4, true),
+                        None => (ctx.prompt_est, a.delta_chars / 4, true),
                     }
                 };
-                record(&st, &vk, &model, pt, ct, &upstream, latency, est);
+                record(
+                    &st,
+                    &ctx.vk,
+                    &ctx.model,
+                    &ctx.upstream,
+                    latency,
+                    Usage { pt, ct, est },
+                );
             });
         })),
     };
@@ -220,7 +254,7 @@ fn stream_response(
         axum::http::header::CONTENT_TYPE,
         "text/event-stream".parse().unwrap(),
     );
-    if degraded {
+    if ctx.degraded {
         r.headers_mut()
             .insert("x-degraded", axum::http::HeaderValue::from_static("true"));
     }
@@ -250,15 +284,23 @@ fn scan_chunk(text: &str, acc: &mut StreamAcc) {
         if data == "[DONE]" {
             continue;
         }
-        let Ok(v) = serde_json::from_str::<Value>(data) else { continue };
+        let Ok(v) = serde_json::from_str::<Value>(data) else {
+            continue;
+        };
         if let Some(u) = v.get("usage") {
             let p = u.get("prompt_tokens").and_then(Value::as_u64).unwrap_or(0);
-            let c = u.get("completion_tokens").and_then(Value::as_u64).unwrap_or(0);
+            let c = u
+                .get("completion_tokens")
+                .and_then(Value::as_u64)
+                .unwrap_or(0);
             if p > 0 || c > 0 {
                 acc.usage = Some((p, c));
             }
         }
-        if let Some(delta) = v.pointer("/choices/0/delta/content").and_then(Value::as_str) {
+        if let Some(delta) = v
+            .pointer("/choices/0/delta/content")
+            .and_then(Value::as_str)
+        {
             acc.delta_chars += delta.len() as u64;
         }
     }
@@ -268,7 +310,9 @@ fn scan_chunk(text: &str, acc: &mut StreamAcc) {
 /// (client disconnect ends polling — usage then stays unmetered; that is
 /// acceptable for MVP, the daily quota errs on the generous side).
 struct MeteredStream {
-    inner: std::pin::Pin<Box<dyn futures_util::Stream<Item = Result<bytes::Bytes, std::io::Error>> + Send>>,
+    inner: std::pin::Pin<
+        Box<dyn futures_util::Stream<Item = Result<bytes::Bytes, std::io::Error>> + Send>,
+    >,
     on_end: Option<Box<dyn FnOnce() + Send>>,
 }
 
@@ -294,7 +338,10 @@ fn usage_of(v: &Value, prompt_est: u64) -> (u64, u64, bool) {
     match v.get("usage") {
         Some(u) => {
             let p = u.get("prompt_tokens").and_then(Value::as_u64).unwrap_or(0);
-            let c = u.get("completion_tokens").and_then(Value::as_u64).unwrap_or(0);
+            let c = u
+                .get("completion_tokens")
+                .and_then(Value::as_u64)
+                .unwrap_or(0);
             (p, c, false)
         }
         None => {
@@ -311,28 +358,33 @@ fn usage_of(v: &Value, prompt_est: u64) -> (u64, u64, bool) {
 /// Rough prompt-token estimate (chars/4 over all message contents).
 fn estimate_prompt_tokens(body: &Value) -> u64 {
     match body.get("messages").and_then(Value::as_array) {
-        Some(msgs) => msgs
-            .iter()
-            .filter_map(|m| m.get("content").and_then(Value::as_str))
-            .map(|c| c.len() as u64)
-            .sum::<u64>()
-            / 4,
+        Some(msgs) => {
+            msgs.iter()
+                .filter_map(|m| m.get("content").and_then(Value::as_str))
+                .map(|c| c.len() as u64)
+                .sum::<u64>()
+                / 4
+        }
         None => 0,
     }
 }
 
-fn record(
-    st: &AppState,
-    vk: &VerifiedKey,
-    model: &str,
+struct Usage {
     pt: u64,
     ct: u64,
-    upstream: &str,
-    latency: u64,
-    estimated: bool,
-) {
+    est: bool,
+}
+
+fn record(st: &AppState, vk: &VerifiedKey, model: &str, upstream: &str, latency: u64, u: Usage) {
     if let Err(e) = st.meter.record(
-        &vk.key_hash, &vk.user_id, model, pt, ct, upstream, latency, estimated,
+        &vk.key_hash,
+        &vk.user_id,
+        model,
+        u.pt,
+        u.ct,
+        upstream,
+        latency,
+        u.est,
     ) {
         tracing::warn!(error = %e, "usage record failed");
     }
@@ -346,7 +398,10 @@ mod tests {
     fn sse_scan_counts_usage_and_deltas() {
         let mut acc = StreamAcc::default();
         scan_chunk("data: {\"choices\":[{\"delta\":{\"content\":\"He\"}}]}\n\ndata: {\"choices\":[{\"delta\":{\"content\":\"llo\"}}]}\n", &mut acc);
-        scan_chunk("data: {\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":7}}\ndata: [DONE]\n", &mut acc);
+        scan_chunk(
+            "data: {\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":7}}\ndata: [DONE]\n",
+            &mut acc,
+        );
         assert_eq!(acc.delta_chars, 5);
         assert_eq!(acc.usage, Some((12, 7)));
     }

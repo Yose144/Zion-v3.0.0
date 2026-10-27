@@ -43,8 +43,14 @@ fn default_catalog() -> Vec<ModelDef> {
     vec![ModelDef {
         alias: "hiran-mini".into(),
         upstreams: vec![
-            Upstream { base: "http://127.0.0.1:8004/v1".into(), degraded: false },
-            Upstream { base: "http://127.0.0.1:8002/v1".into(), degraded: true },
+            Upstream {
+                base: "http://127.0.0.1:8004/v1".into(),
+                degraded: false,
+            },
+            Upstream {
+                base: "http://127.0.0.1:8002/v1".into(),
+                degraded: true,
+            },
         ],
         context: 4096,
         tier: "free".into(),
@@ -72,7 +78,10 @@ impl Catalog {
             Ok(raw) => serde_json::from_str::<Vec<ModelDef>>(&raw)
                 .with_context(|| format!("parse {path}"))?,
             Err(_) => {
-                tracing::info!(path, "models.json absent — using built-in hiran-mini catalog");
+                tracing::info!(
+                    path,
+                    "models.json absent — using built-in hiran-mini catalog"
+                );
                 default_catalog()
             }
         };
@@ -120,10 +129,13 @@ impl Catalog {
             .await
             .map(|r| r.status().is_success())
             .unwrap_or(false);
-        self.probes
-            .lock()
-            .unwrap()
-            .insert(base.to_string(), Probe { live, at: Instant::now() });
+        self.probes.lock().unwrap().insert(
+            base.to_string(),
+            Probe {
+                live,
+                at: Instant::now(),
+            },
+        );
         live
     }
 }

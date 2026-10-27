@@ -6,11 +6,7 @@ use crate::{
     meter::{key_hash, Plan},
     proxy::AppState,
 };
-use axum::{
-    extract::State,
-    http::HeaderMap,
-    Json,
-};
+use axum::{extract::State, http::HeaderMap, Json};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -64,10 +60,7 @@ pub async fn list_models(State(st): State<Arc<AppState>>) -> Json<Value> {
 }
 
 /// GET /v1/usage — caller's own key usage, last 30 days.
-pub async fn usage(
-    State(st): State<Arc<AppState>>,
-    headers: HeaderMap,
-) -> ApiResult<Json<Value>> {
+pub async fn usage(State(st): State<Arc<AppState>>, headers: HeaderMap) -> ApiResult<Json<Value>> {
     let key = Auth::extract_key(&headers)?;
     let vk = st.auth.verify(&key, &st.meter).await?;
     let rows = st
@@ -140,7 +133,9 @@ pub async fn set_plan(
     st.meter
         .set_plan(&kh, plan)
         .map_err(|e| ApiError::server(e.to_string()))?;
-    Ok(Json(json!({ "ok": true, "key_hash": &kh[..12], "plan": plan.as_str() })))
+    Ok(Json(
+        json!({ "ok": true, "key_hash": &kh[..12], "plan": plan.as_str() }),
+    ))
 }
 
 /// GET /v1/admin/plans — list configured tiers (truncated hashes).

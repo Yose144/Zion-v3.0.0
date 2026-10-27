@@ -111,9 +111,10 @@ impl Auth {
             tracing::warn!(status = %resp.status(), "ZIS verify unexpected status");
             return Err(ApiError::server("auth backend error"));
         }
-        let vr: VerifyResponse = resp.json().await.map_err(|_| {
-            ApiError::server("auth backend malformed response")
-        })?;
+        let vr: VerifyResponse = resp
+            .json()
+            .await
+            .map_err(|_| ApiError::server("auth backend malformed response"))?;
         let user = vr
             .user
             .filter(|_| vr.valid)
@@ -121,7 +122,10 @@ impl Auth {
 
         self.cache.lock().unwrap().insert(
             kh.clone(),
-            CacheEntry { user_id: user.id.clone(), at: Instant::now() },
+            CacheEntry {
+                user_id: user.id.clone(),
+                at: Instant::now(),
+            },
         );
         Ok(VerifiedKey {
             plan: meter.get_plan(&kh),
@@ -184,10 +188,7 @@ mod tests {
         h.insert("x-api-key", HeaderValue::from_static("zis_aaa"));
         assert_eq!(Auth::extract_key(&h).unwrap(), "zis_aaa");
         let mut h2 = HeaderMap::new();
-        h2.insert(
-            "authorization",
-            HeaderValue::from_static("Bearer zis_bbb"),
-        );
+        h2.insert("authorization", HeaderValue::from_static("Bearer zis_bbb"));
         assert_eq!(Auth::extract_key(&h2).unwrap(), "zis_bbb");
         assert!(Auth::extract_key(&HeaderMap::new()).is_err());
     }
