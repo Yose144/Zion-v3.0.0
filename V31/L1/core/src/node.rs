@@ -1950,4 +1950,165 @@ mod tests {
         }
         assert!(rebuilt.is_admin_unlocked(PREMINE_SLOT1));
     }
+
+    /// Mine and submit the next block paying `miner` the coinbase.
+    /// Template transactions already include any pending mempool txs.
+    async fn mine_next_block(node: &Arc<Node>, miner: &Address) {
+        let template = node.block_template(miner.clone()).await.unwrap();
+        let mut header: BlockHeader = serde_json::from_str(&template.header_json).unwrap();
+        header.difficulty = 1;
+        node.consensus
+            .mine(&mut header, &[0xff; 32], 0, 1_000)
+            .expect("mine block");
+        node.submit_block(Block::new(header, template.transactions))
+            .await
+            .unwrap();
+    }
+
+    /// Regtest dry-run of the documented premine-unlock procedure (1.B5),
+    /// exercised on the real node path: fund admins → submit the 3-of-3
+    /// unlock via the mempool → mine it → the `admin_unlocked` set that
+    /// `getAdminUnlocks` serves now contains the target → the premine
+    /// spend gate opens. Test admins stand in for the canonical
+    /// Rama/Sita/Hanuman set; the transaction wire shape is the same one
+    /// `v31_wallet::build_admin_unlock_tx` produces on mainnet.
+    ///
+    /// Ignored by default: it mines ~107 real blocks (the 100-block coinbase
+    /// maturity is a consensus constant) and takes ~3 min. Run explicitly:
+    /// `cargo test -p zion-core --lib premine_unlock_dry_run -- --ignored`
+    #[tokio::test]
+    #[ignore = "regtest dry-run rehearsal — mines ~107 blocks, ~3 min"]
+    async fn premine_unlock_dry_run_full_node_path() {
+        let node = Arc::new(
+            Node::new(NodeConfig {
+                db_path: ":memory:".into(),
+                soft_fork_activation_height: 0, // premine locks active from genesis
+                ..Default::default()
+            })
+            .await
+            .unwrap(),
+        );
+
+        let admins: Vec<_> = (0..3)
+            .map(|_| {
+                let (sk, vk) = generate_keypair();
+                (sk, derive_address(vk.as_bytes()))
+            })
+            .collect();
+        node.utxo_set.lock().await.set_admin_addresses_for_test(
+            admins.iter().map(|(_, a)| a.clone()),
+        );
+        let admins3: Vec<(&ed25519_dalek::SigningKey, String)> =
+            admins.iter().map(|(sk, a)| (sk, a.clone())).collect();
+
+        let addr_of = |s: &str| {
+            Address::new(zion_l1_types::ChainId::ZionL1, vec![], s).unwrap()
+        };
+        let test_miner = addr_of("zion1testminer");
+
+        // Step "fund admins": two coinbases each — the first set funds the
+        // slot-1 unlock, the second the DAO-slot unlock below.
+        for _ in 0..2 {
+            for (_, addr) in &admins {
+                mine_next_block(&node, &addr_of(addr)).await;
+            }
+        }
+        // Coinbase maturity: funding outputs (blocks 1-6) spendable at >=106.
+        while node.status().await.unwrap().height < 105 {
+            mine_next_block(&node, &test_miner).await;
+        }
+        assert_eq!(node.status().await.unwrap().height, 105);
+
+        let spend_of = |ph: Hash, pi: u32| Transaction {
+            version: 1,
+            inputs: vec![crate::transaction::TransactionInput {
+                previous_output: ph,
+                index: pi,
+                script: vec![],
+            }],
+            outputs: vec![TransactionOutput {
+                amount: Amount::new(1),
+                address: addr_of("zion1test"),
+                ..Default::default()
+            }],
+            memo: vec![],
+        };
+
+        // Premine slot 1 exists from genesis and is admin-locked (no height
+        // gate). Its spend must be rejected by the mempool premine check
+        // before any unlock authorization is recorded.
+        let (ph, pi, ..) = node
+            .get_utxos_for_address(PREMINE_SLOT1)
+            .await
+            .into_iter()
+            .next()
+            .expect("genesis funds premine slot 1");
+        let spend = spend_of(ph, pi);
+        let err = node
+            .submit_utxo_transaction(spend.clone())
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(err, NodeError::Utxo(UtxoError::PremineLocked { .. })),
+            "premine spend before unlock must be PremineLocked, got {err:?}"
+        );
+
+        // Broadcast the 3-of-3 unlock authorization through the mempool and
+        // mine it — the same steps the live procedure documents.
+        let unlock = {
+            let set = node.utxo_set.lock().await;
+            signed_unlock_tx(&set, &admins3, PREMINE_SLOT1)
+        };
+        node.submit_utxo_transaction(unlock).await.unwrap();
+        mine_next_block(&node, &test_miner).await; // block 106 records it
+
+        {
+            let set = node.utxo_set.lock().await;
+            // `getAdminUnlocks` serves exactly this set on every node.
+            assert!(set.is_admin_unlocked(PREMINE_SLOT1));
+            assert!(set.admin_unlocked().contains(PREMINE_SLOT1));
+            // The spend that was rejected before now passes the premine gate.
+            Node::validate_premine_and_maturity_for_tx(&set, &spend, 107).unwrap();
+        }
+
+        // DAO treasury slot: `unlock_height = 144_000` — the admin unlock is
+        // recorded, but the height gate still applies independently.
+        let dao_slot = crate::v3_compat::PREMINE_OUTPUTS
+            .iter()
+            .find(|o| o.unlock_height.is_some())
+            .expect("a height-gated DAO slot exists")
+            .address;
+        let unlock_dao = {
+            let set = node.utxo_set.lock().await;
+            signed_unlock_tx(&set, &admins3, dao_slot)
+        };
+        node.submit_utxo_transaction(unlock_dao).await.unwrap();
+        mine_next_block(&node, &test_miner).await; // block 107
+
+        {
+            let set = node.utxo_set.lock().await;
+            assert!(set.is_admin_unlocked(dao_slot));
+            let (dh, di, ..) = set
+                .get_utxos_for_address(dao_slot)
+                .into_iter()
+                .next()
+                .unwrap();
+            let dao_spend = spend_of(dh, di);
+            // Below the treasury height gate the spend is still locked even
+            // though the admin multisig authorization is already on-chain.
+            let err =
+                Node::validate_premine_and_maturity_for_tx(&set, &dao_spend, 108).unwrap_err();
+            assert!(
+                matches!(err, UtxoError::PremineLocked { .. }),
+                "DAO slot spend below 144k must stay locked, got {err:?}"
+            );
+            // At >= DAO_TREASURY_LOCK_HEIGHT the same spend passes.
+            Node::validate_premine_and_maturity_for_tx(
+                &set,
+                &dao_spend,
+                crate::v3_compat::DAO_TREASURY_LOCK_HEIGHT,
+            )
+            .unwrap();
+        }
+    }
 }
