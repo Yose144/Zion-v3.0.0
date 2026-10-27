@@ -1,12 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import MarkdownDoc from '@/components/docs/MarkdownDoc';
 import {
   BookOpen,
   FileText,
   ChevronRight,
   ChevronDown,
+  ArrowLeft,
+  ArrowRight,
+  ExternalLink,
+  Library,
   Menu,
   X,
   Sparkles,
@@ -176,20 +181,20 @@ export default function BookReader({ book }: { book: BookDef }) {
         className="relative overflow-hidden border-b border-white/10"
         style={{ background: `linear-gradient(to bottom, rgb(${ACCENT} / 0.1), transparent, transparent)` }}
       >
-        <div className="zion-container py-20 relative">
-          <div className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center" style={accentStyle}>
+        <div className="zion-container py-12 md:py-16 relative">
+          <div className="zion-rainbow-card max-w-4xl mx-auto p-6 md:p-8 text-center" style={accentStyle}>
             <div
-              className="zion-kicker mx-auto mb-6 w-fit"
+              className="zion-kicker mx-auto mb-5 w-fit"
               style={{ borderColor: `rgb(${ACCENT} / 0.3)`, background: `rgb(${ACCENT} / 0.1)` }}
             >
               <HeroIcon className="w-4 h-4" style={{ color: accentRgb }} />
               <span className="text-sm text-amber-200 font-semibold">{book.kicker[l]}</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gradient">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-gradient">
               {book.title[l]}
             </h1>
-            <p className="text-xl text-gray-400 mb-4">{book.subtitle[l]}</p>
-            <div className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300" style={accentStyle}>
+            <p className="text-lg text-gray-400 mb-4">{book.subtitle[l]}</p>
+            <div className="zion-rainbow-sub mx-auto mb-6 max-w-3xl px-5 py-4 text-left text-sm text-gray-300" style={accentStyle}>
               {book.description[l]}
             </div>
 
@@ -318,24 +323,54 @@ export default function BookReader({ book }: { book: BookDef }) {
 
           {/* Content */}
           <div className="flex-1 min-w-0 max-w-3xl xl:max-w-4xl mx-auto">
+            {/* Breadcrumbs — same chrome as /docs/view */}
+            <nav className="flex flex-wrap items-center gap-1.5 text-sm text-gray-500 mb-8">
+              <Link
+                href="/maitreya"
+                className="inline-flex items-center gap-1.5 text-zion-cyan hover:text-white transition-colors"
+              >
+                <Library className="w-4 h-4" /> {l === 'cs' ? 'Knihovna' : 'Library'}
+              </Link>
+              <ChevronRight className="w-3 h-3 text-gray-600" />
+              <span className="text-gray-500">{book.title[l]}</span>
+              {currentChapter && (
+                <>
+                  <ChevronRight className="w-3 h-3 text-gray-600" />
+                  <span className="text-zion-gold">{currentChapter.num[l]}</span>
+                </>
+              )}
+            </nav>
+
             {currentChapter && (
-              <div className="mb-10 pb-8 border-b border-white/10">
-                <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                  <span style={{ color: accentRgb }}>{parts[currentChapter.part]?.[l]}</span>
-                  <ChevronRight className="w-3 h-3" />
-                  <span className="text-zion-purple">{currentChapter.num[l]}</span>
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-gradient">
-                  {currentChapter.title[l]}
-                </h2>
-                <p className="text-gray-400">
-                  {parts[currentChapter.part]?.[l]} · {currentChapter.num[l]}
-                </p>
-                {czFallback && l === 'en' && (
-                  <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs text-amber-200">
-                    <Languages className="w-3.5 h-3.5" />
-                    {book.czOnly[l]}
+              <div className="mb-10 pb-6 border-b border-white/10 flex flex-wrap items-end justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                    <span style={{ color: accentRgb }}>{parts[currentChapter.part]?.[l]}</span>
+                    <ChevronRight className="w-3 h-3" />
+                    <span className="text-zion-purple">{currentChapter.num[l]}</span>
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-gradient">
+                    {currentChapter.title[l]}
+                  </h2>
+                  <p className="text-gray-400">
+                    {parts[currentChapter.part]?.[l]} · {currentChapter.num[l]}
                   </p>
+                  {czFallback && l === 'en' && (
+                    <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs text-amber-200">
+                      <Languages className="w-3.5 h-3.5" />
+                      {book.czOnly[l]}
+                    </p>
+                  )}
+                </div>
+                {sourceFile && (
+                  <a
+                    href={`/docs/${sourceFile}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="zion-button-secondary inline-flex items-center gap-2 text-sm shrink-0"
+                  >
+                    <ExternalLink className="w-4 h-4" /> {l === 'cs' ? 'Zdroj' : 'Source'}
+                  </a>
                 )}
               </div>
             )}
@@ -361,6 +396,47 @@ export default function BookReader({ book }: { book: BookDef }) {
                 </article>
               )}
             </div>
+
+            {/* Prev / next chapter */}
+            {currentChapter &&
+              (() => {
+                const idx = chapters.findIndex((c) => c.slug === currentChapter.slug);
+                const prev = idx > 0 ? chapters[idx - 1] : null;
+                const next = idx >= 0 && idx < chapters.length - 1 ? chapters[idx + 1] : null;
+                if (!prev && !next) return null;
+                return (
+                  <nav className="mt-12 pt-8 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {prev ? (
+                      <button
+                        onClick={() => handleChapterSelect(prev.slug, prev.part)}
+                        className="zion-rainbow-sub group flex items-center gap-3 px-4 py-3 text-left transition-all hover:border-white/25"
+                        style={accentStyle}
+                      >
+                        <ArrowLeft className="w-4 h-4 shrink-0 text-gray-500 transition-transform group-hover:-translate-x-0.5" />
+                        <span className="min-w-0">
+                          <span className="block text-[10px] uppercase tracking-wider text-gray-500">{prev.num[l]}</span>
+                          <span className="block truncate text-sm font-semibold text-gray-200">{prev.title[l]}</span>
+                        </span>
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+                    {next && (
+                      <button
+                        onClick={() => handleChapterSelect(next.slug, next.part)}
+                        className="zion-rainbow-sub group flex items-center justify-end gap-3 px-4 py-3 text-right transition-all hover:border-white/25 sm:col-start-2"
+                        style={accentStyle}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-[10px] uppercase tracking-wider text-gray-500">{next.num[l]}</span>
+                          <span className="block truncate text-sm font-semibold text-gray-200">{next.title[l]}</span>
+                        </span>
+                        <ArrowRight className="w-4 h-4 shrink-0 text-gray-500 transition-transform group-hover:translate-x-0.5" />
+                      </button>
+                    )}
+                  </nav>
+                );
+              })()}
           </div>
         </div>
       </div>

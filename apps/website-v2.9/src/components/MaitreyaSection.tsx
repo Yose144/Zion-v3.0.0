@@ -7,12 +7,12 @@ import { ArrowRight, Egg, Gamepad2, Sparkles, Sun, Wind } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 const MaitreyaSectionCopy = {
-  kicker: { cs: 'Kniha Pátá · kompletní · CZ + EN', en: 'Book Five · complete · CZ + EN' },
-  title: { cs: 'Maitreya Buddha', en: 'Maitreya Buddha' },
-  subtitle: { cs: 'Pán Hiranyagarbhy · Dědic Zionu', en: 'Lord of Hiranyagarbha · Heir of Zion' },
+  kicker: { cs: 'Nirvana Hub · knihovna · CZ + EN', en: 'Nirvana Hub · library · CZ + EN' },
+  title: { cs: 'Nirvana Hub', en: 'Nirvana Hub' },
+  subtitle: { cs: 'Všechny knihy cesty · jeden reader', en: 'All the books of the path · one reader' },
   body: {
-    cs: 'Maitreya, Nirvana a šest hlavních knih na jedné mapě. Začni číst, projdi související příběhy nebo otevři plán v3.3 — ten je vývojovým cílem, ne hotovým vydáním.',
-    en: 'Maitreya, Nirvana and the six main books on one map. Start reading, explore the related stories or open the v3.3 plan — a development goal, not a completed release.',
+    cs: 'Genesis, Kvantová revoluce, Ekam, Terra Nova, Maitreya i Nirvana — celá knihovna v jednom sjednoceném readeru. Začni číst, projdi související příběhy nebo otevři plán v3.3 — ten je vývojovým cílem, ne hotovým vydáním.',
+    en: 'Genesis, Quantum Revolution, Ekam, Terra Nova, Maitreya and Nirvana — the whole library in one unified reader. Start reading, explore the related stories or open the v3.3 plan — a development goal, not a completed release.',
   },
   quote: {
     cs: '„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."',
@@ -54,7 +54,7 @@ export default function MaitreyaSection() {
                 src="/images/maitreya/hero.webp"
                 srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1536w"
                 sizes="(max-width: 1024px) calc(100vw - 3rem), 620px"
-                alt={cs ? 'Oasis — jedna rodina pod Stromem života, vizuál Knihy Páté' : 'Oasis — one family under the Tree of Life, artwork of Book Five'}
+                alt={cs ? 'Oasis — jedna rodina pod Stromem života, vizuál Nirvana Hubu' : 'Oasis — one family under the Tree of Life, Nirvana Hub artwork'}
                 loading="lazy"
                 decoding="async"
                 width={1536} height={1024} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/img:scale-[1.04]"
@@ -62,7 +62,7 @@ export default function MaitreyaSection() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-100 backdrop-blur-sm">
                 <Sparkles className="h-3 w-3 text-zion-gold" />
-                {cs ? 'Nový příběh' : 'New story'}
+                {cs ? 'Knihovna' : 'Library'}
               </div>
             </Link>
 
