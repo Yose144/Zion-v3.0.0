@@ -62,3 +62,24 @@ Reconcile `payouts` tabulky (SQLite `pool-store.db`, 210 151 řádků):
 - 24–48 h po deployi: re-run exact-amount pair dotaz; očekávaný zbytek
   = pouze legit equal-amount consecutive-height řádky (už ne stamped-artefakt,
   protože height teď je per-entry) → ideálně 0 nových párů.
+
+### ⚠️ Post-mortem addendum — regrese při 2.S2 fixu (fixnuto `996162bf7`, deployed `f5364566`)
+
+První 2.S2 revize (`ae2a09489`) zavedla kontraktní bug: `submit_utxo_transaction`
+unwrapovala `result`, ale `parse_payout_submit_response` očekává celý
+envelope → **každý accepted submit** se četl jako "no result" → indeterminate
+→ input-probe viděl spent inputy → entries dropped as-landed.
+
+- **Okno 00:19–08:56 UTC:** ~94 payout tx — **všechny on-chain accepted**
+  (minery placené přesně 1×, at-most-once invariant **držel**), ale ledger
+  rows chybí + `sent_payouts` neoznačeno. Live důkaz zachycen v journalu:
+  `payout submit indeterminate and inputs spent ... tx_id=...`.
+- **Fix:** `submit_utxo_transaction` vrací raw envelope; parser klasifikuje
+  (`f5364566` od 08:56 UTC — payout flow + rows resumed, 0 indeterminate).
+- **Unrecorded backfill:** ~94 tx_ids recoverable z journal warn řádků →
+  getTransaction on-chain → rows lze zrekonstruovat (👤/follow-up task;
+  NEfabricovat — ledger = evidence).
+- **Lekce:** kontrakt envelope-vs-result testovat přes `parse_...` unit
+  test s REÁLNÝM node response (shape `{"result":{"accepted":true,
+  "model":"v31-native","tx_id":...}}` nyní v test suite pokryt přes
+  `parse_submit_accepts_canonical_object` v deferred tests).
