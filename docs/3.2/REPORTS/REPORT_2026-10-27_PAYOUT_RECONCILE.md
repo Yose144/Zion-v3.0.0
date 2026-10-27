@@ -76,9 +76,14 @@ envelope → **každý accepted submit** se četl jako "no result" → indetermi
   `payout submit indeterminate and inputs spent ... tx_id=...`.
 - **Fix:** `submit_utxo_transaction` vrací raw envelope; parser klasifikuje
   (`f5364566` od 08:56 UTC — payout flow + rows resumed, 0 indeterminate).
-- **Unrecorded backfill:** ~94 tx_ids recoverable z journal warn řádků →
-  getTransaction on-chain → rows lze zrekonstruovat (👤/follow-up task;
-  NEfabricovat — ledger = evidence).
+- **Unrecorded backfill (provedeno 27. 10.):** 99 unikátních tx_ids z
+  journal warn řádků → `getTransaction` na node :9446 → **99/99 resolved,
+  0 missing, 288 recipient outputs, ~551 364 ZION**. Candidate SQL uložen
+  na EDGE `/root/backfill-unrecorded-payouts.sql` (288 INSERTů;
+  `height`=inclusion height — rewarded height ≈ inclusion−1..2, caveat
+  zdokumentován; `miner_id`=address). **Aplikace = 👤 operátorské
+  rozhodnutí** — script `/root/backfill-unrecorded-payouts.py` je
+  read-only a re-runnable.
 - **Lekce:** kontrakt envelope-vs-result testovat přes `parse_...` unit
   test s REÁLNÝM node response (shape `{"result":{"accepted":true,
   "model":"v31-native","tx_id":...}}` nyní v test suite pokryt přes
