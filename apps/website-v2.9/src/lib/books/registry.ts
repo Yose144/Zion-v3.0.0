@@ -29,8 +29,8 @@ import {
   Sun,
   Atom,
 } from 'lucide-react';
-import type { BookDef, IconType } from './types';
-import { korpusChapters, korpusDocPath } from './korpus';
+import type { BookDef, IconType, Lang } from './types';
+import { korpusChapters, korpusDocPath, korpusLangs } from './korpus';
 import { MAITREYA_CHAPTERS, MAITREYA_PARTS, maitreyaDocPath } from './maitreya';
 import { NIRVANA_CHAPTERS, NIRVANA_PARTS, nirvanaDocPath } from './nirvana';
 import { SURTA_CHAPTERS, SURTA_PARTS, surtaDocPath } from './surta-srdce';
@@ -271,7 +271,7 @@ function korpusBook(p: {
     facts: [
       { label: { cs: 'Textů', en: 'Texts' }, value: String(chapters.length) },
       { label: { cs: 'Korpus', en: 'Corpus' }, value: p.dir },
-      { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ (+EN části)' },
+      { label: { cs: 'Jazyky', en: 'Languages' }, value: korpusLangs(p.dir, chapters.length) },
     ],
     notAvailable: loadError,
     czOnly: czFallbackNote,
@@ -428,4 +428,78 @@ export const BOOKS: Record<string, BookDef> = {
 
 export function getBook(id: string): BookDef | undefined {
   return BOOKS[id];
+}
+
+// --- Library nav ----------------------------------------------------------
+// Grouped book navigation shared by every reader sidebar — mirrors
+// library.ts companion groups. Entries without a reader (genesis,
+// terranova) link out to their experience pages.
+
+export interface BookNavEntry {
+  id: string;
+  href: string;
+  /** Label for books that are not in BOOKS (landing pages). */
+  label?: { cs: string; en: string };
+}
+
+export interface BookNavGroup {
+  id: string;
+  label: { cs: string; en: string };
+  books: BookNavEntry[];
+}
+
+export const BOOK_NAV: BookNavGroup[] = [
+  {
+    id: 'spine',
+    label: { cs: 'Hlavní knihy', en: 'Main books' },
+    books: [
+      { id: 'genesis', href: '/genesis', label: { cs: 'Genesis', en: 'Genesis' } },
+      { id: 'quantum-revolution', href: '/maitreya/quantum-revolution/cist' },
+      { id: 'ekam', href: '/maitreya/ekam/cist' },
+      { id: 'terranova', href: '/terranova', label: { cs: 'Terra Nova', en: 'Terra Nova' } },
+      { id: 'maitreya', href: '/maitreya/cist' },
+      { id: 'nirvana', href: '/maitreya/nirvana/cist' },
+    ],
+  },
+  {
+    id: 'srdce',
+    label: { cs: 'Srdce kompasu', en: 'Heart of the compass' },
+    books: [
+      { id: 'surta-srdce', href: '/maitreya/surta-srdce/cist' },
+      { id: 'kralovstvi-srdce', href: '/maitreya/kralovstvi-srdce/cist' },
+    ],
+  },
+  {
+    id: 'roots',
+    label: { cs: 'Kořeny a příběh', en: 'Roots & story' },
+    books: [
+      { id: 'sulzeme', href: '/maitreya/sulzeme/cist' },
+      { id: 'lumi', href: '/maitreya/lumi/cist' },
+      { id: 'miriam', href: '/maitreya/miriam/cist' },
+    ],
+  },
+  {
+    id: 'earth',
+    label: { cs: 'Země a cesta', en: 'Earth & journey' },
+    books: [
+      { id: 'bodhigaia', href: '/maitreya/bodhigaia/cist' },
+      { id: 'mariacaminho', href: '/maitreya/mariacaminho/cist' },
+      { id: 'naceste', href: '/maitreya/naceste/cist' },
+    ],
+  },
+  {
+    id: 'horizon',
+    label: { cs: 'Horizont a pravidla', en: 'Horizon & rules' },
+    books: [
+      { id: 'nirvanacloud', href: '/maitreya/nirvanacloud/cist' },
+      { id: 'issobella', href: '/maitreya/issobella/cist' },
+      { id: 'miseamenti', href: '/maitreya/miseamenti/cist' },
+    ],
+  },
+];
+
+/** Sidebar label for a nav entry — registry title, or the inline label for non-reader links. */
+export function bookNavLabel(entry: BookNavEntry, l: Lang): string {
+  const def = BOOKS[entry.id];
+  return def ? def.title[l] : (entry.label?.[l] ?? entry.id);
 }

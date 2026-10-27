@@ -184,3 +184,9 @@ Landing stránky `/quantum-revolution`, `/ekam` zůstávají živé experience p
 ## Korpus books → Nirvana Hub (2026-10-28, druhá vlna)
 
 Všech 9 společnicích knih korpusu přesunuto z generického `/docs/view/korpus/*` vieweru do unified readeru — hub teď obsluhuje **celou knihovnu** (6 hlavních + 9 korpus = 15 readerů). `src/lib/books/korpus.ts` — `korpusChapters(dir)` odvozuje kapitoly z `doc-manifest.json` (NN-Name.md konvence; `*_EN.md` = EN varianty přes enFallback, `full.md` vyřazen; `00-*`/`README` = index part 0, `Epilog-*` = Epilog num). Registry `korpusBook()` helper + 9 BookDefů: sulzeme, lumi, miriam, bodhigaia, mariacaminho, naceste, nirvanacloud, issobella, miseamenti. Routy `/maitreya/<id>/cist[/[slug]]`; `library.ts` hrefs/enHrefs → canonical readery, `ruze` → `/maitreya/bodhigaia/cist#12-Ruze-v-Zahrade-Genesis`; `docLinks` BOOK_READERS += 9; sitemap += 9. `/docs/view/korpus/*` URL zůstávají funkční. Verifikace: build 323 str., standalone 9×200 + `[slug]`→307 `#hash`.
+
+## Unified library sidebar + EN/CZ audit (2026-10-28, třetí vlna)
+
+`BOOK_NAV` v registry = skupená navigace všech knih (skupiny zrcadlí library.ts: Hlavní knihy / Srdce kompasu / Kořeny a příběh / Země a cesta / Horizont a pravidla; genesis+terranova = experience linky). BookReader sidebar + mobilní menu renderují jeden `renderNav` strom: skupiny rozbalovací (default otevřená = skupina s aktivní knihou), neaktivní knihy = Link na svůj reader, aktivní kniha = accent row + inline part/chapter TOC.
+
+**EN/CZ audit výsledek:** `korpusLangs(dir)` odvozuje fakt „Jazyky" z manifest EN coverage — Lumi/Miriam/MariaCaminho/NaCeste = 'CZ' (0 _EN), SulZeme/BodhiGaia/Issobella/MiseAmenti = 'CZ (+EN části)' (1 _EN), NirvanaCloud = 'CZ (+EN části)' (3/9). Surta/Království nemají `en/books/*/kapitoly` — enFallback + czOnly note drží poctivé chování. Kapitolové titulky u korpus knih = humanized CS slugs (vlastní jména — přijatelné pro oba jazyky).

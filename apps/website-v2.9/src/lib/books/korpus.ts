@@ -62,3 +62,17 @@ export const korpusDocPath =
   (dir: string) =>
   (slug: string, lang: Lang): string =>
     lang === 'en' ? `/docs/korpus/${dir}/${slug}_EN.md` : `/docs/korpus/${dir}/${slug}.md`;
+
+/** Count of *_EN.md translations present for a korpus book. */
+export function korpusEnCount(dir: string): number {
+  const prefix = `korpus/${dir}/`;
+  return [...FILES].filter((f) => f.startsWith(prefix) && f.endsWith('_EN.md')).length;
+}
+
+/** Honest language fact for a korpus book ('CZ' / 'CZ (+EN části)' / 'CZ + EN'). */
+export function korpusLangs(dir: string, chapterCount: number): string {
+  const en = korpusEnCount(dir);
+  if (en === 0) return 'CZ';
+  if (en >= chapterCount) return 'CZ + EN';
+  return 'CZ (+EN části)';
+}
