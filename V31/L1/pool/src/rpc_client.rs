@@ -71,7 +71,7 @@ pub struct L1Endpoints {
 /// (milliseconds); default 12 s — raised from 4 s after Edge G8 analysis
 /// showed that under CPU saturation all three L1 nodes could simultaneously
 /// exceed the old bound, dropping real block submits.
-fn attempt_timeout() -> Duration {
+pub fn attempt_timeout() -> Duration {
     static CACHED: std::sync::OnceLock<Duration> = std::sync::OnceLock::new();
     *CACHED.get_or_init(|| {
         let ms = std::env::var("ZION_L1_RPC_TIMEOUT_MS")
@@ -150,6 +150,31 @@ impl L1Endpoints {
             }
         }
         Err(last_err.context(format!("all {} L1 endpoints failed", n)))
+    }
+
+    /// Number of configured endpoints.
+    pub fn len(&self) -> usize {
+        self.addrs.len()
+    }
+
+    /// Call one specific endpoint (index into `addrs`) with its own bound —
+    /// used by the block-submit tip-affinity probe, which must query each
+    /// endpoint individually instead of following `last_good`.
+    pub async fn call_addr(
+        &self,
+        idx: usize,
+        request: &Value,
+        timeout: Duration,
+    ) -> Result<Value> {
+        let addr = *self
+            .addrs
+            .get(idx)
+            .ok_or_else(|| anyhow!("endpoint index {} out of range", idx))?;
+        match tokio::time::timeout(timeout, jsonrpc_call(addr, request)).await {
+            Ok(Ok(v)) => Ok(v),
+            Ok(Err(e)) => Err(e),
+            Err(_) => Err(anyhow!("l1 rpc {} timed out after {:?}", addr, timeout)),
+        }
     }
 }
 
@@ -310,5 +335,28 @@ mod tests {
         };
         let err = eps.call(&json!({"id":1})).await.unwrap_err().to_string();
         assert!(err.contains("no L1 RPC endpoints"), "got: {}", err);
+    }
+
+    #[tokio::test]
+    async fn call_addr_targets_exact_endpoint_ignoring_last_good() {
+        let a = spawn_server(json!({ "name": "a" })).await;
+        let b = spawn_server(json!({ "name": "b" })).await;
+        let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", a, b)).unwrap();
+        assert_eq!(eps.len(), 2);
+
+        // call() sets last_good to 0 — call_addr must still reach #1.
+        eps.call(&json!({"id":1})).await.unwrap();
+        assert_eq!(eps.last_good.load(Ordering::Relaxed), 0);
+        let resp = eps
+            .call_addr(1, &json!({"id":2}), Duration::from_secs(2))
+            .await
+            .unwrap();
+        assert_eq!(resp["result"]["name"], "b");
+
+        // Out-of-range and dead indexes error instead of panicking.
+        assert!(eps
+            .call_addr(9, &json!({"id":3}), Duration::from_secs(1))
+            .await
+            .is_err());
     }
 }

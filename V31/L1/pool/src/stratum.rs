@@ -4592,6 +4592,14 @@ async fn current_chain_height(endpoints: &L1Endpoints) -> Option<u64> {
 }
 
 /// Submit a solved block to the node RPC.
+///
+/// Tip-affinity: follower nodes can lag the primary tip — a block built on
+/// node A's template submitted to lagging node B is rejected with
+/// "previous hash mismatch" (and `call()` treats an in-result error as
+/// success, so it never tries the other endpoints). Probe each endpoint's
+/// tip and submit to the one whose tip IS our prev_hash; fall back to the
+/// last_good route when no node advertises it (tip already advanced — let
+/// the node decide).
 async fn submit_block_to_node(endpoints: &L1Endpoints, block: &Block) -> anyhow::Result<()> {
     let payload = json!({
         "jsonrpc": "2.0",
@@ -4599,6 +4607,56 @@ async fn submit_block_to_node(endpoints: &L1Endpoints, block: &Block) -> anyhow:
         "method": "submitBlock",
         "params": serde_json::to_value(block).expect("block serializes"),
     });
+    let prev_hex = hex::encode(block.header.previous_hash);
+    let probe = json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "getChainInfo",
+        "params": [],
+    });
+    for idx in 0..endpoints.len() {
+        let Ok(resp) = endpoints
+            .call_addr(idx, &probe, Duration::from_secs(3))
+            .await
+        else {
+            continue;
+        };
+        let matches = resp
+            .get("result")
+            .map(|r| {
+                [r.get("tip_hash"), r.get("native_tip_hash")]
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Value::as_str)
+                    .any(|h| h.eq_ignore_ascii_case(&prev_hex))
+            })
+            .unwrap_or(false);
+        if !matches {
+            continue;
+        }
+        tracing::info!(
+            "submitBlock tip-affinity: endpoint #{} tip == prev_hash {}",
+            idx,
+            &prev_hex[..12]
+        );
+        let response = endpoints
+            .call_addr(idx, &payload, crate::rpc_client::attempt_timeout())
+            .await?;
+        if let Some(err) = response.get("error") {
+            if !err.is_null() {
+                return Err(anyhow::anyhow!(
+                    "submitBlock returned error: {}",
+                    err
+                ));
+            }
+        }
+        tracing::info!("submitBlock response: {}", response);
+        return Ok(());
+    }
+    tracing::warn!(
+        "submitBlock: no endpoint advertises tip {} — falling back to last_good",
+        &prev_hex[..12]
+    );
     let response: serde_json::Value = endpoints.call(&payload).await?;
 
     if let Some(err) = response.get("error") {
