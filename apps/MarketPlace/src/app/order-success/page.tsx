@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Check, ShoppingBag, Mail, HelpCircle, Loader2, XCircle } from 'lucide-react';
+import { Check, ShoppingBag, Mail, HelpCircle, Loader2, XCircle, PackageSearch } from 'lucide-react';
 import { getOrderStatus, verifyStripeSession, type OrderStatusResult } from '@/lib/shop-api';
 import { useLangT } from '@/lib/useTranslation';
 import { COMPANY } from '@/lib/invoice';
@@ -156,6 +156,12 @@ function OrderSuccessContent() {
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         <Link href="/shop" className="zion-button-primary">
           <ShoppingBag className="w-4 h-4" /> {t('orderSuccess.continueShopping')}
+        </Link>
+        <Link
+          href={`/order-tracking?order=${encodeURIComponent(orderId)}`}
+          className="zion-button-secondary"
+        >
+          <PackageSearch className="w-4 h-4" /> {t('orderSuccess.trackOrderLink')}
         </Link>
         <a href={`mailto:${COMPANY.email}`} className="zion-button-secondary">
           <Mail className="w-4 h-4" /> {t('orderSuccess.contactSupport')}

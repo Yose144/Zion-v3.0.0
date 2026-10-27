@@ -136,6 +136,38 @@ export async function getOrderStatus(orderId: string): Promise<OrderStatusResult
   }
 }
 
+export interface TrackOrderResult {
+  success: boolean;
+  data?: {
+    orderId: string;
+    status: string;
+    paymentStatus: string;
+    totalCzk: number;
+    shippingCzk: number;
+    shipping: string;
+    payment: string;
+    trackingNumber: string | null;
+    shippedAt: string | null;
+    paidAt: string | null;
+    createdAt: string;
+    items: { name: string; quantity: number; priceCzk: number }[];
+    invoices: { id: string; invoiceNumber: string; status: string }[];
+  };
+  error?: string;
+}
+
+export async function trackOrder(orderId: string, email: string): Promise<TrackOrderResult | null> {
+  try {
+    const q = new URLSearchParams({ order: orderId, email });
+    const res = await fetch(`/api/shop/track?${q.toString()}`, {
+      headers: { Accept: 'application/json' },
+    });
+    return (await res.json()) as TrackOrderResult;
+  } catch {
+    return null;
+  }
+}
+
 export interface StripeVerifyResult {
   success: boolean;
   data?: {
