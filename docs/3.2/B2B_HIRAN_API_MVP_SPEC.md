@@ -106,16 +106,16 @@ navržena tak, aby bez fleet fungovala v single-model režimu).
 
 ## 8. Implementační checklist
 
-| # | Krok | Soubor/provoz | Odhad |
-|---|------|---------------|-------|
-| 1 | `hiran-gateway` crate: axum, `/v1/models`, `/v1/chat/completions` proxy na hiran-core chain | `V31/L3/hiran-gateway/` (nový) | 1–2 dny |
-| 2 | ZIS verify client + 60s cache + tier table (`gateway.db` SQLite) | stejné | 0,5 dne |
-| 3 | Metering writer + `GET /v1/usage` | stejné | 0,5 dne |
-| 4 | systemd `zion-hiran-gateway.service` na EDGE2 + nginx vhost `api.zionterranova.com` | `infra/nginx/edge2/` | 0,5 dne |
-| 5 | Stripe: produkt+price v dashboardu, webhook route v gateway (reuse MarketPlace pattern) | MarketPlace infra | 0,5–1 dne |
-| 6 | Price/console stránka `market.zionterranova.com/ai` (klíče = link na ZIS dashboard) | `apps/MarketPlace` | 1 den |
-| 7 | G8 probe `inference_live` + alert | monitoring stack | 0,5 dne |
-| 8 | Smoke E2E: key → request → usage → invoice item | runbook | 0,5 dne |
+| # | Krok | Soubor/provoz | Stav |
+|---|------|---------------|------|
+| 1 | `hiran-gateway` crate: axum, `/v1/models`, `/v1/chat/completions` proxy na upstream chain | `V31/L3/hiran-gateway/` | ✅ 2026-10-28 — 11/11 testů, clippy clean |
+| 2 | ZIS verify client + 60s cache + tier table (`gateway.db` SQLite) | `auth.rs`, `meter.rs` | ✅ |
+| 3 | Metering writer + `GET /v1/usage` + rpm/daily quota | `meter.rs`, `auth.rs` | ✅ |
+| 4 | systemd `zion-hiran-gateway.service` + nginx vhost `api.zionterranova.com` (SSE unbuffered) | `V31/deploy/systemd/`, `infra/nginx/edge2/` | ✅ files ready — deploy = 👤 |
+| 5 | Stripe: produkt+price, webhook route v gateway (reuse MarketPlace pattern) | MarketPlace infra | ⏳ blokováno secrets (5.B6 nález: prod `.env` má STRIPE_* prázdné) |
+| 6 | Price/console stránka `market.zionterranova.com/ai` | `apps/MarketPlace` | ⏳ |
+| 7 | G8 probe `inference_live` + alert (`/health` už agreguje upstream liveness) | monitoring stack | ⏳ |
+| 8 | Smoke E2E: key → request → usage → invoice | runbook | ⏳ potřebuje živé nasazení + zis klíč |
 
 ## 9. Explicitně MIMO MVP
 
