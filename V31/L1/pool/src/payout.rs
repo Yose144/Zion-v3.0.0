@@ -181,7 +181,10 @@ impl PayoutSweeper {
                 // was lost. Verify against the inputs before requeueing:
                 // if the batch's selected UTXOs are now spent, the tx
                 // landed and resubmitting would double-pay.
-                if self.inputs_still_unspent(&endpoints, &pool_encoded, &tx).await {
+                if self
+                    .inputs_still_unspent(&endpoints, &pool_encoded, &tx)
+                    .await
+                {
                     self.requeue(payouts);
                 } else {
                     warn!(
@@ -204,7 +207,10 @@ impl PayoutSweeper {
                 if rejected {
                     warn!("payout submit rejected by node: {e} — requeueing");
                     self.requeue(payouts);
-                } else if self.inputs_still_unspent(&endpoints, &pool_encoded, &tx).await {
+                } else if self
+                    .inputs_still_unspent(&endpoints, &pool_encoded, &tx)
+                    .await
+                {
                     warn!("payout submit indeterminate but inputs unspent: {e} — requeueing");
                     self.requeue(payouts);
                 } else {
@@ -287,10 +293,8 @@ impl PayoutSweeper {
                 return false;
             }
         };
-        let unspent: std::collections::HashSet<([u8; 32], u32)> = fresh
-            .iter()
-            .map(|u| (u.tx_hash, u.output_index))
-            .collect();
+        let unspent: std::collections::HashSet<([u8; 32], u32)> =
+            fresh.iter().map(|u| (u.tx_hash, u.output_index)).collect();
         tx.inputs
             .iter()
             .all(|i| unspent.contains(&(i.previous_output.0, i.index)))

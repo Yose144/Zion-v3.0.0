@@ -524,3 +524,99 @@ No further tuning needed for i066d.
 - [`docs/3.0.1Genesis/SMOS_VEGA64_FIRE_TUNING_POSTMORTEM.md`](./docs/3.0.1Genesis/SMOS_VEGA64_FIRE_TUNING_POSTMORTEM.md) — Vega tuning history
 - [`docs/3.0.1Genesis/VEGA64_S4_MEMHARD_DEBUG_GUIDE.md`](./docs/3.0.1Genesis/VEGA64_S4_MEMHARD_DEBUG_GUIDE.md) — GCN vs RDNA details
 - [`V3/SMOS_DEPLOY.md`](../../V3/SMOS_DEPLOY.md) — SMOS deployment guide
+
+---
+
+## 14. 2026-10-27 — SRB/vast package on Vega: QTU dead (CUDA-only sidecar) → OpenCL fix via tarball patch
+
+**Symptom:** rig `vega-smos` (rig 518837, now at LAN `192.168.1.106`) ran new
+package `custom_teamredminer-zion-trinity-srb-v1.7` — ZION + VRSC mining, quantus
+jobs arriving, but `gpu-external`/`gpu-external-2` permanently `idle, 0 H/s`.
+
+**Root cause (two layers):**
+
+1. Package design assumes NVIDIA: QTU is delegated to an **SRBMiner-MULTI
+   sidecar** (`--algorithm quantus`, pool `eu.lproute.com:5660`) — SRB's quantus
+   kernel is **CUDA-only** → on Vega it runs, sees `Radeon RX Vega`, gets jobs,
+   hashes **0.00 H/s** forever.
+2. The miner's own QTU path was deliberately disabled: `ZION_STREAM2_ENABLED=0`
+   (`gpu-external` IS stream2), plus `ZION_EXT_GPU_BACKEND=cuda` /
+   `ZION_QPOW_BACKEND=cuda` in minerOptions — dead on AMD.
+
+**Gotcha — SMOS package lifecycle:** `/root/miner/custom_*/miner` is
+**re-extracted from `/root/miner_org/<pkg>.tar.gz` on every miner restart** —
+editing the extracted wrapper does NOT survive. Patch the tarball (and rewrite
+the `.md5` sidecar) instead:
+
+```bash
+# insert override block after the `set -- "${passthru_args...}"` line in `miner`:
+export SRB_ENABLED=0
+export ZION_EXT_GPU_BACKEND=opencl
+export ZION_QPOW_BACKEND=opencl
+export ZION_STREAM2_ENABLED=1
+export ZION_STREAM2_FORCE_COIN=QTU
+# repack tar.gz, update .tar.gz.md5 sidecar, `pkill -f zion-miner-v31`
+# → SMOS re-extracts patched package and restarts with the env.
+```
+
+Original tarball backup kept at
+`/root/miner_org/custom_teamredminer-zion-trinity-srb-v1.7.tar.gz.bak-orig`
+(restore it when the rig goes back to NVIDIA / a fixed package is published).
+
+**Interim result (own kernel):** `gpu-external coin=QTU status=active
+hashrate≈80–84 MH/s` — worked, but superseded below.
+
+## 15. 2026-10-27 (2) — ROCm 5.4.6 userland + SRBMiner 3.7.9 → QTU ~138 MH/s
+
+**Why SRBMiner showed 0.00 H/s on Vega:** its `quantus` OpenCL kernel fails to
+compile on SMOS's legacy amdgpu-pro ICD stack (`GPU0 can't build program` on
+gfx900 for v3.7.6, 3.7.9, 3.8.0 alike). NOT a version bug — the kernel needs a
+modern ROCm compiler/runtime.
+
+**Fix:** stage a **ROCm 5.4.6 userland** (last release line supporting gfx900)
+without touching the kernel/driver — `/dev/kfd` already exists on SMOS
+(5.15.80-sm amdgpu). Downloaded focal debs from
+`repo.radeon.com/rocm/apt/5.4.6/` (`comgr5.4.6`, `hsa-rocr5.4.6`,
+`rocm-opencl5.4.6`, `rocm-ocl-icd5.4.6`, `rocm-core5.4.6`), `dpkg -x` into
+`/root/rocm546/rootfs/opt/rocm-5.4.6/`, then launch SRBMiner with:
+
+```bash
+env LD_LIBRARY_PATH=/root/rocm546/rootfs/opt/rocm-5.4.6/opencl/lib:/root/rocm546/rootfs/opt/rocm-5.4.6/hsa/lib:/root/rocm546/rootfs/opt/rocm-5.4.6/lib SRBMiner-MULTI ...
+```
+
+→ `GPU0 init... [OPENCL]` succeeds, `AMD ADL initialised`, temps/power readable.
+
+**Measured:** SRBMiner 3.7.9 quantus solo on Vega = **~144 MH/s** (operator's
+"150" confirmed); co-resident with zion-miner = **~135-138 MH/s** vs our
+OpenCL kernel ~85 MH/s (+62%).
+
+**Final tarball patch (wrapper `miner` script, after `set -- ... passthru`):**
+
+```bash
+export SRB_ENABLED=1          # SRBMiner sidecar owns QTU
+export ZION_STREAM2_ENABLED=0 # miner's own QTU stream off (SRB is faster)
+export ZION_EXT_GPU_BACKEND=opencl
+export ZION_QPOW_BACKEND=opencl
+export ZION_GPU_TIME_DUTY_PCT=12   # ZION throttled to ~12% GPU ("zion na minimum")
+```
+
+plus 3 line edits: `SRB_BIN=/root/srb379/SRBMiner-Multi-3-7-9/SRBMiner-MULTI`
+(persistent path; /tmp is wiped on reboot), download gated by
+`[ ! -x "${SRB_BIN}" ]`, launch line prefixed with `env LD_LIBRARY_PATH=...`.
+
+**Live:** `[SRB] GPU0 RX Vega 135-138 MH/s A:accepted | [miner] zion ~55 KH/s
+(duty 12) | VRSC ~1.47 MH/s` — three streams, one Vega, temps ~67C @ ~220W.
+
+**Incident (same day):** dashboard showed ~70 MH/s — a wrapper restart had
+orphaned the first SRBMiner (PPID 1) while the new run spawned a second one;
+two instances split the card ~50/50. The survivor then wedged with
+`Exception[15]` when its orphan was killed (shared API port 21550). Fix:
+`pkill -x SRBMiner-MULTI` guard added to the patch block so every wrapper
+start kills stale sidecars before launching. Recovered to ~138 MH/s single
+instance.
+
+**Persistence:** patched tarball `miner_org/*.tar.gz` (+ `.md5` sidecar,
+backup `.bak-orig`) survives reboots — verified. Risk: SMOS cloud re-download
+of same package name would overwrite it; the durable fix is publishing the
+ROCm+SRB wiring in the package itself. `RIG_LLM=1` llama-server still runs
+co-resident (~2 GB VRAM).

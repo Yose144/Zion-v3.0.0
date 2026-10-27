@@ -257,9 +257,7 @@ impl Pool {
                     ))
                 }
             },
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                Ok(PayoutLedgerState::default())
-            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(PayoutLedgerState::default()),
             Err(e) => Err(e),
         }
     }
@@ -1921,8 +1919,15 @@ mod tests {
         let quarantined = std::fs::read_dir(&root)
             .unwrap()
             .filter_map(|e| e.ok())
-            .any(|e| e.file_name().to_string_lossy().starts_with("pplns.json.payouts.corrupt-"));
-        assert!(quarantined, "quarantine file must exist for operator inspection");
+            .any(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .starts_with("pplns.json.payouts.corrupt-")
+            });
+        assert!(
+            quarantined,
+            "quarantine file must exist for operator inspection"
+        );
         let _ = std::fs::remove_dir_all(&root);
     }
 
