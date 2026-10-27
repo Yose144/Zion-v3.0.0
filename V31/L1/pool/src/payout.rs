@@ -7,7 +7,7 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, Result};
 use serde_json::json;
 use tokio::time::interval;
 use tracing::{info, warn};
@@ -430,6 +430,12 @@ async fn fetch_utxos(
 }
 
 /// Submit a signed V31 UTXO transaction to the node.
+///
+/// Returns the raw JSON-RPC *envelope* — classification (accepted /
+/// rejected / indeterminate) belongs to `parse_payout_submit_response`,
+/// which expects the full envelope shape. Unwrapping `result` here would
+/// strip the fields the parser needs and misread every accepted submit as
+/// indeterminate.
 async fn submit_utxo_transaction(
     endpoints: &L1Endpoints,
     tx: &Transaction,
@@ -441,19 +447,7 @@ async fn submit_utxo_transaction(
         "method": "submitUtxoTransaction",
         "params": { "transaction": tx_json }
     });
-    let resp = endpoints.call(&payload).await?;
-
-    if let Some(error) = resp.get("error").filter(|v| !v.is_null()) {
-        let msg = error
-            .get("message")
-            .and_then(|m| m.as_str())
-            .unwrap_or("unknown");
-        return Err(anyhow!("submitUtxoTransaction error: {}", msg));
-    }
-
-    resp.get("result")
-        .cloned()
-        .context("missing result in submitUtxoTransaction response")
+    endpoints.call(&payload).await
 }
 
 #[cfg(test)]
