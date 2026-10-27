@@ -75,16 +75,10 @@ fn derive_evm_from_seed(seed: &[u8]) -> (String, String) {
     (addr, sk_hex)
 }
 
-/// Minimal keccak256 implementation (Ethereum uses keccak-256, NOT SHA3-256).
-/// We use the tiny-keccak crate if available, otherwise fall back to sha3.
+/// Real keccak-256 via the sha3 crate (Ethereum keccak, NOT NIST SHA3-256).
 fn keccak256(data: &[u8]) -> [u8; 32] {
-    use sha2::{Digest, Sha256};
-    // NOTE: This is SHA-256, NOT keccak-256. For production EVM address
-    // derivation, we need true keccak-256. However, since we're generating
-    // fresh keys (not matching existing EVM addresses), the exact hash
-    // function doesn't matter — it just needs to be deterministic and unique.
-    // The bridge contract will use the private key directly for signing.
-    let mut hasher = Sha256::new();
+    use sha3::{Digest, Keccak256};
+    let mut hasher = Keccak256::new();
     hasher.update(data);
     let result = hasher.finalize();
     let mut out = [0u8; 32];

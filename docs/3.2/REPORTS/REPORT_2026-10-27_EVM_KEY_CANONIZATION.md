@@ -94,12 +94,56 @@ Marketplace DEF_ADMIN `0x8637976f…`.
 | Base — bridge validators | ✅ 3-of-5 V2 |
 | Starý `0xdde17…` | ✅ 0 rolí všude |
 
-## 7. Zbývá / poznámky
+## 7. WARP relay canonizace (EDGE2, `zion-v31-multichain`)
+
+`/etc/zion/edge-environment.sh` (backup `.bak-warpv2-20261027`):
+
+| Env | Před | Po |
+|---|---|---|
+| `WARP_EVM_RELAY_KEY` | `0xdde17…` (starý deployer — **revokován všude**) | V2 validator_1 evm sk (`0x13D06bEf…`) |
+| `WARP_VALIDATOR_KEYS` | 1× `val1:` ed25519 (stará generace) | `val1..val5:` V2 ed25519 sks (odvozeno z V2 mnemoniců, blake3 seed) |
+| `WARP_L1_RELEASE_KEYS` | unset | **zůstává unset** — manual release mode by design; při zapnutí auto-release použít ≥3 V2 evm sks (L1 allowlist = V2 cpks, threshold 3) |
+
+`warpd` restartován: čistý boot, watchers base+zion-l1 registrovány, inbound releaser v
+manual módu. POZOR: `execute_burn_release` v legacy `zion_l1.rs` adapteru podepisuje
+unlock proof přes `WARP_EVM_RELAY_KEY` — dřív by jeho pubkey odmítla L1 allowlist;
+teď = V2 allowlist člen ✅.
+
+## 8. Non-Base chainy — inventura + částečná rotace
+
+Kontrakty `wZION 0x0c49…` + `ZIONBridge 0xa5a09b2C…` nasazené na 5 chainech (deterministic
+adresy). Stav před rotací: všude threshold 5, validators 5 (starý set), starý `0xdde17…`
+má `DEF_ADMIN+GUARDIAN+VALIDATOR` na bridge a `DEF_ADMIN+GUARDIAN` na wZION; v1 nic.
+
+| Chain | Gas old | Gas v1 | Stav rotace |
+|---|---|---|---|
+| BSC (56) | 0.000010 | 0 | 🔴 blokováno fundingem |
+| **Polygon (137)** | 0.166→0.036 | 0 | 🟡 **částečně** — Phase 1 ✅ (v1 má DEF_ADMIN+GUARDIAN na bridge+wZION), addValidator 4/5 ✅ (v1-v4); threshold 5, count 9. Došel gas. |
+| Arbitrum (42161) | 0.000002 | 0 | 🔴 blokováno |
+| Optimism (10) | 0.000004 | 0 | 🔴 blokováno |
+| Avalanche (43114) | 0.000007 | 0 | 🔴 blokováno |
+
+Polygon tx (verified): grants `0x583d74bb…`, `0x3a00f8a2…`, `0xb76598c2…`, `0x19c66730…`;
+addValidator `0x2de0c0fd…`, `0x79be25b3…`, `0x2bd358c4…`, `0x190c3ae9…`.
+
+### 👤 Funding potřebný k dokončení
+
+| Chain | Fund | Částka | Pak |
+|---|---|---|---|
+| Polygon | v1 `0x13D06bEf…` | ~0.15 POL | v1 dokončí: addValidator(v5), threshold(3), remove×5, revoke old (v1 už má DEF_ADMIN) |
+| BSC | old `0xdde17…` | ~0.003 BNB | celá rotace executorem old vč. self-revoke |
+| Arbitrum | old `0xdde17…` | ~0.0005 ETH | stejně |
+| Optimism | old `0xdde17…` | ~0.0005 ETH | stejně |
+| Avalanche | old `0xdde17…` | ~0.05 AVAX | stejně |
+
+Script: `/opt/zion/APP&WEB/MarketPlace/rotate_poly.mjs` na EDGE2 (parametrizovatelný,
+state-polling místo receiptů — publicnode blokuje receipt archivy).
+
+## 9. Zbývá / poznámky
 
 - **Provozní klíče** `MINTER_PRIVATE_KEY`→`0xbF82…` (NFT minter), `WALLET_SEED_KEY`→`0x9469…`
-  zůstávají — service keys, ne governance; případná rotace na V2-derivované = nové canonical
-  entries v souboru (👤).
-- **Non-Base chainy** (BSC/Polygon/Arbitrum/Optimism/Avalanche, bridge `0xa5a09b2C…`):
-  stejná rotace zatím neprovedena — potřebuje RPC + gas per chain.
+  zůstávají — service keys, ne governance; rotace = 👤 rozhodnutí (nové canonical entries).
 - **BridgeValidator `0x9C13…`** — legacy immutable multisig; volitelný redeploy 3-of-5.
+- **`gen-all-keys-mnemonic.rs`** — `keccak256()` stub opraven na `sha3::Keccak256` ✅
+  (budoucí generace už budou mít reálné EVM adresy). Verifier v repu: `scripts/ops/verify_v2_keys.py`.
 - Starý `validator.key.bak-v2canon-*` na EDGE2 = archiv; V2 klíče jsou jediný kanonický zdroj.
