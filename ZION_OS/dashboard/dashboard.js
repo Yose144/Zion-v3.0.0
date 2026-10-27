@@ -11010,11 +11010,11 @@ function updateBridgeTimelockCountdown(){
 
 // Fallback validator data (used if API is unavailable)
 const BRIDGE_VALIDATORS_FALLBACK = [
-  { id: 1, address: '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186', role: 'Deployer + Guardian + Validator', balance: '~0.002 ETH', online: true },
-  { id: 2, address: '0x24d986841E56e5571489B25951eE8C1Ae761FA82', role: 'Guardian + Validator', balance: '~0.001 ETH', online: true },
-  { id: 3, address: '0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0', role: 'Guardian + Validator', balance: '~0.001 ETH', online: true },
-  { id: 4, address: '0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6', role: 'Guardian + Validator', balance: '~0.001 ETH', online: true },
-  { id: 5, address: '0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2', role: 'Guardian + Validator', balance: '~0.001 ETH', online: true },
+  { id: 1, address: '0x13D06bEfcd28A06616C3CE2C6C7F5cdE5f02BB2b', role: 'EVM Admin + Guardian + Validator', balance: '~0.0001 ETH', online: true },
+  { id: 2, address: '0xf46437eCCFbd8242424AcB4de5255545a070E651', role: 'Validator', balance: '0 ETH', online: true },
+  { id: 3, address: '0xF6fa1E363711ccE826d4EE443Dd5f45626911400', role: 'Validator', balance: '0 ETH', online: true },
+  { id: 4, address: '0x3Aa2b354CA39AF88583721F64aebBA9D7771e113', role: 'Validator', balance: '0 ETH', online: true },
+  { id: 5, address: '0x4C032870E3882b8bAF5E131BF0f4D23beFc36857', role: 'Validator', balance: '0 ETH', online: true },
 ];
 
 async function loadBridgeValidators(){
