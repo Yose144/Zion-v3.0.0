@@ -9,6 +9,13 @@
 # client + debian-openssl-3.0.x engine (binaryTargets in prisma/schema.prisma)
 # get traced into .next/standalone — the remote needs no npm install.
 #
+# Invoice PDF prerequisite (server, one-time — done on EDGE2 2026-10-27):
+#   sudo -u zion HOME=/home/zion npx --prefix .next/standalone puppeteer browsers install chrome
+#   apt-get install libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 \
+#     libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 \
+#     libasound2t64 libpango-1.0-0 libcairo2 libnss3 libnspr4 libx11-xcb1 libxcb-dri3-0
+# Without Chrome in ~zion/.cache/puppeteer, /api/invoice/[id]/download?format=pdf → 500.
+#
 # Usage:
 #   bash apps/MarketPlace/deploy/deploy-marketplace.sh
 
