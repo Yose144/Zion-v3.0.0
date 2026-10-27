@@ -29,8 +29,11 @@ else
   cp "$POOL_DATA_DIR/pool-store.db" "$STAGE/pool-store.db"
 fi
 [[ -f "$POOL_DATA_DIR/pool-pplns.json" ]] && cp "$POOL_DATA_DIR/pool-pplns.json" "$STAGE/"
+# Payout idempotency ledger (IA-14) — a standby brought up without it would
+# resubmit already-sent payouts.
+[[ -f "$POOL_DATA_DIR/pool-pplns.json.payouts.json" ]] && cp "$POOL_DATA_DIR/pool-pplns.json.payouts.json" "$STAGE/"
 
 # shellcheck disable=SC2086
-rsync -az $TARGET_SSH_OPTS "$STAGE"/ "$TARGET"
+rsync -az ${TARGET_SSH_OPTS:-} "$STAGE"/ "$TARGET"
 
 logger -t zion-pool-standby "state replicated -> ${TARGET%%:*}"
