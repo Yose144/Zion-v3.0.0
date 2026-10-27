@@ -99,6 +99,44 @@
 3. **Rasta theme on shop pages** — ensure `zion-section`, `rasta-gold`, `rasta-green`, `rasta-red` classes work
 4. **Mobile responsive check** — cart, checkout, shop
 
+## E2E Test Results — 2026-10-28 (5.B6, live on market.zionterranova.com)
+
+Test order `TEST-E2E-1761680000` (digi-001, 390 CZK, virtualni-nakup,
+transfer) — **operator: cancel/delete after review.**
+
+| Check | Result |
+|---|---|
+| Order create + server-side recompute | ✅ pending, 390 CZK, own pricing |
+| Idempotent resubmit (same orderId) | ✅ `duplicate:true`, original preserved |
+| Bank transfer data | ✅ SPD QR, IBAN, VS `1761680000` |
+| Invoice auto-gen | ✅ `FV2026-000031`, VAT split, HTML |
+| `GET /api/shop/orders/[id]` | ✅ status + invoice link |
+| Public tracking (email-gated) | ✅ data on correct email; **404 on wrong** (no enumeration) |
+| `GET /api/invoice/[id]/download` | ✅ HTML 200 + **PDF 200** (432 KB, puppeteer works) |
+| ZION customer wallet | ✅ address + seed generated (900 tokens) |
+| Rate limit | ✅ present (10/min) |
+
+### Launch blockers found 🔴
+
+1. **`STRIPE_SECRET_KEY=""` + `STRIPE_WEBHOOK_SECRET=""` in prod env**
+   (`/opt/zion/APP&WEB/MarketPlace/.env` on EDGE2) → `/api/stripe/checkout`
+   returns "Stripe is not configured". Card payments dead. 👤 supply keys.
+2. **`SMTP_PASSWORD=""` in prod env** → journal: "Email notifications
+   disabled: SMTP not configured" — **zero transactional email in prod**
+   (customer confirmations, admin notifications, wallet seeds undelivered).
+   👤 supply password for `shop@newearth.cz` (`mail.webglobe.cz:587`).
+3. **12/20 products `inStock=false` despite `stock>0`** — all physical
+   merch (engr-*, star-*, wood-004) unbuyable. Not from seed (schema
+   default `true`); flag flipped elsewhere. 👤 decide: bug →
+   `UPDATE ShopProduct SET inStock=true WHERE stock>0 AND inStock=false`,
+   or intentional delisting (merch not ready).
+
+### Minor bugs
+
+- `stripe/checkout` line-item: `unit_amount = priceCzk*quantity` with
+  `quantity: 1` — totals correct, but checkout shows no "×N" for qty>1.
+- Order-success/admin flows untested pending Stripe/email credentials.
+
 ## Architecture
 
 ```
