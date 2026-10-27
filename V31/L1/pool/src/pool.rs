@@ -63,6 +63,9 @@ pub struct SessionCounters {
     pub active_sessions: Arc<AtomicU64>,
     /// Cumulative accepted connections since start.
     pub total_connections: Arc<AtomicU64>,
+    /// Dedup marks dropped when the persist-writer queue was full or
+    /// disconnected (7.B2/R1 replay-window observability — 0 is healthy).
+    pub dedup_marks_dropped: Arc<AtomicU64>,
 }
 
 /// Durable payout-idempotency ledger persisted next to the PPLNS state file
@@ -365,6 +368,9 @@ impl Pool {
     fn queue_dedup_op(&self, op: crate::store::DedupOp) {
         let Some(tx) = &self.dedup_tx else { return };
         if tx.try_send(op).is_err() {
+            self.session_counters
+                .dedup_marks_dropped
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             tracing::warn!("dedup persist: queue full/disconnected — mark dropped");
         }
     }

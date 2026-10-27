@@ -1991,6 +1991,7 @@ impl PoolApi {
             stats,
             fees,
             sessions,
+            dedup_dropped,
             persistence_configured,
             persist_success_timestamp_s,
             persist_failures_total,
@@ -2004,6 +2005,9 @@ impl PoolApi {
                 pool.pplns.fee_stats(),
                 pool.session_counters
                     .active_sessions
+                    .load(Ordering::Relaxed),
+                pool.session_counters
+                    .dedup_marks_dropped
                     .load(Ordering::Relaxed),
                 pool.config.state_path.is_some(),
                 pool.pplns_persist_success_timestamp_s,
@@ -2025,6 +2029,9 @@ impl PoolApi {
         body.push_str(&format!("zion_pool_miners_tracked {miners_tracked}\n"));
         body.push_str(&format!("zion_pool_hashrate_hps {hashrate_hps}\n"));
         body.push_str(&format!("zion_pool_hashrate_1h_hps {hashrate_1h_hps}\n"));
+        body.push_str(&format!(
+            "zion_pool_dedup_marks_dropped {dedup_dropped}\n"
+        ));
         body.push_str(&format!("zion_pool_shares_accepted {accepted}\n"));
         body.push_str(&format!("zion_pool_shares_rejected {rejected}\n"));
         body.push_str(&format!(
