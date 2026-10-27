@@ -477,6 +477,14 @@ impl PoolApi {
             }
         }
 
+        // ---- /api/v1/state/* — authenticated HA state export (A4.2) ----
+        // Raw byte streams (not JSON) so the EDGE2 standby can pull
+        // byte-identical state files. /api auth already ran above.
+        if path.starts_with("/api/v1/state/") {
+            self.respond_state_export(&mut stream, path)?;
+            return Ok(());
+        }
+
         let (status, content_type, body) = match path {
             "/health" => {
                 let uptime_s = self.started_at.elapsed().as_secs();
@@ -1687,6 +1695,68 @@ impl PoolApi {
         .to_string()
     }
 
+    /// `/api/v1/state/{pplns|payouts|db}` — authenticated raw-byte state
+    /// export for the EDGE2 warm standby (A4.2).
+    ///
+    /// - `pplns`   → `state_path` file bytes (atomically replaced on save)
+    /// - `payouts` → `state_path + ".payouts.json"` idempotency ledger
+    /// - `db`      → `VACUUM INTO` snapshot of `pool-store.db` — consistent
+    ///               under WAL while writers keep working
+    ///
+    /// Files are read OUTSIDE the pool lock — only the config paths are
+    /// taken under it.
+    fn respond_state_export(&self, stream: &mut TcpStream, path: &str) -> Result<()> {
+        let name = path.trim_start_matches("/api/v1/state/");
+        let bytes = match name {
+            "pplns" | "payouts" => {
+                let state_path = {
+                    let pool = self.pool.lock().expect("pool lock poisoned");
+                    pool.config.state_path.clone()
+                };
+                let file = state_path.map(|p| {
+                    if name == "payouts" {
+                        std::path::PathBuf::from(format!("{p}.payouts.json"))
+                    } else {
+                        std::path::PathBuf::from(p)
+                    }
+                });
+                file.and_then(|p| std::fs::read(&p).ok())
+            }
+            "db" => self.share_store.as_ref().and_then(|store| {
+                let tmp = std::env::temp_dir()
+                    .join(format!("pool-store-export-{}.db", std::process::id()));
+                let out = store
+                    .vacuum_into(&tmp)
+                    .ok()
+                    .and_then(|_| std::fs::read(&tmp).ok());
+                let _ = std::fs::remove_file(&tmp);
+                out
+            }),
+            _ => None,
+        };
+
+        match bytes {
+            Some(b) => {
+                let head = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    b.len()
+                );
+                stream.write_all(head.as_bytes())?;
+                stream.write_all(&b)?;
+            }
+            None => {
+                let body = "{\"ok\":false,\"error\":\"not found\"}";
+                let response = format!(
+                    "HTTP/1.1 404 Not Found\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes())?;
+            }
+        }
+        Ok(())
+    }
+
     /// `/public/v1/coins/{coin}/stats` — per-coin telemetry + window stats.
     fn build_public_coin_stats_payload(&self, coin: &str) -> String {
         let coin = coin.to_ascii_lowercase();
@@ -2029,9 +2099,7 @@ impl PoolApi {
         body.push_str(&format!("zion_pool_miners_tracked {miners_tracked}\n"));
         body.push_str(&format!("zion_pool_hashrate_hps {hashrate_hps}\n"));
         body.push_str(&format!("zion_pool_hashrate_1h_hps {hashrate_1h_hps}\n"));
-        body.push_str(&format!(
-            "zion_pool_dedup_marks_dropped {dedup_dropped}\n"
-        ));
+        body.push_str(&format!("zion_pool_dedup_marks_dropped {dedup_dropped}\n"));
         body.push_str(&format!("zion_pool_shares_accepted {accepted}\n"));
         body.push_str(&format!("zion_pool_shares_rejected {rejected}\n"));
         body.push_str(&format!(
@@ -2927,6 +2995,104 @@ mod tests {
             handler.join().unwrap();
             response
         })
+    }
+
+    /// Raw request helper with an explicit `X-API-Key` header value — needed
+    /// for the binary state-export endpoints whose body is not UTF-8 JSON.
+    fn request_raw(api: &PoolApi, path: &str, api_key: Option<&str>) -> (String, Vec<u8>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let mut client = TcpStream::connect(addr).unwrap();
+        let (server, _) = listener.accept().unwrap();
+        std::thread::scope(|scope| {
+            let handler = scope.spawn(move || api.handle_request(server).unwrap());
+            let key_line = api_key
+                .map(|k| format!("X-API-Key: {k}\r\n"))
+                .unwrap_or_default();
+            let request = format!(
+                "GET {path} HTTP/1.1\r\nHost: localhost\r\n{key_line}Connection: close\r\n\r\n"
+            );
+            client.write_all(request.as_bytes()).unwrap();
+            client.shutdown(std::net::Shutdown::Write).unwrap();
+            let mut response = Vec::new();
+            client.read_to_end(&mut response).unwrap();
+            handler.join().unwrap();
+            let split = response
+                .windows(4)
+                .position(|w| w == b"\r\n\r\n")
+                .expect("HTTP response has header/body split");
+            let head = String::from_utf8_lossy(&response[..split]).into_owned();
+            (head, response[split + 4..].to_vec())
+        })
+    }
+
+    #[test]
+    fn state_export_serves_authenticated_binary_snapshots() {
+        let dir = std::env::temp_dir().join(format!(
+            "zion_pool_state_export_{}_{}",
+            std::process::id(),
+            crate::telemetry::now_unix_seconds()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let state_path = dir.join("pool-pplns.json");
+        let payouts_path = dir.join("pool-pplns.json.payouts.json");
+        let db_path = dir.join("pool-store.db");
+        std::fs::write(&state_path, br#"{"shares":[]}"#).unwrap();
+        std::fs::write(&payouts_path, br#"{"paid_block_heights":[1]}"#).unwrap();
+
+        let telemetry = Arc::new(Mutex::new(crate::telemetry::MinerTelemetryRegistry::new()));
+        let pool = Pool::new(
+            crate::config::PoolConfig {
+                api_key: Some("test-api".into()),
+                ..Default::default()
+            },
+            telemetry,
+        );
+        let pool = Arc::new(Mutex::new(pool));
+        // Point at the export files after construction — Pool::new would
+        // try to *parse* the snapshot at startup, while the export path
+        // only reads the raw bytes.
+        pool.lock().unwrap().config.state_path = Some(state_path.to_string_lossy().into_owned());
+        let store = Arc::new(ShareStore::open(&db_path).unwrap());
+        store
+            .record_coin_revenue("qtu:bal:0:100", "qtu", 100, 42, 2, 95)
+            .unwrap();
+        let api = PoolApi::new(pool, Some(store), None);
+
+        // Unauthorized: no key and wrong key → 401 before any export work.
+        let (head, _) = request_raw(&api, "/api/v1/state/pplns", None);
+        assert!(head.starts_with("HTTP/1.1 401"), "{head}");
+        let (head, _) = request_raw(&api, "/api/v1/state/pplns", Some("wrong"));
+        assert!(head.starts_with("HTTP/1.1 401"), "{head}");
+
+        // Authorized: byte-identical file bodies, octet-stream content type.
+        let (head, body) = request_raw(&api, "/api/v1/state/pplns", Some("test-api"));
+        assert!(head.starts_with("HTTP/1.1 200 OK"), "{head}");
+        assert!(head.contains("application/octet-stream"), "{head}");
+        assert_eq!(body, br#"{"shares":[]}"#);
+
+        let (head, body) = request_raw(&api, "/api/v1/state/payouts", Some("test-api"));
+        assert!(head.starts_with("HTTP/1.1 200 OK"), "{head}");
+        assert_eq!(body, br#"{"paid_block_heights":[1]}"#);
+
+        // DB snapshot is a valid, reopenable SQLite file containing live rows.
+        let (head, body) = request_raw(&api, "/api/v1/state/db", Some("test-api"));
+        assert!(head.starts_with("HTTP/1.1 200 OK"), "{head}");
+        assert_eq!(&body[..16], b"SQLite format 3\0");
+        let snap_path = dir.join("snapshot-check.db");
+        std::fs::write(&snap_path, &body).unwrap();
+        let snap = ShareStore::open(&snap_path).unwrap();
+        assert_eq!(
+            snap.coin_revenue_amount("qtu:bal:0:100").unwrap(),
+            Some(100)
+        );
+        drop(snap);
+
+        // Unknown state resource → 404.
+        let (head, _) = request_raw(&api, "/api/v1/state/nope", Some("test-api"));
+        assert!(head.starts_with("HTTP/1.1 404"), "{head}");
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
