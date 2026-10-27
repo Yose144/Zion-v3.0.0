@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
 
     for (const raw of items) {
       const it = raw as Record<string, unknown>;
-      const priceCzk = Math.round((it.priceCzk as number) * (it.quantity as number));
+      const unitCzk = Math.round((it.priceCzk as number) || 0);
+      const qty = Math.max(1, Math.round(Number(it.quantity) || 1));
       lineItems.push({
         price_data: {
           currency: 'czk',
@@ -58,9 +59,9 @@ export async function POST(request: NextRequest) {
             name: String(it.name ?? 'Produkt'),
             description: it.category ? String(it.category) : undefined,
           },
-          unit_amount: priceCzk * 100,
+          unit_amount: unitCzk * 100,
         },
-        quantity: 1,
+        quantity: qty,
       });
     }
 
