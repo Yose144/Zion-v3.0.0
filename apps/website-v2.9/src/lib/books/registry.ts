@@ -5,9 +5,11 @@
 import {
   Anchor,
   BookOpen,
+  Cloud,
   Compass,
   Egg,
   Eye,
+  Gem,
   Hammer,
   Heart,
   KeyRound,
@@ -15,15 +17,20 @@ import {
   Languages,
   ListChecks,
   Mail,
+  Moon,
+  NotebookPen,
   PenLine,
   Route,
   Sailboat,
+  Satellite,
   ScrollText,
   Sparkles,
+  Sprout,
   Sun,
   Atom,
 } from 'lucide-react';
-import type { BookDef } from './types';
+import type { BookDef, IconType } from './types';
+import { korpusChapters, korpusDocPath } from './korpus';
 import { MAITREYA_CHAPTERS, MAITREYA_PARTS, maitreyaDocPath } from './maitreya';
 import { NIRVANA_CHAPTERS, NIRVANA_PARTS, nirvanaDocPath } from './nirvana';
 import { SURTA_CHAPTERS, SURTA_PARTS, surtaDocPath } from './surta-srdce';
@@ -238,6 +245,169 @@ export const QR_BOOK: BookDef = {
   enFallback: true,
 };
 
+// --- Korpus books ---------------------------------------------------------
+// Chapter lists are derived from the doc-manifest file listing (NN-Name.md).
+
+function korpusBook(p: {
+  id: string;
+  dir: string;
+  accent: string;
+  icon: IconType;
+  kicker: { cs: string; en: string };
+  title: { cs: string; en: string };
+  subtitle: { cs: string; en: string };
+  description: { cs: string; en: string };
+}): BookDef {
+  const { chapters, parts } = korpusChapters(p.dir);
+  return {
+    id: p.id,
+    accent: p.accent,
+    icon: p.icon,
+    partIcons: [BookOpen, Sparkles],
+    kicker: p.kicker,
+    title: p.title,
+    subtitle: p.subtitle,
+    description: p.description,
+    facts: [
+      { label: { cs: 'Textů', en: 'Texts' }, value: String(chapters.length) },
+      { label: { cs: 'Korpus', en: 'Corpus' }, value: p.dir },
+      { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ (+EN části)' },
+    ],
+    notAvailable: loadError,
+    czOnly: czFallbackNote,
+    chapters,
+    parts,
+    docPath: korpusDocPath(p.dir),
+    enFallback: true,
+  };
+}
+
+export const SULZEME_BOOK = korpusBook({
+  id: 'sulzeme',
+  dir: 'SulZeme',
+  accent: '52, 211, 153',
+  icon: Gem,
+  kicker: { cs: 'Kmenový kanon · střed kompasu · CZ + EN', en: 'Root canon · compass center · CZ + EN' },
+  title: { cs: 'Sůl této země', en: 'The Salt of this Earth' },
+  subtitle: { cs: 'Zastavení přes proroky a archu — kanonický kořen cesty.', en: 'Stations through the prophets and the ark — the canonical root of the path.' },
+  description: {
+    cs: 'Kmenový kanon knihovny: rozpouštění vody, nevyslápaná cesta, archa a kompas s pozvánkou do Oasis.',
+    en: 'The root canon of the library: the dissolution, the unwalked path, the ark and the compass with the invitation to Oasis.',
+  },
+});
+
+export const LUMI_BOOK = korpusBook({
+  id: 'lumi',
+  dir: 'Lumi',
+  accent: '252, 209, 22',
+  icon: Sun,
+  kicker: { cs: 'Příběh · svislá osa světla · CZ', en: 'A story · the vertical axis of light · CZ' },
+  title: { cs: 'Lumi', en: 'Lumi' },
+  subtitle: { cs: 'Dítě s lucernou — brána zůstává otevřená.', en: 'The child with the lantern — the gate stays open.' },
+  description: {
+    cs: 'Příběh světla: dítě na přídi, dům jmen, sto let lucerny a brána, která zůstává otevřená.',
+    en: 'The tale of light: the child on the prow, the house of names, a hundred years of the lantern and the gate that stays open. Czech original.',
+  },
+});
+
+export const MIRIAM_BOOK = korpusBook({
+  id: 'miriam',
+  dir: 'Miriam',
+  accent: '236, 72, 153',
+  icon: Moon,
+  kicker: { cs: 'Příběh · osa času · CZ', en: 'A story · the axis of time · CZ' },
+  title: { cs: 'Miriam', en: 'Miriam' },
+  subtitle: { cs: 'Maria Magdaléna — metoda kámen / hlína / sen.', en: 'Mary Magdalene — the stone / clay / dream method.' },
+  description: {
+    cs: 'Osa času kompasu: žena z věže, alabastrová nádobka, zahradník a cesta metodou kámen / hlína / sen.',
+    en: 'The time axis of the compass: the woman of the tower, the alabaster jar, the gardener and the stone / clay / dream path. Czech original.',
+  },
+});
+
+export const BODHIGAIA_BOOK = korpusBook({
+  id: 'bodhigaia',
+  dir: 'BodhiGaia',
+  accent: '52, 211, 153',
+  icon: Sprout,
+  kicker: { cs: 'Země a cesta · zahrady · CZ + EN', en: 'Earth & journey · the gardens · CZ + EN' },
+  title: { cs: 'BodhiGaia', en: 'BodhiGaia' },
+  subtitle: { cs: 'Hlína pod nohama — zahrady Země, do nichž trupy dovážejí sůl.', en: 'The clay underfoot — the gardens of Earth the hulls carry salt to.' },
+  description: {
+    cs: 'Zahrady Nové Země: semeno a sůl, Dharma Temple, Te Piko Ora, protokoly země, Bodhi Lanka, Nová Amerika i Růže v zahradě Genesis.',
+    en: 'The gardens of the New Earth: seed and salt, Dharma Temple, Te Piko Ora, the earth protocols, Bodhi Lanka, Nova America and the Rose in the Garden of Genesis.',
+  },
+});
+
+export const MARIACAMINHO_BOOK = korpusBook({
+  id: 'mariacaminho',
+  dir: 'MariaCaminho',
+  accent: '6, 182, 212',
+  icon: Sailboat,
+  kicker: { cs: 'Příběh · osa prostoru · CZ', en: 'A story · the axis of space · CZ' },
+  title: { cs: 'MariaCaminho', en: 'MariaCaminho' },
+  subtitle: { cs: 'Tři zjevení, credencial, flotila Tres Marías.', en: 'Three apparitions, the credencial, the Tres Marías fleet.' },
+  description: {
+    cs: 'Osa prostoru kompasu: Caminha, Červená Marie, bílá nevěsta, most Lumi, Compostela a moře, které nekončí.',
+    en: 'The space axis of the compass: Caminha, the Red Mary, the white bride, the Lumi bridge, Compostela and the sea that never ends. Czech original.',
+  },
+});
+
+export const NACESTE_BOOK = korpusBook({
+  id: 'naceste',
+  dir: 'NaCeste',
+  accent: '148, 163, 184',
+  icon: NotebookPen,
+  kicker: { cs: 'Deník · draft · CZ', en: 'A log · draft · CZ' },
+  title: { cs: 'Na Cestě', en: 'On the Way' },
+  subtitle: { cs: 'Lumen na flotile — pracovní deník cesty.', en: 'Lumen aboard the fleet — a working log of the path.' },
+  description: {
+    cs: 'Pracovní deník cesty na flotile — draft, zatím nepodložený review.',
+    en: 'A working log of the path aboard the fleet — draft, not yet independently reviewed. Czech original.',
+  },
+});
+
+export const NIRVANACLOUD_BOOK = korpusBook({
+  id: 'nirvanacloud',
+  dir: 'NirvanaCloud',
+  accent: '168, 85, 247',
+  icon: Cloud,
+  kicker: { cs: 'Horizont · kosmologie · CZ + EN', en: 'Horizon · cosmology · CZ + EN' },
+  title: { cs: 'NirvanaCloud', en: 'NirvanaCloud' },
+  subtitle: { cs: 'Hloubka oblohy — kosmologie, bardo, Amenti za horizontem.', en: 'The depth of the sky — cosmology, bardo, Amenti beyond the horizon.' },
+  description: {
+    cs: 'Kanonický společník: kolo života a šest světů, pět Buddů a šest vrstev, bardo velkého přechodu, proroctví digitální Sambhaly, století plánu.',
+    en: 'The canonical companion: the wheel of life and six worlds, five Buddhas and six layers, the bardo of the great transition, the prophecy of digital Sambhala, the century plan.',
+  },
+});
+
+export const ISSOBELLA_BOOK = korpusBook({
+  id: 'issobella',
+  dir: 'Issobella',
+  accent: '251, 146, 60',
+  icon: Satellite,
+  kicker: { cs: 'Příběh · nebe nad námi · CZ + EN', en: 'A story · the sky above · CZ + EN' },
+  title: { cs: 'Issobella', en: 'Issobella' },
+  subtitle: { cs: 'Orbitální stanice L6, kvantový oheň — příběh, ne příslib technologie.', en: 'The L6 orbital station, the quantum fire — a story, not a technology promise.' },
+  description: {
+    cs: 'Příběh stanice nad Zemí: jméno z hvězd, posádka, dědictví stanic, pět procent nahoru, hlídač na okraji a pozemní uzel Kostarika.',
+    en: 'The story of the station above Earth: a name from the stars, the crew, the legacy of stations, five percent upward, the watcher at the edge and the ground node of Costa Rica.',
+  },
+});
+
+export const MISEAMENTI_BOOK = korpusBook({
+  id: 'miseamenti',
+  dir: 'MiseAmenti',
+  accent: '148, 163, 184',
+  icon: ScrollText,
+  kicker: { cs: 'Prováděcí rámec 3.3 · CZ + EN', en: 'The 3.3 execution framework · CZ + EN' },
+  title: { cs: 'Mise Amenti', en: 'Mise Amenti' },
+  subtitle: { cs: 'Evidence, brány a review — rámec, ne román.', en: 'Evidence, gates and reviews — a framework, not a novel.' },
+  description: {
+    cs: 'Prováděcí rámec plánu 3.3: evidence za každým krokem, brány a review místo slibů.',
+    en: 'The execution framework of the 3.3 plan: evidence behind every step, gates and reviews instead of promises.',
+  },
+});
+
 export const BOOKS: Record<string, BookDef> = {
   maitreya: MAITREYA_BOOK,
   nirvana: NIRVANA_BOOK,
@@ -245,6 +415,15 @@ export const BOOKS: Record<string, BookDef> = {
   'kralovstvi-srdce': KRAL_BOOK,
   ekam: EKAM_BOOK,
   'quantum-revolution': QR_BOOK,
+  sulzeme: SULZEME_BOOK,
+  lumi: LUMI_BOOK,
+  miriam: MIRIAM_BOOK,
+  bodhigaia: BODHIGAIA_BOOK,
+  mariacaminho: MARIACAMINHO_BOOK,
+  naceste: NACESTE_BOOK,
+  nirvanacloud: NIRVANACLOUD_BOOK,
+  issobella: ISSOBELLA_BOOK,
+  miseamenti: MISEAMENTI_BOOK,
 };
 
 export function getBook(id: string): BookDef | undefined {

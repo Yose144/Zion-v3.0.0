@@ -113,6 +113,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/maitreya/surta-srdce/cist', 0.7, 'monthly'),
     // ── Království srdce — the carpenter's boat (linked from /maitreya#spolecnici) ──
     r('/maitreya/kralovstvi-srdce/cist', 0.7, 'monthly'),
+    // ── Korpus companion books — all read in the Nirvana Hub ──
+    r('/maitreya/sulzeme/cist', 0.7, 'monthly'),
+    r('/maitreya/lumi/cist', 0.6, 'monthly'),
+    r('/maitreya/miriam/cist', 0.6, 'monthly'),
+    r('/maitreya/bodhigaia/cist', 0.7, 'monthly'),
+    r('/maitreya/mariacaminho/cist', 0.6, 'monthly'),
+    r('/maitreya/naceste/cist', 0.5, 'monthly'),
+    r('/maitreya/nirvanacloud/cist', 0.7, 'monthly'),
+    r('/maitreya/issobella/cist', 0.6, 'monthly'),
+    r('/maitreya/miseamenti/cist', 0.6, 'monthly'),
 
     // ── Misc real pages ──────────────────────────────────────────────
     r('/ekam', 0.6, 'monthly'),

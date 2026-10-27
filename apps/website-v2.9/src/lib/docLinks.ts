@@ -4,6 +4,7 @@ import { MAITREYA_CHAPTERS } from '@/lib/books/maitreya';
 import { NIRVANA_CHAPTERS } from '@/lib/books/nirvana';
 import { SURTA_CHAPTERS } from '@/lib/books/surta-srdce';
 import { KRAL_CHAPTERS } from '@/lib/books/kralovstvi-srdce';
+import { korpusChapters } from '@/lib/books/korpus';
 
 /* ═══════════════════════════════════════════════════════════
    ZION Docs Link Engine
@@ -111,6 +112,16 @@ const BOOK_READERS: Record<string, { slugs: Set<string>; reader: string }> = {
   nirvana: { slugs: new Set(NIRVANA_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/nirvana/cist' },
   'surta-srdce': { slugs: new Set(SURTA_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/surta-srdce/cist' },
   'kralovstvi-srdce': { slugs: new Set(KRAL_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/kralovstvi-srdce/cist' },
+  // korpus books — chapters derived from the doc manifest
+  sulzeme: { slugs: new Set(korpusChapters('SulZeme').chapters.map((c) => c.slug)), reader: '/maitreya/sulzeme/cist' },
+  lumi: { slugs: new Set(korpusChapters('Lumi').chapters.map((c) => c.slug)), reader: '/maitreya/lumi/cist' },
+  miriam: { slugs: new Set(korpusChapters('Miriam').chapters.map((c) => c.slug)), reader: '/maitreya/miriam/cist' },
+  bodhigaia: { slugs: new Set(korpusChapters('BodhiGaia').chapters.map((c) => c.slug)), reader: '/maitreya/bodhigaia/cist' },
+  mariacaminho: { slugs: new Set(korpusChapters('MariaCaminho').chapters.map((c) => c.slug)), reader: '/maitreya/mariacaminho/cist' },
+  naceste: { slugs: new Set(korpusChapters('NaCeste').chapters.map((c) => c.slug)), reader: '/maitreya/naceste/cist' },
+  nirvanacloud: { slugs: new Set(korpusChapters('NirvanaCloud').chapters.map((c) => c.slug)), reader: '/maitreya/nirvanacloud/cist' },
+  issobella: { slugs: new Set(korpusChapters('Issobella').chapters.map((c) => c.slug)), reader: '/maitreya/issobella/cist' },
+  miseamenti: { slugs: new Set(korpusChapters('MiseAmenti').chapters.map((c) => c.slug)), reader: '/maitreya/miseamenti/cist' },
 };
 
 function isMarkdown(path: string) {
