@@ -80,6 +80,18 @@ upstream). Žádný SRBMiner sidecar. ZION stream je vypnutý
 (`ZION_STREAM1_ENABLED=0`). Vyžaduje SM80+ GPU (RTX 30xx/40xx) pro tensor
 kernely; na SM75 (RTX 20xx) PRL běží jen fallback kernelem.
 
+### PRL hardware matice (per stream `gpu`/`gpu_coin_2`)
+
+| HW | Path | Výkon | Pozn. |
+|---|---|---|---|
+| SM80+ (RTX 30xx/40xx, A-série) | CUDA `pearl_pouw_mine_native_v6` tensor (mma m16n8k32) | ~24 TH/s (3060 @170 W) | default v6, auto-fallback v4 |
+| SM75 (RTX 20xx, Turing) | opt-in `ZION_PEARL_MINE=v6|v7` → 4× mma m8n8k16; default = v4 portable | podstatně nižší | funguje, ale bez v6 pipeline |
+| SM61–70 (GTX 10xx) | v4 portable CUDA | nízký | jen pro testy |
+| AMD gfx1010/gfx900 + ostatní OpenCL | `pearl_pouw_native.cl`/`pearl_kernel.cl` portable | nižší, bez tensor | `ZION_GPU_BACKEND=opencl` |
+| CPU | jen verifikace | nepraktické | — |
+
+**`gpu=PRL` pref na nepodporovaných kartách:** `v3_coin_preference {gpu_coin_2:"PRL"}` nebo env route `ZION_POOL_AUXPOW_GPU_COIN2_ROUTE="pattern=PRL"` pool-side routuje PRL joby — miner s nevyhovujícím backendem job **odmítne** (`ZION_STREAM4_FORCE_COIN` guard → idle, ne špatné share). Na slabém HW raději `gpu_coin_2=QTU` (light compute) nebo CPU slot — PRL se vyplatí od SM75+/RDNA nahoru.
+
 ### Referenční měření — SRBMiner dual (2 procesy na 1 kartě)
 
 SRBMiner nemá integrovaný pearlhash+quantus dual mód — "dual" = dva
