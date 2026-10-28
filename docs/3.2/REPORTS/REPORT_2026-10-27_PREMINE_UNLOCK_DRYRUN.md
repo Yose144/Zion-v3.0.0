@@ -85,3 +85,17 @@ tests (non-admin input, thin quorum, key↔address mismatch, unknown target),
   termine — submit beberapa blok sebelumnya agar aman.
 - **Unlock = one-way door** — tidak ada re-lock; jangan unlock slot yang
   tidak segera dipakai.
+
+## 6. Live readiness check (2026-10-28)
+
+Ověřeno na produkci:
+
+| Předpoklad | Stav |
+|---|---|
+| Validatory běží unlock path | ✅ :9445/:9446/:9447 vše `node_version 3.2.0`, tip `bbd24779…` sync, `getAdminUnlocks` → canonical V2 set (Rama `zion1s4t4…`, Sita `zion1l6p5…`, Hanuman `zion18693…`) |
+| Aktuální výška | 100 054 — zbývá **43 946 bloků** |
+| Reálný block time | ~57.9 s (změřeno 54 bloků) → **ETA ≈ 27. 11. 2026** (±1 d) |
+| Admin funding (krok 3) | ❌ **všechny 3 admin adresy mají 0 UTXO** — před exekucí nutno poslat dust ~0.01–0.05 ZION na každou (z `zion1d2k` payout treasury nebo jiného funded walletu; = 👤 pohyb prostředků). Bez spendable UTXO nemůže admin podepsat unlock input. |
+| DAO guardians V2 | ✅ 5-of-7 ověřeno 27.10 (dao config EDGE2) |
+
+**K vyřízení před ~144k (👤):** admin dust funding ×3 (ideálně s předstihem — coinbase maturity není potřeba pro normální UTXO), potom submit unlock tx ~50–100 bloků před gatem (jistota inclusion).
