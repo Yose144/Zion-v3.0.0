@@ -538,3 +538,71 @@ All key files are in `~/Desktop/ZION_KEYS_GENESIS_V2_2026-08-06/` (chmod 700):
 ---
 
 *This playbook was created on 2026-08-06 following the third hard genesis reset in ZION's history. The first was 2026-07-20 (block-retention bug), the second was 2026-08-06 (V31 cutover, no mnemonics), and the third was 2026-08-06 (v3.2 One Love, with BIP39 mnemonic keys). This document ensures future resets follow a verified, repeatable procedure.*
+
+---
+
+## F. DR restore drill — dvouboxová topologie (7.B7 / D-10, draft 2026-10-28)
+
+Genesis reset (§0–E) ≠ restore drill. Tato sekce = postup obnovy celého
+produkčního stacku na čistém hostu — ověřeno proti živému stavu 28. 10.
+
+### F.1 Topologie + data, která se musí přežít
+
+| Box | Role | Kritická data |
+|---|---|---|
+| **EDGE2** `207.180.217.100` | primary node + web ingress (nginx :80/:443) + L1–L6 daemony + ZIS + MarketPlace/website + tunely | `/opt/zion/data/v31` (node chain), `zion_marketplace` + `zion` PG, `/etc/zion/` env, `/opt/zion/shared/.env`, `/opt/zion/data/l3-audit`, `/opt/zion/data/v31-pool-standby/` (pool standby kopie) |
+| **EDGE** `62.171.141.136:2222` | pool + node2/node3 followeři + miner + Prometheus/Alertmanager + dashboard + wedgewatch | `/opt/zion/data/v31` (pool `pool-pplns.json`, `pool-store.db`, payout ledger, node chain), `/opt/zion/scripts`, env `/etc/zion/edge-environment.sh` |
+
+Secrets NEJSOU v repu — bez zálohy `/etc/zion/` + `/opt/zion/shared/.env`
++ ssh klíčů (`edgetunnel`, `hirantunnel`, `~/.vast-agent-token`,
+`~/.ssh/id_ed25519` pro tunely) restore není možný.
+
+### F.2 Restore pořadí (čistý host)
+
+**EDGE2:**
+1. OS user `zion`, dirs `/opt/zion/{V31,bin,data,scripts,shared}`,
+   `/etc/zion/`, ssh klíče tunnel userů.
+2. Binárky: `rsync -a <build-host>:/opt/zion/V31/target/release/ /opt/zion/V31/target/release/` — EDGE2 žádný source tree nemá (build na EDGE).
+3. Chain data: restore `/opt/zion/data/v31` z `zion-edge-backup` archivu,
+   nebo nechat resync z P2P (primary: full sync ~hodiny; followeři rychleji).
+4. Env: `/etc/zion/*` + `/opt/zion/shared/.env` + unit soubory
+   `V31/deploy/systemd/` → `/etc/systemd/system/`, `daemon-reload`.
+5. Start order: `zion-v31-node` (počkat sync tip) → `zion-db-sync` →
+   L2 (`zion-v31-multichain`, `zion-v31-dao`, `zion-zis`) → L3–L6 →
+   `zion-website`, `zion-marketplace` → nginx → tunely → probí/timery.
+6. PG restore před db-sync/marketplace (`zion`, `zion_marketplace` db).
+
+**EDGE:**
+1. Totéž skeleton + git checkout (build host) — POZOR: produkční checkout
+   je divergovaný (`6fae7b60d` + kumulativní rsync overlaye, 7k+ dirty);
+   restore manifestu `docs/3.2/DEPLOY-PROVENANCE-*.jsonl` určuje
+   nasazené sha256 — build z tags/checkoutu nemusí dát stejnou binárku.
+2. Pool data: restore `pool-pplns.json` + `pool-store.db` + payout ledger
+   — **nebo z EDGE2 standby** `/opt/zion/data/v31-pool-standby/`
+   (RPO ≤15 min pplns, ≤1 h store.db — replikace `zion-pool-state-replicate.timer`).
+3. Start: node2/node3 → wait sync → `zion-v31-pool` → miner/fallback →
+   wedgewatch + watchdog timery + Prometheus/Alertmanager.
+
+### F.3 Failover poolu (EDGE → EDGE2 standby)
+
+Existující HA standby (`POOL-HA-STANDBY.md`): unit `zion-v31-pool.service`
+na EDGE2 gated `ConditionPathExists=…/ACTIVATED`. Promote = zastavit
+primary → vytvořit ACTIVATED → start. **Nikdy oba najednou** — double-pay
+hazard (ledger žije v store.db; standby má kopii ≤1 h starou → po promote
+probe `inputs_still_unspent` rozhodne resubmity, viz 2.S2 hardening).
+
+### F.4 Verifikační gate po restore
+
+- `curl :9445/jsonrpc getStatus` = chain tip roste (≤900 s)
+- `curl :8080/health` + `/stats` <3 s (pool), stratum :8444 connect
+- `zion_g8_probe_success` = 1 všech služeb (probe na :9105)
+- `/public/v1/payouts?limit=1` age <1 h (payout write path)
+- provenance: `scripts/ops/deploy-provenance.sh` diff vs poslední baseline
+
+### F.5 Co drill zatím NEPOKRYVÁ (otvřené)
+
+- Full restore na čistém hostu nikdy neproběhl end-to-end (jen komponenty:
+  standby replica ověřena read-only 27.10, integrity ok, ledger max=tip)
+- PG dumps (`zion`, `zion_marketplace`) — ověřit existenci čerstvé zálohy
+- Secrets backup scope (kdo drží `/etc/zion/*` offline kopii — 👤)
+- Časový rozpočet: chain resync je dominantní položka (RTO hodin, ne minut)
