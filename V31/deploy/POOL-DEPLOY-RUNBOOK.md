@@ -95,6 +95,8 @@ ssh zion-new 'curl -s http://127.0.0.1:8080/public/v1/blocks?limit=2 | head -c20
 sha256sum /proc/$(systemctl show -p MainPID --value zion-v31-pool)/exe   # = build hash
 ```
 
+> **pool-ui webroot (2026-10-28 lekce):** `pool.zionterranova.com` resolvuje na **EDGE2** — veřejné UI se servíruje z **`/var/www/pool` na EDGE2**, ne na EDGE. EDGE `/var/www/pool` je mirror pro failover vhost (tam taky nasazovat pro paritu). Deploy = `dist/` tarball → oba huby, verify `md5sum` vs lokální dist + `curl … | grep <marker>`.
+
 - Prometheus: `zion_pool_stats_api_ok=1`, alerty nefiringují.
 - Dedup `restored=N` + counter flush (`SELECT * FROM pool_state`) po ~30 s.
 - G8 probe netknutá.
