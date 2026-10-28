@@ -64,6 +64,50 @@ def _ttl_cache_fn(ttl_seconds: float, max_size: int = 256):
         return wrapper
     return decorator
 
+
+def _single_flight(cache: dict, ttl: float, build_fn, not_ready: dict):
+    """Single-flight + serve-stale wrapper for heavy aggregate endpoints.
+
+    cache must be a dict holding: ts, data, lock, building, event.
+      - fresh cache (< ttl) → return it
+      - rebuild already running → return stale data immediately ({"stale": True}),
+        or wait briefly on the first-ever build instead of stacking a duplicate
+      - otherwise run build_fn(), cache the result, clear the building flag
+
+    Exists because getUtxos on dust-heavy wallets (100k+ outputs) takes ~5-15 s;
+    without this, concurrent dashboard polls used to pile up identical builds
+    and every request timed out (nginx 499s) until the UI gave up.
+    """
+    now = time.time()
+    lock = cache["lock"]
+    with lock:
+        cached = cache.get("data")
+        if cached and (now - cache.get("ts", 0)) < ttl:
+            return cached
+        if cache["building"]:
+            if cached:
+                return {**cached, "stale": True}
+            waiter = True
+        else:
+            waiter = False
+            cache["building"] = True
+            cache["event"].clear()
+    if waiter:
+        cache["event"].wait(timeout=10.0)
+        with lock:
+            return cache.get("data") or dict(not_ready)
+    try:
+        result = build_fn()
+        if result.get("ok"):
+            with lock:
+                cache["data"] = result
+                cache["ts"] = time.time()
+        return result
+    finally:
+        with lock:
+            cache["building"] = False
+            cache["event"].set()
+
 # ── Config ──────────────────────────────────────────────────────────────
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -2131,7 +2175,8 @@ def all_services_health() -> list:
                 try:
                     raw[sid] = fut.result()
                 except Exception:
-                    raw[sid] = {"alive": False, "status": "error", "details": "health check failed"}
+                    raw[sid] = {"alive": False, "status": "error", "details": "health check failed",
+                                "ports_open": [], "ports_closed": []}
         except TimeoutError:
             pass
     finally:
@@ -2139,7 +2184,8 @@ def all_services_health() -> list:
     # Fill in any timed-out entries
     for svc in SERVICE_REGISTRY:
         if svc["id"] not in raw:
-            raw[svc["id"]] = {"alive": False, "status": "timeout", "details": "health check timeout"}
+            raw[svc["id"]] = {"alive": False, "status": "timeout", "details": "health check timeout",
+                              "ports_open": [], "ports_closed": []}
 
     # Second pass: dependency propagation
     out = []
@@ -2153,7 +2199,7 @@ def all_services_health() -> list:
             "log": svc["log"], "start": svc["start"],
             "alive": h["alive"], "status": h.get("status", "unknown"),
             "details": h["details"], "severity": h.get("severity", "info"),
-            "ports_open": h["ports_open"], "ports_closed": h["ports_closed"],
+            "ports_open": h.get("ports_open", []), "ports_closed": h.get("ports_closed", []),
             "autoheal": h.get("autoheal", False),
             "health_method": h.get("health_method", "log"),
             "primary": svc.get("primary", False),
@@ -6306,6 +6352,23 @@ def _get_on_chain_balance(address: str, scan: dict = None) -> tuple[int, bool]:
         slot["done"].set()
 
 
+def _balance_with_deadline(address: str, deadline_s: float = 3.0) -> tuple[int, bool]:
+    """_get_on_chain_balance bounded by a wall-clock deadline.
+
+    A single getUtxos call on a dust-heavy wallet (100k+ outputs) can take
+    ~5-15 s — callers on a request path must not block that long. When the
+    deadline fires the worker keeps running and still lands in the 60 s UTXO
+    cache, so the next request gets the balance instantly (warms in background).
+    """
+    ex = ThreadPoolExecutor(max_workers=1)
+    try:
+        return ex.submit(_get_on_chain_balance, address).result(timeout=deadline_s)
+    except Exception:
+        return 0, False
+    finally:
+        ex.shutdown(wait=False)
+
+
 def _get_latest_block_recipients(timeout: float = 5.0) -> dict:
     """Return {miner, humanitarian, issobella} from the tip block.
 
@@ -6996,6 +7059,11 @@ def _pplns_dict_lookup(pplns_dict: dict, miner_id: str, worker_name: str = "", f
             return default if val is None else val
     return default
 
+_POOL_MINERS_CACHE = {"ts": 0, "data": {}, "lock": threading.Lock(),
+                      "building": False, "event": threading.Event()}
+_POOL_MINERS_TTL = 15  # seconds
+
+
 def get_pool_miners() -> dict:
     """Fetch active miners from Edge pool /miners endpoint.
 
@@ -7004,6 +7072,13 @@ def get_pool_miners() -> dict:
     Prometheus metrics and enriches each miner with PPLNS state data and live
     telemetry (hashrate, shares, blocks_found) when available.
     """
+    return _single_flight(
+        _POOL_MINERS_CACHE, _POOL_MINERS_TTL, _build_pool_miners,
+        {"ok": False, "miners": [], "error": "pool miners build in progress"},
+    )
+
+
+def _build_pool_miners() -> dict:
     active_sessions = 0
     miners_tracked = 0
     shares_accepted = 0
@@ -7826,7 +7901,7 @@ def get_pool_registered_miners() -> dict:
     # without an overall budget a stalled node makes this O(minutes). Balances
     # are display-only — skipping the rest still yields a useful response.
     balance_map = {}
-    balance_deadline = time.time() + 8.0
+    balance_deadline = time.time() + 3.0
     if unique_addrs:
         ex = ThreadPoolExecutor(max_workers=min(8, len(unique_addrs)))
         try:
@@ -7836,7 +7911,7 @@ def get_pool_registered_miners() -> dict:
                 if remaining <= 0:
                     break
                 try:
-                    atomic, ok = fut.result(timeout=min(remaining, 6.0))
+                    atomic, ok = fut.result(timeout=min(remaining, 3.0))
                     if ok:
                         balance_map[a] = flowers_to_zion(atomic)
                 except Exception:
@@ -7977,7 +8052,7 @@ def enrich_miner_balances(miners: list) -> list:
         return miners
     # Same wedge guard as get_pool_registered_miners: bound total enrichment
     # time so a stalled node cannot hang callers that embed balances.
-    balance_deadline = time.time() + 8.0
+    balance_deadline = time.time() + 3.0
     # 1. Collect unique payout addresses
     unique_addrs: list[str] = []
     seen: set = set()
@@ -7997,7 +8072,7 @@ def enrich_miner_balances(miners: list) -> list:
                 if remaining <= 0:
                     break
                 try:
-                    balances[a] = fut.result(timeout=min(remaining, 6.0))
+                    balances[a] = fut.result(timeout=min(remaining, 3.0))
                 except Exception:
                     pass
         finally:
@@ -8066,9 +8141,9 @@ def get_pool_leaderboard(limit: int = 50) -> dict:
 
 # ── Pool Miners Dashboard (combined view for dedicated Pool Miners tab) ──
 
-_POOL_DASHBOARD_CACHE = {"ts": 0, "data": {}}
-_POOL_DASHBOARD_LOCK = threading.Lock()
-_POOL_DASHBOARD_TTL = 5  # seconds
+_POOL_DASHBOARD_CACHE = {"ts": 0, "data": {}, "lock": threading.Lock(),
+                        "building": False, "event": threading.Event()}
+_POOL_DASHBOARD_TTL = 30  # seconds
 
 
 def get_pool_miners_dashboard() -> dict:
@@ -8079,12 +8154,13 @@ def get_pool_miners_dashboard() -> dict:
     pool info. Each sub-source is wrapped in a try/except so a partial failure
     still yields a useful response.
     """
-    now = time.time()
-    with _POOL_DASHBOARD_LOCK:
-        cached = _POOL_DASHBOARD_CACHE.get("data")
-        if cached and (now - _POOL_DASHBOARD_CACHE.get("ts", 0)) < _POOL_DASHBOARD_TTL:
-            return cached
+    return _single_flight(
+        _POOL_DASHBOARD_CACHE, _POOL_DASHBOARD_TTL, _build_pool_miners_dashboard,
+        {"ok": False, "error": "pool dashboard build in progress"},
+    )
 
+
+def _build_pool_miners_dashboard() -> dict:
     result: dict = {"ok": True}
 
     # 1. Pool stats from /stats endpoint (fee split, PPLNS, routing, blocks, hashrate, uptime)
@@ -8311,9 +8387,6 @@ def get_pool_miners_dashboard() -> dict:
     except Exception:
         result["summary"] = {}
 
-    with _POOL_DASHBOARD_LOCK:
-        _POOL_DASHBOARD_CACHE["data"] = result
-        _POOL_DASHBOARD_CACHE["ts"] = time.time()
     return result
 
 
@@ -10431,8 +10504,9 @@ def get_pool_wallet_status() -> dict:
     wallet = status["pool_wallet"]
     if wallet and wallet.startswith("zion1"):
         try:
-            atomic, _ = _get_on_chain_balance(wallet)
-            status["balance_zion"] = flowers_to_zion(atomic)
+            atomic, ok = _balance_with_deadline(wallet, deadline_s=3.0)
+            if ok:
+                status["balance_zion"] = flowers_to_zion(atomic)
         except Exception:
             pass
     status["ok"] = True
