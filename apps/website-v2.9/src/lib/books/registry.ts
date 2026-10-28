@@ -9,6 +9,7 @@ import {
   Compass,
   Egg,
   Eye,
+  Flower2,
   Gem,
   Hammer,
   Heart,
@@ -24,6 +25,7 @@ import {
   Sailboat,
   Satellite,
   ScrollText,
+  Shield,
   Sparkles,
   Sprout,
   Sun,
@@ -352,6 +354,20 @@ export const MARIACAMINHO_BOOK = korpusBook({
   },
 });
 
+export const RUZE_BOOK = korpusBook({
+  id: 'ruze',
+  dir: 'Ruze',
+  accent: '244, 63, 94',
+  icon: Flower2,
+  kicker: { cs: 'Bajka · průsečík vztahů · CZ', en: 'A fable · the intersection of relations · CZ' },
+  title: { cs: 'Příběh Růže', en: 'The Rose Story' },
+  subtitle: { cs: 'Co nelze vlastnit — malá kniha o Lumi a růži u řeky za otevřenou bránou.', en: 'What cannot be owned — a small book about Lumi and the rose by the river behind the open gate.' },
+  description: {
+    cs: 'Filosofická bajka v průsečíku Lumi a Miriam: prázdná nádoba, semínko a růže, která umí mluvit. Péče bez vlastnění; celý děj mýtus.',
+    en: 'A philosophical fable at the intersection of Lumi and Miriam: the empty jar, a seed and a rose that can speak. Care without ownership; the whole story is myth. Czech original.',
+  },
+});
+
 export const NACESTE_BOOK = korpusBook({
   id: 'naceste',
   dir: 'NaCeste',
@@ -394,6 +410,20 @@ export const ISSOBELLA_BOOK = korpusBook({
   },
 });
 
+export const KRUHBOHYNI_BOOK = korpusBook({
+  id: 'kruhbohyni',
+  dir: 'KruhBohyni',
+  accent: '217, 70, 239',
+  icon: Shield,
+  kicker: { cs: 'Kniha Strážkyň · L5 + L6 · CZ', en: 'The Book of Guardians · L5 + L6 · CZ' },
+  title: { cs: 'Kruh Bohyní', en: 'The Circle of Goddesses' },
+  subtitle: { cs: 'Sedm sedadel — šest pro zahrady Země, jedno pro nebe. Ženský kruh péče bez vlastnění.', en: 'Seven seats — six for the gardens of Earth, one for the sky. A women’s circle of care without ownership.' },
+  description: {
+    cs: 'Příběh strážkyň zahrad a nebe: dcera hlíny, strážkyně ohně i ticha, sesté sedadlo, tři klíče a kruh, který se drží. Zjevená budoucnost — celý děj mýtus/horizont.',
+    en: 'The story of the guardians of the gardens and the sky: the daughter of clay, the keepers of fire and silence, the sixth seat, the three keys and the circle that holds. A revealed future — the whole story is myth/horizon. Czech original.',
+  },
+});
+
 export const MISEAMENTI_BOOK = korpusBook({
   id: 'miseamenti',
   dir: 'MiseAmenti',
@@ -420,9 +450,11 @@ export const BOOKS: Record<string, BookDef> = {
   miriam: MIRIAM_BOOK,
   bodhigaia: BODHIGAIA_BOOK,
   mariacaminho: MARIACAMINHO_BOOK,
+  ruze: RUZE_BOOK,
   naceste: NACESTE_BOOK,
   nirvanacloud: NIRVANACLOUD_BOOK,
   issobella: ISSOBELLA_BOOK,
+  kruhbohyni: KRUHBOHYNI_BOOK,
   miseamenti: MISEAMENTI_BOOK,
 };
 
@@ -476,6 +508,7 @@ export const BOOK_NAV: BookNavGroup[] = [
       { id: 'sulzeme', href: '/maitreya/sulzeme/cist' },
       { id: 'lumi', href: '/maitreya/lumi/cist' },
       { id: 'miriam', href: '/maitreya/miriam/cist' },
+      { id: 'ruze', href: '/maitreya/ruze/cist' },
     ],
   },
   {
@@ -493,6 +526,7 @@ export const BOOK_NAV: BookNavGroup[] = [
     books: [
       { id: 'nirvanacloud', href: '/maitreya/nirvanacloud/cist' },
       { id: 'issobella', href: '/maitreya/issobella/cist' },
+      { id: 'kruhbohyni', href: '/maitreya/kruhbohyni/cist' },
       { id: 'miseamenti', href: '/maitreya/miseamenti/cist' },
     ],
   },

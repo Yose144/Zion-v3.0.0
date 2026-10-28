@@ -196,6 +196,18 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         czOnly: true,
         rc: '236, 72, 153',
       },
+      {
+        id: 'ruze',
+        title: { cs: 'Příběh Růže', en: 'The Rose Story' },
+        description: {
+          cs: 'Malá bajka o Lumi a růži u řeky za otevřenou bránou — péče bez vlastnění. Samostatná kniha; celý děj mýtus.',
+          en: 'A small fable of Lumi and the rose by the river behind the open gate — care without ownership. A standalone book; the whole story is myth. Czech only.',
+        },
+        status: 'draft',
+        href: '/maitreya/ruze/cist',
+        czOnly: true,
+        rc: '244, 63, 94',
+      },
     ],
   },
   {
@@ -242,19 +254,6 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         czOnly: true,
         rc: '148, 163, 184',
       },
-      {
-        id: 'ruze',
-        title: { cs: 'Růže v Zahradě Genesis', en: 'Růže v Zahradě Genesis' },
-        description: {
-          cs: 'Jedna kapitola BodhiGaia — průsečík vztahů. Samostatná kniha Růže zatím publikovaná není.',
-          en: 'A single BodhiGaia chapter — the intersection of relations. A standalone Růže book is not published yet. Czech only.',
-        },
-        status: 'draft',
-        kind: 'chapter',
-        href: '/maitreya/bodhigaia/cist#12-Ruze-v-Zahrade-Genesis',
-        czOnly: true,
-        rc: '236, 72, 153',
-      },
     ],
   },
   {
@@ -288,6 +287,18 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         href: '/maitreya/issobella/cist',
         enHref: '/maitreya/issobella/cist',
         rc: '251, 146, 60',
+      },
+      {
+        id: 'kruhbohyni',
+        title: { cs: 'Kruh Bohyní', en: 'The Circle of Goddesses' },
+        description: {
+          cs: 'Kniha Strážkyň — sedm sedadel pro šest zahrad L5 a jedno pro nebe L6. Ženský kruh péče a správy bez vlastnění; zjevená budoucnost, celý děj mýtus.',
+          en: 'The Book of Guardians — seven seats for the six L5 gardens and one for the L6 sky. A women’s circle of care and stewardship without ownership; a revealed future, the whole story is myth. Czech only.',
+        },
+        status: 'draft',
+        href: '/maitreya/kruhbohyni/cist',
+        czOnly: true,
+        rc: '217, 70, 239',
       },
       {
         id: 'miseamenti',

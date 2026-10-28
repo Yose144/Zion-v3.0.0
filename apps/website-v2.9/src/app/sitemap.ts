@@ -117,11 +117,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/maitreya/sulzeme/cist', 0.7, 'monthly'),
     r('/maitreya/lumi/cist', 0.6, 'monthly'),
     r('/maitreya/miriam/cist', 0.6, 'monthly'),
+    r('/maitreya/ruze/cist', 0.6, 'monthly'),
     r('/maitreya/bodhigaia/cist', 0.7, 'monthly'),
     r('/maitreya/mariacaminho/cist', 0.6, 'monthly'),
     r('/maitreya/naceste/cist', 0.5, 'monthly'),
     r('/maitreya/nirvanacloud/cist', 0.7, 'monthly'),
     r('/maitreya/issobella/cist', 0.6, 'monthly'),
+    r('/maitreya/kruhbohyni/cist', 0.6, 'monthly'),
     r('/maitreya/miseamenti/cist', 0.6, 'monthly'),
 
     // ── Misc real pages ──────────────────────────────────────────────

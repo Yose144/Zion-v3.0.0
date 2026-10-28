@@ -118,9 +118,11 @@ const BOOK_READERS: Record<string, { slugs: Set<string>; reader: string }> = {
   miriam: { slugs: new Set(korpusChapters('Miriam').chapters.map((c) => c.slug)), reader: '/maitreya/miriam/cist' },
   bodhigaia: { slugs: new Set(korpusChapters('BodhiGaia').chapters.map((c) => c.slug)), reader: '/maitreya/bodhigaia/cist' },
   mariacaminho: { slugs: new Set(korpusChapters('MariaCaminho').chapters.map((c) => c.slug)), reader: '/maitreya/mariacaminho/cist' },
+  ruze: { slugs: new Set(korpusChapters('Ruze').chapters.map((c) => c.slug)), reader: '/maitreya/ruze/cist' },
   naceste: { slugs: new Set(korpusChapters('NaCeste').chapters.map((c) => c.slug)), reader: '/maitreya/naceste/cist' },
   nirvanacloud: { slugs: new Set(korpusChapters('NirvanaCloud').chapters.map((c) => c.slug)), reader: '/maitreya/nirvanacloud/cist' },
   issobella: { slugs: new Set(korpusChapters('Issobella').chapters.map((c) => c.slug)), reader: '/maitreya/issobella/cist' },
+  kruhbohyni: { slugs: new Set(korpusChapters('KruhBohyni').chapters.map((c) => c.slug)), reader: '/maitreya/kruhbohyni/cist' },
   miseamenti: { slugs: new Set(korpusChapters('MiseAmenti').chapters.map((c) => c.slug)), reader: '/maitreya/miseamenti/cist' },
 };
 

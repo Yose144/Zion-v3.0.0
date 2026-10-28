@@ -33,18 +33,37 @@ export function korpusChapters(dir: string): KorpusBookData {
     .map((f) => f.slice(prefix.length, -3))
     .sort();
 
-  const isIndexSlug = (s: string) => /^00-/.test(s) || /^readme$/i.test(s);
-  const ordered = [...slugs.filter(isIndexSlug), ...slugs.filter((s) => !isIndexSlug(s))];
+  const isReadme = (s: string) => /^(00-)?readme$/i.test(s);
+  // other 00-* files (prolog/outline/…) are front matter, not the index
+  const isFront = (s: string) => !isReadme(s) && /^00-/.test(s);
+  const ordered = [
+    ...slugs.filter(isReadme),
+    ...slugs.filter(isFront),
+    ...slugs.filter((s) => !isReadme(s) && !isFront(s)),
+  ];
+
+  const frontNum = (slug: string) =>
+    /prolog/i.test(slug)
+      ? { cs: 'Prolog', en: 'Prologue' }
+      : /outline|osnova|obsah/i.test(slug)
+        ? { cs: 'Osnova', en: 'Outline' }
+        : { cs: 'Úvod', en: 'Intro' };
 
   const chapters: BookChapter[] = ordered.map((slug, i) => {
     const m = slug.match(/^(\d+)-/);
-    const isIndex = isIndexSlug(slug);
+    const isIndex = isReadme(slug);
     const isEpilog = /^epilog/i.test(slug);
-    const num = isIndex ? 'Index' : isEpilog ? 'Epilog' : m ? String(parseInt(m[1], 10)) : `${i}`;
+    const num: { cs: string; en: string } = isIndex
+      ? { cs: 'Index', en: 'Index' }
+      : isEpilog
+        ? { cs: 'Epilog', en: 'Epilogue' }
+        : isFront(slug)
+          ? frontNum(slug)
+          : { cs: m ? String(parseInt(m[1], 10)) : `${i}`, en: m ? String(parseInt(m[1], 10)) : `${i}` };
     return {
       slug,
-      part: isIndex ? 0 : 1,
-      num: { cs: num, en: num },
+      part: isIndex || isFront(slug) ? 0 : 1,
+      num,
       title: { cs: humanize(slug), en: humanize(slug) },
     };
   });
