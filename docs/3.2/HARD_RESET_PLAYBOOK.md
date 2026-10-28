@@ -606,3 +606,21 @@ probe `inputs_still_unspent` rozhodne resubmity, viz 2.S2 hardening).
 - PG dumps (`zion`, `zion_marketplace`) — ověřit existenci čerstvé zálohy
 - Secrets backup scope (kdo drží `/etc/zion/*` offline kopii — 👤)
 - Časový rozpočet: chain resync je dominantní položka (RTO hodin, ne minut)
+
+### F.6 Partial rehearsal — provedeno 2026-10-28 ✅
+
+Boot test standby dat na EDGE2 (izolovaný `/tmp/dr-rehearsal-*`, staging
+porty `18444`/`18080`, **bez wallet klíčů** → payout submit nemožný =
+žádný double-pay hazard):
+
+- Standby artefakty: `pool-store.db` integrity **ok**, schema v11,
+  218 020 payout rows; `pool-pplns.json` + `.payouts.json` ledger
+  (`paid_block_heights`/`sent_payouts`/`pending_payouts`) parsovatelné;
+  snapshot ~6 min fresh (15min timer)
+- `zion-pool` binary (EDGE2 rsync) **nabootoval nad standby daty**:
+  `/health` ok, `/stats` servíruje plnou API → restore→boot→serve path
+  funguje end-to-end. Post-run `integrity_check` znovu ok
+- **Verdikt:** pool DR standby cesta je ověřená reálným bootem, ne jen
+  read-only. Repro: viz §F.3 + env `-i` bez `ZION_POOL_WALLET*`
+- Zůstává nepokryté: plný chain resync, PG restore, secrets restore —
+  potřebují čistý host (👤 náklad)
