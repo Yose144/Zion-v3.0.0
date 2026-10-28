@@ -159,6 +159,7 @@ interface ApiBlock {
 interface ApiPayout {
   coin: string; ts: number | null; address: string; amount_flowers?: number;
   tx_id?: string; confirmations?: number; confirmed?: boolean; status?: string;
+  superseded_tx_id?: string;
 }
 interface ApiWorker {
   name: string; worker: string; accepted: number; rejected: number;
@@ -193,7 +194,7 @@ function toPayoutRow(coin: CoinId, p: ApiPayout): PayoutRow {
   const tx = p.tx_id ?? '';
   const confirmed = p.confirmed ?? false;
   const status: PayoutStatus =
-    p.status === 'queued' || p.status === 'sent' || p.status === 'confirmed'
+    p.status === 'queued' || p.status === 'sent' || p.status === 'confirmed' || p.status === 'superseded'
       ? p.status
       : confirmed
         ? 'confirmed'

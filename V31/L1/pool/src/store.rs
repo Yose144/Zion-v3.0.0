@@ -1135,7 +1135,7 @@ impl ShareStore {
     pub fn query_payouts(&self, miner_id: &str, limit: u32) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id
              FROM payouts WHERE miner_id = ?1 ORDER BY ts DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![miner_id, limit as i64], |row| {
@@ -1150,6 +1150,7 @@ impl ShareStore {
                 confirmations: row.get::<_, i64>(7)? as u32,
                 confirmed: row.get::<_, i32>(8)? != 0,
                 coin: row.get(9)?,
+                superseded_tx_id: row.get(10)?,
             })
         })?;
         let mut out = Vec::new();
@@ -1164,7 +1165,7 @@ impl ShareStore {
     pub fn query_payouts_by_address(&self, address: &str, limit: u32) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id
              FROM payouts WHERE address = ?1 ORDER BY ts DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![address, limit as i64], |row| {
@@ -1179,6 +1180,7 @@ impl ShareStore {
                 confirmations: row.get::<_, i64>(7)? as u32,
                 confirmed: row.get::<_, i32>(8)? != 0,
                 coin: row.get(9)?,
+                superseded_tx_id: row.get(10)?,
             })
         })?;
         let mut out = Vec::new();
@@ -1192,7 +1194,7 @@ impl ShareStore {
     pub fn query_all_payouts(&self, limit: u32) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id
              FROM payouts ORDER BY ts DESC LIMIT ?1",
         )?;
         let rows = stmt.query_map(params![limit as i64], |row| {
@@ -1207,6 +1209,7 @@ impl ShareStore {
                 confirmations: row.get::<_, i64>(7)? as u32,
                 confirmed: row.get::<_, i32>(8)? != 0,
                 coin: row.get(9)?,
+                superseded_tx_id: row.get(10)?,
             })
         })?;
         let mut out = Vec::new();
@@ -1220,7 +1223,7 @@ impl ShareStore {
     pub fn query_all_payouts_asc(&self) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id
              FROM payouts ORDER BY ts ASC",
         )?;
         let rows = stmt.query_map([], |row| {
@@ -1235,6 +1238,7 @@ impl ShareStore {
                 confirmations: row.get::<_, i64>(7)? as u32,
                 confirmed: row.get::<_, i32>(8)? != 0,
                 coin: row.get(9)?,
+                superseded_tx_id: row.get(10)?,
             })
         })?;
         let mut out = Vec::new();
@@ -1248,7 +1252,7 @@ impl ShareStore {
     pub fn query_unconfirmed_payouts(&self) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id
              FROM payouts WHERE confirmed = 0 AND superseded_tx_id = ''",
         )?;
         let rows = stmt.query_map([], |row| {
@@ -1263,6 +1267,7 @@ impl ShareStore {
                 confirmations: row.get::<_, i64>(7)? as u32,
                 confirmed: row.get::<_, i32>(8)? != 0,
                 coin: row.get(9)?,
+                superseded_tx_id: row.get(10)?,
             })
         })?;
         let mut out = Vec::new();
@@ -1914,6 +1919,9 @@ pub struct PayoutRow {
     pub confirmed: bool,
     /// Payout coin — amount units are coin-dependent (F2).
     pub coin: String,
+    /// Schema v11: non-empty when this row was voided as a dead/stuck tx
+    /// and requeued under a fresh payout (evidence, never resubmitted).
+    pub superseded_tx_id: String,
 }
 
 #[derive(Debug, Clone)]

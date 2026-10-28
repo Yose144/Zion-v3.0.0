@@ -3392,9 +3392,12 @@ fn serialize_public_blocks_json(blocks: &[crate::store::DbBlockRow]) -> serde_js
 
 /// Lifecycle label for one payout row: queued (computed, awaiting
 /// broadcast — lives in `pool.pplns.pending_payouts`), sent (tx broadcast,
-/// awaiting confirmations), confirmed (chain-confirmed).
-fn payout_lifecycle(confirmed: bool, tx_id: &str) -> &'static str {
-    if confirmed {
+/// awaiting confirmations), confirmed (chain-confirmed), superseded
+/// (dead tx voided and requeued under a fresh payout — evidence row).
+fn payout_lifecycle(confirmed: bool, tx_id: &str, superseded_tx_id: &str) -> &'static str {
+    if !superseded_tx_id.is_empty() {
+        "superseded"
+    } else if confirmed {
         "confirmed"
     } else if tx_id.is_empty() {
         "queued"
@@ -3468,7 +3471,8 @@ fn serialize_public_payouts_json(payouts: &[crate::store::PayoutRow]) -> serde_j
                     "block_hash": p.block_hash,
                     "confirmations": p.confirmations,
                     "confirmed": p.confirmed,
-                    "status": payout_lifecycle(p.confirmed, &p.tx_id),
+                    "superseded_tx_id": p.superseded_tx_id,
+                    "status": payout_lifecycle(p.confirmed, &p.tx_id, &p.superseded_tx_id),
                 })
             })
             .collect(),
@@ -3508,7 +3512,8 @@ fn serialize_payouts_json(payouts: &[crate::store::PayoutRow]) -> String {
             "block_hash": p.block_hash,
             "confirmations": p.confirmations,
             "confirmed": p.confirmed,
-            "status": payout_lifecycle(p.confirmed, &p.tx_id),
+            "superseded_tx_id": p.superseded_tx_id,
+            "status": payout_lifecycle(p.confirmed, &p.tx_id, &p.superseded_tx_id),
         })).collect::<Vec<_>>(),
     })
     .to_string()

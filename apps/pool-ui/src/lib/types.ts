@@ -63,7 +63,7 @@ export interface BlockRow {
   luck_pct?: number | null; // >100 = lucky (fewer shares than expected)
 }
 
-export type PayoutStatus = 'queued' | 'sent' | 'confirmed';
+export type PayoutStatus = 'queued' | 'sent' | 'confirmed' | 'superseded';
 
 export interface PayoutRow {
   coin: CoinId;

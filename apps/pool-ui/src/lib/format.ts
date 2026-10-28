@@ -85,6 +85,7 @@ export const PAYOUT_STATUS_CLASS: Record<PayoutStatus, string> = {
   queued: 'text-gold border-gold/40 bg-gold/10',
   sent: 'text-cyan border-cyan/40 bg-cyan/10',
   confirmed: 'text-green border-green/40 bg-green/10',
+  superseded: 'text-white/40 border-white/20 bg-white/5 line-through',
 };
 
 export function payoutStatusLabel(
@@ -93,5 +94,6 @@ export function payoutStatusLabel(
 ): string {
   if (status === 'queued') return t('ve frontě', 'queued');
   if (status === 'sent') return t('odesláno', 'sent');
+  if (status === 'superseded') return t('nahrazeno', 'superseded');
   return t('potvrzeno', 'confirmed');
 }
