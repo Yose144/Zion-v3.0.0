@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Copy, Cpu, Gauge, MonitorSmartphone, Pickaxe, Terminal } from 'lucide-react';
+import CoinLogo from '@/components/CoinLogo';
 import { useEffect, useState } from 'react';
 import { fetchVardiff } from '@/lib/api';
 import { COINS } from '@/lib/mock';
@@ -125,8 +126,11 @@ function CoinSection({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black text-white">
-            {coin.ticker} <span className="text-sm font-medium text-white/40">{coin.name}</span>
+          <h2 className="flex items-center gap-3 text-xl font-black text-white">
+            <CoinLogo logo={coin.logo} ticker={coin.ticker} accent={coin.accent} size={34} />
+            <span>
+              {coin.ticker} <span className="text-sm font-medium text-white/40">{coin.name}</span>
+            </span>
           </h2>
           <p className="mt-1 text-xs text-white/50">{coin.algorithm} · {coin.dialect}</p>
         </div>

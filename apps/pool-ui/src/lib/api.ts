@@ -28,62 +28,74 @@ const COIN_META: Record<string, Omit<CoinInfo, 'id' | 'legs' | 'fee_bps' | 'min_
     ticker: 'ZION', name: 'ZION TerraNova', algorithm: 'Ekam Deeksha (GPU)',
     port: 8444, tls_port: 8445, dialect: 'ZION native + Stratum v1',
     payout_unit: 'ZION', accent: 'gold',
+    logo: '/brand/zion-symbol.png',
   },
   qtu: {
     ticker: 'QTC', name: 'Quantus', algorithm: 'QPoW · Poseidon2',
     port: 8444, tls_port: 8445, dialect: 'CryptoNote (SRBMiner / XMRig)',
     payout_unit: 'QTC', accent: 'cyan',
+    logo: '/brand/quantus.svg',
   },
   prl: {
     ticker: 'PRL', name: 'Pearl', algorithm: 'Pearl PoUW · matrix PoW',
     port: 8444, tls_port: 8445, dialect: 'Pearl stratum (SRBMiner ≥3.7.6)',
     payout_unit: 'PRL', accent: 'purple',
+    logo: '/brand/pearl.svg',
   },
   // ── auxPoW upstream legs (forwarded, unified ZION payout) ──────────
   vrsc: {
     ticker: 'VRSC', name: 'VerusCoin', algorithm: 'VerusHash 2.1 · CPU',
     port: 8444, tls_port: 8445, dialect: 'Stratum v1',
     payout_unit: 'ZION', accent: 'cyan',
+    logo: '/brand/coins/vrsc.png',
   },
   zano: {
     ticker: 'ZANO', name: 'Zano', algorithm: 'ProgPoWz',
     port: 8444, tls_port: 8445, dialect: 'Stratum v1',
     payout_unit: 'ZION', accent: 'green',
+    logo: '/brand/coins/zano.png',
   },
   rtm: {
     ticker: 'RTM', name: 'Raptoreum', algorithm: 'GhostRider',
     port: 8444, tls_port: 8445, dialect: 'Stratum v1',
     payout_unit: 'ZION', accent: 'purple',
+    logo: '/brand/coins/rtm.png',
   },
   evr: {
     ticker: 'EVR', name: 'Evrmore', algorithm: 'EvrProgPoW',
     port: 8444, tls_port: 8445, dialect: 'Stratum v1',
     payout_unit: 'ZION', accent: 'gold',
+    logo: '/brand/coins/evr.png',
   },
   mewc: {
     ticker: 'MEWC', name: 'Meowcoin', algorithm: 'MeowPoW',
     port: 8444, tls_port: 8445, dialect: 'Stratum v1',
     payout_unit: 'ZION', accent: 'cyan',
+    logo: '/brand/coins/mewc.png',
   },
   zec: {
     ticker: 'ZEC', name: 'Zcash', algorithm: 'Equihash 200,9',
     port: 8444, tls_port: 8445, dialect: 'Stratum v1',
     payout_unit: 'ZION', accent: 'purple',
+    logo: '/brand/coins/zec.png',
   },
   zcl: {
     ticker: 'ZCL', name: 'Zclassic', algorithm: 'Equihash 192,7',
     port: 8444, tls_port: 8445, dialect: 'Stratum v1',
     payout_unit: 'ZION', accent: 'green',
+    logo: '/brand/coins/zcl.png',
   },
   phx: {
     ticker: 'PHX', name: 'Phoenixcoin', algorithm: 'NeoScrypt',
     port: 8444, tls_port: 8445, dialect: 'Stratum v1',
     payout_unit: 'ZION', accent: 'gold',
+    logo: '/brand/coins/phx.png',
   },
   krx: {
     ticker: 'KRX', name: 'Keryx', algorithm: 'KeryxHash',
     port: 8444, tls_port: 8445, dialect: 'Stratum v1',
     payout_unit: 'ZION', accent: 'cyan',
+    logo: '/brand/coins/krx.svg',
   },
 };
 

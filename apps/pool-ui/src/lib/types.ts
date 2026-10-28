@@ -31,6 +31,8 @@ export interface CoinInfo {
   fee_bps: number;
   legs: CoinLeg[];
   accent: 'gold' | 'cyan' | 'purple' | 'green';
+  /** Coin logo asset under /public (optional — falls back to a ticker badge). */
+  logo?: string;
   requirements?: string;
 }
 

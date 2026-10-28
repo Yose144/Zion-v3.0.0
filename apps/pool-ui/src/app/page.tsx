@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Blocks, Boxes, CircleDollarSign, Clock, Gauge, Pickaxe, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import AreaChart, { type SeriesPoint } from '@/components/AreaChart';
 import CoinCard from '@/components/CoinCard';
+import CoinLogo from '@/components/CoinLogo';
 import MinerSearch from '@/components/MinerSearch';
 import { fetchBlocks, fetchHistory, fetchOverview } from '@/lib/api';
 import { fetchMarketPrices, fetchZionPrice, type MarketPrice, type ZionPrice } from '@/lib/price';
@@ -332,10 +333,15 @@ export default function HomePage() {
                     return (
                       <tr key={c.id}>
                         <td>
-                          <span className="font-bold" style={{ color: ACCENT[c.accent] }}>
-                            {c.ticker}
-                          </span>{' '}
-                          <span className="text-white/40">{c.name}</span>
+                          <span className="inline-flex items-center gap-2.5">
+                            <CoinLogo logo={c.logo} ticker={c.ticker} accent={c.accent} size={26} />
+                            <span>
+                              <span className="font-bold" style={{ color: ACCENT[c.accent] }}>
+                                {c.ticker}
+                              </span>{' '}
+                              <span className="text-white/40">{c.name}</span>
+                            </span>
+                          </span>
                         </td>
                         <td className="text-white/60">{c.algorithm}</td>
                         <td className="text-right font-bold text-white">

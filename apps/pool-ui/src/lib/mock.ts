@@ -27,6 +27,7 @@ export const COINS: CoinInfo[] = [
       { kind: 'native', status: 'live', job_age_ms: 1200, share_pct: 1.0 },
     ],
     accent: 'gold',
+    logo: '/brand/zion-symbol.png',
   },
   {
     id: 'qtc',
@@ -45,6 +46,7 @@ export const COINS: CoinInfo[] = [
       { kind: 'upstream', status: 'live', job_age_ms: 2400, share_pct: 0.28 },
     ],
     accent: 'cyan',
+    logo: '/brand/quantus.svg',
     requirements: 'GPU recommended · CPU supported',
   },
   {
@@ -64,6 +66,7 @@ export const COINS: CoinInfo[] = [
       { kind: 'upstream', status: 'sync', job_age_ms: 6100, share_pct: 0.1 },
     ],
     accent: 'purple',
+    logo: '/brand/pearl.svg',
     requirements: 'GPU only · NVIDIA SM75+ or AMD RDNA+ (Pascal unsupported)',
   },
   {

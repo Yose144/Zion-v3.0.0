@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Activity } from 'lucide-react';
+import CoinLogo from '@/components/CoinLogo';
 import { fetchBlocks, fetchHistory, fetchOverview, type HistorySample } from '@/lib/api';
 import { fetchZionPrice, type ZionPrice } from '@/lib/price';
 import {
@@ -209,8 +210,11 @@ export default function StatsPage() {
               style={{ ['--card-accent' as string]: ACCENT[c.accent] }}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg font-black text-white">
-                  {c.ticker} <span className="text-xs font-normal text-white/40">{c.algorithm}</span>
+                <h2 className="flex items-center gap-2.5 text-lg font-black text-white">
+                  <CoinLogo logo={c.logo} ticker={c.ticker} accent={c.accent} size={30} />
+                  <span>
+                    {c.ticker} <span className="text-xs font-normal text-white/40">{c.algorithm}</span>
+                  </span>
                 </h2>
                 <div className="flex gap-2">
                   {c.legs.map((l, i) => (
@@ -326,8 +330,11 @@ export default function StatsPage() {
                     return (
                       <tr key={c.id}>
                         <td>
-                          <span className="font-bold" style={{ color: ACCENT[c.accent] }}>
-                            {c.ticker}
+                          <span className="inline-flex items-center gap-2">
+                            <CoinLogo logo={c.logo} ticker={c.ticker} accent={c.accent} size={22} />
+                            <span className="font-bold" style={{ color: ACCENT[c.accent] }}>
+                              {c.ticker}
+                            </span>
                           </span>
                         </td>
                         <td className="text-right font-bold text-white">

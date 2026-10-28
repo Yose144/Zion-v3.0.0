@@ -6,6 +6,7 @@ import { useLang } from '@/lib/i18n';
 import type { CoinInfo, CoinStats } from '@/lib/types';
 import type { MarketPrice } from '@/lib/price';
 import Sparkline from '@/components/Sparkline';
+import CoinLogo from '@/components/CoinLogo';
 import { loadSeries, pushSample, type SeriesPoint } from '@/components/AreaChart';
 import { COINGECKO_ID, fetchPriceHistory } from '@/lib/price';
 import { useEffect, useState } from 'react';
@@ -79,13 +80,18 @@ export default function CoinCard({
       className="pool-card pool-card-accent card-glow flex flex-col gap-4"
       style={{ ['--card-accent' as string]: ACCENT[coin.accent] }}
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-xl font-black text-white">{coin.ticker}</span>
-            <span className="text-xs text-white/40">{coin.name}</span>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5">
+            <CoinLogo logo={coin.logo} ticker={coin.ticker} accent={coin.accent} size={38} />
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-black text-white">{coin.ticker}</span>
+                <span className="truncate text-xs text-white/40">{coin.name}</span>
+              </div>
+              <p className="mt-0.5 text-[0.72rem] text-white/45">{coin.algorithm}</p>
+            </div>
           </div>
-          <p className="mt-0.5 text-[0.72rem] text-white/45">{coin.algorithm}</p>
           {price && (
             <p className="stat-value mt-1.5 flex items-baseline gap-1.5 text-sm font-bold text-white">
               {fmtUsd(price.usd)}
