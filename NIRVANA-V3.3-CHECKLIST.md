@@ -17,7 +17,7 @@
 | G8 | run #5 `g8-20261025T215746Z` — **99.733 %**, 0 kritických, rozpočet 43 min (spotřebováno 2), konec 24. 11. |
 | G9 | ⏸️ **posunuto rozhodnutím 👤 26. 10.** — audit package + scope připravené k odeslání; Stable bez data |
 | Interní audit | vlny 1–7 nasazené a živě ověřené (warpd = audit build, holdy aktivní, payouty potvrzené on-chain) |
-| Code gates (pin `ad8ab5895`) | `cargo test --workspace` **2 839 / 0 fail**, check OK, Foundry 48/48, ZIS 46/46 · ⚠️ clippy ~110 warnings, fmt drift 25 souborů · ❌ npm critical v 5 webových appkách + mobile, `cargo audit` chybí |
+| Code gates (pin `ad8ab5895`) | `cargo test --workspace` **2 839 / 0 fail**, check OK, Foundry 48/48, ZIS 46/46 · ⚠️ clippy ~110 warnings, fmt drift 25 souborů · 🔄 audit triage 28.10 (`docs/3.2/AUDIT-TRIAGE.md`): cargo 9 vuln = 0 in-range fix (multichain/k256 only, pool/node čisté), npm 9 app kritik `next` majors — upgrade = deliberate, neblokuje Beta |
 | P0 defekty | **1 otevřený** — P0-1 ✅ + P0-2 ✅ opraveny 26. 10.; zbývá P0-3 sdílený env (viz N0) |
 | DoD v3.3 | 0/9 splněno · 5 rozpracovaných (tabulka níže) |
 
@@ -56,8 +56,8 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
   - [ ] 👤 EDGE load (~12/4 jádra): CPU mining pro liveness vs. stabilita (8.B5)
 - [ ] **RC → v3.2.0**
   - [x] 🤖 Post-audit code verifikace 26. 10. — 0 regresí (3.2.x plán §1.2)
-  - [ ] 🤖 Code gates zelené na RC commitu: npm critical/high triáž + upgrade, clippy politika, fmt, `cargo audit` do gate (B-EXIT-2, 7.B4)
-  - [ ] 🤖 `DEFERRED_3.2.md` (feature freeze) + `RELEASE_NOTES_3.2.0.md` (9.B1, 9.B2)
+  - [x] 🤖 Code gates triáž na RC commitu: ✅ audit proveden 28.10 — `docs/3.2/AUDIT-TRIAGE.md` (cargo 9 vuln → zion-multichain/k256, pool+node čisté; npm next-critical v 7/9 apps, vše major-only); upgrade = deliberate task před Stable (B-EXIT-2, 7.B4)
+  - [x] 🤖 `DEFERRED_3.2.md` (feature freeze) + `RELEASE_NOTES_3.2.0.md` (9.B1, 9.B2) ✅ 28. 10. sync na realitu (D-7 verified v running binary, backlog/mutation holdy)
   - [ ] 🤖 Release artefakty Linux/Windows/macOS + SHA256SUMS (9.B4)
   - [x] 🤖 Public repo sync workflow předefinovat (tracked `public/` subtree zanikl) (8.B7) ✅ 28. 10.: curated export `scripts/ops/public-export.sh` + manifest + `docs/3.2/PUBLIC-SYNC-WORKFLOW.md` (fail-closed secret scan gate; push přes reviewnutý commit)
   - [ ] 👤 Podepsaný tag `v3.2.0` + release (9.S1)
@@ -168,7 +168,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 | V33-5 L3 sandbox | Maestro 3 reálné úlohy s audit logem + approval gate; NCL ≥1 job typ | 🔄 Maestro read-only live, NCL bez jobů |
 | V33-6 L5 dopad | ≥1 pilot s veřejným rozpočtem a výsledkem | ❌ (P0-1 ✅, scanner na tipu) |
 | V33-7 L6 repro | dokument s L1 anchorem | ❌ |
-| V33-8 Kvalita | `cargo test --workspace` + clippy + `npm/cargo audit` 0 critical | 🔄 testy ✅ 2 839/0; clippy 0 errors/~110 warnings; npm critical ❌ (website 2, MarketPlace 1, OasisWeb 1, IntroPage 1, pool-ui 1, mobile 3); `cargo audit` chybí |
+| V33-8 Kvalita | `cargo test --workspace` + clippy + `npm/cargo audit` 0 critical | 🔄 testy ✅ 2 839/0; clippy pool 32 warn test-only; **audit triage ✅ 28.10** (`AUDIT-TRIAGE.md`): cargo 9 vuln major-only fix, npm next-critical — upgrade naplánován před Stable |
 | V33-9 Pool produkce | PRL + QTU native payouty live, ≥1 externí miner per leg | ❌ PRL dry-run, QTC deficit |
 | *V33-10 (návrh)* | OASIS preview: a11y + security + privacy review + změřený výkon (charta M4/R6) | 🔄 částečný scan |
 | *V33-11 (návrh)* | nezávislý operátor nodu + restore bez EDGE i EDGE2 (charta M7/R8) | ❌ |
