@@ -120,7 +120,7 @@
 | # | Akce | Typ | Závisí na | Stav 28.10. |
 |---|---|---|---|---|
 | 1 | `5.B6` dokončit: E2E order test (transfer + Stripe), invoice download route, order-tracking, deploy MarketPlace | 🤖 | — | ✅ 9/10 — Stripe+SMTP blokováno prázdnými secrets v prod `.env` (👤); test objednávka `TEST-E2E-1761680000` **zrušena 28.10.** (status→cancelled, evidence v note) |
-| 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤 | 2.B7 | ⏳ backlog **1 168** unconfirmed (28.10., gauge `zion_pool_payouts_unconfirmed`) — rostoucí trend 931→1076→1168; nový alert `ZionPoolPayoutStale` hlídá sweep stall |
+| 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤 | 2.B7 | ⏳ backlog **1 180** unconfirmed (28.10., ~1.35 ZION dust celkem, vše s tx_id ale nikdy neminováno — root cause fix `defdcd84a`: under-fee'd clamp → dead tx + resurrect/void path; rozhodnutí o exekuci resubmity = 👤) |
 | 3 | `PRL_PAYOUT_DRY_RUN=0` po dry-batch review + sweep do oyster | 👤🔀 | 2.B6 | 🔍 review hotový (níže) — **nic k sweepu**: 0 pending pearl payoutů, 0 ledger rows; flip bezpečný ale zatím k ničemu, prerekvizita = PRL miner aktivita |
 | 4 | Hiran API MVP spec: `/v1/models` gateway + `X-API-Key` (ZIS) + Stripe price page | 🤖 | ZIS keys | ✅ spec + gateway + Stripe webhook + `/ai` page + probe implementováno; ⏳ deploy + secrets = 👤 |
 | 5 | One-pager "Pool-as-a-Service" (CS+EN) + seznam 10 cílových PoW coinů | 🤖 | — | ✅ `docs/3.2/B2B_POOL_AS_A_SERVICE.md` |
