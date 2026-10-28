@@ -1,14 +1,21 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Copy, Cpu, Gauge, MonitorSmartphone, Terminal, Wand2 } from 'lucide-react';
+import { Copy, Cpu, Gauge, MonitorSmartphone, Terminal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { fetchVardiff } from '@/lib/api';
 import { COINS } from '@/lib/mock';
 import { useLang } from '@/lib/i18n';
 import type { CoinInfo, VarDiffPolicy } from '@/lib/types';
+import Wizard from './Wizard';
 
-const HOST = 'pool.zionterranova.com';
+// Stratum lives on EDGE — pool.zionterranova.com is the EDGE2 web dashboard
+// and does not forward stratum ports. All coins share one stratum endpoint:
+// TCP :8444, TLS :8445, SOLO :8446. Coin selection happens via miner flags
+// (--force-coin / --algorithm) or the v3 hello CoinPreference.
+const HOST = 'stratum.zionterranova.com';
+const PORT_TCP = 8444;
+const PORT_TLS = 8445;
 
 interface Cmd {
   miner: string;
@@ -24,7 +31,7 @@ function connectCmds(
   const w = wallet || `<${t_wallet_placeholder(coin.id)}>`;
   const wrk = worker || 'rig-1';
   const addr = `${w}.${wrk}`;
-  const port = tls ? coin.tls_port : coin.port;
+  const port = tls ? PORT_TLS : PORT_TCP;
   const scheme = tls ? 'stratum+ssl' : 'stratum+tcp';
 
   switch (coin.id) {
@@ -115,7 +122,7 @@ function CoinSection({
           <p className="mt-1 text-xs text-white/50">{coin.algorithm} · {coin.dialect}</p>
         </div>
         <div className="text-right text-[0.72rem] leading-relaxed text-white/50">
-          <p>port <span className="stat-value text-rasta-gold">{coin.port}</span> · TLS <span className="stat-value text-rasta-green">{coin.tls_port}</span></p>
+          <p>TCP <span className="stat-value text-rasta-gold">{PORT_TCP}</span> · TLS <span className="stat-value text-rasta-green">{PORT_TLS}</span> · SOLO <span className="stat-value text-rasta-gold">8446</span></p>
           <p>fee {coin.fee_bps / 100}% · min {coin.min_payout} {coin.payout_unit}</p>
         </div>
       </div>
@@ -218,56 +225,16 @@ export default function StartPage() {
         ))}
       </div>
 
-      {/* ── Config generator ─────────────────────────────── */}
-      <div className="pool-card mt-10 border-rasta-gold/20">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-white">
-          <Wand2 size={15} className="text-rasta-gold" />
-          {t('Generátor konfigurace', 'Config generator')}
-        </h3>
-        <p className="mt-1 text-xs text-white/45">
-          {t(
-            'Vyplň wallet a worker — příkazy níže se přegenerují na míru.',
-            'Fill in wallet and worker — the commands below regenerate to fit.',
-          )}
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <label className="block">
-            <span className="kicker mb-1 block">{t('payout adresa', 'payout address')}</span>
-            <input
-              value={wallet}
-              onChange={(e) => setWallet(e.target.value.trim())}
-              placeholder="zion1… / qz… / prl1…"
-              className="w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 font-mono text-xs text-white placeholder:text-white/25 focus:border-rasta-gold/60 focus:outline-none"
-            />
-          </label>
-          <label className="block">
-            <span className="kicker mb-1 block">{t('jméno rigu', 'worker name')}</span>
-            <input
-              value={worker}
-              onChange={(e) => setWorker(e.target.value.trim())}
-              placeholder="rig-1"
-              className="w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 font-mono text-xs text-white placeholder:text-white/25 focus:border-rasta-gold/60 focus:outline-none"
-            />
-          </label>
-          <label className="block">
-            <span className="kicker mb-1 block">{t('spojení', 'connection')}</span>
-            <div className="flex overflow-hidden rounded-lg border border-white/15 text-[0.72rem] font-bold">
-              <button
-                onClick={() => setTls(true)}
-                className={`flex-1 px-3 py-2 transition-colors ${tls ? 'bg-rasta-green text-black' : 'text-white/50 hover:text-white'}`}
-              >
-                TLS :8445
-              </button>
-              <button
-                onClick={() => setTls(false)}
-                className={`flex-1 px-3 py-2 transition-colors ${!tls ? 'bg-rasta-gold text-black' : 'text-white/50 hover:text-white'}`}
-              >
-                TCP :8444
-              </button>
-            </div>
-          </label>
-        </div>
-      </div>
+      {/* ── Config wizard (A2.5) ─────────────────────────── */}
+      <Wizard
+        coins={COINS}
+        wallet={wallet}
+        worker={worker}
+        tls={tls}
+        setWallet={setWallet}
+        setWorker={setWorker}
+        setTls={setTls}
+      />
 
       <div className="mt-8 flex flex-col gap-5">
         {COINS.map((c) => (
