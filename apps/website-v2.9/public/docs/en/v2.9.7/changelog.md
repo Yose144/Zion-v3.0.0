@@ -43,7 +43,7 @@ Hard fork introducing the **6-Layer "On the Star"** architecture.
 
 ## [v2.9.5] — 2025 · "Native Awakening"
 
-See [docs/v2.9.5](../v2.9.5/) for full changelog.
+See [docs/v2.9.5](../v2.9.5/README.md) for full changelog.
 
 Key highlights: Cosmic Harmony v3 PoW algorithm, UTXO + Ed25519, LWMA DAA, LMDB storage, genesis premine fully disclosed, fair launch (no presale).
 

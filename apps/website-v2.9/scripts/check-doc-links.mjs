@@ -6,7 +6,7 @@
  *   node scripts/check-doc-links.mjs           → report (always exit 0)
  *   node scripts/check-doc-links.mjs --strict  → exit 1 on dead links
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -38,19 +38,46 @@ const ALIASES = {
   chv3: 'architecture/consensus.md',
 };
 const ANCHOR_ALIASES = new Set(['whitepaper-full', 'whitepaper-roadmap', 'whitepaper-security', 'whitepaper-governance']);
-// chapters are TS modules — extract slugs from source text instead
-function bookSlugs(name) {
-  const src = readFileSync(join(root, 'src/app', name, 'chapters.ts'), 'utf8');
-  return new Set([...src.matchAll(/slug:\s*'([^']+)'/g)].map((m) => m[1]));
+// Book slug sets are derived from the manifest itself: books/<name>/kapitoly/
+// chaptered books and korpus/<Dir>/ book dirs (NN-Name.md stems).
+const BOOKS = {};
+for (const f of files) {
+  const bm = f.match(/^(?:cs|en\/)?books\/([^/]+)\/kapitoly\/([^/]+)\.md$/i);
+  const km = f.match(/^korpus\/([^/]+)\/([^/]+)\.md$/i);
+  const m = bm ?? km;
+  if (!m) continue;
+  (BOOKS[m[1].toLowerCase()] ??= new Set()).add(m[2]);
 }
-const BOOKS = { maitreya: bookSlugs('maitreya'), nirvana: bookSlugs('nirvana') };
 
-const APP_ROUTES = new Set(
-  `,account,admin,admin/algo-manager,admin/pool-config,admin/revenue-v3,ai-native,api-reference,benchmarks,bridge,cesta,cex,dao,dashboard,dashboard/advanced-pool,dashboard/ch3,dashboard/dao-tree,dashboard/guardian,dashboard/ncl,dashboard/pool-metrics,dashboard/presale,dashboard/private,dashboard/system-metrics,defi,defi/dao,defi/farming,defi/staking,dex,dex/liquidity,dex/portfolio,docs,doge-vs-zion,download,ekam,ekam/deeksha,explorer,explorer/address,explorer/api-docs,explorer/block,explorer/blocks,explorer/bridge,explorer/broadcast,explorer/charts,explorer/consensus,explorer/contracts,explorer/emission,explorer/fee-estimator,explorer/mempool,explorer/miners,explorer/network-stats,explorer/richlist,explorer/search,explorer/status,explorer/supply,explorer/tokens,explorer/transactions,explorer/tx,explorer/txs,explorer/verify-message,g8,genesis,kompas,l3-hiran,l4-oasis,l5-free-world,l6-issobella,login,maitreya,maitreya/cist,miner-stats,mining,mining/guides,mining/node-setup,monitoring,multichain,network,news,news/launch-postponed,news/v3-internal-audit,nirvana,nirvana/cist,node-setup,onboard,philosophy,pool,quantum-revolution,resonance,roadmap,roadmap-295,swap,team,terranova,terranova/amenti,terranova/boa-esperanca,terranova/bodhi-lanka,terranova/dharma-temple,terranova/ekam,terranova/genesis,terranova/geography/africa,terranova/geography/americas,terranova/geography/asia,terranova/geography/europe,terranova/geography/oceania,terranova/golden-republic-bohemia,terranova/kailash,terranova/maria-del-camino,terranova/nova-amerika,terranova/te-piko-ora,terranova/uluru,tree-of-life,wallet,wallet/bridge,wallet/multichain,wallet/staking,warp,whitepapers,wiki,ziondex`
-    .split(',')
-    .map((s) => s.trim()),
-);
-const NEXT_REDIRECTS = new Set(['/oasis', '/health', '/pool/stats']);
+// App routes: scan src/app for page.tsx files (dynamic segments keep the dir).
+const APP_ROUTES = new Set(['']);
+(function collectRoutes(dir, prefix) {
+  for (const e of readdirSync(join(root, 'src/app', dir), { withFileTypes: true })) {
+    if (!e.isDirectory()) continue;
+    if (e.name === 'api' || e.name.startsWith('(')) continue;
+    collectRoutes(`${dir}/${e.name}`, `${prefix}/${e.name}`);
+  }
+  try {
+    readdirSync(join(root, 'src/app', dir)).includes('page.tsx') &&
+      APP_ROUTES.add(prefix.replace(/^\//, ''));
+  } catch {}
+})('', '');
+// dynamic routes collapse to their parent prefixes for link checking
+for (const r of [...APP_ROUTES]) {
+  const clean = r.replace(/\/?\[[^\]]+\]/g, '');
+  if (clean !== r) APP_ROUTES.add(clean.replace(/^\//, ''));
+}
+
+// Redirects: parse `source:` entries out of next.config.ts
+const NEXT_REDIRECTS = new Set();
+try {
+  const cfg = readFileSync(join(root, 'next.config.ts'), 'utf8');
+  for (const m of cfg.matchAll(/source:\s*'([^']+)'/g)) {
+    const src = m[1].replace(/\/?:path\*?/g, '').replace(/\/\(\.\*\)/g, '').replace(/\/:slug$/g, '').replace(/\/+$/, '');
+    if (src && !src.includes(':') && !src.includes('(')) NEXT_REDIRECTS.add(src);
+    if (src && src.includes('/:slug')) NEXT_REDIRECTS.add(src.replace(/\/:slug$/, ''));
+  }
+} catch {}
 
 function slug(text) {
   return text.trim().toLowerCase()
@@ -135,6 +162,10 @@ function resolve(href, file, anchors) {
     if (t) {
       const c = norm(t);
       if (c && (fileHit(c) || suffix(c))) return 'ok';
+      // cross-book chapter link → reader hash (mirrors docLinks corpusTarget)
+      for (const [bname, slugs] of Object.entries(BOOKS)) {
+        if (bname !== book && slugs.has(stem)) return 'ok';
+      }
       return 'dead';
     }
   }

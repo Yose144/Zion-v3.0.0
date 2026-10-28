@@ -22,14 +22,16 @@ export interface KorpusBookData {
 
 export function korpusChapters(dir: string): KorpusBookData {
   const prefix = `korpus/${dir}/`;
+  // reader TOC = book structure only: README/00-* front matter, NN-* chapters,
+  // Epilog-* — auxiliary docs in the dir (Onboarding*, CHANGELOG, …) stay
+  // linkable via the docs viewer but are not chapters of the book.
   const slugs = [...FILES]
-    .filter(
-      (f) =>
-        f.startsWith(prefix) &&
-        f.endsWith('.md') &&
-        !f.endsWith('_EN.md') &&
-        f.slice(prefix.length) !== 'full.md',
-    )
+    .filter((f) => {
+      if (!f.startsWith(prefix) || !f.endsWith('.md') || f.endsWith('_EN.md')) return false;
+      const name = f.slice(prefix.length, -3);
+      if (name === 'full' || name.includes('/')) return false;
+      return /^(00-)?readme$/i.test(name) || /^\d+-/.test(name) || /^epilog/i.test(name);
+    })
     .map((f) => f.slice(prefix.length, -3))
     .sort();
 

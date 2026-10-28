@@ -209,7 +209,7 @@ Podle roadmapy: L5/L6 distribuce v coinbase, TestNet fork, audit třetí strany,
 - Web: https://zionterranova.com · Docs: https://zionterranova.com/docs  
 - GitHub: https://github.com/Zion-TerraNova/2.9.6  
 
-Experimentální open-source software; není investiční produkt. Viz [legal/](legal/).
+Experimentální open-source software; není investiční produkt. Viz [legal/](../legal/disclaimer.md).
 
 Licence: MIT.
 

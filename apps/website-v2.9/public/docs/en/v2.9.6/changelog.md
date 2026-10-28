@@ -41,7 +41,7 @@
 
 ## Version 2.9.5 (Native Awakening) — January 2026
 
-See [v2.9.5](../v2.9.5/). Highlights: CHv3 crate, pool Stratum, P2P seeds, genesis with Tree of Life ASCII art.
+See [v2.9.5](../v2.9.5/README.md). Highlights: CHv3 crate, pool Stratum, P2P seeds, genesis with Tree of Life ASCII art.
 
 ---
 

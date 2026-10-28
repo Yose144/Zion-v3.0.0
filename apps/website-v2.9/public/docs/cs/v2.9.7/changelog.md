@@ -43,7 +43,7 @@ Hard fork zavádějící **6vrstvou architekturu „On the Star“**.
 
 ## [v2.9.5] — 2025 · „Native Awakening“
 
-Plný changelog viz [docs/v2.9.5](../v2.9.5/).
+Plný changelog viz [docs/v2.9.5](../v2.9.5/README.md).
 
 Shrnutí: Cosmic Harmony v3 PoW, UTXO + Ed25519, LWMA DAA, LMDB, genesis premine plně zveřejněna, fair launch (bez presale).
 
