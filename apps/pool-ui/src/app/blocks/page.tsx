@@ -19,14 +19,30 @@ const STATUS: Record<string, { cls: string; cs: string; en: string }> = {
   orphaned: { cls: 'pill-down', cs: 'orphan', en: 'orphaned' },
 };
 
+/** Coinbase maturity — payouts wait for this many confirmations. */
+const MATURITY = 100;
+
+function luckClass(luck: number | null | undefined): string {
+  if (luck == null) return 'text-white/30';
+  if (luck >= 110) return 'text-green';
+  if (luck <= 90) return 'text-gold';
+  return 'text-white/70';
+}
+
 export default function BlocksPage() {
   const { t, lang } = useLang();
   const [coin, setCoin] = useState<CoinId | ''>('');
   const [rows, setRows] = useState<BlockRow[]>([]);
+  const [tip, setTip] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchBlocks(coin || undefined).then(setRows);
-    const iv = setInterval(() => fetchBlocks(coin || undefined).then(setRows), 20_000);
+    const load = () =>
+      fetchBlocks(coin || undefined).then(({ rows, tip }) => {
+        setRows(rows);
+        setTip(tip);
+      });
+    load();
+    const iv = setInterval(load, 20_000);
     return () => clearInterval(iv);
   }, [coin]);
 
@@ -61,37 +77,65 @@ export default function BlocksPage() {
               <th>hash</th>
               <th>{t('miner', 'miner')}</th>
               <th>diff</th>
+              <th title={t('>100 % = štěstí, <100 % = smůla', '>100% = lucky, <100% = unlucky')}>
+                luck %
+              </th>
               <th>{t('stav', 'status')}</th>
+              <th>{t('maturity', 'maturity')}</th>
               <th>{t('čas', 'time')}</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((b, i) => (
-              <tr key={`${b.coin}-${b.height}-${i}`}>
-                <td className={`font-bold ${COIN_COLOR[b.coin] ?? 'text-white'}`}>
-                  {b.coin.toUpperCase()}
-                </td>
-                <td className="text-white">{fmtInt(b.height)}</td>
-                <td className="text-dim">{shortAddr(b.hash)}</td>
-                <td>
-                  <a
-                    href={`/miner/${b.coin}/${b.miner}/`}
-                    className="text-white/60 underline decoration-white/15 underline-offset-2 transition hover:text-rasta-gold"
-                    title={b.miner}
+            {rows.map((b, i) => {
+              const st = STATUS[b.status] ?? STATUS.pending;
+              const confs =
+                tip != null && b.height > 0 ? Math.max(0, tip - b.height + 1) : null;
+              const maturing =
+                b.status !== 'orphaned' && confs != null && confs < MATURITY;
+              return (
+                <tr key={`${b.coin}-${b.height}-${i}`}>
+                  <td className={`font-bold ${COIN_COLOR[b.coin] ?? 'text-white'}`}>
+                    {b.coin.toUpperCase()}
+                  </td>
+                  <td className="text-white">{fmtInt(b.height)}</td>
+                  <td className="text-dim">{shortAddr(b.hash)}</td>
+                  <td>
+                    <a
+                      href={`/miner/${b.coin}/${b.miner}/`}
+                      className="text-white/60 underline decoration-white/15 underline-offset-2 transition hover:text-rasta-gold"
+                      title={b.miner}
+                    >
+                      {shortAddr(b.miner)}
+                    </a>
+                  </td>
+                  <td className="text-dim">{fmtDifficulty(b.network_difficulty)}</td>
+                  <td
+                    className={luckClass(b.luck_pct)}
+                    title={
+                      b.shares_since_prev
+                        ? `${t('shares od předchozího bloku', 'shares since prev block')}: ${fmtInt(b.shares_since_prev)}`
+                        : undefined
+                    }
                   >
-                    {shortAddr(b.miner)}
-                  </a>
-                </td>
-                <td className="text-dim">{fmtDifficulty(b.network_difficulty)}</td>
-                <td>
-                  <span className={`pill ${STATUS[b.status].cls}`}>
-                    <span className="dot" />
-                    {lang === 'cs' ? STATUS[b.status].cs : STATUS[b.status].en}
-                  </span>
-                </td>
-                <td className="text-dim">{fmtAgo(b.ts, lang)}</td>
-              </tr>
-            ))}
+                    {b.luck_pct == null ? '—' : `${Math.round(b.luck_pct)}%`}
+                  </td>
+                  <td>
+                    <span className={`pill ${st.cls}`}>
+                      <span className="dot" />
+                      {lang === 'cs' ? st.cs : st.en}
+                    </span>
+                  </td>
+                  <td className={maturing ? 'text-gold' : 'text-white/30'}>
+                    {b.status === 'orphaned' || confs == null
+                      ? '—'
+                      : maturing
+                        ? `${confs}/${MATURITY}`
+                        : `✓ ${fmtInt(confs)}`}
+                  </td>
+                  <td className="text-dim">{fmtAgo(b.ts, lang)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

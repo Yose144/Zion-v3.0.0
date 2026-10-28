@@ -4,7 +4,7 @@
 // deliberately serves only live operational data.
 
 import * as mock from './mock';
-import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, FeeSplit, MinerStats, PayoutRow, PayoutStatus, PoolOverview } from './types';
+import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, FeeSplit, MinerStats, PayoutRow, PayoutStatus, PoolOverview, VarDiffPolicy } from './types';
 
 const USE_MOCK = false;
 const API_BASE = '/public/v1';
@@ -100,6 +100,7 @@ interface ApiBlock {
   coin: string; height: number; hash: string; ts: number;
   miner: string; status?: string; worker_name?: string;
   network_difficulty?: number; share_difficulty?: number; confirmed_at?: number | null;
+  shares_since_prev?: number; luck_pct?: number | null;
 }
 interface ApiPayout {
   coin: string; ts: number | null; address: string; amount_flowers?: number;
@@ -186,25 +187,44 @@ export async function fetchHistory(limit = 1440): Promise<HistorySample[]> {
   return res.samples ?? [];
 }
 
-export async function fetchBlocks(coin?: CoinId): Promise<BlockRow[]> {
+/** Advertised vardiff policy from `/coins` — values the stratum enforces.
+ *  Null when the backend predates the field or the call fails. */
+export async function fetchVardiff(): Promise<VarDiffPolicy | null> {
   if (USE_MOCK) {
-    return mock.BLOCKS.filter((b) => !coin || b.coin === coin);
+    return { start: 1000, min: 1000, max: 100_000, target_secs: 15, retarget_shares: 8 };
+  }
+  try {
+    const { vardiff } = await get<{ ok: boolean; vardiff?: VarDiffPolicy }>('/coins');
+    return vardiff ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchBlocks(coin?: CoinId): Promise<{ rows: BlockRow[]; tip: number | null }> {
+  if (USE_MOCK) {
+    return { rows: mock.BLOCKS.filter((b) => !coin || b.coin === coin), tip: null };
   }
   const q = coin && POOL_COIN[coin] ? `?coin=${POOL_COIN[coin]}` : '';
-  const { blocks } = await get<{ blocks: ApiBlock[] }>(`/blocks${q}`);
-  return blocks.map((b) => ({
-    coin: UI_ID[b.coin] ?? 'multi',
-    height: b.height,
-    hash: b.hash,
-    ts: b.ts,
-    miner: b.miner,
-    worker: b.worker_name ?? '',
-    status: (b.status as BlockRow['status']) ?? 'confirmed',
-    effort_pct: null,
-    network_difficulty: b.network_difficulty ?? null,
-    share_difficulty: b.share_difficulty ?? null,
-    confirmed_at: b.confirmed_at ?? null,
-  }));
+  const { blocks, tip } = await get<{ blocks: ApiBlock[]; tip?: number | null }>(`/blocks${q}`);
+  return {
+    tip: tip ?? null,
+    rows: blocks.map((b) => ({
+      coin: UI_ID[b.coin] ?? 'multi',
+      height: b.height,
+      hash: b.hash,
+      ts: b.ts,
+      miner: b.miner,
+      worker: b.worker_name ?? '',
+      status: (b.status as BlockRow['status']) ?? 'confirmed',
+      effort_pct: null,
+      network_difficulty: b.network_difficulty ?? null,
+      share_difficulty: b.share_difficulty ?? null,
+      confirmed_at: b.confirmed_at ?? null,
+      shares_since_prev: b.shares_since_prev ?? undefined,
+      luck_pct: b.luck_pct ?? null,
+    })),
+  };
 }
 
 export async function fetchPayouts(coin?: CoinId): Promise<PayoutRow[]> {

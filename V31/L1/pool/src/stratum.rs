@@ -268,16 +268,7 @@ impl StratumServer {
         };
         let (notify_tx, _notify_rx) = broadcast::channel(256);
 
-        let vardiff_config = VarDiffConfig {
-            start_difficulty: env_or(
-                "ZION_VARDIFF_START_DIFF",
-                env_or("ZION_VARDIFF_START", 1000),
-            ),
-            min_difficulty: env_or("ZION_VARDIFF_MIN_DIFF", env_or("ZION_VARDIFF_MIN", 1000)),
-            max_difficulty: env_or("ZION_VARDIFF_MAX_DIFF", env_or("ZION_VARDIFF_MAX", 100_000)),
-            target_secs: env_or("ZION_VARDIFF_TARGET_SECS", 15),
-            retarget_shares: env_or("ZION_VARDIFF_RETARGET_SHARES", 8),
-        };
+        let vardiff_config = VarDiffConfig::from_env();
 
         let max_sessions_per_ip = env_or("ZION_POOL_MAX_SESSIONS_PER_IP", 10) as usize;
         // F4-B: global concurrent-session cap — bounds accept-loop work

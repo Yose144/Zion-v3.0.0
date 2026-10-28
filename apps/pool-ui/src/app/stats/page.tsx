@@ -77,8 +77,8 @@ export default function StatsPage() {
   }, []);
 
   useEffect(() => {
-    fetchBlocks().then(setBlocks);
-    const iv = setInterval(() => fetchBlocks().then(setBlocks), 30_000);
+    fetchBlocks().then((b) => setBlocks(b.rows));
+    const iv = setInterval(() => fetchBlocks().then((b) => setBlocks(b.rows)), 30_000);
     return () => clearInterval(iv);
   }, []);
 

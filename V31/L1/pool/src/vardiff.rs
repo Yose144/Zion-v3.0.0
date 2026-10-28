@@ -31,6 +31,31 @@ pub struct VarDiffConfig {
     pub retarget_shares: u64,
 }
 
+impl VarDiffConfig {
+    /// Build the production config from `ZION_VARDIFF_*` environment
+    /// variables.  Single source of truth — the stratum server and the
+    /// public API's `/public/v1/coins` vardiff block both use this so the
+    /// advertised values can never drift from the enforced ones.
+    pub fn from_env() -> Self {
+        fn env_or(key: &str, default: u64) -> u64 {
+            std::env::var(key)
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(default)
+        }
+        Self {
+            start_difficulty: env_or(
+                "ZION_VARDIFF_START_DIFF",
+                env_or("ZION_VARDIFF_START", 1000),
+            ),
+            min_difficulty: env_or("ZION_VARDIFF_MIN_DIFF", env_or("ZION_VARDIFF_MIN", 1000)),
+            max_difficulty: env_or("ZION_VARDIFF_MAX_DIFF", env_or("ZION_VARDIFF_MAX", 100_000)),
+            target_secs: env_or("ZION_VARDIFF_TARGET_SECS", 15),
+            retarget_shares: env_or("ZION_VARDIFF_RETARGET_SHARES", 8),
+        }
+    }
+}
+
 /// Variable-difficulty controller.
 ///
 /// Call [`VarDiff::record_submit`] for every accepted share.  After

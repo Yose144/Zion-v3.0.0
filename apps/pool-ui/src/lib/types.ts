@@ -55,6 +55,8 @@ export interface BlockRow {
   network_difficulty: number | null;
   share_difficulty: number | null;
   confirmed_at: number | null;
+  shares_since_prev?: number;
+  luck_pct?: number | null; // >100 = lucky (fewer shares than expected)
 }
 
 export type PayoutStatus = 'queued' | 'sent' | 'confirmed';
@@ -112,6 +114,15 @@ export interface FeeSplit {
   humanitarian_pct: number;
   issobella_pct: number;
   pool_fee_pct: number;
+}
+
+/** Advertised vardiff policy — values the stratum actually enforces. */
+export interface VarDiffPolicy {
+  start: number;
+  min: number;
+  max: number | null; // null = no ceiling
+  target_secs: number;
+  retarget_shares: number;
 }
 
 export interface PoolOverview {

@@ -17,7 +17,7 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchOverview().then(setOv);
-    fetchBlocks().then((b) => setBlockCount(b.length)).catch(() => {});
+    fetchBlocks().then((b) => setBlockCount(b.rows.length)).catch(() => {});
     const iv = setInterval(() => fetchOverview().then(setOv), 15_000);
     return () => clearInterval(iv);
   }, []);

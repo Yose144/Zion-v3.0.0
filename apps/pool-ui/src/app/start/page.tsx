@@ -1,11 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Copy, Cpu, MonitorSmartphone, Terminal, Wand2 } from 'lucide-react';
-import { useState } from 'react';
+import { Copy, Cpu, Gauge, MonitorSmartphone, Terminal, Wand2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { fetchVardiff } from '@/lib/api';
 import { COINS } from '@/lib/mock';
 import { useLang } from '@/lib/i18n';
-import type { CoinInfo } from '@/lib/types';
+import type { CoinInfo, VarDiffPolicy } from '@/lib/types';
 
 const HOST = 'pool.zionterranova.com';
 
@@ -155,6 +156,11 @@ export default function StartPage() {
   const [wallet, setWallet] = useState('');
   const [worker, setWorker] = useState('');
   const [tls, setTls] = useState(true);
+  const [vd, setVd] = useState<VarDiffPolicy | null>(null);
+
+  useEffect(() => {
+    fetchVardiff().then(setVd);
+  }, []);
 
   return (
     <div className="pt-10">
@@ -267,6 +273,58 @@ export default function StartPage() {
         {COINS.map((c) => (
           <CoinSection key={c.id} coin={c} wallet={wallet} worker={worker} tls={tls} />
         ))}
+      </div>
+
+      {/* ── Difficulty policy (A2.4) ─────────────────────── */}
+      <div className="pool-card mt-8">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+          <Gauge size={15} className="text-rasta-gold" />
+          {t('Obtížnost (vardiff)', 'Difficulty (vardiff)')}
+        </h3>
+        <p className="mt-2 text-xs leading-relaxed text-white/50">
+          {t(
+            'Pool obtížnost ladí automaticky — statická obtížnost není potřeba ani podporovaná. Řídí se takto:',
+            'The pool adjusts difficulty automatically — no static difficulty needed or supported. The policy:',
+          )}
+        </p>
+        <div className="mt-3 grid gap-2 text-[0.72rem] sm:grid-cols-2">
+          {[
+            [
+              t('startovní obtížnost', 'start difficulty'),
+              vd ? vd.start.toLocaleString() : '—',
+            ],
+            [
+              t('rozsah', 'range'),
+              vd
+                ? `${vd.min.toLocaleString()} – ${vd.max == null ? '∞' : vd.max.toLocaleString()}`
+                : '—',
+            ],
+            [
+              t('cílová kadence', 'target pace'),
+              vd ? `1 share / ${vd.target_secs} s` : '—',
+            ],
+            [
+              t('retarget', 'retarget'),
+              vd
+                ? t(`každých ${vd.retarget_shares} sharů`, `every ${vd.retarget_shares} shares`)
+                : '—',
+            ],
+          ].map(([k, v], i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between rounded-lg border border-white/8 bg-black/30 px-3 py-2"
+            >
+              <span className="text-white/45">{k}</span>
+              <span className="font-mono font-bold text-white">{v}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-[0.68rem] leading-relaxed text-white/40">
+          {t(
+            'Pomalé rigy dostanou nižší obtížnost, rychlé vyšší — hashrate zůstává přesný a stale shares klesají. `mining.suggest_difficulty` akceptujeme jako hint, vardiff ale drží kontrolu.',
+            'Slow rigs get lower difficulty, fast rigs higher — hashrate stays accurate and stale shares drop. `mining.suggest_difficulty` is accepted as a hint, but vardiff stays in control.',
+          )}
+        </p>
       </div>
 
       <div className="pool-card mt-8">

@@ -537,6 +537,8 @@ impl PoolApi {
                         let body = json!({
                             "ok": true,
                             "coin": coin,
+                            "tip": self.current_height.as_ref()
+                                .map(|h| h.load(Ordering::Relaxed)),
                             "blocks": serialize_public_blocks_json(&blocks),
                         })
                         .to_string();
@@ -640,6 +642,8 @@ impl PoolApi {
                         };
                         let body = json!({
                             "ok": true,
+                            "tip": self.current_height.as_ref()
+                                .map(|h| h.load(Ordering::Relaxed)),
                             "blocks": serialize_public_blocks_json(&blocks),
                         })
                         .to_string();
@@ -1679,6 +1683,10 @@ impl PoolApi {
                 "job_age_ms": leg.job_age_ms,
             }));
         }
+        // Advertised vardiff policy — same source as the stratum server
+        // (VarDiffConfig::from_env) so public docs never drift from what is
+        // actually enforced.
+        let vd = crate::vardiff::VarDiffConfig::from_env();
         json!({
             "ok": true,
             // Protocol reward split (emission 89/5/5/1) — global, applies to
@@ -1689,6 +1697,17 @@ impl PoolApi {
                 "humanitarian_pct": fees.humanitarian_pct,
                 "issobella_pct": fees.issobella_pct,
                 "pool_fee_pct": fees.pool_fee_pct
+            },
+            "vardiff": {
+                "start": vd.start_difficulty,
+                "min": vd.min_difficulty,
+                "max": if vd.max_difficulty == 0 {
+                    serde_json::Value::Null
+                } else {
+                    json!(vd.max_difficulty)
+                },
+                "target_secs": vd.target_secs,
+                "retarget_shares": vd.retarget_shares
             },
             "coins": coins.values().collect::<Vec<_>>()
         })
@@ -2682,6 +2701,17 @@ fn serialize_public_blocks_json(blocks: &[crate::store::DbBlockRow]) -> serde_js
         blocks
             .iter()
             .map(|b| {
+                // Per-block luck (A2.6): same formula as pool_luck_pct —
+                // expected/actual = (net_diff/share_diff)/shares * 100.
+                // >100% = lucky (fewer shares than statistically expected),
+                // <100% = unlucky. null when the inputs are missing
+                // (pre-v8 rows, or a block found before any share landed).
+                let luck_pct = if b.share_difficulty > 0 && b.shares_since_prev > 0 {
+                    let expected = b.network_difficulty as f64 / b.share_difficulty as f64;
+                    Some(expected / b.shares_since_prev as f64 * 100.0)
+                } else {
+                    None
+                };
                 json!({
                     "coin": b.coin,
                     "height": b.height,
@@ -2689,6 +2719,8 @@ fn serialize_public_blocks_json(blocks: &[crate::store::DbBlockRow]) -> serde_js
                     "miner": public_miner_id(&b.miner_id),
                     "share_difficulty": b.share_difficulty,
                     "network_difficulty": b.network_difficulty,
+                    "shares_since_prev": b.shares_since_prev,
+                    "luck_pct": luck_pct,
                     "status": b.status,
                     "ts": b.ts,
                     "confirmed_at": b.confirmed_at,
@@ -3407,6 +3439,69 @@ mod tests {
         assert_eq!(fees["humanitarian_pct"], 5);
         assert_eq!(fees["issobella_pct"], 5);
         assert_eq!(fees["pool_fee_pct"], 1);
+
+        // A2.4: advertised vardiff policy matches what the stratum enforces
+        // (same VarDiffConfig::from_env source, no env → defaults).
+        let vd = &payload["vardiff"];
+        assert_eq!(vd["start"], 1000);
+        assert_eq!(vd["min"], 1000);
+        assert_eq!(vd["max"], 100_000);
+        assert_eq!(vd["target_secs"], 15);
+        assert_eq!(vd["retarget_shares"], 8);
+    }
+
+    #[test]
+    fn public_blocks_carry_luck_shares_and_tip() {
+        let pool = test_pool();
+        let store = Arc::new(ShareStore::open_in_memory().unwrap());
+        let height = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(500));
+        let api = PoolApi::new(pool, Some(store.clone()), None).with_current_height(height);
+
+        // One confirmed block: net_diff 100_000, share_diff 1_000 → expected
+        // 100 shares; actually took 50 → luck 200% (lucky).
+        store
+            .record_block(&crate::store::BlockRecord {
+                coin: "zion".to_string(),
+                height: 450,
+                hash: "aa".repeat(32),
+                miner_id: "miner-a".to_string(),
+                worker_name: "w".to_string(),
+                share_difficulty: 1_000,
+                network_difficulty: 100_000,
+                shares_since_prev: 50,
+                status: "confirmed".to_string(),
+            })
+            .unwrap();
+        // Pre-v8 row without shares_since_prev → luck must be null.
+        store
+            .record_block(&crate::store::BlockRecord {
+                coin: "zion".to_string(),
+                height: 440,
+                hash: "bb".repeat(32),
+                miner_id: "miner-b".to_string(),
+                worker_name: "w".to_string(),
+                share_difficulty: 1_000,
+                network_difficulty: 100_000,
+                shares_since_prev: 0,
+                status: "orphaned".to_string(),
+            })
+            .unwrap();
+
+        let resp = request(&api, "GET", "/public/v1/blocks", "");
+        assert!(resp.starts_with("HTTP/1.1 200"), "{resp}");
+        let json_start = resp.find("\r\n\r\n").unwrap() + 4;
+        let body: serde_json::Value = serde_json::from_str(&resp[json_start..]).unwrap();
+        assert_eq!(body["tip"], 500);
+
+        let blocks = body["blocks"].as_array().unwrap();
+        let lucky = blocks.iter().find(|b| b["height"] == 450).unwrap();
+        assert_eq!(lucky["shares_since_prev"], 50);
+        let luck = lucky["luck_pct"].as_f64().unwrap();
+        assert!((luck - 200.0).abs() < 0.01, "luck was {luck}");
+
+        let legacy = blocks.iter().find(|b| b["height"] == 440).unwrap();
+        assert_eq!(legacy["shares_since_prev"], 0);
+        assert!(legacy["luck_pct"].is_null());
     }
 
     #[test]
