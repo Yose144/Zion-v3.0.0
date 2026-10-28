@@ -101,6 +101,19 @@ ok = 1 if stats is not None else 0
 metrics.append(m("zion_pool_stats_api_ok", ok, help_text="Pool /stats returns within 8s via edge tunnel"))
 metrics.append(m("zion_pool_stats_api_latency_seconds", round(lat, 3), help_text="Pool /stats response time"))
 
+# Payout write-path freshness — 2.S2 follow-up. The pool writes a payout
+# ledger row per found block (~30 s cadence); an aging newest row means
+# the submit/record path is dead while stratum and API still look fine.
+pay = http_json("http://127.0.0.1:8080/public/v1/payouts?limit=1", timeout=8)
+pay_ts = None
+if pay and pay.get("ok") and pay.get("payouts"):
+    pay_ts = pay["payouts"][0].get("ts")
+if pay_ts is not None:
+    metrics.append(m("zion_pool_last_payout_age_seconds", max(0, int(time.time() - pay_ts)),
+                     help_text="Age of newest payout ledger row"))
+metrics.append(m("zion_pool_payouts_api_ok", 1 if pay_ts is not None else 0,
+                 help_text="Pool public payouts endpoint returns a row"))
+
 # G8 — Hiran inference gateway (api.zionterranova.com -> 127.0.0.1:8007).
 # /health returns per-upstream liveness; export each leg so alerts can
 # distinguish "gateway dead" from "primary GPU upstream offline" (which is

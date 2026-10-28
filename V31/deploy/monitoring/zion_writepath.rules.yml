@@ -77,3 +77,14 @@ groups:
         annotations:
           summary: "pool /stats latency {{ $value }}s"
           description: "Pool /stats responding but slower than 3s for 15+ minutes — early sign of lock contention."
+
+      # 2.S2 follow-up: payout ledger writes per found block (~30 s); an
+      # hour without a row = submit/record path dead, stratum unaffected.
+      - alert: ZionPoolPayoutStale
+        expr: zion_pool_last_payout_age_seconds > 3600
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "no pool payout recorded for {{ $value }}s"
+          description: "Newest payout ledger row is over 1h old — payout submit or confirmation sweep likely stalled (pool keeps finding blocks but stops recording/paying). Check pool journal payout lines and store.db write health."

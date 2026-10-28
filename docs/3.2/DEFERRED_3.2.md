@@ -13,7 +13,7 @@
 | Program nezávislých operátorů nodů (charta M7) | vyžaduje stabilní release + incentivizaci | N7 |
 | QTU native payouty | `treasury_free=0`, 918 stalled payoutů — pre-existing deficit, funding/policy na operátorovi | N2 |
 | Persistentní share-dedup okno (A4.1) | in-memory dedup funkční; DB persist přidá latenci — po soak | N2 / pool beta.2 |
-| HA stratum / standby pool na druhém hostu | single-pool topology je pro beta akceptovaná | N2 / W-vlny |
+| HA stratum auto-promote (A4.2 částečně dodáno 27.10 — warm standby na EDGE2 live, alert-only watchdog, failover manuální) | auto-promote = split-brain riziko; držet manuální do dalšího soak | N2 / W-vlny |
 | Adapter parity — `warp_message_hash` anchor | jen EVM adapter binduje msg hash on-chain; ostatní chainy (TON/SUI/Solana/Stellar/Tron/Cardano/Cosmos/Aptos/NEAR) nemají contract-level dedup — vyžaduje dest-program upgrade | N1 |
 | TON `query_id=1` hardcoded, seqno `unwrap_or(0)` | non-blocking; contract-level | N1 |
 | QTU/PRL attestation dokazuje jen ZION-key ownership | adresy claimed neověřitelné — must-fix před payout-gated flows, ne před stable | N1 |
@@ -50,8 +50,8 @@ Podle `NIRVANA-V3.3-PLAN.md` §Explicitní NON-DoD:
 | D-3 | `protocol_version` on-chain hlásí `3.1.0-alpha` vs node `3.2.0` | verifikace 26. 10. |
 | D-4 | npm audit: kritické advisories v 5 web apps + mobile | verifikace 26. 10. |
 | D-5 | `cargo audit` nenainstalován; clippy ~110 warnings; 25 fmt-drfit souborů | verifikace 26. 10. |
-| D-6 | Provenance: žádný embedded git sha v binárkách; EDGE2 source tree není git checkout; EDGE working tree ≠ HEAD | `REPORTS/PROVENANCE-2026-10-26.md` |
-| D-7 | Pool sticky-confirmed fix (record_block CASE) — v repu, **deploy pending** | `REPORTS/REPORT_2026-10-26_POOL_ORPHAN_RCA.md` |
+| D-6 | Provenance — ✅ 28.10: build id embedded v pool crate (`66d15bef4`, do prvního rebuildu nasazené binary se nedotkne), collector `scripts/ops/deploy-provenance.sh` + baseline `DEPLOY-PROVENANCE-2026-10-28.jsonl`. Zbývá: rollout patternu na ostatní binárky + rozhodnutí o EDGE dirty checkout (7 258 souborů) | `DEPLOY-PROVENANCE.md` |
+| ~~D-7~~ | ~~Pool sticky-confirmed fix~~ — ✅ nasazeno (CASE logika v running binary, ověřeno 28.10.) | `REPORTS/REPORT_2026-10-26_POOL_ORPHAN_RCA.md` |
 | D-8 | Stale-block rate 15–21 % `previous hash mismatch` — interní same-height racy (0 externích ztrát), residuální tuning | tentýž report |
 | D-9 | Public repo sync předefinovat — tracked `public/` přesunut do `archive/PUBLIC/` (workflow G4/E7 neplatný) | plan 8.B7 |
 | D-10 | DR restore drill neproveden; `HARD_RESET_PLAYBOOK.md` neaktualizován na dvouboxovou topologii | plan 8.B11 |
@@ -59,7 +59,7 @@ Podle `NIRVANA-V3.3-PLAN.md` §Explicitní NON-DoD:
 | D-12 | `auth.` certifikát renewal owner — expirace 25. 11. | plan 8.B6 |
 | D-13 | EDGE load ~12/4 jádra — CPU mining vs stabilita followerů (rozhodnutí) | plan 8.B5 |
 | D-14 | SMOS rig 518837 offline | fleet status |
-| D-15 | Alert sink firing test + 40d retence doložit | plan 8.B9 |
+| ~~D-15~~ | ~~Alert sink firing test + 40d retence~~ — ✅ 28.10 (firing+resolved přes reálný Alertmanager; 40d span doběhne ~8.11.) | `REPORTS/REPORT_2026-10-28_G8_ALERT_SINK.md` |
 
 ## E) Gates držící Stable (mimo tento freeze — registry G*)
 

@@ -50,8 +50,8 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [ ] **Provoz a hygiena**
   - [x] 🤖 Disk audit + cleanup s archivy (EDGE 88 → 59 %, EDGE2 54 %) — rozšíření volume aktuálně nepotřeba
   - [x] 🤖 fail2ban fix (self-heal drop-in), nginx `.bak` pryč ze `sites-enabled` (IA-16)
-  - [ ] 🤖 Deploy provenance manifest — checkout na EDGE neodpovídá nasazeným binárkám (8.B3)
-  - [ ] 🤖 Health checky zápisových cest a lagu (8.B4) — P0-1/P0-2 byly „active", ale nefunkční 5 dní (opraveno 26. 10.)
+  - [x] 🤖 Deploy provenance manifest — `scripts/ops/deploy-provenance.sh` + `docs/3.2/DEPLOY-PROVENANCE.md` + baseline jsonl; embedded build id `66d15bef4` (8.B3 — mechanism hotový, první příští rebuild ho ponese)
+  - [x] 🤖 Health checky zápisových cest a lagu (8.B4) — P0-1/P0-2 byly „active", ale nefunkční 5 dní (probe+rules live; 28.10 += payout-sweep freshness `ZionPoolPayoutStale`)
   - [ ] 🤖 Plný DR drill — restore celého stacku na čistém hostu do syncu (7.B7)
   - [ ] 👤 EDGE load (~12/4 jádra): CPU mining pro liveness vs. stabilita (8.B5)
 - [ ] **RC → v3.2.0**
@@ -190,9 +190,9 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 ## Rychlá autonomní fronta (další kroky)
 
 1. 🔀 P0-3 — rotace PRL RPC credentialu (👤) + per-service env subsety; P0-1/P0-2 ✅ 26. 10.
-2. 🤖 Provenance manifest + build z čistého `git archive` (8.B3)
-3. 🤖 Health checky zápisových cest + lag alerty L5/L6/db-sync/payout sweep (8.B4, 6.B2)
-4. 🤖 Stale-block RCA nad A1.2 metrikami (2.B1)
+2. ~~🤖 Provenance manifest + build z čistého `git archive` (8.B3)~~ ✅ 28. 10. (collector + baseline; `git archive` build nese `.git-archive-sha`)
+3. ~~🤖 Health checky zápisových cest + lag alerty L5/L6/db-sync/payout sweep (8.B4, 6.B2)~~ ✅ 28. 10. (`ZionPoolPayoutStale` + freshness metriky nasazené)
+4. ~~🤖 Stale-block RCA nad A1.2 metrikami (2.B1)~~ ✅ 26. 10. (`REPORT_2026-10-26_POOL_ORPHAN_RCA.md`)
 5. ~~🤖 Alert sink firing test + důkaz retence (8.B9)~~ ✅ 28. 10.
 6. 🤖 Drafty `DEFERRED_3.2.md` + `RELEASE_NOTES_3.2.0.md` (9.B1, 9.B2)
 7. 🤖 Truth-sync dokumentace + Registr důkazů (9.B5)
