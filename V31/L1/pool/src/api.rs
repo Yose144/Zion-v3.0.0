@@ -624,7 +624,10 @@ impl PoolApi {
         let (status, content_type, body) = match path {
             "/health" => {
                 let uptime_s = self.started_at.elapsed().as_secs();
-                let body = format!("{{\"status\":\"ok\",\"uptime_s\":{uptime_s}}}");
+                let body = format!(
+                    "{{\"status\":\"ok\",\"uptime_s\":{uptime_s},\"build\":\"{}\"}}",
+                    env!("ZION_BUILD_ID")
+                );
                 ("200 OK", "application/json", body)
             }
             "/metrics" => {

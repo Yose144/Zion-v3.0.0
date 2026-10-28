@@ -35,7 +35,7 @@ use zion_pool::{Pool, PoolConfig, StratumServer};
 #[derive(Parser, Debug)]
 #[command(name = "zion-pool")]
 #[command(about = "ZION L1 stratum pool server")]
-#[command(version)]
+#[command(version, long_version = concat!(env!("CARGO_PKG_VERSION"), " build ", env!("ZION_BUILD_ID")))]
 struct Args {
     /// Stratum bind address.
     #[arg(short, long, env = "ZION_POOL_BIND", default_value = "0.0.0.0:8444")]
@@ -130,6 +130,11 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
     let args = Args::parse();
+    info!(
+        "zion-pool {} starting (build {})",
+        env!("CARGO_PKG_VERSION"),
+        env!("ZION_BUILD_ID")
+    );
 
     let pool_address = parse_address(&args.miner_address)?;
     let l1_rpc_url = args.l1_rpc_url.unwrap_or_default();
