@@ -31,12 +31,16 @@ export default function BookNav({ lang: l, activeBookId, renderActive, onNavigat
           <div key={group.id}>
             <button
               onClick={() => setOpenGroups((prev) => ({ ...prev, [group.id]: !isOpen }))}
-              className={`w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] transition-all rounded-lg ${
+              aria-expanded={isOpen}
+              className={`w-full flex items-center justify-between px-3 py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] transition-all rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/60 ${
                 hasActive ? 'text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
               }`}
             >
               <span>{group.label[l]}</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+              <span className="ml-3 inline-flex items-center gap-1.5">
+                <span className="text-[9px] font-semibold text-gray-600">{group.books.length}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+              </span>
             </button>
 
             {isOpen && (
@@ -50,7 +54,7 @@ export default function BookNav({ lang: l, activeBookId, renderActive, onNavigat
                       href={b.href}
                       prefetch={false}
                       onClick={onNavigate}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/60"
                     >
                       <BookOpen className="w-3.5 h-3.5 shrink-0 text-gray-600" />
                       <span className="truncate">{bookNavLabel(b, l)}</span>
