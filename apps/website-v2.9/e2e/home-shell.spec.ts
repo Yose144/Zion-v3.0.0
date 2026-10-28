@@ -235,7 +235,7 @@ test.describe('home shell performance & resilience', () => {
       await stubApis(ctx);
       const page = await ctx.newPage();
       const errors = watchErrors(page);
-      for (const path of ['/', '/maitreya', '/docs', '/whitepapers']) {
+      for (const path of ['/', '/zion-archive', '/docs', '/whitepapers']) {
         await page.goto(`${BASE}${path}`, { waitUntil: 'domcontentloaded' });
         await page.waitForTimeout(1200);
         const ov = await page.evaluate(

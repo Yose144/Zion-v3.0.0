@@ -108,22 +108,22 @@ const ANCHOR_ALIASES: Record<string, string> = {
 };
 
 const BOOK_READERS: Record<string, { slugs: Set<string>; reader: string }> = {
-  maitreya: { slugs: new Set(MAITREYA_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/cist' },
-  nirvana: { slugs: new Set(NIRVANA_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/nirvana/cist' },
-  'surta-srdce': { slugs: new Set(SURTA_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/surta-srdce/cist' },
-  'kralovstvi-srdce': { slugs: new Set(KRAL_CHAPTERS.map((c) => c.slug)), reader: '/maitreya/kralovstvi-srdce/cist' },
+  maitreya: { slugs: new Set(MAITREYA_CHAPTERS.map((c) => c.slug)), reader: '/zion-archive/cist' },
+  nirvana: { slugs: new Set(NIRVANA_CHAPTERS.map((c) => c.slug)), reader: '/zion-archive/nirvana/cist' },
+  'surta-srdce': { slugs: new Set(SURTA_CHAPTERS.map((c) => c.slug)), reader: '/zion-archive/surta-srdce/cist' },
+  'kralovstvi-srdce': { slugs: new Set(KRAL_CHAPTERS.map((c) => c.slug)), reader: '/zion-archive/kralovstvi-srdce/cist' },
   // korpus books — chapters derived from the doc manifest
-  sulzeme: { slugs: new Set(korpusChapters('SulZeme').chapters.map((c) => c.slug)), reader: '/maitreya/sulzeme/cist' },
-  lumi: { slugs: new Set(korpusChapters('Lumi').chapters.map((c) => c.slug)), reader: '/maitreya/lumi/cist' },
-  miriam: { slugs: new Set(korpusChapters('Miriam').chapters.map((c) => c.slug)), reader: '/maitreya/miriam/cist' },
-  bodhigaia: { slugs: new Set(korpusChapters('BodhiGaia').chapters.map((c) => c.slug)), reader: '/maitreya/bodhigaia/cist' },
-  mariacaminho: { slugs: new Set(korpusChapters('MariaCaminho').chapters.map((c) => c.slug)), reader: '/maitreya/mariacaminho/cist' },
-  ruze: { slugs: new Set(korpusChapters('Ruze').chapters.map((c) => c.slug)), reader: '/maitreya/ruze/cist' },
-  naceste: { slugs: new Set(korpusChapters('NaCeste').chapters.map((c) => c.slug)), reader: '/maitreya/naceste/cist' },
-  nirvanacloud: { slugs: new Set(korpusChapters('NirvanaCloud').chapters.map((c) => c.slug)), reader: '/maitreya/nirvanacloud/cist' },
-  issobella: { slugs: new Set(korpusChapters('Issobella').chapters.map((c) => c.slug)), reader: '/maitreya/issobella/cist' },
-  kruhbohyni: { slugs: new Set(korpusChapters('KruhBohyni').chapters.map((c) => c.slug)), reader: '/maitreya/kruhbohyni/cist' },
-  miseamenti: { slugs: new Set(korpusChapters('MiseAmenti').chapters.map((c) => c.slug)), reader: '/maitreya/miseamenti/cist' },
+  sulzeme: { slugs: new Set(korpusChapters('SulZeme').chapters.map((c) => c.slug)), reader: '/zion-archive/sulzeme/cist' },
+  lumi: { slugs: new Set(korpusChapters('Lumi').chapters.map((c) => c.slug)), reader: '/zion-archive/lumi/cist' },
+  miriam: { slugs: new Set(korpusChapters('Miriam').chapters.map((c) => c.slug)), reader: '/zion-archive/miriam/cist' },
+  bodhigaia: { slugs: new Set(korpusChapters('BodhiGaia').chapters.map((c) => c.slug)), reader: '/zion-archive/bodhigaia/cist' },
+  mariacaminho: { slugs: new Set(korpusChapters('MariaCaminho').chapters.map((c) => c.slug)), reader: '/zion-archive/mariacaminho/cist' },
+  ruze: { slugs: new Set(korpusChapters('Ruze').chapters.map((c) => c.slug)), reader: '/zion-archive/ruze/cist' },
+  naceste: { slugs: new Set(korpusChapters('NaCeste').chapters.map((c) => c.slug)), reader: '/zion-archive/naceste/cist' },
+  nirvanacloud: { slugs: new Set(korpusChapters('NirvanaCloud').chapters.map((c) => c.slug)), reader: '/zion-archive/nirvanacloud/cist' },
+  issobella: { slugs: new Set(korpusChapters('Issobella').chapters.map((c) => c.slug)), reader: '/zion-archive/issobella/cist' },
+  kruhbohyni: { slugs: new Set(korpusChapters('KruhBohyni').chapters.map((c) => c.slug)), reader: '/zion-archive/kruhbohyni/cist' },
+  miseamenti: { slugs: new Set(korpusChapters('MiseAmenti').chapters.map((c) => c.slug)), reader: '/zion-archive/miseamenti/cist' },
 };
 
 function isMarkdown(path: string) {

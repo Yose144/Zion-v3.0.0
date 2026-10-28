@@ -9,7 +9,7 @@ import { resolveDocHref, resolveDocImage, type DocLinkCtx } from '@/lib/docLinks
 /* ═══════════════════════════════════════════════════════════
    MarkdownDoc — shared corpus renderer
 
-   Every markdown surface (/docs library, /maitreya/cist,
+   Every markdown surface (/docs library, /zion-archive/cist,
    /nirvana/cist, /whitepapers, /onboard, /terranova) renders
    through this component so that:
 

@@ -835,7 +835,7 @@ export default function RoadmapPage() {
           </div>
           <p className="mt-6 text-sm text-gray-500">{copy.nirvanaDisclaimer}</p>
           <div className="mt-6">
-            <Link href="/maitreya#plan-v33" className="zion-button-secondary">
+            <Link href="/zion-archive#plan-v33" className="zion-button-secondary">
               <BookOpen className="h-4 w-4" /> {copy.nirvanaCta}
             </Link>
           </div>

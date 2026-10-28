@@ -305,7 +305,7 @@ export default function BookReader({ book }: { book: BookDef }) {
             {/* Breadcrumbs — same chrome as /docs/view */}
             <nav className="flex flex-wrap items-center gap-1.5 text-sm text-gray-500 mb-8">
               <Link
-                href="/maitreya"
+                href="/zion-archive"
                 className="inline-flex items-center gap-1.5 text-zion-cyan hover:text-white transition-colors"
               >
                 <Library className="w-4 h-4" /> {l === 'cs' ? 'Knihovna' : 'Library'}

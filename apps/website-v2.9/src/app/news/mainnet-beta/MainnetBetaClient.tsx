@@ -40,7 +40,7 @@ const Article = {
     links: [
       { href: '/roadmap', label: 'Roadmap' },
       { href: '/g8', label: 'G8 monitoring' },
-      { href: '/maitreya', label: 'Kniha Maitreya' },
+      { href: '/zion-archive', label: 'Kniha Maitreya' },
       { href: '/l5-free-world', label: 'Free World' },
       { href: '/pool', label: 'Mining pool' },
       { href: '/download', label: 'Stáhnout klienty' },
@@ -82,7 +82,7 @@ const Article = {
     links: [
       { href: '/roadmap', label: 'Roadmap' },
       { href: '/g8', label: 'G8 monitoring' },
-      { href: '/maitreya', label: 'Maitreya book' },
+      { href: '/zion-archive', label: 'Maitreya book' },
       { href: '/l5-free-world', label: 'Free World' },
       { href: '/pool', label: 'Mining pool' },
       { href: '/download', label: 'Download clients' },

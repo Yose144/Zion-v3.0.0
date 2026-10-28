@@ -34,7 +34,7 @@ export default function DocsRail() {
       title: tr('docsRail', 'res_book_title', lang),
       description: tr('docsRail', 'res_book_body', lang),
       icon: BookOpen,
-      href: '/maitreya/cist',
+      href: '/zion-archive/cist',
       accent: 'from-zion-gold/20 to-zion-purple/10',
     },
   ];

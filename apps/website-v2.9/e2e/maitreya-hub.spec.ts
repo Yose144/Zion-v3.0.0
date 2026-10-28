@@ -1,9 +1,11 @@
+// NOTE: suite skipped while Zion Archive is locked (ARCHIVE_LOCKED in
+// src/app/zion-archive/layout.tsx). Re-enable when the archive reopens.
 import { test, expect, type Page } from '@playwright/test';
 import { MAITREYA_CHAPTERS } from '../src/lib/books/maitreya';
 import { NIRVANA_CHAPTERS } from '../src/lib/books/nirvana';
 import { DOC_IDS, DOC_HASH_ALIASES } from '../src/lib/docs-manifest';
 import { NIRVANA_WORKSTREAMS } from '../src/lib/nirvana-roadmap';
-import { MAIN_BOOKS, COMPANION_GROUPS } from '../src/app/maitreya/library';
+import { MAIN_BOOKS, COMPANION_GROUPS } from '../src/app/zion-archive/library';
 
 // No bundled Playwright browsers in this environment — use installed Chrome.
 // Dev-server compiles can exceed 30s under parallel workers — give navigations
@@ -38,11 +40,11 @@ function watchPageErrors(page: Page) {
 const activePanel = (page: Page) => page.locator('section[data-panel]');
 const navLink = (page: Page, id: string) => page.locator(`a[href="#${id}"]:visible`).first();
 
-test.describe('maitreya hub', () => {
+test.describe.skip('maitreya hub', () => {
   test.setTimeout(120_000);
   test('default view shows the ordered books with six real read links', async ({ page }) => {
     const errors = watchPageErrors(page);
-    await page.goto('/maitreya');
+    await page.goto('/zion-archive');
     await expect(activePanel(page)).toHaveCount(1);
     await expect(activePanel(page)).toHaveAttribute('data-panel', 'cesta');
 
@@ -60,7 +62,7 @@ test.describe('maitreya hub', () => {
 
   test('section nav selects exactly one panel via real hash links', async ({ page }) => {
     const errors = watchPageErrors(page);
-    await page.goto('/maitreya');
+    await page.goto('/zion-archive');
     for (const id of SECTION_IDS) {
       await navLink(page, id).first().click();
       await expect(page).toHaveURL(new RegExp(`#${id}$`));
@@ -77,7 +79,7 @@ test.describe('maitreya hub', () => {
     test.setTimeout(90_000);
     const errors = watchPageErrors(page);
     for (const id of SECTION_IDS) {
-      await page.goto(`/maitreya#${id}`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`/zion-archive#${id}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator(`section[data-panel="${id}"]`)).toBeVisible({ timeout: 20000 });
       await expect(activePanel(page)).toHaveCount(1);
     }
@@ -91,7 +93,7 @@ test.describe('maitreya hub', () => {
 
   test('browser back/forward walks the section history', async ({ page }) => {
     const errors = watchPageErrors(page);
-    await page.goto('/maitreya');
+    await page.goto('/zion-archive');
     await navLink(page, 'kniha').first().click();
     await expect(page).toHaveURL(/#kniha$/);
     await navLink(page, 'plan-v33').first().click();
@@ -111,7 +113,7 @@ test.describe('maitreya hub', () => {
 
   test('keyboard: nav focus, enter selects panel, details expands', async ({ page }) => {
     const errors = watchPageErrors(page);
-    await page.goto('/maitreya');
+    await page.goto('/zion-archive');
     await navLink(page, 'souvislosti').first().focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('section[data-panel="souvislosti"]')).toBeVisible();
@@ -133,26 +135,26 @@ test.describe('maitreya hub', () => {
     page,
   }) => {
     const errors = watchPageErrors(page);
-    await page.goto('/maitreya#kniha');
+    await page.goto('/zion-archive#kniha');
     const panel = page.locator('section[data-panel="kniha"]');
     await expect(panel).toBeVisible({ timeout: 20000 });
     const hrefs = await panel
       .locator('a[href]')
       .evaluateAll((els) => els.map((e) => e.getAttribute('href')));
 
-    expect(hrefs).toContain('/maitreya/cist#prolog');
-    expect(hrefs).toContain('/maitreya/cist#epilog');
+    expect(hrefs).toContain('/zion-archive/cist#prolog');
+    expect(hrefs).toContain('/zion-archive/cist#epilog');
     for (const part of [1, 2, 3, 4, 5]) {
       const first = MAITREYA_CHAPTERS.find((c) => c.part === part);
       expect(first, `part ${part} must have a first chapter`).toBeTruthy();
-      expect(hrefs).toContain(`/maitreya/cist#${first!.slug}`);
+      expect(hrefs).toContain(`/zion-archive/cist#${first!.slug}`);
     }
     expect(errors).toEqual([]);
   });
 
   test('nirvana panel links all 12+1 episodes with honest framing', async ({ page }) => {
     const errors = watchPageErrors(page);
-    await page.goto('/maitreya#nirvana');
+    await page.goto('/zion-archive#nirvana');
     const panel = page.locator('section[data-panel="nirvana"]');
     await expect(panel).toBeVisible({ timeout: 20000 });
     const hrefs = await panel
@@ -162,9 +164,9 @@ test.describe('maitreya hub', () => {
     const episodes = NIRVANA_CHAPTERS.filter((c) => c.part === 1);
     expect(episodes.length).toBe(12);
     for (const ep of episodes) {
-      expect(hrefs).toContain(`/maitreya/nirvana/cist#${ep.slug}`);
+      expect(hrefs).toContain(`/zion-archive/nirvana/cist#${ep.slug}`);
     }
-    expect(hrefs).toContain('/maitreya/nirvana/cist#13-Tres-Marias');
+    expect(hrefs).toContain('/zion-archive/nirvana/cist#13-Tres-Marias');
     expect(hrefs).toContain('/terranova/maria-del-camino');
 
     // published-book disclaimer present; no fake live/building status chips
@@ -176,7 +178,7 @@ test.describe('maitreya hub', () => {
 
   test('plan-v33 shows six workstreams with honest goal framing', async ({ page }) => {
     const errors = watchPageErrors(page);
-    await page.goto('/maitreya#plan-v33');
+    await page.goto('/zion-archive#plan-v33');
     const panel = page.locator('section[data-panel="plan-v33"]');
 
     const cards = panel.locator('[data-workstream]');
@@ -189,7 +191,7 @@ test.describe('maitreya hub', () => {
         .locator('a[href]')
         .evaluateAll((els) => els.map((e) => e.getAttribute('href')));
       expect(cardHrefs).toContain(w.layerHref);
-      expect(cardHrefs).toContain(`/maitreya/nirvana/cist#${w.chapterSlug}`);
+      expect(cardHrefs).toContain(`/zion-archive/nirvana/cist#${w.chapterSlug}`);
     }
 
     // valid list markup — no nested <li> (was a hydration bug)
@@ -214,7 +216,7 @@ test.describe('maitreya hub', () => {
 
   test('spolecnici panel: every companion is a real link with honest labels', async ({ page }) => {
     const errors = watchPageErrors(page);
-    await page.goto('/maitreya#spolecnici');
+    await page.goto('/zion-archive#spolecnici');
     const panel = page.locator('section[data-panel="spolecnici"]');
     await expect(panel).toBeVisible({ timeout: 20000 });
     const hrefs = await panel
@@ -262,7 +264,7 @@ test.describe('maitreya hub', () => {
 
     const collected = new Set<string>();
     for (const id of SECTION_IDS) {
-      await page.goto(`/maitreya#${id}`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`/zion-archive#${id}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator(`section[data-panel="${id}"]`)).toBeVisible({ timeout: 20000 });
       const hrefs = await page
         .locator(`section[data-panel="${id}"] a[href], main a[href^="/"], main a[href^="#"]`)
@@ -283,13 +285,13 @@ test.describe('maitreya hub', () => {
         expect(docsIds.has(hash), `docs id #${hash}`).toBeTruthy();
         continue;
       }
-      if (path === '/maitreya/cist' && hash) {
+      if (path === '/zion-archive/cist' && hash) {
         expect(maitreyaSlugs.has(hash), `maitreya slug #${hash}`).toBeTruthy();
       }
-      if (path === '/maitreya/nirvana/cist' && hash) {
+      if (path === '/zion-archive/nirvana/cist' && hash) {
         expect(nirvanaSlugs.has(hash), `nirvana slug #${hash}`).toBeTruthy();
       }
-      if (path === '/maitreya' && hash) {
+      if (path === '/zion-archive' && hash) {
         expect(SECTION_IDS as readonly string[]).toContain(hash);
       }
       if (path.startsWith('/docs/view/')) {
@@ -350,7 +352,7 @@ test.describe('maitreya hub', () => {
       (res) => res.url().includes('/docs/books/nirvana/kapitoly/13-Tres-Marias.md') && res.status() === 200,
       { timeout: 30000 }
     );
-    await page.goto('/maitreya/nirvana/cist#13-Tres-Marias', { waitUntil: 'domcontentloaded' });
+    await page.goto('/zion-archive/nirvana/cist#13-Tres-Marias', { waitUntil: 'domcontentloaded' });
     await tresMarias;
     await expect(page.locator('body')).toContainText(/flotila Cesty|trupy pro tři oceány/i, {
       timeout: 30000,
@@ -367,7 +369,7 @@ test.describe('maitreya hub', () => {
       await contextRouteStubs(ctx);
       const errors = watchPageErrors(page);
       for (const id of SECTION_IDS) {
-        await page.goto(`/maitreya#${id}`, { waitUntil: 'domcontentloaded' });
+        await page.goto(`/zion-archive#${id}`, { waitUntil: 'domcontentloaded' });
         await expect(page.locator(`section[data-panel="${id}"]`)).toBeVisible({ timeout: 20000 });
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -401,12 +403,12 @@ test.describe('maitreya hub', () => {
       souvislosti: /Story & tradition/i,
     };
     for (const id of SECTION_IDS) {
-      await page.goto(`/maitreya#${id}`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`/zion-archive#${id}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator(`#${id}-title`)).toHaveText(titles[id], { timeout: 20000 });
     }
 
     // cesta: Salt center goes to the EN index in EN mode
-    await page.goto('/maitreya#cesta', { waitUntil: 'domcontentloaded' });
+    await page.goto('/zion-archive#cesta', { waitUntil: 'domcontentloaded' });
     const cestaHrefs = await page
       .locator('section[data-panel="cesta"] a[href]')
       .evaluateAll((els) => els.map((e) => e.getAttribute('href')));
@@ -414,7 +416,7 @@ test.describe('maitreya hub', () => {
     expect(cestaHrefs).not.toContain('/docs/view/korpus/SulZeme/00-README.md');
 
     // nirvana: BodhiGaia bridge uses EN index; MariaCaminho stays visibly CZ-only
-    await page.goto('/maitreya#nirvana', { waitUntil: 'domcontentloaded' });
+    await page.goto('/zion-archive#nirvana', { waitUntil: 'domcontentloaded' });
     const nirvanaHrefs = await page
       .locator('section[data-panel="nirvana"] a[href]')
       .evaluateAll((els) => els.map((e) => e.getAttribute('href')));
@@ -422,7 +424,7 @@ test.describe('maitreya hub', () => {
     expect(nirvanaHrefs).toContain('/docs/view/korpus/MariaCaminho/00-README.md');
 
     // spolecnici: EN primary = English index + Czech-original secondary; CZ-only flagged
-    await page.goto('/maitreya#spolecnici', { waitUntil: 'domcontentloaded' });
+    await page.goto('/zion-archive#spolecnici', { waitUntil: 'domcontentloaded' });
     const panel = page.locator('section[data-panel="spolecnici"]');
     await expect(panel).toBeVisible({ timeout: 20000 });
     const hrefs = await panel
@@ -452,7 +454,7 @@ test.describe('maitreya hub', () => {
       const page = await ctx.newPage();
       await contextRouteStubs(ctx);
       const errors = watchPageErrors(page);
-      await page.goto('/maitreya#plan-v33', { waitUntil: 'domcontentloaded' });
+      await page.goto('/zion-archive#plan-v33', { waitUntil: 'domcontentloaded' });
       await expect(page.locator('section[data-panel="plan-v33"]')).toBeVisible({ timeout: 20000 });
       // scrolled mid-lane, the sticky sidebar holds near top-24 (~96px)
       await page.evaluate(() => window.scrollTo(0, 700));
@@ -477,7 +479,7 @@ test.describe('maitreya hub', () => {
       const page = await ctx.newPage();
       await contextRouteStubs(ctx);
       const errors = watchPageErrors(page);
-      await page.goto('/maitreya#nirvana', { waitUntil: 'domcontentloaded' });
+      await page.goto('/zion-archive#nirvana', { waitUntil: 'domcontentloaded' });
       await expect(page.locator('section[data-panel="nirvana"]')).toBeVisible({ timeout: 20000 });
       await page.evaluate(() => window.scrollTo(0, 900));
       await page.waitForTimeout(400);
@@ -507,7 +509,7 @@ test.describe('maitreya hub', () => {
     const page = await ctx.newPage();
     await contextRouteStubs(ctx);
     const errors = watchPageErrors(page);
-    await page.goto('/maitreya#plan-v33');
+    await page.goto('/zion-archive#plan-v33');
     await expect(page.locator('section[data-panel="plan-v33"]')).toBeVisible();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -530,7 +532,7 @@ test.describe('maitreya hub', () => {
           await page.addInitScript(() => window.localStorage.setItem('zion-lang', 'en'));
         const errors = watchPageErrors(page);
         for (const id of ['plan-v33', 'spolecnici'] as const) {
-          await page.goto(`/maitreya#${id}`, { waitUntil: 'domcontentloaded' });
+          await page.goto(`/zion-archive#${id}`, { waitUntil: 'domcontentloaded' });
           await expect(page.locator(`section[data-panel="${id}"]`)).toBeVisible({ timeout: 30000 });
           await page.waitForTimeout(1200); // chooser smooth-scroll settle
           const chooser = page.locator('nav[aria-label]').first();
@@ -563,7 +565,7 @@ test.describe('maitreya hub', () => {
     const page = await ctx.newPage();
     await contextRouteStubs(ctx);
     const errors = watchPageErrors(page);
-    for (const path of ['/whitepapers', '/maitreya/cist']) {
+    for (const path of ['/whitepapers', '/zion-archive/cist']) {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 30000 });
       await page.evaluate(() => window.scrollTo(0, 400));

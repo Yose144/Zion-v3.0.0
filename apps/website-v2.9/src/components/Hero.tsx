@@ -126,7 +126,7 @@ export default function Hero() {
                 {tr('hero', 'btn_native_miner', lang)}
               </Link>
               <Link
-                href="/maitreya/cist" prefetch={false}
+                href="/zion-archive/cist" prefetch={false}
                 className="zion-button-secondary w-full sm:w-auto justify-center border-zion-purple/30 hover:border-zion-purple/60 hover:bg-zion-purple/10 hover:text-violet-200 transition-colors"
               >
                 <BookOpen className="w-5 h-5 text-zion-purple" />

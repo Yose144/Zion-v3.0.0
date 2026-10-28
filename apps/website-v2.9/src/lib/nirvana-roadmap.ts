@@ -1,4 +1,4 @@
-// Public 3.3 "Nirvana" workstreams — shared between /maitreya#plan-v33 and /roadmap#nirvana.
+// Public 3.3 "Nirvana" workstreams — shared between /zion-archive#plan-v33 and /roadmap#nirvana.
 // Derived from the canonical execution charter (Mise Amenti): every entry is a goal/horizon
 // with measurable acceptance criteria — never a completed capability or a promised date.
 

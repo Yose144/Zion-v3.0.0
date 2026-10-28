@@ -99,32 +99,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/team', 0.5, 'monthly'),
     r('/benchmarks', 0.5, 'monthly'),
 
-    // ── Maitreya — Book Five (full book, 19 chapters) ────────────────
-    r('/maitreya', 0.8, 'monthly'),
-    r('/maitreya/cist', 0.7, 'monthly'),
-
-    // ── Nirvana — Book of the West reader (landing lives under /maitreya#nirvana) ──
-    r('/maitreya/nirvana/cist', 0.7, 'monthly'),
-    // ── Ekam Deeksha — Book Three, seven parts + glossary ──
-    r('/maitreya/ekam/cist', 0.7, 'monthly'),
-    // ── Kvantová revoluce — Book Two, campfire tale ──
-    r('/maitreya/quantum-revolution/cist', 0.7, 'monthly'),
-    // ── Surta Srdce — heart sūtra for Surta (linked from /maitreya#spolecnici) ──
-    r('/maitreya/surta-srdce/cist', 0.7, 'monthly'),
-    // ── Království srdce — the carpenter's boat (linked from /maitreya#spolecnici) ──
-    r('/maitreya/kralovstvi-srdce/cist', 0.7, 'monthly'),
-    // ── Korpus companion books — all read in the Nirvana Hub ──
-    r('/maitreya/sulzeme/cist', 0.7, 'monthly'),
-    r('/maitreya/lumi/cist', 0.6, 'monthly'),
-    r('/maitreya/miriam/cist', 0.6, 'monthly'),
-    r('/maitreya/ruze/cist', 0.6, 'monthly'),
-    r('/maitreya/bodhigaia/cist', 0.7, 'monthly'),
-    r('/maitreya/mariacaminho/cist', 0.6, 'monthly'),
-    r('/maitreya/naceste/cist', 0.5, 'monthly'),
-    r('/maitreya/nirvanacloud/cist', 0.7, 'monthly'),
-    r('/maitreya/issobella/cist', 0.6, 'monthly'),
-    r('/maitreya/kruhbohyni/cist', 0.6, 'monthly'),
-    r('/maitreya/miseamenti/cist', 0.6, 'monthly'),
+    // ── Zion Archive — Nirvana Hub (locked coming-soon; readers re-enter
+    //    the sitemap when ARCHIVE_LOCKED flips off) ──
+    r('/zion-archive', 0.8, 'monthly'),
 
     // ── Misc real pages ──────────────────────────────────────────────
     r('/ekam', 0.6, 'monthly'),

@@ -22,11 +22,11 @@ const SLIDES: Slide[] = [
       en: 'Tree of Life, Maitreya and the journey that continues — One Love · One Human · One World',
     },
     label: { cs: 'Maitreya · Strom života', en: 'Maitreya · Tree of Life' },
-    href: '/maitreya#cesta',
+    href: '/zion-archive#cesta',
   },
   {
-    src: '/images/maitreya/hero.webp',
-    srcM: '/images/maitreya/hero-m.webp',
+    src: '/images/zion-archive/hero.webp',
+    srcM: '/images/zion-archive/hero-m.webp',
     alt: {
       cs: 'Oasis — jedna rodina pod Stromem života: Maitreya, Krišna, tesař a děti nové země',
       en: 'Oasis — one family under the Tree of Life: Maitreya, Krishna, the carpenter and the children of the new earth',

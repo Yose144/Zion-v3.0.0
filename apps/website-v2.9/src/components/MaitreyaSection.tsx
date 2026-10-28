@@ -7,9 +7,9 @@ import { ArrowRight, Egg, Gamepad2, Sparkles, Sun, Wind } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 const MaitreyaSectionCopy = {
-  kicker: { cs: 'Nirvana Hub · knihovna · CZ + EN', en: 'Nirvana Hub · library · CZ + EN' },
-  title: { cs: 'Nirvana Hub', en: 'Nirvana Hub' },
-  subtitle: { cs: 'Všechny knihy cesty · jeden reader', en: 'All the books of the path · one reader' },
+  kicker: { cs: 'Zion Archive · Nirvana Hub · CZ + EN', en: 'Zion Archive · Nirvana Hub · CZ + EN' },
+  title: { cs: 'Zion Archive', en: 'Zion Archive' },
+  subtitle: { cs: 'Nirvana Hub · všechny knihy cesty · jeden reader · přístup brzy', en: 'Nirvana Hub · all the books of the path · one reader · access soon' },
   body: {
     cs: 'Genesis, Kvantová revoluce, Ekam, Terra Nova, Maitreya i Nirvana — celá knihovna v jednom sjednoceném readeru. Začni číst, projdi související příběhy nebo otevři plán v3.3 — ten je vývojovým cílem, ne hotovým vydáním.',
     en: 'Genesis, Quantum Revolution, Ekam, Terra Nova, Maitreya and Nirvana — the whole library in one unified reader. Start reading, explore the related stories or open the v3.3 plan — a development goal, not a completed release.',
@@ -47,12 +47,12 @@ export default function MaitreyaSection() {
           <div className="relative grid gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-stretch">
             {/* artwork panel */}
             <Link
-              href="/maitreya"
+              href="/zion-archive"
               className="group/img relative block aspect-[16/9] overflow-hidden rounded-xl border border-white/10 lg:aspect-auto lg:h-full"
             >
               <img
-                src="/images/maitreya/hero.webp"
-                srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1536w"
+                src="/images/zion-archive/hero.webp"
+                srcSet="/images/zion-archive/hero-m.webp 960w, /images/zion-archive/hero.webp 1536w"
                 sizes="(max-width: 1024px) calc(100vw - 3rem), 620px"
                 alt={cs ? 'Oasis — jedna rodina pod Stromem života, vizuál Nirvana Hubu' : 'Oasis — one family under the Tree of Life, Nirvana Hub artwork'}
                 loading="lazy"
@@ -62,7 +62,7 @@ export default function MaitreyaSection() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-100 backdrop-blur-sm">
                 <Sparkles className="h-3 w-3 text-zion-gold" />
-                {cs ? 'Knihovna' : 'Library'}
+                {cs ? 'Otevírá se brzy' : 'Opening soon'}
               </div>
             </Link>
 
@@ -78,7 +78,7 @@ export default function MaitreyaSection() {
                   {cs ? 'Element vzduchu' : 'The element of air'}
                 </span>
                 <Link
-                  href="/maitreya/nirvana/cist"
+                  href="/zion-archive/nirvana/cist"
                   className="zion-kicker border-amber-400/25 bg-amber-400/10 text-amber-300 transition-colors hover:border-amber-400/50"
                 >
                   <Sun className="h-3.5 w-3.5" />
@@ -104,19 +104,19 @@ export default function MaitreyaSection() {
               </p>
 
               <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
-                <Link href="/maitreya#cesta" prefetch={false} className="zion-button-primary group">
+                <Link href="/zion-archive#cesta" prefetch={false} className="zion-button-primary group">
                   {MaitreyaSectionCopy.ctaHub[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <Link
-                  href="/maitreya/cist"
+                  href="/zion-archive/cist"
                   prefetch={false}
                   className="zion-button-secondary border-white/15 hover:border-zion-purple/40 hover:text-zion-purple"
                 >
                   {MaitreyaSectionCopy.cta[cs ? 'cs' : 'en']}
                 </Link>
                 <Link
-                  href="/maitreya#plan-v33"
+                  href="/zion-archive#plan-v33"
                   prefetch={false}
                   className="zion-button-secondary border-white/15 hover:border-zion-gold/40 hover:text-zion-gold"
                 >
