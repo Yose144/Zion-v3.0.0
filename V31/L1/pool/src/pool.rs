@@ -862,6 +862,31 @@ impl Pool {
         &self,
         multi_bridge: &crate::auxpow_bridge::MultiAuxPowBridge,
     ) -> Vec<crate::coin_leg::LegStatus> {
+        Self::leg_statuses_detached(
+            self.config.l1_rpc_url.is_some(),
+            self.pearl.as_ref(),
+            multi_bridge,
+        )
+    }
+
+    /// Clone the two pool-owned inputs `leg_statuses_detached` needs —
+    /// call this under `pool.lock()`, release the guard, then gather leg
+    /// state without the shared pool mutex held.
+    pub fn leg_inputs(&self) -> (bool, Option<Arc<crate::pearl_gateway::PearlRuntime>>) {
+        (self.config.l1_rpc_url.is_some(), self.pearl.clone())
+    }
+
+    /// `leg_statuses` over detached inputs — callers collect
+    /// `(l1_configured, pearl.clone())` under `pool.lock()`, release the
+    /// guard, then gather leg state. Per-leg mutexes (job queues, upstream
+    /// runtime state) must never be taken while the shared pool mutex is
+    /// held: a leg stuck on a stalled upstream would otherwise freeze share
+    /// accounting and every API payload.
+    pub fn leg_statuses_detached(
+        l1_configured: bool,
+        pearl: Option<&Arc<crate::pearl_gateway::PearlRuntime>>,
+        multi_bridge: &crate::auxpow_bridge::MultiAuxPowBridge,
+    ) -> Vec<crate::coin_leg::LegStatus> {
         use crate::coin_leg::{LegKind, LegStatus};
         let mut legs: Vec<LegStatus> = Vec::new();
 
@@ -871,7 +896,7 @@ impl Pool {
             coin: "ZION".into(),
             kind: LegKind::Native,
             enabled: true,
-            connected: self.config.l1_rpc_url.is_some(),
+            connected: l1_configured,
             job_id: None,
             job_age_ms: None,
             share_pct: None,
@@ -891,7 +916,7 @@ impl Pool {
         });
 
         // PRL native + upstream legs (pearl-gateway / LuckyPool).
-        if let Some(pearl) = &self.pearl {
+        if let Some(pearl) = pearl {
             let (n_en, njid, nage, npct, u_en, u_conn, ujid, uage, _upend, _sn, _su) =
                 pearl.status();
             legs.push(LegStatus {

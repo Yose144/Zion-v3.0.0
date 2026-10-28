@@ -648,13 +648,17 @@ async fn main() -> anyhow::Result<()> {
             std::collections::HashMap::new();
         loop {
             interval.tick().await;
-            let legs = {
+            // Pool-owned inputs under the guard, leg state outside it — a
+            // leg mutex stuck on a stalled upstream must not wedge `pool`.
+            let (l1_cfg, pearl) = {
                 let p = match stale_pool.lock() {
                     Ok(p) => p,
                     Err(_) => continue,
                 };
-                p.leg_statuses(&stale_bridge)
+                p.leg_inputs()
             };
+            let legs =
+                zion_pool::pool::Pool::leg_statuses_detached(l1_cfg, pearl.as_ref(), &stale_bridge);
             for leg in legs {
                 if !leg.enabled {
                     continue;

@@ -1537,12 +1537,14 @@ impl StratumServer {
     }
 
     /// Live snapshot of every coin leg — delegates to
-    /// [`Pool::leg_statuses`] so the same snapshot can serve the API.
+    /// [`Pool::leg_statuses_detached`] so per-leg mutexes are never taken
+    /// while the shared pool mutex is held.
     pub fn leg_statuses(&self) -> Vec<coin_leg::LegStatus> {
-        self.pool
-            .lock()
-            .expect("pool lock poisoned")
-            .leg_statuses(&self.multi_bridge)
+        let (l1_cfg, pearl) = {
+            let pool = self.pool.lock().expect("pool lock poisoned");
+            pool.leg_inputs()
+        };
+        Pool::leg_statuses_detached(l1_cfg, pearl.as_ref(), &self.multi_bridge)
     }
 
     /// Return true if an external job is fresh enough to send to a miner.

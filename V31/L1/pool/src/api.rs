@@ -35,6 +35,23 @@ const HISTORY_CAP: usize = 24 * 60;
 /// A miner counts as online for a coin when its last share is younger.
 const ONLINE_WINDOW_S: u64 = 600;
 
+/// Hard cap on concurrent API requests. Each connection is served on its
+/// own OS thread — without a bound, a stalled backend piles up threads
+/// until the process suffocates (seen live: 437 threads on a hung lock).
+/// The accept loop sheds excess load with a fast 503 instead.
+const API_MAX_IN_FLIGHT: usize = 64;
+static API_IN_FLIGHT: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(0);
+
+/// RAII decrement for `API_IN_FLIGHT` — released when the handler thread
+/// exits, on success or panic alike.
+struct ApiPermit;
+impl Drop for ApiPermit {
+    fn drop(&mut self) {
+        API_IN_FLIGHT.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
 fn write_http_response(
     stream: &mut TcpStream,
     status: &str,
@@ -325,8 +342,19 @@ impl PoolApi {
                     continue;
                 }
             };
+            let prev = API_IN_FLIGHT.fetch_add(1, Ordering::Relaxed);
+            if prev >= API_MAX_IN_FLIGHT {
+                API_IN_FLIGHT.fetch_sub(1, Ordering::Relaxed);
+                warn!("pool_api_shed_load in_flight={prev}");
+                let mut s = stream;
+                let _ = s.write_all(
+                    b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
+                );
+                continue;
+            }
             let api = Arc::clone(&self);
             std::thread::spawn(move || {
+                let _permit = ApiPermit;
                 if let Err(e) = api.handle_request(stream) {
                     error!("pool_api_handle_error={e}");
                 }
@@ -1231,21 +1259,43 @@ impl PoolApi {
     }
 
     fn build_stats_payload(&self) -> String {
-        let pool = self.pool.lock().expect("pool lock poisoned");
-        let (accepted, rejected) = pool.stats();
         let uptime_s = self.started_at.elapsed().as_secs();
-        let sessions = pool
-            .session_counters
-            .active_sessions
-            .load(Ordering::Relaxed);
-        let total_conn = pool
-            .session_counters
-            .total_connections
-            .load(Ordering::Relaxed);
-        let stats = pool.pplns.stats();
-        let fees = pool.pplns.fee_stats();
+        let (
+            accepted,
+            rejected,
+            sessions,
+            total_conn,
+            stats,
+            fees,
+            pearl,
+            pool_port,
+            quantus_pending,
+            pearl_pending,
+        ) = {
+            let pool = self.pool.lock().expect("pool lock poisoned");
+            let (accepted, rejected) = pool.stats();
+            (
+                accepted,
+                rejected,
+                pool.session_counters
+                    .active_sessions
+                    .load(Ordering::Relaxed),
+                pool.session_counters
+                    .total_connections
+                    .load(Ordering::Relaxed),
+                pool.pplns.stats(),
+                pool.pplns.fee_stats(),
+                pool.pearl.clone(),
+                pool.config.port,
+                pool.pending_external_payouts("quantus").len(),
+                pool.pending_external_payouts("pearl").len(),
+            )
+        };
 
-        let auxpow_json = self.auxpow_summary_inner(pool.pearl.clone());
+        // Leg state lives behind per-leg mutexes — gathered only after the
+        // pool guard is released so a leg stuck on a stalled upstream can
+        // never wedge share accounting through this payload.
+        let auxpow_json = self.auxpow_summary_inner(pearl);
 
         // Routing stats (sources + groups) for dashboard Trinity Mining panel
         let routing_json = if let Some(ref rs) = self.routing_stats {
@@ -1282,15 +1332,15 @@ impl PoolApi {
                 "miner_pct": fees.miner_pct,
                 "humanitarian_pct": fees.humanitarian_pct,
                 "issobella_pct": fees.issobella_pct,
-                "port": pool.config.port
+                "port": pool_port
             },
             "blocks": self.block_tracker_json(),
             "external_payouts": {
                 "quantus": {
-                    "pending": pool.pending_external_payouts("quantus").len()
+                    "pending": quantus_pending
                 },
                 "pearl": {
-                    "pending": pool.pending_external_payouts("pearl").len()
+                    "pending": pearl_pending
                 }
             },
             "auxpow": auxpow_json,
@@ -1981,11 +2031,20 @@ impl PoolApi {
 
     /// `/public/v1/coins` — coin registry + live leg health, public-safe.
     fn build_public_coins_payload(&self) -> String {
-        let pool = self.pool.lock().expect("pool lock poisoned");
+        // Leg state is gathered behind per-leg mutexes — take only the two
+        // pool-owned inputs under the guard, then release it (see
+        // `leg_statuses_detached`): a stuck leg must not wedge the pool.
         let legs = match &self.auxpow_bridge {
-            Some(b) => pool.leg_statuses(b),
+            Some(b) => {
+                let (l1_cfg, pearl) = {
+                    let pool = self.pool.lock().expect("pool lock poisoned");
+                    pool.leg_inputs()
+                };
+                Pool::leg_statuses_detached(l1_cfg, pearl.as_ref(), b)
+            }
             None => Vec::new(),
         };
+        let pool = self.pool.lock().expect("pool lock poisoned");
         let fees = pool.pplns.fee_stats();
 
         // One row per coin — legs folded in.  Public-safe fields only:
@@ -2600,10 +2659,15 @@ impl PoolApi {
         }
 
         // F4-B: leg health gauges — alert on enabled-but-disconnected or
-        // stale legs (job_age_ms > threshold).
+        // stale legs (job_age_ms > threshold). Leg state is gathered with
+        // the pool guard released — a stuck leg mutex must not wedge this
+        // scrape (Prometheus hits /metrics every interval).
         if let Some(ref bridge) = self.auxpow_bridge {
-            let pool = self.pool.lock().expect("pool lock poisoned");
-            for leg in pool.leg_statuses(bridge) {
+            let (l1_cfg, pearl) = {
+                let pool = self.pool.lock().expect("pool lock poisoned");
+                pool.leg_inputs()
+            };
+            for leg in Pool::leg_statuses_detached(l1_cfg, pearl.as_ref(), bridge) {
                 let id = sanitize_prometheus_label(&leg.leg_id);
                 let coin = sanitize_prometheus_label(&leg.coin.to_ascii_lowercase());
                 body.push_str(&format!(
