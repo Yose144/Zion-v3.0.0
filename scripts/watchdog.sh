@@ -134,6 +134,31 @@ check_pool_tcp() {
   timeout 3 bash -c "exec 3<>/dev/tcp/${POOL_HOST}/${POOL_PORT}" >/dev/null 2>&1
 }
 
+# Pool HTTP API liveness — the stratum TCP listener can stay reachable
+# while the API (and share accounting) is wedged on a stale lock. Two
+# consecutive unresponsive probes -> restart; the counter file survives
+# across timer runs.
+POOL_API_URL="${ZION_POOL_API_URL:-http://127.0.0.1:8080/stats}"
+POOL_API_STATE="${ZION_POOL_API_STATE:-/var/tmp/zion-pool-api-fails}"
+
+check_pool_api() {
+  [[ -n "$POOL_SERVICE" ]] || return 0
+  local fails=0
+  [[ -f "$POOL_API_STATE" ]] && fails=$(cat "$POOL_API_STATE" 2>/dev/null || echo 0)
+  if curl -s -o /dev/null --max-time 8 "$POOL_API_URL" 2>/dev/null; then
+    [[ "$fails" -gt 0 ]] && echo 0 > "$POOL_API_STATE"
+    return 0
+  fi
+  fails=$((fails + 1))
+  echo "$fails" > "$POOL_API_STATE"
+  log "WARN: pool API ${POOL_API_URL} unresponsive — fail ${fails}/2"
+  if [[ "$fails" -ge 2 ]]; then
+    restart_service "$POOL_SERVICE" "pool API unresponsive ${fails}x (wedged lock)"
+    echo 0 > "$POOL_API_STATE"
+  fi
+  return 0
+}
+
 rpc_get() {
   local url="$1"
   local method="$2"
@@ -202,6 +227,8 @@ check_health() {
   if [[ -n "$POOL_SERVICE" ]] && ! check_pool_tcp; then
     restart_service "$POOL_SERVICE" "pool TCP ${POOL_HOST}:${POOL_PORT} not reachable"
   fi
+
+  check_pool_api
 }
 
 check_sync() {
@@ -330,6 +357,8 @@ check_v31() {
   if [[ -n "$POOL_SERVICE" ]] && ! check_pool_tcp; then
     restart_service "$POOL_SERVICE" "pool TCP ${POOL_HOST}:${POOL_PORT} not reachable"
   fi
+
+  check_pool_api
 
   log "OK: v31=${v31_height} version=${v31_version}"
 }
