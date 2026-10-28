@@ -1894,17 +1894,7 @@ impl PoolApi {
             invalid += w_invalid;
             // worker_short is "wallet.worker@group" — show just the worker
             // part so the dashboard doesn't echo the wallet back.
-            let worker_name = worker_short
-                .strip_prefix(&format!("{miner_id}."))
-                .unwrap_or(&worker_short)
-                .split('@')
-                .next()
-                .unwrap_or(&worker_short);
-            let worker_name = if worker_name.is_empty() {
-                "default"
-            } else {
-                worker_name
-            };
+            let worker_name = worker_display_name(&miner_id, &worker_short);
             workers.push(json!({
                 "name": worker_name,
                 "worker": worker_name,
@@ -2056,9 +2046,9 @@ impl PoolApi {
             .unwrap_or_default();
         let mut by_ts: std::collections::BTreeMap<u64, (f64, u64, u64)> =
             std::collections::BTreeMap::new();
-        for (_miner_id, row_worker, ts, hps_json, accepted, rejected) in rows {
+        for (miner_id, row_worker, ts, hps_json, accepted, rejected) in rows {
             if let Some(w) = &worker {
-                if &row_worker != w {
+                if worker_display_name(&miner_id, &row_worker) != w.as_str() {
                     continue;
                 }
             }
@@ -2662,10 +2652,55 @@ fn parse_query_param(path: &str, key: &str) -> Option<String> {
     let q = path.split('?').nth(1)?;
     for pair in q.split('&') {
         if let Some(val) = pair.strip_prefix(&format!("{key}=")) {
-            return Some(val.to_string());
+            return Some(percent_decode(val));
         }
     }
     None
+}
+
+/// Minimal percent-decoder for query params (worker names are miner-supplied
+/// free text — `encodeURIComponent` on the frontend produces `%XX`, `+` reads
+/// as space per form convention). Malformed sequences pass through verbatim.
+fn percent_decode(s: &str) -> String {
+    if !s.contains('%') && !s.contains('+') {
+        return s.to_string();
+    }
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'+' => {
+                out.push(b' ');
+                i += 1;
+            }
+            b'%' if i + 2 < bytes.len() => {
+                let hex = |b: u8| -> Option<u8> {
+                    match b {
+                        b'0'..=b'9' => Some(b - b'0'),
+                        b'a'..=b'f' => Some(b - b'a' + 10),
+                        b'A'..=b'F' => Some(b - b'A' + 10),
+                        _ => None,
+                    }
+                };
+                match (hex(bytes[i + 1]), hex(bytes[i + 2])) {
+                    (Some(h), Some(l)) => {
+                        out.push(h * 16 + l);
+                        i += 3;
+                    }
+                    _ => {
+                        out.push(b'%');
+                        i += 1;
+                    }
+                }
+            }
+            b => {
+                out.push(b);
+                i += 1;
+            }
+        }
+    }
+    String::from_utf8_lossy(&out).into_owned()
 }
 
 fn parse_query_limit(path: &str, default: u32) -> u32 {
@@ -2696,6 +2731,24 @@ fn parse_query_miner_limit(path: &str, default_limit: u32) -> (Option<String>, u
         }
     }
     (miner, limit)
+}
+
+/// Normalize a stored worker identifier to the public worker name shown in
+/// miner payloads. Stored rows use "{miner_id}.{worker}[@{group}]" (or a
+/// free-form name); miners also see bare names for legacy/login variants.
+/// Miner-supplied free text — equality comparisons only, never SQL.
+fn worker_display_name<'a>(miner_id: &str, worker_short: &'a str) -> &'a str {
+    let name = worker_short
+        .strip_prefix(&format!("{miner_id}."))
+        .unwrap_or(worker_short)
+        .split('@')
+        .next()
+        .unwrap_or(worker_short);
+    if name.is_empty() {
+        "default"
+    } else {
+        name
+    }
 }
 
 /// Strip ".worker" and "@group" suffixes so the public feed only exposes the
@@ -3714,14 +3767,15 @@ mod tests {
     fn public_miner_history_aggregates_wallet_workers() {
         let store = std::sync::Arc::new(ShareStore::open_in_memory().unwrap());
         let now = crate::telemetry::now_unix_seconds();
-        // Two workers under one wallet — series merges per ts.
+        // Two workers under one wallet — series merges per ts. Stored worker
+        // values use the production shape "{miner_id}.{worker}[@{group}]".
         store
-            .record_miner_history_sample("w1", "rigA", now - 120, r#"{"qtu":1e6}"#, 5, 0, 86400)
+            .record_miner_history_sample("w1", "w1.rigA", now - 120, r#"{"qtu":1e6}"#, 5, 0, 86400)
             .unwrap();
         store
             .record_miner_history_sample(
-                "w1.rigB",
-                "rigB",
+                "w1",
+                "w1.rigB@g=qtu",
                 now - 120,
                 r#"{"qtu":2e6}"#,
                 3,
@@ -3730,11 +3784,11 @@ mod tests {
             )
             .unwrap();
         store
-            .record_miner_history_sample("w1", "rigA", now - 60, r#"{"qtu":1.5e6}"#, 8, 0, 86400)
+            .record_miner_history_sample("w1", "w1.rigA", now - 60, r#"{"qtu":1.5e6}"#, 8, 0, 86400)
             .unwrap();
         // Foreign miner excluded; old row pruned by since filter.
         store
-            .record_miner_history_sample("w9", "rigZ", now - 60, r#"{"qtu":9e9}"#, 1, 0, 86400)
+            .record_miner_history_sample("w9", "w9.rigZ", now - 60, r#"{"qtu":9e9}"#, 1, 0, 86400)
             .unwrap();
 
         let api = PoolApi::new(test_pool(), Some(store), None);
@@ -3750,7 +3804,9 @@ mod tests {
         assert_eq!(samples[0]["rejected"], 1);
         assert_eq!(samples[1]["hps"].as_f64().unwrap(), 1.5e6);
 
-        // A2.1: worker filter isolates a single worker's series.
+        // A2.1: worker filter isolates a single worker's series — matched on
+        // the display name, so "rigB" resolves stored "w1.rigB@g=qtu" and
+        // "rigA" resolves both "w1.rigA" rows.
         let only_rigb: serde_json::Value = serde_json::from_str(&api.build_public_miner_history(
             "qtu",
             "w1",
@@ -3763,6 +3819,17 @@ mod tests {
         assert_eq!(wb[0]["hps"].as_f64().unwrap(), 2e6);
         assert_eq!(wb[0]["accepted"], 3);
         assert_eq!(wb[0]["rejected"], 1);
+        let only_riga: serde_json::Value = serde_json::from_str(&api.build_public_miner_history(
+            "qtu",
+            "w1",
+            100,
+            Some("rigA".to_string()),
+        ))
+        .unwrap();
+        let wa = only_riga["samples"].as_array().unwrap();
+        assert_eq!(wa.len(), 2, "rigA has two ts points");
+        assert_eq!(wa[0]["hps"].as_f64().unwrap(), 1e6);
+        assert_eq!(wa[1]["hps"].as_f64().unwrap(), 1.5e6);
         // Unknown worker → empty series (not an error).
         let ghost: serde_json::Value = serde_json::from_str(&api.build_public_miner_history(
             "qtu",
@@ -3778,6 +3845,35 @@ mod tests {
             serde_json::from_str(&api.build_public_miner_history("qtu", "nobody", 100, None))
                 .unwrap();
         assert_eq!(empty["samples"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn worker_display_name_normalizes_stored_shapes() {
+        // Production shape: "{miner_id}.{worker}[@{group}]".
+        assert_eq!(worker_display_name("w1", "w1.rigA"), "rigA");
+        assert_eq!(worker_display_name("w1", "w1.rigB@g=qtu"), "rigB");
+        // Free-form / legacy rows pass through.
+        assert_eq!(worker_display_name("probe", "health-check"), "health-check");
+        // A different miner_id prefix is NOT stripped — passes through whole.
+        assert_eq!(worker_display_name("w1", "w2.rigA"), "w2.rigA");
+        // Empty remainder falls back to "default" (matches the miners payload).
+        assert_eq!(worker_display_name("w1", "w1."), "default");
+    }
+
+    #[test]
+    fn percent_decode_handles_query_encoding() {
+        assert_eq!(percent_decode("rig%201"), "rig 1");
+        assert_eq!(percent_decode("rig+1"), "rig 1");
+        assert_eq!(percent_decode("plain"), "plain");
+        assert_eq!(percent_decode("a%2Fb"), "a/b");
+        // Malformed sequences pass through verbatim.
+        assert_eq!(percent_decode("rig%2"), "rig%2");
+        assert_eq!(percent_decode("rig%zz"), "rig%zz");
+        // Route-level: encoded worker name lands decoded in the filter.
+        assert_eq!(
+            parse_query_param("/x?limit=10&worker=my%20rig", "worker"),
+            Some("my rig".to_string())
+        );
     }
 
     #[test]
