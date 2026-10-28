@@ -5,6 +5,7 @@
 //! Auth: ZIS API keys (X-API-Key → /api/keys/verify). Metering: SQLite.
 
 mod auth;
+mod billing;
 mod config;
 mod error;
 mod meter;
@@ -47,6 +48,11 @@ async fn main() -> anyhow::Result<()> {
         timeout: std::time::Duration::from_secs(cfg.timeout_secs),
         fallback_timeout: std::time::Duration::from_secs(cfg.fallback_timeout_secs),
         admin_key_hash: cfg.admin_key.as_deref().map(key_hash),
+        stripe: Some(billing::StripeConfig {
+            webhook_secret: cfg.stripe_webhook_secret,
+            price_pro: cfg.stripe_price_pro,
+            price_team: cfg.stripe_price_team,
+        }),
     });
 
     let app = Router::new()
@@ -57,6 +63,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/v1/usage", get(routes::usage))
         .route("/v1/admin/plan", post(routes::set_plan))
         .route("/v1/admin/plans", get(routes::list_plans))
+        .route("/v1/stripe/webhook", post(billing::webhook))
         .layer(CorsLayer::permissive())
         .with_state(state);
 

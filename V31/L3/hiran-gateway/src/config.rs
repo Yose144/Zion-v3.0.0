@@ -22,6 +22,10 @@ pub struct GatewayConfig {
     pub auth_cache_secs: u64,
     /// Upstream liveness probe cache TTL for /v1/models.
     pub probe_cache_secs: u64,
+    /// Stripe billing (empty → /v1/stripe/webhook disabled).
+    pub stripe_webhook_secret: Option<String>,
+    pub stripe_price_pro: Option<String>,
+    pub stripe_price_team: Option<String>,
 }
 
 impl GatewayConfig {
@@ -40,6 +44,15 @@ impl GatewayConfig {
             fallback_timeout_secs: env_u64("HIRAN_FALLBACK_TIMEOUT_SECS", 180),
             auth_cache_secs: env_u64("HIRAN_AUTH_CACHE_SECS", 60),
             probe_cache_secs: env_u64("HIRAN_PROBE_CACHE_SECS", 30),
+            stripe_webhook_secret: std::env::var("STRIPE_WEBHOOK_SECRET")
+                .ok()
+                .filter(|v| !v.is_empty()),
+            stripe_price_pro: std::env::var("STRIPE_PRICE_PRO")
+                .ok()
+                .filter(|v| !v.is_empty()),
+            stripe_price_team: std::env::var("STRIPE_PRICE_TEAM")
+                .ok()
+                .filter(|v| !v.is_empty()),
         };
         Ok(cfg)
     }

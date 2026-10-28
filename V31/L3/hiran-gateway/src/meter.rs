@@ -82,6 +82,10 @@ impl Meter {
                 key_hash TEXT PRIMARY KEY,
                 plan TEXT NOT NULL,
                 updated INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS stripe_map (
+                customer_id TEXT PRIMARY KEY,
+                key_hash TEXT NOT NULL
             );",
         )?;
         Ok(Self {
@@ -162,6 +166,29 @@ impl Meter {
             params![kh, day, total as i64],
         )?;
         Ok(())
+    }
+
+    /// Stripe customer → key_hash link (checkout.session.completed).
+    pub fn set_stripe_customer(&self, customer_id: &str, kh: &str) -> Result<()> {
+        self.conn.lock().unwrap().execute(
+            "INSERT INTO stripe_map(customer_id, key_hash) VALUES(?1, ?2)
+             ON CONFLICT(customer_id) DO UPDATE SET key_hash = excluded.key_hash",
+            params![customer_id, kh],
+        )?;
+        Ok(())
+    }
+
+    pub fn stripe_key_hash(&self, customer_id: &str) -> Result<Option<String>> {
+        let r = self.conn.lock().unwrap().query_row(
+            "SELECT key_hash FROM stripe_map WHERE customer_id = ?1",
+            params![customer_id],
+            |row| row.get::<_, String>(0),
+        );
+        match r {
+            Ok(v) => Ok(Some(v)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
     }
 
     /// Today's token usage for a key (daily-quota enforcement).

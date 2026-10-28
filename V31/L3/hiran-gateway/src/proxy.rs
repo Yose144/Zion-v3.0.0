@@ -28,6 +28,7 @@ pub struct AppState {
     pub timeout: Duration,
     pub fallback_timeout: Duration,
     pub admin_key_hash: Option<String>,
+    pub stripe: Option<crate::billing::StripeConfig>,
 }
 
 const MAX_TOKENS_CAP: u64 = 4096;
