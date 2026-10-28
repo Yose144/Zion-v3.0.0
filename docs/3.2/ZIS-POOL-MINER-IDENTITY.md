@@ -1,6 +1,15 @@
 # ZIS ↔ Pool: miner identity & payout routing (design — 9.B/3.B follow-up)
 
-> Stav: NÁVRH (2026-10-28). Žádná produkční změna — pouze architektura.
+> Stav: **ČÁSTEČNĚ IMPLEMENTOVÁNO** (aktualizace 2026-10-28 večer).
+> Fáze C (stratum auth + payout fallback) už běžela v produkci:
+> `ZION_POOL_ZIS_AUTH=optional` + `ZION_POOL_ZIS_URL` + service key na
+> EDGE; `zis.rs` verifier (pos/neg cache, ban list, linked addrs),
+> auth_token v Hello na plain+TLS, `zis_register_linked_payout` fallback,
+> account API `/public/v1/account/*` s `owns()` gatem, Welcome `zis_user`.
+> **Nově doplněno:** schema v12 `miner_zis_bindings` (persist binding při
+> každém úspěšném ZIS loginu napříč dialekty v1/qtu/pearl/v3-plain/v3-TLS),
+> `GET /public/v1/miner/{coin}/{wallet}/identity` (`{bound, zis_user:masked,
+> bound_since}` — DID jen maskovaný), metrika `zion_pool_zis_bound_miners`.
 > Kontext: payout wallet přešla na canonical `pool_payout` (187k ZION);
 > zbývá identita minerů — „kdo vlastní payout adresu a kam se vyplácí".
 
@@ -73,12 +82,20 @@ stratum auth (hello JWT/apikey)   payout routing + thresholds + alerts
   cache bindings (60 s TTL, mimo `pool` mutex — wedge lekce),
   `GET /public/v1/miner/{id}/identity` (jen bound flag + masked DID).
 
-## 5. Migrace
+## 5. Migrace — realita vs. plán
 
-1. Ship read-only: binding tabulka + claim UI (žádný pool vliv).
-2. Pool accept `zis_token` — legacy paralelně, metrika `bound_share_pct`.
-3. Payout routing flip per-coin (zion first, ext legs po attestaci).
-4. Legacy sunset až bound_share > 95 % nebo 👤 rozhodnutí.
+1. ✅ Stratum auth + payout fallback: live (`optional` mód).
+2. ✅ Persist + observability (28.10): v12 binding tabulka, identity
+   endpoint, adoption gauge `zion_pool_zis_bound_miners` — nasadit s
+   příštím pool buildem.
+3. ⏳ Claim/bind UX: ZIS `wallet` routes (`linkedAddresses`) existují —
+   chybí miner-facing „propojit payout adresu" flow v UI (Miner dashboard
+   / wallet-sdk) + explicit `bind` endpoint, pokud stačit linked addrs.
+4. ⏳ Payout routing precedence: dnes ZIS fallback jen když hello address
+   prázdná — bound-override (bound miner → jeho ZIS adresa vyhrává) je
+   fáze 3, potřebuje design rozhodnutí (hold-on-conflict vs prefer-bound).
+5. ⏳ Adoption gate: `zion_pool_zis_bound_miners` sledovat → optional→
+   required flip / legacy sunset = 👤.
 
 ## 6. Bezpečnost
 

@@ -520,6 +520,17 @@ impl StratumServer {
         }
     }
 
+    /// Persist a successful ZIS bind so the public identity endpoint can
+    /// report `bound` after the session closes. Best-effort — a store
+    /// failure must never break a login.
+    fn record_zis_binding(&self, key: &str, sub: &str) {
+        if let Some(store) = &self.share_store {
+            if let Err(e) = store.record_zis_binding(key, sub) {
+                tracing::warn!("zis_binding record failed key={}: {e}", key);
+            }
+        }
+    }
+
     /// Register a ZIS-linked payout address for `key` (wallet or miner
     /// id), mirroring the V3 Hello auto-resolve.  No-op without a
     /// matching linked address for `chain` (`"quantus"`, `"pearl"`,
@@ -599,6 +610,7 @@ impl StratumServer {
                             if let Some(idn) = idn {
                                 ctx.zis_user = idn.sub.clone();
                                 let (miner_id, _) = StratumV1Session::parse_username(&username);
+                                self.record_zis_binding(&miner_id, &idn.sub);
                                 self.zis_register_linked_payout(&idn, "zion", &miner_id);
                             }
                         }
@@ -1656,6 +1668,7 @@ impl StratumServer {
             ZisPasswordOutcome::Allow(idn) => {
                 if let Some(idn) = idn {
                     zis_user = idn.sub.clone();
+                    self.record_zis_binding(&login.wallet, &idn.sub);
                     self.zis_register_linked_payout(&idn, "quantus", &login.wallet);
                 }
             }
@@ -2183,6 +2196,7 @@ impl StratumServer {
             ZisPasswordOutcome::Allow(idn) => {
                 if let Some(idn) = idn {
                     zis_user = idn.sub.clone();
+                    self.record_zis_binding(&auth.wallet, &idn.sub);
                     self.zis_register_linked_payout(&idn, "pearl", &auth.wallet);
                 }
             }
@@ -2631,6 +2645,7 @@ impl StratumServer {
                     match identity {
                         Some(idn) if !verifier.is_banned(&idn.sub) => {
                             zis_user = idn.sub.clone();
+                            self.record_zis_binding(&miner_id, &idn.sub);
                             tracing::info!(
                                 "v3_zis_auth miner={} worker={} sub={} (tls)",
                                 miner_id,
@@ -3117,6 +3132,7 @@ impl StratumServer {
                     match identity {
                         Some(idn) if !verifier.is_banned(&idn.sub) => {
                             zis_user = idn.sub.clone();
+                            self.record_zis_binding(&miner_id, &idn.sub);
                             tracing::info!(
                                 "v3_zis_auth miner={} worker={} sub={}",
                                 miner_id,

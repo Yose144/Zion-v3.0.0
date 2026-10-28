@@ -760,6 +760,36 @@ impl PoolApi {
                     ),
                 }
             }
+            p if p.starts_with("/public/v1/miner/") && p.ends_with("/identity") => {
+                let parts: Vec<&str> = p
+                    .trim_start_matches("/public/v1/miner/")
+                    .split('/')
+                    .collect();
+                let wallet = parts.get(1).copied().unwrap_or("");
+                match &self.share_store {
+                    Some(store) => {
+                        // DID stays server-side; the public view shows only
+                        // a masked prefix so miners can confirm their bind.
+                        let binding = store.query_zis_binding(wallet).unwrap_or(None);
+                        let body = match binding {
+                            Some((sub, since)) => json!({
+                                "ok": true,
+                                "bound": true,
+                                "zis_user": mask_zis_sub(&sub),
+                                "bound_since": since,
+                            }),
+                            None => json!({ "ok": true, "bound": false }),
+                        }
+                        .to_string();
+                        ("200 OK", "application/json", body)
+                    }
+                    None => (
+                        "503 Service Unavailable",
+                        "application/json",
+                        "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
+                    ),
+                }
+            }
             p if p.starts_with("/public/v1/miner/") => {
                 let parts: Vec<&str> = p
                     .trim_start_matches("/public/v1/miner/")
@@ -2866,6 +2896,13 @@ impl PoolApi {
                     body.push_str(&format!("# payout backlog query failed: {}\n", e));
                 }
             }
+            // ZIS adoption: distinct miner ids observed with a bound
+            // identity (schema v12). Adoption gauge for the optional→
+            // required migration decision.
+            match store.count_zis_bindings() {
+                Ok(n) => body.push_str(&format!("zion_pool_zis_bound_miners {}\n", n)),
+                Err(e) => body.push_str(&format!("# zis bindings query failed: {}\n", e)),
+            }
         }
 
         // TLS status
@@ -3406,6 +3443,13 @@ fn payout_lifecycle(confirmed: bool, tx_id: &str, superseded_tx_id: &str) -> &'s
     }
 }
 
+/// Public-facing mask for a ZIS subject: enough to let the owner confirm
+/// their binding (`u9…`), never the full DID (doxxing surface — design §7).
+fn mask_zis_sub(sub: &str) -> String {
+    let head: String = sub.chars().take(3).collect();
+    format!("{head}…")
+}
+
 /// Queued (not-yet-broadcast) payouts from the in-memory PPLNS queue,
 /// serialized in the same shape as DB rows so clients can render one
 /// feed. `payout_chain` maps to the public coin id.
@@ -3629,6 +3673,32 @@ mod tests {
             .expect("confirmed row present");
         assert_eq!(conf["status"], "confirmed");
         assert_eq!(conf["confirmed"], true);
+    }
+
+    #[test]
+    fn public_miner_identity_reports_masked_binding() {
+        let pool = test_pool();
+        let store = Arc::new(ShareStore::open_in_memory().unwrap());
+        store
+            .record_zis_binding("zion1bound", "u42-secret-sub")
+            .unwrap();
+        let api = PoolApi::new(pool, Some(store), None);
+
+        let resp = request(&api, "GET", "/public/v1/miner/zion/zion1bound/identity", "");
+        assert!(resp.starts_with("HTTP/1.1 200 OK"), "{resp}");
+        let body: serde_json::Value =
+            serde_json::from_str(resp.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+        assert_eq!(body["bound"], true);
+        let masked = body["zis_user"].as_str().unwrap().to_string();
+        assert_eq!(masked, "u42…");
+        assert!(!masked.contains("secret"), "DID must stay masked: {masked}");
+        assert!(body["bound_since"].as_i64().unwrap() > 0);
+
+        let resp2 = request(&api, "GET", "/public/v1/miner/zion/zion1anon/identity", "");
+        let body2: serde_json::Value =
+            serde_json::from_str(resp2.split("\r\n\r\n").nth(1).unwrap()).unwrap();
+        assert_eq!(body2["bound"], false);
+        assert!(body2.get("zis_user").is_none() || body2["zis_user"].is_null());
     }
 
     #[test]

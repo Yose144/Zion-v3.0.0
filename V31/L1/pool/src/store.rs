@@ -38,7 +38,7 @@ use crate::v3_pplns::PayoutEntry;
 /// v9: `pool_state` kv — the running shares-since-last-block counter is
 /// flushed here periodically (the `shares` table is not populated by the
 /// production submit path, so there is no per-share trail to recount).
-const SCHEMA_VERSION: u32 = 11;
+const SCHEMA_VERSION: u32 = 12;
 
 /// A thread-safe wrapper around a SQLite connection.  SQLite with
 /// `serialized` mode (default for `bundled`) supports multi-thread access,
@@ -522,6 +522,23 @@ impl ShareStore {
             }
         }
 
+        if current < 12 {
+            // v12: `miner_zis_bindings` records which miner identity has a
+            // ZIS-bound session (claim observability, not authorization —
+            // auth decisions stay in the session layer). Written on each
+            // successful ZIS login across all stratum dialects; the public
+            // identity endpoint serves a masked view.
+            conn.execute_batch(
+                "CREATE TABLE IF NOT EXISTS miner_zis_bindings (
+                    miner_id      TEXT PRIMARY KEY,
+                    zis_sub       TEXT NOT NULL,
+                    first_seen_ts INTEGER NOT NULL,
+                    last_seen_ts  INTEGER NOT NULL
+                );",
+            )
+            .context("failed to migrate schema to v12")?;
+        }
+
         conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
         info!("share_store: schema migration complete v{SCHEMA_VERSION}");
         Ok(())
@@ -584,6 +601,45 @@ impl ShareStore {
             |row| row.get(0),
         )?;
         Ok(count)
+    }
+
+    /// Upsert a miner↔ZIS binding after a successful ZIS-authenticated
+    /// stratum login. `miner_id` is the wallet/key the session mines under
+    /// (v3 miner id or legacy wallet login); `first_seen_ts` is preserved
+    /// on conflict so the identity endpoint can report when binding began.
+    pub fn record_zis_binding(&self, miner_id: &str, zis_sub: &str) -> Result<()> {
+        if miner_id.is_empty() || zis_sub.is_empty() {
+            return Ok(());
+        }
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        conn.execute(
+            "INSERT INTO miner_zis_bindings (miner_id, zis_sub, first_seen_ts, last_seen_ts)
+             VALUES (?1, ?2, unixepoch(), unixepoch())
+             ON CONFLICT(miner_id) DO UPDATE SET
+                zis_sub = excluded.zis_sub,
+                last_seen_ts = excluded.last_seen_ts",
+            params![miner_id, zis_sub],
+        )?;
+        Ok(())
+    }
+
+    /// Fetch `(zis_sub, first_seen_ts)` for a miner id, if bound.
+    pub fn query_zis_binding(&self, miner_id: &str) -> Result<Option<(String, i64)>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        conn.query_row(
+            "SELECT zis_sub, first_seen_ts FROM miner_zis_bindings WHERE miner_id = ?1",
+            params![miner_id],
+            |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)),
+        )
+        .optional()
+        .map_err(Into::into)
+    }
+
+    /// Number of distinct miner ids with an observed ZIS binding.
+    pub fn count_zis_bindings(&self) -> Result<i64> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        conn.query_row("SELECT COUNT(*) FROM miner_zis_bindings", [], |r| r.get(0))
+            .map_err(Into::into)
     }
 
     /// Query recent shares for a miner.
@@ -2316,6 +2372,30 @@ mod tests {
 
         // Idempotent: a second void is a no-op.
         assert_eq!(store.void_payout_rows("deadbeef").unwrap(), 0);
+    }
+
+    #[test]
+    fn zis_binding_upsert_query_count() {
+        let store = ShareStore::open_in_memory().unwrap();
+        assert!(store.query_zis_binding("m1").unwrap().is_none());
+        assert_eq!(store.count_zis_bindings().unwrap(), 0);
+
+        store.record_zis_binding("m1", "u42").unwrap();
+        let (sub, first) = store.query_zis_binding("m1").unwrap().unwrap();
+        assert_eq!(sub, "u42");
+        assert!(first > 0);
+        assert_eq!(store.count_zis_bindings().unwrap(), 1);
+
+        // Rebind keeps first_seen and updates the sub.
+        store.record_zis_binding("m1", "u99").unwrap();
+        let (sub2, first2) = store.query_zis_binding("m1").unwrap().unwrap();
+        assert_eq!(sub2, "u99");
+        assert_eq!(first2, first);
+
+        // Empty inputs are a no-op (defensive — never break a login).
+        store.record_zis_binding("", "u1").unwrap();
+        store.record_zis_binding("m2", "").unwrap();
+        assert_eq!(store.count_zis_bindings().unwrap(), 1);
     }
 
     #[test]
