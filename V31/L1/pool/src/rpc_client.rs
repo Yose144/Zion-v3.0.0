@@ -157,6 +157,80 @@ impl L1Endpoints {
         self.addrs.len()
     }
 
+    /// Broadcast a request to EVERY configured endpoint in parallel and
+    /// pick the best response. Use for mempool submissions: mempools are
+    /// node-local (there is no tx relay), so a `call()` that lands on one
+    /// node leaves the others blind — templates built elsewhere never
+    /// include the tx, and a sibling spend built against another node's
+    /// mempool view double-spends it into a zombie that dies at
+    /// template-build ("input not found"). Fanout makes every node hold
+    /// the pending tx and mark its inputs spent.
+    ///
+    /// Prefers a non-rejection envelope (no `error` field and no
+    /// `result.accepted == false`); falls back to the first rejection
+    /// envelope; returns Err only when every attempt fails at transport.
+    /// `last_good` is untouched — this is a broadcast, not a failover call.
+    pub async fn call_all(&self, request: &Value) -> Result<Value> {
+        let n = self.addrs.len();
+        if n == 0 {
+            return Err(anyhow!("no L1 RPC endpoints configured"));
+        }
+        if n == 1 {
+            return self.call(request).await;
+        }
+        let timeout = attempt_timeout();
+        let mut set = tokio::task::JoinSet::new();
+        for idx in 0..n {
+            let this = self.clone();
+            let req = request.clone();
+            set.spawn(async move { (idx, this.call_addr(idx, &req, timeout).await) });
+        }
+        let mut good: Option<Value> = None;
+        let mut rejected: Option<Value> = None;
+        let mut last_err: Option<anyhow::Error> = None;
+        let (mut n_good, mut n_rejected, mut n_failed) = (0usize, 0usize, 0usize);
+        while let Some(joined) = set.join_next().await {
+            let (idx, result) = match joined {
+                Ok(v) => v,
+                Err(e) => {
+                    n_failed += 1;
+                    last_err = Some(anyhow!("broadcast task failed: {e}"));
+                    continue;
+                }
+            };
+            match result {
+                Ok(v) => {
+                    let is_reject = v.get("error").is_some_and(|e| !e.is_null())
+                        || v
+                            .get("result")
+                            .and_then(|r| r.get("accepted"))
+                            .and_then(|a| a.as_bool())
+                            == Some(false);
+                    if is_reject {
+                        n_rejected += 1;
+                        tracing::debug!("l1 rpc {} rejected broadcast", self.addrs[idx]);
+                        rejected.get_or_insert(v);
+                    } else {
+                        n_good += 1;
+                        good.get_or_insert(v);
+                    }
+                }
+                Err(e) => {
+                    n_failed += 1;
+                    tracing::debug!("l1 rpc {} broadcast failed: {}", self.addrs[idx], e);
+                    last_err = Some(e);
+                }
+            }
+        }
+        if n_good + n_rejected + n_failed > 1 || n_rejected + n_failed > 0 {
+            tracing::info!(
+                "l1 broadcast: {n_good} accepted, {n_rejected} rejected, {n_failed} unreachable"
+            );
+        }
+        good.or(rejected)
+            .ok_or_else(|| last_err.unwrap_or_else(|| anyhow!("all {n} L1 endpoints failed")))
+    }
+
     /// Call one specific endpoint (index into `addrs`) with its own bound —
     /// used by the block-submit tip-affinity probe, which must query each
     /// endpoint individually instead of following `last_good`.
@@ -335,6 +409,90 @@ mod tests {
         };
         let err = eps.call(&json!({"id":1})).await.unwrap_err().to_string();
         assert!(err.contains("no L1 RPC endpoints"), "got: {}", err);
+    }
+
+    #[tokio::test]
+    async fn call_all_broadcasts_to_every_endpoint() {
+        // Every live endpoint must receive the request — the whole point of
+        // fanout is that each node's mempool holds the submitted tx.
+        let hits_a = Arc::new(AtomicUsize::new(0));
+        let hits_b = Arc::new(AtomicUsize::new(0));
+        async fn spawn_counting(hits: Arc<AtomicUsize>) -> SocketAddr {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let addr = listener.local_addr().unwrap();
+            tokio::spawn(async move {
+                while let Ok((stream, _)) = listener.accept().await {
+                    hits.fetch_add(1, Ordering::Relaxed);
+                    let (reader, mut writer) = stream.into_split();
+                    let mut reader = BufReader::new(reader);
+                    let mut line = String::new();
+                    if reader.read_line(&mut line).await.is_err() {
+                        continue;
+                    }
+                    let resp = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"ok\":true}}\n";
+                    let _ = writer.write_all(resp.as_bytes()).await;
+                }
+            });
+            addr
+        }
+        let a = spawn_counting(hits_a.clone()).await;
+        let b = spawn_counting(hits_b.clone()).await;
+        let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", a, b)).unwrap();
+        let resp = eps.call_all(&json!({"id":1})).await.unwrap();
+        assert_eq!(resp["result"]["ok"], true);
+        assert_eq!(hits_a.load(Ordering::Relaxed), 1);
+        assert_eq!(hits_b.load(Ordering::Relaxed), 1);
+    }
+
+    #[tokio::test]
+    async fn call_all_prefers_accept_over_rejection() {
+        // One endpoint rejects (e.g. AlreadySpent sibling), another accepts —
+        // the accepted envelope wins so the caller parses a tx_id.
+        async fn spawn_raw(body: &'static str) -> SocketAddr {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let addr = listener.local_addr().unwrap();
+            tokio::spawn(async move {
+                while let Ok((stream, _)) = listener.accept().await {
+                    let (reader, mut writer) = stream.into_split();
+                    let mut reader = BufReader::new(reader);
+                    let mut line = String::new();
+                    if reader.read_line(&mut line).await.is_err() {
+                        continue;
+                    }
+                    let _ = writer.write_all(body.as_bytes()).await;
+                }
+            });
+            addr
+        }
+        let reject = spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-1,\"message\":\"already spent\"}}\n").await;
+        let accept = spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tx_id\":\"aa\"}}\n").await;
+        let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", reject, accept)).unwrap();
+        let resp = eps.call_all(&json!({"id":1})).await.unwrap();
+        assert_eq!(resp["result"]["tx_id"], "aa");
+
+        // All-reject returns a rejection envelope (caller requeues safely).
+        let reject2 =
+            spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-2,\"message\":\"nope\"}}\n")
+                .await;
+        let eps =
+            L1Endpoints::from_urls(&format!("http://{},http://{}", reject, reject2)).unwrap();
+        let resp = eps.call_all(&json!({"id":1})).await.unwrap();
+        assert!(resp.get("error").is_some());
+    }
+
+    #[tokio::test]
+    async fn call_all_survives_dead_endpoints() {
+        // A live endpoint still wins when others are unreachable.
+        let dead = dead_addr().await;
+        let live = spawn_server(json!({ "tx_id": "bb" })).await;
+        let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", dead, live)).unwrap();
+        let resp = eps.call_all(&json!({"id":1})).await.unwrap();
+        assert_eq!(resp["result"]["tx_id"], "bb");
+
+        // All dead → Err.
+        let dead2 = dead_addr().await;
+        let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", dead, dead2)).unwrap();
+        assert!(eps.call_all(&json!({"id":1})).await.is_err());
     }
 
     #[tokio::test]

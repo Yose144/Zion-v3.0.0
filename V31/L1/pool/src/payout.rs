@@ -464,7 +464,10 @@ async fn submit_utxo_transaction(
         "method": "submitUtxoTransaction",
         "params": { "transaction": tx_json }
     });
-    endpoints.call(&payload).await
+    // Broadcast to every endpoint: mempools are node-local with no relay,
+    // so a single-node submit can only land when that node wins the
+    // template race — and lets other nodes build conflicting spends.
+    endpoints.call_all(&payload).await
 }
 
 #[cfg(test)]

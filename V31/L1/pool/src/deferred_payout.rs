@@ -327,14 +327,15 @@ pub async fn execute_fee_payout(
 
     let eps = crate::rpc_client::L1Endpoints::from_urls(rpc_addr)
         .ok_or_else(|| anyhow::anyhow!("invalid L1 RPC URL: {}", rpc_addr))?;
+    // Broadcast to all endpoints — mempools are node-local with no relay.
     let resp = eps
-        .call(&rpc_request(
+        .call_all(&rpc_request(
             "submitUtxoTransaction",
             json!({ "transaction": tx_json }),
         ))
         .await?;
 
-    // `L1Endpoints::call` returns the raw envelope — a JSON-RPC `error`
+    // `L1Endpoints::call_all` returns the raw envelope — a JSON-RPC `error`
     // field still arrives as Ok. A rejected submit must not fabricate a
     // tx_id and look like a paid-out batch to the caller.
     let tx_id = parse_payout_submit_response(&resp)?;
@@ -507,7 +508,7 @@ pub fn spawn_deferred_payout_processor(
                                 }
                             };
                             match eps
-                                .call(&rpc_request(
+                                .call_all(&rpc_request(
                                     "submitUtxoTransaction",
                                     json!({ "transaction": tx_json }),
                                 ))
