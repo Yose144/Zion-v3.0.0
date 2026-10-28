@@ -733,7 +733,11 @@ async fn main() -> anyhow::Result<()> {
         let _ = shutdown_tx.send(true);
         tokio::time::sleep(Duration::from_millis(drain_grace_ms)).await;
         let pool2 = Arc::clone(&drain_pool);
-        let _ = tokio::task::spawn_blocking(move || {
+        // Bound the final flush: `pool.lock()` can starve for minutes under
+        // a submit-storm convoy (2026-10-28 wedge pattern — drain hung in
+        // lock() until systemd SIGKILL). The 30s periodic flush keeps state
+        // within seconds of durable, so a stuck save must never hold exit.
+        let flush = tokio::task::spawn_blocking(move || {
             if let Ok(mut p) = pool2.lock() {
                 match p.save() {
                     Ok(true) => info!("drain: final pplns flush persisted"),
@@ -745,8 +749,13 @@ async fn main() -> anyhow::Result<()> {
             if let (Some(store), Ok(t)) = (drain_store, drain_tracker.lock()) {
                 let _ = store.set_state("shares_since_last_block", t.shares_since_last_block());
             }
-        })
-        .await;
+        });
+        if tokio::time::timeout(Duration::from_secs(5), flush)
+            .await
+            .is_err()
+        {
+            warn!("drain: final flush exceeded 5s — exiting on periodic state");
+        }
         info!("drain: complete — exiting");
         // The drain task owns process exit: runtime teardown waits on
         // detached blocking tasks (the std-blocking API listener) until
