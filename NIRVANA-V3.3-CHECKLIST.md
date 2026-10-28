@@ -37,7 +37,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
   - [x] 🤖 RCA run #2 + live stall 21. 10. → fixy (pool RPC timeout 4→12 s, pool-side pre-orphan pryč, watchdog 30 s/3-fail) nasazené ([`REPORT_2026-10-21_G8_STALL_RCA.md`](docs/3.2/REPORTS/REPORT_2026-10-21_G8_STALL_RCA.md))
   - [x] 🤖 RCA run #3 (SPOF tunelu v sondě) → probe na lokální followery + vlastní probe na EDGE2
   - [x] 👤 Start run #5 (25. 10.)
-  - [ ] 🤖 Alert sink firing test + 40d retence doložit (8.B9)
+  - [x] 🤖 Alert sink firing test + 40d retence doložit (8.B9) — `REPORT_2026-10-28_G8_ALERT_SINK.md`: firing+resolved přes reálný Alertmanager 28.10., append-only jsonl 29d+ bez rotace, 40d span doběhne ~8.11.
   - [ ] 🤖 Run #5 PASS (1.S1) — nic nesmí zasáhnout required služby bez rollbacku do 15 min
 - [~] **G9 — externí audit** ⏸️ **posunuto rozhodnutím 👤 26. 10.** (v aktuálním okně se neobjednává)
   - [x] 🤖 Audit package (pin `4108a52d0`, reprodukovatelný build) + scope v2.2 — připraveno k odeslání
@@ -193,7 +193,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 2. 🤖 Provenance manifest + build z čistého `git archive` (8.B3)
 3. 🤖 Health checky zápisových cest + lag alerty L5/L6/db-sync/payout sweep (8.B4, 6.B2)
 4. 🤖 Stale-block RCA nad A1.2 metrikami (2.B1)
-5. 🤖 Alert sink firing test + důkaz retence (8.B9)
+5. ~~🤖 Alert sink firing test + důkaz retence (8.B9)~~ ✅ 28. 10.
 6. 🤖 Drafty `DEFERRED_3.2.md` + `RELEASE_NOTES_3.2.0.md` (9.B1, 9.B2)
 7. 🤖 Truth-sync dokumentace + Registr důkazů (9.B5)
 8. 🤖 Nový public repo sync workflow + secret scan (8.B7)
