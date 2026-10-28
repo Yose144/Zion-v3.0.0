@@ -43,15 +43,22 @@ impl VarDiffConfig {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(default)
         }
+        let min_difficulty =
+            env_or("ZION_VARDIFF_MIN_DIFF", env_or("ZION_VARDIFF_MIN", 1000))
+                .max(MIN_SHARE_DIFFICULTY);
         Self {
+            // Same normalization VarDiff::new applies — the config is the
+            // enforced policy, so a sub-floor env min (or a start below it)
+            // must read back as its effective value, not the raw knob.
+            min_difficulty,
             start_difficulty: env_or(
                 "ZION_VARDIFF_START_DIFF",
                 env_or("ZION_VARDIFF_START", 1000),
-            ),
-            min_difficulty: env_or("ZION_VARDIFF_MIN_DIFF", env_or("ZION_VARDIFF_MIN", 1000)),
+            )
+            .max(min_difficulty),
             max_difficulty: env_or("ZION_VARDIFF_MAX_DIFF", env_or("ZION_VARDIFF_MAX", 100_000)),
-            target_secs: env_or("ZION_VARDIFF_TARGET_SECS", 15),
-            retarget_shares: env_or("ZION_VARDIFF_RETARGET_SHARES", 8),
+            target_secs: env_or("ZION_VARDIFF_TARGET_SECS", 15).max(1),
+            retarget_shares: env_or("ZION_VARDIFF_RETARGET_SHARES", 8).max(2),
         }
     }
 }
