@@ -107,7 +107,15 @@ sha256sum /proc/$(systemctl show -p MainPID --value zion-v31-pool)/exe   # = bui
 - `docs/3.2/3.2.1-3.2.9_PLAN.md` status položky.
 - Push commitů na `main` (ne zapomenout — provenance baseline 8.B3).
 
-## 8. Známé zákruty
+## 8. Payout ledger ops (schema v11+, od 28. 10.)
+
+- **Treasury:** canonical payout wallet `zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6` — env `ZION_POOL_WALLET` + `ZION_POOL_WALLET_KEY` (+`ZION_POOL_PAYOUT_SK_HEX` pro standby) v `/etc/zion/edge-environment.sh` na EDGE **i** EDGE2. Bývalý `zion1n4k…` (klíč v `*.bak-canonical-payout-*`) drží ~6.8k ZION — případný sweep = 👤.
+- **Under-fee guard:** batch, kde required fee > 10 % cap, se NEBroadcastuje — requeue a čeká na větší payout value (loguje `under_fee`). Zamezuje dead-tx vznik.
+- **Resurrect sweep:** tx starší `ZION_PAYOUT_STUCK_AGE_SECS` (default 7 d) bez chain i UTXO evidence → `void_payout_rows` (řádek dostane `superseded_tx_id='voided:stuck'` = evidence, `total_paid` rollback) + requeue entry → nový submit. Externí coin chainy se neresurrectují.
+- **Monitoring:** `journalctl -u zion-v31-pool | grep -E 'payout_resurrect|voided|under_fee'`; backlog = `SELECT COUNT(*) FROM payouts WHERE confirmed=0 AND superseded_tx_id=''`; gauge `zion_pool_payouts_unconfirmed*`.
+- **Schema:** v11 přidává `payouts.superseded_tx_id` (migrace tolerantní i bez tabulky — historické fixture db).
+
+## 9. Známé zákruty
 
 - `pgrep -f 'cargo build.*zion-pool'` matchne i vlastní wait-loop bash — filtrovat `pgrep -f 'rustc.*main.rs'` nebo explicitní PID.
 - SQLite `.backup` na cestu bez existujícího adresáře → prázdný soubor, ověřit `ls -la`.

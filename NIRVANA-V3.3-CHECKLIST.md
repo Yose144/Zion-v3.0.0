@@ -95,6 +95,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [ ] 🤖 W2: dedup persist (A4.1), drain restart + canary deploy gate (A4.3 / 2.B2), alerting (A4.4/A4.5), payout lifecycle UI (A3.1)
 - [ ] 🔀 PRL payout `DRY_RUN=0` — 🤖 dry-batch report, 👤 flip (2.B6)
   - [ ] 👤 Revenue→oyster: sweep z BIP86 vs. přesměrování upstream walletu
+- [x] 🤖 **ZION payout backlog recovery 28. 10.** — `defdcd84a` DEPLOYED: under-fee guard + schema v11 `superseded_tx_id` + `void_payout_rows` (evidence+rollback) + resurrect sweep; treasury → canonical `zion1d2k` (~187k); live: 1 180 → ~560 a klesá, 0 double-pay
 - [ ] 👤 QTC treasury deficit (`treasury_free=0`, 918 odložených payoutů) (2.B7)
 - [ ] 🤖 PRL miner enablement: docs (SM75+/RDNA+), `gpu=PRL` pref na nepodporovaných kartách
 - [ ] 🤖 QTU native payout path produkčně (batch z quantus walletu)
