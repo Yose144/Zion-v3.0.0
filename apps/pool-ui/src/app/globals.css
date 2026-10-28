@@ -150,6 +150,26 @@ main {
   color: transparent;
 }
 
+/* Market-style layout primitives (shared ZION design language) */
+.zion-container {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+.section-line {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(228, 30, 43, 0.6),
+    rgba(252, 209, 22, 0.6),
+    rgba(7, 137, 48, 0.6),
+    transparent
+  );
+}
+
 /* ── Pills / status ────────────────────────────────────────────── */
 
 .pill {
