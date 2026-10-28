@@ -36,7 +36,7 @@ const SECTIONS: {
   { id: 'kniha', label: { cs: 'Maitreya', en: 'Maitreya' }, icon: BookOpen, rc: '252, 209, 22' },
   { id: 'nirvana', label: { cs: 'Nirvana', en: 'Nirvana' }, icon: Sun, rc: '251, 146, 60' },
   { id: 'plan-v33', label: { cs: 'Plán v3.3', en: 'v3.3 plan' }, icon: ListChecks, rc: '168, 85, 247' },
-  { id: 'spolecnici', label: { cs: 'Doprovodné knihy', en: 'Companion books' }, icon: Library, rc: '236, 72, 153' },
+  { id: 'spolecnici', label: { cs: 'Knihovna', en: 'Library' }, icon: Library, rc: '236, 72, 153' },
   { id: 'souvislosti', label: { cs: 'Příběh a tradice', en: 'Story & tradition' }, icon: ScrollText, rc: '148, 163, 184' },
 ];
 

@@ -3,16 +3,24 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { BookOpen, ExternalLink, FileText, Library } from 'lucide-react';
-import { COMPANION_GROUPS, type CompanionStatus } from '../library';
+import { COMPANION_GROUPS, MAIN_BOOKS, type CompanionStatus } from '../library';
 import { Panel, PanelHeader, type Lang } from './shared';
 
 const Copy = {
-  kicker: { cs: 'Osy a společníci', en: 'Axes and companions' },
-  title: { cs: 'Doprovodné knihy', en: 'Companion books' },
+  kicker: { cs: 'Knihovna cesty', en: 'The library of the path' },
+  title: { cs: 'Všechny knihy', en: 'All books' },
   sub: {
-    cs: 'Vyber podle tématu; doprovodné knihy hlavní cestu prohlubují, nenahrazují její pořadí.',
-    en: 'Pick by topic; the companion books deepen the main path, they do not replace its order.',
+    cs: 'Celá knihovna na jednom místě — hlavní knihy cesty i doprovodné osy; čte se v jednom readeru.',
+    en: 'The whole library in one place — the main books of the path and the companion axes; all read in one reader.',
   },
+  mainGroup: { cs: 'Hlavní knihy — cesta', en: 'Main books — the path' },
+  mainBlurb: {
+    cs: 'Šest knih hlavní osy od Genesis po Nirvanu — čtou se v pořadí.',
+    en: 'The six books of the main axis from Genesis to Nirvana — read in order.',
+  },
+  about: { cs: 'O knize', en: 'About' },
+  markerHere: { cs: '· jsme tady', en: '· we are here' },
+  markerGoal: { cs: '· cíl cesty', en: '· the goal' },
   status: {
     canon: { cs: 'kanon', en: 'canon' },
     draft: { cs: 'draft', en: 'draft' },
@@ -49,6 +57,72 @@ export default function SpolecniciPanel({ lang }: { lang: Lang }) {
         />
 
         <div className="space-y-7">
+          {/* main spine books first — the whole library lives in this panel */}
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-200">
+                {Copy.mainGroup[l]}
+              </h3>
+              <p className="text-xs text-gray-500">{Copy.mainBlurb[l]}</p>
+            </div>
+            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {MAIN_BOOKS.map((b) => (
+                <li key={b.id}>
+                  <article
+                    className="flex h-full flex-col gap-2.5 rounded-2xl border p-4"
+                    style={
+                      {
+                        borderColor: `rgba(${b.rc}, 0.2)`,
+                        backgroundColor: `rgba(${b.rc}, 0.04)`,
+                      } as CSSProperties
+                    }
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="min-w-0 flex-1 text-sm font-bold leading-snug text-white">
+                        <Link
+                          href={b.readHref}
+                          className="transition-colors hover:text-zion-gold"
+                        >
+                          {b.title[l]}
+                        </Link>
+                      </h4>
+                      <span
+                        className="shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em]"
+                        style={{ borderColor: `rgba(${b.rc}, 0.3)`, color: `rgb(${b.rc})` }}
+                      >
+                        {b.position} · {b.mantra}
+                      </span>
+                      {b.marker && (
+                        <span className="shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                          {b.marker === 'here' ? Copy.markerHere[l] : Copy.markerGoal[l]}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs leading-relaxed text-gray-400">{b.role[l]}</p>
+                    <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+                      <Link
+                        href={b.readHref}
+                        className="group inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-gray-200 transition-colors hover:border-white/25 hover:text-white"
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        {Copy.readChapter[l]}
+                      </Link>
+                      {b.aboutHref && b.aboutHref !== b.readHref && (
+                        <Link
+                          href={b.aboutHref}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-gray-400 transition-colors hover:border-white/25 hover:text-gray-200"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          {Copy.about[l]}
+                        </Link>
+                      )}
+                    </div>
+                  </article>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {COMPANION_GROUPS.map((g) => (
             <div key={g.id} className="space-y-3">
               <div className="space-y-1">
@@ -57,7 +131,7 @@ export default function SpolecniciPanel({ lang }: { lang: Lang }) {
                 </h3>
                 <p className="text-xs text-gray-500">{g.blurb[l]}</p>
               </div>
-              <ul className="grid gap-3 sm:grid-cols-2">
+              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {g.items.map((item) => {
                   // Localized primary: EN readers land on the English index when it
                   // exists (chapters stay Czech — flagged by the action label).
