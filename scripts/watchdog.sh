@@ -145,7 +145,9 @@ check_pool_api() {
   [[ -n "$POOL_SERVICE" ]] || return 0
   local fails=0
   [[ -f "$POOL_API_STATE" ]] && fails=$(cat "$POOL_API_STATE" 2>/dev/null || echo 0)
-  if curl -s -o /dev/null --max-time 8 "$POOL_API_URL" 2>/dev/null; then
+  # -f: a fast 503 from the API permit shed (API_MAX_IN_FLIGHT) means the
+  # handler pool is parked on stuck locks — that is a wedge, not health.
+  if curl -sf -o /dev/null --max-time 8 "$POOL_API_URL" 2>/dev/null; then
     [[ "$fails" -gt 0 ]] && echo 0 > "$POOL_API_STATE"
     return 0
   fi
