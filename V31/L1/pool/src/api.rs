@@ -1,7 +1,7 @@
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::Ordering;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
@@ -51,6 +51,22 @@ impl Drop for ApiPermit {
         API_IN_FLIGHT.fetch_sub(1, Ordering::Relaxed);
     }
 }
+
+/// Periodic snapshot cache for the heavy read-only payloads. One refresher
+/// thread rebuilds them; readers always get the last good build, so a
+/// `pool`-starved build cycle can never park request threads (2026-10-28
+/// wedge: a submit storm kept the mutex effectively held — /stats queued
+/// behind it until every permit was gone). Readers clone an `Arc`, never
+/// wait on `pool`.
+#[derive(Default)]
+struct PayloadSnapshots {
+    stats: RwLock<Option<Arc<str>>>,
+    metrics: RwLock<Option<Arc<str>>>,
+    public_coins: RwLock<Option<Arc<str>>>,
+}
+
+/// Snapshot refresh cadence — `ZION_POOL_API_SNAPSHOT_MS` overrides.
+const SNAPSHOT_INTERVAL_MS: u64 = 2_000;
 
 fn write_http_response(
     stream: &mut TcpStream,
@@ -122,6 +138,10 @@ pub struct PoolApi {
     /// `verify_blocking` variant; shares the env config with the stratum's
     /// own verifier but keeps an independent cache.
     zis: crate::zis::ZisVerifier,
+    /// Refreshed heavy-payload cache — `/stats`, `/metrics`,
+    /// `/public/v1/coins` are served from it so a `pool`-lock starvation
+    /// storm cannot park request threads.
+    snapshots: PayloadSnapshots,
     started_at: Instant,
 }
 
@@ -184,6 +204,7 @@ impl PoolApi {
             public_rate: Mutex::new(std::collections::HashMap::new()),
             auth_fail_rate: Mutex::new(std::collections::HashMap::new()),
             zis: crate::zis::ZisVerifier::from_env(),
+            snapshots: PayloadSnapshots::default(),
             started_at: Instant::now(),
         }
     }
@@ -332,6 +353,30 @@ impl PoolApi {
                     std::thread::sleep(Duration::from_secs(60));
                 }
             });
+        }
+
+        // Snapshot refresher — rebuilds the heavy read-only payloads on a
+        // fixed cadence so request threads never build them inline. If the
+        // `pool` mutex starves under a share storm, this one thread simply
+        // produces staler snapshots; `/stats`, `/metrics` and
+        // `/public/v1/coins` keep answering from the last good build.
+        {
+            let api = Arc::clone(&self);
+            let interval_ms = std::env::var("ZION_POOL_API_SNAPSHOT_MS")
+                .ok()
+                .and_then(|v| v.parse::<u64>().ok())
+                .unwrap_or(SNAPSHOT_INTERVAL_MS)
+                .max(250);
+            std::thread::Builder::new()
+                .name("api-snapshot".to_string())
+                .spawn(move || loop {
+                    api.refresh_snapshots();
+                    std::thread::sleep(Duration::from_millis(interval_ms));
+                })
+                .map_err(|e| {
+                    error!("api-snapshot thread spawn failed: {e}");
+                    e
+                })?;
         }
 
         for stream in listener.incoming() {
@@ -583,11 +628,13 @@ impl PoolApi {
                 ("200 OK", "application/json", body)
             }
             "/metrics" => {
-                let body = self.build_prometheus_payload();
+                let body = Self::snapshot_or(&self.snapshots.metrics, || {
+                    self.build_prometheus_payload()
+                });
                 ("200 OK", "text/plain; version=0.0.4", body)
             }
             p if p == "/stats" || p == "/" || p == "/pool" => {
-                let body = self.build_stats_payload();
+                let body = Self::snapshot_or(&self.snapshots.stats, || self.build_stats_payload());
                 ("200 OK", "application/json", body)
             }
             p if p.starts_with("/miners") => {
@@ -600,7 +647,9 @@ impl PoolApi {
             // Never leak: internal leg addresses/ports, upstream worker
             // names, wallet-key existence, anything admin.
             "/public/v1/coins" => {
-                let body = self.build_public_coins_payload();
+                let body = Self::snapshot_or(&self.snapshots.public_coins, || {
+                    self.build_public_coins_payload()
+                });
                 ("200 OK", "application/json", body)
             }
             "/public/v1/history" => {
@@ -1256,6 +1305,32 @@ impl PoolApi {
         };
 
         write_http_response(&mut stream, status, content_type, &body)
+    }
+
+    /// Rebuild every cached payload once — called only by the
+    /// `api-snapshot` refresher thread. A panic in any single builder must
+    /// not kill the refresher (frozen snapshots would look like a wedge).
+    fn refresh_snapshots(&self) {
+        let builds: [(&RwLock<Option<Arc<str>>>, &dyn Fn(&Self) -> String); 3] = [
+            (&self.snapshots.stats, &Self::build_stats_payload),
+            (&self.snapshots.metrics, &Self::build_prometheus_payload),
+            (&self.snapshots.public_coins, &Self::build_public_coins_payload),
+        ];
+        for (slot, build) in builds {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| build(self))) {
+                Ok(body) => *slot.write().expect("snapshot lock poisoned") = Some(body.into()),
+                Err(_) => error!("api-snapshot: payload build panicked — keeping last good"),
+            }
+        }
+    }
+
+    /// Serve the cached payload, building inline only while the refresher
+    /// has not produced its first copy yet (first seconds after boot).
+    fn snapshot_or(slot: &RwLock<Option<Arc<str>>>, build: impl Fn() -> String) -> String {
+        if let Some(body) = slot.read().expect("snapshot lock poisoned").as_ref() {
+            return body.to_string();
+        }
+        build()
     }
 
     fn build_stats_payload(&self) -> String {
@@ -3989,6 +4064,57 @@ mod tests {
         assert_eq!(vd["max"], 100_000);
         assert_eq!(vd["target_secs"], 15);
         assert_eq!(vd["retarget_shares"], 8);
+    }
+
+    // ---- snapshot cache (starvation wedge fix) --------------------------
+
+    #[test]
+    fn snapshots_serve_last_good_build() {
+        let api = PoolApi::new(test_pool(), None, None);
+        // Empty cache falls back to the inline build.
+        let fresh = api.build_stats_payload();
+        assert_eq!(
+            PoolApi::snapshot_or(&api.snapshots.stats, || api.build_stats_payload()),
+            fresh
+        );
+        // After a refresh the cached body is served verbatim — the inline
+        // fallback must not fire once a snapshot exists.
+        api.refresh_snapshots();
+        let cached = api
+            .snapshots
+            .stats
+            .read()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .to_string();
+        assert!(!cached.is_empty());
+        assert_eq!(
+            PoolApi::snapshot_or(&api.snapshots.stats, || "SHOULD-NOT-BUILD".to_string()),
+            cached
+        );
+        // Metrics + public coins snapshots were populated by the same pass.
+        assert!(api.snapshots.metrics.read().unwrap().is_some());
+        assert!(api.snapshots.public_coins.read().unwrap().is_some());
+    }
+
+    #[test]
+    fn snapshot_slots_refresh_independently() {
+        // A stale slot is replaced wholesale, never appended — the served
+        // body always matches the latest successful build.
+        let api = PoolApi::new(test_pool(), None, None);
+        *api.snapshots.stats.write().unwrap() = Some("STALE-MARKER".into());
+        api.refresh_snapshots();
+        let cached = api
+            .snapshots
+            .stats
+            .read()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .to_string();
+        assert_ne!(cached, "STALE-MARKER");
+        assert!(cached.contains("\"ok\":true") || cached.contains("ok"));
     }
 
     #[test]
