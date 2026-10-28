@@ -190,3 +190,6 @@ Všech 9 společnicích knih korpusu přesunuto z generického `/docs/view/korpu
 `BOOK_NAV` v registry = skupená navigace všech knih (skupiny zrcadlí library.ts: Hlavní knihy / Srdce kompasu / Kořeny a příběh / Země a cesta / Horizont a pravidla; genesis+terranova = experience linky). BookReader sidebar + mobilní menu renderují jeden `renderNav` strom: skupiny rozbalovací (default otevřená = skupina s aktivní knihou), neaktivní knihy = Link na svůj reader, aktivní kniha = accent row + inline part/chapter TOC.
 
 **EN/CZ audit výsledek:** `korpusLangs(dir)` odvozuje fakt „Jazyky" z manifest EN coverage — Lumi/Miriam/MariaCaminho/NaCeste = 'CZ' (0 _EN), SulZeme/BodhiGaia/Issobella/MiseAmenti = 'CZ (+EN části)' (1 _EN), NirvanaCloud = 'CZ (+EN části)' (3/9). Surta/Království nemají `en/books/*/kapitoly` — enFallback + czOnly note drží poctivé chování. Kapitolové titulky u korpus knih = humanized CS slugs (vlastní jména — přijatelné pro oba jazyky).
+
+
+> **2026-10-28 update — Zion Archive:** knihovna přejmenována na `/zion-archive` (`/maitreya*` → 301). Celá knihovna + readery dočasně za coming-soon lockem (`ARCHIVE_LOCKED` v `zion-archive/layout.tsx`) — přístup bude placený (Archive Pass na marketplace + OASIS bonusy + B2B). Odemčení = flip flagu, routy čtou znovu. Sitemap: jen `/zion-archive`.
