@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::anyhow;
 use serde_json::{json, Value};
@@ -648,20 +648,93 @@ async fn check_tx_on_chain_via_utxos(
 /// recorded on the matching output in the recipient's UTXO set. A UTXO
 /// entry without a positive `block_height` is not treated as evidence and
 /// the payout's earning height is never used as an inclusion height.
+/// A payout group whose broadcast tx is provably dead — absent from the
+/// chain AND the recipient UTXO set — and older than `stuck_age_secs` is
+/// voided in the ledger and its entries re-queued so the next sweep builds
+/// a fresh tx. The old tx cannot resurface: no node retains it (mempool
+/// is volatile), so the fresh tx is the only payable path. Only `zion`
+/// rows are re-queued — external payout chains own their sweeps.
+fn resurrect_stuck_group(
+    store: &ShareStore,
+    pool: &Option<Arc<Mutex<crate::pool::Pool>>>,
+    tx_id: &str,
+    group: &[PayoutRow],
+    stuck_age_secs: u64,
+) {
+    let Some(pool) = pool else {
+        return;
+    };
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    // Conservative: void only when every row of the dead tx is past the
+    // stuck age (a mixed-age group means something else is going on).
+    if !group
+        .iter()
+        .all(|p| (now - p.ts) > stuck_age_secs as i64)
+    {
+        return;
+    }
+    let zion_rows: Vec<&PayoutRow> = group.iter().filter(|p| p.coin == "zion").collect();
+    if zion_rows.is_empty() {
+        return;
+    }
+    match store.void_payout_rows(tx_id) {
+        Ok(0) => return,
+        Ok(n) => info!(
+            "payout_resurrect tx_id={} voided_rows={} requeue={} — broadcast tx never landed",
+            tx_id,
+            n,
+            zion_rows.len()
+        ),
+        Err(e) => {
+            warn!("payout_resurrect void failed for {tx_id}: {e}");
+            return;
+        }
+    }
+    let entries: Vec<(u64, PayoutEntry)> = zion_rows
+        .iter()
+        .map(|p| {
+            (
+                p.height,
+                PayoutEntry {
+                    miner_id: p.miner_id.clone(),
+                    address: p.address.clone(),
+                    amount: p.amount_flowers,
+                    share_count: 0,
+                    payout_chain: Some("zion".to_string()),
+                    native_units: false,
+                    coin: Some("zion".to_string()),
+                    revenue_event: Some(format!("resurrect:{tx_id}")),
+                },
+            )
+        })
+        .collect();
+    pool.lock()
+        .expect("pool lock poisoned")
+        .requeue_payouts(entries);
+}
+
 pub fn spawn_payout_confirmation_sweep(
     rpc_addr: Option<String>,
     interval_secs: u64,
     share_store: Option<Arc<ShareStore>>,
+    pool: Option<Arc<Mutex<crate::pool::Pool>>>,
 ) {
     let interval = Duration::from_secs(interval_secs);
     let maturity_confirmations = std::env::var("ZION_PAYOUT_MATURITY")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(6u32);
+    let stuck_age_secs = std::env::var("ZION_PAYOUT_STUCK_AGE_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(7 * 86_400u64);
 
     info!(
-        "payout_confirmation_sweep: enabled interval_secs={} maturity_confirmations={}",
-        interval_secs, maturity_confirmations
+        "payout_confirmation_sweep: enabled interval_secs={} maturity_confirmations={} stuck_age_secs={} resurrect={}",
+        interval_secs, maturity_confirmations, stuck_age_secs, pool.is_some()
     );
 
     tokio::spawn(async move {
@@ -718,7 +791,12 @@ pub fn spawn_payout_confirmation_sweep(
                             .await
                         {
                             Ok(Some(h)) => (h, String::new()),
-                            Ok(None) => continue,
+                            Ok(None) => {
+                                resurrect_stuck_group(
+                                    &store, &pool, &tx_id, &group, stuck_age_secs,
+                                );
+                                continue;
+                            }
                             Err(e) => {
                                 tracing::debug!("payout_confirmation_sweep: getUtxos fallback failed for {}: {e}", representative.address);
                                 continue;

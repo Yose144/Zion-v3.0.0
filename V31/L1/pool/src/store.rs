@@ -38,7 +38,7 @@ use crate::v3_pplns::PayoutEntry;
 /// v9: `pool_state` kv — the running shares-since-last-block counter is
 /// flushed here periodically (the `shares` table is not populated by the
 /// production submit path, so there is no per-share trail to recount).
-const SCHEMA_VERSION: u32 = 10;
+const SCHEMA_VERSION: u32 = 11;
 
 /// A thread-safe wrapper around a SQLite connection.  SQLite with
 /// `serialized` mode (default for `bundled`) supports multi-thread access,
@@ -497,6 +497,31 @@ impl ShareStore {
             .context("failed to migrate schema to v10")?;
         }
 
+        if current < 11 {
+            // v11: `superseded_tx_id` marks unconfirmed payout rows whose
+            // broadcast tx provably never landed (absent from chain AND
+            // mempool past the stuck age). The rows stay in the ledger as
+            // evidence but are excluded from the unconfirmed backlog and
+            // the entry is re-queued so a fresh tx pays the miner.
+            let has_payouts: bool = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM sqlite_master
+                     WHERE type = 'table' AND name = 'payouts'",
+                    [],
+                    |r| r.get::<_, i64>(0),
+                )
+                .map(|c| c > 0)
+                .unwrap_or(false);
+            if has_payouts {
+                conn.execute_batch(
+                    "ALTER TABLE payouts
+                        ADD COLUMN superseded_tx_id TEXT NOT NULL DEFAULT '';
+                     CREATE INDEX payouts_superseded ON payouts(superseded_tx_id);",
+                )
+                .context("failed to migrate schema to v11")?;
+            }
+        }
+
         conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
         info!("share_store: schema migration complete v{SCHEMA_VERSION}");
         Ok(())
@@ -623,6 +648,44 @@ impl ShareStore {
             params![rec.amount_flowers as i64, base_miner_id],
         )?;
         Ok(())
+    }
+
+    /// Mark unconfirmed payout rows of `tx_id` as voided (`superseded_tx_id`)
+    /// because the broadcast provably never landed (absent from chain and
+    /// mempool past the stuck age). Rows stay in the ledger as evidence but
+    /// leave the unconfirmed backlog; `miners.total_paid_flowers` is rolled
+    /// back so the re-queued payment doesn't double-count. Returns the
+    /// number of rows voided.
+    pub fn void_payout_rows(&self, tx_id: &str) -> Result<usize> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT miner_id, amount_flowers FROM payouts
+             WHERE tx_id = ?1 AND confirmed = 0 AND superseded_tx_id = ''",
+        )?;
+        let rows: Vec<(String, i64)> = stmt
+            .query_map(params![tx_id], |r| Ok((r.get(0)?, r.get(1)?)))?
+            .collect::<std::result::Result<_, _>>()?;
+        drop(stmt);
+        if rows.is_empty() {
+            return Ok(0);
+        }
+        let n = conn.execute(
+            "UPDATE payouts SET superseded_tx_id = 'voided:stuck'
+             WHERE tx_id = ?1 AND confirmed = 0 AND superseded_tx_id = ''",
+            params![tx_id],
+        )?;
+        for (miner_id, amount) in &rows {
+            let base = miner_id
+                .split_once('/')
+                .map(|(b, _)| b)
+                .unwrap_or(miner_id.as_str());
+            conn.execute(
+                "UPDATE miners SET total_paid_flowers = MAX(0, total_paid_flowers - ?1)
+                 WHERE miner_id = ?2",
+                params![amount, base],
+            )?;
+        }
+        Ok(n)
     }
 
     /// Mark a payout as confirmed with N confirmations.
@@ -1186,7 +1249,7 @@ impl ShareStore {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
             "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin
-             FROM payouts WHERE confirmed = 0",
+             FROM payouts WHERE confirmed = 0 AND superseded_tx_id = ''",
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(PayoutRow {
@@ -2213,6 +2276,38 @@ mod tests {
         assert_eq!(payouts[0].confirmations, 12);
         assert_eq!(payouts[0].block_hash, "blockhash456");
         assert_eq!(payouts[0].height, 150);
+    }
+
+    #[test]
+    fn void_payout_rows_exits_backlog_and_rolls_back_total_paid() {
+        let store = ShareStore::open_in_memory().unwrap();
+        let payout = PayoutRecord {
+            miner_id: "m1".to_string(),
+            address: "zion1abc".to_string(),
+            amount_flowers: 1_000_000,
+            tx_id: "deadbeef".to_string(),
+            height: 100,
+            block_hash: String::new(),
+            coin: "zion".to_string(),
+        };
+        store.record_payout(&payout).unwrap();
+        assert_eq!(store.query_unconfirmed_payouts().unwrap().len(), 1);
+
+        // Voiding marks the rows superseded: out of the unconfirmed backlog
+        // but still present in the ledger as evidence.
+        assert_eq!(store.void_payout_rows("deadbeef").unwrap(), 1);
+        assert_eq!(store.query_unconfirmed_payouts().unwrap().len(), 0);
+        let payouts = store.query_payouts("m1", 10).unwrap();
+        assert_eq!(payouts.len(), 1);
+        assert!(!payouts[0].confirmed);
+
+        // Miner total_paid is rolled back so the re-queued payment doesn't
+        // double-count.
+        let miner = store.get_miner_stats("m1").unwrap().unwrap();
+        assert_eq!(miner.total_paid_flowers, 0);
+
+        // Idempotent: a second void is a no-op.
+        assert_eq!(store.void_payout_rows("deadbeef").unwrap(), 0);
     }
 
     #[test]

@@ -148,8 +148,21 @@ impl PayoutSweeper {
             utxos.len(),
             recipients.len() + 1,
         ))
-        .max(fee_flowers)
-        .min(max_fee);
+        .max(fee_flowers);
+
+        if fee > max_fee {
+            // Clamping the fee below the network minimum produced txs that
+            // broadcast but never mined — the exact mechanism behind the
+            // legacy unconfirmed-payout residue. Defer the batch instead:
+            // the queue re-accumulates until 10 % covers the required fee.
+            warn!(
+                "payout sweep deferred: required fee {} exceeds 10% cap {} \
+                 (total {} flowers, {} recipients) — requeueing",
+                fee, max_fee, total_payout, recipients.len()
+            );
+            self.requeue(payouts);
+            return Ok(());
+        }
 
         if fee == 0 {
             warn!("payout sweep skipped: fee is zero");
