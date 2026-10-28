@@ -139,6 +139,13 @@ pub struct StratumServer {
     ip_sessions: Arc<Mutex<HashMap<IpAddr, usize>>>,
     /// NoSolution ban list: IP -> ban expiry.
     no_solution_bans: Arc<Mutex<HashMap<IpAddr, Instant>>>,
+    /// Per-session V3 nonce-space allocator — every session mines a
+    /// disjoint 2^32 window (`start_nonce = base`) so two sessions on the
+    /// same job can never produce identical (job, nonce) shares → the
+    /// "duplicate" rejects seen on colliding sessions. Seeded from the
+    /// clock so a restart skips to a fresh era (persisted dedup would
+    /// otherwise replay-reject the first scans at base 0).
+    v3_nonce_alloc: Arc<AtomicU64>,
     /// Max concurrent sessions per IP.
     max_sessions_per_ip: usize,
     /// Global concurrent-session cap (F4-B).
@@ -295,6 +302,13 @@ impl StratumServer {
             no_solution_ban_duration,
             vardiff_config,
             multi_bridge: MultiAuxPowBridge::new(),
+            v3_nonce_alloc: Arc::new(AtomicU64::new(
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_nanos() as u64)
+                    .unwrap_or(0)
+                    & 0xFFFF_FFFF_0000_0000,
+            )),
             relay_config: ShareRelayConfig::from_env(),
             notifier: Arc::new(Notifier::new(NotificationsConfig::from_env())),
             revenue_scheduler: Arc::new(Mutex::new(RevenueScheduler::from_env(0.0))),
@@ -1292,17 +1306,19 @@ impl StratumServer {
     }
 
     /// Rewrite the `external_stream` / `external_stream_cpu` fields of a
-    /// broadcast Job line for a session with explicit coin preferences.
-    /// Returns the original line unchanged when no preference applies or
-    /// the embedded coin already matches — the common path stays cheap.
+    /// broadcast Job line for a session with explicit coin preferences,
+    /// and pin `start_nonce` to the session's own 2^32 nonce window.
+    /// Returns the original line unchanged when no preference applies and
+    /// `nonce_base` is 0 — the common path stays cheap.
     fn session_job_line(
         &self,
         line: &str,
         gpu_pref: Option<ExternalCoin>,
         cpu_pref: Option<ExternalCoin>,
         gpu2_pref: Option<ExternalCoin>,
+        nonce_base: u64,
     ) -> String {
-        if gpu_pref.is_none() && cpu_pref.is_none() && gpu2_pref.is_none() {
+        if nonce_base == 0 && gpu_pref.is_none() && cpu_pref.is_none() && gpu2_pref.is_none() {
             return line.to_string();
         }
         let mut v: serde_json::Value = match serde_json::from_str(line.trim()) {
@@ -1313,6 +1329,10 @@ impl StratumServer {
             return line.to_string();
         }
         let mut changed = false;
+        if nonce_base != 0 && v.get("start_nonce").and_then(|n| n.as_u64()) == Some(0) {
+            v["start_nonce"] = serde_json::json!(nonce_base);
+            changed = true;
+        }
         if let Some(coin) = gpu_pref {
             changed |= self.rewrite_ext_field(&mut v, "external_stream", coin);
         }
@@ -1920,12 +1940,10 @@ impl StratumServer {
             } else {
                 auxpow_share_weight("QTU")
             };
-            self.pool.lock().unwrap().credit_reserved_external_share(
-                &login.login,
-                h,
-                w,
-                "qtu",
-            );
+            self.pool
+                .lock()
+                .unwrap()
+                .credit_reserved_external_share(&login.login, h, w, "qtu");
         }
         {
             let mut t = self.telemetry.lock().unwrap();
@@ -2567,6 +2585,10 @@ impl StratumServer {
         let mut session_gpu_pref: Option<ExternalCoin>;
         let mut session_cpu_pref: Option<ExternalCoin>;
         let mut session_gpu2_pref: Option<ExternalCoin>;
+        // This session's private 2^32 nonce window — see handle_v3_client.
+        let nonce_base = self
+            .v3_nonce_alloc
+            .fetch_add(0x1_0000_0000, Ordering::Relaxed);
         // Per-session vardiff + share rate limit + Hello-bound identity —
         // same submit contract as the plain-TCP path.
         let mut vardiff = VarDiff::new(&self.vardiff_config);
@@ -2700,6 +2722,7 @@ impl StratumServer {
                         session_gpu_pref,
                         session_cpu_pref,
                         session_gpu2_pref,
+                        nonce_base,
                     );
                     let mut w = writer.lock().await;
                     if w.write_all(job.as_bytes()).await.is_err() {
@@ -2991,6 +3014,7 @@ impl StratumServer {
                                 session_gpu_pref,
                                 session_cpu_pref,
                                 session_gpu2_pref,
+                                nonce_base,
                             );
                             let mut w = writer.lock().await;
                             if w.write_all(line.as_bytes()).await.is_err() { break; }
@@ -3006,6 +3030,7 @@ impl StratumServer {
                                 session_gpu_pref,
                                 session_cpu_pref,
                                 session_gpu2_pref,
+                                nonce_base,
                             );
                             let mut w = writer.lock().await;
                             if w.write_all(job.as_bytes()).await.is_err() { break; }
@@ -3028,6 +3053,12 @@ impl StratumServer {
     ) {
         // Track consecutive NoSolution for this connection
         let mut consecutive_no_solution: u32 = 0;
+        // This session's private 2^32 nonce window — `session_job_line`
+        // stamps it into every served Job so concurrent sessions never
+        // scan the same space (shared window = guaranteed duplicates).
+        let nonce_base = self
+            .v3_nonce_alloc
+            .fetch_add(0x1_0000_0000, Ordering::Relaxed);
         // Per-session VarDiff
         let mut vardiff = VarDiff::new(&self.vardiff_config);
         // Per-session share rate limit (same contract as the v1 path).
@@ -3203,6 +3234,7 @@ impl StratumServer {
                         session_gpu_pref,
                         session_cpu_pref,
                         session_gpu2_pref,
+                        nonce_base,
                     );
                     let mut w = writer.lock().await;
                     if w.write_all(job.as_bytes()).await.is_err() {
@@ -3869,6 +3901,7 @@ impl StratumServer {
                                             session_gpu_pref,
                                             session_cpu_pref,
                                             session_gpu2_pref,
+                                            nonce_base,
                                         );
                                         let mut w = writer.lock().await;
                                         let _ = w.write_all(job.as_bytes()).await;
@@ -4008,6 +4041,7 @@ impl StratumServer {
                                             session_gpu_pref,
                                             session_cpu_pref,
                                             session_gpu2_pref,
+                                            nonce_base,
                                         );
                                         let mut w = writer.lock().await;
                                         let _ = w.write_all(job.as_bytes()).await;
@@ -4039,6 +4073,7 @@ impl StratumServer {
                                 session_gpu_pref,
                                 session_cpu_pref,
                                 session_gpu2_pref,
+                                nonce_base,
                             );
                             let mut w = writer.lock().await;
                             if w.write_all(line.as_bytes()).await.is_err() { break; }
@@ -4056,6 +4091,7 @@ impl StratumServer {
                                 session_gpu_pref,
                                 session_cpu_pref,
                                 session_gpu2_pref,
+                                nonce_base,
                             );
                             let mut w = writer.lock().await;
                             if w.write_all(job.as_bytes()).await.is_err() { break; }
@@ -4663,10 +4699,7 @@ async fn submit_block_to_node(endpoints: &L1Endpoints, block: &Block) -> anyhow:
             .await?;
         if let Some(err) = response.get("error") {
             if !err.is_null() {
-                return Err(anyhow::anyhow!(
-                    "submitBlock returned error: {}",
-                    err
-                ));
+                return Err(anyhow::anyhow!("submitBlock returned error: {}", err));
             }
         }
         tracing::info!("submitBlock response: {}", response);
@@ -4859,7 +4892,11 @@ mod tests {
         assert_eq!(job["job_id"], "qtun:testjob");
         assert_eq!(job["mining_hash"], hex::encode(header));
         assert_eq!(job["target"].as_str().unwrap().len(), 128);
-        assert_eq!(job["extranonce"].as_str().unwrap().len(), 8);
+        // upstream en1 ("aabbccdd") extended by the 4B session tag —
+        // each session mines a disjoint upstream nonce subspace.
+        let en = job["extranonce"].as_str().unwrap();
+        assert_eq!(en.len(), 16);
+        assert!(en.starts_with("aabbccdd"), "extranonce={en}");
 
         // 2) job push on rotation — feed a fresh native job, expect the
         //    `job` notification within the poll interval.
@@ -5920,29 +5957,43 @@ mod tests {
         }));
 
         // Session pinned to ZANO: broadcast carries QTU → rewritten to ZANO.
-        let out = server.session_job_line(&line, Some(ExternalCoin::Zano), None, None);
+        let out = server.session_job_line(&line, Some(ExternalCoin::Zano), None, None, 0);
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert_eq!(v["external_stream"]["coin"], "ZANO");
         assert_eq!(v["external_stream"]["job_id"], "zano_job_9");
         assert_eq!(v["external_stream"]["algorithm"], "progpow_zano");
 
         // Session pinned to the embedded coin: identical line passes through.
-        let out = server.session_job_line(&line, Some(ExternalCoin::Quantus), None, None);
+        let out = server.session_job_line(&line, Some(ExternalCoin::Quantus), None, None, 0);
         assert_eq!(out, line);
 
         // No prefs at all: byte-identical passthrough.
-        let out = server.session_job_line(&line, None, None, None);
+        let out = server.session_job_line(&line, None, None, None, 0);
         assert_eq!(out, line);
 
         // gpu2_pref=ZANO rewrites external_stream_2; gpu2_pref=QTU collides
         // with the embedded stream-1 coin → stream_2 nulled.
-        let out = server.session_job_line(&line, None, None, Some(ExternalCoin::Zano));
+        let out = server.session_job_line(&line, None, None, Some(ExternalCoin::Zano), 0);
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert_eq!(v["external_stream_2"]["coin"], "ZANO");
         assert_eq!(v["external_stream_2"]["job_id"], "zano_job_9");
-        let out = server.session_job_line(&line, None, None, Some(ExternalCoin::Quantus));
+        let out = server.session_job_line(&line, None, None, Some(ExternalCoin::Quantus), 0);
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert!(v["external_stream_2"].is_null());
+    }
+
+    #[test]
+    fn session_job_line_stamps_nonce_window() {
+        let server = make_server();
+        let line = broadcast_job_line(None);
+        // Nonzero base rewrites the broadcast's start_nonce=0 → each
+        // session scans its own 2^32 window, never colliding shares.
+        let out = server.session_job_line(&line, None, None, None, 0x1_0000_0000);
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["start_nonce"].as_u64().unwrap(), 0x1_0000_0000);
+        assert_eq!(v["nonce_count"].as_u64().unwrap(), 100);
+        // Base 0 keeps the passthrough fast path byte-identical.
+        assert_eq!(server.session_job_line(&line, None, None, None, 0), line);
     }
 
     #[test]
@@ -5965,7 +6016,7 @@ mod tests {
             timestamp: 0,
             ntime_hex: "00000000".into(),
         }));
-        let out = server.session_job_line(&line, Some(ExternalCoin::Zano), None, None);
+        let out = server.session_job_line(&line, Some(ExternalCoin::Zano), None, None, 0);
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert!(v["external_stream"].is_null());
     }
