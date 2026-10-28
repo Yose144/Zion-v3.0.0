@@ -112,9 +112,9 @@ navržena tak, aby bez fleet fungovala v single-model režimu).
 | 2 | ZIS verify client + 60s cache + tier table (`gateway.db` SQLite) | `auth.rs`, `meter.rs` | ✅ |
 | 3 | Metering writer + `GET /v1/usage` + rpm/daily quota | `meter.rs`, `auth.rs` | ✅ |
 | 4 | systemd `zion-hiran-gateway.service` + nginx vhost `api.zionterranova.com` (SSE unbuffered) | `V31/deploy/systemd/`, `infra/nginx/edge2/` | ✅ files ready — deploy = 👤 |
-| 5 | Stripe: produkt+price, webhook route v gateway (reuse MarketPlace pattern) | MarketPlace infra | ⏳ blokováno secrets (5.B6 nález: prod `.env` má STRIPE_* prázdné) |
-| 6 | Price/console stránka `market.zionterranova.com/ai` | `apps/MarketPlace` | ⏳ |
-| 7 | G8 probe `inference_live` + alert (`/health` už agreguje upstream liveness) | monitoring stack | ⏳ |
+| 5 | Stripe: produkt+price, webhook route v gateway | `billing.rs` + `/v1/stripe/webhook` | ✅ webhook implemented (HMAC-SHA256 verify, stripe_map, plan activation) — ⏳ Stripe produkt/price + secrets = 👤 |
+| 6 | Price/console stránka `market.zionterranova.com/ai` | `apps/MarketPlace/src/app/ai` + `/api/stripe/hiran-subscribe` | ✅ implemented — ⏳ deploy + HIRAN_PRICE_* env |
+| 7 | G8 probe + alert | `zion-writepath-probe.py` | ✅ `zion_hiran_gateway_ok`, `zion_hiran_upstream_live{alias,position}`, degraded-leg count — ⏳ probe deploy + Prom alert rule |
 | 8 | Smoke E2E: key → request → usage → invoice | runbook | ⏳ potřebuje živé nasazení + zis klíč |
 
 ## 9. Explicitně MIMO MVP
