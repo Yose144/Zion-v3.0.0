@@ -1570,15 +1570,21 @@ impl StratumServer {
         Self::job_is_fresh(&job).then_some(job)
     }
 
-    /// Extranonce to advertise for a QTU job — the job's own
-    /// `extranonce1_hex` when set (upstream pools validate the nonce prefix
-    /// against the extranonce they assigned, native jobs carry a random
-    /// per-job one), else the per-session fallback.
-    fn qtu_job_en1<'a>(pkg: &'a crate::auxpow_bridge::JobPackage, session: &'a str) -> &'a str {
+    /// Extranonce to advertise for a QTU job — for upstream jobs the
+    /// pool's upstream extranonce EXTENDED by the per-session tag so each
+    /// downstream session mines a disjoint nonce subspace (all sessions
+    /// otherwise share one upstream extranonce and collide on identical
+    /// shares → upstream "duplicate share" rejects). Native jobs carry
+    /// their own random per-job prefix; the bare session tag is the
+    /// fallback when a job has none.
+    fn qtu_job_en1<'a>(
+        pkg: &'a crate::auxpow_bridge::JobPackage,
+        session: &'a str,
+    ) -> std::borrow::Cow<'a, str> {
         if pkg.extranonce1_hex.is_empty() {
-            session
+            std::borrow::Cow::Borrowed(session)
         } else {
-            &pkg.extranonce1_hex
+            std::borrow::Cow::Owned(format!("{}{}", pkg.extranonce1_hex, session))
         }
     }
 
@@ -1674,7 +1680,7 @@ impl StratumServer {
             &session_id,
             initial
                 .as_ref()
-                .map(|p| stratum_qtu::job_wire(p, Self::qtu_job_en1(p, &extranonce), seq)),
+                .map(|p| stratum_qtu::job_wire(p, Self::qtu_job_en1(p, &extranonce).as_ref(), seq)),
         );
         if Self::qtu_send(writer, &resp).await.is_err() {
             return;
@@ -1726,15 +1732,20 @@ impl StratumServer {
                                     }
                                     Err(reason) => {
                                         if Self::qtu_send(writer, &stratum_qtu::submit_err(&id, &reason)).await.is_err() { break; }
-                                        // Resync — a stale submit usually means the
-                                        // miner missed the job rotation.
+                                        // Resync only when the served job actually
+                                        // rotated — a stale submit means the miner
+                                        // missed the new job. Re-pushing the SAME
+                                        // job after e.g. a duplicate reject just
+                                        // provokes an immediate resubmit.
                                         if let Some(pkg) = self.qtu_current_job() {
-                                            seq += 1;
-                                            last_job_id = pkg.external_job_id.clone();
-                                            let n = stratum_qtu::job_notify(
-                                                stratum_qtu::job_wire(&pkg, Self::qtu_job_en1(&pkg, &extranonce), seq),
-                                            );
-                                            if Self::qtu_send(writer, &n).await.is_err() { break; }
+                                            if pkg.external_job_id != last_job_id {
+                                                seq += 1;
+                                                last_job_id = pkg.external_job_id.clone();
+                                                let n = stratum_qtu::job_notify(
+                                                    stratum_qtu::job_wire(&pkg, Self::qtu_job_en1(&pkg, &extranonce).as_ref(), seq),
+                                                );
+                                                if Self::qtu_send(writer, &n).await.is_err() { break; }
+                                            }
                                         }
                                     }
                                 }
@@ -1756,7 +1767,7 @@ impl StratumServer {
                             seq += 1;
                             last_job_id = pkg.external_job_id.clone();
                             let n = stratum_qtu::job_notify(
-                                stratum_qtu::job_wire(&pkg, Self::qtu_job_en1(&pkg, &extranonce), seq),
+                                stratum_qtu::job_wire(&pkg, Self::qtu_job_en1(&pkg, &extranonce).as_ref(), seq),
                             );
                             if Self::qtu_send(writer, &n).await.is_err() { break; }
                             tracing::debug!("qtu_stratum: {} job push {}", ip, last_job_id);
@@ -1832,6 +1843,21 @@ impl StratumServer {
             .get(nonce_hex.len().saturating_sub(16)..)
             .and_then(|s| u64::from_str_radix(s, 16).ok())
             .unwrap_or(0);
+        // Reserve the dedup slot BEFORE forwarding — repeated submits of
+        // the same share (miner retries, concurrent sessions mining the
+        // same nonce space) must never round-trip upstream; they fail
+        // locally as "duplicate" without a second upstream submit.
+        let dedup_tag = format!("{nonce_hex}:{result_hex}");
+        {
+            let claimed = self
+                .pool
+                .lock()
+                .unwrap()
+                .reserve_external_share("qtu", &job_id, &dedup_tag);
+            if !claimed {
+                return Err("duplicate".to_string());
+            }
+        }
         let req = ShareForwardRequest {
             job_id: pkg.external_job_id.clone(),
             nonce: nonce_u64,
@@ -1885,27 +1911,21 @@ impl StratumServer {
 
         if accepted {
             // Same accounting as the V3 external-submit path: PPLNS credit
-            // at the QTU weight, coin-scoped telemetry, routing stats.
-            // Dedup key binds credit to this exact (job, nonce, result) —
-            // replays return false and draw no second credit.
+            // at the QTU weight, coin-scoped telemetry, routing stats. The
+            // dedup slot was already reserved before forwarding — credit
+            // unconditionally.
             let h = self.current_height.load(Ordering::Relaxed);
             let w = if is_unverified_credit(&status) {
                 auxpow_share_weight("QTU") * unverified_credit_weight_pct() / 100
             } else {
                 auxpow_share_weight("QTU")
             };
-            let credited = self.pool.lock().unwrap().record_external_share(
-                &login.wallet,
+            self.pool.lock().unwrap().credit_reserved_external_share(
                 &login.login,
                 h,
                 w,
                 "qtu",
-                &job_id,
-                &format!("{nonce_hex}:{result_hex}"),
             );
-            if !credited {
-                return Err("duplicate".to_string());
-            }
         }
         {
             let mut t = self.telemetry.lock().unwrap();
@@ -1992,12 +2012,18 @@ impl StratumServer {
                 }
                 // Proof in a serialization we cannot decode (e.g. SRBMiner):
                 // forward it opaque — the upstream pool is authoritative.
+                // `share_eh` must still be charged from the resolved job
+                // target, otherwise PRL hashrate reads 0 on every stat.
                 Err(crate::pearl_gateway::PearlSubmitError::Invalid(_)) => {
                     match pearl
                         .submit_upstream_opaque(external_job_id, proof_b64, hs)
                         .await
                     {
-                        Ok(reply) => map_upstream_reply(reply),
+                        Ok((ujob, reply)) => {
+                            share_eh =
+                                crate::telemetry::expected_hashes_for_target(&ujob.target_be);
+                            map_upstream_reply(reply)
+                        }
                         Err(e) => (false, e.status()),
                     }
                 }

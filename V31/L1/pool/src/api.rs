@@ -2250,6 +2250,10 @@ impl PoolApi {
     /// `/public/v1/coins/{coin}/stats` — per-coin telemetry + window stats.
     fn build_public_coin_stats_payload(&self, coin: &str) -> String {
         let coin = coin.to_ascii_lowercase();
+        // Served-job difficulty comes from per-leg job rings — gather it
+        // BEFORE the pool mutex so a slow leg read can never wedge share
+        // processing (the leg_inputs/detached pattern used elsewhere).
+        let served_diff = self.served_share_difficulty(&coin);
         let pool = self.pool.lock().expect("pool lock poisoned");
         let now_s = now_unix_seconds();
         let reg = pool.telemetry.lock().expect("telemetry lock poisoned");
@@ -2321,10 +2325,47 @@ impl PoolApi {
             "accepted_total": accepted_total,
             "hashrate": hashrate,
         });
+        if let Some(d) = served_diff {
+            out["served_difficulty"] = json!(d);
+        }
         if coin == "zion" {
             out["blocks"] = self.block_tracker_json();
         }
         out.to_string()
+    }
+
+    /// Difficulty of the job a miner on `coin` would be served right now —
+    /// expected hashes of the freshest leg job target. This is the "diff"
+    /// miners see in their client (upstream pools set it per job); for ZION
+    /// it's the latest found block's network difficulty until a template
+    /// source is wired in. `None` when no leg holds a job.
+    fn served_share_difficulty(&self, coin: &str) -> Option<f64> {
+        if coin == "zion" {
+            let store = self.share_store.as_ref()?;
+            let rows = store.query_blocks_for_coin("zion", 1).ok()?;
+            return rows.first().and_then(|b| {
+                let d = b.network_difficulty;
+                (d > 0).then_some(d as f64)
+            });
+        }
+        if coin == "prl" {
+            let pearl = {
+                let pool = self.pool.lock().expect("pool lock poisoned");
+                pool.leg_inputs().1
+            }?;
+            return pearl.served_share_difficulty();
+        }
+        let bridge = self.auxpow_bridge.as_ref()?;
+        let ec = ExternalCoin::from_ticker(coin)?;
+        let job = if ec == ExternalCoin::Quantus {
+            bridge
+                .native_latest_job()
+                .or_else(|| bridge.latest_job_for_coin(&ec))
+        } else {
+            bridge.latest_job_for_coin(&ec)
+        }?;
+        let d = crate::telemetry::expected_hashes_for_target_hex(&job.target_hex);
+        (d > 0.0).then_some(d)
     }
 
     /// `/public/v1/miner/{coin}/{wallet}` — wallet-scoped dashboard data.

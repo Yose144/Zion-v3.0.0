@@ -365,12 +365,15 @@ impl PearlRuntime {
     /// undecodable blob earns a normal error reply upstream, not a session
     /// kill (verified on the wire). Dedup falls back to a hash of the raw
     /// payload since the jackpot is buried in the undecodable proof.
+    /// Returns the resolved upstream job alongside the submit reply — the
+    /// caller needs `target_be` to charge expected work into the hashrate
+    /// estimator (opaque submissions are how SRBMiner pearls arrive).
     pub async fn submit_upstream_opaque(
         &self,
         served_id: &str,
         proof_b64: &str,
         hs: Option<u64>,
-    ) -> std::result::Result<UpstreamSubmitReply, PearlSubmitError> {
+    ) -> std::result::Result<(UpstreamPearlJob, UpstreamSubmitReply), PearlSubmitError> {
         let Some(upstream) = &self.upstream else {
             return Err(PearlSubmitError::Stale);
         };
@@ -390,9 +393,10 @@ impl PearlRuntime {
             return Err(PearlSubmitError::Invalid("plain_proof empty".to_string()));
         }
         self.claim_upstream_verified(served_id, *blake3::hash(&bytes).as_bytes())?;
-        Ok(upstream
+        let reply = upstream
             .submit(&ujob.served_id, &ujob.raw_id, proof_b64, hs)
-            .await)
+            .await;
+        Ok((ujob, reply))
     }
 
     #[cfg(test)]
@@ -578,6 +582,32 @@ impl PearlRuntime {
             self.served_native.fetch_add(1, Ordering::Relaxed);
         }
         native.map(|(job, _)| self.ext_stream_for(&job))
+    }
+
+    /// Expected-hash difficulty of the job a pearl miner would be served
+    /// right now — mirrors `pick_served_job` ordering (native-flagged job
+    /// first, then the freshest forwardable upstream job, then the native
+    /// fallback) without bumping the serve counters. Drives the public
+    /// `served_difficulty` field so the dashboard can show the real diff
+    /// miners work against instead of a per-block-lookback value.
+    pub fn served_share_difficulty(&self) -> Option<f64> {
+        let native = self.latest_with_flag();
+        if let Some((job, true)) = &native {
+            return Some(crate::telemetry::expected_hashes_for_u256(
+                &self.share_target(job),
+            ));
+        }
+        if let Some(job) = self
+            .upstream
+            .as_ref()
+            .and_then(|u| u.latest_forwardable().or_else(|| u.latest_fresh()))
+        {
+            return Some(crate::telemetry::expected_hashes_for_target(
+                &job.target_be,
+            ));
+        }
+        native
+            .map(|(job, _)| crate::telemetry::expected_hashes_for_u256(&self.share_target(&job)))
     }
 
     #[allow(clippy::type_complexity)]

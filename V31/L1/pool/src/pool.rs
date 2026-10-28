@@ -415,6 +415,37 @@ impl Pool {
         }
     }
 
+    /// Reserve a dedup slot for an external share BEFORE it is forwarded
+    /// upstream — concurrent or repeated submits of the same share then
+    /// fail locally instead of round-tripping to the upstream pool and
+    /// coming back as "duplicate share". Paired with
+    /// `credit_reserved_external_share` on accepted outcomes.
+    /// Returns `false` on replay.
+    pub fn reserve_external_share(&mut self, coin: &str, job_id: &str, tag: &str) -> bool {
+        self.mark_external_share_seen(coin, job_id, tag)
+    }
+
+    /// PPLNS credit for an external share whose dedup slot was already
+    /// claimed by `reserve_external_share` — always credits.
+    pub fn credit_reserved_external_share(
+        &mut self,
+        worker_name: &str,
+        height: u64,
+        weight: u64,
+        coin: &str,
+    ) {
+        let (chain, address) = self.worker_payout_target(worker_name);
+        self.pplns
+            .register_address_with_chain(worker_name, &address, &chain);
+        self.pplns.record_share_with_diff_for_coin(
+            worker_name,
+            worker_name,
+            height,
+            weight.max(1),
+            coin,
+        );
+    }
+
     /// Dedup for external (AuxPoW) legs — `tag` is any stable proof/nonce
     /// string; it is hashed to u64 for storage. Returns `false` on replay.
     pub fn mark_external_share_seen(&mut self, coin: &str, job_id: &str, tag: &str) -> bool {

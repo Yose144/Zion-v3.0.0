@@ -231,8 +231,10 @@ pub struct AuxPowClient {
     latest_job_time: Arc<Mutex<Option<Instant>>>,
     cryptonote_session_id: Arc<Mutex<Option<String>>>,
     submitted_nonces: Arc<Mutex<std::collections::VecDeque<(String, u64)>>>,
-    /// QPoW submit dedup keyed by full 128-hex nonce (u64 is insufficient).
-    submitted_qpow: Arc<Mutex<std::collections::HashSet<String>>>,
+    /// QPoW submit dedup keyed by (job_id, full 128-hex nonce) — nonce-only
+    /// keying falsely rejects valid shares: miners legitimately reuse nonce
+    /// values across different jobs (same extranonce space, scan restarts).
+    submitted_qpow: Arc<Mutex<std::collections::VecDeque<(String, String)>>>,
     /// Full 512-bit target of the current QPoW job (Quantus only).
     current_target_512: Arc<Mutex<Option<[u8; 64]>>>,
     /// Guard to ensure only one background poll/reconnect task is ever spawned.
@@ -280,7 +282,7 @@ impl AuxPowClient {
             latest_job_time: Arc::new(Mutex::new(None)),
             cryptonote_session_id: Arc::new(Mutex::new(None)),
             submitted_nonces: Arc::new(Mutex::new(std::collections::VecDeque::new())),
-            submitted_qpow: Arc::new(Mutex::new(std::collections::HashSet::new())),
+            submitted_qpow: Arc::new(Mutex::new(std::collections::VecDeque::new())),
             current_target_512: Arc::new(Mutex::new(None)),
             poll_task_running: Arc::new(AtomicBool::new(false)),
         }
@@ -868,15 +870,15 @@ impl AuxPowClient {
         let nonce_hex = hex::encode(nonce);
         {
             let mut submitted = self.submitted_qpow.lock().await;
-            if submitted.contains(&nonce_hex) {
+            if submitted
+                .iter()
+                .any(|(jid, n)| jid == job_id && *n == nonce_hex)
+            {
                 return Ok(ShareResult::Rejected("duplicate share".to_string()));
             }
-            submitted.insert(nonce_hex.clone());
+            submitted.push_back((job_id.to_string(), nonce_hex.clone()));
             if submitted.len() > 8192 {
-                let oldest = submitted.iter().next().cloned();
-                if let Some(o) = oldest {
-                    submitted.remove(&o);
-                }
+                submitted.pop_front();
             }
         }
 
