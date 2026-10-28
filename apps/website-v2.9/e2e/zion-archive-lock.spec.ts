@@ -51,6 +51,23 @@ test.describe('Zion Archive — lock gate', () => {
     await expect(page.getByRole('heading', { name: /Zion Archive/i }).first()).toBeVisible();
   });
 
+  test('access status endpoint reports no access anonymously', async ({
+    request,
+  }) => {
+    const res = await request.get('/api/archive/access');
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    expect(body.access).toBe(false);
+    expect(body.via).toBeNull();
+  });
+
+  test('entitlements admin API rejects requests without a token', async ({
+    request,
+  }) => {
+    const res = await request.get('/api/archive/entitlements');
+    expect(res.status()).toBe(401);
+  });
+
   test('access-code form renders and rejects an invalid code', async ({ page }) => {
     await page.goto('/zion-archive', { waitUntil: 'domcontentloaded' });
     const input = page.locator('#archive-code');

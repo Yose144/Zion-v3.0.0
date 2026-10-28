@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   ARCHIVE_PASS_COOKIE,
   ARCHIVE_PASS_MAX_AGE,
+  archiveAccess,
   isValidPassCode,
 } from '@/lib/archive-access';
+import { grantEntitlement } from '@/lib/archive-entitlements';
+import { getCurrentUserFromRequest } from '@/lib/zis';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +30,19 @@ function throttled(ip: string): boolean {
   return e.count > MAX_ATTEMPTS;
 }
 
+/** Current access status for the requesting client. */
+export async function GET() {
+  const { access, via, user } = await archiveAccess();
+  return NextResponse.json({
+    access,
+    via,
+    user: user
+      ? { id: user.id, displayName: user.displayName ?? null }
+      : undefined,
+  });
+}
+
+/** Redeem an Archive Pass code → sets the access cookie (and binds to ZIS). */
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   if (throttled(ip)) {
@@ -45,7 +61,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'invalid_code' }, { status: 401 });
   }
 
-  const res = NextResponse.json({ ok: true });
+  // If the redeemer is logged in via ZIS, bind the pass to their identity:
+  // the entitlement survives code rotation and unlocks via session alone.
+  let bound = false;
+  try {
+    const user = await getCurrentUserFromRequest(req);
+    if (user) {
+      grantEntitlement({
+        subject: `zis:${user.id}`,
+        type: 'b2b',
+        claimedVia: 'code',
+      });
+      bound = true;
+    }
+  } catch {
+    // binding is best-effort — the cookie still grants access
+  }
+
+  const res = NextResponse.json({ ok: true, bound });
   res.cookies.set(ARCHIVE_PASS_COOKIE, code.trim(), {
     httpOnly: true,
     secure: true,

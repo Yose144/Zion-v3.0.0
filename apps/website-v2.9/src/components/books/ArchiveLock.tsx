@@ -3,8 +3,17 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Building2, Gem, KeyRound, Lock, Sparkles } from 'lucide-react';
+import {
+  BookOpen,
+  Building2,
+  Gem,
+  KeyRound,
+  Lock,
+  LogIn,
+  Sparkles,
+} from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
 import { BOOK_NAV } from '@/lib/books/registry';
 
 const Copy = {
@@ -32,8 +41,8 @@ const Copy = {
   },
   oasisTitle: { cs: 'OASIS bonusy', en: 'OASIS bonuses' },
   oasisBody: {
-    cs: 'Držitelé passu dostanou výhody a bonusy v OASIS světě.',
-    en: 'Pass holders get perks and bonuses inside the OASIS world.',
+    cs: 'Hráči OASIS mají přístup do archivu zdarma — stačí se přihlásit přes ZIS.',
+    en: 'OASIS players get free archive access — just sign in with ZIS.',
   },
   b2bTitle: { cs: 'B2B licence', en: 'B2B licence' },
   b2bBody: {
@@ -50,16 +59,34 @@ const Copy = {
   codeInvalid: { cs: 'Neplatný kód', en: 'Invalid code' },
   codeThrottled: { cs: 'Příliš mnoho pokusů — zkus to za chvíli', en: 'Too many attempts — try again shortly' },
   codeError: { cs: 'Ověření selhalo — zkus to znovu', en: 'Verification failed — try again' },
+  codeBound: {
+    cs: 'Pass navázán na tvůj ZIS účet',
+    en: 'Pass bound to your ZIS account',
+  },
+  loginCta: {
+    cs: 'Přihlásit se přes ZIS',
+    en: 'Sign in with ZIS',
+  },
+  loginHint: {
+    cs: 'OASIS hráče pustíme dovnitř zdarma — kód není potřeba.',
+    en: 'OASIS players get in free — no code needed.',
+  },
+  loggedInAs: {
+    cs: 'Přihlášen jako',
+    en: 'Signed in as',
+  },
 };
 
 export default function ArchiveLock() {
   const { lang } = useLang();
   const l = lang === 'cs' ? 'cs' : 'en';
   const router = useRouter();
+  const { user } = useAuth();
   const total = BOOK_NAV.reduce((n, g) => n + g.books.length, 0);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bound, setBound] = useState(false);
 
   async function submitCode(e: React.FormEvent) {
     e.preventDefault();
@@ -73,6 +100,12 @@ export default function ArchiveLock() {
         body: JSON.stringify({ code }),
       });
       if (res.ok) {
+        try {
+          const data = (await res.json()) as { bound?: boolean };
+          if (data.bound) setBound(true);
+        } catch {
+          /* bound flag is cosmetic */
+        }
         router.refresh();
         return;
       }
@@ -134,6 +167,30 @@ export default function ArchiveLock() {
               <p className="mt-2 text-xs font-semibold text-red-400" role="alert">
                 {error}
               </p>
+            )}
+            {bound && (
+              <p className="mt-2 text-xs font-semibold text-emerald-400" role="status">
+                {Copy.codeBound[l]}
+              </p>
+            )}
+            {user ? (
+              <p className="mt-3 text-xs text-gray-500">
+                {Copy.loggedInAs[l]}{' '}
+                <span className="font-semibold text-gray-300">
+                  {user.displayName || user.primaryAddress.slice(0, 10) + '…'}
+                </span>
+              </p>
+            ) : (
+              <div className="mt-4">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-300 transition-colors hover:bg-emerald-500/20"
+                >
+                  <LogIn className="h-3.5 w-3.5" />
+                  {Copy.loginCta[l]}
+                </Link>
+                <p className="mt-2 text-[11px] text-gray-600">{Copy.loginHint[l]}</p>
+              </div>
             )}
           </form>
         </div>
