@@ -59,7 +59,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
   - [ ] 🤖 Code gates zelené na RC commitu: npm critical/high triáž + upgrade, clippy politika, fmt, `cargo audit` do gate (B-EXIT-2, 7.B4)
   - [ ] 🤖 `DEFERRED_3.2.md` (feature freeze) + `RELEASE_NOTES_3.2.0.md` (9.B1, 9.B2)
   - [ ] 🤖 Release artefakty Linux/Windows/macOS + SHA256SUMS (9.B4)
-  - [ ] 🤖 Public repo sync workflow předefinovat (tracked `public/` subtree zanikl) (8.B7)
+  - [x] 🤖 Public repo sync workflow předefinovat (tracked `public/` subtree zanikl) (8.B7) ✅ 28. 10.: curated export `scripts/ops/public-export.sh` + manifest + `docs/3.2/PUBLIC-SYNC-WORKFLOW.md` (fail-closed secret scan gate; push přes reviewnutý commit)
   - [ ] 👤 Podepsaný tag `v3.2.0` + release (9.S1)
 
 ## N1 · Identity & Value Transfer (L2 + ZIS)
@@ -148,7 +148,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 
 ## N7 · Launch Readiness
 
-- [ ] 🤖 Truth-sync dokumentace + refresh Registru důkazů (9.B5; seznam rozporů = mapa §8)
+- [x] 🤖 Truth-sync dokumentace + refresh Registru důkazů (9.B5; seznam rozporů = mapa §8) ✅ 28. 10.: REPO-MAP (public/→archive/PUBLIC + nový export model), Registr (Passkeys→STAVBA, Hiran inference→ŽIVÉ, Maestro→ŽIVÉ read-only, +premine řádek), StatusV3 update 2026-10-28
 - [ ] 🤖 Public copy `/roadmap`, `nirvana-roadmap.ts`, `/maitreya#plan-v33` sladit s mapou (9.B6)
 - [ ] 🤖 Charta R9: factual/legal/cultural review veřejných textů
 - [ ] 🤖 CoinGecko re-apply package ([`COINGECKO_REAPPLY_ROADMAP.md`](docs/3.2/COINGECKO_REAPPLY_ROADMAP.md), 17 prerekvizit)
@@ -194,11 +194,11 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 3. ~~🤖 Health checky zápisových cest + lag alerty L5/L6/db-sync/payout sweep (8.B4, 6.B2)~~ ✅ 28. 10. (`ZionPoolPayoutStale` + freshness metriky nasazené)
 4. ~~🤖 Stale-block RCA nad A1.2 metrikami (2.B1)~~ ✅ 26. 10. (`REPORT_2026-10-26_POOL_ORPHAN_RCA.md`)
 5. ~~🤖 Alert sink firing test + důkaz retence (8.B9)~~ ✅ 28. 10.
-6. 🤖 Drafty `DEFERRED_3.2.md` + `RELEASE_NOTES_3.2.0.md` (9.B1, 9.B2)
-7. 🤖 Truth-sync dokumentace + Registr důkazů (9.B5)
-8. 🤖 Nový public repo sync workflow + secret scan (8.B7)
-9. 🤖 Premine unlock dry-run na regtestu (1.B5)
-10. 🤖 Plán + provedení plného DR drillu (7.B7)
+6. ~~🤖 Drafty `DEFERRED_3.2.md` + `RELEASE_NOTES_3.2.0.md` (9.B1, 9.B2)~~ ✅ 28. 10. (oba drafty sync na realitu)
+7. ~~🤖 Truth-sync dokumentace + Registr důkazů (9.B5)~~ ✅ 28. 10.
+8. ~~🤖 Nový public repo sync workflow + secret scan (8.B7)~~ ✅ 28. 10.
+9. ~~🤖 Premine unlock dry-run na regtestu (1.B5)~~ ✅ 28. 10. (`premine_unlock_dry_run_full_node_path` PASS — viz plán 1.B5)
+10. 🤖 Plán + provedení plného DR drillu (7.B7) — **plán ✅** (`HARD_RESET_PLAYBOOK.md` §F); provedení potřebuje čistý host → 👤 náklad
 
 ## Operátor-only fronta
 

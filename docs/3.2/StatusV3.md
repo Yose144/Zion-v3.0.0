@@ -1,6 +1,8 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-10-26
+> **Datum poslední aktualizace:** 2026-10-28
+>
+> **Update (2026-10-28, autonomní fronta):** **2.S2 payout double-pay gate uzavřen** — 48 h re-count: 8 031 rows, 0 post-fix duplicit, 4 residuální páry vše před fix boundary 27.10 09:04 UTC (evidence-historie, treasury dopad = 👤). **Deploy provenance baseline:** `scripts/ops/deploy-provenance.sh` + `docs/3.2/DEPLOY-PROVENANCE*` — EDGE checkout `6fae7b60d` + 7 258 dirty (kumulativní overlaye), EDGE2 bez git checkoutu (build→rsync z EDGE). **Write-path alerting kompletní:** write-path probe += `zion_pool_last_payout_age_seconds` + rule `ZionPoolPayoutStale` (>1 h) nasazen na EDGE Prometheus. **Maestro 5.B2:** první read-only orchestrate E2E (6/6 Success) + fix systemd sandboxu, který tiše zabíjel audit log (`ReadWritePaths=/opt/zion/data/l3-audit`; mutations stále OFF). **Payout backlog roste:** 1 168 unconfirmed ZION payoutů — 👤 rozhodnutí. **DR appendix** v `HARD_RESET_PLAYBOOK.md` §F (dvouboxová topologie, restore pořadí, otevřené mezery). **8.B7:** public sync = nový curated export (`scripts/ops/public-export.sh`), tracked `public/` subtree zanikl.
 >
 > **Update (2026-10-26, lifecycle):** Aktuální stupeň = **3.2.0 Mainnet Beta** (≠ Mainnet Stable). Topologie: EDGE2 = primary node + web ingress + app stack, EDGE = pool + followeři + ops. Protokol handshake `zion-v3-node/3.1.0-alpha` zůstává záměrně (ID, ne stupeň). Záznam 21. 10. níže zůstává datovaným snapshotem.
 >

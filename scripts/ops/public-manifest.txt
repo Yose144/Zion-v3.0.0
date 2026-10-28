@@ -1,0 +1,13 @@
+# public-manifest.txt — co se exportuje do Zion-TerraNova/v3-Mainnet (8.B7)
+# Jedna repo-relativní cesta na řádek. Adresář = celý strom (rsync --delete).
+# Pozor: obsah jde VEŘEJNĚ — nic sem nepatří, dokud neprošel review + scan.
+
+README.md
+LICENSE
+CHANGELOG.md
+docs/3.2/RELEASE_NOTES_3.2.0.md
+docs/3.2/DEFERRED_3.2.md
+canon/books/MiseAmenti/
+# V31 zdroje — odkomentovat až po code-gate review (clippy/audit + licence):
+# V31/L1/core/
+# V31/L1/pool/

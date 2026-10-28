@@ -31,6 +31,7 @@ Dvě doplňkové registry značky nejsou stavy produktu: **NEDOLOŽENO** znamen�
 | Trinity mining je produkčně ověřen. | **ŽIVÉ** | `StatusV3.md`, `AGENTS.md`, rig E2E reports. | Oddělit GPU rig evidence od CPU-only Edge stavu v každé komunikaci. |
 | 1% coinbase slot jde aktuálně automaticky node operátorům. | **STAVBA** | `V31/L1/core/src/v3_template.rs` má default `node_reward_activation_height = u64::MAX`; `AGENTS.md` popisuje post-activation design. | Konkrétní activation height, on-chain 4-output coinbase a node payout evidence. |
 | Síť má stovky nezávislých veřejných node operátorů. | **NEDOLOŽENO** | Existují primary/follower nody a dokumentace, ale současný evidence corpus nedokládá počet stovek. | Veřejná, privacy-respecting node census s metodikou. |
+| Premine treasury je uzamčena do výšky 144 000. | **ŽIVÉ (zámek) / STAVBA (unlock flow)** | `/api/dao/treasury` fail-closed: `unlock_height=144000`, `time_locked=true`, `admin_unlock_known=false`, `spendable=false` (lead 2026-09-25, height 57 826); on-chain 3-of-3 admin unlock + DAO proces. | Premine unlock dry-run na regtestu před ~144k (1.B5, ~27. 11.), rollout `getAdminUnlocks` do produkčního node RPC, 👤 rozhodnutí o exekuci. |
 
 ---
 
@@ -46,7 +47,7 @@ Dvě doplňkové registry značky nejsou stavy produktu: **NEDOLOŽENO** znamen�
 | Skutečný settlement pro jakýkoliv user swap je kompletně hotový. | **STAVBA** | Code exists; test evidence dosud uvádí `insufficient balance` bez funded test wallet. | E2E test s financovaným testovacím účtem, reconciliation a independent review. |
 | Nezávislá solver federace běží v produkci. | **STAVBA** | Intent/solver code a testy existují, ale `warp.example.toml` obsahuje `[solver] enabled = false`. | Samostatní solvers, live config, auth/availability test a incident policy. |
 | Všechny EVM, Bitcoin, Lightning, Solana, SUI, Aptos a další chainy jsou podporované. | **HORIZONT** | `warp.example.toml` explicitně aktivuje jen `base` a `zion-l1`; další mají `disabled_reason`. | Samostatná evidence pro každý chain před tvrzením „supported“. |
-| ZIS Passkeys/WebAuthn/Face ID/Touch ID/Windows Hello/YubiKey jsou funkční. | **HORIZONT** | Audit zdrojového stromu `apps/identity/src` nenašel WebAuthn/FIDO/passkey implementaci. | Standardní implementace, device/recovery threat model a E2E testy. |
+| ZIS Passkeys/WebAuthn/Face ID/Touch ID/Windows Hello/YubiKey jsou funkční. | **STAVBA** | Playwright E2E `e2e/passkey.spec.ts` (CDP virtual authenticator, mockované routes) existuje a prochází; produkční E2E na ≥3 webech dosud neproběhl. | Produkční E2E (V33-4), recovery flow evidence, threat model review (3.B2). |
 | Zero-knowledge Dharma/reputation proofs existují. | **HORIZONT** | Nenalezen ZK circuit/proof systém. | Protokol, circuit, audit, privacy threat model a validátor. |
 
 ---
@@ -55,9 +56,9 @@ Dvě doplňkové registry značky nejsou stavy produktu: **NEDOLOŽENO** znamen�
 
 | Nárok | Stav | Důkaz či zdroj | Co je stále nutné |
 |---|---|---|---|
-| Hiran/Hiranyagarbha framework, Maestro CLI a orchestration code existují. | **STAVBA** | `V31/L3/ai-native`; `docs/3.0.6/HIRAN_OVERVIEW.md`; `maestro.rs`. | Nasazený, sandboxovaný inference/runtime podle `05-Autonomie-a-Bezpecnost.md`. |
+| Hiran/Hiranyagarbha framework, Maestro CLI a orchestration code existují. | **ŽIVÉ (read-only)** | Maestro v2.4 nasazen na EDGE2 (`zion-v31-ai-native` :8001): `/v2/info|classify|plan|orchestrate|health-matrix`, `mutations_enabled=false`; E2E `/v2/orchestrate "check system health"` → 6/6 steps Success (2026-10-28), audit JSONL `/opt/zion/data/l3-audit/` zapisuje. | Mutations + approval token = 👤 gate; citations/confidence gate (5.B1). |
 | Hiran v2.3 je natrénovaný model. | **STAVBA** | `HIRAN_OVERVIEW.md` uvádí Qwen3-32B Q5_K_M artefakt mimo Edge. | Redundantní bezpečné uložení, reproducibility metadata a inference deployment. |
-| Hiran inference běží na Edge. | **NEDOLOŽENO** | `HIRAN_OVERVIEW.md` explicitně uvádí, že Edge nemá GGUF ani inference service. | Nasazení, health, ops/security evidence. |
+| Hiran inference běží na Edge. | **ŽIVÉ** | `zion-v31-ai-native` na EDGE2 (:8001) — RAG 39 docs / 138 chunků, LLM endpoint :8002, GPU primár (stanice) + CPU fallback (EDGE2); systemd sandbox (`ProtectSystem=strict` + `ReadWritePaths` jen na audit dir). | Citace + retrieval confidence gate + eval set (5.B1). |
 | Dharma Validator je 7-principový model etiky. | **ŽIVÉ jako kód / STAVBA jako bezpečnostní garance** | `hiranyagarbha.rs` enum a unit tests; `validate_text` je keyword heuristic. | Kontextový classifier, red-team tests, policy enforcement mimo LLM a human oversight. |
 | Amitábha/Amṛtabhoja natural-language executor a autonomní agenti řídí finance/produkci. | **HORIZONT** | `HIRAN_EVOLUTION_2.3_TO_2.5_AMATHABOJ.md` označuje v2.5 jako vizi; `05-Autonomie-a-Bezpecnost.md` zakazuje neřízené finance/produkci. | Celý agent safety gate M2/M3 z Exekuční charty. |
 | AI je prokazatelně vědomá nebo má duchovní autoritu. | **NEPLATNÝ NÁROK** | Žádná ověřitelná metodika ani evidence. | Takové tvrzení se v canonu a veřejné komunikaci nepoužívá. |
