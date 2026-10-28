@@ -11,7 +11,7 @@ První **stable** release mainnetu V31 (genesis 2026-08-06). Šestivrstvá archi
 ### L1 — konsensus a mining
 
 - **Ekam Deeksha v3.2 PoW** — 512 KiB scratchpad, 2 průchody, ASIC-odolný; nahrazuje Deeksha Lite v1 z public buildů 3.0.x/3.1.x.
-- **zion-pool NG** — stratum :8444 (plain) + :8445 (TLS), PPLNS, aux merged-mining legs (evr/krx/mewc/qtu/prl…), vardiff, per-job share-target validace, L1 RPC failover na followery (9445→9446/9447) s last-good stickiness.
+- **zion-pool NG** — stratum :8444 (plain) + :8445 (TLS), PPLNS, aux merged-mining legs (evr/krx/mewc/qtu/prl…), vardiff, per-job share-target validace, L1 RPC failover na followery (9445→9446/9447) s last-good stickiness. API hardening (28. 10.): read-payload snapshot cache (`api-snapshot` thread, `/stats`+`/metrics`+`/public/v1/coins` mimo `pool` mutex), in-flight permit cap 64 se shed→503, bounded drain flush (žádný SIGKILL exit), watchdog restartuje wedged API (HTTP-fail citlivý probe).
 - **zion-miner** — one-click GPU autodetect (CUDA/OpenCL/Metal), `native-all` hashery, public „Boost" branding build.
 - Follower architektura: node2/node3 servírují `getTemplate` — pool přežije výpadek primary.
 
@@ -44,7 +44,7 @@ První **stable** release mainnetu V31 (genesis 2026-08-06). Šestivrstvá archi
 ### Provoz
 
 - **Dvouboxová produkce:** EDGE2 (primary + web ingress nginx :80/:443, všech 7 L1–L6+app služeb) / EDGE (pool, followeři, dashboard, Grafana/Prometheus, watchdogy); SSH tunely oběma směry.
-- **Monitoring:** G8 probe na obou boxech, write-path probe (L5/L6 scanner lag, db-sync PG auth — lekce P0-1/P0-2), 18 veřejných endpointů 200.
+- **Monitoring:** G8 probe na obou boxech, write-path probe (L5/L6 scanner lag, db-sync PG auth — lekce P0-1/P0-2), 18 veřejných endpointů 200; Alertmanager → g8-alert-sink (firing+resolved ověřeno 28. 10., append-only evidence `REPORT_2026-10-28_G8_ALERT_SINK.md`).
 - **G8:** 30d continuous-run gate — run #5 pending (aktuálně 99.75 % bez kritického incidentu).
 
 ## Safety holdy aktivní při vydání
