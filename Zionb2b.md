@@ -117,14 +117,24 @@
 
 ## 5. Okamžité akční kroky (tento týden)
 
-| # | Akce | Typ | Závisí na |
-|---|---|---|---|
-| 1 | `5.B6` dokončit: E2E order test (transfer + Stripe), invoice download route, order-tracking, deploy MarketPlace | 🤖 | — |
-| 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤 | 2.B7 |
-| 3 | `PRL_PAYOUT_DRY_RUN=0` po dry-batch review + sweep do oyster | 👤🔀 | 2.B6 |
-| 4 | Hiran API MVP spec: `/v1/models` gateway + `X-API-Key` (ZIS) + Stripe price page | 🤖 | ZIS keys |
-| 5 | One-pager "Pool-as-a-Service" (CS+EN) + seznam 10 cílových PoW coinů | 🤖 | — |
-| 6 | Regtest dry-run `build_admin_unlock_tx` 3-of-3 (1.B5) — před 144k | 🤖 | PREMINE_UNLOCK.md |
+| # | Akce | Typ | Závisí na | Stav 28.10. |
+|---|---|---|---|---|
+| 1 | `5.B6` dokončit: E2E order test (transfer + Stripe), invoice download route, order-tracking, deploy MarketPlace | 🤖 | — | ✅ 9/10 — Stripe+SMTP blokováno prázdnými secrets v prod `.env` (👤), test objednávka `TEST-E2E-1761680000` ke zrušení |
+| 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤 | 2.B7 | ⏳ backlog narostl 931→**1076** unconfirmed (~1.22M ZION) během API wedge — viz incident níže |
+| 3 | `PRL_PAYOUT_DRY_RUN=0` po dry-batch review + sweep do oyster | 👤🔀 | 2.B6 | 🔍 review hotový (níže) — **nic k sweepu**: 0 pending pearl payoutů, 0 ledger rows; flip bezpečný ale zatím k ničemu, prerekvizita = PRL miner aktivita |
+| 4 | Hiran API MVP spec: `/v1/models` gateway + `X-API-Key` (ZIS) + Stripe price page | 🤖 | ZIS keys | ✅ spec + gateway + Stripe webhook + `/ai` page + probe implementováno; ⏳ deploy + secrets = 👤 |
+| 5 | One-pager "Pool-as-a-Service" (CS+EN) + seznam 10 cílových PoW coinů | 🤖 | — | ✅ `docs/3.2/B2B_POOL_AS_A_SERVICE.md` |
+| 6 | Regtest dry-run `build_admin_unlock_tx` 3-of-3 (1.B5) — před 144k | 🤖 | PREMINE_UNLOCK.md | ✅ PASS (158 s, reálná node cesta, DAO height gate drží) |
+
+### Incident 28.10. ~07:15 — pool API wedge (nález při PRL review)
+`/health` 200, ale `/metrics` + `/stats` visely >15 s na EDGE i přes EDGE2 tunnel — stejný `pool.lock()` wedge vzorec jako 26.10. Drain restart (runbook) clean: API zpět (metrics 0.13 s, stats 6 ms), stratum OK, bloky 1000/1000 confirmed. **Unconfirmed payout backlog mezitím narostl 931→1076** — wedge pravděpodobně blokoval confirmation sweep. Druhý výskyt pattern → root-cause fix pool.lock critical section zůstává otevřený (👤 priorita — retry loop, ne one-off).
+
+### PRL payout review 28.10. (`scripts/prl-payout-review.sh` na EDGE)
+- Env: `PRL_PAYOUT_ENABLED=1`, `PRL_PAYOUT_DRY_RUN=1`, sweeper = `zion-v31-multichain` (`prl_payout.rs`), oracle 120 s, `NATIVE_PAYOUT_COINS=prl`, `MIN_PAYOUT_NATIVE=prl:50000000`
+- Pool queue `admin/external-payouts?chain=pearl`: **pending 0**
+- Sweeper ledger `ext_payout_records` (warp_multichain.db): **0 pearl rows** — žádný dry-run batch nikdy neproběhl
+- Journal 2 h: žádná sweeper aktivita (nema co dělat, dokud nepřistanou payouts)
+- **Verdikt:** pipeline bezpečně izolovaná; `DRY_RUN=0` lze flippnout kdykoliv, ale nemá smysl bez PRL payoutů v queue — prerekvizita je aktivita PRL minerů + první dryrun rows k manuálnímu review. QTC sweeper zůstává disabled (918 deferred = samostatné 👤 rozhodnutí).
 
 ## 6. Metriky úspěchu
 

@@ -1,0 +1,65 @@
+# Prometheus alert rules — Hiran inference API (api.zionterranova.com)
+#
+# Metrics are exported by V31/deploy/monitoring/zion-writepath-probe.py
+# (EDGE2, 60 s cycle) into the node_exporter textfile:
+#   zion_hiran_gateway_ok                   — /health reachable
+#   zion_hiran_gateway_latency_seconds      — /health latency
+#   zion_hiran_upstream_live{alias,pos}     — per-leg upstream liveness
+#   zion_hiran_degraded_upstreams_live      — count of live fallback legs
+#
+# Severity model: the GPU upstream (position=0) sleeps when the operator
+# PC is off — that is expected, NOT an alert. The SLO-bearing signal is
+# the CPU fallback leg (degraded). Alert only when no fallback is live
+# or the gateway itself is down.
+groups:
+  - name: hiran-gateway
+    rules:
+      - alert: HiranGatewayDown
+        expr: zion_hiran_gateway_ok == 0
+        for: 3m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Hiran gateway not responding on :8007"
+          description: "api.zionterranova.com gateway /health has failed for 3m. Check zion-hiran-gateway.service on EDGE2. Paid API is down for ALL customers."
+
+      - alert: HiranGatewaySlow
+        expr: zion_hiran_gateway_latency_seconds > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Hiran gateway /health latency >5s"
+          description: "Gateway responds but slowly — possible upstream probe stalls (each is_live call hits an upstream with timeout)."
+
+      - alert: HiranNoFallbackUpstream
+        expr: zion_hiran_degraded_upstreams_live == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "No live fallback (CPU) inference upstream"
+          description: "All degraded legs dead — if the GPU primary also sleeps, every request fails. Check zion-hiran-inference.service (llama.cpp CPU) on EDGE2."
+
+      - alert: HiranAllUpstreamsDead
+        expr: max(zion_hiran_upstream_live) == 0
+        for: 3m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Every inference upstream leg is offline"
+          description: "Gateway is up but no model can be served — neither GPU (operator PC) nor CPU fallback reachable. Customers get 503 degraded-model errors."
+
+      - alert: HiranMissingProbe
+        expr: absent(zion_hiran_gateway_ok)
+        for: 10m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Hiran probe metrics absent"
+          description: "writepath probe not exporting hiran metrics — probe timer dead or gateway not deployed yet (expected until zion-hiran-gateway is enabled on EDGE2)."
