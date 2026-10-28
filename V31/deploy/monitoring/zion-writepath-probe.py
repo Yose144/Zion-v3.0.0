@@ -101,6 +101,30 @@ ok = 1 if stats is not None else 0
 metrics.append(m("zion_pool_stats_api_ok", ok, help_text="Pool /stats returns within 8s via edge tunnel"))
 metrics.append(m("zion_pool_stats_api_latency_seconds", round(lat, 3), help_text="Pool /stats response time"))
 
+# G8 — Hiran inference gateway (api.zionterranova.com -> 127.0.0.1:8007).
+# /health returns per-upstream liveness; export each leg so alerts can
+# distinguish "gateway dead" from "primary GPU upstream offline" (which is
+# expected when the operator PC sleeps — degraded fallback leg must be live).
+t0 = time.time()
+gw = http_json("http://127.0.0.1:8007/health", timeout=8)
+gw_lat = time.time() - t0
+gw_ok = 1 if gw and gw.get("status") == "ok" else 0
+metrics.append(m("zion_hiran_gateway_ok", gw_ok, help_text="Hiran gateway /health responds"))
+metrics.append(m("zion_hiran_gateway_latency_seconds", round(gw_lat, 3), help_text="Hiran gateway /health response time"))
+if gw_ok:
+    for u in gw.get("upstreams", []):
+        alias = u.get("alias", "?")
+        pos = u.get("position", 0)
+        live = 1 if u.get("live") else 0
+        metrics.append(m("zion_hiran_upstream_live", live,
+                         {"alias": str(alias), "position": str(pos)},
+                         "Upstream leg liveness per model alias"))
+    degraded_live = sum(
+        1 for u in gw.get("upstreams", [])
+        if u.get("degraded") and u.get("live"))
+    metrics.append(m("zion_hiran_degraded_upstreams_live", degraded_live,
+                     help_text="Count of live fallback (degraded) upstream legs"))
+
 for unit, name in (("zion-v31-free-world", "l5"), ("zion-v31-issobella", "l6"), ("zion-db-sync", "dbsync")):
     r = subprocess.run(["systemctl", "is-active", unit], capture_output=True, text=True)
     metrics.append(m("zion_service_active", 1 if r.stdout.strip() == "active" else 0, {"service": name}, f"systemd is-active {unit}"))
