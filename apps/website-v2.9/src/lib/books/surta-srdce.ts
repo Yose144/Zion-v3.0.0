@@ -28,8 +28,8 @@ export const SURTA_CHAPTERS: SurtaChapter[] = [
 
 export function surtaDocPath(slug: string, lang: 'cs' | 'en'): string {
   return lang === 'cs'
-    ? `/docs/books/surta-srdce/kapitoly/${slug}.md`
-    : `/docs/en/books/surta-srdce/kapitoly/${slug}.md`;
+    ? `/api/archive/docs/books/surta-srdce/kapitoly/${slug}.md`
+    : `/api/archive/docs/en/books/surta-srdce/kapitoly/${slug}.md`;
 }
 
 export function surtaChapterBySlug(slug: string) {

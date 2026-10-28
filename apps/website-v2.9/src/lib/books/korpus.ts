@@ -6,7 +6,13 @@
 import manifest from '@/lib/doc-manifest.json';
 import type { BookChapter, Lang } from './types';
 
-const FILES = new Set((manifest as { files: string[] }).files);
+// Chapter derivation + EN counts read the archive file index as well —
+// korpus book sources live in archive-content/ behind the Archive Pass API,
+// not in public/docs.
+const FILES = new Set([
+  ...(manifest as { files: string[] }).files,
+  ...((manifest as { archiveFiles?: string[] }).archiveFiles ?? []),
+]);
 
 function humanize(slug: string): string {
   return slug
@@ -82,7 +88,7 @@ export function korpusChapters(dir: string): KorpusBookData {
 export const korpusDocPath =
   (dir: string) =>
   (slug: string, lang: Lang): string =>
-    lang === 'en' ? `/docs/korpus/${dir}/${slug}_EN.md` : `/docs/korpus/${dir}/${slug}.md`;
+    lang === 'en' ? `/api/archive/docs/korpus/${dir}/${slug}_EN.md` : `/api/archive/docs/korpus/${dir}/${slug}.md`;
 
 /** Count of *_EN.md translations present for a korpus book. */
 export function korpusEnCount(dir: string): number {

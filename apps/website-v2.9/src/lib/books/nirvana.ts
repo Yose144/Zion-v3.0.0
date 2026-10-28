@@ -32,8 +32,8 @@ export const NIRVANA_CHAPTERS: NirvanaChapter[] = [
 
 export function nirvanaDocPath(slug: string, lang: 'cs' | 'en'): string {
   return lang === 'cs'
-    ? `/docs/books/nirvana/kapitoly/${slug}.md`
-    : `/docs/en/books/nirvana/kapitoly/${slug}.md`;
+    ? `/api/archive/docs/books/nirvana/kapitoly/${slug}.md`
+    : `/api/archive/docs/en/books/nirvana/kapitoly/${slug}.md`;
 }
 
 export function nirvanaChapterBySlug(slug: string) {

@@ -39,8 +39,8 @@ export const MAITREYA_CHAPTERS: MaitreyaChapter[] = [
 
 export function maitreyaDocPath(slug: string, lang: 'cs' | 'en'): string {
   return lang === 'cs'
-    ? `/docs/books/zion-archive/kapitoly/${slug}.md`
-    : `/docs/en/books/zion-archive/kapitoly/${slug}.md`;
+    ? `/api/archive/docs/books/maitreya/kapitoly/${slug}.md`
+    : `/api/archive/docs/en/books/maitreya/kapitoly/${slug}.md`;
 }
 
 export function maitreyaChapterBySlug(slug: string) {

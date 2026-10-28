@@ -40,6 +40,14 @@ echo "[deploy-web2.9] Copying public/ -> .next/standalone/public/"
 mkdir -p "${ROOT_DIR}/.next/standalone/public"
 rsync -a --delete "${ROOT_DIR}/public/" "${ROOT_DIR}/.next/standalone/public/"
 
+# archive-content/ (Archive Pass gated books) — served by /api/archive/docs
+# which resolves it relative to cwd (.next/standalone on the server).
+if [[ -d "${ROOT_DIR}/archive-content" ]]; then
+  echo "[deploy-web2.9] Copying archive-content/ -> .next/standalone/archive-content/"
+  mkdir -p "${ROOT_DIR}/.next/standalone/archive-content"
+  rsync -a --delete "${ROOT_DIR}/archive-content/" "${ROOT_DIR}/.next/standalone/archive-content/"
+fi
+
 echo "[deploy-web2.9] Syncing to ${EDGE_HOST}:${REMOTE_DIR}"
 rsync -avz --delete \
   --exclude='node_modules' \

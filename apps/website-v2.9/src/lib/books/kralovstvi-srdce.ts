@@ -29,8 +29,8 @@ export const KRAL_CHAPTERS: KralChapter[] = [
 
 export function kralDocPath(slug: string, lang: 'cs' | 'en'): string {
   return lang === 'cs'
-    ? `/docs/books/kralovstvi-srdce/kapitoly/${slug}.md`
-    : `/docs/en/books/kralovstvi-srdce/kapitoly/${slug}.md`;
+    ? `/api/archive/docs/books/kralovstvi-srdce/kapitoly/${slug}.md`
+    : `/api/archive/docs/en/books/kralovstvi-srdce/kapitoly/${slug}.md`;
 }
 
 export function kralChapterBySlug(slug: string) {

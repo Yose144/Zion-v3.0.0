@@ -1,8 +1,4 @@
 import { Book, Rocket, Shield, FileText, Sparkles, Globe, Cpu, Map, AlertTriangle, GitBranch, Coins } from 'lucide-react';
-import { MAITREYA_CHAPTERS } from '@/lib/books/maitreya';
-import { NIRVANA_CHAPTERS } from '@/lib/books/nirvana';
-import { SURTA_CHAPTERS } from '@/lib/books/surta-srdce';
-import { KRAL_CHAPTERS } from '@/lib/books/kralovstvi-srdce';
 
 /* ═══════════════════════════════════════════
    Docs manifest — single source of truth for
@@ -235,30 +231,6 @@ export const docTitles: Record<string, LocalizedText> = {
   'l6-human-factors': { cs: 'Lidské faktory', en: 'Human Factors' },
   'l6-history': { cs: 'Historie vesmírných stanic', en: 'Space Station History' },
   'l6-ground-station': { cs: 'Pozemní stanice Kostarika', en: 'Costa Rica Ground Station' },
-  ...Object.fromEntries(
-    MAITREYA_CHAPTERS.map((c) => [
-      `book-maitreya-${c.slug}`,
-      { cs: `${c.num.cs} — ${c.title.cs}`, en: `${c.num.en} — ${c.title.en}` },
-    ]),
-  ),
-  ...Object.fromEntries(
-    NIRVANA_CHAPTERS.map((c) => [
-      `book-nirvana-${c.slug}`,
-      { cs: `Nirvana · ${c.num.cs} — ${c.title.cs}`, en: `Nirvana · ${c.num.en} — ${c.title.en}` },
-    ]),
-  ),
-  ...Object.fromEntries(
-    SURTA_CHAPTERS.map((c) => [
-      `book-surta-${c.slug}`,
-      { cs: `Surta Srdce · ${c.num.cs} — ${c.title.cs}`, en: `Surta Srdce · ${c.num.en} — ${c.title.en}` },
-    ]),
-  ),
-  ...Object.fromEntries(
-    KRAL_CHAPTERS.map((c) => [
-      `book-kral-${c.slug}`,
-      { cs: `Království srdce · ${c.num.cs} — ${c.title.cs}`, en: `Kingdom of the Heart · ${c.num.en} — ${c.title.en}` },
-    ]),
-  ),
 };
 
 export const versions: Version[] = [
@@ -390,26 +362,6 @@ export const sections: Section[] = [
     accentText: 'text-zion-gold',
     accentBorder: 'border-zion-gold/30',
     docs: [
-      ...MAITREYA_CHAPTERS.map((c) => ({
-        id: `book-maitreya-${c.slug}`,
-        title: c.title.cs,
-        file: `books/maitreya/kapitoly/${c.slug}.md`,
-      })),
-      ...NIRVANA_CHAPTERS.map((c) => ({
-        id: `book-nirvana-${c.slug}`,
-        title: c.title.cs,
-        file: `books/nirvana/kapitoly/${c.slug}.md`,
-      })),
-      ...SURTA_CHAPTERS.map((c) => ({
-        id: `book-surta-${c.slug}`,
-        title: c.title.cs,
-        file: `books/surta-srdce/kapitoly/${c.slug}.md`,
-      })),
-      ...KRAL_CHAPTERS.map((c) => ({
-        id: `book-kral-${c.slug}`,
-        title: c.title.cs,
-        file: `books/kralovstvi-srdce/kapitoly/${c.slug}.md`,
-      })),
       { id: 'book-genesis', title: 'Genesis — Kniha probuzení', file: 'mainnet/genesis-book.md' },
       { id: 'book-ekam-full', title: 'Ekam Deeksha — kompletní kniha', file: 'books/ekam-deeksha/BOOK-FULL-VERSION.md' },
       { id: 'book-ekam-ucebnice', title: 'Učebnice Ekam (historie)', file: 'books/ekam-deeksha/UCEBNICE-FULL-VERSION.md' },
@@ -534,13 +486,6 @@ export const DOC_IDS = new Set(ALL_DOCS.map((d) => d.id));
 /** Hash aliases — corpus links pointing at section ids or legacy anchors. */
 export const DOC_HASH_ALIASES: Record<string, string> = {
   mainnet: 'mainnet-plan',
-  'book-maitreya': `book-maitreya-${MAITREYA_CHAPTERS[0].slug}`,
-  'book-nirvana': `book-nirvana-${NIRVANA_CHAPTERS[0].slug}`,
-  'book-surta': `book-surta-${SURTA_CHAPTERS[0].slug}`,
-  'book-surta-srdce': `book-surta-${SURTA_CHAPTERS[0].slug}`,
-  'surta-srdce': `book-surta-${SURTA_CHAPTERS[0].slug}`,
-  'book-kralovstvi': `book-kral-${KRAL_CHAPTERS[0].slug}`,
-  'kralovstvi-srdce': `book-kral-${KRAL_CHAPTERS[0].slug}`,
   whitepaper: 'wp-v3-mainnet',
-  books: `book-maitreya-${MAITREYA_CHAPTERS[0].slug}`,
+  books: 'book-genesis',
 };

@@ -335,7 +335,7 @@ test.describe.skip('maitreya hub', () => {
 
     // SulZeme viewer — assert the real markdown asset was fetched AND rendered.
     const sulzeme = page.waitForResponse(
-      (res) => res.url().includes('/docs/korpus/SulZeme/00-README.md') && res.status() === 200,
+      (res) => res.url().includes('/api/archive/docs/korpus/SulZeme/00-README.md') && res.status() === 200,
       { timeout: 30000 }
     );
     await page.goto('/docs/view/korpus/SulZeme/00-README.md', { waitUntil: 'domcontentloaded' });
@@ -349,7 +349,7 @@ test.describe.skip('maitreya hub', () => {
 
     // Tres Marías reader (CZ canonical text) — fetched asset + episode body.
     const tresMarias = page.waitForResponse(
-      (res) => res.url().includes('/docs/books/nirvana/kapitoly/13-Tres-Marias.md') && res.status() === 200,
+      (res) => res.url().includes('/api/archive/docs/books/nirvana/kapitoly/13-Tres-Marias.md') && res.status() === 200,
       { timeout: 30000 }
     );
     await page.goto('/zion-archive/nirvana/cist#13-Tres-Marias', { waitUntil: 'domcontentloaded' });
