@@ -3,23 +3,29 @@
 import { Suspense, useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import MinerClient from './MinerClient';
+import WorkerClient from './WorkerClient';
 import MinerSearch from '@/components/MinerSearch';
 import { useLang } from '@/lib/i18n';
 
-// Static export can't pre-render arbitrary /miner/<coin>/<wallet> paths, so
-// this shell parses the URL client-side.  nginx maps every /miner/* URL to
-// this page (try_files $uri $uri/ /miner/index.html).
+// Static export can't pre-render arbitrary /miner/<coin>/<wallet>[/<worker>]
+// paths, so this shell parses the URL client-side.  nginx maps every
+// /miner/* URL to this page (try_files $uri $uri/ /miner/index.html).
 function MinerShell() {
   const pathname = usePathname();
   const search = useSearchParams();
   const { t } = useLang();
-  const [parsed, setParsed] = useState<{ coin: string; wallet: string } | null>(null);
+  const [parsed, setParsed] = useState<{
+    coin: string;
+    wallet: string;
+    worker?: string;
+  } | null>(null);
 
   useEffect(() => {
-    const seg = pathname.split('/').filter(Boolean); // ['miner', coin, wallet]
+    const seg = pathname.split('/').filter(Boolean); // ['miner', coin, wallet, worker?]
     const coin = seg[1] ?? search.get('coin') ?? '';
     const wallet = seg[2] ?? search.get('wallet') ?? '';
-    setParsed(coin && wallet ? { coin, wallet } : null);
+    const worker = seg[3] ? decodeURIComponent(seg[3]) : undefined;
+    setParsed(coin && wallet ? { coin, wallet, worker } : null);
   }, [pathname, search]);
 
   if (!parsed) {
@@ -43,6 +49,11 @@ function MinerShell() {
     );
   }
 
+  if (parsed.worker) {
+    return (
+      <WorkerClient coin={parsed.coin} wallet={parsed.wallet} worker={parsed.worker} />
+    );
+  }
   return <MinerClient coin={parsed.coin} wallet={parsed.wallet} />;
 }
 

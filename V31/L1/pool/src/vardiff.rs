@@ -43,9 +43,8 @@ impl VarDiffConfig {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(default)
         }
-        let min_difficulty =
-            env_or("ZION_VARDIFF_MIN_DIFF", env_or("ZION_VARDIFF_MIN", 1000))
-                .max(MIN_SHARE_DIFFICULTY);
+        let min_difficulty = env_or("ZION_VARDIFF_MIN_DIFF", env_or("ZION_VARDIFF_MIN", 1000))
+            .max(MIN_SHARE_DIFFICULTY);
         Self {
             // Same normalization VarDiff::new applies — the config is the
             // enforced policy, so a sub-floor env min (or a start below it)

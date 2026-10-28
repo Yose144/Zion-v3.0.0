@@ -604,9 +604,10 @@ impl PoolApi {
                     parts.get(1).copied().unwrap_or(""),
                 );
                 let limit = parse_query_limit(raw_path, HISTORY_CAP as u32) as usize;
+                let worker = parse_query_param(raw_path, "worker");
                 match &self.share_store {
                     Some(_) => {
-                        let body = self.build_public_miner_history(coin, wallet, limit);
+                        let body = self.build_public_miner_history(coin, wallet, limit, worker);
                         ("200 OK", "application/json", body)
                     }
                     None => (
@@ -2021,7 +2022,16 @@ impl PoolApi {
     /// are the wallet's summed cumulative counters at sample time
     /// (per-interval deltas derived client-side; counters reset on pool
     /// restart, so the series may dip once per bounce).
-    fn build_public_miner_history(&self, coin: &str, wallet: &str, limit: usize) -> String {
+    /// `worker` (A2.1) — when Some, only that worker's rows are aggregated;
+    /// None keeps the wallet-wide rollup. Worker names are miner-supplied
+    /// free text — equality filter only, never interpolated into SQL.
+    fn build_public_miner_history(
+        &self,
+        coin: &str,
+        wallet: &str,
+        limit: usize,
+        worker: Option<String>,
+    ) -> String {
         let coin_key = if coin.is_empty() { "zion" } else { coin };
         let now_s = now_unix_seconds();
         let (extra_ids, store) = {
@@ -2046,7 +2056,12 @@ impl PoolApi {
             .unwrap_or_default();
         let mut by_ts: std::collections::BTreeMap<u64, (f64, u64, u64)> =
             std::collections::BTreeMap::new();
-        for (_miner_id, _worker, ts, hps_json, accepted, rejected) in rows {
+        for (_miner_id, row_worker, ts, hps_json, accepted, rejected) in rows {
+            if let Some(w) = &worker {
+                if &row_worker != w {
+                    continue;
+                }
+            }
             let hps_map: std::collections::HashMap<String, f64> =
                 serde_json::from_str(&hps_json).unwrap_or_default();
             let entry = by_ts.entry(ts).or_default();
@@ -3724,7 +3739,7 @@ mod tests {
 
         let api = PoolApi::new(test_pool(), Some(store), None);
         let payload: serde_json::Value =
-            serde_json::from_str(&api.build_public_miner_history("qtu", "w1", 100)).unwrap();
+            serde_json::from_str(&api.build_public_miner_history("qtu", "w1", 100, None)).unwrap();
         assert_eq!(payload["ok"], true);
         assert_eq!(payload["coin"], "qtu");
         let samples = payload["samples"].as_array().unwrap();
@@ -3735,9 +3750,33 @@ mod tests {
         assert_eq!(samples[0]["rejected"], 1);
         assert_eq!(samples[1]["hps"].as_f64().unwrap(), 1.5e6);
 
+        // A2.1: worker filter isolates a single worker's series.
+        let only_rigb: serde_json::Value = serde_json::from_str(&api.build_public_miner_history(
+            "qtu",
+            "w1",
+            100,
+            Some("rigB".to_string()),
+        ))
+        .unwrap();
+        let wb = only_rigb["samples"].as_array().unwrap();
+        assert_eq!(wb.len(), 1, "rigB has one ts point");
+        assert_eq!(wb[0]["hps"].as_f64().unwrap(), 2e6);
+        assert_eq!(wb[0]["accepted"], 3);
+        assert_eq!(wb[0]["rejected"], 1);
+        // Unknown worker → empty series (not an error).
+        let ghost: serde_json::Value = serde_json::from_str(&api.build_public_miner_history(
+            "qtu",
+            "w1",
+            100,
+            Some("nobody".to_string()),
+        ))
+        .unwrap();
+        assert_eq!(ghost["samples"].as_array().unwrap().len(), 0);
+
         // Unknown wallet → empty series, still ok:true.
         let empty: serde_json::Value =
-            serde_json::from_str(&api.build_public_miner_history("qtu", "nobody", 100)).unwrap();
+            serde_json::from_str(&api.build_public_miner_history("qtu", "nobody", 100, None))
+                .unwrap();
         assert_eq!(empty["samples"].as_array().unwrap().len(), 0);
     }
 

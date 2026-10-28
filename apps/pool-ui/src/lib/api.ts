@@ -299,13 +299,15 @@ export async function fetchMinerHistory(
   coin: CoinId,
   wallet: string,
   limit = 720,
+  worker?: string,
 ): Promise<MinerHistorySample[]> {
   if (USE_MOCK) return [];
   const poolCoin = POOL_COIN[coin];
   if (!poolCoin) return [];
+  const wq = worker ? `&worker=${encodeURIComponent(worker)}` : '';
   try {
     const res = await get<{ ok: boolean; samples: MinerHistorySample[] }>(
-      `/miner/${poolCoin}/${encodeURIComponent(wallet)}/history?limit=${limit}`,
+      `/miner/${poolCoin}/${encodeURIComponent(wallet)}/history?limit=${limit}${wq}`,
     );
     return res.samples ?? [];
   } catch {

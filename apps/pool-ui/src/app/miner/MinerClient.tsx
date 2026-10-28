@@ -250,7 +250,14 @@ export default function MinerClient({
                       : 100;
                   return (
                     <tr key={w.name}>
-                      <td className="text-white">{w.name}</td>
+                      <td>
+                        <a
+                          href={`/miner/${coin}/${wallet}/${encodeURIComponent(w.name)}/`}
+                          className="text-white/70 underline decoration-white/15 underline-offset-2 transition hover:text-rasta-gold"
+                        >
+                          {w.name}
+                        </a>
+                      </td>
                       <td className="text-dim">{w.algorithm}</td>
                       <td style={{ color: ACCENT[coin] }}>{fmtHashrate(w.hashrate)}</td>
                       <td className="text-green">{fmtInt(w.shares_accepted)}</td>
