@@ -73,6 +73,8 @@ Coin list + protocol fee split.
   "ok": true,
   "fees": {"miner_pct": 89, "humanitarian_pct": 5,
            "issobella_pct": 5, "pool_fee_pct": 1},
+  "vardiff": {"start": 1000, "min": 1000, "max": 100000,
+              "target_secs": 15, "retarget_shares": 8},
   "coins": [
     {"coin": "zion", "payout_mode": "native",
      "min_payout": "10000000", "fee_bps": 100,
@@ -84,6 +86,13 @@ Coin list + protocol fee split.
 
 `payout_mode`: `native` = paid in ZION; `unified` = merged into the
 ZION slice. `fee_bps` = pool-fee basis points (1 %).
+
+`vardiff` is the difficulty policy the stratum actually enforces (both
+are built from the same `VarDiffConfig::from_env` — the advertised
+values cannot drift from the enforced ones). The pool runs vardiff
+only: there is **no static-difficulty parameter** and
+`mining.suggest_difficulty` is accepted purely as a hint. `max` is
+`null` when the ceiling is disabled (`ZION_VARDIFF_MAX_DIFF=0`).
 
 ### `GET /public/v1/coins/{coin}/stats`
 ```json
@@ -97,19 +106,29 @@ ZION slice. `fee_bps` = pool-fee basis points (1 %).
 ```
 
 ### `GET /public/v1/coins/{coin}/blocks?limit=50`
-`{"ok": true, "coin": "…", "blocks": [block…]}` — same row shape as
-`/public/v1/blocks`. `503` when the store is disabled.
+`{"ok": true, "coin": "…", "tip": <height>, "blocks": [block…]}` — same
+row shape as `/public/v1/blocks`. `503` when the store is disabled.
 
 ### `GET /public/v1/blocks?coin=&limit=50`
 ```json
-{"ok": true, "blocks": [
+{"ok": true, "tip": 97402, "blocks": [
   {"coin": "zion", "height": 97300, "hash": "…",
    "miner": "s6m2…",            // public alias, never worker login
    "share_difficulty": 12.3, "network_difficulty": 10.1,
+   "shares_since_prev": 421, "luck_pct": 2.4,
    "status": "confirmed",       // pending|confirmed|orphaned (sticky)
    "ts": 1761600000, "confirmed_at": 1761600300}
 ]}
 ```
+
+`tip` = current chain height the pool tracks (null when unavailable) —
+for client-side coinbase-maturity countdowns (`tip − height + 1`
+confirmations; coinbase spends at 100). `shares_since_prev` = accepted
+shares between the previous block and this one (0 on rows predating
+schema v8). `luck_pct` = per-block luck, same formula as
+`pool_luck_100`: `(network_difficulty ÷ share_difficulty) ÷
+shares_since_prev × 100` — `>100` = lucky (found with fewer shares
+than statistically expected), `null` when inputs are missing.
 
 ### `GET /public/v1/payouts?coin=&limit=50`
 Merged feed — queued (in-memory PPLNS) + DB rows, newest first.
