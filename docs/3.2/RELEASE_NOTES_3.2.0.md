@@ -45,7 +45,10 @@ První **stable** release mainnetu V31 (genesis 2026-08-06). Šestivrstvá archi
 
 - **Dvouboxová produkce:** EDGE2 (primary + web ingress nginx :80/:443, všech 7 L1–L6+app služeb) / EDGE (pool, followeři, dashboard, Grafana/Prometheus, watchdogy); SSH tunely oběma směry.
 - **Monitoring:** G8 probe na obou boxech, write-path probe (L5/L6 scanner lag, db-sync PG auth — lekce P0-1/P0-2, payout-sweep freshness `zion_pool_last_payout_age_seconds` + alert `ZionPoolPayoutStale` >1 h), 18 veřejných endpointů 200; Alertmanager → g8-alert-sink (firing+resolved ověřeno 28. 10., append-only evidence `REPORT_2026-10-28_G8_ALERT_SINK.md`).
-- **Deploy provenance:** `scripts/ops/deploy-provenance.sh` + baseline manifest `docs/3.2/DEPLOY-PROVENANCE*` — sha256/mtime/verze/checkout stav nasazených binárek na obou boxech; pool `--version`/`/health` nesou build ID (od příštího rebuildu).
+- **Deploy provenance:** `scripts/ops/deploy-provenance.sh` + baseline manifest `docs/3.2/DEPLOY-PROVENANCE*` — sha256/mtime/verze/checkout stav nasazených binárek na obou boxech; pool `/health` nese build ID (`6fae7b60d2b5-dirty`, od buildu 28. 10.).
+- **Payout recovery (28. 10.):** fix `defdcd84a` deployed — under-fee'd payout batch (10 % cap < network min) → requeue místo doomed broadcastu; schema v11 `superseded_tx_id` + `void_payout_rows()` (evidence zachována, `total_paid` rollback); sweep **resurrectuje** mrtvé tx po UTXO/chain absence-proof + age threshold (`ZION_PAYOUT_STUCK_AGE_SECS`, 7 d). Backlog 1 180 → klesá live; voided rows requeued = žádný double-pay.
+- **Payout treasury:** sjednoceno na canonical `pool_payout` wallet `zion1d2k…` (~187k ZION) na EDGE i EDGE2 standby.
+- **Ops hardening:** EDGE fail2ban whitelist `+207.180.217.100 +62.171.141.136` (EDGE2/self se bannoval při scanner nárazu — recurring sshd refusal fix).
 - **G8:** 30d continuous-run gate — run #5 pending (aktuálně 99.75 % bez kritického incidentu).
 
 ## Safety holdy aktivní při vydání
@@ -60,9 +63,10 @@ Genesis chain je permanentní (2026-08-06 reset) — V3.x chain data se nepřen�
 
 - On-chain `protocol_version` hlásí `3.1.0-alpha` (kosmetická divergence vs node 3.2.0).
 - Pool stale-rate ~15–21 % = interní same-height racy, 0 externích ztrát (RCA 26. 10.).
-- npm advisories ve web apps (5 kritických) — triáž v běhu.
+- npm advisories ve web apps (next-critical v 7/9 appkách) — triáž `docs/3.2/AUDIT-TRIAGE.md`: fixy major-only; MarketPlace `next/image` off (Image-Opt RCE mimo hru), Server Actions unused; upgrade před Stable.
+- cargo audit: 9 vuln major-only — pouze `zion-multichain` + k256 chain, pool/node money path čistá (viz `AUDIT-TRIAGE.md`).
 - PRL/QTC payout paths drženy vypnuté; QTU attestation dokazuje jen ZION-key.
-- Payout backlog: 1 168 unconfirmed ZION payoutů (28. 10., roste) — vypořádání = rozhodnutí operátora, viz `Zionb2b.md` §5.
+- Payout backlog: recovery běží (28. 10. `defdcd84a` — 1 180 → klesá; voided rows = evidence). Zbývá QTC deferred ~918 = 👤 treasury funding, viz `Zionb2b.md` §5.
 - Maestro mutace vypnuté (`mutations_enabled=false`); auditované pouze read-only orchestrace.
 
 ## Ověření (pin `ad8ab5895`, 26. 10.)

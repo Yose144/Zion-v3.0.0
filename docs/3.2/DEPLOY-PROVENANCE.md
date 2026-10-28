@@ -36,7 +36,9 @@ umí — ostatní by spustily daemon), `since` (service start), plus repo
 checkout sha a počet dirty souborů.
 
 **Baseline:** `DEPLOY-PROVENANCE-2026-10-28.jsonl` (snapshot po deployi
-api-snapshot fixů). Spustit po každém deployi; diff proti baseline =
+api-snapshot fixů) · `DEPLOY-PROVENANCE-2026-10-28-evening.jsonl` (po
+payoutfix deployi — pool `1c159d7b73cf`, `--version` nyní hlásí
+`build 6fae7b60` = embedded build ID end-to-end). Spustit po každém deployi; diff proti baseline =
 přesný audit trail co se změnilo.
 
 ## Zjištění z baseline 2026-10-28

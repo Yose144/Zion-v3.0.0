@@ -48,10 +48,12 @@ Podle `NIRVANA-V3.3-PLAN.md` §Explicitní NON-DoD:
 | D-1 | P0-3: rotace PRL RPC credentialu + per-service env subsety (`/etc/zion/edge-environment.sh` sdílí nesouvisející secrets) | plan §8, P0 |
 | D-2 | Pool sidecar I/O, deferred queue/outbox, daily-volume atomicita — source problémy z audit re-check | `AUDIT_RECHECK_2026-10-25` korekce |
 | D-3 | `protocol_version` on-chain hlásí `3.1.0-alpha` vs node `3.2.0` | verifikace 26. 10. |
-| D-4 | npm audit: kritické advisories v 5 web apps + mobile | verifikace 26. 10. |
-| D-5 | `cargo audit` nenainstalován; clippy ~110 warnings; 25 fmt-drfit souborů | verifikace 26. 10. |
+| D-4 | npm audit: kritické advisories — ✅ triážena 28.10 (7/9 apps next-critical, fixy major-only → viz D-17) | `AUDIT-TRIAGE.md` |
+| D-5 | `cargo audit` — ✅ nainstalován + spuštěn 28.10 (9 vuln major-only → D-17); clippy pool 18 auto-fixů commit `f38f823cb` | `AUDIT-TRIAGE.md` |
 | D-6 | Provenance — ✅ 28.10: build id embedded v pool crate (`66d15bef4`, do prvního rebuildu nasazené binary se nedotkne), collector `scripts/ops/deploy-provenance.sh` + baseline `DEPLOY-PROVENANCE-2026-10-28.jsonl`. Zbývá: rollout patternu na ostatní binárky + rozhodnutí o EDGE dirty checkout (7 258 souborů) | `DEPLOY-PROVENANCE.md` |
 | ~~D-7~~ | ~~Pool sticky-confirmed fix~~ — ✅ nasazeno (CASE logika v running binary, ověřeno 28.10.) | `REPORTS/REPORT_2026-10-26_POOL_ORPHAN_RCA.md` |
+| ~~D-16~~ | ~~ZION payout backlog 1 180 dead-tx rows~~ — ✅ 28.10: `defdcd84a` deployed — under-fee guard (requeue místo broadcastu pod network min), schema v11 `superseded_tx_id`, `void_payout_rows` (evidence+rollback), resurrect sweep (`ZION_PAYOUT_STUCK_AGE_SECS`); canonical treasury `zion1d2k` (~187k). Active backlog klesá live; QTC deferred = samostatné 👤 funding | `RELEASE_NOTES_3.2.0.md`, `Zionb2b.md` §5 |
+| D-17 | npm `next` critical advisories (7/9 apps) + cargo audit 9 vuln (multichain/k256) | vše major-only fix — naplánovat upgrade před Stable; MarketPlace `unoptimized:true` mitigace aplikována 28.10 | `AUDIT-TRIAGE.md` |
 | D-8 | Stale-block rate 15–21 % `previous hash mismatch` — interní same-height racy (0 externích ztrát), residuální tuning | tentýž report |
 | D-9 | Public repo sync předefinovat — tracked `public/` přesunut do `archive/PUBLIC/` (workflow G4/E7 neplatný) | plan 8.B7 |
 | D-10 | DR restore drill neproveden; `HARD_RESET_PLAYBOOK.md` neaktualizován na dvouboxovou topologii | plan 8.B11 |
