@@ -1104,6 +1104,7 @@ mod tests {
             password: "x".to_string(),
             job_ttl: Duration::from_millis(90_000),
             fwd_max: Duration::from_millis(90_000),
+            fwd_grace: None,
             ring_cap: crate::pearl_upstream::DEFAULT_JOB_RING_CAP,
         });
         up.seed_job(UpstreamPearlJob {
@@ -1114,6 +1115,7 @@ mod tests {
             height: 0,
             cert_version: 3,
             received_at: Instant::now() - age,
+            superseded_at: None,
         });
         up
     }

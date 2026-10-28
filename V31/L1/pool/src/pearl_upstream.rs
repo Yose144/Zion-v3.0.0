@@ -51,6 +51,12 @@ pub struct PearlUpstreamConfig {
     pub password: String,
     pub job_ttl: Duration,
     pub fwd_max: Duration,
+    /// Optional supersede bound: once a job stops being the ring's newest,
+    /// forward its shares only for this grace window. `None` = age-only
+    /// model (verified behaviour — LuckyPool tolerates superseded job_ids
+    /// for many minutes). Set ZION_POOL_PEARL_UPSTREAM_FWD_GRACE_MS to
+    /// tighten against pools that retire aggressively on every notify.
+    pub fwd_grace: Option<Duration>,
     pub ring_cap: usize,
 }
 
@@ -98,6 +104,11 @@ impl PearlUpstreamConfig {
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(DEFAULT_FWD_MAX_MS),
         );
+        let fwd_grace = std::env::var("ZION_POOL_PEARL_UPSTREAM_FWD_GRACE_MS")
+            .ok()
+            .and_then(|v| v.trim().parse::<u64>().ok())
+            .filter(|ms| *ms > 0)
+            .map(Duration::from_millis);
         let ring_cap = std::env::var("ZION_POOL_PEARL_JOB_RING_CAP")
             .ok()
             .and_then(|v| v.trim().parse::<usize>().ok())
@@ -110,6 +121,7 @@ impl PearlUpstreamConfig {
             password,
             job_ttl,
             fwd_max,
+            fwd_grace,
             ring_cap,
         })
     }
@@ -124,6 +136,10 @@ pub struct UpstreamPearlJob {
     pub height: u64,
     pub cert_version: u32,
     pub received_at: Instant,
+    /// When this job stopped being the ring's newest (a later notify
+    /// superseded it). `None` while it is still the head — the timestamp
+    /// anchors the optional supersede-grace forward bound.
+    pub superseded_at: Option<Instant>,
 }
 
 impl UpstreamPearlJob {
@@ -183,6 +199,7 @@ pub struct PearlUpstream {
     password: String,
     job_ttl: Duration,
     fwd_max: Duration,
+    fwd_grace: Option<Duration>,
     ring_cap: usize,
     jobs: Arc<RwLock<VecDeque<UpstreamPearlJob>>>,
     connected: Arc<AtomicBool>,
@@ -208,6 +225,7 @@ impl PearlUpstream {
             password: cfg.password,
             job_ttl: cfg.job_ttl,
             fwd_max: cfg.fwd_max,
+            fwd_grace: cfg.fwd_grace,
             ring_cap: cfg.ring_cap,
             jobs: Arc::new(RwLock::new(VecDeque::new())),
             connected: Arc::new(AtomicBool::new(false)),
@@ -251,6 +269,28 @@ impl PearlUpstream {
         }
     }
 
+    /// Is a job's share still worth sending upstream? Age bound always
+    /// applies; when `fwd_grace` is configured a superseded job also has to
+    /// be inside its post-supersede grace window — the retirement model
+    /// LuckyPool-style pools that kill on stale job_ids actually need.
+    fn is_forwardable(&self, j: &UpstreamPearlJob) -> bool {
+        if j.received_at.elapsed() > self.fwd_max {
+            return false;
+        }
+        match (self.fwd_grace, j.superseded_at) {
+            (Some(grace), Some(sup)) => sup.elapsed() <= grace,
+            _ => true,
+        }
+    }
+
+    fn any_forwardable(&self, served_id: &str) -> bool {
+        self.jobs
+            .read()
+            .unwrap()
+            .iter()
+            .any(|j| j.served_id == served_id && self.is_forwardable(j))
+    }
+
     /// Newest job that is still inside the forward window.
     ///
     /// `latest_fresh` only reports jobs younger than `job_ttl` (30 s on
@@ -290,13 +330,7 @@ impl PearlUpstream {
         self.submits.fetch_add(1, Ordering::Relaxed);
         // Never send upstream a share for a job LP already retired — that
         // kills the upstream session (their anti-abuse drops the socket).
-        let forwardable = self
-            .jobs
-            .read()
-            .unwrap()
-            .iter()
-            .any(|j| j.served_id == served_id && j.received_at.elapsed() <= self.fwd_max);
-        if !forwardable {
+        if !self.any_forwardable(served_id) {
             self.stale_dropped.fetch_add(1, Ordering::Relaxed);
             tracing::info!(
                 "pearl_upstream: submit {served_id} dropped — job retired (forward window {}ms)",
@@ -380,6 +414,7 @@ impl PearlUpstream {
             height: j.height,
             cert_version: j.cert_version,
             received_at: Instant::now(),
+            superseded_at: None,
         };
         let mut ring = self.jobs.write().unwrap();
         if ring
@@ -389,8 +424,12 @@ impl PearlUpstream {
         {
             // Same template re-seen (post-submit `latest_job` refresh or a
             // duplicate notify): replace in place to renew the TTL without
-            // growing the ring or re-logging.
-            *ring.back_mut().unwrap() = cached;
+            // growing the ring or re-logging — keep the supersede marker
+            // of the entry being replaced (it is still the head anyway).
+            let superseded_at = ring.back().unwrap().superseded_at;
+            let mut replaced = cached;
+            replaced.superseded_at = superseded_at;
+            *ring.back_mut().unwrap() = replaced;
             return;
         }
         tracing::info!(
@@ -400,6 +439,15 @@ impl PearlUpstream {
             cached.cert_version,
             &hex::encode(cached.target_be)[..16]
         );
+        // Every existing entry is now superseded by the incoming head —
+        // stamp the ones not already marked (keeps the *first* supersede
+        // time, i.e. how long the job stopped being the newest).
+        let now = Instant::now();
+        for j in ring.iter_mut() {
+            if j.superseded_at.is_none() {
+                j.superseded_at = Some(now);
+            }
+        }
         // Evict by age, not by count: a job must stay resolvable for as
         // long as we are willing to forward it (fwd_max). Evicting by
         // count dropped the job while the miner was still searching for a
@@ -494,12 +542,7 @@ impl PearlUpstream {
                     // Queued submits may have outlived their job while
                     // waiting through a reconnect — re-check freshness at
                     // dispatch so we never send a retired job_id upstream.
-                    let fresh = self
-                        .jobs
-                        .read()
-                        .unwrap()
-                        .iter()
-                        .any(|j| j.served_id == req.served_id && j.received_at.elapsed() <= self.fwd_max);
+                    let fresh = self.any_forwardable(&req.served_id);
                     if !fresh {
                         self.pending.fetch_sub(1, Ordering::Relaxed);
                         self.stale_dropped.fetch_add(1, Ordering::Relaxed);
@@ -554,6 +597,12 @@ impl PearlUpstream {
     #[cfg(test)]
     pub fn seed_job(&self, job: UpstreamPearlJob) {
         let mut ring = self.jobs.write().unwrap();
+        let now = Instant::now();
+        for j in ring.iter_mut() {
+            if j.superseded_at.is_none() {
+                j.superseded_at = Some(now);
+            }
+        }
         while let Some(front) = ring.front() {
             if front.received_at.elapsed() > self.fwd_max {
                 ring.pop_front();
@@ -574,12 +623,14 @@ mod tests {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
     use tokio::net::TcpListener;
 
-    const ENV_VARS: [&str; 5] = [
+    const ENV_VARS: [&str; 7] = [
         "ZION_POOL_PEARL_UPSTREAM",
         "ZION_POOL_PEARL_UPSTREAM_WALLET",
         "ZION_POOL_PEARL_UPSTREAM_WORKER",
         "ZION_POOL_PEARL_UPSTREAM_PASSWORD",
         "ZION_POOL_PEARL_UPSTREAM_JOB_TTL_MS",
+        "ZION_POOL_PEARL_UPSTREAM_FWD_MAX_MS",
+        "ZION_POOL_PEARL_UPSTREAM_FWD_GRACE_MS",
     ];
 
     fn test_cfg(endpoint: &str) -> PearlUpstreamConfig {
@@ -590,6 +641,7 @@ mod tests {
             password: "x".to_string(),
             job_ttl: Duration::from_millis(90_000),
             fwd_max: Duration::from_millis(90_000),
+            fwd_grace: None,
             ring_cap: DEFAULT_JOB_RING_CAP,
         }
     }
@@ -603,7 +655,39 @@ mod tests {
             height: 42,
             cert_version: 3,
             received_at: Instant::now() - age,
+            superseded_at: None,
         }
+    }
+
+    #[test]
+    fn forwardable_respects_supersede_grace() {
+        let cfg = PearlUpstreamConfig {
+            fwd_grace: Some(Duration::from_millis(30_000)),
+            ..test_cfg("127.0.0.1:1")
+        };
+        let up = PearlUpstream::new(cfg);
+        // head job: always forwardable regardless of grace.
+        let head = ujob("new", Duration::from_millis(1_000));
+        up.seed_job(head);
+        assert!(up.any_forwardable(&format!("{UPSTREAM_JOB_PREFIX}new")));
+        // pushing a second job supersedes the first — inside grace it
+        // still forwards.
+        up.seed_job(ujob("newer", Duration::ZERO));
+        assert!(up.any_forwardable(&format!("{UPSTREAM_JOB_PREFIX}new")));
+        // A job superseded beyond the grace window drops out.
+        let old = {
+            let mut j = ujob("old", Duration::from_millis(50_000));
+            j.superseded_at = Some(Instant::now() - Duration::from_millis(40_000));
+            j
+        };
+        up.seed_job(old);
+        assert!(!up.any_forwardable(&format!("{UPSTREAM_JOB_PREFIX}old")));
+        // Without grace configured, age alone decides (default model).
+        let up2 = PearlUpstream::new(test_cfg("127.0.0.1:1"));
+        let mut j = ujob("aged", Duration::from_millis(80_000));
+        j.superseded_at = Some(Instant::now() - Duration::from_millis(70_000));
+        up2.seed_job(j);
+        assert!(up2.any_forwardable(&format!("{UPSTREAM_JOB_PREFIX}aged")));
     }
 
     #[test]
