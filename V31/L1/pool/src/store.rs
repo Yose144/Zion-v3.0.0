@@ -38,7 +38,7 @@ use crate::v3_pplns::PayoutEntry;
 /// v9: `pool_state` kv — the running shares-since-last-block counter is
 /// flushed here periodically (the `shares` table is not populated by the
 /// production submit path, so there is no per-share trail to recount).
-const SCHEMA_VERSION: u32 = 9;
+const SCHEMA_VERSION: u32 = 10;
 
 /// A thread-safe wrapper around a SQLite connection.  SQLite with
 /// `serialized` mode (default for `bundled`) supports multi-thread access,
@@ -70,6 +70,23 @@ pub struct ShareRecord {
     /// Coin the share was mined for — lowercase ticker (F2; `"zion"`,
     /// `"qtu"`, `"prl"`, bridged coin ids).
     pub coin: String,
+}
+
+/// An offline-worker alert subscription row (schema v10, A2.2).
+/// `worker` empty = wallet-wide watch (alert when NO worker of the wallet
+/// is online); otherwise that exact worker name. `channel` ∈
+/// {`webhook`, `telegram`}; `target` = URL or chat_id. `state` dedups
+/// transitions — alerts fire only on online↔offline flips.
+#[derive(Debug, Clone)]
+pub struct AlertSub {
+    pub id: i64,
+    pub miner_id: String,
+    pub worker: String,
+    pub channel: String,
+    pub target: String,
+    pub offline_secs: u64,
+    pub state: String,
+    pub last_alert_ts: u64,
 }
 
 /// A payout record for insertion.
@@ -451,6 +468,33 @@ impl ShareStore {
                 );",
             )
             .context("failed to migrate schema to v9")?;
+        }
+
+        if current < 10 {
+            // v10: ZIS-account miner settings (per-wallet payout threshold
+            // override — 0 = inherit global) + offline-worker alert
+            // subscriptions (A2.2/A2.3). `state`/`last_alert_ts` dedup the
+            // offline→online transition alerts.
+            conn.execute_batch(
+                "CREATE TABLE miner_settings (
+                    miner_id           TEXT PRIMARY KEY,
+                    min_payout_flowers INTEGER NOT NULL DEFAULT 0,
+                    updated_ts         INTEGER NOT NULL DEFAULT (unixepoch())
+                );
+                CREATE TABLE alert_subscriptions (
+                    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                    miner_id      TEXT NOT NULL,
+                    worker        TEXT NOT NULL DEFAULT '',
+                    channel       TEXT NOT NULL,
+                    target        TEXT NOT NULL,
+                    offline_secs  INTEGER NOT NULL DEFAULT 600,
+                    state         TEXT NOT NULL DEFAULT 'online',
+                    last_alert_ts INTEGER NOT NULL DEFAULT 0,
+                    created_ts    INTEGER NOT NULL DEFAULT (unixepoch())
+                );
+                CREATE INDEX alert_subs_miner ON alert_subscriptions(miner_id);",
+            )
+            .context("failed to migrate schema to v10")?;
         }
 
         conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
@@ -1443,6 +1487,159 @@ impl ShareStore {
             out.push(r?);
         }
         Ok(out)
+    }
+
+    // ── Miner settings + alert subscriptions (schema v10, A2.2/A2.3) ───
+
+    /// Upsert a per-wallet payout threshold override (flowers). `0` clears
+    /// the override → the global coin threshold applies again.
+    pub fn set_min_payout_override(&self, miner_id: &str, flowers: u64) -> Result<()> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        if flowers == 0 {
+            conn.execute(
+                "DELETE FROM miner_settings WHERE miner_id = ?1",
+                params![miner_id],
+            )?;
+        } else {
+            conn.execute(
+                "INSERT INTO miner_settings (miner_id, min_payout_flowers, updated_ts)
+                 VALUES (?1, ?2, unixepoch())
+                 ON CONFLICT(miner_id) DO UPDATE SET
+                   min_payout_flowers = excluded.min_payout_flowers,
+                   updated_ts = excluded.updated_ts",
+                params![miner_id, flowers as i64],
+            )?;
+        }
+        Ok(())
+    }
+
+    /// All configured threshold overrides (`miner_id → flowers`), for boot
+    /// restore and the public miner payload.
+    pub fn load_payout_overrides(&self) -> Result<HashMap<String, u64>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT miner_id, min_payout_flowers FROM miner_settings WHERE min_payout_flowers > 0",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)? as u64))
+        })?;
+        let mut out = HashMap::new();
+        for r in rows {
+            let (k, v) = r?;
+            out.insert(k, v);
+        }
+        Ok(out)
+    }
+
+    /// Insert or replace an offline-alert subscription. Unique per
+    /// (miner_id, worker, channel) — a repeated POST updates target/cadence
+    /// in place and keeps the dedup state. Returns the row id.
+    pub fn upsert_alert_subscription(
+        &self,
+        miner_id: &str,
+        worker: &str,
+        channel: &str,
+        target: &str,
+        offline_secs: u64,
+    ) -> Result<i64> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        // Manual upsert — alert_subscriptions has an AUTOINCREMENT id, so
+        // ON CONFLICT would need a UNIQUE index on the triple; a delete+
+        // insert inside one lock hold is equally atomic and keeps `state`.
+        conn.execute(
+            "UPDATE alert_subscriptions SET target = ?4, offline_secs = ?5
+             WHERE miner_id = ?1 AND worker = ?2 AND channel = ?3",
+            params![miner_id, worker, channel, target, offline_secs as i64],
+        )?;
+        let mut stmt = conn.prepare(
+            "SELECT id FROM alert_subscriptions
+             WHERE miner_id = ?1 AND worker = ?2 AND channel = ?3",
+        )?;
+        if let Some(id) = stmt
+            .query_map(params![miner_id, worker, channel], |r| r.get::<_, i64>(0))?
+            .next()
+        {
+            return id.map_err(Into::into);
+        }
+        drop(stmt);
+        conn.execute(
+            "INSERT INTO alert_subscriptions (miner_id, worker, channel, target, offline_secs)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![miner_id, worker, channel, target, offline_secs as i64],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    /// Delete a subscription owned by `miner_id` — returns rows removed.
+    pub fn delete_alert_subscription(&self, id: i64, miner_id: &str) -> Result<usize> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let n = conn.execute(
+            "DELETE FROM alert_subscriptions WHERE id = ?1 AND miner_id = ?2",
+            params![id, miner_id],
+        )?;
+        Ok(n)
+    }
+
+    /// Subscriptions for one wallet (account view).
+    pub fn list_alert_subscriptions(&self, miner_id: &str) -> Result<Vec<AlertSub>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT id, miner_id, worker, channel, target, offline_secs, state, last_alert_ts
+             FROM alert_subscriptions WHERE miner_id = ?1 ORDER BY id",
+        )?;
+        let rows = stmt.query_map(params![miner_id], |row| {
+            Ok(AlertSub {
+                id: row.get(0)?,
+                miner_id: row.get(1)?,
+                worker: row.get(2)?,
+                channel: row.get(3)?,
+                target: row.get(4)?,
+                offline_secs: row.get::<_, i64>(5)? as u64,
+                state: row.get(6)?,
+                last_alert_ts: row.get::<_, i64>(7)? as u64,
+            })
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    }
+
+    /// All subscriptions — the offline watcher scans these every tick.
+    pub fn load_all_alert_subscriptions(&self) -> Result<Vec<AlertSub>> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        let mut stmt = conn.prepare(
+            "SELECT id, miner_id, worker, channel, target, offline_secs, state, last_alert_ts
+             FROM alert_subscriptions ORDER BY id",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(AlertSub {
+                id: row.get(0)?,
+                miner_id: row.get(1)?,
+                worker: row.get(2)?,
+                channel: row.get(3)?,
+                target: row.get(4)?,
+                offline_secs: row.get::<_, i64>(5)? as u64,
+                state: row.get(6)?,
+                last_alert_ts: row.get::<_, i64>(7)? as u64,
+            })
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    }
+
+    /// Mark an alert transition (dedup) — `state` is "offline" or "online".
+    pub fn set_alert_state(&self, id: i64, state: &str, ts: u64) -> Result<()> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        conn.execute(
+            "UPDATE alert_subscriptions SET state = ?2, last_alert_ts = ?3 WHERE id = ?1",
+            params![id, state, ts as i64],
+        )?;
+        Ok(())
     }
 
     // ── Share dedup marks (schema v7) ──────────────────────────────────
@@ -2452,5 +2649,91 @@ mod history_tests {
         store.set_state("shares_since_last_block", 0).unwrap();
         assert_eq!(store.get_state("shares_since_last_block").unwrap(), Some(0));
         assert_eq!(store.get_state("other_key").unwrap(), None);
+    }
+
+    /// v9→v10: migration must create `miner_settings` +
+    /// `alert_subscriptions` on an existing v9 database (A2.2/A2.3).
+    #[test]
+    fn v10_migration_creates_settings_and_alert_tables() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE pool_state (
+                key TEXT PRIMARY KEY,
+                value INTEGER NOT NULL
+            );
+            PRAGMA user_version = 9;",
+        )
+        .unwrap();
+        let store = ShareStore::from_connection_for_test(conn).unwrap();
+        // Tables usable → migration ran (methods would fail otherwise).
+        store.set_min_payout_override("w1", 42).unwrap();
+        store
+            .upsert_alert_subscription("w1", "rig", "webhook", "https://h.ex/x", 60)
+            .unwrap();
+    }
+
+    /// A2.3: per-wallet payout override round-trip — set, load, clear.
+    #[test]
+    fn payout_override_crud_roundtrip() {
+        let store = ShareStore::open_in_memory().unwrap();
+        assert!(store.load_payout_overrides().unwrap().is_empty());
+        store.set_min_payout_override("zion1a", 5_000_000).unwrap();
+        store.set_min_payout_override("zion1b", 7_000_000).unwrap();
+        let m = store.load_payout_overrides().unwrap();
+        assert_eq!(m.get("zion1a"), Some(&5_000_000));
+        assert_eq!(m.get("zion1b"), Some(&7_000_000));
+        // Overwrite + clear (0 deletes the row).
+        store.set_min_payout_override("zion1a", 9).unwrap();
+        store.set_min_payout_override("zion1b", 0).unwrap();
+        let m = store.load_payout_overrides().unwrap();
+        assert_eq!(m.get("zion1a"), Some(&9));
+        assert!(!m.contains_key("zion1b"));
+    }
+
+    /// A2.2: alert subscription upsert (keyed by wallet+worker+channel),
+    /// scoped delete, and persisted state transitions for dedup.
+    #[test]
+    fn alert_subscription_crud_and_state() {
+        let store = ShareStore::open_in_memory().unwrap();
+        let id1 = store
+            .upsert_alert_subscription("w1", "rigA", "webhook", "https://a", 120)
+            .unwrap();
+        let id2 = store
+            .upsert_alert_subscription("w1", "", "telegram", "-123", 600)
+            .unwrap();
+        store
+            .upsert_alert_subscription("w2", "rigA", "webhook", "https://b", 300)
+            .unwrap();
+        // Re-upsert same key → same id, updated fields.
+        let again = store
+            .upsert_alert_subscription("w1", "rigA", "webhook", "https://a2", 90)
+            .unwrap();
+        assert_eq!(again, id1);
+
+        let subs = store.list_alert_subscriptions("w1").unwrap();
+        assert_eq!(subs.len(), 2);
+        let s1 = subs.iter().find(|s| s.id == id1).unwrap();
+        assert_eq!(s1.target, "https://a2");
+        assert_eq!(s1.offline_secs, 90);
+        assert_eq!(s1.state, "online");
+
+        // All-subs load (watcher path) sees every wallet.
+        assert_eq!(store.load_all_alert_subscriptions().unwrap().len(), 3);
+
+        // State transition persists (dedup key).
+        store.set_alert_state(id1, "offline", 111).unwrap();
+        let s1 = store
+            .list_alert_subscriptions("w1")
+            .unwrap()
+            .into_iter()
+            .find(|s| s.id == id1)
+            .unwrap();
+        assert_eq!(s1.state, "offline");
+        assert_eq!(s1.last_alert_ts, 111);
+
+        // Scoped delete — wrong wallet cannot remove the row.
+        assert_eq!(store.delete_alert_subscription(id2, "w2").unwrap(), 0);
+        assert_eq!(store.delete_alert_subscription(id2, "w1").unwrap(), 1);
+        assert_eq!(store.list_alert_subscriptions("w1").unwrap().len(), 1);
     }
 }

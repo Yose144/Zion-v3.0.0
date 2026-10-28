@@ -204,6 +204,57 @@ Pool-wide 60 s timeseries (24 h ring, persisted):
 `hashrate` = ZION-leg live (10-min trailing); `hashrate_by_coin` = same
 window per stream (external = expected-work H/s).
 
+## Account endpoints (ZIS-authed, POST only)
+
+`/public/v1/account*` is the only **write-capable public tier**. Auth =
+the miner's ZIS API key (`zis_…`) sent in the JSON body as `"token"`;
+the pool verifies it against the identity service (`POST /api/keys/verify`)
+and every `wallet` argument must be one of the identity's linked
+addresses — otherwise **403**. Invalid tokens count against the
+auth-failure limiter; banned subs get **403**. All bodies are JSON.
+
+### `POST /public/v1/account` — read view
+
+```json
+// → {"token": "zis_…"}
+{"ok": true, "sub": "u123", "wallets": ["zion1…", "qz…"],
+ "settings": {"zion1…": {"min_payout_flowers": 5000000}},
+ "alerts":   {"zion1…": [{"id": 3, "worker": "rigA",
+              "channel": "webhook", "target": "https://…",
+              "offline_secs": 600, "state": "online"}]}}
+```
+
+### `POST /public/v1/account/threshold`
+
+`{"token","wallet","min_payout":<flowers>}` — per-wallet payout threshold
+override on the **unified (flowers) payout path** (native-payout coins
+keep their own units/threshold). `0` clears → global `min_payout`
+applies. Bounds: `global_min ≤ v ≤ 1000×global_min` (400 otherwise).
+Effective threshold shows up as `min_payout` in
+`GET /public/v1/miner/{coin}/{wallet}`.
+
+### `POST /public/v1/account/alert`
+
+`{"token","wallet","worker"?, "channel","target","offline_secs"?}` —
+subscribe to worker-offline alerts (A2.2). `worker` empty = watch every
+worker of the wallet. `channel` `webhook` → `target` = https URL
+(no IP literals / local hosts — SSRF guard); `telegram` → `target` =
+numeric chat id. `offline_secs` clamped `[60, 86400]` (default 600).
+Upsert keyed by `(wallet, worker, channel)` — repeat POST updates in
+place → `{"ok":true,"id":N}`.
+
+Delivery: a 60 s watcher transitions `state` `online↔offline` when the
+last-seen age crosses `offline_secs` and sends one notification per
+transition (`worker_offline` / `worker_online` event; webhook gets a
+JSON payload `{event, miner_id, worker, offline_secs, ts}`, telegram a
+text line). Best-effort — failures are logged, never retried.
+
+### `POST /public/v1/account/alert/delete`
+
+`{"token","wallet","id":N}` — deletes one subscription; the row must
+belong to `wallet` (scoped, **0 rows** if another wallet owns it) →
+`{"ok":true,"deleted":bool}`.
+
 ### `GET /health` — *API bind only*
 `{"ok": true, "status": "ok", …}` — liveness probe.
 

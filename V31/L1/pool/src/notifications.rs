@@ -256,10 +256,18 @@ impl Notifier {
     /// `https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={text}`.
     /// Best-effort: errors are logged, not propagated.
     pub fn send_telegram(&self, text: &str) {
-        let (Some(token), Some(chat_id)) = (
-            &self.config.telegram_bot_token,
-            &self.config.telegram_chat_id,
-        ) else {
+        let Some(chat_id) = self.config.telegram_chat_id.clone() else {
+            return;
+        };
+        self.send_telegram_to(&chat_id, text);
+    }
+
+    /// Send a Telegram message to an arbitrary chat_id (per-user offline
+    /// worker alerts — A2.2). Uses the shared bot token; silent no-op when
+    /// no token is configured. Same best-effort semantics as
+    /// `send_telegram`.
+    pub fn send_telegram_to(&self, chat_id: &str, text: &str) {
+        let Some(token) = &self.config.telegram_bot_token else {
             return;
         };
         let Some(client) = &self.http_client else {
@@ -271,7 +279,7 @@ impl Notifier {
         // percent-encoded automatically — no extra encoding crate needed.
         let result = client
             .get(format!("https://api.telegram.org/bot{}/sendMessage", token))
-            .query(&[("chat_id", chat_id.as_str()), ("text", text)])
+            .query(&[("chat_id", chat_id), ("text", text)])
             .send();
 
         match result {
@@ -284,6 +292,33 @@ impl Notifier {
                 }
             }
             Err(e) => warn!("telegram_send_error err={}", e),
+        }
+    }
+
+    /// POST a JSON payload to an arbitrary HTTPS webhook URL — per-user
+    /// alert target (A2.2 offline-worker subscriptions). SSRF-guarded:
+    /// `http://`, IP-literal hosts, and `.local`/`.internal`/`localhost`
+    /// names are refused so a subscription cannot reach back into pool
+    /// infrastructure. Best-effort: failures are logged, never propagated.
+    pub fn send_webhook(&self, url: &str, payload: &serde_json::Value) {
+        if !webhook_url_allowed(url) {
+            warn!("webhook_skip url refused by policy");
+            return;
+        }
+        let Some(client) = &self.http_client else {
+            info!("webhook_skip (no http client) url={}", url);
+            return;
+        };
+        match client.post(url).json(payload).send() {
+            Ok(resp) => {
+                let status = resp.status();
+                if status.is_success() {
+                    info!("webhook_sent status={}", status);
+                } else {
+                    warn!("webhook_send_failed status={}", status);
+                }
+            }
+            Err(e) => warn!("webhook_send_error err={}", e),
         }
     }
 
@@ -407,6 +442,41 @@ impl Notifier {
     }
 }
 
+/// SSRF guard for user-supplied webhook targets (A2.2): only `https://`
+/// scheme, a DNS host (no IP literals — refuses loopback/private ranges
+/// without resolving), and no `.local`/`.internal`/`localhost` names.
+/// The same check validates subscriptions at write time on the API.
+pub fn webhook_url_allowed(url: &str) -> bool {
+    let Some(rest) = url.strip_prefix("https://") else {
+        return false;
+    };
+    // host = up to '/', '?', '#'; strip any userinfo + port.
+    let hostport = rest
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or("")
+        .rsplit('@')
+        .next()
+        .unwrap_or("");
+    let host = hostport
+        .trim_start_matches('[')
+        .split([']', ':'])
+        .next()
+        .unwrap_or("")
+        .trim_end_matches('.')
+        .to_ascii_lowercase();
+    if host.is_empty()
+        || host == "localhost"
+        || host.ends_with(".local")
+        || host.ends_with(".internal")
+        || host.ends_with(".localhost")
+        || host.parse::<std::net::IpAddr>().is_ok()
+    {
+        return false;
+    }
+    true
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -519,5 +589,23 @@ mod tests {
         let notifier = Notifier::new(cfg);
         // Should complete without panicking.
         notifier.notify_block_found("test-miner", 42, "worker-1");
+    }
+
+    /// A2.2 webhook policy — https only, no IP literals, no local hosts.
+    #[test]
+    fn webhook_url_allowed_policy() {
+        assert!(webhook_url_allowed("https://hooks.example.com/x"));
+        assert!(webhook_url_allowed("https://example.com:8443/hook?k=v"));
+        assert!(webhook_url_allowed("https://user:pw@hooks.example.com/x"));
+        assert!(!webhook_url_allowed("http://hooks.example.com/x"));
+        assert!(!webhook_url_allowed("https://127.0.0.1/x"));
+        assert!(!webhook_url_allowed("https://[::1]/x"));
+        assert!(!webhook_url_allowed("https://10.0.0.5:9000/x"));
+        assert!(!webhook_url_allowed("https://localhost/x"));
+        assert!(!webhook_url_allowed("https://foo.local/x"));
+        assert!(!webhook_url_allowed("https://svc.internal/"));
+        assert!(!webhook_url_allowed("https://a.localhost/x"));
+        assert!(!webhook_url_allowed("not a url"));
+        assert!(!webhook_url_allowed(""));
     }
 }

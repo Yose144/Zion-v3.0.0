@@ -9,6 +9,7 @@ use serde_json::json;
 use tracing::{error, info, warn};
 
 use crate::auxpow_bridge::MultiAuxPowBridge;
+use crate::notifications::{NotificationsConfig, Notifier};
 use crate::pool::Pool;
 use crate::store::ShareStore;
 use crate::telemetry::now_unix_seconds;
@@ -100,6 +101,10 @@ pub struct PoolApi {
     /// `(window_start_s, failures)` per client IP for `/api` + `/admin`
     /// authentication failures.
     auth_fail_rate: Mutex<std::collections::HashMap<std::net::IpAddr, (u64, u32)>>,
+    /// ZIS verifier for the `/public/v1/account/*` endpoints (A2.2/A2.3) —
+    /// `verify_blocking` variant; shares the env config with the stratum's
+    /// own verifier but keeps an independent cache.
+    zis: crate::zis::ZisVerifier,
     started_at: Instant,
 }
 
@@ -135,6 +140,22 @@ impl PoolApi {
                 Err(e) => warn!("history: restore failed: {e}"),
             }
         }
+        // A2.3: restore persisted per-wallet payout threshold overrides into
+        // the engine — the share store is the source of truth across restarts.
+        if let Some(store) = &share_store {
+            match store.load_payout_overrides() {
+                Ok(overrides) if !overrides.is_empty() => {
+                    let n = overrides.len();
+                    pool.lock()
+                        .expect("pool lock poisoned")
+                        .pplns
+                        .set_payout_overrides(overrides);
+                    info!("miner_settings: restored {n} payout overrides");
+                }
+                Ok(_) => {}
+                Err(e) => warn!("miner_settings: restore failed: {e}"),
+            }
+        }
         Self {
             pool,
             share_store,
@@ -145,6 +166,7 @@ impl PoolApi {
             history: Arc::new(Mutex::new(h)),
             public_rate: Mutex::new(std::collections::HashMap::new()),
             auth_fail_rate: Mutex::new(std::collections::HashMap::new()),
+            zis: crate::zis::ZisVerifier::from_env(),
             started_at: Instant::now(),
         }
     }
@@ -272,6 +294,26 @@ impl PoolApi {
                 h.push_back(sample);
                 drop(h);
                 std::thread::sleep(Duration::from_secs(HISTORY_INTERVAL_S));
+            });
+        }
+
+        // A2.2 offline-worker watcher — evaluate persisted alert
+        // subscriptions against live last-seen data once a minute and emit
+        // transition notifications (dedup via `alert_subscriptions.state`).
+        {
+            let pool = Arc::clone(&self.pool);
+            let store = self.share_store.clone();
+            std::thread::spawn(move || {
+                let notifier = Notifier::new(NotificationsConfig::from_env());
+                // Boot grace — miners need a moment to reconnect before any
+                // subscription can be judged offline.
+                std::thread::sleep(Duration::from_secs(60));
+                loop {
+                    if let Some(store) = &store {
+                        check_alert_subscriptions(&pool, store, &notifier);
+                    }
+                    std::thread::sleep(Duration::from_secs(60));
+                }
             });
         }
 
@@ -482,6 +524,27 @@ impl PoolApi {
         // byte-identical state files. /api auth already ran above.
         if path.starts_with("/api/v1/state/") {
             self.respond_state_export(&mut stream, path)?;
+            return Ok(());
+        }
+
+        // ---- /public/v1/account — ZIS-authed miner settings (A2.2/A2.3) ----
+        // Write-capable public tier: the zis token IS the auth (verified
+        // against the identity service); wallet must be a linked address.
+        if path.starts_with("/public/v1/account") {
+            let (status, body) = if method != "POST" {
+                (
+                    "405 Method Not Allowed",
+                    "{\"ok\":false,\"error\":\"POST required\"}".to_string(),
+                )
+            } else {
+                self.handle_account_request(path, &request_body, client_ip)
+            };
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes())?;
             return Ok(());
         }
 
@@ -1594,6 +1657,276 @@ impl PoolApi {
         .to_string()
     }
 
+    // ── /public/v1/account — ZIS-authed miner settings (A2.2/A2.3) ──────
+
+    /// Dispatch one authenticated account request. The zis token is the
+    /// credential — verified against the identity service via
+    /// `verify_blocking`; the wallet argument must be a linked address of
+    /// the resolved identity (`owns`) before any read or write happens.
+    /// Failed tokens count against the shared auth-failure limiter.
+    fn handle_account_request(
+        &self,
+        path: &str,
+        body: &str,
+        client_ip: std::net::IpAddr,
+    ) -> (&'static str, String) {
+        let json: serde_json::Value = match serde_json::from_str(body) {
+            Ok(v) => v,
+            Err(_) => {
+                return (
+                    "400 Bad Request",
+                    "{\"ok\":false,\"error\":\"invalid json\"}".to_string(),
+                )
+            }
+        };
+        let token = json["token"].as_str().unwrap_or("");
+        if !token.starts_with("zis_") {
+            self.note_auth_failure(client_ip);
+            return (
+                "401 Unauthorized",
+                "{\"ok\":false,\"error\":\"invalid token\"}".to_string(),
+            );
+        }
+        let Some(idn) = self.zis.verify_blocking(token) else {
+            self.note_auth_failure(client_ip);
+            return (
+                "401 Unauthorized",
+                "{\"ok\":false,\"error\":\"invalid token\"}".to_string(),
+            );
+        };
+        if self.zis.is_banned(&idn.sub) {
+            return (
+                "403 Forbidden",
+                "{\"ok\":false,\"error\":\"account banned\"}".to_string(),
+            );
+        }
+        match path {
+            "/public/v1/account" => ("200 OK", self.account_view(&idn)),
+            "/public/v1/account/threshold" => self.account_set_threshold(&idn, &json),
+            "/public/v1/account/alert" => self.account_upsert_alert(&idn, &json),
+            "/public/v1/account/alert/delete" => self.account_delete_alert(&idn, &json),
+            _ => (
+                "404 Not Found",
+                "{\"ok\":false,\"error\":\"unknown endpoint\"}".to_string(),
+            ),
+        }
+    }
+
+    /// `POST /public/v1/account` — read: linked wallets, their payout
+    /// threshold overrides and alert subscriptions.
+    fn account_view(&self, idn: &crate::zis::ZisIdentity) -> String {
+        let Some(store) = &self.share_store else {
+            return json!({"ok": false, "error": "database not configured"}).to_string();
+        };
+        let overrides = store.load_payout_overrides().unwrap_or_default();
+        let mut settings = serde_json::Map::new();
+        let mut alerts = serde_json::Map::new();
+        for w in &idn.addresses {
+            if let Some(v) = overrides.get(w) {
+                settings.insert(w.clone(), json!({"min_payout_flowers": v}));
+            }
+            let subs = store.list_alert_subscriptions(w).unwrap_or_default();
+            if !subs.is_empty() {
+                alerts.insert(
+                    w.clone(),
+                    json!(subs
+                        .iter()
+                        .map(|s| json!({
+                            "id": s.id,
+                            "worker": s.worker,
+                            "channel": s.channel,
+                            "target": s.target,
+                            "offline_secs": s.offline_secs,
+                            "state": s.state,
+                        }))
+                        .collect::<Vec<_>>()),
+                );
+            }
+        }
+        json!({
+            "ok": true,
+            "sub": idn.sub,
+            "wallets": idn.addresses,
+            "settings": settings,
+            "alerts": alerts,
+        })
+        .to_string()
+    }
+
+    /// `POST /public/v1/account/threshold` — `{token, wallet, min_payout}`.
+    /// `min_payout` in flowers; 0 clears the override. Floor = the global
+    /// coin minimum (a user cannot push below pool dust protection), cap =
+    /// 1000× to keep accidental typos from freezing payouts forever.
+    fn account_set_threshold(
+        &self,
+        idn: &crate::zis::ZisIdentity,
+        json: &serde_json::Value,
+    ) -> (&'static str, String) {
+        let Some(store) = &self.share_store else {
+            return (
+                "503 Service Unavailable",
+                "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
+            );
+        };
+        let wallet = json["wallet"].as_str().unwrap_or("");
+        if !idn.owns(wallet) {
+            return (
+                "403 Forbidden",
+                "{\"ok\":false,\"error\":\"wallet not linked to account\"}".to_string(),
+            );
+        }
+        let v = json["min_payout"]
+            .as_u64()
+            .or_else(|| json["min_payout"].as_str().and_then(|s| s.parse().ok()));
+        let Some(v) = v else {
+            return (
+                "400 Bad Request",
+                "{\"ok\":false,\"error\":\"min_payout required (flowers)\"}".to_string(),
+            );
+        };
+        let floor = {
+            let pool = self.pool.lock().expect("pool lock poisoned");
+            pool.config.min_payout_flowers
+        };
+        let cap = floor.saturating_mul(1000);
+        if v != 0 && (v < floor || v > cap) {
+            return (
+                "400 Bad Request",
+                json!({"ok": false, "error": format!("min_payout out of range [{floor}, {cap}] or 0 to clear")})
+                    .to_string(),
+            );
+        }
+        if let Err(e) = store.set_min_payout_override(wallet, v) {
+            warn!("miner_settings: override write failed: {e}");
+            return (
+                "500 Internal Server Error",
+                "{\"ok\":false,\"error\":\"store failed\"}".to_string(),
+            );
+        }
+        self.pool
+            .lock()
+            .expect("pool lock poisoned")
+            .pplns
+            .set_payout_override(wallet, if v > 0 { Some(v) } else { None });
+        (
+            "200 OK",
+            json!({"ok": true, "wallet": wallet, "min_payout": v.to_string()}).to_string(),
+        )
+    }
+
+    /// `POST /public/v1/account/alert` — `{token, wallet, worker?, channel,
+    /// target, offline_secs?}`. `worker` empty = wallet-wide watch. Channel
+    /// `webhook` → https target (`webhook_url_allowed`), `telegram` → a
+    /// numeric chat id. Unique per (wallet, worker, channel) — repeat POST
+    /// updates in place.
+    fn account_upsert_alert(
+        &self,
+        idn: &crate::zis::ZisIdentity,
+        json: &serde_json::Value,
+    ) -> (&'static str, String) {
+        let Some(store) = &self.share_store else {
+            return (
+                "503 Service Unavailable",
+                "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
+            );
+        };
+        let wallet = json["wallet"].as_str().unwrap_or("");
+        if !idn.owns(wallet) {
+            return (
+                "403 Forbidden",
+                "{\"ok\":false,\"error\":\"wallet not linked to account\"}".to_string(),
+            );
+        }
+        let worker: String = json["worker"]
+            .as_str()
+            .unwrap_or("")
+            .chars()
+            .take(64)
+            .collect();
+        let channel = json["channel"].as_str().unwrap_or("");
+        let target: String = json["target"]
+            .as_str()
+            .unwrap_or("")
+            .chars()
+            .take(512)
+            .collect();
+        let target_ok = match channel {
+            "webhook" => crate::notifications::webhook_url_allowed(&target),
+            // chat ids are signed decimal integers.
+            "telegram" => {
+                !target.is_empty()
+                    && target
+                        .strip_prefix('-')
+                        .unwrap_or(&target)
+                        .chars()
+                        .all(|c| c.is_ascii_digit())
+            }
+            _ => false,
+        };
+        if !target_ok {
+            return (
+                "400 Bad Request",
+                "{\"ok\":false,\"error\":\"invalid channel/target (webhook=https url, telegram=chat id)\"}"
+                    .to_string(),
+            );
+        }
+        let offline_secs = json["offline_secs"]
+            .as_u64()
+            .unwrap_or(600)
+            .clamp(60, 86_400);
+        match store.upsert_alert_subscription(wallet, &worker, channel, &target, offline_secs) {
+            Ok(id) => (
+                "200 OK",
+                json!({"ok": true, "id": id, "wallet": wallet, "worker": worker,
+                       "channel": channel, "offline_secs": offline_secs})
+                .to_string(),
+            ),
+            Err(e) => {
+                warn!("alert_subscriptions: upsert failed: {e}");
+                (
+                    "500 Internal Server Error",
+                    "{\"ok\":false,\"error\":\"store failed\"}".to_string(),
+                )
+            }
+        }
+    }
+
+    /// `POST /public/v1/account/alert/delete` — `{token, wallet, id}`.
+    /// Scoped delete: the row must belong to `wallet` (which the identity
+    /// must own), so one account cannot delete another's subscriptions.
+    fn account_delete_alert(
+        &self,
+        idn: &crate::zis::ZisIdentity,
+        json: &serde_json::Value,
+    ) -> (&'static str, String) {
+        let Some(store) = &self.share_store else {
+            return (
+                "503 Service Unavailable",
+                "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
+            );
+        };
+        let wallet = json["wallet"].as_str().unwrap_or("");
+        if !idn.owns(wallet) {
+            return (
+                "403 Forbidden",
+                "{\"ok\":false,\"error\":\"wallet not linked to account\"}".to_string(),
+            );
+        }
+        let Some(id) = json["id"].as_i64() else {
+            return (
+                "400 Bad Request",
+                "{\"ok\":false,\"error\":\"id required\"}".to_string(),
+            );
+        };
+        let deleted = store
+            .delete_alert_subscription(id, wallet)
+            .unwrap_or_default();
+        (
+            "200 OK",
+            json!({"ok": true, "deleted": deleted > 0}).to_string(),
+        )
+    }
+
     fn build_miners_payload(&self, limit: usize) -> String {
         let (worker_addresses, telemetry) = {
             let pool = self.pool.lock().expect("pool lock poisoned");
@@ -1972,7 +2305,9 @@ impl PoolApi {
         // threshold at the estimated accrual rate (est_daily). `0` = at or
         // above threshold (eligible for the next batch); `null` = the rate
         // can't be estimated (no store history yet).
-        let min_payout = pool.pplns.min_payout_for(coin_key);
+        // A2.3: effective threshold incl. the per-wallet override (unified
+        // path only — native-payout coins ignore the flowers override).
+        let min_payout = pool.pplns.min_payout_for_miner(wallet, coin_key);
         let payout_eta_s = if unpaid >= min_payout {
             Some(0u64)
         } else {
@@ -2748,6 +3083,80 @@ fn worker_display_name<'a>(miner_id: &str, worker_short: &'a str) -> &'a str {
         "default"
     } else {
         name
+    }
+}
+
+/// A2.2 offline-worker alerts — one pass over persisted subscriptions.
+/// A worker (or the whole wallet when `worker == ""`) counts as online
+/// while any matching telemetry entry was seen within `offline_secs`.
+/// Transition dedup lives in `alert_subscriptions.state`; notifications
+/// are best-effort — failures log, never propagate.
+fn check_alert_subscriptions(pool: &Arc<Mutex<Pool>>, store: &ShareStore, notifier: &Notifier) {
+    let subs = match store.load_all_alert_subscriptions() {
+        Ok(s) => s,
+        Err(e) => {
+            warn!("alert watcher: subscription load failed: {e}");
+            return;
+        }
+    };
+    if subs.is_empty() {
+        return;
+    }
+    let now = now_unix_seconds();
+    // (miner_id, display_worker, last_seen_s) snapshot for live sessions.
+    let live: Vec<(String, String, u64)> = {
+        let pool = pool.lock().expect("pool lock poisoned");
+        let reg = pool.telemetry.lock().expect("telemetry lock poisoned");
+        reg.all_miners()
+            .map(|(key, m)| {
+                let (mid, wshort) = split_worker_key(key);
+                let wname = worker_display_name(&mid, &wshort).to_string();
+                (mid, wname, m.last_seen_s)
+            })
+            .collect()
+    };
+    for sub in subs {
+        let wallet_prefix = format!("{}.", sub.miner_id);
+        let online = live.iter().any(|(mid, w, last)| {
+            (mid == &sub.miner_id || mid.starts_with(&wallet_prefix))
+                && (sub.worker.is_empty() || w == &sub.worker)
+                && now.saturating_sub(*last) <= sub.offline_secs
+        });
+        let want = if online { "online" } else { "offline" };
+        if want == sub.state {
+            continue;
+        }
+        let scope = if sub.worker.is_empty() {
+            format!("wallet {}", sub.miner_id)
+        } else {
+            format!("worker {}", sub.worker)
+        };
+        let (event, text) = if online {
+            ("worker_online", format!("{scope} is back online"))
+        } else {
+            (
+                "worker_offline",
+                format!("{scope} offline for >{} s", sub.offline_secs),
+            )
+        };
+        info!("alert: {event} {scope} → {} {}", sub.channel, sub.target);
+        match sub.channel.as_str() {
+            "webhook" => notifier.send_webhook(
+                &sub.target,
+                &json!({
+                    "event": event,
+                    "miner_id": sub.miner_id,
+                    "worker": sub.worker,
+                    "offline_secs": sub.offline_secs,
+                    "ts": now,
+                }),
+            ),
+            "telegram" => notifier.send_telegram_to(&sub.target, &text),
+            _ => {}
+        }
+        if let Err(e) = store.set_alert_state(sub.id, want, now) {
+            warn!("alert watcher: state update failed: {e}");
+        }
     }
 }
 
@@ -3905,5 +4314,243 @@ mod tests {
         assert!(!pool.wallet_is_valid("garbage"));
         assert!(!pool.wallet_is_valid("rig1"));
         assert!(!pool.wallet_is_valid(""));
+    }
+
+    // ── A2.2/A2.3 — account endpoints + offline-alert watcher ──────────
+
+    /// Canned ZIS for account tests: `zis_good` → identity u9 owning
+    /// `zion1mine`; anything else is invalid. Runs until the test ends.
+    fn account_zis_url() -> String {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        std::thread::spawn(move || loop {
+            let Ok((mut sock, _)) = listener.accept() else {
+                break;
+            };
+            let mut buf = vec![0u8; 8192];
+            let n = sock.read(&mut buf).unwrap_or(0);
+            let req = String::from_utf8_lossy(&buf[..n]).into_owned();
+            let body = if req.contains("zis_good") {
+                r#"{"valid":true,"user":{"id":"u9","linkedAddresses":[
+                    {"address":"zion1mine","chainType":"zion-l1"}]}}"#
+            } else {
+                r#"{"valid":false}"#
+            }
+            .to_string();
+            let resp = format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            let _ = sock.write_all(resp.as_bytes());
+        });
+        format!("http://{addr}")
+    }
+
+    fn account_api() -> (PoolApi, Arc<Mutex<Pool>>, Arc<ShareStore>) {
+        let pool = test_pool();
+        let store = Arc::new(ShareStore::open_in_memory().unwrap());
+        let mut api = PoolApi::new(pool.clone(), Some(store.clone()), None);
+        api.zis = crate::zis::ZisVerifier::for_test(account_zis_url());
+        (api, pool, store)
+    }
+
+    fn body_json(resp: &str) -> serde_json::Value {
+        serde_json::from_str(resp.split("\r\n\r\n").nth(1).unwrap()).unwrap()
+    }
+
+    /// Auth gate: unauthenticated and unowned writes are rejected before
+    /// any store/engine mutation happens.
+    #[test]
+    fn account_endpoints_enforce_zis_auth_and_ownership() {
+        let (api, _pool, _store) = account_api();
+        let post = |path: &str, body: &str| request(&api, "POST", path, body);
+
+        assert!(post("/public/v1/account", "{}").starts_with("HTTP/1.1 401"));
+        assert!(post("/public/v1/account", r#"{"token":"zis_bad"}"#).starts_with("HTTP/1.1 401"));
+        assert!(request(&api, "GET", "/public/v1/account", "").starts_with("HTTP/1.1 405"));
+
+        // Owned-wallet check fires on every write path.
+        for path in [
+            "/public/v1/account/threshold",
+            "/public/v1/account/alert",
+            "/public/v1/account/alert/delete",
+        ] {
+            let resp = post(
+                path,
+                r#"{"token":"zis_good","wallet":"zion1other","min_payout":1,"id":1,"channel":"telegram","target":"1"}"#,
+            );
+            assert!(resp.starts_with("HTTP/1.1 403"), "{path}: {resp}");
+        }
+
+        // Read view works for the owner.
+        let resp = post("/public/v1/account", r#"{"token":"zis_good"}"#);
+        assert!(resp.starts_with("HTTP/1.1 200"), "{resp}");
+        let body = body_json(&resp);
+        assert_eq!(body["sub"], "u9");
+        assert_eq!(body["wallets"][0], "zion1mine");
+    }
+
+    /// A2.3 end-to-end: threshold write persists, reaches the engine, and
+    /// shows up in the public miner payload; `0` clears back to global.
+    #[test]
+    fn account_threshold_roundtrip_updates_engine_and_payload() {
+        let (api, pool, store) = account_api();
+        let global = pool.lock().unwrap().config.min_payout_flowers;
+        let post = |path: &str, body: &str| request(&api, "POST", path, body);
+
+        // Below floor rejected; floor = global minimum.
+        let resp = post(
+            "/public/v1/account/threshold",
+            &format!(r#"{{"token":"zis_good","wallet":"zion1mine","min_payout":1}}"#),
+        );
+        assert!(resp.starts_with("HTTP/1.1 400"), "{resp}");
+
+        let raised = global * 3;
+        let resp = post(
+            "/public/v1/account/threshold",
+            &format!(r#"{{"token":"zis_good","wallet":"zion1mine","min_payout":{raised}}}"#),
+        );
+        assert!(resp.starts_with("HTTP/1.1 200"), "{resp}");
+        assert_eq!(
+            store.load_payout_overrides().unwrap().get("zion1mine"),
+            Some(&raised)
+        );
+        assert_eq!(
+            pool.lock()
+                .unwrap()
+                .pplns
+                .min_payout_for_miner("zion1mine", "zion"),
+            raised
+        );
+
+        // Public miner payload advertises the override.
+        let resp = request(&api, "GET", "/public/v1/miner/zion/zion1mine", "");
+        let body = body_json(&resp);
+        assert_eq!(body["min_payout"], raised.to_string(), "{body}");
+
+        // Account view surfaces it; clear with 0 → global restored.
+        let resp = post("/public/v1/account", r#"{"token":"zis_good"}"#);
+        let body = body_json(&resp);
+        assert_eq!(
+            body["settings"]["zion1mine"]["min_payout_flowers"],
+            serde_json::json!(raised)
+        );
+        let resp = post(
+            "/public/v1/account/threshold",
+            r#"{"token":"zis_good","wallet":"zion1mine","min_payout":0}"#,
+        );
+        assert!(resp.starts_with("HTTP/1.1 200"), "{resp}");
+        assert!(store
+            .load_payout_overrides()
+            .unwrap()
+            .get("zion1mine")
+            .is_none());
+        assert_eq!(
+            pool.lock()
+                .unwrap()
+                .pplns
+                .min_payout_for_miner("zion1mine", "zion"),
+            global
+        );
+    }
+
+    /// A2.2: alert subscription upsert validation (https webhook / numeric
+    /// telegram chat id), wallet-scoped delete.
+    #[test]
+    fn account_alert_upsert_validates_targets_and_deletes() {
+        let (api, _pool, store) = account_api();
+        let post = |path: &str, body: &str| request(&api, "POST", path, body);
+
+        // http (not https) webhook → 400; ip-literal host → 400.
+        for target in ["http://hooks.example.com/x", "https://127.0.0.1/x"] {
+            let resp = post(
+                "/public/v1/account/alert",
+                &format!(
+                    r#"{{"token":"zis_good","wallet":"zion1mine","worker":"rigA","channel":"webhook","target":"{target}"}}"#
+                ),
+            );
+            assert!(resp.starts_with("HTTP/1.1 400"), "{target}: {resp}");
+        }
+        // Non-numeric telegram target → 400.
+        let resp = post(
+            "/public/v1/account/alert",
+            r#"{"token":"zis_good","wallet":"zion1mine","channel":"telegram","target":"@chan"}"#,
+        );
+        assert!(resp.starts_with("HTTP/1.1 400"), "{resp}");
+
+        // Valid webhook sub → id; account view lists it.
+        let resp = post(
+            "/public/v1/account/alert",
+            r#"{"token":"zis_good","wallet":"zion1mine","worker":"rigA","channel":"webhook","target":"https://hooks.example.com/x","offline_secs":120}"#,
+        );
+        assert!(resp.starts_with("HTTP/1.1 200"), "{resp}");
+        let id = body_json(&resp)["id"].as_i64().unwrap();
+        let subs = store.list_alert_subscriptions("zion1mine").unwrap();
+        assert_eq!(subs.len(), 1);
+        assert_eq!(subs[0].offline_secs, 120);
+
+        // Scoped delete.
+        let resp = post(
+            "/public/v1/account/alert/delete",
+            &format!(r#"{{"token":"zis_good","wallet":"zion1mine","id":{id}}}"#),
+        );
+        assert!(resp.starts_with("HTTP/1.1 200"), "{resp}");
+        assert_eq!(body_json(&resp)["deleted"], true);
+        assert!(store
+            .list_alert_subscriptions("zion1mine")
+            .unwrap()
+            .is_empty());
+    }
+
+    /// A2.2 watcher: offline→online transitions flip `state` exactly once
+    /// each (dedup); wallet-wide subs match any worker of the wallet.
+    #[test]
+    fn alert_watcher_transitions_and_dedups() {
+        let telemetry = Arc::new(Mutex::new(crate::telemetry::MinerTelemetryRegistry::new()));
+        let pool = Arc::new(Mutex::new(Pool::new(
+            crate::config::PoolConfig::default(),
+            telemetry.clone(),
+        )));
+        let store = ShareStore::open_in_memory().unwrap();
+        let notifier = Notifier::new(NotificationsConfig::default()); // all off
+
+        store
+            .upsert_alert_subscription("w1", "rigA", "telegram", "123", 60)
+            .unwrap();
+
+        // No live workers → offline transition fires once.
+        check_alert_subscriptions(&pool, &store, &notifier);
+        let s = &store.list_alert_subscriptions("w1").unwrap()[0];
+        assert_eq!(s.state, "offline");
+        let ts1 = s.last_alert_ts;
+        assert!(ts1 > 0);
+        // Second pass → dedup: state and timestamp unchanged.
+        check_alert_subscriptions(&pool, &store, &notifier);
+        let s = &store.list_alert_subscriptions("w1").unwrap()[0];
+        assert_eq!(s.state, "offline");
+        assert_eq!(s.last_alert_ts, ts1);
+
+        // Worker connects (prefixed stored shape `w1.w1.rigA`-style:
+        // miner_id w1, worker "rigA" after display normalization).
+        telemetry
+            .lock()
+            .unwrap()
+            .touch_session("w1", "w1.rigA", "algo", "gpu", "");
+        check_alert_subscriptions(&pool, &store, &notifier);
+        let s = &store.list_alert_subscriptions("w1").unwrap()[0];
+        assert_eq!(s.state, "online");
+        // Recovery stamped its own alert ts (may share the same second).
+        assert!(s.last_alert_ts >= ts1);
+
+        // Wallet-wide subscription sees the same worker online → no alert.
+        let id2 = store
+            .upsert_alert_subscription("w1", "", "telegram", "123", 60)
+            .unwrap();
+        check_alert_subscriptions(&pool, &store, &notifier);
+        let subs = store.list_alert_subscriptions("w1").unwrap();
+        let s2 = subs.iter().find(|s| s.id == id2).unwrap();
+        assert_eq!(s2.state, "online");
+        assert_eq!(s2.last_alert_ts, 0);
     }
 }

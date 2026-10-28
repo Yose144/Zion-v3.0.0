@@ -5046,6 +5046,7 @@ mod tests {
             zion_address: None,
             quantus_address: None,
             pearl_address: None,
+            addresses: Vec::new(),
         })));
         let resp = server.handle_request_with_ctx(
             r#"{"id":2,"method":"mining.authorize","params":["zion1x.w1","zis_tok"]}"#,

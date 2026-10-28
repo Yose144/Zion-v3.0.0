@@ -47,6 +47,18 @@ pub struct ZisIdentity {
     pub quantus_address: Option<String>,
     /// First linked `pearl` address, if any (PRL payout fallback — F2e).
     pub pearl_address: Option<String>,
+    /// Every linked address (any chain) — ownership check for the
+    /// `/public/v1/account/*` endpoints (A2.2/A2.3): a wallet must appear
+    /// here before its settings may be read or written.
+    pub addresses: Vec<String>,
+}
+
+impl ZisIdentity {
+    /// `true` when `wallet` is a ZIS-linked address of this identity —
+    /// the sole ownership proof for account-scoped writes.
+    pub fn owns(&self, wallet: &str) -> bool {
+        self.addresses.iter().any(|a| a == wallet)
+    }
 }
 
 #[derive(Deserialize)]
@@ -78,6 +90,12 @@ pub struct ZisVerifier {
     cache: Mutex<HashMap<u64, (Option<ZisIdentity>, Instant)>>,
     banned: HashSet<String>,
     client: reqwest::Client,
+    timeout: Duration,
+    /// Lazily-built blocking client for the synchronous API server
+    /// (`/public/v1/account/*` runs on std::thread handlers, not tokio —
+    /// building `reqwest::blocking` inside a tokio worker panics, so this
+    /// must never be touched from async code).
+    blocking_client: std::sync::OnceLock<reqwest::blocking::Client>,
 }
 
 impl ZisVerifier {
@@ -116,6 +134,8 @@ impl ZisVerifier {
             cache: Mutex::new(HashMap::new()),
             banned,
             client,
+            timeout,
+            blocking_client: std::sync::OnceLock::new(),
         }
     }
 
@@ -156,6 +176,8 @@ impl ZisVerifier {
                 .timeout(Duration::from_secs(2))
                 .build()
                 .unwrap(),
+            timeout: Duration::from_secs(2),
+            blocking_client: std::sync::OnceLock::new(),
         }
     }
 
@@ -194,26 +216,7 @@ impl ZisVerifier {
         let identity = parsed
             .filter(|v| v.valid == Some(true))
             .and_then(|v| v.user)
-            .and_then(|u| {
-                u.id.map(|sub| ZisIdentity {
-                    sub,
-                    zion_address: u
-                        .linked_addresses
-                        .iter()
-                        .find(|a| a.chain_type == "zion-l1")
-                        .map(|a| a.address.clone()),
-                    quantus_address: u
-                        .linked_addresses
-                        .iter()
-                        .find(|a| a.chain_type == "quantus")
-                        .map(|a| a.address.clone()),
-                    pearl_address: u
-                        .linked_addresses
-                        .iter()
-                        .find(|a| a.chain_type == "pearl")
-                        .map(|a| a.address.clone()),
-                })
-            });
+            .and_then(Self::identity_from_user);
         {
             let mut cache = self.cache.lock().unwrap();
             // Bound the cache so a hostile key flood cannot grow it without
@@ -224,6 +227,86 @@ impl ZisVerifier {
             cache.insert(kh, (identity.clone(), Instant::now()));
         }
         identity
+    }
+
+    /// Blocking variant of [`verify`] for the synchronous API server —
+    /// same endpoint, same shared cache. Must only run on std::thread
+    /// handlers (reqwest::blocking panics inside a tokio worker).
+    pub fn verify_blocking(&self, token: &str) -> Option<ZisIdentity> {
+        let kh = Self::key_hash(token);
+        {
+            let cache = self.cache.lock().unwrap();
+            if let Some((cached, at)) = cache.get(&kh) {
+                let ttl = if cached.is_some() {
+                    self.pos_ttl
+                } else {
+                    self.neg_ttl
+                };
+                if at.elapsed() < ttl {
+                    return cached.clone();
+                }
+            }
+        }
+        let client = self.blocking_client.get_or_init(|| {
+            reqwest::blocking::Client::builder()
+                .timeout(self.timeout)
+                .build()
+                .unwrap_or_else(|_| reqwest::blocking::Client::new())
+        });
+        let mut req = client
+            .post(format!(
+                "{}/api/keys/verify",
+                self.url.trim_end_matches('/')
+            ))
+            .json(&serde_json::json!({ "apiKey": token }));
+        if let Some(sk) = &self.service_key {
+            req = req.header("x-service-key", sk);
+        }
+        let parsed = match req.send() {
+            Ok(resp) => resp.json::<VerifyResponse>().ok(),
+            Err(_) => None,
+        };
+        let identity = parsed
+            .filter(|v| v.valid == Some(true))
+            .and_then(|v| v.user)
+            .and_then(Self::identity_from_user);
+        {
+            let mut cache = self.cache.lock().unwrap();
+            if cache.len() >= 8192 {
+                cache.clear();
+            }
+            cache.insert(kh, (identity.clone(), Instant::now()));
+        }
+        identity
+    }
+
+    /// Map a verified `user` payload to an identity — first-per-chain
+    /// payout fallbacks plus the full linked-address list used for
+    /// ownership checks on account endpoints.
+    fn identity_from_user(u: VerifyUser) -> Option<ZisIdentity> {
+        u.id.map(|sub| ZisIdentity {
+            sub,
+            zion_address: u
+                .linked_addresses
+                .iter()
+                .find(|a| a.chain_type == "zion-l1")
+                .map(|a| a.address.clone()),
+            quantus_address: u
+                .linked_addresses
+                .iter()
+                .find(|a| a.chain_type == "quantus")
+                .map(|a| a.address.clone()),
+            pearl_address: u
+                .linked_addresses
+                .iter()
+                .find(|a| a.chain_type == "pearl")
+                .map(|a| a.address.clone()),
+            addresses: u
+                .linked_addresses
+                .iter()
+                .map(|a| a.address.clone())
+                .collect(),
+        })
     }
 }
 
@@ -362,5 +445,62 @@ mod tests {
             .linked_addresses
             .iter()
             .any(|a| a.chain_type == "quantus" && a.address == "qzxxxx"));
+    }
+
+    /// Sync mock for the blocking verify path — the account endpoints run
+    /// on std::thread handlers, not tokio, so the async mock above cannot
+    /// serve them.
+    fn mock_zis_blocking(responder: impl Fn(&str) -> String + Send + 'static) -> String {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        std::thread::spawn(move || {
+            use std::io::{Read, Write};
+            while let Ok((mut sock, _)) = listener.accept() {
+                let mut buf = vec![0u8; 8192];
+                let n = sock.read(&mut buf).unwrap_or(0);
+                let req = String::from_utf8_lossy(&buf[..n]).into_owned();
+                let body = responder(&req);
+                let resp = format!(
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                let _ = sock.write_all(resp.as_bytes());
+            }
+        });
+        format!("http://{addr}")
+    }
+
+    /// A2.2/A2.3: `verify_blocking` hits `{url}/api/keys/verify`, parses the
+    /// linked-address list into `addresses` for ownership checks, and
+    /// shares the cache with the async path.
+    #[test]
+    fn verify_blocking_binds_identity_and_owns() {
+        let url = mock_zis_blocking(|req| {
+            if req.contains("zis_good_token") {
+                r#"{"valid":true,"user":{"id":"u7","linkedAddresses":[
+                    {"address":"zion1w","chainType":"zion-l1"},
+                    {"address":"q1w","chainType":"quantus"},
+                    {"address":"p1w","chainType":"pearl"}]}}"#
+            } else {
+                r#"{"valid":false}"#
+            }
+            .to_string()
+        });
+        let v = verifier_for(url);
+        let idn = v.verify_blocking("zis_good_token").unwrap();
+        assert_eq!(idn.sub, "u7");
+        assert_eq!(idn.zion_address.as_deref(), Some("zion1w"));
+        assert_eq!(idn.pearl_address.as_deref(), Some("p1w"));
+        assert_eq!(
+            idn.addresses,
+            vec!["zion1w".to_string(), "q1w".to_string(), "p1w".to_string()]
+        );
+        assert!(idn.owns("zion1w"));
+        assert!(idn.owns("q1w"));
+        assert!(!idn.owns("zion1other"));
+        assert!(!idn.owns(""));
+        // Invalid → None (fail-closed for account writes).
+        assert!(v.verify_blocking("zis_bad_token").is_none());
     }
 }

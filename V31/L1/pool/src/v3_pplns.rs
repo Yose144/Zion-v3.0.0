@@ -379,6 +379,11 @@ pub struct PplnsEngine {
     /// `(miner_index, coin_index)` (F3).  Kept separate from `unpaid`
     /// (flowers) so ZION and e.g. QTU-plank balances never mix units.
     unpaid_native: HashMap<(u32, u16), u64>,
+    /// Per-wallet payout threshold overrides (flowers, A2.3) — ZIS-account
+    /// configured, persisted in the share store (`miner_settings`), applied
+    /// to the unified (flowers) payout path only. Keyed by wallet; lookup
+    /// falls back to the id's `.worker`-stripped prefix for dotted logins.
+    payout_overrides: HashMap<String, u64>,
     /// Total native-unit payouts emitted per coin (lifetime stat).
     total_paid_native: HashMap<u16, u128>,
     /// Native revenue events included in state and durable snapshots.
@@ -463,6 +468,7 @@ impl PplnsEngine {
             miner_coin_weights: HashMap::new(),
             coin_share_counts: HashMap::new(),
             unpaid_native: HashMap::new(),
+            payout_overrides: HashMap::new(),
             total_paid_native: HashMap::new(),
             applied_revenue_events: HashSet::new(),
             total_paid_flowers: 0,
@@ -1146,6 +1152,47 @@ impl PplnsEngine {
             .unwrap_or(self.config.min_payout_flowers)
     }
 
+    /// Effective threshold for a specific wallet — the ZIS-account override
+    /// when set AND the coin rides the unified (flowers) payout path;
+    /// native-payout coins keep their global threshold since the override
+    /// is denominated in flowers (A2.3). Dotted ids resolve via prefix.
+    pub fn min_payout_for_miner(&self, miner_id: &str, coin: &str) -> u64 {
+        let key = coin.trim().to_ascii_lowercase();
+        if !self.config.min_payout_native.contains_key(&key) {
+            if let Some(v) = self
+                .payout_overrides
+                .get(miner_id)
+                .or_else(|| {
+                    miner_id
+                        .split('.')
+                        .next()
+                        .and_then(|w| self.payout_overrides.get(w))
+                })
+                .copied()
+            {
+                return v;
+            }
+        }
+        self.min_payout_for(coin)
+    }
+
+    /// Replace the whole override map (boot restore from `miner_settings`).
+    pub fn set_payout_overrides(&mut self, overrides: HashMap<String, u64>) {
+        self.payout_overrides = overrides;
+    }
+
+    /// Set or clear one wallet's override — called by the account API.
+    pub fn set_payout_override(&mut self, miner_id: &str, flowers: Option<u64>) {
+        match flowers {
+            Some(f) if f > 0 => {
+                self.payout_overrides.insert(miner_id.to_string(), f);
+            }
+            _ => {
+                self.payout_overrides.remove(miner_id);
+            }
+        }
+    }
+
     /// `true` when `coin` is configured for native-unit payouts
     /// (`native_payout_coins`) — its shares earn only coin revenue events
     /// and are excluded from the unified ZION distribution.
@@ -1372,9 +1419,21 @@ impl PplnsEngine {
             }
             None => {
                 for (i, unpaid) in self.unpaid.iter().enumerate() {
-                    if *unpaid >= self.config.min_payout_flowers {
+                    let miner_id = self.registry.id(i as u32);
+                    let min = self
+                        .payout_overrides
+                        .get(miner_id)
+                        .or_else(|| {
+                            miner_id
+                                .split('.')
+                                .next()
+                                .and_then(|w| self.payout_overrides.get(w))
+                        })
+                        .copied()
+                        .unwrap_or(self.config.min_payout_flowers);
+                    if *unpaid >= min {
                         if let Some(ref address) = self.addresses[i] {
-                            let miner_id = self.registry.id(i as u32).to_string();
+                            let miner_id = miner_id.to_string();
                             payouts.push(PayoutEntry {
                                 share_count: share_counts[i],
                                 miner_id,
@@ -1728,6 +1787,68 @@ mod tests {
         assert_eq!(payouts.len(), 1);
         assert_eq!(payouts[0].miner_id, "alice");
         assert_eq!(e.unpaid_balance("bob"), 250_000);
+    }
+
+    /// A2.3: a per-wallet override applies to unified-path selection in
+    /// both directions (lower pays earlier, higher holds longer) and
+    /// clearing restores the global threshold.
+    #[test]
+    fn payout_override_applies_and_clears() {
+        let mut e = engine(100, 500_000);
+        e.register_address("alice", "zion1alice");
+        e.register_address("bob", "zion1bob");
+        for i in 0..3 {
+            e.record_share_at("alice", "r", 1, 1000 + i);
+        }
+        e.record_share_at("bob", "r", 1, 2000);
+        // alice 750k, bob 250k.
+
+        e.set_payout_override("alice", Some(900_000)); // raise → hold
+        e.set_payout_override("bob", Some(200_000)); // lower → pay
+        let payouts = e.compute_payouts(1_000_000);
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].miner_id, "bob");
+        assert_eq!(payouts[0].amount, 250_000);
+        assert_eq!(e.unpaid_balance("alice"), 750_000);
+
+        e.set_payout_override("alice", None); // clear → global again
+        e.record_share_at("alice", "r", 2, 3000);
+        // Nonzero reward needed — compute_payouts short-circuits on 0.
+        let payouts = e.compute_payouts(1);
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].miner_id, "alice");
+        assert!(payouts[0].amount >= 750_000);
+    }
+
+    /// A2.3: overrides are keyed on the wallet — a dotted login id
+    /// (`wallet.rig`) resolves via its prefix.
+    #[test]
+    fn payout_override_dotted_miner_id_uses_wallet_prefix() {
+        let mut e = engine(100, 500_000);
+        e.register_address("w1.rigA", "zion1w1");
+        e.set_payout_override("w1", Some(100));
+        e.record_share_at("w1.rigA", "r", 1, 1000);
+        let payouts = e.compute_payouts(250);
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].amount, 250);
+    }
+
+    /// A2.3: `min_payout_for_miner` — override on unified coins, prefix
+    /// resolution, global fallback, and native-payout coins keep their
+    /// native-unit threshold (the override is flowers-denominated).
+    #[test]
+    fn min_payout_for_miner_resolves_override_and_native() {
+        let mut e = engine_native(100, 500_000, &["qtu"], &[("qtu", 42)]);
+        e.set_payout_override("w1", Some(777));
+        assert_eq!(e.min_payout_for_miner("w1", "zion"), 777);
+        assert_eq!(e.min_payout_for_miner("w1.rigA", "zion"), 777);
+        assert_eq!(e.min_payout_for_miner("w2", "zion"), 500_000);
+        assert_eq!(e.min_payout_for_miner("w1", "qtu"), 42);
+
+        // Bulk restore replaces the whole map.
+        e.set_payout_overrides(HashMap::from([("w9".to_string(), 1u64)]));
+        assert_eq!(e.min_payout_for_miner("w9", "zion"), 1);
+        assert_eq!(e.min_payout_for_miner("w1", "zion"), 500_000);
     }
 
     #[test]
