@@ -1405,7 +1405,7 @@ impl PplnsEngine {
                     if let Some(ref address) = self.addresses[m as usize] {
                         payouts.push(PayoutEntry {
                             share_count: share_counts.get(m as usize).copied().unwrap_or(0),
-                            miner_id: self.registry.id(m as u32).to_string(),
+                            miner_id: self.registry.id(m).to_string(),
                             address: address.clone(),
                             amount: bal,
                             payout_chain: (d.chain != "zion").then(|| d.chain.clone()),

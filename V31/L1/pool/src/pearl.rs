@@ -369,7 +369,7 @@ impl PeriodicPattern {
         while p.len() > 1 {
             let mut found = false;
             for period in 1..p.len() {
-                if p.len() % period == 0 {
+                if p.len().is_multiple_of(period) {
                     let s = p[period];
                     if (0..p.len() - period).all(|i| p[i] + s == p[i + period]) {
                         shape_vec.push((s, (p.len() / period) as u32));
@@ -550,7 +550,7 @@ pub fn verify_pearl_share(
     let h = rows_pattern.size() as usize;
     let w = cols_pattern.size() as usize;
     ensure!(
-        h % 4 == 0 && w % 4 == 0 && (32..=256).contains(&(h * w)),
+        h.is_multiple_of(4) && w.is_multiple_of(4) && (32..=256).contains(&(h * w)),
         "invalid hash tile dimensions"
     );
     ensure!(
@@ -849,7 +849,7 @@ mod tests {
         put(&mut out, p.k);
         put(&mut out, p.noise_rank);
         mp(&mut out, &p.a);
-        mp(&mut out, &p.b_t());
+        mp(&mut out, p.b_t());
         out.push(0); // moe = None
         out
     }

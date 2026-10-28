@@ -400,7 +400,7 @@ async fn run_bridge_task(
                     // Emit at TRACE to avoid log flooding; emit DEBUG only
                     // periodically so operators can still see the loop is alive.
                     timeout_counter += 1;
-                    if timeout_counter % 30 == 0 {
+                    if timeout_counter.is_multiple_of(30) {
                         tracing::debug!(
                             "auxpow[{}]: still polling upstream ({}x timeout)",
                             coin_label,

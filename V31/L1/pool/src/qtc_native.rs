@@ -227,6 +227,7 @@ pub struct NativeJobCtx {
 }
 
 /// Shared mutable state owned by `MultiAuxPowBridge`.
+#[derive(Default)]
 pub struct NativeQtcState {
     pub enabled: bool,
     pub share_pct: u8,
@@ -240,19 +241,6 @@ pub struct NativeQtcState {
     connected: bool,
 }
 
-impl Default for NativeQtcState {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            share_pct: 0,
-            job_seq: 0,
-            jobs: std::collections::VecDeque::new(),
-            ctx: HashMap::new(),
-            result_tx: None,
-            connected: false,
-        }
-    }
-}
 
 impl NativeQtcState {
     pub fn configure(&mut self, tx: mpsc::UnboundedSender<MiningResult>, share_pct: u8) {
@@ -436,10 +424,7 @@ async fn run_connection(
                 anyhow::bail!("connection closed: {reason}");
             }
             msg = read_message(&mut recv) => {
-                match msg? {
-                    MinerMessage::NewJob(req) => handle_new_job(bridge, &req, cfg.share_diff),
-                    _ => {}
-                }
+                if let MinerMessage::NewJob(req) = msg? { handle_new_job(bridge, &req, cfg.share_diff) }
             }
             Some(result) = result_rx.recv() => {
                 write_message(&mut send, &MinerMessage::JobResult(result)).await?;

@@ -968,7 +968,7 @@ impl StratumServer {
     ) {
         let (is_block, rpc_url) = {
             let pool = self.pool.lock().unwrap();
-            let is_block = match coin_leg::route_job_id(&job_id) {
+            let is_block = match coin_leg::route_job_id(job_id) {
                 JobRoute::ZionV1 => {
                     let hash = pool.validator.zion_hash(header, nonce);
                     hash.as_bytes() <= block_target
@@ -1396,7 +1396,7 @@ impl StratumServer {
             let fresh = self
                 .multi_bridge
                 .latest_job_for_coin(&coin)
-                .filter(|j| Self::job_is_fresh(j));
+                .filter(Self::job_is_fresh);
             fresh
                 .as_ref()
                 .and_then(|job| serde_json::to_value(Self::job_to_ext_stream(&coin, job)).ok())

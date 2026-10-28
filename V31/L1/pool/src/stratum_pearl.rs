@@ -297,9 +297,7 @@ mod tests {
         assert_eq!(auth.agent, "zion-miner/3.2.0-pearl-probe");
         assert_eq!(worker_name(&auth), "prl1abc.rig1");
 
-        let no_worker = format!(
-            "{{\"id\":2,\"method\":\"mining.authorize\",\"params\":{{\"wallet\":\"prl1abc\"}}}}"
-        );
+        let no_worker = "{\"id\":2,\"method\":\"mining.authorize\",\"params\":{\"wallet\":\"prl1abc\"}}".to_string();
         let (_, auth2) = parse_authorize(&no_worker).unwrap();
         let auth2 = auth2.unwrap();
         assert_eq!(auth2.worker, "");

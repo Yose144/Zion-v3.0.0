@@ -3347,7 +3347,7 @@ fn check_alert_subscriptions(pool: &Arc<Mutex<Pool>>, store: &ShareStore, notifi
 /// wallet/address part of a miner id.
 fn public_miner_id(miner_id: &str) -> &str {
     let end = miner_id
-        .find(|c| c == '.' || c == '@')
+        .find(['.', '@'])
         .unwrap_or(miner_id.len());
     &miner_id[..end]
 }
@@ -4067,7 +4067,7 @@ mod tests {
 
         // ZION always present even without bridge legs.
         let zion = coins.iter().find(|c| c["coin"] == "zion").unwrap();
-        assert!(zion["legs"].as_array().unwrap().len() >= 1);
+        assert!(!zion["legs"].as_array().unwrap().is_empty());
         assert!(zion["fee_bps"].is_number());
         assert!(zion["min_payout"].is_string());
 
@@ -4374,7 +4374,7 @@ mod tests {
         assert_eq!(unknown["unpaid"], "0");
         // No payout history → est_daily null → eta null.
         assert!(unknown["payout_eta_s"].is_null());
-        assert_eq!(unknown["min_payout"].as_str().is_some(), true);
+        assert!(unknown["min_payout"].as_str().is_some());
     }
 
     #[test]
@@ -4637,7 +4637,7 @@ mod tests {
         // Below floor rejected; floor = global minimum.
         let resp = post(
             "/public/v1/account/threshold",
-            &format!(r#"{{"token":"zis_good","wallet":"zion1mine","min_payout":1}}"#),
+            &r#"{"token":"zis_good","wallet":"zion1mine","min_payout":1}"#.to_string(),
         );
         assert!(resp.starts_with("HTTP/1.1 400"), "{resp}");
 

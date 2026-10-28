@@ -280,7 +280,7 @@ impl Pool {
         let write = || -> std::io::Result<()> {
             let tmp = path.with_extension("payouts.json.tmp");
             let body = serde_json::to_vec(&state)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+                .map_err(std::io::Error::other)?;
             {
                 use std::io::Write;
                 let mut f = std::fs::File::create(&tmp)?;
@@ -1803,7 +1803,7 @@ mod tests {
         // v3 Hello payout_address
         let pa = format!("qtc:{QTC_ADDR}");
         let res = pool.register_payout_address("miner42", &pa);
-        assert_eq!(res.map(|(c, a)| (c, a)), Some(("quantus", &pa[..])));
+        assert_eq!(res, Some(("quantus", &pa[..])));
         let (chain, addr) = pool.worker_payout_target("miner42.rigA");
         assert_eq!(chain, "quantus");
         assert_eq!(addr, QTC_ADDR);
@@ -1898,7 +1898,7 @@ mod tests {
         let mut pool = Pool::new(config(), telemetry());
         let pa = format!("prl:{PRL_ADDR}");
         let res = pool.register_payout_address("miner43", &pa);
-        assert_eq!(res.map(|(c, a)| (c, a)), Some(("pearl", &pa[..])));
+        assert_eq!(res, Some(("pearl", &pa[..])));
         let (chain, addr) = pool.worker_payout_target("miner43.rigB");
         assert_eq!(chain, "pearl");
         assert_eq!(addr, PRL_ADDR);
