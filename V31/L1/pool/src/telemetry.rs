@@ -20,6 +20,11 @@ pub const HASHRATE_WINDOW_1H_S: u64 = 3600;
 pub const HASHRATE_WINDOW_24H_S: u64 = 86400;
 /// "Live" hashrate window (10 minutes) in seconds.
 pub const HASHRATE_WINDOW_LIVE_S: u64 = 600;
+
+/// Minimum share samples for a fixed-window hashrate estimate to be
+/// statistically meaningful — below this, `stream_hashrate` stretches the
+/// effective window backward (up to 1h) to reach this count.
+pub const MIN_RATE_SAMPLES: usize = 6;
 /// Maximum number of payout records retained per miner.
 pub const PAYOUT_HISTORY_LIMIT: usize = 50;
 
@@ -275,18 +280,39 @@ impl MinerTelemetry {
     /// Expected hashes/sec for one coin stream over `window_s`. Each
     /// accepted external share contributes its own expected work, so
     /// different algos yield honest rates despite incompatible scales.
+    ///
+    /// Low-share-rate streams (e.g. PRL at ~1 share/5 min) leave the 10-min
+    /// window with 2–4 samples, so the plain estimate swings wildly between
+    /// readings. When the window holds fewer than [`MIN_RATE_SAMPLES`],
+    /// older samples (up to 1h back) are folded in until the count is met
+    /// and the divisor becomes the actual covered span — the estimate then
+    /// uses ~35 min of history instead of two lucky/unlucky samples. Dense
+    /// streams are unaffected: all in-window samples count exactly as before.
     pub fn stream_hashrate(&self, stream: &str, window_s: u64, now_s: u64) -> f64 {
         let Some(s) = self.streams.get(stream) else {
             return 0.0;
         };
         let mut work = 0f64;
+        let mut n = 0usize;
+        let mut oldest_t = now_s;
         for sample in s.work.iter().rev() {
-            if sample.completed_at_s.saturating_add(window_s) < now_s {
+            let in_window = sample.completed_at_s.saturating_add(window_s) >= now_s;
+            let in_cap = sample.completed_at_s.saturating_add(HASHRATE_WINDOW_1H_S) >= now_s;
+            if !in_window && (n >= MIN_RATE_SAMPLES || !in_cap) {
                 break;
             }
             work += sample.attempted_hashes as f64;
+            n += 1;
+            oldest_t = sample.completed_at_s;
         }
-        work / window_s as f64
+        if n == 0 {
+            return 0.0;
+        }
+        // Denominator covers the real span when the window had to stretch —
+        // and keeps growing past the newest sample if the stream stalls, so
+        // the estimate decays rather than freezing at a stale rate.
+        let span = now_s.saturating_sub(oldest_t);
+        work / window_s.max(span) as f64
     }
 
     /// Per-stream live (10-minute) hashrates — `{coin: hps}`.
@@ -734,6 +760,56 @@ mod tests {
         assert_eq!(s.invalid_shares, 1);
         // Aggregate ZION estimator is untouched by external shares.
         assert_eq!(m.hashrate_live(now_s), 0.0);
+    }
+
+    #[test]
+    fn test_stream_hashrate_sparse_window_stretches() {
+        // Fewer than MIN_RATE_SAMPLES in the nominal window → older samples
+        // (up to 1h) fold in and the divisor covers the real span.
+        let now_s = now_unix_seconds();
+        let mut m = MinerTelemetry::new("w", "", "", now_s);
+        let stats = m.streams.entry("prl".to_string()).or_default();
+        // 2 samples inside the 10-min window, 4 older ones behind it —
+        // cadence ~300 s, eh=6 each → true rate ≈ 6/300 = 0.02/s.
+        // Pushed oldest→newest so the deque mirrors production order.
+        for i in (0..6u64).rev() {
+            stats.work.push_back(WorkSample {
+                completed_at_s: now_s - 60 - i * 300,
+                attempted_hashes: 6,
+                elapsed_ms: 0,
+            });
+        }
+        let hps = m.stream_hashrate("prl", HASHRATE_WINDOW_LIVE_S, now_s);
+        // Span from oldest included sample (~1560s ago) to now dominates the
+        // nominal 600s window → rate ≈ 36/~1560 ≈ 0.023, not 12/600 = 0.02…
+        // wait: 2 in-window + 4 extended → 6 samples, work=36,
+        // span = 60+5*300 = 1560 → 36/1560.
+        let expect = 36.0 / 1560.0;
+        assert!(
+            (hps - expect).abs() < expect * 0.15,
+            "hps={hps} expect≈{expect}"
+        );
+    }
+
+    #[test]
+    fn test_stream_hashrate_stalled_stream_decays() {
+        // When the stream goes quiet the denominator keeps growing past the
+        // newest sample, so the displayed rate decays toward zero rather
+        // than freezing at the last value.
+        let now_s = now_unix_seconds();
+        let mut m = MinerTelemetry::new("w", "", "", now_s);
+        let stats = m.streams.entry("qtu".to_string()).or_default();
+        for i in 0..6u64 {
+            stats.work.push_back(WorkSample {
+                // all samples ~45–47 min old — stream stopped long ago
+                completed_at_s: now_s - 2700 - i * 10,
+                attempted_hashes: 6,
+                elapsed_ms: 0,
+            });
+        }
+        let hps = m.stream_hashrate("qtu", HASHRATE_WINDOW_LIVE_S, now_s);
+        // span ≈ 2750s → 36/2750 ≈ 0.013 — far below the naive 36/600.
+        assert!(hps < 36.0 / 600.0 * 0.5, "stalled hps={hps} should decay");
     }
 
     #[test]
