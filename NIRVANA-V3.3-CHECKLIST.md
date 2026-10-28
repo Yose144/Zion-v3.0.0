@@ -92,7 +92,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 W1 A1.2 reason buckets (commit `0796497e2`) + A1.5 est. earnings (nasazeno, `est_daily`/`window_share` ve veřejném API) + A1.3 timeseries (`fcbf2aec0`: `hashrate_by_coin` + `miner_history` tabulka, `/public/v1/miner/{coin}/{wallet}/history`)
 - [x] 🤖 W1 zbytek: ✅ A3.2 pending estimate live (`unpaid/est_daily/est_per_block/payout_eta_s` v `/public/v1/miner` — re-verified 28.10); luck persistence přes restart (schema v8/v9, boot restore — 2.B4 ✅)
 - [x] 🤖 **Stale-block RCA uzavřena 26. 10.** — `REPORT_2026-10-26_POOL_ORPHAN_RCA.md`: 21,4 % = interní souběhy na stejnou výšku (Poisson), externí ztráty 0/24 h, ekonomika ~0. Reálný bug = `confirmed`→`orphaned` downgrade → sticky fix `0796497e2` + reg. test (deploy pending 🔀). Metrika předefinována na external-loss rate
-- [ ] 🤖 W2: dedup persist (A4.1), drain restart + canary deploy gate (A4.3 / 2.B2), alerting (A4.4/A4.5), payout lifecycle UI (A3.1)
+- [x] 🤖 W2: ✅ dedup persist A4.1 (2.B3, schema v7 `share_dedup`); drain+canary gate A4.3 (`POOL-DEPLOY-RUNBOOK.md` §canary); alerting A4.4/5 (2.B5 rules live); payout lifecycle UI A3.1 (`/payouts` `queued|sent|confirmed`, +28.10 `superseded` 4. stav — API+UI `7136f3566`)
 - [ ] 🔀 PRL payout `DRY_RUN=0` — 🤖 dry-batch report, 👤 flip (2.B6)
   - [ ] 👤 Revenue→oyster: sweep z BIP86 vs. přesměrování upstream walletu
 - [x] 🤖 **ZION payout backlog recovery 28. 10.** — `defdcd84a` DEPLOYED: under-fee guard + schema v11 `superseded_tx_id` + `void_payout_rows` (evidence+rollback) + resurrect sweep; treasury → canonical `zion1d2k` (~187k); live: 1 180 → ~560 a klesá, 0 double-pay
