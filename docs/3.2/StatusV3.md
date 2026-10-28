@@ -234,7 +234,7 @@ Latence edge↔EDGE2 ≈ 1 ms → cross-box RPC je prakticky lokální. Rollback
 | Dashboard | `https://dashboard.zionterranova.com` | Basic Auth — V31 Alpha node card integrated (4th node card, systemd status, live sync, restart/stop buttons) |
 | RPC | `http://rpc.zionterranova.com:8443` | nginx (EDGE) → chain tunnel → EDGE2 `zion-v31-node` RPC 9445 (**plain HTTP**, no TLS) |
 | Legacy newearth archive | `https://www.newearth.cz` | Root redirects to `https://zionterranova.com/`; `/V2/` served from `/var/www/newearth/` (2026-08-03) |
-| Pool | `62.171.141.136:8444` | Stratum (EDGE) · `pool.zionterranova.com:8444` + TLS 8445 · `https://pool.zionterranova.com/public/v1` public API tier |
+| Pool | `62.171.141.136:8444` | Stratum (EDGE) · `stratum.zionterranova.com:8444` TCP + `:8445` TLS (LE cert pro `stratum.`; `pool.zionterranova.com` = web dashboard na EDGE2, stratum tam neposlouchá) + SOLO `:8446` · `https://pool.zionterranova.com/public/v1` public API tier |
 
 ### Resource Usage
 

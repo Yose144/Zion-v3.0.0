@@ -74,7 +74,7 @@ tail -f ~/mine.log   # sledování logu
 
 ## 4b. DUAL mining přes náš pool — PRL + QTU v jednom `zion-miner`
 
-Jeden proces, dva GPU streamy, **vše přes `pool.zionterranova.com:8444`**
+Jeden proces, dva GPU streamy, **vše přes `stratum.zionterranova.com:8444`**
 (V3 Trinity — pool sám routuje PRL → `prlu:` LuckyPool a QTU → `qtun:`
 upstream). Žádný SRBMiner sidecar. ZION stream je vypnutý
 (`ZION_STREAM1_ENABLED=0`). Vyžaduje SM80+ GPU (RTX 30xx/40xx) pro tensor
@@ -163,7 +163,7 @@ export ZION_EXT_GPU_TIME_DUTY_PCT=100 ZION_EXT_GPU2_TIME_DUTY_PCT=40
 # export ZION_EXT_GPU_TIME_DUTY_PCT=35 ZION_EXT_GPU2_TIME_DUTY_PCT=60
 # (c) free contention 100/100 → scheduler sám rozdělí (~25 % PRL / 75 % QTU)
 
-nohup ./zion-miner --pool pool.zionterranova.com:8444 \
+nohup ./zion-miner --pool stratum.zionterranova.com:8444 \
   --wallet ZION_WALLET --worker vast-3060 \
   --gpu cuda --threads 4 --log-interval 15 --v3-trinity \
   > /root/dual.log 2>&1 &
