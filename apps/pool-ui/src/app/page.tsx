@@ -113,18 +113,16 @@ export default function HomePage() {
           height={84}
         />
 
-        <p className="kicker mt-5 text-[0.62rem]">
-          ZION TerraNova · {t('veřejný těžební pool', 'public mining pool')}
+        <p className="rasta-hero-kicker mt-6">
+          <span className="dot" style={{ color: 'var(--rasta-green)' }} />
+          ZION TerraNova · {t('veřejný těžební pool · mainnet beta', 'public mining pool · mainnet beta')}
         </p>
-        <h1 className="mx-auto mt-3 max-w-3xl text-4xl font-black leading-tight text-white md:text-5xl">
-          {t('Jeden pool.', 'One pool.')}{' '}
-          <span className="gradient-text">
-            {t('Dvanáct coinů.', 'Twelve coins.')}
-          </span>
+        <h1 className="rasta-hero-title mx-auto mt-5 max-w-3xl text-4xl md:text-6xl">
+          {t('Jeden pool.', 'One pool.')}
           <br />
-          {t('Jedna stratum adresa.', 'One stratum address.')}
+          {t('Dvanáct coinů. Jedna stratum adresa.', 'Twelve coins. One stratum address.')}
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/55">
+        <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-white/70 md:text-base">
           {t(
             'Těžte ZION, Quantus, Pearl + 9 dalších auxPoW coinů přes jediný stratum. Transparentní PPLNS, jednotné ZION výplaty, bez poplatků navíc.',
             'Mine ZION, Quantus, Pearl + 9 more auxPoW coins over a single stratum. Transparent PPLNS, unified ZION payouts, no extra fees.',
@@ -190,10 +188,10 @@ export default function HomePage() {
 
         {/* CTA row */}
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-          <a href="/start/" className="btn-gold">
+          <a href="/start/" className="rasta-hero-btn rasta-hero-btn-primary">
             <Pickaxe size={15} /> {t('Začít těžit', 'Start mining')}
           </a>
-          <a href="/stats/" className="btn-ghost">
+          <a href="/stats/" className="rasta-hero-btn rasta-hero-btn-ghost">
             {t('Live statistiky', 'Live stats')} <ArrowRight size={14} />
           </a>
         </div>
@@ -233,7 +231,7 @@ export default function HomePage() {
               const s = ov.stats[c.id];
               const live = c.legs.some((l) => l.status === 'live');
               return (
-                <div key={c.id} className="pool-card kpi-tile">
+                <div key={c.id} className="pool-card card-glow kpi-tile">
                   <div className="flex items-center justify-between">
                     <span className="text-[0.7rem] font-black uppercase tracking-wider" style={{ color: ({ zion: '#fcd116', qtc: '#078930', prl: '#e41e2b' } as Record<string, string>)[c.id] ?? '#fff' }}>
                       {c.ticker}
@@ -298,7 +296,7 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.35 }}
-          className="pool-card mt-8"
+          className="pool-card card-glow mt-8"
         >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-white/70">
@@ -377,20 +375,20 @@ export default function HomePage() {
         </motion.section>
       )}
 
-      {/* CTA strip */}
-      <section className="pool-card mt-12 flex flex-col items-center justify-between gap-4 md:flex-row">
+      {/* CTA strip — market rasta banner */}
+      <section className="rasta-cta-banner mt-12 flex flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
         <div>
           <h2 className="text-lg font-bold text-white">
             {t('Začněte za 2 minuty', 'Start in 2 minutes')}
           </h2>
-          <p className="mt-1 text-sm text-white/50">
+          <p className="mt-1 text-sm text-white/55">
             {t(
               'Trinity Miner na jedno kliknutí, nebo SRBMiner / teamredminer pro pokročilé. Porty, TLS i config snippet najdete v návodu.',
               'One-click Trinity Miner, or SRBMiner / teamredminer for power users. Ports, TLS and config snippets in the guide.',
             )}
           </p>
         </div>
-        <a href="/start/" className="btn-gold shrink-0">
+        <a href="/start/" className="rasta-hero-btn rasta-hero-btn-primary shrink-0">
           {t('Jak těžit', 'How to mine')} <ArrowRight size={16} />
         </a>
       </section>

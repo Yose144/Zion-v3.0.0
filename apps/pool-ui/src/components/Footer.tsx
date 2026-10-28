@@ -5,16 +5,17 @@ import { useLang } from '@/lib/i18n';
 export default function Footer() {
   const { t } = useLang();
   return (
-    <footer className="relative mt-20 py-10">
+    <footer className="rasta-footer relative mt-20 py-10">
       <div className="section-line absolute inset-x-0 top-0" />
-
       <div className="zion-container flex flex-col items-center text-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/zion-symbol.png"
-          alt="ZION Pool"
-          className="h-16 w-16 opacity-90 transition-opacity duration-300 hover:opacity-100"
-        />
+        <a href="/" className="opacity-90 transition-opacity duration-300 hover:opacity-100">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/zion-symbol.png"
+            alt="ZION Pool"
+            className="rasta-footer-logo mx-auto h-16 w-16"
+          />
+        </a>
         <p className="mt-3 text-sm font-bold text-white">
           ZION <span className="gradient-text">Pool</span>
         </p>

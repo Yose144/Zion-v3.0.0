@@ -76,7 +76,7 @@ export default function CoinCard({
 
   return (
     <div
-      className="pool-card pool-card-accent flex flex-col gap-4"
+      className="pool-card pool-card-accent card-glow flex flex-col gap-4"
       style={{ ['--card-accent' as string]: ACCENT[coin.accent] }}
     >
       <div className="flex items-start justify-between">

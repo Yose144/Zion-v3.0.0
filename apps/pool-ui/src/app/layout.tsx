@@ -8,9 +8,9 @@ import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'ZION Pool — one pool, four+ coins, native payouts',
+  title: 'ZION Pool — one pool, twelve coins, native payouts',
   description:
-    'Public mining pool of the ZION TerraNova ecosystem: ZION, Quantus (QTC), Pearl (PRL) and multi-algo. Native payouts, transparent PPLNS.',
+    'Public mining pool of the ZION TerraNova ecosystem: ZION, Quantus (QTC), Pearl (PRL) + 9 auxPoW coins over one stratum. Native payouts, transparent PPLNS.',
 };
 
 export const viewport: Viewport = {
@@ -30,7 +30,7 @@ export default function RootLayout({
         <LangProvider>
           <AuthProvider>
             <Nav />
-            <main className="mx-auto min-h-[70vh] max-w-6xl px-4">{children}</main>
+            <main className="zion-container mx-auto min-h-[70vh]">{children}</main>
             <Footer />
           </AuthProvider>
         </LangProvider>

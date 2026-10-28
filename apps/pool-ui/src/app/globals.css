@@ -75,13 +75,22 @@ main {
   border-radius: var(--zion-radius-lg);
   padding: 26px 24px;
   backdrop-filter: blur(14px);
-  box-shadow: var(--zion-shadow-panel);
+  box-shadow:
+    var(--zion-shadow-panel),
+    0 0 0 1px rgba(252, 209, 22, 0.06),
+    0 4px 20px rgba(252, 209, 22, 0.05),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.03);
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .pool-card:hover {
-  border-color: var(--zion-border-strong);
+  border-color: rgba(252, 209, 22, 0.28);
   transform: translateY(-2px);
+  box-shadow:
+    var(--zion-shadow-panel),
+    0 0 0 1px rgba(252, 209, 22, 0.14),
+    0 8px 30px rgba(252, 209, 22, 0.1),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.05);
 }
 
 .pool-card-accent {
@@ -153,9 +162,9 @@ main {
 /* Market-style layout primitives (shared ZION design language) */
 .zion-container {
   width: 100%;
-  max-width: 72rem;
+  max-width: 80rem;
   margin-inline: auto;
-  padding-inline: 1rem;
+  padding-inline: clamp(0.75rem, 3.5vw, 2rem);
 }
 
 .section-line {
@@ -437,6 +446,126 @@ main {
 /* Sparkline inside coin cards */
 .card-spark {
   margin: 0 -6px;
+}
+
+/* ── Market-parity primitives (market.zionterranova.com) ──────── */
+
+/* Gold-tinted card glow — market product card pattern. */
+.card-glow {
+  box-shadow:
+    0 0 0 1px rgba(252, 209, 22, 0.1),
+    0 4px 20px rgba(252, 209, 22, 0.08),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.03);
+}
+.card-glow:hover {
+  border-color: rgba(252, 209, 22, 0.25);
+  box-shadow:
+    0 0 0 1px rgba(252, 209, 22, 0.2),
+    0 8px 30px rgba(252, 209, 22, 0.12),
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.05);
+}
+
+/* Market hero — kicker pill, gradient title, CTA buttons. */
+.rasta-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(252, 209, 22, 0.35);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 0.35rem 0.9rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--rasta-gold);
+}
+
+.rasta-hero-title {
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: clamp(1px, 0.4vw, 4px);
+  text-transform: uppercase;
+  background: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.rasta-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.6rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease,
+    background 0.15s ease, color 0.15s ease;
+  text-decoration: none;
+}
+
+.rasta-hero-btn-primary {
+  background: linear-gradient(120deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  color: #0d0d0d;
+  box-shadow: 0 10px 28px rgba(252, 209, 22, 0.28);
+}
+.rasta-hero-btn-primary:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 14px 36px rgba(252, 209, 22, 0.38);
+}
+
+.rasta-hero-btn-ghost {
+  border: 1px solid var(--rasta-gold);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--rasta-gold);
+}
+.rasta-hero-btn-ghost:hover {
+  background: rgba(252, 209, 22, 0.15);
+  color: #fff;
+}
+
+/* Market CTA banner — gradient surface + thin gold top line. */
+.rasta-cta-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: clamp(1.5rem, 3.5vw, 2rem);
+  border: 1px solid hsla(0, 0%, 100%, 0.1);
+  background: linear-gradient(
+    90deg,
+    rgba(228, 30, 43, 0.18),
+    rgba(252, 209, 22, 0.1) 50%,
+    rgba(7, 137, 48, 0.18)
+  );
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+.rasta-cta-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--rasta-gold), transparent);
+  pointer-events: none;
+}
+
+/* Market footer — dark gradient + gold hairline + glowing logo. */
+.rasta-footer {
+  border-top: 1px solid rgba(252, 209, 22, 0.12);
+  background: linear-gradient(180deg, rgba(7, 10, 20, 0.9), rgba(0, 0, 0, 0.95));
+}
+.rasta-footer-logo {
+  filter: drop-shadow(0 0 8px rgba(252, 209, 22, 0.35));
+  transition: filter 0.3s ease;
+}
+.rasta-footer-logo:hover {
+  filter: drop-shadow(0 0 12px rgba(252, 209, 22, 0.55));
 }
 
 /* ── Misc ──────────────────────────────────────────────────────── */
