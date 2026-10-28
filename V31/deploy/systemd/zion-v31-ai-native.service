@@ -27,6 +27,7 @@ MemoryMax=512M
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
+ReadWritePaths=/opt/zion/data/l3-audit
 ProtectHome=true
 
 [Install]

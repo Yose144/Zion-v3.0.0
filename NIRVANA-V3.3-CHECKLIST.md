@@ -107,7 +107,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 `zion-ncl` daemon + SQLite persistence + unit — live (42 testů), 0 workerů
 - [x] 🤖 Maestro v2.4 nasazen **read-only** (`/v2/info|classify|plan|orchestrate|health-matrix`, `mutations_enabled=false`, approval token nenastaven, audit dir)
 - [x] 🤖 Inference: GPU primár (stanice) + CPU fallback (EDGE2), konstituční prompt, RAG 39 docs / 138 chunků
-- [ ] 🤖 Maestro první read-only E2E úloha (intent→plan→health_poller→report) + audit log — M2.1 (5.B2)
+- [x] 🤖 Maestro první read-only E2E úloha (intent→plan→health_poller→report) + audit log — M2.1 (5.B2) ✅ 28. 10.: `POST /v2/orchestrate "check system health"` → SystemHealth plan, 6/6 steps Success; **fix `ProtectSystem=strict` bez `ReadWritePaths` tiše zabíjel audit** → `ReadWritePaths=/opt/zion/data/l3-audit` v unit (repo+EDGE2, `.bak-20261028-rwp`), audit jsonl zapisuje
 - [ ] 🤖 Citace + retrieval confidence gate + faktický eval set (5.B1)
 - [ ] 🤖 NCL: registrace 1 workeru + 1 pilotní job typ → V33-5
 - [ ] 🤖 Miner↔NCL spike: `ZION_NCL_*` opt-in pull-job loop v `L1/miner` (off default, reward jen regtest)
