@@ -13,7 +13,7 @@
 | wZION/USDT pool (Base, `0x186b…fdda`) | **TVL $38**, cena ~$0.000125/ZION | ZION je fakticky nelikvidní — "příjem v ZION" ≠ cashflow |
 | CoinGecko | listing zamítnut (17 prerekvizit → 9.B7) | žádný organický sell-side kanál |
 | DAO treasury | 1.5B ZION; lock do bloku **144 000 (~27.–28. 11.)** + on-chain 3-of-3 admin unlock + DAO proces | zatím nepoužitelná — žádný seed liquidity |
-| Pool payout backlog | ~931 unconfirmed ZION (~1.22e12 flowers) + ~918 QTC deferred (2.B7) | **dluh minerům** — důvěra pod tlakem; 👤 rozhodnutí |
+| Pool payout backlog | **recovery in flight 28.10.** — root cause fix `defdcd84a` deployed: active unconfirmed 1 180 → klesá (canary ~695 a padá); treasury teď canonical `zion1d2k` (~187k ZION) | ZION strana se řeší autonomně; ~918 QTC deferred stále = 👤 treasury/funding |
 | Presale | deprecated — `/api/presale/status` vrací 410 "Fair launch only" | token-sale cesta uzavřená |
 | NCL compute market | daemon live (`V31/L3/ncl`), 10 % protocol fee | **0 workerů, 0 customers** — engine bez trhu |
 | Externí audit (G9) | 👤 posunut na neurčito | enterprise B2B bude ptát — připravit odpověď |
@@ -119,8 +119,9 @@
 
 | # | Akce | Typ | Závisí na | Stav 28.10. |
 |---|---|---|---|---|
-| 1 | `5.B6` dokončit: E2E order test (transfer + Stripe), invoice download route, order-tracking, deploy MarketPlace | 🤖 | — | ✅ 9/10 — Stripe+SMTP blokováno prázdnými secrets v prod `.env` (👤); test objednávka `TEST-E2E-1761680000` **zrušena 28.10.** (status→cancelled, evidence v note) |
-| 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤 | 2.B7 | ⏳ backlog **1 180** unconfirmed (28.10., ~1.35 ZION dust celkem, vše s tx_id ale nikdy neminováno — root cause fix `defdcd84a`: under-fee'd clamp → dead tx + resurrect/void path; rozhodnutí o exekuci resubmity = 👤) |
+| 1 | `5.B6` dokončit: E2E order test (transfer + Stripe), invoice download route, order-tracking, deploy MarketPlace | 🤖 | — | ✅ 9/10 — Stripe+SMTP blokováno prázdnými secrets v prod `.env` (👤); test objednávka `TEST-E2E-1761680000` **zrušena 28.10.** (status→cancelled, evidence v note). ⚠️ **Nový gate 28.10:** `next 14.2.35` = critical npm advisory sada (~25 CVE, fix = major next 15/16) — před veřejným launch per-CVE feature-usage review + případně mitigace (viz `docs/3.2/AUDIT-TRIAGE.md`) |
+| 1b | MarketPlace `next` major upgrade nebo per-CVE review + mitigace | 🤖→👤 | AUDIT-TRIAGE | ✅ review 28.10: `next/image` nepoužíván → **`unoptimized:true` aplikováno** (Image-Opt RCE třída mimo hru); Server Actions 0× → neaplikovatelné; middleware = jen pre-filter (auth v route handlers). Zbývá DoS/cache-poison sada → next 15/16 migrace před veřejným launch = 👤 priorita |
+| 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤→✅ | 2.B7 | 🟢 **Recovery běží 28.10.** — `defdcd84a` deployed (sha `1c159d7b73cf`): schema v11 + `void_payout_rows` + resurrect sweep; `payout_resurrect` events live, active backlog 1 180 → ~695 a klesá; voided rows = evidence zachována, `total_paid` rollback → žádný double-pay. Payout wallet sjednocen na canonical `zion1d2k` (90.9k UTXO / ~187k ZION — fee-cap riziko pryč). Zbývá: QTC deferred = samostatné 👤 treasury funding; veřejný statement po dojezdu |
 | 3 | `PRL_PAYOUT_DRY_RUN=0` po dry-batch review + sweep do oyster | 👤🔀 | 2.B6 | 🔍 review hotový (níže) — **nic k sweepu**: 0 pending pearl payoutů, 0 ledger rows; flip bezpečný ale zatím k ničemu, prerekvizita = PRL miner aktivita |
 | 4 | Hiran API MVP spec: `/v1/models` gateway + `X-API-Key` (ZIS) + Stripe price page | 🤖 | ZIS keys | ✅ spec + gateway + Stripe webhook + `/ai` page + probe implementováno; ⏳ deploy + secrets = 👤 |
 | 5 | One-pager "Pool-as-a-Service" (CS+EN) + seznam 10 cílových PoW coinů | 🤖 | — | ✅ `docs/3.2/B2B_POOL_AS_A_SERVICE.md` |

@@ -45,6 +45,15 @@ Pool/node money path (`zion-pool`, `zion-node`) není zasažen přímo mimo `cry
 - High: axios 1.0–1.19, nodemailer ≤10.1.3, ws ≤8.20.1, zod <4.6.6, js-yaml, nanoid, follow-redirects, postcss, glob, brace-expansion, @fastify/busboy, source-map-js, parse-duration — všechny fixy major.
 - Pozn.: ~polovina Next advisories cílí featury, které MarketPlace nemusí používat (Image Optimizer, Server Actions, Edge runtime) — per-CVE feature-usage review sníží reálný exposure před migrací.
 
+### MarketPlace feature-usage review (28.10)
+
+Reálný exposure je užší než advisory count:
+
+- **`next/image` se nikde nepoužívá** → aplikováno `images.unoptimized: true` (next.config.js) — `/_next/image` optimizer endpoint se vypne kompletně → RCE-in-Image-Optimization třída (GHSA-2xp9, GHSA-2464) mimo hru.
+- **Žádné Server Actions** (`"use server"` 0×) → SSRF/cache-confusion v Server Actions neaplikovatelné.
+- **`src/middleware.ts` existuje** (admin pre-filter + CORS na `/api/admin|shop|stripe`) — ale je to jen coarse pre-filter; autoritativní auth je v route handlers (`requireAdminAuth`, Node runtime) → middleware-bypass CVE (GHSA-36qx) admin surface neotevře. Middleware cache-poison/redirect CVEs zbývají relevantní → major upgrade stále potřeba.
+- Zůstává: DoS sada (Server Components, rewrites smuggling), cache poisoning v RSC — opravuje až next 15/16.
+
 ### Doporučení npm
 
 1. MarketPlace: před produkčním B2B launch naplánovat next 15/16 migraci; mezitím per-CVE review (Image Optimizer off? Server Actions použité?) + nginx/edge mitigace.

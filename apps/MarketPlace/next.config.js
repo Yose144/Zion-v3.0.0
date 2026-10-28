@@ -5,6 +5,9 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['viem', 'wagmi'],
   images: {
+    // No next/image usage in the codebase — disables the /_next/image
+    // optimizer endpoint entirely (npm audit GHSA-2xp9/GHSA-2464 class).
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: 'ipfs.io' },
       { protocol: 'https', hostname: 'gateway.pinata.cloud' },
