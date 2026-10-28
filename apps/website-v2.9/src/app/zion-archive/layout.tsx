@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import ArchiveLock from '@/components/books/ArchiveLock';
+import { hasArchiveAccess } from '@/lib/archive-access';
 import { SITE_APP_URL } from '@/lib/site';
 
-// Zion Archive — Nirvana Hub is temporarily locked (coming-soon access gate:
-// paid Archive Pass on the marketplace + OASIS bonuses + B2B in discussion).
-// To reopen the full library flip this to false — all hub panels, readers and
-// deep links stay intact under this route tree.
+// Zion Archive — Nirvana Hub is behind the Archive Pass gate (coming-soon +
+// B2B access codes). A valid `zion_archive_pass` cookie unlocks the whole
+// tree; to reopen publicly flip ARCHIVE_LOCKED to false.
 const ARCHIVE_LOCKED = true;
 
 export const metadata: Metadata = {
@@ -15,7 +15,11 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_APP_URL}/zion-archive` },
 };
 
-export default function ZionArchiveLayout({ children }: { children: React.ReactNode }) {
-  if (ARCHIVE_LOCKED) return <ArchiveLock />;
-  return children;
+export default async function ZionArchiveLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  if (!ARCHIVE_LOCKED || (await hasArchiveAccess())) return children;
+  return <ArchiveLock />;
 }

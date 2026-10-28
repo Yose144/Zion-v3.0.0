@@ -50,4 +50,15 @@ test.describe('Zion Archive — lock gate', () => {
     expect(page.url()).toContain('/zion-archive/nirvana/cist');
     await expect(page.getByRole('heading', { name: /Zion Archive/i }).first()).toBeVisible();
   });
+
+  test('access-code form renders and rejects an invalid code', async ({ page }) => {
+    await page.goto('/zion-archive', { waitUntil: 'domcontentloaded' });
+    const input = page.locator('#archive-code');
+    await expect(input).toBeVisible();
+    await input.fill('definitely-not-a-real-code');
+    await page.getByRole('button', { name: /Odemknout|Unlock/i }).click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    // still locked — the archive tree did not unlock for a bad code
+    await expect(page.getByRole('heading', { name: /Zion Archive/i }).first()).toBeVisible();
+  });
 });

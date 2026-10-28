@@ -109,6 +109,9 @@ const DefiCopy = {
   artifactMarketplace: { cs: `Artifact Marketplace`, en: `Artifact Marketplace` },
   artifactMarketplaceDesc: { cs: `OASIS tržiště artefaktů — samostatná aplikace s vlastními aukcemi a sbírkami.`, en: `OASIS artifact marketplace — standalone app with its own auctions and collections.` },
   openMarketplace: { cs: `Otevřít marketplace`, en: `Open marketplace` },
+  archivePassTitle: { cs: `Zion Archive — Archive Pass`, en: `Zion Archive — Archive Pass` },
+  archivePassDesc: { cs: `Nirvana Hub · knihovna cesty · placený přístup v přípravě`, en: `Nirvana Hub · the library of the path · paid access coming soon` },
+  archivePassCta: { cs: `Získat pass`, en: `Get the pass` },
   trade: { cs: `Obchodování`, en: `Trade` },
   swapTradeOnDexAndTrackTheWzion: { cs: `Swapuj, obchoduj na DEX a sleduj cenu wZION na Base Mainnet.`, en: `Swap, trade on DEX, and track the wZION price on Base Mainnet.` },
   swapWzion: { cs: `Swap wZION`, en: `Swap wZION` },
@@ -1154,6 +1157,29 @@ export default function DefiPage() {
               <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
           </a>
+        </section>
+
+        {/* ═══════ ZION ARCHIVE — Nirvana Hub (Archive Pass teaser) ═══════ */}
+        <section className="zion-container relative z-10 mt-4">
+          <Link
+            href="/zion-archive"
+            className="zion-rainbow-sub p-5 flex items-center justify-between gap-4 group"
+            style={{ '--rc': '168, 85, 247' } as React.CSSProperties}
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-zion-purple/10 border border-zion-purple/20">
+                <Lock className="h-5 w-5 text-zion-purple" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-white">{DefiCopy.archivePassTitle[cs ? 'cs' : 'en']}</h3>
+                <p className="text-xs text-gray-400">{DefiCopy.archivePassDesc[cs ? 'cs' : 'en']}</p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-zion-purple shrink-0">
+              {DefiCopy.archivePassCta[cs ? 'cs' : 'en']}
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
         </section>
       </>
       )}

@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, Building2, Gem, Lock, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { BookOpen, Building2, Gem, KeyRound, Lock, Sparkles } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { BOOK_NAV } from '@/lib/books/registry';
 
@@ -41,12 +43,46 @@ const Copy = {
   market: { cs: 'Marketplace', en: 'Marketplace' },
   docs: { cs: 'Veřejná dokumentace', en: 'Public documentation' },
   home: { cs: 'Zpět na homepage', en: 'Back to homepage' },
+  haveCode: { cs: 'Mám přístupový kód', en: 'I have an access code' },
+  codePlaceholder: { cs: 'Archive Pass kód', en: 'Archive Pass code' },
+  codeSubmit: { cs: 'Odemknout archiv', en: 'Unlock the archive' },
+  codeWorking: { cs: 'Ověřuji…', en: 'Verifying…' },
+  codeInvalid: { cs: 'Neplatný kód', en: 'Invalid code' },
+  codeThrottled: { cs: 'Příliš mnoho pokusů — zkus to za chvíli', en: 'Too many attempts — try again shortly' },
+  codeError: { cs: 'Ověření selhalo — zkus to znovu', en: 'Verification failed — try again' },
 };
 
 export default function ArchiveLock() {
   const { lang } = useLang();
   const l = lang === 'cs' ? 'cs' : 'en';
+  const router = useRouter();
   const total = BOOK_NAV.reduce((n, g) => n + g.books.length, 0);
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submitCode(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy || !code.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/archive/access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+      if (res.ok) {
+        router.refresh();
+        return;
+      }
+      setError(res.status === 429 ? Copy.codeThrottled[l] : Copy.codeInvalid[l]);
+    } catch {
+      setError(Copy.codeError[l]);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -68,6 +104,38 @@ export default function ArchiveLock() {
           <p className="mx-auto mt-6 max-w-2xl text-sm leading-relaxed text-gray-400 sm:text-base">
             {Copy.lede[l]}
           </p>
+
+          <form onSubmit={submitCode} className="mx-auto mt-7 max-w-md">
+            <label htmlFor="archive-code" className="sr-only">
+              {Copy.haveCode[l]}
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <KeyRound className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                <input
+                  id="archive-code"
+                  type="text"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder={Copy.codePlaceholder[l]}
+                  autoComplete="off"
+                  className="w-full rounded-xl border border-white/15 bg-white/[0.04] py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold/50 focus:outline-none focus:ring-2 focus:ring-zion-gold/30"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={busy || !code.trim()}
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-zion-gold/40 bg-zion-gold/10 px-4 py-2.5 text-sm font-bold text-zion-gold transition-colors hover:bg-zion-gold/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy ? Copy.codeWorking[l] : Copy.codeSubmit[l]}
+              </button>
+            </div>
+            {error && (
+              <p className="mt-2 text-xs font-semibold text-red-400" role="alert">
+                {error}
+              </p>
+            )}
+          </form>
         </div>
 
         <div className="mt-12 grid gap-3 sm:grid-cols-3">
