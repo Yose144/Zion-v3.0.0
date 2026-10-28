@@ -1,9 +1,14 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
-import { fmtHashrate, fmtInt } from '@/lib/format';
+import { fmtDifficulty, fmtHashrate, fmtInt, fmtUsd } from '@/lib/format';
 import { useLang } from '@/lib/i18n';
 import type { CoinInfo, CoinStats } from '@/lib/types';
+import type { MarketPrice } from '@/lib/price';
+import Sparkline from '@/components/Sparkline';
+import { loadSeries, pushSample, type SeriesPoint } from '@/components/AreaChart';
+import { COINGECKO_ID, fetchPriceHistory } from '@/lib/price';
+import { useEffect, useState } from 'react';
 
 const ACCENT: Record<string, string> = {
   gold: '#fcd116',
@@ -32,11 +37,43 @@ function LegPill({ leg }: { leg: CoinInfo['legs'][number] }) {
 export default function CoinCard({
   coin,
   stats,
+  networkDiff,
+  price,
 }: {
   coin: CoinInfo;
   stats: CoinStats | undefined;
+  networkDiff?: number | null;
+  price?: MarketPrice | null;
 }) {
   const { t } = useLang();
+  // Sparkline fed by the same localStorage key the stats page pushes
+  // into (pool-hr-<coin>) — shows history once stats has been visited.
+  const [series, setSeries] = useState<SeriesPoint[]>([]);
+  useEffect(() => {
+    setSeries(loadSeries(`pool-hr-${coin.id}`));
+  }, [coin.id]);
+
+  // 24h USD price chart — CoinGecko market history for listed coins;
+  // ZION accumulates the live on-chain Uni V3 price locally instead.
+  const [priceSeries, setPriceSeries] = useState<SeriesPoint[]>([]);
+  const cgId = COINGECKO_ID[coin.id as keyof typeof COINGECKO_ID];
+  useEffect(() => {
+    if (cgId) {
+      fetchPriceHistory(cgId)
+        .then((pts) => setPriceSeries(pts.map((p) => ({ t: p.ts / 1000, v: p.usd }))))
+        .catch(() => {});
+    } else {
+      setPriceSeries(loadSeries(`price-usd-${coin.id}`));
+    }
+  }, [coin.id, cgId]);
+
+  // Accumulate ZION's on-chain price so its sparkline fills in over time.
+  useEffect(() => {
+    if (coin.id === 'zion' && price?.usd) {
+      setPriceSeries(pushSample('price-usd-zion', price.usd));
+    }
+  }, [coin.id, price]);
+
   return (
     <div
       className="pool-card pool-card-accent flex flex-col gap-4"
@@ -44,11 +81,26 @@ export default function CoinCard({
     >
       <div className="flex items-start justify-between">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-baseline gap-2">
             <span className="text-xl font-black text-white">{coin.ticker}</span>
             <span className="text-xs text-white/40">{coin.name}</span>
           </div>
           <p className="mt-0.5 text-[0.72rem] text-white/45">{coin.algorithm}</p>
+          {price && (
+            <p className="stat-value mt-1.5 flex items-baseline gap-1.5 text-sm font-bold text-white">
+              {fmtUsd(price.usd)}
+              {price.change_24h != null && (
+                <span
+                  className={`text-[0.68rem] font-semibold ${
+                    price.change_24h >= 0 ? 'text-rasta-green' : 'text-rasta-red'
+                  }`}
+                >
+                  {price.change_24h >= 0 ? '+' : ''}
+                  {price.change_24h.toFixed(1)}%
+                </span>
+              )}
+            </p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-1">
           {coin.legs.map((l, i) => (
@@ -57,7 +109,36 @@ export default function CoinCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {(series.length > 1 || priceSeries.length > 1) && (
+        <div className="card-spark -my-1 flex flex-col gap-2">
+          {priceSeries.length > 1 && (
+            <div>
+              <p className="kicker mb-1 flex items-center gap-1 !text-[0.55rem]">
+                {t('cena · 24 h', 'price · 24 h')}
+              </p>
+              <Sparkline
+                data={priceSeries.map((p) => ({ ts: p.t, hps: p.v }))}
+                color="#ffffff"
+                height={40}
+              />
+            </div>
+          )}
+          {series.length > 1 && (
+            <div>
+              <p className="kicker mb-1 flex items-center gap-1 !text-[0.55rem]">
+                {t('pool hashrate', 'pool hashrate')}
+              </p>
+              <Sparkline
+                data={series.map((p) => ({ ts: p.t, hps: p.v }))}
+                color={ACCENT[coin.accent]}
+                height={44}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
           <p className="kicker">{t('Pool hashrate', 'Pool hashrate')}</p>
           <p className="stat-value text-lg font-bold" style={{ color: ACCENT[coin.accent] }}>
@@ -71,15 +152,15 @@ export default function CoinCard({
           </p>
         </div>
         <div>
-          <p className="kicker">{t('Bloky / 24h', 'Blocks / 24h')}</p>
+          <p className="kicker">{t('Difficulty', 'Difficulty')}</p>
           <p className="stat-value text-white">
-            {stats ? fmtInt(stats.blocks_24h) : '—'}
+            {networkDiff != null ? fmtDifficulty(networkDiff) : '—'}
           </p>
         </div>
         <div>
-          <p className="kicker">{t('Luck', 'Luck')}</p>
+          <p className="kicker">{t('Bloky / 24h', 'Blocks / 24h')}</p>
           <p className="stat-value text-white">
-            {stats?.luck_pct != null ? `${stats.luck_pct.toFixed(0)}%` : '—'}
+            {stats ? fmtInt(stats.blocks_24h) : '—'}
           </p>
         </div>
       </div>

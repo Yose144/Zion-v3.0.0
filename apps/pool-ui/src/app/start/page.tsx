@@ -75,6 +75,15 @@ function connectCmds(
           label: `-o ${scheme}://${HOST}:${port} -u ${addr} -p z=<coin>`,
         },
       ];
+    default:
+      // auxPoW upstream legs — routed by wallet address on the shared
+      // stratum; any Stratum v1 client works.
+      return [
+        {
+          miner: 'stratum v1',
+          label: `-o ${scheme}://${HOST}:${port} -u ${addr} -p x`,
+        },
+      ];
   }
 }
 

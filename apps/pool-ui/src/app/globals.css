@@ -10,6 +10,20 @@
   --rasta-red: #e41e2b;
   --rasta-gold: #fcd116;
   --rasta-green: #066928;
+
+  /* ZION surface tokens — aligned with apps/shared/ui/tokens.css and
+     the MarketPlace design language for a unified ecosystem look. */
+  --zion-radius-sm: 0.85rem;
+  --zion-radius-md: 1.2rem;
+  --zion-radius-lg: 1.65rem;
+  --zion-radius-xl: 2rem;
+  --zion-border-subtle: rgba(255, 255, 255, 0.1);
+  --zion-border-strong: rgba(255, 255, 255, 0.18);
+  --zion-surface: rgba(7, 10, 20, 0.68);
+  --zion-surface-soft: rgba(255, 255, 255, 0.045);
+  --zion-surface-hover: rgba(255, 255, 255, 0.075);
+  --zion-shadow-panel: 0 24px 90px rgba(0, 0, 0, 0.42);
+  --zion-shadow-glow: 0 0 42px rgba(228, 30, 43, 0.22);
 }
 
 html {
@@ -19,34 +33,58 @@ html {
 
 body {
   background:
-    radial-gradient(circle at 18% -5%, rgba(228, 30, 43, 0.14), transparent 38rem),
-    radial-gradient(circle at 84% 4%, rgba(7, 137, 48, 0.12), transparent 34rem),
-    radial-gradient(circle at 50% 42%, rgba(252, 209, 22, 0.06), transparent 52rem),
-    radial-gradient(ellipse at bottom, #0d0d0d 0%, #050505 100%);
+    radial-gradient(circle at 18% -8%, rgba(228, 30, 43, 0.13), transparent 34rem),
+    radial-gradient(circle at 86% 8%, rgba(7, 137, 48, 0.1), transparent 30rem),
+    radial-gradient(circle at 50% 42%, rgba(252, 209, 22, 0.05), transparent 52rem),
+    radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
   background-attachment: fixed;
   color: rgba(255, 255, 255, 0.88);
   font-family: Inter, system-ui, -apple-system, sans-serif;
   min-height: 100vh;
   margin: 0;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle grid overlay — shared ZION shell pattern (same as market). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
+  background-size: 96px 96px;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+}
+
+main {
+  position: relative;
+  z-index: 2;
 }
 
 /* ── Cards ─────────────────────────────────────────────────────── */
 
 .pool-card {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
+  position: relative;
+  background: linear-gradient(180deg, var(--zion-surface-soft), rgba(255, 255, 255, 0.02)), var(--zion-surface);
+  border: 1px solid var(--zion-border-subtle);
+  border-radius: var(--zion-radius-lg);
   padding: 26px 24px;
-  backdrop-filter: blur(10px);
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  backdrop-filter: blur(14px);
+  box-shadow: var(--zion-shadow-panel);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .pool-card:hover {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--zion-border-strong);
+  transform: translateY(-2px);
 }
 
 .pool-card-accent {
-  position: relative;
   overflow: hidden;
 }
 
@@ -59,6 +97,35 @@ body {
   height: 3px;
   background: linear-gradient(90deg, var(--card-accent, var(--zion-gold)), transparent 80%);
   opacity: 0.9;
+}
+
+.pool-card-accent::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--card-accent, var(--zion-gold)) 0%, transparent 70%);
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+/* Compact KPI tile used in stat strips */
+.kpi-tile {
+  padding: 14px 16px;
+}
+
+.kpi-tile .stat-value {
+  font-size: 1.05rem;
+}
+
+@media (max-width: 640px) {
+  .pool-card {
+    padding: 18px 16px;
+    border-radius: var(--zion-radius-md);
+  }
 }
 
 /* ── Typography helpers ────────────────────────────────────────── */
@@ -236,14 +303,22 @@ body {
 .hero-shell {
   position: relative;
   overflow: hidden;
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--zion-radius-xl);
+  border: 1px solid var(--zion-border-subtle);
   background:
-    radial-gradient(1000px 420px at 15% -10%, rgba(228, 30, 43, 0.22), transparent 60%),
-    radial-gradient(900px 380px at 85% 0%, rgba(7, 137, 48, 0.2), transparent 55%),
-    radial-gradient(700px 500px at 50% 120%, rgba(252, 209, 22, 0.14), transparent 60%),
-    linear-gradient(180deg, rgba(10, 12, 20, 0.9), rgba(5, 5, 8, 0.95));
+    radial-gradient(1000px 420px at 15% -10%, rgba(228, 30, 43, 0.24), transparent 60%),
+    radial-gradient(900px 380px at 85% 0%, rgba(7, 137, 48, 0.22), transparent 55%),
+    radial-gradient(700px 500px at 50% 120%, rgba(252, 209, 22, 0.15), transparent 60%),
+    linear-gradient(180deg, rgba(10, 12, 20, 0.92), rgba(5, 5, 8, 0.96));
   padding: 3.5rem 2rem 2.5rem;
+  box-shadow: var(--zion-shadow-panel), var(--zion-shadow-glow);
+}
+
+@media (max-width: 640px) {
+  .hero-shell {
+    padding: 2.25rem 1.1rem 1.75rem;
+    border-radius: var(--zion-radius-lg);
+  }
 }
 
 .hero-shell::before {
@@ -295,6 +370,53 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(8px);
+}
+
+/* ── Live band / network strip ─────────────────────────────────── */
+
+.live-band {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 255, 65, 0.22);
+  background: rgba(0, 255, 65, 0.05);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 65, 0.85);
+}
+
+.live-band .dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+
+/* Table wrapper that scrolls horizontally on small screens instead of
+   overflowing the card — keeps mono table legible on mobile. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -24px;
+  padding: 0 24px;
+}
+
+@media (max-width: 640px) {
+  .table-scroll {
+    margin: 0 -16px;
+    padding: 0 16px;
+  }
+}
+
+/* Sparkline inside coin cards */
+.card-spark {
+  margin: 0 -6px;
 }
 
 /* ── Misc ──────────────────────────────────────────────────────── */

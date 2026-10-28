@@ -30,6 +30,14 @@ export function fmtInt(n: number): string {
   return n.toLocaleString('en-US');
 }
 
+export function fmtUsd(v: number | null): string {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v >= 1) return `$${v.toFixed(2)}`;
+  if (v >= 0.01) return `$${v.toFixed(4)}`;
+  // sub-cent prices (ZION trades ~$0.0001) — keep 2 significant digits
+  return `$${v.toPrecision(2)}`;
+}
+
 export function fmtDifficulty(d: number | null): string {
   if (d == null) return '—';
   const units: [number, string][] = [

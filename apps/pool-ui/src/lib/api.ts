@@ -9,20 +9,21 @@ import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, FeeSplit, MinerStats, P
 const USE_MOCK = false;
 const API_BASE = '/public/v1';
 
-// UI coin id -> pool coin key (`/public/v1` uses pool-side tickers).
+// UI coin id -> pool coin key (`/public/v1` uses pool-side tickers;
+// 'qtc' is the UI's long-standing id for pool 'qtu').
 const POOL_COIN: Record<CoinId, string> = {
-  zion: 'zion',
-  qtc: 'qtu',
-  prl: 'prl',
+  zion: 'zion', qtc: 'qtu', prl: 'prl',
+  zano: 'zano', vrsc: 'vrsc', evr: 'evr', mewc: 'mewc',
+  rtm: 'rtm', zcl: 'zcl', zec: 'zec', phx: 'phx', krx: 'krx',
   multi: '',
 };
 
 // Static connect metadata — displayed on cards/start page; the API's
 // /coins payload only carries payout_mode/min_payout/fee_bps + legs.
+// All coins share the multiplexed stratum: stratum+tcp://…:8444
+// (plaintext) and stratum+ssl://…:8445 (TLS). Upstream-leg coins are
+// forwarded to external pools and settle through unified ZION payouts.
 const COIN_META: Record<string, Omit<CoinInfo, 'id' | 'legs' | 'fee_bps' | 'min_payout' | 'payout_mode'>> = {
-  // All coins share the multiplexed stratum: stratum+tcp://…:8444 (plaintext)
-  // and stratum+ssl://…:8445 (TLS).  The dialect below is how each coin is
-  // authenticated on that listener.
   zion: {
     ticker: 'ZION', name: 'ZION TerraNova', algorithm: 'Ekam Deeksha (GPU)',
     port: 8444, tls_port: 8445, dialect: 'ZION native + Stratum v1',
@@ -38,9 +39,59 @@ const COIN_META: Record<string, Omit<CoinInfo, 'id' | 'legs' | 'fee_bps' | 'min_
     port: 8444, tls_port: 8445, dialect: 'Pearl stratum (SRBMiner ≥3.7.6)',
     payout_unit: 'PRL', accent: 'purple',
   },
+  // ── auxPoW upstream legs (forwarded, unified ZION payout) ──────────
+  vrsc: {
+    ticker: 'VRSC', name: 'VerusCoin', algorithm: 'VerusHash 2.1 · CPU',
+    port: 8444, tls_port: 8445, dialect: 'Stratum v1',
+    payout_unit: 'ZION', accent: 'cyan',
+  },
+  zano: {
+    ticker: 'ZANO', name: 'Zano', algorithm: 'ProgPoWz',
+    port: 8444, tls_port: 8445, dialect: 'Stratum v1',
+    payout_unit: 'ZION', accent: 'green',
+  },
+  rtm: {
+    ticker: 'RTM', name: 'Raptoreum', algorithm: 'GhostRider',
+    port: 8444, tls_port: 8445, dialect: 'Stratum v1',
+    payout_unit: 'ZION', accent: 'purple',
+  },
+  evr: {
+    ticker: 'EVR', name: 'Evrmore', algorithm: 'EvrProgPoW',
+    port: 8444, tls_port: 8445, dialect: 'Stratum v1',
+    payout_unit: 'ZION', accent: 'gold',
+  },
+  mewc: {
+    ticker: 'MEWC', name: 'Meowcoin', algorithm: 'MeowPoW',
+    port: 8444, tls_port: 8445, dialect: 'Stratum v1',
+    payout_unit: 'ZION', accent: 'cyan',
+  },
+  zec: {
+    ticker: 'ZEC', name: 'Zcash', algorithm: 'Equihash 200,9',
+    port: 8444, tls_port: 8445, dialect: 'Stratum v1',
+    payout_unit: 'ZION', accent: 'purple',
+  },
+  zcl: {
+    ticker: 'ZCL', name: 'Zclassic', algorithm: 'Equihash 192,7',
+    port: 8444, tls_port: 8445, dialect: 'Stratum v1',
+    payout_unit: 'ZION', accent: 'green',
+  },
+  phx: {
+    ticker: 'PHX', name: 'Phoenixcoin', algorithm: 'NeoScrypt',
+    port: 8444, tls_port: 8445, dialect: 'Stratum v1',
+    payout_unit: 'ZION', accent: 'gold',
+  },
+  krx: {
+    ticker: 'KRX', name: 'Keryx', algorithm: 'KeryxHash',
+    port: 8444, tls_port: 8445, dialect: 'Stratum v1',
+    payout_unit: 'ZION', accent: 'cyan',
+  },
 };
 
-const UI_ID: Record<string, CoinId> = { zion: 'zion', qtu: 'qtc', prl: 'prl' };
+const UI_ID: Record<string, CoinId> = {
+  zion: 'zion', qtu: 'qtc', prl: 'prl',
+  zano: 'zano', vrsc: 'vrsc', evr: 'evr', mewc: 'mewc',
+  rtm: 'rtm', zcl: 'zcl', zec: 'zec', phx: 'phx', krx: 'krx',
+};
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });
@@ -79,6 +130,9 @@ interface ApiCoinStats {
   shares: { accepted: number; rejected: number };
   window_weight: string; accepted_total: number;
   hashrate: { live: number } | null;
+  /** Expected-hash difficulty of the currently served job (pool ≥3.2.0);
+   *  the "diff" miners work against — upstream pools set it per job. */
+  served_difficulty?: number;
 }
 
 function toCoinStats(coin: CoinId, s: ApiCoinStats): CoinStats {
@@ -88,7 +142,7 @@ function toCoinStats(coin: CoinId, s: ApiCoinStats): CoinStats {
     miners_online: s.miners_online,
     workers_online: s.miners_online,
     network_hashrate: null,
-    network_difficulty: null,
+    network_difficulty: s.served_difficulty ?? null,
     height: null,
     blocks_24h: 0,
     luck_pct: null,
@@ -122,7 +176,12 @@ interface ApiMiner {
 // rendered as-is with the coin ticker — their base-unit scale is coin-specific
 // and the public API doesn't publish decimals.
 const FLOWERS = 1e6;
-const UNIT_LABEL: Record<CoinId, string> = { zion: 'ZION', qtc: 'QTC', prl: 'PRL', multi: '' };
+const UNIT_LABEL: Record<CoinId, string> = {
+  zion: 'ZION', qtc: 'QTC', prl: 'PRL',
+  zano: 'ZANO', vrsc: 'VRSC', evr: 'EVR', mewc: 'MEWC',
+  rtm: 'RTM', zcl: 'ZCL', zec: 'ZEC', phx: 'PHX', krx: 'KRX',
+  multi: '',
+};
 
 function normalizeAmount(coin: CoinId, raw: number, unit: string): { amount: number; unit: string } {
   if (unit === 'flowers' || coin === 'zion') return { amount: raw / FLOWERS, unit: 'ZION' };
@@ -172,6 +231,7 @@ export interface HistorySample {
   hashrate: number;
   miners_online: number;
   online_by_coin: Record<string, number>;
+  hashrate_by_coin?: Record<string, number>;
   accepted: number;
   rejected: number;
 }

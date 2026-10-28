@@ -140,7 +140,10 @@ export default function Wizard({
   const [mode, setMode] = useState<Mode>('pool');
   const [copied, setCopied] = useState(false);
 
-  const coin = coins.find((c) => c.id === coinId) ?? coins[0];
+  // Only native-leg coins get wizard configs — auxPoW legs are routed by
+  // the wallet address on the shared stratum, no --force-coin flag exists.
+  const wizardCoins = coins.filter((c) => c.legs.some((l) => l.kind === 'native'));
+  const coin = wizardCoins.find((c) => c.id === coinId) ?? wizardCoins[0];
   const miners = MINERS[coin.id] ?? MINERS.zion;
   const miner = miners.find((m) => m.id === minerId) ?? miners[0];
   const cmd = buildCmd(coin, miner.id, os, wallet, worker, tls, mode);
@@ -169,7 +172,7 @@ export default function Wizard({
       <div className="mt-5">
         <p className="kicker mb-2">1 · {t('coin', 'coin')}</p>
         <div className="grid gap-2 sm:grid-cols-4">
-          {coins.map((c) => (
+          {wizardCoins.map((c) => (
             <button
               key={c.id}
               onClick={() => {

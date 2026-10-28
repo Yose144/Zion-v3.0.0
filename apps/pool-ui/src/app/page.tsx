@@ -2,25 +2,76 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Blocks, Boxes, Clock, Pickaxe, ShieldCheck, Users } from 'lucide-react';
+import { ArrowRight, Blocks, Boxes, CircleDollarSign, Clock, Gauge, Pickaxe, ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import AreaChart, { type SeriesPoint } from '@/components/AreaChart';
 import CoinCard from '@/components/CoinCard';
 import MinerSearch from '@/components/MinerSearch';
-import { fetchBlocks, fetchOverview } from '@/lib/api';
-import { fmtDuration, fmtHashrate, fmtInt } from '@/lib/format';
+import { fetchBlocks, fetchHistory, fetchOverview } from '@/lib/api';
+import { fetchMarketPrices, fetchZionPrice, type MarketPrice, type ZionPrice } from '@/lib/price';
+import { fmtDifficulty, fmtDuration, fmtHashrate, fmtInt, fmtUsd } from '@/lib/format';
 import { useLang } from '@/lib/i18n';
-import type { PoolOverview } from '@/lib/types';
+import type { BlockRow, PoolOverview } from '@/lib/types';
+
+const ACCENT: Record<string, string> = {
+  gold: '#fcd116',
+  cyan: '#078930',
+  purple: '#e41e2b',
+  green: '#00ff41',
+};
 
 export default function HomePage() {
   const { t } = useLang();
   const [ov, setOv] = useState<PoolOverview | null>(null);
   const [blockCount, setBlockCount] = useState<number | null>(null);
+  const [blocks, setBlocks] = useState<BlockRow[]>([]);
+  const [hrHistory, setHrHistory] = useState<SeriesPoint[]>([]);
+  const [price, setPrice] = useState<ZionPrice | null>(null);
+  const [markets, setMarkets] = useState<Record<string, MarketPrice>>({});
 
   useEffect(() => {
     fetchOverview().then(setOv);
-    fetchBlocks().then((b) => setBlockCount(b.rows.length)).catch(() => {});
+    fetchBlocks()
+      .then((b) => {
+        setBlockCount(b.rows.length);
+        setBlocks(b.rows);
+      })
+      .catch(() => {});
     const iv = setInterval(() => fetchOverview().then(setOv), 15_000);
     return () => clearInterval(iv);
   }, []);
+
+  // Server-side 24h pool hashrate series (60s samples) — authoritative
+  // history persisted by the backend, no client accumulation needed.
+  useEffect(() => {
+    const pull = () =>
+      fetchHistory()
+        .then((s) => {
+          if (s.length)
+            setHrHistory(s.map((p) => ({ t: p.ts, v: p.hashrate })));
+        })
+        .catch(() => {});
+    pull();
+    const iv = setInterval(pull, 60_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // ZION/USD — live on-chain Uni V3 spot on Base (seed-price fallback);
+  // all other listed coins come from CoinGecko.
+  useEffect(() => {
+    const pull = () => {
+      fetchZionPrice().then(setPrice).catch(() => {});
+      fetchMarketPrices().then(setMarkets).catch(() => {});
+    };
+    pull();
+    const iv = setInterval(pull, 120_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // Unified price lookup — ZION's on-chain price overrides CoinGecko.
+  const priceOf = (coinId: string): MarketPrice | null =>
+    coinId === 'zion' && price
+      ? { usd: price.usd, change_24h: null }
+      : markets[coinId] ?? null;
 
   const totalHps = ov
     ? Object.values(ov.stats).reduce((a, s) => a + s.hashrate, 0)
@@ -28,6 +79,21 @@ export default function HomePage() {
   const totalMiners = ov
     ? Object.values(ov.stats).reduce((a, s) => a + s.miners_online, 0)
     : 0;
+
+  // Difficulty per coin — live `served_difficulty` from the stats API wins;
+  // block-derived network difficulty is the fallback for coins with no
+  // served value yet.
+  const netDiff: Record<string, number | null> = {};
+  for (const b of blocks) {
+    if (netDiff[b.coin] === undefined && b.network_difficulty != null)
+      netDiff[b.coin] = b.network_difficulty;
+  }
+  if (ov) {
+    for (const c of ov.coins) {
+      const sd = ov.stats[c.id]?.network_difficulty;
+      if (sd != null) netDiff[c.id] = sd;
+    }
+  }
 
   return (
     <div className="pt-6">
@@ -53,15 +119,15 @@ export default function HomePage() {
         <h1 className="mx-auto mt-3 max-w-3xl text-4xl font-black leading-tight text-white md:text-5xl">
           {t('Jeden pool.', 'One pool.')}{' '}
           <span className="gradient-text">
-            {t('Čtyři coiny.', 'Four coins.')}
+            {t('Dvanáct coinů.', 'Twelve coins.')}
           </span>
           <br />
-          {t('Nativní výplaty.', 'Native payouts.')}
+          {t('Jedna stratum adresa.', 'One stratum address.')}
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/55">
           {t(
-            'Těžte ZION, Quantus, Pearl nebo multi-algo přes jediný stratum. Transparentní PPLNS, výplata vždy v coinu, který těžíte. Žádná auto-konverze.',
-            'Mine ZION, Quantus, Pearl or multi-algo over a single stratum. Transparent PPLNS, always paid in the coin you mine. No auto-conversion.',
+            'Těžte ZION, Quantus, Pearl + 9 dalších auxPoW coinů přes jediný stratum. Transparentní PPLNS, jednotné ZION výplaty, bez poplatků navíc.',
+            'Mine ZION, Quantus, Pearl + 9 more auxPoW coins over a single stratum. Transparent PPLNS, unified ZION payouts, no extra fees.',
           )}
         </p>
 
@@ -101,6 +167,27 @@ export default function HomePage() {
           </span>
         </div>
 
+        {/* pool hashrate — live chart inside hero */}
+        {hrHistory.length > 2 && (
+          <div className="mx-auto mt-8 max-w-2xl text-left">
+            <div className="mb-2 flex items-center justify-between px-1">
+              <span className="kicker flex items-center gap-1.5">
+                <TrendingUp size={11} className="text-rasta-gold" />
+                {t('pool hashrate · 24 h', 'pool hashrate · 24 h')}
+              </span>
+              <span className="stat-value text-xs text-white/50">
+                {fmtHashrate(totalHps)}
+              </span>
+            </div>
+            <AreaChart
+              data={hrHistory}
+              color="#fcd116"
+              height={90}
+              fmt={(v) => fmtHashrate(v)}
+            />
+          </div>
+        )}
+
         {/* CTA row */}
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
           <a href="/start/" className="btn-gold">
@@ -129,54 +216,166 @@ export default function HomePage() {
         </p>
       </motion.section>
 
-      {/* Coin cards */}
+      {/* Network strip — live chain state per coin */}
+      {Object.keys(netDiff).length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
+          className="mx-auto mt-10 max-w-4xl"
+        >
+          <h2 className="kicker mb-3 text-center">
+            {t('Stav sítě', 'Network status')}
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {ov?.coins.filter((c) => c.legs.some((l) => l.kind === 'native')).map((c) => {
+              const d = netDiff[c.id];
+              const s = ov.stats[c.id];
+              const live = c.legs.some((l) => l.status === 'live');
+              return (
+                <div key={c.id} className="pool-card kpi-tile">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[0.7rem] font-black uppercase tracking-wider" style={{ color: ({ zion: '#fcd116', qtc: '#078930', prl: '#e41e2b' } as Record<string, string>)[c.id] ?? '#fff' }}>
+                      {c.ticker}
+                    </span>
+                    <span className={`pill ${live ? 'pill-live' : 'pill-down'}`}>
+                      <span className="dot" />
+                      {live ? 'live' : 'sync'}
+                    </span>
+                  </div>
+                  <p className="kicker mt-3">
+                    <Gauge size={10} className="mr-1 inline" />
+                    {t('difficulty', 'difficulty')}
+                  </p>
+                  <p className="stat-value text-base font-black text-white">
+                    {d != null ? fmtDifficulty(d) : '—'}
+                  </p>
+                  {c.id === 'zion' && price ? (
+                    <p className="stat-value mt-1 flex items-center gap-1 text-[0.72rem] text-rasta-gold">
+                      <CircleDollarSign size={10} />
+                      {fmtUsd(price.usd)}
+                      <span className="text-white/30">
+                        {price.source === 'onchain' ? 'Uni V3' : 'seed'}
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="stat-value mt-1 text-[0.7rem] text-white/40">
+                      {s ? `${fmtHashrate(s.hashrate)} pool` : ''}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </motion.section>
+      )}
+
+      {/* Featured native coins */}
       <section className="mt-12">
         <h2 className="kicker mb-4 text-center">
           {t('Podporované coiny', 'Supported coins')}
         </h2>
-        <div className="grid gap-5 md:grid-cols-2">
-          {ov?.coins.map((c, i) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.2 + i * 0.07 }}
-            >
-              <CoinCard coin={c} stats={ov.stats[c.id]} />
-            </motion.div>
-          ))}
+        <div className="grid gap-5 md:grid-cols-3">
+          {ov?.coins
+            .filter((c) => c.legs.some((l) => l.kind === 'native'))
+            .sort((a, b) => ['qtc', 'prl', 'zion'].indexOf(a.id) - ['qtc', 'prl', 'zion'].indexOf(b.id))
+            .map((c, i) => (
+              <motion.div
+                key={c.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.2 + i * 0.07 }}
+              >
+                <CoinCard coin={c} stats={ov.stats[c.id]} networkDiff={netDiff[c.id]} price={priceOf(c.id)} />
+              </motion.div>
+            ))}
         </div>
       </section>
 
-      {/* Ecosystem strip */}
-      <section className="mt-14">
-        <h2 className="kicker mb-4 text-center">
-          {t('Součást ekosystému', 'Part of the ecosystem')}
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {[
-            { href: 'https://zionterranova.com', label: 'TerraNova', sub: t('hub', 'hub') },
-            { href: 'https://app.zionterranova.com', label: 'App', sub: t('wallet + docs', 'wallet + docs') },
-            { href: 'https://app.zionterranova.com/explorer', label: 'eXplorer', sub: t('bloky + tx', 'blocks + tx') },
-            { href: 'https://market.zionterranova.com', label: 'Market', sub: t('obchod', 'shop') },
-            { href: 'https://oasis.zionterranova.com', label: 'OASIS', sub: t('hra', 'game') },
-            { href: 'https://freeworld.zionterranova.com', label: 'Free World', sub: 'DAO' },
-          ].map((e) => (
-            <a
-              key={e.href}
-              href={e.href}
-              target="_blank"
-              rel="noreferrer"
-              className="pool-card group flex flex-col items-center py-4 text-center transition hover:border-rasta-gold/40"
-            >
-              <span className="text-sm font-bold text-white group-hover:text-rasta-gold">
-                {e.label}
-              </span>
-              <span className="mt-0.5 text-[0.62rem] text-white/40">{e.sub}</span>
-            </a>
-          ))}
-        </div>
-      </section>
+      {/* All coins — full table incl. auxPoW upstream legs */}
+      {ov && ov.coins.length > 3 && (
+        <motion.section
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.35 }}
+          className="pool-card mt-8"
+        >
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-white/70">
+              {t('Všechny minovatelné coiny', 'All mineable coins')}
+            </h2>
+            <span className="text-[0.65rem] text-white/35">
+              {t('auxPoW coiny se vyplácejí v ZION', 'auxPoW coins pay out in ZION')}
+            </span>
+          </div>
+          <div className="table-scroll">
+            <table className="pool-table">
+              <thead>
+                <tr>
+                  <th>{t('coin', 'coin')}</th>
+                  <th>{t('algoritmus', 'algorithm')}</th>
+                  <th className="text-right">{t('cena', 'price')}</th>
+                  <th className="text-right">{t('pool hashrate', 'pool hashrate')}</th>
+                  <th className="text-right">{t('mineři', 'miners')}</th>
+                  <th className="text-right">{t('fee', 'fee')}</th>
+                  <th className="text-right">{t('stav', 'status')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...ov.coins]
+                  .sort(
+                    (a, b) =>
+                      (ov.stats[b.id]?.hashrate ?? 0) - (ov.stats[a.id]?.hashrate ?? 0),
+                  )
+                  .map((c) => {
+                    const s = ov.stats[c.id];
+                    const live = c.legs.some((l) => l.status === 'live');
+                    const p = priceOf(c.id);
+                    return (
+                      <tr key={c.id}>
+                        <td>
+                          <span className="font-bold" style={{ color: ACCENT[c.accent] }}>
+                            {c.ticker}
+                          </span>{' '}
+                          <span className="text-white/40">{c.name}</span>
+                        </td>
+                        <td className="text-white/60">{c.algorithm}</td>
+                        <td className="text-right font-bold text-white">
+                          {p ? fmtUsd(p.usd) : '—'}
+                          {p?.change_24h != null && (
+                            <span
+                              className={`ml-1 text-[0.65rem] ${
+                                p.change_24h >= 0 ? 'text-rasta-green' : 'text-rasta-red'
+                              }`}
+                            >
+                              {p.change_24h >= 0 ? '+' : ''}
+                              {p.change_24h.toFixed(1)}%
+                            </span>
+                          )}
+                        </td>
+                        <td className="text-right font-bold text-white">
+                          {s ? fmtHashrate(s.hashrate) : '—'}
+                        </td>
+                        <td className="text-right text-white">
+                          {s ? fmtInt(s.miners_online) : '—'}
+                        </td>
+                        <td className="text-right text-white/50">
+                          {(c.fee_bps / 100).toFixed(1)}%
+                        </td>
+                        <td className="text-right">
+                          <span className={`pill ${live ? 'pill-live' : 'pill-down'}`}>
+                            <span className="dot" />
+                            {live ? 'live' : 'sync'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </motion.section>
+      )}
 
       {/* CTA strip */}
       <section className="pool-card mt-12 flex flex-col items-center justify-between gap-4 md:flex-row">

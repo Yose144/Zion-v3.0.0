@@ -2,7 +2,11 @@
 // (docs/3.2/ZION-POOL-NG-PLAN.md §5a). The mock layer returns these
 // shapes so swapping to the live API is a base-URL change only.
 
-export type CoinId = 'zion' | 'qtc' | 'prl' | 'multi';
+export type CoinId =
+  | 'zion' | 'qtc' | 'prl'           // native-payout / native legs
+  | 'zano' | 'vrsc' | 'evr' | 'mewc' // auxPoW upstream legs
+  | 'rtm' | 'zcl' | 'zec' | 'phx' | 'krx'
+  | 'multi';
 
 export type LegStatus = 'native' | 'upstream' | 'down';
 

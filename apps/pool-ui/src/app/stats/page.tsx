@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Activity } from 'lucide-react';
 import { fetchBlocks, fetchHistory, fetchOverview, type HistorySample } from '@/lib/api';
+import { fetchZionPrice, type ZionPrice } from '@/lib/price';
 import {
   fmtDifficulty,
   fmtDuration,
   fmtHashrate,
   fmtInt,
+  fmtUsd,
 } from '@/lib/format';
 import { useLang } from '@/lib/i18n';
 import type { BlockRow, CoinId, PoolOverview } from '@/lib/types';
@@ -26,6 +28,7 @@ export default function StatsPage() {
   const [blocks, setBlocks] = useState<BlockRow[]>([]);
   const [histories, setHistories] = useState<Record<string, SeriesPoint[]>>({});
   const [minersHist, setMinersHist] = useState<Record<string, SeriesPoint[]>>({});
+  const [price, setPrice] = useState<ZionPrice | null>(null);
   const historiesRef = useRef(histories);
   historiesRef.current = histories;
 
@@ -56,18 +59,20 @@ export default function StatsPage() {
       fetchHistory()
         .then((s: HistorySample[]) => {
           if (!s.length) return;
-          const zionSeries: SeriesPoint[] = s.map((p) => ({
-            t: p.ts * 1000,
-            v: p.hashrate,
-          }));
-          setHistories((h) => ({ ...h, zion: zionSeries }));
-          // Per-coin miners-online series from the same server snapshots.
+          // Per-coin hashrate + miners-online series from server snapshots.
+          const hrByCoin: Record<string, SeriesPoint[]> = {};
           const perCoin: Record<string, SeriesPoint[]> = {};
           for (const p of s) {
+            for (const [coin, hr] of Object.entries(p.hashrate_by_coin ?? {})) {
+              const id = coin === 'qtu' ? 'qtc' : coin;
+              (hrByCoin[id] ??= []).push({ t: p.ts, v: hr });
+            }
             for (const [coin, n] of Object.entries(p.online_by_coin ?? {})) {
-              (perCoin[coin] ??= []).push({ t: p.ts * 1000, v: n });
+              const id = coin === 'qtu' ? 'qtc' : coin;
+              (perCoin[id] ??= []).push({ t: p.ts, v: n });
             }
           }
+          setHistories((h) => ({ ...h, ...hrByCoin, zion: hrByCoin.zion ?? h.zion }));
           setMinersHist(perCoin);
         })
         .catch(() => {});
@@ -82,6 +87,13 @@ export default function StatsPage() {
     return () => clearInterval(iv);
   }, []);
 
+  useEffect(() => {
+    const pull = () => fetchZionPrice().then(setPrice).catch(() => {});
+    pull();
+    const iv = setInterval(pull, 120_000);
+    return () => clearInterval(iv);
+  }, []);
+
   if (!ov) return <div className="pt-20 text-center text-white/40">…</div>;
 
   const totalHashrate = ov.coins.reduce(
@@ -92,6 +104,18 @@ export default function StatsPage() {
     (sum, c) => sum + (ov.stats[c.id]?.miners_online ?? 0),
     0,
   );
+
+  // Difficulty per coin — live `served_difficulty` from the stats API wins;
+  // block-derived network difficulty is the fallback.
+  const netDiff: Record<string, number> = {};
+  for (const b of blocks) {
+    if (netDiff[b.coin] === undefined && b.network_difficulty != null)
+      netDiff[b.coin] = b.network_difficulty;
+  }
+  for (const c of ov?.coins ?? []) {
+    const sd = ov?.stats[c.id]?.network_difficulty;
+    if (sd != null) netDiff[c.id] = sd;
+  }
 
   // blocks per day histogram (last 14 days, all coins)
   const dayBuckets: { day: string; count: number }[] = [];
@@ -118,16 +142,24 @@ export default function StatsPage() {
       </h1>
 
       {/* Pool-wide KPI strip */}
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {[
           { k: t('celkový hashrate', 'total hashrate'), v: fmtHashrate(totalHashrate) },
           { k: t('mineři online', 'miners online'), v: fmtInt(totalMiners) },
+          {
+            k: 'ZION / USD',
+            v: price ? fmtUsd(price.usd) : '…',
+            sub: price?.source === 'onchain' ? 'Uni V3 · Base' : t('seed cena', 'seed price'),
+          },
           { k: t('coinů', 'coins'), v: String(ov.coins.length) },
           { k: t('nalezené bloky', 'blocks found'), v: fmtInt(blocks.length) },
         ].map((x, i) => (
-          <div key={i} className="pool-card p-4">
+          <div key={i} className="pool-card kpi-tile">
             <p className="kicker">{x.k}</p>
             <p className="stat-value mt-1 text-lg font-bold text-white">{x.v}</p>
+            {'sub' in x && x.sub && (
+              <p className="mt-0.5 text-[0.6rem] text-white/35">{x.sub}</p>
+            )}
           </div>
         ))}
       </div>
@@ -155,7 +187,7 @@ export default function StatsPage() {
       )}
 
       <div className="mt-8 flex flex-col gap-5">
-        {ov.coins.map((c) => {
+        {ov.coins.filter((c) => c.legs.some((l) => l.kind === 'native')).map((c) => {
           const s = ov.stats[c.id];
           if (!s) return null;
           const acc = s.shares_1h.accepted;
@@ -192,7 +224,7 @@ export default function StatsPage() {
                   { k: t('síť', 'network'), v: s.network_hashrate != null ? fmtHashrate(s.network_hashrate) : '—' },
                   { k: t('mineři', 'miners'), v: fmtInt(s.miners_online) },
                   { k: 'workers', v: fmtInt(s.workers_online) },
-                  { k: 'diff', v: fmtDifficulty(s.network_difficulty) },
+                  { k: t('diff', 'diff'), v: fmtDifficulty(netDiff[c.id] ?? null) },
                   { k: t('bloky 24h', 'blocks 24h'), v: fmtInt(s.blocks_24h) },
                   { k: t('rej 1h', 'rej 1h'), v: `${rejPct.toFixed(2)}%` },
                 ].map((x, i) => (
@@ -260,6 +292,60 @@ export default function StatsPage() {
           );
         })}
       </div>
+
+      {/* auxPoW coins — compact live table */}
+      {ov.coins.some((c) => !c.legs.some((l) => l.kind === 'native')) && (
+        <div className="pool-card mt-6">
+          <p className="kicker mb-3">
+            {t('auxPoW coiny — live', 'auxPoW coins — live')}
+          </p>
+          <div className="table-scroll">
+            <table className="pool-table">
+              <thead>
+                <tr>
+                  <th>{t('coin', 'coin')}</th>
+                  <th className="text-right">{t('pool hashrate', 'pool hashrate')}</th>
+                  <th className="text-right">{t('mineři', 'miners')}</th>
+                  <th className="text-right">{t('shares ok', 'shares ok')}</th>
+                  <th className="text-right">{t('stav', 'status')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ov.coins
+                  .filter((c) => !c.legs.some((l) => l.kind === 'native'))
+                  .map((c) => {
+                    const s = ov.stats[c.id];
+                    const live = c.legs.some((l) => l.status === 'live');
+                    return (
+                      <tr key={c.id}>
+                        <td>
+                          <span className="font-bold" style={{ color: ACCENT[c.accent] }}>
+                            {c.ticker}
+                          </span>
+                        </td>
+                        <td className="text-right font-bold text-white">
+                          {s ? fmtHashrate(s.hashrate) : '—'}
+                        </td>
+                        <td className="text-right text-white">
+                          {s ? fmtInt(s.miners_online) : '—'}
+                        </td>
+                        <td className="text-right text-white/60">
+                          {s ? fmtInt(s.shares_1h.accepted) : '—'}
+                        </td>
+                        <td className="text-right">
+                          <span className={`pill ${live ? 'pill-live' : 'pill-down'}`}>
+                            <span className="dot" />
+                            {live ? 'live' : 'sync'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Blocks-per-day histogram */}
       {dayBuckets.some((d) => d.count > 0) && (
