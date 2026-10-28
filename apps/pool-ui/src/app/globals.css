@@ -555,6 +555,59 @@ main {
   pointer-events: none;
 }
 
+/* Market info-page hero — compact variant for pool subpages:
+   centered gradient banner with rasta corner glows + gold hairline. */
+.page-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--zion-radius-lg);
+  border: 1px solid var(--zion-border-subtle);
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.85), hsla(0, 0%, 4%, 0.9));
+  padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1rem, 4vw, 2rem);
+  text-align: center;
+  box-shadow: var(--zion-shadow-panel);
+}
+.page-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(228, 30, 43, 0.12), transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(252, 209, 22, 0.08), transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(7, 137, 48, 0.1), transparent 40%);
+  pointer-events: none;
+}
+.page-hero::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--rasta-gold), transparent);
+  pointer-events: none;
+}
+.page-hero > * {
+  position: relative;
+  z-index: 1;
+}
+.page-hero .rasta-hero-kicker {
+  margin-bottom: 0.75rem;
+}
+.page-hero h1 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+.page-hero .page-hero-sub {
+  margin: 0.6rem auto 0;
+  max-width: 42rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.55);
+}
+
 /* Market footer — dark gradient + gold hairline + glowing logo. */
 .rasta-footer {
   border-top: 1px solid rgba(252, 209, 22, 0.12);

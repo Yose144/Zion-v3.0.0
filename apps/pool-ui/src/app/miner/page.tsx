@@ -1,5 +1,6 @@
 'use client';
 
+import { Pickaxe } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import MinerClient from './MinerClient';
@@ -30,18 +31,19 @@ function MinerShell() {
 
   if (!parsed) {
     return (
-      <div className="pt-10">
-        <div className="pool-card mx-auto max-w-xl text-center">
-          <h1 className="text-lg font-bold text-white">
-            {t('Miner dashboard', 'Miner dashboard')}
-          </h1>
-          <p className="mt-2 text-xs text-white/50">
+      <div className="pt-8">
+        <header className="page-hero">
+          <p className="rasta-hero-kicker">
+            <Pickaxe size={12} /> {t('Miner dashboard', 'Miner dashboard')}
+          </p>
+          <h1>{t('Tvoje těžba', 'Your mining')}</h1>
+          <p className="page-hero-sub">
             {t(
-              'Zadej adresu peněženky — uvidíš hashrate, workery, bilanci a výplaty.',
-              'Enter a wallet address to see hashrate, workers, balance and payouts.',
+              'Zadej adresu peněženky — uvidíš hashrate, workery, bilanci a výplaty v reálném čase.',
+              'Enter a wallet address to see hashrate, workers, balance and payouts in real time.',
             )}
           </p>
-        </div>
+        </header>
         <div className="mx-auto mt-6 max-w-xl">
           <MinerSearch />
         </div>

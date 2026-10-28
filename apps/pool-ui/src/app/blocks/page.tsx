@@ -47,15 +47,19 @@ export default function BlocksPage() {
   }, [coin]);
 
   return (
-    <div className="pt-10">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="kicker">{t('Found blocks', 'Found blocks')}</p>
-          <h1 className="mt-2 flex items-center gap-3 text-3xl font-black text-white">
-            <Blocks className="text-zion-gold" size={26} /> {t('Bloky', 'Blocks')}
-          </h1>
-        </div>
-        <div className="flex gap-2">
+    <div className="pt-8">
+      <header className="page-hero">
+        <p className="rasta-hero-kicker">
+          <Blocks size={12} /> {t('Found blocks', 'Found blocks')}
+        </p>
+        <h1>{t('Bloky', 'Blocks')}</h1>
+        <p className="page-hero-sub">
+          {t(
+            'Každý nalezený blok s confirmation statusem a pool luck — nativní coiny těží přímo proti našemu nodu.',
+            'Every block found with confirmation status and pool luck — native coins mine directly against our node.',
+          )}
+        </p>
+        <div className="mt-4 flex justify-center gap-2">
           {(['', 'zion', 'qtc', 'prl'] as const).map((c) => (
             <button
               key={c}
@@ -66,7 +70,7 @@ export default function BlocksPage() {
             </button>
           ))}
         </div>
-      </div>
+      </header>
 
       <div className="pool-card mt-6 overflow-x-auto">
         <table className="pool-table">

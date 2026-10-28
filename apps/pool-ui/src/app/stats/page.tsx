@@ -134,12 +134,19 @@ export default function StatsPage() {
   }
 
   return (
-    <div className="pt-10">
-      <p className="kicker">{t('Telemetrie', 'Telemetry')}</p>
-      <h1 className="mt-2 flex items-center gap-3 text-3xl font-black text-white">
-        <Activity className="text-zion-cyan" size={26} />
-        {t('Statistiky poolu', 'Pool stats')}
-      </h1>
+    <div className="pt-8">
+      <header className="page-hero">
+        <p className="rasta-hero-kicker">
+          <Activity size={12} /> {t('Telemetrie', 'Telemetry')}
+        </p>
+        <h1>{t('Statistiky poolu', 'Pool stats')}</h1>
+        <p className="page-hero-sub">
+          {t(
+            'Live hashrate, difficulty a share účetnictví všech 12 coinů — z on-chain telemetrie poolu, ne odhadů.',
+            'Live hashrate, difficulty and share accounting for all 12 coins — from the pool’s own on-chain telemetry, not estimates.',
+          )}
+        </p>
+      </header>
 
       {/* Pool-wide KPI strip */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

@@ -25,15 +25,19 @@ export default function PayoutsPage() {
   }, [coin]);
 
   return (
-    <div className="pt-10">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="kicker">{t('Transparentní feed', 'Transparent feed')}</p>
-          <h1 className="mt-2 flex items-center gap-3 text-3xl font-black text-white">
-            <HandCoins className="text-zion-gold" size={26} /> {t('Výplaty', 'Payouts')}
-          </h1>
-        </div>
-        <div className="flex gap-2">
+    <div className="pt-8">
+      <header className="page-hero">
+        <p className="rasta-hero-kicker">
+          <HandCoins size={12} /> {t('Transparentní feed', 'Transparent feed')}
+        </p>
+        <h1>{t('Výplaty', 'Payouts')}</h1>
+        <p className="page-hero-sub">
+          {t(
+            'PPLNS okno, nativní coin výplaty a každá tx on-chain — fee 1 %, žádné skryté srážky.',
+            'PPLNS window, native-coin payouts and every tx on-chain — 1% fee, no hidden deductions.',
+          )}
+        </p>
+        <div className="mt-4 flex justify-center gap-2">
           {(['', 'zion', 'qtc', 'prl'] as const).map((c) => (
             <button
               key={c}
@@ -44,7 +48,7 @@ export default function PayoutsPage() {
             </button>
           ))}
         </div>
-      </div>
+      </header>
 
       {/* Policy cards */}
       <div className="mt-6 grid gap-4 md:grid-cols-3">

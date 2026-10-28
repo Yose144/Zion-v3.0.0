@@ -1,5 +1,6 @@
 'use client';
 
+import { HelpCircle } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 
 const QA: { cs: [string, string]; en: [string, string] }[] = [
@@ -98,11 +99,19 @@ const QA: { cs: [string, string]; en: [string, string] }[] = [
 export default function FaqPage() {
   const { t, lang } = useLang();
   return (
-    <div className="pt-10">
-      <p className="kicker">FAQ</p>
-      <h1 className="mt-2 text-3xl font-black text-white">
-        {t('Časté otázky', 'Frequently asked questions')}
-      </h1>
+    <div className="pt-8">
+      <header className="page-hero">
+        <p className="rasta-hero-kicker">
+          <HelpCircle size={12} /> FAQ
+        </p>
+        <h1>{t('Časté otázky', 'Frequently asked questions')}</h1>
+        <p className="page-hero-sub">
+          {t(
+            'Stratum porty, výplatní model, coiny a podpora — vše na jednom místě.',
+            'Stratum ports, payout model, coins and support — everything in one place.',
+          )}
+        </p>
+      </header>
       <div className="mt-8 flex flex-col gap-4">
         {QA.map((q, i) => (
           <details key={i} className="pool-card group cursor-pointer">

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Copy, Cpu, Gauge, MonitorSmartphone, Terminal } from 'lucide-react';
+import { Copy, Cpu, Gauge, MonitorSmartphone, Pickaxe, Terminal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { fetchVardiff } from '@/lib/api';
 import { COINS } from '@/lib/mock';
@@ -179,17 +179,19 @@ export default function StartPage() {
   }, []);
 
   return (
-    <div className="pt-10">
-      <p className="kicker">{t('Návod', 'Guide')}</p>
-      <h1 className="mt-2 text-3xl font-black text-white">
-        {t('Jak začít těžit', 'How to start mining')}
-      </h1>
-      <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/55">
-        {t(
-          'Tři cesty: Trinity Miner (GUI, jedno kliknutí — doporučeno), zion-miner CLI, nebo váš stávající miner (SRBMiner, teamredminer). Adresa ve formátu <wallet>.<worker>, heslo "x" pro anonymous nebo "zis_<token>" pro ZIS účet.',
-          'Three ways: Trinity Miner (GUI, one click — recommended), zion-miner CLI, or your existing miner (SRBMiner, teamredminer). Username is <wallet>.<worker>, password "x" for anonymous or "zis_<token>" for a ZIS account.',
-        )}
-      </p>
+    <div className="pt-8">
+      <header className="page-hero">
+        <p className="rasta-hero-kicker">
+          <Pickaxe size={12} /> {t('Návod', 'Guide')}
+        </p>
+        <h1>{t('Jak začít těžit', 'How to start mining')}</h1>
+        <p className="page-hero-sub">
+          {t(
+            'Tři cesty: Trinity Miner (GUI, jedno kliknutí — doporučeno), zion-miner CLI, nebo váš stávající miner (SRBMiner, teamredminer). Adresa ve formátu <wallet>.<worker>, heslo "x" pro anonymous nebo "zis_<token>" pro ZIS účet.',
+            'Three ways: Trinity Miner (GUI, one click — recommended), zion-miner CLI, or your existing miner (SRBMiner, teamredminer). Username is <wallet>.<worker>, password "x" for anonymous or "zis_<token>" for a ZIS account.',
+          )}
+        </p>
+      </header>
 
       <div className="mt-8 grid gap-4 md:grid-cols-3">
         {[

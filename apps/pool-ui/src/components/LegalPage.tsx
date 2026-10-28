@@ -2,6 +2,7 @@
 
 // Shared legal-page shell — Marketplace-style structure, CS/EN via useLang.
 
+import { Scale } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import Link from 'next/link';
 
@@ -30,18 +31,21 @@ export default function LegalPage({
 }) {
   const { t } = useLang();
   return (
-    <div className="mx-auto max-w-3xl py-12">
-      <nav className="mb-6 text-xs text-white/35">
+    <div className="mx-auto max-w-3xl py-10">
+      <header className="page-hero">
+        <p className="rasta-hero-kicker">
+          <Scale size={12} /> {t('Právní dokumentace', 'Legal documentation')}
+        </p>
+        <h1>{t(titleCs, titleEn)}</h1>
+        <p className="page-hero-sub">{t(subtitleCs, subtitleEn)}</p>
+      </header>
+      <nav className="my-6 text-xs text-white/35">
         <Link href="/" className="hover:text-white">
           {t('Přehled', 'Overview')}
         </Link>
         <span className="mx-2">/</span>
         <span className="text-white/60">{t(titleCs, titleEn)}</span>
       </nav>
-      <h1 className="gradient-text mb-2 text-3xl font-black tracking-tight">
-        {t(titleCs, titleEn)}
-      </h1>
-      <p className="mb-8 text-sm text-white/50">{t(subtitleCs, subtitleEn)}</p>
       <div className="legal-content card p-6 sm:p-8">{children}</div>
     </div>
   );
