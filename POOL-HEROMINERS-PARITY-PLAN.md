@@ -138,10 +138,11 @@ sheet assign (rig/group/bulk), exec queue, group set, rig remove,
 task/results viewer, alert badges, catalog+bench, events feed, X-Ops-Auth.
 17. **Bench seeding form** — POST /agent/bench from UI → unlock profit dry.
 18. **Catalog editor** — add/edit presets in-console (`/agent/catalog`).
-19. **Pool-side worker hps join** — map `miner.pool` worker names to
-    `/public/v1/miner/{w}` data → live rig hashrate column.
-20. **AI-inference tab** — `/api/ai/status` + `/api/inference/*` surface
-    (exists in mockup) as an ops section.
+19. ~~**Pool-side worker hps join**~~ ✅ — `/public/v1/miners` worker names
+    embed instance/rig ids (`vast-58077390-qtu`); joined by substring match
+    into vast+agent rig rows (live H/s column + per-worker detail).
+20. ~~**AI-inference tab**~~ ✅ — `/ops-api/ai/status` card: GPU/VRAM/util
+    inventory, model list, inference reachability, Hiran status chip.
 21. **Alert routing prefs UI** — TG/webhook status + test-fire button.
 
 ## Milestones
@@ -152,9 +153,9 @@ task/results viewer, alert badges, catalog+bench, events feed, X-Ops-Auth.
   strip, WS2.8 status page, WS5.17 bench form.
 - **M3:** WS3.10 lock-sharding phase 1 ✅ (`cc589d926`), WS3.11 worker
   history ✅ (pre-existing v6), WS3.12 alert coverage ✅, WS5.18 catalog
-  editor ✅ (`0650944f4`). Remaining: phase-2 sharding, WS4.13/14 fleet
-  alerts+switch live, WS5.19/20/21.
-- **M4:** WS1.5 solo docs, WS4.15/16 OC + adapters, OG/SEO polish, WS5.20/21.
+  editor ✅ (`0650944f4`), WS5.19 worker-hps join ✅ + WS5.20 AI tab ✅.
+  Remaining: phase-2 sharding, WS4.13/14 fleet alerts+switch live, WS5.21.
+- **M4:** WS1.5 solo docs, WS4.15/16 OC + adapters, OG/SEO polish, WS5.21.
 
 ## Acceptance criteria
 

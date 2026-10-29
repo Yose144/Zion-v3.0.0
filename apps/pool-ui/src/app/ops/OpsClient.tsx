@@ -63,6 +63,48 @@ interface FleetEvent {
   detail?: string;
 }
 
+interface PoolMiner {
+  worker: string;
+  display_coin?: string;
+  display_hps?: number;
+  hashrate_hps?: number;
+  hashrate_1h_hps?: number;
+  last_seen_s?: number;
+}
+
+interface AiGpu {
+  name: string;
+  memory_total_mib: number;
+  memory_used_mib: number;
+  utilization_pct: number;
+  temperature_c: number;
+  power_w?: number | null;
+}
+
+interface AiRig {
+  id: number;
+  gpu_name?: string;
+  gpus: AiGpu[];
+  models: string[];
+  inference_reachable: boolean;
+  servers: string[];
+  error?: string | null;
+}
+
+interface AiStatus {
+  ts?: string;
+  ai_api_port?: number;
+  rigs?: AiRig[];
+  totals?: {
+    gpu_count?: number;
+    memory_total_mib?: number;
+    memory_used_mib?: number;
+    gpu_utilization_pct?: number | null;
+    inference_rigs?: number;
+  };
+  hiran?: { reachable: boolean; model?: string | null; models?: string[] };
+}
+
 interface Status {
   ts?: string;
   total_dph?: number;
@@ -114,6 +156,12 @@ const L = {
   },
   updated: { cs: 'Aktualizováno', en: 'Updated' },
   offline: { cs: 'offline', en: 'offline' },
+  poolHps: { cs: 'Pool H/s', en: 'Pool H/s' },
+  aiTitle: { cs: 'AI inference', en: 'AI inference' },
+  aiVram: { cs: 'VRAM', en: 'VRAM' },
+  aiRigs: { cs: 'inference rigy', en: 'inference rigs' },
+  hiran: { cs: 'Hiran', en: 'Hiran' },
+  reachable: { cs: 'dostupný', en: 'reachable' },
 } as const;
 
 type Key = keyof typeof L;
@@ -133,6 +181,18 @@ function shortPool(p?: string) {
   if (!p) return '—';
   return p.replace(/^stratum\+(tcp|ssl|tls):\/\//, '');
 }
+function fmtHps(hps?: number) {
+  if (hps == null || Number.isNaN(hps)) return '—';
+  const units = ['', 'K', 'M', 'G', 'T', 'P'];
+  let v = hps;
+  let u = 0;
+  while (v >= 1000 && u < units.length - 1) { v /= 1000; u += 1; }
+  return `${v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2)} ${units[u]}H/s`;
+}
+function fmtMib(mib?: number) {
+  if (mib == null) return '—';
+  return mib >= 1024 ? `${(mib / 1024).toFixed(1)} GB` : `${mib} MB`;
+}
 function sheetLabel(s?: FleetSheet): string {
   if (!s?.miner) return '—';
   return s.miner === 'none' ? 'stop-all' : `${s.miner}${s.coin ? ` · ${s.coin}` : ''}`;
@@ -142,6 +202,8 @@ export default function OpsClient() {
   const { lang } = useLang();
   const [status, setStatus] = useState<Status | null>(null);
   const [fleet, setFleet] = useState<Fleet | null>(null);
+  const [poolMiners, setPoolMiners] = useState<PoolMiner[]>([]);
+  const [ai, setAi] = useState<AiStatus | null>(null);
   const [unauth, setUnauth] = useState(false);
   const [tick, setTick] = useState(0);
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -185,14 +247,21 @@ export default function OpsClient() {
     let dead = false;
     const load = async () => {
       try {
-        const [s, f] = await Promise.all([
+        const [s, f, p, a] = await Promise.all([
           fetch('/ops-api/status', { cache: 'no-store' }),
           fetch('/ops-api/agent/fleet', { cache: 'no-store' }),
+          fetch('/public/v1/miners?limit=200', { cache: 'no-store' }),
+          fetch('/ops-api/ai/status', { cache: 'no-store' }),
         ]);
         if (dead) return;
         if (s.status === 401 || f.status === 401) { setUnauth(true); return; }
         if (s.ok) setStatus(await s.json());
         if (f.ok) setFleet(await f.json());
+        if (p.ok) {
+          const d = await p.json();
+          setPoolMiners(d.miners ?? []);
+        }
+        if (a.ok) setAi(await a.json());
       } catch {
         /* keep last good */
       }
@@ -215,6 +284,13 @@ export default function OpsClient() {
   );
   const alertKinds = /alert_|_down|_drop/;
   const openAlerts = events.filter((e) => alertKinds.test(e.kind) && !/recover/.test(e.kind)).length;
+  // Pool-side worker join (WS5.19): public /miners worker names embed the
+  // vast instance id ("vast-58077390-qtu") or the agent rig id — substring
+  // match is the join key. Live pool H/s then shows next to each rig.
+  const workersFor = (key: string | number) =>
+    poolMiners.filter((m) => m.worker.includes(String(key)));
+  const sumHps = (ms: PoolMiner[]) =>
+    ms.reduce((a, m) => a + (m.display_hps ?? m.hashrate_hps ?? 0), 0);
 
   if (unauth) {
     return (
@@ -258,7 +334,7 @@ export default function OpsClient() {
             <thead>
               <tr>
                 <th>Rig</th><th>GPU</th><th>Status</th><th>T/P</th>
-                <th>Mining</th><th>Shares</th><th>$/h</th>
+                <th>Mining</th><th>Shares</th><th>{t(lang, 'poolHps')}</th><th>$/h</th>
               </tr>
             </thead>
             <tbody>
@@ -267,6 +343,7 @@ export default function OpsClient() {
                 const acc = ms.reduce((a, m) => a + (m.hashrate?.a ?? 0), 0);
                 const rej = ms.reduce((a, m) => a + (m.hashrate?.r ?? 0), 0);
                 const down = r.status !== 'running';
+                const pms = workersFor(r.id);
                 return (
                   <>
                     <tr key={r.id} onClick={() => setExpanded(expanded === r.id ? null : r.id)} style={{ cursor: 'pointer' }}>
@@ -284,17 +361,31 @@ export default function OpsClient() {
                         ))}
                       </td>
                       <td>{acc}<span className="text-muted">/{rej}</span></td>
+                      <td style={{ fontSize: '.8rem' }}>
+                        {pms.length > 0
+                          ? <><b>{fmtHps(sumHps(pms))}</b><br /><span className="text-muted">{pms.map((m) => m.display_coin ?? '?').join(' ')}</span></>
+                          : <span className="text-muted">—</span>}
+                      </td>
                       <td>{fmtUsd(r.dph, 3)}</td>
                     </tr>
                     {expanded === r.id && (
                       <tr key={`${r.id}-x`}>
-                        <td colSpan={7} style={{ fontFamily: 'monospace', fontSize: '.75rem', background: 'rgba(255,255,255,.02)' }}>
+                        <td colSpan={8} style={{ fontFamily: 'monospace', fontSize: '.75rem', background: 'rgba(255,255,255,.02)' }}>
                           {ms.map((m, i) => (
                             <div key={i} style={{ padding: '.3rem 0', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
                               <b>pid {m.pid}</b> · uptime {m.etime ?? '—'} · <span className="text-muted">{m.cmd}</span>
                             </div>
                           ))}
                           {ms.length === 0 && <span className="text-muted">no miners</span>}
+                          {pms.length > 0 && (
+                            <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: '.3rem', marginTop: '.3rem' }}>
+                              {pms.map((m, i) => (
+                                <div key={`p${i}`} style={{ padding: '.15rem 0' }}>
+                                  <b>pool</b> {fmtHps(m.display_hps ?? m.hashrate_hps)} · {m.display_coin ?? '?'} · <span className="text-muted">{m.worker}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     )}
@@ -302,7 +393,7 @@ export default function OpsClient() {
                 );
               })}
               {rigs.length === 0 && (
-                <tr><td colSpan={7} className="text-muted" style={{ textAlign: 'center', padding: '1.5rem' }}>—</td></tr>
+                <tr><td colSpan={8} className="text-muted" style={{ textAlign: 'center', padding: '1.5rem' }}>—</td></tr>
               )}
             </tbody>
           </table>
@@ -328,6 +419,7 @@ export default function OpsClient() {
                 const applied = a.desired?.hash
                   ? (a.desired.hash === a.applied_sheet ? '✓' : '⟳ pending')
                   : '—';
+                const pms = workersFor(a.rig_id);
                 return (
                   <Fragment key={a.rig_id}>
                     <tr onClick={() => setExpandedAgent(expandedAgent === a.rig_id ? null : a.rig_id)} style={{ cursor: 'pointer' }}>
@@ -341,7 +433,14 @@ export default function OpsClient() {
                     <td>{applied}</td>
                     <td>{a.age_s != null ? fmtAge(a.last_seen) : '—'}<br /><span className="text-muted" style={{ fontSize: '.72rem' }}>{a.load1 != null ? `load ${a.load1}` : ''}</span></td>
                     <td>{(a.gpus ?? []).map((g) => `${g.name ?? '?'} ${g.temp ?? ''}°`).join(', ') || '—'}</td>
-                    <td>{(a.miners ?? []).join(', ') || '—'}</td>
+                    <td>
+                      {(a.miners ?? []).join(', ') || '—'}
+                      {pms.length > 0 && (
+                        <div style={{ fontSize: '.75rem', color: 'var(--good, #3ddc84)' }}>
+                          ⇒ {fmtHps(sumHps(pms))} pool
+                        </div>
+                      )}
+                    </td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <SheetPicker target={{ rig_id: a.rig_id }} />
                       <div style={{ marginTop: '.3rem', display: 'flex', gap: '.3rem' }}>
@@ -519,6 +618,56 @@ export default function OpsClient() {
           <button type="submit" className="ops-mini-btn">{t(lang, 'benchAdd')}</button>
         </form>
       </div>
+
+      {/* AI inference (WS5.20) */}
+      {ai && (
+        <div className="pool-card" style={{ marginTop: '1.25rem', padding: 0 }}>
+          <h2 style={{ padding: '1rem 1rem .5rem', fontSize: '1.05rem', margin: 0 }}>
+            {t(lang, 'aiTitle')}
+            <span className="text-muted" style={{ fontSize: '.78rem', fontWeight: 400, marginLeft: '.5rem' }}>
+              {ai.totals?.gpu_count ?? 0} GPU · {fmtMib(ai.totals?.memory_used_mib)}/{fmtMib(ai.totals?.memory_total_mib)} {t(lang, 'aiVram')} · {ai.totals?.inference_rigs ?? 0} {t(lang, 'aiRigs')}
+              {ai.hiran && (
+                <span style={{ color: ai.hiran.reachable ? 'var(--good, #3ddc84)' : 'var(--bad, #ff6b6b)' }}>
+                  {' '}· {t(lang, 'hiran')}: {ai.hiran.reachable ? (ai.hiran.model ?? 'ok') : 'down'}
+                </span>
+              )}
+            </span>
+          </h2>
+          <div className="table-scroll">
+            <table className="pool-table">
+              <thead>
+                <tr><th>Rig</th><th>GPU · VRAM</th><th>Util/Temp</th><th>Server</th><th>Models</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {(ai.rigs ?? []).map((r) => (
+                  <tr key={r.id}>
+                    <td><b>#{r.id}</b><br /><span className="text-muted" style={{ fontSize: '.75rem' }}>{r.gpu_name ?? ''}</span></td>
+                    <td style={{ fontSize: '.8rem' }}>
+                      {(r.gpus ?? []).map((g, i) => (
+                        <div key={i}>{g.name.split(' ').pop()} <span className="text-muted">{fmtMib(g.memory_used_mib)}/{fmtMib(g.memory_total_mib)}</span></div>
+                      ))}
+                      {r.gpus.length === 0 && '—'}
+                    </td>
+                    <td style={{ fontSize: '.8rem' }}>
+                      {(r.gpus ?? []).map((g, i) => <div key={i}>{g.utilization_pct}% · {g.temperature_c}°{g.power_w != null ? ` · ${Math.round(g.power_w)}W` : ''}</div>)}
+                    </td>
+                    <td style={{ fontSize: '.8rem' }}>{r.servers.join(', ') || '—'}</td>
+                    <td style={{ fontSize: '.75rem', maxWidth: '16rem' }}>{r.models.join(', ') || '—'}</td>
+                    <td>
+                      <span style={{ color: r.inference_reachable ? 'var(--good, #3ddc84)' : 'var(--bad, #ff6b6b)', fontSize: '.8rem' }}>
+                        {r.inference_reachable ? t(lang, 'reachable') : (r.error ?? '—')}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {(ai.rigs ?? []).length === 0 && (
+                  <tr><td colSpan={6} className="text-muted" style={{ textAlign: 'center', padding: '1.25rem' }}>—</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Events */}
       <div className="pool-card" style={{ marginTop: '1.25rem', padding: '1rem' }}>
