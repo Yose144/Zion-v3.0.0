@@ -117,11 +117,23 @@ User chat ──zis_*────────────► gateway ──► m
 
 **Done when:** `GET …/v1/models` ukáže `hiran-coder` live; jeden chat turn OK s `zis_*`. ✅
 
-> **GPU mutex:** 1070 Ti unese jen hiran **nebo** coder. `use-coder.sh` stopne `zion-hiran-cuda` → mini padá na EDGE2 CPU / tunnel fallback. Zpět: `use-hiran.sh` + stop `zion-coder-tunnel`.
+### GPU duty (1070 Ti)
+
+Produkční default = **mini na GPU**. Coder je on-demand (sdílená VRAM, jeden model).
+
+| Režim | Příkaz (ops PC, `~/zion-hiran/`) | Gateway |
+|---|---|---|
+| Mini (default) | `bash use-hiran.sh` — stop `zion-coder-cuda` + `zion-coder-tunnel` | `hiran-mini` live, `hiran-coder` offline |
+| Coder | `bash use-coder.sh` — start `:8072` + `zion-coder-tunnel` (`-R 8005`) | `hiran-coder` live, mini na CPU fallback |
+
+Šablona tunelu: [`V31/deploy/local/zion-coder-tunnel.service`](V31/deploy/local/zion-coder-tunnel.service).  
+**29.10. večer:** provoz vrácen na mini (`hiran-cuda` active, coder+tunnel inactive, public mini live / coder false).
+
+Sync agenta na rig (bez nového enrollu): `bash infra/tools/vast/bootstrap-agent.sh <id> --sync-only`.
 
 ### P1 — Reálný weight na rigu (ne stub)
 
-**Proč:** Smoke dokázal jail + enqueue; produkt potřebuje GGUF/vLLM.
+**Proč:** Lokální stub na rigu není produkt. Kanon `code.run` = lease → gateway (hotovo). GGUF/vLLM na rigu je volitelný offline fallback.
 
 - [x] Fleet ≥1 enrolled — `58077390` live (age_s < 10, 29.10.)
 - [ ] Image s **Dockerem** → vLLM pin **nebo** manuální llama.cpp GGUF (ne OpenAI stub)

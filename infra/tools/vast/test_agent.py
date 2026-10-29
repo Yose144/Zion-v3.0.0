@@ -140,6 +140,21 @@ class CodeRunPolicyTests(unittest.TestCase):
         a = self.cr.validate_code_run_args({"prompt": "hi", "max_turns": 99})
         self.assertEqual(a["max_turns"], 8)
         self.assertNotIn("llm_key", a)
+        leased = self.cr.validate_code_run_args({
+            "prompt": "hi",
+            "lease_token": "hiran_lease_" + ("ab" * 20),
+            "llm_key": "zis_should_be_stripped",
+            "llm_base": "https://market.zionterranova.com/v1",
+            "model": "hiran-coder",
+        })
+        self.assertTrue(leased["lease_token"].startswith("hiran_lease_"))
+        self.assertNotIn("llm_key", leased)
+        self.assertEqual(leased["model"], "hiran-coder")
+        with self.assertRaises(ValueError):
+            self.cr.validate_code_run_args({
+                "prompt": "hi",
+                "lease_token": "zis_not_a_lease",
+            })
 
     def test_run_code_job_no_llm(self):
         from pathlib import Path
