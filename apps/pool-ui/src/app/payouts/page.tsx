@@ -21,21 +21,22 @@ export default function PayoutsPage() {
   const [rows, setRows] = useState<PayoutRow[]>([]);
 
   useEffect(() => {
-    fetchPayouts(coin || undefined).then(setRows);
+    fetchPayouts(coin || undefined, 500).then(setRows);
   }, [coin]);
 
-  // Daily paid volume (ZION-denominated rows only — external-coin payouts
-  // carry their own units and would distort the sum).
-  const dayTotals = (() => {
+  // Paid volume per hour (API caps at 500 rows ≈ a few hours at the pool's
+  // payout cadence — hourly buckets are the honest granularity for it).
+  // Only ZION-denominated rows count; external-coin legs carry own units.
+  const hourTotals = (() => {
     const map = new Map<string, number>();
     for (const p of rows) {
       if (!p.ts || p.unit !== 'ZION') continue;
-      const day = new Date(p.ts * 1000).toISOString().slice(0, 10);
-      map.set(day, (map.get(day) ?? 0) + p.amount);
+      const hour = new Date(p.ts * 1000).toISOString().slice(0, 13) + ':00';
+      map.set(hour, (map.get(hour) ?? 0) + p.amount);
     }
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])).slice(-14);
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])).slice(-24);
   })();
-  const dayMax = Math.max(0, ...dayTotals.map(([, v]) => v));
+  const hourMax = Math.max(0, ...hourTotals.map(([, v]) => v));
 
   return (
     <div className="pt-8">
@@ -97,24 +98,24 @@ export default function PayoutsPage() {
         </div>
       </div>
 
-      {/* Daily payout volume — ZION rows */}
-      {dayTotals.length > 1 && (
+      {/* Payout volume — ZION rows, hourly buckets */}
+      {hourTotals.length > 1 && (
         <div className="pool-card card-glow mt-6">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-bold uppercase tracking-wider text-white/70">
-              {t('vyplaceno ZION / den', 'ZION paid / day')}
+              {t('vyplaceno ZION / hod', 'ZION paid / hour')}
             </h3>
             <span className="stat-value text-[0.7rem] text-white/35">
-              {dayTotals.length} {t('dní', 'days')}
+              {hourTotals.length} h
             </span>
           </div>
           <div className="flex h-20 items-end gap-1">
-            {dayTotals.map(([day, v]) => (
+            {hourTotals.map(([hour, v]) => (
               <div
-                key={day}
+                key={hour}
                 className="group relative flex-1 rounded-t-sm bg-gradient-to-t from-rasta-gold/15 to-rasta-gold/60 transition-colors hover:to-rasta-gold"
-                style={{ height: `${Math.max(4, (v / (dayMax || 1)) * 100)}%` }}
-                title={`${day.slice(5)}: ${fmtAmount(v, 'ZION')} ZION`}
+                style={{ height: `${Math.max(4, (v / (hourMax || 1)) * 100)}%` }}
+                title={`${hour.slice(5)}: ${fmtAmount(v, 'ZION')} ZION`}
               >
                 <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[0.6rem] font-bold text-rasta-gold opacity-0 transition-opacity group-hover:opacity-100">
                   {fmtAmount(v, 'ZION')}
@@ -123,8 +124,8 @@ export default function PayoutsPage() {
             ))}
           </div>
           <div className="mt-1 flex justify-between text-[0.6rem] text-white/25">
-            <span>{dayTotals[0]?.[0].slice(5)}</span>
-            <span>{dayTotals[dayTotals.length - 1]?.[0].slice(5)}</span>
+            <span>{hourTotals[0]?.[0].slice(5)}</span>
+            <span>{hourTotals[hourTotals.length - 1]?.[0].slice(5)}</span>
           </div>
         </div>
       )}

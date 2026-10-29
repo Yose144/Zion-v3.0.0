@@ -310,12 +310,14 @@ export async function fetchBlocks(coin?: CoinId): Promise<{ rows: BlockRow[]; ti
   };
 }
 
-export async function fetchPayouts(coin?: CoinId): Promise<PayoutRow[]> {
+export async function fetchPayouts(coin?: CoinId, limit = 50): Promise<PayoutRow[]> {
   if (USE_MOCK) {
     return mock.PAYOUTS.filter((p) => !coin || p.coin === coin);
   }
-  const q = coin && POOL_COIN[coin] ? `?coin=${POOL_COIN[coin]}` : '';
-  const { payouts } = await get<{ payouts: ApiPayout[] }>(`/payouts${q}`);
+  const params = new URLSearchParams();
+  if (coin && POOL_COIN[coin]) params.set('coin', POOL_COIN[coin]);
+  params.set('limit', String(limit));
+  const { payouts } = await get<{ payouts: ApiPayout[] }>(`/payouts?${params}`);
   return payouts.map((p) => toPayoutRow(UI_ID[p.coin] ?? 'multi', p));
 }
 
