@@ -130,6 +130,8 @@ type AgentRig = {
   miners?: string[];
   pending: number;
   results: number;
+  tasks_tail?: { id: string; op: string; state: string; ts?: number }[];
+  results_tail?: { task_id?: string; rc?: number; out?: string; ts?: number }[];
 };
 type SmosRig = {
   id: number;
@@ -914,6 +916,104 @@ export default function Dashboard() {
       setBusy("");
     }
   };
+  // ── F3 Coding Agent (fleet code.run) ──
+  const [codeRig, setCodeRig] = useState("");
+  const [codePrompt, setCodePrompt] = useState("");
+  const [codeLog, setCodeLog] = useState("");
+  const [codeTaskId, setCodeTaskId] = useState<string | null>(null);
+  const [codeState, setCodeState] = useState("");
+  const codeAgents = snap?.agents || [];
+  const runCodeAgent = async () => {
+    const prompt = codePrompt.trim();
+    const rig = codeRig || codeAgents.find((a) => (a.age_s ?? 1e9) < 300)?.rig_id || "";
+    if (!prompt || !rig) {
+      setCodeLog(!rig
+        ? "No fleet agent online — enroll a vast rig first (2.B11)."
+        : "Enter a prompt.");
+      return;
+    }
+    setBusy("code:run");
+    setCodeLog("enqueue…");
+    setCodeState("pending");
+    setCodeTaskId(null);
+    try {
+      const res = await fetch("/vast-ops/api/inference/code-run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rig_id: rig,
+          prompt,
+          args: { prompt, max_turns: 4, force: true },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        setCodeLog(data?.error || `HTTP ${res.status}`);
+        setCodeState("error");
+        return;
+      }
+      const tid = data.task?.id as string;
+      setCodeTaskId(tid);
+      setCodeRig(rig);
+      setCodeLog(`queued ${tid} on ${rig} — waiting for result…`);
+      setCodeState(data.task?.state || "pending");
+    } catch (e) {
+      setCodeLog(String(e));
+      setCodeState("error");
+    } finally {
+      setBusy("");
+    }
+  };
+  const cancelCodeAgent = async () => {
+    if (!codeTaskId || !codeRig) return;
+    setBusy("code:cancel");
+    try {
+      const res = await fetch("/vast-ops/api/inference/code-cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rig_id: codeRig, task_id: codeTaskId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setCodeLog((prev) => `${prev}\n[cancel] ${data?.state || data?.error || res.status}`);
+      setCodeState(data?.state || "cancelled");
+    } catch (e) {
+      setCodeLog((prev) => `${prev}\n[cancel] ${e}`);
+    } finally {
+      setBusy("");
+    }
+  };
+  useEffect(() => {
+    if (!codeTaskId || !codeRig) return;
+    if (["done", "failed", "cancelled", "error"].includes(codeState)) return;
+    let stop = false;
+    const tick = () => {
+      const a = (snap?.agents || []).find((x) => x.rig_id === codeRig);
+      const t = a?.tasks_tail?.find((x) => x.id === codeTaskId);
+      const r = a?.results_tail?.find((x) => x.task_id === codeTaskId);
+      if (r) {
+        if (!stop) {
+          setCodeState(r.rc === 0 ? "done" : "failed");
+          setCodeLog(r.out || `(rc=${r.rc})`);
+        }
+        return;
+      }
+      if (t && !stop) setCodeState(t.state);
+      fetch(`/vast-ops/api/agent/task?rig_id=${encodeURIComponent(codeRig)}&task_id=${encodeURIComponent(codeTaskId)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (stop || !data?.ok) return;
+          if (data.task?.state) setCodeState(data.task.state);
+          if (data.result) {
+            setCodeState(data.result.rc === 0 ? "done" : "failed");
+            setCodeLog(data.result.out || `(rc=${data.result.rc})`);
+          }
+        })
+        .catch(() => {});
+    };
+    tick();
+    const iv = setInterval(tick, 4000);
+    return () => { stop = true; clearInterval(iv); };
+  }, [codeTaskId, codeRig, codeState, snap?.agents]);
   const [open, setOpen] = useState<Record<number, boolean>>({});
   const [tab, setTab] = useState<"mining" | "ai" | "market" | "pool">("mining");
   useEffect(() => {
@@ -1160,6 +1260,10 @@ export default function Dashboard() {
                               {m.hf.split("/").pop()}
                             </span>
                             {m.internal && <span className="shrink-0 rounded-full border border-[#fcd116]/40 bg-[#fcd116]/10 px-1.5 py-px text-[8px] font-semibold text-[#fcd116]">ZION</span>}
+                            {m.tags.includes("trinity") && <span className="shrink-0 rounded-full border border-[#f0abfc]/40 bg-[#f0abfc]/10 px-1.5 py-px text-[8px] font-semibold text-[#f0abfc]">trinity</span>}
+                            {(m.tags.includes("coder-ready") || (m.tags.includes("code") && !m.mockup)) && (
+                              <span className="shrink-0 rounded-full border border-[#79c0ff]/50 bg-[#79c0ff]/10 px-1.5 py-px text-[8px] font-semibold text-[#79c0ff]">coder-ready</span>
+                            )}
                             {m.tags.includes("live") && <span className="shrink-0 rounded-full border border-[#34d399]/50 bg-[#34d399]/10 px-1.5 py-px text-[8px] font-semibold text-[#6ee7b7]">live</span>}
                             {m.mockup && <span className="shrink-0 text-[8px] italic text-white/35">planned</span>}
                           </div>
@@ -1175,7 +1279,7 @@ export default function Dashboard() {
                         </td>
                         <td className="px-3 py-2 max-lg:hidden">
                           <div className="flex flex-wrap gap-1">
-                            {m.tags.filter((t) => t !== "live").map((t) => (
+                            {m.tags.filter((t) => !["live", "trinity", "coder-ready"].includes(t)).map((t) => (
                               <span key={t} className="rounded-full bg-white/[0.06] px-1.5 py-px text-[9px] text-white/45">{t}</span>
                             ))}
                             {m.gated && <span className="rounded-full border border-[#fcd116]/30 px-1.5 py-px text-[9px] text-[#fcd116]">gated</span>}
@@ -1318,20 +1422,28 @@ export default function Dashboard() {
                         <div className="p-3 sm:p-4">
                           {eps.length > 0 ? (
                             <div className="mb-2.5 flex flex-wrap gap-1.5">
-                              {eps.map((e, i) => (
+                              {eps.map((e, i) => {
+                                const id = e.model.toLowerCase();
+                                const coderReady = /coder|devstral|issobella/.test(id);
+                                return (
                                 <button
                                   key={`${e.model}-${i}`}
                                   onClick={() => setRouterModel(e.model)}
-                                  title={`${e.model} @ ${e.where}`}
+                                  title={`${e.model} @ ${e.where}${coderReady ? " · coder-ready" : ""}`}
                                   className={`max-w-full truncate rounded-full border px-2.5 py-1 font-mono text-[10px] transition ${
                                     routerModel === e.model
                                       ? "border-[#a371f7]/60 bg-[#a371f7]/20 text-[#d8b4fe]"
-                                      : "border-white/10 bg-black/30 text-white/55 hover:border-white/25 hover:text-white/85"
+                                      : coderReady
+                                        ? "border-[#79c0ff]/35 bg-[#79c0ff]/[0.07] text-[#9ecbff] hover:border-[#79c0ff]/55"
+                                        : "border-white/10 bg-black/30 text-white/55 hover:border-white/25 hover:text-white/85"
                                   }`}
                                 >
-                                  {e.model.split("/").pop()} <span className="opacity-50">@{e.where}</span>
+                                  {e.model.split("/").pop()}{" "}
+                                  {coderReady && <span className="opacity-70">⚡</span>}
+                                  <span className="opacity-50">@{e.where}</span>
                                 </button>
-                              ))}
+                                );
+                              })}
                             </div>
                           ) : (
                             <p className="mb-2.5 text-[11px] text-white/40">
@@ -1367,6 +1479,91 @@ export default function Dashboard() {
                           {routerAns !== "" && (
                             <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[#a371f7]/15 bg-black/40 p-3 text-[11px] leading-relaxed text-[#d2a8ff]">
                               {routerAns}
+                            </pre>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* ── F3 Coding Agent ── */}
+                      <div className="mt-4 overflow-hidden rounded-xl border border-[#79c0ff]/25 bg-gradient-to-br from-[#79c0ff]/[0.06] to-black/20">
+                        <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] bg-white/[0.02] px-3 py-2.5 sm:px-4">
+                          <h3 className="text-sm font-semibold text-white">Coding Agent</h3>
+                          <span className="rounded-full border border-[#79c0ff]/35 bg-[#79c0ff]/10 px-2 py-0.5 text-[9px] font-semibold text-[#9ecbff]">
+                            fleet · code.run
+                          </span>
+                          <span className="text-[10px] text-white/35">
+                            {codeAgents.filter((a) => (a.age_s ?? 1e9) < 300).length}/{codeAgents.length} agents live
+                          </span>
+                          {codeState && (
+                            <span className="ml-auto rounded-full border border-white/15 px-2 py-0.5 font-mono text-[9px] text-white/55">
+                              {codeState}{codeTaskId ? ` · ${codeTaskId}` : ""}
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-3 sm:p-4">
+                          <p className="mb-2.5 text-[11px] leading-relaxed text-white/45">
+                            Enqueue a sandboxed coding job on an enrolled vast agent (cwd <span className="font-mono text-white/60">/root/work</span>).
+                            Needs vLLM on the rig <span className="font-mono">:8000</span>. Trinity models train later — today uses local coder weights.
+                          </p>
+                          {codeAgents.length === 0 ? (
+                            <p className="rounded-lg border border-dashed border-white/15 bg-black/30 p-3 text-[11px] text-white/40">
+                              No fleet agents in <span className="font-mono">status.json</span> — rent a rig, run{" "}
+                              <span className="font-mono text-white/55">bootstrap-agent.sh</span>, then refresh.
+                            </p>
+                          ) : (
+                            <>
+                              <div className="mb-2 flex flex-wrap gap-1.5">
+                                {codeAgents.map((a) => {
+                                  const live = (a.age_s ?? 1e9) < 300;
+                                  return (
+                                    <button
+                                      key={a.rig_id}
+                                      type="button"
+                                      onClick={() => setCodeRig(a.rig_id)}
+                                      className={`rounded-full border px-2.5 py-1 font-mono text-[10px] transition ${
+                                        codeRig === a.rig_id
+                                          ? "border-[#79c0ff]/60 bg-[#79c0ff]/20 text-[#9ecbff]"
+                                          : live
+                                            ? "border-[#34d399]/30 bg-[#34d399]/[0.06] text-[#6ee7b7]"
+                                            : "border-white/10 bg-black/30 text-white/40"
+                                      }`}
+                                    >
+                                      {a.hostname || a.rig_id}
+                                      <span className="opacity-50"> · {live ? "live" : "stale"}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex gap-1.5">
+                                <input
+                                  value={codePrompt}
+                                  onChange={(e) => setCodePrompt(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runCodeAgent(); } }}
+                                  placeholder="e.g. List files and summarize README"
+                                  className="min-h-9 min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-white/25 focus:border-[#79c0ff]/50 focus:outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={!!busy}
+                                  onClick={runCodeAgent}
+                                  className="min-h-9 shrink-0 rounded-lg border border-[#79c0ff]/40 bg-[#79c0ff]/10 px-4 text-xs font-semibold text-[#9ecbff] transition hover:bg-[#79c0ff]/20 disabled:opacity-40"
+                                >
+                                  {busy === "code:run" ? "…" : "Run"}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={!!busy || !codeTaskId || ["done", "failed", "cancelled", "error"].includes(codeState)}
+                                  onClick={cancelCodeAgent}
+                                  className="min-h-9 shrink-0 rounded-lg border border-white/20 bg-white/[0.04] px-3 text-xs font-semibold text-white/60 transition hover:border-white/35 hover:text-white disabled:opacity-40"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </>
+                          )}
+                          {codeLog !== "" && (
+                            <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[#79c0ff]/15 bg-black/40 p-3 text-[11px] leading-relaxed text-[#9ecbff]">
+                              {codeLog}
                             </pre>
                           )}
                         </div>

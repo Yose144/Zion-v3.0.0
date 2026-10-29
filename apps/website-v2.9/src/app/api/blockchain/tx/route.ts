@@ -18,6 +18,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
+import {
+  changeAmountAtomic,
+  markChangeOutputs,
+  senderAddressSet,
+  totalOutputAtomic,
+} from '@/lib/explorer/amount';
 
 function normalizeTxHash(raw: string): string {
   const trimmed = raw.trim();
@@ -74,8 +80,15 @@ export async function GET(request: NextRequest) {
     const isCoinbase = tx.from === 'coinbase' || (tx.inputs?.length === 0 && tx.outputs && tx.outputs.length > 0);
     const type = isCoinbase ? 'coinbase' : 'transfer';
 
-    const amountZion = tx.amount_zion ? Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION : 0;
-    const feeZion = (tx.fee_zion ?? tx.fee ?? 0) / ATOMIC_UNITS_PER_ZION;
+    // Net-vs-gross: `amount_zion` is the raw output sum which includes UTXO
+    // change returned to the sender. Report `amount` net of change and keep
+    // `amount_gross`/`change` for transparency.
+    const senders = senderAddressSet(tx);
+    const grossAtomic = tx.amount_zion ? Number(tx.amount_zion) : totalOutputAtomic(tx);
+    const changeAtomic = senders.size > 0 ? Math.min(grossAtomic, changeAmountAtomic(tx, senders)) : 0;
+    const netAtomic = Math.max(0, grossAtomic - changeAtomic);
+    const amountZion = netAtomic / ATOMIC_UNITS_PER_ZION;
+    const feeZion = tx.fee_zion != null ? tx.fee_zion / ATOMIC_UNITS_PER_ZION : (tx.fee ?? 0);
 
     // Build inputs/outputs for V31-native UTXO transactions
     const inputs: Array<{ address?: string; amount: number; type: string; key_image?: string; previous_output?: string; output_index?: number; script?: string }> =
@@ -89,14 +102,17 @@ export async function GET(request: NextRequest) {
         script: i.script,
       })) ?? [];
 
-    const outputs: Array<{ address: string; amount: number; type: string; key?: string; index?: number }> =
-      tx.outputs?.map((o, idx) => ({
-        address: o.address,
-        amount: o.amount / ATOMIC_UNITS_PER_ZION,
-        type: 'standard',
-        key: o.key,
-        index: idx,
-      })) ?? [];
+    const outputs: Array<{ address: string; amount: number; type: string; key?: string; index?: number; is_change?: boolean }> =
+      markChangeOutputs(
+        tx.outputs?.map((o, idx) => ({
+          address: o.address,
+          amount: o.amount / ATOMIC_UNITS_PER_ZION,
+          type: 'standard',
+          key: o.key,
+          index: idx,
+        })) ?? [],
+        senders,
+      );
 
     // Known address labels (first known address in comma-joined list)
     const firstKnown = (field?: string) => {
@@ -126,7 +142,9 @@ export async function GET(request: NextRequest) {
       in_pool: tx.in_pool ?? !confirmations,
       status: tx.in_pool ? 'pending' : (confirmations > 0 ? 'confirmed' : 'unknown'),
       amount: amountZion,
-      amount_zion: tx.amount_zion ?? String(Math.round(amountZion * ATOMIC_UNITS_PER_ZION)),
+      amount_zion: String(netAtomic),
+      amount_gross: grossAtomic / ATOMIC_UNITS_PER_ZION,
+      change: changeAtomic / ATOMIC_UNITS_PER_ZION,
       fee: feeZion,
       fee_zion: tx.fee_zion ?? 0,
       size: 0,

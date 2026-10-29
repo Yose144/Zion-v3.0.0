@@ -103,6 +103,7 @@ interface TxRow {
   status: string;
   type?: string;
   confirmations?: number;
+  direction?: string;
 }
 
 type TxsApiResponse =
@@ -168,6 +169,7 @@ export default function TxsPageClient() {
             ),
             type: String(tx.type || "transfer"),
             confirmations: Number(tx.confirmations || 0),
+            direction: tx.direction ? String(tx.direction) : undefined,
           }))
           .filter((tx) => tx.hash);
         if (append) setTransactions((prev) => [...prev, ...newTxs]);
@@ -473,9 +475,13 @@ export default function TxsPageClient() {
                     {tx.fee > 0 ? tx.fee.toFixed(6) : "—"}
                   </div>
 
-                  {/* amount */}
-                  <div className="flex items-center justify-end text-[13px] text-white font-semibold tabular-nums">
-                    {tx.amount > 0 ? `${formatZion(tx.amount, 4)} ₿Z` : "—"}
+                  {/* amount — net of change; ± direction when address-filtered */}
+                  <div className={`flex items-center justify-end text-[13px] font-semibold tabular-nums ${
+                    tx.direction === 'in' ? 'text-zion-cyan' : tx.direction === 'out' ? 'text-zion-purple' : 'text-white'
+                  }`}>
+                    {tx.amount > 0
+                      ? `${tx.direction === 'in' ? '+' : tx.direction === 'out' ? '−' : ''}${formatZion(tx.amount, 4)} ZION`
+                      : "—"}
                   </div>
                 </Link>
               ))}

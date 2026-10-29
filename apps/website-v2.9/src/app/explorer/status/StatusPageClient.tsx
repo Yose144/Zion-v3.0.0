@@ -621,7 +621,7 @@ export default function StatusPageClient() {
                 <div>
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{ExplorerStatusStatusPageClientCopy.reward[cs ? 'cs' : 'en']}</div>
                   <div className="text-xl font-bold text-zion-cyan tabular-nums">
-                    {stats.last_block.reward.toFixed(2)} ₿Z
+                    {stats.last_block.reward.toFixed(2)} ZION
                   </div>
                 </div>
                 <div>

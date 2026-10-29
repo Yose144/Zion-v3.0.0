@@ -69,7 +69,19 @@
 - **Synergie:** B2B-3 metering + ZIS keys = auth; Maestro/ai-native tool layer = seed pro agent tools; NCL = heavy jobs.
 - **MVP scope (návrh):** REPL + one-shot `zion agent -p "…"`, tool allowlist, Hiran `hiran-mini` default, Pro unlock větších modelů; žádný silent cloud exfil.
 - **Priorita:** hned za B2B-3 paid — stejný fiat rail, vyšší ARPU než raw API; spec `docs/3.2/B2B_HIRAN_AGENT_CLI.md`.
+- **Stav (2026-10-29):** ✅ MVP + ZIS device-code login — `zion hiran login|whoami|subscribe` + agent loop; Stripe/`X-API-Key` upgrade + Base USDC MetaMask; kanon [`HIRAN-CLI-AUTH.md`](HIRAN-CLI-AUTH.md). **Další:** sjednocení s Vast `#ai` + fleet → [`docs/3.2/VAST_HIRAN_CODING_AGENT_PLAN.md`](docs/3.2/VAST_HIRAN_CODING_AGENT_PLAN.md) (B2B #4c).
 - **Čas:** 3–6 týdnů po live Hiran API (reuse gateway + Stripe).
+
+#### B2B-3c · Vast Coding Agent (sjednocení `#ai` + fleet + CLI)
+- **Nápad (29.10.):** jeden coding agent napříč `/vast-rigs/#ai` (katalog/vLLM), fleet agentem (2.B11) a Hiran CLI — autonomní programování na vast.io s EU/Hiran metering.
+- **MVP:** model alias `hiran-coder` → vast vLLM / PC coder / EDGE2; na rigu op `code.run` (tool jail); UI karta + `zion hiran agent --remote vast`.
+- **Priorita:** po enrollu rigu (2.B11) a po B2B-3b; plán `docs/3.2/VAST_HIRAN_CODING_AGENT_PLAN.md`.
+- **Train-first:** kvalitní agent = Issobella po FT (#4d); scaffold F1–F3 mezitím na mini + generic coder.
+
+#### B2B-3d · Hiran Trinity (Amitábha / Issobella / Maitreya)
+- **Nápad:** tři persony z `#ai` katalogu (dnes `mockup`) — Hlas / Code / Teacher — společný ZION constitution, oddělené LoRA.
+- **Pořadí:** shared dataset → Maitreya (lore) → Amitábha (reason) → Issobella (agentic code).
+- **Gate:** licence korpusu + eval suite; train na vast GPU (👤 kredit).
 
 ### B. Krátký horizont (1–3 měsíce) — služby založené na stacku
 
@@ -136,7 +148,9 @@
 | 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤→✅ | 2.B7 | 🟢 ZION recovery live (`defdcd84a`). ✅ **QTC politika 29.10.** — `docs/3.2/QTC_PAYOUT_POLICY.md` (honest hold / hybrid D) + pool FAQ update. Funding treasury = 👤 |
 | 3 | `PRL_PAYOUT_DRY_RUN=0` po dry-batch review + sweep do oyster | 👤🔀 | 2.B6 | 🔍 review hotový — 0 pending; flip až po PRL aktivitě |
 | 4 | Hiran API MVP spec: `/v1/models` gateway + `X-API-Key` (ZIS) + Stripe price page | 🤖 | ZIS keys | ✅ free + **Pro/Team prices** (`price_1UViLH…` / `price_1UViLI…`) + dual webhooks shop/gateway; hiranBilling=true |
-| 4b | Hiran Agent v `zion` CLI (B2B-3b) — Cursor/Claude/Devin-class coding agent | 🤖 | #4 paid | 📝 spec `docs/3.2/B2B_HIRAN_AGENT_CLI.md`; implementace po Stripe |
+| 4b | Hiran Agent v `zion` CLI (B2B-3b) — Cursor/Claude/Devin-class coding agent | 🤖 | #4 paid | ✅ MVP + **ZIS login** (`zion hiran login`) + Stripe/MetaMask subscribe; kanon `HIRAN-CLI-AUTH.md`; public packaging později |
+| 4c | Vast + Hiran Coding Agent — sjednocení `/vast-rigs/#ai` + fleet 2.B11 + CLI | 🤖 | #4b, 2.B11 enroll | ✅ F0–F3 + E2E smoke 29.10. na `58077390` (`code.run`→`read_file` SMOKE_OK); reálný vLLM až Docker image |
+| 4d | Hiran Trinity fine-tune — ZION-komplexní persony | 🤖→👤 | korpus licence, vast GPU $ | 📝 Marketplace §FT + Coding plán §FT; pořadí Maitreya→Amitábha→Issobella; eval suite |
 | 5 | One-pager "Pool-as-a-Service" (CS+EN) + seznam 10 cílových PoW coinů | 🤖 | — | ✅ + outreach balíček `docs/3.2/B2B_POOL_OUTREACH.md` (gate = QTC politika) |
 | 6 | Regtest dry-run `build_admin_unlock_tx` 3-of-3 (1.B5) — před 144k | 🤖 | PREMINE_UNLOCK.md | ✅ PASS (158 s, reálná node cesta, DAO height gate drží) |
 
@@ -159,4 +173,4 @@
 
 ---
 
-*Souvisí: `docs/3.2/3.2.1-3.2.9_PLAN.md` (položky 2.B6/2.B7/5.B6/1.B5/1.S3), `HIRAN-MARKETPLACE-PLAN.md`, `docs/3.2/ESHOP_WORKFLOW_PLAN.md`, `docs/3.2/B2B_SOFT_LAUNCH.md`, `docs/3.2/QTC_PAYOUT_POLICY.md`, `docs/3.2/B2B_POOL_OUTREACH.md`, `docs/3.2/B2B_HIRAN_SECRETS.md`, `docs/3.2/B2B_HIRAN_AGENT_CLI.md`, `docs/3.2/PREMINE_UNLOCK.md`, `docs/3.2/DAO.md`.*
+*Souvisí: `docs/3.2/3.2.1-3.2.9_PLAN.md` (položky 2.B6/2.B7/5.B6/1.B5/1.S3/2.B11), `HIRAN-MARKETPLACE-PLAN.md`, `docs/3.2/ESHOP_WORKFLOW_PLAN.md`, `docs/3.2/B2B_SOFT_LAUNCH.md`, `docs/3.2/QTC_PAYOUT_POLICY.md`, `docs/3.2/B2B_POOL_OUTREACH.md`, `docs/3.2/B2B_HIRAN_SECRETS.md`, `docs/3.2/B2B_HIRAN_AGENT_CLI.md`, `docs/3.2/VAST_HIRAN_CODING_AGENT_PLAN.md`, `HIRAN-CLI-AUTH.md`, `VASTAI-MINING.md`, `docs/3.2/PREMINE_UNLOCK.md`, `docs/3.2/DAO.md`.*

@@ -1,7 +1,7 @@
 # Report — Pool QTU duplicate telemetry (2026-10-29)
 
-**Status:** code ready in local `main` worktree; **EDGE deploy intentionally stopped** (parallel pool work elsewhere — do not collide).  
-**Operator:** desktop-agent QTU rejects investigation → pool-side visibility fix.
+**Status:** **FIXED & LIVE** (2026-10-29) — dual-SRB per GPU + pool EN1 entropy fix; canary 0 local_dedup.  
+**Operator:** desktop-agent QTU rejects → miner partition + pool EN1 + telemetry.
 
 ---
 
@@ -55,10 +55,31 @@ Backup path prepared/intended: `/root/pool-deploy-backup-20261029-dedup-telem` (
 
 **Rollback (if a bad binary was swapped):** restore `zion-pool.running` from that backup dir over `/opt/zion/V31/target/release/zion-pool` + `systemctl restart zion-v31-pool`.
 
-## 5. What this does *not* fix
+## 5. Fix shipped (2026-10-29 ~14:40–14:57 CET)
 
-- Dual-GPU SRB duplicate **rate** (~30 %) — needs miner-side nonce partition (1 GPU, 2 SRB workers, or internal V3 miner salt). Pool dedup staying strict is correct.
-- Historical SRB reject counters — only future pool `/miners` / metrics after deploy.
+### Root causes
+
+1. **Dual-GPU / one SRB session** (`srbminerGpuId=0,1`) → one extranonce → overlapping nonce → `reserve_external_share` `duplicate`.
+2. **Pool EN1 entropy bug:** session EN1 used BE high-4-bytes of nanos (constant ~4.3 s) → two logins in the same window got the **same** EN1 even with separate workers.
+
+### Changes
+
+| Layer | Change |
+|---|---|
+| Desktop agent | [`apps/desktop-agent/src/main.js`](../../../apps/desktop-agent/src/main.js): multi-ID `srbminerGpuId` → **N SRB processes** (`dest-zion.gpu0` / `.gpu1`, API 21550+) |
+| Pool | [`stratum.rs`](../../../V31/L1/pool/src/stratum.rs) QTU EN1 = LE low-4-bytes + seq mix (EDGE build deployed) |
+| Pool unit | [`zion-v31-pool.service`](../../../V31/deploy/systemd/zion-v31-pool.service) ExecStart primary-only `:9445` (anti tip-affinity fork) |
+
+### Canary (post dual-SRB + EN1 fix, ~3 min)
+
+- Pool journal: **0× local_dedup**, **11×** QTU accepted
+- SRB gpu0: **A:2 R:0** (~103 MH/s); gpu1: **A:2 R:0** (~61 MH/s)
+- Tips primary/node2/node3 aligned during window
+
+### What this does *not* change
+
+- Pool dedup stays strict (correct anti-double-credit).
+- Historical SRB lifetime A/R counters from before restart are irrelevant — use post-restart logs.
 
 ## 6. Resume checklist (when pool lane is free)
 

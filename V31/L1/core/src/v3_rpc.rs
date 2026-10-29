@@ -402,9 +402,15 @@ impl V3RpcHandler {
             .get("address")
             .and_then(Value::as_str)
             .ok_or_else(|| V3RpcError::Parse("address required".to_string()))?;
+        let limit = params.get("limit").and_then(Value::as_u64).map(|v| v as usize);
+        let offset = params.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
         let utxos = self.storage.v3_utxos_by_address(address).await?;
+        let total_count = utxos.len();
+        let total_amount: u128 = utxos.iter().map(|(_, _, amount)| *amount as u128).sum();
         let out: Vec<Value> = utxos
             .into_iter()
+            .skip(offset)
+            .take(limit.unwrap_or(usize::MAX))
             .map(|(hash, idx, amount)| {
                 json!({
                     "tx_hash": hex(&hash),
@@ -413,7 +419,15 @@ impl V3RpcHandler {
                 })
             })
             .collect();
-        Ok(json!({ "address": address, "utxos": out, "count": out.len(), "model": "v3" }))
+        Ok(json!({
+            "address": address,
+            "utxos": out,
+            "count": out.len(),
+            "total_count": total_count,
+            "total_amount": total_amount.to_string(),
+            "offset": offset,
+            "model": "v3",
+        }))
     }
 
     async fn get_transaction(&self, params: &Value) -> Result<Value, V3RpcError> {
@@ -493,10 +507,33 @@ impl V3RpcHandler {
                 }
                 for utxo_tx in &block.utxo_transactions {
                     let is_recipient = utxo_tx.outputs.iter().any(|o| o.address == address);
-                    let is_sender = utxo_tx
-                        .inputs
-                        .iter()
-                        .any(|input| crate::crypto::derive_address(&input.public_key) == address);
+                    // Resolve the sender via the persistent `output_index`
+                    // (owner of the spent output). `input.public_key` is empty
+                    // on pool-created payouts, which made the old
+                    // derive_address(&[]) check never match — is_sender was
+                    // permanently false even for the pool wallet.
+                    let mut is_sender = false;
+                    for input in &utxo_tx.inputs {
+                        if let Ok(Some((owner, _))) = self
+                            .storage
+                            .get_output_owner(
+                                &zion_l1_types::Hash::new(input.prev_tx_hash),
+                                input.output_index,
+                            )
+                            .await
+                        {
+                            if owner == address {
+                                is_sender = true;
+                            }
+                        } else if !input.public_key.is_empty()
+                            && crate::crypto::derive_address(&input.public_key) == address
+                        {
+                            is_sender = true;
+                        }
+                        if is_sender {
+                            break;
+                        }
+                    }
                     if is_recipient || is_sender {
                         let received: u128 = utxo_tx
                             .outputs
@@ -634,19 +671,38 @@ impl V3RpcHandler {
     }
 
     async fn get_supply_info(&self) -> Result<Value, V3RpcError> {
-        let height = self.storage.v3_height().await?;
+        // Use V31 native chain height (not v3_height which is 0 for V31-only chains).
+        let height = self.storage.height().await?;
         let block_reward = crate::emission::block_subsidy(height.max(1));
-        let mined_flowers: u128 = {
-            let mut sum: u128 = 0;
+        let node_reward_activation = *self.node_reward_activation_height.lock().await;
+        // `mined` = subsidy actually minted. Blocks below the node-reward
+        // activation burn the 1% slot (it is never created), so they mint
+        // only `minted_subsidy` (99%). `burned` accumulates that destroyed
+        // share for transparency.
+        let (mined_flowers, burned_flowers): (u128, u128) = {
+            let mut mined: u128 = 0;
+            let mut burned: u128 = 0;
             let mut h: u64 = 1;
             while h <= height {
                 let decade_end = ((h - 1) / crate::emission::BLOCKS_PER_DECADE + 1)
                     * crate::emission::BLOCKS_PER_DECADE;
-                let blocks_in_range = decade_end.min(height) - h + 1;
-                sum += crate::emission::block_subsidy(h) as u128 * blocks_in_range as u128;
+                let seg_end = decade_end.min(height);
+                let subsidy = crate::emission::block_subsidy(h);
+                // Blocks below activation mint 99% and burn the 1% slot.
+                let burned_end = seg_end.min(node_reward_activation.saturating_sub(1));
+                if h <= burned_end {
+                    let n = (burned_end - h + 1) as u128;
+                    mined += crate::emission::minted_subsidy(subsidy) as u128 * n;
+                    burned += crate::emission::burned_subsidy(subsidy) as u128 * n;
+                }
+                // Activated blocks mint the full subsidy to the node pool.
+                if seg_end >= node_reward_activation {
+                    let act_start = h.max(node_reward_activation);
+                    mined += subsidy as u128 * (seg_end - act_start + 1) as u128;
+                }
                 h = decade_end + 1;
             }
-            sum
+            (mined, burned)
         };
         let circulating = crate::emission::GENESIS_PREMINE + mined_flowers;
         let remaining = crate::emission::TOTAL_SUPPLY.saturating_sub(circulating);
@@ -660,6 +716,8 @@ impl V3RpcHandler {
             "premine_flowers": crate::emission::GENESIS_PREMINE.to_string(),
             "mining_emission_flowers": crate::emission::MINING_EMISSION.to_string(),
             "mined_so_far_flowers": mined_flowers.to_string(),
+            "burned_so_far_flowers": burned_flowers.to_string(),
+            "node_reward_activation_height": node_reward_activation,
             "circulating_supply_flowers": circulating.to_string(),
             "remaining_supply_flowers": remaining.to_string(),
             "block_reward_flowers": block_reward,

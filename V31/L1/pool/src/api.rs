@@ -703,17 +703,18 @@ impl PoolApi {
                 ("200 OK", "application/json", body)
             }
             p if p.starts_with("/public/v1/coins/") && p.ends_with("/blocks") => {
-                let coin = p
-                    .trim_start_matches("/public/v1/coins/")
-                    .trim_end_matches("/blocks")
-                    .trim_matches('/');
+                let coin = internal_coin_key(
+                    p.trim_start_matches("/public/v1/coins/")
+                        .trim_end_matches("/blocks")
+                        .trim_matches('/'),
+                );
                 let limit = parse_query_limit(raw_path, 50);
                 match &self.share_store {
                     Some(store) => {
-                        let blocks = store.query_blocks_for_coin(coin, limit).unwrap_or_default();
+                        let blocks = store.query_blocks_for_coin(&coin, limit).unwrap_or_default();
                         let body = json!({
                             "ok": true,
-                            "coin": coin,
+                            "coin": public_ticker(&coin),
                             "tip": self.current_height.as_ref()
                                 .map(|h| h.load(Ordering::Relaxed)),
                             "blocks": serialize_public_blocks_json(&blocks),
@@ -734,7 +735,7 @@ impl PoolApi {
                     .split('/')
                     .collect();
                 let (coin, wallet) = (
-                    parts.first().copied().unwrap_or(""),
+                    internal_coin_key(parts.first().copied().unwrap_or("")),
                     parts.get(1).copied().unwrap_or(""),
                 );
                 let limit = parse_query_limit(raw_path, 50);
@@ -744,10 +745,10 @@ impl PoolApi {
                             .query_payouts_by_address(wallet, limit * 4)
                             .unwrap_or_default()
                             .into_iter()
-                            .filter(|r| r.coin == coin || coin.is_empty())
+                            .filter(|r| internal_coin_key(&r.coin) == coin || coin.is_empty())
                             .take(limit as usize)
                             .collect();
-                        let mut rows = queued_payouts_snapshot(&self.pool, coin, Some(wallet));
+                        let mut rows = queued_payouts_snapshot(&self.pool, &coin, Some(wallet));
                         if let serde_json::Value::Array(db) =
                             serialize_public_payouts_json(&payouts)
                         {
@@ -756,7 +757,7 @@ impl PoolApi {
                         rows.truncate(limit as usize);
                         let body = json!({
                             "ok": true,
-                            "coin": coin,
+                            "coin": public_ticker(&coin),
                             "wallet": wallet,
                             "payouts": rows,
                         })
@@ -865,7 +866,7 @@ impl PoolApi {
                 }
             }
             "/public/v1/payouts" => {
-                let coin = parse_query_param(raw_path, "coin").unwrap_or_default();
+                let coin = internal_coin_key(&parse_query_param(raw_path, "coin").unwrap_or_default());
                 let limit = parse_query_limit(raw_path, 50);
                 match &self.share_store {
                     Some(store) => {
@@ -873,7 +874,7 @@ impl PoolApi {
                             .query_all_payouts(limit * 4)
                             .unwrap_or_default()
                             .into_iter()
-                            .filter(|r| coin.is_empty() || r.coin == coin)
+                            .filter(|r| coin.is_empty() || internal_coin_key(&r.coin) == coin)
                             .take(limit as usize)
                             .collect();
                         let mut rows = queued_payouts_snapshot(&self.pool, &coin, None);
@@ -1027,7 +1028,7 @@ impl PoolApi {
                                     "amount_flowers": p.amount,
                                     "share_count": p.share_count,
                                     "unit": p.unit(),
-                                    "coin": p.coin.as_deref(),
+                                    "coin": p.coin.as_deref().map(public_ticker),
                                     "event": p.revenue_event.as_deref(),
                                 })
                             })
@@ -1040,7 +1041,7 @@ impl PoolApi {
                                 "amount_flowers": p.amount,
                                 "share_count": p.share_count,
                                 "unit": p.unit(),
-                                "coin": p.coin.as_deref(),
+                                "coin": p.coin.as_deref().map(public_ticker),
                                 "event": p.revenue_event.as_deref(),
                             })
                         }));
@@ -1066,7 +1067,7 @@ impl PoolApi {
                                     "amount_flowers": p.amount,
                                     "share_count": p.share_count,
                                     "unit": p.unit(),
-                                    "coin": p.coin.as_deref(),
+                                    "coin": p.coin.as_deref().map(public_ticker),
                                     "event": p.revenue_event.as_deref(),
                                 })
                             })
@@ -1082,7 +1083,7 @@ impl PoolApi {
                                         "address": &p.address,
                                         "amount_flowers": p.amount,
                                         "unit": p.unit(),
-                                        "coin": p.coin.as_deref(),
+                                        "coin": p.coin.as_deref().map(public_ticker),
                                         "event": p.revenue_event.as_deref(),
                                     })
                                 })
@@ -1329,7 +1330,7 @@ impl PoolApi {
                                             "application/json",
                                             serde_json::json!({
                                                 "ok": true,
-                                                "coin": journal.coin,
+                                                "coin": public_ticker(&journal.coin),
                                                 "amount": journal.amount_native,
                                                 "emitted": emitted,
                                                 "emitted_total": emitted_total,
@@ -1694,7 +1695,7 @@ impl PoolApi {
             .map(|p| {
                 let ticker = p.coin.as_str();
                 json!({
-                    "coin": ticker,
+                    "coin": public_ticker(ticker),
                     "algorithm": p.coin.algorithm(),
                     "device": format!("{:?}", p.device),
                     "profit_usd_day": p.estimate_profit(1.0),
@@ -1733,7 +1734,7 @@ impl PoolApi {
             })
             .map(|p| {
                 json!({
-                    "coin": p.coin.as_str(),
+                    "coin": public_ticker(p.coin.as_str()),
                     "profit_usd_day": p.estimate_profit(1.0),
                 })
             })
@@ -1748,7 +1749,7 @@ impl PoolApi {
             })
             .map(|p| {
                 json!({
-                    "coin": p.coin.as_str(),
+                    "coin": public_ticker(p.coin.as_str()),
                     "profit_usd_day": p.estimate_profit(1.0),
                 })
             })
@@ -1764,11 +1765,23 @@ impl PoolApi {
 
     /// Serialize up to `limit` most recent history samples (ascending ts).
     fn build_history_payload(&self, limit: usize) -> String {
-        let samples: Vec<HistorySample> = {
+        let mut samples: Vec<HistorySample> = {
             let h = self.history.lock().expect("history lock poisoned");
             let skip = h.len().saturating_sub(limit.min(h.len()));
             h.iter().skip(skip).cloned().collect()
         };
+        for s in &mut samples {
+            s.online_by_coin = s
+                .online_by_coin
+                .iter()
+                .map(|(k, v)| (public_ticker(k), *v))
+                .collect();
+            s.hashrate_by_coin = s
+                .hashrate_by_coin
+                .iter()
+                .map(|(k, v)| (public_ticker(k), *v))
+                .collect();
+        }
         json!({
             "ok": true,
             "interval_s": HISTORY_INTERVAL_S,
@@ -2266,7 +2279,7 @@ impl PoolApi {
             let key = leg.coin.to_ascii_lowercase();
             let entry = coins.entry(key.clone()).or_insert_with(|| {
                 json!({
-                    "coin": key,
+                    "coin": public_ticker(&key),
                     "payout_mode": if pl.is_native_payout_coin(&key) {
                         "native"
                     } else {
@@ -2402,13 +2415,14 @@ impl PoolApi {
                     .collect()
             })
             .unwrap_or_default();
+        let coin_key = internal_coin_key(&coin);
         let entries: Vec<serde_json::Value> = zion_cosmic_harmony::CoinProfile::all()
             .iter()
-            .filter(|p| coin.is_empty() || p.ticker().eq_ignore_ascii_case(&coin))
+            .filter(|p| coin.is_empty() || p.ticker().eq_ignore_ascii_case(&coin_key))
             .map(|p| {
                 let usd_day = p.estimate_profit(hps);
                 json!({
-                    "coin": p.ticker(),
+                    "coin": public_ticker(p.ticker()),
                     "algorithm": p.coin.algorithm(),
                     "device": format!("{:?}", p.device),
                     "served": served.contains(p.ticker()),
@@ -2435,6 +2449,10 @@ impl PoolApi {
         let (miners_in_window, top_share_pct, coins) =
             pl.public_window_summary();
         drop(pl);
+        let coins: serde_json::Map<String, serde_json::Value> = coins
+            .into_iter()
+            .map(|(k, v)| (public_ticker(&k), serde_json::json!(v)))
+            .collect();
         let window_total = stats.window_total_difficulty;
         json!({
             "ok": true,
@@ -2462,7 +2480,7 @@ impl PoolApi {
     }
 
     fn build_public_coin_stats_payload(&self, coin: &str) -> String {
-        let coin = coin.to_ascii_lowercase();
+        let coin = internal_coin_key(coin);
         // Served-job difficulty comes from per-leg job rings — gather it
         // BEFORE the pool mutex so a slow leg read can never wedge share
         // processing (the leg_inputs/detached pattern used elsewhere).
@@ -2546,7 +2564,7 @@ impl PoolApi {
         // here, so their payload omits the field entirely.
         let mut out = json!({
             "ok": true,
-            "coin": coin,
+            "coin": public_ticker(&coin),
             "miners_online": online,
             "active_miners": active_miners,
             "shares": {"accepted": valid, "rejected": invalid},
@@ -2604,7 +2622,7 @@ impl PoolApi {
     /// Miners are keyed `miner_id/worker`; the wallet matches the miner id
     /// prefix or a registered payout address.
     fn build_public_miner_payload(&self, coin: &str, wallet: &str) -> String {
-        let coin = coin.to_ascii_lowercase();
+        let coin = internal_coin_key(coin);
         let now_s = now_unix_seconds();
         let reg = self.telemetry.lock().expect("telemetry lock poisoned");
         let pl = self.pplns.lock().expect("pplns lock poisoned");
@@ -2729,7 +2747,7 @@ impl PoolApi {
 
         json!({
             "ok": true,
-            "coin": coin,
+            "coin": public_ticker(&coin),
             "wallet": wallet,
             "worker_count": workers.len(),
             "workers": workers,
@@ -2766,7 +2784,11 @@ impl PoolApi {
         limit: usize,
         worker: Option<String>,
     ) -> String {
-        let coin_key = if coin.is_empty() { "zion" } else { coin };
+        let coin_key = if coin.is_empty() {
+            "zion".to_string()
+        } else {
+            internal_coin_key(coin)
+        };
         let now_s = now_unix_seconds();
         let (extra_ids, store) = (
             self.pplns
@@ -2798,7 +2820,7 @@ impl PoolApi {
             let hps_map: std::collections::HashMap<String, f64> =
                 serde_json::from_str(&hps_json).unwrap_or_default();
             let entry = by_ts.entry(ts).or_default();
-            entry.0 += hps_map.get(coin_key).copied().unwrap_or(0.0);
+            entry.0 += hps_map.get(coin_key.as_str()).copied().unwrap_or(0.0);
             entry.1 = entry.1.saturating_add(accepted);
             entry.2 = entry.2.saturating_add(rejected);
         }
@@ -2812,7 +2834,7 @@ impl PoolApi {
             .collect();
         json!({
             "ok": true,
-            "coin": coin,
+            "coin": public_ticker(coin),
             "wallet": wallet,
             "interval_s": HISTORY_INTERVAL_S,
             "samples": samples,
@@ -3369,7 +3391,7 @@ fn miner_to_json(
                         )),
                     );
                 }
-                streams.insert(stream.clone(), serde_json::Value::Object(obj));
+                streams.insert(public_ticker(stream), serde_json::Value::Object(obj));
             }
             json!({
                 "worker": worker,
@@ -3644,7 +3666,7 @@ fn serialize_public_blocks_json(blocks: &[crate::store::DbBlockRow]) -> serde_js
                     None
                 };
                 json!({
-                    "coin": b.coin,
+                    "coin": public_ticker(&b.coin),
                     "height": b.height,
                     "hash": b.hash,
                     "miner": public_miner_id(&b.miner_id),
@@ -3684,16 +3706,38 @@ fn mask_zis_sub(sub: &str) -> String {
     format!("{head}…")
 }
 
+/// Canonical public ticker for a coin tag — `qtu`/`quantus` internally
+/// surface as `qtc` (the official Quantus ticker). Internal `qtc` means
+/// Qubitcoin (`ExternalCoin::Qubitcoin::as_str()`), which collides with
+/// Quantus's public ticker — it surfaces under its full name instead.
+fn public_ticker(coin: &str) -> String {
+    match coin.trim().to_ascii_lowercase().as_str() {
+        "qtu" | "quantus" => "qtc".to_string(),
+        "qtc" => "qubitcoin".to_string(),
+        c => c.to_string(),
+    }
+}
+
+/// Normalize an externally supplied coin selector back to the internal
+/// storage tag. `qtc`/`quantus` are aliases of the internal `qtu` tag
+/// (Quantus); `qubitcoin` resolves to the internal `qtc` tag.
+fn internal_coin_key(coin: &str) -> String {
+    match coin.trim().to_ascii_lowercase().as_str() {
+        "qtc" | "quantus" => "qtu".to_string(),
+        "qubitcoin" => "qtc".to_string(),
+        c => c.to_string(),
+    }
+}
+
 /// Queued (not-yet-broadcast) payouts from the in-memory PPLNS queue,
 /// serialized in the same shape as DB rows so clients can render one
 /// feed. `payout_chain` maps to the public coin id.
 fn queued_payout_json(height: u64, e: &crate::v3_pplns::PayoutEntry) -> serde_json::Value {
     let coin = match e.coin.as_deref() {
-        Some(c) => c.to_ascii_lowercase(),
+        Some(c) => public_ticker(c),
         None => match e.payout_chain.as_deref() {
             None | Some("") | Some("zion") => "zion".to_string(),
-            Some("quantus") => "qtu".to_string(),
-            Some(c) => c.to_ascii_lowercase(),
+            Some(c) => public_ticker(c),
         },
     };
     json!({
@@ -3726,7 +3770,7 @@ fn queued_payouts_snapshot(
         .filter(|row| {
             let c = row["coin"].as_str().unwrap_or_default();
             let a = row["address"].as_str().unwrap_or_default();
-            (coin_filter.is_empty() || c == coin_filter)
+            (coin_filter.is_empty() || internal_coin_key(c) == coin_filter)
                 && address_filter.map(|w| a == w).unwrap_or(true)
         })
         .collect()
@@ -3742,7 +3786,7 @@ fn serialize_public_payouts_json(payouts: &[crate::store::PayoutRow]) -> serde_j
                 json!({
                     "ts": p.ts,
                     "address": p.address,
-                    "coin": p.coin,
+                    "coin": public_ticker(&p.coin),
                     "amount_flowers": p.amount_flowers,
                     "tx_id": p.tx_id,
                     "height": p.height,
@@ -3762,7 +3806,7 @@ fn serialize_blocks_json(blocks: &[crate::store::DbBlockRow]) -> String {
     json!({
         "ok": true,
         "blocks": blocks.iter().map(|b| json!({
-            "coin": b.coin,
+            "coin": public_ticker(&b.coin),
             "height": b.height,
             "hash": b.hash,
             "miner_id": b.miner_id,
@@ -3784,7 +3828,7 @@ fn serialize_payouts_json(payouts: &[crate::store::PayoutRow]) -> String {
             "ts": p.ts,
             "miner_id": p.miner_id,
             "address": p.address,
-            "coin": p.coin,
+            "coin": public_ticker(&p.coin),
             "amount_flowers": p.amount_flowers,
             "tx_id": p.tx_id,
             "height": p.height,
@@ -4381,6 +4425,12 @@ mod tests {
             coins.len()
         );
         assert!(coins.iter().all(|c| c.get("served").is_some()));
+        // Quantus surfaces under its canonical public ticker `qtc`;
+        // Qubitcoin (internal `QTC`) is disambiguated to `qubitcoin`.
+        let qtc = coins.iter().find(|c| c["coin"] == "qtc").unwrap();
+        assert_eq!(qtc["algorithm"], "qpow-poseidon2");
+        let qbc = coins.iter().find(|c| c["coin"] == "qubitcoin").unwrap();
+        assert_eq!(qbc["algorithm"], "qhash");
         // Pearl is registered but deliberately disabled.
         let prl = coins.iter().find(|c| c["coin"] == "PRL").unwrap();
         assert_eq!(prl["enabled"], false);
@@ -4410,8 +4460,9 @@ mod tests {
         assert!(zion["fee_bps"].is_number());
         assert!(zion["min_payout"].is_string());
 
-        // QTU has both native and upstream legs folded under one coin.
-        let qtu = coins.iter().find(|c| c["coin"] == "qtu").unwrap();
+        // QTC (Quantus) has both native and upstream legs folded under
+        // one coin — the public payload emits the canonical `qtc` ticker.
+        let qtu = coins.iter().find(|c| c["coin"] == "qtc").unwrap();
         let kinds: Vec<&str> = qtu["legs"]
             .as_array()
             .unwrap()
@@ -4568,7 +4619,7 @@ mod tests {
         let api = PoolApi::new(pool, None, None);
         let payload: serde_json::Value =
             serde_json::from_str(&api.build_public_coin_stats_payload("qtu")).unwrap();
-        assert_eq!(payload["coin"], "qtu");
+        assert_eq!(payload["coin"], "qtc");
         assert_eq!(payload["shares"]["accepted"], 2);
         assert_eq!(payload["shares"]["rejected"], 0);
         assert_eq!(payload["miners_online"], 2);
@@ -4733,7 +4784,7 @@ mod tests {
             serde_json::from_str(&api.build_miners_payload(50)).unwrap();
         let miner = &payload["miners"][0];
         let streams = miner["streams"].as_object().expect("streams object");
-        let qtu = streams["qtu"].as_object().expect("qtu stream");
+        let qtu = streams["qtc"].as_object().expect("qtc stream");
         let reasons = qtu["reject_reasons"].as_object().expect("reject_reasons");
         assert_eq!(reasons["low_difficulty"], 1);
         assert_eq!(reasons["duplicate"], 1);
@@ -4778,7 +4829,7 @@ mod tests {
         let payload: serde_json::Value =
             serde_json::from_str(&api.build_public_miner_history("qtu", "w1", 100, None)).unwrap();
         assert_eq!(payload["ok"], true);
-        assert_eq!(payload["coin"], "qtu");
+        assert_eq!(payload["coin"], "qtc");
         let samples = payload["samples"].as_array().unwrap();
         assert_eq!(samples.len(), 2, "one point per ts across workers");
         // First point merges both workers' qtu hps + share counters.

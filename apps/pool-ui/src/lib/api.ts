@@ -9,10 +9,10 @@ import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, FeeSplit, MinerStats, P
 const USE_MOCK = false;
 const API_BASE = '/public/v1';
 
-// UI coin id -> pool coin key (`/public/v1` uses pool-side tickers;
-// 'qtc' is the UI's long-standing id for pool 'qtu').
+// UI coin id -> pool coin key (`/public/v1` emits the canonical public
+// ticker 'qtc' for Quantus; the API still accepts 'qtu' as an alias).
 const POOL_COIN: Record<CoinId, string> = {
-  zion: 'zion', qtc: 'qtu', prl: 'prl',
+  zion: 'zion', qtc: 'qtc', prl: 'prl',
   zano: 'zano', vrsc: 'vrsc', evr: 'evr', mewc: 'mewc',
   rtm: 'rtm', zcl: 'zcl', zec: 'zec', phx: 'phx', krx: 'krx',
   multi: '',
@@ -30,7 +30,7 @@ export const COIN_META: Record<string, Omit<CoinInfo, 'id' | 'legs' | 'fee_bps' 
     payout_unit: 'ZION', accent: 'gold',
     logo: '/brand/zion-symbol.png',
   },
-  qtu: {
+  qtc: {
     ticker: 'QTC', name: 'Quantus', algorithm: 'QPoW · Poseidon2',
     port: 8444, tls_port: 8445, dialect: 'CryptoNote (SRBMiner / XMRig)',
     payout_unit: 'QTC', accent: 'cyan',
@@ -100,7 +100,7 @@ export const COIN_META: Record<string, Omit<CoinInfo, 'id' | 'legs' | 'fee_bps' 
 };
 
 export const UI_ID: Record<string, CoinId> = {
-  zion: 'zion', qtu: 'qtc', prl: 'prl',
+  zion: 'zion', qtc: 'qtc', qtu: 'qtc', quantus: 'qtc', prl: 'prl',
   zano: 'zano', vrsc: 'vrsc', evr: 'evr', mewc: 'mewc',
   rtm: 'rtm', zcl: 'zcl', zec: 'zec', phx: 'phx', krx: 'krx',
 };
@@ -176,8 +176,8 @@ function toCoinStats(coin: CoinId, s: ApiCoinStats): CoinStats {
   };
 }
 
-/** History endpoints key their per-coin series by pool ticker ('qtu'),
- *  not the UI id ('qtc') — the same mapping fetch paths already use. */
+/** History endpoints key their per-coin series by pool ticker ('qtc'),
+ *  which now matches the UI id — the mapping stays for other coins. */
 export function poolCoinKey(id: CoinId | string): string {
   return POOL_COIN[id as CoinId] ?? id;
 }

@@ -54,13 +54,17 @@ Stripe = stejné `HIRAN_PRICE_*` jako `/ai` page (B2B-3).
 
 ## 5. MVP checklist
 
-1. `zion agent` clap subcommand + config (`~/.zion/agent.toml`)
-2. Tool loop (read/edit/shell) + confirm hooks
-3. Hiran client (reuse reqwest; stream SSE)
-4. ZIS key from env / keychain (`ZION_HIRAN_API_KEY`)
-5. Smoke: one-shot edit + `cargo test` v sandbox repo
-6. Docs + soft-sell na `/ai` a pool FAQ
-7. Public/archive packaging (feature flag)
+1. ✅ `zion agent` clap (+ `-p` / `--model` / `--cwd` / `--yes` / `--max-turns`) + config (`~/.zion/agent.toml`, `ZION_HIRAN_API_KEY`)
+2. ✅ Tool loop (`read_file` / `write_file` / `str_replace` / `run_shell` / `git_status` / `git_diff`) + cwd jail + secret-path deny + confirm on write/shell
+3. ✅ Hiran client (`V31/cli/src/agent/`) — OpenAI chat completions (non-stream MVP; reqwest `stream` feature ready for SSE)
+4. ✅ ZIS key via `zion hiran login` (device-code → MarketPlace `/ai/cli` → mint) + env / `~/.zion/agent.toml`
+5. ✅ Thin gateway: `zion hiran models|status|ask|whoami|subscribe` — live `GET /v1/models` → `hiran-mini`
+6. ✅ Soft-sell na `/ai` (+ MetaMask USDC / Stripe) + CLI link; pool FAQ později
+7. ⬜ Public/archive packaging (feature flag)
+
+**Implementace (2026-10-29):** agent loop + **ZIS device-code login** + Stripe upgrade (`X-API-Key`) + Base USDC crypto intent/confirm. Kanon: root [`HIRAN-CLI-AUTH.md`](../../HIRAN-CLI-AUTH.md).
+
+**Vast remote (F3):** `zion hiran agent -p "…" --remote vast` (+ `#ai` Coding Agent). Kanon [`VAST_HIRAN_CODING_AGENT_PLAN.md`](VAST_HIRAN_CODING_AGENT_PLAN.md). Ops token `VASTCTL_AGENT_TOKEN`, ne `zis_*`.
 
 ## 6. Co nedělat v MVP
 

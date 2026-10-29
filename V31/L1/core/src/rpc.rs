@@ -648,9 +648,18 @@ async fn get_utxos(node: &Node, params: &Value) -> Result<Value, NodeError> {
         .or_else(|| params.get(0))
         .and_then(Value::as_str)
         .ok_or_else(|| NodeError::Address("address required".to_string()))?;
+    // Optional paging — whale/pool wallets can hold 100k+ UTXOs; callers that
+    // only need the balance can read `total_amount` with `limit: 0` instead
+    // of transferring the whole set.
+    let limit = params.get("limit").and_then(Value::as_u64).map(|v| v as usize);
+    let offset = params.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
     let utxos = node.get_utxos_for_address(address).await;
+    let total_count = utxos.len();
+    let total_amount: u128 = utxos.iter().map(|u| u.2 as u128).sum();
     let out: Vec<Value> = utxos
         .into_iter()
+        .skip(offset)
+        .take(limit.unwrap_or(usize::MAX))
         .map(
             |(hash, idx, amount, height, timestamp, is_coinbase, script)| {
                 json!({
@@ -670,6 +679,9 @@ async fn get_utxos(node: &Node, params: &Value) -> Result<Value, NodeError> {
         "address": address,
         "utxos": out,
         "count": out.len(),
+        "total_count": total_count,
+        "total_amount": total_amount.to_string(),
+        "offset": offset,
         "model": "v31-native",
     }))
 }

@@ -3,6 +3,7 @@ import { getZionRpc } from '@/lib/zion-rpc';
 import { SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
 import { GENESIS_PREMINE_ZION } from '@/lib/constants';
+import { resolveSupplySnapshot } from '@/lib/supply';
 
 async function rpc(method: string, params: Record<string, any> = {}) {
   try {
@@ -102,8 +103,17 @@ export async function GET(request: Request) {
 
   try {
     const poolMiners = await fetchPoolMiners();
-    const supplyInfo = await rpc('getSupplyInfo');
-    const totalCirculating = supplyInfo?.circulating_supply || GENESIS_PREMINE_ZION;
+    // Live circulating supply — premine + minted-so-far per the Decade Decay
+    // schedule (resolveSupplySnapshot computes live values; the node's
+    // getSupplyInfo RPC only echoes static genesis constants).
+    const info = await rpc('getChainInfo').catch(() => null);
+    const height = Number(info?.native_chain_height ?? info?.chain_height ?? 0) || 0;
+    let totalCirculating = GENESIS_PREMINE_ZION;
+    try {
+      const client = getZionRpc();
+      const supply = await resolveSupplySnapshot(client as any, height);
+      if (supply.circulatingSupply > 0) totalCirculating = supply.circulatingSupply;
+    } catch { /* keep premine-only fallback */ }
 
     let richList: RichListEntry[] = [];
 

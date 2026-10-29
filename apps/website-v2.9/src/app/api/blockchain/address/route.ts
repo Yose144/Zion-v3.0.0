@@ -170,6 +170,17 @@ export async function GET(request: NextRequest) {
       totalReceived = transactions.reduce((sum: number, tx: any) => sum + tx.amount, 0);
     }
 
+    // `total_received`/`total_sent` are sums over the fetched transaction
+    // window only (the node's getTransactionHistory scans the whole chain per
+    // call, so lifetime sums aren't computable per request). `totals_scope`
+    // tells the UI whether the window covers the full history.
+    const txTotal = (txHistory && txHistory.total > 0)
+      ? txHistory.total
+      : (utxoList.length > 0 ? utxoList.length : transactions.length);
+    const totalsWindow = transactions.length;
+    const totalsScope: 'lifetime' | 'window' =
+      totalsWindow >= txTotal ? 'lifetime' : 'window';
+
     const knownAddress = KNOWN_ADDRESS_MAP.get(address);
     const isMiner = !!minerData && (
       (minerData.hashrate_1h ?? 0) > 0 ||
@@ -184,10 +195,12 @@ export async function GET(request: NextRequest) {
       known_label: knownAddress?.label || null,
       known_type: knownAddress?.type || null,
       balance,
-      total_received: totalReceived || minerData?.balance?.paid || 0,
+      total_received: totalReceived,
       total_sent: totalSent,
+      totals_scope: totalsScope,
+      totals_window: totalsWindow,
       net_balance: balanceZion,
-      transaction_count: (txHistory && txHistory.total > 0) ? txHistory.total : (utxoList.length > 0 ? utxoList.length : transactions.length),
+      transaction_count: txTotal,
       first_seen: minerData?.first_seen || (utxoList.length ? Math.min(...utxoList.map((u: any) => u.timestamp ?? 0).filter((t: number) => t > 0)) : 0),
       last_seen: minerData?.last_seen || (utxoList.length ? Math.max(...utxoList.map((u: any) => u.timestamp ?? 0)) : 0),
 

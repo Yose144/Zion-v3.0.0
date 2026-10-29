@@ -708,7 +708,7 @@ export default function OpsClient() {
           }}
         >
           <input name="gpu" required placeholder="GPU (RTX_3060)" className="ops-exec-input" style={{ maxWidth: '10rem' }} />
-          <input name="coin" required placeholder="coin (qtu)" className="ops-exec-input" style={{ maxWidth: '7rem' }} />
+          <input name="coin" required placeholder="coin (qtc)" className="ops-exec-input" style={{ maxWidth: '7rem' }} />
           <input name="hps" required type="number" step="any" placeholder="H/s" className="ops-exec-input" style={{ maxWidth: '8rem' }} />
           <input name="usd" required type="number" step="any" placeholder="$/day" className="ops-exec-input" style={{ maxWidth: '7rem' }} />
           <button type="submit" className="ops-mini-btn">{t(lang, 'benchAdd')}</button>

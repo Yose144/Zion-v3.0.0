@@ -23,7 +23,7 @@ const LINKS = [
 ];
 
 // Coin menu groups — static metadata, same order as the homepage table.
-const NATIVE_COIN_KEYS = ['zion', 'qtu', 'prl'];
+const NATIVE_COIN_KEYS = ['zion', 'qtc', 'prl'];
 const AUX_COIN_KEYS = Object.keys(COIN_META).filter(
   (k) => !NATIVE_COIN_KEYS.includes(k),
 );

@@ -42,6 +42,7 @@ const ExplorerAddressAddressDetailClientCopy = {
   poolPending: { cs: `Pool (čeká)`, en: `Pool (Pending)` },
   poolPaid: { cs: `Pool (vyplaceno)`, en: `Pool (Paid)` },
   transactionSummary: { cs: `Souhrn transakcí`, en: `Transaction Summary` },
+  totalsWindowNote: { cs: `součty z posledních`, en: `totals from the last` },
   total: { cs: `Celkem`, en: `Total` },
   received: { cs: `Přijato`, en: `Received` },
   sent: { cs: `Odesláno`, en: `Sent` },
@@ -151,6 +152,8 @@ interface AddressData {
   balance: { total: number; total_atomic: number; utxo_count: number; pool_pending: number; pool_locked: number; pool_paid: number };
   total_received: number;
   total_sent: number;
+  totals_scope?: 'lifetime' | 'window';
+  totals_window?: number;
   net_balance: number;
   transaction_count: number;
   first_seen: number;
@@ -395,6 +398,11 @@ export default function AddressDetailClient() {
               <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-zion-purple" />
                 {ExplorerAddressAddressDetailClientCopy.transactionSummary[cs ? 'cs' : 'en']}
+                {data.totals_scope === 'window' && (
+                  <span className="text-[10px] font-normal text-white/30 normal-case">
+                    ({ExplorerAddressAddressDetailClientCopy.totalsWindowNote[cs ? 'cs' : 'en']} {data.totals_window ?? data.transactions.length} {cs ? 'z' : 'of'} {data.transaction_count.toLocaleString(locale)} tx)
+                  </span>
+                )}
               </h2>
               <div className="flex items-center gap-6 flex-wrap">
                 <div className="relative flex-shrink-0">
@@ -652,7 +660,7 @@ export default function AddressDetailClient() {
                   <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums font-mono">{u.height > 0 ? u.height.toLocaleString(locale) : '—'}</div>
                   <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums">{u.timestamp ? timeAgo(u.timestamp, cs) : '—'}</div>
                   <div className="flex items-center justify-end text-[13px] font-semibold tabular-nums text-zion-cyan">
-                    {(u.amount / FLOWERS_PER_ZION).toFixed(4)} ₿Z
+                    {(u.amount / FLOWERS_PER_ZION).toFixed(4)} ZION
                   </div>
                 </Link>
               ))

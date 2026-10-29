@@ -147,6 +147,8 @@ export interface ExplorerTxOutput {
   amount: number;
   type: string;
   key?: string;
+  /** True when this output returns funds to a sender address (UTXO change). */
+  is_change?: boolean;
 }
 
 export interface ExplorerTransaction {
@@ -160,8 +162,13 @@ export interface ExplorerTransaction {
   confirmations: number;
   in_pool: boolean;
   status: string;
+  /** Net transferred value — outputs minus change returned to the sender. */
   amount: number;
   amount_zion: string;
+  /** Raw sum of all outputs (includes change), ZION units. */
+  amount_gross?: number;
+  /** Change returned to sender, ZION units. */
+  change?: number;
   fee: number;
   fee_zion: number;
   size: number;
@@ -187,8 +194,13 @@ export interface ExplorerTxListItem {
   type: string;
   from: string;
   to: string;
+  /** Net transferred value (address-scoped share when `address` filter used). */
   amount: number;
   amount_zion: string;
+  /** Raw output sum including change, ZION units. */
+  amount_gross?: number;
+  /** Direction relative to a filtered address: in | out | related. */
+  direction?: string;
   fee: number;
   fee_zion: number;
   nonce: number;
@@ -228,6 +240,9 @@ export interface ExplorerAddress {
   balance: ExplorerAddressBalance;
   total_received: number;
   total_sent: number;
+  /** 'window' when totals cover only the fetched tx page, 'lifetime' otherwise. */
+  totals_scope?: 'lifetime' | 'window';
+  totals_window?: number;
   net_balance: number;
   transaction_count: number;
   first_seen: number;

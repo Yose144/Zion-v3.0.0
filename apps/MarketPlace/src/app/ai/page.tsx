@@ -78,8 +78,8 @@ const T = {
   trialSend: { cs: 'Odeslat', en: 'Send' },
   resCliTitle: { cs: 'Schválit Hiran CLI', en: 'Approve Hiran CLI' },
   resCliSub: {
-    cs: 'zion hiran login → potvrdit kód',
-    en: 'zion hiran login → confirm code',
+    cs: 'zion-hiran → menu 2 Login, nebo /login',
+    en: 'zion-hiran → menu 2 Login, or /login',
   },
   plansTitle: { cs: 'Plány', en: 'Plans' },
   plansSub: {
@@ -421,8 +421,8 @@ function AiPricingInner() {
             <h2 className="mt-1 text-xl font-semibold text-white">Zion Hiran</h2>
             <p className="mt-2 text-sm text-gray-400">
               {l === 'cs'
-                ? 'Jeden příkaz. Po startu uvidíš strom Genesis a menu (chat, login, účet, modely).'
-                : 'One command. On start you get the Genesis tree and a menu (chat, login, account, models).'}
+                ? 'Jeden příkaz. Po startu strom Genesis, pak session chat. /agent zapne úpravy v aktuální složce.'
+                : 'One command. The Genesis tree on start, then a session chat. /agent edits inside the current directory.'}
             </p>
             <pre className="mt-3 overflow-x-auto rounded-lg bg-black/60 p-3 text-xs text-amber-200">{`curl -fsSL https://market.zionterranova.com/install-hiran.sh | bash
 zion-hiran`}</pre>

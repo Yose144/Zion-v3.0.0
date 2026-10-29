@@ -27,7 +27,7 @@ const GROUPS: { cs: string; en: string; rows: Row[] }[] = [
       },
       {
         method: 'GET', path: '/coins/{coin}/stats',
-        params: 'coin = zion|qtu|prl|…',
+        params: 'coin = zion|qtc|prl|… (qtu/quantus aliases)',
         cs: 'Per-coin statistiky — hashrate, mineři, shares, payouts_24h, luck (100/500 blk).',
         en: 'Per-coin stats — hashrate, miners, shares, payouts_24h, luck (100/500 blocks).',
       },

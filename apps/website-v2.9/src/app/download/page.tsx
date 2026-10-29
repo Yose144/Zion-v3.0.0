@@ -325,6 +325,18 @@ export default function DownloadPage() {
           </div>
         </section>
 
+        <section id="hiran-cli" className="zion-section">
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Hiranyagarbha</p>
+          <h2 className="mt-2 text-3xl font-semibold text-white">Zion Hiran CLI</h2>
+          <p className="mt-3 max-w-3xl text-gray-400">
+            {cs
+              ? 'Session klient: strom Genesis, menu, FAQ a slovníček. macOS a Linux, stačí Python 3.'
+              : 'A session client: the Genesis tree, a menu, an FAQ, and a glossary. macOS and Linux, Python 3 only.'}
+          </p>
+          <pre className="mt-5 overflow-x-auto rounded-xl bg-black/50 p-4 text-sm text-zion-gold">{`curl -fsSL https://app.zionterranova.com/install-hiran.sh | bash
+zion-hiran`}</pre>
+        </section>
+
         <section id="downloads">
           <DownloadToolBrowser cs={cs} />
         </section>

@@ -65,6 +65,7 @@ interface Transaction {
   block_height: number | null;
   status: string;
   type?: string;
+  direction?: string;
 }
 
 type TransactionsApiResponse =
@@ -115,6 +116,7 @@ export default function TransactionsPageClient() {
         block_height: tx.block_height === null || tx.block_height === undefined ? null : Number(tx.block_height),
         status: String(tx.status || (tx.block_height ? "confirmed" : "pending")),
         type: String(tx.type || "transfer"),
+        direction: tx.direction ? String(tx.direction) : undefined,
       })).filter((tx) => tx.hash);
       if (append) setTransactions((prev) => [...prev, ...newTxs]);
       else setTransactions(newTxs);
@@ -286,9 +288,13 @@ export default function TransactionsPageClient() {
                 {tx.fee > 0 ? tx.fee.toFixed(6) : "—"}
               </div>
 
-              {/* amount */}
-              <div className="flex items-center justify-end text-[13px] text-white font-semibold tabular-nums">
-                {tx.amount > 0 ? `${tx.amount.toFixed(4)} ₿Z` : "—"}
+              {/* amount — net of change; ± direction when address-filtered */}
+              <div className={`flex items-center justify-end text-[13px] font-semibold tabular-nums ${
+                tx.direction === 'in' ? 'text-zion-cyan' : tx.direction === 'out' ? 'text-zion-purple' : 'text-white'
+              }`}>
+                {tx.amount > 0
+                  ? `${tx.direction === 'in' ? '+' : tx.direction === 'out' ? '−' : ''}${tx.amount.toFixed(4)} ZION`
+                  : "—"}
               </div>
             </Link>
           ))}

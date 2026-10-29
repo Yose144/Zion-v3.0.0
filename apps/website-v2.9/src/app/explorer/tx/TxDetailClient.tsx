@@ -34,6 +34,10 @@ const ExplorerTxTxDetailClientCopy = {
   hideRawJson: { cs: `Skrýt Raw JSON`, en: `Hide Raw JSON` },
   rawJson: { cs: `Raw JSON`, en: `Raw JSON` },
   amount: { cs: `Částka`, en: `Amount` },
+  amountNet: { cs: `Částka (net)`, en: `Amount (net)` },
+  amountGross: { cs: `Částka brutto (vč. change)`, en: `Gross amount (incl. change)` },
+  changeReturned: { cs: `Change zpět odesílateli`, en: `Change returned to sender` },
+  changeBadge: { cs: `change`, en: `change` },
   model: { cs: `Model`, en: `Model` },
   previousOutput: { cs: `Předchozí výstup`, en: `Previous Output` },
   outputIndex: { cs: `Index výstupu`, en: `Output Index` },
@@ -64,7 +68,7 @@ const ExplorerTxTxDetailClientCopy = {
 };
 
 interface TxInput { type: string; amount: number; address?: string; key_image?: string; previous_output?: string; output_index?: number; script?: string; key_offsets?: number[]; }
-interface TxOutput { amount: number; key: string; address?: string; index?: number; }
+interface TxOutput { amount: number; key: string; address?: string; index?: number; is_change?: boolean; }
 interface Transaction {
   tx_hash: string; block_height: number; block_timestamp: number; in_pool: boolean;
   fee: number; amount: number; version: number; unlock_time: number;
@@ -192,7 +196,14 @@ export default function TxDetailClient() {
   const totalInput = tx.inputs.reduce((s, inp) => s + inp.amount, 0);
   const totalOutput = tx.outputs.reduce((s, out) => s + out.amount, 0);
   const isCoinbase = tx.inputs.some((inp) => inp.type === "coinbase");
-  const isV3Account = !!(tx.from && tx.to);
+  // Account-model txs carry no UTXO inputs/outputs. v31-native txs now have
+  // from/to populated too, so detect the account model via transaction_model
+  // rather than from/to presence.
+  const isV3Account = (tx.transaction_model ?? '') === 'account'
+    || ((tx.transaction_model ?? '') !== 'v31-native' && tx.inputs.length === 0 && tx.outputs.length === 0 && !!(tx.from || tx.to));
+  const grossAmount = typeof tx.amount_gross === 'number' ? tx.amount_gross : null;
+  const changeAmount = typeof tx.change === 'number' ? tx.change : null;
+  const hasChange = changeAmount !== null && changeAmount > 0;
 
   return (
     <div className="relative min-h-screen pb-24 overflow-x-hidden">
@@ -287,7 +298,15 @@ export default function TxDetailClient() {
               link={`/explorer/block?id=${tx.block_height}`} />
           )}
           <InfoRow label={ExplorerTxTxDetailClientCopy.timestamp[cs ? 'cs' : 'en']} value={`${fmtDate(tx.block_timestamp, locale)} (${fmtAge(tx.block_timestamp, cs)})`} />
-          <InfoRow label={ExplorerTxTxDetailClientCopy.amount[cs ? 'cs' : 'en']} value={`${tx.amount.toFixed(6)} ZION`} color="text-zion-gold" />
+          <InfoRow
+            label={hasChange ? ExplorerTxTxDetailClientCopy.amountNet[cs ? 'cs' : 'en'] : ExplorerTxTxDetailClientCopy.amount[cs ? 'cs' : 'en']}
+            value={`${tx.amount.toFixed(6)} ZION`} color="text-zion-gold" />
+          {hasChange && grossAmount !== null && (
+            <InfoRow label={ExplorerTxTxDetailClientCopy.amountGross[cs ? 'cs' : 'en']} value={`${grossAmount.toFixed(6)} ZION`} />
+          )}
+          {hasChange && (
+            <InfoRow label={ExplorerTxTxDetailClientCopy.changeReturned[cs ? 'cs' : 'en']} value={`${changeAmount.toFixed(6)} ZION`} />
+          )}
           <InfoRow label="Fee" value={`${tx.fee.toFixed(6)} ZION`} color="text-zion-gold" />
           {isCoinbase ? (
             <InfoRow label="From" value="⛏ Coinbase" />
@@ -412,7 +431,14 @@ export default function TxDetailClient() {
               {tx.outputs.map((out, i) => (
                 <div key={i} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-zion-cyan text-[10px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.output[cs ? 'cs' : 'en']} #{i}</span>
+                    <span className="flex items-center gap-2 text-zion-cyan text-[10px] font-mono uppercase tracking-wider">
+                      {ExplorerTxTxDetailClientCopy.output[cs ? 'cs' : 'en']} #{i}
+                      {out.is_change && (
+                        <span className="px-1.5 py-0.5 rounded bg-zion-purple/15 text-zion-purple border border-zion-purple/25 text-[9px] font-semibold uppercase tracking-wider">
+                          {ExplorerTxTxDetailClientCopy.changeBadge[cs ? 'cs' : 'en']}
+                        </span>
+                      )}
+                    </span>
                     <span className="text-zion-gold text-sm font-semibold tabular-nums">{out.amount.toFixed(4)} ZION</span>
                   </div>
                   <div className="space-y-0.5">

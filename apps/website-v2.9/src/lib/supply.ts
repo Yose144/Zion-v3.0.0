@@ -7,9 +7,16 @@ import {
   GENESIS_PREMINE_ZION,
   MAX_DECAY_DECADES,
   MINING_HORIZON_LABEL,
+  POOL_FEE_PCT,
   TAIL_REWARD_ZION,
   TOTAL_SUPPLY_ZION,
 } from '@/lib/constants';
+
+// Share of the block subsidy that is actually minted. The 1% pool-fee /
+// node-reward slot is *burned* (never created) while the node-reward soft
+// fork is not activated — on chain it is configured at u64::MAX, i.e. never,
+// so every block so far minted only 99% of the subsidy.
+const MINTED_SUBSIDY_SHARE = (100 - POOL_FEE_PCT) / 100;
 
 interface RpcSupplyClient {
   rpcCall<T = unknown>(method: string, params?: Record<string, unknown> | unknown[]): Promise<T>;
@@ -54,14 +61,14 @@ export function estimateMinedSupplyAtHeight(height: number): number {
 
   while (remainingBlocks > 0 && decadeIndex < MAX_DECAY_DECADES) {
     const blocksThisDecade = Math.min(remainingBlocks, BLOCKS_PER_DECADE);
-    const reward = BLOCK_REWARD_ZION * Math.pow(DECAY_FACTOR, decadeIndex);
+    const reward = BLOCK_REWARD_ZION * Math.pow(DECAY_FACTOR, decadeIndex) * MINTED_SUBSIDY_SHARE;
     minedSupply += blocksThisDecade * reward;
     remainingBlocks -= blocksThisDecade;
     decadeIndex += 1;
   }
 
   if (remainingBlocks > 0) {
-    minedSupply += remainingBlocks * TAIL_REWARD_ZION;
+    minedSupply += remainingBlocks * TAIL_REWARD_ZION * MINTED_SUBSIDY_SHARE;
   }
 
   const maxMineableSupply = Math.max(0, TOTAL_SUPPLY_ZION - GENESIS_PREMINE_ZION);

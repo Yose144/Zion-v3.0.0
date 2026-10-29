@@ -49,9 +49,15 @@ vast-rigs/ AI tab → vastctl-serve :8088 → rig SSH / Edge :8003
 
 - **F1 — katalog v UI** *(dnes)*: veřejné + interní sekce, fits badge,
   HF search, auto-deploy/auto-chat router. ✅
-- **F2 — gateway**: jednotný `GET /v1/models` na Edge agregující
-  hiran-core + SMOS + Vast vLLM; alias router (`model=hiran-mini` →
-  backend); API klíč + rate limit jako pool API :8080.
+- **F2 — gateway**: ✅ MVP live (`market…/v1`, ZIS keys). **F1 fabric
+  29.10.:** `hiran-mini` + Trinity mockupy + `hiran-coder` slot (`:8005`).
+  Coding sjednocení →
+  [`docs/3.2/VAST_HIRAN_CODING_AGENT_PLAN.md`](docs/3.2/VAST_HIRAN_CODING_AGENT_PLAN.md)
+  (F2 `code.run` na rigu).
+- **FT — Trinity train-first** *(priorita před kvalitním agentem)*:
+  shared ZION constitution → **Maitreya** (lore) → **Amitábha** (reason)
+  → **Issobella** (code/agentic). Dataset + eval + QLoRA na vast →
+  GGUF → mockup→live v `#ai`. Detail: Coding Agent plán §FT.
 - **F3 — Marketplace listing**: položka per model-alias (params, ctx,
   $/1M tok z `gpu$/h ÷ tok/s × marže`, live dostupnost z
   `model_endpoints()`, trial chat widget). Settlement ZION/L2, dry-run.
@@ -64,7 +70,8 @@ vast-rigs/ AI tab → vastctl-serve :8088 → rig SSH / Edge :8003
 - [ ] Licence: interní-only vs veřejný GGUF release pod `zion-terranova`
       HF org
 - [ ] Data pro fine-tune: korpus knih (Maitreya/Nirvana/Ekam) + faq —
-      kolik lze legálně publikovat v trénovacím setu
+      kolik lze legálně publikovat v trénovacím setu (**blokuje FT Maitreya**)
+- [ ] Eval suite „ZION komplexně“ (emission, topologie, WARP, pool, DAO)
 - [ ] SMOS rig 518837: opravit a vrátit do rotace, nebo retirement
 - [ ] Marketplace = přímý prodej inference vs "Hiran inside" badge
 - [ ] vLLM default image bump po smoke-testu nového tagu

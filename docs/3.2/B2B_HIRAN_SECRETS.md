@@ -29,6 +29,15 @@ STRIPE_WEBHOOK_SECRET=whsec_…        # gateway endpoint secret
 STRIPE_PRICE_PRO=price_…
 STRIPE_PRICE_TEAM=price_…
 
+# MarketPlace — crypto (MetaMask Base USDC) + CLI device store
+HIRAN_TREASURY_ADDRESS=0x…          # Base USDC recipient
+HIRAN_USDC_ADDRESS=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+HIRAN_USDC_PRO=29000000             # 29 USDC (6 decimals)
+HIRAN_USDC_TEAM=99000000            # 99 USDC
+HIRAN_ADMIN_KEY=…                   # same value as gateway (X-Admin-Key)
+HIRAN_GATEWAY_ADMIN_URL=https://market.zionterranova.com/v1/admin/plan
+# HIRAN_CLI_STORE_PATH=/var/lib/zion/hiran-cli-store.json  # optional
+
 systemctl restart zion-marketplace zion-hiran-gateway
 ```
 

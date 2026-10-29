@@ -1002,8 +1002,11 @@ class ZionRpcClient {
   }
 
   /** Get recent V31-native transactions from latest blocks.
-   *  Scans blocks and returns both coinbase and transfer transactions with UTXO details. */
-  async getRecentV3Transactions(limit: number = 20): Promise<Array<{
+   *  Scans blocks newest-first and returns both coinbase and transfer
+   *  transactions with UTXO details. `offset` skips the newest entries so the
+   *  caller can page; scanning stops once `offset + limit` txs are collected
+   *  or `maxBlocks` blocks have been walked. */
+  async getRecentV3Transactions(limit: number = 20, offset: number = 0, maxBlocks: number = 4000): Promise<Array<{
     tx_id: string; tx_hash: string; from: string; to: string; amount_zion: string;
     fee_zion: number; nonce: number; block_height: number; timestamp: number;
     public_key: string; signature: string; transaction_model: string;
@@ -1012,9 +1015,10 @@ class ZionRpcClient {
   }>> {
     const info = await this.getInfo();
     const chainHeight = info.height;
-    const txs: any[] = [];
-    const startHeight = Math.max(0, chainHeight - 199);
-    for (let h = chainHeight; h >= startHeight && txs.length < limit; h--) {
+    const all: any[] = [];
+    const want = offset + limit;
+    const startHeight = Math.max(0, chainHeight - maxBlocks + 1);
+    for (let h = chainHeight; h >= startHeight && all.length < want; h--) {
       try {
         const block = await this.rpcCall<any>('getBlockByHeight', { height: h });
         const parsed = parseV31TransactionsFromBlock(block);
@@ -1026,7 +1030,7 @@ class ZionRpcClient {
         await Promise.all(parsed.map((tx) => this.enrichInputAddresses(tx)));
 
         for (const tx of parsed) {
-          if (txs.length >= limit) break;
+          if (all.length >= want) break;
           const isCoinbase = tx.from === 'coinbase';
 
           // Build a human-readable from/to summary from UTXO inputs/outputs
@@ -1037,7 +1041,7 @@ class ZionRpcClient {
             .map((o) => o.address || o.key)
             .filter((a): a is string => typeof a === 'string' && a.startsWith('zion1'));
 
-          txs.push({
+          all.push({
             tx_id: tx.tx_hash,
             tx_hash: tx.tx_hash,
             from: isCoinbase ? 'coinbase' : (fromAddrs.length ? Array.from(new Set(fromAddrs)).join(', ') : ''),
@@ -1056,7 +1060,7 @@ class ZionRpcClient {
         }
       } catch { /* skip unavailable block */ }
     }
-    return txs;
+    return all.slice(offset, offset + limit);
   }
 
   /** Get chain height */

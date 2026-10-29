@@ -219,6 +219,12 @@ nvidia-smi                               # ~95-100 % util, ~135-170 W
 
 ## 5. AI inference capacity dashboard (read-only pilot)
 
+> **Sjednocení s Hiran Coding Agent (plán):**  
+> [`docs/3.2/VAST_HIRAN_CODING_AGENT_PLAN.md`](docs/3.2/VAST_HIRAN_CODING_AGENT_PLAN.md)  
+> — **F1 live:** gateway aliasy `hiran-mini` + Trinity mockupy; `hiran-coder` až po tunnel `:8005`.  
+> — **F2 code:** fleet op `code.run` (`infra/tools/vast/code_run.py`) + `zion-coder-job.sh`.  
+> — **F3:** `#ai` Coding Agent karta + `zion hiran agent --remote vast`.
+
 `/vast-rigs/` includes an AI status panel backed by
 `infra/tools/vast/vastctl.py` at `/vast-ops/api/ai/status`. The backend probes each
 active instance over SSH for NVIDIA GPU memory, utilization, temperature and
@@ -238,6 +244,61 @@ shows GPU utilization because free VRAM does not mean free compute; current
 mining and inference can still contend for GPU time. There is no 80/20
 scheduler, automatic miner pause, or automatic Vast rental; model deployment
 is an explicit per-instance opt-in below.
+
+### F1 — `hiran-coder` tunnel (EDGE2 gateway)
+
+Gateway lists `hiran-coder` only when an upstream answers `GET /models`. Default
+upstream is `http://127.0.0.1:8005/v1` with rewrite to
+`qwen2.5-coder-7b-instruct` (see `V31/L3/hiran-gateway/models.example.json`).
+
+On the ops PC, `hiran-proxy :1235` already routes coder weights. Extend the
+existing reverse-tunnel chain so EDGE2 sees coder on loopback `:8005` (same
+pattern as Hiran primary → `:8004`). Then:
+
+```bash
+# EDGE2 drop-in (optional — models.json already has the entry)
+systemctl edit zion-hiran-gateway
+# Environment=HIRAN_CODER_PRIMARY=http://127.0.0.1:8005/v1
+systemctl restart zion-hiran-gateway
+curl -sS https://market.zionterranova.com/v1/models | jq '.data[].id'
+```
+
+Trinity aliases (`hiran-amitabha|issobella|maitreya`) stay `x-mockup: true`
+until FT weights land — chat returns 503 by design.
+
+### F2 — Fleet `code.run` (coding worker)
+
+After `bootstrap-agent.sh <instance-id>` the rig has `/root/code_run.py`,
+`/root/zion-coder-job.sh`, and workspace `/root/work`. Ops enqueue (shared
+`VASTCTL_AGENT_TOKEN` only — never a user `zis_*` key):
+
+```bash
+curl -sS -X POST https://zionterranova.com/api/agent/enqueue \
+  -H "Authorization: Bearer $VASTCTL_AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"rig_id":"<id>","op":"code.run","args":{"prompt":"Summarize repo layout","max_turns":3,"force":true}}'
+```
+
+The worker calls local `VAST_AGENT_LLM_URL` (default `http://127.0.0.1:8000/v1`
+= vLLM from §Opt-in below). No LLM → result `rc=503`. Tool jail mirrors
+Hiran CLI (cwd jail, secret deny, shell allowlist, no pipes). Path-B:
+`bash /root/zion-coder-job.sh "…"` remains on the exec allowlist.
+
+### F3 — `#ai` UI + CLI remote
+
+- Dashboard `/vast-rigs/#ai` → **Coding Agent** card: pick live agent, prompt,
+  Run / Cancel. Calls `POST /vast-ops/api/inference/code-run` (same-origin;
+  nginx basic). Poll via `status.json` agents + `GET /api/agent/task`.
+- CLI (ops token, not `zis_*`):
+
+```bash
+export VASTCTL_AGENT_TOKEN=…   # same as vastctl serve
+zion hiran agent -p "List files in /root/work" --remote vast
+zion hiran agent -p "…" --remote vast --rig <rig_id> --timeout 900
+```
+
+Cancel pending/delivered only (`POST …/code-cancel`); in-flight tool loops
+are not killed mid-turn.
 
 ### Opt-in vLLM on an existing instance
 
