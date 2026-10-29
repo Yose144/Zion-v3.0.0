@@ -102,6 +102,8 @@ const L = {
   exec: { cs: 'exec', en: 'exec' },
   execPh: { cs: 'příkaz na rigu…', en: 'command on rig…' },
   allRigs: { cs: 'všem rigům', en: 'all rigs' },
+  benchAdd: { cs: '+ bench záznam', en: '+ bench entry' },
+  saved: { cs: 'Uloženo ✓', en: 'Saved ✓' },
   removeRig: { cs: 'odebrat', en: 'remove' },
   setGroup: { cs: 'group…', en: 'group…' },
   queued: { cs: 'Zařazeno ✓', en: 'Queued ✓' },
@@ -466,6 +468,26 @@ export default function OpsClient() {
             </tbody>
           </table>
         </div>
+        {/* bench seeding — feeds the profit-switch engine */}
+        <form
+          style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', padding: '.6rem 1rem .9rem', alignItems: 'center' }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const f = e.target as HTMLFormElement;
+            const v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
+            postOps('/agent/bench', {
+              gpu: v('gpu'), coin: v('coin'),
+              hps: Number(v('hps')) || null, usd_day: Number(v('usd')) || null,
+            }).then(() => { setAssignMsg(t(lang, 'saved')); f.reset(); })
+              .catch((err) => setAssignMsg(String(err)));
+          }}
+        >
+          <input name="gpu" required placeholder="GPU (RTX_3060)" className="ops-exec-input" style={{ maxWidth: '10rem' }} />
+          <input name="coin" required placeholder="coin (qtu)" className="ops-exec-input" style={{ maxWidth: '7rem' }} />
+          <input name="hps" required type="number" step="any" placeholder="H/s" className="ops-exec-input" style={{ maxWidth: '8rem' }} />
+          <input name="usd" required type="number" step="any" placeholder="$/day" className="ops-exec-input" style={{ maxWidth: '7rem' }} />
+          <button type="submit" className="ops-mini-btn">{t(lang, 'benchAdd')}</button>
+        </form>
       </div>
 
       {/* Events */}
