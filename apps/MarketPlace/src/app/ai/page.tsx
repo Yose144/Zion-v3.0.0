@@ -35,6 +35,12 @@ const T = {
     cs: 'Pro vytvoření API klíče se nejdřív přihlaste přes ZIS (tlačítko Sign In v navigaci).',
     en: 'Sign in via ZIS first to mint an API key (Sign In button in the navigation).',
   },
+  chipEu: { cs: 'Hostováno v EU', en: 'Hosted in the EU' },
+  chipOpenAi: { cs: 'OpenAI-kompatibilní', en: 'OpenAI-compatible' },
+  chipNoTrain: { cs: 'Nikdy netrénujeme na vašich datech', en: 'Never trained on your data' },
+  stepSign: { cs: 'Přihlaste se přes ZIS', en: 'Sign in via ZIS' },
+  stepKey: { cs: 'Vytvořte API klíč', en: 'Mint an API key' },
+  stepCall: { cs: 'Zavolejte /v1/chat', en: 'Call /v1/chat' },
   perMonth: { cs: '/ měsíc', en: '/ month' },
   getKey: { cs: 'Vytvořit API klíč', en: 'Create API key' },
   subscribe: { cs: 'Stripe karta', en: 'Stripe card' },
@@ -143,7 +149,7 @@ const PLANS: {
   {
     id: 'pro',
     name: 'Pro',
-    price: '29 €',
+    price: '19 €',
     features: {
       cs: ['Všechny modely', '120 požadavků/min', '5M tokenů/měs v ceně', 'Pak 0,60 €/1M tokenů'],
       en: ['All models', '120 requests/min', '5M tokens/mo included', 'Then €0.60/1M tokens'],
@@ -383,23 +389,45 @@ function AiPricingInner() {
 
   return (
     <div className="rasta-info-page">
-      <section className="rasta-info-hero">
-        <div className="rasta-info-hero-inner">
-          <span className="rasta-info-version-badge">
-            <Brain className="w-4 h-4 inline-block mr-2" /> {T.kicker[l]}
-          </span>
-          <h1>{T.title[l]}</h1>
-          <p className="rasta-info-subtitle">{T.subtitle[l]}</p>
+      <section className="rasta-hero" aria-label="Hiranyagarbha">
+        <div className="rasta-hero-inner">
+          <div className="rasta-hero-kicker">
+            <span className="dot" />
+            {T.kicker[l]}
+          </div>
+          <h1 className="rasta-hero-title">{T.title[l]}</h1>
+          <p className="rasta-hero-desc mx-auto max-w-2xl">{T.subtitle[l]}</p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            {[T.chipEu[l], T.chipOpenAi[l], T.chipNoTrain[l]].map((chip) => (
+              <span
+                key={chip}
+                className="rounded-full border border-rasta-gold/30 bg-black/50 px-3.5 py-1.5 text-xs font-semibold text-rasta-gold backdrop-blur-sm"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="rasta-info-section">
-        <div className="rasta-info-content">
+      <section className="pb-16">
+        <div>
           {!authLoading && !authenticated && (
             <p className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
               {T.signIn[l]}
             </p>
           )}
+
+          <div className="mb-8 grid gap-3 sm:grid-cols-3">
+            {[T.stepSign[l], T.stepKey[l], T.stepCall[l]].map((step, i) => (
+              <div key={step} className="zion-tile flex items-center gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-rasta-gold/30 bg-rasta-gold/15 text-sm font-black text-rasta-gold">
+                  {i + 1}
+                </span>
+                <p className="text-sm font-medium text-gray-300">{step}</p>
+              </div>
+            ))}
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
@@ -507,36 +535,43 @@ function AiPricingInner() {
             className="zion-rainbow-card p-5"
             style={{ '--rc': '252, 209, 22' } as CSSProperties}
           >
-            <textarea
-              value={trialPrompt}
-              onChange={(e) => setTrialPrompt(e.target.value)}
-              rows={3}
-              maxLength={500}
-              placeholder={T.trialPlaceholder[l]}
-              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-rasta-gold/40 focus:outline-none"
-            />
-            <div className="mt-3 flex justify-end">
+            {trialOut && (
+              <div className="mb-4 flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-rasta-gold/30 bg-rasta-gold/15">
+                  <Brain className="w-4 h-4 text-rasta-gold" />
+                </div>
+                <div className="flex-1 rounded-xl rounded-tl-sm border border-white/10 bg-black/40 p-4 text-sm leading-relaxed text-gray-200 whitespace-pre-wrap">
+                  {trialOut}
+                </div>
+              </div>
+            )}
+            {trialErr && (
+              <p className="mb-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                {trialErr}
+              </p>
+            )}
+            <div className="flex items-end gap-2">
+              <textarea
+                value={trialPrompt}
+                onChange={(e) => setTrialPrompt(e.target.value)}
+                rows={2}
+                maxLength={500}
+                placeholder={T.trialPlaceholder[l]}
+                className="flex-1 resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:border-rasta-gold/40 focus:outline-none"
+              />
               <button
                 type="button"
                 onClick={() => void runTrial()}
                 disabled={!authenticated || busy !== null || !trialPrompt.trim()}
-                className="rounded-lg bg-amber-500/90 px-5 py-2 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
+                className="zion-button-primary shrink-0 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {busy === 'trial' ? (
-                  <Loader2 className="w-4 h-4 animate-spin inline-block" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   T.trialSend[l]
                 )}
               </button>
             </div>
-            {trialErr && (
-              <p className="mt-3 text-sm text-red-300">{trialErr}</p>
-            )}
-            {trialOut && (
-              <pre className="mt-3 max-h-48 overflow-auto rounded-lg bg-black/50 p-3 text-xs text-gray-200 whitespace-pre-wrap">
-                {trialOut}
-              </pre>
-            )}
           </div>
 
           <SectionHead icon={CreditCard} title={T.plansTitle[l]} sub={T.plansSub[l]} />
@@ -545,7 +580,9 @@ function AiPricingInner() {
               <div
                 key={p.id}
                 className={`zion-rainbow-card flex flex-col p-6 ${
-                  p.id === 'pro' ? 'md:-translate-y-1' : ''
+                  p.id === 'pro'
+                    ? 'md:-translate-y-1 shadow-[0_0_60px_-15px_rgba(252,209,22,0.45)]'
+                    : ''
                 }`}
                 style={
                   {
@@ -579,7 +616,11 @@ function AiPricingInner() {
                 <button
                   onClick={() => subscribeStripe(p.id)}
                   disabled={!authenticated || busy !== null}
-                  className="mt-4 w-full rounded-lg bg-amber-500/90 px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
+                  className={
+                    p.id === 'pro'
+                      ? 'zion-button-primary mt-5 w-full disabled:cursor-not-allowed disabled:opacity-40'
+                      : 'mt-5 w-full rounded-xl border border-rasta-gold/40 px-4 py-2.5 text-sm font-bold text-rasta-gold transition hover:bg-rasta-gold/10 disabled:cursor-not-allowed disabled:opacity-40'
+                  }
                 >
                   {busy === `stripe-${p.id}` ? (
                     <Loader2 className="w-4 h-4 animate-spin inline-block" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useMemo, useState } from 'react';
+import { Suspense, useCallback, useMemo, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Check, Loader2, Terminal } from 'lucide-react';
@@ -62,30 +62,32 @@ function CliApproveInner() {
 
   return (
     <div className="rasta-info-page">
-      <section className="rasta-info-hero">
-        <div className="rasta-info-hero-inner">
-          <span className="rasta-info-version-badge">
-            <Terminal className="w-4 h-4 inline-block mr-2" /> CLI
-          </span>
-          <h1>{T.title[l]}</h1>
-          <p className="rasta-info-subtitle">{T.subtitle[l]}</p>
+      <section className="rasta-hero" aria-label="Hiran CLI">
+        <div className="rasta-hero-inner">
+          <div className="rasta-hero-kicker">
+            <span className="dot" />
+            <Terminal className="w-3.5 h-3.5" /> CLI
+          </div>
+          <h1 className="rasta-hero-title">{T.title[l]}</h1>
+          <p className="rasta-hero-desc mx-auto max-w-2xl">{T.subtitle[l]}</p>
         </div>
       </section>
 
-      <section className="rasta-info-section">
-        <div className="rasta-info-content max-w-lg">
+      <section className="pb-16">
+        <div className="mx-auto max-w-lg">
+          <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           {!authLoading && !authenticated && (
             <p className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
               {T.signIn[l]}
             </p>
           )}
 
-          <label className="block text-sm text-gray-300 mb-2">{T.codeLabel[l]}</label>
+          <label className="block text-sm font-semibold text-gray-300 mb-2">{T.codeLabel[l]}</label>
           <input
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="ABCD-1234"
-            className="w-full rounded-lg border border-white/15 bg-black/40 px-4 py-3 font-mono text-lg tracking-widest text-white"
+            className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-center font-mono text-xl tracking-[0.3em] text-white focus:border-rasta-gold/40 focus:outline-none"
             disabled={ok}
           />
 
@@ -93,7 +95,7 @@ function CliApproveInner() {
             type="button"
             onClick={approve}
             disabled={!authenticated || busy || ok || code.trim().length < 4}
-            className="mt-4 w-full rounded-lg bg-amber-500/90 px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
+            className="zion-button-primary mt-4 w-full disabled:cursor-not-allowed disabled:opacity-40"
           >
             {busy ? (
               <Loader2 className="w-4 h-4 animate-spin inline-block" />
@@ -119,6 +121,7 @@ function CliApproveInner() {
               {T.back[l]}
             </Link>
           </p>
+          </div>
         </div>
       </section>
     </div>
