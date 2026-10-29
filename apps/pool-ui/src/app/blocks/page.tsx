@@ -85,6 +85,13 @@ export default function BlocksPage() {
               </h3>
               <span className="text-[0.65rem] text-white/35">
                 {t('>100 % štěstí · <100 % smůla', '>100% lucky · <100% unlucky')}
+                {' · '}
+                <b className={(() => {
+                  const avg = lucky.reduce((a, b) => a + (b.luck_pct ?? 0), 0) / lucky.length;
+                  return avg >= 100 ? 'text-rasta-green' : 'text-rasta-gold';
+                })()}>
+                  Ø {(lucky.reduce((a, b) => a + (b.luck_pct ?? 0), 0) / lucky.length).toFixed(0)}%
+                </b>
               </span>
             </div>
             <div className="relative flex h-16 items-end gap-[2px]">
