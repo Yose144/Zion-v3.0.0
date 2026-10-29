@@ -2,6 +2,10 @@
 
 ## Verdikt: ⚠️ reálné on-chain double-payouts v malé míře + ledger stamping bug — P0 fix nasazen
 
+> **Update 29. 10.: 2.S2 gate = PASS** — žádná nová double-pay post-deploy;
+> 6 flagovaných párů = phantom páry z `height`-conflace (fix schema v13
+> `inclusion_height`), viz § „2.S2 finální re-count + verdikt".
+
 Reconcile `payouts` tabulky (SQLite `pool-store.db`, 210 151 řádků):
 
 ### Autoritativní čísla
@@ -100,6 +104,54 @@ envelope → **každý accepted submit** se četl jako "no result" → indetermi
 
 → Gate 2.S2 counting od 27. 10. 08:56 UTC; autoritativní verdikt po
 24–48 h okně (28.–29. 10.). Early signal čistý.
+
+### 2.S2 finální re-count + verdikt (29. 10.)
+
+Re-count na standby replice (EDGE2, read-only, schema v12, RPO ~1 h,
+220 176 payout řádků, okno od `f5364566` deploye 27. 10. 08:56 UTC):
+
+- Exact-dup join (address+height+amount, různé tx_id, obě confirmed):
+  **6 párů post-deploy** — nenula → triáž každého páru.
+- **Všech 6 párů = legitimní dvojice různých dluhů:** vždy
+  (a) nový batch řádek s reward height ~999xx +
+  (b) resurrect resubmit **starého voidnutého dluhu** (reward height
+  689xx/697xx/77xxx/88xxx) — journal `payout_submitted height=` na EDGE
+  prokazuje, že resubmit řádky nesou staré reward heights; join na
+  voidnuté řádky ukázal ~60 starých whale-dluhů stejné částky
+  (např. 4 806 059 630 flowers = konstantní reward × stabilní PPLNS
+  podíl), které D-16 resurrect postupně requeueuje.
+- **On-chain verifikace:** `e57bae66…` = 4 výstupy whale adrese s
+  různými částkami (4 skutečné dluhy); `94319b58…` = 2× 4 806 059 630
+  v jedné tx (2 skutečné dluhy stejné částky); `b0a0c2e4…` = 3 různé
+  částky. Žádná tx neplatí tentýž dluh dvakrát.
+
+**Verdikt 2.S2: PASS — žádná nová double-pay po `cdbb8a29`/`f5364566`.**
+Flagované páry jsou faležné pozitivy exact-dup metriky, ne duplicitní
+platby. Treasury dopad zůstává původní evidence (1 441 historických
+párů ≈ 5.9 M ZION, 👤 rozhodnutí).
+
+**Nový defekt odhalený re-countem — `payouts.height` sémantika:**
+`confirm_payout_with_block` přepisovalo `height` (reward height) na
+inclusion height → dvě různé výplaty potvrzené ve stejném bloku se
+staly nerozlišitelné → phantom páry v exact-dup metrice.
+
+- **Fix — schema v13 (`inclusion_height`):** `height` = trvale reward
+  height; `confirm_payout_with_block` nově zapisuje
+  `inclusion_height`. UTXO-fallback confirm cesta v
+  `deferred_payout.rs` sjednocena na `confirm_payout_with_block`
+  (zná inclusion height také). API serializéry exportují obě pole.
+- **Migrace:** legacy confirmed řádky se backfillují
+  `inclusion_height = height`; jejich původní reward height je
+  nenávratně ztracen (zdokumentováno v migraci). Pending řádky =
+  NULL.
+- **Testy:** `schema_v13_backfills_inclusion_height` (v12→v13),
+  `same_amount_payouts_confirmed_in_one_block_stay_distinct`
+  (regrese 2.S2), `confirm_payout_with_block_keeps_reward_height`.
+- **Metrika forward:** exact-dup join nad confirmed řádky má nově
+  klíčovat `inclusion_height` (skupina „potvrzeno ve stejném bloku"),
+  `height` = reward height pro přiřazení dluhu. Do nasazení v13 na
+  EDGE běží produkce na v12 binárce → `height` u nových confirmů
+  stále = inclusion (migrační caveat platí).
 
 ### Ops incident (mimo payout scope)
 

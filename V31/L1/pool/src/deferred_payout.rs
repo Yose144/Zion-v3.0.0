@@ -671,10 +671,7 @@ fn resurrect_stuck_group(
         .unwrap_or(0);
     // Conservative: void only when every row of the dead tx is past the
     // stuck age (a mixed-age group means something else is going on).
-    if !group
-        .iter()
-        .all(|p| (now - p.ts) > stuck_age_secs as i64)
-    {
+    if !group.iter().all(|p| (now - p.ts) > stuck_age_secs as i64) {
         return;
     }
     let zion_rows: Vec<&PayoutRow> = group.iter().filter(|p| p.coin == "zion").collect();
@@ -794,7 +791,11 @@ pub fn spawn_payout_confirmation_sweep(
                             Ok(Some(h)) => (h, String::new()),
                             Ok(None) => {
                                 resurrect_stuck_group(
-                                    &store, &pool, &tx_id, &group, stuck_age_secs,
+                                    &store,
+                                    &pool,
+                                    &tx_id,
+                                    &group,
+                                    stuck_age_secs,
                                 );
                                 continue;
                             }
@@ -816,16 +817,15 @@ pub fn spawn_payout_confirmation_sweep(
                 let confirmations = confirmations_at(chain_height, tx_height);
 
                 if confirmations >= maturity_confirmations {
-                    let confirm = if block_hash.is_empty() {
-                        store.confirm_payout(&tx_id, confirmations)
-                    } else {
-                        store.confirm_payout_with_block(
-                            &tx_id,
-                            confirmations,
-                            &block_hash,
-                            tx_height,
-                        )
-                    };
+                    // Always record the inclusion height (schema v13): the
+                    // UTXO-fallback path has it too (the output's recorded
+                    // block_height), only block_hash may be empty.
+                    let confirm = store.confirm_payout_with_block(
+                        &tx_id,
+                        confirmations,
+                        &block_hash,
+                        tx_height,
+                    );
                     if let Err(e) = confirm {
                         warn!(
                             "payout_confirmation_sweep: confirm_payout failed for {}: {}",

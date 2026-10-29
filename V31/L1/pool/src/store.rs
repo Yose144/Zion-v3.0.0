@@ -38,7 +38,7 @@ use crate::v3_pplns::PayoutEntry;
 /// v9: `pool_state` kv — the running shares-since-last-block counter is
 /// flushed here periodically (the `shares` table is not populated by the
 /// production submit path, so there is no per-share trail to recount).
-const SCHEMA_VERSION: u32 = 12;
+const SCHEMA_VERSION: u32 = 13;
 
 /// A thread-safe wrapper around a SQLite connection.  SQLite with
 /// `serialized` mode (default for `bundled`) supports multi-thread access,
@@ -539,6 +539,36 @@ impl ShareStore {
             .context("failed to migrate schema to v12")?;
         }
 
+        if current < 13 {
+            // v13: `inclusion_height` records which block a payout tx was
+            // mined in. Previously `confirm_payout_with_block` overwrote the
+            // row's `height` (the rewarded block height) with the inclusion
+            // height — different debts of the same amount confirmed in one
+            // block then became indistinguishable, so the exact-amount
+            // duplicate-detection query produced phantom pairs (2026-10-29
+            // 2.S2 re-count). `height` keeps its original meaning (rewarded
+            // height); legacy confirmed rows backfill inclusion_height from
+            // the overwritten value (their rewarded height is unrecoverable).
+            let has_payouts: bool = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM sqlite_master
+                     WHERE type = 'table' AND name = 'payouts'",
+                    [],
+                    |r| r.get::<_, i64>(0),
+                )
+                .map(|c| c > 0)
+                .unwrap_or(false);
+            if has_payouts {
+                conn.execute_batch(
+                    "ALTER TABLE payouts
+                        ADD COLUMN inclusion_height INTEGER;
+                     UPDATE payouts SET inclusion_height = height
+                        WHERE confirmed = 1;",
+                )
+                .context("failed to migrate schema to v13")?;
+            }
+        }
+
         conn.pragma_update(None, "user_version", SCHEMA_VERSION)?;
         info!("share_store: schema migration complete v{SCHEMA_VERSION}");
         Ok(())
@@ -754,8 +784,11 @@ impl ShareStore {
         Ok(())
     }
 
-    /// Mark a payout as confirmed, also recording the block hash and height
-    /// it was mined in.
+    /// Mark a payout as confirmed, also recording the block hash and the
+    /// inclusion height it was mined in. The row's `height` stays the
+    /// rewarded block height (schema v13 — previously it was overwritten,
+    /// which made same-amount debts confirmed in one block collide in the
+    /// duplicate-detection query).
     pub fn confirm_payout_with_block(
         &self,
         tx_id: &str,
@@ -765,7 +798,7 @@ impl ShareStore {
     ) -> Result<()> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         conn.execute(
-            "UPDATE payouts SET confirmations = ?1, confirmed = 1, block_hash = ?2, height = ?3 WHERE tx_id = ?4",
+            "UPDATE payouts SET confirmations = ?1, confirmed = 1, block_hash = ?2, inclusion_height = ?3 WHERE tx_id = ?4",
             params![confirmations as i64, block_hash, height as i64, tx_id],
         )?;
         Ok(())
@@ -1191,7 +1224,7 @@ impl ShareStore {
     pub fn query_payouts(&self, miner_id: &str, limit: u32) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id, inclusion_height
              FROM payouts WHERE miner_id = ?1 ORDER BY ts DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![miner_id, limit as i64], |row| {
@@ -1207,6 +1240,7 @@ impl ShareStore {
                 confirmed: row.get::<_, i32>(8)? != 0,
                 coin: row.get(9)?,
                 superseded_tx_id: row.get(10)?,
+                inclusion_height: row.get::<_, Option<i64>>(11)?.map(|v| v as u64),
             })
         })?;
         let mut out = Vec::new();
@@ -1221,7 +1255,7 @@ impl ShareStore {
     pub fn query_payouts_by_address(&self, address: &str, limit: u32) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id, inclusion_height
              FROM payouts WHERE address = ?1 ORDER BY ts DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![address, limit as i64], |row| {
@@ -1237,6 +1271,7 @@ impl ShareStore {
                 confirmed: row.get::<_, i32>(8)? != 0,
                 coin: row.get(9)?,
                 superseded_tx_id: row.get(10)?,
+                inclusion_height: row.get::<_, Option<i64>>(11)?.map(|v| v as u64),
             })
         })?;
         let mut out = Vec::new();
@@ -1250,7 +1285,7 @@ impl ShareStore {
     pub fn query_all_payouts(&self, limit: u32) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id, inclusion_height
              FROM payouts ORDER BY ts DESC LIMIT ?1",
         )?;
         let rows = stmt.query_map(params![limit as i64], |row| {
@@ -1266,6 +1301,7 @@ impl ShareStore {
                 confirmed: row.get::<_, i32>(8)? != 0,
                 coin: row.get(9)?,
                 superseded_tx_id: row.get(10)?,
+                inclusion_height: row.get::<_, Option<i64>>(11)?.map(|v| v as u64),
             })
         })?;
         let mut out = Vec::new();
@@ -1279,7 +1315,7 @@ impl ShareStore {
     pub fn query_all_payouts_asc(&self) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id, inclusion_height
              FROM payouts ORDER BY ts ASC",
         )?;
         let rows = stmt.query_map([], |row| {
@@ -1295,6 +1331,7 @@ impl ShareStore {
                 confirmed: row.get::<_, i32>(8)? != 0,
                 coin: row.get(9)?,
                 superseded_tx_id: row.get(10)?,
+                inclusion_height: row.get::<_, Option<i64>>(11)?.map(|v| v as u64),
             })
         })?;
         let mut out = Vec::new();
@@ -1308,7 +1345,7 @@ impl ShareStore {
     pub fn query_unconfirmed_payouts(&self) -> Result<Vec<PayoutRow>> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         let mut stmt = conn.prepare(
-            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id
+            "SELECT ts, miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed, coin, superseded_tx_id, inclusion_height
              FROM payouts WHERE confirmed = 0 AND superseded_tx_id = ''",
         )?;
         let rows = stmt.query_map([], |row| {
@@ -1324,6 +1361,7 @@ impl ShareStore {
                 confirmed: row.get::<_, i32>(8)? != 0,
                 coin: row.get(9)?,
                 superseded_tx_id: row.get(10)?,
+                inclusion_height: row.get::<_, Option<i64>>(11)?.map(|v| v as u64),
             })
         })?;
         let mut out = Vec::new();
@@ -1978,6 +2016,9 @@ pub struct PayoutRow {
     /// Schema v11: non-empty when this row was voided as a dead/stuck tx
     /// and requeued under a fresh payout (evidence, never resubmitted).
     pub superseded_tx_id: String,
+    /// Schema v13: the block the payout tx was mined in (None until
+    /// confirmed). `height` stays the rewarded block height.
+    pub inclusion_height: Option<u64>,
 }
 
 #[derive(Debug, Clone)]
@@ -2318,7 +2359,7 @@ mod tests {
     }
 
     #[test]
-    fn confirm_payout_with_block_updates_height_and_hash() {
+    fn confirm_payout_with_block_keeps_reward_height() {
         let store = ShareStore::open_in_memory().unwrap();
         let payout = PayoutRecord {
             miner_id: "m1".to_string(),
@@ -2339,7 +2380,108 @@ mod tests {
         assert!(payouts[0].confirmed);
         assert_eq!(payouts[0].confirmations, 12);
         assert_eq!(payouts[0].block_hash, "blockhash456");
-        assert_eq!(payouts[0].height, 150);
+        // v13: `height` stays the rewarded height; the inclusion block goes
+        // to `inclusion_height` (previously the two were conflated, which
+        // produced phantom duplicate pairs in the exact-amount query).
+        assert_eq!(payouts[0].height, 100);
+        assert_eq!(payouts[0].inclusion_height, Some(150));
+    }
+
+    /// v12→v13: `inclusion_height` is added and backfilled from `height` on
+    /// confirmed rows (their original rewarded height was overwritten by the
+    /// pre-v13 confirm path and is unrecoverable); pending rows stay NULL.
+    #[test]
+    fn schema_v13_backfills_inclusion_height() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE payouts (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts            INTEGER NOT NULL DEFAULT (unixepoch()),
+                miner_id      TEXT NOT NULL,
+                address       TEXT NOT NULL,
+                amount_flowers INTEGER NOT NULL,
+                tx_id         TEXT NOT NULL,
+                height        INTEGER NOT NULL,
+                block_hash    TEXT NOT NULL,
+                confirmations INTEGER NOT NULL DEFAULT 0,
+                confirmed     INTEGER NOT NULL DEFAULT 0,
+                coin          TEXT NOT NULL DEFAULT 'zion',
+                superseded_tx_id TEXT NOT NULL DEFAULT ''
+            );
+            -- legacy confirmed row: `height` already holds the overwritten
+            -- inclusion height (rewarded height lost pre-v13)
+            INSERT INTO payouts (miner_id, address, amount_flowers, tx_id, height, block_hash, confirmations, confirmed)
+            VALUES ('m1', 'zion1abc', 100, 'tx_confirmed', 99917, 'bh1', 50, 1);
+            -- still-pending row keeps its rewarded height, no inclusion yet
+            INSERT INTO payouts (miner_id, address, amount_flowers, tx_id, height, block_hash)
+            VALUES ('m1', 'zion1abc', 200, 'tx_pending', 69500, '');
+            -- voided/superseded pending row
+            INSERT INTO payouts (miner_id, address, amount_flowers, tx_id, height, block_hash, superseded_tx_id)
+            VALUES ('m1', 'zion1abc', 300, 'tx_voided', 77000, '', 'voided:stuck');
+            PRAGMA user_version = 12;",
+        )
+        .unwrap();
+        let store = ShareStore::from_connection_for_test(conn).unwrap();
+
+        let version: u32 = store
+            .conn
+            .lock()
+            .unwrap()
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(version, SCHEMA_VERSION);
+
+        let rows = store.query_all_payouts(10).unwrap();
+        let by_tx = |tx: &str| rows.iter().find(|r| r.tx_id == tx).unwrap();
+        let confirmed = by_tx("tx_confirmed");
+        assert_eq!(confirmed.height, 99917);
+        assert_eq!(confirmed.inclusion_height, Some(99917));
+        assert_eq!(by_tx("tx_pending").inclusion_height, None);
+        assert_eq!(by_tx("tx_voided").inclusion_height, None);
+
+        // Post-migration confirms keep writing the split fields.
+        store
+            .confirm_payout_with_block("tx_pending", 10, "bh2", 70001)
+            .unwrap();
+        let rows = store.query_all_payouts(10).unwrap();
+        let pending = rows.iter().find(|r| r.tx_id == "tx_pending").unwrap();
+        assert_eq!(pending.height, 69500);
+        assert_eq!(pending.inclusion_height, Some(70001));
+    }
+
+    /// Regression for the 2.S2 phantom-duplicate finding: two payouts to the
+    /// same address for the same amount rewarded at *different* heights and
+    /// confirmed in the *same* block must remain distinguishable.
+    #[test]
+    fn same_amount_payouts_confirmed_in_one_block_stay_distinct() {
+        let store = ShareStore::open_in_memory().unwrap();
+        for (tx, height) in [("tx_a", 100u64), ("tx_b", 69500)] {
+            store
+                .record_payout(&PayoutRecord {
+                    miner_id: "m1".to_string(),
+                    address: "zion1abc".to_string(),
+                    amount_flowers: 4_806_059_630,
+                    tx_id: tx.to_string(),
+                    height,
+                    block_hash: String::new(),
+                    coin: "zion".to_string(),
+                })
+                .unwrap();
+        }
+        store
+            .confirm_payout_with_block("tx_a", 5, "bhX", 99917)
+            .unwrap();
+        store
+            .confirm_payout_with_block("tx_b", 5, "bhX", 99917)
+            .unwrap();
+
+        let rows = store.query_all_payouts(10).unwrap();
+        let a = rows.iter().find(|r| r.tx_id == "tx_a").unwrap();
+        let b = rows.iter().find(|r| r.tx_id == "tx_b").unwrap();
+        assert_eq!(a.height, 100);
+        assert_eq!(b.height, 69500);
+        assert_eq!(a.inclusion_height, Some(99917));
+        assert_eq!(b.inclusion_height, Some(99917));
     }
 
     #[test]

@@ -40,8 +40,7 @@ const ONLINE_WINDOW_S: u64 = 600;
 /// until the process suffocates (seen live: 437 threads on a hung lock).
 /// The accept loop sheds excess load with a fast 503 instead.
 const API_MAX_IN_FLIGHT: usize = 64;
-static API_IN_FLIGHT: std::sync::atomic::AtomicUsize =
-    std::sync::atomic::AtomicUsize::new(0);
+static API_IN_FLIGHT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// RAII decrement for `API_IN_FLIGHT` — released when the handler thread
 /// exits, on success or panic alike.
@@ -631,9 +630,8 @@ impl PoolApi {
                 ("200 OK", "application/json", body)
             }
             "/metrics" => {
-                let body = Self::snapshot_or(&self.snapshots.metrics, || {
-                    self.build_prometheus_payload()
-                });
+                let body =
+                    Self::snapshot_or(&self.snapshots.metrics, || self.build_prometheus_payload());
                 ("200 OK", "text/plain; version=0.0.4", body)
             }
             p if p == "/stats" || p == "/" || p == "/pool" => {
@@ -1352,7 +1350,10 @@ impl PoolApi {
         let builds: [(&RwLock<Option<Arc<str>>>, &dyn Fn(&Self) -> String); 3] = [
             (&self.snapshots.stats, &Self::build_stats_payload),
             (&self.snapshots.metrics, &Self::build_prometheus_payload),
-            (&self.snapshots.public_coins, &Self::build_public_coins_payload),
+            (
+                &self.snapshots.public_coins,
+                &Self::build_public_coins_payload,
+            ),
         ];
         for (slot, build) in builds {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| build(self))) {
@@ -3489,9 +3490,7 @@ fn check_alert_subscriptions(pool: &Arc<Mutex<Pool>>, store: &ShareStore, notifi
 /// Strip ".worker" and "@group" suffixes so the public feed only exposes the
 /// wallet/address part of a miner id.
 fn public_miner_id(miner_id: &str) -> &str {
-    let end = miner_id
-        .find(['.', '@'])
-        .unwrap_or(miner_id.len());
+    let end = miner_id.find(['.', '@']).unwrap_or(miner_id.len());
     &miner_id[..end]
 }
 
@@ -3618,6 +3617,7 @@ fn serialize_public_payouts_json(payouts: &[crate::store::PayoutRow]) -> serde_j
                     "amount_flowers": p.amount_flowers,
                     "tx_id": p.tx_id,
                     "height": p.height,
+                    "inclusion_height": p.inclusion_height,
                     "block_hash": p.block_hash,
                     "confirmations": p.confirmations,
                     "confirmed": p.confirmed,
@@ -3659,6 +3659,7 @@ fn serialize_payouts_json(payouts: &[crate::store::PayoutRow]) -> String {
             "amount_flowers": p.amount_flowers,
             "tx_id": p.tx_id,
             "height": p.height,
+            "inclusion_height": p.inclusion_height,
             "block_hash": p.block_hash,
             "confirmations": p.confirmations,
             "confirmed": p.confirmed,
@@ -3720,7 +3721,10 @@ mod tests {
         // Short ids and hyphenated rig labels pass through untouched —
         // "vast-58077390-prlpool" is 20 chars but clearly not a wallet.
         assert_eq!(mask_wallet("short"), "short");
-        assert_eq!(mask_wallet("vast-58077390-prlpool"), "vast-58077390-prlpool");
+        assert_eq!(
+            mask_wallet("vast-58077390-prlpool"),
+            "vast-58077390-prlpool"
+        );
     }
 
     #[test]
