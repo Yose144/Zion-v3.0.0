@@ -24,6 +24,14 @@
 - notifications.rs: Telegram + SMTP + block webhook (pool-side events)
 - Drain fix `8a32fae94` — dedicated-thread shutdown, verified 2.9s live
 - Snapshot-thread serves /stats,/metrics,/public/v1/coins lock-free
+- Canonical QTC ticker (2026-10-29, `a152d04e8` + parallel `4040126ad`):
+  internal storage tag stays `qtu`, every public payload emits `qtc`
+  (`public_ticker`/`internal_coin_key` helpers in api.rs); inputs accept
+  `qtc`/`qtu`/`quantus`/`quantum`; Qubitcoin's internal `qtc` tag
+  disambiguates to `qubitcoin` (never collides). Wallet prefixes
+  `qtc:`/`qtu:`/`quantus:` all parse; env `ZION_POOL_NATIVE_PAYOUT_COINS`
+  accepts aliases. Live-verified: /coins, /pplns, /miners, /coin stats,
+  payout feed + filters.
 
 **Frontend (live on EDGE2 `/var/www/pool`):**
 - Pages: `/` `/start` `/blocks` `/payouts` `/stats` `/coin/[id]`
