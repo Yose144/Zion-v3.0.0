@@ -36,12 +36,22 @@ interface FleetSheet {
 interface AgentRig {
   rig_id: string;
   hostname?: string;
+  enrolled?: boolean;
   group?: string;
+  desired?: FleetSheet & { hash?: string };
+  applied_sheet?: string;
   last_seen?: number;
-  applied_hash?: string;
+  age_s?: number | null;
+  uptime_s?: number;
+  load1?: number;
   miners?: string[];
-  gpus?: { name?: string; temp?: number; util?: number; power?: number }[];
-  pending_tasks?: unknown[];
+  gpus?: { name?: string; temp?: number | string; util?: number | string; power?: number | string }[];
+  pending?: number;
+  results?: number;
+  offline_alert?: boolean;
+  miner_alert?: string | null;
+  temp_alerts?: string[];
+  hps_alert?: boolean;
 }
 
 interface FleetEvent {
@@ -87,6 +97,12 @@ const L = {
   assign: { cs: 'Přiřadit sheet…', en: 'Assign sheet…' },
   clear: { cs: '(zrušit)', en: '(clear)' },
   assigned: { cs: 'Přiřazeno ✓', en: 'Assigned ✓' },
+  exec: { cs: 'exec', en: 'exec' },
+  execPh: { cs: 'příkaz na rigu…', en: 'command on rig…' },
+  allRigs: { cs: 'všem rigům', en: 'all rigs' },
+  removeRig: { cs: 'odebrat', en: 'remove' },
+  setGroup: { cs: 'group…', en: 'group…' },
+  queued: { cs: 'Zařazeno ✓', en: 'Queued ✓' },
   noAgents: {
     cs: 'Zatím žádní agenti nepřipojeni — nasaď vast-agent na rig.',
     en: 'No agents enrolled yet — deploy vast-agent to a rig.',
@@ -184,7 +200,6 @@ export default function OpsClient() {
   const online = rigs.filter((r) => r.status === 'running');
   const miners = rigs.flatMap((r) => r.miners ?? []);
   const agents = fleet?.rigs ?? [];
-  const sheets = fleet?.sheets?.rigs ?? {};
   const groups = fleet?.sheets?.groups ?? {};
   const catalog = fleet?.catalog ?? {};
   const bench = fleet?.bench ?? {};
@@ -294,31 +309,95 @@ export default function OpsClient() {
         <div className="table-scroll">
           <table className="pool-table">
             <thead>
-              <tr><th>Rig / group</th><th>Flight sheet</th><th>Applied</th><th>Seen</th><th>GPUs</th><th>Miners</th><th>{t(lang, 'assign')}</th></tr>
+              <tr><th>Rig / group</th><th>Flight sheet</th><th>Applied</th><th>Seen</th><th>GPUs</th><th>Miners</th><th>{t(lang, 'assign')}</th><th>{t(lang, 'exec')}</th></tr>
             </thead>
             <tbody>
-              {agents.map((a) => (
-                <tr key={a.rig_id}>
-                  <td><b>{a.hostname ?? a.rig_id}</b>{a.group && <span className="text-muted"> · {a.group}</span>}</td>
-                  <td>{sheetLabel(sheets[a.rig_id])}</td>
-                  <td>{sheets[a.rig_id]?.hash && a.applied_hash
-                    ? (sheets[a.rig_id]!.hash === a.applied_hash ? '✓' : '⟳ pending')
-                    : '—'}</td>
-                  <td>{fmtAge(a.last_seen)}</td>
-                  <td>{(a.gpus ?? []).map((g) => `${g.name ?? '?'} ${g.temp ?? ''}°`).join(', ') || '—'}</td>
-                  <td>{(a.miners ?? []).join(', ') || '—'}</td>
-                  <td><SheetPicker target={{ rig_id: a.rig_id }} /></td>
-                </tr>
-              ))}
+              {agents.map((a) => {
+                const badges = [
+                  a.offline_alert && 'offline',
+                  a.miner_alert && `miner:${a.miner_alert}`,
+                  (a.temp_alerts ?? []).length ? `temp:${(a.temp_alerts ?? []).length}` : null,
+                  a.hps_alert && 'hps',
+                ].filter(Boolean);
+                const applied = a.desired?.hash
+                  ? (a.desired.hash === a.applied_sheet ? '✓' : '⟳ pending')
+                  : '—';
+                return (
+                  <tr key={a.rig_id}>
+                    <td>
+                      <b>{a.hostname ?? a.rig_id}</b>
+                      {a.group && <span className="text-muted"> · {a.group}</span>}
+                      {(a.pending ?? 0) > 0 && <span className="text-muted"> · ⧗{a.pending}</span>}
+                      {badges.length > 0 && <div style={{ color: 'var(--bad, #ff6b6b)', fontSize: '.72rem' }}>⚠ {badges.join(' ')}</div>}
+                    </td>
+                    <td>{sheetLabel(a.desired)}</td>
+                    <td>{applied}</td>
+                    <td>{a.age_s != null ? fmtAge(a.last_seen) : '—'}<br /><span className="text-muted" style={{ fontSize: '.72rem' }}>{a.load1 != null ? `load ${a.load1}` : ''}</span></td>
+                    <td>{(a.gpus ?? []).map((g) => `${g.name ?? '?'} ${g.temp ?? ''}°`).join(', ') || '—'}</td>
+                    <td>{(a.miners ?? []).join(', ') || '—'}</td>
+                    <td>
+                      <SheetPicker target={{ rig_id: a.rig_id }} />
+                      <div style={{ marginTop: '.3rem', display: 'flex', gap: '.3rem' }}>
+                        <button onClick={() => {
+                          const g = prompt(`${t(lang, 'setGroup')} (${a.rig_id})`, a.group ?? '');
+                          if (g != null) postOps('/agent/group', { rig_id: a.rig_id, group: g || null }).catch((e) => setAssignMsg(String(e)));
+                        }} className="ops-mini-btn">{t(lang, 'setGroup')}</button>
+                        <button onClick={() => {
+                          if (confirm(`${t(lang, 'removeRig')} ${a.rig_id}?`))
+                            postOps('/agent/rig/remove', { rig_id: a.rig_id }).catch((e) => setAssignMsg(String(e)));
+                        }} className="ops-mini-btn ops-mini-danger">{t(lang, 'removeRig')}</button>
+                      </div>
+                    </td>
+                    <td>
+                      <input
+                        placeholder={t(lang, 'execPh')}
+                        className="ops-exec-input"
+                        onKeyDown={(e) => {
+                          const v = (e.target as HTMLInputElement).value.trim();
+                          if (e.key === 'Enter' && v) {
+                            (e.target as HTMLInputElement).value = '';
+                            postOps('/agent/enqueue', { rig_id: a.rig_id, op: 'exec', args: { cmd: v } })
+                              .then(() => setAssignMsg(t(lang, 'queued')))
+                              .catch((err) => setAssignMsg(String(err)));
+                          }
+                        }}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
               {Object.entries(groups).map(([g, s]) => (
                 <tr key={`g-${g}`}>
                   <td><b>{g}</b> <span className="text-muted">(group)</span></td>
                   <td>{sheetLabel(s)}</td><td colSpan={4} className="text-muted">—</td>
-                  <td><SheetPicker target={{ group: g }} /></td>
+                  <td><SheetPicker target={{ group: g }} /></td><td></td>
                 </tr>
               ))}
+              {agents.length > 0 && (
+                <tr>
+                  <td><b>∗ {t(lang, 'allRigs')}</b></td>
+                  <td colSpan={5} className="text-muted">bulk</td>
+                  <td>
+                    <select
+                      defaultValue=""
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        e.target.value = '';
+                        if (v && confirm(`bulk → ${v} (${agents.length} rigs)?`))
+                          postOps('/agent/bulk', { target: { all: true }, action: { catalog: v } })
+                            .catch((err) => setAssignMsg(String(err)));
+                      }}
+                      style={{ background: 'rgba(0,0,0,.45)', border: '1px solid rgba(255,255,255,.18)', borderRadius: 6, color: 'inherit', padding: '.25rem .4rem', fontSize: '.78rem' }}
+                    >
+                      <option value="">{t(lang, 'assign')}</option>
+                      {Object.keys(catalog).map((n) => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </td>
+                  <td></td>
+                </tr>
+              )}
               {agents.length === 0 && Object.keys(groups).length === 0 && (
-                <tr><td colSpan={7} className="text-muted" style={{ textAlign: 'center', padding: '1.25rem' }}>{t(lang, 'noAgents')}</td></tr>
+                <tr><td colSpan={8} className="text-muted" style={{ textAlign: 'center', padding: '1.25rem' }}>{t(lang, 'noAgents')}</td></tr>
               )}
             </tbody>
           </table>

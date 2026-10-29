@@ -697,3 +697,28 @@ main {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
+
+/* ── /ops MultiRig console ─────────────────────────────────────────── */
+.ops-mini-btn {
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 6px;
+  color: inherit;
+  padding: .2rem .45rem;
+  font-size: .72rem;
+  cursor: pointer;
+}
+.ops-mini-btn:hover { border-color: rgba(252,209,22,.5); color: #fcd116; }
+.ops-mini-danger:hover { border-color: rgba(255,107,107,.6); color: #ff6b6b; }
+.ops-exec-input {
+  width: 100%;
+  min-width: 10rem;
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 6px;
+  color: inherit;
+  padding: .3rem .5rem;
+  font-size: .78rem;
+  font-family: monospace;
+}
+.ops-exec-input:focus { outline: none; border-color: rgba(252,209,22,.5); }
