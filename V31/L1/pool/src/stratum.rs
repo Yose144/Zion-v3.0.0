@@ -218,6 +218,10 @@ pub struct StratumServer {
     /// feeds and share validation, but their shares never weight the
     /// PPLNS window and a found block pays winner-take-all to the finder.
     solo_mode: bool,
+    /// Share validator copied out of the Pool at construction so submit
+    /// paths can run the PoW hash without holding `pool.lock()` —
+    /// `ShareValidator` is `Copy` + stateless, the copy is free.
+    validator: crate::validator::ShareValidator,
 }
 
 /// Decrements the shared active-session counter when the session task
@@ -264,13 +268,14 @@ impl StratumServer {
     }
 
     pub fn new(pool: Arc<Mutex<Pool>>) -> Self {
-        let (config, telemetry, session_counters, pearl) = {
+        let (config, telemetry, session_counters, pearl, validator) = {
             let pool = pool.lock().unwrap();
             (
                 pool.config.clone(),
                 pool.telemetry.clone(),
                 pool.session_counters.clone(),
                 pool.pearl.clone(),
+                pool.validator,
             )
         };
         let (notify_tx, _notify_rx) = broadcast::channel(256);
@@ -350,6 +355,7 @@ impl StratumServer {
                 .unwrap_or(false),
             pearl,
             solo_mode: false,
+            validator,
         }
     }
 
@@ -789,21 +795,24 @@ impl StratumServer {
 
         let height = template.as_ref().map(|t| t.height).unwrap_or(0);
 
-        let result = match coin_leg::route_job_id(&job_id) {
-            JobRoute::ZionV1 => self.pool.lock().unwrap().submit_zion_with_target(
-                submission,
+        let (result, share_hash) = match coin_leg::route_job_id(&job_id) {
+            JobRoute::ZionV1 => self.submit_share_two_phase(
+                &submission,
+                nonce,
                 &header,
                 height,
                 &share_target,
+                None,
             ),
-            JobRoute::Auxpow(coin) => self.pool.lock().unwrap().submit_auxpow_with_target(
-                coin,
-                submission,
+            JobRoute::Auxpow(coin) => self.submit_share_two_phase(
+                &submission,
+                nonce,
                 &header,
                 height,
                 &share_target,
+                Some(coin),
             ),
-            _ => Err(PoolError::UnknownJob),
+            _ => (Err(PoolError::UnknownJob), None),
         };
 
         match result {
@@ -824,13 +833,15 @@ impl StratumServer {
                 );
                 // Record share for block tracker luck.
                 self.block_tracker.lock().unwrap().record_share();
-                // Check whether the share is also a full block.
+                // Check whether the share is also a full block — the hash
+                // already computed by the submit phase is reused here, so
+                // no second PoW hash runs under a lock.
                 self.check_and_record_block(
                     &job_id,
                     &worker_name,
-                    &header,
                     nonce,
                     &block_target,
+                    share_hash,
                     share_difficulty,
                     reward,
                     template,
@@ -966,36 +977,80 @@ impl StratumServer {
         u64::from_str_radix(s, 16).map_err(|_| PoolError::Parse)
     }
 
+    /// Two-phase share admission. Dedup probe and PPLNS credit take
+    /// short `pool.lock()` holds; the PoW hash runs unlocked on this
+    /// task's own validator copy. Under submit storms the per-share
+    /// lock hold drops by the full validation cost instead of convoying
+    /// hashing into the global mutex — the 2026-10-28 wedge RCA showed
+    /// exactly that starvation pattern.
+    ///
+    /// Returns the admission result plus the computed share hash so the
+    /// caller can reuse it for the block-target check (accepted shares
+    /// previously paid a second identical hash under the lock).
+    fn submit_share_two_phase(
+        &self,
+        submission: &ShareSubmission,
+        nonce: u64,
+        header: &[u8],
+        height: u64,
+        share_target: &[u8; 32],
+        aux: Option<ExternalCoin>,
+    ) -> (Result<bool, PoolError>, Option<[u8; 32]>) {
+        let dedup_bucket = match aux {
+            Some(coin) => format!("aux:{}:{coin}", submission.job_id),
+            None => submission.job_id.clone(),
+        };
+        // Phase 1 — replay probe. No mark is taken so an invalid share
+        // keeps its tag for a later legit resubmit.
+        {
+            let pool = self.pool.lock().unwrap();
+            if pool.share_replay_probe(&dedup_bucket, nonce) {
+                pool.note_rejected_share();
+                return (Err(PoolError::DuplicateShare), None);
+            }
+        }
+        // Phase 2 — PoW hash with no lock held.
+        let hash: [u8; 32] = match aux {
+            Some(coin) => self.validator.auxpow_hash(coin, header, nonce),
+            None => *self.validator.zion_hash(header, nonce).as_bytes(),
+        };
+        if !zion_miner::auxpow::hasher::meets_target(&hash, share_target) {
+            self.pool.lock().unwrap().note_rejected_share();
+            return (Err(PoolError::Invalid), Some(hash));
+        }
+        // Phase 3 — atomic dedup claim + PPLNS credit.
+        let coin_key = aux.map(|c| c.as_str()).unwrap_or("zion");
+        let result = self.pool.lock().unwrap().credit_validated_share(
+            submission,
+            nonce,
+            &dedup_bucket,
+            coin_key,
+            height,
+        );
+        (result, Some(hash))
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn check_and_record_block(
         &self,
         job_id: &str,
         worker_full: &str,
-        header: &[u8],
         nonce: u64,
         block_target: &[u8; 32],
+        share_hash: Option<[u8; 32]>,
         share_difficulty: u64,
         block_reward: u64,
         template: Option<CoreBlockTemplate>,
     ) {
-        let (is_block, rpc_url) = {
-            let pool = self.pool.lock().unwrap();
-            let is_block = match coin_leg::route_job_id(job_id) {
-                JobRoute::ZionV1 => {
-                    let hash = pool.validator.zion_hash(header, nonce);
-                    hash.as_bytes() <= block_target
-                }
-                JobRoute::Auxpow(coin) => {
-                    let hash = pool.validator.auxpow_hash(coin, header, nonce);
-                    &hash <= block_target
-                }
-                _ => false,
-            };
-            (is_block, pool.config.l1_rpc_url.clone())
-        };
+        // The submit phase already computed the share hash unlocked —
+        // the block check is a pure comparison, no `pool.lock()` needed.
+        // `rpc_url` comes from the server's own config clone (l1_rpc_url
+        // is static after boot).
+        let is_block = share_hash.is_some_and(|h| h <= *block_target);
         if !is_block {
             return;
         }
+        let rpc_url = self.config.l1_rpc_url.clone();
 
         let block_height = template.as_ref().map(|t| t.height).unwrap_or(0);
         let network_difficulty = template.as_ref().map(|t| t.difficulty).unwrap_or(1);
@@ -2869,7 +2924,14 @@ impl StratumServer {
                                             difficulty: share_diff,
                                             solo: self.solo_mode,
                                         };
-                                        let result = self.pool.lock().unwrap().submit_zion_with_target(submission, &header, height, &share_target);
+                                        let (result, share_hash) = self.submit_share_two_phase(
+                                            &submission,
+                                            nonce,
+                                            &header,
+                                            height,
+                                            &share_target,
+                                            None,
+                                        );
                                         let accepted = matches!(result, Ok(true));
 
                                         // Estimate hashes/elapsed for TLS clients (no per-session vardiff here).
@@ -2881,12 +2943,12 @@ impl StratumServer {
                                             elapsed_ms,
                                         );
 
-                                        // Check if share meets the network block target
-                                        let block_found = accepted && {
-                                            let pool = self.pool.lock().unwrap();
-                                            let hash = pool.validator.zion_hash(&header, nonce);
-                                            hash.as_bytes() <= &block_target
-                                        };
+                                        // Check if share meets the network block
+                                        // target — reuses the hash the submit
+                                        // phase already computed unlocked.
+                                        let block_found = accepted
+                                            && share_hash
+                                                .is_some_and(|h| h <= block_target);
 
                                         if accepted {
                                             self.telemetry.lock().unwrap().record_job_result(
@@ -3435,19 +3497,21 @@ impl StratumServer {
                                     solo: self.solo_mode,
                                 };
 
-                                let result = self.pool.lock().unwrap().submit_zion_with_target(
-                                    submission,
+                                let (result, share_hash) = self.submit_share_two_phase(
+                                    &submission,
+                                    nonce,
                                     &header,
                                     height,
                                     &share_target,
+                                    None,
                                 );
 
                                 let accepted = matches!(result, Ok(true));
-                                let block_found = accepted && {
-                                    let pool = self.pool.lock().unwrap();
-                                    let hash = pool.validator.zion_hash(&header, nonce);
-                                    hash.as_bytes() <= &block_target
-                                };
+                                // Reuses the hash the submit phase already
+                                // computed unlocked — no second hash under
+                                // `pool.lock()`.
+                                let block_found =
+                                    accepted && share_hash.is_some_and(|h| h <= block_target);
 
                                 // Estimate hashes/elapsed for clients that don't report them.
                                 let (attempted_h, elapsed_ms) = self.fallback_work_sample(

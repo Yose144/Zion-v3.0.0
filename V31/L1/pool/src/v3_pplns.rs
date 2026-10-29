@@ -744,6 +744,13 @@ impl PplnsEngine {
         std::mem::replace(&mut self.dirty, false)
     }
 
+    /// Re-arm the dirty flag — a failed persist attempt marks the state
+    /// dirty again so the next cycle retries instead of silently losing
+    /// the mutations since the last successful save.
+    pub fn mark_dirty(&mut self) {
+        self.dirty = true;
+    }
+
     /// Save engine state only if it has changed since the last save.
     ///
     /// Returns `Ok(true)` if a snapshot was written, `Ok(false)` if the state

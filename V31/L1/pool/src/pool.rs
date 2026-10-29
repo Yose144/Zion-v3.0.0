@@ -13,7 +13,7 @@ use crate::config::PoolConfig;
 use crate::share::ShareSubmission;
 use crate::store::ShareStore;
 use crate::telemetry::MinerTelemetryRegistry;
-use crate::v3_pplns::{PayoutEntry, PplnsConfig, PplnsEngine};
+use crate::v3_pplns::{PayoutEntry, PplnsConfig, PplnsEngine, PplnsSnapshot};
 use crate::validator::ShareValidator;
 
 #[derive(Clone, Copy, Debug, thiserror::Error)]
@@ -691,6 +691,44 @@ impl Pool {
         }
     }
 
+    /// Phase-1 replay probe for the two-phase submit path — `true` when
+    /// this (job bucket, tag) was already claimed. No mark is taken, so
+    /// a share that fails validation keeps its tag for a later legit
+    /// resubmit. Callers hold `pool.lock()` only for this probe and run
+    /// the PoW hash unlocked, which keeps validation latency out of the
+    /// global mutex under submit storms.
+    pub fn share_replay_probe(&self, job_bucket: &str, tag: u64) -> bool {
+        self.share_seen(job_bucket, tag)
+    }
+
+    /// Phase-3 claim + credit for a share whose PoW validation already
+    /// ran outside `pool.lock()`. The dedup claim is atomic under this
+    /// call — a racing submit of the same (bucket, tag) loses as
+    /// [`PoolError::DuplicateShare`]. Credit matches `record_share`.
+    pub fn credit_validated_share(
+        &mut self,
+        submission: &ShareSubmission,
+        nonce: u64,
+        dedup_bucket: &str,
+        coin: &str,
+        height: u64,
+    ) -> Result<bool, PoolError> {
+        if !self.mark_share_seen(dedup_bucket, nonce) {
+            self.rejected.fetch_add(1, Ordering::Relaxed);
+            return Err(PoolError::DuplicateShare);
+        }
+        self.record_share(submission, height, coin);
+        self.accepted.fetch_add(1, Ordering::Relaxed);
+        Ok(true)
+    }
+
+    /// Reject-side accounting for shares turned away before the credit
+    /// phase — keeps the same `rejected` counter the monolithic submit
+    /// path bumped.
+    pub fn note_rejected_share(&self) {
+        self.rejected.fetch_add(1, Ordering::Relaxed);
+    }
+
     /// Compute miner payouts for the given full block subsidy.
     ///
     /// The node coinbase already splits the block reward 89/5/5/1, so the pool
@@ -831,23 +869,43 @@ impl Pool {
     /// Returns `Ok(true)` if a snapshot was written because the state was dirty,
     /// `Ok(false)` if there was nothing to save, and `Err` only on I/O failure.
     pub fn save(&mut self) -> std::io::Result<bool> {
-        if let Some(path) = self.config.state_path.as_ref() {
-            match self.pplns.save_if_dirty(path) {
-                Ok(saved) => {
-                    if saved {
-                        self.pplns_persist_success_timestamp_s =
-                            crate::telemetry::now_unix_seconds();
-                    }
-                    Ok(saved)
-                }
-                Err(e) => {
-                    self.pplns_persist_failures_total =
-                        self.pplns_persist_failures_total.saturating_add(1);
-                    Err(e)
-                }
+        match self.pplns_save_prepare() {
+            Some((snap, path)) => {
+                let r = PplnsEngine::write_snapshot_to_path(&snap, &path);
+                self.pplns_save_finish(r.is_ok());
+                r.map(|_| true)
             }
+            None => Ok(false),
+        }
+    }
+
+    /// Phase-1 of the two-phase persist: under a short `pool.lock()` the
+    /// caller swaps the dirty flag and clones the snapshot, then runs
+    /// JSON serialization + fsync + rename outside the lock via
+    /// [`PplnsEngine::write_snapshot_to_path`] and reports the outcome
+    /// through [`Self::pplns_save_finish`]. Previously the whole window
+    /// clone + write ran inside the mutex — a tens-of-milliseconds stall
+    /// every save cycle while the window is large.
+    /// Returns `None` when the state is clean or persistence is off.
+    pub fn pplns_save_prepare(&mut self) -> Option<(PplnsSnapshot, PathBuf)> {
+        let path = self.config.state_path.clone()?;
+        if !self.pplns.take_dirty() {
+            return None;
+        }
+        Some((self.pplns.snapshot(), PathBuf::from(path)))
+    }
+
+    /// Phase-3 bookkeeping after the outside-lock write attempt. A failed
+    /// write re-marks the engine dirty so the next cycle retries rather
+    /// than silently dropping the interval's mutations.
+    pub fn pplns_save_finish(&mut self, ok: bool) {
+        if ok {
+            self.pplns_persist_success_timestamp_s =
+                crate::telemetry::now_unix_seconds();
         } else {
-            Ok(false)
+            self.pplns.mark_dirty();
+            self.pplns_persist_failures_total =
+                self.pplns_persist_failures_total.saturating_add(1);
         }
     }
 

@@ -622,12 +622,25 @@ async fn main() -> anyhow::Result<()> {
             interval.tick().await;
             let pool = Arc::clone(&persist_pool);
             let _ = tokio::task::spawn_blocking(move || {
+                // Two-phase persist: swap dirty + clone the snapshot under
+                // a short `pool.lock()`, serialize + fsync outside it, then
+                // re-lock only for bookkeeping — the window clone + JSON
+                // write no longer stall every other `pool.lock()` waiter.
+                let prepared = match pool.lock() {
+                    Ok(mut p) => p.pplns_save_prepare(),
+                    Err(_) => None,
+                };
+                let Some((snap, path)) = prepared else { return };
+                let write = zion_pool::v3_pplns::PplnsEngine::write_snapshot_to_path(&snap, &path);
+                let ok = write.is_ok();
+                if let Err(e) = write {
+                    warn!("failed to save pplns state: {}", e);
+                }
                 if let Ok(mut p) = pool.lock() {
-                    match p.save() {
-                        Ok(true) => info!("pplns state persisted"),
-                        Ok(false) => {}
-                        Err(e) => warn!("failed to save pplns state: {}", e),
-                    }
+                    p.pplns_save_finish(ok);
+                }
+                if ok {
+                    info!("pplns state persisted");
                 }
             })
             .await;
