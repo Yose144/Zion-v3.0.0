@@ -93,24 +93,169 @@ pub struct PayoutLedgerState {
 }
 
 #[derive(Debug)]
+/// Share-dedup shard — extracted from the global `Pool` mutex in M3
+/// phase 2. Probe/claim take `dedup.lock()` directly so the submit path
+/// never queues on the global mutex; the bounded writer-queue hand-off
+/// stays non-blocking inside the same lock (fail-open semantics kept).
+pub struct ShareDedup {
+    /// Bounded (job-bucket → nonce/proof-tag) seen-set for accepted shares.
+    /// Buckets track the live job map — entries are evicted FIFO when the
+    /// job-key count exceeds the cap, so memory stays proportional to the
+    /// working set rather than to total submissions.
+    sets: HashMap<String, HashSet<u64>>,
+    order: std::collections::VecDeque<String>,
+    /// Persistence hand-off — every mark is mirrored to `share_dedup` in
+    /// the share store so a restart cannot reopen the replay window
+    /// (upstream-keyed `ext:` job ids outlive a bounce). Ops go through a
+    /// bounded queue to the dedup writer thread — synchronous SQLite
+    /// under `pool.lock()` wedged the API on 2026-10-26; a full queue
+    /// drops marks (fail-open, in-memory set stays authoritative) rather
+    /// than stalling share processing.
+    tx: Option<std::sync::mpsc::SyncSender<crate::store::DedupOp>>,
+    counters: SessionCounters,
+}
+
+impl ShareDedup {
+    fn new(counters: SessionCounters) -> Self {
+        Self { sets: HashMap::new(), order: std::collections::VecDeque::new(), tx: None, counters }
+    }
+
+    /// Read-only dedup probe: `true` when this (job bucket, tag) was
+    /// already credited. Checking before validation (and marking only on
+    /// success) keeps invalid submissions from burning tags that a later
+    /// valid resubmit at a lower session target could still legitimately
+    /// use.
+    pub fn seen(&self, job_bucket: &str, tag: u64) -> bool {
+        self.sets.get(job_bucket).is_some_and(|s| s.contains(&tag))
+    }
+
+    /// Dedup mark: `false` when this (job bucket, tag) was already
+    /// credited or the bucket is full (fail closed). First valid
+    /// submission claims the pair; replays fail closed.
+    pub fn mark(&mut self, job_bucket: &str, tag: u64) -> bool {
+        if !self.sets.contains_key(job_bucket) {
+            while self.sets.len() >= SHARE_DEDUP_JOB_CAP {
+                match self.order.pop_front() {
+                    Some(old) => {
+                        self.sets.remove(&old);
+                        self.queue_op(crate::store::DedupOp::DeleteBucket { bucket: old });
+                    }
+                    None => break,
+                }
+            }
+            self.order.push_back(job_bucket.to_string());
+            self.sets.insert(job_bucket.to_string(), HashSet::new());
+        }
+        let set = self.sets.get_mut(job_bucket).expect("bucket present");
+        if set.len() >= SHARE_DEDUP_TAG_CAP {
+            return false;
+        }
+        let claimed = set.insert(tag);
+        // Mirror the fresh mark to disk — a restart restores it and the
+        // replay window stays closed. Fail-open: the in-memory mark is
+        // authoritative for the live session; a dropped queue entry only
+        // widens the post-restart window, never rejects an honest share.
+        if claimed {
+            self.queue_op(crate::store::DedupOp::Mark {
+                bucket: job_bucket.to_string(),
+                tag,
+                ts: crate::telemetry::now_unix_seconds(),
+            });
+        }
+        claimed
+    }
+
+    /// Dedup for external (AuxPoW) legs — `tag` is any stable proof/nonce
+    /// string; it is hashed to u64 for storage. Returns `false` on replay.
+    pub fn mark_external(&mut self, coin: &str, job_id: &str, tag: &str) -> bool {
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        tag.hash(&mut h);
+        self.mark(&format!("ext:{coin}:{job_id}"), h.finish())
+    }
+
+    /// Non-blocking hand-off to the dedup writer. A full queue drops the
+    /// op — the in-memory set is authoritative for the live session, so
+    /// this only widens the post-restart replay window, never rejects an
+    /// honest share. Warn at most once per drop burst via a cheap flag.
+    fn queue_op(&self, op: crate::store::DedupOp) {
+        let Some(tx) = &self.tx else { return };
+        if tx.try_send(op).is_err() {
+            self.counters
+                .dedup_marks_dropped
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            tracing::warn!("dedup persist: queue full/disconnected — mark dropped");
+        }
+    }
+
+    /// Attach the share store for dedup persistence and rebuild the
+    /// in-memory seen-set from the newest persisted buckets. A restore
+    /// failure is non-fatal — the pool starts with an empty set exactly
+    /// as it did before persistence existed.
+    pub fn attach_store(&mut self, store: Arc<crate::store::ShareStore>) {
+        match store.load_dedup_marks(SHARE_DEDUP_JOB_CAP, SHARE_DEDUP_RETAIN_S) {
+            Ok(rows) => {
+                let mut restored = 0usize;
+                for (bucket, tag) in rows {
+                    if !self.sets.contains_key(&bucket) {
+                        if self.sets.len() >= SHARE_DEDUP_JOB_CAP {
+                            break;
+                        }
+                        self.order.push_back(bucket.clone());
+                        self.sets.insert(bucket.clone(), HashSet::new());
+                    }
+                    if let Some(set) = self.sets.get_mut(&bucket) {
+                        if set.insert(tag) {
+                            restored += 1;
+                        }
+                    }
+                }
+                if restored > 0 {
+                    tracing::info!(restored, "share dedup restored from store");
+                }
+            }
+            Err(e) => tracing::warn!("dedup persist: restore failed: {e}"),
+        }
+        // Bounded queue to the writer thread — every dedup write stays
+        // off `pool.lock()`. Capacity sized so a stalled writer still
+        // covers a long burst before marks start dropping.
+        let (tx, rx) = std::sync::mpsc::sync_channel::<crate::store::DedupOp>(8192);
+        let writer = Arc::clone(&store);
+        match std::thread::Builder::new()
+            .name("dedup-writer".to_string())
+            .spawn(move || crate::store::dedup_writer_loop(writer, rx, SHARE_DEDUP_RETAIN_S))
+        {
+            Ok(_) => self.tx = Some(tx),
+            Err(e) => tracing::warn!("dedup persist: writer spawn failed: {e}"),
+        }
+    }
+}
+
 pub struct Pool {
     pub config: PoolConfig,
-    pub pplns: PplnsEngine,
+    /// PPLNS engine behind its own mutex (M3 phase 2) — share credit,
+    /// payout computation and persistence contend here instead of the
+    /// global pool lock. Lock order: `pool` → `pplns`/`dedup`/worker maps,
+    /// never the reverse (shards hold no back-reference to Pool state).
+    pub pplns: Arc<Mutex<PplnsEngine>>,
     pub validator: ShareValidator,
     pub current_job_id: AtomicU64,
-    pub accepted: AtomicU64,
-    pub rejected: AtomicU64,
+    pub accepted: Arc<AtomicU64>,
+    pub rejected: Arc<AtomicU64>,
     pub pplns_persist_success_timestamp_s: u64,
     pub pplns_persist_failures_total: u64,
     /// Live stratum session counters for the HTTP API.
     pub session_counters: SessionCounters,
     /// Authorized worker name -> payout address (anonymous mining).
-    pub worker_addresses: HashMap<String, Address>,
+    /// `RwLock` shard (M3 phase 2) — the submit path resolves payout
+    /// targets via a read guard without touching the global pool lock;
+    /// writes happen only at session register/authorize time.
+    pub worker_addresses: Arc<std::sync::RwLock<HashMap<String, Address>>>,
     /// Worker name -> (external chain, raw address) for non-ZION payouts
     /// (e.g. `qtc:<ss58>` Quantus payouts).  Entries here bypass the ZION
     /// UTXO sweeper and are drained by the multichain payout sweeper via
     /// `POST /admin/external-payouts/drain`.
-    pub worker_ext_payouts: HashMap<String, (String, String)>,
+    pub worker_ext_payouts: Arc<std::sync::RwLock<HashMap<String, (String, String)>>>,
     /// Last computed payouts for a found block, keyed by block height.
     pub last_payouts: Option<(u64, Vec<PayoutEntry>)>,
     /// Ed25519 signing key for the pool payout wallet (hex 32 bytes).
@@ -121,20 +266,9 @@ pub struct Pool {
     pub sent_payouts: HashSet<(u64, String)>,
     /// Block heights that have already been processed for payout (idempotency guard).
     paid_block_heights: HashSet<u64>,
-    /// Bounded (job-bucket → nonce/proof-tag) dedup for accepted shares.
-    /// Buckets track the live job map — entries are evicted FIFO when the
-    /// job-key count exceeds the cap, so memory stays proportional to the
-    /// working set rather than to total submissions.
-    share_dedup: HashMap<String, HashSet<u64>>,
-    share_dedup_order: std::collections::VecDeque<String>,
-    /// Optional persistence for the dedup set — every mark is mirrored to
-    /// `share_dedup` in the share store so a restart cannot reopen the
-    /// replay window (upstream-keyed `ext:` job ids outlive a bounce).
-    /// Ops go through a bounded queue to the dedup writer thread —
-    /// synchronous SQLite under `pool.lock()` wedged the API on
-    /// 2026-10-26; a full queue drops marks (fail-open, in-memory set
-    /// stays authoritative) rather than stalling share processing.
-    dedup_tx: Option<std::sync::mpsc::SyncSender<crate::store::DedupOp>>,
+    /// Share dedup shard (see [`ShareDedup`]) — probe/claim happen under
+    /// its own mutex, off the global pool lock.
+    dedup: Arc<Mutex<ShareDedup>>,
     /// Shared per-worker telemetry registry (hashrate, shares, blocks).
     pub telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
     pub(crate) pearl: Option<Arc<crate::pearl_gateway::PearlRuntime>>,
@@ -151,6 +285,45 @@ const SHARE_DEDUP_TAG_CAP: usize = 500_000;
 /// rotate in minutes; 4h covers restart gaps plus upstream outages without
 /// letting the table accumulate dead buckets.
 const SHARE_DEDUP_RETAIN_S: u64 = 4 * 3600;
+
+/// Resolve a worker string to its `(chain, payout_address)` target —
+/// free function shared by `Pool` and the stratum submit path so both
+/// apply identical wallet rules (M3 phase 2).
+///
+/// `qtc:<ss58>` / bare `qz…` SS58 → `("quantus", ss58)`; `zion1…` →
+/// `("zion", encoded)`; anything else falls back to the pool wallet
+/// (shares still counted, payout retained by the pool).
+pub fn resolve_payout_target(
+    worker: &str,
+    ext_payouts: &std::sync::RwLock<HashMap<String, (String, String)>>,
+    worker_addresses: &std::sync::RwLock<HashMap<String, Address>>,
+    pool_fallback_addr: &str,
+) -> (String, String) {
+    let wallet = worker.split('.').next().unwrap_or(worker).trim();
+    {
+        let ext = ext_payouts.read().expect("ext payouts lock poisoned");
+        if let Some((chain, addr)) = ext.get(worker).or_else(|| ext.get(wallet)) {
+            return (chain.clone(), addr.clone());
+        }
+    }
+    if let Some(ss58) = parse_quantus_payout(wallet) {
+        return ("quantus".to_string(), ss58);
+    }
+    if let Some(prl) = parse_pearl_payout(wallet) {
+        return ("pearl".to_string(), prl);
+    }
+    if let Some(addr) = {
+        let addrs = worker_addresses.read().expect("worker addrs lock poisoned");
+        addrs
+            .get(worker)
+            .or_else(|| addrs.get(wallet))
+            .cloned()
+            .or_else(|| parse_worker_address(worker))
+    } {
+        return ("zion".to_string(), addr.encoded);
+    }
+    ("zion".to_string(), pool_fallback_addr.to_string())
+}
 
 impl Pool {
     pub fn new(config: PoolConfig, telemetry: Arc<Mutex<MinerTelemetryRegistry>>) -> Self {
@@ -183,26 +356,25 @@ impl Pool {
             Some(SigningKey::from_bytes(&arr))
         });
         let ledger = Self::load_payout_ledger(config.state_path.as_deref())?;
+        let session_counters = SessionCounters::default();
         Ok(Self {
             config,
-            pplns,
+            pplns: Arc::new(Mutex::new(pplns)),
             validator: ShareValidator::new(),
             current_job_id: AtomicU64::new(1),
-            accepted: AtomicU64::new(0),
-            rejected: AtomicU64::new(0),
+            accepted: Arc::new(AtomicU64::new(0)),
+            rejected: Arc::new(AtomicU64::new(0)),
             pplns_persist_success_timestamp_s: 0,
             pplns_persist_failures_total: 0,
-            session_counters: SessionCounters::default(),
-            worker_addresses: HashMap::new(),
-            worker_ext_payouts: HashMap::new(),
+            session_counters: session_counters.clone(),
+            worker_addresses: Arc::new(std::sync::RwLock::new(HashMap::new())),
+            worker_ext_payouts: Arc::new(std::sync::RwLock::new(HashMap::new())),
             last_payouts: None,
             signing_key,
             pending_payouts: ledger.pending_payouts,
             sent_payouts: ledger.sent_payouts.into_iter().collect(),
             paid_block_heights: ledger.paid_block_heights.into_iter().collect(),
-            share_dedup: HashMap::new(),
-            share_dedup_order: std::collections::VecDeque::new(),
-            dedup_tx: None,
+            dedup: Arc::new(Mutex::new(ShareDedup::new(session_counters))),
             telemetry,
             pearl: crate::pearl_gateway::PearlRuntime::from_env(),
         })
@@ -308,68 +480,28 @@ impl Pool {
         self.current_job_id.fetch_add(1, Ordering::Relaxed) + 1
     }
 
-    /// Read-only dedup probe: `true` when this (job bucket, tag) was already
-    /// credited. Checking before validation (and marking only on success)
-    /// keeps invalid submissions from burning tags that a later valid
-    /// resubmit at a lower session target could still legitimately use.
+    /// Dedup-shard handle — stratum hands shares through probe/claim
+    /// without touching the global pool mutex (M3 phase 2).
+    pub fn dedup_handle(&self) -> Arc<Mutex<ShareDedup>> {
+        Arc::clone(&self.dedup)
+    }
+
+    /// PPLNS-shard handle — for consumers that credit/serve window state
+    /// outside the global pool lock (stratum submit credit, API reads).
+    pub fn pplns_handle(&self) -> Arc<Mutex<PplnsEngine>> {
+        Arc::clone(&self.pplns)
+    }
+
+    /// Read-only dedup probe delegating to the shard (see
+    /// [`ShareDedup::seen`]); kept for callers already holding the pool
+    /// lock.
     fn share_seen(&self, job_bucket: &str, tag: u64) -> bool {
-        self.share_dedup
-            .get(job_bucket)
-            .is_some_and(|s| s.contains(&tag))
+        self.dedup.lock().expect("dedup lock poisoned").seen(job_bucket, tag)
     }
 
-    /// Dedup mark: `false` when this (job bucket, tag) was already credited
-    /// or the bucket is full (fail closed). First valid submission claims
-    /// the pair; replays fail closed.
+    /// Dedup claim delegating to the shard (see [`ShareDedup::mark`]).
     fn mark_share_seen(&mut self, job_bucket: &str, tag: u64) -> bool {
-        if !self.share_dedup.contains_key(job_bucket) {
-            while self.share_dedup.len() >= SHARE_DEDUP_JOB_CAP {
-                match self.share_dedup_order.pop_front() {
-                    Some(old) => {
-                        self.share_dedup.remove(&old);
-                        self.queue_dedup_op(crate::store::DedupOp::DeleteBucket { bucket: old });
-                    }
-                    None => break,
-                }
-            }
-            self.share_dedup_order.push_back(job_bucket.to_string());
-            self.share_dedup
-                .insert(job_bucket.to_string(), HashSet::new());
-        }
-        let set = self
-            .share_dedup
-            .get_mut(job_bucket)
-            .expect("bucket present");
-        if set.len() >= SHARE_DEDUP_TAG_CAP {
-            return false;
-        }
-        let claimed = set.insert(tag);
-        // Mirror the fresh mark to disk — a restart restores it and the
-        // replay window stays closed. Fail-open: the in-memory mark is
-        // authoritative for the live session; a dropped queue entry only
-        // widens the post-restart window, never rejects an honest share.
-        if claimed {
-            self.queue_dedup_op(crate::store::DedupOp::Mark {
-                bucket: job_bucket.to_string(),
-                tag,
-                ts: crate::telemetry::now_unix_seconds(),
-            });
-        }
-        claimed
-    }
-
-    /// Non-blocking hand-off to the dedup writer. A full queue drops the
-    /// op — the in-memory set is authoritative for the live session, so
-    /// this only widens the post-restart replay window, never rejects an
-    /// honest share. Warn at most once per drop burst via a cheap flag.
-    fn queue_dedup_op(&self, op: crate::store::DedupOp) {
-        let Some(tx) = &self.dedup_tx else { return };
-        if tx.try_send(op).is_err() {
-            self.session_counters
-                .dedup_marks_dropped
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            tracing::warn!("dedup persist: queue full/disconnected — mark dropped");
-        }
+        self.dedup.lock().expect("dedup lock poisoned").mark(job_bucket, tag)
     }
 
     /// Attach the share store for dedup persistence and rebuild the
@@ -377,41 +509,7 @@ impl Pool {
     /// failure is non-fatal — the pool starts with an empty set exactly
     /// as it did before persistence existed.
     pub fn attach_dedup_store(&mut self, store: Arc<crate::store::ShareStore>) {
-        match store.load_dedup_marks(SHARE_DEDUP_JOB_CAP, SHARE_DEDUP_RETAIN_S) {
-            Ok(rows) => {
-                let mut restored = 0usize;
-                for (bucket, tag) in rows {
-                    if !self.share_dedup.contains_key(&bucket) {
-                        if self.share_dedup.len() >= SHARE_DEDUP_JOB_CAP {
-                            break;
-                        }
-                        self.share_dedup_order.push_back(bucket.clone());
-                        self.share_dedup.insert(bucket.clone(), HashSet::new());
-                    }
-                    if let Some(set) = self.share_dedup.get_mut(&bucket) {
-                        if set.insert(tag) {
-                            restored += 1;
-                        }
-                    }
-                }
-                if restored > 0 {
-                    tracing::info!(restored, "share dedup restored from store");
-                }
-            }
-            Err(e) => tracing::warn!("dedup persist: restore failed: {e}"),
-        }
-        // Bounded queue to the writer thread — every dedup write stays
-        // off `pool.lock()`. Capacity sized so a stalled writer still
-        // covers a long burst before marks start dropping.
-        let (tx, rx) = std::sync::mpsc::sync_channel::<crate::store::DedupOp>(8192);
-        let writer = Arc::clone(&store);
-        match std::thread::Builder::new()
-            .name("dedup-writer".to_string())
-            .spawn(move || crate::store::dedup_writer_loop(writer, rx, SHARE_DEDUP_RETAIN_S))
-        {
-            Ok(_) => self.dedup_tx = Some(tx),
-            Err(e) => tracing::warn!("dedup persist: writer spawn failed: {e}"),
-        }
+        self.dedup.lock().expect("dedup lock poisoned").attach_store(store);
     }
 
     /// Reserve a dedup slot for an external share BEFORE it is forwarded
@@ -434,9 +532,9 @@ impl Pool {
         coin: &str,
     ) {
         let (chain, address) = self.worker_payout_target(worker_name);
-        self.pplns
-            .register_address_with_chain(worker_name, &address, &chain);
-        self.pplns.record_share_with_diff_for_coin(
+        let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+        pl.register_address_with_chain(worker_name, &address, &chain);
+        pl.record_share_with_diff_for_coin(
             worker_name,
             worker_name,
             height,
@@ -448,10 +546,7 @@ impl Pool {
     /// Dedup for external (AuxPoW) legs — `tag` is any stable proof/nonce
     /// string; it is hashed to u64 for storage. Returns `false` on replay.
     pub fn mark_external_share_seen(&mut self, coin: &str, job_id: &str, tag: &str) -> bool {
-        use std::hash::{Hash, Hasher};
-        let mut h = std::collections::hash_map::DefaultHasher::new();
-        tag.hash(&mut h);
-        self.mark_share_seen(&format!("ext:{coin}:{job_id}"), h.finish())
+        self.dedup.lock().expect("dedup lock poisoned").mark_external(coin, job_id, tag)
     }
 
     fn parse_nonce(nonce_hex: &str) -> Result<u64, PoolError> {
@@ -473,11 +568,10 @@ impl Pool {
         }
         let worker = &submission.worker;
         let (chain, address) = self.worker_payout_target(worker);
-        self.pplns
-            .register_address_with_chain(worker, &address, &chain);
         let share_difficulty = submission.difficulty.max(1);
-        self.pplns
-            .record_share_with_diff_for_coin(worker, worker, height, share_difficulty, coin);
+        let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+        pl.register_address_with_chain(worker, &address, &chain);
+        pl.record_share_with_diff_for_coin(worker, worker, height, share_difficulty, coin);
     }
 
     /// Credit an accepted external (AuxPoW) stream share into PPLNS so the
@@ -509,9 +603,9 @@ impl Pool {
             return false;
         }
         let (chain, address) = self.worker_payout_target(worker_name);
-        self.pplns
-            .register_address_with_chain(worker_name, &address, &chain);
-        self.pplns.record_share_with_diff_for_coin(
+        let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+        pl.register_address_with_chain(worker_name, &address, &chain);
+        pl.record_share_with_diff_for_coin(
             worker_name,
             worker_name,
             height,
@@ -522,35 +616,15 @@ impl Pool {
     }
 
     /// Resolve a worker string to its `(chain, payout_address)` target.
-    ///
-    /// `qtc:<ss58>` / bare `qz…` SS58 → `("quantus", ss58)`; `zion1…` →
-    /// `("zion", encoded)`; anything else falls back to the pool wallet
-    /// (shares still counted, payout retained by the pool).
+    /// Thin wrapper over [`resolve_payout_target`] reading the shared
+    /// worker maps under a read guard.
     fn worker_payout_target(&self, worker: &str) -> (String, String) {
-        let wallet = worker.split('.').next().unwrap_or(worker).trim();
-        if let Some((chain, addr)) = self
-            .worker_ext_payouts
-            .get(worker)
-            .or_else(|| self.worker_ext_payouts.get(wallet))
-        {
-            return (chain.clone(), addr.clone());
-        }
-        if let Some(ss58) = parse_quantus_payout(wallet) {
-            return ("quantus".to_string(), ss58);
-        }
-        if let Some(prl) = parse_pearl_payout(wallet) {
-            return ("pearl".to_string(), prl);
-        }
-        if let Some(addr) = self
-            .worker_addresses
-            .get(worker)
-            .or_else(|| self.worker_addresses.get(wallet))
-            .cloned()
-            .or_else(|| parse_worker_address(worker))
-        {
-            return ("zion".to_string(), addr.encoded);
-        }
-        ("zion".to_string(), self.config.pool_address.encoded.clone())
+        resolve_payout_target(
+            worker,
+            &self.worker_ext_payouts,
+            &self.worker_addresses,
+            &self.config.pool_address.encoded,
+        )
     }
 
     /// `true` when `wallet` parses to a known payout target (ZION / QTU /
@@ -567,22 +641,35 @@ impl Pool {
         let wallet = worker.split('.').next().unwrap_or(worker).trim();
         if let Some(ss58) = parse_quantus_payout(wallet) {
             self.worker_ext_payouts
+                .write()
+                .expect("ext payouts lock poisoned")
                 .insert(worker.to_string(), ("quantus".to_string(), ss58.clone()));
             self.pplns
+                .lock()
+                .expect("pplns lock poisoned")
                 .register_address_with_chain(worker, &ss58, "quantus");
             return;
         }
         if let Some(prl) = parse_pearl_payout(wallet) {
             self.worker_ext_payouts
+                .write()
+                .expect("ext payouts lock poisoned")
                 .insert(worker.to_string(), ("pearl".to_string(), prl.clone()));
             self.pplns
+                .lock()
+                .expect("pplns lock poisoned")
                 .register_address_with_chain(worker, &prl, "pearl");
             return;
         }
         if let Some(addr) = parse_worker_address(worker) {
             self.worker_addresses
+                .write()
+                .expect("worker addrs lock poisoned")
                 .insert(worker.to_string(), addr.clone());
-            self.pplns.register_address(worker, &addr.encoded);
+            self.pplns
+                .lock()
+                .expect("pplns lock poisoned")
+                .register_address(worker, &addr.encoded);
         }
     }
 
@@ -598,23 +685,36 @@ impl Pool {
         let addr = address.trim();
         if let Some(ss58) = parse_quantus_payout(addr) {
             self.worker_ext_payouts
+                .write()
+                .expect("ext payouts lock poisoned")
                 .insert(miner_id.to_string(), ("quantus".to_string(), ss58.clone()));
             self.pplns
+                .lock()
+                .expect("pplns lock poisoned")
                 .register_address_with_chain(miner_id, &ss58, "quantus");
             return Some(("quantus", addr));
         }
         if let Some(_prl) = parse_pearl_payout(addr) {
             self.worker_ext_payouts
+                .write()
+                .expect("ext payouts lock poisoned")
                 .insert(miner_id.to_string(), ("pearl".to_string(), _prl.clone()));
             self.pplns
+                .lock()
+                .expect("pplns lock poisoned")
                 .register_address_with_chain(miner_id, &_prl, "pearl");
             return Some(("pearl", addr));
         }
         if addr.starts_with("zion1") {
             if let Ok(parsed) = Address::new(ChainId::ZionL1, addr.as_bytes().to_vec(), addr) {
                 self.worker_addresses
+                    .write()
+                    .expect("worker addrs lock poisoned")
                     .insert(miner_id.to_string(), parsed.clone());
-                self.pplns.register_address(miner_id, &parsed.encoded);
+                self.pplns
+                    .lock()
+                    .expect("pplns lock poisoned")
+                    .register_address(miner_id, &parsed.encoded);
                 return Some(("zion", addr));
             }
         }
@@ -705,6 +805,10 @@ impl Pool {
     /// ran outside `pool.lock()`. The dedup claim is atomic under this
     /// call — a racing submit of the same (bucket, tag) loses as
     /// [`PoolError::DuplicateShare`]. Credit matches `record_share`.
+    /// Kept for callers already holding the pool lock; the stratum hot
+    /// path shards further — dedup claim, worker-map read and PPLNS
+    /// credit each under their own shard lock, no `pool.lock()` at all
+    /// (M3 phase 2, see `StratumServer::submit_share_two_phase`).
     pub fn credit_validated_share(
         &mut self,
         submission: &ShareSubmission,
@@ -735,7 +839,10 @@ impl Pool {
     /// only redistributes the miner share (89% minus rounding dust).
     pub fn payouts(&mut self, block_reward: u64) -> Vec<PayoutEntry> {
         let miner_share = zion_core::emission::fee_split(block_reward).0;
-        self.pplns.compute_miner_payouts(miner_share)
+        self.pplns
+            .lock()
+            .expect("pplns lock poisoned")
+            .compute_miner_payouts(miner_share)
     }
 
     /// Winner-take-all payout for a SOLO-port block: the entire protocol
@@ -746,6 +853,8 @@ impl Pool {
     fn solo_payout(&mut self, miner_id: &str, block_reward: u64) -> Option<PayoutEntry> {
         let (chain, address) = self.worker_payout_target(miner_id);
         self.pplns
+            .lock()
+            .expect("pplns lock poisoned")
             .register_address_with_chain(miner_id, &address, &chain);
         let miner_share = zion_core::emission::fee_split(block_reward).0;
         Some(PayoutEntry {
@@ -819,17 +928,16 @@ impl Pool {
         event_id: &str,
     ) -> Result<CoinRevenueOutcome, PoolError> {
         let coin = coin.trim().to_ascii_lowercase();
-        if !self.pplns.is_native_payout_coin(&coin) {
+        let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+        if !pl.is_native_payout_coin(&coin) {
             return Err(PoolError::CoinNotNative);
         }
-        if event_id.is_empty() || self.pplns.has_applied_revenue_event(event_id) {
+        if event_id.is_empty() || pl.has_applied_revenue_event(event_id) {
             return Err(PoolError::DuplicateRevenueEvent);
         }
 
         let chain = crate::coin_leg::payout_chain_for_coin(&coin).into_owned();
-        let mut entries = self
-            .pplns
-            .compute_miner_payouts_for_coin(&coin, amount_native, &chain);
+        let mut entries = pl.compute_miner_payouts_for_coin(&coin, amount_native, &chain);
         for entry in &mut entries {
             entry.revenue_event = Some(event_id.to_string());
         }
@@ -837,9 +945,14 @@ impl Pool {
             .into_iter()
             .map(|entry| (ref_height, entry))
             .collect();
+        // Mark applied while still under the engine lock so a replay can
+        // never slip a second distribution between compute and mark —
+        // then drop it before the ledger IO so fsync never stalls share
+        // credits on the pplns shard.
+        pl.mark_revenue_event_applied(event_id);
+        drop(pl);
         self.pending_payouts.extend(payouts.iter().cloned());
         self.persist_payout_ledger();
-        self.pplns.mark_revenue_event_applied(event_id);
         let emitted_total = payouts
             .iter()
             .map(|(_, payout)| payout.amount)
@@ -889,10 +1002,11 @@ impl Pool {
     /// Returns `None` when the state is clean or persistence is off.
     pub fn pplns_save_prepare(&mut self) -> Option<(PplnsSnapshot, PathBuf)> {
         let path = self.config.state_path.clone()?;
-        if !self.pplns.take_dirty() {
+        let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+        if !pl.take_dirty() {
             return None;
         }
-        Some((self.pplns.snapshot(), PathBuf::from(path)))
+        Some((pl.snapshot(), PathBuf::from(path)))
     }
 
     /// Phase-3 bookkeeping after the outside-lock write attempt. A failed
@@ -903,7 +1017,7 @@ impl Pool {
             self.pplns_persist_success_timestamp_s =
                 crate::telemetry::now_unix_seconds();
         } else {
-            self.pplns.mark_dirty();
+            self.pplns.lock().expect("pplns lock poisoned").mark_dirty();
             self.pplns_persist_failures_total =
                 self.pplns_persist_failures_total.saturating_add(1);
         }
@@ -913,7 +1027,7 @@ impl Pool {
     pub fn restore(&mut self) -> std::io::Result<()> {
         if let Some(path) = self.config.state_path.as_ref() {
             if let Some(snap) = PplnsEngine::load_from_path(path)? {
-                self.pplns.restore(snap);
+                self.pplns.lock().expect("pplns lock poisoned").restore(snap);
             }
         }
         let ledger = Self::load_payout_ledger(self.config.state_path.as_deref())?;
@@ -1141,7 +1255,7 @@ pub fn recover_pending_coin_revenue(pool: &mut Pool, store: &ShareStore) -> anyh
     let mut recovered = 0;
     for event in pending_events {
         let (emitted, emitted_total, payouts) =
-            if pool.pplns.has_applied_revenue_event(&event.event_id) {
+            if pool.pplns.lock().expect("pplns lock").has_applied_revenue_event(&event.event_id) {
                 let payouts = pool.pending_revenue_payouts(&event.event_id);
                 let outbox_count = store.coin_revenue_outbox_count(&event.event_id)?;
                 let emitted = event.emitted.max(payouts.len());
@@ -1182,7 +1296,7 @@ pub fn recover_pending_coin_revenue(pool: &mut Pool, store: &ShareStore) -> anyh
                     event.event_id
                 )
             })?;
-        pool.pplns.save_if_dirty(&state_path).with_context(|| {
+        pool.pplns.lock().expect("pplns lock").save_if_dirty(&state_path).with_context(|| {
             format!(
                 "failed to persist recovered PPLNS state for {}",
                 event.event_id
@@ -1302,10 +1416,10 @@ mod tests {
         let mut original = Pool::new(config.clone(), telemetry());
         original
             .pplns
-            .register_address_with_chain("alice", "qz1alice", "quantus");
+            .lock().unwrap().register_address_with_chain("alice", "qz1alice", "quantus");
         original
             .pplns
-            .record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
+            .lock().unwrap().record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
         original.save().unwrap();
         store
             .begin_coin_revenue("qtu:recovery:1", "qtu", 5_000_000, 42)
@@ -1324,7 +1438,7 @@ mod tests {
         drop(original);
 
         let mut restarted = Pool::try_new(config.clone(), telemetry()).unwrap();
-        assert!(!restarted.pplns.has_applied_revenue_event("qtu:recovery:1"));
+        assert!(!restarted.pplns.lock().unwrap().has_applied_revenue_event("qtu:recovery:1"));
         assert_eq!(
             recover_pending_coin_revenue(&mut restarted, &store).unwrap(),
             1
@@ -1340,7 +1454,7 @@ mod tests {
         );
 
         let restored = Pool::try_new(config, telemetry()).unwrap();
-        assert!(restored.pplns.has_applied_revenue_event("qtu:recovery:1"));
+        assert!(restored.pplns.lock().unwrap().has_applied_revenue_event("qtu:recovery:1"));
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -1359,7 +1473,8 @@ mod tests {
             },
             telemetry(),
         )
-        .unwrap_err();
+        .err()
+        .unwrap();
 
         assert!(format!("{err:#}").contains("failed to load PPLNS state"));
         std::fs::remove_file(path).unwrap();
@@ -1379,7 +1494,7 @@ mod tests {
             },
             telemetry(),
         );
-        pool.pplns.record_share_at("miner", "worker", 1, 10);
+        pool.pplns.lock().unwrap().record_share_at("miner", "worker", 1, 10);
 
         assert!(pool.save().is_err());
         assert_eq!(pool.pplns_persist_failures_total, 1);
@@ -1552,9 +1667,9 @@ mod tests {
         );
         // A PPLNS miner holds real window shares — a SOLO-port block must
         // not pay them anything; the whole miner share goes to the finder.
-        pool.pplns.register_address("pplns_miner", "z1pplns");
+        pool.pplns.lock().unwrap().register_address("pplns_miner", "z1pplns");
         pool.pplns
-            .record_share_with_diff("pplns_miner", "rig", 1, 100);
+            .lock().unwrap().record_share_with_diff("pplns_miner", "rig", 1, 100);
 
         pool.on_block_found(100, 1_000_000, Some("solo1win"));
 
@@ -1574,7 +1689,7 @@ mod tests {
         assert!(entry.coin.is_none());
         assert!(entry.revenue_event.is_none());
         // PPLNS miner's window balance is untouched by the solo block.
-        assert_eq!(pool.pplns.unpaid_balance("pplns_miner"), 0);
+        assert_eq!(pool.pplns.lock().unwrap().unpaid_balance("pplns_miner"), 0);
     }
 
     #[test]
@@ -1599,9 +1714,9 @@ mod tests {
             },
             telemetry(),
         );
-        pool.pplns.register_address("pplns_miner", "z1pplns");
+        pool.pplns.lock().unwrap().register_address("pplns_miner", "z1pplns");
         pool.pplns
-            .record_share_with_diff("pplns_miner", "rig", 1, 100);
+            .lock().unwrap().record_share_with_diff("pplns_miner", "rig", 1, 100);
 
         // Solo-port submissions register the payout target but must not
         // enter the shared PPLNS window.
@@ -1625,7 +1740,7 @@ mod tests {
             pending.iter().all(|(_, e)| e.miner_id == "pplns_miner"),
             "solo miner must not appear in PPLNS distribution: {pending:?}"
         );
-        assert_eq!(pool.pplns.unpaid_balance("solo1m"), 0);
+        assert_eq!(pool.pplns.lock().unwrap().unpaid_balance("solo1m"), 0);
     }
 
     #[test]
@@ -1637,8 +1752,8 @@ mod tests {
             },
             telemetry(),
         );
-        pool.pplns.register_address("alice", "z1alice");
-        pool.pplns.record_share_with_diff("alice", "rig", 1, 100);
+        pool.pplns.lock().unwrap().register_address("alice", "z1alice");
+        pool.pplns.lock().unwrap().record_share_with_diff("alice", "rig", 1, 100);
         pool.on_block_found(100, 1_000_000, None);
 
         // Queue also holds an external-chain entry the zion path must not
@@ -1690,8 +1805,8 @@ mod tests {
         // First process lifetime: block found, one payout queued and sent.
         {
             let mut pool = Pool::new(cfg.clone(), telemetry());
-            pool.pplns.register_address("alice", "z1alice");
-            pool.pplns.record_share_with_diff("alice", "rig", 1, 100);
+            pool.pplns.lock().unwrap().register_address("alice", "z1alice");
+            pool.pplns.lock().unwrap().record_share_with_diff("alice", "rig", 1, 100);
             pool.on_block_found(100, 1_000_000, None);
             let pending = pool.take_pending_payouts();
             assert_eq!(pending.len(), 1);
@@ -1754,9 +1869,9 @@ mod tests {
             telemetry(),
         );
         pool.pplns
-            .register_address_with_chain("alice", "qz1alice", "quantus");
+            .lock().unwrap().register_address_with_chain("alice", "qz1alice", "quantus");
         pool.pplns
-            .record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
+            .lock().unwrap().record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
 
         // Coin not enabled for native payouts → CoinNotNative.
         assert!(matches!(
@@ -1796,7 +1911,7 @@ mod tests {
         // Nothing leaked into the ZION queue.
         assert!(pool.take_pending_payouts().is_empty());
 
-        let snapshot = pool.pplns.snapshot();
+        let snapshot = pool.pplns.lock().unwrap().snapshot();
         let mut restored = Pool::new(
             PoolConfig {
                 native_payout_coins: vec!["qtu".into()],
@@ -1804,7 +1919,7 @@ mod tests {
             },
             telemetry(),
         );
-        restored.pplns.restore(snapshot);
+        restored.pplns.lock().unwrap().restore(snapshot);
         assert!(matches!(
             restored.on_coin_revenue("qtu", 5_000_000, 42, "qtu:bal:0:5m"),
             Err(PoolError::DuplicateRevenueEvent)
@@ -2001,7 +2116,7 @@ mod tests {
         // P-01: a replayed (job, tag) pair draws no second credit.
         assert!(!pool.record_external_share("wallet", "wallet.rig", 1, 4, "qtu", "job1", "nonce1"));
 
-        let stats = pool.pplns.coin_stats();
+        let stats = pool.pplns.lock().unwrap().coin_stats();
         let find = |c: &str| stats.iter().find(|s| s.coin == c).unwrap();
         assert_eq!(find("zion").accepted_total, 1);
         // auxpow Quantus submit (weight 2) + external "qtu" credit (4) → 6

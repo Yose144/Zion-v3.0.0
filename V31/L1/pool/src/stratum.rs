@@ -222,6 +222,20 @@ pub struct StratumServer {
     /// paths can run the PoW hash without holding `pool.lock()` —
     /// `ShareValidator` is `Copy` + stateless, the copy is free.
     validator: crate::validator::ShareValidator,
+    /// Share dedup shard (M3 phase 2) — probe/claim run under this mutex
+    /// alone so submit storms never queue on the global pool mutex.
+    dedup: Arc<Mutex<crate::pool::ShareDedup>>,
+    /// PPLNS engine shard — share credit after PoW validation.
+    pplns: Arc<Mutex<crate::v3_pplns::PplnsEngine>>,
+    /// Worker → ZION address map (payout-target resolution).
+    worker_addresses:
+        Arc<std::sync::RwLock<std::collections::HashMap<String, zion_l1_types::Address>>>,
+    /// Worker → (chain, address) external payout overrides.
+    worker_ext_payouts:
+        Arc<std::sync::RwLock<std::collections::HashMap<String, (String, String)>>>,
+    /// Global share counters (same atomics `/stats` exposes).
+    accepted: Arc<AtomicU64>,
+    rejected: Arc<AtomicU64>,
 }
 
 /// Decrements the shared active-session counter when the session task
@@ -268,7 +282,19 @@ impl StratumServer {
     }
 
     pub fn new(pool: Arc<Mutex<Pool>>) -> Self {
-        let (config, telemetry, session_counters, pearl, validator) = {
+        let (
+            config,
+            telemetry,
+            session_counters,
+            pearl,
+            validator,
+            dedup,
+            pplns,
+            worker_addresses,
+            worker_ext_payouts,
+            accepted,
+            rejected,
+        ) = {
             let pool = pool.lock().unwrap();
             (
                 pool.config.clone(),
@@ -276,6 +302,12 @@ impl StratumServer {
                 pool.session_counters.clone(),
                 pool.pearl.clone(),
                 pool.validator,
+                pool.dedup_handle(),
+                pool.pplns_handle(),
+                Arc::clone(&pool.worker_addresses),
+                Arc::clone(&pool.worker_ext_payouts),
+                Arc::clone(&pool.accepted),
+                Arc::clone(&pool.rejected),
             )
         };
         let (notify_tx, _notify_rx) = broadcast::channel(256);
@@ -356,6 +388,12 @@ impl StratumServer {
             pearl,
             solo_mode: false,
             validator,
+            dedup,
+            pplns,
+            worker_addresses,
+            worker_ext_payouts,
+            accepted,
+            rejected,
         }
     }
 
@@ -1000,14 +1038,18 @@ impl StratumServer {
             Some(coin) => format!("aux:{}:{coin}", submission.job_id),
             None => submission.job_id.clone(),
         };
-        // Phase 1 — replay probe. No mark is taken so an invalid share
-        // keeps its tag for a later legit resubmit.
+        // Phase 1 — replay probe on the dedup shard alone. No mark is
+        // taken so an invalid share keeps its tag for a later legit
+        // resubmit. No `pool.lock()` — submit storms can't convoy on the
+        // global mutex (M3 phase 2).
+        if self
+            .dedup
+            .lock()
+            .expect("dedup lock poisoned")
+            .seen(&dedup_bucket, nonce)
         {
-            let pool = self.pool.lock().unwrap();
-            if pool.share_replay_probe(&dedup_bucket, nonce) {
-                pool.note_rejected_share();
-                return (Err(PoolError::DuplicateShare), None);
-            }
+            self.rejected.fetch_add(1, Ordering::Relaxed);
+            return (Err(PoolError::DuplicateShare), None);
         }
         // Phase 2 — PoW hash with no lock held.
         let hash: [u8; 32] = match aux {
@@ -1015,19 +1057,97 @@ impl StratumServer {
             None => *self.validator.zion_hash(header, nonce).as_bytes(),
         };
         if !zion_miner::auxpow::hasher::meets_target(&hash, share_target) {
-            self.pool.lock().unwrap().note_rejected_share();
+            self.rejected.fetch_add(1, Ordering::Relaxed);
             return (Err(PoolError::Invalid), Some(hash));
         }
-        // Phase 3 — atomic dedup claim + PPLNS credit.
-        let coin_key = aux.map(|c| c.as_str()).unwrap_or("zion");
-        let result = self.pool.lock().unwrap().credit_validated_share(
-            submission,
-            nonce,
-            &dedup_bucket,
-            coin_key,
-            height,
+        // Phase 3 — atomic dedup claim + PPLNS credit, each under its own
+        // shard lock; the global pool mutex is not touched at all.
+        if !self
+            .dedup
+            .lock()
+            .expect("dedup lock poisoned")
+            .mark(&dedup_bucket, nonce)
+        {
+            self.rejected.fetch_add(1, Ordering::Relaxed);
+            return (Err(PoolError::DuplicateShare), Some(hash));
+        }
+        if !submission.solo {
+            // Same credit as `Pool::record_share` — SOLO-port shares
+            // never weight the PPLNS window.
+            let worker = &submission.worker;
+            let (chain, address) = crate::pool::resolve_payout_target(
+                worker,
+                &self.worker_ext_payouts,
+                &self.worker_addresses,
+                &self.config.pool_address.encoded,
+            );
+            let coin_key = aux.map(|c| c.as_str()).unwrap_or("zion");
+            let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+            pl.register_address_with_chain(worker, &address, &chain);
+            pl.record_share_with_diff_for_coin(
+                worker,
+                worker,
+                height,
+                submission.difficulty.max(1),
+                coin_key,
+            );
+        }
+        self.accepted.fetch_add(1, Ordering::Relaxed);
+        (Ok(true), Some(hash))
+    }
+
+    /// Reserve a dedup slot for an external share BEFORE it is forwarded
+    /// upstream — same semantics as `Pool::reserve_external_share` but
+    /// under the dedup shard alone.
+    fn reserve_external_share(&self, coin: &str, job_id: &str, tag: &str) -> bool {
+        self.dedup
+            .lock()
+            .expect("dedup lock poisoned")
+            .mark_external(coin, job_id, tag)
+    }
+
+    /// PPLNS credit for an external share whose dedup slot was already
+    /// claimed — worker-map read + engine credit under shard locks.
+    fn credit_reserved_external_share(&self, worker_name: &str, height: u64, weight: u64, coin: &str) {
+        let (chain, address) = crate::pool::resolve_payout_target(
+            worker_name,
+            &self.worker_ext_payouts,
+            &self.worker_addresses,
+            &self.config.pool_address.encoded,
         );
-        (result, Some(hash))
+        let mut pl = self.pplns.lock().expect("pplns lock poisoned");
+        pl.register_address_with_chain(worker_name, &address, &chain);
+        pl.record_share_with_diff_for_coin(
+            worker_name,
+            worker_name,
+            height,
+            weight.max(1),
+            coin,
+        );
+    }
+
+    /// Dedup claim + PPLNS credit for an external (AuxPoW) share —
+    /// same semantics as `Pool::record_external_share` without the
+    /// global pool mutex.
+    fn record_external_share(
+        &self,
+        worker_name: &str,
+        height: u64,
+        weight: u64,
+        coin: &str,
+        dedup_job: &str,
+        dedup_tag: &str,
+    ) -> bool {
+        if !self
+            .dedup
+            .lock()
+            .expect("dedup lock poisoned")
+            .mark_external(coin, dedup_job, dedup_tag)
+        {
+            return false;
+        }
+        self.credit_reserved_external_share(worker_name, height, weight, coin);
+        true
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1627,11 +1747,13 @@ impl StratumServer {
     /// [`Pool::leg_statuses_detached`] so per-leg mutexes are never taken
     /// while the shared pool mutex is held.
     pub fn leg_statuses(&self) -> Vec<coin_leg::LegStatus> {
-        let (l1_cfg, pearl) = {
-            let pool = self.pool.lock().expect("pool lock poisoned");
-            pool.leg_inputs()
-        };
-        Pool::leg_statuses_detached(l1_cfg, pearl.as_ref(), &self.multi_bridge)
+        // `self.config`/`self.pearl` are boot-time clones of the same
+        // inputs `leg_inputs()` would return — no global pool mutex needed.
+        Pool::leg_statuses_detached(
+            self.config.l1_rpc_url.is_some(),
+            self.pearl.as_ref(),
+            &self.multi_bridge,
+        )
     }
 
     /// Return true if an external job is fresh enough to send to a miner.
@@ -1947,11 +2069,7 @@ impl StratumServer {
         // locally as "duplicate" without a second upstream submit.
         let dedup_tag = format!("{nonce_hex}:{result_hex}");
         {
-            let claimed = self
-                .pool
-                .lock()
-                .unwrap()
-                .reserve_external_share("qtu", &job_id, &dedup_tag);
+            let claimed = self.reserve_external_share("qtu", &job_id, &dedup_tag);
             if !claimed {
                 // Local dedup reject — must count in /miners + reject_reasons.
                 // Previously this returned silently: SRB showed ~30% duplicate
@@ -2040,10 +2158,7 @@ impl StratumServer {
             } else {
                 auxpow_share_weight("QTU")
             };
-            self.pool
-                .lock()
-                .unwrap()
-                .credit_reserved_external_share(&login.login, h, w, "qtu");
+            self.credit_reserved_external_share(&login.login, h, w, "qtu");
         }
         {
             let mut t = self.telemetry.lock().unwrap();
@@ -2188,8 +2303,7 @@ impl StratumServer {
             } else {
                 auxpow_share_weight("PRL")
             };
-            let credited = self.pool.lock().unwrap().record_external_share(
-                miner_id,
+            let credited = self.record_external_share(
                 worker_name,
                 h,
                 w,
@@ -2993,7 +3107,9 @@ impl StratumServer {
 
                                         // If block found, submit to node
                                         if block_found {
-                                            let has_rpc = self.pool.lock().unwrap().config.l1_rpc_url.as_deref().is_some_and(|s| !s.is_empty());
+                                            // `self.config` is a boot-time
+                                            // clone — `l1_rpc_url` is static.
+                                            let has_rpc = self.config.l1_rpc_url.as_deref().is_some_and(|s| !s.is_empty());
                                             match (has_rpc, template) {
                                                 (true, Some(tpl)) => {
                                                     let block = match build_solved_block(tpl, nonce) {
@@ -4040,21 +4156,16 @@ impl StratumServer {
                                     } else {
                                         auxpow_share_weight(&coin)
                                     };
-                                    let credited = self
-                                        .pool
-                                        .lock()
-                                        .unwrap()
-                                        .record_external_share(
-                                            &sub_miner_id,
-                                            &sub_worker_name,
-                                            h,
-                                            w,
-                                            &coin,
-                                            &external_job_id,
-                                            &format!(
-                                                "{nonce}:{nonce_hex:?}:{hash_hex:?}"
-                                            ),
-                                        );
+                                    let credited = self.record_external_share(
+                                        &sub_worker_name,
+                                        h,
+                                        w,
+                                        &coin,
+                                        &external_job_id,
+                                        &format!(
+                                            "{nonce}:{nonce_hex:?}:{hash_hex:?}"
+                                        ),
+                                    );
                                     if !credited {
                                         // Upstream accepted but PPLNS dedup already
                                         // claimed the slot — surface as duplicate so
@@ -6372,7 +6483,7 @@ mod tests {
                     .unwrap();
                 assert!(resp.accepted, "resp={:?}", resp.raw);
                 assert_eq!(resp.id, 2);
-                assert_eq!(pool2.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool2.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
 
                 let mut client2 = PearlPoolClient::connect(
                     &addr.to_string(),
@@ -6388,7 +6499,7 @@ mod tests {
                     .unwrap();
                 assert!(!resp2.accepted, "resp={:?}", resp2.raw);
                 assert_eq!(resp2.raw["error"]["message"], "duplicate");
-                assert_eq!(pool2.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool2.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
 
                 let resp3 = client2
                     .submit_proof("stale-job", &proof_b64, None)
@@ -6413,7 +6524,7 @@ mod tests {
                     .as_str()
                     .unwrap()
                     .starts_with("rejected:"));
-                assert_eq!(pool2.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool2.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
 
                 let server3 = StratumServer::new(pool2.clone());
                 let (ok3, status3) = server3
@@ -6427,7 +6538,7 @@ mod tests {
                     .await;
                 assert!(!ok3);
                 assert_eq!(status3, "duplicate");
-                assert_eq!(pool2.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool2.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
 
                 tokio::time::sleep(Duration::from_millis(200)).await;
                 let calls = gw_calls.lock().unwrap();
@@ -6471,7 +6582,7 @@ mod tests {
                     .await;
                 assert!(ok, "status={status}");
                 assert_eq!(status, "accepted");
-                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
 
                 let forwarded = tokio::time::timeout(Duration::from_secs(10), async {
                     loop {
@@ -6511,7 +6622,7 @@ mod tests {
                         .count(),
                     1
                 );
-                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
             });
         });
         handle.join().unwrap();
@@ -6721,7 +6832,7 @@ mod tests {
                 .unwrap();
                 assert_eq!(ok_ext["accepted"], json!(true), "resp={ok_ext}");
                 assert_eq!(ok_ext["status"], "accepted");
-                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
 
                 w.write_all(submit("PRL").as_bytes()).await.unwrap();
                 let dup_ext = tokio::time::timeout(Duration::from_secs(10), async {
@@ -6738,7 +6849,7 @@ mod tests {
                 .unwrap();
                 assert_eq!(dup_ext["accepted"], json!(false), "resp={dup_ext}");
                 assert_eq!(dup_ext["status"], "duplicate");
-                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
             });
         });
         handle.join().unwrap();
@@ -6875,14 +6986,14 @@ mod tests {
                     .await;
                 assert!(!ok0);
                 assert_eq!(status0, "stale");
-                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 0);
+                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 0);
 
                 let (ok, status) = server
                     .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64, None)
                     .await;
                 assert!(ok, "status={status}");
                 assert_eq!(status, "accepted");
-                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
 
                 let submits: Vec<String> = calls
                     .lock()
@@ -6900,7 +7011,7 @@ mod tests {
                     .await;
                 assert!(!ok2);
                 assert_eq!(status2, "duplicate");
-                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
             });
         });
         handle.join().unwrap();
@@ -6926,7 +7037,7 @@ mod tests {
                     .await;
                 assert!(!ok);
                 assert_eq!(status, "rejected:low difficulty");
-                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 0);
+                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 0);
             });
         });
         handle.join().unwrap();
@@ -6950,7 +7061,7 @@ mod tests {
                     .await;
                 assert!(ok, "status={status}");
                 assert_eq!(status, "accepted_unknown");
-                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
             });
         });
         handle.join().unwrap();
@@ -7034,7 +7145,7 @@ mod tests {
                 .unwrap();
                 assert_eq!(got["accepted"], json!(true), "resp={got}");
                 assert_eq!(got["status"], "accepted");
-                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+                assert_eq!(pool.lock().unwrap().pplns.lock().unwrap().stats().window_used, 1);
                 let submits: Vec<String> = calls
                     .lock()
                     .unwrap()

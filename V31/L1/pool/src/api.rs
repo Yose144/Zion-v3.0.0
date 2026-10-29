@@ -119,6 +119,13 @@ struct MinerHistoryRow {
 
 pub struct PoolApi {
     pool: Arc<Mutex<Pool>>,
+    /// Shard clones extracted at construction (M3 phase 2) — request-path
+    /// payload builders read telemetry / PPLNS / worker maps under their
+    /// own locks so a share-submit storm on the global `pool` mutex can
+    /// never convoy API readers behind it.
+    telemetry: Arc<Mutex<crate::telemetry::MinerTelemetryRegistry>>,
+    pplns: Arc<Mutex<crate::v3_pplns::PplnsEngine>>,
+    worker_addresses: Arc<std::sync::RwLock<std::collections::HashMap<String, zion_l1_types::Address>>>,
     share_store: Option<Arc<ShareStore>>,
     auxpow_bridge: Option<MultiAuxPowBridge>,
     routing_stats: Option<Arc<std::sync::Mutex<crate::routing::RoutingStats>>>,
@@ -177,15 +184,25 @@ impl PoolApi {
                 Err(e) => warn!("history: restore failed: {e}"),
             }
         }
+        // Extract the shard handles once — every later use skips the
+        // global pool mutex entirely.
+        let (telemetry, pplns, worker_addresses) = {
+            let p = pool.lock().expect("pool lock poisoned");
+            (
+                p.telemetry.clone(),
+                p.pplns.clone(),
+                p.worker_addresses.clone(),
+            )
+        };
         // A2.3: restore persisted per-wallet payout threshold overrides into
         // the engine — the share store is the source of truth across restarts.
         if let Some(store) = &share_store {
             match store.load_payout_overrides() {
                 Ok(overrides) if !overrides.is_empty() => {
                     let n = overrides.len();
-                    pool.lock()
-                        .expect("pool lock poisoned")
-                        .pplns
+                    pplns
+                        .lock()
+                        .expect("pplns lock poisoned")
                         .set_payout_overrides(overrides);
                     info!("miner_settings: restored {n} payout overrides");
                 }
@@ -195,6 +212,9 @@ impl PoolApi {
         }
         Self {
             pool,
+            telemetry,
+            pplns,
+            worker_addresses,
             share_store,
             auxpow_bridge,
             routing_stats: None,
@@ -1167,7 +1187,7 @@ impl PoolApi {
                                 let state_path: Option<String> =
                                     pool.config.state_path.as_deref().map(|p| p.to_string());
                                 let coin = req.coin.trim().to_ascii_lowercase();
-                                if !pool.pplns.is_native_payout_coin(&coin) {
+                                if !pool.pplns.lock().expect("pplns lock").is_native_payout_coin(&coin) {
                                     (
                                         "400 Bad Request",
                                         "application/json",
@@ -1210,6 +1230,8 @@ impl PoolApi {
                                     } else {
                                         let (emitted, emitted_total, payouts) = if pool
                                             .pplns
+                                            .lock()
+                                            .expect("pplns lock")
                                             .has_applied_revenue_event(event_id)
                                         {
                                             let payouts = pool.pending_revenue_payouts(event_id);
@@ -1276,7 +1298,7 @@ impl PoolApi {
                                                 "{\"ok\":false,\"error\":\"PPLNS state persistence is required for native revenue\"}",
                                             );
                                         };
-                                        if let Err(e) = pool.pplns.save_if_dirty(sp) {
+                                        if let Err(e) = pool.pplns.lock().expect("pplns lock").save_if_dirty(sp) {
                                             tracing::error!(
                                                 event = %event_id,
                                                 "failed to persist PPLNS revenue snapshot: {e}"
@@ -1389,13 +1411,18 @@ impl PoolApi {
 
     fn build_stats_payload(&self) -> String {
         let uptime_s = self.started_at.elapsed().as_secs();
+        // PPLNS reads go through the shard — only the truly global fields
+        // (session counters, config, pending payout queue) stay under the
+        // pool mutex, which keeps this build's global hold to ~µs.
+        let (stats, fees) = {
+            let pl = self.pplns.lock().expect("pplns lock poisoned");
+            (pl.stats(), pl.fee_stats())
+        };
         let (
             accepted,
             rejected,
             sessions,
             total_conn,
-            stats,
-            fees,
             pearl,
             pool_port,
             quantus_pending,
@@ -1412,8 +1439,6 @@ impl PoolApi {
                 pool.session_counters
                     .total_connections
                     .load(Ordering::Relaxed),
-                pool.pplns.stats(),
-                pool.pplns.fee_stats(),
                 pool.pearl.clone(),
                 pool.config.port,
                 pool.pending_external_payouts("quantus").len(),
@@ -1490,9 +1515,10 @@ impl PoolApi {
     }
 
     fn build_pplns_payload(&self) -> String {
-        let pool = self.pool.lock().expect("pool lock poisoned");
-        let stats = pool.pplns.stats();
-        let fees = pool.pplns.fee_stats();
+        let pl = self.pplns.lock().expect("pplns lock poisoned");
+        let stats = pl.stats();
+        let fees = pl.fee_stats();
+        drop(pl);
 
         json!({
             "ok": true,
@@ -1759,10 +1785,11 @@ impl PoolApi {
 
     /// Build per-miner detail payload.
     fn build_miner_detail_payload(&self, miner_id: &str) -> String {
-        let (worker_addresses, telemetry) = {
-            let pool = self.pool.lock().expect("pool lock poisoned");
-            (pool.worker_addresses.clone(), pool.telemetry.clone())
-        };
+        // Read the worker map once under the shard read guard — no
+        // global pool mutex on this request path.
+        let worker_addresses: std::collections::HashMap<String, zion_l1_types::Address> =
+            self.worker_addresses.read().expect("worker addrs lock").clone();
+        let telemetry = self.telemetry.clone();
 
         let (full_worker, address) = worker_addresses
             .get(miner_id)
@@ -1982,10 +2009,9 @@ impl PoolApi {
                 "{\"ok\":false,\"error\":\"store failed\"}".to_string(),
             );
         }
-        self.pool
+        self.pplns
             .lock()
-            .expect("pool lock poisoned")
-            .pplns
+            .expect("pplns lock poisoned")
             .set_payout_override(wallet, if v > 0 { Some(v) } else { None });
         (
             "200 OK",
@@ -2119,10 +2145,10 @@ impl PoolApi {
     /// Shared miner collection for `/miners` (full detail) and
     /// `/public/v1/miners` (masked leaderboard view).
     fn collect_miners_json(&self, limit: usize) -> (usize, Vec<serde_json::Value>) {
-        let (worker_addresses, telemetry) = {
-            let pool = self.pool.lock().expect("pool lock poisoned");
-            (pool.worker_addresses.clone(), pool.telemetry.clone())
-        };
+        // Worker-map read under the shard guard — no global pool mutex.
+        let worker_addresses: std::collections::HashMap<String, zion_l1_types::Address> =
+            self.worker_addresses.read().expect("worker addrs lock").clone();
+        let telemetry = self.telemetry.clone();
 
         let now_s = now_unix_seconds();
         let reg = telemetry.lock().expect("telemetry lock poisoned");
@@ -2230,8 +2256,8 @@ impl PoolApi {
             }
             None => Vec::new(),
         };
-        let pool = self.pool.lock().expect("pool lock poisoned");
-        let fees = pool.pplns.fee_stats();
+        let pl = self.pplns.lock().expect("pplns lock poisoned");
+        let fees = pl.fee_stats();
 
         // One row per coin — legs folded in.  Public-safe fields only:
         // no internal ports, upstream endpoints, or worker names.
@@ -2241,12 +2267,12 @@ impl PoolApi {
             let entry = coins.entry(key.clone()).or_insert_with(|| {
                 json!({
                     "coin": key,
-                    "payout_mode": if pool.pplns.is_native_payout_coin(&key) {
+                    "payout_mode": if pl.is_native_payout_coin(&key) {
                         "native"
                     } else {
                         "unified"
                     },
-                    "min_payout": pool.pplns.min_payout_for(&key).to_string(),
+                    "min_payout": pl.min_payout_for(&key).to_string(),
                     "fee_bps": fees.pool_fee_pct * 100,
                     "legs": []
                 })
@@ -2403,12 +2429,12 @@ impl PoolApi {
     /// or accumulated-balance fields. Served via the api-snapshot cache so
     /// the request path never touches `pool.lock()`.
     fn build_public_pplns_payload(&self) -> String {
-        let pool = self.pool.lock().expect("pool lock poisoned");
-        let stats = pool.pplns.stats();
-        let fees = pool.pplns.fee_stats();
+        let pl = self.pplns.lock().expect("pplns lock poisoned");
+        let stats = pl.stats();
+        let fees = pl.fee_stats();
         let (miners_in_window, top_share_pct, coins) =
-            pool.pplns.public_window_summary();
-        drop(pool);
+            pl.public_window_summary();
+        drop(pl);
         let window_total = stats.window_total_difficulty;
         json!({
             "ok": true,
@@ -2451,8 +2477,9 @@ impl PoolApi {
             s.payouts_amount_sum_since(&coin, (now_s - 86_400) as i64)
                 .ok()
         });
-        let pool = self.pool.lock().expect("pool lock poisoned");
-        let reg = pool.telemetry.lock().expect("telemetry lock poisoned");
+        // Shard reads only — telemetry and PPLNS each under their own
+        // lock, no global pool mutex on this request path.
+        let reg = self.telemetry.lock().expect("telemetry lock poisoned");
 
         // Aggregate the per-miner coin streams: a miner counts as online
         // when it submitted a share on this coin within the live window.
@@ -2470,7 +2497,13 @@ impl PoolApi {
         }
         drop(reg);
 
-        let coin_stats = pool.pplns.coin_stats().into_iter().find(|s| s.coin == coin);
+        let coin_stats = self
+            .pplns
+            .lock()
+            .expect("pplns lock poisoned")
+            .coin_stats()
+            .into_iter()
+            .find(|s| s.coin == coin);
         let (window_weight, active_miners, accepted_total) = coin_stats
             .map(|s| {
                 (
@@ -2485,7 +2518,7 @@ impl PoolApi {
         // per-stream expected-work samples (each share carries its own
         // difficulty — see telemetry::record_external_share).
         let hashrate = {
-            let reg = pool.telemetry.lock().expect("telemetry lock");
+            let reg = self.telemetry.lock().expect("telemetry lock");
             if coin == "zion" {
                 json!({
                     "live": reg.pool_hashrate_live(),
@@ -2572,9 +2605,9 @@ impl PoolApi {
     /// prefix or a registered payout address.
     fn build_public_miner_payload(&self, coin: &str, wallet: &str) -> String {
         let coin = coin.to_ascii_lowercase();
-        let pool = self.pool.lock().expect("pool lock poisoned");
         let now_s = now_unix_seconds();
-        let reg = pool.telemetry.lock().expect("telemetry lock poisoned");
+        let reg = self.telemetry.lock().expect("telemetry lock poisoned");
+        let pl = self.pplns.lock().expect("pplns lock poisoned");
 
         let mut valid = 0u64;
         let mut invalid = 0u64;
@@ -2584,9 +2617,7 @@ impl PoolApi {
             let (miner_id, worker_short) = split_worker_key(key);
             let matches = miner_id == wallet
                 || miner_id.starts_with(&format!("{wallet}."))
-                || pool
-                    .pplns
-                    .address_for(&miner_id)
+                || pl.address_for(&miner_id)
                     .map(|a| a == wallet)
                     .unwrap_or(false);
             if !matches {
@@ -2625,14 +2656,14 @@ impl PoolApi {
         drop(reg);
 
         // Unpaid balance — unified flowers or native coin units.
-        let miner_ids = pool.pplns.miner_ids_for_address(wallet);
+        let miner_ids = pl.miner_ids_for_address(wallet);
         let (unpaid, unpaid_unit) = if coin.is_empty() || coin == "zion" {
-            let total: u64 = miner_ids.iter().map(|m| pool.pplns.unpaid_balance(m)).sum();
+            let total: u64 = miner_ids.iter().map(|m| pl.unpaid_balance(m)).sum();
             (total, "flowers")
         } else {
             let total: u64 = miner_ids
                 .iter()
-                .map(|m| pool.pplns.unpaid_native_balance(m, &coin))
+                .map(|m| pl.unpaid_native_balance(m, &coin))
                 .sum();
             (total, "native")
         };
@@ -2651,9 +2682,13 @@ impl PoolApi {
         };
         let miner_weight: u128 = miner_ids
             .iter()
-            .map(|m| pool.pplns.window_weight_for_miner(m, coin_key))
+            .map(|m| pl.window_weight_for_miner(m, coin_key))
             .sum();
-        let coin_weight = pool.pplns.window_weight_for_coin(coin_key);
+        let coin_weight = pl.window_weight_for_coin(coin_key);
+        // A2.3: effective threshold incl. the per-wallet override (unified
+        // path only — native-payout coins ignore the flowers override).
+        let min_payout = pl.min_payout_for_miner(wallet, coin_key);
+        drop(pl); // all PPLNS reads done — sqlite IO below must not hold the shard
         let window_share = if coin_weight > 0 {
             miner_weight as f64 / coin_weight as f64
         } else {
@@ -2682,9 +2717,6 @@ impl PoolApi {
         // threshold at the estimated accrual rate (est_daily). `0` = at or
         // above threshold (eligible for the next batch); `null` = the rate
         // can't be estimated (no store history yet).
-        // A2.3: effective threshold incl. the per-wallet override (unified
-        // path only — native-payout coins ignore the flowers override).
-        let min_payout = pool.pplns.min_payout_for_miner(wallet, coin_key);
         let payout_eta_s = if unpaid >= min_payout {
             Some(0u64)
         } else {
@@ -2736,17 +2768,16 @@ impl PoolApi {
     ) -> String {
         let coin_key = if coin.is_empty() { "zion" } else { coin };
         let now_s = now_unix_seconds();
-        let (extra_ids, store) = {
-            let pool = self.pool.lock().expect("pool lock poisoned");
-            (
-                pool.pplns
-                    .miner_ids_for_address(wallet)
-                    .into_iter()
-                    .map(str::to_string)
-                    .collect::<Vec<String>>(),
-                self.share_store.clone(),
-            )
-        };
+        let (extra_ids, store) = (
+            self.pplns
+                .lock()
+                .expect("pplns lock poisoned")
+                .miner_ids_for_address(wallet)
+                .into_iter()
+                .map(str::to_string)
+                .collect::<Vec<String>>(),
+            self.share_store.clone(),
+        );
         let Some(store) = store else {
             return json!({"ok": false, "error": "database not configured"}).to_string();
         };
@@ -2802,13 +2833,17 @@ impl PoolApi {
             persist_success_timestamp_s,
             persist_failures_total,
         ) = {
+            let (pplns_stats, pplns_fees) = {
+                let pl = self.pplns.lock().expect("pplns lock poisoned");
+                (pl.stats(), pl.fee_stats())
+            };
             let pool = self.pool.lock().expect("pool lock poisoned");
             (
                 pool.stats().0,
                 pool.stats().1,
                 pool.telemetry.clone(),
-                pool.pplns.stats(),
-                pool.pplns.fee_stats(),
+                pplns_stats,
+                pplns_fees,
                 pool.session_counters
                     .active_sessions
                     .load(Ordering::Relaxed),
@@ -4109,11 +4144,11 @@ mod tests {
             ..Default::default()
         };
         config.min_payout_native.insert("qtu".into(), 1);
-        let mut pool = Pool::new(config, telemetry);
+        let pool = Pool::new(config, telemetry);
         pool.pplns
-            .register_address_with_chain("alice", "qz1alice", "quantus");
+            .lock().unwrap().register_address_with_chain("alice", "qz1alice", "quantus");
         pool.pplns
-            .record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
+            .lock().unwrap().record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
         let pool = Arc::new(Mutex::new(pool));
         let store = Arc::new(ShareStore::open_in_memory().unwrap());
         let api = PoolApi::new(pool, Some(store.clone()), None);
@@ -4634,12 +4669,12 @@ mod tests {
         )));
         const WALLET: &str = "zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2";
         {
-            let mut p = pool.lock().unwrap();
-            p.pplns.register_address("miner1", WALLET);
-            p.pplns.record_share_at("miner1", "rig", 1, 1000);
+            let p = pool.lock().unwrap();
+            p.pplns.lock().unwrap().register_address("miner1", WALLET);
+            p.pplns.lock().unwrap().record_share_at("miner1", "rig", 1, 1000);
             // 400k reward → 89% miner share = 356k, below the 1M
             // threshold → stays in unpaid balance.
-            let payouts = p.pplns.compute_payouts(400_000);
+            let payouts = p.pplns.lock().unwrap().compute_payouts(400_000);
             assert!(payouts.is_empty());
         }
         // Store history: 100k paid in 24h; sole-weight miner → est_daily 100k.
@@ -4959,7 +4994,7 @@ mod tests {
             pool.lock()
                 .unwrap()
                 .pplns
-                .min_payout_for_miner("zion1mine", "zion"),
+                .lock().unwrap().min_payout_for_miner("zion1mine", "zion"),
             raised
         );
 
@@ -4988,7 +5023,7 @@ mod tests {
             pool.lock()
                 .unwrap()
                 .pplns
-                .min_payout_for_miner("zion1mine", "zion"),
+                .lock().unwrap().min_payout_for_miner("zion1mine", "zion"),
             global
         );
     }
