@@ -111,6 +111,44 @@ automatically.
 
 ---
 
+## Generic Stratum V1 clients (NiceHash-compatible tooling)
+
+Any stratum-V1 miner or redirector that speaks the classic
+`mining.subscribe/authorize/set_difficulty/notify/submit` dialect can
+connect to the pool directly — no ZION-specific miner build required
+beyond PoW support for `deeksha_lite_v1`.
+
+**Endpoints**
+
+| Port | Mode | Auth |
+|------|------|------|
+| `62.171.141.136:8444` | PPLNS | `WALLET.worker` in `mining.authorize` |
+| `62.171.141.136:8446` | SOLO | same — winner-take-all block reward |
+
+**Wire dialect**
+
+- `mining.subscribe` → `extranonce1` = per-session id, **4 bytes**
+  (8 hex chars); `extranonce2_size` = **4 bytes**.
+- `mining.set_difficulty` — VarDiff retargets the share target; honor
+  it or the pool rejects low-difficulty submits.
+- `mining.submit` accepts the standard 5-param form
+  `[worker, job_id, extranonce2, ntime, nonce]` — the pool auto-detects
+  it against its compact `[worker, job_id, nonce, hash]` form by
+  inspecting param 2.
+- Username parsing: `WALLET.worker` (anything before the first `.` is
+  the payout wallet; after it, the worker name shown on the dashboard).
+
+> **NiceHash marketplace note:** hashpower *rental* from the NiceHash
+> marketplace requires the algorithm to be listed there — ZION's
+> `deeksha_lite_v1` is a custom PoW not traded on NH, so rental traffic
+> cannot be directed at the pool today. This section documents the
+> V1-compatible surface for generic stratum clients, NH-style
+> redirectors and monitoring tooling.
+
+---
+
+---
+
 ## Quick Start — Linux (any distro)
 
 ```bash

@@ -165,7 +165,10 @@ task/results viewer, alert badges, catalog+bench, events feed, X-Ops-Auth.
   WS5.21 alert-routing UI ✅ — **WS5 complete**.
   Remaining: WS4.13/14 fleet alerts+switch live (blocked on
   `VASTCTL_TG_*`/webhook envs — operator action).
-- **M4:** WS1.5 solo docs, WS4.15/16 OC + adapters, OG/SEO polish.
+- **M4:** OG/SEO ✅ (`612fe44a5` — OG/Twitter cards, per-page metadata,
+  sitemap + robots, `/ops` noindex); WS1.5 solo docs ✅ (start strip +
+  FAQ); WS4.15 OC control ✅ (`7fdfe0955` — `oc` task op + ops UI form);
+  WS4.16 adapters ✅ (SMOS/HiveOS guide + generic V1 dialect doc).
 
 ## Acceptance criteria
 
