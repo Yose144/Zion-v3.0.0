@@ -8,6 +8,7 @@ mod auth;
 mod billing;
 mod config;
 mod error;
+mod lease;
 mod meter;
 mod models;
 mod proxy;
@@ -44,6 +45,7 @@ async fn main() -> anyhow::Result<()> {
         auth: auth::Auth::new(&cfg.zis_verify_url, cfg.auth_cache_secs),
         catalog,
         meter,
+        leases: lease::LeaseStore::new(),
         client,
         timeout: std::time::Duration::from_secs(cfg.timeout_secs),
         fallback_timeout: std::time::Duration::from_secs(cfg.fallback_timeout_secs),
@@ -61,6 +63,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/v1/chat/completions", post(proxy::chat_completions))
         .route("/v1/completions", post(proxy::completions))
         .route("/v1/usage", get(routes::usage))
+        .route("/v1/agent/lease", post(routes::mint_lease))
         .route("/v1/admin/plan", post(routes::set_plan))
         .route("/v1/admin/plans", get(routes::list_plans))
         .route("/v1/stripe/webhook", post(billing::webhook))

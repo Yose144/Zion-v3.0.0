@@ -13,6 +13,9 @@ Environment=HIRAN_BIND=127.0.0.1:8007
 Environment=ZIS_VERIFY_URL=http://127.0.0.1:8096/api/keys/verify
 Environment=HIRAN_DB=/opt/zion/data/hiran-gateway.db
 Environment=HIRAN_MODELS=/etc/zion/hiran-models.json
+# Optional F1 coder tunnel (PC hiran-proxy :1235 → EDGE2 :8005):
+#   Environment=HIRAN_CODER_PRIMARY=http://127.0.0.1:8005/v1
+#   Environment=HIRAN_CODER_UPSTREAM_MODEL=qwen2.5-coder-7b-instruct
 # HIRAN_ADMIN_KEY must live in an override:
 #   systemctl edit zion-hiran-gateway → Environment=HIRAN_ADMIN_KEY=<secret>
 ExecStart=/opt/zion/V31/target/release/zion-hiran-gateway

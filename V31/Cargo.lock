@@ -6803,6 +6803,7 @@ dependencies = [
  "clap",
  "futures-util",
  "hex",
+ "rand 0.8.7",
  "reqwest 0.12.28",
  "rusqlite",
  "serde",

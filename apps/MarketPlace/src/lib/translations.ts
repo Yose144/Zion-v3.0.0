@@ -19,6 +19,7 @@ const t = {
     explore: { cs: 'Prozkoumat', en: 'Explore' },
     shop: { cs: 'Obchod', en: 'Shop' },
     create: { cs: 'Vytvořit', en: 'Create' },
+    ai: { cs: 'AI', en: 'AI' },
     pool: { cs: 'Pool', en: 'Pool' },
     cart: { cs: 'Košík', en: 'Cart' },
     cartAria: { cs: 'Košík', en: 'Cart' },
@@ -125,6 +126,17 @@ const t = {
     },
     ctaOasis: { cs: 'Vstoupit do OASIS', en: 'Enter OASIS' },
     ctaDiscord: { cs: 'Připojit se na Discord', en: 'Join Discord' },
+  },
+
+  homeAi: {
+    kicker: { cs: 'Hiranyagarbha', en: 'Hiranyagarbha' },
+    title: { cs: 'AI pro vývojáře', en: 'AI for builders' },
+    cardTitle: { cs: 'Hiran AI', en: 'Hiran AI' },
+    cardDesc: {
+      cs: 'Lokální coding agent, CLI login a plány — inference i coding joby na GPU fleetu.',
+      en: 'Local coding agent, CLI login, and plans — inference and coding jobs on the GPU fleet.',
+    },
+    cta: { cs: 'Otevřít AI', en: 'Open AI' },
   },
 
   explore: {

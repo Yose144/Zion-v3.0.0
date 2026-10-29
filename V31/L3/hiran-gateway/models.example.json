@@ -4,6 +4,8 @@
     "context": 4096,
     "tier": "free",
     "price_1m_usd": 0.6,
+    "role": "chat",
+    "tags": ["live", "hiran"],
     "upstreams": [
       { "base": "http://127.0.0.1:8004/v1", "degraded": false },
       { "base": "http://127.0.0.1:8002/v1", "degraded": true }
@@ -11,11 +13,47 @@
   },
   {
     "alias": "hiran-coder",
-    "context": 32768,
+    "context": 8192,
     "tier": "pro",
-    "price_1m_usd": 1.2,
+    "price_1m_usd": 2.5,
+    "role": "coder",
+    "tags": ["code", "agentic", "hiran"],
     "upstreams": [
-      { "base": "http://127.0.0.1:8008/v1", "degraded": false }
+      {
+        "base": "http://127.0.0.1:8005/v1",
+        "degraded": false,
+        "model": "qwen2.5-coder-7b-instruct"
+      }
     ]
+  },
+  {
+    "alias": "hiran-amitabha",
+    "mockup": true,
+    "context": 8192,
+    "tier": "pro",
+    "price_1m_usd": 3.0,
+    "role": "thinking",
+    "tags": ["trinity", "hiran", "thinking"],
+    "upstreams": []
+  },
+  {
+    "alias": "hiran-issobella",
+    "mockup": true,
+    "context": 16384,
+    "tier": "pro",
+    "price_1m_usd": 4.0,
+    "role": "agentic",
+    "tags": ["trinity", "hiran", "code", "agentic"],
+    "upstreams": []
+  },
+  {
+    "alias": "hiran-maitreya",
+    "mockup": true,
+    "context": 8192,
+    "tier": "pro",
+    "price_1m_usd": 3.5,
+    "role": "lore",
+    "tags": ["trinity", "hiran", "rag", "lore"],
+    "upstreams": []
   }
 ]

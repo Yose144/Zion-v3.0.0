@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createHash } from 'crypto';
-import { requireMarketAuth, createMarketApiKey, isAuthDenied } from '@/lib/zis';
+import { createMarketApiKey, isAuthDenied, requireMarketAuth } from '@/lib/zis';
+import { extractApiKey, requireHiranCaller } from '@/lib/hiran-auth';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -12,18 +13,21 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://market.zionterranova.com';
 
-// Stripe price ids for the Hiran API subscription tiers — create the
-// products in the Stripe dashboard once, then set these in the env.
 const PRICE_IDS: Record<'pro' | 'team', string | undefined> = {
   pro: process.env.HIRAN_PRICE_PRO_ID,
   team: process.env.HIRAN_PRICE_TEAM_ID,
 };
 
-// POST /api/stripe/hiran-subscribe { plan: 'free'|'pro'|'team' }
-// Requires a ZIS session — mints a fresh `zis_*` API key for the caller,
-// puts sha256(key) into the Stripe subscription metadata (gateway's
-// /v1/stripe/webhook maps it to the plan tier), and returns the raw key
-// once alongside the checkout URL. The raw key is never stored here.
+function hashKey(raw: string): string {
+  return createHash('sha256').update(raw).digest('hex');
+}
+
+/**
+ * POST /api/stripe/hiran-subscribe { plan: 'free'|'pro'|'team' }
+ *
+ * Auth: ZIS session cookie OR X-API-Key (CLI upgrade of existing key —
+ * no second key minted).
+ */
 export async function POST(request: NextRequest) {
   const rl = rateLimit(`hiran-subscribe:${clientIp(request)}`, 10, 60_000);
   if (!rl.ok) {
@@ -32,9 +36,6 @@ export async function POST(request: NextRequest) {
       { status: 429 },
     );
   }
-
-  const userOrResponse = await requireMarketAuth();
-  if (isAuthDenied(userOrResponse)) return userOrResponse;
 
   let plan: 'free' | 'pro' | 'team';
   try {
@@ -53,26 +54,44 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Mint a dedicated key for the API — one key per subscription keeps
-  // per-key quotas clean and revocation scoped.
+  // Prefer explicit API key (CLI) so we upgrade that hash; else session mint.
+  const headerKey = extractApiKey(request);
   let apiKey: string;
-  try {
-    const created = await createMarketApiKey(`hiran-api-${plan}`);
-    apiKey = created.apiKey;
-  } catch (err) {
-    console.error('hiran-subscribe: ZIS key creation failed:', err);
-    return NextResponse.json(
-      { success: false, error: 'Could not create API key' },
-      { status: 502 },
-    );
-  }
-  const keyHash = createHash('sha256').update(apiKey).digest('hex');
+  let keyHash: string;
+  let returnKey = true;
 
-  // Free tier: no Stripe — key works immediately at free limits.
+  if (headerKey) {
+    const caller = await requireHiranCaller(request);
+    if (caller instanceof NextResponse) return caller;
+    if (!caller.apiKey || !caller.keyHash) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid API key' },
+        { status: 401 },
+      );
+    }
+    apiKey = caller.apiKey;
+    keyHash = caller.keyHash;
+    returnKey = false; // CLI already has the key
+  } else {
+    const userOrResponse = await requireMarketAuth();
+    if (isAuthDenied(userOrResponse)) return userOrResponse;
+    try {
+      const created = await createMarketApiKey(`hiran-api-${plan}`);
+      apiKey = created.apiKey;
+      keyHash = hashKey(apiKey);
+    } catch (err) {
+      console.error('hiran-subscribe: ZIS key creation failed:', err);
+      return NextResponse.json(
+        { success: false, error: 'Could not create API key' },
+        { status: 502 },
+      );
+    }
+  }
+
   if (plan === 'free') {
     return NextResponse.json({
       success: true,
-      data: { plan, apiKey },
+      data: returnKey ? { plan, apiKey } : { plan, upgraded: true },
     });
   }
 
@@ -100,7 +119,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { plan, apiKey, url: session.url },
+      data: returnKey
+        ? { plan, apiKey, url: session.url }
+        : { plan, url: session.url, upgraded: true },
     });
   } catch (err) {
     console.error('hiran-subscribe: Stripe session failed:', err);

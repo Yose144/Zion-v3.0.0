@@ -69,24 +69,88 @@ install -d -o zion -g zion -m 755 /opt/zion/data /opt/zion/logs /var/log/zion /e
 install -m 755 -o zion -g zion /tmp/zion-hiran-gateway.new /opt/zion/V31/target/release/zion-hiran-gateway
 rm -f /tmp/zion-hiran-gateway.new
 
-if [[ ! -f /etc/zion/hiran-models.json ]]; then
-  cat >/etc/zion/hiran-models.json <<'JSON'
-[
+# F1 fabric: ensure mini + coder + trinity mockups (merge, never wipe custom upstreams).
+python3 - <<'PY'
+import json
+from pathlib import Path
+p = Path("/etc/zion/hiran-models.json")
+builtins = [
   {
     "alias": "hiran-mini",
     "context": 4096,
     "tier": "free",
     "price_1m_usd": 0.6,
+    "role": "chat",
+    "tags": ["live", "hiran"],
     "upstreams": [
-      { "base": "http://127.0.0.1:8004/v1", "degraded": false },
-      { "base": "http://127.0.0.1:8002/v1", "degraded": true }
-    ]
-  }
+      {"base": "http://127.0.0.1:8004/v1", "degraded": False},
+      {"base": "http://127.0.0.1:8002/v1", "degraded": True},
+    ],
+  },
+  {
+    "alias": "hiran-coder",
+    "context": 8192,
+    "tier": "pro",
+    "price_1m_usd": 2.5,
+    "role": "coder",
+    "tags": ["code", "agentic", "hiran"],
+    "upstreams": [
+      {
+        "base": "http://127.0.0.1:8005/v1",
+        "degraded": False,
+        "model": "qwen2.5-coder-7b-instruct",
+      }
+    ],
+  },
+  {
+    "alias": "hiran-amitabha",
+    "mockup": True,
+    "context": 8192,
+    "tier": "pro",
+    "price_1m_usd": 3.0,
+    "role": "thinking",
+    "tags": ["trinity", "hiran", "thinking"],
+    "upstreams": [],
+  },
+  {
+    "alias": "hiran-issobella",
+    "mockup": True,
+    "context": 16384,
+    "tier": "pro",
+    "price_1m_usd": 4.0,
+    "role": "agentic",
+    "tags": ["trinity", "hiran", "code", "agentic"],
+    "upstreams": [],
+  },
+  {
+    "alias": "hiran-maitreya",
+    "mockup": True,
+    "context": 8192,
+    "tier": "pro",
+    "price_1m_usd": 3.5,
+    "role": "lore",
+    "tags": ["trinity", "hiran", "rag", "lore"],
+    "upstreams": [],
+  },
 ]
-JSON
-  chown root:zion /etc/zion/hiran-models.json
-  chmod 640 /etc/zion/hiran-models.json
-fi
+if p.exists():
+    data = json.loads(p.read_text())
+    if not isinstance(data, list):
+        raise SystemExit("hiran-models.json must be a JSON array")
+else:
+    data = []
+have = {m.get("alias") for m in data if isinstance(m, dict)}
+added = []
+for b in builtins:
+    if b["alias"] not in have:
+        data.append(b)
+        added.append(b["alias"])
+p.parent.mkdir(parents=True, exist_ok=True)
+p.write_text(json.dumps(data, indent=2) + "\n")
+print("hiran-models.json aliases:", [m.get("alias") for m in data], "added:", added or "none")
+PY
+chown root:zion /etc/zion/hiran-models.json
+chmod 640 /etc/zion/hiran-models.json
 
 if [[ -f /tmp/zion-hiran-gateway.service ]]; then
   install -m 644 /tmp/zion-hiran-gateway.service /etc/systemd/system/zion-hiran-gateway.service
@@ -115,10 +179,14 @@ EOF
 fi
 
 systemctl daemon-reload
-systemctl enable --now zion-hiran-gateway.service
+systemctl enable zion-hiran-gateway.service
+# Always restart — enable --now does not replace a running binary (stale inode).
+systemctl restart zion-hiran-gateway.service
 sleep 2
 systemctl is-active zion-hiran-gateway.service
 curl -sf --max-time 5 http://127.0.0.1:8007/health
+echo
+curl -sf --max-time 5 http://127.0.0.1:8007/v1/models | head -c 500
 echo
 
 NGX=""

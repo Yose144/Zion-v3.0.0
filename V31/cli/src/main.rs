@@ -8,6 +8,7 @@ use tokio::sync::watch;
 use std::net::SocketAddr;
 use zion_l1_types::{Address, Amount, Asset, ChainId};
 
+mod agent;
 mod commands;
 mod menu;
 mod rpc;
@@ -87,9 +88,9 @@ enum Command {
         /// Shell (bash, zsh, fish, powershell, elvish)
         shell: clap_complete::Shell,
     },
-    /// AI Agent commands (L4 — not yet migrated).
-    Agent(AgentArgs),
-    /// Hiran AI oracle commands (L4 — not yet migrated).
+    /// Hiran coding agent (REPL / one-shot).
+    Agent(commands::agent::AgentCmd),
+    /// Hiran gateway + ZIS login (`login` / `subscribe` / `models` / …).
     Hiran(HiranArgs),
     /// Issobella layer commands (L6 — space science and research funding).
     Issobella(IssobellaArgs),
@@ -161,12 +162,6 @@ struct UpdateArgs {
 struct ComposeArgs {
     #[command(subcommand)]
     command: commands::compose::ComposeCmd,
-}
-
-#[derive(Parser)]
-struct AgentArgs {
-    #[command(subcommand)]
-    command: commands::agent::AgentCmd,
 }
 
 #[derive(Parser)]
@@ -1022,7 +1017,7 @@ async fn main() -> anyhow::Result<()> {
         Command::Update(args) => commands::update::run(args.command).await?,
         Command::Compose(args) => commands::compose::run(args.command).await?,
         Command::Completions { shell } => commands::completions::run(shell)?,
-        Command::Agent(args) => commands::agent::run(args.command).await?,
+        Command::Agent(args) => commands::agent::run(args).await?,
         Command::Hiran(args) => commands::hiran::run(args.command).await?,
         Command::Issobella(args) => {
             commands::issobella::run(args.command, "http://127.0.0.1:8097").await?

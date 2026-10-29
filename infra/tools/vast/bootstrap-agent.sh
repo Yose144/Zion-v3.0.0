@@ -30,9 +30,13 @@ echo ">> $IID → root@$HOST:$PORT (rig_id=$RIG_ID)"
 
 SSH=(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$PORT" "root@$HOST")
 
-# 1. upload agent + apply hook
+# 1. upload agent + coding worker (F2) + apply hook
 scp -o StrictHostKeyChecking=no -P "$PORT" \
     "$HERE/agent.py" "root@$HOST:/root/zion-vast-agent.py"
+scp -o StrictHostKeyChecking=no -P "$PORT" \
+    "$HERE/code_run.py" "root@$HOST:/root/code_run.py"
+scp -o StrictHostKeyChecking=no -P "$PORT" \
+    "$HERE/zion-coder-job.sh" "root@$HOST:/root/zion-coder-job.sh"
 scp -o StrictHostKeyChecking=no -P "$PORT" \
     "$HERE/zion-sheet-apply.sh" "root@$HOST:/root/zion-sheet-apply.sh"
 
@@ -43,12 +47,20 @@ export VAST_AGENT_URL="https://zionterranova.com"
 export VAST_AGENT_ENROLL="$VASTCTL_ENROLL_TOKEN"
 export VAST_AGENT_RIG_ID="$RIG_ID"
 export VAST_AGENT_INTERVAL=30
-chmod 755 /root/zion-vast-agent.py /root/zion-sheet-apply.sh
+export VAST_AGENT_CODE_CWD=/root/work
+# Local vLLM/llama default. For metered remote: set llm_base+lease_token via enqueue
+# (CLI mints hiran_lease_* against market.zionterranova.com/v1) — do not put zis_* here.
+# Local default. Metered remote: CLI enqueue passes llm_base + lease_token (hiran_lease_*).
+export VAST_AGENT_LLM_URL=http://127.0.0.1:8000/v1
+mkdir -p /root/work
+chmod 755 /root/zion-vast-agent.py /root/code_run.py /root/zion-coder-job.sh /root/zion-sheet-apply.sh
 python3 /root/zion-vast-agent.py --enroll
 tmux kill-session -t vast-agent 2>/dev/null || true
 tmux new-session -d -s vast-agent \\
-  'VAST_AGENT_URL=https://zionterranova.com VAST_AGENT_RIG_ID=$RIG_ID \\
-   VAST_AGENT_INTERVAL=30 python3 /root/zion-vast-agent.py'
+  'cd /root && VAST_AGENT_URL=https://zionterranova.com VAST_AGENT_RIG_ID=$RIG_ID \\
+   VAST_AGENT_INTERVAL=30 VAST_AGENT_CODE_CWD=/root/work \\
+   VAST_AGENT_LLM_URL=http://127.0.0.1:8000/v1 \\
+   python3 /root/zion-vast-agent.py'
 sleep 2
 tmux ls | grep vast-agent
 EOF

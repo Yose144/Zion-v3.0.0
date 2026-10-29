@@ -28,21 +28,27 @@ pub async fn health(State(st): State<Arc<AppState>>) -> Json<Value> {
     Json(json!({ "status": "ok", "service": "hiran-gateway", "upstreams": upstreams }))
 }
 
-/// GET /v1/models — only live aliases; free list for unauthenticated
-/// callers too (it's the price list).
+/// GET /v1/models — live aliases + mockup placeholders (price list).
+/// Unauthenticated OK. `hiran-coder` appears only when an upstream is live.
 pub async fn list_models(State(st): State<Arc<AppState>>) -> Json<Value> {
     let mut out = Vec::new();
     for m in st.catalog.all() {
-        let mut live = false;
-        let mut degraded = false;
-        for (i, u) in m.upstreams.iter().enumerate() {
-            if st.catalog.is_live(&u.base).await {
-                live = true;
-                degraded = i > 0; // serving non-primary → degraded tier
-                break;
-            }
-        }
-        if !live {
+        let (live, degraded) = st.catalog.alias_live(m).await;
+        if m.mockup {
+            out.push(json!({
+                "id": m.alias,
+                "object": "model",
+                "created": 1_760_000_000,
+                "owned_by": "hiranyagarbha",
+                "x-context": m.context,
+                "x-tier": m.tier,
+                "x-price-1m-usd": m.price_1m_usd,
+                "x-degraded": false,
+                "x-mockup": true,
+                "x-available": false,
+                "x-role": m.role,
+                "x-tags": m.tags,
+            }));
             continue;
         }
         out.push(json!({
@@ -54,9 +60,40 @@ pub async fn list_models(State(st): State<Arc<AppState>>) -> Json<Value> {
             "x-tier": m.tier,
             "x-price-1m-usd": m.price_1m_usd,
             "x-degraded": degraded,
+            "x-mockup": false,
+            "x-available": live,
+            "x-role": m.role,
+            "x-tags": m.tags,
         }));
     }
     Json(json!({ "object": "list", "data": out }))
+}
+
+#[derive(Deserialize)]
+pub struct LeaseBody {
+    pub ttl_secs: Option<u64>,
+    pub max_turns: Option<u32>,
+}
+
+/// POST /v1/agent/lease — mint short-lived Bearer for remote code.run metering.
+pub async fn mint_lease(
+    State(st): State<Arc<AppState>>,
+    headers: HeaderMap,
+    body: Option<Json<LeaseBody>>,
+) -> ApiResult<Json<Value>> {
+    let key = Auth::extract_key(&headers)?;
+    let vk = st.auth.verify(&key, &st.meter).await?;
+    let (ttl, turns) = match body {
+        Some(Json(b)) => (b.ttl_secs, b.max_turns),
+        None => (None, None),
+    };
+    let (token, expires_in, max_turns) = st.leases.mint(&vk, ttl, turns);
+    Ok(Json(json!({
+        "lease_token": token,
+        "expires_in": expires_in,
+        "max_turns": max_turns,
+        "plan": vk.plan.as_str(),
+    })))
 }
 
 /// GET /v1/usage — caller's own key usage, last 30 days.

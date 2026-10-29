@@ -14,6 +14,7 @@ const navLinkKeys = [
   { href: '/explore', key: 'nav.explore' },
   { href: '/shop', key: 'nav.shop' },
   { href: '/create', key: 'nav.create' },
+  { href: '/ai', key: 'nav.ai' },
 ];
 
 export default function Navbar() {
@@ -55,7 +56,7 @@ export default function Navbar() {
                 href={link.href}
                 className={`rasta-nav-link ${isActive(link.href) ? 'active' : ''}`}
               >
-                {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create')}
+                {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create' | 'nav.ai')}
               </Link>
             ))}
             <a
@@ -121,7 +122,7 @@ export default function Navbar() {
             onClick={() => setOpen(false)}
             className={`rasta-nav-link ${isActive(link.href) ? 'active' : ''}`}
           >
-            {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create')}
+            {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create' | 'nav.ai')}
           </Link>
         ))}
         <a

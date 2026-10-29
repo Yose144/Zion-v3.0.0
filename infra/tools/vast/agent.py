@@ -14,6 +14,8 @@ Security model (A/W3):
   - `exec` tasks run ONLY commands matching the allowlist (prefix match,
     no shell metachars) — a compromised CP cannot run arbitrary shell.
     Operator extends via VAST_AGENT_EXEC_ALLOW{,_EXTRA} on the RIG side.
+  - `code.run` (F2): coding tool jail + local LLM loop — see code_run.py.
+    Not an open shell; writes require force (fleet default true).
 
 Env:
   VAST_AGENT_URL         control plane base, e.g. https://zionterranova.com
@@ -25,6 +27,8 @@ Env:
   VAST_AGENT_SEEN        seen-task file (default ~/.local/share/vast-agent-seen.json)
   VAST_AGENT_EXEC_ALLOW  replaces allowlist (comma-separated cmd prefixes)
   VAST_AGENT_EXEC_ALLOW_EXTRA  appended to the default allowlist
+  VAST_AGENT_LLM_URL     OpenAI base for code.run (default http://127.0.0.1:8000/v1)
+  VAST_AGENT_CODE_CWD    coding workspace (default /root/work)
 """
 from __future__ import annotations
 
@@ -36,6 +40,18 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
+
+try:
+    import code_run as _code_run
+except ImportError:  # pragma: no cover — same-dir import when cwd differs
+    _code_run = None
+    _here = Path(__file__).resolve().parent
+    if str(_here) not in sys.path:
+        sys.path.insert(0, str(_here))
+    try:
+        import code_run as _code_run
+    except ImportError:
+        _code_run = None
 
 URL = os.environ.get("VAST_AGENT_URL", "http://127.0.0.1:8088").rstrip("/")
 TOKEN = os.environ.get("VAST_AGENT_TOKEN", "")
@@ -72,6 +88,8 @@ EXEC_ALLOW_DEFAULT = (
     "journalctl", "tmux ls", "tmux capture-pane", "tmux kill-session",
     "pkill -f SRBMiner", "pkill -f xmrig", "pkill -f zion-miner",
     "bash /root/", "sh /root/",
+    # F2 path-B: allowlisted job wrapper (not arbitrary shell)
+    "bash /root/zion-coder-job.sh",
 )
 EXEC_META_FORBIDDEN = (";", "|", "&", "`", "$(", ">", "<", "\n", "\r")
 
@@ -303,8 +321,20 @@ def run_task(task, seen):
     tid, op, args = task["id"], task["op"], task.get("args", {})
     if tid in seen:
         return
+    # CP may cancel pending/delivered before we start — skip quietly.
+    if task.get("state") == "cancelled":
+        seen.append(tid)
+        return
     if op == "self-update":
         rc, out = self_update(args)
+    elif op == "code.run":
+        if _code_run is None:
+            rc, out = 2, "code.run unavailable: code_run.py not installed on rig"
+        else:
+            try:
+                rc, out = _code_run.run_code_job(args if isinstance(args, dict) else {})
+            except Exception as e:
+                rc, out = 1, f"code.run error: {e}"
     elif op != "exec":
         rc, out = 2, f"unsupported op {op}"
     elif not exec_allowed(args.get("cmd", "")):
@@ -318,6 +348,10 @@ def run_task(task, seen):
             rc, out = 124, f"task timeout ({TASK_TIMEOUT}s)"
         except Exception as e:
             rc, out = 1, f"exec error: {e}"
+    # Coding results may be longer than miner exec noise.
+    out_cap = 24000 if op == "code.run" else 8000
+    if isinstance(out, str) and len(out) > out_cap:
+        out = out[: out_cap - 20] + "\n…[truncated]"
     try:
         _req("/api/agent/result",
              {"rig_id": _load_state().get("rig_id") or RIG_ID,

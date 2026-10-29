@@ -109,10 +109,11 @@ User chat ──zis_*────────────► gateway ──► m
 
 **Proč:** Market/CLI routing na coder; slot existuje, upstream ne.
 
+- [x] Gateway katalog: `hiran-coder` v `/v1/models` s `x-available:false` dokud upstream neodpoví (deploy 29.10. večer)
 - [ ] Stabilní upstream: prefer PC coder `:8072` (přes proxy) **nebo** Vast tunnel → EDGE2 `:8005`
-- [ ] Gateway env / `models` entry — `hiran-coder` v `/v1/models` s `live:true`
-- [ ] Health probe zelený; smoke `POST /v1/chat/completions` model=`hiran-coder`
-- [ ] Dokumentovat fallback řetěz: vast coder → PC `:8072` → EDGE2 (pokud dostupný)
+- [ ] Gateway health `live:true` + smoke `POST …/chat/completions` model=`hiran-coder`
+- [x] Runbook (29.10.): `zion-coder-cuda` **inactive**, PC `:8072` down, EDGE2 `:8005` nic neposlouchá; mini jede `:8071` + proxy `:1235`.  
+      Postup: start coder na `:8072` → `ssh -R 8005:127.0.0.1:1235 zion-edge2` (nebo dedicated tunnel unit) → ověř `curl :8005/v1/models` → gateway probe zelený.
 
 **Done when:** `GET …/v1/models` ukáže `hiran-coder` live; jeden chat turn OK s `zis_*`.
 
@@ -120,12 +121,11 @@ User chat ──zis_*────────────► gateway ──► m
 
 **Proč:** Smoke dokázal jail + enqueue; produkt potřebuje GGUF/vLLM.
 
-- [ ] Fleet ≥1 enrolled agent (`VASTCTL_ENROLL_TOKEN` v serve env; bootstrap)
-- [ ] Image s **Dockerem** → vLLM pin (`vllm/vllm-openai:v0.8.5` nebo ověřený tag)  
-      **nebo** manuální llama.cpp GGUF path (bez Docker)
-- [ ] LLM na `127.0.0.1:8000` (`VASTCTL_AI_PORT` / `VAST_AGENT_LLM_URL`)
-- [ ] E2E `code.run` s reálným modelem (tool turn + smysluplná odpověď)
-- [ ] Mining vs infer: sheet / dočasný stop mine při code burst (contention — viz rizika)
+- [x] Fleet ≥1 enrolled — `58077390` live (age_s < 10, 29.10.)
+- [ ] Image s **Dockerem** → vLLM pin **nebo** manuální llama.cpp GGUF (ne OpenAI stub)
+- [x] LLM na rigu `:8000` — zatím **smoke-coder stub** (E2E rc=0, `SMOKE_OK`, task `19ae464767e2`)
+- [ ] E2E `code.run` s **reálným** weightem
+- [ ] Mining vs infer duty sheet
 
 **Done when:** E2E checklist z Vast plánu §7 splněn **bez** stub serveru.
 
@@ -133,10 +133,11 @@ User chat ──zis_*────────────► gateway ──► m
 
 **Proč:** Remote dnes jede na fleet token + local `:8000`; user billing musí jít přes `zis_*`.
 
-- [ ] Worker / remote path: LLM calls přes gateway (`hiran-coder` / `hiran-mini`) s user turn budget
-- [ ] Žádný user `llm_key` v enqueue args z control plane (už deny — držet)
-- [ ] CLI remote: meterované turns viditelné ve `whoami` / usage
-- [ ] Fail-closed při vyčerpání plánu
+- [x] `POST /v1/agent/lease` — short TTL `hiran_lease_*` vázaný na key_hash (deployed)
+- [x] Chat path přijme lease Bearer; turn budget fail-closed
+- [x] `code_run` / vastctl: `lease_token` + `llm_base` + `model` OK; `llm_key` strip
+- [x] CLI `zion hiran agent --remote vast` mint lease → enqueue; po runu `/v1/usage`
+- [ ] E2E metered remote (vyžaduje `zis_*` v `~/.zion/agent.toml` + live `hiran-mini`/`coder` na gateway z rigu)
 
 **Done when:** remote `code.run` odečte turns na ZIS/Hiran plánu, ne jen ops token.
 
@@ -144,23 +145,23 @@ User chat ──zis_*────────────► gateway ──► m
 
 **Proč:** `/ai` je pricing + soft-sell; chybí katalog aliasů jako produkt.
 
-- [ ] Karta per alias: params, ctx, $/1M tok (gpu$/h ÷ tok/s × marže), live dostupnost
-- [ ] Zdroj dostupnosti: `model_endpoints()` / gateway health
-- [ ] Trial chat widget (rate-limited, `zis_*` nebo guest trial)
-- [ ] Settlement copy: ZION/L2 (dry-run flag dokud není produkční settlement)
-- [ ] Rozhodnutí copy: přímý prodej inference vs „Hiran inside“ badge (Marketplace §5)
+- [x] Karty per alias (ctx, $/1M, live/offline/mockup) — `/api/hiran/models` + `/ai`
+- [x] Zdroj: public `/v1/models` + loopback `/health` (`HIRAN_GATEWAY_INTERNAL`)
+- [x] Trial chat — `/api/hiran/trial-chat` (session, rate-limit 8/min)
+- [x] Settlement copy dry-run
+- [ ] Rozhodnutí copy: přímý prodej vs „Hiran inside“ (product)
 
-**Done when:** `/ai` (nebo podstránka) ukáže live karty mini (+ coder když P0) s cenou a CTA.
+**Done when:** `/ai` ukáže live karty mini (+ coder když P0) s cenou a CTA. ✅ (coder offline badge OK)
 
 ### P4 — Provoz / observabilita
 
-- [ ] `inference_live` (nebo ekvivalent) do G8 / Prometheus
-- [ ] Uptime badge z `ai_status` historie (vast-rigs / Market)
-- [ ] Stabilní fallback: hiran-core (PC) → EDGE2 CPU → Vast
-- [ ] Alert při `hiran-coder`/`hiran-mini` down > N minut
-- [ ] SMOS 518837: opravit rotaci **nebo** oficiálně retire (Marketplace open item)
+- [x] Market uptime badge mini/coder z `/api/hiran/models`
+- [x] Metriky/alerts v repo: `V31/deploy/monitoring/zion-writepath-probe.py` (`zion_hiran_*`) + `zion-hiran-alerts.yml`
+- [ ] Prometheus scrape + alert rules **live** na EDGE (ověřit timer)
+- [ ] `inference_live` jméno do G8 JSON (nice-to-have; writepath gauge stačí)
+- [ ] SMOS 518837 retire/repair
 
-**Done when:** ops má gauge + alert; veřejný badge sedí s realitou.
+**Done when:** ops má gauge + alert; veřejný badge sedí s realitou. (badge ✅; EDGE Prom partial)
 
 ### FT — Trinity train-first (paralelní / odložené)
 
@@ -193,12 +194,22 @@ Pořadí: shared constitution → **Maitreya** → **Amitábha** → **Issobella
 
 ## 6. Success criteria (produkt „complete“ pro tuto mapu)
 
-- [ ] P0: `hiran-coder` live na public `/v1`
-- [ ] P1: E2E `code.run` s reálným weightem
-- [ ] P2: remote turns metered `zis_*`
-- [ ] P3: Market listing karty + trial
-- [ ] P4: inference v monitoringu + fallback
+- [ ] P0: `hiran-coder` live na public `/v1` *(blocked: coder CUDA off / no :8005)*
+- [ ] P1: E2E `code.run` s reálným weightem *(stub E2E OK; real GGUF pending)*
+- [ ] P2: remote turns metered `zis_*` *(lease code live; metered E2E pending)*
+- [x] P3: Market listing karty + trial
+- [x] P4: Market badge + monitoring files in repo *(EDGE Prom wiring residual)*
 - [ ] FT (aspoň 1 persona): mockup→live (může doběhnout po P0–P2)
+
+### Autonomní průchod 2026-10-29 (bez FT)
+
+| Položka | Výsledek |
+|---|---|
+| Gateway lease + offline aliases | deployed EDGE2 `:8007` |
+| Market `/ai` models + trial + badge | deployed |
+| P0 coder upstream | **skip** — `zion-coder-cuda` inactive |
+| P1 fleet `code.run` | ✅ stub `SMOKE_OK` on `58077390` |
+| FT Trinity | skipped (delší sezení) |
 
 ---
 

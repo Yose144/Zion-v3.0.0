@@ -3,6 +3,7 @@
 use crate::{
     auth::{Auth, VerifiedKey},
     error::{ApiError, ApiResult},
+    lease::{LeaseStore, LEASE_PREFIX},
     meter::Meter,
     models::Catalog,
 };
@@ -24,6 +25,7 @@ pub struct AppState {
     pub auth: Auth,
     pub catalog: Catalog,
     pub meter: Meter,
+    pub leases: LeaseStore,
     pub client: reqwest::Client,
     pub timeout: Duration,
     pub fallback_timeout: Duration,
@@ -53,6 +55,17 @@ pub async fn chat_completions(
         .get(&model)
         .ok_or_else(|| ApiError::not_found(format!("unknown model '{model}' — see /v1/models")))?
         .clone();
+
+    if def.mockup {
+        return Err(ApiError::overloaded(format!(
+            "model '{model}' is a planned Trinity persona (mockup) — not deployed yet; use hiran-mini or hiran-coder"
+        )));
+    }
+    if def.upstreams.is_empty() {
+        return Err(ApiError::overloaded(format!(
+            "model '{model}' has no upstreams configured"
+        )));
+    }
 
     let stream = body.get("stream").and_then(Value::as_bool).unwrap_or(false);
 
@@ -85,10 +98,17 @@ pub async fn chat_completions(
             st.fallback_timeout
         };
         let url = format!("{}/chat/completions", up.base.trim_end_matches('/'));
+        // Rewrite public alias → backend weight id when configured.
+        let mut fwd = body.clone();
+        if let Some(upstream_model) = &up.model {
+            if let Some(obj) = fwd.as_object_mut() {
+                obj.insert("model".into(), json!(upstream_model));
+            }
+        }
         let resp = match st
             .client
             .post(&url)
-            .json(&body)
+            .json(&fwd)
             .timeout(timeout)
             .send()
             .await
@@ -161,6 +181,9 @@ pub async fn completions(
 
 async fn authenticate(st: &AppState, headers: &HeaderMap) -> ApiResult<VerifiedKey> {
     let key = Auth::extract_key(headers)?;
+    if key.starts_with(LEASE_PREFIX) {
+        return st.leases.consume(&key);
+    }
     st.auth.verify(&key, &st.meter).await
 }
 
