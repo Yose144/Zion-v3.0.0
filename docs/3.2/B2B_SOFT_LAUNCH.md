@@ -48,10 +48,11 @@ Stripe Dashboard → Webhooks → endpoint
 1. Digi SKUs in stock (seed) — ✅
 2. Transfer E2E — ✅ (28.10.)
 3. Soft-launch banner + card gate — ✅ (kód 29.10.)
-4. 👤 Stripe + SMTP/Resend secrets
-5. Card E2E + e-mail arrival
-6. Next 15/16 před **veřejným** (wide) launch — viz `AUDIT-TRIAGE.md`
-7. Fyzické merch `inStock` — 👤 rozhodnutí (zatím záměrně false)
+4. Stripe secrets — ✅ 29.10. (EDGE2); Hiran Pro/Team prices + webhooks live
+5. 👤 SMTP/Resend — stále EMPTY (`email:false` v capabilities); card už jde
+6. Card E2E + e-mail arrival — card smoke pending; e-mail po SMTP
+7. Next 15/16 před **veřejným** (wide) launch — viz `AUDIT-TRIAGE.md`
+8. Fyzické merch `inStock` — 👤 rozhodnutí (zatím záměrně false)
 
 ## Deploy
 

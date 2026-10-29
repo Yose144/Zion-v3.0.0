@@ -45,3 +45,11 @@ curl -s https://market.zionterranova.com/v1/chat/completions \
   -d '{"model":"hiran-mini","messages":[{"role":"user","content":"ping"}]}'
 curl -s https://market.zionterranova.com/v1/usage -H "X-API-Key: zis_…"
 ```
+
+## Live IDs (2026-10-29)
+
+- Pro price: `price_1UViLHPFWMwiTqj6DedtRHSS` (€29/mo)
+- Team price: `price_1UViLIPFWMwiTqj6Dh61AQSk` (€99/mo)
+- Shop webhook: `we_1UViLgPFWMwiTqj6q9RrdfYq` → `/api/stripe/webhook`
+- Hiran webhook: `we_1UViLhPFWMwiTqj6GtMbYBGo` → `/v1/stripe/webhook`
+- Secrets live on EDGE2 only (MarketPlace `.env` + `/etc/zion/hiran-gateway-stripe.env`).

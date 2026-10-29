@@ -52,10 +52,34 @@ export async function POST(req: NextRequest) {
     if (!['transfer', 'card', 'crypto'].includes(body.payment)) {
       return NextResponse.json({ success: false, error: 'Invalid payment method' }, { status: 400 });
     }
-    // Physical delivery requires an address
+    // Shipping rules (V2 parity):
+    // - virtualni*: no address
+    // - zasilkovna (pickup): requires pickupPoint name/id (no home address)
+    // - zasilkovna-home: requires street address
     const isVirtual = shippingMethod.startsWith('virtualni');
-    if (!isVirtual && !body.customer.address?.street) {
-      return NextResponse.json({ success: false, error: 'Address required for physical shipping' }, { status: 400 });
+    const isPickup = shippingMethod === 'zasilkovna';
+    const isHome = shippingMethod === 'zasilkovna-home';
+    if (isHome && !body.customer.address?.street) {
+      return NextResponse.json({ success: false, error: 'Address required for home delivery' }, { status: 400 });
+    }
+    if (isPickup) {
+      const pp = body.shipping?.pickupPoint as { name?: string; id?: string; label?: string } | string | null | undefined;
+      const label =
+        typeof pp === 'string'
+          ? pp.trim()
+          : [pp?.name, pp?.label, pp?.id].filter(Boolean).join(' ').trim();
+      if (!label) {
+        return NextResponse.json(
+          { success: false, error: 'Pickup point required for Zásilkovna' },
+          { status: 400 },
+        );
+      }
+    }
+    if (!isVirtual && !isPickup && !isHome) {
+      // Future physical methods — require address by default
+      if (!body.customer.address?.street) {
+        return NextResponse.json({ success: false, error: 'Address required for physical shipping' }, { status: 400 });
+      }
     }
 
     // ── Idempotency: same orderId → return existing order ───────────
@@ -100,7 +124,17 @@ export async function POST(req: NextRequest) {
       }
       itemsTotal += product.priceCzk * qty;
       zionTokens += product.tokens * qty;
-      lineItems.push({ externalId: product.externalId, name: product.name, quantity: qty, priceCzk: product.priceCzk, tokens: product.tokens });
+      lineItems.push({
+        externalId: product.externalId,
+        name: product.name,
+        quantity: qty,
+        priceCzk: product.priceCzk,
+        tokens: product.tokens,
+        digital: product.digital,
+        filesUrl: product.filesUrl ?? undefined,
+        instructionsUrl: product.instructionsUrl ?? undefined,
+        modelUrl: product.modelUrl ?? undefined,
+      });
     }
 
     const shippingCzk = SHIPPING_PRICES[shippingMethod];

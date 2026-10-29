@@ -14,7 +14,7 @@ const COMPANY = {
   iban: 'CZ63 2010 0000 0029 0180 9148',
   swift: 'FIOBCZPPXXX',
   bankName: 'Fio banka, a.s.',
-  supportEmail: 'admin@newearth.cz',
+  supportEmail: 'shop@zionterranova.com',
   shopUrl: 'https://market.zionterranova.com',
 };
 
@@ -244,8 +244,49 @@ Platbu prosím uhraďte do 7 dnů.`;
   return '';
 }
 
-function formatDigitalDownloadsHtml(_order: OrderEmailData): string {
-  return '';
+function formatDigitalDownloadsHtml(order: OrderEmailData): string {
+  const items = Array.isArray(order.items) ? (order.items as Record<string, unknown>[]) : [];
+  const digi = items.filter((it) => {
+    if (it.digital === true) return true;
+    return Boolean(it.filesUrl || it.instructionsUrl || it.modelUrl);
+  });
+  if (digi.length === 0) return '';
+
+  const rows = digi
+    .map((it) => {
+      const name = escapeHtml(String(it.name ?? 'Digitální produkt'));
+      const links: string[] = [];
+      if (typeof it.filesUrl === 'string' && it.filesUrl) {
+        links.push(
+          `<a href="${escapeHtml(it.filesUrl)}" style="color:#FFD700;font-weight:700;">Soubory / download</a>`,
+        );
+      }
+      if (typeof it.instructionsUrl === 'string' && it.instructionsUrl) {
+        links.push(
+          `<a href="${escapeHtml(it.instructionsUrl)}" style="color:#9af59a;">Instrukce (PDF)</a>`,
+        );
+      }
+      if (typeof it.modelUrl === 'string' && it.modelUrl) {
+        links.push(
+          `<a href="${escapeHtml(it.modelUrl)}" style="color:#9af59a;">3D model</a>`,
+        );
+      }
+      if (links.length === 0) {
+        links.push('<span style="color:#8a8f94;">Odkazy pošleme po potvrzení platby.</span>');
+      }
+      return `<li style="margin:0 0 12px 0;"><strong style="color:#00ff7f;">${name}</strong><br>${links.join(' · ')}</li>`;
+    })
+    .join('');
+
+  return `
+    <div style="background: linear-gradient(145deg, rgba(255,215,0,0.12), rgba(0,0,0,0.5)); border: 2px solid rgba(255,215,0,0.35); border-radius: 18px; padding: 28px; margin-bottom: 36px;">
+      <h3 style="color:#FFD700;margin:0 0 16px 0;font-size:20px;text-align:center;">📥 Digitální stažení</h3>
+      <ul style="color:#9af59a;font-size:14px;line-height:1.6;margin:0;padding-left:18px;">${rows}</ul>
+      <p style="color:#8a8f94;font-size:12px;margin:16px 0 0 0;text-align:center;">
+        Uložte si odkazy. Podpora: ${escapeHtml(COMPANY.supportEmail)}
+      </p>
+    </div>
+  `;
 }
 
 function formatZionTokenSectionHtml(order: OrderEmailData): string {

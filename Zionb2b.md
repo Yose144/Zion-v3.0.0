@@ -58,7 +58,18 @@
 - **Co:** OpenAI-kompatibilní endpoint na vast rigách (vLLM katalog existuje), `X-API-Key` gate přes ZIS, Stripe subscription CZK/EUR, metering přes NCL daemon (pricing engine už počítá).
 - **Positioning:** „EU-hosted LLM" — GDPR/data sovereignty pro české/EU klienty; data neopouští EU, žádný US cloud.
 - **MVP scope:** jeden model tier (8B chat + RAG), $/1M tok nebo flat monthly, `/v1/models` gateway (HIRAN-MARKETPLACE-PLAN F2).
-- **Čas:** 2–4 týdny do prvního MRR.
+- **Stav 29.10.:** free tier live na `market.zionterranova.com/v1/` (`hiran-mini`); Pro/Team = 👤 Stripe price IDs.
+- **Čas:** 2–4 týdny do prvního MRR (paid).
+
+#### B2B-3b · Hiran Agent v `zion` CLI — autonomní programování (Cursor / Claude Code / Devin třída)
+- **Nápad (29.10.):** přímo do unified CLI (`V31/cli` → bin `zion`) a do public/archive miner CLI balíčků přidat **AI agent servis** — lokální/remote agent + model routing pro autonomní coding (read/edit/run/test loop), ne jen chat.
+- **Co prodáváme:** `zion agent` (nebo `zion ai`) — session s tools (fs, shell, git, test), napojená na Hiran API (B2B-3) + volitelně BYOK; subscription stejný Stripe rail jako `/ai`.
+- **Positioning:** EU-sovereign coding agent — kód a kontext neopouští EU (default Hiran upstream); ZION ecosystem awareness (RAG z L3 + canon) jako moat vs generický Claude/Devin.
+- **Distribuce:** (1) `zion` V31 operator CLI; (2) public `v3-Mainnet` / archive CLI artefakty — stejný subcommand, feature-flag `agent`; (3) později desktop-agent embed.
+- **Synergie:** B2B-3 metering + ZIS keys = auth; Maestro/ai-native tool layer = seed pro agent tools; NCL = heavy jobs.
+- **MVP scope (návrh):** REPL + one-shot `zion agent -p "…"`, tool allowlist, Hiran `hiran-mini` default, Pro unlock větších modelů; žádný silent cloud exfil.
+- **Priorita:** hned za B2B-3 paid — stejný fiat rail, vyšší ARPU než raw API; spec `docs/3.2/B2B_HIRAN_AGENT_CLI.md`.
+- **Čas:** 3–6 týdnů po live Hiran API (reuse gateway + Stripe).
 
 ### B. Krátký horizont (1–3 měsíce) — služby založené na stacku
 
@@ -99,10 +110,11 @@
 ## 3. Doporučené pořadí
 
 ```
-1. E-shop fiat (dokončit 5.B6)              → první CZK/EUR ~týden
-2. Aux-mining cash-out + payout backlog      → cashflow + retence minerů
-3. Hiran API subscription                    → 2–4 týdny do prvního MRR
-4. Pool-as-a-service one-pager + outreach    → B2B pipeline 1–3 měs.
+1. E-shop fiat (soft-launch + Stripe secrets) → první CZK/EUR
+2. Aux-mining cash-out + QTC policy/funding  → cashflow + retence minerů
+3. Hiran API paid (Stripe Pro/Team)          → MRR z inference
+3b. Hiran Agent v zion CLI (+ archive)       → coding-agent ARPU (po 3)
+4. Pool-as-a-service outreach                → B2B pipeline 1–3 měs.
 5. NCL marketplace                           → jen na základě reálného leadu
 6. Treasury → likvidita (po unlocku 144k)    → odemyká vše ostatní
 ```
@@ -119,11 +131,12 @@
 
 | # | Akce | Typ | Závisí na | Stav 28.10. |
 |---|---|---|---|---|
-| 1 | `5.B6` dokončit: E2E order test (transfer + Stripe), invoice download route, order-tracking, deploy MarketPlace | 🤖 | — | ✅ soft-launch 29.10. — digi + bank transfer + `/api/shop/capabilities` card gate; runbook `docs/3.2/B2B_SOFT_LAUNCH.md`. Stripe+SMTP stále 👤 (EMPTY na EDGE2). Transfer E2E ✅ 28.10. Next 15/16 před wide public launch |
+| 1 | `5.B6` dokončit: E2E order test (transfer + Stripe), invoice download route, order-tracking, deploy MarketPlace | 🤖 | — | ✅ Stripe live; V2 parity pass 29.10. (pickup/digi/paid-email/reklamace). E-mail blok = vytvořit **`shop@zionterranova.com`** + SMTP/Resend (`MARKET_V2_PARITY.md`). Next 15/16 před wide launch |
 | 1b | MarketPlace `next` major upgrade nebo per-CVE review + mitigace | 🤖→👤 | AUDIT-TRIAGE | ✅ review 28.10: `unoptimized:true`; Server Actions 0×. Zbývá next 15/16 = 👤 před veřejným launch |
 | 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤→✅ | 2.B7 | 🟢 ZION recovery live (`defdcd84a`). ✅ **QTC politika 29.10.** — `docs/3.2/QTC_PAYOUT_POLICY.md` (honest hold / hybrid D) + pool FAQ update. Funding treasury = 👤 |
 | 3 | `PRL_PAYOUT_DRY_RUN=0` po dry-batch review + sweep do oyster | 👤🔀 | 2.B6 | 🔍 review hotový — 0 pending; flip až po PRL aktivitě |
-| 4 | Hiran API MVP spec: `/v1/models` gateway + `X-API-Key` (ZIS) + Stripe price page | 🤖 | ZIS keys | ✅ spec+code; deploy skript `scripts/ops/deploy-hiran-gateway.sh`; veřejná cesta `market…/v1/` (api. DNS = EDGE/ZIS). Stripe price IDs = 👤 |
+| 4 | Hiran API MVP spec: `/v1/models` gateway + `X-API-Key` (ZIS) + Stripe price page | 🤖 | ZIS keys | ✅ free + **Pro/Team prices** (`price_1UViLH…` / `price_1UViLI…`) + dual webhooks shop/gateway; hiranBilling=true |
+| 4b | Hiran Agent v `zion` CLI (B2B-3b) — Cursor/Claude/Devin-class coding agent | 🤖 | #4 paid | 📝 spec `docs/3.2/B2B_HIRAN_AGENT_CLI.md`; implementace po Stripe |
 | 5 | One-pager "Pool-as-a-Service" (CS+EN) + seznam 10 cílových PoW coinů | 🤖 | — | ✅ + outreach balíček `docs/3.2/B2B_POOL_OUTREACH.md` (gate = QTC politika) |
 | 6 | Regtest dry-run `build_admin_unlock_tx` 3-of-3 (1.B5) — před 144k | 🤖 | PREMINE_UNLOCK.md | ✅ PASS (158 s, reálná node cesta, DAO height gate drží) |
 
@@ -146,4 +159,4 @@
 
 ---
 
-*Souvisí: `docs/3.2/3.2.1-3.2.9_PLAN.md` (položky 2.B6/2.B7/5.B6/1.B5/1.S3), `HIRAN-MARKETPLACE-PLAN.md`, `docs/3.2/ESHOP_WORKFLOW_PLAN.md`, `docs/3.2/B2B_SOFT_LAUNCH.md`, `docs/3.2/QTC_PAYOUT_POLICY.md`, `docs/3.2/B2B_POOL_OUTREACH.md`, `docs/3.2/B2B_HIRAN_SECRETS.md`, `docs/3.2/PREMINE_UNLOCK.md`, `docs/3.2/DAO.md`.*
+*Souvisí: `docs/3.2/3.2.1-3.2.9_PLAN.md` (položky 2.B6/2.B7/5.B6/1.B5/1.S3), `HIRAN-MARKETPLACE-PLAN.md`, `docs/3.2/ESHOP_WORKFLOW_PLAN.md`, `docs/3.2/B2B_SOFT_LAUNCH.md`, `docs/3.2/QTC_PAYOUT_POLICY.md`, `docs/3.2/B2B_POOL_OUTREACH.md`, `docs/3.2/B2B_HIRAN_SECRETS.md`, `docs/3.2/B2B_HIRAN_AGENT_CLI.md`, `docs/3.2/PREMINE_UNLOCK.md`, `docs/3.2/DAO.md`.*

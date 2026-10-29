@@ -456,3 +456,6 @@ apps/desktop-agent/resources/srbminer/Autotune/
 
 # IDE/MCP lokalni konfigurace (neni soucast repozitare)
 .continue/
+
+# Live Stripe keys — never commit
+docs/Stripe.md
