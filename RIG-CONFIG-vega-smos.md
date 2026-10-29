@@ -108,3 +108,26 @@ RUST_LOG=info
   `progpow_zano` → `"Method not found"`. Now `eth_submitWork` covers the
   whole `EthStratum` protocol family.
 - Thermals: ~67–68 °C, ~220 W, fans ~3.2k RPM — stable co-resident.
+
+## 2026-10-29 (2) — SMOS package wipe + durable fix; VRSC disabled
+
+**Incident:** `kill <miner-pid>` for a config restart triggered the SMOS
+watchdog to **re-download the whole custom package** from
+`http://62.171.141.136/zion-miner/teamredminer-zion-trinity-srb-v1.7.zip`
+→ `/root/miner/custom_*/miner` reverted to stock (20880 B, Oct 13) →
+all local patches lost: `STREAM4=0`, `STREAM3=1`, stock `/tmp` binary
++ duplicate `/tmp/SRBMiner-MULTI` next to `/root/srb379` one.
+
+**Durable fix (survives re-extract):**
+- EDGE zip `teamredminer-zion-trinity-srb-v1.7.zip` patched IN PLACE
+  (`/var/www/zion-miner/`, bak `.zip.bak-20261029`) — every future
+  re-download now contains the patched `miner` script (STREAM4 ZANO
+  block, `CUSTOM_MINER=/root/zion-miner-v31-zano` override, ROCm SRB
+  path, orphan `pkill -x SRBMiner-MULTI` guard).
+- Rig: `pkgwork/miner` = canonical patched script (also installed to
+  `miner/` + repacked `miner_org` tarball + regenerated `.md5`).
+
+**VRSC off:** `ZION_STREAM3_ENABLED="${ZION_STREAM3_ENABLED:-0}"` —
+patched in all three places (live miner, miner_org tarball, EDGE zip).
+Re-enable via SMOS minerOptions token `ZION_STREAM3_ENABLED=1`.
+Verified: `cpu-external` stream idle, ZION ~48 KH/s, ZANO active.
