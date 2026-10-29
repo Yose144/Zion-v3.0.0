@@ -133,6 +133,20 @@ export interface VarDiffPolicy {
   retarget_shares: number;
 }
 
+/** Public leaderboard row — wallet masked server-side (`zion1abc…xyz.rig`). */
+export interface TopMinerRow {
+  worker: string;
+  address: string;
+  hashrate_hps: number;
+  hashrate_1h_hps: number;
+  hashrate_24h_hps: number;
+  valid_shares: number;
+  invalid_shares: number;
+  blocks_found: number;
+  last_seen_s: number;
+  streams?: Record<string, { hps_live?: number; accept_rate?: number; valid_shares?: number }>;
+}
+
 export interface PoolOverview {
   uptime_s: number;
   coins: CoinInfo[];

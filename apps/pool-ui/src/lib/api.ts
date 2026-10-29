@@ -4,7 +4,7 @@
 // deliberately serves only live operational data.
 
 import * as mock from './mock';
-import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, FeeSplit, MinerStats, PayoutRow, PayoutStatus, PoolOverview, VarDiffPolicy } from './types';
+import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, FeeSplit, MinerStats, PayoutRow, PayoutStatus, PoolOverview, TopMinerRow, VarDiffPolicy } from './types';
 
 const USE_MOCK = false;
 const API_BASE = '/public/v1';
@@ -319,6 +319,16 @@ export async function fetchPayouts(coin?: CoinId, limit = 50): Promise<PayoutRow
   params.set('limit', String(limit));
   const { payouts } = await get<{ payouts: ApiPayout[] }>(`/payouts?${params}`);
   return payouts.map((p) => toPayoutRow(UI_ID[p.coin] ?? 'multi', p));
+}
+
+export async function fetchTopMiners(limit = 10): Promise<TopMinerRow[]> {
+  if (USE_MOCK) return [];
+  try {
+    const res = await get<{ ok: boolean; miners: TopMinerRow[] }>(`/miners?limit=${limit}`);
+    return res.miners ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchMiner(

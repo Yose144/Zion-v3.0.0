@@ -6,6 +6,7 @@ import { LangProvider } from '@/lib/i18n';
 import { AuthProvider } from '@/lib/auth';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
+import StatusBanner from '@/components/StatusBanner';
 
 export const metadata: Metadata = {
   title: 'ZION Pool — one pool, twelve coins, native payouts',
@@ -30,7 +31,10 @@ export default function RootLayout({
         <LangProvider>
           <AuthProvider>
             <Nav />
-            <main className="zion-container mx-auto min-h-[70vh]">{children}</main>
+            <main className="zion-container mx-auto min-h-[70vh]">
+              <StatusBanner />
+              {children}
+            </main>
             <Footer />
           </AuthProvider>
         </LangProvider>

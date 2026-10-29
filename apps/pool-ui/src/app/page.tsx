@@ -8,6 +8,7 @@ import RangeTabs from '@/components/RangeTabs';
 import CoinCard from '@/components/CoinCard';
 import CoinLogo from '@/components/CoinLogo';
 import MinerSearch from '@/components/MinerSearch';
+import TopMiners from '@/components/TopMiners';
 import { fetchBlocks, fetchHistory, fetchOverview } from '@/lib/api';
 import { fetchMarketPrices, fetchZionPrice, type MarketPrice, type ZionPrice } from '@/lib/price';
 import { fmtDifficulty, fmtDuration, fmtHashrate, fmtInt, fmtUsd } from '@/lib/format';
@@ -390,6 +391,8 @@ export default function HomePage() {
           </div>
         </motion.section>
       )}
+
+      <TopMiners limit={10} />
 
       {/* CTA strip — market rasta banner */}
       <section className="rasta-cta-banner mt-12 flex flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
