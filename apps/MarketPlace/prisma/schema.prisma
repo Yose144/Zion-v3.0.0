@@ -238,6 +238,10 @@ model ShopOrder {
   trackingNumber       String?
   shippedAt            DateTime?
   paidAt               DateTime?
+  companyName          String?
+  buyerIco             String?
+  buyerDic             String?
+  statusHistory        Json?
   termsAccepted        Boolean  @default(false)
   newsletter           Boolean  @default(false)
   createdAt            DateTime @default(now())

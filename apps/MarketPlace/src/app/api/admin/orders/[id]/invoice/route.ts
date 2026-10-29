@@ -81,6 +81,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
         city: order.addressCity ?? undefined,
         zip: order.addressZip ?? undefined,
       },
+      customerCompany: order.companyName
+        ? { name: order.companyName, ico: order.buyerIco ?? '', dic: order.buyerDic ?? '' }
+        : null,
       payment: order.payment,
       totalCzk: order.totalCzk,
       shippingCzk: order.shippingCzk,

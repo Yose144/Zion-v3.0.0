@@ -268,6 +268,12 @@ function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
                   <div><span className="text-gray-500">Jméno:</span> {order.customerName}</div>
                   <div><span className="text-gray-500">Email:</span> <a href={`mailto:${order.customerEmail}`} className="text-rasta-gold">{order.customerEmail}</a></div>
                   <div><span className="text-gray-500">Telefon:</span> {order.customerPhone || 'N/A'}</div>
+                  {order.companyName && (
+                    <div><span className="text-gray-500">Firma:</span> {order.companyName}
+                      {order.buyerIco && <span className="text-gray-400"> · IČO {order.buyerIco}</span>}
+                      {order.buyerDic && <span className="text-gray-400"> · DIČ {order.buyerDic}</span>}
+                    </div>
+                  )}
                   {order.addressStreet && (
                     <div><span className="text-gray-500">Adresa:</span> {order.addressStreet}, {order.addressZip} {order.addressCity}</div>
                   )}
@@ -311,6 +317,25 @@ function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
                 <div>
                   <h3 className="text-rasta-gold font-bold mb-2 text-sm uppercase tracking-wider">📝 Poznámka</h3>
                   <p className="text-sm text-gray-300 p-3 rounded bg-black/30 border-l-2 border-rasta-gold">{order.note}</p>
+                </div>
+              )}
+
+              {/* Status history (V2 parity audit) */}
+              {Array.isArray(order.statusHistory) && order.statusHistory.length > 0 && (
+                <div>
+                  <h3 className="text-rasta-gold font-bold mb-2 text-sm uppercase tracking-wider">🕓 Historie stavů</h3>
+                  <div className="space-y-1 text-xs">
+                    {(order.statusHistory as Array<Record<string, unknown>>).map((h, i) => (
+                      <div key={i} className="flex items-center gap-2 p-1.5 rounded bg-black/30">
+                        <span className="text-gray-500 font-mono">{typeof h.at === 'string' ? h.at.slice(0, 16).replace('T', ' ') : ''}</span>
+                        <span className="text-rasta-gold font-bold">{String(h.status ?? '')}</span>
+                        {typeof h.paymentStatus === 'string' && <span className="text-gray-400">({h.paymentStatus})</span>}
+                        {typeof h.trackingNumber === 'string' && h.trackingNumber && <span className="text-gray-400">📦 {h.trackingNumber}</span>}
+                        {typeof h.note === 'string' && h.note && <span className="text-gray-500 truncate">{h.note}</span>}
+                        <span className="ml-auto text-gray-600">{String(h.by ?? '')}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

@@ -44,6 +44,11 @@ export interface ShopOrderInput {
       city: string;
       zip: string;
     } | null;
+    company?: {
+      name: string;
+      ico: string;
+      dic: string;
+    } | null;
     newsletter: boolean;
   };
   shipping: {

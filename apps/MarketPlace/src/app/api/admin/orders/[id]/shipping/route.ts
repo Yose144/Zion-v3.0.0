@@ -40,6 +40,23 @@ export async function POST(request: NextRequest, context: RouteContext) {
       update.shippedAt = new Date();
     }
 
+    const before = await prisma.shopOrder.findFirst({
+      where: { OR: [{ id }, { orderId: id }] },
+    });
+    if (before) {
+      const prevHist = Array.isArray(before.statusHistory) ? before.statusHistory : [];
+      update.statusHistory = [
+        ...prevHist,
+        {
+          status: (update.status as string) ?? before.status,
+          paymentStatus: before.paymentStatus,
+          trackingNumber: body.trackingNumber ?? before.trackingNumber,
+          at: new Date().toISOString(),
+          by: 'admin-shipping',
+        },
+      ];
+    }
+
     const updatedCount = await prisma.shopOrder.updateMany({
       where: { OR: [{ id }, { orderId: id }] },
       data: update,

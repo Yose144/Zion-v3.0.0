@@ -40,7 +40,11 @@ export default function CartPage() {
     zip: '',
     pickupPoint: '',
     note: '',
+    companyName: '',
+    ico: '',
+    dic: '',
   });
+  const [isCompany, setIsCompany] = useState(false);
   const [terms, setTerms] = useState(false);
   const [newsletter, setNewsletter] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -93,7 +97,8 @@ export default function CartPage() {
     form.phone.trim() &&
     terms &&
     (!needsAddress || (form.street && form.city && form.zip)) &&
-    (!needsPickup || form.pickupPoint.trim().length >= 3);
+    (!needsPickup || form.pickupPoint.trim().length >= 3) &&
+    (!isCompany || (form.companyName.trim() && /^\d{8}$/.test(form.ico.replace(/\s/g, ''))));
 
   const formatPrice = (price: number) => t('common.price', { price, symbol: t('common.kcSymbol') });
 
@@ -113,6 +118,13 @@ export default function CartPage() {
           ? { street: form.street.trim(), city: form.city.trim(), zip: form.zip.trim() }
           : null,
         newsletter,
+        company: isCompany
+          ? {
+              name: form.companyName.trim(),
+              ico: form.ico.replace(/\s/g, ''),
+              dic: form.dic.replace(/\s/g, ''),
+            }
+          : null,
       },
       shipping: {
         method: shipping,
@@ -326,6 +338,46 @@ export default function CartPage() {
                 className="input-zion w-full"
                 required
               />
+
+              <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={isCompany}
+                  onChange={(e) => setIsCompany(e.target.checked)}
+                  className="w-4 h-4 accent-rasta-gold"
+                />
+                {t('cart.companyToggle')}
+              </label>
+              {isCompany && (
+                <div className="space-y-3 p-3 rounded-xl border border-rasta-gold/30 bg-rasta-gold/5">
+                  <input
+                    type="text"
+                    placeholder={t('cart.placeholderCompany')}
+                    value={form.companyName}
+                    onChange={(e) => setForm({ ...form, companyName: e.target.value })}
+                    className="input-zion w-full"
+                    required
+                  />
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder={t('cart.placeholderIco')}
+                      value={form.ico}
+                      onChange={(e) => setForm({ ...form, ico: e.target.value })}
+                      className="input-zion w-full"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder={t('cart.placeholderDic')}
+                      value={form.dic}
+                      onChange={(e) => setForm({ ...form, dic: e.target.value })}
+                      className="input-zion w-full"
+                    />
+                  </div>
+                </div>
+              )}
 
               {needsAddress && (
                 <div className="space-y-3 pt-2 border-t border-white/10">

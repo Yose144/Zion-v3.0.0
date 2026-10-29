@@ -213,6 +213,10 @@ export interface AdminOrdersListResult {
       trackingNumber: string | null;
       zionTokens: number;
       customerWalletAddress: string | null;
+      companyName: string | null;
+      buyerIco: string | null;
+      buyerDic: string | null;
+      statusHistory: unknown;
       items: unknown;
       addressStreet: string | null;
       addressCity: string | null;

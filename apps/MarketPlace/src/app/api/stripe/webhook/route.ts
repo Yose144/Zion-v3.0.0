@@ -62,6 +62,17 @@ export async function POST(request: NextRequest) {
 
           const order = await prisma.shopOrder.findFirst({ where: { orderId } });
           if (order) {
+            const hist = Array.isArray(order.statusHistory) ? [...order.statusHistory] : [];
+            hist.push({
+              status: 'paid',
+              paymentStatus: 'paid',
+              at: now.toISOString(),
+              by: 'stripe-webhook',
+            });
+            await prisma.shopOrder.update({
+              where: { id: order.id },
+              data: { statusHistory: hist },
+            });
             sendPaymentConfirmation({
               orderId: order.orderId,
               customerName: order.customerName,
@@ -94,6 +105,20 @@ export async function POST(request: NextRequest) {
             where: { orderId },
             data: { paymentStatus: 'failed' },
           });
+          const failed = await prisma.shopOrder.findFirst({ where: { orderId } });
+          if (failed) {
+            const hist = Array.isArray(failed.statusHistory) ? [...failed.statusHistory] : [];
+            hist.push({
+              status: failed.status,
+              paymentStatus: 'failed',
+              at: new Date().toISOString(),
+              by: 'stripe-webhook',
+            });
+            await prisma.shopOrder.update({
+              where: { id: failed.id },
+              data: { statusHistory: hist },
+            });
+          }
         }
         break;
       }

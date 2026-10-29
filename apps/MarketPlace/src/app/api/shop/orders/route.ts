@@ -52,6 +52,23 @@ export async function POST(req: NextRequest) {
     if (!['transfer', 'card', 'crypto'].includes(body.payment)) {
       return NextResponse.json({ success: false, error: 'Invalid payment method' }, { status: 400 });
     }
+    // B2B buyer block (optional): company name + IČO/DIČ for invoices.
+    const company = body.customer.company;
+    if (company) {
+      const ico = String(company.ico ?? '').replace(/\s/g, '');
+      const dic = String(company.dic ?? '').replace(/\s/g, '');
+      if (!String(company.name ?? '').trim()) {
+        return NextResponse.json({ success: false, error: 'Company name required for B2B order' }, { status: 400 });
+      }
+      if (!/^\d{8}$/.test(ico)) {
+        return NextResponse.json({ success: false, error: 'Invalid IČO (8 digits)' }, { status: 400 });
+      }
+      if (dic && !/^[A-Z]{2}?\d{7,12}$/i.test(dic)) {
+        return NextResponse.json({ success: false, error: 'Invalid DIČ' }, { status: 400 });
+      }
+      company.ico = ico;
+      company.dic = dic;
+    }
     // Shipping rules (V2 parity):
     // - virtualni*: no address
     // - zasilkovna (pickup): requires pickupPoint name/id (no home address)
@@ -179,6 +196,10 @@ export async function POST(req: NextRequest) {
           addressZip: body.customer.address?.zip?.slice(0, 20) ?? null,
           pickupPoint: (body.shipping.pickupPoint as Prisma.InputJsonValue | undefined) ?? Prisma.JsonNull,
           note: body.note?.slice(0, 2000) ?? null,
+          companyName: company ? company.name.slice(0, 200) : null,
+          buyerIco: company ? company.ico.slice(0, 10) : null,
+          buyerDic: company ? (company.dic || null) : null,
+          statusHistory: [{ status: 'pending', at: new Date().toISOString(), by: 'customer' }],
           totalCzk,
           shippingCzk,
           items: lineItems as unknown as Prisma.InputJsonValue,
@@ -229,6 +250,9 @@ export async function POST(req: NextRequest) {
       totalCzk: order.totalCzk,
       shippingCzk: order.shippingCzk,
       items: order.items,
+      customerCompany: order.companyName
+        ? { name: order.companyName, ico: order.buyerIco ?? '', dic: order.buyerDic ?? '' }
+        : null,
     }).catch((err) => {
       console.error('Invoice auto-generation failed:', err);
       return null;

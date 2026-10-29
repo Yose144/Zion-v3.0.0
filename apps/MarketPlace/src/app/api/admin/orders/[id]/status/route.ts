@@ -63,6 +63,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
     if (body.note !== undefined) update.note = body.note;
 
+    // Audit trail (V2 parity): append the transition to statusHistory.
+    const prevHist = Array.isArray(before.statusHistory) ? before.statusHistory : [];
+    update.statusHistory = [
+      ...prevHist,
+      {
+        status: (update.status as string) ?? before.status,
+        paymentStatus: (update.paymentStatus as string) ?? before.paymentStatus,
+        note: body.note ?? null,
+        at: new Date().toISOString(),
+        by: 'admin',
+      },
+    ];
+
     const order = await prisma.shopOrder.updateMany({
       where: { OR: [{ id }, { orderId: id }] },
       data: update,

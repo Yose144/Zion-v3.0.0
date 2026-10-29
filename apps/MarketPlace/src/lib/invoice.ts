@@ -184,6 +184,7 @@ export function buildInvoiceHtml(
     dueDate: Date;
     customerName: string;
     customerAddress?: { street?: string; city?: string; zip?: string } | null;
+    customerCompany?: { name: string; ico: string; dic?: string } | null;
     customerEmail: string;
     customerPhone: string;
     paymentMethod: string;
@@ -313,8 +314,13 @@ export function buildInvoiceHtml(
       <div class="party">
         <h3>Odběratel</h3>
         <p>
-          <strong>${escapeHtml(opts.customerName)}</strong><br>
-          ${escapeHtml(addressText)}<br>
+          <strong>${escapeHtml(opts.customerName)}</strong><br>${
+            opts.customerCompany
+              ? `${escapeHtml(opts.customerCompany.name)}<br>
+          IČO: ${escapeHtml(opts.customerCompany.ico)}${opts.customerCompany.dic ? `<br>\n          DIČ: ${escapeHtml(opts.customerCompany.dic)}` : ''}<br>`
+              : ''
+          }
+          ${escapeHtml(addressText)}${addressText ? '<br>' : ''}
           Email: ${escapeHtml(opts.customerEmail)}<br>
           Tel: ${escapeHtml(opts.customerPhone)}
         </p>
@@ -429,6 +435,7 @@ interface CreateInvoiceInput {
   customerEmail: string;
   customerPhone: string;
   customerAddress?: { street?: string; city?: string; zip?: string } | null;
+  customerCompany?: { name: string; ico: string; dic?: string } | null;
   payment: string;
   totalCzk: number;
   shippingCzk: number;
@@ -469,6 +476,7 @@ export async function createInvoiceForOrder(input: CreateInvoiceInput) {
       dueDate,
       customerName: input.customerName,
       customerAddress: input.customerAddress,
+      customerCompany: input.customerCompany,
       customerEmail: input.customerEmail,
       customerPhone: input.customerPhone,
       paymentMethod: input.payment,
