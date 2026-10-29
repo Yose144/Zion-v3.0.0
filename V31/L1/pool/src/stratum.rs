@@ -2269,7 +2269,7 @@ impl StratumServer {
         let current_params = || {
             self.pearl
                 .as_ref()
-                .and_then(|p| p.pick_served_job())
+                .and_then(|p| p.pick_served_upstream_job())
                 .map(|j| stratum_pearl::notify_params(&j))
         };
         let mut last_params = current_params();

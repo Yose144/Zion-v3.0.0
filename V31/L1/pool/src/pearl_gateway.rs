@@ -584,6 +584,25 @@ impl PearlRuntime {
         native.map(|(job, _)| self.ext_stream_for(&job))
     }
 
+    /// Upstream-leg-only variant of [`Self::pick_served_job`].
+    ///
+    /// Pearl-stratum sessions (the SRBMiner wire protocol) always submit
+    /// LuckyPool-format `plain_proof` blobs — a native leg job can never
+    /// verify those, so the flagged-native branch and the upstream-gap
+    /// native fallback only farm guaranteed decode rejects there. These
+    /// clients get upstream jobs only and idle while the bridge holds
+    /// nothing inside the forward window.
+    pub fn pick_served_upstream_job(&self) -> Option<ExternalStreamJob> {
+        let job = self
+            .upstream
+            .as_ref()
+            .and_then(|u| u.latest_forwardable().or_else(|| u.latest_fresh()));
+        if job.is_some() {
+            self.served_upstream.fetch_add(1, Ordering::Relaxed);
+        }
+        job.map(|job| job.ext_stream_job())
+    }
+
     /// Expected-hash difficulty of the job a pearl miner would be served
     /// right now — mirrors `pick_served_job` ordering (native-flagged job
     /// first, then the freshest forwardable upstream job, then the native
@@ -1351,6 +1370,33 @@ mod tests {
         let rt_empty = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, None, None, 0);
         assert!(rt_empty.pick_served_job().is_none());
         let (_, _, _, _, _, _, _, _, _, sn, su) = rt_empty.status();
+        assert_eq!((sn, su), (0, 0));
+    }
+
+    #[test]
+    fn pick_served_upstream_job_skips_native_leg() {
+        let j = job([0xaau8; 76], BigUint::from(10u8), 3);
+        // Native-only runtime: the pearl-stratum path starves rather than
+        // serving a job its clients can never verify.
+        let rt = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j.clone()), None, 0);
+        assert!(rt.pick_served_upstream_job().is_none());
+        // Native flagged 100% + fresh upstream: still upstream-only.
+        let up = upstream_seeded([0xaau8; 76], "u1", [0x11u8; 32], Duration::ZERO);
+        let rt = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j.clone()), Some(up), 100);
+        let ext = rt.pick_served_upstream_job().unwrap();
+        assert_eq!(ext.job_id, "prlu:u1");
+        let (_, _, _, _, _, _, _, _, _, sn, su) = rt.status();
+        assert_eq!((sn, su), (0, 1));
+        // Upstream gap (stale job) + native present: no gap fallback either.
+        let stale_up = upstream_seeded(
+            [0xaau8; 76],
+            "u1",
+            [0x11u8; 32],
+            Duration::from_millis(91_000),
+        );
+        let rt = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j), Some(stale_up), 0);
+        assert!(rt.pick_served_upstream_job().is_none());
+        let (_, _, _, _, _, _, _, _, _, sn, su) = rt.status();
         assert_eq!((sn, su), (0, 0));
     }
 }

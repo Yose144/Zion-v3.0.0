@@ -159,6 +159,7 @@ def parse_probe(inst, text):
     }
     sec = None
     log_file = None
+    log_algo = {}          # {log_file: algo} from "[ A0 - <algo> ]" headers
     hr_by_log = {}
     pane_hrs = []          # [(algo, rate, unit, a, r)] from tmux panes
     zion_hrs = {}          # {coin: {rate,unit,a,r}} from [metrics] lines
@@ -261,11 +262,18 @@ def parse_probe(inst, text):
             if g:
                 log_file = g.group(1)
                 continue
+            # SRBMiner stats header "[ A0 - pearlhash ]" names the algo even
+            # when the filename doesn't (e.g. srb-pool.log serves pearlhash).
+            ga = re.search(r"\[\s*A0\s*-\s*([A-Za-z0-9_]+)\s*\]", clean)
+            if ga and log_file:
+                log_algo[log_file] = ga.group(1)
+                continue
             h = HR_RE.search(clean)
             if h and log_file:
                 hr_by_log[log_file] = {
                     "rate": float(h.group(1)), "unit": h.group(2),
                     "a": int(h.group(3)), "r": int(h.group(4)),
+                    "algo": log_algo.get(log_file),
                 }
         elif sec == "XMRIG_API":
             if clean:
@@ -284,6 +292,12 @@ def parse_probe(inst, text):
                 break
         if "hashrate" not in m:
             for lf, hr in hr_by_log.items():
+                # Exact algo from the stats header wins; filename substrings
+                # stay as fallback for miners without an "[ A0 - .. ]" line.
+                if hr.get("algo") and algo and \
+                   hr["algo"].lower() == algo.split("-")[0].lower():
+                    m["hashrate"] = hr
+                    break
                 if (algo and algo.split("-")[0][:3] in lf) or \
                    (algo == "pearlhash" and "prl" in lf) or \
                    (algo == "quantus" and "qtu" in lf):
