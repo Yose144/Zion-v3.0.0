@@ -1882,7 +1882,8 @@ def _agent_token_ok(headers):
 #   rig override  >  group sheet  >  none
 # CP owns the *what*; the rig's local apply hook owns the *how* (vast.ai
 # rigs have no systemd and miner launch differs per box).
-SHEET_KEYS = {"miner", "coin", "pool", "wallet", "args", "duty", "oc", "group"}
+SHEET_KEYS = {"miner", "coin", "pool", "wallet", "args", "duty", "oc", "group",
+              "autopilot"}
 
 
 def _sheet_hash(sheet):
@@ -2055,22 +2056,312 @@ AGENT_OFFLINE_AFTER_S = int(
     os.environ.get("VASTCTL_AGENT_OFFLINE_AFTER", "600"))
 
 
-def _check_offline(db, now):
-    """Emit alert_offline once per rig crossing the threshold (dedup via
-    rig.alerted_offline flag; heartbeat clears it). Called under lock."""
+# ── fleet alerting + profit switching (W7 B5) ─────────────────────────
+# Alert state machine runs inside agent_fleet under _agents_lock; fired
+# alerts are returned and notified AFTER the lock is released (network I/O
+# must never run under the lock — a wedged Telegram endpoint would stall
+# heartbeats).
+ALERT_GPU_TEMP_C = float(os.environ.get("VASTCTL_ALERT_GPU_TEMP", "85"))
+ALERT_GPU_CLEAR_C = float(
+    os.environ.get("VASTCTL_ALERT_GPU_CLEAR", str(ALERT_GPU_TEMP_C - 5)))
+ALERT_HPS_DROP_PCT = float(
+    os.environ.get("VASTCTL_ALERT_HPS_DROP_PCT", "20"))
+ALERT_HPS_BASELINE_S = int(
+    os.environ.get("VASTCTL_ALERT_HPS_BASELINE_S", "900"))
+HPS_RING_KEEP = 60            # ~1 h of samples at the 60 s daemon cadence
+HPS_RING_MIN_GAP_S = 30
+
+# sheet.miner → substring expected in the heartbeat `miners` cmdlines.
+MINER_PROC = {
+    "srbminer-dual": "srbminer", "srbminer": "srbminer",
+    "zion-miner": "zion-miner", "zion": "zion-miner",
+    "xmrig": "xmrig",
+}
+
+
+def _miner_proc(miner):
+    m = str(miner or "").lower()
+    return MINER_PROC.get(m, m)
+
+
+def _gpu_temps(hb):
+    """nvidia-smi CSV 'name, util %, temp C, power W, fan %' → [float|None]."""
+    temps = []
+    for line in hb.get("gpus") or []:
+        parts = str(line).split(",")
+        m = len(parts) > 2 and re.search(r"[\d.]+", parts[2])
+        temps.append(float(m.group(0)) if m else None)
+    return temps
+
+
+def _rig_workers(hb, workers):
+    """Pool-side workers belonging to this rig: worker names from the apply
+    hook are `vast-{hostname[:12]}` (+ -qtu/-prl suffixes); a bare hostname
+    substring match covers custom agent names."""
+    hostname = str(hb.get("hostname") or "").lower()[:12]
+    if not hostname:
+        return []
+    frags = (f"vast-{hostname}", hostname)
+    return [w for w in workers
+            if any(f in str(w.get("worker") or "").lower() for f in frags)]
+
+
+def _check_alerts(db, now, workers=None):
+    """Per-tick alert state machine — caller holds _agents_lock.
+    Returns [(kind, rig_id, detail)] fired this tick for notification."""
+    fired = []
     changed = False
     for rid, rig in db["rigs"].items():
         hb = rig.get("heartbeat") or {}
         ts = hb.get("server_ts")
-        if ts and now - ts > AGENT_OFFLINE_AFTER_S \
-                and not rig.get("alerted_offline"):
-            rig["alerted_offline"] = True
-            _agent_event("alert_offline", rid,
-                         f"age_s={int(now - ts)}")
-            changed = True
+        if ts and now - ts > AGENT_OFFLINE_AFTER_S:
+            if not rig.get("alerted_offline"):
+                rig["alerted_offline"] = True
+                _agent_event("alert_offline", rid,
+                             f"age_s={int(now - ts)}")
+                fired.append(("alert_offline", rid,
+                              f"no heartbeat for {int(now - ts)}s"))
+                changed = True
+            continue
+        if not ts:
+            continue
+
+        # miner_down — only meaningful once the rig reports it applied the
+        # exact sheet we asked for (hash match), and that sheet is active.
+        desired = _desired_for(db, rid)
+        if desired:
+            dhash = _sheet_hash({k: v for k, v in desired.items()
+                                 if not k.startswith("_")})
+            applied = (hb.get("applied_sheet") or {}).get("hash")
+            miner = str(desired.get("miner") or "").lower()
+            if applied == dhash and miner not in {"", "none", "stop"}:
+                proc = _miner_proc(miner)
+                running = any(proc in m.lower()
+                              for m in hb.get("miners") or [])
+                flag = rig.get("alerted_miner")
+                if not running and flag != dhash:
+                    rig["alerted_miner"] = dhash
+                    _agent_event("alert_miner_down", rid,
+                                 f"miner={miner} sheet={dhash}")
+                    fired.append(("alert_miner_down", rid,
+                                  f"{miner} not running "
+                                  f"(applied sheet {dhash})"))
+                    changed = True
+                elif running and flag == dhash:
+                    rig.pop("alerted_miner", None)
+                    _agent_event("alert_miner_recovered", rid,
+                                 f"miner={miner}")
+                    fired.append(("alert_miner_recovered", rid,
+                                  f"{miner} is running again"))
+                    changed = True
+            elif miner in {"", "none", "stop"}:
+                if rig.pop("alerted_miner", None):
+                    changed = True
+
+        # gpu_temp — per-GPU dedup, clear needs hysteresis below threshold.
+        alerted = rig.setdefault("alerted_temp", {})
+        for i, t in enumerate(_gpu_temps(hb)):
+            if t is None:
+                continue
+            k = str(i)
+            if t >= ALERT_GPU_TEMP_C and not alerted.get(k):
+                alerted[k] = True
+                _agent_event("alert_gpu_temp", rid,
+                             f"gpu{i}={t:.0f}C>={ALERT_GPU_TEMP_C:.0f}C")
+                fired.append(("alert_gpu_temp", rid,
+                              f"GPU{i} at {t:.0f}°C "
+                              f"(limit {ALERT_GPU_TEMP_C:.0f}°C)"))
+                changed = True
+            elif t <= ALERT_GPU_CLEAR_C and alerted.pop(k, None):
+                _agent_event("alert_temp_recovered", rid,
+                             f"gpu{i}={t:.0f}C")
+                fired.append(("alert_temp_recovered", rid,
+                              f"GPU{i} back to {t:.0f}°C"))
+                changed = True
+
+        # hashrate_drop — pool-side hashrate vs this rig's own baseline
+        # (rolling max of same-sheet samples older than the baseline
+        # window, so a sheet switch cannot inherit a stale baseline).
+        if workers is not None:
+            rig_hps = sum(w.get("hps") or 0 for w in _rig_workers(hb, workers))
+            sheet_hash = ((hb.get("applied_sheet") or {}).get("hash")) or "?"
+            ring = rig.setdefault("hps_ring", [])
+            if not ring or now - ring[-1]["ts"] >= HPS_RING_MIN_GAP_S:
+                ring.append({"ts": now, "hps": rig_hps,
+                             "sheet": sheet_hash})
+                rig["hps_ring"] = ring[-HPS_RING_KEEP:]
+                changed = True
+            base_samples = [s["hps"] for s in ring
+                            if s["sheet"] == sheet_hash
+                            and s["ts"] <= now - ALERT_HPS_BASELINE_S]
+            if len(base_samples) >= 4:
+                baseline = max(base_samples)
+                floor = baseline * (1 - ALERT_HPS_DROP_PCT / 100)
+                if baseline > 0 and rig_hps < floor \
+                        and not rig.get("alerted_hps"):
+                    rig["alerted_hps"] = True
+                    _agent_event("alert_hashrate_drop", rid,
+                                 f"hps={rig_hps:.0f} base={baseline:.0f}")
+                    fired.append(("alert_hashrate_drop", rid,
+                                  f"{rig_hps:.0f} H/s vs baseline "
+                                  f"{baseline:.0f} H/s "
+                                  f"(-{ALERT_HPS_DROP_PCT:.0f}%)"))
+                    changed = True
+                elif rig.get("alerted_hps") and rig_hps >= floor:
+                    rig.pop("alerted_hps", None)
+                    _agent_event("alert_hps_recovered", rid,
+                                 f"hps={rig_hps:.0f}")
+                    fired.append(("alert_hps_recovered", rid,
+                                  f"hashrate back to {rig_hps:.0f} H/s"))
+                    changed = True
     if changed:
         _write_json_atomic(AGENT_DB_FILE, db)
-    return None
+    return fired
+
+
+# ── profit switching (W7 B5 MVP) ──────────────────────────────────────
+# Revenue model v1: `bench[gpu_model][coin] = {hps, usd_day}` seeded by ops
+# (whattomine/pool stats) via POST /api/agent/bench. A sheet opts in with
+# `autopilot: ["preset-name", ...]` (catalog entries); the evaluator scores
+# each preset's coin and switches when the best beats the current by the
+# hysteresis margin. VASTCTL_PROFIT_SWITCH = "" | "dry" | "apply".
+PROFIT_SWITCH_MODE = os.environ.get("VASTCTL_PROFIT_SWITCH", "")
+PROFIT_EVAL_S = int(os.environ.get("VASTCTL_PROFIT_EVAL_S", "300"))
+# Only the process that owns heartbeats (serve) may run alert/profit
+# evaluation — other vastctl processes (daemon snapshot loop) would
+# double-fire events+notifications over the same db file.
+FLEET_CHECKS = os.environ.get("VASTCTL_FLEET_CHECKS", "1") != "0"
+PROFIT_HYST_PCT = float(os.environ.get("VASTCTL_PROFIT_HYST_PCT", "15"))
+PROFIT_COOLDOWN_S = int(
+    os.environ.get("VASTCTL_PROFIT_COOLDOWN_S", "1800"))
+
+
+def _norm_gpu_key(name):
+    """'NVIDIA GeForce RTX 3060' → 'RTX_3060' — vendor-agnostic bench key."""
+    name = re.sub(r"(?i)\b(geforce|nvidia|amd|radeon)\b", "", str(name))
+    return re.sub(r"_+", "_", re.sub(r"[^A-Za-z0-9]+", "_",
+                                    name).strip("_").upper()) or None
+
+
+def _gpu_model(hb):
+    """First GPU name → normalized key ('RTX 3060' → 'RTX_3060')."""
+    gpus = hb.get("gpus") or []
+    if not gpus:
+        return None
+    return _norm_gpu_key(str(gpus[0]).split(",")[0].strip())
+
+
+def agent_bench_set(gpu, coin, hps=None, usd_day=None):
+    """Seed/update one (gpu_model, coin) benchmark entry — ops only."""
+    gpu = _norm_gpu_key(gpu) or ""
+    coin = str(coin).lower().strip()
+    if not gpu or not re.fullmatch(r"[a-z0-9]+", coin):
+        raise ValueError("gpu and coin required")
+    with _agents_lock:
+        db = _agent_db()
+        ent = db.setdefault("bench", {}).setdefault(gpu, {})
+        cur = ent.setdefault(coin, {})
+        if hps is not None:
+            cur["hps"] = float(hps)
+        if usd_day is not None:
+            cur["usd_day"] = float(usd_day)
+        cur["ts"] = time.time()
+        _agent_event("bench_set", gpu, f"coin={coin} "
+                     f"hps={cur.get('hps')} usd_day={cur.get('usd_day')}")
+        _write_json_atomic(AGENT_DB_FILE, db)
+        return {"ok": True, "gpu": gpu, "coin": coin, "bench": cur}
+
+
+def _check_profit(db, now):
+    """Evaluate autopilot sheets against the bench table. Returns fired
+    alerts for notify; sheet rewrites happen in 'apply' mode only."""
+    if PROFIT_SWITCH_MODE not in {"dry", "apply"}:
+        return []
+    prof = db.setdefault("profit", {})
+    if now - prof.get("last_eval", 0) < PROFIT_EVAL_S:
+        return []
+    prof["last_eval"] = now
+    fired = []
+    changed = True  # last_eval bump
+    bench = db.get("bench") or {}
+    catalog = db.get("catalog") or {}
+    for rid, rig in db["rigs"].items():
+        hb = rig.get("heartbeat") or {}
+        desired = _desired_for(db, rid)
+        if not desired or not isinstance(desired.get("autopilot"), list):
+            continue
+        applied = (hb.get("applied_sheet") or {}).get("hash")
+        dhash = _sheet_hash({k: v for k, v in desired.items()
+                             if not k.startswith("_")})
+        if applied != dhash:
+            continue  # only steer rigs that honour their sheets
+        gpu = _gpu_model(hb)
+        if not gpu or gpu not in bench:
+            continue
+        # score each candidate preset's coin
+        scored = {}
+        for preset in desired["autopilot"]:
+            sheet = catalog.get(str(preset))
+            if not sheet:
+                continue
+            coin = str(sheet.get("coin") or "").lower()
+            ent = bench[gpu].get(coin)
+            if ent and ent.get("usd_day") is not None:
+                scored[str(preset)] = (sheet, coin, float(ent["usd_day"]))
+        if not scored:
+            continue
+        cur_coin = str(desired.get("coin") or "").lower()
+        cur_usd = float((bench[gpu].get(cur_coin) or {}).get("usd_day") or 0)
+        best_name, (best_sheet, best_coin, best_usd) = max(
+            scored.items(), key=lambda kv: kv[1][2])
+        if best_coin == cur_coin:
+            continue
+        if best_usd <= cur_usd * (1 + PROFIT_HYST_PCT / 100):
+            continue
+        if now - rig.get("profit_last_switch", 0) < PROFIT_COOLDOWN_S:
+            continue
+        detail = (f"{cur_coin or '?'}→{best_coin} preset={best_name} "
+                  f"est ${cur_usd:.3f}→${best_usd:.3f}/day gpu={gpu}")
+        _agent_event("profit_switch", rid,
+                     f"{detail} mode={PROFIT_SWITCH_MODE}")
+        fired.append(("profit_switch", rid, detail))
+        if PROFIT_SWITCH_MODE == "apply":
+            new_sheet = dict(best_sheet, autopilot=desired["autopilot"])
+            db.setdefault("desired", {}).setdefault("rigs", {})[rid] = \
+                new_sheet
+            rig["profit_last_switch"] = now
+        changed = True
+    if changed:
+        _write_json_atomic(AGENT_DB_FILE, db)
+    return fired
+
+
+def _notify_alert(kind, rig_id, detail):
+    """Best-effort alert fan-out: Telegram bot + generic webhook. Called
+    OUTSIDE _agents_lock; failures are silent (events are the record)."""
+    text = f"[zion-fleet] {kind} rig={rig_id} {detail}"
+    tok = os.environ.get("VASTCTL_TG_BOT_TOKEN", "")
+    chat = os.environ.get("VASTCTL_TG_CHAT_ID", "")
+    if tok and chat:
+        try:
+            body = json.dumps({"chat_id": chat, "text": text}).encode()
+            req = urllib.request.Request(
+                f"https://api.telegram.org/bot{tok}/sendMessage",
+                data=body, headers={"Content-Type": "application/json"})
+            urllib.request.urlopen(req, timeout=5).close()
+        except Exception:
+            pass
+    hook = os.environ.get("VASTCTL_ALERT_WEBHOOK", "")
+    if hook:
+        try:
+            body = json.dumps({"kind": kind, "rig_id": rig_id,
+                               "detail": detail, "ts": time.time()}).encode()
+            req = urllib.request.Request(
+                hook, data=body,
+                headers={"Content-Type": "application/json"})
+            urllib.request.urlopen(req, timeout=5).close()
+        except Exception:
+            pass
 
 
 def agent_enroll(enroll_token, rig_id_hint, hostname):
@@ -2168,10 +2459,16 @@ def agent_enqueue(rig_id, op, args):
 
 
 def agent_fleet():
+    # fetch_pool_miners does HTTP against the local pool API — outside the
+    # lock (cached; a wedged pool must not stall heartbeats/fleet reads).
+    workers = fetch_pool_miners() if FLEET_CHECKS else None
     with _agents_lock:
         now = time.time()
         db = _agent_db()
-        _check_offline(db, now)
+        fired = []
+        if FLEET_CHECKS:
+            fired += _check_alerts(db, now, workers=workers)
+            fired += _check_profit(db, now)
         out = []
         for rid, rig in db["rigs"].items():
             hb = rig["heartbeat"]
@@ -2197,11 +2494,21 @@ def agent_fleet():
                                if t["state"] in {"pending", "delivered"}),
                 "results": len(rig["results"]),
                 "offline_alert": bool(rig.get("alerted_offline")),
+                "miner_alert": rig.get("alerted_miner"),
+                "temp_alerts": sorted(k for k, v in
+                                      rig.get("alerted_temp", {}).items()
+                                      if v),
+                "hps_alert": bool(rig.get("alerted_hps")),
                 "payload_keys": sorted(hb.keys())})
-        return {"rigs": sorted(out, key=lambda r: r["rig_id"]),
-                "sheets": db.get("desired", {"rigs": {}, "groups": {}}),
-                "catalog": db.get("catalog", {}),
-                "events": db.get("events", [])[-20:]}
+        result = {"rigs": sorted(out, key=lambda r: r["rig_id"]),
+                  "sheets": db.get("desired", {"rigs": {}, "groups": {}}),
+                  "catalog": db.get("catalog", {}),
+                  "bench": db.get("bench", {}),
+                  "profit_mode": PROFIT_SWITCH_MODE,
+                  "events": db.get("events", [])[-20:]}
+    for kind, rid, detail in fired:
+        _notify_alert(kind, rid, detail)
+    return result
 
 
 def _agent_fleet_section():
@@ -2551,7 +2858,7 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
         elif u.path in ("/api/agent/sheet", "/api/agent/sheet/clear",
                         "/api/agent/group", "/api/agent/rig/remove",
                         "/api/agent/catalog", "/api/agent/catalog/clear",
-                        "/api/agent/bulk"):
+                        "/api/agent/bulk", "/api/agent/bench"):
             if readonly():
                 self._send("readonly mode", 403, "text/plain")
                 return
@@ -2587,6 +2894,11 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
                         str(payload["name"]), payload.get("sheet"))
                 elif u.path == "/api/agent/catalog/clear":
                     out = agent_catalog_clear(str(payload["name"]))
+                elif u.path == "/api/agent/bench":
+                    out = agent_bench_set(
+                        str(payload["gpu"]), str(payload["coin"]),
+                        hps=payload.get("hps"),
+                        usd_day=payload.get("usd_day"))
                 else:
                     out = agent_bulk(
                         payload.get("target") or {},
