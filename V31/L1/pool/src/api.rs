@@ -2171,6 +2171,7 @@ impl PoolApi {
             }
             obj.remove("paid_total_atomic");
             obj.remove("first_seen_s");
+            obj.remove("zis_user");
         }
         json!({
             "ok": true,
@@ -2333,10 +2334,10 @@ impl PoolApi {
         // Store query runs before the pool mutex so sqlite IO can never
         // wedge share processing.
         let now_s = now_unix_seconds();
-        let payouts_24h = self
-            .share_store
-            .as_ref()
-            .and_then(|s| s.payouts_amount_sum_since(&coin, (now_s - 86_400) as i64).ok());
+        let payouts_24h = self.share_store.as_ref().and_then(|s| {
+            s.payouts_amount_sum_since(&coin, (now_s - 86_400) as i64)
+                .ok()
+        });
         let pool = self.pool.lock().expect("pool lock poisoned");
         let reg = pool.telemetry.lock().expect("telemetry lock poisoned");
 
@@ -3070,12 +3071,15 @@ fn mask_wallet(s: &str) -> String {
 }
 
 /// `wallet.rig_name` → `masked_wallet.rig_name` — the rig label is the part
-/// miners actually want on a leaderboard; the wallet stays masked.
+/// miners actually want on a leaderboard; the wallet stays masked. Every
+/// dot-separated segment is masked independently: some sessions repeat the
+/// full wallet inside the rig label (`w.addr1…x.full_wallet_again.rig`).
 fn mask_worker_wallet(worker: &str) -> String {
-    match worker.split_once('.') {
-        Some((wallet, rig)) => format!("{}.{}", mask_wallet(wallet), rig),
-        None => mask_wallet(worker),
-    }
+    worker
+        .split('.')
+        .map(mask_wallet)
+        .collect::<Vec<_>>()
+        .join(".")
 }
 
 /// Split "wallet.worker" or "wallet" into (wallet, worker_name).
@@ -3688,6 +3692,12 @@ mod tests {
             mask_worker_wallet(&format!("{w}.rig01")),
             format!("{masked}.rig01")
         );
+        // Sessions that repeat the full wallet inside the rig label get
+        // every wallet-length segment masked, not just the first.
+        let double = format!("{w}.{w}.vast-3060");
+        let md = mask_worker_wallet(&double);
+        assert_eq!(md, format!("{masked}.{masked}.vast-3060"));
+        assert!(!md.contains(&w[12..w.len() - 6]));
         // Short ids pass through untouched.
         assert_eq!(mask_wallet("short"), "short");
     }
