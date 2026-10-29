@@ -20,8 +20,8 @@ use std::time::{Duration, Instant};
 
 use zion_miner::auxpow::client::{AuxPowClient, AuxPowClientConfig, ShareResult};
 use zion_miner::auxpow::qpow;
-use zion_miner::gpu::QpowGpuMiner;
 use zion_miner::auxpow::ExternalCoin;
+use zion_miner::gpu::QpowGpuMiner;
 
 const DEFAULT_POOL: &str = "quantus.qelvhash.com:4444";
 const DEFAULT_WALLET: &str = "qzkeicNBtW2AG2E7USjDcLzAL8d9WxTZnV2cbtXoDzWxzpHC2";
@@ -97,7 +97,10 @@ fn main() {
         std::process::exit(2);
     }
     let pool = args.get(0).cloned().unwrap_or_else(|| DEFAULT_POOL.into());
-    let wallet = args.get(1).cloned().unwrap_or_else(|| DEFAULT_WALLET.into());
+    let wallet = args
+        .get(1)
+        .cloned()
+        .unwrap_or_else(|| DEFAULT_WALLET.into());
 
     let batch: u64 = std::env::var("ZION_QPOW_PROBE_BATCH")
         .ok()
@@ -122,9 +125,7 @@ fn main() {
         .build()
         .expect("tokio runtime");
 
-    let code = rt.block_on(run(
-        &pool, &wallet, &backend, batch, max_scan, timeout_secs,
-    ));
+    let code = rt.block_on(run(&pool, &wallet, &backend, batch, max_scan, timeout_secs));
     std::process::exit(code);
 }
 
@@ -140,8 +141,10 @@ async fn run(
     let cfg = AuxPowClientConfig::new(ExternalCoin::Quantus, pool, "probe", "x");
     let client = AuxPowClient::new(cfg);
 
-    eprintln!("qpow_probe: pool={pool} wallet={} backend={backend} batch={batch}",
-        &wallet[..wallet.len().min(16)]);
+    eprintln!(
+        "qpow_probe: pool={pool} wallet={} backend={backend} batch={batch}",
+        &wallet[..wallet.len().min(16)]
+    );
     if let Err(e) = tokio::time::timeout(timeout, client.connect(wallet)).await {
         eprintln!("connect timeout/err on {pool}: {e:?}");
         return 1;
@@ -180,7 +183,11 @@ async fn run(
             }
         };
         if job.header_bytes.len() != 32 {
-            eprintln!("job {} header {}B != 32B", job.job_id, job.header_bytes.len());
+            eprintln!(
+                "job {} header {}B != 32B",
+                job.job_id,
+                job.header_bytes.len()
+            );
             return 1;
         }
         let mut header = [0u8; 32];

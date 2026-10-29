@@ -2844,10 +2844,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             let ntime = params[5].as_str().unwrap_or("00000000").to_string();
             *state.ntime.lock().await = ntime.clone();
             let nbits = params[6].as_str().unwrap_or("");
-            let solution = params
-                .get(8)
-                .and_then(parse_hex_value)
-                .unwrap_or_default();
+            let solution = params.get(8).and_then(parse_hex_value).unwrap_or_default();
 
             // Honor an explicit mining.set_target override (used by the ZION pool's
             // per-session vardiff and mock pools). If none was sent, fall back to
