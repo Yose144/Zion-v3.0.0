@@ -1,0 +1,14 @@
+[Unit]
+Description=ZION coder reverse tunnel (EDGE2 :8005 -> local llama :8072)
+After=network-online.target
+# Pair with zion-coder-cuda.service (use-coder.sh). When hiran-cuda owns the GPU,
+# stop this unit or coder upstream goes stale.
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -R 127.0.0.1:8005:127.0.0.1:8072 zion-edge2
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

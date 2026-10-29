@@ -109,13 +109,15 @@ User chat ──zis_*────────────► gateway ──► m
 
 **Proč:** Market/CLI routing na coder; slot existuje, upstream ne.
 
-- [x] Gateway katalog: `hiran-coder` v `/v1/models` s `x-available:false` dokud upstream neodpoví (deploy 29.10. večer)
-- [ ] Stabilní upstream: prefer PC coder `:8072` (přes proxy) **nebo** Vast tunnel → EDGE2 `:8005`
-- [ ] Gateway health `live:true` + smoke `POST …/chat/completions` model=`hiran-coder`
-- [x] Runbook (29.10.): `zion-coder-cuda` **inactive**, PC `:8072` down, EDGE2 `:8005` nic neposlouchá; mini jede `:8071` + proxy `:1235`.  
-      Postup: start coder na `:8072` → `ssh -R 8005:127.0.0.1:1235 zion-edge2` (nebo dedicated tunnel unit) → ověř `curl :8005/v1/models` → gateway probe zelený.
+- [x] Gateway katalog: `hiran-coder` v `/v1/models` (offline→live)
+- [x] Stabilní upstream: PC `zion-coder-cuda` `:8072` + reverse tunnel EDGE2 `:8005` (`zion-coder-tunnel.service`)
+- [x] Gateway health `live:true` (29.10. 18:45) — public `/v1/models` + Market badge `coder: live`
+- [x] Local smoke `POST :8072/v1/chat/completions` OK (`Pong!…`)
+- [ ] Public metered smoke `POST market…/v1/chat/completions` model=`hiran-coder` s `zis_*` (ops key)
 
-**Done when:** `GET …/v1/models` ukáže `hiran-coder` live; jeden chat turn OK s `zis_*`.
+**Done when:** `GET …/v1/models` ukáže `hiran-coder` live; jeden chat turn OK s `zis_*`. *(list live ✅; metered turn residual)*
+
+> **GPU mutex:** 1070 Ti unese jen hiran **nebo** coder. `use-coder.sh` stopne `zion-hiran-cuda` → mini padá na EDGE2 CPU / tunnel fallback. Zpět: `use-hiran.sh` + stop `zion-coder-tunnel`.
 
 ### P1 — Reálný weight na rigu (ne stub)
 
@@ -194,7 +196,7 @@ Pořadí: shared constitution → **Maitreya** → **Amitábha** → **Issobella
 
 ## 6. Success criteria (produkt „complete“ pro tuto mapu)
 
-- [ ] P0: `hiran-coder` live na public `/v1` *(blocked: coder CUDA off / no :8005)*
+- [x] P0: `hiran-coder` live na public `/v1` *(29.10. use-coder + tunnel; metered chat residual)*
 - [ ] P1: E2E `code.run` s reálným weightem *(stub E2E OK; real GGUF pending)*
 - [ ] P2: remote turns metered `zis_*` *(lease code live; metered E2E pending)*
 - [x] P3: Market listing karty + trial
@@ -207,7 +209,7 @@ Pořadí: shared constitution → **Maitreya** → **Amitábha** → **Issobella
 |---|---|
 | Gateway lease + offline aliases | deployed EDGE2 `:8007` |
 | Market `/ai` models + trial + badge | deployed |
-| P0 coder upstream | **skip** — `zion-coder-cuda` inactive |
+| P0 coder upstream | ✅ live `:8072`→`:8005` (GPU swapped off hiran-cuda) |
 | P1 fleet `code.run` | ✅ stub `SMOKE_OK` on `58077390` |
 | FT Trinity | skipped (delší sezení) |
 
