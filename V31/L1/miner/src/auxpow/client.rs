@@ -2977,7 +2977,16 @@ fn build_submit_params(
     // DAG-based Ethash / ProgPoW variants: EthereumStratum uses eth_submitWork
     // with [nonce, header_hash, mix_hash]. The original 32-byte header hash is
     // required, not the final PoW hash; the pool recomputes the final hash.
-    if algo.contains("ethash") || algo == "etchash" || algo == "progpowz" || algo == "epic" {
+    // ZANO (progpow_zano) must match here — `algo.contains("progpow")` below
+    // would otherwise route it to the yiimp `mining.submit` layout, which
+    // EthStratum pools (HeroMiners) reject with "Method not found".
+    if algo.contains("ethash")
+        || algo == "etchash"
+        || algo == "progpowz"
+        || algo == "progpow_zano"
+        || algo == "epic"
+        || coin_protocol(share.coin) == StratumProtocol::EthStratum
+    {
         let nonce = format!("0x{nonce}");
         let header = format!("0x{}", hex::encode(share.header_hash));
         let mix = mix.unwrap_or_else(|| format!("0x{}", hex::encode([0u8; 32])));

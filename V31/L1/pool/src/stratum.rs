@@ -1691,14 +1691,24 @@ impl StratumServer {
                 ^ (std::process::id() as u64) << 32
         );
         // Session-scoped extranonce prefix (4B) — same model as upstream.
+        // IMPORTANT: use *low* LE bytes of nanos (change every ns). The old
+        // BE high-4-byte form was constant for ~4.3s, so two SRB logins in
+        // the same window (dual-GPU workers) shared one EN1 → overlapping
+        // nonce space → local_dedup rejects (~25–30%).
         let extranonce = {
+            static EN1_SEQ: std::sync::atomic::AtomicU64 =
+                std::sync::atomic::AtomicU64::new(1);
             let nanos = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_nanos() as u64)
                 .unwrap_or_default();
-            hex::encode(
-                (nanos ^ (std::process::id() as u64).rotate_left(17)).to_be_bytes()[..4].as_ref(),
-            )
+            let seq = EN1_SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let mixed = nanos
+                .wrapping_mul(0x9E37_79B9_7F4A_7C15)
+                .wrapping_add((std::process::id() as u64).rotate_left(17))
+                .wrapping_add(seq.wrapping_mul(0xC2B2_AE3D_27D4_EB4F));
+            // 4-byte EN1 (8 hex chars) — keep wire size matching upstream.
+            hex::encode(&mixed.to_le_bytes()[..4])
         };
 
         let mut seq: u64 = 0;
@@ -1888,6 +1898,28 @@ impl StratumServer {
                 .unwrap()
                 .reserve_external_share("qtu", &job_id, &dedup_tag);
             if !claimed {
+                // Local dedup reject — must count in /miners + reject_reasons.
+                // Previously this returned silently: SRB showed ~30% duplicate
+                // while pool gauges stayed at invalid=0 (dest-zion 2026-10-29).
+                tracing::info!(
+                    "qtu_stratum: {} share worker={} job={} status=duplicate (local_dedup)",
+                    ip,
+                    login.login,
+                    job_id
+                );
+                {
+                    let mut t = self.telemetry.lock().unwrap();
+                    t.record_external_share(&login.wallet, &login.login, "QTU", false, 0.0);
+                    t.record_reject_reason(&login.wallet, &login.login, "qtu", "duplicate");
+                }
+                let rev_source =
+                    zion_cosmic_harmony::revenue::RevenueSource::from_str_ci("qpow-poseidon2")
+                        .unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
+                let group = resolve_session_group(&login.wallet, &login.login);
+                self.routing_stats
+                    .lock()
+                    .unwrap()
+                    .record(group, rev_source, false);
                 return Err("duplicate".to_string());
             }
         }
@@ -2030,7 +2062,7 @@ impl StratumServer {
         // the per-coin hashrate estimator (upstream = served target_be,
         // native = eased share target).
         let mut share_eh = 0f64;
-        let (accepted, status) = if coin_leg::route_job_id(external_job_id)
+        let (mut accepted, mut status) = if coin_leg::route_job_id(external_job_id)
             == JobRoute::PearlUpstream
         {
             match pearl
@@ -2111,7 +2143,10 @@ impl StratumServer {
                 proof_b64,
             );
             if !credited {
-                return (false, "duplicate".to_string());
+                // Fall through to telemetry as a duplicate reject — early
+                // return used to hide these from /miners reject_reasons.
+                accepted = false;
+                status = "duplicate".to_string();
             }
         }
         {
@@ -3957,6 +3992,46 @@ impl StratumServer {
                                             ),
                                         );
                                     if !credited {
+                                        // Upstream accepted but PPLNS dedup already
+                                        // claimed the slot — surface as duplicate so
+                                        // /miners reject_reasons matches the miner UI.
+                                        tracing::info!(
+                                            "v3_external_duplicate miner={} worker={} ip={} coin={} job={} nonce={}",
+                                            sub_miner_id,
+                                            sub_worker_name,
+                                            ip,
+                                            coin,
+                                            external_job_id,
+                                            nonce
+                                        );
+                                        {
+                                            let mut t = self.telemetry.lock().unwrap();
+                                            t.record_external_share(
+                                                &sub_miner_id,
+                                                &sub_worker_name,
+                                                &coin,
+                                                false,
+                                                share_eh,
+                                            );
+                                            t.record_reject_reason(
+                                                &sub_miner_id,
+                                                &sub_worker_name,
+                                                &coin,
+                                                "duplicate",
+                                            );
+                                        }
+                                        let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci(
+                                            &submit_algorithm
+                                        ).unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
+                                        let group = crate::routing::resolve_session_group(
+                                            &sub_miner_id,
+                                            &sub_worker_name,
+                                        );
+                                        self.routing_stats.lock().unwrap().record(
+                                            group,
+                                            rev_source,
+                                            false,
+                                        );
                                         let result = PoolMessage::ExternalResult {
                                             accepted: false,
                                             status: "duplicate".to_string(),

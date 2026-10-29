@@ -1829,6 +1829,37 @@ impl MinerRuntime {
         // Spawn periodic metrics summary task (every 30s)
         let h_metrics = self.spawn_periodic_metrics(shutdown.clone());
 
+        // Stream 4 dedicated upstream session (`ZION_STREAM4_URL` set): runs
+        // OUTSIDE the V3 session so a pool outage or reconnect cycle never
+        // kills it — e.g. HeroMiners ZANO keeps mining while the project
+        // pool is down. Its own retry loop handles transient upstream
+        // errors; only global shutdown ends it.
+        let h_gpu2_dedicated: MinerHandle = if self.config.stream4_enabled
+            && self.config.auxpow_enabled
+            && self.config.stream4_url.is_some()
+        {
+            let this = self.clone();
+            let mut shutdown = shutdown.clone();
+            tokio::spawn(async move {
+                loop {
+                    tokio::select! {
+                        _ = shutdown.changed() => break,
+                        result = this.auxpow_stream_round(StreamId::GpuExternal2) => {
+                            this.mark_active(StreamId::GpuExternal2).await;
+                            if let Err(e) = result {
+                                warn!(stream = "gpu2", error = %e,
+                                      "dedicated gpu2 upstream round failed; retrying after backoff");
+                                sleep(Duration::from_millis(this.config.auxpow_retry_ms)).await;
+                            }
+                        }
+                    }
+                }
+                Ok(())
+            })
+        } else {
+            tokio::spawn(async { Ok::<(), MinerError>(()) })
+        };
+
         // Outer reconnect loop: if the pool connection drops, reconnect with
         // exponential backoff. This handles pool restarts and network blips.
         let mut reconnect_delay_secs: u64 = 3;
@@ -1850,8 +1881,9 @@ impl MinerRuntime {
                 }
             }
         }
-        // Abort metrics task on exit
+        // Abort metrics + dedicated stream4 tasks on exit
         h_metrics.abort();
+        h_gpu2_dedicated.abort();
         Ok(())
     }
 
@@ -2284,35 +2316,15 @@ impl MinerRuntime {
         };
 
         // ── Stream 4: second GPU AuxPoW (Quad mode) ──
-        // Two drivers depending on config:
-        //   * `ZION_STREAM4_URL` set → dedicated upstream session via
-        //     `auxpow_stream_round` (own stratum login, e.g. HeroMiners
-        //     ZANO), independent of pool-served bundles. Failures retry
-        //     in-place so a flaky upstream never kills the V3 session.
-        //   * otherwise → pool-multiplexed `bundle.gpu_external_2` jobs
-        //     (same subscription pattern as Stream 2). A same-coin bundle
-        //     is skipped defensively so two tasks can never race the same
-        //     upstream job/nonce space.
-        let mut h4 = if self.config.stream4_enabled {
-            if self.config.stream4_url.is_some() && self.config.auxpow_enabled {
-                let this = self.clone();
-                let mut shutdown = shutdown.clone();
-                tokio::spawn(async move {
-                    loop {
-                        tokio::select! {
-                            _ = shutdown.changed() => break,
-                            result = this.auxpow_stream_round(StreamId::GpuExternal2) => {
-                                this.mark_active(StreamId::GpuExternal2).await;
-                                if let Err(e) = result {
-                                    warn!(stream = "gpu2", error = %e, "V3 Quad: dedicated gpu2 upstream round failed; retrying after backoff");
-                                    sleep(Duration::from_millis(this.config.auxpow_retry_ms)).await;
-                                }
-                            }
-                        }
-                    }
-                    Ok::<(), MinerError>(())
-                })
-            } else {
+        // When `ZION_STREAM4_URL` is set, the dedicated upstream session is
+        // spawned OUTSIDE this session (see `run_v3_trinity`) so a pool
+        // outage/reconnect never kills it — h4 here stays a no-op. Otherwise
+        // h4 watches pool-multiplexed `bundle.gpu_external_2` jobs (same
+        // subscription pattern as Stream 2). A same-coin bundle is skipped
+        // defensively so two tasks can never race the same upstream
+        // job/nonce space.
+        let mut h4 = if self.config.stream4_enabled && self.config.stream4_url.is_none() {
+            {
                 let this = self.clone();
                 let client = client.clone();
                 let mut job_rx = client.subscribe_jobs();

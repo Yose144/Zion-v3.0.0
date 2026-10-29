@@ -2908,7 +2908,10 @@ function updateTrayMenu(stats) {
 // zion-miner keeps the ZION + CPU streams. Its stats API feeds the
 // gpu-external stream card (index 2) so the UI keeps showing QTU telemetry.
 // ═══════════════════════════════════════════════════════════════════════════════
-let srbProcess = null;
+// One entry per SRBMiner process. Multi-GPU QTU must use separate processes
+// (distinct stratum sessions / extranonces) — a single process with
+// --gpu-id 0,1 shares one EN1 and the pool rejects ~25–30% as local_dedup.
+let srbInstances = []; // { proc, gpuId, apiPort, worker, logPath }
 let srbPollTimer = null;
 let srbSpawnTimer = null;
 let srbRestarts = 0;
@@ -2918,8 +2921,18 @@ let _srbPollCount = 0;
 // recomposed in srbApplyStats / the metrics-summary parser.
 let _srbLastHr = 0;
 let _v31LastTotalHr = 0;
-const SRB_API_PORT = 21550;
+const SRB_API_PORT_BASE = 21550;
 const SRB_MAX_RESTARTS = 3;
+function srbIsRunning() {
+  return srbInstances.some((i) => i && i.proc);
+}
+/** @returns {string[]|null} numeric GPU ids, or null for auto/all (single process). */
+function parseSrbGpuIds(config) {
+  const raw = String(config?.srbminerGpuId || '').trim().toLowerCase();
+  if (!raw || raw === 'auto' || raw === 'all') return null;
+  const ids = raw.split(/[,\s]+/).map((s) => s.trim()).filter((s) => /^\d+$/.test(s));
+  return ids.length ? ids : null;
+}
 const SRB_DEFAULT_POOL = 'eu.lproute.com:5660';
 const SRB_DEFAULT_WALLET = 'qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb';
 const SRB_DEFAULT_PRL_POOL = 'pearl-eu2.luckypool.io:3360';
@@ -3066,62 +3079,112 @@ function srbApplyStats(stats) {
       try { enqueueMinerOutputToRenderer('stdout', `[SRB] share accepted (total ${acc})`); } catch {}
     }
     if (rej > prev.rejected) {
-      try { sendToRenderer('share-event', { stream: 2, coin: srbActiveCoin, accepted: false, status: 'rejected', reason: 'rejected', algorithm: srbActiveAlgo, ts: Date.now() }); } catch {}
-      try { enqueueMinerOutputToRenderer('stdout', `[SRB] share rejected (total ${rej})`); } catch {}
+      let lastReject = null;
+      try {
+        // Prefer the newest reject across per-GPU log files.
+        const logFiles = srbInstances.length
+          ? srbInstances.map((i) => i.logPath).filter(Boolean)
+          : [path.join(USER_DATA_PATH, 'srbminer.log')];
+        for (const srbLog of logFiles) {
+          try {
+            const tail = fs.readFileSync(srbLog, 'utf8').trim().split('\n').slice(-40);
+            for (let i = tail.length - 1; i >= 0; i--) {
+              const m = tail[i].match(/\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (GPU\d+).*share rejected \[([^\]]+)\]/i);
+              if (m) {
+                const cand = { ts: m[1], gpu: m[2], reason: m[3] };
+                if (!lastReject || cand.ts >= lastReject.ts) lastReject = cand;
+                break;
+              }
+            }
+          } catch {}
+        }
+      } catch {}
+      try { sendToRenderer('share-event', { stream: 2, coin: srbActiveCoin, accepted: false, status: 'rejected', reason: (lastReject && lastReject.reason) || 'rejected', algorithm: srbActiveAlgo, ts: Date.now() }); } catch {}
+      try { enqueueMinerOutputToRenderer('stdout', `[SRB] share rejected (total ${rej})${lastReject ? ` [${lastReject.reason}] ${lastReject.gpu}` : ''}`); } catch {}
     }
   }
   srbShareCounts = { accepted: acc, rejected: rej };
 }
 
-async function pollSrbStats() {
+function srbParseGpuDevices(j, algo, idxOffset) {
+  const hrMap = (algo?.hashrate?.gpu && typeof algo.hashrate.gpu === 'object')
+    ? algo.hashrate.gpu : {};
+  if (!Array.isArray(j?.gpu_devices)) return [];
+  return j.gpu_devices.map((d, i) => {
+    const idx = Number.isFinite(Number(d?.id)) ? Number(d.id) : i;
+    const bus = String(d?.topology_id || '');
+    const hashrate = Number(hrMap[`gpu${idx}`]) || 0;
+    const h = recordGpuHrSample(bus || `gpu${idxOffset + idx}`, hashrate);
+    const avg = h.n > 0 ? h.sum / h.n : 0;
+    return {
+      idx: idxOffset + idx,
+      model: String(d?.model || '').replace(/_/g, ' '),
+      bus,
+      hashrate,
+      hr_min: Number.isFinite(h.min) ? h.min : hashrate,
+      hr_avg: avg,
+      hr_max: h.max,
+      hr_hist: h.samples.slice(-24),
+      dipping: h.n >= 6 && avg > 0 && hashrate < avg * 0.35,
+      engine: 'srbminer',
+      temp_c: Number.isFinite(Number(d?.temperature)) ? Number(d.temperature) : null,
+      clock_mhz: Number.isFinite(Number(d?.core_clock)) ? Number(d.core_clock) : null,
+      mclock_mhz: Number.isFinite(Number(d?.memory_clock)) ? Number(d.memory_clock) : null,
+      fan_rpm: Number.isFinite(Number(d?.fan_speed_rpm)) ? Number(d.fan_speed_rpm) : null,
+      power_w: Number.isFinite(Number(d?.asic_power)) ? Number(d.asic_power) : null,
+    };
+  });
+}
+
+async function pollOneSrbApi(apiPort) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 5000);
   try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 5000);
-    const res = await fetch(`http://127.0.0.1:${SRB_API_PORT}/`, { signal: ctrl.signal });
-    clearTimeout(t);
-    if (!res.ok) return;
+    const res = await fetch(`http://127.0.0.1:${apiPort}/`, { signal: ctrl.signal });
+    if (!res.ok) return null;
     const j = await res.json();
     const algo = Array.isArray(j?.algorithms) ? j.algorithms[0] : null;
-    if (!algo) return;
+    if (!algo) return null;
     const hrGpu = Number(algo?.hashrate?.gpu?.total);
     const hr = Number.isFinite(hrGpu) && hrGpu > 0 ? hrGpu : Number(algo?.hashrate?.total) || 0;
-    // Per-GPU hashrate map (hashrate.gpu.gpu0/gpu1/…) merged with the
-    // gpu_devices[] telemetry so each card gets rate + temp + fan + power.
-    const hrMap = (algo?.hashrate?.gpu && typeof algo.hashrate.gpu === 'object')
-      ? algo.hashrate.gpu : {};
-    const gpus = Array.isArray(j?.gpu_devices)
-      ? j.gpu_devices.map((d, i) => {
-          const idx = Number.isFinite(Number(d?.id)) ? Number(d.id) : i;
-          const bus = String(d?.topology_id || '');
-          const hashrate = Number(hrMap[`gpu${idx}`]) || 0;
-          // Rolling stats per bus → min/avg/max + dip detection. A "dip" is
-          // current <35% of rolling avg with ≥6 samples — typical signature
-          // of the display-driving GPU getting preempted by the compositor.
-          const h = recordGpuHrSample(bus || `gpu${idx}`, hashrate);
-          const avg = h.n > 0 ? h.sum / h.n : 0;
-          return {
-            idx,
-            model: String(d?.model || '').replace(/_/g, ' '),
-            bus,
-            hashrate,
-            hr_min: Number.isFinite(h.min) ? h.min : hashrate,
-            hr_avg: avg,
-            hr_max: h.max,
-            hr_hist: h.samples.slice(-24),
-            dipping: h.n >= 6 && avg > 0 && hashrate < avg * 0.35,
-            engine: 'srbminer',
-            temp_c: Number.isFinite(Number(d?.temperature)) ? Number(d.temperature) : null,
-            clock_mhz: Number.isFinite(Number(d?.core_clock)) ? Number(d.core_clock) : null,
-            mclock_mhz: Number.isFinite(Number(d?.memory_clock)) ? Number(d.memory_clock) : null,
-            fan_rpm: Number.isFinite(Number(d?.fan_speed_rpm)) ? Number(d.fan_speed_rpm) : null,
-            power_w: Number.isFinite(Number(d?.asic_power)) ? Number(d.asic_power) : null,
-          };
-        })
-      : [];
-    srbApplyStats({
+    return {
       hashrate: hr,
       accepted: Number(algo?.shares?.accepted) || 0,
       rejected: Number(algo?.shares?.rejected) || 0,
+      j,
+      algo,
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function pollSrbStats() {
+  try {
+    const targets = srbInstances.length
+      ? srbInstances.map((inst, i) => ({ port: inst.apiPort, idxOffset: Number(inst.gpuId) || i }))
+      : [{ port: SRB_API_PORT_BASE, idxOffset: 0 }];
+    let totalHr = 0;
+    let totalAcc = 0;
+    let totalRej = 0;
+    const gpus = [];
+    let any = false;
+    for (const t of targets) {
+      const one = await pollOneSrbApi(t.port);
+      if (!one) continue;
+      any = true;
+      totalHr += one.hashrate;
+      totalAcc += one.accepted;
+      totalRej += one.rejected;
+      gpus.push(...srbParseGpuDevices(one.j, one.algo, t.idxOffset));
+    }
+    if (!any) return;
+    srbApplyStats({
+      hashrate: totalHr,
+      accepted: totalAcc,
+      rejected: totalRej,
       active: true,
       gpu: gpus[0] ? {
         core_clock: gpus[0].clock_mhz, temperature: gpus[0].temp_c,
@@ -3179,7 +3242,7 @@ function verifySrbBinaryIntegrity(srbPath, isCustom) {
 }
 
 function startSrbMiner(config, worker) {
-  if (srbProcess) return;
+  if (srbIsRunning()) return;
   const srbPath = resolveSrbMinerPath(config);
   if (!srbPath) {
     logApp('srb-missing', 'SRBMiner-MULTI binary not found in resources/srbminer');
@@ -3209,96 +3272,128 @@ function startSrbMiner(config, worker) {
   // Our worker names carry an internal "@g=zion" group hint that upstream
   // pools reject at login — strip it and keep only safe worker chars.
   const srbWorkerRaw = String(config?.srbminerWorker || worker || 'desktop').split('@')[0];
-  const srbWorker = sanitizeWorkerName(srbWorkerRaw).replace(/[^A-Za-z0-9._-]/g, '') || 'desktop';
-  const logPath = path.join(USER_DATA_PATH, 'srbminer.log');
-  const args = [
-    '--algorithm', srbAlgo,
-    '--pool', srbPool,
-    '--wallet', srbWallet,
-    '--worker', srbWorker,
-    '--password', 'x',
-    '--disable-cpu',
-    '--api-enable',
-    '--api-port', String(SRB_API_PORT),
-    '--api-rig-name', srbWorker,
-    '--log-file', logPath,
-  ];
-  // Multi-GPU: pin SRBMiner to specific GPU(s) — e.g. the card NOT driving
-  // the display, so display freezes don't matter for mining stability.
-  // 'auto'/'all'/empty = let SRBMiner use every detected GPU.
-  const gpuIds = String(config?.srbminerGpuId || '').trim().toLowerCase();
-  if (gpuIds && gpuIds !== 'auto' && gpuIds !== 'all') {
-    args.push('--gpu-id', gpuIds);
-  }
-  if (config?.srbminerExtraArgs) {
-    args.push(...String(config.srbminerExtraArgs).split(/\s+/).filter(Boolean));
-  }
+  const srbWorkerBase = sanitizeWorkerName(srbWorkerRaw).replace(/[^A-Za-z0-9._-]/g, '') || 'desktop';
+  const parsedGpuIds = parseSrbGpuIds(config);
+  // Multi numeric ids → one process per GPU (disjoint EN1). auto/all → one
+  // process owning every card. Single id → one pinned process.
+  const launchSpecs = parsedGpuIds && parsedGpuIds.length > 1
+    ? parsedGpuIds.map((id, i) => ({
+        gpuId: id,
+        worker: `${srbWorkerBase}.gpu${id}`.replace(/[^A-Za-z0-9._-]/g, ''),
+        apiPort: SRB_API_PORT_BASE + i,
+        logPath: path.join(USER_DATA_PATH, `srbminer-gpu${id}.log`),
+        gpuArg: id,
+      }))
+    : [{
+        gpuId: parsedGpuIds ? parsedGpuIds[0] : 'all',
+        worker: srbWorkerBase,
+        apiPort: SRB_API_PORT_BASE,
+        logPath: path.join(USER_DATA_PATH, 'srbminer.log'),
+        gpuArg: parsedGpuIds ? parsedGpuIds[0] : null,
+      }];
+
   try { if (process.platform !== 'win32') fs.chmodSync(srbPath, 0o755); } catch {}
-  try {
-    srbProcess = spawn(srbPath, args, {
-      cwd: path.dirname(srbPath),
-      env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true
-    });
-  } catch (e) {
-    logApp('srb-spawn-fail', JSON.stringify({ error: e?.message || String(e) }));
-    srbProcess = null;
-    return;
-  }
-  srbShareCounts = { accepted: -1, rejected: -1 };
-  logApp('srb-spawn', JSON.stringify({ pid: srbProcess.pid, pool: srbPool, worker: srbWorker }));
-  console.error(`[SRB] spawned PID ${srbProcess.pid} → ${srbPool} (wallet ${srbWallet.slice(0, 10)}…)`);
-  try { enqueueMinerOutputToRenderer('stdout', `[SRB] spawned pid ${srbProcess.pid} → ${srbPool} worker ${srbWorker}`); } catch {}
-  // SRBMiner's stdout is a full-screen ANSI TUI that arrives fragmented in
-  // the pipe — mirroring it raw produced garbled half-lines in miner.log.
-  // Structured telemetry comes from the API poller ([GPU] lines, share
-  // events, cards); SRB's own --log-file keeps the complete dump. Set
-  // srbminerRawLog: true in config to re-enable the raw mirror for debug.
   const ANSI_RE = /\x1b\[[0-9;?]*[A-Za-z]|\[[0-9;]+m/g;
   const rawMirror = config?.srbminerRawLog === true;
-  let _srbStderrBuf = '';
-  const onData = (d) => {
-    if (!rawMirror) return;
-    const line = d.toString().replace(ANSI_RE, '');
+  const extraArgs = config?.srbminerExtraArgs
+    ? String(config.srbminerExtraArgs).split(/\s+/).filter(Boolean)
+    : [];
+
+  srbInstances = [];
+  srbShareCounts = { accepted: -1, rejected: -1 };
+
+  for (const spec of launchSpecs) {
+    const args = [
+      '--algorithm', srbAlgo,
+      '--pool', srbPool,
+      '--wallet', srbWallet,
+      '--worker', spec.worker,
+      '--password', 'x',
+      '--disable-cpu',
+      '--api-enable',
+      '--api-port', String(spec.apiPort),
+      '--api-rig-name', spec.worker,
+      '--log-file', spec.logPath,
+    ];
+    if (spec.gpuArg != null) args.push('--gpu-id', String(spec.gpuArg));
+    args.push(...extraArgs);
+
+    let proc = null;
     try {
-      appendToFileBuffered(LOG_PATH, `[SRB] ${line}`, {
-        flushDelayMs: 200, maxBufferedChars: 512 * 1024
+      proc = spawn(srbPath, args, {
+        cwd: path.dirname(srbPath),
+        env: process.env,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        windowsHide: true
       });
+    } catch (e) {
+      logApp('srb-spawn-fail', JSON.stringify({ error: e?.message || String(e), gpuId: spec.gpuId }));
+      continue;
+    }
+    const inst = { proc, gpuId: spec.gpuId, apiPort: spec.apiPort, worker: spec.worker, logPath: spec.logPath };
+    srbInstances.push(inst);
+    logApp('srb-spawn', JSON.stringify({
+      pid: proc.pid, pool: srbPool, worker: spec.worker, gpuId: spec.gpuId, apiPort: spec.apiPort
+    }));
+    console.error(`[SRB] spawned PID ${proc.pid} gpu=${spec.gpuId} → ${srbPool} worker ${spec.worker}`);
+    try {
+      enqueueMinerOutputToRenderer('stdout',
+        `[SRB] spawned pid ${proc.pid} gpu=${spec.gpuId} → ${srbPool} worker ${spec.worker}`);
     } catch {}
-    enqueueMinerOutputToRenderer('stdout', `[SRB] ${line}`);
-  };
-  srbProcess.stdout.on('data', onData);
-  // stderr is line-oriented — surface real errors even with rawMirror off.
-  srbProcess.stderr.on('data', (d) => {
-    _srbStderrBuf += d.toString().replace(ANSI_RE, '');
-    let nl;
-    while ((nl = _srbStderrBuf.indexOf('\n')) >= 0) {
-      const l = _srbStderrBuf.slice(0, nl).trim();
-      _srbStderrBuf = _srbStderrBuf.slice(nl + 1);
-      if (!l) continue;
-      if (rawMirror || /error|failed|cannot|unable|reject|warn/i.test(l)) {
-        try {
-          appendToFileBuffered(LOG_PATH, `[SRB] ${l}\n`, {
-            flushDelayMs: 200, maxBufferedChars: 512 * 1024
-          });
-        } catch {}
-        enqueueMinerOutputToRenderer('stdout', `[SRB] ${l}`);
+
+    // SRBMiner's stdout is a full-screen ANSI TUI — don't mirror raw by default.
+    const onData = (d) => {
+      if (!rawMirror) return;
+      const line = d.toString().replace(ANSI_RE, '');
+      try {
+        appendToFileBuffered(LOG_PATH, `[SRB] ${line}`, {
+          flushDelayMs: 200, maxBufferedChars: 512 * 1024
+        });
+      } catch {}
+      enqueueMinerOutputToRenderer('stdout', `[SRB] ${line}`);
+    };
+    proc.stdout.on('data', onData);
+    let stderrBuf = '';
+    proc.stderr.on('data', (d) => {
+      stderrBuf += d.toString().replace(ANSI_RE, '');
+      let nl;
+      while ((nl = stderrBuf.indexOf('\n')) >= 0) {
+        const l = stderrBuf.slice(0, nl).trim();
+        stderrBuf = stderrBuf.slice(nl + 1);
+        if (!l) continue;
+        if (rawMirror || /error|failed|cannot|unable|reject|warn/i.test(l)) {
+          try {
+            appendToFileBuffered(LOG_PATH, `[SRB] ${l}\n`, {
+              flushDelayMs: 200, maxBufferedChars: 512 * 1024
+            });
+          } catch {}
+          enqueueMinerOutputToRenderer('stdout', `[SRB] ${l}`);
+        }
       }
-    }
-  });
-  srbProcess.on('close', (code) => {
-    srbProcess = null;
-    if (srbPollTimer) { clearInterval(srbPollTimer); srbPollTimer = null; }
-    logApp('srb-exit', JSON.stringify({ code }));
-    console.error(`[SRB] exited code=${code}`);
-    try { enqueueMinerOutputToRenderer('stdout', `[SRB] exited code=${code}`); } catch {}
-    if (!minerStopping && !minerUserStopRequested && srbRestarts < SRB_MAX_RESTARTS) {
-      srbRestarts++;
-      srbSpawnTimer = setTimeout(() => { srbSpawnTimer = null; startSrbMiner(config, worker); }, 15000);
-    }
-  });
-  srbProcess.on('error', () => { srbProcess = null; });
+    });
+    proc.on('close', (code) => {
+      inst.proc = null;
+      srbInstances = srbInstances.filter((x) => x.proc);
+      logApp('srb-exit', JSON.stringify({ code, gpuId: spec.gpuId }));
+      console.error(`[SRB] exited code=${code} gpu=${spec.gpuId}`);
+      try { enqueueMinerOutputToRenderer('stdout', `[SRB] exited code=${code} gpu=${spec.gpuId}`); } catch {}
+      // If all instances died, clear poller and maybe restart the set.
+      if (!srbIsRunning()) {
+        if (srbPollTimer) { clearInterval(srbPollTimer); srbPollTimer = null; }
+        if (!minerStopping && !minerUserStopRequested && srbRestarts < SRB_MAX_RESTARTS) {
+          srbRestarts++;
+          srbSpawnTimer = setTimeout(() => { srbSpawnTimer = null; startSrbMiner(config, worker); }, 15000);
+        }
+      }
+    });
+    proc.on('error', () => {
+      inst.proc = null;
+      srbInstances = srbInstances.filter((x) => x.proc);
+    });
+  }
+
+  if (!srbIsRunning()) return;
+  if (srbPollTimer) { clearInterval(srbPollTimer); srbPollTimer = null; }
   srbPollTimer = setInterval(pollSrbStats, 20000);
   setTimeout(pollSrbStats, 8000);
 }
@@ -3320,11 +3415,18 @@ function stopSrbMiner() {
         s && Number(s.index) === 2 ? { ...s, active: false, hashrate_10s: 0, hashrate_60s: 0, hashrate_15m: 0 } : s);
     }
   } catch {}
-  const proc = srbProcess;
-  srbProcess = null;
-  if (!proc) return;
-  try { proc.kill('SIGTERM'); } catch {}
-  setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, 4000);
+  const procs = srbInstances.map((i) => i.proc).filter(Boolean);
+  srbInstances = [];
+  for (const proc of procs) {
+    try { proc.kill('SIGTERM'); } catch {}
+  }
+  if (procs.length) {
+    setTimeout(() => {
+      for (const proc of procs) {
+        try { proc.kill('SIGKILL'); } catch {}
+      }
+    }, 4000);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -5393,7 +5495,7 @@ function parseMinerOutput(output) {
     const idx = streamIndex[streamId] ?? 1;
     // When the SRBMiner sidecar owns stream 2, the internal miner reports it
     // as idle/hr=0 — keep the sidecar's injected entry instead of clobbering.
-    if (idx === 2 && srbProcess) continue;
+    if (idx === 2 && srbIsRunning()) continue;
     const hr = parseFloat(m[5]);
     const active = String(m[6] || '').toLowerCase() === 'active';
     const accepted = parseInt(m[3], 10) || 0;
@@ -5501,7 +5603,7 @@ function parseMinerOutput(output) {
       // Internal miner total + SRBMiner sidecar contribution (when the QTU
       // external engine runs outside the miner process).
       _v31LastTotalHr = totalHr;
-      const combinedHr = totalHr + (srbProcess ? _srbLastHr : 0);
+      const combinedHr = totalHr + (srbIsRunning() ? _srbLastHr : 0);
       minerStats.hashrate = combinedHr;
       minerStats.hashrate_10s = combinedHr;
       minerStats.hashrate_60s = combinedHr;

@@ -886,6 +886,35 @@ mod tests {
         assert_eq!(s.invalid_shares, 1);
     }
 
+    /// Regression for QTU/SRB local-dedup path (2026-10-29): each local
+    /// `duplicate` must bump both `invalid_shares` and the duplicate bucket
+    /// — previously `qtu_handle_submit` returned before telemetry, so
+    /// `/miners` showed accept_rate=1.0 while SRB reported ~30% rejects.
+    #[test]
+    fn test_local_duplicate_rejects_accumulate() {
+        let mut reg = MinerTelemetryRegistry::new();
+        for _ in 0..5 {
+            reg.record_external_share("qz…", "qz….dest-zion", "QTU", false, 0.0);
+            reg.record_reject_reason("qz…", "qz….dest-zion", "qtu", "duplicate");
+        }
+        for _ in 0..10 {
+            reg.record_external_share("qz…", "qz….dest-zion", "QTU", true, 1e9);
+        }
+        let s = reg
+            .get_miner("qz…/qz….dest-zion")
+            .expect("miner")
+            .streams
+            .get("qtu")
+            .expect("qtu")
+            .clone();
+        assert_eq!(s.valid_shares, 10);
+        assert_eq!(s.invalid_shares, 5);
+        assert_eq!(s.reject_reasons.get("duplicate"), Some(&5));
+        let total = s.valid_shares + s.invalid_shares;
+        let rate = s.valid_shares as f64 / total as f64;
+        assert!((rate - (10.0 / 15.0)).abs() < 1e-9, "rate={rate}");
+    }
+
     /// P-05 audit residual: unverifiable upstream accepts count in
     /// `unverified_shares` (and stay inside `valid_shares` — they ARE
     /// credited, just flagged as upstream-quality signal).

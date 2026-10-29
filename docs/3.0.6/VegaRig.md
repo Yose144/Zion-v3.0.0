@@ -620,3 +620,105 @@ backup `.bak-orig`) survives reboots — verified. Risk: SMOS cloud re-download
 of same package name would overwrite it; the durable fix is publishing the
 ROCm+SRB wiring in the package itself. `RIG_LLM=1` llama-server still runs
 co-resident (~2 GB VRAM).
+
+## 16. 2026-10-29 — ZANO stream4 direct to HeroMiners (EthStratum)
+
+**Context:** project pool broadcasts only zion+qtu+vrsc today — no
+`external_stream_2` bundle for this worker, so the pool-bundle path cannot
+deliver ZANO. Chosen path = dedicated upstream session via
+`ZION_STREAM4_URL` (pool-bundle watcher remains the fallback when no URL is
+set).
+
+**Two miner fixes were required** (binaries deployed as persistent
+`/root/zion-miner-v31-zano`, wrapper prefers it over EDGE download):
+
+1. `runtime.rs` — in V3 Trinity mode, stream4 previously only watched
+   `bundle.gpu_external_2` and ignored `stream4_url` entirely (dedicated-URL
+   path existed only in legacy `run()`). Added: when
+   `stream4_url.is_some() && auxpow_enabled`, run
+   `auxpow_stream_round(StreamId::GpuExternal2)` in a retry loop instead of
+   the bundle watcher.
+2. `auxpow/client.rs` — `stratum_session` sent `mining.subscribe` +
+   `mining.authorize` for EthStratum sessions; HeroMiners replies
+   `Undefined stratum` and closes. Fixed to `eth_submitLogin` (+ immediate
+   `eth_getWork`) for `StratumProtocol::EthStratum` (ZANO maps to it
+   automatically).
+
+**Config (tarball env):** `ZION_STREAM4_ENABLED=1`,
+`ZION_STREAM4_FORCE_COIN=ZANO`,
+`ZION_STREAM4_URL=stratum+tcp://de.zano.herominers.com:1110`,
+`ZION_STREAM4_WALLET=<ZANO wallet>`, `ZION_EXT_GPU2_TIME_DUTY_PCT=30`.
+
+**Wire reality (HeroMiners ZANO :1110):** fixed difficulty **1e9** (only
+port; "Low-End" but fixed), `eth_getWork` = `[header, seed, target, height]`;
+seed for epoch 129 matches `seed_hash_for_epoch(129)` → **30 000-block
+ProgPowZ epoch confirmed**, DAG correct. Manual `eth_submitWork` (fake
+nonce/mix) → `"low diff share"` → submit format accepted upstream.
+
+**Verification chain:** `auxpow_kat progpowz` on this Vega = **PASS**
+(`mine mix≡CPU nonce=0`) — kernel computes the correct digest and the found
+path works. Kernel boundary = top-64-bit BE compare (`keccak_f800` returns
+hash[0..8] byteswapped to BE; host passes `u64::from_be_bytes(target[0..8])`)
+— consistent, expected work ≈ 1e9/share.
+
+**Share-rate math:** active rate ≈ 7–9.5 MH/s, but `TIME_DUTY_PCT=30` sleeps
+2.33×batch after each batch → effective ≈ 2.3–2.8 MH/s → **~6–7 min/share
+expected at diff 1e9**. Historical pool-relay (commit `0c8187969`, Aug 9)
+forwarded the SAME upstream target — its "1 accepted" in 5 min came at
+~10.5 MH/s unthrottled, i.e. the same per-hash odds; it felt faster only
+because the stream ran undutied.
+
+**Status at write:** connected + hashing ~7 MH/s active, 0 submissions yet
+within early probability window (~3–4 expected cumulative). Soak gate:
+if `eth_submitWork` still absent after ~60+ min cumulative active time,
+re-open investigation of job→kernel nonce mapping.
+
+## 17. 2026-10-29 (2) — ROOT CAUSE found: `progpow_zano` fell through to yiimp `mining.submit` + stream4 decoupled from Trinity + pool outage
+
+**Zero-submission root cause (post-mortem):** `build_submit_params` routed by
+algo string — `algo == "progpowz"` matched the EthStratum/`eth_submitWork`
+branch, but our algo is **`progpow_zano`** → matched the later
+`contains("progpow")` → yiimp `mining.submit` branch → HeroMiners answered
+`"Method not found"`. The miner **was finding and sending shares the whole
+time**, just with the wrong method name (`rejected=1` seen in live log).
+Fix: `eth_submitWork` branch now covers `progpow_zano` and, authoritatively,
+any coin whose `coin_protocol()` is `EthStratum`.
+
+**Stream4 decoupled from Trinity session:** the dedicated-URL stream4 task
+originally spawned *inside* `run_v3_trinity_session` → every pool
+connect failure killed ZANO too. Moved to `run_v3_trinity` (outer scope):
+spawned once before the reconnect loop, survives pool outages, aborted only
+on global shutdown. In-session `h4` now only watches
+`bundle.gpu_external_2` when `stream4_url.is_none()` (no double mining).
+Verified live: `ESTABLISHED 192.168.1.114 → 178.63.50.103:1110` while
+`62.171.141.136:8444` was still refusing connections.
+
+**Pool outage + recovery (2026-10-29 ~12:57–13:00 UTC):**
+`62.171.141.136:8444` refused TCP from rig and dev host (~10 min).
+Recovered on its own — Trinity reconnected, ZION/VRSC shares resumed
+100% accept. EDGE2 jump host also unreachable during the window.
+
+**⚠️ BUILD GOTCHA — `native-hashers` is mandatory for DAG algos:**
+a `--features gpu-opencl`-only binary produced `mine_batch_raw: ProgPow DAG
+not set` spam forever — `update_epoch` only calls
+`generate_progpow_dag_on_gpu` under `#[cfg(feature = "native-hashers")]`.
+Always deploy with the full documented set:
+`gpu-opencl,native-hashers,native-cosmic-harmony,native-randomx,
+native-verushash,native-ghostrider,tui,public_build`.
+
+**Post-fix state (14:08 CET):** ZANO `gpu-external-2` **active ~11 MH/s**
+direct on HeroMiners, ZION ~47 KH/s (A57+/R0), VRSC ~1.5 MH/s (A9),
+SRBMiner QTU ~135 MH/s — all concurrent on one Vega.
+
+**✅ E2E VERIFIED (13:46 UTC):** `eth_submitWork` ×2 transmitted →
+**accepted=2 / rejected=0, 100% accept** (`coin="ZANO"` in stream metrics).
+HeroMiners API confirms independently: `hashrate: 3.33 MH/s` (= effective
+rate at duty 30%), `roundHashes: 2e9` = 2 shares × diff 1e9. Full pipeline
+closed: connect → `eth_submitLogin` → `eth_getWork` poll → GPU ProgPowZ →
+found → `eth_submitWork` → upstream accept.
+
+**⚠️ `public_build` observability:** ext_info/ext_warn compile to no-ops in
+public builds → no stratum tx/rx, no dag_manager, no share-accept lines.
+For wire-level debugging deploy a binary built **without** `public_build`
+(same feature set minus it) — that is what produced the `eth_submitWork`
+evidence above.

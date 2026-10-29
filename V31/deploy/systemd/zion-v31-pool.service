@@ -12,7 +12,7 @@ EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_pool=debug"
 ExecStart=/opt/zion/V31/target/release/zion-pool \
     --bind 0.0.0.0:8444 \
-    --l1-rpc-url "http://127.0.0.1:9445,http://127.0.0.1:9446,http://127.0.0.1:9447" \
+    --l1-rpc-url http://127.0.0.1:9445 \
     --miner-address ${ZION_POOL_WALLET} \
     --state-path /opt/zion/data/v31/pool-pplns.json \
     --pool-fee-bps 100 \
