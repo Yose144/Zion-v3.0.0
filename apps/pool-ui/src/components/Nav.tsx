@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ExternalLink, Menu, X } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '@/lib/i18n';
 import { COIN_META, UI_ID } from '@/lib/api';
 import AuthButton from '@/components/AuthButton';
 import CoinLogo from '@/components/CoinLogo';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import NavDropdown from '@/components/NavDropdown';
 
 const LINKS = [
@@ -60,7 +61,7 @@ const ECOSYSTEM_GROUPS: {
 
 export default function Nav() {
   const pathname = usePathname();
-  const { lang, setLang, t } = useLang();
+  const { lang, t } = useLang();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -202,33 +203,21 @@ export default function Nav() {
 
           <div className="rasta-nav-right">
             <div className="rasta-nav-actions">
-              <div className="flex overflow-hidden rounded-full border border-white/15 text-[0.68rem] font-bold">
-                {(['cs', 'en'] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLang(l)}
-                    className={`px-2.5 py-1.5 uppercase transition-colors ${
-                      lang === l
-                        ? 'bg-rasta-gold text-black'
-                        : 'text-white/50 hover:text-white'
-                    }`}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
+              <LanguageSwitcher />
               <AuthButton />
             </div>
             <button
               ref={menuButtonRef}
               type="button"
-              className="rasta-hamburger"
+              className={`rasta-hamburger ${open ? 'active' : ''}`}
               onClick={() => setOpen(!open)}
               aria-label={open ? t('Zavřít menu', 'Close menu') : t('Otevřít menu', 'Open menu')}
               aria-expanded={open}
               aria-controls="pool-mobile-menu"
             >
-              {open ? <X size={20} /> : <Menu size={20} />}
+              <span className="bar" />
+              <span className="bar" />
+              <span className="bar" />
             </button>
           </div>
         </div>
@@ -246,25 +235,15 @@ export default function Nav() {
         inert={!open}
       >
         <div className="rasta-mobile-brand">
-          <div className="flex min-w-0 items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/brand/zion-symbol.png"
-              alt=""
-              width={34}
-              height={34}
-              className="rasta-nav-logo-img"
-            />
-            <span id="pool-mobile-menu-title" className="rasta-nav-brand">ZION Pool</span>
-          </div>
-          <button
-            type="button"
-            className="rasta-mobile-close"
-            onClick={() => setOpen(false)}
-            aria-label={t('Zavřít menu', 'Close menu')}
-          >
-            <X size={19} />
-          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/zion-symbol.png"
+            alt=""
+            width={34}
+            height={34}
+            className="rasta-nav-logo-img"
+          />
+          <span id="pool-mobile-menu-title" className="rasta-nav-brand">ZION Pool</span>
         </div>
         {LINKS.map((l) => (
           <Link
@@ -336,33 +315,10 @@ export default function Nav() {
           </div>
         ))}
         <div className="rasta-mobile-actions">
+          <LanguageSwitcher />
           <AuthButton />
-          <div className="flex overflow-hidden rounded-full border border-white/15 text-[0.72rem] font-bold">
-            {(['cs', 'en'] as const).map((l) => (
-              <button
-                key={l}
-                onClick={() => {
-                  setLang(l);
-                  setOpen(false);
-                }}
-                className={`flex-1 px-3 py-2 uppercase transition-colors ${
-                  lang === l
-                    ? 'bg-rasta-gold text-black'
-                    : 'text-white/50 hover:text-white'
-                }`}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
-      {open && (
-        <div
-          className="rasta-mobile-backdrop fixed inset-0 z-[48] bg-black/60 backdrop-blur-sm"
-          onClick={() => setOpen(false)}
-        />
-      )}
     </>
   );
 }
