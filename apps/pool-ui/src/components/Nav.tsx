@@ -2,10 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import { ExternalLink, Menu, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '@/lib/i18n';
+import { COIN_META, UI_ID } from '@/lib/api';
 import AuthButton from '@/components/AuthButton';
+import CoinLogo from '@/components/CoinLogo';
+import NavDropdown from '@/components/NavDropdown';
 
 const LINKS = [
   { href: '/', cs: 'Přehled', en: 'Overview' },
@@ -14,6 +17,45 @@ const LINKS = [
   { href: '/payouts/', cs: 'Výplaty', en: 'Payouts' },
   { href: '/stats/', cs: 'Statistiky', en: 'Stats' },
   { href: '/faq/', cs: 'FAQ', en: 'FAQ' },
+];
+
+// Coin menu groups — static metadata, same order as the homepage table.
+const NATIVE_COIN_KEYS = ['zion', 'qtu', 'prl'];
+const AUX_COIN_KEYS = Object.keys(COIN_META).filter(
+  (k) => !NATIVE_COIN_KEYS.includes(k),
+);
+const coinItem = (key: string) => ({
+  href: `/coin/${UI_ID[key]}/`,
+  ticker: COIN_META[key].ticker,
+  name: COIN_META[key].name,
+  logo: COIN_META[key].logo,
+  accent: COIN_META[key].accent,
+});
+
+// HeroMiners-style "Details" dropdown — grouped ecosystem links.
+const ECOSYSTEM_GROUPS: {
+  cs: string;
+  en: string;
+  items: { href: string; label: string; sub: string }[];
+}[] = [
+  {
+    cs: 'Ekosystém',
+    en: 'Ecosystem',
+    items: [
+      { href: 'https://zionterranova.com', label: 'ZION TerraNova', sub: 'zionterranova.com' },
+      { href: 'https://app.zionterranova.com', label: 'Wallet & Explorer', sub: 'app.zionterranova.com' },
+      { href: 'https://market.zionterranova.com', label: 'Marketplace', sub: 'market.zionterranova.com' },
+      { href: 'https://oasis.zionterranova.com', label: 'Oasis AI', sub: 'oasis.zionterranova.com' },
+    ],
+  },
+  {
+    cs: 'Pro vývojáře',
+    en: 'Developers',
+    items: [
+      { href: 'https://rpc.zionterranova.com', label: 'Public RPC', sub: 'rpc.zionterranova.com' },
+      { href: 'https://github.com/Yose144/Zion-v3.0.0', label: 'GitHub', sub: 'Zion-v3.0.0' },
+    ],
+  },
 ];
 
 export default function Nav() {
@@ -103,6 +145,59 @@ export default function Nav() {
                 {lang === 'cs' ? l.cs : l.en}
               </Link>
             ))}
+            <NavDropdown label={t('Coiny', 'Coins')}>
+              <div className="rasta-nav-dropheader">{t('Nativní', 'Native')}</div>
+              {NATIVE_COIN_KEYS.map((k) => {
+                const c = coinItem(k);
+                return (
+                  <Link key={k} href={c.href} role="menuitem" className="rasta-nav-dropitem">
+                    <CoinLogo logo={c.logo} ticker={c.ticker} accent={c.accent} size={22} />
+                    <span className="rasta-nav-dropitem-main">
+                      {c.ticker}
+                      <span className="rasta-nav-dropitem-sub">{c.name}</span>
+                    </span>
+                  </Link>
+                );
+              })}
+              <div className="rasta-nav-dropheader">{t('auxPoW — výplata v ZION', 'auxPoW — paid in ZION')}</div>
+              {AUX_COIN_KEYS.map((k) => {
+                const c = coinItem(k);
+                return (
+                  <Link key={k} href={c.href} role="menuitem" className="rasta-nav-dropitem">
+                    <CoinLogo logo={c.logo} ticker={c.ticker} accent={c.accent} size={22} />
+                    <span className="rasta-nav-dropitem-main">
+                      {c.ticker}
+                      <span className="rasta-nav-dropitem-sub">{c.name}</span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </NavDropdown>
+            <NavDropdown label={t('Ekosystém', 'Ecosystem')}>
+              {ECOSYSTEM_GROUPS.map((g) => (
+                <div key={g.en}>
+                  <div className="rasta-nav-dropheader">
+                    {lang === 'cs' ? g.cs : g.en}
+                  </div>
+                  {g.items.map((item) => (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      role="menuitem"
+                      className="rasta-nav-dropitem"
+                    >
+                      <span className="rasta-nav-dropitem-main">
+                        {item.label}
+                        <span className="rasta-nav-dropitem-sub">{item.sub}</span>
+                      </span>
+                      <ExternalLink size={12} className="rasta-nav-dropitem-ext" aria-hidden />
+                    </a>
+                  ))}
+                </div>
+              ))}
+            </NavDropdown>
           </div>
 
           <div className="rasta-nav-right">
@@ -180,6 +275,65 @@ export default function Nav() {
           >
             {lang === 'cs' ? l.cs : l.en}
           </Link>
+        ))}
+        <div className="rasta-mobile-subheader">{t('Coiny — nativní', 'Coins — native')}</div>
+        {NATIVE_COIN_KEYS.map((k) => {
+          const c = coinItem(k);
+          return (
+            <Link
+              key={k}
+              href={c.href}
+              onClick={() => setOpen(false)}
+              className="rasta-nav-dropitem"
+            >
+              <CoinLogo logo={c.logo} ticker={c.ticker} accent={c.accent} size={22} />
+              <span className="rasta-nav-dropitem-main">
+                {c.ticker}
+                <span className="rasta-nav-dropitem-sub">{c.name}</span>
+              </span>
+            </Link>
+          );
+        })}
+        <div className="rasta-mobile-subheader">{t('Coiny — auxPoW', 'Coins — auxPoW')}</div>
+        {AUX_COIN_KEYS.map((k) => {
+          const c = coinItem(k);
+          return (
+            <Link
+              key={k}
+              href={c.href}
+              onClick={() => setOpen(false)}
+              className="rasta-nav-dropitem"
+            >
+              <CoinLogo logo={c.logo} ticker={c.ticker} accent={c.accent} size={22} />
+              <span className="rasta-nav-dropitem-main">
+                {c.ticker}
+                <span className="rasta-nav-dropitem-sub">{c.name}</span>
+              </span>
+            </Link>
+          );
+        })}
+        {ECOSYSTEM_GROUPS.map((g) => (
+          <div key={g.en}>
+            <div className="rasta-mobile-subheader">
+              {lang === 'cs' ? g.cs : g.en}
+            </div>
+            {g.items.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setOpen(false)}
+                className="rasta-nav-dropitem"
+              >
+                <span className="rasta-nav-dropitem-main">
+                  {item.label}
+                  <span className="rasta-nav-dropitem-sub">{item.sub}</span>
+                </span>
+                <ExternalLink size={12} className="rasta-nav-dropitem-ext" aria-hidden />
+              </a>
+            ))}
+          </div>
         ))}
         <div className="rasta-mobile-actions">
           <AuthButton />

@@ -321,6 +321,118 @@ body.rasta-menu-open {
   }
 }
 
+/* ── Dropdown menus (HeroMiners-style grouped nav) — additive ────────── */
+.rasta-nav-dropdown {
+  position: relative;
+}
+
+.rasta-nav-drop-btn .rasta-nav-drop-chevron {
+  transition: transform 0.2s ease;
+}
+
+.rasta-nav-dropdown.open .rasta-nav-drop-chevron {
+  transform: rotate(180deg);
+}
+
+.rasta-nav-dropdown.open .rasta-nav-drop-btn {
+  color: #fff;
+  border-color: var(--rasta-gold);
+  background: linear-gradient(120deg, rgba(228, 30, 43, 0.45), rgba(252, 209, 22, 0.45), rgba(7, 137, 48, 0.45));
+  box-shadow: 0 0 18px rgba(252, 209, 22, 0.35);
+}
+
+.rasta-nav-dropmenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 230px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(10, 12, 20, 0.98), rgba(5, 6, 10, 0.98));
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.6),
+    0 0 24px rgba(252, 209, 22, 0.12);
+  backdrop-filter: blur(20px) saturate(140%);
+  z-index: 60;
+  animation: rasta-drop-in 0.18s ease;
+}
+
+@keyframes rasta-drop-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.rasta-nav-dropheader {
+  padding: 0.45rem 0.7rem 0.3rem;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(252, 209, 22, 0.8);
+}
+
+.rasta-nav-dropitem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #f7f7f7;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.rasta-nav-dropitem:hover,
+.rasta-nav-dropitem:focus-visible {
+  background: linear-gradient(110deg, rgba(228, 30, 43, 0.25), rgba(252, 209, 22, 0.2), rgba(7, 137, 48, 0.25));
+}
+
+.rasta-nav-dropitem-main {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+
+.rasta-nav-dropitem-sub {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.rasta-nav-dropitem-ext {
+  margin-left: auto;
+  flex-shrink: 0;
+  opacity: 0.4;
+}
+
+/* Mobile drawer — grouped sections (same groups as the desktop dropdowns) */
+.rasta-mobile-subheader {
+  padding: 0.9rem 1rem 0.2rem;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(252, 209, 22, 0.75);
+}
+
+.rasta-mobile-menu .rasta-nav-dropitem {
+  padding: 0.55rem 0.9rem;
+  font-size: 0.8rem;
+}
+
 /* pool-ui extras — mobile close button + backdrop toggle */
 .rasta-mobile-close {
   display: inline-flex;

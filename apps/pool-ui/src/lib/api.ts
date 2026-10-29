@@ -23,7 +23,7 @@ const POOL_COIN: Record<CoinId, string> = {
 // All coins share the multiplexed stratum: stratum+tcp://…:8444
 // (plaintext) and stratum+ssl://…:8445 (TLS). Upstream-leg coins are
 // forwarded to external pools and settle through unified ZION payouts.
-const COIN_META: Record<string, Omit<CoinInfo, 'id' | 'legs' | 'fee_bps' | 'min_payout' | 'payout_mode'>> = {
+export const COIN_META: Record<string, Omit<CoinInfo, 'id' | 'legs' | 'fee_bps' | 'min_payout' | 'payout_mode'>> = {
   zion: {
     ticker: 'ZION', name: 'ZION TerraNova', algorithm: 'Ekam Deeksha (GPU)',
     port: 8444, tls_port: 8445, dialect: 'ZION native + Stratum v1',
@@ -99,7 +99,7 @@ const COIN_META: Record<string, Omit<CoinInfo, 'id' | 'legs' | 'fee_bps' | 'min_
   },
 };
 
-const UI_ID: Record<string, CoinId> = {
+export const UI_ID: Record<string, CoinId> = {
   zion: 'zion', qtu: 'qtc', prl: 'prl',
   zano: 'zano', vrsc: 'vrsc', evr: 'evr', mewc: 'mewc',
   rtm: 'rtm', zcl: 'zcl', zec: 'zec', phx: 'phx', krx: 'krx',
