@@ -187,7 +187,7 @@ export default function CoinClient({ coinId }: { coinId: CoinId }) {
 
       {/* KPI strip */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {[
+        {([
           { k: t('pool hashrate', 'pool hashrate'), v: stats ? fmtHashrate(hr) : '—' },
           { k: t('mineři', 'miners'), v: stats ? fmtInt(stats.miners_online) : '—' },
           {
@@ -203,10 +203,24 @@ export default function CoinClient({ coinId }: { coinId: CoinId }) {
             k: t('min výplata', 'min payout'),
             v: `${coin.min_payout} ${coin.payout_unit}`,
           },
-        ].map((x) => (
-          <div key={x.k} className="pool-card card-glow p-4">
+          {
+            k: t('luck (100 blk)', 'luck (100 blk)'),
+            v: stats?.luck_100 != null ? `${stats.luck_100.toFixed(1)}%` : '—',
+            cls:
+              stats?.luck_100 != null
+                ? stats.luck_100 <= 100
+                  ? 'text-rasta-green'
+                  : 'text-rasta-red'
+                : undefined,
+            title:
+              stats?.luck_500 != null
+                ? t(`500 blk: ${stats.luck_500.toFixed(1)}%`, `500 blk: ${stats.luck_500.toFixed(1)}%`)
+                : undefined,
+          },
+        ] as { k: string; v: string; cls?: string; title?: string }[]).map((x) => (
+          <div key={x.k} className="pool-card card-glow p-4" title={x.title}>
             <p className="kicker">{x.k}</p>
-            <p className="stat-value mt-1 truncate text-base font-bold text-white">{x.v}</p>
+            <p className={`stat-value mt-1 truncate text-base font-bold ${x.cls ?? 'text-white'}`}>{x.v}</p>
           </div>
         ))}
       </div>

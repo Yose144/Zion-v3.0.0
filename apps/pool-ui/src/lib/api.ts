@@ -148,6 +148,13 @@ interface ApiCoinStats {
   /** ZION flowers paid out for this coin in the last 24h — the signal the
    *  pool's own est_daily model uses (pool ≥3.2.0-calculator). */
   payouts_24h?: string;
+  /** Block aggregates incl. rolling luck (pool ≥3.2.0). */
+  blocks?: {
+    found?: number; confirmed?: number; pending?: number; orphaned?: number;
+    /** Avg shares-to-block vs expected over last 100/500 blocks
+     *  (<100 = luckier than expected). */
+    luck_100?: number | null; luck_500?: number | null;
+  };
 }
 
 function toCoinStats(coin: CoinId, s: ApiCoinStats): CoinStats {
@@ -161,6 +168,9 @@ function toCoinStats(coin: CoinId, s: ApiCoinStats): CoinStats {
     height: null,
     blocks_24h: 0,
     luck_pct: null,
+    luck_100: s.blocks?.luck_100 ?? null,
+    luck_500: s.blocks?.luck_500 ?? null,
+    blocks_found: s.blocks?.found ?? null,
     shares_1h: s.shares,
     payouts_24h_zion: s.payouts_24h != null ? Number(s.payouts_24h) / FLOWERS : null,
   };

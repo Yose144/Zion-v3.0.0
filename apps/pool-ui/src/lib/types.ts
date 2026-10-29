@@ -48,6 +48,10 @@ export interface CoinStats {
   height: number | null;
   blocks_24h: number;
   luck_pct: number | null; // pool luck, 100 = average
+  /** Avg luck over last 100 / 500 blocks (<100 = luckier than expected). */
+  luck_100?: number | null;
+  luck_500?: number | null;
+  blocks_found?: number | null;
   shares_1h: { accepted: number; rejected: number };
 }
 

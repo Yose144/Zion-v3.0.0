@@ -17,6 +17,7 @@ const LINKS = [
   { href: '/blocks/', cs: 'Bloky', en: 'Blocks' },
   { href: '/payouts/', cs: 'Výplaty', en: 'Payouts' },
   { href: '/stats/', cs: 'Statistiky', en: 'Stats' },
+  { href: '/api-docs/', cs: 'API', en: 'API' },
   { href: '/faq/', cs: 'FAQ', en: 'FAQ' },
 ];
 
