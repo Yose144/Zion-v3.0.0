@@ -542,6 +542,13 @@ Edge se touto lokální změnou nemění.
   broadcastoval `mining.notify` přes follower bez přerušení → restore OK.
   Last-good zůstává na followeru (nechurnuje zpět). Standby pool na jiném
   hostu zůstává open.
+- **submitBlock je primary-only (2026-10-29).** Tip-affinity
+  (`tip == prev_hash` → zapiš tam) prodloužila same-height fork na
+  followeru: node3 inzeroval svůj tip a další blok šel zase tam.
+  `ZION_L1_BLOCK_SUBMIT_URL` (unit default `http://127.0.0.1:9445`) je
+  jediný submit cíl; bez něj se použije první URL z `--l1-rpc-url`.
+  Comma list dál platí pro template failover a payout `call_all`.
+  Mrtvý primary submit neopakuje na follower.
 
 ### F6 — HA runbook (operátor)
 

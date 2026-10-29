@@ -201,8 +201,7 @@ impl L1Endpoints {
             match result {
                 Ok(v) => {
                     let is_reject = v.get("error").is_some_and(|e| !e.is_null())
-                        || v
-                            .get("result")
+                        || v.get("result")
                             .and_then(|r| r.get("accepted"))
                             .and_then(|a| a.as_bool())
                             == Some(false);
@@ -231,15 +230,19 @@ impl L1Endpoints {
             .ok_or_else(|| last_err.unwrap_or_else(|| anyhow!("all {n} L1 endpoints failed")))
     }
 
-    /// Call one specific endpoint (index into `addrs`) with its own bound —
-    /// used by the block-submit tip-affinity probe, which must query each
-    /// endpoint individually instead of following `last_good`.
-    pub async fn call_addr(
-        &self,
-        idx: usize,
-        request: &Value,
-        timeout: Duration,
-    ) -> Result<Value> {
+    /// The first configured endpoint, alone.
+    ///
+    /// Repo units list the primary (`:9445`) first. Extra entries stay on
+    /// the full set for template failover and payout `call_all`.
+    pub fn primary_only(&self) -> Self {
+        Self {
+            addrs: Arc::new(self.addrs.first().copied().into_iter().collect()),
+            last_good: Arc::new(AtomicUsize::new(0)),
+        }
+    }
+
+    /// Call one specific endpoint (index into `addrs`) with its own bound.
+    pub async fn call_addr(&self, idx: usize, request: &Value, timeout: Duration) -> Result<Value> {
         let addr = *self
             .addrs
             .get(idx)
@@ -250,6 +253,36 @@ impl L1Endpoints {
             Err(_) => Err(anyhow!("l1 rpc {} timed out after {:?}", addr, timeout)),
         }
     }
+}
+
+/// Where a solved block is written.
+///
+/// `ZION_L1_RPC_URL` may list followers so templates fail over and payout
+/// `call_all` reaches every mempool. `submitBlock` does not use that list.
+/// Tip-affinity (write the block to whichever node already has
+/// `tip == prev_hash`) extended a same-height follower fork: the divergent
+/// tip matched, so the next block was written there again (2026-10-29).
+///
+/// `submit_url` is `ZION_L1_BLOCK_SUBMIT_URL`. When it parses, only its
+/// first entry is the target. Otherwise only the first entry of
+/// `configured` is the target. A dead primary fails the submit; it is not
+/// retried onto a follower.
+pub fn select_block_submit_endpoints(
+    configured: &L1Endpoints,
+    submit_url: Option<&str>,
+) -> L1Endpoints {
+    if let Some(raw) = submit_url.map(str::trim).filter(|s| !s.is_empty()) {
+        if let Some(pinned) = L1Endpoints::from_urls(raw) {
+            return pinned.primary_only();
+        }
+    }
+    configured.primary_only()
+}
+
+/// [`select_block_submit_endpoints`] with `ZION_L1_BLOCK_SUBMIT_URL`.
+pub fn block_submit_endpoints(configured: &L1Endpoints) -> L1Endpoints {
+    let raw = std::env::var("ZION_L1_BLOCK_SUBMIT_URL").ok();
+    select_block_submit_endpoints(configured, raw.as_deref())
 }
 
 #[cfg(test)]
@@ -465,17 +498,18 @@ mod tests {
             addr
         }
         let reject = spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-1,\"message\":\"already spent\"}}\n").await;
-        let accept = spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tx_id\":\"aa\"}}\n").await;
+        let accept =
+            spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tx_id\":\"aa\"}}\n").await;
         let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", reject, accept)).unwrap();
         let resp = eps.call_all(&json!({"id":1})).await.unwrap();
         assert_eq!(resp["result"]["tx_id"], "aa");
 
         // All-reject returns a rejection envelope (caller requeues safely).
-        let reject2 =
-            spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-2,\"message\":\"nope\"}}\n")
-                .await;
-        let eps =
-            L1Endpoints::from_urls(&format!("http://{},http://{}", reject, reject2)).unwrap();
+        let reject2 = spawn_raw(
+            "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-2,\"message\":\"nope\"}}\n",
+        )
+        .await;
+        let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", reject, reject2)).unwrap();
         let resp = eps.call_all(&json!({"id":1})).await.unwrap();
         assert!(resp.get("error").is_some());
     }
@@ -516,5 +550,40 @@ mod tests {
             .call_addr(9, &json!({"id":3}), Duration::from_secs(1))
             .await
             .is_err());
+    }
+
+    #[test]
+    fn block_submit_without_override_is_the_first_endpoint_only() {
+        // Followers-first is a misconfiguration: without the explicit pin
+        // the first URL wins, and the other two are not submit targets.
+        let eps = L1Endpoints::from_urls("127.0.0.1:9446,127.0.0.1:9447,127.0.0.1:9445").unwrap();
+        let submit = select_block_submit_endpoints(&eps, None);
+        assert_eq!(submit.describe(), "127.0.0.1:9446");
+        assert_eq!(submit.len(), 1);
+        assert_eq!(eps.len(), 3);
+    }
+
+    #[test]
+    fn block_submit_url_pins_primary_even_when_followers_are_listed_first() {
+        let eps = L1Endpoints::from_urls("127.0.0.1:9446,127.0.0.1:9447,127.0.0.1:9445").unwrap();
+        let submit = select_block_submit_endpoints(&eps, Some("http://127.0.0.1:9445"));
+        assert_eq!(submit.describe(), "127.0.0.1:9445");
+        assert_eq!(submit.len(), 1);
+    }
+
+    #[test]
+    fn block_submit_url_ignores_extra_entries_and_blank_override() {
+        let eps = L1Endpoints::from_urls("http://127.0.0.1:9445,http://127.0.0.1:9446").unwrap();
+        let submit = select_block_submit_endpoints(
+            &eps,
+            Some("http://127.0.0.1:9445,http://127.0.0.1:9447"),
+        );
+        assert_eq!(submit.describe(), "127.0.0.1:9445");
+        assert_eq!(submit.len(), 1);
+
+        let blank = select_block_submit_endpoints(&eps, Some("  "));
+        assert_eq!(blank.describe(), "127.0.0.1:9445");
+        let garbage = select_block_submit_endpoints(&eps, Some("not a url"));
+        assert_eq!(garbage.describe(), "127.0.0.1:9445");
     }
 }

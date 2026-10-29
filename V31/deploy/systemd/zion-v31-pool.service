@@ -10,6 +10,10 @@ Group=zion
 WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_pool=debug"
+# Solved blocks go only to the primary (EDGE tunnel to EDGE2 :9445).
+# The comma list below is template failover and payout call_all. A follower
+# that already holds a same-height fork must not receive submitBlock.
+Environment=ZION_L1_BLOCK_SUBMIT_URL=http://127.0.0.1:9445
 ExecStart=/opt/zion/V31/target/release/zion-pool \
     --bind 0.0.0.0:8444 \
     --l1-rpc-url "http://127.0.0.1:9445,http://127.0.0.1:9446,http://127.0.0.1:9447" \
