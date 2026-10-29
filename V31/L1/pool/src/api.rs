@@ -653,6 +653,10 @@ impl PoolApi {
                 });
                 ("200 OK", "application/json", body)
             }
+            "/public/v1/estimate" => {
+                let body = self.build_public_estimate_payload(raw_path);
+                ("200 OK", "application/json", body)
+            }
             "/public/v1/history" => {
                 let limit = parse_query_limit(raw_path, HISTORY_CAP as u32) as usize;
                 let body = self.build_history_payload(limit);
@@ -2341,6 +2345,47 @@ impl PoolApi {
     }
 
     /// `/public/v1/coins/{coin}/stats` — per-coin telemetry + window stats.
+    /// `/public/v1/estimate?coin=X&hps=N` — public per-hashrate earnings
+    /// estimate reusing the profit-switch model (linear, fee-adjusted).
+    /// `hps` defaults to 1 → the response is a per-unit price table.
+    /// CoinProfile data is static — no pool lock on this path.
+    fn build_public_estimate_payload(&self, raw_path: &str) -> String {
+        let coin = parse_query_param(raw_path, "coin").unwrap_or_default();
+        let hps: f64 = parse_query_param(raw_path, "hps")
+            .and_then(|s| s.parse::<f64>().ok())
+            .unwrap_or(1.0)
+            .clamp(0.0, 1e15);
+        let served: std::collections::HashSet<String> = self
+            .auxpow_bridge
+            .as_ref()
+            .map(|b| {
+                b.enabled_coins()
+                    .iter()
+                    .map(|c| c.as_str().to_string())
+                    .collect()
+            })
+            .unwrap_or_default();
+        let entries: Vec<serde_json::Value> = zion_cosmic_harmony::CoinProfile::all()
+            .iter()
+            .filter(|p| coin.is_empty() || p.ticker().eq_ignore_ascii_case(&coin))
+            .map(|p| {
+                let usd_day = p.estimate_profit(hps);
+                json!({
+                    "coin": p.ticker(),
+                    "algorithm": p.coin.algorithm(),
+                    "device": format!("{:?}", p.device),
+                    "served": served.contains(p.ticker()),
+                    "enabled": p.enabled && !p.disabled,
+                    "usd_day": usd_day,
+                    "usd_hour": usd_day / 24.0,
+                    "usd_week": usd_day * 7.0,
+                    "usd_month": usd_day * 30.0,
+                })
+            })
+            .collect();
+        json!({"ok": true, "hps": hps, "coins": entries}).to_string()
+    }
+
     fn build_public_coin_stats_payload(&self, coin: &str) -> String {
         let coin = coin.to_ascii_lowercase();
         // Served-job difficulty comes from per-leg job rings — gather it

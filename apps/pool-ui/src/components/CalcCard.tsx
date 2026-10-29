@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Calculator } from 'lucide-react';
 import { fmtHashrate, fmtUsd } from '@/lib/format';
 import { useLang } from '@/lib/i18n';
@@ -53,12 +53,29 @@ export default function CalcCard({
   const { t } = useLang();
   const [amount, setAmount] = useState<number>(defaultAmount(coin.id));
   const [unit, setUnit] = useState<number>(defaultUnit(coin.id));
+  const [modelUsd, setModelUsd] = useState<number | null>(null);
 
   const est = useMemo(() => {
     const hr = amount * unit;
     if (!(hr > 0) || payouts24h == null || payouts24h <= 0) return null;
     return (hr / (poolHashrate + hr)) * payouts24h;
   }, [amount, unit, poolHashrate, payouts24h]);
+
+  // Theoretical model line — /public/v1/estimate (profit-switch engine,
+  // fee-adjusted). Debounced; absent until the pool rebuild carries it.
+  useEffect(() => {
+    const hr = amount * unit;
+    if (!(hr > 0)) { setModelUsd(null); return; }
+    const id = setTimeout(async () => {
+      try {
+        const r = await fetch(`/public/v1/estimate?coin=${encodeURIComponent(coin.id)}&hps=${hr}`, { cache: 'no-store' });
+        if (!r.ok) { setModelUsd(null); return; }
+        const j = await r.json();
+        setModelUsd(j?.coins?.[0]?.usd_day ?? null);
+      } catch { setModelUsd(null); }
+    }, 300);
+    return () => clearTimeout(id);
+  }, [amount, unit, coin.id]);
 
   const fmtZion = (v: number) =>
     v >= 1000
@@ -126,6 +143,11 @@ export default function CalcCard({
           <p className="stat-value text-lg font-bold text-white">
             {est != null && zionUsd ? fmtUsd(est * zionUsd) : '—'}
           </p>
+          {modelUsd != null && (
+            <p className="mt-0.5 text-[0.65rem] text-white/40">
+              {t('model', 'model')} ≈ {fmtUsd(modelUsd)}
+            </p>
+          )}
         </div>
       </div>
 
