@@ -36,6 +36,15 @@
 - Flight sheets, per-rig secrets, offline alerts, watchdog
 - B5 alerts: miner_down / gpu_temp / hashrate_drop (same-sheet baseline)
 - Profit-switch MVP: bench table + autopilot sheets, dry/apply modes
+- **Ops console `/ops/` on pool.zionterranova.com** (2026-10-29, auth_basic
+  `.htpasswd-vast` + `X-Ops-Auth` plumbing): vast.ai rigs w/ expandable
+  miner detail, agent rigs w/ desired-vs-applied + alert badges, sheet
+  assign per-rig/group/bulk, exec queue, group set, rig remove, task/
+  results viewer, catalog + bench view, events feed. Internal only.
+
+**Frontend additions since first draft:**
+- `/api-docs` — full `/public/v1` route reference + curl examples (WS2.9 ✅)
+- Coin luck tile (luck_100/luck_500 aggregates on `/coin/[id]`)
 
 ## Gap analysis vs HeroMiners
 
@@ -44,6 +53,7 @@
 | Coin dropdown nav | ✅ done | — |
 | Dashboard widgets (pool/net hashrate, miners, luck) | ~80 % | effort/luck aggregates, nethash per coin |
 | Miner dashboard (workers, payments, charts) | ~80 % | per-worker hps history depth, worker table polish |
+| Ops/fleet console | ✅ /ops (internal) | agent enrollment, task results done |
 | Worker offline alerts | ✅ account/alert | surface it better in UI |
 | Profit calculator widget | ❌ | public est-earnings endpoint + UI widget |
 | Blocks page w/ luck+maturity | ✅ done | pool avg-effort widget |
@@ -104,15 +114,27 @@
 16. **NiceHash/SMOS adapters** — v1 stratum compat exists; document
     extranonce/diff quirks + SMOS agent packaging.
 
+### WS5 — Ops console (internal `/ops/`, HiveOS-parity)
+*Done 2026-10-29:* console shell, vast rigs + agent rigs tables, flight
+sheet assign (rig/group/bulk), exec queue, group set, rig remove,
+task/results viewer, alert badges, catalog+bench, events feed, X-Ops-Auth.
+17. **Bench seeding form** — POST /agent/bench from UI → unlock profit dry.
+18. **Catalog editor** — add/edit presets in-console (`/agent/catalog`).
+19. **Pool-side worker hps join** — map `miner.pool` worker names to
+    `/public/v1/miner/{w}` data → live rig hashrate column.
+20. **AI-inference tab** — `/api/ai/status` + `/api/inference/*` surface
+    (exists in mockup) as an ops section.
+21. **Alert routing prefs UI** — TG/webhook status + test-fire button.
+
 ## Milestones
 
-- **M1 (this sprint):** WS1.1 calculator (backend est endpoint + widget),
-  WS1.4 per-coin config cards, WS2.9 API docs page, WS2.6 public PPLNS.
+- ~~**M1 (this sprint):**~~ partially landed — WS2.9 api-docs ✅, coin luck
+  tile ✅, /ops console shell ✅. Remaining: WS1.1 calculator, WS2.6 PPLNS.
 - **M2:** WS1.3 miner-page depth + WS2.7 worker history, WS1.2 luck/effort
-  strip, WS2.8 status page.
+  strip, WS2.8 status page, WS5.17 bench form.
 - **M3:** WS3.10 lock-sharding (biggest resilience item), WS3.12 alert
-  coverage, WS4.13/14 fleet alerts+switch live.
-- **M4:** WS1.5 solo docs, WS4.15/16 OC + adapters, OG/SEO polish.
+  coverage, WS4.13/14 fleet alerts+switch live, WS5.18/19.
+- **M4:** WS1.5 solo docs, WS4.15/16 OC + adapters, OG/SEO polish, WS5.20/21.
 
 ## Acceptance criteria
 
@@ -132,6 +154,12 @@
 - EDGE2 ingress `/var/www/pool` via `apps/pool-ui/deploy/deploy-pool.sh`.
 - Fleet CP on zionserver: `vastctl-serve` (alerts) + `vastctl-daemon`
   (`VASTCTL_FLEET_CHECKS=0`).
-- 2026-10-29 incident: pool stopped cleanly 13:30 and left inactive ~15min
-  (no auto-restart) — `Restart=always` gap or intentional ops stop;
-  watchdog coverage for "service inactive" worth adding (WS3).
+- 2026-10-29 incident RESOLVED (mostly): repeated clean `systemctl stop`
+  ~15min cadence traced to an EXTERNAL host — SSH key
+  `zion-edge-post-wipe-2026-07-29` from `109.81.23.46` (operator PC, 674
+  logins/day) + LAN v6. Stale watchdog/deploy loop on an ops machine;
+  EDGE `zion-v31-watchdog.timer` (60s) self-heals each stop. OPEN: find
+  and kill the source process on the operator workstation/LAN box.
+- `/ops/` ingress: EDGE2 pool vhost `location /ops{,-api}/` → auth_basic
+  `.htpasswd-vast` + `X-Ops-Auth: 1` header to vastctl serve :8088
+  (Authorization stripped upstream — basic creds never reach serve).
