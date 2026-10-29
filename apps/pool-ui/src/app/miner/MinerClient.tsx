@@ -189,6 +189,24 @@ export default function MinerClient({
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         <div className="pool-card">
           <p className="kicker mb-3">{t('Výdělky a bilance', 'Earnings & balance')}</p>
+          {/* Payout progress — pending vs min threshold as a bar, the
+              classic "kdy mi to přijde" surface every pro pool shows. */}
+          {m.min_payout != null && m.min_payout > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-[0.68rem] text-white/45">
+                <span>{t('Postup k výplatě', 'Progress to payout')}</span>
+                <span className="font-bold text-white/80">
+                  {Math.min(100, (m.pending / m.min_payout) * 100).toFixed(1)}%
+                </span>
+              </div>
+              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/8">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-rasta-gold/70 to-rasta-gold transition-all duration-700"
+                  style={{ width: `${Math.min(100, (m.pending / m.min_payout) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
           {[
             {
               k: t('Čeká na výplatu', 'Pending payout'),
@@ -196,6 +214,9 @@ export default function MinerClient({
                 ? `${fmtAmount(m.pending, m.unit)} / ${fmtAmount(m.min_payout, m.unit)}`
                 : fmtAmount(m.pending, m.unit),
             },
+            ...(m.immature > 0
+              ? [{ k: t('Nedozrálé', 'Immature'), v: fmtAmount(m.immature, m.unit) }]
+              : []),
             {
               k: t('Výplata za', 'Payout in'),
               v:
@@ -243,7 +264,9 @@ export default function MinerClient({
                 </tr>
               </thead>
               <tbody>
-                {m.workers.map((w) => {
+                {(() => {
+                  const maxHr = Math.max(1, ...m.workers.map((w) => w.hashrate));
+                  return m.workers.map((w) => {
                   const wAcc =
                     w.shares_accepted + w.shares_rejected > 0
                       ? (w.shares_accepted / (w.shares_accepted + w.shares_rejected)) * 100
@@ -259,7 +282,19 @@ export default function MinerClient({
                         </a>
                       </td>
                       <td className="text-dim">{w.algorithm}</td>
-                      <td style={{ color: ACCENT[coin] }}>{fmtHashrate(w.hashrate)}</td>
+                      <td style={{ color: ACCENT[coin] }}>
+                        {fmtHashrate(w.hashrate)}
+                        <div className="mt-1 h-1 w-20 overflow-hidden rounded-full bg-white/8">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${Math.max(3, (w.hashrate / maxHr) * 100)}%`,
+                              background: ACCENT[coin] ?? '#fcd116',
+                              opacity: 0.7,
+                            }}
+                          />
+                        </div>
+                      </td>
                       <td className="text-green">{fmtInt(w.shares_accepted)}</td>
                       <td className={w.shares_rejected > 0 ? 'text-red' : 'text-dim'}>
                         {fmtInt(w.shares_rejected)}
@@ -270,7 +305,8 @@ export default function MinerClient({
                       <td className="text-dim">{fmtAgo(w.last_seen, lang)}</td>
                     </tr>
                   );
-                })}
+                  });
+                })()}
               </tbody>
             </table>
           </div>
