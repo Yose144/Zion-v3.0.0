@@ -2275,6 +2275,16 @@ async fn stratum_session(
             }
         });
         send_line(&mut writer, &login).await?;
+    } else if coin_protocol(coin) == StratumProtocol::EthStratum {
+        // EthStratum pools (HeroMiners ZANO, ethproxy dialect) reject
+        // mining.subscribe outright ("Undefined stratum") and drop the
+        // connection — they expect eth_submitLogin as the only handshake.
+        let auth = json!({
+            "id": 2,
+            "method": "eth_submitLogin",
+            "params": [worker, password]
+        });
+        send_line(&mut writer, &auth).await?;
     } else {
         let subscribe =
             json!({"id": 1, "method": "mining.subscribe", "params": ["zion-miner/3.1.0", null]});

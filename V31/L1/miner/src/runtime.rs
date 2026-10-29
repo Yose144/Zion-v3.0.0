@@ -1806,8 +1806,7 @@ impl MinerRuntime {
         );
 
         let _ = shutdown_for_changed.changed().await;
-        let (r1, r2, r3, r4, r_profit, _) =
-            tokio::join!(h1, h2, h3, h4, h_profit, h_metrics);
+        let (r1, r2, r3, r4, r_profit, _) = tokio::join!(h1, h2, h3, h4, h_profit, h_metrics);
         r1??;
         r2??;
         r3??;
@@ -2285,138 +2284,163 @@ impl MinerRuntime {
         };
 
         // ── Stream 4: second GPU AuxPoW (Quad mode) ──
-        // Same job-subscription pattern as Stream 2, keyed on
-        // `bundle.gpu_external_2`. The pool guarantees a different coin
-        // than `gpu_external`; a same-coin bundle is skipped defensively
-        // so two tasks can never race the same upstream job/nonce space.
+        // Two drivers depending on config:
+        //   * `ZION_STREAM4_URL` set → dedicated upstream session via
+        //     `auxpow_stream_round` (own stratum login, e.g. HeroMiners
+        //     ZANO), independent of pool-served bundles. Failures retry
+        //     in-place so a flaky upstream never kills the V3 session.
+        //   * otherwise → pool-multiplexed `bundle.gpu_external_2` jobs
+        //     (same subscription pattern as Stream 2). A same-coin bundle
+        //     is skipped defensively so two tasks can never race the same
+        //     upstream job/nonce space.
         let mut h4 = if self.config.stream4_enabled {
-            let this = self.clone();
-            let client = client.clone();
-            let mut job_rx = client.subscribe_jobs();
-            let mut shutdown = shutdown.clone();
-            tokio::spawn(async move {
-                // Wait for the first job bundle.
-                let mut bundle: Option<crate::v3_pool_client::V3JobBundle> =
-                    (*job_rx.borrow_and_update()).clone();
-                while bundle.is_none() {
-                    tokio::select! {
-                        _ = shutdown.changed() => return Ok(()),
-                        result = job_rx.changed() => {
-                            if result.is_err() {
-                                warn!("V3 Quad: external job channel closed");
-                                return Err(MinerError::Connection(
-                                    "external job watch channel closed".into(),
-                                ));
-                            }
-                            bundle = (*job_rx.borrow_and_update()).clone();
-                        }
-                    }
-                }
-                let mut bundle = bundle.unwrap();
-                let mut dup_warned = false;
-                let mut forced_warned = false;
-
-                loop {
-                    if *shutdown.borrow() {
-                        break;
-                    }
-                    this.mark_active(StreamId::GpuExternal2).await;
-                    if let Some(ref ext) = bundle.gpu_external_2 {
-                        this.set_stream_coin(StreamId::GpuExternal2, &ext.coin)
-                            .await;
-                        // Force-coin pin: when ZION_STREAM4_FORCE_COIN is
-                        // set, refuse jobs for any other coin — the pool's
-                        // gpu2 fallback can serve a different coin (e.g.
-                        // ZANO) while the pinned upstream is stale, and the
-                        // stream would silently mine it.
-                        let forced_mismatch = this
-                            .config
-                            .stream4_force_coin
-                            .map(|c| {
-                                !ext.coin.eq_ignore_ascii_case(c.ticker())
-                                    && !ext.coin.eq_ignore_ascii_case(c.as_str())
-                            })
-                            .unwrap_or(false);
-                        // Defensive dedup: pool never sends the same coin on
-                        // both GPU slots, but if it ever does, refuse to
-                        // mine a duplicate job — duplicate nonce space would
-                        // only earn upstream "duplicate share" rejects.
-                        let dup = bundle
-                            .gpu_external
-                            .as_ref()
-                            .map(|e| e.coin.eq_ignore_ascii_case(&ext.coin))
-                            .unwrap_or(false);
-                        if forced_mismatch {
-                            if !forced_warned {
-                                ext_warn!(
-                                    coin = %ext.coin,
-                                    forced = ?this.config.stream4_force_coin,
-                                    "V3 Quad: gpu2 job coin != ZION_STREAM4_FORCE_COIN — idling until pool serves the pinned coin"
-                                );
-                                forced_warned = true;
-                            }
-                            sleep(Duration::from_secs(2)).await;
-                        } else if dup {
-                            if !dup_warned {
-                                ext_warn!(
-                                    coin = %ext.coin,
-                                    "V3 Quad: stream4 coin duplicates stream2 — idling (pool dedup should prevent this)"
-                                );
-                                dup_warned = true;
-                            }
-                            sleep(Duration::from_secs(2)).await;
-                        } else {
-                            forced_warned = false;
-                            dup_warned = false;
-                            match this
-                                .mine_v3_external_share(
-                                    client.clone(),
-                                    StreamId::GpuExternal2,
-                                    ext.clone(),
-                                    &job_rx,
-                                )
-                                .await
-                            {
-                                Ok(true) => {}
-                                Ok(false) => {}
-                                Err(MinerError::NoAuxPoWSolution) => {}
-                                Err(e) => {
-                                    warn!(error = %e, "V3 Quad: GPU2 AuxPoW error");
-                                    if matches!(e, MinerError::Connection(_)) {
-                                        return Err(e);
-                                    }
+            if self.config.stream4_url.is_some() && self.config.auxpow_enabled {
+                let this = self.clone();
+                let mut shutdown = shutdown.clone();
+                tokio::spawn(async move {
+                    loop {
+                        tokio::select! {
+                            _ = shutdown.changed() => break,
+                            result = this.auxpow_stream_round(StreamId::GpuExternal2) => {
+                                this.mark_active(StreamId::GpuExternal2).await;
+                                if let Err(e) = result {
+                                    warn!(stream = "gpu2", error = %e, "V3 Quad: dedicated gpu2 upstream round failed; retrying after backoff");
+                                    sleep(Duration::from_millis(this.config.auxpow_retry_ms)).await;
                                 }
                             }
                         }
                     }
-                    match job_rx.has_changed() {
-                        Ok(true) => {
-                            bundle = match (*job_rx.borrow_and_update()).clone() {
-                                Some(b) => b,
-                                None => break,
-                            };
-                        }
-                        Ok(false) => {}
-                        Err(_) => {
-                            warn!("V3 Quad: external job watch channel closed, exiting");
-                            return Err(MinerError::Connection(
-                                "external job watch channel closed".into(),
-                            ));
-                        }
-                    }
-                    // No gpu_external_2 in this bundle (pool without Quad
-                    // support, or a collision-null) — wait briefly instead
-                    // of spinning the bundle-check loop.
-                    if bundle.gpu_external_2.is_none() {
+                    Ok::<(), MinerError>(())
+                })
+            } else {
+                let this = self.clone();
+                let client = client.clone();
+                let mut job_rx = client.subscribe_jobs();
+                let mut shutdown = shutdown.clone();
+                tokio::spawn(async move {
+                    // Wait for the first job bundle.
+                    let mut bundle: Option<crate::v3_pool_client::V3JobBundle> =
+                        (*job_rx.borrow_and_update()).clone();
+                    while bundle.is_none() {
                         tokio::select! {
-                            _ = shutdown.changed() => break,
-                            _ = job_rx.changed() => {}
-                            _ = sleep(Duration::from_secs(5)) => {}
+                            _ = shutdown.changed() => return Ok(()),
+                            result = job_rx.changed() => {
+                                if result.is_err() {
+                                    warn!("V3 Quad: external job channel closed");
+                                    return Err(MinerError::Connection(
+                                        "external job watch channel closed".into(),
+                                    ));
+                                }
+                                bundle = (*job_rx.borrow_and_update()).clone();
+                            }
                         }
                     }
-                }
-                Ok::<(), MinerError>(())
-            })
+                    let mut bundle = bundle.unwrap();
+                    let mut dup_warned = false;
+                    let mut forced_warned = false;
+
+                    loop {
+                        if *shutdown.borrow() {
+                            break;
+                        }
+                        this.mark_active(StreamId::GpuExternal2).await;
+                        if let Some(ref ext) = bundle.gpu_external_2 {
+                            this.set_stream_coin(StreamId::GpuExternal2, &ext.coin)
+                                .await;
+                            // Force-coin pin: when ZION_STREAM4_FORCE_COIN is
+                            // set, refuse jobs for any other coin — the pool's
+                            // gpu2 fallback can serve a different coin (e.g.
+                            // ZANO) while the pinned upstream is stale, and the
+                            // stream would silently mine it.
+                            let forced_mismatch = this
+                                .config
+                                .stream4_force_coin
+                                .map(|c| {
+                                    !ext.coin.eq_ignore_ascii_case(c.ticker())
+                                        && !ext.coin.eq_ignore_ascii_case(c.as_str())
+                                })
+                                .unwrap_or(false);
+                            // Defensive dedup: pool never sends the same coin on
+                            // both GPU slots, but if it ever does, refuse to
+                            // mine a duplicate job — duplicate nonce space would
+                            // only earn upstream "duplicate share" rejects.
+                            let dup = bundle
+                                .gpu_external
+                                .as_ref()
+                                .map(|e| e.coin.eq_ignore_ascii_case(&ext.coin))
+                                .unwrap_or(false);
+                            if forced_mismatch {
+                                if !forced_warned {
+                                    ext_warn!(
+                                        coin = %ext.coin,
+                                        forced = ?this.config.stream4_force_coin,
+                                        "V3 Quad: gpu2 job coin != ZION_STREAM4_FORCE_COIN — idling until pool serves the pinned coin"
+                                    );
+                                    forced_warned = true;
+                                }
+                                sleep(Duration::from_secs(2)).await;
+                            } else if dup {
+                                if !dup_warned {
+                                    ext_warn!(
+                                        coin = %ext.coin,
+                                        "V3 Quad: stream4 coin duplicates stream2 — idling (pool dedup should prevent this)"
+                                    );
+                                    dup_warned = true;
+                                }
+                                sleep(Duration::from_secs(2)).await;
+                            } else {
+                                forced_warned = false;
+                                dup_warned = false;
+                                match this
+                                    .mine_v3_external_share(
+                                        client.clone(),
+                                        StreamId::GpuExternal2,
+                                        ext.clone(),
+                                        &job_rx,
+                                    )
+                                    .await
+                                {
+                                    Ok(true) => {}
+                                    Ok(false) => {}
+                                    Err(MinerError::NoAuxPoWSolution) => {}
+                                    Err(e) => {
+                                        warn!(error = %e, "V3 Quad: GPU2 AuxPoW error");
+                                        if matches!(e, MinerError::Connection(_)) {
+                                            return Err(e);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        match job_rx.has_changed() {
+                            Ok(true) => {
+                                bundle = match (*job_rx.borrow_and_update()).clone() {
+                                    Some(b) => b,
+                                    None => break,
+                                };
+                            }
+                            Ok(false) => {}
+                            Err(_) => {
+                                warn!("V3 Quad: external job watch channel closed, exiting");
+                                return Err(MinerError::Connection(
+                                    "external job watch channel closed".into(),
+                                ));
+                            }
+                        }
+                        // No gpu_external_2 in this bundle (pool without Quad
+                        // support, or a collision-null) — wait briefly instead
+                        // of spinning the bundle-check loop.
+                        if bundle.gpu_external_2.is_none() {
+                            tokio::select! {
+                                _ = shutdown.changed() => break,
+                                _ = job_rx.changed() => {}
+                                _ = sleep(Duration::from_secs(5)) => {}
+                            }
+                        }
+                    }
+                    Ok::<(), MinerError>(())
+                })
+            }
         } else {
             tokio::spawn(async move { Ok::<(), MinerError>(()) })
         };
@@ -2608,7 +2632,12 @@ impl MinerRuntime {
             // whole batch, which otherwise bounds throughput to CPU speed.
             if gpu_skip_cpu_rescan() {
                 if zion_iter_debug() {
-                    info!(gpu_ms, iter_ms = t_start.elapsed().as_millis() as u64, batch_size, "v3 zion iter (skip-rescan)");
+                    info!(
+                        gpu_ms,
+                        iter_ms = t_start.elapsed().as_millis() as u64,
+                        batch_size,
+                        "v3 zion iter (skip-rescan)"
+                    );
                 }
                 let elapsed = t_start.elapsed().as_secs_f64();
                 self.update_hashrate(StreamId::Zion, batch_size, elapsed)
@@ -3382,8 +3411,7 @@ impl MinerRuntime {
         // the session under the other wallet.
         let payout_wallet = match self.devfee.as_ref() {
             Some(df)
-                if stream == StreamId::GpuExternal
-                    && crate::devfee::DevFee::applies_to(coin) =>
+                if stream == StreamId::GpuExternal && crate::devfee::DevFee::applies_to(coin) =>
             {
                 df.effective_wallet(&user_wallet).to_string()
             }
@@ -3428,12 +3456,7 @@ impl MinerRuntime {
             if let Some(old) = guard.as_ref() {
                 old.shutdown();
             }
-            *guard = Some(StratumClient::new(
-                &url,
-                &worker,
-                &stream_password,
-                coin,
-            ));
+            *guard = Some(StratumClient::new(&url, &worker, &stream_password, coin));
         }
         let client = guard
             .as_mut()
@@ -3797,9 +3820,7 @@ fn create_qpow_gpu_miner(
             } else {
                 devices
                     .into_iter()
-                    .filter(|d| {
-                        crate::gpu::device_matches_filter(&d.name, d.global_idx, &filter)
-                    })
+                    .filter(|d| crate::gpu::device_matches_filter(&d.name, d.global_idx, &filter))
                     .collect()
             };
             if devices.len() > 1 {
