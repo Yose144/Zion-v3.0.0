@@ -188,12 +188,14 @@ task/results viewer, alert badges, catalog+bench, events feed, X-Ops-Auth.
 - EDGE2 ingress `/var/www/pool` via `apps/pool-ui/deploy/deploy-pool.sh`.
 - Fleet CP on zionserver: `vastctl-serve` (alerts) + `vastctl-daemon`
   (`VASTCTL_FLEET_CHECKS=0`).
-- 2026-10-29 incident RESOLVED (mostly): repeated clean `systemctl stop`
-  ~15min cadence traced to an EXTERNAL host — SSH key
-  `zion-edge-post-wipe-2026-07-29` from `109.81.23.46` (operator PC, 674
-  logins/day) + LAN v6. Stale watchdog/deploy loop on an ops machine;
-  EDGE `zion-v31-watchdog.timer` (60s) self-heals each stop. OPEN: find
-  and kill the source process on the operator workstation/LAN box.
+- 2026-10-29 incident RESOLVED: repeated clean `systemctl stop` cadence
+  attributed fully — (a) real `/stats` wedges of the pre-M3 `6fae7b60d`
+  build self-healed by EDGE `zion-v31-watchdog`, (b) deploy-iteration
+  restarts (each Stopping followed by Started + build id), (c) a handful
+  of overnight manual restarts. **No external stop-loop exists**: the
+  `109.81.23.46` login correlation was an artifact of `vastctl-daemon`'s
+  legit 60 s status push (2 ssh ops/cycle — scp+mv). Full evidence:
+  `docs/3.2/REPORTS/REPORT_2026-10-29_POOL_RESTART_ATTRIBUTION.md`.
 - `/ops/` ingress: EDGE2 pool vhost `location /ops{,-api}/` → auth_basic
   `.htpasswd-vast` + `X-Ops-Auth: 1` header to vastctl serve :8088
   (Authorization stripped upstream — basic creds never reach serve).
