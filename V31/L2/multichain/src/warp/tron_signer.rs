@@ -45,7 +45,7 @@ use sha3::Keccak256;
 /// 4. Base58check encode (SHA256d checksum)
 pub fn tron_address_from_key(key: &SigningKey) -> String {
     let vk = key.verifying_key();
-    let ep = vk.to_encoded_point(false); // uncompressed
+    let ep = vk.to_sec1_point(false); // uncompressed
     let raw = ep.as_bytes(); // 65 bytes: 04 || x || y
     let mut h = Keccak256::new();
     h.update(&raw[1..]); // drop 0x04
@@ -152,12 +152,7 @@ pub fn tron_sign_txid(key: &SigningKey, txid_hex: &str) -> WarpResult<String> {
         });
     }
 
-    let (sig, recid) =
-        key.sign_prehash_recoverable(&txid_bytes)
-            .map_err(|e| WarpError::AdapterError {
-                chain: "tron".into(),
-                reason: format!("secp256k1 sign: {}", e),
-            })?;
+    let (sig, recid) = key.sign_prehash_recoverable(&txid_bytes);
 
     let mut out = [0u8; 65];
     out[..64].copy_from_slice(&sig.to_bytes());
