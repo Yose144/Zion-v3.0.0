@@ -2498,6 +2498,11 @@ def agent_fleet():
                 "pending": sum(1 for t in rig["tasks"]
                                if t["state"] in {"pending", "delivered"}),
                 "results": len(rig["results"]),
+                "tasks_tail": [{"id": t["id"], "op": t["op"],
+                                "state": t["state"], "ts": t["ts"]}
+                               for t in rig["tasks"][-5:]],
+                "results_tail": [{**r, "out": (r.get("out") or "")[-1500:]}
+                                 for r in rig["results"][-3:]],
                 "offline_alert": bool(rig.get("alerted_offline")),
                 "miner_alert": rig.get("alerted_miner"),
                 "temp_alerts": sorted(k for k, v in

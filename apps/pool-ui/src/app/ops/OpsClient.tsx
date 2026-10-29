@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useLang } from '@/lib/i18n';
 
 const REFRESH_MS = 10_000;
@@ -48,6 +48,8 @@ interface AgentRig {
   gpus?: { name?: string; temp?: number | string; util?: number | string; power?: number | string }[];
   pending?: number;
   results?: number;
+  tasks_tail?: { id: string; op: string; state: string; ts: number }[];
+  results_tail?: { task_id: string; rc: number; out: string; ts: number }[];
   offline_alert?: boolean;
   miner_alert?: string | null;
   temp_alerts?: string[];
@@ -140,6 +142,7 @@ export default function OpsClient() {
   const [unauth, setUnauth] = useState(false);
   const [tick, setTick] = useState(0);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
   const [assignMsg, setAssignMsg] = useState('');
 
   const postOps = async (path: string, payload: unknown) => {
@@ -323,9 +326,10 @@ export default function OpsClient() {
                   ? (a.desired.hash === a.applied_sheet ? '✓' : '⟳ pending')
                   : '—';
                 return (
-                  <tr key={a.rig_id}>
+                  <Fragment key={a.rig_id}>
+                    <tr onClick={() => setExpandedAgent(expandedAgent === a.rig_id ? null : a.rig_id)} style={{ cursor: 'pointer' }}>
                     <td>
-                      <b>{a.hostname ?? a.rig_id}</b>
+                      <b>{a.hostname ?? a.rig_id}</b> <span className="text-muted">{expandedAgent === a.rig_id ? '▾' : '▸'}</span>
                       {a.group && <span className="text-muted"> · {a.group}</span>}
                       {(a.pending ?? 0) > 0 && <span className="text-muted"> · ⧗{a.pending}</span>}
                       {badges.length > 0 && <div style={{ color: 'var(--bad, #ff6b6b)', fontSize: '.72rem' }}>⚠ {badges.join(' ')}</div>}
@@ -335,7 +339,7 @@ export default function OpsClient() {
                     <td>{a.age_s != null ? fmtAge(a.last_seen) : '—'}<br /><span className="text-muted" style={{ fontSize: '.72rem' }}>{a.load1 != null ? `load ${a.load1}` : ''}</span></td>
                     <td>{(a.gpus ?? []).map((g) => `${g.name ?? '?'} ${g.temp ?? ''}°`).join(', ') || '—'}</td>
                     <td>{(a.miners ?? []).join(', ') || '—'}</td>
-                    <td>
+                    <td onClick={(e) => e.stopPropagation()}>
                       <SheetPicker target={{ rig_id: a.rig_id }} />
                       <div style={{ marginTop: '.3rem', display: 'flex', gap: '.3rem' }}>
                         <button onClick={() => {
@@ -348,7 +352,7 @@ export default function OpsClient() {
                         }} className="ops-mini-btn ops-mini-danger">{t(lang, 'removeRig')}</button>
                       </div>
                     </td>
-                    <td>
+                    <td onClick={(e) => e.stopPropagation()}>
                       <input
                         placeholder={t(lang, 'execPh')}
                         className="ops-exec-input"
@@ -363,7 +367,32 @@ export default function OpsClient() {
                         }}
                       />
                     </td>
-                  </tr>
+                    </tr>
+                    {expandedAgent === a.rig_id && (
+                      <tr>
+                        <td colSpan={8} style={{ fontFamily: 'monospace', fontSize: '.75rem', background: 'rgba(255,255,255,.02)' }}>
+                          {(a.tasks_tail ?? []).length > 0 && (
+                            <div style={{ padding: '.2rem 0' }}>
+                              {(a.tasks_tail ?? []).map((tk) => (
+                                <div key={tk.id}>
+                                  <span className="text-muted">{new Date(tk.ts * 1000).toLocaleTimeString()}</span>{' '}
+                                  <b>{tk.id}</b> {tk.op} → <i style={{ color: tk.state === 'done' ? 'var(--good, #3ddc84)' : tk.state === 'failed' ? 'var(--bad, #ff6b6b)' : undefined }}>{tk.state}</i>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {(a.results_tail ?? []).map((r, i) => (
+                            <div key={i} style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '.3rem 0' }}>
+                              <b>{r.task_id}</b> rc=<span style={{ color: r.rc === 0 ? 'var(--good, #3ddc84)' : 'var(--bad, #ff6b6b)' }}>{r.rc}</span>{' '}
+                              <span className="text-muted">{new Date(r.ts * 1000).toLocaleString()}</span>
+                              {r.out && <pre style={{ margin: '.2rem 0 0', whiteSpace: 'pre-wrap', fontSize: '.72rem', color: 'rgba(255,255,255,.6)', maxHeight: '8rem', overflowY: 'auto' }}>{r.out}</pre>}
+                            </div>
+                          ))}
+                          {!(a.tasks_tail?.length || a.results_tail?.length) && <span className="text-muted">no tasks yet — use exec →</span>}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
               {Object.entries(groups).map(([g, s]) => (
@@ -397,7 +426,14 @@ export default function OpsClient() {
                 </tr>
               )}
               {agents.length === 0 && Object.keys(groups).length === 0 && (
-                <tr><td colSpan={8} className="text-muted" style={{ textAlign: 'center', padding: '1.25rem' }}>{t(lang, 'noAgents')}</td></tr>
+                <tr>
+                  <td colSpan={8} className="text-muted" style={{ textAlign: 'center', padding: '1.25rem' }}>
+                    {t(lang, 'noAgents')}
+                    <div style={{ fontFamily: 'monospace', fontSize: '.75rem', marginTop: '.5rem', color: 'rgba(255,255,255,.5)' }}>
+                      bash infra/tools/vast/bootstrap-agent.sh &lt;instance-id&gt;
+                    </div>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
