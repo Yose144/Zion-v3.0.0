@@ -72,6 +72,47 @@ export default function BlocksPage() {
         </div>
       </header>
 
+      {/* Luck trend — last blocks' luck% as colored bars (>100% = lucky) */}
+      {(() => {
+        const lucky = rows.filter((b) => b.luck_pct != null).slice(0, 40).reverse();
+        if (lucky.length < 3) return null;
+        const max = Math.max(...lucky.map((b) => b.luck_pct ?? 0), 200);
+        return (
+          <div className="pool-card card-glow mt-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white/70">
+                {t('luck trend — posledních', 'luck trend — last')} {lucky.length} {t('bloků', 'blocks')}
+              </h3>
+              <span className="text-[0.65rem] text-white/35">
+                {t('>100 % štěstí · <100 % smůla', '>100% lucky · <100% unlucky')}
+              </span>
+            </div>
+            <div className="relative flex h-16 items-end gap-[2px]">
+              {/* 100% reference line */}
+              <div
+                className="pointer-events-none absolute inset-x-0 border-t border-dashed border-white/20"
+                style={{ bottom: `${(100 / max) * 100}%` }}
+              />
+              {lucky.map((b, i) => {
+                const l = b.luck_pct ?? 0;
+                return (
+                  <div
+                    key={i}
+                    className={`flex-1 rounded-t-[2px] transition-opacity hover:opacity-80 ${
+                      l >= 100
+                        ? 'bg-gradient-to-t from-rasta-green/30 to-rasta-green/80'
+                        : 'bg-gradient-to-t from-rasta-red/25 to-rasta-red/70'
+                    }`}
+                    style={{ height: `${Math.max(4, (l / max) * 100)}%` }}
+                    title={`#${fmtInt(b.height)}: ${Math.round(l)}% — ${fmtAgo(b.ts, lang)}`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="pool-card mt-6 overflow-x-auto">
         <table className="pool-table">
           <thead>

@@ -80,15 +80,16 @@ export async function fetchMarketPrices(): Promise<Record<string, MarketPrice>> 
   }
 }
 
-/** 24h USD price history from CoinGecko market_chart (hourly points).
- *  Returns [] on rate-limit/error — callers degrade to client-accumulated
- *  series or hide the chart. */
+/** USD price history from CoinGecko market_chart (hourly points for
+ *  days<=90). Returns [] on rate-limit/error — callers degrade to
+ *  client-accumulated series or hide the chart. */
 export async function fetchPriceHistory(
   cgId: string,
+  days = 1,
 ): Promise<{ ts: number; usd: number }[]> {
   try {
     const res = await fetch(
-      `https://api.coingecko.com/api/v3/coins/${cgId}/market_chart?vs_currency=usd&days=1`,
+      `https://api.coingecko.com/api/v3/coins/${cgId}/market_chart?vs_currency=usd&days=${days}`,
       { signal: AbortSignal.timeout(10000), cache: 'no-store' },
     );
     if (!res.ok) return [];

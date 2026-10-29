@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Blocks, Boxes, CircleDollarSign, Clock, Gauge, Pickaxe, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import AreaChart, { type SeriesPoint } from '@/components/AreaChart';
+import RangeTabs from '@/components/RangeTabs';
 import CoinCard from '@/components/CoinCard';
 import CoinLogo from '@/components/CoinLogo';
 import MinerSearch from '@/components/MinerSearch';
@@ -26,6 +27,8 @@ export default function HomePage() {
   const [blockCount, setBlockCount] = useState<number | null>(null);
   const [blocks, setBlocks] = useState<BlockRow[]>([]);
   const [hrHistory, setHrHistory] = useState<SeriesPoint[]>([]);
+  const [hrRange, setHrRange] = useState(24);
+  const nowS = Math.floor(Date.now() / 1000);
   const [price, setPrice] = useState<ZionPrice | null>(null);
   const [markets, setMarkets] = useState<Record<string, MarketPrice>>({});
 
@@ -172,14 +175,17 @@ export default function HomePage() {
             <div className="mb-2 flex items-center justify-between px-1">
               <span className="kicker flex items-center gap-1.5">
                 <TrendingUp size={11} className="text-rasta-gold" />
-                {t('pool hashrate · 24 h', 'pool hashrate · 24 h')}
+                {t('pool hashrate', 'pool hashrate')}
               </span>
-              <span className="stat-value text-xs text-white/50">
-                {fmtHashrate(totalHps)}
+              <span className="flex items-center gap-2">
+                <span className="stat-value text-xs text-white/50">
+                  {fmtHashrate(totalHps)}
+                </span>
+                <RangeTabs value={hrRange} onChange={setHrRange} />
               </span>
             </div>
             <AreaChart
-              data={hrHistory}
+              data={hrHistory.filter((p) => p.t >= nowS - hrRange * 3600)}
               color="#fcd116"
               height={90}
               fmt={(v) => fmtHashrate(v)}
@@ -336,9 +342,13 @@ export default function HomePage() {
                           <span className="inline-flex items-center gap-2.5">
                             <CoinLogo logo={c.logo} ticker={c.ticker} accent={c.accent} size={26} />
                             <span>
-                              <span className="font-bold" style={{ color: ACCENT[c.accent] }}>
+                              <a
+                                href={`/coin/${c.id}/`}
+                                className="font-bold transition-opacity hover:opacity-75"
+                                style={{ color: ACCENT[c.accent] }}
+                              >
                                 {c.ticker}
-                              </span>{' '}
+                              </a>{' '}
                               <span className="text-white/40">{c.name}</span>
                             </span>
                           </span>

@@ -83,10 +83,17 @@ export default function CoinCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2.5">
-            <CoinLogo logo={coin.logo} ticker={coin.ticker} accent={coin.accent} size={38} />
+            <a href={`/coin/${coin.id}/`} className="transition-opacity hover:opacity-80">
+              <CoinLogo logo={coin.logo} ticker={coin.ticker} accent={coin.accent} size={38} />
+            </a>
             <div className="min-w-0">
               <div className="flex items-baseline gap-2">
-                <span className="text-xl font-black text-white">{coin.ticker}</span>
+                <a
+                  href={`/coin/${coin.id}/`}
+                  className="text-xl font-black text-white transition-colors hover:text-rasta-gold"
+                >
+                  {coin.ticker}
+                </a>
                 <span className="truncate text-xs text-white/40">{coin.name}</span>
               </div>
               <p className="mt-0.5 text-[0.72rem] text-white/45">{coin.algorithm}</p>

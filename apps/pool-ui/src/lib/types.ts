@@ -38,6 +38,8 @@ export interface CoinInfo {
 
 export interface CoinStats {
   coin: CoinId;
+  /** ZION paid out for this coin in the last 24h (whole ZION units). */
+  payouts_24h_zion?: number | null;
   hashrate: number;        // H/s pool-side estimate
   miners_online: number;
   workers_online: number;

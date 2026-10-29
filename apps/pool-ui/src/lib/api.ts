@@ -145,6 +145,9 @@ interface ApiCoinStats {
   /** Expected-hash difficulty of the currently served job (pool ≥3.2.0);
    *  the "diff" miners work against — upstream pools set it per job. */
   served_difficulty?: number;
+  /** ZION flowers paid out for this coin in the last 24h — the signal the
+   *  pool's own est_daily model uses (pool ≥3.2.0-calculator). */
+  payouts_24h?: string;
 }
 
 function toCoinStats(coin: CoinId, s: ApiCoinStats): CoinStats {
@@ -159,7 +162,14 @@ function toCoinStats(coin: CoinId, s: ApiCoinStats): CoinStats {
     blocks_24h: 0,
     luck_pct: null,
     shares_1h: s.shares,
+    payouts_24h_zion: s.payouts_24h != null ? Number(s.payouts_24h) / FLOWERS : null,
   };
+}
+
+/** History endpoints key their per-coin series by pool ticker ('qtu'),
+ *  not the UI id ('qtc') — the same mapping fetch paths already use. */
+export function poolCoinKey(id: CoinId | string): string {
+  return POOL_COIN[id as CoinId] ?? id;
 }
 
 interface ApiBlock {
