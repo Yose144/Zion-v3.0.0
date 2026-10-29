@@ -2284,8 +2284,17 @@ impl PoolApi {
         // BEFORE the pool mutex so a slow leg read can never wedge share
         // processing (the leg_inputs/detached pattern used elsewhere).
         let served_diff = self.served_share_difficulty(&coin);
-        let pool = self.pool.lock().expect("pool lock poisoned");
+        // 24h paid volume for this coin (ZION flowers) — the same signal the
+        // per-miner `est_daily` uses; the UI calculator turns it into a
+        // per-hashrate earnings estimate without inventing its own model.
+        // Store query runs before the pool mutex so sqlite IO can never
+        // wedge share processing.
         let now_s = now_unix_seconds();
+        let payouts_24h = self
+            .share_store
+            .as_ref()
+            .and_then(|s| s.payouts_amount_sum_since(&coin, (now_s - 86_400) as i64).ok());
+        let pool = self.pool.lock().expect("pool lock poisoned");
         let reg = pool.telemetry.lock().expect("telemetry lock poisoned");
 
         // Aggregate the per-miner coin streams: a miner counts as online
@@ -2357,6 +2366,9 @@ impl PoolApi {
         });
         if let Some(d) = served_diff {
             out["served_difficulty"] = json!(d);
+        }
+        if let Some(sum) = payouts_24h {
+            out["payouts_24h"] = json!(sum.to_string());
         }
         if coin == "zion" {
             out["blocks"] = self.block_tracker_json();
