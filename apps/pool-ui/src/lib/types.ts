@@ -144,7 +144,11 @@ export interface TopMinerRow {
   invalid_shares: number;
   blocks_found: number;
   last_seen_s: number;
-  streams?: Record<string, { hps_live?: number; accept_rate?: number; valid_shares?: number }>;
+  /** Dominant stream rate + its coin — cross-algo rates aren't summable,
+   *  so the leaderboard ranks by the miner's strongest stream. */
+  display_hps?: number;
+  display_coin?: string;
+  streams?: Record<string, { hps_live?: number; hps_1h?: number; accept_rate?: number; valid_shares?: number }>;
 }
 
 export interface PoolOverview {

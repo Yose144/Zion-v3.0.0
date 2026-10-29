@@ -2154,13 +2154,6 @@ impl PoolApi {
     fn build_public_miners_payload(&self, limit: usize) -> String {
         let limit = limit.min(100);
         let (count, mut miners) = self.collect_miners_json(limit);
-        miners.sort_by(|a, b| {
-            b["hashrate_hps"]
-                .as_f64()
-                .unwrap_or(0.0)
-                .partial_cmp(&a["hashrate_hps"].as_f64().unwrap_or(0.0))
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
         for m in &mut miners {
             let obj = m.as_object_mut().unwrap();
             if let Some(addr) = obj.get("address").and_then(|v| v.as_str()) {
@@ -2169,10 +2162,35 @@ impl PoolApi {
             if let Some(w) = obj.get("worker").and_then(|v| v.as_str()) {
                 obj.insert("worker".into(), json!(mask_worker_wallet(w)));
             }
+            // `hashrate_hps` counts native ZION job samples only, so
+            // external-only miners (PRL/QTU rigs) sort at 0 despite real
+            // work. Promote the dominant coin stream as display fields —
+            // cross-algo rates are not summable, the leaderboard shows the
+            // strongest stream and its coin label instead.
+            let mut dom_hps = obj["hashrate_hps"].as_f64().unwrap_or(0.0);
+            let mut dom_coin = "zion".to_string();
+            if let Some(streams) = obj.get("streams").and_then(|v| v.as_object()) {
+                for (stream, st) in streams {
+                    let h = st["hps_live"].as_f64().unwrap_or(0.0);
+                    if h > dom_hps {
+                        dom_hps = h;
+                        dom_coin = stream.clone();
+                    }
+                }
+            }
+            obj.insert("display_hps".into(), json!(dom_hps));
+            obj.insert("display_coin".into(), json!(dom_coin));
             obj.remove("paid_total_atomic");
             obj.remove("first_seen_s");
             obj.remove("zis_user");
         }
+        miners.sort_by(|a, b| {
+            b["display_hps"]
+                .as_f64()
+                .unwrap_or(0.0)
+                .partial_cmp(&a["display_hps"].as_f64().unwrap_or(0.0))
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         json!({
             "ok": true,
             "count": count,

@@ -64,15 +64,22 @@ export default function TopMiners({ limit = 10 }: { limit?: number }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((m, i) => (
+          {rows.map((m, i) => {
+            const dom = m.display_coin;
+            const domStream = dom ? m.streams?.[dom] : undefined;
+            const hr1h = domStream?.hps_1h ?? m.hashrate_1h_hps ?? 0;
+            return (
             <tr key={m.worker + i}>
               <td className={`font-bold ${MEDAL[i] ?? 'text-white/30'}`}>{i + 1}</td>
               <td className="font-mono text-[0.78rem] text-white/85">{m.worker}</td>
               <td className="text-[0.7rem] text-white/45">{coins(m) || '—'}</td>
               <td className="text-right font-bold text-rasta-gold">
-                {fmtHashrate(m.hashrate_hps ?? 0)}
+                {fmtHashrate(m.display_hps ?? m.hashrate_hps ?? 0)}
+                {dom && dom !== 'zion' && (
+                  <span className="ml-1 text-[0.6rem] font-normal text-white/40">{dom.toUpperCase()}</span>
+                )}
               </td>
-              <td className="text-right text-white/60">{fmtHashrate(m.hashrate_1h_hps ?? 0)}</td>
+              <td className="text-right text-white/60">{fmtHashrate(hr1h)}</td>
               <td className="text-right text-white/45">{fmtHashrate(m.hashrate_24h_hps ?? 0)}</td>
               <td className="text-right text-white/60">{fmtInt(m.valid_shares ?? 0)}</td>
               <td className="text-right text-white/60">{m.blocks_found ? fmtInt(m.blocks_found) : '—'}</td>
@@ -80,7 +87,8 @@ export default function TopMiners({ limit = 10 }: { limit?: number }) {
                 {m.last_seen_s ? fmtAgo(m.last_seen_s, lang) : '—'}
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
