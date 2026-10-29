@@ -741,38 +741,53 @@ async fn main() -> anyhow::Result<()> {
             drain_grace_ms
         );
         let _ = shutdown_tx.send(true);
-        tokio::time::sleep(Duration::from_millis(drain_grace_ms)).await;
+        // The rest of the drain MUST NOT run on the tokio runtime: stratum
+        // session tasks take a synchronous `pool.lock()` directly on worker
+        // threads, so under a submit storm every worker can be parked in a
+        // lock() wait — a timer-driven sleep/timeout here would then never
+        // be polled again and systemd SIGKILLs at TimeoutStopSec (seen live
+        // 2026-10-29: 30s of drain silence → SIGKILL, 3×). A dedicated OS
+        // thread is immune — it owns grace → bounded flush → process exit.
         let pool2 = Arc::clone(&drain_pool);
-        // Bound the final flush: `pool.lock()` can starve for minutes under
-        // a submit-storm convoy (2026-10-28 wedge pattern — drain hung in
-        // lock() until systemd SIGKILL). The 30s periodic flush keeps state
-        // within seconds of durable, so a stuck save must never hold exit.
-        let flush = tokio::task::spawn_blocking(move || {
-            if let Ok(mut p) = pool2.lock() {
-                match p.save() {
-                    Ok(true) => info!("drain: final pplns flush persisted"),
-                    Ok(false) => info!("drain: pplns state already clean"),
-                    Err(e) => warn!("drain: final pplns flush failed: {}", e),
+        let _ = std::thread::Builder::new()
+            .name("drain".into())
+            .spawn(move || {
+                std::thread::sleep(Duration::from_millis(drain_grace_ms));
+                // Bound the final flush: `pool.lock()` can starve for
+                // minutes under a submit-storm convoy (2026-10-28 wedge
+                // pattern). The 30s periodic flush keeps state within
+                // seconds of durable, so a stuck save must never hold exit.
+                let (tx, rx) = std::sync::mpsc::channel::<()>();
+                let flush_pool = Arc::clone(&pool2);
+                let _ = std::thread::Builder::new()
+                    .name("drain-flush".into())
+                    .spawn(move || {
+                        if let Ok(mut p) = flush_pool.lock() {
+                            match p.save() {
+                                Ok(true) => info!("drain: final pplns flush persisted"),
+                                Ok(false) => info!("drain: pplns state already clean"),
+                                Err(e) => warn!("drain: final pplns flush failed: {}", e),
+                            }
+                        }
+                        // Final counter flush — survives the process exit below.
+                        if let (Some(store), Ok(t)) = (drain_store, drain_tracker.lock()) {
+                            let _ = store.set_state(
+                                "shares_since_last_block",
+                                t.shares_since_last_block(),
+                            );
+                        }
+                        let _ = tx.send(());
+                    });
+                if rx.recv_timeout(Duration::from_secs(5)).is_err() {
+                    warn!("drain: final flush exceeded 5s — exiting on periodic state");
                 }
-            }
-            // Final counter flush — survives the process exit below.
-            if let (Some(store), Ok(t)) = (drain_store, drain_tracker.lock()) {
-                let _ = store.set_state("shares_since_last_block", t.shares_since_last_block());
-            }
-        });
-        if tokio::time::timeout(Duration::from_secs(5), flush)
-            .await
-            .is_err()
-        {
-            warn!("drain: final flush exceeded 5s — exiting on periodic state");
-        }
-        info!("drain: complete — exiting");
-        // The drain task owns process exit: runtime teardown waits on
-        // detached blocking tasks (the std-blocking API listener) until
-        // TimeoutStopSec SIGKILLs — process::exit skips that entirely;
-        // all durable state is already on disk.
-        tokio::time::sleep(Duration::from_millis(50)).await;
-        std::process::exit(0);
+                info!("drain: complete — exiting");
+                // The drain thread owns process exit: runtime teardown waits
+                // on detached blocking tasks (the std-blocking API listener)
+                // until TimeoutStopSec SIGKILLs — process::exit skips that
+                // entirely; all durable state is already on disk.
+                std::process::exit(0);
+            });
     });
 
     tokio::select! {
