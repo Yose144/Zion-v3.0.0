@@ -333,8 +333,12 @@ const t = {
     shippingFree: { cs: 'Zdarma', en: 'Free' },
     shippingPrice: { cs: '{price} {symbol}', en: '{price} {symbol}' },
     pickupNote: {
-      cs: 'Zásilkovna widget bude dostupný v další verzi. Pro tuto objednávku budeme kontaktovat zákazníka ohledně výdejního místa.',
-      en: 'Zásilkovna widget will be available in a future version. For this order we will contact the customer about the pickup point.',
+      cs: 'Zadejte výdejní místo Zásilkovny (město + název / adresa). Interaktivní mapa Packeta přijde v další verzi.',
+      en: 'Enter a Zásilkovna pickup point (city + name / address). Interactive Packeta map comes in a later version.',
+    },
+    placeholderPickup: {
+      cs: 'Výdejní místo Zásilkovna *',
+      en: 'Zásilkovna pickup point *',
     },
     sectionCustomer: { cs: 'Kontaktní údaje', en: 'Contact details' },
     placeholderName: { cs: 'Jméno a příjmení *', en: 'Full name *' },
@@ -722,6 +726,7 @@ const t = {
     gdpr: { cs: 'GDPR', en: 'GDPR' },
     about: { cs: 'O nás', en: 'About' },
     guide: { cs: 'Nákupní řád', en: 'Shopping Guide' },
+    claims: { cs: 'Reklamace', en: 'Claims' },
     faq: { cs: 'FAQ', en: 'FAQ' },
   },
 

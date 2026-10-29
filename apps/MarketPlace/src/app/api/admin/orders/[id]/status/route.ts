@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdminAuth } from '@/lib/admin-guard';
+import { sendPaymentConfirmation, sendShippingNotification } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +23,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
       paymentStatus?: string;
       note?: string;
     };
+
+    const before = await prisma.shopOrder.findFirst({
+      where: { OR: [{ id }, { orderId: id }] },
+    });
+    if (!before) {
+      return NextResponse.json(
+        { success: false, error: 'Order not found' },
+        { status: 404 }
+      );
+    }
 
     const update: Record<string, unknown> = {};
     if (body.status) {
@@ -68,6 +79,65 @@ export async function POST(request: NextRequest, context: RouteContext) {
       where: { OR: [{ id }, { orderId: id }] },
       include: { invoices: true },
     });
+
+    // Bank-transfer soft-launch: admin "mark paid" must notify customer (V2 parity).
+    const becamePaid =
+      updated &&
+      updated.paymentStatus === 'paid' &&
+      before.paymentStatus !== 'paid';
+    if (becamePaid) {
+      void sendPaymentConfirmation({
+        orderId: updated.orderId,
+        customerName: updated.customerName,
+        customerEmail: updated.customerEmail,
+        customerPhone: updated.customerPhone,
+        shipping: updated.shipping,
+        payment: updated.payment,
+        totalCzk: updated.totalCzk,
+        shippingCzk: updated.shippingCzk,
+        items: updated.items,
+        addressStreet: updated.addressStreet,
+        addressCity: updated.addressCity,
+        addressZip: updated.addressZip,
+        pickupPoint: updated.pickupPoint,
+        note: updated.note,
+        zionTokens: updated.zionTokens,
+        trackingNumber: updated.trackingNumber,
+        status: updated.status,
+        paymentStatus: updated.paymentStatus,
+        customerWalletAddress: updated.customerWalletAddress,
+        customerWalletId: updated.orderId,
+      }).catch((err) => console.error('mark-paid email failed:', err));
+    }
+
+    // Status → shipped without separate shipping API still notifies when possible.
+    const becameShipped =
+      updated &&
+      updated.status === 'shipped' &&
+      before.status !== 'shipped' &&
+      Boolean(updated.trackingNumber);
+    if (becameShipped && updated) {
+      void sendShippingNotification({
+        orderId: updated.orderId,
+        customerName: updated.customerName,
+        customerEmail: updated.customerEmail,
+        customerPhone: updated.customerPhone,
+        shipping: updated.shipping,
+        payment: updated.payment,
+        totalCzk: updated.totalCzk,
+        shippingCzk: updated.shippingCzk,
+        items: updated.items,
+        addressStreet: updated.addressStreet,
+        addressCity: updated.addressCity,
+        addressZip: updated.addressZip,
+        pickupPoint: updated.pickupPoint,
+        note: updated.note,
+        zionTokens: updated.zionTokens,
+        trackingNumber: updated.trackingNumber,
+        status: updated.status,
+        paymentStatus: updated.paymentStatus,
+      }).catch((err) => console.error('shipped email failed:', err));
+    }
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {

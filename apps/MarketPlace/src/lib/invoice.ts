@@ -1,21 +1,16 @@
 import { prisma } from './db';
 import { getActiveTheme, type ShopTheme } from './settings';
+import { COMPANY as COMPANY_BASE, companySupportEmail } from './company';
 
+/** @deprecated import from `@/lib/company` — kept for existing call sites */
 export const COMPANY = {
-  name: 'Omnity.One s.r.o.',
-  ico: '09120050',
-  dic: 'CZ09120050',
-  address: 'Horní Čermná 229',
-  city: '56156',
-  country: 'Česká republika',
-  court: 'Krajský soud v Hradci Králové',
-  fileNo: '00215716',
-  bankAccount: '2901809148 / 2010',
-  iban: 'CZ63 2010 0000 0029 0180 9148',
-  swift: 'FIOBCZPPXXX',
-  bankName: 'Fio banka, a.s.',
-  email: 'admin@newearth.cz',
-  web: 'www.newearth.cz',
+  ...COMPANY_BASE,
+  get email() {
+    return companySupportEmail();
+  },
+  get web() {
+    return COMPANY_BASE.web.replace(/^https?:\/\//, '');
+  },
 };
 
 const VAT_RATE = 0.21;
@@ -243,7 +238,10 @@ export function buildInvoiceHtml(
     .invoice-container { max-width: 900px; margin: 0 auto; background: #1f1f1f; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
     .rasta-header { background: linear-gradient(90deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%); height: 5px; }
     .header { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-    .logo img { height: 48px; border-radius: 50%; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand img { height: 56px; width: 56px; border-radius: 50%; object-fit: cover; background: #111; }
+    .brand-name { font-size: 1.15rem; color: #fff; font-weight: 700; letter-spacing: 0.02em; }
+    .brand-sub { font-size: 0.75rem; color: #9af59a; margin-top: 2px; }
     .invoice-title { text-align: right; }
     .invoice-title h1 { font-size: 1.7rem; color: #FFD700; margin: 0; }
     .invoice-number { font-size: 0.9rem; color: #aaa; margin-top: 2px; }
@@ -286,8 +284,12 @@ export function buildInvoiceHtml(
     <div class="rasta-header"></div>
 
     <div class="header">
-      <div class="logo">
-        <img src="https://market.zionterranova.com/logo/org/zion-wordmark-dark.png" alt="ZION Logo" onerror="this.style.display='none'" />
+      <div class="brand">
+        <img src="${escapeHtml(COMPANY_BASE.logoUrl)}" alt="${escapeHtml(COMPANY.name)}" />
+        <div>
+          <div class="brand-name">${escapeHtml(COMPANY.name)}</div>
+          <div class="brand-sub">IČO ${escapeHtml(COMPANY.ico)} · DIČ ${escapeHtml(COMPANY.dic)}</div>
+        </div>
       </div>
       <div class="invoice-title">
         <h1>FAKTURA</h1>
@@ -305,7 +307,7 @@ export function buildInvoiceHtml(
           ${escapeHtml(COMPANY.country)}<br><br>
           IČO: ${escapeHtml(COMPANY.ico)}<br>
           DIČ: ${escapeHtml(COMPANY.dic)}<br>
-          Zapsáno: ${escapeHtml(COMPANY.court)}
+          Zapsáno: ${escapeHtml(COMPANY.court)}, sp. zn. ${escapeHtml(COMPANY.fileNo)}
         </p>
       </div>
       <div class="party">

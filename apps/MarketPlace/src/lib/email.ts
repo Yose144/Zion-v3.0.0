@@ -27,14 +27,14 @@ function emailConfig() {
   return {
     host,
     port,
-    user: process.env.SMTP_USER ?? 'shop@newearth.cz',
+    user: process.env.SMTP_USER ?? 'shop@zionterranova.com',
     password: process.env.SMTP_PASSWORD ?? '',
     isLocal,
-    adminEmail: process.env.ADMIN_EMAIL ?? 'admin@newearth.cz',
-    shopEmail: process.env.SHOP_EMAIL ?? 'shop@newearth.cz',
-    shopName: process.env.SHOP_NAME ?? 'ZION eShop',
+    adminEmail: process.env.ADMIN_EMAIL ?? 'shop@zionterranova.com',
+    shopEmail: process.env.SHOP_EMAIL ?? 'shop@zionterranova.com',
+    shopName: process.env.SHOP_NAME ?? 'ZION Market',
     resendApiKey: process.env.RESEND_API_KEY ?? '',
-    resendFrom: process.env.RESEND_FROM ?? 'onboarding@resend.dev',
+    resendFrom: process.env.RESEND_FROM ?? 'shop@zionterranova.com',
   };
 }
 
@@ -177,6 +177,9 @@ export interface OrderEmailData {
   trackingNumber: string | null;
   status: string;
   paymentStatus: string;
+  /** ZION L1 loyalty wallet (V2 bonus parity) */
+  customerWalletAddress?: string | null;
+  customerWalletId?: string | null;
 }
 
 export async function sendAdminOrderNotification(order: OrderEmailData): Promise<void> {
@@ -187,10 +190,16 @@ export async function sendAdminOrderNotification(order: OrderEmailData): Promise
 
   const cfg = emailConfig();
 
+  const pickupLabel = (() => {
+    const pp = order.pickupPoint as { name?: string; label?: string; id?: string } | string | null;
+    if (!pp) return '';
+    if (typeof pp === 'string') return pp;
+    return [pp.name, pp.label, pp.id].filter(Boolean).join(' — ');
+  })();
   const shippingInfo = order.shipping === 'zasilkovna-home'
     ? `Doručovací adresa: ${formatAddress(order)}`
     : order.shipping === 'zasilkovna'
-    ? 'Zásilkovna - výdejní místo (bude upřesněno)'
+    ? `Zásilkovna — výdejní místo: ${pickupLabel || '(neuvedeno)'}`
     : 'Digitální doručení / online převzetí';
 
   const subject = `Nová objednávka #${order.orderId} - ${cfg.shopName}`;

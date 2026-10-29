@@ -328,9 +328,10 @@ export async function regenerateInvoice(
   }
 }
 
-export function getTokens(product: ShopProductData): number {
+/** V2 parity: catalog `tokens` wins; else 1 Kč ≈ 1 ZION loyalty unit. */
+export function getTokens(product: Pick<ShopProductData, 'tokens' | 'priceCzk'>): number {
   if (product.tokens > 0) return product.tokens;
-  if (product.priceCzk > 0) return Math.max(1, Math.round(product.priceCzk / 100));
+  if (product.priceCzk > 0) return Math.max(1, Math.round(product.priceCzk));
   return 0;
 }
 

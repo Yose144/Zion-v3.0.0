@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import type { ShopProductData } from '@/types/shop';
 import type { CartItem, CartContextValue } from '@/types/shop';
+import { getTokens } from '@/lib/shop-api';
 
 const CART_KEY = 'zion_shop_cart';
 
@@ -16,7 +17,7 @@ function toCartItem(product: ShopProductData, quantity: number): CartItem {
     priceCzk: product.priceCzk,
     image: product.image,
     category: product.category,
-    tokens: product.tokens,
+    tokens: getTokens(product),
     quantity,
     digital: product.digital,
   };

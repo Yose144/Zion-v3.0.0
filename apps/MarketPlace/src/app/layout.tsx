@@ -21,6 +21,7 @@ const FOOTER_LINKS = [
   { href: '/gdpr', labelKey: 'footer.gdpr' },
   { href: '/legal', labelKey: 'footer.legal' },
   { href: '/shopping-guide', labelKey: 'footer.guide' },
+  { href: '/reklamace', labelKey: 'footer.claims' },
   { href: '/faq', labelKey: 'footer.faq' },
 ];
 

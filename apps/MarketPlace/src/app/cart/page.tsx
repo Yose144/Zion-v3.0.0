@@ -38,6 +38,7 @@ export default function CartPage() {
     street: '',
     city: '',
     zip: '',
+    pickupPoint: '',
     note: '',
   });
   const [terms, setTerms] = useState(false);
@@ -91,7 +92,8 @@ export default function CartPage() {
     form.email.trim() &&
     form.phone.trim() &&
     terms &&
-    (!needsAddress || (form.street && form.city && form.zip));
+    (!needsAddress || (form.street && form.city && form.zip)) &&
+    (!needsPickup || form.pickupPoint.trim().length >= 3);
 
   const formatPrice = (price: number) => t('common.price', { price, symbol: t('common.kcSymbol') });
 
@@ -112,7 +114,13 @@ export default function CartPage() {
           : null,
         newsletter,
       },
-      shipping: { method: shipping, price: shippingPrice },
+      shipping: {
+        method: shipping,
+        price: shippingPrice,
+        pickupPoint: needsPickup
+          ? { name: form.pickupPoint.trim(), source: 'manual' }
+          : undefined,
+      },
       payment,
       note: form.note,
       items,
@@ -272,8 +280,16 @@ export default function CartPage() {
             </div>
 
             {needsPickup && (
-              <div className="mt-4 p-3 rounded-xl bg-rasta-green/5 border border-rasta-green/20 text-sm text-gray-300">
-                {t('cart.pickupNote')}
+              <div className="mt-4 space-y-2">
+                <p className="text-sm text-gray-300">{t('cart.pickupNote')}</p>
+                <input
+                  type="text"
+                  value={form.pickupPoint}
+                  onChange={(e) => setForm({ ...form, pickupPoint: e.target.value })}
+                  placeholder={t('cart.placeholderPickup')}
+                  className="input-zion w-full"
+                  required
+                />
               </div>
             )}
           </div>

@@ -1,21 +1,12 @@
 import type { OrderEmailData } from './email';
 import type { ShopTheme } from './settings';
+import { COMPANY as COMPANY_BASE, companySupportEmail } from './company';
 
 const COMPANY = {
-  name: 'Omnity.One s.r.o.',
-  ico: '09120050',
-  dic: 'CZ09120050',
-  address: 'Horní Čermná 229',
-  city: '56156',
-  country: 'Česká republika',
-  court: 'Krajský soud v Hradci Králové',
-  fileNo: '00215716',
-  bankAccount: '2901809148 / 2010',
-  iban: 'CZ63 2010 0000 0029 0180 9148',
-  swift: 'FIOBCZPPXXX',
-  bankName: 'Fio banka, a.s.',
-  supportEmail: 'shop@zionterranova.com',
-  shopUrl: 'https://market.zionterranova.com',
+  ...COMPANY_BASE,
+  get supportEmail() {
+    return companySupportEmail();
+  },
 };
 
 function escapeHtml(input: string | null | undefined): string {
@@ -202,8 +193,11 @@ function formatPaymentInstructionsHtml(order: OrderEmailData): string {
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
               <tr>
                 <td style="vertical-align: top; padding-right: 16px; color: #e5e7eb; font-size: 14px; line-height: 1.8;" width="55%">
-                  <strong style="color:#9af59a;">Číslo účtu:</strong> ${escapeHtml(COMPANY.bankAccount)}<br>
+                  <strong style="color:#9af59a;">Příjemce:</strong> ${escapeHtml(COMPANY.name)}<br>
+                  <strong style="color:#9af59a;">IČO:</strong> ${escapeHtml(COMPANY.ico)} · DIČ: ${escapeHtml(COMPANY.dic)}<br>
+                  <strong style="color:#9af59a;">Číslo účtu:</strong> ${escapeHtml(COMPANY.bankAccount)} (${escapeHtml(COMPANY.bankName)})<br>
                   <strong style="color:#9af59a;">IBAN:</strong> ${escapeHtml(COMPANY.iban)}<br>
+                  <strong style="color:#9af59a;">SWIFT:</strong> ${escapeHtml(COMPANY.swift)}<br>
                   <strong style="color:#9af59a;">Variabilní symbol:</strong> ${escapeHtml(order.orderId)}<br>
                   <strong style="color:#9af59a;">Částka:</strong> ${formatPrice(order.totalCzk)}<br>
                   <strong style="color:#9af59a;">Zpráva:</strong> Objednávka ${escapeHtml(order.orderId)}
@@ -232,8 +226,11 @@ function formatPaymentInstructionsText(order: OrderEmailData): string {
 
   if (order.payment === 'transfer') {
     return `Instrukce k platbě:
-Číslo účtu: ${COMPANY.bankAccount}
+Příjemce: ${COMPANY.name}
+IČO: ${COMPANY.ico} · DIČ: ${COMPANY.dic}
+Číslo účtu: ${COMPANY.bankAccount} (${COMPANY.bankName})
 IBAN: ${COMPANY.iban}
+SWIFT: ${COMPANY.swift}
 Variabilní symbol: ${order.orderId}
 Částka: ${formatPrice(order.totalCzk)}
 Zpráva: Objednávka ${order.orderId}
@@ -293,6 +290,68 @@ function formatZionTokenSectionHtml(order: OrderEmailData): string {
   const tokens = order.zionTokens || 0;
   if (tokens === 0) return '';
 
+  const walletAddress = order.customerWalletAddress?.trim() || '';
+  const walletId = order.customerWalletId?.trim() || order.orderId;
+  const walletQr = walletAddress
+    ? `https://quickchart.io/qr?text=${encodeURIComponent(walletAddress)}&size=160&margin=2`
+    : '';
+
+  const walletBlock = walletAddress
+    ? `
+      <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 28px; border: 2px solid rgba(0,255,127,0.3); margin-bottom: 20px;">
+        <table width="100%" cellpadding="10" cellspacing="0">
+          <tr>
+            <td style="color: #9af59a; font-size: 16px; font-weight: 600;">💎 Bonus tokeny:</td>
+            <td style="color: #00ff7f; font-size: 26px; font-weight: 700; text-align: right;">${tokens.toLocaleString('cs-CZ')} ZION ⚡</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding-top: 16px;">
+              <p style="color: #8a8f94; font-size: 13px; margin: 0 0 10px 0;">🔐 Wallet ID / objednávka:</p>
+              <p style="color: #00ff7f; font-size: 15px; font-family: monospace; word-break: break-all; margin: 0; font-weight: 700; background: rgba(0,255,127,0.1); padding: 12px; border-radius: 8px;">${escapeHtml(walletId)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding-top: 16px;">
+              <p style="color: #8a8f94; font-size: 13px; margin: 0 0 10px 0;">📍 ZION L1 adresa:</p>
+              <p style="color: #00ff7f; font-size: 14px; font-family: monospace; word-break: break-all; margin: 0; font-weight: 600; background: rgba(0,255,127,0.08); padding: 12px; border-radius: 8px;">${escapeHtml(walletAddress)}</p>
+            </td>
+          </tr>
+        </table>
+        ${
+          walletQr
+            ? `<div style="text-align:center;margin-top:18px;">
+                <img src="${walletQr}" alt="Wallet QR" width="140" height="140" style="border-radius:8px;background:#fff;padding:4px;" />
+                <p style="color:#8a8f94;font-size:11px;margin:8px 0 0 0;">QR adresa peněženky</p>
+              </div>`
+            : ''
+        }
+      </div>
+      <div style="background: rgba(255,215,0,0.1); border-left: 4px solid #FFD700; padding: 16px; border-radius: 8px;">
+        <p style="color: #FFD700; font-size: 14px; margin: 0; line-height: 1.6;">
+          ⚠️ <strong>DŮLEŽITÉ:</strong> Seed phrase jsme poslali samostatným e-mailem — uložte ji offline.
+          Bonus ZION se připíše na tuto peněženku po uhrazení objednávky (admin / payout).
+        </p>
+      </div>
+      <div style="margin-top: 20px; padding: 18px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(0,255,127,0.2);">
+        <h4 style="color: #FFD700; margin: 0 0 12px 0; font-size: 15px; text-align: center;">📖 Co s tokeny můžete dělat?</h4>
+        <ul style="color: #a8ffb0; font-size: 14px; line-height: 1.7; margin: 0; padding-left: 22px;">
+          <li>💰 Platby v ekosystému ZION</li>
+          <li>🔒 Staking a odměny</li>
+          <li>🗳️ Governance / DAO</li>
+          <li>⚡ Consciousness mining</li>
+        </ul>
+      </div>`
+    : `
+      <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 20px; border: 1px solid rgba(0,255,127,0.2);">
+        <p style="color: #9af59a; font-size: 16px; text-align: center; margin: 0 0 12px 0;">
+          <strong style="color:#00ff7f;font-size:22px;">${tokens.toLocaleString('cs-CZ')} ZION</strong>
+        </p>
+        <p style="color: #8a8f94; font-size: 13px; line-height: 1.6; margin: 0; text-align:center;">
+          Bonus evidujeme k objednávce. Po zaplacení připravíme / připíšeme tokeny na ZION L1.
+          Dotazy: ${escapeHtml(COMPANY.supportEmail)}.
+        </p>
+      </div>`;
+
   return `
     <div style="background: linear-gradient(145deg, rgba(0,255,127,0.2), rgba(0,0,0,0.5)); border: 3px solid rgba(0,255,127,0.5); border-radius: 18px; padding: 32px; margin-bottom: 36px; box-shadow: 0 0 30px rgba(0,255,127,0.3), inset 0 2px 12px rgba(0,255,127,0.15);">
       <div style="text-align: center; margin-bottom: 20px;">
@@ -304,13 +363,9 @@ function formatZionTokenSectionHtml(order: OrderEmailData): string {
         🎁 ZION TOKEN BONUS 🎁
       </h3>
       <p style="color: #9af59a; font-size: 16px; text-align: center; margin: 0 0 24px 0; line-height: 1.6;">
-        Jah Bless! 🙏 Za váš nákup jste získali <strong style="color: #00ff7f; font-size: 20px;">${tokens.toLocaleString('cs-CZ')} ZION</strong> jako poděkování!
+        Jah Bless! 🙏 Za váš nákup jste získali <strong style="color: #00ff7f; font-size: 20px;">ZION tokeny</strong> jako poděkování!
       </p>
-      <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 20px; border: 1px solid rgba(0,255,127,0.2);">
-        <p style="color: #8a8f94; font-size: 13px; line-height: 1.6; margin: 0;">
-          Tokeny budou připsány po spuštění odměňovacího programu. Pro dotazy kontaktujte ${escapeHtml(COMPANY.supportEmail)}.
-        </p>
-      </div>
+      ${walletBlock}
     </div>
   `;
 }
@@ -318,7 +373,19 @@ function formatZionTokenSectionHtml(order: OrderEmailData): string {
 function formatZionTokenSectionText(order: OrderEmailData): string {
   const tokens = order.zionTokens || 0;
   if (tokens === 0) return '';
-  return `🎁 ZION TOKEN BONUS 🎁\nJah Bless! Za váš nákup jste získali ${tokens.toLocaleString('cs-CZ')} ZION jako poděkování.\nTokeny budou připsány po spuštění odměňovacího programu.`;
+  const parts = [
+    `🎁 ZION TOKEN BONUS 🎁`,
+    `Jah Bless! Za váš nákup jste získali ${tokens.toLocaleString('cs-CZ')} ZION.`,
+  ];
+  if (order.customerWalletAddress) {
+    parts.push(`Wallet ID: ${order.customerWalletId || order.orderId}`);
+    parts.push(`ZION adresa: ${order.customerWalletAddress}`);
+    parts.push('Seed phrase je v samostatném e-mailu — uložte offline.');
+    parts.push('Bonus se připíše po uhrazení objednávky.');
+  } else {
+    parts.push('Bonus evidujeme k objednávce; po zaplacení připíšeme na ZION L1.');
+  }
+  return parts.join('\n');
 }
 
 function formatQrCodeSectionHtml(order: OrderEmailData): string {
@@ -385,14 +452,21 @@ export async function buildV2OrderConfirmationEmail(
 
                     <tr>
                         <td style="background: linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%); padding: 4px;">
-                            <div style="background: #0f0f0f; padding: 38px 32px; text-align: center;">
+                            <div style="background: #0f0f0f; padding: 32px 28px; text-align: center;">
+                                <img src="${escapeHtml(COMPANY.logoUrl)}" alt="${escapeHtml(COMPANY.name)}" width="88" height="88" style="border-radius: 50%; display: block; margin: 0 auto 14px auto; background: #111;" />
+                                <div style="color: #fff; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px;">
+                                    ${escapeHtml(COMPANY.name)}
+                                </div>
+                                <div style="color: #9af59a; font-size: 12px; margin-bottom: 16px;">
+                                    IČO ${escapeHtml(COMPANY.ico)} · DIČ ${escapeHtml(COMPANY.dic)}
+                                </div>
                                 <div style="display: inline-block; padding: 11px 22px; border-radius: 999px; background: rgba(0,0,0,0.4); color: #FFD700; font-size: 13px; letter-spacing: 3.5px; border: 1px solid rgba(255,215,0,0.5); text-transform: uppercase; font-weight: 600;">
                                     ⚡ ESHOP OBJEDNÁVKA ⚡
                                 </div>
-                                <h1 style="color: #FFD700; margin: 18px 0 8px 0; font-size: 38px; text-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 40px rgba(255,215,0,0.3); font-weight: 700;">
+                                <h1 style="color: #FFD700; margin: 18px 0 8px 0; font-size: 32px; text-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 40px rgba(255,215,0,0.3); font-weight: 700;">
                                     ZION TERRA NOVA
                                 </h1>
-                                <p style="color: #9af59a; margin: 0; font-size: 16px; letter-spacing: 1.5px; font-weight: 500;">
+                                <p style="color: #9af59a; margin: 0; font-size: 15px; letter-spacing: 1.5px; font-weight: 500;">
                                     🌿 One Love • One Chain • One Future 🌿
                                 </p>
                             </div>
@@ -527,7 +601,8 @@ export async function buildV2OrderConfirmationEmail(
                                 </p>
                                 <p style="color: #999; font-size: 13px; margin: 0 0 8px 0; line-height: 1.6;">
                                     Tento email byl odeslán z <strong style="color: #FFD700;">ZION eShop</strong><br>
-                                    Pokud máte jakékoliv dotazy, neváhejte nás kontaktovat
+                                    ZION TerraNova ® | <strong style="color:#fff;">${escapeHtml(COMPANY.name)}</strong><br>
+                                    IČO ${escapeHtml(COMPANY.ico)} · DIČ ${escapeHtml(COMPANY.dic)} · ${escapeHtml(COMPANY.address)}, ${escapeHtml(COMPANY.city)}
                                 </p>
                                 <div style="margin: 16px 0;">
                                     <a href="${escapeHtml(COMPANY.shopUrl)}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #1f9b1f, #00ff7f); color: #000; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 15px; box-shadow: 0 6px 20px rgba(0,255,0,0.3); border: 2px solid rgba(255,215,0,0.4); letter-spacing: 0.5px;">
@@ -535,7 +610,8 @@ export async function buildV2OrderConfirmationEmail(
                                     </a>
                                 </div>
                                 <p style="color: #666; font-size: 12px; margin: 16px 0 0 0;">
-                                    © 2026 ZION Terra Nova • All Rights Reserved
+                                    © 2026 ZION Terra Nova • All Rights Reserved<br>
+                                    Podpora: <a href="mailto:${escapeHtml(COMPANY.supportEmail)}" style="color:#9af59a;">${escapeHtml(COMPANY.supportEmail)}</a>
                                 </p>
                             </div>
                         </td>

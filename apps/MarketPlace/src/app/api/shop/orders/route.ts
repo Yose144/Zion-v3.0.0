@@ -109,7 +109,18 @@ export async function POST(req: NextRequest) {
 
     let itemsTotal = 0;
     let zionTokens = 0;
-    const lineItems: { externalId: string; name: string; quantity: number; priceCzk: number; tokens: number }[] = [];
+    type LineItem = {
+      externalId: string;
+      name: string;
+      quantity: number;
+      priceCzk: number;
+      tokens: number;
+      digital: boolean;
+      filesUrl?: string;
+      instructionsUrl?: string;
+      modelUrl?: string;
+    };
+    const lineItems: LineItem[] = [];
     for (const item of body.items) {
       const product = byId.get(String(item.externalId));
       const qty = Math.floor(Number(item.quantity));
@@ -122,14 +133,17 @@ export async function POST(req: NextRequest) {
       if (!product.inStock || product.stock < qty) {
         return NextResponse.json({ success: false, error: `${product.name} is out of stock` }, { status: 409 });
       }
+      // V2 parity: catalog tokens, else 1 Kč = 1 ZION loyalty unit
+      const unitTokens =
+        product.tokens > 0 ? product.tokens : Math.max(1, Math.round(product.priceCzk));
       itemsTotal += product.priceCzk * qty;
-      zionTokens += product.tokens * qty;
+      zionTokens += unitTokens * qty;
       lineItems.push({
         externalId: product.externalId,
         name: product.name,
         quantity: qty,
         priceCzk: product.priceCzk,
-        tokens: product.tokens,
+        tokens: unitTokens,
         digital: product.digital,
         filesUrl: product.filesUrl ?? undefined,
         instructionsUrl: product.instructionsUrl ?? undefined,
@@ -239,6 +253,8 @@ export async function POST(req: NextRequest) {
       trackingNumber: order.trackingNumber,
       status: order.status,
       paymentStatus: order.paymentStatus,
+      customerWalletAddress: order.customerWalletAddress,
+      customerWalletId: order.orderId,
     };
 
     // Send notifications in background; don't block the response
