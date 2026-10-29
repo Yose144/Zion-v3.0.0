@@ -10,9 +10,7 @@ import {
   Brain,
   Check,
   Copy,
-  Cpu,
   CreditCard,
-  ExternalLink,
   Key,
   Loader2,
   MessageSquare,
@@ -52,18 +50,6 @@ const T = {
   copied: { cs: 'Zkopírováno', en: 'Copied' },
   docsTitle: { cs: 'Použití (OpenAI-compatible)', en: 'Usage (OpenAI-compatible)' },
   usage: { cs: 'Využití a limity', en: 'Usage & limits' },
-  cliLink: {
-    cs: 'CLI: zion hiran login → schválit na /ai/cli',
-    en: 'CLI: zion hiran login → approve at /ai/cli',
-  },
-  vastLink: {
-    cs: 'Vast Coding Agent — spouštěj coding joby na GPU fleetu (/vast-rigs/#ai)',
-    en: 'Vast Coding Agent — run coding jobs on the GPU fleet (/vast-rigs/#ai)',
-  },
-  vastCli: {
-    cs: 'zion hiran agent -p "…" --remote vast',
-    en: 'zion hiran agent -p "…" --remote vast',
-  },
   cryptoOk: {
     cs: 'Platba USDC potvrzena — plán aktivován.',
     en: 'USDC payment confirmed — plan activated.',
@@ -95,7 +81,6 @@ const T = {
     cs: 'zion hiran login → potvrdit kód',
     en: 'zion hiran login → confirm code',
   },
-  resVastTitle: { cs: 'Vast Coding Agent', en: 'Vast Coding Agent' },
   plansTitle: { cs: 'Plány', en: 'Plans' },
   plansSub: {
     cs: 'Zrušitelné kdykoliv. Platba kartou přes Stripe nebo USDC na Base.',
@@ -429,7 +414,21 @@ function AiPricingInner() {
             ))}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="mb-8 rounded-xl border border-rasta-gold/25 bg-black/40 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rasta-gold">
+              {l === 'cs' ? 'Instalace CLI' : 'Install the CLI'}
+            </p>
+            <h2 className="mt-1 text-xl font-semibold text-white">Zion Hiran</h2>
+            <p className="mt-2 text-sm text-gray-400">
+              {l === 'cs'
+                ? 'Jeden příkaz. Po startu uvidíš strom Genesis a menu (chat, login, účet, modely).'
+                : 'One command. On start you get the Genesis tree and a menu (chat, login, account, models).'}
+            </p>
+            <pre className="mt-3 overflow-x-auto rounded-lg bg-black/60 p-3 text-xs text-amber-200">{`curl -fsSL https://market.zionterranova.com/install-hiran.sh | bash
+zion-hiran`}</pre>
+          </div>
+
+          <div className="grid gap-3">
             <Link
               href="/ai/cli"
               className="zion-tile group flex items-center gap-3 hover:border-rasta-gold/40"
@@ -443,21 +442,6 @@ function AiPricingInner() {
               </div>
               <ArrowRight className="ml-auto w-4 h-4 shrink-0 text-gray-600 transition-transform group-hover:translate-x-1 group-hover:text-rasta-gold" />
             </Link>
-            <a
-              href="https://zionterranova.com/vast-rigs/#ai"
-              target="_blank"
-              rel="noreferrer"
-              className="zion-tile group flex items-center gap-3 hover:border-rasta-gold/40"
-            >
-              <Cpu className="w-5 h-5 shrink-0 text-rasta-gold" />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-white transition-colors group-hover:text-rasta-gold">
-                  {T.resVastTitle[l]}
-                </p>
-                <p className="truncate font-mono text-xs text-gray-500">{T.vastCli[l]}</p>
-              </div>
-              <ExternalLink className="ml-auto w-4 h-4 shrink-0 text-gray-600 transition-colors group-hover:text-rasta-gold" />
-            </a>
           </div>
 
           {modelsInfo?.badge && (
@@ -688,10 +672,7 @@ function AiPricingInner() {
               </p>
               <pre className="overflow-x-auto rounded-xl border border-white/10 bg-black/50 p-4 text-xs leading-relaxed text-gray-200">{`zion hiran login
 zion hiran whoami
-zion agent -p "…"
-
-# remote GPU fleet (ops token):
-zion hiran agent -p "…" --remote vast`}</pre>
+zion hiran agent -p "…"`}</pre>
             </div>
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">

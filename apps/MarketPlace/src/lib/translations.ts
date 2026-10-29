@@ -133,12 +133,12 @@ const t = {
     title: { cs: 'AI pro vývojáře', en: 'AI for builders' },
     cardTitle: { cs: 'Hiran AI', en: 'Hiran AI' },
     cardDesc: {
-      cs: 'Lokální coding agent, CLI login a plány — inference i coding joby na GPU fleetu.',
-      en: 'Local coding agent, CLI login, and plans — inference and coding jobs on the GPU fleet.',
+      cs: 'Lokální coding agent, CLI login a plány — OpenAI-kompatibilní inference hostované v EU.',
+      en: 'Local coding agent, CLI login, and plans — OpenAI-compatible inference hosted in the EU.',
     },
     chipCli: { cs: 'CLI coding agent', en: 'CLI coding agent' },
     chipApi: { cs: 'OpenAI-compatible API', en: 'OpenAI-compatible API' },
-    chipFleet: { cs: 'GPU fleet joby', en: 'GPU fleet jobs' },
+    chipFleet: { cs: 'Trial chat zdarma', en: 'Free trial chat' },
     cta: { cs: 'Otevřít AI', en: 'Open AI' },
   },
 
