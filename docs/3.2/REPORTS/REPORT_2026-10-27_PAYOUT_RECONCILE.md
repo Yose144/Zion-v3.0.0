@@ -165,6 +165,21 @@ inclusion. Build obsahuje zároveň drain-thread fix `8a32fae94`
 byla přepsána; její embedded id `8a32fae94` přitom v13 neobsahoval
 (dirty-tree build — provenance caveat potvrzen naživo).
 
+**Forward verifikace na v13 replice (29. 10. odpoledne):**
+
+- Same-debt check (`address + height + amount`, různé tx_id, obě
+  confirmed) nad řádky zapsanými po deployi: **0 párů** — pod v13
+  sémantikou (`height`=reward) žádné kolize nevznikají.
+- Post-deploy `payout_confirmed` řádky ukazují split naživo:
+  `a487e63b…` `height=100977` vs `inclusion_height=100978`.
+- Dodatečný důkaz phantom-mechanismu: resubmit `d5ddd771` má submit
+  log `height=69072` a jeho dluh (3. 10., `6e02cbbe`, `voided:stuck`)
+  sedí — ledger řádek však nese `height=99993`, protože pre-v13
+  confirm reward height přepsal. Phantom pary = dva tx confirmované
+  ve stejném bloku se shodným *clobbered* `height`, ne stejný dluh.
+  Resubmity tedy splácejí odlišné měsíc staré dluhy (žebřík
+  689xx/690xx/697xx/77xxx/88xxx) — žádná nová double-pay.
+
 ### Ops incident (mimo payout scope)
 
 - **EDGE „sshd outage" = false alarm, opraveno 10:56 UTC:** `:22`
