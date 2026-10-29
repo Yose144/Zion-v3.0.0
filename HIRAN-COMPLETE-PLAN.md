@@ -113,9 +113,9 @@ User chat ──zis_*────────────► gateway ──► m
 - [x] Stabilní upstream: PC `zion-coder-cuda` `:8072` + reverse tunnel EDGE2 `:8005` (`zion-coder-tunnel.service`)
 - [x] Gateway health `live:true` (29.10. 18:45) — public `/v1/models` + Market badge `coder: live`
 - [x] Local smoke `POST :8072/v1/chat/completions` OK (`Pong!…`)
-- [ ] Public metered smoke `POST market…/v1/chat/completions` model=`hiran-coder` s `zis_*` (ops key)
+- [x] Public metered smoke `POST market…/v1` model=`hiran-coder` → `WORKFLOW_OK` (29.10. E2E, free plan)
 
-**Done when:** `GET …/v1/models` ukáže `hiran-coder` live; jeden chat turn OK s `zis_*`. *(list live ✅; metered turn residual)*
+**Done when:** `GET …/v1/models` ukáže `hiran-coder` live; jeden chat turn OK s `zis_*`. ✅
 
 > **GPU mutex:** 1070 Ti unese jen hiran **nebo** coder. `use-coder.sh` stopne `zion-hiran-cuda` → mini padá na EDGE2 CPU / tunnel fallback. Zpět: `use-hiran.sh` + stop `zion-coder-tunnel`.
 
@@ -139,9 +139,9 @@ User chat ──zis_*────────────► gateway ──► m
 - [x] Chat path přijme lease Bearer; turn budget fail-closed
 - [x] `code_run` / vastctl: `lease_token` + `llm_base` + `model` OK; `llm_key` strip
 - [x] CLI `zion hiran agent --remote vast` mint lease → enqueue; po runu `/v1/usage`
-- [ ] E2E metered remote (vyžaduje `zis_*` v `~/.zion/agent.toml` + live `hiran-mini`/`coder` na gateway z rigu)
+- [x] E2E metered remote 29.10.: lease → enqueue `58077390` → `REMOTE_METER_OK` (rc=0); `/v1/usage` 1→2 req, 42→575 tok (rig `code_run.py` reload)
 
-**Done when:** remote `code.run` odečte turns na ZIS/Hiran plánu, ne jen ops token.
+**Done when:** remote `code.run` odečte turns na ZIS/Hiran plánu, ne jen ops token. ✅
 
 ### P3 — Market F3 listing
 
@@ -196,9 +196,9 @@ Pořadí: shared constitution → **Maitreya** → **Amitábha** → **Issobella
 
 ## 6. Success criteria (produkt „complete“ pro tuto mapu)
 
-- [x] P0: `hiran-coder` live na public `/v1` *(29.10. use-coder + tunnel; metered chat residual)*
-- [ ] P1: E2E `code.run` s reálným weightem *(stub E2E OK; real GGUF pending)*
-- [ ] P2: remote turns metered `zis_*` *(lease code live; metered E2E pending)*
+- [x] P0: `hiran-coder` live + metered public chat `WORKFLOW_OK`
+- [ ] P1: E2E `code.run` s reálným weightem na rigu *(remote teď metruje přes gateway coder; local stub residual)*
+- [x] P2: remote turns metered `zis_*` (`REMOTE_METER_OK` + usage delta)
 - [x] P3: Market listing karty + trial
 - [x] P4: Market badge + monitoring files in repo *(EDGE Prom wiring residual)*
 - [ ] FT (aspoň 1 persona): mockup→live (může doběhnout po P0–P2)
@@ -209,7 +209,9 @@ Pořadí: shared constitution → **Maitreya** → **Amitábha** → **Issobella
 |---|---|
 | Gateway lease + offline aliases | deployed EDGE2 `:8007` |
 | Market `/ai` models + trial + badge | deployed |
-| P0 coder upstream | ✅ live `:8072`→`:8005` (GPU swapped off hiran-cuda) |
+| P0 coder upstream | ✅ live `:8072`→`:8005` + metered `WORKFLOW_OK` |
+| P2 metered remote | ✅ lease + `REMOTE_METER_OK` on `58077390` (usage 575) |
+| Ops note | EDGE2 ZIS `DATABASE_URL` synced to shared `.env` (stale 8-char pw broke verify) |
 | P1 fleet `code.run` | ✅ stub `SMOKE_OK` on `58077390` |
 | FT Trinity | skipped (delší sezení) |
 
