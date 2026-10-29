@@ -154,11 +154,17 @@ task/results viewer, alert badges, catalog+bench, events feed, X-Ops-Auth.
   tile ✅, /ops console shell ✅. Remaining: WS1.1 calculator, WS2.6 PPLNS.
 - **M2:** WS1.3 miner-page depth + WS2.7 worker history, WS1.2 luck/effort
   strip, WS2.8 status page, WS5.17 bench form.
-- **M3:** WS3.10 lock-sharding phase 1 ✅ (`cc589d926`), WS3.11 worker
-  history ✅ (pre-existing v6), WS3.12 alert coverage ✅, WS5.18 catalog
-  editor ✅ (`0650944f4`), WS5.19 worker-hps join ✅ + WS5.20 AI tab ✅,
+- **M3 — COMPLETE:** WS3.10 lock-sharding phase 1 ✅ (`cc589d926`),
+  **phase 2 ✅ (`aada29cd6`, deployed 29.10 18:41)** — `ShareDedup` +
+  `PplnsEngine` + worker maps sharded off the global mutex; stratum
+  submit path now runs zero `pool.lock()` calls (probe → unlocked PoW
+  → dedup claim → PPLNS credit); API builders read shards directly.
+  Live: `/stats` 0.65 ms, dedup restore 1166, accepts flowing.
+  WS3.11 worker history ✅ (pre-existing v6), WS3.12 alert coverage ✅,
+  WS5.18 catalog editor ✅, WS5.19 worker-hps join ✅, WS5.20 AI tab ✅,
   WS5.21 alert-routing UI ✅ — **WS5 complete**.
-  Remaining: phase-2 sharding, WS4.13/14 fleet alerts+switch live.
+  Remaining: WS4.13/14 fleet alerts+switch live (blocked on
+  `VASTCTL_TG_*`/webhook envs — operator action).
 - **M4:** WS1.5 solo docs, WS4.15/16 OC + adapters, OG/SEO polish.
 
 ## Acceptance criteria
