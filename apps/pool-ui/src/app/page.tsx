@@ -109,20 +109,31 @@ export default function HomePage() {
         transition={{ duration: 0.5 }}
         className="hero-shell text-center"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/zion-symbol.png"
-          alt="ZION"
-          className="hero-logo-mark mx-auto"
-          width={84}
-          height={84}
-        />
+        <a
+          href="/start/"
+          className="hero-banner"
+          aria-label={t('Začít těžit — návod', 'Start mining — guide')}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/hero-multichain.webp"
+            alt={t(
+              'ZION TerraNova multi-chain mining pool — jeden miner, více řetězců: ZION, Quantus, Pearl a další.',
+              'ZION TerraNova multi-chain mining pool — one miner, multiple chains: ZION, Quantus, Pearl and more.',
+            )}
+            width={1672}
+            height={941}
+            loading="eager"
+            decoding="async"
+            className="hero-banner-img"
+          />
+        </a>
 
         <p className="rasta-hero-kicker mt-6">
           <span className="dot" style={{ color: 'var(--rasta-green)' }} />
           ZION TerraNova · {t('veřejný těžební pool · mainnet beta', 'public mining pool · mainnet beta')}
         </p>
-        <h1 className="rasta-hero-title mx-auto mt-5 max-w-3xl text-4xl md:text-6xl">
+        <h1 className="rasta-hero-title mx-auto mt-5 max-w-3xl text-3xl md:text-4xl">
           {t('Jeden pool.', 'One pool.')}
           <br />
           {t('Dvanáct coinů. Jedna stratum adresa.', 'Twelve coins. One stratum address.')}

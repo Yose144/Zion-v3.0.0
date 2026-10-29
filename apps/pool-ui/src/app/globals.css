@@ -362,6 +362,36 @@ main {
   pointer-events: none;
 }
 
+.hero-banner {
+  display: block;
+  position: relative;
+  /* bleed to the hero-shell edges (inverse of its padding) */
+  margin: -3.5rem -2rem 2.25rem;
+  border-bottom: 1px solid rgba(252, 209, 22, 0.3);
+}
+
+.hero-banner-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: filter 0.25s ease;
+}
+
+.hero-banner:hover .hero-banner-img {
+  filter: brightness(1.07);
+}
+
+.hero-banner:focus-visible {
+  outline: 2px solid var(--rasta-gold);
+  outline-offset: -2px;
+}
+
+@media (max-width: 640px) {
+  .hero-banner {
+    margin: -2.25rem -1.1rem 1.5rem;
+  }
+}
+
 .hero-logo-mark {
   width: 84px;
   height: 84px;
