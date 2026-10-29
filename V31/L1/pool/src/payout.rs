@@ -158,7 +158,10 @@ impl PayoutSweeper {
             warn!(
                 "payout sweep deferred: required fee {} exceeds 10% cap {} \
                  (total {} flowers, {} recipients) — requeueing",
-                fee, max_fee, total_payout, recipients.len()
+                fee,
+                max_fee,
+                total_payout,
+                recipients.len()
             );
             self.requeue(payouts);
             return Ok(());

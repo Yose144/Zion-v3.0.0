@@ -241,7 +241,6 @@ pub struct NativeQtcState {
     connected: bool,
 }
 
-
 impl NativeQtcState {
     pub fn configure(&mut self, tx: mpsc::UnboundedSender<MiningResult>, share_pct: u8) {
         self.result_tx = Some(tx);

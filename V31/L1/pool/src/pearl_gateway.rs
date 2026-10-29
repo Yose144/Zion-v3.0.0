@@ -602,12 +602,9 @@ impl PearlRuntime {
             .as_ref()
             .and_then(|u| u.latest_forwardable().or_else(|| u.latest_fresh()))
         {
-            return Some(crate::telemetry::expected_hashes_for_target(
-                &job.target_be,
-            ));
+            return Some(crate::telemetry::expected_hashes_for_target(&job.target_be));
         }
-        native
-            .map(|(job, _)| crate::telemetry::expected_hashes_for_u256(&self.share_target(&job)))
+        native.map(|(job, _)| crate::telemetry::expected_hashes_for_u256(&self.share_target(&job)))
     }
 
     #[allow(clippy::type_complexity)]

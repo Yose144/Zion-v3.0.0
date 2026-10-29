@@ -201,8 +201,7 @@ impl L1Endpoints {
             match result {
                 Ok(v) => {
                     let is_reject = v.get("error").is_some_and(|e| !e.is_null())
-                        || v
-                            .get("result")
+                        || v.get("result")
                             .and_then(|r| r.get("accepted"))
                             .and_then(|a| a.as_bool())
                             == Some(false);
@@ -234,12 +233,7 @@ impl L1Endpoints {
     /// Call one specific endpoint (index into `addrs`) with its own bound —
     /// used by the block-submit tip-affinity probe, which must query each
     /// endpoint individually instead of following `last_good`.
-    pub async fn call_addr(
-        &self,
-        idx: usize,
-        request: &Value,
-        timeout: Duration,
-    ) -> Result<Value> {
+    pub async fn call_addr(&self, idx: usize, request: &Value, timeout: Duration) -> Result<Value> {
         let addr = *self
             .addrs
             .get(idx)
@@ -465,17 +459,18 @@ mod tests {
             addr
         }
         let reject = spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-1,\"message\":\"already spent\"}}\n").await;
-        let accept = spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tx_id\":\"aa\"}}\n").await;
+        let accept =
+            spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tx_id\":\"aa\"}}\n").await;
         let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", reject, accept)).unwrap();
         let resp = eps.call_all(&json!({"id":1})).await.unwrap();
         assert_eq!(resp["result"]["tx_id"], "aa");
 
         // All-reject returns a rejection envelope (caller requeues safely).
-        let reject2 =
-            spawn_raw("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-2,\"message\":\"nope\"}}\n")
-                .await;
-        let eps =
-            L1Endpoints::from_urls(&format!("http://{},http://{}", reject, reject2)).unwrap();
+        let reject2 = spawn_raw(
+            "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-2,\"message\":\"nope\"}}\n",
+        )
+        .await;
+        let eps = L1Endpoints::from_urls(&format!("http://{},http://{}", reject, reject2)).unwrap();
         let resp = eps.call_all(&json!({"id":1})).await.unwrap();
         assert!(resp.get("error").is_some());
     }

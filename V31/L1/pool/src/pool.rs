@@ -279,8 +279,7 @@ impl Pool {
         // already-handed payouts in the restored queue (double-pay window).
         let write = || -> std::io::Result<()> {
             let tmp = path.with_extension("payouts.json.tmp");
-            let body = serde_json::to_vec(&state)
-                .map_err(std::io::Error::other)?;
+            let body = serde_json::to_vec(&state).map_err(std::io::Error::other)?;
             {
                 use std::io::Write;
                 let mut f = std::fs::File::create(&tmp)?;
