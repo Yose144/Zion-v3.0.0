@@ -103,6 +103,7 @@ const L = {
   execPh: { cs: 'příkaz na rigu…', en: 'command on rig…' },
   allRigs: { cs: 'všem rigům', en: 'all rigs' },
   benchAdd: { cs: '+ bench záznam', en: '+ bench entry' },
+  presetAdd: { cs: '+ preset', en: '+ preset' },
   saved: { cs: 'Uloženo ✓', en: 'Saved ✓' },
   removeRig: { cs: 'odebrat', en: 'remove' },
   setGroup: { cs: 'group…', en: 'group…' },
@@ -447,7 +448,7 @@ export default function OpsClient() {
         <h2 style={{ padding: '1rem 1rem .5rem', fontSize: '1.05rem', margin: 0 }}>{t(lang, 'catalog')}</h2>
         <div className="table-scroll">
           <table className="pool-table">
-            <thead><tr><th>Preset</th><th>Miner</th><th>Coin</th><th>Pool</th><th>Duty</th><th>Bench $/day</th></tr></thead>
+            <thead><tr><th>Preset</th><th>Miner</th><th>Coin</th><th>Pool</th><th>Duty</th><th>Bench $/day</th><th></th></tr></thead>
             <tbody>
               {Object.entries(catalog).map(([name, s]) => {
                 const benchRows = Object.entries(bench)
@@ -462,12 +463,41 @@ export default function OpsClient() {
                     <td style={{ fontSize: '.8rem' }}>{shortPool(s.pool)}</td>
                     <td>{s.duty ? Object.entries(s.duty).map(([c, p]) => `${c}:${p}%`).join(' ') : '—'}</td>
                     <td style={{ fontSize: '.8rem' }}>{benchRows || '—'}</td>
+                    <td>
+                      <button
+                        className="ops-mini-btn ops-mini-danger"
+                        onClick={() => {
+                          if (confirm(`${t(lang, 'removeRig')} preset ${name}?`))
+                            postOps('/agent/catalog/clear', { name }).catch((e) => setAssignMsg(String(e)));
+                        }}
+                      >✕</button>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
+        {/* preset add — catalog editor */}
+        <form
+          style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', padding: '.6rem 1rem 0', alignItems: 'center' }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            const f = e.target as HTMLFormElement;
+            const v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
+            postOps('/agent/catalog', {
+              name: v('name'),
+              sheet: { miner: v('miner'), pool: v('pool') || undefined, coin: v('coin') || undefined },
+            }).then(() => { setAssignMsg(t(lang, 'saved')); f.reset(); })
+              .catch((err) => setAssignMsg(String(err)));
+          }}
+        >
+          <input name="name" required placeholder="preset name" className="ops-exec-input" style={{ maxWidth: '11rem' }} />
+          <input name="miner" required placeholder="miner (xmrig)" className="ops-exec-input" style={{ maxWidth: '9rem' }} />
+          <input name="coin" placeholder="coin" className="ops-exec-input" style={{ maxWidth: '6rem' }} />
+          <input name="pool" placeholder="pool host:port" className="ops-exec-input" style={{ maxWidth: '15rem' }} />
+          <button type="submit" className="ops-mini-btn">{t(lang, 'presetAdd')}</button>
+        </form>
         {/* bench seeding — feeds the profit-switch engine */}
         <form
           style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', padding: '.6rem 1rem .9rem', alignItems: 'center' }}
