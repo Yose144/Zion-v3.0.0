@@ -62,6 +62,7 @@ struct PayloadSnapshots {
     stats: RwLock<Option<Arc<str>>>,
     metrics: RwLock<Option<Arc<str>>>,
     public_coins: RwLock<Option<Arc<str>>>,
+    public_pplns: RwLock<Option<Arc<str>>>,
 }
 
 /// Snapshot refresh cadence — `ZION_POOL_API_SNAPSHOT_MS` overrides.
@@ -655,6 +656,12 @@ impl PoolApi {
             }
             "/public/v1/estimate" => {
                 let body = self.build_public_estimate_payload(raw_path);
+                ("200 OK", "application/json", body)
+            }
+            "/public/v1/pplns" => {
+                let body = Self::snapshot_or(&self.snapshots.public_pplns, || {
+                    self.build_public_pplns_payload()
+                });
                 ("200 OK", "application/json", body)
             }
             "/public/v1/history" => {
@@ -1351,12 +1358,16 @@ impl PoolApi {
     /// `api-snapshot` refresher thread. A panic in any single builder must
     /// not kill the refresher (frozen snapshots would look like a wedge).
     fn refresh_snapshots(&self) {
-        let builds: [(&RwLock<Option<Arc<str>>>, &dyn Fn(&Self) -> String); 3] = [
+        let builds: [(&RwLock<Option<Arc<str>>>, &dyn Fn(&Self) -> String); 4] = [
             (&self.snapshots.stats, &Self::build_stats_payload),
             (&self.snapshots.metrics, &Self::build_prometheus_payload),
             (
                 &self.snapshots.public_coins,
                 &Self::build_public_coins_payload,
+            ),
+            (
+                &self.snapshots.public_pplns,
+                &Self::build_public_pplns_payload,
             ),
         ];
         for (slot, build) in builds {
@@ -2384,6 +2395,44 @@ impl PoolApi {
             })
             .collect();
         json!({"ok": true, "hps": hps, "coins": entries}).to_string()
+    }
+
+    /// `/public/v1/pplns` — public-safe PPLNS window transparency: window
+    /// fill, miner count, top-share concentration, per-coin weight and the
+    /// fee split. Public-safe subset of `/api/v1/pplns` — no wallet-level
+    /// or accumulated-balance fields. Served via the api-snapshot cache so
+    /// the request path never touches `pool.lock()`.
+    fn build_public_pplns_payload(&self) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let stats = pool.pplns.stats();
+        let fees = pool.pplns.fee_stats();
+        let (miners_in_window, top_share_pct, coins) =
+            pool.pplns.public_window_summary();
+        drop(pool);
+        let window_total = stats.window_total_difficulty;
+        json!({
+            "ok": true,
+            "scheme": "PPLNS",
+            "window_size": stats.window_size,
+            "window_used": stats.window_used,
+            "window_fill_pct": if stats.window_size > 0 {
+                stats.window_used as f64 / stats.window_size as f64 * 100.0
+            } else { 0.0 },
+            "window_total_difficulty": window_total.to_string(),
+            "miners_in_window": miners_in_window,
+            "top_miner_share_pct": (top_share_pct * 100.0).round() / 100.0,
+            "coins": coins,
+            "miners_with_unpaid": stats.miners_with_unpaid,
+            "payout_rounds": stats.payout_rounds,
+            "fee_bps": fees.pool_fee_pct * 100,
+            "fee_split_pct": {
+                "miner": fees.miner_pct,
+                "humanitarian": fees.humanitarian_pct,
+                "issobella": fees.issobella_pct,
+                "pool": fees.pool_fee_pct,
+            },
+        })
+        .to_string()
     }
 
     fn build_public_coin_stats_payload(&self, coin: &str) -> String {

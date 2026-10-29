@@ -19,10 +19,24 @@ export default function PayoutsPage() {
   const { t, lang } = useLang();
   const [coin, setCoin] = useState<CoinId | ''>('');
   const [rows, setRows] = useState<PayoutRow[]>([]);
+  const [pplns, setPplns] = useState<{
+    window_size: number; window_used: number; window_fill_pct: number;
+    miners_in_window: number; top_miner_share_pct: number;
+    miners_with_unpaid: number; payout_rounds: number;
+    coins?: Record<string, number>;
+  } | null>(null);
 
   useEffect(() => {
     fetchPayouts(coin || undefined, 500).then(setRows);
   }, [coin]);
+
+  // PPLNS window transparency — public snapshot; absent pre-rebuild (404).
+  useEffect(() => {
+    fetch('/public/v1/pplns', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j?.ok && setPplns(j))
+      .catch(() => {});
+  }, []);
 
   // Paid volume per hour (API caps at 500 rows ≈ a few hours at the pool's
   // payout cadence — hourly buckets are the honest granularity for it).
@@ -97,6 +111,73 @@ export default function PayoutsPage() {
           </p>
         </div>
       </div>
+
+      {/* PPLNS window transparency — live distribution snapshot */}
+      {pplns && (
+        <div className="pool-card mt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="kicker">{t('PPLNS okno · live', 'PPLNS window · live')}</p>
+            <span className="text-[0.65rem] text-white/35">
+              {t('aktualizace ~2 s', 'refresh ~2 s')}
+            </span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div>
+              <p className="kicker">{t('naplnění okna', 'window fill')}</p>
+              <p className="stat-value text-base font-bold text-white">
+                {pplns.window_fill_pct.toFixed(1)}%
+              </p>
+              <p className="text-[0.65rem] text-white/35">
+                {fmtInt(pplns.window_used)} / {fmtInt(pplns.window_size)}
+              </p>
+            </div>
+            <div>
+              <p className="kicker">{t('minerů v okně', 'miners in window')}</p>
+              <p className="stat-value text-base font-bold text-white">
+                {fmtInt(pplns.miners_in_window)}
+              </p>
+              <p className="text-[0.65rem] text-white/35">
+                {fmtInt(pplns.miners_with_unpaid)} {t('nevyplacených', 'unpaid')}
+              </p>
+            </div>
+            <div>
+              <p className="kicker">{t('top podíl', 'top share')}</p>
+              <p className="stat-value text-base font-bold text-rasta-gold">
+                {pplns.top_miner_share_pct.toFixed(2)}%
+              </p>
+              <p className="text-[0.65rem] text-white/35">
+                {t('koncentrace okna', 'window concentration')}
+              </p>
+            </div>
+            <div>
+              <p className="kicker">{t('payout rounds', 'payout rounds')}</p>
+              <p className="stat-value text-base font-bold text-white">
+                {fmtInt(pplns.payout_rounds)}
+              </p>
+            </div>
+          </div>
+          {pplns.coins && Object.keys(pplns.coins).length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {Object.entries(pplns.coins)
+                .sort((a, b) => b[1] - a[1])
+                .map(([c, pct]) => (
+                  <span
+                    key={c}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[0.65rem] font-semibold text-white/70"
+                  >
+                    {c.toUpperCase()} {pct.toFixed(1)}%
+                  </span>
+                ))}
+            </div>
+          )}
+          <p className="mt-3 text-[0.65rem] leading-relaxed text-white/30">
+            {t(
+              'Transparentní PPLNS: tvůj podíl = tvoje share-váha ÷ celková váha okna. Rozdělení se mění s každým novým sharem — top podíl ukazuje koncentraci.',
+              'Transparent PPLNS: your cut = your share weight ÷ total window weight. Distribution shifts with every new share — top share shows concentration.',
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Payout volume — ZION rows, hourly buckets */}
       {hourTotals.length > 1 && (

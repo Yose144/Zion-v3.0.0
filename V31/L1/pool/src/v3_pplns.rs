@@ -1623,6 +1623,36 @@ impl PplnsEngine {
         }
     }
 
+    /// Public-safe window distribution for `/public/v1/pplns` — single pass
+    /// over the window, no state clones (snapshot() would copy every
+    /// entry). Returns (miners_in_window, top_miner_share_pct,
+    /// coin->weight_pct of window difficulty).
+    pub fn public_window_summary(
+        &self,
+    ) -> (usize, f64, std::collections::HashMap<String, f64>) {
+        let total = self.window_total_difficulty.max(1);
+        let mut by_miner: std::collections::HashMap<u32, u128> =
+            std::collections::HashMap::new();
+        let mut by_coin: std::collections::HashMap<u16, u128> =
+            std::collections::HashMap::new();
+        for e in &self.window {
+            let w = u128::from(e.difficulty.max(1));
+            *by_miner.entry(e.miner_index).or_default() += w;
+            *by_coin.entry(e.coin_index).or_default() += w;
+        }
+        let top = by_miner.values().copied().max().unwrap_or(0) as f64;
+        let coins = by_coin
+            .iter()
+            .map(|(ci, w)| {
+                (
+                    self.coin_registry.key_for(*ci).to_string(),
+                    *w as f64 / total as f64 * 100.0,
+                )
+            })
+            .collect();
+        (by_miner.len(), top / total as f64 * 100.0, coins)
+    }
+
     /// Drain all accumulated fee balances, returning them and resetting
     /// internal accumulators to zero.  Used when the pool server executes
     /// an on-chain fee-payout transaction.
