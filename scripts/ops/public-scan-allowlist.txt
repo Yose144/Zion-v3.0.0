@@ -1,0 +1,26 @@
+# public-scan-allowlist.txt — cesty vyjmuté ze secret-scan grep hitů.
+# Jeden glob na řádek; matchuje se proti plné cestě souboru (prefix).
+# Pozor: allowlist potlačí VŠECHNY vzory v daném stromu/souboru —
+# nové skutečné secrets tam scanner neuvidí. Přidávej jen ověřené cesty.
+#
+# Vendored third-party (veřejné upstream knihovny — žádný review potřeba):
+*/lib/openzeppelin-contracts/*
+*/lib/forge-std/*
+*/node_modules/*
+# Reviewed 2026-10-29 — soubory flagované jen na bare-word "mnemonic"/"seed"
+# (UX text, doc komentáře, generátory) + 0x{64} event-topics; žádné hodnoty:
+*/V3/L1/core/src/bin/gen-all-keys-mnemonic.rs    # key GENERATOR — pouze fresh entropy, žádný stored material
+*/V3/L1/core/src/bin/canonical-mainnet-operator-env.rs  # doc komentáře (offline mnemonics), žádné klíče
+*/V3/L1/core/src/genesis.rs                      # doc komentáře; canonical konstanty = adresy, ne secrets
+*/V3/community-cli/src/commands/wallet.rs        # CLI flags/help pro mnemonic import/export
+*/V3/community-cli/src/commands/doctor.rs        # help text odkaz na --mnemonic
+*/V3/community-cli/src/menu.rs                   # menu text
+*/V3/community-cli/src/ui.rs                     # "write down mnemonic" UX varování
+*/V3/sdk/src/wallet.rs                           # Mnemonic API doc-komentáře
+*/V3/L2/bridge/src/ankr.rs                       # 0x{64} = event topic hashe (public constants)
+*/V3/L2/dao/config/dao-mainnet.toml              # komentář zmiňuje mnemonics; api_key = "" placeholder
+*/V3/L1/core/Cargo.toml                          # bin name 'gen-all-keys-mnemonic' obsahuje slovo mnemonic
+*/V3/L2/bridge/src/evm_watcher.rs                # 0x{64} = test konstanta 0x0..01
+*/V3/L2/contracts/hardhat/scripts/verify-base-mainnet-basescan.ts  # tx hash = public on-chain data
+*/V3/L2/dao/src/api.rs                           # cfg.api_key = "test-key" — test fixture
+*/docs/security/vulnerabilities.json             # incident disclosure — zmiňuje kompromitované klíče, žádné hodnoty

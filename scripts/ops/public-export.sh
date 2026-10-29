@@ -59,9 +59,21 @@ scan)
   [ -d "$PUBLIC_DIR" ] || die "PUBLIC/ chybí"
   echo "== secret scan =="
   # Fail-closed pattern scan — hexdump-safe, bez speciálních nástrojů.
+  # Assignment vzory (password=/token=/...) vyžadují neprázdnou quoted
+  # hodnotu — zabíjí to FP na `s.token ==`, `api_key = ""` a
+  # `api_key = std::env::var(...)`. Bare-word vzory (mnemonic, 0x{64},
+  # PRIVATE KEY, sk_live_, AKIA) flagují všechno — reviewed false
+  # positives jdou do scripts/ops/public-scan-allowlist.txt (path globy).
+  allowlist="$REPO_ROOT/scripts/ops/public-scan-allowlist.txt"
+  allow_re='^$'
+  if [ -f "$allowlist" ]; then
+    allow_re="$(sed 's/#.*//' "$allowlist" | sed 's/^ *//; s/ *$//' | grep -v '^$' | sed 's/[][\.*^$/]/\\&/g; s/\*/.*/g' | paste -sd'|' -)"
+  fi
   if grep -rInE -- \
-    'BEGIN [A-Z ]*PRIVATE KEY|mnemonic|seed phrase|password *=|passwd *=|secret *=|api[_-]?key *=|token *=|sk_live_|AKIA[0-9A-Z]{16}|0x[0-9a-fA-F]{64}' \
-    "$PUBLIC_DIR" 2>/dev/null | grep -vE '\.md:|\bexample\b|sample|placeholder|REDACTED|<.*>|\.\.\.'; then
+    'BEGIN [A-Z ]*PRIVATE KEY|mnemonic|seed phrase|(password|passwd|secret|api[_-]?key|token) *= *["'"'"'][^"'"'"']|sk_live_|AKIA[0-9A-Z]{16}|0x[0-9a-fA-F]{64}' \
+    "$PUBLIC_DIR" 2>/dev/null \
+    | grep -vE '\.md:|\bexample\b|sample|placeholder|REDACTED|<.*>|\.\.\.' \
+    | grep -vE "$allow_re"; then
     die "SCAN FAIL — podezřelé řádky výše (ověř a přidej do allowlist nebo vyhoď z manifestu)"
   fi
   # Binary/large guard.
