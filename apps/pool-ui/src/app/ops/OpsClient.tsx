@@ -91,6 +91,12 @@ interface AiRig {
   error?: string | null;
 }
 
+interface AlertStatus {
+  telegram?: { configured: boolean; bot_token: boolean; chat_id: boolean };
+  webhook?: { configured: boolean; host?: string | null };
+  channels?: number;
+}
+
 interface AiStatus {
   ts?: string;
   ai_api_port?: number;
@@ -162,6 +168,11 @@ const L = {
   aiRigs: { cs: 'inference rigy', en: 'inference rigs' },
   hiran: { cs: 'Hiran', en: 'Hiran' },
   reachable: { cs: 'dostupný', en: 'reachable' },
+  alertsTitle: { cs: 'Alert routing', en: 'Alert routing' },
+  configured: { cs: 'nastaveno', en: 'configured' },
+  notConfigured: { cs: 'nenastaveno', en: 'not configured' },
+  testFire: { cs: 'Test-fire', en: 'Test-fire' },
+  testSent: { cs: 'Test odeslán →', en: 'Test sent →' },
 } as const;
 
 type Key = keyof typeof L;
@@ -204,6 +215,8 @@ export default function OpsClient() {
   const [fleet, setFleet] = useState<Fleet | null>(null);
   const [poolMiners, setPoolMiners] = useState<PoolMiner[]>([]);
   const [ai, setAi] = useState<AiStatus | null>(null);
+  const [alertStatus, setAlertStatus] = useState<AlertStatus | null>(null);
+  const [testMsg, setTestMsg] = useState('');
   const [unauth, setUnauth] = useState(false);
   const [tick, setTick] = useState(0);
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -247,11 +260,12 @@ export default function OpsClient() {
     let dead = false;
     const load = async () => {
       try {
-        const [s, f, p, a] = await Promise.all([
+        const [s, f, p, a, al] = await Promise.all([
           fetch('/ops-api/status', { cache: 'no-store' }),
           fetch('/ops-api/agent/fleet', { cache: 'no-store' }),
           fetch('/public/v1/miners?limit=200', { cache: 'no-store' }),
           fetch('/ops-api/ai/status', { cache: 'no-store' }),
+          fetch('/ops-api/alerts/status', { cache: 'no-store' }),
         ]);
         if (dead) return;
         if (s.status === 401 || f.status === 401) { setUnauth(true); return; }
@@ -262,6 +276,7 @@ export default function OpsClient() {
           setPoolMiners(d.miners ?? []);
         }
         if (a.ok) setAi(await a.json());
+        if (al.ok) setAlertStatus(await al.json());
       } catch {
         /* keep last good */
       }
@@ -668,6 +683,46 @@ export default function OpsClient() {
           </div>
         </div>
       )}
+
+      {/* Alert routing (WS5.21) */}
+      <div className="pool-card" style={{ marginTop: '1.25rem', padding: '1rem' }}>
+        <h2 style={{ fontSize: '1.05rem', margin: '0 0 .5rem' }}>
+          {t(lang, 'alertsTitle')}
+          <span className="text-muted" style={{ fontSize: '.78rem', fontWeight: 400, marginLeft: '.5rem' }}>
+            {(alertStatus?.channels ?? 0)} ch
+          </span>
+        </h2>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', fontSize: '.85rem', fontFamily: 'monospace' }}>
+          <span>
+            telegram:{' '}
+            {alertStatus?.telegram?.configured
+              ? <b style={{ color: 'var(--good, #3ddc84)' }}>{t(lang, 'configured')}</b>
+              : <span style={{ color: 'var(--bad, #ff6b6b)' }}>
+                  {t(lang, 'notConfigured')}
+                  {alertStatus && <span className="text-muted"> (token {alertStatus.telegram?.bot_token ? '✓' : '✗'} chat {alertStatus.telegram?.chat_id ? '✓' : '✗'})</span>}
+                </span>}
+          </span>
+          <span>
+            webhook:{' '}
+            {alertStatus?.webhook?.configured
+              ? <b style={{ color: 'var(--good, #3ddc84)' }}>{alertStatus.webhook.host ?? t(lang, 'configured')}</b>
+              : <span style={{ color: 'var(--bad, #ff6b6b)' }}>{t(lang, 'notConfigured')}</span>}
+          </span>
+          <button
+            className="ops-mini-btn"
+            onClick={async () => {
+              try {
+                const r = await fetch('/ops-api/alerts/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                const d = r.ok ? await r.json() : { attempted: [] };
+                setTestMsg(`${t(lang, 'testSent')} ${(d.attempted ?? []).join(', ') || '—'}`);
+              } catch { setTestMsg('error'); }
+              setTimeout(() => setTestMsg(''), 4000);
+            }}
+          >{t(lang, 'testFire')}</button>
+          {testMsg && <span className="text-muted">{testMsg}</span>}
+          {!alertStatus && <span className="text-muted">—</span>}
+        </div>
+      </div>
 
       {/* Events */}
       <div className="pool-card" style={{ marginTop: '1.25rem', padding: '1rem' }}>

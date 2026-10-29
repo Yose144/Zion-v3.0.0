@@ -523,14 +523,14 @@ MODEL_CATALOG = [
      "tags": ["hiran", "gguf", "chat", "live"], "internal": True,
      "desc": "Qwen3-8B + LoRA r32/a64 · live on hiran-core + EDGE2 fallback"},
     {"hf": "zion/hiran-amitabha-Q4_K_M", "params": "14B", "vram_gb": 9,
-     "tags": ["hiran", "gguf", "thinking"], "internal": True, "mockup": True,
+     "tags": ["hiran", "gguf", "thinking", "trinity"], "internal": True, "mockup": True,
      "desc": "\"the Voice\" — deep reasoning tier, planned on Qwen3-14B"},
     {"hf": "zion/hiran-issobella-Q4_K_M", "params": "30B MoE", "vram_gb": 19,
-     "tags": ["hiran", "gguf", "code", "agentic"], "internal": True,
+     "tags": ["hiran", "gguf", "code", "agentic", "trinity", "coder-ready"], "internal": True,
      "mockup": True,
      "desc": "code/agentic tier, planned on Qwen3-Coder-30B-A3B GGUF"},
     {"hf": "zion/hiran-maitreya-Q5_K_M", "params": "27B", "vram_gb": 20,
-     "tags": ["hiran", "gguf", "rag", "lore"], "internal": True,
+     "tags": ["hiran", "gguf", "rag", "lore", "trinity"], "internal": True,
      "mockup": True,
      "desc": "teacher/oracle over the book corpus, planned on gemma-4/27B"},
     # ── ≤10 GB — runs beside dual mining ──
@@ -557,10 +557,10 @@ MODEL_CATALOG = [
     {"hf": "Qwen/Qwen3-32B-AWQ", "params": "32B", "vram_gb": 19,
      "tags": ["thinking", "reasoning"], "desc": "single 4090-class card"},
     {"hf": "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8", "params": "30B MoE",
-     "vram_gb": 31, "tags": ["code", "agentic"], "latest_vllm": True,
-     "desc": "coding daily driver, 3B active params"},
+     "vram_gb": 31, "tags": ["code", "agentic", "coder-ready"], "latest_vllm": True,
+     "desc": "coding daily driver, 3B active params · hiran-coder candidate"},
     {"hf": "mistralai/Devstral-Small-2-24B-Instruct-2512", "params": "24B",
-     "vram_gb": 48, "tags": ["code", "agentic"], "latest_vllm": True,
+     "vram_gb": 48, "tags": ["code", "agentic", "coder-ready"], "latest_vllm": True,
      "desc": "agentic coding, Dec 2025"},
     # ── 48 GB+ (A100/H100) ──
     {"hf": "Qwen/Qwen3.8-27B", "params": "27B", "vram_gb": 54,
@@ -2383,6 +2383,35 @@ def _notify_alert(kind, rig_id, detail):
             pass
 
 
+def alerts_status():
+    """Alert-routing status for the ops console — config booleans and a
+    webhook hostname only, never secret values."""
+    tok = os.environ.get("VASTCTL_TG_BOT_TOKEN", "")
+    chat = os.environ.get("VASTCTL_TG_CHAT_ID", "")
+    hook = os.environ.get("VASTCTL_ALERT_WEBHOOK", "")
+    return {
+        "telegram": {"configured": bool(tok and chat),
+                     "bot_token": bool(tok), "chat_id": bool(chat)},
+        "webhook": {"configured": bool(hook),
+                    "host": (urlparse(hook).hostname if hook else None)},
+        "channels": int(bool(tok and chat)) + int(bool(hook)),
+    }
+
+
+def alerts_test():
+    """Manual test-fire from the ops console: audit event + real fan-out.
+    Returns which channels were attempted (delivery itself is best-effort)."""
+    st = alerts_status()
+    chans = [n for n, ok in (("telegram", st["telegram"]["configured"]),
+                             ("webhook", st["webhook"]["configured"])) if ok]
+    with _agents_lock:
+        _agent_event("alert_test", "ops-ui",
+                     f"manual test-fire channels={chans or 'none'}")
+    _notify_alert("alert_test", "ops-ui",
+                  "manual test-fire from /ops/ console")
+    return {"ok": True, "attempted": chans}
+
+
 def agent_enroll(enroll_token, rig_id_hint, hostname):
     """One-time enroll: master enroll token → rig_id + per-rig secret.
     Secret plaintext is returned once and never stored (sha256 only)."""
@@ -2432,8 +2461,16 @@ def agent_heartbeat(rig_id, payload):
             t["state"] = "delivered"
             t["delivered_ts"] = time.time()
         sheet = _desired_for(db, rig_id)
+        # Include cancel notices so the rig can mark seen without running.
+        cancelled = [t for t in rig["tasks"]
+                     if t["state"] == "cancelled"
+                     and not t.get("cancel_notified")]
+        for t in cancelled:
+            t["cancel_notified"] = True
         resp = {"ok": True, "tasks": [
-            {"id": t["id"], "op": t["op"], "args": t["args"]} for t in due]}
+            {"id": t["id"], "op": t["op"], "args": t["args"],
+             "state": t.get("state")}
+            for t in due + cancelled]}
         if sheet:
             sheet["hash"] = _sheet_hash(
                 {k: v for k, v in sheet.items() if not k.startswith("_")})
@@ -2452,9 +2489,13 @@ def agent_result(rig_id, task_id, rc, out):
                 t["state"] = state
                 t["finished_ts"] = time.time()
                 break
+        # code.run logs are longer than exec noise; keep more for ops.
+        cap = 24000 if any(
+            t.get("id") == task_id and t.get("op") == "code.run"
+            for t in rig.get("tasks", [])) else 8000
         rig["results"].append({
             "task_id": task_id, "rc": rc,
-            "out": out[-8000:] if isinstance(out, str) else "",
+            "out": out[-cap:] if isinstance(out, str) else "",
             "ts": time.time()})
         _agent_event("result", rig_id, f"task={task_id} rc={rc}")
         _agent_prune(rig)
@@ -2463,18 +2504,74 @@ def agent_result(rig_id, task_id, rc, out):
 
 
 def agent_enqueue(rig_id, op, args):
-    if op != "exec" or not isinstance(args.get("cmd"), str) or not args["cmd"]:
-        raise ValueError("supported ops: exec with args.cmd")
+    """Queue a task for a rig. Supported ops: `exec`, `code.run` (F2)."""
+    args = dict(args or {})
+    if op == "exec":
+        if not isinstance(args.get("cmd"), str) or not args["cmd"]:
+            raise ValueError("exec requires args.cmd")
+    elif op == "code.run":
+        try:
+            from code_run import validate_code_run_args
+        except ImportError:
+            # vastctl may run with cwd elsewhere — load beside this file
+            import importlib.util
+            _p = Path(__file__).resolve().parent / "code_run.py"
+            spec = importlib.util.spec_from_file_location("code_run", _p)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            validate_code_run_args = mod.validate_code_run_args
+        args = validate_code_run_args(args)
+    else:
+        raise ValueError("supported ops: exec (args.cmd), code.run (args.prompt)")
     with _agents_lock:
         rig = _agent_db()["rigs"].setdefault(
             rig_id, {"heartbeat": {}, "tasks": [], "results": []})
         _agent_prune(rig)
         task = {"id": uuid.uuid4().hex[:12], "op": op, "args": args,
                 "state": "pending", "ts": time.time()}
+        # Cap stored prompt size in CP DB (full prompt still in task args).
         rig["tasks"].append(task)
         _agent_event("enqueue", rig_id, f"task={task['id']} op={op}")
         _write_json_atomic(AGENT_DB_FILE, _agents_cache)
         return task
+
+
+def agent_cancel(rig_id, task_id):
+    """Cancel a pending/delivered task (F3). Running tasks are not killed."""
+    with _agents_lock:
+        rig = _agent_db()["rigs"].get(rig_id)
+        if not rig:
+            raise ValueError(f"unknown rig {rig_id}")
+        for t in rig.get("tasks", []):
+            if t.get("id") != task_id:
+                continue
+            if t.get("state") not in {"pending", "delivered"}:
+                raise ValueError(f"task {task_id} state={t.get('state')} — cannot cancel")
+            t["state"] = "cancelled"
+            t["finished_ts"] = time.time()
+            _agent_event("cancel", rig_id, f"task={task_id}")
+            _write_json_atomic(AGENT_DB_FILE, _agents_cache)
+            return {"ok": True, "task_id": task_id, "state": "cancelled"}
+        raise ValueError(f"task {task_id} not found")
+
+
+def agent_task_status(rig_id, task_id):
+    """Lookup task + matching result for UI/CLI poll."""
+    with _agents_lock:
+        rig = _agent_db()["rigs"].get(rig_id) or {}
+        task = next((t for t in rig.get("tasks", []) if t.get("id") == task_id), None)
+        result = next((r for r in reversed(rig.get("results", []))
+                       if r.get("task_id") == task_id), None)
+        if not task and not result:
+            raise ValueError(f"task {task_id} not found on {rig_id}")
+        out = {
+            "ok": True,
+            "rig_id": rig_id,
+            "task": ({k: task[k] for k in ("id", "op", "state", "ts")
+                      if k in task} if task else None),
+            "result": result,
+        }
+        return out
 
 
 def agent_fleet():
@@ -2742,9 +2839,26 @@ class Handler(BaseHTTPRequestHandler):
         q = parse_qs(u.query)
         if u.path == "/api/agent/fleet":
             self._send(json.dumps(agent_fleet()), ctype="application/json")
+        elif u.path == "/api/agent/task":
+            # Poll one task (UI/CLI). Behind /vast-ops basic or public tunnel.
+            try:
+                rid = (q.get("rig_id") or [""])[0]
+                tid = (q.get("task_id") or [""])[0]
+                self._send(json.dumps(agent_task_status(rid, tid)),
+                           ctype="application/json")
+            except ValueError as e:
+                self._send(json.dumps({"ok": False, "error": str(e)}),
+                           404, "application/json")
         elif u.path == "/api/status":
             self._send(json.dumps(snapshot_from(cached_rigs(), rigs_live=rigs_cache_live())),
                        ctype="application/json")
+        elif u.path == "/api/alerts/status":
+            # Ops-only: reveals internal routing config (channels, hosts).
+            if _agent_token_ok(self.headers) is not True:
+                self._send("ops token required", 403, "text/plain")
+            else:
+                self._send(json.dumps(alerts_status()),
+                           ctype="application/json")
         elif u.path == "/api/ai/status":
             try:
                 self._send(json.dumps(ai_status()), ctype="application/json")
@@ -2882,7 +2996,8 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
         elif u.path in ("/api/agent/sheet", "/api/agent/sheet/clear",
                         "/api/agent/group", "/api/agent/rig/remove",
                         "/api/agent/catalog", "/api/agent/catalog/clear",
-                        "/api/agent/bulk", "/api/agent/bench"):
+                        "/api/agent/bulk", "/api/agent/bench",
+                        "/api/alerts/test"):
             if readonly():
                 self._send("readonly mode", 403, "text/plain")
                 return
@@ -2923,6 +3038,8 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
                         str(payload["gpu"]), str(payload["coin"]),
                         hps=payload.get("hps"),
                         usd_day=payload.get("usd_day"))
+                elif u.path == "/api/alerts/test":
+                    out = alerts_test()
                 else:
                     out = agent_bulk(
                         payload.get("target") or {},
@@ -2952,6 +3069,33 @@ for f in /root/zion.log /root/xmrig.log /root/srb-*.log /root/miner*.log; do [ -
                            ctype="application/json")
             except (KeyError, ValueError, json.JSONDecodeError) as e:
                 self._send(f"bad request: {e}", 400, "text/plain")
+        elif u.path in ("/api/inference/code-run", "/api/inference/code-cancel"):
+            # F3 UI path — same-origin + /vast-ops basic auth (nginx).
+            # Does NOT weaken public /api/agent/enqueue (still bearer-only).
+            if readonly():
+                self._send("readonly mode", 403, "text/plain")
+                return
+            if not same_origin_request(
+                    self.headers.get("Origin"), self.headers.get("Host")):
+                self._send("same-origin request required", 403, "text/plain")
+                return
+            body = self._read_body()
+            try:
+                payload = json.loads(body or b"{}")
+                if u.path.endswith("code-cancel"):
+                    out = agent_cancel(
+                        str(payload["rig_id"]), str(payload["task_id"]))
+                else:
+                    args = dict(payload.get("args") or {})
+                    if payload.get("prompt") and "prompt" not in args:
+                        args["prompt"] = payload["prompt"]
+                    task = agent_enqueue(
+                        str(payload["rig_id"]), "code.run", args)
+                    out = {"ok": True, "task": task}
+                self._send(json.dumps(out), ctype="application/json")
+            except (KeyError, ValueError, json.JSONDecodeError) as e:
+                self._send(json.dumps({"ok": False, "error": str(e)}),
+                           400, "application/json")
         elif u.path.startswith("/api/inference/"):
             if readonly():
                 self._send("readonly mode", 403, "text/plain")

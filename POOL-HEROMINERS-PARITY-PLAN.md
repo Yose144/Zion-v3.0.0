@@ -143,7 +143,10 @@ task/results viewer, alert badges, catalog+bench, events feed, X-Ops-Auth.
     into vast+agent rig rows (live H/s column + per-worker detail).
 20. ~~**AI-inference tab**~~ ✅ — `/ops-api/ai/status` card: GPU/VRAM/util
     inventory, model list, inference reachability, Hiran status chip.
-21. **Alert routing prefs UI** — TG/webhook status + test-fire button.
+21. ~~**Alert routing prefs UI**~~ ✅ — `/api/alerts/status` (ops-gated
+    GET: channel config booleans + webhook host, no secrets) +
+    `/api/alerts/test` (ops POST: audit event + real fan-out) + Alert
+    routing card in `/ops/` (per-channel status, test-fire).
 
 ## Milestones
 
@@ -153,9 +156,10 @@ task/results viewer, alert badges, catalog+bench, events feed, X-Ops-Auth.
   strip, WS2.8 status page, WS5.17 bench form.
 - **M3:** WS3.10 lock-sharding phase 1 ✅ (`cc589d926`), WS3.11 worker
   history ✅ (pre-existing v6), WS3.12 alert coverage ✅, WS5.18 catalog
-  editor ✅ (`0650944f4`), WS5.19 worker-hps join ✅ + WS5.20 AI tab ✅.
-  Remaining: phase-2 sharding, WS4.13/14 fleet alerts+switch live, WS5.21.
-- **M4:** WS1.5 solo docs, WS4.15/16 OC + adapters, OG/SEO polish, WS5.21.
+  editor ✅ (`0650944f4`), WS5.19 worker-hps join ✅ + WS5.20 AI tab ✅,
+  WS5.21 alert-routing UI ✅ — **WS5 complete**.
+  Remaining: phase-2 sharding, WS4.13/14 fleet alerts+switch live.
+- **M4:** WS1.5 solo docs, WS4.15/16 OC + adapters, OG/SEO polish.
 
 ## Acceptance criteria
 
