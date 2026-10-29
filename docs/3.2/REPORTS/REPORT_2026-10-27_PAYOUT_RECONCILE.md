@@ -153,6 +153,18 @@ staly nerozlišitelné → phantom páry v exact-dup metrice.
   EDGE běží produkce na v12 binárce → `height` u nových confirmů
   stále = inclusion (migrační caveat platí).
 
+**Deploy 29. 10. ~11:55 UTC:** `zion-v31-pool` restart na build
+`c95ca3437` (clean worktree `/opt/zion-rel/build`, sha256
+`2ab9fa5f…`, bak `/root/pool-deploy-backup-20261029-1238` — včetně
+running+on-disk binary, DB, pplns). Drain čistý (final pplns flush,
+complete), migrace **v12→v13 provedena** (`user_version=13`,
+219 973 confirmed řádků backfillováno `inclusion_height`). Od této
+chvíle nové confirmy zapisují `height`=reward + `inclusion_height`=
+inclusion. Build obsahuje zároveň drain-thread fix `8a32fae94`
+(paralelní session) — staged binary `/opt/zion/V31/target/release`
+byla přepsána; její embedded id `8a32fae94` přitom v13 neobsahoval
+(dirty-tree build — provenance caveat potvrzen naživo).
+
 ### Ops incident (mimo payout scope)
 
 - **EDGE „sshd outage" = false alarm, opraveno 10:56 UTC:** `:22`

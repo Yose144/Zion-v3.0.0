@@ -113,7 +113,7 @@ sha256sum /proc/$(systemctl show -p MainPID --value zion-v31-pool)/exe   # = bui
 - **Under-fee guard:** batch, kde required fee > 10 % cap, se NEBroadcastuje — requeue a čeká na větší payout value (loguje `under_fee`). Zamezuje dead-tx vznik.
 - **Resurrect sweep:** tx starší `ZION_PAYOUT_STUCK_AGE_SECS` (default 7 d) bez chain i UTXO evidence → `void_payout_rows` (řádek dostane `superseded_tx_id='voided:stuck'` = evidence, `total_paid` rollback) + requeue entry → nový submit. Externí coin chainy se neresurrectují.
 - **Monitoring:** `journalctl -u zion-v31-pool | grep -E 'payout_resurrect|voided|under_fee'`; backlog = `SELECT COUNT(*) FROM payouts WHERE confirmed=0 AND superseded_tx_id=''`; gauge `zion_pool_payouts_unconfirmed*`.
-- **Schema:** v11 přidává `payouts.superseded_tx_id` (migrace tolerantní i bez tabulky — historické fixture db).
+- **Schema:** v11 přidává `payouts.superseded_tx_id` (migrace tolerantní i bez tabulky — historické fixture db). v13 přidává `payouts.inclusion_height` — `height` = trvale reward height, `inclusion_height` = blok začlenění payout tx (dřív confirm přepisoval `height` → phantom dup páry, viz 2.S2 report). Legacy confirmed backfill = `inclusion_height=height` (původní reward height nenávratná). Exact-dup metrika nově klíčuje `inclusion_height`.
 - **Lifecycle:** API `status` má 4 stavy — `queued|sent|confirmed|superseded` (voidnuté dead-tx řádky = evidence, UI šedá přeškrtnutá pilule „nahrazeno"). Deploy UI/API změny = příští pool build + pool-ui rsync.
 
 ## 9. Známé zákruty
