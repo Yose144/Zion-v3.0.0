@@ -1145,7 +1145,7 @@ impl AuxPowClient {
                 let (eq_params, solution_param) = if is_equihash_algo && param8_str.contains('_') {
                     (Some(param8_str.to_string()), None)
                 } else {
-                    (None, params.get(8).and_then(|v| parse_hex_value(v)))
+                    (None, params.get(8).and_then(parse_hex_value))
                 };
                 let eq_pers = if is_equihash_algo {
                     params.get(9).and_then(|v| v.as_str()).map(String::from)
@@ -2836,7 +2836,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             let nbits = params[6].as_str().unwrap_or("");
             let solution = params
                 .get(8)
-                .and_then(|v| parse_hex_value(v))
+                .and_then(parse_hex_value)
                 .unwrap_or_default();
 
             // Honor an explicit mining.set_target override (used by the ZION pool's

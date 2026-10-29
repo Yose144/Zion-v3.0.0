@@ -205,11 +205,11 @@ async fn run(pool: &str, wallet: &str, threads: usize, verdicts_wanted: u32) -> 
     // soln wire variants for control probes
     let junk_prefixed = {
         let mut v = vec![0x64u8];
-        v.extend(std::iter::repeat(0u8).take(100));
+        v.extend(std::iter::repeat_n(0u8, 100));
         hex::encode(&v) // 101B, CompactSize 0x64 — parseable shape, junk indices
     };
-    let junk_raw = hex::encode(&[0u8; 100]); // 100B, no prefix
-    let junk_tiny = hex::encode(&[0u8; 8]); // 8B — structurally malformed
+    let junk_raw = hex::encode([0u8; 100]); // 100B, no prefix
+    let junk_tiny = hex::encode([0u8; 8]); // 8B — structurally malformed
 
     let mut verdicts = 0u32;
     let mut active_job = String::new();

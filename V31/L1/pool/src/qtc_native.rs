@@ -737,9 +737,11 @@ mod tests {
 
     #[test]
     fn pick_job_respects_pct_and_freshness() {
-        let mut st = NativeQtcState::default();
-        st.enabled = true;
-        st.share_pct = 25;
+        let mut st = NativeQtcState {
+            enabled: true,
+            share_pct: 25,
+            ..Default::default()
+        };
         let pkg = |id: &str, age: Option<Duration>| JobPackage {
             external_job_id: id.into(),
             coin: ExternalCoin::Quantus,

@@ -920,10 +920,9 @@ mod tests {
             "qtu timeout buckets to 'other' (no keyword match)"
         );
         assert_eq!(m.streams["prl"].reject_reasons.get("other"), Some(&1));
-        assert!(m.streams["qtu"]
+        assert!(!m.streams["qtu"]
             .reject_reasons
-            .get("low_difficulty")
-            .is_none());
+            .contains_key("low_difficulty"));
     }
 
     #[test]

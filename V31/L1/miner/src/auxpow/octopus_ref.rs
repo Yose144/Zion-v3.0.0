@@ -187,7 +187,7 @@ pub fn octopus_make_cache(num_nodes: usize, ident: &[u8; 32]) -> Vec<u8> {
                 data[j * 8..j * 8 + 8].copy_from_slice(&(a ^ b).to_le_bytes());
             }
             let mut h = Keccak512::new();
-            h.update(&data);
+            h.update(data);
             cache[i * 64..(i + 1) * 64].copy_from_slice(&h.finalize());
         }
     }
@@ -198,12 +198,12 @@ fn is_prime_u64(n: u64) -> bool {
     if n < 2 {
         return false;
     }
-    if n % 2 == 0 {
+    if n.is_multiple_of(2) {
         return n == 2;
     }
     let mut d = 3u64;
     while d * d <= n {
-        if n % d == 0 {
+        if n.is_multiple_of(d) {
             return false;
         }
         d += 2;
@@ -321,8 +321,8 @@ pub fn octopus_hash_ref(
 
     // final = keccak256(half_mix || cmix)
     let mut h = Keccak256::new();
-    h.update(&half_mix);
-    h.update(&cmix);
+    h.update(half_mix);
+    h.update(cmix);
     h.finalize().into()
 }
 
@@ -340,7 +340,7 @@ pub fn octopus_dag_item(cache: &[u8], index: u64) -> [u8; 64] {
     mix[0..4].copy_from_slice(&w0.to_le_bytes());
     {
         let mut h = Keccak512::new();
-        h.update(&mix);
+        h.update(mix);
         mix = h.finalize().into();
     }
     for j in 0..256u32 {
@@ -354,6 +354,6 @@ pub fn octopus_dag_item(cache: &[u8], index: u64) -> [u8; 64] {
         }
     }
     let mut h = Keccak512::new();
-    h.update(&mix);
+    h.update(mix);
     h.finalize().into()
 }

@@ -981,8 +981,8 @@ mod tests {
         let accepted = [ra.is_ok(), rb.is_ok()].into_iter().filter(|x| *x).count();
         assert_eq!(accepted, 1, "exactly one concurrent submit is credited");
         match (ra, rb) {
-            (Err(e), _) if matches!(e, PearlSubmitError::Duplicate) => {}
-            (_, Err(e)) if matches!(e, PearlSubmitError::Duplicate) => {}
+            (Err(PearlSubmitError::Duplicate), _) => {}
+            (_, Err(PearlSubmitError::Duplicate)) => {}
             (a2, b2) => panic!("the losing submit must be Duplicate: {a2:?} {b2:?}"),
         }
     }

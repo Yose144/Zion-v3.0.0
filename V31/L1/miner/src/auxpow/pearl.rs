@@ -27,7 +27,7 @@ pub struct PeriodicPattern {
 
 impl PeriodicPattern {
     pub fn period(&self) -> u32 {
-        self.shape.iter().map(|&(s, l)| s * l).last().unwrap_or(1)
+        self.shape.iter().map(|&(s, l)| s * l).next_back().unwrap_or(1)
     }
 
     pub fn size(&self) -> usize {
@@ -88,7 +88,7 @@ impl PeriodicPattern {
         while p.len() > 1 {
             let mut found = false;
             for period in 1..p.len() {
-                if p.len() % period == 0 {
+                if p.len().is_multiple_of(period) {
                     let s = p[period];
                     if (0..p.len() - period).all(|i| p[i] + s == p[i + period]) {
                         shape_vec.push((s, (p.len() / period) as u32));
@@ -201,26 +201,26 @@ impl PearlMineConfig {
             "matrix dims must be in 1..=2^24"
         );
         ensure!(
-            (128..=1024).contains(&self.rank) && self.rank.is_power_of_two() && self.rank % 32 == 0,
+            (128..=1024).contains(&self.rank) && self.rank.is_power_of_two() && self.rank.is_multiple_of(32),
             "rank must be a power of two in 128..=1024"
         );
         ensure!(
-            (1024..=65536).contains(&self.k) && self.k % 64 == 0,
+            (1024..=65536).contains(&self.k) && self.k.is_multiple_of(64),
             "k must be a multiple of 64 in 1024..=65536"
         );
         ensure!(
             self.k >= 16 * self.rank && self.k <= 4 * self.rank * self.rank,
             "k must satisfy 16*rank <= k <= 4*rank^2"
         );
-        ensure!(self.k % self.rank == 0, "k not divisible by rank");
+        ensure!(self.k.is_multiple_of(self.rank), "k not divisible by rank");
         ensure!(
-            self.m % self.rows_pattern.period() as usize == 0,
+            self.m.is_multiple_of(self.rows_pattern.period() as usize),
             "m {} not divisible by rows period {}",
             self.m,
             self.rows_pattern.period()
         );
         ensure!(
-            self.n % self.cols_pattern.period() as usize == 0,
+            self.n.is_multiple_of(self.cols_pattern.period() as usize),
             "n {} not divisible by cols period {}",
             self.n,
             self.cols_pattern.period()

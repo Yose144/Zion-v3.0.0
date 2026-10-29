@@ -2221,7 +2221,7 @@ impl PoolApi {
     /// - `pplns`   → `state_path` file bytes (atomically replaced on save)
     /// - `payouts` → `state_path + ".payouts.json"` idempotency ledger
     /// - `db`      → `VACUUM INTO` snapshot of `pool-store.db` — consistent
-    ///               under WAL while writers keep working
+    ///   under WAL while writers keep working
     ///
     /// Files are read OUTSIDE the pool lock — only the config paths are
     /// taken under it.
@@ -4724,7 +4724,7 @@ mod tests {
         // Below floor rejected; floor = global minimum.
         let resp = post(
             "/public/v1/account/threshold",
-            &r#"{"token":"zis_good","wallet":"zion1mine","min_payout":1}"#.to_string(),
+            r#"{"token":"zis_good","wallet":"zion1mine","min_payout":1}"#,
         );
         assert!(resp.starts_with("HTTP/1.1 400"), "{resp}");
 
@@ -4763,11 +4763,10 @@ mod tests {
             r#"{"token":"zis_good","wallet":"zion1mine","min_payout":0}"#,
         );
         assert!(resp.starts_with("HTTP/1.1 200"), "{resp}");
-        assert!(store
+        assert!(!store
             .load_payout_overrides()
             .unwrap()
-            .get("zion1mine")
-            .is_none());
+            .contains_key("zion1mine"));
         assert_eq!(
             pool.lock()
                 .unwrap()

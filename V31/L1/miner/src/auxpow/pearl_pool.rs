@@ -284,7 +284,7 @@ impl PearlPoolClient {
         }
         if let Some(id) = value.get("id").and_then(Value::as_u64) {
             let accepted = value.get("result") == Some(&Value::Bool(true))
-                && value.get("error").map_or(true, Value::is_null);
+                && value.get("error").is_none_or(Value::is_null);
             return Ok(PearlPoolEvent::Response(PearlPoolResponse {
                 id,
                 accepted,
