@@ -1,9 +1,24 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Brain, Check, Copy, Key, Loader2, Terminal, Wallet } from 'lucide-react';
+import {
+  type LucideIcon,
+  ArrowRight,
+  Boxes,
+  Brain,
+  Check,
+  Copy,
+  Cpu,
+  CreditCard,
+  ExternalLink,
+  Key,
+  Loader2,
+  MessageSquare,
+  Terminal,
+  Wallet,
+} from 'lucide-react';
 import { erc20Abi, type Hex } from 'viem';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useLang } from '@/contexts/LanguageContext';
@@ -69,6 +84,20 @@ const T = {
     en: 'Ask Hiran…',
   },
   trialSend: { cs: 'Odeslat', en: 'Send' },
+  resCliTitle: { cs: 'Schválit Hiran CLI', en: 'Approve Hiran CLI' },
+  resCliSub: {
+    cs: 'zion hiran login → potvrdit kód',
+    en: 'zion hiran login → confirm code',
+  },
+  resVastTitle: { cs: 'Vast Coding Agent', en: 'Vast Coding Agent' },
+  plansTitle: { cs: 'Plány', en: 'Plans' },
+  plansSub: {
+    cs: 'Zrušitelné kdykoliv. Platba kartou přes Stripe nebo USDC na Base.',
+    en: 'Cancel anytime. Pay by card via Stripe or USDC on Base.',
+  },
+  recommended: { cs: 'Doporučený', en: 'Recommended' },
+  docsCli: { cs: 'CLI', en: 'CLI' },
+  docsApi: { cs: 'HTTP API', en: 'HTTP API' },
   settlement: {
     cs: 'Settlement ZION/L2 = dry-run; platby dnes = Stripe / Base USDC.',
     en: 'ZION/L2 settlement = dry-run; billing today = Stripe / Base USDC.',
@@ -136,6 +165,27 @@ interface SubscribeResult {
   apiKey?: string;
   url?: string | null;
   upgraded?: boolean;
+}
+
+function SectionHead({
+  icon: Icon,
+  title,
+  sub,
+}: {
+  icon: LucideIcon;
+  title: string;
+  sub?: string;
+}) {
+  return (
+    <div className="mt-12 mb-6">
+      <div className="flex items-center gap-3">
+        <Icon className="w-5 h-5 shrink-0 text-rasta-gold" />
+        <h2 className="text-xl font-black font-display text-gradient">{title}</h2>
+        <div className="section-line flex-1" />
+      </div>
+      {sub && <p className="mt-2 text-sm text-gray-400">{sub}</p>}
+    </div>
+  );
 }
 
 function AiPricingInner() {
@@ -351,27 +401,39 @@ function AiPricingInner() {
             </p>
           )}
 
-          <p className="mb-5 text-sm text-gray-400 space-y-1">
-            <span className="block">
-              <Link href="/ai/cli" className="underline hover:text-gray-200">
-                {T.cliLink[l]}
-              </Link>
-            </span>
-            <span className="block">
-              <a
-                href="https://zionterranova.com/vast-rigs/#ai"
-                target="_blank"
-                rel="noreferrer"
-                className="underline hover:text-gray-200"
-              >
-                {T.vastLink[l]}
-              </a>
-              <span className="ml-2 font-mono text-xs text-gray-500">{T.vastCli[l]}</span>
-            </span>
-          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link
+              href="/ai/cli"
+              className="zion-tile group flex items-center gap-3 hover:border-rasta-gold/40"
+            >
+              <Terminal className="w-5 h-5 shrink-0 text-rasta-gold" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white transition-colors group-hover:text-rasta-gold">
+                  {T.resCliTitle[l]}
+                </p>
+                <p className="truncate font-mono text-xs text-gray-500">{T.resCliSub[l]}</p>
+              </div>
+              <ArrowRight className="ml-auto w-4 h-4 shrink-0 text-gray-600 transition-transform group-hover:translate-x-1 group-hover:text-rasta-gold" />
+            </Link>
+            <a
+              href="https://zionterranova.com/vast-rigs/#ai"
+              target="_blank"
+              rel="noreferrer"
+              className="zion-tile group flex items-center gap-3 hover:border-rasta-gold/40"
+            >
+              <Cpu className="w-5 h-5 shrink-0 text-rasta-gold" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white transition-colors group-hover:text-rasta-gold">
+                  {T.resVastTitle[l]}
+                </p>
+                <p className="truncate font-mono text-xs text-gray-500">{T.vastCli[l]}</p>
+              </div>
+              <ExternalLink className="ml-auto w-4 h-4 shrink-0 text-gray-600 transition-colors group-hover:text-rasta-gold" />
+            </a>
+          </div>
 
           {modelsInfo?.badge && (
-            <div className="mb-6 flex flex-wrap items-center gap-2 text-xs">
+            <div className="mt-6 flex flex-wrap items-center gap-2 text-xs">
               <span className="text-gray-500">gateway</span>
               <span
                 className={`rounded-full px-2.5 py-1 font-mono ${
@@ -394,9 +456,8 @@ function AiPricingInner() {
             </div>
           )}
 
-          <h2 className="mb-2 text-xl font-semibold text-white">{T.modelsTitle[l]}</h2>
-          <p className="mb-4 text-sm text-gray-400">{T.modelsSub[l]}</p>
-          <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <SectionHead icon={Boxes} title={T.modelsTitle[l]} sub={T.modelsSub[l]} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(modelsInfo?.models ?? []).map((m) => {
               const status = m['x-mockup']
                 ? T.mockup[l]
@@ -404,25 +465,33 @@ function AiPricingInner() {
                   ? T.available[l]
                   : T.offline[l];
               const statusClass = m['x-mockup']
-                ? 'text-amber-300'
+                ? 'border-amber-400/30 bg-amber-400/10 text-amber-300'
                 : m['x-available']
-                  ? 'text-emerald-300'
-                  : 'text-gray-500';
+                  ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+                  : 'border-white/10 bg-white/5 text-gray-500';
+              const rc = m['x-mockup']
+                ? '252, 209, 22'
+                : m['x-available']
+                  ? '7, 137, 48'
+                  : '148, 163, 184';
               return (
                 <div
                   key={m.id}
-                  className="rounded-xl border border-white/10 bg-white/5 p-4"
+                  className="zion-rainbow-card p-5"
+                  style={{ '--rc': rc } as CSSProperties}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <code className="text-sm font-semibold text-white">{m.id}</code>
-                    <span className={`text-[11px] font-mono uppercase ${statusClass}`}>
+                    <code className="text-sm font-bold text-white">{m.id}</code>
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider ${statusClass}`}
+                    >
                       {status}
                     </span>
                   </div>
                   <p className="mt-2 text-xs text-gray-400">
                     {m['x-role'] || '—'} · {T.ctx[l]} {m['x-context'] ?? '—'}
                   </p>
-                  <p className="mt-1 text-sm text-amber-200/90">
+                  <p className="mt-1 text-sm font-semibold text-amber-200/90">
                     {T.price[l]}{' '}
                     {typeof m['x-price-1m-usd'] === 'number'
                       ? m['x-price-1m-usd'].toFixed(2)
@@ -433,29 +502,33 @@ function AiPricingInner() {
             })}
           </div>
 
-          <div className="mb-10 rounded-xl border border-white/10 bg-white/5 p-5">
-            <h2 className="text-lg font-semibold text-white">{T.trialTitle[l]}</h2>
-            <p className="mt-1 text-sm text-gray-400">{T.trialHint[l]}</p>
+          <SectionHead icon={MessageSquare} title={T.trialTitle[l]} sub={T.trialHint[l]} />
+          <div
+            className="zion-rainbow-card p-5"
+            style={{ '--rc': '252, 209, 22' } as CSSProperties}
+          >
             <textarea
               value={trialPrompt}
               onChange={(e) => setTrialPrompt(e.target.value)}
               rows={3}
               maxLength={500}
               placeholder={T.trialPlaceholder[l]}
-              className="mt-3 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-gray-600"
+              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-rasta-gold/40 focus:outline-none"
             />
-            <button
-              type="button"
-              onClick={() => void runTrial()}
-              disabled={!authenticated || busy !== null || !trialPrompt.trim()}
-              className="mt-3 rounded-lg bg-amber-500/90 px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {busy === 'trial' ? (
-                <Loader2 className="w-4 h-4 animate-spin inline-block" />
-              ) : (
-                T.trialSend[l]
-              )}
-            </button>
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => void runTrial()}
+                disabled={!authenticated || busy !== null || !trialPrompt.trim()}
+                className="rounded-lg bg-amber-500/90 px-5 py-2 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {busy === 'trial' ? (
+                  <Loader2 className="w-4 h-4 animate-spin inline-block" />
+                ) : (
+                  T.trialSend[l]
+                )}
+              </button>
+            </div>
             {trialErr && (
               <p className="mt-3 text-sm text-red-300">{trialErr}</p>
             )}
@@ -466,18 +539,32 @@ function AiPricingInner() {
             )}
           </div>
 
-          <p className="mb-6 text-xs text-gray-500">
-            {modelsInfo?.settlement_note || T.settlement[l]}
-          </p>
-
+          <SectionHead icon={CreditCard} title={T.plansTitle[l]} sub={T.plansSub[l]} />
           <div className="grid gap-5 md:grid-cols-3">
             {PLANS.map((p) => (
               <div
                 key={p.id}
-                className="rounded-xl border border-white/10 bg-white/5 p-5 flex flex-col"
+                className={`zion-rainbow-card flex flex-col p-6 ${
+                  p.id === 'pro' ? 'md:-translate-y-1' : ''
+                }`}
+                style={
+                  {
+                    '--rc':
+                      p.id === 'free'
+                        ? '7, 137, 48'
+                        : p.id === 'pro'
+                          ? '252, 209, 22'
+                          : '56, 189, 248',
+                  } as CSSProperties
+                }
               >
-                <h3 className="text-lg font-semibold text-white">{p.name}</h3>
-                <p className="mt-1 text-2xl font-bold text-amber-300">
+                {p.id === 'pro' && (
+                  <span className="absolute -top-px right-5 rounded-b-lg bg-rasta-gold px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
+                    {T.recommended[l]}
+                  </span>
+                )}
+                <h3 className="text-lg font-bold font-display text-white">{p.name}</h3>
+                <p className="mt-1 text-3xl font-black text-gradient-gold">
                   {p.price}
                   <span className="text-sm font-normal text-gray-400">{T.perMonth[l]}</span>
                 </p>
@@ -552,21 +639,32 @@ function AiPricingInner() {
             </div>
           )}
 
-          <h2 className="mt-10 flex items-center gap-2 text-xl font-semibold text-white">
-            <Terminal className="w-5 h-5" /> {T.docsTitle[l]}
-          </h2>
-          <pre className="mt-3 overflow-x-auto rounded-xl bg-black/50 p-4 text-xs text-gray-200">{`zion hiran login
+          <SectionHead icon={Terminal} title={T.docsTitle[l]} />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                {T.docsCli[l]}
+              </p>
+              <pre className="overflow-x-auto rounded-xl border border-white/10 bg-black/50 p-4 text-xs leading-relaxed text-gray-200">{`zion hiran login
 zion hiran whoami
 zion agent -p "…"
-# remote GPU fleet (ops token):
-zion hiran agent -p "…" --remote vast
 
-curl https://market.zionterranova.com/v1/chat/completions \\
+# remote GPU fleet (ops token):
+zion hiran agent -p "…" --remote vast`}</pre>
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                {T.docsApi[l]}
+              </p>
+              <pre className="overflow-x-auto rounded-xl border border-white/10 bg-black/50 p-4 text-xs leading-relaxed text-gray-200">{`curl https://market.zionterranova.com/v1/chat/completions \\
   -H "X-API-Key: zis_…" \\
   -H "Content-Type: application/json" \\
-  -d '{"model": "hiran-mini", "messages": [{"role": "user", "content": "Hello"}]}'
+  -d '{"model": "hiran-mini",
+      "messages": [{"role": "user", "content": "Hello"}]}'
 
-GET /v1/models · `}{T.usage[l]}{` → /v1/usage`}</pre>
+GET /v1/models · ${T.usage[l]} → /v1/usage`}</pre>
+            </div>
+          </div>
 
           <p className="mt-6 text-sm text-gray-400">{T.footer[l]}</p>
           <p className="mt-2 text-sm text-gray-500">

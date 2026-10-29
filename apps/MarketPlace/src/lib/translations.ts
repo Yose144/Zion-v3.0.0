@@ -136,6 +136,9 @@ const t = {
       cs: 'Lokální coding agent, CLI login a plány — inference i coding joby na GPU fleetu.',
       en: 'Local coding agent, CLI login, and plans — inference and coding jobs on the GPU fleet.',
     },
+    chipCli: { cs: 'CLI coding agent', en: 'CLI coding agent' },
+    chipApi: { cs: 'OpenAI-compatible API', en: 'OpenAI-compatible API' },
+    chipFleet: { cs: 'GPU fleet joby', en: 'GPU fleet jobs' },
     cta: { cs: 'Otevřít AI', en: 'Open AI' },
   },
 
