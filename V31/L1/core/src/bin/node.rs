@@ -18,6 +18,7 @@ use zion_l1_types::{Address, ChainId};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
+#[command(long_version = concat!(env!("CARGO_PKG_VERSION"), " build ", env!("ZION_BUILD_ID")))]
 struct Args {
     /// SQLite database path.
     #[arg(long, default_value = "zion-node.db", env = "ZION_NODE_DB")]
@@ -164,6 +165,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     info!("ZION v3.1 node");
+    info!("build_id={}", env!("ZION_BUILD_ID"));
     info!("node_id={}", args.node_id);
     if !args.v3_miner.is_empty() {
         info!("v3_miner_address={}", args.v3_miner);

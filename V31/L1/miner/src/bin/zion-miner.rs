@@ -31,7 +31,7 @@ use zion_miner::stream::{StreamId, StreamStats};
 #[derive(Parser, Debug)]
 #[command(name = "zion-miner")]
 #[command(about = "ZION triple-stream stratum miner (ZION + GPU AuxPoW + CPU AuxPoW)")]
-#[command(version)]
+#[command(version, long_version = concat!(env!("CARGO_PKG_VERSION"), " build ", env!("ZION_BUILD_ID")))]
 struct Args {
     /// Pool stratum address (host:port) for ZION share mining.
     /// Also read from `ZION_POOL_ADDR`.
@@ -1312,6 +1312,7 @@ async fn srbminer_json(
     serde_json::json!({
         "rig_name": rig_name,
         "miner_version": env!("CARGO_PKG_VERSION"),
+        "build_id": env!("ZION_BUILD_ID"),
         "miner": "zion-miner",
         "mining_time": uptime,
         "total_cpu_workers": cpu_workers,

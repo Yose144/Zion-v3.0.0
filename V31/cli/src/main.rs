@@ -26,7 +26,7 @@ use zion_multichain::MultichainService;
 #[derive(Parser)]
 #[command(name = "zion")]
 #[command(about = "ZION Mainnet Beta CLI")]
-#[command(version)]
+#[command(version, long_version = concat!(env!("CARGO_PKG_VERSION"), " build ", env!("ZION_BUILD_ID")))]
 pub struct Cli {
     /// Path to the multichain TOML config.
     #[arg(short, long, global = true, value_name = "FILE")]

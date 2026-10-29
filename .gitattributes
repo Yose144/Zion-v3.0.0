@@ -1,2 +1,5 @@
 *.zip filter=lfs diff=lfs merge=lfs -text
 V31/L1/pool/.git-archive-sha export-subst
+V31/L1/core/.git-archive-sha export-subst
+V31/cli/.git-archive-sha export-subst
+V31/L1/miner/.git-archive-sha export-subst
