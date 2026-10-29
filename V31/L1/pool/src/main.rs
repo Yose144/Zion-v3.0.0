@@ -709,6 +709,95 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
+    // ── Pool health alerting (M3): reject-rate spike + block silence ──
+    // Pool-wide share reject rate over a delta window + age of the newest
+    // found block, fanned out via Notifier with per-signal cooldown (same
+    // pattern as the stale-job loop above). All thresholds env-tunable.
+    let health_pool = Arc::clone(&pool);
+    let health_tracker = Arc::clone(&block_tracker);
+    let health_notifier = notifier.clone();
+    tokio::spawn(async move {
+        let reject_min_samples: u64 = std::env::var("ZION_POOL_ALERT_REJECT_MIN_SHARES")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(200);
+        let reject_threshold_pct: f64 = std::env::var("ZION_POOL_ALERT_REJECT_PCT")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(20.0);
+        let block_silence_secs: u64 = std::env::var("ZION_POOL_ALERT_BLOCK_SILENCE_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(6 * 3600);
+        let cooldown_secs: u64 = std::env::var("ZION_POOL_ALERT_COOLDOWN_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(1800);
+        let boot_ts = zion_pool::telemetry::now_unix_seconds();
+        let mut last_acc: u64 = 0;
+        let mut last_rej: u64 = 0;
+        let mut first = true;
+        let mut last_alert: std::collections::HashMap<&'static str, std::time::Instant> =
+            std::collections::HashMap::new();
+        let mut interval = tokio::time::interval(Duration::from_secs(60));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        loop {
+            interval.tick().await;
+            let (accepted, rejected) = {
+                let p = match health_pool.lock() {
+                    Ok(p) => p,
+                    Err(_) => continue,
+                };
+                (
+                    p.accepted.load(std::sync::atomic::Ordering::Relaxed),
+                    p.rejected.load(std::sync::atomic::Ordering::Relaxed),
+                )
+            };
+            if first {
+                first = false;
+                last_acc = accepted;
+                last_rej = rejected;
+                continue;
+            }
+            let d_acc = accepted.saturating_sub(last_acc);
+            let d_rej = rejected.saturating_sub(last_rej);
+            last_acc = accepted;
+            last_rej = rejected;
+            let total = d_acc + d_rej;
+            let cooling = |m: &std::collections::HashMap<&'static str, std::time::Instant>,
+                           key: &'static str| {
+                m.get(key)
+                    .map(|t| t.elapsed().as_secs() < cooldown_secs)
+                    .unwrap_or(false)
+            };
+            if total >= reject_min_samples {
+                let pct = d_rej as f64 / total as f64 * 100.0;
+                if pct >= reject_threshold_pct && !cooling(&last_alert, "reject_spike") {
+                    last_alert.insert("reject_spike", std::time::Instant::now());
+                    let n = health_notifier.clone();
+                    tokio::spawn(async move {
+                        n.notify_reject_spike(pct, d_rej, total);
+                    });
+                }
+            }
+            // Block silence: age of the newest found block. A fresh boot
+            // with no blocks yet gets a grace period counted from start.
+            let last_block_ts = health_tracker
+                .lock()
+                .ok()
+                .and_then(|t| t.recent_blocks(1).first().map(|b| b.found_at_unix));
+            let silence_s = zion_pool::telemetry::now_unix_seconds()
+                .saturating_sub(last_block_ts.unwrap_or(boot_ts));
+            if silence_s >= block_silence_secs && !cooling(&last_alert, "block_silence") {
+                last_alert.insert("block_silence", std::time::Instant::now());
+                let n = health_notifier.clone();
+                tokio::spawn(async move {
+                    n.notify_block_silence(silence_s);
+                });
+            }
+        }
+    });
+
     // ── Graceful drain (A4.3) ───────────────────────────────────────────
     // SIGTERM/SIGINT → broadcast shutdown to every accept loop + the
     // template feed, give in-flight submits a short grace window, then a

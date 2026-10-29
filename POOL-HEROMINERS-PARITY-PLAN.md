@@ -98,10 +98,28 @@
     global pool mutex synchronously on tokio workers (convoy → wedge +
     delayed drains). Options: shard state per coin/stream, or move submit
     accounting off the hot mutex; keep snapshot-API immune (already done).
+    **Phase 1 landed (`cc589d926`):** submit path is now probe → validate →
+    claim — PoW hash runs unlocked on a per-server `ShareValidator` copy,
+    `pool.lock()` only covers dedup probe + atomic claim/credit; the block
+    check reuses the submit hash (was a second identical hash under lock).
+    PPLNS persist split the same way (`pplns_save_prepare`/`_finish`) —
+    window clone + JSON + fsync no longer hold the mutex every 30 s.
+    **Phase 2 candidates (documented, staged):** `PplnsEngine` behind its
+    own `Mutex` (share credit + payout calc + save detach from `Pool`),
+    `share_dedup` → dedicated lock, remaining ~19 request-path locks in
+    api.rs → snapshot-served. Careful: `worker_payout_target` reads
+    `worker_addresses`/`worker_ext_payouts` — those must move with the
+    engine or become `RwLock`.
 11. **Per-worker historical hps persistence** — needed for #3/#7 (store
-    sampler already exists; add retention + read path).
+    sampler already exists; add retention + read path). ✅ schema v6
+    `miner_history` (miner/worker/ts/hps-json/acc/rej, 60 s cadence, 24 h
+    retention) + `/public/v1/miner/{w}/history` + MinerClient/WorkerClient
+    charts already live.
 12. **Alert coverage parity** — miner alert prefs exist; add reject-rate
-    spike alert + block-frequency anomaly into notifications.rs.
+    spike alert + block-frequency anomaly into notifications.rs. ✅ done:
+    60 s health loop (reject-rate delta ≥ threshold over ≥200 shares +
+    last-block age ≥ 6 h, per-signal 30 min cooldown, env-tunable
+    `ZION_POOL_ALERT_*`) → TG + block webhook via Notifier.
 
 ### WS4 — Fleet / HiveOS-class (vastctl)
 13. **Profit-switch apply rollout** — bench table seeding (ops), dry→apply
@@ -132,8 +150,10 @@ task/results viewer, alert badges, catalog+bench, events feed, X-Ops-Auth.
   tile ✅, /ops console shell ✅. Remaining: WS1.1 calculator, WS2.6 PPLNS.
 - **M2:** WS1.3 miner-page depth + WS2.7 worker history, WS1.2 luck/effort
   strip, WS2.8 status page, WS5.17 bench form.
-- **M3:** WS3.10 lock-sharding (biggest resilience item), WS3.12 alert
-  coverage, WS4.13/14 fleet alerts+switch live, WS5.18/19.
+- **M3:** WS3.10 lock-sharding phase 1 ✅ (`cc589d926`), WS3.11 worker
+  history ✅ (pre-existing v6), WS3.12 alert coverage ✅, WS5.18 catalog
+  editor ✅ (`0650944f4`). Remaining: phase-2 sharding, WS4.13/14 fleet
+  alerts+switch live, WS5.19/20/21.
 - **M4:** WS1.5 solo docs, WS4.15/16 OC + adapters, OG/SEO polish, WS5.20/21.
 
 ## Acceptance criteria

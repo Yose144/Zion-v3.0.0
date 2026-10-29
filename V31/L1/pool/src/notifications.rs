@@ -248,6 +248,63 @@ impl Notifier {
         }
     }
 
+    /// Pool-health alert (M3): the pool-wide share reject rate over the
+    /// last delta window crossed the configured threshold — miner-side
+    /// misconfiguration, wrong algo, or an upstream leg serving stale
+    /// jobs. Callers rate-limit; this helper is fire-and-forget.
+    pub fn notify_reject_spike(&self, reject_pct: f64, rejected: u64, total: u64) {
+        warn!(
+            "notify_reject_spike pct={:.1} rejected={} total={}",
+            reject_pct, rejected, total
+        );
+
+        if self.config.telegram_enabled() {
+            let msg = format!(
+                "📉 Reject-rate Spike\n{:.1}% rejected ({}/{} shares in window)\nCheck miner configs / stale jobs.",
+                reject_pct, rejected, total
+            );
+            self.send_telegram(&msg);
+        }
+
+        if self.config.webhook_enabled() {
+            let payload = serde_json::json!({
+                "event": "reject_spike",
+                "reject_pct": reject_pct,
+                "rejected": rejected,
+                "total": total,
+            });
+            if let Some(url) = self.config.block_webhook_url.clone() {
+                self.send_webhook(&url, &payload);
+            }
+        }
+    }
+
+    /// Pool-health alert (M3): no new block found for `silence_secs` —
+    /// hashrate may have left the pool or block submission is failing.
+    /// Callers rate-limit; fire-and-forget.
+    pub fn notify_block_silence(&self, silence_secs: u64) {
+        warn!("notify_block_silence silence_s={}", silence_secs);
+
+        if self.config.telegram_enabled() {
+            let msg = format!(
+                "⏳ Block Silence\nNo block found for {}h {}m — check pool hashrate and block submission.",
+                silence_secs / 3600,
+                (silence_secs % 3600) / 60
+            );
+            self.send_telegram(&msg);
+        }
+
+        if self.config.webhook_enabled() {
+            let payload = serde_json::json!({
+                "event": "block_silence",
+                "silence_secs": silence_secs,
+            });
+            if let Some(url) = self.config.block_webhook_url.clone() {
+                self.send_webhook(&url, &payload);
+            }
+        }
+    }
+
     // --- individual channel senders --------------------------------------
 
     /// Send a text message to the configured Telegram chat.
