@@ -114,5 +114,7 @@ těžitelné = náš miner základna může merge-minovat hned.
 > (pro legs: "vaši mineři dostanou zaplaceno ve vašem tokenu, my držíme %").
 > 1–2 klienti/kvartál je realistický cíl — niche trh.
 
-> **Pre-outreach blocker:** payout backlog 2.B7 vyřešit PRVNÍ — mineři jsou
-> zároveň budoucí hashrate pro tyto služby (§4 `Zionb2b.md`).
+> **Pre-outreach gate (29.10.):** ZION payout recovery live; QTC = zveřejněný
+> honest hold (`QTC_PAYOUT_POLICY.md`). Outreach balíček:
+> `B2B_POOL_OUTREACH.md`. Mineři = budoucí hashrate (§4 `Zionb2b.md`) —
+> při leadu nezatajovat QTC hold.

@@ -11,7 +11,7 @@
 | Aktivace node reward distribution | premine sloty 6–8 time-lock až height 144 000 (~27.–28. 11.); rozhodnutí operátora | N1/N2 |
 | CHv4.2 (fork height `u64::MAX`) | jen governance-triggered; bez potřeby před stable | N1 |
 | Program nezávislých operátorů nodů (charta M7) | vyžaduje stabilní release + incentivizaci | N7 |
-| QTU native payouty | `treasury_free=0`, 918 stalled payoutů — pre-existing deficit, funding/policy na operátorovi | N2 |
+| QTU native payouty | `treasury_free=0`, ~918 deferred — politika ✅ 29.10. (`QTC_PAYOUT_POLICY.md` honest hold); zbývá 👤 funding | N2 |
 | Persistentní share-dedup okno (A4.1) | in-memory dedup funkční; DB persist přidá latenci — po soak | N2 / pool beta.2 |
 | HA stratum auto-promote (A4.2 částečně dodáno 27.10 — warm standby na EDGE2 live, alert-only watchdog, failover manuální) | auto-promote = split-brain riziko; držet manuální do dalšího soak | N2 / W-vlny |
 | Adapter parity — `warp_message_hash` anchor | jen EVM adapter binduje msg hash on-chain; ostatní chainy (TON/SUI/Solana/Stellar/Tron/Cardano/Cosmos/Aptos/NEAR) nemají contract-level dedup — vyžaduje dest-program upgrade | N1 |
@@ -39,7 +39,7 @@ Podle `NIRVANA-V3.3-PLAN.md` §Explicitní NON-DoD:
 | `PRL_PAYOUT_DRY_RUN=1` | dry-run | rozhodnutí operátora + attestation fix (A) |
 | `WARP_API_KEY` unset → mutating routes disabled | vypnuto | po G9 |
 | `WARP_L1_RELEASE_KEYS` absent → inbound `AwaitingFinality` hold | aktivní | po G9 |
-| QTC payouts | deferred, treasury 0 | funding/politika — operátor |
+| QTC payouts | deferred, treasury 0 | politika ✅ (`QTC_PAYOUT_POLICY.md`); funding — operátor |
 
 ## D) Otevřené technické položky (carried into RC — nesmí blokovat Stable, ale musí být vypsané)
 

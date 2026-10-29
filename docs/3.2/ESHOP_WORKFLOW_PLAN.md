@@ -131,6 +131,13 @@ transfer) — **operator: cancel/delete after review.**
    `UPDATE ShopProduct SET inStock=true WHERE stock>0 AND inStock=false`,
    or intentional delisting (merch not ready).
 
+### Soft-launch 2026-10-29 ✅ (B2B-1)
+
+- Digi/software SKUs buyable via **bank transfer** (card UI gated by
+  `/api/shop/capabilities`).
+- Runbook: `docs/3.2/B2B_SOFT_LAUNCH.md`.
+- Wide public launch still needs Stripe + SMTP/Resend + Next 15/16.
+
 ### Minor bugs
 
 - `stripe/checkout` line-item: `unit_amount = priceCzk*quantity` with
@@ -170,6 +177,8 @@ Invoice Flow:
 ## Files Modified
 
 - `prisma/schema.prisma` — removed duplicate ShopSetting model ✅
-- `src/app/page.tsx` — add shop link (TODO)
-- `src/components/Navbar.tsx` — add cart badge (TODO)
-- `src/app/api/invoice/[id]/download/route.ts` — new (TODO)
+- `src/app/page.tsx` — shop discoverability (navbar has `/shop` + cart)
+- `src/components/Navbar.tsx` — cart badge ✅
+- `src/app/api/invoice/[id]/download/route.ts` — ✅
+- `src/app/order-tracking/page.tsx` — ✅
+- `src/app/api/shop/capabilities/route.ts` — soft-launch gate ✅

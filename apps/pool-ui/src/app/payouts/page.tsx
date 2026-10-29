@@ -77,7 +77,7 @@ export default function PayoutsPage() {
           </p>
         </div>
         <div className="pool-card">
-          <p className="kicker">{t('Výplata vždy v nativním coinu', 'Always native-coin payouts')}</p>
+          <p className="kicker">{t('Nativní coin výplaty (QTC dočasně deferred)', 'Native-coin payouts (QTC temporarily deferred)')}</p>
           <p className="mt-2 text-sm font-bold text-white">ZION · QTC · PRL</p>
           <p className="mt-1 text-xs leading-relaxed text-white/50">
             {t(

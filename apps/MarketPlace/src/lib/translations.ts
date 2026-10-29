@@ -350,6 +350,18 @@ const t = {
     paymentTransferDesc: { cs: 'QR platba nebo klasický převod', en: 'QR payment or classic transfer' },
     paymentCard: { cs: 'Platební karta', en: 'Card payment' },
     paymentCardDesc: { cs: 'Rychlá platba přes Stripe', en: 'Fast payment via Stripe' },
+    paymentCardSoon: {
+      cs: 'Karty se zapnou po konfiguraci Stripe — zatím použijte převod.',
+      en: 'Cards enable once Stripe is configured — use bank transfer for now.',
+    },
+    softLaunchBanner: {
+      cs: 'Soft-launch: digitální produkty + bankovní převod. Stav objednávky sledujte na /order-tracking.',
+      en: 'Soft-launch: digital products + bank transfer. Track your order at /order-tracking.',
+    },
+    softLaunchNoEmail: {
+      cs: 'E-mailové potvrzení zatím nemusí dorazit — uložte si číslo objednávky a VS z QR.',
+      en: 'Confirmation e-mail may not arrive yet — save your order id and VS from the QR.',
+    },
     sectionSummary: { cs: 'Shrnutí', en: 'Summary' },
     summaryProducts: { cs: 'Produkty:', en: 'Products:' },
     summaryShipping: { cs: 'Doprava:', en: 'Shipping:' },

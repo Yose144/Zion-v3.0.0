@@ -119,12 +119,12 @@
 
 | # | Akce | Typ | Závisí na | Stav 28.10. |
 |---|---|---|---|---|
-| 1 | `5.B6` dokončit: E2E order test (transfer + Stripe), invoice download route, order-tracking, deploy MarketPlace | 🤖 | — | ✅ 9/10 — Stripe+SMTP blokováno prázdnými secrets v prod `.env` (👤); test objednávka `TEST-E2E-1761680000` **zrušena 28.10.** (status→cancelled, evidence v note). ⚠️ **Nový gate 28.10:** `next 14.2.35` = critical npm advisory sada (~25 CVE, fix = major next 15/16) — před veřejným launch per-CVE feature-usage review + případně mitigace (viz `docs/3.2/AUDIT-TRIAGE.md`) |
-| 1b | MarketPlace `next` major upgrade nebo per-CVE review + mitigace | 🤖→👤 | AUDIT-TRIAGE | ✅ review 28.10: `next/image` nepoužíván → **`unoptimized:true` aplikováno** (Image-Opt RCE třída mimo hru); Server Actions 0× → neaplikovatelné; middleware = jen pre-filter (auth v route handlers). Zbývá DoS/cache-poison sada → next 15/16 migrace před veřejným launch = 👤 priorita |
-| 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤→✅ | 2.B7 | 🟢 **Recovery běží 28.10.** — `defdcd84a` deployed (sha `1c159d7b73cf`): schema v11 + `void_payout_rows` + resurrect sweep; `payout_resurrect` events live, active backlog 1 180 → ~695 a klesá; voided rows = evidence zachována, `total_paid` rollback → žádný double-pay. Payout wallet sjednocen na canonical `zion1d2k` (90.9k UTXO / ~187k ZION — fee-cap riziko pryč). Zbývá: QTC deferred = samostatné 👤 treasury funding; veřejný statement po dojezdu |
-| 3 | `PRL_PAYOUT_DRY_RUN=0` po dry-batch review + sweep do oyster | 👤🔀 | 2.B6 | 🔍 review hotový (níže) — **nic k sweepu**: 0 pending pearl payoutů, 0 ledger rows; flip bezpečný ale zatím k ničemu, prerekvizita = PRL miner aktivita |
-| 4 | Hiran API MVP spec: `/v1/models` gateway + `X-API-Key` (ZIS) + Stripe price page | 🤖 | ZIS keys | ✅ spec + gateway + Stripe webhook + `/ai` page + probe implementováno; ⏳ deploy + secrets = 👤 |
-| 5 | One-pager "Pool-as-a-Service" (CS+EN) + seznam 10 cílových PoW coinů | 🤖 | — | ✅ `docs/3.2/B2B_POOL_AS_A_SERVICE.md` |
+| 1 | `5.B6` dokončit: E2E order test (transfer + Stripe), invoice download route, order-tracking, deploy MarketPlace | 🤖 | — | ✅ soft-launch 29.10. — digi + bank transfer + `/api/shop/capabilities` card gate; runbook `docs/3.2/B2B_SOFT_LAUNCH.md`. Stripe+SMTP stále 👤 (EMPTY na EDGE2). Transfer E2E ✅ 28.10. Next 15/16 před wide public launch |
+| 1b | MarketPlace `next` major upgrade nebo per-CVE review + mitigace | 🤖→👤 | AUDIT-TRIAGE | ✅ review 28.10: `unoptimized:true`; Server Actions 0×. Zbývá next 15/16 = 👤 před veřejným launch |
+| 2 | Payout backlog rozhodnutí: vyplatit z treasury-free zdrojů nebo politika + veřejný statement | 👤→✅ | 2.B7 | 🟢 ZION recovery live (`defdcd84a`). ✅ **QTC politika 29.10.** — `docs/3.2/QTC_PAYOUT_POLICY.md` (honest hold / hybrid D) + pool FAQ update. Funding treasury = 👤 |
+| 3 | `PRL_PAYOUT_DRY_RUN=0` po dry-batch review + sweep do oyster | 👤🔀 | 2.B6 | 🔍 review hotový — 0 pending; flip až po PRL aktivitě |
+| 4 | Hiran API MVP spec: `/v1/models` gateway + `X-API-Key` (ZIS) + Stripe price page | 🤖 | ZIS keys | ✅ spec+code; deploy skript `scripts/ops/deploy-hiran-gateway.sh`; veřejná cesta `market…/v1/` (api. DNS = EDGE/ZIS). Stripe price IDs = 👤 |
+| 5 | One-pager "Pool-as-a-Service" (CS+EN) + seznam 10 cílových PoW coinů | 🤖 | — | ✅ + outreach balíček `docs/3.2/B2B_POOL_OUTREACH.md` (gate = QTC politika) |
 | 6 | Regtest dry-run `build_admin_unlock_tx` 3-of-3 (1.B5) — před 144k | 🤖 | PREMINE_UNLOCK.md | ✅ PASS (158 s, reálná node cesta, DAO height gate drží) |
 
 ### Incident 28.10. ~07:15 — pool API wedge (nález při PRL review)
@@ -146,4 +146,4 @@
 
 ---
 
-*Souvisí: `docs/3.2/3.2.1-3.2.9_PLAN.md` (položky 2.B6/2.B7/5.B6/1.B5/1.S3), `HIRAN-MARKETPLACE-PLAN.md`, `docs/3.2/ESHOP_WORKFLOW_PLAN.md`, `docs/3.2/PREMINE_UNLOCK.md`, `docs/3.2/DAO.md`.*
+*Souvisí: `docs/3.2/3.2.1-3.2.9_PLAN.md` (položky 2.B6/2.B7/5.B6/1.B5/1.S3), `HIRAN-MARKETPLACE-PLAN.md`, `docs/3.2/ESHOP_WORKFLOW_PLAN.md`, `docs/3.2/B2B_SOFT_LAUNCH.md`, `docs/3.2/QTC_PAYOUT_POLICY.md`, `docs/3.2/B2B_POOL_OUTREACH.md`, `docs/3.2/B2B_HIRAN_SECRETS.md`, `docs/3.2/PREMINE_UNLOCK.md`, `docs/3.2/DAO.md`.*

@@ -17,11 +17,21 @@ const QA: { cs: [string, string]; en: [string, string] }[] = [
   {
     cs: [
       'V jakém coinu dostanu výplatu?',
-      'Vždy v coinu, který těžíte — žádná auto-konverze. ZION jde on-chain automaticky, QTC a PRL se vyplácejí periodickými dávkami po dosažení minima.',
+      'Vždy v coinu, který těžíte — žádná auto-konverze. ZION jde on-chain automaticky. PRL se vyplácí dávkami po dosažení minima (když je sweeper aktivní). QTC výplaty jsou dočasně pozastavené (deferred), dokud nebude funded payout treasury — ledger je zachován, žádný write-off. Detail: dokument QTC payout policy.',
     ],
     en: [
       'What coin am I paid in?',
-      'Always the coin you mined — no auto-conversion. ZION pays on-chain automatically; QTC and PRL pay in periodic batches once the minimum is reached.',
+      'Always the coin you mined — no auto-conversion. ZION pays on-chain automatically. PRL pays in batches once the minimum is reached (when the sweeper is live). QTC payouts are temporarily deferred until the payout treasury is funded — the ledger is retained; no silent write-off. See the QTC payout policy.',
+    ],
+  },
+  {
+    cs: [
+      'Proč jsou QTC výplaty deferred?',
+      'Hot treasury pro Quantus výplaty má aktuálně free balance 0. Sweeper řádky bezpečně parkne (deferred), aby neplýtval attempts na InsufficientFunds. Po funding se FIFO vyplatí. Politika: docs/3.2/QTC_PAYOUT_POLICY.md (veřejné prohlášení 2026-10-29).',
+    ],
+    en: [
+      'Why are QTC payouts deferred?',
+      'The Quantus payout hot treasury currently has free balance 0. The sweeper parks rows as deferred so it does not burn attempts on InsufficientFunds. After funding, rows settle FIFO. Policy: docs/3.2/QTC_PAYOUT_POLICY.md (public statement 2026-10-29).',
     ],
   },
   {

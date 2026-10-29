@@ -16,6 +16,13 @@ const shippingOptions: { value: ShippingMethod; labelKey: string; descKey: strin
   { value: 'virtualni-odber', labelKey: 'cart.shippingVirtualPickup', descKey: 'cart.shippingVirtualPickupDesc', price: SHIPPING_PRICES['virtualni-odber'] },
 ];
 
+type ShopCapabilities = {
+  softLaunch: boolean;
+  stripe: boolean;
+  email: boolean;
+  modes: { transfer: boolean; card: boolean; crypto: boolean };
+};
+
 export default function CartPage() {
   const { items, count, total, updateQuantity, remove, clear } = useCart();
   const router = useRouter();
@@ -23,6 +30,7 @@ export default function CartPage() {
 
   const [shipping, setShipping] = useState<ShippingMethod>('zasilkovna');
   const [payment, setPayment] = useState<'transfer' | 'card' | 'crypto'>('transfer');
+  const [caps, setCaps] = useState<ShopCapabilities | null>(null);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -43,6 +51,26 @@ export default function CartPage() {
   } | null>(null);
 
   const virtualOnly = useMemo(() => isVirtualOnlyCart(items), [items]);
+  const cardEnabled = caps?.modes.card ?? false;
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/shop/capabilities', { headers: { Accept: 'application/json' } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!cancelled && j) setCaps(j as ShopCapabilities);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (caps && !caps.modes.card && payment === 'card') {
+      setPayment('transfer');
+    }
+  }, [caps, payment]);
 
   useEffect(() => {
     if (virtualOnly && shipping !== 'virtualni-nakup' && shipping !== 'virtualni-odber') {
@@ -330,6 +358,14 @@ export default function CartPage() {
             <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-rasta-red">
               <CreditCard className="w-5 h-5" /> {t('cart.sectionPayment')}
             </h2>
+            {caps?.softLaunch && (
+              <div className="mb-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+                {t('cart.softLaunchBanner')}
+                {!caps.email && (
+                  <span className="mt-1 block text-amber-200/80">{t('cart.softLaunchNoEmail')}</span>
+                )}
+              </div>
+            )}
             <div className="space-y-2">
               <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                 payment === 'transfer' ? 'border-rasta-red bg-rasta-red/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
@@ -347,20 +383,27 @@ export default function CartPage() {
                   <div className="text-xs text-gray-500">{t('cart.paymentTransferDesc')}</div>
                 </div>
               </label>
-              <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                payment === 'card' ? 'border-rasta-red bg-rasta-red/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
+              <label className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                !cardEnabled
+                  ? 'cursor-not-allowed opacity-50 border-white/5 bg-white/[0.03]'
+                  : payment === 'card'
+                    ? 'cursor-pointer border-rasta-red bg-rasta-red/10'
+                    : 'cursor-pointer border-white/10 bg-white/5 hover:bg-white/10'
               }`}>
                 <input
                   type="radio"
                   name="payment"
                   value="card"
                   checked={payment === 'card'}
-                  onChange={() => setPayment('card')}
+                  disabled={!cardEnabled}
+                  onChange={() => cardEnabled && setPayment('card')}
                   className="accent-rasta-red"
                 />
                 <div className="flex-1">
                   <div className="font-bold text-sm">{t('cart.paymentCard')}</div>
-                  <div className="text-xs text-gray-500">{t('cart.paymentCardDesc')}</div>
+                  <div className="text-xs text-gray-500">
+                    {cardEnabled ? t('cart.paymentCardDesc') : t('cart.paymentCardSoon')}
+                  </div>
                 </div>
               </label>
             </div>

@@ -201,12 +201,12 @@ export default function AiPricingPage() {
           <h2 className="mt-10 flex items-center gap-2 text-xl font-semibold text-white">
             <Terminal className="w-5 h-5" /> {T.docsTitle[l]}
           </h2>
-          <pre className="mt-3 overflow-x-auto rounded-xl bg-black/50 p-4 text-xs text-gray-200">{`curl https://api.zionterranova.com/v1/chat/completions \\
+          <pre className="mt-3 overflow-x-auto rounded-xl bg-black/50 p-4 text-xs text-gray-200">{`curl https://market.zionterranova.com/v1/chat/completions \\
   -H "X-API-Key: zis_…" \\
   -H "Content-Type: application/json" \\
   -d '{"model": "hiran-mini", "messages": [{"role": "user", "content": "Hello"}]}'
 
-GET https://api.zionterranova.com/v1/models   — `}{T.usage[l]}{` → /v1/usage`}</pre>
+GET https://market.zionterranova.com/v1/models   — `}{T.usage[l]}{` → /v1/usage`}</pre>
 
           <p className="mt-6 text-sm text-gray-400">{T.footer[l]}</p>
           <p className="mt-2 text-sm text-gray-500">

@@ -10,7 +10,7 @@
 
 ```
 klient (X-API-Key)
-  → EDGE2 nginx :443 api.zionterranova.com
+  → EDGE2 nginx :443 market.zionterranova.com/v1/*  (interim — api. DNS still EDGE/ZIS)
   → hiran-gateway (nový service, :8007 loopback)
       ├─ auth:  ZIS POST /api/keys/verify  (zis_* key → user, cache 60s)
       ├─ meter: usage_records (SQLite/PG) — prompt+completion tokens per key
