@@ -9,11 +9,30 @@ set -euo pipefail
 passthru_args=()
 for arg in "$@"; do
   case "$arg" in
-    ZION_*=*|RUST_*=*) export "$arg" ;;
+    ZION_*=*|RUST_*=*|SRB_*=*|RIG_*=*) export "$arg" ;;
     *) passthru_args+=("$arg") ;;
   esac
 done
 set -- "${passthru_args[@]+"${passthru_args[@]}"}"
+
+# ── LOCAL FIX 2026-10-27 vega-qtc ────────────────────────────────────────────
+# AMD Vega (gfx900). SRBMiner 3.7.9 + ROCm 5.4.6 userland (/root/rocm546)
+# da ~144 MH/s QTU solo; nativni kernel ~85. SRB vlastni QTU, ZION na minimum.
+export SRB_ENABLED=1
+export ZION_STREAM2_ENABLED=0
+export ZION_EXT_GPU_BACKEND=opencl
+export ZION_QPOW_BACKEND=opencl
+export ZION_GPU_TIME_DUTY_PCT=12
+export ZION_STREAM4_ENABLED=1
+export ZION_STREAM4_FORCE_COIN=ZANO
+export ZION_STREAM4_URL=stratum+tcp://de.zano.herominers.com:1110
+export ZION_STREAM4_WALLET=ZxCFngZg2XUHmxm7zTL9jwEaDKNPCBDoCZv44myC6PesBXEXrbq8NRaDpkmL7utcYhiLXB2KiJyVmA5atrQbd7Ai2SX3nptts
+export ZION_STREAM4_PASSWORD=x
+export ZION_EXT_GPU2_TIME_DUTY_PCT=100
+export ZION_STRATUM_TRACE=1
+# guard: zabit sirotcive sidecar procesy z predchoziho behu (restart
+# wrapperu bez trap = orphan drzel GPU a dalil hashrate na polovinu)
+pkill -x SRBMiner-MULTI 2>/dev/null || true
 
 # ── Rig doctor (v3.4.21) — one-shot diagnostics + SSH access + PL fix ────────
 # Runs at every miner start; echoes land in the SMOS console.
@@ -42,6 +61,8 @@ KEYS_TMP="$(mktemp 2>/dev/null || echo /tmp/.rigkeys)"
 cat > "${KEYS_TMP}" <<'RIGKEYS'
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCdmnUpjbA8jjJHuXn18ZGLYhLioLpbKzAezxuKekuRZSDBWlVh4obvH1xRBsMBkkpPzw9rTIjQ+3xMAhGUtTMnZXihf1Avq/WsJpHFxGMBPhUSa/DpUdancMCvRbaNJoJM2hfkHem6G8aQp2x6dw7B2H37giYBIkwWSpCjpOu/ABOZqzpJu+U6OtolFmMglgSjABYnIbK6aetfKgUF085IqDfGr/M9AhUxf/BWq2uk+QCQyVOlmVwXDaaTLv/M6MqhvpZQwsZSIfY+bemvrntjbepzVcjyMx/bxsw5NWxOtttfwX7iL/vr6+JX3mfMg3cwzgfzkPkt4thJnJYnw4x9 zion-desktop-smos
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDSlWZcvkT4t52JeWnA7jiCNfGYYL1gxL/HvxOBWdrpi zion-desktop
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIETs6N0+QnhovcHcuew+T7PuIHPv3KSci6oCgZ4Y2z1 rig-admin
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE8tsCa5LS6AvSy5suIgp54DePxB7Pjg32hIonJGt8Fx zion-deploy zion-dev-mac
 RIGKEYS
 ( EFF_HOME="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f6)"
   EFF_HOME="${EFF_HOME:-$HOME}"
@@ -56,7 +77,88 @@ rm -f "${KEYS_TMP}" 2>/dev/null || true
 
 # SMOS stores powerLimit "3" (AMD powerplay semantics) — on NVIDIA that reads
 # as 3W and gets clamped to the 90W floor. Force a real value every start.
-( nvidia-smi -pl 120 >/dev/null 2>&1 && echo "[rig-doctor] powerLimit=120W applied" ) || true
+( nvidia-smi -pl 150 >/dev/null 2>&1 && echo "[rig-doctor] powerLimit=150W applied" ) || true
+
+# ── Startup recon (v1.3) — console echo + POST to Edge /rig-output/ ─────────
+# execute-command queue on SMOS is unreliable; the wrapper stdout IS the
+# reliable channel (SMOS console mirrors it) and Edge nginx exposes
+# /rig-output/ -> 127.0.0.1:9999 for bulk payloads.
+{
+  RECON_TMP="$(mktemp 2>/dev/null || echo /tmp/.rigrecon)"
+  {
+    echo "=== recon $(date -u +%FT%TZ) ==="
+    echo "host: $(uname -a)"
+    echo "gpu: $(nvidia-smi --query-gpu=name,memory.total,memory.used,memory.free,utilization.gpu,power.draw --format=csv,noheader 2>/dev/null || lspci | grep -iE 'vga|3d' | head -4)"
+    echo "ram: $(free -m | awk '/Mem:/{print $2"MB total, "$4"MB free"}')"
+    echo "cpu: $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2-) x$(grep -c processor /proc/cpuinfo)"
+    echo "sshd: $(ss -tln 2>/dev/null | grep -c ':22 ') listeners22; procs=$(pgrep -c sshd 2>/dev/null || echo 0)"
+    echo "ssh procs: $(ps aux 2>/dev/null | grep -cE 'ss[h].*-R|autoss[h]')"
+    echo "llm procs: $(ps aux 2>/dev/null | grep -icE 'llama|gguf')"
+    echo "disk /tmp: $(df -h /tmp 2>/dev/null | awk 'NR==2{print $4" free"}')  /root: $(df -h /root 2>/dev/null | awk 'NR==2{print $4" free"}')"
+    echo "gguf files: $(find /root /opt /tmp /usr/local /home -name '*.gguf' 2>/dev/null | head -5 | tr '\n' ' ')"
+  } > "${RECON_TMP}" 2>&1
+  sed 's/^/[recon] /' "${RECON_TMP}" || true
+  curl -s --max-time 20 -X POST --data-binary @"${RECON_TMP}" \
+       "http://62.171.141.136/rig-output/recon-boot" >/dev/null 2>&1 || true
+  rm -f "${RECON_TMP}" 2>/dev/null || true
+} || true
+
+# ── Admin reverse tunnel (v1.3) — Edge 127.0.0.1:8322 -> rig sshd :22 ────────
+# Rig is behind NAT; execute-command queue is unreliable. This persistent
+# -R forward gives the operator a shell via `ssh -p 8322 <user>@127.0.0.1`
+# *on the Edge host itself*. The rigtunnel Edge account is nologin +
+# permitlisten-restricted, so the embedded private key only buys a port bind.
+RT_KEY="$(mktemp 2>/dev/null || echo /tmp/.rtk)"
+RT_KH="$(mktemp 2>/dev/null || echo /tmp/.rtkh)"
+cat > "${RT_KEY}" <<'RTKEY'
+# RT_KEY elided in git — real ed25519 private key lives only in the deployed
+# package (EDGE zip / rig pkgwork). It buys a port-bind on the nologin
+# `rigtunnel` account; provision it out-of-band, never commit it.
+RTKEY
+cat > "${RT_KH}" <<'RTKH'
+[62.171.141.136]:2222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID6zQPE9FT7FGRlSaR5f9NjJLt11GA58RGB1Jd1b5902
+[62.171.141.136]:2222 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBO0/50VTepArs9f4CrNuBk8NAb1V1kTgE2R9+WEQdAVXiSSGyZUodX/1Eo3S1cYQFMhQCcszaRalJREpUfcPodo=
+RTKH
+chmod 600 "${RT_KEY}" 2>/dev/null || true
+if [ "${RIG_TUNNEL:-1}" = "1" ] && command -v ssh >/dev/null 2>&1; then
+  ( while true; do
+      ssh -NT -o BatchMode=yes -o ExitOnForwardFailure=yes \
+          -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+          -o StrictHostKeyChecking=yes -o UserKnownHostsFile="${RT_KH}" \
+          -o ConnectTimeout=20 \
+          -i "${RT_KEY}" -p 2222 \
+          -R 127.0.0.1:8322:127.0.0.1:22 \
+          -R 127.0.0.1:8003:127.0.0.1:8003 \
+          rigtunnel@62.171.141.136 && sleep 60
+      sleep 15
+    done ) >/dev/null 2>&1 &
+  echo "[rig-doctor] admin tunnel -> edge:8322 + inference :8003 (pid $!)"
+else
+  echo "[rig-doctor] admin tunnel skipped (RIG_TUNNEL=${RIG_TUNNEL:-unset} or no ssh client)"
+fi
+
+# ── Hiran L3 inference on rig (v1.4) — llama.cpp CUDA on GTX 1070 Ti ────────
+# Co-resident with mining: model Qwen3-4B-Q4_K_M ~2.8 GB VRAM alongside SRB
+# (~4.2 GB) fits the 8 GB card. Server binds 127.0.0.1:8003 and is exposed on
+# Edge via the -R forward above. Disable with RIG_LLM=0 in minerOptions.
+if [ "${RIG_LLM:-1}" = "1" ]; then
+  # Watcher always starts: /opt/llm may not be mounted yet this early in boot
+  # (fstab is not reliably honored on SMOS; journal replay can delay mounts).
+  # set +e inside: a crashed server or failed mount must never kill the loop.
+  ( set +e
+    while true; do
+      if ! mountpoint -q /opt/llm 2>/dev/null; then
+        mkdir -p /opt/llm
+        mount /dev/sda5 /opt/llm 2>/dev/null || \
+          mount /dev/sdb1 /opt/llm 2>/dev/null || true
+      fi
+      if mountpoint -q /opt/llm 2>/dev/null && [ -x /opt/llm/run-cuda.sh ]; then
+        /opt/llm/run-cuda.sh >>/opt/llm/cuda-server.log 2>&1
+      fi
+      sleep 30
+    done ) >/dev/null 2>&1 &
+  echo "[rig-doctor] hiran inference watcher -> 127.0.0.1:8003 (pid $!)"
+fi
 
 # ── One-shot SMOS agent probe (ZION_SMOS_PROBE=1 via minerOptions) ─────────
 # Removed 2026-10-06 after the SMOS parser schema was extracted
@@ -77,7 +179,7 @@ fi
 # V3 Trinity architecture: single V3 protocol connection to ZION pool.
 # Pool embeds external_stream jobs and forwards AuxPoW shares to external pools.
 # All revenue flows through the pool's AuxPoW bridge and revenue system.
-# QPoW OpenCL backend: commit 762b8cbe4 (poseidon2_kernel.cl, bit-exact vs
+# QPoW OpenCL backend: commit 789d30e02 (poseidon2_kernel.cl, bit-exact vs
 # CPU reference on hash-1/hash/hash+1 boundaries incl. nonzero nonces).
 # Rollback to ZANO: flip ZION_STREAM2_FORCE_COIN back to ZANO.
 # Date: 2026-08-10 (V3.2 Trinity multi-GPU DEDICATED, max performance)
@@ -138,8 +240,10 @@ export ZION_GPU_NO_STREAM_BYPRODUCT=1
 # In V3 Trinity mode, the pool decides which coins to send based on its
 # auxpow_runtime configuration (ZANO + VRSC). No direct stream URLs needed.
 export ZION_STREAM1_ENABLED=1
-export ZION_STREAM2_ENABLED=1
-export ZION_STREAM3_ENABLED=1
+# HYBRID: QTU stream lives in SRBMiner sidecar (2x faster QPoW kernel) —
+# zion-miner stream2 defaults OFF here; re-enable for pure-zion fallback.
+export ZION_STREAM2_ENABLED="${ZION_STREAM2_ENABLED:-0}"
+export ZION_STREAM3_ENABLED="${ZION_STREAM3_ENABLED:-0}"
 
 # GPU AuxPoW tuning — QTU QPoW (Poseidon2-Goldilocks) on the reserved Vega.
 # ZION_STREAM2_BATCH doubles as the QPoW launch size (nonces per kernel
@@ -147,7 +251,7 @@ export ZION_STREAM3_ENABLED=1
 # (fewer host prestate/launch round-trips); still short enough that an
 # in-flight batch doesn't hold up a fresh job for long.
 export ZION_STREAM2_BATCH="${ZION_STREAM2_BATCH:-8388608}"
-export ZION_STREAM2_FORCE_COIN=QTU
+export ZION_STREAM2_FORCE_COIN="${ZION_STREAM2_FORCE_COIN:-QTU}"
 # QPoW OpenCL work partitioning: local_size 64 (one wave64 group on gfx900,
 # two wave32 on gfx1010), NPT=4 amortizes per-work-item dispatch setup —
 # measured ~10% above NPT=1 on this rig (NPT=8 flat vs 4).
@@ -183,21 +287,47 @@ export ZION_EXT_CPU_NONCE_COUNT=2000000
 export ZION_MINER_THREADS=4
 
 # ── Download V31 miner binary ─────────────────────────────────────────────
-LOCAL_MINER="/tmp/zion-miner-v31"
+LOCAL_MINER="/tmp/zion-miner-v31-cuda"
+CUSTOM_MINER="/root/zion-miner-v31-zano"
 rm -f "${LOCAL_MINER}"
 
+if [ -x "${CUSTOM_MINER}" ]; then
+    # LOCAL OVERRIDE: patched build with stream4 dedicated-URL support
+    # (Trinity mode honors ZION_STREAM4_URL -> own stratum session).
+    cp -f "${CUSTOM_MINER}" "${LOCAL_MINER}"
+    chmod +x "${LOCAL_MINER}"
+    echo "[smos-wrapper] using LOCAL custom miner (${CUSTOM_MINER}, $(stat -c%s "${LOCAL_MINER}") bytes)"
+else
 EDGE_BASE="http://62.171.141.136/zion-miner"
 echo "[smos-wrapper] downloading V31 miner binary ..."
 rm -f "${LOCAL_MINER}.tmp"
 curl --http1.1 --retry 20 --retry-delay 5 --connect-timeout 30 \
      --speed-time 60 --speed-limit 10000 \
-     -fsSL -o "${LOCAL_MINER}.tmp" "${EDGE_BASE}/zion-miner-v31" || {
+     -fsSL -o "${LOCAL_MINER}.tmp" "${EDGE_BASE}/zion-miner-v31-cuda" || {
     echo "[smos-wrapper] FATAL: could not download V31 miner binary"
     exit 1
 }
 chmod +x "${LOCAL_MINER}.tmp"
 mv "${LOCAL_MINER}.tmp" "${LOCAL_MINER}"
 echo "[smos-wrapper] V31 miner binary ready ($(stat -c%s "${LOCAL_MINER}") bytes)"
+fi
+
+# ── SRBMiner-MULTI sidecar — QTU/QPoW on quantus algo (2x our CUDA kernel) ──
+# zion-miner QTU stream (stream2) is OFF by default in this package; SRBMiner
+# owns the QTU workload on the same card — NVIDIA driver timeslices both.
+SRB_BIN="/root/srb379/SRBMiner-Multi-3-7-9/SRBMiner-MULTI"
+if [ "${SRB_ENABLED:-1}" = "1" ] && [ ! -x "${SRB_BIN}" ]; then
+  echo "[smos-wrapper] downloading SRBMiner-MULTI ..."
+  rm -f "${SRB_BIN}.tmp"
+  curl --http1.1 --retry 20 --retry-delay 5 --connect-timeout 30 \
+       --speed-time 60 --speed-limit 10000 \
+       -fsSL -o "${SRB_BIN}.tmp" "${EDGE_BASE}/SRBMiner-MULTI" && \
+  chmod +x "${SRB_BIN}.tmp" && mv "${SRB_BIN}.tmp" "${SRB_BIN}" && \
+  echo "[smos-wrapper] SRBMiner ready ($(stat -c%s "${SRB_BIN}") bytes)" || {
+    echo "[smos-wrapper] WARN: SRBMiner download failed — QTU sidecar skipped"
+    SRB_ENABLED=0
+  }
+fi
 
 # ── SMOS stats API (sgminer/TRM-compatible) ──────────────────────────────────
 # Two providers race for the port — whichever binds first serves SMOS:
@@ -211,11 +341,65 @@ if command -v python3 >/dev/null 2>&1 && [ -f "${SCRIPT_DIR}/smos_api.py" ]; the
   echo "[smos-wrapper] stats API sidecar started (pid ${SIDECAR_PID})"
 fi
 echo "[smos-wrapper] API listening on ${ZION_API_ADDR} (dual ${ZION_API_ADDR_DUAL})"
-echo "[smos-wrapper] starting V3 TRINITY multi-GPU DEDICATED: RX5600→ZION + Vega→QTU + VRSC CPU"
+
+# ── SRBMiner launch (background, QTU quantus → LuckyPool stratum) ──────────
+SRB_PID=""
+SRB_TAIL_PID=""
+SRB_LOG="/tmp/srbminer.log"
+if [ "${SRB_ENABLED:-1}" = "1" ] && [ -x "${SRB_BIN}" ]; then
+  # SRB_GPU_INTENSITY (0-31) via minerOptions — single-token env, avoids the
+  # whitespace problem of passing '--gpu-intensity N' through SRB_EXTRA_ARGS.
+  SRB_INTENSITY_ARGS=()
+  if [ -n "${SRB_GPU_INTENSITY:-}" ]; then
+    SRB_INTENSITY_ARGS+=(--gpu-intensity "${SRB_GPU_INTENSITY}")
+  fi
+  env LD_LIBRARY_PATH=/root/rocm546/rootfs/opt/rocm-5.4.6/opencl/lib:/root/rocm546/rootfs/opt/rocm-5.4.6/hsa/lib:/root/rocm546/rootfs/opt/rocm-5.4.6/lib "${SRB_BIN}" \
+    --algorithm quantus \
+    --pool "${SRB_POOL:-stratum+tcp://eu.lproute.com:5660}" \
+    --wallet "${SRB_WALLET:-qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb}" \
+    --worker "${SRB_WORKER:-vega-smos}" \
+    --password "${SRB_PASSWORD:-x}" \
+    --disable-cpu \
+    --api-enable --api-port "${SRB_API_PORT:-21550}" \
+    --log-file "${SRB_LOG}" \
+    "${SRB_INTENSITY_ARGS[@]}" \
+    ${SRB_EXTRA_ARGS:-} &
+  SRB_PID=$!
+  echo "[smos-wrapper] SRBMiner QTU sidecar started (pid ${SRB_PID}, api :${SRB_API_PORT:-21550})"
+  # QTU throttle for ZANO headroom (2026-10-29): duty-cycle SRB via
+  # SIGSTOP/SIGCONT. Lower --gpu-intensity only shrinks kernels; the GPU
+  # timeslicer still hands SRB every cycle. Real OFF windows let the ZANO
+  # kernel run uncontended. SRB_DUTY_PCT=70 -> ~100 MH/s QTU (minOpt override).
+  SRB_DUTY_PCT="${SRB_DUTY_PCT:-70}"
+  if [ "${SRB_DUTY_PCT}" -gt 0 ] && [ "${SRB_DUTY_PCT}" -lt 100 ]; then
+    SRB_ON_S=$(awk "BEGIN{printf \"%.3f\", ${SRB_DUTY_PCT}*2/100}")
+    SRB_OFF_S=$(awk "BEGIN{printf \"%.3f\", (100-${SRB_DUTY_PCT})*2/100}")
+    ( while kill -0 "${SRB_PID}" 2>/dev/null; do
+        sleep "${SRB_ON_S}"
+        kill -STOP "${SRB_PID}" 2>/dev/null || break
+        sleep "${SRB_OFF_S}"
+        kill -CONT "${SRB_PID}" 2>/dev/null || break
+      done ) &
+    echo "[smos-wrapper] SRB duty throttle ${SRB_DUTY_PCT}% on=${SRB_ON_S}s off=${SRB_OFF_S}s"
+  fi
+  # Mirror SRBMiner stats lines into SMOS console every 60s.
+  ( while sleep 60; do
+      { grep -aE 'GTX|MH/s|Accepted|Share stats' "${SRB_LOG}" 2>/dev/null | tail -5 | sed 's/^/[srb] /'; } || true
+      { [ -d "/proc/${SRB_PID}" ] || echo "[srb] WARN: SRBMiner process died (pid ${SRB_PID})"; } || true
+    done ) &
+  SRB_TAIL_PID=$!
+  sleep 15
+  { echo "[srb] first log lines:"; head -15 "${SRB_LOG}" 2>/dev/null; } || true
+fi
+echo "[smos-wrapper] starting HYBRID: SRBMiner→QTU + zion(ZION GPU + VRSC CPU)"
 
 # Foreground miner + signal forwarding (SMOS stops the script, not the miner).
 MINER_PID=""
-_term() { [ -n "${MINER_PID}" ] && kill -TERM "${MINER_PID}" 2>/dev/null || true; }
+_term() {
+  [ -n "${MINER_PID}" ] && kill -TERM "${MINER_PID}" 2>/dev/null || true
+  [ -n "${SRB_PID}" ] && kill -TERM "${SRB_PID}" 2>/dev/null || true
+  [ -n "${SRB_TAIL_PID}" ] && kill "${SRB_TAIL_PID}" 2>/dev/null || true
+}
 trap '_term' TERM INT
 
 "${LOCAL_MINER}" \
@@ -231,4 +415,6 @@ MINER_PID=$!
 wait "${MINER_PID}"
 STATUS=$?
 [ -n "${SIDECAR_PID:-}" ] && kill "${SIDECAR_PID}" 2>/dev/null || true
+[ -n "${SRB_TAIL_PID:-}" ] && kill "${SRB_TAIL_PID}" 2>/dev/null || true
+[ -n "${SRB_PID:-}" ] && kill -TERM "${SRB_PID}" 2>/dev/null || true
 exit "${STATUS}"

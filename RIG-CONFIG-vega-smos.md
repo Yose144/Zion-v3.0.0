@@ -1,15 +1,15 @@
 # Rig Config Report — `vega-smos` (SimpleMining)
 
-**Snapshot:** 2026-10-29 ~14:50 CET · Host `192.168.1.114` (DHCP) · GPU: AMD RX Vega (gfx900) · CPU: Pentium G4560 (4T, no AVX)
+**Snapshot:** 2026-10-29 ~17:15 CET · Host `192.168.1.114` (DHCP) · GPU: AMD RX Vega (gfx900) · CPU: Pentium G4560 (4T, no AVX)
 
 ## Revenue streams — live state
 
 | Stream | Coin | Driver | Rate (live) | Pool | Accept |
 |--------|------|--------|------------:|------|-------:|
-| QTU sidecar | QTU (`quantus`) | SRBMiner-MULTI **3.7.9** + ROCm 5.4.6 userland | **~134–144 MH/s** | `eu.lproute.com:5660` | running |
-| Stream 4 (gpu-external-2) | **ZANO** (`progpow_zano`) | zion-miner OpenCL, dedicated EthStratum | **~11 MH/s** active (~3.3 MH/s effective @ duty 30) | `de.zano.herominers.com:1110` | **2/2 = 100%** |
+| QTU sidecar | QTU (`quantus`) | SRBMiner-MULTI **3.7.9** + ROCm 5.4.6 userland, **duty 70%** (SIGSTOP/CONT 1.4 s / 0.6 s) | **~120–125 MH/s** self-report, ~1 share / 61 s | `eu.lproute.com:5660` | 100% (0 rejects) |
+| Stream 4 (gpu-external-2) | **ZANO** (`progpow_zano`) | zion-miner OpenCL, dedicated EthStratum, **duty 100%** | **~11 MH/s** active (~1–4 MH/s pool-effective) | `de.zano.herominers.com:1110` | 100% |
 | Stream 1 (zion) | **ZION** (`ekam_deeksha`) | zion-miner OpenCL, duty 12% | **~47 KH/s** | `62.171.141.136:8444` (V3 Trinity) | 100% |
-| Stream 3 (cpu-external) | **VRSC** (`verushash`) | zion-miner CPU, 4 threads | **~1.4–1.5 MH/s** | pool-relayed via Trinity | 100% |
+| Stream 3 (cpu-external) | **VRSC** (`verushash`) | zion-miner CPU | **disabled** (`STREAM3=0`) | — | — |
 
 Stream 2 (gpu-external) is **disabled** — QTU lives in the SRBMiner sidecar
 (~2× our native kernel on gfx900; ROCm userland fixes the `can't build
@@ -41,7 +41,7 @@ Wrapper guard `pkill -x SRBMiner-MULTI` before spawn (orphan-sidecar fix).
 # stream enables
 ZION_STREAM1_ENABLED=1      # ZION
 ZION_STREAM2_ENABLED=0      # QTU → SRBMiner sidecar instead
-ZION_STREAM3_ENABLED=1      # VRSC cpu
+ZION_STREAM3_ENABLED=0      # VRSC cpu — OFF (frees CPU + removes stream)
 ZION_STREAM4_ENABLED=1      # ZANO dedicated upstream
 
 # stream4 — ZANO direct (decoupled from Trinity, survives pool outages)
@@ -49,7 +49,7 @@ ZION_STREAM4_FORCE_COIN=ZANO
 ZION_STREAM4_URL=stratum+tcp://de.zano.herominers.com:1110
 ZION_STREAM4_WALLET=ZxCFngZg2XUHmxm7zTL9jwEaDKNPCBDoCZv44myC6PesBXEXrbq8NRaDpkmL7utcYhiLXB2KiJyVmA5atrQbd7Ai2SX3nptts
 ZION_STREAM4_PASSWORD=x
-ZION_EXT_GPU2_TIME_DUTY_PCT=30
+ZION_EXT_GPU2_TIME_DUTY_PCT=100
 
 # GPU backends
 ZION_GPU_BACKEND=opencl
@@ -131,3 +131,43 @@ all local patches lost: `STREAM4=0`, `STREAM3=1`, stock `/tmp` binary
 patched in all three places (live miner, miner_org tarball, EDGE zip).
 Re-enable via SMOS minerOptions token `ZION_STREAM3_ENABLED=1`.
 Verified: `cpu-external` stream idle, ZION ~48 KH/s, ZANO active.
+
+## 2026-10-29 (3) — QTU/ZANO duty split optimization
+
+**Mechanism:** two independent duty controls share the gfx900 GPU.
+
+- **SRBMiner (QTU):** wrapper duty loop sends `SIGSTOP`/`SIGCONT` on a
+  2 s cycle — `SRB_DUTY_PCT=70` → ~1.4 s running / 0.6 s frozen.
+  `--gpu-intensity` alone is NOT enough (small kernels still win every
+  GPU timeslice → ZANO starved at ~4 MH/s).
+- **zion-miner (ZANO):** `ZION_EXT_GPU2_TIME_DUTY_PCT` gates how much of
+  each duty window the ext stream occupies.
+
+**Sweep (pool-side / share-rate evidence, NOT self-reports):**
+
+| ZANO duty | SRB duty | QTU (API 1 min / share rate) | ZANO displayed | ZANO share evidence |
+|----------:|---------:|------------------------------|---------------:|---------------------|
+| 30  | 100 (cont.) | ~134–144 MH/s | ~4.3 MH/s | eff ~1.7 MH/s |
+| 60  | 70  | ~106 MH/s | ~8.2 MH/s | share ~1/15 min |
+| 80  | 70  | ~119–120 MH/s | ~9.5–12 MH/s | 0 in ~13 min (variance) |
+| **100** | **70** | **~120–130 MH/s, 1 share/61 s** | **~11 MH/s** | **share @ ~330 s, `status OK` 16:06:49** |
+
+**Selected: `ZION_EXT_GPU2_TIME_DUTY_PCT=100`, `SRB_DUTY_PCT=70`.**
+Duty-100 ZANO costs QTU nothing measurable (share rate ~equal) — the
+ZANO kernel wins most of SRB's 0.6 s freeze windows plus scraps during
+contention. Physical ceiling for ZANO here is ~`14.5 MH/s` × pause
+fraction (kernel rate measured with SRB fully stopped).
+
+**Caveats:**
+- SRB self-reported MH/s is inflated under SIGSTOP (its clocks freeze
+  too) — trust pool share rate / API `shares.accepted`, not the console.
+- Miner's displayed `gpu-external-2: N MH/s` is the kernel rate during
+  *active* windows; pool-effective rate is much lower
+  (`hashrate_1h ≈ 0.6–2 MH/s` on HeroMiners while co-resident).
+- HeroMiners stats endpoint is `/api/stats_address?address=...`
+  (no `/v1` prefix).
+- Every config change must be written to **three places** or SMOS
+  re-extract wipes it: `pkgwork/miner` (canonical) → live `miner/` →
+  repack `miner_org` tarball (+`.md5`) → EDGE zip
+  (`/var/www/zion-miner/teamredminer-zion-trinity-srb-v1.7.zip`,
+  md5 `34c6641b…` @ duty-100).
