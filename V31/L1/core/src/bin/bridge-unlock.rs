@@ -88,7 +88,7 @@ fn main() -> anyhow::Result<()> {
 
         // Get compressed public key
         let verifying_key = VerifyingKey::from(&signing_key);
-        let encoded_point = verifying_key.to_encoded_point(true);
+        let encoded_point = verifying_key.to_sec1_point(true);
         let pubkey_bytes: &[u8] = encoded_point.as_bytes();
         let pubkey_hex = hex::encode(pubkey_bytes);
 

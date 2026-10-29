@@ -126,7 +126,7 @@ impl L1Releaser {
     pub fn public_keys(&self) -> Vec<String> {
         self.keys
             .iter()
-            .map(|(_, k)| hex::encode(VerifyingKey::from(k).to_encoded_point(true).as_bytes()))
+            .map(|(_, k)| hex::encode(VerifyingKey::from(k).to_sec1_point(true).as_bytes()))
             .collect()
     }
 
@@ -151,7 +151,7 @@ impl L1Releaser {
         let mut proofs = Vec::new();
         for (id, key) in &self.keys {
             let signature: Signature = key.sign(operation_message.as_bytes());
-            let pubkey_hex = hex::encode(VerifyingKey::from(key).to_encoded_point(true).as_bytes());
+            let pubkey_hex = hex::encode(VerifyingKey::from(key).to_sec1_point(true).as_bytes());
             proofs.push(json!({
                 "validator_id": id,
                 "validator_address": Value::Null,

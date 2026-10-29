@@ -1411,7 +1411,7 @@ mod tests {
     async fn submit_bridge_unlock_accepts_valid_multisig() {
         use k256::ecdsa::signature::Signer;
         use k256::ecdsa::SigningKey;
-        use rand::rngs::OsRng;
+        use k256::elliptic_curve::Generate;
 
         let storage = Arc::new(Storage::open_in_memory().await.unwrap());
         let handler = V3RpcHandler::new(storage.clone());
@@ -1450,7 +1450,7 @@ mod tests {
         let mut pubkeys = Vec::new();
         let mut proof_chunks = Vec::new();
         for i in 0..3 {
-            let signing_key = SigningKey::random(&mut OsRng);
+            let signing_key = SigningKey::generate();
             let verifying_key = signing_key.verifying_key();
             let pubkey_hex = hex(verifying_key.to_sec1_bytes().as_ref());
             pubkeys.push(pubkey_hex.clone());

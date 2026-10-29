@@ -62,7 +62,7 @@ fn derive_evm_from_seed(seed: &[u8]) -> (String, String) {
     let pk = sk.verifying_key();
 
     // Ethereum address = keccak256(pubkey_uncompressed[1:65])[12:32]
-    let pk_uncompressed = pk.to_encoded_point(false);
+    let pk_uncompressed = pk.to_sec1_point(false);
     let pk_bytes_full = pk_uncompressed.as_bytes(); // 0x04 || x(32) || y(32) = 65 bytes
 
     // keccak256 of (x || y) = keccak256 of 64 bytes (skip the 0x04 prefix)

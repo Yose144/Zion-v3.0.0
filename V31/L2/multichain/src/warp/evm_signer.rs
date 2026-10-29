@@ -287,7 +287,7 @@ fn encode_legacy_signed(
 
 /// Derive Ethereum address from an uncompressed/compressed secp256k1 public key.
 fn public_key_to_address(vk: &k256::ecdsa::VerifyingKey) -> String {
-    let point = vk.to_encoded_point(false); // uncompressed: 65 bytes 04 X Y
+    let point = vk.to_sec1_point(false); // uncompressed: 65 bytes 04 X Y
     let pub_bytes = &point.as_bytes()[1..]; // strip 04 prefix → 64 bytes
     let hash: [u8; 32] = Keccak256::digest(pub_bytes).into();
     format!("0x{}", hex::encode(&hash[12..])) // last 20 bytes = address
