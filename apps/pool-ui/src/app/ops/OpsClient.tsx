@@ -84,6 +84,9 @@ const L = {
   fleetAgents: { cs: 'ZION agenti + flight sheets', en: 'ZION agents + flight sheets' },
   catalog: { cs: 'Katalog presetů', en: 'Preset catalog' },
   events: { cs: 'Události', en: 'Events' },
+  assign: { cs: 'Přiřadit sheet…', en: 'Assign sheet…' },
+  clear: { cs: '(zrušit)', en: '(clear)' },
+  assigned: { cs: 'Přiřazeno ✓', en: 'Assigned ✓' },
   noAgents: {
     cs: 'Zatím žádní agenti nepřipojeni — nasaď vast-agent na rig.',
     en: 'No agents enrolled yet — deploy vast-agent to a rig.',
@@ -120,6 +123,41 @@ export default function OpsClient() {
   const [fleet, setFleet] = useState<Fleet | null>(null);
   const [unauth, setUnauth] = useState(false);
   const [tick, setTick] = useState(0);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [assignMsg, setAssignMsg] = useState('');
+
+  const postOps = async (path: string, payload: unknown) => {
+    const r = await fetch(`/ops-api${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    setAssignMsg(t(lang, 'assigned'));
+    setTimeout(() => setAssignMsg(''), 3000);
+    const f = await fetch('/ops-api/agent/fleet', { cache: 'no-store' });
+    if (f.ok) setFleet(await f.json());
+  };
+  const assignSheet = (target: Record<string, string>, catalog: string) =>
+    postOps('/agent/sheet', catalog ? { ...target, catalog } : { ...target, sheet: { miner: 'none' } });
+
+  const SheetPicker = ({ target }: { target: Record<string, string> }) => (
+    <select
+      defaultValue=""
+      onChange={(e) => {
+        const v = e.target.value;
+        e.target.value = '';
+        if (!v) return;
+        (v === '__clear__' ? postOps('/agent/sheet/clear', target) : assignSheet(target, v))
+          .catch((err) => { setAssignMsg(String(err)); setTimeout(() => setAssignMsg(''), 4000); });
+      }}
+      style={{ background: 'rgba(0,0,0,.45)', border: '1px solid rgba(255,255,255,.18)', borderRadius: 6, color: 'inherit', padding: '.25rem .4rem', fontSize: '.78rem' }}
+    >
+      <option value="">{t(lang, 'assign')}</option>
+      {Object.keys(catalog).map((n) => <option key={n} value={n}>{n}</option>)}
+      <option value="__clear__">{t(lang, 'clear')}</option>
+    </select>
+  );
 
   useEffect(() => {
     let dead = false;
@@ -178,6 +216,7 @@ export default function OpsClient() {
         <div className="text-muted" style={{ fontSize: '.8rem' }}>
           {t(lang, 'updated')} {status?.ts ?? '—'} · {fleet?.profit_mode ? `profit:${fleet.profit_mode}` : 'profit:off'}
           {openAlerts > 0 && <span style={{ color: 'var(--bad, #ff6b6b)', marginLeft: '.5rem' }}>⚠ {openAlerts}</span>}
+          {assignMsg && <span style={{ color: 'var(--good, #3ddc84)', marginLeft: '.5rem' }}>{assignMsg}</span>}
           <span className="text-muted"> · {tick}</span>
         </div>
       </div>
@@ -208,23 +247,37 @@ export default function OpsClient() {
                 const rej = ms.reduce((a, m) => a + (m.hashrate?.r ?? 0), 0);
                 const down = r.status !== 'running';
                 return (
-                  <tr key={r.id}>
-                    <td><b>#{r.id}</b><br /><span className="text-muted" style={{ fontSize: '.75rem' }}>{r.geo ?? ''}</span></td>
-                    <td>{r.gpu_name ?? '—'}<br /><span className="text-muted" style={{ fontSize: '.75rem' }}>{r.gpu?.util ?? ''} {r.gpu?.mem ?? ''}</span></td>
-                    <td><span style={{ color: down ? 'var(--bad, #ff6b6b)' : 'var(--good, #3ddc84)' }}>{down ? t(lang, 'offline') : (r.status ?? '—')}</span></td>
-                    <td>{r.gpu?.temp ?? '—'}°<br /><span className="text-muted" style={{ fontSize: '.75rem' }}>{r.gpu?.power ?? ''}</span></td>
-                    <td>
-                      {ms.length === 0 && <span className="text-muted">—</span>}
-                      {ms.map((m, i) => (
-                        <div key={i} style={{ fontSize: '.8rem', lineHeight: 1.5 }}>
-                          <b>{m.algo ?? '?'}</b> {m.hashrate?.rate != null && <span>{m.hashrate.rate} {m.hashrate.unit}</span>}
-                          <br /><span className="text-muted">{shortPool(m.pool)}{m.worker ? ` · ${m.worker}` : ''}</span>
-                        </div>
-                      ))}
-                    </td>
-                    <td>{acc}<span className="text-muted">/{rej}</span></td>
-                    <td>{fmtUsd(r.dph, 3)}</td>
-                  </tr>
+                  <>
+                    <tr key={r.id} onClick={() => setExpanded(expanded === r.id ? null : r.id)} style={{ cursor: 'pointer' }}>
+                      <td><b>#{r.id}</b> <span className="text-muted">{expanded === r.id ? '▾' : '▸'}</span><br /><span className="text-muted" style={{ fontSize: '.75rem' }}>{r.geo ?? ''}</span></td>
+                      <td>{r.gpu_name ?? '—'}<br /><span className="text-muted" style={{ fontSize: '.75rem' }}>{r.gpu?.util ?? ''} {r.gpu?.mem ?? ''}</span></td>
+                      <td><span style={{ color: down ? 'var(--bad, #ff6b6b)' : 'var(--good, #3ddc84)' }}>{down ? t(lang, 'offline') : (r.status ?? '—')}</span></td>
+                      <td>{r.gpu?.temp ?? '—'}°<br /><span className="text-muted" style={{ fontSize: '.75rem' }}>{r.gpu?.power ?? ''}</span></td>
+                      <td>
+                        {ms.length === 0 && <span className="text-muted">—</span>}
+                        {ms.map((m, i) => (
+                          <div key={i} style={{ fontSize: '.8rem', lineHeight: 1.5 }}>
+                            <b>{m.algo ?? '?'}</b> {m.hashrate?.rate != null && <span>{m.hashrate.rate} {m.hashrate.unit}</span>}
+                            <br /><span className="text-muted">{shortPool(m.pool)}{m.worker ? ` · ${m.worker}` : ''}</span>
+                          </div>
+                        ))}
+                      </td>
+                      <td>{acc}<span className="text-muted">/{rej}</span></td>
+                      <td>{fmtUsd(r.dph, 3)}</td>
+                    </tr>
+                    {expanded === r.id && (
+                      <tr key={`${r.id}-x`}>
+                        <td colSpan={7} style={{ fontFamily: 'monospace', fontSize: '.75rem', background: 'rgba(255,255,255,.02)' }}>
+                          {ms.map((m, i) => (
+                            <div key={i} style={{ padding: '.3rem 0', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
+                              <b>pid {m.pid}</b> · uptime {m.etime ?? '—'} · <span className="text-muted">{m.cmd}</span>
+                            </div>
+                          ))}
+                          {ms.length === 0 && <span className="text-muted">no miners</span>}
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 );
               })}
               {rigs.length === 0 && (
@@ -241,7 +294,7 @@ export default function OpsClient() {
         <div className="table-scroll">
           <table className="pool-table">
             <thead>
-              <tr><th>Rig / group</th><th>Flight sheet</th><th>Applied</th><th>Seen</th><th>GPUs</th><th>Miners</th></tr>
+              <tr><th>Rig / group</th><th>Flight sheet</th><th>Applied</th><th>Seen</th><th>GPUs</th><th>Miners</th><th>{t(lang, 'assign')}</th></tr>
             </thead>
             <tbody>
               {agents.map((a) => (
@@ -254,16 +307,18 @@ export default function OpsClient() {
                   <td>{fmtAge(a.last_seen)}</td>
                   <td>{(a.gpus ?? []).map((g) => `${g.name ?? '?'} ${g.temp ?? ''}°`).join(', ') || '—'}</td>
                   <td>{(a.miners ?? []).join(', ') || '—'}</td>
+                  <td><SheetPicker target={{ rig_id: a.rig_id }} /></td>
                 </tr>
               ))}
               {Object.entries(groups).map(([g, s]) => (
                 <tr key={`g-${g}`}>
                   <td><b>{g}</b> <span className="text-muted">(group)</span></td>
                   <td>{sheetLabel(s)}</td><td colSpan={4} className="text-muted">—</td>
+                  <td><SheetPicker target={{ group: g }} /></td>
                 </tr>
               ))}
               {agents.length === 0 && Object.keys(groups).length === 0 && (
-                <tr><td colSpan={6} className="text-muted" style={{ textAlign: 'center', padding: '1.25rem' }}>{t(lang, 'noAgents')}</td></tr>
+                <tr><td colSpan={7} className="text-muted" style={{ textAlign: 'center', padding: '1.25rem' }}>{t(lang, 'noAgents')}</td></tr>
               )}
             </tbody>
           </table>

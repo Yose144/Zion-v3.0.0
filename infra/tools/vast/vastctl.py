@@ -1857,7 +1857,12 @@ def _sha256(s):
 
 def _agent_token_ok(headers):
     """Returns rig_id bound by the bearer (`rig_id:secret` per-rig auth),
-    True for the legacy shared token, or False/None on failure."""
+    True for the legacy shared token, or False/None on failure.
+    Also accepts X-Ops-Auth: 1 — set by the edge nginx only AFTER basic
+    auth passes (/ops-api/). :8088 binds localhost, so the header is not
+    client-spoofable over any public path."""
+    if headers.get("X-Ops-Auth") == "1":
+        return True
     auth = headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
         return False
