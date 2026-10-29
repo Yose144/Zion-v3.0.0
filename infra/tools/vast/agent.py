@@ -317,6 +317,70 @@ def self_update(args):
     return 0, f"updated to {want[:12]} ({len(data)}B), restarting"
 
 
+# OC bounds — CP validates these too, but the rig is the last line of
+# defense: a malformed sheet/args must never push clocks outside sane
+# ranges even if a bug lets them through.
+OC_BOUNDS = {
+    "core_mhz": (100, 3500),
+    "mem_mhz": (100, 16000),
+    "power_w": (40, 800),
+    "fan_pct": (0, 100),
+}
+OC_FLAGS = {
+    "core_mhz": ["-lgc"],
+    "mem_mhz": ["-lmc"],
+    "power_w": ["-pl"],
+    "fan_pct": ["--gpu-target-fan-speed="],
+}
+
+
+def apply_oc(args):
+    """Dedicated OC task op — per-GPU clocks/power/fan via nvidia-smi with
+    validated bounds. args: {gpu:int, reset?:bool, core_mhz?, mem_mhz?,
+    power_w?, fan_pct?}. Each setting runs as its own argv call (no shell)
+    and reports per-setting rc so partial applies are visible."""
+    gpu = args.get("gpu")
+    if not isinstance(gpu, int) or isinstance(gpu, bool) or gpu < 0 or gpu > 15:
+        return 2, "oc requires integer gpu index 0..15"
+    cmds = []
+    if args.get("reset"):
+        cmds.append((["-rgc"], "reset core"))
+        cmds.append((["-rmc"], "reset mem"))
+    for key, bounds in OC_BOUNDS.items():
+        v = args.get(key)
+        if v is None:
+            continue
+        if not isinstance(v, int) or isinstance(v, bool):
+            return 2, f"oc {key} must be int"
+        lo, hi = bounds
+        if not lo <= v <= hi:
+            return 2, f"oc {key}={v} outside bounds [{lo},{hi}]"
+        flag = OC_FLAGS[key]
+        if flag[0].endswith("="):
+            cmds.append(([f"{flag[0]}{v}"], key))
+        else:
+            cmds.append((flag + [str(v)], key))
+    if not cmds:
+        return 2, "oc: nothing to apply (need reset or a clock/power/fan field)"
+    lines, worst = [], 0
+    for flag, label in cmds:
+        try:
+            r = subprocess.run(["nvidia-smi", "-i", str(gpu)] + flag,
+                               capture_output=True, text=True, timeout=15)
+            lines.append(f"{label}: rc={r.returncode} "
+                         f"{(r.stdout + r.stderr).strip()[:200]}")
+            worst = worst or r.returncode
+        except subprocess.TimeoutExpired:
+            lines.append(f"{label}: timeout")
+            worst = worst or 124
+        except FileNotFoundError:
+            return 2, "nvidia-smi not found"
+        except Exception as e:
+            lines.append(f"{label}: {e}")
+            worst = worst or 1
+    return worst, "\n".join(lines)
+
+
 def run_task(task, seen):
     tid, op, args = task["id"], task["op"], task.get("args", {})
     if tid in seen:
@@ -327,6 +391,8 @@ def run_task(task, seen):
         return
     if op == "self-update":
         rc, out = self_update(args)
+    elif op == "oc":
+        rc, out = apply_oc(args if isinstance(args, dict) else {})
     elif op == "code.run":
         if _code_run is None:
             rc, out = 2, "code.run unavailable: code_run.py not installed on rig"

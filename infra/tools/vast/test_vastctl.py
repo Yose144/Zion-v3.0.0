@@ -103,11 +103,46 @@ class AgentRegistryTests(unittest.TestCase):
         rig = vastctl._agents_cache["rigs"]["r1"]
         self.assertEqual(rig["results"][-1]["out"], "ok-out")
 
-    def test_enqueue_rejects_non_exec_ops(self):
+    def test_enqueue_rejects_unknown_ops_allows_code_run(self):
         with self.assertRaises(ValueError):
             vastctl.agent_enqueue("r1", "launch", {})
         with self.assertRaises(ValueError):
             vastctl.agent_enqueue("r1", "exec", {})
+        with self.assertRaises(ValueError):
+            vastctl.agent_enqueue("r1", "code.run", {})
+        task = vastctl.agent_enqueue(
+            "r1", "code.run", {"prompt": "read README", "max_turns": 2})
+        self.assertEqual(task["op"], "code.run")
+        self.assertEqual(task["args"]["prompt"], "read README")
+        self.assertEqual(task["args"]["max_turns"], 2)
+
+    def test_oc_enqueue_validates_gpu_and_bounds(self):
+        task = vastctl.agent_enqueue(
+            "r1", "oc", {"gpu": 0, "core_mhz": 2100, "power_w": 170})
+        self.assertEqual(task["op"], "oc")
+        self.assertEqual(task["args"]["gpu"], 0)
+        # missing gpu / out-of-range / no fields all rejected
+        for bad in ({}, {"gpu": "0"}, {"gpu": -1}, {"gpu": 99},
+                    {"gpu": 0, "core_mhz": 50},
+                    {"gpu": 0, "power_w": 5000},
+                    {"gpu": 0, "fan_pct": 101},
+                    {"gpu": 0, "core_mhz": "2100"},
+                    {"gpu": 0, "core_mhz": True}):
+            with self.assertRaises(ValueError, msg=str(bad)):
+                vastctl.agent_enqueue("r1", "oc", bad)
+        # reset-only is a valid op
+        t2 = vastctl.agent_enqueue("r1", "oc", {"gpu": 1, "reset": True})
+        self.assertEqual(t2["args"]["reset"], True)
+
+    def test_cancel_pending_code_run(self):
+        task = vastctl.agent_enqueue(
+            "r1", "code.run", {"prompt": "x"})
+        out = vastctl.agent_cancel("r1", task["id"])
+        self.assertEqual(out["state"], "cancelled")
+        st = vastctl.agent_task_status("r1", task["id"])
+        self.assertEqual(st["task"]["state"], "cancelled")
+        with self.assertRaises(ValueError):
+            vastctl.agent_cancel("r1", task["id"])
 
     def test_fleet_reports_last_seen_and_pending(self):
         vastctl.agent_enqueue("r2", "exec", {"cmd": "uptime"})

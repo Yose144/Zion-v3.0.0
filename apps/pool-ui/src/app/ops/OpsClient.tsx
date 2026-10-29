@@ -173,6 +173,12 @@ const L = {
   notConfigured: { cs: 'nenastaveno', en: 'not configured' },
   testFire: { cs: 'Test-fire', en: 'Test-fire' },
   testSent: { cs: 'Test odeslán →', en: 'Test sent →' },
+  ocApply: { cs: 'OC apply', en: 'OC apply' },
+  ocReset: { cs: 'OC reset', en: 'OC reset' },
+  ocHint: {
+    cs: 'OC (gpu, core/mem MHz, power W, fan %)',
+    en: 'OC (gpu, core/mem MHz, power W, fan %)',
+  },
 } as const;
 
 type Key = keyof typeof L;
@@ -204,6 +210,80 @@ function fmtMib(mib?: number) {
   if (mib == null) return '—';
   return mib >= 1024 ? `${(mib / 1024).toFixed(1)} GB` : `${mib} MB`;
 }
+/// Per-GPU OC quick form (W6) — enqueues the `oc` task op; bounds are
+/// validated CP-side and again rig-side before any nvidia-smi call.
+function OcRow({
+  rigId,
+  postOps,
+  lang,
+}: {
+  rigId: string;
+  postOps: (path: string, payload: unknown) => Promise<unknown>;
+  lang: 'cs' | 'en';
+}) {
+  const [gpu, setGpu] = useState('0');
+  const [core, setCore] = useState('');
+  const [mem, setMem] = useState('');
+  const [power, setPower] = useState('');
+  const [fan, setFan] = useState('');
+  const num = (s: string) => (s.trim() === '' ? undefined : Number(s.trim()));
+  const send = (extra: Record<string, unknown>) =>
+    postOps('/agent/enqueue', {
+      rig_id: rigId,
+      op: 'oc',
+      args: { gpu: Number(gpu) || 0, ...extra },
+    }).catch(() => {});
+  const field = (v: string, set: (s: string) => void, ph: string) => (
+    <input
+      value={v}
+      onChange={(e) => set(e.target.value)}
+      placeholder={ph}
+      className="ops-exec-input"
+      style={{ maxWidth: '4.5rem' }}
+    />
+  );
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: '.35rem',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        marginTop: '.4rem',
+        borderTop: '1px solid rgba(255,255,255,.06)',
+        paddingTop: '.4rem',
+      }}
+    >
+      <span className="text-muted" style={{ fontSize: '.72rem' }}>{t(lang, 'ocHint')}</span>
+      {field(gpu, setGpu, 'gpu')}
+      {field(core, setCore, 'core')}
+      {field(mem, setMem, 'mem')}
+      {field(power, setPower, 'W')}
+      {field(fan, setFan, 'fan%')}
+      <button
+        className="ops-mini-btn"
+        disabled={!core.trim() && !mem.trim() && !power.trim() && !fan.trim()}
+        onClick={() =>
+          send({
+            ...(num(core) != null ? { core_mhz: num(core) } : {}),
+            ...(num(mem) != null ? { mem_mhz: num(mem) } : {}),
+            ...(num(power) != null ? { power_w: num(power) } : {}),
+            ...(num(fan) != null ? { fan_pct: num(fan) } : {}),
+          })
+        }
+      >
+        {t(lang, 'ocApply')}
+      </button>
+      <button
+        className="ops-mini-btn"
+        onClick={() => send({ reset: true })}
+      >
+        {t(lang, 'ocReset')}
+      </button>
+    </div>
+  );
+}
+
 function sheetLabel(s?: FleetSheet): string {
   if (!s?.miner) return '—';
   return s.miner === 'none' ? 'stop-all' : `${s.miner}${s.coin ? ` · ${s.coin}` : ''}`;
@@ -506,6 +586,7 @@ export default function OpsClient() {
                             </div>
                           ))}
                           {!(a.tasks_tail?.length || a.results_tail?.length) && <span className="text-muted">no tasks yet — use exec →</span>}
+                          <OcRow rigId={a.rig_id} postOps={postOps} lang={lang} />
                         </td>
                       </tr>
                     )}

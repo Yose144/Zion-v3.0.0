@@ -2504,11 +2504,29 @@ def agent_result(rig_id, task_id, rc, out):
 
 
 def agent_enqueue(rig_id, op, args):
-    """Queue a task for a rig. Supported ops: `exec`, `code.run` (F2)."""
+    """Queue a task for a rig. Supported ops: `exec`, `code.run` (F2),
+    `oc` (per-GPU clocks/power/fan via agent-side nvidia-smi, W6)."""
     args = dict(args or {})
     if op == "exec":
         if not isinstance(args.get("cmd"), str) or not args["cmd"]:
             raise ValueError("exec requires args.cmd")
+    elif op == "oc":
+        gpu = args.get("gpu")
+        if not isinstance(gpu, int) or isinstance(gpu, bool) or not 0 <= gpu <= 15:
+            raise ValueError("oc requires integer args.gpu 0..15")
+        bounds = {"core_mhz": (100, 3500), "mem_mhz": (100, 16000),
+                  "power_w": (40, 800), "fan_pct": (0, 100)}
+        fields = [k for k in bounds if k in args]
+        if not args.get("reset") and not fields:
+            raise ValueError(
+                "oc requires reset=true or one of " + ",".join(sorted(bounds)))
+        for k in fields:
+            v = args[k]
+            if not isinstance(v, int) or isinstance(v, bool):
+                raise ValueError(f"oc args.{k} must be int")
+            lo, hi = bounds[k]
+            if not lo <= v <= hi:
+                raise ValueError(f"oc args.{k}={v} outside bounds [{lo},{hi}]")
     elif op == "code.run":
         try:
             from code_run import validate_code_run_args
@@ -2522,7 +2540,9 @@ def agent_enqueue(rig_id, op, args):
             validate_code_run_args = mod.validate_code_run_args
         args = validate_code_run_args(args)
     else:
-        raise ValueError("supported ops: exec (args.cmd), code.run (args.prompt)")
+        raise ValueError(
+            "supported ops: exec (args.cmd), code.run (args.prompt), "
+            "oc (args.gpu + core_mhz/mem_mhz/power_w/fan_pct/reset)")
     with _agents_lock:
         rig = _agent_db()["rigs"].setdefault(
             rig_id, {"heartbeat": {}, "tasks": [], "results": []})
