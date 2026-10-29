@@ -3070,9 +3070,10 @@ impl PoolApi {
 }
 
 /// `zion1abc…xyz` — public leaderboard shows a recognizable but non-copyable
-/// wallet fragment (first 12 + last 6 chars).
+/// wallet fragment (first 12 + last 6 chars). Segments containing '-' or '_'
+/// pass through untouched: rig labels are hyphenated, wallet addresses are not.
 fn mask_wallet(s: &str) -> String {
-    if s.chars().count() > 18 {
+    if s.chars().count() > 18 && !s.contains('-') && !s.contains('_') {
         let head: String = s.chars().take(12).collect();
         let tail: String = s
             .chars()
@@ -3716,8 +3717,10 @@ mod tests {
         let md = mask_worker_wallet(&double);
         assert_eq!(md, format!("{masked}.{masked}.vast-3060"));
         assert!(!md.contains(&w[12..w.len() - 6]));
-        // Short ids pass through untouched.
+        // Short ids and hyphenated rig labels pass through untouched —
+        // "vast-58077390-prlpool" is 20 chars but clearly not a wallet.
         assert_eq!(mask_wallet("short"), "short");
+        assert_eq!(mask_wallet("vast-58077390-prlpool"), "vast-58077390-prlpool");
     }
 
     #[test]
