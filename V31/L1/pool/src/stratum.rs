@@ -37,7 +37,7 @@ use crate::pool::{Pool, PoolError, SessionCounters};
 use crate::rate_limit::{IpRateLimiter, ShareRateLimiter};
 use crate::revenue_scheduler::RevenueScheduler;
 use crate::routing::{resolve_session_group, session_group_name, RoutingStats};
-use crate::rpc_client::L1Endpoints;
+use crate::rpc_client::{block_submit_endpoints, L1Endpoints};
 use crate::share::ShareSubmission;
 use crate::share_relay::{relay_share_fire_and_forget, ShareRelayConfig};
 use crate::stratum_pearl::{self, is_pearl_stratum};
@@ -4662,70 +4662,35 @@ async fn current_chain_height(endpoints: &L1Endpoints) -> Option<u64> {
     })
 }
 
-/// Submit a solved block to the node RPC.
+/// Submit a solved block to the primary L1 node only.
 ///
-/// Tip-affinity: follower nodes can lag the primary tip — a block built on
-/// node A's template submitted to lagging node B is rejected with
-/// "previous hash mismatch" (and `call()` treats an in-result error as
-/// success, so it never tries the other endpoints). Probe each endpoint's
-/// tip and submit to the one whose tip IS our prev_hash; fall back to the
-/// last_good route when no node advertises it (tip already advanced — let
-/// the node decide).
+/// Templates and payout `call_all` still use the full endpoint list.
+/// `submitBlock` does not. Writing the block to whichever follower already
+/// has `tip == prev_hash` extended a same-height fork (2026-10-29): node3
+/// advertised its own tip, so the next block was appended there. The
+/// primary accepts or rejects; a follower is not a submit target.
 async fn submit_block_to_node(endpoints: &L1Endpoints, block: &Block) -> anyhow::Result<()> {
+    let targets = block_submit_endpoints(endpoints);
+    submit_block_on(&targets, endpoints, block).await
+}
+
+async fn submit_block_on(
+    targets: &L1Endpoints,
+    configured: &L1Endpoints,
+    block: &Block,
+) -> anyhow::Result<()> {
     let payload = json!({
         "jsonrpc": "2.0",
         "id": 1,
         "method": "submitBlock",
         "params": serde_json::to_value(block).expect("block serializes"),
     });
-    let prev_hex = hex::encode(block.header.previous_hash);
-    let probe = json!({
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "getChainInfo",
-        "params": [],
-    });
-    for idx in 0..endpoints.len() {
-        let Ok(resp) = endpoints
-            .call_addr(idx, &probe, Duration::from_secs(3))
-            .await
-        else {
-            continue;
-        };
-        let matches = resp
-            .get("result")
-            .map(|r| {
-                [r.get("tip_hash"), r.get("native_tip_hash")]
-                    .into_iter()
-                    .flatten()
-                    .filter_map(Value::as_str)
-                    .any(|h| h.eq_ignore_ascii_case(&prev_hex))
-            })
-            .unwrap_or(false);
-        if !matches {
-            continue;
-        }
-        tracing::info!(
-            "submitBlock tip-affinity: endpoint #{} tip == prev_hash {}",
-            idx,
-            &prev_hex[..12]
-        );
-        let response = endpoints
-            .call_addr(idx, &payload, crate::rpc_client::attempt_timeout())
-            .await?;
-        if let Some(err) = response.get("error") {
-            if !err.is_null() {
-                return Err(anyhow::anyhow!("submitBlock returned error: {}", err));
-            }
-        }
-        tracing::info!("submitBlock response: {}", response);
-        return Ok(());
-    }
-    tracing::warn!(
-        "submitBlock: no endpoint advertises tip {} — falling back to last_good",
-        &prev_hex[..12]
+    tracing::info!(
+        "submitBlock primary-only: {} (configured {})",
+        targets.describe(),
+        configured.describe()
     );
-    let response: serde_json::Value = endpoints.call(&payload).await?;
+    let response: serde_json::Value = targets.call(&payload).await?;
 
     if let Some(err) = response.get("error") {
         if !err.is_null() {
@@ -4762,6 +4727,60 @@ fn error_response(id: Option<Value>, code: i32, message: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn block_submit_contacts_only_the_primary_target() {
+        use std::sync::atomic::AtomicUsize;
+        use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+        use tokio::net::TcpListener;
+
+        async fn spawn_counting(hits: Arc<AtomicUsize>) -> std::net::SocketAddr {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let addr = listener.local_addr().unwrap();
+            tokio::spawn(async move {
+                while let Ok((stream, _)) = listener.accept().await {
+                    hits.fetch_add(1, Ordering::Relaxed);
+                    let (reader, mut writer) = stream.into_split();
+                    let mut reader = BufReader::new(reader);
+                    let mut line = String::new();
+                    if reader.read_line(&mut line).await.is_err() {
+                        continue;
+                    }
+                    let resp = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"accepted\":true}}\n";
+                    let _ = writer.write_all(resp.as_bytes()).await;
+                }
+            });
+            addr
+        }
+
+        let primary_hits = Arc::new(AtomicUsize::new(0));
+        let follower_hits = Arc::new(AtomicUsize::new(0));
+        let primary = spawn_counting(primary_hits.clone()).await;
+        let follower = spawn_counting(follower_hits.clone()).await;
+        let configured =
+            L1Endpoints::from_urls(&format!("http://{primary},http://{follower}")).unwrap();
+        let targets = configured.primary_only();
+        let block = Block::new(
+            BlockHeader {
+                previous_hash: zion_l1_types::Hash::new([0xab; 32]),
+                merkle_root: zion_l1_types::Hash::new([0; 32]),
+                height: 100_295,
+                timestamp: 1,
+                nonce: 1,
+                difficulty: 1,
+            },
+            Vec::new(),
+        );
+        submit_block_on(&targets, &configured, &block)
+            .await
+            .unwrap();
+        assert_eq!(primary_hits.load(Ordering::Relaxed), 1);
+        assert_eq!(
+            follower_hits.load(Ordering::Relaxed),
+            0,
+            "follower must not be probed or submitted to"
+        );
+    }
     use std::net::{IpAddr, Ipv4Addr};
     use std::sync::Arc;
     use std::time::Duration;

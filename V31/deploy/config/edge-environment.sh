@@ -48,6 +48,10 @@ ZION_POOL_FEE_PCT=0
 # ── Pool Configuration (PRIMARY — accepts all miners) ──
 ZION_POOL_BIND=0.0.0.0:8444
 ZION_NODE_RPC_ADDR=127.0.0.1:9445
+# Templates and payout fanout may list followers. submitBlock must not:
+# tip-affinity onto a same-height fork extends that fork (2026-10-29).
+# Primary is the EDGE :9445 tunnel to the EDGE2 chain source of truth.
+ZION_L1_BLOCK_SUBMIT_URL=http://127.0.0.1:9445
 ZION_L1_RPC_URL=http://127.0.0.1:9445
 ZION_POOL_LOOP_COUNT=1000000
 ZION_MAX_SESSIONS_PER_IP=10

@@ -41,9 +41,11 @@ struct Args {
     #[arg(short, long, env = "ZION_POOL_BIND", default_value = "0.0.0.0:8444")]
     bind: String,
 
-    /// Zion L1 node RPC URL for getTemplate / submitBlock. Comma-separated
+    /// Zion L1 node RPC URL for getTemplate and payout fanout. Comma-separated
     /// list enables HA failover with last-good stickiness, e.g.
     /// `http://127.0.0.1:9445,http://127.0.0.1:9446,http://127.0.0.1:9447`.
+    /// Solved blocks are not submitted across this list: they go to
+    /// `ZION_L1_BLOCK_SUBMIT_URL`, or to the first URL when that is unset.
     #[arg(short, long, env = "ZION_L1_RPC_URL")]
     l1_rpc_url: Option<String>,
 
@@ -365,6 +367,14 @@ async fn main() -> anyhow::Result<()> {
 
     if !l1_rpc_url.is_empty() {
         info!("template feed from L1 RPC: {}", l1_rpc_url);
+        if let Some(eps) = zion_pool::rpc_client::L1Endpoints::from_urls(&l1_rpc_url) {
+            let submit = zion_pool::rpc_client::block_submit_endpoints(&eps);
+            info!(
+                "block submit primary-only: {} (template/payout endpoints: {})",
+                submit.describe(),
+                eps.describe()
+            );
+        }
     } else {
         warn!("no --l1-rpc-url configured; template feed disabled");
     }
