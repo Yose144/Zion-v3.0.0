@@ -3,13 +3,13 @@ import TerraNovaBookLoader from './TerraNovaBookLoader';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/terranova' },
-  title: 'Terra Nova — více edic knihy ZION · ZION',
+  title: 'Terra Nova — kniha Zlatého Kompasu · ZION',
   description:
-    'Terra Nova ve webové čtečce ZION: organická ORG větev, technická FINAL/Cloud edice a sci-fi Gemini odysea v jednom lokálním readeru.',
+    'Terra Nova ve webové čtečce ZION: kompletní kniha — prolog, 12 kapitol a přílohy A–D, česky i anglicky. Každé tvrzení nese vrstvu: realita, roadmap, horizont.',
   openGraph: {
-    title: 'Terra Nova — ORG, FINAL a Gemini',
+    title: 'Terra Nova — Zlatý Kompas Nové Země',
     description:
-      'Lokální čtečka Terra Novy se třemi verzemi: ORG, FINAL/Cloud a Gemini sci-fi odysea.',
+      'Kompletní kniha Terra Nova v interaktivní čtečce: od Genesis přes komunity, AI a WARP až po Issobellu a Zlatý Kompas.',
   },
 };
 
