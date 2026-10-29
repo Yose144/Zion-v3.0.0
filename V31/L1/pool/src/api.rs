@@ -668,6 +668,11 @@ impl PoolApi {
                 let body = self.build_public_coin_stats_payload(coin);
                 ("200 OK", "application/json", body)
             }
+            p if p.starts_with("/public/v1/miners") => {
+                let limit = parse_query_limit(raw_path, 50);
+                let body = self.build_public_miners_payload(limit as usize);
+                ("200 OK", "application/json", body)
+            }
             p if p.starts_with("/public/v1/coins/") && p.ends_with("/blocks") => {
                 let coin = p
                     .trim_start_matches("/public/v1/coins/")
@@ -2086,6 +2091,18 @@ impl PoolApi {
     }
 
     fn build_miners_payload(&self, limit: usize) -> String {
+        let (count, miners) = self.collect_miners_json(limit);
+        json!({
+            "ok": true,
+            "count": count,
+            "miners": miners,
+        })
+        .to_string()
+    }
+
+    /// Shared miner collection for `/miners` (full detail) and
+    /// `/public/v1/miners` (masked leaderboard view).
+    fn collect_miners_json(&self, limit: usize) -> (usize, Vec<serde_json::Value>) {
         let (worker_addresses, telemetry) = {
             let pool = self.pool.lock().expect("pool lock poisoned");
             (pool.worker_addresses.clone(), pool.telemetry.clone())
@@ -2129,6 +2146,32 @@ impl PoolApi {
             count = count.saturating_add(1);
         }
 
+        (count, miners)
+    }
+
+    /// `/public/v1/miners` — top-miners leaderboard, sorted by live hashrate.
+    /// Public-safe: wallet masked, payout amounts stripped, cap 100.
+    fn build_public_miners_payload(&self, limit: usize) -> String {
+        let limit = limit.min(100);
+        let (count, mut miners) = self.collect_miners_json(limit);
+        miners.sort_by(|a, b| {
+            b["hashrate_hps"]
+                .as_f64()
+                .unwrap_or(0.0)
+                .partial_cmp(&a["hashrate_hps"].as_f64().unwrap_or(0.0))
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        for m in &mut miners {
+            let obj = m.as_object_mut().unwrap();
+            if let Some(addr) = obj.get("address").and_then(|v| v.as_str()) {
+                obj.insert("address".into(), json!(mask_wallet(addr)));
+            }
+            if let Some(w) = obj.get("worker").and_then(|v| v.as_str()) {
+                obj.insert("worker".into(), json!(mask_worker_wallet(w)));
+            }
+            obj.remove("paid_total_atomic");
+            obj.remove("first_seen_s");
+        }
         json!({
             "ok": true,
             "count": count,
@@ -3007,6 +3050,34 @@ impl PoolApi {
     }
 }
 
+/// `zion1abc…xyz` — public leaderboard shows a recognizable but non-copyable
+/// wallet fragment (first 12 + last 6 chars).
+fn mask_wallet(s: &str) -> String {
+    if s.chars().count() > 18 {
+        let head: String = s.chars().take(12).collect();
+        let tail: String = s
+            .chars()
+            .rev()
+            .take(6)
+            .collect::<String>()
+            .chars()
+            .rev()
+            .collect();
+        format!("{head}…{tail}")
+    } else {
+        s.to_string()
+    }
+}
+
+/// `wallet.rig_name` → `masked_wallet.rig_name` — the rig label is the part
+/// miners actually want on a leaderboard; the wallet stays masked.
+fn mask_worker_wallet(worker: &str) -> String {
+    match worker.split_once('.') {
+        Some((wallet, rig)) => format!("{}.{}", mask_wallet(wallet), rig),
+        None => mask_wallet(worker),
+    }
+}
+
 /// Split "wallet.worker" or "wallet" into (wallet, worker_name).
 fn split_worker(username: &str) -> (String, String) {
     if let Some(dot) = username.find('.') {
@@ -3602,6 +3673,23 @@ mod tests {
         assert_eq!(parse_query_limit("/blocks?limit=10", 50), 10);
         assert_eq!(parse_query_limit("/blocks?limit=999", 50), 500);
         assert_eq!(parse_query_limit("/blocks?limit=0", 50), 1);
+    }
+
+    #[test]
+    fn mask_helpers_keep_wallet_unrecoverable() {
+        let w = "zion1s6m204400290l660k622r3r0c6u040g5j6cu2x5";
+        let masked = mask_wallet(w);
+        assert!(masked.starts_with("zion1s6m2044"));
+        assert!(masked.ends_with("6cu2x5"));
+        assert!(masked.contains('…'));
+        assert!(!masked.contains(&w[12..w.len() - 6]));
+        // Worker suffix survives; only the wallet part is masked.
+        assert_eq!(
+            mask_worker_wallet(&format!("{w}.rig01")),
+            format!("{masked}.rig01")
+        );
+        // Short ids pass through untouched.
+        assert_eq!(mask_wallet("short"), "short");
     }
 
     #[test]
