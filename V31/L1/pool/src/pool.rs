@@ -1336,6 +1336,8 @@ fn parse_quantus_payout(wallet: &str) -> Option<String> {
     let lower = wallet.to_ascii_lowercase();
     let bare = if lower.starts_with("qtc:") || lower.starts_with("qtu:") {
         &wallet[4..]
+    } else if lower.starts_with("quantus:") {
+        &wallet[8..]
     } else {
         wallet
     };

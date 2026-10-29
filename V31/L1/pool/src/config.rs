@@ -65,20 +65,30 @@ pub struct PoolConfig {
 }
 
 /// Parse `ZION_POOL_NATIVE_PAYOUT_COINS` (`"qtu,prl"` → lowercase tickers).
+/// `qtc`/`quantus` normalize to the internal `qtu` tag.
 pub fn parse_native_payout_coins(raw: &str) -> Vec<String> {
     raw.split(',')
         .map(|c| c.trim().to_ascii_lowercase())
+        .map(|c| match c.as_str() {
+            "qtc" | "quantus" | "quantum" => "qtu".to_string(),
+            _ => c,
+        })
         .filter(|c| !c.is_empty())
         .collect()
 }
 
 /// Parse `ZION_POOL_MIN_PAYOUT_NATIVE` (`"qtu:1000000,prl:50000000"` →
-/// lowercase ticker → native base-unit threshold).
+/// lowercase ticker → native base-unit threshold). `qtc`/`quantus`
+/// normalize to the internal `qtu` tag.
 pub fn parse_min_payout_native(raw: &str) -> std::collections::HashMap<String, u64> {
     raw.split(',')
         .filter_map(|pair| {
             let (coin, amount) = pair.split_once(':')?;
             let coin = coin.trim().to_ascii_lowercase();
+            let coin = match coin.as_str() {
+                "qtc" | "quantus" | "quantum" => "qtu".to_string(),
+                _ => coin,
+            };
             let amount: u64 = amount.trim().parse().ok()?;
             (!coin.is_empty()).then_some((coin, amount))
         })

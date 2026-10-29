@@ -1137,7 +1137,7 @@ def _launch_group(mn):
         return "srb"
     if mn == "xmr":
         return "xmr"
-    if mn in ("zion", "zion50", "zionmax", "prl", "qtu"):
+    if mn in ("zion", "zion50", "zionmax", "prl", "qtu", "qtc", "quantus"):
         return "zion"
     return None
 
@@ -1445,6 +1445,7 @@ def _pool_wallet(pool, merged_wallet, plain_wallet):
 
 def launch_srb(inst, iid, coins=("qtu", "prl")):
     """SRBMiner sessions: PRL → luckypool, QTU → lproute, one tmux each."""
+    coins = tuple("qtu" if c in ("qtc", "quantus") else c for c in coins)
     wq, wp = f"vast-{iid}-qtu", f"vast-{iid}-prl"
     kills = ("tmux kill-session -t zion 2>/dev/null; "
              "pkill -f 'zion-miner --pool' 2>/dev/null\n")

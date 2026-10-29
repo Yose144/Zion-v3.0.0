@@ -31,7 +31,8 @@ wallet-existence internals, and anything admin.
 - Hashrate in H/s (synthetic work-equivalent for external streams —
   expected-hashes/s, not physical).
 - `?limit=N` caps rows (defaults below; history endpoints cap at 1440).
-- Coin ids: `zion` (native), `qtu`, `prl`, `zano`, `vrsc`, `xmr`
+- Coin ids: `zion` (native), `qtc` (Quantus — canonical public ticker;
+  `qtu`/`quantus` accepted as aliases), `prl`, `zano`, `vrsc`, `xmr`
   (upstream legs). Empty `{coin}` path segment = `zion`.
 - `active`/`online` window = a share in the last **600 s**.
 
@@ -196,8 +197,8 @@ Pool-wide 60 s timeseries (24 h ring, persisted):
 {"ok": true, "interval_s": 60,
  "samples": [{"ts": 1761600000, "hashrate": 123.4,
               "miners_online": 4,
-              "online_by_coin": {"zion": 3, "qtu": 1},
-              "hashrate_by_coin": {"zion": 123.4, "qtu": 2.1e8},
+              "online_by_coin": {"zion": 3, "qtc": 1},
+              "hashrate_by_coin": {"zion": 123.4, "qtc": 2.1e8},
               "accepted": 5000, "rejected": 30}]}
 ```
 

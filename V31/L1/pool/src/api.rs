@@ -3710,12 +3710,28 @@ fn mask_zis_sub(sub: &str) -> String {
 /// surface as `qtc` (the official Quantus ticker). Internal `qtc` means
 /// Qubitcoin (`ExternalCoin::Qubitcoin::as_str()`), which collides with
 /// Quantus's public ticker — it surfaces under its full name instead.
+/// Pass-through preserves the caller's casing so uppercase-ticker
+/// payloads (`"ZANO"`, `"PRL"`) keep their style.
 fn public_ticker(coin: &str) -> String {
+    let upper = coin.chars().any(|c| c.is_ascii_uppercase());
     match coin.trim().to_ascii_lowercase().as_str() {
-        "qtu" | "quantus" => "qtc".to_string(),
-        "qtc" => "qubitcoin".to_string(),
-        c => c.to_string(),
+        "qtu" | "quantus" | "quantum" => {
+            if upper {
+                "QTC"
+            } else {
+                "qtc"
+            }
+        }
+        "qtc" => {
+            if upper {
+                "QUBITCOIN"
+            } else {
+                "qubitcoin"
+            }
+        }
+        _ => return coin.trim().to_string(),
     }
+    .to_string()
 }
 
 /// Normalize an externally supplied coin selector back to the internal
@@ -3723,7 +3739,7 @@ fn public_ticker(coin: &str) -> String {
 /// (Quantus); `qubitcoin` resolves to the internal `qtc` tag.
 fn internal_coin_key(coin: &str) -> String {
     match coin.trim().to_ascii_lowercase().as_str() {
-        "qtc" | "quantus" => "qtu".to_string(),
+        "qtc" | "quantus" | "quantum" => "qtu".to_string(),
         "qubitcoin" => "qtc".to_string(),
         c => c.to_string(),
     }
@@ -4425,11 +4441,11 @@ mod tests {
             coins.len()
         );
         assert!(coins.iter().all(|c| c.get("served").is_some()));
-        // Quantus surfaces under its canonical public ticker `qtc`;
-        // Qubitcoin (internal `QTC`) is disambiguated to `qubitcoin`.
-        let qtc = coins.iter().find(|c| c["coin"] == "qtc").unwrap();
+        // Quantus surfaces under its canonical public ticker `QTC`;
+        // Qubitcoin (internal `QTC`) is disambiguated to `QUBITCOIN`.
+        let qtc = coins.iter().find(|c| c["coin"] == "QTC").unwrap();
         assert_eq!(qtc["algorithm"], "qpow-poseidon2");
-        let qbc = coins.iter().find(|c| c["coin"] == "qubitcoin").unwrap();
+        let qbc = coins.iter().find(|c| c["coin"] == "QUBITCOIN").unwrap();
         assert_eq!(qbc["algorithm"], "qhash");
         // Pearl is registered but deliberately disabled.
         let prl = coins.iter().find(|c| c["coin"] == "PRL").unwrap();
@@ -4892,6 +4908,29 @@ mod tests {
         assert_eq!(worker_display_name("w1", "w2.rigA"), "w2.rigA");
         // Empty remainder falls back to "default" (matches the miners payload).
         assert_eq!(worker_display_name("w1", "w1."), "default");
+    }
+
+    #[test]
+    fn public_ticker_canonicalizes_quantus_and_avoids_qubitcoin_collision() {
+        // Internal Quantus tags -> canonical public `qtc`, any casing.
+        assert_eq!(public_ticker("qtu"), "qtc");
+        assert_eq!(public_ticker("QTU"), "QTC");
+        assert_eq!(public_ticker("quantus"), "qtc");
+        assert_eq!(public_ticker("quantum"), "qtc");
+        // Internal `qtc`/`QTC` is Qubitcoin — never emit as Quantus.
+        assert_eq!(public_ticker("qtc"), "qubitcoin");
+        assert_eq!(public_ticker("QTC"), "QUBITCOIN");
+        // Unrelated tags pass through with casing preserved.
+        assert_eq!(public_ticker("zion"), "zion");
+        assert_eq!(public_ticker("PRL"), "PRL");
+        assert_eq!(public_ticker("vrsc"), "vrsc");
+        // Selectors normalize both ways without collision.
+        assert_eq!(internal_coin_key("qtc"), "qtu");
+        assert_eq!(internal_coin_key("QTC"), "qtu");
+        assert_eq!(internal_coin_key("quantus"), "qtu");
+        assert_eq!(internal_coin_key("qtu"), "qtu");
+        assert_eq!(internal_coin_key("qubitcoin"), "qtc");
+        assert_eq!(internal_coin_key("zion"), "zion");
     }
 
     #[test]
