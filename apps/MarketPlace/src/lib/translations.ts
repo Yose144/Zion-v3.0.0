@@ -397,6 +397,10 @@ const t = {
       cs: 'Karty se zapnou po konfiguraci Stripe — zatím použijte převod.',
       en: 'Cards enable once Stripe is configured — use bank transfer for now.',
     },
+    paymentZion: { cs: 'ZION', en: 'ZION' },
+    paymentZionDesc: { cs: 'Nativní ZION mincemi — QR kód nebo zion wallet', en: 'Pay with native ZION — QR code or zion wallet' },
+    paymentCommerce: { cs: 'Krypto (jiné coiny)', en: 'Crypto (other coins)' },
+    paymentCommerceDesc: { cs: 'BTC, ETH, USDC a další — QR platební stránka', en: 'BTC, ETH, USDC & more — hosted QR checkout' },
     softLaunchBanner: {
       cs: 'Soft-launch: digitální produkty + bankovní převod. Stav objednávky sledujte na /order-tracking.',
       en: 'Soft-launch: digital products + bank transfer. Track your order at /order-tracking.',
@@ -426,7 +430,25 @@ const t = {
     qrAmount: { cs: 'Částka:', en: 'Amount:' },
     qrDone: { cs: 'Objednávka přijata', en: 'Order received' },
     alertStripeError: { cs: 'Chyba při vytváření Stripe platby', en: 'Error creating Stripe payment' },
+    alertCommerceError: { cs: 'Chyba při vytváření krypto platby', en: 'Error creating crypto payment' },
     alertOrderError: { cs: 'Chyba při vytváření objednávky', en: 'Error creating order' },
+    zionQrTitle: { cs: 'Platba ZION', en: 'Pay with ZION' },
+    zionQrSubtitle: {
+      cs: 'Naskenujte QR v peněžence nebo pošlete příkazem níže — potvrzení proběhne automaticky.',
+      en: 'Scan the QR in your wallet or send via the command below — confirmation is automatic.',
+    },
+    zionQrAlt: { cs: 'ZION QR platba', en: 'ZION QR payment' },
+    zionAddress: { cs: 'Adresa:', en: 'Address:' },
+    zionAmount: { cs: 'Částka:', en: 'Amount:' },
+    zionMemo: { cs: 'Memo (povinné):', en: 'Memo (required):' },
+    zionCliHint: { cs: 'Nebo příkazem v zion peněžence:', en: 'Or via the zion wallet CLI:' },
+    zionWaiting: { cs: 'Čekáme na potvrzení platby v síti…', en: 'Waiting for network confirmation…' },
+    zionPayLater: { cs: 'Zaplatím později', en: 'I\'ll pay later' },
+    zionPaidTitle: { cs: 'Platba přijata!', en: 'Payment received!' },
+    zionPaidDesc: {
+      cs: 'Vaše ZION platba byla potvrzena v síti. Objednávka je zaplacená.',
+      en: 'Your ZION payment was confirmed on the network. The order is paid.',
+    },
   },
 
   orderSuccess: {

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ShoppingCart, Trash2, Minus, Plus, Truck, User, CreditCard, Check, AlertTriangle, X } from 'lucide-react';
 import { useCart } from '@/components/shop/CartContext';
 import { SHIPPING_PRICES, type ShippingMethod } from '@/types/shop';
-import { isVirtualOnlyCart, createShopOrder, createStripeCheckoutSession } from '@/lib/shop-api';
+import { isVirtualOnlyCart, createShopOrder, createStripeCheckoutSession, createCommerceCheckout, trackOrder } from '@/lib/shop-api';
 import { useLangT } from '@/lib/useTranslation';
 
 const shippingOptions: { value: ShippingMethod; labelKey: string; descKey: string; price: number }[] = [
@@ -20,7 +20,16 @@ type ShopCapabilities = {
   softLaunch: boolean;
   stripe: boolean;
   email: boolean;
-  modes: { transfer: boolean; card: boolean; crypto: boolean };
+  modes: { transfer: boolean; card: boolean; crypto: boolean; zion?: boolean; commerce?: boolean };
+};
+
+type ZionPayData = {
+  address: string;
+  memo: string;
+  amountZion: number;
+  uri: string;
+  qrCode: string;
+  cliHint: string;
 };
 
 export default function CartPage() {
@@ -29,7 +38,7 @@ export default function CartPage() {
   const { t } = useLangT();
 
   const [shipping, setShipping] = useState<ShippingMethod>('zasilkovna');
-  const [payment, setPayment] = useState<'transfer' | 'card' | 'crypto'>('transfer');
+  const [payment, setPayment] = useState<'transfer' | 'card' | 'crypto' | 'zion' | 'commerce'>('transfer');
   const [caps, setCaps] = useState<ShopCapabilities | null>(null);
   const [form, setForm] = useState({
     name: '',
@@ -53,10 +62,15 @@ export default function CartPage() {
     orderId: string;
     qrCode: string;
     bank: { account: string; iban: string; bic: string; vs: string; amount: number };
+    zion?: ZionPayData | null;
   } | null>(null);
+  const [showZionQr, setShowZionQr] = useState(false);
+  const [zionPaid, setZionPaid] = useState(false);
 
   const virtualOnly = useMemo(() => isVirtualOnlyCart(items), [items]);
   const cardEnabled = caps?.modes.card ?? false;
+  const zionEnabled = caps?.modes.zion ?? true;
+  const commerceEnabled = caps?.modes.commerce ?? false;
 
   useEffect(() => {
     let cancelled = false;
@@ -146,6 +160,7 @@ export default function CartPage() {
         orderId,
         qrCode: result.data.bank.qrCode,
         bank: result.data.bank,
+        zion: result.data.zion ?? null,
       });
       if (payment === 'transfer') {
         setShowQr(true);
@@ -157,6 +172,22 @@ export default function CartPage() {
           return;
         }
         alert(stripeResult?.error || t('cart.alertStripeError'));
+      } else if (payment === 'commerce') {
+        const co = await createCommerceCheckout(orderId);
+        if (co?.success && co.data?.hostedUrl) {
+          clear();
+          window.location.href = co.data.hostedUrl;
+          return;
+        }
+        alert(co?.error || t('cart.alertCommerceError'));
+      } else if (payment === 'zion' || payment === 'crypto') {
+        if (result.data.zion) {
+          setZionPaid(false);
+          setShowZionQr(true);
+        } else {
+          clear();
+          router.push(`/order-success?order=${encodeURIComponent(orderId)}`);
+        }
       } else {
         clear();
         router.push(`/order-success?order=${encodeURIComponent(orderId)}`);
@@ -173,6 +204,30 @@ export default function CartPage() {
     clear();
     router.push(`/order-success?order=${encodeURIComponent(orderResult?.orderId ?? '')}`);
   };
+
+  const closeZionQr = () => {
+    setShowZionQr(false);
+    clear();
+    router.push(`/order-success?order=${encodeURIComponent(orderResult?.orderId ?? '')}`);
+  };
+
+  // Poll order status while the ZION QR modal is open — flips to a paid
+  // state once the l1-watcher confirms the SHOPPAY transaction.
+  useEffect(() => {
+    if (!showZionQr || zionPaid || !orderResult) return;
+    const email = form.email.trim();
+    let cancelled = false;
+    const tick = async () => {
+      const res = await trackOrder(orderResult.orderId, email);
+      if (cancelled) return;
+      if (res?.success && res.data?.paymentStatus === 'paid') {
+        setZionPaid(true);
+      }
+    };
+    const iv = setInterval(tick, 10_000);
+    tick();
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [showZionQr, zionPaid, orderResult, form.email]);
 
   const termsText = t('cart.terms', { termsLink: '%%LINK%%' });
   const [termsBefore, termsAfter] = termsText.includes('%%LINK%%')
@@ -474,6 +529,42 @@ export default function CartPage() {
                   </div>
                 </div>
               </label>
+              {zionEnabled && (
+                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                  payment === 'zion' ? 'border-rasta-gold bg-rasta-gold/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
+                }`}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="zion"
+                    checked={payment === 'zion'}
+                    onChange={() => setPayment('zion')}
+                    className="accent-rasta-gold"
+                  />
+                  <div className="flex-1">
+                    <div className="font-bold text-sm">{t('cart.paymentZion')}</div>
+                    <div className="text-xs text-gray-500">{t('cart.paymentZionDesc')}</div>
+                  </div>
+                </label>
+              )}
+              {commerceEnabled && (
+                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                  payment === 'commerce' ? 'border-rasta-gold bg-rasta-gold/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
+                }`}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="commerce"
+                    checked={payment === 'commerce'}
+                    onChange={() => setPayment('commerce')}
+                    className="accent-rasta-gold"
+                  />
+                  <div className="flex-1">
+                    <div className="font-bold text-sm">{t('cart.paymentCommerce')}</div>
+                    <div className="text-xs text-gray-500">{t('cart.paymentCommerceDesc')}</div>
+                  </div>
+                </label>
+              )}
             </div>
           </div>
 
@@ -574,6 +665,73 @@ export default function CartPage() {
             <button onClick={closeQr} className="zion-button-primary w-full">
               <Check className="w-4 h-4" /> {t('cart.qrDone')}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ZION QR Modal */}
+      {showZionQr && orderResult?.zion && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          onClick={closeZionQr}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+          <div
+            className="zion-panel w-full max-w-md relative z-10 p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button onClick={closeZionQr} className="absolute top-4 right-4 zion-button-icon zion-button-ghost">
+              <X className="w-5 h-5" />
+            </button>
+            {zionPaid ? (
+              <>
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rasta-green/20 border-2 border-rasta-green flex items-center justify-center">
+                  <Check className="w-8 h-8 text-rasta-green" />
+                </div>
+                <h2 className="text-xl font-black font-display mb-2 text-rasta-green">{t('cart.zionPaidTitle')}</h2>
+                <p className="text-sm text-gray-400 mb-6">{t('cart.zionPaidDesc')}</p>
+                <button onClick={closeZionQr} className="zion-button-primary w-full">
+                  <Check className="w-4 h-4" /> {t('cart.qrDone')}
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl font-black font-display mb-2">{t('cart.zionQrTitle')}</h2>
+                <p className="text-sm text-gray-400 mb-4">{t('cart.zionQrSubtitle')}</p>
+                <img
+                  src={orderResult.zion.qrCode}
+                  alt={t('cart.zionQrAlt')}
+                  className="w-56 h-56 mx-auto mb-4 bg-white p-2 rounded-xl"
+                />
+                <div className="space-y-2 text-sm text-left bg-white/5 p-4 rounded-xl mb-4">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-gray-500 shrink-0">{t('cart.zionAddress')}</span>
+                    <strong className="font-mono text-[11px] break-all text-right">{orderResult.zion.address}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">{t('cart.zionAmount')}</span>
+                    <strong className="text-gradient-gold">{orderResult.zion.amountZion} ZION</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">{t('cart.zionMemo')}</span>
+                    <strong className="font-mono text-xs break-all text-right">{orderResult.zion.memo}</strong>
+                  </div>
+                </div>
+                <p className="text-[11px] text-gray-500 mb-3 text-left">{t('cart.zionCliHint')}</p>
+                <code className="block text-[10px] font-mono bg-black/40 border border-white/10 rounded-lg p-2 mb-4 text-left break-all text-gray-400 select-all">
+                  {orderResult.zion.cliHint}
+                </code>
+                <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mb-4">
+                  <span className="w-3 h-3 border-2 border-rasta-gold/30 border-t-rasta-gold rounded-full animate-spin" />
+                  {t('cart.zionWaiting')}
+                </div>
+                <button onClick={closeZionQr} className="zion-button-secondary w-full">
+                  {t('cart.zionPayLater')}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

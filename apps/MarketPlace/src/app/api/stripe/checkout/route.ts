@@ -76,8 +76,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // STRIPE_CRYPTO=1 → also offer Stripe's crypto (USDC stablecoin) payment
+    // method on the hosted checkout page.
+    const paymentMethods: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] =
+      process.env.STRIPE_CRYPTO === '1' ? ['card', 'crypto'] : ['card'];
+
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: paymentMethods,
       line_items: lineItems,
       mode: 'payment',
       success_url:

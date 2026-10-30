@@ -9,6 +9,12 @@ import { createInvoiceForOrder } from '@/lib/invoice';
 import { generateCustomerWallet } from '@/lib/zion-l1';
 import { encryptSecret } from '@/lib/crypto';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import {
+  SHOP_VAULT,
+  shopPayMemo,
+  zionPayUri,
+  storeExpectation,
+} from '@/lib/shop-zionpay';
 
 const BANK_ACCOUNT = 'CZ6320100000002901809148';
 const BANK_BIC = 'FIOBCZPPXXX';
@@ -49,8 +55,17 @@ export async function POST(req: NextRequest) {
     if (!shippingMethod || !(shippingMethod in SHIPPING_PRICES)) {
       return NextResponse.json({ success: false, error: 'Invalid shipping method' }, { status: 400 });
     }
-    if (!['transfer', 'card', 'crypto'].includes(body.payment)) {
+    const paymentMethod = body.payment === 'crypto' ? 'zion' : body.payment;
+    if (!['transfer', 'card', 'crypto', 'zion', 'commerce'].includes(body.payment)) {
       return NextResponse.json({ success: false, error: 'Invalid payment method' }, { status: 400 });
+    }
+    // ZION payment requires the shop vault to be configured
+    if (paymentMethod === 'zion' && !SHOP_VAULT) {
+      return NextResponse.json({ success: false, error: 'ZION payments unavailable' }, { status: 503 });
+    }
+    // Coinbase Commerce must be configured before it can be selected
+    if (paymentMethod === 'commerce' && !process.env.COMMERCE_API_KEY?.trim()) {
+      return NextResponse.json({ success: false, error: 'Crypto checkout unavailable' }, { status: 503 });
     }
     // B2B buyer block (optional): company name + IČO/DIČ for invoices.
     const company = body.customer.company;
@@ -190,7 +205,7 @@ export async function POST(req: NextRequest) {
           customerEmail: body.customer.email.slice(0, 254),
           customerPhone: body.customer.phone.slice(0, 40),
           shipping: shippingMethod,
-          payment: body.payment,
+          payment: paymentMethod,
           addressStreet: body.customer.address?.street?.slice(0, 200) ?? null,
           addressCity: body.customer.address?.city?.slice(0, 120) ?? null,
           addressZip: body.customer.address?.zip?.slice(0, 20) ?? null,
@@ -294,6 +309,34 @@ export async function POST(req: NextRequest) {
       }).catch((err) => console.error('Failed to send customer wallet email:', err));
     }
 
+    // ── ZION L1 payment payload (SHOPPAY memo flow) ─────────────────
+    // Store the expected amount so the watcher-confirm endpoint can
+    // verify underpayments; the URI/QR works for any wallet that scans
+    // zion: links, CLI users get the raw fields too.
+    let zion: {
+      address: string;
+      memo: string;
+      amountZion: number;
+      expectedFlowers: string;
+      uri: string;
+      qrCode: string;
+      cliHint: string;
+    } | null = null;
+    if (paymentMethod === 'zion') {
+      const exp = await storeExpectation(order.orderId, totalCzk);
+      const uri = zionPayUri(order.orderId, exp.amountZion);
+      const zSvg = await QRCode.toString(uri, { type: 'svg', margin: 2, width: 280 });
+      zion = {
+        address: exp.vault,
+        memo: shopPayMemo(order.orderId),
+        amountZion: exp.amountZion,
+        expectedFlowers: exp.expectedFlowers,
+        uri,
+        qrCode: `data:image/svg+xml;base64,${Buffer.from(zSvg).toString('base64')}`,
+        cliHint: `zion wallet send -t ${exp.vault} -a ${exp.amountZion} -m "${shopPayMemo(order.orderId)}"`,
+      };
+    }
+
     // Never return wallet material (even encrypted) on the public endpoint
     const { customerWalletSeed, customerWalletSecretKey, ...safeOrder } = order;
     void customerWalletSeed;
@@ -312,6 +355,7 @@ export async function POST(req: NextRequest) {
           amount: totalCzk,
           qrCode,
         },
+        zion,
       },
     });
   } catch (error) {

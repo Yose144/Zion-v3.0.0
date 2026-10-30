@@ -57,6 +57,15 @@ export interface CreateOrderResult {
       amount: number;
       qrCode: string;
     };
+    zion?: {
+      address: string;
+      memo: string;
+      amountZion: number;
+      expectedFlowers: string;
+      uri: string;
+      qrCode: string;
+      cliHint: string;
+    } | null;
   };
   error?: string;
 }
@@ -91,6 +100,29 @@ export async function createStripeCheckoutSession(orderId: string, customerEmail
       body: JSON.stringify({ orderId, customerEmail }),
     });
     return (await res.json()) as StripeCheckoutResult;
+  } catch {
+    return null;
+  }
+}
+
+export interface CommerceCheckoutResult {
+  success: boolean;
+  data?: {
+    chargeId: string;
+    code: string;
+    hostedUrl: string;
+  };
+  error?: string;
+}
+
+export async function createCommerceCheckout(orderId: string): Promise<CommerceCheckoutResult | null> {
+  try {
+    const res = await fetch('/api/shop/commerce/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    });
+    return (await res.json()) as CommerceCheckoutResult;
   } catch {
     return null;
   }

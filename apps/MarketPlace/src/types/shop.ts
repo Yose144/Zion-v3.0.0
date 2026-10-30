@@ -56,7 +56,7 @@ export interface ShopOrderInput {
     price: number;
     pickupPoint?: unknown;
   };
-  payment: 'transfer' | 'card' | 'crypto';
+  payment: 'transfer' | 'card' | 'crypto' | 'zion' | 'commerce';
   note: string;
   items: CartItem[];
   total: number;

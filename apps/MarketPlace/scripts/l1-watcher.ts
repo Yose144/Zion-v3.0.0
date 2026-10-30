@@ -4,6 +4,8 @@
  *
  * Monitors ZION L1 for transactions to the bridge vault with memo:
  *   MARKETBUY:<listingId>:<buyerL2Address>:<quantity>
+ * and to the shop vault with memo:
+ *   SHOPPAY:<orderId>
  *
  * When a matching transaction is confirmed (after finality blocks), the
  * watcher calls `relayerSettle(listingId, buyer, quantity)` on the L2
@@ -37,6 +39,14 @@ import * as path from 'path';
 const L1_RPC_URL = process.env.L1_RPC_URL ?? '127.0.0.1:9443';
 const L1_BRIDGE_VAULT =
   process.env.L1_BRIDGE_VAULT ?? 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7';
+// Shop vault receives customer SHOPPAY payments (default: pool wallet)
+const L1_SHOP_VAULT =
+  process.env.L1_SHOP_VAULT ?? 'zion1n4k4n5e4p0z3g7z2e0z0j7c8w7y0v5m8c6hf8c2';
+const SHOP_CONFIRM_URL =
+  process.env.SHOP_CONFIRM_URL ?? 'http://127.0.0.1:3100/api/shop/zion-confirm';
+const SHOP_CONFIRM_SECRET = process.env.SHOP_CONFIRM_SECRET ?? '';
+// Shop payments confirm faster than L2 settlement (default 15 blocks)
+const SHOP_FINALITY_BLOCKS = parseInt(process.env.SHOP_FINALITY_BLOCKS ?? '15', 10);
 const L1_FINALITY_BLOCKS = parseInt(process.env.L1_FINALITY_BLOCKS ?? '60', 10);
 const L1_POLL_INTERVAL_S = parseInt(process.env.L1_POLL_INTERVAL_S ?? '15', 10);
 const L2_RPC_URL = process.env.L2_RPC_URL ?? 'https://mainnet.base.org';
@@ -170,6 +180,14 @@ interface MarketBuyMemo {
   quantity: bigint;
 }
 
+function parseShopPayMemo(memo: string | null | undefined): string | null {
+  if (!memo) return null;
+  // Format: SHOPPAY:ORD-1234567890-abcdef
+  if (!memo.startsWith('SHOPPAY:')) return null;
+  const orderId = memo.slice('SHOPPAY:'.length).trim();
+  return orderId.length >= 4 && orderId.length <= 64 ? orderId : null;
+}
+
 function parseMarketBuyMemo(memo: string | null | undefined): MarketBuyMemo | null {
   if (!memo) return null;
   // Format: MARKETBUY:42:0xBuyerAddress:1
@@ -248,7 +266,17 @@ interface PendingSettlement {
   detectedAt: Date;
 }
 
+interface PendingShopPay {
+  txHash: string;
+  blockHeight: number;
+  sender: string;
+  amountFlowers: bigint;
+  orderId: string;
+  detectedAt: Date;
+}
+
 const pending: Map<string, PendingSettlement> = new Map();
+const pendingShop: Map<string, PendingShopPay> = new Map();
 const settled: Set<string> = new Set(); // txHashes already settled
 
 // Persist settled txs to avoid re-settling after restart
@@ -293,6 +321,27 @@ async function scanBlock(block: L1Block) {
     if (settled.has(txHash)) continue;
 
     for (const output of tx.outputs) {
+      // SHOPPAY → shop vault (order payment confirmation)
+      if (output.address === L1_SHOP_VAULT) {
+        const orderId = parseShopPayMemo(output.memo ?? null);
+        if (orderId && !settled.has(`${txHash}:${orderId}`)) {
+          const amountFlowers = scaledAmount(toBigInt(output.amount), block.height);
+          console.log(
+            `\n  [SHOP PAY] SHOPPAY detected at height ${block.height}`,
+            `\n  TX: ${txHash}`,
+            `\n  Order ${orderId}, Amount: ${amountFlowers} flowers`,
+          );
+          pendingShop.set(`${txHash}:${orderId}`, {
+            txHash,
+            blockHeight: block.height,
+            sender: 'utxo',
+            amountFlowers,
+            orderId,
+            detectedAt: new Date(),
+          });
+        }
+      }
+
       if (output.address !== L1_BRIDGE_VAULT) continue;
       const memo = parseMarketBuyMemo(output.memo ?? null);
       if (!memo) continue;
@@ -326,6 +375,28 @@ async function scanBlock(block: L1Block) {
 
   // Account-model transactions
   for (const tx of block.account_transactions ?? []) {
+    // SHOPPAY → shop vault
+    if (tx.to === L1_SHOP_VAULT) {
+      const orderId = parseShopPayMemo(tx.memo ?? null);
+      if (orderId && !processed.has(`${tx.tx_id}:${orderId}`) && !settled.has(`${tx.tx_id}:${orderId}`)) {
+        processed.add(`${tx.tx_id}:${orderId}`);
+        const amountFlowers = scaledAmount(toBigInt(tx.amount_zion), block.height);
+        console.log(
+          `\n  [SHOP PAY] SHOPPAY detected (account tx) at height ${block.height}`,
+          `\n  TX: ${tx.tx_id}`,
+          `\n  Order ${orderId}, From ${tx.from}, Amount: ${amountFlowers} flowers`,
+        );
+        pendingShop.set(`${tx.tx_id}:${orderId}`, {
+          txHash: tx.tx_id,
+          blockHeight: block.height,
+          sender: tx.from,
+          amountFlowers,
+          orderId,
+          detectedAt: new Date(),
+        });
+      }
+    }
+
     if (tx.to !== L1_BRIDGE_VAULT) continue;
     if (processed.has(tx.tx_id)) continue;
     processed.add(tx.tx_id);
@@ -354,7 +425,59 @@ async function scanBlock(block: L1Block) {
   }
 }
 
+async function confirmShopPayment(p: PendingShopPay): Promise<boolean> {
+  if (!SHOP_CONFIRM_SECRET) {
+    console.error('  ⚠️  SHOP_CONFIRM_SECRET not set — cannot confirm shop payments');
+    return false;
+  }
+  try {
+    const res = await fetch(SHOP_CONFIRM_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${SHOP_CONFIRM_SECRET}`,
+      },
+      body: JSON.stringify({
+        orderId: p.orderId,
+        txHash: p.txHash,
+        amountFlowers: p.amountFlowers.toString(),
+        height: p.blockHeight,
+        sender: p.sender,
+      }),
+    });
+    const json = (await res.json().catch(() => null)) as { success?: boolean; error?: string } | null;
+    if (res.ok && json?.success) {
+      console.log(`  ✅ Shop order ${p.orderId} confirmed (${json && 'data' in json ? JSON.stringify((json as Record<string, unknown>).data) : ''})`);
+      return true;
+    }
+    // Order not found / not a zion order → permanent failure, don't retry forever
+    if (res.status === 404 || res.status === 409) {
+      console.error(`  ⛔ Shop order ${p.orderId} rejected (${res.status}: ${json?.error ?? '?'}) — dropping`);
+      return true; // treat as settled to stop retrying
+    }
+    console.error(`  ❌ Shop confirm failed (${res.status}): ${json?.error ?? 'no response'}`);
+    return false;
+  } catch (e) {
+    console.error(`  ❌ Shop confirm request error for ${p.orderId}:`, e);
+    return false;
+  }
+}
+
 async function checkFinality(currentHeight: number) {
+  // ── SHOPPAY confirmations (shorter finality for UX) ────────────────
+  const shopFinalizedHeight = currentHeight - SHOP_FINALITY_BLOCKS;
+  const shopDone: string[] = [];
+  for (const [key, p] of pendingShop) {
+    if (p.blockHeight > shopFinalizedHeight) continue;
+    console.log(`\n  [FINALIZED] SHOPPAY ${p.txHash} → confirming order ${p.orderId}...`);
+    const ok = await confirmShopPayment(p);
+    if (ok) {
+      settled.add(key);
+      pendingShop.delete(key);
+      shopDone.push(key);
+    }
+  }
+
   const finalizedHeight = currentHeight - L1_FINALITY_BLOCKS;
   const toFinalize: string[] = [];
 
@@ -379,7 +502,7 @@ async function checkFinality(currentHeight: number) {
     }
   }
 
-  if (toFinalize.length > 0) {
+  if (toFinalize.length > 0 || shopDone.length > 0) {
     saveState(lastProcessedHeight);
   }
 }
@@ -425,6 +548,9 @@ async function main() {
   console.log('═══════════════════════════════════════════════════════════════');
   console.log(`  L1 RPC:          ${L1_RPC_URL}`);
   console.log(`  Bridge vault:    ${L1_BRIDGE_VAULT}`);
+  console.log(`  Shop vault:      ${L1_SHOP_VAULT}`);
+  console.log(`  Shop finality:   ${SHOP_FINALITY_BLOCKS} blocks (confirm → ${SHOP_CONFIRM_URL})`);
+  console.log(`  Shop secret:     ${SHOP_CONFIRM_SECRET ? 'SET' : '⚠️  NOT SET — SHOPPAY disabled'}`);
   console.log(`  Finality:        ${L1_FINALITY_BLOCKS} blocks`);
   console.log(`  Poll interval:   ${L1_POLL_INTERVAL_S}s`);
   console.log(`  L2 RPC:          ${L2_RPC_URL}`);

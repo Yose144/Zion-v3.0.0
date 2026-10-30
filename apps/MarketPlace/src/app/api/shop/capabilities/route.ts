@@ -29,7 +29,11 @@ export async function GET() {
     modes: {
       transfer: true,
       card: stripe,
-      crypto: false,
+      // ZION L1 payments are always available — the shop vault is built in;
+      // `commerce` flips on once COMMERCE_API_KEY is configured.
+      crypto: true,
+      zion: true,
+      commerce: Boolean(process.env.COMMERCE_API_KEY?.trim()),
     },
   });
 }
