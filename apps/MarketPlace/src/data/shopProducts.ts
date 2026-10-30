@@ -4,7 +4,7 @@
 export interface ShopProductSeed {
   externalId: string;
   name: string;
-  category: 'woodart' | 'starfighters' | 'engraving' | 'digital' | 'software';
+  category: 'books' | 'woodart' | 'starfighters' | 'engraving' | 'digital' | 'software';
   description: string;
   priceCzk: number;
   oldPriceCzk?: number;
@@ -22,6 +22,7 @@ export interface ShopProductSeed {
 }
 
 export const SHOP_CATEGORIES: Record<ShopProductSeed['category'], string> = {
+  books: 'Knihy',
   woodart: 'WoodArt',
   starfighters: 'Starfighters',
   engraving: 'Gravírování',
@@ -30,6 +31,7 @@ export const SHOP_CATEGORIES: Record<ShopProductSeed['category'], string> = {
 };
 
 export const SHOP_CATEGORY_ORDER: ShopProductSeed['category'][] = [
+  'books',
   'woodart',
   'starfighters',
   'engraving',
@@ -38,6 +40,24 @@ export const SHOP_CATEGORY_ORDER: ShopProductSeed['category'][] = [
 ];
 
 export const shopProducts: ShopProductSeed[] = [
+  // Books
+  {
+    externalId: 'book-001',
+    name: 'Království srdce — digitální kniha',
+    category: 'books',
+    description:
+      'Příběh lodi, kterou postavil tesař. Duchovní legenda o tektonu z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 10 kapitol + epilog, každá s tabulkou „Kotva pravdy" (co je Písmo, tradice, autorův obraz). Digitální vydání PDF — dodáváme ke stažení.',
+    priceCzk: 225,
+    oldPriceCzk: undefined,
+    image: '/shop/img/books/kralovstvi-srdce-cover.webp',
+    badge: 'Novinka',
+    inStock: true,
+    size: 'PDF · 10 kapitol + epilog',
+    stock: 999,
+    tokens: 2250,
+    digital: true,
+    active: true,
+  },
   // WoodArt
   {
     externalId: 'wood-003',

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ShoppingBag, SearchX, Filter, Zap } from 'lucide-react';
 import { getShopProducts, type ShopProductsFilters } from '@/lib/shop-api';
 import type { ShopProductData } from '@/types/shop';
@@ -16,7 +17,19 @@ const sortOptions = [
 ];
 
 export default function ShopPage() {
-  const [category, setCategory] = useState<string>('all');
+  return (
+    <Suspense fallback={null}>
+      <ShopPageInner />
+    </Suspense>
+  );
+}
+
+function ShopPageInner() {
+  const searchParams = useSearchParams();
+  const [category, setCategory] = useState<string>(() => {
+    const c = searchParams.get('category');
+    return c && (SHOP_CATEGORY_ORDER as readonly string[]).includes(c) ? c : 'all';
+  });
   const [sort, setSort] = useState('recent');
   const [products, setProducts] = useState<ShopProductData[]>([]);
   const [total, setTotal] = useState(0);

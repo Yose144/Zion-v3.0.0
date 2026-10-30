@@ -89,6 +89,25 @@ const t = {
     cosmeticsDesc: { cs: 'Skiny, stopy, efekty', en: 'Skins, trails, effects' },
   },
 
+  book: {
+    kicker: { cs: 'Novinka · Kniha', en: 'New · Book' },
+    title: { cs: 'Království srdce', en: 'Kingdom of Hearts' },
+    subtitle: {
+      cs: 'Příběh lodi, kterou postavil tesař',
+      en: 'The story of the ship a carpenter built',
+    },
+    description: {
+      cs: 'Duchovní legenda o tektonu z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 10 kapitol + epilog, každá s tabulkou „Kotva pravdy".',
+      en: 'A spiritual legend about the tekton of Nazareth who, in his father\'s workshop, built a ship for a sea found on no map — and called it the Kingdom of Hearts. 10 chapters + epilogue, each with a "Truth Anchor" table.',
+    },
+    format: { cs: 'Digitální vydání · PDF · 10 kapitol + epilog', en: 'Digital edition · PDF · 10 chapters + epilogue' },
+    delivery: { cs: 'PDF dodáváme ke stažení po objednávce', en: 'PDF delivered for download after ordering' },
+    buy: { cs: 'Koupit knihu', en: 'Buy the book' },
+    added: { cs: 'Přidáno do košíku ✓', en: 'Added to cart ✓' },
+    details: { cs: 'Detail produktu', en: 'Product details' },
+    tokens: { cs: '+{amount} ZION tokenů', en: '+{amount} ZION tokens' },
+  },
+
   featured: {
     kicker: { cs: 'Vybrané', en: 'Curated' },
     title: { cs: 'Doporučené', en: 'Featured' },
@@ -307,6 +326,7 @@ const t = {
     productsCount: { cs: '{count} produktů', en: '{count} products' },
     loading: { cs: 'Načítání produktů…', en: 'Loading products…' },
     empty: { cs: 'Žádné produkty v této kategorii', en: 'No products in this category' },
+    books: { cs: 'Knihy', en: 'Books' },
     woodart: { cs: 'WoodArt', en: 'WoodArt' },
     starfighters: { cs: 'Starfighters', en: 'Starfighters' },
     engraving: { cs: 'Gravírování', en: 'Engraving' },
