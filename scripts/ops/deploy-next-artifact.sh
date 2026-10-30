@@ -9,10 +9,10 @@ release="${ZION_DEPLOY_RELEASE:-$(date -u +%Y%m%dT%H%M%SZ)}"
 [[ "$release" =~ ^[A-Za-z0-9._-]+$ && "$port" =~ ^[0-9]+$ ]] || exit 2
 stage="${target}.stage-${release}" backup="${target}.before-${release}"
 printf -v quoted_stage '%q' "$stage"
-ssh "$host" "mkdir -p $quoted_stage"
-rsync -azs --delete "$artifact/" "$host:$stage/"
+ssh -o BatchMode=yes -o ConnectTimeout=15 "$host" "mkdir -p $quoted_stage"
+rsync -azs --delete -e 'ssh -o BatchMode=yes -o ConnectTimeout=15' "$artifact/" "$host:$stage/"
 printf -v remote_args '%q ' "$stage" "$target" "$backup" "$service" "$port"
-ssh "$host" "bash -s -- $remote_args" <<'REMOTE'
+ssh -o BatchMode=yes -o ConnectTimeout=15 "$host" "bash -s -- $remote_args" <<'REMOTE'
 set -euo pipefail
 stage="$1" target="$2" backup="$3" service="$4" port="$5"
 [[ -f "$stage/server.js" && ! -e "$backup" ]] || exit 2
@@ -40,7 +40,7 @@ systemctl is-active "$service"
 REMOTE
 if ! curl -fsS --retry 8 --retry-all-errors --retry-delay 2 --max-time 15 -o /dev/null "$site/"; then
   printf -v rollback_args '%q ' "$target" "$backup" "$service"
-  ssh "$host" "bash -s -- $rollback_args" <<'REMOTE'
+  ssh -o BatchMode=yes -o ConnectTimeout=15 "$host" "bash -s -- $rollback_args" <<'REMOTE'
 set -euo pipefail
 target="$1" backup="$2" service="$3"
 systemctl stop "$service"
