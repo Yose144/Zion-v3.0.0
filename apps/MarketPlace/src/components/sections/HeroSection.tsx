@@ -7,15 +7,19 @@ import { useLangT } from '@/lib/useTranslation';
 export default function HeroSection() {
   const { t } = useLangT();
   return (
-    <section className="rasta-hero" aria-label="Hero">
-      <div className="rasta-hero-inner">
+    <section className="kralovstvi-hero" aria-label="Hero">
+      {/* The art carries its own title band (Království Srdce · Nirvana ·
+          Zion TerraNova · One Love) — rendered clean, no text overlay. */}
+      <div
+        className="kralovstvi-hero-art"
+        role="img"
+        aria-label="Království Srdce — Nirvana · Zion TerraNova · One Love"
+      />
+      <div className="kralovstvi-hero-actions">
         <div className="rasta-hero-kicker">
           <span className="dot" />
           {t('hero.kicker')}
         </div>
-        <h1 className="rasta-hero-title">
-          {t('hero.title1')} {t('hero.title2')}
-        </h1>
         <p className="rasta-hero-desc">{t('hero.description')}</p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link

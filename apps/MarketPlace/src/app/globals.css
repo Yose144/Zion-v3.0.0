@@ -921,6 +921,57 @@ body.zion-shell {
   pointer-events: none;
 }
 
+/* Království Srdce banner hero — the art carries its own title band +
+   timeline, so it renders clean full-bleed; actions live in a strip
+   below instead of an overlay. */
+.kralovstvi-hero {
+  position: relative;
+  z-index: 2;
+}
+
+.kralovstvi-hero-art {
+  width: min(100%, 88rem);
+  margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
+  aspect-ratio: 1984 / 793;
+  border-radius: 1rem;
+  background-image: url('/kralovstvi-srdce-hero.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 0 1px rgba(252, 209, 22, 0.25),
+    0 20px 60px -20px rgba(0, 0, 0, 0.8),
+    0 0 80px -30px rgba(252, 209, 22, 0.15);
+  overflow: hidden;
+}
+
+.kralovstvi-hero-actions {
+  position: relative;
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 3vw, 2rem) 1rem clamp(1rem, 3vw, 1.75rem);
+  text-align: center;
+}
+
+.kralovstvi-hero-actions .rasta-hero-desc {
+  margin: 0.75rem auto 1.25rem;
+}
+
+/* Mobile: full aspect ratio would render the banner tiny (≈150 px tall,
+   title unreadable) — switch to a fixed-height center crop that keeps
+   the tree, Buddha and title band legible. */
+@media (max-width: 767px) {
+  .kralovstvi-hero-art {
+    aspect-ratio: auto;
+    height: clamp(280px, 62vw, 360px);
+    max-height: none;
+    border-radius: 0.75rem;
+  }
+}
+
 @media (min-width: 768px) {
   .rasta-hero {
     margin-top: -2rem;
