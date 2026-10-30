@@ -103,7 +103,7 @@ export function Universe({
         dampingFactor={0.06}
         enablePan={false}
         minDistance={7}
-        maxDistance={150}
+        maxDistance={1300}
         minPolarAngle={0.4}
         maxPolarAngle={2.7}
       />

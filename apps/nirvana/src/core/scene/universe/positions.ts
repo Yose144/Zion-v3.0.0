@@ -8,8 +8,8 @@ export const RING_R2 = 7.15;
 export const ORBIT_R = 5.05;
 export const GATE_POS: [number, number, number] = [10.6, 2.1, -7.2];
 export const SUN_POS: [number, number, number] = [0, 0, 0];
-/** Oběžná dráha zemské soustavy — skutečná 3. dráha (1 AU): mezi Venuší (9.6) a Marsem (13.9). */
-export const EARTH_ORBIT_R = 11.3;
+/** Oběžná dráha zemské soustavy — skutečná 3. dráha = 1 AU (1 AU = 30 jednotek). */
+export const EARTH_ORBIT_R = 30;
 export const EARTH_ORBIT_SPEED = 0.02;
 
 export function hash01(id: string, salt = 0): number {
