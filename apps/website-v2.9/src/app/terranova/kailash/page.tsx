@@ -29,6 +29,7 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+const KailashPreviewLazy = dynamic(() => import('@/components/KailashPreviewLazy'), { ssr: false });
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
@@ -44,6 +45,8 @@ const Copy = {
     cs: `Kailash je jedenáctý bod L5 Free World — a záměrně je to vize, ne plán. Gang Rinpoche, čtyřstěnná pyramida v Transhimaláji, je jediná hora světa, na které se dohodly čtyři tradice najednou: hinduisté v ní vidí sídlo Šivy, buddhisté Děmčoka, Bön Kuntu Zangpo a džinisté místo Ríšabhanáthova osvobození. Dohodly se i na druhé věci — na ni se nestoupá. Poutník horu nechodí na ni, ale kolem ní: kora, dvaapadesátikilometrový okruh přes sedlo Dolma La (5 630 m), se koná na očištění. V poušti Ngari, na „střeše Střechy světa", očisťuje krajina tím, že nenabízí nic jiného než cestu — poušť jako Nāgárjunova prázdnota, která je plná: vakuum, ve kterém fluktuuje všechno. V jeskyních Tisé, jak hora zní tibetsky, meditoval před tisíci lety Milarepa — šedý yogi, zpěvák dohá, který dokázal, že bída je učitelka. A u nohy hory hoří — v příběhu sítě — prastarý oheň, u kterého sedí mistři všech linií Šambhaly, od tesaře až po Babajiho. Uzel vzniká jako vztah se custodiány čtyř tradic, ne jako stavba.`,
     en: `Kailash is the eleventh point of L5 Free World — and deliberately a vision, not a plan. Gang Rinpoche, the four-sided pyramid of the Transhimalaya, is the only mountain on Earth that four traditions agree on at once: Hindus see the seat of Shiva, Buddhists Demchok, Bön Kuntu Zangpo, and Jains the place of Rishabhanatha's liberation. They agree on a second thing too — it is not climbed. The pilgrim does not go up the mountain but around it: the kora, a fifty-two-kilometre circuit over the Dolma La pass (5,630 m), is performed as purification. In the Ngari desert, on the "roof of the Roof of the World", the land purifies by offering nothing but the way — a desert like Nagarjuna's emptiness that is full: a vacuum where everything fluctuates. In the caves of Tisé, as the Tibetans call the mountain, Milarepa meditated a thousand years ago — the grey yogi, singer of dohas, who proved that poverty is a teacher. And at the mountain's foot burns — in the story of the network — the primordial fire where the masters of all Shambhala lineages sit, from the Carpenter to Babaji. The node is born as a relationship with the custodians of four traditions, not as a construction.`,
   },
+  threeDPreview: { cs: `3D koncept`, en: `3D concept` },
+  threeDPreviewSubtitle: { cs: `Interaktivní model Kailashe — pyramidová posvátná hora nad ledasovcovými jezery, klášter, zlatý chorten, modlitební vlajky a poutníci na stezce kory.`, en: `Interactive model of Kailash — the pyramidal sacred mountain above glacial lakes, monastery, golden chorten, prayer flags and pilgrims on the kora path.` },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
   featuresSubtitle: { cs: `Oheň & poušť`, en: `Fire & desert` },
   fireTitle: { cs: `Scháziště mistrů — prastarý oheň`, en: `The council of masters — the primordial fire` },
@@ -446,6 +449,26 @@ export default function KailashPage() {
             <p className="text-gray-300 leading-relaxed">
               {Copy.introBody[cs ? 'cs' : 'en']}
             </p>
+          </div>
+        </motion.section>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '165, 180, 252' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-indigo-200/65 mb-1">
+                {Copy.threeDPreview[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {Copy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <KailashPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
           </div>
         </motion.section>
 
