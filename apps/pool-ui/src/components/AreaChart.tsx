@@ -161,3 +161,15 @@ export function loadSeries(key: string): SeriesPoint[] {
     return [];
   }
 }
+
+/** Evenly thin a series to ~max points (7d of 60s samples = 10k pts is
+ *  too heavy for the SVG path — visual fidelity is identical at ~700). */
+export function thinSeries(pts: SeriesPoint[], max = 700): SeriesPoint[] {
+  if (pts.length <= max) return pts;
+  const step = pts.length / max;
+  const out: SeriesPoint[] = [];
+  for (let i = 0; i < pts.length; i += step) out.push(pts[Math.floor(i)]);
+  const last = pts[pts.length - 1];
+  if (out[out.length - 1] !== last) out.push(last);
+  return out;
+}

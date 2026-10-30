@@ -22,7 +22,7 @@ export default function RangeTabs({
               : 'text-white/40 hover:text-white/80'
           }`}
         >
-          {h}h
+          {h >= 48 && h % 24 === 0 ? `${h / 24}d` : `${h}h`}
         </button>
       ))}
     </div>

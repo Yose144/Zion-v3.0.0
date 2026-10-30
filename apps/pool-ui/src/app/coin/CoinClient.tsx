@@ -183,6 +183,40 @@ export default function CoinClient({ coinId }: { coinId: CoinId }) {
           <a href={`/start/#${coin.id}`} className="pill pill-sync">
             {t('návod →', 'guide →')}
           </a>
+          {/* External links — CoinGecko for listed coins, our own
+              explorer + site for ZION. Official-project links live on
+              the CoinGecko page itself (single maintained source). */}
+          {coinId === 'zion' ? (
+            <>
+              <a
+                href="https://zionterranova.com/explorer"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pill text-white/50 transition hover:text-rasta-gold"
+              >
+                explorer ↗
+              </a>
+              <a
+                href="https://zionterranova.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pill text-white/50 transition hover:text-rasta-gold"
+              >
+                zionterranova.com ↗
+              </a>
+            </>
+          ) : (
+            COINGECKO_ID[coinId] && (
+              <a
+                href={`https://www.coingecko.com/en/coins/${COINGECKO_ID[coinId]}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pill text-white/50 transition hover:text-rasta-gold"
+              >
+                CoinGecko ↗
+              </a>
+            )
+          )}
         </div>
       </header>
 

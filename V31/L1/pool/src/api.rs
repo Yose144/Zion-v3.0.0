@@ -29,9 +29,15 @@ const AUTH_FAIL_WINDOW_S: u64 = 60;
 const MAX_HTTP_LINE: u64 = 8 * 1024;
 const MAX_HTTP_HEADERS: usize = 64;
 
-/// History sampler cadence + retention: one sample per minute, 24h kept.
+/// History sampler cadence: one sample per minute.
 const HISTORY_INTERVAL_S: u64 = 60;
-const HISTORY_CAP: usize = 24 * 60;
+/// History retention — 7 days of 60s samples (HeroMiners-parity range
+/// charts). Drives the ring buffer, DB pruner and endpoint limit caps.
+const HISTORY_CAP: usize = 7 * 24 * 60;
+/// Miner-history write gate — a miner keeps receiving fresh samples while
+/// seen inside the last 24h. Their older rows still persist for the full
+/// 7d window; we just don't pad gaps for long-offline wallets.
+const MINER_HISTORY_SEEN_S: u64 = 24 * 60 * 60;
 /// A miner counts as online for a coin when its last share is younger.
 const ONLINE_WINDOW_S: u64 = 600;
 
@@ -134,7 +140,7 @@ pub struct PoolApi {
     block_tracker: Option<Arc<std::sync::Mutex<crate::block_tracker::BlockTracker>>>,
     /// Latest broadcast ZION template height — for `est_per_block`.
     current_height: Option<Arc<std::sync::atomic::AtomicU64>>,
-    /// Ring buffer of periodic pool snapshots (60s cadence, 24h cap).
+    /// Ring buffer of periodic pool snapshots (60s cadence, 7d cap).
     history: Arc<Mutex<std::collections::VecDeque<HistorySample>>>,
     /// `(window_start_s, count)` per client IP for `/public/v1` requests.
     public_rate: Mutex<std::collections::HashMap<std::net::IpAddr, (u64, u32)>>,
@@ -306,8 +312,8 @@ impl PoolApi {
         info!("pool API listening on {bind_addr}");
 
         // History sampler — one snapshot per HISTORY_INTERVAL_S, ring
-        // buffer capped at HISTORY_CAP (24h).  Persisted to the share store
-        // when available so a restart keeps the last day of samples.
+        // buffer capped at HISTORY_CAP (7d).  Persisted to the share store
+        // when available so a restart keeps the last week of samples.
         {
             let pool = Arc::clone(&self.pool);
             let history = Arc::clone(&self.history);
@@ -3304,10 +3310,10 @@ fn sample_history(pool: &Arc<Mutex<Pool>>) -> (HistorySample, Vec<MinerHistoryRo
         if any_online {
             miners_online += 1;
         }
-        // Only persist miners seen inside the retention window — sampling
-        // long-dead entries would just rewrite rows the pruner deletes.
+        // Only persist miners seen inside the liveness window — sampling
+        // long-dead entries would just pad gaps the 7d pruner keeps anyway.
         if !hps.is_empty()
-            || now_s.saturating_sub(miner.last_seen_s) < HISTORY_INTERVAL_S * HISTORY_CAP as u64
+            || now_s.saturating_sub(miner.last_seen_s) < MINER_HISTORY_SEEN_S
         {
             let (miner_id, worker) = split_worker_key(key);
             miner_rows.push(MinerHistoryRow {

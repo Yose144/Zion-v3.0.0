@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Cpu } from 'lucide-react';
-import AreaChart, { type SeriesPoint } from '@/components/AreaChart';
+import AreaChart, { thinSeries, type SeriesPoint } from '@/components/AreaChart';
+import RangeTabs from '@/components/RangeTabs';
 import { fetchMiner, fetchMinerHistory } from '@/lib/api';
 import { fmtAgo, fmtHashrate, fmtInt, shortAddr } from '@/lib/format';
 import { useLang } from '@/lib/i18n';
@@ -30,6 +31,7 @@ export default function WorkerClient({
   const [w, setW] = useState<WorkerRow | null | undefined>(undefined);
   const [hist, setHist] = useState<SeriesPoint[]>([]);
   const [quality, setQuality] = useState<{ t: number; acc: number; rej: number }[]>([]);
+  const [hrRange, setHrRange] = useState(24); // hours — 24h / 7d(168)
 
   useEffect(() => {
     setW(undefined);
@@ -38,12 +40,13 @@ export default function WorkerClient({
         if (!m) return setW(null);
         setW(m.workers.find((x) => x.name === worker) ?? null);
       });
+    // SeriesPoint.t is unix SECONDS — same unit the backend emits.
     const pullHistory = () =>
-      fetchMinerHistory(coin as CoinId, wallet, 720, worker).then((samples) => {
+      fetchMinerHistory(coin as CoinId, wallet, hrRange * 60, worker).then((samples) => {
         if (samples.length) {
-          setHist(samples.map((s) => ({ t: s.ts * 1000, v: s.hps })));
+          setHist(thinSeries(samples.map((s) => ({ t: s.ts, v: s.hps }))));
           setQuality(
-            samples.map((s) => ({ t: s.ts * 1000, acc: s.accepted, rej: s.rejected })),
+            samples.map((s) => ({ t: s.ts, acc: s.accepted, rej: s.rejected })),
           );
         }
       });
@@ -55,7 +58,7 @@ export default function WorkerClient({
       clearInterval(iv);
       clearInterval(ivHist);
     };
-  }, [coin, wallet, worker]);
+  }, [coin, wallet, worker, hrRange]);
 
   if (w === undefined) {
     return <div className="pt-20 text-center text-white/40">…</div>;
@@ -154,13 +157,21 @@ export default function WorkerClient({
         <div className="mb-2 flex items-center justify-between">
           <p className="kicker">
             {hist.length
-              ? t('Hashrate — 24h (server)', 'Hashrate — 24h (server)')
+              ? t(
+                  `Hashrate — ${hrRange >= 48 ? `${hrRange / 24}d` : `${hrRange}h`} (server)`,
+                  `Hashrate — ${hrRange >= 48 ? `${hrRange / 24}d` : `${hrRange}h`} (server)`,
+                )
               : t('Hashrate', 'Hashrate')}
           </p>
-          <p className="text-[0.62rem] text-white/35">
-            {t('algo', 'algo')} {w.algorithm} · {t('naposledy', 'last seen')} {fmtAgo(w.last_seen, lang)}
-            {recentRej > 0 ? ` · +${recentRej} rej/min` : ''}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-[0.62rem] text-white/35">
+              {t('algo', 'algo')} {w.algorithm} · {t('naposledy', 'last seen')} {fmtAgo(w.last_seen, lang)}
+              {recentRej > 0 ? ` · +${recentRej} rej/min` : ''}
+            </p>
+            {hist.length > 0 && (
+              <RangeTabs value={hrRange} onChange={setHrRange} ranges={[24, 168]} />
+            )}
+          </div>
         </div>
         <AreaChart
           data={hist}
@@ -168,8 +179,8 @@ export default function WorkerClient({
           height={120}
           fmt={(v) => fmtHashrate(v)}
           emptyLabel={t(
-            'Worker nemá ještě naměřenou historii (60s vzorky, 24h retence)…',
-            'No sampled history yet (60s samples, 24h retention)…',
+            'Worker nemá ještě naměřenou historii (60s vzorky, 7d retence)…',
+            'No sampled history yet (60s samples, 7d retention)…',
           )}
         />
       </div>
@@ -190,7 +201,7 @@ export default function WorkerClient({
               return (
                 <div
                   key={q.t}
-                  title={`${new Date(q.t).toLocaleTimeString()} — +${dAcc} acc / +${dRej} rej`}
+                  title={`${new Date(q.t * 1000).toLocaleTimeString()} — +${dAcc} acc / +${dRej} rej`}
                   className="flex-1 rounded-sm"
                   style={{
                     height: `${h}px`,

@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Wallet } from 'lucide-react';
-import AreaChart, { pushSample, type SeriesPoint } from '@/components/AreaChart';
+import AreaChart, { pushSample, thinSeries, type SeriesPoint } from '@/components/AreaChart';
 import MinerSearch from '@/components/MinerSearch';
+import RangeTabs from '@/components/RangeTabs';
 import { fetchMiner, fetchMinerHistory } from '@/lib/api';
 import {
   fmtAgo,
@@ -36,6 +37,7 @@ export default function MinerClient({
   const [m, setM] = useState<MinerStats | null | undefined>(undefined);
   const [hrHistory, setHrHistory] = useState<SeriesPoint[]>([]);
   const [serverHist, setServerHist] = useState<SeriesPoint[]>([]);
+  const [hrRange, setHrRange] = useState(24); // hours — 24h / 7d(168)
 
   useEffect(() => {
     setM(undefined);
@@ -46,13 +48,13 @@ export default function MinerClient({
         setM(stats);
         if (stats) setHrHistory(pushSample(key, stats.hashrate));
       });
-    // Server-side wallet history (schema v6) — when present it wins over
-    // the localStorage series because it survives restarts and other
-    // devices. Empty while the endpoint predates deployment.
+    // Server-side wallet history (schema v6, 7d retention) — when present
+    // it wins over the localStorage series because it survives restarts
+    // and other devices. SeriesPoint.t is unix SECONDS (backend ts unit).
     const pullHistory = () =>
-      fetchMinerHistory(coin as CoinId, wallet).then((samples) => {
+      fetchMinerHistory(coin as CoinId, wallet, hrRange * 60).then((samples) => {
         if (samples.length) {
-          setServerHist(samples.map((s) => ({ t: s.ts * 1000, v: s.hps })));
+          setServerHist(thinSeries(samples.map((s) => ({ t: s.ts, v: s.hps }))));
         }
       });
     tick();
@@ -63,7 +65,7 @@ export default function MinerClient({
       clearInterval(iv);
       clearInterval(ivHist);
     };
-  }, [coin, wallet]);
+  }, [coin, wallet, hrRange]);
 
   if (m === undefined) {
     return <div className="pt-20 text-center text-white/40">…</div>;
@@ -163,15 +165,23 @@ export default function MinerClient({
         <div className="mb-2 flex items-center justify-between">
           <p className="kicker">
             {serverHist.length
-              ? t('Hashrate — 24h (server)', 'Hashrate — 24h (server)')
+              ? t(
+                  `Hashrate — ${hrRange >= 48 ? `${hrRange / 24}d` : `${hrRange}h`} (server)`,
+                  `Hashrate — ${hrRange >= 48 ? `${hrRange / 24}d` : `${hrRange}h`} (server)`,
+                )
               : t('Hashrate — poslední 4h', 'Hashrate — last 4h')}
           </p>
-          <p className="text-[0.62rem] text-white/35">
-            {t(
-              `acc ${fmtInt(acc)} · rej ${fmtInt(rej)} · ${rejPct.toFixed(2)}%`,
-              `acc ${fmtInt(acc)} · rej ${fmtInt(rej)} · ${rejPct.toFixed(2)}%`,
+          <div className="flex items-center gap-3">
+            <p className="text-[0.62rem] text-white/35">
+              {t(
+                `acc ${fmtInt(acc)} · rej ${fmtInt(rej)} · ${rejPct.toFixed(2)}%`,
+                `acc ${fmtInt(acc)} · rej ${fmtInt(rej)} · ${rejPct.toFixed(2)}%`,
+              )}
+            </p>
+            {serverHist.length > 0 && (
+              <RangeTabs value={hrRange} onChange={setHrRange} ranges={[24, 168]} />
             )}
-          </p>
+          </div>
         </div>
         <AreaChart
           data={serverHist.length ? serverHist : hrHistory}
