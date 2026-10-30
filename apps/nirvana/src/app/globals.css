@@ -419,3 +419,130 @@ button {
     font-size: 0.9rem;
   }
 }
+
+/* ─── Project presentation (/present/*) ─────────────────────────── */
+.present {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #141208;
+}
+
+.present canvas {
+  touch-action: none !important;
+}
+
+.present-chrome {
+  position: absolute;
+  z-index: 10;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 1rem 0.7rem;
+  background: linear-gradient(180deg, rgba(8, 7, 2, 0.82), rgba(8, 7, 2, 0));
+  pointer-events: none;
+}
+
+.present-chrome > * {
+  pointer-events: auto;
+}
+
+.present-back,
+.present-link {
+  color: #e8c25a;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid rgba(232, 194, 90, 0.35);
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.present-back:hover,
+.present-link:hover {
+  background: rgba(232, 194, 90, 0.14);
+}
+
+.present-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #f5eed8;
+}
+
+.present-title strong {
+  font-size: 0.95rem;
+  letter-spacing: 0.28em;
+}
+
+.present-sub {
+  font-size: 0.68rem;
+  color: rgba(245, 238, 216, 0.6);
+  letter-spacing: 0.05em;
+}
+
+.present-hint {
+  position: absolute;
+  z-index: 10;
+  left: 1rem;
+  bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px));
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  pointer-events: none;
+}
+
+/* in-scene Html labels — Genesis Garden */
+.gg-label {
+  pointer-events: none;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.gg-label-amber {
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fcd34d;
+}
+
+.gg-label-sky {
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #7dd3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 560px) {
+  .present-title strong {
+    font-size: 0.8rem;
+    letter-spacing: 0.18em;
+  }
+
+  .present-sub {
+    display: none;
+  }
+
+  .present-back,
+  .present-link {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.55rem;
+  }
+}

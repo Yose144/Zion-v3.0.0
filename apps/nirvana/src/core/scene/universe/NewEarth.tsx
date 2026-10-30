@@ -132,7 +132,7 @@ function MissionSites() {
         const n = new THREE.Vector3(...latLonToVec3(m.lat, m.lon, 1));
         return {
           name: m.name,
-          url: MISSION_ORIGIN + m.path,
+          url: m.present ?? MISSION_ORIGIN + m.path,
           n,
           h: 0.55,
           color: new THREE.Color(MISSION_STATUS_COLOR[m.status]),
