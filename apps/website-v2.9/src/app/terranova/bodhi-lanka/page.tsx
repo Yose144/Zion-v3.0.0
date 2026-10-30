@@ -29,6 +29,7 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+const BodhiLankaPreviewLazy = dynamic(() => import('@/components/BodhiLankaPreviewLazy'), { ssr: false });
 
 const TerranovaBodhiLankaCopy = {
   home: { cs: `Domů`, en: `Home` },
@@ -70,6 +71,8 @@ const TerranovaBodhiLankaCopy = {
   terraNova: { cs: `Terra Nova`, en: `Terra Nova` },
   sitePlan: { cs: `Architektonický koncept`, en: `Architectural concept` },
   sitePlanSubtitle: { cs: `První konceptový board: půdorysy, řezy a energetický systém.`, en: `First concept board: floor plans, sections and energy system.` },
+  threeDPreview: { cs: `3D koncept`, en: `3D concept` },
+  threeDPreviewSubtitle: { cs: `Interaktivní model Akáša nodu — Sri Maha Bodhi, lotosové jezírko, pět lotosových pavilonů a mosty Rama Setu.`, en: `Interactive model of the Akasha node — Sri Maha Bodhi, lotus pond, five lotus pavilions and Rama Setu bridges.` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
   documentationSubtitle: { cs: `Kompletní plán, koncept a specifikace Bodhi Lanka.`, en: `Complete plan, concept and specification of Bodhi Lanka.` },
   documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
@@ -460,6 +463,26 @@ export default function BodhiLankaPage() {
                 className="w-full object-contain"
               />
             </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {TerranovaBodhiLankaCopy.threeDPreview[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {TerranovaBodhiLankaCopy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <BodhiLankaPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
           </div>
         </motion.section>
 
