@@ -239,7 +239,7 @@ export default function StatsPage() {
               <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
                 {[
                   { k: t('pool hashrate', 'pool hashrate'), v: fmtHashrate(s.hashrate) },
-                  { k: t('síť', 'network'), v: s.network_hashrate != null ? fmtHashrate(s.network_hashrate) : '—' },
+                  { k: t('síť (odhad)', 'network (est)'), v: s.network_hashrate != null ? `~${fmtHashrate(s.network_hashrate)}` : '—' },
                   { k: t('mineři', 'miners'), v: fmtInt(s.miners_online) },
                   { k: 'workers', v: fmtInt(s.workers_online) },
                   { k: t('diff', 'diff'), v: fmtDifficulty(netDiff[c.id] ?? null) },

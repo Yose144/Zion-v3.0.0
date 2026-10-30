@@ -166,7 +166,14 @@ function toCoinStats(coin: CoinId, s: ApiCoinStats): CoinStats {
     hashrate: s.hashrate?.live ?? 0,
     miners_online: s.miners_online,
     workers_online: s.miners_online,
-    network_hashrate: null,
+    // Estimated network hashrate — the chain exposes LWMA difficulty, not
+    // a hashrate RPC, so we self-calibrate: pool finds blocks doing
+    // ~100/luck× the expected share work, i.e. pool_hr × 100/luck_100 ≈
+    // network total. Only native legs with tracked blocks get a value.
+    network_hashrate:
+      s.blocks?.luck_100 != null && s.blocks.luck_100 > 0 && s.hashrate?.live
+        ? (s.hashrate.live * 100) / s.blocks.luck_100
+        : null,
     network_difficulty: s.served_difficulty ?? null,
     height: null,
     blocks_24h: 0,
