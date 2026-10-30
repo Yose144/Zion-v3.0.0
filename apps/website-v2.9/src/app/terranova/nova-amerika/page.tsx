@@ -27,9 +27,12 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+const LumiStationPreviewLazy = dynamic(() => import('@/components/LumiStationPreviewLazy'), { ssr: false });
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
+  threeDPreview: { cs: `3D koncept`, en: `3D concept` },
+  threeDPreviewSubtitle: { cs: `Interaktivní model Issobella L6 stanice — výzkumná kupole se stromovým jádrem, biodomy, radioteleskopy, startovací věž a sopka za mraky.`, en: `Interactive model of the Issobella L6 station — research dome with tree core, biodomes, radio telescopes, launch spire and a volcano above the clouds.` },
   planned2029: { cs: `Plánováno 2029+`, en: `Planned 2029+` },
   bridgeSubtitle: { cs: `Nová Amerika · Most Amerik · Kostarika · Terra Nova ®`, en: `Nová Amerika · Americas Bridge · Costa Rica · Terra Nova ®` },
   quote: {
@@ -464,6 +467,26 @@ export default function NovaAmerikaPage() {
                 className="w-full object-contain"
               />
             </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {Copy.threeDPreview[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {Copy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <LumiStationPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
           </div>
         </motion.section>
 
