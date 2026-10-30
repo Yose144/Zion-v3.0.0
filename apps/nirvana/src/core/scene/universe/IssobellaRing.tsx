@@ -45,7 +45,7 @@ export function IssobellaRing({
       {/* vlajková stanice Issobella — procedurální model L6 */}
       <IssobellaStation
         position={[RING_R, 0, 0]}
-        scale={3.2}
+        scale={4.4}
         onClick={portal ? () => onOpen(portal.id) : undefined}
       />
       {/* stanice L6 světů na prstenci */}
