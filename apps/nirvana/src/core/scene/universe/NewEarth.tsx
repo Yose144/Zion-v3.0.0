@@ -177,10 +177,23 @@ function Beacon({ portal, onOpen }: { portal: Portal; onOpen: (id: string) => vo
   );
 }
 
-/** Měsíc — obíhá Novou Zemi mimo prstenec Issobelly. */
+/** Měsíc — reálná textura (Solar System Scope), obíhá Novou Zemi mimo prstenec Issobelly. */
 function Moon() {
   const ref = useRef<THREE.Group>(null);
   const angle = useRef(Math.PI * 0.35);
+  const [tex, setTex] = useState<THREE.Texture | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    new THREE.TextureLoader().load('/textures/2k_moon.jpg', (t) => {
+      t.colorSpace = THREE.SRGBColorSpace;
+      if (alive) setTex(t);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   useFrame((_, delta) => {
     if (!ref.current) return;
     angle.current += delta * 0.11;
@@ -192,59 +205,11 @@ function Moon() {
     <group ref={ref}>
       <mesh>
         <sphereGeometry args={[0.55, 24, 24]} />
-        <meshStandardMaterial color="#d4d4d4" roughness={0.92} metalness={0.05} />
+        <meshStandardMaterial map={tex ?? undefined} color={tex ? '#ffffff' : '#d4d4d4'} roughness={0.95} metalness={0.02} />
       </mesh>
       <mesh scale={1.35}>
         <sphereGeometry args={[0.55, 12, 12]} />
         <meshBasicMaterial color="#fcd116" transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} />
-      </mesh>
-    </group>
-  );
-}
-
-/** Slunce — reálná textura (Solar System Scope, CC BY 4.0, NASA data)
- *  + korona + pomalá rotace + puls. Ve směru directionalLight. */
-function Sun() {
-  const sun = useRef<THREE.Mesh>(null);
-  const corona = useRef<THREE.MeshBasicMaterial>(null);
-  const [tex, setTex] = useState<THREE.Texture | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    new THREE.TextureLoader().load('/textures/sun-2k.jpg', (t) => {
-      t.colorSpace = THREE.SRGBColorSpace;
-      if (alive) setTex(t);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useFrame(({ clock }, delta) => {
-    const t = clock.getElapsedTime();
-    if (sun.current) sun.current.rotation.y += delta * 0.02;
-    if (corona.current) corona.current.opacity = 0.14 + Math.sin(t * 1.3) * 0.05;
-  });
-
-  return (
-    <group position={[34, 14, -26]}>
-      <mesh ref={sun}>
-        <sphereGeometry args={[3.2, 48, 48]} />
-        <meshBasicMaterial map={tex ?? undefined} color={tex ? '#ffffff' : '#ffb84d'} />
-      </mesh>
-      {/* vnitřní korona */}
-      <mesh scale={1.18}>
-        <sphereGeometry args={[3.2, 24, 24]} />
-        <meshBasicMaterial ref={corona} color="#ff9a3c" transparent opacity={0.14} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.BackSide} />
-      </mesh>
-      {/* vnější žár */}
-      <mesh scale={1.6}>
-        <sphereGeometry args={[3.2, 16, 16]} />
-        <meshBasicMaterial color="#e4661e" transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} />
-      </mesh>
-      <mesh scale={2.6}>
-        <sphereGeometry args={[3.2, 12, 12]} />
-        <meshBasicMaterial color="#fcd116" transparent opacity={0.045} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
@@ -299,7 +264,6 @@ export function NewEarth({
       ))}
       {beacon && <Beacon portal={beacon} onOpen={onOpen} />}
       <Moon />
-      <Sun />
     </group>
   );
 }

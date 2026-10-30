@@ -10,6 +10,7 @@ import { IssobellaRing } from './IssobellaRing';
 import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { SpaceBackdrop } from './SpaceBackdrop';
+import { SolarSystem } from './SolarSystem';
 
 /**
  * Vesmír Království srdce — orbitální pohled z lodi.
@@ -65,6 +66,7 @@ export function Universe({
       />
       <OrbitalWorlds worlds={split.orbit} onSelectWorld={onSelectWorld} />
       {gatePortal && <StarGate portal={gatePortal} onOpen={onOpen} />}
+      <SolarSystem />
 
       <OrbitControls
         makeDefault
