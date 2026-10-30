@@ -6,14 +6,38 @@ import { connectCmds, STRATUM_HOST, STRATUM_PORT_SOLO, STRATUM_PORT_TCP, STRATUM
 import { useLang } from '@/lib/i18n';
 import type { CoinInfo } from '@/lib/types';
 
+/** Compact units for the solo-card estimate (kept local — fmtHashrate
+ *  lives in format.ts but this card wants single-letter suffixes). */
+function fmtHashrateShort(hps: number): string {
+  const U = ['', 'k', 'M', 'G', 'T', 'P', 'E'];
+  let v = hps, i = 0;
+  while (v >= 1000 && i < U.length - 1) { v /= 1000; i++; }
+  return `${v.toFixed(v >= 100 ? 0 : 1)} ${U[i]}H/s`;
+}
+
+function fmtDur(sec: number): string {
+  if (sec < 90) return `${sec.toFixed(0)} s`;
+  if (sec < 5400) return `${(sec / 60).toFixed(1)} min`;
+  if (sec < 129600) return `${(sec / 3600).toFixed(1)} h`;
+  return `${(sec / 86400).toFixed(1)} d`;
+}
+
 /** Per-coin mining configuration cards — copy-ready commands for every
  *  supported miner, with wallet/worker inputs and TCP/TLS/SOLO port
  *  switching. Shared command source: lib/connect.ts (same as /start). */
-export default function ConfigCards({ coin }: { coin: CoinInfo }) {
+export default function ConfigCards({
+  coin,
+  networkHashrate,
+}: {
+  coin: CoinInfo;
+  /** Luck-derived network hashrate — powers the solo-time estimate. */
+  networkHashrate?: number | null;
+}) {
   const { t } = useLang();
   const [wallet, setWallet] = useState('');
   const [worker, setWorker] = useState('');
   const [mode, setMode] = useState<'tcp' | 'tls' | 'solo'>('tcp');
+  const [soloHr, setSoloHr] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
 
   const cmds = connectCmds(coin, wallet, worker, mode === 'tls', mode === 'solo');
@@ -110,6 +134,51 @@ export default function ConfigCards({ coin }: { coin: CoinInfo }) {
           </div>
         ))}
       </div>
+
+      {/* Solo EV card — HeroMiners ships a standalone solo calculator;
+          ours lives where the solo port does. Expected time to a block =
+          network_hr / your_hr × 60s cadence. */}
+      {mode === 'solo' && networkHashrate != null && networkHashrate > 0 && (
+        <div className="mt-4 rounded-xl border border-rasta-gold/15 bg-black/30 p-3.5">
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2">
+              <span className="kicker">{t('tvůj hashrate H/s', 'your hashrate H/s')}</span>
+              <input
+                value={soloHr}
+                onChange={(e) => setSoloHr(e.target.value.replace(/[^0-9.]/g, ''))}
+                placeholder="100000"
+                inputMode="decimal"
+                className="w-28 rounded-lg border border-white/10 bg-black/40 px-2.5 py-1.5 font-mono text-[0.75rem] text-white placeholder:text-white/25 focus:border-rasta-gold/50 focus:outline-none"
+              />
+            </label>
+            {(() => {
+              const hr = parseFloat(soloHr);
+              if (!hr || hr <= 0)
+                return (
+                  <span className="text-[0.7rem] text-white/35">
+                    {t(
+                      `síť ~${fmtHashrateShort(networkHashrate)} · zadej hashrate`,
+                      `network ~${fmtHashrateShort(networkHashrate)} · enter hashrate`,
+                    )}
+                  </span>
+                );
+              const secPerBlock = (networkHashrate / hr) * 60;
+              const perDay = 86400 / secPerBlock;
+              return (
+                <span className="text-[0.7rem] text-white/55">
+                  {t('průměrně blok za', 'avg block every')}{' '}
+                  <b className="text-rasta-gold">{fmtDur(secPerBlock)}</b>
+                  {' · '}
+                  {t('≈ šance ≥1 bloku/den', '≈ chance of ≥1 block/day')}{' '}
+                  <b className="text-rasta-gold">
+                    {perDay >= 1 ? `${perDay.toFixed(1)}×` : `${(perDay * 100).toFixed(0)}%`}
+                  </b>
+                </span>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       <p className="mt-4 text-[0.65rem] text-white/35">
         {t('endpoint', 'endpoint')} <code className="text-white/50">{STRATUM_HOST}</code>

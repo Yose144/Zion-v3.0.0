@@ -335,7 +335,7 @@ export default function CoinClient({ coinId }: { coinId: CoinId }) {
 
         {/* Copy-ready per-miner configs — wallet/worker inputs + TCP/TLS/
             SOLO switch. Shares command generation with /start. */}
-        <ConfigCards coin={coin} />
+        <ConfigCards coin={coin} networkHashrate={stats?.network_hashrate ?? null} />
       </div>
 
       {coin.payout_mode !== 'onchain' && (

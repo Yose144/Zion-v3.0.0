@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Blocks, Boxes, CircleDollarSign, Clock, Gauge, Pickaxe, ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, Blocks, Boxes, CircleDollarSign, Clock, Gauge, Megaphone, Pickaxe, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import AreaChart, { type SeriesPoint } from '@/components/AreaChart';
 import RangeTabs from '@/components/RangeTabs';
 import CoinCard from '@/components/CoinCard';
@@ -12,7 +12,8 @@ import TopMiners from '@/components/TopMiners';
 import LuckEffortCard from '@/components/LuckEffortCard';
 import { fetchBlocks, fetchHistory, fetchOverview } from '@/lib/api';
 import { fetchMarketPrices, fetchZionPrice, type MarketPrice, type ZionPrice } from '@/lib/price';
-import { fmtDifficulty, fmtDuration, fmtHashrate, fmtInt, fmtUsd } from '@/lib/format';
+import { ANNOUNCEMENTS } from '@/lib/announcements';
+import { fmtAgo, fmtDifficulty, fmtDuration, fmtHashrate, fmtInt, fmtUsd } from '@/lib/format';
 import { useLang } from '@/lib/i18n';
 import type { BlockRow, PoolOverview } from '@/lib/types';
 
@@ -24,7 +25,7 @@ const ACCENT: Record<string, string> = {
 };
 
 export default function HomePage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [ov, setOv] = useState<PoolOverview | null>(null);
   const [blockCount, setBlockCount] = useState<number | null>(null);
   const [blocks, setBlocks] = useState<BlockRow[]>([]);
@@ -422,6 +423,28 @@ export default function HomePage() {
       )}
 
       <TopMiners limit={10} />
+
+      {/* Latest announcement — thin pointer to /announcements */}
+      {(() => {
+        const latest = [...ANNOUNCEMENTS].sort((a, b) => b.ts - a.ts)[0];
+        if (!latest) return null;
+        const copy = lang === 'cs' ? latest.cs : latest.en;
+        return (
+          <a
+            href="/announcements/"
+            className="pool-card mt-6 flex items-center gap-3 p-3.5 transition hover:border-rasta-gold/30"
+          >
+            <Megaphone size={14} className="shrink-0 text-rasta-gold" />
+            <span className="truncate text-[0.8rem] text-white/70">
+              <b className="text-white">{copy.title}</b>
+              <span className="hidden sm:inline text-white/45"> — {copy.body}</span>
+            </span>
+            <span className="ml-auto shrink-0 text-[0.65rem] text-white/35">
+              {fmtAgo(latest.ts, lang)}
+            </span>
+          </a>
+        );
+      })()}
 
       {/* CTA strip — market rasta banner */}
       <section className="rasta-cta-banner mt-12 flex flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">

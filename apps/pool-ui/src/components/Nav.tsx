@@ -19,6 +19,7 @@ const LINKS = [
   { href: '/miners/', cs: 'Mineři', en: 'Miners' },
   { href: '/stats/', cs: 'Statistiky', en: 'Stats' },
   { href: '/status/', cs: 'Status', en: 'Status' },
+  { href: '/announcements/', cs: 'Oznámení', en: 'News' },
   { href: '/api-docs/', cs: 'API', en: 'API' },
   { href: '/faq/', cs: 'FAQ', en: 'FAQ' },
 ];
