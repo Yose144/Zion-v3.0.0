@@ -45,8 +45,8 @@ const Copy = {
   locationLine: { cs: `Světové oceány · domovský přístav Galicie`, en: `World oceans · home port Galicia` },
   introTitle: { cs: `Osmý uzel — cesta, ne místo`, en: `The eighth node — a way, not a place` },
   introBody: {
-    cs: `María del Camino je osmý bod L5 Free World — a jediný, který není místo, ale cesta. Flotila Tres Marias — tři lodě pro tři oceány, každá nesoucí jedno ze tří mariánských zjevení poutníkovy cesty: atlantická plachetnice Santa María la Mayor (červená královská roucha), pacifický solární katamarán Nossa Senhora de Fátima (bílé svatební šaty) a indickooceánská María de las Nieves (zlatá roucha, nedokončené zázraky). Zhruba padesát poutníků na trup, solární plachty, vlastní energie, voda, jídlo i plný ZION uzel zprostřed oceánu.`,
-    en: `María del Camino is the eighth point of L5 Free World — and the only one that is not a place but a way. The Tres Marias fleet — three ships for three oceans, each carrying one of the three Marian apparitions of the pilgrim's journey: the Atlantic tall ship Santa María la Mayor (red royal robes), the Pacific solar catamaran Nossa Senhora de Fátima (white wedding dress) and the Indian-ocean María de las Nieves (golden robes, unfinished miracles). Roughly fifty pilgrims per hull, solar sails, their own energy, water, food and a full ZION node mid-ocean.`,
+    cs: `María del Camino je osmý bod L5 Free World — a jediný, který není místo, ale cesta. Flotila Tres Marias — tři lodě pro tři oceány, každá nesoucí jedno ze tří mariánských zjevení poutníkovy cesty: atlantická plachetnice Santa María la Mayor (červená královská roucha), pacifický solární katamarán Nossa Senhora de Fátima (bílé svatební šaty) a indickooceánská María de las Nieves (zlatá roucha, nedokončené zázraky). Na loď se vejde dvanáct poutníků a posádka dvou až tří lidí — celkem čtrnáct až patnáct osob. Solární plachty, vlastní energie, voda, jídlo i plný ZION uzel zprostřed oceánu.`,
+    en: `María del Camino is the eighth point of L5 Free World — and the only one that is not a place but a way. The Tres Marias fleet — three ships for three oceans, each carrying one of the three Marian apparitions of the pilgrim's journey: the Atlantic tall ship Santa María la Mayor (red royal robes), the Pacific solar catamaran Nossa Senhora de Fátima (white wedding dress) and the Indian-ocean María de las Nieves (golden robes, unfinished miracles). Twelve pilgrims and a crew of two or three fit aboard each hull — fourteen to fifteen people in all. Solar sails, their own energy, water, food and a full ZION node mid-ocean.`,
   },
   threeDPreview: { cs: `3D flotila`, en: `3D fleet` },
   threeDPreviewSubtitle: { cs: `Interaktivní model Tres Marias — solární plachty, tři lodě, tři oceány.`, en: `Interactive model of Tres Marias — solar sails, three ships, three oceans.` },
@@ -63,6 +63,10 @@ const Copy = {
   fleetIndian: {
     cs: `Třetí loď pro Indický oceán — pokřtěná po třetím zjevení na La Palmě: María de las Nieves ve zlatých rouchech, držící vzpřímené dítě — Malého prince (Pražské Jezulátko), dítě LUMI, Elizabeth. Loď nedokončených zázraků; patronka ostrova i celé sítě. Trasa Ekam → Boa Esperança → návrat do Atlantiku.`,
     en: `The third ship for the Indian Ocean — christened after the third apparition on La Palma: María de las Nieves in golden robes, holding the upright child — the Little Prince (the Infant of Prague), the child LUMI, Elizabeth. The ship of unfinished miracles; patroness of the island and the whole network. Route Ekam → Boa Esperança → return to the Atlantic.`,
+  },
+  fleetPlanCaption: {
+    cs: `Studie dvou trupů, oba 19,9 m. A — jednotrupá plachetnice pro Atlantik (Santa María la Mayor). B — oceánský katamarán pro Pacifik (Nossa Senhora de Fátima). Třetí trup, María de las Nieves, v tomhle výkresu ještě není.`,
+    en: `A study of two hulls, both 19.9 m. A — a single-hull schooner for the Atlantic (Santa María la Mayor). B — an ocean catamaran for the Pacific (Nossa Senhora de Fátima). The third hull, María de las Nieves, is not in this drawing yet.`,
   },
   fleetMeet: {
     cs: `Tři Marie se nescházejí uprostřed moře — jejich světy se dotýkají na švech světa: na šíji Amerik (LUMI — atlantická × pacifická) a na švu oceánů u Mysu dobré naděje (Boa Esperança — atlantická × indická). Credencial sbírá razítka „tří moří".`,
@@ -126,14 +130,14 @@ const Copy = {
     cs: [
       `Flag state a domovské přístavy — Galicie pro Atlantik; Raiatea/Papeete pro Pacifik?`,
       `Vlastnictví: DAO-owned asset vs. foundation vs. permanentní charter`,
-      `Energetická bilance pro 50 osob — solární plachty vs. hydroregenerace`,
+      `Energetická bilance pro 14–15 osob — solární plachty vs. hydroregenerace`,
       `LUMI exchange protokol — přestup posádek a nákladu přes šíji`,
       `Vazba na L6 Issobella — plující pozemní stanice / telemetry relay`,
     ],
     en: [
       `Flag state and home ports — Galicia for the Atlantic; Raiatea/Papeete for the Pacific?`,
       `Ownership: DAO-owned asset vs. foundation vs. permanent charter`,
-      `Energy balance for 50 souls per hull — solar sails vs. hydro-regeneration`,
+      `Energy balance for 14–15 people per hull — solar sails vs. hydro-regeneration`,
       `The LUMI exchange protocol — crew and cargo transfers across the isthmus`,
       `L6 Issobella link — a floating ground station / telemetry relay`,
     ],
@@ -177,10 +181,10 @@ const FEATURES: FeatureItem[] = [
   },
   {
     icon: Users,
-    titleCs: '~50 poutníků',
-    titleEn: '~50 pilgrims',
-    descCs: 'Permanentní posádka Guardianů plus rotující residenti — výzkum, youth bridge programy, praktici Medical Table a noví Guardiani v tranzitu mezi uzly.',
-    descEn: 'A permanent Guardian crew plus rotating residents — research, youth bridge programmes, Medical Table practitioners and new Guardians in transit between nodes.',
+    titleCs: '12 poutníků',
+    titleEn: '12 pilgrims',
+    descCs: 'Dvanáct poutníků a posádka dvou až tří lidí — celkem čtrnáct až patnáct osob. Rotující residenti: výzkum, youth bridge programy, praktici Medical Table a noví Guardiani v tranzitu mezi uzly.',
+    descEn: 'Twelve pilgrims and a crew of two or three — fourteen to fifteen people in all. Rotating residents: research, youth bridge programmes, Medical Table practitioners and new Guardians in transit between nodes.',
     color: '#22D3EE',
     rgb: '34, 211, 238',
   },
@@ -489,7 +493,7 @@ export default function MariaDelCaminoPage() {
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
                     {[
-                      { icon: Users, value: cs ? '3 × ~50' : '3 × ~50', labelCs: 'Poutníků na trup', labelEn: 'Pilgrims per hull' },
+                      { icon: Users, value: '14–15', labelCs: 'Osob na lodi', labelEn: 'People aboard' },
                       { icon: Sailboat, value: cs ? '8. bod' : '8th point', labelCs: 'Uzel', labelEn: 'Node' },
                       { icon: Sparkles, value: cs ? 'Příprava' : 'Preparation', labelCs: 'Stav', labelEn: 'Status' },
                     ].map((signal) => {
@@ -558,57 +562,34 @@ export default function MariaDelCaminoPage() {
               {Copy.fleetTitle[cs ? 'cs' : 'en']}
             </h2>
           </div>
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30 mb-4">
+            <img
+              src="/images/maria-del-camino/plans.webp"
+              alt={cs
+                ? 'Výkres Království srdce — jednotrupá plachetnice a katamarán, půdorysy a interiéry'
+                : 'Kingdom of Hearts drawing — single-hull schooner and catamaran, deck plans and interiors'}
+              width={1536}
+              height={1024}
+              loading="lazy"
+              decoding="async"
+              className="w-full object-contain"
+            />
+          </div>
+          <p className="mb-6 text-center text-xs leading-relaxed text-white/50">
+            {Copy.fleetPlanCaption[cs ? 'cs' : 'en']}
+          </p>
           <div className="grid md:grid-cols-3 gap-4 mb-4">
-            <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
-              <div className="overflow-hidden">
-                <img
-                  src="/images/maria-del-camino/atlantic.webp"
-                  alt="Santa María la Mayor — atlantická plachetnice pod zlatými plachtami"
-                  width={1280}
-                  height={720}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full object-cover"
-                />
-              </div>
-              <div className="p-5">
-                <h3 className="font-semibold text-white mb-1">Santa María la Mayor <span className="text-xs text-gray-500 font-normal">· {cs ? 'Atlantik' : 'Atlantic'}</span></h3>
-                <p className="text-sm text-gray-400">{Copy.fleetAtlantic[cs ? 'cs' : 'en']}</p>
-              </div>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
+              <h3 className="font-semibold text-white mb-1">Santa María la Mayor <span className="text-xs text-gray-500 font-normal">· {cs ? 'Atlantik' : 'Atlantic'}</span></h3>
+              <p className="text-sm text-gray-400">{Copy.fleetAtlantic[cs ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
-              <div className="overflow-hidden">
-                <img
-                  src="/images/maria-del-camino/pacific.webp"
-                  alt="Nossa Senhora de Fátima — solární katamarán se svítícími plachtami a vieirou na přídi"
-                  width={1280}
-                  height={720}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full object-cover"
-                />
-              </div>
-              <div className="p-5">
-                <h3 className="font-semibold text-white mb-1">Nossa Senhora de Fátima <span className="text-xs text-gray-500 font-normal">· Pacifik</span></h3>
-                <p className="text-sm text-gray-400">{Copy.fleetPacific[cs ? 'cs' : 'en']}</p>
-              </div>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
+              <h3 className="font-semibold text-white mb-1">Nossa Senhora de Fátima <span className="text-xs text-gray-500 font-normal">· Pacifik</span></h3>
+              <p className="text-sm text-gray-400">{Copy.fleetPacific[cs ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
-              <div className="overflow-hidden">
-                <img
-                  src="/images/maria-del-camino/indian.webp"
-                  alt="María de las Nieves — zlatá loď Indického oceánu"
-                  width={1280}
-                  height={720}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full object-cover"
-                />
-              </div>
-              <div className="p-5">
-                <h3 className="font-semibold text-white mb-1">María de las Nieves <span className="text-xs text-gray-500 font-normal">· {cs ? 'Indický oceán' : 'Indian Ocean'}</span></h3>
-                <p className="text-sm text-gray-400">{Copy.fleetIndian[cs ? 'cs' : 'en']}</p>
-              </div>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
+              <h3 className="font-semibold text-white mb-1">María de las Nieves <span className="text-xs text-gray-500 font-normal">· {cs ? 'Indický oceán' : 'Indian Ocean'}</span></h3>
+              <p className="text-sm text-gray-400">{Copy.fleetIndian[cs ? 'cs' : 'en']}</p>
             </div>
           </div>
           <div className="zion-rainbow-sub p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
