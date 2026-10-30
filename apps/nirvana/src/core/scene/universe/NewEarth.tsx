@@ -74,8 +74,9 @@ function useEarthMaps(fallback: THREE.Texture) {
     });
     loader.load('/textures/earth-dark.jpg', (t) => {
       if (cancelled) return t.dispose();
-      // Prah — night texture má šumivé pozadí (~10-30 % lum) které
-      // emissive rozmazává přes celou planetu (= zežloutlá zeměkoule).
+      // Prah — earth-dark má pevninu na ~15-40 % jasu (ne jen světla),
+      // emissive pak žhnul přes kontinenty. Ostříznout na 0.42 → jen
+      // skutečná světla měst projdou, oceán i pevnina → černá.
       const img = t.image as HTMLImageElement;
       const canvas = document.createElement('canvas');
       canvas.width = img.width;
@@ -86,7 +87,7 @@ function useEarthMaps(fallback: THREE.Texture) {
       const px = data.data;
       for (let i = 0; i < px.length; i += 4) {
         const l = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) / 255;
-        const f = Math.max(0, (l - 0.26) / 0.74);
+        const f = Math.pow(Math.max(0, (l - 0.42) / 0.58), 1.4);
         px[i] *= f;
         px[i + 1] *= f;
         px[i + 2] *= f;
@@ -280,8 +281,8 @@ export function NewEarth({
           roughness={0.55}
           metalness={0.03}
           emissiveMap={maps.night}
-          emissive={maps.night ? new THREE.Color('#ffdca8') : new THREE.Color('#066928')}
-          emissiveIntensity={maps.night ? 0.5 : 0.1}
+          emissive={maps.night ? new THREE.Color('#fff3dd') : new THREE.Color('#066928')}
+          emissiveIntensity={maps.night ? 0.35 : 0.08}
         />
       </mesh>
       {/* holografický wireframe shell — jemný */}
