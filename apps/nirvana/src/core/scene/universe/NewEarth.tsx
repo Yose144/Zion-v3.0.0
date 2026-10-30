@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -9,15 +9,14 @@ import { PLANET_R, spotPosition, surfacePosition } from './positions';
 import type { WorldPoint } from '@/lib/worlds';
 import { layerColor } from '@/lib/worlds';
 
-/** Procedurální mapa Nové Země — equirect canvas, seedované kontinenty. */
-function makeEarthTexture(): THREE.CanvasTexture {
-  const w = 1024;
-  const h = 512;
+/** Procedurální mapa — instant fallback dokud se reálné textury nenačtou. */
+function makeFallbackTexture(): THREE.CanvasTexture {
+  const w = 512;
+  const h = 256;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d')!;
-
   const ocean = ctx.createLinearGradient(0, 0, 0, h);
   ocean.addColorStop(0, '#cfe3ee');
   ocean.addColorStop(0.14, '#0b3d66');
@@ -26,20 +25,17 @@ function makeEarthTexture(): THREE.CanvasTexture {
   ocean.addColorStop(1, '#cfe3ee');
   ctx.fillStyle = ocean;
   ctx.fillRect(0, 0, w, h);
-
   let s = 20261029;
   const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
   for (let c = 0; c < 15; c++) {
     const cx = rnd() * w;
     const cy = h * 0.16 + rnd() * h * 0.68;
-    const blobs = 4 + Math.floor(rnd() * 6);
-    for (let b = 0; b < blobs; b++) {
-      const bx = cx + (rnd() - 0.5) * 170;
-      const by = cy + (rnd() - 0.5) * 95;
-      const r = 18 + rnd() * 58;
+    for (let b = 0; b < 6; b++) {
+      const bx = cx + (rnd() - 0.5) * 90;
+      const by = cy + (rnd() - 0.5) * 50;
+      const r = 10 + rnd() * 30;
       const g = ctx.createRadialGradient(bx, by, r * 0.15, bx, by, r);
       g.addColorStop(0, '#2f7d47');
-      g.addColorStop(0.72, '#1d5c3a');
       g.addColorStop(1, 'rgba(14,90,138,0)');
       ctx.fillStyle = g;
       ctx.beginPath();
@@ -47,10 +43,46 @@ function makeEarthTexture(): THREE.CanvasTexture {
       ctx.fill();
     }
   }
-
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
+}
+
+/** Reálné textury Nové Země — předloha z apps/website-v2.9 HolographicEarth. */
+function useEarthMaps(fallback: THREE.Texture) {
+  const [maps, setMaps] = useState<{ color: THREE.Texture; bump?: THREE.Texture; night?: THREE.Texture }>({
+    color: fallback,
+  });
+  useEffect(() => {
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+    const next: { color?: THREE.Texture; bump?: THREE.Texture; night?: THREE.Texture } = {};
+    const commit = () => {
+      if (!cancelled && next.color) setMaps({ color: next.color, bump: next.bump, night: next.night });
+    };
+    loader.load('/textures/earth-blue-marble.webp', (t) => {
+      if (cancelled) return t.dispose();
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 4;
+      next.color = t;
+      commit();
+    });
+    loader.load('/textures/earth-topology.png', (t) => {
+      if (cancelled) return t.dispose();
+      next.bump = t;
+      commit();
+    });
+    loader.load('/textures/earth-dark.jpg', (t) => {
+      if (cancelled) return t.dispose();
+      t.colorSpace = THREE.SRGBColorSpace;
+      next.night = t;
+      commit();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return maps;
 }
 
 function SurfaceMarker({
@@ -126,7 +158,6 @@ function Beacon({ portal, onOpen }: { portal: Portal; onOpen: (id: string) => vo
         <sphereGeometry args={[0.11, 12, 12]} />
         <meshBasicMaterial color="#7ec8ff" />
       </mesh>
-      {/* maják — paprsek vzhůru z povrchu */}
       <mesh ref={ref} position={[0, 0.9, 0]}>
         <cylinderGeometry args={[0.012, 0.05, 1.8, 8, 1, true]} />
         <meshBasicMaterial color="#7ec8ff" transparent opacity={0.5} side={THREE.DoubleSide} depthWrite={false} />
@@ -134,6 +165,51 @@ function Beacon({ portal, onOpen }: { portal: Portal; onOpen: (id: string) => vo
       <Html center distanceFactor={16} occlude="raycast" style={{ pointerEvents: 'none' }}>
         <span className="scene-label">{portal.title.cs}</span>
       </Html>
+    </group>
+  );
+}
+
+/** Měsíc — obíhá Novou Zemi mimo prstenec Issobelly. */
+function Moon() {
+  const ref = useRef<THREE.Group>(null);
+  const angle = useRef(Math.PI * 0.35);
+  useFrame((_, delta) => {
+    if (!ref.current) return;
+    angle.current += delta * 0.11;
+    const r = 9.6;
+    ref.current.position.set(Math.cos(angle.current) * r, Math.sin(angle.current * 0.55) * 0.9, Math.sin(angle.current) * r);
+    ref.current.rotation.y += delta * 0.05;
+  });
+  return (
+    <group ref={ref}>
+      <mesh>
+        <sphereGeometry args={[0.55, 24, 24]} />
+        <meshStandardMaterial color="#d4d4d4" roughness={0.92} metalness={0.05} />
+      </mesh>
+      <mesh scale={1.35}>
+        <sphereGeometry args={[0.55, 12, 12]} />
+        <meshBasicMaterial color="#fcd116" transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Slunce — viditelný zdroj světla ve směru directionalLight. */
+function Sun() {
+  return (
+    <group position={[34, 14, -26]}>
+      <mesh>
+        <sphereGeometry args={[3.2, 24, 24]} />
+        <meshBasicMaterial color="#fcd116" />
+      </mesh>
+      <mesh scale={1.5}>
+        <sphereGeometry args={[3.2, 16, 16]} />
+        <meshBasicMaterial color="#e41e2b" transparent opacity={0.16} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+      <mesh scale={2.4}>
+        <sphereGeometry args={[3.2, 12, 12]} />
+        <meshBasicMaterial color="#fcd116" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
     </group>
   );
 }
@@ -150,7 +226,8 @@ export function NewEarth({
   onSelectWorld: (id: string) => void;
 }) {
   const planet = useRef<THREE.Mesh>(null);
-  const texture = useMemo(() => makeEarthTexture(), []);
+  const fallback = useMemo(() => makeFallbackTexture(), []);
+  const maps = useEarthMaps(fallback);
   const beacon = surfacePortals.find((p) => p.scene.spot === 'beacon');
   const spots = surfacePortals.filter((p) => p.scene.spot !== 'beacon');
 
@@ -160,10 +237,24 @@ export function NewEarth({
 
   return (
     <group>
-      {/* planeta — povrch L5 */}
+      {/* planeta — povrch L5, reálné textury + noční světla + bump */}
       <mesh ref={planet}>
-        <sphereGeometry args={[PLANET_R, 48, 32]} />
-        <meshStandardMaterial map={texture} roughness={0.9} metalness={0.05} />
+        <sphereGeometry args={[PLANET_R, 64, 48]} />
+        <meshStandardMaterial
+          map={maps.color}
+          bumpMap={maps.bump}
+          bumpScale={0.24}
+          roughness={0.55}
+          metalness={0.03}
+          emissiveMap={maps.night}
+          emissive={maps.night ? new THREE.Color('#ffcc66') : new THREE.Color('#066928')}
+          emissiveIntensity={maps.night ? 0.32 : 0.1}
+        />
+      </mesh>
+      {/* holografický wireframe shell — jemný */}
+      <mesh scale={1.012}>
+        <sphereGeometry args={[PLANET_R, 24, 24]} />
+        <meshBasicMaterial color="#066928" wireframe transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
       {/* atmosféra — halo */}
       <mesh scale={1.07}>
@@ -179,6 +270,8 @@ export function NewEarth({
         <PortalSpot key={p.id} portal={p} onOpen={onOpen} />
       ))}
       {beacon && <Beacon portal={beacon} onOpen={onOpen} />}
+      <Moon />
+      <Sun />
     </group>
   );
 }

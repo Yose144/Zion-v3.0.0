@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { RING_R, RING_R2, ringPosition } from './positions';
+import { IssobellaStation } from './IssobellaStation';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
 import { layerColor } from '@/lib/worlds';
@@ -41,9 +42,15 @@ export function IssobellaRing({
         <torusGeometry args={[RING_R2, 0.02, 8, 128]} />
         <meshBasicMaterial ref={glow} color="#7ec8ff" transparent opacity={0.18} />
       </mesh>
-      {/* stanice L6 na prstenci */}
+      {/* vlajková stanice Issobella — procedurální model L6 */}
+      <IssobellaStation
+        position={[RING_R, 0, 0]}
+        scale={3.2}
+        onClick={portal ? () => onOpen(portal.id) : undefined}
+      />
+      {/* stanice L6 světů na prstenci */}
       {worlds.map((w, i) => {
-        const pos = ringPosition(w, i, worlds.length);
+        const pos = ringPosition(w, i + 1, worlds.length + 1);
         return (
           <mesh
             key={w.id}
@@ -59,7 +66,7 @@ export function IssobellaRing({
         );
       })}
       {portal && (
-        <Html position={[0, 0.6, RING_R]} center distanceFactor={16} style={{ pointerEvents: 'none' }}>
+        <Html position={[0, 0.7, RING_R]} center distanceFactor={16} style={{ pointerEvents: 'none' }}>
           <span
             className="scene-label scene-label-ring"
             style={{ pointerEvents: 'auto', cursor: 'pointer' }}
