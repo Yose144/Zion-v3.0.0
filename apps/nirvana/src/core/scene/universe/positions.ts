@@ -7,7 +7,10 @@ export const RING_R = 6.4;
 export const RING_R2 = 7.15;
 export const ORBIT_R = 5.05;
 export const GATE_POS: [number, number, number] = [10.6, 2.1, -7.2];
-export const SUN_POS: [number, number, number] = [34, 14, -26];
+export const SUN_POS: [number, number, number] = [0, 0, 0];
+/** Oběžná dráha zemské soustavy kolem Slunce (vně Neptunu — Nová Země je hrdina). */
+export const EARTH_ORBIT_R = 32;
+export const EARTH_ORBIT_SPEED = 0.012;
 
 export function hash01(id: string, salt = 0): number {
   let h = 2166136261 ^ salt;

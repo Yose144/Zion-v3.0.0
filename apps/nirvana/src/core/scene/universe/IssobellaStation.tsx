@@ -12,13 +12,62 @@ import * as THREE from 'three';
  * tmavomodrá solární křídla. Škáluje se parametrem.
  */
 
-const HULL = '#e8e0cd'; // teplá bílá z předlohy
+const HULL = '#f0f3f7'; // stříbrná bílá trupka
 const GOLD = '#e8c56a';
 const GLASS = '#dff2ff';
 const PARK = '#2f9e52';
 const WATER = '#3fa8d8';
 const PANEL = '#1a2a55';
 const WARM = '#ffd98f';
+
+/** Procedurální panelová textura trupu — stříbrné panely, švy, nýty. */
+function useHullTexture(): THREE.CanvasTexture {
+  return useMemo(() => {
+    const S = 512;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d')!;
+    ctx.fillStyle = '#dfe4ea';
+    ctx.fillRect(0, 0, S, S);
+    // panelová mřížka — každý panel lehce jiný odstín
+    const cols = 10;
+    const rows = 10;
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const v = 210 + ((x * 31 + y * 17) % 4) * 8 - 8;
+        ctx.fillStyle = `rgb(${v},${v + 3},${v + 8})`;
+        ctx.fillRect((x * S) / cols + 1, (y * S) / rows + 1, S / cols - 2, S / rows - 2);
+        // nýty v rozích panelu
+        ctx.fillStyle = '#9aa4b2';
+        ctx.beginPath();
+        ctx.arc((x * S) / cols + 5, (y * S) / rows + 5, 1.6, 0, 7);
+        ctx.arc(((x + 1) * S) / cols - 5, ((y + 1) * S) / rows - 5, 1.6, 0, 7);
+        ctx.fill();
+      }
+    }
+    // švy mezi panely
+    ctx.strokeStyle = '#8f99a8';
+    ctx.lineWidth = 1.4;
+    for (let i = 0; i <= cols; i++) {
+      ctx.beginPath();
+      ctx.moveTo((i * S) / cols, 0);
+      ctx.lineTo((i * S) / cols, S);
+      ctx.stroke();
+    }
+    for (let i = 0; i <= rows; i++) {
+      ctx.beginPath();
+      ctx.moveTo(0, (i * S) / rows);
+      ctx.lineTo(S, (i * S) / rows);
+      ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 1);
+    tex.anisotropy = 4;
+    return tex;
+  }, []);
+}
 
 export function IssobellaStation({
   position = [0, 0, 0],
@@ -33,6 +82,7 @@ export function IssobellaStation({
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const seg = low ? 24 : 48;
+  const hullTex = useHullTexture();
   // 10 biodomů + 3 vodní plochy kolem prstence
   const domes = useMemo(() => Array.from({ length: 10 }, (_, i) => (i / 10) * Math.PI * 2 + 0.31), []);
   const waters = useMemo(() => [0.7, 2.5, 4.6], []);
@@ -53,10 +103,10 @@ export function IssobellaStation({
       }}
     >
       <group scale={scale}>
-        {/* Habitat ring — bílo-zlatý trup */}
+        {/* Habitat ring — stříbrný panelový trup */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[0.16, 0.026, 12, seg]} />
-          <meshStandardMaterial color={HULL} emissive={GOLD} emissiveIntensity={0.22} roughness={0.35} metalness={0.75} />
+          <meshStandardMaterial map={hullTex} color={HULL} emissive="#2a3140" emissiveIntensity={0.15} roughness={0.4} metalness={0.75} />
         </mesh>
         {/* světelný pás oken v trupu */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
@@ -87,14 +137,14 @@ export function IssobellaStation({
           <group key={`s${i}`} rotation={[0, -a, 0]} position={[Math.cos(a) * 0.08, 0, Math.sin(a) * 0.08]}>
             <mesh rotation={[0, 0, Math.PI / 2]}>
               <cylinderGeometry args={[0.006, 0.006, 0.16, 6]} />
-              <meshStandardMaterial color={HULL} roughness={0.4} metalness={0.7} />
+              <meshStandardMaterial map={hullTex} color={HULL} roughness={0.4} metalness={0.7} />
             </mesh>
           </group>
         ))}
         {/* Hub — bílo-zlatá katedrála: základna + dome + spire */}
         <mesh position={[0, 0.01, 0]}>
           <cylinderGeometry args={[0.05, 0.06, 0.03, 16]} />
-          <meshStandardMaterial color={HULL} emissive={GOLD} emissiveIntensity={0.3} roughness={0.3} metalness={0.8} />
+          <meshStandardMaterial map={hullTex} color={HULL} emissive="#2a3140" emissiveIntensity={0.15} roughness={0.3} metalness={0.8} />
         </mesh>
         <mesh position={[0, 0.045, 0]}>
           <sphereGeometry args={[0.04, low ? 10 : 16, low ? 8 : 12]} />
@@ -107,11 +157,11 @@ export function IssobellaStation({
         {/* Dokovací truss dolů + modul na konci */}
         <mesh position={[0, -0.07, 0]}>
           <cylinderGeometry args={[0.005, 0.005, 0.12, 6]} />
-          <meshStandardMaterial color={HULL} roughness={0.4} metalness={0.7} />
+          <meshStandardMaterial map={hullTex} color={HULL} roughness={0.4} metalness={0.7} />
         </mesh>
         <mesh position={[0, -0.135, 0]}>
           <capsuleGeometry args={[0.012, 0.03, 4, 8]} />
-          <meshStandardMaterial color="#c9ccd4" roughness={0.4} metalness={0.7} />
+          <meshStandardMaterial map={hullTex} color="#dfe4ea" roughness={0.4} metalness={0.7} />
         </mesh>
         {/* Solární křídla — velké tmavomodré panely dle předlohy */}
         {[-1, 1].map((s) => (
