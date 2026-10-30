@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
   },
   transpilePackages: ['zion-wallet-sdk', '@noble/ed25519', '@noble/hashes'],
   turbopack: {
-    root: rootDir,
+    root: resolve(rootDir, '..'),
     resolveAlias: {
       net: {
         browser: emptyModule,

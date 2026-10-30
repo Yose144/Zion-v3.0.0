@@ -26,6 +26,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@genesis/runtime": [
+        "./src/lib/genesis-runtime.ts"
       ]
     }
   },
