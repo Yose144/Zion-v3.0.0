@@ -20,6 +20,8 @@ payments / miners / config / notifications).
 | Pool overview table (coin/algo/hr/miners) | coin cards w/ legs | ✅ |
 | Global hashrate + miners strip | net-strip | ✅ |
 | Per-coin luck/effort | LuckEffortCard | ✅ |
+| Announcements | static feed + home ticker | ✅ |
+| Global miners leaderboard | `/miners` top-50 | ✅ |
 
 ### Coin page `/coin/[id]`
 | HM feature | ours | status |
@@ -29,6 +31,7 @@ payments / miners / config / notifications).
 | Price chart | CG 7d / on-chain zion | ✅ |
 | Calculator | CalcCard | ✅ |
 | Mining config per miner | ConfigCards (TCP/TLS/SOLO) | ✅ |
+| Solo calculator | EV card under SOLO tab (nethash est) | ✅ |
 | External links | CoinGecko + explorer/site | ✅ |
 | Network hashrate | est. `pool_hr×100/luck_100` (zion) | ✅ /stats + KPI tile on coin |
 | Recent blocks + luck | table | ✅ |
@@ -89,7 +92,7 @@ payments / miners / config / notifications).
 
 ## Out of scope (HM-only, deliberate)
 - 🚫 24 languages (CS/EN)
-- 🚫 PPS+ / exchange wallets / MinerBox / announcements blog / hardware db
+- 🚫 PPS+ / exchange wallets / MinerBox / hardware db
 
 ## Blocked on operator
 - ⛔ `VASTCTL_TG_BOT_TOKEN`, `VASTCTL_TG_CHAT_ID`, `ALERT_WEBHOOK`,
