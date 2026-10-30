@@ -85,7 +85,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
   - [ ] 🤖 Funded E2E deposit → swap → withdraw s on-chain receipty (charta M1.2) → V33-3
 - [ ] **Passkeys**
   - [x] 🤖 Playwright E2E `e2e/passkey.spec.ts` (CDP virtual authenticator, mocked routes)
-  - [ ] 🤖 ZIS threat model + privacy review — dle charty prerekvizita passkeys (3.B2)
+  - [x] 🤖 ZIS threat model + privacy review — dle charty prerekvizita passkeys (3.B2) — 30. 10. `docs/3.2/ZIS_THREAT_MODEL_PRIVACY.md`: 9 findings (F-1 withdraw bez step-up 🔴, F-2 subdomain blast radius, F-3 challenge DoS, F-4 legacy verifier expiry, F-5..F-9), GDPR inventář, passkey launch prerekvizity
   - [ ] 🤖 Produkční E2E na ≥3 webech (app/market/freeworld) → V33-4 (3.B1)
 - [ ] 🤖 QTU/PRL attestation — address squatting fix před payout-gated linky (3.B3)
 - [ ] 🤖 Custody disclosure v UI (web custodial / desktop non-custodial) (3.B4)
