@@ -94,7 +94,7 @@ export function SceneRoot({
       <Canvas
         role="img"
         aria-label={label}
-        camera={{ position: [20, 5.5, 29], fov: 52 }}
+        camera={{ position: [15, 5, 19], fov: 52 }}
         style={{ width: '100%', height: '100%', display: 'block' }}
         gl={async (defaults) => {
           if (backend === 'webgpu' && !xr) {

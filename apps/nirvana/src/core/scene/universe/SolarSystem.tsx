@@ -76,20 +76,19 @@ interface PlanetDef {
 }
 
 /**
- * Velikosti: reálné relativní proporce (Země = 1 → Jupiter 11.2,
- * Saturn 9.4, Uranus 4.0, Neptun 3.9, Venuše 0.95, Mars 0.53,
- * Merkur 0.38) × display faktor 0.2 — Slunce r=5.5 drží dominanci.
- * Dráhy: komprimované reálné rozestupy (AU^~0.75 škálování).
- * tiltZ: skutečný axiální sklon v radiánech.
+ * Dráhy: reálné AU poměry √komprimováno (Merkur 0.39 AU → 7.0,
+ * Neptun 30.1 AU → 62.0). Zemská soustava sedí na 3. dráze = 11.3.
+ * Rychlosti: Kepler — úhlová rychlost ∝ r^-1.5.
+ * Velikosti: reálné poměry × 0.2; tiltZ = skutečný axiální sklon.
  */
 const PLANETS: PlanetDef[] = [
-  { id: 'mercury', tex: 'mercury', orbitR: 8.2, size: 0.1, speed: 0.34, spin: 0.006, tint: '#b0a89c', tiltZ: 0.001 },
-  { id: 'venus', tex: 'venus_atmosphere', orbitR: 10.6, size: 0.21, speed: 0.24, spin: -0.002, tint: '#e8c98a', tiltZ: 3.09 },
-  { id: 'mars', tex: 'mars', orbitR: 13.2, size: 0.12, speed: 0.19, spin: 0.024, tint: '#c1622f', tiltZ: 0.44 },
-  { id: 'jupiter', tex: 'jupiter', orbitR: 17.2, size: 2.25, speed: 0.11, spin: 0.06, tint: '#d8b58c', tiltZ: 0.05 },
-  { id: 'saturn', tex: 'saturn', orbitR: 21.8, size: 1.9, speed: 0.08, spin: 0.055, tint: '#e3cf9f', ring: true, tiltZ: 0.47 },
-  { id: 'uranus', tex: 'uranus', orbitR: 26.2, size: 0.8, speed: 0.056, spin: -0.04, tint: '#9fd8dc', tiltZ: 1.71 },
-  { id: 'neptune', tex: 'neptune', orbitR: 30.0, size: 0.78, speed: 0.044, spin: 0.04, tint: '#4d6fd1', tiltZ: 0.49 },
+  { id: 'mercury', tex: 'mercury', orbitR: 7.0, size: 0.1, speed: 0.4, spin: 0.006, tint: '#b0a89c', tiltZ: 0.001 },
+  { id: 'venus', tex: 'venus_atmosphere', orbitR: 9.6, size: 0.21, speed: 0.25, spin: -0.002, tint: '#e8c98a', tiltZ: 3.09 },
+  { id: 'mars', tex: 'mars', orbitR: 13.9, size: 0.12, speed: 0.14, spin: 0.024, tint: '#c1622f', tiltZ: 0.44 },
+  { id: 'jupiter', tex: 'jupiter', orbitR: 25.8, size: 2.25, speed: 0.057, spin: 0.06, tint: '#d8b58c', tiltZ: 0.05 },
+  { id: 'saturn', tex: 'saturn', orbitR: 35.0, size: 1.9, speed: 0.036, spin: 0.055, tint: '#e3cf9f', ring: true, tiltZ: 0.47 },
+  { id: 'uranus', tex: 'uranus', orbitR: 49.5, size: 0.8, speed: 0.021, spin: -0.04, tint: '#9fd8dc', tiltZ: 1.71 },
+  { id: 'neptune', tex: 'neptune', orbitR: 62.0, size: 0.78, speed: 0.015, spin: 0.04, tint: '#4d6fd1', tiltZ: 0.49 },
 ];
 
 /** Jedna planeta — oběh kolem Slunce + vlastní rotace. */
