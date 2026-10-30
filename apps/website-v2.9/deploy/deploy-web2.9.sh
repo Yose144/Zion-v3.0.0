@@ -27,37 +27,32 @@ echo "[deploy-web2.9] Building locally..."
 cd "$ROOT_DIR"
 npm run build
 
-STANDALONE_STATIC_DIR="${ROOT_DIR}/.next/standalone/.next/static"
-if [[ ! -d "$STANDALONE_STATIC_DIR" ]] || [[ -z "$(find "$STANDALONE_STATIC_DIR" -type f -print -quit)" ]]; then
-  echo "[deploy-web2.9] ERROR: standalone build is missing .next/static assets" >&2
+# Shared imports can make Next nest the app below the standalone root.
+APP_DIR="${ROOT_DIR}/.next/standalone"
+if [[ ! -f "${APP_DIR}/server.js" ]]; then
+  APP_DIR="${APP_DIR}/website-v2.9"
+fi
+if [[ ! -f "${APP_DIR}/server.js" ]] || [[ ! -d "${ROOT_DIR}/.next/static" ]]; then
+  echo "[deploy-web2.9] ERROR: standalone server or static assets missing" >&2
   exit 1
 fi
 
-# Standalone server serves public assets ONLY from .next/standalone/public/.
-# Next.js does NOT copy public/ there automatically — without this step every
-# /images/*, /docs/*, favicon etc. returns 404 (incident 2026-10-22).
-echo "[deploy-web2.9] Copying public/ -> .next/standalone/public/"
-mkdir -p "${ROOT_DIR}/.next/standalone/public"
-rsync -a --delete "${ROOT_DIR}/public/" "${ROOT_DIR}/.next/standalone/public/"
-
-# archive-content/ (Archive Pass gated books) — served by /api/archive/docs
-# which resolves it relative to cwd (.next/standalone on the server).
+mkdir -p "${APP_DIR}/.next/static"
+rsync -a --delete "${ROOT_DIR}/.next/static/" "${APP_DIR}/.next/static/"
+rsync -a --delete "${ROOT_DIR}/public/" "${APP_DIR}/public/"
 if [[ -d "${ROOT_DIR}/archive-content" ]]; then
-  echo "[deploy-web2.9] Copying archive-content/ -> .next/standalone/archive-content/"
-  mkdir -p "${ROOT_DIR}/.next/standalone/archive-content"
-  rsync -a --delete "${ROOT_DIR}/archive-content/" "${ROOT_DIR}/.next/standalone/archive-content/"
+  rsync -a --delete "${ROOT_DIR}/archive-content/" "${APP_DIR}/archive-content/"
 fi
 
-echo "[deploy-web2.9] Syncing to ${EDGE_HOST}:${REMOTE_DIR}"
-rsync -avz --delete \
-  --exclude='node_modules' \
+# The service starts .next/standalone/server.js; deploy the runnable app there,
+# including its traced dependencies, regardless of the local monorepo layout.
+echo "[deploy-web2.9] Syncing standalone app to ${EDGE_HOST}:${REMOTE_DIR}"
+rsync -az --delete \
   --exclude='.env.production' \
   --exclude='.env.local' \
-  --exclude='.next/cache' \
-  --exclude='.next/trace' \
-  -e 'ssh' \
-  "${ROOT_DIR}/" \
-  "${EDGE_HOST}:${REMOTE_DIR}/"
+  -e ssh \
+  "${APP_DIR}/" \
+  "${EDGE_HOST}:${REMOTE_DIR}/.next/standalone/"
 
 echo "[deploy-web2.9] Fixing ownership and restarting ${SERVICE}"
 ssh "${EDGE_HOST}" "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE}"
