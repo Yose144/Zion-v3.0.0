@@ -117,13 +117,20 @@ function Moon() {
 }
 
 /** L5 Free World — 12 zakládajících misí na reálných souřadnicích.
- *  Instancované světelné sloupky (barva = stav komunity) + jmenovka;
- *  klik otevře stránku komunity na app.zionterranova.com. */
+ *  Instancované světelné sloupky + pulzující kruhy na povrchu +
+ *  jmenovky; hover zvýrazní bod (kurzor odkazu, halo + tooltip ↗),
+ *  klik otevře 3D prezentaci nebo stránku komunity. */
 function MissionSites() {
   const pillars = useRef<THREE.InstancedMesh>(null);
   const tips = useRef<THREE.InstancedMesh>(null);
+  const hits = useRef<THREE.InstancedMesh>(null);
+  const rings = useRef<THREE.InstancedMesh>(null);
+  const halo = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const tipScale = useRef<number[]>([]);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const UP = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const FWD = useMemo(() => new THREE.Vector3(0, 0, 1), []);
   const quat = useMemo(() => new THREE.Quaternion(), []);
 
   const data = useMemo(
@@ -134,18 +141,23 @@ function MissionSites() {
           name: m.name,
           url: m.present ?? MISSION_ORIGIN + m.path,
           n,
-          h: 0.55,
+          h: 0.72,
           color: new THREE.Color(MISSION_STATUS_COLOR[m.status]),
         };
       }),
     [],
   );
 
+  if (tipScale.current.length !== data.length) tipScale.current = data.map(() => 1);
+
   useLayoutEffect(() => {
     const p = pillars.current;
     const t = tips.current;
-    if (!p || !t) return;
+    const h = hits.current;
+    const r = rings.current;
+    if (!p || !t || !h || !r) return;
     data.forEach((d, i) => {
+      // sloupek
       quat.setFromUnitVectors(UP, d.n);
       dummy.quaternion.copy(quat);
       dummy.position.copy(d.n).multiplyScalar(PLANET_R + d.h / 2);
@@ -153,17 +165,86 @@ function MissionSites() {
       dummy.updateMatrix();
       p.setMatrixAt(i, dummy.matrix);
       p.setColorAt(i, d.color);
+      // tip
       dummy.position.copy(d.n).multiplyScalar(PLANET_R + d.h + 0.025);
       dummy.scale.setScalar(1);
       dummy.updateMatrix();
       t.setMatrixAt(i, dummy.matrix);
       t.setColorAt(i, d.color);
+      // neviditelný hit target — větší plocha pro snadný hover
+      dummy.position.copy(d.n).multiplyScalar(PLANET_R + d.h * 0.55);
+      dummy.scale.setScalar(1);
+      dummy.updateMatrix();
+      h.setMatrixAt(i, dummy.matrix);
+      // kruh na povrchu — leží tečně na planetě
+      quat.setFromUnitVectors(FWD, d.n);
+      dummy.quaternion.copy(quat);
+      dummy.position.copy(d.n).multiplyScalar(PLANET_R + 0.02);
+      dummy.scale.setScalar(1);
+      dummy.updateMatrix();
+      r.setMatrixAt(i, dummy.matrix);
+      r.setColorAt(i, d.color);
     });
     p.instanceMatrix.needsUpdate = true;
     t.instanceMatrix.needsUpdate = true;
+    h.instanceMatrix.needsUpdate = true;
+    r.instanceMatrix.needsUpdate = true;
     if (p.instanceColor) p.instanceColor.needsUpdate = true;
     if (t.instanceColor) t.instanceColor.needsUpdate = true;
-  }, [data, dummy, UP, quat]);
+    if (r.instanceColor) r.instanceColor.needsUpdate = true;
+  }, [data, dummy, UP, FWD, quat]);
+
+  // pulz kruhů + hover zvětšení tipů + halo sleduje hovered bod
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const r = rings.current;
+    const tp = tips.current;
+    data.forEach((d, i) => {
+      if (r) {
+        quat.setFromUnitVectors(FWD, d.n);
+        dummy.quaternion.copy(quat);
+        dummy.position.copy(d.n).multiplyScalar(PLANET_R + 0.02);
+        const s = 1 + 0.3 * Math.sin(t * 2.4 + i * 1.7);
+        dummy.scale.setScalar(s);
+        dummy.updateMatrix();
+        r.setMatrixAt(i, dummy.matrix);
+      }
+      if (tp) {
+        tipScale.current[i] += ((i === hovered ? 1.8 : 1) - tipScale.current[i]) * 0.2;
+        quat.setFromUnitVectors(UP, d.n);
+        dummy.quaternion.copy(quat);
+        dummy.position.copy(d.n).multiplyScalar(PLANET_R + d.h + 0.025);
+        dummy.scale.setScalar(tipScale.current[i]);
+        dummy.updateMatrix();
+        tp.setMatrixAt(i, dummy.matrix);
+      }
+    });
+    if (r) r.instanceMatrix.needsUpdate = true;
+    if (tp) tp.instanceMatrix.needsUpdate = true;
+    const hl = halo.current;
+    if (hl) {
+      if (hovered != null) {
+        const d = data[hovered];
+        quat.setFromUnitVectors(FWD, d.n);
+        hl.quaternion.copy(quat);
+        hl.position.copy(d.n).multiplyScalar(PLANET_R + d.h + 0.02);
+        const s = 1 + 0.16 * Math.sin(t * 6);
+        hl.scale.setScalar(s);
+        hl.visible = true;
+      } else {
+        hl.visible = false;
+      }
+    }
+  });
+
+  const open = (i: number) => window.open(data[i].url, '_blank', 'noopener');
+  const hoverRef = useRef<number | null>(null);
+  const setHover = (i: number | null) => {
+    if (hoverRef.current === i) return;
+    hoverRef.current = i;
+    document.body.style.cursor = i == null ? 'auto' : 'pointer';
+    setHovered(i);
+  };
 
   return (
     <>
@@ -173,27 +254,77 @@ function MissionSites() {
         frustumCulled={false}
         raycast={() => null}
       >
-        <cylinderGeometry args={[0.014, 0.04, 1, 6, 1, true]} />
+        <cylinderGeometry args={[0.016, 0.05, 1, 6, 1, true]} />
         <meshBasicMaterial
           transparent
-          opacity={0.5}
+          opacity={0.6}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
         />
       </instancedMesh>
+      {/* pulzující kruhy na povrchu — markery čitelné na první pohled */}
+      <instancedMesh
+        ref={rings}
+        args={[undefined, undefined, data.length]}
+        frustumCulled={false}
+        raycast={() => null}
+      >
+        <ringGeometry args={[0.1, 0.15, 24]} />
+        <meshBasicMaterial transparent opacity={0.55} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+      </instancedMesh>
       <instancedMesh
         ref={tips}
         args={[undefined, undefined, data.length]}
         frustumCulled={false}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (e.instanceId != null) window.open(data[e.instanceId].url, '_blank', 'noopener');
-        }}
+        raycast={() => null}
       >
-        <sphereGeometry args={[0.05, 12, 12]} />
+        <sphereGeometry args={[0.055, 12, 12]} />
         <meshBasicMaterial />
       </instancedMesh>
+      {/* neviditelné hit targety — štědrá plocha pro hover i klik */}
+      <instancedMesh
+        ref={hits}
+        args={[undefined, undefined, data.length]}
+        frustumCulled={false}
+        onPointerMove={(e) => {
+          e.stopPropagation();
+          if (e.instanceId != null) setHover(e.instanceId);
+        }}
+        onPointerOut={() => setHover(null)}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.instanceId != null) open(e.instanceId);
+        }}
+      >
+        <sphereGeometry args={[0.16, 10, 8]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </instancedMesh>
+      {/* halo — zlatý kruh kolem hovered bodu */}
+      <group ref={halo} visible={false}>
+        <mesh>
+          <torusGeometry args={[0.17, 0.014, 8, 32]} />
+          <meshBasicMaterial color="#ffd870" transparent opacity={0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </mesh>
+        <mesh>
+          <torusGeometry args={[0.24, 0.006, 8, 32]} />
+          <meshBasicMaterial color="#ffe9a8" transparent opacity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} />
+        </mesh>
+      </group>
+      {/* tooltip — jméno + ↗ nad hovered bodem */}
+      {hovered != null && (
+        <TextLabel
+          text={`${data[hovered].name}  ↗`}
+          position={[
+            data[hovered].n.x * (PLANET_R + data[hovered].h + 0.62),
+            data[hovered].n.y * (PLANET_R + data[hovered].h + 0.62),
+            data[hovered].n.z * (PLANET_R + data[hovered].h + 0.62),
+          ]}
+          color="#ffffff"
+          height={0.3}
+          onClick={() => open(hovered)}
+        />
+      )}
       {data.map((d) => (
         <TextLabel
           key={d.name}
