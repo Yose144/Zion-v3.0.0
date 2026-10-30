@@ -40,22 +40,26 @@ pub enum ZisAuthMode {
 pub struct ZisIdentity {
     /// ZIS user id (`sub`).
     pub sub: String,
-    /// First linked `zion-l1` address, if any — used as a payout fallback
-    /// when the miner supplies no explicit payout_address.
+    /// First proven linked `zion-l1` address, if any — used as a payout
+    /// fallback when the miner supplies no explicit payout_address.
     pub zion_address: Option<String>,
-    /// First linked `quantus` address, if any.
+    /// First proven linked `quantus` address, if any.
     pub quantus_address: Option<String>,
-    /// First linked `pearl` address, if any (PRL payout fallback — F2e).
+    /// First proven linked `pearl` address, if any (PRL payout fallback — F2e).
     pub pearl_address: Option<String>,
-    /// Every linked address (any chain) — ownership check for the
+    /// Proven linked addresses only — ownership check for the
     /// `/public/v1/account/*` endpoints (A2.2/A2.3): a wallet must appear
-    /// here before its settings may be read or written.
+    /// here before its settings may be read or written.  Attestation-only
+    /// links (quantus/pearl flagged `proven:false` by ZIS) are excluded:
+    /// they prove control of the attesting ZION key, not the external
+    /// address, so honouring them would enable address squatting
+    /// (audit 3.B3).
     pub addresses: Vec<String>,
 }
 
 impl ZisIdentity {
-    /// `true` when `wallet` is a ZIS-linked address of this identity —
-    /// the sole ownership proof for account-scoped writes.
+    /// `true` when `wallet` is a *proven* ZIS-linked address of this
+    /// identity — the sole ownership proof for account-scoped writes.
     pub fn owns(&self, wallet: &str) -> bool {
         self.addresses.iter().any(|a| a == wallet)
     }
@@ -79,6 +83,19 @@ struct LinkedAddress {
     address: String,
     #[serde(rename = "chainType")]
     chain_type: String,
+    /// Ownership provenance flag emitted by ZIS (`proven:false` =
+    /// attestation-only link that does not prove external-key control).
+    /// Absent on older ZIS versions — treated conservatively: quantus and
+    /// pearl links are attestation-based by construction, so a missing
+    /// flag means unproven for them and proven for self-signed chains.
+    proven: Option<bool>,
+}
+
+impl LinkedAddress {
+    fn is_proven(&self) -> bool {
+        self.proven
+            .unwrap_or(!matches!(self.chain_type.as_str(), "quantus" | "pearl"))
+    }
 }
 
 pub struct ZisVerifier {
@@ -281,29 +298,33 @@ impl ZisVerifier {
     }
 
     /// Map a verified `user` payload to an identity — first-per-chain
-    /// payout fallbacks plus the full linked-address list used for
-    /// ownership checks on account endpoints.
+    /// payout fallbacks plus the *proven* linked-address list used for
+    /// ownership checks on account endpoints.  Unproven links (ZIS marks
+    /// quantus/pearl attestation links `proven:false`) never populate
+    /// payout fallbacks and never satisfy `owns()` — a squatted external
+    /// address must not grant payout attribution or account writes.
     fn identity_from_user(u: VerifyUser) -> Option<ZisIdentity> {
         u.id.map(|sub| ZisIdentity {
             sub,
             zion_address: u
                 .linked_addresses
                 .iter()
-                .find(|a| a.chain_type == "zion-l1")
+                .find(|a| a.chain_type == "zion-l1" && a.is_proven())
                 .map(|a| a.address.clone()),
             quantus_address: u
                 .linked_addresses
                 .iter()
-                .find(|a| a.chain_type == "quantus")
+                .find(|a| a.chain_type == "quantus" && a.is_proven())
                 .map(|a| a.address.clone()),
             pearl_address: u
                 .linked_addresses
                 .iter()
-                .find(|a| a.chain_type == "pearl")
+                .find(|a| a.chain_type == "pearl" && a.is_proven())
                 .map(|a| a.address.clone()),
             addresses: u
                 .linked_addresses
                 .iter()
+                .filter(|a| a.is_proven())
                 .map(|a| a.address.clone())
                 .collect(),
         })
@@ -349,8 +370,8 @@ mod tests {
     #[tokio::test]
     async fn verify_valid_key_binds_identity_and_caches() {
         let body = r#"{"valid":true,"user":{"id":"u42","linkedAddresses":[
-            {"address":"zion1link","chainType":"zion-l1"},
-            {"address":"qz99","chainType":"quantus"}]}}"#
+            {"address":"zion1link","chainType":"zion-l1","proven":true},
+            {"address":"qz99","chainType":"quantus","proven":true}]}}"#
             .to_string();
         let (url, hits) = mock_zis(vec![body]).await;
         let v = verifier_for(url);
@@ -372,8 +393,8 @@ mod tests {
         // F2e: a `chainType:"pearl"` linked address lands on
         // `ZisIdentity::pearl_address` (PRL payout fallback).
         let body = r#"{"valid":true,"user":{"id":"u9","linkedAddresses":[
-            {"address":"prl1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq","chainType":"pearl"},
-            {"address":"qz77","chainType":"quantus"}]}}"#
+            {"address":"prl1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq","chainType":"pearl","proven":true},
+            {"address":"qz77","chainType":"quantus","proven":true}]}}"#
             .to_string();
         let (url, _hits) = mock_zis(vec![body]).await;
         let v = verifier_for(url);
@@ -474,6 +495,11 @@ mod tests {
     /// A2.2/A2.3: `verify_blocking` hits `{url}/api/keys/verify`, parses the
     /// linked-address list into `addresses` for ownership checks, and
     /// shares the cache with the async path.
+    ///
+    /// 3.B3 regression: quantus/pearl links without `proven:true` are
+    /// attestation-only — they must NOT populate payout fallbacks and must
+    /// NOT satisfy `owns()`.  A squatter who links a victim's qz/prl
+    /// address gains no payout attribution or account-settings access.
     #[test]
     fn verify_blocking_binds_identity_and_owns() {
         let url = mock_zis_blocking(|req| {
@@ -481,7 +507,7 @@ mod tests {
                 r#"{"valid":true,"user":{"id":"u7","linkedAddresses":[
                     {"address":"zion1w","chainType":"zion-l1"},
                     {"address":"q1w","chainType":"quantus"},
-                    {"address":"p1w","chainType":"pearl"}]}}"#
+                    {"address":"p1w","chainType":"pearl","proven":false}]}}"#
             } else {
                 r#"{"valid":false}"#
             }
@@ -491,16 +517,40 @@ mod tests {
         let idn = v.verify_blocking("zis_good_token").unwrap();
         assert_eq!(idn.sub, "u7");
         assert_eq!(idn.zion_address.as_deref(), Some("zion1w"));
-        assert_eq!(idn.pearl_address.as_deref(), Some("p1w"));
-        assert_eq!(
-            idn.addresses,
-            vec!["zion1w".to_string(), "q1w".to_string(), "p1w".to_string()]
-        );
+        // Unproven attestation links never become payout fallbacks —
+        // `quantus` missing the flag (old-ZIS shape) and `pearl` flagged
+        // false are gated the same way.
+        assert_eq!(idn.quantus_address, None);
+        assert_eq!(idn.pearl_address, None);
+        assert_eq!(idn.addresses, vec!["zion1w".to_string()]);
         assert!(idn.owns("zion1w"));
-        assert!(idn.owns("q1w"));
+        assert!(!idn.owns("q1w"));
+        assert!(!idn.owns("p1w"));
         assert!(!idn.owns("zion1other"));
         assert!(!idn.owns(""));
         // Invalid → None (fail-closed for account writes).
         assert!(v.verify_blocking("zis_bad_token").is_none());
+    }
+
+    /// `proven:true` restores a quantus/pearl link for payout fallback and
+    /// ownership — the shape a future external-chain proof flow emits.
+    #[test]
+    fn verify_blocking_proven_attestation_links_apply() {
+        let url = mock_zis_blocking(|req| {
+            if req.contains("zis_good_token") {
+                r#"{"valid":true,"user":{"id":"u8","linkedAddresses":[
+                    {"address":"q2w","chainType":"quantus","proven":true},
+                    {"address":"p2w","chainType":"pearl","proven":true}]}}"#
+            } else {
+                r#"{"valid":false}"#
+            }
+            .to_string()
+        });
+        let v = verifier_for(url);
+        let idn = v.verify_blocking("zis_good_token").unwrap();
+        assert_eq!(idn.quantus_address.as_deref(), Some("q2w"));
+        assert_eq!(idn.pearl_address.as_deref(), Some("p2w"));
+        assert!(idn.owns("q2w"));
+        assert!(idn.owns("p2w"));
     }
 }

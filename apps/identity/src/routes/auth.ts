@@ -22,6 +22,7 @@ import {
   EmailError,
 } from '../lib/email.js';
 import { auditBg } from '../lib/audit.js';
+import { withLinkProvenance } from '../lib/provenance.js';
 import { inc, M } from '../lib/metrics.js';
 import { createHash } from 'node:crypto';
 
@@ -531,7 +532,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     if (!user) {
       return reply.code(404).send({ error: 'NOT_FOUND' });
     }
-    return user;
+    return { ...user, linkedAddresses: withLinkProvenance(user.linkedAddresses) };
   });
 
   // ── PATCH /me ───────────────────────────────────────────────────
@@ -558,7 +559,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       data: update,
       include: { linkedAddresses: true, oasisPlayer: true },
     });
-    return user;
+    return { ...user, linkedAddresses: withLinkProvenance(user.linkedAddresses) };
   });
 
   // ── DELETE /me — account self-deletion ──────────────────────────
@@ -751,7 +752,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(404).send({ error: 'NOT_FOUND' });
     }
 
-    return { linked, user };
+    return { linked, user: { ...user, linkedAddresses: withLinkProvenance(user.linkedAddresses) } };
   });
 
   // ── DELETE /link/:address — unlink a secondary address ─────────
@@ -813,7 +814,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       address: link.address,
       meta: { previous },
     });
-    return user;
+    return { ...user, linkedAddresses: withLinkProvenance(user.linkedAddresses) };
   });
 
   // ── POST /email/verify/request — send a verification mail ──────

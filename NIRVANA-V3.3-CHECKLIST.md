@@ -87,8 +87,8 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
   - [x] 🤖 Playwright E2E `e2e/passkey.spec.ts` (CDP virtual authenticator, mocked routes)
   - [x] 🤖 ZIS threat model + privacy review — dle charty prerekvizita passkeys (3.B2) — 30. 10. `docs/3.2/ZIS_THREAT_MODEL_PRIVACY.md`: 9 findings (F-1 withdraw bez step-up 🔴, F-2 subdomain blast radius, F-3 challenge DoS, F-4 legacy verifier expiry, F-5..F-9), GDPR inventář, passkey launch prerekvizity
   - [ ] 🤖 Produkční E2E na ≥3 webech (app/market/freeworld) → V33-4 (3.B1)
-- [ ] 🤖 QTU/PRL attestation — address squatting fix před payout-gated linky (3.B3)
-- [ ] 🤖 Custody disclosure v UI (web custodial / desktop non-custodial) (3.B4)
+- [x] 🤖 QTU/PRL attestation — address squatting gate před payout-gated linky (3.B3) — 31. 10. `docs/3.2/REPORTS/REPORT_2026-10-31_3B3_LINK_PROVENANCE.md`: ZIS emituje `proven` (quantus/pearl=false — attestation-only), pool gate payout fallbacky + `owns()` na proven linky; residual: link-409 DoS (dispute/unlink flow) + external-key proof (ML-DSA/XMSS verify nebo on-chain marker) zůstává follow-up
+- [x] 🤖 Custody disclosure v UI (web custodial / desktop non-custodial) (3.B4) — 30. 10. `/wallet/multichain` banner + withdraw warn (platforma drží klíče vs. Nativní/desktop non-custodial), mitigace F-1 z threat modelu
 - [ ] 🤖 ZIS agent sub-accounts — Prisma schema + budgety (design + migrace draft)
 - [ ] 🤖 QTC integrace ([`QUANTUS-INTEGRATION-PLAN.md`](docs/3.2/QUANTUS-INTEGRATION-PLAN.md)): F1 adapter (gated testnet) → F2 keyring → F3 watchtower → F5 wallet pod ZIS
 - [ ] 🔀 DAO: guardian registry deploy, treasury sign flow + 👤 klíč, QV rozhodnutí (4.B8, 4.B9)

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createHash, randomBytes } from 'node:crypto';
 import { requireAuth } from '../lib/auth.js';
 import { auditBg } from '../lib/audit.js';
+import { withLinkProvenance } from '../lib/provenance.js';
 import { inc, M } from '../lib/metrics.js';
 
 const CreateKeySchema = z.object({
@@ -45,7 +46,10 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'User not found' });
     }
     inc(M.apikeyVerify, { result: 'ok' });
-    return { valid: true, user };
+    // Consumers treat linkedAddresses as ownership proofs (pool payout
+    // attribution, `owns()` on account endpoints) — mark quantus/pearl
+    // links as unproven because attestation only proves the ZION key.
+    return { valid: true, user: { ...user, linkedAddresses: withLinkProvenance(user.linkedAddresses) } };
   });
 
   // Create a new API key for the current user
