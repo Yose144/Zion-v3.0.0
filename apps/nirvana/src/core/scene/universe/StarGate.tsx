@@ -2,12 +2,11 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Html, useTexture } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { GATE_POS } from './positions';
 import type { Portal } from '@/core/portals/manifest';
 
-const TUNNEL_LAYERS = 6;
 const TUNNEL_DEPTH = 2.8;
 const CHEVRONS = 39;
 
@@ -31,57 +30,62 @@ function useSoftSprite(): THREE.CanvasTexture {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Glyph textury z IntroPage — luminance → alpha (PNG bez alpha)      */
+/*  WORMHOLE TUNEL — skutečné 3D prstence místo plochých PNG            */
+/*  polygonální rámy střídající CW/CCW, flare do hloubky                */
 /* ------------------------------------------------------------------ */
-function glyphMask(src: THREE.Texture): THREE.CanvasTexture | null {
-  const img = src.image as HTMLImageElement | undefined;
-  if (!img || !img.width) return null;
-  const canvas = document.createElement('canvas');
-  canvas.width = img.width;
-  canvas.height = img.height;
-  const ctx = canvas.getContext('2d')!;
-  ctx.drawImage(img, 0, 0);
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const px = data.data;
-  for (let i = 0; i < px.length; i += 4) {
-    const l = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) / 255;
-    const a = Math.pow(Math.max(0, (l - 0.3) / 0.7), 1.35);
-    px[i] = 255;
-    px[i + 1] = 255;
-    px[i + 2] = 255;
-    px[i + 3] = Math.min(255, a * 255);
-  }
-  ctx.putImageData(data, 0, 0);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
-}
+const TUNNEL_RINGS = 12;
 
-/** Jedna plochá vrstva vadžry v tunelu — ponecháno pár pro kaleidoskopickou hloubku. */
-function TunnelLayer({ tex, index, total }: { tex: THREE.Texture; index: number; total: number }) {
-  const mesh = useRef<THREE.Mesh>(null);
-  const f = index / Math.max(total - 1, 1);
-  const z = -0.3 - f * TUNNEL_DEPTH;
-  const scale = 1.45 + f * 0.5;
-  const opacity = 0.5 * (1 - f) + 0.05;
-  const speed = (index % 2 === 0 ? 1 : -1) * (0.4 - f * 0.25);
-  useFrame((_, delta) => {
-    if (mesh.current) mesh.current.rotation.z += delta * speed;
+function TunnelRings() {
+  const group = useRef<THREE.Group>(null);
+  const rings = useMemo(
+    () =>
+      Array.from({ length: TUNNEL_RINGS }, (_, i) => {
+        const f = i / (TUNNEL_RINGS - 1);
+        return {
+          key: i,
+          z: -0.3 - f * TUNNEL_DEPTH,
+          r: 1.15 + f * 0.75,
+          sides: i % 3 === 0 ? 6 : 8, // hex/oktagon střídavě
+          speed: (i % 2 === 0 ? 1 : -1) * (0.5 - f * 0.3),
+          color: i % 2 === 0 ? ICE : GOLD,
+          opacity: 0.75 * (1 - f) + 0.1,
+        };
+      }),
+    [],
+  );
+  useFrame(({ clock }, delta) => {
+    const t = clock.getElapsedTime();
+    if (!group.current) return;
+    group.current.children.forEach((c, i) => {
+      c.rotation.z += delta * rings[i].speed;
+      const s = 1 + Math.sin(t * 1.4 + i * 0.9) * 0.03;
+      c.scale.setScalar(s);
+    });
   });
   return (
-    <mesh ref={mesh} position={[0, 0, z]} scale={scale}>
-      <planeGeometry args={[2.1, 2.1]} />
-      <meshBasicMaterial
-        map={tex}
-        color={ICE}
-        transparent
-        opacity={opacity}
-        side={THREE.DoubleSide}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </mesh>
+    <group ref={group}>
+      {rings.map((r) => (
+        <mesh key={r.key} position={[0, 0, r.z]}>
+          <torusGeometry args={[r.r, 0.016, 4, r.sides]} />
+          <meshBasicMaterial
+            color={r.color}
+            transparent
+            opacity={r.opacity}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      ))}
+      {/* podélná žebra spojující prstence — skutečný objem */}
+      {Array.from({ length: 8 }, (_, i) => (i / 8) * Math.PI * 2).map((a, i) => (
+        <group key={`rib${i}`} rotation={[0, 0, a]}>
+          <mesh position={[0, 1.5, -TUNNEL_DEPTH / 2]} rotation={[0.42, 0, 0]}>
+            <boxGeometry args={[0.012, 0.012, TUNNEL_DEPTH + 0.6]} />
+            <meshBasicMaterial color={ICE} transparent opacity={0.18} depthWrite={false} blending={THREE.AdditiveBlending} />
+          </mesh>
+        </group>
+      ))}
+    </group>
   );
 }
 
@@ -467,8 +471,6 @@ export function StarGate({ portal, onOpen }: { portal: Portal; onOpen: (id: stri
   const gate = useRef<THREE.Group>(null);
   const [hover, setHover] = useState(false);
   const sprite = useSoftSprite();
-  const [vajraSrc] = useTexture(['/stargate/2.png']);
-  const masks = useMemo(() => ({ vajra: glyphMask(vajraSrc) }), [vajraSrc]);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
@@ -514,8 +516,8 @@ export function StarGate({ portal, onOpen }: { portal: Portal; onOpen: (id: stri
       <Kawoosh sprite={sprite} hover={hover} />
       {/* volumetrická nebula v tunelu */}
       <Nebula sprite={sprite} />
-      {/* kaleidoskopické vrstvy vadžry pro hloubku */}
-      {masks.vajra && Array.from({ length: TUNNEL_LAYERS }, (_, i) => <TunnelLayer key={i} tex={masks.vajra!} index={i} total={TUNNEL_LAYERS} />)}
+      {/* geometrický wormhole tunel — 3D prstence + žebra */}
+      <TunnelRings />
       {/* skutečné 3D objekty v hrdle brány */}
       <Vajra />
       <Meru />
