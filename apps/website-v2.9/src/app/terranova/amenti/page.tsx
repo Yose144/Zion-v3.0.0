@@ -26,6 +26,7 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+const AmentiPreviewLazy = dynamic(() => import('@/components/AmentiPreviewLazy'), { ssr: false });
 
 const ACCENT = '52, 211, 153';
 const ACCENT_TEXT = 'text-emerald-200';
@@ -45,6 +46,8 @@ const Copy = {
     cs: `Amenti je dvanáctý a poslední bod L5 Free World — a uzavírá síť na místě, kde se záznam poprvé stal svatým. Plateau Gízy — Velká pyramida Chufu, Rachef, Menkauré a Velká sfinga — je jediný dochovaný div antického světa: ~4 500 let trvání jednoho záznamu, přežité dynastie, náboženství i technologie. A pod pískem — v mýtické geografii sítě — leží Síně Amenti ze Smaragdových desek Thovtových: síně mrtvých a živých, kde 32 Dětí Světla u dvaatřiceti trůnů hlídá moudrost, dokud ji lidstvo znovu nebude potřebovat, a uprostřed hoří Kvetoucí Plamen. Upřímně, jak sama kapitola korpusu říká: Desky jsou novodobý esoterní text, ne egyptologický artefakt — čteme je jako literární archetyp. Ale jako obraz popisují přesně to, čím síť chce být: nezničitelný, otevřený archiv pravdy — a Kvantová revoluce klade Smaragdové desky jako první kořen Stromu života: „Jak nahoře, tak dole. Jak uvnitř, tak vně." To je přesně struktura blockchainu — každý uzel nese celek. Uzel jako vztah, ne stavba — a jeho digitální protějšek, Amenti Library, už sítí běží.`,
     en: `Amenti is the twelfth and final node of L5 Free World — closing the network at the place where the record first became sacred. The Giza plateau — the Great Pyramid of Khufu, Khafre, Menkaure and the Great Sphinx — is the last surviving Wonder of the ancient world: ~4,500 years of a single record that outlived dynasties, religions and technologies. And beneath the sand — in the mythic geography of the network — lie the Halls of Amenti from the Emerald Tablets of Thoth: halls of the dead and the living, where the 32 Children of Light keep wisdom at thirty-two thrones until humanity needs it again, and at the centre burns the Flower of Light. Honestly, as the corpus chapter itself says: the Tablets are a modern esoteric text, not an Egyptological artefact — we read them as literary archetype. But as an image they describe exactly what the network wants to be: an indestructible, open archive of truth — and the Quantum Revolution places the Emerald Tablets as the first root of the Tree of Life: "As above, so below. As within, so without." That is precisely the structure of a blockchain — every node holds the whole. A node as relationship, not construction — and its digital counterpart, the Amenti Library, already runs on the network.`,
   },
+  threeDPreview: { cs: `3D koncept`, en: `3D concept` },
+  threeDPreviewSubtitle: { cs: `Interaktivní model Amenti — zlatá pyramida s otevřenou síní záznamů, kosmická bytost v mandale Květu života s vejcem Hiranyagarbha, hvězdná tvář, Země s orbitální stanicí a oáza pod pyramidami Gízy.`, en: `Interactive model of Amenti — golden pyramid with an open hall of records, cosmic being in a Flower-of-Life mandala holding the Hiranyagarbha egg, star face, Earth with orbital station and oasis under the Giza pyramids.` },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
   featuresSubtitle: { cs: `Záznam & síň`, en: `Record & hall` },
   hallsTitle: { cs: `Síně Amenti — síně mrtvých a živých`, en: `The Halls of Amenti — halls of the dead and the living` },
@@ -572,6 +575,26 @@ export default function AmentiPage() {
             <p className="text-gray-300 leading-relaxed">
               {Copy.introBody[cs ? 'cs' : 'en']}
             </p>
+          </div>
+        </motion.section>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': ACCENT } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className={`text-[10px] uppercase tracking-[0.45em] ${ACCENT_TEXT}/65 mb-1`}>
+                {Copy.threeDPreview[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {Copy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <AmentiPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
           </div>
         </motion.section>
 

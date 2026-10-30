@@ -31,7 +31,7 @@ export const FREE_WORLD_MISSIONS: FreeWorldMission[] = [
   { key: 'maria-del-camino', name: 'María del Camino', lat: 42.43, lon: -8.65, status: 'preparation', path: '/terranova/maria-del-camino', present: '/present/maria-del-camino' },
   { key: 'boa-esperanca', name: 'Boa Esperança', lat: -34.35, lon: 18.47, status: 'vision', path: '/terranova/boa-esperanca', present: '/present/boa-esperanca' },
   { key: 'kailash', name: 'Kailash', lat: 31.07, lon: 81.31, status: 'vision', path: '/terranova/kailash', present: '/present/kailash' },
-  { key: 'amenti', name: 'Amenti · Giza', lat: 29.98, lon: 31.13, status: 'vision', path: '/terranova/amenti' },
+  { key: 'amenti', name: 'Amenti · Giza', lat: 29.98, lon: 31.13, status: 'vision', path: '/terranova/amenti', present: '/present/amenti' },
 ];
 
 export const MISSION_STATUS_COLOR: Record<MissionStatus, string> = {
