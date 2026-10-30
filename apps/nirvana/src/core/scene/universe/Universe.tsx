@@ -57,19 +57,16 @@ export function Universe({
   const earthAngle = useRef(Math.PI * 0.18);
 
   const split = useMemo(() => {
-    const surface: WorldPoint[] = [];
     const ring: WorldPoint[] = [];
     const orbit: WorldPoint[] = [];
     for (const w of worlds) {
-      const slot = worldSlot(w);
-      if (slot === 'surface') surface.push(w);
-      else if (slot === 'ring') ring.push(w);
+      if (w.layer === 5) continue; // L5 světy = jen menu (World portal), ne scéna
+      if (worldSlot(w) === 'ring') ring.push(w);
       else orbit.push(w);
     }
-    return { surface, ring, orbit };
+    return { ring, orbit };
   }, [worlds]);
 
-  const surfacePortals = portals.filter((p) => p.scene.slot === 'surface' || p.scene.slot === 'core');
   const ringPortal = portals.find((p) => p.scene.slot === 'ring');
   const gatePortal = portals.find((p) => p.scene.slot === 'gate');
 
@@ -96,12 +93,7 @@ export function Universe({
 
       {/* zemská soustava — obíhá Slunce jako jeden svět */}
       <group ref={earthSys} position={[EARTH_ORBIT_R, 0, 0]}>
-        <NewEarth
-          worlds={split.surface}
-          surfacePortals={surfacePortals}
-          onOpen={onOpen}
-          onSelectWorld={onSelectWorld}
-        />
+        <NewEarth />
         <IssobellaRing
           worlds={split.ring}
           portal={ringPortal}

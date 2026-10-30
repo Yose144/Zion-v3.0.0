@@ -1,4 +1,3 @@
-import type { SurfaceSpot } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
 
 /** Nová Země — geografie scény. Radiály a úhly jsou canon-stable. */
@@ -29,34 +28,6 @@ export function latLonToVec3(lat: number, lon: number, r: number): [number, numb
     r * Math.cos(phi),
     r * Math.sin(phi) * Math.sin(theta),
   ];
-}
-
-/** Pevná místa na povrchu — funkcionální spoty manifestu. */
-export const SURFACE_SPOTS: Record<SurfaceSpot, { lat: number; lon: number }> = {
-  harbor: { lat: -6, lon: -55 },
-  market: { lat: 16, lon: 38 },
-  forge: { lat: -18, lon: 108 },
-  library: { lat: 34, lon: -142 },
-  beacon: { lat: 58, lon: 172 },
-  gate: { lat: 0, lon: 0 }, // nepoužívá se — gate visí volně
-  ring: { lat: 0, lon: 0 },
-};
-
-export function spotPosition(spot: SurfaceSpot, r = PLANET_R + 0.06): [number, number, number] {
-  const s = SURFACE_SPOTS[spot];
-  return latLonToVec3(s.lat, s.lon, r);
-}
-
-/** L5 svět → bod na povrchu (deterministicky z id). */
-export function surfacePosition(world: WorldPoint, r = PLANET_R + 0.03): [number, number, number] {
-  if (world.galaxyPosition) {
-    const g = world.galaxyPosition;
-    const len = Math.hypot(g.x, g.y, g.z) || 1;
-    return [(g.x / len) * r, (g.y / len) * r, (g.z / len) * r];
-  }
-  const lat = -55 + hash01(world.id, 7) * 110;
-  const lon = hash01(world.id, 13) * 360 - 180;
-  return latLonToVec3(lat, lon, r);
 }
 
 /** L6 svět → stanice na prstenci Issobelly. */
