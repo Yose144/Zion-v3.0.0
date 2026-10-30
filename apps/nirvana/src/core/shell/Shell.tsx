@@ -158,7 +158,7 @@ export function Shell() {
       <header className="chrome">
         <div>
           <strong>{t('title')}</strong>
-          <span className="muted"> · {t('subtitle')}</span>
+          <span className="muted subtitle"> · {t('subtitle')}</span>
           {backend && <span className="badge">{backend}</span>}
         </div>
         <div className="chrome-actions">

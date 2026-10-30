@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Portal } from '@/core/portals/manifest';
@@ -13,6 +13,25 @@ import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { SpaceBackdrop } from './SpaceBackdrop';
 import { SolarSystem } from './SolarSystem';
+
+/** Portrait / úzké viewporty: širší fov + větší počáteční odstup,
+ *  ať planeta nezaplní celý záběr a zůstane vidět kontext. */
+function ResponsiveFraming() {
+  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
+  const size = useThree((s) => s.size);
+  const didInit = useRef(false);
+  useEffect(() => {
+    const aspect = size.width / Math.max(1, size.height);
+    camera.fov = aspect < 0.75 ? 64 : aspect < 1.1 ? 58 : 52;
+    camera.updateProjectionMatrix();
+    if (!didInit.current) {
+      didInit.current = true;
+      const d = aspect < 0.75 ? 1.85 : aspect < 1.1 ? 1.45 : 1;
+      camera.position.set(15 * d, 5 * d, 19 * d);
+    }
+  }, [camera, size]);
+  return null;
+}
 
 /**
  * Vesmír Království srdce — heliocentrická soustava.
@@ -95,6 +114,7 @@ export function Universe({
 
       <SolarSystem />
 
+      <ResponsiveFraming />
       <OrbitControls
         ref={controls as never}
         makeDefault
