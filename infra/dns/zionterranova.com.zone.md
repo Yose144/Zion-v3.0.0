@@ -72,6 +72,7 @@ dashboard          	3600	IN A    	62.171.141.136       ; ← NEW explicit: ops d
 explorer           	3600	IN A    	62.171.141.136       ; beze změny (vhost zatím není ani na Edge)
 grafana            	3600	IN A    	62.171.141.136       ; ← NEW explicit: monitoring (dnes přes wildcard)
 mining             	3600	IN A    	62.171.141.136       ; beze změny
+nirvana            	3600	IN A    	62.171.141.136       ; ← NEW 2026-10-30: 3D portál na EDGE :3010 (live zatím resolvuje wildcardem — tento explicit = pojistka)
 testnet            	3600	IN A    	62.171.141.136       ; beze změny
 
 ; ─── mail/WebGlobe (beze změny) ─────────────────────────────────────────
@@ -106,6 +107,7 @@ _dmarc             	3600	IN TXT  	"v=DMARC1; p=quarantine; rua=mailto:security@z
 | `grafana` | *(wildcard→edge)* | 62.171.141.136 | **nový explicit** — monitoring zůstává |
 | `*` | 62.171.141.136 | *(beze změny)* | fáze 2 až po stabilizaci |
 | `api`, `explorer`, `mining`, `testnet` | 62.171.141.136 | *(beze změny)* | explicit, zůstává Edge |
+| `nirvana` | *(wildcard→edge)* | 62.171.141.136 | **nový web na EDGE** (`zion-nirvana` :3010) — explicit navržen jako pojistka (live = wildcard); při přesunu na EDGE2 změnit na `207.180.217.100` + deploy + vhost |
 | mail/MX/TXT/NS/CAA/SRV | — | *(beze změny)* | WebGlobe mail nedotčen |
 
 > **Pozn.** `api./explorer./mining.` dnes nemají funkční vhost ani na Edge —
@@ -125,15 +127,16 @@ _dmarc             	3600	IN TXT  	"v=DMARC1; p=quarantine; rua=mailto:security@z
 
 ```bash
 # 1) DNS propagace
-for d in @ www app auth freeworld market oasis pool rpc; do
+for d in @ www app auth freeworld market oasis pool rpc nirvana; do
   dig +short ${d}.zionterranova.com A | sed 's/^/@ /'
-done   # očekáváno: 207.180.217.100 (kromě apex formátu)
+done   # očekáváno: 207.180.217.100 (kromě apex formátu); nirvana = 62.171.141.136
 
 # 2) HTTPS smoke přes novou IP
 for h in zionterranova.com www.zionterranova.com app.zionterranova.com \
          auth.zionterranova.com freeworld.zionterranova.com \
          market.zionterranova.com oasis.zionterranova.com \
-         pool.zionterranova.com rpc.zionterranova.com; do
+         pool.zionterranova.com rpc.zionterranova.com \
+         nirvana.zionterranova.com; do
   curl -s -o /dev/null -w "$h -> %{http_code}\n" https://$h/
 done
 
@@ -157,3 +160,9 @@ curl -s https://oasis.zionterranova.com/health
   Dovecot/postfix/cert hooks z Edge sem NEpřenášet.
 - **Edge nginx zůstává živý** jako fallback po celou fázi 1 — nic na něm
   nevypínat, dokud fáze 2 neschválí decommission.
+- **`nirvana.` (2026-10-30)** — první nový veřejný web nasazený **na Edge**
+  po cutoveru (výjimka): live DNS řeší přes wildcard `*→62.171.141.136`,
+  v zóně navržen i explicitní záznam jako pojistka (k syncu do WebGlobe).
+  Před fází 2 rozhodnout cíl: buď přesun na EDGE2 (`207.180.217.100`,
+  deploy `ZION_EDGE_HOST=zion-edge2`), nebo nechat na Edgi (pak zůstane
+  mimo web-tier standard).

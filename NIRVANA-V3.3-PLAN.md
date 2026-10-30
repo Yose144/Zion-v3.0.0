@@ -34,6 +34,7 @@ Změřeno na Edge (`zion-v6`, `vmi3425821`) + lokální repo HEAD `92ef9e1aa`:
 |---|---|---|
 | WebAuthn/Passkey | kód hotový, čekal deploy | ✅ **nasazeno na Edge** (routes live, auth-gated) |
 | `freeworld.zionterranova.com` | neexistovalo | ✅ dedikovaný vhost, QV balloty se ZIS session |
+| `nirvana.zionterranova.com` | neexistovalo | ✅ **3D portál LIVE 2026-10-30** — `apps/nirvana` (Next.js + R3F WebGL2): reálná obloha ESO, sluneční soustava s texturami, 410 OASIS světů; `zion-nirvana` na EDGE :3010, DNS přes wildcard→EDGE (deploy `apps/nirvana/deploy/deploy-nirvana.sh`) |
 | Pool public API/UI | plán | ✅ F4–F6 live: `/public/v1`, TLS 8445, L1 failover |
 | PRL pipeline | disabled placeholder | ✅ edge wiring: native payout leg + oracle + dry-run |
 | G8 run | neprobíhal / run#1 fail | run#2 **failed** (95.27 % uptime) — stabilizace je kritický blocker |

@@ -25,8 +25,11 @@ Všechny skripty: lokální build → rsync → restart/reload → smoke check (
 | pool.zionterranova.com | `apps/pool-ui/deploy/deploy-pool.sh` | `zion-edge2` | `/var/www/pool` | nginx reload (`--nginx` instaluje vhost z `infra/nginx/edge2/`) |
 | auth.zionterranova.com | `apps/identity/deploy/deploy-zis.sh` | `zion-edge2` (service + nginx) | `/opt/zion/identity` | `zion-zis` restart |
 | market.zionterranova.com | `apps/MarketPlace/deploy/deploy-marketplace.sh` | `zion-edge2` | `/opt/zion/APP&WEB/MarketPlace` | `zion-marketplace` restart |
+| nirvana.zionterranova.com | `apps/nirvana/deploy/deploy-nirvana.sh` | **`zion-new`** (EDGE — viz pozn. níže) | `/opt/zion/APP&WEB/nirvana` | `zion-nirvana` restart |
 
 ⚠️ **Fallback:** Edge (`zion-v6`) drží staré kopie `/var/www/*` a fallback vhosty (do F6). Deploy skripty je nemirrují — fallback servíruje stav z cutoveru.
+
+⚠️ **nirvana. = výjimka z web-tier pravidla:** nasazena na **EDGE** (`zion-new`, port 3010) — DNS `nirvana.` resolvuje přes wildcard `* → 62.171.141.136` (explicitní A záznam zatím není). OASIS data tahá přes `OASIS_API_URL=http://127.0.0.1:8094` = chain-tunnel leg → reálný OASIS backend na EDGE2. **Fáze 2 (wildcard→EDGE2):** přidat explicitní `nirvana A 207.180.217.100` + nasadit instanci na EDGE2 (`ZION_EDGE_HOST=zion-edge2 bash apps/nirvana/deploy/deploy-nirvana.sh`) + certbot vhost tam — jinak po flipu doména umře.
 
 ## Restart / status služeb
 
@@ -49,9 +52,10 @@ ssh zion-v6 'systemctl restart zion-v31-pool'   # stratum 8444/8445, API :8080 (
 ssh zion-v6 'systemctl restart zion-v31-node2'  # follower :9446
 ssh zion-v6 'systemctl restart zion-v31-node3'  # follower :9447
 ssh zion-v6 'systemctl restart zion-g8-probe'   # G8 probe :9105
+ssh zion-v6 'systemctl restart zion-nirvana'    # nirvana web :3010 (Next.js standalone)
 ```
 
-Health: `curl https://app.zionterranova.com/api/health` (28 služeb), `https://auth.zionterranova.com/health`, `https://pool.zionterranova.com/public/v1/coins`.
+Health: `curl https://app.zionterranova.com/api/health` (28 služeb), `https://auth.zionterranova.com/health`, `https://pool.zionterranova.com/public/v1/coins`, `https://nirvana.zionterranova.com/api/oasis/worlds` (proxy → OASIS přes chain-tunnel).
 
 ## Co dělat když…
 
