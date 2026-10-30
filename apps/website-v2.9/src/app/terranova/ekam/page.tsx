@@ -27,9 +27,12 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+const EkamPreviewLazy = dynamic(() => import('@/components/EkamPreviewLazy'), { ssr: false });
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
+  threeDPreview: { cs: `3D model`, en: `3D model` },
+  threeDPreviewSubtitle: { cs: `Interaktivní model Oneness Temple — bílá mramorová síň, shikhara kupole, centrální věž Hiranyagarbha a zrcadlový bazén.`, en: `Interactive model of the Oneness Temple — white marble hall, shikhara domes, central Hiranyagarbha tower and reflecting pool.` },
   builtStage: { cs: `Postaveno 2008 — předloha všech uzlů`, en: `Built 2008 — the template for all nodes` },
   subtitle: { cs: `Oneness Temple · Andhra Pradesh · Indie · Terra Nova ®`, en: `Oneness Temple · Andhra Pradesh · India · Terra Nova ®` },
   quote: {
@@ -410,6 +413,26 @@ export default function EkamPage() {
             <p className="text-gray-300 leading-relaxed">
               {Copy.introBody[cs ? 'cs' : 'en']}
             </p>
+          </div>
+        </motion.section>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-amber-200/65 mb-1">
+                {Copy.threeDPreview[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {Copy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <EkamPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
           </div>
         </motion.section>
 
