@@ -43,20 +43,35 @@ if [[ ! -d "${ROOT_DIR}/.next/standalone/node_modules/.prisma" ]]; then
   exit 1
 fi
 
+# Remote pre-flight: refuse to --delete into a directory that does not look
+# like the MarketPlace app root (guards against wrong REMOTE_DIR / empty dirs).
+if ! ssh "${EDGE_HOST}" "test -f '${REMOTE_DIR}/package.json'"; then
+  echo "[deploy-marketplace] ERROR: ${REMOTE_DIR}/package.json missing on ${EDGE_HOST} — refusing rsync --delete" >&2
+  exit 1
+fi
+
+# Safety net: snapshot remote .env before sync (excludes keep it untouched and
+# undeleted — this is only insurance against operator-side edits).
+ssh "${EDGE_HOST}" "cp -a '${REMOTE_DIR}/.env' '${REMOTE_DIR}/.env.pre-deploy-\$(date +%Y%m%d-%H%M%S)' 2>/dev/null || true"
+
 echo "[deploy-marketplace] Syncing to ${EDGE_HOST}:${REMOTE_DIR}"
+# NOTE: source is the WHOLE app dir — the unit ExecStart expects the standalone
+# runtime at .next/standalone/server.js inside the source tree. NEVER rsync
+# .next/standalone/ directly into REMOTE_DIR: it deletes src/, scripts/,
+# prisma/ AND ships the traced dev .env over the production one (2026-10-30).
 rsync -avz --delete \
   --exclude='node_modules' \
   --exclude='.env' \
-  --exclude='.env.local' \
-  --exclude='.env.production' \
+  --exclude='.env.*' \
+  --exclude='.l1-watcher-state.json' \
   --exclude='.next/cache' \
   --exclude='.next/trace' \
   -e 'ssh' \
   "${ROOT_DIR}/" \
   "${EDGE_HOST}:${REMOTE_DIR}/"
 
-echo "[deploy-marketplace] Fixing ownership and restarting ${SERVICE}"
-ssh "${EDGE_HOST}" "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE}"
+echo "[deploy-marketplace] Fixing ownership and restarting ${SERVICE} + zion-l1-watcher"
+ssh "${EDGE_HOST}" "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE} zion-l1-watcher.service"
 
 echo "[deploy-marketplace] Smoke check..."
 sleep 3
