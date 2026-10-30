@@ -107,8 +107,33 @@ export default function BlocksPage() {
                   const avg = lucky.reduce((a, b) => a + (b.luck_pct ?? 0), 0) / lucky.length;
                   return avg >= 100 ? 'text-rasta-green' : 'text-rasta-gold';
                 })()}>
-                  Ø {(lucky.reduce((a, b) => a + (b.luck_pct ?? 0), 0) / lucky.length).toFixed(0)}%
+                  Ø luck {(lucky.reduce((a, b) => a + (b.luck_pct ?? 0), 0) / lucky.length).toFixed(0)}%
                 </b>
+                {' · '}
+                {(() => {
+                  // Average effort — actual/expected shares per block, the
+                  // HeroMiners KPI. 100% = pool works exactly on schedule.
+                  const eff = lucky
+                    .filter(
+                      (b) =>
+                        (b.network_difficulty ?? 0) > 0 &&
+                        (b.share_difficulty ?? 0) > 0 &&
+                        (b.shares_since_prev ?? 0) > 0,
+                    )
+                    .map(
+                      (b) =>
+                        ((b.shares_since_prev ?? 0) /
+                          ((b.network_difficulty ?? 1) / (b.share_difficulty ?? 1))) *
+                        100,
+                    );
+                  if (!eff.length) return null;
+                  const avg = eff.reduce((a, x) => a + x, 0) / eff.length;
+                  return (
+                    <b className={avg <= 100 ? 'text-rasta-green' : 'text-rasta-gold'}>
+                      Ø effort {avg.toFixed(0)}%
+                    </b>
+                  );
+                })()}
               </span>
             </div>
             <div className="relative flex h-16 items-end gap-[2px]">

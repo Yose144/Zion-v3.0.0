@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Wallet } from 'lucide-react';
+import { AlertTriangle, Bell, Wallet } from 'lucide-react';
 import AreaChart, { pushSample, thinSeries, type SeriesPoint } from '@/components/AreaChart';
 import MinerSearch from '@/components/MinerSearch';
 import RangeTabs from '@/components/RangeTabs';
@@ -25,6 +25,9 @@ const ACCENT: Record<string, string> = {
   qtc: '#078930',
   prl: '#e41e2b',
 };
+
+/** Explorer tx deep-link — same search-redirect the /payouts page uses. */
+const EXPLORER_TX = 'https://app.zionterranova.com/explorer/search?q=';
 
 export default function MinerClient({
   coin,
@@ -354,7 +357,20 @@ export default function MinerClient({
                         {payoutStatusLabel(p.status, t)}
                       </span>
                     </td>
-                    <td className="text-dim">{p.tx ? shortAddr(p.tx) : '—'}</td>
+                    <td className="text-dim">
+                      {p.tx ? (
+                        <a
+                          href={`${EXPLORER_TX}${p.tx}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-white/60 underline decoration-white/15 underline-offset-2 transition hover:text-rasta-gold"
+                        >
+                          {shortAddr(p.tx)}
+                        </a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className={p.confirmed ? 'text-green' : 'text-gold'}>
                       {p.status === 'queued' ? '—' : fmtInt(p.confirmations)}
                     </td>
@@ -365,6 +381,27 @@ export default function MinerClient({
           </div>
         )}
       </div>
+
+      {/* Alerts CTA — worker-offline notifications live on /account. A
+          telegram bot deep-link lands once the operator provides the bot. */}
+      <a
+        href="/account/"
+        className="pool-card card-glow mt-5 flex items-center gap-4 p-4 transition hover:border-rasta-gold/30"
+      >
+        <Bell size={18} className="shrink-0 text-rasta-gold" />
+        <div>
+          <p className="text-sm font-bold text-white">
+            {t('Upozornění na offline workera', 'Worker-offline alerts')}
+          </p>
+          <p className="mt-0.5 text-[0.72rem] text-white/45">
+            {t(
+              'Nastav si webhook nebo Telegram notifikaci, když worker přestane odesílat shares — v Můj účet.',
+              'Get a webhook or Telegram ping when a worker stops submitting — in My account.',
+            )}
+          </p>
+        </div>
+        <span className="ml-auto shrink-0 text-rasta-gold">→</span>
+      </a>
     </div>
   );
 }

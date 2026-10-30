@@ -354,11 +354,22 @@ export async function fetchPayouts(coin?: CoinId, limit = 50): Promise<PayoutRow
   return payouts.map((p) => toPayoutRow(UI_ID[p.coin] ?? 'multi', p));
 }
 
-export async function fetchTopMiners(limit = 10): Promise<TopMinerRow[]> {
+export async function fetchTopMiners(limit = 10, coin?: string): Promise<TopMinerRow[]> {
   if (USE_MOCK) return [];
   try {
-    const res = await get<{ ok: boolean; miners: TopMinerRow[] }>(`/miners?limit=${limit}`);
-    return res.miners ?? [];
+    // Over-fetch when filtering per-coin — the global list ranks by each
+    // miner's dominant stream, so a coin's own miners can sit below the cut.
+    const want = coin ? Math.max(limit * 4, 50) : limit;
+    const res = await get<{ ok: boolean; miners: TopMinerRow[] }>(`/miners?limit=${want}`);
+    const rows = res.miners ?? [];
+    if (!coin) return rows;
+    return rows
+      .filter((m) => (m.streams?.[coin]?.valid_shares ?? 0) > 0)
+      .sort(
+        (a, b) =>
+          (b.streams?.[coin]?.hps_live ?? 0) - (a.streams?.[coin]?.hps_live ?? 0),
+      )
+      .slice(0, limit);
   } catch {
     return [];
   }

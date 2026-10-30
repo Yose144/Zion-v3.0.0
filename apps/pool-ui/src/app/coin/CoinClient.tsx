@@ -7,6 +7,7 @@ import CalcCard from '@/components/CalcCard';
 import CoinLogo from '@/components/CoinLogo';
 import ConfigCards from '@/components/ConfigCards';
 import RangeTabs from '@/components/RangeTabs';
+import TopMiners from '@/components/TopMiners';
 import {
   fetchBlocks,
   fetchHistory,
@@ -238,6 +239,16 @@ export default function CoinClient({ coinId }: { coinId: CoinId }) {
             k: t('min výplata', 'min payout'),
             v: `${coin.min_payout} ${coin.payout_unit}`,
           },
+          ...(stats?.network_hashrate != null
+            ? [{
+                k: t('síť ~', 'network ~'),
+                v: `~${fmtHashrate(stats.network_hashrate)}`,
+                title: t(
+                  'odhad z lucku — chain nemá nethash RPC',
+                  'luck-derived estimate — the chain has no nethash RPC',
+                ),
+              }]
+            : []),
           {
             k: t('luck (100 blk)', 'luck (100 blk)'),
             v: stats?.luck_100 != null ? `${stats.luck_100.toFixed(1)}%` : '—',
@@ -401,6 +412,9 @@ export default function CoinClient({ coinId }: { coinId: CoinId }) {
           )}
         </div>
       </div>
+
+      {/* per-coin leaderboard — ranked by this stream's live rate */}
+      <TopMiners limit={10} coin={poolKey} />
     </div>
   );
 }

@@ -16,6 +16,7 @@ const LINKS = [
   { href: '/start/', cs: 'Jak těžit', en: 'Start mining' },
   { href: '/blocks/', cs: 'Bloky', en: 'Blocks' },
   { href: '/payouts/', cs: 'Výplaty', en: 'Payouts' },
+  { href: '/miners/', cs: 'Mineři', en: 'Miners' },
   { href: '/stats/', cs: 'Statistiky', en: 'Stats' },
   { href: '/status/', cs: 'Status', en: 'Status' },
   { href: '/api-docs/', cs: 'API', en: 'API' },
