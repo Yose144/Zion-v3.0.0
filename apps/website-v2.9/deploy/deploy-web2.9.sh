@@ -13,7 +13,7 @@
 #   - npm installed locally and the `npm run build` working
 #
 # Usage:
-#   bash apps/website-v2.9/deploy/deploy-web2.9.sh
+#   bash apps/website-v2.9/deploy/deploy-web2.9.sh [--artifact-dir /path/to/tested/standalone-app]
 
 set -euo pipefail
 
@@ -23,39 +23,37 @@ EDGE_USER="${ZION_EDGE_USER:-root}"
 REMOTE_DIR="/opt/zion/APP&WEB/website-v2.9"
 SERVICE="zion-website.service"
 
-echo "[deploy-web2.9] Building locally..."
-cd "$ROOT_DIR"
-npm run build
+ARTIFACT_DIR=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --artifact-dir) [[ $# -ge 2 ]] || exit 2; ARTIFACT_DIR="$2"; shift 2 ;;
+    *) echo "Unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+if [[ -n "$ARTIFACT_DIR" ]]; then
+  APP_DIR="$(cd "$ARTIFACT_DIR" && pwd)"
+else
+  cd "$ROOT_DIR"
+  npm run build
+  # Shared imports can make Next nest the app below the standalone root.
+  APP_DIR="${ROOT_DIR}/.next/standalone"
+  if [[ ! -f "${APP_DIR}/server.js" ]]; then
+    APP_DIR="${APP_DIR}/website-v2.9"
+  fi
+  if [[ ! -f "${APP_DIR}/server.js" ]] || [[ ! -d "${ROOT_DIR}/.next/static" ]]; then
+    echo "[deploy-web2.9] ERROR: standalone server or static assets missing" >&2
+    exit 1
+  fi
 
-# Shared imports can make Next nest the app below the standalone root.
-APP_DIR="${ROOT_DIR}/.next/standalone"
-if [[ ! -f "${APP_DIR}/server.js" ]]; then
-  APP_DIR="${APP_DIR}/website-v2.9"
+  mkdir -p "${APP_DIR}/.next/static"
+  rsync -a --delete "${ROOT_DIR}/.next/static/" "${APP_DIR}/.next/static/"
+  rsync -a --delete "${ROOT_DIR}/public/" "${APP_DIR}/public/"
+  if [[ -d "${ROOT_DIR}/archive-content" ]]; then
+    rsync -a --delete "${ROOT_DIR}/archive-content/" "${APP_DIR}/archive-content/"
+  fi
 fi
-if [[ ! -f "${APP_DIR}/server.js" ]] || [[ ! -d "${ROOT_DIR}/.next/static" ]]; then
-  echo "[deploy-web2.9] ERROR: standalone server or static assets missing" >&2
-  exit 1
-fi
 
-mkdir -p "${APP_DIR}/.next/static"
-rsync -a --delete "${ROOT_DIR}/.next/static/" "${APP_DIR}/.next/static/"
-rsync -a --delete "${ROOT_DIR}/public/" "${APP_DIR}/public/"
-if [[ -d "${ROOT_DIR}/archive-content" ]]; then
-  rsync -a --delete "${ROOT_DIR}/archive-content/" "${APP_DIR}/archive-content/"
-fi
-
-# The service starts .next/standalone/server.js; deploy the runnable app there,
-# including its traced dependencies, regardless of the local monorepo layout.
-echo "[deploy-web2.9] Syncing standalone app to ${EDGE_HOST}:${REMOTE_DIR}"
-rsync -az --delete \
-  --exclude='.env.production' \
-  --exclude='.env.local' \
-  -e ssh \
-  "${APP_DIR}/" \
-  "${EDGE_HOST}:${REMOTE_DIR}/.next/standalone/"
-
-echo "[deploy-web2.9] Fixing ownership and restarting ${SERVICE}"
-ssh "${EDGE_HOST}" "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE}"
+bash "${ROOT_DIR}/../../scripts/ops/deploy-next-artifact.sh" "$APP_DIR" "$EDGE_HOST" "${REMOTE_DIR}/.next/standalone" "$SERVICE" 3000 'https://app.zionterranova.com'
 
 echo "[deploy-web2.9] Waiting for app.zionterranova.com..."
 healthy=0

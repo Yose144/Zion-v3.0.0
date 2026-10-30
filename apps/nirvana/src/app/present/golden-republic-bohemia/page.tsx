@@ -46,7 +46,7 @@ export default function GoldenRepublicBohemiaPresentPage() {
 
         <GoldenRepublicBohemiaScene lang={lang} />
 
-        <OrbitControls {...BOHEMIA_CONTROLS} />
+        <OrbitControls makeDefault {...BOHEMIA_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

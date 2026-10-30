@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
@@ -17,104 +18,13 @@ type Lang = 'cs' | 'en';
 const rng = (s: number) => { const x = Math.sin(s * 12.9898) * 43758.5453; return x - Math.floor(x); };
 const FLAG_COLORS = ['#2a5fd0', '#f0eee6', '#c03a2e', '#2a8a4a', '#e0b83e'];
 
-/** vrstevnatá skalní textura pro Kailash — vodorovná pásma se sněhem */
-function strataTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512; canvas.height = 512;
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = '#4a4038'; ctx.fillRect(0, 0, 512, 512);
-  let seed = 5; const rnd = () => (seed = seed * 16807 % 2147483647) / 2147483647;
-  // horizontální pásma skály
-  for (let y = 0; y < 512; y += 8 + rnd() * 18) {
-    const h = 3 + rnd() * 12;
-    ctx.fillStyle = rnd() > 0.5 ? `rgba(96,84,70,${0.4 + rnd() * 0.4})` : `rgba(44,38,32,${0.4 + rnd() * 0.4})`;
-    ctx.fillRect(0, y, 512, h);
-  }
-  // sněhová pásma — hustší nahoře (v textuře dole = vrchol kužele)
-  for (let i = 0; i < 60; i++) {
-    const y = rnd() * 512;
-    const w = 30 + rnd() * 120;
-    ctx.fillStyle = `rgba(235,240,246,${0.25 + rnd() * 0.5})`;
-    ctx.beginPath();
-    ctx.ellipse(rnd() * 512, 500 - Math.pow(rnd(), 0.6) * 512, w, 4 + rnd() * 9, rnd() * 0.4 - 0.2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  return tex;
-}
-
-/** Kailash — charakteristická pyramida se seříznutým vrcholem */
+const KAILASH_PEAKS = [{x:0, z:0, height:42, width:28, depth:25}];
+const HIMALAYA_PEAKS = Array.from({length: 12}, (_, i) => ({x:-94 + i * 17, z:(rng(i) - .5) * 15, height:18 + rng(i + 1) * 13, width:14 + rng(i + 2) * 7, depth:18}));
 function MountKailash() {
-  const { geo, tex } = useMemo(() => {
-    const g = new THREE.ConeGeometry(1, 1, 4, 8);
-    const pos = g.attributes.position;
-    const v = new THREE.Vector3();
-    for (let i = 0; i < pos.count; i++) {
-      v.fromBufferAttribute(pos, i);
-      // jemné zvlnění svahů
-      const n = Math.sin(v.x * 9) * 0.04 + Math.sin(v.z * 11) * 0.04 + Math.sin(v.y * 14) * 0.03;
-      // plošší vrchol
-      let y = v.y;
-      if (y > 0.36) y = 0.36 + (y - 0.36) * 0.55;
-      pos.setXYZ(i, v.x * (1 + n), y, v.z * (1 + n));
-    }
-    g.scale(26, 42, 22);
-    g.computeVertexNormals();
-    return { geo: g, tex: strataTexture() };
-  }, []);
-  useEffect(() => () => tex.dispose(), [tex]);
-  return (
-    <group position={[26, 18, -88]} rotation={[0, Math.PI / 5.5, 0]}>
-      <mesh geometry={geo} castShadow>
-        <meshStandardMaterial map={tex} roughness={0.9} />
-      </mesh>
-      {/* sněhová čepice */}
-      <mesh position={[0, 16.6, 0]} scale={[1.12, 1, 1.12]}>
-        <coneGeometry args={[8.6, 9, 4]} />
-        <meshStandardMaterial color="#eef2f6" roughness={0.55} />
-      </mesh>
-      {/* podstavce */}
-      {[...Array(4)].map((_, i) => (
-        <mesh key={i} position={[-14 + i * 9 - rng(i) * 3, -14 + rng(i + 2) * 2, 8 + rng(i + 4) * 4]} scale={[4.5, 2.5 + rng(i + 6) * 1.5, 4]}>
-          <sphereGeometry args={[1.6, 7, 6]} />
-          <meshStandardMaterial color="#3a3430" roughness={0.95} />
-        </mesh>
-      ))}
-    </group>
-  );
+  return <MountainTerrain position={[26, -.3, -88]} size={[70, 64]} peaks={KAILASH_PEAKS} snowLine={26} terraces rock="#737a81" />;
 }
-
-/** hřeben Himálají — zubaté sněhové štíty v pozadí */
 function HimalayaRange() {
-  const peaks = useMemo(() => {
-    const arr: { p: [number, number, number]; h: number; r: number }[] = [];
-    for (let i = 0; i < 11; i++) {
-      arr.push({
-        p: [-95 + i * 16 + rng(i) * 8, 6 + rng(i + 2) * 4, -95 - rng(i + 4) * 12],
-        h: 16 + rng(i + 3) * 12,
-        r: 7 + rng(i + 5) * 4,
-      });
-    }
-    return arr;
-  }, []);
-  return (
-    <group>
-      {peaks.map((p, i) => (
-        <group key={i} position={p.p}>
-          <mesh castShadow>
-            <coneGeometry args={[p.r, p.h, 5]} />
-            <meshStandardMaterial color="#4a4440" roughness={0.95} flatShading />
-          </mesh>
-          <mesh position={[0, p.h * 0.32, 0]}>
-            <coneGeometry args={[p.r * 0.45, p.h * 0.36, 5]} />
-            <meshStandardMaterial color="#e8eef4" roughness={0.6} flatShading />
-          </mesh>
-        </group>
-      ))}
-    </group>
-  );
+  return <MountainTerrain position={[0, -.4, -130]} size={[240, 70]} peaks={HIMALAYA_PEAKS} snowLine={19} rock="#77858e" />;
 }
 
 /** ledasovcové jezero — tyrkysová hladina */
@@ -123,7 +33,7 @@ function GlacialLake({ x, z, r = 9, sx = 1 }: { x: number; z: number; r?: number
     <group position={[x, 0, z]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} scale={[sx, 1, 1]}>
         <circleGeometry args={[r, 30]} />
-        <meshStandardMaterial color="#2a9aa8" roughness={0.08} metalness={0.15} emissive="#1a6a76" emissiveIntensity={0.5} />
+        <meshStandardMaterial color="#317e97" roughness={0.18} metalness={0.15} emissive="#1a6a76" emissiveIntensity={0.12} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} scale={[sx * 1.14, 1.14, 1]}>
         <ringGeometry args={[r * 0.98, r * 1.0, 30]} />
@@ -172,7 +82,7 @@ function Monastery({ x, z }: { x: number; z: number }) {
         </mesh>
         <mesh position={[0, 1.6, 0]}>
           <coneGeometry args={[2.4, 1.4, 4]} />
-          <meshStandardMaterial color="#e0b040" metalness={0.75} roughness={0.25} emissive="#a06a14" emissiveIntensity={0.5} />
+          <meshStandardMaterial color="#e0b040" metalness={0.75} roughness={0.25} emissive="#a06a14" emissiveIntensity={0.12} />
         </mesh>
       </group>
     </group>
@@ -404,13 +314,15 @@ function KailashSky() {
                + vec3(0.95, 0.6, 0.3) * pow(s, 6.0) * 0.3;
             // pás tenkých mraků
             float cl = noise(vec2(d.x * 6.0, d.y * 14.0)) * 0.5 + noise(vec2(d.x * 14.0, d.y * 30.0)) * 0.5;
-            float band = smoothstep(0.48, 0.7, cl) * smoothstep(0.02, 0.1, d.y) * smoothstep(0.5, 0.2, d.y);
+            float band = smoothstep(0.48, 0.7, cl) * smoothstep(0.02, 0.1, d.y) * (1.0 - smoothstep(0.2, 0.5, d.y));
             c = mix(c, vec3(0.95, 0.85, 0.72), band * 0.5);
             // měsíc — jemný kotouč vlevo nahoře
             vec3 mdir = normalize(vec3(-0.7, 0.55, -0.3));
-            float moon = smoothstep(0.028, 0.02, length(d - mdir));
+            float moon = (1.0 - smoothstep(0.02, 0.028, length(d - mdir)));
             c = mix(c, vec3(0.85, 0.88, 0.9), moon * 0.55);
             gl_FragColor = vec4(c, 1.0);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
           }
         `,
         uniforms: {
@@ -434,7 +346,7 @@ export function KailashScene({ lang }: { lang: Lang }) {
     <>
       <ScenePresentation camera={KAILASH_CAMERA} target={KAILASH_CONTROLS.target} />
       <KailashSky />
-      <fog attach="fog" args={['#b89468', 110, 330]} />
+      <fog attach="fog" args={['#b3c1cf', 110, 330]} />
 
       <MountKailash />
       <HimalayaRange />

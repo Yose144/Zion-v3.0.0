@@ -42,15 +42,16 @@ function VolcanicCoast() {
   </mesh>;
 }
 
-export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, shorelineZ }: { level?: number; coastal?: boolean; lagoon?: boolean; shorelineZ?: number }) {
+export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, shorelineZ, roughSea = false }: { level?: number; coastal?: boolean; lagoon?: boolean; shorelineZ?: number; roughSea?: boolean }) {
   const material = useMemo(() => new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 }, coastal: { value: coastal ? 1 : 0 }, lagoon: { value: lagoon ? 1 : 0 }, shoreline: { value: new THREE.Vector2(shorelineZ === undefined ? 0 : 1, shorelineZ ?? 0) }, sun: { value: new THREE.Vector3(-0.75, 0.08, -0.66).normalize() } },
+    uniforms: { time: { value: 0 }, roughness: { value: roughSea ? 2.2 : 1 }, coastal: { value: coastal ? 1 : 0 }, lagoon: { value: lagoon ? 1 : 0 }, shoreline: { value: new THREE.Vector2(shorelineZ === undefined ? 0 : 1, shorelineZ ?? 0) }, sun: { value: new THREE.Vector3(-0.75, 0.08, -0.66).normalize() } },
     vertexShader: `
       uniform float time;
+      uniform float roughness;
       varying vec3 world;
       void main() {
         vec3 p = position;
-        p.z += sin(p.x * .17 + time * .55) * .035 + sin(p.y * .23 - time * .42) * .025;
+        p.z += (sin(p.x * .17 + time * .55) * .035 + sin(p.y * .23 - time * .42) * .025) * roughness;
         world = (modelMatrix * vec4(p, 1.)).xyz;
         gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.);
       }
@@ -59,6 +60,7 @@ export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, sh
       uniform float time;
       uniform vec3 sun;
       uniform float coastal;
+      uniform float roughness;
       uniform float lagoon;
       uniform vec2 shoreline;
       varying vec3 world;
@@ -67,7 +69,7 @@ export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, sh
         float a = p.x * .23 + p.y * .39 + sin(p.x * .11 - p.y * .13) * 1.5 + time * .6;
         float b = p.x * -.37 + p.y * .17 + sin(p.y * .19) * .9 - time * .42;
         float attenuation = 1. / (1. + length(fwidth(p)) * .8);
-        vec3 n = normalize(vec3((cos(a) * .022 - cos(b) * .016) * attenuation, 1., (cos(a) * .018 + cos(b) * .027) * attenuation));
+        vec3 n = normalize(vec3((cos(a) * .022 - cos(b) * .016) * attenuation * roughness, 1., (cos(a) * .018 + cos(b) * .027) * attenuation * roughness));
         vec3 viewDir = normalize(cameraPosition - world);
         float fresnel = pow(1. - max(dot(n, viewDir), 0.), 3.);
         float distanceFade = smoothstep(90., 650., length(cameraPosition.xz - p));
@@ -88,7 +90,7 @@ export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, sh
         #include <colorspace_fragment>
       }
     `,
-  }), [coastal, lagoon, shorelineZ]);
+  }), [coastal, lagoon, shorelineZ, roughSea]);
   const reducedMotion = useRef(false);
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');

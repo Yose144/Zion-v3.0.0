@@ -72,6 +72,7 @@ function Hall({ def }: { def: HallDef }) {
     () => new THREE.RingGeometry(HALL_R_IN - 0.3, HALL_R_OUT - 0.1, 28, 1, Math.PI / 2 - HALL_SPAN / 2, HALL_SPAN),
     [],
   );
+  useEffect(() => () => { backGeo.dispose(); baseGeo.dispose(); roofGeo.dispose(); floorGeo.dispose(); }, [backGeo, baseGeo, roofGeo, floorGeo]);
   // dřevěné lamely zadní stěny — tenké sloupky podél oblouku
   const slats = useMemo(() => {
     const n = 15;
@@ -391,12 +392,12 @@ function EntrancePath() {
 function Rip() {
   return (
     <group position={[-46, 0, -62]}>
-      <mesh position={[0, 7.4, 0]}>
-        <coneGeometry args={[15, 15, 40]} />
+      <mesh position={[0, 0, 0]} scale={[1, .65, 1]}>
+        <sphereGeometry args={[15, 40, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial color="#4a5a48" roughness={0.95} />
       </mesh>
       {/* vrcholová rotunda */}
-      <mesh position={[0, 15.1, 0]}>
+      <mesh position={[0, 10.1, 0]}>
         <cylinderGeometry args={[0.5, 0.7, 0.8, 8]} />
         <meshStandardMaterial color="#d9cdb0" roughness={0.8} />
       </mesh>
@@ -445,6 +446,8 @@ function SkySun() {
                + vec3(1.0, 0.72, 0.4) * pow(s, 30.0) * 0.5
                + vec3(0.95, 0.55, 0.26) * pow(s, 7.0) * 0.22;
             gl_FragColor = vec4(c, 1.0);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
           }
         `,
         uniforms: {
@@ -498,7 +501,7 @@ export function GoldenRepublicBohemiaScene({ lang }: { lang: Lang }) {
   );
 }
 
-export const BOHEMIA_CAMERA = { position: [0, 8.5, 28.5] as [number, number, number], fov: 46, far: 2000 };
+export const BOHEMIA_CAMERA = { position: [4, 15, 38] as [number, number, number], fov: 46, far: 2000 };
 export const BOHEMIA_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.2, minDistance: 12, maxDistance: 75, maxPolarAngle: Math.PI / 2 - 0.07, target: [0, 2.6, 0.5] as [number, number, number], enablePan: false };
 export function BohemiaLighting() {
   return <>

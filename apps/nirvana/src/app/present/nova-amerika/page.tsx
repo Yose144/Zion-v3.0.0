@@ -46,7 +46,7 @@ export default function NovaAmerikaPresentPage() {
 
         <LumiStationScene lang={lang} />
 
-        <OrbitControls {...LUMI_CONTROLS} />
+        <OrbitControls makeDefault {...LUMI_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

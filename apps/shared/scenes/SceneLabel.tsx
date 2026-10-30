@@ -1,10 +1,21 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useEffect, THREE } from '@genesis/runtime';
+import { React, useEffect, useFrame, THREE } from '@genesis/runtime';
 
 export function SceneLabel({ position, text, scale = 1 }: { position: [number, number, number]; text: string; scale?: number }) {
   const [texture, setTexture] = React.useState<THREE.CanvasTexture | null>(null);
+  const sprite = React.useRef<THREE.Sprite>(null);
+  const world = React.useMemo(() => new THREE.Vector3(), []);
+  useFrame(({ camera, size }) => {
+    if (!sprite.current || !texture || !(camera instanceof THREE.PerspectiveCamera)) return;
+    sprite.current.getWorldPosition(world);
+    const distance = camera.position.distanceTo(world);
+    const desired = Math.min(size.width < 600 ? 12 : 16, 12 * Math.sqrt(scale));
+    const pixels = Math.min(desired, (size.width < 600 ? 155 : 230) * 52 / texture.image.width);
+    const height = 2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * pixels / size.height;
+    sprite.current.scale.set(height * texture.image.width / 52, height, 1);
+  });
   // Sprites stay in the scene's React root; no nested DOM roots to unmount.
   useEffect(() => {
     const canvas = document.createElement('canvas');
@@ -27,8 +38,8 @@ export function SceneLabel({ position, text, scale = 1 }: { position: [number, n
     return () => next.dispose();
   }, [text]);
   if (!texture) return null;
-  return <sprite position={position} scale={[texture.image.width * scale / 180, 52 * scale / 180, 1]}>
-    <spriteMaterial map={texture} transparent depthWrite={false} />
+  return <sprite ref={sprite} position={position}>
+    <spriteMaterial map={texture} transparent depthWrite={false} toneMapped={false} />
   </sprite>;
 }
 

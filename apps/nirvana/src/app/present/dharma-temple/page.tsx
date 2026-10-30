@@ -46,7 +46,7 @@ export default function DharmaTemplePresentPage() {
 
         <DharmaTempleScene lang={lang} />
 
-        <OrbitControls {...DHARMA_CONTROLS} />
+        <OrbitControls makeDefault {...DHARMA_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

@@ -764,6 +764,7 @@ function WaterPathAndRiver({ lang }: { lang: Lang }) {
   const riverGlowGeo = useMemo(() => makeRibbon(RIVER_POINTS, 0.7), []);
   const pathGeo = useMemo(() => makeRibbon(PATH_POINTS, 0.55), []);
   const path2Geo = useMemo(() => makeRibbon(PATH_TO_ALBERGUE, 0.45), []);
+  useEffect(() => () => { riverGeo.dispose(); riverGlowGeo.dispose(); pathGeo.dispose(); path2Geo.dispose(); }, [riverGeo, riverGlowGeo, pathGeo, path2Geo]);
 
   return (
     <>
@@ -852,10 +853,12 @@ function SkyAndSun() {
             vec3 c = d.y > 0.25 ? mix(mid, top, smoothstep(0.25, 0.8, d.y))
                               : mix(low, mid, smoothstep(-0.05, 0.25, d.y));
             float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.88, 0.62) * pow(s, 380.0) * 2.2
+            c += vec3(1.0, 0.88, 0.62) * pow(s, 1800.0) * 1.4
                + vec3(1.0, 0.72, 0.4) * pow(s, 26.0) * 0.35
                + vec3(0.95, 0.6, 0.3) * pow(s, 5.0) * 0.18;
             gl_FragColor = vec4(c, 1.0);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
           }
         `,
         uniforms: {
@@ -870,7 +873,7 @@ function SkyAndSun() {
 
   return (
     <mesh material={skyMat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[90, 24, 16]} />
+      <sphereGeometry args={[1800, 24, 16]} />
     </mesh>
   );
 }
@@ -925,10 +928,10 @@ export function GenesisGardenScene({ lang }: { lang: Lang }) {
   );
 }
 
-export const GENESIS_CAMERA = { position: [0, 14, 31] as [number, number, number], fov: 44 };
+export const GENESIS_CAMERA = { position: [-2.5, 16, 39] as [number, number, number], fov: 44 };
 export const GENESIS_CONTROLS = {
   autoRotate: true, autoRotateSpeed: 0.4, minDistance: 9, maxDistance: 110,
-  maxPolarAngle: Math.PI / 2 - 0.04, target: [0, 3, 0] as [number, number, number], enablePan: false,
+  maxPolarAngle: Math.PI / 2 - 0.04, target: [-2.5, 3, 0] as [number, number, number], enablePan: false,
 };
 export function GenesisGardenLighting() {
   return <>

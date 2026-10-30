@@ -46,7 +46,7 @@ export default function BoaEsperancaPresentPage() {
 
         <BoaEsperancaScene lang={lang} />
 
-        <OrbitControls {...BOA_CONTROLS} />
+        <OrbitControls makeDefault {...BOA_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

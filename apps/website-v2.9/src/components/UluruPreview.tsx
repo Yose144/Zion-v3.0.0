@@ -53,7 +53,7 @@ export default function UluruPreview({
 
         <UluruScene lang={lang} />
 
-        <OrbitControls {...ULURU_CONTROLS} />
+        <OrbitControls makeDefault {...ULURU_CONTROLS} />
       </Canvas>
       <div className="pointer-events-none absolute bottom-3 left-4 rounded border border-white/10 bg-black/60 px-2.5 py-1 text-[10px] text-white/60">
         {lang === 'cs' ? 'Táhni pro otočení · kolečko pro přiblížení' : 'Drag to rotate · scroll to zoom'}

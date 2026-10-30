@@ -46,7 +46,7 @@ export default function MariaDelCaminoPresentPage() {
 
         <MariaDelCaminoScene lang={lang} />
 
-        <OrbitControls {...MARIA_CONTROLS} />
+        <OrbitControls makeDefault {...MARIA_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

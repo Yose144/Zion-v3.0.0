@@ -100,6 +100,7 @@ function LotusRoof({ y, s }: { y: number; s: number }) {
     g.translate(0, 0, 1.7 * s);
     return g;
   }, [s]);
+  useEffect(() => () => { low.dispose(); high.dispose(); }, [low, high]);
   return (
     <group position={[0, y, 0]}>
       {/* pevné tělo střechy — zploštělá kopule pod lupínky */}
@@ -111,7 +112,7 @@ function LotusRoof({ y, s }: { y: number; s: number }) {
         const a = (i / 10) * Math.PI * 2;
         return (
           <group key={i} rotation={[0, a, 0]}>
-            <mesh geometry={low} rotation={[-0.42, 0, 0]} position={[0, 0.15 * s, 0]} castShadow>
+            <mesh geometry={low} rotation={[-0.12, 0, 0]} position={[0, 0.15 * s, 0]} castShadow>
               <meshStandardMaterial color="#efe4c8" roughness={0.5} side={THREE.DoubleSide} />
             </mesh>
           </group>
@@ -121,7 +122,7 @@ function LotusRoof({ y, s }: { y: number; s: number }) {
         const a = (i / 10) * Math.PI * 2 + Math.PI / 10;
         return (
           <group key={i} rotation={[0, a, 0]} position={[0, 0.7 * s, 0]}>
-            <mesh geometry={high} rotation={[-0.85, 0, 0]} castShadow>
+            <mesh geometry={high} rotation={[-0.42, 0, 0]} castShadow>
               <meshStandardMaterial color="#e0cfa6" roughness={0.55} side={THREE.DoubleSide} />
             </mesh>
           </group>
@@ -362,7 +363,7 @@ function LotusPond() {
       {/* vodní plocha jezírka + mělčina */}
       <mesh ref={water} rotation={[-Math.PI / 2, 0, 0]} position={[0, WATER_Y, 0]}>
         <circleGeometry args={[46, 72]} />
-        <meshStandardMaterial color="#22687a" roughness={0.1} metalness={0.4} transparent opacity={0.96} emissive="#e8a04a" emissiveIntensity={0.28} />
+        <meshStandardMaterial color="#286d71" roughness={0.22} metalness={0.12} transparent opacity={0.96} emissive="#162f2c" emissiveIntensity={0.08} />
       </mesh>
       {/* mělká teplá voda u břehu */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, WATER_Y + 0.02, 0]}>
@@ -371,8 +372,8 @@ function LotusPond() {
       </mesh>
       {/* zlatý odraz západu na hladině */}
       <mesh rotation={[-Math.PI / 2, 0, Math.PI / 2.4]} position={[-14, WATER_Y + 0.03, 6]}>
-        <planeGeometry args={[10, 36]} />
-        <meshBasicMaterial color="#f4b95e" transparent opacity={0.3} depthWrite={false} />
+        <planeGeometry args={[5, 28]} />
+        <meshBasicMaterial color="#f4b95e" transparent opacity={0.08} depthWrite={false} />
       </mesh>
       {/* lilie + lotosy */}
       {lilies.map((l, i) => (
@@ -549,8 +550,10 @@ function SkySun() {
                + vec3(1.0, 0.68, 0.38) * pow(s, 28.0) * 0.55
                + vec3(0.95, 0.5, 0.24) * pow(s, 6.5) * 0.24;
             // jemná zlatá mlha nad obzorem
-            c = mix(c, vec3(0.88, 0.62, 0.38), smoothstep(0.18, -0.02, d.y) * 0.35);
+            c = mix(c, vec3(0.88, 0.62, 0.38), (1.0 - smoothstep(-0.02, 0.18, d.y)) * 0.35);
             gl_FragColor = vec4(c, 1.0);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
           }
         `,
         uniforms: {

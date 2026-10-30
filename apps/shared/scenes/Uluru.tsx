@@ -69,7 +69,7 @@ function UluruRock() {
     g.computeVertexNormals();
     return { geo: g, tex: uluruTexture() };
   }, []);
-  useEffect(() => () => tex.dispose(), [tex]);
+  useEffect(() => () => { tex.dispose(); geo.dispose(); }, [tex, geo]);
   return (
     <group position={[6, 0, -95]}>
       <mesh geometry={geo} position={[0, -0.5, 0]} castShadow receiveShadow>
@@ -198,7 +198,7 @@ function Songline({ pts, color = '#ffb050' }: { pts: [number, number][]; color?:
   }, [pts]);
   return (
     <mesh geometry={geo}>
-      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.1} roughness={0.6} transparent opacity={0.85} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.3} roughness={0.6} transparent opacity={0.55} />
     </mesh>
   );
 }
@@ -427,13 +427,15 @@ function UluruSky() {
             vec3 cell = floor(d * 320.0);
             float star = step(0.995, hash(cell));
             float tw = 0.6 + 0.4 * hash(cell + 1.0);
-            c += vec3(1.0, 0.98, 0.92) * star * tw * 1.1 * smoothstep(0.65, 0.1, west) * smoothstep(-0.02, 0.2, d.y);
+            c += vec3(1.0, 0.98, 0.92) * star * tw * 1.1 * (1.0 - smoothstep(0.1, 0.65, west)) * smoothstep(-0.02, 0.2, d.y);
             // měsíc — jemný srpek vpravo nahoře
             vec3 mdir = normalize(vec3(0.62, 0.62, -0.28));
             float md = length(d - mdir);
-            float moon = smoothstep(0.035, 0.028, md) - smoothstep(0.03, 0.024, length(d - mdir - vec3(0.014, 0.008, 0)));
+            float moon = (1.0 - smoothstep(0.028, 0.035, md)) - (1.0 - smoothstep(0.024, 0.03, length(d - mdir - vec3(0.014, 0.008, 0))));
             c += vec3(0.95, 0.92, 0.8) * max(moon, 0.0) * 0.9;
             gl_FragColor = vec4(c, 1.0);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
           }
         `,
         uniforms: {

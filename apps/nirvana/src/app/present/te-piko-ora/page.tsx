@@ -46,7 +46,7 @@ export default function TePikoOraPresentPage() {
 
         <TePikoOraScene lang={lang} />
 
-        <OrbitControls {...PIKO_CONTROLS} />
+        <OrbitControls makeDefault {...PIKO_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

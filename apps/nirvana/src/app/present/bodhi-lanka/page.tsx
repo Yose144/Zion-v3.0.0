@@ -46,7 +46,7 @@ export default function BodhiLankaPresentPage() {
 
         <BodhiLankaScene lang={lang} />
 
-        <OrbitControls {...LANKA_CONTROLS} />
+        <OrbitControls makeDefault {...LANKA_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

@@ -46,7 +46,7 @@ export default function AmentiPresentPage() {
 
         <AmentiScene lang={lang} />
 
-        <OrbitControls {...AMENTI_CONTROLS} />
+        <OrbitControls makeDefault {...AMENTI_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

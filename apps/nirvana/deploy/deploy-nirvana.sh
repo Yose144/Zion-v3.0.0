@@ -13,7 +13,7 @@
 #   - npm installed locally and `npm run build` working
 #
 # Usage:
-#   bash apps/nirvana/deploy/deploy-nirvana.sh
+#   bash apps/nirvana/deploy/deploy-nirvana.sh [--artifact-dir /path/to/tested/standalone-app]
 
 set -euo pipefail
 
@@ -23,27 +23,32 @@ REMOTE_DIR="/opt/zion/APP&WEB/nirvana"
 SERVICE="zion-nirvana.service"
 SITE="https://nirvana.zionterranova.com"
 
-echo "[deploy-nirvana] Building locally..."
-cd "$ROOT_DIR"
-npm run build
+ARTIFACT_DIR=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --artifact-dir) [[ $# -ge 2 ]] || exit 2; ARTIFACT_DIR="$2"; shift 2 ;;
+    *) echo "Unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+if [[ -n "$ARTIFACT_DIR" ]]; then
+  APP_DIR="$(cd "$ARTIFACT_DIR" && pwd)"
+else
+  cd "$ROOT_DIR"
+  npm run build
+  APP_DIR="${ROOT_DIR}/.next/standalone/nirvana"
+  if [[ ! -f "${APP_DIR}/server.js" ]]; then
+    echo "[deploy-nirvana] ERROR: standalone build missing ${APP_DIR}/server.js" >&2
+    exit 1
+  fi
 
-APP_DIR="${ROOT_DIR}/.next/standalone/nirvana"
-if [[ ! -f "${APP_DIR}/server.js" ]]; then
-  echo "[deploy-nirvana] ERROR: standalone build missing ${APP_DIR}/server.js" >&2
-  exit 1
+  # Standalone server serves public/ and .next/static ONLY from next to
+  # server.js — Next does not copy them there (see deploy-web2.9.sh).
+  echo "[deploy-nirvana] Staging public/ + .next/static into standalone tree"
+  rsync -a --delete "${ROOT_DIR}/public/" "${APP_DIR}/public/"
+  rsync -a --delete "${ROOT_DIR}/.next/static/" "${APP_DIR}/.next/static/"
 fi
 
-# Standalone server serves public/ and .next/static ONLY from next to
-# server.js — Next does not copy them there (see deploy-web2.9.sh).
-echo "[deploy-nirvana] Staging public/ + .next/static into standalone tree"
-rsync -a --delete "${ROOT_DIR}/public/" "${APP_DIR}/public/"
-rsync -a --delete "${ROOT_DIR}/.next/static/" "${APP_DIR}/.next/static/"
-
-echo "[deploy-nirvana] Syncing to ${EDGE_HOST}:${REMOTE_DIR}"
-rsync -az --delete -e ssh "${APP_DIR}/" "${EDGE_HOST}:${REMOTE_DIR}/"
-
-echo "[deploy-nirvana] Fixing ownership and restarting ${SERVICE}"
-ssh "${EDGE_HOST}" "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE}"
+bash "${ROOT_DIR}/../../scripts/ops/deploy-next-artifact.sh" "$APP_DIR" "$EDGE_HOST" "${REMOTE_DIR}" "$SERVICE" 3010 'https://nirvana.zionterranova.com'
 
 echo "[deploy-nirvana] Waiting for ${SITE}..."
 healthy=0

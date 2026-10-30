@@ -46,7 +46,7 @@ export default function EkamPresentPage() {
 
         <EkamScene lang={lang} />
 
-        <OrbitControls {...EKAM_CONTROLS} />
+        <OrbitControls makeDefault {...EKAM_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

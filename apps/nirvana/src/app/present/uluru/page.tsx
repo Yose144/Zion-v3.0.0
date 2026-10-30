@@ -46,7 +46,7 @@ export default function UluruPresentPage() {
 
         <UluruScene lang={lang} />
 
-        <OrbitControls {...ULURU_CONTROLS} />
+        <OrbitControls makeDefault {...ULURU_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

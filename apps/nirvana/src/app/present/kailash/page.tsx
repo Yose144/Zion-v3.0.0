@@ -46,7 +46,7 @@ export default function KailashPresentPage() {
 
         <KailashScene lang={lang} />
 
-        <OrbitControls {...KAILASH_CONTROLS} />
+        <OrbitControls makeDefault {...KAILASH_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

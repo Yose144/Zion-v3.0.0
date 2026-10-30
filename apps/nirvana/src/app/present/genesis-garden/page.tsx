@@ -46,7 +46,7 @@ export default function GenesisGardenPresentPage() {
 
         <GenesisGardenScene lang={lang} />
 
-        <OrbitControls {...GENESIS_CONTROLS} />
+        <OrbitControls makeDefault {...GENESIS_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">

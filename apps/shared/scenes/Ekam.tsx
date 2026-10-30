@@ -17,8 +17,8 @@ type Lang = 'cs' | 'en';
 
 const rng = (s: number) => { const x = Math.sin(s * 12.9898) * 43758.5453; return x - Math.floor(x); };
 
-const MARBLE = '#ece4d4';
-const MARBLE_D = '#ddd2ba';
+const MARBLE = '#f3efdf';
+const MARBLE_D = '#dcd8ca';
 const GOLD = '#d9b45c';
 const GLASS = '#2e3d4c';
 
@@ -155,7 +155,7 @@ function CentralTower() {
       {/* Hiranyagarbha — světelný paprsek do nebe */}
       <mesh ref={beamRef} position={[0, 46, 0]}>
         <cylinderGeometry args={[0.32, 0.55, 58, 10, 1, true]} />
-        <meshBasicMaterial color="#ffe9b0" transparent opacity={0.34} side={THREE.DoubleSide} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#ffe9b0" transparent opacity={0.08} side={THREE.DoubleSide} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
       <pointLight position={[0, 15.8, 0]} intensity={4} color="#ffd98a" distance={26} decay={2} />
     </group>
@@ -406,8 +406,10 @@ function SkySun() {
             c += vec3(1.0, 0.95, 0.72) * pow(s, 900.0) * 3.0
                + vec3(1.0, 0.78, 0.45) * pow(s, 60.0) * 0.5
                + vec3(0.96, 0.55, 0.28) * pow(s, 8.0) * 0.2;
-            c = mix(c, vec3(0.9, 0.64, 0.4), smoothstep(0.16, -0.02, d.y) * 0.3);
+            c = mix(c, vec3(0.9, 0.64, 0.4), (1.0 - smoothstep(-0.02, 0.16, d.y)) * 0.3);
             gl_FragColor = vec4(c, 1.0);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
           }
         `,
         uniforms: {

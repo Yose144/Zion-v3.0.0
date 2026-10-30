@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
@@ -31,15 +32,17 @@ function GeoDome({ r, y = 0, glass = '#bfe0ea', frame = '#c9a55c', cut = 0.52, l
     const g = new THREE.IcosahedronGeometry(r, 2);
     const dome = new THREE.SphereGeometry(r, 24, 12, 0, Math.PI * 2, 0, Math.PI * cut);
     const edges = new THREE.EdgesGeometry(g, 12);
+    g.dispose();
     return { dome, edges };
   }, [r, cut]);
+  useEffect(() => () => { dome.dispose(); edges.dispose(); }, [dome, edges]);
   return (
     <group position={[0, y, 0]}>
       <mesh geometry={dome} castShadow>
-        <meshPhysicalMaterial color={glass} roughness={0.15} metalness={0.1} transparent opacity={0.42}
+        <meshPhysicalMaterial color={glass} roughness={0.15} metalness={0.1} transparent opacity={0.28}
           emissive="#ffd98a" emissiveIntensity={light} clearcoat={0.6} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
-      <lineSegments geometry={edges} position={[0, r * (1 - Math.cos(Math.PI * cut)) * 0, 0]} scale={[1, 1, 1]} rotation={[0, 0, 0]}>
+      <lineSegments geometry={edges} position={[0, 0, 0]} scale={[1, 1, 1]} rotation={[0, 0, 0]}>
         <lineBasicMaterial color={frame} transparent opacity={0.85} />
       </lineSegments>
       {/* spodní věnec */}
@@ -129,8 +132,8 @@ function RingComplex() {
       const a = off + (i / n) * Math.PI * 2;
       return (
         <mesh key={i} position={[Math.sin(a) * r, y, Math.cos(a) * r]} rotation={[0, a, 0]}>
-          <planeGeometry args={[0.8, 1.0]} />
-          <meshStandardMaterial color="#2e3d4c" roughness={0.3} emissive="#ffca70" emissiveIntensity={0.9} side={THREE.DoubleSide} />
+          <planeGeometry args={[2.1, 1.0]} />
+          <meshStandardMaterial color="#2e3d4c" roughness={0.3} emissive="#ffca70" emissiveIntensity={0.32} side={THREE.DoubleSide} />
         </mesh>
       );
     })
@@ -423,34 +426,9 @@ function FallsPool() {
 }
 
 /** sopka v pozadí za mračnem mraků */
+const LUMI_VOLCANO = [{x:0,z:0,height:29,width:29,depth:27},{x:-18,z:4,height:12,width:20,depth:19}];
 function Volcano() {
-  return (
-    <group position={[52, 0, -95]}>
-      <mesh position={[0, 13, 0]}>
-        <coneGeometry args={[24, 30, 40, 1, true]} />
-        <meshStandardMaterial color="#4a5648" roughness={0.95} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 13, 0]}>
-        <coneGeometry args={[24, 30, 40]} />
-        <meshStandardMaterial color="#4a5648" roughness={0.95} transparent opacity={0.92} />
-      </mesh>
-      {/* zasněžený/zvětralý vrchol */}
-      <mesh position={[0, 25.5, 0]}>
-        <coneGeometry args={[6.2, 7, 30]} />
-        <meshStandardMaterial color="#8a9688" roughness={0.9} />
-      </mesh>
-      {/* oblaka u paty */}
-      {[...Array(7)].map((_, i) => {
-        const a = rng(i + 90) * Math.PI * 2;
-        return (
-          <mesh key={i} position={[Math.sin(a) * 26, 2.5 + rng(i) * 3, Math.cos(a) * 20]} scale={[2.8, 0.7, 1.6]}>
-            <sphereGeometry args={[2.6, 8, 6]} />
-            <meshStandardMaterial color="#e8d8c8" transparent opacity={0.35} depthWrite={false} roughness={1} />
-          </mesh>
-        );
-      })}
-    </group>
-  );
+  return <MountainTerrain position={[52, -.3, -95]} size={[100, 76]} peaks={LUMI_VOLCANO} rock="#687d70" />;
 }
 
 /** tropická džungle + terasovité zahrady + cesty */
@@ -553,7 +531,7 @@ function DuskSky() {
             vec3 d = normalize(vP);
             // soumrak: západ teplý, východ/zenit noční
             float west = clamp(dot(normalize(d.xz), normalize(vec2(-1.0, -0.35))) * 0.5 + 0.5, 0.0, 1.0);
-            float daySide = smoothstep(0.1, -0.15, d.y) * west;
+            float daySide = (1.0 - smoothstep(-0.15, 0.1, d.y)) * west;
             vec3 night = mix(vec3(0.03, 0.05, 0.12), vec3(0.05, 0.08, 0.18), d.y * 0.5 + 0.5);
             vec3 dusk  = mix(vec3(0.95, 0.55, 0.28), vec3(0.35, 0.28, 0.42), smoothstep(-0.05, 0.5, d.y));
             vec3 c = mix(night, dusk, clamp(west * (1.0 - smoothstep(0.05, 0.55, d.y)) * 1.25, 0.0, 1.0));
@@ -569,8 +547,10 @@ function DuskSky() {
             vec3 cell = floor(d * 200.0);
             float star = step(0.995, hash(cell));
             float tw = 0.6 + 0.4 * hash(cell + 1.0);
-            c += vec3(1.0, 0.98, 0.9) * star * tw * 1.2 * smoothstep(0.6, 0.02, west) * smoothstep(-0.02, 0.25, d.y);
+            c += vec3(1.0, 0.98, 0.9) * star * tw * 1.2 * (1.0 - smoothstep(0.02, 0.6, west)) * smoothstep(-0.02, 0.25, d.y);
             gl_FragColor = vec4(c, 1.0);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
           }
         `,
         uniforms: {

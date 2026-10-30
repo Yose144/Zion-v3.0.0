@@ -51,7 +51,7 @@ function GrandPyramid() {
   useEffect(() => () => tex.dispose(), [tex]);
   useFrame(({ clock }) => {
     const m = beam.current?.material as THREE.MeshBasicMaterial | undefined;
-    if (m) m.opacity = 0.35 + Math.sin(motionTime(clock) * 1.4) * 0.12;
+    if (m) m.opacity = 0.10 + Math.sin(motionTime(clock) * 1.4) * 0.025;
   });
   return (
     <group position={[0, 0, -26]}>
@@ -63,7 +63,7 @@ function GrandPyramid() {
       {/* otevřená síň — svítící zlatý portál na čelní stěně */}
       <mesh position={[0, 3.4, 15.2]} rotation={[0, 0, Math.PI / 4]}>
         <planeGeometry args={[7, 7]} />
-        <meshStandardMaterial color="#ffe9a8" emissive="#ffca50" emissiveIntensity={1.8} transparent opacity={0.95} side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#ffe9a8" emissive="#ffca50" emissiveIntensity={0.65} transparent opacity={0.95} side={THREE.DoubleSide} />
       </mesh>
       {/* interiér — zlatá sloupučí síň naznačená uvnitř portálu */}
       <group position={[0, 3.4, 15.4]}>
@@ -82,7 +82,7 @@ function GrandPyramid() {
       {/* světelný paprsek z vrcholu */}
       <mesh ref={beam} position={[0, 24, 0]}>
         <cylinderGeometry args={[0.5, 0.9, 30, 10, 1, true]} />
-        <meshBasicMaterial color="#ffe9a0" transparent opacity={0.4} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} depthWrite={false} />
+        <meshBasicMaterial color="#ffe9a0" transparent opacity={0.13} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
       <pointLight position={[0, 11, 2]} intensity={4} color="#ffca50" distance={30} decay={2} />
       <pointLight position={[0, 3.5, 16]} intensity={3} color="#ffb840" distance={18} decay={2} />
@@ -226,6 +226,7 @@ function StarFace({ x, y, z }: { x: number; y: number; z: number }) {
     g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
     return g;
   }, [nodes, edges]);
+  useEffect(() => () => geo.dispose(), [geo]);
   return (
     <group position={[x, y, z]} rotation={[0, 0.5, 0]}>
       <lineSegments geometry={geo}>
@@ -297,7 +298,8 @@ function GoldArc({ from, to, lift = 6 }: { from: [number, number, number]; to: [
     mid.y += lift;
     const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
     return new THREE.TubeGeometry(curve, 40, 0.09, 5);
-  }, [from, to, lift]);
+  }, [from[0], from[1], from[2], to[0], to[1], to[2], lift]);
+  useEffect(() => () => geo.dispose(), [geo]);
   return (
     <mesh geometry={geo}>
       <meshBasicMaterial color="#ffca5e" transparent opacity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} />
@@ -477,9 +479,11 @@ function AmentiSky() {
             // srpek vpravo nahoře
             vec3 mdir = normalize(vec3(0.72, 0.6, -0.2));
             float md = length(d - mdir);
-            float moon = smoothstep(0.03, 0.023, md) - smoothstep(0.026, 0.02, length(d - mdir - vec3(0.013, 0.006, 0)));
+            float moon = (1.0 - smoothstep(0.023, 0.03, md)) - (1.0 - smoothstep(0.02, 0.026, length(d - mdir - vec3(0.013, 0.006, 0))));
             c += vec3(0.95, 0.92, 0.8) * max(moon, 0.0) * 0.95;
             gl_FragColor = vec4(c, 1.0);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
           }
         `,
         uniforms: {},
@@ -528,8 +532,8 @@ export function AmentiScene({ lang }: { lang: Lang }) {
   );
 }
 
-export const AMENTI_CAMERA = { position: [2, 11, 56] as [number, number, number], fov: 48, far: 1400 };
-export const AMENTI_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.14, minDistance: 18, maxDistance: 150, maxPolarAngle: Math.PI / 2 - 0.05, target: [0, 14, -20] as [number, number, number], enablePan: false };
+export const AMENTI_CAMERA = { position: [2, 24, 82] as [number, number, number], fov: 48, far: 1400 };
+export const AMENTI_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.14, minDistance: 18, maxDistance: 240, maxPolarAngle: Math.PI / 2 - 0.05, target: [0, 22, -20] as [number, number, number], enablePan: false };
 export function AmentiLighting() {
   return <>
     <ambientLight intensity={0.45} color="#ffd8b0" />

@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { AtlanticOcean } from './CoastalLandscape';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
@@ -43,11 +44,12 @@ function Cliffs() {
   const main = useMemo(() => cliffGeo(3, 34, 20, 9), []);
   const back1 = useMemo(() => cliffGeo(7, 24, 15, 8), []);
   const back2 = useMemo(() => cliffGeo(11, 19, 12, 7), []);
+  useEffect(() => () => { main.dispose(); back1.dispose(); back2.dispose(); }, [main, back1, back2]);
   return (
     <group>
       {/* hlavní mys — čelo k moři */}
       <mesh geometry={main} position={[-16, 1, -14]} castShadow receiveShadow>
-        <meshStandardMaterial color="#5a4634" roughness={0.95} />
+        <meshStandardMaterial color="#746b5d" roughness={0.95} />
       </mesh>
       {/* ustupující hřebeny za mysem — vpravo do dálky */}
       <mesh geometry={back1} position={[16, 0.5, -38]} rotation={[0, -0.28, 0]} castShadow>
@@ -60,7 +62,7 @@ function Cliffs() {
       {[...Array(5)].map((_, i) => (
         <mesh key={i} position={[-38 + i * 9, 2.5 + rng(i) * 2, -8 - rng(i + 4) * 5]} scale={[4.5, 3 + rng(i + 2) * 2, 4]} castShadow>
           <sphereGeometry args={[1.4, 8, 6]} />
-          <meshStandardMaterial color="#5a4634" roughness={0.95} />
+          <meshStandardMaterial color="#746b5d" roughness={0.95} />
         </mesh>
       ))}
       {/* skaliska ve vodě u paty — placatá, tmavá */}
@@ -210,21 +212,7 @@ function TwoOceans() {
   });
   return (
     <group>
-      {/* Atlantik — tmavší tyrkys */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-60, -0.7, 40]}>
-        <planeGeometry args={[160, 170]} />
-        <meshStandardMaterial color="#1a4a54" roughness={0.15} metalness={0.45} />
-      </mesh>
-      {/* Indický oceán — teplejší zelenomodrá */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[60, -0.68, 40]}>
-        <planeGeometry args={[160, 170]} />
-        <meshStandardMaterial color="#205a60" roughness={0.15} metalness={0.45} />
-      </mesh>
-      {/* šev dvou oceánů — jemná světlá linie */}
-      <mesh rotation={[-Math.PI / 2, 0, 0.1]} position={[0, -0.62, 40]}>
-        <planeGeometry args={[1.1, 160]} />
-        <meshStandardMaterial color="#bfe8dc" transparent opacity={0.22} roughness={0.4} emissive="#9ad0c2" emissiveIntensity={0.3} />
-      </mesh>
+      <AtlanticOcean level={-.7} coastal={false} roughSea />
       {/* příbojová vlna sunoucí se ke břehu */}
       <mesh ref={swell} rotation={[-Math.PI / 2, 0, 0.04]} position={[8, -0.55, 16]}>
         <planeGeometry args={[70, 2.6]} />
@@ -312,14 +300,16 @@ function StormSky() {
             c = mix(c, vec3(0.07, 0.075, 0.1), cloud * (1.0 - east * 0.55));
             // slunce + boží paprsky
             float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.88, 0.55) * pow(s, 500.0) * 3.4
-               + vec3(1.0, 0.7, 0.35) * pow(s, 30.0) * 0.55;
+            c += vec3(1.0, 0.88, 0.55) * pow(s, 1800.0) * 1.4
+               + vec3(1.0, 0.7, 0.35) * pow(s, 45.0) * 0.18;
             // radiální paprsky ze slunce
             vec3 sp = normalize(cross(sunDir, vec3(0.0, 1.0, 0.0)));
             float ang = atan(dot(d, sp), dot(d, normalize(cross(sp, sunDir))));
             float rays = pow(0.5 + 0.5 * sin(ang * 14.0 + cl * 6.0), 3.0);
-            c += vec3(1.0, 0.82, 0.45) * rays * pow(s, 5.0) * 0.7;
+            c += vec3(1.0, 0.82, 0.45) * rays * pow(s, 12.0) * 0.14;
             gl_FragColor = vec4(c, 1.0);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
           }
         `,
         uniforms: {

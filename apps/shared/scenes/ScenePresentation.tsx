@@ -10,13 +10,14 @@ export const motionDelta = (delta: number) => reducedMotion ? 0 : Math.min(delta
 
 /** Shared camera, motion and shadow policy for the twelve project canvases. */
 export function ScenePresentation({ camera: initial, target }: { camera: { position: Point; fov: number }; target: Point }) {
-  const { camera, size, gl, controls } = useThree();
+  const { camera, size, gl, controls, scene } = useThree();
   const audit = React.useRef(false);
-  const counters = React.useRef({ frames: 0, start: 0, shadowAt: -1 });
+  const counters = React.useRef({ frames: 0, start: 0 });
+  const invalidVertices = React.useRef(-1);
   React.useLayoutEffect(() => {
     const aspect = size.width / Math.max(1, size.height);
     const portrait = aspect < 1;
-    const factor = portrait ? Math.max(1, .72 / aspect) : 1;
+    const factor = portrait ? Math.max(1, .8 / aspect) : 1;
     camera.position.set(...initial.position).sub(new THREE.Vector3(...target)).multiplyScalar(factor).add(new THREE.Vector3(...target));
     if (camera instanceof THREE.PerspectiveCamera) camera.fov = portrait ? Math.max(initial.fov, 60) : initial.fov;
     camera.lookAt(...target); camera.updateProjectionMatrix();
@@ -42,19 +43,29 @@ export function ScenePresentation({ camera: initial, target }: { camera: { posit
   useFrame(({ clock }) => {
     if (controls && 'autoRotate' in controls) (controls as unknown as { autoRotate: boolean }).autoRotate = !reducedMotion;
     const count = counters.current;
+    count.frames++;
     // Refresh moving silhouettes gently; static surfaces reuse their shadow map.
-    if (clock.elapsedTime - count.shadowAt > .5) {
+    if (count.frames < 4 || count.frames % 24 === 0) {
       gl.shadowMap.needsUpdate = true;
-      count.shadowAt = clock.elapsedTime;
     }
     if (!audit.current) return;
+    if (invalidVertices.current < 0 && count.frames >= 3) {
+      let invalid = 0;
+      scene.traverse(object => {
+        const attribute = (object as THREE.Mesh).geometry?.getAttribute('position');
+        if (attribute) for (let i = 0; i < attribute.count; i++) {
+          if (![attribute.getX(i), attribute.getY(i), attribute.getZ(i)].every(Number.isFinite)) invalid++;
+        }
+      });
+      invalidVertices.current = invalid;
+    }
     const now = performance.now();
     if (!count.start) count.start = now;
-    count.frames++;
     (window as unknown as Record<string, unknown>).__projectScene = {
       frames: count.frames, fps: count.frames * 1000 / Math.max(1, now - count.start),
       calls: gl.info.render.calls, triangles: gl.info.render.triangles,
       geometries: gl.info.memory.geometries, textures: gl.info.memory.textures,
+      invalidVertices: invalidVertices.current,
       reducedMotion, autoRotate: controls && 'autoRotate' in controls ? controls.autoRotate : null,
       camera: camera.position.toArray(), fov: camera instanceof THREE.PerspectiveCamera ? camera.fov : null,
     };
