@@ -140,6 +140,8 @@ Canvas není dekorace ani plochý katalog — **je navigace**. Člověk stojí v
 
 Cíl = **WebXR jako první povrch** (Quest a podobné, `@react-three/xr` / three `xr`), ne separátní klient. Plochá obrazovka = 2D režim téhož grafu. Pixel-stream z edge GPU je HORIZONT a mimo DoD — scéna se renderuje lokálně v prohlížeči.
 
+**Engine rozhodnutí → `docs/3.3/ENGINE-WEB.md`:** three.js r18x + R3F (WebGPURenderer, WebGPU→WebGL2 fallback; **XR sessions → WebGL2** — XRGPUBinding ještě není venku), `@react-three/xr` + `@react-three/uikit` pro in-world panely. Next.js zůstává shell — stačí; scéna žije za `core/scene/` boundary, takže pivot na PlayCanvas/Babylon zůstává ~sprint, ne rewrite.
+
 ### Co tohle mění v pořadí
 
 - **K1** navíc přidává `core/scene/` — modulární scene graph (orbit/planet/rings/gate), ne jeden `WorldCanvas` se vším
