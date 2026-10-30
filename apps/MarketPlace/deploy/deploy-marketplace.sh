@@ -23,8 +23,14 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EDGE_HOST="${ZION_EDGE_HOST:-zion-edge2}"
+EDGE_USER="${ZION_EDGE_USER:-root}"
+SSH_KEY="${ZION_SSH_KEY:-$HOME/.ssh/zion-edge-post-wipe-2026-07-29}"
+SSH_EXTRA="${ZION_SSH_OPTS:-}"
 REMOTE_DIR="/opt/zion/APP&WEB/MarketPlace"
 SERVICE="zion-marketplace.service"
+
+SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=accept-new ${SSH_EXTRA}"
+SSH() { ssh ${SSH_OPTS} "${EDGE_USER}@${EDGE_HOST}" "$@"; }
 
 echo "[deploy-marketplace] Installing deps + generating Prisma client..."
 cd "$ROOT_DIR"
@@ -45,14 +51,14 @@ fi
 
 # Remote pre-flight: refuse to --delete into a directory that does not look
 # like the MarketPlace app root (guards against wrong REMOTE_DIR / empty dirs).
-if ! ssh "${EDGE_HOST}" "test -f '${REMOTE_DIR}/package.json'"; then
+if ! SSH "test -f '${REMOTE_DIR}/package.json'"; then
   echo "[deploy-marketplace] ERROR: ${REMOTE_DIR}/package.json missing on ${EDGE_HOST} — refusing rsync --delete" >&2
   exit 1
 fi
 
 # Safety net: snapshot remote .env before sync (excludes keep it untouched and
 # undeleted — this is only insurance against operator-side edits).
-ssh "${EDGE_HOST}" "cp -a '${REMOTE_DIR}/.env' '${REMOTE_DIR}/.env.pre-deploy-\$(date +%Y%m%d-%H%M%S)' 2>/dev/null || true"
+SSH "cp -a '${REMOTE_DIR}/.env' '${REMOTE_DIR}/.env.pre-deploy-\$(date +%Y%m%d-%H%M%S)' 2>/dev/null || true"
 
 echo "[deploy-marketplace] Syncing to ${EDGE_HOST}:${REMOTE_DIR}"
 # NOTE: source is the WHOLE app dir — the unit ExecStart expects the standalone
@@ -66,21 +72,21 @@ rsync -avz --delete \
   --exclude='.l1-watcher-state.json' \
   --exclude='.next/cache' \
   --exclude='.next/trace' \
-  -e 'ssh' \
+  -e "ssh ${SSH_OPTS}" \
   "${ROOT_DIR}/" \
-  "${EDGE_HOST}:${REMOTE_DIR}/"
+  "${EDGE_USER}@${EDGE_HOST}:${REMOTE_DIR}/"
 
 echo "[deploy-marketplace] Fixing ownership and restarting ${SERVICE} + zion-l1-watcher"
-ssh "${EDGE_HOST}" "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE} zion-l1-watcher.service"
+SSH "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE} zion-l1-watcher.service"
 
 echo "[deploy-marketplace] Smoke check..."
 sleep 3
-local_code=$(ssh "${EDGE_HOST}" "curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3100/" || echo 000)
+local_code=$(SSH "curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3100/" || echo 000)
 live_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 'https://market.zionterranova.com/')
 if [[ "$local_code" == "200" && "$live_code" == "200" ]]; then
   echo "[deploy-marketplace] OK — local :3100=$local_code, live=$live_code. Deploy verified."
 else
   echo "[deploy-marketplace] FAIL — local :3100=$local_code, live=$live_code (want 200/200)" >&2
-  ssh "${EDGE_HOST}" "systemctl status ${SERVICE} --no-pager -l | tail -15" || true
+  SSH "systemctl status ${SERVICE} --no-pager -l | tail -15" || true
   exit 1
 fi

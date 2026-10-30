@@ -1,6 +1,6 @@
 {
-  "id": "qtc-payouts-deferred-2026-10-29",
-  "level": "warning",
-  "cs": "QTC výplaty jsou dočasně pozastavené (deferred), dokud nebude funded payout treasury — ledger je zachován, vyplatí se FIFO po funding. ZION a PRL výplaty jedou normálně. Detail v FAQ.",
-  "en": "QTC payouts are temporarily deferred until the payout treasury is funded — the ledger is retained and will settle FIFO after funding. ZION and PRL payouts run normally. Details in the FAQ."
+  "id": "construction-2026-10-30",
+  "level": "maintenance",
+  "cs": "Pool je ve výstavbě — těžba, statistiky a výplaty běží v plném provozu, nové funkce se průběžně zapínají. Díky za trpělivost.",
+  "en": "The pool is under construction — mining, stats and payouts are fully operational, new features are being enabled progressively. Thanks for your patience."
 }

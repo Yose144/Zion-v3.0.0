@@ -6,6 +6,7 @@ import './globals.css';
 import { Providers } from './providers';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import StatusBanner from '@/components/StatusBanner';
 import StarfieldCanvas from '@/components/StarfieldCanvas';
 import { CartProvider } from '@/components/shop/CartContext';
 import { tr } from '@/lib/translations';
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CartProvider>
             <Navbar />
             <main className="zion-container py-6 md:py-8 min-h-[calc(100vh-4rem)]">
+              <StatusBanner />
               {children}
             </main>
             <footer className="rasta-footer mt-16 relative py-10 zion-container">
