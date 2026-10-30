@@ -297,8 +297,15 @@ function Bridge({ from, to, w = 1.6 }: { from: [number, number]; to: [number, nu
     const mid = a.clone().lerp(b, 0.5); mid.y = 1.9;
     const curve = new THREE.CatmullRomCurve3([a, mid, b]);
     const deck = new THREE.TubeGeometry(curve, 20, w * 0.5, 4);
-    deck.scale(1, 0.16, 1);
-    deck.translate(0, -0.12, 0);
+    const deckPositions = deck.getAttribute('position');
+    for (let ring = 0; ring <= 20; ring++) {
+      const center = curve.getPointAt(ring / 20);
+      for (let j = 0; j <= 4; j++) {
+        const i = ring * 5 + j;
+        deckPositions.setY(i, center.y + (deckPositions.getY(i) - center.y) * .16 - .06);
+      }
+    }
+    deck.computeVertexNormals();
     const rails: THREE.TubeGeometry[] = [];
     const posts: THREE.Vector3[] = [];
     const dir = b.clone().sub(a).normalize();
@@ -314,7 +321,8 @@ function Bridge({ from, to, w = 1.6 }: { from: [number, number]; to: [number, nu
     }
     for (let i = 1; i < 6; i++) posts.push(curve.getPoint(i / 6));
     return { deck, rails, posts, side };
-  }, [from, to, w]);
+  }, [from[0], from[1], to[0], to[1], w]);
+  useEffect(() => () => { deck.dispose(); rails.forEach(rail => rail.dispose()); }, [deck, rails]);
   return (
     <group>
       <mesh geometry={deck} castShadow receiveShadow>
