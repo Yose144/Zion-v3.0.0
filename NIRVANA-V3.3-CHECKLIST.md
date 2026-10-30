@@ -146,10 +146,11 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 
 - [x] 🤖 QV voting UI live (`QvSection`, ZIS gate, otevřené kolo s 6 granty)
 - [x] 🤖 Planetary map + projektový registr live
+- [x] 🤖 **3D prezentační vrstva 12/12** — 30. 10.: shared scény `apps/shared/scenes` (web preview + `/present/*` z jednoho zdroje), `ScenePresentation` policy (reduced-motion, portrait framing, shadow 2 Hz, `?sceneAudit=1`), Earth markery interaktivní (halo+tooltip+link), report `docs/3.2/REPORTS/REPORT_2026-10-30_L5_3D_PRESENTATIONS.md`
 - [x] 🤖 **P0-1** scanner stall opraven 26. 10. (6.B1)
-- [ ] 🤖 alert na lag scanneru (6.B2)
-- [ ] 🤖 QV: Sybil model, eligibility, privacy analýza **před** prvním reálným ballotem (6.B3)
-- [ ] 🤖 Proof-of-impact workflow + impact packet šablona (6.B4)
+- [x] 🤖 alert na lag scanneru (6.B2) — ✅ 28. 10. přes 8.B4 (freshness metriky + lag alerty nasazené)
+- [x] 🤖 QV: Sybil model, eligibility, privacy analýza **před** prvním reálným ballotem (6.B3) — 30. 10. `docs/3.2/QV_SYBIL_PRIVACY_ANALYSIS.md`: voter_id bound server-side `zis:<user.id>`, Sybil = ZIS account cost, doporučení E1 gate + per-IP limit + round-salted HMAC pseudonymizace
+- [x] 🤖 Proof-of-impact workflow + impact packet šablona (6.B4) — 30. 10. `docs/3.2/L5_PROOF_OF_IMPACT.md`: lifecycle proposal→QV→DAO→disbursement→packet→verify→public, jednostránková md šablona
 - [ ] 👤 Výběr 1 reálného pilotu + nezávislé ověření (fyzický svět) → V33-6
 - [ ] 🔀 První E2E grant advisory → DAO → guardian multisig; disbursement tx flow (dnes summary-only) (6.B5)
 
