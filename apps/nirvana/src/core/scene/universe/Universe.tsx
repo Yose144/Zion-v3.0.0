@@ -8,7 +8,7 @@ import type { Lang } from '@/core/i18n';
 import { worldSlot } from './positions';
 import { NewEarth } from './NewEarth';
 import { IssobellaRing } from './IssobellaRing';
-import { Gate } from './Gate';
+import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { HoloConsole } from './HoloConsole';
 
@@ -74,7 +74,7 @@ export function Universe({
         onSelectWorld={onSelectWorld}
       />
       <OrbitalWorlds worlds={split.orbit} onSelectWorld={onSelectWorld} />
-      {gatePortal && <Gate portal={gatePortal} onOpen={onOpen} />}
+      {gatePortal && <StarGate portal={gatePortal} onOpen={onOpen} />}
 
       <HoloConsole
         portals={portals}
