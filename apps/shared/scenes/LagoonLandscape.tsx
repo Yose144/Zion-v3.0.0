@@ -14,7 +14,8 @@ export function LagoonLandscape() {
     for (let i = 0; i < p.count; i++) {
       const x = p.getX(i), z = p.getZ(i), shore = -10.5 - Math.sin(x * .12) * 1.5;
       p.setY(i, Math.max(-3, Math.min(0, (z - shore) * .35)));
-      color.set(z < shore + 5 || Math.hypot(x, z) < 10.8 ? '#cfba92' : '#42653b');
+      const sand = Math.max(1 - THREE.MathUtils.smoothstep(Math.hypot(x, z), 9, 13), 1 - THREE.MathUtils.smoothstep(z - shore, 3, 7));
+      color.set('#42653b').lerp(new THREE.Color('#cfba92'), sand);
       color.multiplyScalar(.95 + .05 * Math.sin(x * 2.2 + z * .8));
       colors.push(color.r, color.g, color.b);
     }
@@ -23,9 +24,9 @@ export function LagoonLandscape() {
     const m = mountains.getAttribute('position');
     for (let i = 0; i < m.count; i++) {
       const x = m.getX(i), z = m.getZ(i);
-      const peak = 22 * Math.exp(-(((x - 38) / 18) ** 2 + ((z + 104) / 18) ** 2))
-        + 14 * Math.exp(-(((x - 15) / 15) ** 2 + ((z + 116) / 19) ** 2))
-        + 12 * Math.exp(-(((x - 65) / 17) ** 2 + ((z + 117) / 20) ** 2));
+      const peak = 16 * Math.exp(-(((x - 38) / 18) ** 2 + ((z + 104) / 18) ** 2))
+        + 9 * Math.exp(-(((x - 15) / 15) ** 2 + ((z + 116) / 19) ** 2))
+        + 8 * Math.exp(-(((x - 65) / 17) ** 2 + ((z + 117) / 20) ** 2));
       const spine = 1 + .13 * Math.sin(x * .6) * Math.cos(z * .4);
       m.setY(i, peak * spine - 3);
     }

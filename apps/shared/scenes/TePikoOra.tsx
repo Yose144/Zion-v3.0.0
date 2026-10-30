@@ -45,8 +45,25 @@ function gableGeometry(w: number, h: number) {
   );
 }
 
+function useThatchTexture() {
+  const texture = React.useMemo(() => {
+    if (typeof document === 'undefined') return null;
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
+    const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#bca477'; ctx.fillRect(0, 0, 256, 256);
+    let seed = 71; const rnd = () => (seed = seed * 16807 % 2147483647) / 2147483647;
+    for (let i = 0; i < 1500; i++) {
+      const x = rnd() * 256, y = rnd() * 256;
+      ctx.strokeStyle = i % 3 ? 'rgba(74,48,22,.24)' : 'rgba(249,222,166,.4)';
+      ctx.lineWidth = .5 + rnd(); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + rnd() * 3, y + 8 + rnd() * 34); ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(2, 2);
+    return tex;
+  }, []);
+  useEffect(() => () => texture?.dispose(), [texture]); return texture;
+}
+
 /** A-frame chýše (fare) — bambusová kostra, rákosová střecha, raised floor */
-function Fare({ fare, lang }: { fare: Fare; lang: Lang }) {
+function Fare({ fare, lang, roofTexture }: { fare: Fare; lang: Lang; roofTexture: THREE.Texture | null }) {
   const { angle, dist, w, len, name } = fare;
   const x = Math.sin(angle) * dist;
   const z = Math.cos(angle) * dist;
@@ -65,6 +82,7 @@ function Fare({ fare, lang }: { fare: Fare; lang: Lang }) {
     geo.translate(0, 0, -len * 0.43);
     return geo;
   }, [w, roofH, len]);
+  useEffect(() => () => { gable.dispose(); innerPrism.dispose(); }, [gable, innerPrism]);
 
   return (
     <group position={[x, 0, z]} rotation={[0, angle + Math.PI, 0]}>
@@ -81,7 +99,7 @@ function Fare({ fare, lang }: { fare: Fare; lang: Lang }) {
       ))}
       {/* vnitřní objem — pletené stěny, teplý interiér */}
       <mesh position={[0, 0.36, 0]} geometry={innerPrism} castShadow>
-        <meshStandardMaterial color="#4a3520" roughness={0.95} emissive="#a85e20" emissiveIntensity={0.3} />
+        <meshStandardMaterial color="#4a3520" roughness={0.95} emissive="#a85e20" emissiveIntensity={0.12} />
       </mesh>
       {/* spádové střechy — palmový rákos */}
       {[1, -1].map((s) => (
@@ -92,7 +110,7 @@ function Fare({ fare, lang }: { fare: Fare; lang: Lang }) {
           castShadow
         >
           <boxGeometry args={[slope, 0.07, len * 1.04]} />
-          <meshStandardMaterial color="#ae9667" roughness={0.98} />
+          <meshStandardMaterial map={roofTexture} color="#fff2d5" roughness={0.98} />
         </mesh>
       ))}
       {[-1, 1].map(side => <group key={`frame${side}`}>
@@ -503,6 +521,8 @@ function SkyMountainsSun() {
     [],
   );
 
+  useEffect(() => () => skyMat.dispose(), [skyMat]);
+
   return (
     <>
       <mesh material={skyMat} renderOrder={-10} frustumCulled={false}>
@@ -513,6 +533,7 @@ function SkyMountainsSun() {
 }
 
 export function TePikoOraScene({ lang }: { lang: Lang }) {
+  const roofTexture = useThatchTexture();
   return (
     <>
       <SkyMountainsSun />
@@ -547,7 +568,7 @@ export function TePikoOraScene({ lang }: { lang: Lang }) {
       </mesh>
 
       {FARES.map((f, i) => (
-        <Fare key={i} fare={f} lang={lang} />
+        <Fare key={i} fare={f} lang={lang} roofTexture={roofTexture} />
       ))}
 
       <CenterPiko lang={lang} />
@@ -568,13 +589,13 @@ export function TePikoOraScene({ lang }: { lang: Lang }) {
 function PikoFraming() {
   const {camera, size} = useThree();
   useEffect(() => {
-    const aspect = size.width / Math.max(1, size.height), d = Math.max(1, .85 / aspect);
+    const aspect = size.width / Math.max(1, size.height), d = Math.max(1, .75 / aspect);
     if (camera instanceof THREE.PerspectiveCamera) camera.fov = aspect < 1 ? 60 : 46;
-    camera.position.set(3 * d, 11 * d, 26 * d); camera.lookAt(0, 2, -2); camera.updateProjectionMatrix();
+    camera.position.set(2 * d, 9.5 * d, 23 * d); camera.lookAt(0, 2, -2); camera.updateProjectionMatrix();
   }, [camera, size.width, size.height]);
   return null;
 }
-export const PIKO_CAMERA = {position: [3, 11, 26] as [number,number,number], fov: 46, far: 2000};
+export const PIKO_CAMERA = {position: [2, 9.5, 23] as [number,number,number], fov: 46, far: 2000};
 export const PIKO_CONTROLS = {autoRotate:true, autoRotateSpeed:.18, minDistance:12, maxDistance:85, maxPolarAngle:Math.PI / 2 - .08, target:[0,2,-2] as [number,number,number], enablePan:false};
 export function PikoLighting() {
   return <>
