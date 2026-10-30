@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { ArrowRight, Cpu, Gem, Pickaxe, Wallet } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useLang } from '@/lib/i18n';
+import AccountAlerts from '@/components/AccountAlerts';
 import { zisAvatarUrl } from '@/lib/zis';
 import { fetchMiner } from '@/lib/api';
 import { fmtHashrate } from '@/lib/format';
@@ -241,6 +242,10 @@ export default function AccountPage() {
           </div>
         )}
       </div>
+
+      {/* Alerts + payout threshold — HeroMiners-parity notification UX
+          on the pool account API (ZIS-key scoped to own wallets). */}
+      <AccountAlerts />
     </div>
   );
 }
