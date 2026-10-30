@@ -96,6 +96,75 @@ export interface PortalManifest {
 
 ---
 
+## 1b. Prostorový model — živé prostředí (Nová Země)
+
+Canvas není dekorace ani plochý katalog — **je navigace**. Člověk stojí v prostoru, místa jsou vrstvy ekosystému. Model (viz operátor 30. 10.):
+
+```text
+                    ✦ ORBIT — pohled z lodi Království srdce
+                              │
+            ◯ ◯ ◯ ◯ ◯  ISSOBELLA (L6) — orbitální prstence, science ring
+             ( Nová Země )      stanice na prstencích = L6 povrchy
+              povrch = L5 Free World — kontinenty = projekty/zahrady
+                (BodhiGaia, Genesis garden, přístav, trh, knihovna)
+              jádro = L1 (řetěz, maják); kovárna = těžba/pool
+                              │
+              [ BRÁNA ] — IntroPage, volně v prostoru vedle planety
+                              │
+                  ▼ OASIS (L4) — sestup dovnitř světa, světy jako místa
+```
+
+**Vrstvy jako místa (mapping):**
+
+| Vrstva | Místo ve vesmíru | Modul |
+|---|---|---|
+| L6 Issobella | **Orbitální prstence** kolem planety — dnešní torus-ringy se stávají jejími stanicemi | `issobella/` |
+| L5 Free World | **Povrch Nové Země** — kontinenty = komunity/piloty (BodhiGaia, zahrada Genesis), přístav = fond/granty | `freeworld/`, `harbor/` |
+| apex | **Brána** — volně v prostoru vedle planety; IntroPage = vstupní portál | `gate/` |
+| L4 OASIS | **Sestup dovnitř** — světy OASIS jako místa na/v planetě, vstupní bod | `world/` |
+| L1 řetěz | **Jádro / maják** planety — chain stats jako světelná houpačka | `chain/` |
+| L1/L2 těžba | **Kovárna / důl** na povrchu — pool data, hashrate jako puls | `pool/` |
+| L4 trh | **Město / tržiště** na povrchu — výloha uvnitř budovy | `market/` |
+| canon | **Knihovna / archiv** — samostatná budova na povrchu | `books/` |
+| L3 Hiran | **Věž / observatoř** — hlava, AI | `hiran/` |
+| ZIS | **Tvoje loď / dok** — účet, session — pojíždíš vesmírem | `account/` |
+| compute | **Strojovna** pod palubou — `zion-compute` stav slotů | `compute/` |
+
+**Pravidla:**
+- Scéna = reálný 3D graf (WebGPU → WebGL2 fallback, R3F). Cesta: `orbit → planet → gate → descend`. Pohyb mezi úrovněmi = kamera/prostředí, ne reload.
+- **Okna zůstávají DOM.** Tabulky, formuláře, checkout, přihlášení — čtěte/pracujete v okně, svět je plátno. Ve VR jsou to in-world panely později; na ploše překryv.
+- **Data = živá.** Prstenec Issobelly puls jeho trackerem, povrch svítí L5 projekty, kovárna hučí hashratem — scéna čte ta samá API jako portály, vizuálně.
+- **Vstup:** Brána je místo příjezdu (orbital gate → descend); IntroPage obsah se stává jejím povrchem.
+
+### VR / WebXR
+
+Cíl = **WebXR jako první povrch** (Quest a podobné, `@react-three/xr` / three `xr`), ne separátní klient. Plochá obrazovka = 2D režim téhož grafu. Pixel-stream z edge GPU je HORIZONT a mimo DoD — scéna se renderuje lokálně v prohlížeči.
+
+### Co tohle mění v pořadí
+
+- **K1** navíc přidává `core/scene/` — modulární scene graph (orbit/planet/rings/gate), ne jeden `WorldCanvas` se vším
+- **K2** absorbuje `OasisWeb` scénu jako `portals/world/` — descend úroveň
+- **K3** = živá data ve scéně (pulzy, stavy) + VR režim + write intents
+- **K4** = apex → Brána jako veřejný vstup
+
+---
+
+## 1c. Závislostní mapa prostoru
+
+```text
+  kamera   orbit ──► gate (IntroPage) ──► descend ──► OASIS světy (L4)
+              │                            │
+              ▼                            ▼
+         prstence L6                  povrch L5
+         Issobella             (přístav·trh·kovárna·knihovna·věž)
+              │                            │
+              └──────────── jádro L1 (chain beacon) ────────────┘
+```
+
+Portály zůstávají portály — ale umístění ve scéně je jejich `manifest.ring/scene` souřadnice. Nový modul = nové místo ve vesmíru, ne další položka v liště.
+
+---
+
 ## 2. Migrace: ze 12 appek do modulů (bez big-bangu)
 
 Postup per povrch — **absorpce kódu, ne proxy**:
@@ -151,10 +220,10 @@ stroj těžaře (ne server, ne node):
 | Vlna | Obsah | Brána |
 |---|---|---|
 | **K0 — čistý stůl** ✅ (dnes) | root cleanup (`7fa9a7062`), docs→docs/plans, G8 run #6 start (`g8-20261029T234617Z`, konec ~28. 11.), nirvana v1 committed | done |
-| **K1 — Shell GA** | `apps/nirvana` → modular monolith: `core/` (shell/session/sdk/ui/api) + `portals/` registry; přesunout v1 portály do manifest tvaru; core/ui tokeny + cs/en i18n jako jediný zdroj; deep-link `/portal/<id>` | build green, 7 portálů v manifestu |
-| **K2 — Depth** | wallet/account modul (session UX sjednocení); market výloha → košík→checkout handoff na market.; hiran modul; intro absorbce apexu | session e2e přes 3 moduly |
-| **K3 — Writes + World** | write intents kde model existuje; OASIS world canvas jako plná scéna (OasisWeb kód → portal world); pool miner-control (read+ops view) | write gate per modul |
-| **K4 — Sjednocení povrchů** | staré appky zhasínají povrch po povrchu (redirecty); DNS rozhodnutí 👤 (apex na Království?); desktop-agent jako native host shellu | exit kritéria per appka |
+| **K1 — Shell GA** | `apps/nirvana` → modular monolith: `core/` (shell/session/sdk/ui/api/**scene**) + `portals/` registry; přesunout v1 portály do manifest tvaru; core/ui tokeny + cs/en i18n jako jediný zdroj; deep-link `/portal/<id>`; scene graph orbit→planet→gate | build green, 7 portálů v manifestu, Nová Země orbit |
+| **K2 — Depth** | wallet/account modul (session UX sjednocení); market výloha → košík→checkout handoff na market.; hiran modul; intro absorbce apexu → **Brána**; povrch L5 jako kontinenty (živá data v mapě) | session e2e přes 3 moduly |
+| **K3 — Writes + World** | write intents kde model existuje; OASIS world canvas jako plná scéna (OasisWeb kód → portal world = descend úroveň); pool miner-control (read+ops view); **WebXR režim**; živá data pulzují ve scéně | write gate per modul |
+| **K4 — Sjednocení povrchů** | staré appky zhasínají povrch po povrchu (redirecty); DNS rozhodnutí 👤 (apex na Království = Brána jako veřejný vstup?); desktop-agent jako native host shellu | exit kritéria per appka |
 
 Paralelní stopy (nezávislé, platí dál): **N0** (G8 run #6 do ~28. 11., operátorská fronta), **zion-compute** vlny 1–4, **N3/N5/N6** dle checklistu.
 
