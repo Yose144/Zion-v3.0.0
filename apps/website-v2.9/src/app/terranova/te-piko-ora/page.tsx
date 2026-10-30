@@ -28,6 +28,7 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+const TePikoOraPreviewLazy = dynamic(() => import('@/components/TePikoOraPreviewLazy'), { ssr: false });
 
 const TerranovaTePikoOraCopy = {
   home: { cs: `Domů`, en: `Home` },
@@ -68,6 +69,8 @@ const TerranovaTePikoOraCopy = {
   connectionWithSisterProjects: { cs: `Propojení se sesterskými projekty`, en: `Connection with sister projects` },
   dimension: { cs: `Dimenze`, en: `Dimension` },
   bothProjectsShareSourceCodeTer: { cs: `Oba projekty sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance a seed library.`, en: `Both projects share source code: Terra Nova ethics, ZION blockchain, off-grid technology, community governance and seed library.` },
+  threeDPreview: { cs: `3D koncept`, en: `3D concept` },
+  threeDPreviewSubtitle: { cs: `Interaktivní náhled vesnice – Te Pīko, fare, laguna a molo.`, en: `Interactive preview of the village – Te Pīko, fare, lagoon and pier.` },
   sitePlan: { cs: `Architektonický koncept`, en: `Architectural concept` },
   sitePlanSubtitle: { cs: `První konceptový board: půdorysy, řezy a energetický systém.`, en: `First concept board: floor plans, sections and energy system.` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
@@ -412,6 +415,27 @@ export default function TePikoOraPage() {
                 ))}
               </div>
             </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.05, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {TerranovaTePikoOraCopy.threeDPreview[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {TerranovaTePikoOraCopy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <TePikoOraPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
           </div>
         </motion.section>
 
