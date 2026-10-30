@@ -13,7 +13,6 @@ import {
 import { Universe } from './universe/Universe';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
-import type { Lang } from '@/core/i18n';
 
 /** Classic materials render on WebGPU only after the node library is keyed
  *  by material.type (Turbopack minifies class names — keys are set directly).
@@ -66,10 +65,6 @@ export function SceneRoot({
   onOpen,
   onSelectWorld,
   xr,
-  lang,
-  onToggleLang,
-  vrSupported,
-  onEnterVr,
   label,
 }: {
   worlds: WorldPoint[];
@@ -77,10 +72,6 @@ export function SceneRoot({
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
   xr: boolean;
-  lang: Lang;
-  onToggleLang: () => void;
-  vrSupported: boolean;
-  onEnterVr: () => void;
   label: string;
 }) {
   const [backend, setBackend] = useState<GpuBackend | null>(null);
@@ -149,10 +140,6 @@ export function SceneRoot({
               portals={portals}
               onOpen={onOpen}
               onSelectWorld={onSelectWorld}
-              lang={lang}
-              onToggleLang={onToggleLang}
-              vrSupported={vrSupported}
-              onEnterVr={onEnterVr}
             />
             <XrEntry store={xrStore} />
           </XR>
@@ -162,10 +149,6 @@ export function SceneRoot({
             portals={portals}
             onOpen={onOpen}
             onSelectWorld={onSelectWorld}
-            lang={lang}
-            onToggleLang={onToggleLang}
-            vrSupported={vrSupported}
-            onEnterVr={onEnterVr}
           />
         )}
         <DirectRenderer />

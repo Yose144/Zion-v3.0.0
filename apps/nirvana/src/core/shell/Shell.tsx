@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/core/session/AuthProvider';
 import { useI18n } from '@/core/i18n';
-import { PORTALS } from '@/core/portals/manifest';
+import { PORTALS, type SceneSlot } from '@/core/portals/manifest';
 import { backendForXr, resolveGpuBackend, type GpuBackend } from '@/core/scene/backends';
 import { SceneRoot } from '@/core/scene/SceneRoot';
 import { AccountPortal } from '@/portals/account/AccountPortal';
@@ -20,6 +20,15 @@ import { parseWorlds, type WorldPoint } from '@/lib/worlds';
 
 const PANELS = new Set(PORTALS.map((p) => p.id));
 
+const SLOT_COLOR: Record<SceneSlot, string> = {
+  core: '#7ec8ff',
+  surface: '#066928',
+  ring: '#f5f5f5',
+  orbit: '#c084fc',
+  gate: '#fcd116',
+  ship: '#e41e2b',
+};
+
 function readHash(): { portal: string | null; world: string | null } {
   if (typeof window === 'undefined') return { portal: null, world: null };
   const hash = window.location.hash.replace(/^#/, '');
@@ -34,7 +43,7 @@ function readHash(): { portal: string | null; world: string | null } {
 
 export function Shell() {
   const { t, lang, setLang } = useI18n();
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
   const [backend, setBackend] = useState<GpuBackend | null>(null);
   const [worlds, setWorlds] = useState<WorldPoint[]>([]);
   const [worldsFailed, setWorldsFailed] = useState(false);
@@ -42,15 +51,18 @@ export function Shell() {
   const [selectedWorld, setSelectedWorld] = useState<string | null>(null);
   const [xrWanted, setXrWanted] = useState(false);
   const [xrSupported, setXrSupported] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const hashInit = useRef(false);
 
   const openPortal = useCallback((id: string) => {
     setPortal(PANELS.has(id) ? id : null);
+    setMenuOpen(false);
   }, []);
 
   const selectWorld = useCallback((id: string) => {
     setSelectedWorld(id);
     setPortal('world');
+    setMenuOpen(false);
   }, []);
 
   // deep-link: #portal=<id>&world=<id>
@@ -120,6 +132,7 @@ export function Shell() {
     backendForXr();
     setBackend('webgl2');
     setXrWanted(true);
+    setMenuOpen(false);
   }
 
   const toggleLang = useCallback(() => {
@@ -139,10 +152,6 @@ export function Shell() {
           onOpen={openPortal}
           onSelectWorld={selectWorld}
           xr={xrWanted}
-          lang={lang}
-          onToggleLang={toggleLang}
-          vrSupported={xrSupported && !xrWanted}
-          onEnterVr={enterVr}
           label={t('gate')}
         />
       </div>
@@ -156,16 +165,60 @@ export function Shell() {
           <span className="muted">
             {worlds.length} {t('worlds')}
           </span>
-          <button type="button" className="account" title={t('session')} onClick={() => openPortal('account')}>
-            {loading ? '…' : user ? short : t('signedOut')}
-          </button>
-          {user && (
-            <button type="button" onClick={() => void logout()}>
-              {t('signOut')}
-            </button>
-          )}
+          <span className="muted">{loading ? '…' : user ? short : t('signedOut')}</span>
         </div>
       </header>
+      {/* hamburger — navigace vysunutá z levého okraje */}
+      <button
+        type="button"
+        className="holo-menu-btn"
+        aria-label="navigace"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen((o) => !o)}
+      >
+        ☰
+      </button>
+      {menuOpen && (
+        <button
+          type="button"
+          className="holo-drawer-scrim"
+          aria-label="zavřít navigaci"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+      <nav className={`holo-drawer${menuOpen ? ' open' : ''}`} aria-hidden={!menuOpen}>
+        <header className="holo-drawer-head">
+          <span className="holo-title">◈ KINGDOM CONSOLE</span>
+          <button type="button" className="holo-btn" onClick={() => setMenuOpen(false)}>
+            ×
+          </button>
+        </header>
+        <div className="holo-drawer-tiles">
+          {PORTALS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="holo-drawer-tile"
+              style={{ borderLeftColor: SLOT_COLOR[p.scene.slot] }}
+              onClick={() => openPortal(p.id)}
+            >
+              <span className="holo-drawer-dot" style={{ background: SLOT_COLOR[p.scene.slot] }} />
+              {p.title[lang]}
+              {p.status === 'stub' && <em className="holo-drawer-stub">·</em>}
+            </button>
+          ))}
+        </div>
+        <footer className="holo-drawer-foot">
+          <button type="button" className="holo-btn" onClick={toggleLang}>
+            {lang === 'cs' ? 'EN' : 'CS'}
+          </button>
+          {xrSupported && !xrWanted && (
+            <button type="button" className="holo-btn holo-btn-vr" onClick={enterVr}>
+              VR
+            </button>
+          )}
+        </footer>
+      </nav>
       {worldsFailed && <p className="notice">{t('worldsEmpty')}</p>}
       {portal === 'world' && (
         <WorldPortal

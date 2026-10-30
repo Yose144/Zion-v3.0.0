@@ -4,39 +4,28 @@ import { useMemo } from 'react';
 import { OrbitControls } from '@react-three/drei';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
-import type { Lang } from '@/core/i18n';
 import { worldSlot } from './positions';
 import { NewEarth } from './NewEarth';
 import { IssobellaRing } from './IssobellaRing';
 import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
-import { HoloConsole } from './HoloConsole';
 import { SpaceBackdrop } from './SpaceBackdrop';
 
 /**
  * Vesmír Království srdce — orbitální pohled z lodi.
  * Nová Země (L5 povrch + L1 jádro/maják) · prstenec Issobelly (L6)
- * · OASIS světy na vnitřní dráze (L4) · Brána ve volném prostoru (apex)
- * · HoloConsole — holografická tabulka se všemi ovládacími prvky.
+ * · OASIS světy na vnitřní dráze (L4) · Brána ve volném prostoru (apex).
  */
 export function Universe({
   worlds,
   portals,
   onOpen,
   onSelectWorld,
-  lang,
-  onToggleLang,
-  vrSupported,
-  onEnterVr,
 }: {
   worlds: WorldPoint[];
   portals: Portal[];
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
-  lang: Lang;
-  onToggleLang: () => void;
-  vrSupported: boolean;
-  onEnterVr: () => void;
 }) {
   const split = useMemo(() => {
     const surface: WorldPoint[] = [];
@@ -76,15 +65,6 @@ export function Universe({
       />
       <OrbitalWorlds worlds={split.orbit} onSelectWorld={onSelectWorld} />
       {gatePortal && <StarGate portal={gatePortal} onOpen={onOpen} />}
-
-      <HoloConsole
-        portals={portals}
-        onOpen={onOpen}
-        lang={lang}
-        onToggleLang={onToggleLang}
-        vrSupported={vrSupported}
-        onEnterVr={onEnterVr}
-      />
 
       <OrbitControls
         makeDefault
