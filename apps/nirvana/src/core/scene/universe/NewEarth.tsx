@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { TextLabel } from './Label';
 import * as THREE from 'three';
-import { PLANET_R } from './positions';
+import { PLANET_R, latLonToVec3 } from './positions';
+import { FREE_WORLD_MISSIONS, MISSION_ORIGIN, MISSION_STATUS_COLOR } from '@/lib/freeworld-sites';
 
 /** Procedurální mapa — instant fallback dokud se reálné textury nenačtou. */
 function makeFallbackTexture(): THREE.CanvasTexture {
@@ -114,34 +116,132 @@ function Moon() {
   );
 }
 
+/** L5 Free World — 12 zakládajících misí na reálných souřadnicích.
+ *  Instancované světelné sloupky (barva = stav komunity) + jmenovka;
+ *  klik otevře stránku komunity na app.zionterranova.com. */
+function MissionSites() {
+  const pillars = useRef<THREE.InstancedMesh>(null);
+  const tips = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const UP = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const quat = useMemo(() => new THREE.Quaternion(), []);
+
+  const data = useMemo(
+    () =>
+      FREE_WORLD_MISSIONS.map((m) => {
+        const n = new THREE.Vector3(...latLonToVec3(m.lat, m.lon, 1));
+        return {
+          name: m.name,
+          url: MISSION_ORIGIN + m.path,
+          n,
+          h: 0.55,
+          color: new THREE.Color(MISSION_STATUS_COLOR[m.status]),
+        };
+      }),
+    [],
+  );
+
+  useLayoutEffect(() => {
+    const p = pillars.current;
+    const t = tips.current;
+    if (!p || !t) return;
+    data.forEach((d, i) => {
+      quat.setFromUnitVectors(UP, d.n);
+      dummy.quaternion.copy(quat);
+      dummy.position.copy(d.n).multiplyScalar(PLANET_R + d.h / 2);
+      dummy.scale.set(1, d.h, 1);
+      dummy.updateMatrix();
+      p.setMatrixAt(i, dummy.matrix);
+      p.setColorAt(i, d.color);
+      dummy.position.copy(d.n).multiplyScalar(PLANET_R + d.h + 0.025);
+      dummy.scale.setScalar(1);
+      dummy.updateMatrix();
+      t.setMatrixAt(i, dummy.matrix);
+      t.setColorAt(i, d.color);
+    });
+    p.instanceMatrix.needsUpdate = true;
+    t.instanceMatrix.needsUpdate = true;
+    if (p.instanceColor) p.instanceColor.needsUpdate = true;
+    if (t.instanceColor) t.instanceColor.needsUpdate = true;
+  }, [data, dummy, UP, quat]);
+
+  return (
+    <>
+      <instancedMesh
+        ref={pillars}
+        args={[undefined, undefined, data.length]}
+        frustumCulled={false}
+        raycast={() => null}
+      >
+        <cylinderGeometry args={[0.014, 0.04, 1, 6, 1, true]} />
+        <meshBasicMaterial
+          transparent
+          opacity={0.5}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </instancedMesh>
+      <instancedMesh
+        ref={tips}
+        args={[undefined, undefined, data.length]}
+        frustumCulled={false}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.instanceId != null) window.open(data[e.instanceId].url, '_blank', 'noopener');
+        }}
+      >
+        <sphereGeometry args={[0.05, 12, 12]} />
+        <meshBasicMaterial />
+      </instancedMesh>
+      {data.map((d) => (
+        <TextLabel
+          key={d.name}
+          text={d.name}
+          position={[
+            d.n.x * (PLANET_R + d.h + 0.34),
+            d.n.y * (PLANET_R + d.h + 0.34),
+            d.n.z * (PLANET_R + d.h + 0.34),
+          ]}
+          color={`#${d.color.getHexString()}`}
+          height={0.19}
+          onClick={() => window.open(d.url, '_blank', 'noopener')}
+        />
+      ))}
+    </>
+  );
+}
+
 export function NewEarth() {
-  const planet = useRef<THREE.Mesh>(null);
+  const spin = useRef<THREE.Group>(null);
   const fallback = useMemo(() => makeFallbackTexture(), []);
   const maps = useEarthMaps(fallback);
 
   useFrame((_, delta) => {
-    if (planet.current) planet.current.rotation.y += delta * 0.02;
+    if (spin.current) spin.current.rotation.y += delta * 0.02;
   });
 
   return (
     <group>
-      {/* planeta — povrch L5, reálné textury + noční světla + bump */}
-      <mesh ref={planet}>
-        <sphereGeometry args={[PLANET_R, 64, 48]} />
-        <meshStandardMaterial
-          map={maps.color}
-          bumpMap={maps.bump}
-          bumpScale={0.2}
-          roughness={0.72}
-          metalness={0.02}
-        />
-      </mesh>
+      {/* planeta + mise rotují spolu — body drží na svých kontinentech */}
+      <group ref={spin}>
+        <mesh>
+          <sphereGeometry args={[PLANET_R, 64, 48]} />
+          <meshStandardMaterial
+            map={maps.color}
+            bumpMap={maps.bump}
+            bumpScale={0.2}
+            roughness={0.72}
+            metalness={0.02}
+          />
+        </mesh>
+        <MissionSites />
+      </group>
       {/* atmosféra — halo */}
       <mesh scale={1.07}>
         <sphereGeometry args={[PLANET_R, 48, 32]} />
         <meshBasicMaterial color="#7ec8ff" transparent opacity={0.13} side={THREE.BackSide} depthWrite={false} />
       </mesh>
-      {/* povrch zůstává čistý — světy, mise i přístavy jsou v menu */}
       <Moon />
     </group>
   );
