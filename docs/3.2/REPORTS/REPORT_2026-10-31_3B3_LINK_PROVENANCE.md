@@ -77,11 +77,17 @@ pool-side.
   proof flow lands, add a `LinkedAddress.proven` column and flip it only
   on external proof (attestation rows stay `false`).
 
-## Deploy notes
+## Deploy notes — executed 2026-10-31
 
-- ZIS deploy: additive response field — `deploy-zis.sh` standard path.
-- Pool deploy: rebuild required; safe before or after ZIS deploy
-  (conservative default already gates qz/prl under old ZIS).
+- **ZIS:** `deploy-zis.sh` → EDGE2 `zion-zis.service`, health 200;
+  `lib/provenance.js` verified on host (apikey.js 2 refs, auth.js 5).
+- **Pool:** clean-worktree EDGE build (`/opt/zion-rel/build`,
+  `ZION_GIT_SHA=c7b9a42e1`, 13m32s, `-j2`) → binary
+  `zion-pool 3.2.0 build c7b9a42e1` (sha `3e7a44ab…`) swapped over
+  `/opt/zion/V31/target/release/zion-pool`; backup
+  `/root/pool-deploy-backup-3b3-<ts>` (running + on-disk bytes).
+  Restart clean: listeners 8444/8445/8446/8080 up, miners reconnecting,
+  `/health` reports `build:"c7b9a42e1"`.
 - Effect on live users: attestation-linked qz/prl addresses stop feeding
   payout fallbacks and `owns()` — intended; PRL payout remains DRY_RUN,
   no funds move.
