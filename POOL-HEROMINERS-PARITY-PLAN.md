@@ -30,10 +30,10 @@ payments / miners / config / notifications).
 | Calculator | CalcCard | ✅ |
 | Mining config per miner | ConfigCards (TCP/TLS/SOLO) | ✅ |
 | External links | CoinGecko + explorer/site | ✅ |
-| Network hashrate | est. `pool_hr×100/luck_100` (zion) | ✅ /stats, 🚧 KPI tile on coin |
+| Network hashrate | est. `pool_hr×100/luck_100` (zion) | ✅ /stats + KPI tile on coin |
 | Recent blocks + luck | table | ✅ |
 | Recent payouts | table + explorer link | ✅ |
-| **Top miners table** | `/public/v1/miners?coin=` exists, no UI | 🚧 |
+| Top miners table | per-coin leaderboard (client filter) | ✅ |
 
 ### Blocks `/blocks`
 | HM feature | ours | status |
@@ -41,7 +41,7 @@ payments / miners / config / notifications).
 | Blocks list w/ luck | ✅ | ✅ |
 | Luck trend bars | 40-block strip | ✅ |
 | Current effort | gauge | ✅ |
-| **Avg effort KPI tile** | derivable `10000/mean(luck)` | 🚧 |
+| Avg effort | Ø effort% in trend header | ✅ |
 
 ### Stats `/stats`
 | HM feature | ours | status |
@@ -58,11 +58,11 @@ payments / miners / config / notifications).
 | Per-worker chart | WorkerClient | ✅ |
 | Earnings: est/day, per block, ETA | ✅ | ✅ |
 | Payout progress bar | ✅ | ✅ |
-| Payouts table | ✅ — **tx not linked to explorer** | 🚧 |
-| **Alerts CTA** (TG/webhook) | link to `/account` | 🚧 |
+| Payouts table | + tx explorer deep-links | ✅ |
+| Alerts CTA | worker-offline → `/account` | ✅ |
 
 ### Global miners leaderboard `/miners`
-| HM "Miners" top-nav page | `/public/v1/miners` endpoint exists | 🚧 new page |
+| Global top-50 leaderboard | `/miners` + nav link | ✅ |
 
 ### Payouts `/payouts`
 | HM feature | ours | status |
