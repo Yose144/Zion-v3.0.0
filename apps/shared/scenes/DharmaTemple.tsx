@@ -37,7 +37,7 @@ function domePos(angle: number): [number, number] {
 
 /* Geodetický rám — hrany icosahedronu jako zlaté pruty (1 InstancedMesh) */
 function useGeoFrame(domess: { r: number; pos: [number, number, number] }[]) {
-  return useMemo(() => {
+  return React.useMemo(() => {
     const segments: { a: THREE.Vector3; b: THREE.Vector3 }[] = [];
     for (const d of domess) {
       const geo = new THREE.IcosahedronGeometry(d.r, 2);

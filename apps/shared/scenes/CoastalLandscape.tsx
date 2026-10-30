@@ -18,7 +18,7 @@ function elevation(x: number, z: number) {
 }
 
 function VolcanicCoast() {
-  const geometry = useMemo(() => {
+  const geometry = React.useMemo(() => {
     const g = new THREE.PlaneGeometry(210, 210, 150, 150);
     g.rotateX(-Math.PI / 2);
     const p = g.getAttribute('position');
@@ -42,9 +42,9 @@ function VolcanicCoast() {
   </mesh>;
 }
 
-function AtlanticOcean() {
+export function AtlanticOcean({ level = -1.8, coastal = true }: { level?: number; coastal?: boolean }) {
   const material = useMemo(() => new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 }, sun: { value: new THREE.Vector3(-0.75, 0.08, -0.66).normalize() } },
+    uniforms: { time: { value: 0 }, coastal: { value: coastal ? 1 : 0 }, sun: { value: new THREE.Vector3(-0.75, 0.08, -0.66).normalize() } },
     vertexShader: `
       uniform float time;
       varying vec3 world;
@@ -58,6 +58,7 @@ function AtlanticOcean() {
     fragmentShader: `
       uniform float time;
       uniform vec3 sun;
+      uniform float coastal;
       varying vec3 world;
       void main() {
         vec2 p = world.xz;
@@ -69,7 +70,7 @@ function AtlanticOcean() {
         float fresnel = pow(1. - max(dot(n, viewDir), 0.), 3.);
         float distanceFade = smoothstep(90., 650., length(cameraPosition.xz - p));
         float shore = -23. - max(p.x - 8., 0.) * .65 + sin(p.x * .12) * 2.5;
-        float nearShore = exp(-abs(p.y - shore + 2.4) * .38);
+        float nearShore = exp(-abs(p.y - shore + 2.4) * .38) * coastal;
         vec3 water = mix(vec3(.025,.14,.23), vec3(.06,.33,.36), nearShore * .75);
         water = mix(water, vec3(.31,.40,.48), fresnel * .65);
         float reflection = pow(max(dot(reflect(-sun, n), viewDir), 0.), 45.);
@@ -82,7 +83,7 @@ function AtlanticOcean() {
         #include <colorspace_fragment>
       }
     `,
-  }), []);
+  }), [coastal]);
   const reducedMotion = useRef(false);
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -92,7 +93,7 @@ function AtlanticOcean() {
   }, []);
   useEffect(() => () => material.dispose(), [material]);
   useFrame((_, delta) => { if (!reducedMotion.current) material.uniforms.time.value += Math.min(delta, .05); });
-  return <mesh position={[0, -1.8, 0]} rotation={[-Math.PI / 2, 0, 0]} material={material}>
+  return <mesh position={[0, level, 0]} rotation={[-Math.PI / 2, 0, 0]} material={material}>
     <planeGeometry args={[2800, 2800, 100, 100]} />
   </mesh>;
 }

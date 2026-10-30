@@ -1,513 +1,233 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useEffect, useFrame, useMemo, useRef, useThree, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { AtlanticOcean } from './CoastalLandscape';
 
 type Lang = 'cs' | 'en';
+type Point = [number, number, number];
 
-/* ─── Tres Marias — tři lodě, tři oceány ──────────────────────────────
- * Santa María la Mayor (Atlantic, tmavý trup, 3stěžňový škuner, lastura),
- * Nossa Senhora de Fátima (Pacific, bílý solární katamarán, 2 stěžně),
- * María de las Nieves (Indian Ocean, bílozlatý superyacht, 3 stěžně).
- * Plachty = průsvitné zlaté solární panely s mřížkou článků (dle hero).
- * V formace dle patron.webp — Fátima v čele, křídla vzadu.
- */
+// One fleet model used by the website and Nirvana. The first two hull types
+// follow the wooden schooner / ocean catamaran reference; Nieves is a light variant.
+const VESSELS = [
+  { id: 'santa', name: 'Santa María la Mayor', ocean: { cs: 'Atlantik', en: 'Atlantic' }, position: [-6.3, 0, -1.7] as Point, yaw: -.65, flag: '#a83134', hull: '#62402b', cat: false, tier: false },
+  { id: 'fatima', name: 'Nossa Senhora de Fátima', ocean: { cs: 'Pacifik', en: 'Pacific' }, position: [0, 0, 3.7] as Point, yaw: -.72, flag: '#eee9d9', hull: '#e7ded0', cat: true, tier: false },
+  { id: 'nieves', name: 'María de las Nieves', ocean: { cs: 'Indický oceán', en: 'Indian Ocean' }, position: [6.3, 0, -1.7] as Point, yaw: -.58, flag: '#c6a25b', hull: '#eee5d2', cat: false, tier: true },
+];
 
-/** Solární plachta — zlatá mřížka fotovoltaických článků */
-function useSailTexture() {
-  return useMemo(() => {
+function widthAt(t: number, beam: number) {
+  return beam * (.07 + .93 * Math.pow(Math.sin(Math.PI * t), .65)) * (1 - .12 * t);
+}
+function sheer(t: number) { return .56 + .2 * Math.pow(Math.abs(t - .5) * 2, 3); }
+
+function useFabric() {
+  const [texture] = React.useState(() => {
     if (typeof document === 'undefined') return null;
-    const c = document.createElement('canvas');
-    c.width = c.height = 256;
-    const ctx = c.getContext('2d')!;
-    const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#ffd98e');
-    g.addColorStop(0.5, '#f2b95e');
-    g.addColorStop(1, '#d69a3e');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 256, 256);
-    // jemná mřížka článků
-    ctx.strokeStyle = 'rgba(122, 72, 12, 0.4)';
-    ctx.lineWidth = 1;
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#eee4c9'; ctx.fillRect(0, 0, 256, 256);
+    // Quiet solar-cell seams rather than luminous orange panels.
+    ctx.strokeStyle = '#d4c8ac'; ctx.lineWidth = .7;
     for (let i = 0; i <= 256; i += 16) {
       ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 256); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(256, i); ctx.stroke();
     }
-    // vzpěrné švy plachty
-    ctx.strokeStyle = 'rgba(96, 55, 8, 0.65)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#c6b798';
     for (let i = 0; i <= 256; i += 64) {
       ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(256, i); ctx.stroke();
     }
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
+    const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
-  }, []);
-}
-
-function sailMaterial(tex: THREE.Texture | null) {
-  return new THREE.MeshStandardMaterial({
-    map: tex ?? undefined,
-    color: tex ? '#ffffff' : '#f2b95e',
-    emissive: '#ffb84e',
-    emissiveMap: tex ?? undefined,
-    emissiveIntensity: 0.55,
-    transparent: true,
-    opacity: 0.9,
-    side: THREE.DoubleSide,
-    roughness: 0.5,
-    metalness: 0.1,
-    depthWrite: false,
   });
+  useEffect(() => () => texture?.dispose(), [texture]);
+  return texture;
 }
 
-/** lichoběžníková plachta s břichem (square-rig / gaff styl) */
-function trapezoidSail(w: number, h: number, belly = 0.16, topScale = 0.55) {
-  const geo = new THREE.PlaneGeometry(w, h, 10, 6);
-  const pos = geo.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const y = pos.getY(i);
-    const u = x / w + 0.5;
-    const v = y / h + 0.5;
-    const taper = 1 - (1 - topScale) * v;
-    pos.setX(i, x * taper);
-    pos.setZ(i, belly * Math.sin(Math.PI * u) * Math.sin(Math.PI * Math.min(v * 1.15, 1)));
-  }
-  geo.computeVertexNormals();
-  return geo;
+/** A tapered, curved hull with a pointed bow, keel and raised sheer. */
+function Hull({ beam, color }: { beam: number; color: string }) {
+  const { hull, deck, outline } = useMemo(() => {
+    const vertices: number[] = [], uv: number[] = [], indices: number[] = [];
+    const deckVertices: number[] = [], deckIndices: number[] = [];
+    const outline: Point[] = [];
+    const sections = 36, arcs = 16;
+    for (let j = 0; j <= sections; j++) {
+      const t = j / sections, z = -3.25 + t * 6.5, w = widthAt(t, beam);
+      const depth = .44 + Math.sin(t * Math.PI) * .42;
+      for (let i = 0; i <= arcs; i++) {
+        const a = i / arcs * Math.PI;
+        vertices.push(Math.cos(a) * w, sheer(t) - Math.sin(a) * depth, z);
+        uv.push(t, i / arcs);
+        if (j < sections && i < arcs) {
+          const k = j * (arcs + 1) + i;
+          indices.push(k, k + 1, k + arcs + 1, k + 1, k + arcs + 2, k + arcs + 1);
+        }
+      }
+      deckVertices.push(-w, sheer(t) + .012, z, w, sheer(t) + .012, z);
+      if (j < sections) { const k = j * 2; deckIndices.push(k, k + 2, k + 1, k + 1, k + 2, k + 3); }
+    }
+    for (let side = 0; side < 2; side++) for (let i = 0; i <= 36; i++) {
+      const t = side ? 1 - i / 36 : i / 36;
+      outline.push([(side ? 1 : -1) * widthAt(t, beam), sheer(t) + .12, -3.25 + t * 6.5]);
+    }
+    outline.push(outline[0]);
+    const hull = new THREE.BufferGeometry(); hull.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3)); hull.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); hull.setIndex(indices); hull.computeVertexNormals();
+    const deck = new THREE.BufferGeometry(); deck.setAttribute('position', new THREE.Float32BufferAttribute(deckVertices, 3)); deck.setIndex(deckIndices); deck.computeVertexNormals();
+    return { hull, deck, outline };
+  }, [beam]);
+  useEffect(() => () => { hull.dispose(); deck.dispose(); }, [hull, deck]);
+  return <>
+    <mesh geometry={hull} castShadow receiveShadow><meshStandardMaterial color={color} roughness={.48} side={THREE.DoubleSide} /></mesh>
+    <mesh geometry={deck} receiveShadow><meshStandardMaterial color="#bd9565" roughness={.82} side={THREE.DoubleSide} /></mesh>
+    <Rail outline={outline} />
+    {/* Longitudinal teak seams, kept within the taper of the deck. */}
+    {[-.6, -.3, 0, .3, .6].filter(x => Math.abs(x) < beam * .85).map(x => <mesh key={x} position={[x, .588, 0]}>
+      <boxGeometry args={[.012, .008, 4.7]} /><meshStandardMaterial color="#896840" roughness={1} />
+    </mesh>)}
+  </>;
 }
 
-/** trojúhelníková plachta s břichem (staysail / bermuda) */
-function triangleSail(w: number, h: number, belly = 0.14, flip = false) {
-  const geo = new THREE.PlaneGeometry(w, h, 10, 6);
-  const pos = geo.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const y = pos.getY(i);
-    const u = x / w + 0.5;
-    const v = y / h + 0.5;
-    const keep = flip ? v : 1 - v; // špička nahoře (nebo dole)
-    pos.setX(i, x * (1 - keep * 0.92));
-    pos.setZ(i, belly * Math.sin(Math.PI * u) * Math.sin(Math.PI * v));
-  }
-  geo.computeVertexNormals();
-  return geo;
+function Rail({ outline }: { outline: Point[] }) {
+  const curves = useMemo(() => [0, .3].map(h => new THREE.CatmullRomCurve3(outline.map(p => new THREE.Vector3(p[0], p[1] + h, p[2])), false)), [outline]);
+  const posts = useRef<THREE.InstancedMesh>(null);
+  useEffect(() => {
+    if (!posts.current) return;
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < 26; i++) {
+      const p = curves[0].getPoint(i / 26); dummy.position.set(p.x, p.y + .15, p.z); dummy.updateMatrix(); posts.current.setMatrixAt(i, dummy.matrix);
+    }
+    posts.current.instanceMatrix.needsUpdate = true;
+  }, [curves]);
+  return <>
+    {curves.map((c, i) => <mesh key={i}><tubeGeometry args={[c, 90, .017, 4, false]} /><meshStandardMaterial color="#aa8957" metalness={.45} roughness={.5} /></mesh>)}
+    <instancedMesh ref={posts} args={[undefined, undefined, 26]} frustumCulled={false}>
+      <cylinderGeometry args={[.014, .014, .3, 4]} /><meshStandardMaterial color="#bba16e" metalness={.6} roughness={.4} />
+    </instancedMesh>
+  </>;
 }
 
-interface SailSpec {
-  kind: 'trap' | 'tri';
-  pos: [number, number, number];
-  w: number;
-  h: number;
-  rotY?: number;
-  flip?: boolean;
+function Spar({ a, b, radius = .026, color = '#87603a' }: { a: Point; b: Point; radius?: number; color?: string }) {
+  const { center, rotation, length } = useMemo(() => {
+    const from = new THREE.Vector3(...a), to = new THREE.Vector3(...b), dir = to.clone().sub(from);
+    return { center: from.add(to).multiplyScalar(.5), rotation: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize()), length: dir.length() };
+  }, [a[0], a[1], a[2], b[0], b[1], b[2]]);
+  return <mesh position={center} quaternion={rotation}><cylinderGeometry args={[radius * .7, radius, length, 6]} /><meshStandardMaterial color={color} roughness={.65} /></mesh>;
 }
 
-function Sails({ specs, tex }: { specs: SailSpec[]; tex: THREE.Texture | null }) {
-  const mat = useMemo(() => sailMaterial(tex), [tex]);
-  const geos = useMemo(
-    () =>
-      specs.map((s) =>
-        s.kind === 'trap' ? trapezoidSail(s.w, s.h) : triangleSail(s.w, s.h, 0.14, s.flip),
-      ),
-    [specs],
-  );
-  return (
-    <>
-      {specs.map((s, i) => (
-        <mesh key={i} position={s.pos} rotation={[0, s.rotY ?? 0, 0]} geometry={geos[i]} material={mat} renderOrder={2} />
-      ))}
-    </>
-  );
+function Sail({ z, height, width, tex, jib = false }: { z: number; height: number; width: number; tex: THREE.Texture | null; jib?: boolean }) {
+  const geometry = useMemo(() => {
+    const g = new THREE.PlaneGeometry(1, 1, 14, 16); const pos = g.getAttribute('position');
+    for (let i = 0; i < pos.count; i++) {
+      const u = pos.getX(i) + .5, v = pos.getY(i) + .5;
+      const taper = jib ? 1 - v : 1 - .28 * v;
+      const span = width * taper;
+      pos.setXYZ(i, .035 + .24 * Math.sin(Math.PI * u) * Math.sin(Math.PI * v), 1.35 + v * height + (jib ? 0 : u * v * height * .176), z + (jib ? 1 : -1) * u * span);
+    }
+    g.computeVertexNormals(); return g;
+  }, [z, height, width, jib]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return <mesh geometry={geometry} castShadow>
+    <meshStandardMaterial map={tex} color="#fff9e9" side={THREE.DoubleSide} roughness={.9} />
+  </mesh>;
 }
 
-/** zlatá lastura Camina na přídi Santa María */
-function ScallopShell() {
-  return (
-    <group position={[0, 0.62, 3.02]} rotation={[-0.5, 0, 0]}>
-      {[-2, -1, 0, 1, 2].map((i) => (
-        <mesh key={i} position={[i * 0.055, 0, 0]} rotation={[0, 0, i * 0.22]}>
-          <coneGeometry args={[0.05, 0.3, 5]} />
-          <meshStandardMaterial color="#e8c25a" metalness={0.75} roughness={0.3} emissive="#8a6416" emissiveIntensity={0.4} />
-        </mesh>
-      ))}
-      <mesh position={[0, -0.12, 0.01]}>
-        <sphereGeometry args={[0.07, 8, 6]} />
-        <meshStandardMaterial color="#e8c25a" metalness={0.75} roughness={0.3} />
-      </mesh>
-    </group>
-  );
+function Deckhouse({ cat, tier }: { cat: boolean; tier: boolean }) {
+  const width = cat ? 2.08 : 1.25;
+  return <group position={[0, 0, -.55]}>
+    <mesh position={[0, .88, 0]} castShadow><boxGeometry args={[width, .52, 2.6]} /><meshStandardMaterial color="#98663d" roughness={.7} /></mesh>
+    {[-1, 1].map(side => <group key={side}>
+      {[-.9, -.3, .3, .9].map(z => <mesh key={z} position={[side * (width / 2 + .008), .94, z]}>
+        <boxGeometry args={[.018, .21, .42]} /><meshStandardMaterial color="#284957" metalness={.3} roughness={.23} />
+      </mesh>)}
+    </group>)}
+    <mesh position={[0, 1.18, 0]} castShadow><boxGeometry args={[width + .12, .09, 2.76]} /><meshStandardMaterial color="#f0e3c8" roughness={.7} /></mesh>
+    <mesh position={[0, .94, 1.31]}><boxGeometry args={[width * .8, .24, .015]} /><meshStandardMaterial color="#335566" metalness={.3} roughness={.2} /></mesh>
+    {tier && <mesh position={[0, 1.33, -.6]}><boxGeometry args={[.95, .22, 1.0]} /><meshStandardMaterial color="#eee5d2" roughness={.5} /></mesh>}
+  </group>;
 }
 
-/** generická jednotrupá jachta — škuner styl */
-function MonoHull({ hullColor, trim, superTier = 1 }: { hullColor: string; trim: string; superTier?: number }) {
-  return (
-    <>
-      {/* trup — protáhlá kapsle pod hladinou */}
-      <mesh position={[0, 0.1, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[0.62, 3.3, 0.5]} castShadow>
-        <capsuleGeometry args={[1, 1.6, 6, 14]} />
-        <meshStandardMaterial color={hullColor} metalness={0.5} roughness={0.35} />
-      </mesh>
-      {/* zlatá lemuvice na vodorysce */}
-      {[-1, 1].map((s) => (
-        <mesh key={s} position={[s * 0.57, 0.42, 0]} castShadow>
-          <boxGeometry args={[0.03, 0.05, 5.6]} />
-          <meshStandardMaterial color={trim} metalness={0.85} roughness={0.25} />
-        </mesh>
-      ))}
-      {/* paluba — teak */}
-      <mesh position={[0, 0.5, 0]} receiveShadow castShadow>
-        <boxGeometry args={[1.15, 0.08, 6.4]} />
-        <meshStandardMaterial color="#8a6b42" roughness={0.85} />
-      </mesh>
-      {/* nástavba — moderní skleněná kajuta */}
-      <mesh position={[0, 0.72, -0.6]} castShadow>
-        <boxGeometry args={[0.95, 0.36, 3.2]} />
-        <meshStandardMaterial color="#e8e2d4" metalness={0.3} roughness={0.4} />
-      </mesh>
-      <mesh position={[0, 0.78, -0.6]}>
-        <boxGeometry args={[0.97, 0.14, 3.0]} />
-        <meshStandardMaterial color="#2a3d55" metalness={0.6} roughness={0.15} emissive="#d98a2a" emissiveIntensity={0.5} />
-      </mesh>
-      {superTier > 1 && (
-        <>
-          <mesh position={[0, 1.02, -1.2]} castShadow>
-            <boxGeometry args={[0.8, 0.28, 1.8]} />
-            <meshStandardMaterial color="#f2ead8" metalness={0.3} roughness={0.4} />
-          </mesh>
-          <mesh position={[0, 1.06, -1.2]}>
-            <boxGeometry args={[0.82, 0.12, 1.7]} />
-            <meshStandardMaterial color="#2a3d55" metalness={0.6} roughness={0.15} emissive="#d98a2a" emissiveIntensity={0.5} />
-          </mesh>
-        </>
-      )}
-      {/* příďové křidélko — clipper */}
-      <mesh position={[0, 0.5, 3.35]} rotation={[Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.09, 0.7, 6]} />
-        <meshStandardMaterial color="#5d4526" roughness={0.8} metalness={0.3} />
-      </mesh>
-    </>
-  );
-}
-
-/** stěžeň + ráhna */
-function Mast({ z, h, booms }: { z: number; h: number; booms: number[] }) {
-  return (
-    <group position={[0, 0, z]}>
-      <mesh position={[0, 0.55 + h / 2, 0]} castShadow>
-        <cylinderGeometry args={[0.035, 0.055, h, 7]} />
-        <meshStandardMaterial color="#5d4526" roughness={0.8} />
-      </mesh>
-      {booms.map((by, i) => (
-        <mesh key={i} position={[0, by, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[0.028, 0.028, 1.7, 6]} />
-          <meshStandardMaterial color="#5d4526" roughness={0.8} />
-        </mesh>
-      ))}
-      {/* vrchol — zlatá korunka */}
-      <mesh position={[0, 0.55 + h + 0.06, 0]}>
-        <sphereGeometry args={[0.06, 8, 6]} />
-        <meshStandardMaterial color="#e8c25a" metalness={0.85} roughness={0.25} />
-      </mesh>
-    </group>
-  );
-}
-
-/** loď obalená houpavým pohybem */
-function FloatingShip({ pos, yaw, phase, children, label, lang }: {
-  pos: [number, number, number];
-  yaw: number;
-  phase: number;
-  children: React.ReactNode;
-  label: { cs: string; en: string };
-  lang: Lang;
-}) {
+function Vessel({ spec, index, lang, tex, reduced }: { spec: typeof VESSELS[number]; index: number; lang: Lang; tex: THREE.Texture | null; reduced: React.RefObject<boolean> }) {
   const ref = useRef<THREE.Group>(null);
+  const masts = spec.cat ? [{ z: .9, h: 5.5, w: 2.15 }, { z: -1.65, h: 4.6, w: 1.45 }] : [{ z: 1.55, h: 4.8, w: 1.5 }, { z: -.15, h: 5.5, w: 1.5 }, { z: -1.85, h: 4.5, w: 1.35 }];
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    if (ref.current) {
-      ref.current.position.y = pos[1] + Math.sin(t * 0.6 + phase) * 0.07;
-      ref.current.rotation.z = Math.sin(t * 0.4 + phase) * 0.02;
-      ref.current.rotation.x = Math.sin(t * 0.5 + phase * 1.3) * 0.015;
-    }
+    if (!ref.current) return;
+    const t = reduced.current ? 0 : clock.getElapsedTime();
+    ref.current.position.y = reduced.current ? 0 : Math.sin(t * .65 + index * 2) * .045;
+    ref.current.rotation.z = reduced.current ? 0 : Math.sin(t * .5 + index * 2) * .014;
   });
-  return (
-    <group position={pos} rotation={[0, yaw, 0]}>
-      <group ref={ref}>
-        {children}
-        <SceneLabel position={[0, 6.4, 0]} text={label[lang]} />
-      </group>
-    </group>
-  );
+  return <group position={spec.position} rotation={[0, spec.yaw, 0]}><group ref={ref}>
+    {spec.cat ? <>
+      {[-1.2, 1.2].map(x => <group key={x} position={[x, 0, 0]}><Hull beam={.35} color={spec.hull} /></group>)}
+      <mesh position={[0, .58, -.45]} castShadow><boxGeometry args={[2.45, .14, 4.1]} /><meshStandardMaterial color="#bb9468" roughness={.8} /></mesh>
+      {/* Open forward trampoline between the two bows. */}
+      <mesh position={[0, .53, 2.05]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[1.7, 1.3, 8, 8]} /><meshStandardMaterial color="#c8bd9d" wireframe /></mesh>
+    </> : <Hull beam={.96} color={spec.hull} />}
+    <Deckhouse cat={spec.cat} tier={spec.tier} />
+    <Spar a={[0, .64, 2.5]} b={[0, .9, 4.25]} radius={.05} />
+    {masts.map(({ z, h, w }, i) => <group key={i}>
+      <Spar a={[0, .57, z]} b={[0, h + 1.35, z]} radius={.044} />
+      <Spar a={[.025, 1.35, z]} b={[.025, 1.35, z - w]} radius={.027} />
+      <Spar a={[0, 1.35 + h * .85, z]} b={[0, 1.35 + h, z - w * .72]} radius={.019} />
+      <Sail z={z} height={h * .85} width={w} tex={tex} />
+      {[-1, 1].map(side => <Spar key={side} a={[0, h + .8, z]} b={[side * (spec.cat ? 1.3 : .78), .83, z - .65]} radius={.006} color="#b5a889" />)}
+      <Spar a={[0, h + 1.0, z]} b={[0, .88, i === 0 ? 4.1 : masts[i - 1].z]} radius={.006} color="#b5a889" />
+    </group>)}
+    <Sail z={1.68} height={3.65} width={2.3} jib tex={tex} />
+    <mesh position={[.18, 6.4, masts[spec.cat ? 0 : 1].z]}><planeGeometry args={[.34, .2]} /><meshStandardMaterial color={spec.flag} side={THREE.DoubleSide} roughness={1} /></mesh>
+    <SceneLabel position={[0, 7.55, -.1]} text={`${spec.name} · ${spec.ocean[lang]}`} />
+    {[-1, 1].map(side => <mesh key={side} position={[side * (spec.cat ? 1.5 : .86), .43, -1.8]} rotation={[0, side * Math.PI / 2, 0]}>
+      <torusGeometry args={[.13, .035, 6, 14]} /><meshStandardMaterial color="#efdfb9" roughness={.9} />
+    </mesh>)}
+  </group></group>;
 }
 
-/** Santa María la Mayor — Atlantic · tmavý škuner, 3 stěžně, lastura */
-function SantaMaria({ tex }: { tex: THREE.Texture | null }) {
-  const sails: SailSpec[] = useMemo(
-    () => [
-      // přední stěžeň — 2 čtverhranné
-      { kind: 'trap', pos: [0, 2.4, 1.9], w: 1.55, h: 1.7 },
-      { kind: 'trap', pos: [0, 3.9, 1.9], w: 1.15, h: 1.15 },
-      // hlavní stěžeň — 2 čtverhranné
-      { kind: 'trap', pos: [0, 2.5, 0], w: 1.75, h: 1.85 },
-      { kind: 'trap', pos: [0, 4.15, 0], w: 1.3, h: 1.25 },
-      // zadní stěžeň — 2 čtverhranné (menší)
-      { kind: 'trap', pos: [0, 2.4, -1.9], w: 1.4, h: 1.55 },
-      { kind: 'trap', pos: [0, 3.8, -1.9], w: 1.05, h: 1.05 },
-      // kosé plachty mezi stěžni
-      { kind: 'tri', pos: [0, 2.6, 0.95], w: 1.5, h: 1.9, rotY: Math.PI / 2 },
-      { kind: 'tri', pos: [0, 2.5, -0.95], w: 1.5, h: 1.8, rotY: Math.PI / 2 },
-      // velký přední stayšal
-      { kind: 'tri', pos: [0, 2.7, 2.85], w: 1.3, h: 2.3, rotY: Math.PI / 2 },
-    ],
-    [],
-  );
-  return (
-    <>
-      <MonoHull hullColor="#1c2431" trim="#e8c25a" />
-      <ScallopShell />
-      <Mast z={1.9} h={4.3} booms={[1.55, 3.28]} />
-      <Mast z={0} h={4.9} booms={[1.62, 3.52]} />
-      <Mast z={-1.9} h={4.2} booms={[1.55, 3.2]} />
-      <Sails specs={sails} tex={tex} />
-      {/* červená vlajka — královská roucha */}
-      <mesh position={[0.16, 5.35, 0]}>
-        <planeGeometry args={[0.34, 0.2]} />
-        <meshBasicMaterial color="#b3202e" side={THREE.DoubleSide} />
-      </mesh>
-    </>
-  );
+function Sky() {
+  const material = useMemo(() => new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false,
+    uniforms: { top: { value: new THREE.Color('#456b95') }, low: { value: new THREE.Color('#e4bd9d') } },
+    vertexShader: 'varying vec3 p; void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader: `varying vec3 p; uniform vec3 top; uniform vec3 low; void main(){
+      vec3 d=normalize(p);vec3 c=mix(low,top,smoothstep(-.04,.7,d.y));
+      float s=max(dot(d,normalize(vec3(-.55,.10,-1.))),0.);
+      c+=vec3(1.,.7,.35)*pow(s,1600.)*1.6+vec3(.4,.2,.1)*pow(s,30.);
+      gl_FragColor=vec4(c,1.);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`,
+  }), []);
+  useEffect(() => () => material.dispose(), [material]);
+  return <mesh material={material} renderOrder={-10}><sphereGeometry args={[1800, 24, 16]} /></mesh>;
 }
 
-/** Nossa Senhora de Fátima — Pacific · bílý katamarán, 2 stěžně */
-function Fatima({ tex }: { tex: THREE.Texture | null }) {
-  const sails: SailSpec[] = useMemo(
-    () => [
-      // hlavní bermuda — velký trojúhelník
-      { kind: 'tri', pos: [0.02, 3.1, 0.4], w: 2.3, h: 4.3, flip: true },
-      // přední genoa
-      { kind: 'tri', pos: [0, 2.6, 1.9], w: 1.6, h: 3.1, rotY: Math.PI / 2, flip: true },
-      // zadní mizzen trojúhelník
-      { kind: 'tri', pos: [0.02, 2.8, -1.6], w: 1.7, h: 3.4, flip: true },
-    ],
-    [],
-  );
-  return (
-    <>
-      {/* dva trupy */}
-      {[-1.05, 1.05].map((s) => (
-        <group key={s} position={[s, 0, 0]}>
-          <mesh position={[0, 0.12, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[0.34, 3.1, 0.4]} castShadow>
-            <capsuleGeometry args={[1, 1.7, 6, 12]} />
-            <meshStandardMaterial color="#f0ead8" metalness={0.45} roughness={0.35} />
-          </mesh>
-          <mesh position={[s > 0 ? 0.3 : -0.3, 0.4, 0]}>
-            <boxGeometry args={[0.03, 0.04, 5.2]} />
-            <meshStandardMaterial color="#e8c25a" metalness={0.85} roughness={0.25} />
-          </mesh>
-        </group>
-      ))}
-      {/* můstek — paluba přes trupy */}
-      <mesh position={[0, 0.52, 0]} receiveShadow castShadow>
-        <boxGeometry args={[2.6, 0.1, 5.4]} />
-        <meshStandardMaterial color="#8a6b42" roughness={0.85} />
-      </mesh>
-      {/* široká skleněná kajuta */}
-      <mesh position={[0, 0.8, -0.4]} castShadow>
-        <boxGeometry args={[2.2, 0.42, 3.4]} />
-        <meshStandardMaterial color="#f5f0e2" metalness={0.3} roughness={0.4} />
-      </mesh>
-      <mesh position={[0, 0.88, -0.4]}>
-        <boxGeometry args={[2.24, 0.16, 3.2]} />
-        <meshStandardMaterial color="#2a3d55" metalness={0.6} roughness={0.15} emissive="#d98a2a" emissiveIntensity={0.55} />
-      </mesh>
-      <Mast z={0.4} h={4.9} booms={[1.1]} />
-      <Mast z={-1.6} h={4.1} booms={[1.1]} />
-      <Sails specs={sails} tex={tex} />
-      {/* bílá vlajka — svatební šaty */}
-      <mesh position={[0.15, 5.5, 0.4]}>
-        <planeGeometry args={[0.3, 0.18]} />
-        <meshBasicMaterial color="#f5f0e2" side={THREE.DoubleSide} />
-      </mesh>
-    </>
-  );
-}
-
-/** María de las Nieves — Indian Ocean · bílozlatá, 3 stěžně, velké trojúhelníky */
-function Nieves({ tex }: { tex: THREE.Texture | null }) {
-  const sails: SailSpec[] = useMemo(
-    () => [
-      // velká přední bermuda
-      { kind: 'tri', pos: [0.02, 3.3, 1.5], w: 2.4, h: 4.6, flip: true },
-      // hlavní trojúhelník
-      { kind: 'tri', pos: [0.02, 3.2, -0.2], w: 2.5, h: 4.5, flip: true },
-      // mizzen
-      { kind: 'tri', pos: [0.02, 3.0, -1.9], w: 1.8, h: 3.6, flip: true },
-      // stayšal vpředu
-      { kind: 'tri', pos: [0, 2.6, 2.7], w: 1.4, h: 2.9, rotY: Math.PI / 2, flip: true },
-    ],
-    [],
-  );
-  return (
-    <>
-      <MonoHull hullColor="#efe6d2" trim="#e8c25a" superTier={2} />
-      <Mast z={1.5} h={5.0} booms={[1.15]} />
-      <Mast z={-0.2} h={4.9} booms={[1.15]} />
-      <Mast z={-1.9} h={4.2} booms={[1.1]} />
-      <Sails specs={sails} tex={tex} />
-      {/* zlatá vlajka — nedokončené zázraky */}
-      <mesh position={[0.15, 5.55, 1.5]}>
-        <planeGeometry args={[0.3, 0.18]} />
-        <meshBasicMaterial color="#e8c25a" side={THREE.DoubleSide} />
-      </mesh>
-    </>
-  );
-}
-
-/** kýl za lodí — bílá brázda */
-function Wake({ pos, yaw, len }: { pos: [number, number, number]; yaw: number; len: number }) {
-  const geo = useMemo(() => {
-    const s = new THREE.Shape();
-    s.moveTo(-0.55, 0);
-    s.lineTo(0.55, 0);
-    s.lineTo(0.12, -len);
-    s.lineTo(-0.12, -len);
-    s.closePath();
-    return new THREE.ShapeGeometry(s);
-  }, [len]);
-  return (
-    <mesh geometry={geo} rotation={[-Math.PI / 2, 0, yaw]} position={pos} renderOrder={1}>
-      <meshBasicMaterial color="#ffffff" transparent opacity={0.16} depthWrite={false} />
-    </mesh>
-  );
-}
-
-/** sluneční glittr na vodě */
-function SunGlitter() {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    if (ref.current) {
-      (ref.current.material as THREE.MeshBasicMaterial).opacity = 0.22 + Math.sin(t * 1.3) * 0.07;
-    }
-  });
-  return (
-    <mesh ref={ref} rotation={[-Math.PI / 2, 0, -0.5]} position={[-10, 0.02, -18]} renderOrder={1}>
-      <planeGeometry args={[7, 46]} />
-      <meshBasicMaterial color="#ffca6a" transparent opacity={0.22} depthWrite={false} />
-    </mesh>
-  );
-}
-
-/** obloha + zapadající slunce nad oceánem */
-function SkySun() {
-  const skyMat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunDir;
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 c = d.y > 0.2 ? mix(mid, top, smoothstep(0.2, 0.72, d.y))
-                             : mix(low, mid, smoothstep(-0.05, 0.2, d.y));
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.94, 0.7) * pow(s, 180.0) * 2.6
-               + vec3(1.0, 0.76, 0.42) * pow(s, 26.0) * 0.55
-               + vec3(0.98, 0.6, 0.28) * pow(s, 6.0) * 0.25;
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {
-          top: { value: new THREE.Color('#2a3550') },
-          mid: { value: new THREE.Color('#c47a3e') },
-          low: { value: new THREE.Color('#e8a45c') },
-          sunDir: { value: new THREE.Vector3(-0.32, 0.05, -0.95).normalize() },
-        },
-      }),
-    [],
-  );
-  return (
-    <mesh material={skyMat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[160, 24, 16]} />
-    </mesh>
-  );
+function FleetFraming() {
+  const { camera, size } = useThree();
+  useEffect(() => {
+    const aspect = size.width / Math.max(1, size.height);
+    const factor = Math.max(1, .78 / aspect);
+    if (camera instanceof THREE.PerspectiveCamera) camera.fov = aspect < 1 ? 60 : 45;
+    camera.position.set(9 * factor, 8.3 * factor, 20.5 * factor); camera.lookAt(0, 2.5, .5); camera.updateProjectionMatrix();
+  }, [camera, size.width, size.height]);
+  return null;
 }
 
 export function MariaDelCaminoScene({ lang }: { lang: Lang }) {
-  const sailTex = useSailTexture();
-
-  return (
-    <>
-      <SkySun />
-
-      {/* oceán — zlatý soumrak */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]} receiveShadow>
-        <circleGeometry args={[150, 72]} />
-        <meshPhysicalMaterial
-          color="#1e4a52"
-          roughness={0.14}
-          metalness={0.3}
-          clearcoat={0.9}
-          emissive="#0d2e34"
-          emissiveIntensity={0.5}
-        />
-      </mesh>
-      <SunGlitter />
-
-      {/* V formace — Fátima v čele, Santa María vlevo, Nieves vpravo */}
-      <FloatingShip
-        pos={[0, 0, 4.6]}
-        yaw={0.08}
-        phase={0}
-        lang={lang}
-        label={{ cs: 'Nossa Senhora de Fátima · Pacific', en: 'Nossa Senhora de Fátima · Pacific' }}
-      >
-        <Fatima tex={sailTex} />
-      </FloatingShip>
-      <FloatingShip
-        pos={[-6.8, 0, -2.6]}
-        yaw={0.34}
-        phase={1.9}
-        lang={lang}
-        label={{ cs: 'Santa María la Mayor · Atlantic', en: 'Santa María la Mayor · Atlantic' }}
-      >
-        <SantaMaria tex={sailTex} />
-      </FloatingShip>
-      <FloatingShip
-        pos={[6.8, 0, -2.6]}
-        yaw={-0.26}
-        phase={3.7}
-        lang={lang}
-        label={{ cs: 'María de las Nieves · Indian Ocean', en: 'María de las Nieves · Indian Ocean' }}
-      >
-        <Nieves tex={sailTex} />
-      </FloatingShip>
-
-      {/* brázdy za loděmi */}
-      <Wake pos={[0, 0.01, 2.4]} yaw={0.08} len={10} />
-      <Wake pos={[-6.8, 0.01, -4.7]} yaw={0.34} len={10} />
-      <Wake pos={[6.8, 0.01, -4.7]} yaw={-0.26} len={10} />
-    </>
-  );
+  const texture = useFabric();
+  const reduced = useRef(false);
+  useEffect(() => {
+    const q = window.matchMedia('(prefers-reduced-motion: reduce)'); const update = () => { reduced.current = q.matches; };
+    update();q.addEventListener('change', update);return () => q.removeEventListener('change', update);
+  }, []);
+  return <><Sky /><FleetFraming /><AtlanticOcean level={-.05} coastal={false} />
+    {VESSELS.map((spec, i) => <Vessel key={spec.id} spec={spec} index={i} lang={lang} tex={texture} reduced={reduced} />)}
+  </>;
 }
 
-export const MARIA_CAMERA = { position: [0, 2.9, 14.2] as [number, number, number], fov: 47, far: 2000 };
-export const MARIA_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.35, minDistance: 7, maxDistance: 34, maxPolarAngle: Math.PI / 2 - 0.06, target: [0, 3.1, 0] as [number, number, number], enablePan: false };
+export const MARIA_CAMERA = { position: [9, 8.3, 20.5] as Point, fov: 45, far: 2000 };
+export const MARIA_CONTROLS = { autoRotate: true, autoRotateSpeed: .18, minDistance: 13, maxDistance: 95, maxPolarAngle: Math.PI / 2 - .08, target: [0, 2.5, .5] as Point, enablePan: false };
 export function MariaLighting() {
   return <>
-    <ambientLight intensity={0.55} color="#ffe9c4" />
-    <hemisphereLight args={['#ffdca8', '#0e2430', 0.55]} />
-    {/* západ slunce — zlatý backlight */}
-    <directionalLight position={[-8, 6, -16]} intensity={2.4} color="#ffb060" castShadow />
-    <directionalLight position={[14, 12, 12]} intensity={0.75} color="#ffd9a8" />
+    <ambientLight intensity={.65} color="#f1e7da" />
+    <hemisphereLight args={['#d3e6ff', '#243941', .7]} />
+    <directionalLight position={[-8, 12, -14]} intensity={2.0} color="#ffe0b3" castShadow />
+    <directionalLight position={[14, 10, 14]} intensity={1.0} color="#d2e4fa" />
   </>;
 }

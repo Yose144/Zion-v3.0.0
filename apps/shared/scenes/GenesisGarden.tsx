@@ -110,7 +110,7 @@ function makeRibbon(pts: [number, number][], width: number): THREE.BufferGeometr
 /* Ocelový rám — hrany + vodorovné vazníky + řídká diagrid mřížka,
  * všechny pruty do jednoho InstancedMesh (1 draw call). */
 function useFrameSegments(pyramids: PyramidData[], levels = 5) {
-  return useMemo(() => {
+  return React.useMemo(() => {
     const segments: { a: THREE.Vector3; b: THREE.Vector3 }[] = [];
     const A = new THREE.Vector3();
     const B = new THREE.Vector3();

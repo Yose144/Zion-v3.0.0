@@ -1,10 +1,10 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useEffect, useState, THREE } from '@genesis/runtime';
+import { React, useEffect, THREE } from '@genesis/runtime';
 
 export function SceneLabel({ position, text }: { position: [number, number, number]; text: string }) {
-  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+  const [texture, setTexture] = React.useState<THREE.CanvasTexture | null>(null);
   // Sprites stay in the scene's React root; no nested DOM roots to unmount.
   useEffect(() => {
     const canvas = document.createElement('canvas');
