@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
 
@@ -300,7 +301,7 @@ function Pilgrims({ path }: { path: [number, number][] }) {
   useFrame(({ clock }) => {
     const g = group.current;
     if (!g) return;
-    const t = clock.getElapsedTime() * 0.02;
+    const t = motionTime(clock) * 0.02;
     const n = path.length;
     g.children.forEach((c, i) => {
       const t2 = (t + i / g.children.length) % 1;
@@ -309,7 +310,7 @@ function Pilgrims({ path }: { path: [number, number][] }) {
       const [x1, z1] = path[seg], [x2, z2] = path[seg + 1];
       c.position.set(x1 + (x2 - x1) * f, 0.02, z1 + (z2 - z1) * f);
       c.rotation.y = Math.atan2(x2 - x1, z2 - z1);
-      c.children[0].position.y = 0.75 + Math.abs(Math.sin(clock.getElapsedTime() * 3 + i * 2)) * 0.06;
+      c.children[0].position.y = 0.75 + Math.abs(Math.sin(motionTime(clock) * 3 + i * 2)) * 0.06;
     });
   });
   return (
@@ -431,6 +432,7 @@ export function KailashScene({ lang }: { lang: Lang }) {
   const koraPath: [number, number][] = [[-30, 46], [-22, 34], [-16, 24], [-12, 14], [-10, 4], [-8, -6], [-4, -14]];
   return (
     <>
+      <ScenePresentation camera={KAILASH_CAMERA} target={KAILASH_CONTROLS.target} />
       <KailashSky />
       <fog attach="fog" args={['#b89468', 110, 330]} />
 

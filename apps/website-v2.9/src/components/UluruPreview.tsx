@@ -43,6 +43,7 @@ export default function UluruPreview({
   return (
     <div className={`relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 ${className}`}>
       <Canvas
+        dpr={[1, 1.5]}
         shadows
         camera={ULURU_CAMERA}
         gl={{ antialias: true, alpha: true }}

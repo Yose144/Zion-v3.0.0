@@ -4,6 +4,7 @@
 import { React, useFrame, useThree, useEffect, useLayoutEffect, useMemo, useRef, useState, THREE } from '@genesis/runtime';
 
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
 
@@ -393,8 +394,8 @@ function Merkaba() {
 
   useFrame((_, delta) => {
     if (ref.current) {
-      ref.current.rotation.y += delta * 0.2;
-      ref.current.rotation.z += delta * 0.12;
+      ref.current.rotation.y += motionDelta(delta) * 0.2;
+      ref.current.rotation.z += motionDelta(delta) * 0.12;
     }
   });
 
@@ -874,22 +875,11 @@ function SkyAndSun() {
   );
 }
 
-function ResponsiveFraming() {
-  const { camera, size } = useThree();
-  useLayoutEffect(() => {
-    const aspect = size.width / Math.max(1, size.height);
-    const distance = Math.max(1, 1 / aspect);
-    camera.position.set(0, 14 * distance, 31 * distance);
-    camera.lookAt(0, 3, 0);
-    camera.updateProjectionMatrix();
-  }, [camera, size.width, size.height]);
-  return null;
-}
 
 export function GenesisGardenScene({ lang }: { lang: Lang }) {
   return (
     <>
-      <ResponsiveFraming />
+      <ScenePresentation camera={GENESIS_CAMERA} target={GENESIS_CONTROLS.target} />
       <SkyAndSun />
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[26, 72]} />

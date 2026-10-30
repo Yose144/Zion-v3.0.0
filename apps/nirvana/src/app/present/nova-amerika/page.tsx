@@ -1,5 +1,6 @@
 'use client';
 
+import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ export default function NovaAmerikaPresentPage() {
             {cs ? 'Issobella L6 · Kostarika — výzkum & harmonie' : 'Issobella L6 · Costa Rica — research & harmony'}
           </span>
         </div>
+        <ProjectLanguageButton />
         <a
           className="present-link"
           href={`${MISSION_ORIGIN}/terranova/nova-amerika`}
@@ -34,6 +36,7 @@ export default function NovaAmerikaPresentPage() {
       </header>
 
       <Canvas
+        dpr={[1, 1.5]}
         shadows
         camera={LUMI_CAMERA}
         gl={{ antialias: true, alpha: true }}

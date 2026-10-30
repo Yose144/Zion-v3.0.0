@@ -1,5 +1,6 @@
 'use client';
 
+import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ export default function BoaEsperancaPresentPage() {
             {cs ? 'Mys Dobré naděje · šev dvou oceánů' : 'Cape of Good Hope · seam of two oceans'}
           </span>
         </div>
+        <ProjectLanguageButton />
         <a
           className="present-link"
           href={`${MISSION_ORIGIN}/terranova/boa-esperanca`}
@@ -34,6 +36,7 @@ export default function BoaEsperancaPresentPage() {
       </header>
 
       <Canvas
+        dpr={[1, 1.5]}
         shadows
         camera={BOA_CAMERA}
         gl={{ antialias: true, alpha: true }}

@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
 
@@ -55,7 +56,7 @@ function ResearchCore() {
   const portalRef = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = portalRef.current?.material as THREE.MeshBasicMaterial | undefined;
-    if (m) m.opacity = 0.5 + Math.sin(clock.getElapsedTime() * 1.8) * 0.15;
+    if (m) m.opacity = 0.5 + Math.sin(motionTime(clock) * 1.8) * 0.15;
   });
   return (
     <group>
@@ -170,7 +171,7 @@ function CommsTower({ x, z }: { x: number; z: number }) {
   const beacon = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = beacon.current?.material as THREE.MeshStandardMaterial | undefined;
-    if (m) m.emissiveIntensity = 1.2 + Math.sin(clock.getElapsedTime() * 4) * 1.1;
+    if (m) m.emissiveIntensity = 1.2 + Math.sin(motionTime(clock) * 4) * 1.1;
   });
   const legs = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -382,7 +383,7 @@ function FallsPool() {
   const fall = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = fall.current?.material as THREE.MeshStandardMaterial | undefined;
-    if (m) m.opacity = 0.55 + Math.sin(clock.getElapsedTime() * 3) * 0.12;
+    if (m) m.opacity = 0.55 + Math.sin(motionTime(clock) * 3) * 0.12;
   });
   return (
     <group position={[0, 0, 22]}>
@@ -590,6 +591,7 @@ export function LumiStationScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
+      <ScenePresentation camera={LUMI_CAMERA} target={LUMI_CONTROLS.target} />
       <DuskSky />
       <fog attach="fog" args={['#3a3a4a', 110, 300]} />
 

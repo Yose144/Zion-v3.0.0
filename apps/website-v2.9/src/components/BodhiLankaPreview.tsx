@@ -43,6 +43,7 @@ export default function BodhiLankaPreview({
   return (
     <div className={`relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 ${className}`}>
       <Canvas
+        dpr={[1, 1.5]}
         shadows
         camera={LANKA_CAMERA}
         gl={{ antialias: true, alpha: true }}

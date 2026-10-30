@@ -1,5 +1,6 @@
 'use client';
 
+import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ export default function BodhiLankaPresentPage() {
             {cs ? 'Akáša · Srí Lanka — živý strom, ne stavba' : 'Akasha · Sri Lanka — a living tree, not a building'}
           </span>
         </div>
+        <ProjectLanguageButton />
         <a
           className="present-link"
           href={`${MISSION_ORIGIN}/terranova/bodhi-lanka`}
@@ -34,6 +36,7 @@ export default function BodhiLankaPresentPage() {
       </header>
 
       <Canvas
+        dpr={[1, 1.5]}
         shadows
         camera={LANKA_CAMERA}
         gl={{ antialias: true, alpha: true }}

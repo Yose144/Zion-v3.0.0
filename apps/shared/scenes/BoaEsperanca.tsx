@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
 
@@ -110,7 +111,7 @@ function Fynbos() {
 function Lighthouse() {
   const beam = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
-    if (beam.current) beam.current.rotation.y = clock.getElapsedTime() * 0.5;
+    if (beam.current) beam.current.rotation.y = motionTime(clock) * 0.5;
   });
   return (
     <group position={[-10, 13.6, -16]}>
@@ -192,7 +193,7 @@ function TwoOceans() {
   const foam = useRef<THREE.Group>(null);
   const swell = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
+    const t = motionTime(clock);
     if (foam.current) {
       foam.current.children.forEach((c, i) => {
         const s = 0.8 + Math.sin(t * 1.1 + i * 1.7) * 0.25;
@@ -253,7 +254,7 @@ function TwoOceans() {
 function Seabirds() {
   const flock = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
-    if (flock.current) flock.current.rotation.y = clock.getElapsedTime() * 0.12;
+    if (flock.current) flock.current.rotation.y = motionTime(clock) * 0.12;
   });
   return (
     <group ref={flock} position={[-14, 22, -8]}>
@@ -339,6 +340,7 @@ export function BoaEsperancaScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
+      <ScenePresentation camera={BOA_CAMERA} target={BOA_CONTROLS.target} />
       <StormSky />
       <fog attach="fog" args={['#5a5a58', 90, 300]} />
 

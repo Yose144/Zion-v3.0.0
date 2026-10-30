@@ -1,5 +1,6 @@
 'use client';
 
+import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ export default function KailashPresentPage() {
             {cs ? 'Posvátná hora · L5 spiritual center · Himálaje' : 'Sacred mountain · L5 spiritual center · Himalaya'}
           </span>
         </div>
+        <ProjectLanguageButton />
         <a
           className="present-link"
           href={`${MISSION_ORIGIN}/terranova/kailash`}
@@ -34,6 +36,7 @@ export default function KailashPresentPage() {
       </header>
 
       <Canvas
+        dpr={[1, 1.5]}
         shadows
         camera={KAILASH_CAMERA}
         gl={{ antialias: true, alpha: true }}

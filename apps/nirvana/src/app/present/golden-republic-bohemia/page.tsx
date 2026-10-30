@@ -1,5 +1,6 @@
 'use client';
 
+import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ export default function GoldenRepublicBohemiaPresentPage() {
             {cs ? 'Čechy · osa Říp — živý střed, ne stavba' : 'Bohemia · Říp axis — living center, not built'}
           </span>
         </div>
+        <ProjectLanguageButton />
         <a
           className="present-link"
           href={`${MISSION_ORIGIN}/terranova/golden-republic-bohemia`}
@@ -34,6 +36,7 @@ export default function GoldenRepublicBohemiaPresentPage() {
       </header>
 
       <Canvas
+        dpr={[1, 1.5]}
         shadows
         camera={BOHEMIA_CAMERA}
         gl={{ antialias: true, alpha: true }}

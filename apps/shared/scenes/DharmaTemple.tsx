@@ -3,6 +3,7 @@
 
 import { React, useFrame, useThree, useEffect, useLayoutEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { CoastalLandscape } from './CoastalLandscape';
 
 type Lang = 'cs' | 'en';
@@ -234,8 +235,8 @@ function Merkaba() {
 
   useFrame((_, delta) => {
     if (ref.current) {
-      ref.current.rotation.y += delta * 0.25;
-      ref.current.rotation.z += delta * 0.15;
+      ref.current.rotation.y += motionDelta(delta) * 0.25;
+      ref.current.rotation.z += motionDelta(delta) * 0.15;
     }
   });
 
@@ -494,16 +495,6 @@ function SkyAndSun() {
   );
 }
 
-function TempleFraming() {
-  const { camera, size } = useThree();
-  useLayoutEffect(() => {
-    const distance = Math.max(1, 0.85 / (size.width / Math.max(size.height, 1)));
-    camera.position.set(0, 10 * distance, 25 * distance);
-    camera.lookAt(0, 2.4, 0);
-    camera.updateProjectionMatrix();
-  }, [camera, size.width, size.height]);
-  return null;
-}
 
 export function DharmaTempleScene({ lang }: { lang: Lang }) {
   const domes = useMemo(() => {
@@ -517,8 +508,8 @@ export function DharmaTempleScene({ lang }: { lang: Lang }) {
 
   return (
     <>
+      <ScenePresentation camera={DHARMA_CAMERA} target={DHARMA_CONTROLS.target} />
       <SkyAndSun />
-      <TempleFraming />
       <fog attach="fog" args={['#c1c1cc', 55, 220]} />
 
       <CoastalLandscape />

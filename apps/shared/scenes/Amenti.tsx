@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
 
@@ -50,7 +51,7 @@ function GrandPyramid() {
   useEffect(() => () => tex.dispose(), [tex]);
   useFrame(({ clock }) => {
     const m = beam.current?.material as THREE.MeshBasicMaterial | undefined;
-    if (m) m.opacity = 0.35 + Math.sin(clock.getElapsedTime() * 1.4) * 0.12;
+    if (m) m.opacity = 0.35 + Math.sin(motionTime(clock) * 1.4) * 0.12;
   });
   return (
     <group position={[0, 0, -26]}>
@@ -105,7 +106,7 @@ function CosmicBeing({ x, y, z }: { x: number; y: number; z: number }) {
   const orb = useRef<THREE.Mesh>(null);
   const rings = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
+    const t = motionTime(clock);
     if (orb.current) {
       const m = orb.current.material as THREE.MeshStandardMaterial;
       m.emissiveIntensity = 1.6 + Math.sin(t * 1.2) * 0.5;
@@ -248,7 +249,7 @@ function StarFace({ x, y, z }: { x: number; y: number; z: number }) {
 function EarthStation({ x, y, z }: { x: number; y: number; z: number }) {
   const st = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
-    if (st.current) st.current.rotation.y = clock.getElapsedTime() * 0.1;
+    if (st.current) st.current.rotation.y = motionTime(clock) * 0.1;
   });
   return (
     <group position={[x, y, z]}>
@@ -497,6 +498,7 @@ export function AmentiScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
+      <ScenePresentation camera={AMENTI_CAMERA} target={AMENTI_CONTROLS.target} />
       <AmentiSky />
       <fog attach="fog" args={['#3a2c20', 130, 380]} />
 

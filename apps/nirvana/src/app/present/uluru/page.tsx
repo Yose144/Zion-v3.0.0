@@ -1,5 +1,6 @@
 'use client';
 
+import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ export default function UluruPresentPage() {
             {cs ? 'Tjukurpa · Songlines · Austrálie' : 'Tjukurpa · Songlines · Australia'}
           </span>
         </div>
+        <ProjectLanguageButton />
         <a
           className="present-link"
           href={`${MISSION_ORIGIN}/terranova/uluru`}
@@ -34,6 +36,7 @@ export default function UluruPresentPage() {
       </header>
 
       <Canvas
+        dpr={[1, 1.5]}
         shadows
         camera={ULURU_CAMERA}
         gl={{ antialias: true, alpha: true }}

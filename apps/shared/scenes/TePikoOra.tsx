@@ -3,6 +3,7 @@
 
 import { React, useFrame, useThree, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { LagoonLandscape } from './LagoonLandscape';
 
 type Lang = 'cs' | 'en';
@@ -212,7 +213,7 @@ function CenterPiko({ lang }: { lang: Lang }) {
   const flameRef = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
+    const t = motionTime(clock);
     const flick = 1 + Math.sin(t * 9) * 0.16 + Math.sin(t * 23) * 0.08;
     if (fireRef.current) fireRef.current.intensity = 2.6 * flick;
     if (flameRef.current) flameRef.current.scale.set(1, flick, 1);
@@ -536,8 +537,8 @@ export function TePikoOraScene({ lang }: { lang: Lang }) {
   const roofTexture = useThatchTexture();
   return (
     <>
+      <ScenePresentation camera={PIKO_CAMERA} target={PIKO_CONTROLS.target} />
       <SkyMountainsSun />
-      <PikoFraming />
       <fog attach="fog" args={['#bbcbd2', 70, 250]} />
 
       <LagoonLandscape />
@@ -586,15 +587,6 @@ export function TePikoOraScene({ lang }: { lang: Lang }) {
 }
 
 
-function PikoFraming() {
-  const {camera, size} = useThree();
-  useEffect(() => {
-    const aspect = size.width / Math.max(1, size.height), d = Math.max(1, .75 / aspect);
-    if (camera instanceof THREE.PerspectiveCamera) camera.fov = aspect < 1 ? 60 : 46;
-    camera.position.set(2 * d, 9.5 * d, 23 * d); camera.lookAt(0, 2, -2); camera.updateProjectionMatrix();
-  }, [camera, size.width, size.height]);
-  return null;
-}
 export const PIKO_CAMERA = {position: [2, 9.5, 23] as [number,number,number], fov: 46, far: 2000};
 export const PIKO_CONTROLS = {autoRotate:true, autoRotateSpeed:.18, minDistance:12, maxDistance:85, maxPolarAngle:Math.PI / 2 - .08, target:[0,2,-2] as [number,number,number], enablePan:false};
 export function PikoLighting() {

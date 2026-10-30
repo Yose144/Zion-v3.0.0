@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
 
@@ -342,7 +343,7 @@ function LotusPond() {
   const water = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = water.current?.material as THREE.MeshStandardMaterial | undefined;
-    if (m) m.emissiveIntensity = 0.14 + Math.sin(clock.getElapsedTime() * 0.7) * 0.05;
+    if (m) m.emissiveIntensity = 0.14 + Math.sin(motionTime(clock) * 0.7) * 0.05;
   });
   const lilies = useMemo(() => {
     const arr: { p: [number, number]; s: number; f: boolean }[] = [];
@@ -573,6 +574,7 @@ export function BodhiLankaScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
+      <ScenePresentation camera={LANKA_CAMERA} target={LANKA_CONTROLS.target} />
       <SkySun />
       <fog attach="fog" args={['#c98a4a', 90, 260]} />
 

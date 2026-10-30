@@ -1,5 +1,6 @@
 'use client';
 
+import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ export default function AmentiPresentPage() {
             {cs ? 'Síň záznamů · Egypt — kde civilizace psala příběh' : 'Hall of records · Egypt — where civilisation wrote its story'}
           </span>
         </div>
+        <ProjectLanguageButton />
         <a
           className="present-link"
           href={`${MISSION_ORIGIN}/terranova/amenti`}
@@ -34,6 +36,7 @@ export default function AmentiPresentPage() {
       </header>
 
       <Canvas
+        dpr={[1, 1.5]}
         shadows
         camera={AMENTI_CAMERA}
         gl={{ antialias: true, alpha: true }}

@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
 
@@ -333,7 +334,7 @@ function ForestRing() {
 function Waters() {
   const fallRef = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
+    const t = motionTime(clock);
     if (fallRef.current) {
       const m = fallRef.current.material as THREE.MeshStandardMaterial;
       m.opacity = 0.5 + Math.sin(t * 2.2) * 0.12;
@@ -466,6 +467,7 @@ function SkySun() {
 export function GoldenRepublicBohemiaScene({ lang }: { lang: Lang }) {
   return (
     <>
+      <ScenePresentation camera={BOHEMIA_CAMERA} target={BOHEMIA_CONTROLS.target} />
       <SkySun />
 
       {/* země pod komplexem */}

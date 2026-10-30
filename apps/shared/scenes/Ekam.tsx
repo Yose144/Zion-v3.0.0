@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
 
@@ -107,7 +108,7 @@ function CentralTower() {
   const beamRef = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = beamRef.current?.material as THREE.MeshBasicMaterial | undefined;
-    if (m) m.opacity = 0.32 + Math.sin(clock.getElapsedTime() * 1.4) * 0.07;
+    if (m) m.opacity = 0.32 + Math.sin(motionTime(clock) * 1.4) * 0.07;
   });
   return (
     <group position={[0, 0, -1]}>
@@ -247,7 +248,7 @@ function ReflectingPool() {
   const water = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = water.current?.material as THREE.MeshStandardMaterial | undefined;
-    if (m) m.emissiveIntensity = 0.3 + Math.sin(clock.getElapsedTime() * 0.9) * 0.08;
+    if (m) m.emissiveIntensity = 0.3 + Math.sin(motionTime(clock) * 0.9) * 0.08;
   });
   return (
     <group>
@@ -430,6 +431,7 @@ export function EkamScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
+      <ScenePresentation camera={EKAM_CAMERA} target={EKAM_CONTROLS.target} />
       <SkySun />
       <fog attach="fog" args={['#c98a4a', 110, 290]} />
 

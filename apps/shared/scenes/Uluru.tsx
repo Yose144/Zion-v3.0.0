@@ -3,6 +3,7 @@
 
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 
 type Lang = 'cs' | 'en';
 
@@ -141,7 +142,7 @@ function FireCircle() {
   const fire = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (!fire.current) return;
-    const t = clock.getElapsedTime();
+    const t = motionTime(clock);
     fire.current.children.forEach((c, i) => {
       c.scale.y = 0.8 + Math.sin(t * 6 + i * 2.1) * 0.25;
       c.rotation.y = t * (0.4 + i * 0.1);
@@ -207,7 +208,7 @@ function LeafSculpture({ x, z }: { x: number; z: number }) {
   const core = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = core.current?.material as THREE.MeshStandardMaterial | undefined;
-    if (m) m.emissiveIntensity = 0.9 + Math.sin(clock.getElapsedTime() * 1.6) * 0.3;
+    if (m) m.emissiveIntensity = 0.9 + Math.sin(motionTime(clock) * 1.6) * 0.3;
   });
   return (
     <group position={[x, 0, z]}>
@@ -453,6 +454,7 @@ export function UluruScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
+      <ScenePresentation camera={ULURU_CAMERA} target={ULURU_CONTROLS.target} />
       <UluruSky />
       <fog attach="fog" args={['#c97a4a', 120, 330]} />
 

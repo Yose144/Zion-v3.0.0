@@ -3,6 +3,7 @@
 
 import { React, useEffect, useFrame, useMemo, useRef, useThree, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
+import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { AtlanticOcean } from './CoastalLandscape';
 
 type Lang = 'cs' | 'en';
@@ -150,7 +151,7 @@ function Vessel({ spec, index, lang, tex, reduced }: { spec: typeof VESSELS[numb
   const masts = spec.cat ? [{ z: .9, h: 5.5, w: 2.15 }, { z: -1.65, h: 4.6, w: 1.45 }] : [{ z: 1.55, h: 4.8, w: 1.5 }, { z: -.15, h: 5.5, w: 1.5 }, { z: -1.85, h: 4.5, w: 1.35 }];
   useFrame(({ clock }) => {
     if (!ref.current) return;
-    const t = reduced.current ? 0 : clock.getElapsedTime();
+    const t = reduced.current ? 0 : motionTime(clock);
     ref.current.position.y = reduced.current ? 0 : Math.sin(t * .65 + index * 2) * .045;
     ref.current.rotation.z = reduced.current ? 0 : Math.sin(t * .5 + index * 2) * .014;
   });
@@ -198,16 +199,6 @@ function Sky() {
   return <mesh material={material} renderOrder={-10}><sphereGeometry args={[1800, 24, 16]} /></mesh>;
 }
 
-function FleetFraming() {
-  const { camera, size } = useThree();
-  useEffect(() => {
-    const aspect = size.width / Math.max(1, size.height);
-    const factor = Math.max(1, .78 / aspect);
-    if (camera instanceof THREE.PerspectiveCamera) camera.fov = aspect < 1 ? 60 : 45;
-    camera.position.set(9 * factor, 8.3 * factor, 20.5 * factor); camera.lookAt(0, 2.5, .5); camera.updateProjectionMatrix();
-  }, [camera, size.width, size.height]);
-  return null;
-}
 
 export function MariaDelCaminoScene({ lang }: { lang: Lang }) {
   const texture = useFabric();
@@ -216,7 +207,8 @@ export function MariaDelCaminoScene({ lang }: { lang: Lang }) {
     const q = window.matchMedia('(prefers-reduced-motion: reduce)'); const update = () => { reduced.current = q.matches; };
     update();q.addEventListener('change', update);return () => q.removeEventListener('change', update);
   }, []);
-  return <><Sky /><FleetFraming /><AtlanticOcean level={-.05} coastal={false} />
+  return <>
+      <ScenePresentation camera={MARIA_CAMERA} target={MARIA_CONTROLS.target} /><Sky /><AtlanticOcean level={-.05} coastal={false} />
     {VESSELS.map((spec, i) => <Vessel key={spec.id} spec={spec} index={i} lang={lang} tex={texture} reduced={reduced} />)}
   </>;
 }

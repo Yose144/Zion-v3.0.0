@@ -1,5 +1,6 @@
 'use client';
 
+import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ export default function GenesisGardenPresentPage() {
             {cs ? 'Sabacheira · Tomar · Portugalsko — koncept, ne stavba' : 'Sabacheira · Tomar · Portugal — concept, not built'}
           </span>
         </div>
+        <ProjectLanguageButton />
         <a
           className="present-link"
           href={`${MISSION_ORIGIN}/terranova/genesis`}
@@ -34,6 +36,7 @@ export default function GenesisGardenPresentPage() {
       </header>
 
       <Canvas
+        dpr={[1, 1.5]}
         shadows
         camera={GENESIS_CAMERA}
         gl={{ antialias: true, alpha: true }}
