@@ -12,7 +12,7 @@ export interface Announcement {
 
 export const ANNOUNCEMENTS: Announcement[] = [
   {
-    ts: 1793364000,
+    ts: 1793358000,
     tag: 'upgrade',
     cs: {
       title: 'Historie minerů 7 dní + leaderboards',
