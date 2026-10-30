@@ -25,6 +25,7 @@ import {
   Shield,
   Globe2,
   KeyRound,
+  Lock,
 } from 'lucide-react';
 import {
   deriveNativeBundle,
@@ -88,6 +89,15 @@ const CopyText = {
   },
   nativeLinked: { cs: `Propojeno`, en: `Linked` },
   nativeLinkResults: { cs: `Výsledky propojení`, en: `Link results` },
+  custodyTitle: { cs: `Custodial peněženka`, en: `Custodial wallet` },
+  custodyBody: {
+    cs: `Zůstatky, vklady, výběry a objednávky na této stránce jsou custodial — klíče drží platforma, přístup jde přes tvůj ZIS účet. Tab „Nativní" je non-custodial — klíče nikdy neopustí prohlížeč. Pro plnou kontrolu nad klíči použij desktopovou peněženku.`,
+    en: `Balances, deposits, withdrawals and orders on this page are custodial — keys are held by the platform, access goes through your ZIS account. The "Native" tab is non-custodial — keys never leave the browser. For full key control use the desktop wallet.`,
+  },
+  withdrawCustodyWarn: {
+    cs: `Výběr přesouvá prostředky z účtu drženého platformou (custodial). Ověř si adresu příjemce — transakce je nevratná.`,
+    en: `Withdrawal moves funds from a platform-held (custodial) account. Double-check the recipient address — the transaction is irreversible.`,
+  },
 };
 
 type Tab = 'overview' | 'deposits' | 'withdrawals' | 'orders' | 'native';
@@ -467,6 +477,14 @@ export default function MultichainWalletPage() {
           </motion.div>
         </section>
 
+        <section className="rounded-2xl border border-amber-400/25 bg-amber-400/5 px-5 py-4 flex items-start gap-3">
+          <Lock className="h-4 w-4 mt-0.5 shrink-0 text-amber-300" />
+          <p className="text-sm text-amber-100/90 leading-relaxed">
+            <span className="font-semibold text-amber-200">{t('custodyTitle')}. </span>
+            {t('custodyBody')}
+          </p>
+        </section>
+
         <section>
           <MetaMaskWalletPanel />
         </section>
@@ -504,6 +522,10 @@ export default function MultichainWalletPage() {
                   onChange={(e) => setWithdrawRecipient(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-zion-gold focus:outline-none"
                 />
+              </div>
+              <div className="md:col-span-4 flex items-start gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-2.5">
+                <Lock className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-300" />
+                <p className="text-xs text-amber-100/80">{t('withdrawCustodyWarn')}</p>
               </div>
               <div className="md:col-span-4 flex items-center gap-3">
                 <button
