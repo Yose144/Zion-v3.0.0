@@ -43,16 +43,22 @@ export function getGpuMode(): GpuMode {
   if (typeof window === 'undefined') return 'auto';
   const q = new URLSearchParams(window.location.search).get(QUERY_PARAM);
   if (q === 'webgpu' || q === 'webgl2' || q === 'auto') {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, q);
-    } catch {
-      // storage may be blocked — the query param still wins this session
+    // webgpu = opt-in jen pro tuto session — neukládat, jinak testovací
+    // hodnota přežije a podlehne konverzi classic materiálů (černé plátno)
+    if (q !== 'webgpu') {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, q);
+      } catch {
+        // storage may be blocked — the query param still wins this session
+      }
     }
     return q;
   }
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === 'webgpu' || stored === 'webgl2' || stored === 'auto') return stored;
+    // stored 'webgpu' ignorovat — zbytky starších testů by potichu
+    // reaktivovaly rozbitý backend místo defaultního WebGL2
+    if (stored === 'webgl2' || stored === 'auto') return stored;
   } catch {
     // ignore
   }

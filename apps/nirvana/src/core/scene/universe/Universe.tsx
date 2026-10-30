@@ -68,9 +68,10 @@ export function Universe({
 
   return (
     <>
-      <color attach="background" args={['#02030a']} />
-      <ambientLight intensity={0.3} />
-      <directionalLight ref={light} intensity={1.05} target={lightTarget} />
+      <color attach="background" args={['#040614']} />
+      <ambientLight intensity={0.55} />
+      <hemisphereLight args={['#5a7fc0', '#0b0e1a', 0.32]} />
+      <directionalLight ref={light} intensity={1.25} target={lightTarget} />
       <primitive object={lightTarget} />
       <SpaceBackdrop />
 

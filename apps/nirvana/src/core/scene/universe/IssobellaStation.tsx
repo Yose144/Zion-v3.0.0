@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -81,11 +81,49 @@ export function IssobellaStation({
   onClick?: () => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
+  const domesRef = useRef<THREE.InstancedMesh>(null);
+  const watersRef = useRef<THREE.InstancedMesh>(null);
+  const spokesRef = useRef<THREE.InstancedMesh>(null);
   const seg = low ? 24 : 48;
   const hullTex = useHullTexture();
   // 10 biodomů + 3 vodní plochy kolem prstence
   const domes = useMemo(() => Array.from({ length: 10 }, (_, i) => (i / 10) * Math.PI * 2 + 0.31), []);
   const waters = useMemo(() => [0.7, 2.5, 4.6], []);
+  const spokeAngles = useMemo(() => Array.from({ length: 8 }, (_, i) => (i / 8) * Math.PI * 2), []);
+
+  // instancované prvky — domy, vody, paprsky (matice jednou do layout effectu)
+  useLayoutEffect(() => {
+    const dummy = new THREE.Object3D();
+    if (domesRef.current) {
+      domes.forEach((a, i) => {
+        dummy.position.set(Math.cos(a) * 0.16, 0.032, Math.sin(a) * 0.16);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.setScalar(1);
+        dummy.updateMatrix();
+        domesRef.current!.setMatrixAt(i, dummy.matrix);
+      });
+      domesRef.current.instanceMatrix.needsUpdate = true;
+    }
+    if (watersRef.current) {
+      waters.forEach((a, i) => {
+        dummy.position.set(Math.cos(a) * 0.16, 0.026, Math.sin(a) * 0.16);
+        dummy.rotation.set(0, -a, 0);
+        dummy.updateMatrix();
+        watersRef.current!.setMatrixAt(i, dummy.matrix);
+      });
+      watersRef.current.instanceMatrix.needsUpdate = true;
+    }
+    if (spokesRef.current) {
+      spokeAngles.forEach((a, i) => {
+        dummy.position.set(Math.cos(a) * 0.08, 0, Math.sin(a) * 0.08);
+        // rodičovská skupina měla rotation [0,-a,0] a cylindr [0,0,PI/2] → kombinace
+        dummy.rotation.set(0, -a, Math.PI / 2);
+        dummy.updateMatrix();
+        spokesRef.current!.setMatrixAt(i, dummy.matrix);
+      });
+      spokesRef.current.instanceMatrix.needsUpdate = true;
+    }
+  }, [domes, waters, spokeAngles]);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
@@ -118,29 +156,21 @@ export function IssobellaStation({
           <torusGeometry args={[0.16, 0.016, 8, seg]} />
           <meshStandardMaterial color={PARK} emissive="#1d7a3f" emissiveIntensity={0.45} roughness={0.75} metalness={0.05} />
         </mesh>
-        {/* Vodní plochy v parklandu */}
-        {waters.map((a, i) => (
-          <mesh key={`w${i}`} position={[Math.cos(a) * 0.16, 0.026, Math.sin(a) * 0.16]} rotation={[0, -a, 0]}>
-            <sphereGeometry args={[0.018, 10, 6]} />
-            <meshStandardMaterial color={WATER} emissive="#1a6a94" emissiveIntensity={0.5} roughness={0.15} metalness={0.4} />
-          </mesh>
-        ))}
-        {/* Skleněné biodomy po obvodu */}
-        {domes.map((a, i) => (
-          <mesh key={i} position={[Math.cos(a) * 0.16, 0.032, Math.sin(a) * 0.16]}>
-            <sphereGeometry args={[0.024, low ? 8 : 14, low ? 6 : 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <meshStandardMaterial color={GLASS} emissive={GOLD} emissiveIntensity={0.35} transparent opacity={0.5} roughness={0.05} metalness={0.1} />
-          </mesh>
-        ))}
-        {/* 8 paprsků hub → ring */}
-        {Array.from({ length: 8 }, (_, i) => (i / 8) * Math.PI * 2).map((a, i) => (
-          <group key={`s${i}`} rotation={[0, -a, 0]} position={[Math.cos(a) * 0.08, 0, Math.sin(a) * 0.08]}>
-            <mesh rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.006, 0.006, 0.16, 6]} />
-              <meshStandardMaterial map={hullTex} color={HULL} roughness={0.4} metalness={0.7} />
-            </mesh>
-          </group>
-        ))}
+        {/* Vodní plochy v parklandu — instancované */}
+        <instancedMesh ref={watersRef} args={[undefined, undefined, waters.length]}>
+          <sphereGeometry args={[0.018, 10, 6]} />
+          <meshStandardMaterial color={WATER} emissive="#1a6a94" emissiveIntensity={0.5} roughness={0.15} metalness={0.4} />
+        </instancedMesh>
+        {/* Skleněné biodomy po obvodu — instancované */}
+        <instancedMesh ref={domesRef} args={[undefined, undefined, domes.length]}>
+          <sphereGeometry args={[0.024, low ? 8 : 14, low ? 6 : 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color={GLASS} emissive={GOLD} emissiveIntensity={0.35} transparent opacity={0.5} roughness={0.05} metalness={0.1} />
+        </instancedMesh>
+        {/* 8 paprsků hub → ring — instancované */}
+        <instancedMesh ref={spokesRef} args={[undefined, undefined, spokeAngles.length]}>
+          <cylinderGeometry args={[0.006, 0.006, 0.16, 6]} />
+          <meshStandardMaterial map={hullTex} color={HULL} roughness={0.4} metalness={0.7} />
+        </instancedMesh>
         {/* Hub — bílo-zlatá katedrála: základna + dome + spire */}
         <mesh position={[0, 0.01, 0]}>
           <cylinderGeometry args={[0.05, 0.06, 0.03, 16]} />

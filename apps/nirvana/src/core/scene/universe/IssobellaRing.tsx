@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { TextLabel } from './Label';
 import * as THREE from 'three';
@@ -25,6 +25,30 @@ export function IssobellaRing({
 }) {
   const ring = useRef<THREE.Group>(null);
   const glow = useRef<THREE.MeshBasicMaterial>(null);
+  const stations = useRef<THREE.InstancedMesh>(null);
+  const stationData = useMemo(
+    () =>
+      worlds.map((w, i) => ({
+        id: w.id,
+        pos: ringPosition(w, i + 1, worlds.length + 1),
+        color: new THREE.Color(layerColor(w.layer)),
+      })),
+    [worlds],
+  );
+
+  useLayoutEffect(() => {
+    const m = stations.current;
+    if (!m) return;
+    const dummy = new THREE.Object3D();
+    stationData.forEach((d, i) => {
+      dummy.position.set(d.pos[0], d.pos[1], d.pos[2]);
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+      m.setColorAt(i, d.color);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }, [stationData]);
 
   useFrame(({ clock }, delta) => {
     if (ring.current) ring.current.rotation.y += delta * 0.03;
@@ -48,23 +72,22 @@ export function IssobellaRing({
         scale={4.4}
         onClick={portal ? () => onOpen(portal.id) : undefined}
       />
-      {/* stanice L6 světů na prstenci */}
-      {worlds.map((w, i) => {
-        const pos = ringPosition(w, i + 1, worlds.length + 1);
-        return (
-          <mesh
-            key={w.id}
-            position={pos}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectWorld(w.id);
-            }}
-          >
-            <octahedronGeometry args={[0.08, 0]} />
-            <meshBasicMaterial color={layerColor(w.layer)} />
-          </mesh>
-        );
-      })}
+      {/* stanice L6 světů na prstenci — instancované */}
+      {stationData.length > 0 && (
+        <instancedMesh
+          key={stationData.length}
+          ref={stations}
+          args={[undefined, undefined, stationData.length]}
+          frustumCulled={false}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (e.instanceId != null) onSelectWorld(stationData[e.instanceId].id);
+          }}
+        >
+          <octahedronGeometry args={[0.08, 0]} />
+          <meshBasicMaterial />
+        </instancedMesh>
+      )}
       {portal && (
         <TextLabel
           text={`${portal.title.cs} · L6`}

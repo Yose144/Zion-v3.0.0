@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ORBIT_R, orbitPosition } from './positions';
@@ -49,10 +49,29 @@ export function OrbitalWorlds({
     return { picked: worlds.filter((_, i) => pickedSet.has(i)), beltGeo: geo };
   }, [worlds]);
 
-  const pickedIndex = useMemo(() => {
+  const pickedMesh = useRef<THREE.InstancedMesh>(null);
+  const pickedData = useMemo(() => {
     const ids = new Map(worlds.map((w, i) => [w.id, i] as const));
-    return picked.map((w) => ({ world: w, index: ids.get(w.id)! }));
+    return picked.map((w) => ({
+      id: w.id,
+      pos: orbitPosition(w, ids.get(w.id)!, worlds.length),
+      color: new THREE.Color(layerColor(w.layer)),
+    }));
   }, [worlds, picked]);
+
+  useLayoutEffect(() => {
+    const m = pickedMesh.current;
+    if (!m) return;
+    const dummy = new THREE.Object3D();
+    pickedData.forEach((d, i) => {
+      dummy.position.set(d.pos[0], d.pos[1], d.pos[2]);
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+      m.setColorAt(i, d.color);
+    });
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }, [pickedData]);
 
   return (
     <group ref={belt}>
@@ -65,20 +84,22 @@ export function OrbitalWorlds({
       <points geometry={beltGeo}>
         <pointsMaterial size={0.055} transparent opacity={0.55} sizeAttenuation depthWrite={false} vertexColors blending={THREE.AdditiveBlending} />
       </points>
-      {/* klikatelná reprezentativní podmnožina */}
-      {pickedIndex.map(({ world, index }) => (
-        <mesh
-          key={world.id}
-          position={orbitPosition(world, index, worlds.length)}
+      {/* klikatelná reprezentativní podmnožina — instancovaná */}
+      {pickedData.length > 0 && (
+        <instancedMesh
+          key={pickedData.length}
+          ref={pickedMesh}
+          args={[undefined, undefined, pickedData.length]}
+          frustumCulled={false}
           onClick={(e) => {
             e.stopPropagation();
-            onSelectWorld(world.id);
+            if (e.instanceId != null) onSelectWorld(pickedData[e.instanceId].id);
           }}
         >
           <sphereGeometry args={[0.07, 10, 10]} />
-          <meshBasicMaterial color={layerColor(world.layer)} />
-        </mesh>
-      ))}
+          <meshBasicMaterial />
+        </instancedMesh>
+      )}
     </group>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { TextLabel } from './Label';
 import * as THREE from 'three';
@@ -126,26 +126,42 @@ function Vajra() {
             <coneGeometry args={[0.028, 0.2, 8]} />
             {mat}
           </mesh>
-          {/* 4 pařáty kolem */}
-          {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((a, i) => (
-            <group key={i} rotation={[0, 0, 0]}>
-              <mesh
-                position={[Math.cos(a) * 0.09, s * 0.28, Math.sin(a) * 0.09]}
-                rotation={[s * 0.7, 0, -a + Math.PI / 2]}
-              >
-                <coneGeometry args={[0.02, 0.17, 6]} />
-                {mat}
-              </mesh>
-            </group>
-          ))}
         </group>
       ))}
+      {/* 2×4 pařáty kolem — instancované */}
+      <VajraClaws mat={mat} />
       {/* glow shell */}
       <mesh scale={1.6}>
         <sphereGeometry args={[0.11, 12, 12]} />
         <meshBasicMaterial color={GOLD} transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
+  );
+}
+
+/** Pařáty vadžry — 8 instancí jednoho kuželu (s = ±1 strana). */
+function VajraClaws({ mat }: { mat: ReactNode }) {
+  const claws = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = claws.current;
+    if (!m) return;
+    const dummy = new THREE.Object3D();
+    let i = 0;
+    for (const s of [1, -1]) {
+      for (const a of [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2]) {
+        dummy.position.set(Math.cos(a) * 0.09, s * 0.28, Math.sin(a) * 0.09);
+        dummy.rotation.set(s * 0.7, 0, -a + Math.PI / 2);
+        dummy.updateMatrix();
+        m.setMatrixAt(i++, dummy.matrix);
+      }
+    }
+    m.instanceMatrix.needsUpdate = true;
+  }, []);
+  return (
+    <instancedMesh ref={claws} args={[undefined, undefined, 8]}>
+      <coneGeometry args={[0.02, 0.17, 6]} />
+      {mat}
+    </instancedMesh>
   );
 }
 
@@ -206,13 +222,8 @@ function Meru() {
           <sphereGeometry args={[0.05, 12, 12]} />
           <meshBasicMaterial color="#fff7e0" />
         </mesh>
-        {/* lotus — 16 okvětních lístků v základně */}
-        {Array.from({ length: 16 }, (_, i) => (i / 16) * Math.PI * 2).map((a, i) => (
-          <mesh key={`p${i}`} position={[Math.cos(a) * 0.78, -0.1, Math.sin(a) * 0.78]} rotation={[0, -a, 0]}>
-            <coneGeometry args={[0.05, 0.16, 4]} />
-            {yantraMat}
-          </mesh>
-        ))}
+        {/* lotus — 16 okvětních lístků v základně, instancované */}
+        <MeruPetals mat={yantraMat} />
         {/* bhupura — čtvercové rámové základny */}
         {[0.85, 0.92].map((s, i) => (
           <mesh key={`b${i}`} position={[0, -0.16 - i * 0.05, 0]} rotation={[Math.PI / 2, 0, Math.PI / 4 + i * 0.2]}>
@@ -227,6 +238,30 @@ function Meru() {
         <meshBasicMaterial color={GOLD} transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
+  );
+}
+
+/** Lotusové lístky meru — 16 instancí. */
+function MeruPetals({ mat }: { mat: ReactNode }) {
+  const petals = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = petals.current;
+    if (!m) return;
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      dummy.position.set(Math.cos(a) * 0.78, -0.1, Math.sin(a) * 0.78);
+      dummy.rotation.set(0, -a, 0);
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+    }
+    m.instanceMatrix.needsUpdate = true;
+  }, []);
+  return (
+    <instancedMesh ref={petals} args={[undefined, undefined, 16]}>
+      <coneGeometry args={[0.05, 0.16, 4]} />
+      {mat}
+    </instancedMesh>
   );
 }
 
@@ -320,24 +355,33 @@ function Horizon({ hover }: { hover: boolean }) {
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
     g.setIndex(idx);
     g.computeVertexNormals();
-    return g;
+    // polární souřadnice předpočítané — per-frame jen sin() (žádné hypot/atan2/exp)
+    const n = g.attributes.position.count;
+    const rs = new Float32Array(n);
+    const angs = new Float32Array(n);
+    const damps = new Float32Array(n);
+    const pp = g.attributes.position;
+    for (let i = 0; i < n; i++) {
+      const r = Math.hypot(pp.getX(i), pp.getY(i));
+      rs[i] = r;
+      angs[i] = Math.atan2(pp.getY(i), pp.getX(i));
+      damps[i] = Math.exp(-r * 0.9);
+    }
+    return { g, rs, angs, damps };
   }, []);
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
-    const p = geo.attributes.position as THREE.BufferAttribute;
+    const p = geo.g.attributes.position as THREE.BufferAttribute;
     const amp = hover ? 0.05 : 0.028;
     for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i);
-      const y = p.getY(i);
-      const r = Math.hypot(x, y);
-      p.setZ(i, Math.sin(r * 9 - t * 3.1) * amp * Math.exp(-r * 0.9) + Math.sin(Math.atan2(y, x) * 5 + t * 1.7) * 0.012);
+      p.setZ(i, Math.sin(geo.rs[i] * 9 - t * 3.1) * amp * geo.damps[i] + Math.sin(geo.angs[i] * 5 + t * 1.7) * 0.012);
     }
     p.needsUpdate = true;
   });
 
   return (
-    <mesh ref={mesh} geometry={geo} position={[0, 0, -0.06]}>
+    <mesh ref={mesh} geometry={geo.g} position={[0, 0, -0.06]}>
       <meshBasicMaterial
         color={hover ? '#e0aaff' : '#b478f0'}
         transparent
@@ -410,28 +454,32 @@ function Kawoosh({ sprite, hover }: { sprite: THREE.Texture; hover: boolean }) {
 /* ------------------------------------------------------------------ */
 function ChevronRing({ active }: { active: boolean }) {
   const group = useRef<THREE.Group>(null);
+  const marks = useRef<THREE.InstancedMesh>(null);
   const speed = useRef(0.06);
   useFrame((_, delta) => {
     const target = active ? 0.9 : 0.06;
     speed.current += (target - speed.current) * 0.08;
     if (group.current) group.current.rotation.z += delta * speed.current;
   });
-  const marks = useMemo(
-    () =>
-      Array.from({ length: CHEVRONS }, (_, i) => {
-        const a = (i / CHEVRONS) * Math.PI * 2;
-        return { key: i, pos: [Math.cos(a) * 1.72, Math.sin(a) * 1.72, 0] as [number, number, number], rot: a };
-      }),
-    [],
-  );
+  useLayoutEffect(() => {
+    const m = marks.current;
+    if (!m) return;
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < CHEVRONS; i++) {
+      const a = (i / CHEVRONS) * Math.PI * 2;
+      dummy.position.set(Math.cos(a) * 1.72, Math.sin(a) * 1.72, 0);
+      dummy.rotation.set(0, 0, a);
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+    }
+    m.instanceMatrix.needsUpdate = true;
+  }, []);
   return (
     <group ref={group}>
-      {marks.map((m) => (
-        <mesh key={m.key} position={m.pos} rotation={[0, 0, m.rot]}>
-          <boxGeometry args={[0.045, 0.17, 0.045]} />
-          <meshBasicMaterial color={active ? GOLD : ICE} transparent opacity={0.8} />
-        </mesh>
-      ))}
+      <instancedMesh ref={marks} args={[undefined, undefined, CHEVRONS]}>
+        <boxGeometry args={[0.045, 0.17, 0.045]} />
+        <meshBasicMaterial color={active ? GOLD : ICE} transparent opacity={0.8} />
+      </instancedMesh>
     </group>
   );
 }
@@ -439,29 +487,33 @@ function ChevronRing({ active }: { active: boolean }) {
 /** Vnitřní glyph prstenec — SG-1 styl, protirrotace vůči chevronům. */
 function InnerGlyphRing() {
   const group = useRef<THREE.Group>(null);
+  const marks = useRef<THREE.InstancedMesh>(null);
   useFrame((_, delta) => {
     if (group.current) group.current.rotation.z -= delta * 0.09;
   });
-  const marks = useMemo(
-    () =>
-      Array.from({ length: 28 }, (_, i) => {
-        const a = (i / 28) * Math.PI * 2;
-        return { key: i, pos: [Math.cos(a) * 1.52, Math.sin(a) * 1.52, 0.02] as [number, number, number], rot: a };
-      }),
-    [],
-  );
+  useLayoutEffect(() => {
+    const m = marks.current;
+    if (!m) return;
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < 28; i++) {
+      const a = (i / 28) * Math.PI * 2;
+      dummy.position.set(Math.cos(a) * 1.52, Math.sin(a) * 1.52, 0.02);
+      dummy.rotation.set(0, 0, a);
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+    }
+    m.instanceMatrix.needsUpdate = true;
+  }, []);
   return (
     <group ref={group}>
       <mesh>
         <torusGeometry args={[1.52, 0.03, 8, 72]} />
         <meshStandardMaterial color="#4a4f63" metalness={0.8} roughness={0.35} emissive={ICE} emissiveIntensity={0.12} />
       </mesh>
-      {marks.map((m) => (
-        <mesh key={m.key} position={m.pos} rotation={[0, 0, m.rot]}>
-          <boxGeometry args={[0.02, 0.08, 0.02]} />
-          <meshBasicMaterial color="#cdd6e4" transparent opacity={0.55} />
-        </mesh>
-      ))}
+      <instancedMesh ref={marks} args={[undefined, undefined, 28]}>
+        <boxGeometry args={[0.02, 0.08, 0.02]} />
+        <meshBasicMaterial color="#cdd6e4" transparent opacity={0.55} />
+      </instancedMesh>
     </group>
   );
 }

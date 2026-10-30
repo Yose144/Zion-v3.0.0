@@ -41,6 +41,7 @@ async function registerNodeLibrary(renderer: {
 }
 
 function DirectRenderer() {
+  // priority 1 → přebíráme render (jinak r3f rendruje sám = dvojí frame)
   useFrame(({ gl, scene, camera }) => {
     const anyGl = gl as unknown as {
       render: (s: THREE.Scene, c: THREE.Camera) => void;
@@ -48,7 +49,7 @@ function DirectRenderer() {
     };
     if (anyGl.renderAsync) void anyGl.renderAsync(scene, camera);
     else anyGl.render(scene, camera);
-  });
+  }, 1);
   return null;
 }
 
@@ -95,6 +96,7 @@ export function SceneRoot({
         role="img"
         aria-label={label}
         camera={{ position: [15, 5, 19], fov: 52, far: 6000 }}
+        dpr={[1, 1.75]}
         style={{ width: '100%', height: '100%', display: 'block' }}
         gl={async (defaults) => {
           if (backend === 'webgpu' && !xr) {
@@ -106,7 +108,7 @@ export function SceneRoot({
                 powerPreference: 'high-performance',
               });
               renderer.toneMapping = THREE.ACESFilmicToneMapping;
-              renderer.toneMappingExposure = 1.0;
+              renderer.toneMappingExposure = 1.15;
               await renderer.init();
               try {
                 await registerNodeLibrary(
@@ -129,7 +131,7 @@ export function SceneRoot({
             failIfMajorPerformanceCaveat: false,
           });
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
-          renderer.toneMappingExposure = 1.0;
+          renderer.toneMappingExposure = 1.15;
           return renderer;
         }}
       >

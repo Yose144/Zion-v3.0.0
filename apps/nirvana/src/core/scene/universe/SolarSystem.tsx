@@ -36,14 +36,15 @@ function Sun() {
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
     if (sun.current) sun.current.rotation.y += delta * 0.02;
-    if (corona.current) corona.current.opacity = 0.14 + Math.sin(t * 1.3) * 0.05;
+    if (corona.current) corona.current.opacity = 0.19 + Math.sin(t * 1.3) * 0.06;
   });
 
   return (
     <group>
       <mesh ref={sun}>
         <sphereGeometry args={[6.0, 48, 48]} />
-        <meshBasicMaterial map={tex ?? undefined} color={tex ? '#ffffff' : '#ffb84d'} />
+        {/* key → USE_MAP recompile až po načtení textury */}
+        <meshBasicMaterial key={tex ? 'tex' : 'flat'} map={tex ?? undefined} color={tex ? '#ffffff' : '#ffb84d'} />
       </mesh>
       {/* vnitřní korona */}
       <mesh scale={1.12}>
@@ -126,11 +127,11 @@ function Planet({ def, index }: { def: PlanetDef; index: number }) {
       <group rotation={[0, 0, def.tiltZ ?? 0]}>
         <mesh ref={body}>
           <sphereGeometry args={[def.size, 32, 32]} />
-          <meshStandardMaterial map={tex ?? undefined} color={tex ? '#ffffff' : def.tint} roughness={0.85} metalness={0.02} />
+          <meshStandardMaterial key={tex ? 'tex' : 'flat'} map={tex ?? undefined} color={tex ? '#ffffff' : def.tint} roughness={0.85} metalness={0.02} />
         </mesh>
         {def.ring && (
           <mesh rotation={[Math.PI / 2 - 0.32, 0, 0]} geometry={ringGeo ?? undefined}>
-            <meshBasicMaterial map={ringTex ?? undefined} color={ringTex ? '#ffffff' : '#d9c49a'} transparent opacity={0.9} side={THREE.DoubleSide} depthWrite={false} />
+            <meshBasicMaterial key={ringTex ? 'tex' : 'flat'} map={ringTex ?? undefined} color={ringTex ? '#ffffff' : '#d9c49a'} transparent opacity={0.9} side={THREE.DoubleSide} depthWrite={false} />
           </mesh>
         )}
       </group>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { TextLabel } from './Label';
 import * as THREE from 'three';
@@ -79,39 +79,95 @@ function useEarthMaps(fallback: THREE.Texture) {
   return maps;
 }
 
-function SurfaceMarker({
-  world,
+/** L5 markery — instancované (2 draw calls místo ~2×N, jedna useFrame). */
+function SurfaceMarkers({
+  worlds,
   onSelectWorld,
 }: {
-  world: WorldPoint;
+  worlds: WorldPoint[];
   onSelectWorld: (id: string) => void;
 }) {
-  const ref = useRef<THREE.Mesh>(null);
-  const phase = useMemo(() => hash01(world.id, 29) * Math.PI * 2, [world.id]);
+  const core = useRef<THREE.InstancedMesh>(null);
+  const halo = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const data = useMemo(
+    () =>
+      worlds.map((w) => ({
+        id: w.id,
+        pos: surfacePosition(w),
+        color: new THREE.Color(layerColor(w.layer)),
+        phase: hash01(w.id, 29) * Math.PI * 2,
+      })),
+    [worlds],
+  );
+
+  useLayoutEffect(() => {
+    const c = core.current;
+    const h = halo.current;
+    if (!c || !h) return;
+    data.forEach((d, i) => {
+      dummy.position.set(d.pos[0], d.pos[1], d.pos[2]);
+      dummy.scale.setScalar(1);
+      dummy.updateMatrix();
+      c.setMatrixAt(i, dummy.matrix);
+      dummy.scale.setScalar(1.6);
+      dummy.updateMatrix();
+      h.setMatrixAt(i, dummy.matrix);
+      c.setColorAt(i, d.color);
+      h.setColorAt(i, d.color);
+    });
+    c.instanceMatrix.needsUpdate = true;
+    h.instanceMatrix.needsUpdate = true;
+    if (c.instanceColor) c.instanceColor.needsUpdate = true;
+    if (h.instanceColor) h.instanceColor.needsUpdate = true;
+  }, [data, dummy]);
+
   useFrame(({ clock }) => {
+    const c = core.current;
+    const h = halo.current;
+    if (!c || !h) return;
     const t = clock.getElapsedTime();
-    const s = 1 + Math.sin(t * 1.8 + phase) * 0.22;
-    ref.current?.scale.setScalar(s);
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const s = 1 + Math.sin(t * 1.8 + d.phase) * 0.22;
+      dummy.position.set(d.pos[0], d.pos[1], d.pos[2]);
+      dummy.scale.setScalar(s);
+      dummy.updateMatrix();
+      c.setMatrixAt(i, dummy.matrix);
+      dummy.scale.setScalar(s * 1.6);
+      dummy.updateMatrix();
+      h.setMatrixAt(i, dummy.matrix);
+    }
+    c.instanceMatrix.needsUpdate = true;
+    h.instanceMatrix.needsUpdate = true;
   });
-  const pos = surfacePosition(world);
-  const color = layerColor(world.layer);
+
+  if (data.length === 0) return null;
   return (
-    <group position={pos}>
-      <mesh
-        ref={ref}
+    <>
+      <instancedMesh
+        key={data.length}
+        ref={core}
+        args={[undefined, undefined, data.length]}
+        frustumCulled={false}
         onClick={(e) => {
           e.stopPropagation();
-          onSelectWorld(world.id);
+          if (e.instanceId != null) onSelectWorld(data[e.instanceId].id);
         }}
       >
         <sphereGeometry args={[0.06, 10, 10]} />
-        <meshBasicMaterial color={color} />
-      </mesh>
-      <mesh scale={1.6}>
+        <meshBasicMaterial />
+      </instancedMesh>
+      <instancedMesh
+        ref={halo}
+        args={[undefined, undefined, data.length]}
+        frustumCulled={false}
+        raycast={() => null}
+      >
         <sphereGeometry args={[0.06, 8, 8]} />
-        <meshBasicMaterial color={color} transparent opacity={0.14} depthWrite={false} blending={THREE.AdditiveBlending} />
-      </mesh>
-    </group>
+        <meshBasicMaterial transparent opacity={0.14} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </instancedMesh>
+    </>
   );
 }
 
@@ -201,7 +257,7 @@ function Moon() {
     <group ref={ref}>
       <mesh>
         <sphereGeometry args={[0.55, 24, 24]} />
-        <meshStandardMaterial map={tex ?? undefined} color={tex ? '#ffffff' : '#d4d4d4'} roughness={0.95} metalness={0.02} />
+        <meshStandardMaterial key={tex ? 'tex' : 'flat'} map={tex ?? undefined} color={tex ? '#ffffff' : '#d4d4d4'} roughness={0.95} metalness={0.02} />
       </mesh>
       <mesh scale={1.35}>
         <sphereGeometry args={[0.55, 12, 12]} />
@@ -250,10 +306,8 @@ export function NewEarth({
         <sphereGeometry args={[PLANET_R, 48, 32]} />
         <meshBasicMaterial color="#7ec8ff" transparent opacity={0.13} side={THREE.BackSide} depthWrite={false} />
       </mesh>
-      {/* L5 světy na povrchu */}
-      {worlds.map((w) => (
-        <SurfaceMarker key={w.id} world={w} onSelectWorld={onSelectWorld} />
-      ))}
+      {/* L5 světy na povrchu — instancované markery */}
+      <SurfaceMarkers worlds={worlds} onSelectWorld={onSelectWorld} />
       {/* funkcionální místa z manifestu */}
       {spots.map((p) => (
         <PortalSpot key={p.id} portal={p} onOpen={onOpen} />
