@@ -420,6 +420,48 @@ button {
   }
 }
 
+/* The shell stays quiet enough for the universe to remain the focal point. */
+.chrome {
+  padding: 1.1rem 1.5rem;
+  padding-top: calc(1.1rem + env(safe-area-inset-top, 0px));
+  background: linear-gradient(180deg, rgba(3, 6, 16, .88), rgba(3, 6, 16, .32) 68%, transparent);
+}
+.chrome strong { letter-spacing: .12em; text-transform: uppercase; font-size: .88rem; }
+.chrome .subtitle, .chrome-actions { color: #c3cddd; }
+.badge { color: #e8c98e; }
+.holo-menu-btn {
+  border-color: rgba(218, 198, 158, .36);
+  background: rgba(9, 14, 27, .78);
+  color: #ead8b5;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .35);
+  backdrop-filter: blur(16px);
+}
+.holo-drawer, .portal {
+  background: linear-gradient(145deg, rgba(17, 25, 42, .96), rgba(5, 9, 20, .95));
+  border-color: rgba(220, 204, 172, .2);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .48);
+  backdrop-filter: blur(20px);
+}
+.portal { box-sizing: border-box; padding: 1.4rem; }
+.portal h2 { font-size: 1.25rem; letter-spacing: .02em; }
+.portal li { border-color: rgba(221, 228, 240, .1); }
+.holo-drawer-head, .holo-drawer-foot { border-color: rgba(220, 204, 172, .16); }
+.holo-drawer-head { padding-top: calc(1.1rem + env(safe-area-inset-top, 0px)); }
+.holo-drawer-tile { background: rgba(255, 255, 255, .035); border-color: rgba(255, 255, 255, .08); letter-spacing: .02em; }
+.holo-drawer-tile:hover { background: rgba(225, 200, 154, .1); border-color: rgba(225, 200, 154, .45); }
+button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visible {
+  outline: 2px solid #f1d49a;
+  outline-offset: 3px;
+}
+@media (max-width: 560px) {
+  .chrome { padding: calc(.8rem + env(safe-area-inset-top, 0px)) 1rem .8rem; }
+  .chrome-actions { gap: .35rem; }
+  .portal { right: max(.75rem, env(safe-area-inset-right, 0px)); padding: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .holo-drawer, .holo-menu-btn, .holo-drawer-tile { transition: none; }
+}
+
 /* ─── Project presentation (/present/*) ─────────────────────────── */
 .present {
   position: relative;

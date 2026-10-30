@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -55,6 +55,15 @@ export function Universe({
   const light = useRef<THREE.DirectionalLight>(null);
   const lightTarget = useMemo(() => new THREE.Object3D(), []);
   const earthAngle = useRef(Math.PI * 0.18);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(preference.matches);
+    update();
+    preference.addEventListener('change', update);
+    return () => preference.removeEventListener('change', update);
+  }, []);
 
   const split = useMemo(() => {
     const ring: WorldPoint[] = [];
@@ -72,7 +81,7 @@ export function Universe({
 
   useFrame((_, delta) => {
     // zemská soustava obíhá Slunce — celý vesmír se točí kolem něj
-    earthAngle.current += delta * EARTH_ORBIT_SPEED;
+    if (!reducedMotion) earthAngle.current += delta * EARTH_ORBIT_SPEED;
     const ex = Math.cos(earthAngle.current) * EARTH_ORBIT_R;
     const ez = Math.sin(earthAngle.current) * EARTH_ORBIT_R;
     if (earthSys.current) earthSys.current.position.set(ex, 0, ez);
@@ -85,9 +94,9 @@ export function Universe({
   return (
     <>
       <color attach="background" args={['#040614']} />
-      <ambientLight intensity={0.55} />
-      <hemisphereLight args={['#5a7fc0', '#0b0e1a', 0.32]} />
-      <directionalLight ref={light} intensity={1.25} target={lightTarget} />
+      <ambientLight intensity={0.48} />
+      <hemisphereLight args={['#829fd0', '#080b18', 0.38]} />
+      <directionalLight ref={light} color="#fff1d4" intensity={1.35} target={lightTarget} />
       <primitive object={lightTarget} />
       <SpaceBackdrop />
 
@@ -110,7 +119,7 @@ export function Universe({
       <OrbitControls
         ref={controls as never}
         makeDefault
-        autoRotate
+        autoRotate={!reducedMotion}
         autoRotateSpeed={0.25}
         enableDamping
         dampingFactor={0.06}
