@@ -107,9 +107,9 @@ function SurfaceMarker({
         <sphereGeometry args={[0.06, 10, 10]} />
         <meshBasicMaterial color={color} />
       </mesh>
-      <mesh scale={2.1}>
+      <mesh scale={1.6}>
         <sphereGeometry args={[0.06, 8, 8]} />
-        <meshBasicMaterial color={color} transparent opacity={0.28} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color={color} transparent opacity={0.14} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
