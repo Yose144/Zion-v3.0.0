@@ -32,6 +32,7 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+const MariaDelCaminoPreviewLazy = dynamic(() => import('@/components/MariaDelCaminoPreviewLazy'), { ssr: false });
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
@@ -47,6 +48,8 @@ const Copy = {
     cs: `María del Camino je osmý bod L5 Free World — a jediný, který není místo, ale cesta. Flotila Tres Marias — tři lodě pro tři oceány, každá nesoucí jedno ze tří mariánských zjevení poutníkovy cesty: atlantická plachetnice Santa María la Mayor (červená královská roucha), pacifický solární katamarán Nossa Senhora de Fátima (bílé svatební šaty) a indickooceánská María de las Nieves (zlatá roucha, nedokončené zázraky). Zhruba padesát poutníků na trup, solární plachty, vlastní energie, voda, jídlo i plný ZION uzel zprostřed oceánu.`,
     en: `María del Camino is the eighth point of L5 Free World — and the only one that is not a place but a way. The Tres Marias fleet — three ships for three oceans, each carrying one of the three Marian apparitions of the pilgrim's journey: the Atlantic tall ship Santa María la Mayor (red royal robes), the Pacific solar catamaran Nossa Senhora de Fátima (white wedding dress) and the Indian-ocean María de las Nieves (golden robes, unfinished miracles). Roughly fifty pilgrims per hull, solar sails, their own energy, water, food and a full ZION node mid-ocean.`,
   },
+  threeDPreview: { cs: `3D flotila`, en: `3D fleet` },
+  threeDPreviewSubtitle: { cs: `Interaktivní model Tres Marias — solární plachty, tři lodě, tři oceány.`, en: `Interactive model of Tres Marias — solar sails, three ships, three oceans.` },
   fleetTitle: { cs: `Tři lodě — tres Marias`, en: `Three ships — tres Marias` },
   fleetSubtitle: { cs: `Tři zjevení · tři oceány · scháziště LUMI a Cape`, en: `Three apparitions · three oceans · LUMI & the Cape seam` },
   fleetAtlantic: {
@@ -614,6 +617,27 @@ export default function MariaDelCaminoPage() {
               <span className="text-xs uppercase tracking-widest text-gray-500">LUMI · {cs ? 'scháziště' : 'meeting point'}</span>
             </div>
             <p className="text-sm text-gray-300">{Copy.fleetMeet[cs ? 'cs' : 'en']}</p>
+          </div>
+        </motion.section>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.05, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {Copy.threeDPreview[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {Copy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <MariaDelCaminoPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
           </div>
         </motion.section>
 
