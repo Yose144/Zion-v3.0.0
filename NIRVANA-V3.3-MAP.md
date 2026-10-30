@@ -34,6 +34,7 @@ Scan: `docs/`, `canon/`, root, `Hiran/`, `V31/`, `apps/website-v2.9/src` (hledá
 | [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md) | fáze N0–N7, DoD V33-1…9, rizika | §1 = snapshot 21. 10. (topologie, G8 run #2, disk) — přepsáno mapou + checklistem | vše |
 | [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) | proveditelný checklist s vlastníky 🤖/🔀/👤 | ✅ struktura 26. 10.; posun 28.–29. 10. v rámečku nahoře (DoD pořád 0/9) | vše |
 | [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md) | čtecí paluba lodi; není nad hierarchií pravdy | ✅ 29. 10. | vše |
+| [`NIRVANA-V3.3-UNIFICATION.md`](NIRVANA-V3.3-UNIFICATION.md) | velké sjednocení: modular monolith shell (`apps/nirvana` → moduly), Portal Contract v1, `zion-compute` impl., vlny K0–K4 | ✅ 30. 10. (K0 hotovo) | N4 / klienti |
 | [`docs/3.3/ENGINE-SRDCE.md`](docs/3.3/ENGINE-SRDCE.md) | spec `zion-compute` (Hash/Care/Scene), bez kódu | ✅ 29. 10., mimo DoD | N3 / N4 |
 | [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) | N0 detail: ALPHA → BETA → RC → STABLE, 9 sekcí | ✅ přepsáno 26. 10. | N0 |
 | [`AUDIT-3.2-BETA-PLAN.md`](docs/plans/AUDIT-3.2-BETA-PLAN.md) | alpha → beta gate | ✅ provedeno (root `3.2.0-beta.1`) | N0 |
