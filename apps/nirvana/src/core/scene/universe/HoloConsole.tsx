@@ -16,7 +16,7 @@ const SLOT_COLOR: Record<SceneSlot, string> = {
   ship: '#e41e2b',
 };
 
-const HOME_POS: [number, number, number] = [0, -4.9, 6.4];
+const HOME_POS: [number, number, number] = [-7.6, -3.6, 4.8];
 const W = 5.6;
 const H = 2.0;
 const TILE_W = 0.98;
@@ -114,7 +114,7 @@ export function HoloConsole({
   const group = useRef<THREE.Group>(null);
   const glow = useRef<THREE.MeshBasicMaterial>(null);
   const dragging = useRef<{ plane: THREE.Plane; offset: THREE.Vector3 } | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const { camera } = useThree();
 
   useFrame(({ clock, camera: cam }) => {
@@ -166,10 +166,19 @@ export function HoloConsole({
           onPointerDown={beginDrag}
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
+          onPointerOver={() => (document.body.style.cursor = 'pointer')}
+          onPointerOut={() => (document.body.style.cursor = 'auto')}
         >
-          <octahedronGeometry args={[0.16, 0]} />
+          <octahedronGeometry args={[0.2, 0]} />
           <meshBasicMaterial color="#7ec8ff" transparent opacity={0.85} />
         </mesh>
+        <mesh scale={1.7}>
+          <octahedronGeometry args={[0.2, 0]} />
+          <meshBasicMaterial color="#7ec8ff" transparent opacity={0.12} depthWrite={false} blending={THREE.AdditiveBlending} />
+        </mesh>
+        <Html position={[0, -0.42, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+          <span className="holo-title">☰</span>
+        </Html>
       </group>
     );
   }

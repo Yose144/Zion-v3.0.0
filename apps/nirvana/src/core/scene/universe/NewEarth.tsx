@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Portal } from '@/core/portals/manifest';
-import { PLANET_R, spotPosition, surfacePosition } from './positions';
+import { PLANET_R, hash01, spotPosition, surfacePosition } from './positions';
 import type { WorldPoint } from '@/lib/worlds';
 import { layerColor } from '@/lib/worlds';
 
@@ -74,8 +74,27 @@ function useEarthMaps(fallback: THREE.Texture) {
     });
     loader.load('/textures/earth-dark.jpg', (t) => {
       if (cancelled) return t.dispose();
-      t.colorSpace = THREE.SRGBColorSpace;
-      next.night = t;
+      // Prah — night texture má šumivé pozadí (~10-30 % lum) které
+      // emissive rozmazává přes celou planetu (= zežloutlá zeměkoule).
+      const img = t.image as HTMLImageElement;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const px = data.data;
+      for (let i = 0; i < px.length; i += 4) {
+        const l = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) / 255;
+        const f = Math.max(0, (l - 0.26) / 0.74);
+        px[i] *= f;
+        px[i + 1] *= f;
+        px[i + 2] *= f;
+      }
+      ctx.putImageData(data, 0, 0);
+      const clean = new THREE.CanvasTexture(canvas);
+      clean.colorSpace = THREE.SRGBColorSpace;
+      next.night = clean;
       commit();
     });
     return () => {
@@ -92,18 +111,32 @@ function SurfaceMarker({
   world: WorldPoint;
   onSelectWorld: (id: string) => void;
 }) {
+  const ref = useRef<THREE.Mesh>(null);
+  const phase = useMemo(() => hash01(world.id, 29) * Math.PI * 2, [world.id]);
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const s = 1 + Math.sin(t * 1.8 + phase) * 0.22;
+    ref.current?.scale.setScalar(s);
+  });
   const pos = surfacePosition(world);
+  const color = layerColor(world.layer);
   return (
-    <mesh
-      position={pos}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelectWorld(world.id);
-      }}
-    >
-      <sphereGeometry args={[0.045, 8, 8]} />
-      <meshBasicMaterial color={layerColor(world.layer)} />
-    </mesh>
+    <group position={pos}>
+      <mesh
+        ref={ref}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelectWorld(world.id);
+        }}
+      >
+        <sphereGeometry args={[0.06, 10, 10]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+      <mesh scale={2.1}>
+        <sphereGeometry args={[0.06, 8, 8]} />
+        <meshBasicMaterial color={color} transparent opacity={0.28} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
   );
 }
 
@@ -247,8 +280,8 @@ export function NewEarth({
           roughness={0.55}
           metalness={0.03}
           emissiveMap={maps.night}
-          emissive={maps.night ? new THREE.Color('#ffcc66') : new THREE.Color('#066928')}
-          emissiveIntensity={maps.night ? 0.32 : 0.1}
+          emissive={maps.night ? new THREE.Color('#ffdca8') : new THREE.Color('#066928')}
+          emissiveIntensity={maps.night ? 0.5 : 0.1}
         />
       </mesh>
       {/* holografický wireframe shell — jemný */}

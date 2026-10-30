@@ -11,6 +11,7 @@ import { IssobellaRing } from './IssobellaRing';
 import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { HoloConsole } from './HoloConsole';
+import { SpaceBackdrop } from './SpaceBackdrop';
 
 /**
  * Vesmír Království srdce — orbitální pohled z lodi.
@@ -59,7 +60,8 @@ export function Universe({
       <color attach="background" args={['#02030a']} />
       <ambientLight intensity={0.5} />
       <directionalLight position={[34, 14, -26]} intensity={1.6} />
-      <Stars radius={90} depth={40} count={3200} factor={4} fade speed={0.4} />
+      <Stars radius={95} depth={45} count={1800} factor={3} fade speed={0.3} />
+      <SpaceBackdrop />
 
       <NewEarth
         worlds={split.surface}
