@@ -42,9 +42,9 @@ function VolcanicCoast() {
   </mesh>;
 }
 
-export function AtlanticOcean({ level = -1.8, coastal = true }: { level?: number; coastal?: boolean }) {
+export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, shorelineZ }: { level?: number; coastal?: boolean; lagoon?: boolean; shorelineZ?: number }) {
   const material = useMemo(() => new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 }, coastal: { value: coastal ? 1 : 0 }, sun: { value: new THREE.Vector3(-0.75, 0.08, -0.66).normalize() } },
+    uniforms: { time: { value: 0 }, coastal: { value: coastal ? 1 : 0 }, lagoon: { value: lagoon ? 1 : 0 }, shoreline: { value: new THREE.Vector2(shorelineZ === undefined ? 0 : 1, shorelineZ ?? 0) }, sun: { value: new THREE.Vector3(-0.75, 0.08, -0.66).normalize() } },
     vertexShader: `
       uniform float time;
       varying vec3 world;
@@ -59,6 +59,8 @@ export function AtlanticOcean({ level = -1.8, coastal = true }: { level?: number
       uniform float time;
       uniform vec3 sun;
       uniform float coastal;
+      uniform float lagoon;
+      uniform vec2 shoreline;
       varying vec3 world;
       void main() {
         vec2 p = world.xz;
@@ -70,8 +72,11 @@ export function AtlanticOcean({ level = -1.8, coastal = true }: { level?: number
         float fresnel = pow(1. - max(dot(n, viewDir), 0.), 3.);
         float distanceFade = smoothstep(90., 650., length(cameraPosition.xz - p));
         float shore = -23. - max(p.x - 8., 0.) * .65 + sin(p.x * .12) * 2.5;
+        shore = mix(shore, shoreline.y - sin(p.x * .12) * 1.5, shoreline.x);
         float nearShore = exp(-abs(p.y - shore + 2.4) * .38) * coastal;
         vec3 water = mix(vec3(.025,.14,.23), vec3(.06,.33,.36), nearShore * .75);
+        vec3 tropical = mix(vec3(.015,.16,.25), vec3(.07,.54,.45), exp(-max(shore - p.y, 0.) * .045));
+        water = mix(water, tropical, lagoon);
         water = mix(water, vec3(.31,.40,.48), fresnel * .65);
         float reflection = pow(max(dot(reflect(-sun, n), viewDir), 0.), 45.);
         water += vec3(1.,.69,.38) * reflection * .32;
@@ -83,7 +88,7 @@ export function AtlanticOcean({ level = -1.8, coastal = true }: { level?: number
         #include <colorspace_fragment>
       }
     `,
-  }), [coastal]);
+  }), [coastal, lagoon, shorelineZ]);
   const reducedMotion = useRef(false);
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');

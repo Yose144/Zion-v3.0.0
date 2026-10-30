@@ -3,7 +3,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
-import { TePikoOraScene } from '@/core/scene/projects/TePikoOra';
+import { TePikoOraScene, PikoLighting, PIKO_CAMERA, PIKO_CONTROLS } from '../../../../../shared/scenes/TePikoOra';
 import { useI18n } from '@/core/i18n';
 import { MISSION_ORIGIN } from '@/lib/freeworld-sites';
 
@@ -35,26 +35,15 @@ export default function TePikoOraPresentPage() {
 
       <Canvas
         shadows
-        camera={{ position: [0, 5.6, 18.5], fov: 46 }}
+        camera={PIKO_CAMERA}
         gl={{ antialias: true, alpha: true }}
         style={{ position: 'absolute', inset: 0 }}
       >
-        <ambientLight intensity={0.55} color="#ffe9c4" />
-        <hemisphereLight args={['#ffdfae', '#1c2a14', 0.55]} />
-        <directionalLight position={[-16, 7, -14]} intensity={2.2} color="#ffb060" castShadow />
-        <directionalLight position={[14, 14, 10]} intensity={0.7} color="#ffd9a8" />
+        <PikoLighting />
 
         <TePikoOraScene lang={lang} />
 
-        <OrbitControls
-          autoRotate
-          autoRotateSpeed={0.4}
-          minDistance={8}
-          maxDistance={30}
-          maxPolarAngle={Math.PI / 2 - 0.04}
-          target={[0, 2.2, -0.5]}
-          enablePan={false}
-        />
+        <OrbitControls {...PIKO_CONTROLS} />
       </Canvas>
 
       <div className="present-hint">
