@@ -47,4 +47,16 @@ export const ANNOUNCEMENTS: Announcement[] = [
       body: 'Quantus is publicly shown as QTC across the API and UI — the internal QTU identifier remains for compatibility.',
     },
   },
+  {
+    ts: 1793280000,
+    tag: 'payout',
+    cs: {
+      title: 'QTC výplaty dočasně deferred',
+      body: 'Quantus payout treasury čeká na funding — získané odměny se bezpečně parkují v ledgeru a po dofinancování se vyplatí FIFO. ZION i ostatní coiny se vyplácejí normálně.',
+    },
+    en: {
+      title: 'QTC payouts temporarily deferred',
+      body: 'The Quantus payout treasury is awaiting funding — earned rewards are safely parked in the ledger and will settle FIFO once funded. ZION and other coins pay out normally.',
+    },
+  },
 ];
