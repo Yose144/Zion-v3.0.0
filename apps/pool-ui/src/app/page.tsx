@@ -9,6 +9,7 @@ import CoinCard from '@/components/CoinCard';
 import CoinLogo from '@/components/CoinLogo';
 import MinerSearch from '@/components/MinerSearch';
 import TopMiners from '@/components/TopMiners';
+import LuckEffortCard from '@/components/LuckEffortCard';
 import { fetchBlocks, fetchHistory, fetchOverview } from '@/lib/api';
 import { fetchMarketPrices, fetchZionPrice, type MarketPrice, type ZionPrice } from '@/lib/price';
 import { fmtDifficulty, fmtDuration, fmtHashrate, fmtInt, fmtUsd } from '@/lib/format';
@@ -35,13 +36,18 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchOverview().then(setOv);
-    fetchBlocks()
-      .then((b) => {
-        setBlockCount(b.rows.length);
-        setBlocks(b.rows);
-      })
-      .catch(() => {});
-    const iv = setInterval(() => fetchOverview().then(setOv), 15_000);
+    const pullBlocks = () =>
+      fetchBlocks()
+        .then((b) => {
+          setBlockCount(b.rows.length);
+          setBlocks(b.rows);
+        })
+        .catch(() => {});
+    pullBlocks();
+    const iv = setInterval(() => {
+      fetchOverview().then(setOv);
+      pullBlocks();
+    }, 15_000);
     return () => clearInterval(iv);
   }, []);
 
@@ -284,6 +290,18 @@ export default function HomePage() {
               );
             })}
           </div>
+        </motion.section>
+      )}
+
+      {/* Pool luck & current effort — ZION rounds (only coin producing
+          blocks; auxPoW legs have no native block lottery). */}
+      {ov && blocks.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <LuckEffortCard stats={ov.stats.zion ?? null} blocks={blocks.filter((b) => b.coin === 'zion')} />
         </motion.section>
       )}
 

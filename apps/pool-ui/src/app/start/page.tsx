@@ -5,101 +5,11 @@ import { Copy, Cpu, Gauge, MonitorSmartphone, Pickaxe, Terminal } from 'lucide-r
 import CoinLogo from '@/components/CoinLogo';
 import { useEffect, useState } from 'react';
 import { fetchVardiff } from '@/lib/api';
+import { connectCmds, STRATUM_PORT_SOLO, STRATUM_PORT_TCP, STRATUM_PORT_TLS } from '@/lib/connect';
 import { COINS } from '@/lib/mock';
 import { useLang } from '@/lib/i18n';
 import type { CoinInfo, VarDiffPolicy } from '@/lib/types';
 import Wizard from './Wizard';
-
-// Stratum lives on EDGE — pool.zionterranova.com is the EDGE2 web dashboard
-// and does not forward stratum ports. All coins share one stratum endpoint:
-// TCP :8444, TLS :8445, SOLO :8446. Coin selection happens via miner flags
-// (--force-coin / --algorithm) or the v3 hello CoinPreference.
-const HOST = 'stratum.zionterranova.com';
-const PORT_TCP = 8444;
-const PORT_TLS = 8445;
-
-interface Cmd {
-  miner: string;
-  label: string;
-}
-
-function connectCmds(
-  coin: CoinInfo,
-  wallet: string,
-  worker: string,
-  tls: boolean,
-): Cmd[] {
-  const w = wallet || `<${t_wallet_placeholder(coin.id)}>`;
-  const wrk = worker || 'rig-1';
-  const addr = `${w}.${wrk}`;
-  const port = tls ? PORT_TLS : PORT_TCP;
-  const scheme = tls ? 'stratum+ssl' : 'stratum+tcp';
-
-  switch (coin.id) {
-    case 'zion':
-      return [
-        {
-          miner: 'zion-miner (nativní)',
-          label: `zion-miner --pool ${scheme}://${HOST}:${port} --wallet ${w} --worker ${wrk}`,
-        },
-        {
-          miner: 'stratum v1',
-          label: `-o ${scheme}://${HOST}:${port} -u ${addr} -p x`,
-        },
-      ];
-    case 'qtc':
-      return [
-        {
-          miner: 'zion-miner',
-          label: `zion-miner --force-coin qtc --pool ${scheme}://${HOST}:${port} --wallet ${w} --worker ${wrk}`,
-        },
-        {
-          miner: 'SRBMiner-MULTI',
-          label: `SRBMiner-MULTI --algorithm quantus --pool ${HOST}:${port} --wallet ${addr} ${tls ? '--tls true' : ''}`.trim(),
-        },
-      ];
-    case 'prl':
-      return [
-        {
-          miner: 'zion-miner',
-          label: `zion-miner --force-coin prl --pool ${scheme}://${HOST}:${port} --wallet ${w} --worker ${wrk}`,
-        },
-        {
-          miner: 'SRBMiner-MULTI ≥3.7.6',
-          label: `SRBMiner-MULTI --algorithm pearlhash --pool ${HOST}:${port} --wallet ${addr} --gpu ${tls ? '--tls true' : ''}`.trim(),
-        },
-      ];
-    case 'multi':
-      return [
-        {
-          miner: 'stratum v1',
-          label: `-o ${scheme}://${HOST}:${port} -u ${addr} -p z=<coin>`,
-        },
-      ];
-    default:
-      // auxPoW upstream legs — routed by wallet address on the shared
-      // stratum; any Stratum v1 client works.
-      return [
-        {
-          miner: 'stratum v1',
-          label: `-o ${scheme}://${HOST}:${port} -u ${addr} -p x`,
-        },
-      ];
-  }
-}
-
-function t_wallet_placeholder(coin: string): string {
-  switch (coin) {
-    case 'zion':
-      return 'zion1…';
-    case 'qtc':
-      return 'qz…';
-    case 'prl':
-      return 'prl1…';
-    default:
-      return 'wallet';
-  }
-}
 
 function CoinSection({
   coin,
@@ -135,7 +45,7 @@ function CoinSection({
           <p className="mt-1 text-xs text-white/50">{coin.algorithm} · {coin.dialect}</p>
         </div>
         <div className="text-right text-[0.72rem] leading-relaxed text-white/50">
-          <p>TCP <span className="stat-value text-rasta-gold">{PORT_TCP}</span> · TLS <span className="stat-value text-rasta-green">{PORT_TLS}</span> · SOLO <span className="stat-value text-rasta-gold">8446</span></p>
+          <p>TCP <span className="stat-value text-rasta-gold">{STRATUM_PORT_TCP}</span> · TLS <span className="stat-value text-rasta-green">{STRATUM_PORT_TLS}</span> · SOLO <span className="stat-value text-rasta-gold">{STRATUM_PORT_SOLO}</span></p>
           <p>fee {coin.fee_bps / 100}% · min {coin.min_payout} {coin.payout_unit}</p>
         </div>
       </div>

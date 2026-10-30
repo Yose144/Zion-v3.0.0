@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { Blocks } from 'lucide-react';
-import { fetchBlocks } from '@/lib/api';
+import { fetchBlocks, fetchCoinStats } from '@/lib/api';
+import LuckEffortCard from '@/components/LuckEffortCard';
 import { fmtAgo, fmtDifficulty, fmtInt, shortAddr } from '@/lib/format';
 import { useLang } from '@/lib/i18n';
-import type { BlockRow, CoinId } from '@/lib/types';
+import type { BlockRow, CoinId, CoinStats } from '@/lib/types';
 
 const COIN_COLOR: Record<string, string> = {
   zion: 'text-gold',
@@ -34,6 +35,7 @@ export default function BlocksPage() {
   const [coin, setCoin] = useState<CoinId | ''>('');
   const [rows, setRows] = useState<BlockRow[]>([]);
   const [tip, setTip] = useState<number | null>(null);
+  const [zionStats, setZionStats] = useState<CoinStats | null>(null);
 
   useEffect(() => {
     const load = () =>
@@ -41,8 +43,13 @@ export default function BlocksPage() {
         setRows(rows);
         setTip(tip);
       });
+    const loadStats = () => fetchCoinStats('zion').then(setZionStats);
     load();
-    const iv = setInterval(load, 20_000);
+    loadStats();
+    const iv = setInterval(() => {
+      load();
+      loadStats();
+    }, 20_000);
     return () => clearInterval(iv);
   }, [coin]);
 
@@ -71,6 +78,16 @@ export default function BlocksPage() {
           ))}
         </div>
       </header>
+
+      {/* ZION round telemetry — effort gauge + rolling luck (own strip
+          below covers the trend view) */}
+      {(coin === '' || coin === 'zion') && (
+        <LuckEffortCard
+          stats={zionStats}
+          blocks={rows.filter((b) => b.coin === 'zion')}
+          showStrip={false}
+        />
+      )}
 
       {/* Luck trend — last blocks' luck% as colored bars (>100% = lucky) */}
       {(() => {

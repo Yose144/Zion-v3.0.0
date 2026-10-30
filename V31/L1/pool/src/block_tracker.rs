@@ -54,6 +54,9 @@ pub struct BlockTrackerStats {
     pub pending_count: usize,
     pub pool_luck_100: Option<f64>,
     pub pool_luck_500: Option<f64>,
+    /// Live accepted-share counter since the last found block — feeds the
+    /// public "current effort" gauge (effort = actual/expected shares).
+    pub shares_since_last_block: u64,
 }
 
 /// In-memory block tracker with stats for pool luck and orphan monitoring.
@@ -283,6 +286,7 @@ impl BlockTracker {
             pending_count: self.pending_blocks().len(),
             pool_luck_100: self.pool_luck_pct(100),
             pool_luck_500: self.pool_luck_pct(500),
+            shares_since_last_block: self.shares_since_last_block,
         }
     }
 }

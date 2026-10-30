@@ -152,8 +152,11 @@ interface ApiCoinStats {
   blocks?: {
     found?: number; confirmed?: number; pending?: number; orphaned?: number;
     /** Avg shares-to-block vs expected over last 100/500 blocks
-     *  (<100 = luckier than expected). */
+     *  (>100 = luckier than expected). */
     luck_100?: number | null; luck_500?: number | null;
+    /** Live accepted-share counter since the last found block
+     *  (pool ≥3.2.0-effort). */
+    shares_since_last_block?: number | null;
   };
 }
 
@@ -171,6 +174,7 @@ function toCoinStats(coin: CoinId, s: ApiCoinStats): CoinStats {
     luck_100: s.blocks?.luck_100 ?? null,
     luck_500: s.blocks?.luck_500 ?? null,
     blocks_found: s.blocks?.found ?? null,
+    shares_since_last_block: s.blocks?.shares_since_last_block ?? null,
     shares_1h: s.shares,
     payouts_24h_zion: s.payouts_24h != null ? Number(s.payouts_24h) / FLOWERS : null,
   };
@@ -257,6 +261,18 @@ export async function fetchOverview(): Promise<PoolOverview> {
     }),
   );
   return { uptime_s: 0, coins: infos, stats, fees: fees ?? null };
+}
+
+/** Single-coin stats — light alternative to fetchOverview for pages that
+ *  only need one coin's aggregates (e.g. /blocks effort gauge). */
+export async function fetchCoinStats(id: CoinId): Promise<CoinStats | null> {
+  if (USE_MOCK) return null;
+  try {
+    const s = await get<ApiCoinStats>(`/coins/${POOL_COIN[id]}/stats`);
+    return toCoinStats(id, s);
+  } catch {
+    return null;
+  }
 }
 
 export interface HistorySample {

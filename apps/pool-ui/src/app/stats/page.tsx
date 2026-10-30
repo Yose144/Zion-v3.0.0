@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Activity } from 'lucide-react';
 import CoinLogo from '@/components/CoinLogo';
+import LuckEffortCard from '@/components/LuckEffortCard';
 import { fetchBlocks, fetchHistory, fetchOverview, type HistorySample } from '@/lib/api';
 import { fetchZionPrice, type ZionPrice } from '@/lib/price';
 import {
@@ -193,6 +194,12 @@ export default function StatsPage() {
           </div>
         </div>
       )}
+
+      {/* ZION round telemetry — live effort gauge + rolling luck */}
+      <LuckEffortCard
+        stats={ov.stats.zion ?? null}
+        blocks={blocks.filter((b) => b.coin === 'zion')}
+      />
 
       <div className="mt-8 flex flex-col gap-5">
         {ov.coins.filter((c) => c.legs.some((l) => l.kind === 'native')).map((c) => {

@@ -48,10 +48,13 @@ export interface CoinStats {
   height: number | null;
   blocks_24h: number;
   luck_pct: number | null; // pool luck, 100 = average
-  /** Avg luck over last 100 / 500 blocks (<100 = luckier than expected). */
+  /** Avg luck over last 100 / 500 blocks (>100 = luckier than expected). */
   luck_100?: number | null;
   luck_500?: number | null;
   blocks_found?: number | null;
+  /** Live accepted-share counter since the last found block — feeds the
+      "current effort" gauge (pool ≥3.2.0-effort). */
+  shares_since_last_block?: number | null;
   shares_1h: { accepted: number; rejected: number };
 }
 

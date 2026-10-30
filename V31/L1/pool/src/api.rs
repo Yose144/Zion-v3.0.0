@@ -290,6 +290,10 @@ impl PoolApi {
             "pending": s.pending_count,
             "luck_100": s.pool_luck_100,
             "luck_500": s.pool_luck_500,
+            // Live accepted-share counter since the last found block — the
+            // dashboards' "current effort" gauge divides it by the expected
+            // share count (net_diff / share_diff, same model as luck_pct).
+            "shares_since_last_block": s.shares_since_last_block,
         })
     }
 

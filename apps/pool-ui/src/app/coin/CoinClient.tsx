@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Pickaxe } from 'lucide-react';
+import { Pickaxe } from 'lucide-react';
 import AreaChart, { type SeriesPoint } from '@/components/AreaChart';
 import CalcCard from '@/components/CalcCard';
 import CoinLogo from '@/components/CoinLogo';
+import ConfigCards from '@/components/ConfigCards';
 import RangeTabs from '@/components/RangeTabs';
 import {
   fetchBlocks,
@@ -208,9 +209,9 @@ export default function CoinClient({ coinId }: { coinId: CoinId }) {
             v: stats?.luck_100 != null ? `${stats.luck_100.toFixed(1)}%` : '—',
             cls:
               stats?.luck_100 != null
-                ? stats.luck_100 <= 100
+                ? stats.luck_100 >= 100
                   ? 'text-rasta-green'
-                  : 'text-rasta-red'
+                  : 'text-rasta-gold'
                 : undefined,
             title:
               stats?.luck_500 != null
@@ -287,35 +288,19 @@ export default function CoinClient({ coinId }: { coinId: CoinId }) {
           zionUsd={zion?.usd ?? null}
         />
 
-        <div className="pool-card card-glow flex flex-col gap-3">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-white/70">
-            {t('Začít těžit', 'Start mining')}
-          </h3>
-          <div className="code-block">
-            <span className="c-dim"># TCP</span>{'\n'}
-            <span className="c-gold">stratum+tcp://pool.zionterranova.com:{coin.port}</span>{'\n'}
-            <span className="c-dim"># TLS</span>{'\n'}
-            <span className="c-cyan">stratum+ssl://pool.zionterranova.com:{coin.tls_port}</span>
-          </div>
-          <p className="text-[0.72rem] leading-relaxed text-white/45">
-            {coin.payout_mode === 'onchain'
-              ? t(
-                  `Výplaty v ${coin.payout_unit} · fee ${(coin.fee_bps / 100).toFixed(1)}% · PPLNS`,
-                  `Paid in ${coin.payout_unit} · ${(coin.fee_bps / 100).toFixed(1)}% fee · PPLNS`,
-                )
-              : t(
-                  `Vyplácí se v ZION (unified payout) · fee ${(coin.fee_bps / 100).toFixed(1)}% · PPLNS`,
-                  `Settled in ZION (unified payout) · ${(coin.fee_bps / 100).toFixed(1)}% fee · PPLNS`,
-                )}
-          </p>
-          <a
-            href={`/start/#${coin.id}`}
-            className="rasta-hero-btn-primary mt-auto inline-flex w-fit items-center gap-1.5 !px-4 !py-2 text-xs"
-          >
-            {t('Kompletní návod', 'Full guide')} <ArrowRight size={13} />
-          </a>
-        </div>
+        {/* Copy-ready per-miner configs — wallet/worker inputs + TCP/TLS/
+            SOLO switch. Shares command generation with /start. */}
+        <ConfigCards coin={coin} />
       </div>
+
+      {coin.payout_mode !== 'onchain' && (
+        <p className="mt-3 text-[0.7rem] text-white/35">
+          {t(
+            `Vyplácí se v ZION (unified payout) · fee ${(coin.fee_bps / 100).toFixed(1)}% · PPLNS`,
+            `Settled in ZION (unified payout) · ${(coin.fee_bps / 100).toFixed(1)}% fee · PPLNS`,
+          )}
+        </p>
+      )}
 
       {/* recent payouts + blocks */}
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
