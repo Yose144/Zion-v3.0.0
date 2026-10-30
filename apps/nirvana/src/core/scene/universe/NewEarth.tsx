@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { TextLabel } from './Label';
 import * as THREE from 'three';
 import type { Portal } from '@/core/portals/manifest';
-import { PLANET_R, hash01, spotPosition, surfacePosition } from './positions';
+import { PLANET_R, hash01, latLonToVec3, spotPosition } from './positions';
 import type { WorldPoint } from '@/lib/worlds';
 import { layerColor } from '@/lib/worlds';
 
@@ -79,75 +79,90 @@ function useEarthMaps(fallback: THREE.Texture) {
   return maps;
 }
 
-/** L5 markery — instancované (2 draw calls místo ~2×N, jedna useFrame). */
-function SurfaceMarkers({
+const MISSION_LABELS = 16;
+
+/** L5 mise — světelné majáky vyplňují celou planetu (instancované, 2 draw calls,
+ *  žádná useFrame). Anonymní body pryč — světy žijí ve World portalu;
+ *  jmenovky nese reprezentativní podmnožina. Pozice hash→lat/lon pokrývá
+ *  celý glóbus (galaxyPosition leží v rovině → jen rovníkový pás). */
+function MissionSites({
   worlds,
   onSelectWorld,
 }: {
   worlds: WorldPoint[];
   onSelectWorld: (id: string) => void;
 }) {
-  const core = useRef<THREE.InstancedMesh>(null);
-  const halo = useRef<THREE.InstancedMesh>(null);
+  const pillars = useRef<THREE.InstancedMesh>(null);
+  const tips = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  const UP = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const color = useMemo(() => new THREE.Color(layerColor(5)), []);
+  const quat = useMemo(() => new THREE.Quaternion(), []);
+
   const data = useMemo(
     () =>
-      worlds.map((w) => ({
-        id: w.id,
-        pos: surfacePosition(w),
-        color: new THREE.Color(layerColor(w.layer)),
-        phase: hash01(w.id, 29) * Math.PI * 2,
-      })),
+      worlds.map((w) => {
+        const lat = -72 + hash01(w.id, 31) * 144;
+        const lon = hash01(w.id, 37) * 360 - 180;
+        const n = new THREE.Vector3(...latLonToVec3(lat, lon, 1));
+        const h = 0.3 + hash01(w.id, 41) * 0.3;
+        return { id: w.id, name: w.name, n, h };
+      }),
     [worlds],
   );
 
+  const labeled = useMemo(() => {
+    const step = Math.max(1, Math.ceil(data.length / MISSION_LABELS));
+    return data.filter((_, i) => i % step === 0);
+  }, [data]);
+
   useLayoutEffect(() => {
-    const c = core.current;
-    const h = halo.current;
-    if (!c || !h) return;
+    const p = pillars.current;
+    const t = tips.current;
+    if (!p || !t) return;
     data.forEach((d, i) => {
-      dummy.position.set(d.pos[0], d.pos[1], d.pos[2]);
+      quat.setFromUnitVectors(UP, d.n);
+      dummy.quaternion.copy(quat);
+      dummy.position.copy(d.n).multiplyScalar(PLANET_R + d.h / 2);
+      dummy.scale.set(1, d.h, 1);
+      dummy.updateMatrix();
+      p.setMatrixAt(i, dummy.matrix);
+      p.setColorAt(i, color);
+      dummy.position.copy(d.n).multiplyScalar(PLANET_R + d.h + 0.02);
       dummy.scale.setScalar(1);
       dummy.updateMatrix();
-      c.setMatrixAt(i, dummy.matrix);
-      dummy.scale.setScalar(1.6);
-      dummy.updateMatrix();
-      h.setMatrixAt(i, dummy.matrix);
-      c.setColorAt(i, d.color);
-      h.setColorAt(i, d.color);
+      t.setMatrixAt(i, dummy.matrix);
+      t.setColorAt(i, color);
     });
-    c.instanceMatrix.needsUpdate = true;
-    h.instanceMatrix.needsUpdate = true;
-    if (c.instanceColor) c.instanceColor.needsUpdate = true;
-    if (h.instanceColor) h.instanceColor.needsUpdate = true;
-  }, [data, dummy]);
-
-  useFrame(({ clock }) => {
-    const c = core.current;
-    const h = halo.current;
-    if (!c || !h) return;
-    const t = clock.getElapsedTime();
-    for (let i = 0; i < data.length; i++) {
-      const d = data[i];
-      const s = 1 + Math.sin(t * 1.8 + d.phase) * 0.22;
-      dummy.position.set(d.pos[0], d.pos[1], d.pos[2]);
-      dummy.scale.setScalar(s);
-      dummy.updateMatrix();
-      c.setMatrixAt(i, dummy.matrix);
-      dummy.scale.setScalar(s * 1.6);
-      dummy.updateMatrix();
-      h.setMatrixAt(i, dummy.matrix);
-    }
-    c.instanceMatrix.needsUpdate = true;
-    h.instanceMatrix.needsUpdate = true;
-  });
+    p.instanceMatrix.needsUpdate = true;
+    t.instanceMatrix.needsUpdate = true;
+    if (p.instanceColor) p.instanceColor.needsUpdate = true;
+    if (t.instanceColor) t.instanceColor.needsUpdate = true;
+  }, [data, dummy, UP, quat, color]);
 
   if (data.length === 0) return null;
   return (
     <>
+      {/* sloupky mise — světelné majáky ze země do nebe */}
       <instancedMesh
         key={data.length}
-        ref={core}
+        ref={pillars}
+        args={[undefined, undefined, data.length]}
+        frustumCulled={false}
+        raycast={() => null}
+      >
+        <cylinderGeometry args={[0.012, 0.032, 1, 6, 1, true]} />
+        <meshBasicMaterial
+          transparent
+          opacity={0.38}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </instancedMesh>
+      {/* jiskra na špici — klikatelná → World portal */}
+      <instancedMesh
+        ref={tips}
         args={[undefined, undefined, data.length]}
         frustumCulled={false}
         onClick={(e) => {
@@ -155,18 +170,24 @@ function SurfaceMarkers({
           if (e.instanceId != null) onSelectWorld(data[e.instanceId].id);
         }}
       >
-        <sphereGeometry args={[0.06, 10, 10]} />
+        <sphereGeometry args={[0.036, 10, 10]} />
         <meshBasicMaterial />
       </instancedMesh>
-      <instancedMesh
-        ref={halo}
-        args={[undefined, undefined, data.length]}
-        frustumCulled={false}
-        raycast={() => null}
-      >
-        <sphereGeometry args={[0.06, 8, 8]} />
-        <meshBasicMaterial transparent opacity={0.14} depthWrite={false} blending={THREE.AdditiveBlending} />
-      </instancedMesh>
+      {/* jmenovky misí — reprezentativní podmnožina, zbytek v menu */}
+      {labeled.map((d) => (
+        <TextLabel
+          key={d.id}
+          text={d.name}
+          position={[
+            d.n.x * (PLANET_R + d.h + 0.3),
+            d.n.y * (PLANET_R + d.h + 0.3),
+            d.n.z * (PLANET_R + d.h + 0.3),
+          ]}
+          color="#e8d8ff"
+          height={0.16}
+          onClick={() => onSelectWorld(d.id)}
+        />
+      ))}
     </>
   );
 }
@@ -306,8 +327,8 @@ export function NewEarth({
         <sphereGeometry args={[PLANET_R, 48, 32]} />
         <meshBasicMaterial color="#7ec8ff" transparent opacity={0.13} side={THREE.BackSide} depthWrite={false} />
       </mesh>
-      {/* L5 světy na povrchu — instancované markery */}
-      <SurfaceMarkers worlds={worlds} onSelectWorld={onSelectWorld} />
+      {/* L5 mise na povrchu — světelné majáky (světy samotné v menu) */}
+      <MissionSites worlds={worlds} onSelectWorld={onSelectWorld} />
       {/* funkcionální místa z manifestu */}
       {spots.map((p) => (
         <PortalSpot key={p.id} portal={p} onOpen={onOpen} />
