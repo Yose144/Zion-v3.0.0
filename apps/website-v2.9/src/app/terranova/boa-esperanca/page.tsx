@@ -29,6 +29,7 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+const BoaEsperancaPreviewLazy = dynamic(() => import('@/components/BoaEsperancaPreviewLazy'), { ssr: false });
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
@@ -44,6 +45,8 @@ const Copy = {
     cs: `Boa Esperança je devátý bod L5 Free World — a záměrně je to vize, ne stavební plán. Roku 1488 Bartolomeu Dias objel mys v bouři a pojmenoval ho Cabo das Tormentas; král Jan II. ho přejmenoval na Boa Esperança, protože zeď na konci světa otevřela mořskou cestu do Indie. Uzel nese Obrat — moment Velké cesty, kdy se poutník po dokončení v Ekamu otáčí domů. Je to druhý šev světa: LUMI spojuje oceány po souši, Mys je jediné místo, kde se dvě Marie mohou setkat na vodě. A drží nejstarší kořen lidstva — Khoisan linii a kolébku symbolického myšlení v Blombos. Uzel vzniká jako vztah s custodiány, ne jako stavba.`,
     en: `Boa Esperança is the ninth point of L5 Free World — and deliberately a vision, not a building plan. In 1488 Bartolomeu Dias rounded the cape in a storm and named it Cabo das Tormentas; King John II renamed it Boa Esperança, because the wall at the end of the world had opened the sea road to India. The node carries the Turn — the moment of the Great Route when the pilgrim, after completion at Ekam, turns home. It is the second seam of the world: LUMI bridges the oceans overland, the Cape is the only place the two Marias can meet at sea. And it holds humanity's oldest root — the Khoisan lineage and the cradle of symbolic thought at Blombos. The node is born as a relationship with custodians, not as a construction.`,
   },
+  threeDPreview: { cs: `3D koncept`, en: `3D concept` },
+  threeDPreviewSubtitle: { cs: `Interaktivní model Mysu Dobré naděje — maják Cape Point na útesovém hřebenu, kruh kamenů Khoisan, bouřlivý oceán a šev dvou oceánů pod božími paprsky.`, en: `Interactive model of the Cape of Good Hope — Cape Point lighthouse on the cliff ridge, Khoisan stone circle, stormy ocean and the seam of two oceans under god rays.` },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
   featuresSubtitle: { cs: `Naděje & paměť`, en: `Hope & memory` },
   turnTitle: { cs: `Scháziště flotily — obrat na švu oceánů`, en: `The fleet rendezvous — the turn on the seam of oceans` },
@@ -373,6 +376,26 @@ export default function BoaEsperancaPage() {
             <p className="text-gray-300 leading-relaxed">
               {Copy.introBody[cs ? 'cs' : 'en']}
             </p>
+          </div>
+        </motion.section>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-amber-200/65 mb-1">
+                {Copy.threeDPreview[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {Copy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <BoaEsperancaPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
           </div>
         </motion.section>
 
