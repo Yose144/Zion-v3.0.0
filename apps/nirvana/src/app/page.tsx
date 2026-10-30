@@ -1,6 +1,6 @@
 'use client';
 
-import { Shell } from '@/components/Shell';
+import { Shell } from '@/core/shell/Shell';
 
 export default function HomePage() {
   return <Shell />;

@@ -1,12 +1,12 @@
 'use client';
 
 /**
- * GPU backend selection for the Nirvana shell.
- * Resolution order matches OasisWeb `gpuBackend.ts`
- * (?gpu= → localStorage → auto), with one shell rule:
- * `auto` uses WebGPU when an adapter exists, otherwise WebGL2.
- * A canvas cannot switch backends after it is created.
- * If WebGPU init throws, `demoteToWebGL` keeps the canvas from staying black.
+ * GPU backend policy — ENGINE-WEB.md §3/§4.
+ * Resolution order: ?gpu= → localStorage → auto.
+ * `auto` prefers WebGPU when an adapter exists, else WebGL2.
+ * XR sessions force WebGL2 — XRGPUBinding is still experimental
+ * (Chrome does not expose it; Babylon/PlayCanvas docs agree).
+ * A canvas cannot swap backends; `demoteToWebGL` forces a remount.
  */
 
 import { createContext, useContext } from 'react';
@@ -78,6 +78,12 @@ export function demoteToWebGL(reason?: unknown) {
     (window as unknown as { __nirvanaBackend?: GpuBackend }).__nirvanaBackend = 'webgl2';
   }
   if (reason !== undefined) {
-    console.warn('[nirvana] WebGPU init failed — falling back to WebGL2', reason);
+    console.warn('[nirvana] WebGPU unavailable for this view — WebGL2 backend', reason);
   }
+}
+
+/** XR rule: immersive sessions always run on the WebGL2 backend. */
+export function backendForXr(): GpuBackend {
+  if (resolved !== 'webgl2') demoteToWebGL('xr-session');
+  return 'webgl2';
 }

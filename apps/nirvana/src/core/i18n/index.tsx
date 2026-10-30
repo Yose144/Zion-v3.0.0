@@ -5,9 +5,10 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
 export type Lang = 'cs' | 'en';
 
 const COPY = {
-  title: { cs: 'Nirvana', en: 'Nirvana' },
-  subtitle: { cs: 'jeden svět', en: 'one world' },
-  gate: { cs: 'Brána těžby', en: 'Mining gate' },
+  title: { cs: 'Království srdce', en: 'Kingdom of Hearts' },
+  subtitle: { cs: 'Nová Země · jeden svět', en: 'New Earth · one world' },
+  gate: { cs: 'Brána', en: 'Gate' },
+  gateStub: { cs: 'Brána se otevře — vstupní portál ve stavbě.', en: 'The gate is opening — the entry portal is under construction.' },
   close: { cs: 'Zavřít', en: 'Close' },
   worlds: { cs: 'světů', en: 'worlds' },
   worldsEmpty: { cs: 'Katalog světů se nepodařilo načíst. Brána zůstává.', en: 'World catalog failed to load. The gate stays.' },
@@ -31,6 +32,10 @@ const COPY = {
   booksEmpty: { cs: 'Knihy se nepodařilo přečíst.', en: 'The books could not be read.' },
   marketShelf: { cs: 'Výloha: název a cena.', en: 'A shelf: name and price.' },
   marketEmpty: { cs: 'Trh teď neodpověděl.', en: 'The market did not answer.' },
+  enterVr: { cs: 'Vstoupit do VR', en: 'Enter VR' },
+  vrUnsupported: { cs: 'VR není na tomto zařízení dostupné.', en: 'VR is not available on this device.' },
+  computeStub: { cs: 'Strojovna — zion-compute sloty (hash/care/scene). Zatím jen místo.', en: 'Engine room — zion-compute lanes (hash/care/scene). Just a place for now.' },
+  issobellaStub: { cs: 'Issobella — orbitální věda. Tracker se připojuje.', en: 'Issobella — orbital science. The tracker is being connected.' },
 } as const;
 
 type CopyKey = keyof typeof COPY;

@@ -1,10 +1,18 @@
 /**
- * Work list for the Nirvana shell. A portal is wired when this app
- * renders it against a live API. Stubs stay listed so the old hostname
- * has a home here before DNS moves.
+ * Portal Contract v1 — manifest řídí i scénu i shell.
+ * Nový povrch = nová položka tady + modul v `portals/`.
+ * `scene.slot` říká, kde ve vesmíru portál bydlí:
+ *   core    — jádro/maják planety (L1)
+ *   surface — místo na povrchu Nové Země (L5, města, přístav, kovárna, knihovna)
+ *   ring    — stanice na prstenci Issobelly (L6)
+ *   orbit   — světy na vnitřní oběžné dráze (L4 OASIS)
+ *   gate    — Brána, volně v prostoru (apex/IntroPage)
+ *   ship    — na palubě lodi (účet, strojovna)
  */
 
 export type PortalStatus = 'stub' | 'wired';
+export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship';
+export type SurfaceSpot = 'harbor' | 'market' | 'forge' | 'library' | 'beacon' | 'gate' | 'ring';
 
 export interface Portal {
   id: string;
@@ -13,6 +21,7 @@ export interface Portal {
   sourceApp: string;
   api: string;
   status: PortalStatus;
+  scene: { slot: SceneSlot; spot?: SurfaceSpot };
 }
 
 export const PORTALS: Portal[] = [
@@ -23,6 +32,7 @@ export const PORTALS: Portal[] = [
     sourceApp: 'apps/OasisWeb',
     api: '/api/oasis/worlds',
     status: 'wired',
+    scene: { slot: 'orbit' },
   },
   {
     id: 'chain',
@@ -31,14 +41,16 @@ export const PORTALS: Portal[] = [
     sourceApp: 'apps/website-v2.9',
     api: '/api/chain/stats',
     status: 'wired',
+    scene: { slot: 'core', spot: 'beacon' },
   },
   {
-    id: 'mine',
+    id: 'pool',
     layer: 'L1',
     title: { cs: 'Těžba', en: 'Mining' },
     sourceApp: 'apps/pool-ui',
     api: '/api/pool/coins',
     status: 'wired',
+    scene: { slot: 'surface', spot: 'forge' },
   },
   {
     id: 'market',
@@ -47,6 +59,7 @@ export const PORTALS: Portal[] = [
     sourceApp: 'apps/MarketPlace',
     api: '/api/market/products',
     status: 'wired',
+    scene: { slot: 'surface', spot: 'market' },
   },
   {
     id: 'books',
@@ -55,6 +68,7 @@ export const PORTALS: Portal[] = [
     sourceApp: 'apps/website-v2.9',
     api: '/api/books',
     status: 'wired',
+    scene: { slot: 'surface', spot: 'library' },
   },
   {
     id: 'harbor',
@@ -63,6 +77,7 @@ export const PORTALS: Portal[] = [
     sourceApp: 'apps/IntroPage/freeworld',
     api: '/api/harbor',
     status: 'wired',
+    scene: { slot: 'surface', spot: 'harbor' },
   },
   {
     id: 'issobella',
@@ -71,6 +86,7 @@ export const PORTALS: Portal[] = [
     sourceApp: 'apps/website-v2.9',
     api: 'issobella tracker',
     status: 'stub',
+    scene: { slot: 'ring', spot: 'ring' },
   },
   {
     id: 'account',
@@ -79,6 +95,7 @@ export const PORTALS: Portal[] = [
     sourceApp: 'apps/identity',
     api: '/api/auth/me',
     status: 'wired',
+    scene: { slot: 'ship' },
   },
   {
     id: 'gate',
@@ -87,9 +104,23 @@ export const PORTALS: Portal[] = [
     sourceApp: 'apps/IntroPage',
     api: 'apex static',
     status: 'stub',
+    scene: { slot: 'gate', spot: 'gate' },
+  },
+  {
+    id: 'compute',
+    layer: 'engine',
+    title: { cs: 'Strojovna', en: 'Engine room' },
+    sourceApp: 'zion-compute',
+    api: 'local slot status',
+    status: 'stub',
+    scene: { slot: 'ship' },
   },
 ];
 
 export function portalById(id: string): Portal | undefined {
   return PORTALS.find((p) => p.id === id);
+}
+
+export function wiredPortals(): Portal[] {
+  return PORTALS.filter((p) => p.status === 'wired');
 }

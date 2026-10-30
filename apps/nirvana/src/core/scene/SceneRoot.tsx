@@ -2,18 +2,21 @@
 
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useEffect, useState } from 'react';
+import { XR, createXRStore, type XRStore } from '@react-three/xr';
 import * as THREE from 'three';
 import {
   GpuBackendContext,
   demoteToWebGL,
   resolveGpuBackend,
   type GpuBackend,
-} from '@/lib/gpuBackend';
-import { layerColor, worldPosition, type WorldPoint } from '@/lib/worlds';
+} from './backends';
+import { Universe } from './universe/Universe';
+import type { Portal } from '@/core/portals/manifest';
+import type { WorldPoint } from '@/lib/worlds';
 
-/** Classic Three materials render on WebGPU only after the node library
- *  is keyed by material.type. Turbopack minifies class names, so the
- *  string keys are set directly (same fix as OasisScene). */
+/** Classic materials render on WebGPU only after the node library is keyed
+ *  by material.type (Turbopack minifies class names — keys are set directly).
+ *  TSL materials are the target; classic types stay as a safety net. */
 async function registerNodeLibrary(renderer: {
   nodes?: {
     library?: {
@@ -27,7 +30,10 @@ async function registerNodeLibrary(renderer: {
   if (!lib?.materialNodes) return;
   const materialTypes: Array<[unknown, string]> = [
     [tsl.MeshBasicNodeMaterial, 'MeshBasicMaterial'],
+    [tsl.MeshStandardNodeMaterial, 'MeshStandardMaterial'],
     [tsl.PointsNodeMaterial, 'PointsMaterial'],
+    [tsl.LineBasicNodeMaterial, 'LineBasicMaterial'],
+    [tsl.SpriteNodeMaterial, 'SpriteMaterial'],
   ];
   for (const [cls, type] of materialTypes) {
     if (cls) lib.materialNodes.set(type, cls);
@@ -46,70 +52,30 @@ function DirectRenderer() {
   return null;
 }
 
-const GATES: Array<{ id: string; color: string; position: [number, number, number] }> = [
-  { id: 'mine', color: '#fcd116', position: [0, 0.15, 0] },
-  { id: 'chain', color: '#7ec8ff', position: [1.35, 0.15, 0.2] },
-  { id: 'harbor', color: '#066928', position: [-1.35, 0.15, 0.2] },
-  { id: 'books', color: '#e41e2b', position: [0, 0.15, 1.35] },
-  { id: 'market', color: '#c084fc', position: [0, 0.15, -1.35] },
-];
-
-function Catalog({
-  worlds,
-  onOpen,
-  onSelectWorld,
-}: {
-  worlds: WorldPoint[];
-  onOpen: (id: string) => void;
-  onSelectWorld: (id: string) => void;
-}) {
-  return (
-    <>
-      <color attach="background" args={['#05060a']} />
-      <ambientLight intensity={0.85} />
-      {worlds.map((world, index) => (
-        <mesh
-          key={world.id}
-          position={worldPosition(world, index, worlds.length)}
-          onClick={(event) => {
-            event.stopPropagation();
-            onSelectWorld(world.id);
-          }}
-        >
-          <sphereGeometry args={[0.11, 10, 10]} />
-          <meshBasicMaterial color={layerColor(world.layer)} />
-        </mesh>
-      ))}
-      {GATES.map((gate) => (
-        <mesh
-          key={gate.id}
-          position={gate.position}
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpen(gate.id);
-          }}
-        >
-          <torusGeometry args={[0.42, 0.06, 12, 28]} />
-          <meshBasicMaterial color={gate.color} />
-        </mesh>
-      ))}
-      <DirectRenderer />
-    </>
-  );
+function XrEntry({ store }: { store: XRStore }) {
+  useEffect(() => {
+    void store.enterVR();
+  }, [store]);
+  return null;
 }
 
-export function WorldCanvas({
+export function SceneRoot({
   worlds,
+  portals,
   onOpen,
   onSelectWorld,
+  xr,
   label,
 }: {
   worlds: WorldPoint[];
+  portals: Portal[];
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
+  xr: boolean;
   label: string;
 }) {
   const [backend, setBackend] = useState<GpuBackend | null>(null);
+  const [xrStore] = useState<XRStore>(() => createXRStore({ foveation: 0.5 }));
 
   useEffect(() => {
     let live = true;
@@ -128,19 +94,19 @@ export function WorldCanvas({
       <Canvas
         role="img"
         aria-label={label}
-        camera={{ position: [0, 4, 14], fov: 55 }}
+        camera={{ position: [2.5, 5.5, 15.5], fov: 52 }}
         style={{ width: '100%', height: '100%', display: 'block' }}
         gl={async (defaults) => {
-          if (backend === 'webgpu') {
+          if (backend === 'webgpu' && !xr) {
             try {
               const { WebGPURenderer } = await import('three/webgpu');
               const renderer = new WebGPURenderer({
                 canvas: defaults.canvas as HTMLCanvasElement,
-                antialias: false,
+                antialias: true,
                 powerPreference: 'high-performance',
               });
               renderer.toneMapping = THREE.ACESFilmicToneMapping;
-              renderer.toneMappingExposure = 1.1;
+              renderer.toneMappingExposure = 1.15;
               await renderer.init();
               try {
                 await registerNodeLibrary(
@@ -158,16 +124,24 @@ export function WorldCanvas({
           const renderer = new THREE.WebGLRenderer({
             canvas: defaults.canvas,
             alpha: false,
-            antialias: false,
+            antialias: true,
             powerPreference: 'high-performance',
             failIfMajorPerformanceCaveat: false,
           });
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
-          renderer.toneMappingExposure = 1.1;
+          renderer.toneMappingExposure = 1.15;
           return renderer;
         }}
       >
-        <Catalog worlds={worlds} onOpen={onOpen} onSelectWorld={onSelectWorld} />
+        {xr ? (
+          <XR store={xrStore}>
+            <Universe worlds={worlds} portals={portals} onOpen={onOpen} onSelectWorld={onSelectWorld} />
+            <XrEntry store={xrStore} />
+          </XR>
+        ) : (
+          <Universe worlds={worlds} portals={portals} onOpen={onOpen} onSelectWorld={onSelectWorld} />
+        )}
+        <DirectRenderer />
       </Canvas>
     </GpuBackendContext.Provider>
   );

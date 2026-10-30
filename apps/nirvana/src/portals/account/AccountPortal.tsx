@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useAuth } from '@/components/AuthProvider';
-import { useI18n } from '@/lib/i18n';
+import { useAuth } from '@/core/session/AuthProvider';
+import { useI18n } from '@/core/i18n';
 
 export function AccountPortal({ onClose }: { onClose: () => void }) {
   const { t, lang } = useI18n();

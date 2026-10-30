@@ -1,6 +1,6 @@
 'use client';
 
-import { useI18n } from '@/lib/i18n';
+import { useI18n } from '@/core/i18n';
 import type { WorldPoint } from '@/lib/worlds';
 
 export function WorldPortal({

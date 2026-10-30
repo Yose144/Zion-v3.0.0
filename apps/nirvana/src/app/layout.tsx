@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from 'next';
-import { AuthProvider } from '@/components/AuthProvider';
-import { I18nProvider } from '@/lib/i18n';
+import { AuthProvider } from '@/core/session/AuthProvider';
+import { I18nProvider } from '@/core/i18n';
 import './globals.css';
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#05060a',
+  themeColor: '#02030a',
 };
 
 export const metadata: Metadata = {
-  title: 'Nirvana',
-  description: 'ZION Nirvana — one WebGPU client for the world and its portals.',
+  title: 'Království srdce',
+  description: 'ZION Nirvana — Království srdce. Orbit Nové Země, prstenec Issobelly, Brána, OASIS.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

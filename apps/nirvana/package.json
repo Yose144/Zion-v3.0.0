@@ -11,19 +11,21 @@
   "dependencies": {
     "@noble/ed25519": "^2.3.0",
     "@noble/hashes": "^1.8.0",
+    "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.4.0",
+    "@react-three/xr": "^6.6.32",
     "@scure/bip39": "^1.6.0",
     "next": "^16.2.9",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "three": "^0.169.0"
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/three": "^0.169.0",
+    "@types/three": "^0.186.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
