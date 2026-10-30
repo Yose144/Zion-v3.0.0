@@ -170,7 +170,7 @@ function useFrameSegments(pyramids: PyramidData[], levels = 5) {
           const bi = T.clone().addScaledVector(B.clone().sub(T), k);
           const cnt = (levels - i) * 2;
           const pts: THREE.Vector3[] = [];
-          for (let j = 0; j <= cnt; j++) pts.push(ai.clone().lerp(bi, j / cnt));
+          for (let j = 0; j <= cnt; j++) pts.push(ai.clone().lerp(bi, cnt ? j / cnt : 0));
           return pts;
         };
         const rows: THREE.Vector3[][] = [];
@@ -242,7 +242,7 @@ function TerraceGreens({ position, height, radius, terraces }: {
   const ref = useRef<THREE.InstancedMesh>(null);
   const clumps = useMemo(() => {
     const out: { p: [number, number, number]; s: number }[] = [];
-    let seed = Math.floor(position[0] * 31 + position[2] * 17 + 99);
+    let seed = Math.abs(Math.floor(position[0] * 31 + position[2] * 17 + 99)) + 1;
     const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     for (const t of terraces) {
       const n = Math.floor(t.r * 5);
@@ -734,7 +734,7 @@ function WaterPathAndRiver({ lang }: { lang: Lang }) {
         const dx = p.position[0];
         const dz = p.position[2] - 0.9;
         const angle = Math.atan2(dx, dz);
-        const len = Math.sqrt(dx * dx + dz * dz) - p.radius * 1.05 - 2.6;
+        const len = Math.max(0.15, Math.sqrt(dx * dx + dz * dz) - p.radius * 1.05 - 2.6);
         return (
           <mesh
             key={i}
@@ -774,7 +774,7 @@ function WaterPathAndRiver({ lang }: { lang: Lang }) {
       {/* Nabão label */}
       <Html position={[10.4, 0.9, 12]} center distanceFactor={14}>
         <div className="pointer-events-none whitespace-nowrap rounded border border-sky-400/30 bg-black/60 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-sky-300/90">
-          {lang === 'cs' ? 'řeka Nabão · pramen Agroal' : 'Nabão river · Agroal spring'}
+          {lang === 'cs' ? 'údolí Nabão · směr Agroal' : 'Nabão valley · toward Agroal'}
         </div>
       </Html>
     </>
@@ -807,9 +807,9 @@ function SkyAndSun() {
           }
         `,
         uniforms: {
-          top: { value: new THREE.Color('#1a1f14') },
-          mid: { value: new THREE.Color('#5a4a2e') },
-          low: { value: new THREE.Color('#a87a42') },
+          top: { value: new THREE.Color('#24466a') },
+          mid: { value: new THREE.Color('#a47a59') },
+          low: { value: new THREE.Color('#e3ad69') },
           sunDir: { value: new THREE.Vector3(0.18, 0.1, -1).normalize() },
         },
       }),
@@ -845,6 +845,13 @@ function GardenScene({ lang }: { lang: Lang }) {
 
       <GardenBeds />
       <WaterPathAndRiver lang={lang} />
+      {Array.from({ length: 16 }, (_, i) => {
+        const angle = (i / 16) * Math.PI * 2;
+        return <mesh key={i} position={[Math.cos(angle) * 3.15, 0.12, 0.9 + Math.sin(angle) * 3.15]} scale={[0.23, 0.12, 0.18]}>
+          <dodecahedronGeometry args={[1, 0]} />
+          <meshStandardMaterial color="#a99a7a" roughness={1} />
+        </mesh>;
+      })}
       <ValleyHills />
 
       {/* Tři prosklené pyramidy — sklo + ocelový rám + terasy se zelení */}
