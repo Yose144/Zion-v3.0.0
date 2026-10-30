@@ -1,9 +1,40 @@
 'use client';
 
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { OrbitControls } from '@react-three/drei';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
+
+function Html({ position, children }: { position: [number, number, number]; center?: boolean; distanceFactor: number; children: ReactNode }) {
+  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+  // The labels contain a single text-only div; render it as a sprite so it
+  // belongs to the scene's React root and has no nested root to unmount.
+  const text = (children as { props: { children: string } }).props.children;
+  useEffect(() => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.font = '600 28px sans-serif';
+    canvas.width = Math.ceil(ctx.measureText(text).width + 36);
+    canvas.height = 52;
+    ctx.fillStyle = 'rgba(8, 12, 20, 0.82)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'rgba(230, 210, 170, 0.5)';
+    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+    ctx.font = '600 28px sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#f3e8d0';
+    ctx.fillText(text, 18, 26);
+    const next = new THREE.CanvasTexture(canvas);
+    next.colorSpace = THREE.SRGBColorSpace;
+    setTexture(next);
+    return () => next.dispose();
+  }, [text]);
+  if (!texture) return null;
+  return <sprite position={position} scale={[texture.image.width / 180, 52 / 180, 1]}>
+    <spriteMaterial map={texture} transparent depthWrite={false} />
+  </sprite>;
+}
 
 type Lang = 'cs' | 'en';
 
@@ -339,7 +370,7 @@ function CrystalPyramid({ position, height, radius, accent, label, lang }: Pyram
           metalness={0.5}
           roughness={0.12}
           transparent
-          opacity={0.62}
+          opacity={0.38}
           side={THREE.DoubleSide}
           depthWrite={false}
           clearcoat={1}
@@ -541,7 +572,7 @@ function Vegetation() {
       const r = 7.2 + rnd() * 5.5;
       const x = Math.cos(angle) * r;
       const z = Math.sin(angle) * r;
-      if (insidePyramid(x, z)) continue;
+      if (insidePyramid(x, z) || (x < -9 && z < -8) || (x < -8 && z > 8)) continue;
       const s = 0.25 + rnd() * 0.35;
       out.push({
         x, z, s,
@@ -554,7 +585,7 @@ function Vegetation() {
       const r = 9.5 + rnd() * 6.5;
       const x = Math.cos(angle) * r;
       const z = Math.sin(angle) * r;
-      if (insidePyramid(x, z)) continue;
+      if (insidePyramid(x, z) || (x < -9 && z < -8) || (x < -8 && z > 8)) continue;
       const s = 0.55 + rnd() * 0.5;
       treeOut.push({
         x, z, s,
@@ -566,7 +597,7 @@ function Vegetation() {
       for (let col = 0; col < 7; col++) {
         const x = -16 + col * 1.5;
         const z = -6 + row * 1.6;
-        if (insidePyramid(x, z)) continue;
+        if (insidePyramid(x, z) || (x < -9 && z < -8) || (x < -8 && z > 8)) continue;
         out.push({ x, z, s: 0.3 + rnd() * 0.12, c: '#4a8a3e' });
       }
     }
@@ -675,14 +706,121 @@ function GardenBeds() {
 }
 
 /** Gentle wooded hills of the Nabão valley enclosing the site */
+/** A shaded gathering terrace and planted rows, inspired by the site concept. */
+function GardenTerrace() {
+  return (
+    <group position={[12.8, 0, 7.5]} rotation={[0, -0.22, 0]}>
+      <mesh position={[0, 0.12, 0]} receiveShadow>
+        <boxGeometry args={[5.4, 0.24, 3.4]} />
+        <meshStandardMaterial color="#aa9876" roughness={1} />
+      </mesh>
+      {[-2.25, 0, 2.25].flatMap((x) => [-1.25, 1.25].map((z) => (
+        <mesh key={`${x}-${z}`} position={[x, 1.25, z]} castShadow>
+          <boxGeometry args={[0.16, 2.3, 0.16]} />
+          <meshStandardMaterial color="#76573a" roughness={0.9} />
+        </mesh>
+      )))}
+      {[-1.25, 1.25].map((z) => (
+        <mesh key={z} position={[0, 2.42, z]} castShadow>
+          <boxGeometry args={[5.1, 0.16, 0.18]} />
+          <meshStandardMaterial color="#76573a" roughness={0.9} />
+        </mesh>
+      ))}
+      {Array.from({ length: 9 }, (_, i) => (
+        <mesh key={i} position={[-2.2 + i * 0.55, 2.49, 0]} castShadow>
+          <boxGeometry args={[0.12, 0.12, 2.8]} />
+          <meshStandardMaterial color="#76573a" roughness={0.9} />
+        </mesh>
+      ))}
+      <mesh position={[0, 2.58, 0]}>
+        <boxGeometry args={[4.8, 0.12, 2.55]} />
+        <meshStandardMaterial color="#54733d" roughness={1} transparent opacity={0.72} />
+      </mesh>
+      <mesh position={[0, 0.55, 0]}>
+        <boxGeometry args={[2.1, 0.12, 0.85]} />
+        <meshStandardMaterial color="#8f704a" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Temporary accommodation and a conceptual boatbuilding yard. */
+function TipiCamp() {
+  const tents: [number, number, number][] = [[-12, -11, 0.2], [-16, -10, -0.3], [-13.5, -15, 0.5], [-18, -14, -0.1]];
+  return <group>{tents.map(([x, z, angle], i) => (
+    <group key={i} position={[x, 0, z]} rotation={[0, angle, 0]}>
+      <mesh position={[0, 0.08, 0]} receiveShadow>
+        <cylinderGeometry args={[1.28, 1.3, 0.16, 12]} /><meshStandardMaterial color="#9b7956" roughness={1} />
+      </mesh>
+      <mesh position={[0, 1.18, 0]} castShadow>
+        <coneGeometry args={[1.05, 2.2, 16, 1, true]} />
+        <meshStandardMaterial color={i % 2 ? '#e1d2ae' : '#eee0c0'} roughness={1} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, 0.55, 0.83]} rotation={[-0.44, 0, Math.PI]}>
+        <circleGeometry args={[0.34, 3]} />
+        <meshBasicMaterial color="#4a3021" side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, 0.17, 1.38]} receiveShadow>
+        <boxGeometry args={[0.75, 0.12, 0.55]} /><meshStandardMaterial color="#9b7956" roughness={1} />
+      </mesh>
+      {[-1, 0, 1].map((j) => <mesh key={j} position={[j * 0.12, 2.27, 0]} rotation={[0, 0, j * 0.18]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.7, 5]} /><meshStandardMaterial color="#71513a" />
+      </mesh>)}
+    </group>
+  ))}</group>;
+}
+
+/** Open wooden ribs, keel and building stands distinguish construction from sailing. */
+function BoatYard() {
+  const hull = (z: number, key: number) => <group key={key} position={[0, 0, z]}>
+    <mesh position={[0, 0.55, 0]} rotation={[0, 0, Math.PI / 2]}>
+      <cylinderGeometry args={[0.09, 0.09, 6.6, 6]} /><meshStandardMaterial color="#805333" />
+    </mesh>
+    {Array.from({ length: 11 }, (_, i) => {
+      const x = (i - 5) * 0.55;
+      const width = Math.max(0.14, Math.sqrt(Math.max(0, 1 - (x / 3.35) ** 2)));
+      return <mesh key={i} position={[x, 1.3, 0]} rotation={[0, Math.PI / 2, Math.PI]} scale={[width, 0.65, 1]}>
+        <torusGeometry args={[1, 0.045, 6, 20, Math.PI]} /><meshStandardMaterial color="#b7814c" roughness={0.9} />
+      </mesh>;
+    })}
+    {/* Lower planking and the rising stem make the unfinished hull legible. */}
+    {[-1, 1].map((side) => <mesh key={side} position={[0, 0.76, side * 0.52]} rotation={[side * 0.35, 0, 0]}>
+      <boxGeometry args={[4.9, 0.32, 0.07]} /><meshStandardMaterial color="#98673f" roughness={0.86} />
+    </mesh>)}
+    {[[-3.2, -0.55], [3.2, 0.55]].map(([x, tilt]) => <mesh key={x} position={[x, 0.98, 0]} rotation={[0, 0, tilt]}>
+      <boxGeometry args={[0.12, 1.05, 0.12]} /><meshStandardMaterial color="#805333" />
+    </mesh>)}
+    {[-0.8, 0.8].map((side) => <mesh key={side} position={[0, 1.3, side]} rotation={[0, 0, Math.PI / 2]}>
+      <cylinderGeometry args={[0.055, 0.055, 5.6, 5]} /><meshStandardMaterial color="#98663e" />
+    </mesh>)}
+    {[-2, 2].map((x) => <mesh key={x} position={[x, 0.24, 0]}>
+      <boxGeometry args={[0.16, 0.48, 2.1]} /><meshStandardMaterial color="#70513a" />
+    </mesh>)}
+  </group>;
+  return <group position={[-12.5, 0, 12.5]} rotation={[0, 0.25, 0]}>
+    <mesh position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[9, 7]} /><meshStandardMaterial color="#9a8567" roughness={1} />
+    </mesh>
+    {hull(-1.9, 0)}
+    {/* Temporary work platforms and stacked timber beside the hulls. */}
+    <mesh position={[-3.9, 0.36, 0]}><boxGeometry args={[0.65, 0.72, 5.6]} /><meshStandardMaterial color="#836440" roughness={1} /></mesh>
+    {[0, 1, 2].map((i) => <mesh key={i} position={[3.7, 0.12 + i * 0.12, -2.5]}>
+      <boxGeometry args={[0.16, 0.1, 2.4]} /><meshStandardMaterial color="#ad8254" roughness={1} />
+    </mesh>)}
+    <group position={[0, 0, 1.8]}>{hull(-0.85, 1)}{hull(0.85, 2)}
+      <mesh position={[0, 1.3, 0]}><boxGeometry args={[3.8, 0.12, 2.1]} /><meshStandardMaterial color="#af8053" /></mesh>
+    </group>
+  </group>;
+}
+
 function ValleyHills() {
   const hills: { p: [number, number, number]; r: number }[] = [
-    { p: [-15, -0.4, -17], r: 7 },
+    { p: [-22, -0.4, -20], r: 5 },
     { p: [15, -0.6, -19], r: 8.5 },
     { p: [-21, -0.5, 5], r: 6.5 },
     { p: [20, -0.5, -7], r: 7.5 },
     { p: [-2, -0.8, -24], r: 9 },
-    { p: [-16, -0.7, 15], r: 7 },
+    { p: [-23, -0.7, 20], r: 4 },
     { p: [19, -0.7, 17], r: 6 },
   ];
   return (
@@ -853,6 +991,12 @@ function GardenScene({ lang }: { lang: Lang }) {
         </mesh>;
       })}
       <ValleyHills />
+      <GardenTerrace />
+      <mesh position={[-13, 0.035, -7.5]} rotation={[-Math.PI / 2, 0, -0.55]} receiveShadow>
+        <planeGeometry args={[0.65, 9]} /><meshStandardMaterial color="#b39d72" roughness={1} />
+      </mesh>
+      <TipiCamp />
+      <BoatYard />
 
       {/* Tři prosklené pyramidy — sklo + ocelový rám + terasy se zelení */}
       {PYRAMIDS.map((p, i) => (
