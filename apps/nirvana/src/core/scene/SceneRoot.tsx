@@ -115,7 +115,7 @@ export function SceneRoot({
                 powerPreference: 'high-performance',
               });
               renderer.toneMapping = THREE.ACESFilmicToneMapping;
-              renderer.toneMappingExposure = 1.15;
+              renderer.toneMappingExposure = 1.0;
               await renderer.init();
               try {
                 await registerNodeLibrary(
@@ -138,7 +138,7 @@ export function SceneRoot({
             failIfMajorPerformanceCaveat: false,
           });
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
-          renderer.toneMappingExposure = 1.15;
+          renderer.toneMappingExposure = 1.0;
           return renderer;
         }}
       >

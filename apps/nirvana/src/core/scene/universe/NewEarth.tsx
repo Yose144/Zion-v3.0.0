@@ -285,11 +285,6 @@ export function NewEarth({
           emissiveIntensity={maps.night ? 0.35 : 0.08}
         />
       </mesh>
-      {/* holografický wireframe shell — jemný */}
-      <mesh scale={1.012}>
-        <sphereGeometry args={[PLANET_R, 24, 24]} />
-        <meshBasicMaterial color="#066928" wireframe transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} />
-      </mesh>
       {/* atmosféra — halo */}
       <mesh scale={1.07}>
         <sphereGeometry args={[PLANET_R, 48, 32]} />
