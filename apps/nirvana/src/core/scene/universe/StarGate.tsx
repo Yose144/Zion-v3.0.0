@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { TextLabel } from './Label';
 import * as THREE from 'three';
 import { GATE_POS } from './positions';
 import type { Portal } from '@/core/portals/manifest';
@@ -521,9 +521,7 @@ export function StarGate({ portal, onOpen }: { portal: Portal; onOpen: (id: stri
       {/* skutečné 3D objekty v hrdle brány */}
       <Vajra />
       <Meru />
-      <Html position={[0, -2.05, 0]} center distanceFactor={20} style={{ pointerEvents: 'none' }}>
-        <span className="scene-label scene-label-gate">{portal.title.cs}</span>
-      </Html>
+      <TextLabel text={portal.title.cs} position={[0, -2.05, 0]} color="#e8c56a" height={0.3} />
     </group>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { TextLabel } from './Label';
 import * as THREE from 'three';
 import type { Portal } from '@/core/portals/manifest';
 import { PLANET_R, hash01, spotPosition, surfacePosition } from './positions';
@@ -141,9 +141,7 @@ function PortalSpot({
         <sphereGeometry args={[0.09, 12, 12]} />
         <meshBasicMaterial color="#fcd116" />
       </mesh>
-      <Html center distanceFactor={16} occlude="raycast" style={{ pointerEvents: 'none' }}>
-        <span className="scene-label">{portal.title.cs}</span>
-      </Html>
+      <TextLabel text={portal.title.cs} position={[0, 0.22, 0]} color="#ffe9b0" height={0.2} />
     </group>
   );
 }
@@ -170,9 +168,7 @@ function Beacon({ portal, onOpen }: { portal: Portal; onOpen: (id: string) => vo
         <cylinderGeometry args={[0.012, 0.05, 1.8, 8, 1, true]} />
         <meshBasicMaterial color="#7ec8ff" transparent opacity={0.5} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
-      <Html center distanceFactor={16} occlude="raycast" style={{ pointerEvents: 'none' }}>
-        <span className="scene-label">{portal.title.cs}</span>
-      </Html>
+      <TextLabel text={portal.title.cs} position={[0, 2.0, 0]} color="#a8d8ff" height={0.22} />
     </group>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { TextLabel } from './Label';
 import * as THREE from 'three';
 import { RING_R, RING_R2, ringPosition } from './positions';
 import { IssobellaStation } from './IssobellaStation';
@@ -66,15 +66,13 @@ export function IssobellaRing({
         );
       })}
       {portal && (
-        <Html position={[0, 0.7, RING_R]} center distanceFactor={16} style={{ pointerEvents: 'none' }}>
-          <span
-            className="scene-label scene-label-ring"
-            style={{ pointerEvents: 'auto', cursor: 'pointer' }}
-            onClick={() => onOpen(portal.id)}
-          >
-            {portal.title.cs} · L6
-          </span>
-        </Html>
+        <TextLabel
+          text={`${portal.title.cs} · L6`}
+          position={[0, 0.7, RING_R]}
+          color="#ffe9b0"
+          height={0.34}
+          onClick={() => onOpen(portal.id)}
+        />
       )}
     </group>
   );
