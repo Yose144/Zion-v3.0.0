@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
 import type { Lang } from '@/core/i18n';
@@ -60,7 +60,6 @@ export function Universe({
       <color attach="background" args={['#02030a']} />
       <ambientLight intensity={0.32} />
       <directionalLight position={[34, 14, -26]} intensity={1.05} />
-      <Stars radius={95} depth={45} count={1800} factor={3} fade speed={0.3} />
       <SpaceBackdrop />
 
       <NewEarth

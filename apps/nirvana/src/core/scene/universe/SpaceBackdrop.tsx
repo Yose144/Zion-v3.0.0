@@ -4,6 +4,49 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
+/* ═══ Vzdálené hvězdy — points-based náhrada za drei Stars
+   (ShaderMaterial nefunguje pod WebGPU rendererem). Dvě vrstvy
+   pro variaci velikostí: prach + jasnější body. ═══ */
+function starShell(count: number, rMin: number, rMax: number) {
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    // rovnoměrné rozmístění na sféře
+    const u = Math.random() * 2 - 1;
+    const theta = Math.random() * Math.PI * 2;
+    const s = Math.sqrt(1 - u * u);
+    const r = rMin + Math.random() * (rMax - rMin);
+    positions[i * 3] = s * Math.cos(theta) * r;
+    positions[i * 3 + 1] = u * r;
+    positions[i * 3 + 2] = s * Math.sin(theta) * r;
+    // většina chladnobílá, část teplá
+    const warm = Math.random() < 0.18;
+    const b = 0.75 + Math.random() * 0.25;
+    colors[i * 3] = warm ? b : b * (0.82 + Math.random() * 0.18);
+    colors[i * 3 + 1] = b * (0.9 + Math.random() * 0.1);
+    colors[i * 3 + 2] = warm ? b * (0.7 + Math.random() * 0.15) : b;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return geo;
+}
+
+function FarStars() {
+  const faint = useMemo(() => starShell(2400, 70, 105), []);
+  const bright = useMemo(() => starShell(380, 65, 100), []);
+  return (
+    <>
+      <points geometry={faint}>
+        <pointsMaterial size={0.09} transparent opacity={0.55} sizeAttenuation depthWrite={false} vertexColors blending={THREE.AdditiveBlending} />
+      </points>
+      <points geometry={bright}>
+        <pointsMaterial size={0.22} transparent opacity={0.85} sizeAttenuation depthWrite={false} vertexColors blending={THREE.AdditiveBlending} />
+      </points>
+    </>
+  );
+}
+
 /* ═══ Mléčná dráha — galaktický disk s náznakem spirálních ramen.
    Port z website-v2.9 HolographicEarth, navržen pro náš vesmír. ═══ */
 function MilkyWay() {
@@ -209,6 +252,7 @@ function Nebula() {
 export function SpaceBackdrop() {
   return (
     <>
+      <FarStars />
       <MilkyWay />
       <GalacticDust />
       <BrightStars />
