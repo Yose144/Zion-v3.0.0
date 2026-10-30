@@ -27,7 +27,7 @@ export const FREE_WORLD_MISSIONS: FreeWorldMission[] = [
   { key: 'bodhi-lanka', name: 'Bodhi Lanka', lat: 7.87, lon: 80.65, status: 'preparation', path: '/terranova/bodhi-lanka', present: '/present/bodhi-lanka' },
   { key: 'ekam', name: 'Ekam · Oneness Temple', lat: 13.42, lon: 79.67, status: 'built', path: '/terranova/ekam', present: '/present/ekam' },
   { key: 'lumi', name: 'LUMI · Nová Amerika', lat: 9.75, lon: -83.75, status: 'preparation', path: '/terranova/nova-amerika', present: '/present/nova-amerika' },
-  { key: 'uluru', name: 'Uluru', lat: -25.34, lon: 131.04, status: 'vision', path: '/terranova/uluru' },
+  { key: 'uluru', name: 'Uluru', lat: -25.34, lon: 131.04, status: 'vision', path: '/terranova/uluru', present: '/present/uluru' },
   { key: 'maria-del-camino', name: 'María del Camino', lat: 42.43, lon: -8.65, status: 'preparation', path: '/terranova/maria-del-camino', present: '/present/maria-del-camino' },
   { key: 'boa-esperanca', name: 'Boa Esperança', lat: -34.35, lon: 18.47, status: 'vision', path: '/terranova/boa-esperanca' },
   { key: 'kailash', name: 'Kailash', lat: 31.07, lon: 81.31, status: 'vision', path: '/terranova/kailash' },

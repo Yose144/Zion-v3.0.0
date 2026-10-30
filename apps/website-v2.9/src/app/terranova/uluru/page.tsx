@@ -29,6 +29,7 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+const UluruPreviewLazy = dynamic(() => import('@/components/UluruPreviewLazy'), { ssr: false });
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
@@ -44,6 +45,8 @@ const Copy = {
     cs: `Uluru je sedmý bod L5 Free World — a záměrně je to vize, ne stavební plán. Červený monolit v srdci Austrálie je domovem Aňangu, tradičních custodiánů, a Tjukurpy — Snění, které nese zákon, příběhy a mapu krajiny starší než šedesát tisíc let. Songlines, pěvecké stezky, nesou poselství přes celý kontinent — od protinožců k protinožcům. Tento uzel nevzniká na posvátné zemi; vzniká jako vztah. Jeho učení jsou telepatie a vize, nativní propojení s přírodou a zvířaty — a jednou ročně Uluru Festival, oslava života pro všechny umělce. Nejdřív poslouchat — teprve pak případně stavět, někde jinde, jinak.`,
     en: `Uluru is the seventh point of L5 Free World — and deliberately a vision, not a building plan. The red monolith at the heart of Australia is the home of the Aṉangu, the traditional custodians, and of Tjukurpa — the Dreaming that carries law, stories and a map of the land older than sixty thousand years. Songlines, the singing tracks, carry the message across the whole continent — from antipode to antipode. This node is not built on sacred land; it is born as a relationship. Its teachings are telepathy and visions, native connection with land and animals — and once a year the Uluru Festival, a celebration of life for all artists. Listen first — then, maybe, build, somewhere else, differently.`,
   },
+  threeDPreview: { cs: `3D koncept`, en: `3D concept` },
+  threeDPreviewSubtitle: { cs: `Interaktivní model uzlu Uluru — červený monolit Tjukurpa, festivalová osada s ohněm v kruhu, zářící songlines a Mléčná dráha nad pouští.`, en: `Interactive model of the Uluru node — the red Tjukurpa monolith, festival settlement with a fire circle, glowing songlines and the Milky Way over the desert.` },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
   featuresSubtitle: { cs: `Dědictví & poselství`, en: `Heritage & Message` },
   festivalTitle: { cs: `Uluru Festival — oslava života`, en: `Uluru Festival — a celebration of life` },
@@ -374,6 +377,26 @@ export default function UluruPage() {
             <p className="text-gray-300 leading-relaxed">
               {Copy.introBody[cs ? 'cs' : 'en']}
             </p>
+          </div>
+        </motion.section>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-orange-200/65 mb-1">
+                {Copy.threeDPreview[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {Copy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <UluruPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
           </div>
         </motion.section>
 
