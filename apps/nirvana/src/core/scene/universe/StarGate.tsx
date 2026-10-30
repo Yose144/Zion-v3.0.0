@@ -36,7 +36,7 @@ function useSoftSprite(): THREE.CanvasTexture {
 const TUNNEL_RINGS = 12;
 
 function TunnelRings() {
-  const group = useRef<THREE.Group>(null);
+  const spin = useRef<THREE.Group>(null);
   const rings = useMemo(
     () =>
       Array.from({ length: TUNNEL_RINGS }, (_, i) => {
@@ -55,27 +55,31 @@ function TunnelRings() {
   );
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
-    if (!group.current) return;
-    group.current.children.forEach((c, i) => {
-      c.rotation.z += delta * rings[i].speed;
+    if (!spin.current) return;
+    spin.current.children.forEach((c, i) => {
+      const r = rings[i];
+      if (!r) return;
+      c.rotation.z += delta * r.speed;
       const s = 1 + Math.sin(t * 1.4 + i * 0.9) * 0.03;
       c.scale.setScalar(s);
     });
   });
   return (
-    <group ref={group}>
-      {rings.map((r) => (
-        <mesh key={r.key} position={[0, 0, r.z]}>
-          <torusGeometry args={[r.r, 0.016, 4, r.sides]} />
-          <meshBasicMaterial
-            color={r.color}
-            transparent
-            opacity={r.opacity}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-      ))}
+    <group>
+      <group ref={spin}>
+        {rings.map((r) => (
+          <mesh key={r.key} position={[0, 0, r.z]}>
+            <torusGeometry args={[r.r, 0.016, 4, r.sides]} />
+            <meshBasicMaterial
+              color={r.color}
+              transparent
+              opacity={r.opacity}
+              depthWrite={false}
+              blending={THREE.AdditiveBlending}
+            />
+          </mesh>
+        ))}
+      </group>
       {/* podélná žebra spojující prstence — skutečný objem */}
       {Array.from({ length: 8 }, (_, i) => (i / 8) * Math.PI * 2).map((a, i) => (
         <group key={`rib${i}`} rotation={[0, 0, a]}>
