@@ -1,7 +1,7 @@
 # Vast + Hiran — sjednocený Coding Agent
 
 > Draft 2026-10-29 · sjednocuje `/vast-rigs/#ai`, fleet agent (2.B11) a Hiran Agent CLI (B2B-3b).  
-> Auth/platby Hiran: [`HIRAN-CLI-AUTH.md`](../../HIRAN-CLI-AUTH.md) · Mining/inference ops: [`VASTAI-MINING.md`](../../VASTAI-MINING.md) §5.
+> Auth/platby Hiran: [`HIRAN-CLI-AUTH.md`](../plans/HIRAN-CLI-AUTH.md) · Mining/inference ops: [`VASTAI-MINING.md`](../plans/VASTAI-MINING.md) §5.
 
 ## 1. Problém
 
@@ -89,7 +89,7 @@ agent.py ──result───────────────────�
 
 - [x] Kanon tento soubor
 - [x] Křížové odkazy: Zionb2b §5 #4c, 3.2.1 → 2.B11, VASTAI §5, HIRAN-CLI-AUTH, B2B_HIRAN_AGENT_CLI
-- [x] Trinity mockupy mapované (Amitábha / Issobella / Maitreya) → FT níže + [`HIRAN-MARKETPLACE-PLAN.md`](../../HIRAN-MARKETPLACE-PLAN.md)
+- [x] Trinity mockupy mapované (Amitábha / Issobella / Maitreya) → FT níže + [`HIRAN-MARKETPLACE-PLAN.md`](../plans/HIRAN-MARKETPLACE-PLAN.md)
 
 ### FT — Hiran Trinity train-first (ZION knowledge) — **před kvalitním coding agentem**
 

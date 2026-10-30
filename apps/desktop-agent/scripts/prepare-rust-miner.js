@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-  Prepares all V31 Mainnet Alpha binaries for the desktop agent bundle.
+  Prepares all V31 Mainnet Beta binaries for the desktop agent bundle.
 
   Builds the V31 Rust workspace in release mode and copies the required
   binaries into desktop-agent/resources/ so electron-builder bundles them

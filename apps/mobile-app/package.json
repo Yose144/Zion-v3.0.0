@@ -1,7 +1,7 @@
 {
   "name": "zion-mobile",
   "version": "3.0.6",
-  "description": "ZION TerraNova Mobile Wallet & Mining Manager v3.0.6 'Trinity'",
+  "description": "ZION TerraNova mobile wallet (app build 3.0.6, preview client) on ZION v3.2 Mainnet Beta",
   "main": "index.js",
   "scripts": {
     "android": "react-native run-android",

@@ -1,11 +1,24 @@
 # ZION V3.3 „NIRVANA" — Execution Checklist
 
-> **Datum:** 2026-10-26 (aktualizace verze z 21. 10.) · **Doplněk k:** [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md)
+> **Datum:** 2026-10-29 (snapshot položek níže je z 26. 10.; posun je v rámečku) · **Doplněk k:** [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md)
+> **Paluba:** [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md) · **Strojovna:** [`docs/3.3/ENGINE-SRDCE.md`](docs/3.3/ENGINE-SRDCE.md)
 > **Mapa (registr plánů, crosswalk, závislosti, ekosystém):** [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) · **N0 detail (3.2 ALPHA → BETA → STABLE):** [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) — ID typu `2.B1` / `7.S1` / `P0-1` odkazují tam.
 > **Značky vlastníka:** 🤖 = autonomní (kód/testy/dokumenty end-to-end) · 🔀 = autonomní příprava + operátorské schválení/flip · 👤 = operátor (rozhodnutí, peníze, klíče, fyzický svět)
 > **Pravidlo:** Devin nikdy neflipuje produkční money-paths, nevydává verze, nevybírá dodavatele — vždy připraví PR/artefakt/důkaz a počká na 👤 sign-off.
 > **Topologie:** EDGE2 = primary node + web ingress + app stack · EDGE = pool (reálné IP minerů) + followeři + ops. Detail v `AGENTS.md`.
-> **Lifecycle sync (2026-10-26):** public Mainnet Beta labely napříč weby/portály/klientskými povrchy připraveny **lokálně — zatím NENASAZENO**.
+> **Lifecycle:** public Mainnet Beta je na webu od sweepu 26. 10. Desktop komentáře srovnány na Beta 29. 10. (bez deploye). Mobilní **build** zůstává `3.0.6`; síťový štítek je `v3.2 · Mainnet Beta`.
+
+## Posun od 26. 10. (HEAD `4040126ad`, +219 commitů)
+
+Checklistové checkboxy pod tímhle rámečkem se hromadně nepřepisovaly. DoD v3.3 je pořád **0/9**. Nově doložené, co 26. 10. ještě nebylo:
+
+- Pool schema **v13** (`height` = reward, `inclusion_height` = inclusion), payout `superseded`, M3 sharding zámků, public `/status` `/estimate` `/pplns`.
+- Explorer: čistá částka (outputs − change), supply mint = 99 % subsidy (1% slot před aktivací se pálí), `getUtxos` paging.
+- Marketplace B2B checkout + `statusHistory` (`0025b5ada`).
+- Fleet: ops konzole, flight sheets, OC task, agent MVP (enroll rigu = náklad). W3–W7 jako celek **nejsou** hotové.
+- Maestro read-only E2E 6/6 (už v N3). Hiran coder tunel + model cards.
+- Release builder **3/4** (chybí OpenCL/GPU host a rebuild z RC commitu).
+- Veřejný podtitul roadmapy: „3.3 Nirvana — loď Království srdce“ (9.B6). Fáze N0–N7 se nepřejmenovaly.
 
 ---
 
@@ -27,8 +40,8 @@
 
 Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Zde jen brány.
 
-- [x] Beta gate — ekosystém F0–F6 sjednocený, web cutover na EDGE2 (22. 10.), root `3.2.0-beta.1` ([`AUDIT-3.2-BETA-PLAN.md`](AUDIT-3.2-BETA-PLAN.md))
-- [x] Interní audit money-paths vlny 1–7 nasazené + live verifikace 26. 10. ([`AUDIT-REPORT.md`](AUDIT-REPORT.md))
+- [x] Beta gate — ekosystém F0–F6 sjednocený, web cutover na EDGE2 (22. 10.), root `3.2.0-beta.1` ([`AUDIT-3.2-BETA-PLAN.md`](docs/plans/AUDIT-3.2-BETA-PLAN.md))
+- [x] Interní audit money-paths vlny 1–7 nasazené + live verifikace 26. 10. ([`AUDIT-REPORT.md`](docs/plans/AUDIT-REPORT.md))
 - [~] **P0** produkční defekty z verifikace 26. 10. — 2/3 opraveny téhož dne
   - [x] 🔀 P0-1 ✅ 26. 10. — L5 scanner restartován, catch-up 6 732 bloků na tip 97 064, zápis ověřen; recovery dump smazaného inode v `/data/zion/` (0 ztráta) (6.B1)
   - [x] 🔀 P0-2 ✅ 26. 10. — db-sync credentials sjednoceny s rolí `zion`, 0 chyb od restartu, upserty `MiningWorker` běží (8.B1)
@@ -79,10 +92,10 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [ ] 🤖 ZIS agent sub-accounts — Prisma schema + budgety (design + migrace draft)
 - [ ] 🤖 QTC integrace ([`QUANTUS-INTEGRATION-PLAN.md`](docs/3.2/QUANTUS-INTEGRATION-PLAN.md)): F1 adapter (gated testnet) → F2 keyring → F3 watchtower → F5 wallet pod ZIS
 - [ ] 🔀 DAO: guardian registry deploy, treasury sign flow + 👤 klíč, QV rozhodnutí (4.B8, 4.B9)
-- [ ] 🔀 Premine unlock dry-run na regtestu před výškou 144 000 (~27.–28. 11.) (1.B5)
+- [x] 🤖 Premine unlock dry-run na regtestu před výškou 144 000 (1.B5) — PASS 28. 10.; výška ~27.–28. 11. a exekuce zůstávají 👤
 - [ ] 👤 Nové chain piloty (Solana watcher v kódu) — každý přes M1.6 gate
 
-## N2 · Pool & Revenue Engine (+ [`POOL-FLEET-EXPANSION-PLAN.md`](POOL-FLEET-EXPANSION-PLAN.md) W1–W7)
+## N2 · Pool & Revenue Engine (+ [`POOL-FLEET-EXPANSION-PLAN.md`](docs/plans/POOL-FLEET-EXPANSION-PLAN.md) W1–W7)
 
 - [x] 🤖 PRL dry-batch review tooling `scripts/prl-payout-review.sh`
 - [x] 🤖 Pearl `FWD_MAX` fix (share loss 17.5 % → 0 dropů)
@@ -115,7 +128,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [ ] 🤖 Dharma: keyword filter → policy manifest (povolené typy akcí + human-approval gate) — kryptografické mantinely = HORIZONT
 - [ ] 🤖 Amitabha draft-only UI (plán s náklady/příjemci/riziky/zrušením, bez exekuce) — až po M2
 - [ ] 🤖 Red-team (prompt injection, confused deputy, privilege escalation, tx substituce) — exit M3
-- [ ] 🤖 [`HIRAN-MARKETPLACE-PLAN.md`](HIRAN-MARKETPLACE-PLAN.md) F2 gateway `/v1/models` + F4 provoz
+- [ ] 🤖 [`HIRAN-MARKETPLACE-PLAN.md`](docs/plans/HIRAN-MARKETPLACE-PLAN.md) F2 gateway `/v1/models` + F4 provoz
 - [ ] 👤 HW upgrade (RTX 3090+/48 GB) — bez něj 8B model + RAG
 
 ## N4 · OASIS (L4)
@@ -150,7 +163,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 ## N7 · Launch Readiness
 
 - [x] 🤖 Truth-sync dokumentace + refresh Registru důkazů (9.B5; seznam rozporů = mapa §8) ✅ 28. 10.: REPO-MAP (public/→archive/PUBLIC + nový export model), Registr (Passkeys→STAVBA, Hiran inference→ŽIVÉ, Maestro→ŽIVÉ read-only, +premine řádek), StatusV3 update 2026-10-28
-- [ ] 🤖 Public copy `/roadmap`, `nirvana-roadmap.ts`, `/maitreya#plan-v33` sladit s mapou (9.B6)
+- [x] 🤖 Public copy `/roadmap`, `nirvana-roadmap.ts`, `/zion-archive#plan-v33` sladit s mapou (9.B6) — 29. 10.: podtitul lodi, šest workstreamů beze změny, žádné slíbené datum
 - [ ] 🤖 Charta R9: factual/legal/cultural review veřejných textů
 - [ ] 🤖 CoinGecko re-apply package ([`COINGECKO_REAPPLY_ROADMAP.md`](docs/3.2/COINGECKO_REAPPLY_ROADMAP.md), 17 prerekvizit)
 - [ ] 👤 Bug bounty + komunitní kanály

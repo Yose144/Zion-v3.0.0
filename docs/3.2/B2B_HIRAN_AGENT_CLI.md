@@ -62,7 +62,7 @@ Stripe = stejné `HIRAN_PRICE_*` jako `/ai` page (B2B-3).
 6. ✅ Soft-sell na `/ai` (+ MetaMask USDC / Stripe) + CLI link; pool FAQ později
 7. ⬜ Public/archive packaging (feature flag)
 
-**Implementace (2026-10-29):** agent loop + **ZIS device-code login** + Stripe upgrade (`X-API-Key`) + Base USDC crypto intent/confirm. Kanon: root [`HIRAN-CLI-AUTH.md`](../../HIRAN-CLI-AUTH.md).
+**Implementace (2026-10-29):** agent loop + **ZIS device-code login** + Stripe upgrade (`X-API-Key`) + Base USDC crypto intent/confirm. Kanon: root [`HIRAN-CLI-AUTH.md`](../plans/HIRAN-CLI-AUTH.md).
 
 **Vast remote (F3):** `zion hiran agent -p "…" --remote vast` (+ `#ai` Coding Agent). Kanon [`VAST_HIRAN_CODING_AGENT_PLAN.md`](VAST_HIRAN_CODING_AGENT_PLAN.md). Ops token `VASTCTL_AGENT_TOKEN`, ne `zis_*`.
 

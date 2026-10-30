@@ -11,7 +11,7 @@
 | Sloupec | Význam |
 |---|---|
 | **Nárok** | Co by mohl čtenář pochopit jako tvrzení o projektu. |
-| **Stav** | ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS podle [`01-Kanon-a-Ustava.md`](./01-Kanon-a-Ustava.md). |
+| **Stav** | ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS podle [`01-Kanon-a-Ustava.md`](01-Kanon-a-Ustava.md). |
 | **Důkaz či zdroj** | Konkrétní zdroj, ze kterého stav vychází. |
 | **Co je stále nutné** | Co musí existovat, než se stav smí zvýšit. |
 
@@ -29,10 +29,12 @@ Dvě doplňkové registry značky nejsou stavy produktu: **NEDOLOŽENO** znamen�
 | UTXO v2 wallet/CLI/SDK cesta funguje. | **ŽIVÉ** | `AGENTS.md` aktualizace 2026-08-22; `StatusV3.md`; `V31/L1/core/src/v3_tx.rs`. | Každý release musí mít E2E send/receive test bez secrets. |
 | L1 HTLC lock → claim fungoval na Edge. | **ŽIVÉ** | `NATIVE_L1_HTLC_REPORT.md`; `StatusV3.md` update 2026-08-23. | Opakovatelný test refund / failure mode a release evidence. |
 | Trinity mining je produkčně ověřen. | **ŽIVÉ** | `StatusV3.md`, `AGENTS.md`, rig E2E reports. | Oddělit GPU rig evidence od CPU-only Edge stavu v každé komunikaci. |
-| 1% coinbase slot jde aktuálně automaticky node operátorům. | **STAVBA** | `V31/L1/core/src/v3_template.rs` má default `node_reward_activation_height = u64::MAX`; `AGENTS.md` popisuje post-activation design. | Konkrétní activation height, on-chain 4-output coinbase a node payout evidence. |
-| Pool payout ledger má self-healing sweep (mrtvé tx → void + requeue, at-most-once). | **ŽIVÉ** | `defdcd84a` deployed 2026-10-28 (EDGE sha `1c159d7b73cf`): schema v11 `superseded_tx_id`, `void_payout_rows` s `total_paid` rollbackem, resurrect po UTXO/chain absence-proof + `ZION_PAYOUT_STUCK_AGE_SECS`; backlog 1 180 → klesá live; treasury canonical `zion1d2k`. | Gauge `zion_pool_payouts_unconfirmed*`, journal `payout_resurrect`, alert `ZionPoolPayoutStale`; QTC deferred zůstává 👤 treasury funding. |
+| 1% coinbase slot jde aktuálně automaticky node operátorům. | **NEPLATNÝ NÁROK** (dnes) | Před aktivací se slot nemintuje: web `supply.ts` počítá minted jako 99 % subsidy; `getSupplyInfo` 2026-10-29 vede nespálený 1% slot jako burned. Default `node_reward_activation_height = u64::MAX` v `v3_template.rs`. | Až 👤 zvolí activation height (1.B4) a on-chain 4-output coinbase. Do té doby se nárok „operátoři dostávají 1 %“ nesmí říkat. |
+| Pool payout ledger má self-healing sweep (mrtvé tx → void + requeue, at-most-once). | **ŽIVÉ** | `defdcd84a` deployed 2026-10-28: schema v11 `superseded_tx_id`, `void_payout_rows`, resurrect; 2026-10-29 schema **v13** (`height` = reward height, `inclusion_height` = inclusion) na poolu EDGE. Treasury canonical `zion1d2k`. | QTC deferred zůstává 👤 treasury funding. PRL `DRY_RUN` není flip. |
 | Síť má stovky nezávislých veřejných node operátorů. | **NEDOLOŽENO** | Existují primary/follower nody a dokumentace, ale současný evidence corpus nedokládá počet stovek. | Veřejná, privacy-respecting node census s metodikou. |
-| Premine treasury je uzamčena do výšky 144 000. | **ŽIVÉ (zámek) / STAVBA (unlock flow)** | `/api/dao/treasury` fail-closed: `unlock_height=144000`, `time_locked=true`, `admin_unlock_known=false`, `spendable=false` (lead 2026-09-25, height 57 826); on-chain 3-of-3 admin unlock + DAO proces. | Premine unlock dry-run na regtestu před ~144k (1.B5, ~27. 11.), rollout `getAdminUnlocks` do produkčního node RPC, 👤 rozhodnutí o exekuci. |
+| Explorer ukazuje čistou částku převodu (outputs minus change), ne hrubý součet výstupů. | **ŽIVÉ** | Web `src/lib/explorer/amount.ts` + deploy 2026-10-29; payout tx příklad 424 290 flowers hrubých → 4 737 ZION čistých. | Držet `amount_gross` / `change` / `is_change` vedle net částky, ať se hrubý a čistý údaj neslijí. |
+| `getUtxos` umí stránkovat a vrátit součet bez celého payloadu. | **ŽIVÉ** | Node `getUtxos` `limit`/`offset`/`total_count`/`total_amount` (2026-10-29). Whale ~106k výstupů sečten bez stažení všech. | Nesahat na konsensus; je to RPC tvar. |
+| Premine treasury je uzamčena do výšky 144 000. | **ŽIVÉ (zámek) / STAVBA (unlock flow)** | `/api/dao/treasury` fail-closed (`unlock_height=144000`). Dry-run unlocku na regtestu PASS 2026-10-28 (1.B5). | Výška ~144k (~27.–28. 11.) a 👤 rozhodnutí o exekuci. Dry-run není unlock na mainnetu. |
 
 ---
 
@@ -71,7 +73,9 @@ Dvě doplňkové registry značky nejsou stavy produktu: **NEDOLOŽENO** znamen�
 | Nárok | Stav | Důkaz či zdroj | Co je stále nutné |
 |---|---|---|---|
 | OASIS backend a samostatný web/provozní služba existují. | **ŽIVÉ** | `V31/L4/oasis`; `StatusV3.md`; live service matrix. | UX/security/privacy evidence pro každou veřejnou schopnost. |
-| UE 5.7, Nanite, Lumen, MetaHuman, WebGPU nebo Pixel Streaming klient jsou hotové. | **HORIZONT** | L4 obsahuje Axum API; audit nenalezl skutečný UE/WebGPU/Pixel Streaming klient. | POC, licenční analýza, performance/accessibility/security tests. |
+| UE 5.7, Nanite, Lumen, MetaHuman nebo Pixel Streaming klient jsou hotové. | **HORIZONT** | L4 backend je Axum API hry. UE/pixel-stream v repu nasazený není a je NON-DoD 3.3. | Samostatné rozhodnutí mimo DoD; licenční analýza a performance/a11y/security testy. |
+| WebGPU náhled OASIS v prohlížeči je hotový produkt. | **STAVBA** | OasisWeb `?gpu=webgpu`, brány G0–G2 (checklist N4). Čtyři parity gapy v `docs/3.2/WebOasis.md`. | Plný axe, device matrix, privacy review (navržené V33-10). Není to GPU těžba ani serverový render. |
+| Marketplace umí nákup na firmu (IČO/DIČ) a historii stavů objednávky. | **ŽIVÉ** | `0025b5ada` (2026-10-29): checkout toggle, validace IČO, `statusHistory`, faktura, admin timeline. Nasazeno na EDGE2. | E2E platební cesty jako celek (5.B6) pořád otevřený — B2B pole ≠ kompletní e-shop gate. |
 | Free World tracker/API a grant/project workflow existují. | **ŽIVÉ** | `V31/L5/free-world/src/api.rs`; `StatusV3.md`; `V31/STATUS.md`. | Public portal, evidence registry a real pilot impact review. |
 | L5 fond dnes vyplácí granty. | **NEPLATNÝ NÁROK** (dnes) | Gate G10 (`docs/3.2/L5_L6_ACTIVATION_PLAN.md`): žádná automatická výplata; `V31/L2/dao/src/runtime.rs` exekuce je summary-only. | DAO UI, výplatní tx flow, guardian multisig, první impact packet. |
 | Zahrada Genesis (Sabacheira, Tomar, Portugalsko) je fyzické místo v aktivním rozvoji. | **STAVBA** | `public/V3/L5/docs/COMMUNITIES/genesis-garden.md` (Fáze 0 ✅, Fáze 1 🟡); web `/terranova/genesis`; OASIS panel *Active*. | Pozemek, registrovaná entita, GPS, nezávislé ověření. Detail: [`BodhiGaia/03`](../BodhiGaia/03-Zahrada-Genesis.md). |
@@ -93,7 +97,7 @@ Dvě doplňkové registry značky nejsou stavy produktu: **NEDOLOŽENO** znamen�
 Tato pravidla nevyžadují mazání předchozího kreativního materiálu. Znamenají, že jeho budoucí čtení se řídí následujícím:
 
 1. Předchozí „canonical plan“ [`V33_NIRVANA_MASTER_PLAN.md`](../../../docs/3.2/V33_NIRVANA_MASTER_PLAN.md) je **technický companion / zdroj práce**, zatímco `MiseAmenti/` je integrační canon a registr pravdy.
-2. Všechny formulace „Passkeys“, „plný multichain“, „autonomní agenti“, „UE 5.7“, „WebGPU/Pixel Streaming“ a „quantum/warp engine“ se čtou jako **STAVBA/HORIZONT/HYPOTÉZA**, podle tabulek výše.
+2. Formulace „Passkeys“, „plný multichain“, „autonomní agenti“, „UE 5.7“, „Pixel Streaming“ a „quantum/warp engine“ se čtou jako **STAVBA/HORIZONT/HYPOTÉZA**, podle tabulek výše. WebGPU náhled v prohlížeči je **STAVBA** (G0–G2), ne hotový klient a ne těžba.
 3. „Global Assimilation“ znamená pouze **dobrovolnou interoperabilitu a spolupráci**; nikdy ne imperativ, nábor nebo kulturní nadřazenost.
 4. Příběhy `nirvana/` a `NirvanaCloud/` zůstávají hodnotnou narativní vrstvou, ale jejich „Kotva pravdy“ se při rozporu aktualizuje na základě tohoto registru.
 5. Tokenomické tvrzení o 1 % se vždy doplní podmínkou activation height: **node reward až po aktivaci; jinak burn**.
@@ -113,4 +117,4 @@ Tato pravidla nevyžadují mazání předchozího kreativního materiálu. Zname
 
 ---
 
-*[Zpět na index Mise Amenti → `README.md`](./README.md)*
+*[Zpět na index Mise Amenti → `README.md`](README.md)*

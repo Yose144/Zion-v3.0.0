@@ -132,10 +132,7 @@ export const CONFIG = {
   BIOMETRIC_ENABLED: true,
   AUTO_LOCK_MINUTES: 5,
   
-  // Version
-  VERSION: '3.0.0',
-  BUILD_NUMBER: 7,
-  CODENAME: 'TerraNova',
+  // App build identity lives once, next to NETWORK_RELEASE_LABEL (below).
 
   // ── Hiran AI Inference + Hiranyagarbha Orchestrator ─────────────────────────
   AI: {
@@ -218,9 +215,10 @@ export const CONFIG = {
   },
 
   // ── App version ───────────────────────────────────────────────────────────
+  // App binary stays 3.0.6 until a store release. The network stage is the label below.
   VERSION: '3.0.6',
   BUILD_NUMBER: '8',
-  CODENAME: 'Trinity',
+  CODENAME: 'Mainnet Beta',
   NETWORK_RELEASE_LABEL: 'ZION v3.2 · Mainnet Beta',
   CLIENT_STAGE: 'preview',
 };

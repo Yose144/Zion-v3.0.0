@@ -2,15 +2,15 @@
 
 import Link from 'next/link';
 import { ArrowRight, BookOpen, ExternalLink, ShieldCheck } from 'lucide-react';
-import { NIRVANA_WORKSTREAMS, type NirvanaWorkstream } from '@/lib/nirvana-roadmap';
+import { NIRVANA_PUBLIC_TITLE, NIRVANA_WORKSTREAMS, type NirvanaWorkstream } from '@/lib/nirvana-roadmap';
 import { Panel, PanelHeader, type Lang } from './shared';
 
 const Copy = {
   kicker: { cs: 'Mise Amenti · prováděcí rámec', en: 'Mise Amenti · execution framework' },
-  title: { cs: 'Plán v3.3 „Nirvana“', en: 'The v3.3 “Nirvana” plan' },
+  title: NIRVANA_PUBLIC_TITLE,
   sub: {
-    cs: 'Šest oblastí práce pro horizont 3.3 — každá má předpoklady a ověřitelný výsledek, ne slíbený termín.',
-    en: 'Six areas of work on the 3.3 horizon — each has prerequisites and a verifiable outcome, not a promised date.',
+    cs: 'Šest oblastí práce pro horizont 3.3 — každá má předpoklady a ověřitelný výsledek, ne slíbený termín. Loď je obraz sjednocení, ne nové jméno fází a ne hotové vydání.',
+    en: 'Six areas of work on the 3.3 horizon — each has prerequisites and a verifiable outcome, not a promised date. The boat is an image of unification, not a new name for the phases and not a finished release.',
   },
   baseline: {
     cs: 'Nejdřív základ: stabilní provoz, bezpečnostní review a otestovaná obnova musí být doloženy předtím, než se šest stop posune dál.',

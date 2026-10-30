@@ -22,7 +22,7 @@ const PUBLIC_API_BASE = 'https://app.zionterranova.com';
 const PUBLIC_API_ADDRESS = `${PUBLIC_API_BASE}/api/blockchain/address`;
 const PUBLIC_API_BROADCAST = `${PUBLIC_API_BASE}/api/blockchain/broadcast`;
 
-// Canonical V31 Mainnet Alpha L1 bridge vault (E4 round-trip, 2026-08-22).
+// Canonical L1 bridge vault (E4 round-trip, 2026-08-22).
 const BRIDGE_VAULT = 'zion1j3w3h7k8m635h734y786j5804305m822t5uk546';
 
 const WalletGenerator = require('../src/wallet-generator');

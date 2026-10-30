@@ -1,8 +1,8 @@
 # ZION V3.3 „NIRVANA" — Mapa
 
-> **2026-10-26:** public lifecycle sync (Mainnet Beta labely) připraven lokálně — NENASAZENO; otevřené položky beze změny.
+> **2026-10-29:** čtecí paluba [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md) (HEAD `4040126ad`). Není nový řádek hierarchie pravdy — je čtení řádků 1–6. Veřejný podtitul „loď Království srdce“ nepřejmenovává N0–N7. Beta labely na webu jsou nasazené od 26. 10.
 
-> **Datum:** 2026-10-26 · **Autor:** Devin (scan repa + post-audit verifikace EDGE/EDGE2)
+> **Datum:** 2026-10-26 (struktura) · doplněk 2026-10-29 · **Autor:** Devin (scan repa + post-audit verifikace EDGE/EDGE2)
 > **K čemu:** jedna navigační mapa nad všemi plány v3.3 — co existuje, co platí, jak do sebe zapadají číslování (N / M / R / V33 / W / 3.2.x), na čem co závisí a kde je dnes každá komponenta ekosystému.
 > **Sesterské dokumenty:** checklist [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · execution plán [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md) · cesta k 3.2 Stable [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md)
 
@@ -17,9 +17,9 @@ Při rozporu vyhrává vyšší řádek:
 3. **Execution** — `NIRVANA-V3.3-PLAN.md` (fáze N0–N7, DoD V33-1…9) + checklist + `3.2.1-3.2.9_PLAN.md` (detail N0)
 4. **Kanonický rámec** — Exekuční charta 3.3 ([`04-Exekucni-Charta-3.3.md`](canon/books/MiseAmenti/04-Exekucni-Charta-3.3.md): workstreamy M0–M8, release gates R1–R9) + [`05-Autonomie-a-Bezpecnost.md`](canon/books/MiseAmenti/05-Autonomie-a-Bezpecnost.md)
 5. **Vize** — [`docs/3.2/V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md) (původní N1–N6, harmonogram září–prosinec 2026 už neplatí)
-6. **Narativ** — `canon/books/nirvana/`, `NirvanaCloud/`, `BodhiGaia/`, `Issobella/`… (platí jejich „Kotva pravdy")
+6. **Narativ** — `canon/books/nirvana/`, `NirvanaCloud/`, `BodhiGaia/`, `Issobella/`, `KralovstviSrdce/`… (platí jejich „Kotva pravdy")
 
-Veřejná podoba 3.3 = `apps/website-v2.9/src/lib/nirvana-roadmap.ts` (`/roadmap#nirvana`, `/maitreya#plan-v33`) — nesmí se rozcházet s řádky 1–4.
+Veřejná podoba 3.3 = `apps/website-v2.9/src/lib/nirvana-roadmap.ts` (`/roadmap#nirvana`, `/zion-archive#plan-v33`) — nesmí se rozcházet s řádky 1–4. Podtitul od 29. 10.: „3.3 Nirvana — loď Království srdce“. [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md) tuhle větu váže na palubu a není nad řádkem 3.
 
 ---
 
@@ -32,11 +32,13 @@ Scan: `docs/`, `canon/`, root, `Hiran/`, `V31/`, `apps/website-v2.9/src` (hledá
 | Dokument | Role pro v3.3 | Aktuálnost k 26. 10. | Workstream |
 |---|---|---|---|
 | [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md) | fáze N0–N7, DoD V33-1…9, rizika | §1 = snapshot 21. 10. (topologie, G8 run #2, disk) — přepsáno mapou + checklistem | vše |
-| [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) | proveditelný checklist s vlastníky 🤖/🔀/👤 | ✅ aktualizováno 26. 10. | vše |
+| [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) | proveditelný checklist s vlastníky 🤖/🔀/👤 | ✅ struktura 26. 10.; posun 28.–29. 10. v rámečku nahoře (DoD pořád 0/9) | vše |
+| [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md) | čtecí paluba lodi; není nad hierarchií pravdy | ✅ 29. 10. | vše |
+| [`docs/3.3/ENGINE-SRDCE.md`](docs/3.3/ENGINE-SRDCE.md) | spec `zion-compute` (Hash/Care/Scene), bez kódu | ✅ 29. 10., mimo DoD | N3 / N4 |
 | [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) | N0 detail: ALPHA → BETA → RC → STABLE, 9 sekcí | ✅ přepsáno 26. 10. | N0 |
-| [`AUDIT-3.2-BETA-PLAN.md`](AUDIT-3.2-BETA-PLAN.md) | alpha → beta gate | ✅ provedeno (root `3.2.0-beta.1`) | N0 |
-| [`AUDIT-REPORT.md`](AUDIT-REPORT.md) | interní audit money-paths, vlny 1–7, residua | ✅ 26. 10. | N0 / N1 / N2 |
-| [`POOL-FLEET-EXPANSION-PLAN.md`](POOL-FLEET-EXPANSION-PLAN.md) | pro-pool parity + Fleet OS, vlny W1–W7 | ✅ schválen 26. 10., W1 běží (A1.1 nasazeno, A1.2 v HEAD) | N2 |
+| [`AUDIT-3.2-BETA-PLAN.md`](docs/plans/AUDIT-3.2-BETA-PLAN.md) | alpha → beta gate | ✅ provedeno (root `3.2.0-beta.1`) | N0 |
+| [`AUDIT-REPORT.md`](docs/plans/AUDIT-REPORT.md) | interní audit money-paths, vlny 1–7, residua | ✅ 26. 10. | N0 / N1 / N2 |
+| [`POOL-FLEET-EXPANSION-PLAN.md`](docs/plans/POOL-FLEET-EXPANSION-PLAN.md) | pro-pool parity + Fleet OS, vlny W1–W7 | ✅ schválen 26. 10., W1 běží (A1.1 nasazeno, A1.2 v HEAD) | N2 |
 | [`docs/3.2/V3.2checklistu.md`](docs/3.2/V3.2checklistu.md) | 3.2 živý checklist | ⚠️ 29. 9. — obsah převzat do 3.2.x plánu | N0 |
 | [`docs/3.2/ROADMAP.md`](docs/3.2/ROADMAP.md) + [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md) | gate registr G1–G11, fáze E–J | ⚠️ 28. 9. (G8/G9 texty zastaralé) | N0 |
 | [`docs/3.2/RELEASE_ARTIFACTS.md`](docs/3.2/RELEASE_ARTIFACTS.md) + [`V31/RELEASE_RUNBOOK.md`](V31/RELEASE_RUNBOOK.md) | release procedura + provenance | draft, neprovedeno | N0 / N7 |
@@ -70,12 +72,12 @@ Scan: `docs/`, `canon/`, root, `Hiran/`, `V31/`, `apps/website-v2.9/src` (hledá
 | **N1 QTC** | [`QUANTUS-INTEGRATION-PLAN.md`](docs/3.2/QUANTUS-INTEGRATION-PLAN.md) (F0 ✅, F1/F2 🚧, F4 pipeline, F8 rozhodnuto) | native leg živý; most ne |
 | **N1/N5 DAO** | [`DAO.md`](docs/3.2/DAO.md) §8 (D1 ✅ merged, D2 většinou merged — část nenasazena, D3 = horizont) | živé |
 | **N2 pool/revenue** | `POOL-FLEET-EXPANSION-PLAN.md`, [`MULTI-ALGO-ROADMAP.md`](docs/3.2/MULTI-ALGO-ROADMAP.md) (fáze A–D), `PEARL-POUW-INTEGRATION.md`, `PEARL-OPTIMIZATION.md`, `AUTONOMOUS_PROFIT_ROUTER.md` (E3), `QPOW*.md`, `VASTAI-MINING.md`, `VastRTX.md` | pool živý; W1 běží |
-| **N3 Hiran** | `Hiran/2.4/*` (+ `docs/3.0.6/HIRAN_V2.4_DEV_PLAN.md`), `Hiran/2.5/README.md` (+ `HIRAN_EVOLUTION_2.3_TO_2.5_AMATHABOJ.md`), [`HIRAN-MARKETPLACE-PLAN.md`](HIRAN-MARKETPLACE-PLAN.md) (F1 ✅, F2–F4), `Vast-Inference.md`, `docs/3.2/HiranDev.md`, `HiranInterface.md`, `masterAI.md` | Maestro v2.4 živý read-only |
+| **N3 Hiran** | `Hiran/2.4/*` (+ `docs/3.0.6/HIRAN_V2.4_DEV_PLAN.md`), `Hiran/2.5/README.md` (+ `HIRAN_EVOLUTION_2.3_TO_2.5_AMATHABOJ.md`), [`HIRAN-MARKETPLACE-PLAN.md`](docs/plans/HIRAN-MARKETPLACE-PLAN.md) (F1 ✅, F2–F4), `Vast-Inference.md`, `docs/3.2/HiranDev.md`, `HiranInterface.md`, `masterAI.md` | Maestro v2.4 živý read-only |
 | **N4 OASIS** | [`OasisChecklist.md`](docs/3.2/OasisChecklist.md), [`WebOasis.md`](docs/3.2/WebOasis.md) (G0–G2 ✅, 4 otevřené), `oasis.md`, [`ESHOP_WORKFLOW_PLAN.md`](docs/3.2/ESHOP_WORKFLOW_PLAN.md) | preview živý |
 | **N5 Free World** | [`L5_L6_ACTIVATION_PLAN.md`](docs/3.2/L5_L6_ACTIVATION_PLAN.md) (G10), `canon/books/BodhiGaia/` (+ `pilots/GENESIS-ROSE-001.md`), kandidáti `docs/3.2/L5*.md`, `TreeMarias.md`, `UluruFestival.md`, `BohemiaDao.md` | portál živý; scanner ✅ na tipu (P0-1 opraven 26. 10.) |
 | **N6 Issobella** | `L5_L6_ACTIVATION_PLAN.md`, `canon/books/Issobella/` (Kotva pravdy), `V31/L6/issobella/docs/` | tracker živý |
 | **N7 launch** | [`COINGECKO_REAPPLY_ROADMAP.md`](docs/3.2/COINGECKO_REAPPLY_ROADMAP.md) (17 prerekvizit), `OneLoveV3.2.md`, `docs/F3-IA-MAP.md` | nezahájeno |
-| **N0 infra** | [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md), [`docs/ECOSYSTEM-REBUILD-PLAN.md`](docs/ECOSYSTEM-REBUILD-PLAN.md) (F0–F6 ✅), `docs/ECOSYSTEM-INVENTORY.md`, [`DASHBOARD-AUDIT-2026-10-26.md`](DASHBOARD-AUDIT-2026-10-26.md), `infra/RUNBOOK.md` | hotovo; provozní dluh v 3.2.8 |
+| **N0 infra** | [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md), [`docs/ECOSYSTEM-REBUILD-PLAN.md`](docs/ECOSYSTEM-REBUILD-PLAN.md) (F0–F6 ✅), `docs/ECOSYSTEM-INVENTORY.md`, [`DASHBOARD-AUDIT-2026-10-26.md`](docs/plans/DASHBOARD-AUDIT-2026-10-26.md), `infra/RUNBOOK.md` | hotovo; provozní dluh v 3.2.8 |
 
 ### 1.5 Narativní korpus (není execution, ale musí sedět s registrem)
 

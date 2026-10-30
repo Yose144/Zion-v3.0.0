@@ -21,7 +21,7 @@ import {
   Globe2,
 } from 'lucide-react';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
-import { NIRVANA_WORKSTREAMS } from '@/lib/nirvana-roadmap';
+import { NIRVANA_PUBLIC_TITLE, NIRVANA_WORKSTREAMS } from '@/lib/nirvana-roadmap';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 
@@ -98,8 +98,8 @@ const t = {
     lastUpdated: 'Poslední aktualizace',
     nirvana: 'Horizont · 3.3 Nirvana',
     nirvanaSub: 'Aspirativní architektonický cíl po stabilním vydání 3.2.',
-    nirvanaTitle: '3.3 Nirvana — Global Assimilation & Attention',
-    nirvanaDisclaimer: 'Nirvana je dlouhodobý aspirativní cíl, nikoli zaručené datum vydání. Představuje Velké Sjednocení celého ZION ekosystému.',
+    nirvanaTitle: NIRVANA_PUBLIC_TITLE.cs,
+    nirvanaDisclaimer: 'Nirvana je dlouhodobý aspirativní cíl, nikoli zaručené datum vydání. Loď Království srdce je obraz sjednocení ekosystému, ne nové jméno fází a ne hotové vydání. Kniha téhož jména je příběh.',
     nirvanaCta: 'Plán, knihy a podmínky 3.3',
   },
   en: {
@@ -174,8 +174,8 @@ const t = {
     lastUpdated: 'Last updated',
     nirvana: 'Horizon · 3.3 Nirvana',
     nirvanaSub: 'An aspirational architectural target after a stable 3.2 release.',
-    nirvanaTitle: '3.3 Nirvana — Global Assimilation & Attention',
-    nirvanaDisclaimer: 'Nirvana is a long-term aspirational target, not a committed release date. It represents the grand unification of the whole ZION ecosystem.',
+    nirvanaTitle: NIRVANA_PUBLIC_TITLE.en,
+    nirvanaDisclaimer: 'Nirvana is a long-term aspirational target, not a committed release date. The boat called Kingdom of the Heart is an image of unifying the ecosystem, not a new name for the phases and not a finished release. The book of the same name is a story.',
     nirvanaCta: 'The 3.3 plan, books & conditions',
   },
 };

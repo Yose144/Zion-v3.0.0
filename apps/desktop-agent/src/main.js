@@ -1,4 +1,4 @@
-// ZION V31 Mainnet Alpha v3.2.0 "Triple Stream" - Main Process
+// ZION V31 Mainnet Beta v3.2.0 "Triple Stream" - Main Process
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
 // Work around NVIDIA/Wayland GPU sandbox segfaults by forcing the X11 Ozone
@@ -1515,7 +1515,7 @@ function loadConfig() {
         saveConfig(merged);
       }
       merged.algorithm = normalizeAlgorithmName(merged.algorithm || DEFAULT_CONFIG.algorithm);
-      // V31 Mainnet Alpha: triple-stream is honored when explicitly enabled in
+      // V31 Mainnet Beta: triple-stream is honored when explicitly enabled in
       // config (e.g. one-click auto-start). Ensure it stays a boolean.
       merged.tripleStream = !!merged.tripleStream;
       merged.desktopPureZionDefault = DESKTOP_PURE_ZION_DEFAULT;

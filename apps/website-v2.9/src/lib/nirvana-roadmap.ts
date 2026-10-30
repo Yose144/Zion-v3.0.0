@@ -1,6 +1,13 @@
 // Public 3.3 "Nirvana" workstreams — shared between /zion-archive#plan-v33 and /roadmap#nirvana.
 // Derived from the canonical execution charter (Mise Amenti): every entry is a goal/horizon
 // with measurable acceptance criteria — never a completed capability or a promised date.
+// Subtitle "loď Království srdce" is the public image of unification. It does not rename
+// phases N0–N7 and it is not the literary book (that book stays a story).
+
+export const NIRVANA_PUBLIC_TITLE = {
+  cs: '3.3 Nirvana — loď Království srdce',
+  en: '3.3 Nirvana — the boat called Kingdom of the Heart',
+} as const;
 
 export interface NirvanaWorkstream {
   id: string;

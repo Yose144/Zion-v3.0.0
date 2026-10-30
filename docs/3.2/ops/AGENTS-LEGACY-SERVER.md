@@ -12,7 +12,7 @@
 > - `## Memory pressure incident 2026-07-24` — `MALLOC_ARENA_MAX=1` past (trik je stále platný, viz `## 6` níže)
 >
 > **Aktuální realita** (EDGE2 split, 2026-10-21) je v kořenovém [`AGENTS.md`](../../../AGENTS.md)
-> a v [`INFRA-SPLIT-PLAN.md`](../../../INFRA-SPLIT-PLAN.md).
+> a v [`INFRA-SPLIT-PLAN.md`](../../plans/INFRA-SPLIT-PLAN.md).
 
 ---
 

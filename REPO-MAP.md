@@ -78,9 +78,9 @@ Tyto adresáře zůstávají v rootu, protože **jejich jméno je součást prod
 | [`AGENTS.md`](AGENTS.md) | operativní pravidla (topologie, deploy, security, subtree) — ~130KB runbook |
 | [`docs/ECOSYSTEM-INVENTORY.md`](docs/ECOSYSTEM-INVENTORY.md) | **měřená fakta** o boxech (služby, porty, /opt/zion, DNS) |
 | [`docs/ECOSYSTEM-REBUILD-PLAN.md`](docs/ECOSYSTEM-REBUILD-PLAN.md) | plán fází F1–F6 + batch execution log + F5 deferral mapa |
-| [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md) | EDGE→EDGE2 split execution log + rollback |
+| [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md) | EDGE→EDGE2 split execution log + rollback |
 | [`infra/dns/zionterranova.com.zone.md`](infra/dns/zionterranova.com.zone.md) | DNS zóna + verifikační runbook |
-| [`zionterranova.com.zone`](zionterranova.com.zone) | raw WebGlobe zone file (import-ready) |
+| [`zionterranova.com.zone`](infra/dns/zionterranova.com.zone) | raw WebGlobe zone file (import-ready) |
 
 ---
 *Udržuj při každém strukturálním přesunu — poslední update: F2b8 (tools→infra, watchdog probe, F5 deferral).*

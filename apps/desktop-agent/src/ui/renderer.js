@@ -1,4 +1,4 @@
-// ZION V31 Mainnet Alpha v3.1.0 - Renderer Process
+// ZION V31 Mainnet Beta v3.2.0 - Renderer Process
 // UI logic and state management
 
 // ── Logging: only user-visible events + errors in console.log.
@@ -6578,7 +6578,7 @@ function initBridgeView() {
   const resultEl   = document.getElementById('bridge-lock-tx-result');
   const txHashEl   = document.getElementById('bridge-lock-txhash');
 
-  // Canonical V31 Mainnet Alpha bridge vault (E4 round-trip, 2026-08-22).
+  // Canonical L1 bridge vault (E4 round-trip, 2026-08-22).
   const BRIDGE_VAULT = 'zion1j3w3h7k8m635h734y786j5804305m822t5uk546';
 
   // Auto-generate memo when EVM address changes

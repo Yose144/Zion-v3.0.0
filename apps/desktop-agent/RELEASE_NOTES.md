@@ -2,7 +2,7 @@
 
 **Release:** `v3.2.0`  
 **Date:** 2026-08-21  
-**Status:** Mainnet Alpha
+**Status:** Mainnet Beta (network stage since 2026-10-26; the v3.2.0 build itself is from 2026-08-21 and the version was not bumped when the stage was relabeled)
 
 ## Overview
 

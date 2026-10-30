@@ -16,7 +16,7 @@
   - **EDGE** `62.171.141.136` (vmi3425821) — nginx ingress (všechny veřejné vhosty), **pool** 8444/8445 (stratum + TLS) + API 8080, fallback-miner, node2 (9446) + node3 (9447) followeři, regtest BTC, dashboard (8766), grafana, prometheus, fail2ban.
   - **Tunely:** `zion-chain-tunnel` (edge→EDGE2) a `zion-edge-tunnel` (EDGE2→edge), oba s `permitopen` whitelist. Latence edge↔EDGE2 ≈ 1 ms.
   - **Pool zůstává na EDGI záměrně** — stratum musí vidět reálné IP minerů (`ZION_POOL_MAX_SESSIONS_PER_IP=10` + IP ban); stream proxy by je sjednotil pod jednu IP a rozbil per-IP limity.
-  - Plán + execution log + rollback skripty: [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md).
+  - Plán + execution log + rollback skripty: [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md).
 - **Lifecycle (2026-10-26):** **3.2.0 Mainnet Beta** — stupeň zralosti, NE Mainnet Stable ani nový chain/fork. Runtime verze zůstává `3.2.0`; handshake ID `zion-v3-node/3.1.0-alpha` je záměrně zachováno (verze protokolu ≠ stupeň). Topologie: **EDGE2** = primary node + web ingress + app stack, **EDGE** = pool + followeři + ops. Detailní plán: [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md).
 - **Active mainnet track:** `V31/` workspace — verze `3.2.0`, protokol `zion-v3-node/3.1.0-alpha`. V31 cutover (2026-08-04) dokončen, V3 archivován v `archive/V3/`.
 - **Chain:** ~90 400+ bloků, difficulty ~16k (LWMA-60, `MIN_SOLVE_TIME=6`, `MAX_SOLVE_TIME=360`, ±50 % clamp na blok). Genesis hash (V31 native): `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` · (V3 compat): `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`.
@@ -41,7 +41,7 @@
 | **3.2 technical execution plan** | [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md) |
 | **Canonical public docs / whitepapers** | [`canon/books/README.md`](canon/books/README.md) |
 | **Live status + topology** | [`StatusV3.md`](docs/3.2/StatusV3.md) |
-| **EDGE → EDGE2 split plan + execution log** | [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md) |
+| **EDGE → EDGE2 split plan + execution log** | [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md) |
 | **V3.3 NIRVANA execution checklist** | [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) |
 | **Post-cutover execution plan** | [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V31 detailed status** | [`V31/STATUS.md`](V31/STATUS.md) |
@@ -126,7 +126,7 @@ ZION_STREAM3_FORCE_COIN=MONERO ./target/release/zion-miner \
 
 ## Network topology
 
-Aktuální rozdělení EDGE/EDGE2 je shrnuté také v úvodu [`AGENTS.md`](AGENTS.md); detailní stav a rollback postup jsou v [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md). [`StatusV3.md`](docs/3.2/StatusV3.md) obsahuje starší technický/statusový kontext a nemusí odrážet poslední změny infrastruktury. Stručně:
+Aktuální rozdělení EDGE/EDGE2 je shrnuté také v úvodu [`AGENTS.md`](AGENTS.md); detailní stav a rollback postup jsou v [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md). [`StatusV3.md`](docs/3.2/StatusV3.md) obsahuje starší technický/statusový kontext a nemusí odrážet poslední změny infrastruktury. Stručně:
 
 - **EDGE2** `207.180.217.100` — V31 **primary** node, chain stack (bitcoind/quantus/pearl), multichain/WARP, DAO, OASIS, Free World, Issobella, NCL, ZIS, db-sync, PostgreSQL, website, marketplace, ai-native, btcunlock.
 - **EDGE** `62.171.141.136` — nginx public ingress, **pool** (stratum 8444/8445 + API 8080), fallback-miner, follower nodes node2/node3, regtest BTC, dashboard, grafana/prometheus.
@@ -151,7 +151,7 @@ This repository has one source of truth per topic:
 | **Post-cutover execution plan** | [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V31 detailed status** | [`V31/STATUS.md`](V31/STATUS.md) |
 | **V3 archive** | [`archive/V3/README.md`](archive/V3/README.md) |
-| **EDGE → EDGE2 split plan + rollback** | [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md) |
+| **EDGE → EDGE2 split plan + rollback** | [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md) |
 | **V3.3 NIRVANA execution checklist** | [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) |
 | **MarketPlace ZION L1 bonus payout** | [`apps/MarketPlace/PAYOUT.md`](apps/MarketPlace/PAYOUT.md) |
 | **Operator runbook + pravidla** | [`AGENTS.md`](AGENTS.md) |
@@ -166,4 +166,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-10-26 · Version: 3.2.0 (V31 Mainnet Beta, protocol 3.1.0-alpha) · Topologie: EDGE2 primary + web ingress + app stack / EDGE pool + followeři + ops (viz [`INFRA-SPLIT-PLAN.md`](INFRA-SPLIT-PLAN.md)) · 3.3 NIRVANA: [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · 3.2 "One Love" docs: [`canon/books/README.md`](canon/books/README.md) · 3.1 archived reports: [`docs/3.1/README.md`](docs/3.1/README.md) · Live status: [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*
+*Last updated: 2026-10-26 · Version: 3.2.0 (V31 Mainnet Beta, protocol 3.1.0-alpha) · Topologie: EDGE2 primary + web ingress + app stack / EDGE pool + followeři + ops (viz [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md)) · 3.3 NIRVANA: [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · 3.2 "One Love" docs: [`canon/books/README.md`](canon/books/README.md) · 3.1 archived reports: [`docs/3.1/README.md`](docs/3.1/README.md) · Live status: [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*
