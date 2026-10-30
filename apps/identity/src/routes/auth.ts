@@ -22,7 +22,7 @@ import {
   EmailError,
 } from '../lib/email.js';
 import { auditBg } from '../lib/audit.js';
-import { withLinkProvenance } from '../lib/provenance.js';
+import { linkProven, withLinkProvenance } from '../lib/provenance.js';
 import { inc, M } from '../lib/metrics.js';
 import { createHash } from 'node:crypto';
 
@@ -752,7 +752,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(404).send({ error: 'NOT_FOUND' });
     }
 
-    return { linked, user: { ...user, linkedAddresses: withLinkProvenance(user.linkedAddresses) } };
+    return {
+      linked: { ...linked, proven: linkProven(linked.chainType) },
+      user: { ...user, linkedAddresses: withLinkProvenance(user.linkedAddresses) },
+    };
   });
 
   // ── DELETE /link/:address — unlink a secondary address ─────────
