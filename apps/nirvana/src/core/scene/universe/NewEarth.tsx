@@ -202,21 +202,49 @@ function Moon() {
   );
 }
 
-/** Slunce — viditelný zdroj světla ve směru directionalLight. */
+/** Slunce — reálná textura (Solar System Scope, CC BY 4.0, NASA data)
+ *  + korona + pomalá rotace + puls. Ve směru directionalLight. */
 function Sun() {
+  const sun = useRef<THREE.Mesh>(null);
+  const corona = useRef<THREE.MeshBasicMaterial>(null);
+  const [tex, setTex] = useState<THREE.Texture | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    new THREE.TextureLoader().load('/textures/sun-2k.jpg', (t) => {
+      t.colorSpace = THREE.SRGBColorSpace;
+      if (alive) setTex(t);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useFrame(({ clock }, delta) => {
+    const t = clock.getElapsedTime();
+    if (sun.current) sun.current.rotation.y += delta * 0.02;
+    if (corona.current) corona.current.opacity = 0.14 + Math.sin(t * 1.3) * 0.05;
+  });
+
   return (
     <group position={[34, 14, -26]}>
-      <mesh>
+      <mesh ref={sun}>
+        <sphereGeometry args={[3.2, 48, 48]} />
+        <meshBasicMaterial map={tex ?? undefined} color={tex ? '#ffffff' : '#ffb84d'} />
+      </mesh>
+      {/* vnitřní korona */}
+      <mesh scale={1.18}>
         <sphereGeometry args={[3.2, 24, 24]} />
-        <meshBasicMaterial color="#fcd116" />
+        <meshBasicMaterial ref={corona} color="#ff9a3c" transparent opacity={0.14} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.BackSide} />
       </mesh>
-      <mesh scale={1.5}>
+      {/* vnější žár */}
+      <mesh scale={1.6}>
         <sphereGeometry args={[3.2, 16, 16]} />
-        <meshBasicMaterial color="#e41e2b" transparent opacity={0.16} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#e4661e" transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
-      <mesh scale={2.4}>
+      <mesh scale={2.6}>
         <sphereGeometry args={[3.2, 12, 12]} />
-        <meshBasicMaterial color="#fcd116" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#fcd116" transparent opacity={0.045} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
