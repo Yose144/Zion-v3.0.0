@@ -78,8 +78,11 @@ copy_if_exists() {
     local src="$1"
     local dest_dir="$2"
     if [[ -f "$src" ]]; then
-        cp "$src" "${dest_dir}/"
-        log "${GREEN}  ✓ $(basename $src)${NC}"
+        if cp "$src" "${dest_dir}/" 2>/dev/null; then
+            log "${GREEN}  ✓ $(basename $src)${NC}"
+        else
+            log "${YELLOW}  ⚠  $(basename $src) unreadable — skipped${NC}"
+        fi
     else
         log "${YELLOW}  ⚠  $(basename $src) not found${NC}"
     fi
