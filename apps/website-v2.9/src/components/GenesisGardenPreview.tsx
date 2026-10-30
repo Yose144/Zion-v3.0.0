@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 type Lang = 'cs' | 'en';
@@ -11,33 +11,41 @@ interface PyramidData {
   position: [number, number, number];
   height: number;
   radius: number;
-  color: string;
+  accent: string;
   label: { cs: string; en: string };
 }
 
+/* Uspořádání dle masterplanu — trojúhelník kolem centrální zahrady:
+ * Vědomí vzadu (sever), Paměť vlevo vpředu, Budoucnost vpravo vpředu.
+ * V hero mají všechny podobnou velikost, Vědomí o něco vyšší. */
 const PYRAMIDS: PyramidData[] = [
   {
-    position: [0, 0, -2.2],
-    height: 3.2,
-    radius: 1.55,
-    color: '#34d399',
-    label: { cs: 'CONSCIOUSNESS — komunita & meditace', en: 'CONSCIOUSNESS — community & meditation' },
+    // II — VĚDOMÍ (Consciousness): největší, vzadu — meditace & komunita
+    position: [0, 0, -3.4],
+    height: 6.6,
+    radius: 3.5,
+    accent: '#7dd8a8',
+    label: { cs: 'VĚDOMÍ — komunita & meditace', en: 'CONSCIOUSNESS — community & meditation' },
   },
   {
-    position: [-3.6, 0, 2.6],
-    height: 2.3,
-    radius: 1.15,
-    color: '#f6ad55',
-    label: { cs: 'MEMORY — semínka & znalosti', en: 'MEMORY — seeds & knowledge' },
+    // I — PAMĚŤ (Memory): knihovna, archiv, semínka
+    position: [-4.9, 0, 2.7],
+    height: 5.2,
+    radius: 2.75,
+    accent: '#e8c98a',
+    label: { cs: 'PAMĚŤ — semínka & znalosti', en: 'MEMORY — seeds & knowledge' },
   },
   {
-    position: [3.6, 0, 2.6],
-    height: 2.3,
-    radius: 1.15,
-    color: '#a78bfa',
-    label: { cs: 'FUTURE — ZION & technologie', en: 'FUTURE — ZION & technology' },
+    // III — BUDOUCNOST (ZION Lab): technologie, node
+    position: [4.9, 0, 2.7],
+    height: 5.2,
+    radius: 2.75,
+    accent: '#a8c8e8',
+    label: { cs: 'BUDOUCNOST — ZION & technologie', en: 'FUTURE — ZION & technology' },
   },
 ];
+
+const CORNER = Math.PI / 4; // rohy čtvercové základny pod osami
 
 /** River Nabão — meanders along the eastern edge of the site (Agroal spring side) */
 const RIVER_POINTS: [number, number][] = [
@@ -54,19 +62,19 @@ const RIVER_POINTS: [number, number][] = [
   [9.2, 26],
 ];
 
-/** Caminho do Jardim — pilgrim path from the west (Fátima side) to the stone ring, then to the albergue */
+/** Caminho do Jardim — pilgrim path from the west (Fátima side) */
 const PATH_POINTS: [number, number][] = [
   [-24, 10],
   [-18, 7],
   [-13.5, 4.6],
   [-9, 3.0],
   [-5.5, 1.6],
-  [-3.1, 0.4],
+  [-3.6, 0.9],
 ];
 
 const PATH_TO_ALBERGUE: [number, number][] = [
-  [2.9, -0.4],
-  [4.6, -1.9],
+  [3.6, 0.2],
+  [5.2, -1.4],
   [6.4, -3.1],
 ];
 
@@ -114,35 +122,241 @@ function makeRibbon(pts: [number, number][], width: number): THREE.BufferGeometr
   return g;
 }
 
-function CrystalPyramid({
-  position,
-  height,
-  radius,
-  color,
-  label,
-  lang,
-}: PyramidData & { lang: Lang }) {
+/* ─── Ocelový rám ────────────────────────────────────────────────────
+ * Z řezů v konceptu: ocelová prostorová konstrukce — hrany + vodorovné
+ * vazníky v úrovních pater. Všechny pruty → jeden InstancedMesh.
+ */
+function useFrameSegments(pyramids: PyramidData[], levels = 5) {
+  return useMemo(() => {
+    const segments: { a: THREE.Vector3; b: THREE.Vector3 }[] = [];
+    const A = new THREE.Vector3();
+    const B = new THREE.Vector3();
+    const T = new THREE.Vector3();
+
+    for (const p of pyramids) {
+      const corners: THREE.Vector3[] = [];
+      for (let c = 0; c < 4; c++) {
+        const th = (c * Math.PI) / 2 + CORNER;
+        corners.push(
+          new THREE.Vector3(
+            p.position[0] + Math.cos(th) * p.radius,
+            0,
+            p.position[2] + Math.sin(th) * p.radius,
+          ),
+        );
+      }
+      T.set(p.position[0], p.height, p.position[2]);
+
+      // hlavní hrany: rohy → vrchol
+      for (const c of corners) segments.push({ a: c.clone(), b: T.clone() });
+
+      // vodorovné okruhy v úrovních pater (řezy v hero)
+      for (let i = 1; i <= levels; i++) {
+        const k = 1 - i / (levels + 1);
+        for (let f = 0; f < 4; f++) {
+          A.copy(T).addScaledVector(corners[f].clone().sub(T), k);
+          B.copy(T).addScaledVector(corners[(f + 1) % 4].clone().sub(T), k);
+          segments.push({ a: A.clone(), b: B.clone() });
+        }
+      }
+
+      // diagrid mřížka na stěnách — řidší (každý 2. segment)
+      for (let f = 0; f < 4; f++) {
+        A.copy(corners[f]);
+        B.copy(corners[(f + 1) % 4]);
+        const levelPts = (i: number): THREE.Vector3[] => {
+          const k = 1 - i / levels;
+          const ai = T.clone().addScaledVector(A.clone().sub(T), k);
+          const bi = T.clone().addScaledVector(B.clone().sub(T), k);
+          const cnt = (levels - i) * 2;
+          const pts: THREE.Vector3[] = [];
+          for (let j = 0; j <= cnt; j++) pts.push(ai.clone().lerp(bi, j / cnt));
+          return pts;
+        };
+        const rows: THREE.Vector3[][] = [];
+        for (let i = 0; i <= levels; i++) rows.push(levelPts(i));
+        for (let i = 0; i < levels; i++) {
+          const bot = rows[i];
+          const top = rows[i + 1];
+          for (let j = 0; j < bot.length - 1; j += 2) {
+            segments.push({ a: bot[j], b: bot[Math.min(j + 2, bot.length - 1)] });
+          }
+          for (let j = 0; j < top.length; j += 2) {
+            segments.push({ a: top[j], b: bot[j] });
+            segments.push({ a: top[j], b: bot[Math.min(j + 1, bot.length - 1)] });
+          }
+        }
+      }
+    }
+    return segments;
+  }, [pyramids, levels]);
+}
+
+function PyramidFrame({ pyramids }: { pyramids: PyramidData[] }) {
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  const segments = useFrameSegments(pyramids, 5);
+
+  useLayoutEffect(() => {
+    const m = mesh.current;
+    if (!m) return;
+    const dummy = new THREE.Object3D();
+    const mid = new THREE.Vector3();
+    const dir = new THREE.Vector3();
+    const up = new THREE.Vector3(0, 1, 0);
+    const q = new THREE.Quaternion();
+    segments.forEach((s, i) => {
+      dir.subVectors(s.b, s.a);
+      const len = dir.length();
+      dir.normalize();
+      q.setFromUnitVectors(up, dir);
+      mid.addVectors(s.a, s.b).multiplyScalar(0.5);
+      dummy.position.copy(mid);
+      dummy.quaternion.copy(q);
+      dummy.scale.set(1, len, 1);
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+    });
+    m.instanceMatrix.needsUpdate = true;
+  }, [segments]);
+
   return (
-    <group position={position}>
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
-        <coneGeometry args={[radius, height, 4]} />
+    <instancedMesh
+      ref={mesh}
+      args={[undefined, undefined, segments.length]}
+      frustumCulled={false}
+      castShadow
+    >
+      <cylinderGeometry args={[0.035, 0.035, 1, 6]} />
+      <meshStandardMaterial color="#e0bc6a" metalness={0.85} roughness={0.22} />
+    </instancedMesh>
+  );
+}
+
+/** Vegetace uvnitř pyramid — zelené trsy na terasách (skleník z hero) */
+function TerraceGreens({ position, height, radius, terraces }: {
+  position: [number, number, number];
+  height: number;
+  radius: number;
+  terraces: { y: number; r: number }[];
+}) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const clumps = useMemo(() => {
+    const out: { p: [number, number, number]; s: number }[] = [];
+    let seed = Math.floor(position[0] * 31 + position[2] * 17 + 99);
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (const t of terraces) {
+      const n = Math.floor(t.r * 5);
+      for (let i = 0; i < n; i++) {
+        const a = rnd() * Math.PI * 2;
+        const rr = t.r * (0.35 + rnd() * 0.55);
+        out.push({
+          p: [position[0] + Math.cos(a) * rr, t.y + 0.12 + rnd() * 0.1, position[2] + Math.sin(a) * rr],
+          s: 0.14 + rnd() * 0.16,
+        });
+      }
+    }
+    // zemní patro — keře po obvodu
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + rnd() * 0.3;
+      const rr = radius * (0.5 + rnd() * 0.4);
+      out.push({
+        p: [position[0] + Math.cos(a) * rr, 0.25 + rnd() * 0.15, position[2] + Math.sin(a) * rr],
+        s: 0.2 + rnd() * 0.18,
+      });
+    }
+    return out;
+  }, [position, radius, terraces]);
+
+  useLayoutEffect(() => {
+    if (!ref.current) return;
+    const dummy = new THREE.Object3D();
+    clumps.forEach((c, i) => {
+      dummy.position.set(c.p[0], c.p[1], c.p[2]);
+      dummy.scale.set(c.s, c.s * 0.7, c.s);
+      dummy.updateMatrix();
+      ref.current!.setMatrixAt(i, dummy.matrix);
+    });
+    ref.current.instanceMatrix.needsUpdate = true;
+  }, [clumps]);
+
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, clumps.length]}>
+      <icosahedronGeometry args={[1, 1]} />
+      <meshStandardMaterial color="#3f7a34" roughness={0.9} emissive="#1d3a16" emissiveIntensity={0.35} />
+    </instancedMesh>
+  );
+}
+
+/** Prosklená pyramida — sklo, terasy, zeleň, vnitřní záře (dle hero/řezů) */
+function CrystalPyramid({ position, height, radius, accent, label, lang }: PyramidData & { lang: Lang }) {
+  const terraces = useMemo(() => {
+    // patra z průřezu — široké kamenné/skvělé podlahy s vegetací
+    const fr = [0.22, 0.4, 0.58, 0.74];
+    return fr.map((f) => ({ y: height * f, r: radius * (1 - f) * 0.94 }));
+  }, [height, radius]);
+
+  return (
+    <group>
+      {/* sokl — kamenná pata */}
+      <mesh position={[position[0], 0.11, position[2]]} rotation={[0, CORNER, 0]} receiveShadow castShadow>
+        <cylinderGeometry args={[radius * 1.06, radius * 1.13, 0.22, 4]} />
+        <meshStandardMaterial color="#8d7f63" roughness={0.9} />
+      </mesh>
+
+      {/* vnitřní terasy — patra plná zeleně, čitelné přes sklo */}
+      {terraces.map((t, i) => (
+        <mesh key={i} position={[position[0], t.y, position[2]]} rotation={[0, CORNER, 0]}>
+          <cylinderGeometry args={[t.r, t.r * 1.02, 0.09, 4]} />
+          <meshStandardMaterial
+            color={i % 2 === 0 ? '#4d6b35' : '#425c2d'}
+            roughness={0.85}
+            emissive="#2a421c"
+            emissiveIntensity={0.45}
+          />
+        </mesh>
+      ))}
+      <TerraceGreens position={position} height={height} radius={radius} terraces={terraces} />
+
+      {/* vnitřní jádro — sloup světla/strom uprostřed (Vědomí) */}
+      {height > 6 && (
+        <>
+          <mesh position={[position[0], height * 0.42, position[2]]} castShadow>
+            <cylinderGeometry args={[0.16, 0.3, height * 0.8, 8]} />
+            <meshStandardMaterial color="#5e4226" roughness={0.9} />
+          </mesh>
+          <mesh position={[position[0], height * 0.66, position[2]]} scale={[1.15, 0.75, 1.15]}>
+            <icosahedronGeometry args={[1, 1]} />
+            <meshStandardMaterial color="#4a9440" roughness={0.85} emissive="#2f5a22" emissiveIntensity={0.4} />
+          </mesh>
+        </>
+      )}
+
+      {/* sklo — průsvitná skořepina s jemným leskem */}
+      <mesh position={[position[0], height / 2, position[2]]} rotation={[0, CORNER, 0]}>
+        <coneGeometry args={[radius, height, 4, 1, true]} />
         <meshPhysicalMaterial
-          color={color}
-          metalness={0.05}
+          color="#cfe8f2"
+          metalness={0.5}
           roughness={0.12}
-          transmission={0.28}
-          thickness={0.6}
           transparent
-          opacity={0.55}
+          opacity={0.62}
           side={THREE.DoubleSide}
+          depthWrite={false}
+          clearcoat={1}
+          emissive="#8fb8c8"
+          emissiveIntensity={0.35}
         />
       </mesh>
-      <mesh position={[0, height / 2, 0]}>
-        <coneGeometry args={[radius * 1.015, height * 1.015, 4]} />
-        <meshBasicMaterial color={color} wireframe transparent opacity={0.22} />
+      {/* accent nádech — barva mise ve skle */}
+      <mesh position={[position[0], height / 2, position[2]]} rotation={[0, CORNER, 0]}>
+        <coneGeometry args={[radius * 0.996, height * 0.996, 4, 1, true]} />
+        <meshBasicMaterial color={accent} transparent opacity={0.05} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
-      <Html position={[0, height + 0.5, 0]} center distanceFactor={10}>
-        <div className="pointer-events-none whitespace-nowrap rounded border border-zion-gold/30 bg-black/70 px-2 py-1 text-[10px] font-semibold text-zion-gold shadow-lg">
+      {/* teplá záře uvnitř — skleník svítí zevnitř jako na hero */}
+      <pointLight position={[position[0], height * 0.3, position[2]]} intensity={1.4} distance={radius * 2.2} color="#ffce8a" decay={2} />
+
+      <Html position={[position[0], height + 0.55, position[2]]} center distanceFactor={11}>
+        <div className="pointer-events-none whitespace-nowrap rounded border border-white/15 bg-black/70 px-2 py-1 text-[10px] font-semibold text-white/85 shadow-lg">
           {label[lang]}
         </div>
       </Html>
@@ -150,28 +364,59 @@ function CrystalPyramid({
   );
 }
 
+/** Strom života — mohutný rozložitý strom uprostřed kruhového náměstí */
 function CentralTree() {
+  const canopy = useMemo(() => {
+    const blobs: { p: [number, number, number]; s: number; c: string }[] = [
+      { p: [0, 3.5, 0], s: 1.9, c: '#3d7a3a' },
+      { p: [1.4, 3.7, 0.4], s: 1.35, c: '#4a9440' },
+      { p: [-1.4, 3.65, 0.5], s: 1.25, c: '#3d7a3a' },
+      { p: [0.6, 4.15, -0.8], s: 1.15, c: '#55a04a' },
+      { p: [-0.8, 4.05, -0.7], s: 1.0, c: '#4a9440' },
+      { p: [1.9, 3.3, -0.5], s: 0.9, c: '#5aa854' },
+      { p: [-1.85, 3.2, -0.3], s: 0.9, c: '#3d7a3a' },
+      { p: [0.1, 4.6, 0.1], s: 0.85, c: '#6ab45f' },
+      { p: [2.2, 3.0, 0.5], s: 0.7, c: '#4a8a3e' },
+      { p: [-2.15, 2.95, 0.6], s: 0.72, c: '#3f7d38' },
+      { p: [0.9, 4.3, 0.7], s: 0.6, c: '#c9a83f' },
+      { p: [-0.9, 4.35, 0.2], s: 0.55, c: '#c9a83f' },
+      { p: [0.3, 3.2, 1.3], s: 0.85, c: '#478a3c' },
+      { p: [-0.4, 3.15, 1.25], s: 0.8, c: '#3d7a3a' },
+    ];
+    return blobs;
+  }, []);
+
   return (
-    <group position={[0, 0, 0]}>
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <cylinderGeometry args={[0.2, 0.28, 2.6, 8]} />
-        <meshStandardMaterial color="#6b4c2a" roughness={0.95} />
+    <group position={[0, 0, 0.9]}>
+      {/* kmen — silný, rozvětený */}
+      <mesh position={[0, 1.35, 0]} castShadow>
+        <cylinderGeometry args={[0.3, 0.52, 2.9, 8]} />
+        <meshStandardMaterial color="#4e3720" roughness={0.95} />
       </mesh>
-      <mesh position={[0, 2.6, 0]} castShadow>
-        <icosahedronGeometry args={[1.1, 1]} />
-        <meshStandardMaterial color="#2d7a35" roughness={0.85} />
+      <mesh position={[0.4, 2.5, 0.1]} rotation={[0, 0, -0.3]} castShadow>
+        <cylinderGeometry args={[0.13, 0.24, 1.7, 7]} />
+        <meshStandardMaterial color="#4e3720" roughness={0.95} />
       </mesh>
-      <mesh position={[0.55, 2.85, 0.25]} castShadow>
-        <icosahedronGeometry args={[0.55, 1]} />
-        <meshStandardMaterial color="#3b9a45" roughness={0.85} />
+      <mesh position={[-0.38, 2.45, -0.05]} rotation={[0, 0, 0.32]} castShadow>
+        <cylinderGeometry args={[0.12, 0.22, 1.6, 7]} />
+        <meshStandardMaterial color="#4e3720" roughness={0.95} />
       </mesh>
-      <mesh position={[-0.5, 2.75, 0.45]} castShadow>
-        <icosahedronGeometry args={[0.5, 1]} />
-        <meshStandardMaterial color="#2d7a35" roughness={0.85} />
+      <mesh position={[0.05, 2.6, -0.3]} rotation={[0.28, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.1, 0.18, 1.5, 7]} />
+        <meshStandardMaterial color="#4e3720" roughness={0.95} />
       </mesh>
-      <mesh position={[0.2, 3.15, -0.45]} castShadow>
-        <icosahedronGeometry args={[0.48, 1]} />
-        <meshStandardMaterial color="#4caf50" roughness={0.85} />
+      <group scale={[0.85, 0.82, 0.85]}>
+        {canopy.map((b, i) => (
+          <mesh key={i} position={b.p} scale={[b.s, b.s * 0.72, b.s]} castShadow>
+            <icosahedronGeometry args={[1, 1]} />
+            <meshStandardMaterial color={b.c} roughness={0.85} />
+          </mesh>
+        ))}
+      </group>
+      {/* kořenová násobka — kamenná ohrádka */}
+      <mesh position={[0, 0.14, 0]} rotation={[0, CORNER, 0]} receiveShadow>
+        <cylinderGeometry args={[0.85, 0.95, 0.28, 8]} />
+        <meshStandardMaterial color="#8d7f63" roughness={0.9} />
       </mesh>
     </group>
   );
@@ -188,14 +433,14 @@ function Merkaba() {
   });
 
   return (
-    <group position={[0, 5.2, 0]} ref={ref}>
+    <group position={[0, 8.6, -0.4]} ref={ref}>
       <mesh>
         <tetrahedronGeometry args={[1.0, 0]} />
-        <meshBasicMaterial color="#f6ad55" wireframe transparent opacity={0.3} />
+        <meshBasicMaterial color="#e8c25a" wireframe transparent opacity={0.3} />
       </mesh>
       <mesh scale={[-1, -1, -1]}>
         <tetrahedronGeometry args={[1.0, 0]} />
-        <meshBasicMaterial color="#f6ad55" wireframe transparent opacity={0.22} />
+        <meshBasicMaterial color="#e8c25a" wireframe transparent opacity={0.22} />
       </mesh>
     </group>
   );
@@ -205,27 +450,22 @@ function Merkaba() {
 function Albergue({ lang }: { lang: Lang }) {
   return (
     <group position={ALBERGUE_POS}>
-      {/* walls */}
       <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.9, 1.0, 1.5]} />
         <meshStandardMaterial color="#a89070" roughness={0.9} />
       </mesh>
-      {/* terracotta pyramid roof */}
       <mesh position={[0, 1.42, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
         <coneGeometry args={[1.45, 0.85, 4]} />
         <meshStandardMaterial color="#8a4b2f" roughness={0.85} />
       </mesh>
-      {/* door */}
       <mesh position={[0.35, 0.35, 0.76]}>
         <boxGeometry args={[0.45, 0.7, 0.05]} />
         <meshStandardMaterial color="#3a2a1c" roughness={0.95} />
       </mesh>
-      {/* warm window */}
       <mesh position={[-0.45, 0.55, 0.76]}>
         <boxGeometry args={[0.32, 0.32, 0.04]} />
         <meshStandardMaterial color="#ffd98a" emissive="#ffb347" emissiveIntensity={0.9} />
       </mesh>
-      {/* tiny bell gable */}
       <mesh position={[0, 2.0, 0]}>
         <boxGeometry args={[0.22, 0.3, 0.12]} />
         <meshStandardMaterial color="#a89070" roughness={0.9} />
@@ -252,6 +492,11 @@ const CYPRESS_POSITIONS: [number, number][] = [
   [-14.5, 6.0],
   [-10.5, 4.0],
   [-6.6, 2.4],
+  // alej podél hlavní cesty od řeky
+  [5.6, -1.2],
+  [4.4, 0.8],
+  [-4.2, 1.9],
+  [-5.8, 2.9],
 ];
 
 function Cypresses() {
@@ -279,58 +524,153 @@ function Cypresses() {
   );
 }
 
+/** Hustá vegetace — keře, stromy, živé ploty kolem areálu (dle hero: bujná zeleň) */
 function Vegetation() {
-  const positions = useMemo(() => {
+  const { positions, trees } = useMemo(() => {
     const out: { x: number; z: number; s: number; c: string }[] = [];
-    for (let i = 0; i < 80; i++) {
-      const angle = (i / 80) * Math.PI * 2 + (i % 3) * 0.3;
-      const r = 6.5 + (i % 5) * 0.55 + Math.random() * 0.4;
-      const s = 0.22 + (i % 4) * 0.09;
+    const treeOut: { x: number; z: number; s: number; c: string }[] = [];
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const insidePyramid = (x: number, z: number) =>
+      PYRAMIDS.some(
+        (p) => Math.abs(x - p.position[0]) + Math.abs(z - p.position[2]) < p.radius * 1.3,
+      );
+    // prstenec keřů kolem centrální zahrady
+    for (let i = 0; i < 140; i++) {
+      const angle = rnd() * Math.PI * 2;
+      const r = 7.2 + rnd() * 5.5;
+      const x = Math.cos(angle) * r;
+      const z = Math.sin(angle) * r;
+      if (insidePyramid(x, z)) continue;
+      const s = 0.25 + rnd() * 0.35;
       out.push({
-        x: Math.cos(angle) * r,
-        z: Math.sin(angle) * r,
-        s,
-        c: i % 3 === 0 ? '#2f7a35' : i % 3 === 1 ? '#1f5e2a' : '#4a7a2e',
+        x, z, s,
+        c: i % 4 === 0 ? '#3f8a3f' : i % 4 === 1 ? '#2f7a35' : i % 4 === 2 ? '#1f5e2a' : '#4a7a2e',
       });
     }
-    // Food forest / orchard clusters
-    for (let i = 0; i < 24; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const r = 8.5 + Math.random() * 4;
-      const s = 0.35 + Math.random() * 0.3;
-      out.push({
-        x: Math.cos(angle) * r,
-        z: Math.sin(angle) * r,
-        s,
-        c: i % 2 === 0 ? '#3a8a3f' : '#26682c',
+    // listnaté stromy — širší koruny, vymezení prostoru
+    for (let i = 0; i < 40; i++) {
+      const angle = rnd() * Math.PI * 2;
+      const r = 9.5 + rnd() * 6.5;
+      const x = Math.cos(angle) * r;
+      const z = Math.sin(angle) * r;
+      if (insidePyramid(x, z)) continue;
+      const s = 0.55 + rnd() * 0.5;
+      treeOut.push({
+        x, z, s,
+        c: i % 3 === 0 ? '#3a8a3f' : i % 3 === 1 ? '#2a7030' : '#26682c',
       });
+    }
+    // ovocné sady — pravidelné řady v západní části
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 7; col++) {
+        const x = -16 + col * 1.5;
+        const z = -6 + row * 1.6;
+        if (insidePyramid(x, z)) continue;
+        out.push({ x, z, s: 0.3 + rnd() * 0.12, c: '#4a8a3e' });
+      }
+    }
+    // farmářské terasy na jihovýchodě
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 6; col++) {
+        const x = 12 + col * 1.4;
+        const z = -8 + row * 1.7;
+        out.push({ x, z, s: 0.28 + rnd() * 0.12, c: row % 2 === 0 ? '#5a8a3e' : '#3f7a34' });
+      }
+    }
+    return { positions: out, trees: treeOut };
+  }, []);
+
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const treeRef = useRef<THREE.InstancedMesh>(null);
+  const trunkRef = useRef<THREE.InstancedMesh>(null);
+
+  useEffect(() => {
+    const dummy = new THREE.Object3D();
+    const color = new THREE.Color();
+    if (ref.current) {
+      for (let i = 0; i < positions.length; i++) {
+        const { x, z, s, c } = positions[i];
+        dummy.position.set(x, s * 0.5, z);
+        dummy.scale.set(s, s * 0.85, s);
+        dummy.updateMatrix();
+        ref.current.setMatrixAt(i, dummy.matrix);
+        ref.current.setColorAt(i, color.set(c));
+      }
+      ref.current.instanceMatrix.needsUpdate = true;
+      if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true;
+    }
+    if (treeRef.current && trunkRef.current) {
+      for (let i = 0; i < trees.length; i++) {
+        const { x, z, s, c } = trees[i];
+        dummy.position.set(x, 0.5 * s + s * 0.9, z);
+        dummy.scale.set(s, s * 0.8, s);
+        dummy.updateMatrix();
+        treeRef.current.setMatrixAt(i, dummy.matrix);
+        treeRef.current.setColorAt(i, color.set(c));
+        dummy.position.set(x, 0.45 * s, z);
+        dummy.scale.set(s * 0.22, s * 0.9, s * 0.22);
+        dummy.updateMatrix();
+        trunkRef.current.setMatrixAt(i, dummy.matrix);
+      }
+      treeRef.current.instanceMatrix.needsUpdate = true;
+      if (treeRef.current.instanceColor) treeRef.current.instanceColor.needsUpdate = true;
+      trunkRef.current.instanceMatrix.needsUpdate = true;
+    }
+  }, [positions, trees]);
+
+  return (
+    <>
+      <instancedMesh ref={ref} args={[undefined, undefined, positions.length]} castShadow receiveShadow>
+        <dodecahedronGeometry args={[1, 0]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.9} />
+      </instancedMesh>
+      <instancedMesh ref={trunkRef} args={[undefined, undefined, trees.length]} castShadow>
+        <cylinderGeometry args={[0.5, 0.65, 1, 5]} />
+        <meshStandardMaterial color="#4e3720" roughness={0.95} />
+      </instancedMesh>
+      <instancedMesh ref={treeRef} args={[undefined, undefined, trees.length]} castShadow>
+        <icosahedronGeometry args={[1, 1]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.9} />
+      </instancedMesh>
+    </>
+  );
+}
+
+/** Radiální záhony — farmářské klíny mezi pyramidami (dle masterplanu) */
+function GardenBeds() {
+  const beds = useMemo(() => {
+    // klínové sektory mezi směry k pyramidám
+    const out: { a0: number; a1: number; r0: number; r1: number; c: string }[] = [];
+    const spokes = [-2.5, -1.2, 0.3, 1.6, 2.9]; // úhly kvolněni pyramidám (rad)
+    const palette = ['#3f6e2c', '#496f2f', '#38652a', '#54763a'];
+    let k = 0;
+    for (let i = 0; i < spokes.length - 1; i++) {
+      const a0 = spokes[i] + 0.16;
+      const a1 = spokes[i + 1] - 0.16;
+      const n = 4;
+      for (let j = 0; j < n; j++) {
+        const t0 = 3.1 + j * 1.35;
+        out.push({ a0, a1, r0: t0, r1: t0 + 1.1, c: palette[(k++) % palette.length] });
+      }
     }
     return out;
   }, []);
 
-  const ref = useRef<THREE.InstancedMesh>(null);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const dummy = new THREE.Object3D();
-    const color = new THREE.Color();
-    for (let i = 0; i < positions.length; i++) {
-      const { x, z, s, c } = positions[i];
-      dummy.position.set(x, s * 0.5, z);
-      dummy.scale.set(s, s, s);
-      dummy.updateMatrix();
-      ref.current.setMatrixAt(i, dummy.matrix);
-      ref.current.setColorAt(i, color.set(c));
-    }
-    ref.current.instanceMatrix.needsUpdate = true;
-    if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true;
-  }, [positions]);
-
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, positions.length]} castShadow receiveShadow>
-      <dodecahedronGeometry args={[1, 0]} />
-      <meshStandardMaterial color="#ffffff" roughness={0.9} />
-    </instancedMesh>
+    <group>
+      {beds.map((b, i) => {
+        const shape = new THREE.Shape();
+        shape.absarc(0, 0, b.r1, b.a0, b.a1, false);
+        shape.absarc(0, 0, b.r0, b.a1, b.a0, true);
+        return (
+          <mesh key={i} position={[0, 0.045, 0.9]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <shapeGeometry args={[shape, 24]} />
+            <meshStandardMaterial color={b.c} roughness={1} />
+          </mesh>
+        );
+      })}
+    </group>
   );
 }
 
@@ -350,7 +690,7 @@ function ValleyHills() {
       {hills.map((h, i) => (
         <mesh key={i} position={h.p} scale={[1, 0.32, 1]}>
           <sphereGeometry args={[h.r, 20, 14]} />
-          <meshStandardMaterial color="#16301a" roughness={1} />
+          <meshStandardMaterial color="#2f4a26" roughness={1} />
         </mesh>
       ))}
     </>
@@ -365,39 +705,44 @@ function WaterPathAndRiver({ lang }: { lang: Lang }) {
 
   return (
     <>
-      {/* Central reflecting pool */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <circleGeometry args={[1.6, 56]} />
+      {/* Vodní prstenec kolem Stromu života — z hero: kruhová fontána/zrcadlo */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0.9]}>
+        <ringGeometry args={[2.15, 2.55, 64]} />
         <meshPhysicalMaterial
-          color="#06b6d4"
-          roughness={0.04}
-          metalness={0.75}
+          color="#2fa8c8"
+          roughness={0.03}
+          metalness={0.8}
           transparent
-          opacity={0.65}
+          opacity={0.85}
           clearcoat={1}
+          emissive="#0a4a5e"
+          emissiveIntensity={0.5}
         />
       </mesh>
+      {/* kamenné lemy prstence */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.052, 0.9]}>
+        <ringGeometry args={[2.5, 2.66, 64]} />
+        <meshStandardMaterial color="#a8946f" roughness={0.9} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.052, 0.9]}>
+        <ringGeometry args={[1.98, 2.15, 64]} />
+        <meshStandardMaterial color="#a8946f" roughness={0.9} />
+      </mesh>
 
-      {/* Radial water channels to the three pyramids */}
+      {/* Radiální kamenné cesty ze středu ke třem pyramidám */}
       {PYRAMIDS.map((p, i) => {
         const dx = p.position[0];
-        const dz = p.position[2];
+        const dz = p.position[2] - 0.9;
         const angle = Math.atan2(dx, dz);
-        const len = Math.sqrt(dx * dx + dz * dz) - p.radius * 0.8;
+        const len = Math.sqrt(dx * dx + dz * dz) - p.radius * 1.05 - 2.6;
         return (
           <mesh
             key={i}
-            position={[Math.sin(angle) * (len / 2), 0.03, Math.cos(angle) * (len / 2)]}
+            position={[Math.sin(angle) * (2.66 + len / 2), 0.055, 0.9 + Math.cos(angle) * (2.66 + len / 2)]}
             rotation={[0, angle, 0]}
           >
-            <boxGeometry args={[0.28, 0.03, len]} />
-            <meshPhysicalMaterial
-              color="#06b6d4"
-              roughness={0.05}
-              metalness={0.7}
-              transparent
-              opacity={0.55}
-            />
+            <boxGeometry args={[0.5, 0.04, len]} />
+            <meshStandardMaterial color="#9d8a66" roughness={0.95} />
           </mesh>
         );
       })}
@@ -414,16 +759,15 @@ function WaterPathAndRiver({ lang }: { lang: Lang }) {
           side={THREE.DoubleSide}
         />
       </mesh>
-      {/* river glow highlight */}
       <mesh geometry={riverGlowGeo} position={[0, 0.021, 0]}>
         <meshBasicMaterial color="#38bdf8" transparent opacity={0.22} side={THREE.DoubleSide} />
       </mesh>
 
       {/* Caminho do Jardim — pilgrim path */}
-      <mesh geometry={pathGeo} position={[0, 0.022, 0]}>
+      <mesh geometry={pathGeo} position={[0, 0.045, 0]}>
         <meshStandardMaterial color="#b39d72" roughness={0.95} side={THREE.DoubleSide} />
       </mesh>
-      <mesh geometry={path2Geo} position={[0, 0.022, 0]}>
+      <mesh geometry={path2Geo} position={[0, 0.045, 0]}>
         <meshStandardMaterial color="#b39d72" roughness={0.95} side={THREE.DoubleSide} />
       </mesh>
 
@@ -437,30 +781,79 @@ function WaterPathAndRiver({ lang }: { lang: Lang }) {
   );
 }
 
+/** Západ slunce — gradientní obloha + zářící slunce za Vědomí (dle hero) */
+function SkyAndSun() {
+  const skyMat = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        vertexShader: `
+          varying vec3 vP;
+          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
+        `,
+        fragmentShader: `
+          varying vec3 vP;
+          uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunDir;
+          void main(){
+            vec3 d = normalize(vP);
+            vec3 c = d.y > 0.25 ? mix(mid, top, smoothstep(0.25, 0.8, d.y))
+                              : mix(low, mid, smoothstep(-0.05, 0.25, d.y));
+            float s = max(dot(d, sunDir), 0.0);
+            c += vec3(1.0, 0.88, 0.62) * pow(s, 380.0) * 2.2
+               + vec3(1.0, 0.72, 0.4) * pow(s, 26.0) * 0.35
+               + vec3(0.95, 0.6, 0.3) * pow(s, 5.0) * 0.18;
+            gl_FragColor = vec4(c, 1.0);
+          }
+        `,
+        uniforms: {
+          top: { value: new THREE.Color('#1a1f14') },
+          mid: { value: new THREE.Color('#5a4a2e') },
+          low: { value: new THREE.Color('#a87a42') },
+          sunDir: { value: new THREE.Vector3(0.18, 0.1, -1).normalize() },
+        },
+      }),
+    [],
+  );
+
+  return (
+    <mesh material={skyMat} renderOrder={-10} frustumCulled={false}>
+      <sphereGeometry args={[90, 24, 16]} />
+    </mesh>
+  );
+}
+
 function GardenScene({ lang }: { lang: Lang }) {
   return (
     <>
-      {/* Ground plane — valley floor */}
+      <SkyAndSun />
+      {/* Země — živá zelená údolí (dle hero, ne písek) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[26, 72]} />
-        <meshStandardMaterial color="#142612" roughness={1} metalness={0} />
+        <meshStandardMaterial color="#35501f" roughness={1} metalness={0} />
+      </mesh>
+      {/* centrální travnatý kruh */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0.9]}>
+        <circleGeometry args={[8.2, 64]} />
+        <meshStandardMaterial color="#3f6128" roughness={1} />
+      </mesh>
+      {/* kamenné náměstí uprostřed */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.048, 0.9]}>
+        <circleGeometry args={[2.98, 48]} />
+        <meshStandardMaterial color="#94855f" roughness={0.95} />
       </mesh>
 
-      {/* Outer stone ring / gathering circle */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
-        <ringGeometry args={[2.8, 3.0, 64]} />
-        <meshStandardMaterial color="#8c7a5a" roughness={0.95} />
-      </mesh>
-
+      <GardenBeds />
       <WaterPathAndRiver lang={lang} />
       <ValleyHills />
 
-      {/* Three pyramids */}
+      {/* Tři prosklené pyramidy — sklo + ocelový rám + terasy se zelení */}
       {PYRAMIDS.map((p, i) => (
         <CrystalPyramid key={i} {...p} lang={lang} />
       ))}
+      <PyramidFrame pyramids={PYRAMIDS} />
 
-      {/* Central tree */}
+      {/* Strom života */}
       <CentralTree />
 
       {/* Pilgrim hostel */}
@@ -503,17 +896,20 @@ export default function GenesisGardenPreview({
     <div className={`relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 ${className}`}>
       <Canvas
         shadows
-        camera={{ position: [0, 11.5, 18.5], fov: 46 }}
+        camera={{ position: [0, 8.5, 19.5], fov: 44 }}
         gl={{ antialias: true, alpha: true }}
         style={{ width: '100%', height: '100%' }}
       >
-        <color attach="background" args={['#0a0f0a']} />
-        <fog attach="fog" args={['#0a0f0a', 16, 46]} />
+        {/* golden-hour atmosféra dle hero — teplá obloha, měkká mlha */}
+        <color attach="background" args={['#33301f']} />
+        <fog attach="fog" args={['#33301f', 24, 58]} />
 
-        <ambientLight intensity={0.45} color="#fff8e7" />
-        <hemisphereLight args={['#ffe9c4', '#0c120c', 0.4]} />
-        <directionalLight position={[14, 24, 12]} intensity={1.35} color="#ffd7a3" castShadow />
-        <pointLight position={[0, 3.5, 0]} intensity={2.0} color="#ffd700" distance={16} decay={2} />
+        <ambientLight intensity={0.72} color="#fff3dd" />
+        <hemisphereLight args={['#ffe9c4', '#24351a', 0.62]} />
+        {/* nízké zadní slunce — backlight přes pyramidy jako na hero */}
+        <directionalLight position={[10, 9, -14]} intensity={2.2} color="#ffb76a" castShadow />
+        <directionalLight position={[-12, 16, 14]} intensity={0.85} color="#ffd9a8" />
+        <pointLight position={[0, 3.5, 0.9]} intensity={2.4} color="#ffd700" distance={18} decay={2} />
 
         <GardenScene lang={lang} />
 
@@ -521,8 +917,9 @@ export default function GenesisGardenPreview({
           autoRotate
           autoRotateSpeed={0.4}
           minDistance={9}
-          maxDistance={32}
+          maxDistance={36}
           maxPolarAngle={Math.PI / 2 - 0.04}
+          target={[0, 3, 0]}
           enablePan={false}
         />
       </Canvas>
