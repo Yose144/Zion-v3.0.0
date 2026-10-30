@@ -50,15 +50,15 @@ function makeFallbackTexture(): THREE.CanvasTexture {
 
 /** Reálné textury Nové Země — předloha z apps/website-v2.9 HolographicEarth. */
 function useEarthMaps(fallback: THREE.Texture) {
-  const [maps, setMaps] = useState<{ color: THREE.Texture; bump?: THREE.Texture; night?: THREE.Texture }>({
+  const [maps, setMaps] = useState<{ color: THREE.Texture; bump?: THREE.Texture }>({
     color: fallback,
   });
   useEffect(() => {
     let cancelled = false;
     const loader = new THREE.TextureLoader();
-    const next: { color?: THREE.Texture; bump?: THREE.Texture; night?: THREE.Texture } = {};
+    const next: { color?: THREE.Texture; bump?: THREE.Texture } = {};
     const commit = () => {
-      if (!cancelled && next.color) setMaps({ color: next.color, bump: next.bump, night: next.night });
+      if (!cancelled && next.color) setMaps({ color: next.color, bump: next.bump });
     };
     loader.load('/textures/earth-blue-marble.webp', (t) => {
       if (cancelled) return t.dispose();
@@ -70,32 +70,6 @@ function useEarthMaps(fallback: THREE.Texture) {
     loader.load('/textures/earth-topology.png', (t) => {
       if (cancelled) return t.dispose();
       next.bump = t;
-      commit();
-    });
-    loader.load('/textures/earth-dark.jpg', (t) => {
-      if (cancelled) return t.dispose();
-      // Prah — earth-dark má pevninu na ~15-40 % jasu (ne jen světla),
-      // emissive pak žhnul přes kontinenty. Ostříznout na 0.42 → jen
-      // skutečná světla měst projdou, oceán i pevnina → černá.
-      const img = t.image as HTMLImageElement;
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, 0, 0);
-      const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const px = data.data;
-      for (let i = 0; i < px.length; i += 4) {
-        const l = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) / 255;
-        const f = Math.pow(Math.max(0, (l - 0.42) / 0.58), 1.4);
-        px[i] *= f;
-        px[i + 1] *= f;
-        px[i + 2] *= f;
-      }
-      ctx.putImageData(data, 0, 0);
-      const clean = new THREE.CanvasTexture(canvas);
-      clean.colorSpace = THREE.SRGBColorSpace;
-      next.night = clean;
       commit();
     });
     return () => {
@@ -277,12 +251,9 @@ export function NewEarth({
         <meshStandardMaterial
           map={maps.color}
           bumpMap={maps.bump}
-          bumpScale={0.24}
-          roughness={0.55}
-          metalness={0.03}
-          emissiveMap={maps.night}
-          emissive={maps.night ? new THREE.Color('#fff3dd') : new THREE.Color('#066928')}
-          emissiveIntensity={maps.night ? 0.35 : 0.08}
+          bumpScale={0.2}
+          roughness={0.72}
+          metalness={0.02}
         />
       </mesh>
       {/* atmosféra — halo */}

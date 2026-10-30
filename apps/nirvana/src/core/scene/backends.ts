@@ -2,8 +2,9 @@
 
 /**
  * GPU backend policy — ENGINE-WEB.md §3/§4.
- * Resolution order: ?gpu= → localStorage → auto.
- * `auto` prefers WebGPU when an adapter exists, else WebGL2.
+ * Resolution order: ?gpu= → localStorage → default.
+ * Default = WebGL2 (vizuálně ověřený render classic materiálů);
+ * WebGPU = opt-in přes ?gpu=webgpu dokud neověříme konverzi.
  * XR sessions force WebGL2 — XRGPUBinding is still experimental
  * (Chrome does not expose it; Babylon/PlayCanvas docs agree).
  * A canvas cannot swap backends; `demoteToWebGL` forces a remount.
@@ -63,7 +64,10 @@ let resolved: GpuBackend | null = null;
 export async function resolveGpuBackend(): Promise<GpuBackend> {
   if (resolved) return resolved;
   const mode = getGpuMode();
-  const wantWebGpu = mode === 'webgpu' || mode === 'auto';
+  // Default = WebGL2 — konverze classic materiálů pod WebGPU není
+  // vizuálně ověřená (zahazuje map/emissiveMap → žlutá koule bez
+  // textury). WebGPU = opt-in přes ?gpu=webgpu.
+  const wantWebGpu = mode === 'webgpu';
   resolved = wantWebGpu && (await detectWebGpu()) ? 'webgpu' : 'webgl2';
   if (typeof window !== 'undefined') {
     (window as unknown as { __nirvanaBackend?: GpuBackend }).__nirvanaBackend = resolved;
