@@ -89,7 +89,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
   - [ ] 🤖 Produkční E2E na ≥3 webech (app/market/freeworld) → V33-4 (3.B1)
 - [x] 🤖 QTU/PRL attestation — address squatting gate před payout-gated linky (3.B3) — 31. 10. `docs/3.2/REPORTS/REPORT_2026-10-31_3B3_LINK_PROVENANCE.md`: ZIS emituje `proven` (quantus/pearl=false — attestation-only), pool gate payout fallbacky + `owns()` na proven linky; residual: link-409 DoS (dispute/unlink flow) + external-key proof (ML-DSA/XMSS verify nebo on-chain marker) zůstává follow-up
 - [x] 🤖 Custody disclosure v UI (web custodial / desktop non-custodial) (3.B4) — 30. 10. `/wallet/multichain` banner + withdraw warn (platforma drží klíče vs. Nativní/desktop non-custodial), mitigace F-1 z threat modelu
-- [ ] 🤖 ZIS agent sub-accounts — Prisma schema + budgety (design + migrace draft)
+- [x] 🤖 ZIS agent sub-accounts — Prisma schema + budgety (design + migrace draft) — 31. 10. `docs/3.2/ZIS_AGENT_SUBACCOUNTS_DESIGN.md`: `AgentSubAccount`+`AgentBudget` modely (scoped `zag_` bearer, atomic conditional-update budgety, `wallet:withdraw` nikdy issuabilný — F-1/F-6), API draft, SQL migrace, rollout gates; implementace = follow-up
 - [ ] 🤖 QTC integrace ([`QUANTUS-INTEGRATION-PLAN.md`](docs/3.2/QUANTUS-INTEGRATION-PLAN.md)): F1 adapter (gated testnet) → F2 keyring → F3 watchtower → F5 wallet pod ZIS
 - [ ] 🔀 DAO: guardian registry deploy, treasury sign flow + 👤 klíč, QV rozhodnutí (4.B8, 4.B9)
 - [x] 🤖 Premine unlock dry-run na regtestu před výškou 144 000 (1.B5) — PASS 28. 10.; výška ~27.–28. 11. a exekuce zůstávají 👤
