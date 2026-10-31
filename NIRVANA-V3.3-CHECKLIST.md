@@ -168,6 +168,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 alert na lag scanneru (6.B2) — ✅ 28. 10. přes 8.B4 (freshness metriky + lag alerty nasazené)
 - [x] 🤖 QV: Sybil model, eligibility, privacy analýza **před** prvním reálným ballotem (6.B3) — 30. 10. `docs/3.2/QV_SYBIL_PRIVACY_ANALYSIS.md`: voter_id bound server-side `zis:<user.id>`, Sybil = ZIS account cost, doporučení E1 gate + per-IP limit + round-salted HMAC pseudonymizace
 - [x] 🤖 Proof-of-impact workflow + impact packet šablona (6.B4) — 30. 10. `docs/3.2/L5_PROOF_OF_IMPACT.md`: lifecycle proposal→QV→DAO→disbursement→packet→verify→public, jednostránková md šablona
+- [x] 🤖 Public copy „fond dnes nevyplácí granty" konzistentní (6.S2) — 31. 10. `REPORTS/REPORT_2026-10-31_6S2_L5_PUBLIC_COPY_AUDIT.md`: všechny povrchy DAO-gate/horizon qualifier; live `total_disbursed=0` = NEPLATNÝ NÁROK dnes faktický
 - [ ] 👤 Výběr 1 reálného pilotu + nezávislé ověření (fyzický svět) → V33-6
 - [ ] 🔀 První E2E grant advisory → DAO → guardian multisig (👤 ops); ~~disbursement tx flow design~~ ✅ 6.B5 — 31. 10. `docs/3.2/DAO_DISBURSEMENT_TX_FLOW_DESIGN.md` (pipeline existuje v `treasury_tx.rs`; navržen `derive_treasury_op` most, ~165 LOC realizace 3.3)
 
