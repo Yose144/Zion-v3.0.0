@@ -4,7 +4,7 @@
 
 > **Status:** 🟣 **KONCEPT K DISKUSI** — seed dokument; rozvine se později, nic se zatím nestaví ani neregistruje.
 > **Datum:** 2026-10-31 · **Příprava:** ZION / Terra Nova L5
-> **Realizační studie:** [`docs/3.2/ArchaNoemova.md`](docs/3.2/ArchaNoemova.md) — **tři studie aditivně:** A (rescue/svatyně ~340 osob, 365 d) + B (kolonie-archa ≤100 lidí, absolutní soběstačnost, sail-primary, velrybí navigace) + C (stavební plány, hmotnosti, solární/vodní/potravinové bilance, 8 variant návrhu)
+> **Realizační studie:** [`docs/3.2/ArchaNoemova.md`](docs/3.2/ArchaNoemova.md) — **čtyři studie aditivně:** A (rescue/svatyně ~340 osob, 365 d) + B (kolonie-archa ≤100 lidí, absolutní soběstačnost, sail-primary, velrybí navigace) + C (stavební plány, hmotnosti, bilance soběstačnosti, 8 variant) + D (hluboká analýza: syntéza, FMEA, kalorický runway, lifecycle)
 > **Souvisí:** [`docs/3.2/TreeMarias.md`](docs/3.2/TreeMarias.md) (flotila Tres Marías), [`canon/books/KralovstviSrdce/`](canon/books/KralovstviSrdce/00-README.md) (kniha — loď, kterou postavil tesař), [`canon/books/MariaCaminho/`](canon/books/MariaCaminho/00-README.md), [`canon/books/nirvana/13-Tres-Marias.md`](canon/books/nirvana/13-Tres-Marias.md), [`canon/books/SurtaSrdce/`](canon/books/SurtaSrdce/00-README.md), [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) (v3.3 release nese tytéž dva názvy)
 > **Registry (návrh):** program `archa-nirvana`, status `vision` — v L5 API zatím neregistrován
 

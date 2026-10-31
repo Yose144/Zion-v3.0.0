@@ -5,10 +5,11 @@
 > **Souvisí:** [`../../ARCHA-NOEMOVA.md`](../../ARCHA-NOEMOVA.md) (koncept a kánonické kotvy), [`TreeMarias.md`](./TreeMarias.md) (flotila Tres Marías), [`L5MariaDelCamino.md`](./L5MariaDelCamino.md), [`L5_PROOF_OF_IMPACT.md`](./L5_PROOF_OF_IMPACT.md)
 > **Registry (návrh):** program `archa-nirvana`, status `vision` — neregistrován
 >
-> **Dokument obsahuje TŘI studie (aditivně, nic nepřepsáno):**
+> **Dokument obsahuje ČTYŘI studie (aditivně, nic nepřepsáno):**
 > - **Studie A** — původní brief: rescue/svatyně archa, ~340 osob, autonomie 365 dní (design basis Gn 6–8: 40 d bouře + 150+ d vody)
 > - **Studie B** — rozšířený brief 👤 (2026-10-31): kolonie-archa **≤100 lidí**, absolutní soběstačnost napořád, sail-primary, velrybí navigace, přežití kolapsu civilizace
 > - **Studie C** — technická příloha: GA stavební plán paluba po palubě, matice 8 variant trupu/rigu, parametrický hmotnostní rozpočet, solární+vodní+potravinová bilance s reálnými výnosy, materiálová archa
+> - **Studie D** — hluboká analýza: syntéza rozhodnutí (B=jádro + modulární deck z A), poctivý kalorický runway model, FMEA top-10 selhání, citlivostní analýza, mechanika přežití bouře, demografie kolonie, 50letý lifecycle
 
 ---
 ---
@@ -861,3 +862,153 @@ Kolaps-proof = ne jen systémy, ale **zásoba opravitelnosti**:
 | CAPEX (A novostavba / A′ refit) | ~€70–100M / ~€30–55M |
 
 *Studie C je příloha — detail mění odhad, ne brief. Čísla jsou parametrické; design study je zpřesní.*
+
+---
+---
+
+# STUDIE D — hluboká analýza: syntéza, kritika a dlouhý horizont
+
+> **Rozsah:** kritická analýza, ne propagace. Syntéza A/B/C do jednoho verdiktu, poctivý kalorický model (co skutečně jde a nejde), FMEA analýza selhání, citlivostní analýza předpokladů, mechanika přežití bouře, demografie kolonie a 50letý lifecycle. Aditivní příloha.
+
+---
+
+## D.1 Syntéza — rozhodovací matice studií
+
+Tři studie = tři odpovědi na otázku „co je archa". Vážená matice proti briefu (soběstačnost / velrybí navigace / extrémní klima / kolaps-proof / ≤100):
+
+| Kritérium (váha) | Studie A (rescue 340) | Studie B (kolonie 100) | Studie C (technika) |
+|---|---|---|---|
+| Absolutní soběstačnost (30%) | ✗ — zásobná loď, dojde zásobám | **✓✓ — produkce + rotace + runway model** | doplněk |
+| Velrybí navigace / uzly (20%) | ~ — itinerář, ne migrace | **✓ — doslovné naplnění L5 circuit** | — |
+| Kolaps-proof (25%) | ~ — závisí na dodávkách | **✓ — mechanické fallbacky, sail-primary** | detail |
+| Extrémní klima (15%) | ✓ — ark-mode | **✓ — ark-mode + drift kultura** | — |
+| Humanitární dopad (10%) | **✓✓ — 300 zachráněných** | ~ — kapacita omezená | — |
+| **Verdikt** | vedlejší mise | **JÁDRO** | příloha B |
+
+**Syntéza:** **Studie B je jádro** — a z A si bere **modulární shelter deck** (kontejnerové mise pro rescue/lab/extra-farm jako volitelné moduly, ne identita). Kolonie ≤100 drží humanitární rámec přes *uzly a přístav*, ne přes maximální nosnost.
+
+---
+
+## D.2 Kalorická hluboká analýza — pravda o „100 % soběstačnosti"
+
+**Otázka:** dokáže loď vyprodukovat 220 000 kcal/den pro 100 lidí napořád?
+
+### D.2.1 Produkční strop (realistické horní odhady)
+
+| Kanál | kcal/den | % potřeby |
+|---|---|---|
+| Hydroponie 500 m² (~50 kg/den fresh) | ~20 000 | ~9 % |
+| Klíčárna 50 kg/den klíčků | ~22 000 | ~10 % |
+| Aquaponie+rybolov ~30 kg/den | ~30 000 | ~14 % |
+| Drůbež (40 vajec) + kozy (4 l) + králíci | ~10 000 | ~4,5 % |
+| Spirulina/houby/hmyz | ~8 000 | ~3,5 % |
+| **Σ produkce** | **~90 000** | **~40 %** |
+
+→ **Fyzikální strop produkce ~40 % potřebných kalorií** — zbytek *musí* jít ze zásob. To není selhání designu, je to geometrie: loď není pole.
+
+### D.2.2 Runway model — jak „napořád" skutečně funguje
+
+Správná metrika není „nulové zásoby", ale **runway nikdy nedosáhne nuly**:
+
+- Staples zásoba **~200 t** při čerpání ~30–35 kg/den (60 % zbytku) = **~13 t/rok → ~15 let runway i bez doplnění**
+- Plus **seed vault resow** — obilí/legumíny se na uzlech znovu pěstují a sklízí = archiv se spotřebovává a **doplňuje z vlastní plodiny**
+- Plus **uzlová re-produkce** — každý L5 uzel je současně zásobovací stanice (Genesis Garden, La Palma, LUMI, Lanka…) — archa není izolovaná loď, ale **mobilní článek zemědělské sítě**
+- Plus produkce ~40 % = reálná runway **>20 let** při zachování sítě uzlů, **>10 let** i při totální izolaci
+
+**Verdikt kalorický:** „absolutní soběstačnost" se nepřekládá „100 % vyrobeno na palubě", ale **„systém se nikdy nevyčerpá"** — produkce + rotace + resow + runway > generace. To je poctivá definice, kterou nese i Noe (nesl *potravu*, ne jen zvířata — Gn 6,21).
+
+### D.2.3 Tichý limit: bílkovina a mikroživiny
+
+Kalorie řeší den; **zdraví řeší roky**: B12, omega-3, esenciální aminokyseliny, vápník. Design uzavírá: ryby+aquaponie (protein+omega3), drůbež/kozy (B12+vápník), klíčky (živá vitamínová matice), spirulina (kompletní protein), fermentace (kimchi/miso — palubní mikrobiom). → zdravotní model na roky, ne měsíce.
+
+---
+
+## D.3 FMEA — analýza selhání (top rizika seřazená RPN)
+
+| # | Selhání | Dopad | P | Mitigace | Zbytkové |
+|---|---|---|---|---|---|
+| 1 | **Požár bateriové banky** (LFP runaway) | katastrofa | nízká | 2 oddělené protipožární celky, BMS+odkuřování, jettison-kapacita modulu, manuální izolace | nízká |
+| 2 | **Ztráta rigu v bouři** (pád stěžně) | vysoký | střední | jury-rig procedury + rezervní žerď+plachty; e-drive+nafta drží manévr | střední |
+| 3 | **Úmrtí klíčové osoby** (lékař, kapitán) | vysoký | střední | **skills-matrix po dvou** — žádná kritická role <2 lidí; telemedicina HF | nízká–střední |
+| 4 | **Kolaps farm-deck** (šarža škůdců/houby) | střední | střední | izolované zóny, UV/HEPA vstup, rotace plodin, rezervní klíčárna+staples nesou | nízká |
+| 5 | **Selhání seed vault (−18 °C)** | vysoký (archiv!) | nízká | N+1 komprese, pasivní izolace ~7 d, LN² kryo backup jádra, **duplikát na uzlu** (Genesis Garden) | nízká |
+| 6 | **Kontaminace vody** | vysoký | nízká | RO N+1 + UV + chlor point + tanky oddělené + rain jako nezávislá větev | nízká |
+| 7 | **Nepřátelský styk** (ozbrojené) | vysoký | nízká | neutrální svatyně, non-lethal deterrence, úkrytová citadela, HF distress, rychlost+manévr | střední (👤 defense doctrine) |
+| 8 | **Rigorózní poškození farm skleníků** (zelená voda/pletivo) | střední | střední | skleníky vnitřní (pod shelter), storm-klapky, záložní fólie/PV z materiálové archy | nízká |
+| 9 | **Psychika/rozpad komunity** | vysoký (tichý killer) | střední–vysoká | sociokracie, rotace poutníků, škola+světinec, misi smysluplnosti, „náměstí" jako veřejný prostor | **největší zbytkové riziko projektu** |
+| 10 | **Cyklové stárnutí (rig ~15 l, plachty ~5 l, baterie ~10 l, PV ~2 %/r)** | jisté | vysoká | **lifecycle plán §D.5** — náhradní cykly naplánované, ne reaktivní | nízká (plánované) |
+
+**Top 2 kritika designu:** (a) **komunita > technika** — stroje se opravují, společnost se rozpadá; (b) **rig loss** — jediný event, který ohrožuje identitu sail-primary. Proto materiálová archa a jury-rig procedury.
+
+---
+
+## D.4 Citlivostní analýza — předpoklady, co zabíjí design
+
+| Předpoklad | Pokud se rozbije | Dopad | Přežije systém? |
+|---|---|---|---|
+| PV ~200 kWp | sůl/stín/degradace → ~120–150 kWp efektivní | energetický deficit ~0,4–0,6 MWh/d | **ano** — load-shedding hierarchie; farm denní světlo zdarma; nafta léky |
+| Vítr pasátní konstantní | bezvětří/rozběsněné moře | generace dolů | **ano** — baterie 2–4 MWh, nafta rezerva, počkat (velryby počítají s klidem — archa taky) |
+| Farm produkce 40 % | pokles na ~15–20 % | vyšší čerpání staples | **ano** — runway model absorbuje; resow obnoví |
+| Posádka 100 | výpovědi/konflikt → 60 | méně dělby práce | **ano** — kritické role po dvou se drží; nadbytek kapacity |
+| Uzly L5 dostupné | uzavřené přístavy/nestabilita | ztráta reprodukce | **ano, ale horší** — runway se zkracuje; archa zůstane na moři (proto je archa) |
+| Elektronika funguje | EMP/selhání/grid-down | ztráta nav+comms+řízení | **ano** — sextant+papíry+HF+manuální fallbacky; ZION ledger offline |
+| Kolaps je scénář, ne jistota | trvalý mír | předimenzované rezervy | **ano** — redundance je zdravý luxus, ne mrtvá váha; mise jede dál |
+
+**Křehké místo nalezeno:** energetika je jediná bilance, co je *tight* — design ji drží přes **prioritní load-shedding a dvoustupňový vítr**; všechny ostatní bilance mají přebytek větší než chybu odhadu.
+
+---
+
+## D.5 Mechanika přežití bouře — co dělají 20–30 m vlny
+
+| Vrstva | Realita | Design odpověď |
+|---|---|---|
+| **Trup** | zelená voda na palubě ~10–30 t/m² nárazy | high freeboard, rounded deck edges, nic na decku co se netáhne/nesklopí |
+| **Rig** | vichr+slamming = největší namáhání | reef early, storm staysail, sea anchor drift; **nikdy neběžet před bouří když stačí čelit** |
+| **Farma** | rostliny sloshing, zvířata v kleci | farm uzavřená vnitřní (ne na weather decku), „storm-mode" pro aquaponii (snížená hladina) |
+| **Zvířata** | welfare v bouři = reálný problém | malé hloubkové kotce s měkkým podlahou, sedativní protokol veterinary, **krmení před bouří, ne během** |
+| **Lidé** | mořská nemoc, úzkost, fyzická bezpečnost | citadela-jádro (P1–P2), handrail systém všude, „all-hands secured" protokol, komunikační rituály |
+| **Funkce** | kolonie musí fungovat dál | směny krátké, jídlo jednoduché, škola+světinec jako kotvy rutiny |
+
+**Poučení z precedents:** Tara přežila 507 dní v ledu protože byla *navržená* na drift; RW3 jede všude protože byla *navržená* na sail. Archa přežije bouře protože je navržená na **čekání** — její první dovednost není plout rychle, ale **dostat se skoro kamkoliv a zůstat tam živá**.
+
+---
+
+## D.6 Demografie kolonie — 100 lidí jako společnost
+
+| Dimense | Analýza |
+|---|---|
+| **Genetika** | ~100 je pod minimem dlouhodobé genetické diverzity (~150–500 efektivně) — **ale archa není izolovaná navěky**: uzly + poutníci + příliv lidí = otevřený genofond; uzavřenost jen přechodná v kolaps-scénáři |
+| **Věková struktura** | cílová „malá vesnice": ~15–20 dětí, ~60 dospělých 20–60, ~15–20 starších — **děti = důkaz, že to trvá** |
+| **Rozdělení práce** | ~40 kritických rolí po dvou + rotace — nikdo není „jen zahradník"; všichni se učí plavbu |
+| **Governance** | L5 sociokracie: kruhy (provoz/farma/medic/výchova), dvojí vazba, consent rozhodování; **ústava = survival systém** — v izolaci není kampaň, kde prchneš; rozhoduje se tváří v tvář napořád |
+| **Kultura** | světinec + škola + knowledge ark + rituály = civilizace v malém; kniha Království srdce je loď sama — **příběh udržuje morálku, ne jen technika** |
+
+---
+
+## D.7 Lifecycle — 50 let archy
+
+| Období | Co se děje | Co se mění |
+|---|---|---|
+| **R. 0–3** | design → stavba → shakedown → první obvod | farm iterace, ústava se kalibruje |
+| **R. 3–10** | operativní velrybí cykly; flotila Marií roste vedle | sails ~5–8 l refresh; PV ~90 % výkonu; první generace dětí ve škole |
+| **R. 10–20** | dospělý provoz; uzly dospěly = reprodukce silnější | rig wire ~15 l; baterie banka #1 refresh; PV ~80 %; **druhá generace do role** |
+| **R. 20–35** | stáří trupu OK (ocel 50+ l); mise se přesouvá: kolonie→**flagship svatyně + cvičná loď + archiv** | gensety rebuild/replace; baterie #2; další generace |
+| **R. 35–50+** | **horizont:** archa jako žijící monument; uzel pro uzel služba; případně sesterstvo nové generace | trup podmíněný přežiť století (ocel drží, když se drží); ledger+knihy+semena = paměť netleská |
+
+**Význam horizonu:** archa není produkt, je **instituce**. Její životnost je životnost komunity, která ji nese — proto skills-matrix a škola jsou kritické systémy, ne vybavení.
+
+---
+
+## D.8 Závěr hluboké analýzy
+
+**Co design je:** plavidlo, které přežije kolaps protože je postavené na čekání, vítr, rotaci a komunitu. **Co design není:** loď, která vyrobí všechno sama — nikdo a nic na vodě to nedokáže; proto je její síla v **runway + resow + uzlích**, ne v iluzi uzavřené misky.
+
+**Tři pravdy, které studie nesou:**
+
+1. **Sail-primary je jediné palivo, co nedojde** — všechno ostatní se pije; vítr je zdarma napořád (proto schooner, proto junk-alternativa).
+2. **Největší riziko není stroj, je společnost** — požár se uhasí, rig se opraví, ale komunita se rozpadne tiše; proto ústava, škola a světinec jsou systémové součásti, ne dekorace.
+3. **Archu nenese nosnost, nese ji runway** — 200 t staples + 40 % produkce + resow + uzly = doba, která přežije generace; poctivá soběstačnost je **„nikdy nedojde", ne „všechno vyrobím".**
+
+---
+
+*„Co lidi přikrývá, to je nese přes vodu." — kofer není izolace, ale péče. Archa nepřežije protože je uzavřená, ale protože je propojená.*
