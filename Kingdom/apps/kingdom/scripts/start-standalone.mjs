@@ -1,36 +1,15 @@
 #!/usr/bin/env node
 /**
- * Start standalone serveru bez `next start`.
- *
- * `output: standalone` v monorepu zanoří appku do `.next/standalone/apps/kingdom/`
- * a **statiku je potřeba stageovat vedle server.js**, ne do rootu standalone.
- * Přesně na tomhle spadl deploy 2026-10-30 v `apps/MarketPlace` — odtud ten skript.
+ * Start standalone serveru bez `next start` (to s `output: standalone` nefunguje).
+ * Statiku stageuje `stage.mjs`, aby se nasazení a lokální běh chovaly stejně.
  */
-import { cpSync, existsSync, rmSync } from 'node:fs';
 import { spawn } from 'node:child_process';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { APP_DIR, stageStandalone } from './stage.mjs';
 
-const appDir = join(dirname(fileURLToPath(import.meta.url)), '..');
-const standaloneRoot = join(appDir, '.next', 'standalone');
-const appOut = join(standaloneRoot, 'apps', 'kingdom');
-
-if (!existsSync(join(appOut, 'server.js'))) {
-  console.error('chybí .next/standalone — spusť nejdřív `npm run build`');
-  process.exit(1);
-}
-
-function stage(from, to, label) {
-  if (!existsSync(from)) return;
-  rmSync(to, { recursive: true, force: true });
-  cpSync(from, to, { recursive: true });
-  console.log(`staged ${label}`);
-}
-
-stage(join(appDir, '.next', 'static'), join(appOut, '.next', 'static'), '.next/static');
-stage(join(appDir, 'public'), join(appOut, 'public'), 'public');
-
+const appOut = stageStandalone(APP_DIR);
 const port = process.env.PORT ?? '3020';
+
 console.log(`start → http://127.0.0.1:${port}`);
 
 const child = spawn(process.execPath, [join(appOut, 'server.js')], {

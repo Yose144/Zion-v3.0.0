@@ -2,7 +2,7 @@
 
 > **Datum:** 2026-11-01 · **Autor:** agent (autonomní) · **Stav:** F0 ✅ · F1 ✅ · F2a ✅ · F2b ✅ · **F3 ✅ (9 portálů)**
 > **Rozhodnutí 👤, která to spustila:** (1) strom `Kingdom/` v rootu, stavěný od nuly; (2) `website-v2.9` zůstává knihovnou/docs; (3) Dashboard zůstává samostatný; (4) Nirvana = první svět OASIS, OASIS jednou jako AAA hra; (5) market, pool UI i Dashboard funkčně zůstávají.
-> **Nic z toho není nasazené.** Kingdom běží jen lokálně (`127.0.0.1:3020`). DNS, EDGE2 a `systemd` jsou 👤.
+> **NASZENO 2026-11-01 21:00 UTC** na EDGE2 (`zion-kingdom.service`, `127.0.0.1:3020`, vhost `kingdom.zionterranova.com` staged na :80). DNS + certbot zůstávají 👤.
 
 ---
 
@@ -102,6 +102,24 @@ Výsledek: scéna Místnosti má **8 markerů** (Účet chybí záměrně) a li�
 | zdrojový kód světů | 10 900 LOC (převzato, ne přepsáno) | `wc -l` |
 | První paint Brány | bez WebGL v bundlu | `/` nemá `<canvas>` |
 | Lockfileů v Kingdomu | 1 | `find` |
+
+---
+
+## 2b. Nasazení (EDGE2)
+
+| Položka | Hodnota |
+|---|---|
+| Unit | `zion-kingdom.service` (User=zion, Node 22.23.3) |
+| Bind | `127.0.0.1:3020` — ven jen přes nginx |
+| Origins | **loopback**: web `:3000`, market `:3100`, pool `:8080`, oasis `:8094`, ZIS `:8096` — žádné TLS samo k sobě |
+| Vhost | `kingdom.zionterranova.com`, port 80 (staged jako `api.` / `dex.`) |
+| Deploy | `infra/deploy/deploy-kingdom.sh` — nový `build-<UTC>` + atomický symlink `current`, rollback = přepis symlinku |
+| Paměť | **62 MB** |
+| Odezva | **13–74 ms** (Brána studená 74 ms, teplá 23 ms; portál 19–44 ms; svět 13 ms) |
+
+**Ověřeno živě na serveru, ne jen `200`:** Brána čte z loopbacku **104 200 bloků / difficulty 18 206 / 303 H/s / 57,0 s / 12 z 12 mincí**, Přístav **28 109 510 ZION** (blok 104 192), všech 7 rout včetně `/world/kailash` odpovídá `200`, journal bez chyb.
+
+**Zbývá 👤:** DNS `A kingdom` → `207.180.217.100` + `certbot --nginx`.
 
 ---
 

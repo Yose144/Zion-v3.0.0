@@ -1,0 +1,38 @@
+[Unit]
+Description=ZION Kingdom — jeden klient ekosystému (Brána, Místnost, světy, portály)
+Documentation=https://github.com/Yose144/Zion-v3.0.0/tree/main/Kingdom
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion/APP&WEB/kingdom/current/apps/kingdom
+
+Environment=NODE_ENV=production
+Environment=PORT=3020
+Environment=HOSTNAME=127.0.0.1
+
+# Služby na stejném boxu — loopback místo veřejného TLS.
+Environment=KINGDOM_CHAIN_ORIGIN=http://127.0.0.1:3000
+Environment=KINGDOM_FREEWORLD_ORIGIN=http://127.0.0.1:3000
+Environment=KINGDOM_DAO_ORIGIN=http://127.0.0.1:3000
+Environment=KINGDOM_HIRAN_ORIGIN=http://127.0.0.1:3000
+Environment=KINGDOM_ISSOBELLA_ORIGIN=http://127.0.0.1:3000
+Environment=KINGDOM_MARKET_ORIGIN=http://127.0.0.1:3100
+Environment=KINGDOM_POOL_ORIGIN=http://127.0.0.1:8080
+Environment=KINGDOM_OASIS_ORIGIN=http://127.0.0.1:8094
+Environment=KINGDOM_AUTH_ORIGIN=http://127.0.0.1:8096
+
+ExecStart=/usr/local/bin/node server.js
+
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
