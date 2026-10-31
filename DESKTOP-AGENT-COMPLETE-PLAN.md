@@ -316,7 +316,7 @@ Text (cs/en), který musí být v appce:
 - [x] BOOST vždy on — `default_stream3_enabled()` = `true` v `auto_detect.rs` (1. 11., obě editions).
 - [x] Jasné vysvětlení v UI (cs) — first-run wizard public-miner (1. 11.); EN překlad zbývá.
 - [ ] ⚠️ **PRL blocker:** `ExternalCoin::Pearl` je `disabled` v `CoinProfile` — dokud není production-ready, stream 4 = PRL nejede; aktuálně QTC (GPU) + VRSC (CPU).
-- [ ] Revenue dashboard (interní) — BOOST výnos → treasury/liquidity.
+- [x] **Revenue dashboard** — `ZION_OS/revenue-dash/` (Flask, `http://127.0.0.1:8770`), čte `/public/v1/coins` + `/stats`, zobrazuje 11 BOOST coinů (QTC, PRL, VRSC, ZANO, …), hashrate, accepted shares, fee, pool wallet; auto-refresh 30 s. Live ověřeno 1. 11. (12 coinů, 465k accepted, 12,3 PH/s). Deploy unit: `ZION_OS/revenue-dash/deploy/zion-revenue-dash.service`.
 - [ ] Pool wallet funding (👤 W3.4).
 
 ### D6 — Release (2 dny) · 👤
@@ -377,3 +377,4 @@ Text (cs/en), který musí být v appce:
 | 2026-11-01 | v1.0 — vytvořeno po průzkumu `apps/desktop-agent`, `apps/public-miner`, `V31/L1/miner` (auto_detect, autonomous, Cargo features), `cosmic-harmony/profit.rs`, build skriptů. Ověřen rozpor §1.4 (VIP buildí `public_build`). |
 | 2026-11-01 | v1.1 — **rozhodnutí 👤 zapracována:** licence **jednorázová lifetime**, žádný trial; auto-update dolaď (VIP feed + GitHub fallback + rollback); Public **BOOST vždy ON** (QTC GPU + PRL CPU, výnos → grow/liquidity, uživatel jen ZION, jasné vysvětlení v UI); VIP plná Trinity podpora; Windows OpenCL build + code signing **odloženo na jiný stroj s CUDA/OpenCL GPU** (§6.4). |
 | 2026-11-01 | v1.2 — **D0 hotovo:** `--edition vip\|public`, VIP bez `public_build` (ověřeno: `aarch64` binary obsahuje ZANO/QTC/PEARL/VRSC), public-miner přesunut z archivu, update-server přesunut do `apps/`. **D4 kód:** VIP license-gated update server + GitHub fallback; deploy artefakty (env, systemd, nginx). **D5:** BOOST vždy on (`default_stream3_enabled=true`), UI vysvětlení v public wizardu. **PRL blocker nalezen:** `ExternalCoin::Pearl` = `disabled`. Mac aarch64 + Windows CPU-only miner buildy hotové. |
+| 2026-11-01 | v1.3 — **D5 revenue dashboard hotov:** `ZION_OS/revenue-dash/` (Flask, port 8770) čte live pool API, zobrazuje 11 BOOST coinů + ZION, hashrate/accepted/fee/pool wallet, auto-refresh. Live ověřeno: 12 coinů, 465k accepted, 12,3 PH/s (PRL dominuje). Deploy unit přidán. |
