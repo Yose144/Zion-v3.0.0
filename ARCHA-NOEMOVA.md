@@ -4,7 +4,7 @@
 
 > **Status:** 🟣 **KONCEPT K DISKUSI** — seed dokument; rozvine se později, nic se zatím nestaví ani neregistruje.
 > **Datum:** 2026-10-31 · **Příprava:** ZION / Terra Nova L5
-> **Realizační studie:** [`docs/3.2/ArchaNoemova.md`](docs/3.2/ArchaNoemova.md) — vážný inženýrský rozbor (rozměry, autonomie 365 d, zásoby, energie, seed vault, CAPEX/OPEX, precedenty)
+> **Realizační studie:** [`docs/3.2/ArchaNoemova.md`](docs/3.2/ArchaNoemova.md) — **dvě studie aditivně:** A (rescue/svatyně ~340 osob, 365 d) + B (kolonie-archa ≤100 lidí, absolutní soběstačnost, sail-primary, velrybí navigace)
 > **Souvisí:** [`docs/3.2/TreeMarias.md`](docs/3.2/TreeMarias.md) (flotila Tres Marías), [`canon/books/KralovstviSrdce/`](canon/books/KralovstviSrdce/00-README.md) (kniha — loď, kterou postavil tesař), [`canon/books/MariaCaminho/`](canon/books/MariaCaminho/00-README.md), [`canon/books/nirvana/13-Tres-Marias.md`](canon/books/nirvana/13-Tres-Marias.md), [`canon/books/SurtaSrdce/`](canon/books/SurtaSrdce/00-README.md), [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) (v3.3 release nese tytéž dva názvy)
 > **Registry (návrh):** program `archa-nirvana`, status `vision` — v L5 API zatím neregistrován
 
@@ -13,6 +13,8 @@
 ## 0. TL;DR
 
 Flotila L5 má tři Marie — lodě poutníků (království, cesta, horizont). Čtvrté plavidlo je **archa**: loď, která není pro poutníky, ale pro ty, kdo přežívají potopu. Jmenuje se **Nirvana · Království srdce** — jméno, které tesař vyryl na kýl každé lodi (KralovstviSrdce/09), a jméno, které už nese i release v3.3. Archa je mobilní svatyně + humanitární/záchranná kapacita + plovoucí archiv semen a paměti — ne nákladník, ne poutník, ale **přístav, který se vrací pro ty, co zůstali ve vodě**.
+
+**Brief B (rozšíření 👤, 2026-10-31):** kolonie-archa pro **max ~100 lidí** — ne rescue loď, ale **samoudržující se společnost na oceánu**: absolutní soběstačnost napořád (jídlo se pěstuje, voda se vyrábí, energie fouká a svítí), **sail-primary** (nafta = nouzová rezerva, ne systém), plující **velrybími cestami** — sezónně mezi bezpečnými pásmy jako keporkaci — mimo bouřové zóny, přežívající **kolaps civilizace** (opravitelná, mechanické fallbacky, knowledge ark, ústava).
 
 ---
 

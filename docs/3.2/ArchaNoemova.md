@@ -4,8 +4,15 @@
 > **Datum:** 2026-10-31 · **Příprava:** ZION / Terra Nova L5
 > **Souvisí:** [`../../ARCHA-NOEMOVA.md`](../../ARCHA-NOEMOVA.md) (koncept a kánonické kotvy), [`TreeMarias.md`](./TreeMarias.md) (flotila Tres Marías), [`L5MariaDelCamino.md`](./L5MariaDelCamino.md), [`L5_PROOF_OF_IMPACT.md`](./L5_PROOF_OF_IMPACT.md)
 > **Registry (návrh):** program `archa-nirvana`, status `vision` — neregistrován
+>
+> **Dokument obsahuje DVĚ studie (aditivně, nic nepřepsáno):**
+> - **Studie A** — původní brief: rescue/svatyně archa, ~340 osob, autonomie 365 dní (design basis Gn 6–8: 40 d bouře + 150+ d vody)
+> - **Studie B** — rozšířený brief 👤 (2026-10-31): kolonie-archa **≤100 lidí**, absolutní soběstačnost napořád, sail-primary, velrybí navigace, přežití kolapsu civilizace
 
 ---
+---
+
+# STUDIE A — rescue/svatyně archa (~340 osob, autonomie 365 dní)
 
 ## 0. TL;DR
 
@@ -291,3 +298,294 @@ Ponton + dřevěná nástavba 40–70 m: **€3–6M**, 12–18 měs. — **nen�
 
 *„Udělej si archu z góferového dřeva… a vymaž ji smolou zevnitř i zvenčí." — Gn 6,14*
 *„Co lidi přikrývá, to je nese přes vodu." — Království srdce, kap. 2*
+
+
+---
+---
+
+# STUDIE B — kolonie-archa (≤100 lidí, absolutní soběstačnost napořád)
+
+## 0. TL;DR — nový brief
+
+Ne rescue loď pro 340 — **kolonie-archa pro max ~100 lidí**, projektovaná jako by civilizace zkolabovala: **absolutní oceánská soběstačnost napořád**, primárně na větru (nafta je jen nouzová rezerva, kterou jednou vyčerpáme — a život pokračuje), plující **velrybími cestami** — sezónně mezi teplými a mírnými pásmy, stejně jako keporkaci — a držící se bezpečných proudů mimo bouřové a konfliktní zóny.
+
+| Pravidlo | Co znamená inženýrsky |
+|---|---|
+| **Absolutní soběstačnost** | Žádná dodávka navždy: jídlo se pěstuje (ne jen skladuje), voda se vyrábí, energie padá z nebe a fouká, stroje se opravují na palubě |
+| **Velrybí navigace** | Sezónní letníkování/zimníkování jako keporkaci = zároveň vyhýbání se cyklónům i itinerář mezi L5 uzly (všechny jsou pobřežní!) |
+| **Extrémní klima** | Uzavřený „ark profile" pro mega-bouři; drift-mode; opce ledu na okraji (ne v jádru — velryby sem nejedou) |
+| **Přežití kolapsu** | Plachta = jediné palivo, co nedojde; mechanické fallbacky; dílna+kovárna; skills-matrix posádky; knowledge ark; ústava pro 100 |
+| **≤100 lidí** | Kolonie, ne posádka: rodiny, škola, porodnice — společnost, která se obnovuje |
+
+**Doporučená koncepce:** **A-frame / staysail schooner 75–90 m ocel + e-drive auxiliary** — Rainbow Warrior III (58 m, sail-primary, 10 kn @ 300 kW, €23M účelová novostavba) škálovaná ~2,5× s produkčními palubami.
+
+---
+
+## 1. Design basis — „kolaps civilizace" rozložený na požadavky
+
+| Scénář | Požadavek |
+|---|---|
+| Přestanou existovat přístavy, zásobování, paliv | **Větrný primát:** hlavní pohon plachty; e-drive jen kratše; diesel-genset = nouzová rezerva s konečnou nádrží |
+| Zkolabují dodavatelské řetězce | **Opravitelnost:** ocelový trup svařitelný na palubě, mechanické systémy tam, kde to jde, dílna (soustruh/fréza/svařovna/kovárna/šicí dílna), zásoba surovin |
+| Selže technologie/internet | **Analogové páteře:** astronavigace + papírové mapy + HF rádio (nevyžaduje infrastrukturu), mechanické zálohy kormidla/kloků/výtahů; LEO sat jako bonus, ne závislost |
+| Přijdou extrémní cyklóny / megastormy | **Ark profile:** vše vodotěsné, minimální otvory, 3-compartment standard, sea anchor, drift-mode; úkryt místo boje |
+| Nastane hladomor/nerovnováha | **Produkční paluby:** ~70–80 % kalorií pěstováno/loveno průběžně; rotující zásoby = pojistka; seed vault = farma, kterou jíš a znovu zaseješ |
+| Komunita bude sama roky | **Kolonie:** 100 lidí vč. rodin a dětí; ústava L5 (sociokracie); škola; porodnice; světinec — společnost, ne expedice |
+
+### 1.1 Biblický rámcový check (z v1 platí dál)
+
+300×50×30 loktů = **L:B ~6:1** — KRISO (1994) ověřila jako top stabilní tvar (>30 m vlny). Naše proporce 80–90 × 14–16 m ≈ 5,5–6:1 drží tutéž geometrii. „Po dvou ze všeho" čteme v2 jako: **po dvou lidí na každý kritický skill, po dvou systémy, po dvou semena.**
+
+---
+
+## 2. Velikost — počítáme kolonii, ne manifest
+
+### 2.1 Prostorový rozpočet pro ~100 osob (celoroční standard, ne nouze)
+
+| Funkce | m² | Poznámka |
+|---|---|---|
+| Ubytování (kolonie ~15–18 m²/os brutto) | 1 500–1 800 | kajuty/rodinné komory, ne vojenské lehárně — žije se tu napořád |
+| **Produkční paluby (farm deck)** | 700–900 | skleníková hydroponie + aquaponika + klíčárna + drůbež/kváli + houbárna + micro-dairy |
+| Dílny (fabrication) | ~200 | strojní dílna + kovárna + plachetnice + elektronika bench |
+| Seed vault + kryo + knowledge ark | ~150 | −18 °C archiv + LN² + Faraday knihovna |
+| Medical + porodnice + izolace | ~250 | dokud se nenarodí dítě na moři, není to kolonie |
+| Vzdělání + svatyně + commons | ~400 | školní třída, světinec, refektář/mess, „náměstí" |
+| Rotující zásoby (staples, spares) | ~500 | viz §5 |
+| Strojovna, energie, nádrže | ~600 | gensety (nouzové), baterie, tanky, RO |
+| Plachetní provoz, náklad, čluny | ~400 | sail handling, 2–3 workboaty/tenders |
+| **Σ** | **~4 600–5 100 m²** | na 2–3 paluby ~80×17 m ≈ 1 350 m²/paluba + nástavba |
+
+→ **Trup ~78–90 m LOA, ~16–18 m B, ~2 500–3 500 t plný výtlak** — přesně třída malého research/expedice/tall shipu. (KRISO L:B 5–6:1 splněno na spodní hraně šíře.)
+
+### 2.2 Koncepce trupu — 4 kandidáti
+
+| Varianta | Koncept | Verdikt |
+|---|---|---|
+| **A — A-frame / staysail schooner 75–90 m** (RW3 škálovaná) | Ocel, 2–3 stožáry A-frame/dynarig ~2 500–4 000 m² plachet; e-drive 2× ~400–600 kW shaft; sail-primary | **DOPORUČENO** — dokázaná třída (RW3 10 kn @ 300 kW!), malá posádka zvládne velký plachetní plán, zátěž na vítr nulová |
+| B — Motor-sailer s vysokým sail-assist | konvenční diesel-electric + solid sail/wing | varianta pokud sail-primary projde class obtížně |
+| C — Velký trimaran / SWATH | max palubní plocha pro farm deck | **ZAMÍTNUTO pro kolaps-brief:** multihull se nesamovzpřími; převrhnutí = konec archy; SWATH servisně extrémně náročný |
+| D — Refit research/fishing motor-sailer 70–85 m | ex-trup + plachetní konverze + farm decks | **Pragmatická cesta A′** — levnější start, ale rig konverze je tvrdá (stožáry na cizí trup = redesign, ne nátěr) |
+
+**Pozn.:** full-ark ~135 m (biblická míra) by nesl ~300+ lidí — nad brief ≤100 a nad realitu posádkování. Zůstává horizont v registru.
+
+---
+
+## 3. Energie — rozpočet, který nepoužívá naftu
+
+### 3.1 Zátěž (efficiency-first design — LED, DC rozvody, heat recovery, pasivní ventilace)
+
+| Zátěž | Průměr | Poznámka |
+|---|---|---|
+| Hotel load (100 lidí) | 35–50 kW | vaření+světla+HVAC+farm-housekeeping |
+| Medical + seed vault (−18 °C) + kryo | 25–40 kW | chladna = neustálá povinnost, prioritní okruh |
+| Farm deck (čerpadla, doplnková světla, klíma skleníku) | 25–40 kW | **skleníky na denní světlo — ne LED farma** (okno do paluby + reflektory) |
+| RO vodní výroba (4–6 h okno) | 15–25 kW | běží když fouká/svítí — „water when wind blows" |
+| Node/comms/lab/dílna | 15–25 kW | ZION node, HF, bench spotřeba |
+| **Σ trvalý průměr** | **~90–150 kW** | přiznaný rozptyl = design driver |
+
+### 3.2 Výroba (obnovitelné zdroje)
+
+| Zdroj | Výkon | Poznámka |
+|---|---|---|
+| **PV skin** (střecha nástavby+deck ~800–1 200 m²) | 150–250 kWp → **průměr 40–80 kW** | v pásmech archy (10–35 ° lat) insolace vysoká |
+| **Marine větrné turbíny** 2–4× na rámech | 2× 5–10 kW → **průměr 15–35 kW** | v pasátech konstantní 15–25 kn = zlatý pás |
+| **Hydrogenerace** (tažené/škřípavé rotory za plavby) | 10–30 kW **nepřetržitě při chodu** | RW3-pattern: loď co pluje, dobíjí |
+| **Zbytkové teplo** (genset/pila/kompost) | — | topení kajut+ohřev vody jako RW3 |
+
+→ **Průměrná výroba ~70–140 kW v pásmech** ≈ zátěž — **soustava je vyvážená uprostřed, baterie absorpují dny bez slunce/větru.** Propulze na větru = **0 kW** (to je pointa).
+
+### 3.3 Uskladnění + nouzová nafta
+
+- **Baterie 2–4 MWh** (LFP, 2 banky, N+1) = ~1–2 dny plné autonomie bez generace; cyklické stáří řešitelné zásobou článků v archivu
+- **E-drive auxiliary** 2× 400–600 kW shaft (twin screw, manévrovatelnost+pobřeží/calms)
+- **Diesel gensety 2× ~400–500 kW + ~100–150 t MDO** — **deklarovaně nouzová rezerva**: ~2–3 týdny nepřetržité nouzové jízdy, nebo roky drobného dosing pro calms/harbour ops. **Pravidlo archy: nafta je léky v lékárničce, ne strava. Až dojde, život pokračuje na větru.**
+- **Biomass/driftwood opcená:** mikro-spalovna pro topení/malou karburaci — okrajová, ale v kolaps-scénáři „všechno hořlavé je palivo" je pravda, kterou design nepředstírá.
+
+---
+
+## 4. Jídlo — kolonie jí z paluby, ne ze skladu
+
+Cíl: **~70–80 % kalorií produkce/lov, ~20–30 % rotující zásoby** (a ty se znovu zasejí ze seed banky na každém uzlí).
+
+| Systém | Plocha | Výstup/den | Poznámka |
+|---|---|---|---|
+| Skleníková hydroponie | 400–600 m² | 60–100 kg zeleniny+ovoce | hlavní produkce, denní světlo + LED doplněk |
+| Klíčárna (sprouting) | ~30 m² | 40–60 kg klíčků | 7denní cyklus; semena ze **seed vaultu jíme přímo** = archiv jako spíž |
+| Aquaponika (tilapie/krevety) | integrovaná ~200 m² | 15–30 kg proteinu + okyseluje hydroponii | uzavřená voda, odpad→hnojivo |
+| **Mořský lov** (trawl+linie+potíže) | — | 15–40 kg ryby | velrybí trasa = šelfová voda = rybolovné pole; v pásmech archy trvalé |
+| Drůbež (40–60 slepic) | ~40 m² | 35–50 vajec | odpadky→krmivo, trus→farm deck |
+| Králíci/kválci | ~30 m² | 3–6 kg masa | tichý protein, nízký prostor |
+| **Micro-dairy** (2–4 trpasličí kozy) | ~30 m² | 3–5 l mléka | ověřená námořní praxe; seno z hydroponických ořezů |
+| Spirulina bio-reaktory | ~20 m² | 2–4 kg suchého proteinu | nejhustší protein/m² na světě, záchranný pás |
+| Houbárna (uster/kvasnice na celulóze) | ~20 m² | 3–5 kg | rozebírá odpadní celulózu |
+| Mealworm farm | ~10 m² | 2–4 kg hmyzí protein | krmivo pro drůbež+aquaponii + nouzová potrava |
+| **Rotující zásoby** (obilí/legumíny/oleje/sůl/cukr) | ~40–60 t | krytí ~150–180 d plných porcí | zásoba se **spotřebovává a doplňuje** — nikdy nečerpá do dna |
+
+**Uzavřený kruh:** odpad z kuchyně → mealkworm/drůbež/kompost → farm deck → jídlo → odpad. **Seed vault = banka i spíž** — pšenice se jí i seje.
+
+---
+
+## 5. Voda
+
+- 100 × **80 l/os/den** (komfort, ne survival) = **~8 m³/den** — snadné: 1× RO 12–15 m³/den (8–10 h) + 1× menší backup
+- **Rain catchment:** ark-profile střecha = sběrná plocha ~1 000–1 400 m²; v pásmech dešťů ~10–25 mm/událost → **10–30 m³ na liják** — zdarma
+- Tanky **~150–200 m³ potable** (~3 týdny buffer) + technická voda z greywater/recycling (RW3 pattern)
+- Kondenzát z HVAC + farm deck získávání — každá kapka se vrací
+
+---
+
+## 6. Velrybí navigace — „jdi za keporkaky"
+
+Keporkaci (Megaptera novaeangliae) dělají přesně to, co archa potřebuje: **léto krmí v chladných produktivních vodách na vysokých šířkách, zimu v tropických rodištích** — a to celé v preferenci kontinentálních šelfů a seamountů. Jejich koridory se sezónně střídají mezi hemisférami — **stejně jako sezónní cyklónové okna**.
+
+### 6.1 Roční cyklus archy (obouhemisférický, anti-cyklónový)
+
+| Období | Hemisféra | Keporkačí vzor | Archa — kde | L5 uzel |
+|---|---|---|---|---|
+| Dec–Apr (NH zima) | NH tropika | Karibik/Samana rodiště; Baja | Karibik → Kostarika (Panama přejezd v okně) | **LUMI** |
+| Apr–Jun | NH přechod | severní migrace | Azory/Kanárské okno → Ibérie | **Tomar / Genesis Garden** |
+| Jun–Oct (NH léto) | NH mírné | Island/Norsko/Grónsko krmení | Ibérie → Azory → **mírný Atlantik** (ne Arktidu — velryby jedou výš) | Tomar / Galicie |
+| Okt–Nov | přechod S | jižní migrace | Cape Verde → rovníkový průchod | — |
+| Jun–Oct (SH zima) | SH tropika | Tonga/Fidži/Raiatea rodiště; Mozambik | **Tahiti/Raiatea → Tonga → Fidži** | **Te Pīko Ora** |
+| Nov–Mar (SH léto) | SH mírné | antarktické krmení (arka zůstává na okraji ~40–50 °j) | NZ oblasti → Jižní Afrika okraj | **Boa Esperança** (Mys) |
+| celoročně | Indy | Arabské moře populace = **jediná nemigrující** (celoroční tropika) | Indický oceán okruh | **Bodhi Lanka** |
+
+→ **2–3letý obvod „coconut run" (~30 000 nm) po šelfech a pasátech** — Pontevedra/Tomar → La Palma → Karibik → Kostarika → Panama → Raiatea → Tonga → NZ → Mauricius/Lanka → Mys → Azory → domů. **Každý úsek navštíví L5 uzel** — archa se stává pohyblivým článkem sítě, ne izolovaným bunkrem.
+
+### 6.2 Bezpečnost pásma
+
+- **Cyklóny:** NH hurikán Jun–Nov × SH cyklón Nov–Apr → hemisférický útěk je *ten samý* velrybí rytmus; navíc široká prostorová rezerva oceánů
+- **Piráti/konflikty:** archa se drží otevřeného moře a ověřených průlivů — Horn of Africa, Malacca, Guinejský záliv se proplouvají jen v konvojích/plánu, ne zvyku
+- **Ledy:** velryby jedou do Arktidy/Antarktidy — **archa ne.** Okrajová ice-margin odolnost (ice-belted bow + fenders) jako safety, ne jako habituální režim
+- **Seamounts & šelfy:** velrybí logika (krmí se tam) = rybářská logika archy (jíme tam)
+
+---
+
+## 7. Extrémní klima — „ark profile"
+
+| Režim | Co se stane | Detaily |
+|---|---|---|
+| **Normální plavba** | plachta + PV/turbíny, farm deck otevřený světlu | běžný život |
+| **Bouře (30+ kn)** | reefed sails, farm deck „sklopený"/chráněný kryty, hydroponie v safe-mode | produkce pauzne, zásoba nese |
+| **Mega-bouře (ark mode)** | **vše uzavřeno:** zero otvorů pod freeboard, storm staysail nebo sea-anchor drift, lidi do citadela-jádra | KRISO-validated forma; cíl = přečkat, ne jet |
+| **Calm/dráha** | e-drive z baterií; když dlouho → nouzová nafta (léky) | sail-primary disciplína |
+| **Kolaps scénář** | mechanické zálohy: emergency tiller, ruční navijáky, ruční bilge, papírové mapy+sextant | design předpokládá selhání elektroniky |
+
+**Konstrukce:** ocel; 3-compartment watertight; dvojité dno; bilge keels + pasivní stabilizační tanky; vysoký freeboard; nástavba nízko (nízké větrné plavidlo v bouři = dobré); **self-draining** otevřené plochy.
+
+---
+
+## 8. Kolaps-odolnost — systémy, které přežijí svět
+
+1. **Opravitelnost jako princip:** svařitelná ocel; mechanické systémy tam, kde je to možné; **elektronika je povolená vrstva, ne páteř** — každá kritická funkce má manuální fallback
+2. **Dílna plná:** soustruh+fréza+TIG/elektroda+kovárna+šicí loft (plachty!) + elektrická dílna + zásoba kovu/prken/plachetniny/lan na ~10 let
+3. **Skills-matrix posádky:** 100 lidí = **~40 kritických rolí po dvou** (lékař+medic, kapitán+1. důstojník, strojník+elektrikář, pláteník+tesař, zahradník+rybář, kovář+mechanik, učitelka, porodní asistentka, knihovník+kuchař…) — **„po dvou" jako Genesis, ale pro dovednosti**
+4. **Knowledge ark:** offline technická+agro+medic+stavba knihovna ve Faraday racku + **tištěný jádrový korpus** (ZION knihy vč. Království srdce — loď nese svou vlastní legendu) + semena jako data, která se nedají zkopírovat
+5. **Komunikace:** **HF SSB** (žádná infrastruktura — jen ionosféra) + VHF/UHF + LoRa mesh k uzlům + LEO sat jako bonus
+6. **ZION node:** full node + multisig vault + ledger archiv — síť přežije v arše, i kdyby zůstala jediným uzlem (ledger = paměť+peníze civilizace)
+7. **Ústava pro 100:** sociokratická kruhová governance L5; rozhodovací kruhy (provoz/farma/medic/jáma); **samota v izolaci je největší riziko — governance je survival systém, ne politika**
+8. **Neutrální svatyně:** žádné zbraně na manifestu; humanitární identita + světinec + medic jako obrana — archa pomáhá, ne hrozí (defense v2 k řešení 👤)
+
+---
+
+## 9. Živý náklad — „po dvou" prakticky
+
+1. **Seed vault −18 °C, ~60 m²:** **30–60 tisíc akcesí** prioritních plodin (Svalbard standard) — **banka, kterou zároveň jíme** (klíčky) a **znovu sázíme** (farm+uzly)
+2. **Kryo-banka:** LN² dewary — semen/embrya/tkáně klíčových hospodářských druhů (~20 m²)
+3. **Živá farma:** drůbež+králíci+kozy+včely (osvětlený úl) — „páry" přenášené reálně
+4. **Tissue-culture lab:** klonální propagace recalcitrant druhů (banány, káva, brambory)
+5. **Knowledge + ledger ark:** viz §8.4/§8.6
+
+---
+
+## 10. CAPEX / OPEX — tři cesty
+
+| | A — novostavba schooner (doporučeno) | A′ — refit research/motor-sailer | Horizont |
+|---|---|---|---|
+| Design+class | €4–7M | €2–4M | design study nejdřív |
+| Trup/stavba/konverze | €55–85M | €20–40M (akvizice €4–10 + konverze) | refit rychlejší, ale rig těžký |
+| Farm+mission systémy | €8–12M | €8–12M | skleníky, RO, kryo, dílna |
+| **CAPEX** | **~€70–100M** | **~€30–55M** | — |
+| **OPEX/rok** | ~€2–3M (pojištění, údržba, rotace zásob, přístavy) | ~€1,8–3M | — |
+| Čas do spuštění | 4–6 let | 30–42 měs. | — |
+
+*Proporce k flotilové rezervi:* 300M ZION Maria program je nominálně ~$300M — archa A je ~¼–⅓ obálky Marií; logika **sdílené infrastruktury** (design office, galícijská loděnice, flag, posádka pipeline) — program se staví jako flotila, ne jako samostatné projekty.
+
+---
+
+## 11. Workflow — od studie ke kýlu
+
+| Fáze | Obsah | Délka |
+|---|---|---|
+| **0 — Feasibility/concept** | námořní architekt (Dykstra — RW3 autoři! / van Meer / De Villiers–van Schaik), misijní spec 100-osobní kolonie, energy+food model, class/flag early dialog | 6–9 měs., €200–400k |
+| **1 — Funding + registry** | L5 registry `archa-nirvana`, QV advisory, partnerství (genbanky, L5 uzly na trase) | paralelně |
+| **2 — Stavba/refit** | tender loděnic (Fassmer — RW3 zkušenost! / Freire / Metalships / Balk), trials, certifikace (SPS/colony notation — nová třída) | 24–42 měs. |
+| **3 — Shakedown okruh** | Atlantik trial → první uzlová linka | 12 měs. |
+| **4 — Plný velrybí obvod** | 2–3letý coconut run přes všechny uzly | průběžně |
+
+**Horizont funkční archy: ~4–6 let od design study (A) / ~3,5 roky (A′).**
+
+---
+
+## 12. Rizika
+
+| Riziko | Míra | Mitigace |
+|---|---|---|
+| Sail-primary rig na 100-lidé kolonii = personálně náročné | střední | A-frame/dynarig = malá posádka (RW3: ~30 lidí na 1 260 m²); u nás ~15–20 deck trained + zbytek učení z plavby |
+| Produkce jídla < 70 % v praxi (škůdci, choroby, výpadky) | střední–vysoká | rotující zásoby ~180 d + seed vault re-sow + rybolov kompenzace; **food system je experimentální prostor — iterujeme na shakedown** |
+| Psychika/ústava kolonie v izolaci | **vysoká** | sociokratic governance, rotace poutníků přes uzly, světinec+škola+kultura — kolonie je společnost, ne posádka |
+| Energetická bilance křehká v bezvětří/zimním polu | střední | držet se velrybího pásma (vítr+světlo stálé); nouzová nafta jako doping, ne závislost; spotřeba efficiency-first |
+| CAPEX A velký (€70–100M) | střední | A′ refit ~€30–55M jako první krok; sdílené programové náklady s Marií |
+| Class/registrace „kolonie" = nová kategorie | střední | SPS + special-purpose notation; BV/DNV early dialog; případně research+training kategorie jako precedent |
+| Zbraně/defense v destabilizovaném světě | politické 👤 | neutrální svatyně+medic; případně non-lethal deterrence (LRAD, oplocení, taktiky); ne militarizace |
+
+---
+
+## 13. Otevřené otázky
+
+- [ ] **A vs A′ rozcestník:** novostavba schooner (~€70–100M, 4–6 l) vs refit motor-sailer (~€30–55M, ~3,5 r)? (doporučuji rozhodnutí až po feasibility)
+- [ ] Ice-margin odolnost ano/ne? (velryby jedou výš — my zůstáváme na okraji; náklady ice-class ~+15 %)
+- [ ] Defense doctrine: non-lethal jen, nebo ozbrojená ochrana? 👤
+- [ ] **Kolonie = rodiny a děti ano?** (doporučuji ano — bez dětí je to expedice, ne archa; ale = škola, porodnice, bezpečnostní standard)
+- [ ] Registry `archa-nirvana` — `vision` hned, nebo po feasibility?
+- [ ] Governance: L5 sociokracie adaptovaná pro plavidlo — návrh ústavy jako samostatný dokument?
+- [ ] Čtvrtá barva patrona: mořská modř (kofer) potvrzeno?
+
+---
+
+## 14. Precedenty — co už existuje
+
+| Precedent | Ponaučení pro archu |
+|---|---|
+| **Rainbow Warrior III** (Fassmer/Dykstra 2011) | **Přímý vzor A:** 58 m A-frame schooner, sail-primary, e-drive **10 kn @ 300 kW**, posádka ~30, €23M purpose-built, všeklimatická — naše loď = škálovaná ~2,5× s farm deck |
+| **Tara** (expediční schooner) | 507 dní v arktickém ledu — extrémní survival precedent pro ark-mode drift |
+| **Ocean Viking** | rescue-modul know-how (nyní jen jako kapacita, ne agenda) |
+| **Global Mercy** | medical standard; L:B 6,1 = ark proporce |
+| **Svalbard Seed Vault** | −18 °C standard; 60 m² ≈ 30–60k akcesí |
+| **Johan's Ark** (Dordrecht) | „arku" lze postavit za €4M — ale jako barge, ne loď |
+| **Hōkūleʻa / Polynesian Voyaging Society** | **kolaps-proof navigace:** hvězdy+vlny+ptáci žádnou infrastrukturu nepotřebují — náš analogový páteř |
+| **Cruising community (coconut run)** | prokázaný trvalý tropický obvod ~30 000 nm přes všechny naše uzly |
+| **Keporkaci** | navigace jako biologická pravda: letníkovat/zimníkovat, šelfy, seamounts — „jdi za velrybou" |
+
+---
+
+## 15. Čísla na jednom místě
+
+| Parametr | Hodnota |
+|---|---|
+| Lidé | **≤100** — kolonie (rodiny, děti, všech generací); ~40 kritických rolí po dvou |
+| Trup | schooner/staysail ~78–90 m × 16–18 m; ocel; ~2 500–3 500 t |
+| Plachty | 2 500–4 000 m² A-frame/staysail rig; sail-primary |
+| Propulze | e-drive 2× 400–600 kW aux; **diesel = nouzová rezerva ~100–150 t** (léky, ne strava) |
+| Energie | PV 150–250 kWp + wind 2–4× 5–10 kW + hydro 10–30 kW; baterie **2–4 MWh** |
+| Jídlo | ~70–80 % produkce (hydroponie 400–600 m² + aquaponie + klíčky + rybolov + drůbež + kozy + spirulina + hmyz); ~180 d rotujících zásob |
+| Voda | 8 m³/den; RO + rain catchment (~1 000+ m² střecha) + recycling |
+| Navigace | velrybí cyklus 2–3 roky ~30 000 nm přes všechny L5 uzly; astronav+HF jako páteř |
+| Přežití | ark-mode uzavřená, 3-compartment, sea anchor, L:B ~5,5–6:1 (KRISO) |
+| Náklad | 100 lidí + 30–60k seed akcesí + kryo + živá farma + knowledge ark + ZION node |
+| CAPEX (A) | **~€70–100M novostavba / ~€30–55M refit**; OPEX ~€2–3M/rok |
+| Horizont | design study 6–9 měs. → archa ~3,5–6 let |
+
+---
+
+*„Každý věk má svou loď. Archa je ta, která se vrací pro posledního — a pluje za velrybami, protože velryby vědí, kudy je voda bezpečná."*
