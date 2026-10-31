@@ -35,7 +35,7 @@ export function LagoonLandscape() {
   }, []);
   useEffect(() => () => { beach.dispose(); mountains.dispose(); }, [beach, mountains]);
   return <>
-    <AtlanticOcean level={-.28} lagoon shorelineZ={-10.5} />
+    <AtlanticOcean level={-0.28} lagoon shorelineZ={-10.5} sky="#bfe8ea" deep="#0a5f6b" shallow="#3fbfae" />
     <mesh geometry={beach} receiveShadow><meshStandardMaterial vertexColors roughness={1} /></mesh>
     <mesh geometry={mountains}><meshStandardMaterial color="#527067" roughness={1} /></mesh>
   </>;

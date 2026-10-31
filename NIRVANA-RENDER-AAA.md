@@ -1,5 +1,9 @@
 # NIRVANA RENDER — plán AAA kvality pro 13 L5 scén a celou Nirvanu
 
+> **Kanonický způsob renderu je v [`OASIS-RENDER-CANON.md`](OASIS-RENDER-CANON.md).** Tento soubor
+> je program/programový plán; canon je závazná příručka, podle které se staví každá další scéna
+> (a později celý OASIS).
+>
 > **31. 10. 2026.** Navazuje na `3D-SCENY-PLAN.md` (funkční akceptace 24/24, hotovo) a `MATRIX.md`.
 > Tento dokument je **výtvarný a výkonnostní program**, ne oprava chyb. Mění se jen `apps/shared/scenes`,
 > `apps/nirvana/src/core/scene` + `app/present/*` a `apps/website-v2.9` preview wrappery.

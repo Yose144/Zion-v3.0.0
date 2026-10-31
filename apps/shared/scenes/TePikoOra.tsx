@@ -4,7 +4,7 @@
 import { React, useFrame, useThree, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SkyFill, sandGround } from './kit';
+import { KeyLight, ScenePalms, SkyFill, sandGround } from './kit';
 import { LagoonLandscape } from './LagoonLandscape';
 
 type Lang = 'cs' | 'en';
@@ -479,9 +479,8 @@ function Jungle() {
         <dodecahedronGeometry args={[1, 0]} />
         <meshStandardMaterial color="#ffffff" roughness={0.9} />
       </instancedMesh>
-      {palms.map((p, i) => (
-        <Palm key={i} pos={[p.x, 0, p.z]} h={3.4 + p.s * 2} lean={p.lean} scale={p.s} fronds={8} />
-      ))}
+      {/* háj jako jedna instance; centrální rituální palma zůstává vlastní model */}
+      <ScenePalms items={palms.map((p) => ({ x: p.x, z: p.z, h: 3.4 + p.s * 2, yaw: p.lean }))} />
     </>
   );
 }

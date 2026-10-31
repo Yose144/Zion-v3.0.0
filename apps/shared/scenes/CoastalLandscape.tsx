@@ -43,7 +43,7 @@ function VolcanicCoast() {
   </mesh>;
 }
 
-export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, shorelineZ, roughSea = false }: { level?: number; coastal?: boolean; lagoon?: boolean; shorelineZ?: number; roughSea?: boolean }) {
+export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, shorelineZ, roughSea = false, sky = '#9fb6cc', deep = '#04141c', shallow = '#0a3b45' }: { level?: number; coastal?: boolean; lagoon?: boolean; shorelineZ?: number; roughSea?: boolean; sky?: string; deep?: string; shallow?: string }) {
   // One ocean implementation for every sea scene; see kit/ocean.tsx.
   return (
     <OceanSurface
@@ -53,9 +53,9 @@ export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, sh
       roughness={roughSea ? 2.2 : 1}
       shoreBase={shorelineZ ?? -23}
       shoreSlope={shorelineZ === undefined ? 0.65 : 0}
-      sky="#9fb6cc"
-      deep="#04141c"
-      shallow="#0a3b45"
+      sky={sky}
+      deep={deep}
+      shallow={shallow}
       sun={[-0.75, 0.08, -0.66]}
     />
   );

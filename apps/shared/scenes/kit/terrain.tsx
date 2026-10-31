@@ -381,24 +381,38 @@ export interface PalmItem {
 export function ScenePalms({ items, tone = 'leaf' }: { items: PalmItem[]; tone?: 'leaf' | 'olive' }) {
   const mesh = React.useRef<THREE.InstancedMesh>(null);
   const geometry = React.useMemo(() => {
-    // Normalised palm: total height 1 unit, so instances scale uniformly by the tree height.
+    // Normalised palm: 1 unit tall, so instances scale uniformly by the tree height.
     const parts: Part[] = [];
-    const trunk = new THREE.CylinderGeometry(0.035, 0.06, 1, 6).translate(0, 0.5, 0);
-    const frond = new THREE.OctahedronGeometry(0.5, 0);
-    const nut = new THREE.SphereGeometry(0.05, 6, 5);
+    const trunk = new THREE.CylinderGeometry(0.028, 0.055, 1, 7).translate(0, 0.5, 0);
     parts.push({ geometry: trunk, color: '#6a5138' });
-    for (let i = 0; i < 7; i++) {
-      const angle = (i / 7) * Math.PI * 2 + 0.4;
-      const matrix = new THREE.Matrix4()
-        .makeTranslation(Math.sin(angle) * 0.22, 1, Math.cos(angle) * 0.22)
-        .multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0.6 + (i % 2) * 0.18, angle, 0)))
-        .multiply(new THREE.Matrix4().makeScale(0.13, 0.04, 0.62));
-      parts.push({ geometry: frond, color: i % 2 ? '#3f6a2c' : tone === 'olive' ? '#77824a' : '#4d7a34', matrix });
+
+    // A drooping leaf: a plane along +X, bent downward, base at the origin.
+    const leaf = new THREE.PlaneGeometry(1, 0.26, 10, 2);
+    leaf.translate(0.5, 0, 0);
+    const position = leaf.getAttribute('position');
+    for (let i = 0; i < position.count; i++) {
+      const t = position.getX(i);
+      position.setY(i, position.getY(i) + 0.24 * Math.sin(t * Math.PI) - 0.38 * t * t);
     }
-    parts.push({ geometry: nut, color: '#7a5a34', matrix: new THREE.Matrix4().makeTranslation(0, 1, 0) });
+    leaf.computeVertexNormals();
+
+    const fronds = 9;
+    for (let i = 0; i < fronds; i++) {
+      const angle = (i / fronds) * Math.PI * 2 + 0.25;
+      const tilt = 0.35 + (i % 3) * 0.12;
+      const matrix = new THREE.Matrix4()
+        .makeTranslation(0, 1, 0)
+        .multiply(new THREE.Matrix4().makeRotationY(angle))
+        .multiply(new THREE.Matrix4().makeRotationZ(-tilt))
+        .multiply(new THREE.Matrix4().makeScale(0.46, 0.46, 0.46));
+      parts.push({ geometry: leaf, color: i % 3 === 0 ? '#3f6a2c' : i % 3 === 1 ? (tone === 'olive' ? '#7c8650' : '#4d7a34') : '#5d8a3c', matrix });
+    }
+
+    const nut = new THREE.SphereGeometry(0.045, 6, 5);
+    parts.push({ geometry: nut, color: '#7a5a34', matrix: new THREE.Matrix4().makeTranslation(0, 0.98, 0) });
     const merged = mergeParts(parts);
     trunk.dispose();
-    frond.dispose();
+    leaf.dispose();
     nut.dispose();
     return merged;
   }, [tone]);

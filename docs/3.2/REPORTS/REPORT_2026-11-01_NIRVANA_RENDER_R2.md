@@ -126,6 +126,15 @@ byly z EDGE2 dotaženy `sharp-linux-x64` a `sharp-libvips-linux-x64` do
 `node_modules/@img/`. Ověřeno lokálně (`/_next/image` → 200) i na živém webu.
 Příště je čistší buildit web přímo na Linuxu.
 
+## Kanon a poslední úpravy
+
+- [`OASIS-RENDER-CANON.md`](../../../OASIS-RENDER-CANON.md) — závazný způsob renderu pro
+  další scény i celý OASIS: vrstvy, frame pipeline, tiery a rozpočty, recepty, API kitu,
+  anti-patterns, měření, nasazení (včetně `sharp`), checklist.
+- Te Pīko Ora: háj přešel na `ScenePalms` (574 → 385 draw calls), laguna dostala tropickou
+  paletu (`AtlanticOcean` umí `sky`/`deep`/`shallow`).
+- `ScenePalms` má novou geometrii listů (skloněný pás, ne špička) — prospělo Bodhi, LUMI i Piko.
+
 ## Otevřené (další vlny)
 
 - **R4** — částice a drobný život v každé scéně (ptáci, prach, listí) nad rámec zvuku.
