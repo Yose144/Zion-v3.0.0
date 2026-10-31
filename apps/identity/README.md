@@ -170,8 +170,7 @@ npm run dev           # start dev server (port 8096)
 | `JWT_PRIVATE_KEY` | — | Ed25519 PEM (pkcs8) — enables EdDSA JWT signing + real JWKS |
 | `JWT_PUBLIC_KEY` | derived | Ed25519 PEM (spki); defaults to pubkey derived from the private key |
 | `JWT_KEY_ID` | derived | `kid` for JWK/JWT header (default: `zis-<hash>`) |
-| `JWT_SECRET` | `change-me` | Legacy HS256 secret — used as fallback when no private key, and as legacy verifier in EdDSA mode |
-| `JWT_LEGACY_SECRET` | `JWT_SECRET` | Retired HS256 secret accepted during the EdDSA migration grace period |
+| `JWT_SECRET` | `change-me` | HS256 signing secret — dev-mode fallback when no private key (legacy verifier removed after grace end 2026-10-28, 3.B5) |
 | `ZIS_SERVICE_KEY` | — | Shared secret for `x-service-key` service callers |
 | `COOKIE_DOMAIN` | `.zionterranova.com` | SSO cookie scope |
 | `GOOGLE_CLIENT_ID` | — | Google OIDC audience |

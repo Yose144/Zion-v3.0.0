@@ -7,17 +7,14 @@
 //           tokens without calling back to ZIS.
 //   hs256 — legacy/dev fallback. Symmetric JWT_SECRET, no usable JWKS.
 //
-// Legacy grace: when running in eddsa mode, tokens signed with the old
-// HS256 secret keep verifying until they expire (max 7 days) — set
-// JWT_LEGACY_SECRET (= old JWT_SECRET). Without it old sessions die at
-// deploy time.
+// The HS256→EdDSA grace period ended 2026-10-28 (cutover 21.10 + 7-day
+// session TTL). Legacy-token verification was removed in 3.B5 — tokens
+// must verify against the active key only.
 
 import { createPrivateKey, createPublicKey, createHash, type KeyObject } from 'node:crypto';
-import { createVerifier } from 'fast-jwt';
 import type * as fastifyJwtNs from '@fastify/jwt';
 
 type JwtPluginOptions = fastifyJwtNs.FastifyJWTOptions;
-type LegacyVerifier = ((token: string) => Record<string, unknown>) | null;
 
 export interface ZisJwtConfig {
   mode: 'eddsa' | 'hs256';
@@ -37,7 +34,6 @@ export interface ZisJwtConfig {
 }
 
 let cached: ZisJwtConfig | null = null;
-let legacyVerifier: LegacyVerifier | undefined;
 
 /** Accept PEM either raw, with literal "\n" escapes, or base64-encoded. */
 function normalizePem(value: string): string {
@@ -129,30 +125,6 @@ export function getJwtConfig(): ZisJwtConfig {
 /** Reset cached config — tests only. */
 export function resetJwtConfigCache(): void {
   cached = null;
-  legacyVerifier = undefined;
-}
-
-/**
- * Verify a token against the legacy HS256 secret (grace period after the
- * EdDSA cutover). Returns the decoded payload or null. Only active when
- * JWT_LEGACY_SECRET (or JWT_SECRET, in eddsa mode) is configured.
- */
-export function verifyLegacyToken(token: string): Record<string, unknown> | null {
-  if (legacyVerifier === undefined) {
-    const cfg = getJwtConfig();
-    const legacy = cfg.mode === 'eddsa'
-      ? process.env.JWT_LEGACY_SECRET ?? process.env.JWT_SECRET
-      : null;
-    legacyVerifier = legacy
-      ? (createVerifier({ key: legacy, algorithms: ['HS256'] }) as (t: string) => Record<string, unknown>)
-      : null;
-  }
-  if (!legacyVerifier) return null;
-  try {
-    return legacyVerifier(token);
-  } catch {
-    return null;
-  }
 }
 
 /** JWK Set document for /.well-known/jwks.json. */

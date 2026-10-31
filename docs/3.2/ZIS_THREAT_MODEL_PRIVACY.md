@@ -46,7 +46,7 @@ Cookie domain `.zionterranova.com` + CORS whitelist + WebAuthn RP `zionterranova
 `POST /api/auth/challenge` přepíše aktivní challenge pro **cizí adresu** (unauthenticated, 30/min per IP). Útočník spamuje challenge → oběť nemůže dokončit login (nonce mismatch). **Mitigace:** challenge per (address, requester-fingerprint) nebo držet předchozí challenge vedle nové (accept either within TTL), rate-limit per address ne jen per IP.
 
 ### F-4 🟠 Střední: legacy HS256 verifier bez expiračního data
-`verifyLegacyToken` akceptuje `JWT_LEGACY_SECRET`/`JWT_SECRET` donekud je env nastaven — grace měl pokrýt 7d expiraci tokenů. **Mitigace:** po datu migrace +8 d env `JWT_LEGACY_SECRET` odstranit; metrika `legacy_verify_total` → 0 jako gate.
+`verifyLegacyToken` akceptoval `JWT_LEGACY_SECRET`/`JWT_SECRET` donekud byl env nastaven — grace měl pokrýt 7d expiraci tokenů. ✅ **Vyřešeno 31.10. (3.B5):** legacy verifier odstraněn z `keys.ts`, fallbacky z `auth.ts`/`server.ts`; HS256 tokeny nově selžou na `jwtVerify` → `requireAuth` 401. Zbývá: prod env `JWT_LEGACY_SECRET` unset (dead config cleanup při deploy).
 
 ### F-5 🟡 Nízké: passkey UV není povinné
 `userVerification: 'preferred'` + `requireUserVerification: false` → stolen unlocked device = login. **Mitigace:** pro withdraw/step-up akce vyžadovat UV ceremony (viz F-1); pro plain login akceptovatelné. Sign-counter regression se ukládá (`newCounter`), ale neflaguje — přidat `AuthEvent` na regression = clone signal.
@@ -81,7 +81,7 @@ Login z nového zařízení, link, primary_change, passkey add/remove — ticho.
 ## 5. Passkey launch prerekvizity (R4 gate → 3.B1)
 
 - [ ] F-1: withdraw step-up nebo minimálně custodial disclosure + withdraw notification (3.B4 spojit)
-- [ ] F-4: `JWT_LEGACY_SECRET` removal po grace + metrika legacy verifies = 0
+- [x] F-4: legacy verify path odstraněn (3.B5, 31.10.) + env cleanup při deploy
 - [ ] F-5: counter regression → AuthEvent
 - [ ] F-8: security notifications na link/primary/passkey events
 - [ ] F-3: challenge DoS fix (může být follow-up, ne launch blocker)

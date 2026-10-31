@@ -1,5 +1,5 @@
 // Tests for the ZIS hardening work:
-//   - EdDSA keys: real JWKS document + HS256 legacy grace verification
+//   - EdDSA keys: real JWKS document (legacy HS256 grace removed — 3.B5)
 //   - DB-backed auth challenges (one-shot, expiry, prune)
 //   - Admin API gating (role / service key / last-admin lockout)
 //   - Service-key notification push
@@ -14,12 +14,10 @@ import { generateKeyPairSync } from 'node:crypto';
 import Fastify, { type FastifyInstance } from 'fastify';
 import cookie from '@fastify/cookie';
 import jwt from '@fastify/jwt';
-import { createSigner } from 'fast-jwt';
 
 import {
   getJwtConfig,
   getJwksDocument,
-  verifyLegacyToken,
   resetJwtConfigCache,
 } from '../src/lib/keys.js';
 import {
@@ -276,19 +274,17 @@ function addAuthedUser(
 const asPrisma = (fake: FakePrisma) =>
   fake as unknown as import('@prisma/client').PrismaClient;
 
-// ── EdDSA keys / JWKS / legacy grace ─────────────────────────────────
+// ── EdDSA keys / JWKS ─────────────────────────────────────────────────
 
-test('eddsa mode: JWKS exposes the public JWK only, legacy HS256 token still verifies', async () => {
+test('eddsa mode: JWKS exposes the public JWK only', async () => {
   const { privateKey } = generateKeyPairSync('ed25519');
   const pem = privateKey.export({ format: 'pem', type: 'pkcs8' }) as string;
 
   const saved = {
     priv: process.env.JWT_PRIVATE_KEY,
-    legacy: process.env.JWT_LEGACY_SECRET,
     secret: process.env.JWT_SECRET,
   };
   process.env.JWT_PRIVATE_KEY = pem;
-  process.env.JWT_LEGACY_SECRET = 'old-hs256-secret';
   delete process.env.JWT_SECRET;
   resetJwtConfigCache();
   try {
@@ -307,30 +303,16 @@ test('eddsa mode: JWKS exposes the public JWK only, legacy HS256 token still ver
     assert.equal('d' in doc.keys[0], false);
     assert.equal(JSON.stringify(doc).includes('PRIVATE'), false);
 
-    // A token signed with the retired HS256 secret must still verify
-    // during the grace period.
-    const legacySign = createSigner({ key: 'old-hs256-secret', algorithm: 'HS256' });
-    const token = legacySign({ sub: 'u1', addr: 'a1', jti: 'j1', exp: Math.floor(Date.now() / 1000) + 600 });
-    const payload = verifyLegacyToken(token);
-    assert.ok(payload, 'legacy token must verify with JWT_LEGACY_SECRET set');
-    assert.equal(payload!.sub, 'u1');
-
-    // A token signed with a different secret must not.
-    const badSign = createSigner({ key: 'attacker-secret', algorithm: 'HS256' });
-    const bad = badSign({ sub: 'u1', addr: 'a1', jti: 'j1' });
-    assert.equal(verifyLegacyToken(bad), null);
   } finally {
     if (saved.priv === undefined) delete process.env.JWT_PRIVATE_KEY;
     else process.env.JWT_PRIVATE_KEY = saved.priv;
-    if (saved.legacy === undefined) delete process.env.JWT_LEGACY_SECRET;
-    else process.env.JWT_LEGACY_SECRET = saved.legacy;
     if (saved.secret === undefined) delete process.env.JWT_SECRET;
     else process.env.JWT_SECRET = saved.secret;
     resetJwtConfigCache();
   }
 });
 
-test('hs256 mode: empty JWKS, legacy verifier disabled', async () => {
+test('hs256 mode: empty JWKS', async () => {
   const saved = { priv: process.env.JWT_PRIVATE_KEY, secret: process.env.JWT_SECRET };
   delete process.env.JWT_PRIVATE_KEY;
   process.env.JWT_SECRET = 'explicit-hs256-test-secret';
@@ -340,8 +322,6 @@ test('hs256 mode: empty JWKS, legacy verifier disabled', async () => {
     assert.equal(cfg.mode, 'hs256');
     assert.equal(cfg.jwk, null);
     assert.deepEqual(getJwksDocument(), { keys: [] });
-    const sign = createSigner({ key: 'whatever', algorithm: 'HS256' });
-    assert.equal(verifyLegacyToken(sign({ sub: 'u', jti: 'j' })), null);
   } finally {
     if (saved.priv !== undefined) process.env.JWT_PRIVATE_KEY = saved.priv;
     if (saved.secret === undefined) delete process.env.JWT_SECRET;

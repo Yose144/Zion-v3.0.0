@@ -22,7 +22,7 @@ import { wellKnownRoutes } from './routes/wellknown.js';
 import { adminRoutes } from './routes/admin.js';
 import { metricsRoutes } from './routes/metrics.js';
 import { logger } from './lib/logger.js';
-import { getJwtConfig, verifyLegacyToken } from './lib/keys.js';
+import { getJwtConfig } from './lib/keys.js';
 import { extractSessionToken, isServiceRequest } from './lib/auth.js';
 import { registerMetrics } from './lib/metrics.js';
 import { pruneChallenges } from './lib/challenge.js';
@@ -97,9 +97,7 @@ async function start() {
         try {
           const payload = app.jwt.verify<{ sub?: string }>(token);
           if (payload?.sub) return `sess:${payload.sub}`;
-        } catch { /* try legacy */ }
-        const legacy = verifyLegacyToken(token);
-        if (legacy?.sub) return `sess:${String(legacy.sub)}`;
+        } catch { /* unverifiable token → per-IP bucket */ }
       }
       return req.ip;
     },

@@ -1,6 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { verifyLegacyToken } from './keys.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -32,23 +31,18 @@ export function extractSessionToken(req: FastifyRequest): string | null {
 }
 
 /**
- * Verify the request's session token. Tries the active key (EdDSA in
- * production) first, then — during the legacy grace period — the old
- * HS256 secret. On success the payload is assigned to req.user.
+ * Verify the request's session token against the active key (EdDSA in
+ * production). On success the payload is assigned to req.user. The
+ * legacy HS256 grace path was removed after the 2026-10-28 expiry
+ * horizon (3.B5).
  */
 async function verifySessionToken(req: FastifyRequest): Promise<boolean> {
   try {
     await req.jwtVerify();
     return true;
   } catch {
-    // fall through to legacy
+    return false;
   }
-  const token = extractSessionToken(req);
-  if (!token) return false;
-  const legacy = verifyLegacyToken(token);
-  if (!legacy?.sub || !legacy.jti) return false;
-  (req as unknown as { user: unknown }).user = legacy;
-  return true;
 }
 
 /** Constant-time check of the x-service-key header against ZIS_SERVICE_KEY. */
