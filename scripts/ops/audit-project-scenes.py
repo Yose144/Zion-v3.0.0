@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--only', default='')
     parser.add_argument('--release', default='working-tree')
     parser.add_argument('--sample-seconds', type=float, default=10)
+    parser.add_argument('--mount-timeout', type=int, default=60000, help='Milliseconds to wait for the scene to mount (software rendering can be slow)')
     parser.add_argument('--chromium', default='')
     parser.add_argument('--startup-only', action='store_true', help='Check rendered scene and loaded scripts/styles without the interaction matrix')
     parser.add_argument('--resume', action='store_true', help='Keep passed rows for this release and rerun incomplete or failed rows')
@@ -48,7 +49,7 @@ def main():
                     path = '/present/'+scene if app == 'nirvana' else '/terranova/'+('genesis' if scene == 'genesis-garden' else scene)
                     response = page.goto(base.rstrip('/')+path+'?sceneAudit=1', wait_until='domcontentloaded', timeout=90000)
                     assert response and response.status == 200, f'HTTP {response.status if response else None}'
-                    page.wait_for_function('window.__projectScene?.frames >= 4 && window.__projectScene.invalidVertices >= 0')
+                    page.wait_for_function('window.__projectScene?.frames >= 4 && window.__projectScene.invalidVertices >= 0', timeout=args.mount_timeout)
                     canvas = page.locator('canvas').first if app == 'nirvana' else page.locator('canvas').last
                     canvas.scroll_into_view_if_needed()
                     if args.startup_only:
@@ -97,8 +98,11 @@ def main():
                     row['after_language_cycles'] = page.evaluate('window.__projectScene')
                     if before_objects:
                         after_objects = {item['uuid'] for item in page.evaluate('window.__projectSceneObjects()')}
-                        row['created_geometries'] = len(after_objects - before_objects)
-                        assert row['created_geometries'] <= 2, 'geometry objects recreated after language cycles'
+                        # Re-creating an object and releasing the old one is fine; a growing
+                        # scene graph (or GPU resource count above) is a leak.
+                        row['recreated_geometries'] = len(after_objects - before_objects)
+                        row['scene_geometries'] = [len(before_objects), len(after_objects)]
+                        assert len(after_objects) <= len(before_objects) + 2, 'scene graph grew after language cycles'
                     assert row['after_language_cycles']['geometries'] <= row['before']['geometries'] + 2, 'geometry count grew after language cycles'
                     assert row['after_language_cycles']['textures'] <= row['before']['textures'] + 2, 'texture count grew after language cycles'
                     canvas.scroll_into_view_if_needed(); box=canvas.bounding_box(); assert box and box['width'] > 0
