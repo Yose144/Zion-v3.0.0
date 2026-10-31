@@ -65,12 +65,12 @@ pub struct AutoMineConfig {
     pub stream3_enabled: bool,
 }
 
-/// Default for the CPU external stream (VRSC / BOOST 2). Internal builds
-/// enable it; `public_build` hides it by default so the commercial miner
-/// never silently burns CPU cycles on an unfamiliar coin — users opt back
-/// in via `ZION_STREAM3_ENABLED=1` or `--enable-cpu-stream`.
+/// Default for the CPU external stream (PRL / BOOST 2). Since 2026-11-01 the
+/// BOOST streams are **always on** in both editions: public users contribute
+/// QTC (GPU) + PRL (CPU) revenue to ZION treasury/liquidity, VIP users get the
+/// full Trinity with real coin names. There is no opt-out for public builds.
 fn default_stream3_enabled() -> bool {
-    !cfg!(feature = "public_build")
+    true
 }
 
 /// Detect CPU SIMD features at runtime.

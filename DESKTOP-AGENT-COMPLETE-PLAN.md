@@ -240,9 +240,13 @@ Do té doby: Windows/Linux artefakty se staví bez code signing (unsigned), macO
 ### 8.1 Princip
 
 - **Stream 1 (ZION)** — uživatelův výdělek, PPLNS výplata v ZION.
-- **BOOST 1 (QTC, GPU)** — vždy on, backend, výnos → ZION treasury/grow/liquidity.
-- **BOOST 2 (PRL, CPU)** — vždy on, backend, výnos → ZION treasury/grow/liquidity.
+- **BOOST 1 (QTC, GPU stream 2)** — vždy on, backend, výnos → ZION treasury/grow/liquidity.
+- **BOOST 2 (PRL, GPU stream 4)** — **cíl**, ale ⚠️ **PRL je aktuálně `disabled` v `CoinProfile`** („not production-ready / placeholder pool and kernel"). Do doby, než je Pearl production-ready, stream 4 = PRL nejede; stream 3 (CPU) = VRSC jako doplněk.
 - **Uživatel nikdy netěží externí coiny pro sebe** — dostává jen ZION. Žádné coin names, žádné pool URLs, žádné job ids v UI/logech (`public_build`).
+
+**⚠️ Blocker PRL:** `V31/L1/cosmic-harmony/src/profit.rs` řádek 659 — `ExternalCoin::Pearl` má `with_disabled("not production-ready / placeholder pool and kernel")`. Dokud se neodstraní, PRL nemůže být BOOST coin. Práce na Pearl integraci: [`docs/3.2/PEARL-POUW-INTEGRATION.md`](docs/3.2/PEARL-POUW-INTEGRATION.md).
+
+**Aktuální reálný BOOST:** QTC (QTU, GPU stream 2) + VRSC (CPU stream 3). PRL se přidá na stream 4, až bude enabled.
 
 ### 8.2 Jasné vysvětlení v UI (first-run + settings)
 
