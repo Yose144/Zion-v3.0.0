@@ -32,6 +32,7 @@
 | B2B checkout (IČO/DIČ/`companyName`) | ✅ `0025b5ada` |
 | `statusHistory` audit timeline | ✅ `0025b5ada` |
 | SHOPPAY (ZION L1 + QR + l1-watcher) | ✅ `0680bf0aa` — vault `L1_SHOP_VAULT` oddělený od pool payout |
+| ZION bonus auto-payout | ✅ paid-only, atomický claim, všech 5 rail (webhook/verify/l1/admin/commerce) + sweep `POST /api/shop/bonus-sweep` z l1-watcheru (5 min) + lazy custodial wallet |
 | Coinbase Commerce | ✅ kód; gated dokud 👤 `COMMERCE_API_KEY` |
 | Soft-launch digi + transfer | ✅ (nyní supersedováno plným softLaunch=false) |
 
@@ -50,7 +51,7 @@
 
 - Faktura + rasta mail: hlavička **Omnity.One s.r.o.** + org logo `images/logo144.png`.
 - ZION bonus: wallet adresa + QR v confirmation; seed zvlášť; kurz konzistentní s loyalty (`SHOP_ZION_PER_CZK`).
-- **W3.4 👤:** loyalty/bonus payout wallet musí být dofinancovaný — kód OK, balance 0 = žádné reálné výplaty.
+- **W3.4 ✅ 31. 10.:** payout wallet `zion1d2k5…` = 187,2M ZION (95 118 UTXO) — fundovaný, CLI 3.2.0 fix (v3-tx bug) → první reálná výplata 900 ZION OK (`ed71f7d6…`). Pozor: `getBalance` = account-model, wallet balance měřit `getUtxos`.
 
 ## Zbývá (P1)
 

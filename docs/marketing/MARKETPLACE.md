@@ -153,6 +153,30 @@ Status transitions are done from the admin dashboard (`/admin/orders`) via `PUT 
 - `payment='zion'` on `/api/shop/orders` returns vault address, amount, `SHOPPAY:` memo, SVG QR; l1-watcher confirms after finality.
 - `POST /api/shop/commerce/checkout` + webhook — Coinbase Commerce (env-gated).
 
+### 5.5 ZION bonus payout (auto, 2026-10-31)
+
+Every paid order with `zionTokens > 0` receives its ZION bonus **on-chain** from
+the canonical pool payout wallet (`zion1d2k5…`, `ZION_L1_POOL_WALLET_PATH`) to
+the order's custodial `customerWalletAddress`:
+
+- Paid transitions claim atomically (`updateMany … paymentStatus != 'paid'`)
+  in `markShopOrderPaid`, the Stripe webhook and the admin status route —
+  retries/races can't double-send emails or history.
+- Rails: Stripe webhook + `/api/stripe/verify`, l1-watcher `zion-confirm`,
+  Coinbase Commerce webhook, admin mark-paid → all fire `distributeOrderBonus`.
+- **Sweep:** `POST /api/shop/bonus-sweep` (Bearer `SHOP_CONFIRM_SECRET`) pays
+  every `paid ∧ zionTokens>0 ∧ status != 'cancelled'` order lacking a
+  `tokens:<orderId>` `distributed` record — called by `zion-l1-watcher` every
+  `BONUS_SWEEP_INTERVAL_S` (default 300 s). Handles backfill + transient fails.
+- Orders without a custodial wallet get one lazily (atomic claim + encrypted
+  seed stored + wallet email).
+- `sendZionPayout` requires `TX hash` **and** `Broadcast OK` in CLI output —
+  exit-0 without broadcast proof = failure (no phantom `distributed`).
+- ⚠️ Requires `zion` CLI **≥ 3.2.0** at `ZION_CLI_PATH` — the old `3.1.0-beta`
+  emits v3-model txs that fail `submitUtxoTransaction` on the native node.
+- Manual retry: `POST /api/admin/tokens/distribute/[id]` (admin key);
+  status: `GET` same URL.
+
 ---
 
 ## 6. Admin Dashboard

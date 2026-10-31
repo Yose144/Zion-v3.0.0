@@ -130,7 +130,7 @@ transfer) — **operator: cancel/delete after review.**
 | 4 | 5.B6 formální E2E + sign-off | ✅ 31. 10. [`REPORT_2026-10-31_5B6_ESHOP_E2E.md`](REPORTS/REPORT_2026-10-31_5B6_ESHOP_E2E.md) — transfer+zion+email+invoice; Stripe session create |
 | 5 | Next 14 critical (`5.S2`) | ⬜ major bump před Stable |
 | 6 | Coinbase Commerce | ⬜ gated (`commerce=false`) — volitelné |
-| 7 | Loyalty wallet funding (W3.4) | ⬜ 👤 balance 0 |
+| 7 | Loyalty wallet funding (W3.4) | ✅ 31. 10. — payout `zion1d2k5…` = **187 197 351 ZION** (95 118 UTXO); ⚠️ `getBalance` (account-model) hlásí 0 — UTXO balance měřit přes `getUtxos`! |
 
 ### Soft-launch 2026-10-29 ✅ → exited 31. 10.
 
@@ -145,6 +145,30 @@ transfer) — **operator: cancel/delete after review.**
 - `stripe/checkout` line-item: `unit_amount = priceCzk*quantity` with
   `quantity: 1` — totals correct, but checkout shows no "×N" for qty>1.
 - Admin cancel nevrací stock (design gap).
+
+### Paid-path audit 31. 10. (deployed `a7b083d92` + sweep `f932f2bc1`)
+
+- Admin mark-paid (bank transfer) nově: invoice `paid` + `distributeOrderBonus`
+  + confirmation email — dřív jen email (UI slibovalo „automaticky").
+- Paid transition = atomický claim (`updateMany … paymentStatus != 'paid'`)
+  v `markShopOrderPaid`, Stripe webhooku i admin route → Stripe retry ani
+  souběžné rail potvrzení neduplikují email/history.
+- `/api/stripe/verify` deleguje na `markShopOrderPaid` (history+invoice+dedup).
+- `sendZionPayout` vyžaduje `TX hash` **a** `Broadcast OK` — exit 0 bez
+  broadcast proof = failure, objednávka se neoznačí `distributed`.
+- **ZION bonus auto-payout:** `POST /api/shop/bonus-sweep` (Bearer
+  `SHOP_CONFIRM_SECRET`) — paid objednávky s `zionTokens>0` bez distribution
+  record, `status != 'cancelled'`; volá `zion-l1-watcher` každých
+  `BONUS_SWEEP_INTERVAL_S` (default 300 s). Objednávce bez walletu se
+  custodial wallet vygeneruje lazy (atomický claim) + wallet email.
+- ⚠️ **CLI pitfall (opraveno 31. 10.):** `/opt/zion/bin/zion` byl
+  `3.1.0-beta` (4. 8.) — `wallet send` emituje **v3-model tx** → node
+  validuje proti `v3_utxos` SQLite → `input does not exist` pro native
+  UTXOs. Native builder je až od `c2799b295` (22. 8.). Deployed **3.2.0**
+  z `/opt/zion/V31` (bak `zion.bak-v3.1.0-beta-20261031`).
+  `send --dry-run` **nebroadcastuje** — nepoužívat jako důkaz payout path.
+- Live E2E 31. 10.: TEST-PAIDFLOW → admin paid → bonus **900 ZION on-chain
+  `ed71f7d6…fe6412`** (~2 s i s 95k-UTXO peněženkou).
 
 ## Architecture
 
