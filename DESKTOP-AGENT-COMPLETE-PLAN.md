@@ -297,7 +297,7 @@ Text (cs/en), který musí být v appce:
 - [x] **macOS arm64 VIP DMG** — `dist/zion-desktop-agent-v3.2.0-mac-arm64.dmg` (187 MB), BUILD-INFO + SHA256SUMS (1. 11., ad-hoc signed).
 - [x] macOS aarch64 binárky: `zion-miner`, `zion-universal-miner`, `zion-node`, `zion` (CLI) — builděné 1. 11.
 - [x] Windows CPU-only miner binary (`zion-miner.exe`, bez gpu-opencl — OpenCL ICD chybí) — 1. 11.
-- [ ] macOS arm64 Public DMG (vyžaduje `npm install` + `--edition public`).
+- [x] **macOS arm64 Public DMG** — `dist/zion-public-miner-v3.2.0-mac-arm64.dmg` (146 MB), BUILD-INFO + SHA256SUMS (1. 11., `public_build`, ad-hoc signed).
 - [ ] Linux AppImage + DEB (mac/linux host).
 - [ ] CI workflows (mac/linux).
 - [ ] Windows OpenCL + CUDA build → **jiný stroj** (👤).
