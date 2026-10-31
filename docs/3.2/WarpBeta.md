@@ -94,3 +94,29 @@ Testnet3 rehearsal z 2026-09-19 skončil bez fundingu kvůli nefunkčním faucet
 ---
 
 *Edge BTC swap flow zůstává disabled; tento dokument nesmí být použit jako souhlas s mainnet transakcí.*
+
+## Runbook: reconciliation `executing` withdrawals (4.B5)
+
+`withdrawals.status='executing'` = claim-before-send checkpoint mezi DB debitem a potvrzeným broadcastem. Adapter error po claimu ponechá řádek v `executing` — záměrně **žádný auto-retry ani auto-refund** (submission mohl být ambiguous). Reconcilace je manuální:
+
+```bash
+# 1) Najít stuck řádky (multichain wallet DB na EDGE2):
+sqlite3 /data/zion/warp_multichain.db \
+  "SELECT id, user_id, asset_key, amount, recipient_address, tx_hash, created_at
+   FROM withdrawals WHERE status='executing' ORDER BY created_at;"
+
+# 2) Pro každý ověřit on-chain: hledat platbu recipient_address+amount
+#    v čase ~created_at na příslušném chainu (explorer / node RPC).
+#    Pozor: tx_hash může být NULL i když tx odvysílána (persist po broadcast selhal).
+```
+
+| Výsledek | Akce |
+|---|---|
+| Tx **je na-chainu** (potvrzena) | `UPDATE withdrawals SET status='sent', tx_hash='<hash>', sent_at='<iso>' WHERE id='<id>'` — debit zůstává, korektní final state |
+| Tx **není na-chainu** (broadcast se skutečně neuskutečnil) | `UPDATE withdrawals SET status='failed' WHERE id='<id>'` **+ kompenzační credit** zpět na `wallet_balances`/`ledger_entries` (debit byl už proveden v claim transakci) |
+| Nejasné (explorer/RPC nedostupný) | NERECONCILOVAT — nechat `executing`, eskalovat. Radši stuck než double-pay |
+
+Ochranná vrstva proti double-fire té samé operace: `idx_ledger_refid_type_reason` UNIQUE index na `ledger_entries(reference_id, entry_type, reason)` — druhý stejný journal leg (např. druhý debit/withdraw pro tentýž reference) selže na constraint místo double-credit.
+
+Opačný směr: warp `inbound.rs` `resume_executing` řeší Executing **transfers** (source→dest) po restartu — to je jiný lifecycle, netýká se custodial withdrawals.
+

@@ -334,6 +334,14 @@ impl Db {
             );
             CREATE INDEX IF NOT EXISTS idx_ledger_user ON ledger_entries(user_id);
             CREATE INDEX IF NOT EXISTS idx_ledger_user_asset ON ledger_entries(user_id, asset_key);
+            -- 4.B5 defense-in-depth: one business reference may journal each
+            -- (entry_type, reason) leg at most once. A swap legitimately needs
+            -- debit/swap + credit/swap_output under one order_id, but a second
+            -- debit/swap or a second credit/swap_refund is a double-fire and
+            -- must be rejected. NULL reference_id rows are unconstrained.
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_ledger_refid_type_reason
+                ON ledger_entries(reference_id, entry_type, reason)
+                WHERE reference_id IS NOT NULL;
             "#,
         )?;
 
@@ -2165,5 +2173,41 @@ mod tests {
         let loaded_bids = db.load_bids_for_intent(&intent.id).unwrap();
         assert_eq!(loaded_bids.len(), 1);
         assert_eq!(loaded_bids[0].solver, "solver-a");
+    }
+
+    /// 4.B5: the partial unique index on (reference_id, entry_type, reason)
+    /// must reject a double-fired journal leg while still allowing the
+    /// legitimate multi-leg shape (e.g. swap debit + swap_output credit).
+    #[test]
+    fn ledger_reference_id_uniqueness_defense() {
+        let mut db = Db::open_in_memory().unwrap();
+        db.atomic_credit("u1", "zion:ZION", "1000", "e1", "seed", None)
+            .unwrap();
+
+        // Swap legs under one reference: debit/swap + credit/swap_output.
+        db.atomic_debit("u1", "zion:ZION", "100", "e2", "swap", Some("order-1"))
+            .unwrap();
+        db.atomic_credit("u1", "zion:USDC", "99", "e3", "swap_output", Some("order-1"))
+            .unwrap();
+
+        // Double-firing the same leg must be rejected by the unique index.
+        let dup_debit = db.atomic_debit("u1", "zion:ZION", "100", "e4", "swap", Some("order-1"));
+        assert!(dup_debit.is_err(), "duplicate (ref,debit,swap) must be rejected");
+        let dup_credit =
+            db.atomic_credit("u1", "zion:USDC", "99", "e5", "swap_output", Some("order-1"));
+        assert!(dup_credit.is_err(), "duplicate (ref,credit,swap_output) must be rejected");
+
+        // A second debit under a different reason is a distinct leg — allowed.
+        db.atomic_debit("u1", "zion:ZION", "10", "e6", "swap_fee", Some("order-1"))
+            .unwrap();
+
+        // NULL reference_id is unconstrained.
+        db.atomic_credit("u1", "zion:ZION", "5", "e7", "seed", None).unwrap();
+        db.atomic_credit("u1", "zion:ZION", "5", "e8", "seed", None).unwrap();
+
+        // The rejected double-debit must not have touched the balance:
+        // 1000 + 5 + 5 - 100 - 10 = 900, USDC credit = 99.
+        assert_eq!(read_balance(&db.conn, "u1", "zion:ZION").unwrap(), 900);
+        assert_eq!(read_balance(&db.conn, "u1", "zion:USDC").unwrap(), 99);
     }
 }
