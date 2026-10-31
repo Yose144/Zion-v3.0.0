@@ -535,6 +535,7 @@ const t = {
     navInvoices: { cs: 'Faktury', en: 'Invoices' },
     navShipping: { cs: 'Doprava', en: 'Shipping' },
     navStripe: { cs: 'Stripe', en: 'Stripe' },
+    navGifts: { cs: 'Dárky', en: 'Gifts' },
     navStore: { cs: 'Obchod', en: 'Store' },
     themeLabel: { cs: 'Téma', en: 'Theme' },
     themeRasta: { cs: 'Rasta', en: 'Rasta' },

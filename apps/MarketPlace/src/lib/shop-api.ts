@@ -476,3 +476,70 @@ export async function getTokenStatus(id: string): Promise<TokenStatusResult | nu
     return { found: false, error: err instanceof Error ? err.message : 'Network error' };
   }
 }
+
+// ── Admin ZION Gifts ────────────────────────────────────────────────
+
+export interface AdminGiftResult {
+  success: boolean;
+  data?: {
+    orderId: string;
+    email: string;
+    amountZion: number;
+    paymentStatus: string;
+    wallet: string | null;
+    pass: { code: string } | null;
+    bonus: { txHash?: string; tokens?: number; status: string };
+  };
+  error?: string;
+}
+
+export async function sendAdminGift(input: {
+  email: string;
+  name?: string;
+  amountZion: number;
+  withPass?: boolean;
+  note?: string;
+}): Promise<AdminGiftResult | null> {
+  try {
+    const res = await fetch('/api/admin/gift', {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    const json = (await res.json()) as AdminGiftResult;
+    if (!res.ok) return { success: false, error: json.error ?? `HTTP ${res.status}` };
+    return json;
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
+  }
+}
+
+export interface AdminGiftListItem {
+  orderId: string;
+  customerEmail: string;
+  customerName: string;
+  zionTokens: number;
+  status: string;
+  paymentStatus: string;
+  customerWalletAddress: string | null;
+  note: string | null;
+  createdAt: string;
+  paidAt: string | null;
+  pass: { code: string } | null;
+  bonus: { status: string; txHash?: string; distributedAt?: string } | null;
+}
+
+export async function listAdminGifts(): Promise<{
+  success: boolean;
+  data?: AdminGiftListItem[];
+  error?: string;
+} | null> {
+  try {
+    const res = await fetch('/api/admin/gift', { headers: adminHeaders() });
+    const json = await res.json();
+    if (!res.ok) return { success: false, error: json.error ?? `HTTP ${res.status}` };
+    return json;
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
+  }
+}
