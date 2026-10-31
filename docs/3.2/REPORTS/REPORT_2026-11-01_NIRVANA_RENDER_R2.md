@@ -53,7 +53,9 @@ i globální hvězdné pozadí) a počká, až existují oba.
 
 - **R3** — jeden ocean shader pro `AtlanticOcean` i `SceneWater` (dnes dva přístupy).
 - **R4** — ambientní zvuk pro všech 12 scén (tracky), částice a drobný život v každé scéně.
-- **R6** — universe (`/`): StarGate, NewEarth, solar system, Issobella, HoloConsole.
+- **R6** — universe (`/`): první krok hotový (composer, bloom, DPR z tieru, audit háček;
+  57 fps / 119 draw calls / 65 k tris na WebGL2). Zbývá: přechody scéna↔portál, HUD,
+  Dolby-like grading StarGate a Nové Země.
 - **Instancování** — Bodhi Lanka (730), Te Pīko Ora (544) a LUMI (469) draw calls;
   palmy a keře chtějí vlastní instancované průchody.
 - **Vizuální regrese** — harness zatím ukládá snímky, ale neporovnává je; chybí

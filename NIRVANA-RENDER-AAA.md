@@ -140,4 +140,5 @@ Aplikační vrstva:
 | --- | --- |
 | 2026-10-31 | Vznik dokumentu; R0 GPU harness hotový (ANGLE Metal na Apple M1) |
 | 2026-10-31 | R1 Render Kit hotový: quality/textures/materials/environment/post/camera/terrain; `ProjectPresentation` pro 12 prezentací; art dávka 1 = Ekam, Amenti, Uluru, Kailash, Bodhi Lanka. Report: `docs/3.2/REPORTS/REPORT_2026-10-31_NIRVANA_RENDER_R1.md` |
+| 2026-10-31 | **R6 (universe) první krok** — domovská scéna dostala stejný HDR composer (bloom, AgX, vinětace) na WebGL2 cestě, DPR z tieru a audit háček (`?sceneAudit=1`); WebGPU cesta zůstává bez post-fx. Měřeno: 57 fps / 119 draw calls / 65 k tris. |
 | 2026-10-31 | **R2 hotová** — všech 13 scén má atmosféru, IBL, key-light, opar a post; scénické shadery už nedělají vlastní tonemapping (dvojí konverze dělala oceán vybledlý). **R5 hotová** — web previews jedou `frameloop="never"` mimo viewport (IntersectionObserver), 12 komponent. Akceptace: 13/13 scén PASS na produkčním buildu, 0 chyb. Report: `docs/3.2/REPORTS/REPORT_2026-11-01_NIRVANA_RENDER_R2.md` |
