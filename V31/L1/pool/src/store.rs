@@ -186,6 +186,14 @@ impl ShareStore {
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .unwrap_or(0);
         if current >= SCHEMA_VERSION {
+            // Backfill confirmed_at for legacy rows written before the INSERT
+            // path set it (B.1, 31.10.): any confirmed block without a
+            // confirmed_at timestamp gets its found-time `ts` as approximation.
+            // Idempotent — only touches NULL rows.
+            let _ = conn.execute(
+                "UPDATE blocks SET confirmed_at = ts WHERE status = 'confirmed' AND confirmed_at IS NULL",
+                [],
+            );
             debug!("share_store: schema already at v{current}");
             return Ok(());
         }
@@ -814,8 +822,8 @@ impl ShareStore {
     pub fn record_block(&self, rec: &BlockRecord) -> Result<()> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         conn.execute(
-            "INSERT INTO blocks (coin, height, hash, miner_id, worker_name, share_difficulty, network_difficulty, shares_since_prev, status, ts)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, unixepoch())
+            "INSERT INTO blocks (coin, height, hash, miner_id, worker_name, share_difficulty, network_difficulty, shares_since_prev, status, ts, confirmed_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, unixepoch(), CASE WHEN ?9 = 'confirmed' THEN unixepoch() ELSE NULL END)
              ON CONFLICT(coin, height) DO UPDATE SET
                 status = CASE WHEN blocks.status = 'confirmed' THEN 'confirmed' ELSE excluded.status END,
                 hash = CASE WHEN excluded.status = 'confirmed' THEN excluded.hash ELSE blocks.hash END,

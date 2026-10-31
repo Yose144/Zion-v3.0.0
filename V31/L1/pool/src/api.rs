@@ -145,6 +145,11 @@ pub struct PoolApi {
     history: Arc<Mutex<std::collections::VecDeque<HistorySample>>>,
     /// `(window_start_s, count)` per client IP for `/public/v1` requests.
     public_rate: Mutex<std::collections::HashMap<std::net::IpAddr, (u64, u32)>>,
+    /// Short-TTL cache for `/public/v1/coins/{coin}/stats` — the payload is
+    /// expensive (telemetry scan + PPLNS lock + store query) and the data
+    /// barely changes within a few seconds; a 10 s TTL keeps it fresh while
+    /// absorbing burst traffic that caused 504s under payout-sweep load.
+    coin_stats_cache: Mutex<std::collections::HashMap<String, (u64, String)>>,
     /// `(window_start_s, failures)` per client IP for `/api` + `/admin`
     /// authentication failures.
     auth_fail_rate: Mutex<std::collections::HashMap<std::net::IpAddr, (u64, u32)>>,
@@ -230,6 +235,7 @@ impl PoolApi {
             history: Arc::new(Mutex::new(h)),
             public_rate: Mutex::new(std::collections::HashMap::new()),
             auth_fail_rate: Mutex::new(std::collections::HashMap::new()),
+            coin_stats_cache: Mutex::new(std::collections::HashMap::new()),
             zis: crate::zis::ZisVerifier::from_env(),
             snapshots: PayloadSnapshots::default(),
             started_at: Instant::now(),
@@ -2514,7 +2520,30 @@ impl PoolApi {
         .to_string()
     }
 
+    /// Cached entry point for `/public/v1/coins/{coin}/stats` — 10 s TTL.
     fn build_public_coin_stats_payload(&self, coin: &str) -> String {
+        const TTL_S: u64 = 10;
+        let key = coin.to_string();
+        let now = now_unix_seconds();
+        if let Ok(cache) = self.coin_stats_cache.lock() {
+            if let Some((exp, body)) = cache.get(&key) {
+                if now < *exp {
+                    return body.clone();
+                }
+            }
+        }
+        let body = self.build_public_coin_stats_payload_uncached(coin);
+        if let Ok(mut cache) = self.coin_stats_cache.lock() {
+            cache.insert(key, (now + TTL_S, body.clone()));
+            // Bound the cache to a handful of coins.
+            if cache.len() > 64 {
+                cache.retain(|_, (exp, _)| *exp > now);
+            }
+        }
+        body
+    }
+
+    fn build_public_coin_stats_payload_uncached(&self, coin: &str) -> String {
         let coin = internal_coin_key(coin);
         // Served-job difficulty comes from per-leg job rings — gather it
         // BEFORE the pool mutex so a slow leg read can never wedge share
