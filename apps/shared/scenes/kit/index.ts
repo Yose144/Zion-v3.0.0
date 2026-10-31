@@ -58,6 +58,7 @@ export { ScenePost, sceneRenderStats, type ScenePostProps } from './post';
 export { SceneMotes, type SceneMotesProps } from './particles';
 export { SceneInstances, type InstanceItem, type SceneInstancesProps } from './instances';
 export { OceanSurface, type OceanSurfaceProps } from './ocean';
+export { sriYantraGeometry, type SriYantraOptions } from './yantra';
 export {
   ScenePalms,
   SceneTerrain,

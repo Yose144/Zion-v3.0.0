@@ -830,3 +830,118 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   color: inherit;
   font-size: 0.78rem;
 }
+
+/* ── Hiran v /present/hiran — chrám jako vstup do světů ────────────────── */
+
+.present-hiran-panel {
+  position: absolute;
+  z-index: 20;
+  right: 1rem;
+  top: calc(4.4rem + env(safe-area-inset-top, 0px));
+  bottom: calc(5.6rem + env(safe-area-inset-bottom, 0px));
+  width: min(23rem, calc(100vw - 2rem));
+  display: flex;
+  flex-direction: column;
+  padding: 0.9rem 1rem;
+  overflow: auto;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 209, 102, 0.28);
+  background: rgba(10, 8, 14, 0.86);
+  backdrop-filter: blur(10px);
+}
+
+.present-hiran-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.3rem;
+  color: #ffe9a8;
+  letter-spacing: 0.06em;
+}
+
+.present-hiran-panel > header button {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  width: 1.9rem;
+  height: 1.9rem;
+  line-height: 1;
+  font-size: 1rem;
+}
+
+/* chat potřebuje v panelu menší strop vlákna */
+.present-hiran-panel .hiran-thread {
+  max-height: 30vh;
+}
+
+.present-hiran-open {
+  position: absolute;
+  z-index: 20;
+  right: 1rem;
+  bottom: calc(5.6rem + env(safe-area-inset-bottom, 0px));
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.55);
+  background: rgba(255, 209, 102, 0.16);
+  color: #ffe9a8;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.present-hiran-open:hover {
+  background: rgba(255, 209, 102, 0.28);
+}
+
+.present-hiran-gates {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: linear-gradient(0deg, rgba(8, 7, 2, 0.88), rgba(8, 7, 2, 0));
+}
+
+.present-hiran-gates::-webkit-scrollbar {
+  display: none;
+}
+
+.present-hiran-gates button {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.4);
+  color: #ede6d2;
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.present-hiran-gates button:hover {
+  border-color: rgba(255, 209, 102, 0.55);
+  color: #ffe9a8;
+}
+
+@media (max-width: 720px) {
+  .present-hiran-panel {
+    top: auto;
+    left: 0.6rem;
+    right: 0.6rem;
+    width: auto;
+    max-height: 62vh;
+    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+  }
+  .present-hiran-open {
+    left: 50%;
+    right: auto;
+    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+  }
+}

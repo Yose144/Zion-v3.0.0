@@ -105,3 +105,65 @@ Konzole: jediná chyba je **pre-existing** `401` z anonymous probe `/api/auth/me
 | Datum | Změna |
 |---|---|
 | 2026-10-31 | S0 (portál, slot `sun`, okno, proxy, fokus), S1 (orb: pole/pečeť/prstence/lotos, 4 stavy), S2 (stylizovaná jantra) hotové; ověřeno lokálně |
+
+---
+
+# Chrám Hirana — nová L5 scéna `/present/hiran`
+
+> **Druhá polovina zadání:** „Hiran jako vstup do jiných L5 projektů, 3D model
+> zlatého orbu na lotosovém květu, jako v Ekamu nebo Matrixu, a interaktivní."
+> Přidáno tentýž den nad rámec S0–S2 (původní okno ve vesmíru zůstává).
+
+## Co to je
+
+`apps/shared/scenes/Hiran.tsx` — čtrnáctá scéna rodiny (12 misí + Matrix + Hiran),
+postavená stejným render kitem jako Ekam: mramorová kruhová terasa, tmavá kamenná
+podlaha se zlatými vlysy, **lotos z dvaceti perleťových plátků**, v něm zlatá miska
+a nad ní **zlaté vejce** (jádro, energie, Śrí jantra, skleněná blanka, dva prstence,
+aditivní záře) a kolem **třináct bran** do světů Království srdce.
+
+Interakce:
+- **klik na orb** → otevře se chat Hirana (stav jde do scény: idle → thinking → offline),
+- **klik na bránu** v 3D (nebo na dlaždici v pásu dole) → `router.push` do `/present/<svět>`,
+- **hover** na orb i bránu mění kurzor a orb mírně roste,
+- pás bran dole je zároveň přístupná varianta pro mobil a klávesnici.
+
+`apps/shared/scenes/kit/yantra.ts` — Śrí jantra jako jedna zlatá linka (devět
+trojúhelníků + tři kružnice + bindu). Jeden zdroj pro chrám i pro orb ve vesmíru
+(`HiranSun.tsx` ho teď taky používá, ~45 řádků duplikace zmizelo).
+
+`ProjectPresentation` dostal slot **`overlay`** — DOM vrstva nad plátnem (chat,
+pás bran). Scény samy zůstávají bez DOM.
+
+## Naměřeno (produkční build, M1 / ANGLE Metal, 1440×900)
+
+| Metrika | Hodnota | Brána canonu |
+|---|---|---|
+| FPS | **59,3** | ≥ 30 |
+| Draw calls | **159** | ≤ 250 |
+| Trojúhelníky | **46 090** | ≤ 400 k |
+| Textury | **32** | ≤ 32 (přesně na stropě) |
+| Invalid vertices | **0** | 0 |
+| `budgetOk` | **true** | true |
+
+Chování ověřeno headless prohlídkou: klik na orb otevře chat, pás bran naviguje
+(`/present/ekam`), z okna ve vesmíru vede „Vstoupit do chrámu" na `/present/hiran`.
+
+## Web
+
+`apps/website-v2.9/src/components/HiranPreview.tsx` (+`Lazy`) — stejná scéna v malém
+plátně, brány jako dekorace (bez navigace), sekce „Hiran v prostoru" na `/l3-hiran`
+s CTA do Nirvany. `tsc --noEmit` i `next build` čisté.
+
+## Známé meze
+
+- **Textury jsou přesně na stropě 32.** Přidání dalšího `SceneLabel` nebo nového
+  mramorového variantu (`repeat`) bránu rozbije — nová výzdoba musí nejdřív ubrat
+  jinde (nejvíc jich spotřebují popisky: každý je vlastní CanvasTexture).
+- **`/audio/hiran.mp3` neexistuje** → 404 v konzoli, zvuk jde ze syntetizované
+  ambience (`SceneSoundToggle`). Track dodá operátor, kód se nemění.
+- `401` z `/api/auth/me` je pre-existing (anonymous session probe).
+- Śrí jantra v chrámu je stejná **stylizace** jako na Slunci; přesná konstrukce
+  zůstává otevřená (S5).
+- Brány jsou vizuálně „markery" (sloupek + prstenec + klenot), ne architektura —
+  každý svět má vlastní scénu až za branou, tady jde o rozcestí.

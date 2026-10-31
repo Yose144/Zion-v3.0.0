@@ -42,3 +42,21 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   jako chybu do konzole a rozbilo by to `--strict-budget` audit.
 - **Měření:** fokus na Slunce 46–59 fps, 46–47 draw calls (M1, ANGLE Metal).
 
+
+## Chrám Hirana — `/present/hiran` (2026-10-31)
+
+- **Scéna je sdílená** (`apps/shared/scenes/Hiran.tsx`, 14. scéna rodiny), takže platí
+  canon: jen `@genesis/runtime` + `three`, žádné `drei`, žádný `three/addons`. Web
+  i Nirvana ji kompilují s jinou verzí three (0.169 vs 0.186).
+- **Interakce:** scéna dostává callbacky (`onOrbClick`, `onSelectGate`) a data bran;
+  sama nikam nenaviguje. `present/hiran/page.tsx` je napojuje na `router.push`.
+  Webový náhled callbacky neposílá → brány jsou dekorace.
+- **Overlay:** `ProjectPresentation` má nový prop `overlay` (DOM nad plátnem). Chat
+  žije tam, scéna zůstává bez DOM závislostí.
+- **Textury jsou na stropě (32).** Každý `SceneLabel` = vlastní CanvasTexture.
+  Nový popisek nebo nový `marble*N` variant (jiný `repeat` = jiná textura) rozbije
+  `budgetOk`. Ubírat, ne přidávat — nebo zvednout strop vědomě v `ScenePresentation`.
+- **Śrí jantra** je v `apps/shared/scenes/kit/yantra.ts` (jeden zdroj pro chrám
+  i pro orb ve vesmíru). Přesná konstrukce je otevřený úkol, ne hotová věc.
+- **`/audio/hiran.mp3` neexistuje** → 404 v konzoli při mountu; zvuk jde ze
+  syntetizované ambience. Není to regrese.

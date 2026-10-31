@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { SUN_POS } from './positions';
 import { TextLabel } from './Label';
 import { hiranAccent, hiranActivity, type HiranState } from '@/core/hiran/presence';
+import { sriYantraGeometry } from '../../../../../shared/scenes/kit/yantra';
 
 /**
  * HIRAN — Hiranyagarbha usedá do Slunce.
@@ -63,54 +64,6 @@ void main() {
 }
 `;
 
-/** Stylizovaná Śrí jantra — 9 protínajících se trojúhelníků + 3 kružnice + bindu.
- *  Přesná konstrukce (43 malých trojúhelníků) je samostatný úkol; tenhle tvar
- *  má čitelnou siluetu a je to poctivě linka, ne AI ilustrace. */
-function makeYantraGeometry(): THREE.BufferGeometry {
-  const pts: number[] = [];
-  const seg = (x1: number, y1: number, x2: number, y2: number) => {
-    pts.push(x1, y1, 0, x2, y2, 0);
-  };
-  const circle = (r: number, n = 96) => {
-    for (let i = 0; i < n; i++) {
-      const a1 = (i / n) * Math.PI * 2;
-      const a2 = ((i + 1) / n) * Math.PI * 2;
-      seg(Math.cos(a1) * r, Math.sin(a1) * r, Math.cos(a2) * r, Math.sin(a2) * r);
-    }
-  };
-  const triangle = (base: number, halfWidth: number, apex: number) => {
-    seg(-halfWidth, base, halfWidth, base);
-    seg(halfWidth, base, 0, apex);
-    seg(0, apex, -halfWidth, base);
-  };
-
-  circle(1.0);
-  circle(0.82);
-  circle(0.32);
-
-  const up: Array<[number, number, number]> = [
-    [-0.95, 0.92, 0.18],
-    [-0.62, 0.70, 0.44],
-    [-0.32, 0.46, 0.68],
-    [-0.08, 0.22, 0.90],
-  ];
-  const down: Array<[number, number, number]> = [
-    [0.95, 0.92, -0.18],
-    [0.62, 0.70, -0.44],
-    [0.32, 0.46, -0.68],
-    [0.08, 0.22, -0.90],
-    [0.50, 0.55, -0.50],
-  ];
-  for (const [base, w, apex] of up) triangle(base, w, apex);
-  for (const [base, w, apex] of down) triangle(base, w, apex);
-
-  circle(0.05, 20);
-
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-  return geo.scale(YANTRA_R, YANTRA_R, YANTRA_R);
-}
-
 /** Jeden okvětní lístek — tvar v XY, kořen v počátku, špička k +Y. */
 function makePetalGeometry(): THREE.BufferGeometry {
   const shape = new THREE.Shape();
@@ -131,8 +84,9 @@ export function HiranSun({ state, onOpen }: { state: HiranState; onOpen: () => v
   const [reducedMotion, setReducedMotion] = useState(false);
   const camera = useThree((s) => s.camera);
 
-  const yantraGeo = useMemo(makeYantraGeometry, []);
+  const yantraGeo = useMemo(() => sriYantraGeometry({ radius: YANTRA_R }), []);
   const petalGeo = useMemo(makePetalGeometry, []);
+  useEffect(() => () => yantraGeo.dispose(), [yantraGeo]);
 
   const uniforms = useMemo(
     () => ({

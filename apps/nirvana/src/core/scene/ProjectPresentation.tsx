@@ -25,6 +25,8 @@ export interface ProjectPresentationProps {
   sound?: string;
   /** Ambience character used when no track file exists. */
   ambience?: AmbienceProfile;
+  /** DOM overlay above the canvas — chat, gate list, anything that is not 3D. */
+  overlay?: ReactNode;
   children: (lang: Lang) => ReactNode;
 }
 
@@ -55,7 +57,7 @@ function LoadingVeil() {
  * One wrapper for every L5 project presentation: chrome, canvas, quality tier,
  * controls, soundtrack and the loading veil. Scenes own the 3D content only.
  */
-export function ProjectPresentation({ title, subtitle, missionPath, camera, controls, sound, ambience = 'wind', children }: ProjectPresentationProps) {
+export function ProjectPresentation({ title, subtitle, missionPath, camera, controls, sound, ambience = 'wind', overlay, children }: ProjectPresentationProps) {
   const { lang } = useI18n();
   const cs = lang === 'cs';
   const settings = quality();
@@ -89,6 +91,8 @@ export function ProjectPresentation({ title, subtitle, missionPath, camera, cont
       </Canvas>
 
       <LoadingVeil />
+
+      {overlay}
 
       <div className="present-hint">
         {cs ? 'Táhni pro otočení · kolečko pro přiblížení' : 'Drag to rotate · scroll to zoom'}

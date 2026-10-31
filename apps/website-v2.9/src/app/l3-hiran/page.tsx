@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import HiranyagarbhaChat from '@/components/HiranyagarbhaChat';
+import HiranPreviewLazy from '@/components/HiranPreviewLazy';
 
 const L3HiranCopy = {
   deployment: { cs: `Deployment`, en: `Deployment` },
@@ -593,6 +594,38 @@ export default function L3HiranPage() {
               />
             </div>
           </div>
+        </motion.section>
+
+        {/* ── HIRAN V PROSTORU ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="zion-section p-6 md:p-8 space-y-4"
+          style={{ '--rc': '255, 209, 102' } as React.CSSProperties}
+        >
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3">
+                <Orbit className="h-6 w-6 text-zion-gold" />
+                {cs ? 'Hiran v prostoru' : 'Hiran in space'}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm text-gray-300">
+                {cs
+                  ? 'Zlatý zárodek na lotosovém květu, obklopený třinácti branami do světů Království srdce. Otoč chrám, přibliž orb — a klikni na bránu, která tě volá.'
+                  : 'The golden womb on a lotus, ringed by thirteen gates into the worlds of the Kingdom of Hearts. Turn the temple, approach the orb — and click the gate that calls you.'}
+              </p>
+            </div>
+            <Link
+              href="https://nirvana.zionterranova.com/present/hiran"
+              className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zion-gold transition hover:bg-zion-gold/20"
+            >
+              <Sparkles className="h-3 w-3" />
+              {cs ? 'Otevřít v Nirvaně' : 'Open in Nirvana'}
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <HiranPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
         </motion.section>
 
         {/* ── THREE PILLARS ── */}
