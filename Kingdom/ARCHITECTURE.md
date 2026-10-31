@@ -127,13 +127,17 @@ export const manifest: PortalManifest = {
 
 ### Vynucení (to, co dnes chybí)
 
+Vynucuje `scripts/check-boundaries.mjs` — běží v ms, bez závislostí, součást `npm run verify`.
+
 | Pravidlo | Jak je vynuceno |
 |---|---|
-| Portál nevolá backend napřímo | ESLint `no-restricted-globals` na `fetch`/`XMLHttpRequest` mimo `core/api` a `@zion/api` |
-| Portál nemá vlastní i18n | `no-restricted-imports` na cokoli kromě `@zion/i18n`; zákaz lokálních `translations.ts` |
-| Portál nemá vlastní tokeny | zákaz lokálního `globals.css` s barvami; jen `@zion/ui` |
-| Registry odpovídá manifestům | `npm run codegen` v CI + `git diff --exit-code` |
-| Doména světa je čistá | zákaz `react`, `three`, `next`, `window`, `document`, `Math.random`, `Date.now` v `packages/world/src/domain/**` |
+| Portál nevolá backend napřímo | zákaz `fetch(` / `XMLHttpRequest` / `axios` v `apps/kingdom/src/portals/**` |
+| Portál nemá vlastní i18n | zákaz `translations.ts` a adresářů `i18n`/`locale` v portálech |
+| Doména světa je čistá | zákaz `react`, `three`, `@react-three`, `next`, `window`, `document`, `Math.random`, `Date.now`, `performance.now` v `packages/world/**` |
+| Žádné importy ven z appky | zákaz `../../../../` v `apps/kingdom/**` |
+| Manifest + Portal patří k sobě | každý adresář s `manifest.ts` musí mít `Portal.tsx` |
+| Žádný commitnutý `.tgz` | zákaz `*.tgz` v celém stromě |
+| Registry odpovídá manifestům | `npm run codegen` je součástí `npm run build` (a `verify`) |
 
 ---
 

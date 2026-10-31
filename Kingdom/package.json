@@ -1,0 +1,24 @@
+{
+  "name": "zion-kingdom",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @zion/kingdom",
+    "build": "npm run codegen && npm run build -w @zion/kingdom",
+    "start": "npm run start -w @zion/kingdom",
+    "codegen": "node scripts/codegen.mjs",
+    "check": "node scripts/check-boundaries.mjs",
+    "typecheck": "tsc -p apps/kingdom/tsconfig.json --noEmit",
+    "verify": "npm run codegen && npm run check && npm run typecheck && npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

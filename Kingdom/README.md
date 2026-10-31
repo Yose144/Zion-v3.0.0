@@ -1,6 +1,6 @@
 # Kingdom — jeden klient ekosystému ZION
 
-> **Stav:** F0 nezačata — existují jen tyto dokumenty. Žádný kód, žádný build, žádný deploy.
+> **Stav:** **F0 hotová** (2026-11-01) — kostra buildí, tři portály (Řetěz, Kovárna, Tržiště) čtou živá data. F1 (Brána) následuje.
 > **Datum založení:** 2026-11-01
 > **Nahrazuje:** `NIRVANA-V3.3-UNIFICATION.md` §1–3 jako *architekturu* (nový strom jde od nuly); plánovací router `NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md` zůstává v platnosti pro provoz a RC.
 
@@ -40,14 +40,31 @@ Nic jiného tu není a nic jiného se sem přidávat nebude. Problém, který Ki
 
 ## Rychlý start
 
-Zatím neexistuje. Po F0:
-
 ```bash
 cd Kingdom
-npm ci
-npm run dev      # apps/kingdom na http://127.0.0.1:3020
-npm run build
+npm install
+npm run dev          # http://127.0.0.1:3020
 ```
+
+Produkční build a standalone server (statika se stageuje vedle `server.js`):
+
+```bash
+npm run verify       # codegen + hranice + typecheck + build
+npm start            # http://127.0.0.1:3020
+```
+
+Port `3020` je záměrně mimo `website` (3000), `market` (3100) a `nirvana` (3010).
+
+## Co je hotové (F0)
+
+- jeden workspace root, **jeden lockfile** (dnes jich má ekosystém 13)
+- `@zion/contract` — Portal Contract v1; `@zion/api` — jediná datová cesta; `@zion/i18n` — jediná i18n; `@zion/ui` — jediný token set
+- `@zion/world` s vynucenou hranicí (žádný React/Three/DOM) — AAA seam
+- registry portálů generovaný z manifestů (`npm run codegen`)
+- `scripts/check-boundaries.mjs` — vynucuje 6 pravidel, 0 závislostí, běží v ms
+- **Brána** (`/`) a **Místnost** (`/room`), deep-link `/portal/<id>`
+- tři živé portály: **Řetěz** (výška 104k, difficulty, peers), **Kovárna** (12 mincí, stav nohou), **Tržiště** (výloha s ověřenými náhledy)
+- cs/en celé na serveru — do prohlížeče jde jediná klientská komponenta (přepínač jazyka)
 
 ## Hierarchie pravdy
 

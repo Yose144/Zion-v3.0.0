@@ -1,0 +1,504 @@
+/* Kingdom — Místnost. Tokeny dodává @zion/ui, tady je jen rozvržení. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--k-bg);
+  color: var(--k-text);
+  font-family: var(--k-font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---------- app frame ---------- */
+
+.k-app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.k-topbar {
+  height: 54px;
+  flex: 0 0 54px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--k-line);
+  background: color-mix(in oklab, var(--k-bg-soft) 88%, transparent);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.k-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.k-brand-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--k-accent);
+  box-shadow: 0 0 14px var(--k-accent);
+}
+
+.k-nav {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.k-nav a {
+  padding: 6px 11px;
+  border-radius: var(--k-radius-sm);
+  font-size: 13px;
+  color: var(--k-text-dim);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.k-nav a:hover {
+  background: var(--k-panel-2);
+  color: var(--k-text);
+}
+
+.k-topbar-spacer {
+  flex: 1;
+}
+
+.k-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--k-rail) minmax(0, 1fr);
+  min-height: 0;
+}
+
+@media (max-width: 780px) {
+  .k-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .k-rail {
+    display: none;
+  }
+}
+
+/* ---------- rail ---------- */
+
+.k-rail {
+  border-right: 1px solid var(--k-line);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.k-rail-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--k-text-faint);
+  padding: 8px 10px 6px;
+}
+
+.k-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--k-radius-sm);
+  color: var(--k-text-dim);
+  font-size: 13.5px;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.k-rail-item:hover {
+  background: var(--k-panel);
+  color: var(--k-text);
+}
+
+.k-rail-item[data-active='true'] {
+  background: var(--k-accent-soft);
+  color: var(--k-text);
+}
+
+.k-rail-item[data-status='placeholder'] {
+  opacity: 0.55;
+}
+
+.k-rail-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--k-line);
+  flex: 0 0 6px;
+}
+
+.k-rail-item[data-active='true'] .k-rail-dot {
+  background: var(--k-accent);
+}
+
+/* ---------- stage ---------- */
+
+.k-stage {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 22px 24px 60px;
+}
+
+.k-stage-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.k-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+.k-sub {
+  font-size: 13px;
+  color: var(--k-text-faint);
+  margin: 0;
+}
+
+/* ---------- cards ---------- */
+
+.k-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+  gap: 12px;
+}
+
+.k-card {
+  background: var(--k-panel);
+  border: 1px solid var(--k-line);
+  border-radius: var(--k-radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.k-card[data-link='true']:hover {
+  border-color: color-mix(in oklab, var(--k-accent) 40%, var(--k-line));
+  transform: translateY(-1px);
+}
+
+.k-card-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.k-card-desc {
+  font-size: 12.5px;
+  color: var(--k-text-dim);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.k-meta {
+  font-size: 11px;
+  color: var(--k-text-faint);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---------- stats ---------- */
+
+.k-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.k-stat {
+  background: var(--k-panel);
+  border: 1px solid var(--k-line);
+  border-radius: var(--k-radius-sm);
+  padding: 13px 14px;
+}
+
+.k-stat-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--k-text-faint);
+  margin-bottom: 6px;
+}
+
+.k-stat-value {
+  font-size: 19px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+}
+
+.k-stat-unit {
+  font-size: 12px;
+  color: var(--k-text-dim);
+  font-weight: 400;
+  margin-left: 3px;
+}
+
+/* ---------- misc ---------- */
+
+.k-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--k-line);
+  color: var(--k-text-dim);
+}
+
+.k-badge[data-tone='live'] {
+  color: var(--k-accent);
+  border-color: color-mix(in oklab, var(--k-accent) 35%, var(--k-line));
+  background: var(--k-accent-soft);
+}
+
+.k-badge[data-tone='soon'] {
+  color: var(--k-warn);
+  border-color: color-mix(in oklab, var(--k-warn) 30%, var(--k-line));
+}
+
+.k-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.k-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--k-accent) 45%, var(--k-line));
+  background: var(--k-accent-soft);
+  color: var(--k-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.k-btn:hover {
+  background: color-mix(in oklab, var(--k-accent) 22%, transparent);
+  transform: translateY(-1px);
+}
+
+.k-ghost {
+  background: transparent;
+  border: 1px solid var(--k-line);
+  color: var(--k-text-dim);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.k-ghost:hover {
+  color: var(--k-text);
+  border-color: var(--k-text-faint);
+}
+
+.k-empty {
+  border: 1px dashed var(--k-line);
+  border-radius: var(--k-radius);
+  padding: 26px;
+  text-align: center;
+  color: var(--k-text-faint);
+  font-size: 13px;
+}
+
+.k-code {
+  font-family: var(--k-mono);
+  font-size: 12px;
+  color: var(--k-text-dim);
+  word-break: break-all;
+}
+
+/* ---------- Brána ---------- */
+
+.k-gate {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+  padding: 40px 24px;
+}
+
+.k-gate-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(111, 240, 196, 0.13), transparent 42%),
+    radial-gradient(circle at 50% 46%, rgba(122, 167, 255, 0.1), transparent 62%),
+    radial-gradient(circle at 50% 120%, rgba(122, 167, 255, 0.07), transparent 55%),
+    var(--k-bg);
+  pointer-events: none;
+}
+
+.k-gate-ring {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(74vmin, 620px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(111, 240, 196, 0.16);
+  box-shadow:
+    inset 0 0 90px rgba(111, 240, 196, 0.06),
+    0 0 140px rgba(111, 240, 196, 0.05);
+  pointer-events: none;
+}
+
+.k-gate-ring::after {
+  content: '';
+  position: absolute;
+  inset: 9%;
+  border-radius: 50%;
+  border: 1px dashed rgba(122, 167, 255, 0.12);
+}
+
+.k-gate-inner {
+  position: relative;
+  text-align: center;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.k-gate-title {
+  font-size: clamp(30px, 5.2vw, 54px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  margin: 0;
+  line-height: 1.04;
+}
+
+.k-gate-text {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--k-text-dim);
+  margin: 0;
+  max-width: 470px;
+}
+
+.k-gate-links {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.k-gate-foot {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  font-size: 11.5px;
+  color: var(--k-text-faint);
+}
+
+.k-gate-foot a:hover {
+  color: var(--k-text-dim);
+}
+
+/* ---------- scene placeholder ---------- */
+
+.k-scene {
+  position: relative;
+  height: 240px;
+  border-radius: var(--k-radius);
+  border: 1px solid var(--k-line);
+  overflow: hidden;
+  margin-bottom: 18px;
+  background-color: var(--k-bg-soft);
+  background-image:
+    radial-gradient(1.4px 1.4px at 8% 26%, rgba(255, 255, 255, 0.6), transparent 55%),
+    radial-gradient(1.1px 1.1px at 21% 68%, rgba(255, 255, 255, 0.45), transparent 55%),
+    radial-gradient(1.6px 1.6px at 34% 16%, rgba(255, 255, 255, 0.5), transparent 55%),
+    radial-gradient(1px 1px at 46% 78%, rgba(255, 255, 255, 0.35), transparent 55%),
+    radial-gradient(1.5px 1.5px at 58% 32%, rgba(255, 255, 255, 0.55), transparent 55%),
+    radial-gradient(1.1px 1.1px at 69% 62%, rgba(255, 255, 255, 0.4), transparent 55%),
+    radial-gradient(1.7px 1.7px at 81% 22%, rgba(255, 255, 255, 0.5), transparent 55%),
+    radial-gradient(1.2px 1.2px at 92% 72%, rgba(255, 255, 255, 0.45), transparent 55%),
+    radial-gradient(circle at 68% 42%, rgba(122, 167, 255, 0.16), transparent 46%),
+    radial-gradient(circle at 26% 74%, rgba(111, 240, 196, 0.09), transparent 48%);
+}
+
+.k-thumb {
+  height: 128px;
+  border-radius: var(--k-radius-sm);
+  border: 1px solid var(--k-line-soft);
+  overflow: hidden;
+  background-color: var(--k-bg-soft);
+  background-image:
+    radial-gradient(circle at 30% 28%, rgba(122, 167, 255, 0.11), transparent 62%),
+    radial-gradient(circle at 72% 74%, rgba(111, 240, 196, 0.07), transparent 62%);
+}
+
+.k-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.k-scene-label {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  font-size: 11.5px;
+  color: var(--k-text-faint);
+  letter-spacing: 0.04em;
+}

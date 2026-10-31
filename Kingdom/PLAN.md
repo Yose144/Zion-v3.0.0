@@ -19,7 +19,7 @@
 
 | # | Fáze | Co se udělá | Trvání | Brána (důkaz) | Kdo |
 |---|---|---|---|---|---|
-| **F0** | **Založení** | `Kingdom/` root: npm workspaces, 1 lockfile, `tsconfig.base.json`, eslint/prettier, prázdné balíčky s API, `apps/kingdom` kostra (Místnost + placeholder Brány), `@zion/contract` + codegen | 1–2 d | `npm ci && npm run build` zelené; 1 lockfile; 0 importů přes `../../../` z jiných appek | 🤖 |
+| **F0** | **Založení** | `Kingdom/` root: npm workspaces, 1 lockfile, `tsconfig.base.json`, `scripts/check-boundaries.mjs`, prázdné balíčky s API, `apps/kingdom` kostra (Místnost + placeholder Brány), `@zion/contract` + codegen | 1–2 d | ✅ **2026-11-01 hotovo:** build 489 ms, `check` 32 souborů / 0 porušení, **1 lockfile**, 0 importů přes `../../../`, 3 portály s živými daty | 🤖 |
 | **F1** | **Brána** | Harvest `apps/IntroPage` → `core/gate`. Příjezd, rozcestí, „vejdi dovnitř" | 2–3 d | obsah apexu 1:1 v Kingdomu; klik z Brány otevře Místnost; i18n cs/en z `@zion/i18n` | 🤖 |
 | **F2** | **Místnost + první svět** | Harvest `apps/nirvana` (shell, session, scéna) + `apps/shared/scenes` (13 světů). `portals/worlds/nirvana` = orbit → planeta → prstence L6 → stanice → sestup | 1–2 t | denní cesta Brána → svět → okno funguje; session drží napříč 3 portály; `packages/world` bez React/Three importu | 🤖 |
 | **F3** | **Čtecí portály** | chain+explorer, pool (kovárna), market (výloha), books, freeworld, issobella, hiran, účet, dao. Každý manifest + typed reads přes `@zion/api` | 2 t | 9 portálů v registry; každý má manifest; 0 přímých `fetch`; BFF maskuje privátní pole | 🤖 |
@@ -111,3 +111,4 @@ Do té doby appka běží. Nic se nemaže dopředu — ani když je to „kouzel
 | Datum | Změna |
 |---|---|
 | 2026-11-01 | v1.0 — založeno. Rozhodnutí 👤: strom `Kingdom/` od nuly; `website-v2.9` zůstává knihovnou; Dashboard zůstává samostatný; Nirvana = první svět OASIS s AAA seamem; market/pool/dashboard funkčně zůstávají. |
+| 2026-11-01 | v1.1 — **F0 hotová.** Workspace root (1 lockfile, 38 balíčků, install 28 s), 8 balíčků `@zion/*`, registry codegen z manifestů, `check-boundaries.mjs` (6 pravidel, 0 porušení), Brána + Místnost + deep-link, 3 živé portály (Řetěz / Kovárna / Tržiště) na produkčním buildu Next 16.4.3 (Turbopack, kompilace 489 ms). Klientský JS = jediný přepínač jazyka. Rozhodnutí 🤖: dev port **3020**, produkce **EDGE2**, npm workspaces bez dalšího toolingu, **žádný Tailwind ani three v F0** (menší install, rychlejší paint; scéna se přidá lazy ve F2). |
