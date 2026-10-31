@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
+import { SceneSoundToggle } from '@/core/shell/SceneSoundToggle';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
@@ -14,6 +15,13 @@ export default function MatrixPresentPage() {
   const cs = lang === 'cs';
   const [mode, setMode] = useState<'base' | 'hall'>('base');
   const [beat, setBeat] = useState(0);
+  // Deep link for reviews and the audit harness: /present/matrix?mode=hall&beat=2
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'hall') setMode('hall');
+    const step = Number(params.get('beat'));
+    if (Number.isFinite(step)) setBeat(Math.max(0, Math.min(2, step)));
+  }, []);
   const hall = mode === 'hall';
   const advance = () => setBeat((current) => Math.min(2, current + 1));
 
@@ -34,6 +42,7 @@ export default function MatrixPresentPage() {
           </span>
         </div>
         <ProjectLanguageButton />
+        <SceneSoundToggle />
         {hall && (
           <button
             type="button"

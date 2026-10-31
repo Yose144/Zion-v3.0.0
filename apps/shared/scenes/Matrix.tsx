@@ -3,6 +3,7 @@
 
 import { React, useFrame, useMemo, THREE } from '@genesis/runtime';
 
+import { Antenna, EarthBall, Footprints, LunarGround, Radiators, Rocks, Rover, Starfield, SunGlow, useHullTexture, useSolarTexture, UtilityBox } from './MatrixDetail';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionDelta, motionTime } from './ScenePresentation';
 
@@ -10,7 +11,7 @@ type PointerEventLike = { stopPropagation: () => void };
 
 type Lang = 'cs' | 'en';
 
-const TARGET: [number, number, number] = [0, 1.3, 1.2];
+const TARGET: [number, number, number] = [0, 2.0, 1.0];
 
 function seeded(n: number) {
   let s = n;
@@ -18,75 +19,51 @@ function seeded(n: number) {
 }
 
 function LunarSky() {
-  const stars = useMemo(() => {
-    const rnd = seeded(8909);
-    const positions = new Float32Array(90 * 3);
-    for (let i = 0; i < 90; i++) {
-      const theta = rnd() * Math.PI * 2;
-      const phi = Math.acos(2 * rnd() - 1);
-      const r = 180;
-      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = r * Math.cos(phi);
-      positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    return geo;
-  }, []);
-
   return (
     <>
       <mesh frustumCulled={false} renderOrder={-10}>
         <sphereGeometry args={[320, 24, 16]} />
-        <meshBasicMaterial color="#07080e" side={THREE.BackSide} />
+        <meshBasicMaterial color="#05060b" side={THREE.BackSide} />
       </mesh>
-      <points geometry={stars} frustumCulled={false}>
-        <pointsMaterial color="#f4efe4" size={0.55} sizeAttenuation />
-      </points>
+      <Starfield />
+      <SunGlow />
     </>
   );
 }
 
 function EarthInSky() {
-  const ref = React.useRef<THREE.Group>(null);
-  useFrame((_, delta) => {
-    if (ref.current) ref.current.rotation.y += motionDelta(delta) * 0.12;
-  });
-  return (
-    <group ref={ref} position={[24, 16, -32]}>
-      <mesh>
-        <sphereGeometry args={[1.45, 24, 18]} />
-        <meshStandardMaterial color="#3d7ec8" emissive="#163e72" emissiveIntensity={0.55} roughness={0.45} />
-      </mesh>
-      <mesh scale={1.18}>
-        <sphereGeometry args={[1.45, 16, 12]} />
-        <meshBasicMaterial color="#9fd4ff" transparent opacity={0.18} depthWrite={false} blending={THREE.AdditiveBlending} />
-      </mesh>
-    </group>
-  );
+  return <EarthBall />;
 }
 
 function Craters() {
   const craters = useMemo(() => {
     const rnd = seeded(144000);
-    return Array.from({ length: 7 }, (_, i) => ({
-      x: (rnd() - 0.5) * 22,
-      z: (rnd() - 0.5) * 18,
-      r: 0.7 + rnd() * 1.6,
+    return Array.from({ length: 13 }, (_, i) => ({
+      x: (rnd() - 0.5) * 26,
+      z: (rnd() - 0.5) * 22,
+      r: 0.35 + rnd() * rnd() * 1.5,
       key: i,
-    })).filter((c) => Math.hypot(c.x, c.z) > 4.2);
+    })).filter((c) => Math.hypot(c.x, c.z) > 4.6);
   }, []);
   return (
     <>
       {craters.map((c) => (
-        <group key={c.key} position={[c.x, 0.03, c.z]}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <circleGeometry args={[c.r, 20]} />
-            <meshStandardMaterial color="#5c564e" roughness={1} />
-          </mesh>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
-            <torusGeometry args={[c.r * 0.92, 0.045, 6, 20]} />
-            <meshStandardMaterial color="#9a9286" roughness={1} />
+        <group key={c.key} position={[c.x, 0.006, c.z]}>
+          {/* stupňovitá mísa: tři odstíny naznačí hloubku bez další geometrie terénu */}
+          {[
+            { scale: 1, color: '#6d675d', y: 0 },
+            { scale: 0.74, color: '#5b554c', y: 0.002 },
+            { scale: 0.44, color: '#4c473f', y: 0.004 },
+          ].map((ring) => (
+            <mesh key={ring.scale} rotation={[-Math.PI / 2, 0, 0]} position={[0, ring.y, 0]} receiveShadow>
+              <circleGeometry args={[c.r * ring.scale, 22]} />
+              <meshStandardMaterial color={ring.color} roughness={1} metalness={0.02} />
+            </mesh>
+          ))}
+          {/* nízký val, ne drátěný kroužek */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} receiveShadow>
+            <ringGeometry args={[c.r * 0.94, c.r * 1.06, 24]} />
+            <meshStandardMaterial color="#90897d" roughness={1} metalness={0.02} side={THREE.DoubleSide} />
           </mesh>
         </group>
       ))}
@@ -101,6 +78,7 @@ function Habitat({
   glass,
   enter,
   onEnter,
+  hull,
 }: {
   position: [number, number, number];
   radius: number;
@@ -108,6 +86,7 @@ function Habitat({
   glass?: boolean;
   enter?: boolean;
   onEnter?: () => void;
+  hull?: THREE.Texture | null;
 }) {
   const ring = React.useRef<THREE.Mesh>(null);
   React.useEffect(() => () => {
@@ -139,7 +118,13 @@ function Habitat({
     >
       <mesh position={[0, 0.38, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[radius * 0.92, radius, 0.76, 20]} />
-        <meshStandardMaterial color={color} roughness={0.7} metalness={0.22} />
+        <meshStandardMaterial
+          key={hull ? 'tex' : 'flat'}
+          map={hull ?? undefined}
+          color={hull ? '#e9e3d7' : color}
+          roughness={0.62}
+          metalness={0.28}
+        />
       </mesh>
       <mesh position={[0, 0.76, 0]} castShadow>
         <sphereGeometry args={[radius, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
@@ -183,11 +168,11 @@ function Habitat({
   );
 }
 
-function Tunnel({ position, length }: { position: [number, number, number]; length: number }) {
+function Tunnel({ position, length, hull }: { position: [number, number, number]; length: number; hull?: THREE.Texture | null }) {
   return (
     <mesh position={position} rotation={[0, 0, Math.PI / 2]} castShadow>
       <cylinderGeometry args={[0.32, 0.32, length, 12]} />
-      <meshStandardMaterial color="#b7b1a6" roughness={0.62} metalness={0.28} />
+      <meshStandardMaterial key={hull ? 'tex' : 'flat'} map={hull ?? undefined} color={hull ? '#ded8cc' : '#b7b1a6'} roughness={0.55} metalness={0.3} />
     </mesh>
   );
 }
@@ -201,7 +186,7 @@ function LandingPad() {
       </mesh>
       <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.7, 1.92, 28]} />
-        <meshBasicMaterial color="#a855f7" transparent opacity={0.85} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#c9b6ff" transparent opacity={0.42} side={THREE.DoubleSide} />
       </mesh>
       <group position={[0, 0, 0]}>
         <mesh position={[0, 0.95, 0]} castShadow>
@@ -235,6 +220,7 @@ function LandingPad() {
 }
 
 function SolarArray() {
+  const cells = useSolarTexture();
   return (
     <group position={[-6.4, 0, 2.4]} rotation={[0, 0.4, 0]}>
       <mesh position={[0, 0.55, 0]}>
@@ -244,7 +230,15 @@ function SolarArray() {
       {[ -1.15, 1.15 ].map((x) => (
         <mesh key={x} position={[x, 1.15, 0]} rotation={[0.55, 0, 0]} castShadow>
           <boxGeometry args={[1.7, 0.05, 1.15]} />
-          <meshStandardMaterial color="#1c3f73" emissive="#0c274d" emissiveIntensity={0.35} metalness={0.55} roughness={0.25} />
+          <meshStandardMaterial
+            key={cells ? 'tex' : 'flat'}
+            map={cells ?? undefined}
+            color={cells ? '#ffffff' : '#1c3f73'}
+            emissive="#0c274d"
+            emissiveIntensity={0.18}
+            metalness={0.55}
+            roughness={0.25}
+          />
         </mesh>
       ))}
     </group>
@@ -263,21 +257,25 @@ function GreenhouseGlow() {
 
 export function MatrixScene({ lang, onEnterHall }: { lang: Lang; onEnterHall?: () => void }) {
   const cs = lang === 'cs';
+  const hull = useHullTexture();
   return (
     <>
       <ScenePresentation camera={MATRIX_CAMERA} target={MATRIX_CONTROLS.target} />
       <LunarSky />
       <EarthInSky />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[18, 64]} />
-        <meshStandardMaterial color="#8a8378" roughness={1} metalness={0.02} />
-      </mesh>
+      <LunarGround />
       <Craters />
-      <Habitat position={[-3.5, 0, -0.2]} radius={1.35} color="#c8c2b6" />
-      <Habitat position={[0.15, 0, 0.15]} radius={1.72} color="#d5cfc3" enter onEnter={onEnterHall} />
-      <Habitat position={[3.8, 0, 0.2]} radius={1.22} color="#c8c2b6" glass />
-      <Tunnel position={[-1.7, 0.62, -0.02]} length={2.15} />
-      <Tunnel position={[2.0, 0.62, 0.18]} length={2.05} />
+      <Rocks />
+      <Footprints />
+      <Habitat position={[-3.5, 0, -0.2]} radius={1.35} color="#c8c2b6" hull={hull} />
+      <Habitat position={[0.15, 0, 0.15]} radius={1.72} color="#d5cfc3" hull={hull} enter onEnter={onEnterHall} />
+      <Habitat position={[3.8, 0, 0.2]} radius={1.22} color="#c8c2b6" glass hull={hull} />
+      <Tunnel position={[-1.7, 0.62, -0.02]} length={2.15} hull={hull} />
+      <Tunnel position={[2.0, 0.62, 0.18]} length={2.05} hull={hull} />
+      <Radiators position={[-5.05, 0, 1.15]} />
+      <UtilityBox position={[2.9, 0, 1.9]} rotation={-0.5} />
+      <Antenna position={[-4.95, 0, -1.75]} />
+      <Rover position={[2.6, 0, 4.4]} rotation={0.6} />
       <LandingPad />
       <SolarArray />
       <GreenhouseGlow />
@@ -289,15 +287,15 @@ export function MatrixScene({ lang, onEnterHall }: { lang: Lang; onEnterHall?: (
       <SceneLabel position={[0.15, 2.55, 2.15]} text={cs ? 'hala · vstoupit' : 'hall · enter'} />
       <SceneLabel position={[3.8, 2.7, 0.2]} text={cs ? 'skleník' : 'greenhouse'} />
       <SceneLabel position={[0.4, 2.15, 6.2]} text={cs ? 'přistávací plocha' : 'landing pad'} />
-      <SceneLabel position={[24, 18.2, -32]} scale={1.4} text={cs ? 'Země' : 'Earth'} />
+      <SceneLabel position={[-60, 11.4, -80]} scale={1.4} text={cs ? 'Země' : 'Earth'} />
     </>
   );
 }
 
-export const MATRIX_CAMERA = { position: [12, 7.5, 16] as [number, number, number], fov: 42, far: 900 };
+export const MATRIX_CAMERA = { position: [12.5, 6.6, 16.5] as [number, number, number], fov: 40, far: 900 };
 export const MATRIX_CONTROLS = {
   autoRotate: true,
-  autoRotateSpeed: 0.35,
+  autoRotateSpeed: 0.22,
   minDistance: 8,
   maxDistance: 70,
   maxPolarAngle: Math.PI / 2 - 0.06,
@@ -308,23 +306,26 @@ export const MATRIX_CONTROLS = {
 export function MatrixLighting() {
   return (
     <>
-      <ambientLight intensity={0.22} color="#c9d4e8" />
-      <hemisphereLight args={['#dfe7f5', '#3a342c', 0.35]} />
+      <ambientLight intensity={0.12} color="#c9d4e8" />
+      <hemisphereLight args={['#dfe7f5', '#26231e', 0.22]} />
+      {/* nízké slunce (~7°) — dlouhé stíny jako na jižním pólu Měsíce */}
       <directionalLight
-        position={[18, 14, 8]}
-        intensity={2.6}
-        color="#fff6e8"
+        position={[-70, 9, 12]}
+        intensity={3.4}
+        color="#fff3e2"
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.0005}
         shadow-camera-near={1}
-        shadow-camera-far={48}
+        shadow-camera-far={140}
         shadow-camera-left={-16}
         shadow-camera-right={16}
         shadow-camera-top={16}
         shadow-camera-bottom={-16}
       />
-      <directionalLight position={[-8, 6, -10]} intensity={0.35} color="#8eb7e8" />
+      {/* earthshine — modré světlo odražené od Země */}
+      <directionalLight position={[-60, 8, -80]} intensity={0.4} color="#8ab6ea" />
     </>
   );
 }
