@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Image from "next/image";
 import PageLayout from "../../components/PageLayout";
 import HeroImage from "../../components/HeroImage";
 import LucideIcon from "../../components/LucideIcon";
@@ -26,7 +26,7 @@ export default function ArchaClient() {
   return (
     <PageLayout lang={lang} setLang={setLang}>
       <HeroImage
-        src="/develop/img/stargate.jpg"
+        src="/archa/ship-sunset.jpg"
         alt="Nirvana — archa"
         className="py-20 md:py-28"
       >
@@ -51,6 +51,15 @@ export default function ArchaClient() {
           <div className="text-center">
             <h2 className="major">{t.kofer.title}</h2>
           </div>
+          <div className="float-none mx-auto mb-4 max-w-[240px] sm:float-right sm:ml-6 sm:max-w-[220px]">
+            <Image
+              src="/legacy/img/maria1.jpg"
+              alt="Království srdce"
+              width={564}
+              height={697}
+              className="rounded-lg border border-[#fcd116]/30 opacity-90"
+            />
+          </div>
           <p>{t.kofer.p1}</p>
           <p>{t.kofer.p2}</p>
           <blockquote className="my-6 border-l-4 border-[#fcd116] bg-[rgba(252,209,22,0.04)] p-4 italic text-[#fcd116]">
@@ -66,6 +75,15 @@ export default function ArchaClient() {
             <h2 className="major">{t.fleet.title}</h2>
           </div>
           <p className="text-center">{t.fleet.intro}</p>
+          <figure className="mx-auto mt-6 max-w-3xl">
+            <Image
+              src="/archa/tres-marias.jpg"
+              alt="Tres Marías — tři lodě, tři oceány, jedna cesta"
+              width={1024}
+              height={768}
+              className="rounded-lg border border-white/10"
+            />
+          </figure>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {t.fleet.items.map((ship: any, i: number) => (
               <div
@@ -166,6 +184,15 @@ export default function ArchaClient() {
           </div>
           <p>{t.whale.p1}</p>
           <p>{t.whale.p2}</p>
+          <figure className="mx-auto mt-5 max-w-2xl">
+            <Image
+              src="/archa/route-masterplan.png"
+              alt="María del Camino — masterplan trasy přes uzly"
+              width={1024}
+              height={768}
+              className="rounded-lg border border-white/10 opacity-95"
+            />
+          </figure>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {t.whale.seasons.map((s: any, i: number) => (
               <div
@@ -214,6 +241,15 @@ export default function ArchaClient() {
 
         {/* Status */}
         <section id="status" className="text-center">
+          <figure className="mx-auto mb-6 max-w-xl">
+            <Image
+              src="/archa/ship-stars.png"
+              alt="Loď pod hvězdami — Nirvana"
+              width={1024}
+              height={1024}
+              className="rounded-lg border border-white/10"
+            />
+          </figure>
           <span className="rounded-full border border-white/20 bg-white/[0.03] px-4 py-1 text-xs font-semibold uppercase tracking-widest text-white/50">
             {t.status.badge}
           </span>
