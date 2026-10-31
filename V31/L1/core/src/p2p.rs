@@ -17,6 +17,7 @@ use crate::block::Block;
 use crate::node::Node;
 use crate::node::NodeError;
 use crate::peer_manager::{PeerGuard, PeerManager, PeerSource};
+use crate::v3_chain::P2P_SYNC_WALK_LIMIT;
 use zion_l1_types::Hash;
 
 /// Wire message types exchanged between Alpha nodes.
@@ -339,11 +340,11 @@ async fn sync_peer(
         match find_common_ancestor(node, peer, our_height).await {
             Ok(Some(fork_height)) => {
                 let depth = our_height.saturating_sub(fork_height);
-                if depth > MAX_REORG_DEPTH {
+                if depth > P2P_SYNC_WALK_LIMIT {
                     warn!(
-                        "chain divergence: reorg depth {} exceeds max {}; \
+                        "chain divergence: reorg depth {} exceeds sync-walk limit {}; \
                          local chain may be stale — consider deleting the DB to re-sync",
-                        depth, MAX_REORG_DEPTH
+                        depth, P2P_SYNC_WALK_LIMIT
                     );
                     return Ok(());
                 }
@@ -410,7 +411,7 @@ async fn sync_peer(
                 warn!(
                     "chain divergence: no common ancestor within {} blocks; \
                      local chain may be stale — consider deleting the DB to re-sync",
-                    MAX_REORG_DEPTH
+                    P2P_SYNC_WALK_LIMIT
                 );
                 return Ok(());
             }
@@ -439,21 +440,17 @@ async fn sync_peer(
     Ok(())
 }
 
-/// Maximum blocks we are willing to roll back during a reorg. Anything
-/// deeper indicates a genuinely stale or alternate-history DB — the
-/// operator wipes and re-syncs instead.
-const MAX_REORG_DEPTH: u64 = 64;
-
 /// Walk our chain backwards alongside the peer's, returning the highest
 /// height at which both nodes store the same block hash. `None` when no
-/// common ancestor exists within `MAX_REORG_DEPTH` of our tip.
+/// common ancestor exists within `P2P_SYNC_WALK_LIMIT` of our tip (the
+/// floor is defined in `v3_chain.rs` alongside the other reorg constants).
 async fn find_common_ancestor(
     node: &Node,
     peer: SocketAddr,
     our_height: u64,
 ) -> Result<Option<u64>, crate::node::NodeError> {
     let mut h = our_height;
-    let floor = our_height.saturating_sub(MAX_REORG_DEPTH);
+    let floor = our_height.saturating_sub(P2P_SYNC_WALK_LIMIT);
     loop {
         let peer_blocks = get_blocks(peer, h, h).await?;
         let peer_hash = peer_blocks.first().map(|b| b.header.header_hash().to_hex());

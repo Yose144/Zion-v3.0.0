@@ -4,11 +4,30 @@
 //   MAX_REORG_DEPTH  = 10 blocks
 //   SOFT_FINALITY    = 60 blocks
 //   Fork choice      = highest accumulated work (strictly >)
+//
+// Reorg-depth constants live here as the single definition site (4.B4).
+// Three depths coexist because they guard different layers — they are NOT
+// interchangeable and must satisfy:
+//   MAX_REORG_DEPTH (v3 compat) < P2P_SYNC_WALK_LIMIT ≤ NATIVE_MAX_REORG_DEPTH
+// Changing any of them is a consensus/behavior change — gate on G8 window.
 
 use std::collections::HashMap;
 
 /// Constitutional: maximum reorganization depth.
 pub const MAX_REORG_DEPTH: u64 = 10;
+
+/// Native chain (node_runtime → chain_state reorg execution): maximum
+/// blocks a reorg may roll back. Deliberately deeper than the V3-compat
+/// limit — the native UTXO path is the long-range recovery surface.
+/// Effective reachable depth via P2P sync is additionally capped by
+/// `P2P_SYNC_WALK_LIMIT` (the ancestor-search floor).
+pub const NATIVE_MAX_REORG_DEPTH: u64 = 500;
+
+/// P2P ancestor-search floor: how far back `find_common_ancestor` may walk
+/// before declaring the peer's chain alien. Must be ≥ the depth we are
+/// willing to auto-reorg, else a deeper-but-legal fork is never located;
+/// bounded to cap per-peer scan cost.
+pub const P2P_SYNC_WALK_LIMIT: u64 = 64;
 
 /// Constitutional: blocks after which a chain segment is considered soft-final.
 pub const SOFT_FINALITY_DEPTH: u64 = 60;

@@ -147,7 +147,7 @@ GPU pathspecs are `:(glob)V31/L1/miner/**/*.cu`, `:(glob)V31/L1/miner/**/*.cl`, 
 
 **Carried over / still open:**
 
-1. `MAX_REORG_DEPTH` still has three values (10 / 64 / 500) — reconcile.
+1. ~~`MAX_REORG_DEPTH` still has three values (10 / 64 / 500) — reconcile.~~ ✅ 31.10.: sjednoceno do `v3_chain.rs` jako single definition site — tři hodnoty mají **odlišnou vrstvovou sémantiku** (v3-compat rollback 10 / P2P ancestor-search floor 64 / native execution cap 500); p2p.rs používá `P2P_SYNC_WALK_LIMIT`, node_runtime re-exportuje `NATIVE_MAX_REORG_DEPTH`. Hodnoty beze změny (G8 freeze), invariant zdokumentován.
 2. DAO premine `unlock_height` 144,000 vs admin-lock-only premine outputs.
 3. Pool submit path: pre-orphan check removed by design — node consensus decides `submitBlock` validity. Confirm no DoS/amplification surface (submit flood → node validation cost).
 4. Watchdog policy: `getTemplate` timeout 30 s / 3 consecutive fails → node restart. Verify restart logic cannot be gamed into a restart loop.

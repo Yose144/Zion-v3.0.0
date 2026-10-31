@@ -56,7 +56,9 @@ pub const MAX_TEMPLATE_TRANSACTIONS: usize = 16;
 pub const MAX_MEMPOOL_TRANSACTIONS: usize = 4_096;
 pub const MAX_TEMPLATE_UTXO_TRANSACTIONS: usize = 16;
 pub const DEFAULT_BLOCK_RETENTION: usize = 1000;
-pub const MAX_REORG_DEPTH: u64 = 500;
+// Re-exported under the legacy name so `chain_state` and external callers
+// keep working; canonical definition + rationale lives in `v3_chain.rs` (4.B4).
+pub use crate::v3_chain::NATIVE_MAX_REORG_DEPTH as MAX_REORG_DEPTH;
 
 // ── Helper functions for V31 compatibility ─────────────────────────────
 
