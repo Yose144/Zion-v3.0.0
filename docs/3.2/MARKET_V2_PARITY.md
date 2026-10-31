@@ -46,6 +46,7 @@
 6. B2B + `statusHistory` (29. 10.).
 7. SHOPPAY + dedicated shop vault (30. 10.).
 8. SMTP + Stripe credentials na EDGE2 (do 31. 10.) → soft-launch vypnut.
+9. Rasta design pro VŠECHNY emaily `3ec2900d9` — sdílený `buildRastaEmail` shell (admin notif, payment conf, invoice+PDF, bonus, shipping, wallet seed) — ověřeno live `ORD-RASTA-*`.
 
 ## Branding / bonus
 
