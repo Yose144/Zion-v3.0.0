@@ -124,8 +124,21 @@ Nový adaptér `chain/adapters/quantus.rs` implementující `ChainAdapter`:
       `partialFee=1015602500` + weight → extrinsic dekódován chainem, encoding
       a signature layout validní.** `system_dryRun` je na public RPC disabled
       (unsafe) — podpisová validace se potvrdí prvním reálným submitem.
-- [ ] **PENDING:** Heisenberg send test (`QUANTUS_LIVE=1` + faucet HEI) —
-      `author_submitExtrinsic` acceptance end-to-end.
+- [x] **2026-10-31 GATED LIVE TESTS (F1 evidence):** `QUANTUS_LIVE=1`
+      proti default `rpc.zionterranova.com/qtc` (`system_chain`="Quantus",
+      spec_version 153 — mainnet endpoint, ne Planck):
+      `quantus_live_readonly` ✅ (`system_health` sync, finalized 323 386,
+      `balance()` ss58→storage→AccountInfo decode celá cesta OK);
+      `quantus_live_dryrun_extrinsic` ✅ (`payment_queryInfo` partialFee
+      1 015 602 500 + weight, `system_dryRun` dekóduje extrinsic — návrat
+      `0x010004` = runtime-level err (unfunded), NE decode/BadProof).
+      **Fix:** assert `h > 1_000_000` byl Planck-era stale (default endpoint
+      dnes servíruje mladší "Quantus" mainnet ~323k) → nahrazen `h > 0` +
+      poznámka o chain-name varianci v test doc.
+- [ ] **PENDING 👤:** Heisenberg send test (`QUANTUS_LIVE=1` +
+      `QUANTUS_RPC=https://a1-heisenberg.quantus.cat` + `QUANTUS_SEED` z
+      faucet HEI) — `author_submitExtrinsic` acceptance end-to-end. Jediný
+      zbývající F1 krok; gated test `quantus_live_send_testnet` připraven.
 - [ ] **PENDING:** `transfer_all`/`batch` decode (jiné legální deposit cesty).
 - [x] **2026-10-08 MAINNET SIGNING — ROOT-CAUSE OPRAVENO (2 bugy):**
       Live `--qtc-send` proti mainnetu padal `1010 bad signature`. Wire-level
@@ -167,20 +180,60 @@ Nový adaptér `chain/adapters/quantus.rs` implementující `ChainAdapter`:
 - [ ] ZIS: ověřit `ZisLinkedAddress.chain_type="quantus"` end-to-end
       (zis_auth mapping hotový, API cesta neověřená).
 
-### F3 — Bridge ZION↔QTC (watchtower)
+### F3 — Bridge ZION↔QTC (watchtower) — návrh 2026-10-31
 
-Přes existující `bridge/` + `multichain_wallet` flow:
+**Architektura:** žádný nový komponent — watchtower = kompozice existujících
+primitiv, která už v produkci běží pro ostatní řetězce.
 
-- [ ] **QTC→ZION:** user pošle QTC na svou custodial deposit adresu (ZIS) →
-      `watch_addresses` detekuje deposit s `QUANTUS_MIN_CONF` confirmations
-      → ledger credit → release ZION z bridge walletu (`send_payment` na
-      zion1 adresu). Rate feed: `profit.rs` fallback estimate + později
-      market API (QTC je na MEXC/XeggeX — zdroj ceny ověřit).
-- [ ] **ZION→QTC:** user lock/burn ZION (existující HTLC lock nebo burn
-      memo `BRIDGE:QTC:<quantus_addr>`) → watcher → adapter `send_payment`
-      QTC na jejich Quantus adresu.
-- [ ] Reconciliation + solvency: Quantus hot wallet balance přes
-      `system.account` — přidat do `solvency.rs` reporting.
+```
+QTC→ZION leg:
+  user QTC → custodial deposit adresa (keyring ss58-189 per-user)
+    → DepositWatcher::poll_all → QuantusAdapter::watch_addresses
+      (finalized-block scan, transfer_keep_alive/allow_death filtr)
+    → confirmations ≥ 30 (deposit finality) → atomic_credit_and_mark_
+      deposit_credited → ledger QTC credit
+    → release ZION: interní credit (1:1 admin-pair, nebo rate-adjusted) —
+      stejný model jako ostatní custodial deposit chains
+
+ZION→QTC leg:
+  withdrawal request (chain=quantus, ss58 adresa) → WithdrawalProcessor
+    → SolvencyGuard::verify_withdrawal (hot wallet System.Account free)
+    → QuantusAdapter::send_payment (ML-DSA-87, QUANTUS_EXTRINSIC ctx,
+      best-head era anchor) → confirmations() 128-block lookback
+```
+
+**Co už je implementováno (F1+F2):** `watch_addresses`,
+`confirmations`, `send_payment`, `balance` (`System.Account`), custodial
+keyring ss58-189, `DepositWatcher` atomic credit, `WithdrawalProcessor`
++ `SolvencyGuard` (generické nad `ChainAdapter` — QTC jimi prochází
+automaticky po registraci).
+
+**Zbývá (implementační, 🤖):**
+- [x] `solvency.rs` QTC pokrytí (done 2026-10-31): `check_all` iteruje
+      ledger+pool assety automaticky — chyběly dva registry kousky, které by
+      QTC asset klíče přeskočily: `chain_id_from_str` += `"quantus"|"qtc"|"qtu"`
+      a `token_decimals` fallback += `"QTC"→12`. `evaluate()` teď pro
+      `quantus:QTC` zavolá adapter `balance()` (System.Account.data.free).
+- [ ] QTC→ZION release leg: deposit-credit → ZION release mapování
+      (rate feed viz níže). Do té doby QTC deposits = custodial IOU
+      (stejný stav jako ostatní chain deposits — ledger credit, ne auto-swap).
+- [ ] `QUANTUS_SEED`/`with_keyring` provisioning produkčního hot walletu
+      (👤 key ceremony — kryptograficky hotovo, chybí nasazení klíče).
+- [ ] `transfer_all`/`batch` extrinsic decode v `watch_addresses` —
+      jiné legální deposit cesty se jinak nevidí (dosud jen
+      `transfer_keep_alive`/`transfer_allow_death`).
+
+**Rate feed (rozhodnutí 👤 později):** QTC listován na MEXC/XeggeX —
+`revenue_oracle.rs`/`profit.rs` pattern: externí market API → CZK/USD rate
+→ kvórum/manual fallback estimate. Bez rate feedu zůstává bridge 1:1
+admin-pair only (žádný public swap).
+
+**Bezpečnostní vlastnosti watchtoweru:** custody na QTC straně jen přes
+hot wallet (`QUANTUS_SEED`); deposit finality 30 bloků; GRANDPA finality
+je nezvratná → žádný reorg-rollback potřeba (na rozdíl od PoW chainů);
+double-credit chráněno `atomic_credit_and_mark_deposit_credited` +
+tx-hash unique.
+
 - [ ] F3b (opce): provable-burn — user spálí QTC do wormhole adresy
       `H(H(salt|secret))` s `remark` `BRIDGE:ZION:<zion_addr>` (ověřit, že
       wormhole burn extrinsic přijímá remark) → bridge po konfirmaci

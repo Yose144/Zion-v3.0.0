@@ -249,6 +249,7 @@ pub fn token_decimals(chain: &str, ticker: &str, contract: Option<&str>) -> u8 {
         "WZION" | "WETH" | "ETH" | "TZION" | "TWETH" => 18,
         "USDC" | "USDT" | "USDB" | "TUSDT" => 6,
         "DAI" => 18,
+        "QTC" => 12,
         _ => 0,
     }
 }

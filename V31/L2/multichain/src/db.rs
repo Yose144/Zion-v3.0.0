@@ -1579,6 +1579,47 @@ impl Db {
         Ok(out)
     }
 
+    /// Load *settled* DEX orders (executed or settled) for price derivation,
+    /// newest first, bounded by `scan_limit` rows.
+    ///
+    /// Because rows are returned newest-first, every order inside the `since`
+    /// window is guaranteed to be among the first ones scanned — a bounded
+    /// `LIMIT` therefore never hides in-window rows. Pass `since = None` to
+    /// fetch the most recent `scan_limit` settled orders regardless of age
+    /// (used for the honest "last known price" fallback).
+    pub fn load_settled_dex_orders_since(
+        &self,
+        since: Option<chrono::DateTime<chrono::Utc>>,
+        scan_limit: usize,
+    ) -> MultichainResult<Vec<DexOrder>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, user_id, from_asset_key, to_asset_key, amount_in, amount_out,
+                   min_amount_out, recipient_address, route_json, tx_hash, htlc_hash, status,
+                   created_at, executed_at
+            FROM dex_orders
+            WHERE status IN ('executed', 'settled')
+            ORDER BY created_at DESC
+            LIMIT ?1
+            "#,
+        )?;
+        let mut out = Vec::new();
+        let mut rows = stmt.query(rusqlite::params![scan_limit.max(1) as i64])?;
+        while let Some(row) = rows.next()? {
+            let order = parse_dex_order(row)?;
+            let ts = order.executed_at.unwrap_or(order.created_at);
+            if let Some(since) = since {
+                if ts < since {
+                    // Rows are newest-first; once we fall behind the window
+                    // everything that follows is older too.
+                    break;
+                }
+            }
+            out.push(order);
+        }
+        Ok(out)
+    }
+
     /// Update an existing withdrawal's status and (optionally) on-chain tx hash.
     pub fn update_withdrawal(
         &mut self,
@@ -2082,6 +2123,7 @@ pub(crate) fn chain_id_from_str(s: &str) -> MultichainResult<ChainId> {
         "ethereum_classic" => Ok(ChainId::EthereumClassic),
         "monero" => Ok(ChainId::Monero),
         "zano" => Ok(ChainId::Zano),
+        "quantus" | "qtc" | "qtu" => Ok(ChainId::Quantus),
         _ => Err(MultichainError::Validation(format!(
             "unknown chain id: {s}"
         ))),

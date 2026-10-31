@@ -1016,7 +1016,9 @@ mod tests {
         assert_eq!(body.len(), 1 + 33 + 1 + 7219 + 5 + 40);
     }
 
-    /// Live read-only probe against Planck mainnet (or `QUANTUS_RPC`).
+    /// Live read-only probe against the configured Quantus RPC (default:
+    /// `rpc.zionterranova.com/qtc` = "Quantus" mainnet; override via
+    /// `QUANTUS_RPC` for Planck/Heisenberg).
     /// Run: `QUANTUS_LIVE=1 cargo test -p zion-multichain --lib quantus_live -- --ignored --nocapture`
     #[tokio::test]
     #[ignore = "requires network + QUANTUS_LIVE=1"]
@@ -1028,7 +1030,11 @@ mod tests {
         assert!(adapter.health_check().await.unwrap());
         let h = adapter.current_height().await.unwrap();
         eprintln!("finalized height: {h}");
-        assert!(h > 1_000_000);
+        // Sanity only — the chain the endpoint serves is reported by
+        // `system_chain` ("Quantus" mainnet ~323k at 2026-10-31, legacy
+        // "Planck" ~1.3M). Asserting a fixed floor would break whenever the
+        // target network regenesises or the default endpoint is repointed.
+        assert!(h > 0);
 
         // balance() on a spike-derived account (may be 0 — exercises the
         // full ss58→storage-key→AccountInfo decode path on live chain)
