@@ -184,7 +184,7 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
 | W3.2 | secret scanner jako povinný gate (public export scan už má 0 FP) | 🤖 |
 | W3.3 | SMTP / Resend — emaily nechodí (wallet-seed zachránitelný z DB) | 👤 |
 | W3.4 | dofinancovat pool wallet — loyalty výplaty, balance 0 | 👤 |
-| W3.5 | QTC deferred ~918 — treasury | 👤 |
+| W3.5 | QTC deferred — treasury. **Stav 31. 10. (živě z `zion-v31-multichain` journalu): `qtc_sweeper stalled orphaned queued payouts stalled=1751`, `treasury_free=0`** — roste (dříve ~918). Každý blok přidává další deferraly, dokud treasury nedofinancuješ. | 👤 |
 | W3.6 | gas pro non-Base rotaci klíčů (Polygon 0,15 POL; BSC/Arb/OP/AVAX 0,003–0,05) | 👤 |
 | W3.7 | `WARP_BTC_SWAP_ENABLED=0` držet do uzavření G9 | 👤 |
 
