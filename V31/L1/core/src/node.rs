@@ -1004,8 +1004,7 @@ impl Node {
                 break;
             }
             if next_height >= self.config.soft_fork_activation_height {
-                if let Err(e) =
-                    Self::validate_premine_and_maturity_for_tx(&view, &tx, next_height)
+                if let Err(e) = Self::validate_premine_and_maturity_for_tx(&view, &tx, next_height)
                 {
                     warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx invalid for template");
                     invalid.push(tx.hash());
@@ -1214,16 +1213,12 @@ impl Node {
             if tip_header.height <= target_height {
                 break;
             }
-            let block = self
-                .storage
-                .get_by_hash(&tip_hash)
-                .await?
-                .ok_or_else(|| {
-                    NodeError::Task(format!(
-                        "rollback: tip block {} missing from store",
-                        tip_hash.to_hex()
-                    ))
-                })?;
+            let block = self.storage.get_by_hash(&tip_hash).await?.ok_or_else(|| {
+                NodeError::Task(format!(
+                    "rollback: tip block {} missing from store",
+                    tip_hash.to_hex()
+                ))
+            })?;
 
             // Resolve every spent outpoint back to its live UTXO entry
             // before the block's indexes are deleted.
@@ -1247,15 +1242,15 @@ impl Node {
                                 input.previous_output.to_hex()
                             ))
                         })?;
-                    let prev_block = self
-                        .storage
-                        .get_by_height(prev_height)
-                        .await?
-                        .ok_or_else(|| {
-                            NodeError::Task(format!(
-                                "rollback: prev block {prev_height} missing"
-                            ))
-                        })?;
+                    let prev_block =
+                        self.storage
+                            .get_by_height(prev_height)
+                            .await?
+                            .ok_or_else(|| {
+                                NodeError::Task(format!(
+                                    "rollback: prev block {prev_height} missing"
+                                ))
+                            })?;
                     let prev_tx = prev_block
                         .transactions
                         .iter()
@@ -1263,12 +1258,9 @@ impl Node {
                         .ok_or_else(|| {
                             NodeError::Task("rollback: prev tx not in its block".into())
                         })?;
-                    let prev_out = prev_tx
-                        .outputs
-                        .get(input.index as usize)
-                        .ok_or_else(|| {
-                            NodeError::Task("rollback: prev output index out of range".into())
-                        })?;
+                    let prev_out = prev_tx.outputs.get(input.index as usize).ok_or_else(|| {
+                        NodeError::Task("rollback: prev output index out of range".into())
+                    })?;
                     spent.insert(
                         outpoint,
                         UtxoOutput {
@@ -1524,12 +1516,7 @@ mod tests {
         let rolled = node.rollback_to_height(0).await.unwrap();
         assert_eq!(rolled, 1);
         assert_eq!(node.status().await.unwrap().height, 0);
-        assert!(node
-            .storage
-            .get_by_hash(&a_hash)
-            .await
-            .unwrap()
-            .is_none());
+        assert!(node.storage.get_by_hash(&a_hash).await.unwrap().is_none());
         {
             let set = node.utxo_set.lock().await;
             assert!(!set.contains(&Outpoint::new(a_coinbase_tx, 0)));
@@ -1995,15 +1982,14 @@ mod tests {
                 (sk, derive_address(vk.as_bytes()))
             })
             .collect();
-        node.utxo_set.lock().await.set_admin_addresses_for_test(
-            admins.iter().map(|(_, a)| a.clone()),
-        );
+        node.utxo_set
+            .lock()
+            .await
+            .set_admin_addresses_for_test(admins.iter().map(|(_, a)| a.clone()));
         let admins3: Vec<(&ed25519_dalek::SigningKey, String)> =
             admins.iter().map(|(sk, a)| (sk, a.clone())).collect();
 
-        let addr_of = |s: &str| {
-            Address::new(zion_l1_types::ChainId::ZionL1, vec![], s).unwrap()
-        };
+        let addr_of = |s: &str| Address::new(zion_l1_types::ChainId::ZionL1, vec![], s).unwrap();
         let test_miner = addr_of("zion1testminer");
 
         // Step "fund admins": two coinbases each — the first set funds the
