@@ -1,8 +1,10 @@
 # REPO-MAP — Mapa workspace `~/2.9.6-main`
 
-> **Kompletní přehled, co je kde.** Aktualizováno **2026-10-22** — po dokončení F2 git-reorganizace (batche 1–8, viz [`docs/ECOSYSTEM-REBUILD-PLAN.md`](docs/ECOSYSTEM-REBUILD-PLAN.md)).
+> **Kompletní přehled, co je kde.** Aktualizováno **2026-10-31** — po F2 git-reorganizaci (batche 1–8, viz [`docs/ECOSYSTEM-REBUILD-PLAN.md`](docs/ECOSYSTEM-REBUILD-PLAN.md)) a po repo-hygiene průchodu B9 (viz níže).
 >
-> Zásada: **všechno zůstává v repu.** Tento dokument říká, co je kanonické, co je ops/runtime a proč některé adresáře záměrně nepřesouváme.
+> Zásada: **runtime a ops obsah zůstává v repu** (deferral, §2). Co v repu záměrně **nezůstává**: mrtvé meta-workspace manifesty, stub adresáře a build artefakty, které nic nekonzumuje — ty se mažou, ne archivují (viz B9 níže).
+>
+> **B9 hygiene pass (2026-10-31, commit `d25e6714f`):** smazán root meta-workspace (`Cargo.toml` + `Cargo.lock` + `src/lib.rs` stub — V31 je jediný workspace), prázdné stub adresáře `update-server/` a `edge-deploy/` (reálné věci jsou v `infra/edge-deploy/`), `V31/vendor/`, a untracked stale snapshot `apps/website-v2.9/src-only.tar.gz`. `.pre-commit-config.yaml` přecílen na `V31/Cargo.toml`; `.gitignore` rozšířen o model weights (`*.safetensors`, `*.gguf`, `*.pt/pth/onnx`) a `src-only` snapshoty. Navíc smazán osiřelý root `target/` (build output zrušeného `zion_root` crate).
 
 ---
 
@@ -10,11 +12,13 @@
 
 | Adresář | Obsah | Files | Poznámka |
 |---|---|---:|---|
-| `apps/` | Celý web+app ekosystem (12 aplikací) | 4862 | ← bývalé `APP&WEB/`. website-v2.9 (Next 16, app.zionterranova.com), IntroPage (apex static), OasisWeb, MarketPlace, pool-ui, identity (ZIS), desktop-agent, mobile-app, shared, zion-wallet-sdk, public_html |
-| `canon/` | Kanonický obsah/korpus | 534 | `l2`–`l6` (DAO ústava, layer docs, artwork, Issobella), `brand/` (LOGO + build), `books/` (WP-Mainet knihy) |
-| `docs/` | Dokumentace + reporty | 2934 | `3.2/` aktuální (REPORTS/, ops/), `3.1/`, `3.0.x/`, `marketing/`, `ops/` |
-| `infra/` | Infrastruktura + deploy | 81+ | `nginx/` (edge-current+edge2 vhosty), `dns/` (zóna+runbook), `edge-deploy/` (48 souborů), `vast/`, `config/`, `mining/`, `tools/` (vastctl) |
-| `archive/` | Historické/mrtvý materiál | 2617 | `V3/` (stará V3 kopie), `WarpBeta/`, `config/`, `misc/`, `2.9.9/`, **`PUBLIC/`** (snapshot bývalého veřejného subsetu — tracked `public/` zanikl 2026-10, viz níže) |
+| `apps/` | Celý web+app ekosystem (12 aplikací) | 5180 | ← bývalé `APP&WEB/`. website-v2.9 (Next 16, app.zionterranova.com), IntroPage (apex static), OasisWeb, MarketPlace, pool-ui, identity (ZIS), desktop-agent, mobile-app, shared, zion-wallet-sdk, public_html |
+| `canon/` | Kanonický obsah/korpus | 554 | `l2`–`l6` (DAO ústava, layer docs, artwork, Issobella), `brand/` (LOGO + build), `books/` (WP-Mainet knihy) |
+| `docs/` | Dokumentace + reporty | 3007 | `3.2/` aktuální (REPORTS/, ops/), `3.1/`, `3.0.x/`, `marketing/`, `ops/` |
+| `infra/` | Infrastruktura + deploy | 111 | `nginx/` (edge-current+edge2 vhosty), `dns/` (zóna+runbook), `edge-deploy/` (48 souborů), `vast/`, `config/`, `mining/`, `tools/` (vastctl) |
+| `archive/` | Historické/mrtvý materiál | 4115 | `V3/` (stará V3 kopie), `WarpBeta/`, `config/`, `misc/`, `2.9.9/`, **`PUBLIC/`** (snapshot bývalého veřejného subsetu — tracked `public/` zanikl 2026-10, viz níže) |
+
+> **Počty `Files` = measured** (`git ls-files`, 15 550 tracked souborů celkem, 2026-10-31). Nejsou to velikosti na disku.
 
 > **Public repo sync (8.B7, 2026-10-28):** tracked `public/` subtree zanikl → nový model = curated export `scripts/ops/public-export.sh` + manifest (`PUBLIC/` = untracked clone z `init`). Workflow: [`docs/3.2/PUBLIC-SYNC-WORKFLOW.md`](docs/3.2/PUBLIC-SYNC-WORKFLOW.md).
 
@@ -24,13 +28,12 @@ Tyto adresáře zůstávají v rootu, protože **jejich jméno je součást prod
 
 | Adresář | Files | Proč odloženo |
 |---|---:|---|
-| `V31/` | 1252 | **NEDĚLAT přesun (rozhodnutí 2026-10-22).** Aktivní mainnet workspace — cargo, `.github/workflows`, systemd units, ~tisíce odkazů, untracked `target/` 4.5G |
-| `scripts/` | 359 | ~40 skriptů resolvuje root přes `$(dirname $0)/..` — na serverech = `/opt/zion` správně, v `infra/` by bylo špatně. Servery volají `/opt/zion/scripts/` přímo (watchdog/cron/systemd) |
+| `V31/` | 1710 | **NEDĚLAT přesun (rozhodnutí 2026-10-22).** Aktivní mainnet workspace — cargo, `.github/workflows`, systemd units, ~tisíce odkazů, untracked `target/` 4.5G |
+| `scripts/` | 380 | ~40 skriptů resolvuje root přes `$(dirname $0)/..` — na serverech = `/opt/zion` správně, v `infra/` by bylo špatně. Servery volají `/opt/zion/scripts/` přímo (watchdog/cron/systemd) |
 | `ZION_OS/` | 292 | `deploy-edge.sh` rsyncuje `${REPO_ROOT}/` celý — remote by dostal `infra/ZION_OS/` místo `/opt/zion/ZION_OS/` → rozbil by binary paths |
-| `V3/` | 1430 | `.gitmodules` submodule `V3/L2/bridge/contracts/lib/openzeppelin-contracts` — `git mv` neaktualizuje submodule path. `archive/V3` diverguje (deduplikace k posouzení) |
+| `archive/V3/` | 1131 | Root `V3/` byl archivován 2026-08-04 — existuje už jen jako `archive/V3/`. `.gitmodules` submodule `.../lib/openzeppelin-contracts` už ukazuje na archive path (živý V31 strom má vlastní kontrakty). Read-only reference, needitovat |
 | `Hiran/` | 129 (325M) | AI vrstva — živé refs v `V31/L3/ai-native/src/*.rs`, `V31/cli`, `ZION_OS/dashboard/*.js`, `scripts/openclaw-coding.sh` |
 | `BTCunlock/` | 21 (1.2G) | refs v `apps/desktop-agent/renderer.js`, `ZION_OS/dashboard/*` |
-| `src/` | 1 | `lib.rs` stub — označuje V31 jako aktivní workspace |
 
 ## 3. Untracked adresáře (nejsou v gitu — runtime/artefakty)
 
@@ -39,7 +42,7 @@ Tyto adresáře zůstávají v rootu, protože **jejich jméno je součást prod
 | Adresář | Velikost | Co to je | Kdo ho používá |
 |---|---:|---|---|
 | `backups/` | 16G | chain/system backupy (`backup_YYYY-MM-DD_*.tar.gz`) | `scripts/backup-*.sh` + crontab `pull-edge-backups.sh` |
-| `PUBLIC/` | — | **zrušeno** — clone chybí; nový export workflow (`init` ho znovu vytvoří) | `scripts/ops/public-export.sh` |
+| `PUBLIC/` | 845M | lokální clone curated exportu (untracked; v repu jen `archive/PUBLIC/` snapshot) | `scripts/ops/public-export.sh` (workflow: [`docs/3.2/PUBLIC-SYNC-WORKFLOW.md`](docs/3.2/PUBLIC-SYNC-WORKFLOW.md)) |
 | `logs/` | 466M | runtime logy (`node1.log`, `miner.*.log`, `backup-beacon.log`) | `_lib.sh LOG_DIR`, crontab redirecty, `watchdog.sh` |
 | `venv-hiran/` | 36M | python venv pro Hiran tooling | `hiran-*.sh` skripty |
 | `BACKUP/` | 112M | edge snapshot (`SHA256SUMS.edge-*`, `edge-2026-10-16/`) | manuální offsite kopie |
@@ -83,4 +86,4 @@ Tyto adresáře zůstávají v rootu, protože **jejich jméno je součást prod
 | [`zionterranova.com.zone`](infra/dns/zionterranova.com.zone) | raw WebGlobe zone file (import-ready) |
 
 ---
-*Udržuj při každém strukturálním přesunu — poslední update: F2b8 (tools→infra, watchdog probe, F5 deferral).*
+*Udržuj při každém strukturálním přesunu — poslední update: 2026-10-31 (B9 hygiene pass).*

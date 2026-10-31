@@ -95,6 +95,7 @@ const PRESALE_QR_JSON = JSON.stringify({
   type: 'ZION_PRESALE_WALLET',
   version: '3.0',
   address: 'zion1t2t5r3p697z4v6m4x242l4j7k6w3y470h4d7q7g',
+// Test fixture only — do NOT reuse for real wallets.
   mnemonic: 'plastic rude toilet offer raccoon melody ostrich weather lecture common dry figure',
   tokens: 10000,
   orderId: 'PRESALE-TEST-123',

@@ -12,6 +12,9 @@
 
 const CryptoService = require('./src/services/CryptoService').default;
 
+// Test fixture only — do NOT reuse for real wallets.
+// The expected address assertions below are pinned to this seed, so it
+// cannot be swapped without re-deriving the vectors.
 const TEST_MNEMONIC = 'plastic rude toilet offer raccoon melody ostrich weather lecture common dry figure';
 const EXPECTED_ADDRESS = 'zion1t2t5r3p697z4v6m4x242l4j7k6w3y470h4d7q7g';
 const TEST_PASSWORD = 'Test1234';

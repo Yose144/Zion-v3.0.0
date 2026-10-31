@@ -10,6 +10,10 @@ timelock_threshold_zion = 1000000
 l1_rpc_url = "http://127.0.0.1:9555"
 l1_vault_address = "zion138c2r0q790d622s3l2j480x77850x0v6l4m7348"
 
+# Test-only mnemonic for the local regtest WARP e2e stack (l1_rpc_url above points
+# at 127.0.0.1:9555). It must stay fixed: `l1_vault_address` is derived from it.
+# WARNING: never reuse this seed on mainnet — check on-chain balance before ever
+# treating it as a hot wallet (see docs/3.2/ops/SECRET-TRIAGE-2026-10-31.md).
 mnemonic = "bullet tribe say emotion fix sorry measure canal silent hole photo angry"
 
 poll_interval_secs = 5

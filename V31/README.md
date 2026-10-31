@@ -2,9 +2,9 @@
 
 > **Stav 2026-10-26:** lifecycle = **Mainnet Beta** (≠ Mainnet Stable, žádný nový chain). Protokol handshake `zion-v3-node/3.1.0-alpha` zůstává záměrně. Datované záznamy níže jsou historické snapshoty, ne důkaz aktuálního stavu.
 >
-> **Stav 2026-08-09:** `V31` (`3.1.0-beta`) je aktivní **Mainnet Alpha** workspace. Workspace protokol je `zion-v3-node/3.1.0-alpha`. `cargo test --workspace` prochází (aktuálně 2178 testů, např. `zion-multichain` 579, `zion-ai-native` 337, `zion-core` 303, `zion-pool` 165, `zion-miner` 101 + další crate), `cargo clippy --workspace` čisté kromě pre-existing warnings. **V31 je produkční na Edge** — node, pool, multichain, DAO, OASIS, dashboard, web a marketplace běží na `62.171.141.136` s kanonickým `EkamDeeksha` v3.2 (512 KiB, 2 passy, 128 random reads, 2 AES rounds). V3 služby zastaveny a maskovány.
-
-Workspace se nachází v `/home/zionserver/2.9.6-main/V31/`; V3 produkční služby byly zastaveny a maskovány, V3 zůstává jako historická checkpoint reference (`archive/V3/` + `v3_compat`).
+> **Aktuální workspace:** `V31` (`3.2.0`) je aktivní **Mainnet Beta** workspace; kanonický PoW je `EkamDeeksha` v3.2 (512 KiB, 2 passy, 128 random reads, 2 AES rounds). Produkční běh: **EDGE2** (`207.180.217.100`, node/pool/multichain/DAO/OASIS) + **EDGE** (`62.171.141.136`, pool stratum, followeři node2/node3) — viz [`docs/3.2/StatusV3.md`](../docs/3.2/StatusV3.md). V3 produkční služby jsou zastaveny a maskovány; V3 zůstává jako historická checkpoint reference (`archive/V3/` + `v3_compat`).
+>
+> **Historický snapshot 2026-08-09 (neaktuální čísla):** `V31` (`3.1.0-beta`) tehdy běžel jako **Mainnet Alpha** na jediném Edge serveru; `cargo test --workspace` tehdy hlásil 2178 testů. Tato čísla ani tehdejší single-server topologie už neplatí — ber je jako záznam, ne jako stav.
 
 ## Filozofie
 
@@ -16,7 +16,8 @@ Workspace se nachází v `/home/zionserver/2.9.6-main/V31/`; V3 produkční slu�
 |---|---|---|
 | `L1/types` | `zion-l1-types` | Sdílená L1 primitiva (`Address`, `ChainId`, `Asset`, `Hash`, `Amount`). |
 | `L1/cosmic-harmony` | `zion-cosmic-harmony` | Kanonický PoW `EkamDeeksha`, `ExternalCoin`, `CoinProfile`, `ProfitRouter` a podpora disabled coinů. |
-| `L1/cosmic-harmony-v3` | `zion-cosmic-harmony-v3` | Legacy v3/v2 PoW algoritmy (`deeksha_lite`, `chv3`, `lite_fire`) a CHV3 body root / NPU mixing scaffolding. |
+| `L1/archive/cosmic-harmony-v3` | `zion-cosmic-harmony-v3` | Legacy v3/v2 PoW algoritmy (`deeksha_lite`, `chv3`, `lite_fire`) a CHV3 body root / NPU mixing scaffolding. Archivováno pod `L1/archive/`. |
+| `L1/native-ffi` | `zion-native-ffi` | C/C++ FFI vazby pro nativní hashe (kHeavyHash, VerusHash, RandomX, hashers) používané `zion-auxpow`. |
 | `L1/core` | `zion-core` | Node runtime s V3 checkpoint sync, V3 P2P listen/IBD, V3 RPC, state/template/reorg, SQLite storage a `PeerManager` (max peers, ban score, discovery). |
 | `L1/miner` | `zion-miner` | Triple Stream miner, AuxPoW GPU/CPU fallback (`auxpow` feature), `StratumClient`, `ZION_STREAM3_FORCE_COIN`, disabled-coin filtering a kanonický `EkamDeeksha`. |
 | `L1/pool` | `zion-pool` | Stratum server + PPLNS, share validator s `EkamDeeksha`, reconnect rate limiter a `template_feed_loop` z `zion-core`. |
@@ -24,6 +25,7 @@ Workspace se nachází v `/home/zionserver/2.9.6-main/V31/`; V3 produkční slu�
 | `L2/dao` | `zion-dao` | Návrh/quorum/timelock typy, smoke test, zapojený do workspace. |
 | `L3/ncl` | `zion-ncl` | NCL compute marketplace — scaffold s unit testy. |
 | `L3/ai-native` | `zion-ai-native` | AI-native orchestrace a agenti — scaffold s unit testy. |
+| `L3/hiran-gateway` | `zion-hiran-gateway` | Hiran inference gateway (routing mezi LLM backendy). |
 | `L4/oasis` | `zion-oasis` | Oasis game — 200 avatarů, questy, CORS API, `apps/OasisWeb` Next.js 16 client s live HUD. |
 | `L5/free-world` | `zion-free-world` | Free World vrstva — funkcionální scaffold s unit testy. |
 | `L6/issobella` | `zion-issobella` | Issobella superstruktura — funkcionální scaffold s unit testy. |
