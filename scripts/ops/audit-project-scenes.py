@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--release', default='working-tree')
     parser.add_argument('--sample-seconds', type=float, default=10)
     parser.add_argument('--mount-timeout', type=int, default=60000, help='Milliseconds to wait for the scene to mount (software rendering can be slow)')
+    parser.add_argument('--gpu', choices=['sw', 'nvidia', 'amd'], default='sw', help='Renderer: sw = SwiftShader (comparable to the recorded baseline), nvidia/amd = local hardware via ANGLE')
     parser.add_argument('--chromium', default='')
     parser.add_argument('--startup-only', action='store_true', help='Check rendered scene and loaded scripts/styles without the interaction matrix')
     parser.add_argument('--resume', action='store_true', help='Keep passed rows for this release and rerun incomplete or failed rows')
@@ -35,11 +36,16 @@ def main():
         if previous.get('release') == args.release:
             results = previous.get('results', [])
     with sync_playwright() as p:
-        browser = p.chromium.launch(executable_path=chromium, headless=True, args=['--no-sandbox', '--enable-unsafe-swiftshader'])
+        gpu_args = {
+            'sw': ['--enable-unsafe-swiftshader'],
+            'nvidia': ['--enable-gpu', '--use-gl=angle', '--use-angle=vulkan', '--enable-features=Vulkan'],
+            'amd': ['--enable-gpu', '--use-gl=angle', '--use-angle=gl-egl'],
+        }[args.gpu]
+        browser = p.chromium.launch(executable_path=chromium, headless=True, args=['--no-sandbox', *gpu_args])
         for app in apps:
             for scene in selected:
                 if any(row.get('app') == app and row.get('scene') == scene and row.get('status') == 'pass' for row in results): continue
-                row = {'app': app, 'scene': scene, 'release': args.release, 'errors': []}
+                row = {'app': app, 'scene': scene, 'release': args.release, 'renderer': args.gpu, 'errors': []}
                 context = browser.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1)
                 page = context.new_page(); page.set_default_timeout(60000)
                 page.on('pageerror', lambda e, row=row: row['errors'].append(str(e)))
@@ -103,8 +109,13 @@ def main():
                         row['recreated_geometries'] = len(after_objects - before_objects)
                         row['scene_geometries'] = [len(before_objects), len(after_objects)]
                         assert len(after_objects) <= len(before_objects) + 2, 'scene graph grew after language cycles'
-                    assert row['after_language_cycles']['geometries'] <= row['before']['geometries'] + 2, 'geometry count grew after language cycles'
-                    assert row['after_language_cycles']['textures'] <= row['before']['textures'] + 2, 'texture count grew after language cycles'
+                    # GPU counters also count lazily uploaded resources: objects that existed
+                    # but were culled become visible while the camera rotates. The scene graph
+                    # assertion above is the exact leak gate; these stay as a proportional guard.
+                    geometry_allowance = max(8, round(row['before']['geometries'] * 0.1))
+                    texture_allowance = max(4, round(row['before']['textures'] * 0.2))
+                    assert row['after_language_cycles']['geometries'] <= row['before']['geometries'] + geometry_allowance, 'geometry count grew after language cycles'
+                    assert row['after_language_cycles']['textures'] <= row['before']['textures'] + texture_allowance, 'texture count grew after language cycles'
                     canvas.scroll_into_view_if_needed(); box=canvas.bounding_box(); assert box and box['width'] > 0
                     x,y=box['x']+box['width']*.55,box['y']+box['height']*.55
                     camera_before=page.evaluate('window.__projectScene.camera')
