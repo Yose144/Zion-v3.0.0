@@ -65,6 +65,7 @@ def main():
                     assert row['before']['invalidVertices'] == 0, 'non-finite geometry'
                     def screenshot(label):
                         canvas.scroll_into_view_if_needed(); page.screenshot(path=str(output/f'{app}-{scene}-{label}.png'), timeout=90000, animations='disabled')
+                        print(f'{app}/{scene}: {label}',flush=True)
                     screenshot('cs-desktop')
                     page.set_viewport_size({'width':390,'height':844}); page.wait_for_timeout(350); screenshot('cs-mobile')
                     page.set_viewport_size({'width':1440,'height':900})

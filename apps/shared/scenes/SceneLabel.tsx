@@ -10,10 +10,11 @@ export function SceneLabel({ position, text, scale = 1 }: { position: [number, n
     if (!sprite.current || !texture || !(camera instanceof THREE.PerspectiveCamera)) return;
     sprite.current.getWorldPosition(world);
     const distance = camera.position.distanceTo(world);
-    const desired = Math.min(size.width < 600 ? 12 : 16, 12 * Math.sqrt(scale));
-    const pixels = Math.min(desired, (size.width < 600 ? 155 : 230) * 52 / texture.image.width);
-    const height = 2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * pixels / size.height;
-    sprite.current.scale.set(height * texture.image.width / 52, height, 1);
+    const mobile = size.width < 600;
+    const fontPixels = (mobile ? 11 : 12) * Math.min(1.15, Math.sqrt(scale));
+    const pixelScale = Math.min(fontPixels / 28, (mobile ? 170 : 240) / texture.image.width);
+    const worldPixel = 2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / size.height;
+    sprite.current.scale.set(texture.image.width * pixelScale * worldPixel, texture.image.height * pixelScale * worldPixel, 1);
   });
   // Sprites stay in the scene's React root; no nested DOM roots to unmount.
   const texture = React.useMemo(() => {
@@ -22,8 +23,16 @@ export function SceneLabel({ position, text, scale = 1 }: { position: [number, n
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     ctx.font = '600 28px sans-serif';
-    canvas.width = Math.ceil(ctx.measureText(text).width + 36);
-    canvas.height = 52;
+    const lines: string[] = [];
+    let line = '';
+    for (const word of text.split(/\s+/)) {
+      const candidate = line ? `${line} ${word}` : word;
+      if (line && ctx.measureText(candidate).width > 430) { lines.push(line); line = word; }
+      else line = candidate;
+    }
+    lines.push(line);
+    canvas.width = Math.ceil(Math.max(...lines.map(value => ctx.measureText(value).width)) + 36);
+    canvas.height = lines.length * 34 + 18;
     ctx.fillStyle = 'rgba(8, 12, 20, 0.82)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = 'rgba(230, 210, 170, 0.5)';
@@ -31,7 +40,7 @@ export function SceneLabel({ position, text, scale = 1 }: { position: [number, n
     ctx.font = '600 28px sans-serif';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#f3e8d0';
-    ctx.fillText(text, 18, 26);
+    lines.forEach((value, i) => ctx.fillText(value, 18, 26 + i * 34));
     const next = new THREE.CanvasTexture(canvas);
     next.colorSpace = THREE.SRGBColorSpace;
     return next;
