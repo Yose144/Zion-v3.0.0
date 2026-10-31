@@ -461,6 +461,7 @@ apps/desktop-agent/resources/srbminer/Autotune/
 
 # Live Stripe keys — never commit
 docs/Stripe.md
+apps/Stripe.md
 
 # Local screenshots and browser audit evidence
 .artifacts/
