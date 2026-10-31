@@ -104,21 +104,32 @@ Finální běh: 13/13 `pass` se strict budgetem i s vizuální bránou.
 
 | Povrch | Host | Release | Výsledek |
 | --- | --- | --- | --- |
-| Nirvana | EDGE (zion-new), `zion-nirvana.service` :3010 | `render-r4-20261031T173529Z` | `https://nirvana.zionterranova.com` 200, textury i `/api/oasis/worlds` OK |
-| Web | EDGE2 (zion-edge2), `zion-website.service` :3000 | `render-r5-20261031T174157Z` | `https://app.zionterranova.com` 200, assety i `/api/health` OK |
+| Nirvana | EDGE (zion-new), `zion-nirvana.service` :3010 | `render-r7-20261031T181045Z` | `https://nirvana.zionterranova.com` 200, textury i `/api/oasis/worlds` OK |
+| Web | EDGE2 (zion-edge2), `zion-website.service` :3000 | `render-r6-20261031T180350Z` | `https://app.zionterranova.com` 200, assety i `/api/health` OK |
 
 Předchozí buildy zůstaly na serverech (`nirvana.before-render-r4-…`,
 `standalone.before-render-r5-…`) pro okamžitý rollback.
 
-Live kontrola přes GPU audit (ANGLE Metal, 1440×900):
+Live kontrola přes GPU audit (ANGLE Metal, 1440×900) proti **produkční adrese**,
+13/13 `pass` se strict budgetem:
 
-| Povrch | Scéna | Draw calls | FPS | Stav |
-| --- | --- | --- | --- | --- |
-| nirvana | Ekam | 205 | 53 | pass |
-| nirvana | Boa Esperança | 166 | 57 | pass |
-| nirvana | Matrix | 156 | 54 | pass |
-| web | Ekam | 205 | 37 | pass |
-| web | Bodhi Lanka | 489 | 35 | pass |
+| Scéna | Draw calls | Trojúhelníky | FPS |
+| --- | --- | --- | --- |
+| Bodhi Lanka | 491 | 99 k | 51,6 |
+| Te Pīko Ora | 387 | 81 k | 49,7 |
+| Golden Republic Bohemia | 381 | 79 k | 52,6 |
+| LUMI Nová Amerika | 328 | 114 k | 47,6 |
+| Uluru | 252 | 84 k | 53,4 |
+| Amenti | 232 | 77 k | 51,4 |
+| Genesis Garden | 227 | 103 k | 47,5 |
+| Ekam | 205 | 108 k | 49,5 |
+| Boa Esperança | 166 | 36 k | 55,0 |
+| Matrix | 156 | 11 k | 50,5 |
+| Tres Marias | 141 | 43 k | 53,7 |
+| Kailash | 140 | 104 k | 50,8 |
+| Dharma Temple | 109 | 139 k | 51,3 |
+
+Web preview (živě): Ekam 205 calls / 37 fps, Bodhi Lanka 489 / 35 fps uvnitř stránky.
 
 **Operační poznámka k webu:** `next/image` potřebuje `sharp` pro cílovou platformu. Build
 vznikl na macOS, takže standalone obsahoval jen `@img/sharp-darwin-arm64`; před nasazením
