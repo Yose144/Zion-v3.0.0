@@ -8,7 +8,7 @@
  *
  * Cokoliv, co tenhle soubor vygeneruje, se needituje ručně.
  */
-import { existsSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -95,3 +95,49 @@ writeFileSync(outFile, content, 'utf8');
 console.log(`codegen: ${portals.length} portálů → ${relative(process.cwd(), outFile)}`);
 for (const rel of portals.map((p) => p.rel)) console.log(`  · ${rel}`);
 for (const s of skipped) console.warn(`  ! přeskočeno: ${s}`);
+
+/* ---------- katalog knihoven z canon/books ---------- */
+
+const canonDir = join(here, '..', '..', 'canon', 'books');
+const booksJson = join(appDir, 'src', 'core', 'books', 'catalog.json');
+
+if (existsSync(canonDir)) {
+  const books = [];
+
+  for (const entry of readdirSync(canonDir)) {
+    if (entry.startsWith('.')) continue;
+    const dir = join(canonDir, entry);
+    if (!statSync(dir).isDirectory()) continue;
+
+    const readme = join(dir, '00-README.md');
+    if (!existsSync(readme)) continue;
+
+    const lines = readFileSync(readme, 'utf8').split('\n').slice(0, 12);
+    const heading = lines.find((line) => line.startsWith('# '));
+    if (!heading) continue;
+
+    const title = heading.replace(/^#\s+/, '').trim();
+    const taglineLine = lines.find((line, index) => line.startsWith('## ') && index > 0);
+    const tagline = taglineLine
+      ? taglineLine
+          .replace(/^##\s+/, '')
+          .replace(/\*\*/g, '')
+          .trim()
+          .slice(0, 170)
+      : '';
+
+    books.push({
+      id: entry,
+      title,
+      tagline,
+      en: existsSync(join(dir, '00-README_EN.md')),
+    });
+  }
+
+  books.sort((a, b) => a.title.localeCompare(b.title, 'cs'));
+  mkdirSync(dirname(booksJson), { recursive: true });
+  writeFileSync(booksJson, `${JSON.stringify(books, null, 2)}\n`, 'utf8');
+  console.log(`codegen: ${books.length} knih → ${relative(process.cwd(), booksJson)}`);
+} else {
+  console.warn('  ! canon/books nenalezeno — katalog knih ponechán');
+}

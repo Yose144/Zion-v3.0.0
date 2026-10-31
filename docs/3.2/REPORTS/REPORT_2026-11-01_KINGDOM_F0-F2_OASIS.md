@@ -1,6 +1,6 @@
 # REPORT — Kingdom F0–F2a: první svět OASIS
 
-> **Datum:** 2026-11-01 · **Autor:** agent (autonomní) · **Stav:** F0 ✅ · F1 ✅ · F2a ✅ (orbit) · F2b ✅ (13 světů)
+> **Datum:** 2026-11-01 · **Autor:** agent (autonomní) · **Stav:** F0 ✅ · F1 ✅ · F2a ✅ · F2b ✅ · **F3 ✅ (9 portálů)**
 > **Rozhodnutí 👤, která to spustila:** (1) strom `Kingdom/` v rootu, stavěný od nuly; (2) `website-v2.9` zůstává knihovnou/docs; (3) Dashboard zůstává samostatný; (4) Nirvana = první svět OASIS, OASIS jednou jako AAA hra; (5) market, pool UI i Dashboard funkčně zůstávají.
 > **Nic z toho není nasazené.** Kingdom běží jen lokálně (`127.0.0.1:3020`). DNS, EDGE2 a `systemd` jsou 👤.
 
@@ -71,6 +71,20 @@ packages/world/src/           packages/scenes/src/
 - **ZIONy z flowers** (1 ZION = 1e6) se počítají v portálu, ne ve službě — jedna konverze na jednom místě
 - live: **28 096 820 ZION** nashromážděno (blok 104 145), 0 vyplaceno, 6 grantů po 10M ZION, 12 projektů
 - portál má `ring` → objevil se i ve scéně Místnosti jako čtvrtý marker (důkaz, že svět je řízený kontraktem)
+
+### F3b — zbývajících 5 portálů
+
+| Portál | Data | Poznámka |
+|---|---|---|
+| **Snem** (DAO, L2) | 7 strážců s adresami, 1,5 mld ZION v oběhu, 0 návrhů | reálná data z `dao/proposals` + `stats` + `guardians` |
+| **Knihovna** (L4) | **14 knih** z `canon/books` | katalog generuje codegen z `00-README.md` — žádné ruční kopie textů, žádné síťové čtení |
+| **Věž** (Hiran, L3) | probe `/api/ai-chat` → available / backend / model | rozhovor je zápis → F4 |
+| **Issobella** (L6) | health | papers vrací **404** — repo 6.B4 existuje, ale na EDGE2 není nasazené |
+| **Účet** (L0) | — | `auth: 'session'`, `status: 'placeholder'`; **nemá `ring`** — loď cestuje s tebou, není to místo |
+
+**Pravidlo placeholderu:** portál, který ještě nemá obsah, to **řekne nahlas** a napíše proč. Žádné tlačítko, které nefunguje. `status: 'placeholder'` v manifestu znamená: v liště ztlumený, na kartě „připravujeme", v okně vysvětlení.
+
+Výsledek: scéna Místnosti má **8 markerů** (Účet chybí záměrně) a lišta 9 portálů — celý ekosystém je poprvé na jednom místě.
 
 ---
 
