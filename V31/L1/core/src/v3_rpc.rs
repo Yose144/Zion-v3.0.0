@@ -402,7 +402,10 @@ impl V3RpcHandler {
             .get("address")
             .and_then(Value::as_str)
             .ok_or_else(|| V3RpcError::Parse("address required".to_string()))?;
-        let limit = params.get("limit").and_then(Value::as_u64).map(|v| v as usize);
+        let limit = params
+            .get("limit")
+            .and_then(Value::as_u64)
+            .map(|v| v as usize);
         let offset = params.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
         let utxos = self.storage.v3_utxos_by_address(address).await?;
         let total_count = utxos.len();

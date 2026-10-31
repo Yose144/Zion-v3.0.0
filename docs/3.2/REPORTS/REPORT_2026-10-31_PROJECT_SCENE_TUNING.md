@@ -4,7 +4,7 @@
 
 This pass covers the twelve Free World project previews, each on the website and in Nirvana. It excludes the main universe and standalone L6 previews. Every project continues to use one scene implementation in `apps/shared/scenes`; application wrappers supply their canvas and navigation.
 
-Runtime candidate: `e230c23ce` (includes `ad03ab13d` presentation policy, `1f4ae4e9f` landscape/material updates and audit/deploy tooling, and the Bodhi Lanka bridge correction). The browser baseline was collected from the previously built production applications before rebuilding. A detached release worktree prevents concurrent work in the main checkout from changing the tested artifact. Installed dependency versions were compared against both application lockfiles: no version mismatches were found.
+Runtime candidate: `2c3566593` (includes `ad03ab13d` presentation policy, `1f4ae4e9f` landscape/material updates and audit/deploy tooling, the Bodhi Lanka bridge correction, `79a493d3e` sky clipping correction, `b4e69dd71` label texture lifecycle fix and `2c3566593` readable wrapped labels). The browser baseline was collected from the previously built production applications before rebuilding. A detached release worktree prevents concurrent work in the main checkout from changing the tested artifact. Installed dependency versions were compared against both application lockfiles: no version mismatches were found.
 
 ## Changes reviewed against the local hero artwork
 
@@ -23,7 +23,7 @@ Runtime candidate: `e230c23ce` (includes `ad03ab13d` presentation policy, `1f4ae
 | Kailash | Joined eroded rock/snow terrain replacing detached cone caps for the main peak and Himalayan range; cooler lake and atmospheric palette. |
 | Amenti | Wider, higher frame for the full pyramid/cosmic grouping; restrained portal and beam exposure; stable arc geometry and cleanup. |
 
-Common changes: project canvases cap DPR at 1.5; OrbitControls register as the default controls; automatic rotation and scene time respect reduced motion; responsive framing is shared. Shadow maps are reused between periodic refreshes. Labels remain sprites within the scene's React root and have bounded screen size. Nirvana presentations expose a CS/EN button and use a compact two-row mobile header.
+Common changes: project canvases cap DPR at 1.5; OrbitControls register as the default controls; automatic rotation and scene time respect reduced motion; responsive framing is shared. Shadow maps are reused between periodic refreshes. Labels remain sprites within the scene's React root, wrap long text and use an actual 11–14 px font with bounded screen width. Nirvana presentations expose a CS/EN button and use a compact two-row mobile header.
 
 The opt-in `?sceneAudit=1` diagnostics expose render counts, resource counts, motion state, camera data and a one-time check for non-finite vertices. They do not add UI controls or backend APIs.
 
@@ -36,6 +36,16 @@ The opt-in `?sceneAudit=1` diagnostics expose render counts, resource counts, mo
 - Performance samples use requestAnimationFrame on the same host. This environment uses software rendering; results are comparative diagnostics, not a physical-GPU performance claim.
 
 Final checks and numerical results will be appended after the production acceptance matrix completes. Until that section is populated, this document does not assert deployment readiness.
+
+## Regressions caught before deployment
+
+The initial acceptance pass caught Genesis Garden's sky sphere beyond the default camera far plane. The camera now uses a 2200-unit far plane. It also caught a label lifecycle race: disposing an old texture before the replacement map was committed allowed the old map to be uploaded again. After repeated language cycles, the texture count grew from 8 to 38. The fix creates the replacement map during render and disposes the old map after commit; the regression rerun stayed at 8 textures and 225 geometries. Camera controls, reduced motion and reload passed in that rerun. The complete final matrix below uses the subsequent wrapped-label build.
+
+Standalone artifacts carry a private `.zion-build.json` recording the runtime commit, Next BUILD_ID and server checksum. Final build IDs: Nirvana `ctZaorSm6IRLO-hw39asw`; website `aLCS7Zosem-tzszPSUR44`. The website prebuild changes only the generated date in `doc-manifest.json` (30 → 31 October), not its document list.
+
+## Handoff status — 31 October 2026
+
+The user requested a Git push and an actionable root plan before further work. See `3D-SCENY-PLAN.md`. Final runtime builds and TypeScript checks passed. Genesis Garden in Nirvana passed the full matrix with 8 textures and 225 geometries before and after language cycles (software RAF 1.663 FPS versus baseline 1.335). The remaining final matrix is incomplete. Local preview servers repeatedly exited with SIGTERM; the cause is unconfirmed. Website failures include connection refusals during navigation/reload, so these rows are not acceptance passes. No final scene release was deployed in this pass. Owned preview/audit processes were stopped for the handoff; the existing release worktree and evidence are retained for resuming.
 
 ## Deployment procedure
 

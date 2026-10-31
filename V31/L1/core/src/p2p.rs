@@ -16,8 +16,8 @@ use tracing::{debug, info, warn};
 use crate::block::Block;
 use crate::node::Node;
 use crate::node::NodeError;
-use zion_l1_types::Hash;
 use crate::peer_manager::{PeerGuard, PeerManager, PeerSource};
+use zion_l1_types::Hash;
 
 /// Wire message types exchanged between Alpha nodes.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -350,12 +350,8 @@ async fn sync_peer(
                 if depth > 0 {
                     // Fetch and validate the peer's replacement branch BEFORE
                     // discarding any of our blocks.
-                    let branch = get_blocks(
-                        peer,
-                        fork_height + 1,
-                        peer_height.min(our_height + 1),
-                    )
-                    .await?;
+                    let branch =
+                        get_blocks(peer, fork_height + 1, peer_height.min(our_height + 1)).await?;
                     let our_fork_block = node
                         .storage
                         .get_by_height(fork_height)
@@ -375,8 +371,7 @@ async fn sync_peer(
                     info!(
                         "reorg: our tip {} (h={}) != peer tip {} (h={}); \
                          rolling back {} block(s) to common ancestor h={}",
-                        our_tip_hex, our_height, peer_tip_hash, peer_height, depth,
-                        fork_height
+                        our_tip_hex, our_height, peer_tip_hash, peer_height, depth, fork_height
                     );
 
                     // Save our forked suffix so we can restore it if the
@@ -461,9 +456,7 @@ async fn find_common_ancestor(
     let floor = our_height.saturating_sub(MAX_REORG_DEPTH);
     loop {
         let peer_blocks = get_blocks(peer, h, h).await?;
-        let peer_hash = peer_blocks
-            .first()
-            .map(|b| b.header.header_hash().to_hex());
+        let peer_hash = peer_blocks.first().map(|b| b.header.header_hash().to_hex());
         let our_hash = match node.storage.get_by_height(h).await? {
             Some(b) => Some(b.header.header_hash().to_hex()),
             None => None,
@@ -752,8 +745,8 @@ mod tests {
                 .header_hash()
         );
 
-        let peer = spawn_stub_peer(4, peer_blocks[4].header.header_hash(), peer_blocks.clone())
-            .await;
+        let peer =
+            spawn_stub_peer(4, peer_blocks[4].header.header_hash(), peer_blocks.clone()).await;
         let manager = test_manager();
         sync_peer(&ours, &manager, peer).await.unwrap();
 
@@ -824,8 +817,8 @@ mod tests {
             peer_blocks.push(mine_next(&theirs, &pm).await);
         }
 
-        let peer = spawn_stub_peer(3, peer_blocks[3].header.header_hash(), peer_blocks.clone())
-            .await;
+        let peer =
+            spawn_stub_peer(3, peer_blocks[3].header.header_hash(), peer_blocks.clone()).await;
         let manager = test_manager();
         sync_peer(&ours, &manager, peer).await.unwrap();
 

@@ -21,6 +21,7 @@ def main():
     parser.add_argument('--sample-seconds', type=float, default=10)
     parser.add_argument('--chromium', default='')
     parser.add_argument('--startup-only', action='store_true', help='Check rendered scene and loaded scripts/styles without the interaction matrix')
+    parser.add_argument('--resume', action='store_true', help='Keep passed rows for this release and rerun incomplete or failed rows')
     args = parser.parse_args()
     output = Path(args.output).resolve(); output.mkdir(parents=True, exist_ok=True)
     selected = args.only.split(',') if args.only else SCENES
@@ -28,10 +29,15 @@ def main():
     chromium = args.chromium or str(sorted((Path.home()/'.cache/ms-playwright').glob('chromium-*/chrome-linux64/chrome'))[-1])
     apps = ['nirvana', 'web'] if args.app == 'all' else [args.app]
     results = []
+    if args.resume and (output/'results.json').exists():
+        previous = json.loads((output/'results.json').read_text())
+        if previous.get('release') == args.release:
+            results = previous.get('results', [])
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=chromium, headless=True, args=['--no-sandbox', '--enable-unsafe-swiftshader'])
         for app in apps:
             for scene in selected:
+                if any(row.get('app') == app and row.get('scene') == scene and row.get('status') == 'pass' for row in results): continue
                 row = {'app': app, 'scene': scene, 'release': args.release, 'errors': []}
                 context = browser.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1)
                 page = context.new_page(); page.set_default_timeout(60000)
@@ -104,7 +110,9 @@ def main():
                     try: page.screenshot(path=str(output/f'{app}-{scene}-failure.png'),timeout=10000)
                     except Exception: pass
                 finally:
-                    context.close();results.append(row)
+                    context.close()
+                    results = [previous for previous in results if (previous.get('app'), previous.get('scene')) != (app, scene)]
+                    results.append(row)
                     (output/'results.json').write_text(json.dumps({'release':args.release,'results':results},indent=2))
                     print(json.dumps(row),flush=True)
         browser.close()
