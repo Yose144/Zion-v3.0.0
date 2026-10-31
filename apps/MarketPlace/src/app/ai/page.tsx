@@ -374,8 +374,15 @@ function AiPricingInner() {
 
   return (
     <div className="rasta-info-page">
-      <section className="rasta-hero" aria-label="Hiranyagarbha">
-        <div className="rasta-hero-inner">
+      <section className="hiran-hero" aria-label="Hiranyagarbha">
+        {/* The art carries its own title band (HIRAN AI · AI pro vývojáře)
+            — rendered clean, no text overlay; info strip lives below. */}
+        <div
+          className="hiran-hero-art"
+          role="img"
+          aria-label="HIRAN AI — AI pro vývojáře · ZION Market · OASIS Ecosystem"
+        />
+        <div className="hiran-hero-actions">
           <div className="rasta-hero-kicker">
             <span className="dot" />
             {T.kicker[l]}
