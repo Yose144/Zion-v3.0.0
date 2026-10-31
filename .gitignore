@@ -330,6 +330,8 @@ dist/
 # Do NOT commit built binaries — use GitHub Releases
 apps/desktop-agent/resources/zion*
 APPS/desktop-agent/resources/zion*
+# Unix binary of node (copied in by packaging step); only node.exe is distributed via Releases
+apps/desktop-agent/resources/node
 HiranV2.3/models/**
 
 # Build logs

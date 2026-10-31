@@ -210,14 +210,17 @@ Detail bran: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) §2 (Beta exi
 
 | Datum | Událost | Dopad |
 |---|---|---|
-| 26. 10. | beta; G8 run #5 den 1 (99.73 %); P0-1+P0-2 ✅; G9 posunut 👤 | P0-3 opravit |
+| 26. 10. | beta; P0-1+P0-2 ✅; G9 posunut 👤 | P0-3 opravit |
 | 28. 10. | expirace posledních legacy HS256 session (7 d od cutoveru ZIS) | 3.B5 |
-| 24. 11. 21:57Z | konec G8 run #5 (při čistém běhu) | V33-1 / G8 |
+| 29. 10. 23:46Z | start G8 **run #6** `g8-20261029T234617Z` | nahrazuje run #5 |
+| 30. 10. 21:00Z | incident 240 s (`pool_http`+`pool_stratum`) v run #6 | 99,7976 % — pod 99,9 % branou, dokud nedoběhne okno |
+| 31. 10. | hloubková revize + [kanonický plán](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) v1.0; 3 rozhodnutí 👤 (RC first · HA aktivovat · DNS úklid) | start W0 |
 | 25. 11. | expirace certu `auth.` | renew musí proběhnout dřív (8.B6) |
+| **28. 11. 23:46Z** | **konec G8 run #6** | **V33-1 / KS-1** — hlavní kotva RC |
 | ~27.–28. 11. | výška 144 000 — time-lock premine slotů 6–8 vyprší | utratitelnost dál jen 3-of-3 admin unlock + DAO (1.S3) |
 | ⏸️ | G9 posunut 👤 26. 10. | Stable = pozdější z (G8 PASS, G9 uzavření) → bez data, dokud se audit nepřeplánuje |
 
-**Kritická cesta:** G8 run #5 čistě do 24. 11. + autonomní RC práce (provenance, artefakty, DR, freeze). G9 je posunuté na neurčito — Stable tak nemá datum, ale nic nebrání dodělat RC kvalitu a audit package držet připravený k odeslání.
+**Kritická cesta (revize 31. 10.):** G8 run #6 čistě do **28. 11. 23:46Z** + autonomní RC práce (provenance, alerty, DR runbook, artefakty, audit package) hotová **do 24. 11.** — poslední čtyři dny okna jsou rezerva na 👤 sign-off. G9 zůstává posunuté na neurčito; Stable nemá datum, ale nic nebrání dodělat RC kvalitu a audit package držet připravený k odeslání. Detail: [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §4.
 
 ---
 
@@ -232,24 +235,17 @@ Detail bran: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) §2 (Beta exi
 7. **ZionDex** — zdroj wZION, seed stablecoinů, DEX, gas (4.B7)
 8. **IA-07/08/09/10** — allowlisty, šifrované zálohy, revoke klíčů z historie, provozní detaily v public repu (7.B3)
 9. **Release** — schéma tagů + podpis (9.B3, 9.S1); CI politika (8.B8)
-10. **HA stratum** vs. single-pool s RTO (2.S5); **EDGE load** — trade-off mining vs. stabilita (8.B5)
+10. ✅ **HA stratum** — **rozhodnuto 👤 31. 10.: dokumentovat + oficiálně aktivovat** (2.S5 uzavřeno ve prospěch A4.2 active-passive; podmínka = fencing analýza, viz [plán §W2](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md)); **EDGE load** — trade-off mining vs. stabilita (8.B5) stále otevřené
 11. **SMOS rig 518837** — oprava / vyřazení (2.B10)
 12. **Komunita** — kanály, bug bounty, CoinGecko (9.B7)
 13. **3.3** — L5 pilotní projekt (fyzický svět), HW upgrade pro L3, UE5 research (default HORIZONT)
 
 ---
 
-## 8. Rozpory dokumentů vs. realita (vstup pro truth-sync 9.B5)
+## 8. Rozpory dokumentů vs. realita
 
-| Dokument | Tvrdí | Realita 26. 10. |
-|---|---|---|
-| `07-Registr-Dukazu.md` | Passkeys = HORIZONT („nenalezena implementace") | WebAuthn routes nasazené (auth-gated), Playwright E2E s mocky → STAVBA, ŽIVÉ až po prod E2E |
-| `07-Registr-Dukazu.md` | Hiran inference na Edge = NEDOLOŽENO | běží: GPU na stanici + CPU fallback na EDGE2, `/api/ai-chat` 200 |
-| `07-Registr-Dukazu.md` | DAO treasury `admin_unlock_known=false` (implicitně) | `getAdminUnlocks` live, `admin_unlock_known=true` |
-| `NIRVANA-V3.3-PLAN.md` §1 | Edge = primary, G8 run #2 failed, disk 88 % | EDGE2 = primary, run #5 běží (99.73 %), disk 59 % |
-| root `ROADMAP.md` | výška 23 640+ (31. 8.) | 97 006 |
-| `docs/3.2/ROADMAP.md` | G8 „run #2 not started" | runy #2–#4 failed/archived, #5 běží |
-| `REPO-MAP.md`, `AGENTS.md` | `public/` = git subtree pro public repo | tracked `public/` neexistuje (přesun do `archive/PUBLIC/`) → G4/E7 workflow neplatí |
-| `V31/release/RELEASE_NOTES.md` | „Mainnet Alpha" | beta |
-| `L5_L6_ACTIVATION_PLAN.md` | L5/L6 aktivní na Edge | běží na EDGE2; L5 scanner ✅ na tipu (P0-1 opraven 26. 10.) |
-| `docs/3.2/ROADMAP.md` G4 | public subtree diff = 0 ✅ | neověřitelné (viz výše) |
+> **Přesunuto.** Tabulka rozporů ze stavu 26. 10. (10 řádků) je **neplatná** — realita se posunula (G8 run #6, HA stack nalezen, výška 103 595).
+> Aktuální registr **12 rozporů** se stavem 31. 10. 2026, vlastníkem a stavem řešení žije v [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) **§2**.
+> Tato sekce zůstává jen jako odkaz, aby staré odkazy „MAP §8" neskončily 404. Nic se zde neudržuje.
+
+**Proč se to přesunulo:** registr rozporů musí být na jednom místě a musí mít vlastníka + stav. Dva seznamy na dvou místech = třetí zdroj pravdy, který si každý vyloží jinak.

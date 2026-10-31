@@ -68,6 +68,80 @@ Health: `curl https://app.zionterranova.com/api/health` (28 služeb), `https://a
 - **fail2ban lockout operátora** → jail `sshd` na Edgi umí zabanovat vlastní IP při rychlých SSH auditech — `OPERATOR_IPS` v `V31/AGENTS.md`.
 - **Pool DoS / stratum flood / session churn** → layered vrstvy + kernel tuning + incident checklist: [`docs/3.2/POOL-DOS-LAYERS.md`](../docs/3.2/POOL-DOS-LAYERS.md).
 
+## Pool HA (active-passive) — STAV: připraveno, NEaktivováno
+
+> Rozhodnutí 👤 2026-10-31: HA stack **dokumentovat + oficiálně aktivovat** (2.S5 uzavřeno ve prospěch A4.2 active-passive).
+> **Aktivace je blokovaná, dokud není doložené fencing.** Detail: [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §W2.
+
+### Co existuje (EDGE2)
+
+| Unit | Role | Stav |
+|---|---|---|
+| `zion-pool-standby.service` | replika poolu (`/opt/zion/bin/zion-pool-standby`), nepublikuje stratum | **inactive** |
+| `zion-pool-ha-watchdog.timer` | 30 s — vyhodnocuje health primary a rozhoduje o promote | active |
+| `zion-pool-standby-sync.timer` | 60 s — `store.db` + `pool-pplns.json` + payout ledger z EDGE | active |
+| `zion-pool-standby-dbsync.timer` | 60 min — plná DB replikace | active |
+
+**RPO ≤ 15 min** (ověřeno drill 27. 10.: integrity ok, schema v9, 210 817 payout rows, ledger max = tip).
+**RTO** závisí na zvoleném režimu — u `armed` watchdogu ≈ 30–60 s, u manuálního promote ≈ čas operátora.
+
+### ⚠️ Proč to nesmí být `armed` bez fencingu
+
+Promote **při zpomalení** místo **při smrti** primáru znamená, že obě instance chvíli píšou ledger → **dvojí výplata minerům**. To je nejdražší možná chyba v celém systému; payout historie se needituje zpětně.
+
+**Podmínky aktivace (všechny tři):**
+
+1. Watchdog rozlišuje **prokázaný fail** (proces/port/health dead po N po sobě jdoucích pokusech) od **degradace** (pomalá odpověď) — degradace nikdy nespouští promote.
+2. Promote obsahuje **explicitní stop primary** (systemd stop na EDGE + verifikace, že primary opravdu neběží), ne jen „převzít roli".
+3. Staged: **`log-only` mód ≥ 1 týden** bez falešného promote → teprve pak 👤 flip na `armed`.
+
+### Manuální promote (dokud není `armed`)
+
+```bash
+# 1. STOP primary FIRST — jinak dvojí výplata
+ssh <edge> "systemctl stop zion-v31-pool && systemctl is-active zion-v31-pool"   # musí vrátit inactive
+# 2. ověř, že primary opravdu neběží (ne jen 'deactivating')
+ssh <edge> "pgrep -af zion-pool || echo NO_PROCESS"
+# 3. promote standby
+ssh zion-edge2 "systemctl start zion-pool-standby && systemctl is-active zion-pool-standby"
+# 4. ověř stratum + API + payout sweep
+curl -s http://127.0.0.1:8080/stats | head -c 200
+# 5. zapiš do incident logu: čas, důvod, kdo, RPO (poslední sync timestamp)
+```
+
+**Rollback (zpět na EDGE):** stop standby → ověř `NO_PROCESS` → start primary → ověř `/stats` a payout sweep. Nikdy nespouštěj obě instance současně, ani na „jen pár sekund".
+
+### Failback
+
+Watchdog **neumí** vrátit roli primáru zpět automaticky — failback je vždy 👤 manuální okno (stejná sekvence jako promote, jen opačně). Automatický failback = další příležitost na split-brain.
+
+---
+
+## DNS a veřejné povrchy (stav 2026-10-31)
+
+| Hostname | Cíl | HTTP | Poznámka |
+|---|---|---|---|
+| `zionterranova.com`, `www.` | EDGE2 | 200 | static export `/var/www/zion-maintenance` |
+| `app.` | EDGE2 | 200 | `zion-website` :3000 — **hlavní pracovní povrch** |
+| `market.` | EDGE2 | 200 | `zion-marketplace` :3100 |
+| `pool.` | EDGE2 | 200 | ingress → `zion-edge-tunnel` → EDGE :8080 |
+| `oasis.` | EDGE2 | 200 | `/var/www/oasis` |
+| `auth.` | EDGE2 | 200 | `zion-zis` :8096 — **cert expiruje 25. 11. 2026** |
+| `freeworld.` | EDGE2 | 200 | `zion-v31-free-world` :8095 |
+| `rpc.` | EDGE2 | 200 | veřejné RPC |
+| `explorer.` | EDGE | 301 | web-tier cutover není úplný |
+| `nirvana.` | EDGE | 200 | `zion-nirvana` :3010 (`User=zion`, `/opt/zion/APP&WEB/nirvana`) |
+| `dashboard.` | EDGE | 401 | basic auth — **živé, ne mrtvé** |
+| `api.` | **EDGE** (DNS) / EDGE2 (služba) | **404** | ⚠️ **není mrtvé** — `zion-hiran-gateway` běží na EDGE2 `127.0.0.1:8007` (`/health` 200, neauth chat `401`). Vhost `infra/nginx/edge2/api.zionterranova.com.conf` je v repu. Chybí vhost + cert + **DNS → EDGE2** (rozhodnutí 👤 31. 10.: publikovat) |
+| `updates.` | EDGE | 404 | **mrtvé** → smazat A záznam (`update-server/` jen v `archive/`, mobile = preview) |
+| `dex.` | **EDGE** (DNS) / EDGE2 (služba) | **404** | ⚠️ **není mrtvé** — warpd `:8454` (`/v1/swap/pools` 200). Chybí vhost + cert + **DNS → EDGE2** **a** endpoint `/prices/:token/history` (rozhodnutí 👤 31. 10.: doplnit + publikovat) |
+
+**Pozor na past:** `api.` a `dex.` **nejsou** mrtvé povrchy — DNS vede na EDGE, ale služby žijí na EDGE2. Diagnóza `curl` = `000` + `ssl_verify_result=1` znamená **SAN mismatch**, ne „nic tam neběží". Vždy nejdřív `ss -tlnp` na EDGE2, pak teprve suď.
+
+**Pravidlo:** veřejný povrch je buď **200/301**, nebo **DNS záznam neexistuje**. 404 na vlastním hostname = nedodělek, ne „placeholder".
+
+---
+
 ## Rollback
 
 - **Web:** `.next.bak-*` konvence — před riskantním deployem `ssh zion-edge2 "cp -a /opt/zion/APP\&WEB/website-v2.9/.next /opt/zion/APP\&WEB/website-v2.9/.next.bak-$(date -u +%Y%m%dT%H%M%SZ)-<tag>"`; zpět = přejmenovat + `systemctl restart zion-website`.

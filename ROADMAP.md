@@ -34,18 +34,17 @@
 
 ---
 
-## Where we are now — snapshot 2026-08-31
+## Where we are now — snapshot 2026-10-31
 
-V31 Mainnet Alpha / 3.2 One Love is **live on Edge** and producing blocks. The workspace builds, all workspace tests pass, and the core production services are active:
+ZION v3 is **3.2.0 Mainnet Beta** — live on two hosts (EDGE2 = primary + web ingress + app stack, EDGE = pool + followers + ops), producing blocks continuously.
 
-- Chain height: **23 640+** (2026-08-31)
-- All V31 services active: node, pool, multichain, DAO, OASIS, web, marketplace, dashboard, ZIS
-- Trinity mining validated on Edge pool (ZION + ZANO + VRSC)
-- LWMA difficulty clamp fixed and deployed
-- CPU-only `zion-miner` enumeration fixed and deployed
-- Native SQLite TX/address index active
-- ZIS Identity Service running on `auth.zionterranova.com`
-- L5 Free World & L6 Issobella fund trackers running on Edge
+- **Chain height, difficulty, mempool, service inventory:** do not duplicate numbers here — canonical live state is [`docs/3.2/StatusV3.md`](docs/3.2/StatusV3.md) §1–§2. Numbers in a roadmap go stale within days; a roadmap is not a status page.
+- Network maturity gate **G8** (30-day ≥99.9 % uptime, no incident ≥900 s) is running as run **#6** `g8-20261029T234617Z`, target end **2026-11-28T23:46:17Z** — canonical record in [`docs/3.2/StatusV3.md`](docs/3.2/StatusV3.md) and `NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md` §1.3.
+- Both V31 nodes, pool, multichain, DAO, OASIS, ZIS, website, marketplace, dashboard and the L5/L6 fund trackers are active.
+- Trinity / multi-stream mining validated on the Edge pool (ZION + external GPU/CPU streams).
+- Native SQLite TX/address index active; explorer reads net-of-change amounts.
+- ZIS Identity Service live on `auth.zionterranova.com` (EdDSA/JWKS).
+- **Next stage is RC quality, not new features:** see [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) — it is the single entry point for all v3.3 planning (waves W0–W6, acceptance gates KS-1…KS-9, critical path).
 
 Historical 3.1 reports are archived in [`docs/3.1/REPORTS/`](./docs/3.1/REPORTS/).
 
