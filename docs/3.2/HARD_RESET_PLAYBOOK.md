@@ -25,9 +25,11 @@ A hard genesis reset is a **destructive, irreversible** operation. It discards t
 Before starting, verify:
 
 - [ ] **Local dev PC** is clean (no malware, no screen-sharing, no keyloggers).
-- [ ] **Edge server** (`62.171.141.136`) is reachable via SSH (`ssh zion-new` or `ssh -6 -p 2222 -i ~/.ssh/zion-edge-post-wipe-2026-07-29 root@2a02:c207:2342:5821::1`).
-- [ ] **Backup** of current Edge state taken (`ZION_OS/infra/scripts/backup-edge.sh` on Edge, then `sync-edge-backups.sh` locally). The old chain will be destroyed — this backup is the only record.
-- [ ] **All V31 services** on Edge are running (`systemctl status zion-v31-{node,pool,miner,multichain,dao,oasis} zion-edge-python-dashboard`) so you know the baseline.
+- [ ] **Both boxes reachable via SSH** — produkce je dvouboxová (viz §F.1):
+  - **EDGE2** `207.180.217.100` (`ssh zion-edge2`) — primary node + web ingress + L1–L6 daemony + ZIS + MarketPlace
+  - **EDGE** `62.171.141.136:2222` (`ssh zion-new` or `ssh -6 -p 2222 -i ~/.ssh/zion-edge-post-wipe-2026-07-29 root@2a02:c207:2342:5821::1`) — pool + node2/node3 followeři + miner + Prometheus
+- [ ] **Backup** of **both** boxes taken (`ZION_OS/infra/scripts/backup-edge.sh` on EDGE → `sync-edge-backups.sh` locally; EDGE2: `/opt/zion/data/v31` chain + `zion_marketplace`/`zion` PG + `/etc/zion/` env + `/opt/zion/shared/.env`). The old chain will be destroyed — this backup is the only record.
+- [ ] **All V31 services** baseline na obou: EDGE2 `systemctl status zion-v31-{node,multichain,dao,oasis,l5-fund,issobella} zion-zis zion-marketplace nginx`; EDGE `systemctl status zion-v31-{pool,miner} zion-v31-node{2,3} zion-edge-python-dashboard prometheus`.
 - [ ] **Git working tree** is clean (`git status` — commit or stash any in-progress work).
 - [ ] **Key storage location** ready: `~/Desktop/ZION_KEYS_NEW_GENESIS_<DATE>/` (chmod 700, owner-only).
 - [ ] **Offline backup medium** ready (USB drive / encrypted volume) for key file copies.
@@ -220,71 +222,95 @@ If any test fails because it hardcodes an old address, update the test. Do not s
 
 ## 6. Deploy to Edge server
 
+> **⚠️ Two-box mapping (since 3.2 topology — see §F.1):** příkazy níže používají `zion-new` jako
+> placeholder. Per-service substitution:
+> - **`ssh zion-edge2`** (`207.180.217.100`) — `zion-v31-node` (primary), `zion-v31-multichain`,
+>   `zion-v31-dao`, `zion-v31-oasis`, `zion-v31-l5-fund`, `zion-v31-issobella`, `zion-zis`,
+>   website (`deploy-web2.9.sh`), nginx
+> - **`ssh zion-new`** (`62.171.141.136:2222`) — `zion-v31-pool`, `zion-v31-miner`,
+>   `zion-v31-node2`/`zion-v31-node3` (followeři), dashboard, Prometheus
+>
+> Chain-data wipe (§6.2) platí na **obou** boxech — node DB na EDGE2 + EDGE (node2/node3 chain
+> data + pool db na EDGE). Binárky: EDGE2 nemá source tree → build na EDGE/lokále, `scp` na oba.
+
 ### 6.1 Stop all V31 services
 
 ```bash
-ssh zion-new "systemctl stop zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-oasis"
+# EDGE2 (primary node + L2–L6 daemony)
+ssh zion-edge2 "systemctl stop zion-v31-node zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-l5-fund zion-v31-issobella"
+# EDGE (pool + miner + followeři)
+ssh zion-new "systemctl stop zion-v31-pool zion-v31-miner zion-v31-node2 zion-v31-node3"
 ```
 
 ### 6.2 Wipe old chain data
 
 ```bash
-# Back up first! (§1 pre-flight)
-ssh zion-new "mv /data/zion/v31-node.db /data/zion/v31-node.db.pre-reset-$(date +%Y%m%d)"
-ssh zion-new "mv /data/zion/v31-pool.db /data/zion/v31-pool.db.pre-reset-$(date +%Y%m%d)"
-ssh zion-new "mv /data/zion/dao.db /data/zion/dao.db.pre-reset-$(date +%Y%m%d)"
-ssh zion-new "mv /data/zion/oasis.db /data/zion/oasis.db.pre-reset-$(date +%Y%m%d)"
-# Also wipe warp.db, pplns-state.json, peers.json — they reference old chain
+# Back up first! (§1 pre-flight). Data paths per §F.1: /opt/zion/data/v31 on both boxes.
+# EDGE2 — primary node + L2/L5/L6 daemon data:
+ssh zion-edge2 "cd /opt/zion/data/v31 && for f in v31-node.db dao.db oasis.db l5_fund.db issobella.db warp.db peers.json; do [ -e \$f ] && mv \$f \$f.pre-reset-\$(date +%Y%m%d); done"
+# EDGE — pool + follower chains:
+ssh zion-new "cd /opt/zion/data/v31 && for f in v31-node.db v31-pool.db pool-pplns.json pool-store.db peers.json; do [ -e \$f ] && mv \$f \$f.pre-reset-\$(date +%Y%m%d); done"
+# Also wipe warp.db, pplns-state.json wherever present — they reference old chain
 ```
 
 ### 6.3 Build + deploy new binaries
 
 ```bash
 cd ~/2.9.6-main/V31
-cargo build --release
+cargo build --release   # (nebo build na EDGE /opt/zion-rel build worktree — EDGE2 source tree nemá)
 
-# Deploy each binary to Edge
-scp target/release/node     zion-new:/opt/zion/V31/target/release/node
-scp target/release/pool     zion-new:/opt/zion/V31/target/release/pool
-scp target/release/multichain zion-new:/opt/zion/V31/target/release/multichain
-scp target/release/dao      zion-new:/opt/zion/V31/target/release/dao
-scp target/release/oasis    zion-new:/opt/zion/V31/target/release/oasis
+# EDGE2 — node + L2–L6 daemony (web deploye přes scripts/deploy-web2.9.sh)
+for b in zion-node multichain dao oasis l5-fund issobella zis; do
+  scp target/release/$b zion-edge2:/opt/zion/V31/target/release/$b
+done
+# EDGE — pool + miner + node pro followery
+for b in zion-node zion-pool zion-miner; do
+  scp target/release/$b zion-new:/opt/zion/V31/target/release/$b
+done
 ```
 
 ### 6.4 Update Edge config files
 
-All Edge env/config files with hardcoded addresses must be updated:
+All env/config files with hardcoded addresses must be updated — **per host**:
 
 ```bash
-# Edit on Edge directly (or scp updated versions)
+# EDGE2 (/etc/zion/ + /opt/zion/shared/.env — node/dao/oasis/L5/L6/ZIS env, web .env)
+ssh zion-edge2
+vi /etc/zion/config/dao-v31.toml          # DAO guardian addresses, treasury
+vi /etc/zion/warp.toml                    # bridge validator addresses
+vi /opt/zion/shared/.env                  # canonical subsidy + RPC addrs (P0-3 subsety)
+
+# EDGE (/etc/zion/edge-*.sh — pool/miner/follower env)
 ssh zion-new
 vi /etc/zion/edge-environment.sh          # ZION_MINER_ADDRESS, HUMANITARIAN_WALLET, ISSOBELLA_WALLET
 vi /etc/zion/edge-v31-pool-environment.sh # POOL_WALLET, fee split addresses
 vi /etc/zion/xmr-pool-environment.sh      # if XMR pool references ZION addresses
 vi /etc/zion/edge-node2-environment.sh    # node2 miner address
 vi /etc/zion/edge-env-no-auxpow.sh        # auxpow-disabled env
-vi /etc/zion/config/dao-v31.toml          # DAO guardian addresses, treasury
 vi /etc/zion/config/dao-mainnet.toml      # if still referenced (check first)
-vi /etc/zion/warp.toml                    # bridge validator addresses
 ```
 
 ### 6.5 Restart services
 
 ```bash
-ssh zion-new "systemctl start zion-v31-node"
+# EDGE2 — primary node first (chain head), then daemony
+ssh zion-edge2 "systemctl start zion-v31-node"
+sleep 5
+ssh zion-edge2 "systemctl start zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-l5-fund zion-v31-issobella zion-zis"
+# EDGE — followeři se připojí na primary, pak pool + miner
+ssh zion-new "systemctl start zion-v31-node2 zion-v31-node3"
 sleep 5
 ssh zion-new "systemctl start zion-v31-pool"
 sleep 3
-ssh zion-new "systemctl start zion-v31-multichain"
-ssh zion-new "systemctl start zion-v31-dao"
-ssh zion-new "systemctl start zion-v31-oasis"
+ssh zion-new "systemctl start zion-v31-miner"
 ```
 
-### 6.6 Verify all 5 services active
+### 6.6 Verify all services active
 
 ```bash
-ssh zion-new "systemctl is-active zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-oasis"
-# Expected: active\nactive\nactive\nactive\nactive
+ssh zion-edge2 "systemctl is-active zion-v31-node zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-l5-fund zion-v31-issobella zion-zis"
+ssh zion-new   "systemctl is-active zion-v31-node2 zion-v31-node3 zion-v31-pool zion-v31-miner"
+# Expected: active per service on each box
 ```
 
 ---
@@ -295,7 +321,7 @@ ssh zion-new "systemctl is-active zion-v31-node zion-v31-pool zion-v31-multichai
 
 ```bash
 # On Edge, query the node RPC for block 0
-ssh zion-new "echo '{\"jsonrpc\":\"2.0\",\"method\":\"chain_get_block\",\"params\":[0],\"id\":1}' | nc 127.0.0.1 9445"
+ssh zion-edge2 "echo '{\"jsonrpc\":\"2.0\",\"method\":\"chain_get_block\",\"params\":[0],\"id\":1}' | nc 127.0.0.1 9445"
 # The returned hash must match the V31 native genesis hash from §4.
 ```
 
@@ -303,7 +329,7 @@ ssh zion-new "echo '{\"jsonrpc\":\"2.0\",\"method\":\"chain_get_block\",\"params
 
 ```bash
 # Query each premine address balance — must match the amounts in genesis.rs
-ssh zion-new "echo '{\"jsonrpc\":\"2.0\",\"method\":\"address_get_balance\",\"params\":[\"zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5\"],\"id\":1}' | nc 127.0.0.1 9445"
+ssh zion-edge2 "echo '{\"jsonrpc\":\"2.0\",\"method\":\"address_get_balance\",\"params\":[\"zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5\"],\"id\":1}' | nc 127.0.0.1 9445"
 # Expected: 1,650,000,000 ZION (slot 1, OASIS+GoldenEgg — 1 of 3 OASIS slots; total OASIS = 4.95B; Slots 4 & 5 repurposed to L5 Free World Projects)
 ```
 
@@ -319,7 +345,7 @@ ssh zion-new "journalctl -u zion-v31-pool --since '5 min ago' | grep 'share acce
 ### 7.4 OASIS connects to RPC
 
 ```bash
-ssh zion-new "journalctl -u zion-v31-oasis --since '2 min ago' | grep 'chain_height'"
+ssh zion-edge2 "journalctl -u zion-v31-oasis --since '2 min ago' | grep 'chain_height'"
 # Expected: L1BlockListener initial chain_height=0 (then increasing)
 ```
 
