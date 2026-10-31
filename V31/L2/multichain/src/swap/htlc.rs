@@ -108,6 +108,16 @@ impl SwapPreimage {
 pub enum SwapState {
     /// LOCK TX seen, waiting for counterparty to act.
     Pending,
+    /// Refund broadcast claimed before send (1.B2): the record is marked
+    /// Refunding and persisted BEFORE the ambiguous outbound adapter call,
+    /// so a crash can never re-fire the refund — it parks here for manual
+    /// reconciliation instead of auto-resending (same discipline as the
+    /// `executing` withdrawal hold).
+    Refunding,
+    /// Claim release broadcast claimed before send (1.B2): same
+    /// claim-before-send discipline as Refunding — the ambiguous outcome
+    /// parks here for manual reconciliation instead of auto-resending.
+    Claiming,
     /// Preimage revealed; funds released to claimer — terminal.
     Claimed,
     /// Timelock expired; funds returned to locker — terminal.
@@ -120,6 +130,8 @@ impl std::fmt::Display for SwapState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Pending => write!(f, "pending"),
+            Self::Refunding => write!(f, "refunding"),
+            Self::Claiming => write!(f, "claiming"),
             Self::Claimed => write!(f, "claimed"),
             Self::Refunded => write!(f, "refunded"),
             Self::Error(e) => write!(f, "error:{e}"),
@@ -684,13 +696,22 @@ impl HtlcSwap {
             .get_mut(&hash_hex)
             .ok_or_else(|| MultichainError::TransferNotFound(hash_hex.clone()))?;
 
-        // 3. Guard: already settled?
+        // 3. Guard: already settled or a settle broadcast already in flight?
         if record.is_terminal() {
             return Err(MultichainError::Validation(format!(
                 "HTLC already settled: {}",
                 record.state
             )));
         }
+        if record.state == SwapState::Claiming {
+            return Err(MultichainError::Validation(
+                "HTLC claim release already in flight — reconcile on-chain before retry"
+                    .to_string(),
+            ));
+        }
+        // A Refunding record MAY still be claimed: the in-flight refund and
+        // this claim race on the same lock and the chain arbitrates — the
+        // preimage-carrying claim is legitimate until the refund confirms.
 
         // 4. Select source- or target-side parameters.
         let (lock_tx_id, expires_at, refund_pubkey, claimant_pubkey) = if is_source {
@@ -779,6 +800,20 @@ impl HtlcSwap {
             );
         }
 
+        // Claim-before-send (1.B2): persist the Claiming marker BEFORE the
+        // ambiguous outbound adapter call. A crash between send and the
+        // state update would otherwise leave the record Pending → a later
+        // retry would re-broadcast the release (double-send window).
+        record.state = SwapState::Claiming;
+        record.updated_at = Utc::now();
+        let in_flight = record.clone();
+        drop(records);
+        self.persist(&in_flight).await;
+        let mut records = self.records.lock().await;
+        let record = records
+            .get_mut(&hash_hex)
+            .ok_or_else(|| MultichainError::TransferNotFound(hash_hex.clone()))?;
+
         // 7. Release funds on target chain via adapter.
         let mut preimage = [0u8; 32];
         preimage.copy_from_slice(secret);
@@ -789,7 +824,15 @@ impl HtlcSwap {
         transfer.source_pubkey = refund_pubkey;
         transfer.target_pubkey = claimant_pubkey;
         let release_tx = if let Some(adapter) = self.adapters.get(target_chain) {
-            adapter.execute_outbound(transfer).await?
+            match adapter.execute_outbound(transfer).await {
+                Ok(h) => h,
+                Err(e) => {
+                    // Ambiguous: the release may have broadcast before the
+                    // error surfaced. The record stays Claiming — no
+                    // auto-resend; manual reconciliation decides.
+                    return Err(e);
+                }
+            }
         } else {
             // Offline mode (tests): synthesize a fake tx hash.
             Hash::new(
@@ -918,6 +961,37 @@ impl HtlcSwap {
                 record.state
             )));
         }
+        if record.state == SwapState::Refunding {
+            // A previous refund attempt reached the outbound call — the
+            // outcome is unknown. Refusing to re-fire keeps at-most-once;
+            // the operator reconciles on-chain state and either marks the
+            // record Refunded or resets it to Pending for a fresh attempt.
+            return Err(MultichainError::Validation(
+                "HTLC refund already in flight — reconcile on-chain before retry".to_string(),
+            ));
+        }
+        if record.state == SwapState::Claiming {
+            // A claim release is already in flight — a valid preimage was
+            // revealed, so a refund must not race it. Wait for the claim
+            // outcome; only a reset to Pending re-enables refund.
+            return Err(MultichainError::Validation(
+                "HTLC claim release in flight — cannot refund while settlement pending".to_string(),
+            ));
+        }
+
+        // Claim-before-send (1.B2): persist the Refunding marker BEFORE the
+        // ambiguous outbound adapter call. A crash between send and the
+        // state update would otherwise leave the record Pending → a later
+        // retry would re-broadcast the refund (double-send window).
+        record.state = SwapState::Refunding;
+        record.updated_at = Utc::now();
+        let claimed = record.clone();
+        drop(records);
+        self.persist(&claimed).await;
+        let mut records = self.records.lock().await;
+        let record = records
+            .get_mut(&hash_hex)
+            .ok_or_else(|| MultichainError::TransferNotFound(hash_hex.clone()))?;
 
         // Refund to locker on source chain, using the on-chain timeout stored in the record.
         transfer.timelock = Some(record.expires_at as u64);
@@ -926,7 +1000,15 @@ impl HtlcSwap {
         transfer.target_pubkey = record.claimant_pubkey;
         let source_chain = transfer.source.address.chain;
         let release_tx = if let Some(adapter) = self.adapters.get(source_chain) {
-            adapter.execute_outbound(transfer).await?
+            match adapter.execute_outbound(transfer).await {
+                Ok(h) => h,
+                Err(e) => {
+                    // Ambiguous: the refund may have broadcast before the
+                    // error surfaced. The record stays Refunding — no
+                    // auto-resend; manual reconciliation decides.
+                    return Err(e);
+                }
+            }
         } else {
             Hash::new(Sha256::digest(format!("refund:{hash_hex}").as_bytes()).into())
         };
@@ -939,10 +1021,6 @@ impl HtlcSwap {
         // Need to drop the records guard before persist() can acquire it.
         let record = record.clone();
         drop(records);
-        self.records
-            .lock()
-            .await
-            .insert(hash_hex.clone(), record.clone());
         self.persist(&record).await;
 
         transfer.status = TransferStatus::Refunded;
@@ -1336,6 +1414,146 @@ mod tests {
         let expired = swap.expired_pending().await;
         assert_eq!(expired.len(), 1);
         assert_eq!(expired[0].hash_hex, h1);
+    }
+
+    // ── 1.B2: claim-before-send failure modes ───────────────────────────
+
+    #[tokio::test]
+    async fn htlc_refund_in_flight_blocks_refire() {
+        let swap = HtlcSwap::new_offline();
+        let secret = [0xAB; 32];
+        let hash_hex = hash_sha256(&secret).to_hex();
+        let mut transfer = htlc_transfer(secret);
+        swap.initiate(&mut transfer).await.unwrap();
+        {
+            // Simulate a refund that reached the outbound call and whose
+            // outcome is unknown (e.g. crash after broadcast).
+            let mut records = swap.records.lock().await;
+            let r = records.get_mut(&hash_hex).unwrap();
+            r.state = SwapState::Refunding;
+            r.expires_at = 0;
+        }
+        transfer.timelock = Some(0);
+
+        let err = swap.refund(&mut transfer).await;
+        assert!(matches!(err, Err(MultichainError::Validation(_))));
+        // Held — the parked in-flight marker must not be cleared.
+        assert_eq!(
+            swap.get_record(&hash_hex).await.unwrap().state,
+            SwapState::Refunding
+        );
+    }
+
+    #[tokio::test]
+    async fn htlc_claim_in_flight_blocks_reclaim_and_refund() {
+        let swap = HtlcSwap::new_offline();
+        let secret = [0xAB; 32];
+        let hash_hex = hash_sha256(&secret).to_hex();
+        let mut transfer = htlc_transfer(secret);
+        swap.initiate(&mut transfer).await.unwrap();
+        {
+            let mut records = swap.records.lock().await;
+            let r = records.get_mut(&hash_hex).unwrap();
+            r.state = SwapState::Claiming;
+            r.expires_at = 0;
+            r.source_confirmed = true;
+        }
+
+        // Second claim while Claiming → refused, marker unchanged.
+        let err = swap.claim(&secret, "zion1abc", &mut transfer).await;
+        assert!(matches!(err, Err(MultichainError::Validation(_))));
+        assert_eq!(
+            swap.get_record(&hash_hex).await.unwrap().state,
+            SwapState::Claiming
+        );
+
+        // Refund while a claim release is in flight → refused (must not race).
+        let mut rt = htlc_transfer_with_timelock(secret, 0);
+        let err = swap.refund(&mut rt).await;
+        assert!(matches!(err, Err(MultichainError::Validation(_))));
+        assert_eq!(
+            swap.get_record(&hash_hex).await.unwrap().state,
+            SwapState::Claiming
+        );
+    }
+
+    #[tokio::test]
+    async fn htlc_in_flight_states_excluded_from_pending_and_expired() {
+        let swap = HtlcSwap::new_offline();
+
+        for (secret, state) in [
+            ([0x11; 32], SwapState::Refunding),
+            ([0x22; 32], SwapState::Claiming),
+        ] {
+            let mut t = htlc_transfer(secret);
+            swap.initiate(&mut t).await.unwrap();
+            let h = hash_sha256(&secret).to_hex();
+            let mut records = swap.records.lock().await;
+            let r = records.get_mut(&h).unwrap();
+            r.expires_at = 0;
+            r.state = state;
+        }
+
+        // In-flight records must not be re-picked by auto-refund sweeps —
+        // that is what prevents an ambiguous broadcast from re-firing.
+        assert!(swap.pending_records().await.is_empty());
+        assert!(swap.expired_pending().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn htlc_refunding_survives_restart_and_blocks_refire() {
+        use crate::db::Db;
+        use std::sync::Arc;
+        use tokio::sync::Mutex;
+
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let preimage = SwapPreimage::random();
+        let hash = preimage.hash();
+        let secret = preimage.0;
+
+        let swap = HtlcSwap::with_db(Arc::new(ChainAdapterRegistry::new()), db.clone());
+        let mut transfer = htlc_transfer(secret);
+        swap.initiate(&mut transfer).await.unwrap();
+        {
+            let mut records = swap.records.lock().await;
+            let r = records.get_mut(&hash.to_hex()).unwrap();
+            r.state = SwapState::Refunding;
+            r.expires_at = 0;
+        }
+        // Persist the parked marker (as the claim-before-send path does).
+        let parked = swap.get_record(&hash.to_hex()).await.unwrap();
+        swap.persist(&parked).await;
+
+        // "Restart": a fresh swap over the same DB still refuses to re-fire.
+        let swap2 = HtlcSwap::with_db(Arc::new(ChainAdapterRegistry::new()), db);
+        swap2.load_from_db().await.unwrap();
+        assert_eq!(
+            swap2.get_record(&hash.to_hex()).await.unwrap().state,
+            SwapState::Refunding
+        );
+        let mut rt = htlc_transfer_with_timelock(secret, 0);
+        let err = swap2.refund(&mut rt).await;
+        assert!(matches!(err, Err(MultichainError::Validation(_))));
+    }
+
+    #[tokio::test]
+    async fn htlc_refund_after_terminal_claim_rejected() {
+        let swap = HtlcSwap::new_offline();
+        let secret = [0xAB; 32];
+        let hash_hex = hash_sha256(&secret).to_hex();
+        let mut transfer = htlc_transfer(secret);
+        swap.initiate(&mut transfer).await.unwrap();
+        {
+            let mut records = swap.records.lock().await;
+            records.get_mut(&hash_hex).unwrap().source_confirmed = true;
+        }
+        swap.claim(&secret, "zion1abc", &mut transfer)
+            .await
+            .unwrap();
+
+        let mut rt = htlc_transfer_with_timelock(secret, 0);
+        let err = swap.refund(&mut rt).await;
+        assert!(matches!(err, Err(MultichainError::Validation(_))));
     }
 
     // ── Memo parser tests ───────────────────────────────────────────────
