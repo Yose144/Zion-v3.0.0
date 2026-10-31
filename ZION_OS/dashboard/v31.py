@@ -12,6 +12,7 @@ import re
 import socket
 import subprocess
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import parse_qs
 
@@ -317,54 +318,63 @@ def _http_get_json(host: str, port: int, path: str, timeout: float = 3.0):
         return {"_error": str(e)}
 
 
-def _all_service_status() -> list:
-    """Get systemd status for all V31 services."""
-    result = []
-    for name in _all_service_names():
-        unit = _service_unit(name)
+def _service_status_one(name: str) -> dict:
+    """Systemd status for a single V31 service (EDGE2 units via probe SSH)."""
+    unit = _service_unit(name)
+    try:
+        if _is_edge2_unit(unit):
+            r = _ssh_edge2(
+                f"systemctl show {unit} --property=ActiveState,SubState,MainPID,MemoryCurrent",
+                timeout=8
+            )
+        else:
+            r = subprocess.run(
+                ["systemctl", "show", unit,
+                 "--property=ActiveState,SubState,MainPID,MemoryCurrent"],
+                capture_output=True, text=True, timeout=3
+            )
+        props = {}
+        for line in r.stdout.strip().split("\n"):
+            if "=" in line:
+                k, v = line.split("=", 1)
+                props[k] = v
+        active = props.get("ActiveState", "unknown")
+        mem = props.get("MemoryCurrent", "")
         try:
-            if _is_edge2_unit(unit):
-                r = _ssh_edge2(
-                    f"systemctl show {unit} --property=ActiveState,SubState,MainPID,MemoryCurrent",
-                    timeout=8
-                )
-            else:
-                r = subprocess.run(
-                    ["systemctl", "show", unit,
-                     "--property=ActiveState,SubState,MainPID,MemoryCurrent"],
-                    capture_output=True, text=True, timeout=3
-                )
-            props = {}
-            for line in r.stdout.strip().split("\n"):
-                if "=" in line:
-                    k, v = line.split("=", 1)
-                    props[k] = v
-            active = props.get("ActiveState", "unknown")
-            mem = props.get("MemoryCurrent", "")
-            try:
-                mem_mb = round(int(mem) / 1048576, 1) if mem and mem != "[not set]" else None
-            except (ValueError, TypeError):
-                mem_mb = None
-            result.append({
-                "name": name,
-                "unit": unit,
-                "active": active == "active",
-                "active_state": active,
-                "sub_state": props.get("SubState", "unknown"),
-                "pid": int(props.get("MainPID", 0)) or None,
-                "memory_mb": mem_mb,
-            })
-        except Exception as e:
-            result.append({
-                "name": name,
-                "unit": unit,
-                "active": False,
-                "active_state": "error",
-                "sub_state": str(e)[:60],
-                "pid": None,
-                "memory_mb": None,
-            })
-    return result
+            mem_mb = round(int(mem) / 1048576, 1) if mem and mem != "[not set]" else None
+        except (ValueError, TypeError):
+            mem_mb = None
+        return {
+            "name": name,
+            "unit": unit,
+            "active": active == "active",
+            "active_state": active,
+            "sub_state": props.get("SubState", "unknown"),
+            "pid": int(props.get("MainPID", 0)) or None,
+            "memory_mb": mem_mb,
+        }
+    except Exception as e:
+        return {
+            "name": name,
+            "unit": unit,
+            "active": False,
+            "active_state": "error",
+            "sub_state": str(e)[:60],
+            "pid": None,
+            "memory_mb": None,
+        }
+
+
+def _all_service_status() -> list:
+    """Get systemd status for all V31 services — parallel probes.
+
+    EDGE2 units each cost an SSH roundtrip; sequential probing took 15-20s.
+    I/O-bound probes run on a bounded thread pool (8 workers — stays under
+    sshd MaxStartups on EDGE2 and under local fd limits).
+    """
+    names = _all_service_names()
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        return list(pool.map(_service_status_one, names))
 
 
 def _pool_metrics() -> dict:
