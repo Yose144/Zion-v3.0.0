@@ -301,16 +301,19 @@ Text (cs/en), který musí být v appce:
 - [ ] Code signing (Apple/Windows) → **jiný stroj** (👤).
 
 ### D4 — Licence/platba + autoupdate (5–7 dní) · 🤖→👤
-- [ ] License server (AppPay) — validate, entitlement, feed.
-- [ ] Stripe/Coinbase checkout (jednorázová lifetime).
+- [x] Auto-update kód: VIP — license-gated `updates.zionterranova.com/api/check-update` primární, GitHub fallback (1. 11., `main.js`); Public — GitHub feed (existující).
+- [x] Update-server deploy artefakty: `.env.example`, `deploy/zion-update-server.service`, `infra/nginx/edge2/updates.zionterranova.com.conf` (staged, 1. 11.).
+- [ ] License server nasazení na EDGE2 (🔀/👤 — `systemctl`, DNS flip, certbot).
+- [ ] Stripe/Coinbase checkout (jednorázová lifetime) — 👤 klíče.
 - [ ] Offline grace 30 dní (žádný trial).
-- [ ] Auto-update: VIP feed + GitHub fallback, rollback, kanály stable/beta.
+- [ ] Rollback + kanály stable/beta.
 - [ ] Public GitHub feed + SHA256 manifest.
 
 ### D5 — Public revenue (2–3 dní) · 🤖→👤
-- [ ] BOOST vždy on (QTC GPU + PRL CPU), backend routing.
+- [x] BOOST vždy on — `default_stream3_enabled()` = `true` v `auto_detect.rs` (1. 11., obě editions).
+- [x] Jasné vysvětlení v UI (cs) — first-run wizard public-miner (1. 11.); EN překlad zbývá.
+- [ ] ⚠️ **PRL blocker:** `ExternalCoin::Pearl` je `disabled` v `CoinProfile` — dokud není production-ready, stream 4 = PRL nejede; aktuálně QTC (GPU) + VRSC (CPU).
 - [ ] Revenue dashboard (interní) — BOOST výnos → treasury/liquidity.
-- [ ] Jasné vysvětlení v UI (cs/en) — §8.2.
 - [ ] Pool wallet funding (👤 W3.4).
 
 ### D6 — Release (2 dny) · 👤
@@ -370,3 +373,4 @@ Text (cs/en), který musí být v appce:
 |---|---|
 | 2026-11-01 | v1.0 — vytvořeno po průzkumu `apps/desktop-agent`, `apps/public-miner`, `V31/L1/miner` (auto_detect, autonomous, Cargo features), `cosmic-harmony/profit.rs`, build skriptů. Ověřen rozpor §1.4 (VIP buildí `public_build`). |
 | 2026-11-01 | v1.1 — **rozhodnutí 👤 zapracována:** licence **jednorázová lifetime**, žádný trial; auto-update dolaď (VIP feed + GitHub fallback + rollback); Public **BOOST vždy ON** (QTC GPU + PRL CPU, výnos → grow/liquidity, uživatel jen ZION, jasné vysvětlení v UI); VIP plná Trinity podpora; Windows OpenCL build + code signing **odloženo na jiný stroj s CUDA/OpenCL GPU** (§6.4). |
+| 2026-11-01 | v1.2 — **D0 hotovo:** `--edition vip\|public`, VIP bez `public_build` (ověřeno: `aarch64` binary obsahuje ZANO/QTC/PEARL/VRSC), public-miner přesunut z archivu, update-server přesunut do `apps/`. **D4 kód:** VIP license-gated update server + GitHub fallback; deploy artefakty (env, systemd, nginx). **D5:** BOOST vždy on (`default_stream3_enabled=true`), UI vysvětlení v public wizardu. **PRL blocker nalezen:** `ExternalCoin::Pearl` = `disabled`. Mac aarch64 + Windows CPU-only miner buildy hotové. |
