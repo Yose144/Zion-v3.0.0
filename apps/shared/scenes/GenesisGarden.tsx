@@ -928,7 +928,7 @@ export function GenesisGardenScene({ lang }: { lang: Lang }) {
   );
 }
 
-export const GENESIS_CAMERA = { position: [-2.5, 16, 39] as [number, number, number], fov: 44 };
+export const GENESIS_CAMERA = { position: [-2.5, 16, 39] as [number, number, number], fov: 44, far: 2200 };
 export const GENESIS_CONTROLS = {
   autoRotate: true, autoRotateSpeed: 0.4, minDistance: 9, maxDistance: 110,
   maxPolarAngle: Math.PI / 2 - 0.04, target: [-2.5, 3, 0] as [number, number, number], enablePan: false,

@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--release', default='working-tree')
     parser.add_argument('--sample-seconds', type=float, default=10)
     parser.add_argument('--chromium', default='')
+    parser.add_argument('--startup-only', action='store_true', help='Check rendered scene and loaded scripts/styles without the interaction matrix')
     args = parser.parse_args()
     output = Path(args.output).resolve(); output.mkdir(parents=True, exist_ok=True)
     selected = args.only.split(',') if args.only else SCENES
@@ -44,6 +45,18 @@ def main():
                     page.wait_for_function('window.__projectScene?.frames >= 4 && window.__projectScene.invalidVertices >= 0')
                     canvas = page.locator('canvas').first if app == 'nirvana' else page.locator('canvas').last
                     canvas.scroll_into_view_if_needed()
+                    if args.startup_only:
+                        row['render'] = page.evaluate('window.__projectScene')
+                        assert row['render']['invalidVertices'] == 0, 'non-finite geometry'
+                        assets = page.evaluate("performance.getEntriesByType('resource').filter(r => /\\.(js|css)(\\?|$)/.test(r.name)).map(r => r.name)")
+                        assert assets, 'no scripts/styles loaded'
+                        for asset in assets:
+                            loaded = context.request.get(asset)
+                            assert loaded.ok, f'asset HTTP {loaded.status}: {asset}'
+                        row['assets_checked'] = len(assets)
+                        assert not row['errors'], 'browser runtime errors'
+                        row['status'] = 'pass'
+                        continue
                     sample = args.sample_seconds if app == 'nirvana' else min(args.sample_seconds, 2)
                     row['raf_fps'] = page.evaluate('''seconds => new Promise(resolve => {
                       let frames=0,start=performance.now();function f(t){frames++;if(t-start<seconds*1000)requestAnimationFrame(f);else resolve(frames*1000/(t-start));}requestAnimationFrame(f);
