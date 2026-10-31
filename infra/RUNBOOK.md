@@ -31,6 +31,26 @@ Všechny skripty: lokální build → rsync → restart/reload → smoke check (
 
 ⚠️ **nirvana. = výjimka z web-tier pravidla:** nasazena na **EDGE** (`zion-new`, port 3010) — DNS `nirvana.` resolvuje přes wildcard `* → 62.171.141.136` (explicitní A záznam zatím není). OASIS data tahá přes `OASIS_API_URL=http://127.0.0.1:8094` = chain-tunnel leg → reálný OASIS backend na EDGE2. **Fáze 2 (wildcard→EDGE2):** přidat explicitní `nirvana A 207.180.217.100` + nasadit instanci na EDGE2 (`ZION_EDGE_HOST=zion-edge2 bash apps/nirvana/deploy/deploy-nirvana.sh`) + certbot vhost tam — jinak po flipu doména umře.
 
+### 🛑 Deploy pravidlo: `stop → sync → start → write-path test` (P0-1/P0-2, 21. 10.)
+
+**Nikdy nersyncovat datové soubory (`.db`, `.env`, ledger soubory) pod běžící službou.**
+Proces drží smazaný inode → SQLite `attempt to write a readonly database` (P0-1: L5 scanner
+mrznul 5 dní na `last_block_height 90 334`, API servírovalo stará data — `is-active` ✅ přitom)
+a desyncnutý `.env` = tiché auth selhání ~240 err/h (P0-2).
+
+Pořadí pro dotek dat/env souborů služby:
+
+1. `systemctl stop <svc>`
+2. rsync / edit
+3. `systemctl start <svc>`
+4. **Write-path test** (ne jen `is-active` — proces může být active a nezápisovat):
+   - scanner/daemon: metrika nebo API pole roste (`last_block_height`, `*_blocks_scanned`)
+   - db-sync: fresh write do PG (`MiningWorker.lastShareAt` se mění)
+   - pool: `journalctl -u zion-v31-pool | grep 'share accepted'` teče
+   - obecné: `lsof +D <datadir> | grep deleted` = nesmí vrátit nic (držené smazané inode)
+
+Post-mortem: [`docs/3.2/REPORTS/POSTMORTEM_2026-10-21_RSYNC_UNDER_SERVICE.md`](../docs/3.2/REPORTS/POSTMORTEM_2026-10-21_RSYNC_UNDER_SERVICE.md)
+
 ## Restart / status služeb
 
 ```bash
