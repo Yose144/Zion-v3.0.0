@@ -100,6 +100,32 @@ Kailash (sníh). Mrzne při `prefers-reduced-motion`.
 
 Finální běh: 13/13 `pass` se strict budgetem i s vizuální bránou.
 
+## Nasazení (31. 10. 2026)
+
+| Povrch | Host | Release | Výsledek |
+| --- | --- | --- | --- |
+| Nirvana | EDGE (zion-new), `zion-nirvana.service` :3010 | `render-r4-20261031T173529Z` | `https://nirvana.zionterranova.com` 200, textury i `/api/oasis/worlds` OK |
+| Web | EDGE2 (zion-edge2), `zion-website.service` :3000 | `render-r5-20261031T174157Z` | `https://app.zionterranova.com` 200, assety i `/api/health` OK |
+
+Předchozí buildy zůstaly na serverech (`nirvana.before-render-r4-…`,
+`standalone.before-render-r5-…`) pro okamžitý rollback.
+
+Live kontrola přes GPU audit (ANGLE Metal, 1440×900):
+
+| Povrch | Scéna | Draw calls | FPS | Stav |
+| --- | --- | --- | --- | --- |
+| nirvana | Ekam | 205 | 53 | pass |
+| nirvana | Boa Esperança | 166 | 57 | pass |
+| nirvana | Matrix | 156 | 54 | pass |
+| web | Ekam | 205 | 37 | pass |
+| web | Bodhi Lanka | 489 | 35 | pass |
+
+**Operační poznámka k webu:** `next/image` potřebuje `sharp` pro cílovou platformu. Build
+vznikl na macOS, takže standalone obsahoval jen `@img/sharp-darwin-arm64`; před nasazením
+byly z EDGE2 dotaženy `sharp-linux-x64` a `sharp-libvips-linux-x64` do
+`node_modules/@img/`. Ověřeno lokálně (`/_next/image` → 200) i na živém webu.
+Příště je čistší buildit web přímo na Linuxu.
+
 ## Otevřené (další vlny)
 
 - **R4** — částice a drobný život v každé scéně (ptáci, prach, listí) nad rámec zvuku.

@@ -140,6 +140,7 @@ Aplikační vrstva:
 | --- | --- |
 | 2026-10-31 | Vznik dokumentu; R0 GPU harness hotový (ANGLE Metal na Apple M1) |
 | 2026-10-31 | R1 Render Kit hotový: quality/textures/materials/environment/post/camera/terrain; `ProjectPresentation` pro 12 prezentací; art dávka 1 = Ekam, Amenti, Uluru, Kailash, Bodhi Lanka. Report: `docs/3.2/REPORTS/REPORT_2026-10-31_NIRVANA_RENDER_R1.md` |
+| 2026-10-31 | **Nasazeno** — Nirvana na EDGE (`render-r4-…`) a web na EDGE2 (`render-r5-…`), oba smoke check OK; live GPU audit 5/5 scén PASS. Rollback: `nirvana.before-render-r4-…`, `standalone.before-render-r5-…`. |
 | 2026-10-31 | **R4 doplněna** — `SceneMotes` (pyl/prach/sníh) v Ekamu, Amenti, Uluru a Kailashi; pohyb ve vertex shaderu, respektuje reduced-motion. Harness umí vizuální regresi (`--visual-baseline` + `--visual-gate`). |
 | 2026-10-31 | **R3 hotová** — jeden oceán (`kit/ocean.tsx`) pro všechna moře; `AtlanticOcean` je tenká vrstva nad ním. **R4 hotová (bez assetů)** — `SceneSoundToggle` má fallback na syntetizovanou ambienci (surf/wind/forest/desert/space/temple) přes WebAudio, takže zvuk funguje i bez mp3. Harness umí `--strict-budget` a `--scorecard`. |
 | 2026-10-31 | **R6 (universe) první krok** — domovská scéna dostala stejný HDR composer (bloom, AgX, vinětace) na WebGL2 cestě, DPR z tieru a audit háček (`?sceneAudit=1`); WebGPU cesta zůstává bez post-fx. Měřeno: 57 fps / 119 draw calls / 65 k tris. |
