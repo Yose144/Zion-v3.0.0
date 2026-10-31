@@ -4,7 +4,6 @@
 import { React, useEffect, useFrame, THREE } from '@genesis/runtime';
 
 export function SceneLabel({ position, text, scale = 1 }: { position: [number, number, number]; text: string; scale?: number }) {
-  const [texture, setTexture] = React.useState<THREE.CanvasTexture | null>(null);
   const sprite = React.useRef<THREE.Sprite>(null);
   const world = React.useMemo(() => new THREE.Vector3(), []);
   useFrame(({ camera, size }) => {
@@ -17,10 +16,11 @@ export function SceneLabel({ position, text, scale = 1 }: { position: [number, n
     sprite.current.scale.set(height * texture.image.width / 52, height, 1);
   });
   // Sprites stay in the scene's React root; no nested DOM roots to unmount.
-  useEffect(() => {
+  const texture = React.useMemo(() => {
+    if (typeof document === 'undefined') return null;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return null;
     ctx.font = '600 28px sans-serif';
     canvas.width = Math.ceil(ctx.measureText(text).width + 36);
     canvas.height = 52;
@@ -34,9 +34,11 @@ export function SceneLabel({ position, text, scale = 1 }: { position: [number, n
     ctx.fillText(text, 18, 26);
     const next = new THREE.CanvasTexture(canvas);
     next.colorSpace = THREE.SRGBColorSpace;
-    setTexture(next);
-    return () => next.dispose();
+    return next;
   }, [text]);
+  // Replace the material map in the same commit before disposing the old map.
+  // Disposing in the canvas-creation effect can re-upload its still-mounted map.
+  useEffect(() => () => texture?.dispose(), [texture]);
   if (!texture) return null;
   return <sprite ref={sprite} position={position}>
     <spriteMaterial map={texture} transparent depthWrite={false} toneMapped={false} />
