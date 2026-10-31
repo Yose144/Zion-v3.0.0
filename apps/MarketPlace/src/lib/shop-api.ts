@@ -152,6 +152,7 @@ export interface OrderStatusResult {
     createdAt: string;
     items: { name: string; quantity: number; priceCzk: number }[];
     invoices: { id: string; invoiceNumber: string; status: string; html: string | null }[];
+    archivePass?: { code: string; url: string } | null;
   };
   error?: string;
 }
@@ -184,6 +185,7 @@ export interface TrackOrderResult {
     createdAt: string;
     items: { name: string; quantity: number; priceCzk: number }[];
     invoices: { id: string; invoiceNumber: string; status: string }[];
+    archivePass?: { code: string; url: string } | null;
   };
   error?: string;
 }

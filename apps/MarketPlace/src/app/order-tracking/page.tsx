@@ -12,6 +12,8 @@ import {
   Truck,
   FileText,
   CreditCard,
+  BookOpen,
+  Copy,
 } from 'lucide-react';
 import { trackOrder, type TrackOrderResult } from '@/lib/shop-api';
 import { useLangT } from '@/lib/useTranslation';
@@ -40,6 +42,7 @@ function OrderTrackingContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<'notFound' | 'rateLimited' | null>(null);
   const [order, setOrder] = useState<OrderData | null>(null);
+  const [passCopied, setPassCopied] = useState(false);
 
   const lookup = async (oid: string, em: string) => {
     if (!oid.trim() || !em.trim()) return;
@@ -208,6 +211,62 @@ function OrderTrackingContent() {
               </li>
             ))}
           </ul>
+
+          {order.archivePass && (
+            <div className="mb-6 rounded-xl border border-rasta-gold/40 bg-gradient-to-br from-rasta-gold/10 to-rasta-green/10 p-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-rasta-gold">
+                <BookOpen className="w-4 h-4" /> {t('orderTracking.archivePassTitle')}
+              </h3>
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-black/40 px-3 py-2">
+                <code className="font-mono text-base font-bold tracking-widest text-rasta-green">
+                  {order.archivePass.code}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(order.archivePass!.code).catch(() => {});
+                    setPassCopied(true);
+                    setTimeout(() => setPassCopied(false), 2000);
+                  }}
+                  className="zion-button-secondary text-xs inline-flex items-center gap-1.5"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  {passCopied
+                    ? t('orderTracking.archivePassCopied')
+                    : t('orderTracking.archivePassCopy')}
+                </button>
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-gray-400">
+                {t('orderTracking.archivePassHint')}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a
+                  href={order.archivePass.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="zion-button-secondary text-xs"
+                >
+                  {t('orderTracking.archivePassArchive')} ↗
+                </a>
+                <a
+                  href="https://oasis.zionterranova.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="zion-button-secondary text-xs"
+                >
+                  {t('orderTracking.archivePassOasis')} ↗
+                </a>
+                <a
+                  href="https://nirvana.zionterranova.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="zion-button-secondary text-xs"
+                >
+                  {t('orderTracking.archivePassNirvana')} ↗
+                </a>
+              </div>
+            </div>
+          )}
 
           {order.invoices.length > 0 && (
             <div className="flex flex-wrap gap-2">
