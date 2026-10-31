@@ -3,7 +3,8 @@
 > One document covering the OASIS Artifact Marketplace, e-shop, admin dashboard, invoices, emails, theming, and deployment.
 > Source: `apps/MarketPlace/`
 > Live URL: `https://market.zionterranova.com`
-> Runtime: `systemd zion-marketplace.service` on Edge (`zionterranova.com`), port `3100`
+> Runtime: `systemd zion-marketplace.service` on **EDGE2** (`207.180.217.100`), port `3100`
+> **Truth-sync 2026-10-31:** prefer [`docs/3.2/MARKET_V2_PARITY.md`](../3.2/MARKET_V2_PARITY.md) for payment/capability status. This overview had stale “crypto placeholder / deploy to Edge” claims — corrected below.
 
 ---
 
@@ -30,8 +31,8 @@ Both flows share the same Next.js app, PostgreSQL database, admin dashboard, and
 | Auth | Admin API key (`X-API-Key` / `Authorization: Bearer`) + `ADMIN_USERS` login |
 | Email | `nodemailer` + SMTP (currently `mail.webglobe.cz`) |
 | Blockchain | wagmi/viem, WalletConnect/Reown, Base L2 |
-| Payments | Stripe checkout + manual bank transfer QR |
-| Deploy | `rsync .next` to Edge + `systemctl restart zion-marketplace.service` |
+| Payments | Stripe card · bank transfer QR · ZION L1 (SHOPPAY) · Coinbase Commerce (env-gated) |
+| Deploy | `apps/MarketPlace/deploy/deploy-marketplace.sh` → EDGE2 (`zion-edge2`) + restart `zion-marketplace` (+ `zion-l1-watcher`) |
 
 ---
 
@@ -104,10 +105,11 @@ apps/MarketPlace/
   - `zasilkovna-home` — home delivery
   - `zasilkovna` — pickup point
   - `virtualni-nakup` / `virtualni-odber` — digital delivery
-- Payment methods:
-  - `transfer` — bank transfer (default)
-  - `card` — Stripe checkout
-  - `crypto` — placeholder
+- Payment methods (see `/api/shop/capabilities`):
+  - `transfer` — bank transfer with Czech SPD QR (default)
+  - `card` — Stripe checkout (live when `STRIPE_SECRET_KEY` set)
+  - `zion` / `crypto` — ZION L1 SHOPPAY (vault + QR + `SHOPPAY:` memo; l1-watcher → `/api/shop/zion-confirm`)
+  - Coinbase Commerce — `/api/shop/commerce/*` when `COMMERCE_API_KEY` set
 
 ### 5.2 Create Order
 
@@ -144,10 +146,12 @@ Response:
 
 Status transitions are done from the admin dashboard (`/admin/orders`) via `PUT /api/admin/orders/[id]/status`.
 
-### 5.4 Stripe
+### 5.4 Stripe / ZION / Commerce
 
 - `POST /api/stripe/checkout` creates a Stripe Checkout session.
 - `POST /api/stripe/webhook` handles `checkout.session.completed` and marks order as paid.
+- `payment='zion'` on `/api/shop/orders` returns vault address, amount, `SHOPPAY:` memo, SVG QR; l1-watcher confirms after finality.
+- `POST /api/shop/commerce/checkout` + webhook — Coinbase Commerce (env-gated).
 
 ---
 
@@ -321,18 +325,18 @@ npx prisma generate
 npm run build
 ```
 
-### 11.2 Deploy to Edge
+### 11.2 Deploy to EDGE2
+
+Use the hardened script (never rsync `.next/standalone/` into app root with `--delete`):
 
 ```bash
-rsync -az --delete -e 'ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29' \
-  apps/MarketPlace/.next \
-  zion-new:'/opt/zion/APP&WEB/MarketPlace/'
-
-ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new \
-  'systemctl restart zion-marketplace.service'
+apps/MarketPlace/deploy/deploy-marketplace.sh
+# SSH target: zion-edge2 → /opt/zion/APP&WEB/MarketPlace
+# Restarts: zion-marketplace + zion-l1-watcher
+# Protects: .env, watcher state; pre-flight package.json check
 ```
 
-Service file runs `npm run start` (port 3100) behind nginx.
+Service listens on `127.0.0.1:3100` behind nginx `market.zionterranova.com`.
 
 ---
 
