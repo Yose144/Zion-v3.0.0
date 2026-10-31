@@ -1,4 +1,4 @@
-type IconName = 'link' | 'anvil' | 'bag' | 'arrow' | 'dot';
+type IconName = 'link' | 'anvil' | 'bag' | 'arrow' | 'dot' | 'anchor';
 
 const paths: Record<IconName, string> = {
   link: 'M9 15l6-6M8.5 11.5 6 14a3.5 3.5 0 0 0 5 5l2.5-2.5M15.5 12.5 18 10a3.5 3.5 0 0 0-5-5l-2.5 2.5',
@@ -6,6 +6,7 @@ const paths: Record<IconName, string> = {
   bag: 'M6 8h12l-1 12H7L6 8Zm3 0V6a3 3 0 0 1 6 0v2',
   arrow: 'M5 12h14M13 6l6 6-6 6',
   dot: 'M12 12h.01',
+  anchor: 'M12 8v13M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM5 13H3a9 9 0 0 0 18 0h-2',
 };
 
 export function Icon({ name, size = 16 }: { name: string; size?: number }) {

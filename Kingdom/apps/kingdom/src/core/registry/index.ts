@@ -3,10 +3,12 @@
 
 import { manifest as m0 } from '../../portals/chain/manifest';
 import v0 from '../../portals/chain/Portal';
-import { manifest as m1 } from '../../portals/market/manifest';
-import v1 from '../../portals/market/Portal';
-import { manifest as m2 } from '../../portals/pool/manifest';
-import v2 from '../../portals/pool/Portal';
+import { manifest as m1 } from '../../portals/freeworld/manifest';
+import v1 from '../../portals/freeworld/Portal';
+import { manifest as m2 } from '../../portals/market/manifest';
+import v2 from '../../portals/market/Portal';
+import { manifest as m3 } from '../../portals/pool/manifest';
+import v3 from '../../portals/pool/Portal';
 
 import type { ComponentType } from 'react';
 import type { Locale, PortalManifest } from '@zion/contract';
@@ -20,8 +22,9 @@ export interface PortalEntry {
 
 const entries: PortalEntry[] = [
   { manifest: m0, view: v0 as unknown as PortalView }, // chain
-  { manifest: m1, view: v1 as unknown as PortalView }, // market
-  { manifest: m2, view: v2 as unknown as PortalView }, // pool
+  { manifest: m1, view: v1 as unknown as PortalView }, // freeworld
+  { manifest: m2, view: v2 as unknown as PortalView }, // market
+  { manifest: m3, view: v3 as unknown as PortalView }, // pool
 ];
 
 /** Všechny portály v deterministickém pořadí: manifest.order, pak manifest.id. */

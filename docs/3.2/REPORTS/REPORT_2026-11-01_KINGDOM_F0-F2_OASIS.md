@@ -63,6 +63,15 @@ packages/world/src/           packages/scenes/src/
 - **`/world/<id>` je místo, ne portál.** Portály jsou okna (`/portal/<id>`), světy jsou plátno. Místnost má sekci „Světy OASIS" s 13 dlaždicemi.
 - Ověřeno CDP na **Genesis Garden** (tři pyramidy, jezero, tee-pee, české labely) a **Kailash** (hora, klášter, modlitební praporky, sněžení).
 
+### F3a — portál `freeworld` (Přístav)
+
+Čtvrtý portál a první, který není „řetěz/pool/tržiště": **L5 fond, granty a projekty** z `zion-v31-free-world` přes `app.` proxy.
+
+- 3 deklarovaná čtení (`fund/balance`, `grants`, `projects`), cache 60/120 s
+- **ZIONy z flowers** (1 ZION = 1e6) se počítají v portálu, ne ve službě — jedna konverze na jednom místě
+- live: **28 096 820 ZION** nashromážděno (blok 104 145), 0 vyplaceno, 6 grantů po 10M ZION, 12 projektů
+- portál má `ring` → objevil se i ve scéně Místnosti jako čtvrtý marker (důkaz, že svět je řízený kontraktem)
+
 ---
 
 ## 2. Měření

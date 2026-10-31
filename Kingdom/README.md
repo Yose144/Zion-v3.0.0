@@ -63,7 +63,7 @@ Port `3020` je záměrně mimo `website` (3000), `market` (3100) a `nirvana` (30
 - registry portálů generovaný z manifestů (`npm run codegen`)
 - `scripts/check-boundaries.mjs` — vynucuje 6 pravidel, 0 závislostí, běží v ms
 - **Brána** (`/`) a **Místnost** (`/room`), deep-link `/portal/<id>`
-- tři živé portály: **Řetěz** (výška 104k, difficulty, peers), **Kovárna** (12 mincí, stav nohou), **Tržiště** (výloha s ověřenými náhledy)
+- čtyři živé portály: **Řetěz** (výška, difficulty, peers), **Kovárna** (12 mincí, stav nohou), **Tržiště** (výloha s ověřenými náhledy), **Přístav** (L5 fond, granty, projekty — 28 096 820 ZION nashromážděno)
 - cs/en celé na serveru — do prohlížeče jde jediná klientská komponenta (přepínač jazyka)
 
 ## Co je hotové (F1 — Brána)
