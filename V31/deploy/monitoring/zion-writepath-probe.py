@@ -114,6 +114,23 @@ if pay_ts is not None:
 metrics.append(m("zion_pool_payouts_api_ok", 1 if pay_ts is not None else 0,
                  help_text="Pool public payouts endpoint returns a row"))
 
+# Block production freshness — W1.2 (2026-10-31). G8ChainStale only watches
+# the node tip, so it stays green while the pool finds nothing (tip advances
+# from the EDGE fallback miners / peers, not necessarily from pool sessions).
+# Empirical cadence over the last 300 pool blocks: median 44s, p95 197s,
+# p99 269s, max 323s — 15 min without a block is a ~20x outlier.
+blk = http_json("http://127.0.0.1:8080/public/v1/blocks?limit=1", timeout=8)
+blk_ts = None
+if blk and blk.get("ok") and blk.get("blocks"):
+    blk_ts = blk["blocks"][0].get("ts")
+if blk_ts is not None:
+    metrics.append(m("zion_pool_last_block_age_seconds", max(0, int(time.time() - blk_ts)),
+                     help_text="Age of newest block found by the pool"))
+    metrics.append(m("zion_pool_block_tip_height", int(blk["blocks"][0].get("height") or 0),
+                     help_text="Height of newest block found by the pool"))
+metrics.append(m("zion_pool_blocks_api_ok", 1 if blk_ts is not None else 0,
+                 help_text="Pool public blocks endpoint returns a row"))
+
 # G8 — Hiran inference gateway (api.zionterranova.com -> 127.0.0.1:8007).
 # /health returns per-upstream liveness; export each leg so alerts can
 # distinguish "gateway dead" from "primary GPU upstream offline" (which is

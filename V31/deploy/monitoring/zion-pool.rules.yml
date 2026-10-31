@@ -1,0 +1,68 @@
+groups:
+  - name: zion_pool
+    rules:
+      - alert: ZionPoolApiDown
+        expr: up{job="zion_v31_pool"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "zion-v31-pool API not scrapeable"
+          description: "Prometheus cannot reach 127.0.0.1:8080/metrics for 5m — pool process down or HTTP API hung. Stratum ports 8444/8445 likely down too; miners reconnect-loop."
+
+      - alert: ZionPoolNoMiners
+        expr: zion_pool_active_sessions == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Zero stratum sessions for 15m"
+          description: "No miner sessions on the pool — stratum may be unreachable (firewall/nginx) or miners are misconfigured."
+
+      - alert: ZionPoolAcceptRateDrop
+        expr: |
+          sum(rate(zion_pool_coin_shares_rejected[10m]))
+            /
+          (sum(rate(zion_pool_coin_shares_accepted[10m])) + sum(rate(zion_pool_coin_shares_rejected[10m]))) > 0.15
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Share reject ratio >15% over 15m"
+          description: "Elevated reject rate — check reject_reasons buckets on /miners (duplicate/low_difficulty/stale/malformed). Previous regression pattern: wrong validation target after vardiff retarget."
+
+      - alert: ZionPoolLegDisconnected
+        expr: zion_pool_leg_enabled == 1 and on(leg, coin) zion_pool_leg_connected == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Aux leg enabled but disconnected: {{ $labels.leg }}"
+          description: "Upstream leg {{ $labels.leg }} (coin {{ $labels.coin }}) lost connection >10m — shares for this coin get no upstream credit."
+
+      - alert: ZionPoolJobStale
+        expr: zion_pool_leg_job_age_ms > 180000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Stale job on leg {{ $labels.leg }} (>3min)"
+          description: "No fresh job from upstream for 3min+ on {{ $labels.leg }} — miners may be hashing an outdated template (stale submits expected)."
+
+      - alert: ZionPoolPPLNSPersistFailing
+        expr: increase(zion_pool_pplns_persist_failures_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PPLNS persist failures occurring"
+          description: "pool-pplns.json writes failing — on restart the PPLNS window/state may roll back (miner unpaid balances affected)."
+
+      - alert: ZionPoolPPLNSPersistStale
+        expr: time() - zion_pool_pplns_persist_success_timestamp_seconds > 1800
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No successful PPLNS persist for >30min"
+          description: "Persistence is configured but no successful snapshot in 30m — state loss risk on restart."
