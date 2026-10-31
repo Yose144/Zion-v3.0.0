@@ -50,6 +50,7 @@ Každá epizoda zachovává pravidlo absolutní poctivosti: **krásný archetyp�
 | 11 | [Kvantový oheň Issobella](./11-Kvantovy-Ohen-Issobella.md) | **Warp Engine** · *L6 Hluboká věda* | 5 % vědecký fond, Alcubierre-Ekam metrika, harmonické rezonance $\Phi$ a otevřená věda DeSci. |
 | 12 | [Velké Sjednocení](./12-Velke-Sjednoceni.md) | **Grand Unification** · *Mise Amenti* | Sjednocení všech šesti vrstev, návrat globální pozornosti k tvoření, start odložen (TBD). |
 | 13 | [Tres Marías](./13-Tres-Marias.md) | **Flotila Cesty** · *L5 — osmý bod jako linie* | Tři trupy pro tři oceány; Santa María la Mayor, Nossa Senhora de Fátima, María de las Nieves — cesta, která u moře nekončí. *(Doplněk přidaný po uzavření dvanácti stanic — L5 vize dorostla flotilu později.)* |
+| 14 | [Archa](./14-Archa.md) | **Čtvrté plavidlo** · *L5 — přístav, který se vrací* | Nirvana · Království srdce — kolonie-archa pro sto lidí, semenný archiv, velrybí navigace; loď pro ty, co zůstali ve vodě. *(Doplněk — flotila dorostla čtvrté plavidlo ve studiích `docs/3.2/ArchaNoemova.md`.)* |
 
 ---
 

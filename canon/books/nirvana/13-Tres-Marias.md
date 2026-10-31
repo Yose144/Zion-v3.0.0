@@ -73,6 +73,8 @@ Stav podle korpusu, poctivě: trupy I a II jsou **STAVBA** — koncept, trasa, p
 
 *→ Příběh na palubě: [Na Cestě](../NaCeste/00-README.md) — Lumen na flotile (DRAFT ke kulturnímu review).*
 
+*→ Čtvrté plavidlo: [Epizoda 14 — Archa](./14-Archa.md) — loď, která se vrací pro ty, co zůstali ve vodě.*
+
 *→ Zpět k vrcholu: [Epizoda 12 — Velké Sjednocení](./12-Velke-Sjednoceni.md)*
 
 *Gate, Gate, Paragate, Parasamgate, Bodhi Svaha.*
