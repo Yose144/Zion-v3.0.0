@@ -7,7 +7,7 @@ import { useLang } from '@/contexts/LanguageContext';
 
 const Copy = {
   title: { cs: 'Hiranyagarbha', en: 'Hiranyagarbha' },
-  subtitle: { cs: 'ZION AI Native', en: 'ZION AI Native' },
+  subtitle: { cs: 'ZION AI Native · pomocník', en: 'ZION AI Native · helper' },
   fabLabel: { cs: 'Zeptat se AI', en: 'Ask AI' },
   askAnything: { cs: 'Zeptejte se na cokoliv o ZIONu', en: 'Ask anything about ZION' },
   typeMessage: { cs: 'Napište zprávu...', en: 'Type a message...' },
@@ -15,6 +15,7 @@ const Copy = {
   offline: { cs: 'Offline', en: 'Offline' },
   offlineHint: { cs: 'AI uzel je momentálně offline — zkuste to později.', en: 'The AI node is currently offline — please try again later.' },
   failed: { cs: 'Nepodařilo se spojit s AI. Zkuste to znovu.', en: 'Failed to connect to AI. Please try again.' },
+  disclaimer: { cs: 'Informační pomocník — odpovídá na otázky, nevykonává žádné akce.', en: 'Informational helper — answers questions, performs no actions.' },
 };
 
 type Message = { role: 'user' | 'assistant'; content: string };
@@ -226,6 +227,7 @@ export default function HiranFloatingChat() {
                 <Send className="w-3 h-3 text-white" />
               </button>
             </div>
+            <p className="mt-1.5 text-center text-[9px] text-gray-600">{Copy.disclaimer[t]}</p>
           </form>
         </div>
       )}
