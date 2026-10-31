@@ -5,7 +5,7 @@ export const PLANET_R = 4;
 export const RING_R = 6.4;
 export const RING_R2 = 7.15;
 export const ORBIT_R = 5.05;
-export const GATE_POS: [number, number, number] = [10.6, 2.1, -7.2];
+export const GATE_POS: [number, number, number] = [7.2, 1.2, 6.8];
 export const SUN_POS: [number, number, number] = [0, 0, 0];
 /** Oběžná dráha zemské soustavy — skutečná 3. dráha = 1 AU (1 AU = 30 jednotek). */
 export const EARTH_ORBIT_R = 30;

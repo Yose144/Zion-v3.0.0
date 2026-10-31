@@ -141,6 +141,24 @@ button {
   font-size: 1.1rem;
 }
 
+.portal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(232, 194, 90, 0.55);
+  border-radius: 8px;
+  color: #f0d78f;
+  text-decoration: none;
+  background: rgba(232, 194, 90, 0.12);
+  font-size: 0.9rem;
+}
+
+.portal-link:hover {
+  background: rgba(232, 194, 90, 0.24);
+}
+
 .portal ul {
   list-style: none;
   padding: 0;

@@ -24,7 +24,7 @@ function ResponsiveFraming() {
   const didInit = useRef(false);
   useEffect(() => {
     const aspect = size.width / Math.max(1, size.height);
-    camera.fov = aspect < 0.75 ? 64 : aspect < 1.1 ? 58 : 52;
+    camera.fov = aspect < 0.75 ? 66 : aspect < 1.1 ? 60 : 54;
     camera.updateProjectionMatrix();
     if (!didInit.current) {
       didInit.current = true;
