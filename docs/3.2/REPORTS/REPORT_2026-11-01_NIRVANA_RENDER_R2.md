@@ -169,6 +169,31 @@ Nasazeno `render-r8-20261031T191122Z` (EDGE). Live: Ekam 205 calls / 53 fps,
 Bodhi Lanka 491 / 52, vesmír 64 calls / 58,8 fps s 0 chybami. Předchozí build zůstal
 v `nirvana.before-render-r8-20261031T191122Z`.
 
+## Ekam přestavěn podle skutečné stavby
+
+Ekam byl dosud „inspirovaný": tři patra arkád, řada šikhar, čtyři rohové věže a vymyšlený
+reflektor před chrámem. Teď vychází z ověřených faktů (Wikipedie + fotografie z Commons)
+a drží měřítko **1 jednotka = 2 m**:
+
+| Prvek | Reál | Scéna |
+| --- | --- | --- |
+| Plošina | 130 × 106 m, vyvýšená, voda v rozích | 65 × 53 jednotek, čtyři bazény |
+| Výška | 32,85 m | 16,6 jednotek (33,2 m) |
+| Podlaží | tři; přízemí a střední po 6 700 m², horní bezsloupový sál 2 500 m² | tři stupně 54×38 → 46×31 → 32×21 |
+| Materiál | bílý mramor, mřížovaná okna, zdobené portály | mramor + instancované lomené arkády |
+| Střecha | stupa, věžičky, kopule; centrální věž nejvyšší | 11 stup + 26 čhatrí, zlaté hroty |
+| Vnitřek | zlatá koule Ø ~91 cm v Dharma Moksha | prosvítající zlatá koule + bodové světlo |
+| Okolí | rovina u Východních Ghátů | terén + mlhou ztracený hřeben |
+
+Reflektor před chrámem zmizel — v reálu tam není. Příjezdová osa, lampy a schodiště
+zůstaly, protože je doložené platformou a vstupem.
+
+Scéna je zároveň levnější: **205 → 110 draw calls** (arkády, čhatrí a lampy jsou
+instancované), 98 k trojúhelníků, 21 textur, 49,6 fps.
+
+Nová obecná pomůcka v `ScenePresentation`: `portraitScale` — scény se širokým půdorysem
+(Ekam) si mohou zkrátit portrétní odstup, místo aby je sdílená politika odsunula daleko.
+
 ## Otevřené (další vlny)
 
 - **R4** — částice a drobný život v každé scéně (ptáci, prach, listí) nad rámec zvuku.

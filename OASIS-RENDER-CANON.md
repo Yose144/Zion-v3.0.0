@@ -181,7 +181,28 @@ aby hladina nezešedla od oblohy.
 Vždy předávej `sun` shodné s `<KeyLight sun>` a `sky` shodnou s horizontem oblohy —
 jinak voda nesedí s nebem.
 
-### 4.5 Zvuk
+### 4.5 Reálné stavby — nejdřív rešerše, potom geometrie
+
+Když scéna zobrazuje existující místo, **massing se nehádá**. Postup, který se osvědčil
+na Ekamu:
+
+1. **Fakta z primárních zdrojů** (Wikipedie, oficiální web, odborné články): půdorys,
+   výška, počet podlaží, materiál, architekt, rok, co je uvnitř.
+2. **Fotografie** jako kontrola siluety (Wikimedia Commons). Z ní se čte roofline:
+   kolik věží, kde jsou kopule, jak vysoký je střed.
+3. **Měřítko** zvol jednotné a zapiš ho do hlavičky souboru. U Ekamu 1 jednotka = 2 m,
+   takže plošina 130 × 106 m je 65 × 53 jednotek a výška 32,85 m je 16,6 jednotek.
+4. **Co se modeluje:** hmota, rytmus arkád, střecha, platforma. Co se nemodeluje:
+   interiér, dekorace, lidé — pokud to není pointa scény.
+5. **Co je vidět ve scéně, musí být obhajitelné** vůči zdroji. Vymyšlený reflektor
+   před chrámem je chyba, i když vypadá dobře.
+
+Ověřená data Ekamu: bílý mramor, tři podlaží, výška 32,85 m, plošina 130 × 106 m
+s vodními plochami v rozích, přízemí a střední patro po 6 700 m² (Artha Kama), nejvyšší
+bezsloupový sál Dharma Moksha 2 500 m² se zlatou koulí ~91 cm, stupy, věžičky, kopule,
+mřížovaná okna, architekt Prabhat Poddar (Auroville), dokončeno 2008.
+
+### 4.6 Zvuk
 
 `SceneSoundToggle` zkusí `/audio/<slug>.mp3`; když soubor není, syntetizuje ambienci
 (`ambience.ts`, profily `surf|wind|forest|desert|space|temple`). Autoplay je zakázaný —

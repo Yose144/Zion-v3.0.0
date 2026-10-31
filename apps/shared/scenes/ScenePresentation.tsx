@@ -30,10 +30,12 @@ export interface ScenePresentationProps {
   post?: boolean | ScenePostProps;
   /** Camera entrance; `true` uses the tuned defaults. */
   intro?: boolean | Omit<CinematicIntroProps, 'target'>;
+  /** Portrait distance multiplier; omit for the shared aspect-based framing. */
+  portraitScale?: number;
 }
 
 /** Shared camera, motion, atmosphere and shadow policy for the thirteen project canvases. */
-export function ScenePresentation({ camera: initial, target, spin = true, atmosphere, post = true, intro = true }: ScenePresentationProps) {
+export function ScenePresentation({ camera: initial, target, spin = true, atmosphere, post = true, intro = true, portraitScale }: ScenePresentationProps) {
   const { camera, size, gl, controls, scene } = useThree();
   const audit = React.useRef(false);
   const counters = React.useRef({ frames: 0, start: 0 });
@@ -43,13 +45,13 @@ export function ScenePresentation({ camera: initial, target, spin = true, atmosp
   React.useLayoutEffect(() => {
     const aspect = size.width / Math.max(1, size.height);
     const portrait = aspect < 1;
-    const factor = portrait ? Math.max(1, 0.8 / aspect) : 1;
+    const factor = portrait ? (portraitScale ?? Math.max(1, 0.8 / aspect)) : 1;
     camera.position.set(...initial.position).sub(new THREE.Vector3(...target)).multiplyScalar(factor).add(new THREE.Vector3(...target));
-    if (camera instanceof THREE.PerspectiveCamera) camera.fov = portrait ? Math.max(initial.fov, 60) : initial.fov;
+    if (camera instanceof THREE.PerspectiveCamera) camera.fov = portrait ? Math.max(initial.fov, portraitScale ? initial.fov : 60) : initial.fov;
     camera.lookAt(...target);
     camera.updateProjectionMatrix();
     gl.shadowMap.needsUpdate = true;
-  }, [camera, gl, size.width, size.height, initial, target]);
+  }, [camera, gl, size.width, size.height, initial, target, portraitScale]);
 
   React.useEffect(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
