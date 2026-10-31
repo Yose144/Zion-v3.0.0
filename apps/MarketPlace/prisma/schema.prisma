@@ -241,6 +241,8 @@ model ShopOrder {
   companyName          String?
   buyerIco             String?
   buyerDic             String?
+  archivedAt           DateTime? // hidden from the active orders list (Shopify "Archive")
+  deletedAt            DateTime? // soft delete — trash view, restorable until hard delete
   statusHistory        Json?
   termsAccepted        Boolean  @default(false)
   newsletter           Boolean  @default(false)

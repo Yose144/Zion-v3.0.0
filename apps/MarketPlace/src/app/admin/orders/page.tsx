@@ -6,6 +6,7 @@ import { isAuthenticated } from '@/lib/admin-auth';
 import {
   listAdminOrders,
   updateOrderStatus,
+  updateOrderNote,
   updateTrackingNumber,
   sendInvoiceEmail,
   regenerateInvoice,
@@ -13,7 +14,11 @@ import {
   checkTriviStatus,
   distributeTokens,
   getTokenStatus,
+  bulkOrderAction,
+  adminOrdersExportUrl,
   type AdminOrdersListResult,
+  type AdminOrdersSort,
+  type BulkOrderAction,
 } from '@/lib/shop-api';
 
 const ORDER_STATUSES = ['pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled'];
@@ -53,7 +58,7 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('cs-CZ');
 }
 
-function formatDateTime(dateStr: string): string {
+function formatDateTime(dateStr: string | null): string {
   if (!dateStr) return 'N/A';
   const d = new Date(dateStr);
   return `${d.toLocaleDateString('cs-CZ')} ${d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}`;
@@ -97,24 +102,6 @@ function downloadFile(content: string, filename: string, type: string) {
 
 type OrderRow = NonNullable<AdminOrdersListResult['data']>['orders'][number];
 
-function exportCSV(orders: OrderRow[]) {
-  const headers = ['ID', 'Zákazník', 'Email', 'Telefon', 'Celkem', 'Platba', 'Stav platby', 'Stav objednávky', 'ZION', 'Datum'];
-  const rows = orders.map((o) => [
-    o.orderId,
-    `"${o.customerName}"`,
-    o.customerEmail,
-    o.customerPhone || '',
-    o.totalCzk,
-    PAYMENT_LABELS[o.payment] || o.payment,
-    o.paymentStatus,
-    o.status,
-    o.zionTokens || 0,
-    o.createdAt,
-  ]);
-  const csv = [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\n');
-  downloadFile(csv, 'objednavky-zion.csv', 'text/csv;charset=utf-8');
-}
-
 function exportJSON(orders: OrderRow[]) {
   downloadFile(JSON.stringify(orders, null, 2), 'objednavky-zion.json', 'application/json');
 }
@@ -125,10 +112,12 @@ interface OrderModalProps {
   order: OrderRow;
   onClose: () => void;
   onRefresh: () => void;
+  onAction: (action: BulkOrderAction) => void;
 }
 
-function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
+function OrderModal({ order, onClose, onRefresh, onAction }: OrderModalProps) {
   const [newStatus, setNewStatus] = useState(order.status);
+  const [noteInput, setNoteInput] = useState(order.note ?? '');
   const [trackingInput, setTrackingInput] = useState(order.trackingNumber ?? '');
   const [triviStatus, setTriviStatus] = useState<{ loading: boolean; data: { synced?: boolean; status?: string; trivi_id?: string; document_number?: string; error_message?: string; can_retry?: boolean; created_at?: string } | null }>({ loading: false, data: null });
   const [tokenStatus, setTokenStatus] = useState<{ loading: boolean; data: { found?: boolean; tokens?: number; status?: string; txHash?: string; distributedAt?: string } | null }>({ loading: false, data: null });
@@ -158,6 +147,13 @@ function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
     await updateOrderStatus(order.id, newStatus);
     setBusy(null);
     onRefresh();
+  };
+
+  const handleNoteSave = async () => {
+    setBusy('note');
+    const res = await updateOrderNote(order.id, noteInput);
+    setBusy(null);
+    if (res?.success) onRefresh();
   };
 
   const handleTracking = async () => {
@@ -548,6 +544,86 @@ function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
               </div>
             </div>
           </div>
+
+          {/* Note + lifecycle (archive / trash / delete) */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-black/30">
+              <h4 className="text-rasta-gold font-bold mb-3 text-sm uppercase tracking-wider">📝 Interní poznámka</h4>
+              <div className="space-y-2">
+                <textarea
+                  value={noteInput}
+                  onChange={(e) => setNoteInput(e.target.value)}
+                  rows={3}
+                  placeholder="Poznámka viditelná jen v administraci..."
+                  className="w-full bg-zion-card border border-white/10 rounded px-3 py-2 text-sm resize-y"
+                />
+                <button
+                  onClick={handleNoteSave}
+                  disabled={busy === 'note' || noteInput === (order.note ?? '')}
+                  className="w-full px-3 py-2 rounded bg-white/5 hover:bg-white/10 text-sm disabled:opacity-30"
+                >
+                  {busy === 'note' ? 'Ukládám...' : 'Uložit poznámku'}
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-black/30 border border-white/10">
+              <h4 className="text-rasta-gold font-bold mb-3 text-sm uppercase tracking-wider">🗂️ Správa objednávky</h4>
+              <div className="flex flex-wrap gap-2">
+                {order.deletedAt ? (
+                  <>
+                    <button
+                      onClick={() => onAction('restore')}
+                      className="px-3 py-2 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-sm font-bold"
+                    >
+                      ♻️ Obnovit z koše
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`⚠️ TRVALE smazat ${order.orderId}?\n\nSmaže se i faktura a záznamy o tokenech. Akce je NEVRATNÁ.`)) {
+                          onAction('delete');
+                        }
+                      }}
+                      className="px-3 py-2 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 text-sm font-bold"
+                    >
+                      💀 Smazat trvale
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {order.archivedAt ? (
+                      <button
+                        onClick={() => onAction('unarchive')}
+                        className="px-3 py-2 rounded bg-white/5 hover:bg-white/10 text-sm"
+                      >
+                        ↩️ Zrušit archivaci
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onAction('archive')}
+                        className="px-3 py-2 rounded bg-white/5 hover:bg-white/10 text-sm"
+                      >
+                        📦 Archivovat
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onAction('trash')}
+                      className="px-3 py-2 rounded bg-red-500/10 text-red-300 hover:bg-red-500/20 text-sm"
+                    >
+                      🗑️ Do koše
+                    </button>
+                  </>
+                )}
+              </div>
+              {(order.archivedAt || order.deletedAt) && (
+                <p className="mt-3 text-[11px] text-gray-500">
+                  {order.deletedAt
+                    ? `V koši od ${formatDateTime(order.deletedAt)} — trvalé smazání odsud.`
+                    : `Archivováno ${formatDateTime(order.archivedAt)} — skryté z hlavního seznamu.`}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -566,7 +642,15 @@ export default function AdminOrdersPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
-  const [tab, setTab] = useState<'all' | 'pending' | 'paid' | 'shipped'>('all');
+  const [tab, setTab] = useState<'all' | 'pending' | 'paid' | 'shipped' | 'archived' | 'trash'>('all');
+  const [sort, setSort] = useState<AdminOrdersSort>('created_desc');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  const view =
+    tab === 'archived' ? 'archived'
+    : tab === 'trash' ? 'trash'
+    : 'active';
 
   const load = async () => {
     if (!isAuthenticated()) {
@@ -575,7 +659,7 @@ export default function AdminOrdersPage() {
       return;
     }
     setLoading(true);
-    const res = await listAdminOrders({ status, paymentStatus, search, page, limit: 100 });
+    const res = await listAdminOrders({ status, paymentStatus, search, view, sort, page, limit: 100 });
     if (res?.data) {
       setData(res.data);
       setError(null);
@@ -592,7 +676,77 @@ export default function AdminOrdersPage() {
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, paymentStatus, page]);
+  }, [status, paymentStatus, page, view, sort]);
+
+  const switchTab = (t: typeof tab) => {
+    setTab(t);
+    setPage(1);
+    setSelected(new Set());
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const runBulk = async (action: BulkOrderAction) => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    const label: Partial<Record<BulkOrderAction, string>> = {
+      paid: 'označit jako ZAPLACENÉ (spustí bonus payouty + emaily!)',
+      delete: 'TRVALE SMAZAT (nevratné!)',
+      trash: 'přesunout do koše',
+      restore: 'obnovit z koše',
+      archive: 'archivovat',
+      unarchive: 'zrušit archivaci',
+      cancelled: 'zrušit objednávky',
+    };
+    if (!window.confirm(`Opravdu ${label[action] ?? `nastavit stav „${action}"`} pro ${ids.length} objednávek?`)) return;
+    setBulkBusy(true);
+    const res = await bulkOrderAction(ids, action);
+    setBulkBusy(false);
+    if (res?.success && res.data) {
+      const failed = res.data.results.filter((r) => !r.ok);
+      if (failed.length > 0) {
+        alert(`Hotovo: ${res.data.okCount}/${res.data.total} OK.\nChyby:\n${failed.map((f) => `${f.orderId}: ${f.error}`).join('\n')}`);
+      }
+      setSelected(new Set());
+      setSelectedOrder(null);
+      load();
+    } else {
+      alert(`Akce selhala: ${res?.error ?? 'Network error'}`);
+    }
+  };
+
+  const runSingle = async (action: BulkOrderAction) => {
+    if (!selectedOrder) return;
+    setBulkBusy(true);
+    const res = await bulkOrderAction([selectedOrder.id], action);
+    setBulkBusy(false);
+    if (res?.success) {
+      setSelectedOrder(null);
+      load();
+    } else {
+      alert(`Akce selhala: ${res?.error ?? 'Network error'}`);
+    }
+  };
+
+  const toggleSort = (field: 'created' | 'total' | 'customer' | 'tokens') => {
+    setSort(
+      field === 'created' ? (sort === 'created_desc' ? 'created_asc' : 'created_desc')
+      : field === 'total' ? (sort === 'total_desc' ? 'total_asc' : 'total_desc')
+      : field === 'customer' ? (sort === 'customer' ? 'created_desc' : 'customer')
+      : sort === 'tokens_desc' ? 'created_desc' : 'tokens_desc'
+    );
+    setPage(1);
+  };
+
+  const arrow = (active: boolean, asc: boolean) =>
+    active ? (asc ? ' ↑' : ' ↓') : ' ↕';
 
   const debouncedSearch = useMemo(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -704,12 +858,18 @@ export default function AdminOrdersPage() {
         />
 
         <div className="flex gap-2 ml-auto">
-          <button
-            onClick={() => exportCSV(filteredOrders)}
+          <a
+            href={adminOrdersExportUrl({
+              status: status || undefined,
+              paymentStatus: paymentStatus || undefined,
+              search: search || undefined,
+              view,
+            })}
             className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-rasta-gold hover:text-rasta-gold text-xs transition"
+            title="Server-side export všech vyfiltrovaných objednávek (max 5000)"
           >
             📄 CSV
-          </button>
+          </a>
           <button
             onClick={() => exportJSON(filteredOrders)}
             className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:border-rasta-gold hover:text-rasta-gold text-xs transition"
@@ -726,32 +886,76 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4 border-b border-white/10">
+      <div className="flex gap-1 mb-4 border-b border-white/10 flex-wrap">
         <button
-          onClick={() => setTab('all')}
+          onClick={() => switchTab('all')}
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${tab === 'all' ? 'border-rasta-gold text-rasta-gold' : 'border-transparent text-gray-400 hover:text-white'}`}
         >
           📋 Vše <span className="ml-1 px-2 py-0.5 rounded-full bg-white/10 text-xs">{allOrders.length}</span>
         </button>
         <button
-          onClick={() => setTab('pending')}
+          onClick={() => switchTab('pending')}
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${tab === 'pending' ? 'border-rasta-gold text-rasta-gold' : 'border-transparent text-gray-400 hover:text-white'}`}
         >
           ⏳ Čeká <span className="ml-1 px-2 py-0.5 rounded-full bg-white/10 text-xs">{countPending}</span>
         </button>
         <button
-          onClick={() => setTab('paid')}
+          onClick={() => switchTab('paid')}
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${tab === 'paid' ? 'border-rasta-gold text-rasta-gold' : 'border-transparent text-gray-400 hover:text-white'}`}
         >
           ✅ Zaplaceno <span className="ml-1 px-2 py-0.5 rounded-full bg-white/10 text-xs">{countPaid}</span>
         </button>
         <button
-          onClick={() => setTab('shipped')}
+          onClick={() => switchTab('shipped')}
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${tab === 'shipped' ? 'border-rasta-gold text-rasta-gold' : 'border-transparent text-gray-400 hover:text-white'}`}
         >
           📦 Odesláno <span className="ml-1 px-2 py-0.5 rounded-full bg-white/10 text-xs">{countShipped}</span>
         </button>
+        <div className="flex-1" />
+        <button
+          onClick={() => switchTab('archived')}
+          className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${tab === 'archived' ? 'border-rasta-gold text-rasta-gold' : 'border-transparent text-gray-400 hover:text-white'}`}
+        >
+          🗂️ Archiv <span className="ml-1 px-2 py-0.5 rounded-full bg-white/10 text-xs">{data?.counts?.archived ?? 0}</span>
+        </button>
+        <button
+          onClick={() => switchTab('trash')}
+          className={`px-4 py-3 text-sm font-semibold border-b-2 transition ${tab === 'trash' ? 'border-red-500 text-red-400' : 'border-transparent text-gray-400 hover:text-white'}`}
+        >
+          🗑️ Koš <span className="ml-1 px-2 py-0.5 rounded-full bg-white/10 text-xs">{data?.counts?.trash ?? 0}</span>
+        </button>
       </div>
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-rasta-gold/10 border border-rasta-gold/30">
+          <span className="text-sm font-bold text-rasta-gold">{selected.size} vybráno</span>
+          {view === 'active' && (
+            <>
+              <button onClick={() => runBulk('paid')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold disabled:opacity-40">✅ Zaplaceno</button>
+              <button onClick={() => runBulk('processing')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-xs font-bold disabled:opacity-40">⚙️ Zpracování</button>
+              <button onClick={() => runBulk('shipped')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-xs font-bold disabled:opacity-40">📦 Odesláno</button>
+              <button onClick={() => runBulk('completed')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-green-500/20 text-green-300 hover:bg-green-500/30 text-xs font-bold disabled:opacity-40">🎉 Dokončeno</button>
+              <button onClick={() => runBulk('cancelled')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 text-xs font-bold disabled:opacity-40">❌ Zrušit</button>
+              <button onClick={() => runBulk('archive')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-white/10 hover:bg-white/15 text-xs font-bold disabled:opacity-40">🗂️ Archivovat</button>
+              <button onClick={() => runBulk('trash')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-red-500/10 text-red-300 hover:bg-red-500/20 text-xs font-bold disabled:opacity-40">🗑️ Do koše</button>
+            </>
+          )}
+          {view === 'archived' && (
+            <>
+              <button onClick={() => runBulk('unarchive')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-white/10 hover:bg-white/15 text-xs font-bold disabled:opacity-40">↩️ Zrušit archivaci</button>
+              <button onClick={() => runBulk('trash')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-red-500/10 text-red-300 hover:bg-red-500/20 text-xs font-bold disabled:opacity-40">🗑️ Do koše</button>
+            </>
+          )}
+          {view === 'trash' && (
+            <>
+              <button onClick={() => runBulk('restore')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold disabled:opacity-40">♻️ Obnovit</button>
+              <button onClick={() => runBulk('delete')} disabled={bulkBusy} className="px-3 py-1.5 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 text-xs font-bold disabled:opacity-40">💀 Smazat trvale</button>
+            </>
+          )}
+          <button onClick={() => setSelected(new Set())} className="ml-auto text-xs text-gray-400 hover:text-white">Zrušit výběr</button>
+        </div>
+      )}
 
       {loading && <p className="text-gray-400 py-8 text-center">Načítám...</p>}
       {error && <p className="text-red-400 py-8 text-center">{error}</p>}
@@ -766,13 +970,32 @@ export default function AdminOrdersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-gray-400 text-xs uppercase tracking-wider">
+                  <th className="p-3 w-8">
+                    <input
+                      type="checkbox"
+                      checked={filteredOrders.length > 0 && filteredOrders.every((o) => selected.has(o.id))}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelected(new Set(filteredOrders.map((o) => o.id)));
+                        else setSelected(new Set());
+                      }}
+                      className="w-4 h-4 accent-yellow-500"
+                    />
+                  </th>
                   <th className="p-3">ID</th>
-                  <th className="p-3">Datum</th>
-                  <th className="p-3">Zákazník</th>
+                  <th className="p-3 cursor-pointer select-none hover:text-white" onClick={() => toggleSort('created')}>
+                    Datum{arrow(sort === 'created_desc' || sort === 'created_asc', sort === 'created_asc')}
+                  </th>
+                  <th className="p-3 cursor-pointer select-none hover:text-white" onClick={() => toggleSort('customer')}>
+                    Zákazník{arrow(sort === 'customer', true)}
+                  </th>
                   <th className="p-3">Položky</th>
-                  <th className="p-3">Celkem</th>
+                  <th className="p-3 cursor-pointer select-none hover:text-white" onClick={() => toggleSort('total')}>
+                    Celkem{arrow(sort === 'total_desc' || sort === 'total_asc', sort === 'total_asc')}
+                  </th>
                   <th className="p-3">Platba</th>
-                  <th className="p-3">ZION</th>
+                  <th className="p-3 cursor-pointer select-none hover:text-white" onClick={() => toggleSort('tokens')}>
+                    ZION{arrow(sort === 'tokens_desc', false)}
+                  </th>
                   <th className="p-3">Stav</th>
                   <th className="p-3"></th>
                 </tr>
@@ -781,9 +1004,17 @@ export default function AdminOrdersPage() {
                 {filteredOrders.map((order) => (
                   <tr
                     key={order.id}
-                    className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition"
+                    className={`border-b border-white/5 hover:bg-white/5 cursor-pointer transition ${selected.has(order.id) ? 'bg-rasta-gold/5' : ''}`}
                     onClick={() => setSelectedOrder(order)}
                   >
+                    <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(order.id)}
+                        onChange={() => toggleSelect(order.id)}
+                        className="w-4 h-4 accent-yellow-500"
+                      />
+                    </td>
                     <td className="p-3 font-mono text-rasta-green text-xs">{order.orderId}</td>
                     <td className="p-3 text-gray-400 text-xs">{formatDate(order.createdAt)}</td>
                     <td className="p-3">
@@ -851,6 +1082,7 @@ export default function AdminOrdersPage() {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onRefresh={load}
+          onAction={runSingle}
         />
       )}
     </div>
