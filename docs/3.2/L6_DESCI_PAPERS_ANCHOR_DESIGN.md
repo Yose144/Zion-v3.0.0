@@ -1,7 +1,7 @@
 # L6 DeSci — `/l6-issobella/papers` repozitář + L1 hash anchor design
 
 **Audit item:** 6.B4 (druhá půlka; první = `L5_PROOF_OF_IMPACT.md` ✅ 30. 10.)
-**Datum:** 2026-10-31 · **Stav: implementováno 1. 11.** (`zion-issobella`: `db.rs` papers/batches, `anchor.rs`, 6 rout v `api.rs`; website proxy + `/l6-issobella/papers`; 23 testů ✅). Anchor sweep vyžaduje 👤 `ISS_ANCHOR_WALLET` + `ISS_ANCHOR_SENTINEL` — bez nich zůstávají papers v `submitted`/`anchoring` (fail-closed, žádný money-path). Pozn.: `POST /api/v1/papers` je zatím admin-gated (MVP); design cílí ZIS session submit — viz §API.
+**Datum:** 2026-10-31 · **Stav: implementováno 1. 11.** (`zion-issobella`: `db.rs` papers/batches, `anchor.rs`, 6 rout v `api.rs`; website proxy + `/l6-issobella/papers`; 23 testů ✅). Anchor sweep vyžaduje 👤 `ISS_ANCHOR_KEY` + `ISS_ANCHOR_ADDRESS` (+ `ISS_ANCHOR_SENTINEL`) — bez nich zůstávají papers v `submitted`/`anchoring` (fail-closed, žádný money-path). Submit je ZIS-gated dle designu — přes website proxy `/api/issobella/papers` (ZIS session povinná, `submitted_by` bound `zis:<user.id>` server-side); daemon-level `POST /api/v1/papers` zůstává interně admin-gated.
 
 ## Cíl
 
@@ -73,11 +73,13 @@ fetchable) nebo přijímá pre-computed hash s `verified_hash` flagem.
 
 ### v1 `memo-direct` (MVP)
 
-Jedna tx per paper: spender = `ISS_ANCHOR_WALLET` (daemon ops key, analog
-`ZION_DAO_TREASURY_KEY` custody patternu), memo =
-`ISSPAPER:v1:<blake3(content)>` (34 B prefix+hash), 0-value output na sentinel
-adresu `zion1issobella-anchor` (burn-style). Po broadcastu: `anchor_txid`,
-`anchor_height` (z `get_tx` po finality), status `anchored`.
+Jedna tx per paper: spender = anchor ops wallet (daemon ops key, analog
+`ZION_DAO_TREASURY_KEY` custody patternu; implementace: `ISS_ANCHOR_KEY` hex
+Ed25519 + `ISS_ANCHOR_ADDRESS` source/change), memo =
+`ISSPAPER:v1:<blake3(content)>` (34 B prefix+hash), dust output (1 flower)
+na sentinel adresu `ISS_ANCHOR_SENTINEL` (default = anchor adresa). Po
+broadcastu: `anchor_txid`, `anchor_height` (po `ISS_ANCHOR_FINALITY`
+confirmacích, default 6), status `anchored`.
 
 Náklad: 1 tx + fee per paper — OK při nízkém objemu (<10/den).
 
@@ -114,9 +116,14 @@ datum, anchor badge (`anchored @height` → explorer tx link), "Verify" link
 - Website page: 1 stránka + copy
 
 **Gating:** publish/anchor admin-gated (ops), submit ZIS-gated — žádný
-permissionless write do anchor path. `ISS_ANCHOR_WALLET` env-configured;
+permissionless write do anchor path. Implementováno jako
+`ISS_ANCHOR_KEY`+`ISS_ANCHOR_ADDRESS`+`ISS_ANCHOR_SENTINEL` env-configured;
 bez klíče status zůstává `submitted`/`pending_anchor` (vzor
-`awaiting_broadcast` z `treasury_tx.rs`).
+`awaiting_broadcast` z `treasury_tx.rs`). **Implementace ZIS submitu:**
+daemon `POST /api/v1/papers` vyžaduje admin klíč; veřejná cesta jde přes
+website proxy `POST /api/issobella/papers` — ZIS session povinná,
+`submitted_by` se binduje server-side `zis:<user.id>`, daemon klíč se
+injectuje z env (nikdy z klienta).
 
 ## Rizika / rozhodnutí k review
 

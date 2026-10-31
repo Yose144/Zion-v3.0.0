@@ -3,6 +3,8 @@
 alwaysApply: false
 ---
 
+> **🆕 2026-11-01 6.B4 DESCI PAPERS REPO + L1 HASH ANCHOR IMPLEMENTOVÁN + ROZPOR #13 VYŘEŠEN (commit `d9358015e`, ne-deployed):** **`zion-issobella`:** nové tabulky `papers`+`anchor_batches` (lifecycle `submitted→anchoring→anchored→published` +`anchor_failed`), nový `src/anchor.rs` (~560 LOC) — **memo-direct** `ISSPAPER:v1:<blake3>` (1 tx/paper, dust 1 flower na sentinel) + **merkle-batch** `ISSANCHOR:v1:<root32>` (1 tx/sweep, per-paper `merkle_path`); podpis/broadcast přes `ISS_ANCHOR_KEY`+`ISS_ANCHOR_ADDRESS` → `build_send_with_memo` (stejný custody pattern jako `ZION_DAO_TREASURY_KEY`); **reorg-safe confirm** po `ISS_ANCHOR_FINALITY`=6 conf (primární `getUtxos` na sentinel, fallback `getBlockByHeight` scan — dust output může být spotřebován další anchor tx); **bez klíčů = sweep no-op** (`awaiting_broadcast` vzor — žádný money-path se neaktivuje). **6 REST rout:** `GET/POST /api/v1/papers`, `GET /:id`, `GET /:id/proof` (hash+txid+height+mode+merkle path+verify hints), `POST /:id/publish`, `POST /api/v1/anchor/run`; admin fail-closed `x-api-key`/`Bearer` == `ISSOBELLA_API_KEY` (prázdný klíč = deny); public listing jen `published`, `?all=1` admin. **Website:** proxy `api/issobella/[[...path]]` (env `ISSOBELLA_API_URL`) — GET jen `papers|health|metrics`; **POST `papers` = ZIS-gated submit dle designu** (ZIS session povinná, `submitted_by` bound `zis:<user.id>` server-side, daemon klíč `ISSOBELLA_API_KEY` injectován z env — publish/anchor se přes proxy nepropagují), stránka `/l6-issobella/papers` (bilingual, anchor badge → explorer tx link), CTA z hlavní Issobella stránky. **Rozpor #13 smazán:** `ZionDexDashboard`/`RecentSwaps`/`TransactionStatus` — volaly neexistující `/swaps` routy v `warpd` (legacy Router surface), nuloví konzumenti mimo sebe; `/swaps` se nedoplňuje — reálné swapy přes V3 `tx_hash` po K2. **Testy:** 23/23 issobella (11 anchor + 12 db), `tsc --noEmit` čistý, `next build` 342/342. **Docs:** `REPORTS/REPORT_2026-11-01_6B4_DESCI_PAPERS_ANCHOR.md`, design doc → „implementováno" + env mapping (`ISS_ANCHOR_WALLET`→`ISS_ANCHOR_KEY`/`ISS_ANCHOR_ADDRESS`), plan 6.B4 truth-sync, NIRVANA changelog v1.5 + #13→✅. **👤 aktivace:** `ISS_ANCHOR_KEY`/`ISS_ANCHOR_ADDRESS`/`ISS_ANCHOR_SENTINEL` (+`ISSOBELLA_API_KEY` pro admin routy, `ISSOBELLA_API_URL` pro web proxy).
+
 > **🆕 2026-10-31 (3) OPS PROHLÍDKA — ROZPOR #3 VYŘEŠEN, chain_live INCIDENT VYSVĚTLEN, BACKUP RETENCE IMPLEMENTOVÁNA (−35 G):** **Rozpor #3 uzavřen:** `zion-v31-node.service` na EDGE2 je `enabled` — symlink `multi-user.target.wants` vytvořen dnes 10:59:59 (+1 s restart 11:00:00), spolu s `zion-v31-multichain` (enabled od 21.10.). **G8 incident #2 root cause = právě tento plánovaný restart:** primary node na EDGE2 dole ~16 s (SIGTERM→UTXO reload→RPC listen), chain-tunnel kanály `connect refused` → probe `chain_live=0` na 1 vzorek (10:00:17–10:01:17Z, 60 s). Ne anomálie — probe korektně zachytil primary-path outage; do evidence zapsat jako „planned restart (rozpor #3 fix)". **G8 run #6 mezistav:** uptime 99,7786 %, 2 incidenty (240 s pool + 60 s chain_live), 0 kritických, evidence 100 %, gate pending → 28.11. **Backup retence na EDGE:** retence ve scriptu existovala (14 runů×4h=2,3 d), ale **102 orphan staging dirs `*_TIMESTAMP` z přerušených běhů 10-21→10-30 = 35 G** mimo retenci → smazáno (historie pokrytá tarbally + weeklies W41–W44); disk 97 G→67 G (67 %→46 %), `/opt/zion/backups` 42 G→7,8 G. `backup-edge.sh` patch: `RETENTION_DAILY 14→42` (~7 d ≈ ~19 G) + self-healing sweep orphanů `-mmin +1440`, DEPLOYED na EDGE (bak `*.bak-20261031`). **`zion-g8-probe.service`:** `Environment=` bylo v `[Install]` = ignorováno → přesunuto do `[Service]` (stejná hodnota jako default, žádná změna chování, verify warning pryč), DEPLOYED+restartováno, metriky live (`chain_live=1`, quorum=3). **Commity:** `5d24da5cf` ops (backup+g8-probe+gitignore `apps/Stripe.md`), `c74b83bbc` marketplace `NEXT_PUBLIC_SITE_URL` build pin. ⚠️ **Paralelní session commituje zvlášť** (`cdd205e69` scene previews, `20cd0c6c4`/`d91beb9b3` W3 docs) a má rozpracovanou MarketPlace dávku (Stripe admin/orders/bonus-payout/StarfighterViewer) — ponecháno necommitnuté jako její WIP. EDGE: 15 svc/0 failed, EDGE2: 26 svc+7 timerů/0 failed, chain 103 881, HA watchdog `ok (api=1 stratum=1)`. Fail2ban self-DoS reálný — SSH batchovat nebo použít `zion-v6` (IPv6 alias nebyl banován).
 
 > **🆕 2026-10-31 (1) HLOUBKOVÁ REVIZE + KANONICKÝ PLÁN v3.3 „KRÁLOVSTVÍ SRDCE" (W0 truth-sync):** **Nový jediný vstupní bod plánování:** [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) v1.1 v rootu — **router, ne 14. plán**: cituje a opravuje existující dokumenty, neduplikuje. Obsahuje §1 ověřený stav z živých sond (obě EDGE), §2 registr **12 rozporů** s vlastníkem+stavem (nahrazuje `MAP §8`), §3 vlny **W0–W6**, §4 kritická cesta, §5 brány **KS-1…KS-9** (úmyslně jiná ID než DoD `V33-1…11`, mapování `KS-1`=`V33-1`, `KS-6`=`V33-8`, `KS-9`=`V33-9`), §6 hranice (co plán **nedělá**), §7 změnový log. **Metoda:** všech 3 `explore` subagenti spadli na usage limit → revize dělána vlastními cílenými rešeršemi (plánové docs v3.3 + živé sondy EDGE/EDGE2), žádné delegování. **3 rozhodnutí 👤 (zamčeno):** (1) **RC kvalita 3.2 first** — W4 unifikace v tomto okně jen read-only návrh, implementace po RC sign-off; (2) **Pool HA dokumentovat + oficiálně aktivovat** (ne rozebírat), podmíněno fencing analýzou; (3) ~~`api.`/`updates.`/`dex.` → smazat DNS + 301 na app~~ → **revidováno po živých sondách:** `api.` a `dex.` **nejsou mrtvé** (služby běží na EDGE2: `zion-hiran-gateway` :8007, warpd :8454; DNS chybně na EDGE = TLS SAN mismatch) → 👤 rozhodl `api.` **publikovat**, `dex.` **doplnit `/prices/:token/history`** + publikovat, jen `updates.` **smazat DNS**. **W0 hotovo:** `CHECKLIST` (G8 run #6 + HA 2.S5 rozhodnuto + DoD hlavička 31. 10. + V33-1), `MAP` (§6 kotvy přepsány, §7 bod 10 → HA rozhodnuto, §8 → odkaz na plán), `ROADMAP.md` (snapshot 2026-08-31 → 2026-10-31, výška 23 640+ odstraněna — odkaz na `StatusV3.md`, „Mainnet Alpha" → Mainnet Beta), `docs/3.2/3.2.1-3.2.9_PLAN.md` (2.S5), `StatusV3.md` (G8 #6 + HA standby stack), `infra/RUNBOOK.md` (Pool HA + DNS mapa), `3.2.1-3.2.9` 2.S5, repo hygiena (`archive/` + `.gitignore`). **⚠️ Zjištění z revize (nezapsaná v žádném dokumentu):** (a) **`zion-v31-node.service` na EDGE2 je `disabled`** — startuje jen implicitně přes `WantedBy=zion-v31-multichain.service` (pool na EDGE2 disabled) = křehké po rebootu, rozpor #3, čeká 🔀 `systemctl enable` + explicitní `WantedBy=multi-user.target`; (b) **HA stack existuje a nikdo o něm nevěděl:** `zion-pool-standby.service` (`/opt/zion/bin/zion-pool-standby`, inactive) + `zion-pool-ha-watchdog.timer` 30 s + `zion-pool-standby-sync.timer` 60 s + `zion-pool-standby-dbsync.timer` 60 min — **fencing je nejrizikovější místo plánu** (promote při zpomalení místo smrti = dvojí výplata) → podmínka aktivace = promote jen po prokázaném failu + explicitní stop primary, staged `log-only` → 👤 `armed`; (c) **EDGE mining zátěž 8 threadů na 4 jádrech** (`zion-fallback-miner` 147 % + `zion-v31-miner` 83 %, oba `Nice=19`) = záměrná pool/block liveness, ne bug — ale nebylo to nikde vysvětlené (rozpor #2, 8.B5 zůstává otevřený jako trade-off mining vs. stabilita); (d) **`/opt/zion/backups` na EDGE = 42 G ze 101 G** (dominantní konzument, retenční politika chybí, 👤); (e) **`explorer.` a `nirvana.` zůstávají na EDGE** (`:3010`, `User=zion`) — web-tier cutover není úplný, `dashboard.` 401 = živé; (f) **tři kotvy se sbíhají do 27.–28. 11.** — konec G8 #6 (28. 11. 23:46Z), expirace certu `auth.` (25. 11.), výška 144 000 = premine timelock slotů 6–8 → **proto W1 končí 24. 11.**, poslední 4 dny jsou rezerva na 👤 sign-off. **G8 run #6** `g8-20261029T234617Z`: **99,7976 %**, evidence 100 %, **1 incident 240 s** (30. 10. 21:00:17–21:04:17Z, `pool_http`+`pool_stratum`), 0 kritických, `gate_status=pending`, cíl 28. 11. 23:46Z. Chain height 103 595, `node_version 3.2.0`, wire ID `3.1.0-alpha` záměrně. **EDGE2** 23 běžících `zion-*` / 0 failed / disk 58 %; **EDGE** 13 běžících / 0 failed / disk 70 %. Nic necommitnuto v době sepsání.
@@ -146,61 +148,46 @@ alwaysApply: false
 - **Edge IPv6 + fail2ban lockout (2026-08-17):** Edge IPv6 je funkční fallback; při rychlých SSH auditech může `fail2ban` `sshd` jail zabanovat operátorskou IPv4/IPv6, pokud není v `ignoreip`. Aktuální operátorská IP byly přidány do `V31/AGENTS.md` `OPERATOR_IPS`. `zion-v31-multichain` je active; `zion-v31-miner` běží v CPU-only režimu po fixu enumerace GPU — viz aktuální `StatusV3.md`.
 - **Watchdog scripts:** the canonical unified script is [`scripts/watchdog.sh`](./scripts/watchdog.sh) with modes `edge` (default), `backup`, and `new-server`. `infra/edge-deploy/watchdog.sh` is a thin wrapper that dispatches to it (the archived `V3/deploy/new-server/zion-watchdog.sh` wrapper now lives under `archive/V3/`).
 
-## public/ — Open-source public repository (git subtree)
+## public/ — Open-source public repository (curated export, NOT git subtree)
 
-The `public/` directory is a **git subtree** of the public repository `github.com/Zion-TerraNova/v3-Mainnet`, embedded directly in the private repo. Both repos are kept in sync via subtree push/pull — no separate clone needed.
+> **Aktualizováno 2026-11-01 (W0 rozpor #12):** tracked `public/` subtree zanikl v říjnu 2026. Nový model = **curated export** přes `scripts/ops/public-export.sh` + manifest. Workflow: [`docs/3.2/PUBLIC-SYNC-WORKFLOW.md`](docs/3.2/PUBLIC-SYNC-WORKFLOW.md). `REPO-MAP.md` §"Public repo sync (8.B7)" je kanonický popis. `archive/PUBLIC/` drží snapshot bývalého veřejného subsetu (untracked clone z `init`).
 
-- **Remote name:** `public` → `https://github.com/Zion-TerraNova/v3-Mainnet.git` (public, MIT license)
-- **Remote name:** `origin` → `https://github.com/Yose144/Zion-v3.0.0.git` (private)
-- **Local path:** `public/` (in repo root, tracked by `origin`)
-- **Current status:** **Mainnet Beta** — v3.0.5-beta live, official public launch postponed (TBD)
+- **Source of truth (private):** `origin` → `https://github.com/Yose144/Zion-v3.0.0.git`
+- **Public mirror:** `github.com/Zion-TerraNova/v3-Mainnet` (MIT license) — aktualizuje se přes export skript, NE přes `git subtree`.
+- **Lokální pracovní kopie curated exportu:** `PUBLIC/` (845 MB, untracked) + `archive/PUBLIC/` (snapshot).
+- **Aktuální status:** Mainnet Beta — v3.2.0-beta.1, veřejný launch odložen (TBD).
 - **Network status badge:** `![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange.svg)`
 
-### Subtree commands
+### Export / sync workflow
 
 ```bash
-# Pull latest changes from public repo into public/
-git subtree pull --prefix=public public/main --squash
+# 1. Spustit curated export (sestaví manifest + kopíruje povolené soubory)
+bash scripts/ops/public-export.sh
 
-# Push local changes in public/ to the public repo
-git subtree push --prefix=public public main
+# 2. Audit (0 FP po allowlistu)
+#    public-scan-allowlist.txt + value-anchored secrets scanner
 
-# Fetch public remote (update refs without merging)
-git fetch public
+# 3. Push do veřejného mirroru (pouze po 👤 review gate)
+#    git subtree push UŽ SE NEPOUŽÍVÁ — export skript generuje čistý strom
 ```
 
-### What's in public/
+### Co se exportuje (curated subset)
 
-The public repo contains a **curated subset** of the private repo — only files safe for public release:
-- `V3/` — L1 core, L2 contracts, bridge, DAO, atomic-swap, cosmic-harmony, pool, miner, CLI, SDK, docs
-- `docs/` — Whitepaper, Ethics & Philosophy, Bodhisattva Vow codex, genesis.md, legal docs (disclaimer, terms, privacy, jurisdiction, token disclosure), security disclosures, multilingual READMEs (EN/CS/ES/FR/PT), stargate assets
-- `evoluZionV2.md` — PoW → Proof-of-Care vision
-- Root files: `README.md`, `README_FULL.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE` (MIT), `Cargo.toml`, `.gitignore`
+- `V3/` (L1 core, L2 contracts, bridge, DAO, atomic-swap, cosmic-harmony, pool, miner, CLI, SDK, docs)
+- `docs/` (Whitepaper, Ethics & Philosophy, Bodhisattva Vow codex, genesis.md, legal docs, security disclosures, multilingual READMEs, stargate assets)
+- `evoluZionV2.md`, root soubory (README, SECURITY, CONTRIBUTING, CODE_OF_CONDUCT, LICENSE, Cargo.toml, .gitignore)
 
-### What's NOT in public/ (stays private)
+### Co NIKDY nejde do public/
 
-- `apps/` — website, desktop agent, mobile app source
-- `ZION_OS/` — dashboard, monitoring, operational scripts
-- `ZionStart/` — bootstrap tooling
-- `PoC-lab/` — research/proof-of-concept code
-- `HiranV2.x/` — AI layer (IP protection)
-- `infra/edge-deploy/` — server deploy configs
-- `scripts/` — ops scripts (285 files)
-- `docs/3.0.4/`, `docs/3.0.5/` — internal docs
-- `docs/TerraNova/` — full TerraNova book manuscripts
-- `docs/Zohar/` — internal Zohar documentation
-- `docs/docs2.9/`, `docs/2.9.7/`, `archive/` — legacy/historical docs
-- `docs/3.0.5/3.0.5.md`, `StatusV3.md`, `ROADMAP.md`, `AGENTS.md` — internal status and planning
-- Server configs, deploy scripts, environment files
-- Private keys, mnemonics, GPG private keys
+- `apps/`, `ZION_OS/`, `ZionStart/`, `PoC-lab/`, `HiranV2.x/`, `infra/edge-deploy/`, `scripts/` (kromě export skriptu), `docs/3.0.4/`, `docs/3.0.5/`, `docs/TerraNova/`, `docs/Zohar/`, `docs/docs2.9/`, `archive/`, `StatusV3.md`, `ROADMAP.md`, `AGENTS.md`, server configs, env files, klíče.
 
-### Rules for public/ edits
+### Pravidla pro public/ export
 
-1. **Never push secrets** — no private keys, mnemonics, server IPs (except public RPC `62.171.141.136`), internal hostnames, SSH keys
-2. **Sync after private repo changes** — if you change `V3/` code or docs that also exist in `public/`, sync the change to `public/` and push to both remotes
-3. **Two-step push** — commit to `origin` (private) first, then `git subtree push --prefix=public public main` to publish
-4. **GPG signing** — if `docs/genesis.md` is edited, re-sign with `gpg --detach-sign` using the Yose creator key (`9018F94ACE7C93CF549612E225557B7072678D25`, GNUPGHOME `/tmp/zion_gpg/`)
-5. **Release process** — see "GitHub Release process" below
+1. **Nikdy neposílat secrets** — žádné privátní klíče, mnemoniky, server IP (kromě veřejného RPC `62.171.141.136`), interní hostname, SSH klíče.
+2. **Value-anchored scanner** — `key = "val"` jen s hodnotou; `s.token ==`, `api_key=""`, `env::var` se nehlásí. Allowlist: `public-scan-allowlist.txt`.
+3. **Review gate** — export jde do mirroru jen po explicitním 👤 schválení (push = 👤 gate).
+4. **GPG signing** — pokud se edituje `docs/genesis.md`, znovu podepsat detached signaturou Yose creator key (`9018F94ACE7C93CF549612E225557B7072678D25`, GNUPGHOME `/tmp/zion_gpg/`).
+5. **Release process** — viz "GitHub Release process" níže.
 
 ### GitHub Release process
 
