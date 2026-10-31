@@ -370,7 +370,54 @@ Text (cs/en), který musí být v appce:
 
 ---
 
-## 13. Změnový log
+## 13. Ekosystémové změny relevantní pro desktop (2026-10-31 / 11-01)
+
+> Tyto změny vznikly v paralelních stopách (MarketPlace, nirvana, shop). Nejsou součástí desktop buildu, ale desktop na ně navazuje — zapsáno, aby GPU stroj nezačínal se slepým místem.
+
+### 13.1 MarketPlace — časově omezené token kampaně (commit `6ad1d4e0f`, DEPLOYED)
+
+- `book-001` 144 000 ZION je **kampaň, ne permanentní hodnota** — `ShopSetting campaign:<externalId>` = `{"tokens":144000,"endsAt":"2026-12-24T23:59:59+01:00","label":"🛡️ Genesis Guardian — vstup"}`.
+- `src/lib/shop-campaign.ts`: `getActiveTokenCampaigns()` čte `campaign:*` settings a filtruje `endsAt > now`; `campaignTokens()` vrací override.
+- Aplikováno na **products API** (display) i **orders route** (server-side `zionTokens` snapshot — aktivní kampaň přebije `product.tokens`, fallback 1 Kč = 1 ZION).
+- Po expiraci se overlay ignoruje automaticky — žádný revert, žádný scheduler.
+- Base `book-001.tokens` = **1440** (DB i seed); `zionTokens` je snapshot při vytvoření.
+- Copy fix: „tekton" → „tesař"/„carpenter" (cs+en). Badge „🛡️ Genesis Guardian" zůstává.
+- ⚠️ ShopSetting `id` nemá DB default (cuid generuje Prisma) — raw SQL INSERT musí dodat `id`/`createdAt`/`updatedAt`.
+
+**Dopad na desktop:** pokud desktop zobrazuje shop produkty nebo bonusy, musí číst `zionTokens` ze serveru (snapshot), ne hardcodovat 144k. Po 24. 12. 2026 se kampaň vypne sama.
+
+### 13.2 Shop paid-path + bonus auto-payout (commit `a7b083d92`)
+
+- Admin mark-paid (bank transfer) nyní posílá invoice `paid` + `distributeOrderBonus` (dřív jen email).
+- Paid transition = **atomický claim** (`updateMany … paymentStatus != 'paid'`) → Stripe retry ani souběžné potvrzení neduplikují email/history.
+- `sendZionPayout` vyžaduje `TX hash` + `Broadcast OK` (exit 0 bez proof = failure → žádný phantom `distributed`).
+- **CLI v3-TX bug fix:** `/opt/zion/bin/zion` byl 3.1.0-beta; `cargo build -p zion-cli` → **zion 3.2.0** na EDGE2.
+- **W3.4 ✅:** payout `zion1d2k5…` = 187 197 351 ZION / 95 118 UTXO; `getBalance` = account-model (hlásí 0), wallet balance měřit **`getUtxos`**.
+- Auto-payout: `POST /api/shop/bonus-sweep` (Bearer `SHOP_CONFIRM_SECRET`), watcher každých 300 s, lazy custodial wallet.
+
+**Dopad na desktop:** desktop payout path (pokud existuje) musí používat **zion 3.2.0 CLI** (native v3 TX builder), ne starý 3.1.0-beta. Bundle v `resources/zion` je 3.2.0 (builděný 1. 11.).
+
+### 13.3 Rasta e-maily (commit `3ec2900d9`)
+
+- Sdílený `buildRastaEmail` shell (V2 vzhled) pro všech 7 typů: admin notif, payment conf, invoice+PDF, bonus (txHash mono box), shipping, wallet seed — dřív jen order confirmation.
+
+### 13.4 Hiran usedá do Slunce — nirvana portál `hiran` (commit `906f3ee8f`, DEPLOYED `20261031T190057Z`)
+
+- Nový portál `hiran` (L3) se slotem `sun` v `apps/nirvana`: dlaždice v HoloConsole, drawer, deep-link `#portal=hiran`.
+- Fokus `earth | sun`, Śrí jantra pečeť, lotos koruna, 4 stavy (`idle/thinking/offline/error`).
+- Okno `HiranPortal` + proxy **`/api/hiran`** (GET probe, POST dotaz na veřejné `app.zionterranova.com/api/ai-chat`, per-IP 20/min, žádné klíče) — offline model = **200 `{offline:true}`**, ne 503.
+- Měřeno (M1, ANGLE Metal): 46–59 fps, 46–47 draw calls, 52,8 k tris.
+
+**Dopad na desktop:** desktop `ai-chat-ask` IPC používá `HIRAN_INFERENCE_URL` (default `http://localhost:8002`). Pokud PC inference neběží, fallback je EDGE2 CPU (`zion-hiran-inference`). Pro VIP/Public je AI chat volitelný — nerozbíjí mining.
+
+### 13.5 VR test (commit `a7b083d92` doplněk)
+
+- Produkt `vr-001` (100k Kč / 1M bonus) + `ORD-VR-*` → yosef.hubalek@gmail.com → **1 000 000 ZION `73d6d271…` confirmed block 104061** (~11 s broadcast) → cancelled.
+- `ORD-RASTA-*` testnul všech 7 rasta emailů live → cancelled, stock vrácen.
+
+---
+
+## 14. Změnový log
 
 | Datum | Změna |
 |---|---|
@@ -378,3 +425,4 @@ Text (cs/en), který musí být v appce:
 | 2026-11-01 | v1.1 — **rozhodnutí 👤 zapracována:** licence **jednorázová lifetime**, žádný trial; auto-update dolaď (VIP feed + GitHub fallback + rollback); Public **BOOST vždy ON** (QTC GPU + PRL CPU, výnos → grow/liquidity, uživatel jen ZION, jasné vysvětlení v UI); VIP plná Trinity podpora; Windows OpenCL build + code signing **odloženo na jiný stroj s CUDA/OpenCL GPU** (§6.4). |
 | 2026-11-01 | v1.2 — **D0 hotovo:** `--edition vip\|public`, VIP bez `public_build` (ověřeno: `aarch64` binary obsahuje ZANO/QTC/PEARL/VRSC), public-miner přesunut z archivu, update-server přesunut do `apps/`. **D4 kód:** VIP license-gated update server + GitHub fallback; deploy artefakty (env, systemd, nginx). **D5:** BOOST vždy on (`default_stream3_enabled=true`), UI vysvětlení v public wizardu. **PRL blocker nalezen:** `ExternalCoin::Pearl` = `disabled`. Mac aarch64 + Windows CPU-only miner buildy hotové. |
 | 2026-11-01 | v1.3 — **D5 revenue dashboard hotov:** `ZION_OS/revenue-dash/` (Flask, port 8770) čte live pool API, zobrazuje 11 BOOST coinů + ZION, hashrate/accepted/fee/pool wallet, auto-refresh. Live ověřeno: 12 coinů, 465k accepted, 12,3 PH/s (PRL dominuje). Deploy unit přidán. |
+| 2026-11-01 | v1.4 — **§13 ekosystémové změny:** MarketPlace token kampaně (144k do 24. 12. 2026, `campaign:*`), shop paid-path + bonus auto-payout (CLI 3.2.0 fix), rasta e-maily, Hiran Sun portál (nirvana `/api/hiran`), VR test. Dopad na desktop: shop čte `zionTokens` snapshot, payout vyžaduje zion 3.2.0 CLI, AI chat fallback. |

@@ -85,7 +85,23 @@
 
 ---
 
-## 5. Commity
+## 5. Ekosystémové změny (kontext pro GPU build)
+
+Paralelní stopy (MarketPlace, nirvana) dodaly změny, na které desktop navazuje:
+
+| Změna | Commit | Dopad na desktop |
+|---|---|---|
+| Time-boxed token kampaně — `book-001` 144k ZION do 24. 12. 2026, `campaign:*` ShopSetting | `6ad1d4e0f` | desktop shop musí číst `zionTokens` snapshot ze serveru, ne hardcodovat |
+| Shop paid-path + bonus auto-payout + CLI 3.2.0 fix | `a7b083d92` | desktop payout path vyžaduje **zion 3.2.0 CLI** (bundle 1. 11. = 3.2.0) |
+| Rasta e-maily (7 typů) | `3ec2900d9` | — |
+| Hiran Sun portál (nirvana `#portal=hiran`, `/api/hiran` proxy) | `906f3ee8f` | desktop `ai-chat-ask` používá `HIRAN_INFERENCE_URL`; fallback EDGE2 CPU |
+| VR test (1M ZION bonus, block 104061) | `a7b083d92` | — |
+
+Detail: [`DESKTOP-AGENT-COMPLETE-PLAN.md`](../../../DESKTOP-AGENT-COMPLETE-PLAN.md) §13.
+
+---
+
+## 6. Commity
 
 | Commit | Obsah |
 |---|---|
