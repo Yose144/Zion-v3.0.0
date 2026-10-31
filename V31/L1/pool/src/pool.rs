@@ -117,7 +117,12 @@ pub struct ShareDedup {
 
 impl ShareDedup {
     fn new(counters: SessionCounters) -> Self {
-        Self { sets: HashMap::new(), order: std::collections::VecDeque::new(), tx: None, counters }
+        Self {
+            sets: HashMap::new(),
+            order: std::collections::VecDeque::new(),
+            tx: None,
+            counters,
+        }
     }
 
     /// Read-only dedup probe: `true` when this (job bucket, tag) was
@@ -434,12 +439,15 @@ impl Pool {
         }
     }
 
-    /// Persist the payout ledger next to the PPLNS state file. Best-effort:
-    /// write failures are logged and counted, never fatal — the pool must
-    /// keep serving miners even if the disk hiccups.
-    fn persist_payout_ledger(&mut self) {
+    /// Persist the payout ledger next to the PPLNS state file.
+    /// Returns false when the durable write fails — callers that drain
+    /// state (e.g. `take_pending_payouts`) must treat that as a hard
+    /// failure and refuse the drain; additive mutations (requeue,
+    /// mark-sent) may still treat it as best-effort since their
+    /// in-memory state remains correct either way.
+    fn persist_payout_ledger(&mut self) -> bool {
         let Some(path) = self.payout_state_path() else {
-            return;
+            return true;
         };
         let state = PayoutLedgerState {
             paid_block_heights: self.paid_block_heights.iter().copied().collect(),
@@ -473,7 +481,9 @@ impl Pool {
         if let Err(e) = write() {
             self.pplns_persist_failures_total = self.pplns_persist_failures_total.saturating_add(1);
             tracing::warn!("payout ledger persist failed {}: {}", path.display(), e);
+            return false;
         }
+        true
     }
 
     pub fn next_job_id(&self) -> u64 {
@@ -496,12 +506,18 @@ impl Pool {
     /// [`ShareDedup::seen`]); kept for callers already holding the pool
     /// lock.
     fn share_seen(&self, job_bucket: &str, tag: u64) -> bool {
-        self.dedup.lock().expect("dedup lock poisoned").seen(job_bucket, tag)
+        self.dedup
+            .lock()
+            .expect("dedup lock poisoned")
+            .seen(job_bucket, tag)
     }
 
     /// Dedup claim delegating to the shard (see [`ShareDedup::mark`]).
     fn mark_share_seen(&mut self, job_bucket: &str, tag: u64) -> bool {
-        self.dedup.lock().expect("dedup lock poisoned").mark(job_bucket, tag)
+        self.dedup
+            .lock()
+            .expect("dedup lock poisoned")
+            .mark(job_bucket, tag)
     }
 
     /// Attach the share store for dedup persistence and rebuild the
@@ -509,7 +525,10 @@ impl Pool {
     /// failure is non-fatal — the pool starts with an empty set exactly
     /// as it did before persistence existed.
     pub fn attach_dedup_store(&mut self, store: Arc<crate::store::ShareStore>) {
-        self.dedup.lock().expect("dedup lock poisoned").attach_store(store);
+        self.dedup
+            .lock()
+            .expect("dedup lock poisoned")
+            .attach_store(store);
     }
 
     /// Reserve a dedup slot for an external share BEFORE it is forwarded
@@ -534,19 +553,16 @@ impl Pool {
         let (chain, address) = self.worker_payout_target(worker_name);
         let mut pl = self.pplns.lock().expect("pplns lock poisoned");
         pl.register_address_with_chain(worker_name, &address, &chain);
-        pl.record_share_with_diff_for_coin(
-            worker_name,
-            worker_name,
-            height,
-            weight.max(1),
-            coin,
-        );
+        pl.record_share_with_diff_for_coin(worker_name, worker_name, height, weight.max(1), coin);
     }
 
     /// Dedup for external (AuxPoW) legs — `tag` is any stable proof/nonce
     /// string; it is hashed to u64 for storage. Returns `false` on replay.
     pub fn mark_external_share_seen(&mut self, coin: &str, job_id: &str, tag: &str) -> bool {
-        self.dedup.lock().expect("dedup lock poisoned").mark_external(coin, job_id, tag)
+        self.dedup
+            .lock()
+            .expect("dedup lock poisoned")
+            .mark_external(coin, job_id, tag)
     }
 
     fn parse_nonce(nonce_hex: &str) -> Result<u64, PoolError> {
@@ -605,13 +621,7 @@ impl Pool {
         let (chain, address) = self.worker_payout_target(worker_name);
         let mut pl = self.pplns.lock().expect("pplns lock poisoned");
         pl.register_address_with_chain(worker_name, &address, &chain);
-        pl.record_share_with_diff_for_coin(
-            worker_name,
-            worker_name,
-            height,
-            weight.max(1),
-            coin,
-        );
+        pl.record_share_with_diff_for_coin(worker_name, worker_name, height, weight.max(1), coin);
         true
     }
 
@@ -1014,12 +1024,10 @@ impl Pool {
     /// than silently dropping the interval's mutations.
     pub fn pplns_save_finish(&mut self, ok: bool) {
         if ok {
-            self.pplns_persist_success_timestamp_s =
-                crate::telemetry::now_unix_seconds();
+            self.pplns_persist_success_timestamp_s = crate::telemetry::now_unix_seconds();
         } else {
             self.pplns.lock().expect("pplns lock poisoned").mark_dirty();
-            self.pplns_persist_failures_total =
-                self.pplns_persist_failures_total.saturating_add(1);
+            self.pplns_persist_failures_total = self.pplns_persist_failures_total.saturating_add(1);
         }
     }
 
@@ -1027,7 +1035,10 @@ impl Pool {
     pub fn restore(&mut self) -> std::io::Result<()> {
         if let Some(path) = self.config.state_path.as_ref() {
             if let Some(snap) = PplnsEngine::load_from_path(path)? {
-                self.pplns.lock().expect("pplns lock poisoned").restore(snap);
+                self.pplns
+                    .lock()
+                    .expect("pplns lock poisoned")
+                    .restore(snap);
             }
         }
         let ledger = Self::load_payout_ledger(self.config.state_path.as_deref())?;
@@ -1051,8 +1062,14 @@ impl Pool {
             .into_iter()
             .partition(|(_, p)| p.chain() == "zion");
         self.pending_payouts = ext;
-        if !zion.is_empty() {
-            self.persist_payout_ledger();
+        if !zion.is_empty() && !self.persist_payout_ledger() {
+            // Drain-persist failed — hand nothing to the sweeper. The
+            // in-memory queue and the on-disk ledger still agree, so a
+            // crash mid-submit resurrects the payouts for a re-sweep
+            // (at-most-once preserved); handing them out on a failed
+            // persist was the double-pay window (4.B3).
+            self.pending_payouts.extend(zion);
+            return Vec::new();
         }
         zion
     }
@@ -1182,14 +1199,17 @@ impl Pool {
     }
 
     /// Drain queued payouts for a non-ZION chain (`"quantus"`).  ZION
-    /// entries and other chains stay queued.
+    /// entries and other chains stay queued. Same drain-persist ordering
+    /// as `take_pending_payouts`: a failed durable write refuses the
+    /// handout so a crash can never resurrect already-drained payouts.
     pub fn take_external_payouts(&mut self, chain: &str) -> Vec<(u64, PayoutEntry)> {
         let (taken, kept): (Vec<_>, Vec<_>) = std::mem::take(&mut self.pending_payouts)
             .into_iter()
             .partition(|(_, p)| p.chain() == chain);
         self.pending_payouts = kept;
-        if !taken.is_empty() {
-            self.persist_payout_ledger();
+        if !taken.is_empty() && !self.persist_payout_ledger() {
+            self.pending_payouts.extend(taken);
+            return Vec::new();
         }
         taken
     }
@@ -1254,39 +1274,43 @@ pub fn recover_pending_coin_revenue(pool: &mut Pool, store: &ShareStore) -> anyh
 
     let mut recovered = 0;
     for event in pending_events {
-        let (emitted, emitted_total, payouts) =
-            if pool.pplns.lock().expect("pplns lock").has_applied_revenue_event(&event.event_id) {
-                let payouts = pool.pending_revenue_payouts(&event.event_id);
-                let outbox_count = store.coin_revenue_outbox_count(&event.event_id)?;
-                let emitted = event.emitted.max(payouts.len());
-                if outbox_count < emitted {
-                    anyhow::bail!(
+        let (emitted, emitted_total, payouts) = if pool
+            .pplns
+            .lock()
+            .expect("pplns lock")
+            .has_applied_revenue_event(&event.event_id)
+        {
+            let payouts = pool.pending_revenue_payouts(&event.event_id);
+            let outbox_count = store.coin_revenue_outbox_count(&event.event_id)?;
+            let emitted = event.emitted.max(payouts.len());
+            if outbox_count < emitted {
+                anyhow::bail!(
                     "native revenue event {} is snapshotted but its payout outbox is incomplete",
                     event.event_id
                 );
-                }
-                let emitted_total = if event.emitted > 0 {
-                    event.emitted_total
-                } else {
-                    payouts
-                        .iter()
-                        .map(|(_, payout)| payout.amount)
-                        .fold(0u64, u64::saturating_add)
-                };
-                (emitted, emitted_total, payouts)
+            }
+            let emitted_total = if event.emitted > 0 {
+                event.emitted_total
             } else {
-                let outcome = pool
-                    .on_coin_revenue(
-                        &event.coin,
-                        event.amount_native,
-                        event.ref_height,
-                        &event.event_id,
-                    )
-                    .with_context(|| {
-                        format!("failed to replay native revenue event {}", event.event_id)
-                    })?;
-                (outcome.emitted, outcome.emitted_total, outcome.payouts)
+                payouts
+                    .iter()
+                    .map(|(_, payout)| payout.amount)
+                    .fold(0u64, u64::saturating_add)
             };
+            (emitted, emitted_total, payouts)
+        } else {
+            let outcome = pool
+                .on_coin_revenue(
+                    &event.coin,
+                    event.amount_native,
+                    event.ref_height,
+                    &event.event_id,
+                )
+                .with_context(|| {
+                    format!("failed to replay native revenue event {}", event.event_id)
+                })?;
+            (outcome.emitted, outcome.emitted_total, outcome.payouts)
+        };
 
         store
             .prepare_coin_revenue(&event.event_id, emitted, emitted_total, &payouts)
@@ -1296,12 +1320,16 @@ pub fn recover_pending_coin_revenue(pool: &mut Pool, store: &ShareStore) -> anyh
                     event.event_id
                 )
             })?;
-        pool.pplns.lock().expect("pplns lock").save_if_dirty(&state_path).with_context(|| {
-            format!(
-                "failed to persist recovered PPLNS state for {}",
-                event.event_id
-            )
-        })?;
+        pool.pplns
+            .lock()
+            .expect("pplns lock")
+            .save_if_dirty(&state_path)
+            .with_context(|| {
+                format!(
+                    "failed to persist recovered PPLNS state for {}",
+                    event.event_id
+                )
+            })?;
         store
             .complete_coin_revenue(&event.event_id)
             .with_context(|| {
@@ -1418,10 +1446,14 @@ mod tests {
         let mut original = Pool::new(config.clone(), telemetry());
         original
             .pplns
-            .lock().unwrap().register_address_with_chain("alice", "qz1alice", "quantus");
+            .lock()
+            .unwrap()
+            .register_address_with_chain("alice", "qz1alice", "quantus");
         original
             .pplns
-            .lock().unwrap().record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
+            .lock()
+            .unwrap()
+            .record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
         original.save().unwrap();
         store
             .begin_coin_revenue("qtu:recovery:1", "qtu", 5_000_000, 42)
@@ -1440,7 +1472,11 @@ mod tests {
         drop(original);
 
         let mut restarted = Pool::try_new(config.clone(), telemetry()).unwrap();
-        assert!(!restarted.pplns.lock().unwrap().has_applied_revenue_event("qtu:recovery:1"));
+        assert!(!restarted
+            .pplns
+            .lock()
+            .unwrap()
+            .has_applied_revenue_event("qtu:recovery:1"));
         assert_eq!(
             recover_pending_coin_revenue(&mut restarted, &store).unwrap(),
             1
@@ -1456,7 +1492,11 @@ mod tests {
         );
 
         let restored = Pool::try_new(config, telemetry()).unwrap();
-        assert!(restored.pplns.lock().unwrap().has_applied_revenue_event("qtu:recovery:1"));
+        assert!(restored
+            .pplns
+            .lock()
+            .unwrap()
+            .has_applied_revenue_event("qtu:recovery:1"));
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -1496,7 +1536,10 @@ mod tests {
             },
             telemetry(),
         );
-        pool.pplns.lock().unwrap().record_share_at("miner", "worker", 1, 10);
+        pool.pplns
+            .lock()
+            .unwrap()
+            .record_share_at("miner", "worker", 1, 10);
 
         assert!(pool.save().is_err());
         assert_eq!(pool.pplns_persist_failures_total, 1);
@@ -1669,9 +1712,14 @@ mod tests {
         );
         // A PPLNS miner holds real window shares — a SOLO-port block must
         // not pay them anything; the whole miner share goes to the finder.
-        pool.pplns.lock().unwrap().register_address("pplns_miner", "z1pplns");
         pool.pplns
-            .lock().unwrap().record_share_with_diff("pplns_miner", "rig", 1, 100);
+            .lock()
+            .unwrap()
+            .register_address("pplns_miner", "z1pplns");
+        pool.pplns
+            .lock()
+            .unwrap()
+            .record_share_with_diff("pplns_miner", "rig", 1, 100);
 
         pool.on_block_found(100, 1_000_000, Some("solo1win"));
 
@@ -1716,9 +1764,14 @@ mod tests {
             },
             telemetry(),
         );
-        pool.pplns.lock().unwrap().register_address("pplns_miner", "z1pplns");
         pool.pplns
-            .lock().unwrap().record_share_with_diff("pplns_miner", "rig", 1, 100);
+            .lock()
+            .unwrap()
+            .register_address("pplns_miner", "z1pplns");
+        pool.pplns
+            .lock()
+            .unwrap()
+            .record_share_with_diff("pplns_miner", "rig", 1, 100);
 
         // Solo-port submissions register the payout target but must not
         // enter the shared PPLNS window.
@@ -1754,8 +1807,14 @@ mod tests {
             },
             telemetry(),
         );
-        pool.pplns.lock().unwrap().register_address("alice", "z1alice");
-        pool.pplns.lock().unwrap().record_share_with_diff("alice", "rig", 1, 100);
+        pool.pplns
+            .lock()
+            .unwrap()
+            .register_address("alice", "z1alice");
+        pool.pplns
+            .lock()
+            .unwrap()
+            .record_share_with_diff("alice", "rig", 1, 100);
         pool.on_block_found(100, 1_000_000, None);
 
         // Queue also holds an external-chain entry the zion path must not
@@ -1807,8 +1866,14 @@ mod tests {
         // First process lifetime: block found, one payout queued and sent.
         {
             let mut pool = Pool::new(cfg.clone(), telemetry());
-            pool.pplns.lock().unwrap().register_address("alice", "z1alice");
-            pool.pplns.lock().unwrap().record_share_with_diff("alice", "rig", 1, 100);
+            pool.pplns
+                .lock()
+                .unwrap()
+                .register_address("alice", "z1alice");
+            pool.pplns
+                .lock()
+                .unwrap()
+                .record_share_with_diff("alice", "rig", 1, 100);
             pool.on_block_found(100, 1_000_000, None);
             let pending = pool.take_pending_payouts();
             assert_eq!(pending.len(), 1);
@@ -1871,9 +1936,13 @@ mod tests {
             telemetry(),
         );
         pool.pplns
-            .lock().unwrap().register_address_with_chain("alice", "qz1alice", "quantus");
+            .lock()
+            .unwrap()
+            .register_address_with_chain("alice", "qz1alice", "quantus");
         pool.pplns
-            .lock().unwrap().record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
+            .lock()
+            .unwrap()
+            .record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
 
         // Coin not enabled for native payouts → CoinNotNative.
         assert!(matches!(

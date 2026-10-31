@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{info, warn};
+use tracing::info;
 use uuid::Uuid;
 
 /// Orchestrates cross-chain transfers end-to-end with optional SQLite persistence.
@@ -476,19 +476,17 @@ impl WarpRouter {
         // 7. Persist BEFORE publishing into in-memory state — the durable
         //    record must exist before the transfer becomes executable, so a
         //    crash can never strand a transfer the router has accepted.
-        self.save_transfer(&transfer)?;
+        //    The transfer row and the daily-cap increment commit in ONE
+        //    transaction (4.B3): a crash can never leave a durable
+        //    transfer the cap failed to count.
+        if let Some(db) = &self.db {
+            db.save_and_record_daily_volume(&transfer, &chain_name, proof.amount_flowers)?;
+        }
 
         let sm = TransferStateMachine::new(transfer.status);
         self.transfers.insert(transfer_id, transfer.clone());
         self.state_machines.insert(transfer_id, sm);
         *self.daily_volume.entry(chain_name.clone()).or_insert(0) += proof.amount_flowers;
-
-        // Persist daily volume so it survives restarts (FIND-009).
-        if let Some(db) = &self.db {
-            if let Err(e) = db.record_daily_volume(&chain_name, proof.amount_flowers) {
-                warn!(chain = %chain_name, "[Router] DB daily_volume record failed: {}", e);
-            }
-        }
 
         self.metrics.record_transfer_initiated();
         info!(transfer_id = %transfer_id, "Outbound WARP transfer initiated");

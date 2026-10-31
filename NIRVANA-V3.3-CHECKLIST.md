@@ -96,6 +96,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [ ] 🔀 DAO: guardian registry deploy, treasury sign flow + 👤 klíč, QV rozhodnutí (4.B8, 4.B9)
 - [x] 🤖 Premine unlock dry-run na regtestu před výškou 144 000 (1.B5) — PASS 28. 10.; výška ~27.–28. 11. a exekuce zůstávají 👤
 - [ ] 👤 Nové chain piloty (Solana watcher v kódu) — každý přes M1.6 gate
+- [x] 🤖 Deferred outbox durability + atomic daily-cap (4.B3) — 31. 10. `REPORTS/REPORT_2026-10-31_4B3_DURABLE_OUTBOX_DAILY_CAP.md`: (a) warp transfer+daily_volume v 1 sqlite tx (`save_and_record_daily_volume`, fail-closed před publish); (b) pool `take_*_payouts` drain-persist fail-closed (persist fail → žádný handout, IA-14 double-pay okno zavřené); (c) `DeferredPayoutQueue` durable `<state_path>.deferred.json` (serde `queued_at_unix`, restore v main.rs, corrupt→quarantine); 654/655 warp + 17/17 deferred testů ✅; deploy pending při dalším pool/warpd release
 
 ## N2 · Pool & Revenue Engine (+ [`POOL-FLEET-EXPANSION-PLAN.md`](docs/plans/POOL-FLEET-EXPANSION-PLAN.md) W1–W7)
 

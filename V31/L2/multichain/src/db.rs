@@ -2187,23 +2187,44 @@ mod tests {
         // Swap legs under one reference: debit/swap + credit/swap_output.
         db.atomic_debit("u1", "zion:ZION", "100", "e2", "swap", Some("order-1"))
             .unwrap();
-        db.atomic_credit("u1", "zion:USDC", "99", "e3", "swap_output", Some("order-1"))
-            .unwrap();
+        db.atomic_credit(
+            "u1",
+            "zion:USDC",
+            "99",
+            "e3",
+            "swap_output",
+            Some("order-1"),
+        )
+        .unwrap();
 
         // Double-firing the same leg must be rejected by the unique index.
         let dup_debit = db.atomic_debit("u1", "zion:ZION", "100", "e4", "swap", Some("order-1"));
-        assert!(dup_debit.is_err(), "duplicate (ref,debit,swap) must be rejected");
-        let dup_credit =
-            db.atomic_credit("u1", "zion:USDC", "99", "e5", "swap_output", Some("order-1"));
-        assert!(dup_credit.is_err(), "duplicate (ref,credit,swap_output) must be rejected");
+        assert!(
+            dup_debit.is_err(),
+            "duplicate (ref,debit,swap) must be rejected"
+        );
+        let dup_credit = db.atomic_credit(
+            "u1",
+            "zion:USDC",
+            "99",
+            "e5",
+            "swap_output",
+            Some("order-1"),
+        );
+        assert!(
+            dup_credit.is_err(),
+            "duplicate (ref,credit,swap_output) must be rejected"
+        );
 
         // A second debit under a different reason is a distinct leg — allowed.
         db.atomic_debit("u1", "zion:ZION", "10", "e6", "swap_fee", Some("order-1"))
             .unwrap();
 
         // NULL reference_id is unconstrained.
-        db.atomic_credit("u1", "zion:ZION", "5", "e7", "seed", None).unwrap();
-        db.atomic_credit("u1", "zion:ZION", "5", "e8", "seed", None).unwrap();
+        db.atomic_credit("u1", "zion:ZION", "5", "e7", "seed", None)
+            .unwrap();
+        db.atomic_credit("u1", "zion:ZION", "5", "e8", "seed", None)
+            .unwrap();
 
         // The rejected double-debit must not have touched the balance:
         // 1000 + 5 + 5 - 100 - 10 = 900, USDC credit = 99.

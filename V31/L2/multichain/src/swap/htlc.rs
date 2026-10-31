@@ -1493,7 +1493,11 @@ mod tests {
         let key = [0x33; 32];
         let preimage = [0x07; 32];
         // Reproduce the original FIND-002 encoding: enc: + hex(pt XOR key).
-        let xor_ct: Vec<u8> = preimage.iter().zip(key.iter()).map(|(p, k)| p ^ k).collect();
+        let xor_ct: Vec<u8> = preimage
+            .iter()
+            .zip(key.iter())
+            .map(|(p, k)| p ^ k)
+            .collect();
         let legacy = format!("enc:{}", hex::encode(&xor_ct));
 
         let upgraded = migrate_preimage_encryption(&key, &legacy).unwrap();

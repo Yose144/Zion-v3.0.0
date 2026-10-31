@@ -370,8 +370,32 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // ── Deferred payout processor ─────────────────────────────────────────
-    let deferred_queue: DeferredPayoutQueue =
-        std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    // 4.B3: the queue is durable — `<state_path>.deferred.json` mirrors the
+    // payout-ledger sidecar discipline so a restart cannot silently drop
+    // payouts already drained from `pending_payouts`.
+    let deferred_persist_path = pool
+        .lock()
+        .unwrap()
+        .config
+        .state_path
+        .as_ref()
+        .map(|p| std::path::PathBuf::from(format!("{p}.deferred.json")));
+    let deferred_queue: DeferredPayoutQueue = {
+        let restored = match deferred_persist_path.as_ref() {
+            Some(p) => zion_pool::deferred_payout::load_deferred_queue(p).unwrap_or_else(|e| {
+                warn!("deferred queue restore failed: {e} — starting empty");
+                Vec::new()
+            }),
+            None => Vec::new(),
+        };
+        if !restored.is_empty() {
+            info!(
+                "deferred payout queue restored: {} pending batches",
+                restored.len()
+            );
+        }
+        std::sync::Arc::new(std::sync::Mutex::new(restored))
+    };
     let deferred_cfg = DeferredPayoutConfig::from_env();
     let deferred_rpc = if l1_rpc_url.is_empty() {
         None
@@ -391,6 +415,7 @@ async fn main() -> anyhow::Result<()> {
         deferred_wallet,
         deferred_key,
         Some(notifier.clone()),
+        deferred_persist_path,
     );
 
     // ── Payout confirmation sweep ─────────────────────────────────────────
@@ -873,10 +898,8 @@ async fn main() -> anyhow::Result<()> {
                         }
                         // Final counter flush — survives the process exit below.
                         if let (Some(store), Ok(t)) = (drain_store, drain_tracker.lock()) {
-                            let _ = store.set_state(
-                                "shares_since_last_block",
-                                t.shares_since_last_block(),
-                            );
+                            let _ = store
+                                .set_state("shares_since_last_block", t.shares_since_last_block());
                         }
                         let _ = tx.send(());
                     });

@@ -171,6 +171,57 @@ impl TransferDb {
         Ok(())
     }
 
+    /// Atomically persist a new transfer AND bump today's durable daily
+    /// volume for `chain` in one transaction (4.B3). Previously the two
+    /// writes were separate — the transfer row was durable while the
+    /// volume bump was a later best-effort write — so a crash (or a
+    /// failed second write) could leave a durable transfer that the
+    /// daily cap never counted. Either both rows commit or neither does.
+    pub fn save_and_record_daily_volume(
+        &self,
+        t: &WarpTransfer,
+        chain: &str,
+        amount: u64,
+    ) -> WarpResult<()> {
+        let data_json = serde_json::to_string(t)
+            .map_err(|e| WarpError::Database(format!("serialize transfer: {e}")))?;
+        let date = chrono::Utc::now().date_naive().to_string();
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction().map_err(db_err)?;
+        tx.execute(
+            r#"INSERT OR REPLACE INTO transfers
+               (id, status, source_chain, dest_chain, sender, recipient,
+                amount_flowers, fee_flowers, memo, source_tx, dest_tx,
+                created_at, updated_at, data_json)
+               VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)"#,
+            params![
+                t.id.to_string(),
+                t.status.to_string(),
+                t.source_chain.name,
+                t.dest_chain.name,
+                t.sender,
+                t.recipient,
+                t.amount_flowers as i64,
+                t.fee_flowers as i64,
+                t.memo,
+                t.source_tx_hash,
+                t.dest_tx_hash,
+                t.created_at.to_rfc3339(),
+                t.updated_at.to_rfc3339(),
+                data_json,
+            ],
+        )
+        .map_err(db_err)?;
+        tx.execute(
+            "INSERT INTO daily_volume (chain, date_utc, amount) VALUES (?1, ?2, ?3) \
+             ON CONFLICT(chain, date_utc) DO UPDATE SET amount = amount + excluded.amount",
+            params![chain, date, amount as i64],
+        )
+        .map_err(db_err)?;
+        tx.commit().map_err(db_err)?;
+        Ok(())
+    }
+
     /// Update just the status and updated_at for an existing transfer.
     pub fn update_status(
         &self,
@@ -555,5 +606,39 @@ mod tests {
         db.record_daily_volume("base", 500_000).unwrap();
         db.record_daily_volume("base", 500_000).unwrap();
         assert_eq!(db.load_daily_volume("base").unwrap(), 1_000_000);
+    }
+
+    /// 4.B3: transfer row and daily-cap increment must commit together —
+    /// a durable transfer the cap never counted was the pre-4.B3 hole.
+    #[test]
+    fn test_save_and_record_daily_volume_atomic() {
+        let db = TransferDb::in_memory().unwrap();
+        let t = dummy_transfer();
+
+        db.save_and_record_daily_volume(&t, "base", t.amount_flowers)
+            .unwrap();
+
+        // Both side effects committed: the durable transfer row exists
+        // AND today's durable cap counter moved by the same amount.
+        assert_eq!(db.count().unwrap(), 1);
+        assert_eq!(
+            db.load_daily_volume("base").unwrap(),
+            t.amount_flowers,
+            "daily cap must count every durable transfer"
+        );
+
+        // A second accepted transfer accumulates the counter, still in
+        // one transaction per call.
+        let t2 = dummy_transfer();
+        db.save_and_record_daily_volume(&t2, "base", t2.amount_flowers)
+            .unwrap();
+        assert_eq!(db.count().unwrap(), 2);
+        assert_eq!(
+            db.load_daily_volume("base").unwrap(),
+            t.amount_flowers + t2.amount_flowers
+        );
+
+        // Other chains stay untouched.
+        assert_eq!(db.load_daily_volume("solana").unwrap(), 0);
     }
 }

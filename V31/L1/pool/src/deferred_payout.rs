@@ -7,9 +7,10 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::anyhow;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tracing::{info, warn};
 
@@ -21,15 +22,76 @@ use crate::v3_pplns::PayoutEntry;
 /// A batch of payouts that failed to execute immediately (usually because
 /// the pool wallet balance hasn't been credited yet by the node).
 /// Retried periodically until success or max retries exceeded.
-#[derive(Debug, Clone)]
+/// `queued_at_unix` replaces the old runtime-only `Instant` so the entry
+/// survives the durable-queue sidecar round-trip (4.B3).
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeferredPayout {
     pub payouts: Vec<PayoutEntry>,
     pub height: u64,
-    pub queued_at: Instant,
+    pub queued_at_unix: u64,
     pub retry_count: u32,
 }
 
 pub type DeferredPayoutQueue = Arc<Mutex<Vec<DeferredPayout>>>;
+
+fn now_unix() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+/// Persist the deferred queue to `<state_path>.deferred.json` using the
+/// same tmp+fsync+rename+dir-fsync discipline as the payout ledger —
+/// without it, a restart silently drops payouts that were already
+/// drained out of `pending_payouts` (4.B3).
+pub fn persist_deferred_queue(
+    queue: &DeferredPayoutQueue,
+    path: &std::path::Path,
+) -> std::io::Result<()> {
+    let snapshot: Vec<DeferredPayout> = queue.lock().unwrap().clone();
+    let tmp = path.with_extension("deferred.json.tmp");
+    let body = serde_json::to_vec(&snapshot).map_err(std::io::Error::other)?;
+    {
+        use std::io::Write;
+        let mut f = std::fs::File::create(&tmp)?;
+        f.write_all(&body)?;
+        f.flush()?;
+        f.sync_all()?;
+    }
+    std::fs::rename(&tmp, &path)?;
+    #[cfg(unix)]
+    {
+        let parent = path
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+            .unwrap_or_else(|| std::path::Path::new("."));
+        std::fs::File::open(parent)?.sync_all()?;
+    }
+    Ok(())
+}
+
+/// Load the persisted deferred queue. Missing file = empty (first run);
+/// corrupt file = quarantined to `<path>.corrupt-<unix>` and the error
+/// propagates — same fail-closed policy as the payout ledger (a silent
+/// empty start would permanently drop deferred payouts).
+pub fn load_deferred_queue(path: &std::path::Path) -> std::io::Result<Vec<DeferredPayout>> {
+    match std::fs::read(path) {
+        Ok(bytes) => match serde_json::from_slice::<Vec<DeferredPayout>>(&bytes) {
+            Ok(v) => Ok(v),
+            Err(e) => {
+                let quarantine = path.with_extension(format!("corrupt-{}", now_unix()));
+                let _ = std::fs::rename(path, &quarantine);
+                Err(std::io::Error::other(format!(
+                    "deferred queue corrupt (quarantined to {}): {e}",
+                    quarantine.display()
+                )))
+            }
+        },
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
+        Err(e) => Err(e),
+    }
+}
 
 /// Configuration for the deferred payout processor.
 #[derive(Debug, Clone)]
@@ -64,16 +126,29 @@ impl DeferredPayoutConfig {
     }
 }
 
-/// Push a batch of failed payouts onto the deferred queue.
-pub fn enqueue_deferred(queue: &DeferredPayoutQueue, payouts: Vec<PayoutEntry>, height: u64) {
+/// Push a batch of failed payouts onto the deferred queue. When
+/// `persist_path` is set the new queue state is written durably before
+/// returning — enqueue callers have already drained the source queue,
+/// so losing the entry on restart is a permanent payout loss (4.B3).
+pub fn enqueue_deferred(
+    queue: &DeferredPayoutQueue,
+    payouts: Vec<PayoutEntry>,
+    height: u64,
+    persist_path: Option<&std::path::Path>,
+) {
     let count = payouts.len();
     let entry = DeferredPayout {
         payouts,
         height,
-        queued_at: Instant::now(),
+        queued_at_unix: now_unix(),
         retry_count: 0,
     };
     queue.lock().unwrap().push(entry);
+    if let Some(path) = persist_path {
+        if let Err(e) = persist_deferred_queue(queue, path) {
+            warn!("deferred queue persist failed {}: {}", path.display(), e);
+        }
+    }
     info!("payout_deferred_queued height={} miners={}", height, count);
 }
 
@@ -407,6 +482,7 @@ pub fn spawn_deferred_payout_processor(
     pool_wallet: Option<String>,
     signing_key_hex: Option<String>,
     notifier: Option<Arc<crate::notifications::Notifier>>,
+    persist_path: Option<std::path::PathBuf>,
 ) {
     let max_retries = config.max_retries;
     let retry_interval = config.retry_interval;
@@ -453,6 +529,11 @@ pub fn spawn_deferred_payout_processor(
                     );
                 }
                 queue.lock().unwrap().remove(0);
+                if let Some(ref p) = persist_path {
+                    if let Err(e) = persist_deferred_queue(&queue, p) {
+                        warn!("deferred queue persist failed {}: {}", p.display(), e);
+                    }
+                }
                 continue;
             }
 
@@ -530,6 +611,15 @@ pub fn spawn_deferred_payout_processor(
                                                 retry
                                             );
                                             queue.lock().unwrap().remove(0);
+                                            if let Some(ref p) = persist_path {
+                                                if let Err(e) = persist_deferred_queue(&queue, p) {
+                                                    warn!(
+                                                        "deferred queue persist failed {}: {}",
+                                                        p.display(),
+                                                        e
+                                                    );
+                                                }
+                                            }
                                         }
                                         Err(e) => {
                                             if retry % 10 == 0 || retry <= 3 {
@@ -897,10 +987,59 @@ mod tests {
             coin: None,
             revenue_event: None,
         }];
-        enqueue_deferred(&queue, payouts, 42);
+        enqueue_deferred(&queue, payouts, 42, None);
         assert_eq!(queue.lock().unwrap().len(), 1);
         assert_eq!(queue.lock().unwrap()[0].height, 42);
         assert_eq!(queue.lock().unwrap()[0].retry_count, 0);
+    }
+
+    /// 4.B3: a drained-and-deferred batch must survive a "restart" —
+    /// enqueue → persist → fresh load reproduces the same queue.
+    #[test]
+    fn deferred_queue_survives_restart() {
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!("deferred-test-{}.json", std::process::id()));
+        let queue: DeferredPayoutQueue = Arc::new(Mutex::new(Vec::new()));
+        let payouts = vec![PayoutEntry {
+            miner_id: "miner1".to_string(),
+            address: "addr1".to_string(),
+            amount: 100,
+            share_count: 1,
+            payout_chain: None,
+            native_units: false,
+            coin: None,
+            revenue_event: None,
+        }];
+        enqueue_deferred(&queue, payouts, 42, Some(&path));
+        assert!(path.exists(), "persist path must be written on enqueue");
+
+        let restored = load_deferred_queue(&path).unwrap();
+        assert_eq!(restored.len(), 1);
+        assert_eq!(restored[0].height, 42);
+        assert_eq!(restored[0].payouts.len(), 1);
+        assert_eq!(restored[0].payouts[0].address, "addr1");
+        std::fs::remove_file(&path).ok();
+    }
+
+    /// 4.B3: a corrupt deferred sidecar is quarantined, never silently
+    /// treated as empty — silent empty start would drop drained payouts.
+    #[test]
+    fn deferred_queue_corrupt_is_quarantined() {
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!("deferred-corrupt-{}.json", std::process::id()));
+        std::fs::write(&path, b"{not json").unwrap();
+        let err = load_deferred_queue(&path).unwrap_err();
+        assert!(err.to_string().contains("quarantined"));
+        // Original file moved aside, not deleted.
+        assert!(!path.exists());
+        for entry in std::fs::read_dir(&dir).unwrap().flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if name.starts_with(&format!("deferred-corrupt-{}", std::process::id()))
+                && name.contains(".corrupt-")
+            {
+                std::fs::remove_file(entry.path()).ok();
+            }
+        }
     }
 
     // ── parse_payout_submit_response ─────────────────────────────────
