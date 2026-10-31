@@ -144,6 +144,29 @@ nginx -t && systemctl reload nginx
 
 ---
 
+## Fáze 4 — `kingdom.` na EDGE2 (čeká na 👤, 2026-11-01)
+
+`zion-kingdom.service` **běží na EDGE2** (`127.0.0.1:3020`), vhost je staged na portu 80.
+Doména ale chytá wildcard `*` → Edge (`62.171.141.136`), kde žádný vhost není → `404`.
+
+| Záznam | Dnes | Cíl | Poznámka |
+|---|---|---|---|
+| `kingdom` | *(wildcard → Edge)* | **`207.180.217.100`** — **nový explicit** | `zion-kingdom.service` :3020, vhost staged, `nginx -t` OK |
+
+**Postup 👤 ve WebGlobe:** přidat `kingdom` A → `207.180.217.100`, serial bump, uložit.
+
+**Navazující kroky 🤖 (po propagaci):**
+
+```bash
+# na EDGE2
+certbot --nginx -d kingdom.zionterranova.com
+nginx -t && systemctl reload nginx
+# pak synchronizovat certbotem vygenerované bloky zpět do
+# Kingdom/infra/nginx/kingdom.zionterranova.com.conf
+```
+
+---
+
 ## Postup u registrátora
 
 1. **Serial bump** — `2026070701` → `2026070702` (WebGlobe panel to řeší často sám).
