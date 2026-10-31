@@ -41,7 +41,7 @@ export default async function ChainPortal({ locale }: { locale: Locale }) {
         />
         <Stat
           label="Block time"
-          value={stats.avg_block_time ? `${stats.avg_block_time.toFixed(1)} s` : '—'}
+          value={stats.avg_block_time ? `${fmtNumber(locale, stats.avg_block_time, 1)} s` : '—'}
         />
       </div>
 

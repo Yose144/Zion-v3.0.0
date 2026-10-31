@@ -361,7 +361,7 @@ a {
 /* ---------- Brána ---------- */
 
 .k-gate {
-  min-height: 100dvh;
+  min-height: calc(100dvh - 54px);
   display: grid;
   place-items: center;
   position: relative;
@@ -419,14 +419,6 @@ a {
   letter-spacing: -0.035em;
   margin: 0;
   line-height: 1.04;
-}
-
-.k-gate-text {
-  font-size: 15px;
-  line-height: 1.65;
-  color: var(--k-text-dim);
-  margin: 0;
-  max-width: 470px;
 }
 
 .k-gate-links {
@@ -501,4 +493,244 @@ a {
   font-size: 11.5px;
   color: var(--k-text-faint);
   letter-spacing: 0.04em;
+}
+
+/* ---------- Brána — obsah pod hero ---------- */
+
+.k-gate-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.k-hero-line {
+  margin: 0;
+  font-family: var(--k-mono);
+  font-size: 12px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--k-accent);
+}
+
+.k-hero-lead {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--k-text-dim);
+}
+
+/* ---------- živý pás ---------- */
+
+.k-live {
+  border-top: 1px solid var(--k-line);
+  border-bottom: 1px solid var(--k-line);
+  background: var(--k-bg-soft);
+}
+
+.k-live-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.k-live-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--k-text-faint);
+}
+
+.k-live-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 18px;
+}
+
+.k-live-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.k-live-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--k-text-faint);
+}
+
+.k-live-value {
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+}
+
+/* ---------- sekce ---------- */
+
+.k-section {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 56px 24px 8px;
+  width: 100%;
+}
+
+.k-section-head {
+  margin-bottom: 22px;
+}
+
+.k-section-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--k-text-faint);
+}
+
+.k-prose {
+  max-width: 720px;
+}
+
+.k-prose p {
+  margin: 0 0 16px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--k-text-dim);
+}
+
+.k-prose strong {
+  color: var(--k-text);
+  font-weight: 600;
+}
+
+/* ---------- tři cesty ---------- */
+
+.k-paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  gap: 12px;
+}
+
+.k-path {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 20px;
+  border: 1px solid var(--k-line);
+  border-radius: var(--k-radius);
+  background: var(--k-panel);
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.k-path:hover {
+  border-color: color-mix(in oklab, var(--k-accent) 38%, var(--k-line));
+  transform: translateY(-2px);
+}
+
+.k-path-index {
+  font-family: var(--k-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--k-accent);
+}
+
+.k-path-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.k-path-body {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--k-text-dim);
+  flex: 1;
+}
+
+.k-path-body strong {
+  color: var(--k-text);
+  font-weight: 500;
+}
+
+.k-path-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--k-accent);
+}
+
+/* ---------- vrstvy ---------- */
+
+.k-layers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 8px;
+}
+
+.k-layer {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 14px;
+  row-gap: 3px;
+  padding: 15px 16px;
+  border: 1px solid var(--k-line-soft);
+  border-radius: var(--k-radius-sm);
+  background: color-mix(in oklab, var(--k-panel) 60%, transparent);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.k-layer:hover {
+  border-color: var(--k-line);
+  background: var(--k-panel);
+}
+
+.k-layer-code {
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-family: var(--k-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--k-accent-2);
+}
+
+.k-layer-title {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.k-layer-body {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--k-text-dim);
+}
+
+/* ---------- patička ---------- */
+
+.k-site-foot {
+  margin-top: 56px;
+  border-top: 1px solid var(--k-line);
+  padding: 20px 24px 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--k-text-faint);
+  max-width: 1080px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.k-site-foot a:hover {
+  color: var(--k-text-dim);
+}
+
+.k-section {
+  scroll-margin-top: 70px;
 }

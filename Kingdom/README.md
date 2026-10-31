@@ -1,6 +1,6 @@
 # Kingdom — jeden klient ekosystému ZION
 
-> **Stav:** **F0 hotová** (2026-11-01) — kostra buildí, tři portály (Řetěz, Kovárna, Tržiště) čtou živá data. F1 (Brána) následuje.
+> **Stav:** **F0 + F1 hotové** (2026-11-01) — kostra buildí, Brána má obsah z IntroPage a živá čísla, tři portály (Řetěz, Kovárna, Tržiště) čtou živá data. F2 (první svět OASIS) následuje.
 > **Datum založení:** 2026-11-01
 > **Nahrazuje:** `NIRVANA-V3.3-UNIFICATION.md` §1–3 jako *architekturu* (nový strom jde od nuly); plánovací router `NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md` zůstává v platnosti pro provoz a RC.
 
@@ -65,6 +65,19 @@ Port `3020` je záměrně mimo `website` (3000), `market` (3100) a `nirvana` (30
 - **Brána** (`/`) a **Místnost** (`/room`), deep-link `/portal/<id>`
 - tři živé portály: **Řetěz** (výška 104k, difficulty, peers), **Kovárna** (12 mincí, stav nohou), **Tržiště** (výloha s ověřenými náhledy)
 - cs/en celé na serveru — do prohlížeče jde jediná klientská komponenta (přepínač jazyka)
+
+## Co je hotové (F1 — Brána)
+
+Obsah harvest z `apps/IntroPage` (`maintenance.html` + `intro-tabs.js`), přepsaný do **typovaných dat** (`core/gate/content.ts`), ne do JSX:
+
+- hero: `ZION / TERRA NOVA ∞ OASIS / Multichain Dharma ekosystém` + vstup, OASIS preview, eXplorer
+- **živý pás** — výška, difficulty, hashrate, block time a připojené mince z hlavního uzlu, ověřené při každém renderu
+- **Co je ZION** — tři odstavce včetně fee splitu 89/5/5/1
+- **Tři cesty na palubu** — Pozorovatel / Hráč / Stavitel
+- **Vrstvy ekosystému** — L1–L6 jako rozcestník do portálů a služeb
+- kotvy `#why` `#paths` `#layers`, cs/en, patička
+
+Staré `apps/IntroPage` zůstává jako donor; apex DNS se nepřepíná, dokud Brána nepokryje jeho povrch (F6).
 
 ## Hierarchie pravdy
 
