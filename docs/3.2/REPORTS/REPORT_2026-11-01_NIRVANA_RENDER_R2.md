@@ -90,8 +90,15 @@ tlačítko už není mrtvé. Ověřeno v prohlížeči: `ZVUK → VYPNOUT ZVUK`,
 žádná chyba v konzoli kromě očekávaného 404 na chybějící track.
 
 **Brána kvality.** Harness má `--strict-budget` (≤600 draw calls, ≤450 k trojúhelníků,
-≥30 fps) a `--scorecard`, který zapíše markdown tabulku. Finální běh: 13/13 `pass`
-se strict budgetem.
+≥30 fps), `--scorecard` (markdown tabulka) a vizuální regresi: `--visual-baseline <dir>`
++ `--visual-gate <%>` porovná 16×16 perceptual hash hero snímku s referencí a při rozdílu
+nad práh scénu shodí. Ověřeno: stejný běh proti sobě = 0,0 % delta, brána 6 %.
+
+**Život ve scénách.** `SceneMotes` — jeden `Points` objekt, pohyb celý ve vertex shaderu
+(CPU nahraje pozice jednou). Nasazeno: Ekam (pyl), Amenti (prach), Uluru (červený prach),
+Kailash (sníh). Mrzne při `prefers-reduced-motion`.
+
+Finální běh: 13/13 `pass` se strict budgetem i s vizuální bránou.
 
 ## Otevřené (další vlny)
 

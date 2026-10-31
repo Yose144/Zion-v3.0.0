@@ -4,7 +4,7 @@
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SceneTerrain, SceneWater, SkyFill, gold as goldMaterial, stoneWarm } from './kit';
+import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill, gold as goldMaterial, stoneWarm } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -543,6 +543,7 @@ export function AmentiScene({ lang }: { lang: Lang }) {
       <GoldArc from={[0, 45, -26]} to={[40, 42, -54]} lift={8} />
       <GoldArc from={[-36, 36, -50]} to={[40, 38, -54]} lift={14} />
       <Oasis />
+      <SceneMotes count={260} area={[120, 120]} height={26} speed={0.5} size={2.8} color="#f0c9a0" opacity={0.35} sway={2.4} seed={9} />
       <SeaAndSails />
 
       {/* labely */}

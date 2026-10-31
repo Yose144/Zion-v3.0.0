@@ -14,6 +14,21 @@ SCENES = ['genesis-garden', 'dharma-temple', 'te-piko-ora', 'golden-republic-boh
 NIRVANA_ONLY = ['matrix']
 
 
+def average_hash(path, size=16):
+    """Perceptual fingerprint: 16x16 greyscale, one bit per pixel versus the mean."""
+    from PIL import Image
+    image = Image.open(path).convert('L').resize((size, size))
+    pixels = list(image.getdata())
+    mean = sum(pixels) / len(pixels)
+    return ''.join('1' if value >= mean else '0' for value in pixels)
+
+
+def hash_distance(a, b):
+    if not a or not b or len(a) != len(b):
+        return None
+    return sum(1 for x, y in zip(a, b) if x != y) * 100 / len(a)
+
+
 def local_chromium(explicit):
     """Prefer a locally installed browser so audits never download playwright builds."""
     if explicit:
@@ -44,6 +59,8 @@ def main():
     parser.add_argument('--resume', action='store_true', help='Keep passed rows for this release and rerun incomplete or failed rows')
     parser.add_argument('--strict-budget', action='store_true', help='Fail scenes above 600 draw calls, 450k triangles or below 30 fps')
     parser.add_argument('--scorecard', default='', help='Write a markdown scorecard to this path')
+    parser.add_argument('--visual-baseline', default='', help='Directory of reference screenshots to compare against')
+    parser.add_argument('--visual-gate', type=float, default=0, help='Fail when the perceptual difference of the hero shot exceeds this percentage')
     args = parser.parse_args()
     output = Path(args.output).resolve(); output.mkdir(parents=True, exist_ok=True)
     selected = args.only.split(',') if args.only else SCENES + NIRVANA_ONLY
@@ -101,8 +118,18 @@ def main():
                                             ('mobile-390', {'width': 390, 'height': 844})):
                             page.set_viewport_size(size)
                             page.wait_for_timeout(700)
-                            page.screenshot(path=str(output/f'{app}-{scene}-{label}.png'), timeout=90000, animations='disabled')
+                            shot = output/f'{app}-{scene}-{label}.png'
+                            page.screenshot(path=str(shot), timeout=90000, animations='disabled')
                             print(f'{app}/{scene}: {label}', flush=True)
+                            if args.visual_baseline and label == 'desktop-1440':
+                                reference = Path(args.visual_baseline) / shot.name
+                                if reference.exists():
+                                    delta = hash_distance(average_hash(shot), average_hash(reference))
+                                    row['visual_delta'] = round(delta, 2) if delta is not None else None
+                                    if args.visual_gate and delta is not None and delta > args.visual_gate:
+                                        raise AssertionError(f'visual delta {delta:.1f}% > {args.visual_gate}%')
+                                else:
+                                    row['visual_delta'] = 'new'
                         row['metrics'] = {
                             'fps': row['render']['fps'],
                             'calls': row['render']['calls'],

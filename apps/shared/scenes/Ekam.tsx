@@ -6,6 +6,7 @@ import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime } from './ScenePresentation';
 import {
   KeyLight,
+  SceneMotes,
   SceneWater,
   makeNoise,
   terrainGround,
@@ -487,6 +488,7 @@ export function EkamScene({ lang }: { lang: Lang }) {
       <CornerTower x={23.5} z={5.5} />
       <ReflectingPool />
       <Gardens />
+      <SceneMotes count={200} area={[70, 70]} height={22} speed={0.25} size={2.4} color="#ffe8c0" opacity={0.42} sway={1.6} seed={3} />
 
       {/* labely */}
       <SceneLabel position={[0, 19.5, -1]} text="Ekam · Oneness Temple" scale={2.2} />

@@ -5,7 +5,7 @@ import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/run
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SceneTerrain, SceneWater, SkyFill } from './kit';
+import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -378,6 +378,7 @@ export function KailashScene({ lang }: { lang: Lang }) {
       <MountKailash />
       <HimalayaRange />
       <Valley />
+      <SceneMotes count={240} area={[80, 80]} height={34} speed={0.55} size={2.2} color="#eaf2ff" opacity={0.45} sway={1.2} seed={21} />
       <GlacialLake x={-14} z={-24} r={8.5} sx={1.3} />
       <GlacialLake x={10} z={-30} r={6} sx={1.5} />
       <Monastery x={-6} z={-16} />

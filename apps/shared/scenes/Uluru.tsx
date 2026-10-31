@@ -4,7 +4,7 @@
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SceneTerrain, SkyFill } from './kit';
+import { KeyLight, SceneMotes, SceneTerrain, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -498,6 +498,7 @@ export function UluruScene({ lang }: { lang: Lang }) {
       <UluruRock />
       <Outback />
       <Settlement />
+      <SceneMotes count={220} area={[90, 90]} height={20} speed={0.45} size={2.6} color="#f0b184" opacity={0.32} sway={2} seed={13} />
       <LeafSculpture x={polar(115, 24)[0]} z={polar(115, 24)[1]} />
       {/* songlines — zářící cesty údolím */}
       <Songline pts={SONGLINE_WEST} />
