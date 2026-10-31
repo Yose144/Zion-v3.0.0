@@ -177,6 +177,20 @@ the order's custodial `customerWalletAddress`:
 - Manual retry: `POST /api/admin/tokens/distribute/[id]` (admin key);
   status: `GET` same URL.
 
+### 5.6 Time-boxed token campaigns (2026-10-31)
+
+`ShopSetting` key `campaign:<externalId>` holds
+`{"tokens": N, "endsAt": "<ISO>", "label": "…"}`. While `endsAt` is in the
+future, `campaignTokens()` overrides the product's catalog `tokens` in
+`/api/shop/products` (display) **and** `/api/shop/orders` (server-side
+`zionTokens` snapshot). After expiry the overlay is ignored automatically —
+no revert needed. `zionTokens` is snapshotted at order creation, so orders
+placed during the campaign keep the campaign amount even after `endsAt`.
+
+Live campaign: `campaign:book-001` = 144 000 ZION „Genesis Guardian vstup"
+until `2026-12-24T23:59:59+01:00` (Štědrý večer 2026). Base catalog tokens
+for `book-001` stay 1440.
+
 ---
 
 ## 6. Admin Dashboard
