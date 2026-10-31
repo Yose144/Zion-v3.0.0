@@ -38,7 +38,7 @@ use crate::xp::{XpSource, XpSystem, MAX_WORLD_XP};
 use crate::zis_auth::ZisClient;
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     middleware,
     response::IntoResponse,
     routing::{get, post},
@@ -141,6 +141,7 @@ pub fn build_router(state: OasisState) -> Router {
     Router::new()
         .merge(sensitive)
         .route("/health", get(health))
+        .route("/api/v1/oasis/pass/verify", post(pass_verify))
         .route("/api/v1/oasis/player/:address", get(get_player))
         .route("/api/v1/oasis/worlds", get(list_worlds))
         .route("/api/v1/oasis/worlds/:id", get(get_world))
@@ -296,6 +297,10 @@ pub struct WorldActionRequest {
     /// Optional explicit XP amount. If omitted, defaults to a sensible
     /// preview value (100 for scan, 25 for approach).
     pub xp: Option<u64>,
+    /// ZION Archive Pass code — required when the target world declares
+    /// `requiredPass`. Equivalent to the `x-zion-pass` request header.
+    #[serde(default)]
+    pub pass: Option<String>,
 }
 
 /// Response for a world scan or approach.
@@ -451,9 +456,65 @@ fn apply_world_action(
     (award.actual_amount, first, award.leveled_up)
 }
 
+/// Worlds declaring `requiredPass` demand a valid ZION Archive Pass code.
+/// Resolution order: `x-zion-pass` header, then `req.pass` body field.
+/// Returns `Some(403)` when the world is gated and the code is missing or
+/// invalid — `None` lets the action proceed.
+fn world_pass_denied(
+    state: &OasisState,
+    world_id: &str,
+    headers: &HeaderMap,
+    body_pass: Option<&str>,
+) -> Option<axum::response::Response> {
+    let world = state.worlds.get(world_id)?;
+    if world.required_pass.as_deref() != Some("archive") {
+        return None;
+    }
+    let code = headers
+        .get("x-zion-pass")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_string)
+        .or_else(|| body_pass.map(str::to_string));
+    match code {
+        Some(c) if crate::pass_store::is_valid_market_code(&c) => None,
+        _ => Some(
+            (
+                StatusCode::FORBIDDEN,
+                Json(ApiResponse::<()>::error("pass_required")),
+            )
+                .into_response(),
+        ),
+    }
+}
+
+/// POST /api/v1/oasis/pass/verify — `{code}` → `{valid}`.
+/// Public oracle so clients can pre-check a ZION Archive Pass before
+/// attempting a gated world action (mirrors the website's
+/// /api/archive/verify; the daemon validates against the local store).
+#[derive(Debug, Deserialize)]
+struct PassVerifyRequest {
+    code: String,
+}
+
+#[derive(Debug, Serialize)]
+struct PassVerifyResponse {
+    valid: bool,
+}
+
+async fn pass_verify(Json(req): Json<PassVerifyRequest>) -> impl IntoResponse {
+    (
+        StatusCode::OK,
+        Json(ApiResponse::ok(PassVerifyResponse {
+            valid: crate::pass_store::is_valid_market_code(&req.code),
+        })),
+    )
+        .into_response()
+}
+
 /// POST /api/v1/oasis/player/:address/worlds/:id/scan
 async fn scan_world(
     State(state): State<OasisState>,
+    headers: HeaderMap,
     Path((address, world_id)): Path<(String, String)>,
     Json(req): Json<WorldActionRequest>,
 ) -> impl IntoResponse {
@@ -461,6 +522,10 @@ async fn scan_world(
         .metrics
         .requests_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    if let Some(resp) = world_pass_denied(&state, &world_id, &headers, req.pass.as_deref()) {
+        return resp;
+    }
 
     let mut player = match state.db.get_or_create_player(&address) {
         Ok(p) => p,
@@ -519,6 +584,7 @@ async fn scan_world(
 /// POST /api/v1/oasis/player/:address/worlds/:id/approach
 async fn approach_world(
     State(state): State<OasisState>,
+    headers: HeaderMap,
     Path((address, world_id)): Path<(String, String)>,
     Json(req): Json<WorldActionRequest>,
 ) -> impl IntoResponse {
@@ -526,6 +592,10 @@ async fn approach_world(
         .metrics
         .requests_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    if let Some(resp) = world_pass_denied(&state, &world_id, &headers, req.pass.as_deref()) {
+        return resp;
+    }
 
     let mut player = match state.db.get_or_create_player(&address) {
         Ok(p) => p,
@@ -588,6 +658,7 @@ async fn approach_world(
 /// (ZIS-linked via address) and can be hydrated on other devices.
 async fn discover_world(
     State(state): State<OasisState>,
+    headers: HeaderMap,
     Path((address, world_id)): Path<(String, String)>,
     Json(req): Json<WorldActionRequest>,
 ) -> impl IntoResponse {
@@ -595,6 +666,10 @@ async fn discover_world(
         .metrics
         .requests_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    if let Some(resp) = world_pass_denied(&state, &world_id, &headers, req.pass.as_deref()) {
+        return resp;
+    }
 
     let mut player = match state.db.get_or_create_player(&address) {
         Ok(p) => p,
@@ -654,12 +729,17 @@ pub struct WorldClueResponse {
 /// POST /api/v1/oasis/player/:address/worlds/:id/clue
 async fn discover_world_clue(
     State(state): State<OasisState>,
+    headers: HeaderMap,
     Path((address, world_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
     state
         .metrics
         .requests_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    if let Some(resp) = world_pass_denied(&state, &world_id, &headers, None) {
+        return resp;
+    }
 
     let world = match state.worlds.get(&world_id) {
         Some(w) => w,
