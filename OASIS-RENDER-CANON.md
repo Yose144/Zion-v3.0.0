@@ -173,8 +173,11 @@ balvan). Geometrii a materiál drž na úrovni modulu, ne v renderu.
 
 ### 4.4 Voda
 
-`SceneWater` = texturované vlnky + Fresnel (bazény, jezera).
-`OceanSurface` = tři procedurální vlnové vlaky (moře do dálky, žádný tiling).
+**Jedna voda, dva režimy.** `OceanSurface` je jediná implementace: `mode="sea"` počítá tři
+procedurální vlnové vlaky (moře do dálky, žádný tiling), `mode="pool"` vzorkuje tilingovou
+ripple normal mapu (bazény, jezera). `SceneWater` je jen tenká vrstva nad `pool` režimem,
+`AtlanticOcean` nad `sea` režimem. Fresnel je v bazénu ztlumený (`uFresnelScale 0.42`),
+aby hladina nezešedla od oblohy.
 Vždy předávej `sun` shodné s `<KeyLight sun>` a `sky` shodnou s horizontem oblohy —
 jinak voda nesedí s nebem.
 
@@ -265,11 +268,12 @@ se sám vrátí, když start nebo health check selže.
 ## 8. Co je hotové a co ne
 
 Hotovo: 13 scén (12 misí + Matrix/Hala), jednotný kit, composer, tiery, terén/les/palmy/
-voda/částice, obloha s IBL, intro kamery, zvuk s ambiencí, web previews s pauzou mimo
-viewport, universe s composerem, GPU audit s budgetem a vizuální regresí.
+voda/částice, **jedna voda ve dvou režimech**, obloha s IBL, intro kamery, zvuk s ambiencí,
+web previews s pauzou mimo viewport, universe s composerem a Hiranem ve Slunci, GPU audit
+s rozpočtem pro CI a vizuální regresí.
 
-Otevřeno: přechody scéna↔portál v universe, HUD, LOD pro velké scény, sdílený ocean pro
-všechny typy vod (dnes `SceneWater` + `OceanSurface`), vizuální baseline v CI.
+Otevřeno: přechody scéna↔portál v universe, HUD, LOD pro velké scény, vizuální baseline
+v CI (rozpočet už ano, hash zůstává lokální).
 
 ## 9. Až přijde OASIS ve velkém
 

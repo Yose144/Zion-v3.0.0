@@ -12,6 +12,7 @@
 import { React, useFrame, THREE } from '@genesis/runtime';
 
 import { groundMaterial } from './materials';
+import { OceanSurface } from './ocean';
 import { makeNoise, ripple, tiled, type Noise } from './textures';
 
 export type GroundKind = 'grass' | 'sand' | 'snow' | 'regolith';
@@ -230,96 +231,38 @@ export interface SceneWaterProps {
   segments?: number;
 }
 
-const WATER_VERT = /* glsl */ `
-  varying vec3 vWorld;
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    vec4 world = modelMatrix * vec4(position, 1.0);
-    vWorld = world.xyz;
-    gl_Position = projectionMatrix * viewMatrix * world;
-  }
-`;
-
-const WATER_FRAG = /* glsl */ `
-  precision highp float;
-  varying vec3 vWorld;
-  varying vec2 vUv;
-  uniform sampler2D uNormalMap;
-  uniform vec3 uDeep;
-  uniform vec3 uShallow;
-  uniform vec3 uSky;
-  uniform vec3 uSunColor;
-  uniform vec3 uSunDir;
-  uniform float uTime;
-  uniform float uSpeed;
-  uniform float uRepeat;
-
-  void main() {
-    vec2 base = vUv * uRepeat;
-    vec2 uv1 = base + vec2(uTime * 0.012, uTime * 0.021) * uSpeed;
-    vec2 uv2 = base * 0.73 - vec2(uTime * 0.017, uTime * 0.009) * uSpeed;
-    vec3 n1 = texture2D(uNormalMap, uv1).xyz * 2.0 - 1.0;
-    vec3 n2 = texture2D(uNormalMap, uv2).xyz * 2.0 - 1.0;
-    // Flatten the ripple and tilt it into world space (plane lies on XZ).
-    vec3 ripple = (n1 + n2) * vec3(0.35, 0.0, 0.35);
-    vec3 normal = normalize(vec3(ripple.x, 1.0, ripple.z));
-
-    vec3 viewDir = normalize(cameraPosition - vWorld);
-    float facing = clamp(dot(viewDir, normal), 0.0, 1.0);
-    float fresnel = pow(1.0 - facing, 3.2);
-
-    vec3 body = mix(uDeep, uShallow, 0.45);
-    vec3 color = mix(body, uSky, clamp(fresnel * 1.15, 0.0, 0.92));
-
-    // Sun glitter.
-    vec3 halfDir = normalize(uSunDir + viewDir);
-    float spec = pow(max(dot(normal, halfDir), 0.0), 340.0);
-    color += uSunColor * spec * 2.4;
-
-    // A hint of sky gradient near the horizon keeps large water bodies from going flat.
-    color += uSky * 0.05;
-
-    gl_FragColor = vec4(color, 1.0);
-  }
-`;
-
-/** Animated water with a Fresnel reflection of the scene's sky colour. */
-export function SceneWater({ width, depth = 1, position, tint, repeat = 3, speed = 1, sun = [-0.45, 0.35, -0.82], sky = '#c9d6e4', circle = false, segments = 72 }: SceneWaterProps) {
-  const material = React.useMemo(() => {
-    const maps = ripple(256);
-    const normalMap = tiled(maps.normalMap, 1);
-    return new THREE.ShaderMaterial({
-      vertexShader: WATER_VERT,
-      fragmentShader: WATER_FRAG,
-      uniforms: {
-        uNormalMap: { value: normalMap },
-        uDeep: { value: new THREE.Color(tint ?? '#06232b') },
-        uShallow: { value: new THREE.Color('#0d5560') },
-        uSky: { value: new THREE.Color(sky) },
-        uSunColor: { value: new THREE.Color('#ffd9a0') },
-        uSunDir: { value: new THREE.Vector3(...sun).normalize() },
-        uTime: { value: 0 },
-        uSpeed: { value: speed },
-        uRepeat: { value: repeat },
-      },
-    });
-  }, [tint, repeat, speed, sky, sun]);
-
-  React.useEffect(() => () => {
-    const map = material.uniforms.uNormalMap.value as THREE.Texture | null;
-    map?.dispose();
-    material.dispose();
-  }, [material]);
-
-  useFrame(({ clock }) => {
-    material.uniforms.uTime.value = clock.elapsedTime;
-  });
-
+/** Animated water plane; delegates to the one ocean shader in `pool` mode. */
+export function SceneWater({
+  width,
+  depth = 1,
+  position,
+  tint,
+  repeat = 3,
+  speed = 1,
+  sun = [-0.45, 0.35, -0.82],
+  sky = '#c9d6e4',
+  circle = false,
+}: SceneWaterProps) {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={position} material={material}>
-      {circle ? <circleGeometry args={[width / 2, segments]} /> : <planeGeometry args={[width, depth]} />}
-    </mesh>
+    <group position={[0, position[1], 0]}>
+      <group position={[position[0], 0, position[2]]}>
+        <OceanSurface
+          mode="pool"
+          level={0}
+          width={width}
+          depth={depth}
+          circle={circle}
+          segments={1}
+          sky={sky}
+          deep={tint ?? '#06232b'}
+          shallow="#0d5560"
+          sun={sun}
+          ripple={0.35}
+          rippleRepeat={repeat}
+          roughness={0.35 * speed}
+        />
+      </group>
+    </group>
   );
 }
 
