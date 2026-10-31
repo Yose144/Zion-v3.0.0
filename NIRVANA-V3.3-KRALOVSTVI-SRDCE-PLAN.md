@@ -152,7 +152,7 @@ Cíl: až G8 doběhne, být připraven na RC sign-off. Nezávislé na unifikaci.
 | W1.3 | **DR drill runbook** — bringup standby repliky; ⚠️ stop primary first (double-pay hazard) | `docs/3.2/ops/DR-BRINGUP-RUNBOOK.md`; spouští 👤 |
 | W1.4 | release artifacts 9.B4: přebuild linux + windows z RC commitu, zbývá OpenCL varianta | tar.gz + `SHA256SUMS` + `BUILD-INFO.txt` |
 | W1.5 | audit package refresh (pin na RC commit) | `docs/3.2/AUDIT_PACKAGE.md` |
-| W1.6 | cert `auth.` renewal **před 25. 11.**, reálná (ne staging) | `openssl x509 -enddate`, certbot log |
+| W1.6 | cert `auth.` — **aktualizace 31. 10.: už proběhlo.** Cert má `notAfter` **24. 1. 2027** (EDGE2) / 25. 1. 2027 (EDGE), SAN `auth.zionterranova.com`, `certbot.timer` běží 2×/den na obou boxech. Kotva „25. 11. expirace" v `AGENTS.md` je **stale** — renewal proběhl ~26. 10. Zbývá jen kontrola jednou za 2 týdny (`openssl x509 -enddate`) | `openssl x509 -enddate`, certbot log |
 | W1.7 | premine 144k checklist pro 👤 (27.–28. 11., 3-of-3 admin unlock + DAO) | checklist v `docs/3.2/ops/` |
 
 **Gate W1:** G8 run #6 `gate_status=pass` 28. 11. → V33-1 splněno; žádná otevřená 🤖 položka v RC checklistu.
@@ -239,9 +239,9 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
              │
              ├─► W1 RC kvalita ────────────────────────────┐           🤖
              │    provenance · alerty · DR runbook ·       │
-             │    artefakty · audit package · cert          │
+             │    artefakty · audit package                 │
              │                                              ▼
-25.11 cert auth. ═══════════════════════► 28.11 G8 #6 KONEC ══► RC sign-off 👤
+             │            28.11 G8 #6 KONEC ═══════════► RC sign-off 👤
              │                                              │
 27–28.11 premine 144k 👤 ══════════════════════════════════┤
              │                                              ▼
@@ -250,13 +250,14 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
              └─► W4 design (read-only) ─► po RC: K1 impl ─► W5 flip 👤
 ```
 
-**Tři nezávislé kotvy se sbíhají do 27.–28. 11. 2026** a ani jedna není 🤖:
+**Dvě nezávislé kotvy se sbíhají do 27.–28. 11. 2026** a ani jedna není 🤖:
 
 | Datum | Událost | Důsledek |
 |---|---|---|
-| 25. 11. | expirace certu `auth.` | renewal musí proběhnout **dřív** → W1.6 do 24. 11. |
 | 28. 11. 23:46Z | konec G8 run #6 | V33-1; bez PASS není RC sign-off |
 | ~27.–28. 11. | výška 144 000 — time-lock premine slotů 6–8 | utratitelnost dál jen 3-of-3 admin unlock + DAO (1.S3) |
+
+> **Korekce 31. 10. (W1.6):** třetí kotva „25. 11. expirace certu `auth.`" **neexistuje** — cert byl obnoven ~26. 10. a platí do 24. 1. 2027, `certbot.timer` jede 2×/den na obou boxech. Kotva byla převzata z poznámky v `AGENTS.md`, která popisovala stav *před* renewalem.
 
 **Proto W1 končí 24. 11., ne 28. 11.** Poslední čtyři dny okna jsou rezerva na 👤 sign-off a na to, co se posere.
 
