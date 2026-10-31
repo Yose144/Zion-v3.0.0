@@ -374,11 +374,12 @@ a {
 .k-gate-bg {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(180deg, rgba(5, 6, 10, 0.72) 0%, rgba(5, 6, 10, 0.86) 55%, rgba(5, 6, 10, 0.96) 100%),
-    url('/stargate/nebula.jpg');
-  background-size: cover;
-  background-position: center;
+  /* Tmavé pole — brána si nebuli nese sama uvnitř kruhu. Když svítí i za ní,
+     kovový prstenec se rozmyje a přestane být bránou. */
+  background:
+    radial-gradient(circle at 50% 46%, rgba(122, 167, 255, 0.05), transparent 46%),
+    radial-gradient(circle at 50% 120%, rgba(228, 30, 43, 0.05), transparent 55%),
+    #04050a;
   pointer-events: none;
 }
 
@@ -392,10 +393,10 @@ a {
   opacity: 0.55;
 }
 
-.k-gate-stage > .k-stargate {
+.k-gate-stage > .stargate-wrap {
   /* Celý kruh musí zůstat v záběru — vnější kovový prstenec je součást brány. */
-  width: min(82vmin, 760px);
-  height: min(82vmin, 760px);
+  width: min(68vmin, 620px);
+  pointer-events: none;
 }
 
 .k-gate-inner {

@@ -88,12 +88,17 @@ Výsledek: scéna Místnosti má **8 markerů** (Účet chybí záměrně) a li�
 
 ### F1b — stargate + rasta (2026-11-01)
 
-Brána dostala **přesně ten stargate z IntroPage** a **rasta design**:
+Brána dostala **skutečnou bránu** a **rasta design**.
 
-- `core/gate/stargate.css` (699 řádků) — extrahováno z `stargate-theme.css` (772 řádků). Globální reset, `body`, `html` a `#header` z původního souboru **vyhozeny** (stylovaly by celou appku); zbytek scope-ovaný pod `.k-stargate`.
-- `core/gate/Stargate.tsx` — 28 prstenců (22× `2.png` chevrony, 6× `1.png` Śrí jantra) + 39 glyfů (A–Z, a–m). **Čisté CSS, žádný canvas, žádný JS** — `aria-hidden`, dekorace.
-- Assety `1.png`, `2.png`, `Z.webp`, `nebula.jpg` → `public/stargate/` (416 KB celkem; `Z.gif` 610 KB záměrně vynechán ve prospěch `Z.webp`).
-- `nebula.jpg` je i pod bránou jako pozadí hero — stejný asset jako originál.
+⚠️ **První dva pokusy byly špatná brána.** `apps/IntroPage/public/stargate/` obsahuje **dvě** varianty: `stargate-theme.css` (43 KB, globální — styluje `body`/`#header`) a `stargate.css` (18 KB, **scoped pod `.stargate-wrap`**). Portoval jsem tu první, a ta nemá `.chevrons`, `.chevronInners` ani `.center-logo` — takže výsledek byl jen rozostřený stack obrázků, ne brána. **Kanoniální zdroj je `apps/website-v2.9/src/components/StargateLogo.tsx`** (live na `/doge-vs-zion`), který používá scoped `stargate.css`.
+
+Výsledná podoba (`core/gate/Stargate.tsx` + `core/gate/stargate.css`):
+
+- `.stargate-wrap > .gate > .container` — **28 rotujících vrstev** (22× `2.png`, 6× `1.png`) + `a.center-logo` (Z.webp, fallback Z.gif)
+- `.glyphs` — **52 glyfů** (A–Z, a–z); dřív jsem měl 39
+- `.chevrons` + `.chevronInners` — **9 + 9 chevronů**, které v první verzi chyběly úplně
+- Assety `1.png`, `2.png`, `Z.gif`, `Z.webp`, `nebula.jpg` → `public/stargate/` (1 MB; `Z.gif` se nenačítá, `<picture>` vybere webp)
+- **Pozadí hero ztmaveno:** brána si nebuli nese uvnitř kruhu (`.stargate-wrap`). Když svítila i za ní, kovový prstenec se rozmył a brána přestala vypadat jako brána. Velikost `min(68vmin, 620px)` kvůli proporcím.
 - **Rasta tokeny** (`--rasta-red #e41e2b`, `--rasta-gold #fcd116`, `--rasta-green #078930`) přidány do `@zion/ui`; zdroj `apps/IntroPage/public/assets/css/intro-rasta.css`.
 - 🔴 **Chyba při portu (nalezena měřením, ne okem):** `:root` se při prefixování přepsal na `.k-stargate :root`, což nematchuje nikdy → `--gate-offset-y` chyběl → `top: calc(50% + var(--gate-offset-y))` neplatné → `top: auto` → brána se posunula o **půl své výšky (369 px) nahoru** a byla uříznutá. Na screenshotu to vypadalo „jen divně"; `getBoundingClientRect()` ukázal `.k-stargate top:108` vs `.gate top:-261`. Fix = definovat proměnnou na `.k-stargate`, ne na `:root`.
 - Rasta se aplikuje **jen na Bránu** (hero aura, zlatý badge, zlaté CTA, triáda na třech cestách). Místnost a portály zůstávají neutrální — data musí zůstat čitelná.
