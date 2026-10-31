@@ -34,6 +34,7 @@
 | SHOPPAY (ZION L1 + QR + l1-watcher) | ✅ `0680bf0aa` — vault `L1_SHOP_VAULT` oddělený od pool payout |
 | ZION bonus auto-payout | ✅ paid-only, atomický claim, všech 5 rail (webhook/verify/l1/admin/commerce) + sweep `POST /api/shop/bonus-sweep` z l1-watcheru (5 min) + lazy custodial wallet |
 | Časově omezené token kampaně | ✅ `ShopSetting campaign:<externalId>` = `{tokens, endsAt}` — překryje catalog tokens v products API i order snapshotu, po expiraci se ignoruje automaticky (`6ad1d4e0f`). Live: `campaign:book-001` 144 000 ZION „Genesis Guardian" do 24. 12. 2026 23:59 CET; base 1440. Copy: „tekton"→„tesař" |
+| ZION Archive Pass | ✅ `ShopSetting archive-pass:<externalId>` → unikátní `ZAP-…` kód při paid (3 claim sites), sdílený store `/opt/zion/data/archive-market-codes.json`, web `isValidPassCode` += market kódy; cancel → revoke okamžitě (`8d8c699fe`). E2E ověřeno: issue→redeem 200→cancel→401 |
 | Coinbase Commerce | ✅ kód; gated dokud 👤 `COMMERCE_API_KEY` |
 | Soft-launch digi + transfer | ✅ (nyní supersedováno plným softLaunch=false) |
 

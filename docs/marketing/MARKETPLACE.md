@@ -191,6 +191,29 @@ Live campaign: `campaign:book-001` = 144 000 ZION „Genesis Guardian vstup"
 until `2026-12-24T23:59:59+01:00` (Štědrý večer 2026). Base catalog tokens
 for `book-001` stay 1440.
 
+### 5.7 ZION Archive Pass (2026-10-31)
+
+Buying a product flagged `ShopSetting archive-pass:<externalId>` issues a
+unique `ZAP-…` code at the paid transition (all 3 claim sites:
+`markShopOrderPaid`, Stripe webhook, admin status route). Codes live in a
+shared JSON store `/opt/zion/data/archive-market-codes.json` on EDGE2 —
+MarketPlace writes (atomic tmp+fsync+rename), `app.zionterranova.com`
+reads (`isValidMarketCode`, mtime-cached) as a second source in
+`isValidPassCode` alongside `ARCHIVE_PASS_CODES` env codes.
+
+- Grant flag: `ShopSetting archive-pass:book-001` — presence = grant;
+  optional `endsAt` (stop issuing) / `passExpiresAt` (code lifetime).
+- Delivery: rasta card in the payment-confirmation email (code + redeem
+  link `https://app.zionterranova.com/zion-archive`).
+- Redemption: existing ArchiveLock form → `POST /api/archive/access` →
+  90-day cookie; a ZIS-logged-in redeemer also binds a permanent
+  entitlement (`claimedVia:'code'`).
+- Revocation: order → `cancelled` sets `revokedAt` → code dies
+  immediately (cookie re-validates per request).
+- OASIS needs no pass — entry is open (player = wallet address); the
+  reverse direction already exists: ZIS + linked OASIS player unlocks
+  the archive free (`zis-oasis`).
+
 ---
 
 ## 6. Admin Dashboard
