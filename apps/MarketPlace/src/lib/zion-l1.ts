@@ -223,20 +223,22 @@ export async function sendZionPayout(
     });
     const output = stdout + stderr;
 
-    // Extract tx hash from "TX hash: <hash>" or "Broadcast OK. Result: ..."
+    // The CLI prints `TX hash:` before broadcast and `Broadcast OK` only on a
+    // successful submit — require both so an unparsed/rejected run is reported
+    // as failure instead of recording a phantom 'distributed' payout.
     const txMatch = output.match(/TX hash:\s*([a-f0-9]{64})/i);
     const txHash = txMatch ? txMatch[1] : undefined;
+    const broadcastOk = output.includes('Broadcast OK');
     const changeMatch = output.match(/Change:\s*(\d+)\s*flowers/);
     const inputsMatch = output.match(/Inputs:\s*(\d+)/);
     const outputsMatch = output.match(/Outputs:\s*(\d+)/);
 
-    if (txHash) {
-      console.log(`[zion-l1] Payout broadcast OK. txHash=${txHash}`);
-    } else if (output.toLowerCase().includes('dry-run')) {
-      console.log('[zion-l1] Payout dry-run completed');
-    } else {
-      console.warn('[zion-l1] Payout CLI completed without a tx hash:', output.slice(0, 500));
+    if (!txHash || !broadcastOk) {
+      console.error('[zion-l1] Payout CLI exited 0 without broadcast proof:', output.slice(0, 500));
+      return { success: false, error: 'Payout CLI completed without broadcast confirmation' };
     }
+
+    console.log(`[zion-l1] Payout broadcast OK. txHash=${txHash}`);
 
     return {
       success: true,

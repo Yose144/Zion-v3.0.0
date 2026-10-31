@@ -48,14 +48,18 @@ export async function POST(request: NextRequest) {
         const orderId = session.metadata?.order_id;
         if (orderId && session.payment_status === 'paid') {
           const now = new Date();
-          await prisma.shopOrder.updateMany({
-            where: { orderId },
+          // Only the first delivery wins — Stripe retries webhooks, and the
+          // /api/stripe/verify fallback may already have marked the order
+          // paid. Re-processing would resend emails and duplicate history.
+          const claimed = await prisma.shopOrder.updateMany({
+            where: { orderId, paymentStatus: { not: 'paid' } },
             data: {
               status: 'paid',
               paymentStatus: 'paid',
               paidAt: now,
             },
           });
+          if (claimed.count === 0) break;
           await prisma.invoice.updateMany({
             where: { order: { orderId } },
             data: { status: 'paid', paidAt: now },
