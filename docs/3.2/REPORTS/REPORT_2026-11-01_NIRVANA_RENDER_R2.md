@@ -146,6 +146,17 @@ Příště je čistší buildit web přímo na Linuxu.
   paletu (`AtlanticOcean` umí `sky`/`deep`/`shallow`).
 - `ScenePalms` má novou geometrii listů (skloněný pás, ne špička) — prospělo Bodhi, LUMI i Piko.
 
+## Universe a rozpočet v CI
+
+- **Atmosféra Nové Země** je Fresnel halo (additive shell) místo plného obalu — okraj planety
+  svítí, vnitřek zůstává čitelný.
+- **Kosmický prach** (`SceneMotes`) v zemské soustavě, kamera o kus dál (18/7/24 × d).
+  Měřeno: 121 draw calls, 51 fps.
+- **`docs/3.2/render-budget.json`** — strojově nezávislý rozpočet (draw calls / trojúhelníky
+  / textury na scénu) generovaný `--write-budget`; CI ho vynutí přes
+  `--budget-file … --budget-tolerance 15`. Vizuální hash zůstává lokální, protože se mezi
+  GPU liší.
+
 ## Otevřené (další vlny)
 
 - **R4** — částice a drobný život v každé scéně (ptáci, prach, listí) nad rámec zvuku.

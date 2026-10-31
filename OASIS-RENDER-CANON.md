@@ -215,6 +215,24 @@ Režimy: `--shots-only` (hero 1920, desktop 1440, mobil 390 — se `?labels=0`),
 `--startup-only` (jen mount + assety), `--resume` (pokračuj po pádu), plná matice
 (bez příznaku) pro interakce, jazyk, reduced-motion a detekci úniků.
 
+### Rozpočet v CI (strojově nezávislý)
+
+Obrazová baseline je závislá na GPU, takže do CI nepatří. Do repa patří **rozpočet** —
+draw calls, trojúhelníky a textury na scénu (`docs/3.2/render-budget.json`). Je to jediné
+číslo, které musí platit na každém stroji.
+
+```bash
+# vygenerovat / obnovit rozpočet (jen po vědomé změně scény)
+... --write-budget docs/3.2/render-budget.json
+
+# CI gate: selže, když scéna naroste o víc než 15 % draw calls nebo trojúhelníků
+... --budget-file docs/3.2/render-budget.json --budget-tolerance 15 --strict-budget
+```
+
+Vizuální regrese zůstává lokální (`--visual-baseline` + `--visual-gate`), protože
+perceptual hash se mezi GPU liší; používej ji před nasazením na stejném stroji, kde
+vznikla baseline.
+
 ### Nasazení
 
 | Povrch | Skript | Host | Služba |
