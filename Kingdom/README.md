@@ -1,6 +1,6 @@
 # Kingdom — jeden klient ekosystému ZION
 
-> **Stav:** **F0 + F1 + F2a hotové** (2026-11-01) — kostra buildí, Brána má obsah z IntroPage a živá čísla, Místnost má **první svět OASIS** (planeta, prstenec Issobelly, Brána, markery portálů) a tři portály (Řetěz, Kovárna, Tržiště) čtou živá data. F2b (13 světů) následuje.
+> **Stav:** **F0 + F1 + F2a hotové** (2026-11-01) — kostra buildí, Brána má obsah z IntroPage a živá čísla, Místnost má **první svět OASIS** (planeta, prstenec Issobelly, Brána, markery portálů) a tři portály (Řetěz, Kovárna, Tržiště) čtou živá data. 13 světů OASIS je hotových.
 > **Datum založení:** 2026-11-01
 > **Nahrazuje:** `NIRVANA-V3.3-UNIFICATION.md` §1–3 jako *architekturu* (nový strom jde od nuly); plánovací router `NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md` zůstává v platnosti pro provoz a RC.
 
@@ -86,6 +86,14 @@ Staré `apps/IntroPage` zůstává jako donor; apex DNS se nepřepíná, dokud B
 - scéna je **generovaná Portal Contractem**: portál s `ring` se objeví ve světě sám, klik na marker otevře `/portal/<id>`
 - lazy `next/dynamic` + `ssr:false` → three.js (**237 KB gzip**) se stahuje jen na `/room`; Brána zůstává bez WebGL
 - ověřeno přes CDP, ne screenshotem: headless Chromium WebGL canvas do obrázku nekomponuje
+
+## Co je hotové (F2b — 13 světů)
+
+- `packages/scenes/src/worlds/` — 13 světů převzatých z `apps/shared/scenes` (10 900 LOC vč. `kit`), `@genesis/runtime` nahrazen skutečným modulem (`runtime.ts`)
+- **`OrbitRig`** místo `drei` `OrbitControls` — stejné rozhraní (`target`, `enabled`, `autoRotate`, `min/maxDistance`, `maxPolarAngle`), tažení + kolečko, o ~100 KB lehčí
+- **katalog světů v `@zion/world`** (jen texty), komponentová vazba v `@zion/scenes` — serverové stránky si three netáhnou do SSR
+- cesta **`/world/<id>`** = místo, ne portál; lazy chunk **294 KB gzip** (three + 13 světů + kit)
+- Místnost má sekci „Světy OASIS“ s 13 dlaždicemi
 
 Report: [`docs/3.2/REPORTS/REPORT_2026-11-01_KINGDOM_F0-F2_OASIS.md`](../docs/3.2/REPORTS/REPORT_2026-11-01_KINGDOM_F0-F2_OASIS.md)
 

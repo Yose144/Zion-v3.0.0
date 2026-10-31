@@ -56,3 +56,11 @@ Pro dokumentační změny stačí `git diff --check`.
 - **Scéna je lazy** (`next/dynamic`, `ssr:false`) — three.js se nesmí objevit v bundlu Brány. Ověřuj: `/` nesmí mít `<canvas>` v HTML.
 - **`manifest.ring` je měřítko světa, ne nirvany.** Drž orbitu r ≈ 2,5; `x: 12` je mimo záběr kamery.
 - **Headless screenshot WebGL nefunguje** (prázdné plátno i když scéna běží). Ověřuj přes CDP: `Page.captureScreenshot` + `Runtime.evaluate` na `.k-scene canvas` (`hasGL`, `contextLost`, `width`/`height`).
+
+## Pasti z F2b (2026-11-01)
+
+- **Katalog světa ≠ komponenta světa.** Texty drž v `@zion/world` (`WORLD_CATALOG`), komponenty v `@zion/scenes` (`WORLDS`). Když serverová stránka sáhne na `@zion/scenes`, přitáhne si three do SSR.
+- **`@genesis/runtime` je mrtvý alias.** Scény v `worlds/` importují `../runtime`, kit `../../runtime`. Nikdy nevracej alias zpět — v bundlu by vznikla druhá instance Reactu/R3F.
+- **Scény si nesou vlastní `ScenePresentation`** (kamera, atmosféra, post, intro). `WorldStage` staví jen `<Canvas>` + `OrbitRig` + `XLighting`.
+- **`OrbitRig` musí číst stav z kamery každý frame**, ne z vlastní absolutní proměnné — jinak se po intru (které kameru přesune) scéna snapne zpět.
+- **Procedurální textury** (`kit/textures.ts`) generují 30–60 ms na povrch. Nikdy negeneruj povrch ve framu.

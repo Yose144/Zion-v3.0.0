@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { text } from '@zion/contract';
 import { t } from '@zion/i18n';
-import { placeMarker, type SceneMarker } from '@zion/world';
+import { placeMarker, WORLD_CATALOG, type SceneMarker } from '@zion/world';
 import { getLocale } from '@/core/locale.server';
 import { portals } from '@/core/registry';
 import { Frame } from '@/core/shell/Frame';
@@ -54,6 +54,26 @@ export default async function RoomPage() {
               </span>
               {portal.layer ? <span>{portal.layer}</span> : null}
               <span>{portal.reads.length} reads</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="k-stage-head" style={{ marginTop: 34 }}>
+        <h2 className="k-title" style={{ fontSize: 18 }}>
+          {t(locale, 'worlds')}
+        </h2>
+        <p className="k-sub">{t(locale, 'worldsLead')}</p>
+      </div>
+
+      <div className="k-grid">
+        {WORLD_CATALOG.map((world) => (
+          <Link key={world.id} href={`/world/${world.id}`} className="k-card" data-link="true">
+            <div className="k-card-title">{world.title}</div>
+            <p className="k-card-desc">{world.subtitle[locale]}</p>
+            <div className="k-meta">
+              <span className="k-badge">{world.layer}</span>
+              <span>3D</span>
             </div>
           </Link>
         ))}

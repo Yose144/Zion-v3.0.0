@@ -1,0 +1,150 @@
+/** @jsxRuntime classic */
+'use client';
+
+import { React, useThree, useFrame, THREE } from '../runtime';
+
+import { CinematicIntro, type CinematicIntroProps } from './kit/camera';
+import { SceneEnvironment, type EnvironmentProps } from './kit/environment';
+import { ScenePost, sceneRenderStats, type ScenePostProps } from './kit/post';
+import { quality } from './kit/quality';
+import { resolveSceneLabels } from './SceneLabel';
+import { reducedMotion as prefersReduced } from './kit/camera';
+
+type Point = [number, number, number];
+
+let reducedMotion = false;
+export const motionTime = (clock: { elapsedTime: number }) => (reducedMotion ? 0 : clock.elapsedTime);
+export const motionDelta = (delta: number) => (reducedMotion ? 0 : Math.min(delta, 0.1));
+export const prefersReducedMotion = () => reducedMotion;
+
+export interface ScenePresentationProps {
+  camera: { position: Point; fov: number };
+  target: Point;
+  spin?: boolean;
+  /**
+   * Sky, image-based lighting and haze. Omitting it keeps a scene on the legacy
+   * hand-authored lighting while the art pass reaches it.
+   */
+  atmosphere?: EnvironmentProps;
+  /** Post chain; `true` uses the tuned defaults. */
+  post?: boolean | ScenePostProps;
+  /** Camera entrance; `true` uses the tuned defaults. */
+  intro?: boolean | Omit<CinematicIntroProps, 'target'>;
+}
+
+/** Shared camera, motion, atmosphere and shadow policy for the thirteen project canvases. */
+export function ScenePresentation({ camera: initial, target, spin = true, atmosphere, post = true, intro = true }: ScenePresentationProps) {
+  const { camera, size, gl, controls, scene } = useThree();
+  const audit = React.useRef(false);
+  const counters = React.useRef({ frames: 0, start: 0 });
+  const invalidVertices = React.useRef(-1);
+  const settings = quality();
+
+  React.useLayoutEffect(() => {
+    const aspect = size.width / Math.max(1, size.height);
+    const portrait = aspect < 1;
+    const factor = portrait ? Math.max(1, 0.8 / aspect) : 1;
+    camera.position.set(...initial.position).sub(new THREE.Vector3(...target)).multiplyScalar(factor).add(new THREE.Vector3(...target));
+    if (camera instanceof THREE.PerspectiveCamera) camera.fov = portrait ? Math.max(initial.fov, 60) : initial.fov;
+    camera.lookAt(...target);
+    camera.updateProjectionMatrix();
+    gl.shadowMap.needsUpdate = true;
+  }, [camera, gl, size.width, size.height, initial, target]);
+
+  React.useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => {
+      reducedMotion = preference.matches || prefersReduced();
+    };
+    update();
+    preference.addEventListener('change', update);
+    audit.current = new URLSearchParams(window.location.search).get('sceneAudit') === '1';
+    if (audit.current) {
+      // Inventory of live geometries so the audit can name the layers that leak.
+      (window as unknown as Record<string, unknown>).__projectSceneObjects = () => {
+        const list: { type: string; uuid: string; vertices: number; object: string }[] = [];
+        scene.traverse((object) => {
+          const geometry = (object as THREE.Mesh).geometry;
+          if (!geometry) return;
+          list.push({
+            type: geometry.type,
+            uuid: geometry.uuid,
+            vertices: geometry.getAttribute ? (geometry.getAttribute('position')?.count ?? 0) : 0,
+            object: object.type,
+          });
+        });
+        return list;
+      };
+    }
+    gl.shadowMap.type = THREE.PCFSoftShadowMap;
+    const previous = gl.shadowMap.autoUpdate;
+    gl.shadowMap.autoUpdate = false;
+    gl.shadowMap.needsUpdate = true;
+    return () => {
+      preference.removeEventListener('change', update);
+      gl.shadowMap.autoUpdate = previous;
+      if (audit.current) {
+        const target = window as unknown as Record<string, unknown>;
+        delete target.__projectScene;
+        delete target.__projectSceneObjects;
+      }
+    };
+  }, [gl, scene]);
+
+  useFrame(({ clock }) => {
+    // Labels publish their screen rectangles later in the frame; resolve the
+    // overlap from the previous frame before the camera is drawn again.
+    resolveSceneLabels(camera);
+    if (controls && 'autoRotate' in controls) (controls as unknown as { autoRotate: boolean }).autoRotate = spin && !reducedMotion;
+    const count = counters.current;
+    count.frames++;
+    // Refresh moving silhouettes gently; static surfaces reuse their shadow map.
+    const refreshEvery = settings.shadowRefreshHz > 0 ? Math.max(2, Math.round(60 / settings.shadowRefreshHz)) : 0;
+    if (count.frames < 4 || (refreshEvery && count.frames % refreshEvery === 0)) {
+      gl.shadowMap.needsUpdate = true;
+    }
+    if (!audit.current) return;
+    if (invalidVertices.current < 0 && count.frames >= 3) {
+      let invalid = 0;
+      scene.traverse((object) => {
+        const attribute = (object as THREE.Mesh).geometry?.getAttribute('position');
+        if (attribute) {
+          for (let i = 0; i < attribute.count; i++) {
+            if (![attribute.getX(i), attribute.getY(i), attribute.getZ(i)].every(Number.isFinite)) invalid++;
+          }
+        }
+      });
+      invalidVertices.current = invalid;
+    }
+    const now = performance.now();
+    if (!count.start) count.start = now;
+    const postActive = Boolean(post) && settings.post;
+    const calls = postActive ? sceneRenderStats.calls : gl.info.render.calls;
+    const triangles = postActive ? sceneRenderStats.triangles : gl.info.render.triangles;
+    const textures = gl.info.memory.textures;
+    (window as unknown as Record<string, unknown>).__projectScene = {
+      frames: count.frames,
+      fps: (count.frames * 1000) / Math.max(1, now - count.start),
+      calls,
+      triangles,
+      geometries: gl.info.memory.geometries,
+      textures,
+      invalidVertices: invalidVertices.current,
+      reducedMotion,
+      autoRotate: controls && 'autoRotate' in controls ? controls.autoRotate : null,
+      camera: camera.position.toArray(),
+      fov: camera instanceof THREE.PerspectiveCamera ? camera.fov : null,
+      tier: settings.tier,
+      dpr: gl.getPixelRatio(),
+      budgetOk: calls <= 250 && triangles <= 400_000 && textures <= 32,
+    };
+  }, -1);
+
+  return (
+    <>
+      {atmosphere ? <SceneEnvironment {...atmosphere} /> : null}
+      {intro ? <CinematicIntro target={target} {...(intro === true ? {} : intro)} enabled={!reducedMotion} /> : null}
+      {post && settings.post ? <ScenePost {...(post === true ? {} : post)} /> : null}
+    </>
+  );
+}

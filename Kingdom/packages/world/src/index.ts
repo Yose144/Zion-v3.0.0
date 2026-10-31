@@ -9,6 +9,8 @@
 
 export type { Vec3, LayerId, PlanetSpec, RingSpec, Place, SceneMarker } from './types';
 export { stationAngle, stationPosition, ringStations } from './geometry';
+export { WORLD_CATALOG, worldEntry } from './worlds';
+export type { WorldCatalogEntry } from './worlds';
 export { mulberry32, starField, starBrightness } from './rng';
 export {
   NEW_EARTH,
