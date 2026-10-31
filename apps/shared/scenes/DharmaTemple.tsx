@@ -449,51 +449,6 @@ function Forest() {
   );
 }
 
-/** Západ slunce nad oceánem — gradient oblohy + slunce (La Palma, hero) */
-function SkyAndSun() {
-  const skyMat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunDir;
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 c = d.y > 0.25 ? mix(mid, top, smoothstep(0.25, 0.8, d.y))
-                              : mix(low, mid, smoothstep(-0.06, 0.25, d.y));
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.88, 0.62) * pow(s, 1800.0) * 1.3
-               + vec3(1.0, 0.72, 0.4) * pow(s, 55.0) * 0.18
-               + vec3(0.95, 0.6, 0.3) * pow(s, 5.0) * 0.2;
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {
-          top: { value: new THREE.Color('#486c94') },
-          mid: { value: new THREE.Color('#b291a3') },
-          low: { value: new THREE.Color('#d8b6aa') },
-          sunDir: { value: new THREE.Vector3(-0.75, 0.08, -0.66).normalize() },
-        },
-      }),
-    [],
-  );
-
-  return (
-    <>
-      <mesh material={skyMat} renderOrder={-10} frustumCulled={false}>
-        <sphereGeometry args={[1800, 32, 20]} />
-      </mesh>
-    </>
-  );
-}
-
-
 export function DharmaTempleScene({ lang }: { lang: Lang }) {
   const domes = useMemo(() => {
     const list = [{ r: CENTER_R, pos: [0, PLATFORM_H, 0] as [number, number, number] }];

@@ -1,7 +1,7 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
@@ -29,14 +29,14 @@ function polar(azDeg: number, d: number): [number, number] {
 function GeoDome({ r, y = 0, glass = '#bfe0ea', frame = '#c9a55c', cut = 0.52, light = 0 }: {
   r: number; y?: number; glass?: string; frame?: string; cut?: number; light?: number;
 }) {
-  const { dome, edges } = useMemo(() => {
+  const { dome, edges } = React.useMemo(() => {
     const g = new THREE.IcosahedronGeometry(r, 2);
     const dome = new THREE.SphereGeometry(r, 24, 12, 0, Math.PI * 2, 0, Math.PI * cut);
     const edges = new THREE.EdgesGeometry(g, 12);
     g.dispose();
     return { dome, edges };
   }, [r, cut]);
-  useEffect(() => () => { dome.dispose(); edges.dispose(); }, [dome, edges]);
+  React.useEffect(() => () => { dome.dispose(); edges.dispose(); }, [dome, edges]);
   return (
     <group position={[0, y, 0]}>
       <mesh geometry={dome} castShadow>
@@ -57,7 +57,7 @@ function GeoDome({ r, y = 0, glass = '#bfe0ea', frame = '#c9a55c', cut = 0.52, l
 
 /** centrální kupole s vnitřním stromem života + světelným portálem */
 function ResearchCore() {
-  const portalRef = useRef<THREE.Mesh>(null);
+  const portalRef = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = portalRef.current?.material as THREE.MeshBasicMaterial | undefined;
     if (m) m.opacity = 0.5 + Math.sin(motionTime(clock) * 1.8) * 0.15;
@@ -172,12 +172,12 @@ function RingComplex() {
 
 /** krovová komunikační věž s anténami a blikajícím majákem */
 function CommsTower({ x, z }: { x: number; z: number }) {
-  const beacon = useRef<THREE.Mesh>(null);
+  const beacon = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = beacon.current?.material as THREE.MeshStandardMaterial | undefined;
     if (m) m.emissiveIntensity = 1.2 + Math.sin(motionTime(clock) * 4) * 1.1;
   });
-  const legs = useMemo(() => {
+  const legs = React.useMemo(() => {
     const g = new THREE.BufferGeometry();
     const pts: number[] = [];
     const w = 1.1, h = 17;
@@ -384,7 +384,7 @@ function LaunchSpire({ x, z }: { x: number; z: number }) {
 
 /** vodopád z terasy do jezírka + tečoucí kaskáda */
 function FallsPool() {
-  const fall = useRef<THREE.Mesh>(null);
+  const fall = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = fall.current?.material as THREE.MeshStandardMaterial | undefined;
     if (m) m.opacity = 0.55 + Math.sin(motionTime(clock) * 3) * 0.12;
@@ -434,7 +434,7 @@ function Volcano() {
 
 /** tropická džungle + terasovité zahrady + cesty */
 function Jungle() {
-  const trees = useMemo(() => {
+  const trees = React.useMemo(() => {
     const arr: { p: [number, number]; h: number; t: number }[] = [];
     for (let i = 0; i < 110; i++) {
       const a = rng(i + 15) * Math.PI * 2;
@@ -445,7 +445,7 @@ function Jungle() {
     }
     return arr;
   }, []);
-  const terraces = useMemo(() => {
+  const terraces = React.useMemo(() => {
     const arr: { pos: [number, number, number]; r: number; y: number }[] = [];
     for (let i = 0; i < 9; i++) {
       const a = rng(i + 50) * Math.PI * 2;
@@ -512,59 +512,6 @@ function Jungle() {
         </group>
       ))}
     </group>
-  );
-}
-
-/** obloha — soumrak na západě, Mléčná dráha + hvězdy na východě/zenitu */
-function DuskSky() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 sunDir;
-          float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-          void main(){
-            vec3 d = normalize(vP);
-            // soumrak: západ teplý, východ/zenit noční
-            float west = clamp(dot(normalize(d.xz), normalize(vec2(-1.0, -0.35))) * 0.5 + 0.5, 0.0, 1.0);
-            float daySide = (1.0 - smoothstep(-0.15, 0.1, d.y)) * west;
-            vec3 night = mix(vec3(0.03, 0.05, 0.12), vec3(0.05, 0.08, 0.18), d.y * 0.5 + 0.5);
-            vec3 dusk  = mix(vec3(0.95, 0.55, 0.28), vec3(0.35, 0.28, 0.42), smoothstep(-0.05, 0.5, d.y));
-            vec3 c = mix(night, dusk, clamp(west * (1.0 - smoothstep(0.05, 0.55, d.y)) * 1.25, 0.0, 1.0));
-            // slunce nízko na západě
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.9, 0.6) * pow(s, 700.0) * 3.0
-               + vec3(1.0, 0.7, 0.4) * pow(s, 30.0) * 0.5;
-            // Mléčná dráha — pás přes oblohu
-            vec3 mwN = normalize(vec3(0.5, 0.75, -0.35));
-            float band = exp(-abs(dot(d, mwN)) * 9.0);
-            c += vec3(0.35, 0.4, 0.55) * band * 0.4 * smoothstep(-0.05, 0.25, d.y);
-            // hvězdy — jen na noční straně
-            vec3 cell = floor(d * 200.0);
-            float star = step(0.995, hash(cell));
-            float tw = 0.6 + 0.4 * hash(cell + 1.0);
-            c += vec3(1.0, 0.98, 0.9) * star * tw * 1.2 * (1.0 - smoothstep(0.02, 0.6, west)) * smoothstep(-0.02, 0.25, d.y);
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {
-          sunDir: { value: new THREE.Vector3(-0.92, 0.12, -0.32).normalize() },
-        },
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[340, 28, 18]} />
-    </mesh>
   );
 }
 

@@ -1,7 +1,7 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, ScenePalms, SceneTerrain, SceneWater, SkyFill } from './kit';
@@ -89,19 +89,19 @@ function Pavilion({ def }: { def: PavilionDef }) {
 
 /** dvojitá lotosová střecha — kopule + 10 velkých + 10 malých lupínků + pupen */
 function LotusRoof({ y, s }: { y: number; s: number }) {
-  const low = useMemo(() => {
+  const low = React.useMemo(() => {
     const g = new THREE.OctahedronGeometry(1, 1);
     g.scale(1.7 * s, 0.3 * s, 4.4 * s);
     g.translate(0, 0, 2.3 * s);
     return g;
   }, [s]);
-  const high = useMemo(() => {
+  const high = React.useMemo(() => {
     const g = new THREE.OctahedronGeometry(1, 1);
     g.scale(1.15 * s, 0.28 * s, 3.0 * s);
     g.translate(0, 0, 1.7 * s);
     return g;
   }, [s]);
-  useEffect(() => () => { low.dispose(); high.dispose(); }, [low, high]);
+  React.useEffect(() => () => { low.dispose(); high.dispose(); }, [low, high]);
   return (
     <group position={[0, y, 0]}>
       {/* pevné tělo střechy — zploštělá kopule pod lupínky */}
@@ -140,7 +140,7 @@ function LotusRoof({ y, s }: { y: number; s: number }) {
 
 /** Sri Maha Bodhi — mohutný rozložitý strom s opěrnými kořeny */
 function BodhiTree() {
-  const branches = useMemo(() => {
+  const branches = React.useMemo(() => {
     const arr: { a: THREE.Vector3; b: THREE.Vector3; r: number }[] = [];
     for (let i = 0; i < 9; i++) {
       const an = (i / 9) * Math.PI * 2 + 0.3;
@@ -154,7 +154,7 @@ function BodhiTree() {
     arr.push({ a: new THREE.Vector3(0, 6.8, 0), b: new THREE.Vector3(0.6, 14.5, 0.4), r: 0.6 });
     return arr;
   }, []);
-  const canopy = useMemo(() => {
+  const canopy = React.useMemo(() => {
     const arr: { p: [number, number, number]; s: number; c: string }[] = [];
     for (let i = 0; i < 40; i++) {
       const a = rng(i + 2) * Math.PI * 2;
@@ -167,7 +167,7 @@ function BodhiTree() {
     }
     return arr;
   }, []);
-  const roots = useMemo(() => {
+  const roots = React.useMemo(() => {
     const arr: { p: [number, number, number]; yaw: number; tilt: number }[] = [];
     for (let i = 0; i < 7; i++) {
       const a = (i / 7) * Math.PI * 2 + 0.2;
@@ -292,7 +292,7 @@ function CentralIsland() {
 
 /** klenutý dřevěný můstek Rama Setu mezi dvěma body */
 function Bridge({ from, to, w = 1.6 }: { from: [number, number]; to: [number, number]; w?: number }) {
-  const { deck, rails, posts, side } = useMemo(() => {
+  const { deck, rails, posts, side } = React.useMemo(() => {
     const a = new THREE.Vector3(from[0], 0.62, from[1]);
     const b = new THREE.Vector3(to[0], 0.62, to[1]);
     const mid = a.clone().lerp(b, 0.5); mid.y = 1.9;
@@ -323,7 +323,7 @@ function Bridge({ from, to, w = 1.6 }: { from: [number, number]; to: [number, nu
     for (let i = 1; i < 6; i++) posts.push(curve.getPoint(i / 6));
     return { deck, rails, posts, side };
   }, [from[0], from[1], to[0], to[1], w]);
-  useEffect(() => () => { deck.dispose(); rails.forEach(rail => rail.dispose()); }, [deck, rails]);
+  React.useEffect(() => () => { deck.dispose(); rails.forEach(rail => rail.dispose()); }, [deck, rails]);
   return (
     <group>
       <mesh geometry={deck} castShadow receiveShadow>
@@ -350,12 +350,12 @@ function Bridge({ from, to, w = 1.6 }: { from: [number, number]; to: [number, nu
 
 /** lotosová jezírka — voda, lilie, lotosy */
 function LotusPond() {
-  const water = useRef<THREE.Mesh>(null);
+  const water = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = water.current?.material as THREE.MeshStandardMaterial | undefined;
     if (m) m.emissiveIntensity = 0.14 + Math.sin(motionTime(clock) * 0.7) * 0.05;
   });
-  const lilies = useMemo(() => {
+  const lilies = React.useMemo(() => {
     const arr: { p: [number, number]; s: number; f: boolean }[] = [];
     let i = 0;
     while (arr.length < 26 && i < 300) {
@@ -413,7 +413,7 @@ function LotusPond() {
 
 /** zahradní okraj — země, cesta, tropická džungle */
 function GardenRing() {
-  const palms = useMemo(() => {
+  const palms = React.useMemo(() => {
     const arr: { p: [number, number]; h: number }[] = [];
     for (let i = 0; i < 30; i++) {
       const a = rng(i + 21) * Math.PI * 2;
@@ -425,7 +425,7 @@ function GardenRing() {
     }
     return arr;
   }, []);
-  const shrubs = useMemo(() => {
+  const shrubs = React.useMemo(() => {
     const arr: { p: [number, number]; s: number; c: string }[] = [];
     for (let i = 0; i < 40; i++) {
       const a = rng(i + 77) * Math.PI * 2;
@@ -537,50 +537,6 @@ function Stupas() {
         </mesh>
       ))}
     </group>
-  );
-}
-
-/** obloha — zlatý soumrak nad Indickým oceánem, slunce na západě */
-function SkySun() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunDir;
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 c = d.y > 0.15 ? mix(mid, top, smoothstep(0.15, 0.65, d.y))
-                              : mix(low, mid, smoothstep(-0.05, 0.15, d.y));
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.9, 0.62) * pow(s, 300.0) * 3.4
-               + vec3(1.0, 0.68, 0.38) * pow(s, 28.0) * 0.55
-               + vec3(0.95, 0.5, 0.24) * pow(s, 6.5) * 0.24;
-            // jemná zlatá mlha nad obzorem
-            c = mix(c, vec3(0.88, 0.62, 0.38), (1.0 - smoothstep(-0.02, 0.18, d.y)) * 0.35);
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {
-          top: { value: new THREE.Color('#2e3c62') },
-          mid: { value: new THREE.Color('#c98444') },
-          low: { value: new THREE.Color('#f0b868') },
-          sunDir: { value: new THREE.Vector3(-0.82, 0.1, -0.3).normalize() },
-        },
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[300, 24, 16]} />
-    </mesh>
   );
 }
 

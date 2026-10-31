@@ -1,7 +1,7 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneMotes, SceneTerrain, SkyFill } from './kit';
@@ -52,7 +52,7 @@ function uluruTexture() {
 
 /** Uluru — masivní monolit s drážkovanými svahy, mírně zvlněný hřbet */
 function UluruRock() {
-  const { geo, tex } = useMemo(() => {
+  const { geo, tex } = React.useMemo(() => {
     const g = new THREE.SphereGeometry(1, 72, 36);
     const pos = g.attributes.position;
     const v = new THREE.Vector3();
@@ -70,7 +70,7 @@ function UluruRock() {
     g.computeVertexNormals();
     return { geo: g, tex: uluruTexture() };
   }, []);
-  useEffect(() => () => { tex.dispose(); geo.dispose(); }, [tex, geo]);
+  React.useEffect(() => () => { tex.dispose(); geo.dispose(); }, [tex, geo]);
   return (
     <group position={[6, 0, -95]}>
       <mesh geometry={geo} position={[0, -0.5, 0]} castShadow receiveShadow>
@@ -93,7 +93,7 @@ function UluruRock() {
 
 /** membránová plachta — napnutá bílá plachta mezi 4 kůly (hyperboloid) */
 function ShadeSail({ x, z, s = 1, yaw = 0 }: { x: number; z: number; s?: number; yaw?: number }) {
-  const sail = useMemo(() => {
+  const sail = React.useMemo(() => {
     const w = 5.4 * s;
     const pts: THREE.Vector3[] = [];
     // napnutá plachta — 4 rohy v různých výškách (hypar)
@@ -140,7 +140,7 @@ function ShadeSail({ x, z, s = 1, yaw = 0 }: { x: number; z: number; s?: number;
 
 /** oheň v kruhu — plamen + sedící lidé */
 function FireCircle() {
-  const fire = useRef<THREE.Group>(null);
+  const fire = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (!fire.current) return;
     const t = motionTime(clock);
@@ -198,13 +198,13 @@ const SONGLINE_SOUTH: [number, number][] = [[0, -6], [6, -20], [18, -38], [30, -
 
 /** svítící songline cesta — křivka napříč údolím */
 function Songline({ pts, color = '#ffb050' }: { pts: [number, number][]; color?: string }) {
-  const geo = useMemo(() => {
+  const geo = React.useMemo(() => {
     const v = pts.map(([x, z], i) => new THREE.Vector3(x, 0.12 + Math.sin(i * 1.3) * 0.06, z));
     const curve = new THREE.CatmullRomCurve3(v);
     return new THREE.TubeGeometry(curve, 60, 0.14, 5);
   }, [pts]);
   // Release the tube when `pts` changes instead of leaving it on the GPU forever.
-  useEffect(() => () => geo.dispose(), [geo]);
+  React.useEffect(() => () => geo.dispose(), [geo]);
   return (
     <mesh geometry={geo}>
       <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.3} roughness={0.6} transparent opacity={0.55} />
@@ -214,7 +214,7 @@ function Songline({ pts, color = '#ffb050' }: { pts: [number, number][]; color?:
 
 /** zlatá socha listu — dvě propletené elipsy se světelným jádrem */
 function LeafSculpture({ x, z }: { x: number; z: number }) {
-  const core = useRef<THREE.Mesh>(null);
+  const core = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = core.current?.material as THREE.MeshStandardMaterial | undefined;
     if (m) m.emissiveIntensity = 0.9 + Math.sin(motionTime(clock) * 1.6) * 0.3;
@@ -293,7 +293,7 @@ function HabDome({ x, z, r = 2.6 }: { x: number; z: number; r?: number }) {
 
 /** pouštní krajina — červená zem, dubby, keře, skaliska v popředí */
 function Outback() {
-  const plants = useMemo(() => {
+  const plants = React.useMemo(() => {
     const arr: { p: [number, number]; s: number; t: number }[] = [];
     for (let i = 0; i < 150; i++) {
       const a = rng(i + 5) * Math.PI * 2;
@@ -410,63 +410,6 @@ function Settlement() {
         );
       })}
     </group>
-  );
-}
-
-/** obloha — západ slunce vlevo, Mléčná dráha přes zenit */
-function UluruSky() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 sunDir;
-          float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-          void main(){
-            vec3 d = normalize(vP);
-            float west = clamp(dot(normalize(d.xz), normalize(vec2(-1.0, -0.2))) * 0.5 + 0.5, 0.0, 1.0);
-            vec3 night = mix(vec3(0.02, 0.04, 0.11), vec3(0.04, 0.07, 0.17), d.y * 0.5 + 0.5);
-            vec3 dusk = mix(vec3(0.98, 0.6, 0.3), vec3(0.3, 0.24, 0.4), smoothstep(-0.05, 0.45, d.y));
-            vec3 c = mix(night, dusk, clamp(west * (1.0 - smoothstep(0.05, 0.5, d.y)) * 1.3, 0.0, 1.0));
-            // slunce nízko za obzorem
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.92, 0.62) * pow(s, 1600.0) * 3.2
-               + vec3(1.0, 0.68, 0.38) * pow(s, 60.0) * 0.42
-               + vec3(0.95, 0.5, 0.24) * pow(s, 8.0) * 0.16;
-            // Mléčná dráha — diagonální pás přes oblohu
-            vec3 mwN = normalize(vec3(0.62, 0.55, 0.3));
-            float band = exp(-abs(dot(d, mwN)) * 8.0);
-            c += vec3(0.4, 0.42, 0.6) * band * 0.55 * smoothstep(-0.05, 0.2, d.y);
-            // hvězdy
-            vec3 cell = floor(d * 320.0);
-            float star = step(0.995, hash(cell));
-            float tw = 0.6 + 0.4 * hash(cell + 1.0);
-            c += vec3(1.0, 0.98, 0.92) * star * tw * 1.1 * (1.0 - smoothstep(0.1, 0.65, west)) * smoothstep(-0.02, 0.2, d.y);
-            // měsíc — jemný srpek vpravo nahoře
-            vec3 mdir = normalize(vec3(0.62, 0.62, -0.28));
-            float md = length(d - mdir);
-            float moon = (1.0 - smoothstep(0.028, 0.035, md)) - (1.0 - smoothstep(0.024, 0.03, length(d - mdir - vec3(0.014, 0.008, 0))));
-            c += vec3(0.95, 0.92, 0.8) * max(moon, 0.0) * 0.9;
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {
-          sunDir: { value: new THREE.Vector3(-0.52, 0.06, -0.85).normalize() },
-        },
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[360, 28, 18]} />
-    </mesh>
   );
 }
 

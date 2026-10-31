@@ -1,7 +1,7 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
@@ -121,9 +121,9 @@ function Chorten({ x, z, s = 1 }: { x: number; z: number; s?: number }) {
 
 /** modlitební vlajky — instancované barevné obdélníky na šňůrách */
 function PrayerFlags({ anchors }: { anchors: { from: [number, number, number]; to: [number, number, number] }[] }) {
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const count = useMemo(() => anchors.length * 14, [anchors]);
-  useEffect(() => {
+  const ref = React.useRef<THREE.InstancedMesh>(null);
+  const count = React.useMemo(() => anchors.length * 14, [anchors]);
+  React.useEffect(() => {
     const m = ref.current;
     if (!m) return;
     const dummy = new THREE.Object3D();
@@ -207,7 +207,7 @@ function Cairn({ x, z, s = 1 }: { x: number; z: number; s?: number }) {
 
 /** poutníci na koře — jdoucí postavy s hůlkami */
 function Pilgrims({ path }: { path: [number, number][] }) {
-  const group = useRef<THREE.Group>(null);
+  const group = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     const g = group.current;
     if (!g) return;
@@ -243,7 +243,7 @@ function Pilgrims({ path }: { path: [number, number][] }) {
 
 /** krajina — údolí, stezka kory, skály, tráva */
 function Valley() {
-  const rocks = useMemo(() => {
+  const rocks = React.useMemo(() => {
     const arr: { p: [number, number]; s: number }[] = [];
     for (let i = 0; i < 60; i++) {
       const a = rng(i + 3) * Math.PI * 2;
@@ -289,63 +289,6 @@ function Valley() {
         <meshStandardMaterial color="#8a7a5c" roughness={0.95} />
       </mesh>
     </group>
-  );
-}
-
-/** obloha — zlatá hodina, slunce za vrcholem Kailashe, pás mraků */
-function KailashSky() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 sunDir;
-          float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-          float noise(vec2 p){
-            vec2 i = floor(p), f = fract(p);
-            f = f * f * (3.0 - 2.0 * f);
-            float a = hash(vec3(i, 1.0)), b = hash(vec3(i + vec2(1.0, 0.0), 1.0));
-            float c = hash(vec3(i + vec2(0.0, 1.0), 1.0)), d = hash(vec3(i + vec2(1.0, 1.0), 1.0));
-            return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-          }
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 top = vec3(0.10, 0.22, 0.42);
-            vec3 hor = vec3(0.92, 0.62, 0.38);
-            vec3 c = mix(hor, top, smoothstep(-0.02, 0.5, d.y));
-            // slunce za vrcholem
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.9, 0.6) * pow(s, 900.0) * 3.6
-               + vec3(1.0, 0.72, 0.4) * pow(s, 40.0) * 0.6
-               + vec3(0.95, 0.6, 0.3) * pow(s, 6.0) * 0.3;
-            // pás tenkých mraků
-            float cl = noise(vec2(d.x * 6.0, d.y * 14.0)) * 0.5 + noise(vec2(d.x * 14.0, d.y * 30.0)) * 0.5;
-            float band = smoothstep(0.48, 0.7, cl) * smoothstep(0.02, 0.1, d.y) * (1.0 - smoothstep(0.2, 0.5, d.y));
-            c = mix(c, vec3(0.95, 0.85, 0.72), band * 0.5);
-            // měsíc — jemný kotouč vlevo nahoře
-            vec3 mdir = normalize(vec3(-0.7, 0.55, -0.3));
-            float moon = (1.0 - smoothstep(0.02, 0.028, length(d - mdir)));
-            c = mix(c, vec3(0.85, 0.88, 0.9), moon * 0.55);
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {
-          sunDir: { value: new THREE.Vector3(0.22, 0.17, -0.96).normalize() },
-        },
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[400, 32, 20]} />
-    </mesh>
   );
 }
 

@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { PASS_COOKIE, verifyPassCode } from '@/lib/pass';
 
@@ -11,6 +11,15 @@ export default async function PresentLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Lokální render audit (scripts/ops/audit-project-scenes.py) potřebuje dosáhnout scén.
+  // Zapnuté jen když to server explicitně dovolí env proměnnou — v produkci se nenastavuje.
+  if (process.env.ZION_RENDER_AUDIT === '1') {
+    const requestHeaders = await headers();
+    if (requestHeaders.get('x-render-audit') === '1') {
+      return <>{children}</>;
+    }
+  }
+
   const store = await cookies();
   const code = store.get(PASS_COOKIE)?.value;
   if (!code || !(await verifyPassCode(code))) {

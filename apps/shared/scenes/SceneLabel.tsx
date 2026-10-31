@@ -33,6 +33,57 @@ function overlaps(a: [number, number, number, number], b: [number, number, numbe
   return a[0] < b[2] + GAP && a[2] + GAP > b[0] && a[1] < b[3] + GAP && a[3] + GAP > b[1];
 }
 
+/** Sdílená cache textur popisků: stejný text = jedna textura, ne jedna na instanci. */
+const textureCache = new Map<string, { texture: THREE.CanvasTexture; users: number }>();
+
+function acquireLabelTexture(text: string): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const hit = textureCache.get(text);
+  if (hit) {
+    hit.users += 1;
+    return hit.texture;
+  }
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.font = '600 28px sans-serif';
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(/\s+/)) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(candidate).width > 430) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  }
+  lines.push(line);
+  canvas.width = Math.ceil(Math.max(...lines.map((value) => ctx.measureText(value).width)) + 36);
+  canvas.height = lines.length * 34 + 18;
+  ctx.fillStyle = 'rgba(8, 12, 20, 0.82)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = 'rgba(230, 210, 170, 0.5)';
+  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+  ctx.font = '600 28px sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#f3e8d0';
+  lines.forEach((value, i) => ctx.fillText(value, 18, 26 + i * 34));
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  textureCache.set(text, { texture, users: 1 });
+  return texture;
+}
+
+function releaseLabelTexture(text: string): void {
+  const hit = textureCache.get(text);
+  if (!hit) return;
+  hit.users -= 1;
+  if (hit.users > 0) return;
+  hit.texture.dispose();
+  textureCache.delete(text);
+}
+
 /** `?labels=0` hides every label — used by the art-review harness. */
 const labelsHidden = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('labels') === '0';
 
@@ -100,37 +151,9 @@ export function SceneLabel({ position, text, scale = 1 }: { position: [number, n
     value.ready = true;
   });
   // Sprites stay in the scene's React root; no nested DOM roots to unmount.
-  const texture = React.useMemo(() => {
-    if (typeof document === 'undefined') return null;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-    ctx.font = '600 28px sans-serif';
-    const lines: string[] = [];
-    let line = '';
-    for (const word of text.split(/\s+/)) {
-      const candidate = line ? `${line} ${word}` : word;
-      if (line && ctx.measureText(candidate).width > 430) { lines.push(line); line = word; }
-      else line = candidate;
-    }
-    lines.push(line);
-    canvas.width = Math.ceil(Math.max(...lines.map(value => ctx.measureText(value).width)) + 36);
-    canvas.height = lines.length * 34 + 18;
-    ctx.fillStyle = 'rgba(8, 12, 20, 0.82)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'rgba(230, 210, 170, 0.5)';
-    ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
-    ctx.font = '600 28px sans-serif';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#f3e8d0';
-    lines.forEach((value, i) => ctx.fillText(value, 18, 26 + i * 34));
-    const next = new THREE.CanvasTexture(canvas);
-    next.colorSpace = THREE.SRGBColorSpace;
-    return next;
-  }, [text]);
-  // Replace the material map in the same commit before disposing the old map.
-  // Disposing in the canvas-creation effect can re-upload its still-mounted map.
-  useEffect(() => () => texture?.dispose(), [texture]);
+  // The texture is shared between every label with the same text.
+  const texture = React.useMemo(() => acquireLabelTexture(text), [text]);
+  useEffect(() => () => releaseLabelTexture(text), [text]);
   if (!texture) return null;
   return <sprite ref={sprite} position={position}>
     <spriteMaterial map={texture} transparent depthWrite={false} toneMapped={false} />

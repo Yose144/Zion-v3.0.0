@@ -1,7 +1,7 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { AtlanticOcean } from './CoastalLandscape';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
@@ -42,10 +42,10 @@ function cliffGeo(seed: number, len: number, h: number, w: number) {
 
 /** útesový hřeben — hlavní mys + ustupující hřebeny */
 function Cliffs() {
-  const main = useMemo(() => cliffGeo(3, 34, 20, 9), []);
-  const back1 = useMemo(() => cliffGeo(7, 24, 15, 8), []);
-  const back2 = useMemo(() => cliffGeo(11, 19, 12, 7), []);
-  useEffect(() => () => { main.dispose(); back1.dispose(); back2.dispose(); }, [main, back1, back2]);
+  const main = React.useMemo(() => cliffGeo(3, 34, 20, 9), []);
+  const back1 = React.useMemo(() => cliffGeo(7, 24, 15, 8), []);
+  const back2 = React.useMemo(() => cliffGeo(11, 19, 12, 7), []);
+  React.useEffect(() => () => { main.dispose(); back1.dispose(); back2.dispose(); }, [main, back1, back2]);
   return (
     <group>
       {/* hlavní mys — čelo k moři */}
@@ -79,7 +79,7 @@ function Cliffs() {
 
 /** fynbos — nízké křoviny na náhorní plošině + protea akcenty */
 function Fynbos() {
-  const plants = useMemo(() => {
+  const plants = React.useMemo(() => {
     const arr: { p: [number, number, number]; s: number; flower: boolean }[] = [];
     for (let i = 0; i < 90; i++) {
       const t = rng(i + 9);
@@ -112,7 +112,7 @@ function Fynbos() {
 
 /** maják Cape Point — bílá věž s lucernou + rotující svazek */
 function Lighthouse() {
-  const beam = useRef<THREE.Group>(null);
+  const beam = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (beam.current) beam.current.rotation.y = motionTime(clock) * 0.5;
   });
@@ -193,8 +193,8 @@ function StoneCircle({ x, z }: { x: number; z: number }) {
 
 /** oceán — dvě vody se švem + pěna o skály + vlny */
 function TwoOceans() {
-  const foam = useRef<THREE.Group>(null);
-  const swell = useRef<THREE.Mesh>(null);
+  const foam = React.useRef<THREE.Group>(null);
+  const swell = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const t = motionTime(clock);
     if (foam.current) {
@@ -236,7 +236,7 @@ function TwoOceans() {
 
 /** mořští ptáci kroužící u mysu */
 function Seabirds() {
-  const flock = useRef<THREE.Group>(null);
+  const flock = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (flock.current) flock.current.rotation.y = motionTime(clock) * 0.12;
   });
@@ -258,65 +258,6 @@ function Seabirds() {
         );
       })}
     </group>
-  );
-}
-
-/** bouřlivá obloha — temné mraky vlevo, zlaté paprsky ze slunce vpravo */
-function StormSky() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 sunDir;
-          float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-          float noise(vec2 p){
-            vec2 i = floor(p), f = fract(p);
-            f = f * f * (3.0 - 2.0 * f);
-            float a = hash(vec3(i, 1.0)), b = hash(vec3(i + vec2(1.0, 0.0), 1.0));
-            float c = hash(vec3(i + vec2(0.0, 1.0), 1.0)), d = hash(vec3(i + vec2(1.0, 1.0), 1.0));
-            return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-          }
-          void main(){
-            vec3 d = normalize(vP);
-            // základní gradient — temná bouře nahoře, zlato u obzoru vpravo
-            float east = clamp(dot(normalize(d.xz), normalize(vec2(0.57, -0.83))) * 0.5 + 0.5, 0.0, 1.0);
-            vec3 storm = mix(vec3(0.10, 0.11, 0.15), vec3(0.05, 0.055, 0.08), smoothstep(0.0, 0.55, d.y));
-            vec3 gold = mix(vec3(0.95, 0.68, 0.34), vec3(0.42, 0.3, 0.26), smoothstep(-0.02, 0.4, d.y));
-            vec3 c = mix(storm, gold, clamp(east * (1.0 - smoothstep(0.05, 0.5, d.y)) * 1.4, 0.0, 1.0));
-            // mraky — vrstvený šum
-            float cl = noise(d.xz / max(d.y, 0.08) * 2.2) * 0.6 + noise(d.xz / max(d.y, 0.08) * 5.5) * 0.4;
-            float cloud = smoothstep(0.42, 0.75, cl) * smoothstep(-0.02, 0.18, d.y);
-            c = mix(c, vec3(0.07, 0.075, 0.1), cloud * (1.0 - east * 0.55));
-            // slunce + boží paprsky
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.88, 0.55) * pow(s, 1800.0) * 1.4
-               + vec3(1.0, 0.7, 0.35) * pow(s, 45.0) * 0.18;
-            // radiální paprsky ze slunce
-            vec3 sp = normalize(cross(sunDir, vec3(0.0, 1.0, 0.0)));
-            float ang = atan(dot(d, sp), dot(d, normalize(cross(sp, sunDir))));
-            float rays = pow(0.5 + 0.5 * sin(ang * 14.0 + cl * 6.0), 3.0);
-            c += vec3(1.0, 0.82, 0.45) * rays * pow(s, 12.0) * 0.14;
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {
-          sunDir: { value: new THREE.Vector3(0.55, 0.11, -0.8).normalize() },
-        },
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[380, 32, 20]} />
-    </mesh>
   );
 }
 

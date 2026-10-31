@@ -492,52 +492,6 @@ function Jungle() {
   );
 }
 
-/** Hory Raiatea na horizontu + západ slunce nad lagunou */
-function SkyMountainsSun() {
-  const skyMat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunDir;
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 c = d.y > 0.22 ? mix(mid, top, smoothstep(0.22, 0.75, d.y))
-                              : mix(low, mid, smoothstep(-0.05, 0.22, d.y));
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.92, 0.66) * pow(s, 1600.0) * 1.5
-               + vec3(1.0, 0.75, 0.42) * pow(s, 45.0) * 0.18
-               + vec3(0.98, 0.62, 0.3) * pow(s, 6.0) * 0.22;
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {
-          top: { value: new THREE.Color('#4c7ba5') },
-          mid: { value: new THREE.Color('#c6b5a4') },
-          low: { value: new THREE.Color('#ebd2aa') },
-          sunDir: { value: new THREE.Vector3(-0.6, 0.05, -0.75).normalize() },
-        },
-      }),
-    [],
-  );
-
-  useEffect(() => () => skyMat.dispose(), [skyMat]);
-
-  return (
-    <>
-      <mesh material={skyMat} renderOrder={-10} frustumCulled={false}>
-        <sphereGeometry args={[1800, 24, 16]} />
-      </mesh>
-    </>
-  );
-}
-
 export function TePikoOraScene({ lang }: { lang: Lang }) {
   const roofTexture = useThatchTexture();
   return (

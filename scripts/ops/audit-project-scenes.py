@@ -2,6 +2,7 @@
 """Browser acceptance matrix for the twelve shared project scenes (production or local)."""
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -92,6 +93,10 @@ def main():
                 if any(row.get('app') == app and row.get('scene') == scene and row.get('status') == 'pass' for row in results): continue
                 row = {'app': app, 'scene': scene, 'release': args.release, 'renderer': args.gpu, 'errors': []}
                 context = browser.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1)
+                if os.environ.get('ZION_RENDER_AUDIT') == '1':
+                    # The presentations are gated by an access pass; a local production build can
+                    # opt in to audits by setting ZION_RENDER_AUDIT=1 on the server and here.
+                    context.set_extra_http_headers({'x-render-audit': '1'})
                 page = context.new_page(); page.set_default_timeout(60000)
                 page.on('pageerror', lambda e, row=row: row['errors'].append(str(e)))
                 page.on('console', lambda m, row=row: row['errors'].append(m.text) if re.search(r'Shader Error|synchronously unmount|React is not defined|Error creating WebGL', m.text) else None)

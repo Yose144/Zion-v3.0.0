@@ -1,7 +1,7 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill, gold as goldMaterial, stoneWarm } from './kit';
@@ -47,9 +47,9 @@ function glyphTexture() {
 
 /** hlavní pyramida — otevřená síň vpředu, zářící vrchol, paprsek do nebe */
 function GrandPyramid() {
-  const beam = useRef<THREE.Mesh>(null);
-  const tex = useMemo(() => glyphTexture(), []);
-  useEffect(() => () => tex.dispose(), [tex]);
+  const beam = React.useRef<THREE.Mesh>(null);
+  const tex = React.useMemo(() => glyphTexture(), []);
+  React.useEffect(() => () => tex.dispose(), [tex]);
   useFrame(({ clock }) => {
     const m = beam.current?.material as THREE.MeshBasicMaterial | undefined;
     if (m) m.opacity = 0.10 + Math.sin(motionTime(clock) * 1.4) * 0.025;
@@ -103,8 +103,8 @@ function GrandPyramid() {
 
 /** meditující kosmická bytost — translucidní zlatá silueta v mandale */
 function CosmicBeing({ x, y, z }: { x: number; y: number; z: number }) {
-  const orb = useRef<THREE.Mesh>(null);
-  const rings = useRef<THREE.Group>(null);
+  const orb = React.useRef<THREE.Mesh>(null);
+  const rings = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     const t = motionTime(clock);
     if (orb.current) {
@@ -201,7 +201,7 @@ function GizaPyramids() {
 
 /** modrá hvězdná tvář — translucidní drátěná hlava z uzlů */
 function StarFace({ x, y, z }: { x: number; y: number; z: number }) {
-  const nodes = useMemo(() => {
+  const nodes = React.useMemo(() => {
     const pts: [number, number, number][] = [];
     // profil tváře z uzlů — ovál + obličejové linie
     for (let i = 0; i < 26; i++) {
@@ -212,21 +212,21 @@ function StarFace({ x, y, z }: { x: number; y: number; z: number }) {
     pts.push([0.9, 0.5, 2.6], [1.4, -0.6, 2.4], [0.6, -1.8, 2.2], [-0.8, 0.9, 2.3], [0.2, 2.4, 1.8], [-0.4, -3.2, 1.6]);
     return pts;
   }, []);
-  const edges = useMemo(() => {
+  const edges = React.useMemo(() => {
     const lines: [number, number][] = [];
     for (let i = 0; i < 26; i++) lines.push([i, (i + 1) % 26]);
     // paprskové spojnice do vnitřní sítě
     for (let i = 0; i < 26; i += 4) lines.push([i, 26 + (i % 6)]);
     return lines;
   }, []);
-  const geo = useMemo(() => {
+  const geo = React.useMemo(() => {
     const verts: number[] = [];
     for (const [a, b] of edges) verts.push(...nodes[a], ...nodes[b]);
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
     return g;
   }, [nodes, edges]);
-  useEffect(() => () => geo.dispose(), [geo]);
+  React.useEffect(() => () => geo.dispose(), [geo]);
   return (
     <group position={[x, y, z]} rotation={[0, 0.5, 0]}>
       <lineSegments geometry={geo}>
@@ -248,7 +248,7 @@ function StarFace({ x, y, z }: { x: number; y: number; z: number }) {
 
 /** Země + orbitální stanice */
 function EarthStation({ x, y, z }: { x: number; y: number; z: number }) {
-  const st = useRef<THREE.Group>(null);
+  const st = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (st.current) st.current.rotation.y = motionTime(clock) * 0.1;
   });
@@ -291,7 +291,7 @@ function EarthStation({ x, y, z }: { x: number; y: number; z: number }) {
 
 /** zlatý energetický oblouk mezi dvěma body */
 function GoldArc({ from, to, lift = 6 }: { from: [number, number, number]; to: [number, number, number]; lift?: number }) {
-  const geo = useMemo(() => {
+  const geo = React.useMemo(() => {
     const a = new THREE.Vector3(...from);
     const b = new THREE.Vector3(...to);
     const mid = a.clone().lerp(b, 0.5);
@@ -299,7 +299,7 @@ function GoldArc({ from, to, lift = 6 }: { from: [number, number, number]; to: [
     const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
     return new THREE.TubeGeometry(curve, 40, 0.09, 5);
   }, [from[0], from[1], from[2], to[0], to[1], to[2], lift]);
-  useEffect(() => () => geo.dispose(), [geo]);
+  React.useEffect(() => () => geo.dispose(), [geo]);
   return (
     <mesh geometry={geo}>
       <meshBasicMaterial color="#ffca5e" transparent opacity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} />
@@ -460,50 +460,6 @@ function Desert() {
         <meshStandardMaterial color="#b89468" roughness={0.95} />
       </mesh>
     </group>
-  );
-}
-
-/** obloha — noc nahoře, soumrak u obzoru, hvězdy, srpek */
-function AmentiSky() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 night = mix(vec3(0.02, 0.03, 0.09), vec3(0.05, 0.08, 0.2), d.y * 0.5 + 0.5);
-            vec3 dusk = mix(vec3(0.85, 0.5, 0.26), vec3(0.1, 0.08, 0.16), smoothstep(-0.02, 0.3, d.y));
-            vec3 c = mix(dusk, night, smoothstep(0.08, 0.4, d.y));
-            // hvězdy
-            vec3 cell = floor(d * 300.0);
-            float star = step(0.995, hash(cell));
-            float tw = 0.5 + 0.5 * hash(cell + 1.0);
-            c += vec3(1.0, 0.98, 0.9) * star * tw * 1.3 * smoothstep(0.05, 0.25, d.y);
-            // srpek vpravo nahoře
-            vec3 mdir = normalize(vec3(0.72, 0.6, -0.2));
-            float md = length(d - mdir);
-            float moon = (1.0 - smoothstep(0.023, 0.03, md)) - (1.0 - smoothstep(0.02, 0.026, length(d - mdir - vec3(0.013, 0.006, 0))));
-            c += vec3(0.95, 0.92, 0.8) * max(moon, 0.0) * 0.95;
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {},
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[420, 32, 20]} />
-    </mesh>
   );
 }
 

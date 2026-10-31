@@ -247,6 +247,11 @@ vznikla baseline.
 | Nirvana | `apps/nirvana/deploy/deploy-nirvana.sh --artifact-dir <standalone/nirvana>` | EDGE (`zion-new`) | `zion-nirvana.service` :3010 |
 | Web | `apps/website-v2.9/deploy/deploy-web2.9.sh --artifact-dir <standalone/website-v2.9>` | EDGE2 (`zion-edge2`) | `zion-website.service` :3000 |
 
+**Pozor na gate.** Prezentace `/present/*` jsou od 31. 10. za ZAP pasem. Lokální audit
+produkčního buildu proto potřebuje dvě věci: server spuštěný s `ZION_RENDER_AUDIT=1`
+a stejnou proměnnou u skriptu — ten pak posílá hlavičku `x-render-audit: 1`, kterou
+`present/layout.tsx` pustí dál. V produkci proměnná není, takže se nic neobchází.
+
 **Pozor na `sharp`.** Web používá `next/image`; build na macOS obsahuje jen
 `@img/sharp-darwin-arm64`. Před nasazením je potřeba dotočit z EDGE2
 `sharp-linux-x64` + `sharp-libvips-linux-x64` do `node_modules/@img/`, jinak obrázky

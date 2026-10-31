@@ -835,49 +835,6 @@ function WaterPathAndRiver({ lang }: { lang: Lang }) {
   );
 }
 
-/** Západ slunce — gradientní obloha + zářící slunce za Vědomí (dle hero) */
-function SkyAndSun() {
-  const skyMat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunDir;
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 c = d.y > 0.25 ? mix(mid, top, smoothstep(0.25, 0.8, d.y))
-                              : mix(low, mid, smoothstep(-0.05, 0.25, d.y));
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.88, 0.62) * pow(s, 1800.0) * 1.4
-               + vec3(1.0, 0.72, 0.4) * pow(s, 26.0) * 0.35
-               + vec3(0.95, 0.6, 0.3) * pow(s, 5.0) * 0.18;
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {
-          top: { value: new THREE.Color('#24466a') },
-          mid: { value: new THREE.Color('#a47a59') },
-          low: { value: new THREE.Color('#e3ad69') },
-          sunDir: { value: new THREE.Vector3(0.18, 0.1, -1).normalize() },
-        },
-      }),
-    [],
-  );
-
-  return (
-    <mesh material={skyMat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[1800, 24, 16]} />
-    </mesh>
-  );
-}
-
-
 export function GenesisGardenScene({ lang }: { lang: Lang }) {
   return (
     <>

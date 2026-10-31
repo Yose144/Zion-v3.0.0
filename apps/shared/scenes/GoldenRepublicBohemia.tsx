@@ -1,7 +1,7 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
 import { KeyLight, SceneTerrain, SkyFill } from './kit';
@@ -54,28 +54,28 @@ function Hall({ def }: { def: HallDef }) {
   const yaw = Math.atan2(-hx, -hz);
 
   // kamenná zadní stěna — oblouk otočený OD centra
-  const backGeo = useMemo(
+  const backGeo = React.useMemo(
     () => new THREE.CylinderGeometry(HALL_R_OUT, HALL_R_OUT, HALL_H - 0.35, 30, 1, true, Math.PI - HALL_SPAN / 2, HALL_SPAN),
     [],
   );
   // kamenný sokl — širší a nižší oblouk
-  const baseGeo = useMemo(
+  const baseGeo = React.useMemo(
     () => new THREE.CylinderGeometry(HALL_R_OUT + 0.35, HALL_R_OUT + 0.5, 0.55, 30, 1, true, Math.PI - (HALL_SPAN + 0.12) / 2, HALL_SPAN + 0.12),
     [],
   );
   // zelená střecha — výsek prstence s přesahem (křídlo nad kolonádou)
-  const roofGeo = useMemo(() => {
+  const roofGeo = React.useMemo(() => {
     const r = ringSector(HALL_R_IN - 1.1, HALL_R_OUT + 0.7, HALL_SPAN + 0.16, 0, '#000');
     return r.geo;
   }, []);
   // vnitřní podlahový výsek — teplé světlo zevnitř
-  const floorGeo = useMemo(
+  const floorGeo = React.useMemo(
     () => new THREE.RingGeometry(HALL_R_IN - 0.3, HALL_R_OUT - 0.1, 28, 1, Math.PI / 2 - HALL_SPAN / 2, HALL_SPAN),
     [],
   );
-  useEffect(() => () => { backGeo.dispose(); baseGeo.dispose(); roofGeo.dispose(); floorGeo.dispose(); }, [backGeo, baseGeo, roofGeo, floorGeo]);
+  React.useEffect(() => () => { backGeo.dispose(); baseGeo.dispose(); roofGeo.dispose(); floorGeo.dispose(); }, [backGeo, baseGeo, roofGeo, floorGeo]);
   // dřevěné lamely zadní stěny — tenké sloupky podél oblouku
-  const slats = useMemo(() => {
+  const slats = React.useMemo(() => {
     const n = 15;
     const arr: { x: number; z: number; yaw: number }[] = [];
     for (let i = 0; i < n; i++) {
@@ -85,7 +85,7 @@ function Hall({ def }: { def: HallDef }) {
     return arr;
   }, []);
   // kolonáda — sloupky po vnitřním oblouku
-  const columns = useMemo(() => {
+  const columns = React.useMemo(() => {
     const n = 9;
     const arr: [number, number][] = [];
     for (let i = 0; i < n; i++) {
@@ -149,7 +149,7 @@ function DecisionCircle() {
   const rings = [1.6, 2.6, 3.6, 4.6];
   const spokes = 16;
   // zlatá spirála vložená do podlahy
-  const spiral = useMemo(() => {
+  const spiral = React.useMemo(() => {
     const pts: THREE.Vector3[] = [];
     for (let i = 0; i <= 90; i++) {
       const t = i / 90;
@@ -198,7 +198,7 @@ function DecisionCircle() {
 
 /** Strom života — mohutný dub nad Decision Circle */
 function OakTree() {
-  const branches = useMemo(() => {
+  const branches = React.useMemo(() => {
     const arr: { start: THREE.Vector3; end: THREE.Vector3; r: number }[] = [];
     const top = new THREE.Vector3(0, 5.6, 0);
     for (let i = 0; i < 7; i++) {
@@ -209,7 +209,7 @@ function OakTree() {
     arr.push({ start: new THREE.Vector3(0, 3.2, 0), end: top, r: 0.2 });
     return arr;
   }, []);
-  const canopy = useMemo(() => {
+  const canopy = React.useMemo(() => {
     const rng = (s: number) => { const x = Math.sin(s * 12.9898) * 43758.5453; return x - Math.floor(x); };
     const arr: { pos: [number, number, number]; s: number }[] = [];
     for (let i = 0; i < 26; i++) {
@@ -259,7 +259,7 @@ function Terraces() {
     { rIn: 9.4, rOut: 13.4, y: 0.18 },
     { rIn: 13.4, rOut: 19.5, y: -0.1 },
   ];
-  const shrubs = useMemo(() => {
+  const shrubs = React.useMemo(() => {
     const rng = (s: number) => { const x = Math.sin(s * 78.233) * 43758.5453; return x - Math.floor(x); };
     const arr: { pos: [number, number, number]; s: number; c: string }[] = [];
     for (let i = 0; i < 70; i++) {
@@ -301,7 +301,7 @@ function Terraces() {
 
 /** les za terasami */
 function ForestRing() {
-  const trees = useMemo(() => {
+  const trees = React.useMemo(() => {
     const rng = (s: number) => { const x = Math.sin(s * 91.17) * 24634.6345; return x - Math.floor(x); };
     const arr: { pos: [number, number, number]; h: number }[] = [];
     for (let i = 0; i < 90; i++) {
@@ -334,7 +334,7 @@ function ForestRing() {
 
 /** vodní plochy — jezírko + prstencový potok + vodopády */
 function Waters() {
-  const fallRef = useRef<THREE.Mesh>(null);
+  const fallRef = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const t = motionTime(clock);
     if (fallRef.current) {
@@ -421,48 +421,6 @@ function DistantLand() {
         </mesh>
       ))}
     </group>
-  );
-}
-
-/** obloha — teplý soumrak, slunce za Řípem */
-function SkySun() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunDir;
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 c = d.y > 0.16 ? mix(mid, top, smoothstep(0.16, 0.7, d.y))
-                              : mix(low, mid, smoothstep(-0.04, 0.16, d.y));
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.92, 0.66) * pow(s, 260.0) * 3.2
-               + vec3(1.0, 0.72, 0.4) * pow(s, 30.0) * 0.5
-               + vec3(0.95, 0.55, 0.26) * pow(s, 7.0) * 0.22;
-            gl_FragColor = vec4(c, 1.0);
-          }
-        `,
-        uniforms: {
-          top: { value: new THREE.Color('#31406a') },
-          mid: { value: new THREE.Color('#c98444') },
-          low: { value: new THREE.Color('#e8b06a') },
-          sunDir: { value: new THREE.Vector3(-0.5, 0.07, -0.86).normalize() },
-        },
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[240, 24, 16]} />
-    </mesh>
   );
 }
 
