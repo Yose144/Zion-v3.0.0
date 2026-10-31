@@ -1,5 +1,16 @@
 # 🌟 ZION Desktop Agent - AI Native Integration
 
+> **⚠️ HISTORICAL (2026-10-31) — hosty v tomto dokumentu jsou vyřazené.**
+> `91.98.122.165` (Zion2, Praha) je decommissioned. Aktuální topologie:
+> **EDGE2** `207.180.217.100` (node/multichain/DAO/OASIS/AI-native) + **EDGE**
+> `62.171.141.136` (pool stratum). Veřejné endpointy:
+> `https://app.zionterranova.com`, `https://pool.zionterranova.com`,
+> `https://rpc.zionterranova.com`. Aktuální AI vrstva = `zion-v31-ai-native`
+> (`V31/L3/ai-native`) + `V31/L3/hiran-gateway`, viz
+> [`docs/3.2/StatusV3.md`](../../docs/3.2/StatusV3.md) a
+> [`docs/3.2/ops/STALE-HOST-REFS-2026-10-31.md`](../../docs/3.2/ops/STALE-HOST-REFS-2026-10-31.md).
+> Text níže je ponechán jako záznam stavu 2.9.6.
+
 Desktop Agent je nyní plně integrován s **AI Native Server** běžícím na aktuálním primárním hostu Zion2 (91.98.122.165:8001).
 
 ---

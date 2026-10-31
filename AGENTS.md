@@ -742,7 +742,7 @@ sudo systemctl enable --now zion-agent
   - `node --check "apps/desktop-agent/src/main.js"`
 - For desktop-agent Python mining fallback changes, run:
   - `python3 -m py_compile <touched_python_file>`
-- `scripts/autopilot-2.9.8.sh` encodes a practical validation/deploy sequence when tasks touch miner/desktop-agent/deploy pipelines.
+- `scripts/autopilot-2.9.8.sh` je **legacy 2.9.x** skript — hardcoduje vyřazené hosty (`91.98.122.165`, porty 3333/8080) a **není** platná validační ani deploy cesta pro V31. Aktuální postup: `V31/RELEASE_RUNBOOK.md` + `V31/deploy/POOL-DEPLOY-RUNBOOK.md`.
 - If GitHub Actions jobs finish in seconds with no runner/steps, treat it as the known billing/infrastructure issue in `StatusV3.md`, not as code validation.
 
 

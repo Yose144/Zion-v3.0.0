@@ -2,6 +2,12 @@
 # ==============================================================================
 # ZION 2.9.8 Autopilot
 # Phases: upgrade -> core -> nodes -> miners -> server deploy -> server test
+#
+# ⚠️ DEPRECATED (2026-10-31): legacy 2.9.x path. The hosts below
+# (91.98.122.165 / 77.42.31.72 / ...) are decommissioned and the ports
+# (3333 stratum, 8080 pool API) no longer exist. Do NOT use for V31
+# deployment — see V31/RELEASE_RUNBOOK.md and V31/deploy/POOL-DEPLOY-RUNBOOK.md.
+# Inventory: docs/3.2/ops/STALE-HOST-REFS-2026-10-31.md
 # ==============================================================================
 
 set -euo pipefail

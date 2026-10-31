@@ -33,7 +33,7 @@ Tyto adresáře zůstávají v rootu, protože **jejich jméno je součást prod
 | `ZION_OS/` | 292 | `deploy-edge.sh` rsyncuje `${REPO_ROOT}/` celý — remote by dostal `infra/ZION_OS/` místo `/opt/zion/ZION_OS/` → rozbil by binary paths |
 | `archive/V3/` | 1131 | Root `V3/` byl archivován 2026-08-04 — existuje už jen jako `archive/V3/`. `.gitmodules` submodule `.../lib/openzeppelin-contracts` už ukazuje na archive path (živý V31 strom má vlastní kontrakty). Read-only reference, needitovat |
 | `Hiran/` | 129 (325M) | AI vrstva — živé refs v `V31/L3/ai-native/src/*.rs`, `V31/cli`, `ZION_OS/dashboard/*.js`, `scripts/openclaw-coding.sh` |
-| `BTCunlock/` | 21 (1.2G) | refs v `apps/desktop-agent/renderer.js`, `ZION_OS/dashboard/*` |
+| `BTCunlock/` | 21 (1.2G) | refs v `apps/desktop-agent/src/ui/renderer.js`, `ZION_OS/dashboard/*` |
 
 ## 3. Untracked adresáře (nejsou v gitu — runtime/artefakty)
 
