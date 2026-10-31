@@ -27,14 +27,14 @@ function emailConfig() {
   return {
     host,
     port,
-    user: process.env.SMTP_USER ?? 'shop@zionterranova.com',
+    user: process.env.SMTP_USER ?? 'shop@newearth.cz',
     password: process.env.SMTP_PASSWORD ?? '',
     isLocal,
-    adminEmail: process.env.ADMIN_EMAIL ?? 'shop@zionterranova.com',
-    shopEmail: process.env.SHOP_EMAIL ?? 'shop@zionterranova.com',
+    adminEmail: process.env.ADMIN_EMAIL ?? 'shop@newearth.cz',
+    shopEmail: process.env.SHOP_EMAIL ?? 'shop@newearth.cz',
     shopName: process.env.SHOP_NAME ?? 'ZION Market',
     resendApiKey: process.env.RESEND_API_KEY ?? '',
-    resendFrom: process.env.RESEND_FROM ?? 'shop@zionterranova.com',
+    resendFrom: process.env.RESEND_FROM ?? 'shop@newearth.cz',
   };
 }
 
@@ -273,15 +273,20 @@ export async function sendCustomerOrderConfirmation(
     const theme = await getActiveTheme();
     const { html, text } = await buildV2OrderConfirmationEmail(order, theme);
 
-    const attachments: AttachmentInput[] | undefined = invoiceHtml
-      ? [
+    let attachments: AttachmentInput[] | undefined;
+    if (invoiceHtml) {
+      try {
+        attachments = [
           {
             filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.pdf`,
             content: await generateInvoicePdf(invoiceHtml),
             contentType: 'application/pdf',
           },
-        ]
-      : undefined;
+        ];
+      } catch (error) {
+        console.error(`Invoice PDF attachment skipped for ${order.orderId}:`, error);
+      }
+    }
 
     await sendMail({
       from: defaultFrom(),
@@ -292,7 +297,9 @@ export async function sendCustomerOrderConfirmation(
       html,
       attachments,
     });
-    console.log(`Customer order confirmation sent for ${order.orderId}${invoiceHtml ? ' (with invoice attachment)' : ''}`);
+    console.log(
+      `Customer order confirmation sent for ${order.orderId}${attachments ? ' (with invoice attachment)' : ''}`
+    );
   } catch (error) {
     console.error('Failed to send customer order confirmation:', error);
   }

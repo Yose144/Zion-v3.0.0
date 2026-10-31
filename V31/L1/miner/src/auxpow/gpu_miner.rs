@@ -247,7 +247,9 @@ mod opencl_impl {
 
                 while left > 0 {
                     let chunk = (left as usize).min(self.work_size);
-                    let local_size = self.local_ws.min(chunk).max(1);
+                    // local_size must equal the compiled reqd_work_group_size;
+                    // extra gids exit early via `tid >= nonce_count`.
+                    let local_size = self.local_ws;
                     let global_size = chunk.div_ceil(local_size) * local_size;
 
                     self.kernel.set_arg(1, current_nonce)?;
@@ -297,7 +299,7 @@ mod opencl_impl {
 
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size);
-                let local_size = self.local_ws.min(chunk).max(1);
+                let local_size = self.local_ws;
                 let global_size = chunk.div_ceil(local_size) * local_size;
 
                 self.kernel.set_arg(1, current_nonce)?;

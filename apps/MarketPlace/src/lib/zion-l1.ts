@@ -142,6 +142,20 @@ function getPoolWalletPath(): string {
   );
 }
 
+/** Canonical pool payout wallet. Bonuses must not leave the shop vault. */
+export const CANONICAL_POOL_PAYOUT_ADDRESS =
+  'zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6';
+
+export function readPoolWalletAddress(): string {
+  const walletPath = ensurePoolWallet();
+  const raw = JSON.parse(fs.readFileSync(walletPath, 'utf8')) as { address?: string };
+  const address = raw.address ?? '';
+  if (address !== CANONICAL_POOL_PAYOUT_ADDRESS) {
+    throw new Error('Pool wallet is not the canonical payout wallet');
+  }
+  return address;
+}
+
 function ensurePoolWallet(): string {
   const walletPath = getPoolWalletPath();
   if (fs.existsSync(walletPath)) return walletPath;
@@ -204,6 +218,7 @@ export async function sendZionPayout(
   try {
     const { stdout, stderr } = await execFileAsync(cli, args, {
       timeout: 120_000,
+      cwd: process.env.ZION_L1_CLI_CWD ?? '/opt/zion/data/v31',
       env: { ...process.env },
     });
     const output = stdout + stderr;

@@ -38,7 +38,10 @@ npm ci
 npx prisma generate
 
 echo "[deploy-marketplace] Building (standalone)..."
-npm run build
+# Local .env pins NEXT_PUBLIC_SITE_URL to localhost for dev. Next inlines that
+# into the server bundle, so a production build must override it or Stripe
+# success/cancel URLs send the customer back to the builder's machine.
+NEXT_PUBLIC_SITE_URL=https://market.zionterranova.com npm run build
 
 if [[ ! -f "${ROOT_DIR}/.next/standalone/server.js" ]]; then
   echo "[deploy-marketplace] ERROR: .next/standalone/server.js missing" >&2

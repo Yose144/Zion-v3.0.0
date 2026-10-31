@@ -84,6 +84,8 @@ pub struct MultichainConfig {
     pub reconciliation: ReconciliationConfig,
     #[serde(default)]
     pub solvency: SolvencyConfig,
+    #[serde(default)]
+    pub dex: DexConfig,
 }
 
 impl Default for MultichainConfig {
@@ -102,6 +104,7 @@ impl Default for MultichainConfig {
             node_rewards: NodeRewardsConfig::default(),
             reconciliation: ReconciliationConfig::default(),
             solvency: SolvencyConfig::default(),
+            dex: DexConfig::default(),
         }
     }
 }
@@ -172,6 +175,26 @@ impl Default for SolvencyConfig {
         Self {
             enforce: true,
             margin: "0".to_string(),
+        }
+    }
+}
+
+/// DEX execution configuration.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DexConfig {
+    /// Allow swaps to execute against the in-memory `DexRouter` AMM (virtual
+    /// reserves, custodial ledger settlement only). Default `false`: the
+    /// in-memory AMM is a dev/test engine — production swaps must route
+    /// through on-chain settlement (Uniswap V3 `exactInputSingle` or solver
+    /// intents). Set `true` only for dev/test environments.
+    #[serde(default)]
+    pub inmemory_amm: bool,
+}
+
+impl Default for DexConfig {
+    fn default() -> Self {
+        Self {
+            inmemory_amm: false,
         }
     }
 }

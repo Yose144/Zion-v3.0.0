@@ -45,6 +45,21 @@ pub struct BlockRecord {
     pub confirmed_at_chain_height: u64,
 }
 
+/// Dominant-miner concentration over a trailing window of found blocks
+/// (IA-19/1.B6): the largest single miner's block share — the metric whose
+/// spike revealed the G8 run #2 single-miner dependency.
+#[derive(Debug, Clone, Default)]
+pub struct DominantShare {
+    /// Miner identity (`miner_id` from the winning share).
+    pub miner_id: String,
+    /// Blocks attributed to that miner inside the window.
+    pub blocks: u64,
+    /// Total blocks in the window.
+    pub total: u64,
+    /// `blocks / total * 100`.
+    pub share_pct: f64,
+}
+
 /// Summary statistics for the block tracker.
 #[derive(Debug, Clone, Default)]
 pub struct BlockTrackerStats {
@@ -57,6 +72,8 @@ pub struct BlockTrackerStats {
     /// Live accepted-share counter since the last found block — feeds the
     /// public "current effort" gauge (effort = actual/expected shares).
     pub shares_since_last_block: u64,
+    /// Largest single-miner share of the last 100 found blocks (1.B6).
+    pub dominant_share_100: Option<DominantShare>,
 }
 
 /// In-memory block tracker with stats for pool luck and orphan monitoring.
@@ -277,6 +294,44 @@ impl BlockTracker {
         self.blocks.iter().rev().take(n).collect()
     }
 
+    /// Largest single-miner share over the last `window` found blocks.
+    /// `None` when no blocks are recorded. Ties resolve to the miner whose
+    /// most recent block is newest (the concentration that is *currently*
+    /// growing is the operational concern).
+    pub fn dominant_miner_share(&self, window: usize) -> Option<DominantShare> {
+        let recent: Vec<&BlockRecord> = self.blocks.iter().rev().take(window).collect();
+        if recent.is_empty() {
+            return None;
+        }
+        let total = recent.len() as u64;
+        let mut counts: std::collections::HashMap<&str, u64> = std::collections::HashMap::new();
+        for rec in &recent {
+            *counts.entry(rec.miner_id.as_str()).or_default() += 1;
+        }
+        let (miner_id, blocks) = counts
+            .iter()
+            .max_by(|(m1, b1), (m2, b2)| {
+                b1.cmp(b2).then_with(|| {
+                    // Tie-break: newer last-seen block wins (recency).
+                    let last_seen = |m: &str| {
+                        recent
+                            .iter()
+                            .position(|r| r.miner_id == m)
+                            .map(|i| recent.len() - i)
+                            .unwrap_or(0)
+                    };
+                    last_seen(m1).cmp(&last_seen(m2))
+                })
+            })
+            .map(|(m, b)| (*m, *b))?;
+        Some(DominantShare {
+            miner_id: miner_id.to_string(),
+            blocks,
+            total,
+            share_pct: blocks as f64 / total as f64 * 100.0,
+        })
+    }
+
     /// Return summary statistics for the tracker.
     pub fn stats(&self) -> BlockTrackerStats {
         BlockTrackerStats {
@@ -287,6 +342,7 @@ impl BlockTracker {
             pool_luck_100: self.pool_luck_pct(100),
             pool_luck_500: self.pool_luck_pct(500),
             shares_since_last_block: self.shares_since_last_block,
+            dominant_share_100: self.dominant_miner_share(100),
         }
     }
 }
@@ -456,5 +512,85 @@ mod tests {
         let n = tracker.record_block_found(4, "m", "w", 1000, 100_000, true);
         assert_eq!(n, 56);
         assert_eq!(tracker.shares_since_last_block, 0);
+    }
+
+    // ── 1.B6/IA-19: dominant-miner share ─────────────────────────────────
+
+    #[test]
+    fn dominant_share_none_when_empty() {
+        let tracker = BlockTracker::new();
+        assert!(tracker.dominant_miner_share(100).is_none());
+        assert!(tracker.stats().dominant_share_100.is_none());
+    }
+
+    #[test]
+    fn dominant_share_single_miner_is_100pct() {
+        let mut tracker = BlockTracker::new();
+        for h in 1..=5 {
+            tracker.record_block_found(h, "whale", "w1", 1000, 100_000, true);
+        }
+        let d = tracker.dominant_miner_share(100).unwrap();
+        assert_eq!(d.miner_id, "whale");
+        assert_eq!(d.blocks, 5);
+        assert_eq!(d.total, 5);
+        assert!((d.share_pct - 100.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn dominant_share_picks_largest_miner() {
+        let mut tracker = BlockTracker::new();
+        // whale 7, small 3 → 70/30.
+        for h in 1..=7 {
+            tracker.record_block_found(h, "whale", "w", 1000, 100_000, true);
+        }
+        for h in 8..=10 {
+            tracker.record_block_found(h, "small", "w", 1000, 100_000, true);
+        }
+        let d = tracker.dominant_miner_share(100).unwrap();
+        assert_eq!(d.miner_id, "whale");
+        assert_eq!(d.blocks, 7);
+        assert_eq!(d.total, 10);
+        assert!((d.share_pct - 70.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn dominant_share_window_excludes_older_blocks() {
+        let mut tracker = BlockTracker::new();
+        // 10 whale blocks, then 5 small blocks. Window 5 → only small.
+        for h in 1..=10 {
+            tracker.record_block_found(h, "whale", "w", 1000, 100_000, true);
+        }
+        for h in 11..=15 {
+            tracker.record_block_found(h, "small", "w", 1000, 100_000, true);
+        }
+        let d = tracker.dominant_miner_share(5).unwrap();
+        assert_eq!(d.miner_id, "small");
+        assert_eq!(d.total, 5);
+        assert!((d.share_pct - 100.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn dominant_share_tie_prefers_most_recent() {
+        let mut tracker = BlockTracker::new();
+        tracker.record_block_found(1, "alice", "w", 1000, 100_000, true);
+        tracker.record_block_found(2, "bob", "w", 1000, 100_000, true);
+        tracker.record_block_found(3, "alice", "w", 1000, 100_000, true);
+        tracker.record_block_found(4, "bob", "w", 1000, 100_000, true);
+        // 2–2 tie; bob's last block is newer.
+        let d = tracker.dominant_miner_share(100).unwrap();
+        assert_eq!(d.miner_id, "bob");
+        assert_eq!(d.blocks, 2);
+        assert!((d.share_pct - 50.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn dominant_share_in_stats() {
+        let mut tracker = BlockTracker::new();
+        for h in 1..=4 {
+            tracker.record_block_found(h, "solo", "w", 1000, 100_000, true);
+        }
+        let d = tracker.stats().dominant_share_100.unwrap();
+        assert_eq!(d.miner_id, "solo");
+        assert_eq!(d.total, 4);
     }
 }

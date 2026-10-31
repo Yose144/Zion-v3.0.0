@@ -253,12 +253,26 @@ function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
                   <div><span className="text-gray-500">ID:</span> <span className="font-mono text-rasta-green text-xs">{order.orderId}</span></div>
                   <div><span className="text-gray-500">Datum:</span> {formatDateTime(order.createdAt)}</div>
                   <div><span className="text-gray-500">Platba:</span> {PAYMENT_LABELS[order.payment] || order.payment}</div>
+                  <div><span className="text-gray-500">Částka:</span> {formatPrice(order.totalCzk)}</div>
                   <div><span className="text-gray-500">Stav platby:</span>
                     <span className={`ml-1 px-2 py-0.5 rounded text-xs ${order.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-yellow-500/20 text-yellow-300'}`}>
                       {order.paymentStatus === 'paid' ? '✅ Zaplaceno' : '⏳ Čeká'}
                     </span>
                   </div>
                   <div><span className="text-gray-500">Aktualizace:</span> {formatDateTime(order.updatedAt)}</div>
+                  {order.invoices[0]?.stripeSession && (
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Stripe:</span>{' '}
+                      <a
+                        href={`https://dashboard.stripe.com/checkout/sessions/${order.invoices[0].stripeSession}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-xs text-rasta-gold hover:underline"
+                      >
+                        {order.invoices[0].stripeSession}
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -372,7 +386,10 @@ function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
                     </div>
                   )}
                 </div>
-                {tokenStatus.data?.status !== 'distributed' && (
+                {tokenStatus.data?.status !== 'distributed' && order.paymentStatus !== 'paid' && (
+                  <span className="text-sm text-gray-400">Odejde automaticky po zaplacení</span>
+                )}
+                {tokenStatus.data?.status !== 'distributed' && order.paymentStatus === 'paid' && (
                   <button
                     onClick={handleDistributeTokens}
                     disabled={busy === 'tokens'}

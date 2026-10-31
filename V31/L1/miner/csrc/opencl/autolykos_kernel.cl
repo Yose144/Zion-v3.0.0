@@ -40,7 +40,7 @@ __constant const ulong BLAKE2B_IV[8] = {
 };
 
 // BLAKE2b G function (RFC 7693 §3.1).  Rotations: 32, 24, 16, 63.
-inline void blake2b_G(
+static inline void blake2b_G(
     ulong v[16],
     const int a, const int b, const int c, const int d,
     const ulong x, const ulong y
@@ -70,7 +70,7 @@ inline void blake2b_G(
 //   m    — 16 message words (little-endian u64), pre-loaded by caller
 //   t    — 64-bit total byte counter
 //   last — nonzero if this is the final block
-inline void blake2b_compress_unrolled(
+static inline void blake2b_compress_unrolled(
     ulong h[8],
     __private const ulong m[16],
     const ulong t,
@@ -112,7 +112,7 @@ inline void blake2b_compress_unrolled(
 }
 
 // Load 16 little-endian u64 words from a 128-byte block.
-inline void blake2b_load_message(
+static inline void blake2b_load_message(
     __private ulong m[16],
     __private const uchar *block
 ) {
@@ -124,7 +124,7 @@ inline void blake2b_load_message(
     }
 }
 
-inline void blake2b_init(ulong h[8]) {
+static inline void blake2b_init(ulong h[8]) {
     h[0] = BLAKE2B_IV[0] ^ 0x01010020UL;  // digest=32, key=0, fanout=1, depth=1
     h[1] = BLAKE2B_IV[1];
     h[2] = BLAKE2B_IV[2];
@@ -135,14 +135,14 @@ inline void blake2b_init(ulong h[8]) {
     h[7] = BLAKE2B_IV[7];
 }
 
-inline void blake2b_store(ulong h[8], uchar *output) {
+static inline void blake2b_store(ulong h[8], uchar *output) {
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 8; j++)
             output[i * 8 + j] = (uchar)(h[i] >> (j * 8));
 }
 
 // BLAKE2b-256 of up to 256 bytes held in private memory (1-2 blocks).
-inline void blake2b256_short(
+static inline void blake2b256_short(
     __private const uchar *input,
     const uint input_len,
     uchar *output

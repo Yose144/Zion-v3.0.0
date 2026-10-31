@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::config::{ReconciliationConfig, SolverConfig, SolverEntry};
+use crate::config::{DexConfig, ReconciliationConfig, SolverConfig, SolverEntry};
 
 /// WARP configuration loaded from TOML.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,6 +46,11 @@ pub struct WarpConfig {
     /// Reconciliation task configuration ([reconciliation] section).
     #[serde(default)]
     pub reconciliation: ReconciliationConfig,
+
+    /// DEX execution gates ([dex] section) — `inmemory_amm` defaults to
+    /// `false` so the in-memory AMM stays a dev/test engine in production.
+    #[serde(default)]
+    pub dex: DexConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -95,6 +100,7 @@ impl Default for WarpConfig {
             solver: SolverConfig::default(),
             solvers: Vec::new(),
             reconciliation: ReconciliationConfig::default(),
+            dex: DexConfig::default(),
         }
     }
 }

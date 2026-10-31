@@ -42,6 +42,11 @@ pub struct SwapExecutor {
     /// Optional solvency guard — when set, swap output settlement is blocked
     /// if the hot wallet has insufficient on-chain balance.
     solvency: Option<SolvencyGuard>,
+    /// When `false`, swaps may not execute against the in-memory `DexRouter`
+    /// AMM (virtual reserves). Only on-chain settlement paths (Uniswap V3,
+    /// solver intents) are allowed. Defaults to `true` for dev/test compat;
+    /// production wires `config.dex.inmemory_amm` (default `false`).
+    inmemory_amm: bool,
 }
 
 /// Parameters for a non-custodial two-sided HTLC swap.
@@ -83,6 +88,7 @@ impl SwapExecutor {
             router,
             htlc: None,
             solvency: None,
+            inmemory_amm: true,
         }
     }
 
@@ -103,6 +109,25 @@ impl SwapExecutor {
     pub fn with_solvency(mut self, guard: SolvencyGuard) -> Self {
         self.solvency = Some(guard);
         self
+    }
+
+    /// Enable/disable execution through the in-memory `DexRouter` AMM.
+    /// Production sets `config.dex.inmemory_amm = false` (the default) so
+    /// only on-chain settlement paths can execute.
+    pub fn with_inmemory_amm(mut self, enabled: bool) -> Self {
+        self.inmemory_amm = enabled;
+        self
+    }
+
+    /// Error used when a swap can only be served by the disabled in-memory
+    /// AMM. The swap fails closed: the input is refunded and the order is
+    /// recorded as `Failed`.
+    fn inmemory_amm_disabled_err() -> MultichainError {
+        MultichainError::Unsupported(
+            "in-memory AMM disabled (set dex.inmemory_amm=true for dev/test); \
+             no on-chain route for this pair"
+                .to_string(),
+        )
     }
 
     /// Return the best quote for a swap, falling back to an on-chain Uniswap V3
@@ -185,21 +210,19 @@ impl SwapExecutor {
 
         // 0. Pre-flight solvency check: if the swap output will be settled
         // on-chain (recipient is Some), verify the hot wallet has enough of
-        // the output token before debiting the user. This uses a read-only
-        // quote to estimate the output amount.
+        // the output token before debiting the user. Uses `self.quote()` —
+        // the same read-only quote the execution path uses — so V3-only
+        // pairs (no in-memory route) are checked too instead of silently
+        // skipping the guard.
         if let Some(ref guard) = self.solvency {
             if recipient.is_some() {
-                let router_read = self.router.read().await;
-                if let Ok(quotes) = router_read.quote_multi(from, to, amount, 1, 4) {
-                    if let Some(quote) = quotes.last() {
-                        if let Err(e) = guard.verify_swap_output(to, quote.expected_out).await {
-                            order.status = DexOrderStatus::Failed;
-                            self.save_order(&order).await?;
-                            return Err(e);
-                        }
+                if let Ok(quote) = self.quote(from, to, amount).await {
+                    if let Err(e) = guard.verify_swap_output(to, quote.expected_out).await {
+                        order.status = DexOrderStatus::Failed;
+                        self.save_order(&order).await?;
+                        return Err(e);
                     }
                 }
-                drop(router_read);
             }
         }
 
@@ -299,7 +322,7 @@ impl SwapExecutor {
                     order.tx_hash = Some(tx_hash.to_hex());
                     out
                 }
-                Err(MultichainError::Unsupported(_)) => {
+                Err(MultichainError::Unsupported(_)) if self.inmemory_amm => {
                     // V3 not supported by this adapter (e.g. MockAdapter in tests).
                     // Fall back to in-memory AMM execution.
                     let mut router = self.router.write().await;
@@ -325,6 +348,14 @@ impl SwapExecutor {
                     return Err(e);
                 }
             }
+        } else if !self.inmemory_amm {
+            // In-memory AMM is a dev/test engine — disabled in production.
+            // Fail closed: refund the input and record the order as failed.
+            self.credit(user_id, from, amount, "swap_refund", Some(&order.id))
+                .await?;
+            order.status = DexOrderStatus::Failed;
+            self.save_order(&order).await?;
+            return Err(Self::inmemory_amm_disabled_err());
         } else {
             // In-memory AMM execution (custodial, for non-EVM or multi-hop).
             let mut router = self.router.write().await;
@@ -901,6 +932,99 @@ mod tests {
 
         let usdc_balance = ledger.balance(user_id, &usdc).await.unwrap();
         assert_eq!(usdc_balance.0, order.amount_out.0);
+    }
+
+    /// 4.B6: with `inmemory_amm = false` (the production default), a swap that
+    /// has no on-chain route must fail closed — the input is refunded, the
+    /// order is recorded as Failed, and pool reserves are untouched.
+    #[tokio::test]
+    async fn inmemory_amm_disabled_fails_closed() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+        let mut dex = DexRouter::new();
+        let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
+        let usdc = Asset::native(ChainId::ZionL1, "USDC", 6, "USD Coin");
+
+        dex.add_pool(Pool {
+            id: 1,
+            asset_a: zion.clone(),
+            asset_b: usdc.clone(),
+            reserve_a: Amount::new(100_000_000_000),
+            reserve_b: Amount::new(1_000_000_000_000),
+            fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
+        });
+
+        let user_id = "user1";
+        ledger
+            .credit(user_id, &zion, Amount::new(10_000_000))
+            .await
+            .unwrap();
+
+        let executor = SwapExecutor::new(
+            Arc::clone(&db),
+            Arc::new(ChainAdapterRegistry::new()),
+            ledger.clone(),
+            Arc::new(RwLock::new(dex)),
+        )
+        .with_inmemory_amm(false);
+
+        let err = executor
+            .execute_swap(
+                user_id,
+                &zion,
+                &usdc,
+                Amount::new(1_000_000),
+                Amount::ZERO,
+                None,
+            )
+            .await
+            .unwrap_err();
+        assert!(matches!(err, MultichainError::Unsupported(_)));
+
+        // Input refunded in full — no partial debit left behind.
+        let zion_balance = ledger.balance(user_id, &zion).await.unwrap();
+        assert_eq!(zion_balance.0, 10_000_000);
+        let usdc_balance = ledger.balance(user_id, &usdc).await.unwrap();
+        assert_eq!(usdc_balance.0, 0);
+    }
+
+    /// 4.B6: quoting stays read-only — a disabled in-memory AMM may still
+    /// answer `quote()` (it only prices against virtual reserves), but the
+    /// execution path is gated separately.
+    #[tokio::test]
+    async fn inmemory_amm_disabled_still_quotes() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+        let mut dex = DexRouter::new();
+        let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
+        let usdc = Asset::native(ChainId::ZionL1, "USDC", 6, "USD Coin");
+
+        dex.add_pool(Pool {
+            id: 1,
+            asset_a: zion.clone(),
+            asset_b: usdc.clone(),
+            reserve_a: Amount::new(100_000_000_000),
+            reserve_b: Amount::new(1_000_000_000_000),
+            fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
+        });
+
+        let executor = SwapExecutor::new(
+            Arc::clone(&db),
+            Arc::new(ChainAdapterRegistry::new()),
+            ledger,
+            Arc::new(RwLock::new(dex)),
+        )
+        .with_inmemory_amm(false);
+
+        let quote = executor
+            .quote(&zion, &usdc, Amount::new(1_000_000))
+            .await
+            .unwrap();
+        assert!(quote.expected_out.0 > 0);
     }
 
     #[tokio::test]

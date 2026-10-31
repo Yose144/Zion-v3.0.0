@@ -31,6 +31,26 @@ Všechny skripty: lokální build → rsync → restart/reload → smoke check (
 
 ⚠️ **nirvana. = výjimka z web-tier pravidla:** nasazena na **EDGE** (`zion-new`, port 3010) — DNS `nirvana.` resolvuje přes wildcard `* → 62.171.141.136` (explicitní A záznam zatím není). OASIS data tahá přes `OASIS_API_URL=http://127.0.0.1:8094` = chain-tunnel leg → reálný OASIS backend na EDGE2. **Fáze 2 (wildcard→EDGE2):** přidat explicitní `nirvana A 207.180.217.100` + nasadit instanci na EDGE2 (`ZION_EDGE_HOST=zion-edge2 bash apps/nirvana/deploy/deploy-nirvana.sh`) + certbot vhost tam — jinak po flipu doména umře.
 
+### 🛑 Deploy pravidlo: `stop → sync → start → write-path test` (P0-1/P0-2, 21. 10.)
+
+**Nikdy nersyncovat datové soubory (`.db`, `.env`, ledger soubory) pod běžící službou.**
+Proces drží smazaný inode → SQLite `attempt to write a readonly database` (P0-1: L5 scanner
+mrznul 5 dní na `last_block_height 90 334`, API servírovalo stará data — `is-active` ✅ přitom)
+a desyncnutý `.env` = tiché auth selhání ~240 err/h (P0-2).
+
+Pořadí pro dotek dat/env souborů služby:
+
+1. `systemctl stop <svc>`
+2. rsync / edit
+3. `systemctl start <svc>`
+4. **Write-path test** (ne jen `is-active` — proces může být active a nezápisovat):
+   - scanner/daemon: metrika nebo API pole roste (`last_block_height`, `*_blocks_scanned`)
+   - db-sync: fresh write do PG (`MiningWorker.lastShareAt` se mění)
+   - pool: `journalctl -u zion-v31-pool | grep 'share accepted'` teče
+   - obecné: `lsof +D <datadir> | grep deleted` = nesmí vrátit nic (držené smazané inode)
+
+Post-mortem: [`docs/3.2/REPORTS/POSTMORTEM_2026-10-21_RSYNC_UNDER_SERVICE.md`](../docs/3.2/REPORTS/POSTMORTEM_2026-10-21_RSYNC_UNDER_SERVICE.md)
+
 ## Restart / status služeb
 
 ```bash
@@ -68,11 +88,100 @@ Health: `curl https://app.zionterranova.com/api/health` (28 služeb), `https://a
 - **fail2ban lockout operátora** → jail `sshd` na Edgi umí zabanovat vlastní IP při rychlých SSH auditech — `OPERATOR_IPS` v `V31/AGENTS.md`.
 - **Pool DoS / stratum flood / session churn** → layered vrstvy + kernel tuning + incident checklist: [`docs/3.2/POOL-DOS-LAYERS.md`](../docs/3.2/POOL-DOS-LAYERS.md).
 
+## Pool HA (active-passive) — STAV: připraveno, NEaktivováno
+
+> Rozhodnutí 👤 2026-10-31: HA stack **dokumentovat + oficiálně aktivovat** (2.S5 uzavřeno ve prospěch A4.2 active-passive).
+> **Aktivace je blokovaná, dokud není doložené fencing.** Detail: [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §W2.
+
+### Co existuje (EDGE2)
+
+| Unit | Role | Stav |
+|---|---|---|
+| `zion-pool-standby.service` | replika poolu (`/opt/zion/bin/zion-pool-standby`), nepublikuje stratum | **inactive** (`ConditionPathExists=/opt/zion/data/v31-standby/ACTIVATED` — bez markeru se `start` tiše skipne) |
+| `zion-pool-ha-watchdog.timer` | 30 s — měří health primary a **jen alertuje**; **NIKDY nepromotuje** | active |
+| `zion-pool-standby-sync.timer` | 60 s — `pool-pplns.json` + payout ledger + `store.db` z EDGE (pull) | active |
+| `zion-pool-standby-dbsync.timer` | 60 min — plná DB replikace (pull) | active |
+
+**RPO (měřeno 2026-10-31, `scripts/ops/dr-parity-check.sh --only data`):**
+- PPLNS state + payout ledger: **≤ 60 s** (naměřeno ~47 s) — odpovídá kadence `*-sync.timer`.
+- `pool-store.db`: **≤ 60 min** (naměřeno ~3343 s) — odpovídá `*-dbsync.timer`. Mezi syncy je `store.db` na standby **zastaralá až o hodinu**; PPLNS + ledger jsou ale čerstvé, takže promote neztratí payout idempotency guards, jen historii bloků.
+
+**RTO** = čas operátora. V kódu **neexistuje žádný `armed`/auto-promote režim** — watchdog je alert-only (hlavička skriptu: *„never starts the standby … split-brain"*). Auto-promote je jen backlog (`G*` v DR runbooku), ne funkce.
+
+> **Kanonický postup aktivace / promote / rollback / failback:** [`docs/3.2/ops/DR-BRINGUP-RUNBOOK.md`](../docs/3.2/ops/DR-BRINGUP-RUNBOOK.md) (W1.3). Obsahuje 5 defektů B1–B5 se stavem a paritní matici; `scripts/ops/dr-parity-check.sh` je jediný povolený gate.
+
+**Parita standby (W1.5, 31. 10. 2026): `PASS (0 fail, 5 warn)`** — `--miner-address`, payout klíč (sha256 shodný s primárem), `--pplns-window-size 500000000`, izolované `state`/`store.db` a **byte-identická binárka** s primárem (`build fdeda709a`). Parita je pinovaná **explicitními flagy v unitě** ([`infra/tools/pool-ha/units/zion-pool-standby.service`](tools/pool-ha/units/zion-pool-standby.service)), takže ji env soubor nemůže tiše rozbít. Zbylé `WARN` jsou **jen kroky promotu**, které dopředu udělat nelze: B4 (EDGE watchdog restartuje pool) a B5 (UFW/nginx cesta pro minery), plus osiřelý replikační adresář.
+> Po **každém rebuildu poolu na primáru** znovu spusť `bash scripts/ops/dr-parity-check.sh --only binary` — jinak se binary skew vrátí a standby vrací starou logiku.
+
+### ⚠️ Proč to nesmí být `armed` bez fencingu
+
+Promote **při zpomalení** místo **při smrti** primáru znamená, že obě instance chvíli píšou ledger → **dvojí výplata minerům**. To je nejdražší možná chyba v celém systému; payout historie se needituje zpětně.
+
+**Podmínky aktivace (všechny tři):**
+
+1. Watchdog rozlišuje **prokázaný fail** (proces/port/health dead po N po sobě jdoucích pokusech) od **degradace** (pomalá odpověď) — degradace nikdy nespouští promote.
+2. Promote obsahuje **explicitní stop primary** (systemd stop na EDGE + verifikace, že primary opravdu neběží), ne jen „převzít roli".
+3. Staged observační období ≥ 1 týden bez falešného poplachu → teprve pak 👤 rozhodnutí.
+
+> ⚠️ **`log-only` ani `armed` mód v kódu neexistují** — jsou to jen názvy cílových stavů v tomto runbooku, ne přepínače. Dnešní watchdog je *alert-only by design* a žádná konfigurační hodnota ho nepřepne na promote. Zavádění auto-promote = **nový kód** (backlog `G*` v DR runbooku), ne „flip env proměnné".
+
+### Manuální promote
+
+```bash
+# 1. STOP primary FIRST — jinak dvojí výplata
+ssh <edge> "systemctl stop zion-v31-pool && systemctl is-active zion-v31-pool"   # musí vrátit inactive
+# 2. ověř, že primary opravdu neběží (ne jen 'deactivating')
+ssh <edge> "pgrep -af zion-pool || echo NO_PROCESS"
+# 3. promote standby — NEJDŘÍV ale zakaž watchdogu vzkřísit primary (B4)
+ssh <edge> "systemctl stop zion-v31-watchdog.timer"            # jinak do 60 s restartuje pool
+ssh zion-edge2 "touch /opt/zion/data/v31-standby/ACTIVATED && chmod 600 /opt/zion/data/v31-standby/ACTIVATED"
+ssh zion-edge2 "systemctl start zion-pool-standby && systemctl is-active zion-pool-standby"
+# 4. ověř stratum + API + payout sweep (standby API je na :8090, ne :8080 — B5)
+curl -s http://127.0.0.1:8090/stats | head -c 200
+# 5. zapiš do incident logu: čas, důvod, kdo, RPO (poslední sync timestamp)
+```
+
+**Rollback (zpět na EDGE):** stop standby + `rm /opt/zion/data/v31-standby/ACTIVATED` → ověř `NO_PROCESS` → start primary → `systemctl start zion-v31-watchdog.timer` → ověř `/stats` a payout sweep. Nikdy nespouštěj obě instance současně, ani na „jen pár sekund". Kompletní sekvence včetně nginx/monitoringu zpět na `:8080` je v DR runbooku §8 (Rollback / failback).
+
+### Failback
+
+Watchdog **neumí** vrátit roli primáru zpět automaticky — failback je vždy 👤 manuální okno (stejná sekvence jako promote, jen opačně). Automatický failback = další příležitost na split-brain.
+
+---
+
+## DNS a veřejné povrchy (stav 2026-10-31)
+
+| Hostname | Cíl | HTTP | Poznámka |
+|---|---|---|---|
+| `zionterranova.com`, `www.` | EDGE2 | 200 | static export `/var/www/zion-maintenance` |
+| `app.` | EDGE2 | 200 | `zion-website` :3000 — **hlavní pracovní povrch** |
+| `market.` | EDGE2 | 200 | `zion-marketplace` :3100 |
+| `pool.` | EDGE2 | 200 | ingress → `zion-edge-tunnel` → EDGE :8080 |
+| `oasis.` | EDGE2 | 200 | `/var/www/oasis` |
+| `auth.` | EDGE2 | 200 | `zion-zis` :8096 — **cert expiruje 24. 1. 2027** |
+| `freeworld.` | EDGE2 | 200 | `zion-v31-free-world` :8095 |
+| `rpc.` | EDGE2 | 200 | veřejné RPC |
+| `explorer.` | EDGE | 301 | web-tier cutover není úplný |
+| `nirvana.` | EDGE | 200 | `zion-nirvana` :3010 (`User=zion`, `/opt/zion/APP&WEB/nirvana`) |
+| `dashboard.` | EDGE | 401 | basic auth — **živé, ne mrtvé** |
+| `api.` | **EDGE** (DNS) / EDGE2 (služba) | **404** | ⚠️ **není mrtvé** — `zion-hiran-gateway` běží na EDGE2 `127.0.0.1:8007` (`/health` 200, neauth chat `401`). Vhost `infra/nginx/edge2/api.zionterranova.com.conf` je v repu a staged na EDGE2 (**NO_CERT**). Chybí **DNS `api` A → `207.180.217.100`** + `certbot` (rozhodnutí 👤 31. 10.: publikovat) |
+| `updates.` | EDGE (přes **wildcard `*`**) | 404 | **mrtvé.** ⚠️ V zóně **není explicitní `A` záznam** — resolvuje jen díky wildcardu `* → 62.171.141.136`, takže „smazat A záznam" **nelze** (smazalo by celý wildcard = grafana/dashboard/testnet/… ). Správná akce: buď nechat 404 (dnes), nebo přidat explicitní záznam až při obnovení `update-server/` (dnes jen v `archive/`) |
+| `dex.` | **EDGE** (DNS) / EDGE2 (služba) | **404** | ⚠️ **není mrtvé** — warpd `:8454` (`/v1/swap/pools` 200). `/prices/:token/history` **už implementováno + nasazeno** (`V31/L2/multichain`, `768fc23dc`). Vhost staged (**NO_CERT**). Chybí **DNS: nový explicitní `dex` A → `207.180.217.100`** + `certbot` (rozhodnutí 👤 31. 10.: doplnit + publikovat) |
+
+**Cert expiry (EDGE2, měřeno 2026-10-31):** `auth.` **24. 1. 2027** · `pool.` **16. 1. 2027** · `rpc.` **4. 1. 2027** · `market.` **29. 12. 2026** · `freeworld.` **28. 12. 2026** · `app.` **27. 12. 2026** · `oasis.` **27. 12. 2026** · `api.`/`dex.` **NO_CERT**.
+Nejbližší expirace tedy **27. 12. 2026** (`app.` + `oasis.`) — **není** to kritická cesta v3.3 (W1 končí 24. 11.); `auth.` není blokátor, jak se dřív tvrdilo.
+
+**Pozor na past:** `api.` a `dex.` **nejsou** mrtvé povrchy — DNS vede na EDGE, ale služby žijí na EDGE2. Diagnóza `curl` = `000` + `ssl_verify_result=1` znamená **SAN mismatch**, ne „nic tam neběží". Vždy nejdřív `ss -tlnp` na EDGE2, pak teprve suď.
+
+**Pravidlo:** veřejný povrch je buď **200/301**, nebo **DNS záznam neexistuje**. 404 na vlastním hostname = nedodělek, ne „placeholder".
+
+---
+
 ## Rollback
 
 - **Web:** `.next.bak-*` konvence — před riskantním deployem `ssh zion-edge2 "cp -a /opt/zion/APP\&WEB/website-v2.9/.next /opt/zion/APP\&WEB/website-v2.9/.next.bak-$(date -u +%Y%m%dT%H%M%SZ)-<tag>"`; zpět = přejmenovat + `systemctl restart zion-website`.
 - **Statické weby:** rsync `--delete` → rollback = redeploy předchozího commitu (nebo `/var/www/*.bak-*` adresáře pokud existují).
-- **Celý web-tier na Edge:** DNS 9 záznamů zpět na `62.171.141.136` — fallback vhosty na Edgi žijí (stale). Okno ≈ do expirace auth certu na Edgi.
+- **Celý web-tier na Edge:** DNS 9 záznamů zpět na `62.171.141.136` — fallback vhosty na Edgi žijí (stale). Rollback okno je otevřené **do 25. 1. 2027** (expirace `auth.` certu na Edgi); `dashboard.` a `explorer.` tam mají certy platné do 5. 10. 2026 / 28. 1. 2027 — `dashboard.` dnes servíruje jiný (platný) cert než ten v `live/`, `curl` hlásí `verify=0`.
 - **nginx změna:** `nginx -t` vždy před reload; zálohy confů **mimo** `sites-enabled/` (include glob `*` načte i `.bak` → duplicate `server_name`).
 
 ## Ops lessons (2026-10-24)

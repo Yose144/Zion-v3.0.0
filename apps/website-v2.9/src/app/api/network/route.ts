@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSeedNodesConfig, type SeedNodeConfig } from '@/lib/network-config';
 import { getZionRpc } from '@/lib/zion-rpc';
+import { SITE_PRIMARY_HOST } from '@/lib/site';
 
 /**
  * TREE_NODES Network API
@@ -10,6 +11,13 @@ import { getZionRpc } from '@/lib/zion-rpc';
  */
 
 const SEED_NODES = getSeedNodesConfig();
+
+/** Loopback / private / link-local — must never appear in the public API. IA-17. */
+const PRIVATE_HOST_RE = /^(localhost|127\.|0\.0\.0\.0|::1|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|fe80:|fd|fc[0-9a-f]{2}:)/i;
+
+function sanitizePublicHost(host: string, fallback: string): string {
+  return PRIVATE_HOST_RE.test(host) ? fallback : host;
+}
 
 interface NodeStatus {
   id: string;
@@ -105,9 +113,11 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
   }
 
   // Sanitize public-facing identifiers regardless of env overrides.
+  // `host` was leaking the env's loopback probe target (127.0.0.1) — IA-17.
   status.id = 'zion-primary';
   status.name = 'ZION One Love Node';
   status.region = 'PRIMARY';
+  status.host = sanitizePublicHost(status.host, SITE_PRIMARY_HOST);
 
   return status;
 }

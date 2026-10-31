@@ -26,6 +26,6 @@ export function companySupportEmail(): string {
   return (
     process.env.SHOP_EMAIL?.trim() ||
     process.env.ADMIN_EMAIL?.trim() ||
-    'shop@zionterranova.com'
+    'shop@newearth.cz'
   );
 }

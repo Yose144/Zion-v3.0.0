@@ -88,3 +88,35 @@ groups:
         annotations:
           summary: "no pool payout recorded for {{ $value }}s"
           description: "Newest payout ledger row is over 1h old — payout submit or confirmation sweep likely stalled (pool keeps finding blocks but stops recording/paying). Check pool journal payout lines and store.db write health."
+
+      # W1.2 (2026-10-31): pool-side block production freshness. G8ChainStale
+      # watches the chain tip, which keeps advancing from EDGE fallback miners
+      # and peers even when no pool session is producing — so a dead pool
+      # hashrate path was previously invisible. Empirical cadence over the
+      # last 300 pool blocks: median 44s, p95 197s, p99 269s, max 323s.
+      - alert: ZionPoolBlockProductionStale
+        expr: zion_pool_last_block_age_seconds > 900
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "no block found by pool for {{ $value }}s"
+          description: "Newest pool block is over 15min old (median cadence 44s, p99 269s) — pool hashrate collapsed or all sessions are submitting stale work. Stratum/API can still look healthy; check active sessions, vardiff and share reject buckets."
+
+      - alert: ZionPoolBlockProductionHalted
+        expr: zion_pool_last_block_age_seconds > 1800
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "pool block production halted {{ $value }}s"
+          description: "No pool block for 30+ minutes (~40x median cadence). Chain liveness still relies on EDGE fallback miners, but pool PPLNS/payout rounds stop accruing. Check pool journal for template fetch errors and node RPC reachability."
+
+      - alert: ZionPoolBlocksApiDown
+        expr: zion_pool_blocks_api_ok == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "pool public blocks endpoint returns no rows"
+          description: "/public/v1/blocks returned no rows for 10+ minutes — either block-production metrics are blind (the probe cannot compute zion_pool_last_block_age_seconds) or the pool store/API is broken. Verify GET /public/v1/blocks and the pool store.db."

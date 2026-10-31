@@ -1,6 +1,6 @@
 # Shared project scenes
 
-Single source of geometry, labels, lighting and camera settings for the twelve L5 Free World project scenes. Each scene renders twice: as the website preview on `app.zionterranova.com/terranova/<slug>` and as the Nirvana presentation on `nirvana.zionterranova.com/present/<slug>`. Change a scene here rather than copying it into either application.
+Single source of geometry, labels, lighting and camera settings for the twelve L5 Free World project scenes, plus the lunar Matrix base. Earth scenes render twice: as the website preview on `app.zionterranova.com/terranova/<slug>` and as the Nirvana presentation on `nirvana.zionterranova.com/present/<slug>`. Matrix is Moon-only for now (`/present/matrix`) — it is not a thirteenth Earth pin. Change a scene here rather than copying it into either application.
 
 ## Scenes
 
@@ -18,6 +18,7 @@ Single source of geometry, labels, lighting and camera settings for the twelve L
 | `BoaEsperanca.tsx` | Boa Esperança · Cape of Good Hope | `/present/boa-esperanca` |
 | `Kailash.tsx` | Kailash · Tibet | `/present/kailash` |
 | `Amenti.tsx` | Amenti · Giza | `/present/amenti` |
+| `Matrix.tsx` | Matrix · Shackleton, Moon | `/present/matrix` |
 
 ## Shared infrastructure
 

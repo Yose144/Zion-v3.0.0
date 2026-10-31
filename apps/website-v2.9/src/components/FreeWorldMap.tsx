@@ -17,7 +17,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type * as Leaflet from 'leaflet';
 import { useLang } from '@/contexts/LanguageContext';
-import { FREE_WORLD_SITES, SITE_STATUS_COLOR, type FreeWorldSite } from '@/lib/freeworld-sites';
+import { EARTH_FREE_WORLD_SITES, SITE_STATUS_COLOR, type FreeWorldSite } from '@/lib/freeworld-sites';
 
 const copy = {
   loading: { cs: 'Načítám planetární mapu…', en: 'Loading planetary map…' },
@@ -43,8 +43,8 @@ const copy = {
   },
   detail: { cs: 'Otevřít stránku komunity →', en: 'Open community page →' },
   communityCount: {
-    cs: `${FREE_WORLD_SITES.length} komunit`,
-    en: `${FREE_WORLD_SITES.length} communities`,
+    cs: `${EARTH_FREE_WORLD_SITES.length} komunit`,
+    en: `${EARTH_FREE_WORLD_SITES.length} communities`,
   },
 };
 
@@ -90,7 +90,7 @@ export default function FreeWorldMap() {
 
   const buildMarkers = useCallback(
     (map: Leaflet.Map, L: typeof Leaflet) => {
-      for (const site of FREE_WORLD_SITES) {
+      for (const site of EARTH_FREE_WORLD_SITES) {
         const color = SITE_STATUS_COLOR[site.status];
         const icon = L.divIcon({
           className: 'fw-map-marker',
@@ -152,7 +152,7 @@ export default function FreeWorldMap() {
         mapRef.current = map;
         buildMarkers(map, L);
 
-        const bounds = L.latLngBounds(FREE_WORLD_SITES.map((s) => [s.lat, s.lon] as [number, number]));
+        const bounds = L.latLngBounds(EARTH_FREE_WORLD_SITES.map((s) => [s.lat, s.lon] as [number, number]));
         map.fitBounds(bounds.pad(0.35));
 
         // Size can still settle after the entrance animation — re-measure.

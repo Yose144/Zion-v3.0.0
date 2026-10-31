@@ -257,7 +257,7 @@ export interface AdminOrdersListResult {
       newsletter: boolean;
       createdAt: string;
       updatedAt: string;
-      invoices: { id: string; invoiceNumber: string; status: string; pdfUrl: string | null; totalCzk: number; issuedAt: string }[];
+      invoices: { id: string; invoiceNumber: string; status: string; pdfUrl: string | null; totalCzk: number; issuedAt: string; stripeSession: string | null }[];
     }[];
     page: number;
     limit: number;

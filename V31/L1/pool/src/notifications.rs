@@ -305,6 +305,44 @@ impl Notifier {
         }
     }
 
+    /// IA-19/1.B6: hashrate centralization — one miner found `blocks` of the
+    /// last `window` blocks (≥ alert threshold). The G8 run #2 failure was a
+    /// single-miner dependency discovered only after the fact; this alert
+    /// makes it visible while it is still recoverable.
+    pub fn notify_dominant_share(
+        &self,
+        miner_id: &str,
+        share_pct: f64,
+        blocks: u64,
+        window: usize,
+    ) {
+        warn!(
+            "notify_dominant_share miner={} share={:.1}% ({}/{})",
+            miner_id, share_pct, blocks, window
+        );
+
+        if self.config.telegram_enabled() {
+            let msg = format!(
+                "⚠️ Hashrate Concentration\nMiner {} found {} of the last {} blocks ({:.1}%) — single-miner dependency (IA-19).",
+                miner_id, blocks, window, share_pct
+            );
+            self.send_telegram(&msg);
+        }
+
+        if self.config.webhook_enabled() {
+            let payload = serde_json::json!({
+                "event": "dominant_share",
+                "miner": miner_id,
+                "share_pct": share_pct,
+                "blocks": blocks,
+                "window": window,
+            });
+            if let Some(url) = self.config.block_webhook_url.clone() {
+                self.send_webhook(&url, &payload);
+            }
+        }
+    }
+
     // --- individual channel senders --------------------------------------
 
     /// Send a text message to the configured Telegram chat.

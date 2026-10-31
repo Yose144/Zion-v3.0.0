@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import PageLayout from "../components/PageLayout";
 import HeroImage from "../components/HeroImage";
 import LucideIcon from "../components/LucideIcon";
@@ -253,6 +254,13 @@ export default function EvoluzionPage() {
             />
           </div>
           <p className="italic text-[#fcd116]">{t.footer.quote}</p>
+          <Link
+            href="/evoluzion/archa/"
+            className="mt-6 inline-block text-white/15 transition hover:text-[#fcd116]/70"
+            title="…"
+          >
+            <LucideIcon name="fa-waves" size={16} />
+          </Link>
           <div className="mt-6 flex justify-center gap-6 text-2xl">
             <a href="https://www.facebook.com/ZionTerraNova/" className="text-[#078930]">
               <LucideIcon name="fa-facebook" size={28} />

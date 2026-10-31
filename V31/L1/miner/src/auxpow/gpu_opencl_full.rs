@@ -239,7 +239,7 @@ struct OctopusDag {
 #[derive(Clone)]
 struct FishhashDag {
     /// DAG buffer on GPU — stored as uint8 elements (128 bytes = 16 uint8 per item).
-    buf: Buffer<u8>,
+    buf: Buffer<ocl::prm::Uint8>,
     /// Number of DAG items (37,748,717 for FishHash/KarlsenHashV2).
     size_items: u32,
 }
@@ -2929,10 +2929,10 @@ impl ExtGpuMiner {
             pro_que.queue().clone()
         };
 
-        let buf: Buffer<u8> = Buffer::builder()
+        let buf: Buffer<ocl::prm::Uint8> = Buffer::builder()
             .queue(q)
-            .len(dag.len())
-            .copy_host_slice(dag)
+            .len(dag.len() / core::mem::size_of::<ocl::prm::Uint8>())
+            .copy_host_slice(Self::bytes_as_ocl_vec(dag))
             .build()
             .map_err(|e| anyhow!("failed to allocate FishHash DAG buffer: {e}"))?;
 
@@ -2952,10 +2952,26 @@ impl ExtGpuMiner {
     /// `node_start` (a dataset item covers nodes `2*i`, `2*i+1`; the full DAG
     /// is `2 * FISHHASH_DATASET_ITEMS` nodes ≈ 4.6 GB). Returns the generated
     /// bytes so callers can verify against [`fishhash_dataset_item`].
+    /// Reinterpret a byte buffer as OpenCL vector elements so ROCm's strict
+    /// kernel-arg introspection sees the declared pointer type (e.g. `uint16*`,
+    /// `uint8*`) instead of `uchar*`. Alignment is safe: ocl prm types are
+    /// plain scalar arrays (align ≤ 16) and Vec<u8> is malloc-aligned.
+    fn bytes_as_ocl_vec<T>(bytes: &[u8]) -> &[T] {
+        let n = bytes.len() / core::mem::size_of::<T>();
+        unsafe { core::slice::from_raw_parts(bytes.as_ptr() as *const T, n) }
+    }
+
+    fn bytes_as_ocl_vec_mut<T>(bytes: &mut [u8]) -> &mut [T] {
+        let n = bytes.len() / core::mem::size_of::<T>();
+        unsafe { core::slice::from_raw_parts_mut(bytes.as_mut_ptr() as *mut T, n) }
+    }
+
     fn fishhash_build_dag_into(
         pro_que: &ocl::ProQue,
-        dag_buf: &Buffer<u8>,
-        cache_buf: &Buffer<u8>,
+        dag_buf: &Buffer<ocl::prm::Uint8>,
+        // Typed Uint16 so ROCm's strict arg introspection matches the kernel's
+        // `__global const uint16 *_Cache` (a u8 buffer reports uchar*).
+        cache_buf: &Buffer<ocl::prm::Uint16>,
         node_start: u32,
         node_count: u32,
     ) -> Result<()> {
@@ -2999,21 +3015,20 @@ impl ExtGpuMiner {
         let q = pro_que.queue().clone();
 
         let cache = build_fishhash_light_cache();
-        let cache_buf: Buffer<u8> = Buffer::builder()
+        let cache_buf: Buffer<ocl::prm::Uint16> = Buffer::builder()
             .queue(q.clone())
-            .len(cache.len())
-            .copy_host_slice(&cache)
+            .len(cache.len() / core::mem::size_of::<ocl::prm::Uint16>())
+            .copy_host_slice(Self::bytes_as_ocl_vec(&cache))
             .build()?;
-        let dag_buf: Buffer<u8> = Buffer::builder()
+        let dag_buf: Buffer<ocl::prm::Uint8> = Buffer::builder()
             .queue(q.clone())
-            .len(node_count as usize * 64)
-            .fill_val(0u8)
+            .len(node_count as usize * 64 / core::mem::size_of::<ocl::prm::Uint8>())
             .build()?;
 
         Self::fishhash_build_dag_into(pro_que, &dag_buf, &cache_buf, node_start, node_count)?;
 
         let mut out = vec![0u8; node_count as usize * 64];
-        dag_buf.read(&mut out).enq()?;
+        dag_buf.read(Self::bytes_as_ocl_vec_mut(&mut out)).enq()?;
         Ok(out)
     }
 
@@ -3028,16 +3043,16 @@ impl ExtGpuMiner {
         let q = pro_que.queue().clone();
 
         let cache = build_fishhash_light_cache();
-        let cache_buf: Buffer<u8> = Buffer::builder()
+        let cache_buf: Buffer<ocl::prm::Uint16> = Buffer::builder()
             .queue(q.clone())
-            .len(cache.len())
-            .copy_host_slice(&cache)
+            .len(cache.len() / core::mem::size_of::<ocl::prm::Uint16>())
+            .copy_host_slice(Self::bytes_as_ocl_vec(&cache))
             .build()?;
 
         let total_nodes: u64 = FISHHASH_DATASET_ITEMS as u64 * 2;
-        let dag_buf: Buffer<u8> = Buffer::builder()
+        let dag_buf: Buffer<ocl::prm::Uint8> = Buffer::builder()
             .queue(q.clone())
-            .len((total_nodes * 64) as usize)
+            .len((total_nodes * 64 / core::mem::size_of::<ocl::prm::Uint8>() as u64) as usize)
             .build()
             .map_err(|e| {
                 anyhow!(
@@ -3877,6 +3892,46 @@ typedef unsigned long ulong;
         Ok((platform, device, platform_name, device_name))
     }
 
+    fn device_local_mem_size(&self) -> u64 {
+        self.device
+            .info(ocl::enums::DeviceInfo::LocalMemSize)
+            .ok()
+            .and_then(|v| match v {
+                ocl::enums::DeviceInfoResult::LocalMemSize(n) => Some(n),
+                _ => None,
+            })
+            .unwrap_or(u64::MAX)
+    }
+
+    fn device_global_mem_size(&self) -> u64 {
+        self.device
+            .info(ocl::enums::DeviceInfo::GlobalMemSize)
+            .ok()
+            .and_then(|v| match v {
+                ocl::enums::DeviceInfoResult::GlobalMemSize(n) => Some(n),
+                _ => None,
+            })
+            .unwrap_or(u64::MAX)
+    }
+
+    /// Clean bail when a multi-GB buffer set cannot fit in device VRAM.
+    /// ROCm overcommits clCreateBuffer (lazy page allocation), so oversized
+    /// requests "succeed" and the kernel page-faults mid-run → SIGABRT kills
+    /// the whole miner process.  Checking up-front converts that into a
+    /// recoverable error.  ~10% headroom covers driver/desktop allocations.
+    fn check_vram_fits(&self, needed: usize, algo: &str) -> Result<()> {
+        let total = self.device_global_mem_size();
+        let usable = total.saturating_sub(total / 10);
+        if needed as u64 > usable {
+            anyhow::bail!(
+                "{algo} needs {:.1} GB VRAM, device has {:.1} GB — insufficient memory",
+                needed as f64 / 1e9,
+                total as f64 / 1e9
+            );
+        }
+        Ok(())
+    }
+
     fn detect_work_size(device: &Device) -> Result<usize> {
         let global_mem = device
             .info(ocl::enums::DeviceInfo::GlobalMemSize)
@@ -4051,13 +4106,19 @@ typedef unsigned long ulong;
         prog_builder.src(src);
         // Conservative build options; fast-relaxed-math can break integer hashing.
         // Include a unique timestamp to force OpenCL driver to recompile (avoid cached binaries)
-        let force_recompile = format!(
+        let mut force_recompile = format!(
             "-cl-std=CL1.2 -cl-mad-enable -DFORCE_RECOMPILE={}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_nanos()
         );
+        // pearl v2 stages 49,476 B of __local — over the 48 KiB cap on
+        // pre-sm_75 NVIDIA devices (GP104 reports 49,152). ptxas rejects the
+        // whole program (even unused kernels), so compile it out there.
+        if kernel_file == "pearl_pouw_native.cl" && self.device_local_mem_size() < 49_476 {
+            force_recompile.push_str(" -DPEARL_DISABLE_V2=1");
+        }
         prog_builder.cmplr_opt(&force_recompile);
 
         let pro_que = ProQue::builder()
@@ -4602,7 +4663,7 @@ typedef unsigned long ulong;
         header: &[u8],
         target: &[u8; 32],
         base_nonce: u64,
-        dag_buf: &Buffer<u8>,
+        dag_buf: &Buffer<ocl::prm::Uint8>,
         dag_size_items: u32,
         output_nonce_buf: &Buffer<u64>,
         output_hash_buf: &Buffer<u8>,
@@ -4617,29 +4678,13 @@ typedef unsigned long ulong;
         let mut header_padded = vec![0u8; 192];
         header_padded[..header_len].copy_from_slice(&header[..header_len]);
 
-        // Reinterpret as uint16 array (3 × 64 bytes).
-        // OpenCL uint16 = 16 × uint32 = 64 bytes.
-        let mut block_header_u32 = vec![0u32; 48]; // 3 × 16 uint32s
-        for i in (0..header_len).step_by(4) {
-            let remaining = header_len - i;
-            if remaining >= 4 {
-                block_header_u32[i / 4] = u32::from_le_bytes([
-                    header_padded[i],
-                    header_padded[i + 1],
-                    header_padded[i + 2],
-                    header_padded[i + 3],
-                ]);
-            } else {
-                let mut bytes = [0u8; 4];
-                bytes[..remaining].copy_from_slice(&header_padded[i..header_len]);
-                block_header_u32[i / 4] = u32::from_le_bytes(bytes);
-            }
-        }
-
-        let block_header_buf: Buffer<u32> = Buffer::builder()
+        // Reinterpreted as uint16 array (3 × 64 bytes) via bytes_as_ocl_vec —
+        // little-endian u32 staging is a no-op on the wire, and the Uint16
+        // element type satisfies ROCm's arg introspection (`__global uint16*`).
+        let block_header_buf: Buffer<ocl::prm::Uint16> = Buffer::builder()
             .queue(q.clone())
-            .len(48)
-            .copy_host_slice(&block_header_u32)
+            .len(3) // 192 B = 3 × uint16
+            .copy_host_slice(Self::bytes_as_ocl_vec(&header_padded))
             .build()?;
 
         let target_buf: Buffer<u8> = Buffer::builder()
@@ -4759,12 +4804,12 @@ typedef unsigned long ulong;
             .copy_host_slice(target.as_slice())
             .build()?;
 
-        // State vector pool: effective_batch * STATE_SIZE float2 elements
-        // ocl Buffer<u8> with byte length = effective_batch * 512KB
-        let state_pool_bytes = effective_batch * Self::QHASH_STATE_BYTES;
-        let state_vec_pool: Buffer<u8> = Buffer::builder()
+        // State vector pool: effective_batch * STATE_SIZE float2 elements.
+        // Typed Float2 so ROCm's strict kernel-arg introspection matches the
+        // kernel's `__global float2*` declaration (u8 buffers report uchar*).
+        let state_vec_pool: Buffer<ocl::prm::Float2> = Buffer::builder()
             .queue(q.clone())
-            .len(state_pool_bytes)
+            .len(effective_batch * Self::QHASH_STATE_SIZE)
             .build()?;
 
         let kernel = Kernel::builder()
@@ -5507,12 +5552,18 @@ typedef unsigned long ulong;
 
         const SOLS_BUF_SIZE: usize = 8192;
 
-        let vram_needed = 2 * HT_SIZE + ROW_COUNTERS_SIZE * 2 * 4 + SOLS_BUF_SIZE + 1024;
+        // dbg_buf = NR_ROWS*2 u32; rc0/rc1 = ROW_COUNTERS_SIZE u32 each.
+        let vram_needed = 2 * HT_SIZE
+            + ROW_COUNTERS_SIZE * 2 * 4
+            + NR_ROWS * 2 * 4
+            + SOLS_BUF_SIZE
+            + 1024;
         crate::ext_info!(
             "auxpow_gpu_zelhash_prod ht_size={:.1} GB per table, total VRAM needed={:.1} GB",
             HT_SIZE as f64 / 1e9,
             vram_needed as f64 / 1e9
         );
+        self.check_vram_fits(vram_needed, "zelhash")?;
 
         let pro_que = self.ensure_proque("zelhash_prod_kernel.cl")?;
         let q = pro_que.queue().clone();
@@ -5904,13 +5955,15 @@ typedef unsigned long ulong;
         // K=7: 20 + 5120 = 5140; K=9: 20 + 20480 = 20500.
         let sols_buf_size: usize = 20 + MAX_SOLS * (1usize << param_k) * 4;
 
-        // Check VRAM — need at least 2 * ht_size + overhead
-        let vram_needed = 2 * ht_size + ROW_COUNTERS_SIZE * 2 * 4 + sols_buf_size + 1024;
+        // Check VRAM — 2 tables + counters + dbg_buf + sols.
+        let vram_needed =
+            2 * ht_size + ROW_COUNTERS_SIZE * 2 * 4 + NR_ROWS * 2 * 4 + sols_buf_size + 1024;
         crate::ext_info!(
             "auxpow_gpu_equihash ht_size={:.1} GB per table, total VRAM needed={:.1} GB",
             ht_size as f64 / 1e9,
             vram_needed as f64 / 1e9
         );
+        self.check_vram_fits(vram_needed, "equihash")?;
 
         // ZION_EQ192_DEBUG enables the kernel's ENABLE_DEBUG diagnostics
         // (digest KAT dumps, per-row drop counters) plus host readbacks.
@@ -6172,7 +6225,7 @@ typedef unsigned long ulong;
                 dbg_buf.read(&mut dbg).enq()?;
                 let w1_0 = (dbg[25] as u64) << 32 | dbg[24] as u64;
                 let w1_388 = (dbg[37] as u64) << 32 | dbg[36] as u64;
-                crate::ext_info!(
+                eprintln!(
                     "eq192dbg kat word1: input0={w1_0:#018x} input388={w1_388:#018x} \
                      (expect tail1|0 and tail1|{:#x})",
                     388u64 << 32
@@ -6181,7 +6234,7 @@ typedef unsigned long ulong;
                 let ms0_0 = (dbg[27] as u64) << 32 | dbg[26] as u64;
                 let ms1_0 = (dbg[29] as u64) << 32 | dbg[28] as u64;
                 let t0_0 = (dbg[31] as u64) << 32 | dbg[30] as u64;
-                crate::ext_info!(
+                eprintln!(
                     "eq192dbg kat input0 reads: h0={ms0_0:#018x} h1={ms1_0:#018x} \
                      tail0={t0_0:#018x} (host h0={:#018x} h1={:#018x} tail0={:#018x})",
                     blake_state[0],
@@ -6199,7 +6252,7 @@ typedef unsigned long ulong;
                     let base = if leaf < 2 { 0 } else { 48 };
                     let lo = base + ((leaf % 2) as usize) * 24;
                     let gpu_xi = &gpu_d[lo..lo + 24];
-                    crate::ext_info!(
+                    eprintln!(
                         "eq192dbg kat leaf{leaf}: match={} gpu={:02x?} cpu={:02x?}",
                         gpu_xi == &xi[..],
                         gpu_xi,
@@ -6230,7 +6283,7 @@ typedef unsigned long ulong;
                         | ((xi[1] as u32) << 4)
                         | ((xi[2] as u32) >> 4)) as usize;
                     let mut rowbuf = vec![0u8; nr_slots * slot_len];
-                    ht0.read(&mut rowbuf)
+                    ht0.read(Self::bytes_as_ocl_vec_mut(&mut rowbuf))
                         .offset(row * nr_slots * slot_len)
                         .enq()?;
                     let mut found = false;
@@ -8132,7 +8185,11 @@ impl ExtGpuMiner {
                 .name("pearl_blake3_chunk_hash")
                 .arg(matrix_a_buf)
                 .arg(&job_key_buf)
-                .arg(if single_a { root_a_buf } else { chunk_hashes_buf })
+                .arg(if single_a {
+                    root_a_buf
+                } else {
+                    chunk_hashes_buf
+                })
                 .arg(num_chunks_a as u32)
                 .arg(if single_a { 1u32 } else { 0u32 })
                 .build()?;
@@ -8823,7 +8880,11 @@ impl ExtGpuMiner {
                     .name("pearl_blake3_chunk_hash")
                     .arg(matrix_a_buf)
                     .arg(&job_key_buf)
-                    .arg(if single_a { root_a_buf } else { chunk_hashes_buf })
+                    .arg(if single_a {
+                        root_a_buf
+                    } else {
+                        chunk_hashes_buf
+                    })
                     .arg(num_chunks_a as u32)
                     .arg(if single_a { 1u32 } else { 0u32 })
                     .build()?;
@@ -8928,13 +8989,11 @@ impl ExtGpuMiner {
                         let mut bind_a = [0u8; 64];
                         bind_a[..32].copy_from_slice(&root_a);
                         bind_a[32..36].copy_from_slice(&(m as u32).to_le_bytes());
-                        let bound_a =
-                            *blake3::keyed_hash(&PEARL_SEED_SALT_A, &bind_a).as_bytes();
+                        let bound_a = *blake3::keyed_hash(&PEARL_SEED_SALT_A, &bind_a).as_bytes();
                         let mut bind_b = [0u8; 64];
                         bind_b[..32].copy_from_slice(&root_b);
                         bind_b[32..36].copy_from_slice(&(n as u32).to_le_bytes());
-                        let bound_b =
-                            *blake3::keyed_hash(&PEARL_SEED_SALT_B, &bind_b).as_bytes();
+                        let bound_b = *blake3::keyed_hash(&PEARL_SEED_SALT_B, &bind_b).as_bytes();
                         (bound_a, bound_b)
                     }
                 };
@@ -9802,6 +9861,67 @@ mod tests {
         }
     }
 
+    /// Same as `eq192_kernel_round0_cpu_replica` but for 200,9: midstate
+    /// with hash_len=50, digest split into two 25-byte Xi halves.
+    #[test]
+    fn eq200_kernel_round0_cpu_replica() {
+        let mut header = [0u8; 140];
+        for (i, b) in header.iter_mut().enumerate() {
+            *b = ((i * 31 + 7) & 0xff) as u8;
+        }
+        let midstate = ExtGpuMiner::equihash_blake2b_state(&header, 200, 9);
+        let tail0 = u64::from_le_bytes(header[128..136].try_into().unwrap());
+        let tail1 = u32::from_le_bytes(header[136..140].try_into().unwrap()) as u64;
+
+        for input in [0u32, 1, 42, 65535, 1 << 20] {
+            let word1 = tail1 | ((input as u64) << 32);
+            let m = {
+                let mut m = [0u64; 16];
+                m[0] = tail0;
+                m[1] = word1;
+                m
+            };
+            let mut v = [0u64; 16];
+            v[..8].copy_from_slice(&midstate);
+            v[8..].copy_from_slice(&ExtGpuMiner::EQ_BLAKE_IV);
+            v[12] ^= 140 + 4;
+            v[14] ^= u64::MAX;
+            for round in 0..12 {
+                let s = &ExtGpuMiner::EQ_BLAKE_SIGMA[round];
+                ExtGpuMiner::eq_mix(&mut v, 0, 4, 8, 12, m[s[0]], m[s[1]]);
+                ExtGpuMiner::eq_mix(&mut v, 1, 5, 9, 13, m[s[2]], m[s[3]]);
+                ExtGpuMiner::eq_mix(&mut v, 2, 6, 10, 14, m[s[4]], m[s[5]]);
+                ExtGpuMiner::eq_mix(&mut v, 3, 7, 11, 15, m[s[6]], m[s[7]]);
+                ExtGpuMiner::eq_mix(&mut v, 0, 5, 10, 15, m[s[8]], m[s[9]]);
+                ExtGpuMiner::eq_mix(&mut v, 1, 6, 11, 12, m[s[10]], m[s[11]]);
+                ExtGpuMiner::eq_mix(&mut v, 2, 7, 8, 13, m[s[12]], m[s[13]]);
+                ExtGpuMiner::eq_mix(&mut v, 3, 4, 9, 14, m[s[14]], m[s[15]]);
+            }
+            // 200,9 digest = 50 B: h[0..6] + low 16 bits of h[6].
+            let mut digest = [0u8; 50];
+            for i in 0..6 {
+                let w = midstate[i] ^ v[i] ^ v[i + 8];
+                digest[i * 8..i * 8 + 8].copy_from_slice(&w.to_le_bytes());
+            }
+            let w6 = midstate[6] ^ v[6] ^ v[14];
+            digest[48..50].copy_from_slice(&w6.to_le_bytes()[..2]);
+            let xi0 = ExtGpuMiner::equihash_leaf_hash(&header, 200, 9, input * 2);
+            let xi1 = ExtGpuMiner::equihash_leaf_hash(&header, 200, 9, input * 2 + 1);
+            assert_eq!(
+                &digest[..25],
+                &xi0[..],
+                "200,9 replica leaf {} mismatch vs blake2b_simd",
+                input * 2
+            );
+            assert_eq!(
+                &digest[25..],
+                &xi1[..],
+                "200,9 replica leaf {} mismatch vs blake2b_simd",
+                input * 2 + 1
+            );
+        }
+    }
+
     /// Verify the host BLAKE2b-256 (used by Autolykos v2 table generation)
     /// against the RFC 7693 test vector for "abc".
     #[test]
@@ -9933,8 +10053,7 @@ mod pearl_gpu_kat {
             let row_off = row_offsets[tile / nco];
             let col_off = col_offsets[tile % nco];
             let expected = tile_jackpot_ref(
-                nonce, m, n, k, rank, &job_key, row_off, col_off, &rows_base, &cols_base,
-                salted,
+                nonce, m, n, k, rank, &job_key, row_off, col_off, &rows_base, &cols_base, salted,
             );
             assert_eq!(
                 res.jackpot_hash, expected,

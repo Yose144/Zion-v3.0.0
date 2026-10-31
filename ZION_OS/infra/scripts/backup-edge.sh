@@ -34,7 +34,7 @@
 #   systemctl start zion-edge-backup.timer
 #   systemctl enable zion-edge-backup.timer
 #
-# Retention: 14 daily + 4 weekly backups
+# Retention: 42 daily runs (~7 days at the 4h timer cadence) + 4 weekly backups
 # Backups go to: /opt/zion/backups/
 # ============================================================================
 
@@ -45,7 +45,7 @@ BACKUP_DIR="/opt/zion/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
 
-RETENTION_DAILY=14
+RETENTION_DAILY=42
 RETENTION_WEEKLY=4
 
 GREEN='\033[0;32m'
@@ -302,6 +302,16 @@ if [[ ${WEEKLY_COUNT} -gt ${RETENTION_WEEKLY} ]]; then
         xargs -r rm -f
     log "${GREEN}  ✓ Rotated weekly backups (keep ${RETENTION_WEEKLY})${NC}"
 fi
+
+# Orphaned staging dirs: a run that dies between the per-component copies and
+# the tar+rm leaves <component>_<TIMESTAMP> dirs behind (2026-10: 35G accrued).
+# Anything older than a day is definitively orphaned — a healthy run finishes
+# in minutes.
+find "${BACKUP_DIR}/daily" -maxdepth 1 -type d -mmin +1440 \
+    \( -name 'node_state_*' -o -name 'v31_data_*' -o -name 'app_state_*' \
+       -o -name 'config_*' -o -name 'systemd_*' -o -name 'nginx_*' \
+       -o -name 'fail2ban_*' -o -name 'letsencrypt_*' \) \
+    -exec rm -rf {} + 2>/dev/null || true
 
 # ── Summary ─────────────────────────────────────────────────────────────────
 TOTAL_SIZE=$(du -sh "${BACKUP_DIR}" 2>/dev/null | cut -f1 || echo "unknown")

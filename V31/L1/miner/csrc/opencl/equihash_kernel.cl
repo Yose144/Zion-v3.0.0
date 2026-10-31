@@ -281,8 +281,8 @@ void kernel_round0(__global ulong *blake_state, __global uchar *ht,
 	mix(v[3], v[7], v[11], v[15], 0, 0);
 	mix(v[0], v[5], v[10], v[15], 0, 0);
 	mix(v[1], v[6], v[11], v[12], 0, 0);
-	mix(v[2], v[7], v[8],  v[13], 0, 0);
-	mix(v[3], v[4], v[9],  v[14], 0, tail0);
+	mix(v[2], v[7], v[8],  v[13], 0, tail0);
+	mix(v[3], v[4], v[9],  v[14], 0, 0);
 	// round 5
 	mix(v[0], v[4], v[8],  v[12], 0, tail0);
 	mix(v[1], v[5], v[9],  v[13], 0, 0);

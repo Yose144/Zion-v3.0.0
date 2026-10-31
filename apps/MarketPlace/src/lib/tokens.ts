@@ -1,7 +1,7 @@
 import { prisma } from './db';
 
 export interface TokenDistribution {
-  status: 'pending' | 'distributed';
+  status: 'pending' | 'sending' | 'distributed';
   tokens: number;
   txHash?: string;
   distributedAt?: string;

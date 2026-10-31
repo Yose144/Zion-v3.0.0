@@ -52,6 +52,15 @@ excluded_assets = [
   # "base:tZION",
 ]
 
+# DEX execution gates (4.B6). The in-memory `DexRouter` AMM prices against
+# virtual reserves held in process memory — a dev/test engine, not a
+# production settlement path. With `inmemory_amm = false` (the default),
+# `/v1/swap/execute*` fails closed for pairs without an on-chain route
+# (Uniswap V3 `exactInputSingle` via EvmAdapter, or solver intents); quotes
+# stay read-only and still answer.
+[dex]
+inmemory_amm = false
+
 # ENABLED for 3.2.0 Mainnet Stable (Base EVM pilot + ZION L1 source)
 [[chains]]
 name = "base"

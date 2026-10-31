@@ -50,7 +50,10 @@
   #define FORCE_INLINE __attribute__((always_inline)) inline
   #define FORCE_INLINE_STATIC __attribute__((always_inline)) static inline
 #else
-  #define FORCE_INLINE inline
+  // Non-NVIDIA (ROCm/clang): bare `inline` emits no out-of-line copy under
+  // strict C99 semantics — the linker then reports "undefined hidden symbol"
+  // for every call. `static inline` always emits a local definition.
+  #define FORCE_INLINE static inline
   #define FORCE_INLINE_STATIC static inline
 #endif
 
@@ -1053,9 +1056,9 @@ typedef struct {
 } Scalar;
 
 // Forward declarations (used before their definitions below).
-inline void scalar_negate_impl(const Scalar* a, Scalar* r);
-inline void scalar_mul_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r);
-inline void ct_schnorr_pubkey_impl(const Scalar* priv, FieldElement* pub_x);
+static inline void scalar_negate_impl(const Scalar* a, Scalar* r);
+static inline void scalar_mul_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r);
+static inline void ct_schnorr_pubkey_impl(const Scalar* priv, FieldElement* pub_x);
 
 // =============================================================================
 // Point Utilities
@@ -1821,12 +1824,12 @@ __kernel void scalar_mul_generator(
 // branch-to-cmov and dead-code optimizations that leak secrets.
 // OpenCL has no inline asm; use volatile through private memory.
 // ---------------------------------------------------------------------------
-inline ulong ct_value_barrier(ulong v) {
+static inline ulong ct_value_barrier(ulong v) {
     volatile ulong tmp = v;
     return tmp;
 }
 
-inline uint ct_value_barrier32(uint v) {
+static inline uint ct_value_barrier32(uint v) {
     volatile uint tmp = v;
     return tmp;
 }
@@ -1834,29 +1837,29 @@ inline uint ct_value_barrier32(uint v) {
 // ---------------------------------------------------------------------------
 // Mask generators -- all produce 0 or 0xFFFFFFFFFFFFFFFF
 // ---------------------------------------------------------------------------
-inline ulong ct_is_zero_mask(ulong v) {
+static inline ulong ct_is_zero_mask(ulong v) {
     // (v | -v) >> 63 is 1 when v != 0, 0 when v == 0
     v = ct_value_barrier(v);
     return ~(((v | (0UL - v)) >> 63) - 1UL) ^ 0xFFFFFFFFFFFFFFFFUL;
     // Simplified: zero -> mask = all-ones, nonzero -> mask = 0
 }
 
-inline ulong ct_is_nonzero_mask(ulong v) {
+static inline ulong ct_is_nonzero_mask(ulong v) {
     v = ct_value_barrier(v);
     ulong t = (v | (0UL - v)) >> 63;  // 1 if nonzero
     return 0UL - t;  // 0xFFFF... if nonzero, 0 if zero
 }
 
-inline ulong ct_eq_mask(ulong a, ulong b) {
+static inline ulong ct_eq_mask(ulong a, ulong b) {
     return ct_is_zero_mask(a ^ b);
 }
 
-inline ulong ct_bool_to_mask(int b) {
+static inline ulong ct_bool_to_mask(int b) {
     return 0UL - (ulong)(b & 1);
 }
 
 // Return all-ones if a < b (unsigned), else 0
-inline ulong ct_lt_mask(ulong a, ulong b) {
+static inline ulong ct_lt_mask(ulong a, ulong b) {
     // (a - b) borrows iff a < b, bit 63 of (a ^ ((a ^ b) | ((a - b) ^ a)))
     ulong x = a ^ b;
     ulong d = a - b;
@@ -1867,11 +1870,11 @@ inline ulong ct_lt_mask(ulong a, ulong b) {
 // ---------------------------------------------------------------------------
 // Conditional move: r = cond ? a : r  (cond is 0 or all-ones mask)
 // ---------------------------------------------------------------------------
-inline void ct_cmov64(ulong* r, ulong a, ulong mask) {
+static inline void ct_cmov64(ulong* r, ulong a, ulong mask) {
     *r = (*r & ~mask) | (a & mask);
 }
 
-inline void ct_cmov256(ulong r[4], const ulong a[4], ulong mask) {
+static inline void ct_cmov256(ulong r[4], const ulong a[4], ulong mask) {
     for (int i = 0; i < 4; ++i)
         r[i] = (r[i] & ~mask) | (a[i] & mask);
 }
@@ -1879,7 +1882,7 @@ inline void ct_cmov256(ulong r[4], const ulong a[4], ulong mask) {
 // ---------------------------------------------------------------------------
 // Conditional swap: if mask is all-ones, swap a[] and b[]
 // ---------------------------------------------------------------------------
-inline void ct_cswap256(ulong a[4], ulong b[4], ulong mask) {
+static inline void ct_cswap256(ulong a[4], ulong b[4], ulong mask) {
     for (int i = 0; i < 4; ++i) {
         ulong diff = (a[i] ^ b[i]) & mask;
         a[i] ^= diff;
@@ -1890,7 +1893,7 @@ inline void ct_cswap256(ulong a[4], ulong b[4], ulong mask) {
 // ---------------------------------------------------------------------------
 // CT select from array: always scans ALL entries (no early exit)
 // ---------------------------------------------------------------------------
-inline void ct_select256(const ulong table[][4], int table_size, int index, ulong out[4]) {
+static inline void ct_select256(const ulong table[][4], int table_size, int index, ulong out[4]) {
     out[0] = 0; out[1] = 0; out[2] = 0; out[3] = 0;
     for (int i = 0; i < table_size; ++i) {
         ulong mask = ct_eq_mask((ulong)i, (ulong)index);
@@ -1900,7 +1903,7 @@ inline void ct_select256(const ulong table[][4], int table_size, int index, ulon
 }
 
 // CT lookup: 8-limb version (for FieldElement + Scalar pairs stored as 8 ulongs)
-inline void ct_lookup_256(const ulong table[][8], int table_size, int index, ulong out[8]) {
+static inline void ct_lookup_256(const ulong table[][8], int table_size, int index, ulong out[8]) {
     for (int j = 0; j < 8; ++j) out[j] = 0;
     for (int i = 0; i < table_size; ++i) {
         ulong mask = ct_eq_mask((ulong)i, (ulong)index);
@@ -1912,22 +1915,22 @@ inline void ct_lookup_256(const ulong table[][8], int table_size, int index, ulo
 // ---------------------------------------------------------------------------
 // CT FieldElement operations (wrapping the 4-limb FieldElement struct)
 // ---------------------------------------------------------------------------
-inline void ct_field_cmov(FieldElement* r, const FieldElement* a, ulong mask) {
+static inline void ct_field_cmov(FieldElement* r, const FieldElement* a, ulong mask) {
     ct_cmov256((ulong*)r->limbs, (const ulong*)a->limbs, mask);
 }
 
-inline void ct_field_cswap(FieldElement* a, FieldElement* b, ulong mask) {
+static inline void ct_field_cswap(FieldElement* a, FieldElement* b, ulong mask) {
     ct_cswap256((ulong*)a->limbs, (ulong*)b->limbs, mask);
 }
 
-inline void ct_field_select(const FieldElement* a, const FieldElement* b,
+static inline void ct_field_select(const FieldElement* a, const FieldElement* b,
                             ulong mask, FieldElement* out) {
     // out = mask ? a : b
     for (int i = 0; i < 4; ++i)
         out->limbs[i] = (b->limbs[i] & ~mask) | (a->limbs[i] & mask);
 }
 
-inline void ct_field_cneg(FieldElement* r, const FieldElement* a, ulong mask) {
+static inline void ct_field_cneg(FieldElement* r, const FieldElement* a, ulong mask) {
     FieldElement neg;
     field_neg_impl(&neg, a);
     ct_field_select(&neg, a, mask, r);
@@ -1936,21 +1939,21 @@ inline void ct_field_cneg(FieldElement* r, const FieldElement* a, ulong mask) {
 // ---------------------------------------------------------------------------
 // CT Scalar operations (wrapping the 4-limb Scalar struct)
 // ---------------------------------------------------------------------------
-inline void ct_scalar_cmov(Scalar* r, const Scalar* a, ulong mask) {
+static inline void ct_scalar_cmov(Scalar* r, const Scalar* a, ulong mask) {
     ct_cmov256((ulong*)r->limbs, (const ulong*)a->limbs, mask);
 }
 
-inline void ct_scalar_cswap(Scalar* a, Scalar* b, ulong mask) {
+static inline void ct_scalar_cswap(Scalar* a, Scalar* b, ulong mask) {
     ct_cswap256((ulong*)a->limbs, (ulong*)b->limbs, mask);
 }
 
-inline void ct_scalar_select(const Scalar* a, const Scalar* b,
+static inline void ct_scalar_select(const Scalar* a, const Scalar* b,
                              ulong mask, Scalar* out) {
     for (int i = 0; i < 4; ++i)
         out->limbs[i] = (b->limbs[i] & ~mask) | (a->limbs[i] & mask);
 }
 
-inline void ct_scalar_cneg(Scalar* r, const Scalar* a, ulong mask) {
+static inline void ct_scalar_cneg(Scalar* r, const Scalar* a, ulong mask) {
     Scalar neg;
     scalar_negate_impl(a, &neg);
     ct_scalar_select(&neg, a, mask, r);
@@ -1975,7 +1978,7 @@ inline void ct_scalar_cneg(Scalar* r, const Scalar* a, ulong mask) {
 // ---------------------------------------------------------------------------
 // 256-bit add with carry (a + b -> r, returns carry)
 // ---------------------------------------------------------------------------
-inline ulong ct_add256(const ulong a[4], const ulong b[4], ulong r[4]) {
+static inline ulong ct_add256(const ulong a[4], const ulong b[4], ulong r[4]) {
     ulong carry = 0;
     for (int i = 0; i < 4; ++i) {
         ulong sum = a[i] + b[i] + carry;
@@ -1986,7 +1989,7 @@ inline ulong ct_add256(const ulong a[4], const ulong b[4], ulong r[4]) {
 }
 
 // 256-bit sub with borrow (a - b -> r, returns borrow)
-inline ulong ct_sub256(const ulong a[4], const ulong b[4], ulong r[4]) {
+static inline ulong ct_sub256(const ulong a[4], const ulong b[4], ulong r[4]) {
     ulong borrow = 0;
     for (int i = 0; i < 4; ++i) {
         ulong diff = a[i] - b[i] - borrow;
@@ -2005,7 +2008,7 @@ inline ulong ct_sub256(const ulong a[4], const ulong b[4], ulong r[4]) {
 #define CT_FIELD_P2 0xFFFFFFFFFFFFFFFFUL
 #define CT_FIELD_P3 0xFFFFFFFFFFFFFFFFUL
 
-inline void ct_reduce_field(FieldElement* r) {
+static inline void ct_reduce_field(FieldElement* r) {
     const ulong p[4] = { CT_FIELD_P0, CT_FIELD_P1, CT_FIELD_P2, CT_FIELD_P3 };
     ulong tmp[4];
     ulong borrow = ct_sub256(r->limbs, p, tmp);
@@ -2018,7 +2021,7 @@ inline void ct_reduce_field(FieldElement* r) {
 // ---------------------------------------------------------------------------
 // CT field_add: r = (a + b) mod p, branchless
 // ---------------------------------------------------------------------------
-inline void ct_field_add_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
+static inline void ct_field_add_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
     ulong carry = ct_add256(a->limbs, b->limbs, r->limbs);
     // If carry or r >= p, subtract p
     const ulong p[4] = { CT_FIELD_P0, CT_FIELD_P1, CT_FIELD_P2, CT_FIELD_P3 };
@@ -2033,7 +2036,7 @@ inline void ct_field_add_impl(FieldElement* r, const FieldElement* a, const Fiel
 // ---------------------------------------------------------------------------
 // CT field_sub: r = (a - b) mod p, branchless
 // ---------------------------------------------------------------------------
-inline void ct_field_sub_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
+static inline void ct_field_sub_impl(FieldElement* r, const FieldElement* a, const FieldElement* b) {
     ulong borrow = ct_sub256(a->limbs, b->limbs, r->limbs);
     // If borrow, add p back
     const ulong p[4] = { CT_FIELD_P0, CT_FIELD_P1, CT_FIELD_P2, CT_FIELD_P3 };
@@ -2047,7 +2050,7 @@ inline void ct_field_sub_impl(FieldElement* r, const FieldElement* a, const Fiel
 // ---------------------------------------------------------------------------
 // CT field_neg: r = (-a) mod p = p - a (if a != 0), else 0
 // ---------------------------------------------------------------------------
-inline void ct_field_neg_impl(FieldElement* r, const FieldElement* a) {
+static inline void ct_field_neg_impl(FieldElement* r, const FieldElement* a) {
     const ulong p[4] = { CT_FIELD_P0, CT_FIELD_P1, CT_FIELD_P2, CT_FIELD_P3 };
     ulong tmp[4];
     ct_sub256(p, a->limbs, tmp);
@@ -2060,7 +2063,7 @@ inline void ct_field_neg_impl(FieldElement* r, const FieldElement* a) {
 // CT field_mul/sqr/inv: wrap fast-path (already data-independent instruction count)
 // The value_barrier prevents the compiler from short-circuiting
 // ---------------------------------------------------------------------------
-inline void ct_field_mul(FieldElement* r, const FieldElement* a, const FieldElement* b) {
+static inline void ct_field_mul(FieldElement* r, const FieldElement* a, const FieldElement* b) {
     FieldElement a2 = *a, b2 = *b;
     for (int i = 0; i < 4; ++i) {
         a2.limbs[i] = ct_value_barrier(a2.limbs[i]);
@@ -2069,14 +2072,14 @@ inline void ct_field_mul(FieldElement* r, const FieldElement* a, const FieldElem
     field_mul_impl(r, &a2, &b2);
 }
 
-inline void ct_field_sqr(FieldElement* r, const FieldElement* a) {
+static inline void ct_field_sqr(FieldElement* r, const FieldElement* a) {
     FieldElement a2 = *a;
     for (int i = 0; i < 4; ++i)
         a2.limbs[i] = ct_value_barrier(a2.limbs[i]);
     field_sqr_impl(r, &a2);
 }
 
-inline void ct_field_inv(FieldElement* r, const FieldElement* a) {
+static inline void ct_field_inv(FieldElement* r, const FieldElement* a) {
     FieldElement a2 = *a;
     for (int i = 0; i < 4; ++i)
         a2.limbs[i] = ct_value_barrier(a2.limbs[i]);
@@ -2084,7 +2087,7 @@ inline void ct_field_inv(FieldElement* r, const FieldElement* a) {
 }
 
 // CT field_half: r = a/2 mod p (branchless)
-inline void ct_field_half_impl(FieldElement* r, const FieldElement* a) {
+static inline void ct_field_half_impl(FieldElement* r, const FieldElement* a) {
     ulong odd_mask = ct_bool_to_mask(a->limbs[0] & 1);
     const ulong p[4] = { CT_FIELD_P0, CT_FIELD_P1, CT_FIELD_P2, CT_FIELD_P3 };
     ulong tmp[4];
@@ -2102,19 +2105,19 @@ inline void ct_field_half_impl(FieldElement* r, const FieldElement* a) {
 // ---------------------------------------------------------------------------
 // CT field predicates (constant-time, branchless)
 // ---------------------------------------------------------------------------
-inline ulong ct_field_is_zero(const FieldElement* a) {
+static inline ulong ct_field_is_zero(const FieldElement* a) {
     ulong acc = 0;
     for (int i = 0; i < 4; ++i) acc |= a->limbs[i];
     return ct_is_zero_mask(acc);
 }
 
-inline ulong ct_field_eq(const FieldElement* a, const FieldElement* b) {
+static inline ulong ct_field_eq(const FieldElement* a, const FieldElement* b) {
     ulong acc = 0;
     for (int i = 0; i < 4; ++i) acc |= (a->limbs[i] ^ b->limbs[i]);
     return ct_is_zero_mask(acc);
 }
 
-inline void ct_field_normalize(FieldElement* r) {
+static inline void ct_field_normalize(FieldElement* r) {
     ct_reduce_field(r);
 }
 
@@ -2149,7 +2152,7 @@ inline void ct_field_normalize(FieldElement* r) {
 // ---------------------------------------------------------------------------
 // Branchless reduce mod n: if val >= n, subtract n
 // ---------------------------------------------------------------------------
-inline void ct_reduce_order(Scalar* r) {
+static inline void ct_reduce_order(Scalar* r) {
     const ulong n[4] = { CT_ORDER_N0, CT_ORDER_N1, CT_ORDER_N2, CT_ORDER_N3 };
     ulong tmp[4];
     ulong borrow = ct_sub256(r->limbs, n, tmp);
@@ -2161,7 +2164,7 @@ inline void ct_reduce_order(Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar_add: r = (a + b) mod n
 // ---------------------------------------------------------------------------
-inline void ct_scalar_add_impl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void ct_scalar_add_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     ulong carry = ct_add256(a->limbs, b->limbs, r->limbs);
     const ulong n[4] = { CT_ORDER_N0, CT_ORDER_N1, CT_ORDER_N2, CT_ORDER_N3 };
     ulong tmp[4];
@@ -2174,7 +2177,7 @@ inline void ct_scalar_add_impl(const Scalar* a, const Scalar* b, Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar_sub: r = (a - b) mod n
 // ---------------------------------------------------------------------------
-inline void ct_scalar_sub_impl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void ct_scalar_sub_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     ulong borrow = ct_sub256(a->limbs, b->limbs, r->limbs);
     const ulong n[4] = { CT_ORDER_N0, CT_ORDER_N1, CT_ORDER_N2, CT_ORDER_N3 };
     ulong tmp[4];
@@ -2187,7 +2190,7 @@ inline void ct_scalar_sub_impl(const Scalar* a, const Scalar* b, Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar_neg: r = (-a) mod n = n - a if a != 0
 // ---------------------------------------------------------------------------
-inline void ct_scalar_neg_impl(const Scalar* a, Scalar* r) {
+static inline void ct_scalar_neg_impl(const Scalar* a, Scalar* r) {
     const ulong n[4] = { CT_ORDER_N0, CT_ORDER_N1, CT_ORDER_N2, CT_ORDER_N3 };
     ulong tmp[4];
     ct_sub256(n, a->limbs, tmp);
@@ -2199,7 +2202,7 @@ inline void ct_scalar_neg_impl(const Scalar* a, Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar_half: r = a/2 mod n (branchless)
 // ---------------------------------------------------------------------------
-inline void ct_scalar_half_impl(const Scalar* a, Scalar* r) {
+static inline void ct_scalar_half_impl(const Scalar* a, Scalar* r) {
     ulong odd_mask = ct_bool_to_mask(a->limbs[0] & 1);
     const ulong n[4] = { CT_ORDER_N0, CT_ORDER_N1, CT_ORDER_N2, CT_ORDER_N3 };
     ulong tmp[4];
@@ -2215,7 +2218,7 @@ inline void ct_scalar_half_impl(const Scalar* a, Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar_mul/sqr: wrap fast-path (Montgomery is data-independent)
 // ---------------------------------------------------------------------------
-inline void ct_scalar_mul_impl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void ct_scalar_mul_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     Scalar a2 = *a, b2 = *b;
     for (int i = 0; i < 4; ++i) {
         a2.limbs[i] = ct_value_barrier(a2.limbs[i]);
@@ -2224,7 +2227,7 @@ inline void ct_scalar_mul_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     scalar_mul_mod_n_impl(&a2, &b2, r);
 }
 
-inline void ct_scalar_sqr_impl(const Scalar* a, Scalar* r) {
+static inline void ct_scalar_sqr_impl(const Scalar* a, Scalar* r) {
     ct_scalar_mul_impl(a, a, r);
 }
 
@@ -2232,7 +2235,7 @@ inline void ct_scalar_sqr_impl(const Scalar* a, Scalar* r) {
 // CT scalar_inverse: Fermat's little theorem a^(n-2) mod n
 // Fixed-trace: always 256 squares + 256 CT-selected multiplies
 // ---------------------------------------------------------------------------
-inline void ct_scalar_inverse_impl(const Scalar* a, Scalar* r) {
+static inline void ct_scalar_inverse_impl(const Scalar* a, Scalar* r) {
     // n-2 in 4 limbs
     const ulong nm2[4] = {
         CT_ORDER_N0 - 2,
@@ -2266,20 +2269,20 @@ inline void ct_scalar_inverse_impl(const Scalar* a, Scalar* r) {
 // ---------------------------------------------------------------------------
 // CT scalar predicates (scan ALL limbs, no early exit)
 // ---------------------------------------------------------------------------
-inline ulong ct_scalar_is_zero(const Scalar* a) {
+static inline ulong ct_scalar_is_zero(const Scalar* a) {
     ulong acc = 0;
     for (int i = 0; i < 4; ++i) acc |= a->limbs[i];
     return ct_is_zero_mask(acc);
 }
 
-inline ulong ct_scalar_eq(const Scalar* a, const Scalar* b) {
+static inline ulong ct_scalar_eq(const Scalar* a, const Scalar* b) {
     ulong acc = 0;
     for (int i = 0; i < 4; ++i) acc |= (a->limbs[i] ^ b->limbs[i]);
     return ct_is_zero_mask(acc);
 }
 
 // CT scalar_is_high: returns mask if s > n/2
-inline ulong ct_scalar_is_high(const Scalar* s) {
+static inline ulong ct_scalar_is_high(const Scalar* s) {
     ulong n_half[4] = { CT_HALF_N0, CT_HALF_N1, CT_HALF_N2, CT_HALF_N3 };
     // Compare s > n/2: check if n_half < s
     // Subtract: n_half - s, if borrow then s > n_half
@@ -2288,13 +2291,13 @@ inline ulong ct_scalar_is_high(const Scalar* s) {
     return ct_is_nonzero_mask(borrow);
 }
 
-inline int ct_scalar_bit(const Scalar* s, int pos) {
+static inline int ct_scalar_bit(const Scalar* s, int pos) {
     int limb_idx = pos >> 6;
     int bit_idx = pos & 63;
     return (int)((s->limbs[limb_idx] >> bit_idx) & 1);
 }
 
-inline int ct_scalar_window(const Scalar* s, int pos, int width) {
+static inline int ct_scalar_window(const Scalar* s, int pos, int width) {
     int val = 0;
     for (int i = 0; i < width; ++i)
         val |= ct_scalar_bit(s, pos + i) << i;
@@ -2304,7 +2307,7 @@ inline int ct_scalar_window(const Scalar* s, int pos, int width) {
 // ---------------------------------------------------------------------------
 // Low-S normalization: if s > n/2, s = n - s (BIP-62 / BIP-340)
 // ---------------------------------------------------------------------------
-inline void ct_scalar_normalize_low_s(Scalar* s) {
+static inline void ct_scalar_normalize_low_s(Scalar* s) {
     ulong mask = ct_scalar_is_high(s);
     Scalar neg;
     ct_scalar_neg_impl(s, &neg);
@@ -2327,7 +2330,7 @@ typedef struct {
 #define CT_GLV_G2_0 0xE4437ED6010E8828UL
 #define CT_GLV_G2_1 0x0UL
 
-inline void ct_glv_decompose_impl(const Scalar* k, CTGLVDecompositionOCL* out) {
+static inline void ct_glv_decompose_impl(const Scalar* k, CTGLVDecompositionOCL* out) {
     // Simplified balanced decomposition:
     // k1 = k mod n, k2 = 0 initially, then use endomorphism
     // Full GLV uses lattice reduction, but the critical CT aspect is
@@ -2383,7 +2386,7 @@ typedef struct {
 // CT Jacobian to affine conversion (branchless field inversion)
 // Used by ct_ecdsa_sign_impl and ct_schnorr_sign_impl in secp256k1_ct_sign.cl
 // ---------------------------------------------------------------------------
-inline void ct_jacobian_to_affine(const CTJacobianPoint* p,
+static inline void ct_jacobian_to_affine(const CTJacobianPoint* p,
                                   FieldElement* x_out, FieldElement* y_out) {
     FieldElement zi, zi2, zi3;
     field_inv_impl(&zi, &p->z);
@@ -2396,7 +2399,7 @@ inline void ct_jacobian_to_affine(const CTJacobianPoint* p,
 // ---------------------------------------------------------------------------
 // Conversion utilities
 // ---------------------------------------------------------------------------
-inline void ct_point_set_infinity(CTJacobianPoint* p) {
+static inline void ct_point_set_infinity(CTJacobianPoint* p) {
     for (int i = 0; i < 4; ++i) {
         p->x.limbs[i] = 0;
         p->y.limbs[i] = 0;
@@ -2406,7 +2409,7 @@ inline void ct_point_set_infinity(CTJacobianPoint* p) {
     p->infinity = ~(ulong)0;
 }
 
-inline JacobianPoint ct_point_to_jacobian(const CTJacobianPoint* p) {
+static inline JacobianPoint ct_point_to_jacobian(const CTJacobianPoint* p) {
     JacobianPoint r;
     r.x = p->x;
     r.y = p->y;
@@ -2415,7 +2418,7 @@ inline JacobianPoint ct_point_to_jacobian(const CTJacobianPoint* p) {
     return r;
 }
 
-inline CTJacobianPoint ct_point_from_jacobian(const JacobianPoint* p) {
+static inline CTJacobianPoint ct_point_from_jacobian(const JacobianPoint* p) {
     CTJacobianPoint r;
     r.x = p->x;
     r.y = p->y;
@@ -2427,28 +2430,28 @@ inline CTJacobianPoint ct_point_from_jacobian(const JacobianPoint* p) {
 // ---------------------------------------------------------------------------
 // CT conditional ops on points
 // ---------------------------------------------------------------------------
-inline void ct_point_cmov(CTJacobianPoint* r, const CTJacobianPoint* a, ulong mask) {
+static inline void ct_point_cmov(CTJacobianPoint* r, const CTJacobianPoint* a, ulong mask) {
     ct_cmov256((ulong*)r->x.limbs, (const ulong*)a->x.limbs, mask);
     ct_cmov256((ulong*)r->y.limbs, (const ulong*)a->y.limbs, mask);
     ct_cmov256((ulong*)r->z.limbs, (const ulong*)a->z.limbs, mask);
     ct_cmov64(&r->infinity, a->infinity, mask);
 }
 
-inline void ct_aff_cmov(CTAffinePoint* r, const CTAffinePoint* a, ulong mask) {
+static inline void ct_aff_cmov(CTAffinePoint* r, const CTAffinePoint* a, ulong mask) {
     ct_cmov256((ulong*)r->x.limbs, (const ulong*)a->x.limbs, mask);
     ct_cmov256((ulong*)r->y.limbs, (const ulong*)a->y.limbs, mask);
     ct_cmov64(&r->infinity, a->infinity, mask);
 }
 
 // Conditionally negate Y: if mask, y = -y
-inline void ct_point_cneg_y(CTAffinePoint* p, ulong mask) {
+static inline void ct_point_cneg_y(CTAffinePoint* p, ulong mask) {
     FieldElement neg;
     ct_field_neg_impl(&neg, &p->y);
     ct_field_cmov(&p->y, &neg, mask);
 }
 
 // CT lookup from affine table (scans ALL entries)
-inline void ct_affine_table_lookup(const CTAffinePoint* table, int table_size,
+static inline void ct_affine_table_lookup(const CTAffinePoint* table, int table_size,
                                    int index, CTAffinePoint* out) {
     *out = table[0];
     for (int i = 1; i < table_size; ++i) {
@@ -2460,7 +2463,7 @@ inline void ct_affine_table_lookup(const CTAffinePoint* table, int table_size,
 // ---------------------------------------------------------------------------
 // CT point doubling (standard 4M+4S, with CT infinity handling)
 // ---------------------------------------------------------------------------
-inline void ct_point_dbl(const CTJacobianPoint* p, CTJacobianPoint* r) {
+static inline void ct_point_dbl(const CTJacobianPoint* p, CTJacobianPoint* r) {
     // Standard Jacobian doubling
     FieldElement a, b, c, d, e, f;
 
@@ -2510,7 +2513,7 @@ inline void ct_point_dbl(const CTJacobianPoint* p, CTJacobianPoint* r) {
 // CT point add mixed (Jacobian + Affine -> Jacobian)
 // Brier-Joye complete formula: 7M + 5S, handles all degenerate cases
 // ---------------------------------------------------------------------------
-inline void ct_point_add_mixed(const CTJacobianPoint* p, const CTAffinePoint* q,
+static inline void ct_point_add_mixed(const CTJacobianPoint* p, const CTAffinePoint* q,
                                CTJacobianPoint* r) {
     FieldElement z2, u2, s2, h, hh, i, j, rr, v;
 
@@ -2579,7 +2582,7 @@ inline void ct_point_add_mixed(const CTJacobianPoint* p, const CTAffinePoint* q,
 // ---------------------------------------------------------------------------
 // CT batch field inverse (Montgomery trick)
 // ---------------------------------------------------------------------------
-inline void ct_batch_field_inv(FieldElement* vals, FieldElement* invs, int n) {
+static inline void ct_batch_field_inv(FieldElement* vals, FieldElement* invs, int n) {
     if (n <= 0) return;
     FieldElement acc[16];  // max 16
     acc[0] = vals[0];
@@ -2599,7 +2602,7 @@ inline void ct_batch_field_inv(FieldElement* vals, FieldElement* invs, int n) {
 // ---------------------------------------------------------------------------
 // CT scalar multiplication: k*P using GLV + 4-bit windowed
 // ---------------------------------------------------------------------------
-inline void ct_scalar_mul_point(const CTJacobianPoint* p, const Scalar* k,
+static inline void ct_scalar_mul_point(const CTJacobianPoint* p, const Scalar* k,
                                 CTJacobianPoint* r_out) {
     // GLV decomposition
     CTGLVDecompositionOCL glv;
@@ -2791,7 +2794,7 @@ __constant ulong CT_G_TABLE_B[15][8] = {
 // ---------------------------------------------------------------------------
 // CT generator multiplication: k*G (fixed-base, precomputed tables)
 // ---------------------------------------------------------------------------
-inline void ct_generator_mul_impl(const Scalar* k, CTJacobianPoint* r_out) {
+static inline void ct_generator_mul_impl(const Scalar* k, CTJacobianPoint* r_out) {
     CTGLVDecompositionOCL glv;
     ct_glv_decompose_impl(k, &glv);
 
@@ -2966,7 +2969,7 @@ __constant uint K256[64] = {
 // =============================================================================
 
 // BE 32 bytes → Scalar (4×64 LE limbs) with branchless mod n reduction
-inline void scalar_from_bytes_impl(const uchar bytes[32], Scalar* out) {
+static inline void scalar_from_bytes_impl(const uchar bytes[32], Scalar* out) {
     for (int i = 0; i < 4; i++) {
         ulong limb = 0;
         int base = (3 - i) * 8;
@@ -2985,7 +2988,7 @@ inline void scalar_from_bytes_impl(const uchar bytes[32], Scalar* out) {
 }
 
 // Scalar → BE 32 bytes
-inline void scalar_to_bytes_impl(const Scalar* s, uchar out[32]) {
+static inline void scalar_to_bytes_impl(const Scalar* s, uchar out[32]) {
     for (int i = 0; i < 4; i++) {
         ulong limb = s->limbs[3 - i];
         for (int j = 0; j < 8; j++)
@@ -2994,7 +2997,7 @@ inline void scalar_to_bytes_impl(const Scalar* s, uchar out[32]) {
 }
 
 // FieldElement → BE 32 bytes (normalizes mod p before serialization)
-inline void field_to_bytes_impl(const FieldElement* f, uchar out[32]) {
+static inline void field_to_bytes_impl(const FieldElement* f, uchar out[32]) {
     // p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
     const ulong P[4] = {
         0xFFFFFFFEFFFFFC2FUL, 0xFFFFFFFFFFFFFFFFUL,
@@ -3031,7 +3034,7 @@ inline void field_to_bytes_impl(const FieldElement* f, uchar out[32]) {
 
 // Field square root: a^((p+1)/4) via optimized addition chain (269 ops)
 // p ≡ 3 (mod 4) ⇒ sqrt(a) = a^((p+1)/4)
-inline void field_sqrt_impl(const FieldElement* a, FieldElement* r) {
+static inline void field_sqrt_impl(const FieldElement* a, FieldElement* r) {
     FieldElement x2, x3, x6, x9, x11, x22, x44, x88, x176, x220, x222, t;
 
     // x2 = a^(2^2-1)
@@ -3115,7 +3118,7 @@ inline void field_sqrt_impl(const FieldElement* a, FieldElement* r) {
 // =============================================================================
 
 // Scalar negate: r = n - a (if a != 0)
-inline void scalar_negate_impl(const Scalar* a, Scalar* r) {
+static inline void scalar_negate_impl(const Scalar* a, Scalar* r) {
     ulong n[4] = { ORDER_N0, ORDER_N1, ORDER_N2, ORDER_N3 };
     int is_zero_flag = scalar_is_zero(a);
 
@@ -3128,7 +3131,7 @@ inline void scalar_negate_impl(const Scalar* a, Scalar* r) {
 }
 
 // Helper: branchless conditional subtract n (r -= n if r >= n)
-inline void scalar_cond_sub_n(Scalar* r) {
+static inline void scalar_cond_sub_n(Scalar* r) {
     ulong n[4] = { ORDER_N0, ORDER_N1, ORDER_N2, ORDER_N3 };
     ulong borrow = 0;
     ulong tmp[4];
@@ -3141,7 +3144,7 @@ inline void scalar_cond_sub_n(Scalar* r) {
 }
 
 // Scalar add mod n: r = (a + b) mod n
-inline void scalar_add_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void scalar_add_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     ulong carry = 0;
     for (int i = 0; i < 4; i++)
         r->limbs[i] = add_with_carry(a->limbs[i], b->limbs[i], carry, &carry);
@@ -3161,7 +3164,7 @@ inline void scalar_add_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r) {
 }
 
 // Scalar sub mod n: r = (a - b) mod n
-inline void scalar_sub_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void scalar_sub_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     ulong borrow = 0;
     for (int i = 0; i < 4; i++)
         r->limbs[i] = sub_with_borrow(a->limbs[i], b->limbs[i], borrow, &borrow);
@@ -3176,7 +3179,7 @@ inline void scalar_sub_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r) {
 
 // Scalar multiply mod n: r = (a * b) mod n
 // Uses 2^256 ≡ NC (mod n) reduction where NC = 2^256 - n
-inline void scalar_mul_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r) {
+static inline void scalar_mul_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r) {
     // NC = 2^256 - n = {0x402DA1732FC9BEBF, 0x4551231950B75FC4, 1, 0}
     ulong NC[3] = { 0x402DA1732FC9BEBFUL, 0x4551231950B75FC4UL, 0x1UL };
 
@@ -3262,7 +3265,7 @@ inline void scalar_mul_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r) {
 }
 
 // Scalar inverse mod n via binary exponentiation: a^(n-2) mod n
-inline void scalar_inverse_impl(const Scalar* a, Scalar* r) {
+static inline void scalar_inverse_impl(const Scalar* a, Scalar* r) {
     ulong exp[4] = { ORDER_N_MINUS2_0, ORDER_N_MINUS2_1, ORDER_N_MINUS2_2, ORDER_N_MINUS2_3 };
     Scalar base = *a;
     Scalar result;
@@ -3281,19 +3284,19 @@ inline void scalar_inverse_impl(const Scalar* a, Scalar* r) {
 }
 
 // Scalar is even: test bit 0
-inline int scalar_is_even_impl(const Scalar* s) {
+static inline int scalar_is_even_impl(const Scalar* s) {
     return (s->limbs[0] & 1UL) == 0;
 }
 
 // Scalar equality
-inline int scalar_eq_impl(const Scalar* a, const Scalar* b) {
+static inline int scalar_eq_impl(const Scalar* a, const Scalar* b) {
     ulong diff = 0;
     for (int i = 0; i < 4; i++) diff |= (a->limbs[i] ^ b->limbs[i]);
     return diff == 0;
 }
 
 // Scalar bit length
-inline int scalar_bitlen_impl(const Scalar* s) {
+static inline int scalar_bitlen_impl(const Scalar* s) {
     for (int i = 3; i >= 0; i--) {
         if (s->limbs[i] != 0) {
             int bits = 64;
@@ -3306,7 +3309,7 @@ inline int scalar_bitlen_impl(const Scalar* s) {
 }
 
 // Scalar greater-or-equal
-inline int scalar_ge_impl(const Scalar* a, const Scalar* b) {
+static inline int scalar_ge_impl(const Scalar* a, const Scalar* b) {
     for (int i = 3; i >= 0; i--) {
         if (a->limbs[i] > b->limbs[i]) return 1;
         if (a->limbs[i] < b->limbs[i]) return 0;
@@ -3315,7 +3318,7 @@ inline int scalar_ge_impl(const Scalar* a, const Scalar* b) {
 }
 
 // low-S check (BIP-62)
-inline int scalar_is_low_s_impl(const Scalar* s) {
+static inline int scalar_is_low_s_impl(const Scalar* s) {
     Scalar half_n;
     half_n.limbs[0] = HALF_ORDER_0; half_n.limbs[1] = HALF_ORDER_1;
     half_n.limbs[2] = HALF_ORDER_2; half_n.limbs[3] = HALF_ORDER_3;
@@ -3329,7 +3332,7 @@ inline int scalar_is_low_s_impl(const Scalar* s) {
 
 // Branchless mask: returns all-ones if s > n/2, all-zeros otherwise.
 // No early-exit — avoids warp divergence on secret-derived values of s.
-inline ulong scalar_is_high_mask_impl(const Scalar* s) {
+static inline ulong scalar_is_high_mask_impl(const Scalar* s) {
     const ulong half_order[4] = { HALF_ORDER_0, HALF_ORDER_1, HALF_ORDER_2, HALF_ORDER_3 };
     ulong gt = 0;
     ulong eq_so_far = ~(ulong)0;
@@ -3346,7 +3349,7 @@ inline ulong scalar_is_high_mask_impl(const Scalar* s) {
 // GLV Endomorphism
 // =============================================================================
 
-inline void apply_endomorphism_impl(const JacobianPoint* p, JacobianPoint* r) {
+static inline void apply_endomorphism_impl(const JacobianPoint* p, JacobianPoint* r) {
     FieldElement beta;
     beta.limbs[0] = 0x7AE96A2B657C0710UL;
     beta.limbs[1] = 0x6E64479EAC3434E9UL;
@@ -3360,7 +3363,7 @@ inline void apply_endomorphism_impl(const JacobianPoint* p, JacobianPoint* r) {
 }
 
 // Field negation: r = p - a (mod p)
-inline void field_negate_impl(FieldElement* r, const FieldElement* a) {
+static inline void field_negate_impl(FieldElement* r, const FieldElement* a) {
     FieldElement zero;
     zero.limbs[0] = 0; zero.limbs[1] = 0; zero.limbs[2] = 0; zero.limbs[3] = 0;
     field_sub_impl(r, &zero, a);
@@ -3370,7 +3373,7 @@ inline void field_negate_impl(FieldElement* r, const FieldElement* a) {
 // Uses full lattice-based decomposition with Babai rounding.
 
 // (a * b) >> 384 with rounding (bit 383)
-inline void glv_mul_shift_384_impl(const ulong a[4], __constant const ulong b[4], ulong result[4]) {
+static inline void glv_mul_shift_384_impl(const ulong a[4], __constant const ulong b[4], ulong result[4]) {
     ulong prod[8] = {0,0,0,0,0,0,0,0};
     for (int i = 0; i < 4; i++) {
         ulong carry = 0;
@@ -3392,7 +3395,7 @@ inline void glv_mul_shift_384_impl(const ulong a[4], __constant const ulong b[4]
     }
 }
 
-inline void glv_decompose_impl(const Scalar* k, Scalar* k1, Scalar* k2,
+static inline void glv_decompose_impl(const Scalar* k, Scalar* k1, Scalar* k2,
                                  int* k1_neg, int* k2_neg) {
     // c1 = round(k * g1 / 2^384), c2 = round(k * g2 / 2^384)
     ulong c1_limbs[4], c2_limbs[4];
@@ -3453,7 +3456,7 @@ inline void glv_decompose_impl(const Scalar* k, Scalar* k1, Scalar* k2,
 // GLV-accelerated scalar multiplication: k*P using Shamir's trick
 // with endomorphism phi(P) = (beta*x, y) where phi corresponds to lambda.
 // Uses interleaved wNAF w=5 for both half-scalars k1, k2.
-inline void build_wnaf_table_zr_impl(const AffinePoint* base, AffinePoint table[8],
+static inline void build_wnaf_table_zr_impl(const AffinePoint* base, AffinePoint table[8],
                                      FieldElement* globalz) {
     JacobianPoint base_jac;
     point_from_affine(&base_jac, base);
@@ -3515,7 +3518,7 @@ inline void build_wnaf_table_zr_impl(const AffinePoint* base, AffinePoint table[
     }
 }
 
-inline void derive_endo_table_impl(const AffinePoint table[8], AffinePoint endo_table[8],
+static inline void derive_endo_table_impl(const AffinePoint table[8], AffinePoint endo_table[8],
                                    int negate_y) {
     FieldElement beta;
     beta.limbs[0] = GLV_BETA0; beta.limbs[1] = GLV_BETA1;
@@ -3534,7 +3537,7 @@ inline void derive_endo_table_impl(const AffinePoint table[8], AffinePoint endo_
 // Forward declaration required because shamir_double_mul_glv_impl calls
 // scalar_mul_glv_impl as a degenerate-case fallback, but the full definition
 // of scalar_mul_glv_impl appears later in this file.
-inline void scalar_mul_glv_impl(JacobianPoint* r, const Scalar* k, const AffinePoint* p);
+static inline void scalar_mul_glv_impl(JacobianPoint* r, const Scalar* k, const AffinePoint* p);
 
 // =============================================================================
 // Shamir's trick double-scalar multiplication with 4-scalar GLV decomposition.
@@ -3545,7 +3548,7 @@ inline void scalar_mul_glv_impl(JacobianPoint* r, const Scalar* k, const AffineP
 //   2×(~130 D + ~65 MA) + 1 J+J = ~260 D + ~131 MA
 //   Shamir: ~1 field_inv + ~129 D + ~120 MA  → saves ~130 doubles
 // =============================================================================
-inline void shamir_double_mul_glv_impl(
+static inline void shamir_double_mul_glv_impl(
     const AffinePoint* P, const Scalar* a,
     const AffinePoint* Q, const Scalar* b,
     JacobianPoint* r)
@@ -3701,7 +3704,7 @@ inline void shamir_double_mul_glv_impl(
     }
 }
 
-inline void scalar_mul_glv_impl(JacobianPoint* r, const Scalar* k, const AffinePoint* p) {
+static inline void scalar_mul_glv_impl(JacobianPoint* r, const Scalar* k, const AffinePoint* p) {
     Scalar k1, k2;
     int k1_neg, k2_neg;
     glv_decompose_impl(k, &k1, &k2, &k1_neg, &k2_neg);
@@ -3757,7 +3760,7 @@ inline void scalar_mul_glv_impl(JacobianPoint* r, const Scalar* k, const AffineP
 // Precomputed generator multiplication using fixed window w=4.
 // Uses a hard-coded affine table of {0G..15G} — eliminates per-thread table
 // construction and uses mixed (J+A) additions instead of J+J (saves ~5 field_muls per add).
-inline void scalar_mul_generator_windowed_impl(JacobianPoint* r, const Scalar* k) {
+static inline void scalar_mul_generator_windowed_impl(JacobianPoint* r, const Scalar* k) {
     // Precomputed affine table: table[i] = i*G for i = 1..15.
     AffinePoint table[16];
     table[0].x.limbs[0] = 0; table[0].x.limbs[1] = 0; table[0].x.limbs[2] = 0; table[0].x.limbs[3] = 0;
@@ -3854,7 +3857,7 @@ inline void scalar_mul_generator_windowed_impl(JacobianPoint* r, const Scalar* k
 // Generator multiplication via precomputed LUT in __global memory.
 // lut: 16 slices x 65536 AffinePoints. lut[win*65536+idx] = idx * 2^(16*win) * G.
 // 15 mixed additions, 0 doublings.
-inline void scalar_mul_generator_lut_impl(JacobianPoint* r, const Scalar* k,
+static inline void scalar_mul_generator_lut_impl(JacobianPoint* r, const Scalar* k,
                                           __global const AffinePoint* lut) {
     point_set_infinity(r);
     for (int win = 0; win < 16; win++) {
@@ -3881,15 +3884,15 @@ typedef struct {
     ulong total_len;
 } SHA256Ctx;
 
-inline uint sha256_rotr(uint x, uint n) { return (x >> n) | (x << (32 - n)); }
-inline uint sha256_ch(uint x, uint y, uint z)  { return (x & y) ^ (~x & z); }
-inline uint sha256_maj(uint x, uint y, uint z) { return (x & y) ^ (x & z) ^ (y & z); }
-inline uint sha256_bsig0(uint x) { return sha256_rotr(x,2) ^ sha256_rotr(x,13) ^ sha256_rotr(x,22); }
-inline uint sha256_bsig1(uint x) { return sha256_rotr(x,6) ^ sha256_rotr(x,11) ^ sha256_rotr(x,25); }
-inline uint sha256_ssig0(uint x) { return sha256_rotr(x,7) ^ sha256_rotr(x,18) ^ (x >> 3); }
-inline uint sha256_ssig1(uint x) { return sha256_rotr(x,17) ^ sha256_rotr(x,19) ^ (x >> 10); }
+static inline uint sha256_rotr(uint x, uint n) { return (x >> n) | (x << (32 - n)); }
+static inline uint sha256_ch(uint x, uint y, uint z)  { return (x & y) ^ (~x & z); }
+static inline uint sha256_maj(uint x, uint y, uint z) { return (x & y) ^ (x & z) ^ (y & z); }
+static inline uint sha256_bsig0(uint x) { return sha256_rotr(x,2) ^ sha256_rotr(x,13) ^ sha256_rotr(x,22); }
+static inline uint sha256_bsig1(uint x) { return sha256_rotr(x,6) ^ sha256_rotr(x,11) ^ sha256_rotr(x,25); }
+static inline uint sha256_ssig0(uint x) { return sha256_rotr(x,7) ^ sha256_rotr(x,18) ^ (x >> 3); }
+static inline uint sha256_ssig1(uint x) { return sha256_rotr(x,17) ^ sha256_rotr(x,19) ^ (x >> 10); }
 
-inline void sha256_compress(SHA256Ctx* ctx, const uchar block[64]) {
+static inline void sha256_compress(SHA256Ctx* ctx, const uchar block[64]) {
     uint w[64];
     for (int i = 0; i < 16; i++)
         w[i] = ((uint)block[i*4] << 24) | ((uint)block[i*4+1] << 16)
@@ -3910,7 +3913,7 @@ inline void sha256_compress(SHA256Ctx* ctx, const uchar block[64]) {
     ctx->h[4]+=e; ctx->h[5]+=f; ctx->h[6]+=g; ctx->h[7]+=h;
 }
 
-inline void sha256_init(SHA256Ctx* ctx) {
+static inline void sha256_init(SHA256Ctx* ctx) {
     ctx->h[0]=0x6a09e667u; ctx->h[1]=0xbb67ae85u;
     ctx->h[2]=0x3c6ef372u; ctx->h[3]=0xa54ff53au;
     ctx->h[4]=0x510e527fu; ctx->h[5]=0x9b05688cu;
@@ -3918,7 +3921,7 @@ inline void sha256_init(SHA256Ctx* ctx) {
     ctx->buf_len = 0; ctx->total_len = 0;
 }
 
-inline void sha256_update(SHA256Ctx* ctx, const uchar* data, uint len) {
+static inline void sha256_update(SHA256Ctx* ctx, const uchar* data, uint len) {
     ctx->total_len += len;
     uint i = 0;
     if (ctx->buf_len > 0) {
@@ -3934,7 +3937,7 @@ inline void sha256_update(SHA256Ctx* ctx, const uchar* data, uint len) {
  * is O(1) regardless of total row length (rows can be multi-MB, e.g. real
  * Bitcoin transactions). Reuses the existing sha256_compress unchanged.
  * Mirrors sha256_update's own partial-buffer folding logic exactly. */
-inline void sha256_update_global(SHA256Ctx* ctx, __global const uchar* data, uint len) {
+static inline void sha256_update_global(SHA256Ctx* ctx, __global const uchar* data, uint len) {
     ctx->total_len += len;
     uint i = 0;
     if (ctx->buf_len > 0) {
@@ -3950,7 +3953,7 @@ inline void sha256_update_global(SHA256Ctx* ctx, __global const uchar* data, uin
     while (i < len) ctx->buf[ctx->buf_len++] = data[i++];
 }
 
-inline void sha256_final(SHA256Ctx* ctx, uchar out[32]) {
+static inline void sha256_final(SHA256Ctx* ctx, uchar out[32]) {
     ulong bits = ctx->total_len * 8;
     uchar pad = 0x80;
     sha256_update(ctx, &pad, 1);
@@ -3968,7 +3971,7 @@ inline void sha256_final(SHA256Ctx* ctx, uchar out[32]) {
     }
 }
 
-inline void hmac_sha256_impl(const uchar* key, uint key_len,
+static inline void hmac_sha256_impl(const uchar* key, uint key_len,
                               const uchar* msg, uint msg_len,
                               uchar out[32]) {
     uchar k_pad[64];
@@ -3998,7 +4001,7 @@ inline void hmac_sha256_impl(const uchar* key, uint key_len,
     sha256_final(&octx, out);
 }
 
-inline void rfc6979_nonce_impl(const Scalar* priv, const uchar msg_hash[32], Scalar* k_out) {
+static inline void rfc6979_nonce_impl(const Scalar* priv, const uchar msg_hash[32], Scalar* k_out) {
     uchar priv_bytes[32];
     scalar_to_bytes_impl(priv, priv_bytes);
 
@@ -4065,9 +4068,9 @@ typedef struct {
     Scalar s;
 } ECDSASignature;
 
-inline int lift_x_impl(const uchar x_bytes[32], JacobianPoint* p);
+static inline int lift_x_impl(const uchar x_bytes[32], JacobianPoint* p);
 
-inline int lbtc_be32_lt_field_p(__global const uchar* x) {
+static inline int lbtc_be32_lt_field_p(__global const uchar* x) {
     const uchar P[32] = {
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -4081,7 +4084,7 @@ inline int lbtc_be32_lt_field_p(__global const uchar* x) {
     return 0;
 }
 
-inline int lbtc_point_from_compressed(__global const uchar* pub, JacobianPoint* p) {
+static inline int lbtc_point_from_compressed(__global const uchar* pub, JacobianPoint* p) {
     const uchar prefix = pub[0];
     if (prefix != 0x02 && prefix != 0x03) return 0;
     if (!lbtc_be32_lt_field_p(pub + 1)) return 0;
@@ -4095,7 +4098,7 @@ inline int lbtc_point_from_compressed(__global const uchar* pub, JacobianPoint* 
     return 1;
 }
 
-inline int lbtc_scalar_ge_order(const Scalar* s) {
+static inline int lbtc_scalar_ge_order(const Scalar* s) {
     const ulong n[4] = { ORDER_N0, ORDER_N1, ORDER_N2, ORDER_N3 };
     for (int i = 3; i >= 0; --i) {
         if (s->limbs[i] > n[i]) return 1;
@@ -4104,7 +4107,7 @@ inline int lbtc_scalar_ge_order(const Scalar* s) {
     return 1;
 }
 
-inline int lbtc_parse_opaque_scalar(__global const uchar* opaque, Scalar* out) {
+static inline int lbtc_parse_opaque_scalar(__global const uchar* opaque, Scalar* out) {
     for (int i = 0; i < 4; ++i) {
         ulong limb = 0;
         for (int j = 0; j < 8; ++j)
@@ -4114,7 +4117,7 @@ inline int lbtc_parse_opaque_scalar(__global const uchar* opaque, Scalar* out) {
     return !scalar_is_zero(out) && !lbtc_scalar_ge_order(out);
 }
 
-inline int lbtc_parse_compact_scalar(__global const uchar* be, Scalar* out) {
+static inline int lbtc_parse_compact_scalar(__global const uchar* be, Scalar* out) {
     for (int limb = 0; limb < 4; ++limb) {
         ulong v = 0;
         const int base = (3 - limb) * 8;
@@ -4125,14 +4128,14 @@ inline int lbtc_parse_compact_scalar(__global const uchar* be, Scalar* out) {
     return !scalar_is_zero(out) && !lbtc_scalar_ge_order(out);
 }
 
-inline int lbtc_parse_compact_signature(__global const uchar* sig64,
+static inline int lbtc_parse_compact_signature(__global const uchar* sig64,
                                         ECDSASignature* sig) {
     if (!lbtc_parse_compact_scalar(sig64, &sig->r)) return 0;
     if (!lbtc_parse_compact_scalar(sig64 + 32, &sig->s)) return 0;
     return 1;
 }
 
-inline int lbtc_parse_opaque_signature(__global const uchar* opaque,
+static inline int lbtc_parse_opaque_signature(__global const uchar* opaque,
                                        ECDSASignature* sig) {
     if (!lbtc_parse_opaque_scalar(opaque, &sig->r)) return 0;
     if (!lbtc_parse_opaque_scalar(opaque + 32, &sig->s)) return 0;
@@ -4143,7 +4146,7 @@ inline int lbtc_parse_opaque_signature(__global const uchar* opaque,
     return 1;
 }
 
-inline int ecdsa_sign_impl(const uchar msg_hash[32], const Scalar* priv, ECDSASignature* sig) {
+static inline int ecdsa_sign_impl(const uchar msg_hash[32], const Scalar* priv, ECDSASignature* sig) {
     if (scalar_is_zero(priv)) return 0;
 
     Scalar z;
@@ -4199,7 +4202,7 @@ inline int ecdsa_sign_impl(const uchar msg_hash[32], const Scalar* priv, ECDSASi
     return 1;
 }
 
-inline int ecdsa_verify_impl(const uchar msg_hash[32], const JacobianPoint* pubkey, const ECDSASignature* sig) {
+static inline int ecdsa_verify_impl(const uchar msg_hash[32], const JacobianPoint* pubkey, const ECDSASignature* sig) {
     if (scalar_is_zero(&sig->r) || scalar_is_zero(&sig->s)) return 0;
 
     Scalar z;
@@ -4251,7 +4254,7 @@ inline int ecdsa_verify_impl(const uchar msg_hash[32], const JacobianPoint* pubk
 // LAYER 5a: Tagged Hash + Schnorr BIP-340
 // =============================================================================
 
-inline void tagged_hash_impl(const uchar* tag, uint tag_len,
+static inline void tagged_hash_impl(const uchar* tag, uint tag_len,
                               const uchar* data, uint data_len,
                               uchar out[32]) {
     // H_tag(msg) = SHA256(SHA256(tag) || SHA256(tag) || msg)
@@ -4288,7 +4291,7 @@ __constant uint BIP340_MIDSTATES[3][8] = {
      0x97c87550U, 0x003cc765U, 0x90f61164U, 0x33e9b66aU},
 };
 
-inline void tagged_hash_fast_impl(int tag_idx,
+static inline void tagged_hash_fast_impl(int tag_idx,
                                   const uchar* data, uint data_len,
                                   uchar out[32]) {
     SHA256Ctx ctx;
@@ -4300,7 +4303,7 @@ inline void tagged_hash_fast_impl(int tag_idx,
 }
 
 // Lift x to curve point with even Y
-inline int lift_x_impl(const uchar x_bytes[32], JacobianPoint* p) {
+static inline int lift_x_impl(const uchar x_bytes[32], JacobianPoint* p) {
     FieldElement x;
     for (int i = 0; i < 4; i++) {
         ulong limb = 0;
@@ -4346,7 +4349,7 @@ typedef struct {
     Scalar s;
 } SchnorrSignature;
 
-inline int schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
+static inline int schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
                                const uchar aux_rand[32], SchnorrSignature* sig) {
     if (scalar_is_zero(priv)) return 0;
 
@@ -4465,7 +4468,7 @@ inline int schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
     return 1;
 }
 
-inline int schnorr_verify_impl(const uchar pubkey_x[32], const uchar msg[32],
+static inline int schnorr_verify_impl(const uchar pubkey_x[32], const uchar msg[32],
                                  const SchnorrSignature* sig) {
     if (scalar_is_zero(&sig->s)) return 0;
 
@@ -4527,7 +4530,7 @@ inline int schnorr_verify_impl(const uchar pubkey_x[32], const uchar msg[32],
 // ct_ecdh_scalar_mul() in secp256k1_ecdh.cl, adapted for the AffinePoint type
 // used by the extended kernel.  No GLV, no wNAF, no data-dependent branches on
 // the scalar value.
-inline void ct_ecdh_scalar_mul_affine(JacobianPoint* r,
+static inline void ct_ecdh_scalar_mul_affine(JacobianPoint* r,
                                        const AffinePoint* pk,
                                        const Scalar* sk)
 {
@@ -4557,7 +4560,7 @@ inline void ct_ecdh_scalar_mul_affine(JacobianPoint* r,
     *r = R;
 }
 
-inline int ecdh_compute_raw_impl(const Scalar* priv, const AffinePoint* peer, uchar out[32]) {
+static inline int ecdh_compute_raw_impl(const Scalar* priv, const AffinePoint* peer, uchar out[32]) {
     JacobianPoint shared;
     ct_ecdh_scalar_mul_affine(&shared, peer, priv);  // P1-SEC-001: CT path
     if (point_is_infinity(&shared)) return 0;
@@ -4570,7 +4573,7 @@ inline int ecdh_compute_raw_impl(const Scalar* priv, const AffinePoint* peer, uc
     return 1;
 }
 
-inline int ecdh_compute_xonly_impl(const Scalar* priv, const AffinePoint* peer, uchar out[32]) {
+static inline int ecdh_compute_xonly_impl(const Scalar* priv, const AffinePoint* peer, uchar out[32]) {
     uchar x_bytes[32];
     if (!ecdh_compute_raw_impl(priv, peer, x_bytes)) return 0;
 
@@ -4580,7 +4583,7 @@ inline int ecdh_compute_xonly_impl(const Scalar* priv, const AffinePoint* peer, 
     return 1;
 }
 
-inline int ecdh_compute_impl(const Scalar* priv, const AffinePoint* peer, uchar out[32]) {
+static inline int ecdh_compute_impl(const Scalar* priv, const AffinePoint* peer, uchar out[32]) {
     // BUG-3 FIX: cannot use ecdh_compute_raw_impl here — it discards y_aff, making it
     // impossible to derive the correct compressed-point prefix.  Inline the computation
     // so we have y_aff and can determine Y parity.  Previously hardcoded 0x02 produced
@@ -4618,7 +4621,7 @@ typedef struct {
     int recid;
 } RecoverableSignature;
 
-inline int ecdsa_sign_recoverable_impl(const uchar msg_hash[32], const Scalar* priv,
+static inline int ecdsa_sign_recoverable_impl(const uchar msg_hash[32], const Scalar* priv,
                                          RecoverableSignature* rsig) {
     if (scalar_is_zero(priv)) return 0;
 
@@ -4684,7 +4687,7 @@ inline int ecdsa_sign_recoverable_impl(const uchar msg_hash[32], const Scalar* p
 }
 
 // Lift x as FieldElement with parity control
-inline int lift_x_field_impl(const FieldElement* x_fe, int parity, JacobianPoint* p) {
+static inline int lift_x_field_impl(const FieldElement* x_fe, int parity, JacobianPoint* p) {
     FieldElement x2, x3, y2, seven, y;
     field_sqr_impl(&x2, x_fe);
     field_mul_impl(&x3, &x2, x_fe);
@@ -4716,7 +4719,7 @@ inline int lift_x_field_impl(const FieldElement* x_fe, int parity, JacobianPoint
     return 1;
 }
 
-inline int ecdsa_recover_impl(const uchar msg_hash[32], const ECDSASignature* sig,
+static inline int ecdsa_recover_impl(const uchar msg_hash[32], const ECDSASignature* sig,
                                 int recid, JacobianPoint* Q) {
     if (recid < 0 || recid > 3) return 0;
     if (scalar_is_zero(&sig->r) || scalar_is_zero(&sig->s)) return 0;
@@ -4804,7 +4807,7 @@ inline int ecdsa_recover_impl(const uchar msg_hash[32], const ECDSASignature* si
 // =============================================================================
 
 // Extract c-bit window from scalar
-inline uint scalar_get_window_impl(const Scalar* s, int window_idx, int c) {
+static inline uint scalar_get_window_impl(const Scalar* s, int window_idx, int c) {
     int bit_offset = window_idx * c;
     int limb_idx = bit_offset / 64;
     int bit_idx = bit_offset % 64;
@@ -4820,7 +4823,7 @@ inline uint scalar_get_window_impl(const Scalar* s, int window_idx, int c) {
 }
 
 // Naive MSM: sum of individual scalar multiplications
-inline void msm_naive_impl(const Scalar* scalars, const AffinePoint* points,
+static inline void msm_naive_impl(const Scalar* scalars, const AffinePoint* points,
                              int n, JacobianPoint* result) {
     point_set_infinity(result);
     for (int i = 0; i < n; i++) {
@@ -4838,7 +4841,7 @@ inline void msm_naive_impl(const Scalar* scalars, const AffinePoint* points,
 }
 
 // Pippenger bucket MSM
-inline void msm_pippenger_impl(const Scalar* scalars, const AffinePoint* points,
+static inline void msm_pippenger_impl(const Scalar* scalars, const AffinePoint* points,
                                  int n, JacobianPoint* result,
                                  JacobianPoint* buckets, int c) {
     int num_buckets = 1 << c;
@@ -5497,7 +5500,7 @@ typedef struct {
 } EcdsaSnarkWitnessFlatOCL;
 
 // Helper: Scalar (4×ulong LE limbs) → 5×52-bit foreign-field limbs.
-inline void scalar_to_ff_limbs_cl(const Scalar* s, ulong out[5]) {
+static inline void scalar_to_ff_limbs_cl(const Scalar* s, ulong out[5]) {
     const ulong MASK52 = (1UL << 52) - 1UL;
     out[0] =  s->limbs[0]                                        & MASK52;
     out[1] = ((s->limbs[0] >> 52) | (s->limbs[1] << 12))        & MASK52;
@@ -5508,7 +5511,7 @@ inline void scalar_to_ff_limbs_cl(const Scalar* s, ulong out[5]) {
 
 // Helper: 32 big-endian bytes → 5×52-bit foreign-field limbs.
 // Interprets BE bytes as 4×ulong LE, then 52-bit windowing.
-inline void be_bytes_to_ff_limbs_cl(const uchar be[32], ulong out[5]) {
+static inline void be_bytes_to_ff_limbs_cl(const uchar be[32], ulong out[5]) {
     ulong w[4];
     for (int i = 0; i < 4; i++) {
         ulong v = 0;
@@ -5527,7 +5530,7 @@ inline void be_bytes_to_ff_limbs_cl(const uchar be[32], ulong out[5]) {
 
 // Compute one ECDSA SNARK witness record into *out.
 // On any early-out failure, out->valid is left 0.
-inline void ecdsa_snark_witness_impl(
+static inline void ecdsa_snark_witness_impl(
     const uchar              msg_hash[32],
     const JacobianPoint*     pubkey,
     const ECDSASignature*    sig,
@@ -5691,7 +5694,7 @@ typedef struct {
 
 // Validate: be32 bytes represent value < p (secp256k1 field prime).
 // p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
-inline int schnorr_be32_lt_p(const uchar x[32]) {
+static inline int schnorr_be32_lt_p(const uchar x[32]) {
     const uchar P[32] = {
         0xFF,0xFF,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF,
         0xFF,0xFF,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF,
@@ -5707,7 +5710,7 @@ inline int schnorr_be32_lt_p(const uchar x[32]) {
 
 // Validate: be32 bytes represent scalar s in [1, n-1].
 // n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
-inline int schnorr_be32_is_nonzero_lt_n(const uchar s[32]) {
+static inline int schnorr_be32_is_nonzero_lt_n(const uchar s[32]) {
     int all_zero = 1;
     for (int i = 0; i < 32; i++) if (s[i] != 0) { all_zero = 0; break; }
     if (all_zero) return 0;
@@ -5726,7 +5729,7 @@ inline int schnorr_be32_is_nonzero_lt_n(const uchar s[32]) {
 
 // Compute one BIP-340 Schnorr SNARK witness record.
 // out->valid = 0 on any failure (invalid sig, x not on curve, etc.).
-inline void schnorr_snark_witness_impl(
+static inline void schnorr_snark_witness_impl(
     const uchar               msg[32],
     const uchar               pub_x_bytes[32],
     const uchar               sig64[64],
@@ -5817,7 +5820,7 @@ __kernel void schnorr_snark_witness_batch(
 // ---------------------------------------------------------------------------
 // CT ECDSA sign: deterministic (RFC 6979) + constant-time k*G + k^-1
 // ---------------------------------------------------------------------------
-inline int ct_ecdsa_sign_impl(const uchar msg_hash[32], const Scalar* priv,
+static inline int ct_ecdsa_sign_impl(const uchar msg_hash[32], const Scalar* priv,
                               ECDSASignature* sig) {
     // BUG-M1 FIX: reject zero private key before RFC 6979 nonce derivation.
     // Every other signing function checks this; ct_ecdsa_sign_impl was the only
@@ -5874,7 +5877,7 @@ inline int ct_ecdsa_sign_impl(const uchar msg_hash[32], const Scalar* priv,
 }
 
 // CT ECDSA sign with fault countermeasure (verify after signing)
-inline int ct_ecdsa_sign_verified_impl(const uchar msg_hash[32], const Scalar* priv,
+static inline int ct_ecdsa_sign_verified_impl(const uchar msg_hash[32], const Scalar* priv,
                                        ECDSASignature* sig) {
     int ok = ct_ecdsa_sign_impl(msg_hash, priv, sig);
     if (!ok) return 0;
@@ -5906,7 +5909,7 @@ typedef struct {
     FieldElement pub_y;   // full y for internal use
 } CTSchnorrKeypairOCL;
 
-inline int ct_schnorr_keypair_create_impl(const Scalar* priv,
+static inline int ct_schnorr_keypair_create_impl(const Scalar* priv,
                                           CTSchnorrKeypairOCL* kp) {
     // CT: d*G
     CTJacobianPoint P;
@@ -5932,7 +5935,7 @@ inline int ct_schnorr_keypair_create_impl(const Scalar* priv,
 // ---------------------------------------------------------------------------
 // CT Schnorr sign (BIP-340)
 // ---------------------------------------------------------------------------
-inline int ct_schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
+static inline int ct_schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
                                 const uchar aux_rand[32],
                                 uchar sig_out[64]) {
     // Create keypair with CT
@@ -6021,7 +6024,7 @@ inline int ct_schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
 }
 
 // CT Schnorr sign with fault countermeasure
-inline int ct_schnorr_sign_verified_impl(const Scalar* priv, const uchar msg[32],
+static inline int ct_schnorr_sign_verified_impl(const Scalar* priv, const uchar msg[32],
                                          const uchar aux_rand[32],
                                          uchar sig_out[64]) {
     int ok = ct_schnorr_sign_impl(priv, msg, aux_rand, sig_out);
@@ -6053,7 +6056,7 @@ inline int ct_schnorr_sign_verified_impl(const Scalar* priv, const uchar msg[32]
 }
 
 // CT public key derivation
-inline void ct_schnorr_pubkey_impl(const Scalar* priv, FieldElement* pub_x) {
+static inline void ct_schnorr_pubkey_impl(const Scalar* priv, FieldElement* pub_x) {
     CTJacobianPoint P;
     ct_generator_mul_impl(priv, &P);
     FieldElement py;

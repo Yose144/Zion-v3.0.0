@@ -31,8 +31,11 @@ export default function PriceChart({ token, vsToken = 'USDT', height = 200 }: Pr
       setLoading(true);
       try {
         // Fetch price history from Router API
-        // Endpoint: GET /prices/:token/history?tf=24h
-        const resp = await fetch(`${ROUTER_URL}/prices/${token}/history?tf=${timeframe}`);
+        // Endpoint: GET /prices/:token/history?tf=24h&vs=USDT
+        // `vs` is explicit so the chart never silently shows prices quoted in a
+        // different asset than the one it labels.
+        const query = new URLSearchParams({ tf: timeframe, vs: vsToken });
+        const resp = await fetch(`${ROUTER_URL}/prices/${token}/history?${query.toString()}`);
         if (resp.ok) {
           const data = await resp.json();
           if (data.prices && Array.isArray(data.prices)) {

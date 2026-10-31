@@ -3,13 +3,16 @@
 
 import { React, useThree, useFrame, THREE } from '@genesis/runtime';
 
+import { resolveSceneLabels } from './SceneLabel';
+
 type Point = [number, number, number];
 let reducedMotion = false;
 export const motionTime = (clock: { elapsedTime: number }) => reducedMotion ? 0 : clock.elapsedTime;
 export const motionDelta = (delta: number) => reducedMotion ? 0 : Math.min(delta, .1);
+export const prefersReducedMotion = () => reducedMotion;
 
 /** Shared camera, motion and shadow policy for the twelve project canvases. */
-export function ScenePresentation({ camera: initial, target }: { camera: { position: Point; fov: number }; target: Point }) {
+export function ScenePresentation({ camera: initial, target, spin = true }: { camera: { position: Point; fov: number }; target: Point; spin?: boolean }) {
   const { camera, size, gl, controls, scene } = useThree();
   const audit = React.useRef(false);
   const counters = React.useRef({ frames: 0, start: 0 });
@@ -29,6 +32,23 @@ export function ScenePresentation({ camera: initial, target }: { camera: { posit
     const update = () => { reducedMotion = preference.matches; };
     update(); preference.addEventListener('change', update);
     audit.current = new URLSearchParams(window.location.search).get('sceneAudit') === '1';
+    if (audit.current) {
+      // Inventory of live geometries so the audit can name the layers that leak.
+      (window as unknown as Record<string, unknown>).__projectSceneObjects = () => {
+        const list: { type: string; uuid: string; vertices: number; object: string }[] = [];
+        scene.traverse(object => {
+          const geometry = (object as THREE.Mesh).geometry;
+          if (!geometry) return;
+          list.push({
+            type: geometry.type,
+            uuid: geometry.uuid,
+            vertices: geometry.getAttribute ? (geometry.getAttribute('position')?.count ?? 0) : 0,
+            object: object.type,
+          });
+        });
+        return list;
+      };
+    }
     gl.shadowMap.type = THREE.PCFShadowMap;
     const previous = gl.shadowMap.autoUpdate;
     gl.shadowMap.autoUpdate = false;
@@ -36,12 +56,19 @@ export function ScenePresentation({ camera: initial, target }: { camera: { posit
     return () => {
       preference.removeEventListener('change', update);
       gl.shadowMap.autoUpdate = previous;
-      if (audit.current) delete (window as unknown as Record<string, unknown>).__projectScene;
+      if (audit.current) {
+        const target = window as unknown as Record<string, unknown>;
+        delete target.__projectScene;
+        delete target.__projectSceneObjects;
+      }
     };
-  }, [gl]);
+  }, [gl, scene]);
 
   useFrame(({ clock }) => {
-    if (controls && 'autoRotate' in controls) (controls as unknown as { autoRotate: boolean }).autoRotate = !reducedMotion;
+    // Labels publish their screen rectangles later in the frame; resolve the
+    // overlap from the previous frame before the camera is drawn again.
+    resolveSceneLabels(camera);
+    if (controls && 'autoRotate' in controls) (controls as unknown as { autoRotate: boolean }).autoRotate = spin && !reducedMotion;
     const count = counters.current;
     count.frames++;
     // Refresh moving silhouettes gently; static surfaces reuse their shadow map.

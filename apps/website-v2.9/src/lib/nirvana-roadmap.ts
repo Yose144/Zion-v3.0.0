@@ -1,6 +1,8 @@
 // Public 3.3 "Nirvana" workstreams — shared between /zion-archive#plan-v33 and /roadmap#nirvana.
-// Derived from the canonical execution charter (Mise Amenti): every entry is a goal/horizon
-// with measurable acceptance criteria — never a completed capability or a promised date.
+// Derived from the canonical execution charter (Mise Amenti); internal detail lives in the
+// repo plan NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md (waves W0–W6, gates KS-1…KS-9 — those are
+// operator DoD, not public copy). Every entry is a goal/horizon with measurable acceptance
+// criteria — never a completed capability or a promised date.
 // Subtitle "loď Království srdce" is the public image of unification. It does not rename
 // phases N0–N7 and it is not the literary book (that book stays a story).
 

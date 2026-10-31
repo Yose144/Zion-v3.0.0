@@ -137,6 +137,7 @@ pub fn create_router(mut state: WarpState) -> Router {
         .route("/health", get(health))
         .route("/metrics", get(metrics))
         .route("/chains", get(chains))
+        .route("/validators", get(validators))
         .route("/transfers", get(list_transfers))
         .route("/transfers/pending", get(list_pending))
         .route("/transfers/:id", get(get_transfer))
@@ -319,7 +320,19 @@ async fn metrics(State(s): State<WarpState>, headers: HeaderMap) -> impl IntoRes
     if accepts_json {
         Json(r.metrics.snapshot()).into_response()
     } else {
-        let body = r.metrics.prometheus_output(&s.config.node_id);
+        // 4.B1: validator-set gauges sampled live — quorum reachability is
+        // the operational signal that decides whether the bridge can settle.
+        let vg = {
+            let vs = r.validator_set.lock().await;
+            crate::warp::metrics::ValidatorGauges {
+                quorum: vs.quorum as u64,
+                validators_total: vs.total_count() as u64,
+                validators_active: vs.active_count() as u64,
+                local_signers_active: vs.local_signer_count() as u64,
+                can_sign_quorum_locally: vs.can_sign_quorum_locally(),
+            }
+        };
+        let body = r.metrics.prometheus_output(&s.config.node_id, Some(&vg));
         (
             StatusCode::OK,
             [(
@@ -335,6 +348,22 @@ async fn metrics(State(s): State<WarpState>, headers: HeaderMap) -> impl IntoRes
 async fn chains(State(s): State<WarpState>) -> impl IntoResponse {
     let r = s.router.lock().await;
     Json(ApiOk::new(r.registry.list_chain_status()))
+}
+
+/// 4.B1: validator/bridge-state monitoring — quorum reachability, validator
+/// counts and local-signer capacity. Counts only; identities/keys are not
+/// exposed. `can_sign_quorum_locally=false` means the bridge cannot produce
+/// signatures and transfers will stall at `quorum_reached` → alert on it.
+async fn validators(State(s): State<WarpState>) -> impl IntoResponse {
+    let r = s.router.lock().await;
+    let vs = r.validator_set.lock().await;
+    Json(ApiOk::new(serde_json::json!({
+        "quorum": vs.quorum,
+        "validators_total": vs.total_count(),
+        "validators_active": vs.active_count(),
+        "local_signers_active": vs.local_signer_count(),
+        "can_sign_quorum_locally": vs.can_sign_quorum_locally(),
+    })))
 }
 
 async fn list_transfers(State(s): State<WarpState>) -> impl IntoResponse {

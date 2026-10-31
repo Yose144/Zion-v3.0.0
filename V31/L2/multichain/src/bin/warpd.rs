@@ -108,6 +108,7 @@ fn build_multichain_config(warp: &WarpConfig) -> MultichainConfig {
         node_rewards: NodeRewardsConfig::default(),
         reconciliation: warp.reconciliation.clone(),
         solvency: SolvencyConfig::default(),
+        dex: warp.dex.clone(),
     }
 }
 

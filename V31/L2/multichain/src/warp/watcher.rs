@@ -384,6 +384,7 @@ mod tests {
             solver: Default::default(),
             solvers: vec![],
             reconciliation: Default::default(),
+            dex: Default::default(),
         }
     }
 

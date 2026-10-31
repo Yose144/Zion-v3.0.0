@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { TextLabel } from './Label';
 import * as THREE from 'three';
 import { PLANET_R, latLonToVec3 } from './positions';
-import { FREE_WORLD_MISSIONS, MISSION_ORIGIN, MISSION_STATUS_COLOR } from '@/lib/freeworld-sites';
+import { EARTH_MISSIONS, LUNAR_MISSIONS, MISSION_ORIGIN, MISSION_STATUS_COLOR } from '@/lib/freeworld-sites';
 
 /** Procedurální mapa — instant fallback dokud se reálné textury nenačtou. */
 function makeFallbackTexture(): THREE.CanvasTexture {
@@ -78,11 +78,31 @@ function useEarthMaps(fallback: THREE.Texture) {
 }
 
 
-/** Měsíc — reálná textura (Solar System Scope), obíhá Novou Zemi mimo prstenec Issobelly. */
+const MOON_R = 0.55;
+
+/** Měsíc — reálná textura (Solar System Scope), obíhá Novou Zemi mimo prstenec Issobelly.
+ *  Matrix je maják na Shackletonu; klik otevře lunární základnu. */
 function Moon() {
   const ref = useRef<THREE.Group>(null);
+  const ring = useRef<THREE.Mesh>(null);
   const angle = useRef(Math.PI * 0.35);
   const [tex, setTex] = useState<THREE.Texture | null>(null);
+  const [hovered, setHovered] = useState(false);
+  const mission = LUNAR_MISSIONS[0];
+  const color = MISSION_STATUS_COLOR[mission?.status ?? 'vision'];
+
+  const beacon = useMemo(() => {
+    const n = new THREE.Vector3(...latLonToVec3(mission?.lat ?? -89.9, mission?.lon ?? 0, 1)).normalize();
+    const h = 0.22;
+    return {
+      n,
+      h,
+      pos: n.clone().multiplyScalar(MOON_R + h / 2),
+      up: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), n),
+      ringPos: n.clone().multiplyScalar(MOON_R + 0.012),
+      ringQuat: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), n),
+    };
+  }, [mission]);
 
   useEffect(() => {
     let alive = true;
@@ -95,23 +115,77 @@ function Moon() {
     };
   }, []);
 
-  useFrame((_, delta) => {
+  useEffect(() => () => {
+    document.body.style.cursor = 'auto';
+  }, []);
+
+  const open = () => {
+    if (!mission?.present) return;
+    window.open(mission.present, '_blank', 'noopener');
+  };
+
+  const hover = (on: boolean) => {
+    document.body.style.cursor = on ? 'pointer' : 'auto';
+    setHovered(on);
+  };
+
+  useFrame(({ clock }, delta) => {
     if (!ref.current) return;
     angle.current += delta * 0.11;
     const r = 9.6;
     ref.current.position.set(Math.cos(angle.current) * r, Math.sin(angle.current * 0.55) * 0.9, Math.sin(angle.current) * r);
     ref.current.rotation.y += delta * 0.05;
+    if (ring.current) {
+      const s = 1 + 0.28 * Math.sin(clock.getElapsedTime() * 2.4);
+      ring.current.scale.setScalar(s);
+    }
   });
+
   return (
     <group ref={ref}>
       <mesh>
-        <sphereGeometry args={[0.55, 24, 24]} />
+        <sphereGeometry args={[MOON_R, 24, 24]} />
         <meshStandardMaterial key={tex ? 'tex' : 'flat'} map={tex ?? undefined} color={tex ? '#ffffff' : '#d4d4d4'} roughness={0.95} metalness={0.02} />
       </mesh>
       <mesh scale={1.35}>
-        <sphereGeometry args={[0.55, 12, 12]} />
+        <sphereGeometry args={[MOON_R, 12, 12]} />
         <meshBasicMaterial color="#fcd116" transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
+      <mesh ref={ring} position={beacon.ringPos} quaternion={beacon.ringQuat}>
+        <ringGeometry args={[0.06, 0.09, 20]} />
+        <meshBasicMaterial color={color} transparent opacity={0.7} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+      </mesh>
+      <group position={beacon.pos} quaternion={beacon.up}>
+        <mesh>
+          <cylinderGeometry args={[0.012, 0.03, beacon.h, 6, 1, true]} />
+          <meshBasicMaterial color={color} transparent opacity={0.8} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, beacon.h / 2 + 0.02, 0]} scale={hovered ? 1.6 : 1}>
+          <sphereGeometry args={[0.032, 10, 10]} />
+          <meshBasicMaterial color={color} />
+        </mesh>
+      </group>
+      <mesh
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          hover(true);
+        }}
+        onPointerOut={() => hover(false)}
+        onClick={(e) => {
+          e.stopPropagation();
+          open();
+        }}
+      >
+        <sphereGeometry args={[MOON_R * 1.45, 12, 10]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+      <TextLabel
+        text={hovered ? `${mission?.name ?? 'Matrix'}  ↗` : (mission?.name ?? 'Matrix')}
+        position={[0, MOON_R + 0.95, 0]}
+        color={hovered ? '#ffffff' : color}
+        height={0.85}
+        onClick={open}
+      />
     </group>
   );
 }
@@ -135,7 +209,7 @@ function MissionSites() {
 
   const data = useMemo(
     () =>
-      FREE_WORLD_MISSIONS.map((m) => {
+      EARTH_MISSIONS.map((m) => {
         const n = new THREE.Vector3(...latLonToVec3(m.lat, m.lon, 1));
         return {
           name: m.name,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/db';
+import { distributeOrderBonus } from '@/lib/bonus-payout';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +56,9 @@ export async function POST(request: NextRequest) {
         where: { order: { orderId } },
         data: { status: 'paid', paidAt: now },
       });
+      void distributeOrderBonus(orderId).catch((err) =>
+        console.error('Bonus payout failed:', err)
+      );
     } else if (paymentStatus === 'unpaid' && session.status === 'open') {
       // still pending
     } else {

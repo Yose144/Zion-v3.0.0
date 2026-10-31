@@ -67,7 +67,7 @@ rpc                	3600	IN A    	207.180.217.100      ; ← NEW explicit: node 
 www                	3600	IN A    	207.180.217.100      ; ← FLIP
 
 ; ─── EDGE (62.171.141.136) — ops/chain infra, explicitně ukotveno ───────
-api                	3600	IN A    	62.171.141.136       ; beze změny (zatím bez vhostu)
+api                	3600	IN A    	62.171.141.136       ; ⚠️ fáze 3: přesouvá se na 207.180.217.100 (hiran-gateway :8007)
 dashboard          	3600	IN A    	62.171.141.136       ; ← NEW explicit: ops dashboard (dnes přes wildcard)
 explorer           	3600	IN A    	62.171.141.136       ; beze změny (vhost zatím není ani na Edge)
 grafana            	3600	IN A    	62.171.141.136       ; ← NEW explicit: monitoring (dnes přes wildcard)
@@ -110,9 +110,37 @@ _dmarc             	3600	IN TXT  	"v=DMARC1; p=quarantine; rua=mailto:security@z
 | `nirvana` | *(wildcard→edge)* | 62.171.141.136 | **nový web na EDGE** (`zion-nirvana` :3010) — explicit navržen jako pojistka (live = wildcard); při přesunu na EDGE2 změnit na `207.180.217.100` + deploy + vhost |
 | mail/MX/TXT/NS/CAA/SRV | — | *(beze změny)* | WebGlobe mail nedotčen |
 
-> **Pozn.** `api./explorer./mining.` dnes nemají funkční vhost ani na Edge —
-> zůstávají ukotvené tam, dokud pro ně nedefinujeme cíl (kandidát: EDGE2
-> catch-all → app, nebo dedikované vhosty).
+> **Pozn.** `explorer./mining./testnet.` zůstávají na Edge — jejich služby tam
+> skutečně běží (`explorer`, `dashboard`, `grafana` jsou ops tier).
+> `api.` **není** mrtvá: `zion-hiran-gateway` běží na **EDGE2 :8007** → patří
+> do fáze 3 (níže).
+
+---
+
+## Fáze 3 — `api.` a `dex.` na EDGE2 (čeká na 👤, 31. 10. 2026)
+
+Obě služby **reálně běží na EDGE2**, ale DNS (respektive wildcard) je posílá na
+Edge, kde pro ně není vhost → `404` / TLS SAN mismatch. Vhosty jsou na EDGE2
+**už staged** (port 80, `nginx -t` OK), takže po flipu stačí jen certbot.
+
+| Záznam | Dnes | Cíl | Poznámka |
+|---|---|---|---|
+| `api` | `62.171.141.136` (explicit) | **`207.180.217.100`** | `zion-hiran-gateway` :8007, SSE unbuffered, neauth = 401 |
+| `dex` | *(wildcard → Edge)* | **`207.180.217.100`** — **nový explicit** | `warpd` :8454, úzký vhost (`/prices/`, `/v1/swap/pools`, `/health`) |
+| `updates` | *(wildcard → Edge)* | *(beze změny)* | ⚠️ **v zóně žádný explicitní záznam není** — žádný A záznam ke smazání. Doména je mrtvá jen tím, že na Edge nic neservíruje (404). Řeší se až ve fázi 2 (flip wildcardu) nebo samostatným explicitním `A` na EDGE2 s vhostem `return 410`. |
+
+**Postup 👤 ve WebGlobe:** přepsat `api` A → `207.180.217.100`, přidat `dex` A
+→ `207.180.217.100`, serial bump, uložit.
+
+**Navazující kroky 🤖 (po propagaci):**
+
+```bash
+# na EDGE2
+certbot --nginx -d api.zionterranova.com -d dex.zionterranova.com
+nginx -t && systemctl reload nginx
+# pak synchronizovat certbotem vygenerované bloky zpět do
+# infra/nginx/edge2/{api,dex}.zionterranova.com.conf
+```
 
 ---
 

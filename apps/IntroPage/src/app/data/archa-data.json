@@ -1,0 +1,186 @@
+{
+  "hero": {
+    "cs": {
+      "badge": "vision · čtvrté plavidlo",
+      "title": "NIRVANA",
+      "subtitle": "Království srdce — archa",
+      "desc": "Flotila má tři Marie — lodě poutníků. Čtvrté plavidlo není poutník. Je to přístav, který se vrací pro ty, co zůstali ve vodě.",
+      "cta": "sestoupit do trupu"
+    },
+    "en": {
+      "badge": "vision · fourth vessel",
+      "title": "NIRVANA",
+      "subtitle": "Kingdom of the Heart — the ark",
+      "desc": "The fleet has three Marias — pilgrim ships. The fourth vessel is no pilgrim. It is a harbor that returns for those left in the water.",
+      "cta": "descend into the hull"
+    }
+  },
+  "kofer": {
+    "cs": {
+      "title": "Kofer na kýlu",
+      "p1": "„Udělej si archu z dřeva gófer… a vymaž ji zevnitř i zvnitřku smolou.“ — Gn 6,14. Hebrejské kofer (smola) nese stejný kořen jako kapóret — smíření. Co lidi přikrývá, to je nese přes vodu.",
+      "p2": "V knize Království srdce vyryl tesař totéž jméno na kýl každé lodě, která kdy měla nést lidi. Archa toto jméno nese celá — trupem, ústavou i semenným archivem.",
+      "quote": "„Postav si loď. Ne protože přijde potopa — ale protože jednoho dne někdo bude ve vodě.“"
+    },
+    "en": {
+      "title": "Kofer on the keel",
+      "p1": "“Make yourself an ark of gopher wood… and cover it inside and out with pitch.” — Gn 6:14. Hebrew kofer (pitch) shares its root with kapporet — atonement. What shelters people carries them across water.",
+      "p2": "In the book Království srdce the carpenter carved the same name into the keel of every vessel meant to carry people. The ark bears this name entirely — in hull, constitution and seed vault alike.",
+      "quote": "“Build a boat. Not because the flood is coming — but because one day someone will be in the water.”"
+    }
+  },
+  "fleet": {
+    "cs": {
+      "title": "Tři Marie a archa",
+      "intro": "Tres Marías nesou poutníky mezi dvanácti uzly L5. Archa nese něco jiného:",
+      "items": [
+        { "icon": "fa-heart", "name": "Santa María la Mayor", "role": "Atlantik — tall ship" },
+        { "icon": "fa-heart", "name": "N. S. de Fátima", "role": "Pacifik — solární katamarán" },
+        { "icon": "fa-heart", "name": "M. de las Nieves", "role": "Indický oceán — otevřený design" },
+        { "icon": "fa-infinity", "name": "Nirvana · Království srdce", "role": "všude — svatyně, záchrana, semena" }
+      ]
+    },
+    "en": {
+      "title": "Three Marias and the ark",
+      "intro": "The Tres Marías carry pilgrims between the twelve L5 nodes. The ark carries something else:",
+      "items": [
+        { "icon": "fa-heart", "name": "Santa María la Mayor", "role": "Atlantic — tall ship" },
+        { "icon": "fa-heart", "name": "N. S. de Fátima", "role": "Pacific — solar catamaran" },
+        { "icon": "fa-heart", "name": "M. de las Nieves", "role": "Indian Ocean — open design" },
+        { "icon": "fa-infinity", "name": "Nirvana · Království srdce", "role": "everywhere — shrine, rescue, seeds" }
+      ]
+    }
+  },
+  "numbers": {
+    "cs": {
+      "title": "Čísla archy",
+      "items": [
+        { "value": "≤100", "label": "posádka — malá vesnice, ne expedice" },
+        { "value": "75–90 m", "label": "ocelový trup, 3 paluby + shelter deck" },
+        { "value": "2 500–4 000 m²", "label": "plachet — vítr jako jediné palivo, co nedojde" },
+        { "value": "~200 kWp", "label": "PV skin + vítr + hydrogenerace" },
+        { "value": ">15 let", "label": "runway zásob — systém se nikdy nevyčerpá" },
+        { "value": "30–60 tis.", "label": "akcesí semen při −18 °C" }
+      ]
+    },
+    "en": {
+      "title": "Ark in numbers",
+      "items": [
+        { "value": "≤100", "label": "crew — a small village, not an expedition" },
+        { "value": "75–90 m", "label": "steel hull, 3 decks + shelter deck" },
+        { "value": "2,500–4,000 m²", "label": "sail — wind, the only fuel that never runs out" },
+        { "value": "~200 kWp", "label": "PV skin + wind + hydrogeneration" },
+        { "value": ">15 yrs", "label": "stores runway — the system never depletes" },
+        { "value": "30–60k", "label": "seed accessions at −18 °C" }
+      ]
+    }
+  },
+  "decks": {
+    "cs": {
+      "title": "Pět úrovní trupu",
+      "items": [
+        { "deck": "Shelter deck", "desc": "PV skin ~1 000 m² · sběr deště · větrné turbíny · misijní kontejnery", "icon": "fa-sun" },
+        { "deck": "P3 — dům", "desc": "můstek 360° + ZION node · guardians kajuty · skleník 400–600 m² · seed vault", "icon": "fa-seedling" },
+        { "deck": "P2 — obec", "desc": "ubytování rodin · mess · knowledge ark · škola + svatyně srdce · kryté náměstí", "icon": "fa-users" },
+        { "deck": "P1 — pracovní", "desc": "kovárna + dílna · aquaponie + farma · živá farma · medical + porodnice", "icon": "fa-flask" },
+        { "deck": "Hold", "desc": "baterie 2–4 MWh · staples ~200 t · voda + palivo — těžiště dole", "icon": "fa-boxes" }
+      ]
+    },
+    "en": {
+      "title": "Five hull levels",
+      "items": [
+        { "deck": "Shelter deck", "desc": "PV skin ~1,000 m² · rain catchment · wind turbines · mission containers", "icon": "fa-sun" },
+        { "deck": "P3 — house", "desc": "360° bridge + ZION node · guardians cabins · greenhouse 400–600 m² · seed vault", "icon": "fa-seedling" },
+        { "deck": "P2 — commons", "desc": "family quarters · mess · knowledge ark · school + heart shrine · covered square", "icon": "fa-users" },
+        { "deck": "P1 — working", "desc": "forge + workshop · aquaponics + farm · livestock · medical + birth room", "icon": "fa-flask" },
+        { "deck": "Hold", "desc": "batteries 2–4 MWh · staples ~200 t · water + fuel — weight down low", "icon": "fa-boxes" }
+      ]
+    }
+  },
+  "systems": {
+    "cs": {
+      "title": "Systémy soběstačnosti",
+      "items": [
+        { "icon": "fa-bolt", "name": "Energie", "desc": "sail-primary — vítr, PV ~200 kWp, turbíny, hydrogenerace; nafta = léky v lékárničce, ne strava" },
+        { "icon": "fa-droplet", "name": "Voda", "desc": "2× RO 23 m³/den + déšť + kondenzát vs potřeba ~8 m³/den — voda je přebytek" },
+        { "icon": "fa-seedling", "name": "Potraviny", "desc": "~40 % kalorií z paluby (skleníky, klíčky, aquaponie, rybolov) + 200 t staples = runway >15 let" },
+        { "icon": "fa-tree", "name": "Semena", "desc": "seed vault −18 °C, duplikát na uzlu — banka i spíž zároveň; resow uzavírá cyklus" },
+        { "icon": "fa-heart", "name": "Zdraví", "desc": "medical + porodnice + izolace — kolonie rodí děti, protože bez dětí je to expedice, ne archa" },
+        { "icon": "fa-compass", "name": "Vláda", "desc": "sociokratická ústava pro 100 — kruhy, consent, role po dvou; v izolaci není kam prchnout" }
+      ]
+    },
+    "en": {
+      "title": "Self-sufficiency systems",
+      "items": [
+        { "icon": "fa-bolt", "name": "Energy", "desc": "sail-primary — wind, PV ~200 kWp, turbines, hydrogeneration; diesel = medicine, not food" },
+        { "icon": "fa-droplet", "name": "Water", "desc": "2× RO 23 m³/day + rain + condensate vs ~8 m³/day need — water is surplus" },
+        { "icon": "fa-seedling", "name": "Food", "desc": "~40 % of calories grown aboard (greenhouse, sprouts, aquaponics, fishing) + 200 t staples = >15 yr runway" },
+        { "icon": "fa-tree", "name": "Seeds", "desc": "seed vault −18 °C, node duplicate — bank and pantry alike; resowing closes the loop" },
+        { "icon": "fa-heart", "name": "Health", "desc": "medical + birth room + isolation — the colony bears children, because without children it is an expedition, not an ark" },
+        { "icon": "fa-compass", "name": "Governance", "desc": "sociocratic constitution for 100 — circles, consent, roles in pairs; in isolation there is nowhere to flee" }
+      ]
+    }
+  },
+  "whale": {
+    "cs": {
+      "title": "Velrybí navigace",
+      "p1": "Archa nepluje itinerář — pluje migraci. Jako keporkak: léto v mírných pásmech, zimu v tropikách. Sezónní cyklus sám vyhýbá cyklónům a sám sbírá uzly L5.",
+      "p2": "Tomar → LUMI → Te Pīko Ora → Bodhi Lanka → Boa Esperança — každý uzel je zároveň zásobovací stanice a záloha seed vaultu. Archa není izolovaná loď, ale mobilní článek zemědělské sítě.",
+      "seasons": [
+        { "when": "léto", "where": "mírná pásma — krmení, práce, opravy" },
+        { "when": "podzim/jaro", "where": "přesuny po hřbetech proudů" },
+        { "when": "zima", "where": "tropika — uzly, reprodukce, klid" }
+      ]
+    },
+    "en": {
+      "title": "Whale navigation",
+      "p1": "The ark sails no itinerary — it sails a migration. Like the humpback: summers in temperate bands, winters in the tropics. The seasonal cycle itself avoids cyclones and collects the L5 nodes.",
+      "p2": "Tomar → LUMI → Te Pīko Ora → Bodhi Lanka → Boa Esperança — every node is both supply station and seed vault backup. The ark is not an isolated ship but a mobile link in an agricultural network.",
+      "seasons": [
+        { "when": "summer", "where": "temperate bands — feeding, work, repairs" },
+        { "when": "autumn/spring", "where": "transits along current ridges" },
+        { "when": "winter", "where": "tropics — nodes, reproduction, calm" }
+      ]
+    }
+  },
+  "studies": {
+    "cs": {
+      "title": "Čtyři studie",
+      "intro": "Koncept se nechal růst aditivně — žádná studie nepřepsala předchozí:",
+      "items": [
+        { "id": "A", "name": "Rescue archa", "desc": "~340 osob, 365 dní autonomie — svatyně + záchrana" },
+        { "id": "B", "name": "Kolonie-archa", "desc": "≤100 lidí, sail-primary, kolaps-proof — jádro designu" },
+        { "id": "C", "name": "Stavba & bilance", "desc": "GA plán, 8 variant, hmotnosti, solár/voda/jídlo" },
+        { "id": "D", "name": "Hluboká analýza", "desc": "syntéza, FMEA, kalorický runway, 50letý lifecycle" }
+      ],
+      "note": "Závěr syntézy: největší riziko není stroj, je společnost. Archu nenese nosnost — nese ji runway."
+    },
+    "en": {
+      "title": "Four studies",
+      "intro": "The concept grew additively — no study overwrote the previous one:",
+      "items": [
+        { "id": "A", "name": "Rescue ark", "desc": "~340 people, 365-day autonomy — shrine + rescue" },
+        { "id": "B", "name": "Colony ark", "desc": "≤100 people, sail-primary, collapse-proof — the design core" },
+        { "id": "C", "name": "Build & balance", "desc": "GA plan, 8 variants, weights, solar/water/food" },
+        { "id": "D", "name": "Deep analysis", "desc": "synthesis, FMEA, caloric runway, 50-year lifecycle" }
+      ],
+      "note": "Synthesis verdict: the biggest risk is not a machine, it is society. The ark is not carried by capacity — it is carried by runway."
+    }
+  },
+  "status": {
+    "cs": {
+      "badge": "status: vision",
+      "p1": "Zatím jen studie. Žádná registry, žádná alokace, žádný kýl. Až jednoho dne někdo bude ve vodě — a pak už bude pozdě začínat stavět.",
+      "link": "koncept v repozitáři →"
+    },
+    "en": {
+      "badge": "status: vision",
+      "p1": "Only studies so far. No registry, no allocation, no keel. Until one day someone is in the water — and then it is too late to start building.",
+      "link": "concept in repository →"
+    }
+  },
+  "footer": {
+    "cs": { "quote": "„Co lidi přikrývá, to je nese přes vodu.“ — kofer" },
+    "en": { "quote": "“What shelters people carries them across the water.” — kofer" }
+  }
+}

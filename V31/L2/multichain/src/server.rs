@@ -333,6 +333,8 @@ impl ApiServer {
             )
             .route("/v1/swap/order/:id/htlc-claim", post(swap_htlc_claim))
             .route("/v1/swap/order/:id", get(get_swap_order))
+            .route("/prices/:token/history", get(price_history))
+            .route("/v1/prices/:token/history", get(price_history))
             .route("/v1/swap/intent", post(create_intent))
             .route("/v1/swap/intent/:id", get(get_intent))
             .route("/v1/swap/intent/:id/bid", post(submit_bid))
@@ -1133,6 +1135,109 @@ async fn deploy_pool(
 async fn list_pools(State(state): State<AppState>) -> Json<serde_json::Value> {
     let pools = state.service.list_dex_pools().await;
     Json(serde_json::json!({"pools": pools}))
+}
+
+const PRICE_HISTORY_DEFAULT_LIMIT: usize = 500;
+const PRICE_HISTORY_MAX_LIMIT: usize = 5_000;
+
+#[derive(Deserialize)]
+struct PriceHistoryQuery {
+    /// Window such as `1h`, `24h`, `7d` (default `24h`).
+    tf: Option<String>,
+    /// Quote asset: bare ticker (`USDT`), `chain:ticker` or a full asset key.
+    vs: Option<String>,
+    /// Maximum number of points returned (1..=5000, default 500).
+    limit: Option<usize>,
+}
+
+/// `GET /prices/:token/history?tf=24h&vs=USDT`
+///
+/// Derives a price series from **real** data only: settled DEX orders plus the
+/// live constant-product pool midpoint. There is no price-history table, so an
+/// empty answer is reported honestly (`prices: []`) instead of being filled
+/// with placeholders.
+async fn price_history(
+    State(state): State<AppState>,
+    Path(token): Path<String>,
+    Query(query): Query<PriceHistoryQuery>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let token_ref = crate::pricing::AssetRef::parse(&token).ok_or(StatusCode::BAD_REQUEST)?;
+    let vs_key = query.vs.as_deref().unwrap_or("USDT");
+    let vs_ref = crate::pricing::AssetRef::parse(vs_key).ok_or(StatusCode::BAD_REQUEST)?;
+    let timeframe = query.tf.as_deref().unwrap_or("24h");
+    let window = crate::pricing::parse_timeframe(timeframe).ok_or(StatusCode::BAD_REQUEST)?;
+    let limit = query
+        .limit
+        .unwrap_or(PRICE_HISTORY_DEFAULT_LIMIT)
+        .clamp(1, PRICE_HISTORY_MAX_LIMIT);
+    // Newest-first scan: a generous multiple of `limit` guarantees the window is
+    // fully covered even on a busy pair.
+    let scan_limit = limit.saturating_mul(20).max(200);
+
+    let now = chrono::Utc::now();
+    let since = now - window;
+
+    let orders = state
+        .service
+        .settled_dex_orders_since(Some(since), scan_limit)
+        .await
+        .map_err(|e| {
+            tracing::warn!("price history: settled order scan failed: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    let pools = state.service.list_dex_pools().await;
+
+    let (series, source) =
+        crate::pricing::build_series(&orders, &pools, &token_ref, &vs_ref, now, limit);
+
+    // When the window holds no trades for this pair, report the most recent
+    // known price outside it rather than pretending the pair was never traded.
+    // Keyed off the *derived series*, not the raw order count — the window may
+    // be full of other pairs.
+    let last_known = if series.is_empty() {
+        match state
+            .service
+            .settled_dex_orders_since(None, scan_limit)
+            .await
+        {
+            Ok(recent) => crate::pricing::latest_order_point(&recent, &token_ref, &vs_ref),
+            Err(e) => {
+                tracing::warn!("price history: last-known scan failed: {e}");
+                None
+            }
+        }
+    } else {
+        None
+    };
+
+    let points: Vec<serde_json::Value> = series
+        .iter()
+        .map(|p| {
+            serde_json::json!({
+                "timestamp": p.timestamp_ms,
+                "price": p.price,
+            })
+        })
+        .collect();
+
+    let last_known = last_known.map(|p| {
+        serde_json::json!({
+            "timestamp": p.timestamp_ms,
+            "price": p.price,
+        })
+    });
+
+    Ok(Json(serde_json::json!({
+        "token": token,
+        "vs": vs_key,
+        "timeframe": timeframe,
+        "from": since.to_rfc3339(),
+        "to": now.to_rfc3339(),
+        "source": source.as_str(),
+        "count": points.len(),
+        "prices": points,
+        "last_known": last_known,
+    })))
 }
 
 #[derive(Deserialize)]

@@ -19,5 +19,8 @@ PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
 
+# Node RPC ports probed by the exporter (primary first).
+Environment=G8_NODE_RPC_PORTS=9445,9446,9447
+
 [Install]
 WantedBy=multi-user.target
