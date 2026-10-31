@@ -333,8 +333,6 @@ function KailashSky() {
             float moon = (1.0 - smoothstep(0.02, 0.028, length(d - mdir)));
             c = mix(c, vec3(0.85, 0.88, 0.9), moon * 0.55);
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
           }
         `,
         uniforms: {

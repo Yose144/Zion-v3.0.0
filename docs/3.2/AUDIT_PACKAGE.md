@@ -2,7 +2,7 @@
 
 > **Status:** prepared for operator hand-off — auditors NOT yet engaged (👤 selects firm, budget, NDA, kickoff)
 > **Companion docs:** `EXTERNAL_AUDIT_SCOPE.md`, `SECURITY_AUDIT_3.2.md` + `REPORTS/INTERNAL_AUDIT_2026-10-05.md` (historical baseline), `REPORTS/AUDIT_RECHECK_2026-10-25.md` (money-path corrections and remaining risks)
-> **Generated:** 2026-10-25 — pinned to the reviewed source commit. The manifest/report commit follows as documentation only; a document cannot contain its own commit hash.
+> **Generated:** 2026-11-01 — pinned to the reviewed source commit (W1 closeout + kanonizace). The manifest/report commit follows as documentation only; a document cannot contain its own commit hash.
 
 ---
 
@@ -14,9 +14,9 @@
 |---|---|
 | Repository | `github.com/Yose144/Zion-v3.0.0` (private mirror of record) |
 | Branch | `main` |
-| Pinned source HEAD | `27f2932b4a44249426743bec6e9ecd5df5914f93` (W1 RC baseline) |
-| Short | `27f2932b4` |
-| Current HEAD | `3560223e79da64463566d8b35dcb168fee202392` (`3560223e7`) |
+| Pinned source HEAD | `aa6599cce82d2805fc1a30d4d2c7b1c247254e5b` (W1 closeout + kanonizace, 1. 11.) |
+| Short | `aa6599cce` |
+| Current HEAD | `aa6599cce82d2805fc1a30d4d2c7b1c247254e5b` (`aa6599cce`) |
 | Commits since `4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4` | `426` (as of 2026-10-31 W1 closeout) |
 | Supersedes | `4108a52d0` / previous audit pins (trace via git log) |
 

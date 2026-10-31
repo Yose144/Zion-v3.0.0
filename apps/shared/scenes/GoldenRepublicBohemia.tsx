@@ -447,8 +447,6 @@ function SkySun() {
                + vec3(1.0, 0.72, 0.4) * pow(s, 30.0) * 0.5
                + vec3(0.95, 0.55, 0.26) * pow(s, 7.0) * 0.22;
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
           }
         `,
         uniforms: {

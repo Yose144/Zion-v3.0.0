@@ -493,8 +493,6 @@ function AmentiSky() {
             float moon = (1.0 - smoothstep(0.023, 0.03, md)) - (1.0 - smoothstep(0.02, 0.026, length(d - mdir - vec3(0.013, 0.006, 0))));
             c += vec3(0.95, 0.92, 0.8) * max(moon, 0.0) * 0.95;
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
           }
         `,
         uniforms: {},

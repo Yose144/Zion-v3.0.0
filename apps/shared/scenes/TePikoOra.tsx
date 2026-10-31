@@ -509,8 +509,6 @@ function SkyMountainsSun() {
                + vec3(1.0, 0.75, 0.42) * pow(s, 45.0) * 0.18
                + vec3(0.98, 0.62, 0.3) * pow(s, 6.0) * 0.22;
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
           }
         `,
         uniforms: {

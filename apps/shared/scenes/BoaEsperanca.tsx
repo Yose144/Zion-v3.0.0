@@ -5,7 +5,7 @@ import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/run
 import { SceneLabel } from './SceneLabel';
 import { AtlanticOcean } from './CoastalLandscape';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SkyFill } from './kit';
+import { KeyLight, SkyFill, basaltRock } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -50,20 +50,20 @@ function Cliffs() {
     <group>
       {/* hlavní mys — čelo k moři */}
       <mesh geometry={main} position={[-16, 1, -14]} castShadow receiveShadow>
-        <meshStandardMaterial color="#746b5d" roughness={0.95} />
+        <primitive object={basaltRock(5)} attach="material" />
       </mesh>
       {/* ustupující hřebeny za mysem — vpravo do dálky */}
       <mesh geometry={back1} position={[16, 0.5, -38]} rotation={[0, -0.28, 0]} castShadow>
-        <meshStandardMaterial color="#52402e" roughness={0.95} />
+        <primitive object={basaltRock(4)} attach="material" />
       </mesh>
       <mesh geometry={back2} position={[46, 0, -52]} rotation={[0, -0.42, 0]}>
-        <meshStandardMaterial color="#4a3a2c" roughness={0.95} />
+        <primitive object={basaltRock(4)} attach="material" />
       </mesh>
       {/* útesy zahlazující pravý bok — nižší předhůří */}
       {[...Array(5)].map((_, i) => (
         <mesh key={i} position={[-38 + i * 9, 2.5 + rng(i) * 2, -8 - rng(i + 4) * 5]} scale={[4.5, 3 + rng(i + 2) * 2, 4]} castShadow>
           <sphereGeometry args={[1.4, 8, 6]} />
-          <meshStandardMaterial color="#746b5d" roughness={0.95} />
+          <primitive object={basaltRock(5)} attach="material" />
         </mesh>
       ))}
       {/* skaliska ve vodě u paty — placatá, tmavá */}
@@ -217,7 +217,7 @@ function TwoOceans() {
       {/* příbojová vlna sunoucí se ke břehu */}
       <mesh ref={swell} rotation={[-Math.PI / 2, 0, 0.04]} position={[8, -0.55, 16]}>
         <planeGeometry args={[70, 2.6]} />
-        <meshStandardMaterial color="#cfe8e2" transparent opacity={0.4} roughness={0.5} />
+        <meshStandardMaterial color="#8fc4c8" transparent opacity={0.18} roughness={0.5} />
       </mesh>
       {/* pěna u skalisek */}
       <group ref={foam}>
@@ -309,8 +309,6 @@ function StormSky() {
             float rays = pow(0.5 + 0.5 * sin(ang * 14.0 + cl * 6.0), 3.0);
             c += vec3(1.0, 0.82, 0.45) * rays * pow(s, 12.0) * 0.14;
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
           }
         `,
         uniforms: {
@@ -371,10 +369,11 @@ export function BoaEsperancaScene({ lang }: { lang: Lang }) {
 export const BOA_CAMERA = { position: [16, 9, 58] as [number, number, number], fov: 48, far: 1000 };
 export const BOA_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.16, minDistance: 16, maxDistance: 140, maxPolarAngle: Math.PI / 2 - 0.05, target: [-8, 10, -10] as [number, number, number], enablePan: false };
 export function BoaEsperancaLighting() {
-  return <>
-    <ambientLight intensity={0.5} color="#c8d0d8" />
-    <hemisphereLight args={['#d8c8a8', '#24303a', 0.6]} />
-    <directionalLight position={[80, 30, -30]} intensity={1.8} color="#ffd090" castShadow />
-    <directionalLight position={[-40, 20, 50]} intensity={0.4} color="#90a8c0" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.18} color="#c8d0d8" />
+      <SkyFill sky="#a9b8c8" ground="#24303a" intensity={0.5} />
+      <KeyLight sun={[-0.6, 0.18, -0.78]} intensity={2.2} extent={120} distance={180} color="#ffd6a8" />
+    </>
+  );
 }

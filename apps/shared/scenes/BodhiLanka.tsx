@@ -567,8 +567,6 @@ function SkySun() {
             // jemná zlatá mlha nad obzorem
             c = mix(c, vec3(0.88, 0.62, 0.38), (1.0 - smoothstep(-0.02, 0.18, d.y)) * 0.35);
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
           }
         `,
         uniforms: {

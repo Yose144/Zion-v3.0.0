@@ -563,8 +563,6 @@ function DuskSky() {
             float tw = 0.6 + 0.4 * hash(cell + 1.0);
             c += vec3(1.0, 0.98, 0.9) * star * tw * 1.2 * (1.0 - smoothstep(0.02, 0.6, west)) * smoothstep(-0.02, 0.25, d.y);
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
           }
         `,
         uniforms: {

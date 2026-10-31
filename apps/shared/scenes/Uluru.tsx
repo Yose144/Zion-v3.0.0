@@ -454,8 +454,6 @@ function UluruSky() {
             float moon = (1.0 - smoothstep(0.028, 0.035, md)) - (1.0 - smoothstep(0.024, 0.03, length(d - mdir - vec3(0.014, 0.008, 0))));
             c += vec3(0.95, 0.92, 0.8) * max(moon, 0.0) * 0.9;
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
           }
         `,
         uniforms: {

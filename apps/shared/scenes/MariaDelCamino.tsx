@@ -192,8 +192,6 @@ function Sky() {
       float s=max(dot(d,normalize(vec3(-.55,.10,-1.))),0.);
       c+=vec3(1.,.7,.35)*pow(s,1600.)*1.6+vec3(.4,.2,.1)*pow(s,30.);
       gl_FragColor=vec4(c,1.);
-      #include <tonemapping_fragment>
-      #include <colorspace_fragment>
     }`,
   }), []);
   useEffect(() => () => material.dispose(), [material]);

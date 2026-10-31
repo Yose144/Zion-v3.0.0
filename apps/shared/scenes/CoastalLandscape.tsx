@@ -69,25 +69,23 @@ export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, sh
         float a = p.x * .23 + p.y * .39 + sin(p.x * .11 - p.y * .13) * 1.5 + time * .6;
         float b = p.x * -.37 + p.y * .17 + sin(p.y * .19) * .9 - time * .42;
         float attenuation = 1. / (1. + length(fwidth(p)) * .8);
-        vec3 n = normalize(vec3((cos(a) * .022 - cos(b) * .016) * attenuation * roughness, 1., (cos(a) * .018 + cos(b) * .027) * attenuation * roughness));
+        vec3 n = normalize(vec3((cos(a) * .05 - cos(b) * .038) * attenuation * roughness, 1., (cos(a) * .042 + cos(b) * .06) * attenuation * roughness));
         vec3 viewDir = normalize(cameraPosition - world);
         float fresnel = pow(1. - max(dot(n, viewDir), 0.), 3.);
         float distanceFade = smoothstep(90., 650., length(cameraPosition.xz - p));
         float shore = -23. - max(p.x - 8., 0.) * .65 + sin(p.x * .12) * 2.5;
         shore = mix(shore, shoreline.y - sin(p.x * .12) * 1.5, shoreline.x);
         float nearShore = exp(-abs(p.y - shore + 2.4) * .38) * coastal;
-        vec3 water = mix(vec3(.025,.14,.23), vec3(.06,.33,.36), nearShore * .75);
-        vec3 tropical = mix(vec3(.015,.16,.25), vec3(.07,.54,.45), exp(-max(shore - p.y, 0.) * .045));
+        vec3 water = mix(vec3(.006,.045,.09), vec3(.02,.16,.18), nearShore * .75);
+        vec3 tropical = mix(vec3(.005,.07,.11), vec3(.025,.32,.3), exp(-max(shore - p.y, 0.) * .045));
         water = mix(water, tropical, lagoon);
-        water = mix(water, vec3(.31,.40,.48), fresnel * .65);
+        water = mix(water, vec3(.09,.16,.26), fresnel * .7);
         float reflection = pow(max(dot(reflect(-sun, n), viewDir), 0.), 45.);
-        water += vec3(1.,.69,.38) * reflection * .32;
+        water += vec3(1.,.62,.3) * reflection * .5;
         float foam = nearShore * smoothstep(.65, .95, sin(p.y * 3. + sin(p.x * .6) - time * .65)) * .13;
         water += vec3(.65,.78,.76) * foam;
-        water = mix(water, vec3(.52,.56,.61), distanceFade * .8);
+        water = mix(water, vec3(.28,.34,.42), distanceFade * .7);
         gl_FragColor = vec4(water, 1.);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
       }
     `,
   }), [coastal, lagoon, shorelineZ, roughSea]);

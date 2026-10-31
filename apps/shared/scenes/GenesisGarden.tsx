@@ -858,8 +858,6 @@ function SkyAndSun() {
                + vec3(1.0, 0.72, 0.4) * pow(s, 26.0) * 0.35
                + vec3(0.95, 0.6, 0.3) * pow(s, 5.0) * 0.18;
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
           }
         `,
         uniforms: {
