@@ -298,7 +298,7 @@ Text (cs/en), který musí být v appce:
 - [x] macOS aarch64 binárky: `zion-miner`, `zion-universal-miner`, `zion-node`, `zion` (CLI) — builděné 1. 11.
 - [x] Windows CPU-only miner binary (`zion-miner.exe`, bez gpu-opencl — OpenCL ICD chybí) — 1. 11.
 - [x] **macOS arm64 Public DMG** — `dist/zion-public-miner-v3.2.0-mac-arm64.dmg` (146 MB), BUILD-INFO + SHA256SUMS (1. 11., `public_build`, ad-hoc signed).
-- [ ] Linux AppImage + DEB (mac/linux host).
+- [ ] Linux AppImage + DEB — ⚠️ cross-compile z macOS selhal (`blake3`/`ring` C build scripts pod `cargo-zigbuild`); vyžaduje **Linux host** nebo Docker (Ubuntu 22.04 + OpenCL ICD).
 - [ ] CI workflows (mac/linux).
 - [ ] Windows OpenCL + CUDA build → **jiný stroj** (👤).
 - [ ] Code signing (Apple/Windows) → **jiný stroj** (👤).
