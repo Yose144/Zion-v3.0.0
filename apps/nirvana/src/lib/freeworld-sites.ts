@@ -1,10 +1,12 @@
 /**
- * L5 Free World — 12 zakládajících misí na planetě.
+ * L5 Free World — 12 zakládajících misí na planetě plus lunární Matrix.
  * Zrcadlo `apps/website-v2.9/src/lib/freeworld-sites.ts` (kanonický zdroj) —
  * držet synchronizované. href vede na komunitní stránku app.zionterranova.com.
+ * `body: 'moon'` nepatří na glóbus — maják žije na Měsíci.
  */
 
 export type MissionStatus = 'preparation' | 'vision' | 'built';
+export type CelestialBody = 'earth' | 'moon';
 
 export interface FreeWorldMission {
   key: string;
@@ -15,6 +17,8 @@ export interface FreeWorldMission {
   path: string;
   /** interní 3D prezentace v Nirvaně (má přednost před externím path) */
   present?: string;
+  /** default earth; moon = selenografické souřadnice, ne pin na Zemi */
+  body?: CelestialBody;
 }
 
 export const MISSION_ORIGIN = 'https://app.zionterranova.com';
@@ -32,7 +36,12 @@ export const FREE_WORLD_MISSIONS: FreeWorldMission[] = [
   { key: 'boa-esperanca', name: 'Boa Esperança', lat: -34.35, lon: 18.47, status: 'vision', path: '/terranova/boa-esperanca', present: '/present/boa-esperanca' },
   { key: 'kailash', name: 'Kailash', lat: 31.07, lon: 81.31, status: 'vision', path: '/terranova/kailash', present: '/present/kailash' },
   { key: 'amenti', name: 'Amenti · Giza', lat: 29.98, lon: 31.13, status: 'vision', path: '/terranova/amenti', present: '/present/amenti' },
+  // Shackleton — jižní pól Měsíce. path je jen záloha; prezentace je v Nirvaně.
+  { key: 'matrix', name: 'Matrix', lat: -89.9, lon: 0, status: 'vision', path: '/l5-free-world', present: '/present/matrix', body: 'moon' },
 ];
+
+export const EARTH_MISSIONS = FREE_WORLD_MISSIONS.filter((m) => m.body !== 'moon');
+export const LUNAR_MISSIONS = FREE_WORLD_MISSIONS.filter((m) => m.body === 'moon');
 
 export const MISSION_STATUS_COLOR: Record<MissionStatus, string> = {
   preparation: '#06b6d4', // cyan — financované komunity v přípravě

@@ -29,6 +29,23 @@ export function ScenePresentation({ camera: initial, target }: { camera: { posit
     const update = () => { reducedMotion = preference.matches; };
     update(); preference.addEventListener('change', update);
     audit.current = new URLSearchParams(window.location.search).get('sceneAudit') === '1';
+    if (audit.current) {
+      // Inventory of live geometries so the audit can name the layers that leak.
+      (window as unknown as Record<string, unknown>).__projectSceneObjects = () => {
+        const list: { type: string; uuid: string; vertices: number; object: string }[] = [];
+        scene.traverse(object => {
+          const geometry = (object as THREE.Mesh).geometry;
+          if (!geometry) return;
+          list.push({
+            type: geometry.type,
+            uuid: geometry.uuid,
+            vertices: geometry.getAttribute ? (geometry.getAttribute('position')?.count ?? 0) : 0,
+            object: object.type,
+          });
+        });
+        return list;
+      };
+    }
     gl.shadowMap.type = THREE.PCFShadowMap;
     const previous = gl.shadowMap.autoUpdate;
     gl.shadowMap.autoUpdate = false;
@@ -36,9 +53,13 @@ export function ScenePresentation({ camera: initial, target }: { camera: { posit
     return () => {
       preference.removeEventListener('change', update);
       gl.shadowMap.autoUpdate = previous;
-      if (audit.current) delete (window as unknown as Record<string, unknown>).__projectScene;
+      if (audit.current) {
+        const target = window as unknown as Record<string, unknown>;
+        delete target.__projectScene;
+        delete target.__projectSceneObjects;
+      }
     };
-  }, [gl]);
+  }, [gl, scene]);
 
   useFrame(({ clock }) => {
     if (controls && 'autoRotate' in controls) (controls as unknown as { autoRotate: boolean }).autoRotate = !reducedMotion;

@@ -5,10 +5,13 @@
  * carries a 300M founding reserve; Uluru + Boa Esperança + Kailash +
  * Amenti stay vision-stage with no committed allocation — and Ekam is
  * the only node already built (2008), held as a relationship, not a
- * project. Amenti (Giza) is the twelfth and final node.
+ * project. Amenti (Giza) is the twelfth and final node on Earth.
+ * Matrix is the lunar sibling (Shackleton) — not a thirteenth continent,
+ * not drawn on the planetary map, allocation stays zero.
  */
 
 export type FreeWorldSiteStatus = 'development' | 'preparation' | 'vision' | 'built';
+export type CelestialBody = 'earth' | 'moon';
 
 export interface FreeWorldSite {
   key: string;
@@ -19,6 +22,8 @@ export interface FreeWorldSite {
   href: string;
   /** Approximate founding allocation (ZION) shown on markers/details. */
   allocationZion: number;
+  /** default earth; moon coordinates are selenographic and stay off the Earth map */
+  body?: CelestialBody;
 }
 
 export const FREE_WORLD_SITES: FreeWorldSite[] = [
@@ -151,7 +156,23 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     href: '/terranova/amenti',
     allocationZion: 0,
   },
+  {
+    // Shackleton crater, lunar south pole. Vision only — no funded
+    // allocation and no Earth pin. The public community page is not
+    // published yet; href stays on the L5 portal.
+    key: 'matrix',
+    name: 'Matrix',
+    lat: -89.9,
+    lon: 0,
+    status: 'vision',
+    href: '/l5-free-world',
+    allocationZion: 0,
+    body: 'moon',
+  },
 ];
+
+/** Planetary map and the "12 communities" count — Matrix stays on the Moon. */
+export const EARTH_FREE_WORLD_SITES = FREE_WORLD_SITES.filter((site) => site.body !== 'moon');
 
 export const SITE_STATUS_COLOR: Record<FreeWorldSiteStatus, string> = {
   development: '#fcd116', // gold — reserved for active build phase
