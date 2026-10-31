@@ -22,7 +22,7 @@ export default function BooksPortal({ locale }: { locale: Locale }) {
     <>
       <div className="k-meta" style={{ marginBottom: 14 }}>
         <span>
-          {BOOKS.length} {t(locale, 'books').toLowerCase()}
+          {t(locale, 'books')}: {BOOKS.length}
         </span>
         <a href={EXTERNAL.library} target="_blank" rel="noreferrer" style={{ color: 'var(--k-accent)' }}>
           {t(locale, 'docs')} →
