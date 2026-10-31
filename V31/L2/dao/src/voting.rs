@@ -4,6 +4,14 @@
 //! Voters lock their balance at proposal snapshot block.
 //! Each address can vote once per proposal.
 //! Weight = balance at snapshot block (in atomic units).
+//!
+//! 4.B9 decision: binding votes stay stake-weighted. Naive quadratic
+//! voting (sqrt(balance)) is *worse* than linear on a pseudonymous chain —
+//! a whale splits into N wallets and amplifies by √N. Quadratic weighting
+//! only works bound to identity (1 person = 1 voice); ZIS binding exists
+//! but is not mandatory for DAO voters. Quadratic consent for
+//! expulsion-type decisions lives in `consent.rs` (advisory role).
+//! See docs/3.2/REPORTS/REPORT_2026-10-31_4B9_DAO_QV_DECISION.md.
 
 use std::collections::HashMap;
 

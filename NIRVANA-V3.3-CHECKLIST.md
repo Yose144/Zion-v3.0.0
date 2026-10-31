@@ -94,7 +94,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 ZIS agent sub-accounts — Prisma schema + budgety (design + migrace draft) — 31. 10. `docs/3.2/ZIS_AGENT_SUBACCOUNTS_DESIGN.md`: `AgentSubAccount`+`AgentBudget` modely (scoped `zag_` bearer, atomic conditional-update budgety, `wallet:withdraw` nikdy issuabilný — F-1/F-6), API draft, SQL migrace, rollout gates; implementace = follow-up
 - [x] 🤖 Mobile app 3.0.6 — API audit + preview marking (3.B6) — 31. 10. `REPORTS/REPORT_2026-10-31_3B6_MOBILE_APP_AUDIT.md`: preview stage ✅ (config+UI+pkg), 5/8 endpointů live, 3 dead vhosts (api/dex/updates — nikdy nenasazené, graceful degradace); full API sladění = 👤 deploy-vs-cut
 - [ ] 🤖 QTC integrace ([`QUANTUS-INTEGRATION-PLAN.md`](docs/3.2/QUANTUS-INTEGRATION-PLAN.md)): F1 adapter (gated testnet) → F2 keyring → F3 watchtower → F5 wallet pod ZIS
-- [ ] 🔀 DAO: guardian registry deploy, treasury sign flow + 👤 klíč, QV rozhodnutí (4.B8, 4.B9)
+- [ ] 🔀 DAO: guardian registry deploy, treasury sign flow + 👤 klíč (4.B8); ~~QV rozhodnutí~~ ✅ 4.B9 — DECIDED 31. 10. `REPORTS/REPORT_2026-10-31_4B9_DAO_QV_DECISION.md`: DAO zůstává stake-weighted (naivní QV = sybil-zranitelné √N amplifikací; advisory QV už existuje v `consent.rs`)
 - [x] 🤖 Premine unlock dry-run na regtestu před výškou 144 000 (1.B5) — PASS 28. 10.; výška ~27.–28. 11. a exekuce zůstávají 👤
 - [ ] 👤 Nové chain piloty (Solana watcher v kódu) — každý přes M1.6 gate
 - [x] 🤖 Deferred outbox durability + atomic daily-cap (4.B3) — 31. 10. `REPORTS/REPORT_2026-10-31_4B3_DURABLE_OUTBOX_DAILY_CAP.md`: (a) warp transfer+daily_volume v 1 sqlite tx (`save_and_record_daily_volume`, fail-closed před publish); (b) pool `take_*_payouts` drain-persist fail-closed (persist fail → žádný handout, IA-14 double-pay okno zavřené); (c) `DeferredPayoutQueue` durable `<state_path>.deferred.json` (serde `queued_at_unix`, restore v main.rs, corrupt→quarantine); 654/655 warp + 17/17 deferred testů ✅; nasazeno 31. 10. (pool `fdeda709a`, warpd `b05b23208` @ `e9be58c04`)
@@ -220,7 +220,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 
 ## Rychlá autonomní fronta (další kroky)
 
-1. 🔀 P0-3 — rotace PRL RPC credentialu (👤) + per-service env subsety; P0-1/P0-2 ✅ 26. 10.
+1. 🔀 P0-3 — rotace PRL RPC credentialu (👤) + per-service env subsety; P0-1/P0-2 ✅ 26. 10. · audit 31.10. v [`docs/3.2/P0-3-SHARED-ENV-AUDIT.md`](docs/3.2/P0-3-SHARED-ENV-AUDIT.md): 186 vars, 24 secret-ish, 15 služeb sdílí `edge-environment.sh` (mode 0644) — subset plan + rotace runbook připraveny, čeká 👤
 2. ~~🤖 Provenance manifest + build z čistého `git archive` (8.B3)~~ ✅ 28. 10. (collector + baseline; `git archive` build nese `.git-archive-sha`)
 3. ~~🤖 Health checky zápisových cest + lag alerty L5/L6/db-sync/payout sweep (8.B4, 6.B2)~~ ✅ 28. 10. (`ZionPoolPayoutStale` + freshness metriky nasazené)
 4. ~~🤖 Stale-block RCA nad A1.2 metrikami (2.B1)~~ ✅ 26. 10. (`REPORT_2026-10-26_POOL_ORPHAN_RCA.md`)
@@ -230,6 +230,9 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 8. ~~🤖 Nový public repo sync workflow + secret scan (8.B7)~~ ✅ 28. 10.
 9. ~~🤖 Premine unlock dry-run na regtestu (1.B5)~~ ✅ 28. 10. (`premine_unlock_dry_run_full_node_path` PASS — viz plán 1.B5)
 10. 🤖 Plán + provedení plného DR drillu (7.B7) — **plán ✅** (`HARD_RESET_PLAYBOOK.md` §F); provedení potřebuje čistý host → 👤 náklad
+11. ✅ 🤖 Deploy reconciliation A (31.10.) — staged rebuild z čistého worktree `e9be58c04`: warpd (×2, finálně `b05b23208`), pool (`fdeda709a`→`d786449b0`), node ×3 (`08d7348d`); G8 bez incidentu (15 s gap); provenance `docs/3.2/DEPLOY-PROVENANCE-2026-10-31-postdeploy.jsonl`
+12. ✅ 🤖 B1+B2 (31.10.) — `confirmed_at` set on INSERT (backfill 94 471 řádků → 0 NULL); 10 s TTL cache pro `/public/v1/coins/*/stats` (cold 94–206 ms → warm 1–6 ms); pool build `d786449b0` nasazen, 4071/0 accepted canary
+13. ✅ 🤖 C cleanup (31.10., opatrně) — `/root/build` (2.8 G) + 6 node snapshot DBs (3.6 G) → komprimované archivy `/opt/zion/archive/root-build-20261029.tar.gz` (541 M) + `node-snapshots-20261029.tar.gz` (857 M); disk 102 → 97 G (67 %); denní snapshoty ponechány (vše v 14denním okně)
 
 ## Operátor-only fronta
 
