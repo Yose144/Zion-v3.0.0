@@ -59,7 +59,7 @@ export default function AdminInvoicesPage() {
                 </td>
                 <td className="p-3 space-x-3">
                   <a
-                    href={`/api/invoices/${inv.id}`}
+                    href={`/api/invoice/${inv.id}/download`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-rasta-gold hover:underline text-sm"
@@ -67,7 +67,7 @@ export default function AdminInvoicesPage() {
                     {t('admin.view')}
                   </a>
                   <a
-                    href={`/api/invoices/${inv.id}?format=pdf`}
+                    href={`/api/invoice/${inv.id}/download?format=pdf`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-emerald-400 hover:underline text-sm font-bold"

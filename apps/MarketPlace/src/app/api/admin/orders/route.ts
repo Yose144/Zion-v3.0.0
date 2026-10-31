@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         include: {
           invoices: {
-            select: { id: true, invoiceNumber: true, status: true, pdfUrl: true, totalCzk: true, issuedAt: true },
+            select: { id: true, invoiceNumber: true, status: true, pdfUrl: true, totalCzk: true, issuedAt: true, stripeSession: true },
           },
         },
       }),

@@ -3,7 +3,7 @@ const nextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   reactStrictMode: true,
-  transpilePackages: ['viem', 'wagmi'],
+  transpilePackages: ['viem', 'wagmi', 'three'],
   images: {
     // No next/image usage in the codebase — disables the /_next/image
     // optimizer endpoint entirely (npm audit GHSA-2xp9/GHSA-2464 class).

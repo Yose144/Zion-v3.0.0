@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { distributeOrderBonus } from '@/lib/bonus-payout';
 import { sendPaymentConfirmation } from '@/lib/email';
 import type { Prisma } from '@prisma/client';
 
@@ -126,6 +127,10 @@ export async function markShopOrderPaid(
       data: { status: 'paid', paidAt: now },
     }),
   ]);
+
+  void distributeOrderBonus(order.orderId).catch((err) =>
+    console.error('Bonus payout failed:', err)
+  );
 
   sendPaymentConfirmation({
     orderId: order.orderId,

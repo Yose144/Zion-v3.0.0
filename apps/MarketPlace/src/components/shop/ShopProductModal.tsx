@@ -6,6 +6,7 @@ import type { ShopProductData } from '@/types/shop';
 import { getTokens } from '@/lib/shop-api';
 import { useCart } from './CartContext';
 import { useLangT } from '@/lib/useTranslation';
+import StarfighterViewer, { isLocalStl } from './StarfighterViewer';
 
 interface ShopProductModalProps {
   product: ShopProductData | null;
@@ -79,7 +80,9 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
         <div className="grid md:grid-cols-[1.2fr_1fr] gap-6 p-6">
           {/* Image */}
           <div className="relative aspect-square rounded-2xl overflow-hidden bg-black/40">
-            {imgError || !product.image ? (
+            {isLocalStl(product.modelUrl) ? (
+              <StarfighterViewer url={product.modelUrl} />
+            ) : imgError || !product.image ? (
               <div className="w-full h-full flex items-center justify-center">
                 <span className="text-7xl text-gradient font-black font-display">Z</span>
               </div>

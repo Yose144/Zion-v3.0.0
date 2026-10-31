@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/db';
 import { sendPaymentConfirmation } from '@/lib/email';
+import { distributeOrderBonus } from '@/lib/bonus-payout';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const orderId = session.metadata?.order_id;
-        if (orderId) {
+        if (orderId && session.payment_status === 'paid') {
           const now = new Date();
           await prisma.shopOrder.updateMany({
             where: { orderId },
@@ -73,6 +74,9 @@ export async function POST(request: NextRequest) {
               where: { id: order.id },
               data: { statusHistory: hist },
             });
+            void distributeOrderBonus(order.orderId).catch((err) =>
+              console.error('Bonus payout failed:', err)
+            );
             sendPaymentConfirmation({
               orderId: order.orderId,
               customerName: order.customerName,
