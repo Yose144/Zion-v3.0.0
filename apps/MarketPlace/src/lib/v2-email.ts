@@ -668,3 +668,147 @@ ZION Terra Nova
 
   return { html, text };
 }
+
+/* ------------------------------------------------------------------ */
+/* Shared rasta shell — all transactional emails use the same design   */
+/* as the V2 order confirmation (dark bg, rasta stripes, gold/green).  */
+/* ------------------------------------------------------------------ */
+
+export interface RastaEmailOpts {
+  /** <title> + envelope subject context */
+  title: string;
+  /** pill badge under company block, e.g. '⚡ ESHOP OBJEDNÁVKA ⚡' */
+  badge?: string;
+  /** big emoji inside the green hero circle (e.g. '💚', '🚚', '🎁') */
+  heroEmoji: string;
+  /** main gold headline under the hero circle */
+  headline: string;
+  /** intro paragraph (already-escaped or plain text — escaped internally? NO: pass html) */
+  intro?: string;
+  /** one or more rastaCard()/custom blocks, joined in order */
+  content: string;
+}
+
+/** A rounded section card in rasta palette. */
+export function rastaCard(opts: {
+  heading?: string;
+  body: string;
+  tone?: 'green' | 'gold' | 'red';
+}): string {
+  const tones = {
+    green: 'rgba(34,139,34,0.2)|rgba(0,255,0,0.35)|inset 0 2px 8px rgba(0,255,0,0.1)',
+    gold: 'rgba(255,215,0,0.15)|rgba(255,215,0,0.35)|inset 0 2px 8px rgba(255,215,0,0.1)',
+    red: 'rgba(220,20,60,0.15)|rgba(220,20,60,0.3)|inset 0 2px 8px rgba(220,20,60,0.1)',
+  };
+  const [bg, border, shadow] = tones[opts.tone ?? 'green'].split('|');
+  const h = opts.heading
+    ? `<h3 style="color: #FFD700; margin: 0 0 20px 0; font-size: 22px; text-align: center; letter-spacing: 1px; font-weight: 700; border-bottom: 2px solid rgba(255,215,0,0.3); padding-bottom: 14px;">${opts.heading}</h3>`
+    : '';
+  return `<div style="background: linear-gradient(145deg, ${bg}, rgba(0,0,0,0.4)); border: 2px solid ${border}; border-radius: 18px; padding: 28px; margin-bottom: 32px; box-shadow: ${shadow};">${h}${opts.body}</div>`;
+}
+
+/** Label/value row for detail tables inside cards. */
+export function rastaRow(label: string, valueHtml: string, opts?: { big?: boolean }): string {
+  const size = opts?.big ? '20px' : '16px';
+  return `<tr>
+    <td style="color: #9af59a; font-size: 15px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 600;">${label}</td>
+    <td style="color: #fff; font-size: ${size}; text-align: right; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">${valueHtml}</td>
+  </tr>`;
+}
+
+/** Gold mono box for hashes / seeds / addresses. */
+export function rastaMonoBox(label: string, value: string): string {
+  return `<p style="color: #8a8f94; font-size: 13px; margin: 0 0 10px 0;">${label}</p>
+  <p style="color: #00ff7f; font-size: 14px; font-family: monospace; word-break: break-all; margin: 0; font-weight: 600; background: rgba(0,255,127,0.08); padding: 14px; border-radius: 8px;">${escapeHtml(value)}</p>`;
+}
+
+/** Warning strip (gold left border). */
+export function rastaWarning(text: string): string {
+  return `<div style="background: rgba(255,215,0,0.1); border-left: 4px solid #FFD700; padding: 16px; border-radius: 8px; margin-top: 18px;">
+    <p style="color: #FFD700; font-size: 14px; margin: 0; line-height: 1.6;">${text}</p>
+  </div>`;
+}
+
+export function buildRastaEmail(opts: RastaEmailOpts): string {
+  const badge = opts.badge ?? '⚡ ZION ESHOP ⚡';
+  const intro = opts.intro
+    ? `<p style="color: #a8ffb0; margin: 16px 0 0 0; font-size: 16px; line-height: 1.6; text-align: center;">${opts.intro}</p>`
+    : '';
+  return `<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(opts.title)}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Trebuchet MS', 'Verdana', sans-serif; background: radial-gradient(circle at 20% 20%, rgba(0,255,0,0.15), transparent 40%), radial-gradient(circle at 80% 15%, rgba(255,215,0,0.15), transparent 45%), radial-gradient(circle at 50% 90%, rgba(220,20,60,0.18), transparent 40%), #0a0a0a;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(145deg, rgba(0,0,0,0.85), rgba(0,0,0,0.96)); padding: 50px 20px;">
+        <tr>
+            <td align="center">
+                <table width="680" cellpadding="0" cellspacing="0" style="background: #0f0f0f; border-radius: 24px; overflow: hidden; box-shadow: 0 28px 72px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.06);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%); padding: 4px;">
+                            <div style="background: #0f0f0f; padding: 32px 28px; text-align: center;">
+                                <img src="${escapeHtml(COMPANY.logoUrl)}" alt="${escapeHtml(COMPANY.name)}" width="88" height="88" style="border-radius: 50%; display: block; margin: 0 auto 14px auto; background: #111;" />
+                                <div style="color: #fff; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px;">
+                                    ${escapeHtml(COMPANY.name)}
+                                </div>
+                                <div style="color: #9af59a; font-size: 12px; margin-bottom: 16px;">
+                                    IČO ${escapeHtml(COMPANY.ico)} · DIČ ${escapeHtml(COMPANY.dic)}
+                                </div>
+                                <div style="display: inline-block; padding: 11px 22px; border-radius: 999px; background: rgba(0,0,0,0.4); color: #FFD700; font-size: 13px; letter-spacing: 3.5px; border: 1px solid rgba(255,215,0,0.5); text-transform: uppercase; font-weight: 600;">
+                                    ${badge}
+                                </div>
+                                <h1 style="color: #FFD700; margin: 18px 0 8px 0; font-size: 32px; text-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 40px rgba(255,215,0,0.3); font-weight: 700;">
+                                    ZION TERRA NOVA
+                                </h1>
+                                <p style="color: #9af59a; margin: 0; font-size: 15px; letter-spacing: 1.5px; font-weight: 500;">
+                                    🌿 One Love • One Chain • One Future 🌿
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 44px 40px 30px 40px; background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%);">
+                            <div style="text-align: center; margin-bottom: 32px;">
+                                <div style="background: linear-gradient(145deg, #1f9b1f, #00ff7f); width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 22px; box-shadow: 0 0 50px rgba(0,255,0,0.45), 0 12px 32px rgba(0,0,0,0.4); border: 3px solid rgba(255,215,0,0.4); text-align:center;">
+                                    <span style="font-size: 48px; line-height: 96px;">${opts.heroEmoji}</span>
+                                </div>
+                                <h2 style="color: #FFD700; margin: 0; font-size: 28px; letter-spacing: 0.8px; font-weight: 700; text-shadow: 0 4px 16px rgba(0,0,0,0.5);">
+                                    ${opts.headline}
+                                </h2>
+                                ${intro}
+                            </div>
+                            ${opts.content}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%); padding: 3px;">
+                            <div style="background: #0a0a0a; padding: 32px; text-align: center;">
+                                <p style="color: #9af59a; font-size: 16px; margin: 0 0 12px 0; font-weight: 600; letter-spacing: 0.5px;">
+                                    ☮️ Peace &amp; One Love ☮️
+                                </p>
+                                <p style="color: #999; font-size: 13px; margin: 0 0 8px 0; line-height: 1.6;">
+                                    Tento email byl odeslán z <strong style="color: #FFD700;">ZION eShop</strong><br>
+                                    ZION TerraNova ® | <strong style="color:#fff;">${escapeHtml(COMPANY.name)}</strong><br>
+                                    IČO ${escapeHtml(COMPANY.ico)} · DIČ ${escapeHtml(COMPANY.dic)} · ${escapeHtml(COMPANY.address)}, ${escapeHtml(COMPANY.city)}
+                                </p>
+                                <div style="margin: 16px 0;">
+                                    <a href="${escapeHtml(COMPANY.shopUrl)}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #1f9b1f, #00ff7f); color: #000; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 15px; box-shadow: 0 6px 20px rgba(0,255,0,0.3); border: 2px solid rgba(255,215,0,0.4); letter-spacing: 0.5px;">
+                                        🛒 Přejít do eshopu
+                                    </a>
+                                </div>
+                                <p style="color: #666; font-size: 12px; margin: 16px 0 0 0;">
+                                    © 2026 ZION Terra Nova • All Rights Reserved<br>
+                                    Podpora: <a href="mailto:${escapeHtml(COMPANY.supportEmail)}" style="color:#9af59a;">${escapeHtml(COMPANY.supportEmail)}</a>
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+}
