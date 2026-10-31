@@ -63,7 +63,7 @@ export function ProjectPresentation({ title, subtitle, missionPath, camera, cont
   const settings = quality();
 
   return (
-    <main className="present">
+    <main className={`present${overlay ? ' has-overlay' : ''}`}>
       <header className="present-chrome">
         <Link href="/" className="present-back">
           ← Nirvana

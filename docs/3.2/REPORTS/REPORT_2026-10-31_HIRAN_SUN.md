@@ -167,10 +167,11 @@ Ověřeno live: `/hiran` 200, `/present/hiran` 404, `/present/ekam` 307.
 
 | Povrch | Deploy | Rollback |
 |---|---|---|
-| Nirvana (EDGE) | `20261031T205858Z` | `/opt/zion/APP&WEB/nirvana.before-20261031T205858Z` |
-| Web (EDGE2) | `20261031T210216Z` | `.next/standalone.before-20261031T210216Z` |
+| Nirvana (EDGE) | `20261031T205858Z`, finální art pass `20261031T211254Z` | `/opt/zion/APP&WEB/nirvana.before-*` |
+| Web (EDGE2) | `20261031T210216Z`, finální art pass `20261031T211657Z` | `.next/standalone.before-20261031T211657Z` |
 
-Web build potřeboval linuxový `sharp` (`sharp-linux-x64` + `sharp-libvips-linux-x64`)
+Po finálním art passu (zlatá deska v kalichu + nápověda nad pásem bran) oba
+povrchy přenasazeny. Web build potřeboval linuxový `sharp` (`sharp-linux-x64` + `sharp-libvips-linux-x64`)
 zkopírovaný z EDGE2 do `node_modules/@img/` před buildem — jinak by `next/image`
 na Linuxu vracelo 500 (macOS build obsahuje jen `sharp-darwin-arm64`). Smoke po
 deployi: `/images/home/hero.webp` 200, takže ostré obrázky žijí.

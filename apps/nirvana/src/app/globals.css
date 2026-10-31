@@ -945,3 +945,8 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     transform: translateX(-50%);
   }
 }
+
+/* Scény s overlayem mají dole pás bran — nápověda se zvedne nad něj. */
+.present.has-overlay .present-hint {
+  bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+}

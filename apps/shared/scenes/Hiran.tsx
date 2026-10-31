@@ -140,6 +140,9 @@ function LotusDais() {
       <mesh position={[0, 1.9, 0]} castShadow material={gold(0.22)}>
         <cylinderGeometry args={[1.55, 1.0, 1.5, 28, 1, true]} />
       </mesh>
+      <mesh position={[0, 2.05, 0]} material={gold(0.3)}>
+        <cylinderGeometry args={[1.38, 1.38, 0.14, 28]} />
+      </mesh>
       <mesh position={[0, 2.62, 0]} rotation={[-Math.PI / 2, 0, 0]} material={gold(0.28)}>
         <torusGeometry args={[1.55, 0.06, 6, 60]} />
       </mesh>
