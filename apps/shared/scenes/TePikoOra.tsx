@@ -4,10 +4,17 @@
 import { React, useFrame, useThree, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, ScenePalms, SkyFill, sandGround } from './kit';
+import { KeyLight, SceneInstances, ScenePalms, SkyFill, sandGround } from './kit';
 import { LagoonLandscape } from './LagoonLandscape';
 
 type Lang = 'cs' | 'en';
+
+// Shared prop geometry and materials — instanced, so a stone circle is one draw call.
+const KILN_ROCK = new THREE.DodecahedronGeometry(1, 0);
+const STONE_MAT = new THREE.MeshStandardMaterial({ color: '#8d7f63', roughness: 0.95 });
+const FIRE_STONE_MAT = new THREE.MeshStandardMaterial({ color: '#6e6350', roughness: 1 });
+const LOG = new THREE.CylinderGeometry(0.11, 0.11, 0.8, 7);
+const LOG_MAT = new THREE.MeshStandardMaterial({ color: '#6e5233', roughness: 0.95 });
 
 /* ─── Te Pīko Ora — polynéská vesnice na Raiatee ──────────────────────
  * Masterplan: centrální palma (Pīko) + oheň, kruh A-frame chýší (fare)
@@ -223,26 +230,24 @@ function CenterPiko({ lang }: { lang: Lang }) {
   return (
     <group>
       {/* kamenný kruh — posvátný okraj píka */}
-      {Array.from({ length: 14 }, (_, i) => {
-        const a = (i / 14) * Math.PI * 2;
-        return (
-          <mesh key={i} position={[Math.cos(a) * 1.9, 0.1, Math.sin(a) * 1.9]} scale={[0.28, 0.16, 0.22]} rotation={[0, a, 0]} castShadow receiveShadow>
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshStandardMaterial color="#8d7f63" roughness={0.95} />
-          </mesh>
-        );
-      })}
+      <SceneInstances
+        geometry={KILN_ROCK}
+        material={STONE_MAT}
+        items={Array.from({ length: 14 }, (_, i) => {
+          const a = (i / 14) * Math.PI * 2;
+          return { position: [Math.cos(a) * 1.9, 0.1, Math.sin(a) * 1.9] as [number, number, number], rotation: [0, a, 0] as [number, number, number], scale: [0.28, 0.16, 0.22] as [number, number, number] };
+        })}
+      />
 
       {/* ohniště — kameny + plamen */}
-      {Array.from({ length: 9 }, (_, i) => {
-        const a = (i / 9) * Math.PI * 2;
-        return (
-          <mesh key={`f${i}`} position={[Math.cos(a) * 0.62, 0.08, 0.9 + Math.sin(a) * 0.62]} scale={0.14} castShadow>
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshStandardMaterial color="#6e6350" roughness={1} />
-          </mesh>
-        );
-      })}
+      <SceneInstances
+        geometry={KILN_ROCK}
+        material={FIRE_STONE_MAT}
+        items={Array.from({ length: 9 }, (_, i) => {
+          const a = (i / 9) * Math.PI * 2;
+          return { position: [Math.cos(a) * 0.62, 0.08, 0.9 + Math.sin(a) * 0.62] as [number, number, number], rotation: [0, a, 0] as [number, number, number], scale: 0.14 };
+        })}
+      />
       <mesh ref={flameRef} position={[0, 0.34, 0.9]}>
         <coneGeometry args={[0.22, 0.6, 7]} />
         <meshBasicMaterial color="#ff9a3c" transparent opacity={0.92} />
@@ -254,12 +259,14 @@ function CenterPiko({ lang }: { lang: Lang }) {
       <pointLight ref={fireRef} position={[0, 0.7, 0.9]} intensity={2.6} distance={7} color="#ff8a3c" decay={2} />
 
       {/* sedačky — klády v kruhu kolem ohně */}
-      {[0.35, 1.5, 2.6, 3.9, 5.1].map((a, i) => (
-        <mesh key={`s${i}`} position={[Math.cos(a) * 1.25, 0.16, 0.9 + Math.sin(a) * 1.25]} rotation={[0, -a, Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[0.11, 0.11, 0.8, 7]} />
-          <meshStandardMaterial color="#6e5233" roughness={0.95} />
-        </mesh>
-      ))}
+      <SceneInstances
+        geometry={LOG}
+        material={LOG_MAT}
+        items={[0.35, 1.5, 2.6, 3.9, 5.1].map((a) => ({
+          position: [Math.cos(a) * 1.25, 0.16, 0.9 + Math.sin(a) * 1.25] as [number, number, number],
+          rotation: [0, -a, Math.PI / 2] as [number, number, number],
+        }))}
+      />
 
       {/* Te Pīko — velká centrální palma */}
       <Palm pos={[0, 0, -0.6]} h={7.2} lean={0.05} fronds={13} />

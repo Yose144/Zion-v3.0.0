@@ -163,6 +163,10 @@ Pak: `apps/nirvana/src/core/scene/projects/<X>.tsx` (re-export), `app/present/<s
 | `SceneWater` | 1 draw call | bazény, jezera, malé plochy |
 | `OceanSurface` (`AtlanticOcean`) | 1 draw call | moře; `lagoon` pro tyrkys |
 | `SceneMotes` | 1 draw call | pyl / prach / sníh; pohyb ve vertex shaderu |
+| `SceneInstances` | 1 draw call | opakované propriety: kamenný kruh, lampy, klády, balvany |
+
+`SceneInstances` ber vždy, když `map()` vrací víc než ~4 stejné meshe (kámen, kláda, lampa,
+balvan). Geometrii a materiál drž na úrovni modulu, ne v renderu.
 
 **Instancuj, dokud to jde.** 60 stromů jako 60 skupin = ~180 draw calls; přes
 `SceneTrees` = 4. Tři palmy na scéně klidně nech vlastní (hero detail), zbytek instancuj.
