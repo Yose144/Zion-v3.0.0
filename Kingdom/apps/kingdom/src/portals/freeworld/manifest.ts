@@ -10,7 +10,7 @@ export const manifest = definePortal({
   icon: 'anchor',
   order: 40,
   layer: 'L5',
-  ring: { x: 0, z: -2.85, hue: 150 },
+  ring: { x: -1.35, z: 2.45, hue: 150 },
   auth: 'none',
   windows: [
     { id: 'fund', title: { cs: 'Fond', en: 'Fund' }, size: 'md' },
