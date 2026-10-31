@@ -1,7 +1,7 @@
 # REPORT 2026-10-31 — HIRAN NA SLUNCI (Nirvana, S0–S2)
 
-> **Stav:** implementováno a ověřeno lokálně na produkčním buildu (M1 / ANGLE Metal).
-> **Nenasazeno** — deploy na EDGE čeká na 👤 (jedno rozhodnutí, jeden příkaz).
+> **Stav:** implementováno, ověřeno lokálně na produkčním buildu (M1 / ANGLE Metal)
+> a **nasazeno na EDGE** (deploy `20261031T190057Z`, rollback `nirvana.before-20261031T190057Z`).
 > **Rozsah:** jen `apps/nirvana/**` + dokumentace. L1, emise, genesis, výplaty, API
 > ani portály se nedotčeny.
 
@@ -84,7 +84,21 @@ Konzole: jediná chyba je **pre-existing** `401` z anonymous probe `/api/auth/me
   nemá křičet, stav říká panel.
 - Śrí jantra je stylizace; přesná konstrukce = navazující úkol s art review.
 - Hiran v Nirvaně neumí nic než odpovědět. Žádné akce, žádné klíče, žádná session.
-- Deploy nenasazen: `apps/nirvana/deploy/deploy-nirvana.sh` na EDGE po 👤 schválení.
+- Harness `audit-project-scenes.py` universe pořád neměří (soubor má rozpracovanou
+  jinou session) → měřeno vlastní sondou přes `?sceneAudit=1`; doplnit řádek
+  `universe` do harnessu je samostatný malý úkol.
+
+## 6b. Nasazení (2026-10-31)
+
+- `bash apps/nirvana/deploy/deploy-nirvana.sh` → EDGE, deploy `20261031T190057Z`,
+  předchozí build držen v `/opt/zion/APP&WEB/nirvana.before-20261031T190057Z`
+- smoke: `/` 200, `textures/milkyway-eso-4k.jpg` 200, `textures/earth-blue-marble.webp` 200,
+  `/api/oasis/worlds` 200, lokální `:3010` 200
+- live ověřeno: `GET /api/hiran` → `{available:true}`; `POST` → `{offline:true,…}`
+  (model dnes nevydá odpověď — přesně ten stav, který okno umí); deep-link
+  `#portal=hiran` otevře okno a přiletí ke Slunci, textura Slunce se načítá
+- konzole live: jediná chyba `401` (anonymous `/api/auth/me`, pre-existing)
+
 
 ## 7. Změnový log
 
