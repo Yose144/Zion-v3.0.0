@@ -12,17 +12,24 @@
 
 | Item | Value |
 |---|---|
-| Repository | `github.com/Yose144/Zion-v3.0.0` (public mirror is a subset — auditors should work from the full tree) |
+| Repository | `github.com/Yose144/Zion-v3.0.0` (private mirror of record) |
 | Branch | `main` |
-| Pinned source HEAD | `4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4` |
-| Short | `4108a52d0` |
-| Supersedes | `e9088b128fbccaf493c3e786360002a6025aa957` (wave-5 documentation plus the money-path recheck) |
+| Pinned source HEAD | `27f2932b4a44249426743bec6e9ecd5df5914f93` (W1 RC baseline) |
+| Short | `27f2932b4` |
+| Current HEAD | `3560223e79da64463566d8b35dcb168fee202392` (`3560223e7`) |
+| Commits since `4108a52d0b47702dd97fbd1d6f4919ceb1aca6a4` | `426` (as of 2026-10-31 W1 closeout) |
+| Supersedes | `4108a52d0` / previous audit pins (trace via git log) |
 
-**Production-relevant commits in the +169 delta (highlights):**
+**Production-relevant commits in the +426 delta (highlights):**
 
 | Commit | Content |
 |---|---|
-| `edb7ddbaf` | Pool L1 RPC timeout 4s→12s, pre-orphan removal, watchdog 15s/2f→30s/3f (carried from previous pin) |
+| `0bb706737` | W1.5 pool HA: B1/B2/B3/G5 closed, standby parity pinned via unit flags, payout key sync, parity gate `PASS (0 fail, 5 warn)` |
+| `6c452ec2a` | W1.3 DR bringup runbook + read-only parity gate `scripts/ops/dr-parity-check.sh` |
+| `e9be58c04` | W1.2 stale block production alerts + Prometheus rules sync |
+| `b388b1adf` | W1.1 deploy provenance baseline |
+| `8829d974d` | W1.4 release artifact builder hardened (BUILD-INFO, variants, container, bookworm) |
+| `3560223e7` | W1.4 release artifacts `v3.2.0-rc-w1.4` (default + gpu-opencl) |
 | ZIS hardening 21.10 | `apps/identity` full rewrite — EdDSA/Ed25519 JWT + JWKS, DB-backed challenges/sessions, audit log, admin API, `/metrics` |
 | Pearl PoUW | v13 packed-k kernels promoted default on SM80+, `pearl_gateway`/`pearl_upstream` in pool |
 | Pool/PPLNS | `v3_pplns` native-coin legs, coin-revenue oracle + SQLite outbox, `pearl_gateway`, `qtc_native`, stratum v3/ZIS binding |
