@@ -2097,4 +2097,91 @@ mod tests {
             .unwrap();
         }
     }
+
+    /// Release evidence for 1.S4/3.S3: end-to-end send/receive on the real
+    /// node path, no secrets.  Wallet A is funded by a regtest coinbase,
+    /// `v31_wallet::build_send` signs the spend, the mempool accepts it, a
+    /// mined block confirms it, and wallet B's UTXO view (the same data
+    /// `getUtxos` serves over RPC) reflects the payment — while A is
+    /// debited exactly amount+fee.
+    ///
+    /// Ignored by default: mines ~107 real blocks (~3 min). Run explicitly:
+    /// `cargo test -p zion-core --lib e2e_send_receive -- --ignored`
+    #[tokio::test]
+    #[ignore = "regtest E2E send/receive — mines ~107 blocks, ~3 min; release evidence run"]
+    async fn e2e_send_receive_full_node_path() {
+        let node = Arc::new(
+            Node::new(NodeConfig {
+                db_path: ":memory:".into(),
+                ..Default::default()
+            })
+            .await
+            .unwrap(),
+        );
+
+        let (sk_a, vk_a) = generate_keypair();
+        let addr_a = derive_address(vk_a.as_bytes());
+        let (_sk_b, vk_b) = generate_keypair();
+        let addr_b = derive_address(vk_b.as_bytes());
+
+        let addr_of = |s: &str| Address::new(zion_l1_types::ChainId::ZionL1, vec![], s).unwrap();
+        let miner_a = addr_of(&addr_a);
+        let test_miner = addr_of("zion1testminer");
+
+        // Fund A with a coinbase, then mine past the 100-block maturity.
+        mine_next_block(&node, &miner_a).await;
+        while node.status().await.unwrap().height < 106 {
+            mine_next_block(&node, &test_miner).await;
+        }
+
+        // Wallet-side UTXO view — the same tuples getUtxos serves.
+        let utxos = node.get_utxos_for_address(&addr_a).await;
+        assert!(!utxos.is_empty(), "sender must be funded");
+        let balance_a: u64 = utxos.iter().map(|u| u.2).sum();
+        let spendable: Vec<SpendableUtxo> = utxos
+            .iter()
+            .map(|(h, i, amt, bh, _ts, cb, script)| SpendableUtxo {
+                tx_hash: h.0,
+                output_index: *i,
+                amount: *amt,
+                address: addr_a.clone(),
+                script: script.clone(),
+                block_height: *bh,
+                is_coinbase: *cb,
+            })
+            .collect();
+
+        // A → B signed send through the mempool.
+        let send_amount = 21_000_000u64;
+        let fee = 1_000_000u64;
+        let res = build_send(&sk_a, &addr_a, &addr_b, send_amount, fee, &spendable)
+            .expect("wallet can fund the send");
+        let txid = node.submit_utxo_transaction(res.transaction).await.unwrap();
+
+        // Receiver sees nothing until the tx confirms.
+        assert!(node.get_utxos_for_address(&addr_b).await.is_empty());
+        mine_next_block(&node, &test_miner).await;
+
+        let b_utxos = node.get_utxos_for_address(&addr_b).await;
+        let received: u64 = b_utxos
+            .iter()
+            .filter(|(h, ..)| *h == txid)
+            .map(|u| u.2)
+            .sum();
+        assert_eq!(
+            received, send_amount,
+            "receiver credit must equal sent amount"
+        );
+        let balance_a_after: u64 = node
+            .get_utxos_for_address(&addr_a)
+            .await
+            .iter()
+            .map(|u| u.2)
+            .sum();
+        assert_eq!(
+            balance_a_after,
+            balance_a - send_amount - fee,
+            "sender debit must equal amount + fee"
+        );
+    }
 }
