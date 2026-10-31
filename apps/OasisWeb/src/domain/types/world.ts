@@ -47,6 +47,9 @@ export interface World {
 
   /** Optional Golden Egg clue number. */
   goldenEggClue?: number;
+
+  /** Access pass required to act on this world ('archive' = ZAP-… code). */
+  requiredPass?: string;
 }
 
 export interface GalaxyConfig {
