@@ -3,6 +3,11 @@ import { prisma } from '@/lib/db';
 import { requireAdminAuth } from '@/lib/admin-guard';
 import { sendPaymentConfirmation, sendShippingNotification } from '@/lib/email';
 import { distributeOrderBonus } from '@/lib/bonus-payout';
+import {
+  ARCHIVE_REDEEM_URL,
+  issueArchivePassForOrder,
+  revokeArchivePass,
+} from '@/lib/archive-pass';
 
 export const dynamic = 'force-dynamic';
 
@@ -124,7 +129,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
       void distributeOrderBonus(updated.orderId).catch((err) =>
         console.error('Bonus payout failed:', err)
       );
+      const archivePass = await issueArchivePassForOrder(updated).catch(
+        (err) => {
+          console.error('Archive pass issue failed:', err);
+          return null;
+        },
+      );
       void sendPaymentConfirmation({
+        archivePass: archivePass
+          ? { code: archivePass.code, url: ARCHIVE_REDEEM_URL }
+          : null,
         orderId: updated.orderId,
         customerName: updated.customerName,
         customerEmail: updated.customerEmail,
@@ -146,6 +160,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
         customerWalletAddress: updated.customerWalletAddress,
         customerWalletId: updated.orderId,
       }).catch((err) => console.error('mark-paid email failed:', err));
+    }
+
+    // Cancelled orders lose their archive pass (if one was issued at paid).
+    if (updated && updated.status === 'cancelled' && before.status !== 'cancelled') {
+      try {
+        revokeArchivePass(updated.orderId);
+      } catch (err) {
+        console.error('Archive pass revoke failed:', err);
+      }
     }
 
     // Status → shipped without separate shipping API still notifies when possible.

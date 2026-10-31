@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
 import { getEntitlement } from '@/lib/archive-entitlements';
+import { isValidMarketCode } from '@/lib/archive-market-codes';
 import {
   getCurrentUser,
   ZIS_SESSION_COOKIE,
@@ -51,10 +52,16 @@ function safeEqual(a: string, b: string): boolean {
 
 export function isValidPassCode(code: string | undefined): boolean {
   if (!code) return false;
+  const trimmed = code.trim();
   const codes = passCodes();
-  if (codes.size === 0) return false;
   for (const valid of codes) {
-    if (safeEqual(code.trim(), valid)) return true;
+    if (safeEqual(trimmed, valid)) return true;
+  }
+  // marketplace-issued per-order codes (shared store on EDGE2)
+  try {
+    if (isValidMarketCode(trimmed)) return true;
+  } catch {
+    // store unreadable → fall through to deny
   }
   return false;
 }

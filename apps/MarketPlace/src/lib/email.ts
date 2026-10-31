@@ -194,6 +194,8 @@ export interface OrderEmailData {
   /** ZION L1 loyalty wallet (V2 bonus parity) */
   customerWalletAddress?: string | null;
   customerWalletId?: string | null;
+  /** ZION Archive pass issued at paid transition (book purchases) */
+  archivePass?: { code: string; url: string } | null;
 }
 
 export async function sendAdminOrderNotification(order: OrderEmailData): Promise<void> {
@@ -386,14 +388,26 @@ export async function sendPaymentConfirmation(order: OrderEmailData): Promise<vo
           <li>💚 <strong>Podpora:</strong> ${escapeHtml(cfg.shopEmail)}</li>
         </ul>`,
         tone: 'gold',
-      }),
+      }) +
+      (order.archivePass
+        ? rastaCard({
+            heading: '📚 ZION Archive Pass',
+            body: `<p style="color:#a8ffb0;font-size:15px;margin:0 0 14px;">K této objednávce získáváte přístup do <strong style="color:#FFD700;">ZION Archivu</strong> — knihovny knih a korpusu. Váš osobní pass kód:</p>
+            <div style="background:#0d0d0d;border:1px solid #1c7b1c;border-radius:8px;padding:16px;text-align:center;margin-bottom:14px;"><code style="color:#FFD700;font-size:20px;font-weight:700;letter-spacing:2px;">${escapeHtml(order.archivePass.code)}</code></div>
+            <p style="color:#a8ffb0;font-size:14px;margin:0 0 12px;">Zadejte ho na stránce archivu — přístup zůstává v tomto prohlížeči 90 dní, přihlášením přes ZIS účet ho navážete natrvalo.</p>
+            <p style="margin:0;text-align:center;"><a href="${escapeHtml(order.archivePass.url)}" style="display:inline-block;background:#1c7b1c;color:#fff;font-weight:700;padding:12px 28px;border-radius:999px;text-decoration:none;">📖 Otevřít ZION Archiv</a></p>`,
+          })
+        : ''),
   });
   const body = `Dobrý den, ${order.customerName},
 
 Vaše platba za objednávku #${order.orderId} byla úspěšně přijata.
 
 Celková částka: ${formatPrice(order.totalCzk)}
-
+${order.archivePass ? `
+ZION Archive Pass: ${order.archivePass.code}
+Aktivace: ${order.archivePass.url}
+` : ''}
 Vaše zboží bude co nejdříve odesláno.
 
 S pozdravem,

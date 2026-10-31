@@ -46,7 +46,7 @@ export const shopProducts: ShopProductSeed[] = [
     name: 'Království srdce — digitální kniha',
     category: 'books',
     description:
-      'Příběh lodi, kterou postavil tesař. Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 10 kapitol + epilog, každá s tabulkou „Kotva pravdy" (co je Písmo, tradice, autorův obraz). Digitální vydání PDF — dodáváme ke stažení. 🛡️ BONUS: 144 000 ZION — Genesis vstup pro Guardians ekosystému ZION (akce do 24. 12. 2026).',
+      'Příběh lodi, kterou postavil tesař. Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 10 kapitol + epilog, každá s tabulkou „Kotva pravdy" (co je Písmo, tradice, autorův obraz). Digitální vydání PDF — dodáváme ke stažení. 📚 Ke knize ZION Archive Pass — vstup do ZION Archivu. 🛡️ BONUS: 144 000 ZION — Genesis vstup pro Guardians ekosystému ZION (akce do 24. 12. 2026).',
     priceCzk: 144,
     oldPriceCzk: undefined,
     image: '/shop/img/books/kralovstvi-srdce-cover.webp',

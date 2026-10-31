@@ -1,6 +1,10 @@
 import { prisma } from '@/lib/db';
 import { distributeOrderBonus } from '@/lib/bonus-payout';
 import { sendPaymentConfirmation } from '@/lib/email';
+import {
+  ARCHIVE_REDEEM_URL,
+  issueArchivePassForOrder,
+} from '@/lib/archive-pass';
 import type { Prisma } from '@prisma/client';
 
 /**
@@ -138,7 +142,15 @@ export async function markShopOrderPaid(
     console.error('Bonus payout failed:', err)
   );
 
+  const archivePass = await issueArchivePassForOrder(order).catch((err) => {
+    console.error('Archive pass issue failed:', err);
+    return null;
+  });
+
   sendPaymentConfirmation({
+    archivePass: archivePass
+      ? { code: archivePass.code, url: ARCHIVE_REDEEM_URL }
+      : null,
     orderId: order.orderId,
     customerName: order.customerName,
     customerEmail: order.customerEmail,
