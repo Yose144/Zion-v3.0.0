@@ -1,7 +1,7 @@
 # L6 DeSci — `/l6-issobella/papers` repozitář + L1 hash anchor design
 
 **Audit item:** 6.B4 (druhá půlka; první = `L5_PROOF_OF_IMPACT.md` ✅ 30. 10.)
-**Datum:** 2026-10-31 · **Stav: design — implementace 3.3**
+**Datum:** 2026-10-31 · **Stav: implementováno 1. 11.** (`zion-issobella`: `db.rs` papers/batches, `anchor.rs`, 6 rout v `api.rs`; website proxy + `/l6-issobella/papers`; 23 testů ✅). Anchor sweep vyžaduje 👤 `ISS_ANCHOR_WALLET` + `ISS_ANCHOR_SENTINEL` — bez nich zůstávají papers v `submitted`/`anchoring` (fail-closed, žádný money-path). Pozn.: `POST /api/v1/papers` je zatím admin-gated (MVP); design cílí ZIS session submit — viz §API.
 
 ## Cíl
 

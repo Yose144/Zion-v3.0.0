@@ -31,6 +31,9 @@ pub enum IssobellaError {
     #[error("Disbursement not found: {0}")]
     DisbursementNotFound(String),
 
+    #[error("Paper not found: {0}")]
+    PaperNotFound(String),
+
     #[error("Invalid status value: {0}")]
     InvalidStatus(String),
 

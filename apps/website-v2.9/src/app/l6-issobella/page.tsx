@@ -389,6 +389,13 @@ export default function L6IssobellaPage() {
                   <Crown className="h-4 w-4 text-zion-gold" />
                   {L6IssobellaCopy.ctaDao[cs ? 'cs' : 'en']}
                 </Link>
+                <Link
+                  href="/l6-issobella/papers"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 px-6 py-3 text-sm font-semibold text-cyan-200 transition-colors hover:bg-zion-cyan/10"
+                >
+                  <Anchor className="h-4 w-4 text-zion-cyan" />
+                  {cs ? 'Papers · L1 kotva' : 'Papers · L1 anchor'}
+                </Link>
               </div>
             </div>
           </div>

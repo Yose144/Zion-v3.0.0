@@ -6824,7 +6824,10 @@ dependencies = [
  "anyhow",
  "async-trait",
  "axum",
+ "blake3",
  "chrono",
+ "ed25519-dalek",
+ "hex",
  "reqwest 0.12.28",
  "rusqlite",
  "serde",
@@ -6837,6 +6840,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid 1.24.0",
+ "zion-core",
 ]
 
 [[package]]

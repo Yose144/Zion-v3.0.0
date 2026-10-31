@@ -223,3 +223,67 @@ fn test_disbursement_lifecycle() -> IssobellaResult<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_paper_anchor_lifecycle() -> IssobellaResult<()> {
+    use zion_issobella::db::{AnchorBatchRecord, PaperRecord};
+
+    let db = in_memory_db()?;
+    let hash = "aa".repeat(32);
+
+    let paper = PaperRecord::new(
+        "Orbital regolith assay",
+        &["Dr. Vega".to_string()],
+        &hash,
+        "zis:user-1",
+    );
+    db.insert_paper(&paper)?;
+
+    // Public list sees nothing until published.
+    assert!(db.list_papers(Some("published"))?.is_empty());
+    assert_eq!(db.list_papers(None)?.len(), 1);
+    assert_eq!(db.list_papers_any(&["submitted"])?.len(), 1);
+
+    // Publish before anchor is rejected (fail-closed).
+    assert!(db.publish_paper(&paper.id).is_err());
+
+    // Anchor submitted → anchoring.
+    db.set_paper_anchor_submitted(&paper.id, "tx-1", "memo-direct", None)?;
+    let p = db.get_paper(&paper.id)?;
+    assert_eq!(p.status, "anchoring");
+    assert_eq!(p.anchor_txid.as_deref(), Some("tx-1"));
+
+    // Finality → anchored, then publishable.
+    db.mark_paper_anchored(&paper.id, 12345)?;
+    let p = db.publish_paper(&paper.id)?;
+    assert_eq!(p.status, "published");
+    assert!(p.published_at.is_some());
+    assert_eq!(db.list_papers(Some("published"))?.len(), 1);
+
+    Ok(())
+}
+
+#[test]
+fn test_anchor_batch_lifecycle() -> IssobellaResult<()> {
+    use zion_issobella::db::AnchorBatchRecord;
+
+    let db = in_memory_db()?;
+    let batch = AnchorBatchRecord {
+        batch_id: "iss-20261031-abcd".to_string(),
+        merkle_root: "ff".repeat(32),
+        paper_count: 3,
+        anchor_txid: None,
+        anchor_height: None,
+        created_at: chrono::Utc::now(),
+    };
+    db.insert_anchor_batch(&batch)?;
+    assert!(db.list_pending_anchor_batches()?.is_empty());
+
+    db.set_anchor_batch_submitted(&batch.batch_id, "tx-batch-1")?;
+    assert_eq!(db.list_pending_anchor_batches()?.len(), 1);
+
+    db.mark_anchor_batch_anchored(&batch.batch_id, 999)?;
+    assert!(db.list_pending_anchor_batches()?.is_empty());
+
+    Ok(())
+}
