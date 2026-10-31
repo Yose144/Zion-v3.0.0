@@ -230,6 +230,13 @@ accounts enter the code on each ("kód zadají všude"):
   OASIS clients.
 - OasisWeb: `PassPrompt` modal on first gated action; code persisted in
   `localStorage zion_pass`, sent automatically on all world actions.
+- Delivery surfaces (commit `ab1a02833`): the code is visible to the
+  buyer in the payment-confirmation email **and** on the order pages —
+  `/order-success` (when the order is already paid) and `/order-tracking`
+  (rasta card + copy button + links to all three surfaces). Both
+  `GET /api/shop/track` and `GET /api/shop/orders/[orderId]` expose
+  `archivePass` only when `paymentStatus='paid'` — pending orders never
+  leak a code.
 - Camel-case fields are authoritative in the store (`revokedAt`,
   `expiresAt`) — the Rust reader must `rename` them (a snake_case slip
   silently ignored revocations; fixed in `2ff58a8a8`).
