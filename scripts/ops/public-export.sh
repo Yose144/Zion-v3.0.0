@@ -5,11 +5,14 @@
 # `public/` subtree byl 2026-10 zrušen (obsah v `archive/PUBLIC`).
 # Model: manifest-driven rsync do working clone ./PUBLIC → secret scan → push.
 #
+# **REQUIRED GATE:** `scan` je FAIL-CLOSED a povinný před každým publikováním.
+# `push` VŽDY volá `export + scan` — nelze obejít.
+#
 # Použití:
 #   ./scripts/ops/public-export.sh init      # naklonuje public remote do ./PUBLIC
 #   ./scripts/ops/public-export.sh export    # rsync manifest paths → ./PUBLIC
-#   ./scripts/ops/public-export.sh scan      # secret scan ./PUBLIC (musí projít)
-#   ./scripts/ops/public-export.sh push "msg" # export+scan+commit+push (gate)
+#   ./scripts/ops/public-export.sh scan      # secret scan ./PUBLIC (**MUSÍ PROJÍT**)
+#   ./scripts/ops/public-export.sh push "msg" # export+scan+commit+push (REQUIRED GATE)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
