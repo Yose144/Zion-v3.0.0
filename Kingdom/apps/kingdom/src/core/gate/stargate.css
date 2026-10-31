@@ -19,7 +19,7 @@
 .k-stargate *:before, .k-stargate *:after {
   box-sizing: border-box;
 }
-.k-stargate :root {
+.k-stargate {
   --gate-offset-y: 0vmin;
 }
 .k-stargate .gate {
@@ -568,7 +568,7 @@
 .k-stargate .gate {
   width: min(110vmin, 96vw);
 }
-.k-stargate :root {
+.k-stargate {
   --gate-offset-y: 6vmin;
 }
 .k-stargate .gate img {

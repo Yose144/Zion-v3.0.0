@@ -64,3 +64,8 @@ Pro dokumentační změny stačí `git diff --check`.
 - **Scény si nesou vlastní `ScenePresentation`** (kamera, atmosféra, post, intro). `WorldStage` staví jen `<Canvas>` + `OrbitRig` + `XLighting`.
 - **`OrbitRig` musí číst stav z kamery každý frame**, ne z vlastní absolutní proměnné — jinak se po intru (které kameru přesune) scéna snapne zpět.
 - **Procedurální textury** (`kit/textures.ts`) generují 30–60 ms na povrch. Nikdy negeneruj povrch ve framu.
+
+## Pasti z portu stargate (2026-11-01)
+
+- **`--gate-offset-y` a `top: calc(50% + var(...))`**: při extrakci cizího CSS **neprefixuj `:root`**. `.k-stargate :root` nematchuje nikdy → proměnná chybí → `calc()` je neplatné → `top: auto` → absolutně pozicovaný prvek se posune o polovinu své výšky nahoru. Projevilo se to jako „brána je uříznutá". Definuj proměnné radši přímo na scope elementu (`.k-stargate`), ne na `:root`.
+- **Po každém portu cizího CSS změř `getBoundingClientRect()`**, ne jen „vypadá to dobře na screenshotu". Rozdíl 369 px jsem na obrázku přehlédl, změřit ho bylo otázkou jedné věty.

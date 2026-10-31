@@ -95,6 +95,7 @@ Brána dostala **přesně ten stargate z IntroPage** a **rasta design**:
 - Assety `1.png`, `2.png`, `Z.webp`, `nebula.jpg` → `public/stargate/` (416 KB celkem; `Z.gif` 610 KB záměrně vynechán ve prospěch `Z.webp`).
 - `nebula.jpg` je i pod bránou jako pozadí hero — stejný asset jako originál.
 - **Rasta tokeny** (`--rasta-red #e41e2b`, `--rasta-gold #fcd116`, `--rasta-green #078930`) přidány do `@zion/ui`; zdroj `apps/IntroPage/public/assets/css/intro-rasta.css`.
+- 🔴 **Chyba při portu (nalezena měřením, ne okem):** `:root` se při prefixování přepsal na `.k-stargate :root`, což nematchuje nikdy → `--gate-offset-y` chyběl → `top: calc(50% + var(--gate-offset-y))` neplatné → `top: auto` → brána se posunula o **půl své výšky (369 px) nahoru** a byla uříznutá. Na screenshotu to vypadalo „jen divně"; `getBoundingClientRect()` ukázal `.k-stargate top:108` vs `.gate top:-261`. Fix = definovat proměnnou na `.k-stargate`, ne na `:root`.
 - Rasta se aplikuje **jen na Bránu** (hero aura, zlatý badge, zlaté CTA, triáda na třech cestách). Místnost a portály zůstávají neutrální — data musí zůstat čitelná.
 
 ---
