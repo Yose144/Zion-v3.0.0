@@ -79,6 +79,14 @@ rsync -avz --delete \
   "${ROOT_DIR}/" \
   "${EDGE_USER}@${EDGE_HOST}:${REMOTE_DIR}/"
 
+echo "[deploy-marketplace] Regenerating Prisma client on ${EDGE_HOST}"
+# rsync excludes ALL node_modules — including .next/standalone/node_modules/.prisma —
+# so the bundled client never updates on deploy (schema drift bug, 2026-11-01).
+# Regenerate server-side (correct engine platform) and copy it into the bundle.
+SSH "cd '${REMOTE_DIR}' && npx prisma generate >/dev/null 2>&1 && \
+  mkdir -p .next/standalone/node_modules/.prisma/client && \
+  cp -a node_modules/.prisma/client/. .next/standalone/node_modules/.prisma/client/"
+
 echo "[deploy-marketplace] Fixing ownership and restarting ${SERVICE} + zion-l1-watcher"
 SSH "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE} zion-l1-watcher.service"
 
