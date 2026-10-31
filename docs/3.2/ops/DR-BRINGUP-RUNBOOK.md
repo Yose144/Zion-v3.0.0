@@ -390,3 +390,27 @@ Po každém rebuildu poolu na primáru: **G5 znovu** (`dr-parity-check.sh --only
 |---|---|
 | 2026-10-31 | Nový dokument (W1.3). Živé sondy EDGE + EDGE2: paritní matice, měřené RPO, 5 blokujících defektů (B1–B5), backlog G1–G14. Nahrazuje nepodložené „RPO ≤15 min" a „watchdog rozhoduje o promote" z `infra/RUNBOOK.md`. |
 | 2026-10-31 (2) | **W1.5 — B1/B2/B3/G5 uzavřeny živě.** (a) `infra/tools/pool-ha/units/zion-pool-standby.service` pinuje paritu **explicitními flagy** (bind, L1 RPC, miner-address, state-path, fee, pplns window, store-db, api-bind) — env soubor už divergenci nezpůsobí; (b) `pool-standby.env.example` přepsán na paritní kontrakt (wallet + miner-address + key + window); (c) na EDGE2 přenesen payout klíč pipe (sha256 `707490011268e8ec…`), doplněn `ZION_POOL_MINER_ADDRESS`, `ZION_PPLNS_WINDOW_SIZE=500000000`, nainstalována nová unita (zálohy `/root/*.bak-20261031T101235Z`); (d) standby binárka nahrazena **byte-identickou** kopií primáru (`sha 1cc4a7a9…`, `build fdeda709a`, záloha `/root/zion-pool-standby.bak-20261031T101430Z`); (e) **gate bug** — `gather()` četl jen první řádku multi-line `ExecStart` → falešné `WARN state path/store db unset` a maskovaná divergence `api-bind`; nyní spojuje pokračovací řádky. **Výsledek gate: `PASS (0 fail, 5 warn)`**, zbylé WARN = B4/B5 + nginx repoint + osiřelý adresář (procesní kroky promotu). |
+
+
+## §4 RTO/RPO tabulka (W2.4 — aktualizováno 31. 10. 2026)
+
+| Vrstva | RPO | RTO (cílové / poznámka) | Důkaz |
+|---|---|---|---|
+| **PPLNS window** | **≤ 60 s** | < 2 min (restart standby + load snapshot) | `pool-pplns.json` rsync 60s timer, `dr-parity-check.sh --only data` |
+| **Payout ledger** | **≤ 60 s** | < 2 min | `payout ledger` rsync 60s timer (kritické pro idempotenci) |
+| **Pool store (SQLite)** | **≤ 60 min** | 5–10 min (VACUUM INTO + kopie) | `pool-store.db` rsync 60min timer, pomalejší kvůli velikosti |
+| **Celkové (ekonomické)** | **≤ 60 s** v praxi | **manuální** (viz §5 promote) | Největší riziko = payouty odeslané primárem v posledních ≤60s po selhání |
+
+> **Pozn.:** původní odhad „RPO ≤ 15 min“ nebyl podložený — platil pouze pro ledger, nikoli pro `pool-store.db`. Po měření je reálné RPO **≤ 60 s pro ledger+PPLNS, ≤ 60 min pro store.db**.
+
+## §4b Promotion safety / fencing (W2.2 — blokuje auto-promote)
+**Stav:** `alert-only`. Žádná automatická promocionace.
+
+**Povinné guardraily před `armed`:**
+- [ ] **Nezávislé sondy** — min 2 různé cesty (z EDGE2 + externí) musí potvrdit nefunkčnost primáru
+- [ ] **Explicitní stop primáru** — **stop primárního poolu na EDGE před startem standby** (ověřit `pgrep`/`systemctl`). Bez tohoto kroku hrozí **dvojí výplata**
+- [ ] **Split-brain detekce** — ověřit, že primár nepřijímá share/bloky (RPC/metrics)
+- [ ] **Fencing / lockout** — zabránit opakovanému promote, vyžadovat manuální potvrzení
+- [ ] **Failover okno** — DNS přepnutí manuální (WebGlobe), rollback musí být jasně definován
+
+> **Varování:** `pool-ha-watchdog.sh` je **čistě alert-only** (nikdy nespouští standby). Promotion je výhradně **manuální** rozhodnutí operátora.
