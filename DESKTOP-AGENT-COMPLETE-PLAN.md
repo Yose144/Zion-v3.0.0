@@ -227,7 +227,7 @@ Do té doby: Windows/Linux artefakty se staví bez code signing (unsigned), macO
 
 ### 7.4 Co je potřeba
 
-- Update/license server (kód jen v `archive/update-server`, nic neběží).
+- Update/license server (kód jen v `apps/update-server`, nic neběží).
 - Stripe/Coinbase klíče (`STRIPE_SECRET_KEY`, `COMMERCE_API_KEY`).
 - Apple Developer Program + Windows Code Signing cert (👤, jiný stroj).
 
@@ -272,7 +272,7 @@ Text (cs/en), který musí být v appce:
 
 ### D0 — Rozdělení editions (1–2 dny) · 🤖
 - [x] `prepare-rust-miner.js`: `--edition vip|public`, VIP bez `public_build` (1. 11.).
-- [ ] Ověřit, že VIP binary odhalí ZANO/QTC/PEARL v TUI (build + run).
+- [x] Ověřit, že VIP binary odhalí ZANO/QTC/PEARL v TUI — **ověřeno 1. 11.** (`aarch64-apple-darwin` build bez `public_build`: `strings` obsahuje ZANO/QTC/PEARL/VRSC + pool URLs, `--version` = `3.2.0 build 86064c342608`).
 - [x] Public binary přesunuto `archive/DesktopAgentP3.0.6` → `apps/public-miner/` (1. 11.).
 - [x] `.gitignore` pokrývá `node_modules` (`**/node_modules/`).
 - [ ] `apps/public-miner/scripts/prepare-rust-miner.js` — default edition `public` (aby se nebuildil omylem VIP).
@@ -355,7 +355,7 @@ Text (cs/en), který musí být v appce:
 - Nemění L1 consensus ani miner algoritmy (jen build/UI).
 - Nepřepíná money-paths bez 👤 (pool wallet, treasury).
 - Nezavádí nové coiny — používá existující `ExternalCoin` enum.
-- Neimplementuje AppPay server od nuly — předpokládá `archive/update-server` jako základ.
+- Neimplementuje AppPay server od nuly — předpokládá `apps/update-server` jako základ.
 - Není náhradou RC/Stable gate — desktop release je samostatná trať.
 
 ---
