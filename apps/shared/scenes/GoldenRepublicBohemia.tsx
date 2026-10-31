@@ -4,6 +4,7 @@
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SceneTerrain, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -470,14 +471,44 @@ function SkySun() {
 export function GoldenRepublicBohemiaScene({ lang }: { lang: Lang }) {
   return (
     <>
-      <ScenePresentation camera={BOHEMIA_CAMERA} target={BOHEMIA_CONTROLS.target} />
-      <SkySun />
+      <ScenePresentation
+        camera={BOHEMIA_CAMERA}
+        target={BOHEMIA_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.72, 0.16, -0.67],
+          zenith: '#2b3d63',
+          horizon: '#f6c98a',
+          ground: '#3a3a28',
+          sunColor: '#ffc98a',
+          sunSharpness: 300,
+          clouds: 0.22,
+          stars: 0,
+          fog: '#d7c2a6',
+          fogDensity: 0.0018,
+          envIntensity: 0.9,
+        }}
+        post={{ bloom: 0.34, threshold: 0.88, exposure: 1.02, vignette: 0.5 }}
+        intro={{ duration: 3.6 }}
+      />
 
       {/* země pod komplexem */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.22, 0]} receiveShadow>
-        <circleGeometry args={[180, 72]} />
-        <meshStandardMaterial color="#4d6039" roughness={0.98} />
-      </mesh>
+      <SceneTerrain
+        kind="grass"
+        size={760}
+        segments={170}
+        repeat={240}
+        seed={19}
+        level={-0.22}
+        height={(x, z, noise) => {
+          const distance = Math.hypot(x, z);
+          const rise = Math.max(0, Math.min(1, (distance - 120) / 160));
+          return rise * (noise.fbm(x * 0.008, z * 0.008, 4) - 0.42) * 34;
+        }}
+        color={(x, _y, z, noise) => {
+          const dry = noise.fbm(x * 0.02 + 6, z * 0.02 + 2, 3);
+          return [0.16 + dry * 0.1, 0.25 + dry * 0.12, 0.1 + dry * 0.06];
+        }}
+      />
 
       <Terraces />
       <DecisionCircle />
@@ -504,11 +535,12 @@ export function GoldenRepublicBohemiaScene({ lang }: { lang: Lang }) {
 export const BOHEMIA_CAMERA = { position: [4, 15, 38] as [number, number, number], fov: 46, far: 2000 };
 export const BOHEMIA_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.2, minDistance: 12, maxDistance: 75, maxPolarAngle: Math.PI / 2 - 0.07, target: [0, 2.6, 0.5] as [number, number, number], enablePan: false };
 export function BohemiaLighting() {
-  return <>
-    <ambientLight intensity={0.6} color="#ffe9c4" />
-    <hemisphereLight args={['#d3e2f5', '#3a4530', 0.6]} />
-    {/* západ slunce za Řípem — zlatý backlight */}
-    <directionalLight position={[-18, 9, -22]} intensity={2.2} color="#ffbe72" castShadow />
-    <directionalLight position={[16, 14, 14]} intensity={0.7} color="#ffe0b0" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.14} color="#ffe9c4" />
+      <SkyFill sky="#cfdcee" ground="#3a4530" intensity={0.45} />
+      {/* západ slunce za Řípem — zlatý backlight */}
+      <KeyLight sun={[-0.72, 0.16, -0.67]} intensity={2.9} extent={80} distance={130} color="#ffc285" />
+    </>
+  );
 }

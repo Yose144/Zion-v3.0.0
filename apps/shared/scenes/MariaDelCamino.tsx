@@ -4,6 +4,7 @@
 import { React, useEffect, useFrame, useMemo, useRef, useThree, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SkyFill } from './kit';
 import { AtlanticOcean } from './CoastalLandscape';
 
 type Lang = 'cs' | 'en';
@@ -208,7 +209,26 @@ export function MariaDelCaminoScene({ lang }: { lang: Lang }) {
     update();q.addEventListener('change', update);return () => q.removeEventListener('change', update);
   }, []);
   return <>
-      <ScenePresentation camera={MARIA_CAMERA} target={MARIA_CONTROLS.target} /><Sky /><AtlanticOcean level={-.05} coastal={false} />
+      <ScenePresentation
+        camera={MARIA_CAMERA}
+        target={MARIA_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.7, 0.13, -0.7],
+          zenith: '#25405f',
+          horizon: '#f0b884',
+          ground: '#20323a',
+          sunColor: '#ffcf9a',
+          sunSharpness: 340,
+          clouds: 0.3,
+          stars: 0.1,
+          fog: '#b8c4cc',
+          fogDensity: 0.003,
+          envIntensity: 1,
+        }}
+        post={{ bloom: 0.36, threshold: 0.87, exposure: 1.02, vignette: 0.5 }}
+        intro={{ duration: 3.4 }}
+      />
+      <AtlanticOcean level={-0.05} coastal={false} />
     {VESSELS.map((spec, i) => <Vessel key={spec.id} spec={spec} index={i} lang={lang} tex={texture} reduced={reduced} />)}
   </>;
 }
@@ -216,10 +236,11 @@ export function MariaDelCaminoScene({ lang }: { lang: Lang }) {
 export const MARIA_CAMERA = { position: [9, 8.3, 20.5] as Point, fov: 45, far: 2000 };
 export const MARIA_CONTROLS = { autoRotate: true, autoRotateSpeed: .18, minDistance: 13, maxDistance: 95, maxPolarAngle: Math.PI / 2 - .08, target: [0, 2.5, .5] as Point, enablePan: false };
 export function MariaLighting() {
-  return <>
-    <ambientLight intensity={.65} color="#f1e7da" />
-    <hemisphereLight args={['#d3e6ff', '#243941', .7]} />
-    <directionalLight position={[-8, 12, -14]} intensity={2.0} color="#ffe0b3" castShadow />
-    <directionalLight position={[14, 10, 14]} intensity={1.0} color="#d2e4fa" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.16} color="#f1e7da" />
+      <SkyFill sky="#c9dcf2" ground="#243941" intensity={0.5} />
+      <KeyLight sun={[-0.7, 0.13, -0.7]} intensity={2.7} extent={45} distance={80} color="#ffcf9a" />
+    </>
+  );
 }

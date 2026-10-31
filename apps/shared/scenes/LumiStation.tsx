@@ -5,6 +5,7 @@ import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/run
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SceneTerrain, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -459,10 +460,23 @@ function Jungle() {
   return (
     <group>
       {/* země */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]} receiveShadow>
-        <circleGeometry args={[170, 80]} />
-        <meshStandardMaterial color="#33451f" roughness={0.98} />
-      </mesh>
+      <SceneTerrain
+        kind="grass"
+        size={720}
+        segments={170}
+        repeat={230}
+        seed={31}
+        level={-0.15}
+        height={(x, z, noise) => {
+          const distance = Math.hypot(x, z);
+          const rise = Math.max(0, Math.min(1, (distance - 70) / 100));
+          return rise * (noise.ridged(x * 0.013, z * 0.013, 3) - 0.42) * 26;
+        }}
+        color={(x, _y, z, noise) => {
+          const dry = noise.fbm(x * 0.024 + 7, z * 0.024 + 3, 3);
+          return [0.13 + dry * 0.08, 0.22 + dry * 0.1, 0.1 + dry * 0.05];
+        }}
+      />
       {/* terasovitá zahrada areálu */}
       {terraces.map((t, i) => (
         <group key={i} position={t.pos}>
@@ -571,9 +585,25 @@ export function LumiStationScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
-      <ScenePresentation camera={LUMI_CAMERA} target={LUMI_CONTROLS.target} />
-      <DuskSky />
-      <fog attach="fog" args={['#3a3a4a', 110, 300]} />
+      <ScenePresentation
+        camera={LUMI_CAMERA}
+        target={LUMI_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.78, 0.14, -0.62],
+          zenith: '#1b2a4a',
+          horizon: '#e8996a',
+          ground: '#2a2c20',
+          sunColor: '#ffb174',
+          sunSharpness: 320,
+          clouds: 0.42,
+          stars: 0.18,
+          fog: '#4a4a58',
+          fogDensity: 0.0018,
+          envIntensity: 0.85,
+        }}
+        post={{ bloom: 0.42, threshold: 0.84, exposure: 1.04, vignette: 0.54 }}
+        intro={{ duration: 3.8 }}
+      />
 
       <ResearchCore />
       <RingComplex />
@@ -603,10 +633,11 @@ export function LumiStationScene({ lang }: { lang: Lang }) {
 export const LUMI_CAMERA = { position: [0, 26, 78] as [number, number, number], fov: 45, far: 1000 };
 export const LUMI_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.16, minDistance: 18, maxDistance: 160, maxPolarAngle: Math.PI / 2 - 0.06, target: [0, 6, 0] as [number, number, number], enablePan: false };
 export function LumiLighting() {
-  return <>
-    <ambientLight intensity={0.55} color="#c8d4f0" />
-    <hemisphereLight args={['#ffdcaa', '#2d3d2a', 0.65]} />
-    <directionalLight position={[-70, 22, -26]} intensity={1.9} color="#ffc887" castShadow />
-    <directionalLight position={[40, 30, 40]} intensity={0.4} color="#a8c8ff" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.16} color="#c8d4f0" />
+      <SkyFill sky="#8ea8d0" ground="#2d3d2a" intensity={0.45} />
+      <KeyLight sun={[-0.78, 0.14, -0.62]} intensity={2.5} extent={100} distance={150} color="#ffbe8c" />
+    </>
+  );
 }

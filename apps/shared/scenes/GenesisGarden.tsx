@@ -5,6 +5,7 @@ import { React, useFrame, useThree, useEffect, useLayoutEffect, useMemo, useRef,
 
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SceneTerrain, SkyFill, grassGround, sandGround } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -771,14 +772,14 @@ function WaterPathAndRiver({ lang }: { lang: Lang }) {
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0.9]}>
         <ringGeometry args={[2.15, 2.55, 64]} />
         <meshPhysicalMaterial
-          color="#2fa8c8"
-          roughness={0.03}
-          metalness={0.8}
+          color="#2a7183"
+          roughness={0.12}
+          metalness={0.25}
           transparent
-          opacity={0.85}
-          clearcoat={1}
-          emissive="#0a4a5e"
-          emissiveIntensity={0.5}
+          opacity={0.92}
+          clearcoat={0.8}
+          emissive="#0a3a44"
+          emissiveIntensity={0.12}
         />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.052, 0.9]}>
@@ -882,19 +883,33 @@ function SkyAndSun() {
 export function GenesisGardenScene({ lang }: { lang: Lang }) {
   return (
     <>
-      <ScenePresentation camera={GENESIS_CAMERA} target={GENESIS_CONTROLS.target} />
-      <SkyAndSun />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <ScenePresentation
+        camera={GENESIS_CAMERA}
+        target={GENESIS_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.55, 0.24, -0.8],
+          zenith: '#2f5280',
+          horizon: '#f5cf9a',
+          ground: '#3a3a24',
+          sunColor: '#ffcf92',
+          sunSharpness: 280,
+          clouds: 0.3,
+          stars: 0,
+          fog: '#cbd6cf',
+          fogDensity: 0.0016,
+          envIntensity: 0.9,
+        }}
+        post={{ bloom: 0.32, threshold: 0.88, exposure: 1.02, vignette: 0.48 }}
+        intro={{ duration: 3.4 }}
+      />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={grassGround(34)}>
         <circleGeometry args={[26, 72]} />
-        <meshStandardMaterial color="#35501f" roughness={1} metalness={0} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0.9]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0.9]} material={grassGround(12, '#c9d8a8')}>
         <circleGeometry args={[8.2, 64]} />
-        <meshStandardMaterial color="#3f6128" roughness={1} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.048, 0.9]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.048, 0.9]} material={sandGround(8)}>
         <circleGeometry args={[2.98, 48]} />
-        <meshStandardMaterial color="#94855f" roughness={0.95} />
       </mesh>
 
       <GardenBeds />
@@ -906,7 +921,23 @@ export function GenesisGardenScene({ lang }: { lang: Lang }) {
           <meshStandardMaterial color="#a99a7a" roughness={1} />
         </mesh>;
       })}
-      <ValleyHills />
+      <SceneTerrain
+        kind="grass"
+        size={560}
+        segments={160}
+        repeat={220}
+        seed={23}
+        level={-0.3}
+        height={(x, z, noise) => {
+          const distance = Math.hypot(x, z - 0.9);
+          const rise = Math.max(0, Math.min(1, (distance - 26) / 70));
+          return rise * (noise.fbm(x * 0.016, z * 0.016, 4) - 0.4) * 26;
+        }}
+        color={(x, _y, z, noise) => {
+          const dry = noise.fbm(x * 0.03 + 2, z * 0.03 + 6, 3);
+          return [0.14 + dry * 0.09, 0.24 + dry * 0.12, 0.1 + dry * 0.05];
+        }}
+      />
       <GardenTerrace />
       <mesh position={[-13, 0.035, -7.5]} rotation={[-Math.PI / 2, 0, -0.55]} receiveShadow>
         <planeGeometry args={[0.65, 9]} /><meshStandardMaterial color="#b39d72" roughness={1} />
@@ -935,9 +966,9 @@ export const GENESIS_CONTROLS = {
 };
 export function GenesisGardenLighting() {
   return <>
-    <ambientLight intensity={0.72} color="#fff3dd" />
-    <hemisphereLight args={['#ffe9c4', '#24351a', 0.62]} />
-    <directionalLight position={[10, 9, -14]} intensity={2.2} color="#ffb76a" castShadow />
+    <ambientLight intensity={0.16} color="#fff3dd" />
+    <SkyFill sky="#cfe0f2" ground="#24351a" intensity={0.5} />
+    <KeyLight sun={[-0.55, 0.24, -0.8]} intensity={2.8} extent={60} distance={90} color="#ffc98c" />
     <directionalLight position={[-12, 16, 14]} intensity={0.85} color="#ffd9a8" />
     <pointLight position={[0, 3.5, 0.9]} intensity={2.4} color="#ffd700" distance={18} decay={2} />
   </>;

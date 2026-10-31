@@ -5,6 +5,7 @@ import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/run
 import { SceneLabel } from './SceneLabel';
 import { AtlanticOcean } from './CoastalLandscape';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -330,9 +331,25 @@ export function BoaEsperancaScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
-      <ScenePresentation camera={BOA_CAMERA} target={BOA_CONTROLS.target} />
-      <StormSky />
-      <fog attach="fog" args={['#5a5a58', 90, 300]} />
+      <ScenePresentation
+        camera={BOA_CAMERA}
+        target={BOA_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.6, 0.18, -0.78],
+          zenith: '#2a3444',
+          horizon: '#8f958f',
+          ground: '#2a3238',
+          sunColor: '#ffd6a8',
+          sunSharpness: 200,
+          clouds: 0.85,
+          stars: 0,
+          fog: '#7b8184',
+          fogDensity: 0.0028,
+          envIntensity: 0.9,
+        }}
+        post={{ bloom: 0.3, threshold: 0.9, exposure: 0.98, vignette: 0.55 }}
+        intro={{ duration: 4 }}
+      />
 
       <Cliffs />
       <Fynbos />

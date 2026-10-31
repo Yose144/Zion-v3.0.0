@@ -4,6 +4,7 @@
 import { React, useFrame, useThree, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SkyFill, sandGround } from './kit';
 import { LagoonLandscape } from './LagoonLandscape';
 
 type Lang = 'cs' | 'en';
@@ -537,13 +538,29 @@ export function TePikoOraScene({ lang }: { lang: Lang }) {
   const roofTexture = useThatchTexture();
   return (
     <>
-      <ScenePresentation camera={PIKO_CAMERA} target={PIKO_CONTROLS.target} />
-      <SkyMountainsSun />
-      <fog attach="fog" args={['#bbcbd2', 70, 250]} />
+      <ScenePresentation
+        camera={PIKO_CAMERA}
+        target={PIKO_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.5, 0.42, -0.76],
+          zenith: '#22508a',
+          horizon: '#bfe0ea',
+          ground: '#3a4030',
+          sunColor: '#ffe9c4',
+          sunSharpness: 300,
+          clouds: 0.4,
+          stars: 0,
+          fog: '#b8d2dc',
+          fogDensity: 0.0024,
+          envIntensity: 1,
+        }}
+        post={{ bloom: 0.28, threshold: 0.9, exposure: 1, vignette: 0.42 }}
+        intro={{ duration: 3.4 }}
+      />
 
       <LagoonLandscape />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .015, 0]} receiveShadow>
-        <circleGeometry args={[5.1, 64]} /><meshStandardMaterial color="#cbb68f" roughness={1} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .015, 0]} receiveShadow material={sandGround(7)}>
+        <circleGeometry args={[5.1, 64]} />
       </mesh>
 
       {/* radiální pěšiny z plázy k fare a mola */}
@@ -590,10 +607,11 @@ export function TePikoOraScene({ lang }: { lang: Lang }) {
 export const PIKO_CAMERA = {position: [2, 9.5, 23] as [number,number,number], fov: 46, far: 2000};
 export const PIKO_CONTROLS = {autoRotate:true, autoRotateSpeed:.18, minDistance:12, maxDistance:85, maxPolarAngle:Math.PI / 2 - .08, target:[0,2,-2] as [number,number,number], enablePan:false};
 export function PikoLighting() {
-  return <>
-    <ambientLight intensity={.65} color="#e9f3ff" />
-    <hemisphereLight args={['#c9e3f3','#494b30',.75]} />
-    <directionalLight position={[-16,12,-14]} intensity={2} color="#ffe0a8" castShadow />
-    <directionalLight position={[14,14,10]} intensity={.9} color="#d5eaff" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.14} color="#e9f3ff" />
+      <SkyFill sky="#c9e3f3" ground="#494b30" intensity={0.5} />
+      <KeyLight sun={[-0.5, 0.42, -0.76]} intensity={2.9} extent={50} distance={80} color="#ffe4b4" />
+    </>
+  );
 }
