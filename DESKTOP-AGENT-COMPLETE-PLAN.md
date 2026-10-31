@@ -1,7 +1,7 @@
 # ZION Desktop Agent — kompletní plán (VIP + Public)
 
 > **Verze:** 1.0 · **Datum:** 2026-11-01 · **HEAD:** `86064c342`
-> **Rozsah:** dva desktop klienti — **VIP** (`apps/desktop-agent`, placený) a **Public** (`archive/DesktopAgentP3.0.6`, veřejný zdarma). Cíl: oba do plné podoby s one-click miningem na macOS, Windows a Ubuntu.
+> **Rozsah:** dva desktop klienti — **VIP** (`apps/desktop-agent`, placený) a **Public** (`apps/public-miner`, veřejný zdarma). Cíl: oba do plné podoby s one-click miningem na macOS, Windows a Ubuntu.
 > **Nadřazené dokumenty:** [`AGENTS.md`](AGENTS.md) (topologie, release proces), [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) (RC/Stable gate), [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) (W0–W6). Tento plán je **sub-plán pro desktop klienty**, nenahrazuje je.
 
 ---
@@ -25,7 +25,7 @@
 | Verze | Cesta | `package.json` name | Verze | Branding | Stav |
 |---|---|---|---|---|---|
 | **VIP** (placená) | `apps/desktop-agent/` | `zion-desktop-agent` | `3.2.0` | plné coiny (ZANO/QTC/PEARL/VRSC), Trinity, license gate | 🔄 funkční základ, ale buildí `public_build` (rozpor) |
-| **Public** (zdarma) | `archive/DesktopAgentP3.0.6/` | `zion-public-miner` | `3.2.0` | `PUBLIC_BUILD=true`, BOOST 1/BOOST 2 | 🔄 nedodělaná, zastaralá, `node_modules` v archivu |
+| **Public** (zdarma) | `apps/public-miner/` | `zion-public-miner` | `3.2.0` | `PUBLIC_BUILD=true`, BOOST 1/BOOST 2 | 🔄 nedodělaná, zastaralá, `node_modules` v archivu |
 
 ### 1.2 Co oba mají
 
@@ -57,7 +57,7 @@ const publicFlag = 'public_build';
 
 - `apps/desktop-agent/resources/zion-miner` — 5,4 MB, 24. 10. (stará, před RC).
 - `apps/desktop-agent/resources/zion-miner-linux-x86_64` — 8,8 MB, 24. 10.
-- `archive/DesktopAgentP3.0.6/resources/` — stejná sada, `node_modules` přítomný (rozbalený, ~200 MB).
+- `apps/public-miner/resources/` — stejná sada, `node_modules` přítomný (rozbalený, ~200 MB).
 
 ---
 
@@ -117,11 +117,11 @@ const publicFlag = 'public_build';
 
 ---
 
-## 4. Gap analýza — Public (`archive/DesktopAgentP3.0.6`)
+## 4. Gap analýza — Public (`apps/public-miner`)
 
 | # | Gap | Dopad | Návrh |
 |---|---|---|---|
-| P1 | **Umístění v `archive/`** | Není aktivní track, snadno zapadne | Přesunout do `apps/public-miner/` (nebo `apps/desktop-agent-public/`) a archivovat jen snapshot. |
+| P1 | **Umístění v `archive/`** | Není aktivní track, snadno zapadne | ✅ **Hotovo 1. 11.** — přesunuto `archive/DesktopAgentP3.0.6` → `apps/public-miner/`. |
 | P2 | **Zastaralé binárky** (24. 10.) | Nekonzistentní s RC | Rebuild z RC commitu (`86064c342`+) se `public_build`. |
 | P3 | **`node_modules` v archivu** | 200 MB balast v gitu/archivu | `.gitignore` + `npm ci` v buildu. |
 | P4 | **One-click mining** jen částečný | Uživatel musí nastavit wallet/pool | First-run: auto wallet generate nebo import, default pool `stratum.zionterranova.com:8444`, start. |
@@ -186,56 +186,97 @@ const publicFlag = 'public_build';
 - Gate: `npm test` + `node --check` + smoke launch (xvfb na Linuxu).
 - Artefakty + `SHA256SUMS.txt` + `BUILD-INFO.txt` (commit, edition, features, platform).
 
+### 6.4 Odloženo na jiný stroj (👤)
+
+> **Rozhodnutí 👤 2026-11-01:** Windows OpenCL build a code signing se doladí **na jiném stroji s CUDA + OpenCL GPU**. Tento Mac nemá NVIDIA GPU ani Windows OpenCL SDK.
+
+- **Windows x64 build** (OpenCL + CUDA) — stroj s Windows + NVIDIA + CUDA Toolkit + NVRTC.
+- **Code signing** — Apple Developer ID + notarizace, Windows Authenticode cert.
+- **CUDA verify** — reálná NVIDIA karta pro test `gpu-cuda` backendu.
+
+Do té doby: Windows/Linux artefakty se staví bez code signing (unsigned), macOS unsigned DMG.
+
 ---
 
 ## 7. Licencování a platba — VIP
 
+> **Rozhodnutí 👤 2026-11-01:** **jednorázová lifetime licence**, žádný trial, žádná subscription.
+
 ### 7.1 Model
 
-- **Free trial** — 7 dní plných funkcí, pak omezení na ZION-only (jako Public).
-- **Lifetime license** — jednorázově (např. $49–99) přes Stripe/Coinbase Commerce.
-- **Subscription** — volitelně měsíčně (např. $9/mo) s auto-update.
+- **Lifetime license** — jednorázová platba (cena k určení 👤) přes Stripe (karta) nebo Coinbase Commerce (BTC/ETH/USDC).
+- **Žádný trial** — VIP buď licencovaný, nebo neběží (bez licence = ZION-only režim jako Public, ale bez BOOST streamů).
+- **Žádná subscription** — licence je trvalá pro danou major verzi; major upgrade (např. 3.2 → 4.0) může vyžadovat novou licenci (👤 rozhodnutí).
 
 ### 7.2 Enforcement
 
-- Offline grace: 14 dní bez serveru, pak read-only.
-- License key = podepsaný token (Ed25519) s HW fingerprintem (volitelně 2 zařízení).
-- Server: `updates.zionterranova.com` (AppPay plán) — license validate + entitlement + release feed.
+- License key = podepsaný token (Ed25519) s HW fingerprintem (max 2 zařízení).
+- Offline grace: 30 dní bez serveru, pak read-only (ne stop — uživatel nepřijde o data).
+- Server: `updates.zionterranova.com` (AppPay) — license validate + entitlement + release feed.
 
-### 7.3 Co je potřeba
+### 7.3 Auto-update (oba editions)
+
+| Edition | Feed | Auto-download | Podpis |
+|---|---|---|---|
+| **VIP** | `updates.zionterranova.com` (license-gated) + GitHub fallback | ano (po validaci licence) | Ed25519 manifest + SHA256 |
+| **Public** | GitHub Releases (`Zion-TerraNova/v3-Mainnet`) | ano | SHA256 + (volitelně) code signing |
+
+- **Rollback:** update musí umět vrátit předchozí verzi (`electron-updater` rollback + keep previous).
+- **Delta updates:** volitelné (electron-updater podporuje differential).
+- **Kanály:** `stable` / `beta` (VIP může opt-in beta).
+
+### 7.4 Co je potřeba
 
 - Update/license server (kód jen v `archive/update-server`, nic neběží).
 - Stripe/Coinbase klíče (`STRIPE_SECRET_KEY`, `COMMERCE_API_KEY`).
-- Apple Developer Program + Windows Code Signing cert.
+- Apple Developer Program + Windows Code Signing cert (👤, jiný stroj).
 
 ---
 
 ## 8. Revenue / liquidity — Public
 
+> **Rozhodnutí 👤 2026-11-01:** **BOOST je vždy ON** (uživatel ho nemůže vypnout). Externí streamy jedou primárně **QTC + PRL** v backendu; výnos jde **k nám do grow/liquidity**. Uživatel těží **jen ZION** a dostává ZION podle PPLNS. UI to musí jasně vysvětlit.
+
 ### 8.1 Princip
 
-Public miner těží **ZION** (stream 1) pro uživatele a **BOOST 1/2** (externí coiny) pro ZION revenue/liquidity. Uživatel dostává ZION podle PPLNS; BOOST výnos jde do pool wallet → treasury/liquidity.
+- **Stream 1 (ZION)** — uživatelův výdělek, PPLNS výplata v ZION.
+- **BOOST 1 (QTC, GPU)** — vždy on, backend, výnos → ZION treasury/grow/liquidity.
+- **BOOST 2 (PRL, CPU)** — vždy on, backend, výnos → ZION treasury/grow/liquidity.
+- **Uživatel nikdy netěží externí coiny pro sebe** — dostává jen ZION. Žádné coin names, žádné pool URLs, žádné job ids v UI/logech (`public_build`).
 
-### 8.2 Co je potřeba
+### 8.2 Jasné vysvětlení v UI (first-run + settings)
 
-- Pool wallet funding (viz W3.4) — jinak loyalty výplaty nefungují.
-- Jasná komunikace: „BOOST streamy financují vývoj a liquiditu ZION" (volitelné vypnutí?).
-- Revenue dashboard (interní) — kolik BOOST vydělal, kam šel.
+Text (cs/en), který musí být v appce:
 
-### 8.3 Rizika
+> **Jak to funguje:** Těžíte ZION a dostáváte ZION. Na pozadí běží dva pomocné („boost") streamy, které vydělávají pro rozvoj ZIONu — financují vývoj, liquiditu a odměny. Nejsou to vaše coiny a nemusíte se o ně starat. Boost je vždy zapnutý, protože bez něj by ZION nemohl růst.
 
-- Uživatel může BOOST vypnout (`ZION_STREAM2_ENABLED=0`) — akceptovat.
-- Externí pool výpadky → fallback na ZION-only.
+- Žádné skrývání — uživatel to vidí a rozumí.
+- Žádný opt-out (BOOST vždy on).
+- V dashboardu: „Boost: aktivní (podpora ZIONu)" — bez coin tickerů.
+
+### 8.3 Co je potřeba
+
+- Pool wallet funding (viz W3.4) — výplaty ZION uživatelům.
+- Revenue dashboard (interní) — kolik BOOST vydělal, kam šel (QTC/PRL → treasury/liquidity).
+- Backend routing: QTC + PRL jako primární BOOST coiny (`ZION_POOL_AUXPOW_COIN=QTC`, `ZION_POOL_AUXPOW_CPU_COIN=PRL` — nebo ekvivalent v miner configu).
+
+### 8.4 Rizika
+
+- Externí pool výpadky → BOOST fallback (ZION-only), uživatel to nepozná.
+- Právní/etická rovina: uživatel musí vědět, že boost existuje (řešeno §8.2).
+- QTC treasury deficit (W3.5) — pokud QTC výnos nestačí, BOOST se přepne na jiný coin dle profit routeru (ale v `public_build` je router no-op → pevné QTC/PRL).
 
 ---
 
 ## 9. Fáze a pořadí
 
 ### D0 — Rozdělení editions (1–2 dny) · 🤖
-- [ ] `prepare-rust-miner.js`: `--edition vip|public`, VIP bez `public_build`.
-- [ ] Ověřit, že VIP binary odhalí ZANO/QTC/PEARL v TUI.
-- [ ] Public binary (z `archive/`) přesunout do `apps/public-miner/` + `public_build`.
-- [ ] `.gitignore` pro `node_modules` v public.
+- [x] `prepare-rust-miner.js`: `--edition vip|public`, VIP bez `public_build` (1. 11.).
+- [ ] Ověřit, že VIP binary odhalí ZANO/QTC/PEARL v TUI (build + run).
+- [x] Public binary přesunuto `archive/DesktopAgentP3.0.6` → `apps/public-miner/` (1. 11.).
+- [x] `.gitignore` pokrývá `node_modules` (`**/node_modules/`).
+- [ ] `apps/public-miner/scripts/prepare-rust-miner.js` — default edition `public` (aby se nebuildil omylem VIP).
+- [ ] `package.json` skripty: `build:vip` / `build:public` s `ZION_DESKTOP_EDITION`.
 
 ### D1 — One-click mining (3–5 dní) · 🤖
 - [ ] First-run wizard (HW → backend → wallet → plán → start).
@@ -248,23 +289,25 @@ Public miner těží **ZION** (stream 1) pro uživatele a **BOOST 1/2** (extern�
 - [ ] Per-stream coin dropdown (VIP).
 - [ ] Profit ranking + hysteresis indikátor.
 
-### D3 — Build pipeline (3–5 dní) · 🤖
-- [ ] Build matrix mac/win/linux × editions.
-- [ ] Windows OpenCL SDK / libOpenCL.a fix.
-- [ ] CUDA verify (NVRTC presence).
+### D3 — Build pipeline (3–5 dní) · 🤖 (mac/linux), 👤 (win/signing jiný stroj)
+- [ ] Build matrix macOS + Linux × editions (tento Mac).
 - [ ] BUILD-INFO + SHA256SUMS.
-- [ ] CI workflows.
+- [ ] CI workflows (mac/linux).
+- [ ] Windows OpenCL + CUDA build → **jiný stroj** (👤).
+- [ ] Code signing (Apple/Windows) → **jiný stroj** (👤).
 
-### D4 — Licence/platba (5–7 dní) · 🤖→👤
+### D4 — Licence/platba + autoupdate (5–7 dní) · 🤖→👤
 - [ ] License server (AppPay) — validate, entitlement, feed.
-- [ ] Stripe/Coinbase checkout.
-- [ ] Trial + offline grace.
-- [ ] Code signing (👤 Apple/Windows certs).
+- [ ] Stripe/Coinbase checkout (jednorázová lifetime).
+- [ ] Offline grace 30 dní (žádný trial).
+- [ ] Auto-update: VIP feed + GitHub fallback, rollback, kanály stable/beta.
+- [ ] Public GitHub feed + SHA256 manifest.
 
 ### D5 — Public revenue (2–3 dní) · 🤖→👤
-- [ ] Revenue dashboard.
+- [ ] BOOST vždy on (QTC GPU + PRL CPU), backend routing.
+- [ ] Revenue dashboard (interní) — BOOST výnos → treasury/liquidity.
+- [ ] Jasné vysvětlení v UI (cs/en) — §8.2.
 - [ ] Pool wallet funding (👤 W3.4).
-- [ ] „Support ZION" copy.
 
 ### D6 — Release (2 dny) · 👤
 - [ ] mac/win/linux artefakty, SHA256SUMS, BUILD-INFO.
@@ -284,9 +327,11 @@ Public miner těží **ZION** (stream 1) pro uživatele a **BOOST 1/2** (extern�
 | **DA-5** | Multi-GPU: 2+ karty těží, per-GPU stats | screenshot |
 | **DA-6** | Coin switching: profit router přepne při >15 % | log `profit_switch` |
 | **DA-7** | Build matrix: 6 artefaktů (2 editions × 3 platformy) | SHA256SUMS + BUILD-INFO |
-| **DA-8** | VIP licence: trial → paid → offline grace | license server test |
-| **DA-9** | Public revenue: BOOST výnos viditelný v dashboardu | interní dashboard |
+| **DA-8** | VIP licence: jednorázová lifetime → validate → offline grace 30 dní | license server test |
+| **DA-9** | Public revenue: BOOST (QTC/PRL) vždy on, výnos v dashboardu, uživatel jen ZION | interní dashboard + UI screenshot |
 | **DA-10** | Žádná regrese v `node --check` / `npm test` | CI zelené |
+| **DA-11** | Auto-update: VIP feed + GitHub fallback + rollback | update test |
+| **DA-12** | Public UI vysvětluje BOOST (cs/en) | screenshot first-run |
 
 ---
 
@@ -294,13 +339,14 @@ Public miner těží **ZION** (stream 1) pro uživatele a **BOOST 1/2** (extern�
 
 | Riziko | Dopad | Mitigace |
 |---|---|---|
-| Windows OpenCL cross-compile | Build selže | Build na Windows hostu nebo dodat ICD loader |
+| Windows OpenCL cross-compile | Build selže | **Odloženo na jiný stroj** (Windows + NVIDIA + OpenCL SDK) |
 | CUDA NVRTC chybí na cíli | Fallback na OpenCL | Detekce + jasná hláška |
-| Code signing certy | Installer varování | 👤 Apple/Windows certs |
-| License server neběží | VIP bez update | Offline grace + GitHub fallback |
+| Code signing certy | Installer varování | **Odloženo na jiný stroj** (👤 Apple/Windows certs) |
+| License server neběží | VIP bez update | Offline grace 30 dní + GitHub fallback |
 | Public revenue závisí na pool wallet | BOOST bez výplaty | 👤 W3.4 funding |
 | `archive/` public verze zastaralá | Nekonzistence | D0 přesun + rebuild |
 | GLIBC kompatibilita | Binary neběží na starších distrech | Docker focal build |
+| BOOST vždy on bez opt-outu | Uživatel může namítat | Jasné vysvětlení v UI (§8.2), žádné skrývání |
 
 ---
 
@@ -318,4 +364,5 @@ Public miner těží **ZION** (stream 1) pro uživatele a **BOOST 1/2** (extern�
 
 | Datum | Změna |
 |---|---|
-| 2026-11-01 | v1.0 — vytvořeno po průzkumu `apps/desktop-agent`, `archive/DesktopAgentP3.0.6`, `V31/L1/miner` (auto_detect, autonomous, Cargo features), `cosmic-harmony/profit.rs`, build skriptů. Ověřen rozpor §1.4 (VIP buildí `public_build`). |
+| 2026-11-01 | v1.0 — vytvořeno po průzkumu `apps/desktop-agent`, `apps/public-miner`, `V31/L1/miner` (auto_detect, autonomous, Cargo features), `cosmic-harmony/profit.rs`, build skriptů. Ověřen rozpor §1.4 (VIP buildí `public_build`). |
+| 2026-11-01 | v1.1 — **rozhodnutí 👤 zapracována:** licence **jednorázová lifetime**, žádný trial; auto-update dolaď (VIP feed + GitHub fallback + rollback); Public **BOOST vždy ON** (QTC GPU + PRL CPU, výnos → grow/liquidity, uživatel jen ZION, jasné vysvětlení v UI); VIP plná Trinity podpora; Windows OpenCL build + code signing **odloženo na jiný stroj s CUDA/OpenCL GPU** (§6.4). |
