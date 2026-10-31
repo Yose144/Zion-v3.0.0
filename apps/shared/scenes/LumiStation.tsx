@@ -5,7 +5,7 @@ import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/run
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SceneTerrain, SkyFill } from './kit';
+import { KeyLight, ScenePalms, SceneTerrain, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -497,29 +497,18 @@ function Jungle() {
           <meshStandardMaterial color="#a08d68" roughness={0.9} />
         </mesh>
       ))}
-      {/* stromy — směs palem a listnatých */}
-      {trees.map((t, i) => (
-        <group key={i} position={[t.p[0], 0, t.p[1]]}>
+      {/* stromy — palmy jako jedna instance, listnáče jako druhá vrstva */}
+      <ScenePalms items={trees.filter((t) => t.t > 0.55).map((t) => ({ x: t.p[0], z: t.p[1], h: t.h * 0.85 }))} />
+      {trees.filter((t) => t.t <= 0.55).map((t, i) => (
+        <group key={`b${i}`} position={[t.p[0], 0, t.p[1]]}>
           <mesh position={[0, t.h / 2, 0]} castShadow>
             <cylinderGeometry args={[0.1 + t.t * 0.06, 0.2 + t.t * 0.08, t.h, 5]} />
             <meshStandardMaterial color="#4f3a24" roughness={0.95} />
           </mesh>
-          {t.t > 0.55 ? (
-            [...Array(6)].map((_, k) => {
-              const a = (k / 6) * Math.PI * 2;
-              return (
-                <mesh key={k} position={[Math.sin(a) * 0.7, t.h + 0.25, Math.cos(a) * 0.7]} rotation={[0.55, a, 0]} scale={[0.5, 0.16, 2.1]} castShadow>
-                  <octahedronGeometry args={[0.8, 0]} />
-                  <meshStandardMaterial color={k % 2 ? '#4f7a34' : '#5d8a3c'} roughness={0.9} />
-                </mesh>
-              );
-            })
-          ) : (
-            <mesh position={[0, t.h + 0.6, 0]} castShadow>
-              <sphereGeometry args={[0.8 + t.t * 1.1 + t.h * 0.06, 7, 6]} />
-              <meshStandardMaterial color={['#3f5e2e', '#4a6a34', '#55753a'][i % 3]} roughness={0.95} />
-            </mesh>
-          )}
+          <mesh position={[0, t.h + 0.6, 0]} castShadow>
+            <sphereGeometry args={[0.8 + t.t * 1.1 + t.h * 0.06, 7, 6]} />
+            <meshStandardMaterial color={['#3f5e2e', '#4a6a34', '#55753a'][i % 3]} roughness={0.95} />
+          </mesh>
         </group>
       ))}
     </group>

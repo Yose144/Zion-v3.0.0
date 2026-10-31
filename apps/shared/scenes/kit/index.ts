@@ -56,12 +56,14 @@ export {
 export { KeyLight, SceneEnvironment, SceneSky, SkyFill, type EnvironmentProps, type KeyLightProps, type SkyOptions } from './environment';
 export { ScenePost, sceneRenderStats, type ScenePostProps } from './post';
 export {
+  ScenePalms,
   SceneTerrain,
   SceneTrees,
   SceneWater,
   type GroundKind,
   type SceneTreesProps,
   type SceneWaterProps,
+  type PalmItem,
   type TerrainProps,
   type TreeItem,
 } from './terrain';

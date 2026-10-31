@@ -200,7 +200,7 @@ function Palm({ pos, h = 4.2, lean = 0.12, scale = 1, fronds = 9 }: {
         <sphereGeometry args={[0.17, 8, 6]} />
         <meshStandardMaterial color="#5d4526" roughness={0.95} />
       </mesh>
-      {leaves.map((l, i) => <mesh key={i} position={[0, h + .06, 0]} rotation={[0, l.yaw, 0]} scale={[l.len * 1.5, l.len * 1.5, l.len * 1.5]} geometry={leafGeometry} castShadow>
+      {leaves.map((l, i) => <mesh key={i} position={[0, h + .06, 0]} rotation={[0, l.yaw, 0]} scale={[l.len * 1.5, l.len * 1.5, l.len * 1.5]} geometry={leafGeometry}>
         <meshStandardMaterial color={i % 3 === 0 ? '#537c36' : i % 3 === 1 ? '#356b38' : '#6b9045'} roughness={.92} side={THREE.DoubleSide} />
       </mesh>)}
       {h > 6 && [-.16, 0, .16].map((x, i) => <mesh key={i} position={[x, h - .15, .12]}><sphereGeometry args={[.13, 8, 6]} /><meshStandardMaterial color="#88703c" roughness={1} /></mesh>)}

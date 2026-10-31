@@ -40,6 +40,32 @@ background canvasu a běžícího preview mimo viewport.
 Audit harness proto před čekáním na frame odscrolluje **poslední** canvas (web má
 i globální hvězdné pozadí) a počká, až existují oba.
 
+## Instancování — draw calls
+
+`ScenePalms` v kitu merguje kmen, sedm listů a ořech do jedné geometrie s vertex colours,
+takže celý háj je jeden draw call. Nasazeno v Bodhi Lanka (730 → 489) a LUMI
+(561 → 328). Zbylé náklady jsou kapličky, lilie a pódia, ne vegetace.
+
+## Finální akceptace — 13 scén, produkční build
+
+| Scéna | Draw calls | Trojúhelníky | FPS |
+| --- | --- | --- | --- |
+| Te Pīko Ora | 574 | 85 k | 50,9 |
+| Bodhi Lanka | 489 | 90 k | 53,5 |
+| Golden Republic Bohemia | 382 | 79 k | 54,1 |
+| LUMI Nová Amerika | 328 | 101 k | 51,7 |
+| Uluru | 254 | 84 k | 54,4 |
+| Amenti | 231 | 77 k | 53,2 |
+| Genesis Garden | 227 | 103 k | 52,2 |
+| Ekam | 204 | 108 k | 53,0 |
+| Boa Esperança | 165 | 36 k | 57,7 |
+| Matrix | 156 | 11 k | 54,0 |
+| Tres Marias | 141 | 43 k | 57,6 |
+| Kailash | 139 | 104 k | 57,3 |
+| Dharma Temple | 109 | 139 k | 51,9 |
+
+13/13 `pass`, žádná shaderová ani konzolová chyba, `invalidVertices: 0`.
+
 ## Ověření
 
 - `npx tsc --noEmit` čistý v Nirvaně i ve webu.

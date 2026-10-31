@@ -4,7 +4,7 @@
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SceneTerrain, SceneWater, SkyFill } from './kit';
+import { KeyLight, ScenePalms, SceneTerrain, SceneWater, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -461,12 +461,10 @@ function GardenRing() {
         <planeGeometry args={[1.8, 26]} />
         <meshStandardMaterial color="#a08d68" roughness={0.9} />
       </mesh>
-      {/* palmy */}
-      {palms.map((p, i) => (
-        <Palm key={i} pos={[p.p[0], -0.2, p.p[1]]} h={p.h} />
-      ))}
+      {/* palmy — jedna instancovaná geometrie pro celý háj */}
+      <ScenePalms items={palms.map((p) => ({ x: p.p[0], z: p.p[1], y: -0.2, h: p.h / 1.4 }))} />
       {shrubs.map((s, i) => (
-        <mesh key={i} position={[s.p[0], s.s * 0.4 - 0.2, s.p[1]]} scale={[1.3, s.s, 1.3]} castShadow>
+        <mesh key={i} position={[s.p[0], s.s * 0.4 - 0.2, s.p[1]]} scale={[1.3, s.s, 1.3]}>
           <sphereGeometry args={[0.8, 7, 6]} />
           <meshStandardMaterial color={s.c} roughness={0.95} />
         </mesh>
@@ -486,7 +484,7 @@ function Palm({ pos, h }: { pos: [number, number, number]; h: number }) {
       {Array.from({ length: fronds }, (_, i) => {
         const a = (i / fronds) * Math.PI * 2 + 0.4;
         return (
-          <mesh key={i} position={[Math.sin(a) * 0.9, h + 0.35, Math.cos(a) * 0.9]} rotation={[0.55 + (i % 2) * 0.2, a, 0]} scale={[0.55, 0.18, 2.6]} castShadow>
+          <mesh key={i} position={[Math.sin(a) * 0.9, h + 0.35, Math.cos(a) * 0.9]} rotation={[0.55 + (i % 2) * 0.2, a, 0]} scale={[0.55, 0.18, 2.6]}>
             <octahedronGeometry args={[0.9, 0]} />
             <meshStandardMaterial color={i % 2 ? '#4f7a34' : '#5d8a3c'} roughness={0.9} />
           </mesh>

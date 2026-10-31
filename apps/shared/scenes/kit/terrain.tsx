@@ -322,3 +322,111 @@ export function SceneWater({ width, depth = 1, position, tint, repeat = 3, speed
     </mesh>
   );
 }
+
+/* ── palms ─────────────────────────────────────────────────────────── */
+
+interface Part {
+  geometry: THREE.BufferGeometry;
+  color: string;
+  matrix?: THREE.Matrix4;
+}
+
+/** Merge parts into one non-indexed geometry with per-vertex colour. */
+function mergeParts(parts: Part[]): THREE.BufferGeometry {
+  const positions: number[] = [];
+  const normals: number[] = [];
+  const uvs: number[] = [];
+  const colors: number[] = [];
+  const color = new THREE.Color();
+  for (const part of parts) {
+    const geometry = part.geometry.index ? part.geometry.toNonIndexed() : part.geometry.clone();
+    if (part.matrix) geometry.applyMatrix4(part.matrix);
+    const position = geometry.getAttribute('position');
+    const normal = geometry.getAttribute('normal');
+    const uv = geometry.getAttribute('uv');
+    color.set(part.color);
+    for (let i = 0; i < position.count; i++) {
+      positions.push(position.getX(i), position.getY(i), position.getZ(i));
+      if (normal) normals.push(normal.getX(i), normal.getY(i), normal.getZ(i));
+      if (uv) uvs.push(uv.getX(i), uv.getY(i));
+      colors.push(color.r, color.g, color.b);
+    }
+    geometry.dispose();
+  }
+  const merged = new THREE.BufferGeometry();
+  merged.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  if (normals.length) merged.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  if (uvs.length) merged.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  merged.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  merged.computeBoundingSphere();
+  return merged;
+}
+
+export interface PalmItem {
+  x: number;
+  z: number;
+  y?: number;
+  /** Trunk length in world units. */
+  h?: number;
+  /** Uniform scale. */
+  s?: number;
+  /** Rotation around Y. */
+  yaw?: number;
+}
+
+/**
+ * Palms as a single instanced mesh: trunk, fronds and crown are merged into one geometry
+ * with vertex colours, so a whole grove costs one draw call instead of nine per tree.
+ */
+export function ScenePalms({ items, tone = 'leaf' }: { items: PalmItem[]; tone?: 'leaf' | 'olive' }) {
+  const mesh = React.useRef<THREE.InstancedMesh>(null);
+  const geometry = React.useMemo(() => {
+    // Normalised palm: total height 1 unit, so instances scale uniformly by the tree height.
+    const parts: Part[] = [];
+    const trunk = new THREE.CylinderGeometry(0.035, 0.06, 1, 6).translate(0, 0.5, 0);
+    const frond = new THREE.OctahedronGeometry(0.5, 0);
+    const nut = new THREE.SphereGeometry(0.05, 6, 5);
+    parts.push({ geometry: trunk, color: '#6a5138' });
+    for (let i = 0; i < 7; i++) {
+      const angle = (i / 7) * Math.PI * 2 + 0.4;
+      const matrix = new THREE.Matrix4()
+        .makeTranslation(Math.sin(angle) * 0.22, 1, Math.cos(angle) * 0.22)
+        .multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0.6 + (i % 2) * 0.18, angle, 0)))
+        .multiply(new THREE.Matrix4().makeScale(0.13, 0.04, 0.62));
+      parts.push({ geometry: frond, color: i % 2 ? '#3f6a2c' : tone === 'olive' ? '#77824a' : '#4d7a34', matrix });
+    }
+    parts.push({ geometry: nut, color: '#7a5a34', matrix: new THREE.Matrix4().makeTranslation(0, 1, 0) });
+    const merged = mergeParts(parts);
+    trunk.dispose();
+    frond.dispose();
+    nut.dispose();
+    return merged;
+  }, [tone]);
+  const material = React.useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), []);
+
+  React.useEffect(() => () => {
+    geometry.dispose();
+    material.dispose();
+  }, [geometry, material]);
+
+  React.useLayoutEffect(() => {
+    const node = mesh.current;
+    if (!node) return;
+    const matrix = new THREE.Matrix4();
+    const quaternion = new THREE.Quaternion();
+    const position = new THREE.Vector3();
+    const size = new THREE.Vector3();
+    items.forEach((item, i) => {
+      const height = item.h ?? 6;
+      const scale = item.s ?? 1;
+      quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), item.yaw ?? item.x * 0.7 + i);
+      position.set(item.x, item.y ?? 0, item.z);
+      size.set(height * scale, height * scale, height * scale);
+      matrix.compose(position, quaternion, size);
+      node.setMatrixAt(i, matrix);
+    });
+    node.instanceMatrix.needsUpdate = true;
+  }, [items]);
+
+  return <instancedMesh ref={mesh} args={[geometry, material, items.length]} frustumCulled={false} castShadow receiveShadow />;
+}
