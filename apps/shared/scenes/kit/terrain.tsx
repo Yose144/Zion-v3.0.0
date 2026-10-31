@@ -378,9 +378,10 @@ export interface PalmItem {
  * Palms as a single instanced mesh: trunk, fronds and crown are merged into one geometry
  * with vertex colours, so a whole grove costs one draw call instead of nine per tree.
  */
-export function ScenePalms({ items, tone = 'leaf' }: { items: PalmItem[]; tone?: 'leaf' | 'olive' }) {
-  const mesh = React.useRef<THREE.InstancedMesh>(null);
-  const geometry = React.useMemo(() => {
+export function ScenePalms({ items, tone = 'leaf', variants = 3 }: { items: PalmItem[]; tone?: 'leaf' | 'olive'; variants?: number }) {
+  const group = React.useRef<THREE.Group>(null);
+
+  const build = (variant: number) => {
     // Normalised palm: 1 unit tall, so instances scale uniformly by the tree height.
     const parts: Part[] = [];
     const trunk = new THREE.CylinderGeometry(0.028, 0.055, 1, 7).translate(0, 0.5, 0);
@@ -396,15 +397,16 @@ export function ScenePalms({ items, tone = 'leaf' }: { items: PalmItem[]; tone?:
     }
     leaf.computeVertexNormals();
 
-    const fronds = 9;
+    const fronds = 9 + variant;
     for (let i = 0; i < fronds; i++) {
-      const angle = (i / fronds) * Math.PI * 2 + 0.25;
-      const tilt = 0.35 + (i % 3) * 0.12;
+      const angle = (i / fronds) * Math.PI * 2 + 0.25 + variant * 0.4;
+      const tilt = 0.3 + ((i + variant) % 4) * 0.12;
+      const length = 0.42 + ((i * 7 + variant * 3) % 5) * 0.02;
       const matrix = new THREE.Matrix4()
         .makeTranslation(0, 1, 0)
         .multiply(new THREE.Matrix4().makeRotationY(angle))
         .multiply(new THREE.Matrix4().makeRotationZ(-tilt))
-        .multiply(new THREE.Matrix4().makeScale(0.46, 0.46, 0.46));
+        .multiply(new THREE.Matrix4().makeScale(length, length, length));
       parts.push({ geometry: leaf, color: i % 3 === 0 ? '#3f6a2c' : i % 3 === 1 ? (tone === 'olive' ? '#7c8650' : '#4d7a34') : '#5d8a3c', matrix });
     }
 
@@ -415,32 +417,62 @@ export function ScenePalms({ items, tone = 'leaf' }: { items: PalmItem[]; tone?:
     leaf.dispose();
     nut.dispose();
     return merged;
-  }, [tone]);
+  };
+
+  const geometries = React.useMemo(
+    () => Array.from({ length: Math.max(1, variants) }, (_, index) => build(index)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tone, variants],
+  );
   const material = React.useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), []);
 
   React.useEffect(() => () => {
-    geometry.dispose();
+    for (const geometry of geometries) geometry.dispose();
     material.dispose();
-  }, [geometry, material]);
+  }, [geometries, material]);
+
+  // Split the grove between the variants so neighbouring palms are not identical.
+  const buckets = React.useMemo(() => {
+    const list: PalmItem[][] = Array.from({ length: geometries.length }, () => []);
+    items.forEach((item, index) => list[index % list.length].push(item));
+    return list;
+  }, [items, geometries.length]);
 
   React.useLayoutEffect(() => {
-    const node = mesh.current;
+    const node = group.current;
     if (!node) return;
     const matrix = new THREE.Matrix4();
     const quaternion = new THREE.Quaternion();
     const position = new THREE.Vector3();
     const size = new THREE.Vector3();
-    items.forEach((item, i) => {
-      const height = item.h ?? 6;
-      const scale = item.s ?? 1;
-      quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), item.yaw ?? item.x * 0.7 + i);
-      position.set(item.x, item.y ?? 0, item.z);
-      size.set(height * scale, height * scale, height * scale);
-      matrix.compose(position, quaternion, size);
-      node.setMatrixAt(i, matrix);
+    node.children.forEach((child, bucketIndex) => {
+      const mesh = child as THREE.InstancedMesh;
+      const bucket = buckets[bucketIndex] ?? [];
+      bucket.forEach((item, i) => {
+        const height = item.h ?? 6;
+        const scale = item.s ?? 1;
+        quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), item.yaw ?? item.x * 0.7 + i);
+        position.set(item.x, item.y ?? 0, item.z);
+        size.set(height * scale, height * scale, height * scale);
+        matrix.compose(position, quaternion, size);
+        mesh.setMatrixAt(i, matrix);
+      });
+      mesh.count = bucket.length;
+      mesh.instanceMatrix.needsUpdate = true;
     });
-    node.instanceMatrix.needsUpdate = true;
-  }, [items]);
+  }, [buckets]);
 
-  return <instancedMesh ref={mesh} args={[geometry, material, items.length]} frustumCulled={false} castShadow receiveShadow />;
+  return (
+    <group ref={group}>
+      {geometries.map((geometry, index) => (
+        <instancedMesh
+          key={index}
+          args={[geometry, material, Math.max(1, buckets[index]?.length ?? 1)]}
+          frustumCulled={false}
+          castShadow
+          receiveShadow
+        />
+      ))}
+    </group>
+  );
 }
