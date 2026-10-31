@@ -210,9 +210,31 @@ reads (`isValidMarketCode`, mtime-cached) as a second source in
   entitlement (`claimedVia:'code'`).
 - Revocation: order → `cancelled` sets `revokedAt` → code dies
   immediately (cookie re-validates per request).
-- OASIS needs no pass — entry is open (player = wallet address); the
-  reverse direction already exists: ZIS + linked OASIS player unlocks
+- The reverse direction exists too: ZIS + linked OASIS player unlocks
   the archive free (`zis-oasis`).
+
+#### 5.7.1 Cross-surface pass (2026-10-31, commits `4732d98d5`…`2ff58a8a8`)
+
+The same `ZAP-…` code works on three surfaces — guests without ZIS
+accounts enter the code on each ("kód zadají všude"):
+
+| Surface | Host | Validation |
+|---|---|---|
+| `app.zionterranova.com/zion-archive` | EDGE2 | direct file read (`archive-market-codes.ts`) + 90 d cookie via `/api/archive/access` |
+| `oasis.zionterranova.com` world **NIRVANA — První svět** (id `NIRVANA`, `requiredPass: "archive"` in `worlds.json`) | EDGE2 | daemon `pass_store.rs` reads the same JSON file (mtime/size cache, fail-closed); gated actions `scan/approach/discover/clue` take `x-zion-pass` header or JSON `pass` field → `403 {"error":"pass_required"}` |
+| `nirvana.zionterranova.com` portal + `/present/*` | EDGE | server-side `POST /api/pass` → canonical oracle `app.zionterranova.com/api/archive/verify` → `zion_nirvana_pass` httpOnly cookie (re-validated per GET → revocation propagates) |
+
+- `POST /api/archive/verify` (website) — public `{code}→{valid}`
+  oracle for sibling surfaces, per-IP throttled.
+- `POST /api/v1/oasis/pass/verify` (daemon) — same oracle shape for
+  OASIS clients.
+- OasisWeb: `PassPrompt` modal on first gated action; code persisted in
+  `localStorage zion_pass`, sent automatically on all world actions.
+- Camel-case fields are authoritative in the store (`revokedAt`,
+  `expiresAt`) — the Rust reader must `rename` them (a snake_case slip
+  silently ignored revocations; fixed in `2ff58a8a8`).
+- E2E verified 2026-10-31: issue → `valid` on all 3 → gated scan 403 →
+  scan with pass 200 → cancel → `invalid/403/access:false` everywhere.
 
 ---
 
