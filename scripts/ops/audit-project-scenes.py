@@ -67,8 +67,8 @@ def main():
                     row['raf_fps'] = page.evaluate('''seconds => new Promise(resolve => {
                       let frames=0,start=performance.now();function f(t){frames++;if(t-start<seconds*1000)requestAnimationFrame(f);else resolve(frames*1000/(t-start));}requestAnimationFrame(f);
                     })''', sample)
-                    row['before'] = page.evaluate('window.__projectScene')
-                    assert row['before']['invalidVertices'] == 0, 'non-finite geometry'
+                    row['initial'] = page.evaluate('window.__projectScene')
+                    assert row['initial']['invalidVertices'] == 0, 'non-finite geometry'
                     def screenshot(label):
                         canvas.scroll_into_view_if_needed(); page.screenshot(path=str(output/f'{app}-{scene}-{label}.png'), timeout=90000, animations='disabled')
                         print(f'{app}/{scene}: {label}',flush=True)
@@ -85,9 +85,20 @@ def main():
                     else: assert page.get_by_role('button',name='Přepnout do češtiny',exact=True).count() == 1
                     page.set_viewport_size({'width':390,'height':844}); page.wait_for_timeout(350); screenshot('en-mobile')
                     page.set_viewport_size({'width':1440,'height':900}); language(False)
+                    # Warm baseline: both viewports and both languages have rendered, so every
+                    # geometry and texture that is merely lazily uploaded to the GPU is already
+                    # counted. Anything created from here on is churn in the live renderer.
+                    row['before'] = page.evaluate('window.__projectScene')
+                    before_objects = set()
+                    if page.evaluate("typeof window.__projectSceneObjects === 'function'"):
+                        before_objects = {item['uuid'] for item in page.evaluate('window.__projectSceneObjects()')}
                     # Exercise texture replacement repeatedly in the same live renderer.
                     for _ in range(2): language(True); language(False)
                     row['after_language_cycles'] = page.evaluate('window.__projectScene')
+                    if before_objects:
+                        after_objects = {item['uuid'] for item in page.evaluate('window.__projectSceneObjects()')}
+                        row['created_geometries'] = len(after_objects - before_objects)
+                        assert row['created_geometries'] <= 2, 'geometry objects recreated after language cycles'
                     assert row['after_language_cycles']['geometries'] <= row['before']['geometries'] + 2, 'geometry count grew after language cycles'
                     assert row['after_language_cycles']['textures'] <= row['before']['textures'] + 2, 'texture count grew after language cycles'
                     canvas.scroll_into_view_if_needed(); box=canvas.bounding_box(); assert box and box['width'] > 0

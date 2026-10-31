@@ -3,6 +3,8 @@
 
 import { React, useThree, useFrame, THREE } from '@genesis/runtime';
 
+import { resolveSceneLabels } from './SceneLabel';
+
 type Point = [number, number, number];
 let reducedMotion = false;
 export const motionTime = (clock: { elapsedTime: number }) => reducedMotion ? 0 : clock.elapsedTime;
@@ -62,6 +64,9 @@ export function ScenePresentation({ camera: initial, target }: { camera: { posit
   }, [gl, scene]);
 
   useFrame(({ clock }) => {
+    // Labels publish their screen rectangles later in the frame; resolve the
+    // overlap from the previous frame before the camera is drawn again.
+    resolveSceneLabels(camera);
     if (controls && 'autoRotate' in controls) (controls as unknown as { autoRotate: boolean }).autoRotate = !reducedMotion;
     const count = counters.current;
     count.frames++;

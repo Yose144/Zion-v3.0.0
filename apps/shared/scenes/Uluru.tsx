@@ -189,6 +189,12 @@ function FireCircle() {
   );
 }
 
+/** Trasy songlines — modulové konstanty, aby `useMemo` nevytvářel novou geometrii při každém renderu. */
+const SONGLINE_WEST: [number, number][] = [[-60, -30], [-38, -16], [-18, -6], [-9, 2]];
+const SONGLINE_EAST: [number, number][] = [[9, 4], [26, 8], [44, 18], [62, 32]];
+const SONGLINE_NORTH: [number, number][] = [[-8, 3], [-16, 14], [-30, 30], [-46, 48]];
+const SONGLINE_SOUTH: [number, number][] = [[0, -6], [6, -20], [18, -38], [30, -58]];
+
 /** svítící songline cesta — křivka napříč údolím */
 function Songline({ pts, color = '#ffb050' }: { pts: [number, number][]; color?: string }) {
   const geo = useMemo(() => {
@@ -196,6 +202,8 @@ function Songline({ pts, color = '#ffb050' }: { pts: [number, number][]; color?:
     const curve = new THREE.CatmullRomCurve3(v);
     return new THREE.TubeGeometry(curve, 60, 0.14, 5);
   }, [pts]);
+  // Release the tube when `pts` changes instead of leaving it on the GPU forever.
+  useEffect(() => () => geo.dispose(), [geo]);
   return (
     <mesh geometry={geo}>
       <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.3} roughness={0.6} transparent opacity={0.55} />
@@ -465,10 +473,10 @@ export function UluruScene({ lang }: { lang: Lang }) {
       <Settlement />
       <LeafSculpture x={polar(115, 24)[0]} z={polar(115, 24)[1]} />
       {/* songlines — zářící cesty údolím */}
-      <Songline pts={[[-60, -30], [-38, -16], [-18, -6], [-9, 2]]} />
-      <Songline pts={[[9, 4], [26, 8], [44, 18], [62, 32]]} color="#ffca6e" />
-      <Songline pts={[[-8, 3], [-16, 14], [-30, 30], [-46, 48]]} color="#8ad4c8" />
-      <Songline pts={[[0, -6], [6, -20], [18, -38], [30, -58]]} color="#ffd98a" />
+      <Songline pts={SONGLINE_WEST} />
+      <Songline pts={SONGLINE_EAST} color="#ffca6e" />
+      <Songline pts={SONGLINE_NORTH} color="#8ad4c8" />
+      <Songline pts={SONGLINE_SOUTH} color="#ffd98a" />
 
       {/* labely */}
       <SceneLabel position={[6, 22, -95]} text="Uluru · Tjukurpa" scale={4.2} />
