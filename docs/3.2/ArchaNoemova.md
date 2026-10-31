@@ -5,9 +5,10 @@
 > **Souvisí:** [`../../ARCHA-NOEMOVA.md`](../../ARCHA-NOEMOVA.md) (koncept a kánonické kotvy), [`TreeMarias.md`](./TreeMarias.md) (flotila Tres Marías), [`L5MariaDelCamino.md`](./L5MariaDelCamino.md), [`L5_PROOF_OF_IMPACT.md`](./L5_PROOF_OF_IMPACT.md)
 > **Registry (návrh):** program `archa-nirvana`, status `vision` — neregistrován
 >
-> **Dokument obsahuje DVĚ studie (aditivně, nic nepřepsáno):**
+> **Dokument obsahuje TŘI studie (aditivně, nic nepřepsáno):**
 > - **Studie A** — původní brief: rescue/svatyně archa, ~340 osob, autonomie 365 dní (design basis Gn 6–8: 40 d bouře + 150+ d vody)
 > - **Studie B** — rozšířený brief 👤 (2026-10-31): kolonie-archa **≤100 lidí**, absolutní soběstačnost napořád, sail-primary, velrybí navigace, přežití kolapsu civilizace
+> - **Studie C** — technická příloha: GA stavební plán paluba po palubě, matice 8 variant trupu/rigu, parametrický hmotnostní rozpočet, solární+vodní+potravinová bilance s reálnými výnosy, materiálová archa
 
 ---
 ---
@@ -589,3 +590,274 @@ Keporkaci (Megaptera novaeangliae) dělají přesně to, co archa potřebuje: **
 ---
 
 *„Každý věk má svou loď. Archa je ta, která se vrací pro posledního — a pluje za velrybami, protože velryby vědí, kudy je voda bezpečná."*
+
+---
+---
+
+# STUDIE C — stavební plány, varianty návrhů a hmotnostně-energetické bilance
+
+> **Rozsah:** technické prohloubení obou studií — GA (general arrangement) paluba po palubě, parametrický výpočet výtlaku, solární/vodní/potravinová inženýrství s reálnými čísly, matice variant návrhu trupu a rigu. **Nic z předchozího se nemění — toto je příloha, ne revize.**
+
+---
+
+## C.1 GA plán — paluba po palubě (doporučená koncepce B: ~85 × 17 m schooner)
+
+Referenční trup: ocel, 3 uzavřené paluby + nástavba + shelter/weather deck, L:B ≈ 5:1–5,4:1, ponor ~5–5,5 m, výtlak ~3 300–4 000 t.
+
+### C.1.1 Hold / tank top (pod vodou částečně)
+
+| Zóna | Obsah | Poznámka |
+|---|---|---|
+| Příď | chain locker, bosun store | kotvící výstroj 2× naviják |
+| Dvojité dno plné délky | ballast + grey tank + fuel day-tanks | „kofer" doslova — dvojitá podlaha |
+| Střed (nejnižší těžiště) | **2× bateriové banky LFP po 1–2 MWh** (oddělené protipožární celky) | těžké nízko = GM zdarma |
+| Strojovna záď | 2× e-drive shaft (400–600 kW), 2× nouzový genset ~400–500 kW, PTO/gearbox | twin screw = redundance |
+| Servisní blok | RO 2× 15 m³/d, sewage MARPOL, HVAC core, LN² kryo dewary | kryo zde — chladno+stabilní |
+| Zásoby I (nejhlubší) | ~200–300 t staples rotace v paletách | těžké nízko, pojistný náklad |
+| Voda | ~150–200 m³ potable v baffled tancích | ~3 týdny buffer |
+
+### C.1.2 Paluba 1 (hlavní — „pracovní archa")
+
+| Zóna | Obsah |
+|---|---|
+| Příď | kovárna + strojní dílna + plátenice (šicí loft) + sklad materiálu |
+| Střed-port | **farm deck A:** aquaponie (tilapie/krevety ~200 m²) + klíčárna + houbárna + mealworm rack |
+| Střed-stbd | **živá farma:** drůbež 40–60 + králíci + micro-kozy 2–4 + včelí úl (osvětlený) |
+| Záď | **zdravotní blok:** ambulance + OR + izolace + porodnice + lékárna + lab |
+| Venkovní lem | záchranné čluny (2× SOLAS + 2 workboat), davitové výložníky |
+
+### C.1.3 Paluba 2 („obec")
+
+| Zóna | Obsah |
+|---|---|
+| Příď | **commons:** refektář/mess 100 + kuchyň + knihovna/knowledge ark + Faraday rack |
+| Střed | **ubytování:** ~40–50 kajut/komor (rodiny 15–18 m² brutto, sólo menší) + komunitní místnosti |
+| Záď | **škola + svatyně srdce + kajuta přijetí** — posvátné a vzdělávací jádro zádi |
+| Zvláštní | „náměstí" — krytá promenáda, společenský prostor (izolace kolonie potřebuje veřejný prostor) |
+
+### C.1.4 Paluba 3 („dům")
+
+| Zóna | Obsah |
+|---|---|
+| Příď | **můstek 360°** + chart room + comms (HF/LEO/LoRa) + ZION node rack |
+| Střed | ubytování II (velitelství+guardians) |
+| Záď | **skleník hlavní** ~400–600 m² hydroponie (světelná střecha, denní světlo zdarma) + vedlejší skleník |
+| Venku | seed vault −18 °C modul (kontejnerový, N+1 komprese) |
+
+### C.1.5 Shelter / weather deck (střecha = elektrárna + sběrač vody)
+
+- **PV skin** ~800–1 200 m² (walk-on panely Solbian-class, antiskid) — hlavní plocha
+- **Rain catchment:** celá střecha = sběrač do prvního filtru → potable tanky
+- **Větrné turbíny** 2–4× na rámech nad záďovým lemem (mimo padající plachty)
+- **Hydro-generatory** tažené/příďové při plavbě
+- Shelter kontejnery na zádi (misijní moduly — rescue/lab/extra farm) — výměnné
+- **Ark-mode:** vše sklopitelné/uzamykatelné; plachty dolů; sea anchor ready; citadel = paluba 1–2 jádro
+
+### C.1.6 Rig — plánovaný plášť plachet
+
+| Parametr | Hodnota |
+|---|---|
+| Typ | A-frame / staysail schooner 2 stožáry (RW3 styl) — nebo 3-stěžňový bark pro max plášť (varianta) |
+| Plášť | **~2 800–4 000 m²** (upwind); downwind doplňky |
+| Posádka na plachty | ~12–16 lidí vycvičených (zbylá kolonie se učí — „všichni jsou crew" rituál) |
+| Výkon | ~8–10 kn v pasátech; aux e-drive jen pobřeží/calms |
+| Náhradní materiál | 2× plná sada plachetniny + lana + rezervní ráhna/žerď — „loď nese svou plachetnici" |
+
+---
+
+## C.2 Hmotnostní rozpočet (parametrický odhad)
+
+Metoda: Watson-Gilfillan equipment number + typické podíly lightship (konzervativní pásma, design study upřesní).
+
+### C.2.1 Lightship (~suchá loď)
+
+| Skupina | Odhad | Poznámka |
+|---|---|---|
+| Ocelový trup + nástavba | **~1 400–1 700 t** | E ≈ L(B+T) + 0,85L(D−T) + nástavby ≈ ~2 500 → Ws = K·E^1,36, K≈0,04, CB≈0,6–0,65 |
+| Strojírna + e-drive + gensety + baterie | ~450–600 t | baterie 2–4 MWh samy ~15–25 t; e-motory+šrouby+transformátory |
+| Výstroj (outfit): kajuty, galley, HVAC, nav, záchrana | ~550–700 t | včetně rigu (~150–250 t stožáry+takeláž+plachty) |
+| Margin (design reserve) | ~150–250 t | přiznaná rezerva — ark se nepodbízí |
+| **Lightship** | **~2 600–3 100 t** | |
+
+### C.2.2 Deadweight (náklad, který nese)
+
+| Skupina | Odhad |
+|---|---|
+| 100 lidí + osobní + „domácnost" | ~30–40 t |
+| Rotující zásoby jídla (staples) | ~150–200 t (cílový buffer ~180 d) |
+| Voda pitná tanky | ~150–200 t |
+| Nouzová nafta | ~100–150 t |
+| Farm deck systémy + živá farma + půdy/substráty | ~80–120 t |
+| Seed vault + kryo + knowledge ark + node | ~15–25 t |
+| Dílna + náhradní díly + materiálová archa | ~80–120 t |
+| Shelter kontejnery (misijní moduly) | ~40–80 t (dle mise) |
+| Čluny + takeláž spotřebák + maziva | ~40–60 t |
+| **Deadweight** | **~700–1 100 t** |
+
+### C.2.3 Výtlak souhrn
+
+| Stav | Výtlak |
+|---|---|
+| Lightship | ~2 600–3 100 t |
+| + plný deadweight | **~3 300–4 200 t plný** |
+| Check buoyancy: L·B·T·CB·ρ = 85×17×5,2×0,62×1,025 | ≈ ~4 780 t → **volný bok ~2,7–3 m zbývá** — zdravá rezerva pro ark-mode |
+
+### C.2.4 Stabilita (soul-check, přesné až v hydrostatice)
+
+- **GM cíl ~1,2–1,8 m** (vysoký pro kolonie + děti + volné plochy tanků — free-surface korekce povinná: baffled tanky, plné prázdné stavy, ne poloviční)
+- Těžiště nízko: baterie+staples+voda+palivo pod vodou; těžké nahoru jen rig (snižujeme: alu/kompozit stožáry)
+- **Flood-mode GM** ověřit s vymoknutými shelter moduly — jiný stav křivky, jiný svět
+- Bilge keels + pasivní stabilizační tanky; anti-roll aktivní fins jen jako bonus (v driftu spolehlivost < forma)
+
+---
+
+## C.3 Matice variant návrhu (různé návrhy archy)
+
+| # | Koncept | Popis | Pro | Proti | Verdikt |
+|---|---|---|---|---|---|
+| **C-A** | **A-frame / staysail schooner** (RW3-scaled) | 2× A-stožár, ~2 800–4 000 m², e-drive aux | dokázaná třída, malá posádka, velký plášť, deck volný pro farm | A-frame = nová kategorie pro class | **DOPORUČENO** |
+| **C-B** | **3-stěžňový bark/barquentine** | klasický tall ship rig, ~3 500–5 000 m² | nejvíce plachet, flotilová jednota s trupem I (schooner tradice) | více posádky na plachty, složitější výuka | silná varianta — sjednocuje s Tres Marías |
+| **C-C** | **DynaRig** (Maltese Falcon typ) | volně stojící stožáry, automatizované yardy | 1–2 lidé řídí celý plášť z můstku | proprietární tech (Southern Spars), drahé, servis = specialisté | v rozporu s collapse-proof (zamkne na vendor) — zamítnuto pro B |
+| **C-D** | **Junk-rig (čínský lug)** | jednoduché battened plachty, ruční ovládání | **nej kolaps-proofnější rig světa:** žádná hydraulika, reefuje se z paluby, opravitelné | menší výkon proti větru, exotický v class | **fascinující kandidát B-varianty** — primitivnost jako systémová ctnost |
+| **C-E** | **Ketch motor-sailer** | konvenční motor-sailer s ketch rigem | konzervativní, snadný class | více závislosti na motoru | fallback |
+| **C-F** | **Semi-submersible storm** | ballast-down režim: trup se v bouři potápí na nízký freeboard | maximální bouřová přežitelnost | extrémní komplexita, neověřená kategorie | horizont — pozoruhodné, ne první loď |
+| **C-G** | **Modulární barge + plachta** | ponton + kontejnerová nástavba + jednoduchý rig | nejlevnější, stavitelná kdekoli | slabá plavitelnost, nízká rychlost, estetika | přístavní/dockside archa variant — ne oceánská |
+| **C-H** | **Dvoutrupový SWATH** | torpédové plováky + platforma nad vodou | minimální pohyb (farma miluje klid), obrovská plocha | nesamovzpřímej, hluboký ponor, servis | zamítnuto (collapse-brief) |
+
+**Rig verdikt:** C-A schooner jako jádro; **C-D junk-rig držet jako seriózní alternativu v design study** — jediný rig, který opraví jeden člověk s nářadím z dílny, bez hydrauliky.
+
+---
+
+## C.4 Solární soběstačnost — detailní bilance
+
+### C.4.1 Dostupné plochy (85×17 m trup)
+
+| Plocha | m² | Poznámka |
+|---|---|---|
+| Shelter/střecha nástavby | 700–900 | walk-on PV |
+| Záď/lem paluby (bezpečné zóny) | 150–250 | mezi pracovními plochami |
+| Skleník střecha (semi-transparent PV) | 200–300 | dvojí funkce: světlo i proud |
+| Bimini/wings rozšiřky (volitelné) | +100–200 | rozkládací křídla v klidných vodách |
+| **Σ reálné** | **~1 050–1 450 m²** | konzervativně ~1 000 m² použitelných |
+
+### C.4.2 Výkon a výtěžnost
+
+- Moderní marine PV ~180–220 Wp/m² → **180–250 kWp** (držíme ~200 kWp nominál)
+- V pásmu archy (10–30 ° lat) peak-sun ~4,5–5,5 h → **~0,9–1,4 MWh/den čisté solární** (průměr ~1,1 MWh)
+- **+ vítr** (pasáty 15–25 kn): 2× 8–10 kW → ~0,4–0,7 MWh/den
+- **+ hydro** za plavby (trailing/towed): ~0,3–0,6 MWh/den
+- **Σ výroba ~1,6–2,5 MWh/den v cílovém pásmu**
+
+### C.4.3 Spotřeba (cíl < výroba — discipline-first design)
+
+| Zátěž | kWh/den | Komentář |
+|---|---|---|
+| Hotel 100 lidí (vaření, světla, HVAC, drobné) | 700–1 000 | DC rozvody, LED, heat recovery, pasivní ventilace |
+| Farm deck (čerpadla, doplnková světla, klíma) | 500–800 | **skleníky jedou na denní světlo** — elektrina jen pro systémy, ne fotosyntézu |
+| Medical + seed vault + kryo | 400–700 | neustálá povinnost, prioritní okruh |
+| RO (8 m³/den, ~3–4 kWh/m³) | 25–35 | zdánlivě levné — výroba za světla |
+| Node/comms/dílna/IT | 200–400 | |
+| Buffer/ztráty (invertery, nabíjení) | ~15 % | |
+| **Σ** | **~1 600–2 600 kWh/den** | **≈ výroba — systém na hraně, správně** |
+
+→ **Závěr solární bilance:** vyvážená v cílovém pásmu při ~200 kWp + vítr + hydro + efficiency. V zimní polohách/špatných týdnech se propad pokrývá: (a) baterie 2–4 MWh = ~1,5–2 dny bufferu, (b) nouzová nafta (léky), (c) **load-shedding hierarchie:** nejdřív dílna/komfort, pak farm-luxus, nikdy medical/seed/voda.
+
+### C.4.4 Proč to drží — precedenty
+
+- **Energy Observer (EO1):** 202 m² PV + ocean wings + hydro + H₂ řetězec — **obeplula svět 7 let čistě na renewables**; energetický systém 1,3 t (CEA design). Důkaz, že self-sufficiency mix existuje.
+- **Serenity 64/74:** ~65–111 m² PV → pluje 5–6 kn celý den čistě na solar (cat, lehká, ale princip platí — e-drive je hladovější než plachta, proto náš sail-primary).
+- **RW3:** 10 kn @ 300 kW e-drive → naše twin 400–600 kW = přiměřené pro 3,5× větší výtlak.
+
+---
+
+## C.5 Voda — inženýrství úplné
+
+| Zdroj | Kapacita | Spolehlivost |
+|---|---|---|
+| **RO #1** kontejnerová | 15 m³/den | hlavní; ~3–4 kWh/m³ |
+| **RO #2** menší/backup | 8 m³/den | N+1, jiný napájecí okruh |
+| **Rain catchment** (střecha ~1 000–1 400 m²) | 10–30 m³/liják | pasivní, zdarma; v pásmech časté |
+| **Kondenzát HVAC + farm-deck recapture** | ~1–3 m³/den | „voda co se vrací" |
+| **Tanky** | ~150–200 m³ potable | ~3 týdny plné spotřeby buffer |
+
+Poptávka: **~8 m³/den** (80 l/os × 100). Σ výrobní kapacita přes 2× poptávku → **voda je přebytek, ne problém** — přesně jak má archa znít.
+
+Kvalita: RO→mineralizace→UV→potable; greywater→bio (RW3 pattern)→technické použití; black→MARPOL treatment; farm loop zvlášť (aquaponie recirkulace).
+
+---
+
+## C.6 Potraviny — poctivá kalorická bilance (korekce z rešerše)
+
+**Poctivé zjištění z dat:** hydroponická zelenina ~40–100 g/m²/den (Yuma studie 41 kg/m²/rok; mikro-zahrada ~100 g/m²/den) = **výživa (vitamíny, vláknina, čerstvost), ne kalorie** (zelenina ~200–600 kcal/kg). Kalorie nesou: **staples rotace + klíčky + bílkovina** — proto „seed vault = spíž i banka".
+
+### C.6.1 Cíl: 220 000 kcal/den (100 × 2 200)
+
+| Kanál | Podíl kalorií | Poznámka |
+|---|---|---|
+| **Rotující staples** (rýže/pšenice/legumíny/oleje) | ~50–60 % | buffer 150–200 t ≈ ~180 d plné spotřeby; **rotuje se — jíme sklad, doplníme na uzlech a z vlastních výnosů** |
+| **Klíčky (sprouting)** | ~10–15 % | 8–12 kg semen/den → 40–60 kg klíčků (1:5–6); kalorie+protein+živé enzymy; semena = zásoba, co se sama obnovuje |
+| **Aquaponie+rybolov** | ~10–15 % | protein + tuk; velrybí trasa = šelf = ryby |
+| **Drůbež/kozy/králíci/hmyz/spirulina** | ~10–15 % | vejce+mléko+maso+protein koncentráty |
+| **Hydroponie zelenina** | ~5 % kalorií, ~90 % čerstvé výživy | ~16–40 kg/den fresh z ~400–600 m² |
+| **Konzervy/luxus** | rezerva | morálka a nemocniční zásoba |
+
+**Uzavřenost:** ~40–50 % kalorií se rodí/lovi na palubě průběžně; zbytek ze zásob, které **rotují přes uzly a vlastní sklizně** — systém se z principu nikdy nevyčerpá do dna. Zároveň **180-denní buffer** = měkké břicho pro špatné sezóny.
+
+### C.6.2 Výrobní fyzika (reálné výnosy)
+
+| Systém | Reálný výkon | Zdroj |
+|---|---|---|
+| Hydroponie | ~40–100 g/m²/den | Yuma lettuce 41 kg/m²/rok; micro-garden ~2 kg/20 m²/den |
+| Klíčárna | semeno→klíček 1:5–6 hmotnosti za 5–7 d | standardní sprouting poměry |
+| Spirulina | ~15–25 g suchiny/m²/den | nejvyšší protein/m² |
+| Tilapie aquaponie | ~40–60 kg/m³/rok | RAS standard |
+| Slepice | ~0,7–0,9 vejce/den | 50 slepic ≈ 35–45 vajec/den |
+| Micro-kozy | ~1–1,5 l mléka/den/koza | trpasličí plemena — loď přátelská |
+
+---
+
+## C.7 Materiálová archa — „loď nese svou loděnici"
+
+Kolaps-proof = ne jen systémy, ale **zásoba opravitelnosti**:
+
+| Sklad | Obsah | Cíl |
+|---|---|---|
+| Ocel + hliník | ~30–50 t plechů/profilů/trubek | opravit trup, nástavbu, ráhna |
+| Plachetnina + lana | ~2× plná sada | rig obnovitelný na moři |
+| Spare parts | čerpadla, těsnění, ložiska, střídače, membrány RO, kompresory | N+1 pro vše kritické |
+| Elektronika | náhradní invertory, regulátory, kabely, spoje | bateriové články jako „semente energie" |
+| Nástroje | soustruh, fréza, TIG/MMA, kovadlina, šicí stroje | fabricate, ne čekat |
+| Farma | substráty, krmiva, náhradní chladiče, semena navíc | produkce nezastavitelná |
+| Medical | 2 roky konzumables + chirurgická sada | porodnice+OR bez řetězce |
+
+---
+
+## C.8 Stavební sekvence (jak se to staví)
+
+| Fáze | Obsah | Délka |
+|---|---|---|
+| **Design** | concept→basic→detail design; class approval (BV/DNV/LR); hydrostatika+stabilita+výkon | 9–15 měs. |
+| **Yard tender** | Fassmer (RW3!) / Freire / Metalships / Balk / Nodosa — galícijská synergia s trupem I | tender |
+| **Stavba** | keel → blocks → hull → launch → outfit → rig → trials | 24–36 měs. (newbuild) |
+| **Modulární přístup** | farm/kontejnerové systémy se montují standardizovaně — **výměnné mezi loděnicemi a uzly** = servisní svoboda | průběžně |
+| **Shakedown** | Atlantik trial + první uzlová linka + farm iterace | 6–12 měs. |
+
+---
+
+## C.9 Souhrn čísel — studie C
+
+| Parametr | Hodnota |
+|---|---|
+| LOA / B / T / výtlak | ~85 m / ~17 m / ~5,2 m / **~3 300–4 200 t plný** |
+| Lightship / deadweight | ~2 600–3 100 t / ~700–1 100 t |
+| Lidé | ≤100 (kolonie) |
+| Plachty / e-drive | ~2 800–4 000 m² / 2× 400–600 kW aux |
+| PV / vítr / hydro / baterie | ~200 kWp / 2–4× ~10 kW / 10–30 kW / **2–4 MWh** |
+| Vyrobená energie vs zátěž | ~1,6–2,5 MWh/den vs ~1,6–2,6 MWh/den (vyvážená v pásmu) |
+| Voda | ~8 m³/den; RO 2× + rain + condensate; tanky ~200 m³ |
+| Jídlo | ~40–50 % z paluby; ~50–60 % rotující staples; ~180 d buffer |
+| Nouzová nafta | ~100–150 t (léky, ne strava) |
+| Přežití | ark-mode uzavřená, 3-compartment, GM ~1,2–1,8 m, L:B ~5–6:1 |
+| CAPEX (A novostavba / A′ refit) | ~€70–100M / ~€30–55M |
+
+*Studie C je příloha — detail mění odhad, ne brief. Čísla jsou parametrické; design study je zpřesní.*
