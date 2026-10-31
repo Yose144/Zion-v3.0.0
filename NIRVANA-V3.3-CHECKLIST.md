@@ -22,12 +22,12 @@ Checklistové checkboxy pod tímhle rámečkem se hromadně nepřepisovaly. DoD 
 
 ---
 
-## Stav v kostce (2026-10-26)
+## Stav v kostce (2026-10-31; snapshot položek níže je z 26. 10., posun viz rámeček)
 
 | Oblast | Stav |
 |---|---|
-| Stupeň | **3.2 BETA** (`3.2.0-beta.1`, beta gate 25. 10.) → další brána RC |
-| G8 | run #5 `g8-20261025T215746Z` — **99.733 %**, 0 kritických, rozpočet 43 min (spotřebováno 2), konec 24. 11. |
+| Stupeň | **3.2.0 Mainnet Beta** (`V31/Cargo.toml` = `3.2.0`, node hlásí `3.2.0`; wire ID `zion-v3-node/3.1.0-alpha` zůstává záměrně) → další brána RC |
+| G8 | run **#6** `g8-20261029T234617Z` — **99.7976 %**, 0 kritických, **1 incident 240 s** (30. 10. 21:00–21:04Z, `pool_http`+`pool_stratum`), evidence 100 %, konec **28. 11. 23:46Z** |
 | G9 | ⏸️ **posunuto rozhodnutím 👤 26. 10.** — audit package + scope připravené k odeslání; Stable bez data |
 | Interní audit | vlny 1–7 nasazené a živě ověřené (warpd = audit build, holdy aktivní, payouty potvrzené on-chain) |
 | Code gates (pin `ad8ab5895`) | `cargo test --workspace` **2 839 / 0 fail**, check OK, Foundry 48/48, ZIS 46/46 · ⚠️ clippy ~110 warnings, fmt drift 25 souborů · 🔄 audit triage 28.10 (`docs/3.2/AUDIT-TRIAGE.md`): cargo 9 vuln = 0 in-range fix (multichain/k256 only, pool/node čisté), npm 9 app kritik `next` majors — upgrade = deliberate, neblokuje Beta |
@@ -49,9 +49,10 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [ ] **G8 — 30 dní ≥99.9 %, žádný incident ≥900 s**
   - [x] 🤖 RCA run #2 + live stall 21. 10. → fixy (pool RPC timeout 4→12 s, pool-side pre-orphan pryč, watchdog 30 s/3-fail) nasazené ([`REPORT_2026-10-21_G8_STALL_RCA.md`](docs/3.2/REPORTS/REPORT_2026-10-21_G8_STALL_RCA.md))
   - [x] 🤖 RCA run #3 (SPOF tunelu v sondě) → probe na lokální followery + vlastní probe na EDGE2
-  - [x] 👤 Start run #5 (25. 10.)
+  - [x] 👤 Start run #5 (25. 10.) — uzavřen 29. 10., navázán run #6
   - [x] 🤖 Alert sink firing test + 40d retence doložit (8.B9) — `REPORT_2026-10-28_G8_ALERT_SINK.md`: firing+resolved přes reálný Alertmanager 28.10., append-only jsonl 29d+ bez rotace, 40d span doběhne ~8.11.
-  - [ ] 🤖 Run #5 PASS (1.S1) — nic nesmí zasáhnout required služby bez rollbacku do 15 min
+  - [x] 👤 Start run #6 `g8-20261029T234617Z` (29. 10. 23:46Z), cíl **28. 11. 23:46Z**, evidence step 60 s, coverage 100 %
+  - [ ] 🤖 Run #6 PASS (1.S1) — nic nesmí zasáhnout required služby bez rollbacku do 15 min. Stav 31. 10.: **99.7976 %**, 0 kritických, 1 incident 240 s (`pool_http`+`pool_stratum`, 30. 10. 21:00–21:04Z)
 - [~] **G9 — externí audit** ⏸️ **posunuto rozhodnutím 👤 26. 10.** (v aktuálním okně se neobjednává)
   - [x] 🤖 Audit package (pin `4108a52d0`, reprodukovatelný build) + scope v2.2 — připraveno k odeslání
   - [ ] 🤖 Přepinovat na RC commit (wave 7 + W1 posunuly pool scope) (7.B1)
@@ -101,6 +102,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 IA-06 P2P rollback verifikace (1.B3) — 31. 10. `REPORTS/REPORT_2026-10-31_1B3_IA06_P2P_ROLLBACK_VERIFY.md`: Fix C (`c8f8e95f3`) potvrzen v kódu — strictly-longer gate 2×, validate-branch-first, suffix restore on failure, depth-0 skip; 14/14 p2p testů; **live na 3/3 nodech** (`node_version 3.2.0` + `reorg branch rejected` marker v binárce sha `02e83286`); residual = height-as-work-proxy (reálný `total_work` ForkChoice nezapojen → audit follow-up mimo G8 freeze)
 - [x] 🤖 Hashrate decentralizace — dominant-miner share metrika + alert (1.B6/IA-19) — 31. 10. `REPORTS/REPORT_2026-10-31_1B6_DOMINANT_SHARE_METRIC.md`: `dominant_miner_share(100)` v BlockTracker (top miner za posledních 100 bloků, tie→nejnovější), `dominant_share_100` v public API (masked wallet jako leaderboard), health-loop alert `ZION_POOL_ALERT_DOMINANT_PCT=50`/`_MIN_BLOCKS=20` + shared cooldown → Telegram/webhook `dominant_share` event; 6 nových regresí, 435/436 lib ✅ (1 pre-existing env flake); deploy pending při dalším pool release
 - [x] 🤖 Bridge smoke + validator monitoring (4.B1) — 31. 10. `REPORTS/REPORT_2026-10-31_4B1_BRIDGE_SMOKE_VALIDATOR_MONITORING.md`: round-trip test `test_round_trip_outbound_then_inbound_completes` (out→Completed + in→Completed, pending=0); `GET /validators` — quorum/active/local-signers/`can_sign_quorum_locally` (counts only) + prometheus `warp_validator_*` gauges v `/metrics`; 656/657 warp testů ✅; deploy pending při dalším warpd release
+- [x] 🤖 ZionDex QuoterV2/SwapRouter + solvency + in-memory AMM gate (4.B6) — 31. 10. `REPORTS/REPORT_2026-10-31_4B6_DEX_QUOTER_SOLVENCY_INMEMORY_GATE.md`: QuoterV2/exactInputSingle ověřeny v EvmAdapter; solvency pre-flight fix (četl jen in-memory quote → V3-only páry obcházely check, teď `self.quote()`); `[dex] inmemory_amm` default `false` — execute_swap non-V3 branch + V3-Unsupported fallback + admin dex_swap + intent AMM hops všechny fail-closed (refund + Failed); 814/818 ✅; deploy pending — warp.toml bez [dex] = automaticky disabled
 
 ## N2 · Pool & Revenue Engine (+ [`POOL-FLEET-EXPANSION-PLAN.md`](docs/plans/POOL-FLEET-EXPANSION-PLAN.md) W1–W7)
 
@@ -120,7 +122,12 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 PRL miner enablement: ✅ `VASTAI-MINING.md` §4b — HW matice (SM80+ tensor v6 / SM75 opt-in / OpenCL portable) + `gpu=PRL` pref chování na nepodporovaných kartách (miner odmítne, idle; doporučeno QTU)
 - [ ] 🤖 QTU native payout path produkčně (batch z quantus walletu)
 - [ ] 🤖 W3 Fleet agent MVP + control plane (`vastctl serve`) → W4 flight sheets → W5 miner UX → W6 HA/OC/profit-switch → W7 ekosystém
-- [ ] 🔀 HA stratum (A4.2) nebo „single pool + RTO" (2.S5)
+- [~] 🔀 HA stratum — **rozhodnutí 👤 31. 10.: dokumentovat + oficiálně aktivovat** (2.S5 uzavřeno ve prospěch A4.2 active-passive)
+  - [x] 🤖 Inventura: EDGE2 má `zion-pool-standby.service` (`/opt/zion/bin/zion-pool-standby`, inactive) + `zion-pool-ha-watchdog.timer` (30 s) + `zion-pool-standby-sync.timer` (60 s) + `zion-pool-standby-dbsync.timer` (60 min) — dřív **nedokumentováno**
+  - [x] 👤 Rozhodnutí 31. 10. — ne rozebírat, ale zprovoznit bezpečně
+  - [ ] 🤖 Fencing analýza `pool-ha-watchdog.sh` — promote **jen** po prokázaném failu + stop primary; 30 s interval bez fencingu = dvojí výplata (**blokuje aktivaci**)
+  - [ ] 🤖 `docs/3.2/ops/POOL-HA-RUNBOOK.md` + zápis do `AGENTS.md` / `StatusV3.md` / `infra/RUNBOOK.md`
+  - [ ] 🔀 Staged activation: `log-only` → 👤 flip `armed`
 - [ ] 👤 ≥1 externí miner na každé nativní legě (V33-9; HW SM75+/RDNA+ pro PRL)
 
 ## N3 · Hiranyagarbha 2.4/2.5 (L3, sandboxed)
@@ -181,9 +188,9 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 
 ## DoD v3.3 — stav
 
-| Gate | Měření | Stav 26. 10. |
+| Gate | Měření | Stav 31. 10. |
 |---|---|---|
-| V33-1 Stabilita | G8 ≥99.9 % (`g8_run.json` + Prometheus) | 🔄 run #5 99.73 %, do 24. 11. |
+| V33-1 Stabilita | G8 ≥99.9 % (`g8_run.json` + Prometheus) | 🔄 run **#6** 99.7976 %, do **28. 11. 23:46Z**, 1 incident 240 s (`pool_http`+`pool_stratum`) |
 | V33-2 Externí audit | report + mitigace | ⏸️ posunuto 👤 26. 10. |
 | V33-3 Value transfer | BTC swap lock→claim + refund on-chain; ZionDex deposit→swap→withdraw | ❌ holdy / settlement nehotový |
 | V33-4 Identita | passkey E2E na ≥3 produkčních webech | 🔄 routes + mocked E2E |
@@ -224,7 +231,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 
 ## Operátor-only fronta
 
-Seřazený seznam rozhodnutí: [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) §7 (G9 · P0 schválení · node reward · Stable scope L2 · PRL flip · QTC deficit · ZionDex · IA-07/08/09/10 · release tagy + CI · HA stratum · EDGE load · SMOS rig · komunita · 3.3 pilot/HW/UE5).
+Seřazený seznam rozhodnutí: [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) §7 (G9 · P0 schválení · node reward · Stable scope L2 · PRL flip · QTC deficit · ZionDex · IA-07/08/09/10 · release tagy + CI · EDGE load · SMOS rig · komunita · 3.3 pilot/HW/UE5).
 
 ## Archiv — hotovo z autonomní fronty 21. 10.
 

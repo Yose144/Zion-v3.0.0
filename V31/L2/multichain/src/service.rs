@@ -406,7 +406,8 @@ impl MultichainService {
         )
         .with_journal(journal_ledger)
         .with_htlc(htlc.clone())
-        .with_solvency(solvency_guard.clone());
+        .with_solvency(solvency_guard.clone())
+        .with_inmemory_amm(config.dex.inmemory_amm);
 
         let withdrawal_processor = WithdrawalProcessor::new(
             Arc::clone(&db),
@@ -730,12 +731,21 @@ impl MultichainService {
     }
 
     /// Execute a DEX swap and return the output amount.
+    ///
+    /// Runs directly against the in-memory `DexRouter` AMM, so it is gated by
+    /// `config.dex.inmemory_amm` (default `false` in production — the virtual
+    /// reserves engine is a dev/test tool).
     pub async fn dex_swap(
         &self,
         from: &Asset,
         to: &Asset,
         amount: Amount,
     ) -> MultichainResult<Amount> {
+        if !self.config.dex.inmemory_amm {
+            return Err(MultichainError::Unsupported(
+                "in-memory AMM disabled (set dex.inmemory_amm=true for dev/test)".to_string(),
+            ));
+        }
         self.dex.write().await.execute(from, to, amount)
     }
 
@@ -972,6 +982,10 @@ impl MultichainService {
     }
 
     /// Settle an intent and execute the winning path via `Executor`.
+    ///
+    /// Same-chain hops settle through the in-memory `DexRouter` AMM, so with
+    /// `config.dex.inmemory_amm = false` (the production default) any winning
+    /// path containing a non-bridge hop is rejected fail-closed.
     pub async fn execute_intent(&self, id: uuid::Uuid) -> MultichainResult<Option<Amount>> {
         let (out, saved) = {
             let mut engine = self.intent_engine.write().await;
@@ -980,6 +994,14 @@ impl MultichainService {
             let Some(bid) = engine.settle(id)? else {
                 return Ok(None);
             };
+
+            if !self.config.dex.inmemory_amm && bid.path.iter().any(|hop| !hop.is_bridge) {
+                return Err(MultichainError::Unsupported(
+                    "in-memory AMM disabled (set dex.inmemory_amm=true for dev/test); \
+                     solver path contains a same-chain AMM hop"
+                        .to_string(),
+                ));
+            }
 
             let Some(intent) = engine.get_intent(id).cloned() else {
                 return Ok(None);
