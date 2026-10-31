@@ -88,7 +88,10 @@ Health: `curl https://app.zionterranova.com/api/health` (28 služeb), `https://a
 
 **RTO** = čas operátora. V kódu **neexistuje žádný `armed`/auto-promote režim** — watchdog je alert-only (hlavička skriptu: *„never starts the standby … split-brain"*). Auto-promote je jen backlog (`G*` v DR runbooku), ne funkce.
 
-> **Kanonický postup aktivace / promote / rollback / failback:** [`docs/3.2/ops/DR-BRINGUP-RUNBOOK.md`](../docs/3.2/ops/DR-BRINGUP-RUNBOOK.md) (W1.3). Obsahuje 5 blokujících defektů B1–B5 a paritní matici; `scripts/ops/dr-parity-check.sh` je jediný povolený gate.
+> **Kanonický postup aktivace / promote / rollback / failback:** [`docs/3.2/ops/DR-BRINGUP-RUNBOOK.md`](../docs/3.2/ops/DR-BRINGUP-RUNBOOK.md) (W1.3). Obsahuje 5 defektů B1–B5 se stavem a paritní matici; `scripts/ops/dr-parity-check.sh` je jediný povolený gate.
+
+**Parita standby (W1.5, 31. 10. 2026): `PASS (0 fail, 5 warn)`** — `--miner-address`, payout klíč (sha256 shodný s primárem), `--pplns-window-size 500000000`, izolované `state`/`store.db` a **byte-identická binárka** s primárem (`build fdeda709a`). Parita je pinovaná **explicitními flagy v unitě** ([`infra/tools/pool-ha/units/zion-pool-standby.service`](tools/pool-ha/units/zion-pool-standby.service)), takže ji env soubor nemůže tiše rozbít. Zbylé `WARN` jsou **jen kroky promotu**, které dopředu udělat nelze: B4 (EDGE watchdog restartuje pool) a B5 (UFW/nginx cesta pro minery), plus osiřelý replikační adresář.
+> Po **každém rebuildu poolu na primáru** znovu spusť `bash scripts/ops/dr-parity-check.sh --only binary` — jinak se binary skew vrátí a standby vrací starou logiku.
 
 ### ⚠️ Proč to nesmí být `armed` bez fencingu
 

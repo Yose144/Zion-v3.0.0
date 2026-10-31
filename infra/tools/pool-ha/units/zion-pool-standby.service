@@ -9,17 +9,37 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-# Full pool env (API key, miner address, auxpow, telegram) lives in the
-# env file; the four overrides below pin standby-local state/API binding
-# so it can never collide with the EDGE live pool or the tunnel forward.
+# Full pool env (API key, payout key, auxpow, telegram) lives in the env file;
+# the env file must be a mirror of EDGE /etc/zion/edge-environment.sh.
 EnvironmentFile=/etc/zion/pool-standby.env
-Environment=ZION_PPLNS_STATE_PATH=/opt/zion/data/v31-standby/pool-pplns.json
-Environment=ZION_POOL_STORE_DB_PATH=/opt/zion/data/v31-standby/pool-store.db
-Environment=ZION_POOL_API_BIND=127.0.0.1:8090
-Environment=ZION_L1_RPC_URL=http://127.0.0.1:9445
-ExecStart=/opt/zion/bin/zion-pool-standby
+# PARITY IS PINNED HERE AS EXPLICIT FLAGS, NOT LEFT TO THE ENV FILE.
+# The 2026-10-31 DR review found that an implicit env-only configuration had
+# silently diverged from the primary: no --miner-address (→ clap default
+# `zion1pool`, an address the pool cannot pay from), a 1000x smaller PPLNS
+# window (`500000` vs `500000000` → different split before/after promote) and a
+# mismatched payout key. Flags are the only values a reader can audit without
+# cross-referencing the env file, and they win over env (clap precedence).
+#
+# Values below are intentionally IDENTICAL to
+# V31/deploy/systemd/zion-v31-pool.service. Only these three may differ:
+#   --state-path / --store-db-path -> /opt/zion/data/v31-standby/ (isolation:
+#      the standby must never write into the live PPLNS state or history DB)
+#   --api-bind                     -> 127.0.0.1:8090 (8080 on EDGE2 is the
+#      reverse tunnel to the EDGE pool API; binding it would shadow the tunnel)
+# --miner-address resolves through the env file (${ZION_POOL_WALLET}) exactly
+# like the primary, so a wrong wallet there is still caught by the gate.
+ExecStart=/opt/zion/bin/zion-pool-standby \
+    --bind 0.0.0.0:8444 \
+    --l1-rpc-url http://127.0.0.1:9445 \
+    --miner-address ${ZION_POOL_WALLET} \
+    --state-path /opt/zion/data/v31-standby/pool-pplns.json \
+    --pool-fee-bps 100 \
+    --pplns-window-size 500000000 \
+    --store-db-path /opt/zion/data/v31-standby/pool-store.db \
+    --api-bind 127.0.0.1:8090
 Restart=always
 RestartSec=5
 LimitNOFILE=65536
 # No [Install] WantedBy — never enabled; start is `systemctl start` only,
 # after `touch /opt/zion/data/v31-standby/ACTIVATED` per the runbook.
+# Verify before any promote: bash scripts/ops/dr-parity-check.sh

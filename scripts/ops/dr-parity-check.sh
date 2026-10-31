@@ -109,8 +109,27 @@ set -u
 
 emit_secret() { printf '%s|SEC|%s|%s\n' "$1" "$2" "$(printf '%s' "$3" | sha256sum | cut -d' ' -f1)"; }
 
-# --- last ExecStart (drop-ins override earlier ones) ---
-exec_line=$(systemctl cat "$UNIT" 2>/dev/null | grep -E '^ExecStart=' | tail -n1)
+# --- last ExecStart, with systemd line continuations joined ---
+# A multi-line ExecStart (`ExecStart=/bin/x \` + indented flag lines) is a
+# single logical command in systemd. `grep '^ExecStart=' | tail -n1` sees only
+# the first physical line, so every continuation flag looked absent and the
+# gate emitted false "unset" warnings while masking real divergences. Join on
+# trailing backslash and keep the LAST completed block.
+exec_line=$(systemctl cat "$UNIT" 2>/dev/null | awk '
+  /^ExecStart=/ { buf = ""; collecting = 1 }
+  collecting == 0 { next }
+  {
+    s = $0
+    if (s ~ /\\[ \t]*$/) {
+      while (s ~ /\\[ \t]*$/) sub(/\\[ \t]*$/, "", s)
+      buf = buf s " "
+      next
+    }
+    buf = buf s
+    last = buf
+    collecting = 0
+  }
+  END { if (buf != "") last = buf; print last }' | tr -s ' ' | sed -E 's/^ //; s/ $//')
 printf 'U|EXEC|%s\n' "${exec_line#ExecStart=}"
 
 # --- unit Environment= (higher precedence than EnvironmentFile) ---

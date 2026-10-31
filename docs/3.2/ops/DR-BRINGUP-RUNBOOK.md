@@ -9,19 +9,23 @@
 
 ## §0 TL;DR — co je hotové a co blokuje promote
 
-**Hotové:** replikace běží (PPLNS + payout ledger ≤60 s, `pool-store.db` ≤60 min), standby binárka startuje, watchdog měří a alertuje, `ACTIVATED` marker brání náhodnému startu.
+**Hotové:** replikace běží (PPLNS + payout ledger ≤60 s, `pool-store.db` ≤60 min), standby binárka startuje **a je byte-identická s primárem**, watchdog měří a alertuje, `ACTIVATED` marker brání náhodnému startu.
 
-**Blokující zjištění (5) — promote bez jejich opravy = tichá chyba:**
+**Paritní gate 31. 10. 2026 (po opravách): `RESULT: PASS (0 fail, 5 warn)`** — `bash scripts/ops/dr-parity-check.sh`, exit `0`.
 
-| # | Defekt | Dopad při promotu |
-|---|---|---|
-| **B1** | standby **nepředává `--miner-address`** a v env není `ZION_POOL_MINER_ADDRESS` | coinbase bloků jde na default **`zion1pool`** = neplatná adresa → pool těží bloky, které si nemůže vyplatit |
-| **B2** | `ZION_POOL_WALLET_KEY` na standby **≠** klíč primáru (sha256 se liší) | payout sweep podepisuje **jiným klíčem** → výplaty z nesprávné/vyprázdněné peněženky, nebo selžou |
-| **B3** | `--pplns-window-size` primár **500 000 000** vs standby env **500 000** (1000×) | jiné PPLNS okno = **jiný split** než minery viděly před výpadkem |
-| **B4** | EDGE `zion-v31-watchdog.timer` **auto-restartuje `zion-v31-pool`** | po promotu watchdog vzkřísí primár → **dvě instance = dvojí výplata** |
-| **B5** | veřejná stratum cesta na EDGE2 neexistuje (UFW 8444/8445 jen z EDGE + `::/64`), nginx `pool.` API míří na tunel `:8080` | minery se nepřipojí; `pool.` API vrací 502 |
+**Blokující zjištění (5) a jejich stav:**
 
-Opravy jsou v §9 jako backlog s vlastníkem; **promote procedura v §6 je obsahuje jako povinné kroky**.
+| # | Defekt | Dopad při promotu | Stav 31. 10. |
+|---|---|---|---|
+| **B1** | standby **nepředává `--miner-address`** a v env není `ZION_POOL_MINER_ADDRESS` | coinbase bloků jde na default **`zion1pool`** = neplatná adresa → pool těží bloky, které si nemůže vyplatit | ✅ **OPRAVENO** — flag v unitě + env (`zion1d2k…`) |
+| **B2** | `ZION_POOL_WALLET_KEY` na standby **≠** klíč primáru (sha256 se lišil) | payout sweep podepisuje **jiným klíčem** → výplaty z nesprávné/vyprázdněné peněženky, nebo selžou | ✅ **OPRAVENO** — klíč přenesen pipe, sha256 `707490011268e8ec…` shodný |
+| **B3** | `--pplns-window-size` primár **500 000 000** vs standby env **500 000** (1000×) | jiné PPLNS okno = **jiný split** než minery viděly před výpadkem | ✅ **OPRAVENO** — flag v unitě + env `500000000` |
+| **B4** | EDGE `zion-v31-watchdog.timer` **auto-restartuje `zion-v31-pool`** | po promotu watchdog vzkřísí primár → **dvě instance = dvojí výplata** | ⚠️ **PROCESNÍ KROK** — nejde opravit dopředu, §6.1 ho stopuje; gate ho hlásí jako `WARN` |
+| **B5** | veřejná stratum cesta na EDGE2 neexistuje (UFW 8444/8445 jen z EDGE + `::/64`), nginx `pool.` API míří na tunel `:8080` | minery se nepřipojí; `pool.` API vrací 502 | ⚠️ **PROCESNÍ KROK** — otevírá se až při promotu (§6.3/§6.4); `WARN` je záměrný |
+
+Zbylé **WARN** gate jsou tedy jen kroky, které **nelze** udělat dopředu (B4/B5, nginx repoint, osiřelý replikační adresář — §9 G7/G9). Nic z toho nebrání tomu, aby standby po promotu fungoval; brání jen tomu, aby promote proběhl bez obsluhy.
+
+> **Proč se opravy dělaly dopředu, ne až při promotu:** gate, který je trvale červený, přestane být detekcí driftu — operátor ho přestane číst a nová divergence projde. Parita je proto **permanentní stav EDGE2**, ne krok incidentu. Cena: na EDGE2 leží kopie payout klíče (nutná podmínka — standby musí umět podepsat payout, jinak je promote bezvýznamný).
 
 ---
 
@@ -29,7 +33,7 @@ Opravy jsou v §9 jako backlog s vlastníkem; **promote procedura v §6 je obsah
 
 | Unit | Role | Kadence | Stav 31. 10. |
 |---|---|---|---|
-| `zion-pool-standby.service` | replika poolu, `ExecStart=/opt/zion/bin/zion-pool-standby`, **žádný `[Install]`** | `systemctl start` jen ručně | `inactive` (marker chybí) |
+| `zion-pool-standby.service` | replika poolu, `ExecStart=/opt/zion/bin/zion-pool-standby` + **8 explicitních flagů** (§3), **žádný `[Install]`** | `systemctl start` jen ručně | `inactive` (marker chybí) |
 | `zion-pool-standby-sync.timer` | pull PPLNS + payout ledger (`MODE=json`) | 60 s | active |
 | `zion-pool-standby-dbsync.timer` | pull `pool-store.db` snapshot (`MODE=db`, `VACUUM INTO`) | 60 min | active |
 | `zion-pool-ha-watchdog.timer` | health primary (API + stratum TCP), **jen Telegram alert** | 30 s | active, `fails=0 status=ok` |
@@ -74,41 +78,57 @@ Konzistence obsahu v okamžiku měření:
 
 ---
 
-## §3 Paritní matice (efektivní hodnoty, 31. 10.)
+## §3 Paritní matice (efektivní hodnoty, 31. 10. po opravách)
 
-Efektivní hodnota = CLI flag > env > default (clap precedence). Primár má většinu parametrů ve `ExecStart` flagách, standby v env souboru — proto se rozejly.
+Efektivní hodnota = CLI flag > unit `Environment=` > `EnvironmentFile` > default (clap precedence). **Po W1.5 jsou paritní hodnoty pinované flagy v unitě** — env soubor je jen zrcadlo a nemůže už divergenci způsobit.
 
 | Parametr | Primár (efektivní) | Standby (efektivní) | Parita |
 |---|---|---|---|
-| stratum bind | `0.0.0.0:8444` (flag) | `0.0.0.0:8444` (env) | ✅ |
+| stratum bind | `0.0.0.0:8444` (flag) | `0.0.0.0:8444` (flag) | ✅ |
 | SOLO port | `0.0.0.0:8446` (env) | `0.0.0.0:8446` (env) | ✅ |
-| API bind | `127.0.0.1:8080` (env) | `127.0.0.1:8090` (unit override) | ⚠️ **záměrně** (kolize s tunelem) |
-| L1 RPC | `http://127.0.0.1:9445` (flag) | `http://127.0.0.1:9445` (unit override) | ✅ (jiný význam: tunel vs. lokální node) |
-| **miner-address** | `${ZION_POOL_WALLET}` = `zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6` | **`zion1pool`** (default) | 🚨 **B1** |
-| **pool-wallet-key** | `sha256:707490011268e8ec…` (klíč k `zion1d2k…`) | `sha256:10d0b93534ed99c0…` (klíč k `zion1n4k4…`) | 🚨 **B2** |
-| pool-fee-bps | `100` (flag) | `100` (default) | ✅ |
-| **pplns-window-size** | **500 000 000** (flag) | **500 000** (env) | 🚨 **B3** |
+| API bind | `127.0.0.1:8080` (env) | `127.0.0.1:8090` (flag) | ⚠️ **záměrně** (8080 na EDGE2 = tunel na EDGE) |
+| L1 RPC | `http://127.0.0.1:9445` (flag) | `http://127.0.0.1:9445` (flag) | ✅ (na EDGE2 = lokální node, ne tunel) |
+| **miner-address** | `${ZION_POOL_WALLET}` = `zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6` | `${ZION_POOL_WALLET}` = **totéž** (flag) | ✅ (B1) |
+| **pool-wallet-key** | `sha256:707490011268e8ec…` (klíč k `zion1d2k…`) | `sha256:707490011268e8ec…` | ✅ (B2) |
+| pool-fee-bps | `100` (flag) | `100` (flag) | ✅ |
+| **pplns-window-size** | **500 000 000** (flag) | **500 000 000** (flag) | ✅ (B3) |
 | payout-interval-s | `30` (default) | `30` (default) | ✅ |
 | min-payout-flowers | `10 000 000` (default) | `10 000 000` | ✅ |
 | native-payout-coins | `prl` (env) | `prl` (env) | ✅ |
 | vardiff min/start/max | `100 / 500 / 100 000` | `100 / 500 / 100 000` | ✅ |
 | vardiff target / retarget | `5 s / 20` | `5 s / 20` | ✅ |
-| state path | `/opt/zion/data/v31/pool-pplns.json` | `/opt/zion/data/v31-standby/pool-pplns.json` | ✅ (izolace) |
-| store db | `/opt/zion/data/v31/pool-store.db` | `/opt/zion/data/v31-standby/pool-store.db` | ✅ (izolace) |
+| state path | `/opt/zion/data/v31/pool-pplns.json` (flag) | `/opt/zion/data/v31-standby/pool-pplns.json` (flag) | ✅ (izolace) |
+| store db | `/opt/zion/data/v31/pool-store.db` (flag) | `/opt/zion/data/v31-standby/pool-store.db` (flag) | ✅ (izolace) |
 
-**Mrtvé env (nulový výskyt ve `V31/**/*.rs`)** — v `pool-standby.env` jen matou, neodstraňovat naslepo, ale **nevěřit jim**: `ZION_POOL_WALLET`, `ZION_POOL_PAYOUT_SK_HEX`, `ZION_POOL_FEE_PCT`, `ZION_POOL_LOOP_COUNT`, `ZION_POOL_AUXPOW_{ENABLED,SPLIT_ZION,SPLIT_EXTERNAL}`.
-> `ZION_POOL_WALLET` **není čten binárkou** — na primáru ho používá jen systemd substituce v `ExecStart` (`--miner-address ${ZION_POOL_WALLET}`). Na standby má hodnotu staré peněženky `zion1n4k4…` = **dekorace, ale nebezpečná past**: `ZION_POOL_WALLET_KEY` (`332780a6…`, sha256 `10d0b935…`) je **párový klíč právě k této staré peněžence**, takže po promotu by payout sweep podepisoval klíčem k peněžence s ~6,8 k ZION místo k `zion1d2k…` (~187 k ZION) — a adresa coinbase by navíc byla `zion1pool`.
+**Zdroj pravdy pro standby unitu:** [`infra/tools/pool-ha/units/zion-pool-standby.service`](../../../infra/tools/pool-ha/units/zion-pool-standby.service) (repo) — na EDGE2 je nainstalovaná 1:1 kopie. Env kontrakt: [`infra/tools/pool-ha/pool-standby.env.example`](../../../infra/tools/pool-ha/pool-standby.env.example).
 
-**Ověřeno 31. 10. 2026 naostro (`dr-parity-check.sh`):** B1, B2, B3 hlášeny jako `FAIL`; `native-payout-coins`, vardiff, fee, intervaly, min-payout a izolace `state`/`store-db` jako `PASS`; `api-bind` jako `WARN` (záměrná divergence `8080` vs `8090`); `binary` jako `FAIL` (skew) a `network` jako 3× `WARN` (B4 watchdog, B5 UFW/nginx, osiřelý replikační adresář).
+**Mrtvé env (nulový výskyt ve `V31/**/*.rs`)** — v `pool-standby.env` jen matou, neodstraňovat naslepo, ale **nevěřit jim**: `ZION_POOL_PAYOUT_SK_HEX`, `ZION_POOL_FEE_PCT`, `ZION_POOL_LOOP_COUNT`, `ZION_POOL_AUXPOW_{ENABLED,SPLIT_ZION,SPLIT_EXTERNAL}`.
+> `ZION_POOL_WALLET` **není čten binárkou** — používá ho jen systemd substituce `--miner-address ${ZION_POOL_WALLET}`. Proto musí existovat **na obou** stranách a být shodný; jeho hodnota je zároveň to, co gate porovnává jako `coinbase / miner-address`.
+
+**Ověřeno 31. 10. 2026 naostro (`dr-parity-check.sh`):** všech 13 parametrů `PASS`, `api bind` `WARN` (záměrná divergence `8080` vs `8090`), `secrets` `PASS`, `binary` `PASS` (byte-identické), `data` `PASS`, `network` 4× `WARN` (B4 watchdog, B5 UFW, nginx `:8080`, osiřelý replikační adresář).
 
 **Binárky:**
 
 | | Cesta | Velikost | Datum | Verze |
 |---|---|---|---|---|
 | primár | `/opt/zion/V31/target/release/zion-pool` | 12 011 392 B | 31. 10. 10:18 | `build fdeda709a`, schema v13 |
-| standby | `/opt/zion/bin/zion-pool-standby` | 11 023 168 B | 27. 10. 11:12 | `zion-pool 3.2.0`, schema v13 |
+| standby | `/opt/zion/bin/zion-pool-standby` | 12 011 392 B | 31. 10. 11:14 | `build fdeda709a`, schema v13 |
 
-**Binary skew = 4 dny vývoje** (G5). Před každým promotem platí: *standby musí být rebuild z aktuálního RC commitu*, jinak promote vrací pool do starší logiky (payout lifecycle, dedup marks, snapshoty).
+**Provenance (proč je kopie artefaktu legitimní):** `fdeda709a` je reálný commit („4.B1: bridge round-trip smoke + validator/quorum monitoring"), je **ancestor `HEAD`** a `git log fdeda709a..HEAD -- V31/L1/pool` = **0 commitů** → zdroj poolu se od tohoto buildu nezměnil. Přenos se dělá jako **byte-stream s hash kontrolou**, ne rebuild:
+
+```bash
+# z operátorské stanice; jeden SSH na hostitele (fail2ban-safe)
+PSHA=$(ssh zion-v6 'sha256sum /opt/zion/V31/target/release/zion-pool | cut -d" " -f1')
+ssh zion-v6 'cat /opt/zion/V31/target/release/zion-pool' \
+  | ssh zion-edge2 'TS=$(date -u +%Y%m%dT%H%M%SZ); cat > /opt/zion/bin/.zps.new-$TS
+      chmod 755 /opt/zion/bin/.zps.new-$TS
+      [ "$(sha256sum /opt/zion/bin/.zps.new-$TS | cut -d" " -f1)" = "'"$PSHA"'" ] || { rm -f /opt/zion/bin/.zps.new-$TS; exit 9; }
+      cp -a /opt/zion/bin/zion-pool-standby /root/zion-pool-standby.bak-$TS
+      mv -f /opt/zion/bin/.zps.new-$TS /opt/zion/bin/zion-pool-standby'
+```
+
+> `mv -f` (ne `cp` přes běžící binárku) — i když je unit `inactive`, `ETXTBSY` je zbytečné riziko. Starý artefakt zůstává v `/root/zion-pool-standby.bak-<stamp>`.
+> **Při každém novém RC buildu se tento krok opakuje** — gate `--only binary` je povinný po každém rebuildu primáru, jinak se skew vrátí.
 
 ---
 
@@ -155,6 +175,7 @@ bash scripts/ops/dr-parity-check.sh --only network   # fencing marker, watchdog,
 ```
 
 - **read-only** — nikdy nic nestartuje, nezastavuje ani needituje.
+- **`ExecStart` se čte jako logický celek** — pokračovací řádky (`\`) se spojují a bere se **poslední** blok (drop-in override). Do 31. 10. skript bral jen první fyzickou řádku, takže flagy na pokračovacích řádcích „neexistovaly": gate pak hlásil falešné `WARN state path unset` / `store db unset` a **maskoval** záměrnou divergenci `api-bind` (viz §11).
 - **jedno SSH na hostitele a běh** (`ControlMaster` + `ControlPersist=120`) — EDGE `fail2ban` banuje operátorskou IP při sérii krátkých spojení. Skript proto nesbírá data po jednom dotazu; všechno jde jedním strukturovaným proudem. **Nepřidávej další `ssh` volání** — rozbije to fail2ban-safety.
 - exit `0` = žádný `FAIL` (WARN povolen), `1` = aspoň jeden `FAIL`, `2` = chyba přenosu (častý příznak fail2ban banu; hint v `stderr`).
 - `--only secrets` je **povinný** po každé editaci `pool-standby.env` (§6.2) — ověří, že klíč na standby je byte-identický s primárem, aniž by ho vypsal.
@@ -180,27 +201,35 @@ ssh zion-v6 'journalctl -u zion-v31-pool -n 20 --no-pager | tail -5'   # potvrď
 
 Pokud `pgrep` něco vrátí: **STOP.** Řeš proces (SIGKILL až po 30 s grace) a znovu verifikuj.
 
-### 6.2 Aplikuj paritní opravy (B1, B2, B3, B4')
+### 6.2 Ověř paritu (B1, B2, B3) — **neaplikuj ji znovu**
 
-Na EDGE2, v `/etc/zion/pool-standby.env` (`600 root`):
+Parita je od **31. 10. 2026** permanentní stav EDGE2 (unit + env), takže tento krok je **verifikace**, ne oprava. Kdyby gate hlásil `FAIL`, znamená to **nový drift** → řeš ho jako incident, ne jako „krok promotu".
+
+```bash
+bash scripts/ops/dr-parity-check.sh --only params
+bash scripts/ops/dr-parity-check.sh --only secrets
+bash scripts/ops/dr-parity-check.sh --only binary
+```
+
+Očekávané: `0 fail`. Klíčové hodnoty, které musí sedět (a jsou **zároveň flagy v unitě**, takže je nelze obejít env souborem):
 
 | Klíč | Hodnota | Proč |
 |---|---|---|
-| `ZION_POOL_MINER_ADDRESS` | `zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6` | coinbase musí jít na kanonickou pool peněženku |
-| `ZION_PPLNS_WINDOW_SIZE` | `500000000` | stejné okno = stejný split |
+| `--miner-address ${ZION_POOL_WALLET}` | `zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6` | coinbase musí jít na kanonickou pool peněženku |
+| `--pplns-window-size` | `500000000` | stejné okno = stejný split |
 | `ZION_POOL_NATIVE_PAYOUT_COINS` | `prl` | pearl shares nesmí do ZION PPLNS |
-| `ZION_POOL_WALLET_KEY` | **zkopíruj hodnotu z EDGE** (`/etc/zion/edge-environment.sh`) | podpis payoutů stejným klíčem |
+| `ZION_POOL_WALLET_KEY` | byte-identický s EDGE (`/etc/zion/edge-environment.sh`) | podpis payoutů stejným klíčem |
 
-Postup bez vyzrazení secretu (hash musí sedět, hodnoty se nikam nelogují):
+Pokud bys paritu musel obnovovat (nový host, obnova ze zálohy):
 
 ```bash
-# před editací záloha
-ssh zion-edge2 'install -m 600 /etc/zion/pool-standby.env /etc/zion/pool-standby.env.bak-$(date +%Y%m%d-%H%M)'
-# po editaci: hash obou klíčů musí být SHODNÝ
+# záloha před zásahem
+ssh zion-edge2 'install -m 600 /etc/zion/pool-standby.env /root/pool-standby.env.bak-$(date +%Y%m%dT%H%M%SZ)'
+# po zásahu: hash obou klíčů musí být SHODNÝ (hodnota se nikam netiskne)
 bash scripts/ops/dr-parity-check.sh --only secrets
 ```
 
-> ⚠️ **Nikdy** nekopíruj klíč přes shell historii ani `echo` do terminálu. Použij `scp` mezi hosty s `root:root 600`, nebo `ssh zion-v6 'cat …'` **do souboru** na EDGE2.
+> ⚠️ **Nikdy** nekopíruj klíč přes shell historii ani `echo` do terminálu. Osvědčený vzor je **pipe mezi hosty do souboru** (`ssh zion-v6 'awk -F= "/^ZION_POOL_WALLET_KEY=/{print \$2}" /etc/zion/edge-environment.sh' | ssh zion-edge2 '…'`), nikdy ne přes `argv` ani terminál.
 > ⚠️ Env soubor **nesmí** mít trailing-newline past: `echo >>` slepí poslední proměnnou s novou. Edituj `python3`/`sed -i`, ne `echo >>`.
 
 ### 6.3 Otevři stratum cestu (B5)
@@ -319,24 +348,26 @@ ssh zion-v6 'journalctl -u zion-v31-pool -n 200 --no-pager | grep -E "payout_utx
 
 ## §9 Backlog — co opravit, aby promote nebyl riskantní
 
-| ID | Co | Blokuje promote | Vlastník |
-|---|---|---|---|
-| **G1** | sjednotit `ZION_POOL_WALLET_KEY` (parita hashem) | 🔴 ano (B2) | 👤/W1 |
-| **G2** | doplnit `ZION_POOL_MINER_ADDRESS` do standby env **a** do unit flagů (make it explicit, ne implicit default) | 🔴 ano (B1) | W1 |
-| **G3** | sjednotit `--pplns-window-size` (500 000 000) — ideálně jako **flag** v unit, ne env | 🔴 ano (B3) | W1 |
-| **G4** | `ZION_POOL_NATIVE_PAYOUT_COINS=prl` na standby | 🟠 ano (minor) | W1 |
-| **G5** | rebuild `zion-pool-standby` z aktuálního RC commitu + `ZION_BUILD_ID` provenance | 🔴 ano | W1.4/W1.5 |
-| **G6** | veřejná stratum cesta (UFW) nebo vědomé DNS-only rozhodnutí | 🔴 ano (B5) | 👤 |
-| **G7** | `pool.` nginx proxy + probe target po promotu (runbook krok, ne permanentní změna) | 🟠 procesní | ops |
-| **G8** | `zion-v31-watchdog.timer` na EDGE musí být součástí promote kroku (nebo dostat pool-exclusion flag) | 🔴 ano (B4) | W1 |
-| **G9** | osiřelý `zion-pool-state-replicate.timer` → buď vypnout, nebo přejmenovat cíl a zdokumentovat jako cold-spare | ⚪ ne | ops |
-| **G10** | `zion-v31-node.service` na EDGE2 je `disabled` → po rebootu EDGE2 nemusí node naběhnout = standby bez L1 | 🟠 pro reboot resilienci | 👤 (rozpor #3 plánu) |
-| **G11** | fencing + `log-only`/`armed` mód watchdogu (dnes neexistuje; `armed` = až po auditu fencingu) | ⚪ blokuje jen auto-promote | 👤 W2 |
-| **G12** | úklid 0 B `.in-*` temp souborů v `/opt/zion/data/v31-standby/` (4 ks, od 28. 10.) | ⚪ kosmetika | ops |
-| **G13** | standby unit nemá `[Install]` — po rebootu EDGE2 během incidentu pool nenaběhne | ⚪ akceptováno (záměr: žádný auto-start) | — |
-| **G14** | `store.db` 0 B + 140 MB duplikát v `/opt/zion/data/v31-pool-standby/` (osiřelý kanál) | ⚪ kosmetika | ops |
+| ID | Co | Blokuje promote | Vlastník | Stav 31. 10. |
+|---|---|---|---|---|
+| **G1** | sjednotit `ZION_POOL_WALLET_KEY` (parita hashem) | 🔴 ano (B2) | 👤/W1 | ✅ **done** — sha256 `707490011268e8ec…` shodný |
+| **G2** | doplnit `--miner-address` do unit flagů **a** `ZION_POOL_MINER_ADDRESS` do env (explicitně, ne implicit default) | 🔴 ano (B1) | W1 | ✅ **done** |
+| **G3** | sjednotit `--pplns-window-size` (500 000 000) jako **flag** v unit | 🔴 ano (B3) | W1 | ✅ **done** (flag + env) |
+| **G4** | `ZION_POOL_NATIVE_PAYOUT_COINS=prl` na standby | 🟠 ano (minor) | W1 | ✅ **done** (v env example i živě) |
+| **G5** | standby binárka = aktuální RC build + `ZION_BUILD_ID` provenance | 🔴 ano | W1.4/W1.5 | ✅ **done** — byte-identická (`sha 1cc4a7a9…`, `build fdeda709a`); **opakuj po každém rebuildu primáru** |
+| **G6** | veřejná stratum cesta (UFW) nebo vědomé DNS-only rozhodnutí | 🔴 ano (B5) | 👤 | ⚠️ otevřené — **rozhodnutí při promotu**, §6.3 |
+| **G7** | `pool.` nginx proxy + probe target po promotu (runbook krok, ne permanentní změna) | 🟠 procesní | ops | ⚠️ otevřené — §6.4 |
+| **G8** | `zion-v31-watchdog.timer` na EDGE musí být součástí promote kroku (nebo dostat pool-exclusion flag) | 🔴 ano (B4) | W1 | ⚠️ otevřené — gate to hlásí jako `WARN`; §6.1 to stopuje |
+| **G9** | osiřelý `zion-pool-state-replicate.timer` → vypnout, nebo přejmenovat cíl a zdokumentovat jako cold-spare | ⚪ ne | ops | ⚪ otevřené (195 MB, `X|ORPHAN` v gate) |
+| **G10** | `zion-v31-node.service` na EDGE2 je `disabled` → po rebootu EDGE2 nemusí node naběhnout = standby bez L1 | 🟠 pro reboot resilienci | 👤 | ⚪ otevřené (rozpor #3 plánu) — gate dnes `PASS enabled+active` |
+| **G11** | fencing + `log-only`/`armed` mód watchdogu (dnes neexistuje; `armed` = až po auditu fencingu) | ⚪ blokuje jen auto-promote | 👤 W2 | ⚪ otevřené |
+| **G12** | úklid 0 B `.in-*` temp souborů v `/opt/zion/data/v31-standby/` (4 ks, od 28. 10.) | ⚪ kosmetika | ops | ⚪ otevřené |
+| **G13** | standby unit nemá `[Install]` — po rebootu EDGE2 během incidentu pool nenaběhne | ⚪ akceptováno (záměr: žádný auto-start) | — | ⚪ akceptováno |
+| **G14** | `store.db` 0 B + 140 MB duplikát v `/opt/zion/data/v31-pool-standby/` (osiřelý kanál) | ⚪ kosmetika | ops | ⚪ otevřené (= G9) |
+| **G15** | gate `gather()` četl jen první řádku `ExecStart` → falešné WARN + maskovaná divergence | ⚪ ne | W1 | ✅ **done** — spojování pokračovacích řádků, §5 |
 
-**Doporučené pořadí:** G1 → G2 → G3 → G4 (jeden sed do `pool-standby.env` + unit) → G5 (rebuild) → G8 (watchdog) → G6/G7 (síť/API) → pak je promote rutina, ne risk.
+**Doporučené pořadí:** G1–G5 ✅ → **G6/G7/G8 (příprava promotu)** → G9/G12/G14 úklid → G10/G11 (reboot + fencing) — pak je promote rutina, ne risk.
+Po každém rebuildu poolu na primáru: **G5 znovu** (`dr-parity-check.sh --only binary`).
 
 ---
 
@@ -358,3 +389,4 @@ ssh zion-v6 'journalctl -u zion-v31-pool -n 200 --no-pager | grep -E "payout_utx
 | Datum | Změna |
 |---|---|
 | 2026-10-31 | Nový dokument (W1.3). Živé sondy EDGE + EDGE2: paritní matice, měřené RPO, 5 blokujících defektů (B1–B5), backlog G1–G14. Nahrazuje nepodložené „RPO ≤15 min" a „watchdog rozhoduje o promote" z `infra/RUNBOOK.md`. |
+| 2026-10-31 (2) | **W1.5 — B1/B2/B3/G5 uzavřeny živě.** (a) `infra/tools/pool-ha/units/zion-pool-standby.service` pinuje paritu **explicitními flagy** (bind, L1 RPC, miner-address, state-path, fee, pplns window, store-db, api-bind) — env soubor už divergenci nezpůsobí; (b) `pool-standby.env.example` přepsán na paritní kontrakt (wallet + miner-address + key + window); (c) na EDGE2 přenesen payout klíč pipe (sha256 `707490011268e8ec…`), doplněn `ZION_POOL_MINER_ADDRESS`, `ZION_PPLNS_WINDOW_SIZE=500000000`, nainstalována nová unita (zálohy `/root/*.bak-20261031T101235Z`); (d) standby binárka nahrazena **byte-identickou** kopií primáru (`sha 1cc4a7a9…`, `build fdeda709a`, záloha `/root/zion-pool-standby.bak-20261031T101430Z`); (e) **gate bug** — `gather()` četl jen první řádku multi-line `ExecStart` → falešné `WARN state path/store db unset` a maskovaná divergence `api-bind`; nyní spojuje pokračovací řádky. **Výsledek gate: `PASS (0 fail, 5 warn)`**, zbylé WARN = B4/B5 + nginx repoint + osiřelý adresář (procesní kroky promotu). |
