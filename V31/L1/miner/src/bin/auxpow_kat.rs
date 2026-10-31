@@ -540,6 +540,7 @@ fn real_main() {
         if msg.contains("MEM_OBJECT_ALLOCATION_FAILURE")
             || msg.contains("OUT_OF_HOST_MEMORY")
             || msg.contains("alloc failed")
+            || msg.contains("insufficient memory")
         {
             return Some("VRAM allocation failed (host limit)");
         }
@@ -1609,10 +1610,21 @@ fn real_main() {
                     hdr[..copy].copy_from_slice(&c.header[..copy]);
                     hdr[108..140].fill(0);
                     hdr[108..116].copy_from_slice(&share.nonce.to_le_bytes());
-                    let sol = share
+                    let sol_wire = share
                         .solution
                         .as_deref()
                         .ok_or_else(|| anyhow::anyhow!("share has no solution"))?;
+                    // share.solution is the stratum wire format:
+                    // CompactSize(varint) length prefix + minimal soln.
+                    // is_valid_solution expects raw indices — strip it.
+                    let vlen = match sol_wire.first().copied() {
+                        Some(0xfd) => 3,
+                        Some(0xfe) => 5,
+                        Some(0xff) => 9,
+                        Some(_) => 1,
+                        None => 0,
+                    };
+                    let sol = &sol_wire[vlen..];
                     if let Err(e) =
                         equihash::is_valid_solution(200, 9, &hdr[..108], &hdr[108..140], sol)
                     {

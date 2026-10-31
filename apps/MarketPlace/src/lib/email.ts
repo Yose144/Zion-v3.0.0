@@ -27,14 +27,14 @@ function emailConfig() {
   return {
     host,
     port,
-    user: process.env.SMTP_USER ?? 'shop@zionterranova.com',
+    user: process.env.SMTP_USER ?? 'shop@newearth.cz',
     password: process.env.SMTP_PASSWORD ?? '',
     isLocal,
-    adminEmail: process.env.ADMIN_EMAIL ?? 'shop@zionterranova.com',
-    shopEmail: process.env.SHOP_EMAIL ?? 'shop@zionterranova.com',
+    adminEmail: process.env.ADMIN_EMAIL ?? 'shop@newearth.cz',
+    shopEmail: process.env.SHOP_EMAIL ?? 'shop@newearth.cz',
     shopName: process.env.SHOP_NAME ?? 'ZION Market',
     resendApiKey: process.env.RESEND_API_KEY ?? '',
-    resendFrom: process.env.RESEND_FROM ?? 'shop@zionterranova.com',
+    resendFrom: process.env.RESEND_FROM ?? 'shop@newearth.cz',
   };
 }
 

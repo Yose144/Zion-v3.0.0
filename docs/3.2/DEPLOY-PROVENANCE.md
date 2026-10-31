@@ -112,3 +112,38 @@ důkaz, ne commit.
    startují (`zion-dao`, `zion-ncl`, `zion-free-world`, `zion-issobella`,
    `zion-oasis`, `zion-ai-native-api`) — collector je z bezpečnostních
    důvodů nesondí.
+
+## Deploy reconciliation — 31. 10. 10:48–11:30 (A)
+
+Staged rebuild z čistého worktree `/opt/zion-rel/build` (commit `e9be58c04`,
+dirty 0) na EDGE, `ZION_GIT_SHA` embedded. Před deploy zálohy v
+`/root/deploy-20261031/` (EDGE: `zion-pool.bak`, `zion-node.bak`,
+`pool-store.db.bak`; EDGE2: `warpd.bak` + `warp.db.bak` +
+`warp_multichain.db.bak`). G8 run #6 nezaznamenal incident (gap 15 s na
+primary byl pod 900 s thresholdem; uptime vzrostla 99.7976 → 99.8050 %).
+
+| Host | Unit | sha256 (prefix) | build id | poznámka |
+|---|---|---|---|---|
+| EDGE | `zion-v31-pool` | `1cc4a7a9179eb5f3` | `fdeda709a` | drain clean, 1.B6 `dominant_share_100` live, 4.B3 outbox live; L1 code == `e9be58c04` (V31/L1 beze změny) |
+| EDGE | `zion-v31-node2` | `08d7348d71a8c4e6` | `fdeda709a` | 4.B4 (MAX_REORG_DEPTH unify, zero-delta) |
+| EDGE | `zion-v31-node3` | `08d7348d71a8c4e6` | `fdeda709a` | dto |
+| EDGE2 | `zion-v31-node` | `08d7348d71a8c4e6` | `fdeda709a` | `systemctl enable` proveden (dříve disabled); gap 15 s |
+| EDGE2 | `zion-v31-multichain` (warpd) | `b05b23208cc8e9d5` | **`unknown`** (multichain nemá `build.rs`) | obsahuje 4.B1, 1.B2, 4.B3, 4.B5, 4.B6, 4.B10, T0.8 (dex `/prices/:token/history` na :8454); `can_sign_quorum_locally=true`, 5/5 signerů |
+
+Kolize s paralelní session: v 10:35–10:38 jiná session nasadila warpd
+build `ac22f4261` (4.B10) na EDGE2; můj první deploy (10:48, `fdeda709a`)
+ho přepsal. Rozřešeno druhým rebuildem+deployem (11:29) na `e9be58c04`,
+který obsahuje 4.B10 + 4.B6 + T0.8. Kanonický zdroj = čistý worktree
+`/opt/zion-rel/build` @ `e9be58c04`, ne dirty `/opt/zion` checkout
+(`c14f1e4d9`, 8 628 dirty souborů).
+
+Otevřené po deployi:
+- `ZionPoolLegDisconnected` pro `aux-evr` (warning) — EVR leg se po restartu
+  reconnectuje, ale upstream zpool neposílá joby → leg `connected=0`; EVR
+  neměl žádné shares v 24 h před deployem ani po něm. Ne peněžní cesta
+  ZION. Monitorovat; pokud > 1 h, zvážit disable legu nebo restart poolu.
+- `pending` bloky v pool trackeru (557 → 11 po restartu) a 3 442/3 597
+  `confirmed` řádků s `confirmed_at NULL` — kosmetika, odloženo (viz nálezy A).
+- `/public/v1/coins/*/stats` burst 504 — odloženo (cache jako u `/stats` snapshotu).
+- EDGE disk 70 % / RAM pressure — odloženo (cleanup).
+- `build.rs` chybí v `zion-multichain` → warpd hlásí `unknown` (viz bod 2 výše).

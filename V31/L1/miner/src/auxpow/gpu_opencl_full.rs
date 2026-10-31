@@ -3903,6 +3903,35 @@ typedef unsigned long ulong;
             .unwrap_or(u64::MAX)
     }
 
+    fn device_global_mem_size(&self) -> u64 {
+        self.device
+            .info(ocl::enums::DeviceInfo::GlobalMemSize)
+            .ok()
+            .and_then(|v| match v {
+                ocl::enums::DeviceInfoResult::GlobalMemSize(n) => Some(n),
+                _ => None,
+            })
+            .unwrap_or(u64::MAX)
+    }
+
+    /// Clean bail when a multi-GB buffer set cannot fit in device VRAM.
+    /// ROCm overcommits clCreateBuffer (lazy page allocation), so oversized
+    /// requests "succeed" and the kernel page-faults mid-run → SIGABRT kills
+    /// the whole miner process.  Checking up-front converts that into a
+    /// recoverable error.  ~10% headroom covers driver/desktop allocations.
+    fn check_vram_fits(&self, needed: usize, algo: &str) -> Result<()> {
+        let total = self.device_global_mem_size();
+        let usable = total.saturating_sub(total / 10);
+        if needed as u64 > usable {
+            anyhow::bail!(
+                "{algo} needs {:.1} GB VRAM, device has {:.1} GB — insufficient memory",
+                needed as f64 / 1e9,
+                total as f64 / 1e9
+            );
+        }
+        Ok(())
+    }
+
     fn detect_work_size(device: &Device) -> Result<usize> {
         let global_mem = device
             .info(ocl::enums::DeviceInfo::GlobalMemSize)
@@ -5523,12 +5552,18 @@ typedef unsigned long ulong;
 
         const SOLS_BUF_SIZE: usize = 8192;
 
-        let vram_needed = 2 * HT_SIZE + ROW_COUNTERS_SIZE * 2 * 4 + SOLS_BUF_SIZE + 1024;
+        // dbg_buf = NR_ROWS*2 u32; rc0/rc1 = ROW_COUNTERS_SIZE u32 each.
+        let vram_needed = 2 * HT_SIZE
+            + ROW_COUNTERS_SIZE * 2 * 4
+            + NR_ROWS * 2 * 4
+            + SOLS_BUF_SIZE
+            + 1024;
         crate::ext_info!(
             "auxpow_gpu_zelhash_prod ht_size={:.1} GB per table, total VRAM needed={:.1} GB",
             HT_SIZE as f64 / 1e9,
             vram_needed as f64 / 1e9
         );
+        self.check_vram_fits(vram_needed, "zelhash")?;
 
         let pro_que = self.ensure_proque("zelhash_prod_kernel.cl")?;
         let q = pro_que.queue().clone();
@@ -5920,13 +5955,15 @@ typedef unsigned long ulong;
         // K=7: 20 + 5120 = 5140; K=9: 20 + 20480 = 20500.
         let sols_buf_size: usize = 20 + MAX_SOLS * (1usize << param_k) * 4;
 
-        // Check VRAM — need at least 2 * ht_size + overhead
-        let vram_needed = 2 * ht_size + ROW_COUNTERS_SIZE * 2 * 4 + sols_buf_size + 1024;
+        // Check VRAM — 2 tables + counters + dbg_buf + sols.
+        let vram_needed =
+            2 * ht_size + ROW_COUNTERS_SIZE * 2 * 4 + NR_ROWS * 2 * 4 + sols_buf_size + 1024;
         crate::ext_info!(
             "auxpow_gpu_equihash ht_size={:.1} GB per table, total VRAM needed={:.1} GB",
             ht_size as f64 / 1e9,
             vram_needed as f64 / 1e9
         );
+        self.check_vram_fits(vram_needed, "equihash")?;
 
         // ZION_EQ192_DEBUG enables the kernel's ENABLE_DEBUG diagnostics
         // (digest KAT dumps, per-row drop counters) plus host readbacks.
@@ -6188,7 +6225,7 @@ typedef unsigned long ulong;
                 dbg_buf.read(&mut dbg).enq()?;
                 let w1_0 = (dbg[25] as u64) << 32 | dbg[24] as u64;
                 let w1_388 = (dbg[37] as u64) << 32 | dbg[36] as u64;
-                crate::ext_info!(
+                eprintln!(
                     "eq192dbg kat word1: input0={w1_0:#018x} input388={w1_388:#018x} \
                      (expect tail1|0 and tail1|{:#x})",
                     388u64 << 32
@@ -6197,7 +6234,7 @@ typedef unsigned long ulong;
                 let ms0_0 = (dbg[27] as u64) << 32 | dbg[26] as u64;
                 let ms1_0 = (dbg[29] as u64) << 32 | dbg[28] as u64;
                 let t0_0 = (dbg[31] as u64) << 32 | dbg[30] as u64;
-                crate::ext_info!(
+                eprintln!(
                     "eq192dbg kat input0 reads: h0={ms0_0:#018x} h1={ms1_0:#018x} \
                      tail0={t0_0:#018x} (host h0={:#018x} h1={:#018x} tail0={:#018x})",
                     blake_state[0],
@@ -6215,7 +6252,7 @@ typedef unsigned long ulong;
                     let base = if leaf < 2 { 0 } else { 48 };
                     let lo = base + ((leaf % 2) as usize) * 24;
                     let gpu_xi = &gpu_d[lo..lo + 24];
-                    crate::ext_info!(
+                    eprintln!(
                         "eq192dbg kat leaf{leaf}: match={} gpu={:02x?} cpu={:02x?}",
                         gpu_xi == &xi[..],
                         gpu_xi,
@@ -9819,6 +9856,67 @@ mod tests {
                 &digest[24..],
                 &xi1[..],
                 "replica leaf {} mismatch vs blake2b_simd",
+                input * 2 + 1
+            );
+        }
+    }
+
+    /// Same as `eq192_kernel_round0_cpu_replica` but for 200,9: midstate
+    /// with hash_len=50, digest split into two 25-byte Xi halves.
+    #[test]
+    fn eq200_kernel_round0_cpu_replica() {
+        let mut header = [0u8; 140];
+        for (i, b) in header.iter_mut().enumerate() {
+            *b = ((i * 31 + 7) & 0xff) as u8;
+        }
+        let midstate = ExtGpuMiner::equihash_blake2b_state(&header, 200, 9);
+        let tail0 = u64::from_le_bytes(header[128..136].try_into().unwrap());
+        let tail1 = u32::from_le_bytes(header[136..140].try_into().unwrap()) as u64;
+
+        for input in [0u32, 1, 42, 65535, 1 << 20] {
+            let word1 = tail1 | ((input as u64) << 32);
+            let m = {
+                let mut m = [0u64; 16];
+                m[0] = tail0;
+                m[1] = word1;
+                m
+            };
+            let mut v = [0u64; 16];
+            v[..8].copy_from_slice(&midstate);
+            v[8..].copy_from_slice(&ExtGpuMiner::EQ_BLAKE_IV);
+            v[12] ^= 140 + 4;
+            v[14] ^= u64::MAX;
+            for round in 0..12 {
+                let s = &ExtGpuMiner::EQ_BLAKE_SIGMA[round];
+                ExtGpuMiner::eq_mix(&mut v, 0, 4, 8, 12, m[s[0]], m[s[1]]);
+                ExtGpuMiner::eq_mix(&mut v, 1, 5, 9, 13, m[s[2]], m[s[3]]);
+                ExtGpuMiner::eq_mix(&mut v, 2, 6, 10, 14, m[s[4]], m[s[5]]);
+                ExtGpuMiner::eq_mix(&mut v, 3, 7, 11, 15, m[s[6]], m[s[7]]);
+                ExtGpuMiner::eq_mix(&mut v, 0, 5, 10, 15, m[s[8]], m[s[9]]);
+                ExtGpuMiner::eq_mix(&mut v, 1, 6, 11, 12, m[s[10]], m[s[11]]);
+                ExtGpuMiner::eq_mix(&mut v, 2, 7, 8, 13, m[s[12]], m[s[13]]);
+                ExtGpuMiner::eq_mix(&mut v, 3, 4, 9, 14, m[s[14]], m[s[15]]);
+            }
+            // 200,9 digest = 50 B: h[0..6] + low 16 bits of h[6].
+            let mut digest = [0u8; 50];
+            for i in 0..6 {
+                let w = midstate[i] ^ v[i] ^ v[i + 8];
+                digest[i * 8..i * 8 + 8].copy_from_slice(&w.to_le_bytes());
+            }
+            let w6 = midstate[6] ^ v[6] ^ v[14];
+            digest[48..50].copy_from_slice(&w6.to_le_bytes()[..2]);
+            let xi0 = ExtGpuMiner::equihash_leaf_hash(&header, 200, 9, input * 2);
+            let xi1 = ExtGpuMiner::equihash_leaf_hash(&header, 200, 9, input * 2 + 1);
+            assert_eq!(
+                &digest[..25],
+                &xi0[..],
+                "200,9 replica leaf {} mismatch vs blake2b_simd",
+                input * 2
+            );
+            assert_eq!(
+                &digest[25..],
+                &xi1[..],
+                "200,9 replica leaf {} mismatch vs blake2b_simd",
                 input * 2 + 1
             );
         }
