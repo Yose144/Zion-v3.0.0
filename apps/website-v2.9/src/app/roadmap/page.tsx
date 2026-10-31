@@ -32,7 +32,7 @@ const t = {
     title: 'Plán letu k veřejnému launchi (odloženo)',
     subtitle: '3.2 „One Love" Mainnet Beta — nikoli Stable. Node, pool i multichain běží v produkci. Veřejný launch je odložen (TBD). Aktuální 30denní stabilitní run — důkazy na /g8; nezávislý audit a test obnovy ze záloh zůstávají otevřené.',
     subtitleStrong: 'odloženo (TBD)',
-    updated: 'Aktualizováno 26. 10. 2026',
+    updated: 'Aktualizováno 31. 10. 2026',
     publicLaunch: 'Veřejný launch · odloženo (TBD)',
     testsPassing: '2 155+ testů prochází',
     heroStats: [
@@ -108,7 +108,7 @@ const t = {
     title: 'Flight plan to public launch (postponed)',
     subtitle: '3.2 "One Love" Mainnet Beta — not Stable. Node, pool, and multichain run in production. The public launch is postponed (TBD). Current 30-day stability run evidence on /g8; independent audit and recovery drill remain pending.',
     subtitleStrong: 'postponed (TBD)',
-    updated: 'Updated 26 Oct 2026',
+    updated: 'Updated 31 Oct 2026',
     publicLaunch: 'Public launch · postponed (TBD)',
     testsPassing: '2,155+ tests passing',
     heroStats: [
