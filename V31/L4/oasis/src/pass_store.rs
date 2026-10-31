@@ -15,9 +15,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[derive(Debug, Deserialize)]
 struct MarketCode {
     code: String,
-    #[serde(default)]
+    #[serde(default, rename = "expiresAt")]
     expires_at: Option<String>,
-    #[serde(default)]
+    #[serde(default, rename = "revokedAt")]
     revoked_at: Option<String>,
 }
 
