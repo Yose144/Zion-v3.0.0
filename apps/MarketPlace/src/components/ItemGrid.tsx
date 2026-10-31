@@ -17,7 +17,7 @@ export function ItemGrid({ items, emptyMessage = 'No items found' }: ItemGridPro
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 mobile-keep-cols sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
       {items.map((item) => (
         <ItemCard key={item.id} item={item} />
       ))}

@@ -77,9 +77,48 @@ function ShopPageInner() {
         </a>
       </div>
 
+      {/* Mobile filters — horizontal chips + sort (lg+ hides this) */}
+      <div className="lg:hidden space-y-3">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <button
+            onClick={() => setCategory('all')}
+            className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-bold border transition-all ${
+              category === 'all'
+                ? 'bg-rasta-gold/20 text-white border-rasta-gold/40'
+                : 'text-gray-400 bg-white/5 border-white/10'
+            }`}
+          >
+            {t('shop.all')}
+          </button>
+          {SHOP_CATEGORY_ORDER.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-bold border transition-all ${
+                category === c
+                  ? 'bg-rasta-gold/20 text-white border-rasta-gold/40'
+                  : 'text-gray-400 bg-white/5 border-white/10'
+              }`}
+            >
+              {t(`shop.${c}`)}
+            </button>
+          ))}
+        </div>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="input-zion w-full"
+          aria-label={t('shop.sortTitle')}
+        >
+          {sortOptions.map((o) => (
+            <option key={o.value} value={o.value} className="bg-zion-card">{t(o.key)}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="grid lg:grid-cols-[240px_1fr] gap-6">
         {/* Sidebar */}
-        <aside className="space-y-4">
+        <aside className="hidden lg:block space-y-4">
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-rasta-gold" />
@@ -147,7 +186,7 @@ function ShopPageInner() {
               <div className="text-gray-500 mb-1">{t('shop.empty')}</div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 mobile-keep-cols sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {products.map((product, i) => (
                 <div key={product.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.04}s` }}>
                   <ShopProductCard product={product} onOpen={setSelected} />

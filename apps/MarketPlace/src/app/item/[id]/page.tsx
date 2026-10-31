@@ -367,7 +367,7 @@ export default function ItemDetailPage() {
               <span className="w-1 h-3 rounded-full bg-rasta-red" />
               {t('item.properties')}
             </h3>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 mobile-keep-cols gap-2">
               {display.properties.map((p) => (
                 <div key={p.trait} className="rounded-xl bg-white/5 border border-white/5 p-3 hover:border-rasta-green/20 transition-colors">
                   <div className="text-[10px] text-gray-500 uppercase">{p.trait}</div>

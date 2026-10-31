@@ -144,7 +144,7 @@ export default function ProfilePage() {
               {isMe && <span className="rarity-badge rarity-unique">{t('profile.youBadge')}</span>}
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-6 text-center">
+          <div className="grid grid-cols-3 mobile-keep-cols gap-3 sm:gap-6 text-center">
             <div>
               <div className="text-2xl font-black text-rasta-red font-display">{stats.owned}</div>
               <div className="text-xs text-gray-500">{t('profile.owned')}</div>
@@ -183,7 +183,7 @@ export default function ProfilePage() {
       ) : (
         <>
           {tab === 'owned' && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 mobile-keep-cols sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {ownedItems.map((item, i) => (
                 <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.05}s` }}>
                   <ItemCard item={item} />
@@ -193,7 +193,7 @@ export default function ProfilePage() {
           )}
 
           {tab === 'listed' && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 mobile-keep-cols sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {listedItems.map((item, i) => (
                 <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.05}s` }}>
                   <ItemCard item={item} />

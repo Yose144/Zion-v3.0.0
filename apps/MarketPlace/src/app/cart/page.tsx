@@ -642,7 +642,7 @@ export default function CartPage() {
         >
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
           <div
-            className="zion-panel w-full max-w-md relative z-10 p-6 text-center"
+            className="zion-panel w-full max-w-md max-h-[92vh] overflow-y-auto relative z-10 p-6 text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <button onClick={closeQr} className="absolute top-4 right-4 zion-button-icon zion-button-ghost">
@@ -679,7 +679,7 @@ export default function CartPage() {
         >
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
           <div
-            className="zion-panel w-full max-w-md relative z-10 p-6 text-center"
+            className="zion-panel w-full max-w-md max-h-[92vh] overflow-y-auto relative z-10 p-6 text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <button onClick={closeZionQr} className="absolute top-4 right-4 zion-button-icon zion-button-ghost">

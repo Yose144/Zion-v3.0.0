@@ -124,9 +124,57 @@ export default function ExplorePage() {
         </div>
       </div>
 
+      {/* Mobile filters — compact panel (lg+ hides this) */}
+      <div className="lg:hidden space-y-3">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+          {collections.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCollection(c)}
+              className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-bold border transition-all ${
+                collection === c
+                  ? 'bg-rasta-red/20 text-white border-rasta-red/40'
+                  : 'text-gray-400 bg-white/5 border-white/10'
+              }`}
+            >
+              {t(getCollectionLabelKey(c))}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {rarities.map((r) => (
+            <button
+              key={r}
+              onClick={() => toggleRarity(r)}
+              className={`rarity-badge rarity-${r} cursor-pointer transition-all duration-200 ${
+                selectedRarities.has(r) ? 'ring-2 ring-white/30 scale-105' : 'opacity-50 hover:opacity-100'
+              }`}
+            >
+              {t(`rarity.${r}`)}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-3 gap-2 mobile-keep-cols">
+          {listingOptions.map((o) => (
+            <button
+              key={o.value}
+              onClick={() => setListingFilter(o.value)}
+              className={`px-3 py-2 rounded-lg text-xs font-bold capitalize transition-all duration-200 inline-flex items-center justify-center gap-1.5 ${
+                listingFilter === o.value
+                  ? 'bg-rasta-green/20 text-white border border-rasta-green/30'
+                  : 'text-gray-400 bg-white/5 border border-transparent'
+              }`}
+            >
+              {o.icon}
+              <span className="truncate">{o.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-[260px_1fr] gap-6">
         {/* Filters sidebar */}
-        <aside className="space-y-4">
+        <aside className="hidden lg:block space-y-4">
           {/* Collection */}
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
@@ -227,7 +275,7 @@ export default function ExplorePage() {
               <div className="text-xs text-gray-600">{t('explore.emptySubtitle')}</div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 mobile-keep-cols sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {items.map((item, i) => (
                 <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.04}s` }}>
                   <ItemCard item={item} />
