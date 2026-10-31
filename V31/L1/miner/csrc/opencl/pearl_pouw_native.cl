@@ -669,6 +669,9 @@ __kernel void pearl_pouw_mine_native(
 // Only work-item 0 does BLAKE3 hash + target check.
 //
 // Local memory: TILE_H*MAX_K + TILE_W*MAX_K = 4*1024 + 8*1024 = 48KB int32
+// Exceeds the 48 KiB ceiling on pre-sm_75 devices (e.g. GP104 = 49152 B) —
+// the host passes -DPEARL_DISABLE_V2 when CL_DEVICE_LOCAL_MEM_SIZE is too small.
+#ifndef PEARL_DISABLE_V2
 __kernel void pearl_pouw_mine_native_v2(
     __global const int* noised_a,
     __global const int* noised_b,
@@ -798,6 +801,7 @@ __kernel void pearl_pouw_mine_native_v2(
         }
     }
 }
+#endif /* PEARL_DISABLE_V2 */
 
 // v3: One work-group per tile, 32 work-items per group.
 // NO local memory for matrix data — relies on L1 cache for reuse.

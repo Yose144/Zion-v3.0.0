@@ -120,7 +120,7 @@ __constant ulong blake_iv[] =
 ** Reset counters in hash table.
 */
 __kernel
-void kernel_init_ht(__global char *ht, __global uint *rowCounters)
+void kernel_init_ht(__global uchar *ht, __global uint *rowCounters)
 {
     rowCounters[get_global_id(0)] = 0;
 }
@@ -138,11 +138,11 @@ void kernel_init_ht(__global char *ht, __global uint *rowCounters)
 **
 ** Return 0 if successfully stored, or 1 if the row overflowed.
 */
-uint ht_store(uint round, __global char *ht, uint i,
+uint ht_store(uint round, __global uchar *ht, uint i,
 	ulong xi0, ulong xi1, __global uint *rowCounters)
 {
     uint    row;
-    __global char       *p;
+    __global uchar       *p;
     uint                cnt;
     // Row is always the first NR_ROWS_LOG bits of xi0.
     // For all rounds, the Xi passed to ht_store has the collision prefix
@@ -192,7 +192,7 @@ vb = rotate((vb ^ vc), (ulong)64 - 63);
 ** http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/opencl-optimization-guide/
 */
 __kernel __attribute__((reqd_work_group_size(64, 1, 1)))
-void kernel_round0(__global ulong *blake_state, __global char *ht,
+void kernel_round0(__global ulong *blake_state, __global uchar *ht,
 	__global uint *rowCounters, __global uint *debug,
 	ulong tail0, ulong tail1)
 {
@@ -399,7 +399,7 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 **
 ** Return 0 if successfully stored, or 1 if the row overflowed.
 */
-uint xor_and_store(uint round, __global char *ht_dst, uint row,
+uint xor_and_store(uint round, __global uchar *ht_dst, uint row,
 	uint slot_a, uint slot_b, __global ulong *a, __global ulong *b,
 	__global uint *rowCounters)
 {
@@ -424,8 +424,8 @@ uint xor_and_store(uint round, __global char *ht_dst, uint row,
 ** store them in ht_dst.
 */
 void equihash_round(uint round,
-	__global char *ht_src,
-	__global char *ht_dst,
+	__global uchar *ht_src,
+	__global uchar *ht_dst,
 	__global uint *debug,
 	__local uchar *first_words_data,
 	__local uint *collisionsData,
@@ -435,7 +435,7 @@ void equihash_round(uint round,
 {
     uint		tid = get_global_id(0);
     uint		tlid = get_local_id(0);
-    __global char	*p;
+    __global uchar	*p;
     uint		cnt;
     __local uchar	*first_words = &first_words_data[(NR_SLOTS+2)*tlid];
     uchar		mask;
@@ -564,7 +564,7 @@ part2:
 */
 #define KERNEL_ROUND(N) \
 __kernel __attribute__((reqd_work_group_size(64, 1, 1))) \
-void kernel_round ## N(__global char *ht_src, __global char *ht_dst, \
+void kernel_round ## N(__global uchar *ht_src, __global uchar *ht_dst, \
 	__global uint *rowCountersSrc, __global uint *rowCountersDst, \
        	__global uint *debug) \
 { \
@@ -580,7 +580,7 @@ KERNEL_ROUND(2)
 // kernel_round3 is the final round for K=4 (round K-1 = 3).
 // It takes an extra argument "sols" and initializes sols->nr = 0.
 __kernel __attribute__((reqd_work_group_size(64, 1, 1)))
-void kernel_round3(__global char *ht_src, __global char *ht_dst,
+void kernel_round3(__global uchar *ht_src, __global uchar *ht_dst,
 	__global uint *rowCountersSrc, __global uint *rowCountersDst,
 	__global uint *debug, __global sols_t *sols)
 {
@@ -594,7 +594,7 @@ void kernel_round3(__global char *ht_src, __global char *ht_dst,
 	sols->nr = sols->likely_invalids = 0;
 }
 
-uint expand_ref(__global char *ht, uint xi_offset, uint row, uint slot)
+uint expand_ref(__global uchar *ht, uint xi_offset, uint row, uint slot)
 {
     return *(__global uint *)(ht + row * NR_SLOTS * SLOT_LEN +
 	    slot * SLOT_LEN + xi_offset - 4);
@@ -605,10 +605,10 @@ uint expand_ref(__global char *ht, uint xi_offset, uint row, uint slot)
 ** or 0 otherwise (an invalid solution would be a solution with duplicate
 ** inputs, which can be detected at the last step: round == 0).
 */
-uint expand_refs(uint *ins, uint nr_inputs, __global char **htabs,
+uint expand_refs(uint *ins, uint nr_inputs, __global uchar **htabs,
 	uint round)
 {
-    __global char	*ht = htabs[round % 2];
+    __global uchar	*ht = htabs[round % 2];
     uint		i = nr_inputs - 1;
     uint		j = nr_inputs * 2 - 1;
     uint		xi_offset = xi_offset_for_round(round);
@@ -638,7 +638,7 @@ uint expand_refs(uint *ins, uint nr_inputs, __global char **htabs,
 /*
 ** Verify if a potential solution is in fact valid.
 */
-void potential_sol(__global char **htabs, __global sols_t *sols,
+void potential_sol(__global uchar **htabs, __global sols_t *sols,
 	uint ref0, uint ref1)
 {
     uint	nr_values;
@@ -670,17 +670,16 @@ void potential_sol(__global char **htabs, __global sols_t *sols,
 ** Scan the hash tables to find Equihash solutions.
 */
 __kernel __attribute__((reqd_work_group_size(64, 1, 1)))
-void kernel_sols(__global char *ht0, __global char *ht1, __global sols_t *sols,
+void kernel_sols(__global uchar *ht0, __global uchar *ht1, __global sols_t *sols,
 	__global uint *rowCountersSrc, __global uint *rowCountersDst)
 {
     uint		tid = get_global_id(0);
-    __global char	*htabs[2] = { ht0, ht1 };
-    __global char	*hcounters[2] = { rowCountersSrc, rowCountersDst };
+    __global uchar	*htabs[2] = { ht0, ht1 };
     uint		ht_i = (PARAM_K - 1) % 2; // table filled at last round
     uint		cnt;
     uint		xi_offset = xi_offset_for_round(PARAM_K - 1);
     uint		i, j;
-    __global char	*a, *b;
+    __global uchar	*a, *b;
     uint		ref_i, ref_j;
     // it's ok for the collisions array to be so small, as if it fills up
     // the potential solutions are likely invalid (many duplicate inputs)
