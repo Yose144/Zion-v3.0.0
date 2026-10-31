@@ -6,9 +6,12 @@ the results as metrics on /metrics (default 127.0.0.1:9105).
 
 Probes (run concurrently on every scrape):
   - raw TCP line-delimited JSON-RPC getStatus on the three node RPC ports
-    (labels node_primary, node_follower_2, node_follower_3). The primary node
+    (labels node_primary, node_follower_2, node_follower_3). Every node
     additionally answers getBlockByHeight {"height": <native_chain_height>} on
-    a fresh socket so the exporter can compute the chain tip age.
+    a fresh socket so the exporter can compute the chain tip age; chain_live
+    uses the freshest tip reported by any node, so a planned restart of a
+    single node does not count as a chain outage (per-node freshness and the
+    node_primary probe result remain visible as separate metrics).
   - HTTP GET expecting a 2xx for pool / multichain / DAO / ZIS health URLs.
   - TCP connect for the public pool stratum port.
 
@@ -171,7 +174,7 @@ def run_probes(config: dict) -> dict:
         futures = {}
         for idx, port in enumerate(config["node_rpc_ports"]):
             label = NODE_LABELS[idx] if idx < len(NODE_LABELS) else f"node_{idx + 1}"
-            futures[ex.submit(probe_node, config["node_rpc_host"], port, timeout, idx == 0)] = label
+            futures[ex.submit(probe_node, config["node_rpc_host"], port, timeout, True)] = label
         for label, url in config["http_services"]:
             futures[ex.submit(probe_http, url, timeout)] = label
         futures[ex.submit(probe_tcp, config["stratum_host"], config["stratum_port"], timeout)] = "pool_stratum"
@@ -186,10 +189,19 @@ def run_probes(config: dict) -> dict:
         1 for name, res in services.items()
         if name.startswith("node_") and res.get("success")
     )
+    # Tip source = first node in port order that answered getBlockByHeight —
+    # normally the primary, with followers as fallback when it is unreachable.
+    tip_res = {}
+    for idx in range(len(config["node_rpc_ports"])):
+        label = NODE_LABELS[idx] if idx < len(NODE_LABELS) else f"node_{idx + 1}"
+        res = services.get(label, {})
+        if res.get("tip_timestamp") is not None:
+            tip_res = res
+            break
     return {
         "services": services,
-        "chain_height": primary.get("chain_height"),
-        "tip_timestamp": primary.get("tip_timestamp"),
+        "chain_height": tip_res.get("chain_height") or primary.get("chain_height"),
+        "tip_timestamp": tip_res.get("tip_timestamp"),
         "node_quorum": quorum,
         "primary_ok": bool(primary.get("success")),
     }
@@ -224,8 +236,7 @@ def render_metrics(report: dict, config: dict, now: float = None) -> str:
     else:
         tip_age = -1.0
     chain_live = 1 if (
-        report.get("primary_ok")
-        and tip_ts is not None
+        tip_ts is not None
         and 0 <= tip_age <= config["chain_tip_max_age"]
     ) else 0
 
@@ -241,14 +252,25 @@ def render_metrics(report: dict, config: dict, now: float = None) -> str:
     _metric(lines, "zion_g8_probe_success", "G8 probe result (1=success, 0=failure)", success_entries)
     _metric(lines, "zion_g8_probe_duration_seconds", "G8 probe duration in seconds", duration_entries)
 
-    _metric(lines, "zion_g8_chain_height", "Native chain height reported by the primary node",
+    _metric(lines, "zion_g8_chain_height", "Native chain height reported by the tip source node",
             [("", chain_height if chain_height is not None else 0)])
-    _metric(lines, "zion_g8_chain_tip_timestamp_seconds", "Unix timestamp of the chain tip block (0 = unknown)",
+    _metric(lines, "zion_g8_chain_tip_timestamp_seconds", "Unix timestamp of the freshest chain tip block reported by any node (0 = unknown)",
             [("", tip_ts if tip_ts else 0)])
-    _metric(lines, "zion_g8_chain_tip_age_seconds", "Seconds since the chain tip block timestamp (-1 = unknown)",
+    _metric(lines, "zion_g8_chain_tip_age_seconds", "Seconds since the freshest chain tip block timestamp reported by any node (-1 = unknown)",
             [("", tip_age)])
-    _metric(lines, "zion_g8_chain_live", "1 if the primary node probe succeeded and the tip is fresh",
+    _metric(lines, "zion_g8_chain_live", "1 if any node probe reported a fresh chain tip",
             [("", chain_live)])
+    fresh_entries = []
+    for label in sorted(services):
+        if not label.startswith("node_"):
+            continue
+        res = services[label]
+        ts = res.get("tip_timestamp")
+        fresh = 1 if (
+            ts is not None and 0 <= now - ts <= config["chain_tip_max_age"]
+        ) else 0
+        fresh_entries.append((f'{{service="{_escape_label(label)}"}}', fresh))
+    _metric(lines, "zion_g8_node_tip_fresh", "1 if this node's reported chain tip is fresh", fresh_entries)
     _metric(lines, "zion_g8_node_quorum", "Number of node RPC ports answering",
             [("", report.get("node_quorum", 0))])
     _metric(lines, "zion_g8_probe_timestamp_seconds", "Unix timestamp of this probe round",

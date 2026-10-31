@@ -159,6 +159,49 @@ class ProbeTests(unittest.TestCase):
         text = g8x.render_metrics(stale, config_for([], max_age=900), now=now)
         self.assertIn("zion_g8_chain_live 0", text)
 
+    def test_chain_live_fresh_via_follower_when_primary_down(self):
+        # The primary probe failing must not count as a chain outage when a
+        # follower still reports a fresh tip (planned restarts, tunnel flap).
+        now = time.time()
+        rep = {"services": {
+                   "node_primary": {"success": False, "duration": 0.01, "tip_timestamp": None},
+                   "node_follower_2": {"success": True, "duration": 0.01,
+                                       "tip_timestamp": now - 30}},
+               "chain_height": 10, "tip_timestamp": now - 30,
+               "node_quorum": 1, "primary_ok": False}
+        text = g8x.render_metrics(rep, config_for([], max_age=900), now=now)
+        self.assertIn("zion_g8_chain_live 1", text)
+        self.assertIn('zion_g8_node_tip_fresh{service="node_primary"} 0', text)
+        self.assertIn('zion_g8_node_tip_fresh{service="node_follower_2"} 1', text)
+
+    def test_chain_live_quorum_fallback_end_to_end(self):
+        primary = closed_port()
+        follower = FakeRpcServer(height=99)
+        follower.start()
+        cfg = config_for([primary, follower.port, closed_port()])
+        report = g8x.run_probes(cfg)
+        text = g8x.render_metrics(report, cfg)
+        self.assertFalse(report["primary_ok"])
+        self.assertEqual(report["node_quorum"], 1)
+        self.assertEqual(report["chain_height"], 99)
+        self.assertIsNotNone(report["tip_timestamp"])
+        self.assertIn("zion_g8_chain_live 1", text)
+        self.assertIn("zion_g8_chain_height 99", text)
+        self.assertIn('zion_g8_probe_success{service="node_primary"} 0', text)
+        self.assertIn('zion_g8_node_tip_fresh{service="node_follower_2"} 1', text)
+
+    def test_stale_tips_everywhere_not_live(self):
+        stale_ts = int(time.time()) - 5000
+        nodes = [FakeRpcServer(tip_ts=stale_ts) for _ in range(2)]
+        for n in nodes:
+            n.start()
+        cfg = config_for([n.port for n in nodes])
+        report = g8x.run_probes(cfg)
+        text = g8x.render_metrics(report, cfg)
+        self.assertIn("zion_g8_chain_live 0", text)
+        self.assertIn('zion_g8_node_tip_fresh{service="node_primary"} 0', text)
+        self.assertIn('zion_g8_node_tip_fresh{service="node_follower_2"} 0', text)
+
     def test_future_tip_not_live(self):
         now = time.time()
         rep = {"services": {"node_primary": {"success": True, "duration": 0.01}},
@@ -218,6 +261,7 @@ class ProbeTests(unittest.TestCase):
         for name in ("zion_g8_probe_success", "zion_g8_probe_duration_seconds",
                      "zion_g8_chain_height", "zion_g8_chain_tip_timestamp_seconds",
                      "zion_g8_chain_tip_age_seconds", "zion_g8_chain_live",
+                     "zion_g8_node_tip_fresh",
                      "zion_g8_node_quorum", "zion_g8_probe_timestamp_seconds"):
             self.assertIn(f"# HELP {name}", text)
             self.assertIn(f"# TYPE {name} gauge", text)

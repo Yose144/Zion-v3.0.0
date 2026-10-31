@@ -16,7 +16,7 @@ groups:
           severity: critical
         annotations:
           summary: "G8 chain tip is stale or unreachable"
-          description: "The V31 chain tip is older than 15 minutes or the primary node probe is failing (zion_g8_chain_live == 0)."
+          description: "The V31 chain tip is older than 15 minutes or no node probe reports a reachable tip (zion_g8_chain_live == 0)."
 
       - alert: G8RequiredServiceDown
         expr: zion_g8_probe_success{service=~"pool_http|pool_stratum|multichain|dao|zis"} == 0
