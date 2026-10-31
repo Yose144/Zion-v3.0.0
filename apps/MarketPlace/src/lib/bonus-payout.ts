@@ -1,11 +1,16 @@
 import { prisma } from './db';
-import { sendTokenBonusEmail } from './email';
+import { sendTokenBonusEmail, sendCustomerWalletEmail } from './email';
 import {
   getTokenDistribution,
   recordTokenDistribution,
   tokenSettingKey,
 } from './tokens';
-import { readPoolWalletAddress, sendZionPayout } from './zion-l1';
+import {
+  generateCustomerWallet,
+  readPoolWalletAddress,
+  sendZionPayout,
+} from './zion-l1';
+import { encryptSecret } from './crypto';
 
 export type BonusPayoutResult =
   | {
@@ -51,6 +56,48 @@ async function releaseClaim(orderId: string): Promise<void> {
 }
 
 /**
+ * Ensure the order has a custodial L1 wallet for the bonus payout.
+ * Orders created before wallet auto-generation (or where generation failed)
+ * get one lazily here. The address claim is atomic — a concurrent payout
+ * reuses the winner's address instead of overwriting it.
+ * Returns the wallet address, or null if the row vanished.
+ */
+async function ensureCustomerWallet(order: {
+  id: string;
+  orderId: string;
+  customerName: string;
+  customerEmail: string;
+}): Promise<string | null> {
+  const wallet = generateCustomerWallet();
+  const claim = await prisma.shopOrder.updateMany({
+    where: { id: order.id, customerWalletAddress: null },
+    data: {
+      customerWalletAddress: wallet.address,
+      customerWalletSeed: encryptSecret(wallet.mnemonic),
+      customerWalletPublicKey: wallet.publicKey,
+      customerWalletSecretKey: encryptSecret(wallet.secretKey),
+    },
+  });
+
+  if (claim.count === 1) {
+    sendCustomerWalletEmail({
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      orderId: order.orderId,
+      address: wallet.address,
+      seed: wallet.mnemonic,
+    }).catch((err) => console.error('Failed to send customer wallet email:', err));
+    return wallet.address;
+  }
+
+  const again = await prisma.shopOrder.findUnique({
+    where: { id: order.id },
+    select: { customerWalletAddress: true },
+  });
+  return again?.customerWalletAddress ?? null;
+}
+
+/**
  * Send the order's ZION bonus from the canonical pool payout wallet.
  * `zionTokens` is whole ZION (the number shown in admin), not flowers.
  * Idempotent: a distributed order is not paid twice.
@@ -63,6 +110,7 @@ export async function distributeOrderBonus(
   const order = await prisma.shopOrder.findFirst({
     where: { OR: [{ id: orderId }, { orderId }] },
     select: {
+      id: true,
       orderId: true,
       zionTokens: true,
       customerEmail: true,
@@ -88,7 +136,9 @@ export async function distributeOrderBonus(
 
   let txHash = opts?.txHash?.trim() || undefined;
   if (!txHash) {
-    if (!order.customerWalletAddress) return { ok: true, skipped: 'no-wallet' };
+    const walletAddress =
+      order.customerWalletAddress ?? (await ensureCustomerWallet(order));
+    if (!walletAddress) return { ok: true, skipped: 'no-wallet' };
     const claim = await claimSend(order.orderId, amountZion);
     if (claim === 'distributed') {
       return { ok: true, already: true, tokens: amountZion };
@@ -98,7 +148,7 @@ export async function distributeOrderBonus(
     try {
       readPoolWalletAddress();
       const payout = await sendZionPayout(
-        order.customerWalletAddress,
+        walletAddress,
         amountZion,
         undefined,
         `BONUS:${order.orderId}`
