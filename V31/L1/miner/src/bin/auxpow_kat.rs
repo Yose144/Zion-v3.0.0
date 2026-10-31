@@ -710,12 +710,14 @@ fn real_main() {
             // priv=3 ·G — Jacobian → affine via k256; x must equal pub_x.
             match miner.nexapow_gmul_debug(&priv_be) {
                 Ok(limbs) => {
-                    let fe = |l: &[u64]| -> k256::FieldElement {
+                    use k256::elliptic_curve::hazmat::FieldArithmetic;
+                    type Fe = <k256::Secp256k1 as FieldArithmetic>::FieldElement;
+                    let fe = |l: &[u64]| -> Fe {
                         let mut be = [0u8; 32];
                         for i in 0..4 {
                             be[(3 - i) * 8..(3 - i) * 8 + 8].copy_from_slice(&l[i].to_be_bytes());
                         }
-                        k256::FieldElement::from_bytes((&be).into()).unwrap()
+                        Fe::from_bytes((&be).into()).unwrap()
                     };
                     let x = fe(&limbs[0..4]);
                     let y = fe(&limbs[4..8]);
