@@ -10,7 +10,7 @@ const PushNotificationSchema = z.object({
   type: z.string().min(1).max(64),
   title: z.string().min(1).max(255),
   body: z.string().max(4096).default(''),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**

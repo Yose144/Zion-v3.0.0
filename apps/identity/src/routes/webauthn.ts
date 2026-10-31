@@ -32,7 +32,7 @@ const CEREMONY_RATE_LIMIT = { rateLimit: { max: 10, timeWindow: '1 minute' } };
 
 const RegisterVerifySchema = z.object({
   ceremonyId: z.string().min(1),
-  response: z.record(z.unknown()),
+  response: z.record(z.string(), z.unknown()),
   label: z.string().max(64).optional(),
 });
 
