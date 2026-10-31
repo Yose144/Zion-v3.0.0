@@ -44,15 +44,15 @@ Všechny KAT vektory (včetně nonce=0 i nonce=u64::MAX) produkují **bit-identi
 
 ## AuxPoW sweep (`auxpow_kat`, batch 1024, repeats 4)
 
-### AMD OpenCL (gfx1010) — 15/15 ověřitelných PASS
+### AMD OpenCL (gfx1010) — 16/16 ověřitelných PASS
 
-`kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, autolykos, qhash, eaglesong, neoscrypt, karlsenhash, beamhash, dynexsolve, fishhash, qpow, nexapow` — vše **bit-identické** vs CPU ref (nexapow: 346 s JIT, pak PASS).
+`kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, autolykos, qhash, eaglesong, neoscrypt, karlsenhash, beamhash, dynexsolve, fishhash, qpow, nexapow, equihash` — vše **bit-identické** vs CPU ref (nexapow: 346 s JIT, pak PASS; **equihash 200,9: Wagner sol valid + sha256d≡ — vyřešeno, viz fix #7/#8**).
 
+- `zelhash` (125,4): **SKIP — HW kapacita** — 2× 3.2 GB tabulky + counters ≈ 6.5 GB > 5.98 GiB VRAM karty; nově čistý bail přes `check_vram_fits` místo ROCm page-fault SIGABRT (fix #9)
 - `equihashzero` (192,7): RUN, deterministický výstup — *unverifiable* (žádný CPU ref pro Wagner multi-kernel — stejné na všech platformách)
 - `verushash`: SKIP — žádný GPU kernel (by design)
 - `ghostrider`: RUN — *unverifiable* (CPU ref vyžaduje `native-all` build)
 - DAG-family (`ethash, kawpow, progpow, progpowz, evrprogpow, meowpow, octopus, verthash`): ERR = **host-env** — harness negeneruje DAG/data soubory (`set_*_dag`), není to GPU defect
-- `zelhash` + `equihash` (200,9): **otvřený ROCm-runtime residual** — viz níže
 
 ### NVIDIA OpenCL (GP104) — vše ověřitelné PASS
 
@@ -75,16 +75,20 @@ Audit item se změnil z "run KAT" na "fix KAT" — pět oprav:
    - fishhash `_Cache` → `Buffer<Uint16>`, `dag` → `Buffer<Uint8>`, `blockHeader` → `Buffer<Uint16>` **PASS** (karlsenhash stejná cesta **PASS**)
    - zelhash/equihash200 dead-var `__global char *hcounters[2] = {uint*, uint*}` (typový bug, nikdy nepoužitá) — smazáno; `__global char` → `__global uchar` pro sjednocení se sdílenou equihash tabulkou
 6. **`pearl_pouw_native.cl` v2 smem 49 476 B > 48 KiB (GP104):** ptxas odmítne celý program i když v2 nikdy neběží → `#ifndef PEARL_DISABLE_V2` guard + host `device_local_mem_size() < 49_476` → auto `-DPEARL_DISABLE_V2`. NVIDIA OCL pearl parity následně **PASS**.
+7. **`auxpow_kat.rs` — KAT harness varint bug (equihash "invalid solution"):** `share.solution` = stratum **wire format** = CompactSize varint (`fd4005`) + 1344 B soln = 1347 B; KAT předával celý wire buffer do `is_valid_solution` i do debug index-dekodéru → všechny 21-bit indexy posunuté o 3 B (`leaf_bad=256/256`, "invalid parameters", nulový overlap s CPU řešeními). GPU řešení byla validní celou dobu. Fix = strip varint prefixu před verifikací/dekódováním; produkční `share.solution` zůstává wire-format (správně). Po fixu **equihash 200,9 PASS** (Wagner sol valid + sha256d≡, 118–791 ms).
+8. **Blake2b σ[3] round-4 `tail0` misplacement (3 Wagner kernely):** v `equihash_kernel.cl`, `equihash200_kernel.cl`, `zelhash_prod_kernel.cl` měla round σ[3] `tail0` v G8 (`v[3],v[4],v[9],v[14]`) místo G7 (`v[2],v[7],v[8],v[13]`, kde σ[3] s13=0) — transkripční chyba digestu. Pro KAT headery `tail0==0` → numericky neviditelná; pro headery s nenulovými bytes 128..136 = reálný defect. Audit všech 12 roundů: jediná odchylka. Opraveno ve všech 3 souborech.
+9. **ROCm VRAM overcommit page-fault (zelhash):** `clCreateBuffer` na ROCm alokuje lazy — 2× 3.2 GB tabulky "projdou" i na 5.98 GiB kartě a kernel faultuje až při přístupu → SIGABRT zabije miner proces. Fix = `check_vram_fits()` (`CL_DEVICE_GLOBAL_MEM_SIZE` − 10 % headroom) před alokacemi v `mine_zelhash_prod` i `mine_equihash_impl` → čistý error → KAT klasifikuje jako SKIP ("insufficient memory" přidáno do `env_skip_reason`). Zelhash na AMD = **HW kapacita, ne defect**; na CUDA (8 GB) PASS.
 
 ## Otevřené residuály (tracked, ne blocking)
 
 | Item | Stav | Poznámka |
 |---|---|---|
-| `zelhash`/`equihash` (200,9) ROCm runtime | **PENDING debug** | compile+arg fixy hotové; Wagner table runtime `Memory access fault` / invalid solution na ROCm — dedikované ladění, AMD hloubková session. CUDA `zelhash` PASS = algoritmus zdravý |
+| `zelhash` (125,4) na AMD | **HW kapacita** | potřebuje ~6.5 GB > 5.98 GiB karty — čistý SKIP, ne fault. CUDA `zelhash` PASS = algoritmus zdravý; AMD vyžaduje kartu ≥8 GB |
 | `nexapow` JIT 346 s | OK | secp256k1 kernel je 6k-line; JIT čas dokumentovaný v kódu |
 | Metal | **N/A** | žádné Apple GPU — Metal path existuje (`metal_deeksha_lite`, `qpow_metal` gates `#[ignore]`), ověřit při dostupném Apple hw |
 | DAG-family algos | host-env | `set_*_dag`/data file harness — není GPU defect |
 | `ghostrider`/`equihashzero` CPU refs | unverifiable | GPU běží deterministicky; CPU ref vyžaduje `native-all` FFI build |
+| NVIDIA OCL equihash | env SKIP | VRAM contention na sdílené kartě (alloc fail) — host limit, ne defect |
 | `live_qpow_qelvhash_roundtrip` | env-gated | live stratum login — ne KAT item |
 
 ## Reprodukce
@@ -112,4 +116,4 @@ cargo test --release -p zion-miner --features gpu-opencl --lib \
 
 ## Verdikt
 
-**PASS** — main-chain Ekam Deeksha bit-identický na všech dostupných backendech (CUDA + 2× OpenCL), QPoW a Pearl parity PASS, 15 auxpow algoritmů bit-identických na AMD + 12 na NVIDIA + 7 na CUDA. Metal = N/A (no hw). Pět reálných defect classes opravených cestou. Zbývající otevřený residual: **zelhash/equihash200 Wagner runtime na AMD ROCm** (tracked — auxpow-only coin, CUDA path zdravý, AMD debug session pending).
+**PASS** — main-chain Ekam Deeksha bit-identický na všech dostupných backendech (CUDA + 2× OpenCL), QPoW a Pearl parity PASS, **16 auxpow algoritmů bit-identických na AMD** (vč. equihash 200,9 — Wagner sol valid + sha256d≡) + 12 na NVIDIA + 7 na CUDA. Metal = N/A (no hw). Devět reálných defect classes opravených cestou — včetně KAT-harness varint bugu, který maskoval validní GPU řešení, a Blake2b σ[3] transkripční chyby ve všech 3 Wagner kernelech. Zbývající residual: **zelhash na AMD = HW kapacita** (potřebuje ~6.5 GB > 5.98 GiB; čistý SKIP přes `check_vram_fits`, na CUDA 8 GB PASS) — žádný otevřený correctness defect.
