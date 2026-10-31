@@ -6,6 +6,8 @@ import { React, useFrame, useMemo, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionDelta, motionTime } from './ScenePresentation';
 
+type PointerEventLike = { stopPropagation: () => void };
+
 type Lang = 'cs' | 'en';
 
 const TARGET: [number, number, number] = [0, 1.3, 1.2];
@@ -82,8 +84,8 @@ function Craters() {
             <circleGeometry args={[c.r, 20]} />
             <meshStandardMaterial color="#5c564e" roughness={1} />
           </mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
-            <torusGeometry args={[c.r * 0.92, 0.08, 6, 18]} />
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+            <torusGeometry args={[c.r * 0.92, 0.045, 6, 20]} />
             <meshStandardMaterial color="#9a9286" roughness={1} />
           </mesh>
         </group>
@@ -97,14 +99,44 @@ function Habitat({
   radius,
   color,
   glass,
+  enter,
+  onEnter,
 }: {
   position: [number, number, number];
   radius: number;
   color: string;
   glass?: boolean;
+  enter?: boolean;
+  onEnter?: () => void;
 }) {
+  const ring = React.useRef<THREE.Mesh>(null);
+  React.useEffect(() => () => {
+    if (enter) document.body.style.cursor = 'auto';
+  }, [enter]);
+  useFrame(({ clock }) => {
+    if (!ring.current) return;
+    const s = 1 + 0.08 * Math.sin(motionTime(clock) * 2.2);
+    ring.current.scale.set(s, s, 1);
+  });
+  const open = enter && onEnter
+    ? (e: PointerEventLike) => {
+        e.stopPropagation();
+        onEnter();
+      }
+    : undefined;
+  const hover = enter && onEnter
+    ? (e: PointerEventLike) => {
+        e.stopPropagation();
+        document.body.style.cursor = 'pointer';
+      }
+    : undefined;
   return (
-    <group position={position}>
+    <group
+      position={position}
+      onClick={open}
+      onPointerOver={hover}
+      onPointerOut={enter && onEnter ? () => { document.body.style.cursor = 'auto'; } : undefined}
+    >
       <mesh position={[0, 0.38, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[radius * 0.92, radius, 0.76, 20]} />
         <meshStandardMaterial color={color} roughness={0.7} metalness={0.22} />
@@ -117,10 +149,36 @@ function Habitat({
           metalness={glass ? 0.05 : 0.16}
           transparent={!!glass}
           opacity={glass ? 0.62 : 1}
-          emissive={glass ? '#1c8a4e' : '#000000'}
-          emissiveIntensity={glass ? 0.45 : 0}
+          emissive={glass ? '#1c8a4e' : enter ? '#2a1848' : '#000000'}
+          emissiveIntensity={glass ? 0.45 : enter ? 0.18 : 0}
         />
       </mesh>
+      <mesh position={[0, 0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[radius * 0.98, 0.045, 8, 28]} />
+        <meshStandardMaterial color="#b7b0a4" metalness={0.62} roughness={0.32} />
+      </mesh>
+      {[ -1.15, 1.15, Math.PI ].map((angle) => (
+        <mesh key={angle} position={[Math.sin(angle) * radius * 0.94, 0.5, Math.cos(angle) * radius * 0.94]}>
+          <boxGeometry args={[0.07, 0.26, 0.1]} />
+          <meshStandardMaterial color="#1a1714" emissive="#f3ddb0" emissiveIntensity={0.2} />
+        </mesh>
+      ))}
+      {enter && (
+        <>
+          <mesh position={[0, 0.48, radius * 0.9]}>
+            <boxGeometry args={[0.5, 0.72, 0.08]} />
+            <meshStandardMaterial color="#241c33" metalness={0.35} roughness={0.45} emissive="#4c1d95" emissiveIntensity={0.45} />
+          </mesh>
+          <mesh position={[0, 0.5, radius * 0.96]}>
+            <torusGeometry args={[0.46, 0.03, 8, 22]} />
+            <meshStandardMaterial color="#d9d0c2" metalness={0.72} roughness={0.28} />
+          </mesh>
+          <mesh ref={ring} position={[0, 0.05, radius * 0.2]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.62, 0.8, 28]} />
+            <meshBasicMaterial color="#a855f7" transparent opacity={0.82} side={THREE.DoubleSide} />
+          </mesh>
+        </>
+      )}
     </group>
   );
 }
@@ -150,9 +208,13 @@ function LandingPad() {
           <boxGeometry args={[0.72, 0.42, 0.72]} />
           <meshStandardMaterial color="#e7e1d6" roughness={0.4} metalness={0.35} />
         </mesh>
-        <mesh position={[0, 1.28, 0]} castShadow>
-          <sphereGeometry args={[0.28, 16, 12]} />
-          <meshStandardMaterial color="#9fd0ff" roughness={0.15} metalness={0.1} emissive="#123a66" emissiveIntensity={0.3} />
+        <mesh position={[0, 1.22, 0.08]} castShadow>
+          <sphereGeometry args={[0.32, 16, 12, 0, Math.PI * 2, 0, Math.PI / 1.6]} />
+          <meshStandardMaterial color="#d5e8f8" roughness={0.18} metalness={0.12} emissive="#123a66" emissiveIntensity={0.25} />
+        </mesh>
+        <mesh position={[0, 1.08, 0.38]}>
+          <boxGeometry args={[0.42, 0.18, 0.05]} />
+          <meshStandardMaterial color="#9fd0ff" emissive="#1a4a7a" emissiveIntensity={0.55} roughness={0.12} />
         </mesh>
         <mesh position={[0, 0.42, 0]}>
           <cylinderGeometry args={[0.16, 0.22, 0.28, 10]} />
@@ -199,7 +261,7 @@ function GreenhouseGlow() {
   return <pointLight ref={ref} position={[3.8, 1.4, 0.2]} color="#7dffb0" distance={8} decay={2} />;
 }
 
-export function MatrixScene({ lang }: { lang: Lang }) {
+export function MatrixScene({ lang, onEnterHall }: { lang: Lang; onEnterHall?: () => void }) {
   const cs = lang === 'cs';
   return (
     <>
@@ -212,7 +274,7 @@ export function MatrixScene({ lang }: { lang: Lang }) {
       </mesh>
       <Craters />
       <Habitat position={[-3.5, 0, -0.2]} radius={1.35} color="#c8c2b6" />
-      <Habitat position={[0.15, 0, 0.15]} radius={1.72} color="#d5cfc3" />
+      <Habitat position={[0.15, 0, 0.15]} radius={1.72} color="#d5cfc3" enter onEnter={onEnterHall} />
       <Habitat position={[3.8, 0, 0.2]} radius={1.22} color="#c8c2b6" glass />
       <Tunnel position={[-1.7, 0.62, -0.02]} length={2.15} />
       <Tunnel position={[2.0, 0.62, 0.18]} length={2.05} />
@@ -224,6 +286,7 @@ export function MatrixScene({ lang }: { lang: Lang }) {
         scale={1.2}
         text={cs ? 'MATRIX · lunární základna' : 'MATRIX · lunar base'}
       />
+      <SceneLabel position={[0.15, 2.55, 2.15]} text={cs ? 'hala · vstoupit' : 'hall · enter'} />
       <SceneLabel position={[3.8, 2.7, 0.2]} text={cs ? 'skleník' : 'greenhouse'} />
       <SceneLabel position={[0.4, 2.15, 6.2]} text={cs ? 'přistávací plocha' : 'landing pad'} />
       <SceneLabel position={[24, 18.2, -32]} scale={1.4} text={cs ? 'Země' : 'Earth'} />

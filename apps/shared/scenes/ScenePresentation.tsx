@@ -9,9 +9,10 @@ type Point = [number, number, number];
 let reducedMotion = false;
 export const motionTime = (clock: { elapsedTime: number }) => reducedMotion ? 0 : clock.elapsedTime;
 export const motionDelta = (delta: number) => reducedMotion ? 0 : Math.min(delta, .1);
+export const prefersReducedMotion = () => reducedMotion;
 
 /** Shared camera, motion and shadow policy for the twelve project canvases. */
-export function ScenePresentation({ camera: initial, target }: { camera: { position: Point; fov: number }; target: Point }) {
+export function ScenePresentation({ camera: initial, target, spin = true }: { camera: { position: Point; fov: number }; target: Point; spin?: boolean }) {
   const { camera, size, gl, controls, scene } = useThree();
   const audit = React.useRef(false);
   const counters = React.useRef({ frames: 0, start: 0 });
@@ -67,7 +68,7 @@ export function ScenePresentation({ camera: initial, target }: { camera: { posit
     // Labels publish their screen rectangles later in the frame; resolve the
     // overlap from the previous frame before the camera is drawn again.
     resolveSceneLabels(camera);
-    if (controls && 'autoRotate' in controls) (controls as unknown as { autoRotate: boolean }).autoRotate = !reducedMotion;
+    if (controls && 'autoRotate' in controls) (controls as unknown as { autoRotate: boolean }).autoRotate = spin && !reducedMotion;
     const count = counters.current;
     count.frames++;
     // Refresh moving silhouettes gently; static surfaces reuse their shadow map.

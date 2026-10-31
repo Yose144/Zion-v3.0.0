@@ -20,6 +20,8 @@ Tři propojené habitaty na regolitu:
 - solární pole otočené ke Slunci;
 - Země na černé obloze — jediný modrý bod, podle kterého se základna orientuje.
 
+Střední modul se otevře do skleněné haly. Dvě postavy projdou sálem a na konci vyzvednou třetí. Je to vlastní scéna základny, ne filmové lobby.
+
 ## Jak nahoře, tak dole
 
 Dvanáct uzlů drží povrch Nové Země. Matrix drží jejich obraz nad ním: mřížka, ne kolonie v cizím příběhu. Klik na Měsíc v Nirvaně otevře `/present/matrix`. Pozemské markery dál otevírají svých dvanáct prezentací.
