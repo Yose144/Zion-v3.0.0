@@ -4,6 +4,7 @@
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SceneTerrain, SceneWater, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -357,7 +358,7 @@ function LotusPond() {
   const lilies = useMemo(() => {
     const arr: { p: [number, number]; s: number; f: boolean }[] = [];
     let i = 0;
-    while (arr.length < 42 && i < 300) {
+    while (arr.length < 26 && i < 300) {
       i++;
       const a = rng(i * 3.7) * Math.PI * 2;
       const r = ISLAND_R + 2 + rng(i * 1.3) * (POND_OUT - ISLAND_R - 3.5);
@@ -369,10 +370,7 @@ function LotusPond() {
   return (
     <group>
       {/* vodní plocha jezírka + mělčina */}
-      <mesh ref={water} rotation={[-Math.PI / 2, 0, 0]} position={[0, WATER_Y, 0]}>
-        <circleGeometry args={[46, 72]} />
-        <meshStandardMaterial color="#286d71" roughness={0.22} metalness={0.12} transparent opacity={0.96} emissive="#162f2c" emissiveIntensity={0.08} />
-      </mesh>
+      <SceneWater circle width={92} position={[0, WATER_Y, 0]} tint="#0c3f48" repeat={4} speed={0.8} segments={84} sun={[-0.72, 0.26, -0.62]} sky="#f3bd82" />
       {/* mělká teplá voda u břehu */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, WATER_Y + 0.02, 0]}>
         <ringGeometry args={[POND_OUT + 1, 46, 72]} />
@@ -417,7 +415,7 @@ function LotusPond() {
 function GardenRing() {
   const palms = useMemo(() => {
     const arr: { p: [number, number]; h: number }[] = [];
-    for (let i = 0; i < 46; i++) {
+    for (let i = 0; i < 30; i++) {
       const a = rng(i + 21) * Math.PI * 2;
       const r = 49 + rng(i + 31) * 22;
       const z = Math.cos(a) * r;
@@ -429,7 +427,7 @@ function GardenRing() {
   }, []);
   const shrubs = useMemo(() => {
     const arr: { p: [number, number]; s: number; c: string }[] = [];
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 40; i++) {
       const a = rng(i + 77) * Math.PI * 2;
       const r = 46.5 + rng(i + 7) * 12;
       const z = Math.cos(a) * r;
@@ -441,14 +439,23 @@ function GardenRing() {
   return (
     <group>
       {/* země areálu */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, WATER_Y - 0.25, 0]} receiveShadow>
-        <ringGeometry args={[45.5, 140, 80]} />
-        <meshStandardMaterial color="#33401f" roughness={0.98} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} receiveShadow>
-        <circleGeometry args={[150, 64]} />
-        <meshStandardMaterial color="#2b3a20" roughness={0.98} />
-      </mesh>
+      <SceneTerrain
+        kind="grass"
+        size={700}
+        segments={170}
+        repeat={230}
+        seed={67}
+        level={-0.42}
+        height={(x, z, noise) => {
+          const distance = Math.hypot(x, z);
+          const rise = Math.max(0, Math.min(1, (distance - 62) / 90));
+          return rise * (noise.fbm(x * 0.014, z * 0.014, 4) - 0.45) * 12;
+        }}
+        color={(x, _y, z, noise) => {
+          const dry = noise.fbm(x * 0.025 + 3, z * 0.025 + 8, 3);
+          return [0.16 + dry * 0.08, 0.28 + dry * 0.1, 0.1 + dry * 0.05];
+        }}
+      />
       {/* vstupní cesta z jihu — kamenná promenáda */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.18, 33.5]}>
         <planeGeometry args={[1.8, 26]} />
@@ -585,9 +592,25 @@ export function BodhiLankaScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
-      <ScenePresentation camera={LANKA_CAMERA} target={LANKA_CONTROLS.target} />
-      <SkySun />
-      <fog attach="fog" args={['#c98a4a', 90, 260]} />
+      <ScenePresentation
+        camera={LANKA_CAMERA}
+        target={LANKA_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.72, 0.26, -0.62],
+          zenith: '#2b3f6b',
+          horizon: '#f3bd82',
+          ground: '#3a3424',
+          sunColor: '#ffd2a0',
+          sunSharpness: 280,
+          clouds: 0.26,
+          stars: 0.08,
+          fog: '#c98a4a',
+          fogDensity: 0.0024,
+          envIntensity: 0.95,
+        }}
+        post={{ bloom: 0.38, threshold: 0.86, exposure: 1.02, vignette: 0.5 }}
+        intro={{ duration: 3.8 }}
+      />
 
       <LotusPond />
       <CentralIsland />
@@ -624,10 +647,11 @@ export function BodhiLankaScene({ lang }: { lang: Lang }) {
 export const LANKA_CAMERA = { position: [0, 26, 74] as [number, number, number], fov: 45, far: 900 };
 export const LANKA_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.18, minDistance: 20, maxDistance: 150, maxPolarAngle: Math.PI / 2 - 0.06, target: [0, 5, -2] as [number, number, number], enablePan: false };
 export function LankaLighting() {
-  return <>
-    <ambientLight intensity={0.62} color="#ffe4b8" />
-    <hemisphereLight args={['#ffdcaa', '#3d5233', 0.7]} />
-    <directionalLight position={[-60, 24, -22]} intensity={2.1} color="#ffc887" castShadow />
-    <directionalLight position={[42, 30, 42]} intensity={0.55} color="#d8ecff" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.14} color="#ffe4b8" />
+      <SkyFill sky="#b8cdea" ground="#3d5233" intensity={0.5} />
+      <KeyLight sun={[-0.72, 0.26, -0.62]} intensity={2.8} extent={90} distance={150} color="#ffcf9c" />
+    </>
+  );
 }

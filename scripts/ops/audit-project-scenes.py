@@ -4,10 +4,27 @@ import argparse
 import json
 from pathlib import Path
 import re
+import sys
 import time
 from playwright.sync_api import sync_playwright
 
 SCENES = ['genesis-garden', 'dharma-temple', 'te-piko-ora', 'golden-republic-bohemia', 'bodhi-lanka', 'ekam', 'nova-amerika', 'uluru', 'maria-del-camino', 'boa-esperanca', 'kailash', 'amenti']
+# MATRIX has no Earth marker and the universe shell has no scene audit hook yet; both are
+# reachable in Nirvana only and are useful for beauty shots during the render programme.
+NIRVANA_ONLY = ['matrix']
+
+
+def local_chromium(explicit):
+    """Prefer a locally installed browser so audits never download playwright builds."""
+    if explicit:
+        return explicit
+    if sys.platform == 'darwin':
+        for name in ('Google Chrome', 'Chromium', 'Brave Browser', 'Microsoft Edge'):
+            candidate = f'/Applications/{name}.app/Contents/MacOS/{name}'
+            if Path(candidate).exists():
+                return candidate
+    return str(sorted((Path.home() / '.cache/ms-playwright').glob('chromium-*/chrome-linux64/chrome'))[-1])
+
 
 
 def main():
@@ -20,15 +37,16 @@ def main():
     parser.add_argument('--release', default='working-tree')
     parser.add_argument('--sample-seconds', type=float, default=10)
     parser.add_argument('--mount-timeout', type=int, default=60000, help='Milliseconds to wait for the scene to mount (software rendering can be slow)')
-    parser.add_argument('--gpu', choices=['sw', 'nvidia', 'amd'], default='sw', help='Renderer: sw = SwiftShader (comparable to the recorded baseline), nvidia/amd = local hardware via ANGLE')
+    parser.add_argument('--gpu', choices=['sw', 'nvidia', 'amd', 'metal'], default='metal' if sys.platform == 'darwin' else 'sw', help='Renderer: metal = local Apple GPU via ANGLE (macOS), sw = SwiftShader, nvidia/amd = local hardware via ANGLE')
     parser.add_argument('--chromium', default='')
     parser.add_argument('--startup-only', action='store_true', help='Check rendered scene and loaded scripts/styles without the interaction matrix')
+    parser.add_argument('--shots-only', action='store_true', help='Capture hero screenshots + render metrics only (art review, no interaction matrix)')
     parser.add_argument('--resume', action='store_true', help='Keep passed rows for this release and rerun incomplete or failed rows')
     args = parser.parse_args()
     output = Path(args.output).resolve(); output.mkdir(parents=True, exist_ok=True)
-    selected = args.only.split(',') if args.only else SCENES
-    if any(scene not in SCENES for scene in selected): parser.error('unknown scene')
-    chromium = args.chromium or str(sorted((Path.home()/'.cache/ms-playwright').glob('chromium-*/chrome-linux64/chrome'))[-1])
+    selected = args.only.split(',') if args.only else SCENES + NIRVANA_ONLY
+    if any(scene not in SCENES + NIRVANA_ONLY for scene in selected): parser.error('unknown scene')
+    chromium = local_chromium(args.chromium)
     apps = ['nirvana', 'web'] if args.app == 'all' else [args.app]
     results = []
     if args.resume and (output/'results.json').exists():
@@ -40,10 +58,12 @@ def main():
             'sw': ['--enable-unsafe-swiftshader'],
             'nvidia': ['--enable-gpu', '--use-gl=angle', '--use-angle=vulkan', '--enable-features=Vulkan'],
             'amd': ['--enable-gpu', '--use-gl=angle', '--use-angle=gl-egl'],
+            'metal': ['--enable-gpu', '--use-gl=angle', '--use-angle=metal', '--ignore-gpu-blocklist'],
         }[args.gpu]
         browser = p.chromium.launch(executable_path=chromium, headless=True, args=['--no-sandbox', *gpu_args])
         for app in apps:
             for scene in selected:
+                if scene in NIRVANA_ONLY and app != 'nirvana': continue
                 if any(row.get('app') == app and row.get('scene') == scene and row.get('status') == 'pass' for row in results): continue
                 row = {'app': app, 'scene': scene, 'release': args.release, 'renderer': args.gpu, 'errors': []}
                 context = browser.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1)
@@ -53,11 +73,36 @@ def main():
                 try:
                     base = args.nirvana_url if app == 'nirvana' else args.web_url
                     path = '/present/'+scene if app == 'nirvana' else '/terranova/'+('genesis' if scene == 'genesis-garden' else scene)
-                    response = page.goto(base.rstrip('/')+path+'?sceneAudit=1', wait_until='domcontentloaded', timeout=90000)
+                    query = '?sceneAudit=1' + ('&labels=0' if args.shots_only else '')
+                    response = page.goto(base.rstrip('/')+path+query, wait_until='domcontentloaded', timeout=90000)
                     assert response and response.status == 200, f'HTTP {response.status if response else None}'
                     page.wait_for_function('window.__projectScene?.frames >= 4 && window.__projectScene.invalidVertices >= 0', timeout=args.mount_timeout)
                     canvas = page.locator('canvas').first if app == 'nirvana' else page.locator('canvas').last
                     canvas.scroll_into_view_if_needed()
+                    if args.shots_only:
+                        # Art-review capture: stable frame (no auto-rotate), three compositions.
+                        page.emulate_media(reduced_motion='reduce')
+                        page.wait_for_function('window.__projectScene.reducedMotion')
+                        page.wait_for_timeout(600)
+                        row['render'] = page.evaluate('window.__projectScene')
+                        assert row['render']['invalidVertices'] == 0, 'non-finite geometry'
+                        for label, size in (('hero-1920', {'width': 1920, 'height': 1080}),
+                                            ('desktop-1440', {'width': 1440, 'height': 900}),
+                                            ('mobile-390', {'width': 390, 'height': 844})):
+                            page.set_viewport_size(size)
+                            page.wait_for_timeout(700)
+                            page.screenshot(path=str(output/f'{app}-{scene}-{label}.png'), timeout=90000, animations='disabled')
+                            print(f'{app}/{scene}: {label}', flush=True)
+                        row['metrics'] = {
+                            'fps': row['render']['fps'],
+                            'calls': row['render']['calls'],
+                            'triangles': row['render']['triangles'],
+                            'geometries': row['render']['geometries'],
+                            'textures': row['render']['textures'],
+                        }
+                        assert not row['errors'], 'browser runtime errors'
+                        row['status'] = 'pass'
+                        continue
                     if args.startup_only:
                         row['render'] = page.evaluate('window.__projectScene')
                         assert row['render']['invalidVertices'] == 0, 'non-finite geometry'

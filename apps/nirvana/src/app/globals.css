@@ -483,7 +483,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   left: 0;
   right: 0;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
@@ -608,4 +608,55 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     font-size: 0.7rem;
     padding: 0.35rem 0.55rem;
   }
+}
+
+/* The soundtrack button is optional chrome: keep it compact on small screens. */
+@media (max-width: 720px) {
+  .present-sound .present-sound-label {
+    display: none;
+  }
+
+  .present-chrome {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+  }
+
+  .present-chrome .present-sound {
+    display: none;
+  }
+}
+
+/* Loading veil for the project presentations — fades out when the scene settles. */
+.present-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: radial-gradient(circle at 50% 45%, rgba(24, 20, 16, 0.92), rgba(6, 7, 10, 0.98));
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
+.present-veil-label {
+  font-size: 11px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(243, 232, 208, 0.72);
+}
+
+.present-veil-track {
+  width: min(220px, 40vw);
+  height: 2px;
+  background: rgba(243, 232, 208, 0.18);
+  overflow: hidden;
+}
+
+.present-veil-bar {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(216, 178, 94, 0.4), rgba(243, 232, 208, 0.95));
+  transition: width 220ms ease;
 }

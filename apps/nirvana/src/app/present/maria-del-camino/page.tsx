@@ -1,57 +1,24 @@
 'use client';
 
-import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import Link from 'next/link';
+import { ProjectPresentation } from '@/core/scene/ProjectPresentation';
 import { MariaDelCaminoScene, MariaLighting, MARIA_CAMERA, MARIA_CONTROLS } from '../../../../../shared/scenes/MariaDelCamino';
-import { useI18n } from '@/core/i18n';
-import { MISSION_ORIGIN } from '@/lib/freeworld-sites';
 
 export default function MariaDelCaminoPresentPage() {
-  const { lang } = useI18n();
-  const cs = lang === 'cs';
-
   return (
-    <main className="present">
-      <header className="present-chrome">
-        <Link href="/" className="present-back">
-          ← {cs ? 'Nirvana' : 'Nirvana'}
-        </Link>
-        <div className="present-title">
-          <strong>MARÍA DEL CAMINO</strong>
-          <span className="present-sub">
-            {cs ? 'Galicie · Tres Marias — tři lodě, tři oceány — plující uzel' : 'Galicia · Tres Marias — three ships, three oceans — sailing node'}
-          </span>
-        </div>
-        <ProjectLanguageButton />
-        <a
-          className="present-link"
-          href={`${MISSION_ORIGIN}/terranova/maria-del-camino`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {cs ? 'komunita ↗' : 'community ↗'}
-        </a>
-      </header>
-
-      <Canvas
-        dpr={[1, 1.5]}
-        shadows
-        camera={MARIA_CAMERA}
-        gl={{ antialias: true, alpha: true }}
-        style={{ position: 'absolute', inset: 0 }}
-      >
-        <MariaLighting />
-
-        <MariaDelCaminoScene lang={lang} />
-
-        <OrbitControls makeDefault {...MARIA_CONTROLS} />
-      </Canvas>
-
-      <div className="present-hint">
-        {cs ? 'Táhni pro otočení · kolečko pro přiblížení' : 'Drag to rotate · scroll to zoom'}
-      </div>
-    </main>
+    <ProjectPresentation
+      title="MARÍA DEL CAMINO"
+      subtitle={{ cs: 'Galicie · Tres Marias — tři lodě, tři oceány — plující uzel', en: 'Galicia · Tres Marias — three ships, three oceans — sailing node' }}
+      missionPath="/terranova/maria-del-camino"
+      camera={MARIA_CAMERA}
+      controls={MARIA_CONTROLS}
+      sound="maria-del-camino"
+    >
+      {(lang) => (
+        <>
+          <MariaLighting />
+          <MariaDelCaminoScene lang={lang} />
+        </>
+      )}
+    </ProjectPresentation>
   );
 }

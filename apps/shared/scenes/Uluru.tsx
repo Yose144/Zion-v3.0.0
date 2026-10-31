@@ -4,6 +4,7 @@
 import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SceneTerrain, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -309,16 +310,27 @@ function Outback() {
   }, []);
   return (
     <group>
-      {/* červená pouštní zem */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
-        <circleGeometry args={[200, 80]} />
-        <meshStandardMaterial color="#8a4a30" roughness={0.98} />
-      </mesh>
-      {/* světlejší pás půdy pod osadou */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 8]}>
-        <ringGeometry args={[0, 30, 48]} />
-        <meshStandardMaterial color="#9a5a38" roughness={0.95} />
-      </mesh>
+      <SceneTerrain
+        kind="sand"
+        size={720}
+        segments={170}
+        repeat={240}
+        seed={37}
+        level={-0.1}
+        height={(x, z, noise) => {
+          const distance = Math.hypot(x, z);
+          const ridge = Math.max(0, Math.min(1, (distance - 70) / 110));
+          return ridge * (noise.ridged(x * 0.012, z * 0.012, 3) - 0.45) * 10;
+        }}
+        color={(x, _y, z, noise) => {
+          const distance = Math.hypot(x, z - 8);
+          const dry = noise.fbm(x * 0.022 + 2, z * 0.022 + 7, 3);
+          const base: [number, number, number] = [0.54 + dry * 0.1, 0.3 + dry * 0.07, 0.2 + dry * 0.05];
+          // Světlejší písčitý pás pod osadou.
+          const clearing = 1 - THREE.MathUtils.smoothstep(distance, 18, 34);
+          return [base[0] + clearing * 0.1, base[1] + clearing * 0.09, base[2] + clearing * 0.07];
+        }}
+      />
       {/* pouštní dubby + keře */}
       {plants.map((p, i) => (
         <group key={i} position={[p.p[0], 0, p.p[1]]}>
@@ -464,8 +476,25 @@ export function UluruScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
-      <ScenePresentation camera={ULURU_CAMERA} target={ULURU_CONTROLS.target} />
-      <UluruSky />
+      <ScenePresentation
+        camera={ULURU_CAMERA}
+        target={ULURU_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.82, 0.2, -0.44],
+          zenith: '#3b2a52',
+          horizon: '#f2a05e',
+          ground: '#3a2018',
+          sunColor: '#ffb070',
+          sunSharpness: 260,
+          clouds: 0.18,
+          stars: 0.06,
+          fog: '#c97a4a',
+          fogDensity: 0.0018,
+          envIntensity: 0.9,
+        }}
+        post={{ bloom: 0.4, threshold: 0.85, exposure: 1.02, vignette: 0.52 }}
+        intro={{ duration: 3.6 }}
+      />
       <fog attach="fog" args={['#c97a4a', 120, 330]} />
 
       <UluruRock />
@@ -492,10 +521,11 @@ export function UluruScene({ lang }: { lang: Lang }) {
 export const ULURU_CAMERA = { position: [0, 13, 62] as [number, number, number], fov: 46, far: 1000 };
 export const ULURU_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.16, minDistance: 16, maxDistance: 150, maxPolarAngle: Math.PI / 2 - 0.06, target: [0, 7, -10] as [number, number, number], enablePan: false };
 export function UluruLighting() {
-  return <>
-    <ambientLight intensity={0.55} color="#ffd8b0" />
-    <hemisphereLight args={['#ffdcaa', '#4a3020', 0.7]} />
-    <directionalLight position={[-80, 16, -30]} intensity={2} color="#ffb070" castShadow />
-    <directionalLight position={[40, 26, 40]} intensity={0.45} color="#a8c8ff" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.14} color="#ffd8b0" />
+      <SkyFill sky="#c9a0b8" ground="#4a3020" intensity={0.45} />
+      <KeyLight sun={[-0.82, 0.2, -0.44]} intensity={2.6} extent={90} distance={150} color="#ffb070" />
+    </>
+  );
 }

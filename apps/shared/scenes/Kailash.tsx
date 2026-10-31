@@ -5,6 +5,7 @@ import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/run
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SceneTerrain, SceneWater, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -31,10 +32,9 @@ function HimalayaRange() {
 function GlacialLake({ x, z, r = 9, sx = 1 }: { x: number; z: number; r?: number; sx?: number }) {
   return (
     <group position={[x, 0, z]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} scale={[sx, 1, 1]}>
-        <circleGeometry args={[r, 30]} />
-        <meshStandardMaterial color="#317e97" roughness={0.18} metalness={0.15} emissive="#1a6a76" emissiveIntensity={0.12} />
-      </mesh>
+      <group scale={[sx, 1, 1]}>
+        <SceneWater circle width={r * 2} position={[0, 0.04, 0]} tint="#1e5f74" repeat={3} speed={0.5} segments={40} sun={[0.42, 0.5, -0.76]} sky="#cfe0ee" />
+      </group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} scale={[sx * 1.14, 1.14, 1]}>
         <ringGeometry args={[r * 0.98, r * 1.0, 30]} />
         <meshStandardMaterial color="#c8d8ce" roughness={0.9} />
@@ -256,15 +256,27 @@ function Valley() {
   }, []);
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
-        <circleGeometry args={[220, 72]} />
-        <meshStandardMaterial color="#5a4e3a" roughness={0.98} />
-      </mesh>
-      {/* světlejší pás údolí */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, -10]}>
-        <ringGeometry args={[0, 42, 48]} />
-        <meshStandardMaterial color="#6a5e44" roughness={0.95} />
-      </mesh>
+      <SceneTerrain
+        kind="snow"
+        size={760}
+        segments={170}
+        repeat={200}
+        seed={53}
+        level={-0.1}
+        height={(x, z, noise) => {
+          const distance = Math.hypot(x, z + 6);
+          const ridge = Math.max(0, Math.min(1, (distance - 60) / 120));
+          return ridge * (noise.ridged(x * 0.01, z * 0.01, 4) - 0.42) * 26;
+        }}
+        color={(x, _y, z, noise) => {
+          const distance = Math.hypot(x, z + 10);
+          const grain = noise.fbm(x * 0.03 + 1, z * 0.03 + 5, 3);
+          const valley = 1 - THREE.MathUtils.smoothstep(distance, 74, 150);
+          const rock: [number, number, number] = [0.2 + grain * 0.1, 0.18 + grain * 0.09, 0.16 + grain * 0.07];
+          const snowC: [number, number, number] = [0.82 + grain * 0.08, 0.86 + grain * 0.06, 0.9 + grain * 0.05];
+          return [rock[0] + (snowC[0] - rock[0]) * (1 - valley), rock[1] + (snowC[1] - rock[1]) * (1 - valley), rock[2] + (snowC[2] - rock[2]) * (1 - valley)];
+        }}
+      />
       {rocks.map((p, i) => (
         <mesh key={i} position={[p.p[0], 0.3 * p.s, p.p[1]]} scale={[1.5, p.s, 1.3]} castShadow>
           <sphereGeometry args={[0.7, 6, 5]} />
@@ -344,8 +356,25 @@ export function KailashScene({ lang }: { lang: Lang }) {
   const koraPath: [number, number][] = [[-30, 46], [-22, 34], [-16, 24], [-12, 14], [-10, 4], [-8, -6], [-4, -14]];
   return (
     <>
-      <ScenePresentation camera={KAILASH_CAMERA} target={KAILASH_CONTROLS.target} />
-      <KailashSky />
+      <ScenePresentation
+        camera={KAILASH_CAMERA}
+        target={KAILASH_CONTROLS.target}
+        atmosphere={{
+          sun: [0.42, 0.5, -0.76],
+          zenith: '#16304f',
+          horizon: '#a9c2d8',
+          ground: '#5a5e66',
+          sunColor: '#ffe6bc',
+          sunSharpness: 320,
+          clouds: 0.45,
+          stars: 0,
+          fog: '#9fb2c6',
+          fogDensity: 0.0009,
+          envIntensity: 1,
+        }}
+        post={{ bloom: 0.3, threshold: 0.9, exposure: 1, vignette: 0.45 }}
+        intro={{ duration: 3.8 }}
+      />
       <fog attach="fog" args={['#b3c1cf', 110, 330]} />
 
       <MountKailash />
@@ -383,10 +412,11 @@ export function KailashScene({ lang }: { lang: Lang }) {
 export const KAILASH_CAMERA = { position: [-6, 12, 58] as [number, number, number], fov: 46, far: 1200 };
 export const KAILASH_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.15, minDistance: 18, maxDistance: 150, maxPolarAngle: Math.PI / 2 - 0.06, target: [4, 12, -20] as [number, number, number], enablePan: false };
 export function KailashLighting() {
-  return <>
-    <ambientLight intensity={0.6} color="#e8dcc8" />
-    <hemisphereLight args={['#ffe8c0', '#3a3428', 0.75]} />
-    <directionalLight position={[50, 40, -60]} intensity={2} color="#ffdca0" castShadow />
-    <directionalLight position={[-40, 24, 40]} intensity={0.4} color="#a8c0e0" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.16} color="#e8dcc8" />
+      <SkyFill sky="#bcd4ec" ground="#4a4436" intensity={0.55} />
+      <KeyLight sun={[0.42, 0.5, -0.76]} intensity={2.9} extent={120} distance={200} color="#ffe0b0" />
+    </>
+  );
 }

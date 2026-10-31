@@ -33,6 +33,9 @@ function overlaps(a: [number, number, number, number], b: [number, number, numbe
   return a[0] < b[2] + GAP && a[2] + GAP > b[0] && a[1] < b[3] + GAP && a[3] + GAP > b[1];
 }
 
+/** `?labels=0` hides every label — used by the art-review harness. */
+const labelsHidden = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('labels') === '0';
+
 /** Resolve label overlap for one canvas before the labels refresh their own rectangles. */
 export function resolveSceneLabels(camera: THREE.Camera) {
   const active = [...entries].filter(entry => entry.camera === camera && entry.ready);
@@ -56,6 +59,7 @@ export function resolveSceneLabels(camera: THREE.Camera) {
 
 export function SceneLabel({ position, text, scale = 1 }: { position: [number, number, number]; text: string; scale?: number }) {
   const sprite = React.useRef<THREE.Sprite>(null);
+  if (labelsHidden) return null;
   const world = React.useMemo(() => new THREE.Vector3(), []);
   const view = React.useMemo(() => new THREE.Vector3(), []);
   const entry = React.useRef<LabelEntry | null>(null);

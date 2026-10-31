@@ -90,7 +90,7 @@ export function SceneSoundToggle({ src = MATRIX_TRACK }: { src?: string }) {
   return (
     <button
       type="button"
-      className="present-link"
+      className="present-link present-sound"
       style={{ font: 'inherit', cursor: status === 'ready' ? 'pointer' : 'default', opacity: status === 'ready' ? 1 : 0.55 }}
       onClick={toggle}
       aria-pressed={playing}
@@ -99,7 +99,7 @@ export function SceneSoundToggle({ src = MATRIX_TRACK }: { src?: string }) {
         ? (cs ? `Podklad se doplní do ${src}` : `Track will be added at ${src}`)
         : (cs ? 'Přehrát hudbu scény' : 'Play scene soundtrack')}
     >
-      ♪ {label}
+      ♪ <span className="present-sound-label">{label}</span>
     </button>
   );
 }
