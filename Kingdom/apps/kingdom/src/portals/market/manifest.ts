@@ -10,7 +10,7 @@ export const manifest = definePortal({
   icon: 'bag',
   order: 30,
   layer: 'L4',
-  ring: { x: -11.2, z: 4.6, hue: 268 },
+  ring: { x: -2.45, z: -1.3, hue: 268 },
   auth: 'none',
   windows: [{ id: 'shelf', title: { cs: 'Výloha', en: 'Shelf' }, size: 'lg' }],
   reads: [

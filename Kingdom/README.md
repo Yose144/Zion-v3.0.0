@@ -1,6 +1,6 @@
 # Kingdom — jeden klient ekosystému ZION
 
-> **Stav:** **F0 + F1 hotové** (2026-11-01) — kostra buildí, Brána má obsah z IntroPage a živá čísla, tři portály (Řetěz, Kovárna, Tržiště) čtou živá data. F2 (první svět OASIS) následuje.
+> **Stav:** **F0 + F1 + F2a hotové** (2026-11-01) — kostra buildí, Brána má obsah z IntroPage a živá čísla, Místnost má **první svět OASIS** (planeta, prstenec Issobelly, Brána, markery portálů) a tři portály (Řetěz, Kovárna, Tržiště) čtou živá data. F2b (13 světů) následuje.
 > **Datum založení:** 2026-11-01
 > **Nahrazuje:** `NIRVANA-V3.3-UNIFICATION.md` §1–3 jako *architekturu* (nový strom jde od nuly); plánovací router `NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md` zůstává v platnosti pro provoz a RC.
 
@@ -78,6 +78,16 @@ Obsah harvest z `apps/IntroPage` (`maintenance.html` + `intro-tabs.js`), přepsa
 - kotvy `#why` `#paths` `#layers`, cs/en, patička
 
 Staré `apps/IntroPage` zůstává jako donor; apex DNS se nepřepíná, dokud Brána nepokryje jeho povrch (F6).
+
+## Co je hotové (F2a — první svět OASIS)
+
+- `packages/world` — **doména bez Reactu a Three**: Nová Země, prstenec Issobelly (6 stanic), Brána, `placeMarker`, `orbitCamera`, seeded PRNG (`mulberry32`) a generátor hvězd
+- `packages/scenes` — web adaptér: `OrbitScene`, `NewEarth` (textura 82 KB), `IssobellaRing`, `Gate`, `Markers`, `Starfield` (2400 hvězd, jeden buffer) — **bez drei a bez xr**
+- scéna je **generovaná Portal Contractem**: portál s `ring` se objeví ve světě sám, klik na marker otevře `/portal/<id>`
+- lazy `next/dynamic` + `ssr:false` → three.js (**237 KB gzip**) se stahuje jen na `/room`; Brána zůstává bez WebGL
+- ověřeno přes CDP, ne screenshotem: headless Chromium WebGL canvas do obrázku nekomponuje
+
+Report: [`docs/3.2/REPORTS/REPORT_2026-11-01_KINGDOM_F0-F2_OASIS.md`](../docs/3.2/REPORTS/REPORT_2026-11-01_KINGDOM_F0-F2_OASIS.md)
 
 ## Hierarchie pravdy
 

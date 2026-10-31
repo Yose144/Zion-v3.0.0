@@ -11,7 +11,9 @@ const nextConfig: NextConfig = {
     '@zion/api',
     '@zion/contract',
     '@zion/i18n',
+    '@zion/scenes',
     '@zion/session',
+    '@zion/world',
     '@zion/ui',
   ],
 

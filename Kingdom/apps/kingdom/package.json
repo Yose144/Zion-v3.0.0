@@ -9,19 +9,23 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@react-three/fiber": "^9.4.0",
     "@zion/api": "*",
     "@zion/contract": "*",
     "@zion/i18n": "*",
+    "@zion/scenes": "*",
     "@zion/session": "*",
     "@zion/ui": "*",
     "next": "^16.4.3",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@types/three": "^0.186.0"
   }
 }

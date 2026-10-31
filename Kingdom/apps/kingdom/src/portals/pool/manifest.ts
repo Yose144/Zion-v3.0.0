@@ -10,7 +10,7 @@ export const manifest = definePortal({
   icon: 'anvil',
   order: 20,
   layer: 'L1',
-  ring: { x: 12.4, z: -3.1, hue: 34 },
+  ring: { x: 2.45, z: -1.25, hue: 34 },
   auth: 'none',
   windows: [{ id: 'coins', title: { cs: 'Mince', en: 'Coins' }, size: 'lg' }],
   reads: [

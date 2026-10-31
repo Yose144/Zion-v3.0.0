@@ -48,3 +48,11 @@ Pro dokumentační změny stačí `git diff --check`.
 - **`next start` nefunguje s `output: standalone`** (v monorepu ani omylem). Použij `npm start` → `apps/kingdom/scripts/start-standalone.mjs`, který stageuje `.next/static` a `public/` vedle `server.js` v `.next/standalone/apps/kingdom/`.
 - **Portál nesmí volat `fetch`.** `check-boundaries.mjs` to chytí. Data deklaruj v `manifest.reads[]` a přečti přes `api.read()`.
 - **Nová stránka = nový portál.** Když přidáš adresář do `src/portals/`, spusť `npm run codegen`, jinak se v Místnosti neobjeví.
+
+## Pasti z F2 (2026-11-01)
+
+- **`useLoader` nemá `onLoad`** — třetí argument je `extensions`. `texture.colorSpace` nastav po načtení (`useMemo`).
+- **Kamera v R3F nemá `lookAt`** — bez `CameraRig` (nebo `makeDefault` + ovládání) míří podle rotace, ne na počátek a planeta vypadne ze záběru.
+- **Scéna je lazy** (`next/dynamic`, `ssr:false`) — three.js se nesmí objevit v bundlu Brány. Ověřuj: `/` nesmí mít `<canvas>` v HTML.
+- **`manifest.ring` je měřítko světa, ne nirvany.** Drž orbitu r ≈ 2,5; `x: 12` je mimo záběr kamery.
+- **Headless screenshot WebGL nefunguje** (prázdné plátno i když scéna běží). Ověřuj přes CDP: `Page.captureScreenshot` + `Runtime.evaluate` na `.k-scene canvas` (`hasGL`, `contextLost`, `width`/`height`).

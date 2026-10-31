@@ -734,3 +734,30 @@ a {
 .k-section {
   scroll-margin-top: 70px;
 }
+
+/* ---------- svět ve Místnosti ---------- */
+
+.k-scene-live {
+  height: 340px;
+}
+
+.k-scene-live canvas {
+  display: block;
+  border-radius: var(--k-radius);
+  touch-action: none;
+}
+
+.k-scene-wait {
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 62% 44%, rgba(122, 167, 255, 0.14), transparent 46%),
+    radial-gradient(circle at 28% 72%, rgba(111, 240, 196, 0.08), transparent 48%),
+    var(--k-bg-soft);
+}
+
+.k-scene-label {
+  pointer-events: none;
+  max-width: min(70%, 520px);
+  line-height: 1.4;
+}
