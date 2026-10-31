@@ -131,7 +131,8 @@ pub struct PoolApi {
     /// never convoy API readers behind it.
     telemetry: Arc<Mutex<crate::telemetry::MinerTelemetryRegistry>>,
     pplns: Arc<Mutex<crate::v3_pplns::PplnsEngine>>,
-    worker_addresses: Arc<std::sync::RwLock<std::collections::HashMap<String, zion_l1_types::Address>>>,
+    worker_addresses:
+        Arc<std::sync::RwLock<std::collections::HashMap<String, zion_l1_types::Address>>>,
     share_store: Option<Arc<ShareStore>>,
     auxpow_bridge: Option<MultiAuxPowBridge>,
     routing_stats: Option<Arc<std::sync::Mutex<crate::routing::RoutingStats>>>,
@@ -300,6 +301,15 @@ impl PoolApi {
             // dashboards' "current effort" gauge divides it by the expected
             // share count (net_diff / share_diff, same model as luck_pct).
             "shares_since_last_block": s.shares_since_last_block,
+            // 1.B6/IA-19: largest single-miner share of the last 100 found
+            // blocks — the decentralization metric (wallet masked like the
+            // public leaderboard).
+            "dominant_share_100": s.dominant_share_100.map(|d| json!({
+                "miner": mask_wallet(&d.miner_id),
+                "blocks": d.blocks,
+                "total": d.total,
+                "share_pct": (d.share_pct * 100.0).round() / 100.0,
+            })),
         })
     }
 
@@ -721,7 +731,9 @@ impl PoolApi {
                 let limit = parse_query_limit(raw_path, 50);
                 match &self.share_store {
                     Some(store) => {
-                        let blocks = store.query_blocks_for_coin(&coin, limit).unwrap_or_default();
+                        let blocks = store
+                            .query_blocks_for_coin(&coin, limit)
+                            .unwrap_or_default();
                         let body = json!({
                             "ok": true,
                             "coin": public_ticker(&coin),
@@ -876,7 +888,8 @@ impl PoolApi {
                 }
             }
             "/public/v1/payouts" => {
-                let coin = internal_coin_key(&parse_query_param(raw_path, "coin").unwrap_or_default());
+                let coin =
+                    internal_coin_key(&parse_query_param(raw_path, "coin").unwrap_or_default());
                 let limit = parse_query_limit(raw_path, 50);
                 match &self.share_store {
                     Some(store) => {
@@ -1198,7 +1211,12 @@ impl PoolApi {
                                 let state_path: Option<String> =
                                     pool.config.state_path.as_deref().map(|p| p.to_string());
                                 let coin = req.coin.trim().to_ascii_lowercase();
-                                if !pool.pplns.lock().expect("pplns lock").is_native_payout_coin(&coin) {
+                                if !pool
+                                    .pplns
+                                    .lock()
+                                    .expect("pplns lock")
+                                    .is_native_payout_coin(&coin)
+                                {
                                     (
                                         "400 Bad Request",
                                         "application/json",
@@ -1309,7 +1327,9 @@ impl PoolApi {
                                                 "{\"ok\":false,\"error\":\"PPLNS state persistence is required for native revenue\"}",
                                             );
                                         };
-                                        if let Err(e) = pool.pplns.lock().expect("pplns lock").save_if_dirty(sp) {
+                                        if let Err(e) =
+                                            pool.pplns.lock().expect("pplns lock").save_if_dirty(sp)
+                                        {
                                             tracing::error!(
                                                 event = %event_id,
                                                 "failed to persist PPLNS revenue snapshot: {e}"
@@ -1810,8 +1830,11 @@ impl PoolApi {
     fn build_miner_detail_payload(&self, miner_id: &str) -> String {
         // Read the worker map once under the shard read guard — no
         // global pool mutex on this request path.
-        let worker_addresses: std::collections::HashMap<String, zion_l1_types::Address> =
-            self.worker_addresses.read().expect("worker addrs lock").clone();
+        let worker_addresses: std::collections::HashMap<String, zion_l1_types::Address> = self
+            .worker_addresses
+            .read()
+            .expect("worker addrs lock")
+            .clone();
         let telemetry = self.telemetry.clone();
 
         let (full_worker, address) = worker_addresses
@@ -2169,8 +2192,11 @@ impl PoolApi {
     /// `/public/v1/miners` (masked leaderboard view).
     fn collect_miners_json(&self, limit: usize) -> (usize, Vec<serde_json::Value>) {
         // Worker-map read under the shard guard — no global pool mutex.
-        let worker_addresses: std::collections::HashMap<String, zion_l1_types::Address> =
-            self.worker_addresses.read().expect("worker addrs lock").clone();
+        let worker_addresses: std::collections::HashMap<String, zion_l1_types::Address> = self
+            .worker_addresses
+            .read()
+            .expect("worker addrs lock")
+            .clone();
         let telemetry = self.telemetry.clone();
 
         let now_s = now_unix_seconds();
@@ -2456,8 +2482,7 @@ impl PoolApi {
         let pl = self.pplns.lock().expect("pplns lock poisoned");
         let stats = pl.stats();
         let fees = pl.fee_stats();
-        let (miners_in_window, top_share_pct, coins) =
-            pl.public_window_summary();
+        let (miners_in_window, top_share_pct, coins) = pl.public_window_summary();
         drop(pl);
         let coins: serde_json::Map<String, serde_json::Value> = coins
             .into_iter()
@@ -2645,7 +2670,8 @@ impl PoolApi {
             let (miner_id, worker_short) = split_worker_key(key);
             let matches = miner_id == wallet
                 || miner_id.starts_with(&format!("{wallet}."))
-                || pl.address_for(&miner_id)
+                || pl
+                    .address_for(&miner_id)
                     .map(|a| a == wallet)
                     .unwrap_or(false);
             if !matches {
@@ -3312,9 +3338,7 @@ fn sample_history(pool: &Arc<Mutex<Pool>>) -> (HistorySample, Vec<MinerHistoryRo
         }
         // Only persist miners seen inside the liveness window — sampling
         // long-dead entries would just pad gaps the 7d pruner keeps anyway.
-        if !hps.is_empty()
-            || now_s.saturating_sub(miner.last_seen_s) < MINER_HISTORY_SEEN_S
-        {
+        if !hps.is_empty() || now_s.saturating_sub(miner.last_seen_s) < MINER_HISTORY_SEEN_S {
             let (miner_id, worker) = split_worker_key(key);
             miner_rows.push(MinerHistoryRow {
                 miner_id,
@@ -4216,9 +4240,13 @@ mod tests {
         config.min_payout_native.insert("qtu".into(), 1);
         let pool = Pool::new(config, telemetry);
         pool.pplns
-            .lock().unwrap().register_address_with_chain("alice", "qz1alice", "quantus");
+            .lock()
+            .unwrap()
+            .register_address_with_chain("alice", "qz1alice", "quantus");
         pool.pplns
-            .lock().unwrap().record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
+            .lock()
+            .unwrap()
+            .record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
         let pool = Arc::new(Mutex::new(pool));
         let store = Arc::new(ShareStore::open_in_memory().unwrap());
         let api = PoolApi::new(pool, Some(store.clone()), None);
@@ -4748,7 +4776,10 @@ mod tests {
         {
             let p = pool.lock().unwrap();
             p.pplns.lock().unwrap().register_address("miner1", WALLET);
-            p.pplns.lock().unwrap().record_share_at("miner1", "rig", 1, 1000);
+            p.pplns
+                .lock()
+                .unwrap()
+                .record_share_at("miner1", "rig", 1, 1000);
             // 400k reward → 89% miner share = 356k, below the 1M
             // threshold → stays in unpaid balance.
             let payouts = p.pplns.lock().unwrap().compute_payouts(400_000);
@@ -5094,7 +5125,9 @@ mod tests {
             pool.lock()
                 .unwrap()
                 .pplns
-                .lock().unwrap().min_payout_for_miner("zion1mine", "zion"),
+                .lock()
+                .unwrap()
+                .min_payout_for_miner("zion1mine", "zion"),
             raised
         );
 
@@ -5123,7 +5156,9 @@ mod tests {
             pool.lock()
                 .unwrap()
                 .pplns
-                .lock().unwrap().min_payout_for_miner("zion1mine", "zion"),
+                .lock()
+                .unwrap()
+                .min_payout_for_miner("zion1mine", "zion"),
             global
         );
     }

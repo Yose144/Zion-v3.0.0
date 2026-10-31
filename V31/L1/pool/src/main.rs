@@ -754,6 +754,17 @@ async fn main() -> anyhow::Result<()> {
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(6 * 3600);
+        // 1.B6/IA-19: dominant-miner share of the last 100 found blocks.
+        // G8 run #2 failed on single-miner dependency — alert while the
+        // concentration is still growing, not after it has happened.
+        let dominant_pct: f64 = std::env::var("ZION_POOL_ALERT_DOMINANT_PCT")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(50.0);
+        let dominant_min_blocks: u64 = std::env::var("ZION_POOL_ALERT_DOMINANT_MIN_BLOCKS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(20);
         let cooldown_secs: u64 = std::env::var("ZION_POOL_ALERT_COOLDOWN_SECS")
             .ok()
             .and_then(|v| v.parse().ok())
@@ -819,6 +830,30 @@ async fn main() -> anyhow::Result<()> {
                 tokio::spawn(async move {
                     n.notify_block_silence(silence_s);
                 });
+            }
+            // Dominant share: largest single miner's fraction of the last
+            // 100 found blocks. Min-sample gate avoids false alarms on the
+            // first blocks after boot or after a long quiet period.
+            let dominant = health_tracker
+                .lock()
+                .ok()
+                .and_then(|t| t.dominant_miner_share(100));
+            if let Some(d) = dominant {
+                if d.total >= dominant_min_blocks
+                    && d.share_pct >= dominant_pct
+                    && !cooling(&last_alert, "dominant_share")
+                {
+                    last_alert.insert("dominant_share", std::time::Instant::now());
+                    let n = health_notifier.clone();
+                    tokio::spawn(async move {
+                        n.notify_dominant_share(
+                            &d.miner_id,
+                            d.share_pct,
+                            d.blocks,
+                            d.total as usize,
+                        );
+                    });
+                }
             }
         }
     });
