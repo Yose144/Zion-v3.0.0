@@ -97,8 +97,8 @@ const t = {
       en: 'The story of the ship a carpenter built',
     },
     description: {
-      cs: 'Duchovní legenda o tektonu z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 10 kapitol + epilog, každá s tabulkou „Kotva pravdy".',
-      en: 'A spiritual legend about the tekton of Nazareth who, in his father\'s workshop, built a ship for a sea found on no map — and called it the Kingdom of Hearts. 10 chapters + epilogue, each with a "Truth Anchor" table.',
+      cs: 'Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 10 kapitol + epilog, každá s tabulkou „Kotva pravdy".',
+      en: 'A spiritual legend about the carpenter of Nazareth who, in his father\'s workshop, built a ship for a sea found on no map — and called it the Kingdom of Hearts. 10 chapters + epilogue, each with a "Truth Anchor" table.',
     },
     format: { cs: 'Digitální vydání · PDF · 10 kapitol + epilog', en: 'Digital edition · PDF · 10 chapters + epilogue' },
     delivery: { cs: 'PDF dodáváme ke stažení po objednávce', en: 'PDF delivered for download after ordering' },

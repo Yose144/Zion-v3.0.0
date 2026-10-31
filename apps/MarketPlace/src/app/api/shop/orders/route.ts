@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import type { ShopOrderInput, ShippingMethod } from '@/types/shop';
 import { SHIPPING_PRICES } from '@/types/shop';
 import { sendAdminOrderNotification, sendCustomerOrderConfirmation, sendCustomerWalletEmail } from '@/lib/email';
+import { getActiveTokenCampaigns, campaignTokens } from '@/lib/shop-campaign';
 import { createInvoiceForOrder } from '@/lib/invoice';
 import { generateCustomerWallet } from '@/lib/zion-l1';
 import { encryptSecret } from '@/lib/crypto';
@@ -134,9 +135,12 @@ export async function POST(req: NextRequest) {
 
     // ── Server-side pricing: recompute total + tokens from catalog ──
     const externalIds = body.items.map((i) => String(i.externalId));
-    const products = await prisma.shopProduct.findMany({
-      where: { externalId: { in: externalIds }, active: true },
-    });
+    const [products, tokenCampaigns] = await Promise.all([
+      prisma.shopProduct.findMany({
+        where: { externalId: { in: externalIds }, active: true },
+      }),
+      getActiveTokenCampaigns(),
+    ]);
     const byId = new Map(products.map((p) => [p.externalId, p]));
 
     let itemsTotal = 0;
@@ -165,9 +169,11 @@ export async function POST(req: NextRequest) {
       if (!product.inStock || product.stock < qty) {
         return NextResponse.json({ success: false, error: `${product.name} is out of stock` }, { status: 409 });
       }
-      // V2 parity: catalog tokens, else 1 Kč = 1 ZION loyalty unit
-      const unitTokens =
+      // V2 parity: active campaign overrides catalog tokens,
+      // else 1 Kč = 1 ZION loyalty unit
+      const baseTokens =
         product.tokens > 0 ? product.tokens : Math.max(1, Math.round(product.priceCzk));
+      const unitTokens = campaignTokens(tokenCampaigns, product.externalId, baseTokens);
       itemsTotal += product.priceCzk * qty;
       zionTokens += unitTokens * qty;
       lineItems.push({
