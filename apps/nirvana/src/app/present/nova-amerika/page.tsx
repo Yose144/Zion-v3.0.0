@@ -12,6 +12,7 @@ export default function NovaAmerikaPresentPage() {
       camera={LUMI_CAMERA}
       controls={LUMI_CONTROLS}
       sound="nova-amerika"
+      ambience="forest"
     >
       {(lang) => (
         <>

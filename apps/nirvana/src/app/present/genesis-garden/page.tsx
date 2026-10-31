@@ -12,6 +12,7 @@ export default function GenesisGardenPresentPage() {
       camera={GENESIS_CAMERA}
       controls={GENESIS_CONTROLS}
       sound="genesis-garden"
+      ambience="forest"
     >
       {(lang) => (
         <>

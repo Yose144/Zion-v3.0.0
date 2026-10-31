@@ -12,6 +12,7 @@ export default function BodhiLankaPresentPage() {
       camera={LANKA_CAMERA}
       controls={LANKA_CONTROLS}
       sound="bodhi-lanka"
+      ambience="forest"
     >
       {(lang) => (
         <>

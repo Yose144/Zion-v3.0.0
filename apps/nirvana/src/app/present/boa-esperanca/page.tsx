@@ -12,6 +12,7 @@ export default function BoaEsperancaPresentPage() {
       camera={BOA_CAMERA}
       controls={BOA_CONTROLS}
       sound="boa-esperanca"
+      ambience="surf"
     >
       {(lang) => (
         <>

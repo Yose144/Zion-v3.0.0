@@ -151,13 +151,13 @@ function Lighthouse() {
       </mesh>
       {/* rotující svazek */}
       <group ref={beam} position={[0, 8.95, 0]}>
-        <mesh position={[9, 0, 0]} rotation={[0, 0, 0]}>
-          <boxGeometry args={[18, 0.5, 0.12]} />
-          <meshBasicMaterial color="#ffe9a8" transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <mesh position={[7, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+          <coneGeometry args={[1.5, 14, 14, 1, true]} />
+          <meshBasicMaterial color="#ffe9a8" transparent opacity={0.1} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
-        <mesh position={[-7, 0, 0]}>
-          <boxGeometry args={[14, 0.35, 0.1]} />
-          <meshBasicMaterial color="#ffe9a8" transparent opacity={0.22} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <mesh position={[-5.5, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <coneGeometry args={[1.1, 11, 12, 1, true]} />
+          <meshBasicMaterial color="#ffe9a8" transparent opacity={0.07} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
       </group>
       <pointLight position={[0, 9, 0]} intensity={3} color="#ffca5e" distance={26} decay={2} />
@@ -214,11 +214,6 @@ function TwoOceans() {
   return (
     <group>
       <AtlanticOcean level={-.7} coastal={false} roughSea />
-      {/* příbojová vlna sunoucí se ke břehu */}
-      <mesh ref={swell} rotation={[-Math.PI / 2, 0, 0.04]} position={[8, -0.55, 16]}>
-        <planeGeometry args={[70, 2.6]} />
-        <meshStandardMaterial color="#8fc4c8" transparent opacity={0.18} roughness={0.5} />
-      </mesh>
       {/* pěna u skalisek */}
       <group ref={foam}>
         {[...Array(10)].map((_, i) => (

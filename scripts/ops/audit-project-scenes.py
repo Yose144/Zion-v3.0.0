@@ -42,6 +42,8 @@ def main():
     parser.add_argument('--startup-only', action='store_true', help='Check rendered scene and loaded scripts/styles without the interaction matrix')
     parser.add_argument('--shots-only', action='store_true', help='Capture hero screenshots + render metrics only (art review, no interaction matrix)')
     parser.add_argument('--resume', action='store_true', help='Keep passed rows for this release and rerun incomplete or failed rows')
+    parser.add_argument('--strict-budget', action='store_true', help='Fail scenes above 600 draw calls, 450k triangles or below 30 fps')
+    parser.add_argument('--scorecard', default='', help='Write a markdown scorecard to this path')
     args = parser.parse_args()
     output = Path(args.output).resolve(); output.mkdir(parents=True, exist_ok=True)
     selected = args.only.split(',') if args.only else SCENES + NIRVANA_ONLY
@@ -108,6 +110,10 @@ def main():
                             'geometries': row['render']['geometries'],
                             'textures': row['render']['textures'],
                         }
+                        if args.strict_budget:
+                            assert row['metrics']['calls'] <= 600, f"draw calls {row['metrics']['calls']} > 600"
+                            assert row['metrics']['triangles'] <= 450_000, f"triangles {row['metrics']['triangles']} > 450k"
+                            assert row['metrics']['fps'] >= 30, f"fps {row['metrics']['fps']:.1f} < 30"
                         assert not row['errors'], 'browser runtime errors'
                         row['status'] = 'pass'
                         continue
@@ -195,6 +201,26 @@ def main():
                     (output/'results.json').write_text(json.dumps({'release':args.release,'results':results},indent=2))
                     print(json.dumps(row),flush=True)
         browser.close()
+
+    if args.scorecard:
+        rows = [row for row in results if row.get('metrics')]
+        rows.sort(key=lambda item: -item['metrics']['calls'])
+        lines = [
+            f"# Scene scorecard — {args.release}",
+            '',
+            f"Renderer: {args.gpu}. Captured with reduced motion, 1440x900.",
+            '',
+            '| App | Scene | Draw calls | Triangles | Textures | FPS | Status |',
+            '| --- | --- | --- | --- | --- | --- | --- |',
+        ]
+        for row in rows:
+            m = row['metrics']
+            lines.append(
+                f"| {row['app']} | {row['scene']} | {m['calls']} | {m['triangles']} | {m['textures']} | {m['fps']:.1f} | {row['status']} |"
+            )
+        Path(args.scorecard).write_text('\n'.join(lines) + '\n')
+        print(f'scorecard: {args.scorecard}', flush=True)
+
     return 1 if any(row['status']=='fail' for row in results) else 0
 
 if __name__ == '__main__': raise SystemExit(main())

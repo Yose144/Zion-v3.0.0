@@ -75,10 +75,27 @@ takže celý háj je jeden draw call. Nasazeno v Bodhi Lanka (730 → 489) a LUM
 - Akceptace: `scripts/ops/audit-project-scenes.py --app nirvana --shots-only --gpu metal`
   nad produkčním buildem, 13 scén, bez shader a konzolových chyb.
 
+## R3 + R4 (dokončeno v navazujícím kole)
+
+**Jeden oceán.** `apps/shared/scenes/kit/ocean.tsx` — tři překřížené vlnové vlaky počítané
+procedurálně (žádné texturové tilingy na 2 km), Fresnel k barvě oblohy, sluneční glint,
+volitelná pěna a shoreline. `AtlanticOcean` je odteď tenká vrstva s původním API
+(`level`, `coastal`, `lagoon`, `shorelineZ`, `roughSea`), takže Dharma, Boa i Tres Marias
+sdílí jednu implementaci.
+
+**Zvuk bez assetů.** `core/shell/ambience.ts` syntetizuje tichý podklad z filtrovaného
+šumu a pomalého LFO (profily `surf`, `wind`, `forest`, `desert`, `space`, `temple`).
+`SceneSoundToggle` zkusí `/audio/<slug>.mp3`; když soubor není, přepne na ambienci —
+tlačítko už není mrtvé. Ověřeno v prohlížeči: `ZVUK → VYPNOUT ZVUK`, `aria-pressed=true`,
+žádná chyba v konzoli kromě očekávaného 404 na chybějící track.
+
+**Brána kvality.** Harness má `--strict-budget` (≤600 draw calls, ≤450 k trojúhelníků,
+≥30 fps) a `--scorecard`, který zapíše markdown tabulku. Finální běh: 13/13 `pass`
+se strict budgetem.
+
 ## Otevřené (další vlny)
 
-- **R3** — jeden ocean shader pro `AtlanticOcean` i `SceneWater` (dnes dva přístupy).
-- **R4** — ambientní zvuk pro všech 12 scén (tracky), částice a drobný život v každé scéně.
+- **R4** — částice a drobný život v každé scéně (ptáci, prach, listí) nad rámec zvuku.
 - **R6** — universe (`/`): první krok hotový (composer, bloom, DPR z tieru, audit háček;
   57 fps / 119 draw calls / 65 k tris na WebGL2). Zbývá: přechody scéna↔portál, HUD,
   Dolby-like grading StarGate a Nové Země.

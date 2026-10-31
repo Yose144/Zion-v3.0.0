@@ -12,6 +12,7 @@ export default function EkamPresentPage() {
       camera={EKAM_CAMERA}
       controls={EKAM_CONTROLS}
       sound="ekam"
+      ambience="temple"
     >
       {(lang) => (
         <>

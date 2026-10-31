@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 
 import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
 import { SceneSoundToggle } from '@/core/shell/SceneSoundToggle';
+import type { AmbienceProfile } from '@/core/shell/ambience';
 import { useI18n } from '@/core/i18n';
 import { MISSION_ORIGIN } from '@/lib/freeworld-sites';
 import { quality } from '../../../../shared/scenes/kit/quality';
@@ -20,8 +21,10 @@ export interface ProjectPresentationProps {
   missionPath: string;
   camera: { position: [number, number, number]; fov: number; far?: number };
   controls: Record<string, unknown>;
-  /** Track name under `/audio/`; the player stays inert until the file exists. */
+  /** Track name under `/audio/`; falls back to a synthesised ambience when missing. */
   sound?: string;
+  /** Ambience character used when no track file exists. */
+  ambience?: AmbienceProfile;
   children: (lang: Lang) => ReactNode;
 }
 
@@ -52,7 +55,7 @@ function LoadingVeil() {
  * One wrapper for every L5 project presentation: chrome, canvas, quality tier,
  * controls, soundtrack and the loading veil. Scenes own the 3D content only.
  */
-export function ProjectPresentation({ title, subtitle, missionPath, camera, controls, sound, children }: ProjectPresentationProps) {
+export function ProjectPresentation({ title, subtitle, missionPath, camera, controls, sound, ambience = 'wind', children }: ProjectPresentationProps) {
   const { lang } = useI18n();
   const cs = lang === 'cs';
   const settings = quality();
@@ -68,7 +71,7 @@ export function ProjectPresentation({ title, subtitle, missionPath, camera, cont
           <span className="present-sub">{cs ? subtitle.cs : subtitle.en}</span>
         </div>
         <ProjectLanguageButton />
-        {sound ? <SceneSoundToggle src={`/audio/${sound}.mp3`} /> : null}
+        {sound ? <SceneSoundToggle src={`/audio/${sound}.mp3`} profile={ambience} /> : null}
         <a className="present-link" href={`${MISSION_ORIGIN}${missionPath}`} target="_blank" rel="noopener noreferrer">
           {cs ? 'komunita ↗' : 'community ↗'}
         </a>

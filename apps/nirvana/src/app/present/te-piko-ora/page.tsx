@@ -12,6 +12,7 @@ export default function TePikoOraPresentPage() {
       camera={PIKO_CAMERA}
       controls={PIKO_CONTROLS}
       sound="te-piko-ora"
+      ambience="surf"
     >
       {(lang) => (
         <>

@@ -12,6 +12,7 @@ export default function AmentiPresentPage() {
       camera={AMENTI_CAMERA}
       controls={AMENTI_CONTROLS}
       sound="amenti"
+      ambience="desert"
     >
       {(lang) => (
         <>

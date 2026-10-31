@@ -12,6 +12,7 @@ export default function KailashPresentPage() {
       camera={KAILASH_CAMERA}
       controls={KAILASH_CONTROLS}
       sound="kailash"
+      ambience="wind"
     >
       {(lang) => (
         <>

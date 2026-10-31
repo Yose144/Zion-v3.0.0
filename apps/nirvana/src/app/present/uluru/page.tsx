@@ -12,6 +12,7 @@ export default function UluruPresentPage() {
       camera={ULURU_CAMERA}
       controls={ULURU_CONTROLS}
       sound="uluru"
+      ambience="desert"
     >
       {(lang) => (
         <>

@@ -12,6 +12,7 @@ export default function MariaDelCaminoPresentPage() {
       camera={MARIA_CAMERA}
       controls={MARIA_CONTROLS}
       sound="maria-del-camino"
+      ambience="surf"
     >
       {(lang) => (
         <>

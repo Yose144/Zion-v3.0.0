@@ -12,6 +12,7 @@ export default function GoldenRepublicBohemiaPresentPage() {
       camera={BOHEMIA_CAMERA}
       controls={BOHEMIA_CONTROLS}
       sound="golden-republic-bohemia"
+      ambience="wind"
     >
       {(lang) => (
         <>

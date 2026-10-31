@@ -12,6 +12,7 @@ export default function DharmaTemplePresentPage() {
       camera={DHARMA_CAMERA}
       controls={DHARMA_CONTROLS}
       sound="dharma-temple"
+      ambience="surf"
     >
       {(lang) => (
         <>
