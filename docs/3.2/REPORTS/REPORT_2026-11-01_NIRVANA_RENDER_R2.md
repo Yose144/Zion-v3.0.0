@@ -104,7 +104,7 @@ Finální běh: 13/13 `pass` se strict budgetem i s vizuální bránou.
 
 | Povrch | Host | Release | Výsledek |
 | --- | --- | --- | --- |
-| Nirvana | EDGE (zion-new), `zion-nirvana.service` :3010 | `render-r7-20261031T181045Z` | `https://nirvana.zionterranova.com` 200, textury i `/api/oasis/worlds` OK |
+| Nirvana | EDGE (zion-new), `zion-nirvana.service` :3010 | `render-r8-20261031T191122Z` | `https://nirvana.zionterranova.com` 200, textury i `/api/oasis/worlds` OK |
 | Web | EDGE2 (zion-edge2), `zion-website.service` :3000 | `render-r6-20261031T180350Z` | `https://app.zionterranova.com` 200, assety i `/api/health` OK |
 
 Předchozí buildy zůstaly na serverech (`nirvana.before-render-r4-…`,
@@ -156,6 +156,18 @@ Příště je čistší buildit web přímo na Linuxu.
   / textury na scénu) generovaný `--write-budget`; CI ho vynutí přes
   `--budget-file … --budget-tolerance 15`. Vizuální hash zůstává lokální, protože se mezi
   GPU liší.
+
+## Jedna voda a poslední nasazení
+
+`OceanSurface` je odteď jediná vodní implementace: `mode="sea"` (tři procedurální vlnové
+vlaky, stabilní do dálky) a `mode="pool"` (tilingová ripple normal mapa pro bazény).
+`SceneWater` i `AtlanticOcean` jsou tenké vrstvy nad ní; bazény tlumí Fresnel
+(`uFresnelScale 0.42`), aby nezešedly od oblohy. Ověřeno na sedmi scénách s vodou, draw
+calls beze změny.
+
+Nasazeno `render-r8-20261031T191122Z` (EDGE). Live: Ekam 205 calls / 53 fps,
+Bodhi Lanka 491 / 52, vesmír 64 calls / 58,8 fps s 0 chybami. Předchozí build zůstal
+v `nirvana.before-render-r8-20261031T191122Z`.
 
 ## Otevřené (další vlny)
 
