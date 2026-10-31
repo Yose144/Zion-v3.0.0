@@ -892,6 +892,45 @@ mod tests {
         );
     }
 
+    /// 4.B1 bridge smoke: a small round-trip — outbound ZION→chain leg and
+    /// the matching inbound chain→ZION leg each driven through the full
+    /// lifecycle to `Completed`, leaving the pending set drained.
+    #[test]
+    fn test_round_trip_outbound_then_inbound_completes() {
+        let mut router = test_router();
+        let advance_all = |router: &mut WarpRouter, id: Uuid| {
+            for status in [
+                WarpStatus::AwaitingFinality,
+                WarpStatus::Validating,
+                WarpStatus::QuorumReached,
+                WarpStatus::Executing,
+                WarpStatus::Completed,
+            ] {
+                router.advance_transfer(id, status).unwrap();
+            }
+        };
+
+        // Leg 1: ZION lock → wrapped mint on the destination chain.
+        let out_proof = test_deposit(1_000_000, "WARP:1:base:0xRT");
+        let out_id = router.initiate_outbound(out_proof).unwrap();
+        advance_all(&mut router, out_id);
+
+        // Leg 2: burn on the chain → ZION release back to the recipient.
+        let mut in_proof = test_deposit(1_000_000, "burn_event");
+        in_proof.tx_hash = "chain_tx_rt".into();
+        in_proof.burn_id = Some("burn_rt".into());
+        let in_id = router
+            .initiate_inbound("base", in_proof, "zion1recipient")
+            .unwrap();
+        advance_all(&mut router, in_id);
+
+        let out = router.get_transfer(&out_id).unwrap();
+        let inc = router.get_transfer(&in_id).unwrap();
+        assert_eq!(out.status, WarpStatus::Completed);
+        assert_eq!(inc.status, WarpStatus::Completed);
+        assert_eq!(router.pending_count(), 0);
+    }
+
     #[test]
     fn test_transfer_count() {
         let mut router = test_router();

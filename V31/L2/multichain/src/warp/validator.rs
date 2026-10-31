@@ -140,14 +140,18 @@ impl WarpValidatorSet {
             .collect()
     }
 
-    /// Check if we have enough local signing keys to produce a quorum.
-    pub fn can_sign_quorum_locally(&self) -> bool {
-        let active_local = self
-            .signing_keys
+    /// Number of locally-held signing keys whose validator is active —
+    /// the count `can_sign_quorum_locally` compares against `quorum`.
+    pub fn local_signer_count(&self) -> usize {
+        self.signing_keys
             .keys()
             .filter(|id| self.validators.get(*id).map(|v| v.active).unwrap_or(false))
-            .count();
-        active_local >= self.quorum
+            .count()
+    }
+
+    /// Check if we have enough local signing keys to produce a quorum.
+    pub fn can_sign_quorum_locally(&self) -> bool {
+        self.local_signer_count() >= self.quorum
     }
 
     pub fn remove_validator(&mut self, id: &str) {

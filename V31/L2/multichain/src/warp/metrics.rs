@@ -17,6 +17,17 @@ pub struct MetricsSnapshot {
     pub success_rate: f64,
 }
 
+/// Validator-set gauges rendered into the Prometheus exposition
+/// (4.B1): sampled live from `WarpValidatorSet` at scrape time.
+#[derive(Debug, Clone, Copy)]
+pub struct ValidatorGauges {
+    pub quorum: u64,
+    pub validators_total: u64,
+    pub validators_active: u64,
+    pub local_signers_active: u64,
+    pub can_sign_quorum_locally: bool,
+}
+
 impl WarpMetrics {
     pub fn new() -> Self {
         Self {
@@ -51,8 +62,35 @@ impl WarpMetrics {
     }
 
     /// Render counters and gauges in the Prometheus exposition format.
-    pub fn prometheus_output(&self, node_id: &str) -> String {
+    /// `validators` is `None` when the router has no validator set (tests).
+    pub fn prometheus_output(&self, node_id: &str, validators: Option<&ValidatorGauges>) -> String {
         let s = self.snapshot();
+        let validator_section = validators
+            .map(|v| {
+                format!(
+                    "# HELP warp_validators_total Configured WARP validators.\n\
+                     # TYPE warp_validators_total gauge\n\
+                     warp_validators_total{{node=\"{node_id}\"}} {}\n\
+                     # HELP warp_validators_active Active WARP validators.\n\
+                     # TYPE warp_validators_active gauge\n\
+                     warp_validators_active{{node=\"{node_id}\"}} {}\n\
+                     # HELP warp_validator_quorum Signatures required for quorum.\n\
+                     # TYPE warp_validator_quorum gauge\n\
+                     warp_validator_quorum{{node=\"{node_id}\"}} {}\n\
+                     # HELP warp_validator_local_signers_active Locally-held signing keys for active validators.\n\
+                     # TYPE warp_validator_local_signers_active gauge\n\
+                     warp_validator_local_signers_active{{node=\"{node_id}\"}} {}\n\
+                     # HELP warp_validator_can_sign_quorum Whether local keys can produce quorum (1/0).\n\
+                     # TYPE warp_validator_can_sign_quorum gauge\n\
+                     warp_validator_can_sign_quorum{{node=\"{node_id}\"}} {}\n",
+                    v.validators_total,
+                    v.validators_active,
+                    v.quorum,
+                    v.local_signers_active,
+                    v.can_sign_quorum_locally as u64,
+                )
+            })
+            .unwrap_or_default();
         format!(
             "# HELP warp_transfers_initiated_total Total WARP transfers initiated.\n\
              # TYPE warp_transfers_initiated_total counter\n\
@@ -68,7 +106,7 @@ impl WarpMetrics {
              warp_transfers_pending{{node=\"{}\"}} {}\n\
              # HELP warp_success_rate Ratio of completed to initiated transfers.\n\
              # TYPE warp_success_rate gauge\n\
-             warp_success_rate{{node=\"{}\"}} {:.6}\n",
+             warp_success_rate{{node=\"{}\"}} {:.6}\n{}",
             node_id,
             s.transfers_initiated,
             node_id,
@@ -79,6 +117,7 @@ impl WarpMetrics {
             s.transfers_pending,
             node_id,
             s.success_rate,
+            validator_section,
         )
     }
 
@@ -171,9 +210,29 @@ mod tests {
         m.record_transfer_initiated();
         m.record_transfer_completed();
         m.record_transfer_failed();
-        let out = m.prometheus_output("warp-node-1");
+        let out = m.prometheus_output("warp-node-1", None);
         assert!(out.contains("# HELP warp_transfers_initiated_total"));
         assert!(out.contains("warp_transfers_initiated_total{node=\"warp-node-1\"} 1"));
         assert!(out.contains("# TYPE warp_success_rate gauge"));
+        // No validator section when no set is wired.
+        assert!(!out.contains("warp_validator_quorum"));
+    }
+
+    #[test]
+    fn test_prometheus_output_with_validator_gauges() {
+        let m = WarpMetrics::new();
+        let v = ValidatorGauges {
+            quorum: 3,
+            validators_total: 5,
+            validators_active: 4,
+            local_signers_active: 3,
+            can_sign_quorum_locally: true,
+        };
+        let out = m.prometheus_output("n", Some(&v));
+        assert!(out.contains("warp_validators_total{node=\"n\"} 5"));
+        assert!(out.contains("warp_validators_active{node=\"n\"} 4"));
+        assert!(out.contains("warp_validator_quorum{node=\"n\"} 3"));
+        assert!(out.contains("warp_validator_local_signers_active{node=\"n\"} 3"));
+        assert!(out.contains("warp_validator_can_sign_quorum{node=\"n\"} 1"));
     }
 }
