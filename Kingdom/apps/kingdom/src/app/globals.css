@@ -290,9 +290,9 @@ a {
 }
 
 .k-badge[data-tone='live'] {
-  color: var(--k-accent);
-  border-color: color-mix(in oklab, var(--k-accent) 35%, var(--k-line));
-  background: var(--k-accent-soft);
+  color: var(--rasta-gold);
+  border-color: rgba(252, 209, 22, 0.35);
+  background: rgba(252, 209, 22, 0.1);
 }
 
 .k-badge[data-tone='soon'] {
@@ -310,19 +310,21 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 11px 22px;
   border-radius: 999px;
-  border: 1px solid color-mix(in oklab, var(--k-accent) 45%, var(--k-line));
-  background: var(--k-accent-soft);
-  color: var(--k-text);
+  border: 1px solid rgba(252, 209, 22, 0.55);
+  background: linear-gradient(180deg, rgba(252, 209, 22, 0.16), rgba(252, 209, 22, 0.06));
+  color: #fff8e1;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 140ms ease, transform 140ms ease;
+  box-shadow: 0 0 26px rgba(252, 209, 22, 0.14);
+  transition: box-shadow 160ms ease, transform 160ms ease, background 160ms ease;
 }
 
 .k-btn:hover {
-  background: color-mix(in oklab, var(--k-accent) 22%, transparent);
+  background: linear-gradient(180deg, rgba(252, 209, 22, 0.26), rgba(252, 209, 22, 0.1));
+  box-shadow: 0 0 42px rgba(252, 209, 22, 0.28);
   transform: translateY(-1px);
 }
 
@@ -372,35 +374,28 @@ a {
 .k-gate-bg {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 50% 46%, rgba(111, 240, 196, 0.13), transparent 42%),
-    radial-gradient(circle at 50% 46%, rgba(122, 167, 255, 0.1), transparent 62%),
-    radial-gradient(circle at 50% 120%, rgba(122, 167, 255, 0.07), transparent 55%),
-    var(--k-bg);
+  background-image:
+    linear-gradient(180deg, rgba(5, 6, 10, 0.72) 0%, rgba(5, 6, 10, 0.86) 55%, rgba(5, 6, 10, 0.96) 100%),
+    url('/stargate/nebula.jpg');
+  background-size: cover;
+  background-position: center;
   pointer-events: none;
 }
 
-.k-gate-ring {
+/* Skutečná brána (Stargate) — dekorace pod obsahem. */
+.k-gate-stage {
   position: absolute;
-  left: 50%;
-  top: 46%;
-  width: min(74vmin, 620px);
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 1px solid rgba(111, 240, 196, 0.16);
-  box-shadow:
-    inset 0 0 90px rgba(111, 240, 196, 0.06),
-    0 0 140px rgba(111, 240, 196, 0.05);
+  inset: 0;
+  display: grid;
+  place-items: center;
   pointer-events: none;
+  opacity: 0.55;
 }
 
-.k-gate-ring::after {
-  content: '';
-  position: absolute;
-  inset: 9%;
-  border-radius: 50%;
-  border: 1px dashed rgba(122, 167, 255, 0.12);
+.k-gate-stage > .k-stargate {
+  /* Celý kruh musí zůstat v záběru — vnější kovový prstenec je součást brány. */
+  width: min(82vmin, 760px);
+  height: min(82vmin, 760px);
 }
 
 .k-gate-inner {
@@ -419,6 +414,9 @@ a {
   letter-spacing: -0.035em;
   margin: 0;
   line-height: 1.04;
+  text-shadow:
+    0 0 42px rgba(252, 209, 22, 0.22),
+    0 2px 34px rgba(0, 0, 0, 0.72);
 }
 
 .k-gate-links {
@@ -508,7 +506,8 @@ a {
   font-size: 12px;
   letter-spacing: 0.34em;
   text-transform: uppercase;
-  color: var(--k-accent);
+  color: var(--rasta-gold);
+  text-shadow: 0 0 18px rgba(252, 209, 22, 0.35);
 }
 
 .k-hero-lead {
@@ -624,8 +623,17 @@ a {
   transition: border-color 140ms ease, transform 140ms ease;
 }
 
+.k-path:nth-child(1) { --rc: 228, 30, 43; }
+.k-path:nth-child(2) { --rc: 252, 209, 22; }
+.k-path:nth-child(3) { --rc: 7, 137, 48; }
+
+.k-path {
+  border-color: rgba(var(--rc, 111, 240, 196), 0.26);
+}
+
 .k-path:hover {
-  border-color: color-mix(in oklab, var(--k-accent) 38%, var(--k-line));
+  border-color: rgba(var(--rc, 111, 240, 196), 0.62);
+  box-shadow: 0 0 30px rgba(var(--rc, 111, 240, 196), 0.16);
   transform: translateY(-2px);
 }
 
@@ -633,7 +641,7 @@ a {
   font-family: var(--k-mono);
   font-size: 11px;
   letter-spacing: 0.12em;
-  color: var(--k-accent);
+  color: rgb(var(--rc, 111, 240, 196));
 }
 
 .k-path-title {
@@ -660,7 +668,7 @@ a {
   align-items: center;
   gap: 6px;
   font-size: 12.5px;
-  color: var(--k-accent);
+  color: rgb(var(--rc, 111, 240, 196));
 }
 
 /* ---------- vrstvy ---------- */

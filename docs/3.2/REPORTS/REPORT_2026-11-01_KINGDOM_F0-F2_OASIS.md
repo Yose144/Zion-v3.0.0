@@ -86,6 +86,17 @@ packages/world/src/           packages/scenes/src/
 
 Výsledek: scéna Místnosti má **8 markerů** (Účet chybí záměrně) a lišta 9 portálů — celý ekosystém je poprvé na jednom místě.
 
+### F1b — stargate + rasta (2026-11-01)
+
+Brána dostala **přesně ten stargate z IntroPage** a **rasta design**:
+
+- `core/gate/stargate.css` (699 řádků) — extrahováno z `stargate-theme.css` (772 řádků). Globální reset, `body`, `html` a `#header` z původního souboru **vyhozeny** (stylovaly by celou appku); zbytek scope-ovaný pod `.k-stargate`.
+- `core/gate/Stargate.tsx` — 28 prstenců (22× `2.png` chevrony, 6× `1.png` Śrí jantra) + 39 glyfů (A–Z, a–m). **Čisté CSS, žádný canvas, žádný JS** — `aria-hidden`, dekorace.
+- Assety `1.png`, `2.png`, `Z.webp`, `nebula.jpg` → `public/stargate/` (416 KB celkem; `Z.gif` 610 KB záměrně vynechán ve prospěch `Z.webp`).
+- `nebula.jpg` je i pod bránou jako pozadí hero — stejný asset jako originál.
+- **Rasta tokeny** (`--rasta-red #e41e2b`, `--rasta-gold #fcd116`, `--rasta-green #078930`) přidány do `@zion/ui`; zdroj `apps/IntroPage/public/assets/css/intro-rasta.css`.
+- Rasta se aplikuje **jen na Bránu** (hero aura, zlatý badge, zlaté CTA, triáda na třech cestách). Místnost a portály zůstávají neutrální — data musí zůstat čitelná.
+
 ---
 
 ## 2. Měření

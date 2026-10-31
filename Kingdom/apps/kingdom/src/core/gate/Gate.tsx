@@ -6,6 +6,7 @@ import { api, EXTERNAL } from '@/core/api';
 import { Icon } from '@/core/shell/Icon';
 import { gateReads, hero, intro, layers, paths } from './content';
 import { Rich } from './Rich';
+import { Stargate } from './Stargate';
 
 interface ChainStats {
   block_height?: number;
@@ -39,7 +40,9 @@ export async function Gate({ locale }: { locale: Locale }) {
     <div className="k-gate-page">
       <section className="k-gate">
         <div className="k-gate-bg" aria-hidden="true" />
-        <div className="k-gate-ring" aria-hidden="true" />
+        <div className="k-gate-stage">
+          <Stargate />
+        </div>
 
         <div className="k-gate-inner">
           <span className="k-badge" data-tone="live">

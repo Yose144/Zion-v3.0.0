@@ -85,6 +85,8 @@ Port `3020` je záměrně mimo `website` (3000), `market` (3100) a `nirvana` (30
 Obsah harvest z `apps/IntroPage` (`maintenance.html` + `intro-tabs.js`), přepsaný do **typovaných dat** (`core/gate/content.ts`), ne do JSX:
 
 - hero: `ZION / TERRA NOVA ∞ OASIS / Multichain Dharma ekosystém` + vstup, OASIS preview, eXplorer
+- **skutečná brána (stargate)** převzatá 1:1 z `apps/IntroPage/public/stargate/` — 28 soustředných prstenců (22 chevronů + 6 Śrí jantra) a kruh 39 glyfů, čisté CSS, žádný canvas
+- **rasta design** (One Love v3.2.0) — `--rasta-red/gold/green` z `intro-rasta.css` v `@zion/ui`; hero má zlatou auru, badge i CTA jsou zlaté, tři cesty nesou triádu červená/zlatá/zelená
 - **živý pás** — výška, difficulty, hashrate, block time a připojené mince z hlavního uzlu, ověřené při každém renderu
 - **Co je ZION** — tři odstavce včetně fee splitu 89/5/5/1
 - **Tři cesty na palubu** — Pozorovatel / Hráč / Stavitel

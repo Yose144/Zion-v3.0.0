@@ -23,6 +23,15 @@
   --k-warn: #ffb86b;
   --k-err: #ff7a7a;
 
+  /* Rasta — One Love v3.2.0 (převzato z apps/IntroPage/public/assets/css/intro-rasta.css) */
+  --rasta-red: #e41e2b;
+  --rasta-gold: #fcd116;
+  --rasta-green: #078930;
+  --rasta-black: #0d0d0d;
+  --rasta-dark: #1a1a1a;
+  --rasta-glow: 0 0 42px rgba(252, 209, 22, 0.28);
+  --rasta-border: rgba(255, 255, 255, 0.1);
+
   --k-radius: 14px;
   --k-radius-sm: 9px;
   --k-rail: 232px;
