@@ -11,6 +11,18 @@ if [ -f "$_ENV_FILE" ]; then
   set -a; . "$_ENV_FILE"; set +a
 fi
 
+# ── Self-rotation (2026-10-31) ─────────────────────────────────────────────
+# Cron runs this 4× per minute and the log had grown to 53 MB. Truncate in
+# place once it passes 8 MB (the log is a heartbeat trace, not an audit log).
+LOG_PATH="${REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}/logs/backup-beacon.log"
+if [ -f "$LOG_PATH" ]; then
+  _sz=$(stat -c %s "$LOG_PATH" 2>/dev/null || echo 0)
+  if [ "$_sz" -gt 8388608 ]; then
+    tail -n 2000 "$LOG_PATH" > "${LOG_PATH}.tmp" 2>/dev/null \
+      && mv "${LOG_PATH}.tmp" "$LOG_PATH" || rm -f "${LOG_PATH}.tmp"
+  fi
+fi
+
 RPC_HOST="127.0.0.1"
 RPC_PORT="8446"
 EDGE_URL="https://dashboard.zionterranova.com/api/backup-beacon"
