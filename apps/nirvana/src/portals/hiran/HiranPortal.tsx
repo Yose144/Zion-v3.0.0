@@ -41,7 +41,7 @@ export function HiranPortal({
       <HiranChat state={state} onStateChange={onStateChange} probe={probe} />
 
       <div className="hiran-actions">
-        <button type="button" className="hiran-temple" onClick={() => router.push('/present/hiran')}>
+        <button type="button" className="hiran-temple" onClick={() => router.push('/hiran')}>
           {lang === 'cs' ? 'Vstoupit do chrámu' : 'Enter the temple'}
         </button>
         {focus === 'sun' ? (

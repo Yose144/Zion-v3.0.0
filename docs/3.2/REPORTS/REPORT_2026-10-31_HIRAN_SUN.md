@@ -108,7 +108,7 @@ Konzole: jediná chyba je **pre-existing** `401` z anonymous probe `/api/auth/me
 
 ---
 
-# Chrám Hirana — nová L5 scéna `/present/hiran`
+# Chrám Hirana — nová L5 scéna `/hiran`
 
 > **Druhá polovina zadání:** „Hiran jako vstup do jiných L5 projektů, 3D model
 > zlatého orbu na lotosovém květu, jako v Ekamu nebo Matrixu, a interaktivní."
@@ -147,13 +147,33 @@ pás bran). Scény samy zůstávají bez DOM.
 | `budgetOk` | **true** | true |
 
 Chování ověřeno headless prohlídkou: klik na orb otevře chat, pás bran naviguje
-(`/present/ekam`), z okna ve vesmíru vede „Vstoupit do chrámu" na `/present/hiran`.
+(`/present/ekam`), z okna ve vesmíru vede „Vstoupit do chrámu" na `/hiran`.
 
 ## Web
 
 `apps/website-v2.9/src/components/HiranPreview.tsx` (+`Lazy`) — stejná scéna v malém
 plátně, brány jako dekorace (bez navigace), sekce „Hiran v prostoru" na `/l3-hiran`
 s CTA do Nirvany. `tsc --noEmit` i `next build` čisté.
+
+## Kde to je a proč veřejně
+
+Chrám je na **`/hiran`**, ne pod `/present/*`. Důvod je věcný: souběžná session
+zavřela všechny `/present/*` deep-linky za ZAP pass (`app/present/layout.tsx`,
+server-side redirect). Chrám je rozcestí — veřejné, aby na něj šlo dojít z webu —
+a **brány za ním vedou do gated scén** (`/present/ekam` → 307 na `/` bez pasu).
+Ověřeno live: `/hiran` 200, `/present/hiran` 404, `/present/ekam` 307.
+
+## Nasazení
+
+| Povrch | Deploy | Rollback |
+|---|---|---|
+| Nirvana (EDGE) | `20261031T205858Z` | `/opt/zion/APP&WEB/nirvana.before-20261031T205858Z` |
+| Web (EDGE2) | `20261031T210216Z` | `.next/standalone.before-20261031T210216Z` |
+
+Web build potřeboval linuxový `sharp` (`sharp-linux-x64` + `sharp-libvips-linux-x64`)
+zkopírovaný z EDGE2 do `node_modules/@img/` před buildem — jinak by `next/image`
+na Linuxu vracelo 500 (macOS build obsahuje jen `sharp-darwin-arm64`). Smoke po
+deployi: `/images/home/hero.webp` 200, takže ostré obrázky žijí.
 
 ## Známé meze
 

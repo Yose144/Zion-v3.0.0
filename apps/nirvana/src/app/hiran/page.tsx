@@ -13,7 +13,7 @@ import {
   HiranScene,
   type HiranGate,
   type HiranSceneState,
-} from '../../../../../shared/scenes/Hiran';
+} from '../../../../shared/scenes/Hiran';
 
 /**
  * Třináct bran = třináct světů. Seznam je kanonický (`FREE_WORLD_MISSIONS`),

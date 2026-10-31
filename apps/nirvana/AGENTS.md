@@ -43,7 +43,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Měření:** fokus na Slunce 46–59 fps, 46–47 draw calls (M1, ANGLE Metal).
 
 
-## Chrám Hirana — `/present/hiran` (2026-10-31)
+## Chrám Hirana — `/hiran` (2026-10-31)
 
 - **Scéna je sdílená** (`apps/shared/scenes/Hiran.tsx`, 14. scéna rodiny), takže platí
   canon: jen `@genesis/runtime` + `three`, žádné `drei`, žádný `three/addons`. Web

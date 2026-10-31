@@ -2,7 +2,7 @@
 
 /**
  * Chat Hirana — jedno tělo pro dvě místa: okno ve vesmíru a chrám
- * v `/present/hiran`. Žádná akce, žádné klíče: otázka a odpověď.
+ * v `/hiran`. Žádná akce, žádné klíče: otázka a odpověď.
  *
  * Když inferenční uzel spí, řekne to. `degraded` drží pravdu odpovědi výš než
  * `/health`, protože ten umí říct „ano" i modelu, který nic nevydá.

@@ -617,7 +617,7 @@ export default function L3HiranPage() {
               </p>
             </div>
             <Link
-              href="https://nirvana.zionterranova.com/present/hiran"
+              href="https://nirvana.zionterranova.com/hiran"
               className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zion-gold transition hover:bg-zion-gold/20"
             >
               <Sparkles className="h-3 w-3" />
