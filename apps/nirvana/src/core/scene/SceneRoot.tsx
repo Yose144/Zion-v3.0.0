@@ -14,6 +14,7 @@ import { Universe } from './universe/Universe';
 import { quality } from '../../../../shared/scenes/kit/quality';
 import { ScenePost, sceneRenderStats } from '../../../../shared/scenes/kit/post';
 import type { Portal } from '@/core/portals/manifest';
+import type { HiranState } from '@/core/hiran/presence';
 import type { WorldPoint } from '@/lib/worlds';
 
 /** Classic materials render on WebGPU only after the node library is keyed
@@ -100,6 +101,8 @@ export function SceneRoot({
   onSelectWorld,
   xr,
   label,
+  focus,
+  hiranState,
 }: {
   worlds: WorldPoint[];
   portals: Portal[];
@@ -107,6 +110,8 @@ export function SceneRoot({
   onSelectWorld: (id: string) => void;
   xr: boolean;
   label: string;
+  focus?: 'earth' | 'sun';
+  hiranState?: HiranState;
 }) {
   const [backend, setBackend] = useState<GpuBackend | null>(null);
   const [xrStore] = useState<XRStore>(() => createXRStore({ foveation: 0.5 }));
@@ -175,6 +180,8 @@ export function SceneRoot({
               portals={portals}
               onOpen={onOpen}
               onSelectWorld={onSelectWorld}
+              focus={focus}
+              hiranState={hiranState}
             />
             <XrEntry store={xrStore} />
           </XR>
@@ -184,6 +191,8 @@ export function SceneRoot({
             portals={portals}
             onOpen={onOpen}
             onSelectWorld={onSelectWorld}
+            focus={focus}
+            hiranState={hiranState}
           />
         )}
         <UniverseAudit />

@@ -19,6 +19,7 @@ Proxy v `apps/nirvana/src/app/api/` sahají na veřejné HTTPS. Shell si neotev�
 | Okno | Co v něm je | Odkud to bere |
 |---|---|---|
 | Svět | 410 bodů. Klik ukáže název, vrstvu, místo, náladu a krátké shrnutí. | `oasis.zionterranova.com` |
+| Hiran | Otázka a odpověď. Když inferenční uzel spí, okno to řekne a Slunce ztlumí pečeť. | `app.zionterranova.com/api/ai-chat` |
 | Řetěz | Výška, obtížnost, počet peerů. | `app.zionterranova.com/api/blockchain/stats` |
 | Těžba | Mince na poolu, u ZIONu těžaři a hashrate. | `pool.zionterranova.com/public/v1` |
 | Trh | Výloha: název, kategorie, cena v Kč, skladem. Prohlížeč nedostane odkazy na soubory. | `market.zionterranova.com/api/shop/products` |

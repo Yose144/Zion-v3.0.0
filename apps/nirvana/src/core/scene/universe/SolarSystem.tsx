@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { SUN_POS, EARTH_ORBIT_R, hash01 } from './positions';
 
@@ -27,16 +27,20 @@ function useLazyTexture(path: string | null): THREE.Texture | null {
   return tex;
 }
 
-/** Slunce — povrch + pulzující korona + pomalá rotace. */
+/** Slunce — povrch + pulzující korona + měkká záře, která nemá tvrdý okraj. */
 function Sun() {
   const sun = useRef<THREE.Mesh>(null);
   const corona = useRef<THREE.MeshBasicMaterial>(null);
+  const glow = useRef<THREE.Mesh>(null);
+  const { camera } = useThree();
   const tex = useLazyTexture('/textures/sun-2k.jpg');
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
     if (sun.current) sun.current.rotation.y += delta * 0.02;
     if (corona.current) corona.current.opacity = 0.19 + Math.sin(t * 1.3) * 0.06;
+    // záře je plocha, ne koule — jinak má zblízka viditelný okraj
+    if (glow.current) glow.current.lookAt(camera.position);
   });
 
   return (
@@ -51,18 +55,44 @@ function Sun() {
         <sphereGeometry args={[6.0, 24, 24]} />
         <meshBasicMaterial ref={corona} color="#ff9a3c" transparent opacity={0.14} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.BackSide} />
       </mesh>
-      {/* vnější žár */}
-      <mesh scale={1.4}>
-        <sphereGeometry args={[6.0, 16, 16]} />
-        <meshBasicMaterial color="#e4661e" transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} />
-      </mesh>
-      <mesh scale={1.85}>
-        <sphereGeometry args={[6.0, 12, 12]} />
-        <meshBasicMaterial color="#fcd116" transparent opacity={0.045} depthWrite={false} blending={THREE.AdditiveBlending} />
+      {/* vnější záře — jedna aditivní plocha s radiálním přechodem */}
+      <mesh ref={glow} scale={[4.6, 4.6, 4.6]}>
+        <planeGeometry args={[12, 12]} />
+        <shaderMaterial
+          uniforms={{ uInner: { value: new THREE.Color('#ffcf7a') }, uOuter: { value: new THREE.Color('#e4661e') } }}
+          vertexShader={GLOW_VERT}
+          fragmentShader={GLOW_FRAG}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
       </mesh>
     </group>
   );
 }
+
+const GLOW_VERT = `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+const GLOW_FRAG = `
+precision highp float;
+uniform vec3 uInner;
+uniform vec3 uOuter;
+varying vec2 vUv;
+void main() {
+  vec2 p = vUv * 2.0 - 1.0;
+  float r = length(p);
+  float halo = pow(max(0.0, 1.0 - r), 3.2) * 0.55;
+  float rim = exp(-r * 7.0) * 0.5;
+  vec3 col = mix(uOuter, uInner, clamp(halo * 1.8, 0.0, 1.0)) * (halo + rim);
+  gl_FragColor = vec4(col, col.r + col.g * 0.5);
+}
+`;
 
 interface PlanetDef {
   id: string;

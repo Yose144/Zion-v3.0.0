@@ -36,6 +36,18 @@ const COPY = {
   vrUnsupported: { cs: 'VR není na tomto zařízení dostupné.', en: 'VR is not available on this device.' },
   computeStub: { cs: 'Strojovna — zion-compute sloty (hash/care/scene). Zatím jen místo.', en: 'Engine room — zion-compute lanes (hash/care/scene). Just a place for now.' },
   issobellaStub: { cs: 'Issobella — orbitální věda. Tracker se připojuje.', en: 'Issobella — orbital science. The tracker is being connected.' },
+  hiran: { cs: 'Hiran', en: 'Hiran' },
+  hiranOnline: { cs: 'online', en: 'online' },
+  hiranOfflineShort: { cs: 'offline', en: 'offline' },
+  hiranEmpty: { cs: 'Zatím nic. Zeptej se na řetěz, těžbu nebo OASIS.', en: 'Nothing yet. Ask about the chain, mining or OASIS.' },
+  hiranThinking: { cs: 'Hiran přemýšlí…', en: 'Hiran is thinking…' },
+  hiranOffline: { cs: 'Hiran teď nemluví — inferenční uzel není dostupný. Slunce svítí dál.', en: 'Hiran is not speaking right now — the inference node is unreachable. The sun keeps shining.' },
+  hiranError: { cs: 'Spojení s Hiranem selhalo. Zkus to znovu.', en: 'The connection to Hiran failed. Try again.' },
+  hiranDisclaimer: { cs: 'Informační pomocník — odpovídá na otázky, nevykonává žádné akce.', en: 'Informational helper — answers questions, performs no actions.' },
+  hiranPlaceholder: { cs: 'Napiš otázku…', en: 'Ask a question…' },
+  hiranSend: { cs: 'Odeslat', en: 'Send' },
+  hiranFocusSun: { cs: 'Přiblížit ke Slunci', en: 'Fly to the Sun' },
+  hiranBackToEarth: { cs: 'Zpět k Zemi', en: 'Back to Earth' },
 } as const;
 
 type CopyKey = keyof typeof COPY;

@@ -17,3 +17,28 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **HMR přes preview proxy:** `next.config.ts` potřebuje `allowedDevOrigins: ['127.0.0.1']` (jinak ws://…/_next/hmr refused).
 - **Deploy LIVE (2026-10-30):** `https://nirvana.zionterranova.com` — EDGE (`zion-new` 62.171.141.136, DNS už ukazoval tam). `zion-nirvana.service` na `127.0.0.1:3010` (User=zion, `OASIS_API_URL=http://127.0.0.1:8094` — OASIS backend je na stejném stroji). Nginx vhost `infra/nginx/edge-current/nirvana.zionterranova.com.conf`, cert přes `certbot --nginx`. Deploy: `bash apps/nirvana/deploy/deploy-nirvana.sh` — standalone build si v monorepu zanoří app do `.next/standalone/nirvana/` (public+static se musí stageovat vedle server.js, ne do standalone rootu!).
 - **Perf pass 2026-10-30:** (a) `DirectRenderer` musí mít `useFrame(cb, 1)` — priority ≤0 = r3f rendruje sám → **dvojí render/frame**. (b) Opakující se meshe → `instancedMesh` (`args={[undefined, undefined, n]}`, matice v `useLayoutEffect`, `frustumCulled={false}` — bounding sphere geometrie nekryje rozptýl instancí). Klik přes `e.instanceId`, barvy přes `setColorAt` + `instanceColor.needsUpdate`. Aplikováno na surface markery (103→2), orbit picked, ring stanice, BrightStars (36→3), chevrony/glyphs/lotus/pařáty, station domes/spokes/waters. (c) `dpr={[1, 1.75]}` na Canvas. (d) CPU vertex animace → precomputed polární souřadnice (Horizon).
+
+## Hiran na Slunci (2026-10-31)
+
+- **Kamera a fokus:** `Universe` má `focus: 'earth' | 'sun'`. Fokus nesmí jen tak
+  přepsat `controls.target` — odlet je interpolace (`fromCam`/`fromTarget` se zamrazí
+  při změně, `progress` 0→1, ease-out) a po přeletu se target drží na Slunci.
+  V režimu `earth` se target **každý frame** vrací na Zemi (původní chování).
+- **Pečeť, ne vnitřek:** fotosféra je neprůhledná → Śrí jantra je plocha před diskem
+  (`~1,04 R`), `lookAt(camera)` + pomalá rotace kolem vlastní osy. Kdyby zůstala
+  ve středu, není vidět vůbec.
+- **Lotos na kouli:** divák stojí v rovině ekliptiky, takže prstenec lístků v rovině
+  je z boku vidět jako hroty. Tři věnce na kouli (12/10/8) s `setFromUnitVectors(up, dir)`
+  čtou z každého úhlu.
+- **Vnější koróna:** dvě aditivní koule (1,4×/1,85×) měly zblízka tvrdý okraj → jedna
+  billboardovaná plocha se `pow(1-r, 3.2)` přechodem. Žádný tonemapping ve shaderu.
+- **Stav je vidět bez panelu:** `uActivity` (idle 0.28 / thinking 1 / offline 0.09)
+  řídí opacity pečeti, lotosu i prstenců; akcent se lerpuje zlato → ametyst.
+- **Review hook:** `?hiran=idle|thinking|offline|error` zamrazí stav a vypne probe.
+  **Pozor:** hash-sync efekt v `Shell` přepisuje URL na samotný hash, takže override
+  se musí číst **při prvním renderu** (lazy `useState`), ne v efektu — jinak ho
+  okno nestihne a probe ho přepíše.
+- **Proxy:** offline odpověď modelu = `200 {offline:true}`. 503 by si prohlížeč zapsal
+  jako chybu do konzole a rozbilo by to `--strict-budget` audit.
+- **Měření:** fokus na Slunce 46–59 fps, 46–47 draw calls (M1, ANGLE Metal).
+

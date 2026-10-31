@@ -8,10 +8,11 @@
  *   orbit   — světy na vnitřní oběžné dráze (L4 OASIS)
  *   gate    — Brána, volně v prostoru (apex/IntroPage)
  *   ship    — na palubě lodi (účet, strojovna)
+ *   sun     — Hiran usedá ve středu soustavy (L3 AI Native)
  */
 
 export type PortalStatus = 'stub' | 'wired';
-export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship';
+export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship' | 'sun';
 export type SurfaceSpot = 'harbor' | 'market' | 'forge' | 'library' | 'beacon' | 'gate' | 'ring';
 
 export interface Portal {
@@ -33,6 +34,15 @@ export const PORTALS: Portal[] = [
     api: '/api/oasis/worlds',
     status: 'wired',
     scene: { slot: 'orbit' },
+  },
+  {
+    id: 'hiran',
+    layer: 'L3',
+    title: { cs: 'Hiran', en: 'Hiran' },
+    sourceApp: 'V31/L3/ai-native',
+    api: '/api/hiran',
+    status: 'wired',
+    scene: { slot: 'sun' },
   },
   {
     id: 'chain',
