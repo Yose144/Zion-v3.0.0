@@ -75,9 +75,9 @@
 | `explorer.` | **EDGE** | 301 | web-tier cutover není úplný |
 | `nirvana.` | **EDGE** | 200 | `zion-nirvana` :3010, `User=zion` |
 | `dashboard.` | EDGE | 401 | basic auth — **živé, ne mrtvé** |
-| `api.` | EDGE | **404** | ⚠️ **služba žije na EDGE2** — `zion-hiran-gateway` :8007, `/health` 200, neauth chat = `401 Missing API key`. Vhost `infra/nginx/edge2/api.zionterranova.com.conf` je hotový v repu (SSE unbuffered). Chybí jen vhost + cert + DNS → EDGE2 |
+| `api.` | EDGE | **404** | ⚠️ **služba žije na EDGE2** — `zion-hiran-gateway` :8007, `/health` 200, neauth chat = `401 Missing API key`. Vhost `infra/nginx/edge2/api.zionterranova.com.conf` je hotový v repu (SSE unbuffered). **31. 10.: vhost staged na EDGE2 (port 80), `nginx -t` OK** — zbývá jen DNS → EDGE2 + cert |
 | `updates.` | EDGE | **404** | skutečně mrtvé — `update-server/` jen v `archive/`, nic neběží, mobile = preview. DNS smazat |
-| `dex.` | EDGE | **404** | ⚠️ **backend žije na EDGE2** — warpd `:8453`/`:8454`, `/v1/swap/pools` 200. Chybí vhost + cert + DNS **a** endpoint `/prices/:token/history` (nikdy neexistoval, 404 i `/v1/prices/…`) |
+| `dex.` | EDGE | **404** | ⚠️ **backend žije na EDGE2** — warpd `:8453`/`:8454`. **31. 10.: `/prices/:token/history` implementováno a nasazeno** (`V31/L2/multichain/src/pricing.rs`, `warpd` restart 10:37, live: `tf=90d` → 4 body `source:"orders"`, `tf=24h` → `prices:[]` + `last_known`), vhost staged na EDGE2 (úzký povrch: `/prices/`, `/v1/swap/pools`, `/health`; zbytek 404). Zbývá DNS → EDGE2 + cert |
 
 **Veřejné API sanity:** `app./api/ai-chat` 200 · `oasis./api/v1/oasis/quests` 200 · NCL `:8098/health` OK (`total_workers=0`) · ai-native `/v2/info` = `hiran-maestro 2.4`, `mutations_enabled=false`, `approval_token_configured=false`.
 
@@ -94,7 +94,7 @@
 | `zion-v31-node` na EDGE2 | `UnitFileState=disabled` — startuje jen přes `WantedBy=zion-v31-multichain.service` |
 | `zion-pool-standby` na EDGE2 | `inactive`, `/opt/zion/bin/zion-pool-standby` |
 | `AppPay` update server | kód jen v `archive/update-server`, nic neběží → `updates.` DNS smazat |
-| `api.` / `dex.` na EDGE | DNS vede na EDGE (`62.171.141.136`), ale obě služby běží na **EDGE2** → TLS SAN mismatch, `curl` = `000`; uživatel vidí rozbité UI |
+| `api.` / `dex.` na EDGE | DNS vede na EDGE (`62.171.141.136`), ale obě služby běží na **EDGE2** → TLS SAN mismatch, `curl` = `000`; uživatel vidí rozbité UI. **Porty 8453/8454 nejsou z internetu dostupné** (UFW: 8453 jen z EDGE, 8454 žádné pravidlo) → nginx vhost je jediná veřejná cesta, proto je `dex.` vhost úmyslně úzký |
 
 ---
 
@@ -117,6 +117,7 @@
 | 10 | `apps/*/package.json` | jedna generace Next | 14 (IntroPage, MarketPlace, pool-ui) vs. 16 (nirvana, OasisWeb, website-v2.9) | K3 ve W4 | 🤖 | ⬜ |
 | 11 | `docs/3.2/ROADMAP.md` | G8 „run #2 not started" | runy #2–#5 uzavřené, #6 běží | opravit | 🤖 | ⬜ |
 | 12 | `REPO-MAP.md`, `AGENTS.md` | `public/` = git subtree | tracked `public/` přesunut do `archive/PUBLIC/` | přepsat G4/E7 workflow | 🤖 | ⬜ |
+| 13 | `apps/website-v2.9/src/components/dex/*` | DEX UI je živé | `RecentSwaps.tsx` volá `${ROUTER_URL}/swaps?limit=10`, `TransactionStatus.tsx` `/swaps/:id` — **v `warpd` tyto routy neexistují** (legacy ZionDex Router surface). `ZionDexDashboard` (jejich jediný konzument) se v `app/` **nikde nerenderuje** → mrtvý kód. Živý povrch je jen `PriceChart` (`/market` ř. 1637). | W4 K3: buď routy doplnit, nebo komponenty smazat při unifikaci DEX UI | 🤖 | ⬜ |
 
 ---
 
@@ -135,7 +136,7 @@ Cíl: aby dokumenty nelhaly a repo bylo čisté. Gate: `git diff --check` čist�
 | T0.5 | `docs/3.2/StatusV3.md` | G8 run #6, HA standby stack do topologie |
 | T0.6 | `infra/RUNBOOK.md` | sekce Pool HA + aktuální DNS mapa |
 | T0.7 | `archive/` + `.gitignore` | přesun `apps/website-v2.9-backup-*.tar.gz`, `apps/public_html`; ignore `apps/desktop-agent/resources/{node,zion,zion-derive-addr}` |
-| T0.8 | EDGE2 nginx + DNS | `api.` → vhost `:8007` + cert + DNS na EDGE2 (**publikovat**, služba běží); `dex.` → vhost `:8454` + cert + DNS na EDGE2 **po** doplnění `/prices/:token/history`; `updates.` → smazat A záznam |
+| T0.8 | EDGE2 nginx + DNS | `api.` → vhost `:8007` + cert + DNS na EDGE2 (**publikovat**, služba běží); `dex.` → vhost `:8454` + cert + DNS na EDGE2 **po** doplnění `/prices/:token/history`; `updates.` → smazat A záznam. **Stav 31. 10.: oba vhosty staged na EDGE2 (port 80, `nginx -t` OK), `/prices/:token/history` implementováno a nasazeno ve `warpd`. Zbývá pouze 👤 DNS flip + `certbot --nginx`.** |
 | T0.9 | `/opt/zion/backups` | návrh retenční politiky (14 denních + 8 týdenních + 6 měsíčních?) ke schválení |
 
 ---
@@ -299,3 +300,4 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
 |---|---|
 | 2026-10-31 | v1.0 — vytvořeno po hloubkové revizi (plánové docs v3.3 + živé sondy EDGE i EDGE2). Zamčena 3 rozhodnutí 👤: RC kvalita first; HA dokumentovat + aktivovat. W0 truth-sync proveden. |
 | 2026-10-31 | v1.1 — **revize rozhodnutí o mrtvých površích po živých sondách**: `api.` a `dex.` nejsou mrtvé — obě služby běží na EDGE2 (`zion-hiran-gateway` :8007, warpd :8454) a DNS míří chybně na EDGE. 👤 rozhodl: `api.` **publikovat**, `dex.` **doplnit `/prices/:token/history`** + publikovat, `updates.` DNS smazat. Opraveno §1.4, §1.5, §2 #5, §3 T0.8, §4 řádek 6. |
+| 2026-10-31 | v1.2 — T0.8 implementace: `/prices/:token/history` napsán (`V31/L2/multichain/src/pricing.rs`, 14 testů, `db/service/server` rozšířeny), vhost `dex.` staged na EDGE2 (úzký povrch), `api.` vhost staged. Nový rozpor **#13** — `RecentSwaps`/`TransactionStatus` volají neexistující `/swaps` routy (mrtvý kód, konzument se nerenderuje). |

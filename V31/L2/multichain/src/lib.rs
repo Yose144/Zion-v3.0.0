@@ -20,6 +20,7 @@ pub mod db;
 pub mod error;
 pub mod multichain_wallet;
 pub mod node_rewards;
+pub mod pricing;
 pub mod prl_payout;
 pub mod qtc_payout;
 pub mod rate_limit;

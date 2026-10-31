@@ -522,6 +522,18 @@ impl MultichainService {
         self.dex.read().await.pools().to_vec()
     }
 
+    /// Load settled DEX orders (newest first, bounded by `scan_limit`) for price
+    /// derivation. `since = None` returns the most recent rows regardless of
+    /// age, which backs the honest "last known price" fallback.
+    pub async fn settled_dex_orders_since(
+        &self,
+        since: Option<chrono::DateTime<chrono::Utc>>,
+        scan_limit: usize,
+    ) -> MultichainResult<Vec<crate::multichain_wallet::types::DexOrder>> {
+        let db = self.db.lock().await;
+        db.load_settled_dex_orders_since(since, scan_limit)
+    }
+
     /// Set the on-chain AMM pair address for an existing pool.
     /// This enables on-chain settlement for swaps through this pool.
     pub async fn set_amm_pair(
@@ -1723,7 +1735,7 @@ pub fn parse_asset_key(asset_key: &str) -> MultichainResult<(ChainId, String, Op
     Ok((chain, ticker, contract))
 }
 
-fn chain_id_by_name(name: &str) -> MultichainResult<ChainId> {
+pub(crate) fn chain_id_by_name(name: &str) -> MultichainResult<ChainId> {
     let name_lower = name.to_lowercase();
     if let Some(chain_id) = evm_chain_id(&name_lower) {
         return Ok(chain_id);

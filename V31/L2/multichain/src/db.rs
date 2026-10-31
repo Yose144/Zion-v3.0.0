@@ -1582,11 +1582,19 @@ impl Db {
     /// Load *settled* DEX orders (executed or settled) for price derivation,
     /// newest first, bounded by `scan_limit` rows.
     ///
-    /// Because rows are returned newest-first, every order inside the `since`
-    /// window is guaranteed to be among the first ones scanned — a bounded
-    /// `LIMIT` therefore never hides in-window rows. Pass `since = None` to
-    /// fetch the most recent `scan_limit` settled orders regardless of age
-    /// (used for the honest "last known price" fallback).
+    /// Ordering is by the *trade* time (`executed_at`, falling back to
+    /// `created_at`) because that is the timestamp a price point is placed at.
+    /// Ordering by `created_at` instead would let an old order executed minutes
+    /// ago sit below the cut-off and be skipped by the early `break`. With the
+    /// trade-time ordering, every order inside the `since` window is among the
+    /// first rows scanned, so a bounded `LIMIT` never hides in-window rows.
+    ///
+    /// Pass `since = None` to fetch the most recent `scan_limit` settled orders
+    /// regardless of age (used for the honest "last known price" fallback).
+    ///
+    /// RFC 3339 timestamps with a uniform `+00:00` offset sort lexicographically
+    /// in the same order as chronologically, which is what the SQL ORDER BY
+    /// relies on.
     pub fn load_settled_dex_orders_since(
         &self,
         since: Option<chrono::DateTime<chrono::Utc>>,
@@ -1599,7 +1607,7 @@ impl Db {
                    created_at, executed_at
             FROM dex_orders
             WHERE status IN ('executed', 'settled')
-            ORDER BY created_at DESC
+            ORDER BY COALESCE(executed_at, created_at) DESC
             LIMIT ?1
             "#,
         )?;
