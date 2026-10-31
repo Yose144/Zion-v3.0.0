@@ -76,6 +76,12 @@ def main():
                     query = '?sceneAudit=1' + ('&labels=0' if args.shots_only else '')
                     response = page.goto(base.rstrip('/')+path+query, wait_until='domcontentloaded', timeout=90000)
                     assert response and response.status == 200, f'HTTP {response.status if response else None}'
+                    if app == 'web':
+                        # Website previews render only while they are on screen (frameloop is
+                        # gated by an IntersectionObserver), so scroll before waiting for frames.
+                        page.wait_for_selector('canvas', timeout=args.mount_timeout)
+                        page.evaluate("document.querySelectorAll('canvas').forEach((c) => c.scrollIntoView({ block: 'center' }))")
+                        page.wait_for_timeout(500)
                     page.wait_for_function('window.__projectScene?.frames >= 4 && window.__projectScene.invalidVertices >= 0', timeout=args.mount_timeout)
                     canvas = page.locator('canvas').first if app == 'nirvana' else page.locator('canvas').last
                     canvas.scroll_into_view_if_needed()
