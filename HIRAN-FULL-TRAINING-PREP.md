@@ -106,4 +106,5 @@ zion_advanced 181 · foundation 41 · rag_synthesis 11 · (buddhism 19 = duplik�
 - EDGE dostupnost: fail2ban banuje po sérii SSH — mezi spoji pauzovat / batchnout
 
 Související: `docs/3.2/REPORTS/REPORT_2026-11-01_HIRAN_VAST_TRAINING.md` (§7 validace,
-§8 null-run), `AIhiran.md` (inventura), `VAST-HIRAN-TRAINING-PLAN.md` (run 1 detail).
+§8 null-run), `AIhiran.md` (inventura), `VAST-HIRAN-TRAINING-PLAN.md` (run 1 detail),
+`VAST-OPS.md` (cesty na rig + fleet ops).

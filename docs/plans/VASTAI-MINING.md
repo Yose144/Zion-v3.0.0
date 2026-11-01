@@ -934,6 +934,14 @@ systemctl list-timers zion-vastrigs-sync.timer   # edge2
 journalctl -u zion-vastrigs-sync.service -n 20   # edge2
 ```
 
+**Past (2026-11-01):** web ukazoval „0 active rigs" přestože rig běžel —
+user unit `vastctl-daemon.service` na zionserver neměl v PATH
+`~/.local/bin` → `vastai show instances` padal (`errors.rigs` ve status.json)
+a daemon publikoval `rigs: 0`. Fix: `Environment=VASTAI_BIN=%h/.local/bin/vastai`
+v unit + `daemon-reload` + restart. Diagnostika vždy přes
+`errors.{rigs,pool,…}` a `fresh.*` v `status.json`, ne přes prázdný web.
+Ops přehled cest na rig: `VAST-OPS.md` v rootu.
+
 ### Skrytá veřejná stránka
 
 `https://zionterranova.com/vast-rigs/` — unlisted ops dashboard

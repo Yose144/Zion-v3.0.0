@@ -5,6 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+Environment=VASTAI_BIN=%h/.local/bin/vastai
 EnvironmentFile=-%h/.config/vastctl.env
 WorkingDirectory=/home/zionserver/2.9.6-main/infra/tools/vast
 ExecStart=/usr/bin/python3 vastctl.py --config /home/zionserver/2.9.6-main/infra/vast/xmrig-vast-cpu.json daemon \
