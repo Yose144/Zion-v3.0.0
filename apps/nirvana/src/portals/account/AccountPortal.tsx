@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '@/core/session/AuthProvider';
 import { useI18n } from '@/core/i18n';
+import { KingdomLink } from '@/core/portals/KingdomLink';
 
 export function AccountPortal({ onClose }: { onClose: () => void }) {
   const { t, lang } = useI18n();
@@ -61,6 +62,7 @@ export function AccountPortal({ onClose }: { onClose: () => void }) {
           </button>
         </form>
       )}
+      <KingdomLink portalId="account" />
     </aside>
   );
 }

@@ -139,9 +139,9 @@ export const PORTALS: Portal[] = [
     id: 'issobella',
     layer: 'L6',
     title: { cs: 'Issobella', en: 'Issobella' },
-    sourceApp: 'apps/website-v2.9',
-    api: 'issobella tracker',
-    status: 'stub',
+    sourceApp: 'apps/shared/scenes/Issobella',
+    api: '/present/issobella',
+    status: 'wired',
     scene: { slot: 'ring', spot: 'ring' },
   },
   {

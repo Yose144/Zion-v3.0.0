@@ -1,6 +1,6 @@
 # NIRVANA — planety jako vstupy, herní HUD, Issobella, Kingdom
 
-> **Stav:** rozhodnuto 👤 2026-11-01 · **pořadí závazné:** F1 → F2 → F3 → F4
+> **Stav:** **vše hotové a nasazené** 2026-11-01 (F1 ✅ · F2 ✅ · F3 ✅ · F4 ✅)
 > **Nahrazuje** předchozí „dock jako launcher" — dock se mění na herní HUD,
 > odkazy patří **na planety a body ve scéně**.
 
@@ -14,7 +14,7 @@ i s planetárními osami a pohyby."
 První pokus (dock dole + sekce v konzoli) byl špatně pochopený: odkazy mají být
 **na planetách**, ne v liště.
 
-## F1 · Planety jako vstupy (~1 den)
+## F1 · Planety jako vstupy — ✅ hotovo
 
 **Cíl:** Mars, Venuše a Jupiter jsou zřetelně klikatelné; ostatní planety
 zřetelně ne.
@@ -30,7 +30,7 @@ zřetelně ne.
 
 **DoD:** klik vede na hru, mrtvé planety se nechovají jako odkazy, ≥ 30 fps.
 
-## F2 · Herní HUD (~1 den)
+## F2 · Herní HUD — ✅ hotovo
 
 Spodní pás ve vesmíru i na `/park`, `/mars`, `/venus`, `/avatars`:
 
@@ -44,7 +44,7 @@ Spodní pás ve vesmíru i na `/park`, `/mars`, `/venus`, `/avatars`:
 
 Na `/mars` a `/venus` běží **pod** jejich HUD.
 
-## F3 · Issobella — plná scéna (~2–3 dny)
+## F3 · Issobella — plná scéna — ✅ hotovo
 
 - `apps/shared/scenes/Issobella.tsx` podle canonu L5: jen `three` + `@genesis/runtime`,
   žádné `drei`, žádné `three/addons`
@@ -53,7 +53,7 @@ Na `/mars` a `/venus` běží **pod** jejich HUD.
 - **strop 32 textur** (každý `SceneLabel` = vlastní CanvasTexture) — nový label = ubrat jinde
 - otevřené: scéna jako samostatná stránka (`/present/*`) podle vzoru Kailash/Uluru
 
-## F4 · Kingdom vedle oken (~1 den)
+## F4 · Kingdom vedle oken — ✅ hotovo
 
 Nirvana okna **zůstanou**, ke každému přibude `otevřít v Kingdomu ↗`
 (`https://kingdom.zionterranova.com/portal/<id>`):
@@ -70,6 +70,10 @@ Nirvana okna **zůstanou**, ke každému přibude `otevřít v Kingdomu ↗`
 | Přístav | `freeworld` |
 
 Session je společná (cookie `.zionterranova.com`) → uživatel přistane přihlášený.
+
+> **Splněno:** `core/portals/KingdomLink.tsx` (`KINGDOM_PORTALS`), odkaz
+> v 8 oknech (chain, pool, market, books, account, hiran, issobella, harbor),
+> ověřeno v okně Řetěz (`href=…/portal/chain`), live `/portal/chain` 200.
 
 ## Co zůstává z předchozí dávky
 

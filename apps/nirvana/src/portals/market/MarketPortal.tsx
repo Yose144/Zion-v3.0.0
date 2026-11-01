@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/core/i18n';
+import { KingdomLink } from '@/core/portals/KingdomLink';
 
 interface ShelfItem {
   id: string;
@@ -76,6 +77,7 @@ export function MarketPortal({ onClose }: { onClose: () => void }) {
           ))}
         </ul>
       )}
+      <KingdomLink portalId="market" />
     </aside>
   );
 }

@@ -3037,3 +3037,90 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ── ISSOBELLA — panel šatníku nad scénou ──────────────────────────── */
+
+.isso-panel {
+  position: absolute;
+  z-index: 30;
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(200, 162, 255, 0.4);
+  background: rgba(8, 4, 16, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.isso-panel header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.isso-panel header strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  color: #c8a2ff;
+}
+
+.isso-panel header span {
+  font-size: 0.72rem;
+  color: rgba(246, 231, 216, 0.6);
+}
+
+.isso-panel p {
+  margin: 0.5rem 0 0.7rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(246, 231, 216, 0.75);
+}
+
+.isso-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.isso-guest {
+  color: rgba(246, 231, 216, 0.6) !important;
+}
+
+.isso-guest a {
+  color: #ffb46a;
+}
+
+@media (max-width: 640px) {
+  .isso-panel {
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    bottom: calc(9rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── odkaz do Kingdom klienta (druhá cesta vedle nirvanského okna) ──── */
+
+.kingdom-link {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: 0.7rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 227, 212, 0.4);
+  background: rgba(127, 227, 212, 0.07);
+  color: #7fe3d4;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.kingdom-link:hover {
+  background: rgba(127, 227, 212, 0.16);
+  border-color: rgba(127, 227, 212, 0.75);
+}

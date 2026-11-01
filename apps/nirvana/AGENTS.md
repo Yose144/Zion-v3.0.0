@@ -151,6 +151,22 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Co v MP není:** boti (prázdnou arénu nikdo nedoplňuje), zvuk, VR, tracery.
   Není to nedodělek, je to další krok — nemá se to hlásit jako hotové.
 
+### Issobella — scéna a šatník (F3, 2026-11-01)
+
+- **Scéna je sdílená** (`apps/shared/scenes/Issobella.tsx`), takže platí canon:
+  jen `three` + `@genesis/runtime`, žádné `drei`, `React.use*` explicitně,
+  animace přes `motionTime`/`motionDelta`.
+- **`SceneLabel` má jen `{position, text, scale}`** — žádnou barvu. Kdo přidá
+  čtvrtý prop, dostane type error (dobře).
+- **`KeyLight` bere `sun` (směr), ne `position`**; `SkyFill` bere `sky`/`ground`.
+- **`ScenePresentation` patří do scény** (ne do stránky) a chce `camera` + `target`.
+- **Planeta musí být nad obzorem.** Když je „pod podlahou", podlaha ji zakryje
+  a stanice vypadá jako prázdný sál — osa Y je tu past.
+- **Šatník je 12 výklenků** (koule v barvě paprsku + label). Klik volá
+  `onSelectAvatar(id)`, uložení do ZIS dělá až stránka (`avatar3d.avatarId`) —
+  scéna nesmí volat API.
+- **Celý roster je na `/avatars`**; sem se vejde 12, zbytek odkazem.
+
 ### Herní HUD (F2, 2026-11-01)
 
 - **`GameHud` je v `app/layout.tsx`** a sám se skryje mimo herní povrchy

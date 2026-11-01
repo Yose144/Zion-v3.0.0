@@ -285,7 +285,9 @@ export default function NabukanoPage() {
                   : 'The same scene as in Nirvana — orbit the hull, zoom in on the dock and the lantern.'}
               </p>
             </div>
-            <NebeskaFlotilaPreviewLazy lang={cs ? 'cs' : 'en'} className="h-[420px] md:h-[520px]" />
+            <div className="block w-full" style={{ height: 460 }}>
+              <NebeskaFlotilaPreviewLazy lang={cs ? 'cs' : 'en'} className="h-full" />
+            </div>
             <p className="relative z-10 mt-3 text-center text-xs text-white/35">
               {cs
                 ? 'Umělecká geometrie z primitiv podle studie 02 — ne výrobní model.'

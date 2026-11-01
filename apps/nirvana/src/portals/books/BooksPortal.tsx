@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/core/i18n';
+import { KingdomLink } from '@/core/portals/KingdomLink';
 
 interface BookTitle {
   id: string;
@@ -64,6 +65,7 @@ export function BooksPortal({ onClose }: { onClose: () => void }) {
           ))}
         </ul>
       )}
+      <KingdomLink portalId="books" />
     </aside>
   );
 }

@@ -21,6 +21,7 @@ Single source of geometry, labels, lighting and camera settings for the L5 Free 
 | `KralovstviSrdce.tsx` | Království srdce · Nirvana — the Ark (13th node, whale corridor) | `/present/kralovstvi-srdce` |
 | `Matrix.tsx` | Matrix · Shackleton, Moon | `/present/matrix` |
 | `NebeskaFlotila.tsx` | Nabukano · Nebeská flotila (L6) | `/present/nebeska-flotila` |
+| `Issobella.tsx` | Issobella · orbitální observatoř + šatník OASIS (L6) | `/present/issobella` |
 
 ## Shared infrastructure
 
