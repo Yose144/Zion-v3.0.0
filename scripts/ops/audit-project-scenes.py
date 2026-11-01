@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import statistics
 import sys
 import time
 from playwright.sync_api import sync_playwright
@@ -52,6 +53,9 @@ def main():
     parser.add_argument('--only', default='')
     parser.add_argument('--release', default='working-tree')
     parser.add_argument('--sample-seconds', type=float, default=10)
+    parser.add_argument('--repeat', type=int, default=3, help='Render samples per scene; the median is reported')
+    parser.add_argument('--cooldown', type=float, default=3.0, help='Seconds between the repeated render samples')
+    parser.add_argument('--max-spread', type=float, default=15.0, help='Maximum allowed spread of the fps samples in percent; above it the row is marked unstable')
     parser.add_argument('--mount-timeout', type=int, default=60000, help='Milliseconds to wait for the scene to mount (software rendering can be slow)')
     parser.add_argument('--gpu', choices=['sw', 'nvidia', 'amd', 'metal'], default='metal' if sys.platform == 'darwin' else 'sw', help='Renderer: metal = local Apple GPU via ANGLE (macOS), sw = SwiftShader, nvidia/amd = local hardware via ANGLE')
     parser.add_argument('--chromium', default='')
@@ -122,8 +126,29 @@ def main():
                         page.emulate_media(reduced_motion='reduce')
                         page.wait_for_function('window.__projectScene.reducedMotion')
                         page.wait_for_timeout(600)
-                        row['render'] = page.evaluate('window.__projectScene')
-                        assert row['render']['invalidVertices'] == 0, 'non-finite geometry'
+                        # A single reading is not reproducible: on 2026-11-01 two identical
+                        # batches differed by up to 97 % on this host (19.7 vs 38.9 fps for
+                        # bodhi-lanka), while separate runs agreed at 39.7/40.8. Sample
+                        # repeatedly, report the median, and refuse to call a noisy row a pass.
+                        fps_samples = []
+                        render = None
+                        for sample_idx in range(max(1, args.repeat)):
+                            render = page.evaluate('window.__projectScene')
+                            assert render['invalidVertices'] == 0, 'non-finite geometry'
+                            fps_samples.append(round(float(render['fps']), 2))
+                            if sample_idx + 1 < max(1, args.repeat):
+                                page.wait_for_timeout(int(args.cooldown * 1000))
+                        row['render'] = render
+                        row['fps_samples'] = fps_samples
+                        best, worst = max(fps_samples), min(fps_samples)
+                        spread = (best / worst - 1) * 100 if worst > 0 else 100.0
+                        row['fps_spread_pct'] = round(spread, 1)
+                        if spread > args.max_spread:
+                            row['unstable'] = True
+                        try:
+                            row['host_load'] = round(os.getloadavg()[0], 2)
+                        except OSError:
+                            row['host_load'] = None
                         for label, size in (('hero-1920', {'width': 1920, 'height': 1080}),
                                             ('desktop-1440', {'width': 1440, 'height': 900}),
                                             ('mobile-390', {'width': 390, 'height': 844})):
@@ -142,7 +167,7 @@ def main():
                                 else:
                                     row['visual_delta'] = 'new'
                         row['metrics'] = {
-                            'fps': row['render']['fps'],
+                            'fps': round(statistics.median(fps_samples), 2),
                             'calls': row['render']['calls'],
                             'triangles': row['render']['triangles'],
                             'geometries': row['render']['geometries'],
@@ -161,6 +186,10 @@ def main():
                                 f"triangles {row['metrics']['triangles']} exceed the committed budget {reference['triangles']}"
                             )
                         if args.strict_budget:
+                            assert not row.get('unstable'), (
+                                f"measurement unstable: fps spread {row['fps_spread_pct']:.0f} % > "
+                                f"{args.max_spread:.0f} % (samples {fps_samples}) — rerun on an idle host"
+                            )
                             assert row['metrics']['calls'] <= 600, f"draw calls {row['metrics']['calls']} > 600"
                             assert row['metrics']['triangles'] <= 450_000, f"triangles {row['metrics']['triangles']} > 450k"
                             assert row['metrics']['fps'] >= 30, f"fps {row['metrics']['fps']:.1f} < 30"
