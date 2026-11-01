@@ -102,6 +102,17 @@ const cs = {
     'Do bloku se dá kliknout hloub, ale adresy a historii drží eXplorer. Kingdom ukazuje okno, ne celý archiv.',
   block: 'Blok',
   txs: 'transakcí',
+  checkAddress: 'Najít adresu',
+  addressPlaceholder: 'zion1…',
+  addressHint: 'Zadej adresu a Enter. Hledá se na serveru, klíč žádný — je to jen čtení.',
+  balance: 'Zůstatek',
+  received: 'Přijato',
+  sent: 'Odesláno',
+  utxo: 'UTXO',
+  pending: 'Čeká',
+  history: 'Historie poolu',
+  lastHour: 'poslední hodina',
+  samples: 'vzorků',
 } as const;
 
 export type TranslationKey = keyof typeof cs;
@@ -200,6 +211,17 @@ const en: Record<TranslationKey, string> = {
     'You can dig into a block, but addresses and history live in eXplorer. Kingdom shows a window, not the whole archive.',
   block: 'Block',
   txs: 'txs',
+  checkAddress: 'Look up address',
+  addressPlaceholder: 'zion1…',
+  addressHint: 'Type an address and press Enter. The lookup runs on the server — read only, no key.',
+  balance: 'Balance',
+  received: 'Received',
+  sent: 'Sent',
+  utxo: 'UTXOs',
+  pending: 'Pending',
+  history: 'Pool history',
+  lastHour: 'last hour',
+  samples: 'samples',
 };
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { cs, en };

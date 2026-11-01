@@ -44,6 +44,13 @@ export interface EndpointSpec {
   path: string;
   /** TTL server-side cache v sekundách. Default 60. */
   cache?: number;
+  /**
+   * Timeout čtení v ms. Default 6000.
+   *
+   * Zvedat jen u endpointů, které jsou prokazatelně pomalé (např. agregace
+   * adresy v eXploreru ~10 s) — ne jako zakrývání problému.
+   */
+  timeoutMs?: number;
 }
 
 /** Deklarovaná mutace. V první vlně prázdné. */

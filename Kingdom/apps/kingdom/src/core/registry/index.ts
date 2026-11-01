@@ -23,7 +23,17 @@ import v8 from '../../portals/pool/Portal';
 import type { ComponentType } from 'react';
 import type { Locale, PortalManifest } from '@zion/contract';
 
-export type PortalView = ComponentType<{ locale: Locale }>;
+/**
+ * Portál dostane jazyk a (volitelně) query parametry stránky.
+ *
+ * Většina portálů search ignoruje. Používá ho ten, který má serverové
+ * hledání (např. Řetěz → ?addr=), aby nemusel mít klientský stav ani
+ * volat fetch: formulář je method="get" a server komponenta čte search.
+ */
+export type PortalView = ComponentType<{
+  locale: Locale;
+  search?: Record<string, string | string[] | undefined>;
+}>;
 
 export interface PortalEntry {
   manifest: PortalManifest;

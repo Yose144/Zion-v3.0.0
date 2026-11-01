@@ -47,7 +47,7 @@ export function createApi(origins: Origins): Api {
   async function read<T>(spec: EndpointSpec): Promise<T> {
     const url = resolve(spec);
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), spec.timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
     const init: NextFetchInit = {
       signal: controller.signal,

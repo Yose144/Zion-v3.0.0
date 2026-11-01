@@ -42,6 +42,19 @@ interface MinersPayload {
   miners?: Miner[];
 }
 
+interface HistorySample {
+  ts: number;
+  accepted?: number;
+  rejected?: number;
+  hashrate?: number;
+  miners_online?: number;
+}
+
+interface HistoryPayload {
+  interval_s?: number;
+  samples?: HistorySample[];
+}
+
 /**
  * Jméno workera z poolu je tečkovaná cesta
  * (`adresa.worker.adresa.worker.gpu0`) — do karty stačí poslední dva úseky.
@@ -65,9 +78,10 @@ function shareRatio(miner: Miner): { accepted: number; rate: number | null } {
 }
 
 export default async function PoolPortal({ locale }: { locale: Locale }) {
-  const [payload, minersPayload] = await Promise.all([
+  const [payload, minersPayload, historyPayload] = await Promise.all([
     api.tryRead<CoinsPayload>(readSpec(manifest, 'coins')),
     api.tryRead<MinersPayload>(readSpec(manifest, 'miners')),
+    api.tryRead<HistoryPayload>(readSpec(manifest, 'history')),
   ]);
 
   if (!payload?.coins?.length) {
@@ -82,6 +96,14 @@ export default async function PoolPortal({ locale }: { locale: Locale }) {
     (a, b) => (b.display_hps ?? 0) - (a.display_hps ?? 0),
   );
   const poolHps = miners.reduce((sum, miner) => sum + (miner.display_hps ?? 0), 0);
+
+  /* Historie: posledních 60 vzorků (typicky hodina při 60s intervalu). */
+  const interval = historyPayload?.interval_s ?? 60;
+  const windowSize = Math.max(1, Math.round(3600 / interval));
+  const historySamples = (historyPayload?.samples ?? []).slice(-windowSize);
+  const historyMax = historySamples.reduce((max, sample) => Math.max(max, sample.hashrate ?? 0), 0);
+  const historyLast = historySamples[historySamples.length - 1];
+  const historyAccepted = historySamples.reduce((sum, sample) => sum + (sample.accepted ?? 0), 0);
 
   return (
     <>
@@ -173,6 +195,56 @@ export default async function PoolPortal({ locale }: { locale: Locale }) {
           })}
         </div>
       )}
+
+      {historySamples.length > 1 ? (
+        <>
+          <div className="k-stage-head" style={{ marginTop: 26 }}>
+            <h2 className="k-section-title">{t(locale, 'history')}</h2>
+          </div>
+          <div className="k-card">
+            <div className="k-meta" style={{ marginBottom: 10 }}>
+              <span>{t(locale, 'lastHour')}</span>
+              <span>
+                {historySamples.length} {t(locale, 'samples')} · {interval} s
+              </span>
+              <span>
+                {fmtNumber(locale, historyAccepted)} shares
+              </span>
+              {historyLast?.miners_online !== undefined ? (
+                <span>
+                  {t(locale, 'miners')}: {fmtNumber(locale, historyLast.miners_online)}
+                </span>
+              ) : null}
+            </div>
+            {/*
+             * Sloupcový pruh bez knihovny: výška = podíl na maximu okna.
+             * Čísla jsou v `title`, takže se dají přečíst i bez hoveru v a11y.
+             */}
+            <div
+              role="img"
+              aria-label={`${t(locale, 'history')} — ${historySamples.length} ${t(locale, 'samples')}`}
+              style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 68 }}
+            >
+              {historySamples.map((sample) => {
+                const height = historyMax > 0 ? Math.max(2, ((sample.hashrate ?? 0) / historyMax) * 100) : 2;
+                return (
+                  <div
+                    key={sample.ts}
+                    title={`${new Date(sample.ts * 1000).toISOString().slice(11, 16)} · ${fmtCompact(locale, sample.hashrate ?? 0)} H/s · ${fmtNumber(locale, sample.accepted ?? 0)} shares`}
+                    style={{
+                      flex: 1,
+                      height: `${height}%`,
+                      background: 'var(--k-accent)',
+                      opacity: 0.35 + 0.65 * (height / 100),
+                      borderRadius: 2,
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </>
+      ) : null}
 
       {/*
        * Handoff (F4): ovládání poolu zůstává operátorovi. Kingdom umí jen číst —

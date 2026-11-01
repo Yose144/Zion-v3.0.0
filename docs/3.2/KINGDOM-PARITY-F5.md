@@ -17,7 +17,7 @@
 | poslední bloky (výška, čas, počet tx, miner) | **má** (F5, 2026-11-01) | `/api/blockchain/blocks`, cache 15 s, klik → eXplorer |
 | poslední transakce (částka, typ, from → to) | **má** (F5, 2026-11-01) | `/api/blockchain/transactions` |
 | detail bloku, detail tx | handoff | `/explorer/block?id=`, `/explorer?tx=` — ověřeno klikem |
-| hledání adresy, historie adresy | **chybí** | P1: chce `/api/blockchain/address` + stav „hledám" v klientovi |
+| hledání adresy, historie adresy | **má** (F5, 2026-11-01) | formulář `method="get"` → `?addr=`, server čte `searchParams`; `timeoutMs: 15000` (endpoint ~10 s), cache 30 s |
 | richlist, emisní grafy, konsensus, most | handoff | archiv a grafy zůstávají v eXploreru (rozhodnutí: portál je okno) |
 
 ## 2. Kovárna ← `pool.zionterranova.com`, `/pool`, `/miner-stats`
@@ -26,7 +26,7 @@
 |---|---|---|
 | mince, upstream nohy, payout mode, fee | **má** | `/public/v1/coins` |
 | těžaři: worker, hashrate, accept rate, shares | **má** (F4, 2026-11-01) | `/public/v1/miners`, cache 30 s |
-| historie poolu (hashrate, accepted, online) | **chybí** | P1: `/public/v1/history` je levné, chybí jen UI (sparkline bez knihovny) |
+| historie poolu (hashrate, accepted, online) | **má** (F5, 2026-11-01) | `/public/v1/history?limit=60` (12 KB / 3 s místo 1 MB / 12 s), sloupcový pruh bez knihovny |
 | výplaty, luck, nalezené bloky | **chybí** | P2: `/public/v1/payouts`, `/public/v1/blocks` |
 | detail těžaře (jeho historie, payouty) | **chybí** | P2: chce `/public/v1/miner/{coin}/{wallet}/…` + vstup na adresu |
 | ovládání poolu (restart, drain) | handoff | `/ops/` za basic auth — operátorské, ne klientské |
@@ -89,10 +89,12 @@
 | Stav | Portály |
 |---|---|
 | **100 % (má / platný handoff)** | Přístav, Věž, Snem, Knihovna, Účet (čtení) |
-| **~80 %** | Řetěz (chybí hledání adresy), Kovárna (chybí historie, výplaty) |
+| **~90 %** | Řetěz (má hledání adresy), Kovárna (má historii; chybí výplaty a detail těžaře) |
 | **~60 %** | Tržiště (katalog/pokladna = handoff; DeFi mimo rozsah) |
 | **blokováno** | Issobella (čeká na 6.B4) |
 
-**Do F5 ještě patří (P1):** hledání adresy v Řetězu, historie poolu v Kovárně, zúžení `website-v2.9`
-o duplicitní povrchy (`/pool`, `/market`, `/l4-oasis`, `/explorer`) na odkazy — to je druhá půlka F5
-a smí se udělat až po 30 dnech redirectu podle §3 plánu.
+**P1 hotové (2026-11-01):** hledání adresy v Řetězu, historie poolu v Kovárně.
+
+**Do F5 zbývá:** zúžení `website-v2.9` o duplicitní povrchy (`/pool`, `/market`, `/l4-oasis`, `/explorer`)
+na odkazy — to je druhá půlka F5 a smí se udělat až po 30 dnech redirectu podle §3 plánu.
+Dále P2: detail těžaře a výplaty v Kovárně.

@@ -16,6 +16,7 @@ export const manifest = definePortal({
   reads: [
     { id: 'coins', service: 'pool', path: '/public/v1/coins', cache: 30 },
     { id: 'miners', service: 'pool', path: '/public/v1/miners?limit=32', cache: 30 },
+    { id: 'history', service: 'pool', path: '/public/v1/history?limit=60', cache: 60 },
   ],
   status: 'live',
 });
