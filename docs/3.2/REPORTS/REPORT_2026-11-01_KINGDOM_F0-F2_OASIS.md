@@ -2,6 +2,7 @@
 
 > **Datum:** 2026-11-01 · **Autor:** agent (autonomní) · **Stav:** F0 ✅ · F1 ✅ · F2a ✅ · F2b ✅ · **F3 ✅ (9 portálů)**
 > **Rozhodnutí 👤, která to spustila:** (1) strom `Kingdom/` v rootu, stavěný od nuly; (2) `website-v2.9` zůstává knihovnou/docs; (3) Dashboard zůstává samostatný; (4) Nirvana = první svět OASIS, OASIS jednou jako AAA hra; (5) market, pool UI i Dashboard funkčně zůstávají.
+> **Stav k 2026-11-01 02:00 UTC (autonomní noční běh):** Kingdom **live na `https://kingdom.zionterranova.com`** (TLS do 2027-01-30) — F0 ✅, F1 ✅ (+ stargate a rasta), F2a ✅, F2b ✅, F3 ✅ (9 portálů), **ZIS S1 ✅ a S2 ✅ nasazené**. Zbývá: ZIS S3 (migrace konzumentů) a S4 (CSRF + CORS), F4–F6.
 > **NASZENO 2026-11-01 21:00 UTC** na EDGE2 (`zion-kingdom.service`, `127.0.0.1:3020`, vhost `kingdom.zionterranova.com` staged na :80). DNS + certbot zůstávají 👤.
 
 ---
@@ -185,7 +186,18 @@ Dopad: chybový 5xx místo 4xx (zapleveluje metriky, mate klienty, kteří čtou
 
 **Ověřeno živě na serveru, ne jen `200`:** Brána čte z loopbacku **104 200 bloků / difficulty 18 206 / 303 H/s / 57,0 s / 12 z 12 mincí**, Přístav **28 109 510 ZION** (blok 104 192), všech 7 rout včetně `/world/kailash` odpovídá `200`, journal bez chyb.
 
-**Zbývá 👤:** DNS `A kingdom` → `207.180.217.100` + `certbot --nginx`.
+**Doména a TLS — hotovo 2026-11-01 01:50 UTC** (👤 přidal A záznam, 🤖 dojel certbot):
+
+| | |
+|---|---|
+| DNS | `kingdom.zionterranova.com` → `207.180.217.100` |
+| Cert | `CN=kingdom.zionterranova.com`, platí do **2027-01-30**, `certbot.timer` 2×/den |
+| HTTP | 80 → 301 na HTTPS |
+| Ověřeno z internetu | `/` 200 (0,44 s) · `/room` 200 (0,66 s) · `/portal/chain` 200 · `/portal/account` 200 · `/world/kailash` 200 (0,32 s) · stargate assety 200 |
+| Živá data | 104 503 bloků / difficulty 3 893 / 65 H/s |
+
+Deploy skript vhost z repa **přepisuje**, takže `Kingdom/infra/nginx/kingdom.zionterranova.com.conf`
+teď obsahuje i certbotem spravované `listen 443` bloky — po renew je nutné znovu zkopírovat ze serveru.
 
 ---
 

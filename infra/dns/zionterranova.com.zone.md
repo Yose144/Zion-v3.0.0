@@ -144,26 +144,25 @@ nginx -t && systemctl reload nginx
 
 ---
 
-## Fáze 4 — `kingdom.` na EDGE2 (čeká na 👤, 2026-11-01)
+## Fáze 4 — `kingdom.` na EDGE2 (✅ hotovo 2026-11-01)
 
 `zion-kingdom.service` **běží na EDGE2** (`127.0.0.1:3020`), vhost je staged na portu 80.
 Doména ale chytá wildcard `*` → Edge (`62.171.141.136`), kde žádný vhost není → `404`.
 
 | Záznam | Dnes | Cíl | Poznámka |
 |---|---|---|---|
-| `kingdom` | *(wildcard → Edge)* | **`207.180.217.100`** — **nový explicit** | `zion-kingdom.service` :3020, vhost staged, `nginx -t` OK |
+| `kingdom` | *(wildcard → Edge)* | ✅ **`207.180.217.100`** — přidáno 2026-11-01 | `zion-kingdom.service` :3020, HTTPS live, cert do 2027-01-30 |
 
-**Postup 👤 ve WebGlobe:** přidat `kingdom` A → `207.180.217.100`, serial bump, uložit.
+**Provedeno:** 👤 přidal A záznam; 🤖 spustil `certbot --nginx -d kingdom.zionterranova.com --redirect -n`
+(EDGE2, 2026-11-01 01:50 UTC) a synchronizoval certbotem vygenerované bloky zpět do
+`Kingdom/infra/nginx/kingdom.zionterranova.com.conf`.
 
-**Navazující kroky 🤖 (po propagaci):**
+**Ověřeno z internetu:** `https://kingdom.zionterranova.com/` 200 (0,44 s), `/room`, `/portal/chain`,
+`/portal/account`, `/world/kailash` vše 200, stargate assety 200, cert `CN=kingdom.zionterranova.com`
+do **2027-01-30**, `certbot.timer` 2×/den.
 
-```bash
-# na EDGE2
-certbot --nginx -d kingdom.zionterranova.com
-nginx -t && systemctl reload nginx
-# pak synchronizovat certbotem vygenerované bloky zpět do
-# Kingdom/infra/nginx/kingdom.zionterranova.com.conf
-```
+⚠️ **Deploy skript scp-uje vhost z repa** — soubor v repu proto musí obsahovat i certbotem
+spravované `listen 443` bloky. Po každém renew znovu zkopírovat ze serveru.
 
 ---
 

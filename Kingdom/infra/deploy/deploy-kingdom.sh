@@ -77,4 +77,4 @@ echo
 echo "==> hotovo"
 echo "    služba:  zion-kingdom.service (127.0.0.1:3020)"
 echo "    vhost:   kingdom.zionterranova.com (port 80, staged)"
-echo "    zbývá 👤: DNS A kingdom -> 207.180.217.100 + certbot --nginx"
+echo "    live:    https://kingdom.zionterranova.com"

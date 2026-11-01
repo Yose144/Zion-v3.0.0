@@ -65,7 +65,7 @@ npm start            # http://127.0.0.1:3020
 
 ## Nasazení
 
-Běží na **EDGE2** jako `zion-kingdom.service` (127.0.0.1:3020), vhost `kingdom.zionterranova.com` staged na portu 80.
+Běží na **EDGE2** jako `zion-kingdom.service` (127.0.0.1:3020), vhost `kingdom.zionterranova.com` s TLS od 2026-11-01.
 
 ```bash
 bash infra/deploy/deploy-kingdom.sh                # build + stage + rsync + restart
@@ -74,7 +74,7 @@ SKIP_BUILD=1 bash infra/deploy/deploy-kingdom.sh   # použít existující build
 
 Každý deploy = nový `build-<UTC>` adresář + atomický přepis symlinku `current`; rollback je přepis symlinku. **Nikdy** nekopíruj `.next/standalone/` do živého adresáře appky (incident 2026-10-30 v MarketPlace).
 
-Zbývá 👤: DNS `A kingdom` → `207.180.217.100` + `certbot --nginx`.
+**Live:** <https://kingdom.zionterranova.com> (HTTPS, cert do 2027-01-30). DNS `A kingdom` → `207.180.217.100`, vhost 80 → 301 na 443.
 
 Port `3020` je záměrně mimo `website` (3000), `market` (3100) a `nirvana` (3010).
 
