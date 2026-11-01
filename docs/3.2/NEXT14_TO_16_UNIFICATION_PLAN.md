@@ -26,7 +26,7 @@ Sjednotit všechny 6 webů na jednu generaci Next (16.x) + React 19, aby:
 |---|---|---|---|---|
 | `pool-ui` | 16.4.3 | 19.2.0 | ✅ | ✅ 2026-11-01 (`pool.zionterranova.com`) |
 | `IntroPage` | 16.4.3 | 19.2.0 | ✅ | ✅ 2026-11-01 (apex `zionterranova.com`) |
-| `MarketPlace` | 14.2.5 | 18.3.1 | — | ⏳ gate 1b |
+| `MarketPlace` | 16.4.3 | 19.2.0 | ✅ | ⏳ **build OK, deploy čeká** (gate 1b — money-path, chce TEST-K11-* objednávku) |
 | `nirvana` | 16.4.3 | 19.2.0 | ✅ | ✅ (manifest srovnán; build/deploy patří herní session) |
 | `OasisWeb` | 16.4.3 | 19.2.0 | ✅ | ✅ 2026-11-01 (`oasis.zionterranova.com`) |
 | `website-v2.9` | 16.4.3 | 19.2.0 | ✅ (jen `--webpack`) | ✅ |
