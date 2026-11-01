@@ -114,3 +114,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   prohlížeč přehrávání zablokuje. V repu nejsou žádné zvukové soubory.
 - **VR pohyb** jde přes `XROrigin`: origin nese tělo, kamera (hlava) je vůči němu
   lokální. „Vpřed" se bere z kamery, ne z myši; kolize zůstávají stejné.
+
+## Archa — `/present/kralovstvi-srdce` (2026-11-01)
+
+- **Třináctý uzel L5 nemá pin na pevnině.** V obou `freeworld-sites` je proto
+  `body: 'ocean'` a `EARTH_MISSIONS` filtruje `(m.body ?? 'earth') === 'earth'`.
+  Když se filtr rozbije, archa se objeví jako marker uprostřed Atlantiku.
+- **Nový slot `sea`:** `SceneSlot` je exhaustivní `Record` ve **dvou** souborech
+  (`core/shell/Shell.tsx` a `core/scene/universe/HoloConsole.tsx`) — nový slot
+  bez obou barev neprojde `tsc`.
+- **Plující archa ve vesmíru** (`core/scene/universe/SailingArk.tsx`) obíhá Novou
+  Zemi a klik otevírá portál `archa`; je uvnitř skupiny zemské soustavy, takže
+  obíhá Slunce spolu s planetou. Hit area je neviditelná koule — samotná loď je
+  na klik moc malá.
+- **Scéna je sdílená** (`apps/shared/scenes/KralovstviSrdce.tsx`, 15. scéna
+  rodiny): jen `three` + `@genesis/runtime`. Rotace plachty se **nesmí** dělat
+  kolem osy lodi — geometrie musí být lokální k vlastnímu `z` a pozici nese až
+  `group`; jinak se plachta odsune od stěžně (přesně tahle chyba se stala).
+- **Bílá plachta proti světlé obloze mizí.** Barva `#fff6e4` je na obloze
+  nečitelná; používat teplý cream (`#f0e3c6`) a trim ~0,8 rad, ať není nikdy
+  přesně edge-on ke kameře.
+- **Ověření bez ZAP pasu:** `/present/*` je gate-nutý server-side. Lokálně se
+  scéna pustí s `ZION_RENDER_AUDIT=1` a hlavičkou `x-render-audit: 1`
+  (stejný hook jako `scripts/ops/audit-project-scenes.py`); produkce ten env
+  nemá. `/present/kralovstvi-srdce` → **307** na živém webu je správně.
+- **Dlaždice v konzoli** přibyla automaticky z manifestu (`id: 'archa'`), okno
+  `ArchaPortal` má dvě cesty: `/present/kralovstvi-srdce` a misijní stránku.
