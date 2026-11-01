@@ -27,7 +27,8 @@ MODE="${2:-apply}"
 ROW="$(awk -v s="$SURFACE" -F'\t' '$1==s {print; exit}' "$MAP")"
 [[ -n "$ROW" ]] || { echo "povrch '$SURFACE' není v mapě" >&2; exit 2; }
 
-IFS=$'\t' read -r _ vhost target status reason <<< "$ROW"
+IFS=$'\t' read -r _ vhost target status reason probe root_target <<< "$ROW"
+probe="${probe:-$target}"
 
 if [[ "$status" != "ready" ]]; then
   echo "ODMÍTNUTO: '$SURFACE' je '$status' — $reason" >&2
@@ -50,43 +51,65 @@ if [[ "$MODE" == "--dry-run" ]]; then
 fi
 
 # 1) záloha + přepis location /
-ssh "$HOST" "bash -s -- '${VHOST}' '${STAMP}' '${target}'" <<'REMOTE'
+ssh "$HOST" "bash -s -- '${VHOST}' '${STAMP}' '${target}' '${root_target:-}'" <<'REMOTE'
 set -euo pipefail
-vhost="$1"; stamp="$2"; target="$3"
+vhost="$1"; stamp="$2"; target="$3"; root_target="${4:-}"
 backup_dir="/etc/nginx/backups/redirects"
 mkdir -p "$backup_dir"
 backup="${backup_dir}/$(basename "$vhost").bak-${stamp}"
 cp -p "$vhost" "$backup"
 echo "    záloha: $backup"
 
-python3 - "$vhost" "$target" <<'PY'
+python3 - "$vhost" "$target" "$root_target" <<'PY'
 import re, sys
-path, target = sys.argv[1], sys.argv[2]
+path, target, root_target = sys.argv[1], sys.argv[2], sys.argv[3]
 src = open(path, encoding='utf-8').read()
 
-# Najdi `location / {` a jeho uzavírací závorku (počítáním úrovní).
-m = re.search(r'(?m)^(\s*)location\s+/\s*\{', src)
-if not m:
-    sys.exit('nenalezen blok "location / {"')
-indent = m.group(1)
-start = m.end() - 1  # pozice '{'
-depth = 0
-end = None
-for i in range(start, len(src)):
-    if src[i] == '{':
-        depth += 1
-    elif src[i] == '}':
-        depth -= 1
-        if depth == 0:
-            end = i
-            break
-if end is None:
-    sys.exit('neuzavřený blok "location /"')
+# Vhost má obvykle DVA server bloky (port 80 + 443). Přepsat jen první by
+# znamenalo, že HTTP redirectuje a HTTPS dál servíruje starý web — přesně ta
+# chyba, kterou odhalila simulace. Proto se prochází všechny výskyty.
+def blocks(text):
+    out = []
+    for m in re.finditer(r'(?m)^(\s*)location\s+/\s*\{', text):
+        start = m.end() - 1
+        depth = 0
+        end = None
+        for i in range(start, len(text)):
+            if text[i] == '{':
+                depth += 1
+            elif text[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+        if end is None:
+            sys.exit('neuzavřený blok "location /"')
+        out.append((m.start(), end, m.group(1)))
+    return out
 
-new_block = '{\n' + f'{indent}    return 301 {target}$request_uri;\n' + indent + '}'
-src = src[:start] + new_block + src[end + 1:]
+found = blocks(src)
+if not found:
+    sys.exit('nenalezen blok "location / {"')
+
+def replacement(indent):
+    if root_target:
+        # `/` má jít jinam než zbytek (apex → Brána, ostatní cesty → Archiv v3).
+        return (
+            f'{indent}location = / {{\n{indent}    return 301 {root_target};\n{indent}}}\n'
+            f'{indent}location / {{\n{indent}    return 301 {target}$request_uri;\n{indent}}}'
+        )
+    return f'{indent}location / {{\n{indent}    return 301 {target}$request_uri;\n{indent}}}'
+
+# Od konce, aby zůstaly indexy platné.
+for start, end, indent in reversed(found):
+    src = src[:start] + replacement(indent) + src[end + 1:]
+
 open(path, 'w', encoding='utf-8').write(src)
-print('    location / → 301 (ostatní location bloky zůstaly)')
+if root_target:
+    note = f'location = / → {root_target}; location / → {target}$request_uri'
+else:
+    note = f'location / → 301 {target}$request_uri'
+print(f'    {note} v {len(found)} server blocích (ostatní location zůstaly)')
 PY
 REMOTE
 
@@ -99,8 +122,11 @@ fi
 ssh "$HOST" "nginx -s reload"
 
 # 3) kontrola
+probe_code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "${probe}" || echo '---')"
 code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://${vhost}/")"
 loc="$(curl -s -o /dev/null -w '%{redirect_url}' --max-time 15 "https://${vhost}/")"
+echo "==> cíl (${probe}) → ${probe_code}"
+[[ "$probe_code" == "200" ]] || { echo "POZOR: cíl nevrací 200 — redirect by vedl do prázdna" >&2; exit 1; }
 echo "==> kontrola: https://${vhost}/ → ${code} ${loc}"
 [[ "$code" == "301" || "$code" == "308" ]] || {
   echo "POZOR: čekán 301, přišlo ${code}" >&2; exit 1; }

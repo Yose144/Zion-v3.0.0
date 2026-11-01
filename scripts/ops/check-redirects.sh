@@ -26,24 +26,25 @@ yellow() { printf '\033[33m%s\033[0m\n' "$*"; }
 printf '%-11s %-9s %-42s %s\n' "POVRCH" "STAV" "CÍL" "DNES"
 printf '%-11s %-9s %-42s %s\n' "-----------" "---------" "------------------------------------------" "-------"
 
-while IFS=$'\t' read -r surface vhost target status reason; do
+while IFS=$'\t' read -r surface vhost target status reason probe root_target; do
   [[ -z "${surface:-}" || "$surface" == \#* ]] && continue
 
-  # 1) tvar řádku
+  # 1) tvar řádku (5 povinných sloupců, probe/root volitelné)
   if [[ -z "${vhost:-}" || -z "${target:-}" || -z "${status:-}" || -z "${reason:-}" ]]; then
-    red "$(printf '%-11s %-9s %s' "$surface" "CHYBA" "řádek nemá 5 sloupců")"; fail=1; continue
+    red "$(printf '%-11s %-9s %s' "$surface" "CHYBA" "řádek nemá povinné sloupce")"; fail=1; continue
   fi
+  probe="${probe:-$target}"
   case "$status" in ready|blocked|done) ;; *) red "$(printf '%-11s %-9s %s' "$surface" "CHYBA" "neznámý stav '$status'")"; fail=1; continue ;; esac
 
   today="$(curl -s -o /dev/null -w '%{http_code}' --max-time 12 "https://${vhost}/" || echo '---')"
 
   if [[ "$status" == "ready" ]]; then
     # 2) cíl musí být živý (200) — jinak by redirect vedl do prázdna
-    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$target" || echo '---')"
+    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$probe" || echo '---')"
     if [[ "$code" == "200" ]]; then
-      green "$(printf '%-11s %-9s %-42s %s' "$surface" "$status" "$target" "$today")"
+      green "$(printf '%-11s %-9s %-42s %s' "$surface" "$status" "${root_target:-$target}" "$today")"
     else
-      red "$(printf '%-11s %-9s %-42s %s' "$surface" "$status" "$target → $code!" "$today")"; fail=1
+      red "$(printf '%-11s %-9s %-42s %s' "$surface" "$status" "cíl $probe → $code!" "$today")"; fail=1
     fi
   elif [[ "$status" == "blocked" ]]; then
     if [[ ${#reason} -lt 20 ]]; then

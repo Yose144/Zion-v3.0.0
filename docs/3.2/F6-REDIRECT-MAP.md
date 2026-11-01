@@ -14,18 +14,35 @@ Plán F6 vyjmenovává `pool.` `oasis.` `nirvana.` `freeworld.` `explorer.` → 
 | `explorer.` | 301 → `zionterranova.com/explorer/` | eXplorer žije na `app./explorer` | **done** (nic k práci) |
 | `oasis.` | **11 stránek** — avatars, quests, golden-egg, ships, territories, guilds, leaderboard, dashboard, miner, onboarding | **žádná** | **blocked** |
 | `nirvana.` | hry a scény (`/park`, `/mars`, `/venus`, `/present/*`), chat, multiplayer | **žádná** | **blocked** |
-| `apex` | IntroPage — landing + **59 stránek** | Brána = landing; zbytek je v **Archivu v3** (`/portal/archive` → `/archive/v3/…`, 2026-11-01) | **téměř ready** — chybí jen rozhodnout mapování cest (`/blog/x` → `/archive/v3/blog/x`) |
+| `apex` | IntroPage — landing + **59 stránek** | Brána na `/`, zbytek v **Archivu v3** path-preserving (`/blog/x` → `/archive/v3/blog/x`) | **ready** — paths ověřené 59/59 |
 
 **Důsledek:** redirect `oasis.` nebo `nirvana.` na Kingdom by dnes rozbil funkci, kterou portál nemá — přesně to §3 zakazuje („žádná funkce nezmizela"). Proto jsou v mapě jako `blocked` **s důvodem** a `enable-redirect.sh` je odmítne (exit 3).
+
+## Apex: path-preserving redirect
+
+Pravidla (jediná dvě):
+
+```nginx
+location = / { return 301 https://kingdom.zionterranova.com/; }            # Brána
+location /  { return 301 https://kingdom.zionterranova.com/archive/v3$request_uri; }
+```
+
+Protože Archiv v3 **zachovává strukturu cest**, nepotřebuje apex tabulku výjimek — `/blog/xyz/` → `/archive/v3/blog/xyz/`.
+`scripts/ops/check-apex-mapping.sh` to ověřuje: projde všech 59 HTML v archivu a každé staré URL najde cíl (59/59, včetně adresářových URL typu `/blog/`).
+
+**Vědomé mezery:** `/legacy/` (~385 MB) a `/portfolio/` (~33 MB) v archivu nejsou, takže tyhle staré URL po přepnutí vrátí 404. Nic na ně z archivu neodkazuje (ověřeno: 0 odkazů) — jsou to surové archivy, ne web. Kdyby bylo potřeba, doplní se jedním řádkem do `build-archive-v3.sh`.
+
+**Past nalezená simulací:** vhost má **dva server bloky** (80 a 443). První verze přepisu měnila jen `location /` v prvním z nich — HTTPS by dál servíroval starý web, protože prohlížeč jede přes 443. `enable-redirect.sh` teď přepisuje **všechny** výskyty (ověřeno na kopii živého vhostu: 2 bloky, ostatních 15 `location` zůstalo, závorky 17/17).
 
 ## Co je připravené
 
 | Soubor | Co dělá |
 |---|---|
 | `Kingdom/infra/nginx/redirects/map.tsv` | jediný zdroj pravdy: povrch → vhost → cíl → stav → důvod |
-| `Kingdom/infra/deploy/enable-redirect.sh <povrch> [--dry-run]` | záloha vhostu, přepis **jen** `location /` na `return 301`, `nginx -t`, reload, kontrola 301 |
+| `Kingdom/infra/deploy/enable-redirect.sh <povrch> [--dry-run]` | záloha vhostu, přepis `location /` (ve **všech** server blocích) na `return 301`, `nginx -t`, reload, kontrola 301 + cíl 200 |
 | `Kingdom/infra/deploy/rollback-redirect.sh <povrch> [--list]` | vrátí nejnovější zálohu, `nginx -t`, reload, kontrola |
-| `scripts/ops/check-redirects.sh` | mapa + živý stav + cíl musí vracet 200 + `sites-enabled` bez `.bak` |
+| `scripts/ops/check-redirects.sh` | mapa + živý stav + cíl (probe) musí vracet 200 + `sites-enabled` bez `.bak` |
+| `scripts/ops/check-apex-mapping.sh` | všech 59 stránek archivu má cíl; `/legacy/` a `/portfolio/` se hlásí jako vědomá mezera |
 
 **Vlastnosti, které to má záměrně:**
 - přepisuje se **jen** `location /` — `/ops/`, `/ops-api/`, `/public/v1/`, `/api/auth/` zůstávají živé (API konzumenti a operátor nepřijdou o cestu);
@@ -43,7 +60,7 @@ Přepisovací logika puštěná na **kopii** vhostu v `/tmp`: změnil se jediný
 2. **oasis** — 11 stránek. Buď portál „OASIS" v Kingdomu (avatary, questy, lodě, území, golden egg, leaderboard), nebo rozhodnutí, že OASIS zůstává samostatný povrch a z F6 se vyjímá.
 3. **nirvana** — hry. Buď zůstává samostatná (rozumné: je to herní klient, ne čtecí portál), nebo se do Kingdomu přenese celá herní vrstva — to je jiná velikost práce.
 
-**Doporučení:** `pool.` a `freeworld.` mohou jít do 301 hned po schválení (parita doložena). `oasis.`, `nirvana.`, `apex` držet — F6 pak není „zhasnout 5 hostname", ale „zhasnout 2 a u 3 rozhodnout, čím jsou".
+**Doporučení:** `pool.`, `freeworld.` a `apex` mohou jít do 301 hned po schválení (parita i paths doložené). `oasis.`, `nirvana.`, `apex` držet — F6 pak není „zhasnout 5 hostname", ale „zhasnout 2 a u 3 rozhodnout, čím jsou".
 
 ## Jak se to pouští
 
