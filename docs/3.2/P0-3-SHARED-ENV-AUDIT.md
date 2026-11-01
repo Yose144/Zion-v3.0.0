@@ -1,6 +1,6 @@
 # P0-3 — Shared environment audit & per-service subset plan
 
-**Datum:** 2026-10-31 · **Status:** 🤖 příprava (audit + návrh); rotace a flip = 👤
+**Datum:** 2026-10-31 · **Status:** ✅ **izolace nasazena 2026-11-01** (oba boxy, 0 cizích secretů u služeb; rotace klíčů 👤 „zatím ne“) — report: [`REPORT_2026-11-01_P03_ENV_ISOLATION.md`](REPORTS/REPORT_2026-11-01_P03_ENV_ISOLATION.md)
 **Souvisí:** `AGENTS.md` (P0-3 otevřené), `NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md` §2 (rozpor #?), `docs/3.2/AUDIT-TRIAGE.md`
 
 ## 1. Nález

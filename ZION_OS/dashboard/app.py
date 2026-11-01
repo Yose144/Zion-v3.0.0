@@ -7743,7 +7743,17 @@ def get_pool_debug_dump() -> dict:
                         val = kv[1].strip().strip('"').strip("'")
                         # Only pool/mining-related vars
                         if any(k in key.upper() for k in ["POOL", "MINER", "PAYOUT", "PPLNS", "FEE", "AUXPOW", "STRATUM"]):
-                            env_vars[key] = val
+                            # P0-3 (2026-11-01): never echo a credential. Secrets
+                            # live in /etc/zion/env/<service>.env since the split,
+                            # but this endpoint reads the shared file directly —
+                            # mask by name so a regression cannot leak values.
+                            if any(s in key.upper() for s in (
+                                "KEY", "SECRET", "PASS", "TOKEN", "MNEMONIC",
+                                "SK_HEX", "PASSWORD", "CREDENTIAL",
+                            )):
+                                env_vars[key] = "***redacted***"
+                            else:
+                                env_vars[key] = val
         result["pool_env"] = env_vars
         result["sections"]["pool_env"] = f"ok ({len(env_vars)} vars)"
     except Exception as e:
