@@ -12,6 +12,7 @@
  */
 
 export { SESSION_COOKIE, ZisError, zisUrl } from './client';
+export type { CallOptions } from './client';
 export {
   getChallenge,
   verifyEd25519,

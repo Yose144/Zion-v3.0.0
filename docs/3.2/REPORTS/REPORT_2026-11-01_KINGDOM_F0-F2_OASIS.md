@@ -172,7 +172,39 @@ https://market.zionterranova.com/shop?category=digital
 
 Ověřeno: odkazy jsou v HTML, `?category=books` → **200**. Manifest to říká nahlas: „Kliknutí otevře e-shop — pokladna, platba a doprava zůstávají na marketu."
 
-**Zbývá (S3–S4):** kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
+### ZIS S3 — příprava migrace konzumentů (2026-11-01)
+
+Zjištění, které mění postup: **konzumenti nevolají ZIS přímo.** Nirvana i market mají vlastní same-origin proxy (`/api/auth/*` → ZIS) a volají **relativní** cesty. Přímé napojení na `@zion/session` by z prohlížeče znamenalo cross-origin request → CORS → a ten ZIS nemá pro `nirvana.`/`kingdom.` otevřený.
+
+Řešení je levnější než měnit CORS: klient umí `baseUrl: ''` = relativní cesta, takže jde přes stávající proxy konzumenta. **`@zion/session` proto dostal volitelný `CallOptions.baseUrl`** na všech pěti funkcích (`getChallenge`, `verifyEd25519`, `getCurrentUser`, `listSessions`, `logout`).
+
+**Recept pro nirvanu (73 řádků → ~25, bez CORS, bez změny volajících):**
+
+```jsonc
+// apps/nirvana/package.json
+"dependencies": { "@zion/session": "file:../../Kingdom/packages/session" }
+```
+
+```ts
+// apps/nirvana/src/lib/zis.ts — jen adaptér, API zůstává stejné
+import { SESSION_COOKIE, getCurrentUser as me, getChallenge as challenge,
+         verifyEd25519 as verify, logout as out } from '@zion/session';
+
+export const ZIS_SESSION_COOKIE = SESSION_COOKIE;
+export type { ZisUser } from '@zion/session';
+
+const local = { baseUrl: '' };                     // → /api/auth/* same-origin
+
+export const getCurrentUser = () => me(null, local);   // cookie posílá prohlížeč
+export const logout = () => out(null, local);
+export const getChallenge = async (a: string) => (await challenge(a, 'zion-l1', local)).challenge;
+export const verifyEd25519 = (a: string, pk: string, sig: string) =>
+  verify({ address: a, publicKey: pk, signature: sig }, local).then(() => undefined);
+```
+
+Zbývá doladit jednu věc: `getCurrentUser` v balíčku čte cookie **explicitně** (server), zatímco nirvana volá z prohlížeče s `credentials: 'include'`. Adaptér proto musí předat `sessionCookie: undefined` a nechat hlavičku na prohlížeči — drobná úprava `request()`.
+
+**Zbývá (S3 dokončení, S4):** kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
 
 ---
 

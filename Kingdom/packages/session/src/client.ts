@@ -76,24 +76,50 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return parsed as T;
 }
 
+/**
+ * Volitelné přepsání cíle.
+ *
+ * `baseUrl: ''` znamená **relativní** cestu — tedy same-origin proxy, kterou má
+ * nirvana (`/api/auth/*`). Bez toho by klient z prohlížeče volal ZIS napřímo
+ * a narazil na CORS.
+ */
+export interface CallOptions {
+  baseUrl?: string;
+}
+
 /** Vytvoří výzvu k podpisu pro adresu. */
-export function getChallenge(address: string, chainType: ZisChallenge['chainType'] = 'zion-l1') {
+export function getChallenge(
+  address: string,
+  chainType: ZisChallenge['chainType'] = 'zion-l1',
+  options?: CallOptions,
+) {
   return request<ZisChallenge>('/api/auth/challenge', {
     method: 'POST',
     body: { address, chainType },
+    baseUrl: options?.baseUrl,
   });
 }
 
 /** Ověří Ed25519 podpis a vrátí session (token). */
-export function verifyEd25519(input: { address: string; publicKey: string; signature: string }) {
-  return request<ZisSession>('/api/auth/verify/ed25519', { method: 'POST', body: input });
+export function verifyEd25519(
+  input: { address: string; publicKey: string; signature: string },
+  options?: CallOptions,
+) {
+  return request<ZisSession>('/api/auth/verify/ed25519', {
+    method: 'POST',
+    body: input,
+    baseUrl: options?.baseUrl,
+  });
 }
 
 /** Přihlášený uživatel, nebo `null` (401 = nikdo není přihlášený). */
-export async function getCurrentUser(sessionCookie?: string | null): Promise<ZisUser | null> {
+export async function getCurrentUser(
+  sessionCookie?: string | null,
+  options?: CallOptions,
+): Promise<ZisUser | null> {
   if (!sessionCookie) return null;
   try {
-    return await request<ZisUser>('/api/auth/me', { sessionCookie });
+    return await request<ZisUser>('/api/auth/me', { sessionCookie, baseUrl: options?.baseUrl });
   } catch (error) {
     if (error instanceof ZisError && error.status === 401) return null;
     throw error;
@@ -101,14 +127,18 @@ export async function getCurrentUser(sessionCookie?: string | null): Promise<Zis
 }
 
 /** Aktivní session daného zařízení. */
-export function listSessions(sessionCookie: string) {
-  return request<{ sessions: ZisActiveSession[] }>('/api/session', { sessionCookie });
+export function listSessions(sessionCookie: string, options?: CallOptions) {
+  return request<{ sessions: ZisActiveSession[] }>('/api/session', {
+    sessionCookie,
+    baseUrl: options?.baseUrl,
+  });
 }
 
 /** Odhlásí tuhle session. */
-export function logout(sessionCookie?: string | null) {
+export function logout(sessionCookie?: string | null, options?: CallOptions) {
   return request<{ ok: boolean }>('/api/auth/logout', {
     method: 'POST',
     sessionCookie,
+    baseUrl: options?.baseUrl,
   });
 }
