@@ -43,6 +43,14 @@ export const GAME_LINKS: GameLink[] = [
     tone: '#c8f56a',
   },
   {
+    id: 'mercury',
+    href: '/mercury',
+    title: { cs: 'Merkur — souboj', en: 'Mercury — duel' },
+    note: { cs: 'best of 3 · pugilát · online', en: 'best of 3 · fists · online' },
+    glyph: '⚔',
+    tone: '#e8a15c',
+  },
+  {
     id: 'avatars',
     href: '/avatars',
     title: { cs: 'Avatar', en: 'Avatar' },

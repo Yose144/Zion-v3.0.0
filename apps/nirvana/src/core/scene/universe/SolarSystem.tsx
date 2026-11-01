@@ -109,8 +109,8 @@ interface PlanetDef {
   ring?: boolean;
   /** Axiální náklon v radiánech (Uranus ~98°, Venuše retrográdní). */
   tiltZ?: number;
-  /** Interaktivní planeta = vstup do hry (`/mars`, `/venus`, `/park`). */
-  game?: 'mars' | 'venus' | 'park';
+  /** Interaktivní planeta = vstup do hry (`/mars`, `/venus`, `/mercury`, `/park`). */
+  game?: 'mars' | 'venus' | 'park' | 'mercury';
   /** Co se stane po kliknutí — text na chipu. */
   cta?: { cs: string; en: string };
 }
@@ -135,7 +135,7 @@ export function orbitRadius(au: number): number {
  * tiltZ: skutečný axiální sklon v radiánech.
  */
 export const PLANETS: PlanetDef[] = [
-  { id: 'mercury', name: 'Merkur', tex: 'mercury', au: 0.387, size: 0.62, speed: 0.082, spin: 0.006, tint: '#b0a89c', tiltZ: 0.001 },
+  { id: 'mercury', name: 'Merkur', tex: 'mercury', au: 0.387, size: 0.62, speed: 0.082, spin: 0.006, tint: '#b0a89c', tiltZ: 0.001, game: 'mercury', cta: { cs: 'souboj →', en: 'duel →' } },
   {
     id: 'venus',
     name: 'Venuše',
@@ -192,7 +192,7 @@ function Planet({
   index: number;
   lang: 'cs' | 'en';
   selected: boolean;
-  onSelect?: (id: 'mars' | 'venus' | 'jupiter') => void;
+  onSelect?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
 }) {
   const [hover, setHover] = useState(false);
   const carrier = useRef<THREE.Group>(null);
@@ -274,7 +274,7 @@ function Planet({
         <mesh
           onClick={(event) => {
             event.stopPropagation();
-            onSelect?.(def.game as 'mars' | 'venus' | 'jupiter');
+            onSelect?.(def.game as 'mars' | 'venus' | 'jupiter' | 'mercury');
           }}
           onPointerOver={(event) => {
             event.stopPropagation();
@@ -303,10 +303,10 @@ function Planet({
             style={{ ['--planet-tone' as string]: def.tint }}
             role="button"
             tabIndex={0}
-            onClick={() => onSelect?.(def.game as 'mars' | 'venus' | 'jupiter')}
+            onClick={() => onSelect?.(def.game as 'mars' | 'venus' | 'jupiter' | 'mercury')}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
-                onSelect?.(def.game as 'mars' | 'venus' | 'jupiter');
+                onSelect?.(def.game as 'mars' | 'venus' | 'jupiter' | 'mercury');
               }
             }}
             onPointerOver={() => {
@@ -351,7 +351,7 @@ export function SolarSystem({
   lang = 'cs',
 }: {
   onOpenPark?: () => void;
-  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter') => void;
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
   focused?: string;
   lang?: 'cs' | 'en';
 } = {}) {

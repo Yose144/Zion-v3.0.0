@@ -10,7 +10,8 @@
     "smoke": "node test/smoke.mjs",
     "live": "node test/live-zis.mjs",
     "arena": "node test/arena.mjs",
-    "race": "node test/race.mjs"
+    "race": "node test/race.mjs",
+    "fight": "node test/fight.mjs"
   },
   "dependencies": {
     "ws": "^8.18.3"

@@ -59,6 +59,41 @@ function readHash(): { portal: string | null; world: string | null } {
   };
 }
 
+/** Panel po kliknutí na planetu — titulek, note, CTA. Klíč = hodnota `def.game`. */
+const PLANET_PANELS: Record<'mars' | 'venus' | 'mercury' | 'park', {
+  title: string;
+  note: string;
+  href: string;
+  cta: string;
+  portal?: string;
+}> = {
+  mars: {
+    title: 'MARS',
+    note: 'Aréna z krabic — rail, rakety, tři boti. Sólo i online proti lidem.',
+    href: '/mars',
+    cta: 'Hrát arénu',
+  },
+  venus: {
+    title: 'VENUŠE',
+    note: 'Okruh na hovercraftu, tři kola, tři soupeři. Sólo i online.',
+    href: '/venus',
+    cta: 'Na start',
+  },
+  mercury: {
+    title: 'MERKUR',
+    note: 'Klec na Merkuru — pěst, kop, blok. Best of 3. Cvičení proti stínu i online duel.',
+    href: '/mercury',
+    cta: 'Do klece',
+  },
+  park: {
+    title: 'JUPITER',
+    note: 'Jupiter Station — pouť, arkády, ruské kolo a tabule skóre.',
+    href: '/park',
+    cta: 'Na pouť',
+    portal: 'park',
+  },
+};
+
 export function Shell() {
   const { t, lang, setLang } = useI18n();
   const { user, loading } = useAuth();
@@ -70,10 +105,10 @@ export function Shell() {
   const [hiranState, setHiranState] = useState<HiranState>(() => hiranReviewOverride() ?? 'idle');
   const [reviewState] = useState<HiranState | null>(() => hiranReviewOverride());
   const [focus, setFocus] = useState<
-    'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'fleet' | 'moon'
+    'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'mercury' | 'fleet' | 'moon'
   >('earth');
-  /** Vybraná planeta = přiletěli jsme a nabízíme vstup do hry. */
-  const [planet, setPlanet] = useState<'mars' | 'venus' | 'jupiter' | null>(null);
+  /** Vybraná planeta = přiletěli jsme a nabízíme vstup do hry. ('jupiter' def používá key 'park'.) */
+  const [planet, setPlanet] = useState<'mars' | 'venus' | 'mercury' | 'park' | null>(null);
   const [fleetLeg, setFleetLeg] = useState<FleetLeg | null>(null);
   const [xrWanted, setXrWanted] = useState(false);
   const [xrSupported, setXrSupported] = useState(false);
@@ -195,8 +230,8 @@ export function Shell() {
   }
 
   /** Klik na planetu: přiletět a otevřít panel s CTA (ne rovnou skočit do hry). */
-  const selectPlanet = useCallback((id: 'mars' | 'venus' | 'jupiter') => {
-    setPlanet(id);
+  const selectPlanet = useCallback((id: 'mars' | 'venus' | 'jupiter' | 'mercury') => {
+    setPlanet(id === 'jupiter' ? 'park' : id);
     setFocus(id);
     setPortal(null);
     setMenuOpen(false);
@@ -350,38 +385,30 @@ export function Shell() {
           )}
         </footer>
       </nav>
-      {planet && (
+      {planet && PLANET_PANELS[planet] && (
         <section className="planet-panel" aria-label={planet}>
           <header>
-            <strong>
-              {planet === 'mars' ? 'MARS' : planet === 'venus' ? 'VENUŠE' : 'JUPITER'}
-            </strong>
+            <strong>{PLANET_PANELS[planet].title}</strong>
             <button type="button" className="planet-panel-close" onClick={backToEarth} aria-label="×">
               ×
             </button>
           </header>
-          <p>
-            {planet === 'mars'
-              ? 'Aréna z krabic — rail, rakety, tři boti. Sólo i online proti lidem.'
-              : planet === 'venus'
-                ? 'Okruh na hovercraftu, tři kola, tři soupeři. Sólo i online.'
-                : 'Jupiter Station — pouť, arkády, ruské kolo a tabule skóre.'}
-          </p>
+          <p>{PLANET_PANELS[planet].note}</p>
           <div className="planet-panel-actions">
             <Link
-              href={planet === 'mars' ? '/mars' : planet === 'venus' ? '/venus' : '/park'}
+              href={PLANET_PANELS[planet].href}
               className="park-btn"
               onClick={() => setPlanet(null)}
             >
-              {planet === 'mars' ? 'Hrát arénu' : planet === 'venus' ? 'Na start' : 'Na pouť'}
+              {PLANET_PANELS[planet].cta}
             </Link>
-            {planet === 'jupiter' && (
+            {PLANET_PANELS[planet].portal && (
               <button
                 type="button"
                 className="arena-link"
                 onClick={() => {
                   setPlanet(null);
-                  openPortal('park');
+                  openPortal(PLANET_PANELS[planet].portal ?? 'park');
                 }}
               >
                 otevřít okno pouti

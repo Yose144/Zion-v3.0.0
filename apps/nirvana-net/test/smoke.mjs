@@ -129,7 +129,7 @@ try {
 
   const health = await waitForHealth();
   check('health: ok', health.ok === true && health.service === 'zion-nirvana-net', JSON.stringify(health));
-  check('health: proto 2', health.proto === 2, String(health.proto));
+  check('health: proto 3', health.proto === 3, String(health.proto));
   check('health: bez spojení', health.connections === 0 && health.rooms === 0);
 
   const metrics = await (await fetch(`${BASE}/metrics`)).text();
@@ -139,7 +139,7 @@ try {
   // ── host: čte, ale nepíše ───────────────────────────────────────────
   const guest = client();
   await guest.opened;
-  guest.send({ t: 'hello', proto: 2 });
+  guest.send({ t: 'hello', proto: 3 });
   const guestWelcome = await guest.waitFor((m) => m.t === 'welcome');
   check('host: role guest', guestWelcome.you.role === 'guest' && /^host-/.test(guestWelcome.you.name));
   check('host: prázdná historie', guestWelcome.history.length === 0);
@@ -152,7 +152,7 @@ try {
   // ── přihlášený (ZIS) ────────────────────────────────────────────────
   const zisClient = client({ headers: { Cookie: 'zion_session=good' } });
   await zisClient.opened;
-  zisClient.send({ t: 'hello', proto: 2 });
+  zisClient.send({ t: 'hello', proto: 3 });
   const zisWelcome = await zisClient.waitFor((m) => m.t === 'welcome');
   check('zis: role zis', zisWelcome.you.role === 'zis', zisWelcome.you.role);
   check('zis: jméno z callsignu', zisWelcome.you.name === 'Poutník', zisWelcome.you.name);
@@ -204,7 +204,7 @@ try {
   // ── neplatná session = host ─────────────────────────────────────────
   const badCookie = client({ headers: { Cookie: 'zion_session=rozbitá' } });
   await badCookie.opened;
-  badCookie.send({ t: 'hello', proto: 2 });
+  badCookie.send({ t: 'hello', proto: 3 });
   const badWelcome = await badCookie.waitFor((m) => m.t === 'welcome');
   check('neplatná session → host', badWelcome.you.role === 'guest');
   badCookie.close();
@@ -213,7 +213,7 @@ try {
   await sleep(200);
   const late = client();
   await late.opened;
-  late.send({ t: 'hello', proto: 2 });
+  late.send({ t: 'hello', proto: 3 });
   const lateWelcome = await late.waitFor((m) => m.t === 'welcome');
   check('historie pro nováčka', lateWelcome.history.length >= 1, String(lateWelcome.history.length));
   late.close();
@@ -264,7 +264,7 @@ try {
 
   const good = client({ headers: { Origin: 'https://nirvana.zionterranova.com' } });
   await good.opened;
-  good.send({ t: 'hello', proto: 2 });
+  good.send({ t: 'hello', proto: 3 });
   await good.waitFor((m) => m.t === 'welcome');
   check('povolený Origin projde', true);
   good.close();

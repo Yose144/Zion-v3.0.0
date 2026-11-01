@@ -410,3 +410,36 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Trasa je animace konceptu, ne let.** Okno to říká nahlas (`FleetPortal`);
   v kódu proto žádná fyzika, žádné ETA — jen křivka a světlo, které po ní
   dojde za 6 s a zůstane u doku.
+
+## Merkur — souboj `/mercury` (M3, 2026-11-01)
+
+- **Simulace je jeden modul** `core/fight/duel.ts` (`stepDuel`, `stepFighter`,
+  `botInput`, `resetDuel`, `createDuel`) — používá ho klient i služba
+  (`apps/nirvana-net/src/fight.ts` ho importuje relativně, jako `arena`/`race`).
+  Změníš-li damage/reach, mění se všude z jednoho místa.
+- **Úder blokuje pohyb** (v `attack` se nestojí nic kromě setrvačnosti).
+  Držený `punch` = bojovník mlátí na místě. E2E/simulace musí nechat
+  útočníka nejdřív DOBĚHNOUT do dosahu (`move` bez útoku), jinak se zásah
+  nikdy nesejde — přesně takhle padal první `fight.mjs`.
+- **Klient predikuje jen pohyb.** Zásahy, HP, KO a kola rozhoduje server
+  (`resolveAttack` běží jen na serveru); `stepFighter` je exportovaný
+  přesně proto, aby klient mohl dělat POLUTINOU simulace bez damage.
+- **`resetDuel` nemění objekty** — animace drží `useRef` na `duel.a`/`duel.b`.
+  Kdo při restartu udělá `createDuel` znovu, rozstřelí refy a bojovníci
+  zůstanou viset ve mrtvém stavu (osahano při sólu).
+- **`hud.current` je nosič dat** i pro `?duelDebug=1` háček — `onStats`
+  objekt se musí zapsat zpátky do `hud.current`, jinak debug vidí stará
+  data a testy honí stíny (reálně: `foeHp` se neaktualizovalo a zásah
+  se jevil jako nedosahovaný).
+- **R3F effect uvnitř `<Canvas>` startuje až po GL init.** Na headless
+  swiftshaderu to jsou desítky vteřin — join do `fight` se v E2E může
+  objevit až po ~60–120 s. Timeouty tomu přizpůsob, ne 15 s.
+- **`poll()` ve testech: mimo predikátu vracet `null`.** Vracet
+  „poslední stav" při timeoutu = falešná zelená (stalo se: služba byla
+  mrtvá a 6 assertů prošlo).
+- **Deploy po bumpu protokolu: `deploy-nirvana-net.sh` FIRST, pak appku.**
+  Starý klient na novém serveru dostane `proto_mismatch` (po reloadu OK);
+  obráceně by `join fight` propadl `arena` fallbacku starého parseru.
+- **Klice planet → panel:** `def.game` pro Jupiter je `'park'` (ne
+  `'jupiter'`). Panel v Shell se počítá z `PLANET_PANELS[planet]` —
+  klíče jsou hodnoty `def.game`. Podmínka na `'jupiter'` je mrtvá kód.

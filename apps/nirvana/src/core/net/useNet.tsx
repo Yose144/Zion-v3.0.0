@@ -50,8 +50,8 @@ export interface NetApi {
   youPlayerId: string | null;
   roomId: string | null;
   joinArena: () => void;
-  /** Připojení do hry (`arena` = Mars, `race` = Venuše). */
-  joinGame: (game: 'arena' | 'race') => void;
+  /** Připojení do hry (`arena` = Mars, `race` = Venuše, `fight` = Merkur). */
+  joinGame: (game: 'arena' | 'race' | 'fight') => void;
   leaveRoom: () => void;
   /**
    * Herní data tečou přes subscription, ne přes React state — snapshoty
@@ -70,6 +70,8 @@ export interface ArenaInputFrame {
   jump: boolean;
   fire: boolean;
   weapon: 0 | 1;
+  /** Jen duel (Merkur): držený blok. Ostatní hry ignorují. */
+  block?: boolean;
 }
 
 const MAX_LINES = 200;
@@ -274,7 +276,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const joinGame = useCallback(
-    (game: 'arena' | 'race') => {
+    (game: 'arena' | 'race' | 'fight') => {
       send({ t: 'join', game });
     },
     [send],
@@ -304,6 +306,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
         jump: input.jump,
         fire: input.fire,
         weapon: input.weapon,
+        block: input.block === true,
       });
     },
     [send],

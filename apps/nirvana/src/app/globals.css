@@ -3124,3 +3124,162 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   background: rgba(127, 227, 212, 0.16);
   border-color: rgba(127, 227, 212, 0.75);
 }
+
+/* ── Merkur — duel (top HUD, blesy, bleskové texty, dotek) ──────────── */
+.duel-top {
+  position: absolute;
+  z-index: 14;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 1fr);
+  gap: 16px;
+  width: min(880px, 92vw);
+  align-items: start;
+  pointer-events: none;
+}
+
+.duel-fighter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.duel-name {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.duel-bar {
+  height: 14px;
+  border: 1px solid rgba(255, 230, 180, 0.35);
+  background: rgba(20, 10, 6, 0.55);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.duel-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #7fe3a1, #c8f56a);
+  transition: width 0.12s linear;
+}
+
+.duel-bar i.is-low {
+  background: linear-gradient(90deg, #ff7a6b, #ffb46a);
+}
+
+.duel-fighter.is-foe {
+  text-align: right;
+}
+
+.duel-fighter.is-foe .duel-bar i {
+  margin-left: auto;
+}
+
+.duel-pips {
+  display: flex;
+  gap: 5px;
+}
+
+.duel-fighter.is-foe .duel-pips {
+  justify-content: flex-end;
+}
+
+.duel-pips span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 230, 180, 0.5);
+}
+
+.duel-pips span.is-on {
+  background: #ffd166;
+  border-color: #ffd166;
+}
+
+.duel-clock {
+  text-align: center;
+  line-height: 1.15;
+  font-size: 12px;
+  opacity: 0.92;
+}
+
+.duel-clock strong {
+  display: block;
+  font-size: 26px;
+  color: #ffe9a8;
+}
+
+.duel-clock-sub {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.duel-flash {
+  position: absolute;
+  z-index: 15;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-weight: 800;
+}
+
+.duel-flash.is-count {
+  font-size: min(22vh, 180px);
+  color: #ffe9a8;
+  text-shadow: 0 0 34px rgba(255, 180, 106, 0.6);
+}
+
+.duel-flash.is-round {
+  font-size: min(12vh, 96px);
+  color: #ff7a6b;
+  letter-spacing: 0.2em;
+}
+
+.duel-touch {
+  position: absolute;
+  z-index: 16;
+  left: 12px;
+  right: 12px;
+  bottom: 54px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.duel-touch-row {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.duel-touch-btn {
+  min-width: 64px;
+  padding: 14px 10px;
+  border-radius: 10px;
+  background: rgba(20, 12, 7, 0.6);
+  border: 1px solid rgba(255, 230, 180, 0.3);
+  color: #f6e7d8;
+  font-size: 15px;
+  touch-action: none;
+  user-select: none;
+}
+
+.duel-touch-btn:active {
+  background: rgba(255, 180, 106, 0.35);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .duel-touch {
+    display: flex;
+  }
+}

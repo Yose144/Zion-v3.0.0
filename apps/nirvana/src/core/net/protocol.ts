@@ -10,7 +10,7 @@
  * server z cookie (`zion_session` → ZIS), tak si je nikdo nemůže přepsat.
  */
 
-export const PROTO_VERSION = 2;
+export const PROTO_VERSION = 3;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -19,6 +19,8 @@ export const INPUT_HZ = 20;
 
 export const MAX_PLAYERS = 8;
 export const MAX_ROOMS = 4;
+/** Místnost souboje na Merkuru — duel je vždy dva. */
+export const FIGHT_ROOM_SIZE = 2;
 /** Maximum jednoho WS rámce. Větší = zahodit, ne parsovat. */
 export const MAX_FRAME_BYTES = 4096;
 /** Strop příchozích zpráv na spojení (vstup 20 Hz + rezerva). */
@@ -32,7 +34,7 @@ export const CHAT_HISTORY_LEN = 200;
 export const HEARTBEAT_MS = 20_000;
 export const IDLE_TIMEOUT_MS = 60_000;
 
-export type GameId = 'arena' | 'race';
+export type GameId = 'arena' | 'race' | 'fight';
 /** `guest` = bez ZIS (hraje, ale nepíše), `zis` = ověřený uživatel. */
 export type Role = 'guest' | 'zis';
 export type RoomState = 'waiting' | 'running' | 'ended';
@@ -121,7 +123,25 @@ export interface RacePlayerState {
   finishedAtMs: number | null;
 }
 
-export type SnapshotPlayer = ArenaPlayerState | RacePlayerState;
+/** Stav bojovníka na Merkuru (x = pozice v kleci, y = skok). */
+export interface FightPlayerState {
+  id: string;
+  name: string;
+  avatarId: number | null;
+  x: number;
+  y: number;
+  facing: 1 | -1;
+  hp: number;
+  wins: number;
+  ko: boolean;
+  stun: number;
+  /** Držený blok (pro animaci). */
+  blocking: boolean;
+  /** Právě probíhající úder (pro animaci), nebo null. */
+  attack: { kind: 'punch' | 'kick'; elapsed: number } | null;
+}
+
+export type SnapshotPlayer = ArenaPlayerState | RacePlayerState | FightPlayerState;
 
 /** Raketa ve snapshotu (pohybuje se jen server). */
 export interface RocketView {
@@ -170,7 +190,12 @@ export type EventPayload =
   | {
       kind: 'race_end';
       standings: { id: string; name: string; totalSeconds: number | null; laps: number }[];
-    };
+    }
+  // ── Merkur (duel) ────────────────────────────────────────────────────
+  | { kind: 'round_start'; round: number; at: number }
+  | { kind: 'round_end'; round: number; winner: string | null; reason: 'ko' | 'time'; at: number }
+  | { kind: 'duel_ko'; winner: string; loser: string; round: number; at: number }
+  | { kind: 'duel_end'; winner: string; aWins: number; bWins: number; at: number };
 
 export type ErrorCode =
   | 'proto_mismatch'
@@ -199,6 +224,8 @@ export type ClientMessage =
       jump: boolean;
       fire: boolean;
       weapon: WeaponId;
+      /** Jen duel (Merkur): držení bloku. Aréna/závod ji ignoruje. */
+      block?: boolean;
     }
   | { t: 'chat'; text: string }
   | { t: 'ping'; at: number };
@@ -237,7 +264,7 @@ export type ServerMessage =
       /** Jen aréna: rakety ve vzduchu. */
       projectiles?: RocketView[];
       pickups?: PickupView[];
-      state?: 'running' | 'ended' | 'countdown';
+      state?: 'running' | 'ended' | 'countdown' | 'roundEnd' | 'matchEnd';
       secondsLeft?: number;
       /** Závod: odpočet do startu (s), když `state === 'countdown'`. */
       countdown?: number;
@@ -245,6 +272,8 @@ export type ServerMessage =
       raceSeconds?: number;
       /** Závod: počet kol. */
       laps?: number;
+      /** Duel: číslo aktuálního kola (1..). */
+      round?: number;
     }
   | { t: 'event'; event: EventPayload }
   | { t: 'pong'; at: number; serverTime: number }
@@ -293,7 +322,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     case 'join':
       return {
         t: 'join',
-        game: message.game === 'race' ? 'race' : 'arena',
+        game: message.game === 'race' ? 'race' : message.game === 'fight' ? 'fight' : 'arena',
         room: typeof message.room === 'string' ? message.room.slice(0, 32) : undefined,
       };
 
@@ -311,6 +340,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         jump: message.jump === true,
         fire: message.fire === true,
         weapon: message.weapon === 1 ? 1 : 0,
+        block: message.block === true,
       };
 
     case 'chat':

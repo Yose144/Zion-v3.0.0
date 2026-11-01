@@ -112,10 +112,10 @@ export function SceneRoot({
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
   /** Klik na planetu ve sluneční soustavě. */
-  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter') => void;
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
   xr: boolean;
   label: string;
-  focus?: 'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'fleet' | 'moon';
+  focus?: 'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'mercury' | 'fleet' | 'moon';
   hiranState?: HiranState;
   fleetLeg?: FleetLeg | null;
 }) {

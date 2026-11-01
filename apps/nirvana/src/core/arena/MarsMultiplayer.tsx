@@ -118,7 +118,8 @@ export function MarsMultiplayer({
           players: message.players as ArenaPlayerState[],
           projectiles: message.projectiles ?? [],
           pickups: message.pickups ?? [],
-          state: message.state ?? 'running',
+          // aréna zná jen tyhle tři; `roundEnd`/`matchEnd` chodí maximálně u fight snapshotů
+          state: (message.state ?? 'running') as 'running' | 'ended' | 'countdown',
         };
         latest.current = next;
         matchState.current = next.state;

@@ -67,8 +67,8 @@ export function Universe({
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
   /** Klik na planetu — přiletí a otevře panel s CTA. */
-  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter') => void;
-  focus?: 'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'fleet' | 'moon';
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
+  focus?: 'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'mercury' | 'fleet' | 'moon';
   hiranState?: HiranState;
   fleetLeg?: FleetLeg | null;
 }) {

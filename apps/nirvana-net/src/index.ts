@@ -33,6 +33,7 @@ import {
   MAX_INBOUND_PER_SEC,
   MAX_PLAYERS,
   MAX_ROOMS,
+  FIGHT_ROOM_SIZE,
   PROTO_VERSION,
   SNAPSHOT_HZ,
   TICK_HZ,
@@ -67,6 +68,15 @@ import {
   stepRace,
   type RaceSim,
 } from './race.js';
+import {
+  addFightPlayer,
+  createFight,
+  fightSnapshot,
+  removeFightPlayer,
+  setFightInput,
+  stepFight,
+  type FightRoomSim,
+} from './fight.js';
 import { identityCacheSize, resolveIdentity } from './zis.js';
 
 const SERVICE = 'zion-nirvana-net';
@@ -116,6 +126,8 @@ interface Room {
   arena: ArenaSim | null;
   /** Venuše má simulaci závodu. */
   race: RaceSim | null;
+  /** Merkur má duel (best of 3). */
+  fight: FightRoomSim | null;
 }
 
 const rooms = new Map<string, Room>();
@@ -154,12 +166,17 @@ function summary(identity: NetIdentity): PlayerSummary {
   };
 }
 
+/** Kapacita místnosti podle hry — duel je vždy dva. */
+function capOf(game: GameId): number {
+  return game === 'fight' ? FIGHT_ROOM_SIZE : MAX_PLAYERS;
+}
+
 function roomInfo(room: Room): RoomInfo {
   return {
     id: room.id,
     game: room.game,
     players: room.players.size,
-    maxPlayers: MAX_PLAYERS,
+    maxPlayers: capOf(room.game),
     state: room.state,
   };
 }
@@ -320,6 +337,7 @@ function createRoom(game: GameId): Room {
     players: new Map(),
     arena: game === 'arena' ? createArena(Date.now()) : null,
     race: game === 'race' ? createRace(Date.now()) : null,
+    fight: game === 'fight' ? createFight(Date.now()) : null,
   };
   rooms.set(room.id, room);
   log(`room created id=${room.id} total=${rooms.size}`);
@@ -334,6 +352,7 @@ function leaveRoom(conn: Conn, reason: string): void {
   conn.room = null;
   if (room.arena) removePlayer(room.arena, conn.id);
   if (room.race) removeRacePlayer(room.race, conn.id);
+  if (room.fight) removeFightPlayer(room.fight, conn.id);
   room.players.delete(conn.id);
   log(`leave room=${room.id} id=${conn.identity.id} reason=${reason} players=${room.players.size}`);
 
@@ -362,12 +381,12 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string): void {
   let room: Room | undefined;
   if (wanted) {
     const candidate = rooms.get(wanted);
-    if (candidate && candidate.game === game && candidate.players.size < MAX_PLAYERS) {
+    if (candidate && candidate.game === game && candidate.players.size < capOf(game)) {
       room = candidate;
     }
   } else {
     for (const candidate of rooms.values()) {
-      if (candidate.game === game && candidate.players.size < MAX_PLAYERS) {
+      if (candidate.game === game && candidate.players.size < capOf(game)) {
         room = candidate;
         break;
       }
@@ -386,12 +405,13 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string): void {
   conn.room = room;
   if (room.arena) addPlayer(room.arena, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
   if (room.race) addRacePlayer(room.race, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
+  if (room.fight) addFightPlayer(room.fight, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
 
   send(conn, {
     t: 'room',
     room: roomInfo(room),
     occupants: [...room.players.values()].map((player) => summary(player.identity)),
-    youPlayerId: room.arena || room.race ? conn.id : undefined,
+    youPlayerId: room.arena || room.race || room.fight ? conn.id : undefined,
     // spawn posílá server až ve snapshotech; klient si drží vlastní predikci
     spawn: null,
     history: [...historyOf(`arena:${room.id}`)],
@@ -469,6 +489,17 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
       if (another.race) {
         // u závodu je `mz` plyn a `mx` zatáčení (stejná konvence jako sólo)
         setRaceInput(another.race, conn.id, { throttle: message.mz, steer: message.mx });
+        return;
+      }
+      if (another.fight) {
+        // duel: `mx` = pohyb podél ose, `fire` + `weapon` volí úder (0 pěst, 1 kop), `block` blok
+        setFightInput(another.fight, conn.id, {
+          move: message.mx,
+          jump: message.jump,
+          punch: message.fire && message.weapon === 0,
+          kick: message.fire && message.weapon === 1,
+          block: message.block === true,
+        });
         return;
       }
       sendError(conn, 'not_in_room');
@@ -685,6 +716,30 @@ const gameLoop = setInterval(() => {
   tickCount += 1;
 
   for (const room of rooms.values()) {
+    if (room.fight && room.players.size > 0) {
+      const events = stepFight(room.fight, TICK_MS / 1000, now);
+      room.state =
+        room.fight.duel.phase === 'fighting'
+          ? 'running'
+          : room.fight.duel.phase === 'matchEnd'
+            ? 'ended'
+            : 'waiting';
+      for (const event of events) {
+        broadcastChannel(`arena:${room.id}`, { t: 'event', event: event as never });
+      }
+      if (tickCount % SNAPSHOT_EVERY === 0) {
+        const snapshot = fightSnapshot(room.fight, now);
+        broadcastChannel(`arena:${room.id}`, {
+          t: 'snapshot',
+          game: 'fight',
+          seq: room.fight.seq,
+          time: now,
+          ...snapshot,
+        });
+      }
+      continue;
+    }
+
     if (room.race && room.players.size > 0) {
       const events = stepRace(room.race, TICK_MS / 1000, now);
       room.state = room.race.phase === 'running' ? 'running' : room.race.phase === 'ended' ? 'ended' : 'waiting';

@@ -151,14 +151,14 @@ try {
   // ── 3) host (bez cookie) poslouchá ──────────────────────────────────
   const guest = connect(null);
   await guest.opened;
-  guest.send({ t: 'hello', proto: 2 });
+  guest.send({ t: 'hello', proto: 3 });
   const guestWelcome = await guest.waitFor((m) => m.t === 'welcome');
   check('host: role guest', guestWelcome.you.role === 'guest');
 
   // ── 4) přihlášený hráč ──────────────────────────────────────────────
   const player = connect(cookieHeader);
   await player.opened;
-  player.send({ t: 'hello', proto: 2 });
+  player.send({ t: 'hello', proto: 3 });
   const welcome = await player.waitFor((m) => m.t === 'welcome');
   check('zis: role zis', welcome.you.role === 'zis', welcome.you.role);
   // callsign z `avatar3d` má přednost před displayName (tak to dělá ZIS i web)
