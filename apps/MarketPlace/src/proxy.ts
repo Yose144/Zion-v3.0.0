@@ -22,10 +22,10 @@ const corsHeaders = (origin: string) => ({
 /**
  * Coarse pre-filter for /api/admin/*. The authoritative check lives in
  * each route handler via requireAdminAuth (Node runtime — verifies the
- * HMAC session signature or the API key). Middleware runs in the Edge
- * runtime where node:crypto is unavailable, so it only checks presence.
+ * HMAC session signature or the API key). Proxy runs where node:crypto is
+ * unavailable, so it only checks presence.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const origin = request.headers.get('origin') || '';
 
   // Preflight

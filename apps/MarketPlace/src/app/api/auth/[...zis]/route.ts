@@ -134,26 +134,26 @@ async function proxy(req: NextRequest, segments: string[]): Promise<NextResponse
 
 // ── Route handlers ──────────────────────────────────────────────────────
 
-type Ctx = { params: { zis: string[] } };
+type Ctx = { params: Promise<{ zis: string[] }> };
 
 export async function GET(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
-  return proxy(req, ctx.params.zis);
+  return proxy(req, (await ctx.params).zis);
 }
 
 export async function POST(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
-  return proxy(req, ctx.params.zis);
+  return proxy(req, (await ctx.params).zis);
 }
 
 export async function PUT(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
-  return proxy(req, ctx.params.zis);
+  return proxy(req, (await ctx.params).zis);
 }
 
 export async function DELETE(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
-  return proxy(req, ctx.params.zis);
+  return proxy(req, (await ctx.params).zis);
 }
 
 export async function PATCH(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
-  return proxy(req, ctx.params.zis);
+  return proxy(req, (await ctx.params).zis);
 }
 
 // Re-export the cookie name for convenience in route consumers

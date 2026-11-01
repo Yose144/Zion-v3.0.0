@@ -7,7 +7,7 @@ import { distributeOrderBonus } from '@/lib/bonus-payout';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 function orderSelect() {
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if (auth) return auth;
 
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const order = await prisma.shopOrder.findFirst({
       where: { OR: [{ id }, { orderId: id }] },
       select: orderSelect(),
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   if (auth) return auth;
 
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const body = (await request.json().catch(() => ({}))) as { txHash?: string };
     const result = await distributeOrderBonus(id, { txHash: body.txHash });
 

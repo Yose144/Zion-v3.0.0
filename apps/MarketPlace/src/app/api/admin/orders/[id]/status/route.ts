@@ -12,7 +12,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 const VALID_STATUSES = ['pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled'];
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   if (auth) return auth;
 
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const body = (await request.json()) as {
       status?: string;
       paymentStatus?: string;

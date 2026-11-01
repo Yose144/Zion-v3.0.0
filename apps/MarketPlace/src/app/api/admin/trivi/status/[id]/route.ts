@@ -5,7 +5,7 @@ import { requireAdminAuth } from '@/lib/admin-guard';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if (auth) return auth;
 
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
 
     // Find order by id or orderId
     const order = await prisma.shopOrder.findFirst({

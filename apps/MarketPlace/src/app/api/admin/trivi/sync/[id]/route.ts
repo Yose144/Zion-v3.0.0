@@ -5,7 +5,7 @@ import { requireAdminAuth } from "@/lib/admin-guard";
 export const dynamic = "force-dynamic";
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 async function syncOrderToTrivi(orderId: string) {
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   if (auth) return auth;
 
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const result = await syncOrderToTrivi(id);
     return NextResponse.json(result);
   } catch (error) {

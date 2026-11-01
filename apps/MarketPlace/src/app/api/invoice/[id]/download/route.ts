@@ -5,13 +5,13 @@ import { generateInvoicePdf } from '@/lib/invoice-pdf';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 // GET /api/invoice/[id]/download — serve invoice HTML or PDF
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const format = request.nextUrl.searchParams.get('format') ?? 'html';
 
     const invoice = await prisma.invoice.findFirst({
