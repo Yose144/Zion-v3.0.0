@@ -243,6 +243,30 @@ accounts enter the code on each ("kód zadají všude"):
 - E2E verified 2026-10-31: issue → `valid` on all 3 → gated scan 403 →
   scan with pass 200 → cancel → `invalid/403/access:false` everywhere.
 
+### 5.8 Artifact marketplace launch lock (2026-11-01, commit `dd25eb3fa`)
+
+The L2 artifact market is closed until the OASIS launch — browse allowed,
+all purchase paths locked behind a single flag.
+
+- `src/lib/market-lock.ts` — `MARKET_LOCKED = true`. Flip to `false` at
+  OASIS launch (rebuild required; the notice and all gates react
+  automatically).
+- `MarketLockedNotice` — "Tržiště s artefakty se otevře se spuštěním
+  OASIS" banner (cs/en). On the homepage it sits directly under the HIRAN
+  panel (`Hero → Book → HIRAN → notice → Featured → Stats → Categories`)
+  and inside the item-page price card in `compact` mode. Returns `null`
+  when unlocked.
+- Locked paths: `/item/[id]` buy button, auction bid, and the L1
+  `MARKETBUY:` memo instructions are replaced by the notice; `/create`
+  renders the notice instead of the mint/list form.
+- Server-side: `POST /api/mint` and `POST /api/listings/register` →
+  `503 {error:'Artifact marketplace opens with the OASIS launch'}`.
+- `l1-watcher.ts`: env `MARKET_LOCKED` (default `1` = locked). When
+  locked, detected `MARKETBUY:` payments are logged as
+  `[MARKET LOCKED] ... ignored` and **never** `relayerSettle` — an
+  operator refund may be needed for anyone who paid manually. Set
+  `MARKET_LOCKED=0` at launch.
+
 ---
 
 ## 6. Admin Dashboard
