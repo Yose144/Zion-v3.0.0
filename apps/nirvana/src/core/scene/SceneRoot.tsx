@@ -110,7 +110,7 @@ export function SceneRoot({
   onSelectWorld: (id: string) => void;
   xr: boolean;
   label: string;
-  focus?: 'earth' | 'sun' | 'jupiter';
+  focus?: 'earth' | 'sun' | 'jupiter' | 'fleet';
   hiranState?: HiranState;
 }) {
   const [backend, setBackend] = useState<GpuBackend | null>(null);

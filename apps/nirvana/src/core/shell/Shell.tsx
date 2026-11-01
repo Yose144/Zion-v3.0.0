@@ -13,6 +13,7 @@ import { ChainPortal } from '@/portals/chain/ChainPortal';
 import { ComputePortal } from '@/portals/compute/ComputePortal';
 import { HarborPortal } from '@/portals/freeworld/HarborPortal';
 import { GatePortal } from '@/portals/gate/GatePortal';
+import { FleetPortal } from '@/portals/fleet/FleetPortal';
 import { HiranPortal } from '@/portals/hiran/HiranPortal';
 import { ParkPortal } from '@/portals/park/ParkPortal';
 import { IssobellaPortal } from '@/portals/issobella/IssobellaPortal';
@@ -34,6 +35,7 @@ const SLOT_COLOR: Record<SceneSlot, string> = {
   sun: '#ffd166',
   park: '#ffb46a',
   sea: '#1d8fb3',
+  fleet: '#38bdf8',
 };
 
 function readHash(): { portal: string | null; world: string | null } {
@@ -58,7 +60,7 @@ export function Shell() {
   const [selectedWorld, setSelectedWorld] = useState<string | null>(null);
   const [hiranState, setHiranState] = useState<HiranState>(() => hiranReviewOverride() ?? 'idle');
   const [reviewState] = useState<HiranState | null>(() => hiranReviewOverride());
-  const [focus, setFocus] = useState<'earth' | 'sun' | 'jupiter'>('earth');
+  const [focus, setFocus] = useState<'earth' | 'sun' | 'jupiter' | 'fleet'>('earth');
   const [xrWanted, setXrWanted] = useState(false);
   const [xrSupported, setXrSupported] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,7 +69,7 @@ export function Shell() {
   const openPortal = useCallback((id: string) => {
     const next = PANELS.has(id) ? id : null;
     setPortal(next);
-    setFocus(next === 'hiran' ? 'sun' : next === 'park' ? 'jupiter' : 'earth');
+    setFocus(next === 'hiran' ? 'sun' : next === 'park' ? 'jupiter' : next === 'fleet' ? 'fleet' : 'earth');
     setMenuOpen(false);
   }, []);
 
@@ -90,13 +92,13 @@ export function Shell() {
     const { portal: p, world } = readHash();
     if (p) {
       setPortal(p);
-      setFocus(p === 'hiran' ? 'sun' : p === 'park' ? 'jupiter' : 'earth');
+      setFocus(p === 'hiran' ? 'sun' : p === 'park' ? 'jupiter' : p === 'fleet' ? 'fleet' : 'earth');
     }
     if (world) setSelectedWorld(world);
     const onHash = () => {
       const next = readHash();
       setPortal(next.portal);
-      setFocus(next.portal === 'hiran' ? 'sun' : next.portal === 'park' ? 'jupiter' : 'earth');
+      setFocus(next.portal === 'hiran' ? 'sun' : next.portal === 'park' ? 'jupiter' : next.portal === 'fleet' ? 'fleet' : 'earth');
       if (next.world) setSelectedWorld(next.world);
     };
     window.addEventListener('hashchange', onHash);
@@ -285,6 +287,7 @@ export function Shell() {
       {portal === 'compute' && <ComputePortal onClose={() => setPortal(null)} />}
       {portal === 'park' && <ParkPortal onClose={closePortal} />}
       {portal === 'archa' && <ArchaPortal onClose={closePortal} />}
+      {portal === 'fleet' && <FleetPortal onClose={closePortal} />}
       {portal === 'hiran' && (
         <HiranPortal
           onClose={closePortal}

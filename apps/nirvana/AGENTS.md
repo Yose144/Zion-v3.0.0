@@ -167,3 +167,30 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   nemá. `/present/kralovstvi-srdce` → **307** na živém webu je správně.
 - **Dlaždice v konzoli** přibyla automaticky z manifestu (`id: 'archa'`), okno
   `ArchaPortal` má dvě cesty: `/present/kralovstvi-srdce` a misijní stránku.
+
+## Nebeská flotila — Nabukano (2026-11-01)
+
+- **Slot `fleet` je nový `SceneSlot`.** `SLOT_COLOR` je exhaustivní `Record`
+  ve **dvou** souborech (`core/shell/Shell.tsx` a `scene/universe/HoloConsole.tsx`)
+  — když se přidá jen jeden, `tsc` spadne (nebo hůř, dlaždice zůstane bez barvy).
+- **Pozice i natočení jdou z `positions.ts`** (`fleetPosition()`, `fleetHeading()`).
+  Fokus kamery počítá cíl **stejným vzorcem** jako scéna; kdyby se rozešly,
+  kamera doletí tam, kde flotila není. Stejná past jako u `planetPosition()`
+  (Jupiter Station).
+- **Fokus má tři místa v `Shell.tsx`:** `openPortal()`, inicializace z hashe
+  a `hashchange` listener. Přidání nové hodnoty `focus` znamená sáhnout na
+  všechna tři + typy v `SceneRoot.tsx` a `Universe.tsx`.
+- **Kamera u flotily musí stát dál od Slunce než flotila** (`addScaledVector`
+  radiálně ven + `FLEET_CAM_LIFT`). Při offsetu namířeném dovnitř soustavy
+  vyplní záběr Śrí jantra na Slunci a flotila je jen drobná silueta — přesně
+  tohle se stalo při prvním měření.
+- **Ověření lokálně bez ZAP pasu:** `/api/pass` je fail-closed a ověřuje kód
+  proti `app.zionterranova.com/api/archive/verify`. Pro lokální audit stačí
+  `ARCHIVE_VERIFY_URL=http://127.0.0.1:9099/verify` + lokální stub, který
+  vrací `{"valid":true}`, a cookie `zion_nirvana_pass`.
+- **Headless WebGL:** swiftshader v Chromium zvládne scénu vykreslit, ale fps
+  je bezcenné (~3–4) a `page.screenshot` padá na timeout/closed target.
+  Měřit draw calls a triangles ano; výkon a screenshot jen na GPU.
+- **Naměřeno (swiftshader, 800×600, dpr 1, `?sceneAudit=1`):** 125 draw calls,
+  72 386 tris, 39 textur, `invalidVertices: 0`, tier A. Flotila přidává
+  ~30 draw calls, jen když je v záběru (frustum culling).
