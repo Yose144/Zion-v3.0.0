@@ -69,7 +69,10 @@ fi
 
 status=down
 if [ $((now - last_alert)) -ge "$ALERT_COOLDOWN_S" ]; then
-    tg "ZION POOL HA ALERT: EDGE pool DOWN — API via tunnel + stratum $EDGE_HOST:$EDGE_STRATUM_PORT both failing for $fails consecutive checks. Standby is NOT auto-started (anti split-brain). Failover procedure: docs/3.2/POOL-HA-STANDBY.md"
+    # Fencing (W2.2/G11): promote je platný jen s tokenem z guardu. Alert to
+    # musí říct nahlas, jinak operátor ve stresu promotuje poslepu.
+    guard_hint="Fencing: BEFORE any promote run  pool-promote-guard.sh --promote  (checks primary really dead, auto-restart stopped, stratum closed, parity, single-flight token). Promote without a token is invalid."
+    tg "ZION POOL HA ALERT: EDGE pool DOWN — API via tunnel + stratum $EDGE_HOST:$EDGE_STRATUM_PORT both failing for $fails consecutive checks. Standby is NOT auto-started (anti split-brain). Failover: docs/3.2/ops/DR-BRINGUP-RUNBOOK.md §6. $guard_hint"
     last_alert=$now
 fi
 save

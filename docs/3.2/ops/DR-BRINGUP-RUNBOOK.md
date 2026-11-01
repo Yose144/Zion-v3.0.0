@@ -142,6 +142,40 @@ Promote je **bezpečný jen tehdy**, když platí všechny tři:
 
 Pokud nelze prokázat bod 1 (EDGE nedostupná, stav neznámý) → **čekej na dosažitelnost EDGE** (VNC/console). Promote „naslepo" je horší než 1 h výpadku: payout historie se needituje zpětně.
 
+### §4.1 Fencing guard — promote bez tokenu je neplatný (W2.2 / G11)
+
+Podmínky výše už nejsou jen disciplína: `infra/tools/pool-ha/pool-promote-guard.sh`
+je **vynucuje** a při splnění vystaví jednorázový fencing token.
+
+```bash
+# 1. vyhodnocení (odkud vidíš primár i standby — typicky operátorský stroj)
+ZION_POOL_HA_STATE_DIR=$HOME/.zion-fence ZION_POOL_HA_SSH="ssh -o BatchMode=yes zion-v6" ZION_DR_PARITY_SCRIPT=$PWD/scripts/ops/dr-parity-check.sh ZION_PROMOTE_TOKEN_SYNC=root@207.180.217.100 bash infra/tools/pool-ha/pool-promote-guard.sh --check      # exit 0 = povoleno
+
+# 2. vydání tokenu (až když --check projde)
+bash infra/tools/pool-ha/pool-promote-guard.sh --promote    # vypíše token + další kroky
+
+# 3. po dokončeném (nebo odvolaném) promotu
+bash infra/tools/pool-ha/pool-promote-guard.sh --release
+```
+
+Guard kontroluje šest podmínek a **selhává fail-closed**:
+
+| | Podmínka | Jak zjistí |
+|---|---|---|
+| G1 | primár prokazatelně mrtvý (unit inactive **a** žádný proces) | `systemctl is-active` + `pgrep -af zion-pool` na primáru |
+| G2 | auto-restart primáru vypnutý | `zion-v31-watchdog.timer` inactive |
+| G3 | stratum primáru zavřený | TCP `EDGE:8444` neodpovídá |
+| G4 | parita doložená | `dr-parity-check.sh --only data` bez `FAIL` |
+| G5 | žádný jiný promote neběží | single-flight token (O_EXCL, TTL 900 s) |
+| G6 | cooldown | ≥ 600 s od minulého pokusu |
+
+Každý pokus (i odmítnutý) jde do `promote-audit.jsonl`. Na EDGE2 běží guard
+v `--check` režimu nad **read-only sondou** (`/usr/local/sbin/edge-pool-probe.sh`,
+OMEZENÝ KLÍČ + forced command, `from="207.180.217.100"`); parita se odtud
+nespouští (standby záměrně nemá shell na primáru), takže EDGE2 hlásí G4 ✗ a
+promote **nepovolí** — autoritativní verdikt vydává operátorský stroj.
+
+
 ---
 
 ## §5 Bringup (bez promotu) — jak zjistit, že by standby vůbec nastartoval

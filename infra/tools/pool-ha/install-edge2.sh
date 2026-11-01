@@ -16,6 +16,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 
 install -m 0755 "$HERE/pool-standby-sync.sh" /usr/local/sbin/pool-standby-sync.sh
 install -m 0755 "$HERE/pool-ha-watchdog.sh" /usr/local/sbin/pool-ha-watchdog.sh
+# fencing guard (W2.2 / G11) — promote bez jeho tokenu je neplatný
+install -m 0755 "$HERE/pool-promote-guard.sh" /usr/local/sbin/pool-promote-guard.sh
 
 for u in zion-pool-standby-sync zion-pool-standby-dbsync zion-pool-ha-watchdog zion-pool-standby; do
     install -m 0644 "$HERE/units/$u.service" "/etc/systemd/system/$u.service"
