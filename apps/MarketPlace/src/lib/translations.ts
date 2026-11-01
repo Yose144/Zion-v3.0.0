@@ -42,19 +42,19 @@ const t = {
   },
 
   hero: {
-    kicker: { cs: 'Živě na Base L2 · ERC-1155', en: 'Live on Base L2 · ERC-1155' },
+    kicker: { cs: 'ZION TerraNova · OASIS univerzum', en: 'ZION TerraNova · OASIS universe' },
     title1: { cs: 'OASIS Artefakt', en: 'OASIS Artifact' },
     title2: { cs: 'Tržiště', en: 'Marketplace' },
     description: {
-      cs: 'Obchodujte s avatary, loděmi, quest předměty, územními listinami a Zlatými vejci ze ZION OASIS univerza. Platte wZION na L2 nebo nativním ZION na L1.',
-      en: 'Trade avatars, ships, quest items, territory deeds, and Golden Eggs from the ZION OASIS universe. Pay with wZION on L2 or native ZION on L1.',
+      cs: 'Brána do světa OASIS — digitální kniha Království srdce s přístupem do ZION Archivu a sbírka unikátních artefaktů. Tržiště odstartuje spolu se spuštěním OASIS.',
+      en: 'Your gateway into the OASIS world — the digital book Kingdom of Hearts with ZION Archive access, and a collection of unique artifacts. The marketplace launches together with the OASIS world.',
     },
-    ctaPrimary: { cs: 'Prozkoumat trh', en: 'Explore Market' },
-    ctaSecondary: { cs: 'Vytvořit nabídku', en: 'Create Listing' },
+    ctaPrimary: { cs: 'Prozkoumat artefakty', en: 'Browse Artifacts' },
+    ctaSecondary: { cs: 'Koupit knihu', en: 'Buy the Book' },
   },
 
   stats: {
-    itemsListed: { cs: 'Nabízených předmětů', en: 'Items Listed' },
+    itemsListed: { cs: 'Artefaktů v kolekci', en: 'Artifacts in collection' },
     totalVolume: { cs: 'Celkový objem', en: 'Total Volume' },
     wzion: { cs: 'wZION', en: 'wZION' },
     activeAuctions: { cs: 'Aktivní aukce', en: 'Active Auctions' },
@@ -827,6 +827,11 @@ const t = {
     guideSubtitle: { cs: 'Jak nakupovat na ZION Marketu', en: 'How to shop on ZION Market' },
     faqTitle: { cs: 'Časté dotazy', en: 'FAQ' },
     faqSubtitle: { cs: 'Odpovědi na nejčastější otázky', en: 'Answers to frequently asked questions' },
+    complaintsTitle: { cs: 'Reklamační řád', en: 'Complaints Procedure' },
+    complaintsSubtitle: {
+      cs: 'Záruka, reklamace a odstoupení od smlouvy',
+      en: 'Warranty, complaints and withdrawal from contract',
+    },
   },
 
   footer: {

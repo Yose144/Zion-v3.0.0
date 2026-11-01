@@ -30,7 +30,7 @@ export default function HeroSection() {
             <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
           </Link>
           <Link
-            href="/create"
+            href="/shop?category=books"
             className="rasta-hero-btn rasta-hero-btn-ghost"
           >
             {t('hero.ctaSecondary')}
