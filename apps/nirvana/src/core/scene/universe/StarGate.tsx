@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { GATE_POS } from './positions';
+import { GATE_JUPITER_OFFSET } from './positions';
 import type { Portal } from '@/core/portals/manifest';
 
 /**
@@ -124,7 +124,8 @@ export function StarGate({ portal, onOpen }: { portal: Portal; onOpen: (id: stri
   useFrame(({ clock }) => {
     if (group.current) {
       group.current.quaternion.copy(camera.quaternion);
-      group.current.position.y = GATE_POS[1] + Math.sin(clock.elapsedTime * 0.5) * 0.08;
+      // kolísání je kolem základny odsazení od Jupiteru, ne kolem pevné výšky
+      group.current.position.y = GATE_JUPITER_OFFSET[1] + Math.sin(clock.elapsedTime * 0.5) * 0.08;
     }
     if (spin.current && !still) {
       const t = clock.elapsedTime;
@@ -160,7 +161,7 @@ export function StarGate({ portal, onOpen }: { portal: Portal; onOpen: (id: stri
   const scale = hover ? 1.04 : 1;
 
   return (
-    <group ref={group} position={GATE_POS} scale={scale}>
+    <group ref={group} position={GATE_JUPITER_OFFSET} scale={scale}>
       {/* tmavé pozadí brány + kovový prstenec, stejné jako rádiusový gradient v CSS */}
       <mesh position={[0, 0, -0.06]} {...hit}>
         <circleGeometry args={[RADIUS, 72]} />

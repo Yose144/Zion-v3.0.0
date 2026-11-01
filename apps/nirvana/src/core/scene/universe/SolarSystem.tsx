@@ -4,8 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { SUN_POS, EARTH_ORBIT_R, planetPosition } from './positions';
+import { LINK_COLOR, LINK_OPACITY, LINK_WIDTH, orbitWidth } from './links';
 import { Html } from '@react-three/drei';
 import { TextLabel } from './Label';
+import { StarGate } from './StarGate';
+import type { Portal } from '@/core/portals/manifest';
 
 /**
  * Sluneční soustava — reálné textury Solar System Scope
@@ -187,12 +190,15 @@ function Planet({
   lang,
   selected,
   onSelect,
+  gate,
 }: {
   def: PlanetDef;
   index: number;
   lang: 'cs' | 'en';
   selected: boolean;
   onSelect?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
+  /** Brána je dítě planety — obíhá s ní (Jupiter ji drží pořád nablízku). */
+  gate?: { portal: Portal; onOpen: (id: string) => void };
 }) {
   const [hover, setHover] = useState(false);
   const carrier = useRef<THREE.Group>(null);
@@ -234,16 +240,19 @@ function Planet({
   return (
     <group ref={carrier}>
       <group rotation={[0, 0, def.tiltZ ?? 0]}>
-        {/* rotační osa — nakloněná přesně tak, jak planeta skutečně stojí */}
-        <line>
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              args={[new Float32Array([0, -def.size * 1.75, 0, 0, def.size * 1.75, 0]), 3]}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial color={def.tint} transparent opacity={0.45} />
-        </line>
+        {/* rotační osa — nakloněná přesně tak, jak planeta skutečně stojí.
+            Stejná linka jako dráhy (links.ts): světová šířka, ne 1px vlas,
+            který při oddálení mizí. */}
+        <mesh>
+          <boxGeometry args={[LINK_WIDTH, def.size * 3.5, LINK_WIDTH]} />
+          <meshBasicMaterial
+            color={LINK_COLOR}
+            transparent
+            opacity={LINK_OPACITY}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
         <mesh ref={body}>
           <sphereGeometry args={[def.size, 32, 32]} />
           <meshStandardMaterial key={tex ? 'tex' : 'flat'} map={tex ?? undefined} color={tex ? '#ffffff' : def.tint} roughness={0.85} metalness={0.02} />
@@ -327,18 +336,29 @@ function Planet({
           </span>
         )}
       </Html>
+
+      {/* brána do OASIS — připnutá k téhle planetě (Jupiter), ne k Zemi */}
+      {gate && <StarGate portal={gate.portal} onOpen={gate.onOpen} />}
     </group>
   );
 }
 
 export const JUPITER = PLANETS[3]!;
 
-/** Vodící dráha planety. */
+/** Vodící dráha planety — jedna barva a průhlednost s ostatními linkami (links.ts). */
 function OrbitLine({ r }: { r: number }) {
+  const w = orbitWidth(r) / 2;
   return (
     <mesh rotation={[Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[r - 0.015 * (r / 30), r + 0.015 * (r / 30), 192]} />
-      <meshBasicMaterial color="#8892b0" transparent opacity={0.2} side={THREE.DoubleSide} depthWrite={false} />
+      <ringGeometry args={[r - w, r + w, 192]} />
+      <meshBasicMaterial
+        color={LINK_COLOR}
+        transparent
+        opacity={LINK_OPACITY}
+        side={THREE.DoubleSide}
+        depthWrite={false}
+        toneMapped={false}
+      />
     </mesh>
   );
 }
@@ -349,12 +369,19 @@ export function SolarSystem({
   onSelectPlanet,
   focused = 'earth',
   lang = 'cs',
+  gatePortal = null,
+  onOpenPortal,
 }: {
   onOpenPark?: () => void;
   onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
   focused?: string;
   lang?: 'cs' | 'en';
+  /** Brána do OASIS — vykreslí se jako dítě Jupiteru. */
+  gatePortal?: Portal | null;
+  onOpenPortal?: (id: string) => void;
 } = {}) {
+  const gate =
+    gatePortal && onOpenPortal ? { portal: gatePortal, onOpen: onOpenPortal } : undefined;
   return (
     <group position={SUN_POS}>
       <Sun />
@@ -362,7 +389,14 @@ export function SolarSystem({
       {PLANETS.map((p, i) => (
         <group key={p.id}>
           <OrbitLine r={orbitRadius(p.au)} />
-          <Planet def={p} index={i} lang={lang} selected={focused === p.id} onSelect={onSelectPlanet} />
+          <Planet
+            def={p}
+            index={i}
+            lang={lang}
+            selected={focused === p.id}
+            onSelect={onSelectPlanet}
+            gate={p.id === 'jupiter' ? gate : undefined}
+          />
           {p.id === 'jupiter' && onOpenPark ? <JupiterStation onOpen={onOpenPark} index={i} def={p} /> : null}
         </group>
       ))}

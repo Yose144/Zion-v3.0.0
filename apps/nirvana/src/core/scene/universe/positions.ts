@@ -5,7 +5,17 @@ export const PLANET_R = 4;
 export const RING_R = 6.4;
 export const RING_R2 = 7.15;
 export const ORBIT_R = 5.05;
-export const GATE_POS: [number, number, number] = [7.2, 1.2, 6.8];
+
+/**
+ * Brána je připnutá k Jupiteru — obíhá s planetou, ne se zemskou soustavou,
+ * takže je od něj pořád stejně daleko (a je ve záběru, když se na Jupiter
+ * doletí). Odsazení je lokální vůči carrieru planety.
+ *
+ * Délka |offsetu| = 12,9 je záměrně větší než hit-sféra Jupiteru
+ * (`max(size*2.6, 2.6)` = 9,36) + poloměr brány (3): jinak by klik na bránu
+ * nejdřív trefil planetu a otevřel by se panel pouti místo vstupu do OASIS.
+ */
+export const GATE_JUPITER_OFFSET: [number, number, number] = [9, 6.5, 6.5];
 export const SUN_POS: [number, number, number] = [0, 0, 0];
 /** Oběžná dráha zemské soustavy — skutečná 3. dráha = 1 AU (1 AU = 30 jednotek). */
 export const EARTH_ORBIT_R = 30;

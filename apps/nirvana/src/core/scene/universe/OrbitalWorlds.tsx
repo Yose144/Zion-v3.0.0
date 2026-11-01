@@ -4,6 +4,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ORBIT_R, orbitPosition } from './positions';
+import { LINK_COLOR, LINK_OPACITY, LINK_RADIUS } from './links';
 import type { WorldPoint } from '@/lib/worlds';
 import { layerColor } from '@/lib/worlds';
 
@@ -75,10 +76,10 @@ export function OrbitalWorlds({
 
   return (
     <group ref={belt}>
-      {/* vodící prstenec dráhy — jemný */}
+      {/* vodící prstenec dráhy — stejný jazyk jako ostatní linky (links.ts) */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[ORBIT_R + 0.35, 0.006, 6, 128]} />
-        <meshBasicMaterial color="#c084fc" transparent opacity={0.14} />
+        <torusGeometry args={[ORBIT_R + 0.35, LINK_RADIUS, 6, 128]} />
+        <meshBasicMaterial color={LINK_COLOR} transparent opacity={LINK_OPACITY} depthWrite={false} toneMapped={false} />
       </mesh>
       {/* particle belt — všechny světy jako prach */}
       <points geometry={beltGeo}>

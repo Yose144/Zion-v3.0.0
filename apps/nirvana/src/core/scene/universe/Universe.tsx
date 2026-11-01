@@ -12,7 +12,6 @@ import { NewEarth } from './NewEarth';
 import { SailingArk } from './SailingArk';
 import { SkyFleet, FleetRoute, type FleetLeg } from './SkyFleet';
 import { IssobellaRing } from './IssobellaRing';
-import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { SpaceBackdrop } from './SpaceBackdrop';
 import { PLANETS, SolarSystem, orbitRadius } from './SolarSystem';
@@ -245,10 +244,16 @@ export function Universe({
           onSelectWorld={onSelectWorld}
         />
         <OrbitalWorlds worlds={split.orbit} onSelectWorld={onSelectWorld} />
-        {gatePortal && <StarGate portal={gatePortal} onOpen={onOpen} />}
       </group>
 
-      <SolarSystem onOpenPark={() => onOpen('park')} onSelectPlanet={onSelectPlanet} focused={focus} />
+      {/* brána už nebydlí v zemské soustavě — je dítětem Jupiteru */}
+      <SolarSystem
+        onOpenPark={() => onOpen('park')}
+        onSelectPlanet={onSelectPlanet}
+        focused={focus}
+        gatePortal={gatePortal}
+        onOpenPortal={onOpen}
+      />
       <HiranSun state={hiranState} onOpen={() => onOpen('hiran')} detail={focus === 'sun'} />
 
       <ResponsiveFraming />

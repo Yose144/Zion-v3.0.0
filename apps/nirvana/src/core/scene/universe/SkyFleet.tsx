@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { fleetPosition, fleetHeading, latLonToVec3, moonPosition, PLANET_R, RING_R } from './positions';
+import { LINK_ACTIVE_OPACITY, LINK_COLOR, LINK_OPACITY, LINK_RADIUS } from './links';
 import { TextLabel } from './Label';
 import { NabukanoModel } from '../../../../../shared/scenes/kit/vessels';
 
@@ -103,14 +104,21 @@ export function FleetRoute({ leg, reducedMotion = false }: { leg: FleetLeg; redu
     if (startedAt.current === null) startedAt.current = c.elapsedTime;
     const u = reducedMotion ? 1 : Math.min(1, (c.elapsedTime - startedAt.current) / TRIP_SECONDS);
     if (marker.current) marker.current.position.copy(curve.getPointAt(u));
-    if (glow.current) glow.current.opacity = u < 1 ? 0.85 : 0.35 + Math.sin(c.elapsedTime * 2.4) * 0.15;
+    if (glow.current) glow.current.opacity = u < 1 ? LINK_ACTIVE_OPACITY : LINK_OPACITY + Math.sin(c.elapsedTime * 2.4) * 0.15;
   });
 
   return (
     <group>
       <mesh>
-        <tubeGeometry args={[curve, 72, 0.011, 5, false]} />
-        <meshBasicMaterial color="#7fd3ff" transparent opacity={0.42} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <tubeGeometry args={[curve, 72, LINK_RADIUS, 5, false]} />
+        <meshBasicMaterial
+          color={LINK_COLOR}
+          transparent
+          opacity={LINK_OPACITY}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          toneMapped={false}
+        />
       </mesh>
       <mesh ref={marker} position={curve.getPointAt(0)}>
         <sphereGeometry args={[0.05, 10, 8]} />

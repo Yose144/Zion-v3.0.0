@@ -6,6 +6,7 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Portal, SceneSlot } from '@/core/portals/manifest';
 import type { Lang } from '@/core/i18n';
+import { LINK_COLOR, LINK_OPACITY, LINK_ACTIVE_OPACITY } from './links';
 
 const SLOT_COLOR: Record<SceneSlot, string> = {
   core: '#7ec8ff',
@@ -85,7 +86,14 @@ function HoloTile({
             args={[new Float32Array([-TILE_W / 2, -TILE_H / 2, 0, TILE_W / 2, -TILE_H / 2, 0, TILE_W / 2, TILE_H / 2, 0, -TILE_W / 2, TILE_H / 2, 0]), 3]}
           />
         </bufferGeometry>
-        <lineBasicMaterial color={color} transparent opacity={hover ? 0.95 : 0.45} />
+        {/* rámečky dlaždic drží jednu barvu a jednu průhlednost se všemi
+            linkami ve scéně; barvu slotu nese výplň a popisek (links.ts) */}
+        <lineBasicMaterial
+          color={LINK_COLOR}
+          transparent
+          opacity={hover ? LINK_ACTIVE_OPACITY : LINK_OPACITY}
+          toneMapped={false}
+        />
       </lineLoop>
       <Html center transform={false} distanceFactor={11} style={{ pointerEvents: 'none' }} position={[0, 0, 0.01]}>
         <span className="holo-tile-label" style={{ borderColor: color, color }}>
