@@ -1951,8 +1951,8 @@ export default function Dashboard() {
                                   </span>
                                   <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-white">{fmt(m.hashrate)}</span>
                                   {m.etime && <span className="shrink-0 text-[10px] text-white/35">up {m.etime}</span>}
-                                  <span className="hidden shrink-0 sm:block">
-                                    <Spark data={m.hist} color={coin.c} w={150} h={32} />
+                                  <span className="hidden shrink-0 md:block" title="hashrate history">
+                                    <Spark data={m.hist} color={coin.c} w={110} h={30} />
                                   </span>
                                 </div>
                                 {(m.pool || m.worker) && (
@@ -1993,10 +1993,10 @@ export default function Dashboard() {
                     <button
                       disabled={!!busy}
                       onClick={() => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → PRL+QTU dual → upstream pools (max hashrate)\n• xmrig → CPU rx/0\n• zion-miner → binary installed (standby)`) && ops(`launch?id=${r.id}&m=full`, "POST")}
-                      className="w-full whitespace-normal rounded-xl border border-[#fcd116]/40 bg-gradient-to-r from-[#fcd116]/[0.14] to-transparent px-4 py-2 text-left transition hover:border-[#fcd116]/70 hover:from-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
+                      className="h-auto w-full whitespace-normal rounded-xl border border-[#fcd116]/40 bg-gradient-to-r from-[#fcd116]/[0.14] to-transparent px-4 py-2 text-left leading-snug transition hover:border-[#fcd116]/70 hover:from-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
                     >
                       <div className="text-sm font-bold text-[#fcd116]">{isB(`launch?id=${r.id}&m=full`) ? "Deploying…" : "▸ Full deploy"}</div>
-                      <div className="mt-0.5 text-[10px] text-white/40">SRBMiner PRL+QTU dual → upstream pools · XMRig CPU · zion standby</div>
+                      <div className="mt-0.5 text-[10px] leading-normal text-white/40">SRBMiner PRL+QTU dual → upstream pools · XMRig CPU · zion standby</div>
                     </button>
                     <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-3">
                       <Engine title="SRBMiner · PRL+QTU upstream" accent="#34d399" ms={srbM}>

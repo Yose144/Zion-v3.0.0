@@ -136,15 +136,6 @@
   text-align: left;
 }
 
-/* The same theme reset applies `margin: 0 auto` to every block element, so
-   cards, card headers and toolbars with a smaller intrinsic width drifted to
-   the middle of their row. Tailwind classes (mx-auto / ml-auto) still win. */
-.vast-dashboard-shell,
-.vast-dashboard-shell div,
-.vast-dashboard-shell section,
-.vast-dashboard-shell header,
-.vast-dashboard-shell form,
-.vast-dashboard-shell table {
-  margin-left: 0;
-  margin-right: 0;
-}
+/* The `margin: 0 auto` half of that reset lives in
+   public/assets/css/intro-rasta.css — it has to be authored in a stylesheet
+   that loads *after* main.css to win at element specificity. */
