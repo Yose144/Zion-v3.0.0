@@ -1,6 +1,7 @@
 # ZION V3.3 „NIRVANA" — Execution Checklist
 
-> **Datum:** 2026-10-29 (snapshot položek níže je z 26. 10.; posun je v rámečku) · **Doplněk k:** [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md)
+> **Datum:** 2026-10-29 (snapshot položek níže je z 26. 10.; posun je v rámečku) · **Doplněk k:** [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md) · **Vstupní bod plánování:** [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md)
+> **⚠️ 2026-11-01:** tento checklist neobsahuje položky vlny 1. 11. (NIRVANA multiplayer M0–M2, avatary A1–A4, ops konzole F1–F2.3, 6.B4 DeSci, Kingdom, maintenance 503) — aktuální stav je v plánu **§7 změnovej log v1.6–v1.13** a v [`docs/3.2/REPORTS/REPORT_2026-11-01_NIRVANA_DEN.md`](docs/3.2/REPORTS/REPORT_2026-11-01_NIRVANA_DEN.md); code-vs-doc kanonizace 1. 11. viz [`AGENTS.md`](AGENTS.md) entry TRUTH-SYNC.
 > **Paluba:** [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md) · **Strojovna:** [`docs/3.3/ENGINE-SRDCE.md`](docs/3.3/ENGINE-SRDCE.md)
 > **Mapa (registr plánů, crosswalk, závislosti, ekosystém):** [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) · **N0 detail (3.2 ALPHA → BETA → STABLE):** [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) — ID typu `2.B1` / `7.S1` / `P0-1` odkazují tam.
 > **Značky vlastníka:** 🤖 = autonomní (kód/testy/dokumenty end-to-end) · 🔀 = autonomní příprava + operátorské schválení/flip · 👤 = operátor (rozhodnutí, peníze, klíče, fyzický svět)
