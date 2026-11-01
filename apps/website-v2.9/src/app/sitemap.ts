@@ -76,6 +76,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/terranova/golden-republic-bohemia', 0.6, 'monthly'),
     r('/terranova/kailash', 0.6, 'monthly'),
     r('/terranova/kralovstvi-srdce', 0.6, 'monthly'),
+    r('/terranova/nabukano', 0.6, 'monthly'),
     r('/terranova/maria-del-camino', 0.6, 'monthly'),
     r('/terranova/nova-amerika', 0.6, 'monthly'),
     r('/terranova/te-piko-ora', 0.6, 'monthly'),

@@ -64,7 +64,16 @@ export function ScenePresentation({ camera: initial, target, spin = true, atmosp
     if (audit.current) {
       // Inventory of live geometries so the audit can name the layers that leak.
       (window as unknown as Record<string, unknown>).__projectSceneObjects = () => {
-        const list: { type: string; uuid: string; vertices: number; object: string }[] = [];
+        const list: { type: string; uuid: string; vertices: number; object: string; visible: boolean; name: string }[] = [];
+        const isDrawn = (node: THREE.Object3D | null): boolean => {
+          // A mesh only costs a draw call when it and every ancestor is visible.
+          let current: THREE.Object3D | null = node;
+          while (current) {
+            if (!current.visible) return false;
+            current = current.parent;
+          }
+          return true;
+        };
         scene.traverse((object) => {
           const geometry = (object as THREE.Mesh).geometry;
           if (!geometry) return;
@@ -73,6 +82,8 @@ export function ScenePresentation({ camera: initial, target, spin = true, atmosp
             uuid: geometry.uuid,
             vertices: geometry.getAttribute ? (geometry.getAttribute('position')?.count ?? 0) : 0,
             object: object.type,
+            visible: isDrawn(object),
+            name: object.name || '',
           });
         });
         return list;

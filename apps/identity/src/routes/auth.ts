@@ -75,6 +75,8 @@ const UpdateProfileSchema = z.object({
       bodyType: z.enum(['slim', 'standard', 'heavy']).optional(),
       neonColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
       augmentation: z.enum(['reflexes', 'neural', 'tech', 'bio', 'stealth']).optional(),
+      /** Vybraný avatar z OASIS rosteru (0–202) — používá Nirvana ve 3D. */
+      avatarId: z.number().int().min(0).max(202).optional(),
     })
     .optional()
     .nullable(),

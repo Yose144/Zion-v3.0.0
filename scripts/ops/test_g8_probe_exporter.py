@@ -159,6 +159,49 @@ class ProbeTests(unittest.TestCase):
         text = g8x.render_metrics(stale, config_for([], max_age=900), now=now)
         self.assertIn("zion_g8_chain_live 0", text)
 
+    def test_chain_live_fresh_via_follower_when_primary_down(self):
+        # The primary probe failing must not count as a chain outage when a
+        # follower still reports a fresh tip (planned restarts, tunnel flap).
+        now = time.time()
+        rep = {"services": {
+                   "node_primary": {"success": False, "duration": 0.01, "tip_timestamp": None},
+                   "node_follower_2": {"success": True, "duration": 0.01,
+                                       "tip_timestamp": now - 30}},
+               "chain_height": 10, "tip_timestamp": now - 30,
+               "node_quorum": 1, "primary_ok": False}
+        text = g8x.render_metrics(rep, config_for([], max_age=900), now=now)
+        self.assertIn("zion_g8_chain_live 1", text)
+        self.assertIn('zion_g8_node_tip_fresh{service="node_primary"} 0', text)
+        self.assertIn('zion_g8_node_tip_fresh{service="node_follower_2"} 1', text)
+
+    def test_chain_live_quorum_fallback_end_to_end(self):
+        primary = closed_port()
+        follower = FakeRpcServer(height=99)
+        follower.start()
+        cfg = config_for([primary, follower.port, closed_port()])
+        report = g8x.run_probes(cfg)
+        text = g8x.render_metrics(report, cfg)
+        self.assertFalse(report["primary_ok"])
+        self.assertEqual(report["node_quorum"], 1)
+        self.assertEqual(report["chain_height"], 99)
+        self.assertIsNotNone(report["tip_timestamp"])
+        self.assertIn("zion_g8_chain_live 1", text)
+        self.assertIn("zion_g8_chain_height 99", text)
+        self.assertIn('zion_g8_probe_success{service="node_primary"} 0', text)
+        self.assertIn('zion_g8_node_tip_fresh{service="node_follower_2"} 1', text)
+
+    def test_stale_tips_everywhere_not_live(self):
+        stale_ts = int(time.time()) - 5000
+        nodes = [FakeRpcServer(tip_ts=stale_ts) for _ in range(2)]
+        for n in nodes:
+            n.start()
+        cfg = config_for([n.port for n in nodes])
+        report = g8x.run_probes(cfg)
+        text = g8x.render_metrics(report, cfg)
+        self.assertIn("zion_g8_chain_live 0", text)
+        self.assertIn('zion_g8_node_tip_fresh{service="node_primary"} 0', text)
+        self.assertIn('zion_g8_node_tip_fresh{service="node_follower_2"} 0', text)
+
     def test_future_tip_not_live(self):
         now = time.time()
         rep = {"services": {"node_primary": {"success": True, "duration": 0.01}},
@@ -218,6 +261,7 @@ class ProbeTests(unittest.TestCase):
         for name in ("zion_g8_probe_success", "zion_g8_probe_duration_seconds",
                      "zion_g8_chain_height", "zion_g8_chain_tip_timestamp_seconds",
                      "zion_g8_chain_tip_age_seconds", "zion_g8_chain_live",
+                     "zion_g8_node_tip_fresh",
                      "zion_g8_node_quorum", "zion_g8_probe_timestamp_seconds"):
             self.assertIn(f"# HELP {name}", text)
             self.assertIn(f"# TYPE {name} gauge", text)
@@ -254,6 +298,93 @@ class ProbeTests(unittest.TestCase):
             with urllib.request.urlopen(url, timeout=5) as resp:
                 self.assertEqual(resp.status, 200)
                 self.assertIn(b"zion_g8_probe_success", resp.read())
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+
+class FlakyHttpHandler(BaseHTTPRequestHandler):
+    """HTTP handler that fails the first N requests, then answers 200."""
+
+    failures_left = 0
+
+    def do_GET(self):
+        cls = type(self)
+        if cls.failures_left > 0:
+            cls.failures_left -= 1
+            self.send_response(500)
+        else:
+            self.send_response(200)
+        body = b"{}"
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *a):
+        pass
+
+
+def make_flaky_http_server(failures: int):
+    class H(FlakyHttpHandler):
+        failures_left = failures
+
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return srv
+
+
+class ProbeConfirmationTests(unittest.TestCase):
+    """A single missed sample must not become a 60 s G8 outage."""
+
+    def _config(self, url, attempts=2, delay_ms=0):
+        cfg = config_for([], http_services=[("multichain", url)])
+        cfg["confirm_attempts"] = attempts
+        cfg["confirm_delay_ms"] = delay_ms
+        return cfg
+
+    def test_transient_failure_is_confirmed_away(self):
+        srv = make_flaky_http_server(failures=1)
+        try:
+            cfg = self._config(f"http://127.0.0.1:{srv.server_port}/health")
+            report = g8x.run_probes(cfg)
+            res = report["services"]["multichain"]
+            self.assertTrue(res["success"], "retry must turn a one-off failure into success")
+            self.assertTrue(res["retried"])
+            self.assertEqual(res["attempts"], 2)
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+    def test_persistent_failure_stays_failure(self):
+        port = closed_port()
+        cfg = self._config(f"http://127.0.0.1:{port}/health", attempts=3)
+        report = g8x.run_probes(cfg)
+        res = report["services"]["multichain"]
+        self.assertFalse(res["success"])
+        self.assertTrue(res["retried"])
+        self.assertEqual(res["attempts"], 3)
+
+    def test_healthy_round_does_not_retry(self):
+        srv = make_http_server(200)
+        try:
+            cfg = self._config(f"http://127.0.0.1:{srv.server_port}/health")
+            report = g8x.run_probes(cfg)
+            res = report["services"]["multichain"]
+            self.assertTrue(res["success"])
+            self.assertFalse(res["retried"])
+            self.assertEqual(res["attempts"], 1)
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+    def test_retried_flag_is_exposed_in_metrics(self):
+        srv = make_flaky_http_server(failures=1)
+        try:
+            cfg = self._config(f"http://127.0.0.1:{srv.server_port}/health")
+            report = g8x.run_probes(cfg)
+            text = g8x.render_metrics(report, cfg, now=time.time())
+            self.assertIn('zion_g8_probe_success{service="multichain"} 1\n', text)
+            self.assertIn('zion_g8_probe_retried{service="multichain"} 1\n', text)
         finally:
             srv.shutdown()
             srv.server_close()

@@ -35,11 +35,35 @@ if [[ -n "$ARTIFACT_DIR" ]]; then
 else
   cd "$ROOT_DIR"
   npm run build
-  APP_DIR="${ROOT_DIR}/.next/standalone/nirvana"
-  if [[ ! -f "${APP_DIR}/server.js" ]]; then
-    echo "[deploy-nirvana] ERROR: standalone build missing ${APP_DIR}/server.js" >&2
+  # K1.2: s root workspace (lockfile v rootu repa) Next zanoří standalone strom
+  # hlouběji — `.next/standalone/apps/nirvana/server.js`. Hledej server.js,
+  # ať skript přežije další změnu layoutu (K1.3 ho má sjednotit).
+  APP_DIR="$(dirname "$(find "${ROOT_DIR}/.next/standalone" -maxdepth 4 -name server.js -not -path "*/node_modules/*" | head -1)")"
+  if [[ -z "$APP_DIR" ]] || [[ ! -f "${APP_DIR}/server.js" ]]; then
+    echo "[deploy-nirvana] ERROR: standalone build missing server.js under .next/standalone" >&2
     exit 1
   fi
+  echo "[deploy-nirvana] standalone: ${APP_DIR#"${ROOT_DIR}/"}"
+
+  # K1.2 (root workspace) posunul `node_modules` o úroveň výš (`.next/standalone/node_modules`)
+  # a appku zanořil do `.next/standalone/apps/<app>`. Produkce ale běží ze
+  # `WorkingDirectory=/opt/zion/APP&WEB/nirvana` + `node server.js`, takže
+  # artefakt před nasazením **zplošťujeme**: app dir + node_modules vedle sebe.
+  # unikátní jméno: souběžný deploy jiné session by jinak mazal stejný adresář
+  FLAT_DIR="${ROOT_DIR}/.next/standalone-flat-$$"
+  trap 'rm -rf "$FLAT_DIR"' EXIT
+  rm -rf "$FLAT_DIR"
+  mkdir -p "$FLAT_DIR"
+  cp -a "${APP_DIR}/." "$FLAT_DIR/"
+  if [[ ! -d "${FLAT_DIR}/node_modules" ]]; then
+    if [[ -d "${ROOT_DIR}/.next/standalone/node_modules" ]]; then
+      cp -a "${ROOT_DIR}/.next/standalone/node_modules" "${FLAT_DIR}/node_modules"
+    else
+      echo "[deploy-nirvana] ERROR: chybí node_modules ve standalone stromu" >&2
+      exit 1
+    fi
+  fi
+  APP_DIR="$FLAT_DIR"
 
   # Standalone server serves public/ and .next/static ONLY from next to
   # server.js — Next does not copy them there (see deploy-web2.9.sh).

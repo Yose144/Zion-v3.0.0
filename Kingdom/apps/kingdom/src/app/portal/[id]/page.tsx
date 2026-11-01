@@ -7,8 +7,15 @@ import { portalById } from '@/core/registry';
 import { Frame } from '@/core/shell/Frame';
 import { Icon } from '@/core/shell/Icon';
 
-export default async function PortalPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PortalPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
+  const search = await searchParams;
   const locale = await getLocale();
   const entry = portalById(id);
 
@@ -31,7 +38,7 @@ export default async function PortalPage({ params }: { params: Promise<{ id: str
         {manifest.layer ? <span className="k-sub">{manifest.layer}</span> : null}
       </div>
 
-      <View locale={locale} />
+      <View locale={locale} search={search} />
 
       <p style={{ marginTop: 28 }}>
         <Link href="/room" className="k-sub">

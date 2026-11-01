@@ -49,7 +49,8 @@ const nextConfig: NextConfig = {
   },
   transpilePackages: ['zion-wallet-sdk', '@noble/ed25519', '@noble/hashes'],
   turbopack: {
-    root: resolve(rootDir, '..'),
+    // K1.2: root workspace — lockfile i node_modules jsou v rootu repa.
+    root: resolve(rootDir, '../..'),
     resolveAlias: {
       net: {
         browser: emptyModule,

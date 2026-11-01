@@ -1,0 +1,7 @@
+:HL["/_next/static/chunks/2wmx262rgm7c8.css","style"]
+:HL["/assets/css/main.css","style"]
+:HL["/stargate/stargate-theme.css","style"]
+:HL["/assets/css/intro-rasta.css","style"]
+2:[["children",{"s":"__PAGE__","h":160}]]
+1:[["children",{"s":"/_not-found","h":96,"c":"$Q2"}]]
+0:{"b":"XWpe9tZC3nIzraxdyNNAI","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

@@ -27,6 +27,8 @@ Proxy v `apps/nirvana/src/app/api/` sahají na veřejné HTTPS. Shell si neotev�
 | Knihy | První nadpis z `canon/books/*/00-README.md`. Těla kapitol do prohlížeče nejdou. | soubory v repu |
 | Přístav | Zůstatek fondu a názvy otevřených grantů. Jen GET. | `app.zionterranova.com/api/free-world` |
 | Účet | Dvanáct slov podepíše výzvu ZIS v prohlížeči. Po úspěchu se pole smaže. Odhlášení smaže session. | `auth.zionterranova.com` |
+| Archa | Třináctý uzel L5 na vodě: čtyři plavidla, semenný archiv, velrybí obvod. Klik vede na `/present/kralovstvi-srdce` nebo na misii. | koncept (studie B3) |
+| Flotila | Nebeská flotila Nabukano — pohyblivý uzel L6 mezi LUMI a Issobellou: mateřská loď s dokem a tři nebeské Marie. Dvě trasy (z LUMI, z prstence) kreslí oblouk s poutníkem světla. Nic z toho neexistuje; okno to říká u každého trupu i u trasy. | `canon/books/Nabukano` (koncept, bez endpointu) |
 
 Lišta vypisuje i to, co okno ještě nemá. **Issobella** čeká na veřejné čtení. **Brána** je statický úvod na apexu. Popisek se nedá otevřít do prázdného panelu.
 

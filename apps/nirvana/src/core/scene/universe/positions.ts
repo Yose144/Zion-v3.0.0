@@ -63,3 +63,37 @@ export function planetPosition(
   const angle = hash01(id, 5) * Math.PI * 2 + index + t * speed;
   return [Math.cos(angle) * orbitR, 0, Math.sin(angle) * orbitR];
 }
+
+/* ─── Nebeská flotila (L6) ────────────────────────────────────────────────
+ * Pohyblivý uzel nebe: mateřská loď Nabukano s dokovacím rámem a tři nebeské
+ * Marie. Není to pin na povrchu — flotila obíhá Novou Zemi mezi planetou a
+ * prstencem Issobelly. Jeden vzorec pro scénu i pro fokus: kdyby se rozešly,
+ * kamera doletí tam, kde loď není.
+ */
+export const FLEET_ORBIT_R = 15.5;
+export const FLEET_SPEED = 0.022; // rad/s — pomalejší než archa na hladině
+export const FLEET_ANGLE0 = 0.9;
+export const FLEET_Y = 4.2;
+
+export function fleetPosition(t: number): [number, number, number] {
+  const a = FLEET_ANGLE0 + t * FLEET_SPEED;
+  return [Math.cos(a) * FLEET_ORBIT_R, FLEET_Y + Math.sin(a * 2) * 0.12, Math.sin(a) * FLEET_ORBIT_R];
+}
+
+/** Natočení trupu po tečně dráhy (příď = lokální +x). */
+export function fleetHeading(t: number): number {
+  return -(FLEET_ANGLE0 + t * FLEET_SPEED) - Math.PI / 2;
+}
+
+/* ─── Měsíc (Matrix) ──────────────────────────────────────────────────────
+ * Cislunární prostor: Měsíc leží DÁL než flotila, protože flotila je „mezi
+ * Zemí a Měsícem". Jeden vzorec pro scénu, fokus i trasu.
+ */
+export const MOON_ORBIT_R = 24;
+export const MOON_SPEED = 0.05;
+export const MOON_ANGLE0 = Math.PI * 0.35;
+
+export function moonPosition(t: number): [number, number, number] {
+  const a = MOON_ANGLE0 + t * MOON_SPEED;
+  return [Math.cos(a) * MOON_ORBIT_R, Math.sin(a * 0.55) * 1.4, Math.sin(a) * MOON_ORBIT_R];
+}

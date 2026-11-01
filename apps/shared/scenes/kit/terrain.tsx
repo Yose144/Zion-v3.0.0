@@ -268,14 +268,16 @@ export function SceneWater({
 
 /* ── palms ─────────────────────────────────────────────────────────── */
 
-interface Part {
+export interface MergedPart {
   geometry: THREE.BufferGeometry;
   color: string;
   matrix?: THREE.Matrix4;
 }
 
-/** Merge parts into one non-indexed geometry with per-vertex colour. */
-function mergeParts(parts: Part[]): THREE.BufferGeometry {
+/** Merge parts into one non-indexed geometry with per-vertex colour.
+ *  Exportováno pro scény, které skládají opakované dílce s vlastními transformacemi
+ *  (lotosové plátky) — merge je jeden draw call a transformace zůstanou přesné. */
+export function mergeParts(parts: MergedPart[]): THREE.BufferGeometry {
   const positions: number[] = [];
   const normals: number[] = [];
   const uvs: number[] = [];
@@ -326,7 +328,7 @@ export function ScenePalms({ items, tone = 'leaf', variants = 3 }: { items: Palm
 
   const build = (variant: number) => {
     // Normalised palm: 1 unit tall, so instances scale uniformly by the tree height.
-    const parts: Part[] = [];
+    const parts: MergedPart[] = [];
     const trunk = new THREE.CylinderGeometry(0.028, 0.055, 1, 7).translate(0, 0.5, 0);
     parts.push({ geometry: trunk, color: '#6a5138' });
 

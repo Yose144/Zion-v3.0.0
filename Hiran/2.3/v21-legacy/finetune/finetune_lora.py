@@ -136,9 +136,22 @@ def format_for_llama3(entry: dict, tokenizer) -> str:
       <|start_header_id|>assistant<|end_header_id|>
       {assistant}<|eot_id|>
     """
-    messages = entry.get("messages", [])
+    messages = entry.get("messages") or []
+    if not messages:
+        # instruction/input/output schema (curriculum/*.jsonl) → chat
+        instruction = entry.get("instruction", "")
+        inp = entry.get("input", "")
+        output = entry.get("output", "")
+        if not output:
+            raise ValueError(
+                "Dataset entry nemá ani 'messages' ani 'instruction'/'output' — "
+                "dřív se tiše trénoval jen SYSTEM_PROMPT (run 2 null-run, viz "
+                "REPORT_2026-11-01_HIRAN_VAST_TRAINING §8)"
+            )
+        user = instruction + ("\n\n" + inp if inp and inp.strip() else "")
+        messages = [{"role": "user", "content": user}, {"role": "assistant", "content": output}]
     # Přidej system prompt pokud chybí
-    if not messages or messages[0]["role"] != "system":
+    if messages[0]["role"] != "system":
         messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
 
     return tokenizer.apply_chat_template(
@@ -196,6 +209,15 @@ def train(args) -> None:
     # 3. Formátuj do Llama-3 chat template
     print("Formátuji dataset...")
     texts = [format_for_llama3(entry, tokenizer) for entry in raw_data]
+
+    # Diversity guard: identické/near-identické sekvence = schéma se nezmapovalo
+    # a trénujeme jen system prompt (run 2 null-run). Fail-fast místo spáleného runu.
+    uniq = len(set(texts))
+    if uniq < max(2, len(texts) // 4):
+        raise ValueError(
+            f"Dataset má jen {uniq} unikátních sekvencí z {len(texts)} — "
+            "zkontroluj schéma (messages vs instruction/output)"
+        )
 
     # Hard truncate na args.max_seq_length — trl 0.9.x max_seq_length nezkracuje
     # spolehlivě před-tokenizovaný "text" sloupec, a fp32 logits rostou lineárně

@@ -98,6 +98,9 @@ dashboard/
 !apps/website-v2.9/src/app/dashboard/**
 !apps/website-v2.9/src/components/dashboard/
 !apps/website-v2.9/src/components/dashboard/**
+# apex /dashboard/ redirect stub shipped with the intro export
+!apps/IntroPage/public/dashboard/
+!apps/IntroPage/public/dashboard/**
 # And track OasisWeb dashboard
 !apps/OasisWeb/src/app/(game)/dashboard/
 !apps/OasisWeb/src/app/(game)/dashboard/**

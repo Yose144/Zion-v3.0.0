@@ -33,6 +33,15 @@ enum Message {
     Peers { peers: Vec<SocketAddr> },
 }
 
+/// Timeouts for outbound peer requests. A peer that accepts the TCP
+/// connection but never answers (dead NAT mapping, wedged remote task)
+/// must not wedge the sync loop — there is no other watchdog. Observed
+/// 2026-11-01: backup node stalled for 75 min on a zombie socket to a
+/// seed whose FIN never arrived after the remote read-timeout closed it.
+const OUT_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const OUT_WRITE_TIMEOUT: Duration = Duration::from_secs(30);
+const OUT_READ_TIMEOUT: Duration = Duration::from_secs(60);
+
 /// P2P listener.
 pub struct P2P {
     node: Arc<Node>,
@@ -188,24 +197,35 @@ async fn write_message(
 
 /// Gossip a block to a remote peer (best-effort).
 pub async fn gossip(addr: SocketAddr, block: &Block) -> Result<(), crate::node::NodeError> {
-    let mut stream = TcpStream::connect(addr).await?;
+    let mut stream = timeout(OUT_CONNECT_TIMEOUT, TcpStream::connect(addr))
+        .await
+        .map_err(|_| crate::node::NodeError::Task(format!("connect timeout to {addr}")))??;
     let (_reader, mut writer) = stream.split();
     let msg = Message::Block {
         block: block.clone(),
     };
-    write_message(&mut writer, &msg).await?;
+    timeout(OUT_WRITE_TIMEOUT, write_message(&mut writer, &msg))
+        .await
+        .map_err(|_| crate::node::NodeError::Task(format!("gossip write timeout to {addr}")))??;
     let _ = writer.shutdown().await;
     Ok(())
 }
 
 /// Ask a peer for its current chain status.
 pub async fn get_status(addr: SocketAddr) -> Result<(u64, String), crate::node::NodeError> {
-    let mut stream = TcpStream::connect(addr).await?;
+    let mut stream = timeout(OUT_CONNECT_TIMEOUT, TcpStream::connect(addr))
+        .await
+        .map_err(|_| crate::node::NodeError::Task(format!("connect timeout to {addr}")))??;
     let (reader, mut writer) = stream.split();
-    write_message(&mut writer, &Message::GetStatus).await?;
+    timeout(OUT_WRITE_TIMEOUT, write_message(&mut writer, &Message::GetStatus))
+        .await
+        .map_err(|_| crate::node::NodeError::Task(format!("status write timeout to {addr}")))??;
 
     let mut lines = BufReader::new(reader).lines();
-    if let Some(line) = lines.next_line().await? {
+    let line = timeout(OUT_READ_TIMEOUT, lines.next_line())
+        .await
+        .map_err(|_| crate::node::NodeError::Task(format!("status read timeout from {addr}")))??;
+    if let Some(line) = line {
         if let Message::Status { height, tip_hash } = serde_json::from_str::<Message>(&line)? {
             // Graceful half-close so the peer's read loop ends immediately.
             let _ = writer.shutdown().await;
@@ -224,16 +244,23 @@ pub async fn get_blocks(
     start_height: u64,
     end_height: u64,
 ) -> Result<Vec<Block>, crate::node::NodeError> {
-    let mut stream = TcpStream::connect(addr).await?;
+    let mut stream = timeout(OUT_CONNECT_TIMEOUT, TcpStream::connect(addr))
+        .await
+        .map_err(|_| crate::node::NodeError::Task(format!("connect timeout to {addr}")))??;
     let (reader, mut writer) = stream.split();
     let req = Message::GetBlocks {
         start_height,
         end_height,
     };
-    write_message(&mut writer, &req).await?;
+    timeout(OUT_WRITE_TIMEOUT, write_message(&mut writer, &req))
+        .await
+        .map_err(|_| crate::node::NodeError::Task(format!("blocks write timeout to {addr}")))??;
 
     let mut lines = BufReader::new(reader).lines();
-    if let Some(line) = lines.next_line().await? {
+    let line = timeout(OUT_READ_TIMEOUT, lines.next_line())
+        .await
+        .map_err(|_| crate::node::NodeError::Task(format!("blocks read timeout from {addr}")))??;
+    if let Some(line) = line {
         if let Message::Blocks { blocks } = serde_json::from_str::<Message>(&line)? {
             let _ = writer.shutdown().await;
             return Ok(blocks);

@@ -5,12 +5,12 @@ import { getArchivePassForOrder, ARCHIVE_REDEEM_URL } from '@/lib/archive-pass';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { orderId: string };
+  params: Promise<{ orderId: string }>;
 }
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
-    const { orderId } = context.params;
+    const { orderId } = await context.params;
     const order = await prisma.shopOrder.findFirst({
       where: { orderId },
       include: { invoices: { select: { id: true, invoiceNumber: true, status: true, html: true } } },

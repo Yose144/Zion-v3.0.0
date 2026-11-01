@@ -2,7 +2,10 @@
 
 > Stav 2026-11-01 · První vlastní fine-tuned adaptér: **`zion-llama-lora-vast`**
 > (QLoRA na Llama-3.1-8B, eval_loss 0.284 / ppl 1.33) — natrénován na Vast.ai
-> RTX 3060 vedle produkčního QTC miningu. Detail runu: `VAST-HIRAN-TRAINING-PLAN.md`,
+> RTX 3060 vedle produkčního QTC miningu. **Strategie 👤:** adaptéry = archiv
+> na EDGE, žádný produkční deploy — směřujeme k **FULL trainingu na větší kartě**
+> (8B nestačí; Hiran má znát celý ZION). Příprava: `HIRAN-FULL-TRAINING-PREP.md`.
+> Detail runů: `VAST-HIRAN-TRAINING-PLAN.md`,
 > report: `docs/3.2/REPORTS/REPORT_2026-11-01_HIRAN_VAST_TRAINING.md`.
 
 ## 1. Co je Hiran
@@ -24,15 +27,15 @@ AI Native agent a operátorský orchestrátor; kanonický kód V3/; odpovídá �
 | `hiran-mini` | free tier | ✅ live | `hiran-v2.3mini-Q5_K_M.gguf`, llama.cpp CPU :8002 (+ :8004 tunnel) |
 | `hiran-coder` | pro/coder | live | upstream qwen2.5-coder-7b :8005 (PC tunnel) |
 | `hiran-amitabha` | thinking | `mockup` | čeká na váhy |
-| `hiran-issobella` | agentic/code | `mockup` | čeká na váhy — **kandidát run 2 (zion_core)** |
-| `hiran-maitreya` | lore/rag | `mockup` | **kandidát run 1 (v2.1 generalist)** ✅ adaptér hotov |
+| `hiran-issobella` | agentic/code | `mockup` | run 2 = **NULL-RUN** (bug v pipeline — report §8); čeká na run 3 s opraveným skriptem |
+| `hiran-maitreya` | lore/rag | `mockup` | run 1 adaptér validován → **overfit, neprodukční** při scale 1.0; **`--lora-scaled :0.5` použitelný interim** (report §7) |
 
 ### Natrénované adaptéry
 
 | Adaptér | Base | Dataset | Eval | Artefakt |
 |---|---|---|---|---|
-| `zion-llama-lora-vast` | Llama-3.1-8B-Inst (bnb-4bit) | `hiran_curriculum_v2.1.jsonl` 3056 párů, 3 ep, seq 512 | **0.284 / ppl 1.33** | EDGE `/opt/zion/hiran/` (gguf + safetensors) |
-| `zion-core-lora` 🔵 | stejný | `zion_core.jsonl` 921 párů, 3 ep | běží (ETA ~3 h) | rig `outputs/zion-core-lora` |
+| `zion-llama-lora-vast` | Llama-3.1-8B-Inst (bnb-4bit) | `hiran_curriculum_v2.1.jsonl` 3056 párů, 3 ep, seq 512 | **0.284 / ppl 1.33** | EDGE `/opt/zion/hiran/` (gguf + safetensors) + EDGE2 `/opt/zion/hiran-models/` |
+| `zion-core-lora` ⚠️ | stejný | `zion_core.jsonl` 921 párů, 3 ep | eval 0.008 = **null-run** | degenerativní — trénoval jen SYSTEM_PROMPT (bug fixnut); archiv EDGE `zion-core-lora-final/` |
 
 ## 3. Artefakty — kde co leží
 
@@ -46,9 +49,18 @@ EDGE (62.171.141.136, ssh zion-v6):
     hiran-adapter.tgz               313 MB   ← archiv adaptéru (md5 6c4ab3d…)
   /opt/llama.cpp                    ← clone (python tools, nebuildené)
 
+EDGE2 (207.180.217.100, ssh zion-edge2):
+  /opt/zion/hiran-models/
+    hiran-v2.3mini-Q5_K_M.gguf      5.85 GB  ← produkční hiran-mini (:8002)
+    Meta-Llama-3.1-8B-Instruct-Q5_K_M.gguf   5.73 GB ← base run 1/2 (md5 7a9dd5ff…)
+    hiran-lora-vast.gguf            335 MB   ← adaptér run 1 (md5 42cf6508…)
+  /opt/zion/llama-b11065/llama-server        ← binárka (umí --lora)
+  RAM 11 GB — vedle hiran-mini (~5,8 GB mmap) se 8B vejde jen těsně;
+  smoke test na :8010 proběhl, produkční servis = 👤 rozhodnutí
+
 Vast rig 58077390:
   /root/hiran-train/outputs/zion-llama-lora/checkpoint-258   ← resume bod
-  /root/hiran-train/outputs/zion-core-lora/                  ← run 2 (běží)
+  /root/hiran-train/outputs/zion-core-lora/                  ← run 2 hotov (null-run, archiv)
   /root/hiran-train/data/{zion_train,zion_core}.jsonl
   /root/hiran-train/.hf                  ← HF cache (bnb-4bit base, 5.4 GB)
 
@@ -96,18 +108,24 @@ llama.cpp/convert_hf_to_gguf.py zion-merged --outtype q5_k_m ...
 2. `hiran-models.json`: alias `hiran-maitreya` → `mockup:false`, upstream `127.0.0.1:80XX`
 3. `systemctl restart zion-hiran-gateway` + smoke `POST /v1/chat/completions`
 
-## 6. Datové zdroje (další běhy)
+## 6. Datové zdroje (FULL v1 hotový — 2026-11-01)
 
-| Dataset | Páry | Velikost | Role |
-|---|---|---|---|
-| `hiran_curriculum_v2.1.jsonl` | 3056 | 10,7 MB | generalist (run 1 ✅) |
-| `curriculum/zion_core.jsonl` | 921 | 688 KB | V3/core specialist (run 2 🔵) |
-| `curriculum/cross_domain.jsonl` | 1033 | 285 KB | cross-domain |
-| `curriculum/zion_advanced.jsonl` | ~890 | 118 KB | advanced |
-| `curriculum/foundation.jsonl` | ~1021 | 18 KB | základy |
-| `curriculum/rag_synthesis.jsonl` | ~512 | 6 KB | RAG |
-| `zion_train_buddhism_guided.jsonl` | malý | 7 KB | maitreya/lore flavor |
-| builders | — | — | `data/build_dataset.py`, `boost_dataset.py`, `scrape_v3_docs.py` |
+**Finální artefakty** `Hiran/2.3/dist/` + EDGE `/opt/zion/hiran/datasets/dist/`:
+
+| Soubor | Párů | Určení |
+|---|---|---|
+| `hiran-full-train.jsonl` | **7 106** | trénink — messages, dedup, replay 21 % |
+| `hiran-heldout-eval.jsonl` | **379** | held-out eval — nikdy do tréninku |
+
+Zdroje → `Hiran/2.3/rebuild/HiranV2.2/data/curriculum-messages/`
+(v2.1 2916 · replay bactrian-cs 1600 · zion_core 901 · v3_crates 886 · ops 400 ·
+cross_domain 346 · kb AGENTS/RUNBOOK/V3docs 191 · advanced 190 · foundation 43 · rag 12).
+
+**Buildery** `Hiran/2.3/data/`: `convert_to_messages.py` (instruction→messages),
+`build_ops_curriculum.py` (REPORTS→Q&A), `build_v3_curriculum.py` (V31 docstringy+CLI),
+`build_replay.py` (Bactrian-X cs filtrované→messages), `merge_full_dataset.py`
+(merge+dedup+eval 5 %, seed 42). Legacy: `build_dataset.py`, `boost_dataset.py`,
+`scrape_v3_docs.py`.
 
 ## 7. Migrace na local node PC (👤)
 
@@ -121,8 +139,18 @@ Doporučený postup:
 
 ## 8. Rizika a TODO
 
-- ⚠️ Overfitting: eval 0.284 na curriculum splitu — ověřit na held-out ZION promptech před produkcí.
-- Disk rigu: ~2 GB volných — před dalším runem čistit `outputs/*/checkpoint-*`.
+- ⚠️ Overfitting potvrzen validací (report §7): eval 0.284 = memorace. Adaptér přidává
+  personu, ale **degraduje obecné schopnosti + safety** při scale 1.0. Interim řešení:
+  `--lora-scaled :0.5` — persona drží, safety/generalita se vrací. Sweet spot ~0.5–0.6.
+- 🔴 **BUG FIXNUT (2026-11-01):** `finetune_lora.py::format_for_llama3` tiše ignoroval
+  `instruction/output` schéma → run 2 trénoval 921× jen system prompt (null-run).
+  Fix: mapování na messages + diversity guard + ValueError. Syncnuto na rig.
+- Run 3 doporučení: přegenerovat zion_core do `messages` formátu (Q&A, ne doc-dumpy)
+  + replay data ~20 % obecných párů → potom rerun na rigu (~2,5 h, ~$0,14). 👤
+- Deploy cesta `hiran-maitreya`: unit `/etc/systemd/system/zion-hiran-maitreya.service`
+  = DRAFT na EDGE2 (port 8010, `--lora-scaled :0.5`, MemoryMax 7G — těsné vedle mini).
+  Aktivace = daemon-reload + enable + `hiran-models.json` mockup:false + gateway restart. 👤
+- Disk rigu: ~1,6 GB volných — před runem 3 čistit `outputs/*/checkpoint-*` a staré outputs.
 - `hiran-models.json` změny = produkční config (deploy po smoke, rollback = vrátit `mockup:true`).
-- Run 2 dokončení → adaptér stáhnout na EDGE, GGUF konverze stejným postupem (script `/root/conv-lora.sh` na Edgi — přepsat cesty).
+- zion-miner na rigu stále vypnutý (QTC + xmrig běží) — restart `vastctl launch zion --duty 28` = 👤.
 - Base gated varianta: `meta-llama/Meta-Llama-3.1-8B-Instruct` (HF token) — license pozn. v pipeline; unsloth mirror = ungated.

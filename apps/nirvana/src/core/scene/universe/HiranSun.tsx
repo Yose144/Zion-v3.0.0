@@ -4,6 +4,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { SUN_POS } from './positions';
+
+const SUN_POS_VEC = new THREE.Vector3(SUN_POS[0], SUN_POS[1], SUN_POS[2]);
 import { TextLabel } from './Label';
 import { hiranAccent, hiranActivity, type HiranState } from '@/core/hiran/presence';
 import { sriYantraGeometry } from '../../../../../shared/scenes/kit/yantra';
@@ -80,7 +82,7 @@ const LOTUS_BANDS = [
   { lat: -0.34, count: 8, size: 0.74 },
 ];
 
-export function HiranSun({ state, onOpen }: { state: HiranState; onOpen: () => void }) {
+export function HiranSun({ state, onOpen, detail = false }: { state: HiranState; onOpen: () => void; detail?: boolean }) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const camera = useThree((s) => s.camera);
 
@@ -178,16 +180,24 @@ export function HiranSun({ state, onOpen }: { state: HiranState; onOpen: () => v
         ringB.current.rotation.x = -1.42 + Math.cos(t * 0.15) * 0.04;
       }
     }
+    // Z dálky (od Země) je Hiran jen náznak — jinak by přes Slunce ležela
+    // mřížka, která ze Slunce dělá drátěnou kouli. Plný ornament se ukáže,
+    // až když se kamera opravdu přiblíží (fokus na Slunce).
+    const camDistance = camera.position.distanceTo(SUN_POS_VEC);
+    const near = detail ? 1 : Math.min(1, Math.max(0, (26 - camDistance) / 12));
+    const fade = 0.12 + near * 0.88;
+
     if (lotus.current) {
-      lotus.current.scale.setScalar(1 + Math.min(1, activity.current) * 0.03);
+      const hug = detail ? 1 : 0.62 + near * 0.38;
+      lotus.current.scale.setScalar(hug * (1 + Math.min(1, activity.current) * 0.03));
     }
 
     // Stav je vidět i bez panelu: myšlenka rozsvítí pečeť, offline ji ztlumí.
     const a = uniforms.uActivity.value;
-    if (yantraMat.current) yantraMat.current.opacity = 0.35 + a * 0.55;
-    if (lotusMat.current) lotusMat.current.opacity = 0.42 + a * 0.4;
-    if (ringAMat.current) ringAMat.current.opacity = 0.16 + a * 0.34;
-    if (ringBMat.current) ringBMat.current.opacity = 0.09 + a * 0.21;
+    if (yantraMat.current) yantraMat.current.opacity = (0.35 + a * 0.55) * fade;
+    if (lotusMat.current) lotusMat.current.opacity = (0.42 + a * 0.4) * fade;
+    if (ringAMat.current) ringAMat.current.opacity = (0.16 + a * 0.34) * fade;
+    if (ringBMat.current) ringBMat.current.opacity = (0.09 + a * 0.21) * fade;
   });
 
   return (

@@ -44,6 +44,13 @@
   text-decoration: none;
 }
 
+/* The HTML5UP intro theme puts a dotted 1px border under *every* <a>, which
+   leaked into the nav (visible as a dotted line under the mobile logo). */
+.rasta-nav a,
+.rasta-nav button {
+  border-bottom: 0;
+}
+
 .rasta-nav-logo-img {
   width: 38px;
   height: 38px;

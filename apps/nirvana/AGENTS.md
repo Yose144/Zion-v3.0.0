@@ -61,6 +61,198 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **`/audio/hiran.mp3` neexistuje** → 404 v konzoli při mountu; zvuk jde ze
   syntetizované ambience. Není to regrese.
 
+## Realtime služba `/net` — multiplayer a chat (2026-11-01, M0)
+
+- **Next ve standalone režimu neumí WebSocket** (dokumentace: „cannot be used
+  together" s vlastním serverem). Proto je realtime **samostatný proces**
+  `zion-nirvana-net` (`apps/nirvana-net`, Node 22, `ws`) na `127.0.0.1:3011`,
+  nginx ho vystavuje na `wss://nirvana.zionterranova.com/net`.
+- **Protokol je jeden soubor** `src/core/net/protocol.ts` — importuje ho klient
+  i služba. Když se formát změní, zvedni `PROTO_VERSION`; server starší verzi
+  odmítne (`proto_mismatch`), aby klient nepadal na neznámých polích.
+- **Identita nikdy od klienta.** V M0 je každé spojení `guest` (`host-xxx`).
+  Jméno a avatar se v M1 dotáhnou z cookie `zion_session` → ZIS na serveru.
+- **Služba nic nepíše na disk** — jen drží místnosti v paměti. Historie chatu
+  (M1) je ring buffer; restart = prázdno. Je to záměr, ne nedodělek.
+- **Build kvůli sdílenému protokolu** skládá strom o úroveň výš:
+  `dist/nirvana-net/src/index.js` + `dist/nirvana/src/core/net/protocol.js`.
+  Unit spouští ten první; `rootDir: ".."` v `tsconfig.json` je důvod.
+- **Deploy:** `bash apps/nirvana-net/deploy/deploy-nirvana-net.sh` (poprvé
+  `--install-unit`). Skript dělá stage → `mv` swap → restart → `/net/health`
+  a při selhání health sám vrátí zálohu.
+- **nginx:** `map $http_upgrade $connection_upgrade` je **v souboru vhostu**
+  (sites-enabled se includuje do `http`, takže je to legální) + `location /net`
+  s `proxy_read_timeout 3600s` a `limit_conn nirvana_net 8`. Zálohy confů patří
+  do `/etc/nginx/backups/`, **nikdy** do `sites-enabled`.
+- **Node na produkci:** `zion-nirvana.service` běžel na `/usr/bin/node` **18.19.1**
+  (Next 16 chce ≥ 20.9). 2026-11-01 přepnuto na `/usr/local/bin/node` (22.23.2);
+  záloha unitu `/root/zion-nirvana.service.bak-node18-20261101`. Když se servis
+  „chová divně", první kontrola je `readlink -f /proc/$(systemctl show
+  zion-nirvana -p MainPID --value)/exe`.
+- **Ověření:** `cd apps/nirvana-net && npm run smoke` (20 kontrol: handshake,
+  místnosti, presence, rate limit, Origin, úklid). Živě: `curl /net/health`,
+  `/net/metrics`, WS upgrade z Node klienta s `Origin` hlavičkou.
+- **Past při deployi:** rsync `node_modules/ws` selže, když cíl nemá
+  `node_modules/` — skript proto dělá `mkdir -p <stage>/node_modules`.
+- **Past se SSH:** EDGE banuje rychlé sériové SSH (fail2ban). Deploy skript drží
+  jedno `ControlMaster` spojení; ruční zásahy dělej přes `zion-v6` (IPv6).
+- **K1.2 (root workspace) rozbil deploy:** `node_modules` ve standalone stromu
+  leží o úroveň výš (`.next/standalone/node_modules`) a appka je zanořená
+  v `.next/standalone/apps/<app>`. `deploy-nirvana.sh` proto artefakt před
+  nasazením **zplošťuje** do `.next/standalone-flat` (app dir + node_modules
+  vedle sebe), aby unit zůstal `WorkingDirectory=…/nirvana` + `node server.js`.
+  Když se změní layout standalone výstupu, tohle je první místo, kde to spadne
+  („incomplete standalone artifact").
+
+### Chat (M1, 2026-11-01)
+
+- **Identitu dodává server.** Klient posílá jen `hello` a text; jméno, avatar
+  i právo psát plyne z cookie `zion_session` → ZIS `/api/auth/me` (cache 60 s).
+  Nikdy neposílej jméno z prohlížeče — jinak si kdokoli napíše „admin".
+- **Kanály:** `park` (mimo místnost) a `arena:<room>`. Historie 200 zpráv
+  v RAM, po restartu služby prázdná (záměr, žádná DB).
+- **Psát smí jen `zis`.** Host dostane `read_only`; UI to vysvětlí, ale
+  rozhoduje server.
+- **Rate limit je serverový** (2 zprávy / 2 s) — UI ho jen zobrazí.
+- **Čištění textu:** pryč s HTML tagy (`<[^>]*>`), řídicími znaky a `<`/`>`,
+  strop 240 znaků. Vnitřní text tagu zůstává jako text („alert(1)"), to je OK.
+- **Klávesy v inputu nesmí utéct do hry:** `onKeyDown/onKeyUp` volá
+  `stopPropagation`, jinak `W` rozjede vozítko na Venuši (otestováno).
+- **`T` otevře chat, `Esc` zavře**; otevření uvolní pointer lock (aréna).
+- **Jeden `NetProvider` v `app/layout.tsx`** = jedno WS na kartu. `ChatDock`
+  je tamtéž, takže chat je na každé stránce včetně her.
+- **Lokální test:** `NEXT_PUBLIC_NIRVANA_NET_URL=ws://127.0.0.1:3011/net`
+  při buildu (jinak klient míří na `ws://<host>/net`, což dev server neumí).
+  Pozor: propíše se do bundlu — před deployem build bez té proměnné (dělá to
+  deploy skript sám).
+
+### Multiplayer arény (M2a, 2026-11-01)
+
+- **Server je autorita.** `apps/nirvana-net/src/arena.ts` počítá pohyb (`stepBody`
+  z `core/arena/physics.ts`), zásahy (`pickTarget` z `core/arena/weapons.ts`),
+  smrt, respawn, pickupy i skóre. Klient posílá **jen vstup** 20 Hz a kreslí
+  snapshoty 15 Hz.
+- **Jedna fyzika a jedna čísla.** `physics.ts`, `map.ts` i `weapons.ts` sdílí
+  klient a server (žádná druhá implementace). Když se změní poškození zbraně,
+  mění se na jednom místě — jinak by hráč viděl jiné zásahy, než server počítá.
+- **Predikce vlastního pohybu** běží stejnou `stepBody`; když se rozejde se
+  serverem o > 1,6 m, srovná se (teleport), jinak se plynule dorovnává 18 %/frame.
+  Ostatní hráči se interpolují mezi dvěma posledními snapshoty.
+- **Snapshoty tečou přes `subscribe()`**, ne přes React state — 15×/s by jinak
+  překreslovalo celý 3D strom. Chat a presence naopak state jsou (nízká frekvence).
+- **Presence, ne join/leave.** Hráč je členem parku a pak arény; `join`/`leave`
+  chodily za každý kanál zvlášť a klient napočítal člena dvakrát. Server teď
+  posílá **každému jeho vlastní seznam** (`event.kind === 'presence'`).
+- **Jméno hráče je ve snapshotu** (`ArenaPlayerState.name`). Mapovat
+  `presence` (identity id) na snapshot (connection id) nejde — tabule ukazovala
+  `c_9448…` místo jména.
+- **Zpětná vazba „trefil jsem"**: zásah se pozná podle HP ve snapshotu, ne
+  z klientské střely. Tracery/audio v MP zatím nejsou (sólo je má).
+- **Co v MP není:** boti (prázdnou arénu nikdo nedoplňuje), zvuk, VR, tracery.
+  Není to nedodělek, je to další krok — nemá se to hlásit jako hotové.
+
+### Herní HUD (F2, 2026-11-01)
+
+- **`GameHud` je v `app/layout.tsx`** a sám se skryje mimo herní povrchy
+  (`usePathname()` + seznam `SURFACES`). Varianty: `is-dock` (vesmír, dole
+  uprostřed) a `is-compact` (hry, vlevo dole — aby nekolidoval s jejich HUD).
+- **ZION zůstatek NIKDY přes `getBalance`** — je to account-model a u UTXO
+  vrací 0. Route `/api/wallet/balance` volá `getUtxos` s `limit: 0`
+  (`total_amount`), primárně `127.0.0.1:9445`, fallback `rpc.zionterranova.com`.
+  Když RPC mlčí, vrací **200 `{ok:false}`** — HUD ukáže `—`, hra nesmí vypadat
+  rozbitá.
+- **`BigInt`** kvůli částkám nad 2^53 (144 mld ZION × 1e6 flowers). V `tsconfig`
+  je target ES2017 → **bigint literal `1n` neprojde**, používat `BigInt(1)`.
+- Žetony čte `loadProfile()` až po mountu (SSR by měl jiné číslo) a obnovuje je
+  při `window.focus`.
+- Na mobilu se tabům skrývá text (`game-hud-tab-text`) a lišta scrolluje.
+
+### Planety jako vstupy do her (F1, 2026-11-01)
+
+- **Mars, Venuše, Jupiter jsou vstupy** (`PlanetDef.game`), ostatní planety jsou
+  mrtvé — jen tlumené jméno, žádný hover ani kursor. To je záměr: hranice
+  „na co jde kliknout" musí být vidět bez najetí.
+- **Hit-sféra je neviditelná koule** `max(size*2.6, 2.6)` s `opacity: 0` —
+  `visible={false}` **nefunguje**, raycast takový mesh ignoruje.
+- **Chip na planetě musí mít `pointerEvents: 'auto'`**, jinak je vidět a nejde
+  kliknout (stalo se). U mrtvých planet zůstává `none`.
+- **Halo = billboard** (`ringGeometry` + `quaternion.copy(camera.quaternion)`).
+  Torus v nakloněné rovině vypadá jako Saturnův prstenec — plete to.
+- **Klik = přiletět + panel**, ne rovnou skok do hry. `focus` v `Universe` má
+  `'mars' | 'venus'`; cíl se počítá **každý frame** stejnou `planetPosition`,
+  jinak planeta při přeletu uletí.
+- **`SceneRoot` má DVA stromy** (XR a non-XR) — nový prop je potřeba přidat do
+  obou, jinak se v běžném prohlížeči nic neděje (přesně to se stalo).
+
+### Navigace ke hrám a sluneční soustava (2026-11-01)
+
+- **Hry jsou routy, ne portály.** `/park`, `/mars`, `/venus`, `/avatars` se
+  otevírají `<Link>`em (nová stránka), kdežto portály v konzoli otevírají okno
+  ve scéně. Seznam her drží **`core/games/links.ts`** — konzole, pouť i
+  `GamesDock` ho sdílí; nová hra se přidává tam, ne na čtyři místa.
+- **`GamesDock`** je plovoucí lišta dole ve vesmíru (`/`), vždy viditelná.
+  Kdyby hry zmizely z UI, je to regrese — dřív nešly najít vůbec.
+- **Konzole (hamburger) má sekce** Hry / Světy / Systém / Připravujeme se
+  štítky (`hrát →`, `otevřít`, `ve výstavbu`). Stub portály jsou ztlumené.
+- **OrbitControls míří na Zemi**, ne na Slunce: kamera i `controls.target` se
+  posouvají o deltu oběhu Země. Když se to rozbije, Země proplouvá záběrem.
+- **Dráhy jsou komprimované** `r = 30·AU^0.55` (`orbitRadius()` v `SolarSystem.tsx`).
+  Lineární AU dalo Neptun 903 jednotek daleko — mimo jakýkoli rozumný záběr.
+  Země vychází na 30 = `EARTH_ORBIT_R`, takže fokus a zemská soustava sedí.
+- **Hiran na Slunci má `detail` prop:** plný ornament (jantra + lotos) jen při
+  fokusu na Slunce, z dálky se ztlumí a lotos se schová — jinak přes Slunce leží
+  mřížka a Slunce vypadá jako drátěná koule.
+- **Jména planet jsou DOM popisky** (`<Html>`), ne 3D spritely — sprite je při
+  oddálení nečitelný.
+- **Rotační osa** je úsečka 1,75× průměr planety uvnitř nakloněné skupiny, takže
+  ukazuje skutečný sklon (Venuše 3,09 rad, Uran 1,71).
+
+### Avatary (A1–A4, 2026-11-01)
+
+- **Katalog je generovaný, ne ruční:** `core/avatars/catalog.ts` vzniká z
+  `V31/L4/oasis/data/avatars.json` skriptem
+  `node scripts/ops/gen-avatar-catalog.mjs` (200 záznamů, jen id/jméno/podtitul/
+  paprsek/vzácnost/CL). Needitovat ručně — po změně rosteru spustit generátor.
+- **Vzhled se počítá z id.** `core/avatars/kit.ts` (`avatarLook`) je čistá
+  deterministická funkce: id → semínko → tělo, výška, ornamenty, aura; paprsek
+  a vzácnost berou z katalogu. Proto jde cizí hráč vykreslit jen z `avatarId`,
+  bez stahování rosteru.
+- **Model je z primitiv** (`AvatarModel.tsx`, ~18 meshů) — v repu nejsou žádné
+  glb/gltf, takže „namodelovat 200 postav" nejde. Kit je navržený tak, aby šel
+  později vyměnit za skutečné modely bez změny zbytku.
+- **Ukládá se do ZIS** `avatar3d.avatarId` (+ `callsign`, `bodyType`,
+  `neonColor`). ZIS schéma (`apps/identity/src/routes/auth.ts`,
+  `UpdateProfileSchema`) muselo `avatarId` povolit — do té doby ho zod tiše
+  zahazoval. Bez deploye ZIS se avatar neuloží (a nikdo to nepozná, protože
+  PATCH vrátí 200).
+- **Jméno:** `callsign` z `avatar3d` má přednost před `displayName` (tak to
+  dělá i web). Chat i tabule proto ukazují callsign.
+- **Stránka `/avatars`** je veřejná: host si prohlíží, uložit může jen
+  přihlášený. Náhled je jeden `<Canvas>` (ne 200) — 200 modelů v gridu by
+  zabilo i slušný stroj.
+- **Past s layoutem:** `.avatars` musí mít pevnou výšku (`100dvh`), jinak
+  seznam 200 položek roztáhne scénu na tisíce pixelů a kamera kouká dovnitř
+  modelu. A kamera musí `lookAt` na hrudník — výchozí cíl (0,0,0) uřízne hlavu.
+
+### Multiplayer závodu (M2b, 2026-11-01)
+
+- **Stejná trať, stejná fyzika.** `apps/nirvana-net/src/race.ts` pouští
+  `core/race/track.ts` + `core/race/physics.ts` (`stepCraft`) a kola počítá
+  `advanceLap` z `rivals.ts` — tedy přesně to, co klient.
+- **Vizuál tratě je jeden.** `core/race/TrackStage.tsx` (pás, okraje, brány,
+  startovní čára) používají sólo i multiplayer — neopravovat dvakrát.
+- **Odpočet je serverový** (3 s, při novém hráči se restartuje). Klient ho jen
+  kreslí; když doběhne, server pošle `race_start`.
+- **Vstup:** u závodu posílá klient `mz` = plyn a `mx` = zatáčení (stejná
+  konvence jako sólo klávesy), **ne** dopředu/doprava jako v aréně. `useNet`
+  proto nabízí `joinGame('race')`; `joinArena()` je jen obal (dřív posílal
+  `game: 'arena'` i pro Venuši a závod se nikdy nepřipojil).
+- **Predikce:** vlastní vozidlo se hýbe stejnou `stepCraft`, srovnává se při
+  odchylce > 3 m; ostatní se interpolují mezi snapshoty.
+- **Závod končí**, když dojedou všichni (nebo po 8 min). `race_end` nese
+  pořadí; po 8 s se rozjede nový.
+- **Co tu není:** duchové odpojených (jezdci se jen odeberou), boti, zvuk.
+
 ## Jupiter Station — `/park` (2026-11-01)
 
 - **Jeden canvas, dva pohledy.** Hra se kreslí do `<canvas>` v `park-dock` a ten
@@ -106,7 +298,34 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Okraj tratě je zeď, ne pružina.** Při klampování zachovej podélný postup
   (`along`), jinak auto zamrzne na místě — stalo se to při prvním pokusu.
 - **Skóre = laps/seconds**, takže vyšší je lepší; nepřevracej tabuli.
+  Pořadí v závodě (1.–3. = žetony navíc) je věc HUD, ne skóre na tabuli.
 - **Zvuk:** `core/arena/audio.ts` (syntéza). Nové zvuky přidávej tam, ne jako soubory.
+
+### Soupeři (2026-11-01)
+
+- **Jedna fyzika pro všechny.** `core/race/physics.ts` → `stepCraft()`; hráč
+  posílá klávesy, bot `{throttle, steer}`. Nikdy nedělej botům druhý integrátor:
+  rozdíl by dělala pravidla, ne um. `spawnCraft()` a konstanty jsou tam taky.
+- **Bot míří na směr tratě, ne na bod.** Tětiva k bodu ~1 s dopředu nutí
+  zatáčet víc než trať, řízení saturuje a bot skončí ve zdi (reálně: 196 s na
+  3 kola a ani jedno nedojel). Správně: `headingError = směr tratě(index+look) −
+  heading` + korekce `lateral`. Křivost se počítá jako Δyaw / Δs, ne Δyaw.
+- **Rozdíl mezi boty = jen `skill`** (kH/kL, stopa, `vCap`). Žádný
+  rubber-banding — kazí srovnatelnost časů s lidskými.
+- **Pořadí se počítá z ujeté vzdálenosti** (`LapState.travelled` = sčítaný
+  přírůstek indexu). Nezaváděj „checkpointy + zlomek cesty k dalšímu“ — mezi
+  branami je zlomek nulový a všichni za vedoucím hlásí stejnou ztrátu.
+  `travelled` je záporný pro rošt za startovní čárou (viz `startTravelled`).
+- **Čas se měří simulovanými hodinami** (`clock += dt`), ne `performance.now()`.
+  Fyzika má `dt = min(0,05, delta)`; na 15 fps by skutečné hodiny nafoukly kolo
+  o čtvrtinu a tabule by nebyla srovnatelná.
+- **`advanceLap()` je jediné počítání kol** pro hráče i boty. Nová pravidla
+  (tresty, cut detection) patří sem, ne do `useFrame`.
+- **Deska pořadí** (`.race-board`) je vpravo nahoře a nesmí překrývat HUD;
+  na mobilu se HUD zalamuje (`.race-hud span { white-space: nowrap }`).
+- **Znaménko řízení:** `A` (kladný steer) **zmenšuje** kladný `lateral`.
+  Při testech klávesnicí to ověř v simulaci, ne okem.
+- **Kolize auto–auto nejsou.** Závodníci se projíždějí; je to záměr, ne bug.
 
 ## Zvuk a VR v aréně (2026-11-01)
 
@@ -140,3 +359,38 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   nemá. `/present/kralovstvi-srdce` → **307** na živém webu je správně.
 - **Dlaždice v konzoli** přibyla automaticky z manifestu (`id: 'archa'`), okno
   `ArchaPortal` má dvě cesty: `/present/kralovstvi-srdce` a misijní stránku.
+
+## Nebeská flotila — Nabukano (2026-11-01)
+
+- **Slot `fleet` je nový `SceneSlot`.** `SLOT_COLOR` je exhaustivní `Record`
+  ve **dvou** souborech (`core/shell/Shell.tsx` a `scene/universe/HoloConsole.tsx`)
+  — když se přidá jen jeden, `tsc` spadne (nebo hůř, dlaždice zůstane bez barvy).
+- **Pozice i natočení jdou z `positions.ts`** (`fleetPosition()`, `fleetHeading()`).
+  Fokus kamery počítá cíl **stejným vzorcem** jako scéna; kdyby se rozešly,
+  kamera doletí tam, kde flotila není. Stejná past jako u `planetPosition()`
+  (Jupiter Station).
+- **Fokus má tři místa v `Shell.tsx`:** `openPortal()`, inicializace z hashe
+  a `hashchange` listener. Přidání nové hodnoty `focus` znamená sáhnout na
+  všechna tři + typy v `SceneRoot.tsx` a `Universe.tsx`.
+- **Kamera u flotily musí stát dál od Slunce než flotila** (`addScaledVector`
+  radiálně ven + `FLEET_CAM_LIFT`). Při offsetu namířeném dovnitř soustavy
+  vyplní záběr Śrí jantra na Slunci a flotila je jen drobná silueta — přesně
+  tohle se stalo při prvním měření.
+- **Ověření lokálně bez ZAP pasu:** `/api/pass` je fail-closed a ověřuje kód
+  proti `app.zionterranova.com/api/archive/verify`. Pro lokální audit stačí
+  `ARCHIVE_VERIFY_URL=http://127.0.0.1:9099/verify` + lokální stub, který
+  vrací `{"valid":true}`, a cookie `zion_nirvana_pass`.
+- **Headless WebGL:** swiftshader v Chromium zvládne scénu vykreslit, ale fps
+  je bezcenné (~3–4) a `page.screenshot` padá na timeout/closed target.
+  Měřit draw calls a triangles ano; výkon a screenshot jen na GPU.
+- **Naměřeno (swiftshader, 800×600, dpr 1, `?sceneAudit=1`):** 125 draw calls,
+  72 386 tris, 39 textur, `invalidVertices: 0`, tier A. Flotila přidává
+  ~30 draw calls, jen když je v záběru (frustum culling).
+- **Trasa (leg) se zamrazuje `key`.** `FleetRoute` počítá oblouk v `useMemo`
+  z `clock.elapsedTime` v okamžiku mountu; v `Universe` je proto
+  `{fleetLeg && <FleetRoute key={fleetLeg} … />}`. Bez `key` by se start i cíl
+  přepočítávaly každý frame (nová geometrie = smetí v paměti) a oblouk by
+  odjížděl od LUMI, jak flotila obíhá.
+- **Trasa je animace konceptu, ne let.** Okno to říká nahlas (`FleetPortal`);
+  v kódu proto žádná fyzika, žádné ETA — jen křivka a světlo, které po ní
+  dojde za 6 s a zůstane u doku.

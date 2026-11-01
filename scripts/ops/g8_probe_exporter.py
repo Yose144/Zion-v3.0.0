@@ -6,11 +6,22 @@ the results as metrics on /metrics (default 127.0.0.1:9105).
 
 Probes (run concurrently on every scrape):
   - raw TCP line-delimited JSON-RPC getStatus on the three node RPC ports
-    (labels node_primary, node_follower_2, node_follower_3). The primary node
+    (labels node_primary, node_follower_2, node_follower_3). Every node
     additionally answers getBlockByHeight {"height": <native_chain_height>} on
-    a fresh socket so the exporter can compute the chain tip age.
+    a fresh socket so the exporter can compute the chain tip age; chain_live
+    uses the freshest tip reported by any node, so a planned restart of a
+    single node does not count as a chain outage (per-node freshness and the
+    node_primary probe result remain visible as separate metrics).
   - HTTP GET expecting a 2xx for pool / multichain / DAO / ZIS health URLs.
   - TCP connect for the public pool stratum port.
+
+Every failed probe is retried (only the failures) after a short delay before it
+is reported as a failure. G8 samples one point per 60 s bucket, so a single
+missed packet used to be recorded as a whole 60 s outage — on 2026-11-01 that
+turned 480 s of healthy services (no restarts) into four services under the
+99.9 % gate. The confirmation round makes `zion_g8_probe_success=0` mean a
+sustained failure; `zion_g8_probe_retried=1` keeps the flakiness visible so it
+can still be alerted on instead of being silently smoothed away.
 
 Endpoints:
   /health   200 JSON — exporter process liveness
@@ -21,6 +32,8 @@ Environment overrides:
   G8_LISTEN_HOST               (127.0.0.1)
   G8_LISTEN_PORT               (9105)
   G8_PROBE_TIMEOUT_SECONDS     (3)
+  G8_PROBE_CONFIRM_ATTEMPTS    (2)  attempts per probe before reporting failure
+  G8_PROBE_CONFIRM_DELAY_MS    (400) delay between the attempts
   G8_CHAIN_TIP_MAX_AGE_SECONDS (900)
   G8_NODE_RPC_PORTS            (9445,9446,9447)
   G8_POOL_HEALTH_URL           (http://127.0.0.1:8080/health)
@@ -78,6 +91,8 @@ def load_config() -> dict:
         "listen_host": os.environ.get("G8_LISTEN_HOST", "127.0.0.1"),
         "listen_port": _env_int("G8_LISTEN_PORT", 9105),
         "timeout": _env_float("G8_PROBE_TIMEOUT_SECONDS", 3),
+        "confirm_attempts": max(1, _env_int("G8_PROBE_CONFIRM_ATTEMPTS", 2)),
+        "confirm_delay_ms": max(0, _env_int("G8_PROBE_CONFIRM_DELAY_MS", 400)),
         "chain_tip_max_age": _env_float("G8_CHAIN_TIP_MAX_AGE_SECONDS", 900),
         "node_rpc_host": "127.0.0.1",
         "node_rpc_ports": ports,
@@ -167,34 +182,82 @@ def probe_tcp(host: str, port: int, timeout: float) -> dict:
     return outcome
 
 
-def run_probes(config: dict) -> dict:
-    """Run all probes concurrently and return the combined result."""
-    services: dict = {}
+def _probe_targets(config: dict) -> list:
+    """Build [(label, zero-arg callable)] for one probe round."""
     timeout = config["timeout"]
+    targets = []
+    for idx, port in enumerate(config["node_rpc_ports"]):
+        label = NODE_LABELS[idx] if idx < len(NODE_LABELS) else f"node_{idx + 1}"
+        targets.append(
+            (label, lambda p=port: probe_node(config["node_rpc_host"], p, timeout, True))
+        )
+    for label, url in config["http_services"]:
+        targets.append((label, lambda u=url: probe_http(u, timeout)))
+    targets.append(
+        ("pool_stratum", lambda: probe_tcp(config["stratum_host"], config["stratum_port"], timeout))
+    )
+    return targets
 
+
+def _run_round(config: dict, targets: list) -> dict:
+    """Run the given probes concurrently, one result per label."""
+    results: dict = {}
+    if not targets:
+        return results
     with ThreadPoolExecutor(max_workers=8) as ex:
-        futures = {}
-        for idx, port in enumerate(config["node_rpc_ports"]):
-            label = NODE_LABELS[idx] if idx < len(NODE_LABELS) else f"node_{idx + 1}"
-            futures[ex.submit(probe_node, config["node_rpc_host"], port, timeout, idx == 0)] = label
-        for label, url in config["http_services"]:
-            futures[ex.submit(probe_http, url, timeout)] = label
-        futures[ex.submit(probe_tcp, config["stratum_host"], config["stratum_port"], timeout)] = "pool_stratum"
+        futures = {ex.submit(fn): label for label, fn in targets}
         for fut, label in futures.items():
             try:
-                services[label] = fut.result()
+                results[label] = fut.result()
             except Exception:
-                services[label] = {"success": False, "duration": 0.0}
+                results[label] = {"success": False, "duration": 0.0}
+    return results
+
+
+def run_probes(config: dict) -> dict:
+    """Run all probes, confirming failures, and return the combined result."""
+    targets = _probe_targets(config)
+    by_label = dict(targets)
+    services = _run_round(config, targets)
+    attempts = {label: 1 for label in services}
+    retried = {label: False for label in services}
+
+    confirm = max(1, int(config.get("confirm_attempts", 1) or 1))
+    delay = max(0, int(config.get("confirm_delay_ms", 0) or 0)) / 1000.0
+    for attempt in range(2, confirm + 1):
+        failed = [label for label, res in services.items() if not res.get("success")]
+        if not failed:
+            break
+        if delay:
+            time.sleep(delay)
+        retry_results = _run_round(config, [(label, by_label[label]) for label in failed])
+        for label, res in retry_results.items():
+            attempts[label] = attempt
+            retried[label] = True
+            services[label] = res
+
+    for label, res in services.items():
+        res["attempts"] = attempts.get(label, 1)
+        res["retried"] = retried.get(label, False)
 
     primary = services.get("node_primary", {})
     quorum = sum(
         1 for name, res in services.items()
         if name.startswith("node_") and res.get("success")
     )
+    # Tip source = first node in port order that answered getBlockByHeight —
+    # normally the primary, with followers as fallback when it is unreachable.
+    tip_res = {}
+    for idx in range(len(config["node_rpc_ports"])):
+        label = NODE_LABELS[idx] if idx < len(NODE_LABELS) else f"node_{idx + 1}"
+        res = services.get(label, {})
+        if res.get("tip_timestamp") is not None:
+            tip_res = res
+            break
     return {
         "services": services,
-        "chain_height": primary.get("chain_height"),
-        "tip_timestamp": primary.get("tip_timestamp"),
+        "chain_height": tip_res.get("chain_height") or primary.get("chain_height"),
+        "tip_timestamp": tip_res.get("tip_timestamp"),
         "node_quorum": quorum,
         "primary_ok": bool(primary.get("success")),
     }
@@ -229,8 +292,7 @@ def render_metrics(report: dict, config: dict, now: float = None) -> str:
     else:
         tip_age = -1.0
     chain_live = 1 if (
-        report.get("primary_ok")
-        and tip_ts is not None
+        tip_ts is not None
         and 0 <= tip_age <= config["chain_tip_max_age"]
     ) else 0
 
@@ -245,15 +307,34 @@ def render_metrics(report: dict, config: dict, now: float = None) -> str:
         duration_entries.append((suffix, float(res.get("duration", 0.0))))
     _metric(lines, "zion_g8_probe_success", "G8 probe result (1=success, 0=failure)", success_entries)
     _metric(lines, "zion_g8_probe_duration_seconds", "G8 probe duration in seconds", duration_entries)
+    # 1 = this service needed the confirmation retry this round. The retry keeps
+    # single missed packets out of the uptime gate, but the flakiness itself is
+    # still worth alerting on, so it stays visible here.
+    retried_entries = []
+    for label in sorted(services):
+        suffix = f'{{service="{_escape_label(label)}"}}'
+        retried_entries.append((suffix, 1 if services[label].get("retried") else 0))
+    _metric(lines, "zion_g8_probe_retried", "1 if the probe needed a confirmation retry this round", retried_entries)
 
-    _metric(lines, "zion_g8_chain_height", "Native chain height reported by the primary node",
+    _metric(lines, "zion_g8_chain_height", "Native chain height reported by the tip source node",
             [("", chain_height if chain_height is not None else 0)])
-    _metric(lines, "zion_g8_chain_tip_timestamp_seconds", "Unix timestamp of the chain tip block (0 = unknown)",
+    _metric(lines, "zion_g8_chain_tip_timestamp_seconds", "Unix timestamp of the freshest chain tip block reported by any node (0 = unknown)",
             [("", tip_ts if tip_ts else 0)])
-    _metric(lines, "zion_g8_chain_tip_age_seconds", "Seconds since the chain tip block timestamp (-1 = unknown)",
+    _metric(lines, "zion_g8_chain_tip_age_seconds", "Seconds since the freshest chain tip block timestamp reported by any node (-1 = unknown)",
             [("", tip_age)])
-    _metric(lines, "zion_g8_chain_live", "1 if the primary node probe succeeded and the tip is fresh",
+    _metric(lines, "zion_g8_chain_live", "1 if any node probe reported a fresh chain tip",
             [("", chain_live)])
+    fresh_entries = []
+    for label in sorted(services):
+        if not label.startswith("node_"):
+            continue
+        res = services[label]
+        ts = res.get("tip_timestamp")
+        fresh = 1 if (
+            ts is not None and 0 <= now - ts <= config["chain_tip_max_age"]
+        ) else 0
+        fresh_entries.append((f'{{service="{_escape_label(label)}"}}', fresh))
+    _metric(lines, "zion_g8_node_tip_fresh", "1 if this node's reported chain tip is fresh", fresh_entries)
     _metric(lines, "zion_g8_node_quorum", "Number of node RPC ports answering",
             [("", report.get("node_quorum", 0))])
     _metric(lines, "zion_g8_probe_timestamp_seconds", "Unix timestamp of this probe round",

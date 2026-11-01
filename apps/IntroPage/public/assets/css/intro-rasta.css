@@ -912,3 +912,14 @@ footer .footer-copyright {
 footer .footer-bottom img {
   border-radius: var(--zion-radius-md);
 }
+
+/* ── /vast-rigs ops dashboard ──────────────────────────────────────────────
+   main.css (HTML5UP reset) gives every element `margin: 0 auto`, which drags
+   cards, toolbars and flex rows to the middle of their row. This file loads
+   after main.css, so element-level specificity is enough here — and it still
+   loses to Tailwind utilities (`.mx-auto`, `.ml-auto`, `.mr-auto`), which are
+   class-level. */
+:where(.vast-dashboard-shell) :is(div, section, header, footer, form, table, span, p, b, strong, a, ul, li, button) {
+  margin-left: 0;
+  margin-right: 0;
+}

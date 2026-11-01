@@ -33,9 +33,11 @@ SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=accept-new ${SSH_EXTRA}"
 SSH() { ssh ${SSH_OPTS} "${EDGE_USER}@${EDGE_HOST}" "$@"; }
 
 echo "[deploy-marketplace] Installing deps + generating Prisma client..."
+# K1.2: root workspace — jeden lockfile a jeden node_modules v rootu repa.
+# `npm ci` uvnitř appky by vytvořil druhý strom a rozbil workspace.
 cd "$ROOT_DIR"
-npm ci
-npx prisma generate
+(cd ../.. && npm ci)
+npm run db:generate
 
 echo "[deploy-marketplace] Building (standalone)..."
 # Local .env pins NEXT_PUBLIC_SITE_URL to localhost for dev. Next inlines that
@@ -68,8 +70,17 @@ echo "[deploy-marketplace] Syncing to ${EDGE_HOST}:${REMOTE_DIR}"
 # runtime at .next/standalone/server.js inside the source tree. NEVER rsync
 # .next/standalone/ directly into REMOTE_DIR: it deletes src/, scripts/,
 # prisma/ AND ships the traced dev .env over the production one (2026-10-30).
+#
+# `--exclude='/node_modules'` je ZÁMĚRNĚ kotvené na kořen appky. Bez kotvy
+# vzor matchuje i vnořené cesty, takže se nepřenese:
+#   .next/standalone/node_modules            (runtime deps bundlu)
+#   .next/standalone/.next/node_modules      (Turbopack aliasy, např. symlink
+#                                             @prisma/client-<hash> → @prisma/client)
+# Následek je tichý: na serveru zůstane stará generace Next a běží mix
+# (2026-11-01: next 14 runtime + next 16 manifesty → pád na `canonicalBase`),
+# resp. `Cannot find module '@prisma/client-<hash>'`.
 rsync -avz --delete \
-  --exclude='node_modules' \
+  --exclude='/node_modules' \
   --exclude='.env' \
   --exclude='.env.*' \
   --exclude='.l1-watcher-state.json' \
@@ -79,13 +90,76 @@ rsync -avz --delete \
   "${ROOT_DIR}/" \
   "${EDGE_USER}@${EDGE_HOST}:${REMOTE_DIR}/"
 
+echo "[deploy-marketplace] Verifying bundled Next matches the local build"
+LOCAL_NEXT="$(node -p "require('${ROOT_DIR}/.next/standalone/node_modules/next/package.json').version" 2>/dev/null || echo missing)"
+REMOTE_NEXT="$(SSH "node -p \"require('${REMOTE_DIR}/.next/standalone/node_modules/next/package.json').version\"" 2>/dev/null | tr -d '\r' || echo missing)"
+if [[ "${LOCAL_NEXT}" != "${REMOTE_NEXT}" ]]; then
+  echo "[deploy-marketplace] ERROR: bundled Next mismatch (local=${LOCAL_NEXT} remote=${REMOTE_NEXT})." >&2
+  echo "[deploy-marketplace] Refusing to restart — prod keeps running the previous build in memory." >&2
+  exit 1
+fi
+echo "[deploy-marketplace] Bundled Next ${LOCAL_NEXT} OK"
+
 echo "[deploy-marketplace] Regenerating Prisma client on ${EDGE_HOST}"
-# rsync excludes ALL node_modules — including .next/standalone/node_modules/.prisma —
-# so the bundled client never updates on deploy (schema drift bug, 2026-11-01).
-# Regenerate server-side (correct engine platform) and copy it into the bundle.
+# Regenerace na serveru: engine se musí sestavit pro platformu serveru
+# (binaryTargets v prisma/schema.prisma) a node_modules/@prisma/client je
+# v rsyncu záměrně vynechaný.
 SSH "cd '${REMOTE_DIR}' && npx prisma generate >/dev/null 2>&1 && \
   mkdir -p .next/standalone/node_modules/.prisma/client && \
   cp -a node_modules/.prisma/client/. .next/standalone/node_modules/.prisma/client/"
+
+echo "[deploy-marketplace] Relativizing absolute symlinks in the bundle"
+# Turbopack zapisuje alias externích modulů jako symlink. Když build běží v git
+# worktree (ne v hlavním stromu), resolved realpath je **absolutní** a míří na
+# builderův /tmp — na serveru pak `Cannot find module '@prisma/client-<hash>'`
+# nebo `puppeteer-<hash>` a spadnou VŠECHNY API routy (stránky dál servíruje
+# staticky, takže se to snadno přehlédne).
+#
+# Cesty se do vzdáleného skriptu vkládají přes placeholder, protože REMOTE_DIR
+# obsahuje `&` a argument by se v remote shellu rozpadl.
+REMOTE_SCRIPT=$(cat <<'EOS'
+set -eu
+cd '@REMOTE@'
+remote=$(pwd); app=$(basename "$remote"); builder='@BUILDER@'
+# Builder cesta obsahuje i podadresář appky:
+#   <builder>/apps/<app>/.next/standalone/...  ->  <remote>/.next/standalone/...
+prefix="$builder/apps/$app"
+fixed=0
+for link in $(find .next/standalone -type l); do
+  target=$(readlink "$link")
+  case "$target" in
+    "$prefix"*) ;;
+    *) continue ;;
+  esac
+  rest=${target#"$prefix"}
+  resolved="$remote$rest"
+  if [ -e "$resolved" ]; then
+    rel=$(realpath --relative-to="$(dirname "$link")" "$resolved")
+    ln -sfn "$rel" "$link"
+    fixed=$((fixed + 1))
+  else
+    echo "  CHYBA: cíl $rest v bundlu není" >&2
+  fi
+done
+echo "  přepsáno absolutních odkazů: $fixed"
+dangling=0
+for link in $(find .next/standalone -type l); do
+  [ -e "$link" ] || { echo "  CHYBA: visící symlink $link -> $(readlink "$link")" >&2; dangling=$((dangling + 1)); }
+done
+if [ "$dangling" -gt 0 ]; then
+  echo "  $dangling visících symlinků — nerestartuji, API by spadly" >&2
+  exit 1
+fi
+EOS
+)
+# bash 5.2+ žere `&` v náhradě (patsub_replacement) a REMOTE_DIR obsahuje `&`.
+shopt -u patsub_replacement 2>/dev/null || true
+# ROOT_DIR je v tomhle skriptu adresář appky; builder cesty v symlinkách míří
+# z kořene workspace (root package.json je o dvě úrovně výš).
+REPO_ROOT="$(cd "${ROOT_DIR}/../.." && pwd)"
+REMOTE_SCRIPT="${REMOTE_SCRIPT//@REMOTE@/${REMOTE_DIR}}"
+REMOTE_SCRIPT="${REMOTE_SCRIPT//@BUILDER@/${REPO_ROOT}}"
+SSH bash -s <<<"${REMOTE_SCRIPT}"
 
 echo "[deploy-marketplace] Fixing ownership and restarting ${SERVICE} + zion-l1-watcher"
 SSH "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE} zion-l1-watcher.service"

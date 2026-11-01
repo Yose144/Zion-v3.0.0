@@ -3,27 +3,39 @@
 
 import { manifest as m0 } from '../../portals/account/manifest';
 import v0 from '../../portals/account/Portal';
-import { manifest as m1 } from '../../portals/books/manifest';
-import v1 from '../../portals/books/Portal';
-import { manifest as m2 } from '../../portals/chain/manifest';
-import v2 from '../../portals/chain/Portal';
-import { manifest as m3 } from '../../portals/dao/manifest';
-import v3 from '../../portals/dao/Portal';
-import { manifest as m4 } from '../../portals/freeworld/manifest';
-import v4 from '../../portals/freeworld/Portal';
-import { manifest as m5 } from '../../portals/hiran/manifest';
-import v5 from '../../portals/hiran/Portal';
-import { manifest as m6 } from '../../portals/issobella/manifest';
-import v6 from '../../portals/issobella/Portal';
-import { manifest as m7 } from '../../portals/market/manifest';
-import v7 from '../../portals/market/Portal';
-import { manifest as m8 } from '../../portals/pool/manifest';
-import v8 from '../../portals/pool/Portal';
+import { manifest as m1 } from '../../portals/archive/manifest';
+import v1 from '../../portals/archive/Portal';
+import { manifest as m2 } from '../../portals/books/manifest';
+import v2 from '../../portals/books/Portal';
+import { manifest as m3 } from '../../portals/chain/manifest';
+import v3 from '../../portals/chain/Portal';
+import { manifest as m4 } from '../../portals/dao/manifest';
+import v4 from '../../portals/dao/Portal';
+import { manifest as m5 } from '../../portals/freeworld/manifest';
+import v5 from '../../portals/freeworld/Portal';
+import { manifest as m6 } from '../../portals/hiran/manifest';
+import v6 from '../../portals/hiran/Portal';
+import { manifest as m7 } from '../../portals/issobella/manifest';
+import v7 from '../../portals/issobella/Portal';
+import { manifest as m8 } from '../../portals/market/manifest';
+import v8 from '../../portals/market/Portal';
+import { manifest as m9 } from '../../portals/pool/manifest';
+import v9 from '../../portals/pool/Portal';
 
 import type { ComponentType } from 'react';
 import type { Locale, PortalManifest } from '@zion/contract';
 
-export type PortalView = ComponentType<{ locale: Locale }>;
+/**
+ * Portál dostane jazyk a (volitelně) query parametry stránky.
+ *
+ * Většina portálů search ignoruje. Používá ho ten, který má serverové
+ * hledání (např. Řetěz → ?addr=), aby nemusel mít klientský stav ani
+ * volat fetch: formulář je method="get" a server komponenta čte search.
+ */
+export type PortalView = ComponentType<{
+  locale: Locale;
+  search?: Record<string, string | string[] | undefined>;
+}>;
 
 export interface PortalEntry {
   manifest: PortalManifest;
@@ -32,14 +44,15 @@ export interface PortalEntry {
 
 const entries: PortalEntry[] = [
   { manifest: m0, view: v0 as unknown as PortalView }, // account
-  { manifest: m1, view: v1 as unknown as PortalView }, // books
-  { manifest: m2, view: v2 as unknown as PortalView }, // chain
-  { manifest: m3, view: v3 as unknown as PortalView }, // dao
-  { manifest: m4, view: v4 as unknown as PortalView }, // freeworld
-  { manifest: m5, view: v5 as unknown as PortalView }, // hiran
-  { manifest: m6, view: v6 as unknown as PortalView }, // issobella
-  { manifest: m7, view: v7 as unknown as PortalView }, // market
-  { manifest: m8, view: v8 as unknown as PortalView }, // pool
+  { manifest: m1, view: v1 as unknown as PortalView }, // archive
+  { manifest: m2, view: v2 as unknown as PortalView }, // books
+  { manifest: m3, view: v3 as unknown as PortalView }, // chain
+  { manifest: m4, view: v4 as unknown as PortalView }, // dao
+  { manifest: m5, view: v5 as unknown as PortalView }, // freeworld
+  { manifest: m6, view: v6 as unknown as PortalView }, // hiran
+  { manifest: m7, view: v7 as unknown as PortalView }, // issobella
+  { manifest: m8, view: v8 as unknown as PortalView }, // market
+  { manifest: m9, view: v9 as unknown as PortalView }, // pool
 ];
 
 /** Všechny portály v deterministickém pořadí: manifest.order, pak manifest.id. */

@@ -118,7 +118,11 @@ export default function Navigation() {
             { href: '/terranova/kralovstvi-srdce', label: tr('nav', 'terra_kralovstvi_srdce', lang) },
           ],
         },
-        { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },
+        {
+          href: '/l6-issobella',
+          label: tr('nav', 'l6_issobella', lang),
+          children: [{ href: '/terranova/nabukano', label: tr('nav', 'terra_nabukano', lang) }],
+        },
         { href: '/ai-native', label: tr('nav', 'ai_native', lang) },
       ],
     },

@@ -64,7 +64,9 @@ export {
   SceneTerrain,
   SceneTrees,
   SceneWater,
+  mergeParts,
   type GroundKind,
+  type MergedPart,
   type SceneTreesProps,
   type SceneWaterProps,
   type PalmItem,
@@ -72,3 +74,4 @@ export {
   type TreeItem,
 } from './terrain';
 export { CinematicIntro, reducedMotion, useReducedMotion, type CinematicIntroProps } from './camera';
+export { NabukanoModel, SkyMaria, SISTERS, type SkyMariaType } from './vessels';

@@ -65,4 +65,10 @@ export const EXTERNAL = {
   ops: process.env.KINGDOM_OPS_URL ?? 'https://dashboard.zionterranova.com',
   /** E-shop žije na marketu — Kingdom je výloha, pokladna zůstává tam. */
   shop: process.env.KINGDOM_SHOP_URL ?? 'https://market.zionterranova.com/shop',
+  /** Ovládání poolu je operátorský povrch za basic auth — klient tam nemá co dělat. */
+  poolOps: process.env.KINGDOM_POOL_OPS_URL ?? 'https://pool.zionterranova.com/ops/',
+  /** Hlasování DAO — podepsané peněženkou, ne Kingdomem. */
+  dao: process.env.KINGDOM_DAO_URL ?? 'https://app.zionterranova.com/dao',
+  /** Plný eXplorer (bloky, adresy, historie) — portál drží jen okno. */
+  explorer: process.env.KINGDOM_EXPLORER_URL ?? 'https://app.zionterranova.com/explorer',
 } as const;

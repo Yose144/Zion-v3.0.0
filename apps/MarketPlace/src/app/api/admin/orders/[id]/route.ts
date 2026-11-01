@@ -6,7 +6,7 @@ import { revokeArchivePass } from '@/lib/archive-pass';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 async function findOrder(id: string) {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if (auth) return auth;
 
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const order = await findOrder(id);
 
     if (!order) {
@@ -57,7 +57,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   if (auth) return auth;
 
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const order = await prisma.shopOrder.findFirst({
       where: { OR: [{ id }, { orderId: id }] },
     });

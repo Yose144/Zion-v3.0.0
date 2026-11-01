@@ -7,14 +7,15 @@ import * as THREE from 'three';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
 import type { HiranState } from '@/core/hiran/presence';
-import { worldSlot, EARTH_ORBIT_R, EARTH_ORBIT_SPEED, planetPosition } from './positions';
+import { worldSlot, EARTH_ORBIT_R, EARTH_ORBIT_SPEED, planetPosition, fleetPosition, moonPosition } from './positions';
 import { NewEarth } from './NewEarth';
 import { SailingArk } from './SailingArk';
+import { SkyFleet, FleetRoute, type FleetLeg } from './SkyFleet';
 import { IssobellaRing } from './IssobellaRing';
 import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { SpaceBackdrop } from './SpaceBackdrop';
-import { JUPITER, SolarSystem } from './SolarSystem';
+import { PLANETS, SolarSystem, orbitRadius } from './SolarSystem';
 import { HiranSun } from './HiranSun';
 
 /** Portrait / úzké viewporty: širší fov + větší počáteční odstup,
@@ -30,7 +31,8 @@ function ResponsiveFraming() {
     if (!didInit.current) {
       didInit.current = true;
       const d = aspect < 0.75 ? 1.85 : aspect < 1.1 ? 1.45 : 1;
-      camera.position.set(15 * d, 5 * d, 19 * d);
+      // kamera stojí u Země (ta je na 30) — ne u Slunce, jinak záběr driftuje
+      camera.position.set(EARTH_ORBIT_R + 11 * d, 6 * d, 19 * d);
     }
   }, [camera, size]);
   return null;
@@ -40,6 +42,10 @@ function ResponsiveFraming() {
  *  na jeho oběžné dráze; Země obíhá dál, takže scéna nezamrzne. */
 const SUN_CAM = new THREE.Vector3(17, 8, 17);
 const SUN_TARGET = new THREE.Vector3(0, 0, 0);
+/** Zdvižení kamery nad rovinu dráhy (aby se flotila nekoukala do hrany). */
+const FLEET_CAM_LIFT = new THREE.Vector3(0, 1.6, 0);
+const FLEET_UP = new THREE.Vector3(0, 1, 0);
+const FLEET_CAM_TANGENT = new THREE.Vector3();
 
 /**
  * Vesmír Království srdce — heliocentrická soustava.
@@ -51,21 +57,27 @@ export function Universe({
   portals,
   onOpen,
   onSelectWorld,
+  onSelectPlanet,
   focus = 'earth',
   hiranState = 'idle',
+  fleetLeg = null,
 }: {
   worlds: WorldPoint[];
   portals: Portal[];
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
-  focus?: 'earth' | 'sun' | 'jupiter';
+  /** Klik na planetu — přiletí a otevře panel s CTA. */
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter') => void;
+  focus?: 'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'fleet' | 'moon';
   hiranState?: HiranState;
+  fleetLeg?: FleetLeg | null;
 }) {
   const earthSys = useRef<THREE.Group>(null);
   const controls = useRef<{ target: THREE.Vector3 } | null>(null);
   const light = useRef<THREE.DirectionalLight>(null);
   const lightTarget = useMemo(() => new THREE.Object3D(), []);
   const earthAngle = useRef(Math.PI * 0.18);
+  const lastEarth = useRef(new THREE.Vector3(EARTH_ORBIT_R, 0, 0));
   const [reducedMotion, setReducedMotion] = useState(false);
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
 
@@ -76,6 +88,9 @@ export function Universe({
   const jupiterTarget = useMemo(() => new THREE.Vector3(), []);
   const jupiterCam = useMemo(() => new THREE.Vector3(), []);
   const jupiterOffset = useMemo(() => new THREE.Vector3(24, 13, 28), []);
+  const fleetTarget = useMemo(() => new THREE.Vector3(), []);
+  const lastFleet = useRef(new THREE.Vector3());
+  const fleetCam = useMemo(() => new THREE.Vector3(), []);
 
   useEffect(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -118,16 +133,34 @@ export function Universe({
     if (light.current) light.current.position.set(ex * 0.5, 5, ez * 0.5);
     if (!controls.current) return;
 
-    if (focusRef.current === 'jupiter') {
-      const [jx, jy, jz] = planetPosition(
-        JUPITER.id,
-        3,
-        JUPITER.orbitR,
-        JUPITER.speed,
+    // Země obíhá Slunce → kamera i cíl se posouvají s ní, aby záběr neutíkal.
+    // (Dřív controls mířily na Slunce a Země nám proplouvala záběrem.)
+    if (focusRef.current === 'earth' && progress.current >= 1) {
+      const dx = ex - lastEarth.current.x;
+      const dz = ez - lastEarth.current.z;
+      if (dx !== 0 || dz !== 0) {
+        camera.position.x += dx;
+        camera.position.z += dz;
+        controls.current.target.x += dx;
+        controls.current.target.z += dz;
+      }
+    }
+    lastEarth.current.set(ex, 0, ez);
+
+    const focusPlanet = PLANETS.find((planet) => planet.id === focusRef.current);
+    if (focusPlanet) {
+      // Planeta obíhá — cíl i kamera se musí počítat každý frame stejným vzorcem.
+      const index = PLANETS.indexOf(focusPlanet);
+      const [px, py, pz] = planetPosition(
+        focusPlanet.id,
+        index,
+        orbitRadius(focusPlanet.au),
+        focusPlanet.speed,
         clock.elapsedTime,
       );
-      jupiterTarget.set(jx, jy + 4, jz);
-      jupiterCam.copy(jupiterTarget).add(jupiterOffset);
+      const distance = Math.max(3.6, focusPlanet.size * 3.4 + 1.6);
+      jupiterTarget.set(px, py + focusPlanet.size * 0.4, pz);
+      jupiterCam.set(px + distance * 0.75, py + distance * 0.5, pz + distance);
       const p = (progress.current = Math.min(1, progress.current + delta / 1.8));
       const t = 1 - Math.pow(1 - p, 3);
       controls.current.target.lerpVectors(fromTarget.current, jupiterTarget, t);
@@ -137,6 +170,54 @@ export function Universe({
       const t = 1 - Math.pow(1 - p, 3);
       controls.current.target.lerpVectors(fromTarget.current, SUN_TARGET, t);
       if (p < 1) camera.position.lerpVectors(fromCam.current, SUN_CAM, t);
+    } else if (focusRef.current === 'moon') {
+      // Měsíc obíhá Zemi — cíl i kamera jedním vzorcem jako scéna.
+      const mt = reducedMotion ? 0 : clock.elapsedTime;
+      const [mx, my, mz] = moonPosition(mt);
+      fleetTarget.set(ex + mx, my, ez + mz);
+      const radial = fleetTarget.clone().normalize();
+      const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
+      fleetCam
+        .copy(fleetTarget)
+        .addScaledVector(radial, 3.2)
+        .addScaledVector(tangent, 2.4)
+        .add(FLEET_CAM_LIFT);
+      const p = (progress.current = Math.min(1, progress.current + delta / 1.6));
+      const t = 1 - Math.pow(1 - p, 3);
+      controls.current.target.lerpVectors(fromTarget.current, fleetTarget, t);
+      if (p < 1) {
+        camera.position.lerpVectors(fromCam.current, fleetCam, t);
+      } else if (lastFleet.current.lengthSq() > 0) {
+        camera.position.addScaledVector(lastFleet.current, -1).add(fleetTarget);
+      }
+      lastFleet.current.copy(fleetTarget);
+    } else if (focusRef.current === 'fleet') {
+      // Flotila obíhá Zemi — cíl se musí počítat stejným vzorcem jako scéna.
+      const ft = reducedMotion ? 0 : clock.elapsedTime;
+      const [fx, fy, fz] = fleetPosition(ft);
+      fleetTarget.set(ex + fx, fy, ez + fz);
+      // Kamera stojí dál od Slunce než flotila: díváme se dovnitř soustavy,
+      // takže slunce je za námi a ve záběru je flotila proti planetě.
+      // Pohled z boku: čistě radiální kamera vidí trup zepředu (zkrácený).
+      // Radiála + tečna dráhy dá 3/4 záběr, kde je vidět hřeben i rám s lucernou.
+      const radial = fleetTarget.clone().normalize();
+      const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
+      fleetCam
+        .copy(fleetTarget)
+        .addScaledVector(radial, 4.0)
+        .addScaledVector(tangent, 5.2)
+        .add(FLEET_CAM_LIFT);
+      const p = (progress.current = Math.min(1, progress.current + delta / 1.6));
+      const t = 1 - Math.pow(1 - p, 3);
+      controls.current.target.lerpVectors(fromTarget.current, fleetTarget, t);
+      if (p < 1) {
+        camera.position.lerpVectors(fromCam.current, fleetCam, t);
+      } else if (lastFleet.current.lengthSq() > 0) {
+        // Flotila obíhá dál. Bez tohohle by kamera zůstala stát a loď by
+        // odplouvala ze záběru (0,34 jednotky za sekundu).
+        camera.position.addScaledVector(lastFleet.current, -1).add(fleetTarget);
+      }
+      lastFleet.current.copy(fleetTarget);
     } else {
       controls.current.target.set(ex, 0, ez);
     }
@@ -153,8 +234,10 @@ export function Universe({
 
       {/* zemská soustava — obíhá Slunce jako jeden svět */}
       <group ref={earthSys} position={[EARTH_ORBIT_R, 0, 0]}>
-        <NewEarth />
+        <NewEarth onOpenMatrix={() => onOpen('matrix')} />
         <SailingArk onOpen={() => onOpen('archa')} />
+        <SkyFleet onOpen={() => onOpen('fleet')} reducedMotion={reducedMotion} />
+        {fleetLeg && <FleetRoute key={fleetLeg} leg={fleetLeg} reducedMotion={reducedMotion} />}
         <IssobellaRing
           worlds={split.ring}
           portal={ringPortal}
@@ -165,19 +248,20 @@ export function Universe({
         {gatePortal && <StarGate portal={gatePortal} onOpen={onOpen} />}
       </group>
 
-      <SolarSystem onOpenPark={() => onOpen('park')} />
-      <HiranSun state={hiranState} onOpen={() => onOpen('hiran')} />
+      <SolarSystem onOpenPark={() => onOpen('park')} onSelectPlanet={onSelectPlanet} focused={focus} />
+      <HiranSun state={hiranState} onOpen={() => onOpen('hiran')} detail={focus === 'sun'} />
 
       <ResponsiveFraming />
       <OrbitControls
         ref={controls as never}
         makeDefault
+        target={[EARTH_ORBIT_R, 0, 0]}
         autoRotate={!reducedMotion}
         autoRotateSpeed={0.25}
         enableDamping
         dampingFactor={0.06}
         enablePan={false}
-        minDistance={7}
+        minDistance={3}
         maxDistance={1300}
         minPolarAngle={0.4}
         maxPolarAngle={2.7}

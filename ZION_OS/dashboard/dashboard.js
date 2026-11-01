@@ -41,7 +41,7 @@
   };
 })();
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','multichain','warp-swap','payout','pool','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','qtc','ai-agents','ncl-jobs','poc-lab','marketplace-orders','marketplace-invoices','marketplace-shipping','marketplace-stripe'];
+const TABS = ['overview','nodes','orchestrator','rigs','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','multichain','warp-swap','payout','pool','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','qtc','ai-agents','ncl-jobs','poc-lab','marketplace-orders','marketplace-invoices','marketplace-shipping','marketplace-stripe'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
@@ -49,6 +49,7 @@ let _payoutTimer = null;      // Fallback poll timer for payout tab
 let _poolMinersTimer = null;  // Pool Miners tab auto-refresh timer
 let _poolBlocksTimer = null;  // Pool Blocks tab auto-refresh timer
 let _poolDebugTimer = null;   // Pool Debug tab auto-refresh timer
+let _rigsTimer = null;        // Rigs & Fleet tab auto-refresh timer
 let _revenueTimer = null;     // Revenue System tab auto-refresh timer
 let _cexTimer = null;         // CEX panel auto-refresh timer
 let _qtcTimer = null;         // QTC panel auto-refresh timer
@@ -207,6 +208,7 @@ function clearTabTimers(except){
   if(except !== 'pool-debug'){ clearInterval(_poolDebugTimer); _poolDebugTimer = null; }
   if(except !== 'launch-day'){ clearInterval(_countdownTimer); _countdownTimer = null; }
   if(except !== 'overview'){ clearInterval(_overviewWidgetTimer); _overviewWidgetTimer = null; }
+  if(except !== 'rigs'){ clearInterval(_rigsTimer); _rigsTimer = null; }
   clearInterval(_nclAutoTimer); _nclAutoTimer = null;
   clearInterval(_v31LogTimer); _v31LogTimer = null;
 }
@@ -258,6 +260,7 @@ function switchTab(name){
   else if(name === 'pool-miners'){ clearTabTimers(null); loadPoolMinersTab(); if(!_poolMinersTimer) _poolMinersTimer = setInterval(loadPoolMinersTab, 10000); }
   else if(name === 'pool-blocks'){ clearTabTimers(null); loadPoolBlocksTab(); if(!_poolBlocksTimer) _poolBlocksTimer = setInterval(loadPoolBlocksTab, 15000); }
   else if(name === 'pool-setup'){ clearTabTimers(null); loadPoolSetupTab(); }
+  else if(name === 'rigs'){ clearTabTimers('rigs'); loadRigs(); if(!_rigsTimer) _rigsTimer = setInterval(loadRigs, 15000); }
   else if(name === 'pool-debug'){ clearTabTimers(null); loadPoolDebugTab(); if(!_poolDebugTimer) _poolDebugTimer = setInterval(()=>{ if(document.getElementById('pd-autorefresh')?.checked) loadPoolDebugTab(); }, 15000); }
   else if(name === 'revenue'){ clearTabTimers(null); loadRevenueTab(); if(!_revenueTimer) _revenueTimer = setInterval(loadRevenueTab, 15000); }
   else if(name === 'servers-setup'){ clearTabTimers(null); loadServersSetup(); }
@@ -13464,4 +13467,756 @@ async function loadQtcPanel(withAddr){
     console.warn('QTC panel load failed:', e);
     setColor('qtc-node-badge', 'ERR', false);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Rigs & Fleet — unified ops console (/api/ops/*)
+//
+// One view over the rented GPU fleet (vast.ai), the project pool and the
+// fleet agents. Data comes from /api/ops/overview (aggregated server-side from
+// the vastctl control plane on 127.0.0.1:8088 and the pool API on :8080).
+// ═══════════════════════════════════════════════════════════════════════════
+let _rigsOpen = {};
+
+function _rigsHps(hps){
+  if(hps == null || isNaN(hps) || hps <= 0) return '—';
+  const units = [[1e12,'TH/s'],[1e9,'GH/s'],[1e6,'MH/s'],[1e3,'kH/s']];
+  for(const [scale, name] of units) if(hps >= scale) return (hps/scale).toFixed(1) + ' ' + name;
+  return hps.toFixed(0) + ' H/s';
+}
+
+function _rigsRate(hr){
+  if(!hr || hr.rate == null) return '<span class="text-gray-500">—</span>';
+  const v = hr.rate >= 100 ? hr.rate.toFixed(0) : hr.rate.toFixed(1);
+  return '<b class="text-white">' + v + '</b> <span class="text-gray-400">' + escapeHtml(hr.unit || '') + '</span>';
+}
+
+function _rigsShortAddr(a){
+  const s = String(a || '');
+  return s.length > 20 ? s.slice(0, 10) + '…' + s.slice(-6) : (s || '—');
+}
+
+function _rigsWorkerName(w){
+  const core = String(w || '').split('@')[0];
+  const parts = core.split('.');
+  return parts.length > 1 ? parts[parts.length - 1] : core;
+}
+
+function _rigsUptime(v){
+  const n = Number(v);
+  if(v == null || v === '' || isNaN(n) || n <= 0) return escapeHtml(v == null || v === '' ? '—' : String(v));
+  const d = Math.floor(n / 86400), h = Math.floor((n % 86400) / 3600), m = Math.floor((n % 3600) / 60);
+  if(d) return d + 'd ' + h + 'h';
+  if(h) return h + 'h ' + m + 'm';
+  return m + 'm';
+}
+
+function _rigsCoinColor(name){
+  const map = { XMR: '#fb923c', QTU: '#fcd116', PRL: '#34d399', VRSC: '#a78bfa', ZION: '#7dd3fc' };
+  return map[name] || '#9ca3af';
+}
+
+async function loadRigs(){
+  const body = document.getElementById('rigs-body');
+  if(!body) return;
+  try{
+    const [ov, hl, aud] = await Promise.all([
+      fetch('/api/ops/overview', {cache:'no-store'}).then(r => r.json()),
+      fetch('/api/ops/health', {cache:'no-store'}).then(r => r.json()).catch(() => null),
+      fetch('/api/ops/audit?limit=12', {cache:'no-store'}).then(r => r.json()).catch(() => null),
+    ]);
+    _rigsRender(ov, hl, aud);
+  }catch(e){
+    body.innerHTML = '<div class="zion-panel p-6 text-sm text-red-300">Ops API unreachable — ' +
+      escapeHtml(String(e)) + '</div>';
+    const f = document.getElementById('rigs-freshness');
+    if(f) f.textContent = 'offline';
+  }
+}
+
+function _rigsRender(d, health, audit){
+  const body = document.getElementById('rigs-body');
+  if(!body) return;
+  const fleet = d.fleet || {};
+  const pool = d.pool || {};
+  const rigs = d.rigs || [];
+
+  // ── header badges ──
+  const fEl = document.getElementById('rigs-freshness');
+  if(fEl){
+    const ageTxt = d.ts ? _formatAgo(Math.floor(Date.parse(d.ts) / 1000)) : '—';
+    fEl.textContent = (d.stale ? '⚠ stale ' : '✓ live ') + ageTxt;
+    fEl.className = 'text-[10px] px-2 py-1 rounded-full bg-black/40 border ' +
+      (d.stale ? 'border-amber-500/40 text-amber-300' : 'border-emerald-500/40 text-emerald-300');
+  }
+  const srcEl = document.getElementById('rigs-src');
+  if(srcEl) srcEl.textContent = '· fleet: ' + (d.source?.fleet || '—') + ' · pool: ' + (d.source?.pool || '—');
+
+  // ── KPIs ──
+  const set = (id, v, sub) => {
+    const el = document.getElementById(id); if(el) el.textContent = v;
+    if(sub !== undefined){ const s = document.getElementById(id + '-sub'); if(s) s.textContent = sub; }
+  };
+  set('rig-kpi-rigs', fleet.rigs ?? '—', (fleet.running ?? 0) + ' running · ' + (fleet.miners ?? 0) + ' miners');
+  set('rig-kpi-cost', (fleet.dph_h != null ? '$' + Number(fleet.dph_h).toFixed(4) + '/h' : '—'),
+      (fleet.dph_day != null ? '$' + Number(fleet.dph_day).toFixed(2) + '/day' : '—'));
+  const coins = fleet.coins || [];
+  const topCoin = coins[0];
+  const fleetSub = coins.length
+    ? coins.map(c => c.name + ' ' + c.value.toFixed(c.value >= 100 ? 0 : 1) + ' ' + (c.unit || '')).join(' · ')
+    : 'no miners';
+  set('rig-kpi-fleet', topCoin ? topCoin.value.toFixed(topCoin.value >= 100 ? 0 : 1) + ' ' + (topCoin.unit || '') : '—', fleetSub);
+  set('rig-kpi-pool', _rigsHps(pool.hashrate_hps), (pool.active_miners ?? 0) + '/' + (pool.miners ?? 0) + ' workers active');
+  set('rig-kpi-accept', pool.accept_pct != null ? Number(pool.accept_pct).toFixed(1) + ' %' : '—',
+      (pool.accepted ?? '—') + ' acc / ' + (pool.submits ?? '—') + ' sub');
+  set('rig-kpi-blocks', pool.blocks_found ?? '—',
+      (pool.blocks_confirmed ?? 0) + ' conf · ' + (pool.blocks_pending ?? 0) + ' pending · luck ' +
+      (pool.luck_100 != null ? Number(pool.luck_100).toFixed(0) + ' %' : '—'));
+
+  const coinChips = coins.length
+    ? coins.map(c => '<span class="text-[10px] font-semibold px-2 py-0.5 rounded" style="color:' +
+        _rigsCoinColor(c.name) + ';background:' + _rigsCoinColor(c.name) + '1a">' +
+        escapeHtml(c.name) + ' ' + c.value.toFixed(c.value >= 100 ? 0 : 1) + ' ' + escapeHtml(c.unit || '') +
+        ' <span class="text-gray-400 font-normal">A' + (c.accepted || 0) + '</span></span>').join(' ')
+    : '<span class="text-xs text-gray-500">no active miners</span>';
+
+  // ── fleet table ──
+  const rigRows = rigs.map(r => {
+    const open = !!_rigsOpen[r.id];
+    const miners = r.miners || [];
+    const active = miners.filter(m => m.hashrate);
+    const shares = active.reduce((s, m) => s + ((m.hashrate && m.hashrate.a) || 0), 0);
+    const badges = active.map(m => {
+      const label = (m.algo || '').toLowerCase().includes('quantus') ? 'QTU'
+        : (m.algo || '').toLowerCase().startsWith('rx/') ? 'XMR'
+        : (m.algo || '?').toUpperCase();
+      const color = _rigsCoinColor(label);
+      return '<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded" style="color:' + color +
+        ';background:' + color + '1a">' + escapeHtml(label) + ' ' + _rigsRate(m.hashrate) +
+        ' <span class="text-gray-400 font-normal">A' + (m.hashrate?.a ?? 0) + '·R' + (m.hashrate?.r ?? 0) + '</span></span>';
+    }).join(' ') || '<span class="text-gray-600">—</span>';
+
+    const detail = open ? `
+      <tr class="border-b border-white/10">
+        <td colspan="7" class="bg-black/30 p-3">
+          <div class="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
+            <div class="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-400">
+              <span><b class="text-gray-300">gpu</b> ${escapeHtml(r.gpu?.util || '?')} · ${escapeHtml(r.gpu?.power || '?')} · ${escapeHtml(r.gpu?.temp || '?')}°C · vram ${escapeHtml(r.gpu?.mem || '?')}</span>
+              <span><b class="text-gray-300">shares</b> A${shares}</span>
+              <span><b class="text-gray-300">cost</b> $${Number(r.dph || 0).toFixed(4)}/h · $${(Number(r.dph || 0) * 24).toFixed(2)}/day</span>
+              <span><b class="text-gray-300">tmux</b> ${escapeHtml((r.sessions || []).join(', ') || '—')}</span>
+              <span class="ml-auto font-mono text-gray-500">${escapeHtml(r.ssh || '')}</span>
+            </div>
+            ${r.error ? '<div class="text-xs text-red-300 break-words">' + escapeHtml(r.error) + '</div>' : ''}
+            <table class="w-full text-[11px]">
+              <thead><tr class="text-gray-500 border-b border-white/10">
+                <th class="text-left py-1 px-2">Miner</th><th class="text-left py-1 px-2">Pool / worker</th>
+                <th class="text-right py-1 px-2">Hashrate</th><th class="text-right py-1 px-2">Shares</th>
+                <th class="text-right py-1 px-2">Uptime</th>
+              </tr></thead>
+              <tbody>
+              ${miners.length ? miners.map(m => `
+                <tr class="border-b border-white/5">
+                  <td class="py-1 px-2 text-gray-300">${escapeHtml(m.algo || '—')}</td>
+                  <td class="py-1 px-2 font-mono text-[10px] text-gray-500 max-w-[280px] truncate" title="${escapeHtml((m.pool || '') + ' ' + (m.worker || ''))}">${escapeHtml(m.pool || '—')}${m.worker ? ' · ' + escapeHtml(m.worker) : ''}</td>
+                  <td class="py-1 px-2 text-right">${_rigsRate(m.hashrate)}</td>
+                  <td class="py-1 px-2 text-right text-gray-400">A${m.hashrate?.a ?? 0} · R${m.hashrate?.r ?? 0}</td>
+                  <td class="py-1 px-2 text-right text-gray-500">${escapeHtml(m.etime || '—')}</td>
+                </tr>`).join('') : '<tr><td colspan="5" class="py-2 text-center text-gray-600">no miners running</td></tr>'}
+              </tbody>
+            </table>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button onclick="event.stopPropagation();rigsAction('launch',{id:'${r.id}',m:'full'},'Full deploy on ${r.id}?\\n\\nSRBMiner PRL+QTU + XMRig CPU · zion-miner standby')" class="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-700/40 hover:bg-emerald-600/60 text-emerald-200 font-semibold">▸ full deploy</button>
+              <button onclick="event.stopPropagation();rigsAction('launch',{id:'${r.id}',m:'zion'},'Launch zion stream on ${r.id}?')" class="text-[11px] px-2.5 py-1 rounded-lg bg-zion-gold/20 hover:bg-zion-gold/30 text-zion-gold font-semibold">▸ zion</button>
+              <button onclick="event.stopPropagation();rigsAction('stop',{id:'${r.id}',m:'all'},'Stop ALL miners on ${r.id}?')" class="text-[11px] px-2.5 py-1 rounded-lg bg-red-700/30 hover:bg-red-600/50 text-red-300 font-semibold">■ stop all</button>
+              <button onclick="event.stopPropagation();rigsShowLogs('${r.id}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-sky-700/30 hover:bg-sky-600/50 text-sky-200 font-semibold">▤ logs</button>
+            </div>
+            <pre id="rigs-log-${r.id}" class="hidden max-h-64 overflow-auto rounded-lg bg-black/50 p-2 text-[10px] text-gray-400 whitespace-pre-wrap"></pre>
+          </div>
+        </td>
+      </tr>` : '';
+
+    return `
+      <tr class="border-b border-white/5 hover:bg-white/[0.04] cursor-pointer" onclick="rigsToggle('${r.id}')">
+        <td class="py-2.5 px-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="inline-block w-2 h-2 rounded-full ${r.error ? 'bg-red-400' : 'bg-emerald-400'}"></span>
+            <b class="text-xs text-white">#${r.id}</b>
+            <span class="text-xs text-gray-400 truncate">${escapeHtml(r.gpu_name || '')}</span>
+          </div>
+          <div class="text-[10px] text-gray-500 truncate">${escapeHtml(r.geo || '')} · ${escapeHtml(r.ssh || '')}</div>
+        </td>
+        <td class="py-2.5 px-2"><span class="text-[10px] px-2 py-0.5 rounded-full ${active.length ? 'bg-emerald-700/40 text-emerald-300' : 'bg-white/5 text-gray-500'}">${active.length ? active.length + ' live' : 'idle'}</span></td>
+        <td class="py-2.5 px-2">${badges}</td>
+        <td class="py-2.5 px-2 text-right text-xs text-gray-400">A${shares}</td>
+        <td class="py-2.5 px-2 text-right text-xs text-gray-400">${escapeHtml(r.gpu?.util || '?')} · ${escapeHtml(r.gpu?.temp || '?')}°</td>
+        <td class="py-2.5 px-2 text-right text-xs text-gray-400">$${Number(r.dph || 0).toFixed(4)}/h</td>
+        <td class="py-2.5 px-2 text-right text-gray-500">${open ? '▴' : '▾'}</td>
+      </tr>${detail}`;
+  }).join('');
+
+  const fleetCard = `
+    <div class="zion-panel p-4">
+      <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+        <h2 class="text-sm font-bold text-white flex items-center gap-2"><i class="fas fa-server text-zion-cyan"></i> Rentované rigy <span class="text-[10px] font-normal text-gray-500">vast.ai</span></h2>
+        <div class="flex flex-wrap gap-1.5">${coinChips}</div>
+      </div>
+      ${rigs.length ? `
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="text-gray-500 border-b border-white/10 text-[10px] uppercase tracking-wider">
+            <th class="text-left py-2 px-2">Rig</th><th class="text-left py-2 px-2">Status</th>
+            <th class="text-left py-2 px-2">Mining</th><th class="text-right py-2 px-2">Shares</th>
+            <th class="text-right py-2 px-2">GPU</th><th class="text-right py-2 px-2">Cost</th><th></th>
+          </tr></thead>
+          <tbody>${rigRows}</tbody>
+        </table>
+      </div>` : '<div class="p-6 text-center text-sm text-gray-500">No vast.ai rigs running.<br><span class="text-xs">Rent one from the GPU market in the prototype, or check that vastctl-daemon is up.</span></div>'}
+    </div>`;
+
+  // ── SimpleMining + fleet agents (only when the daemon reports them) ──
+  const smosRigs = d.smos || [];
+  const agentRigs = d.agents || [];
+  const smosTable = smosRigs.length ? `
+    <div class="overflow-x-auto"><table class="w-full text-xs">
+      <thead><tr class="text-gray-500 border-b border-white/10 text-[10px] uppercase tracking-wider">
+        <th class="text-left py-2 px-2">Rig</th><th class="text-left py-2 px-2">Status</th>
+        <th class="text-left py-2 px-2">Group / miner</th><th class="text-right py-2 px-2">Hashrate</th>
+        <th class="text-right py-2 px-2">GPU</th><th class="text-right py-2 px-2">Uptime</th>
+      </tr></thead><tbody>
+      ${smosRigs.map(r => {
+        const alerts = (r.alerts || []).filter(a => a !== 'has_alerts');
+        return `<tr class="border-b border-white/5">
+          <td class="py-2 px-2">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-full ${r.online ? 'bg-emerald-400' : 'bg-red-400'}"></span>
+              <b class="text-xs text-white">${escapeHtml(r.name || '?')}</b>
+              <span class="text-[10px] text-gray-500">#${r.id}</span>
+            </div>
+            <div class="text-[10px] text-gray-500">${escapeHtml(r.os || '')} ${escapeHtml(r.ip || '')}</div>
+          </td>
+          <td class="py-2 px-2">
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${r.online ? 'bg-emerald-700/40 text-emerald-300' : 'bg-red-700/40 text-red-300'}">${r.online ? 'online' : 'offline'}</span>
+            ${alerts.map(a => `<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded border border-amber-500/40 bg-amber-500/10 text-amber-300">⚠ ${escapeHtml(a)}</span>`).join('')}
+          </td>
+          <td class="py-2 px-2 text-gray-400"><div>${escapeHtml(r.group || '—')}</div><div class="text-[10px] text-gray-500">${escapeHtml(r.miner || '—')}</div></td>
+          <td class="py-2 px-2 text-right text-gray-200">
+            ${r.hash > 0 ? _rigsHps(r.hash) : ''}${r.hash2 > 0 ? `<div class="text-[10px] text-emerald-300">${_rigsHps(r.hash2)} <span class="text-gray-500">aux</span></div>` : ''}
+            ${!(r.hash > 0) && !(r.hash2 > 0) ? '<span class="text-gray-600">—</span>' : ''}
+            ${(r.acc || r.rej) ? `<div class="text-[10px] text-gray-500">A${r.acc}·R${r.rej}</div>` : ''}
+          </td>
+          <td class="py-2 px-2 text-right text-gray-400">${r.gpus ?? '—'}/${r.gpus_max ?? '—'}
+            ${(r.gpu_temp || []).length ? `<div class="text-[10px] text-gray-500">${escapeHtml((r.gpu_temp || []).join('° / '))}°</div>` : ''}
+          </td>
+          <td class="py-2 px-2 text-right text-gray-500">${_rigsUptime(r.uptime)}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table></div>` : '<div class="text-xs text-gray-500">Žádný SimpleMining rig.</div>';
+
+  const agentsTable = agentRigs.length ? `
+    <div class="overflow-x-auto"><table class="w-full text-xs">
+      <thead><tr class="text-gray-500 border-b border-white/10 text-[10px] uppercase tracking-wider">
+        <th class="text-left py-2 px-2">Rig</th><th class="text-left py-2 px-2">GPUs</th>
+        <th class="text-left py-2 px-2">Miners</th><th class="text-right py-2 px-2">Heartbeat</th>
+        <th class="text-right py-2 px-2 whitespace-nowrap">Pending</th>
+      </tr></thead><tbody>
+      ${agentRigs.map(a => {
+        const live = (a.age_s ?? 1e9) < 300;
+        return `<tr class="border-b border-white/5">
+          <td class="py-2 px-2">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-full ${live ? 'bg-emerald-400' : 'bg-red-400'}"></span>
+              <b class="text-xs text-white whitespace-nowrap" title="${escapeHtml(a.hostname || a.rig_id)}">${escapeHtml(a.hostname || a.rig_id)}</b>
+              ${a.enrolled === true ? '<span class="text-[9px] px-1.5 py-0.5 rounded border border-emerald-500/40 text-emerald-300 whitespace-nowrap">enrolled</span>' : ''}
+              ${a.offline_alert ? '<span class="text-[9px] px-1.5 py-0.5 rounded border border-red-500/40 text-red-300 whitespace-nowrap">offline</span>' : ''}
+            </div>
+          </td>
+          <td class="py-2 px-2 text-[10px] text-gray-400">${(a.gpus || []).length ? escapeHtml((a.gpus || []).join(', ')).slice(0, 80) : '—'}</td>
+          <td class="py-2 px-2 text-[10px] text-gray-500">${(a.miners || []).map(m => escapeHtml(String(m).slice(0, 40))).join('<br>') || '—'}</td>
+          <td class="py-2 px-2 text-right text-gray-500">${a.age_s != null ? Math.round(a.age_s) + ' s' : '—'}</td>
+          <td class="py-2 px-2 text-right ${a.pending ? 'text-amber-300' : 'text-gray-500'}">${a.pending ?? 0}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table></div>` : '<div class="text-xs text-gray-500">Žádný fleet agent (enrollment běží na operátorském PC).</div>';
+
+  const othersCard = `
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div class="zion-panel p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2"><i class="fas fa-server text-zion-gold"></i> SimpleMining</h2>
+          <span class="text-[10px] text-gray-500">${smosRigs.filter(r => r.online).length}/${smosRigs.length} online</span>
+        </div>
+        ${smosTable}
+      </div>
+      <div class="zion-panel p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2"><i class="fas fa-tower-broadcast text-sky-300"></i> Fleet agenti</h2>
+          <span class="text-[10px] text-gray-500">${agentRigs.filter(a => (a.age_s ?? 1e9) < 300).length}/${agentRigs.length} live · heartbeat 30–60 s</span>
+        </div>
+        ${agentsTable}
+      </div>
+    </div>`;
+
+  // ── pool card ──
+  const tops = pool.top_miners || [];
+  const poolCard = `
+    <div class="zion-panel p-4">
+      <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+        <h2 class="text-sm font-bold text-white flex items-center gap-2"><i class="fas fa-users text-zion-purple"></i> Pool <span class="text-[10px] font-normal text-gray-500">edge:8444</span></h2>
+        <span class="text-[10px] text-gray-500">${pool.sessions ?? '—'} sessions · ${pool.connections ?? '—'} connections · fee ${pool.fee_bps != null ? (pool.fee_bps/100).toFixed(2) + ' %' : '—'}</span>
+      </div>
+      ${tops.length ? `<div class="overflow-x-auto"><table class="w-full text-xs">
+        <thead><tr class="text-gray-500 border-b border-white/10 text-[10px] uppercase tracking-wider">
+          <th class="text-left py-2 px-2">Worker</th><th class="text-right py-2 px-2">Hashrate</th>
+          <th class="text-right py-2 px-2">1 h</th><th class="text-left py-2 px-2">Streams</th>
+          <th class="text-right py-2 px-2">Blocks</th><th class="text-right py-2 px-2">Seen</th>
+        </tr></thead><tbody>
+        ${tops.map(m => {
+          const streams = Object.entries(m.streams || {}).map(([k, v]) =>
+            '<span class="text-[10px] mr-2" style="color:' + _rigsCoinColor(k.toUpperCase()) + '">' +
+            escapeHtml(k) + ' ' + (v.v ?? 0) + (v.i ? '/' + v.i : '') + '</span>').join('');
+          return `<tr class="border-b border-white/5">
+            <td class="py-1.5 px-2 font-mono text-[11px] text-gray-300">${escapeHtml(_rigsShortAddr(m.address))} · ${escapeHtml(_rigsWorkerName(m.worker))}</td>
+            <td class="py-1.5 px-2 text-right text-gray-200">${_rigsHps(m.hps)}</td>
+            <td class="py-1.5 px-2 text-right text-gray-500">${_rigsHps(m.hps_1h)}</td>
+            <td class="py-1.5 px-2">${streams || '<span class="text-gray-600">—</span>'}</td>
+            <td class="py-1.5 px-2 text-right text-zion-gold">${m.blocks || 0}</td>
+            <td class="py-1.5 px-2 text-right text-gray-500">${m.last_seen ? _formatAgo(m.last_seen) : '—'}</td>
+          </tr>`;
+        }).join('')}
+        </tbody></table></div>` : '<div class="p-6 text-center text-sm text-gray-500">Pool API unreachable or no active workers.</div>'}
+    </div>`;
+
+  // ── sources card ──
+  const srcRows = health ? [
+    ['vastctl :8088', health.vastctl],
+    ['pool :8080', health.pool],
+    ['status.json', health.status_json],
+  ].map(([label, h]) => {
+    const ok = h && (h.ok !== undefined ? h.ok : true);
+    const meta = h && h.age_s != null ? 'age ' + Math.round(h.age_s) + 's'
+      : (h && h.ms != null ? h.ms + ' ms' : '');
+    return `<tr class="border-b border-white/5">
+      <td class="py-1.5 px-2 text-gray-300">${escapeHtml(label)}</td>
+      <td class="py-1.5 px-2"><span class="text-[10px] px-2 py-0.5 rounded-full ${ok ? 'bg-emerald-700/40 text-emerald-300' : 'bg-red-700/40 text-red-300'}">${ok ? 'ok' : 'down'}</span></td>
+      <td class="py-1.5 px-2 text-right text-gray-500 text-[11px]">${escapeHtml(meta)}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="3" class="py-2 text-center text-gray-600">health unavailable</td></tr>';
+
+  const errs = Object.entries(d.errors || {});
+  const sourcesCard = `
+    <div class="zion-panel p-4">
+      <h2 class="text-sm font-bold text-white mb-3 flex items-center gap-2"><i class="fas fa-heart-pulse text-emerald-400"></i> Zdroje</h2>
+      <table class="w-full text-xs"><tbody>${srcRows}</tbody></table>
+      ${errs.length ? '<div class="mt-2 text-[10px] text-amber-300">degraded: ' + errs.map(([k, v]) =>
+        escapeHtml(k) + ' — ' + escapeHtml(String(v).slice(0, 90))).join(' · ') + '</div>' : ''}
+      ${d.daemon ? '<div class="mt-2 text-[10px] text-gray-500">daemon pid ' + (d.daemon.pid ?? '—') +
+        ' · cycle ' + (d.daemon.cycle ?? '—') + ' · ' + (d.daemon.cycle_ms ?? '—') + ' ms</div>' : ''}
+    </div>`;
+
+  const auditRows = (audit && audit.entries ? audit.entries.slice().reverse() : []).slice(0, 12);
+  const auditCard = `
+    <div class="zion-panel p-4">
+      <h2 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+        <i class="fas fa-clipboard-list text-gray-400"></i> Audit akcí
+        <span class="text-[10px] font-normal text-gray-500">${escapeHtml(audit?.path || '')}</span>
+      </h2>
+      ${auditRows.length ? `<div class="overflow-x-auto"><table class="w-full text-xs">
+        <thead><tr class="text-gray-500 border-b border-white/10 text-[10px] uppercase tracking-wider">
+          <th class="text-left py-1.5 px-2">Kdy</th><th class="text-left py-1.5 px-2">Akce</th>
+          <th class="text-left py-1.5 px-2">Parametry</th><th class="text-right py-1.5 px-2">Výsledek</th>
+        </tr></thead><tbody>
+        ${auditRows.map(a => `<tr class="border-b border-white/5">
+          <td class="py-1.5 px-2 text-gray-500 whitespace-nowrap">${escapeHtml((a.ts || '').slice(11, 19))}</td>
+          <td class="py-1.5 px-2 font-mono text-[11px] text-gray-200">${escapeHtml(a.action || '')}</td>
+          <td class="py-1.5 px-2 font-mono text-[10px] text-gray-500 truncate max-w-[420px]" title="${escapeHtml(JSON.stringify(a.params || {}))}">${escapeHtml(JSON.stringify(a.params || {}))}</td>
+          <td class="py-1.5 px-2 text-right"><span class="text-[10px] px-2 py-0.5 rounded-full ${a.ok ? 'bg-emerald-700/40 text-emerald-300' : 'bg-red-700/40 text-red-300'}">${a.ok ? 'ok' : 'fail'} ${a.http ?? ''}</span></td>
+        </tr>`).join('')}
+        </tbody></table></div>`
+      : '<div class="text-xs text-gray-500">Zatím žádná akce z dashboardu.</div>'}
+    </div>`;
+
+  body.innerHTML = fleetCard + othersCard + '<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">' +
+    '<div class="xl:col-span-2">' + poolCard + '</div>' + sourcesCard + '</div>' + auditCard;
+}
+
+function rigsToggle(id){
+  _rigsOpen[id] = !_rigsOpen[id];
+  loadRigs();
+}
+
+async function rigsAction(action, params, confirmMsg){
+  if(confirmMsg && !confirm(confirmMsg)) return;
+  try{
+    const r = await fetch('/api/ops/action', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action, params}),
+    });
+    const d = await r.json();
+    const text = d.ok ? (typeof d.data === 'string' ? d.data : JSON.stringify(d.data ?? 'ok'))
+                      : (d.error || d.text || ('HTTP ' + d.http));
+    toast(String(text).slice(0, 180), d.ok ? 'success' : 'error');
+  }catch(e){
+    toast('Action failed: ' + e, 'error');
+  }
+}
+
+async function rigsShowLogs(id){
+  const pre = document.getElementById('rigs-log-' + id);
+  if(!pre) return;
+  pre.classList.remove('hidden');
+  pre.textContent = 'loading logs…';
+  try{
+    const d = await fetch('/api/ops/logs?id=' + encodeURIComponent(id) + '&src=all', {cache:'no-store'}).then(r => r.json());
+    pre.textContent = d.text || d.error || '(empty)';
+    pre.scrollTop = pre.scrollHeight;
+  }catch(e){
+    pre.textContent = 'logs unavailable: ' + e;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Rigs — sub-views (fleet / GPU market / inference)
+// ═══════════════════════════════════════════════════════════════════════════
+let _rigsView = 'fleet';
+
+function rigsReload(){
+  if(_rigsView === 'market') loadMarket();
+  else if(_rigsView === 'ai') loadAi();
+  else loadRigs();
+}
+
+function rigsView(name){
+  _rigsView = name;
+  ['fleet', 'market', 'ai'].forEach(v => {
+    const el = document.getElementById('rigs-view-' + v);
+    if(el) el.classList.toggle('hidden', v !== name);
+    const btn = document.getElementById('rigs-nav-' + v);
+    if(btn){
+      btn.className = 'text-xs font-semibold px-4 py-2 rounded-lg border transition ' +
+        (v === name
+          ? 'border-zion-gold/50 bg-zion-gold/15 text-zion-gold'
+          : 'border-white/10 bg-black/30 text-gray-400 hover:text-white hover:border-white/25');
+    }
+  });
+  rigsReload();
+}
+
+// ── GPU market ──────────────────────────────────────────────────────────────
+function mktCheapest(){
+  const sel = document.getElementById('mkt-gpu');
+  if(sel) sel.value = 'any';
+  loadMarket();
+}
+
+async function loadMarket(){
+  const box = document.getElementById('market-results');
+  const meta = document.getElementById('mkt-meta');
+  if(!box) return;
+  box.innerHTML = '<div class="zion-panel p-6 text-center text-sm text-gray-500">Hledám nabídky na vast.ai… <span class="mkt-wait text-gray-600">0 s</span></div>';
+  let _mktTick = 0;
+  const _mktTimer = setInterval(() => {
+    _mktTick++;
+    const el = box.querySelector('.mkt-wait');
+    if(el) el.textContent = _mktTick + ' s';
+  }, 1000);
+  const gpu = document.getElementById('mkt-gpu')?.value || 'any';
+  const dph = (document.getElementById('mkt-dph')?.value || '').trim();
+  const q = new URLSearchParams({ gpu, limit: '30' });
+  if(dph) q.set('max_dph', dph);
+  const t0 = Date.now();
+  try{
+    const d = await fetch('/api/ops/market?' + q.toString(), { cache: 'no-store' }).then(r => r.json());
+    if(d.error){
+      box.innerHTML = '<div class="zion-panel p-6 text-sm text-red-300">' + escapeHtml(d.error) + '</div>';
+      if(meta) meta.textContent = '';
+      return;
+    }
+    if(meta) meta.textContent = (d.count || 0) + ' nabídek · ' + Math.round((Date.now() - t0) / 1000) + ' s';
+    _mktRender(d.offers || [], gpu);
+  }catch(e){
+    box.innerHTML = '<div class="zion-panel p-6 text-sm text-red-300">Market unreachable — ' + escapeHtml(String(e)) + '</div>';
+  }finally{
+    clearInterval(_mktTimer);
+  }
+}
+
+function _mktRender(offers, gpu){
+  const box = document.getElementById('market-results');
+  if(!box) return;
+  if(!offers.length){
+    box.innerHTML = '<div class="zion-panel p-8 text-center text-sm text-gray-500">Žádná nabídka pro „' +
+      escapeHtml(gpu) + '“ v tomto cenovém stropu.</div>';
+    return;
+  }
+  const rows = offers.map(o => {
+    const dph = Number(o.dph_total || 0);
+    const gpus = Number(o.num_gpus || 1);
+    return `<tr class="border-b border-white/5 hover:bg-white/[0.04]">
+      <td class="py-2 px-2">
+        <div class="text-xs font-semibold text-white">${escapeHtml(o.gpu_name || '?')}${gpus > 1 ? ' ×' + gpus : ''}</div>
+        <div class="font-mono text-[10px] text-gray-500">#${o.id} · ${escapeHtml(o.geolocation || '')}</div>
+      </td>
+      <td class="py-2 px-2 text-right text-xs font-bold text-zion-gold">$${dph.toFixed(4)}<span class="font-normal text-gray-500">/h</span></td>
+      <td class="py-2 px-2 text-right text-xs text-gray-400">$${(dph * 24).toFixed(2)}</td>
+      <td class="py-2 px-2 text-right text-xs ${(o.reliability || 0) >= 0.98 ? 'text-emerald-300' : 'text-gray-400'}">${((o.reliability || 0) * 100).toFixed(1)}%</td>
+      <td class="py-2 px-2 text-right text-xs text-gray-400">${o.cuda_max_good ?? '—'}</td>
+      <td class="py-2 px-2 text-right text-xs text-gray-400">${Math.round((o.cpu_ram || 0) / 1024)} GB</td>
+      <td class="py-2 px-2 text-right text-xs text-gray-400">${Math.round(o.disk_space || 0)} GB</td>
+      <td class="py-2 px-2 text-right text-xs text-gray-400">${Math.round(o.inet_down || 0)}/${Math.round(o.inet_up || 0)}</td>
+      <td class="py-2 px-2 text-right">
+        <button onclick="mktRent('${o.id}','${escapeHtml(o.gpu_name || '')}',${dph})"
+          class="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-700/40 hover:bg-emerald-600/60 text-emerald-200 font-semibold">Rent</button>
+      </td>
+    </tr>`;
+  }).join('');
+  box.innerHTML = `<div class="zion-panel p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-sm font-bold text-white flex items-center gap-2"><i class="fas fa-store text-zion-gold"></i> Nabídky <span class="text-[10px] font-normal text-gray-500">${escapeHtml(gpu)}</span></h2>
+      <span class="text-[10px] text-gray-500">seřazeno od nejlevnější</span>
+    </div>
+    <div class="overflow-x-auto"><table class="w-full text-xs">
+      <thead><tr class="text-gray-500 border-b border-white/10 text-[10px] uppercase tracking-wider">
+        <th class="text-left py-2 px-2">GPU / lokace</th><th class="text-right py-2 px-2">$/h</th>
+        <th class="text-right py-2 px-2">$/den</th><th class="text-right py-2 px-2">Reliability</th>
+        <th class="text-right py-2 px-2">CUDA</th><th class="text-right py-2 px-2">RAM</th>
+        <th class="text-right py-2 px-2">Disk</th><th class="text-right py-2 px-2">Net ↓↑</th><th></th>
+      </tr></thead><tbody>${rows}</tbody></table></div>
+  </div>`;
+}
+
+function mktRent(id, gpuName, dph){
+  const perDay = (Number(dph) * 24).toFixed(2);
+  const ok = confirm(
+    `Pronajmout ${gpuName} (offer #${id})?\n\n` +
+    `Cena: $${Number(dph).toFixed(4)}/h ≈ $${perDay}/den.\n` +
+    `vast.ai začne účtovat okamžitě. Instance naběhne do ~1 minuty a objeví se v záložce Fleet.`
+  );
+  if(!ok) return;
+  const typed = prompt('Pro potvrzení napiš RENT');
+  if((typed || '').trim().toUpperCase() !== 'RENT'){ toast('Zrušeno', 'error'); return; }
+  rigsAction('rent', { id }, null);
+}
+
+// ── AI inference ────────────────────────────────────────────────────────────
+let _aiData = null;
+
+async function loadAi(){
+  const box = document.getElementById('ai-rigs');
+  if(!box) return;
+  box.innerHTML = '<div class="text-xs text-gray-500">Zjišťuji stav inference…</div>';
+  try{
+    const d = await fetch('/api/ops/ai', { cache: 'no-store' }).then(r => r.json());
+    _aiData = d;
+    _aiRender(d);
+  }catch(e){
+    box.innerHTML = '<div class="text-xs text-red-300">AI status unreachable — ' + escapeHtml(String(e)) + '</div>';
+  }
+}
+
+function _aiRender(d){
+  const rigsBox = document.getElementById('ai-rigs');
+  const catBox = document.getElementById('ai-catalog');
+  const chatBox = document.getElementById('ai-chat-area');
+  if(!rigsBox) return;
+  if(d.error){
+    rigsBox.innerHTML = '<div class="text-xs text-red-300">' + escapeHtml(d.error) + '</div>';
+    if(catBox) catBox.innerHTML = '';
+    if(chatBox) chatBox.innerHTML = '';
+    return;
+  }
+  const rigs = d.rigs || [];
+  const totals = d.totals || {};
+  const endpoints = rigs.filter(r => r.inference_reachable).flatMap(r => (r.models || []).map(m => ({ model: m, rig: r.id })));
+
+  rigsBox.innerHTML = `
+    <div class="text-[11px] text-gray-500 mb-3">
+      ${totals.inference_rigs || 0}/${rigs.length} rigů s inference ·
+      ${((totals.memory_free_mib || 0) / 1024).toFixed(1)} GiB free VRAM · hiran
+      <span class="${d.hiran?.reachable ? 'text-emerald-300' : 'text-gray-500'}">${d.hiran?.reachable ? '● online' : '○ offline'}</span>
+    </div>
+    ${rigs.length ? rigs.map(r => `
+      <div class="rounded-xl border border-white/10 bg-black/20 p-3 mb-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <b class="text-xs text-white">#${r.id}</b>
+          <span class="text-xs text-gray-400">${escapeHtml(r.gpu_name || '')}</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full ${r.inference_reachable ? 'bg-emerald-700/40 text-emerald-300' : 'bg-white/5 text-gray-500'}">
+            ${r.inference_reachable ? 'vLLM ready' : 'no worker'}
+          </span>
+          <span class="text-[10px] text-gray-500">$${Number(r.dph || 0).toFixed(4)}/h</span>
+          <div class="ml-auto flex gap-1.5">
+            ${r.inference_reachable
+              ? `<button onclick="rigsAction('inference/stop',{id:'${r.id}',confirm:1},'Zastavit inference worker na #${r.id}?')" class="text-[11px] px-2.5 py-1 rounded-lg bg-red-700/30 hover:bg-red-600/50 text-red-300 font-semibold">■ stop worker</button>`
+              : '<span class="text-[10px] text-gray-600">vyber model v katalogu ↓</span>'}
+          </div>
+        </div>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          ${(r.gpus || []).map(g => {
+            const pct = Math.min(100, Math.round((g.memory_used_mib / Math.max(1, g.memory_total_mib)) * 100));
+            return `<div>
+              <div class="text-[10px] text-gray-400 truncate">${escapeHtml(g.name || 'GPU')} · ${(g.memory_free_mib / 1024).toFixed(1)} GiB free</div>
+              <div class="mt-1 h-1.5 rounded-full bg-white/10 overflow-hidden"><div class="h-full bg-zion-purple" style="width:${pct}%"></div></div>
+              <div class="mt-1 text-[10px] text-gray-500">${g.utilization_pct}% · ${g.temperature_c}°C · ${g.power_w == null ? '—' : g.power_w.toFixed(0) + ' W'}</div>
+            </div>`;
+          }).join('')}
+        </div>
+        ${(r.models || []).length ? '<div class="mt-2 text-[10px] text-gray-400">models: <span class="text-zion-purple">' + escapeHtml((r.models || []).join(', ')) + '</span></div>' : ''}
+        ${r.error ? '<div class="mt-1 text-[10px] text-red-300">' + escapeHtml(r.error) + '</div>' : ''}
+      </div>`).join('') : '<div class="text-xs text-gray-500">Žádný GPU rig — použij panel „Chybí GPU?“ výše (pronájem na vast.ai) nebo GPU market.</div>'}`;
+
+  const catalog = d.catalog || [];
+  if(catBox){
+    catBox.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-xs">
+      <thead><tr class="text-gray-500 border-b border-white/10 text-[10px] uppercase tracking-wider">
+        <th class="text-left py-2 px-2">Model</th><th class="text-left py-2 px-2">Params</th>
+        <th class="text-right py-2 px-2">VRAM</th><th class="text-left py-2 px-2">Tags</th><th class="text-right py-2 px-2"></th>
+      </tr></thead><tbody>
+      ${catalog.map(m => `<tr class="border-b border-white/5 hover:bg-white/[0.04]">
+        <td class="py-2 px-2">
+          <div class="font-mono text-[11px] ${m.internal ? 'text-zion-gold' : 'text-gray-200'}">${escapeHtml(m.hf)}</div>
+          <div class="text-[10px] text-gray-500 truncate max-w-[380px]">${escapeHtml(m.desc || '')}</div>
+        </td>
+        <td class="py-2 px-2 text-gray-400">${escapeHtml(m.params || '')}</td>
+        <td class="py-2 px-2 text-right text-gray-400">${m.vram_gb ?? '—'} GB</td>
+        <td class="py-2 px-2 text-[10px] text-gray-500">${escapeHtml((m.tags || []).join(' · '))}${m.mockup ? ' · <span class="text-amber-400">planned</span>' : ''}</td>
+        <td class="py-2 px-2 text-right">${m.internal
+          ? '<span class="text-[10px] italic text-gray-600">llama.cpp</span>'
+          : `<button onclick="aiDeploy('${escapeHtml(m.hf)}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-zion-purple/20 hover:bg-zion-purple/30 text-zion-purple font-semibold">▸ deploy</button>`}</td>
+      </tr>`).join('')}
+      </tbody></table></div>`;
+  }
+
+  if(chatBox){
+    chatBox.innerHTML = `
+      <div class="flex flex-wrap gap-2 items-center mb-2">
+        <span class="text-[10px] text-gray-500">${endpoints.length} endpointů online</span>
+        ${endpoints.map(e => `<button onclick="document.getElementById('ai-chat-model').value='${escapeHtml(e.model)}';document.getElementById('ai-chat-model').dataset.changed='1'"
+            class="text-[10px] px-2 py-0.5 rounded-full border border-zion-purple/40 bg-zion-purple/10 text-zion-purple font-mono">${escapeHtml(e.model.split('/').pop())}@${e.rig}</button>`).join('')}
+      </div>
+      <div class="flex gap-1.5 flex-wrap">
+        <select id="ai-chat-model" class="min-h-9 w-48 rounded-lg border border-white/15 bg-black/40 px-2 text-xs text-white focus:outline-none">
+          <option value="">auto</option>
+          ${endpoints.map(e => `<option value="${escapeHtml(e.model)}">${escapeHtml(e.model.split('/').pop())}</option>`).join('')}
+        </select>
+        <input id="ai-chat-prompt" placeholder="${endpoints.length ? 'Zeptej se modelu…' : 'Nic neběží — nasaď model výše'}"
+          ${endpoints.length ? '' : 'disabled'}
+          class="min-h-9 flex-1 min-w-[220px] rounded-lg border border-white/15 bg-black/40 px-3 text-xs text-white placeholder-gray-600 focus:outline-none disabled:opacity-40"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();aiChat();}">
+        <button onclick="aiChat()" ${endpoints.length ? '' : 'disabled'} id="ai-chat-btn"
+          class="min-h-9 px-4 rounded-lg border border-zion-purple/40 bg-zion-purple/10 text-xs font-semibold text-zion-purple hover:bg-zion-purple/20 disabled:opacity-40">Ask</button>
+      </div>
+      <pre id="ai-chat-answer" class="hidden mt-2 max-h-72 overflow-auto rounded-lg bg-black/40 border border-zion-purple/20 p-3 text-[11px] leading-relaxed text-zion-purple whitespace-pre-wrap"></pre>`;
+  }
+}
+
+async function aiDeploy(model, rigId){
+  if(!model){ toast('Vyber model v katalogu', 'error'); return; }
+  const hasRig = ((_aiData?.rigs) || []).some(r => r.gpus && !r.error);
+  if(!hasRig){
+    // No GPU anywhere — EDGE has none, so the only way is to rent on vast.ai.
+    const inp = document.getElementById('prov-model');
+    if(inp) inp.value = model;
+    toast('Neběží žádný GPU rig — nabízím pronájem na vast.ai', 'error');
+    aiProvision(false);
+    return;
+  }
+  const ship = rigId ? `rig #${rigId}` : 'nejlepší rig podle volné VRAM';
+  if(!confirm(`Nasadit ${model} na ${ship}?\n\nSpustí se vLLM (60 % VRAM) a může zpomalit těžbu.`)) return;
+  const params = { confirm: 1, model };
+  if(rigId) params.id = rigId;
+  await rigsAction('inference/auto-deploy', params, null);
+  setTimeout(loadAi, 4000);
+}
+
+async function aiChat(){
+  const inp = document.getElementById('ai-chat-prompt');
+  const sel = document.getElementById('ai-chat-model');
+  const out = document.getElementById('ai-chat-answer');
+  const btn = document.getElementById('ai-chat-btn');
+  const prompt = (inp?.value || '').trim();
+  if(!prompt || !out) return;
+  const params = { prompt };
+  if(sel?.value) params.model = sel.value;
+  out.classList.remove('hidden');
+  out.textContent = '…';
+  if(btn){ btn.disabled = true; btn.textContent = '…'; }
+  try{
+    const r = await fetch('/api/ops/action', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ action: 'inference/auto-chat', params }),
+    });
+    const d = await r.json();
+    out.textContent = d.ok ? (d.text || JSON.stringify(d.data ?? '')) : ('error: ' + (d.error || d.text || d.http));
+  }catch(e){
+    out.textContent = 'error: ' + e;
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = 'Ask'; }
+  }
+}
+
+// ── "auto → vast": rent a GPU and deploy, with a live job log ───────────────
+let _provTimer = null;
+
+async function aiProvision(dry){
+  const model = (document.getElementById('prov-model')?.value || '').trim();
+  const gpu = document.getElementById('prov-gpu')?.value || 'RTX_3060';
+  const maxDph = (document.getElementById('prov-dph')?.value || '0.15').trim();
+  if(!model){ toast('Zadej model (např. Qwen/Qwen3-8B-AWQ)', 'error'); return; }
+  if(!dry){
+    if(!confirm(`Pronajmout ${gpu.replace(/_/g,' ')} na vast.ai (strop $${maxDph}/h) a nasadit ${model}?\n\n` +
+                 `Pokud už nějaký rig běží, použije se ten a nic se nepronajme.\n` +
+                 `Jinak se pronajme nejlevnější nabídka a vast.ai začne účtovat.`)) return;
+    const typed = prompt('Pro potvrzení napiš RENT');
+    if((typed || '').trim().toUpperCase() !== 'RENT'){ toast('Zrušeno', 'error'); return; }
+  }
+  const box = document.getElementById('ai-provision-log');
+  const badge = document.getElementById('ai-provision-state');
+  if(box){ box.classList.remove('hidden'); box.textContent = 'spouštím…'; }
+  if(badge){ badge.textContent = 'running'; badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300'; }
+  try{
+    const r = await fetch('/api/ops/provision', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ model, gpu, max_dph: maxDph, dry_run: dry ? 1 : 0 }),
+    }).then(x => x.json());
+    if(!r.ok){ if(box) box.textContent = 'error: ' + (r.error || 'provision refused'); return; }
+    _pollJob(r.job);
+  }catch(e){
+    if(box) box.textContent = 'error: ' + e;
+  }
+}
+
+function _pollJob(id){
+  const box = document.getElementById('ai-provision-log');
+  const badge = document.getElementById('ai-provision-state');
+  clearInterval(_provTimer);
+  const tick = async () => {
+    let d = {};
+    try{
+      d = await fetch('/api/ops/job?id=' + encodeURIComponent(id), {cache:'no-store'}).then(r => r.json());
+    }catch(e){
+      if(box) box.textContent = 'job unreachable: ' + e;
+      return;
+    }
+    if(box){
+      box.classList.remove('hidden');
+      box.textContent = (d.log || []).join('\n') || (d.error || '…');
+      box.scrollTop = box.scrollHeight;
+    }
+    const state = d.state || (d.error ? 'failed' : 'running');
+    if(badge){
+      badge.textContent = state;
+      badge.className = 'text-[10px] px-2 py-0.5 rounded-full border ' + (
+        state === 'done' ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+        : state === 'failed' ? 'bg-red-500/15 border-red-500/40 text-red-300'
+        : 'bg-amber-500/15 border-amber-500/40 text-amber-300');
+    }
+    if(state !== 'running'){
+      clearInterval(_provTimer); _provTimer = null;
+      if(d.result && d.result.deployed !== false) toast('Provisioning: ' + state, state === 'done' ? 'success' : 'error');
+      loadAi();
+    }
+  };
+  tick();
+  _provTimer = setInterval(tick, 3000);
 }

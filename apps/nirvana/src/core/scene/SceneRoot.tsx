@@ -11,6 +11,7 @@ import {
   type GpuBackend,
 } from './backends';
 import { Universe } from './universe/Universe';
+import type { FleetLeg } from './universe/SkyFleet';
 import { quality } from '../../../../shared/scenes/kit/quality';
 import { ScenePost, sceneRenderStats } from '../../../../shared/scenes/kit/post';
 import type { Portal } from '@/core/portals/manifest';
@@ -99,19 +100,24 @@ export function SceneRoot({
   portals,
   onOpen,
   onSelectWorld,
+  onSelectPlanet,
   xr,
   label,
   focus,
   hiranState,
+  fleetLeg,
 }: {
   worlds: WorldPoint[];
   portals: Portal[];
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
+  /** Klik na planetu ve sluneční soustavě. */
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter') => void;
   xr: boolean;
   label: string;
-  focus?: 'earth' | 'sun' | 'jupiter';
+  focus?: 'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'fleet' | 'moon';
   hiranState?: HiranState;
+  fleetLeg?: FleetLeg | null;
 }) {
   const [backend, setBackend] = useState<GpuBackend | null>(null);
   const [xrStore] = useState<XRStore>(() => createXRStore({ foveation: 0.5 }));
@@ -181,7 +187,9 @@ export function SceneRoot({
               onOpen={onOpen}
               onSelectWorld={onSelectWorld}
               focus={focus}
+              onSelectPlanet={onSelectPlanet}
               hiranState={hiranState}
+              fleetLeg={fleetLeg}
             />
             <XrEntry store={xrStore} />
           </XR>
@@ -191,8 +199,10 @@ export function SceneRoot({
             portals={portals}
             onOpen={onOpen}
             onSelectWorld={onSelectWorld}
+            onSelectPlanet={onSelectPlanet}
             focus={focus}
             hiranState={hiranState}
+            fleetLeg={fleetLeg}
           />
         )}
         <UniverseAudit />

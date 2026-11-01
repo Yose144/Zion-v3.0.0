@@ -1,0 +1,177 @@
+# NABUKANO — Nebeská flotila (L6) · plán
+
+> **Verze:** 1.0 · **Datum:** 2026-11-01 · **Vrstva:** L6 (pohyblivý uzel nebe)
+> **Role:** jediný plánovací vstup pro Nebeskou flotilu. Není to druhý projektový strom — cituje knihu ([`canon/books/Nabukano/`](../../canon/books/Nabukano/00-README.md)), report ([`REPORTS/REPORT_2026-11-01_NABUKANO_SKY_FLEET.md`](./REPORTS/REPORT_2026-11-01_NABUKANO_SKY_FLEET.md)) a stávající plány v3.3, neduplikuje je.
+> **Značky vlastníka:** 🤖 autonomní (kód, testy, docs) · 🔀 autonomní příprava + operátorské schválení · 👤 operátor (rozhodnutí, peníze, klíče)
+
+---
+
+## 0. Jak číst
+
+1. **§1** je ověřený stav — co reálně existuje v repu a na produkci k 1. 11. 2026.
+2. **§2** je rozhodovací fronta 👤. Dokud není rozhodnuto, fáze, které na tom závisí, stojí.
+3. **§3** jsou fáze N0–N6 s branami. Pořadí není kosmetika: N1 je nasazení hotového, N2 je model, N3 obloha.
+4. **§4** rozpočty a testy — bez nich se fáze nezavírá.
+5. **§5** je to, co plán **nedělá**.
+
+---
+
+## 1. Ověřený stav (2026-11-01)
+
+### 1.1 Co existuje
+
+| Prvek | Stav | Kde |
+|---|---|---|
+| Kniha **Nabukano** (8 souborů, 7 kapitol) | **DRAFT / MÝTUS** | `canon/books/Nabukano/` |
+| Čtečka na webu | **ŽIVÉ** | `/zion-archive/nabukano/cist` (za ZAP pasem) |
+| Stránka uzlu | **ŽIVÉ** | `/terranova/nabukano` |
+| Uzel v L6 | **ŽIVÉ** | sekce „Uzly L6" na `/l6-issobella`, navigace → Vrstvy → L6, footer |
+| Hero + konceptová deska | **ŽIVÉ** | `public/images/nabukano/{hero,concept-board}*.webp` |
+| Data uzlu | **ŽIVÉ** | `freeworld-sites.ts` → `body: 'orbit'` (+ mirror v Nirvaně) |
+| Scéna flotily v Nirvaně | **COMMITNUTÁ, NENASZENÁ** | `universe/SkyFleet.tsx`, portál `fleet`, fokus `'fleet'` |
+| Trasy LUMI / prstenec | **COMMITNUTÉ, NENASZENÉ** | `FleetRoute` v `SkyFleet.tsx` |
+| Registr `nabukano` | **NÁVRH** (`vision`, 0 ZION, neregistrováno) | 👤 |
+| Kánonizace knihy (třída E) | **NEPROBĚHLA** | 👤 |
+
+### 1.2 Co neexistuje
+
+Žádný trup, dok, výtah, modul, posádka, raketa, termín, fond ani podíl. **3D model neodpovídá konceptové desce** — rotující prstenec, dokovací uzel a osm sekcí v geometrii nejsou. Měsíc (Matrix) není ve scéně jako objekt, takže trasa k němu neexistuje.
+
+---
+
+## 2. Rozhodovací fronta 👤
+
+| # | Otázka | Varianty | Dopad |
+|---|---|---|---|
+| **D1** | **Jména trupů** | (a) mariánská jména + volací znaky *(současný stav)* · (b) volací znaky LUMI / ISSOBELLA / TŘETÍ MARIE jako hlavní jména v knize | ovlivní kap. 3, web, scénu i všechny budoucí texty |
+| **D2** | **Registr `nabukano`** | (a) zapsat jako `vision`, alokace 0 · (b) nezapisovat, dokud není studie | registr = veřejný seznam; zápis je 👤 |
+| **D3** | **Nebeská archa** | (a) žádná — Nebuchadnezzar je mateřská loď, archa zůstává na vodě · (b) flotila dostane vlastní „archu nebe" | kánon, jinak by vznikla druhá archa |
+| **D4** | **Deploy Nirvany** | (a) nasadit teď · (b) počkat na dokončení cizí migrace | CTA „Otevřít ve vesmíru" funguje až po (a) |
+
+---
+
+## 3. Fáze
+
+### N0 — Kánon, web, scéna ✅ (hotovo 1. 11.)
+
+Kniha, čtečka, stránka uzlu, uzel v L6, navigace, hero, deska, scéna flotily a trasy v kódu.
+**Brána:** splněna — live 200, `tsc` čistý, build OK, 0 chyb v konzoli (viz report).
+
+---
+
+### N1 — Nasazení Nirvany 🔀 · ~15 min · **nejmenší krok k viditelnému výsledku**
+
+| Úkol | Co |
+|---|---|
+| N1.1 | `ZION_DEPLOY_RELEASE=nabukano-n1-… bash apps/nirvana/deploy/deploy-nirvana.sh` (strom čistý, žádná cizí session v `apps/nirvana`) |
+| N1.2 | Live ověření: `/` 200, `#portal=fleet` otevře okno **Flotila**, tlačítka tras vykreslí oblouk, 0 chyb v konzoli |
+| N1.3 | Rollback držen: `/opt/zion/APP&WEB/nirvana/.before-<release>` |
+
+**Brána:** flotila je vidět na `nirvana.zionterranova.com`, okno i trasy fungují, konzole čistá.
+
+---
+
+### N2 — 3D model podle konceptové desky 🤖 · 1–2 dny
+
+Cíl: scéna má číst jako **studie 02** (kanonická: dok se třemi kotvišti pod trupem, lucerna na konci rámu), ne jako symbol.
+
+| Úkol | Co | Poznámka |
+|---|---|---|
+| N2.1 | Rotující obytný prstenec s okny a zelení, plynulá rotace kolem podélné osy | ✅ hotovo (studie 02) |
+| N2.2 | **Dokovací rám pod trupem se třemi kotvišti** + lucerna na konci | ✅ hotovo (studie 02) |
+| N2.3 | Osm sekcí jako čitelné bloky: 01 můstek, 02 knihovna a jídelna, 03 zahrada, 04 ordinace, 05 izolační kajuta, 06 dokovací rám, 07 lucerna, 08 technické zázemí | mapování 1:1 na legendu na webu |
+| N2.4 | Tři doprovodné lodě podle desky: Santa María la Mayor (průzkumný), Nossa Senhora de Fátima (lunární transport s gondolami), María de las Nieves (nákladní) | ✅ hotovo (rozdílné siluety) |
+| N2.5 | Okna prstence i obytné přídě **instancovaná**, příhradovina rámu, svislé vzpěry, prosklená zahrada, klec lucerny; počet instancí podle `quality().tier` | ✅ hotovo — 122 draw calls / 80 376 tris / 37 textur / 0 invalid vertices |
+| N2.6 | Kamera fokusu **sleduje obíhající flotilu** (bez toho loď odplouvala ze záběru 0,34 j/s) | ✅ hotovo |
+| N2.5 | LOD: `low` varianta pro mobil (méně segmentů, bez detailů) | `quality().tier` |
+
+**Brána:** `?sceneAudit=1` → **≤ +60 draw calls** proti stavu N1.3, **≤ 110 k tris**, **0 nových textur** (popisky jen nutné), ≥30 fps Tier B na GPU, 0 invalid vertices; srovnávací screenshot s deskou.
+
+---
+
+### N3 — Obloha: Měsíc a trasa k Matrixu 🤖 · 1 den
+
+| Úkol | Co |
+|---|---|
+| N3.1 | `universe/Moon.tsx` — malý objekt na cislunární dráze, marker Shackleton (lat −89,9 / lon 0), label „Matrix" |
+| N3.2 | `planets.ts`(nyní `positions.ts`) — `moonPosition()` jedním vzorcem pro scénu i fokus |
+| N3.3 | `focus: 'moon'` + `FleetLeg = 'lumi' \| 'issobella' \| 'matrix'`; oblouk z doku k Měsíci |
+| N3.4 | Okno flotily: třetí tlačítko trasy + honest label |
+
+**Stav (1. 11.): ✅ hotovo** — `Moon` v `NewEarth` používá `moonPosition()` (jeden vzorec pro scénu i fokus), Měsíc leží **dál než flotila** (24 R vs 15,5 R), klik na Měsíc otevře **portál `matrix`** (nový slot `moon`) a fokus `'moon'`; `FleetRoute` má třetí leg **`matrix`** (dok → Měsíc) a okno flotily třetí tlačítko. Nenasazeno v době psaní: deploy `nabukano-n3-20261101T153715Z`.
+
+---
+
+### N4 — Prezentace `/present/nebeska-flotila` 🤖 · 1 den
+
+| Úkol | Co |
+|---|---|
+| N4.1 | `apps/shared/scenes/kit/vessels.tsx` — **`NabukanoModel`** (jeden zdroj geometrie lodi pro scénu, prezentaci i web) | ✅ hotovo; trupy mořských lodí se neextrahovaly — kosmická loď je jiná geometrie, extrakce by byla refactor bez užitku |
+| N4.2 | `apps/shared/scenes/NebeskaFlotila.tsx` — kompozice pro prezentaci (kamera, `CONTROLS`, `lang`) |
+| N4.3 | Wrapper `apps/nirvana/src/app/present/nebeska-flotila/page.tsx` + thin re-export |
+| N4.4 | Web: `NebeskaFlotilaPreview` + `Lazy`, sekce na `/terranova/nabukano` |
+
+**Stav (1. 11.): ✅ hotovo** — `apps/shared/scenes/NebeskaFlotila.tsx` (Země jako oblouk, prach, model z kitu), nirvana `/present/nebeska-flotila`, web `NebeskaFlotilaPreview` + `Lazy` a sekce „3D model" na `/terranova/nabukano`. **Naměřeno:** 55 draw calls / 21 884 tris / 12 textur / `budgetOk: true` / 0 invalid vertices. Deploy web `nabukano-n4-20261101T160108Z`, nirvana `nabukano-n4-nir-20261101T160405Z`.
+
+---
+
+### N5 — Registr a kánonizace 🔀→👤 · hodiny
+
+| Úkol | Kdo |
+|---|---|
+| N5.1 | `POST /api/v1/projects` → `nabukano`, status `vision`, alokace 0, odkaz na knihu | 🤖 příprava, 👤 odeslání |
+| N5.2 | Kánonizace knihy třídou E podle `MiseAmenti/08` (review, ne přepis) | 👤 |
+| N5.3 | Doplnit `StatusV3.md` / `AGENTS.md` řádkem o uzlu (bez čísel, která nejsou doložená) | 🤖 |
+
+**Brána:** registr odpovídá na dotaz, dokumenty se nerozcházejí s knihou.
+
+---
+
+### N6 — Obsah a rozšíření 👤 · průběžně
+
+- **Hero série:** další obrazy z `heros/Issobela/` (stanice, Kostarika, observatoř) → galerie na stránce.
+- **Kapitola 8** knihy: kajuty, směny, jídlo, „rozpis těla" na doku — až bude D1 rozhodnuto.
+- **VR:** flotila je klikatelná (raycast), okna v VR vidět nejsou (omezení shellu) — rozhodnout, zda to řešit.
+
+---
+
+## 4. Rozpočty a testy
+
+| Metrika | Strop | Kde se měří |
+|---|---|---|
+| Draw calls (universe) | ≤ 180 (dnes 117–125) | `?sceneAudit=1` → `window.__projectScene` |
+| Trojúhelníky | ≤ 110 k (dnes ~72 k) | tamtéž |
+| Textury | 0 nových v N2 (popisky výjimkou) | tamtéž |
+| FPS | ≥ 30 Tier B na GPU | jen na GPU — swiftshader nemá vypovídací hodnotu |
+| `invalidVertices` | 0 | tamtéž |
+| Web | `tsc --noEmit` + `next build --webpack` + live 200 | `deploy-web2.9.sh` smoke |
+| Nirvana | `tsc --noEmit` + `next build` + okno/fokus/trasa | `deploy-nirvana.sh` + headless |
+
+**Pravidla, která se nesmí porušit:**
+- pozice flotily jen z `fleetPosition()` (scéna i fokus stejný vzorec),
+- `SLOT_COLOR` na **dvou** místech (`Shell.tsx` + `HoloConsole.tsx`),
+- nový `focus` znamená tři místa v `Shell.tsx` + typy v `SceneRoot`/`Universe`,
+- shared scény jen `@genesis/runtime` + `three` (žádné `drei`),
+- žádná animace bez `motionTime`/`motionDelta` (reduced motion).
+
+---
+
+## 5. Co tento plán nedělá
+
+- **Nedělá z flotily pozemský uzel.** 12 pinů + archa + Měsíc zůstávají; flotila je osa, ne pin.
+- **Neprodává nic.** Žádný token, podíl, výnos ani „vstupenka".
+- **Neslibuje hardware.** Žádný trup, termín, cena nebo posádka; v UI slovo „koncept".
+- **Nepřepisuje kánon** knih Issobella / Lumi / Království srdce — jen na ně navazuje.
+- **Nezasahuje do cizích session.** Deploy jen při čistém stromu v dané appce.
+
+---
+
+## 6. Změnový log
+
+| Datum | Změna |
+|---|---|
+| 2026-11-01 | v1.0 — vytvořeno po dodání kánonu, webu, scény, tras, hero a konceptové desky. Otevřené D1–D4. |
+| 2026-11-01 | v1.4 — **N4 hotová**: `kit/vessels.tsx` (NabukanoModel), sdílená scéna `NebeskaFlotila`, `/present/nebeska-flotila`, webový 3D náhled + sekce na misijní stránce. |
+| 2026-11-01 | v1.3 — **N3 hotová**: Měsíc jako objekt s vlastním fokusem (`'moon'`), portál `matrix` + slot `moon`, třetí leg trasy `matrix`. Deploy nirvana `nabukano-n3-20261101T153715Z`. |
+| 2026-11-01 | v1.2 — **N2 hotová**: instancovaná okna prstence i přídě, příhradovina rámu, vzpěry, zahrada, klec lucerny, LOD podle tieru; kamera fokusu sleduje flotilu. Naměřeno 122 calls / 80 376 tris / 37 textur / 0 invalid. Deploy nirvana `nabukano-n2-20261101T150748Z`. |
+| 2026-11-01 | v1.1 — **D1 vyřešeno dodáním studie 02**: kanonická jsou mariánská jména, volací znaky LUMI / ISSOBELLA / TŘETÍ MARIE se ruší. Dok = rám pod trupem se třemi kotvišti; N2.1/N2.2 hotové. |

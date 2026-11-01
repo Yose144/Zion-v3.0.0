@@ -4,10 +4,10 @@ import { prisma } from '@/lib/db';
 // GET /api/profile/[address]/activity — sales + bids for a user
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { address: string } }
+  { params }: { params: Promise<{ address: string }> }
 ) {
   try {
-    const address = params.address.toLowerCase();
+    const address = (await params).address.toLowerCase();
 
     const [sales, bids] = await Promise.all([
       prisma.sale.findMany({

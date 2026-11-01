@@ -45,6 +45,7 @@ export default function Footer() {
         { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang) },
         { href: '/l5-free-world', label: tr('nav', 'l5_free_world', lang) },
         { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },
+        { href: '/terranova/nabukano', label: tr('nav', 'terra_nabukano', lang) },
       ],
     },
     {

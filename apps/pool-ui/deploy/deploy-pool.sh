@@ -24,11 +24,12 @@ NGINX_LINK="/etc/nginx/sites-enabled/pool.zionterranova.com.conf"
 echo "=== ZION Pool UI Deploy ==="
 
 # 1. Build the static export locally (Next.js `output: export` -> dist/).
+# K1.2: root workspace — závislosti se instalují jen v rootu (`npm ci`),
+# build se pouští přes workspace, ne `npm install` uvnitř appky.
 echo "[1/4] Building pool-ui..."
-cd "$UI_DIR"
-npm install --production=false
-npm run build
-test -f dist/index.html || { echo "FATAL: dist/index.html missing"; exit 1; }
+cd "$REPO_ROOT"
+npm run build -w zion-pool-ui
+test -f "$UI_DIR/dist/index.html" || { echo "FATAL: $UI_DIR/dist/index.html missing"; exit 1; }
 echo "  Build complete."
 
 if [[ " $* " == *" --build-only "* ]]; then

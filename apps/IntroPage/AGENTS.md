@@ -1,6 +1,6 @@
 # IntroPage — agent notes
 
-This Next.js 14 project produces the `zionterranova.com` landing / maintenance page.
+This Next.js 16 project produces the `zionterranova.com` landing / maintenance page.
 
 ## Build & verify
 
@@ -49,7 +49,7 @@ Use `id="main"` + `<article className="active">` to get the glass rasta card loo
 
 ## Deploy
 
-`deploy/deploy-intro.sh` rsyncs `dist/` to `/var/www/maintenance/` and reloads nginx.
+`deploy/deploy-intro.sh` rsyncs `dist/` to EDGE2 `/var/www/zion-maintenance/` and reloads nginx.
 
 ## freeworld/ (L5 Free World portal)
 

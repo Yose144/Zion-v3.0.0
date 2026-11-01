@@ -35,14 +35,20 @@ if [[ -n "$ARTIFACT_DIR" ]]; then
 else
   cd "$ROOT_DIR"
   npm run build
-  # Shared imports can make Next nest the app below the standalone root.
-  APP_DIR="${ROOT_DIR}/.next/standalone"
-  if [[ ! -f "${APP_DIR}/server.js" ]]; then
-    APP_DIR="${APP_DIR}/website-v2.9"
-  fi
-  if [[ ! -f "${APP_DIR}/server.js" ]] || [[ ! -d "${ROOT_DIR}/.next/static" ]]; then
+  # K1.2: s root workspace (lockfile v rootu repa) Next zanoří standalone strom
+  # podle cesty ve workspace — `.next/standalone/apps/website-v2.9/server.js`.
+  # Najdi server.js, ať skript přežije další změnu layoutu (K1.3 ho sjednotí).
+  APP_DIR="$(dirname "$(find "${ROOT_DIR}/.next/standalone" -maxdepth 4 -name server.js -not -path "*/node_modules/*" | head -1)")"
+  if [[ -z "$APP_DIR" ]] || [[ ! -f "${APP_DIR}/server.js" ]] || [[ ! -d "${ROOT_DIR}/.next/static" ]]; then
     echo "[deploy-web2.9] ERROR: standalone server or static assets missing" >&2
     exit 1
+  fi
+  echo "[deploy-web2.9] standalone: ${APP_DIR#"${ROOT_DIR}/"}"
+
+  # K1.2: workspace deps are hoisted at standalone root — fold them into the
+  # app dir so the artifact stays self-contained for deploy-next-artifact.sh.
+  if [[ ! -d "${APP_DIR}/node_modules" && -d "${ROOT_DIR}/.next/standalone/node_modules" ]]; then
+    rsync -a "${ROOT_DIR}/.next/standalone/node_modules/" "${APP_DIR}/node_modules/"
   fi
 
   mkdir -p "${APP_DIR}/.next/static"

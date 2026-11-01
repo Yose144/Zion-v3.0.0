@@ -1,0 +1,37 @@
+[Unit]
+Description=ZION Nirvana realtime (WebSocket /net — multiplayer + chat)
+Documentation=https://github.com/Yose144/Zion-v3.0.0
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion/APP&WEB/nirvana-net
+Environment=NODE_ENV=production
+Environment=NIRVANA_NET_HOST=127.0.0.1
+Environment=NIRVANA_NET_PORT=3011
+Environment=NIRVANA_NET_PATH=/net
+Environment=NIRVANA_NET_ALLOWED_ORIGINS=https://nirvana.zionterranova.com
+# Volitelné: deploy sem stampuje ZION_DEPLOY_RELEASE (vidí se v /net/health jako `build`)
+EnvironmentFile=-/etc/zion/nirvana-net.env
+ExecStart=/usr/local/bin/node dist/nirvana-net/src/index.js
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+# Služba nic nezapisuje na disk — stačí jí čtení kódu a vlastní socket.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

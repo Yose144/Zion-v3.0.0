@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Dashboard from "./Dashboard";
 
 export const metadata: Metadata = {
-  title: "vast rigs",
+  title: "Vast.ai rigs · ZION OPS",
+  description:
+    "Live vast.ai fleet: mining hashpower per rig, AI inference capacity, GPU market and pool routing.",
   robots: { index: false, follow: false },
 };
 

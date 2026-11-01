@@ -93,6 +93,31 @@ function Fare({ fare, lang, roofTexture }: { fare: Fare; lang: Lang; roofTexture
   }, [w, roofH, len]);
   useEffect(() => () => { gable.dispose(); innerPrism.dispose(); }, [gable, innerPrism]);
 
+  // Doškové latě: 16 kusů na chatu. Jako samostatné mesh objekty to bylo 16 draw
+  // calls z každé chaty (naměřeno 223 boxů v celé scéně); jeden instanced mesh
+  // z toho dělá jeden. Barva jde per-instance, proto bílý základ materiálu.
+  const thatchGeometry = useMemo(() => new THREE.BoxGeometry(0.045, 0.035, len * 1.055), [len]);
+  const thatchMaterial = useMemo(() => new THREE.MeshStandardMaterial({ roughness: 1 }), []);
+  useEffect(
+    () => () => { thatchGeometry.dispose(); thatchMaterial.dispose(); },
+    [thatchGeometry, thatchMaterial],
+  );
+  const thatchItems = useMemo(
+    () =>
+      [-1, 1].flatMap((side) =>
+        Array.from({ length: 8 }, (_, i) => ({
+          position: [
+            side * w * 0.5 * (i + 0.5) / 8,
+            0.35 + roofH * (1 - (i + 0.5) / 8) + 0.045,
+            0,
+          ] as [number, number, number],
+          rotation: [0, 0, -side * pitch] as [number, number, number],
+          color: i % 2 ? '#c1a679' : '#988052',
+        })),
+      ),
+    [w, roofH, pitch],
+  );
+
   return (
     <group position={[x, 0, z]} rotation={[0, angle + Math.PI, 0]}>
       {/* pódium na kůlech */}
@@ -127,10 +152,8 @@ function Fare({ fare, lang, roofTexture }: { fare: Fare; lang: Lang; roofTexture
         <mesh position={[side * w * .25, .35 + roofH * .5, len * .51]} rotation={[0, 0, -side * pitch]}>
           <boxGeometry args={[slope, .08, .09]} /><meshStandardMaterial color="#725034" roughness={.9} />
         </mesh>
-        {Array.from({length: 8}, (_, i) => <mesh key={i} position={[side * w * .5 * (i + .5) / 8, .35 + roofH * (1 - (i + .5) / 8) + .045, 0]} rotation={[0, 0, -side * pitch]}>
-          <boxGeometry args={[.045, .035, len * 1.055]} /><meshStandardMaterial color={i % 2 ? '#c1a679' : '#988052'} roughness={1} />
-        </mesh>)}
       </group>)}
+      <SceneInstances geometry={thatchGeometry} material={thatchMaterial} items={thatchItems} />
       <mesh position={[0, .28, len * .56]} receiveShadow><boxGeometry args={[w * .9, .14, .65]} /><meshStandardMaterial color="#a47d50" roughness={.9} /></mesh>
       {/* hřeben — bambusová vazba ční přes štíty */}
       <mesh position={[0, 0.35 + roofH, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>

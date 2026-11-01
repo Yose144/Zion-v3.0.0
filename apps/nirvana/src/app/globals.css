@@ -1716,6 +1716,131 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-size: 0.72rem;
 }
 
+.race-hud .race-pos {
+  color: #ffb46a;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* pořadí za jízdy — vpravo nahoře, aby nepřekáželo v cestě */
+.race-board {
+  position: absolute;
+  z-index: 13;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  right: 1rem;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(200, 162, 255, 0.28);
+  background: rgba(12, 6, 22, 0.82);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.race-board li {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 0.42rem;
+  color: rgba(246, 231, 216, 0.82);
+}
+
+.race-board li.me {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+.race-board i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.race-board .race-board-gap {
+  color: rgba(246, 231, 216, 0.62);
+  font-size: 0.74rem;
+}
+
+.race-board li.me .race-board-gap {
+  color: #ffd166;
+}
+
+.race-board .race-board-place {
+  color: rgba(246, 231, 216, 0.5);
+  font-size: 0.72rem;
+}
+
+.race-board.final {
+  position: static;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0.2rem 0 0.6rem;
+  pointer-events: auto;
+}
+
+/* ve výsledkové tabulce je podklad panel, takže tlumené barvy nemají na čem
+   vyniknout — text musí být čitelnější než na HUD desce */
+.race-board.final li {
+  color: rgba(246, 231, 216, 0.92);
+}
+
+.race-board.final .race-board-place {
+  color: rgba(246, 231, 216, 0.72);
+}
+
+.race-board.final .race-board-gap {
+  color: rgba(246, 231, 216, 0.72);
+}
+
+.race-verdict {
+  font-size: 0.95rem !important;
+  color: #e0d0ff !important;
+  margin: 0 0 0.6rem !important;
+}
+
+.race-verdict.win {
+  color: #c8f56a !important;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .race-hud {
+    gap: 0.45rem;
+    font-size: 0.72rem;
+    padding: 0.35rem 0.6rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100vw - 1rem);
+  }
+
+  .race-hud .race-speed {
+    font-size: 0.84rem;
+  }
+
+  .race-board {
+    top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    right: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.72rem;
+  }
+
+  .race-board .race-board-gap {
+    font-size: 0.68rem;
+  }
+}
+
+/* položky HUD se nesmí lámat uprostřed („45 km/h“ na dva řádky) */
+.race-hud span {
+  white-space: nowrap;
+}
+
 .race-go {
   position: absolute;
   z-index: 13;
@@ -1730,4 +1855,1185 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-size: 0.86rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+/* ── CHAT (ZIS) — plovoucí dok ─────────────────────────────────────── */
+
+.chat-dock-btn {
+  position: fixed;
+  z-index: 60;
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 162, 255, 0.45);
+  background: rgba(12, 6, 22, 0.86);
+  color: #e0d0ff;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.chat-dock-btn:hover,
+.chat-dock-btn.is-open {
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.6);
+  transform: translateY(-1px);
+}
+
+.chat-dock-btn.is-offline {
+  color: rgba(246, 231, 216, 0.55);
+  border-color: rgba(246, 231, 216, 0.2);
+}
+
+.chat-dock-badge {
+  font-style: normal;
+  min-width: 1.15rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 999px;
+  background: #ff7a6b;
+  color: #1a0a08;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.chat-panel {
+  position: fixed;
+  z-index: 61;
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(4.1rem + env(safe-area-inset-bottom, 0px));
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: min(26rem, 62vh);
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(200, 162, 255, 0.35);
+  background: rgba(10, 5, 18, 0.94);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid rgba(200, 162, 255, 0.2);
+}
+
+.chat-head strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #ffb46a;
+}
+
+.chat-state {
+  font-size: 0.7rem;
+  color: rgba(246, 231, 216, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.chat-state.is-live {
+  color: #7fe3d4;
+}
+
+.chat-close {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  color: rgba(246, 231, 216, 0.65);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chat-lines {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.chat-line {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.35rem;
+  color: rgba(246, 231, 216, 0.88);
+  overflow-wrap: anywhere;
+}
+
+.chat-time {
+  color: rgba(246, 231, 216, 0.35);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chat-name {
+  color: #c8f56a;
+  font-weight: 600;
+}
+
+.chat-line.is-zis .chat-name {
+  color: #ffd166;
+}
+
+.chat-line.is-system {
+  display: block;
+  color: rgba(246, 231, 216, 0.45);
+  font-size: 0.72rem;
+  font-style: italic;
+}
+
+.chat-empty {
+  margin: 0.6rem 0;
+  color: rgba(246, 231, 216, 0.45);
+  font-size: 0.78rem;
+}
+
+.chat-compose {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem 0.6rem;
+  border-top: 1px solid rgba(200, 162, 255, 0.2);
+}
+
+.chat-compose input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.42rem 0.55rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(200, 162, 255, 0.28);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f6e7d8;
+  font-size: 0.82rem;
+}
+
+.chat-compose input:focus {
+  outline: none;
+  border-color: rgba(255, 209, 102, 0.6);
+}
+
+.chat-send {
+  padding: 0.42rem 0.7rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(255, 180, 106, 0.5);
+  background: rgba(255, 180, 106, 0.14);
+  color: #ffd9a8;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.chat-send:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.chat-guest {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-top: 1px solid rgba(200, 162, 255, 0.2);
+  font-size: 0.74rem;
+  color: rgba(246, 231, 216, 0.6);
+}
+
+.chat-guest a {
+  color: #ffb46a;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .chat-dock-btn .chat-dock-label {
+    display: none;
+  }
+
+  .chat-panel {
+    left: calc(0.5rem + env(safe-area-inset-left, 0px));
+    right: calc(0.5rem + env(safe-area-inset-right, 0px));
+    width: auto;
+    max-height: 52vh;
+  }
+}
+
+.chat-members {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  margin: 0;
+  list-style: none;
+  border-bottom: 1px solid rgba(200, 162, 255, 0.14);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chat-member {
+  position: relative;
+  flex: 0 0 auto;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(200, 162, 255, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e0d0ff;
+  font-size: 0.72rem;
+}
+
+.chat-member.is-zis {
+  border-color: rgba(255, 209, 102, 0.55);
+}
+
+.chat-member img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* jméno jen při najetí — jinak by seznam zabral celý panel */
+.chat-member em {
+  position: absolute;
+  bottom: -0.1rem;
+  left: 50%;
+  transform: translate(-50%, 100%);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.3rem;
+  background: rgba(10, 5, 18, 0.95);
+  color: #f6e7d8;
+  font-style: normal;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.chat-member:hover em {
+  opacity: 1;
+}
+
+.chat-more {
+  font-size: 0.7rem;
+  color: rgba(246, 231, 216, 0.55);
+  padding-left: 0.2rem;
+}
+
+/* ── MULTIPLAYER ARÉNA — tabule hráčů ──────────────────────────────── */
+
+.arena-board {
+  position: absolute;
+  z-index: 13;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 9rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 180, 106, 0.28);
+  background: rgba(20, 8, 4, 0.82);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.arena-board li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  color: rgba(246, 231, 216, 0.82);
+}
+
+.arena-board li.is-leader {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+.arena-board .arena-board-score {
+  color: rgba(246, 231, 216, 0.6);
+}
+
+.arena-board li.is-leader .arena-board-score {
+  color: #ffd166;
+}
+
+.arena-hud .arena-weapon.is-offline {
+  color: #ff7a6b;
+}
+
+.park-btn-mp {
+  border-color: rgba(127, 227, 212, 0.6) !important;
+  color: #7fe3d4 !important;
+}
+
+@media (max-width: 640px) {
+  .arena-board {
+    top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    right: calc(0.5rem + env(safe-area-inset-right, 0px));
+    font-size: 0.72rem;
+    min-width: 7rem;
+  }
+}
+
+/* multiplayer závod: odpočet a offline stav */
+.race-hud .race-best.is-offline {
+  color: #ff7a6b;
+}
+
+.race-countdown {
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.6);
+  animation: race-count-pulse 1s ease-in-out infinite;
+}
+
+@keyframes race-count-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.85; }
+}
+
+.race-board li.is-leader {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+/* Přechod scéna ↔ portál (R6): jeden závoj na každou změnu portálu.
+   Nad plátnem, pod panelem portálu (`.portal` má z-index 3). */
+.portal-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, rgba(4, 6, 20, 0) 30%, rgba(4, 6, 20, 0.9) 100%);
+  opacity: 0;
+  animation: portal-veil 340ms ease-out forwards;
+}
+
+@keyframes portal-veil {
+  0% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-veil { animation: none; opacity: 0; }
+}
+
+/* ── VÝBĚR AVATARA ─────────────────────────────────────────────────── */
+
+.avatars {
+  /* pevná výška: seznam 200 položek nesmí roztáhnout scénu (jinak kamera
+     kouká dovnitř modelu — stalo se) */
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 1rem;
+  background: radial-gradient(circle at 30% 0%, #1b1233, #08040f 70%);
+  color: #f6e7d8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.avatars-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.avatars-head strong {
+  letter-spacing: 0.16em;
+  color: #ffb46a;
+}
+
+.avatars-head span {
+  color: rgba(246, 231, 216, 0.55);
+  font-size: 0.82rem;
+}
+
+.avatars-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.82rem;
+}
+
+.avatars-who {
+  color: #7fe3d4;
+}
+
+.avatars-signin {
+  color: #ffd166;
+}
+
+.avatars-body {
+  flex: 1 1 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 1rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.avatars-list-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+  border: 1px solid rgba(200, 162, 255, 0.25);
+  border-radius: 0.9rem;
+  padding: 0.7rem;
+  background: rgba(10, 5, 18, 0.55);
+}
+
+.avatars-search {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(200, 162, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f6e7d8;
+  font-size: 0.85rem;
+}
+
+.avatars-rays {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.avatars-ray {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 162, 255, 0.3);
+  background: none;
+  color: rgba(246, 231, 216, 0.7);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.avatars-ray.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: currentColor;
+}
+
+.avatars-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-height: 0;
+}
+
+.avatars-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.32rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  background: none;
+  color: rgba(246, 231, 216, 0.86);
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.avatars-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.avatars-item.is-selected {
+  border-color: rgba(255, 209, 102, 0.55);
+  background: rgba(255, 209, 102, 0.08);
+  color: #ffd166;
+}
+
+.avatars-item i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.avatars-item-meta {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
+.avatars-empty {
+  padding: 0.6rem;
+  color: rgba(246, 231, 216, 0.5);
+  font-size: 0.82rem;
+}
+
+.avatars-preview-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(200, 162, 255, 0.25);
+  border-radius: 0.9rem;
+  padding: 0.8rem;
+  background: rgba(10, 5, 18, 0.55);
+}
+
+.avatars-stage {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0.7rem;
+  background: radial-gradient(circle at 50% 60%, rgba(147, 51, 234, 0.25), transparent 70%);
+}
+
+.avatars-meta h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #ffd166;
+}
+
+.avatars-sub {
+  margin: 0.15rem 0 0;
+  color: rgba(246, 231, 216, 0.6);
+  font-size: 0.82rem;
+}
+
+.avatars-tags {
+  display: flex;
+  gap: 0.7rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+}
+
+.avatars-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.avatars-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.76rem;
+  color: rgba(246, 231, 216, 0.6);
+}
+
+.avatars-form input {
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(200, 162, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f6e7d8;
+  font-size: 0.84rem;
+}
+
+.avatars-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.76rem;
+  color: rgba(246, 231, 216, 0.6);
+  flex-wrap: wrap;
+}
+
+.avatars-chips {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.avatars-chip {
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 162, 255, 0.3);
+  background: none;
+  color: rgba(246, 231, 216, 0.75);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.avatars-chip.is-active {
+  border-color: rgba(255, 209, 102, 0.7);
+  color: #ffd166;
+}
+
+.avatars-swatch {
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f6e7d8;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.avatars-swatch.is-active {
+  outline: 2px solid #ffd166;
+  outline-offset: 1px;
+}
+
+.avatars-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.avatars-error {
+  margin: 0;
+  color: #ff7a6b;
+  font-size: 0.78rem;
+}
+
+.avatars-guest {
+  margin: 0;
+  color: rgba(246, 231, 216, 0.6);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 820px) {
+  .avatars {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .avatars-body {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .avatars-list-pane {
+    max-height: 42vh;
+  }
+
+  .avatars-stage {
+    flex: 0 0 auto;
+    height: 15rem;
+    min-height: 0;
+  }
+}
+
+/* ── HERNÍ DOCK — jasně vidět, na co jde kliknout ──────────────────── */
+
+.games-dock {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(200, 162, 255, 0.3);
+  background: rgba(8, 4, 16, 0.82);
+  backdrop-filter: blur(8px);
+  max-width: min(56rem, calc(100vw - 10rem));
+}
+
+.games-dock-label {
+  display: flex;
+  align-items: center;
+  padding: 0 0.7rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.5);
+  border-right: 1px solid rgba(200, 162, 255, 0.2);
+  margin-right: 0.2rem;
+}
+
+.games-card {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.7rem;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+  color: #f6e7d8;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.games-card:hover,
+.games-card:focus-visible {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--game-tone, #ffb46a);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.games-card-glyph {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.games-card-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.games-card-text strong {
+  font-size: 0.84rem;
+  color: var(--game-tone, #ffb46a);
+  font-weight: 600;
+}
+
+.games-card-text em {
+  font-style: normal;
+  font-size: 0.68rem;
+  color: rgba(246, 231, 216, 0.55);
+  white-space: nowrap;
+}
+
+.games-card-go {
+  font-size: 0.9rem;
+  color: rgba(246, 231, 216, 0.35);
+  margin-left: 0.2rem;
+}
+
+.games-card:hover .games-card-go {
+  color: var(--game-tone, #ffb46a);
+}
+
+@media (max-width: 900px) {
+  .games-dock {
+    left: 0.5rem;
+    right: 0.5rem;
+    transform: none;
+    max-width: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .games-dock-label {
+    display: none;
+  }
+
+  .games-card-text em {
+    display: none;
+  }
+}
+
+/* ── konzole: sekce a štítky ───────────────────────────────────────── */
+
+.holo-section {
+  margin: 0.7rem 0 0.25rem;
+  padding: 0 0.15rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(200, 162, 255, 0.75);
+}
+
+.holo-section:first-child {
+  margin-top: 0.1rem;
+}
+
+.holo-section-dim {
+  color: rgba(246, 231, 216, 0.35);
+}
+
+.holo-drawer-tile {
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.6rem;
+}
+
+.holo-drawer-name {
+  flex: 1;
+  text-align: left;
+}
+
+.holo-drawer-tag {
+  font-style: normal;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.4);
+}
+
+.holo-drawer-tile:hover .holo-drawer-tag {
+  color: rgba(246, 231, 216, 0.75);
+}
+
+.holo-drawer-tag-play {
+  color: #ffd166;
+}
+
+.holo-drawer-tile.is-game {
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-left-width: 3px;
+}
+
+.holo-drawer-tag-soon {
+  color: rgba(255, 180, 106, 0.75);
+}
+
+.holo-drawer-tile.is-stub {
+  opacity: 0.62;
+}
+
+/* ── pouť: karty ostatních her ─────────────────────────────────────── */
+
+.park-games {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.5rem;
+  margin: 0.7rem 0 0.9rem;
+}
+
+.park-game-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(200, 162, 255, 0.22);
+  border-left: 3px solid var(--game-tone, #ffb46a);
+  background: rgba(255, 255, 255, 0.03);
+  color: #f6e7d8;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.park-game-card:hover,
+.park-game-card:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.park-game-glyph {
+  font-size: 1.05rem;
+}
+
+.park-game-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  flex: 1;
+}
+
+.park-game-text strong {
+  font-size: 0.82rem;
+  color: var(--game-tone, #ffb46a);
+}
+
+.park-game-text em {
+  font-style: normal;
+  font-size: 0.68rem;
+  color: rgba(246, 231, 216, 0.55);
+}
+
+.park-game-go {
+  color: rgba(246, 231, 216, 0.35);
+  font-size: 0.9rem;
+}
+
+.park-game-card:hover .park-game-go {
+  color: var(--game-tone, #ffb46a);
+}
+
+/* jména planet — DOM popisek, čitelný v každém přiblížení */
+.planet-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0.8;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 1);
+}
+
+/* ── PLANETY JAKO VSTUPY ───────────────────────────────────────────── */
+
+/* chip na planetě: jméno + co se stane */
+.planet-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--planet-tone, #ffb46a) 55%, transparent);
+  background: rgba(6, 4, 14, 0.72);
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.planet-chip strong {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--planet-tone, #ffb46a);
+}
+
+.planet-chip em {
+  font-style: normal;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.6);
+}
+
+.planet-chip.is-live {
+  background: rgba(255, 209, 102, 0.16);
+  border-color: var(--planet-tone, #ffb46a);
+  transform: scale(1.08);
+}
+
+.planet-chip.is-live em {
+  color: #ffd166;
+}
+
+/* panel po přiletění k planetě */
+.planet-panel {
+  position: absolute;
+  z-index: 40;
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  top: calc(4.2rem + env(safe-area-inset-top, 0px));
+  width: min(21rem, calc(100vw - 2rem));
+  padding: 0.85rem 0.95rem 0.95rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 180, 106, 0.45);
+  background: rgba(10, 5, 18, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.planet-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.planet-panel header strong {
+  font-size: 0.82rem;
+  letter-spacing: 0.22em;
+  color: #ffb46a;
+}
+
+.planet-panel-close {
+  background: none;
+  border: 0;
+  color: rgba(246, 231, 216, 0.6);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.planet-panel p {
+  margin: 0.5rem 0 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(246, 231, 216, 0.78);
+}
+
+.planet-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .planet-panel {
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    top: auto;
+    bottom: calc(5.6rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── HERNÍ HUD (žetony · online · ZION · ZIS · přepínání her) ──────── */
+
+.game-hud {
+  position: fixed;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.38rem 0.5rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(200, 162, 255, 0.28);
+  background: rgba(8, 4, 16, 0.86);
+  backdrop-filter: blur(9px);
+  font-size: 0.76rem;
+  color: #f6e7d8;
+}
+
+.game-hud.is-dock {
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  max-width: min(58rem, calc(100vw - 2rem));
+}
+
+.game-hud.is-compact {
+  left: calc(0.8rem + env(safe-area-inset-left, 0px));
+  bottom: calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  max-width: calc(100vw - 12rem);
+  padding: 0.3rem 0.42rem;
+  gap: 0.4rem;
+}
+
+.game-hud-tabs {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.game-hud-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.5rem;
+  border-radius: 0.55rem;
+  border: 1px solid transparent;
+  color: rgba(246, 231, 216, 0.72);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.game-hud-tab:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #f6e7d8;
+}
+
+.game-hud-tab.is-active {
+  border-color: var(--game-tone, #ffb46a);
+  color: var(--game-tone, #ffb46a);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.game-hud-tab-text {
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.game-hud-controls {
+  color: rgba(246, 231, 216, 0.5);
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-hud-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+
+.game-hud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.24rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 162, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(246, 231, 216, 0.82);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.game-hud-chip em {
+  font-style: normal;
+  color: rgba(200, 162, 255, 0.8);
+}
+
+.game-hud-chip.is-zion {
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.35);
+}
+
+.game-hud-chip.is-zion em {
+  color: #ffd166;
+}
+
+.game-hud-chip.is-zion.is-down {
+  color: rgba(246, 231, 216, 0.45);
+  border-color: rgba(246, 231, 216, 0.18);
+}
+
+.game-hud-chip.is-who {
+  color: #7fe3d4;
+  border-color: rgba(127, 227, 212, 0.35);
+}
+
+.game-hud-chip.is-signin {
+  color: #ffb46a;
+  border-color: rgba(255, 180, 106, 0.4);
+}
+
+@media (max-width: 900px) {
+  .game-hud.is-dock {
+    left: 0.5rem;
+    right: 0.5rem;
+    transform: none;
+    max-width: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .game-hud-controls {
+    display: none;
+  }
+
+  .game-hud-tab-text {
+    display: none;
+  }
+
+  .game-hud.is-compact {
+    max-width: calc(100vw - 1rem);
+    right: 0.5rem;
+    left: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .game-hud.is-compact {
+    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+  }
 }

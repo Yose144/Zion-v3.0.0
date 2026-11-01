@@ -11,10 +11,12 @@
  *   sun     — Hiran usedá ve středu soustavy (L3 AI Native)
  *   park    — Jupiter Station, pouť (herní místo)
  *   sea     — archa na velrybím koridoru (L5, třináctý uzel)
+ *   fleet   — nebeská flotila na oběžné dráze Nové Země (L6, pohyblivý uzel)
+ *   moon    — Měsíc, Matrix na Shackletonu (zrcadlo dvanácti pozemských misí)
  */
 
 export type PortalStatus = 'stub' | 'wired';
-export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship' | 'sun' | 'park' | 'sea';
+export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship' | 'sun' | 'park' | 'sea' | 'fleet' | 'moon';
 export type SurfaceSpot = 'harbor' | 'market' | 'forge' | 'library' | 'beacon' | 'gate' | 'ring';
 
 export interface Portal {
@@ -110,6 +112,28 @@ export const PORTALS: Portal[] = [
     api: 'concept study B3',
     status: 'wired',
     scene: { slot: 'sea' },
+  },
+  {
+    // L6 — nebeská flotila Nabukano: pohyblivý uzel nebe. Není to pin na
+    // povrchu; visí na dráze mezi Novou Zemí a prstencem Issobelly.
+    id: 'fleet',
+    layer: 'L6',
+    title: { cs: 'Flotila', en: 'Sky fleet' },
+    sourceApp: 'apps/shared/scenes (concept) · canon/books/Nabukano',
+    api: 'concept — no endpoint',
+    status: 'wired',
+    scene: { slot: 'fleet' },
+  },
+  {
+    // Měsíc — Matrix na Shackletonu. Není to pozemský pin: drží obraz
+    // dvanácti misí nad nimi („jak nahoře, tak dole").
+    id: 'matrix',
+    layer: 'L5',
+    title: { cs: 'Matrix', en: 'Matrix' },
+    sourceApp: 'apps/shared/scenes/Matrix',
+    api: 'concept — no endpoint',
+    status: 'wired',
+    scene: { slot: 'moon' },
   },
   {
     id: 'issobella',

@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   allowedDevOrigins: ['127.0.0.1'],
-  turbopack: { root: resolve(process.cwd(), '..') },
+  /* Monorepo (K1.2): lockfile i node_modules jsou v rootu repa, ne v apps/. */
+  turbopack: { root: resolve(process.cwd(), '../..') },
 };
 
 export default nextConfig;

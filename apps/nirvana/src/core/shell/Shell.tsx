@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/core/session/AuthProvider';
+import { GAME_LINKS } from '@/core/games/links';
 import { useI18n } from '@/core/i18n';
 import { PORTALS, type SceneSlot } from '@/core/portals/manifest';
 import { backendForXr, resolveGpuBackend, type GpuBackend } from '@/core/scene/backends';
@@ -13,6 +15,9 @@ import { ChainPortal } from '@/portals/chain/ChainPortal';
 import { ComputePortal } from '@/portals/compute/ComputePortal';
 import { HarborPortal } from '@/portals/freeworld/HarborPortal';
 import { GatePortal } from '@/portals/gate/GatePortal';
+import { FleetPortal } from '@/portals/fleet/FleetPortal';
+import { MatrixPortal } from '@/portals/matrix/MatrixPortal';
+import type { FleetLeg } from '@/core/scene/universe/SkyFleet';
 import { HiranPortal } from '@/portals/hiran/HiranPortal';
 import { ParkPortal } from '@/portals/park/ParkPortal';
 import { IssobellaPortal } from '@/portals/issobella/IssobellaPortal';
@@ -34,7 +39,13 @@ const SLOT_COLOR: Record<SceneSlot, string> = {
   sun: '#ffd166',
   park: '#ffb46a',
   sea: '#1d8fb3',
+  fleet: '#38bdf8',
+  moon: '#c9c2b6',
 };
+
+/** Rozdělení portálů v konzoli — hry jsou zvlášť (jsou to routy, ne portály). */
+const WORLDS = ['world', 'hiran', 'archa', 'fleet'];
+const SYSTEM = ['chain', 'pool', 'market', 'books', 'harbor', 'account'];
 
 function readHash(): { portal: string | null; world: string | null } {
   if (typeof window === 'undefined') return { portal: null, world: null };
@@ -58,7 +69,12 @@ export function Shell() {
   const [selectedWorld, setSelectedWorld] = useState<string | null>(null);
   const [hiranState, setHiranState] = useState<HiranState>(() => hiranReviewOverride() ?? 'idle');
   const [reviewState] = useState<HiranState | null>(() => hiranReviewOverride());
-  const [focus, setFocus] = useState<'earth' | 'sun' | 'jupiter'>('earth');
+  const [focus, setFocus] = useState<
+    'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'fleet' | 'moon'
+  >('earth');
+  /** Vybraná planeta = přiletěli jsme a nabízíme vstup do hry. */
+  const [planet, setPlanet] = useState<'mars' | 'venus' | 'jupiter' | null>(null);
+  const [fleetLeg, setFleetLeg] = useState<FleetLeg | null>(null);
   const [xrWanted, setXrWanted] = useState(false);
   const [xrSupported, setXrSupported] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,7 +83,7 @@ export function Shell() {
   const openPortal = useCallback((id: string) => {
     const next = PANELS.has(id) ? id : null;
     setPortal(next);
-    setFocus(next === 'hiran' ? 'sun' : next === 'park' ? 'jupiter' : 'earth');
+    setFocus(next === 'hiran' ? 'sun' : next === 'park' ? 'jupiter' : next === 'fleet' ? 'fleet' : next === 'matrix' ? 'moon' : 'earth');
     setMenuOpen(false);
   }, []);
 
@@ -90,13 +106,13 @@ export function Shell() {
     const { portal: p, world } = readHash();
     if (p) {
       setPortal(p);
-      setFocus(p === 'hiran' ? 'sun' : p === 'park' ? 'jupiter' : 'earth');
+      setFocus(p === 'hiran' ? 'sun' : p === 'park' ? 'jupiter' : p === 'fleet' ? 'fleet' : p === 'matrix' ? 'moon' : 'earth');
     }
     if (world) setSelectedWorld(world);
     const onHash = () => {
       const next = readHash();
       setPortal(next.portal);
-      setFocus(next.portal === 'hiran' ? 'sun' : next.portal === 'park' ? 'jupiter' : 'earth');
+      setFocus(next.portal === 'hiran' ? 'sun' : next.portal === 'park' ? 'jupiter' : next.portal === 'fleet' ? 'fleet' : next.portal === 'matrix' ? 'moon' : 'earth');
       if (next.world) setSelectedWorld(next.world);
     };
     window.addEventListener('hashchange', onHash);
@@ -178,6 +194,19 @@ export function Shell() {
     setMenuOpen(false);
   }
 
+  /** Klik na planetu: přiletět a otevřít panel s CTA (ne rovnou skočit do hry). */
+  const selectPlanet = useCallback((id: 'mars' | 'venus' | 'jupiter') => {
+    setPlanet(id);
+    setFocus(id);
+    setPortal(null);
+    setMenuOpen(false);
+  }, []);
+
+  const backToEarth = useCallback(() => {
+    setPlanet(null);
+    setFocus('earth');
+  }, []);
+
   const toggleLang = useCallback(() => {
     setLang(lang === 'cs' ? 'en' : 'cs');
   }, [lang, setLang]);
@@ -194,12 +223,18 @@ export function Shell() {
           portals={PORTALS}
           onOpen={openPortal}
           onSelectWorld={selectWorld}
+          onSelectPlanet={selectPlanet}
           xr={xrWanted}
           label={t('gate')}
           focus={focus}
           hiranState={hiranState}
+          fleetLeg={fleetLeg}
         />
       </div>
+      {/* Přechod scéna ↔ portál: krátký závoj, který při každé změně portálu
+          (otevření, zavření, přepnutí) jednou proběhne. `key` ho remountuje,
+          takže animace startuje znovu; pointer-events: none, aby nic neblokoval. */}
+      <div key={portal ?? 'home'} className="portal-veil" aria-hidden />
       <header className="chrome">
         <div>
           <strong>{t('title')}</strong>
@@ -239,7 +274,24 @@ export function Shell() {
           </button>
         </header>
         <div className="holo-drawer-tiles">
-          {PORTALS.map((p) => (
+          <p className="holo-section">◈ {lang === 'cs' ? 'Hry' : 'Games'}</p>
+          {GAME_LINKS.map((game) => (
+            <Link
+              key={game.id}
+              href={game.href}
+              className="holo-drawer-tile is-game"
+              style={{ borderLeftColor: game.tone }}
+            >
+              <span className="holo-drawer-dot" style={{ background: game.tone }} />
+              <span className="holo-drawer-name">{game.title[lang]}</span>
+              <em className="holo-drawer-tag holo-drawer-tag-play">
+                {lang === 'cs' ? 'hrát' : 'play'} →
+              </em>
+            </Link>
+          ))}
+
+          <p className="holo-section">◈ {lang === 'cs' ? 'Světy' : 'Worlds'}</p>
+          {PORTALS.filter((p) => WORLDS.includes(p.id)).map((p) => (
             <button
               key={p.id}
               type="button"
@@ -248,8 +300,42 @@ export function Shell() {
               onClick={() => openPortal(p.id)}
             >
               <span className="holo-drawer-dot" style={{ background: SLOT_COLOR[p.scene.slot] }} />
-              {p.title[lang]}
-              {p.status === 'stub' && <em className="holo-drawer-stub">·</em>}
+              <span className="holo-drawer-name">{p.title[lang]}</span>
+              <em className="holo-drawer-tag">{lang === 'cs' ? 'otevřít' : 'open'}</em>
+            </button>
+          ))}
+
+          <p className="holo-section">◈ {lang === 'cs' ? 'Systém' : 'System'}</p>
+          {PORTALS.filter((p) => SYSTEM.includes(p.id)).map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="holo-drawer-tile"
+              style={{ borderLeftColor: SLOT_COLOR[p.scene.slot] }}
+              onClick={() => openPortal(p.id)}
+            >
+              <span className="holo-drawer-dot" style={{ background: SLOT_COLOR[p.scene.slot] }} />
+              <span className="holo-drawer-name">{p.title[lang]}</span>
+              <em className="holo-drawer-tag">{lang === 'cs' ? 'otevřít' : 'open'}</em>
+            </button>
+          ))}
+
+          <p className="holo-section holo-section-dim">
+            ◈ {lang === 'cs' ? 'Připravujeme' : 'Coming soon'}
+          </p>
+          {PORTALS.filter((p) => p.status === 'stub').map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="holo-drawer-tile is-stub"
+              style={{ borderLeftColor: 'rgba(246,231,216,0.25)' }}
+              onClick={() => openPortal(p.id)}
+            >
+              <span className="holo-drawer-dot" style={{ background: 'rgba(246,231,216,0.3)' }} />
+              <span className="holo-drawer-name">{p.title[lang]}</span>
+              <em className="holo-drawer-tag holo-drawer-tag-soon">
+                {lang === 'cs' ? 've výstavbě' : 'in progress'}
+              </em>
             </button>
           ))}
         </div>
@@ -264,6 +350,50 @@ export function Shell() {
           )}
         </footer>
       </nav>
+      {planet && (
+        <section className="planet-panel" aria-label={planet}>
+          <header>
+            <strong>
+              {planet === 'mars' ? 'MARS' : planet === 'venus' ? 'VENUŠE' : 'JUPITER'}
+            </strong>
+            <button type="button" className="planet-panel-close" onClick={backToEarth} aria-label="×">
+              ×
+            </button>
+          </header>
+          <p>
+            {planet === 'mars'
+              ? 'Aréna z krabic — rail, rakety, tři boti. Sólo i online proti lidem.'
+              : planet === 'venus'
+                ? 'Okruh na hovercraftu, tři kola, tři soupeři. Sólo i online.'
+                : 'Jupiter Station — pouť, arkády, ruské kolo a tabule skóre.'}
+          </p>
+          <div className="planet-panel-actions">
+            <Link
+              href={planet === 'mars' ? '/mars' : planet === 'venus' ? '/venus' : '/park'}
+              className="park-btn"
+              onClick={() => setPlanet(null)}
+            >
+              {planet === 'mars' ? 'Hrát arénu' : planet === 'venus' ? 'Na start' : 'Na pouť'}
+            </Link>
+            {planet === 'jupiter' && (
+              <button
+                type="button"
+                className="arena-link"
+                onClick={() => {
+                  setPlanet(null);
+                  openPortal('park');
+                }}
+              >
+                otevřít okno pouti
+              </button>
+            )}
+            <button type="button" className="arena-link" onClick={backToEarth}>
+              ← zpět k Zemi
+            </button>
+          </div>
+        </section>
+      )}
+
       {worldsFailed && <p className="notice">{t('worldsEmpty')}</p>}
       {portal === 'world' && (
         <WorldPortal
@@ -285,6 +415,10 @@ export function Shell() {
       {portal === 'compute' && <ComputePortal onClose={() => setPortal(null)} />}
       {portal === 'park' && <ParkPortal onClose={closePortal} />}
       {portal === 'archa' && <ArchaPortal onClose={closePortal} />}
+      {portal === 'matrix' && <MatrixPortal onClose={closePortal} />}
+      {portal === 'fleet' && (
+        <FleetPortal onClose={closePortal} leg={fleetLeg} onSelectLeg={setFleetLeg} />
+      )}
       {portal === 'hiran' && (
         <HiranPortal
           onClose={closePortal}

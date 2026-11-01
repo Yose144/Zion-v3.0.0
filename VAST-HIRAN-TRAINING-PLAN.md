@@ -1,7 +1,9 @@
 # VAST Hiran Training — plán běhu na existující instanci (2026-10-31)
 
-> Stav: **FULL RUN DONE ✅ — adaptér stažen lokálně (2026-11-01)** · Instance: vast.ai **58077390** (RTX 3060 12 GB,
-> $0.0544/h, ssh6.vast.ai:27582) · Autor: Devin (autonomní běh na žádost 👤)
+> Stav: **RUN 1 DONE ✅ + VALIDOVÁN (overfit; interim `--lora-scaled`)** · **RUN 2 = NULL-RUN ⚠️**
+> (dataset se přes schémovou bug v pipeline nedostal — fixnuto, run 3 = 👤) ·
+> Instance: vast.ai **58077390** (RTX 3060 12 GB, $0.0544/h, ssh6.vast.ai:27582) · Autor: Devin
+> Validace + diagnóza run 2: `docs/3.2/REPORTS/REPORT_2026-11-01_HIRAN_VAST_TRAINING.md` §7–§8
 >
 > **👤 rozhodnutí 21:20Z:** `zion-miner` vypnut (šetří VRAM/SM pro trénink).
 > Mining = SRBMiner QTC ~201 MH/s + xmrig. ZION zůstává vypnutý po dobu tréninku.
@@ -69,7 +71,14 @@ llama.cpp; adaptér se stáhne a merge/quant běží lokálně (`merge_export.py
 - [x] V5 — Monitor ✅: eval epoch1 **0.385** → final eval **0.284 / ppl 1.33**; GPU 9,1 GiB/100 %; QTC 6h avg 128,8 MH/s (dip za sdílení GPU — očekávané)
 - [x] V6 — Package+pull ✅: `hiran-adapter.tgz` (313 MB) → **EDGE `/opt/zion/hiran/`** (rozbaleno v `zion-llama-lora-vast/` + tgz archiv vedle, md5 ověřen); na rigu zůstávají checkpoint-86/172/258 v `outputs/zion-llama-lora/`; Mac kopie smazána
 - [x] V7 — GGUF na EDGE ✅ (2026-11-01): plný merge 8B fp16 nejde na EDGE (7 GB RAM) ani EDGE2 (11 GB) → cesta **adapter-GGUF + runtime LoRA**: `convert_lora_to_gguf.py --base fp16` → **`/opt/zion/hiran/hiran-lora-vast.gguf`** (335 MB, 448 tensorů, llama arch) + base **`base-gguf/Meta-Llama-3.1-8B-Instruct-Q5_K_M.gguf`** (5,7 GB, bartowski). Servírování: `llama-server -m base.gguf --lora hiran-lora-vast.gguf` (= merged kvalita, bez 16 GB merge). Artefakty na EDGE `/opt/zion/hiran/`: `hiran-lora-vast.gguf`, `base-gguf/`, `zion-llama-lora-vast/` (safetensors), `base-fp16/` (15 GB — pro budoucí full merge), `hiran-adapter.tgz`. llama.cpp clone: `/opt/llama.cpp` (nebuildené — jen python tools). Deploy na `hiran-maitreya` upstream = nový `llama-server` servis na EDGE2 + `hiran-models.json` (👤)
-- [ ] V8 — Dokumentace: finální report do `docs/3.2/REPORTS/` + truth-sync AGENTS/plan files
+- [x] V8 — Dokumentace ✅ (2026-11-01): report `docs/3.2/REPORTS/REPORT_2026-11-01_HIRAN_VAST_TRAINING.md`
+  (§7 validace base-vs-LoRA → overfit + `--lora-scaled` mitigace; §8 run 2 NULL-RUN root cause),
+  `AIhiran.md` truth-sync, smoke prompty `hiran-smoke-prompts.json`
+- [x] V9 — Validace adaptéru ✅: artefakty na EDGE2, `llama-server --lora` smoke (8 held-out promptů);
+  scale sweep 0.5/0.7/1.0 → sweet spot ~0.5; DRAFT unit `zion-hiran-maitreya.service` na EDGE2 (👤 aktivace)
+- [x] Run 2 (zion_core) — doběhl 10:50Z, **NULL-RUN**: `format_for_llama3` ignoroval `instruction/output`
+  schéma → trénoval 921× jen SYSTEM_PROMPT (eval 0.008). Fix v repu + diversity guard + sync na rig.
+  Artefakty archivovány (degenerativní, nepoužitelné). Run 3 po přegenerování datasetu = 👤
 
 ## 6. Rizika a fallbacky
 

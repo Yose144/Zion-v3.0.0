@@ -1,4 +1,18 @@
-# Kingdom — jeden klient ekosystému ZION
+# Kingdom — herní klient ekosystému ZION
+
+> **⚠️ Co to je (pokyn 👤, 2026-11-01):** Kingdom je **herní klient**, ne webová stránka.
+> Cíl je desktopová aplikace pod **Electronem** — okno bez prohlížeče, vlastní identita,
+> **kompletní desktop agent (wallet, mining, rig, session) přímo v klientovi**.
+> Do té doby běží jako Next aplikace (`kingdom.zionterranova.com`), ale architektura,
+> design i rozhodnutí se dělají s cílem „klient", ne „web".
+>
+> **Co z toho plyne:** design vychází z desktop agenta (rasta One Love — zlato/červená/zelená
+> na černé, warp hvězdné pole, přechody), ne z webových stránek; identita = originální
+> rasta Z-glyph (`/brand/zion-glyph.png` z `apps/IntroPage/public/glyph-transparent.png`);
+> nic se nevypíná (staré appky běží dál, jen se na ně přesměrovává).
+>
+> **Je na tom spousta práce** — Electron shell, wallet (podpis, transakce, seed), mining
+> klient, auto-update, tray, podepsané buildy. Fáze a pořadí: `PLAN.md` §8 (K1–K4) a §1 (F7).
 
 > **Stav:** **F0 + F1 + F2a hotové** (2026-11-01) — kostra buildí, Brána má obsah z IntroPage a živá čísla, Místnost má **první svět OASIS** (planeta, prstenec Issobelly, Brána, markery portálů) a tři portály (Řetěz, Kovárna, Tržiště) čtou živá data. 13 světů OASIS je hotových.
 > **Datum založení:** 2026-11-01

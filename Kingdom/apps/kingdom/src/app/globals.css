@@ -11,11 +11,81 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: var(--k-bg);
   color: var(--k-text);
   font-family: var(--k-font);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/*
+ * Pozadí podle desktop agenta (rasta): zelená dopředu, červená a zlato jako
+ * odlesky, dole pád do černé. Warp hvězdy kreslí `WarpCanvas` nad tím (canvas,
+ * 24 fps, `prefers-reduced-motion` snižuje hustotu i rychlost).
+ */
+body {
+  background:
+    radial-gradient(circle at 15% 18%, rgba(6, 105, 40, 0.28), transparent 42rem),
+    radial-gradient(circle at 85% 12%, rgba(6, 105, 40, 0.24), transparent 40rem),
+    radial-gradient(circle at 45% 55%, rgba(6, 105, 40, 0.14), transparent 52rem),
+    radial-gradient(circle at 18% 15%, rgba(228, 30, 43, 0.18), transparent 45rem),
+    radial-gradient(circle at 50% 78%, rgba(252, 209, 22, 0.12), transparent 55rem),
+    linear-gradient(180deg, #0c0c0c 0%, #050505 60%, #000 100%);
+  background-attachment: fixed;
+}
+
+/* HUD mřížka — jemná, stejná jako v desktop appce. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 120px 120px;
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 0;
+}
+
+/* Warp plátno pod obsahem. */
+.k-warp {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.9;
+  will-change: transform;
+}
+
+/* ---------- přechody mezi okny (klient, ne web) ---------- */
+
+@keyframes k-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.996);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes k-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-app,
+  .k-stage > * {
+    animation: none !important;
+  }
 }
 
 a {
@@ -29,6 +99,23 @@ a {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
+  animation: k-fade 420ms ease both;
+}
+
+/* Rasta pruh — jediná věc, která musí být vidět vždy: zelená → zlato → červená. */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #078930 0%, #078930 28%, #fcd116 50%, #e41e2b 72%, #e41e2b 100%);
+  box-shadow: 0 0 18px rgba(252, 209, 22, 0.45);
+  z-index: 50;
+  pointer-events: none;
 }
 
 .k-topbar {
@@ -53,6 +140,30 @@ a {
   font-weight: 600;
   letter-spacing: 0.2px;
   white-space: nowrap;
+}
+
+/* Originální znak — široký rasta Z-glyph. Na úzkých displejích se zmenší. */
+.k-brand-glyph {
+  height: 30px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 0 10px rgba(252, 209, 22, 0.35));
+}
+
+@media (max-width: 640px) {
+  .k-brand-glyph {
+    height: 20px;
+  }
+  .k-brand-name {
+    display: none;
+  }
+}
+
+.k-gate-glyph {
+  width: min(40vw, 270px);
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 0 28px rgba(252, 209, 22, 0.35));
 }
 
 .k-brand-dot {
@@ -167,8 +278,24 @@ a {
   flex: 0 0 6px;
 }
 
+.k-rail-dot {
+  background: var(--rasta-green);
+  box-shadow: 0 0 8px rgba(7, 137, 48, 0.5);
+}
+
+.k-rail-item:nth-child(3n + 1) .k-rail-dot {
+  background: var(--rasta-gold);
+  box-shadow: 0 0 8px rgba(252, 209, 22, 0.45);
+}
+
+.k-rail-item:nth-child(3n + 2) .k-rail-dot {
+  background: var(--rasta-red);
+  box-shadow: 0 0 8px rgba(228, 30, 43, 0.45);
+}
+
 .k-rail-item[data-active='true'] .k-rail-dot {
   background: var(--k-accent);
+  box-shadow: 0 0 12px rgba(252, 209, 22, 0.8);
 }
 
 /* ---------- stage ---------- */
@@ -178,6 +305,11 @@ a {
   min-height: 0;
   overflow-y: auto;
   padding: 22px 24px 60px;
+}
+
+/* Obsah okna najíždí — každá routa je nový mount, takže animace hraje znovu. */
+.k-stage > * {
+  animation: k-enter 300ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .k-stage-head {
@@ -207,6 +339,25 @@ a {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
   gap: 12px;
+}
+
+/* Karty mají jemný rasta pruh — klient, ne web: i panely nesou paletu. */
+.k-card,
+.k-stat {
+  position: relative;
+}
+
+.k-card::before,
+.k-stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(7, 137, 48, 0.55), rgba(252, 209, 22, 0.75), rgba(228, 30, 43, 0.55));
+  opacity: 0.75;
 }
 
 .k-card {
@@ -375,39 +526,48 @@ a {
 /* ---------- Brána ---------- */
 
 .k-gate {
+  /* Brána je nahoře, popisky pod ní (pokyn 👤 2026-11-01). Dřív byl text
+     přes bránu; teď jde ve sloupci — samotná brána se nemění. */
   min-height: calc(100dvh - 54px);
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
   position: relative;
   overflow: hidden;
-  padding: 40px 24px;
+  padding: 44px 24px 56px;
 }
 
 .k-gate-bg {
   position: absolute;
   inset: 0;
-  /* Tmavé pole — brána si nebuli nese sama uvnitř kruhu. Když svítí i za ní,
-     kovový prstenec se rozmyje a přestane být bránou. */
+  /* Průhledné: rasta pozadí i warp hvězdy mají prosvítat — dřív tu bylo
+     neprůhledné #04050a a celá stránka vypadala jako plochý web. Kovový
+     prstenec drží čitelnost sám (je nejjasnější prvek scény). */
   background:
-    radial-gradient(circle at 50% 46%, rgba(122, 167, 255, 0.05), transparent 46%),
-    radial-gradient(circle at 50% 120%, rgba(228, 30, 43, 0.05), transparent 55%),
-    #04050a;
+    radial-gradient(circle at 50% 46%, rgba(252, 209, 22, 0.05), transparent 46%),
+    radial-gradient(circle at 50% 118%, rgba(6, 105, 40, 0.18), transparent 58%),
+    radial-gradient(circle at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.55) 78%);
   pointer-events: none;
 }
 
 /* Skutečná brána (Stargate) — dekorace pod obsahem. */
 .k-gate-stage {
-  position: absolute;
-  inset: 0;
+  /* Ve flow (ne absolutně) — brána je hlavní prvek, text patří pod ni. */
+  position: relative;
+  inset: auto;
   display: grid;
   place-items: center;
   pointer-events: none;
-  opacity: 0.55;
+  opacity: 0.9;
+  flex: 0 0 auto;
 }
 
 .k-gate-stage > .stargate-wrap {
-  /* Celý kruh musí zůstat v záběru — vnější kovový prstenec je součást brány. */
-  width: min(68vmin, 620px);
+  /* Celý kruh musí zůstat v záběru — vnější kovový prstenec je součást brány.
+     Menší než dřív: pod bránou je teď znak a titulek, do 900px se musí vejít. */
+  width: min(52vmin, 460px);
   pointer-events: none;
 }
 

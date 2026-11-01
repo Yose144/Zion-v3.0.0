@@ -8,9 +8,11 @@ import { LocaleSwitcher } from './LocaleSwitcher';
 export function Topbar({ locale }: { locale: Locale }) {
   return (
     <header className="k-topbar">
-      <Link href="/" className="k-brand">
-        <span className="k-brand-dot" />
-        <span>{t(locale, 'brand')}</span>
+      {/* Originální znak ZIONu (rasta Z-glyph) — klient má mít svoji identitu,
+          ne tečku. Zdroj: apps/IntroPage/public/glyph-transparent.png. */}
+      <Link href="/" className="k-brand" aria-label={t(locale, 'brand')}>
+        <img src="/brand/zion-glyph.png" alt="" className="k-brand-glyph" width={132} height={44} />
+        <span className="k-brand-name">{t(locale, 'brand')}</span>
       </Link>
 
       <nav className="k-nav">

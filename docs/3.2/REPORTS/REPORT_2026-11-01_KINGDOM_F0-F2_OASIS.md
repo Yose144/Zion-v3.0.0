@@ -223,7 +223,66 @@ První appka z migrace. Byla nejmenší a nejbezpečnější: **statický export
 
 **Poznámka:** `trailingSlash: true` zůstává — `/stats` → 301 `/stats/` je původní chování, ne regrese.
 
-**Zbývá (K1.1):** IntroPage, MarketPlace (security gate 1b — critical CVE), pak srovnat nirvana/OasisWeb/website-v2.9 na stejnou verzi. **S3/S4** čekají na K1.2–K1.4. kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
+### K1.1 — IntroPage na Next 16 + React 19 (2026-11-01)
+
+Druhá appka migrace, první **produkční povrch** (apex `zionterranova.com`). Statický export (`output: 'export'`, `distDir: 'dist'`), žádné API routes, žádné cookies — ale 48 stránek včetně 32 dynamických slugů a deset `next/image`.
+
+| Krok | Výsledek |
+|---|---|
+| `next` 14.2.30 → **16.4.3**, `react` 18 → **19.2.0**, `@types/react` 19 | `npm install` 37 s; **žádná změna kódu potřeba** |
+| Past `robots.ts`/`sitemap.ts` | **předřešená** — `export const dynamic = 'force-static'` tam už bylo; `robots.txt` i `sitemap.xml` se generují |
+| Past async `params` (Next 15+) | `blog/[slug]` a `seeds/[slug]` mají synchronní `params`, ale se `generateStaticParams` je Next 16 přijme — 27 blog + 5 seed slugů se prerenderovalo správně |
+| `tsc --noEmit` | čistý (Next si sám přepnul `jsx: react-jsx`, `target: ES2017`) |
+| Build | 48/48 statických stránek, 10,4 s compile + 1,4 s generování |
+| Lokální smoke test | 12/12 rout 200; **obsah homepage identický s live** (markery `ZION` 66×, `Amenti` 28× — 1:1), `$undefined` jen RSC payload jako na live |
+| Deploy | `deploy-intro.sh` → **13/13 rout 200** živě, assety (`/_next/static/chunks/*.css|js`, `/assets/css/*`, `/stargate/*`) všech 200 |
+| `vast-rigs/status.json` | rsync exclude fungoval — soubor zůstal čerstvý z daemonu (`ts` v čase deploye) |
+
+**Rollback připraven:** `/root/web-backups/zion-maintenance-bak-20261101T092603Z/` na EDGE2 (472 M, `rsync -a` před deployem). `nginx -s reload` proběhl bez chyby (varování „protocol options redefined" v `kingdom.`/`market.` konfech jsou pre-existing).
+
+### K1.1 — OasisWeb na Next 16 + React 19 (2026-11-01) — **jediná appka, která potřebovala zásah**
+
+Třetí appka migrace. `next` 16.2.12 → **16.4.3**, `react` zůstal **19.2.0**. Build prošel, `tsc` čistý — a přesto byla stránka po nasazení **rozbitá**: 8 z 11 rout spadlo na `Something went wrong`.
+
+| Krok | Výsledek |
+|---|---|
+| `next` 16.2.12 → **16.4.3** (React 19.2.0 beze změny) | `npm install` 26 s, `tsc --noEmit` čistý, build 13 statických rout |
+| HTTP smoke test (curl) | **11/11 rout 200** — nic nenapovídalo problému |
+| **Runtime smoke test (Playwright)** | **8/11 rout**: `Minified React error #438` → ErrorBoundary → prázdná stránka, `canvas=0` (3D scéna se vůbec nenamountovala) |
+| Příčina | Next 16.4 zapíná `experimental.reactBrowserBailout: true` (bailout cesta pro `next/dynamic` se `ssr: false`). Bailout objekt předávaný do `use()` umí zpracovat jen **React canary, který si Next veze interně**; s veřejným Reactem 19.2.0 `use()` objekt odmítne (`formatProdErrorMessage(438)`) a ErrorBoundary zobrazí chybu. **React 19.3.1 to nespraví** (ověřeno) — není to tedy „starý React", ale rozchod Nextu s npm Reactem. |
+| Fix | `next.config.ts`: `experimental: { reactBrowserBailout: false }` — jedna řádka, vrací chování 16.2 (`BailoutToCSRError`) |
+| Po fixu | **11/11 rout**: `canvas=1` (kromě `/miner`, kde plátno není záměrně), jediná chyba = pre-existing `401` z `/api/auth/me` |
+| Deploy | `deploy-oasis-web.sh` → `oasis.zionterranova.com`; záloha `/root/oasis-web-root.bak-20261101T101841Z.tar.gz` na EDGE2 |
+| Rollback | `ssh zion-edge2 'tar -xzf /root/oasis-web-root.bak-20261101T101841Z.tar.gz -C /var/www'` |
+
+**Proč to nikdo nechytil napoprvé:** HTTP 200 + shoda CSS tříd vypadají jako úspěch — statický export ale dodá HTML, které se v prohlížeči zahodí. **Regrese se pozná jen v prohlížeči** (`pageerror` + `canvas`), ne v `curl`.
+
+**Které appky to nepostihne:** `website-v2.9` (85× `ssr: false`) běží na `output: 'standalone'` a je v pořádku; `IntroPage` (4×) a `pool-ui` (0×) jsou statické exporty a také v pořádku — ověřeno v prohlížeči 2026-11-01. OasisWeb má **22** `ssr: false` a jako jediný kombinuje statický export s bailout cestou.
+
+**Měřeno:** lokální statický server háže #438 i pro **bajty, které na live fungují** — tj. lokální „ověřeno" u téhle appky **nic nedokazuje**. Rozhoduje až live v prohlížeči.
+
+**Zbývá (K1.1):** **MarketPlace** (security gate 1b — critical CVE). `nirvana` (16.4.3, deployla herní session) i `OasisWeb` (16.4.3, nasazeno) jsou srovnané. **S3/S4** čekají na K1.2–K1.4. kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
+
+---
+
+## F4 — zápisy a handoff (2026-11-01)
+
+F4 není „přidat tlačítka", ale **rozhodnout, co Kingdom smí udělat sám**. Pravidlo zní: co potřebuje klíč, zůstává mimo klienta; co jen čte, jde do portálu. Hotové čtyři věci:
+
+| Portál | Co umí | Kde končí | Proč |
+|---|---|---|---|
+| **Věž** (F4a) | rozhovor s Hiranem | model volá **server** (`/api/hiran/chat`), ne prohlížeč | klient nemá klíč ani interní URL; rate limit 20/min per IP |
+| **Tržiště** (F4b) | výloha produktů | klik vede na `market.zionterranova.com/shop?category=…` | pokladna, platba a doprava mají vlastní bezpečnostní model |
+| **Kovárna** (F4c) | 13 těžařů, hashrate, accept rate z `/public/v1/miners` | odkaz na `pool.zionterranova.com/ops/` (basic auth) | restart/drain/výplaty jsou operátorské úkony, ne klientské |
+| **Snem** (F4d) | 7 strážců, stav návrhů | odkaz na hlasování na `app.zionterranova.com/dao` | hlas podepisuje **peněženka**; Kingdom nemá klíč ani zůstatek |
+
+**Účet** deklaruje v manifestu jediný zápis, který opravdu umí: `sign-in` (`auth: 'sign'`, `POST /api/auth/login`). Ostatní portály `writes` nemají — prázdné pole je poctivější než seznam slibů.
+
+**Měření (live, 2026-11-01 11:50):** `/portal/pool` = 12 mincí, 13 těžařů, 355 MH/s, 26 karet; `/portal/dao` = 7 strážců, 0 návrhů (reálný stav), handoff karta; `/` a `/room` bez chyb v konzoli. `npm run verify` = codegen 9 portálů / 15 knih, `check` 108 souborů / 0 porušení, `tsc` čistý, build 4 statické routy + 4 API.
+
+**Past:** `Kingdom/node_modules` v pracovním stromu chyběl → `npm run typecheck` spadl na `tsc: not found`. Řešení `npm ci` v `Kingdom/` (vlastní lockfile, do `apps/` nesahá).
+
+**Past (cizí obsah):** codegen knihoven čte `canon/books/` — když tam paralelní session rozepíše novou knihu, `catalog.json` ji vezme i do buildu. Pro vlastní deploy: `git checkout …/catalog.json` **a** build spouštět jako `npm run build -w @zion/kingdom` (ne `npm run build`, který codegen volá znovu).
 
 ---
 

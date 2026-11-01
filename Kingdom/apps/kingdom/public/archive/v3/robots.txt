@@ -1,0 +1,4 @@
+User-Agent: *
+Allow: /
+
+Sitemap: https://zionterranova.com/sitemap.xml

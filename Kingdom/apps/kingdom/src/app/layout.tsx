@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import '@zion/ui/tokens.css';
 import './globals.css';
 import { getLocale } from '@/core/locale.server';
+import { WarpCanvas } from '@/core/shell/WarpCanvas';
 
 export const metadata: Metadata = {
   title: 'Království srdce · ZION',
@@ -20,7 +21,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = await getLocale();
   return (
     <html lang={locale}>
-      <body>{children}</body>
+      <body>
+        {/* Warp je dekorace pod obsahem — kreslí se na klientu, server o něm neví. */}
+        <WarpCanvas />
+        {children}
+      </body>
     </html>
   );
 }

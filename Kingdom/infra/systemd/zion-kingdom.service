@@ -8,7 +8,7 @@ Wants=network-online.target
 Type=simple
 User=zion
 Group=zion
-WorkingDirectory=/opt/zion/APP&WEB/kingdom/current/apps/kingdom
+WorkingDirectory=/opt/zion/APP&WEB/kingdom/current
 
 Environment=NODE_ENV=production
 Environment=PORT=3020

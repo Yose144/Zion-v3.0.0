@@ -1,7 +1,7 @@
 import type { Locale } from '@zion/contract';
 import { readSpec } from '@zion/contract';
 import { fmtNumber, t } from '@zion/i18n';
-import { api } from '@/core/api';
+import { api, EXTERNAL } from '@/core/api';
 import { manifest } from './manifest';
 
 const FLOWERS_PER_ZION = 1_000_000;
@@ -90,6 +90,24 @@ export default async function DaoPortal({ locale }: { locale: Locale }) {
           ))}
         </div>
       )}
+
+      {/*
+       * Handoff (F4): hlas se podepisuje peněženkou na DAO, ne tady.
+       * Kingdom nemá klíč ani zůstatek — neslibujeme tlačítko, které neumíme.
+       */}
+      <div className="k-card" style={{ marginTop: 26, maxWidth: 640 }}>
+        <div className="k-card-title">{t(locale, 'openGovernance')}</div>
+        <p className="k-card-desc">{t(locale, 'voteNote')}</p>
+        <a
+          className="k-btn"
+          href={EXTERNAL.dao}
+          target="_blank"
+          rel="noreferrer"
+          style={{ alignSelf: 'flex-start', marginTop: 8 }}
+        >
+          {t(locale, 'openGovernance')} →
+        </a>
+      </div>
     </>
   );
 }
