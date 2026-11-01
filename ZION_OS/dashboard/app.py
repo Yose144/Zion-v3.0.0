@@ -439,17 +439,24 @@ def _run_edge_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
 
 def _run_edge_cmd_remote(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
     # v3.0.7: Use repo symlink "ssh-key-zion-edge" -> ~/.ssh/zion-edge-post-wipe-2026-07-29, or SSH alias "zion-new"
+    # 2026-11-01: mux the connection — one SSH session per dashboard, not one per probe.
     ssh_key = REPO_ROOT / "ssh-key-zion-edge"
     if ssh_key.exists():
         return subprocess.run(
             ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
              "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
+             "-o", "ControlMaster=auto",
+             "-o", "ControlPath=/tmp/zion-dash-edge-%r@%h:%p",
+             "-o", "ControlPersist=120",
              f"root@{EDGE_HOST}", cmd],
             capture_output=True, text=True, timeout=timeout
         )
     # Fallback: use SSH config alias "zion-new" (configured in ~/.ssh/config)
     return subprocess.run(
         ["ssh", "-o", "ConnectTimeout=3", "-o", "BatchMode=yes",
+         "-o", "ControlMaster=auto",
+         "-o", "ControlPath=/tmp/zion-dash-edge-%r@%h:%p",
+         "-o", "ControlPersist=120",
          "zion-new", cmd],
         capture_output=True, text=True, timeout=timeout
     )
@@ -462,19 +469,81 @@ EDGE2_HOST = os.environ.get("ZION_EDGE2_HOST", "207.180.217.100")
 EDGE2_SSH_KEY = os.environ.get("ZION_EDGE2_SSH_KEY", "/etc/zion/keys/edge2-probe")
 
 def _run_edge2_cmd(cmd: str, timeout: int = 8) -> subprocess.CompletedProcess:
-    """Run a command on EDGE2 via SSH (always remote)."""
+    """Run a command on EDGE2 via SSH (always remote).
+
+    2026-11-01: every probe used to open a brand-new SSH session. The
+    dashboard refresh fan-out produced 4 361 root sessions in 100 minutes on
+    EDGE2, sshd started MaxStartups throttling and the chain-tunnel health
+    legs stalled (G8 saw multichain/dao/zis down 5× between 08:02–08:18 UTC).
+    A shared mux socket + batched systemd checks keep sshd to one session.
+    """
     if Path(EDGE2_SSH_KEY).exists():
         return subprocess.run(
             ["ssh", "-i", EDGE2_SSH_KEY, "-o", "StrictHostKeyChecking=accept-new",
              "-o", "ConnectTimeout=4", "-o", "BatchMode=yes",
+             "-o", "ControlMaster=auto",
+             "-o", "ControlPath=/tmp/zion-dash-edge2-%r@%h:%p",
+             "-o", "ControlPersist=120",
              f"root@{EDGE2_HOST}", cmd],
             capture_output=True, text=True, timeout=timeout
         )
     return subprocess.run(
         ["ssh", "-o", "ConnectTimeout=4", "-o", "BatchMode=yes",
+         "-o", "ControlMaster=auto",
+         "-o", "ControlPath=/tmp/zion-dash-edge2-%r@%h:%p",
+         "-o", "ControlPersist=120",
          "zion-edge2", cmd],
         capture_output=True, text=True, timeout=timeout
     )
+
+
+# ── EDGE2 systemd fan-out (2026-11-01) ───────────────────────────────────
+# /api/services asks about one unit at a time; do it in a single round-trip per
+# TTL window instead of one SSH session per unit.
+_EDGE2_SYSD_TTL = float(os.environ.get("ZION_EDGE2_SYSD_TTL", "8"))
+_EDGE2_SYSD = {"ts": 0.0, "states": {}}
+
+_EDGE2_SYSTEMD_MAP = {
+    "v31-miner": "zion-v31-miner.service",
+    "v31-pool": "zion-v31-pool.service",
+    "v31-node": "zion-v31-node.service",
+    "v31-multichain": "zion-v31-multichain.service",
+}
+
+
+def _edge2_units() -> list:
+    """Every EDGE2 systemd unit the registry can ask about (deduped)."""
+    units = []
+    for svc in SERVICE_REGISTRY_EDGE_PRIMARY:
+        if svc.get("site") != "edge2":
+            continue
+        unit = svc.get("systemd_unit") or _EDGE2_SYSTEMD_MAP.get(svc.get("id"))
+        if unit and unit not in units:
+            units.append(unit)
+    return units
+
+
+def _edge2_systemd_states(extra_units=None) -> dict:
+    """ActiveState map for EDGE2 units — one SSH round-trip per TTL window."""
+    now = time.time()
+    cached = _EDGE2_SYSD["states"]
+    if cached and (now - _EDGE2_SYSD["ts"]) < _EDGE2_SYSD_TTL:
+        return cached
+    targets = _edge2_units()
+    for unit in extra_units or []:
+        if unit and unit not in targets:
+            targets.append(unit)
+    if not targets:
+        return cached
+    try:
+        r = _run_edge2_cmd("systemctl is-active " + " ".join(targets), timeout=15)
+        lines = (r.stdout or "").split() if r else []
+        if len(lines) == len(targets):
+            _EDGE2_SYSD["states"] = dict(zip(targets, lines))
+            _EDGE2_SYSD["ts"] = now
+    except Exception:
+        pass
+    return _EDGE2_SYSD["states"]
 
 # ── Decimal conversion helpers (3.0.3 fork) ──────────────────────────────
 # Post-3.0.3: 1 ZION = 1_000_000 flowers (6 decimals)
@@ -2090,18 +2159,17 @@ def check_service_health(svc: dict) -> dict:
 
     elif method == "systemd":
         # Check systemd service status — per-svc systemd_unit override, EDGE2 via SSH
-        systemd_map = {
-            "v31-miner": "zion-v31-miner.service",
-            "v31-pool": "zion-v31-pool.service",
-            "v31-node": "zion-v31-node.service",
-            "v31-multichain": "zion-v31-multichain.service",
-        }
+        # (EDGE2 states come from one batched call per TTL — see _edge2_systemd_states)
+        systemd_map = _EDGE2_SYSTEMD_MAP
         svc_name = svc.get("systemd_unit") or systemd_map.get(sid)
         if svc_name:
             try:
                 if svc.get("site") == "edge2":
-                    r = _run_edge2_cmd(f"systemctl is-active {svc_name}", timeout=8)
-                    out = (r.stdout if r else "").strip()
+                    out = _edge2_systemd_states([svc_name]).get(svc_name)
+                    if out is None:
+                        # batch missed this unit — fall back to a single probe
+                        r = _run_edge2_cmd(f"systemctl is-active {svc_name}", timeout=8)
+                        out = (r.stdout if r else "").strip()
                 else:
                     r = subprocess.run(["systemctl", "is-active", svc_name],
                                      capture_output=True, text=True, timeout=2)
