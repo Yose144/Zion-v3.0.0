@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain, Sailboat, Sunrise, Sun, Flame, Pyramid } from 'lucide-react';
+import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain, Sailboat, Sunrise, Sun, Flame, Pyramid, Fish } from 'lucide-react';
 
 const VISIONS = [
   {
@@ -84,6 +84,14 @@ const VISIONS = [
     desc: 'Plující uzel — flotila Tres Marias na solárních plachtách (Atlantik × Pacifik × Indický oceán), která spojuje všechny body přes oceány.',
     rc: '14, 165, 233', // ocean blue
     accent: 'text-sky-300',
+  },
+  {
+    href: '/terranova/kralovstvi-srdce',
+    icon: Fish,
+    label: 'Království srdce · Archa',
+    desc: 'Třináctý uzel — jediný, který je na vodě. Plující kolonie do sta lidí se semenným archivem; trasu jí určují keporkaci.',
+    rc: '20, 143, 179', // deep sea
+    accent: 'text-cyan-300',
   },
   {
     href: '/terranova/boa-esperanca',

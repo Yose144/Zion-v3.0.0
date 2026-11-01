@@ -55,6 +55,16 @@ const SLIDES: Slide[] = [
     href: '/terranova/maria-del-camino',
   },
   {
+    src: '/images/kralovstvi-srdce/hero.webp',
+    srcM: '/images/kralovstvi-srdce/hero-m.webp',
+    alt: {
+      cs: 'Království srdce · Nirvana — archa a tři lodě flotily, keporkaci u břehu Nové země',
+      en: 'Kingdom of the Heart · Nirvana — the ark and the fleet’s three ships, humpbacks off the shore of the new world',
+    },
+    label: { cs: 'Království srdce · Archa', en: 'Kingdom of the Heart · The Ark' },
+    href: '/terranova/kralovstvi-srdce',
+  },
+  {
     src: '/images/ekam/hero.webp',
     srcM: '/images/ekam/hero-m.webp',
     alt: {
