@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/core/session/AuthProvider';
-import { GamesDock } from '@/core/games/GamesDock';
 import { GAME_LINKS } from '@/core/games/links';
 import { useI18n } from '@/core/i18n';
 import { PORTALS, type SceneSlot } from '@/core/portals/manifest';
@@ -395,7 +394,6 @@ export function Shell() {
         </section>
       )}
 
-      <GamesDock />
       {worldsFailed && <p className="notice">{t('worldsEmpty')}</p>}
       {portal === 'world' && (
         <WorldPortal

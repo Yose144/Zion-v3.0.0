@@ -23,6 +23,8 @@ export interface ZisUser {
   /** ZIS vrací i tyhle pole — avatar (URL) a 3D podobu hráče. */
   avatar?: string | null;
   avatar3d?: ZisAvatar3d | null;
+  /** Linknuté adresy (zion-l1, evm, …) — HUD z nich bere ZION zůstatek. */
+  linkedAddresses?: { address: string; chainType: string }[];
 }
 
 async function zisFetch<T>(path: string, init?: RequestInit): Promise<T> {

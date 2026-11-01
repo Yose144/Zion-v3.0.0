@@ -151,6 +151,22 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Co v MP není:** boti (prázdnou arénu nikdo nedoplňuje), zvuk, VR, tracery.
   Není to nedodělek, je to další krok — nemá se to hlásit jako hotové.
 
+### Herní HUD (F2, 2026-11-01)
+
+- **`GameHud` je v `app/layout.tsx`** a sám se skryje mimo herní povrchy
+  (`usePathname()` + seznam `SURFACES`). Varianty: `is-dock` (vesmír, dole
+  uprostřed) a `is-compact` (hry, vlevo dole — aby nekolidoval s jejich HUD).
+- **ZION zůstatek NIKDY přes `getBalance`** — je to account-model a u UTXO
+  vrací 0. Route `/api/wallet/balance` volá `getUtxos` s `limit: 0`
+  (`total_amount`), primárně `127.0.0.1:9445`, fallback `rpc.zionterranova.com`.
+  Když RPC mlčí, vrací **200 `{ok:false}`** — HUD ukáže `—`, hra nesmí vypadat
+  rozbitá.
+- **`BigInt`** kvůli částkám nad 2^53 (144 mld ZION × 1e6 flowers). V `tsconfig`
+  je target ES2017 → **bigint literal `1n` neprojde**, používat `BigInt(1)`.
+- Žetony čte `loadProfile()` až po mountu (SSR by měl jiné číslo) a obnovuje je
+  při `window.focus`.
+- Na mobilu se tabům skrývá text (`game-hud-tab-text`) a lišta scrolluje.
+
 ### Planety jako vstupy do her (F1, 2026-11-01)
 
 - **Mars, Venuše, Jupiter jsou vstupy** (`PlanetDef.game`), ostatní planety jsou

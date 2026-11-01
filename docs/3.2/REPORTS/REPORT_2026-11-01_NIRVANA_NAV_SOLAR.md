@@ -105,3 +105,55 @@ Headless (vesmír za ZAP pasem, stub `ARCHIVE_VERIFY_URL`):
 
 - Hover ladit na skutečném displeji (headless ověří jen přítomnost a klik).
 - Mobil: panel se na `≤ 640 px` posouvá nad dock (CSS hotové, netestováno na zařízení).
+
+---
+
+# Dodatek — F2: herní HUD (2026-11-01)
+
+Bývalý `GamesDock` se změnil na **herní HUD**: přepínání her, ovládání,
+žetony, online, ZION zůstatek a ZIS identita.
+
+## Kde běží
+
+| Povrch | Varianta | Kde |
+|---|---|---|
+| `/` (vesmír) | `is-dock` | dole uprostřed (kde dřív byl dock) |
+| `/park`, `/mars`, `/venus`, `/avatars` | `is-compact` | vlevo dole (nekoliduje s HUD hry ani s tabulí vpravo) |
+
+Komponenta je v `app/layout.tsx` a sama se podle `usePathname()` skryje
+na `/present/*`, `/hiran` a jinde.
+
+## Co ukazuje
+
+| Prvek | Zdroj |
+|---|---|
+| 4 taby her | `core/games/links.ts` (aktivní podle cesty) |
+| ovládání kontextově | statické podle povrchu (orbita / skříň / WASD+1-2 / W-S-A-D) |
+| ◎ žetony | `loadProfile()` (localStorage), obnoví se po návratu do okna |
+| ◉ online | `useNet().online` (chat presence) |
+| ⬢ ZION | `/api/wallet/balance` → node `getUtxos` |
+| jméno / přihlásit | `useAuth()` — callsign → displayName → zkrácená adresa |
+
+## ZION zůstatek — proč nová route
+
+`getBalance` je **account-model** a u UTXO peněženky vrací 0 (známá past).
+`GET /api/wallet/balance?address=zion1…` proto volá `getUtxos` s `limit: 0`
+(součty bez megabajtů UTXO), primárně `127.0.0.1:9445` (tunel na primární uzel),
+fallback `https://rpc.zionterranova.com`; 4s timeout, per-IP 30/min, `BigInt`
+kvůli částkám nad 2^53. Když RPC mlčí, vrací **200 s `ok:false`** a HUD ukáže `—`
+(hra nesmí vypadat rozbitá).
+
+**Live ověřeno:** `zion 183 826 425,10`, `utxos 96 307`, **`source: "node"`**.
+
+## Ověřeno
+
+- lokálně: HUD na všech 5 površích, aktivní tab odpovídá cestě, mobil 390×844 bez
+  vodorovného přesahu, 0 chyb v konzoli
+- live: HUD v HTML `/mars`, API vrací zůstatek z uzlu, všech 5 stránek 200
+
+## Meze
+
+- Zůstatek je **jen pro přihlášené** (host vidí `—` a „přihlásit").
+- Čísla jsou orientační, ne účetní — HUD není peněženka; posílat ZION jde dál
+  přes ZIS/Účet.
+- Žetony se čtou z `localStorage`, takže v jiném prohlížeči jsou jiné.
