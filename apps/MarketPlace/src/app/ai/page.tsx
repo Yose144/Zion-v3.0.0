@@ -23,11 +23,11 @@ import { useLang } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 const T = {
-  kicker: { cs: 'Inference API', en: 'Inference API' },
-  title: { cs: 'Hiranyagarbha API', en: 'Hiranyagarbha API' },
+  kicker: { cs: 'Zlatý zárod · AI ze ZION vesmíru', en: 'The Golden Embryo · AI from the ZION universe' },
+  title: { cs: 'Hiran — váš parťák pro kód i myšlenky', en: 'Hiran — your companion for code & ideas' },
   subtitle: {
-    cs: 'OpenAI-kompatibilní inference API hostované v EU. Žádný US cloud — data neopouštějí Evropu a nikdy se nepoužívají k trénování.',
-    en: 'OpenAI-compatible inference API hosted in the EU. No US cloud — your data never leaves Europe and is never used for training.',
+    cs: 'Coding agent, který žije ve vašem terminálu — a OpenAI-kompatibilní API pro vaše aplikace. Hostováno v EU, data nikdy neopouštějí Evropu a nikdy netrénujeme na tom, co píšete.',
+    en: 'A coding agent that lives in your terminal — plus an OpenAI-compatible API for your apps. Hosted in the EU, your data never leaves Europe and is never used for training.',
   },
   signIn: {
     cs: 'Pro vytvoření API klíče se nejdřív přihlaste přes ZIS (tlačítko Sign In v navigaci).',
