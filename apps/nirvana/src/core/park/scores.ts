@@ -10,7 +10,17 @@ export interface ParkScoreEntry {
 export type ParkScores = Partial<Record<ParkGameId, ParkScoreEntry[]>>;
 
 export function emptyScores(): ParkScores {
-  return { pong: [], breakout: [], snake: [], tetris: [], gallery: [], arena: [], race: [] };
+  return {
+    pong: [],
+    breakout: [],
+    snake: [],
+    tetris: [],
+    asteroids: [],
+    gallery: [],
+    arena: [],
+    race: [],
+    fight: [],
+  };
 }
 
 export function topScore(scores: ParkScores, game: ParkGameId): number {

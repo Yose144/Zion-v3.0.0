@@ -125,6 +125,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   při buildu (jinak klient míří na `ws://<host>/net`, což dev server neumí).
   Pozor: propíše se do bundlu — před deployem build bez té proměnné (dělá to
   deploy skript sám).
+- **Turbopack si při změně téhle proměnné nevšimne nové hodnoty** — opakovaný
+  build se starým `.next` nechá ve státu `ws://localhost:3010/net` a E2E pak
+  padá na `WebSocket handshake timedout`, i když proměnná v příkaze je. Před
+  lokálním multiplayer E2E udělej `rm -rf .next` a teprve pak build s env.
 
 ### Multiplayer arény (M2a, 2026-11-01)
 

@@ -1164,6 +1164,13 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   line-height: 1.35;
 }
 
+.park-best {
+  font-style: normal;
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  color: #7fe3d4;
+}
+
 .park-ride-btn {
   width: 100%;
   margin-bottom: 0.7rem;

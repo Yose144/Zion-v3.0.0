@@ -16,12 +16,22 @@ export interface ParkProfile {
   tickets: number;
   /** Den, kdy byla výzva naposledy splněna (YYYY-MM-DD). */
   challengeDay: string | null;
+  /** Den poslední dokončené jízdy na kole — bonus za první jízdu dne. */
+  rideDay: string | null;
 }
 
 export const WHEEL_COST = 1;
 const STORAGE_KEY = 'nirvana.park.v1';
 
-const EMPTY: ParkProfile = { tokens: 0, best: {}, runs: 0, day: null, tickets: 0, challengeDay: null };
+const EMPTY: ParkProfile = {
+  tokens: 0,
+  best: {},
+  runs: 0,
+  day: null,
+  tickets: 0,
+  challengeDay: null,
+  rideDay: null,
+};
 
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -40,6 +50,7 @@ export function loadProfile(): ParkProfile {
       day: typeof parsed.day === 'string' ? parsed.day : null,
       tickets: Math.max(0, Math.floor(Number(parsed.tickets) || 0)),
       challengeDay: typeof parsed.challengeDay === 'string' ? parsed.challengeDay : null,
+      rideDay: typeof parsed.rideDay === 'string' ? parsed.rideDay : null,
     };
     // denní vstupenka: první návštěva dne dostane žeton na kolo
     if (profile.day !== today()) {
@@ -95,4 +106,16 @@ export function grantTokens(profile: ParkProfile, amount: number): ParkProfile {
   const next: ParkProfile = { ...profile, tokens: profile.tokens + amount };
   saveProfile(next);
   return next;
+}
+
+/**
+ * Dokončená jízda na kole. První jízda dne je zdarma — žeton se vrátí.
+ * Nejde z toho vydělat: kolo stojí 1 a vrátí 1, takže bilance je nula;
+ * druhá a další jízda téhož dne stojí vstupné jako obyčejně.
+ */
+export function claimRideBonus(profile: ParkProfile): { profile: ParkProfile; granted: boolean } {
+  if (profile.rideDay === today()) return { profile, granted: false };
+  const next: ParkProfile = { ...profile, rideDay: today(), tokens: profile.tokens + 1 };
+  saveProfile(next);
+  return { profile: next, granted: true };
 }

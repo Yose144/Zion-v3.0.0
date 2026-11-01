@@ -14,6 +14,7 @@ import { GAME_H, GAME_W, PARK_PALETTE } from '@/core/park/games/types';
 import {
   WHEEL_COST,
   awardRun,
+  claimRideBonus,
   loadProfile,
   saveProfile,
   spendTokens,
@@ -35,12 +36,13 @@ import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
  * zobrazuje na dvou místech. Proto ji vidí i hráč ve VR.
  */
 
-/** Názvy všech her, které mají skóre — canvas i 3D. */
+/** Názvy všech her, které mají skóre — canvas, 3D i hry mimo park. */
 const TITLES: { id: ParkGameId; title: { cs: string; en: string } }[] = [
   ...PARK_GAMES.map((game) => ({ id: game.id as ParkGameId, title: game.title })),
   { id: 'gallery', title: { cs: 'Střelnice', en: 'Gallery' } },
   { id: 'arena', title: { cs: 'Mars aréna', en: 'Mars arena' } },
   { id: 'race', title: { cs: 'Venuše okruh', en: 'Venus circuit' } },
+  { id: 'fight', title: { cs: 'Merkur souboj', en: 'Mercury duel' } },
 ];
 
 const BOARD = TITLES;
@@ -48,6 +50,8 @@ const BOARD = TITLES;
 function titleOf(id: ParkGameId, cs: boolean): string {
   return TITLES.find((entry) => entry.id === id)?.title[cs ? 'cs' : 'en'] ?? id;
 }
+
+const RIDE_SECONDS = 25; // jedna otočka kola při jízdě
 
 export default function ParkPage() {
   const { lang } = useI18n();
@@ -230,20 +234,33 @@ export default function ParkPage() {
       'KeyD',
       'Space',
     ]);
+    const pressed = new Set<string>();
     const down = (event: KeyboardEvent) => {
       if (!codes.has(event.code)) return;
       event.preventDefault();
+      pressed.add(event.code);
       handleRef.current?.key(event.code, true);
     };
     const up = (event: KeyboardEvent) => {
       if (!codes.has(event.code)) return;
+      pressed.delete(event.code);
       handleRef.current?.key(event.code, false);
+    };
+    // při ztrátě fokusu klávesy pustit — jinak Had jede dál po přepnutí tabu
+    const release = () => {
+      for (const code of pressed) handleRef.current?.key(code, false);
+      pressed.clear();
     };
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
+    window.addEventListener('blur', release);
+    document.addEventListener('visibilitychange', release);
     return () => {
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
+      window.removeEventListener('blur', release);
+      document.removeEventListener('visibilitychange', release);
+      release();
     };
   }, [active]);
 
@@ -277,6 +294,40 @@ export default function ParkPage() {
     setRiding(true);
     setNotice(cs ? 'Jízda začíná' : 'Ride starts');
   }, [cs, profile, stopGame]);
+
+  /**
+   * Konec jízdy. Dokončená otočka (časovač) vrátí vstupné první jízdu dne;
+   * sesednutí předčasně je jen konec — vstupné se nevrací, ať je slovo
+   * „dokončená" pravdivé.
+   */
+  const endRide = useCallback(
+    (completed: boolean) => {
+      setRiding(false);
+      if (!completed) {
+        setNotice(cs ? 'Jízda ukončena' : 'Ride ended');
+        return;
+      }
+      const bonus = claimRideBonus(profile ?? loadProfile());
+      setProfile(bonus.profile);
+      setNotice(
+        bonus.granted
+          ? cs
+            ? 'Jízda dokončena · první dnes zdarma, +1 žeton'
+            : 'Ride complete · first one today is free, +1 token'
+          : cs
+            ? 'Jízda dokončena'
+            : 'Ride complete',
+      );
+    },
+    [cs, profile],
+  );
+
+  // kolo dokončí otočku samo — jinak jízda trvá do konce světa
+  useEffect(() => {
+    if (!riding) return;
+    const timer = setTimeout(() => endRide(true), RIDE_SECONDS * 1000);
+    return () => clearTimeout(timer);
+  }, [riding, endRide]);
 
   const nickChange = useCallback((value: string) => {
     const clean = value.replace(/[\u0000-\u001f<>]/g, '').slice(0, 12);
@@ -376,7 +427,7 @@ export default function ParkPage() {
             </button>
           )}
           {riding && (
-            <button type="button" className="park-btn" onClick={() => setRiding(false)}>
+            <button type="button" className="park-btn" onClick={() => endRide(false)}>
               {cs ? 'Sesednout' : 'Get off'}
             </button>
           )}
@@ -426,18 +477,24 @@ export default function ParkPage() {
             <strong>{cs ? 'VYBER SI SKŘÍŇ' : 'PICK A CABINET'}</strong>
           </header>
           <div className="park-games">
-            {PARK_GAMES.map((entry) => (
-              <button key={entry.id} type="button" onClick={() => startGame(entry.id)}>
-                <strong>{entry.title[cs ? 'cs' : 'en']}</strong>
-                <small>{entry.hint[cs ? 'cs' : 'en']}</small>
-              </button>
-            ))}
+            {PARK_GAMES.map((entry) => {
+              const best = profile?.best[entry.id];
+              return (
+                <button key={entry.id} type="button" onClick={() => startGame(entry.id)}>
+                  <strong>{entry.title[cs ? 'cs' : 'en']}</strong>
+                  <small>{entry.hint[cs ? 'cs' : 'en']}</small>
+                  {best ? <em className="park-best">{cs ? 'rekord' : 'best'} {best}</em> : null}
+                </button>
+              );
+            })}
           </div>
           <button type="button" className="park-btn park-ride-btn" onClick={startGallery}>
             {cs ? 'Střelnice · 25 s · 3D terče' : 'Shooting gallery · 25 s · 3D targets'}
           </button>
           <button type="button" className="park-btn park-ride-btn" onClick={ride} disabled={riding}>
-            {cs ? `Ruské kolo · ${WHEEL_COST} žeton` : `Ferris wheel · ${WHEEL_COST} token`}
+            {cs
+              ? `Ruské kolo · ${WHEEL_COST} žeton · první jízda dne zdarma`
+              : `Ferris wheel · ${WHEEL_COST} token · first ride of the day is free`}
           </button>
           <div className="park-games">
             {GAME_LINKS.filter((game) => game.id !== 'park').map((game) => (
@@ -468,6 +525,11 @@ export default function ParkPage() {
               {' · '}
               {cs ? 'cíl' : 'target'} {challenge.target}
             </span>
+            {(profile?.best[challenge.game] ?? 0) > 0 && (
+              <em className="park-best">
+                {cs ? 'rekord' : 'best'} {profile!.best[challenge.game]} / {cs ? 'cíl' : 'target'} {challenge.target}
+              </em>
+            )}
             <small>
               {challengeDone
                 ? cs

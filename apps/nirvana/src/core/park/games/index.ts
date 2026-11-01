@@ -1,3 +1,4 @@
+import { createAsteroids } from './asteroids';
 import { createBreakout } from './breakout';
 import { createPong } from './pong';
 import { createSnake } from './snake';
@@ -40,6 +41,15 @@ export const PARK_GAMES: ParkGameDefinition[] = [
       en: 'Arrows or WASD · apple is 25 · do not hit the wall or yourself',
     },
     create: createSnake,
+  },
+  {
+    id: 'asteroids',
+    title: { cs: 'Asteroidy', en: 'Asteroids' },
+    hint: {
+      cs: '← → otáčej, ↑ tlač, mezerník střílej · kurzor je volant i plyn · skály se dělí · 3 životy',
+      en: '← → turn, ↑ thrust, space shoot · cursor is wheel and throttle · rocks split · 3 lives',
+    },
+    create: createAsteroids,
   },
 ];
 

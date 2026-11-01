@@ -11,7 +11,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const GAMES = new Set(['pong', 'breakout', 'snake', 'tetris', 'gallery', 'arena', 'race', 'fight']);
+const GAMES = new Set([
+  'pong',
+  'breakout',
+  'snake',
+  'tetris',
+  'asteroids',
+  'gallery',
+  'arena',
+  'race',
+  'fight',
+]);
 const TOP = 10;
 const MAX_SCORE = 100_000;
 const STORE_PATH = process.env.NIRVANA_PARK_SCORES_PATH ?? '';
@@ -33,7 +43,17 @@ const hits = new Map<string, number[]>();
 let board: Board | null = null;
 
 function emptyBoard(): Board {
-  return { pong: [], breakout: [], snake: [], tetris: [], gallery: [], arena: [], race: [], fight: [] };
+  return {
+    pong: [],
+    breakout: [],
+    snake: [],
+    tetris: [],
+    asteroids: [],
+    gallery: [],
+    arena: [],
+    race: [],
+    fight: [],
+  };
 }
 
 function readBoard(): Board {

@@ -17,7 +17,17 @@ export interface DailyChallenge {
   reward: number;
 }
 
-const GAMES: ParkGameId[] = ['pong', 'breakout', 'snake', 'tetris', 'gallery', 'arena', 'race', 'fight'];
+const GAMES: ParkGameId[] = [
+  'pong',
+  'breakout',
+  'snake',
+  'tetris',
+  'asteroids',
+  'gallery',
+  'arena',
+  'race',
+  'fight',
+];
 
 /** Cíle podle toho, kolik bodů hra reálně dává. */
 const TARGETS: Record<ParkGameId, number> = {
@@ -25,6 +35,7 @@ const TARGETS: Record<ParkGameId, number> = {
   breakout: 300, // 30 cihel
   snake: 200, // 8 jablek
   tetris: 400, // 4 řádky
+  asteroids: 300, // 6 velkých skal nebo vlna 2
   gallery: 150, // 15 zásahů
   arena: 500, // 5 fragů
   race: 3000, // 3 kola pod ~100 s

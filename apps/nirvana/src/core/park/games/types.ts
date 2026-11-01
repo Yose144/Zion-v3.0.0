@@ -10,7 +10,7 @@
  *     jen zdroje stejných dvou signálů.
  */
 
-export type CanvasGameId = 'pong' | 'breakout' | 'snake' | 'tetris';
+export type CanvasGameId = 'pong' | 'breakout' | 'snake' | 'tetris' | 'asteroids';
 /** Cokoli, co jde hrát a zapsat do tabule. Střelnice je 3D, ne canvas. */
 export type ParkGameId = CanvasGameId | 'gallery' | 'arena' | 'race' | 'fight';
 

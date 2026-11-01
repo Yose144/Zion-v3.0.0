@@ -73,7 +73,6 @@ export function createAsteroids(canvas: HTMLCanvasElement, hooks: ParkGameHooks)
     wave: 0,
     fireCooldown: 0,
     running: true,
-    started: false,
     /** Odpočet před novou vlnou (0 = vlna běží). */
     respawnTimer: 0,
   };
@@ -151,7 +150,6 @@ export function createAsteroids(canvas: HTMLCanvasElement, hooks: ParkGameHooks)
     state.fireCooldown = 0;
     state.respawnTimer = 0;
     state.running = true;
-    state.started = false;
     keys.thrust = false;
     keys.left = false;
     keys.right = false;
@@ -211,7 +209,6 @@ export function createAsteroids(canvas: HTMLCanvasElement, hooks: ParkGameHooks)
     const dt = Math.min(0.05, dtRaw);
 
     if (state.running) {
-      state.started = true;
       if (state.fireCooldown > 0) state.fireCooldown -= dt;
       if (ship.guard > 0) ship.guard -= dt;
 

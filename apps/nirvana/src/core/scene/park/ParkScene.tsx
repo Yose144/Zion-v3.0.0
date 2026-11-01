@@ -29,11 +29,13 @@ interface Cabinet {
   angle: number;
 }
 
+/** Pět skříní v pravidelném oblouku — nová hra se přidává do tohoto pole. */
 const CABINETS: Cabinet[] = [
-  { id: 'pong', angle: -8.4 },
-  { id: 'breakout', angle: -2.8 },
-  { id: 'snake', angle: 2.8 },
-  { id: 'tetris', angle: 8.4 },
+  { id: 'pong', angle: -11.2 },
+  { id: 'breakout', angle: -5.6 },
+  { id: 'snake', angle: 0 },
+  { id: 'tetris', angle: 5.6 },
+  { id: 'asteroids', angle: 11.2 },
 ];
 
 function useJupiterTexture(): THREE.Texture | null {
@@ -187,7 +189,8 @@ function FerrisWheel({ riding, onRide }: { riding: boolean; onRide: () => void }
   const GONDOLAS = 10;
 
   useFrame((_, delta) => {
-    spin.current += delta * 0.09;
+    // při jídě kolo zrychlí (celá otočka trvá ~24 s) — jinak jízda nezačne
+    spin.current += delta * (riding ? 0.26 : 0.09);
     if (wheel.current) wheel.current.rotation.z = spin.current;
     for (let i = 0; i < GONDOLAS; i++) {
       const node = gondolas.current[i];
@@ -331,7 +334,8 @@ function RideCamera({ active }: { active: boolean }) {
 
   useFrame((_, delta) => {
     if (!active) return;
-    phase.current += delta * 0.36;
+    // stejná rychlost jako kolo — kamera jede s gondolou, ne kolem ní
+    phase.current += delta * 0.26;
     const angle = phase.current + Math.PI / 2;
     const radius = WHEEL_R + 2.6;
     pos.set(
