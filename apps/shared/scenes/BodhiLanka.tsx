@@ -4,7 +4,7 @@
 import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SceneInstances, ScenePalms, SceneTerrain, SceneWater, SkyFill } from './kit';
+import { KeyLight, SceneInstances, ScenePalms, SceneTerrain, SceneWater, SkyFill, mergeParts, type MergedPart } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -102,6 +102,49 @@ function LotusRoof({ y, s }: { y: number; s: number }) {
     return g;
   }, [s]);
   React.useEffect(() => () => { low.dispose(); high.dispose(); }, [low, high]);
+
+  // Dvě řady po deseti plátcích = 20 samostatných meshů na střechu (pět střech
+  // = 100 draw calls). Sloučení do jedné geometrie s per-vertex barvou zachová
+  // přesné transformace (rotace skupiny i plátku se nekombinují komutativně)
+  // a udělá z toho jeden draw call.
+  const blades = React.useMemo(() => {
+    const parts: MergedPart[] = [];
+    const spins = (offset: number) => Array.from({ length: 10 }, (_, i) => (i / 10) * Math.PI * 2 + offset);
+    for (const a of spins(0)) {
+      parts.push({
+        geometry: low,
+        color: '#efe4c8',
+        matrix: new THREE.Matrix4()
+          .makeRotationY(a)
+          .multiply(new THREE.Matrix4().makeTranslation(0, 0.15 * s, 0))
+          .multiply(new THREE.Matrix4().makeRotationX(-0.12)),
+      });
+    }
+    for (const a of spins(Math.PI / 10)) {
+      parts.push({
+        geometry: high,
+        color: '#e0cfa6',
+        matrix: new THREE.Matrix4()
+          .makeTranslation(0, 0.7 * s, 0)
+          .multiply(new THREE.Matrix4().makeRotationY(a))
+          .multiply(new THREE.Matrix4().makeRotationX(-0.42)),
+      });
+    }
+    return mergeParts(parts);
+  }, [low, high, s]);
+  const bladeMaterial = React.useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.52,
+        side: THREE.DoubleSide,
+      }),
+    [],
+  );
+  React.useEffect(
+    () => () => { blades.dispose(); bladeMaterial.dispose(); },
+    [blades, bladeMaterial],
+  );
   return (
     <group position={[0, y, 0]}>
       {/* pevné tělo střechy — zploštělá kopule pod lupínky */}
@@ -109,26 +152,7 @@ function LotusRoof({ y, s }: { y: number; s: number }) {
         <sphereGeometry args={[3.4 * s, 24, 14]} />
         <meshStandardMaterial color="#e6d9ba" roughness={0.55} />
       </mesh>
-      {Array.from({ length: 10 }, (_, i) => {
-        const a = (i / 10) * Math.PI * 2;
-        return (
-          <group key={i} rotation={[0, a, 0]}>
-            <mesh geometry={low} rotation={[-0.12, 0, 0]} position={[0, 0.15 * s, 0]} castShadow>
-              <meshStandardMaterial color="#efe4c8" roughness={0.5} side={THREE.DoubleSide} />
-            </mesh>
-          </group>
-        );
-      })}
-      {Array.from({ length: 10 }, (_, i) => {
-        const a = (i / 10) * Math.PI * 2 + Math.PI / 10;
-        return (
-          <group key={i} rotation={[0, a, 0]} position={[0, 0.7 * s, 0]}>
-            <mesh geometry={high} rotation={[-0.42, 0, 0]} castShadow>
-              <meshStandardMaterial color="#e0cfa6" roughness={0.55} side={THREE.DoubleSide} />
-            </mesh>
-          </group>
-        );
-      })}
+      <mesh geometry={blades} material={bladeMaterial} castShadow receiveShadow />
       {/* pupen na vrcholu */}
       <mesh position={[0, 1.5 * s, 0]} castShadow>
         <octahedronGeometry args={[0.6 * s, 1]} />
