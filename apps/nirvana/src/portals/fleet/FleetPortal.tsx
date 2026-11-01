@@ -99,6 +99,14 @@ export function FleetPortal({
       <div className="hiran-actions">
         <a
           className="portal-link"
+          href="https://nirvana.zionterranova.com/present/nebeska-flotila"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {cs ? 'Prohlédnout flotilu' : 'Walk the fleet'}
+        </a>
+        <a
+          className="portal-link"
           href="https://app.zionterranova.com/zion-archive/nabukano/cist"
           target="_blank"
           rel="noopener noreferrer"

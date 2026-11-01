@@ -74,3 +74,4 @@ export {
   type TreeItem,
 } from './terrain';
 export { CinematicIntro, reducedMotion, useReducedMotion, type CinematicIntroProps } from './camera';
+export { NabukanoModel, SkyMaria, SISTERS, type SkyMariaType } from './vessels';

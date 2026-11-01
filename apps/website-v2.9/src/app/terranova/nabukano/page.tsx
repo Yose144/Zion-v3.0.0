@@ -16,7 +16,10 @@ import {
   Sparkles,
   Waves,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useLang } from '@/contexts/LanguageContext';
+
+const NebeskaFlotilaPreviewLazy = dynamic(() => import('@/components/NebeskaFlotilaPreviewLazy'), { ssr: false });
 import { useState } from 'react';
 
 const RC = '56, 189, 248'; // nebe — modrá flotily
@@ -268,6 +271,28 @@ export default function NabukanoPage() {
           </div>
         </motion.section>
 
+
+        {/* ═══ 3D NÁHLED ═══ */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-14">
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': RC } as React.CSSProperties}>
+            <div className="relative z-10 mb-3 text-center">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-sky-200/65 mb-1">
+                {cs ? '3D model' : '3D model'}
+              </p>
+              <p className="text-xs text-white/45">
+                {cs
+                  ? 'Tatáž scéna jako v Nirvaně — otáčej kolem trupu, přibliž si dok a lucernu.'
+                  : 'The same scene as in Nirvana — orbit the hull, zoom in on the dock and the lantern.'}
+              </p>
+            </div>
+            <NebeskaFlotilaPreviewLazy lang={cs ? 'cs' : 'en'} className="h-[420px] md:h-[520px]" />
+            <p className="relative z-10 mt-3 text-center text-xs text-white/35">
+              {cs
+                ? 'Umělecká geometrie z primitiv podle studie 02 — ne výrobní model.'
+                : 'Artistic primitive geometry following study 02 — not a production model.'}
+            </p>
+          </div>
+        </motion.section>
 
         {/* ═══ KONCEPČNÍ DESKA ═══ */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-14">

@@ -45,7 +45,7 @@ export const FREE_WORLD_MISSIONS: FreeWorldMission[] = [
   // a stanicí Issobella. Není to čtrnáctý pozemský bod, proto 'orbit'
   // (žádný pin na glóbu). Souřadnice jsou záměrně 0/0. Prezentace
   // v Nirvaně není — flotila žije v samotné scéně vesmíru (#portal=fleet).
-  { key: 'nabukano', name: 'Nabukano · Nebeská flotila', lat: 0, lon: 0, status: 'vision', path: '/terranova/nabukano', body: 'orbit' },
+  { key: 'nabukano', name: 'Nabukano · Nebeská flotila', lat: 0, lon: 0, status: 'vision', path: '/terranova/nabukano', present: '/present/nebeska-flotila', body: 'orbit' },
   // Shackleton — jižní pól Měsíce. path je jen záloha; prezentace je v Nirvaně.
   { key: 'matrix', name: 'Matrix', lat: -89.9, lon: 0, status: 'vision', path: '/l5-free-world', present: '/present/matrix', body: 'moon' },
 ];
