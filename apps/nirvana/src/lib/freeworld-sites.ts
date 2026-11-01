@@ -1,12 +1,14 @@
 /**
- * L5 Free World — 12 zakládajících misí na planetě plus lunární Matrix.
+ * L5 Free World — 12 zakládajících misí na planetě, třináctý uzel na vodě
+ * (archa Království srdce · Nirvana) a lunární Matrix.
  * Zrcadlo `apps/website-v2.9/src/lib/freeworld-sites.ts` (kanonický zdroj) —
  * držet synchronizované. href vede na komunitní stránku app.zionterranova.com.
- * `body: 'moon'` nepatří na glóbus — maják žije na Měsíci.
+ * `body: 'moon'` nepatří na glóbus — maják žije na Měsíci; `body: 'ocean'`
+ * taky ne — archa pluje velrybím korridorem, nemá pin na pevnině.
  */
 
 export type MissionStatus = 'preparation' | 'vision' | 'built';
-export type CelestialBody = 'earth' | 'moon';
+export type CelestialBody = 'earth' | 'ocean' | 'moon';
 
 export interface FreeWorldMission {
   key: string;
@@ -36,11 +38,15 @@ export const FREE_WORLD_MISSIONS: FreeWorldMission[] = [
   { key: 'boa-esperanca', name: 'Boa Esperança', lat: -34.35, lon: 18.47, status: 'vision', path: '/terranova/boa-esperanca', present: '/present/boa-esperanca' },
   { key: 'kailash', name: 'Kailash', lat: 31.07, lon: 81.31, status: 'vision', path: '/terranova/kailash', present: '/present/kailash' },
   { key: 'amenti', name: 'Amenti · Giza', lat: 29.98, lon: 31.13, status: 'vision', path: '/terranova/amenti', present: '/present/amenti' },
+  // Třináctý uzel — archa Království srdce · Nirvana. Není to místo: pluje
+  // s keporkaky, proto 'ocean' (žádný pin na glóbusu) a vlastní prezentace.
+  { key: 'kralovstvi-srdce', name: 'Království srdce · Nirvana', lat: 15, lon: -45, status: 'vision', path: '/terranova/kralovstvi-srdce', present: '/present/kralovstvi-srdce', body: 'ocean' },
   // Shackleton — jižní pól Měsíce. path je jen záloha; prezentace je v Nirvaně.
   { key: 'matrix', name: 'Matrix', lat: -89.9, lon: 0, status: 'vision', path: '/l5-free-world', present: '/present/matrix', body: 'moon' },
 ];
 
-export const EARTH_MISSIONS = FREE_WORLD_MISSIONS.filter((m) => m.body !== 'moon');
+export const EARTH_MISSIONS = FREE_WORLD_MISSIONS.filter((m) => (m.body ?? 'earth') === 'earth');
+export const OCEAN_MISSIONS = FREE_WORLD_MISSIONS.filter((m) => m.body === 'ocean');
 export const LUNAR_MISSIONS = FREE_WORLD_MISSIONS.filter((m) => m.body === 'moon');
 
 export const MISSION_STATUS_COLOR: Record<MissionStatus, string> = {

@@ -7,6 +7,7 @@ import { PORTALS, type SceneSlot } from '@/core/portals/manifest';
 import { backendForXr, resolveGpuBackend, type GpuBackend } from '@/core/scene/backends';
 import { SceneRoot } from '@/core/scene/SceneRoot';
 import { AccountPortal } from '@/portals/account/AccountPortal';
+import { ArchaPortal } from '@/portals/archa/ArchaPortal';
 import { BooksPortal } from '@/portals/books/BooksPortal';
 import { ChainPortal } from '@/portals/chain/ChainPortal';
 import { ComputePortal } from '@/portals/compute/ComputePortal';
@@ -32,6 +33,7 @@ const SLOT_COLOR: Record<SceneSlot, string> = {
   ship: '#e41e2b',
   sun: '#ffd166',
   park: '#ffb46a',
+  sea: '#1d8fb3',
 };
 
 function readHash(): { portal: string | null; world: string | null } {
@@ -282,6 +284,7 @@ export function Shell() {
       {portal === 'issobella' && <IssobellaPortal onClose={() => setPortal(null)} />}
       {portal === 'compute' && <ComputePortal onClose={() => setPortal(null)} />}
       {portal === 'park' && <ParkPortal onClose={closePortal} />}
+      {portal === 'archa' && <ArchaPortal onClose={closePortal} />}
       {portal === 'hiran' && (
         <HiranPortal
           onClose={closePortal}

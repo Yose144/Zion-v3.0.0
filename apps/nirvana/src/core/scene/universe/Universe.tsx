@@ -9,6 +9,7 @@ import type { WorldPoint } from '@/lib/worlds';
 import type { HiranState } from '@/core/hiran/presence';
 import { worldSlot, EARTH_ORBIT_R, EARTH_ORBIT_SPEED, planetPosition } from './positions';
 import { NewEarth } from './NewEarth';
+import { SailingArk } from './SailingArk';
 import { IssobellaRing } from './IssobellaRing';
 import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
@@ -153,6 +154,7 @@ export function Universe({
       {/* zemská soustava — obíhá Slunce jako jeden svět */}
       <group ref={earthSys} position={[EARTH_ORBIT_R, 0, 0]}>
         <NewEarth />
+        <SailingArk onOpen={() => onOpen('archa')} />
         <IssobellaRing
           worlds={split.ring}
           portal={ringPortal}

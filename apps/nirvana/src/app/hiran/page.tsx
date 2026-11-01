@@ -16,8 +16,10 @@ import {
 } from '../../../../shared/scenes/Hiran';
 
 /**
- * Třináct bran = třináct světů. Seznam je kanonický (`FREE_WORLD_MISSIONS`),
- * ne opsaný do scény — scéna dostává data, ne adresy.
+ * Každá mise s `present` = jedna brána. Po přidání archy je to čtrnáct světů:
+ * dvanáct pevninských uzlů, plující María del Camino, třináctý uzel Archa
+ * a lunární Matrix. Seznam je kanonický (`FREE_WORLD_MISSIONS`), ne opsaný
+ * do scény — scéna dostává data, ne adresy.
  */
 const GATES: HiranGate[] = FREE_WORLD_MISSIONS.filter((mission) => mission.present).map((mission) => ({
   key: mission.key,

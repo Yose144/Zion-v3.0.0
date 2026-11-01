@@ -35,6 +35,20 @@ Archa proto není nová loď. Je to **ta samá loď, postavená znovu** — vět
 4. **Záchranná kapacita, deklarovaná poctivě** — místo pro zachráněné, medivak a izolace jako modul, ne jako drama.
 5. **Učitelská loď** — co archa umí, předává dál: každý uzel se učí být malou archou.
 
+## Dispozice palub — studie B3
+
+Konceptuální studie (ne výrobní plán): pracovní délka ~85 m, komunita do 100 osob, ocelový trup s dřevěnými interiéry. Stabilitu, kapacitu a konstrukci musí ověřit námořní architekti.
+
+| Paluba | Co na ní je |
+|---|---|
+| **Horní** | Navigační můstek a komunikační zázemí, společná terasa s posezením, solární panely, skleník pro pěstování a byliny, bezpečně obchozí paluby |
+| **Hlavní** | Společná jídelna s více stoly, kuchyně a zázemí, knihovna a škola, tichá místnost / modlitba, zdravotní ošetřovna, dílny a kreativní prostory |
+| **Obytná** | Rodinné kajuty, kajuty s patrovými lůžky, společné sociální zázemí, prádelna a úklid, úložné prostory, dvě oddělená schodiště, kliďová zóna na přídi |
+| **Technické zázemí** | Sklad potravin a materiálu, nádrže na vodu, bateriové úložiště, pomocné generátory, elektrický pohon (2×), servisní prostory, oddělené bezpečné členění |
+
+**Konstrukční záměr:** ocelová kostra a obšívka, vodotěsné členění, lehké nástavby, servisní přístup.
+**Pohon a energie:** plachty, pomocný elektrický pohon, baterie, solár, nouzové generátory.
+
 ## Velrybí navigace
 
 Keporkak dělá přesně to, co archa potřebuje: **v létě se krmí v chladných produktivních vodách, v zimě rodí v tropech** — a celou dobu se drží kontinentálních šelfů a seamountů. Jeho koridory se navíc střídají přesně v rytmu, ve kterém se střídají cyklónové sezóny obou hemisfér. Archa proto neplánuje trasu proti počasí, ale **s ním**.

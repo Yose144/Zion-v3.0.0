@@ -197,6 +197,14 @@ def train(args) -> None:
     print("Formátuji dataset...")
     texts = [format_for_llama3(entry, tokenizer) for entry in raw_data]
 
+    # Hard truncate na args.max_seq_length — trl 0.9.x max_seq_length nezkracuje
+    # spolehlivě před-tokenizovaný "text" sloupec, a fp32 logits rostou lineárně
+    # s délkou (2000 tok ≈ 1 GiB) — na 12GB kartě vedle minerů kritické.
+    if args.max_seq_length and args.max_seq_length > 0:
+        enc = tokenizer(texts, truncation=True, max_length=args.max_seq_length,
+                        add_special_tokens=False)
+        texts = [tokenizer.decode(ids) for ids in enc["input_ids"]]
+
     hf_dataset = Dataset.from_dict({"text": texts})
     print(f"  → {len(texts)} tréninkových sekvencí")
 
@@ -213,18 +221,32 @@ def train(args) -> None:
         **{**BNB_CONFIG, "bnb_4bit_compute_dtype": torch.bfloat16}
     )
 
+    # Env override (Vast co-resident s minery): ZION_MAX_GPU_MEM_GB=5 → fp32 moduly na CPU
+    _max_gpu_mem = os.environ.get("ZION_MAX_GPU_MEM_GB", "").strip()
+    _mem_kw = {}
+    if _max_gpu_mem:
+        bnb_config.llm_int8_enable_fp32_cpu_offload = True
+        _mem_kw["max_memory"] = {0: f"{_max_gpu_mem}GiB", "cpu": "24GiB"}
     model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL,
         quantization_config=bnb_config,
         device_map="auto",           # Automatické rozmístění na GPU
         trust_remote_code=True,
         attn_implementation="sdpa",   # Scaled Dot-Product Attention (PyTorch native)
+        **_mem_kw,
     )
     model.config.use_cache = False  # Uvolní paměť při tréninku
     model.config.pretraining_tp = 1  # Tensor parallelism off
 
     # 5. Připrav pro k-bit trénink
-    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    # Env override (Vast co-resident s minery): ZION_SKIP_FP32_UPCAST=1 přeskočí
+    # fp32 upcast norm vrstev (~2 GiB burst na embed) — QLoRA běží i bez něj.
+    if os.environ.get("ZION_SKIP_FP32_UPCAST", "") == "1":
+        model.config.use_cache = False
+        if hasattr(model, "enable_input_require_grads"):
+            model.enable_input_require_grads()
+    else:
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     model.gradient_checkpointing_enable()  # -40% VRAM
 
     # 6. Aplikuj LoRA

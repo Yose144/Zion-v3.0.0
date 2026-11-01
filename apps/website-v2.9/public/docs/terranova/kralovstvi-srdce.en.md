@@ -35,6 +35,20 @@ So the ark is not a new ship. It is **the same ship built again** — larger, in
 4. **Rescue capacity, honestly declared** — space for those taken aboard, medivac and isolation as a module, not as drama.
 5. **A teaching ship** — what the ark knows is passed on: every node learns to be a small ark.
 
+## Deck arrangement — study B3
+
+A concept study (not a production plan): roughly 85 m working length, a community of up to 100, a steel hull with wooden interiors. Stability, capacity and construction have to be verified by naval architects.
+
+| Deck | What is on it |
+|---|---|
+| **Upper** | Navigation bridge and communications, a shared terrace with seating, solar panels, a glasshouse for growing food and herbs, safe walk-around decks |
+| **Main** | Common dining room with several tables, kitchen and back-of-house, library and school, quiet room / prayer, infirmary, workshops and creative space |
+| **Accommodation** | Family cabins, double-bunk cabins, shared sanitary facilities, laundry and cleaning, storage, two separate stairways, a quiet zone forward |
+| **Technical spaces** | Food and material stores, water tanks, battery room, auxiliary generators, electric propulsion (×2), service spaces, separate safe subdivision |
+
+**Construction intent:** steel frame and plating, watertight subdivision, light superstructures, service access.
+**Propulsion and energy:** sails, auxiliary electric drive, batteries, solar, emergency generators.
+
 ## Whale navigation
 
 The humpback does exactly what the ark needs: **it feeds in cold productive waters in summer and calves in the tropics in winter** — and keeps to continental shelves and seamounts all the while. Its corridors also alternate in precisely the rhythm in which the two hemispheres' cyclone seasons alternate. So the ark does not plan against the weather, but **with it**.

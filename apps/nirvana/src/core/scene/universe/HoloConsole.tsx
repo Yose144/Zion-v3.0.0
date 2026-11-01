@@ -16,6 +16,7 @@ const SLOT_COLOR: Record<SceneSlot, string> = {
   ship: '#e41e2b',
   sun: '#ffd166',
   park: '#ffb46a',
+  sea: '#1d8fb3',
 };
 
 const HOME_POS: [number, number, number] = [-7.6, -3.6, 4.8];

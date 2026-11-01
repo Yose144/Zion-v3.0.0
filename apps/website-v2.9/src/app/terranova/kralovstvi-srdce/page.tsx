@@ -37,6 +37,7 @@ import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+const KralovstviSrdcePreviewLazy = dynamic(() => import('@/components/KralovstviSrdcePreviewLazy'), { ssr: false });
 
 const SEA = '14, 116, 144';
 
@@ -123,6 +124,44 @@ const Copy = {
       `A colony means families and children: school, birth suite and a safety standard aboard?`,
       `Relation to the fleet — the Marys' mother ship, or a sister line?`,
       `Security doctrine of a neutral sanctuary — where does help end and defence begin?`,
+    ],
+  },
+  threeD: { cs: `3D model archy`, en: `3D model of the ark` },
+  threeDSubtitle: {
+    cs: `Studie B3 — trup, tři stěžně, skleník na palubě a solární střecha. Keporkaci plují s ní.`,
+    en: `Study B3 — hull, three masts, a glasshouse on deck and a solar roof. The humpbacks swim alongside.`,
+  },
+  decksTitle: { cs: `Dispozice palub — studie B3`, en: `Deck arrangement — study B3` },
+  decksSubtitle: { cs: `Čtyři úrovně: technika, obydlí, společný život, můstek`, en: `Four levels: technical, accommodation, common life, bridge` },
+  decksNote: {
+    cs: `Konceptuální studie, ne výrobní plán. Pracovní délka ~85 m, komunita do 100 osob, ocelový trup s dřevěnými interiéry. Stabilitu, kapacitu a konstrukci musí ověřit námořní architekti.`,
+    en: `A concept study, not a production plan. Roughly 85 m working length, a community of up to 100, a steel hull with wooden interiors. Stability, capacity and construction have to be verified by naval architects.`,
+  },
+  decks: {
+    cs: [
+      { name: 'Horní paluba', detail: 'Můstek, skleník, terasa, solární střecha, bezpečné obchozí paluby, navigační a komunikační zázemí.' },
+      { name: 'Hlavní paluba', detail: 'Společná jídelna, kuchyně, knihovna a škola, tichá místnost, zdravotní ošetřovna, dílny a schodiště mezi palubami.' },
+      { name: 'Obytná paluba', detail: 'Rodinné kajuty, kajuty s patrovými lůžky, společné sociální zázemí, prádelna, úložné prostory, kliďová zóna na přídi.' },
+      { name: 'Technické zázemí', detail: 'Sklad potravin a materiálu, nádrže na vodu, bateriové úložiště, pomocné generátory, elektrický pohon 2×, servisní dílny, oddělené bezpečné členění.' },
+    ],
+    en: [
+      { name: 'Upper deck', detail: 'Bridge, glasshouse, terrace, solar roof, safe walk-around decks, navigation and communications.' },
+      { name: 'Main deck', detail: 'Common dining room, kitchen, library and school, quiet room, infirmary, workshops and the stair between decks.' },
+      { name: 'Accommodation deck', detail: 'Family cabins, double-bunk cabins, shared sanitary facilities, laundry, storage, a quiet zone forward.' },
+      { name: 'Technical spaces', detail: 'Food and material stores, water tanks, battery room, auxiliary generators, electric propulsion ×2, service workshops, separate safe subdivision.' },
+    ],
+  },
+  systemsTitle: { cs: `Konstrukce a pohon`, en: `Construction and propulsion` },
+  systems: {
+    cs: [
+      'Ocelová kostra a obšívka, vodotěsné členění, lehké nástavby, servisní přístup ke každému systému.',
+      'Plachty jako hlavní pohon, pomocný elektrický pohon, baterie, solární střecha a nouzové generátory.',
+      'Dřevěné interiéry a prosklené paluby: loď má být obyvatelná, ne jen plavitelná.',
+    ],
+    en: [
+      'Steel frame and plating, watertight subdivision, light superstructures, service access to every system.',
+      'Sail as primary propulsion, auxiliary electric drive, batteries, a solar roof and emergency generators.',
+      'Wooden interiors and glazed decks: the ship should be habitable, not merely seaworthy.',
     ],
   },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
@@ -506,6 +545,27 @@ export default function KralovstviSrdcePage() {
           </div>
         </motion.header>
 
+        {/* ═══ 3D MODEL ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.05, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': SEA } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {Copy.threeD[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {Copy.threeDSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <KralovstviSrdcePreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+          </div>
+        </motion.section>
+
         {/* ═══ INTRO ═══ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
@@ -576,6 +636,65 @@ export default function KralovstviSrdcePage() {
               ? 'Vize, ne stavba: kýl archy položen není. Obrázek je ilustrace směru, kterým se studie ubírá.'
               : 'A vision, not a construction: no keel has been laid. The image illustrates the direction the studies are taking.'}
           </p>
+        </motion.section>
+
+        {/* ═══ DECK ARRANGEMENT (B3) ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.decksSubtitle[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Compass className="h-7 w-7 text-cyan-400" />
+              {Copy.decksTitle[cs ? 'cs' : 'en']}
+            </h2>
+          </div>
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30 mb-4">
+            <img
+              src="/images/kralovstvi-srdce/deck-plans.webp"
+              srcSet="/images/kralovstvi-srdce/deck-plans-m.webp 960w, /images/kralovstvi-srdce/deck-plans.webp 1536w"
+              sizes="(max-width: 1100px) calc(100vw - 2rem), 1024px"
+              alt={cs
+                ? 'Studie B3 — obytná archa inspirovaná keporkakem: čtyři paluby, interiéry, konstrukce a pohon'
+                : 'Study B3 — a residential ark inspired by the humpback: four decks, interiors, construction and propulsion'}
+              width={1536}
+              height={1024}
+              loading="lazy"
+              decoding="async"
+              className="w-full object-contain"
+            />
+          </div>
+          <p className="mb-6 text-center text-xs leading-relaxed text-white/50">
+            {Copy.decksNote[cs ? 'cs' : 'en']}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {Copy.decks[cs ? 'cs' : 'en'].map((deck, i) => {
+              const DeckIcon = [Sun, Users, Heart, Wrench][i];
+              return (
+                <div key={deck.name} className="zion-rainbow-sub p-4" style={{ '--rc': SEA } as React.CSSProperties}>
+                  <div className="flex items-center gap-2 text-cyan-300 mb-1">
+                    <DeckIcon className="h-4 w-4" />
+                    <span className="text-sm font-semibold text-white">{deck.name}</span>
+                  </div>
+                  <p className="text-sm text-gray-400">{deck.detail}</p>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-4 zion-rainbow-sub p-5" style={{ '--rc': '202, 138, 4' } as React.CSSProperties}>
+            <h3 className="font-semibold text-white mb-2 flex items-center gap-2">
+              <Waves className="h-4 w-4 text-amber-300" />
+              {Copy.systemsTitle[cs ? 'cs' : 'en']}
+            </h3>
+            <ul className="list-disc pl-4 space-y-1.5 text-sm text-gray-400">
+              {Copy.systems[cs ? 'cs' : 'en'].map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
         </motion.section>
 
         {/* ═══ WHALE CIRCUIT ═══ */}

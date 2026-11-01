@@ -72,7 +72,32 @@ nohup ./SRBMiner-MULTI --algorithm quantus --pool eu.lproute.com:5660 --wallet q
 tail -f ~/mine.log   # sledování logu
 ```
 
-## 4b. DUAL mining přes náš pool — PRL + QTU v jednom `zion-miner`
+## 4b. Produkční layout (od 2026-10-31): ZION @5 % + SRBMiner QTC
+
+**Pearl mining zrušen.** Kanonický fleet setup přes `vastctl`:
+
+```bash
+cd infra/tools/vast
+vastctl launch <id> zion srbpool    # = FULL deploy (plus xmr v "full")
+```
+
+| Tenant | Co | GPU | Pool | Worker |
+|---|---|---|---|---|
+| `zion` tmux | `zion-miner` stream 1 (nativní ZION) | **~5 %** (`ZION_GPU_TIME_DUTY_PCT=5`) | `62.171.141.136:8444` | `vast-dual-<id>` |
+| `srb-qtu` tmux | `SRBMiner --algorithm quantus` (QTC) | ~95 % | `62.171.141.136:8444` (`qtun:` leg) | `vast-<id>-qtu` |
+| xmrig | CPU RandomX | CPU only | nanopool | — |
+
+Launch módy jsou **group-isolated**: `zion*` nahrazuje jen `zion` session,
+`srb*` jen srb sessions + SRBMiner — koexistují bez zabíjení. Módy:
+`zion` (ZION 5 %), `zionqtc` (nativní dual ZION~60 %/QTU 40 %),
+`zion50`, `zionmax` (ZION solo), `qtu`, `prl` (legacy), `srb` (QTC→lproute),
+`srbpool` (QTC→náš pool, credits ZION wallet), `srb-qtu`, `srb-prl`, `xmr`,
+`full` = zion+srbpool+xmr.
+
+Staré PRL+QTU nativní dual info viz archiv git historie (PRL payout path
+nebyla dokončená — pearl zrušen před produkcí).
+
+### Historický dual (záznam): PRL + QTU v jednom `zion-miner`
 
 Jeden proces, dva GPU streamy, **vše přes `stratum.zionterranova.com:8444`**
 (V3 Trinity — pool sám routuje PRL → `prlu:` LuckyPool a QTU → `qtun:`

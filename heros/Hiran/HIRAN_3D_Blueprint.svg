@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+<defs>
+<linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0B1325"/><stop offset="1" stop-color="#050913"/></linearGradient>
+<radialGradient id="orb"><stop stop-color="#edbe69" stop-opacity=".15"/><stop offset=".75" stop-color="#bd8329" stop-opacity=".06"/><stop offset="1" stop-color="#f0c771" stop-opacity=".13"/></radialGradient>
+<linearGradient id="petal" x2="0.5" y2="1"><stop stop-color="#fff1cd" stop-opacity=".38"/><stop offset="1" stop-color="#d7a648" stop-opacity=".22"/></linearGradient>
+<style>
+.title{font:600 35px Arial,sans-serif;fill:#f7dfaf;letter-spacing:5px}.sub{font:18px Arial,sans-serif;fill:#a5b2c5}.heading{font:600 19px Arial,sans-serif;fill:#e7be73;letter-spacing:2px}.small{font:15px Arial,sans-serif;fill:#b9c2cd}.tiny{font:13px Arial,sans-serif;fill:#96a5b6}.gold{stroke:#e9b75e;fill:none;stroke-width:2}.thin{stroke:#bb9c67;fill:none;stroke-width:1}.dim{stroke:#6b8ba7;fill:none;stroke-width:1}.dash{stroke:#67809b;fill:none;stroke-width:1;stroke-dasharray:5 7}.panel{fill:#101d31;stroke:#334c64;stroke-width:1}
+</style></defs>
+<rect width="1440" height="900" fill="url(#bg)"/>
+<text x="52" y="64" class="title">HIRAN · HIRANYAGARBHA</text>
+<text x="53" y="95" class="sub">ZION AI NATIVE · EKAM GOLDEN ORB · 3D MODEL BLUEPRINT v0.1</text>
+<text x="1378" y="74" class="sub" text-anchor="end">KONCEPT / NENÍ VÝROBNÍ DOKUMENTACE</text>
+<path d="M50 113 H1390" class="thin"/>
+<rect x="50" y="139" width="432" height="474" rx="13" class="panel"/>
+<rect x="504" y="139" width="432" height="474" rx="13" class="panel"/>
+<rect x="958" y="139" width="432" height="474" rx="13" class="panel"/>
+<text x="76" y="178" class="heading">01 / ČELNÍ POHLED</text>
+<text x="528" y="178" class="heading">02 / BOČNÍ POHLED</text>
+<text x="982" y="178" class="heading">03 / PŮDORYS</text>
+<line x1="270" y1="204" x2="270" y2="536" class="dash"/>
+<line x1="105" y1="347" x2="435" y2="347" class="dash"/>
+<circle cx="270" cy="347" r="100" fill="url(#orb)" stroke="#eabd65" stroke-width="2"/>
+<circle cx="270" cy="347" r="95" class="gold" stroke-dasharray="3 9" opacity=".5"/>
+<circle cx="270" cy="347" r="20" fill="#ffda83" opacity=".4" stroke="#ffe8ae"/>
+<polygon points="270.0,292.0 317.6,374.5 222.4,374.5" class="gold" stroke-width="1.1" opacity=".8"/>
+<polygon points="270.0,402.0 222.4,319.5 317.6,319.5" class="gold" stroke-width="1.1" opacity=".8"/>
+<ellipse cx="270" cy="347" rx="123" ry="24" class="gold" opacity=".57" transform="rotate(-18 270 347)"/>
+<ellipse cx="270" cy="347" rx="123" ry="24" class="gold" opacity=".57" transform="rotate(26 270 347)"/>
+<path d="M 125 510 Q 128 457 158 463 Q 188 457 191 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 156 510 Q 159 452 189 458 Q 219 452 222 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 186 510 Q 189 447 219 453 Q 249 447 252 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 214 510 Q 217 443 247 449 Q 277 443 280 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 237 510 Q 240 439 270 445 Q 300 439 303 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 260 510 Q 263 443 293 449 Q 323 443 326 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 288 510 Q 291 447 321 453 Q 351 447 354 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 318 510 Q 321 452 351 458 Q 381 452 384 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 349 510 Q 352 457 382 463 Q 412 457 415 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<ellipse cx="270" cy="511" rx="125" ry="9" fill="#b88939" opacity=".35" stroke="#deb46d"/>
+<path d="M 170 229 V215 M 370 229 V215 M 170 219 H 370" class="dim"/>
+<text x="270" y="207" class="small" text-anchor="middle">Ø 2,00 m</text>
+<line x1="411" y1="247" x2="411" y2="513" class="dim"/>
+<path d="M 406 247 h10 M 406 513 h10" class="dim"/>
+<text x="419" y="390" class="tiny" transform="rotate(90 419 390)" text-anchor="middle">≈ 2,65 m celková výška</text>
+<text x="270" y="556" class="small" text-anchor="middle">Lotos: Ø 2,55 m · výška 0,65 m</text>
+<line x1="722" y1="204" x2="722" y2="536" class="dash"/>
+<line x1="557" y1="347" x2="887" y2="347" class="dash"/>
+<circle cx="722" cy="347" r="100" fill="url(#orb)" stroke="#eabd65" stroke-width="2"/>
+<circle cx="722" cy="347" r="95" class="gold" stroke-dasharray="3 9" opacity=".5"/>
+<circle cx="722" cy="347" r="20" fill="#ffda83" opacity=".4" stroke="#ffe8ae"/>
+<polygon points="722.0,292.0 769.6,374.5 674.4,374.5" class="gold" stroke-width="1.1" opacity=".8"/>
+<polygon points="722.0,402.0 674.4,319.5 769.6,319.5" class="gold" stroke-width="1.1" opacity=".8"/>
+<ellipse cx="722" cy="347" rx="123" ry="24" class="gold" opacity=".57" transform="rotate(-18 722 347)"/>
+<ellipse cx="722" cy="347" rx="123" ry="24" class="gold" opacity=".57" transform="rotate(26 722 347)"/>
+<path d="M 577 510 Q 580 457 610 463 Q 640 457 643 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 608 510 Q 611 452 641 458 Q 671 452 674 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 638 510 Q 641 447 671 453 Q 701 447 704 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 666 510 Q 669 443 699 449 Q 729 443 732 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 689 510 Q 692 439 722 445 Q 752 439 755 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 712 510 Q 715 443 745 449 Q 775 443 778 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 740 510 Q 743 447 773 453 Q 803 447 806 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 770 510 Q 773 452 803 458 Q 833 452 836 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<path d="M 801 510 Q 804 457 834 463 Q 864 457 867 510 Z" stroke="#e6b56f" fill="url(#petal)" stroke-width="1.3"/>
+<ellipse cx="722" cy="511" rx="125" ry="9" fill="#b88939" opacity=".35" stroke="#deb46d"/>
+<path d="M 622 229 V215 M 822 229 V215 M 622 219 H 822" class="dim"/>
+<text x="722" y="207" class="small" text-anchor="middle">Ø 2,00 m</text>
+<line x1="863" y1="247" x2="863" y2="513" class="dim"/>
+<path d="M 858 247 h10 M 858 513 h10" class="dim"/>
+<text x="871" y="390" class="tiny" transform="rotate(90 871 390)" text-anchor="middle">≈ 2,65 m celková výška</text>
+<text x="722" y="556" class="small" text-anchor="middle">Lotos: Ø 2,55 m · výška 0,65 m</text>
+<circle cx="1174" cy="351" r="128" class="thin" opacity=".8"/>
+<circle cx="1174" cy="351" r="112" class="thin" opacity=".8"/>
+<circle cx="1174" cy="351" r="99" class="thin" opacity=".8"/>
+<circle cx="1174" cy="351" r="82" class="thin" opacity=".8"/>
+<circle cx="1174" cy="351" r="27" class="thin" opacity=".8"/>
+<path d="M 1253.0 338.3 Q 1330.0 351.0 1253.0 363.7 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1251.8 369.4 Q 1318.1 410.7 1242.1 393.0 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1238.9 397.8 Q 1284.3 461.3 1220.8 415.9 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1216.0 419.1 Q 1233.7 495.1 1192.4 428.8 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1186.7 430.0 Q 1174.0 507.0 1161.3 430.0 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1155.6 428.8 Q 1114.3 495.1 1132.0 419.1 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1127.2 415.9 Q 1063.7 461.3 1109.1 397.8 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1105.9 393.0 Q 1029.9 410.7 1096.2 369.4 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1095.0 363.7 Q 1018.0 351.0 1095.0 338.3 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1096.2 332.6 Q 1029.9 291.3 1105.9 309.0 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1109.1 304.2 Q 1063.7 240.7 1127.2 286.1 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1132.0 282.9 Q 1114.3 206.9 1155.6 273.2 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1161.3 272.0 Q 1174.0 195.0 1186.7 272.0 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1192.4 273.2 Q 1233.7 206.9 1216.0 282.9 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1220.8 286.1 Q 1284.3 240.7 1238.9 304.2 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<path d="M 1242.1 309.0 Q 1318.1 291.3 1251.8 332.6 Z" fill="url(#petal)" stroke="#d6a75c" stroke-width="1.2"/>
+<circle cx="1174" cy="351" r="99" fill="url(#orb)" stroke="#eabd65" stroke-width="2"/>
+<line x1="1239.0" y1="351.0" x2="1141.5" y2="407.3" class="gold" opacity=".6"/>
+<line x1="1206.5" y1="407.3" x2="1109.0" y2="351.0" class="gold" opacity=".6"/>
+<line x1="1141.5" y1="407.3" x2="1141.5" y2="294.7" class="gold" opacity=".6"/>
+<line x1="1109.0" y1="351.0" x2="1206.5" y2="294.7" class="gold" opacity=".6"/>
+<line x1="1141.5" y1="294.7" x2="1239.0" y2="351.0" class="gold" opacity=".6"/>
+<line x1="1206.5" y1="294.7" x2="1206.5" y2="407.3" class="gold" opacity=".6"/>
+<line x1="1048" y1="529" x2="1302" y2="529" class="dim"/>
+<path d="M 1048 524 v10 M 1302 524 v10" class="dim"/>
+<text x="1175" y="552" class="small" text-anchor="middle">Ø lotosu 2,55 m</text>
+<rect x="50" y="639" width="880" height="215" rx="13" class="panel"/>
+<rect x="952" y="639" width="438" height="215" rx="13" class="panel"/>
+<text x="76" y="678" class="heading">04 / VÝROBNÍ HIERARCHIE 3D SCÉNY</text>
+<text x="978" y="678" class="heading">05 / STAVY A ANIMACE</text>
+
+<rect x="82" y="711" width="121" height="102" rx="9" stroke="#5c6881" fill="#13243c"/>
+<circle cx="142" cy="742" r="16" stroke="#dfa85b" fill="none" stroke-width="1.5"/>
+<text x="142" y="779" text-anchor="middle" font-family="Arial" font-size="12" fill="#efc57b">ORB SHELL</text>
+<text x="142" y="798" text-anchor="middle" font-family="Arial" font-size="11" fill="#94a7bd">sklo / Fresnel</text>
+<rect x="220" y="711" width="121" height="102" rx="9" stroke="#5c6881" fill="#13243c"/>
+<circle cx="280" cy="742" r="16" stroke="#dfa85b" fill="none" stroke-width="1.5"/>
+<text x="280" y="779" text-anchor="middle" font-family="Arial" font-size="12" fill="#efc57b">ENERGY FIELD</text>
+<text x="280" y="798" text-anchor="middle" font-family="Arial" font-size="11" fill="#94a7bd">shader / noise</text>
+<rect x="358" y="711" width="121" height="102" rx="9" stroke="#5c6881" fill="#13243c"/>
+<circle cx="418" cy="742" r="16" stroke="#dfa85b" fill="none" stroke-width="1.5"/>
+<text x="418" y="779" text-anchor="middle" font-family="Arial" font-size="12" fill="#efc57b">CORE</text>
+<text x="418" y="798" text-anchor="middle" font-family="Arial" font-size="11" fill="#94a7bd">emissive</text>
+<rect x="496" y="711" width="121" height="102" rx="9" stroke="#5c6881" fill="#13243c"/>
+<circle cx="556" cy="742" r="16" stroke="#dfa85b" fill="none" stroke-width="1.5"/>
+<text x="556" y="779" text-anchor="middle" font-family="Arial" font-size="12" fill="#efc57b">ŚRĪ YANTRA</text>
+<text x="556" y="798" text-anchor="middle" font-family="Arial" font-size="11" fill="#94a7bd">přesný vektor</text>
+<rect x="634" y="711" width="121" height="102" rx="9" stroke="#5c6881" fill="#13243c"/>
+<circle cx="694" cy="742" r="16" stroke="#dfa85b" fill="none" stroke-width="1.5"/>
+<text x="694" y="779" text-anchor="middle" font-family="Arial" font-size="12" fill="#efc57b">RINGS</text>
+<text x="694" y="798" text-anchor="middle" font-family="Arial" font-size="11" fill="#94a7bd">kinematika</text>
+<rect x="772" y="711" width="121" height="102" rx="9" stroke="#5c6881" fill="#13243c"/>
+<circle cx="832" cy="742" r="16" stroke="#dfa85b" fill="none" stroke-width="1.5"/>
+<text x="832" y="779" text-anchor="middle" font-family="Arial" font-size="12" fill="#efc57b">LOTUS</text>
+<text x="832" y="798" text-anchor="middle" font-family="Arial" font-size="11" fill="#94a7bd">30 petals</text>
+<circle cx="1012" cy="733" r="19" stroke="#e9b75e" stroke-width="3" fill="none"/>
+<text x="1012" y="778" text-anchor="middle" font-size="12" fill="#c7d0dc" font-family="Arial">IDLE</text>
+<circle cx="1091" cy="733" r="19" stroke="#74c7e9" stroke-width="3" fill="none"/>
+<text x="1091" y="778" text-anchor="middle" font-size="12" fill="#c7d0dc" font-family="Arial">LISTEN</text>
+<circle cx="1170" cy="733" r="19" stroke="#b38cff" stroke-width="3" fill="none"/>
+<text x="1170" y="778" text-anchor="middle" font-size="12" fill="#c7d0dc" font-family="Arial">THINK</text>
+<circle cx="1249" cy="733" r="19" stroke="#edc672" stroke-width="3" fill="none"/>
+<text x="1249" y="778" text-anchor="middle" font-size="12" fill="#c7d0dc" font-family="Arial">SPEAK</text>
+<circle cx="1328" cy="733" r="19" stroke="#71cda9" stroke-width="3" fill="none"/>
+<text x="1328" y="778" text-anchor="middle" font-size="12" fill="#c7d0dc" font-family="Arial">ACT</text>
+<text x="986" y="824" class="tiny">Vstup: text / mikrofon · Výstup: STT, AI Native, TTS</text>
+<text x="53" y="883" class="tiny">Modelové rozměry slouží jako proporční reference pro Blender / glTF; nejde o rozměrový výkres fyzické instalace.</text>
+</svg>
