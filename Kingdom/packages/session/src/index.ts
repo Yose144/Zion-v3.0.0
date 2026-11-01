@@ -1,34 +1,40 @@
-import type { PortalAuth } from '@zion/contract';
-
 /**
- * @zion/session — jediný model přihlášení.
+ * @zion/session — jediný klient ZION Identity Service.
  *
- * Session drží hostitel okna (aplikace), ne portál. Cookie `zion_session`
- * vydává ZIS (auth.zionterranova.com). Tady jsou jen typy a čistá logika,
- * žádný fetch a žádný klíč — síť jde přes @zion/api.
+ * Dřív měl každý povrch vlastní kopii (website 619 řádků, market 344,
+ * pool-ui 182, nirvana 73). Tohle je jedna implementace; appky ji jen volají.
+ *
+ * Pravidla:
+ * - Klíč nikdy neopouští prohlížeč. Do ZIS jde podpis, ne fráze.
+ * - Session je cookie `zion_session`, vydává ji ZIS, drží ji hostitel okna.
+ * - Na serveru se cookie předává explicitně (`sessionCookie`), nikdy se
+ *   nespoléhá na to, že ji `fetch` pošle sám.
  */
 
-export const SESSION_COOKIE = 'zion_session';
+export { SESSION_COOKIE, ZisError, zisUrl } from './client';
+export {
+  getChallenge,
+  verifyEd25519,
+  getCurrentUser,
+  listSessions,
+  logout,
+} from './client';
 
-export type Identity = {
-  userId: string;
-  displayName?: string;
-  primaryAddress?: string;
-};
+export {
+  deriveWalletFromMnemonic,
+  addressFromPublicKey,
+  signMessage,
+  isValidMnemonic,
+} from './wallet';
+export type { ZionWallet } from './wallet';
 
-export type SessionState =
-  | { status: 'anonymous' }
-  | { status: 'authenticated'; identity: Identity; expiresAt?: string };
-
-export const ANONYMOUS: SessionState = { status: 'anonymous' };
-
-/** Umí portál s danou úrovní auth otevřít anonymní člověk? */
-export function allows(session: SessionState, level: PortalAuth): boolean {
-  if (level === 'none') return true;
-  return session.status === 'authenticated';
-}
-
-/** Chybí k otevření portálu přihlášení? */
-export function needsSignIn(session: SessionState, level: PortalAuth): boolean {
-  return !allows(session, level);
-}
+export type {
+  ZisChainType,
+  ZisChallenge,
+  ZisLinkedAddress,
+  ZisOasisPlayer,
+  ZisUser,
+  ZisSession,
+  ZisActiveSession,
+  ZisSignature,
+} from './types';

@@ -53,6 +53,16 @@ npm run verify       # codegen + hranice + typecheck + build
 npm start            # http://127.0.0.1:3020
 ```
 
+## Session a ZIS
+
+`@zion/session` je **jediný klient** ZION Identity Service pro celý ekosystém. Nahrazuje šest kopií, které vznikaly v appkách (website 619 řádků, market 344, pool-ui 182, nirvana 73…).
+
+- odvození peněženky z fráze **v prohlížeči** (`deriveWalletFromMnemonic`), fráze se nikdy neukládá ani neposílá
+- dvoukrokové přihlášení: `challenge` → podpis Ed25519 → `verify` → cookie `zion_session`
+- cookie v produkci na `.zionterranova.com` (jedno přihlášení pro celý ekosystém), lokálně host-only
+- server volá ZIS přes **loopback** (`ZIS_URL=http://127.0.0.1:8096`) — žádné CORS, žádné TLS samo k sobě
+- portály síť nevolají (hlídá `check-boundaries`); přihlášení žije v `core/session/`, protože session patří **hostiteli okna**
+
 ## Nasazení
 
 Běží na **EDGE2** jako `zion-kingdom.service` (127.0.0.1:3020), vhost `kingdom.zionterranova.com` staged na portu 80.

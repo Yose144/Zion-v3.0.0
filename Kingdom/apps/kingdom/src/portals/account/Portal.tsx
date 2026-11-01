@@ -1,34 +1,70 @@
 import type { Locale } from '@zion/contract';
 import { t } from '@zion/i18n';
-import { EXTERNAL } from '@/core/api';
+import { getSession } from '@/core/session/server';
+import { LoginForm } from '@/core/session/LoginForm';
+import { LogoutButton } from '@/core/session/LogoutButton';
 
 /**
- * Účet je jediné místo, kde Kingdom sahá na identitu. Dnes jen přiznává,
- * že přihlášení ještě není — v F4 sem přijde ZIS challenge a podpis Ed25519.
- * Nic se nepředstírá: žádné tlačítko, které nefunguje.
+ * Účet — jediné místo, kde Kingdom sahá na identitu.
+ *
+ * Session drží hostitel okna (cookie `zion_session` od ZIS). Portál ji jen
+ * čte; nepřihlášený dostane formulář, přihlášený svou adresu a odhlášení.
  */
-export default function AccountPortal({ locale }: { locale: Locale }) {
-  return (
-    <div className="k-card">
-      <div className="k-card-title">{t(locale, 'signIn')}</div>
-      <p className="k-card-desc">{t(locale, 'signInNote')}</p>
+export default async function AccountPortal({ locale }: { locale: Locale }) {
+  const user = await getSession();
 
-      <div className="k-meta">
-        <span className="k-badge">ZIS</span>
-        <span className="k-badge">Ed25519</span>
-        <span className="k-badge">zion_session</span>
+  if (!user) {
+    return <LoginForm locale={locale} />;
+  }
+
+  const address = user.primaryAddress ?? user.linkedAddresses?.[0]?.address ?? '—';
+
+  return (
+    <div className="k-card" style={{ maxWidth: 640 }}>
+      <div className="k-row" style={{ justifyContent: 'space-between' }}>
+        <div className="k-card-title">{t(locale, 'signedIn')}</div>
+        <LogoutButton locale={locale} />
       </div>
 
-      <p className="k-sub" style={{ marginTop: 10 }}>
-        {locale === 'cs'
-          ? 'Session ponese hostitel okna. Portál si nikdy nedrží vlastní login — jen čte, kdo je přihlášený.'
-          : 'The session belongs to the window host. A portal never keeps its own login — it only reads who is signed in.'}
-      </p>
+      <div className="k-stats" style={{ marginTop: 8 }}>
+        <div className="k-stat">
+          <div className="k-stat-label">{t(locale, 'primaryAddress')}</div>
+          <div className="k-code" style={{ marginTop: 4 }}>
+            {address}
+          </div>
+        </div>
+        {user.displayName ? (
+          <div className="k-stat">
+            <div className="k-stat-label">{t(locale, 'displayName')}</div>
+            <div className="k-stat-value" style={{ fontSize: 15 }}>
+              {user.displayName}
+            </div>
+          </div>
+        ) : null}
+      </div>
 
-      <p style={{ marginTop: 14 }}>
-        <a href={EXTERNAL.library} target="_blank" rel="noreferrer" style={{ color: 'var(--k-accent)' }}>
-          {t(locale, 'docs')} →
-        </a>
+      {user.linkedAddresses && user.linkedAddresses.length > 1 ? (
+        <div className="k-meta" style={{ marginTop: 12 }}>
+          <span>{user.linkedAddresses.length} adres</span>
+          {user.linkedAddresses.map((linked) => (
+            <span key={linked.id} className="k-badge">
+              {linked.chainType}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {user.oasisPlayer ? (
+        <p className="k-sub" style={{ marginTop: 12 }}>
+          {locale === 'cs' ? 'Propojeno s OASIS hráčem' : 'Linked to an OASIS player'}:{' '}
+          {user.oasisPlayer.displayName ?? user.oasisPlayer.address}
+        </p>
+      ) : null}
+
+      <p className="k-sub" style={{ marginTop: 14 }}>
+        {locale === 'cs'
+          ? 'Session platí pro celý ekosystém (*.zionterranova.com). Portály si nikdy nedrží vlastní login — jen čtou, kdo je přihlášený.'
+          : 'The session covers the whole ecosystem (*.zionterranova.com). A portal never keeps its own login — it only reads who is signed in.'}
       </p>
     </div>
   );

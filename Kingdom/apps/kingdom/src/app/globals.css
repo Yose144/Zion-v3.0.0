@@ -829,3 +829,34 @@ a {
 .k-world canvas {
   touch-action: none;
 }
+
+/* ---------- formulářová pole ---------- */
+
+.k-input {
+  width: 100%;
+  background: var(--k-bg-soft);
+  border: 1px solid var(--k-line);
+  border-radius: var(--k-radius-sm);
+  color: var(--k-text);
+  font-family: var(--k-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  padding: 10px 12px;
+  resize: vertical;
+  transition: border-color 140ms ease;
+}
+
+.k-input:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--rasta-gold) 55%, var(--k-line));
+}
+
+.k-input::placeholder {
+  color: var(--k-text-faint);
+}
+
+.k-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}

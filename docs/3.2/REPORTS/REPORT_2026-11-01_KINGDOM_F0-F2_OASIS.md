@@ -103,6 +103,31 @@ Výsledná podoba (`core/gate/Stargate.tsx` + `core/gate/stargate.css`):
 - 🔴 **Chyba při portu (nalezena měřením, ne okem):** `:root` se při prefixování přepsal na `.k-stargate :root`, což nematchuje nikdy → `--gate-offset-y` chyběl → `top: calc(50% + var(--gate-offset-y))` neplatné → `top: auto` → brána se posunula o **půl své výšky (369 px) nahoru** a byla uříznutá. Na screenshotu to vypadalo „jen divně"; `getBoundingClientRect()` ukázal `.k-stargate top:108` vs `.gate top:-261`. Fix = definovat proměnnou na `.k-stargate`, ne na `:root`.
 - Rasta se aplikuje **jen na Bránu** (hero aura, zlatý badge, zlaté CTA, triáda na třech cestách). Místnost a portály zůstávají neutrální — data musí zůstat čitelná.
 
+### ZIS S1 — jeden klient pro celý ekosystém (2026-11-01)
+
+Audit ZIS (`apps/identity`, 4 171 LOC, 59 endpointů, 51 testů) ukázal, že **služba je zdravá** — EdDSA JWT + JWKS, session v DB s revokací (single i revoke-all), WebAuthn, API klíče, audit, metriky, cookie `zion_session` na `.zionterranova.com`. Problém nebyl v ZIS, ale **v konzumentech**: šest klientských implementací, 2 119 řádků.
+
+| Klient | Řádků | Poznámka |
+|---|---|---|
+| `apps/shared/zis-client.ts` | 901 | „canonical", ale MarketPlace si ho částečně kopíruje |
+| `apps/website-v2.9/src/lib/zis.ts` | 619 | vlastní implementace |
+| `apps/MarketPlace/src/lib/zis.ts` + `zis-client.ts` | 201 + 143 | dvě kopie, rozcházejí se |
+| `apps/pool-ui/src/lib/zis.ts` | 182 | `NEXT_PUBLIC_ZIS_URL` |
+| `apps/nirvana/src/lib/zis.ts` | 73 | vlastní |
+| `Kingdom` | ~50 | stub |
+
+**Hotovo v S1:**
+
+- `@zion/session` — typovaný klient (`getChallenge`, `verifyEd25519`, `getCurrentUser`, `logout`, `listSessions`) + odvození peněženky z fráze (`deriveWalletFromMnemonic`, `signMessage`) přenesené z `apps/nirvana/src/lib/zionWallet.ts`. Fráze zůstává v prohlížeči.
+- Kingdom přihlášení: dvoukrokový `POST /api/auth/login` (challenge → verify) a `/api/auth/logout`. Cookie `zion_session` v produkci na `.zionterranova.com`, lokálně host-only. **SSO zůstává**, protože cookie nastavujeme se správnou doménou — ne jen na host.
+- Server volá ZIS přes loopback (`ZIS_URL=http://127.0.0.1:8096`), takže **CORS není potřeba** a `zion-zis` se nemusel restartovat.
+- Portál **Účet** je živý: bez session formulář, se session adresa, projekce OASIS hráče a odhlášení.
+- Hraniční check při tom chytil chybu v návrhu: přihlášení jsem měl v `portals/account/`, ale **session patří hostiteli okna** → přesunuto do `core/session/`.
+
+**Ověřeno:** challenge přes server vrací reálný `ZION-AUTH-V1` objekt (28–70 ms přes loopback), neplatný podpis → `401`, podpis ověřen klíčem (64 B). Plné přihlášení jsem na produkci **nespustil** — vytvořilo by uživatele v ZIS DB; crypto cesta je ověřená zvlášť.
+
+**Zbývá (S2–S4):** kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
+
 ---
 
 ## 2. Měření
