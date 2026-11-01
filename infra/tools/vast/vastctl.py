@@ -1915,6 +1915,24 @@ def _sha256(s):
     return hashlib.sha256(s.encode()).hexdigest()
 
 
+
+def _agent_read_allowed(handler) -> bool:
+    """Read přístup k fleet/task: loopback (dashboard a ops konzole na tomto
+    boxu) nebo platný agent/ops token. Do 2026-11-02 byly tyhle dvě routy
+    bez kontroly a `/api/agent/` je veřejně proxované — kdokoli si přečetl
+    rig id, hostname, stav minerů a tmux výstup. Header X-Ops-Auth se navíc
+    posílal z klienta (nginx ho nezačínal), takže se dal spoofovat."""
+    headers = handler.headers
+    # Přes ingress jde VŽDY přes nginx, který nastavuje `X-Real-IP $remote_addr`
+    # (klientskou hodnotu přepíše, takže se nedá podvrhnout). Přímé lokální
+    # volání (CLI `vastctl fleet`, dashboard) tenhle header nemá. Pozor: :8088
+    # je na EDGE za SSH tunelem, takže client_address je pro VŠE 127.0.0.1 —
+    # proto se podle IP rozhodovat nedá.
+    if not headers.get("X-Real-IP"):
+        return True
+    return _agent_token_ok(headers) is True
+
+
 def _agent_token_ok(headers):
     """Returns rig_id bound by the bearer (`rig_id:secret` per-rig auth),
     True for the legacy shared token, or False/None on failure.
@@ -2904,9 +2922,15 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         q = parse_qs(u.query)
         if u.path == "/api/agent/fleet":
+            if not _agent_read_allowed(self):
+                self._send("agent token required", 403, "text/plain")
+                return
             self._send(json.dumps(agent_fleet()), ctype="application/json")
         elif u.path == "/api/agent/task":
             # Poll one task (UI/CLI). Behind /vast-ops basic or public tunnel.
+            if not _agent_read_allowed(self):
+                self._send("agent token required", 403, "text/plain")
+                return
             try:
                 rid = (q.get("rig_id") or [""])[0]
                 tid = (q.get("task_id") or [""])[0]
