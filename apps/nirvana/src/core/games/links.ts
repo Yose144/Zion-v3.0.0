@@ -1,7 +1,7 @@
 /**
  * HERNÍ ODKAZY — jedno místo, kde je vidět, co jde hrát a kam se kliká.
  *
- * `/mars`, `/venus`, `/park` a `/avatars` jsou **skutečné routy** (ne portály
+ * `/mars`, `/venus`, `/mercury`, `/park` a `/avatars` jsou **skutečné routy** (ne portály
  * ve vesmíru), takže se na ně chodí `<Link>`, ne otevřením okna. Drží je
  * pohromadě tenhle seznam, aby je konzole, pouť i případná další místa
  * nemusely opisovat — a aby nikde nechyběly.

@@ -6,7 +6,7 @@ import { Canvas } from '@react-three/fiber';
 import { useI18n } from '@/core/i18n';
 import { MercurySolo, type DuelStats } from '@/core/fight/MercurySolo';
 import { MercuryDuel, type DuelMpStats } from '@/core/fight/MercuryDuel';
-import { MAX_HP } from '@/core/fight/duel';
+import { MAX_HP, type BotDifficulty } from '@/core/fight/duel';
 import { awardRun, grantTokens, loadProfile, saveProfile } from '@/core/park/profile';
 import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
 import { useNet } from '@/core/net/useNet';
@@ -58,9 +58,11 @@ function duelScore(selfWins: number, foeWins: number): number {
 function TouchButton({
   code,
   label,
+  ariaLabel = label,
 }: {
   code: string;
   label: string;
+  ariaLabel?: string;
 }) {
   // syntetické klávesové události → `useFightKeys` má jeden vstupní tok
   const send = useCallback(
@@ -79,7 +81,11 @@ function TouchButton({
       }}
       onPointerUp={() => send(false)}
       onPointerLeave={() => send(false)}
+      onPointerCancel={() => send(false)}
+      onLostPointerCapture={() => send(false)}
       onContextMenu={(event) => event.preventDefault()}
+      aria-label={ariaLabel}
+      title={ariaLabel}
     >
       {label}
     </button>
@@ -92,6 +98,7 @@ export default function MercuryPage() {
   const { you } = useNet();
   const [phase, setPhase] = useState<Phase>('idle');
   const [mode, setMode] = useState<Mode>('solo');
+  const [difficulty, setDifficulty] = useState<BotDifficulty>('standard');
   const [soloStats, setSoloStats] = useState<DuelStats>(EMPTY_SOLO);
   const [mpStats, setMpStats] = useState<DuelMpStats>(EMPTY_MP);
   const [notice, setNotice] = useState<string | null>(null);
@@ -167,9 +174,11 @@ export default function MercuryPage() {
             <MercuryDuel running onStats={setMpStats} />
           ) : (
             <MercurySolo
+              key={phase}
               running={phase === 'playing'}
               selfAvatarId={you?.avatarId ?? null}
               foeAvatarId={mode === 'solo' ? 42 : null}
+              botDifficulty={difficulty}
               onStats={setSoloStats}
             />
           )}
@@ -178,7 +187,20 @@ export default function MercuryPage() {
 
       {phase === 'playing' && (
         <>
-          <div className="duel-top" aria-hidden>
+          <button
+            type="button"
+            className="duel-exit"
+            aria-label={cs ? 'Ukončit souboj a vrátit se do menu' : 'Leave duel and return to menu'}
+            onClick={() => {
+              setPhase('idle');
+              setMpStats(EMPTY_MP);
+              setNotice(null);
+            }}
+          >
+            {cs ? 'Menu' : 'Menu'}
+          </button>
+
+          {!(mode === 'online' && (!mpStats.connected || mpStats.state === null)) && <div className="duel-top" aria-hidden>
             <div className="duel-fighter is-self">
               <div className="duel-name">{selfName}</div>
               <div className="duel-bar">
@@ -214,7 +236,14 @@ export default function MercuryPage() {
                 ))}
               </div>
             </div>
-          </div>
+          </div>}
+
+          {mode === 'online' && (!mpStats.connected || mpStats.state === null) && (
+            <div className="duel-status" role="status" aria-live="polite">
+              <strong>{cs ? 'Připojuji duel…' : 'Connecting to duel…'}</strong>
+              <span>{mpStats.connected ? (cs ? 'Hledám volnou klec na Merkuru.' : 'Finding an open Mercury ring.') : (cs ? 'Obnovuji spojení s herním serverem.' : 'Reconnecting to the game server.')}</span>
+            </div>
+          )}
 
           {state === 'countdown' && <div className="duel-flash is-count">{countdown > 0 ? countdown : '…'}</div>}
           {top && state === 'roundEnd' && (
@@ -230,6 +259,12 @@ export default function MercuryPage() {
               {notice ? ` · ${notice}` : ''}
             </div>
           )}
+          {mode === 'solo' && soloStats.phase === 'matchEnd' && (
+            <div className="duel-result" role="status" aria-live="polite">
+              <strong>{soloStats.winner === 'self' ? (cs ? 'VÍTĚZSTVÍ' : 'VICTORY') : (cs ? 'PROHRA' : 'DEFEAT')}</strong>
+              <span>{cs ? 'Cvičný souboj se za chvíli obnoví.' : 'Practice match resets shortly.'}</span>
+            </div>
+          )}
 
           <div className="arena-tip">
             {cs
@@ -239,14 +274,14 @@ export default function MercuryPage() {
 
           <div className="duel-touch" aria-label="ovládání">
             <div className="duel-touch-row">
-              <TouchButton code="KeyA" label="←" />
-              <TouchButton code="KeyD" label="→" />
+              <TouchButton code="KeyA" label="←" ariaLabel={cs ? 'Doleva' : 'Move left'} />
+              <TouchButton code="KeyD" label="→" ariaLabel={cs ? 'Doprava' : 'Move right'} />
             </div>
             <div className="duel-touch-row">
-              <TouchButton code="KeyJ" label="J" />
-              <TouchButton code="KeyK" label="K" />
-              <TouchButton code="KeyS" label={cs ? 'blok' : 'block'} />
-              <TouchButton code="Space" label={cs ? 'skok' : 'jump'} />
+              <TouchButton code="KeyJ" label="J" ariaLabel={cs ? 'Pěst' : 'Punch'} />
+              <TouchButton code="KeyK" label="K" ariaLabel={cs ? 'Kop' : 'Kick'} />
+              <TouchButton code="KeyS" label={cs ? 'blok' : 'block'} ariaLabel={cs ? 'Blokovat' : 'Block'} />
+              <TouchButton code="Space" label={cs ? 'skok' : 'jump'} ariaLabel={cs ? 'Skočit' : 'Jump'} />
             </div>
           </div>
         </>
@@ -267,12 +302,39 @@ export default function MercuryPage() {
             <kbd>A/D</kbd> {cs ? 'pohyb' : 'move'} · <kbd>W</kbd> {cs ? 'skok' : 'jump'} · <kbd>J</kbd>{' '}
             {cs ? 'pěst' : 'punch'} · <kbd>K</kbd> {cs ? 'kop' : 'kick'} · <kbd>S</kbd> {cs ? 'blok' : 'block'}
           </div>
+          <section className="duel-difficulty" aria-label={cs ? 'Obtížnost soupeře' : 'Opponent difficulty'}>
+            <strong>{cs ? 'Síla cvičného stínu' : 'Practice shadow skill'}</strong>
+            <div className="duel-difficulty-options">
+              {([
+                { id: 'gentle' as const, cs: 'Klidný', en: 'Gentle', noteCs: 'pomalejší reakce', noteEn: 'slower reactions' },
+                { id: 'standard' as const, cs: 'Vyrovnaný', en: 'Balanced', noteCs: 'doporučeno', noteEn: 'recommended' },
+                { id: 'champion' as const, cs: 'Mistr', en: 'Champion', noteCs: 'rychlý blok a kop', noteEn: 'quick guards & kicks' },
+              ]).map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className="duel-difficulty-option"
+                  aria-pressed={difficulty === option.id}
+                  onClick={() => setDifficulty(option.id)}
+                >
+                  <strong>{cs ? option.cs : option.en}</strong>
+                  <span>{cs ? option.noteCs : option.noteEn}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+          <p className="duel-coach-tip">
+            {cs
+              ? 'Nejdřív dojdi do dosahu. Pěst je rychlá, kop zasáhne dál a blok výrazně tlumí poškození.'
+              : 'Close the distance first. Punches are quick, kicks reach farther, and blocking cuts damage.'}
+          </p>
           <div className="arena-actions">
             <button
               type="button"
               className="park-btn"
               onClick={() => {
                 setMode('solo');
+                setNotice(null);
                 setPhase('playing');
               }}
             >
@@ -283,6 +345,8 @@ export default function MercuryPage() {
               className="park-btn park-btn-mp"
               onClick={() => {
                 setMode('online');
+                setMpStats(EMPTY_MP);
+                setNotice(null);
                 setPhase('playing');
               }}
             >

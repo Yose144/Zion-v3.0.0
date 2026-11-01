@@ -370,6 +370,21 @@ export interface BotMemory {
   seed: number;
 }
 
+export type BotDifficulty = 'gentle' | 'standard' | 'champion';
+
+interface BotTuning {
+  thinkEvery: number;
+  thinkJitter: number;
+  kickChance: number;
+  guardChance: number;
+}
+
+const BOT_TUNING: Record<BotDifficulty, BotTuning> = {
+  gentle: { thinkEvery: 0.52, thinkJitter: 0.28, kickChance: 0.22, guardChance: 0.12 },
+  standard: { thinkEvery: 0.25, thinkJitter: 0.2, kickChance: 0.4, guardChance: 0.44 },
+  champion: { thinkEvery: 0.12, thinkJitter: 0.1, kickChance: 0.55, guardChance: 0.82 },
+};
+
 export function makeBotMemory(): BotMemory {
   return { nextThink: 0, pick: 'punch', blockUntil: 0, seed: 1 };
 }
@@ -384,17 +399,27 @@ function rand(memory: BotMemory): number {
 }
 
 /**
- * Bot míří na soupeře, drží odstup a útočí v dosahu. Rozhodoval se ~4×/s
- * (stejný „plánovací" princip jako boti arény — ne každý frame).
- * Na obtížnost měň jen `aggression` (0..1).
+ * Bot míří na soupeře, drží odstup a útočí v dosahu. Rozhoduje se v
+ * simulovaných intervalech (ne každý frame); obtížnost mění reakční dobu,
+ * výběr kopů a pravděpodobnost, že zareaguje blokem.
  */
-export function botInput(duel: Duel, memory: BotMemory, self: Fighter, foe: Fighter, clock: number, aggression = 0.55): FightInput {
+export function botInput(
+  duel: Duel,
+  memory: BotMemory,
+  self: Fighter,
+  foe: Fighter,
+  clock: number,
+  difficulty: BotDifficulty = 'standard',
+): FightInput {
   if (duel.phase !== 'fighting') return NO_INPUT;
 
+  const tuning = BOT_TUNING[difficulty];
   if (clock >= memory.nextThink) {
-    memory.nextThink = clock + 0.25 + rand(memory) * 0.2;
-    memory.pick = rand(memory) < 0.4 ? 'kick' : 'punch';
-    if (foe.attack && rand(memory) < aggression * 0.8) memory.blockUntil = clock + 0.4;
+    memory.nextThink = clock + tuning.thinkEvery + rand(memory) * tuning.thinkJitter;
+    memory.pick = rand(memory) < tuning.kickChance ? 'kick' : 'punch';
+    if (foe.attack && rand(memory) < tuning.guardChance) {
+      memory.blockUntil = clock + (difficulty === 'champion' ? 0.48 : 0.36);
+    }
   }
 
   const dx = foe.x - self.x;

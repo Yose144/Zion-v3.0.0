@@ -185,7 +185,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ### Planety jako vstupy do her (F1, 2026-11-01)
 
-- **Mars, Venuše, Jupiter jsou vstupy** (`PlanetDef.game`), ostatní planety jsou
+- **Mars, Venuše, Jupiter a Merkur jsou vstupy** (`PlanetDef.game`), ostatní planety jsou
   mrtvé — jen tlumené jméno, žádný hover ani kursor. To je záměr: hranice
   „na co jde kliknout" musí být vidět bez najetí.
 - **Hit-sféra je neviditelná koule** `max(size*2.6, 2.6)` s `opacity: 0` —
@@ -202,7 +202,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ### Navigace ke hrám a sluneční soustava (2026-11-01)
 
-- **Hry jsou routy, ne portály.** `/park`, `/mars`, `/venus`, `/avatars` se
+- **Hry jsou routy, ne portály.** `/park`, `/mars`, `/venus`, `/mercury`, `/avatars` se
   otevírají `<Link>`em (nová stránka), kdežto portály v konzoli otevírají okno
   ve scéně. Seznam her drží **`core/games/links.ts`** — konzole, pouť i
   `GamesDock` ho sdílí; nová hra se přidává tam, ne na čtyři místa.
@@ -443,3 +443,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Klice planet → panel:** `def.game` pro Jupiter je `'park'` (ne
   `'jupiter'`). Panel v Shell se počítá z `PLANET_PANELS[planet]` —
   klíče jsou hodnoty `def.game`. Podmínka na `'jupiter'` je mrtvá kód.
+
+### Merkur — hratelnost polish (2026-11-01)
+
+- Sólo má tři bot profily `gentle | standard | champion`; změna obtížnosti
+  patří do `botInput()` ve sdíleném `duel.ts`. Síťové boty dál používají
+  `standard` default, takže protokol i serverová simulace zůstávají stejné.
+- Pohybové animace i zásahový záblesk čtou `Fighter` v `Fighter3D`; nepřidávat
+  herní stav do React state ani druhou fyziku. HP je jediný signál zásahu, který
+  klient potřebuje pro vizuální odezvu.
+- Klávesy se čistí při ztrátě focusu / skrytí tabu; mobilní ovladače musí pustit
+  vstup i na `pointercancel` a `lostpointercapture`.
+- Menu se vrací přes tlačítko **Menu**. Sóla se při novém startu mountuje čistě,
+  aby po předčasném odchodu nepokračoval zamrzlý duel. Multiplayer hlásí
+  připojování/hledání místo falešného `0s` HUDu.
+- Bez změny wire formátu: `PROTO_VERSION` zůstává 3; `fight` E2E a serverové
+  testy stačí pro změny lokálního balancu/UI. Při budoucí změně vstupu nebo
+  snapshotu pokračuj bumpem protokolu a deploy pořadím server → aplikace.

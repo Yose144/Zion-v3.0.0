@@ -163,6 +163,31 @@ console.log('\n== simulace (bez sítě) ==');
     sim.duel.phase);
 }
 
+// obtížnosti mají být měřitelně různé, ne jen jiný nápis v menu
+{
+  const sample = (difficulty) => {
+    const sim = fight.createFight(0);
+    sim.duel.phase = 'fighting';
+    sim.duel.a.attack = { kind: 'punch', elapsed: 0.1, hit: false };
+    const memory = duel.makeBotMemory();
+    let decisions = 0;
+    let blockedFrames = 0;
+    for (let frame = 0; frame < 300; frame++) {
+      const before = memory.nextThink;
+      const input = duel.botInput(sim.duel, memory, sim.duel.b, sim.duel.a, frame / 30, difficulty);
+      if (memory.nextThink !== before) decisions += 1;
+      if (input.block) blockedFrames += 1;
+    }
+    return { decisions, blockedFrames };
+  };
+  const gentle = sample('gentle');
+  const champion = sample('champion');
+  check('mistr reaguje častěji než klidný stín', champion.decisions > gentle.decisions,
+    `gentle=${gentle.decisions} champion=${champion.decisions}`);
+  check('mistr lépe blokuje útoky', champion.blockedFrames > gentle.blockedFrames,
+    `gentle=${gentle.blockedFrames} champion=${champion.blockedFrames}`);
+}
+
 // ── 2) síť ────────────────────────────────────────────────────────────
 const server = spawn(process.execPath, [entry], {
   env: {

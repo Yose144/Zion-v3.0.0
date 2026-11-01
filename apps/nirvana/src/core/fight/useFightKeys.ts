@@ -38,6 +38,10 @@ export function useFightKeys(active: boolean) {
         block: BLOCK.some((code) => keys.has(code)),
       };
     };
+    const clear = () => {
+      keys.clear();
+      recompute();
+    };
     const down = (event: KeyboardEvent) => {
       keys.add(event.code);
       recompute();
@@ -51,9 +55,13 @@ export function useFightKeys(active: boolean) {
     };
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
+    window.addEventListener('blur', clear);
+    document.addEventListener('visibilitychange', clear);
     return () => {
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
+      window.removeEventListener('blur', clear);
+      document.removeEventListener('visibilitychange', clear);
       input.current = { ...NO_INPUT };
     };
   }, [active]);

@@ -10,6 +10,7 @@ import {
   makeBotMemory,
   resetDuel,
   stepDuel,
+  type BotDifficulty,
   type Duel,
   type Fighter,
 } from './duel';
@@ -40,11 +41,13 @@ export function MercurySolo({
   running,
   selfAvatarId,
   foeAvatarId,
+  botDifficulty,
   onStats,
 }: {
   running: boolean;
   selfAvatarId: number | null;
   foeAvatarId: number | null;
+  botDifficulty: BotDifficulty;
   onStats: (stats: DuelStats) => void;
 }) {
   const keys = useFightKeys(running);
@@ -79,7 +82,7 @@ export function MercurySolo({
     active.a.avatarId = selfAvatarId;
     active.b.avatarId = foeAvatarId;
 
-    stepDuel(active, keys.current, botInput(active, bot.current, active.b, active.a, clock.current), dt, Date.now());
+    stepDuel(active, keys.current, botInput(active, bot.current, active.b, active.a, clock.current, botDifficulty), dt, Date.now());
 
     if (active.phase === 'matchEnd') {
       if (restartAt.current === null) restartAt.current = clock.current + RESTART_AFTER;

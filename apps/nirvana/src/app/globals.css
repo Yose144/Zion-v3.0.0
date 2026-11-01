@@ -1534,6 +1534,8 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   border: 1px solid rgba(255, 180, 106, 0.35);
   background: rgba(14, 7, 5, 0.92);
   backdrop-filter: blur(10px);
+  max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px));
+  overflow: auto;
 }
 
 .arena-panel header {
@@ -3223,6 +3225,62 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   opacity: 0.75;
 }
 
+.duel-exit {
+  position: absolute;
+  z-index: 17;
+  top: calc(0.8rem + env(safe-area-inset-top, 0px));
+  right: 1rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.9rem;
+  border-color: rgba(255, 230, 180, 0.28);
+  background: rgba(15, 9, 7, 0.72);
+  color: rgba(255, 244, 222, 0.84);
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.duel-exit:hover {
+  border-color: rgba(255, 180, 106, 0.72);
+  color: #ffe9a8;
+}
+
+.duel-status,
+.duel-result {
+  position: absolute;
+  z-index: 15;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  width: min(25rem, calc(100vw - 2rem));
+  padding: 1.1rem 1.4rem;
+  border: 1px solid rgba(255, 205, 130, 0.34);
+  border-radius: 1rem;
+  background: rgba(14, 7, 5, 0.82);
+  color: #ffe9c5;
+  text-align: center;
+  backdrop-filter: blur(9px);
+  pointer-events: none;
+}
+
+.duel-status strong,
+.duel-result strong {
+  color: #ffd166;
+  font-size: 1.15rem;
+  letter-spacing: 0.14em;
+}
+
+.duel-status span,
+.duel-result span {
+  color: rgba(255, 244, 222, 0.7);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .duel-flash {
   position: absolute;
   z-index: 15;
@@ -3250,7 +3308,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   z-index: 16;
   left: 12px;
   right: 12px;
-  bottom: 54px;
+  bottom: calc(54px + env(safe-area-inset-bottom, 0px));
   display: none;
   flex-direction: column;
   gap: 8px;
@@ -3276,6 +3334,105 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 
 .duel-touch-btn:active {
   background: rgba(255, 180, 106, 0.35);
+}
+
+.duel-difficulty {
+  margin: 0.2rem 0 1rem;
+}
+
+.duel-difficulty > strong {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: rgba(255, 233, 198, 0.82);
+  font-size: 0.7rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.duel-difficulty-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.duel-difficulty-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.7rem;
+  text-align: left;
+}
+
+.duel-difficulty-option[aria-pressed='true'] {
+  border-color: rgba(255, 209, 102, 0.75);
+  background: rgba(255, 180, 106, 0.18);
+  color: #ffe9a8;
+}
+
+.duel-difficulty-option strong {
+  font-size: 0.75rem;
+}
+
+.duel-difficulty-option span {
+  color: rgba(246, 231, 216, 0.55);
+  font-size: 0.62rem;
+}
+
+.duel-difficulty-option:focus-visible,
+.duel-exit:focus-visible {
+  outline: 2px solid #ffd166;
+  outline-offset: 2px;
+}
+
+.duel-coach-tip {
+  padding: 0.55rem 0.7rem;
+  border-left: 2px solid rgba(255, 180, 106, 0.65);
+  background: rgba(255, 180, 106, 0.06);
+  color: rgba(246, 231, 216, 0.64) !important;
+  font-size: 0.75rem !important;
+}
+
+@media (max-width: 520px) {
+  .duel-top {
+    top: calc(4rem + env(safe-area-inset-top, 0px));
+    width: calc(100vw - 1.2rem);
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .duel-name {
+    font-size: 0.62rem;
+  }
+
+  .duel-clock strong {
+    font-size: 1.2rem;
+  }
+
+  .duel-exit {
+    top: calc(0.55rem + env(safe-area-inset-top, 0px));
+    right: 0.6rem;
+    min-height: 2.2rem;
+    padding: 0.35rem 0.65rem;
+  }
+
+  .duel-difficulty-options {
+    gap: 0.3rem;
+  }
+
+  .duel-difficulty-option {
+    padding: 0.5rem 0.4rem;
+  }
+
+  .duel-difficulty-option strong {
+    font-size: 0.68rem;
+  }
+
+  .duel-difficulty-option span {
+    font-size: 0.55rem;
+  }
 }
 
 @media (hover: none) and (pointer: coarse) {

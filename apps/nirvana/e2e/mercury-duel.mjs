@@ -66,6 +66,24 @@ async function openDuel(page) {
 }
 
 try {
+  console.log('\n== sólový trénink ==');
+  const solo = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  watch(solo, 'solo');
+  await solo.goto(`${BASE}/mercury`, { waitUntil: 'networkidle' });
+  await solo.getByRole('button', { name: /Champion|Mistr/i }).click();
+  check(
+    'obtížnost soupeře jde vybrat',
+    (await solo.getByRole('button', { name: /Champion|Mistr/i }).getAttribute('aria-pressed')) === 'true',
+  );
+  await solo.locator('.arena-actions button').first().click();
+  await solo.locator('.duel-top').waitFor({ timeout: 5000 });
+  check('trénink zobrazí soubojové HUD', await solo.locator('.duel-top').count() === 1);
+  await solo.locator('.duel-exit').click();
+  await solo.locator('.arena-panel').waitFor({ timeout: 3000 });
+  check('Menu bezpečně ukončí trénink', await solo.locator('.arena-panel').count() === 1);
+  await solo.close();
+
+  console.log('\n== online duel ==');
   const a = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const b = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   watch(a, 'A');
