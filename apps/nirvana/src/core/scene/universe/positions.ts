@@ -70,10 +70,10 @@ export function planetPosition(
  * prstencem Issobelly. Jeden vzorec pro scénu i pro fokus: kdyby se rozešly,
  * kamera doletí tam, kde loď není.
  */
-export const FLEET_ORBIT_R = 9.1;
+export const FLEET_ORBIT_R = 15.5;
 export const FLEET_SPEED = 0.022; // rad/s — pomalejší než archa na hladině
 export const FLEET_ANGLE0 = 0.9;
-export const FLEET_Y = 0.95;
+export const FLEET_Y = 4.2;
 
 export function fleetPosition(t: number): [number, number, number] {
   const a = FLEET_ANGLE0 + t * FLEET_SPEED;

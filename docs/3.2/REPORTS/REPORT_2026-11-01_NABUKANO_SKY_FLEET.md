@@ -32,7 +32,7 @@ Každá kapitola má **Kotvu pravdy** (Bible / tradice / historie / korpus / PŘ
 
 | Povrch | Co tam je |
 |---|---|
-| `/terranova/nabukano` | hero (skutečný obraz), čtyři trupy s volacími znaky, **konceptová deska** (8 sekcí + tři čluny), dvě trasy, tabulka „co existuje / co ne", CTA (kniha, vesmír, Issobella) |
+| `/terranova/nabukano` | hero (skutečný obraz), čtyři trupy s orbitami, **studie 02** (dok se třemi kotvišti, 8 sekcí, tři doprovodné lodě), beauty shot rámu s lucernou, dvě trasy, tabulka „co existuje / co ne", CTA |
 | `/l6-issobella` | sekce **„Uzly L6 — Dva uzly nebe"**: Issobella (HORIZONT) + Nabukano (VIZE) |
 | navigace → Vrstvy | `L6 Issobella` je rozbalovací, dítě **Nabukano · Nebeská flotila** |
 | footer | stejný odkaz v sekci vrstev |
@@ -102,7 +102,7 @@ apps/website-v2.9/src/components/{Navigation,Footer}.tsx     odkaz pod L6
 apps/website-v2.9/src/lib/translations.ts                    nav.terra_nabukano
 apps/website-v2.9/src/app/sitemap.ts                         route
 apps/website-v2.9/archive-content/korpus/Nabukano/           mirror kapitol
-apps/website-v2.9/public/images/nabukano/*.webp              hero + deska
+apps/website-v2.9/public/images/nabukano/*.webp              hero + deska 02 + rám
 apps/nirvana/src/core/scene/universe/{SkyFleet,positions,Universe}.tsx
 apps/nirvana/src/core/{portals/manifest,shell/Shell,scene/SceneRoot}.tsx
 apps/nirvana/src/portals/fleet/FleetPortal.tsx
@@ -111,6 +111,16 @@ NIRVANA-SHELL.md, NIRVANA-RENDER-AAA.md, apps/nirvana/AGENTS.md
 ```
 
 ---
+
+## 5b. Kanonická podoba — studie 02 (1. 11., později téhož dne)
+
+Operátor dodal **kanonickou studii 02** (`heros/habuk/Nabukano_ Three-Berth Docking Study.png`) a beauty shot (`Nabukano’s Three-Ship Docking Cradle.png`). Oprava proti studii 01:
+
+- **Dok není prstenec kolem trupu, ale rám pod ním se třemi kotvišti** — tři Marie přisedají zespodu.
+- **Osm sekcí má nový obsah:** 01 můstek · 02 knihovna a jídelna · 03 zahrada · 04 ordinace · 05 izolační kajuta · 06 dokovací rám · 07 **lucerna** (skutečná lucerna na konci rámu) · 08 technické zázemí.
+- **Volací znaky LUMI / ISSOBELLA / TŘETÍ MARIE ze studie 01 se ruší** — kanonická jsou mariánská jména; badge na webu nesou orbity (blízká orbita / Země ↔ Měsíc / daleký horizont).
+- **3D `SkyFleet` překreslen:** hřeben + rotující obytný prstenec + rám se třemi kotvišti a lucernou na konci; tři rozdílné siluety (průzkumný / transport s gondolami / nákladní).
+- Kniha kap. 3 přepsaná na studii 02 (tabulka sekcí, tři lodě, „čtyři trupy, jeden dok, jedna osa").
 
 ## 6. Kolize s paralelními session (pro budoucí čtenáře)
 

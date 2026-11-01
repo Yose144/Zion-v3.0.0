@@ -46,30 +46,32 @@ Tři trupy nejsou tři kopie jedné myšlenky. Jsou tři **režimy vzdálenosti*
 
 A jedna věc, kterou kniha nezakrývá: **jména jsou vypůjčená, posádky ne.** Tři Marie jsou na vodě STAVBA (a třetí HORIZONT, [Nirvana · Epizoda 13](../nirvana/13-Tres-Marias.md)); jejich nebeské sestry jsou **VIZE** a **HORIZONT**. Stejné jméno neznamená stejný stav. Znamená stejný kýl.
 
-## Z konceptové desky (studie 01)
+## Z konceptové desky (studie 02 — kanonická podoba)
 
-Deska [`Nabukano spacecraft concept board.png`](./Nabukano%20spacecraft%20concept%20board.png) je **umělecká koncepční studie** — rozměry a systémy k ověření, ne výrobní plán. Dává flotile pracovní označení a osm sekcí trupu:
+Deska [`Nabukano_ Three-Berth Docking Study.png`](./Nabukano_%20Three-Berth%20Docking%20Study.png) je **kanonická umělecká studie** — rozměry a systémy k ověření, ne výrobní plán. Mění jednu věc zásadně: **dok není prstenec kolem trupu, ale rám pod ním.**
 
-| # | Sekce | Poznámka |
+| # | Sekce | Co na palubě znamená |
 |---|---|---|
-| 01 | Můstek | velitelský prostor s okny k planetě |
-| 02 | Obytné moduly | kajuty po dvou, společné prostory |
-| 03 | Rotující prstenec | obytný, se zelení a zahradou |
-| 04 | Dokovací uzel | místo, kde trupy přisedají |
-| 05 | Laboratoře a zásoby | dílna, archiv, sklady |
-| 06 | Nádrže | pracovní kapaliny, zásoby |
-| 07 | Radiátory | odvod tepla — tichá část lodi |
-| 08 | Pohonná sekce | tah pro lidi, plachta pro náklad |
+| 01 | Můstek | velitelský prostor v přídi, okna k planetě |
+| 02 | Knihovna a jídelna | dlouhý stůl, regály, kde se jí a čte — srdce posádky |
+| 03 | Zahrada | prosklený pás zeleně za trupem; vzduch, který se dá dýchat |
+| 04 | Ordinace | malá, funkční, s lůžkem a světlem |
+| 05 | Izolační kajuta | jedny dveře, které se zavírají zvenku i zevnitř |
+| 06 | Dokovací rám | **tři kotviště** pod trupem — tři Marie přisedají zespodu |
+| 07 | Lucerna | skutečná lucerna na konci rámu; svítí těm, kdo přicházejí zdola |
+| 08 | Technické zázemí | dílna, zásoby, to, co musí fungovat, když se nic neděje |
 
-**Pracovní označení tří trupů** (neruší jména z knihy — jsou to volací znaky posádek):
+**Doprovodné lodě** (jména z knihy, orbity z desky):
 
-| Volací znak | Role | Která María |
+| Loď | Role | Kde slouží |
 |---|---|---|
-| **LUMI** | průzkumný člun, blízké nebe | Santa María la Mayor · nebeská |
-| **ISSOBELLA** | lunární transport, Země ↔ Měsíc | Nossa Senhora de Fátima · nebeská |
-| **TŘETÍ MARIE** | nákladní koráb, dlouhá cesta | María de las Nieves · nebeská |
+| **Santa María la Mayor · nebeská** | průzkumný člun | blízká orbita Nové Země |
+| **Nossa Senhora de Fátima · nebeská** | lunární transport | Země ↔ Měsíc |
+| **María de las Nieves · nebeská** | nákladní koráb | daleký horizont |
 
-Jméno na kýlu zůstává stejné pro všechny čtyři: *Království srdce*.
+Nad rámem je **rotující prstenec** — obytné kolo, které dělá z lodi místo, kde se dá žít, ne jen letět. A na konci rámu **lucerna** (07) není ozdoba: je to světlo pro ty, kdo přilétají zdola, a její obraz drží celou knihu — *„kdo se vrací, potřebuje světlo, které mu řekne: tady přestaň hledat."*
+
+**Čtyři trupy, jeden dok, jedna osa.** Na kýlu všech čtyř zůstává totéž jméno: *Království srdce*.
 
 ## Z Písma a tradice
 

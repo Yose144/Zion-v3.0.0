@@ -15,7 +15,7 @@ import { IssobellaRing } from './IssobellaRing';
 import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { SpaceBackdrop } from './SpaceBackdrop';
-import { JUPITER, SolarSystem } from './SolarSystem';
+import { JUPITER, SolarSystem, orbitRadius } from './SolarSystem';
 import { HiranSun } from './HiranSun';
 
 /** Portrait / úzké viewporty: širší fov + větší počáteční odstup,
@@ -42,7 +42,9 @@ function ResponsiveFraming() {
 const SUN_CAM = new THREE.Vector3(17, 8, 17);
 const SUN_TARGET = new THREE.Vector3(0, 0, 0);
 /** Zdvižení kamery nad rovinu dráhy (aby se flotila nekoukala do hrany). */
-const FLEET_CAM_LIFT = new THREE.Vector3(0, 1.8, 0);
+const FLEET_CAM_LIFT = new THREE.Vector3(0, 0.8, 0);
+const FLEET_UP = new THREE.Vector3(0, 1, 0);
+const FLEET_CAM_TANGENT = new THREE.Vector3();
 
 /**
  * Vesmír Království srdce — heliocentrická soustava.
@@ -129,7 +131,7 @@ export function Universe({
       const [jx, jy, jz] = planetPosition(
         JUPITER.id,
         3,
-        JUPITER.orbitR,
+        orbitRadius(JUPITER.au),
         JUPITER.speed,
         clock.elapsedTime,
       );
@@ -151,9 +153,14 @@ export function Universe({
       fleetTarget.set(ex + fx, fy, ez + fz);
       // Kamera stojí dál od Slunce než flotila: díváme se dovnitř soustavy,
       // takže slunce je za námi a ve záběru je flotila proti planetě.
+      // Pohled z boku: čistě radiální kamera vidí trup zepředu (zkrácený).
+      // Radiála + tečna dráhy dá 3/4 záběr, kde je vidět hřeben i rám s lucernou.
+      const radial = fleetTarget.clone().normalize();
+      const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
       fleetCam
         .copy(fleetTarget)
-        .addScaledVector(fleetTarget.clone().normalize(), 4.4)
+        .addScaledVector(radial, 2.0)
+        .addScaledVector(tangent, 2.6)
         .add(FLEET_CAM_LIFT);
       const p = (progress.current = Math.min(1, progress.current + delta / 1.6));
       const t = 1 - Math.pow(1 - p, 3);
@@ -201,7 +208,7 @@ export function Universe({
         enableDamping
         dampingFactor={0.06}
         enablePan={false}
-        minDistance={7}
+        minDistance={3}
         maxDistance={1300}
         minPolarAngle={0.4}
         maxPolarAngle={2.7}

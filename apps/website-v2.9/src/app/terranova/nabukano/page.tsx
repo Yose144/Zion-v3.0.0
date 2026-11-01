@@ -69,16 +69,20 @@ const Copy = {
     cs: ['Žádný trup, dok, výtah ani posádka', 'Žádná raketa, žádný modul, žádný termín', 'Žádný fond, podíl ani výnos — flotila nic neprodává'],
     en: ['No hull, dock, lift or crew', 'No rocket, module or schedule', 'No fund, share or yield — the fleet sells nothing'],
   },
-  boardTitle: { cs: 'Dispozice, řezy a interiéry', en: 'Arrangement, sections and interiors' },
+  boardTitle: { cs: 'Dok, dispozice a interiéry', en: 'Dock, arrangement and interiors' },
   boardSubtitle: {
-    cs: 'Studie 01 — umělecká koncepční deska. Rozměry a systémy jsou k ověření, ne výrobní plán.',
-    en: 'Study 01 — an artistic concept board. Dimensions and systems are to be verified, not a production drawing.',
+    cs: 'Studie 02 — kanonická podoba. Tři kotviště pod trupem, knihovna, zahrada, ordinace a lucerna na konci rámu. Umělecká deska, rozměry k ověření.',
+    en: 'Study 02 — the canonical look. Three berths under the hull, a library, a garden, a sick bay and a lantern at the end of the frame. An artistic board, dimensions to be verified.',
   },
-  boardSectionsTitle: { cs: 'Osm sekcí trupu', en: 'Eight hull sections' },
-  boardCraftTitle: { cs: 'Tři nebeské Marie — pracovní označení', en: 'Three sky Marías — working designations' },
+  boardSectionsTitle: { cs: 'Osm sekcí — jak je kreslí deska', en: 'Eight sections — as the board draws them' },
+  boardCraftTitle: { cs: 'Tři nebeské Marie — doprovodné lodě', en: 'Three sky Marías — companion ships' },
   boardNote: {
-    cs: 'Čísla 01–08 odpovídají desce: od můstku po pohonnou sekci. Kniha je kánon; deska je obraz, který se k němu přidává.',
-    en: 'Numbers 01–08 follow the board: from the bridge to the propulsion section. The book is the canon; the board is an image added to it.',
+    cs: 'Čtyři trupy, jeden dok, jedna osa. Čísla 01–08 odpovídají desce; kniha je kánon a deska je jeho obraz.',
+    en: 'Four hulls, one dock, one axis. Numbers 01–08 follow the board; the book is the canon and the board is its image.',
+  },
+  cradleCaption: {
+    cs: 'Kotviště pod trupem: tři berthy, dílna, lucerna na konci rámu — Issobella vlevo, Měsíc vpravo.',
+    en: 'The cradle under the hull: three berths, a workshop, a lantern at the end of the frame — Issobella to the left, the Moon to the right.',
   },
   ctaBook: { cs: 'Číst knihu Nabukano', en: 'Read the book Nabukano' },
   ctaSpace: { cs: 'Otevřít ve vesmíru', en: 'Open in space' },
@@ -99,7 +103,7 @@ type Vessel = {
 const VESSELS: Vessel[] = [
   {
     name: 'Nabukano',
-    call: 'MATKA',
+    call: 'MATEŘSKÁ LOĎ',
     role: { cs: 'Mateřská loď a dokovací rám; nese lucernu', en: 'Mother ship and docking frame; carries the lantern' },
     status: { cs: 'Vize', en: 'Vision' },
     tone: 'text-sky-300',
@@ -107,7 +111,7 @@ const VESSELS: Vessel[] = [
   },
   {
     name: 'Santa María la Mayor · nebeská',
-    call: 'LUMI',
+    call: 'BLÍZKÁ ORBITA',
     role: { cs: 'Blízké nebe — oběžná dráha Nové Země', en: 'Near sky — New Earth orbit' },
     status: { cs: 'Vize', en: 'Vision' },
     tone: 'text-rose-300',
@@ -115,7 +119,7 @@ const VESSELS: Vessel[] = [
   },
   {
     name: 'Nossa Senhora de Fátima · nebeská',
-    call: 'ISSOBELLA',
+    call: 'ZEMĚ ↔ MĚSÍC',
     role: { cs: 'Prostor mezi — Země a Měsíc', en: 'The space between — Earth and Moon' },
     status: { cs: 'Vize', en: 'Vision' },
     tone: 'text-amber-100',
@@ -123,7 +127,7 @@ const VESSELS: Vessel[] = [
   },
   {
     name: 'María de las Nieves · nebeská',
-    call: 'TŘETÍ MARIE',
+    call: 'DALEKÝ HORIZONT',
     role: { cs: 'Dlouhá cesta — heliocentrická dráha', en: 'The long road — heliocentric orbit' },
     status: { cs: 'Horizont', en: 'Horizon' },
     tone: 'text-yellow-300',
@@ -277,7 +281,7 @@ export default function NabukanoPage() {
                   src="/images/nabukano/concept-board.webp"
                   srcSet="/images/nabukano/concept-board-m.webp 900w, /images/nabukano/concept-board.webp 1536w"
                   sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                  alt={cs ? 'Nabukano — koncepční deska: podélný řez, půdorys, bokorys, obytný prstenec a interiéry' : 'Nabukano — concept board: longitudinal section, plan, profile, habitat ring and interiors'}
+                  alt={cs ? 'Nabukano — studie 02: dok se třemi kotvišti, podélný řez, půdorys, knihovna, zahrada, ordinace a lucerna' : 'Nabukano — study 02: the three-berth dock, longitudinal section, plan, library, garden, sick bay and lantern'}
                   width={1536}
                   height={1024}
                   loading="lazy"
@@ -286,17 +290,34 @@ export default function NabukanoPage() {
                 />
               </a>
 
+              <figure className="mt-5">
+                <a href="/images/nabukano/cradle.webp" target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                  <img
+                    src="/images/nabukano/cradle.webp"
+                    srcSet="/images/nabukano/cradle-m.webp 900w, /images/nabukano/cradle.webp 1672w"
+                    sizes="(max-width: 1320px) calc(100vw - 4rem), 1200px"
+                    alt={cs ? 'Nabukano — dokovací rám se třemi kotvišti pod trupem, lucerna na konci' : 'Nabukano — the docking cradle with three berths under the hull, lantern at its end'}
+                    width={1672}
+                    height={941}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full object-cover"
+                  />
+                </a>
+                <figcaption className="mt-2 text-xs text-white/45">{Copy.cradleCaption[cs ? 'cs' : 'en']}</figcaption>
+              </figure>
+
               <h3 className="mt-6 mb-3 text-sm font-semibold uppercase tracking-widest text-sky-200/80">{Copy.boardSectionsTitle[cs ? 'cs' : 'en']}</h3>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {[
                   { n: '01', cs: 'Můstek', en: 'Bridge' },
-                  { n: '02', cs: 'Obytné moduly', en: 'Habitat modules' },
-                  { n: '03', cs: 'Rotující prstenec', en: 'Rotating ring' },
-                  { n: '04', cs: 'Dokovací uzel', en: 'Docking node' },
-                  { n: '05', cs: 'Laboratoře a zásoby', en: 'Labs and stores' },
-                  { n: '06', cs: 'Nádrže', en: 'Tanks' },
-                  { n: '07', cs: 'Radiátory', en: 'Radiators' },
-                  { n: '08', cs: 'Pohonná sekce', en: 'Propulsion section' },
+                  { n: '02', cs: 'Knihovna a jídelna', en: 'Library and mess' },
+                  { n: '03', cs: 'Zahrada', en: 'Garden' },
+                  { n: '04', cs: 'Ordinace', en: 'Sick bay' },
+                  { n: '05', cs: 'Izolační kajuta', en: 'Isolation cabin' },
+                  { n: '06', cs: 'Dokovací rám', en: 'Docking cradle' },
+                  { n: '07', cs: 'Lucerna', en: 'Lantern' },
+                  { n: '08', cs: 'Technické zázemí', en: 'Technical spaces' },
                 ].map((item) => (
                   <div key={item.n} className="zion-rainbow-sub flex items-center gap-3 px-3 py-2" style={{ '--rc': RC } as React.CSSProperties}>
                     <span className="text-xs font-bold tracking-widest text-sky-300">{item.n}</span>
@@ -308,12 +329,12 @@ export default function NabukanoPage() {
               <h3 className="mt-6 mb-3 text-sm font-semibold uppercase tracking-widest text-sky-200/80">{Copy.boardCraftTitle[cs ? 'cs' : 'en']}</h3>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
-                  { call: 'LUMI', cs: 'Průzkumný člun', en: 'Survey craft', noteCs: 'blízké nebe', noteEn: 'near sky' },
-                  { call: 'ISSOBELLA', cs: 'Lunární transport', en: 'Lunar transport', noteCs: 'mezi Zemí a Měsícem', noteEn: 'Earth to Moon' },
-                  { call: 'TŘETÍ MARIE', cs: 'Nákladní koráb', en: 'Cargo ship', noteCs: 'dlouhá cesta', noteEn: 'the long road' },
+                  { call: 'Santa María la Mayor', cs: 'Průzkumný člun', en: 'Survey craft', noteCs: 'blízká orbita', noteEn: 'near orbit' },
+                  { call: 'Nossa Senhora de Fátima', cs: 'Lunární transport', en: 'Lunar transport', noteCs: 'Země ↔ Měsíc', noteEn: 'Earth ↔ Moon' },
+                  { call: 'María de las Nieves', cs: 'Nákladní koráb', en: 'Cargo ship', noteCs: 'daleký horizont', noteEn: 'far horizon' },
                 ].map((c) => (
                   <div key={c.call} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': RC } as React.CSSProperties}>
-                    <p className="text-xs font-bold uppercase tracking-widest text-sky-300">{c.call}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-sky-300">{c.call}</p>
                     <p className="mt-1 text-sm text-white/85">{cs ? c.cs : c.en}</p>
                     <p className="text-xs text-white/45">{cs ? c.noteCs : c.noteEn}</p>
                   </div>

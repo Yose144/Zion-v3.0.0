@@ -73,14 +73,14 @@ Kniha, čtečka, stránka uzlu, uzel v L6, navigace, hero, deska, scéna flotily
 
 ### N2 — 3D model podle konceptové desky 🤖 · 1–2 dny
 
-Cíl: scéna má číst jako **studie 01**, ne jako symbol.
+Cíl: scéna má číst jako **studie 02** (kanonická: dok se třemi kotvišti pod trupem, lucerna na konci rámu), ne jako symbol.
 
 | Úkol | Co | Poznámka |
 |---|---|---|
-| N2.1 | Rotující prstenec (03) jako skutečný torus s okny a zelení, plynulá rotace | reuse `kit/` materiály; instancing oken |
-| N2.2 | Dokovací uzel (04) + tři trupy **přisedající** k rámu (ne „viset poblíž") | pozice z `fleetPosition()` |
-| N2.3 | Osm sekcí jako čitelné bloky: 01 můstek, 02 obytné moduly, 05 laboratoře, 06 nádrže, 07 radiátory, 08 pohon | mapování 1:1 na legendu na webu |
-| N2.4 | Tři čluny podle desky: LUMI (průzkumný), ISSOBELLA (lunární transport), TŘETÍ MARIE (nákladní) | rozdílné DMG-free siluety, ne kopie |
+| N2.1 | Rotující obytný prstenec s okny a zelení, plynulá rotace kolem podélné osy | ✅ hotovo (studie 02) |
+| N2.2 | **Dokovací rám pod trupem se třemi kotvišti** + lucerna na konci | ✅ hotovo (studie 02) |
+| N2.3 | Osm sekcí jako čitelné bloky: 01 můstek, 02 knihovna a jídelna, 03 zahrada, 04 ordinace, 05 izolační kajuta, 06 dokovací rám, 07 lucerna, 08 technické zázemí | mapování 1:1 na legendu na webu |
+| N2.4 | Tři doprovodné lodě podle desky: Santa María la Mayor (průzkumný), Nossa Senhora de Fátima (lunární transport s gondolami), María de las Nieves (nákladní) | rozdílné siluety, ne kopie |
 | N2.5 | LOD: `low` varianta pro mobil (méně segmentů, bez detailů) | `quality().tier` |
 
 **Brána:** `?sceneAudit=1` → **≤ +60 draw calls** proti stavu N1.3, **≤ 110 k tris**, **0 nových textur** (popisky jen nutné), ≥30 fps Tier B na GPU, 0 invalid vertices; srovnávací screenshot s deskou.
@@ -169,3 +169,4 @@ Cíl: scéna má číst jako **studie 01**, ne jako symbol.
 | Datum | Změna |
 |---|---|
 | 2026-11-01 | v1.0 — vytvořeno po dodání kánonu, webu, scény, tras, hero a konceptové desky. Otevřené D1–D4. |
+| 2026-11-01 | v1.1 — **D1 vyřešeno dodáním studie 02**: kanonická jsou mariánská jména, volací znaky LUMI / ISSOBELLA / TŘETÍ MARIE se ruší. Dok = rám pod trupem se třemi kotvišti; N2.1/N2.2 hotové. |
