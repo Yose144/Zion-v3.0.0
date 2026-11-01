@@ -3,7 +3,7 @@
 > **Stav:** hotové a ověřené lokálně (produkční build, M1 / ANGLE Metal).
 > **Route:** `/park` (veřejná, mimo ZAP pass gate). Do vesmíru přidána pozvánka:
 > dlaždice **Pouť** + prstenec u Jupitera, klik = fokus na planetu a okno pouti.
-> **Nenasazeno v době sepsání** — deploy na EDGE následuje.
+> **Nasazeno:** EDGE `20261101T011122Z` (+ redeploy po copy fixu). Rollback držen.
 
 ## 1. Co to je
 
@@ -92,6 +92,15 @@ obrazovka je skutečný povrch, ne DOM.
 | `apps/nirvana/src/portals/park/ParkPortal.tsx` | okno ve vesmíru |
 | `apps/nirvana/src/core/scene/universe/SolarSystem.tsx` | prstenec u Jupitera (`JupiterStation`) |
 | `apps/nirvana/src/core/scene/universe/positions.ts` | `planetPosition()` — stejný vzorec pro scénu i fokus |
+
+## 7b. Nasazení
+
+| Povrch | Deploy | Rollback |
+|---|---|---|
+| Nirvana (EDGE) | `20261101T011122Z` (+ redeploy) | `/opt/zion/APP&WEB/nirvana.before-*` |
+
+Live ověřeno: `/park` 200, `GET /api/park/scores` 200, `POST` rank 1,
+Breakout dohrán na živém buildu, konzole bez nových chyb (jen pre-existing `401`).
 
 ## 8. Změnový log
 

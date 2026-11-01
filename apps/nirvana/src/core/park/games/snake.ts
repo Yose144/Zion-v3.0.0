@@ -153,7 +153,7 @@ export function createSnake(canvas: HTMLCanvasElement, hooks: ParkGameHooks): Pa
       ctx.fillText('KONEC HRY', GAME_W / 2, GAME_H / 2 + 2);
       ctx.font = '13px ui-monospace, monospace';
       ctx.fillStyle = PARK_PALETTE.ink;
-      ctx.fillText(`skóre ${state.score} · klikni pro novou hru`, GAME_W / 2, GAME_H / 2 + 28);
+      ctx.fillText(`skóre ${state.score} · Hrát znovu`, GAME_W / 2, GAME_H / 2 + 28);
     }
   }
 

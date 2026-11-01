@@ -159,7 +159,7 @@ export function createPong(canvas: HTMLCanvasElement, hooks: ParkGameHooks): Par
       ctx.fillText(state.player > state.cpu ? 'VYHRÁL JSI' : 'KONEC HRY', GAME_W / 2, GAME_H / 2 + 4);
       ctx.font = '13px ui-monospace, monospace';
       ctx.fillStyle = PARK_PALETTE.ink;
-      ctx.fillText('klikni pro novou hru', GAME_W / 2, GAME_H / 2 + 28);
+      ctx.fillText('klikni na Hrát znovu', GAME_W / 2, GAME_H / 2 + 28);
     }
   }
 
