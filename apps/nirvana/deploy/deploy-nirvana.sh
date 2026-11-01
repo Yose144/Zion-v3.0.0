@@ -35,11 +35,15 @@ if [[ -n "$ARTIFACT_DIR" ]]; then
 else
   cd "$ROOT_DIR"
   npm run build
-  APP_DIR="${ROOT_DIR}/.next/standalone/nirvana"
-  if [[ ! -f "${APP_DIR}/server.js" ]]; then
-    echo "[deploy-nirvana] ERROR: standalone build missing ${APP_DIR}/server.js" >&2
+  # K1.2: s root workspace (lockfile v rootu repa) Next zanoří standalone strom
+  # hlouběji — `.next/standalone/apps/nirvana/server.js`. Hledej server.js,
+  # ať skript přežije další změnu layoutu (K1.3 ho má sjednotit).
+  APP_DIR="$(dirname "$(find "${ROOT_DIR}/.next/standalone" -maxdepth 4 -name server.js | head -1)")"
+  if [[ -z "$APP_DIR" ]] || [[ ! -f "${APP_DIR}/server.js" ]]; then
+    echo "[deploy-nirvana] ERROR: standalone build missing server.js under .next/standalone" >&2
     exit 1
   fi
+  echo "[deploy-nirvana] standalone: ${APP_DIR#"${ROOT_DIR}/"}"
 
   # Standalone server serves public/ and .next/static ONLY from next to
   # server.js — Next does not copy them there (see deploy-web2.9.sh).

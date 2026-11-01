@@ -150,7 +150,7 @@ soubory" — **jedna verze Reactu, Nextu a sdílených balíčků pro všech 6 w
 | # | Vlna | Obsah | Brána |
 |---|---|---|---|
 | **K1.1** | **Next 16 + React 19 ve všech 6 webech** | ✅ **pool-ui** (2026-11-01) → ✅ **IntroPage** (2026-11-01) → ✅ **OasisWeb** (2026-11-01, + `reactBrowserBailout: false` — React #438) → ✅ **nirvana** (16.4.3, manifest) → MarketPlace (security 1b) | pool-ui/IntroPage/OasisWeb: build + deploy + **runtime test v prohlížeči** OK, rollbacky drženy; MarketPlace: `curl` 200 nestačí, chce money-path test |
-| **K1.2** | **Root workspace** | `/package.json` s `workspaces: ["apps/*", "packages/*"]`, jeden lockfile; `Kingdom/packages/*` → `/packages/*` | `npm ci` v rootu, 6 buildů zelených |
+| **K1.2** | **Root workspace** | `/package.json` s `workspaces` = **6 webů + `shared` + `zion-wallet-sdk`** (mobil/Electron/identita zůstávají se svými lockfily — rozhodnutí 👤), jeden lockfile; `Kingdom/packages/*` → `/packages/*` zůstává jako K1.2b | 🚧 **2026-11-01 hotovo na větvi `k12-root-workspace`:** 1 lockfile (2 031 balíčků), `npm ci` OK, **6/6 buildů zelených**; `apps/package.json` stub zrušen. **Nález:** čerstvý install posunul 48 balíčků (stripe 22.4→22.6 shodil build marketu, noblé ed25519 2.3→3.2 major) → 42 posunů zamraženo na původní verze, `three` záměrně sjednocen na 0.186.1. Report: `docs/3.2/REPORTS/REPORT_2026-11-01_KINGDOM_K1.2_ROOT_WORKSPACE.md`. **Zbývá:** merge + nasadit jeden povrch |
 | **K1.3** | **Jeden Turbopack root** | `root: repo`, sjednotit standalone layout + **upravit všech 9 deploy skriptů** na nové cesty | každý deploy projde, rollback ověřen |
 | **K1.4** | **S3 se odblokuje sám** | `@zion/session` jako workspace závislost, žádný tarball ani registry | nirvana 73 → ~25 řádků, market −344 |
 
