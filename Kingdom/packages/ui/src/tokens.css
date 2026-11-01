@@ -6,22 +6,24 @@
 :root {
   color-scheme: dark;
 
-  --k-bg: #05060a;
-  --k-bg-soft: #090c14;
-  --k-panel: #0d1120;
-  --k-panel-2: #111629;
-  --k-line: #1b2236;
-  --k-line-soft: #141a2b;
+  /* Rasta One Love — stejná paleta jako desktop agent (apps/desktop-agent/src/ui).
+     Zlato = primární akcent, červená = chyba/varování, zelená = „živé". */
+  --k-bg: #0d0d0d;
+  --k-bg-soft: #121212;
+  --k-panel: rgba(13, 13, 13, 0.82);
+  --k-panel-2: #1a1a1a;
+  --k-line: rgba(255, 255, 255, 0.12);
+  --k-line-soft: rgba(255, 255, 255, 0.06);
 
-  --k-text: #eaeef7;
-  --k-text-dim: #9aa4bd;
-  --k-text-faint: #6a7490;
+  --k-text: #ffffff;
+  --k-text-dim: rgba(255, 255, 255, 0.72);
+  --k-text-faint: rgba(255, 255, 255, 0.48);
 
-  --k-accent: #6ff0c4;
-  --k-accent-soft: rgba(111, 240, 196, 0.12);
-  --k-accent-2: #7aa7ff;
-  --k-warn: #ffb86b;
-  --k-err: #ff7a7a;
+  --k-accent: #fcd116;                       /* rasta gold */
+  --k-accent-soft: rgba(252, 209, 22, 0.14);
+  --k-accent-2: #078930;                     /* rasta green */
+  --k-warn: #fcd116;
+  --k-err: #e41e2b;                          /* rasta red */
 
   /* Rasta — One Love v3.2.0 (převzato z apps/IntroPage/public/assets/css/intro-rasta.css) */
   --rasta-red: #e41e2b;

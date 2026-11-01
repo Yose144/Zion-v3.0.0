@@ -11,11 +11,81 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: var(--k-bg);
   color: var(--k-text);
   font-family: var(--k-font);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/*
+ * Pozadí podle desktop agenta (rasta): zelená dopředu, červená a zlato jako
+ * odlesky, dole pád do černé. Warp hvězdy kreslí `WarpCanvas` nad tím (canvas,
+ * 24 fps, `prefers-reduced-motion` snižuje hustotu i rychlost).
+ */
+body {
+  background:
+    radial-gradient(circle at 15% 18%, rgba(6, 105, 40, 0.28), transparent 42rem),
+    radial-gradient(circle at 85% 12%, rgba(6, 105, 40, 0.24), transparent 40rem),
+    radial-gradient(circle at 45% 55%, rgba(6, 105, 40, 0.14), transparent 52rem),
+    radial-gradient(circle at 18% 15%, rgba(228, 30, 43, 0.18), transparent 45rem),
+    radial-gradient(circle at 50% 78%, rgba(252, 209, 22, 0.12), transparent 55rem),
+    linear-gradient(180deg, #0c0c0c 0%, #050505 60%, #000 100%);
+  background-attachment: fixed;
+}
+
+/* HUD mřížka — jemná, stejná jako v desktop appce. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 120px 120px;
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 0;
+}
+
+/* Warp plátno pod obsahem. */
+.k-warp {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  will-change: transform;
+}
+
+/* ---------- přechody mezi okny (klient, ne web) ---------- */
+
+@keyframes k-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.996);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes k-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-app,
+  .k-stage > * {
+    animation: none !important;
+  }
 }
 
 a {
@@ -29,6 +99,9 @@ a {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
+  animation: k-fade 420ms ease both;
 }
 
 .k-topbar {
@@ -178,6 +251,11 @@ a {
   min-height: 0;
   overflow-y: auto;
   padding: 22px 24px 60px;
+}
+
+/* Obsah okna najíždí — každá routa je nový mount, takže animace hraje znovu. */
+.k-stage > * {
+  animation: k-enter 300ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .k-stage-head {
@@ -391,12 +469,13 @@ a {
 .k-gate-bg {
   position: absolute;
   inset: 0;
-  /* Tmavé pole — brána si nebuli nese sama uvnitř kruhu. Když svítí i za ní,
-     kovový prstenec se rozmyje a přestane být bránou. */
+  /* Průhledné: rasta pozadí i warp hvězdy mají prosvítat — dřív tu bylo
+     neprůhledné #04050a a celá stránka vypadala jako plochý web. Kovový
+     prstenec drží čitelnost sám (je nejjasnější prvek scény). */
   background:
-    radial-gradient(circle at 50% 46%, rgba(122, 167, 255, 0.05), transparent 46%),
-    radial-gradient(circle at 50% 120%, rgba(228, 30, 43, 0.05), transparent 55%),
-    #04050a;
+    radial-gradient(circle at 50% 46%, rgba(252, 209, 22, 0.05), transparent 46%),
+    radial-gradient(circle at 50% 118%, rgba(6, 105, 40, 0.18), transparent 58%),
+    radial-gradient(circle at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.55) 78%);
   pointer-events: none;
 }
 
