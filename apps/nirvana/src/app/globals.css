@@ -1675,3 +1675,59 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-size: 0.72rem;
   letter-spacing: 0.1em;
 }
+
+/* ── VENUŠE — okruh ─────────────────────────────────────────────────── */
+
+.race .arena-stage canvas {
+  cursor: default;
+}
+
+.race-hud {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(200, 162, 255, 0.35);
+  background: rgba(12, 6, 22, 0.84);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.88rem;
+}
+
+.race-hud .race-speed {
+  color: #ffd166;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.race-hud .race-best {
+  color: #7fe3d4;
+}
+
+.race-hud .race-off {
+  color: #ff7a6b;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+.race-go {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 162, 255, 0.5);
+  background: rgba(16, 8, 28, 0.8);
+  color: #e0d0ff;
+  font-size: 0.86rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

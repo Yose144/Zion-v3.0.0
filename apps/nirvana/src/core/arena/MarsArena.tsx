@@ -2,7 +2,19 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useXRInputSourceState } from '@react-three/xr';
+import { XROrigin, useXRInputSourceState } from '@react-three/xr';
+import {
+  playDeath,
+  playExplosion,
+  playFrag,
+  playHit,
+  playHurt,
+  playMatchEnd,
+  playPickup,
+  playRail,
+  playRocket,
+  unlockAudio,
+} from '@/core/arena/audio';
 import * as THREE from 'three';
 import {
   ARENA_BOXES,
@@ -52,6 +64,9 @@ interface XrHandle {
   firing: boolean;
   /** Zamíření paprskem z pravého ovladače (null = nedostupné). */
   aim: THREE.Vector3 | null;
+  /** Levý thumbstick: −1..1 vpřed / vpravo. */
+  forward: number;
+  strafe: number;
 }
 
 export interface ArenaResult {
@@ -114,6 +129,7 @@ const BOT_NAMES = ['VALLIS', 'NOCTIS', 'ARES'];
  */
 function ArenaXrInput({ handle }: { handle: React.MutableRefObject<XrHandle> }) {
   const right = useXRInputSourceState('controller', 'right');
+  const left = useXRInputSourceState('controller', 'left');
   const direction = useMemo(() => new THREE.Vector3(0, 0, -1), []);
 
   useFrame(() => {
@@ -126,6 +142,14 @@ function ArenaXrInput({ handle }: { handle: React.MutableRefObject<XrHandle> }) 
     } else {
       handle.current.aim = null;
     }
+
+    // pohyb levým thumbstickem (osa Y je v XR obráceně)
+    const stick = left?.gamepad?.['xr-standard-thumbstick'];
+    const dead = 0.18;
+    const x = stick?.xAxis ?? 0;
+    const y = stick?.yAxis ?? 0;
+    handle.current.strafe = Math.abs(x) > dead ? x : 0;
+    handle.current.forward = Math.abs(y) > dead ? -y : 0;
   });
 
   return null;
@@ -200,7 +224,9 @@ export function MarsArena({
   const pickupGroup = useRef<THREE.Group>(null);
 
   const lastStats = useRef('');
-  const xrHandle = useRef<XrHandle>({ firing: false, aim: null });
+  const xrHandle = useRef<XrHandle>({ firing: false, aim: null, forward: 0, strafe: 0 });
+  const xrOrigin = useRef<THREE.Group>(null);
+  const headDir = useMemo(() => new THREE.Vector3(), []);
 
   // ── revizní háček pro testy: `?arenaDebug=1` ─────────────────────
   useEffect(() => {
@@ -261,6 +287,7 @@ export function MarsArena({
     };
 
     const onClick = () => {
+      unlockAudio();
       if (!locked.current) {
         void canvas.requestPointerLock?.();
         return;
@@ -292,6 +319,7 @@ export function MarsArena({
   // ── start / reset zápasu ─────────────────────────────────────────
   useEffect(() => {
     if (!running) return;
+    unlockAudio();
     startedAt.current = performance.now();
     finished.current = false;
     timeLeft.current = MATCH_SECONDS;
@@ -385,8 +413,10 @@ export function MarsArena({
         origin[2] + dir.z * bestT,
       ];
       tracers.current.push({ id: nextId.current++, from: origin, to: end, ttl: now + 140 });
+      playRail();
 
       if (bestBot) {
+        playHit();
         bestBot.health -= RAIL_DAMAGE;
         if (bestBot.health <= 0) killBot(bestBot, now);
       }
@@ -400,6 +430,7 @@ export function MarsArena({
     }
     ammo.current -= 1;
     cooldown.current = now + ROCKET_COOLDOWN;
+    playRocket();
     rockets.current.push({
       id: nextId.current++,
       x: origin[0] + dir.x * 0.6,
@@ -417,6 +448,7 @@ export function MarsArena({
     bot.health = 0;
     bot.respawnAt = now + BOT_RESPAWN * 1000;
     frags.current += 1;
+    playFrag();
     if (frags.current >= FRAG_LIMIT && !finished.current) endMatch('frags');
   }
 
@@ -425,10 +457,12 @@ export function MarsArena({
     const absorbed = Math.min(armor.current, Math.round(amount * 0.6));
     armor.current -= absorbed;
     health.current -= amount - absorbed;
+    if (health.current > 0) playHurt();
     if (health.current <= 0) {
       health.current = 0;
       deaths.current += 1;
       deadUntil.current = now + RESPAWN_TIME * 1000;
+      playDeath();
       window.setTimeout(() => {
         health.current = 100;
         armor.current = 0;
@@ -449,6 +483,8 @@ export function MarsArena({
   function endMatch(reason: 'frags' | 'time') {
     if (finished.current) return;
     finished.current = true;
+    playMatchEnd();
+    if (document.pointerLockElement) void document.exitPointerLock();
     onEnd({
       frags: frags.current,
       deaths: deaths.current,
@@ -470,17 +506,26 @@ export function MarsArena({
 
     // hráč
     if (!dead) {
-      const forward =
-        (keys.current.has('KeyW') || keys.current.has('ArrowUp') ? 1 : 0) -
-        (keys.current.has('KeyS') || keys.current.has('ArrowDown') ? 1 : 0);
-      const strafe =
-        (keys.current.has('KeyD') || keys.current.has('ArrowRight') ? 1 : 0) -
-        (keys.current.has('KeyA') || keys.current.has('ArrowLeft') ? 1 : 0);
+      const forward = xr
+        ? xrHandle.current.forward
+        : (keys.current.has('KeyW') || keys.current.has('ArrowUp') ? 1 : 0) -
+          (keys.current.has('KeyS') || keys.current.has('ArrowDown') ? 1 : 0);
+      const strafe = xr
+        ? xrHandle.current.strafe
+        : (keys.current.has('KeyD') || keys.current.has('ArrowRight') ? 1 : 0) -
+          (keys.current.has('KeyA') || keys.current.has('ArrowLeft') ? 1 : 0);
+
+      // ve VR je „vpřed" tam, kam se dívá hlava — ne kam se dívala myš
+      let moveYaw = view.current.yaw;
+      if (xr) {
+        camera.getWorldDirection(headDir);
+        moveYaw = Math.atan2(-headDir.x, -headDir.z);
+      }
 
       stepBody(
         player.current,
-        view.current.yaw,
-        { forward, strafe, jump: jumpQueued.current },
+        moveYaw,
+        { forward, strafe, jump: jumpQueued.current || (xr && keys.current.has('Space')) },
         dt,
         solids,
       );
@@ -492,7 +537,12 @@ export function MarsArena({
         fire(now);
       }
 
-      if (!xr) {
+      if (xr) {
+        // XR origin nese tělo; kamera (hlava) je vůči němu lokální
+        if (xrOrigin.current) {
+          xrOrigin.current.position.set(player.current.x, player.current.y, player.current.z);
+        }
+      } else {
         camera.position.set(
           player.current.x,
           player.current.y + PLAYER.eye,
@@ -643,6 +693,7 @@ export function MarsArena({
         }
 
         if (exploded) {
+          playExplosion();
           for (const bot of bots.current) {
             if (!bot.alive) continue;
             const d = Math.hypot(
@@ -687,6 +738,7 @@ export function MarsArena({
         armor.current = Math.min(100, armor.current + 50);
       }
       pickup.until = now + pickup.respawn * 1000;
+      playPickup();
     }
 
     tracers.current = tracers.current.filter((tracer) => tracer.ttl > now);
@@ -773,6 +825,7 @@ export function MarsArena({
       <pointLight position={[0, 6, 0]} intensity={18} color="#ff8f5c" distance={28} decay={2} />
 
       {xr && <ArenaXrInput handle={xrHandle} />}
+      {xr && <XROrigin ref={xrOrigin} />}
 
       {/* mapa */}
       {ARENA_BOXES.map((box: ArenaBox, index) => (

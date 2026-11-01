@@ -98,3 +98,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **VR:** `<XR store>` + tlačítko VR; pravý ovladač míří, spoušť střílí. Pohyb
   ve VR není — hráč stojí. Nehlásit jako hotové.
 - **Co tu není:** zvuk, viewmodel, multiplayer, VR pohyb.
+
+## Venuše — `/venus` (2026-11-01)
+
+- **Trať je funkce, ne model:** `r(θ) = 86 + sin(3θ)·22`, šířka 11 m, 320 vzorků.
+  `core/race/track.ts` z toho dělá pás, tečny, normály i checkpointy.
+- **Okraj tratě je zeď, ne pružina.** Při klampování zachovej podélný postup
+  (`along`), jinak auto zamrzne na místě — stalo se to při prvním pokusu.
+- **Skóre = laps/seconds**, takže vyšší je lepší; nepřevracej tabuli.
+- **Zvuk:** `core/arena/audio.ts` (syntéza). Nové zvuky přidávej tam, ne jako soubory.
+
+## Zvuk a VR v aréně (2026-11-01)
+
+- **AudioContext jen po gestu** (`unlockAudio()` v kliku / startu zápasu), jinak
+  prohlížeč přehrávání zablokuje. V repu nejsou žádné zvukové soubory.
+- **VR pohyb** jde přes `XROrigin`: origin nese tělo, kamera (hlava) je vůči němu
+  lokální. „Vpřed" se bere z kamery, ne z myši; kolize zůstávají stejné.

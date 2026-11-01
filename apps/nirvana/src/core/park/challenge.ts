@@ -17,7 +17,7 @@ export interface DailyChallenge {
   reward: number;
 }
 
-const GAMES: ParkGameId[] = ['pong', 'breakout', 'snake', 'tetris', 'gallery', 'arena'];
+const GAMES: ParkGameId[] = ['pong', 'breakout', 'snake', 'tetris', 'gallery', 'arena', 'race'];
 
 /** Cíle podle toho, kolik bodů hra reálně dává. */
 const TARGETS: Record<ParkGameId, number> = {
@@ -27,6 +27,7 @@ const TARGETS: Record<ParkGameId, number> = {
   tetris: 400, // 4 řádky
   gallery: 150, // 15 zásahů
   arena: 500, // 5 fragů
+  race: 3000, // 3 kola pod ~100 s
 };
 
 export const CHALLENGE_REWARD = 5;

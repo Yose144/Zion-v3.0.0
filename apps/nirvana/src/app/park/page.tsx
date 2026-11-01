@@ -39,6 +39,7 @@ const TITLES: { id: ParkGameId; title: { cs: string; en: string } }[] = [
   ...PARK_GAMES.map((game) => ({ id: game.id as ParkGameId, title: game.title })),
   { id: 'gallery', title: { cs: 'Střelnice', en: 'Gallery' } },
   { id: 'arena', title: { cs: 'Mars aréna', en: 'Mars arena' } },
+  { id: 'race', title: { cs: 'Venuše okruh', en: 'Venus circuit' } },
 ];
 
 const BOARD = TITLES;
@@ -439,6 +440,9 @@ export default function ParkPage() {
           </button>
           <Link href="/mars" className="park-arena-link">
             {cs ? 'Mars aréna · deathmatch →' : 'Mars arena · deathmatch →'}
+          </Link>
+          <Link href="/venus" className="park-arena-link">
+            {cs ? 'Venuše · okruh na hovercraftu →' : 'Venus · hovercraft circuit →'}
           </Link>
 
           <div className={`park-challenge${challengeDone ? ' is-done' : ''}`}>
