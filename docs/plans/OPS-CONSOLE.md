@@ -96,6 +96,11 @@ Cache: snapshot 10 s, pool 15 s. Každé volání má timeout; modul nikdy nesho
 7. **SMOS**: `ZionRig` je offline (samostatný problém, viz AGENTS).
 8. **Latence marketu**: dotaz na offers trvá 5–15 s (vast.ai API); UI proto počítá sekundy a
    `/api/ops/market` má 40s timeout. Zvážit server-side cache 60 s, aby opakované hledání bylo zdarma.
+9. ~~**EDGE nemá GPU → inference musí na vast**~~ → **hotové (F2.2)**: `POST /api/ops/provision`
+   (background job + `GET /api/ops/job?id=`) rozhodne: model už běží → nic; existuje GPU rig →
+   nasaď tam (nula nákladů); nic neběží → pronajmi nejlevnější offer pod `OPS_PROVISION_MAX_DPH`
+   (default 0.15 $/h), počkej na boot (max 8 min) a nasaď. `dry_run=1` jen spočítá cenu.
+   UI panel **„Chybí GPU? Pronajmi ho na vast.ai“** + live log; *deploy* bez rigu přesměruje tam.
 
 ## 5b. F2.1 — co přibylo v UI
 

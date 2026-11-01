@@ -14063,7 +14063,7 @@ function _aiRender(d){
         </div>
         ${(r.models || []).length ? '<div class="mt-2 text-[10px] text-gray-400">models: <span class="text-zion-purple">' + escapeHtml((r.models || []).join(', ')) + '</span></div>' : ''}
         ${r.error ? '<div class="mt-1 text-[10px] text-red-300">' + escapeHtml(r.error) + '</div>' : ''}
-      </div>`).join('') : '<div class="text-xs text-gray-500">Žádný rig — pronajmi jeden v GPU marketu.</div>'}`;
+      </div>`).join('') : '<div class="text-xs text-gray-500">Žádný GPU rig — použij panel „Chybí GPU?“ výše (pronájem na vast.ai) nebo GPU market.</div>'}`;
 
   const catalog = d.catalog || [];
   if(catBox){
@@ -14112,6 +14112,15 @@ function _aiRender(d){
 
 async function aiDeploy(model, rigId){
   if(!model){ toast('Vyber model v katalogu', 'error'); return; }
+  const hasRig = ((_aiData?.rigs) || []).some(r => r.gpus && !r.error);
+  if(!hasRig){
+    // No GPU anywhere — EDGE has none, so the only way is to rent on vast.ai.
+    const inp = document.getElementById('prov-model');
+    if(inp) inp.value = model;
+    toast('Neběží žádný GPU rig — nabízím pronájem na vast.ai', 'error');
+    aiProvision(false);
+    return;
+  }
   const ship = rigId ? `rig #${rigId}` : 'nejlepší rig podle volné VRAM';
   if(!confirm(`Nasadit ${model} na ${ship}?\n\nSpustí se vLLM (60 % VRAM) a může zpomalit těžbu.`)) return;
   const params = { confirm: 1, model };
@@ -14144,4 +14153,70 @@ async function aiChat(){
   }finally{
     if(btn){ btn.disabled = false; btn.textContent = 'Ask'; }
   }
+}
+
+// ── "auto → vast": rent a GPU and deploy, with a live job log ───────────────
+let _provTimer = null;
+
+async function aiProvision(dry){
+  const model = (document.getElementById('prov-model')?.value || '').trim();
+  const gpu = document.getElementById('prov-gpu')?.value || 'RTX_3060';
+  const maxDph = (document.getElementById('prov-dph')?.value || '0.15').trim();
+  if(!model){ toast('Zadej model (např. Qwen/Qwen3-8B-AWQ)', 'error'); return; }
+  if(!dry){
+    if(!confirm(`Pronajmout ${gpu.replace(/_/g,' ')} na vast.ai (strop $${maxDph}/h) a nasadit ${model}?\n\n` +
+                 `Pokud už nějaký rig běží, použije se ten a nic se nepronajme.\n` +
+                 `Jinak se pronajme nejlevnější nabídka a vast.ai začne účtovat.`)) return;
+    const typed = prompt('Pro potvrzení napiš RENT');
+    if((typed || '').trim().toUpperCase() !== 'RENT'){ toast('Zrušeno', 'error'); return; }
+  }
+  const box = document.getElementById('ai-provision-log');
+  const badge = document.getElementById('ai-provision-state');
+  if(box){ box.classList.remove('hidden'); box.textContent = 'spouštím…'; }
+  if(badge){ badge.textContent = 'running'; badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300'; }
+  try{
+    const r = await fetch('/api/ops/provision', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ model, gpu, max_dph: maxDph, dry_run: dry ? 1 : 0 }),
+    }).then(x => x.json());
+    if(!r.ok){ if(box) box.textContent = 'error: ' + (r.error || 'provision refused'); return; }
+    _pollJob(r.job);
+  }catch(e){
+    if(box) box.textContent = 'error: ' + e;
+  }
+}
+
+function _pollJob(id){
+  const box = document.getElementById('ai-provision-log');
+  const badge = document.getElementById('ai-provision-state');
+  clearInterval(_provTimer);
+  const tick = async () => {
+    let d = {};
+    try{
+      d = await fetch('/api/ops/job?id=' + encodeURIComponent(id), {cache:'no-store'}).then(r => r.json());
+    }catch(e){
+      if(box) box.textContent = 'job unreachable: ' + e;
+      return;
+    }
+    if(box){
+      box.classList.remove('hidden');
+      box.textContent = (d.log || []).join('\n') || (d.error || '…');
+      box.scrollTop = box.scrollHeight;
+    }
+    const state = d.state || (d.error ? 'failed' : 'running');
+    if(badge){
+      badge.textContent = state;
+      badge.className = 'text-[10px] px-2 py-0.5 rounded-full border ' + (
+        state === 'done' ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+        : state === 'failed' ? 'bg-red-500/15 border-red-500/40 text-red-300'
+        : 'bg-amber-500/15 border-amber-500/40 text-amber-300');
+    }
+    if(state !== 'running'){
+      clearInterval(_provTimer); _provTimer = null;
+      if(d.result && d.result.deployed !== false) toast('Provisioning: ' + state, state === 'done' ? 'success' : 'error');
+      loadAi();
+    }
+  };
+  tick();
+  _provTimer = setInterval(tick, 3000);
 }

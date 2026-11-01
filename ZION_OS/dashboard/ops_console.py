@@ -28,6 +28,8 @@ Routes (GET unless noted):
     /api/ops/status            raw vastctl snapshot (debug)
     /api/ops/logs?id=&src=     miner/session log tail (proxied)
     POST /api/ops/action       {"action": "...", "params": {...}}
+    POST /api/ops/provision    rent a vast.ai GPU (if needed) and deploy a model
+    GET  /api/ops/job?id=      progress log of a provisioning job
 """
 
 from __future__ import annotations
@@ -409,6 +411,190 @@ def ai() -> dict:
     return status
 
 
+# ── provisioning: rent a GPU on vast.ai and deploy, as one background job ───
+#
+# EDGE (and EDGE2) have no GPU at all — the control plane can only orchestrate.
+# Anything that computes must run on a rented vast.ai instance, so the
+# "auto → vast" path is: reuse a running rig if one can host the model, else
+# pick the cheapest offer under a price cap, rent it, wait for boot, deploy.
+
+import threading
+
+_jobs: dict[str, dict] = {}
+_jobs_lock = threading.Lock()
+_JOB_KEEP = 12
+
+
+def _job_new(kind: str) -> dict:
+    jid = f"{int(time.time())}-{os.urandom(3).hex()}"
+    job = {
+        "id": jid,
+        "kind": kind,
+        "state": "running",
+        "started": time.strftime("%H:%M:%S"),
+        "updated": time.time(),
+        "log": [],
+        "result": None,
+        "error": None,
+    }
+    with _jobs_lock:
+        _jobs[jid] = job
+        for stale in sorted(_jobs)[:-_JOB_KEEP]:
+            _jobs.pop(stale, None)
+    return job
+
+
+def _job_log(job: dict, msg: str) -> None:
+    job["log"].append(f"{time.strftime('%H:%M:%S')}  {msg}")
+    job["updated"] = time.time()
+
+
+def _vastctl(path: str, method: str = "GET", params: dict | None = None,
+             timeout: float = 60) -> tuple[int, str]:
+    url = f"{VASTCTL_URL}/api/{path}"
+    clean = {k: v for k, v in (params or {}).items() if v not in (None, "")}
+    if clean:
+        url += "?" + urllib.parse.urlencode(clean)
+    code, raw = _http(url, timeout=timeout, method=method)
+    return code, raw.decode("utf-8", "replace")
+
+
+def _vastctl_json(path: str, params: dict | None = None, timeout: float = 60) -> Any:
+    code, text = _vastctl(path, params=params, timeout=timeout)
+    if code != 200:
+        return None
+    try:
+        return json.loads(text)
+    except Exception:
+        return None
+
+
+def provision(params: dict) -> dict:
+    """Start 'rent on vast.ai -> deploy model' as a background job."""
+    model = str(params.get("model") or "").strip()
+    if not model:
+        return {"ok": False, "error": "model required"}
+    gpu = str(params.get("gpu") or "RTX_3060")
+    try:
+        max_dph = float(params.get("max_dph") or os.environ.get("OPS_PROVISION_MAX_DPH", "0.15"))
+    except (TypeError, ValueError):
+        max_dph = 0.15
+    dry = str(params.get("dry_run") or "") in ("1", "true", "True", "yes")
+    job = _job_new("provision")
+    threading.Thread(
+        target=_run_provision, args=(job, model, gpu, max_dph, dry), daemon=True
+    ).start()
+    return {"ok": True, "job": job["id"], "dry_run": dry}
+
+
+def _run_provision(job: dict, model: str, gpu: str, max_dph: float, dry: bool) -> None:
+    try:
+        _job_log(job, "model %s · hladam GPU %s do $%.2f/h%s" % (
+            model, gpu, max_dph, " (dry-run, nic se nepronajme)" if dry else ""))
+
+        st = _vastctl_json("ai/status", timeout=90) or {}
+        rigs = st.get("rigs") or []
+        _job_log(job, "vastctl vidi %d rig(u), %d s inference" % (
+            len(rigs), sum(1 for r in rigs if r.get("inference_reachable"))))
+
+        already = [r for r in rigs if model in (r.get("models") or []) and r.get("inference_reachable")]
+        if already:
+            _job_log(job, "model uz bezi na rig #%s - nic nepronajimam" % already[0]["id"])
+            job["result"] = {"rig": already[0]["id"], "deployed": False, "rented": False}
+            job["state"] = "done"
+            return
+
+        # 1) reuse a rig that can host the model — cheapest path is no new rental
+        candidates = [r for r in rigs if (r.get("gpus") and not r.get("error"))]
+        if candidates:
+            best = max(candidates, key=lambda r: sum(g.get("memory_free_mib", 0) for g in r.get("gpus") or []))
+            free = sum(g.get("memory_free_mib", 0) for g in best.get("gpus") or []) / 1024
+            _job_log(job, "použiju existujici rig #%s (%.1f GiB free VRAM) - bez noveho nakladu" % (best["id"], free))
+            if dry:
+                job["result"] = {"rig": best["id"], "rented": False, "dry_run": True}
+                job["state"] = "done"
+                return
+            code, text = _vastctl("inference/auto-deploy", method="POST",
+                                  params={"confirm": 1, "model": model}, timeout=900)
+            _job_log(job, "auto-deploy HTTP %d: %s" % (code, text[:400]))
+            job["result"] = {"rig": best["id"], "deployed": code == 200, "rented": False,
+                             "output": text[:2000]}
+            job["state"] = "done" if code == 200 else "failed"
+            if code != 200:
+                job["error"] = text[:400]
+            return
+
+        # 2) nothing running -> rent the cheapest offer under the cap
+        offers = _vastctl_json("offers", params={"gpu": gpu, "max_dph": "%.4f" % max_dph, "limit": 20},
+                               timeout=90)
+        if not isinstance(offers, list) or not offers:
+            job["state"] = "failed"
+            job["error"] = "zadna nabidka %s do $%.2f/h" % (gpu, max_dph)
+            _job_log(job, job["error"])
+            return
+        cheapest = min(offers, key=lambda o: float(o.get("dph_total") or 9e9))
+        dph = float(cheapest.get("dph_total") or 0)
+        _job_log(job, "nejlevnejsi: %s $%.4f/h (%s, offer %s) ~ $%.2f/den" % (
+            cheapest.get("gpu_name"), dph, cheapest.get("geolocation"),
+            cheapest.get("id"), dph * 24))
+        if dry:
+            job["result"] = {"offer": cheapest, "rented": False, "dry_run": True,
+                             "est_day": round(dph * 24, 2)}
+            job["state"] = "done"
+            return
+
+        code, text = _vastctl("rent", method="POST", params={"id": cheapest.get("id")}, timeout=240)
+        _job_log(job, "rent HTTP %d: %s" % (code, text[:300]))
+        if code != 200:
+            job["state"] = "failed"
+            job["error"] = text[:400]
+            return
+        m = re.search(r"instance\s+(\d{5,})", text) or re.search(r"'new_contract':\s*(\d+)", text)
+        iid = m.group(1) if m else None
+        _job_log(job, "pronajato: instance %s - boot ~1-3 min, cekam" % (iid or "(nezname id)"))
+
+        # 3) wait for the instance to come up
+        deadline = time.time() + 8 * 60
+        last = None
+        booted = False
+        while time.time() < deadline:
+            time.sleep(15)
+            snap = _vastctl_json("status", timeout=60) or {}
+            rig = next((r for r in snap.get("rigs") or [] if iid and str(r.get("id")) == str(iid)), None)
+            state = (rig or {}).get("status") or ("not-listed" if not rig else "unknown")
+            if state != last:
+                _job_log(job, "rig %s -> %s" % (iid or "?", state))
+                last = state
+            if rig and state.lower() == "running":
+                booted = True
+                break
+        if not booted:
+            _job_log(job, "rig nenabehl do 8 min - zkus 'auto-deploy' pozdeji rucne")
+
+        # 4) deploy the model on whatever rig is now the best fit
+        code, text = _vastctl("inference/auto-deploy", method="POST",
+                              params={"confirm": 1, "model": model}, timeout=900)
+        _job_log(job, "auto-deploy HTTP %d: %s" % (code, text[:400]))
+        job["result"] = {"rig": iid, "deployed": code == 200, "rented": True,
+                         "dph": dph, "offer": cheapest.get("id"), "output": text[:2000]}
+        job["state"] = "done" if code == 200 else "failed"
+        if code != 200:
+            job["error"] = text[:400]
+    except Exception as exc:  # never leave a job hanging in "running"
+        job["state"] = "failed"
+        job["error"] = str(exc)
+        try:
+            _job_log(job, "FAILED: %s" % exc)
+        except Exception:
+            pass
+
+
+def job(job_id: str) -> dict:
+    with _jobs_lock:
+        j = _jobs.get(job_id)
+        return dict(j) if j else {"error": "unknown job"}
+
+
 # ── audit trail ─────────────────────────────────────────────────────────────
 
 _audit_mem: list[dict] = []
@@ -505,6 +691,18 @@ def handle(handler, route: str, params: dict, method: str = "GET",
             except Exception:
                 limit = 40
             handler._json(audit(max(1, min(limit, 300))))
+        elif route == "/api/ops/job":
+            handler._json(job((params.get("id") or [""])[0]))
+        elif route == "/api/ops/provision":
+            body = payload or {}
+            result = provision(body if isinstance(body, dict) else {})
+            actor = "unknown"
+            try:
+                actor = str(getattr(handler, "client_address", ("?",))[0])
+            except Exception:
+                pass
+            _audit(actor, "provision", body if isinstance(body, dict) else {}, result)
+            handler._json(result)
         elif route == "/api/ops/logs":
             handler._json(logs(params))
         elif route == "/api/ops/status":
