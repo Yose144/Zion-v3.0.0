@@ -69,6 +69,17 @@ const Copy = {
     cs: ['Žádný trup, dok, výtah ani posádka', 'Žádná raketa, žádný modul, žádný termín', 'Žádný fond, podíl ani výnos — flotila nic neprodává'],
     en: ['No hull, dock, lift or crew', 'No rocket, module or schedule', 'No fund, share or yield — the fleet sells nothing'],
   },
+  boardTitle: { cs: 'Dispozice, řezy a interiéry', en: 'Arrangement, sections and interiors' },
+  boardSubtitle: {
+    cs: 'Studie 01 — umělecká koncepční deska. Rozměry a systémy jsou k ověření, ne výrobní plán.',
+    en: 'Study 01 — an artistic concept board. Dimensions and systems are to be verified, not a production drawing.',
+  },
+  boardSectionsTitle: { cs: 'Osm sekcí trupu', en: 'Eight hull sections' },
+  boardCraftTitle: { cs: 'Tři nebeské Marie — pracovní označení', en: 'Three sky Marías — working designations' },
+  boardNote: {
+    cs: 'Čísla 01–08 odpovídají desce: od můstku po pohonnou sekci. Kniha je kánon; deska je obraz, který se k němu přidává.',
+    en: 'Numbers 01–08 follow the board: from the bridge to the propulsion section. The book is the canon; the board is an image added to it.',
+  },
   ctaBook: { cs: 'Číst knihu Nabukano', en: 'Read the book Nabukano' },
   ctaSpace: { cs: 'Otevřít ve vesmíru', en: 'Open in space' },
   ctaIssobella: { cs: 'Stanice Issobella', en: 'The Issobella station' },
@@ -77,6 +88,8 @@ const Copy = {
 
 type Vessel = {
   name: string;
+  /** pracovní označení z konceptové desky (studie 01) */
+  call: string;
   role: { cs: string; en: string };
   status: { cs: string; en: string };
   tone: string;
@@ -86,6 +99,7 @@ type Vessel = {
 const VESSELS: Vessel[] = [
   {
     name: 'Nabukano',
+    call: 'MATKA',
     role: { cs: 'Mateřská loď a dokovací rám; nese lucernu', en: 'Mother ship and docking frame; carries the lantern' },
     status: { cs: 'Vize', en: 'Vision' },
     tone: 'text-sky-300',
@@ -93,6 +107,7 @@ const VESSELS: Vessel[] = [
   },
   {
     name: 'Santa María la Mayor · nebeská',
+    call: 'LUMI',
     role: { cs: 'Blízké nebe — oběžná dráha Nové Země', en: 'Near sky — New Earth orbit' },
     status: { cs: 'Vize', en: 'Vision' },
     tone: 'text-rose-300',
@@ -100,6 +115,7 @@ const VESSELS: Vessel[] = [
   },
   {
     name: 'Nossa Senhora de Fátima · nebeská',
+    call: 'ISSOBELLA',
     role: { cs: 'Prostor mezi — Země a Měsíc', en: 'The space between — Earth and Moon' },
     status: { cs: 'Vize', en: 'Vision' },
     tone: 'text-amber-100',
@@ -107,6 +123,7 @@ const VESSELS: Vessel[] = [
   },
   {
     name: 'María de las Nieves · nebeská',
+    call: 'TŘETÍ MARIE',
     role: { cs: 'Dlouhá cesta — heliocentrická dráha', en: 'The long road — heliocentric orbit' },
     status: { cs: 'Horizont', en: 'Horizon' },
     tone: 'text-yellow-300',
@@ -229,9 +246,12 @@ export default function NabukanoPage() {
               return (
                 <div key={v.name} className="zion-rainbow-card p-5" style={{ '--rc': RC } as React.CSSProperties}>
                   <div className="relative z-10">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Icon className={`h-4 w-4 ${v.tone}`} />
                       <h3 className="text-white font-semibold">{v.name}</h3>
+                      <span className="rounded-full border border-sky-400/30 bg-sky-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-sky-200/90">
+                        {v.call}
+                      </span>
                     </div>
                     <p className="mt-2 text-sm text-gray-400">{v.role[cs ? 'cs' : 'en']}</p>
                     <span className="mt-3 inline-block rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/55">
@@ -241,6 +261,67 @@ export default function NabukanoPage() {
                 </div>
               );
             })}
+          </div>
+        </motion.section>
+
+
+        {/* ═══ KONCEPČNÍ DESKA ═══ */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-14">
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': RC } as React.CSSProperties}>
+            <div className="relative z-10">
+              <h2 className="text-2xl md:text-3xl font-semibold text-white mb-2">{Copy.boardTitle[cs ? 'cs' : 'en']}</h2>
+              <p className="text-sm text-sky-200/70 mb-5">{Copy.boardSubtitle[cs ? 'cs' : 'en']}</p>
+
+              <a href="/images/nabukano/concept-board.webp" target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                <img
+                  src="/images/nabukano/concept-board.webp"
+                  srcSet="/images/nabukano/concept-board-m.webp 900w, /images/nabukano/concept-board.webp 1536w"
+                  sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
+                  alt={cs ? 'Nabukano — koncepční deska: podélný řez, půdorys, bokorys, obytný prstenec a interiéry' : 'Nabukano — concept board: longitudinal section, plan, profile, habitat ring and interiors'}
+                  width={1536}
+                  height={1024}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full object-cover transition duration-500 hover:scale-[1.01]"
+                />
+              </a>
+
+              <h3 className="mt-6 mb-3 text-sm font-semibold uppercase tracking-widest text-sky-200/80">{Copy.boardSectionsTitle[cs ? 'cs' : 'en']}</h3>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  { n: '01', cs: 'Můstek', en: 'Bridge' },
+                  { n: '02', cs: 'Obytné moduly', en: 'Habitat modules' },
+                  { n: '03', cs: 'Rotující prstenec', en: 'Rotating ring' },
+                  { n: '04', cs: 'Dokovací uzel', en: 'Docking node' },
+                  { n: '05', cs: 'Laboratoře a zásoby', en: 'Labs and stores' },
+                  { n: '06', cs: 'Nádrže', en: 'Tanks' },
+                  { n: '07', cs: 'Radiátory', en: 'Radiators' },
+                  { n: '08', cs: 'Pohonná sekce', en: 'Propulsion section' },
+                ].map((item) => (
+                  <div key={item.n} className="zion-rainbow-sub flex items-center gap-3 px-3 py-2" style={{ '--rc': RC } as React.CSSProperties}>
+                    <span className="text-xs font-bold tracking-widest text-sky-300">{item.n}</span>
+                    <span className="text-sm text-white/80">{cs ? item.cs : item.en}</span>
+                  </div>
+                ))}
+              </div>
+
+              <h3 className="mt-6 mb-3 text-sm font-semibold uppercase tracking-widest text-sky-200/80">{Copy.boardCraftTitle[cs ? 'cs' : 'en']}</h3>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  { call: 'LUMI', cs: 'Průzkumný člun', en: 'Survey craft', noteCs: 'blízké nebe', noteEn: 'near sky' },
+                  { call: 'ISSOBELLA', cs: 'Lunární transport', en: 'Lunar transport', noteCs: 'mezi Zemí a Měsícem', noteEn: 'Earth to Moon' },
+                  { call: 'TŘETÍ MARIE', cs: 'Nákladní koráb', en: 'Cargo ship', noteCs: 'dlouhá cesta', noteEn: 'the long road' },
+                ].map((c) => (
+                  <div key={c.call} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': RC } as React.CSSProperties}>
+                    <p className="text-xs font-bold uppercase tracking-widest text-sky-300">{c.call}</p>
+                    <p className="mt-1 text-sm text-white/85">{cs ? c.cs : c.en}</p>
+                    <p className="text-xs text-white/45">{cs ? c.noteCs : c.noteEn}</p>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-5 text-xs text-white/45">{Copy.boardNote[cs ? 'cs' : 'en']}</p>
+            </div>
           </div>
         </motion.section>
 

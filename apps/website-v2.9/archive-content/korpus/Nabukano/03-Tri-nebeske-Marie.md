@@ -46,6 +46,31 @@ Tři trupy nejsou tři kopie jedné myšlenky. Jsou tři **režimy vzdálenosti*
 
 A jedna věc, kterou kniha nezakrývá: **jména jsou vypůjčená, posádky ne.** Tři Marie jsou na vodě STAVBA (a třetí HORIZONT, [Nirvana · Epizoda 13](../nirvana/13-Tres-Marias.md)); jejich nebeské sestry jsou **VIZE** a **HORIZONT**. Stejné jméno neznamená stejný stav. Znamená stejný kýl.
 
+## Z konceptové desky (studie 01)
+
+Deska [`Nabukano spacecraft concept board.png`](./Nabukano%20spacecraft%20concept%20board.png) je **umělecká koncepční studie** — rozměry a systémy k ověření, ne výrobní plán. Dává flotile pracovní označení a osm sekcí trupu:
+
+| # | Sekce | Poznámka |
+|---|---|---|
+| 01 | Můstek | velitelský prostor s okny k planetě |
+| 02 | Obytné moduly | kajuty po dvou, společné prostory |
+| 03 | Rotující prstenec | obytný, se zelení a zahradou |
+| 04 | Dokovací uzel | místo, kde trupy přisedají |
+| 05 | Laboratoře a zásoby | dílna, archiv, sklady |
+| 06 | Nádrže | pracovní kapaliny, zásoby |
+| 07 | Radiátory | odvod tepla — tichá část lodi |
+| 08 | Pohonná sekce | tah pro lidi, plachta pro náklad |
+
+**Pracovní označení tří trupů** (neruší jména z knihy — jsou to volací znaky posádek):
+
+| Volací znak | Role | Která María |
+|---|---|---|
+| **LUMI** | průzkumný člun, blízké nebe | Santa María la Mayor · nebeská |
+| **ISSOBELLA** | lunární transport, Země ↔ Měsíc | Nossa Senhora de Fátima · nebeská |
+| **TŘETÍ MARIE** | nákladní koráb, dlouhá cesta | María de las Nieves · nebeská |
+
+Jméno na kýlu zůstává stejné pro všechny čtyři: *Království srdce*.
+
 ## Z Písma a tradice
 
 - **Zj 21,1** — moře ztichlé; nebeské Marie jsou literární obraz téhož moře o patro výš.
