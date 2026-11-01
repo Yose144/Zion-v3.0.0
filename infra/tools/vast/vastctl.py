@@ -1869,21 +1869,35 @@ AGENT_RESULT_KEEP = 50
 AGENT_EVENTS_KEEP = 200
 _agents_lock = threading.Lock()
 _agents_cache = None
+_agents_mtime = None
 
 
 def _agent_db():
-    """Lazy registry: {rigs: {rid: {heartbeat, tasks, results}}}."""
-    global _agents_cache
-    if _agents_cache is None:
+    """Lazy registry: {rigs: {rid: {heartbeat, tasks, results}}}.
+
+    Reloads when the file changed on disk. The registry is written by the
+    `serve` process (heartbeats) and read by the `daemon` process, so a
+    write-once cache made the daemon's snapshot report ever-growing agent
+    ages. `stat()` is cheap enough for the heartbeat path.
+    """
+    global _agents_cache, _agents_mtime
+    try:
+        mtime = Path(AGENT_DB_FILE).stat().st_mtime
+    except OSError:
+        mtime = None
+    stale = _agents_cache is None or (mtime is not None and mtime != _agents_mtime)
+    if stale:
         try:
             _agents_cache = json.loads(Path(AGENT_DB_FILE).read_text())
         except Exception:
-            _agents_cache = {"rigs": {}}
+            if _agents_cache is None:
+                _agents_cache = {"rigs": {}}
         _agents_cache.setdefault("rigs", {})
         _agents_cache.setdefault("secrets", {})
         _agents_cache.setdefault("events", [])
         _agents_cache.setdefault("desired", {"rigs": {}, "groups": {}})
         _agents_cache.setdefault("catalog", {})
+        _agents_mtime = mtime
     return _agents_cache
 
 

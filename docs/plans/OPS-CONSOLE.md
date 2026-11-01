@@ -85,9 +85,11 @@ Cache: snapshot 10 s, pool 15 s. Každé volání má timeout; modul nikdy nesho
    offers z vast.ai od nejlevnější, filtr `max $/h`, rent za dvojím potvrzením + audit.
 2. ~~**AI inference** panely~~ → **hotové (F2.1)**: `Rigs → AI inference` (stav rigů/VRAM/modelů,
    katalog s deploy, chat proti libovolnému naběhnutému endpointu).
-3. **Agenti (2.B11)**: enrollment dnes končí na `https://zionterranova.com/api/agent/` → EDGE2:8088 →
-   tunel na PC. Po přesunu na EDGE je potřeba buď tunel EDGE2→EDGE:8088 (permitopen), nebo přepsat
-   agent URL na dashboard. Registr agentů (`~/.local/share/vastctl-agents.json`) je zatím na PC.
+3. ~~**Agenti (2.B11)**~~ → **hotové (F2.3)**: ingress `/api/agent/*` jde
+   `agent → nginx(EDGE2) → 127.0.0.1:8088 (ssh -L leg zion-edge-tunnel) → vastctl serve na EDGE`.
+   `permitopen 127.0.0.1:8088` pro `edgetunnel` + registr agentů (`/root/.local/share/vastctl-agents.json`)
+   nakopírovaný na EDGE; PC-side `vastctl-serve`/`daemon`/tunely vypnuté a disablované.
+   Deploy/verify: `bash infra/tools/vast/deploy-agent-ingress.sh [--retire-pc]`.
 4. ~~Akce s následky chtějí potvrzení + audit~~ → **hotové (F2.1)**: `POST /api/ops/action` zapisuje
    každou akci do `/opt/zion/data/dashboard-ops-audit.jsonl` (best-effort, nikdy neblokuje) a
    záložka Fleet má kartu **Audit akcí**.
@@ -121,3 +123,7 @@ Akce jdou výhradně přes `POST /api/ops/action` (whitelist) — `rent`, `launc
 - `serve` startuje ~30 s (první probe) — `/api/ops/health` proto měří TCP, ne HTTP.
 - Dashboard běží jako `zion`, `ProtectSystem=strict`; `status.json` čte z `/var/www/...` (read-only je OK).
 - Deploy dashboardu = restart `zion-edge-python-dashboard.service` (2 s výpadek, `Restart=always`).
+- **Agenti:** rig posílá heartbeat každých 30–60 s na `https://zionterranova.com/api/agent/heartbeat`
+  s `Bearer rig_id:secret`; cesta končí na vastctl serve na EDGE (nginx EDGE2 → ssh -L → EDGE).
+  Registr se čte s mtime-aware cache, takže ho vidí `serve` i `daemon` bez restartu.
+  Bez tokenu endpoint failuje (403). Migrace/verify: `infra/tools/vast/deploy-agent-ingress.sh`.

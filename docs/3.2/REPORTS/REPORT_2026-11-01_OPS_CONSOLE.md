@@ -110,6 +110,32 @@ přesměruje do tohoto panelu.
 
 ---
 
+### F2.3 — agenti (push-model 2.B11) na EDGE
+
+Agentní ingress dřív končil na operátorském PC (`agent → nginx EDGE2 → 127.0.0.1:8088 (sshd reverse
+tunel) → PC`). Po F1 běží `vastctl serve` na EDGE, takže se jen přesměroval poslední úsek:
+
+```
+agent → nginx(EDGE2) /api/agent/ → 127.0.0.1:8088  (ssh -L leg zion-edge-tunnel) → vastctl serve (EDGE)
+```
+
+- `permitopen="127.0.0.1:8088"` pro klíč uživatele `edgetunnel` na EDGE (záloha `authorized_keys`).
+- `zion-edge-tunnel.service` na EDGE2 dostal `-L 127.0.0.1:8088:127.0.0.1:8088` (záloha unitu).
+- Registr agentů (`~/.local/share/vastctl-agents.json`) z PC → `/root/.local/share/vastctl-agents.json`
+  na EDGE (0600) — obsahuje **per-rig secrety** (`sha256`), takže rigy nemusely re-enrollovat.
+- PC-side `vastctl-serve`, `vastctl-daemon`, `vastctl-tunnel`, `vastctl-tunnel-edge2` **vypnuté a
+  disablované** — na PC už neběží žádná část control plane.
+- `vastctl.py`: `_agent_db()` je **mtime-aware** (dřív držel registry v paměti navěky → daemon
+  reportoval stále rostoucí `age_s`, i když heartbeaty chodily).
+- Dashboard: karta *Fleet agenti* (liveness < 300 s, heartbeat 30–60 s).
+
+Ověřeno: rig `58077390` posílá `POST /api/agent/heartbeat` každých 30 s → **HTTP 200** (access log
+EDGE2), `age_s` v registru **8 s**, `status.json → agents[0].age_s = 25 s`, události
+`alert_offline` → `alert_recovered` při výpadku během přepojení tunelu; veřejný heartbeat bez tokenu
+**403**. Reprodukovatelné: `bash infra/tools/vast/deploy-agent-ingress.sh [--retire-pc]`.
+
+---
+
 ## 4. Ověření
 
 **Lokálně** (mock vastctl + reálná fixtures ze status.json / stats / miners / blocks / offers / ai /

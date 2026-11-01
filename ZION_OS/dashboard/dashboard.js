@@ -13718,7 +13718,7 @@ function _rigsRender(d, health, audit){
       <thead><tr class="text-gray-500 border-b border-white/10 text-[10px] uppercase tracking-wider">
         <th class="text-left py-2 px-2">Rig</th><th class="text-left py-2 px-2">GPUs</th>
         <th class="text-left py-2 px-2">Miners</th><th class="text-right py-2 px-2">Heartbeat</th>
-        <th class="text-right py-2 px-2">Pending</th>
+        <th class="text-right py-2 px-2 whitespace-nowrap">Pending</th>
       </tr></thead><tbody>
       ${agentRigs.map(a => {
         const live = (a.age_s ?? 1e9) < 300;
@@ -13726,9 +13726,9 @@ function _rigsRender(d, health, audit){
           <td class="py-2 px-2">
             <div class="flex items-center gap-2">
               <span class="inline-block w-2 h-2 rounded-full ${live ? 'bg-emerald-400' : 'bg-red-400'}"></span>
-              <b class="text-xs text-white">${escapeHtml(a.hostname || a.rig_id)}</b>
-              ${a.enrolled === true ? '<span class="text-[9px] px-1.5 py-0.5 rounded border border-emerald-500/40 text-emerald-300">enrolled</span>' : ''}
-              ${a.offline_alert ? '<span class="text-[9px] px-1.5 py-0.5 rounded border border-red-500/40 text-red-300">offline</span>' : ''}
+              <b class="text-xs text-white whitespace-nowrap" title="${escapeHtml(a.hostname || a.rig_id)}">${escapeHtml(a.hostname || a.rig_id)}</b>
+              ${a.enrolled === true ? '<span class="text-[9px] px-1.5 py-0.5 rounded border border-emerald-500/40 text-emerald-300 whitespace-nowrap">enrolled</span>' : ''}
+              ${a.offline_alert ? '<span class="text-[9px] px-1.5 py-0.5 rounded border border-red-500/40 text-red-300 whitespace-nowrap">offline</span>' : ''}
             </div>
           </td>
           <td class="py-2 px-2 text-[10px] text-gray-400">${(a.gpus || []).length ? escapeHtml((a.gpus || []).join(', ')).slice(0, 80) : '—'}</td>
@@ -13751,7 +13751,7 @@ function _rigsRender(d, health, audit){
       <div class="zion-panel p-4">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-sm font-bold text-white flex items-center gap-2"><i class="fas fa-tower-broadcast text-sky-300"></i> Fleet agenti</h2>
-          <span class="text-[10px] text-gray-500">${agentRigs.filter(a => (a.age_s ?? 1e9) < 300).length}/${agentRigs.length} live</span>
+          <span class="text-[10px] text-gray-500">${agentRigs.filter(a => (a.age_s ?? 1e9) < 300).length}/${agentRigs.length} live · heartbeat 30–60 s</span>
         </div>
         ${agentsTable}
       </div>
