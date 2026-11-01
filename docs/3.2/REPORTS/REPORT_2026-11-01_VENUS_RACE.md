@@ -1,6 +1,9 @@
 # REPORT 2026-11-01 — VENUŠE (okruh) + zvuk arény + VR pohyb
 
-> **Stav:** hotové, ověřené lokálně; nasazeno na EDGE.
+> **Stav:** hotové, ověřené lokálně i live; nasazeno na EDGE `20261101T081445Z`.
+> **Live ověřeno:** `/venus` 200, auto zrychluje (0 → 14,7 m/s za 1,2 s),
+> HUD live, `race` je v API. Deploy přes `zion-v6` — IPv4 alias EDGE byl
+> fail2banem zabanovaný (známá věc, viz AGENTS).
 > **Route:** `/venus` (veřejná). Vstup z pouti: „Venuše · okruh na hovercraftu →".
 
 ## 1. Venuše — time trial
