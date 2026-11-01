@@ -1,6 +1,7 @@
 # OASIS RENDER CANON
 
-> **Závazný způsob, jakým se v tomto repu kreslí 3D.** Vzniklo z programu
+> **Závazný způsob, jakým se v tomto repu kreslí 3D.**
+> Program pro herní klienta OASIS je v [`Oasis Render.md`](Oasis%20Render.md). Vzniklo z programu
 > [`NIRVANA-RENDER-AAA.md`](NIRVANA-RENDER-AAA.md) (13 L5 scén, R0–R7) a je to základ,
 > na kterém se staví celý OASIS. Když se nová scéna odchýlí od tohoto dokumentu, je to
 > chyba, ne styl.
