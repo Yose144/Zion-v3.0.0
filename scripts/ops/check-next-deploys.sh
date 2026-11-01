@@ -123,11 +123,16 @@ done
 
 # --- Kingdom (samostatný workspace, plochý stage) ---
 if [[ -d "$KINGDOM_DIR" ]]; then
+  # Po deployi je stage adresář uklizený (deploy skript ho maže) — to je správný
+  # stav. Rozhoduje, že existuje build, ze kterého stage vznikne.
   KFLAT="$(find "$KINGDOM_DIR/.next" -maxdepth 1 -type d -name 'standalone-flat*' 2>/dev/null | head -1 || true)"
+  KSERVER="$(find "$KINGDOM_DIR/.next/standalone" -maxdepth 5 -name server.js 2>/dev/null | head -1 || true)"
   if [[ -n "$KFLAT" ]] && [[ -f "$KFLAT/server.js" ]] && [[ -f "$KFLAT/node_modules/next/package.json" ]]; then
-    green "$(printf '%-22s %-12s %s' "kingdom" "OK" "$(basename "$KFLAT") — server.js + node_modules/next")"
+    green "$(printf '%-22s %-12s %s' "kingdom" "OK" "$(basename "$KFLAT") — artefakt připraven")"
+  elif [[ -n "$KSERVER" ]]; then
+    green "$(printf '%-22s %-12s %s' "kingdom" "OK" "build hotový (stage se dělá při deployi)")"
   elif [[ -d "$KINGDOM_DIR/.next" ]]; then
-    red "$(printf '%-22s %-12s %s' "kingdom" "CHYBA" "chybí .next/standalone-flat (spusť stage.mjs)")"
+    red "$(printf '%-22s %-12s %s' "kingdom" "CHYBA" ".next existuje, ale bez standalone server.js — build nedoběhl")"
     fail=1
   else
     red "$(printf '%-22s %-12s %s' "kingdom" "NEBUILD" "chybí .next — spusť build")"
