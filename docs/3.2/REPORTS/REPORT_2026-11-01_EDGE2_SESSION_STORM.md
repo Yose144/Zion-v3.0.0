@@ -122,3 +122,26 @@ monitoring) trval **8,7–12,3 s**. Dvě příčiny, obě opravené:
 Zbylé ~4,8 s cold `build_status()` = 9 sekvenčních HTTP dotazů (0,28 s každý) + ~2 s subprocess.
 Cachuje se, takže request path je rychlá; paralelizace těch 9 dotazů je další, menší optimalizace.
 
+### 7b. Doplněno — L2–L6 health dotazy jedním paralelním batch em
+
+Těch 9 dotazů (`8453/health`, `8456/api/dao/{health,proposals}`, `8094/health`,
+`8095/{health,fund/balance}`, `8097/{health,fund/balance}`) šlo sériově. Nový `_prefetch_json()`
+je stáhne jedním `ThreadPoolExecutor(8)`; bloky jen čtou z mapy a při `None` si drží původní
+„service down" defaulty.
+
+**`build_status()` cold: 12,9 s → 1,2 s** (data ověřená: multichain ok, DAO proposals 0,
+Free World 28,46 M ZION, Issobella 28,46 M ZION).
+
+## 8. Logová hygiena na EDGE2 (dozvuk stormu)
+
+Storm po sobě nechal `/var/log/auth.log.1` = **512 MB** (a `syslog.1` ~1 GB). EDGE2 navíc neměl
+žádný cap na journal (3,7 GB). Doplněno drop-inem `infra/edge-deploy/systemd/journald-edge2-limits.conf`
+(`SystemMaxUse=1G`, `SystemMaxFileSize=64M`, `RuntimeMaxUse=128M`), restart journald + rotace,
+a dogzipování rotovaných logů.
+
+| | Před | Po |
+|---|---:|---:|
+| `/var/log` | 5,6 G | **1,6 G** |
+| journal | 3,7 G | **1,0 G** (cap) |
+| disk `/` | 128 G (67 %) | **124 G (65 %)**
+

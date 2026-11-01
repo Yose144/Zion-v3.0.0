@@ -68,6 +68,15 @@ v žádné záloze, zatímco dashboard záloh ukazoval zeleně. Klasická tichá
   `zion-edge-20261101_193324.tar.gz` (470 MB) obsahuje `pg_20261101_193324/{zion,zion_marketplace}.dump`,
   dočasný `pg_*` adresář se po taru uklidí.
 
+
+## 3b. Doplněk — archiv už neobsahuje 0bajtové stuby
+
+Po nasazení se v archivu ještě vezly `0`bajtové `zis.db` / `marketplace.db` / `pool-store.db` /
+`multichain.db` (pozůstatky po splitu na EDGE). Krok **7c** v `backup-edge.sh` je před tarováním
+z stagingu odstraní a zaloguje `⚠ dropped N empty .db stub(s)`. Ověřeno na archivu
+`zion-edge-20261101_195152.tar.gz`: obsahuje `pg_20261101_195152/{zion,zion_marketplace}.dump`
+(2,5 MB + 128 kB) a **žádný** 0bajtový stub (zůstal jen legacy `zion-node-state.db`, který nic neřídí).
+
 ## 4. Vedlejší nález — `/tmp` na EDGE nebyl world-writable
 
 `stat /tmp` → `drwxr-xr-x UNKNOWN:root` (0755, vlastník uid 501). Cokoli, co si pod ne-root uživatelem

@@ -3904,6 +3904,31 @@ def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, 
 _FOLLOWER_RPC_CACHE: dict = {}
 
 
+def _prefetch_json(urls: dict, timeout: float = 2.0) -> dict:
+    """GET several JSON endpoints in parallel → {key: parsed or None}.
+
+    Added 2026-11-01: build_status probed the L2–L6 services one after another,
+    so the cold build paid the sum of all latencies (~2.5 s on a good day, far
+    more when a service was down and each call ran into its timeout). Failures
+    yield None and the callers keep their existing "service down" defaults.
+    """
+    def _one(item):
+        key, url = item
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as resp:
+                return key, json.loads(resp.read().decode())
+        except Exception:
+            return key, None
+
+    out = {}
+    if not urls:
+        return out
+    with ThreadPoolExecutor(max_workers=min(8, len(urls))) as pool:
+        for key, val in pool.map(_one, urls.items()):
+            out[key] = val
+    return out
+
+
 def _build_status_edge_primary() -> dict:
     """Build status for edge-primary topology: fast, parallel RPC with short timeouts."""
     t0 = time.time()
@@ -4400,15 +4425,21 @@ def _build_status_edge_primary() -> dict:
         "payout_address": v31_miner_wallet,
         "on_chain_balance_zion": v31_miner_on_chain,
     }
+    # ── L2–L6 health probes — one parallel batch (see _prefetch_json) ──────
+    _pf = _prefetch_json({
+        "mc": "http://127.0.0.1:8453/health",
+        "dao": "http://127.0.0.1:8456/api/dao/health",
+        "dao_props": "http://127.0.0.1:8456/api/dao/proposals",
+        "oasis": "http://127.0.0.1:8094/health",
+        "fw": "http://127.0.0.1:8095/health",
+        "fw_fund": "http://127.0.0.1:8095/api/v1/fund/balance",
+        "iss": "http://127.0.0.1:8097/health",
+        "iss_fund": "http://127.0.0.1:8097/api/v1/fund/balance",
+    })
     # ── V31 Multichain (PROD) — systemd + /health ──────────────────────────
     v31_mc_sys = _sysd.get("zion-v31-multichain.service", {})
     v31_mc_active = v31_mc_sys.get("ActiveState", "unknown")
-    v31_mc_health = {}
-    try:
-        with urllib.request.urlopen("http://127.0.0.1:8453/health", timeout=2) as resp:
-            v31_mc_health = json.loads(resp.read().decode())
-    except Exception:
-        pass
+    v31_mc_health = _pf.get("mc") or {}
     v31_multichain_status = {
         "running": v31_mc_active == "active",
         "systemd_active": v31_mc_active,
@@ -4420,22 +4451,13 @@ def _build_status_edge_primary() -> dict:
     # ── V31 DAO (PROD) — systemd + /health ─────────────────────────────────
     v31_dao_sys = _sysd.get("zion-v31-dao.service", {})
     v31_dao_active = v31_dao_sys.get("ActiveState", "unknown")
-    v31_dao_health = {}
+    v31_dao_health = _pf.get("dao") or {}
     v31_dao_total = 0
     v31_dao_active_proposals = 0
-    try:
-        with urllib.request.urlopen("http://127.0.0.1:8456/api/dao/health", timeout=2) as resp:
-            v31_dao_health = json.loads(resp.read().decode())
-    except Exception:
-        pass
-    try:
-        with urllib.request.urlopen("http://127.0.0.1:8456/api/dao/proposals", timeout=2) as resp:
-            proposals = json.loads(resp.read().decode())
-            if isinstance(proposals, dict):
-                v31_dao_total = proposals.get("total", 0) or proposals.get("proposals_total", 0)
-                v31_dao_active_proposals = proposals.get("active", 0) or proposals.get("active_proposals", 0)
-    except Exception:
-        pass
+    proposals = _pf.get("dao_props")
+    if isinstance(proposals, dict):
+        v31_dao_total = proposals.get("total", 0) or proposals.get("proposals_total", 0)
+        v31_dao_active_proposals = proposals.get("active", 0) or proposals.get("active_proposals", 0)
     v31_dao_status = {
         "running": v31_dao_active == "active",
         "systemd_active": v31_dao_active,
@@ -4446,12 +4468,7 @@ def _build_status_edge_primary() -> dict:
     # ── V31 OASIS (PROD) — systemd + /health ───────────────────────────────
     v31_oasis_sys = _sysd.get("zion-v31-oasis.service", {})
     v31_oasis_active = v31_oasis_sys.get("ActiveState", "unknown")
-    v31_oasis_health = {}
-    try:
-        with urllib.request.urlopen("http://127.0.0.1:8094/health", timeout=2) as resp:
-            v31_oasis_health = json.loads(resp.read().decode())
-    except Exception:
-        pass
+    v31_oasis_health = _pf.get("oasis") or {}
     v31_oasis_status = {
         "running": v31_oasis_active == "active",
         "systemd_active": v31_oasis_active,
@@ -4460,19 +4477,12 @@ def _build_status_edge_primary() -> dict:
     # ── V31 Free World (PROD) — systemd + /health ───────────────────────────
     v31_free_world_sys = _sysd.get("zion-v31-free-world.service", {})
     v31_free_world_active = v31_free_world_sys.get("ActiveState", "unknown")
-    v31_free_world_health = {}
+    v31_free_world_health = _pf.get("fw") or {}
     v31_free_world_balance_zion = 0
-    try:
-        with urllib.request.urlopen("http://127.0.0.1:8095/health", timeout=2) as resp:
-            v31_free_world_health = json.loads(resp.read().decode())
-        with urllib.request.urlopen("http://127.0.0.1:8095/api/v1/fund/balance", timeout=2) as resp:
-            _fw_body = resp.read().decode()
-            _fw_data = json.loads(_fw_body)
-            if _fw_data.get("success") and _fw_data.get("data"):
-                _fw_bal = _fw_data["data"]
-                v31_free_world_balance_zion = (_fw_bal.get("total_accumulated", 0) or 0) / 1_000_000
-    except Exception:
-        pass
+    _fw_data = _pf.get("fw_fund")
+    if isinstance(_fw_data, dict) and _fw_data.get("success") and _fw_data.get("data"):
+        _fw_bal = _fw_data["data"]
+        v31_free_world_balance_zion = (_fw_bal.get("total_accumulated", 0) or 0) / 1_000_000
     v31_free_world_status = {
         "running": v31_free_world_active == "active",
         "systemd_active": v31_free_world_active,
@@ -4482,19 +4492,12 @@ def _build_status_edge_primary() -> dict:
     # ── V31 Issobella (PROD) — systemd + /health ────────────────────────────
     v31_issobella_sys = _sysd.get("zion-v31-issobella.service", {})
     v31_issobella_active = v31_issobella_sys.get("ActiveState", "unknown")
-    v31_issobella_health = {}
+    v31_issobella_health = _pf.get("iss") or {}
     v31_issobella_balance_zion = 0
-    try:
-        with urllib.request.urlopen("http://127.0.0.1:8097/health", timeout=2) as resp:
-            v31_issobella_health = json.loads(resp.read().decode())
-        with urllib.request.urlopen("http://127.0.0.1:8097/api/v1/fund/balance", timeout=2) as resp:
-            _iss_body = resp.read().decode()
-            _iss_data = json.loads(_iss_body)
-            if _iss_data.get("success") and _iss_data.get("data"):
-                _iss_bal = _iss_data["data"]
-                v31_issobella_balance_zion = (_iss_bal.get("total_accumulated", 0) or 0) / 1_000_000
-    except Exception:
-        pass
+    _iss_data = _pf.get("iss_fund")
+    if isinstance(_iss_data, dict) and _iss_data.get("success") and _iss_data.get("data"):
+        _iss_bal = _iss_data["data"]
+        v31_issobella_balance_zion = (_iss_bal.get("total_accumulated", 0) or 0) / 1_000_000
     v31_issobella_status = {
         "running": v31_issobella_active == "active",
         "systemd_active": v31_issobella_active,

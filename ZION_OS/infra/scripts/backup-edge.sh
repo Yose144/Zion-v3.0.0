@@ -279,6 +279,14 @@ else
     log "${YELLOW}  ⚠  EDGE2 PostgreSQL mirror failed — archive continues WITHOUT PG data${NC}"
 fi
 
+# ── 7c. Drop 0-byte SQLite stubs ────────────────────────────────────────────
+# After the v3 split these leftovers on EDGE are empty while the real data sits
+# in PostgreSQL on EDGE2 (mirrored in 7b): /opt/zion/data/{zis,marketplace,
+# pool-store,pool,multichain}.db. Archiving 0-byte files only makes a restore
+# look complete when it is not.
+_ZERO=$(find "${BACKUP_DIR}/daily" -maxdepth 4 -name '*.db' -size 0 -print -delete 2>/dev/null | wc -l | tr -d ' ')
+[[ "${_ZERO}" != "0" ]] && log "${YELLOW}  ⚠  dropped ${_ZERO} empty .db stub(s) from the archive${NC}"
+
 # ── 8. Compress daily backup ────────────────────────────────────────────────
 DAILY_TAR="${BACKUP_DIR}/daily/zion-edge-${TIMESTAMP}.tar.gz"
 if tar -czf "${DAILY_TAR}" -C "${BACKUP_DIR}/daily" \
