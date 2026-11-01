@@ -1,0 +1,119 @@
+# REPORT — NABUKANO · Nebeská flotila (L6)
+
+> **Datum:** 2026-11-01 · **Vrstva:** L6 (pohyblivý uzel nebe) · **Status:** kánon + web + scéna; **Nirvana nenasazená**
+> **Commity:** `2e4d15be3`, `eb48e1605`, `bf6173d4d`, `76a168b6f`, `674d0c0bb`, `c618c6f97`, `e6095cec4` (+ kánon `627713dfd` — viz §6)
+> **Deploye webu:** `nabukano-20261101T114003Z`, `nabukano-node-20261101T120752Z`, `nabukano-l6-20261101T122616Z`, `nabukano-nav-20261101T124635Z`, `nabukano-hero-20261101T133017Z`
+> **Plán:** [`docs/3.2/NABUKANO-PLAN.md`](../NABUKANO-PLAN.md)
+
+---
+
+## 1. Co vzniklo
+
+Nebeská flotila je **nový uzel L6 na svislé ose mezi pozemním uzlem LUMI (Kostarika) a stanicí Issobella**. Není to čtrnáctý pozemský bod — nemá pin na mapě, protože nevisí na místě. Nese čtyři trupy: mateřskou loď **Nabukano** s dokovacím rámem a tři nebeské Marie.
+
+### 1.1 Kánon — kniha (7 kapitol)
+
+`canon/books/Nabukano/` (nový svazek, DRAFT pro 3.3, registry `nabukano` navrženy a **neregistrovány**):
+
+| # | Kapitola | Co říká |
+|---|---|---|
+| 00 | `00-README.md` | rejstřík, kompas, co kniha netvrdí |
+| 01 | Jméno z Babylonu | Nebúkadnesar II., sen o stromu, pokora; proč loď nese královské jméno; posádková zkratka **Nabukano** |
+| 02 | Loď, která pluje nahoru | „moře se přesunulo nahoru"; první úsek = **Žebřík** z LUMI; Gn 28 (oba směry) vs Gn 11 (věž) |
+| 03 | Tři nebeské Marie | blízké / mezi / daleké nebe + **sekce z konceptové desky** (8 sekcí, volací znaky) |
+| 04 | Dok a lucerna | rám, který se hýbe; posádka; lucerna pro **příjezd** |
+| 05 | Uzel, který není bod | proč L6 a proč to není 14. pin |
+| 06 | Připojení k Issobelle | nepřistává se, připojuje; 200 m / ~2 ot./min / 0,38 g; kdo dnes vozí nahoru |
+| 07 | Kdo se vrací dolů | tabule návratů na obou koncích; „nahoru letenka, dolů ten, kdo čeká" |
+
+Každá kapitola má **Kotvu pravdy** (Bible / tradice / historie / korpus / PŘÍBĚH / VIZE / NETVRDÍME). Index: `canon/books/README.md` (sekce „Koncepty a horizont"). Křížový odkaz z `canon/books/Issobella/00-README.md`.
+
+### 1.2 Web 2.9
+
+| Povrch | Co tam je |
+|---|---|
+| `/terranova/nabukano` | hero (skutečný obraz), čtyři trupy s volacími znaky, **konceptová deska** (8 sekcí + tři čluny), dvě trasy, tabulka „co existuje / co ne", CTA (kniha, vesmír, Issobella) |
+| `/l6-issobella` | sekce **„Uzly L6 — Dva uzly nebe"**: Issobella (HORIZONT) + Nabukano (VIZE) |
+| navigace → Vrstvy | `L6 Issobella` je rozbalovací, dítě **Nabukano · Nebeská flotila** |
+| footer | stejný odkaz v sekci vrstev |
+| `/zion-archive/nabukano/cist` | čtečka knihy (korpusový svazek přes `korpusBook`, kapitoly z `doc-manifest`) |
+| `sitemap.xml` | `/terranova/nabukano` |
+| `lib/freeworld-sites.ts` | `body: 'orbit'` (žádný pin; `EARTH_FREE_WORLD_SITES` filtruje) + mirror v Nirvaně |
+| obrázky | `public/images/nabukano/{hero,hero-m,concept-board,concept-board-m}.webp` |
+
+### 1.3 Nirvana (scéna) — **commitnuto, nenasazeno**
+
+- `scene/universe/SkyFleet.tsx` — mateřská loď s dokovacím rámem, tři trupy (červená / bílá / zlatá), lucerna, instancované detaily.
+- `positions.ts` — `fleetPosition()` / `fleetHeading()`: **jeden vzorec pro scénu i fokus** (past z Jupiter Station).
+- Portál `fleet` + slot `fleet` (nový `SceneSlot`), okno `FleetPortal`.
+- Fokus `'fleet'` ve třech mapováních `Shell` + typy `SceneRoot`/`Universe`.
+- **Trasy:** `FleetRoute` kreslí oblouk z **LUMI (Kostarika)** nebo z **prstence** k doku; světlo dojde za 6 s. Křivka se zamrazí při výběru (`key`), takže se geometrie nepřepočítává každý frame.
+- Okno nahlas říká: *animace konceptu, ne let*.
+
+---
+
+## 2. Ověření
+
+| Co | Výsledek |
+|---|---|
+| `tsc --noEmit` (web) | moje soubory čisté; 84 chyb **mimo** ně (fall-out cizí React 19 / workspace migrace, `ignoreBuildErrors: true`) |
+| `tsc --noEmit` (nirvana) | čisté |
+| `next build` (web) | OK (353 stránek), `/terranova/nabukano`, `/zion-archive/nabukano/cist[/[slug]]` v routovací tabulce |
+| `next build` (nirvana) | OK |
+| Live web | `/terranova/nabukano` 200, hero 200, deska 200, `/l6-issobella` 200, `/l5-free-world` **0× „Nabukano"**, mobil 390×844 bez přesahu, 0 chyb v konzoli |
+| Čtečka | `/zion-archive/nabukano/cist` 200; `/api/archive/docs/korpus/Nabukano/…` bez pasu **403** (správně, fail-closed) |
+| Nirvana (headless, swiftshader) | scéna 121 → 117 draw calls, 59 288 → 72 370 tris, 34 → 39 textur, `invalidVertices: 0`; s trasou 111 calls / 59 960 tris / 40 textur |
+| FPS | v softwarovém renderu ~3,9 — **nemá vypovídací hodnotu**, měřit jen na GPU |
+
+---
+
+## 3. Meze (poctivě)
+
+- **Nic z toho neexistuje** jako hardware: žádný trup, dok, výtah, posádka, modul. Kniha i web to říkají u každého bloku.
+- **3D model je stylizovaný**, ne podle desky: rotující prstenec, dokovací uzel ani osm sekcí v geometrii **nejsou**. To je práce N3 v plánu.
+- **Trasa** je animace konceptu (oblouk + světlo), bez fyziky, bez ETA.
+- **Nirvana není nasazená** → CTA „Otevřít ve vesmíru" zatím otevře scénu bez flotily.
+- **Registr `nabukano`** v L5/L6 API není zapsaný (👤 rozhodnutí), alokace 0 ZION.
+- **Kánonizace** knihy (třída E) neproběhla — text je DRAFT.
+- **Volací znaky vs. jména:** deska vede trupy jako LUMI / ISSOBELLA / TŘETÍ MARIE, kniha jako tři mariánská jména. Zatím **dvě vrstvy** (jméno + volací znak); rozhodnutí je otevřené.
+
+---
+
+## 4. Co se cestou opravilo
+
+1. **Uzel omylem v L5** — karta byla na `/l5-free-world` a v L5 Pioneer Projects. Vráceno (`674d0c0bb`), L5 zůstává 12 + archa; uzel žije v L6 (sekce, navigace, footer).
+2. **Placeholder hero** — generovaný přes `sharp`/SVG (31 kB), aby stránka nevypadala rozbitá a aby chyběl 404; nahrazen skutečným obrazem (`e6095cec4`).
+3. **K1.2 rozbil standalone layout** (`.next/standalone/apps/<app>` + `node_modules` o patro výš) — první deploy šel přes ručně zploštěný artefakt; `deploy-web2.9.sh` i `deploy-nirvana.sh` už zplošťují (cizí commit), takže další deploye jdou z hlavy skriptu.
+
+---
+
+## 5. Soubory
+
+```
+canon/books/Nabukano/*.md                                  nové (8 souborů)
+canon/books/README.md, canon/books/Issobella/00-README.md   +odkazy
+apps/website-v2.9/src/app/terranova/nabukano/page.tsx        nová stránka
+apps/website-v2.9/src/app/l6-issobella/page.tsx              sekce Uzly L6
+apps/website-v2.9/src/app/zion-archive/nabukano/**           reader
+apps/website-v2.9/src/lib/books/registry.ts                  NABUKANO_BOOK
+apps/website-v2.9/src/app/zion-archive/library.ts            karta knihy
+apps/website-v2.9/src/lib/freeworld-sites.ts                 body: 'orbit'
+apps/website-v2.9/src/components/{Navigation,Footer}.tsx     odkaz pod L6
+apps/website-v2.9/src/lib/translations.ts                    nav.terra_nabukano
+apps/website-v2.9/src/app/sitemap.ts                         route
+apps/website-v2.9/archive-content/korpus/Nabukano/           mirror kapitol
+apps/website-v2.9/public/images/nabukano/*.webp              hero + deska
+apps/nirvana/src/core/scene/universe/{SkyFleet,positions,Universe}.tsx
+apps/nirvana/src/core/{portals/manifest,shell/Shell,scene/SceneRoot}.tsx
+apps/nirvana/src/portals/fleet/FleetPortal.tsx
+apps/nirvana/src/lib/freeworld-sites.ts                      mirror
+NIRVANA-SHELL.md, NIRVANA-RENDER-AAA.md, apps/nirvana/AGENTS.md
+```
+
+---
+
+## 6. Kolize s paralelními session (pro budoucí čtenáře)
+
+- **Kánon byl swept do cizího commitu:** `git add canon/…` jsem měl staged, ale souběžná session pustila `git add -A` a svazek odjel v `627713dfd` s názvem „fix(3d audit)…". Obsah je v pořádku, jen pod zavádějícím popisem. Historie se nepřepisovala.
+- **Během práce se HEAD posunul několikrát** (Hiran curriculum, `zion-nirvana-net` M0–M2b, K1.2 workspace, React 19). Deploy webu proto proběhl dřív, než byla migrace lockfilu usazená; po ní už build prochází.
+- **Pravidlo pro příště:** před `git add` zkontrolovat `git status` a přidávat **konkrétní cesty**, nikdy `-A`; před deployem zkontrolovat, že cizí session nemá rozpracované změny v `apps/website-v2.9` / `apps/nirvana`.
