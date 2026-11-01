@@ -2,10 +2,11 @@
 
 > Stav 2026-11-01 · První vlastní fine-tuned adaptér: **`zion-llama-lora-vast`**
 > (QLoRA na Llama-3.1-8B, eval_loss 0.284 / ppl 1.33) — natrénován na Vast.ai
-> RTX 3060 vedle produkčního QTC miningu. **Validace: overfit potvrzen** — persona
-> OK, ale degraduje obecné schopnosti + safety base modelu; alias `hiran-maitreya`
-> zůstává `mockup:true`. Detail: `VAST-HIRAN-TRAINING-PLAN.md`,
-> report §7: `docs/3.2/REPORTS/REPORT_2026-11-01_HIRAN_VAST_TRAINING.md`.
+> RTX 3060 vedle produkčního QTC miningu. **Strategie 👤:** adaptéry = archiv
+> na EDGE, žádný produkční deploy — směřujeme k **FULL trainingu na větší kartě**
+> (8B nestačí; Hiran má znát celý ZION). Příprava: `HIRAN-FULL-TRAINING-PREP.md`.
+> Detail runů: `VAST-HIRAN-TRAINING-PLAN.md`,
+> report: `docs/3.2/REPORTS/REPORT_2026-11-01_HIRAN_VAST_TRAINING.md`.
 
 ## 1. Co je Hiran
 

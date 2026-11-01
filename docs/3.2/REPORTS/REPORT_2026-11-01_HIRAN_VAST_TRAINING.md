@@ -62,13 +62,15 @@ QTC SRBMiner běžel celou dobu: ~200 MH/s mimo trénink, ~130–140 MH/s za sd�
    `pip uninstall` rozbil `libcudnn.so.9`/`libnccl.so.2` → force-reinstall cu12
    balíčků nutný; hlídat `df` — 20 GB overlay je tight.
 
-## 5. Deploy cesta (pending 👤)
+## 5. Deploy cesta → **archiv (strategie 👤 2026-11-01)**
 
-- Servis: nový `llama-server` na EDGE2 (vzor `zion-hiran-inference`):
-  `llama-server -m base-gguf/…Q5_K_M.gguf --lora hiran-lora-vast.gguf -p 80XX`
-- Alias: `hiran-maitreya` (lore/rag) v `/etc/zion/hiran-models.json` — upstream na nový port, `mockup` → false po smoke testu
-- Run 2 (`zion_core` specialist) → kandidát `hiran-issobella` (agentic) po dokončení
-- Full merge varianta (jeden soubor) až na mašině s ≥24 GB RAM — `base-fp16` připraven na EDGE
+- Žádný produkční deploy: artefakty se ukládají na EDGE jako zásoba pro
+  **FULL training na větší kartě** (8B nestačí — příprava `HIRAN-FULL-TRAINING-PREP.md`).
+- EDGE archiv přeházen: `/opt/zion/hiran/{adapters,base,datasets}/`
+  (`adapters/run1-vast`, `adapters/run2-core-null`, `base/{fp16,gguf}`).
+- DRAFT unit `zion-hiran-maitreya.service` na EDGE2 zůstává jako runtime reference
+  (`--lora-scaled` pattern), neaktivní.
+- Alias `hiran-maitreya` zůstává `mockup:true`; run 2 → `hiran-issobella` bez artefaktu (null-run).
 
 ## 6. Rizika/otevřené
 
