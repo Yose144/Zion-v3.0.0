@@ -50,6 +50,14 @@ Deploy skripty: `deploy-nirvana.sh` hledá `server.js` v hloubce (přežije dal�
 3. **K1.3 dojet:** sjednotit standalone layout (jeden tvar pro všechny) a aktualizovat zbylé deploy skripty (KPI: 9 → 3 skripty).
 4. **K1.4:** `@zion/session` jako workspace závislost (dnes tarball u website-v2.9) — tím zmizí i poslední commitnutý `.tgz` (KPI 1 → 0). Vyžaduje build SDK v pipeline (`npm run build -w zion-wallet-sdk` před buildem webu).
 
+## 4b. K1.4 (předběžně) — poslední `.tgz` je pryč
+
+`website-v2.9` závisel na `zion-wallet-sdk: file:zion-wallet-sdk-2.0.0.tgz` — commitnutý binární balík. Ve workspace je to zbytečné: závislost je `"*"` (symlink na `apps/zion-wallet-sdk`) a `prebuild` si SDK nejdřív zbuildí (`npm run build -w zion-wallet-sdk` → `tsc` → `dist/`). Ověřeno: `next build` projde, 343 stránek.
+
+Smazány i dva osiřelé artefakty: `apps/website-v2.9/zion-wallet-sdk-2.0.0.tgz` (nahrazen linkem) a `apps/zion-wallet-sdk/zion-wallet-sdk-1.0.0.tgz` (stale 1.0.0 vedle zdroje 2.0.0, nic na něj neodkazovalo). **KPI „commitnutých `.tgz` 1 → 0" je splněno.**
+
+**Turbopack na `website-v2.9` ale nejde:** s workspace linkem zmizel důvod „Turbopack neumí `.tgz`", takže jsem zkusil `next build` bez `--webpack`. Build se **zasekl na 30 minut** v „Creating an optimized production build" bez jediného řádku výstupu (webpack zvládne totéž za 40–50 s). Proto `--webpack` **zůstává** — ale už ne kvůli tarballu, nýbrž proto, že Turbopack tuhle appku neutáhne. Profilace = samostatný úkol (K1.3 poznámka).
+
 ## 5. Jak to zreprodukovat
 
 ```bash

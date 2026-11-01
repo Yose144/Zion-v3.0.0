@@ -33,9 +33,11 @@ SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=accept-new ${SSH_EXTRA}"
 SSH() { ssh ${SSH_OPTS} "${EDGE_USER}@${EDGE_HOST}" "$@"; }
 
 echo "[deploy-marketplace] Installing deps + generating Prisma client..."
+# K1.2: root workspace — jeden lockfile a jeden node_modules v rootu repa.
+# `npm ci` uvnitř appky by vytvořil druhý strom a rozbil workspace.
 cd "$ROOT_DIR"
-npm ci
-npx prisma generate
+(cd ../.. && npm ci)
+npm run db:generate
 
 echo "[deploy-marketplace] Building (standalone)..."
 # Local .env pins NEXT_PUBLIC_SITE_URL to localhost for dev. Next inlines that
