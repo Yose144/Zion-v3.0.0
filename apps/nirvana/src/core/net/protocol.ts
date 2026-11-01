@@ -107,6 +107,7 @@ export interface ArenaPlayerState {
 /** Stav vozidla na Venuši. */
 export interface RacePlayerState {
   id: string;
+  name: string;
   x: number;
   z: number;
   heading: number;
@@ -154,7 +155,19 @@ export type EventPayload =
   | { kind: 'pickup'; id: string; item: 'health' | 'armor' }
   | { kind: 'system'; text: string; at: number }
   | { kind: 'match_start'; at: number }
-  | { kind: 'match_end'; scoreboard: ScoreRow[] };
+  | { kind: 'match_end'; scoreboard: ScoreRow[] }
+  | { kind: 'race_start'; at: number }
+  | {
+      kind: 'finish';
+      id: string;
+      name: string;
+      totalSeconds: number;
+      position: number;
+    }
+  | {
+      kind: 'race_end';
+      standings: { id: string; name: string; totalSeconds: number | null; laps: number }[];
+    };
 
 export type ErrorCode =
   | 'proto_mismatch'
@@ -221,8 +234,14 @@ export type ServerMessage =
       /** Jen aréna: rakety ve vzduchu. */
       projectiles?: RocketView[];
       pickups?: PickupView[];
-      state?: 'running' | 'ended';
+      state?: 'running' | 'ended' | 'countdown';
       secondsLeft?: number;
+      /** Závod: odpočet do startu (s), když `state === 'countdown'`. */
+      countdown?: number;
+      /** Závod: čas od startu (s). */
+      raceSeconds?: number;
+      /** Závod: počet kol. */
+      laps?: number;
     }
   | { t: 'event'; event: EventPayload }
   | { t: 'pong'; at: number; serverTime: number }

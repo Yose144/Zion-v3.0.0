@@ -9,7 +9,8 @@
     "dev": "tsc -p tsconfig.json && node dist/nirvana-net/src/index.js",
     "smoke": "node test/smoke.mjs",
     "live": "node test/live-zis.mjs",
-    "arena": "node test/arena.mjs"
+    "arena": "node test/arena.mjs",
+    "race": "node test/race.mjs"
   },
   "dependencies": {
     "ws": "^8.18.3"

@@ -151,6 +151,25 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Co v MP není:** boti (prázdnou arénu nikdo nedoplňuje), zvuk, VR, tracery.
   Není to nedodělek, je to další krok — nemá se to hlásit jako hotové.
 
+### Multiplayer závodu (M2b, 2026-11-01)
+
+- **Stejná trať, stejná fyzika.** `apps/nirvana-net/src/race.ts` pouští
+  `core/race/track.ts` + `core/race/physics.ts` (`stepCraft`) a kola počítá
+  `advanceLap` z `rivals.ts` — tedy přesně to, co klient.
+- **Vizuál tratě je jeden.** `core/race/TrackStage.tsx` (pás, okraje, brány,
+  startovní čára) používají sólo i multiplayer — neopravovat dvakrát.
+- **Odpočet je serverový** (3 s, při novém hráči se restartuje). Klient ho jen
+  kreslí; když doběhne, server pošle `race_start`.
+- **Vstup:** u závodu posílá klient `mz` = plyn a `mx` = zatáčení (stejná
+  konvence jako sólo klávesy), **ne** dopředu/doprava jako v aréně. `useNet`
+  proto nabízí `joinGame('race')`; `joinArena()` je jen obal (dřív posílal
+  `game: 'arena'` i pro Venuši a závod se nikdy nepřipojil).
+- **Predikce:** vlastní vozidlo se hýbe stejnou `stepCraft`, srovnává se při
+  odchylce > 3 m; ostatní se interpolují mezi snapshoty.
+- **Závod končí**, když dojedou všichni (nebo po 8 min). `race_end` nese
+  pořadí; po 8 s se rozjede nový.
+- **Co tu není:** duchové odpojených (jezdci se jen odeberou), boti, zvuk.
+
 ## Jupiter Station — `/park` (2026-11-01)
 
 - **Jeden canvas, dva pohledy.** Hra se kreslí do `<canvas>` v `park-dock` a ten

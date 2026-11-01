@@ -58,6 +58,15 @@ import {
   stepArena,
   type ArenaSim,
 } from './arena.js';
+import {
+  addRacePlayer,
+  createRace,
+  raceSnapshot,
+  removeRacePlayer,
+  setRaceInput,
+  stepRace,
+  type RaceSim,
+} from './race.js';
 import { identityCacheSize, resolveIdentity } from './zis.js';
 
 const SERVICE = 'zion-nirvana-net';
@@ -105,6 +114,8 @@ interface Room {
   players: Map<string, Conn>;
   /** Aréna má serverovou simulaci; chat místnost ne. */
   arena: ArenaSim | null;
+  /** Venuše má simulaci závodu. */
+  race: RaceSim | null;
 }
 
 const rooms = new Map<string, Room>();
@@ -308,6 +319,7 @@ function createRoom(game: GameId): Room {
     createdAt: Date.now(),
     players: new Map(),
     arena: game === 'arena' ? createArena(Date.now()) : null,
+    race: game === 'race' ? createRace(Date.now()) : null,
   };
   rooms.set(room.id, room);
   log(`room created id=${room.id} total=${rooms.size}`);
@@ -321,6 +333,7 @@ function leaveRoom(conn: Conn, reason: string): void {
   const channel = `arena:${room.id}`;
   conn.room = null;
   if (room.arena) removePlayer(room.arena, conn.id);
+  if (room.race) removeRacePlayer(room.race, conn.id);
   room.players.delete(conn.id);
   log(`leave room=${room.id} id=${conn.identity.id} reason=${reason} players=${room.players.size}`);
 
@@ -372,12 +385,13 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string): void {
   room.players.set(conn.id, conn);
   conn.room = room;
   if (room.arena) addPlayer(room.arena, conn.id, conn.identity.name, Date.now());
+  if (room.race) addRacePlayer(room.race, conn.id, conn.identity.name, Date.now());
 
   send(conn, {
     t: 'room',
     room: roomInfo(room),
     occupants: [...room.players.values()].map((player) => summary(player.identity)),
-    youPlayerId: room.arena ? conn.id : undefined,
+    youPlayerId: room.arena || room.race ? conn.id : undefined,
     // spawn posílá server až ve snapshotech; klient si drží vlastní predikci
     spawn: null,
     history: [...historyOf(`arena:${room.id}`)],
@@ -435,20 +449,29 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
       return;
 
     case 'input': {
-      const arena = conn.room?.arena;
-      if (!conn.room || !arena) {
+      const another = conn.room;
+      if (!another) {
         sendError(conn, 'not_in_room');
         return;
       }
-      setInput(arena, conn.id, {
-        forward: message.mz,
-        strafe: message.mx,
-        yaw: message.yaw,
-        pitch: message.pitch,
-        jump: message.jump,
-        fire: message.fire,
-        weapon: message.weapon === 1 ? 'rocket' : 'rail',
-      });
+      if (another.arena) {
+        setInput(another.arena, conn.id, {
+          forward: message.mz,
+          strafe: message.mx,
+          yaw: message.yaw,
+          pitch: message.pitch,
+          jump: message.jump,
+          fire: message.fire,
+          weapon: message.weapon === 1 ? 'rocket' : 'rail',
+        });
+        return;
+      }
+      if (another.race) {
+        // u závodu je `mz` plyn a `mx` zatáčení (stejná konvence jako sólo)
+        setRaceInput(another.race, conn.id, { throttle: message.mz, steer: message.mx });
+        return;
+      }
+      sendError(conn, 'not_in_room');
       return;
     }
 
@@ -662,6 +685,25 @@ const gameLoop = setInterval(() => {
   tickCount += 1;
 
   for (const room of rooms.values()) {
+    if (room.race && room.players.size > 0) {
+      const events = stepRace(room.race, TICK_MS / 1000, now);
+      room.state = room.race.phase === 'running' ? 'running' : room.race.phase === 'ended' ? 'ended' : 'waiting';
+      for (const event of events) {
+        broadcastChannel(`arena:${room.id}`, { t: 'event', event });
+      }
+      if (tickCount % SNAPSHOT_EVERY === 0) {
+        const snapshot = raceSnapshot(room.race, now);
+        broadcastChannel(`arena:${room.id}`, {
+          t: 'snapshot',
+          game: 'race',
+          seq: room.race.seq,
+          time: now,
+          ...snapshot,
+        });
+      }
+      continue;
+    }
+
     const arena = room.arena;
     if (!arena || room.players.size === 0) continue;
 

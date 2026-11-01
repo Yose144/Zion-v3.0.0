@@ -50,6 +50,8 @@ export interface NetApi {
   youPlayerId: string | null;
   roomId: string | null;
   joinArena: () => void;
+  /** Připojení do hry (`arena` = Mars, `race` = Venuše). */
+  joinGame: (game: 'arena' | 'race') => void;
   leaveRoom: () => void;
   /**
    * Herní data tečou přes subscription, ne přes React state — snapshoty
@@ -271,9 +273,14 @@ export function NetProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
-  const joinArena = useCallback(() => {
-    send({ t: 'join', game: 'arena' });
-  }, [send]);
+  const joinGame = useCallback(
+    (game: 'arena' | 'race') => {
+      send({ t: 'join', game });
+    },
+    [send],
+  );
+
+  const joinArena = useCallback(() => joinGame('arena'), [joinGame]);
 
   const leaveRoom = useCallback(() => {
     send({ t: 'leave' });
@@ -316,6 +323,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       youPlayerId,
       roomId,
       joinArena,
+      joinGame,
       leaveRoom,
       subscribe,
       sendInput,
@@ -332,6 +340,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       youPlayerId,
       roomId,
       joinArena,
+      joinGame,
       leaveRoom,
       subscribe,
       sendInput,

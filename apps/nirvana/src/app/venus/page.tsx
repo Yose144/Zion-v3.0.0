@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
 import { useI18n } from '@/core/i18n';
 import { VenusRace, type RaceResult, type RaceStats } from '@/core/race/VenusRace';
+import { VenusMultiplayer, type MpRaceStats } from '@/core/race/VenusMultiplayer';
 import { LAPS, raceScore } from '@/core/race/track';
 import type { StandingRow } from '@/core/race/rivals';
 import { awardRun, grantTokens, loadProfile, saveProfile } from '@/core/park/profile';
@@ -44,6 +45,8 @@ export default function VenusPage() {
   const [stats, setStats] = useState<RaceStats>(EMPTY);
   const [result, setResult] = useState<RaceResult | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [mp, setMp] = useState(false);
+  const [mpStats, setMpStats] = useState<MpRaceStats | null>(null);
 
   const finish = useCallback(
     (outcome: RaceResult) => {
@@ -89,11 +92,56 @@ export default function VenusPage() {
           camera={{ position: [0, 8, 20], fov: 68, near: 0.1, far: 600 }}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >
-          <VenusRace running={phase === 'playing'} onStats={setStats} onFinish={finish} />
+          {mp ? (
+            <VenusMultiplayer running={phase === 'playing'} onStats={setMpStats} />
+          ) : (
+            <VenusRace running={phase === 'playing'} onStats={setStats} onFinish={finish} />
+          )}
         </Canvas>
       </div>
 
-      {phase === 'playing' && (
+      {phase === 'playing' && mp && (
+        <>
+          <div className="race-hud">
+            <span className="race-speed">{mpStats?.speed ?? 0} km/h</span>
+            <span className="race-pos">
+              {mpStats?.position ?? 1}/{mpStats?.total ?? 1}
+            </span>
+            <span>
+              {cs ? 'kolo' : 'lap'} {mpStats?.lap ?? 1}/{mpStats?.laps ?? LAPS}
+            </span>
+            <span>{format(mpStats?.elapsed ?? 0)}</span>
+            <span className={`race-best${mpStats?.connected ? '' : ' is-offline'}`}>
+              {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : cs ? 'offline' : 'offline'}
+            </span>
+          </div>
+          {mpStats && mpStats.standings.length > 0 && (
+            <ol className="race-board">
+              {mpStats.standings.map((row) => (
+                <li
+                  key={row.id}
+                  className={row.id === mpStats.standings[0]?.id ? 'is-leader' : undefined}
+                >
+                  <span className="race-board-name">{row.name}</span>
+                  <span className="race-board-gap">
+                    {row.finishedAtMs !== null ? format(row.finishedAtMs / 1000) : `${cs ? 'k' : 'l'}${row.lap}`}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+          {mpStats?.state === 'countdown' && (
+            <div className="race-go race-countdown">
+              {mpStats.countdown > 0 ? mpStats.countdown : cs ? 'start!' : 'go!'}
+            </div>
+          )}
+          {mpStats?.state === 'ended' && (
+            <div className="race-go">{cs ? 'cíl — nový závod za chvíli' : 'finish — new race soon'}</div>
+          )}
+        </>
+      )}
+
+      {phase === 'playing' && !mp && (
         <div className="race-hud">
           <span className="race-speed">{stats.speed} km/h</span>
           <span className="race-pos">
@@ -128,7 +176,7 @@ export default function VenusPage() {
         </ol>
       )}
 
-      {phase === 'playing' && !stats.started && (
+      {phase === 'playing' && !mp && !stats.started && (
         <div className="race-go">{cs ? 'plyn = start' : 'throttle to start'}</div>
       )}
 
@@ -160,6 +208,16 @@ export default function VenusPage() {
               <div className="arena-actions">
                 <button type="button" className="park-btn" onClick={() => setPhase('playing')}>
                   {cs ? 'Na start' : 'To the grid'}
+                </button>
+                <button
+                  type="button"
+                  className="park-btn park-btn-mp"
+                  onClick={() => {
+                    setMp(true);
+                    setPhase('playing');
+                  }}
+                >
+                  {cs ? 'Multiplayer — proti lidem' : 'Multiplayer — against people'}
                 </button>
                 <Link href="/park" className="arena-link">
                   {cs ? '← zpět na pouť' : '← back to the fair'}

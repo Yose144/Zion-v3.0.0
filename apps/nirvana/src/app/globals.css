@@ -2193,3 +2193,27 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     min-width: 7rem;
   }
 }
+
+/* multiplayer závod: odpočet a offline stav */
+.race-hud .race-best.is-offline {
+  color: #ff7a6b;
+}
+
+.race-countdown {
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.6);
+  animation: race-count-pulse 1s ease-in-out infinite;
+}
+
+@keyframes race-count-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.85; }
+}
+
+.race-board li.is-leader {
+  color: #ffd166;
+  font-weight: 700;
+}
