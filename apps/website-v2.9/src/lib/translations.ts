@@ -71,6 +71,7 @@ const t = {
     terra_ekam: { cs: 'Ekam', en: 'Ekam' },
     terra_kailash: { cs: 'Kailash', en: 'Kailash' },
     terra_amenti: { cs: 'Amenti — Síně záznamu', en: 'Amenti — Halls of Records' },
+    terra_kralovstvi_srdce: { cs: 'Království srdce · Archa', en: 'Kingdom of the Heart · the Ark' },
     resonance: { cs: 'Rezonance', en: 'Resonance' },
     team: { cs: 'Tým', en: 'Team' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },

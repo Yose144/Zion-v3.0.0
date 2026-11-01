@@ -96,8 +96,8 @@ const L5FreeWorldCopy = {
   planetaryMap: { cs: `Planetární mapa`, en: `Planetary map` },
   sixNodesOnPlanet: { cs: `Dvanáct bodů na planetě`, en: `Twelve nodes on the planet` },
   l5MapDesc: {
-    cs: `Zakládající L5 komunity napříč kontinenty — od údolí Nabão po poušť Ngari pod Kailashem a síň záznamu na plateu Gízy. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru, Boa Esperança, Kailash a Amenti zůstávají vizemi — vztahové uzly na posvátných a historických místech; Amenti je dvanáctý a poslední bod. Ekam je jediný uzel, který už stojí — chrám z roku 2008 slouží jako předloha všem ostatním. A María del Camino — plující uzel se solárními plachtami — všechny body fyzicky spojuje přes oceány.`,
-    en: `The L5 communities across the continents — from the Nabão valley to the Ngari desert under Kailash and the hall of records on the Giza plateau. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru, Boa Esperança, Kailash and Amenti remain visions — relationship nodes on sacred and historic ground; Amenti is the twelfth and final node. Ekam is the only node already standing — a temple built in 2008 that serves as the template for all the others. And María del Camino — a sailing node on solar sails — physically connects every point across the oceans.`,
+    cs: `Zakládající L5 komunity napříč kontinenty — od údolí Nabão po poušť Ngari pod Kailashem a síň záznamu na plateu Gízy. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru, Boa Esperança, Kailash a Amenti zůstávají vizemi — vztahové uzly na posvátných a historických místech; Amenti je dvanáctý bod na pevnině. Ekam je jediný uzel, který už stojí — chrám z roku 2008 slouží jako předloha všem ostatním. María del Camino — plující uzel se solárními plachtami — všechny body fyzicky spojuje přes oceány. A třináctý uzel není na mapě, protože je na vodě: archa Království srdce · Nirvana, plující kolonie do sta lidí, která se vrací pro ty, kdo zůstali ve vodě — a její trasu určují keporkaci.`,
+    en: `The L5 communities across the continents — from the Nabão valley to the Ngari desert under Kailash and the hall of records on the Giza plateau. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru, Boa Esperança, Kailash and Amenti remain visions — relationship nodes on sacred and historic ground; Amenti is the twelfth point on land. Ekam is the only node already standing — a temple built in 2008 that serves as the template for all the others. María del Camino — a sailing node on solar sails — physically connects every point across the oceans. And the thirteenth node is not on the map, because it is on the water: the ark Království srdce · Nirvana, a sailing colony of up to one hundred people that returns for those left in the water — its route set by the humpback whales.`,
   },
   liveRegistry: { cs: `Živý registr`, en: `Live registry` },
   projectsAndGrants: { cs: `Projekty & granty`, en: `Projects & Grants` },
@@ -285,6 +285,17 @@ const getCommunities = (cs: boolean) => [
     tags: cs ? ['Vzpomínka', 'Síně záznamu', 'Smaragdové desky'] : ['Remembrance', 'Halls of Records', 'Emerald Tablets'],
     href: '/terranova/amenti',
     cover: '/images/amenti/hero.webp',
+  },
+  {
+    name: 'Království srdce · Archa',
+    location: cs ? 'Světové oceány · velrybí koridor' : 'World oceans · whale corridor',
+    status: 'vision' as const,
+    desc: cs
+      ? 'Třináctý uzel sítě — a jediný, který je na vodě. Archa Nirvana: plující kolonie do sta lidí, semenný archiv při −18 °C, knihovna civilizace a plný uzel řetězce. Čtvrté plavidlo vedle Tres Marías, které se vrací pro ty, kdo zůstali ve vodě; trasu mu určují keporkaci — sezónně mezi tropy a mírným pásmem, v rytmu cyklónových oken obou hemisfér. Koncept se čtyřmi pracovními studiemi, bez položeného kýlu.'
+      : 'The thirteenth node of the network — and the only one on the water. The ark Nirvana: a sailing colony of up to one hundred people, a seed vault at −18 °C, a library of civilisation and a full chain node. The fourth vessel beside the Tres Marías, returning for those left in the water; its route is set by the humpbacks — seasonally between the tropics and the temperate band, in the rhythm of both hemispheres’ cyclone windows. A concept with four working studies and no keel laid.',
+    tags: cs ? ['Archa', 'Velrybí obrace', 'Kolonie do sta'] : ['The Ark', 'Whale circuit', 'Colony of one hundred'],
+    href: '/terranova/kralovstvi-srdce',
+    cover: '/images/kralovstvi-srdce/hero.webp',
   },
 ];
 

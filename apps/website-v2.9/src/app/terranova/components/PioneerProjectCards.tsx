@@ -340,6 +340,29 @@ const PROJECTS: ProjectCardData[] = [
       { value: 'EG', labelCs: 'Region', labelEn: 'Region' },
     ],
   },
+  {
+    href: '/terranova/kralovstvi-srdce',
+    title: 'Království srdce · Archa',
+    location: 'Světové oceány · velrybí koridor',
+    eyebrow: 'L5 · The Ark · 13th Node',
+    statusCs: 'Vize',
+    statusEn: 'Vision',
+    descriptionCs:
+      'Třináctý uzel sítě — archa Nirvana: plující kolonie do sta lidí, semenný archiv, knihovna civilizace a plný uzel řetězce. Čtvrté plavidlo vedle Tres Marías, které se vrací pro ty, kdo zůstali ve vodě — a pluje s keporkaky v rytmu, ve kterém se střídají cyklónové sezóny obou hemisfér.',
+    descriptionEn:
+      'The thirteenth node of the network — the ark Nirvana: a sailing colony of up to one hundred people, a seed vault, a library of civilisation and a full chain node. The fourth vessel beside the Tres Marías, returning for those left in the water — and sailing with the humpbacks in the rhythm of both hemispheres’ cyclone seasons.',
+    features: [
+      { icon: Waves, labelCs: 'Velrybí navigace', labelEn: 'Whale navigation' },
+      { icon: Sprout, labelCs: 'Semenný archiv', labelEn: 'Seed vault' },
+      { icon: Users, labelCs: 'Kolonie do sta', labelEn: 'Colony of one hundred' },
+      { icon: Network, labelCs: 'Uzel na moři', labelEn: 'Node at sea' },
+    ],
+    metrics: [
+      { value: '≤ 100', labelCs: 'Lidí na palubě', labelEn: 'People aboard' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: '13. uzel', labelCs: 'Pořadí', labelEn: 'Node' },
+    ],
+  },
 ];
 
 export default function PioneerProjectCards({ cs }: { cs: boolean }) {

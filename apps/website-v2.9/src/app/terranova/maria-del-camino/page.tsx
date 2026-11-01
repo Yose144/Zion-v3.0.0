@@ -410,6 +410,7 @@ const SISTERS = [
   { name: 'Ekam · Oneness Temple', href: '/terranova/ekam', region: { cs: 'Andhra Pradesh, Indie', en: 'Andhra Pradesh, India' } },
   { name: 'Kailash', href: '/terranova/kailash', region: { cs: 'Ngari, Tibet', en: 'Ngari, Tibet' } },
   { name: 'Amenti', href: '/terranova/amenti', region: { cs: 'Gíza, Egypt', en: 'Giza, Egypt' } },
+  { name: 'Království srdce · Archa', href: '/terranova/kralovstvi-srdce', region: { cs: 'Světové oceány · velrybí koridor', en: 'World oceans · whale corridor' } },
 ];
 
 export default function MariaDelCaminoPage() {
