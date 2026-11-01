@@ -14,8 +14,8 @@
  */
 
 export type FreeWorldSiteStatus = 'development' | 'preparation' | 'vision' | 'built';
-/** earth = land node · ocean = vessel on the whale corridor · moon = selenographic sibling */
-export type CelestialBody = 'earth' | 'ocean' | 'moon';
+/** earth = land node · ocean = vessel on the whale corridor · moon = selenographic sibling · orbit = sky node (L6 axis) */
+export type CelestialBody = 'earth' | 'ocean' | 'moon' | 'orbit';
 
 export interface FreeWorldSite {
   key: string;
@@ -189,10 +189,28 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     allocationZion: 0,
     body: 'moon',
   },
+  {
+    // L6 — the sky fleet Nabukano, a mobile node of the sky. Not a
+    // fourteenth Earth node: it is the vertical axis between the LUMI
+    // ground node (Costa Rica) and the Issobella station. No pin on the
+    // planetary map (body: 'orbit'); coordinates are meaningless and are
+    // kept at 0/0 on purpose. Vision only — no hull, dock or crew exists.
+    key: 'nabukano',
+    name: 'Nabukano · Nebeská flotila',
+    lat: 0,
+    lon: 0,
+    status: 'vision',
+    href: '/terranova/nabukano',
+    allocationZion: 0,
+    body: 'orbit',
+  },
 ];
 
-/** Planetary map and the "12 communities" count — the Ark sails the ocean and Matrix stays on the Moon. */
+/** Planetary map and the "12 communities" count — the Ark sails the ocean, Matrix stays on the Moon and the sky fleet holds the L6 axis. */
 export const EARTH_FREE_WORLD_SITES = FREE_WORLD_SITES.filter((site) => (site.body ?? 'earth') === 'earth');
+
+/** Nodes that are not on the planetary surface (ocean vessel, lunar sibling, sky fleet). */
+export const OFF_EARTH_FREE_WORLD_SITES = FREE_WORLD_SITES.filter((site) => (site.body ?? 'earth') !== 'earth');
 
 export const SITE_STATUS_COLOR: Record<FreeWorldSiteStatus, string> = {
   development: '#fcd116', // gold — reserved for active build phase

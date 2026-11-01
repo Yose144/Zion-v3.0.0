@@ -8,7 +8,7 @@
  */
 
 export type MissionStatus = 'preparation' | 'vision' | 'built';
-export type CelestialBody = 'earth' | 'ocean' | 'moon';
+export type CelestialBody = 'earth' | 'ocean' | 'moon' | 'orbit';
 
 export interface FreeWorldMission {
   key: string;
@@ -41,6 +41,11 @@ export const FREE_WORLD_MISSIONS: FreeWorldMission[] = [
   // Třináctý uzel — archa Království srdce · Nirvana. Není to místo: pluje
   // s keporkaky, proto 'ocean' (žádný pin na glóbusu) a vlastní prezentace.
   { key: 'kralovstvi-srdce', name: 'Království srdce · Nirvana', lat: 15, lon: -45, status: 'vision', path: '/terranova/kralovstvi-srdce', present: '/present/kralovstvi-srdce', body: 'ocean' },
+  // L6 — nebeská flotila Nabukano: svislá osa mezi pozemním uzlem LUMI
+  // a stanicí Issobella. Není to čtrnáctý pozemský bod, proto 'orbit'
+  // (žádný pin na glóbu). Souřadnice jsou záměrně 0/0. Prezentace
+  // v Nirvaně není — flotila žije v samotné scéně vesmíru (#portal=fleet).
+  { key: 'nabukano', name: 'Nabukano · Nebeská flotila', lat: 0, lon: 0, status: 'vision', path: '/terranova/nabukano', body: 'orbit' },
   // Shackleton — jižní pól Měsíce. path je jen záloha; prezentace je v Nirvaně.
   { key: 'matrix', name: 'Matrix', lat: -89.9, lon: 0, status: 'vision', path: '/l5-free-world', present: '/present/matrix', body: 'moon' },
 ];
@@ -48,6 +53,7 @@ export const FREE_WORLD_MISSIONS: FreeWorldMission[] = [
 export const EARTH_MISSIONS = FREE_WORLD_MISSIONS.filter((m) => (m.body ?? 'earth') === 'earth');
 export const OCEAN_MISSIONS = FREE_WORLD_MISSIONS.filter((m) => m.body === 'ocean');
 export const LUNAR_MISSIONS = FREE_WORLD_MISSIONS.filter((m) => m.body === 'moon');
+export const ORBIT_MISSIONS = FREE_WORLD_MISSIONS.filter((m) => m.body === 'orbit');
 
 export const MISSION_STATUS_COLOR: Record<MissionStatus, string> = {
   preparation: '#06b6d4', // cyan — financované komunity v přípravě
