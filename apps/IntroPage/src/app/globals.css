@@ -127,3 +127,24 @@
     font-size: 1rem;
   }
 }
+
+/* ── /vast-rigs ops dashboard ───────────────────────────────────────────────
+   The intro theme sets `text-align: center` on <body>. That is right for the
+   marketing pages, but it centred every card label, KPI and table caption on
+   the ops dashboard. The hero keeps its own `text-center`. */
+.vast-dashboard-shell {
+  text-align: left;
+}
+
+/* The same theme reset applies `margin: 0 auto` to every block element, so
+   cards, card headers and toolbars with a smaller intrinsic width drifted to
+   the middle of their row. Tailwind classes (mx-auto / ml-auto) still win. */
+.vast-dashboard-shell,
+.vast-dashboard-shell div,
+.vast-dashboard-shell section,
+.vast-dashboard-shell header,
+.vast-dashboard-shell form,
+.vast-dashboard-shell table {
+  margin-left: 0;
+  margin-right: 0;
+}

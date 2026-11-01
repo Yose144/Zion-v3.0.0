@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import PageLayout from "../components/PageLayout";
 
 type Hashrate = { rate: number; unit: string; a: number; r: number };
@@ -252,6 +252,16 @@ function workerName(w: string) {
   return parts.length > 1 ? parts[parts.length - 1] : core;
 }
 
+/** Pool worker rows carry the full session identity
+ *  `wallet.wallet.worker` — unreadable in a table cell, so show a short wallet
+ *  plus the worker name (full value stays in the title attribute). */
+function shortWorker(w: string) {
+  const name = workerName(w);
+  const addr = w.split(".")[0] || w;
+  const shortAddr = addr.length > 16 ? `${addr.slice(0, 8)}…${addr.slice(-6)}` : addr;
+  return name && name !== addr ? `${shortAddr} · ${name}` : shortAddr;
+}
+
 function workerKind(name: string): { label: string; cls: string } {
   const n = name.toLowerCase();
   if (n.includes("smos")) return { label: "SMOS", cls: "border-[#fcd116]/40 bg-[#fcd116]/10 text-[#fcd116]" };
@@ -281,6 +291,35 @@ function fmtAge(s: number | null) {
   if (s < 90) return `${s}s ago`;
   if (s < 5400) return `${Math.floor(s / 60)}m ago`;
   return `${Math.floor(s / 3600)}h ago`;
+}
+
+/** /vast-ops/* is behind nginx HTTP basic auth. An unauthenticated fetch()
+ *  doesn't fail — the browser parks the request waiting for credentials, so
+ *  every panel stayed on "checking…"/"searching…" forever. Bound each call and
+ *  collapse the failure into one explainable state instead. */
+const OPS_LOCKED_MSG =
+  "Ops API locked — /vast-ops/* needs HTTP basic auth. Sign in once at /vast-ops/ in this browser, then reload.";
+
+function OpsLockedNotice({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div role="alert" className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/[0.06] p-4">
+      <p className="text-sm font-semibold text-amber-200">Ops API not reachable</p>
+      <p className="mt-1 break-words text-xs leading-relaxed text-white/55">
+        This panel reads <span className="font-mono text-white/70">/vast-ops/*</span>, which sits behind HTTP
+        basic auth and the SSH tunnel to the ops station. If you are the operator, sign in once at{" "}
+        <a href="/vast-ops/" className="font-semibold text-[#fcd116] underline decoration-dotted">
+          /vast-ops/
+        </a>{" "}
+        and retry; otherwise the station is offline.
+      </p>
+      <button
+        onClick={onRetry}
+        className="mt-3 min-h-9 rounded-lg border border-white/20 bg-white/[0.05] px-3 text-xs font-semibold text-white/75 transition hover:border-white/40 hover:text-white"
+      >
+        ↻ Retry
+      </button>
+    </div>
+  );
 }
 
 /** Section health from the daemon snapshot's `fresh` map: "live" data came
@@ -393,13 +432,15 @@ function Spark({ data, color, w = 110, h = 26 }: { data?: number[]; color: strin
   );
 }
 
-function fmt(hr?: Hashrate) {
+/** `compactShares` hides the A/R chip below `sm` — the rig table on a phone has
+ *  no room for it, and the expanded row shows the full numbers anyway. */
+function fmt(hr?: Hashrate, compactShares = false) {
   if (!hr) return <span className="text-white/25">—</span>;
   return (
     <>
       <span className="font-bold text-white">{hr.rate >= 100 ? hr.rate.toFixed(0) : hr.rate.toFixed(1)}</span>{" "}
       <span className="text-white/60">{hr.unit}</span>
-      <span className="ml-2 text-[11px] text-white/40">
+      <span className={`ml-2 text-[11px] text-white/40 ${compactShares ? "hidden sm:inline" : ""}`}>
         A{hr.a}·R{hr.r}
       </span>
     </>
@@ -470,7 +511,7 @@ function PoolStatsPanel({ p, miners, stale, minersStale }: { p: PoolStats; miner
         <Kpi
           label="Pool fee"
           value={p.config?.fee_bps !== undefined ? `${(p.config.fee_bps / 100).toFixed(2)} %` : "—"}
-          sub={`miner ${p.config?.miner_pct ?? "?"} · charity ${p.config?.humanitarian_pct ?? "?"} %`}
+          sub={`miner ${p.config?.miner_pct ?? "?"} % · charity ${p.config?.humanitarian_pct ?? "?"} % · issobella ${p.config?.issobella_pct ?? "?"} %`}
         />
       </div>
 
@@ -693,14 +734,10 @@ function PoolStatsPanel({ p, miners, stale, minersStale }: { p: PoolStats; miner
                   .map((m) => (
                     <tr key={m.worker} className="border-b border-white/[0.03] text-xs">
                       <td className="max-w-[260px] truncate px-4 py-2 font-mono text-white/75" title={m.worker}>
-                        {m.worker || "—"}
+                        {m.worker ? shortWorker(m.worker) : "—"}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-white/70">
-                        {m.hps ? `${(m.hps / 1e12).toFixed(2)} TH/s` : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono text-white/45">
-                        {m.hps_1h ? `${(m.hps_1h / 1e12).toFixed(2)} TH/s` : "—"}
-                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-white/70">{fmtHps(m.hps)}</td>
+                      <td className="px-3 py-2 text-right font-mono text-white/45">{fmtHps(m.hps_1h)}</td>
                       <td className="px-3 py-2 text-right font-mono">
                         {Object.keys(m.streams || {}).length === 0 ? (
                           <span className="text-white/25">—</span>
@@ -736,6 +773,34 @@ export default function Dashboard() {
   const [ai, setAi] = useState<AiStatus | null>(null);
   const [aiErr, setAiErr] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [opsLocked, setOpsLocked] = useState(false);
+  const opsLockedRef = useRef(false);
+  /** Every /vast-ops/* call goes through here: bounded, and a 401/timeout flips
+   *  the page into one "ops API locked" state instead of hanging forever. */
+  const opsFetch = useCallback(async (url: string, init?: RequestInit, timeoutMs = 12000) => {
+    if (opsLockedRef.current) throw new Error(OPS_LOCKED_MSG);
+    let res: Response;
+    try {
+      res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+    } catch {
+      opsLockedRef.current = true;
+      setOpsLocked(true);
+      throw new Error(OPS_LOCKED_MSG);
+    }
+    if (res.status === 401 || res.status === 403) {
+      opsLockedRef.current = true;
+      setOpsLocked(true);
+      throw new Error(OPS_LOCKED_MSG);
+    }
+    return res;
+  }, []);
+  const unlockOps = () => {
+    opsLockedRef.current = false;
+    setOpsLocked(false);
+    setAiErr("");
+    setOfferError("");
+    loadAiStatus();
+  };
   const [inferenceModel, setInferenceModel] = useState("Qwen/Qwen2.5-Coder-3B-Instruct");
   const [inferenceMemory, setInferenceMemory] = useState("0.6");
   const [catalog, setCatalog] = useState<CatEntry[]>([]);
@@ -747,7 +812,7 @@ export default function Dashboard() {
     setBusy("hf:search");
     setHfRes(null);
     try {
-      const res = await fetch(`/vast-ops/api/inference/hf-search?q=${encodeURIComponent(q)}`);
+      const res = await opsFetch(`/vast-ops/api/inference/hf-search?q=${encodeURIComponent(q)}`);
       const data = await res.json();
       setHfRes(Array.isArray(data) ? data : []);
     } catch {
@@ -758,11 +823,14 @@ export default function Dashboard() {
   };
 
   const loadAiStatus = useCallback(async () => {
+    if (opsLockedRef.current) return;
     setAiLoading(true);
     try {
-      const response = await fetch("/vast-ops/api/ai/status", { cache: "no-store" });
+      // short budget: an unauthenticated request parks until the credential
+      // prompt is answered, so don't let the first probe stall the panel
+      const response = await opsFetch("/vast-ops/api/ai/status", { cache: "no-store" }, 6000);
+      if (!response.ok) throw new Error(`ops API returned HTTP ${response.status}`);
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
       setAi(data as AiStatus);
       setAiErr("");
     } catch (e) {
@@ -770,7 +838,7 @@ export default function Dashboard() {
     } finally {
       setAiLoading(false);
     }
-  }, []);
+  }, [opsFetch]);
 
   useEffect(() => {
     let stop = false;
@@ -794,7 +862,7 @@ export default function Dashboard() {
         .catch((e) => !stop && setErr(String(e)));
     load();
     const t = setInterval(load, 10000);
-    fetch("/vast-ops/api/inference/catalog")
+    opsFetch("/vast-ops/api/inference/catalog")
       .then((r) => r.json())
       .then((d) => Array.isArray(d) && setCatalog(d))
       .catch(() => {});
@@ -824,9 +892,9 @@ export default function Dashboard() {
     const query = new URLSearchParams({ gpu: gpuOverride ?? mGpu });
     if (mDph.trim()) query.set("max_dph", mDph.trim());
     try {
-      const response = await fetch(`/vast-ops/api/offers?${query.toString()}`);
+      const response = await opsFetch(`/vast-ops/api/offers?${query.toString()}`);
+      if (!response.ok) throw new Error(`ops API returned HTTP ${response.status}`);
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
       setOffers(Array.isArray(data) ? data : []);
     } catch (e) {
       setOfferError(String(e));
@@ -851,7 +919,7 @@ export default function Dashboard() {
     setSmosLogOpen({ ...smosLogOpen, [id]: opening });
     if (!opening) return;
     setSmosLog({ ...smosLog, [id]: "loading console…" });
-    fetch(`/vast-ops/api/smos/console?id=${id}`)
+    opsFetch(`/vast-ops/api/smos/console?id=${id}`)
       .then((r) => r.text())
       .then((t) => setSmosLog((p) => ({ ...p, [id]: t })))
       .catch((e) => setSmosLog((p) => ({ ...p, [id]: String(e) })));
@@ -868,7 +936,7 @@ export default function Dashboard() {
     try {
       const q = new URLSearchParams({ prompt });
       if (routerModel) q.set("model", routerModel);
-      const res = await fetch(`/vast-ops/api/inference/auto-chat?${q}`, { method: "POST" });
+      const res = await opsFetch(`/vast-ops/api/inference/auto-chat?${q}`, { method: "POST" });
       const text = await res.text();
       setRouterAns(text || "(empty reply)");
     } catch (e) {
@@ -890,7 +958,7 @@ export default function Dashboard() {
       const q = new URLSearchParams({
         confirm: "1", model, gpu_memory_utilization: inferenceMemory, image: VLLM_IMAGE,
       });
-      const res = await fetch(`/vast-ops/api/inference/auto-deploy?${q}`, { method: "POST" });
+      const res = await opsFetch(`/vast-ops/api/inference/auto-deploy?${q}`, { method: "POST" });
       const text = await res.text();
       show(res.ok, text);
     } catch (e) {
@@ -907,7 +975,7 @@ export default function Dashboard() {
     setBusy("hiran:chat");
     setHiranAns("…");
     try {
-      const res = await fetch(`/vast-ops/api/inference/hiran-chat?prompt=${encodeURIComponent(prompt)}`, { method: "POST" });
+      const res = await opsFetch(`/vast-ops/api/inference/hiran-chat?prompt=${encodeURIComponent(prompt)}`, { method: "POST" });
       const text = await res.text();
       setHiranAns(text || "(empty reply)");
     } catch (e) {
@@ -937,7 +1005,7 @@ export default function Dashboard() {
     setCodeState("pending");
     setCodeTaskId(null);
     try {
-      const res = await fetch("/vast-ops/api/inference/code-run", {
+      const res = await opsFetch("/vast-ops/api/inference/code-run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -968,7 +1036,7 @@ export default function Dashboard() {
     if (!codeTaskId || !codeRig) return;
     setBusy("code:cancel");
     try {
-      const res = await fetch("/vast-ops/api/inference/code-cancel", {
+      const res = await opsFetch("/vast-ops/api/inference/code-cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rig_id: codeRig, task_id: codeTaskId }),
@@ -998,7 +1066,7 @@ export default function Dashboard() {
         return;
       }
       if (t && !stop) setCodeState(t.state);
-      fetch(`/vast-ops/api/agent/task?rig_id=${encodeURIComponent(codeRig)}&task_id=${encodeURIComponent(codeTaskId)}`)
+      opsFetch(`/vast-ops/api/agent/task?rig_id=${encodeURIComponent(codeRig)}&task_id=${encodeURIComponent(codeTaskId)}`)
         .then((res) => res.json())
         .then((data) => {
           if (stop || !data?.ok) return;
@@ -1036,7 +1104,7 @@ export default function Dashboard() {
   };
   const loadLogs = (id: number, src: string) => {
     setLogs({ ...logs, [id]: `loading ${src} logs…` });
-    fetch(`/vast-ops/api/logs?id=${id}&src=${src}`)
+    opsFetch(`/vast-ops/api/logs?id=${id}&src=${src}`)
       .then((r) => r.text())
       .then((t) => setLogs({ ...logs, [id]: t }))
       .catch((e) => setLogs({ ...logs, [id]: String(e) }));
@@ -1053,7 +1121,7 @@ export default function Dashboard() {
   const ops = async (path: string, method = "GET") => {
     setBusy(path);
     try {
-      const r = await fetch(`/vast-ops/api/${path}`, { method });
+      const r = await opsFetch(`/vast-ops/api/${path}`, { method });
       show(r.ok, await r.text());
     } catch (e) {
       show(false, String(e));
@@ -1085,7 +1153,7 @@ export default function Dashboard() {
     if (action === "stop") query.set("confirm", "1");
     setBusy(key);
     try {
-      const response = await fetch(`/vast-ops/api/inference/${action}?${query.toString()}`, {
+      const response = await opsFetch(`/vast-ops/api/inference/${action}?${query.toString()}`, {
         method: "POST",
       });
       const text = await response.text();
@@ -1129,12 +1197,13 @@ export default function Dashboard() {
         <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl md:text-6xl">
           Multi-Mining Rigs
         </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-white/55 sm:text-base">
+        <p className="max-w-2xl text-sm leading-relaxed text-white/60 sm:text-base">
           Live fleet overview, AI inference capacity, and instance management.
         </p>
         <div className="flex w-full max-w-4xl flex-wrap items-center justify-center gap-2">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/75 sm:px-4 sm:text-sm">
-            <b className="text-white">{rigs.length}</b> active rigs
+            <b className="text-white">{snap ? rigs.length : "—"}</b>{" "}
+            {snap && rigs.length === 1 ? "active rig" : "active rigs"}
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/75 sm:px-4 sm:text-sm">
             {snap ? snap.total_dph.toFixed(4) : "—"}/h
@@ -1176,8 +1245,15 @@ export default function Dashboard() {
       {/* ── section tabs ── */}
       <nav className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-center gap-1.5 px-2 pb-5 sm:px-4" aria-label="Dashboard sections">
         {([
-          ["mining", `Mining rigs · ${rigs.length}`],
-          ["ai", `AI inference · ${ai ? `${ai.totals.inference_rigs}/${ai.rigs.length} online` : "…"}`],
+          ["mining", `Mining rigs · ${snap ? rigs.length : "…"}`],
+          [
+            "ai",
+            ai
+              ? `AI inference · ${ai.totals.inference_rigs}/${ai.rigs.length} online`
+              : opsLocked
+                ? "AI inference · locked"
+                : "AI inference · …",
+          ],
           ["market", "GPU market"],
           ["pool", `SMOS / Pool${snap?.smos ? ` · ${snap.smos.filter((r) => r.online).length}/${snap.smos.length}` : ""}`],
         ] as const).map(([id, label]) => (
@@ -1223,7 +1299,9 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {aiErr ? (
+            {opsLocked ? (
+              <OpsLockedNotice onRetry={unlockOps} />
+            ) : aiErr ? (
               <div role="alert" className="mt-4 rounded-xl border border-[#ff7b72]/25 bg-[#ff7b72]/[0.06] p-4">
                 <p className="text-sm font-semibold text-[#ff9b93]">AI status unavailable</p>
                 <p className="mt-1 break-words text-xs text-white/55">{aiErr}</p>
@@ -1661,7 +1739,7 @@ export default function Dashboard() {
                             setBusy(key);
                             setChatAns((p) => ({ ...p, [rig.id]: "…" }));
                             try {
-                              const res = await fetch(`/vast-ops/api/inference/chat?id=${rig.id}&prompt=${encodeURIComponent(prompt)}`, { method: "POST" });
+                              const res = await opsFetch(`/vast-ops/api/inference/chat?id=${rig.id}&prompt=${encodeURIComponent(prompt)}`, { method: "POST" });
                               const text = await res.text();
                               setChatAns((p) => ({ ...p, [rig.id]: text || "(empty reply)" }));
                             } catch (e) {
@@ -1741,15 +1819,15 @@ export default function Dashboard() {
             </div>
           )}
           <div className="overflow-x-auto rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01]">
-            <table className="w-full min-w-[840px] border-collapse text-left">
+            <table className="w-full min-w-[340px] border-collapse text-left sm:min-w-[620px]">
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.03] text-[10px] font-semibold uppercase tracking-wider text-white/40">
                   <th className="px-3 py-2.5">Rig</th>
                   <th className="px-3 py-2.5">Status</th>
-                  <th className="px-3 py-2.5">Cost</th>
+                  <th className="hidden px-3 py-2.5 sm:table-cell">Cost</th>
                   <th className="px-3 py-2.5">Mining</th>
-                  <th className="px-3 py-2.5">Shares</th>
-                  <th className="px-3 py-2.5">GPU</th>
+                  <th className="hidden px-3 py-2.5 lg:table-cell">Shares</th>
+                  <th className="hidden px-3 py-2.5 md:table-cell">GPU</th>
                   <th className="w-8 px-3 py-2.5" aria-label="expand" />
                 </tr>
               </thead>
@@ -1781,28 +1859,30 @@ export default function Dashboard() {
                     {act.length ? `${act.length} live` : "idle"}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-3 py-3 text-xs text-white/60">${r.dph.toFixed(4)}/h</td>
+                <td className="hidden whitespace-nowrap px-3 py-3 text-xs text-white/60 sm:table-cell">${r.dph.toFixed(4)}/h</td>
                 <td className="px-3 py-3">
                   <div className="flex flex-wrap gap-1">
                     {act.map((m, i) => {
                       const c = coinOf(m);
                       return (
                         <span key={i} className="whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold" style={{ background: `${c.c}15`, color: c.c }}>
-                          {c.name} {fmt(m.hashrate)}
+                          {c.name} {fmt(m.hashrate, true)}
                         </span>
                       );
                     })}
                     {!act.length && <span className="text-white/25">—</span>}
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-3 py-3 text-xs text-white/50">A{totA}</td>
-                <td className="whitespace-nowrap px-3 py-3 text-xs text-white/50">{r.gpu?.util ?? "?"} · {r.gpu?.temp ?? "?"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-3 text-xs text-white/50 lg:table-cell">A{totA}</td>
+                <td className="hidden whitespace-nowrap px-3 py-3 text-xs text-white/50 md:table-cell">{r.gpu?.util ?? "?"} · {r.gpu?.temp ?? "?"}</td>
                 <td className="px-3 py-3 text-white/40">{expanded ? "▴" : "▾"}</td>
               </tr>
               {expanded && (
               <tr className="border-b border-white/10">
                 <td colSpan={7} className="bg-black/30 p-3 sm:p-4">
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 sm:p-4">
+                  {/* clamp to the viewport on phones — otherwise the panel's
+                     intrinsic width stretches the table and needs h-scroll */}
+                  <div className="min-w-0 max-w-[calc(100vw-2.5rem)] rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 sm:max-w-none sm:p-4">
               {r.error && <div role="alert" className="mt-2 break-words rounded-lg bg-[#ff7b72]/[0.07] p-2 text-xs text-[#ff9b93]">{r.error}</div>}
               {r.net && Object.values(r.net).some((v) => !v) && (
                 <div role="alert" className="mt-2 flex items-start gap-2 break-words rounded-lg border border-[#ff7b72]/30 bg-[#ff7b72]/[0.08] p-2 text-xs text-[#ff9b93]">
@@ -1871,7 +1951,9 @@ export default function Dashboard() {
                                   </span>
                                   <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-white">{fmt(m.hashrate)}</span>
                                   {m.etime && <span className="shrink-0 text-[10px] text-white/35">up {m.etime}</span>}
-                                  <Spark data={m.hist} color={coin.c} w={150} h={32} />
+                                  <span className="hidden shrink-0 sm:block">
+                                    <Spark data={m.hist} color={coin.c} w={150} h={32} />
+                                  </span>
                                 </div>
                                 {(m.pool || m.worker) && (
                                   <div className="mt-1 truncate text-[10px] text-white/30" title={`${m.pool || ""} ${m.worker || ""}`}>
@@ -1899,13 +1981,19 @@ export default function Dashboard() {
                       <span title="GPU util / power / temp / vram">
                         <b className="text-white/70">gpu</b> {r.gpu?.util ?? "?"} · {r.gpu?.power ?? "?"} · {r.gpu?.temp ?? "?"} · vram {r.gpu?.mem ?? "?"}
                       </span>
+                      <span title="accepted shares reported by the miners">
+                        <b className="text-white/70">shares</b> A{totA}
+                      </span>
+                      <span title="vast.ai billing rate">
+                        <b className="text-white/70">cost</b> ${r.dph.toFixed(4)}/h · ${(r.dph * 24).toFixed(2)}/day
+                      </span>
                       <span title="tmux sessions"><b className="text-white/70">tmux</b> {(r.sessions ?? []).join(", ") || "—"}</span>
                       <span className="ml-auto truncate font-mono text-white/30" title="ssh endpoint">{r.ssh}</span>
                     </div>
                     <button
                       disabled={!!busy}
                       onClick={() => confirm(`full deploy on ${r.id}?\n\n• SRBMiner → PRL+QTU dual → upstream pools (max hashrate)\n• xmrig → CPU rx/0\n• zion-miner → binary installed (standby)`) && ops(`launch?id=${r.id}&m=full`, "POST")}
-                      className="w-full rounded-xl border border-[#fcd116]/40 bg-gradient-to-r from-[#fcd116]/[0.14] to-transparent px-4 py-2 text-left transition hover:border-[#fcd116]/70 hover:from-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
+                      className="w-full whitespace-normal rounded-xl border border-[#fcd116]/40 bg-gradient-to-r from-[#fcd116]/[0.14] to-transparent px-4 py-2 text-left transition hover:border-[#fcd116]/70 hover:from-[#fcd116]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fcd116] disabled:cursor-wait disabled:opacity-40"
                     >
                       <div className="text-sm font-bold text-[#fcd116]">{isB(`launch?id=${r.id}&m=full`) ? "Deploying…" : "▸ Full deploy"}</div>
                       <div className="mt-0.5 text-[10px] text-white/40">SRBMiner PRL+QTU dual → upstream pools · XMRig CPU · zion standby</div>
@@ -2546,11 +2634,13 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {offerError && (
+            {opsLocked ? (
+              <OpsLockedNotice onRetry={unlockOps} />
+            ) : offerError ? (
               <p role="alert" className="mt-4 rounded-lg border border-[#ff7b72]/25 bg-[#ff7b72]/[0.06] p-3 text-xs text-[#ff9b93]">
                 Could not search offers: {offerError}
               </p>
-            )}
+            ) : null}
 
             {offers && (
               <div className="mt-5">
