@@ -13502,6 +13502,15 @@ function _rigsWorkerName(w){
   return parts.length > 1 ? parts[parts.length - 1] : core;
 }
 
+function _rigsUptime(v){
+  const n = Number(v);
+  if(v == null || v === '' || isNaN(n) || n <= 0) return escapeHtml(v == null || v === '' ? '—' : String(v));
+  const d = Math.floor(n / 86400), h = Math.floor((n % 86400) / 3600), m = Math.floor((n % 3600) / 60);
+  if(d) return d + 'd ' + h + 'h';
+  if(h) return h + 'h ' + m + 'm';
+  return m + 'm';
+}
+
 function _rigsCoinColor(name){
   const map = { XMR: '#fb923c', QTU: '#fcd116', PRL: '#34d399', VRSC: '#a78bfa', ZION: '#7dd3fc' };
   return map[name] || '#9ca3af';
@@ -13665,6 +13674,89 @@ function _rigsRender(d, health, audit){
       </div>` : '<div class="p-6 text-center text-sm text-gray-500">No vast.ai rigs running.<br><span class="text-xs">Rent one from the GPU market in the prototype, or check that vastctl-daemon is up.</span></div>'}
     </div>`;
 
+  // ── SimpleMining + fleet agents (only when the daemon reports them) ──
+  const smosRigs = d.smos || [];
+  const agentRigs = d.agents || [];
+  const smosTable = smosRigs.length ? `
+    <div class="overflow-x-auto"><table class="w-full text-xs">
+      <thead><tr class="text-gray-500 border-b border-white/10 text-[10px] uppercase tracking-wider">
+        <th class="text-left py-2 px-2">Rig</th><th class="text-left py-2 px-2">Status</th>
+        <th class="text-left py-2 px-2">Group / miner</th><th class="text-right py-2 px-2">Hashrate</th>
+        <th class="text-right py-2 px-2">GPU</th><th class="text-right py-2 px-2">Uptime</th>
+      </tr></thead><tbody>
+      ${smosRigs.map(r => {
+        const alerts = (r.alerts || []).filter(a => a !== 'has_alerts');
+        return `<tr class="border-b border-white/5">
+          <td class="py-2 px-2">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-full ${r.online ? 'bg-emerald-400' : 'bg-red-400'}"></span>
+              <b class="text-xs text-white">${escapeHtml(r.name || '?')}</b>
+              <span class="text-[10px] text-gray-500">#${r.id}</span>
+            </div>
+            <div class="text-[10px] text-gray-500">${escapeHtml(r.os || '')} ${escapeHtml(r.ip || '')}</div>
+          </td>
+          <td class="py-2 px-2">
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${r.online ? 'bg-emerald-700/40 text-emerald-300' : 'bg-red-700/40 text-red-300'}">${r.online ? 'online' : 'offline'}</span>
+            ${alerts.map(a => `<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded border border-amber-500/40 bg-amber-500/10 text-amber-300">⚠ ${escapeHtml(a)}</span>`).join('')}
+          </td>
+          <td class="py-2 px-2 text-gray-400"><div>${escapeHtml(r.group || '—')}</div><div class="text-[10px] text-gray-500">${escapeHtml(r.miner || '—')}</div></td>
+          <td class="py-2 px-2 text-right text-gray-200">
+            ${r.hash > 0 ? _rigsHps(r.hash) : ''}${r.hash2 > 0 ? `<div class="text-[10px] text-emerald-300">${_rigsHps(r.hash2)} <span class="text-gray-500">aux</span></div>` : ''}
+            ${!(r.hash > 0) && !(r.hash2 > 0) ? '<span class="text-gray-600">—</span>' : ''}
+            ${(r.acc || r.rej) ? `<div class="text-[10px] text-gray-500">A${r.acc}·R${r.rej}</div>` : ''}
+          </td>
+          <td class="py-2 px-2 text-right text-gray-400">${r.gpus ?? '—'}/${r.gpus_max ?? '—'}
+            ${(r.gpu_temp || []).length ? `<div class="text-[10px] text-gray-500">${escapeHtml((r.gpu_temp || []).join('° / '))}°</div>` : ''}
+          </td>
+          <td class="py-2 px-2 text-right text-gray-500">${_rigsUptime(r.uptime)}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table></div>` : '<div class="text-xs text-gray-500">Žádný SimpleMining rig.</div>';
+
+  const agentsTable = agentRigs.length ? `
+    <div class="overflow-x-auto"><table class="w-full text-xs">
+      <thead><tr class="text-gray-500 border-b border-white/10 text-[10px] uppercase tracking-wider">
+        <th class="text-left py-2 px-2">Rig</th><th class="text-left py-2 px-2">GPUs</th>
+        <th class="text-left py-2 px-2">Miners</th><th class="text-right py-2 px-2">Heartbeat</th>
+        <th class="text-right py-2 px-2">Pending</th>
+      </tr></thead><tbody>
+      ${agentRigs.map(a => {
+        const live = (a.age_s ?? 1e9) < 300;
+        return `<tr class="border-b border-white/5">
+          <td class="py-2 px-2">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-full ${live ? 'bg-emerald-400' : 'bg-red-400'}"></span>
+              <b class="text-xs text-white">${escapeHtml(a.hostname || a.rig_id)}</b>
+              ${a.enrolled === true ? '<span class="text-[9px] px-1.5 py-0.5 rounded border border-emerald-500/40 text-emerald-300">enrolled</span>' : ''}
+              ${a.offline_alert ? '<span class="text-[9px] px-1.5 py-0.5 rounded border border-red-500/40 text-red-300">offline</span>' : ''}
+            </div>
+          </td>
+          <td class="py-2 px-2 text-[10px] text-gray-400">${(a.gpus || []).length ? escapeHtml((a.gpus || []).join(', ')).slice(0, 80) : '—'}</td>
+          <td class="py-2 px-2 text-[10px] text-gray-500">${(a.miners || []).map(m => escapeHtml(String(m).slice(0, 40))).join('<br>') || '—'}</td>
+          <td class="py-2 px-2 text-right text-gray-500">${a.age_s != null ? Math.round(a.age_s) + ' s' : '—'}</td>
+          <td class="py-2 px-2 text-right ${a.pending ? 'text-amber-300' : 'text-gray-500'}">${a.pending ?? 0}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table></div>` : '<div class="text-xs text-gray-500">Žádný fleet agent (enrollment běží na operátorském PC).</div>';
+
+  const othersCard = `
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div class="zion-panel p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2"><i class="fas fa-server text-zion-gold"></i> SimpleMining</h2>
+          <span class="text-[10px] text-gray-500">${smosRigs.filter(r => r.online).length}/${smosRigs.length} online</span>
+        </div>
+        ${smosTable}
+      </div>
+      <div class="zion-panel p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2"><i class="fas fa-tower-broadcast text-sky-300"></i> Fleet agenti</h2>
+          <span class="text-[10px] text-gray-500">${agentRigs.filter(a => (a.age_s ?? 1e9) < 300).length}/${agentRigs.length} live</span>
+        </div>
+        ${agentsTable}
+      </div>
+    </div>`;
+
   // ── pool card ──
   const tops = pool.top_miners || [];
   const poolCard = `
@@ -13744,7 +13836,7 @@ function _rigsRender(d, health, audit){
       : '<div class="text-xs text-gray-500">Zatím žádná akce z dashboardu.</div>'}
     </div>`;
 
-  body.innerHTML = fleetCard + '<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">' +
+  body.innerHTML = fleetCard + othersCard + '<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">' +
     '<div class="xl:col-span-2">' + poolCard + '</div>' + sourcesCard + '</div>' + auditCard;
 }
 
