@@ -96,8 +96,8 @@ const L5FreeWorldCopy = {
   planetaryMap: { cs: `Planetární mapa`, en: `Planetary map` },
   sixNodesOnPlanet: { cs: `Dvanáct bodů na planetě`, en: `Twelve nodes on the planet` },
   l5MapDesc: {
-    cs: `Zakládající L5 komunity napříč kontinenty — od údolí Nabão po poušť Ngari pod Kailashem a síň záznamu na plateu Gízy. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru, Boa Esperança, Kailash a Amenti zůstávají vizemi — vztahové uzly na posvátných a historických místech; Amenti je dvanáctý bod na pevnině. Ekam je jediný uzel, který už stojí — chrám z roku 2008 slouží jako předloha všem ostatním. María del Camino — plující uzel se solárními plachtami — všechny body fyzicky spojuje přes oceány. A třináctý uzel není na mapě, protože je na vodě: archa Království srdce · Nirvana, plující kolonie do sta lidí, která se vrací pro ty, kdo zůstali ve vodě — a její trasu určují keporkaci. Nad nimi stojí první uzel nebe: Nabukano — nebeská flotila, která není čtrnáctým pozemským bodem, ale svislou osou mezi pozemním uzlem LUMI a stanicí Issobella.`,
-    en: `The L5 communities across the continents — from the Nabão valley to the Ngari desert under Kailash and the hall of records on the Giza plateau. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru, Boa Esperança, Kailash and Amenti remain visions — relationship nodes on sacred and historic ground; Amenti is the twelfth point on land. Ekam is the only node already standing — a temple built in 2008 that serves as the template for all the others. María del Camino — a sailing node on solar sails — physically connects every point across the oceans. And the thirteenth node is not on the map, because it is on the water: the ark Království srdce · Nirvana, a sailing colony of up to one hundred people that returns for those left in the water — its route set by the humpback whales. Above them stands the first node of the sky: Nabukano — the sky fleet, which is not a fourteenth Earth point but the vertical axis between the LUMI ground node and the Issobella station.`,
+    cs: `Zakládající L5 komunity napříč kontinenty — od údolí Nabão po poušť Ngari pod Kailashem a síň záznamu na plateu Gízy. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru, Boa Esperança, Kailash a Amenti zůstávají vizemi — vztahové uzly na posvátných a historických místech; Amenti je dvanáctý bod na pevnině. Ekam je jediný uzel, který už stojí — chrám z roku 2008 slouží jako předloha všem ostatním. María del Camino — plující uzel se solárními plachtami — všechny body fyzicky spojuje přes oceány. A třináctý uzel není na mapě, protože je na vodě: archa Království srdce · Nirvana, plující kolonie do sta lidí, která se vrací pro ty, kdo zůstali ve vodě — a její trasu určují keporkaci.`,
+    en: `The L5 communities across the continents — from the Nabão valley to the Ngari desert under Kailash and the hall of records on the Giza plateau. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru, Boa Esperança, Kailash and Amenti remain visions — relationship nodes on sacred and historic ground; Amenti is the twelfth point on land. Ekam is the only node already standing — a temple built in 2008 that serves as the template for all the others. María del Camino — a sailing node on solar sails — physically connects every point across the oceans. And the thirteenth node is not on the map, because it is on the water: the ark Království srdce · Nirvana, a sailing colony of up to one hundred people that returns for those left in the water — its route set by the humpback whales.`,
   },
   liveRegistry: { cs: `Živý registr`, en: `Live registry` },
   projectsAndGrants: { cs: `Projekty & granty`, en: `Projects & Grants` },
@@ -296,17 +296,6 @@ const getCommunities = (cs: boolean) => [
     tags: cs ? ['Archa', 'Velrybí obrace', 'Kolonie do sta'] : ['The Ark', 'Whale circuit', 'Colony of one hundred'],
     href: '/terranova/kralovstvi-srdce',
     cover: '/images/kralovstvi-srdce/hero.webp',
-  },
-  {
-    name: 'Nabukano · Nebeská flotila',
-    location: cs ? 'Oběžná dráha Nové Země · osa LUMI → Issobella' : 'New Earth orbit · the LUMI → Issobella axis',
-    status: 'vision' as const,
-    desc: cs
-      ? 'Čtrnáctý pozemský uzel to není — je to první uzel nebe. Mateřská loď Nabukano nese dokovací rám a tři nebeské Marie: blízké nebe, prostor mezi Zemí a Měsícem a dlouhou cestu ke světlu. Svislá osa začíná u pozemního uzlu LUMI v Kostarice a končí u stanice Issobella; mezi tím není prázdno, mezi tím je cesta. Kýl položený není a žádný trup neexistuje — kniha a scéna jsou obraz konceptu.'
-      : 'Not a fourteenth Earth node — the first node of the sky. The mother ship Nabukano carries a docking frame and three sky Marías: the near sky, the space between Earth and the Moon, and the long road toward the light. The vertical axis begins at the LUMI ground node in Costa Rica and ends at the Issobella station; between them there is no emptiness, between them is the journey. No keel has been laid and no hull exists — the book and the scene are an image of the concept.',
-    tags: cs ? ['L6', 'Nebeská flotila', 'Osa'] : ['L6', 'Sky fleet', 'Axis'],
-    href: '/terranova/nabukano',
-    cover: '/images/nabukano/hero.webp',
   },
 ];
 

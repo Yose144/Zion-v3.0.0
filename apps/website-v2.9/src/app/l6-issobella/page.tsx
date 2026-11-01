@@ -804,6 +804,68 @@ export default function L6IssobellaPage() {
           </div>
         </motion.section>
 
+        {/* ── UZLY L6 — stanice + flotila ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="zion-rainbow-card p-5 md:p-8"
+          style={{ '--rc': '56, 189, 248' } as React.CSSProperties}
+        >
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Uzly L6' : 'L6 nodes'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Orbit className="h-7 w-7 text-sky-300" />
+              {cs ? 'Dva uzly nebe' : 'Two nodes of the sky'}
+            </h2>
+            <p className="text-sm text-gray-400">
+              {cs
+                ? 'Stanice stojí, flotila se hýbe. Issobella drží prstenec, Nabukano drží osu k zemi — dohromady tvoří nebe, ke kterému se dá vrátit.'
+                : 'The station stands, the fleet moves. Issobella holds the ring, Nabukano holds the axis to the ground — together they form a sky you can return to.'}
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="flex items-center justify-between mb-3">
+                <Satellite className="h-6 w-6 text-zion-purple" />
+                <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/55">
+                  {cs ? 'Horizont' : 'Horizon'}
+                </span>
+              </div>
+              <h3 className="font-semibold text-white mb-2">Issobella</h3>
+              <p className="text-sm text-gray-400">
+                {cs
+                  ? 'Orbitální stanice L6: prstenec ~200 m napříč, ~2 otáčky za minutu, cíl 0,38 g. Nahoře žádný modul neexistuje — roadmapa 2030–2045+ je horizont.'
+                  : 'The L6 orbital station: a ring ~200 m across, ~2 revolutions per minute, 0.38 g target. Nothing is up there yet — the 2030–2045+ roadmap is a horizon.'}
+              </p>
+            </div>
+
+            <Link
+              href="/terranova/nabukano"
+              className="zion-rainbow-sub group block p-5 transition duration-300 hover:-translate-y-1 hover:bg-white/5"
+              style={{ '--rc': '56, 189, 248' } as React.CSSProperties}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <Orbit className="h-6 w-6 text-sky-300" />
+                <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/55">
+                  {cs ? 'Vize' : 'Vision'}
+                </span>
+              </div>
+              <h3 className="font-semibold text-white mb-2">Nabukano · {cs ? 'Nebeská flotila' : 'Sky fleet'}</h3>
+              <p className="text-sm text-gray-400">
+                {cs
+                  ? 'Pohyblivý uzel nebe: mateřská loď s dokovacím rámem a tři nebeské Marie. Svislá osa začíná u pozemního uzlu LUMI v Kostarice. Kýl položený není.'
+                  : 'A mobile node of the sky: a mother ship with a docking frame and three sky Marías. The vertical axis begins at the LUMI ground node in Costa Rica. No keel has been laid.'}
+              </p>
+              <span className="mt-3 inline-flex items-center gap-1 text-sm text-sky-300 group-hover:gap-2 transition-all">
+                {cs ? 'Podrobnosti' : 'Details'} <ArrowRight className="h-4 w-4" />
+              </span>
+            </Link>
+          </div>
+        </motion.section>
+
         {/* ── BOTTOM CTA ── */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}

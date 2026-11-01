@@ -363,29 +363,6 @@ const PROJECTS: ProjectCardData[] = [
       { value: '13. uzel', labelCs: 'Pořadí', labelEn: 'Node' },
     ],
   },
-  {
-    href: '/terranova/nabukano',
-    title: 'Nabukano · Nebeská flotila',
-    location: 'Oběžná dráha Nové Země · osa LUMI → Issobella',
-    eyebrow: 'L6 · The Sky Fleet · Mobile node',
-    statusCs: 'Vize',
-    statusEn: 'Vision',
-    descriptionCs:
-      'První uzel nebe — a přesto ne čtrnáctý pozemský bod. Mateřská loď Nabukano nese dokovací rám a tři nebeské Marie: blízké nebe, prostor mezi Zemí a Měsícem a dlouhou cestu ke světlu. Svislá osa začíná u pozemního uzlu LUMI v Kostarice a končí u stanice Issobella. Kýl položený není; kniha a scéna jsou obraz konceptu.',
-    descriptionEn:
-      'The first node of the sky — and still not a fourteenth Earth point. The mother ship Nabukano carries a docking frame and three sky Marías: the near sky, the space between Earth and the Moon, and the long road toward the light. The vertical axis begins at the LUMI ground node in Costa Rica and ends at the Issobella station. No keel has been laid; the book and the scene are an image of the concept.',
-    features: [
-      { icon: Orbit, labelCs: 'Mateřská loď s dokem', labelEn: 'Mother ship with a dock' },
-      { icon: Sailboat, labelCs: 'Tři nebeské Marie', labelEn: 'Three sky Marías' },
-      { icon: Network, labelCs: 'Osa LUMI → Issobella', labelEn: 'The LUMI → Issobella axis' },
-      { icon: BookOpen, labelCs: 'Kniha Nabukano', labelEn: 'The book Nabukano' },
-    ],
-    metrics: [
-      { value: '4', labelCs: 'Trupy', labelEn: 'Hulls' },
-      { value: 'L6', labelCs: 'Vrstva', labelEn: 'Layer' },
-      { value: 'Vize', labelCs: 'Stav', labelEn: 'Status' },
-    ],
-  },
 ];
 
 export default function PioneerProjectCards({ cs }: { cs: boolean }) {
