@@ -4,8 +4,8 @@ export const manifest = definePortal({
   id: 'hiran',
   title: { cs: 'Věž', en: 'Tower' },
   summary: {
-    cs: 'Hiran — AI vrstva. Stav inference; rozhovor přijde ve F4.',
-    en: 'Hiran — the AI layer. Inference status; chat arrives in F4.',
+    cs: 'Hiran — AI vrstva. Stav inference a rozhovor nad kanonickými dokumenty.',
+    en: 'Hiran — the AI layer. Inference status and a chat over the canonical docs.',
   },
   icon: 'tower',
   order: 70,
@@ -14,5 +14,14 @@ export const manifest = definePortal({
   auth: 'none',
   windows: [{ id: 'status', title: { cs: 'Stav', en: 'Status' }, size: 'md' }],
   reads: [{ id: 'probe', service: 'hiran', path: '/api/ai-chat', cache: 30 }],
-  status: 'placeholder',
+  writes: [
+    {
+      id: 'chat',
+      title: { cs: 'Otázka Hiranovi', en: 'Ask Hiran' },
+      auth: 'session',
+      service: 'hiran',
+      path: '/api/ai-chat',
+    },
+  ],
+  status: 'live',
 });

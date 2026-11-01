@@ -2,6 +2,7 @@ import type { Locale } from '@zion/contract';
 import { readSpec } from '@zion/contract';
 import { t } from '@zion/i18n';
 import { api } from '@/core/api';
+import { HiranChat } from '@/core/hiran/HiranChat';
 import { manifest } from './manifest';
 
 interface ChatProbe {
@@ -15,12 +16,12 @@ export default async function HiranPortal({ locale }: { locale: Locale }) {
 
   return (
     <>
-      <div className="k-stats">
+      <div className="k-stats" style={{ maxWidth: 720 }}>
         <div className="k-stat">
-          <div className="k-stat-label">{t(locale, 'available')}</div>
-          <div className="k-stat-value">
-            {probe?.available ? 'online' : 'offline'}
-          </div>
+          {/* Probe měří gateway, ne model — ten může spát i když gateway běží.
+              Proto „gateway", ne „online": UI neslibuje víc, než ví. */}
+          <div className="k-stat-label">gateway</div>
+          <div className="k-stat-value">{probe?.available ? 'up' : 'down'}</div>
         </div>
         <div className="k-stat">
           <div className="k-stat-label">{t(locale, 'model')}</div>
@@ -36,13 +37,15 @@ export default async function HiranPortal({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      <div className="k-empty" style={{ textAlign: 'left' }}>
-        <strong>{t(locale, 'comingSoon')}</strong>
-        <br />
-        {locale === 'cs'
-          ? 'Rozhovor s Hiranem je zápisová operace — otevírá se ve F4 spolu s podpisem session. Dnes Věž ukazuje jen stav inference.'
-          : 'Talking to Hiran is a write operation — it opens in F4 together with session signing. Today the Tower shows inference status only.'}
+      <div style={{ marginTop: 16 }}>
+        <HiranChat locale={locale} />
       </div>
+
+      <p className="k-sub" style={{ marginTop: 14, maxWidth: 640 }}>
+        {locale === 'cs'
+          ? 'Odpovědi jdou přes server Kingdomu — prohlížeč nemá žádný klíč ani interní adresu. Když inference uzel spí, Hiran to řekne místo chybové stránky.'
+          : 'Answers are proxied through the Kingdom server — the browser holds no key and no internal address. When the inference node sleeps, Hiran says so instead of failing.'}
+      </p>
     </>
   );
 }

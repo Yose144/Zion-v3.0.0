@@ -151,6 +151,16 @@ Dopad: chybový 5xx místo 4xx (zapleveluje metriky, mate klienty, kteří čtou
 1. **`rsync --delete` u víc zdrojů** do jednoho adresáře maže i `.env` a `node_modules` → skončí kódem 23 → `set -e` zastaví deploy ve kroku 2 → **služba se vůbec nerestartuje**. Přesně to se stalo: soubory se nakopírovaly, restart neproběhl, musel jsem ho dokončit ručně. Fix: artefakty se mažou explicitně před rsyncem, `--delete` je pryč.
 2. **Chybělo `--chown=zion:zion`** — rsync jako root zachová uid z macu (`501:staff`), takže služba běžela nad soubory, které nevlastní. Fix: `--chown` v rsyncu.
 
+### Kingdom F4a — Věž (Hiran) je živá (2026-11-01)
+
+Poslední portál, který říkal „připravuji", je hotový:
+
+- `POST /api/hiran/chat` — serverový proxy na `app./api/ai-chat`, **rate limit 20/min per IP**, strop promptu 800 znaků, timeout 30 s, žádný klíč v prohlížeči.
+- `core/hiran/HiranChat.tsx` — rozhovor (ne v portálu: portály nesmí volat síť, hlídá to `check-boundaries`).
+- manifest: `status: 'live'` + deklarovaný **write intent** `chat` (první zápis v celém kontraktu).
+- Chování při spícím uzlu: `200 {offline:true}` a viditelná poznámka — ne 5xx. Ověřeno živě: inference uzel je teď offline (operátor spí), takže chat správně řekl „Hiran spí" místo chybové stránky.
+- **Opravena nepravda v UI:** probe měří *gateway*, ne model — karta proto hlásí `gateway: up`, ne „online". Model může spát i při běžící gateway a UI to nemá slibovat.
+
 **Zbývá (S3–S4):** kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
 
 ---
