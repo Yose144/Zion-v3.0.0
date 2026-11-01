@@ -40,6 +40,10 @@
 
 set -euo pipefail
 
+# Zálohy obsahují credentials (edge-environment.sh) a DB — nikdy nesmí být
+# world-readable. Fresh tar/dump by jinak zdědil 0644 z umasku shellu.
+umask 077
+
 REPO_ROOT="/opt/zion"
 BACKUP_DIR="/opt/zion/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
