@@ -19,6 +19,7 @@ import {
   ListChecks,
   Mail,
   Moon,
+  Orbit,
   NotebookPen,
   PenLine,
   Route,
@@ -424,6 +425,23 @@ export const KRUHBOHYNI_BOOK = korpusBook({
   },
 });
 
+export const NABUKANO_BOOK = korpusBook({
+  id: 'nabukano',
+  dir: 'Nabukano',
+  accent: '56, 189, 248',
+  icon: Orbit,
+  kicker: { cs: 'Nebeská flotila · L6 · CZ', en: 'The sky fleet · L6 · CZ' },
+  title: { cs: 'Nabukano', en: 'Nabukano' },
+  subtitle: {
+    cs: 'Kniha Nebeské flotily — loď, která pluje nahoru, a dok, který se hýbe.',
+    en: 'The Book of the Sky Fleet — the ship that sails upward, and the dock that moves.',
+  },
+  description: {
+    cs: 'Pohyblivý uzel L6 mezi pozemním uzlem LUMI a stanicí Issobella: jméno z Babylonu, tři nebeské Marie, dok s lucernou a tabule návratů. Není to čtrnáctý pozemský uzel — je to svislá osa. Celý děj mýtus/vize; žádný trup neexistuje.',
+    en: 'The mobile L6 node between the ground node LUMI and the Issobella station: a name from Babylon, three sky Marías, a dock with a lantern and the return board. Not a fourteenth Earth node — a vertical axis. The whole story is myth/vision; no hull exists.',
+  },
+});
+
 export const MISEAMENTI_BOOK = korpusBook({
   id: 'miseamenti',
   dir: 'MiseAmenti',
@@ -454,6 +472,7 @@ export const BOOKS: Record<string, BookDef> = {
   naceste: NACESTE_BOOK,
   nirvanacloud: NIRVANACLOUD_BOOK,
   issobella: ISSOBELLA_BOOK,
+  nabukano: NABUKANO_BOOK,
   kruhbohyni: KRUHBOHYNI_BOOK,
   miseamenti: MISEAMENTI_BOOK,
 };

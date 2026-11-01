@@ -287,6 +287,18 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         rc: '251, 146, 60',
       },
       {
+        id: 'nabukano',
+        title: { cs: 'Nabukano', en: 'Nabukano' },
+        description: {
+          cs: 'Kniha Nebeské flotily — loď, která pluje nahoru. Pohyblivý uzel L6 mezi pozemním uzlem LUMI a stanicí Issobella: jméno z Babylonu, tři nebeské Marie, dok s lucernou a tabule návratů. Mýtus a vize, ne slib technologie.',
+          en: 'The Book of the Sky Fleet — the ship that sails upward. The mobile L6 node between the ground node LUMI and the Issobella station: a name from Babylon, three sky Marías, a dock with a lantern and the return board. Myth and vision, not a technology promise. Czech only.',
+        },
+        status: 'draft',
+        href: '/zion-archive/nabukano/cist',
+        czOnly: true,
+        rc: '56, 189, 248',
+      },
+      {
         id: 'kruhbohyni',
         title: { cs: 'Kruh Bohyní', en: 'The Circle of Goddesses' },
         description: {
