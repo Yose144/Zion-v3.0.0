@@ -35,6 +35,7 @@
 //! - Read-only queries to track Issobella fund accumulation
 //! - L2 DAO for governance proposals on mission funding
 
+pub mod anchor;
 pub mod api;
 pub mod config;
 pub mod dao_client;
@@ -45,10 +46,11 @@ pub mod l1_scanner;
 pub mod metrics;
 
 // Re-exports
+pub use anchor::{anchor_config, AnchorConfig, AnchorMode, AnchorSweepReport};
 pub use config::IssobellaConfig;
 pub use db::{
-    DisbursementRecord, FundBalance, IssobellaDb, MissionRecord, ObservationRecord,
-    ResearchProposal,
+    AnchorBatchRecord, DisbursementRecord, FundBalance, IssobellaDb, MissionRecord,
+    ObservationRecord, PaperRecord, ResearchProposal,
 };
 pub use error::{IssobellaError, IssobellaResult};
 pub use l1_scanner::{L1Scanner, ScannerConfig};

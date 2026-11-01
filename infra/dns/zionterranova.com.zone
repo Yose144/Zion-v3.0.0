@@ -25,6 +25,7 @@ $ORIGIN zionterranova.com.
 *                  	3600	IN A    	62.171.141.136
 api                	3600	IN A    	62.171.141.136
 app                	3600	IN A    	207.180.217.100
+kingdom            	3600	IN A    	207.180.217.100
 auth               	3600	IN A    	207.180.217.100
 autoconfig         	3600	IN CNAME	autodiscover.webglobe.cz.
 autodiscover       	3600	IN CNAME	autodiscover.webglobe.cz.

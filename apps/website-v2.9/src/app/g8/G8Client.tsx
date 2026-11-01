@@ -206,7 +206,7 @@ export default function G8Client() {
             {statusLabel}
           </span>
           {gateLabel && (
-            <span className="text-[10px] px-2 py-1 rounded-full border border-white/10 bg-white/5 text-gray-400">
+            <span className="text-[11px] px-2 py-1 rounded-full border border-white/10 bg-white/5 text-gray-400">
               {gateLabel}
               {gateReasonLabel ? ` — ${gateReasonLabel}` : ''}
             </span>
@@ -222,48 +222,48 @@ export default function G8Client() {
 
         <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-gray-500">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-gray-500">
               <TrendingUp className="h-3.5 w-3.5" /> {t('uptime')}
             </div>
             <div className={`mt-2 text-2xl font-extrabold font-mono ${uptime == null ? 'text-gray-400' : uptimeOk ? 'text-emerald-300' : 'text-rose-300'}`}>
               {loading && !data ? '…' : fmtPct(uptime)}
             </div>
-            <div className="mt-1 text-[10px] text-gray-500">{t('uptimeTarget')}</div>
+            <div className="mt-1 text-[11px] text-gray-500">{t('uptimeTarget')}</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-gray-500">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-gray-500">
               <Activity className="h-3.5 w-3.5" /> {t('evidenceCoverage')}
             </div>
             <div className="mt-2 text-2xl font-extrabold font-mono text-cyan-300">
               {loading && !data ? '…' : fmtPct(data?.evidence_coverage_percent ?? null)}
             </div>
-            <div className="mt-1 text-[10px] text-gray-500">
+            <div className="mt-1 text-[11px] text-gray-500">
               {data?.sample_counts ? `${data.sample_counts.good ?? '—'}/${data.sample_counts.expected ?? '—'} ${t('samples')}` : '—'}
             </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-gray-500">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-gray-500">
               <Clock className="h-3.5 w-3.5" /> {t('elapsed')}
             </div>
             <div className="mt-2 text-2xl font-extrabold font-mono text-white">
               {loading && !data ? '…' : fmtDuration(data?.elapsed_seconds ?? null, lang)}
             </div>
-            <div className="mt-1 text-[10px] text-gray-500">{t('started')}: {fmtTime(data?.started ?? null)}</div>
+            <div className="mt-1 text-[11px] text-gray-500">{t('started')}: {fmtTime(data?.started ?? null)}</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-gray-500">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-gray-500">
               <Timer className="h-3.5 w-3.5" /> {t('remaining')}
             </div>
             <div className="mt-2 text-2xl font-extrabold font-mono text-white">
               {loading && !data ? '…' : fmtDuration(data?.remaining_seconds ?? null, lang)}
             </div>
-            <div className="mt-1 text-[10px] text-gray-500">{t('targetEnd')}: {fmtTime(data?.target_end ?? null)}</div>
+            <div className="mt-1 text-[11px] text-gray-500">{t('targetEnd')}: {fmtTime(data?.target_end ?? null)}</div>
           </div>
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase tracking-wider text-gray-500">{t('progress')}</span>
+            <span className="text-[11px] uppercase tracking-wider text-gray-500">{t('progress')}</span>
             <span className="text-xs font-mono text-gray-300">{(progress ?? 0).toFixed(2)}%</span>
           </div>
           <div className="relative h-4 w-full overflow-hidden rounded-full bg-black/50">
@@ -282,12 +282,12 @@ export default function G8Client() {
               {t('incidents')}: <span className="font-mono text-gray-300">{data?.incident_count ?? '—'}</span>
               {' · '}{t('criticalIncidents')}: <span className={`font-mono ${((data?.critical_incident_count ?? 0) > 0) ? 'text-rose-300' : 'text-gray-300'}`}>{data?.critical_incident_count ?? '—'}</span>
             </span>
-            <span className="ml-auto text-[10px] text-gray-500">{t('autoRefresh')}</span>
+            <span className="ml-auto text-[11px] text-gray-500">{t('autoRefresh')}</span>
           </div>
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <div className="mb-1 text-[10px] uppercase tracking-wider text-gray-500">{t('signals')}</div>
+          <div className="mb-1 text-[11px] uppercase tracking-wider text-gray-500">{t('signals')}</div>
           <p className="mb-4 text-xs text-gray-500">{t('signalSub')}</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {Object.entries(data?.service_uptime_percent ?? {}).map(([name, v]) => (
@@ -303,7 +303,7 @@ export default function G8Client() {
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <div className="mb-3 flex items-center gap-2 text-[10px] uppercase tracking-wider text-gray-500">
+          <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-wider text-gray-500">
             <ShieldCheck className="h-3.5 w-3.5" /> {t('rules')}
           </div>
           <ul className="space-y-2 text-sm text-gray-400 leading-relaxed">
@@ -313,7 +313,7 @@ export default function G8Client() {
             <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400/70" />{t('rule4')}</li>
           </ul>
           {data?.last_evidence_update && (
-            <div className="mt-4 text-[10px] text-gray-600">
+            <div className="mt-4 text-[11px] text-gray-600">
               {t('lastUpdate')}: {fmtTime(data.last_evidence_update)} · <Globe className="inline h-3 w-3" /> live
             </div>
           )}

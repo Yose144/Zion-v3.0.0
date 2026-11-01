@@ -1,10 +1,11 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { AtlanticOcean } from './CoastalLandscape';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SkyFill, basaltRock } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -41,28 +42,28 @@ function cliffGeo(seed: number, len: number, h: number, w: number) {
 
 /** útesový hřeben — hlavní mys + ustupující hřebeny */
 function Cliffs() {
-  const main = useMemo(() => cliffGeo(3, 34, 20, 9), []);
-  const back1 = useMemo(() => cliffGeo(7, 24, 15, 8), []);
-  const back2 = useMemo(() => cliffGeo(11, 19, 12, 7), []);
-  useEffect(() => () => { main.dispose(); back1.dispose(); back2.dispose(); }, [main, back1, back2]);
+  const main = React.useMemo(() => cliffGeo(3, 34, 20, 9), []);
+  const back1 = React.useMemo(() => cliffGeo(7, 24, 15, 8), []);
+  const back2 = React.useMemo(() => cliffGeo(11, 19, 12, 7), []);
+  React.useEffect(() => () => { main.dispose(); back1.dispose(); back2.dispose(); }, [main, back1, back2]);
   return (
     <group>
       {/* hlavní mys — čelo k moři */}
       <mesh geometry={main} position={[-16, 1, -14]} castShadow receiveShadow>
-        <meshStandardMaterial color="#746b5d" roughness={0.95} />
+        <primitive object={basaltRock(5)} attach="material" />
       </mesh>
       {/* ustupující hřebeny za mysem — vpravo do dálky */}
       <mesh geometry={back1} position={[16, 0.5, -38]} rotation={[0, -0.28, 0]} castShadow>
-        <meshStandardMaterial color="#52402e" roughness={0.95} />
+        <primitive object={basaltRock(4)} attach="material" />
       </mesh>
       <mesh geometry={back2} position={[46, 0, -52]} rotation={[0, -0.42, 0]}>
-        <meshStandardMaterial color="#4a3a2c" roughness={0.95} />
+        <primitive object={basaltRock(4)} attach="material" />
       </mesh>
       {/* útesy zahlazující pravý bok — nižší předhůří */}
       {[...Array(5)].map((_, i) => (
         <mesh key={i} position={[-38 + i * 9, 2.5 + rng(i) * 2, -8 - rng(i + 4) * 5]} scale={[4.5, 3 + rng(i + 2) * 2, 4]} castShadow>
           <sphereGeometry args={[1.4, 8, 6]} />
-          <meshStandardMaterial color="#746b5d" roughness={0.95} />
+          <primitive object={basaltRock(5)} attach="material" />
         </mesh>
       ))}
       {/* skaliska ve vodě u paty — placatá, tmavá */}
@@ -78,7 +79,7 @@ function Cliffs() {
 
 /** fynbos — nízké křoviny na náhorní plošině + protea akcenty */
 function Fynbos() {
-  const plants = useMemo(() => {
+  const plants = React.useMemo(() => {
     const arr: { p: [number, number, number]; s: number; flower: boolean }[] = [];
     for (let i = 0; i < 90; i++) {
       const t = rng(i + 9);
@@ -111,7 +112,7 @@ function Fynbos() {
 
 /** maják Cape Point — bílá věž s lucernou + rotující svazek */
 function Lighthouse() {
-  const beam = useRef<THREE.Group>(null);
+  const beam = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (beam.current) beam.current.rotation.y = motionTime(clock) * 0.5;
   });
@@ -150,13 +151,13 @@ function Lighthouse() {
       </mesh>
       {/* rotující svazek */}
       <group ref={beam} position={[0, 8.95, 0]}>
-        <mesh position={[9, 0, 0]} rotation={[0, 0, 0]}>
-          <boxGeometry args={[18, 0.5, 0.12]} />
-          <meshBasicMaterial color="#ffe9a8" transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <mesh position={[7, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+          <coneGeometry args={[1.5, 14, 14, 1, true]} />
+          <meshBasicMaterial color="#ffe9a8" transparent opacity={0.1} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
-        <mesh position={[-7, 0, 0]}>
-          <boxGeometry args={[14, 0.35, 0.1]} />
-          <meshBasicMaterial color="#ffe9a8" transparent opacity={0.22} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <mesh position={[-5.5, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <coneGeometry args={[1.1, 11, 12, 1, true]} />
+          <meshBasicMaterial color="#ffe9a8" transparent opacity={0.07} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
       </group>
       <pointLight position={[0, 9, 0]} intensity={3} color="#ffca5e" distance={26} decay={2} />
@@ -192,8 +193,8 @@ function StoneCircle({ x, z }: { x: number; z: number }) {
 
 /** oceán — dvě vody se švem + pěna o skály + vlny */
 function TwoOceans() {
-  const foam = useRef<THREE.Group>(null);
-  const swell = useRef<THREE.Mesh>(null);
+  const foam = React.useRef<THREE.Group>(null);
+  const swell = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const t = motionTime(clock);
     if (foam.current) {
@@ -213,11 +214,6 @@ function TwoOceans() {
   return (
     <group>
       <AtlanticOcean level={-.7} coastal={false} roughSea />
-      {/* příbojová vlna sunoucí se ke břehu */}
-      <mesh ref={swell} rotation={[-Math.PI / 2, 0, 0.04]} position={[8, -0.55, 16]}>
-        <planeGeometry args={[70, 2.6]} />
-        <meshStandardMaterial color="#cfe8e2" transparent opacity={0.4} roughness={0.5} />
-      </mesh>
       {/* pěna u skalisek */}
       <group ref={foam}>
         {[...Array(10)].map((_, i) => (
@@ -240,7 +236,7 @@ function TwoOceans() {
 
 /** mořští ptáci kroužící u mysu */
 function Seabirds() {
-  const flock = useRef<THREE.Group>(null);
+  const flock = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (flock.current) flock.current.rotation.y = motionTime(clock) * 0.12;
   });
@@ -265,74 +261,29 @@ function Seabirds() {
   );
 }
 
-/** bouřlivá obloha — temné mraky vlevo, zlaté paprsky ze slunce vpravo */
-function StormSky() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 sunDir;
-          float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-          float noise(vec2 p){
-            vec2 i = floor(p), f = fract(p);
-            f = f * f * (3.0 - 2.0 * f);
-            float a = hash(vec3(i, 1.0)), b = hash(vec3(i + vec2(1.0, 0.0), 1.0));
-            float c = hash(vec3(i + vec2(0.0, 1.0), 1.0)), d = hash(vec3(i + vec2(1.0, 1.0), 1.0));
-            return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-          }
-          void main(){
-            vec3 d = normalize(vP);
-            // základní gradient — temná bouře nahoře, zlato u obzoru vpravo
-            float east = clamp(dot(normalize(d.xz), normalize(vec2(0.57, -0.83))) * 0.5 + 0.5, 0.0, 1.0);
-            vec3 storm = mix(vec3(0.10, 0.11, 0.15), vec3(0.05, 0.055, 0.08), smoothstep(0.0, 0.55, d.y));
-            vec3 gold = mix(vec3(0.95, 0.68, 0.34), vec3(0.42, 0.3, 0.26), smoothstep(-0.02, 0.4, d.y));
-            vec3 c = mix(storm, gold, clamp(east * (1.0 - smoothstep(0.05, 0.5, d.y)) * 1.4, 0.0, 1.0));
-            // mraky — vrstvený šum
-            float cl = noise(d.xz / max(d.y, 0.08) * 2.2) * 0.6 + noise(d.xz / max(d.y, 0.08) * 5.5) * 0.4;
-            float cloud = smoothstep(0.42, 0.75, cl) * smoothstep(-0.02, 0.18, d.y);
-            c = mix(c, vec3(0.07, 0.075, 0.1), cloud * (1.0 - east * 0.55));
-            // slunce + boží paprsky
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.88, 0.55) * pow(s, 1800.0) * 1.4
-               + vec3(1.0, 0.7, 0.35) * pow(s, 45.0) * 0.18;
-            // radiální paprsky ze slunce
-            vec3 sp = normalize(cross(sunDir, vec3(0.0, 1.0, 0.0)));
-            float ang = atan(dot(d, sp), dot(d, normalize(cross(sp, sunDir))));
-            float rays = pow(0.5 + 0.5 * sin(ang * 14.0 + cl * 6.0), 3.0);
-            c += vec3(1.0, 0.82, 0.45) * rays * pow(s, 12.0) * 0.14;
-            gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
-          }
-        `,
-        uniforms: {
-          sunDir: { value: new THREE.Vector3(0.55, 0.11, -0.8).normalize() },
-        },
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[380, 32, 20]} />
-    </mesh>
-  );
-}
-
 export function BoaEsperancaScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
-      <ScenePresentation camera={BOA_CAMERA} target={BOA_CONTROLS.target} />
-      <StormSky />
-      <fog attach="fog" args={['#5a5a58', 90, 300]} />
+      <ScenePresentation
+        camera={BOA_CAMERA}
+        target={BOA_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.6, 0.18, -0.78],
+          zenith: '#2a3444',
+          horizon: '#8f958f',
+          ground: '#2a3238',
+          sunColor: '#ffd6a8',
+          sunSharpness: 200,
+          clouds: 0.85,
+          stars: 0,
+          fog: '#7b8184',
+          fogDensity: 0.0028,
+          envIntensity: 0.9,
+        }}
+        post={{ bloom: 0.3, threshold: 0.9, exposure: 0.98, vignette: 0.55 }}
+        intro={{ duration: 4 }}
+      />
 
       <Cliffs />
       <Fynbos />
@@ -354,10 +305,11 @@ export function BoaEsperancaScene({ lang }: { lang: Lang }) {
 export const BOA_CAMERA = { position: [16, 9, 58] as [number, number, number], fov: 48, far: 1000 };
 export const BOA_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.16, minDistance: 16, maxDistance: 140, maxPolarAngle: Math.PI / 2 - 0.05, target: [-8, 10, -10] as [number, number, number], enablePan: false };
 export function BoaEsperancaLighting() {
-  return <>
-    <ambientLight intensity={0.5} color="#c8d0d8" />
-    <hemisphereLight args={['#d8c8a8', '#24303a', 0.6]} />
-    <directionalLight position={[80, 30, -30]} intensity={1.8} color="#ffd090" castShadow />
-    <directionalLight position={[-40, 20, 50]} intensity={0.4} color="#90a8c0" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.18} color="#c8d0d8" />
+      <SkyFill sky="#a9b8c8" ground="#24303a" intensity={0.5} />
+      <KeyLight sun={[-0.6, 0.18, -0.78]} intensity={2.2} extent={120} distance={180} color="#ffd6a8" />
+    </>
+  );
 }

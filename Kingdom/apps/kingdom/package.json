@@ -1,0 +1,34 @@
+{
+  "name": "@zion/kingdom",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3020",
+    "build": "next build",
+    "start": "node scripts/start-standalone.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@noble/ed25519": "^2.3.0",
+    "@noble/hashes": "^1.8.0",
+    "@react-three/fiber": "^9.4.0",
+    "@scure/bip39": "^1.6.0",
+    "@zion/api": "*",
+    "@zion/contract": "*",
+    "@zion/i18n": "*",
+    "@zion/scenes": "*",
+    "@zion/session": "*",
+    "@zion/ui": "*",
+    "next": "^16.4.3",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5",
+    "@types/three": "^0.186.0"
+  }
+}

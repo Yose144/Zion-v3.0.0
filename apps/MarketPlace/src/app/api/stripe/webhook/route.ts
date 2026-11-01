@@ -3,6 +3,10 @@ import Stripe from 'stripe';
 import { prisma } from '@/lib/db';
 import { sendPaymentConfirmation } from '@/lib/email';
 import { distributeOrderBonus } from '@/lib/bonus-payout';
+import {
+  ARCHIVE_REDEEM_URL,
+  issueArchivePassForOrder,
+} from '@/lib/archive-pass';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,14 +52,18 @@ export async function POST(request: NextRequest) {
         const orderId = session.metadata?.order_id;
         if (orderId && session.payment_status === 'paid') {
           const now = new Date();
-          await prisma.shopOrder.updateMany({
-            where: { orderId },
+          // Only the first delivery wins — Stripe retries webhooks, and the
+          // /api/stripe/verify fallback may already have marked the order
+          // paid. Re-processing would resend emails and duplicate history.
+          const claimed = await prisma.shopOrder.updateMany({
+            where: { orderId, paymentStatus: { not: 'paid' } },
             data: {
               status: 'paid',
               paymentStatus: 'paid',
               paidAt: now,
             },
           });
+          if (claimed.count === 0) break;
           await prisma.invoice.updateMany({
             where: { order: { orderId } },
             data: { status: 'paid', paidAt: now },
@@ -77,7 +85,16 @@ export async function POST(request: NextRequest) {
             void distributeOrderBonus(order.orderId).catch((err) =>
               console.error('Bonus payout failed:', err)
             );
+            const archivePass = await issueArchivePassForOrder(order).catch(
+              (err) => {
+                console.error('Archive pass issue failed:', err);
+                return null;
+              },
+            );
             sendPaymentConfirmation({
+              archivePass: archivePass
+                ? { code: archivePass.code, url: ARCHIVE_REDEEM_URL }
+                : null,
               orderId: order.orderId,
               customerName: order.customerName,
               customerEmail: order.customerEmail,

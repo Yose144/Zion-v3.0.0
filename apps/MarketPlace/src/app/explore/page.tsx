@@ -7,19 +7,17 @@ import { getItems, type ItemsFilters, type ItemsResponse } from '@/lib/market-ap
 import { useLangT } from '@/lib/useTranslation';
 
 const rarities: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'unique'];
-const collections = ['All', 'OASIS Genesis', 'OASIS Quest', 'OASIS Ships', 'OASIS Territory', 'Golden Eggs', 'OASIS Cosmetics'];
+
+// Canonical artifact categories (mint route CATEGORIES) — chips are
+// populated from /api/stats so only categories that actually exist in
+// the DB are shown.
+const CATEGORY_ORDER = [
+  'avatar', 'ship', 'ship_skin', 'quest_item', 'consumable',
+  'territory', 'golden_egg', 'badge', 'music', 'art',
+];
 
 function getCollectionLabelKey(c: string) {
-  switch (c) {
-    case 'All': return 'explore.all';
-    case 'OASIS Genesis': return 'collections.oasisGenesis';
-    case 'OASIS Quest': return 'collections.oasisQuest';
-    case 'OASIS Ships': return 'collections.oasisShips';
-    case 'OASIS Territory': return 'collections.oasisTerritory';
-    case 'Golden Eggs': return 'collections.goldenEggs';
-    case 'OASIS Cosmetics': return 'collections.oasisCosmetics';
-    default: return c;
-  }
+  return c === 'All' ? 'explore.all' : `cat.${c}`;
 }
 
 // No mock fallback — only real OASIS / marketplace data
@@ -33,6 +31,8 @@ const sortOptions = [
 
 export default function ExplorePage() {
   const [collection, setCollection] = useState('All');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [selectedRarities, setSelectedRarities] = useState<Set<Rarity>>(new Set());
   const [listingFilter, setListingFilter] = useState<'all' | 'fixed' | 'auction'>('all');
   const [sort, setSort] = useState('recent');
@@ -52,7 +52,7 @@ export default function ExplorePage() {
       pageSize: 60,
     };
 
-    if (collection !== 'All') filters.category = collection.toLowerCase().replace(/\s+/g, '_');
+    if (collection !== 'All') filters.category = collection;
     if (selectedRarities.size === 1) filters.rarity = Array.from(selectedRarities)[0];
 
     getItems(filters).then((res: ItemsResponse | null) => {
@@ -69,10 +69,6 @@ export default function ExplorePage() {
       if (selectedRarities.size > 0) {
         data = data.filter((i) => selectedRarities.has(i.rarity));
       }
-      // Client-side collection filter for fallback mock data
-      if (collection !== 'All') {
-        data = data.filter((i) => i.collection === collection);
-      }
       setItems(data);
       setTotal(res?.total ?? base.length);
       setLoading(false);
@@ -80,6 +76,36 @@ export default function ExplorePage() {
 
     return () => { cancelled = true; };
   }, [collection, selectedRarities, listingFilter, sort, search]);
+
+  // ?category=<slug> deep link (homepage category tiles)
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get('category');
+    if (c) setCollection(c);
+  }, []);
+
+  // Real categories from the DB — chips only for categories with items
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/stats')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d?.categories) return;
+        setCategoryCounts(d.categories);
+        const present = Object.keys(d.categories);
+        setCategories(
+          CATEGORY_ORDER.filter((c) => present.includes(c))
+            .concat(present.filter((c) => !CATEGORY_ORDER.includes(c)).sort())
+        );
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const collectionChips = [
+    'All',
+    ...categories,
+    ...(collection !== 'All' && !categories.includes(collection) ? [collection] : []),
+  ];
 
   const toggleRarity = (r: Rarity) => {
     const next = new Set(selectedRarities);
@@ -127,7 +153,7 @@ export default function ExplorePage() {
       {/* Mobile filters — compact panel (lg+ hides this) */}
       <div className="lg:hidden space-y-3">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-          {collections.map((c) => (
+          {collectionChips.map((c) => (
             <button
               key={c}
               onClick={() => setCollection(c)}
@@ -182,17 +208,20 @@ export default function ExplorePage() {
               {t('explore.collectionTitle')}
             </h3>
             <div className="space-y-1">
-              {collections.map(c => (
+              {collectionChips.map(c => (
                 <button
                   key={c}
                   onClick={() => setCollection(c)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between ${
                     collection === c
                       ? 'bg-rasta-red/20 text-white border border-rasta-red/30'
                       : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
                 >
-                  {t(getCollectionLabelKey(c))}
+                  <span>{t(getCollectionLabelKey(c))}</span>
+                  {c !== 'All' && categoryCounts[c] !== undefined && (
+                    <span className="text-[10px] text-gray-500 font-mono">{categoryCounts[c]}</span>
+                  )}
                 </button>
               ))}
             </div>

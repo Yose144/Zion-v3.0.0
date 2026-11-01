@@ -236,6 +236,11 @@
   transform: translateX(0);
 }
 
+/* Scroll lock while the mobile drawer is open (Navbar toggles this on <body>). */
+body.rasta-menu-open {
+  overflow: hidden;
+}
+
 .rasta-mobile-brand {
   display: flex;
   align-items: center;

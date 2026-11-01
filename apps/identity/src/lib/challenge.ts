@@ -126,11 +126,25 @@ export async function verifyEd25519(
   const sig = Buffer.from(signatureHex, 'hex');
   const pub = Buffer.from(publicKeyHex, 'hex');
 
+  // Malformed key/signature is an authentication failure, not a server error.
+  // (An Ed25519 public key is exactly 32 bytes, a signature exactly 64.)
+  if (pub.length !== 32 || sig.length !== 64) return false;
+
   // Derive expected address from pubkey and ensure it matches the claimed address.
-  const expectedAddr = publicKeyToAddress(Uint8Array.from(pub));
+  let expectedAddr: string;
+  try {
+    expectedAddr = publicKeyToAddress(Uint8Array.from(pub));
+  } catch {
+    return false;
+  }
   if (expectedAddr !== address) return false;
 
-  const ok = await ed.verify(sig, messageBytes, pub);
+  let ok = false;
+  try {
+    ok = await ed.verify(sig, messageBytes, pub);
+  } catch {
+    ok = false;
+  }
   if (ok) await clearChallenge(prisma, address);
   return ok;
 }

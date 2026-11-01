@@ -38,7 +38,7 @@ export default function BookNav({ lang: l, activeBookId, renderActive, onNavigat
             >
               <span>{group.label[l]}</span>
               <span className="ml-3 inline-flex items-center gap-1.5">
-                <span className="text-[9px] font-semibold text-gray-600">{group.books.length}</span>
+                <span className="text-[10px] font-semibold text-gray-600">{group.books.length}</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
               </span>
             </button>

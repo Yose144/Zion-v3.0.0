@@ -164,8 +164,26 @@ export function MatrixHallScene({ lang, beat, onAdvance }: { lang: Lang; beat: n
     : undefined;
   return (
     <>
-      <ScenePresentation camera={HALL_CAMERA} target={HALL_CONTROLS.target} spin={false} />
-      <color attach="background" args={['#07080c']} />
+      <ScenePresentation
+        camera={HALL_CAMERA}
+        target={HALL_CONTROLS.target}
+        spin={false}
+        atmosphere={{
+          zenith: '#08120f',
+          horizon: '#20463a',
+          ground: '#05070a',
+          sun: [0.2, 0.5, 0.4],
+          sunColor: '#bfe9d8',
+          sunSharpness: 60,
+          clouds: 0,
+          stars: 0.3,
+          envIntensity: 0.5,
+          fog: '#060a0c',
+          fogDensity: 0.012,
+        }}
+        post={{ bloom: 0.55, threshold: 0.72, exposure: 1.15, vignette: 0.62 }}
+        intro={{ duration: 2.6, distance: 1.12, rise: 0.1 }}
+      />
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow onClick={advance}>
         <planeGeometry args={[8, 18]} />
         <meshStandardMaterial
@@ -248,9 +266,21 @@ export const HALL_CONTROLS = {
 export function MatrixHallLighting() {
   return (
     <>
-      <ambientLight intensity={0.45} color="#cfe0d6" />
+      <ambientLight intensity={0.85} color="#cfe0d6" />
       <hemisphereLight args={['#2a6350', '#101319', 0.75]} />
-      <directionalLight position={[4, 8, 6]} intensity={1.6} color="#e7fff4" castShadow />
+      <directionalLight position={[4, 8, 6]} intensity={2.2} color="#e7fff4" castShadow />
+      {/* strop — hala je uzavřená, ne průhledná do nebe */}
+      <mesh position={[0, 3.35, 1]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[10, 26]} />
+        <meshStandardMaterial color="#0b0f12" roughness={0.55} metalness={0.25} side={THREE.DoubleSide} />
+      </mesh>
+      {/* stropní světelné pásy — vysvětlují bazény světla na podlaze */}
+      {[4.5, 0, -4.5, -8.2].map((z) => (
+        <mesh key={`ceiling${z}`} position={[0, 3.15, z]} rotation={[Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[1.5, 0.16]} />
+          <meshBasicMaterial color="#c8ffe4" transparent opacity={0.75} toneMapped={false} />
+        </mesh>
+      ))}
       <pointLight position={[0, 2.4, 4]} color="#7dffb0" intensity={1.5} distance={16} decay={2} />
       <pointLight position={[0, 2.2, -2]} color="#39f3a0" intensity={0.9} distance={12} decay={2} />
       <pointLight position={[-2.2, 2.9, 0.5]} color="#bfe9d8" intensity={0.5} distance={9} decay={2} />

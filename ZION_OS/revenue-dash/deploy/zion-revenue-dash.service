@@ -1,0 +1,23 @@
+[Unit]
+Description=ZION Revenue Dashboard (BOOST streams, internal)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion/revenue-dash
+Environment=POOL_API_BASE=https://pool.zionterranova.com
+Environment=REVENUE_DASH_HOST=127.0.0.1
+Environment=REVENUE_DASH_PORT=8770
+ExecStart=/usr/bin/python3 app.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

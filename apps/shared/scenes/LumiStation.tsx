@@ -1,10 +1,11 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, ScenePalms, SceneTerrain, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -28,14 +29,14 @@ function polar(azDeg: number, d: number): [number, number] {
 function GeoDome({ r, y = 0, glass = '#bfe0ea', frame = '#c9a55c', cut = 0.52, light = 0 }: {
   r: number; y?: number; glass?: string; frame?: string; cut?: number; light?: number;
 }) {
-  const { dome, edges } = useMemo(() => {
+  const { dome, edges } = React.useMemo(() => {
     const g = new THREE.IcosahedronGeometry(r, 2);
     const dome = new THREE.SphereGeometry(r, 24, 12, 0, Math.PI * 2, 0, Math.PI * cut);
     const edges = new THREE.EdgesGeometry(g, 12);
     g.dispose();
     return { dome, edges };
   }, [r, cut]);
-  useEffect(() => () => { dome.dispose(); edges.dispose(); }, [dome, edges]);
+  React.useEffect(() => () => { dome.dispose(); edges.dispose(); }, [dome, edges]);
   return (
     <group position={[0, y, 0]}>
       <mesh geometry={dome} castShadow>
@@ -56,7 +57,7 @@ function GeoDome({ r, y = 0, glass = '#bfe0ea', frame = '#c9a55c', cut = 0.52, l
 
 /** centrální kupole s vnitřním stromem života + světelným portálem */
 function ResearchCore() {
-  const portalRef = useRef<THREE.Mesh>(null);
+  const portalRef = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = portalRef.current?.material as THREE.MeshBasicMaterial | undefined;
     if (m) m.opacity = 0.5 + Math.sin(motionTime(clock) * 1.8) * 0.15;
@@ -171,12 +172,12 @@ function RingComplex() {
 
 /** krovová komunikační věž s anténami a blikajícím majákem */
 function CommsTower({ x, z }: { x: number; z: number }) {
-  const beacon = useRef<THREE.Mesh>(null);
+  const beacon = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = beacon.current?.material as THREE.MeshStandardMaterial | undefined;
     if (m) m.emissiveIntensity = 1.2 + Math.sin(motionTime(clock) * 4) * 1.1;
   });
-  const legs = useMemo(() => {
+  const legs = React.useMemo(() => {
     const g = new THREE.BufferGeometry();
     const pts: number[] = [];
     const w = 1.1, h = 17;
@@ -383,7 +384,7 @@ function LaunchSpire({ x, z }: { x: number; z: number }) {
 
 /** vodopád z terasy do jezírka + tečoucí kaskáda */
 function FallsPool() {
-  const fall = useRef<THREE.Mesh>(null);
+  const fall = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = fall.current?.material as THREE.MeshStandardMaterial | undefined;
     if (m) m.opacity = 0.55 + Math.sin(motionTime(clock) * 3) * 0.12;
@@ -433,7 +434,7 @@ function Volcano() {
 
 /** tropická džungle + terasovité zahrady + cesty */
 function Jungle() {
-  const trees = useMemo(() => {
+  const trees = React.useMemo(() => {
     const arr: { p: [number, number]; h: number; t: number }[] = [];
     for (let i = 0; i < 110; i++) {
       const a = rng(i + 15) * Math.PI * 2;
@@ -444,7 +445,7 @@ function Jungle() {
     }
     return arr;
   }, []);
-  const terraces = useMemo(() => {
+  const terraces = React.useMemo(() => {
     const arr: { pos: [number, number, number]; r: number; y: number }[] = [];
     for (let i = 0; i < 9; i++) {
       const a = rng(i + 50) * Math.PI * 2;
@@ -459,10 +460,23 @@ function Jungle() {
   return (
     <group>
       {/* země */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]} receiveShadow>
-        <circleGeometry args={[170, 80]} />
-        <meshStandardMaterial color="#33451f" roughness={0.98} />
-      </mesh>
+      <SceneTerrain
+        kind="grass"
+        size={720}
+        segments={170}
+        repeat={230}
+        seed={31}
+        level={-0.15}
+        height={(x, z, noise) => {
+          const distance = Math.hypot(x, z);
+          const rise = Math.max(0, Math.min(1, (distance - 70) / 100));
+          return rise * (noise.ridged(x * 0.013, z * 0.013, 3) - 0.42) * 26;
+        }}
+        color={(x, _y, z, noise) => {
+          const dry = noise.fbm(x * 0.024 + 7, z * 0.024 + 3, 3);
+          return [0.13 + dry * 0.08, 0.22 + dry * 0.1, 0.1 + dry * 0.05];
+        }}
+      />
       {/* terasovitá zahrada areálu */}
       {terraces.map((t, i) => (
         <group key={i} position={t.pos}>
@@ -483,87 +497,21 @@ function Jungle() {
           <meshStandardMaterial color="#a08d68" roughness={0.9} />
         </mesh>
       ))}
-      {/* stromy — směs palem a listnatých */}
-      {trees.map((t, i) => (
-        <group key={i} position={[t.p[0], 0, t.p[1]]}>
+      {/* stromy — palmy jako jedna instance, listnáče jako druhá vrstva */}
+      <ScenePalms items={trees.filter((t) => t.t > 0.55).map((t) => ({ x: t.p[0], z: t.p[1], h: t.h * 0.85 }))} />
+      {trees.filter((t) => t.t <= 0.55).map((t, i) => (
+        <group key={`b${i}`} position={[t.p[0], 0, t.p[1]]}>
           <mesh position={[0, t.h / 2, 0]} castShadow>
             <cylinderGeometry args={[0.1 + t.t * 0.06, 0.2 + t.t * 0.08, t.h, 5]} />
             <meshStandardMaterial color="#4f3a24" roughness={0.95} />
           </mesh>
-          {t.t > 0.55 ? (
-            [...Array(6)].map((_, k) => {
-              const a = (k / 6) * Math.PI * 2;
-              return (
-                <mesh key={k} position={[Math.sin(a) * 0.7, t.h + 0.25, Math.cos(a) * 0.7]} rotation={[0.55, a, 0]} scale={[0.5, 0.16, 2.1]} castShadow>
-                  <octahedronGeometry args={[0.8, 0]} />
-                  <meshStandardMaterial color={k % 2 ? '#4f7a34' : '#5d8a3c'} roughness={0.9} />
-                </mesh>
-              );
-            })
-          ) : (
-            <mesh position={[0, t.h + 0.6, 0]} castShadow>
-              <sphereGeometry args={[0.8 + t.t * 1.1 + t.h * 0.06, 7, 6]} />
-              <meshStandardMaterial color={['#3f5e2e', '#4a6a34', '#55753a'][i % 3]} roughness={0.95} />
-            </mesh>
-          )}
+          <mesh position={[0, t.h + 0.6, 0]} castShadow>
+            <sphereGeometry args={[0.8 + t.t * 1.1 + t.h * 0.06, 7, 6]} />
+            <meshStandardMaterial color={['#3f5e2e', '#4a6a34', '#55753a'][i % 3]} roughness={0.95} />
+          </mesh>
         </group>
       ))}
     </group>
-  );
-}
-
-/** obloha — soumrak na západě, Mléčná dráha + hvězdy na východě/zenitu */
-function DuskSky() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 sunDir;
-          float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-          void main(){
-            vec3 d = normalize(vP);
-            // soumrak: západ teplý, východ/zenit noční
-            float west = clamp(dot(normalize(d.xz), normalize(vec2(-1.0, -0.35))) * 0.5 + 0.5, 0.0, 1.0);
-            float daySide = (1.0 - smoothstep(-0.15, 0.1, d.y)) * west;
-            vec3 night = mix(vec3(0.03, 0.05, 0.12), vec3(0.05, 0.08, 0.18), d.y * 0.5 + 0.5);
-            vec3 dusk  = mix(vec3(0.95, 0.55, 0.28), vec3(0.35, 0.28, 0.42), smoothstep(-0.05, 0.5, d.y));
-            vec3 c = mix(night, dusk, clamp(west * (1.0 - smoothstep(0.05, 0.55, d.y)) * 1.25, 0.0, 1.0));
-            // slunce nízko na západě
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.9, 0.6) * pow(s, 700.0) * 3.0
-               + vec3(1.0, 0.7, 0.4) * pow(s, 30.0) * 0.5;
-            // Mléčná dráha — pás přes oblohu
-            vec3 mwN = normalize(vec3(0.5, 0.75, -0.35));
-            float band = exp(-abs(dot(d, mwN)) * 9.0);
-            c += vec3(0.35, 0.4, 0.55) * band * 0.4 * smoothstep(-0.05, 0.25, d.y);
-            // hvězdy — jen na noční straně
-            vec3 cell = floor(d * 200.0);
-            float star = step(0.995, hash(cell));
-            float tw = 0.6 + 0.4 * hash(cell + 1.0);
-            c += vec3(1.0, 0.98, 0.9) * star * tw * 1.2 * (1.0 - smoothstep(0.02, 0.6, west)) * smoothstep(-0.02, 0.25, d.y);
-            gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
-          }
-        `,
-        uniforms: {
-          sunDir: { value: new THREE.Vector3(-0.92, 0.12, -0.32).normalize() },
-        },
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[340, 28, 18]} />
-    </mesh>
   );
 }
 
@@ -571,9 +519,25 @@ export function LumiStationScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
-      <ScenePresentation camera={LUMI_CAMERA} target={LUMI_CONTROLS.target} />
-      <DuskSky />
-      <fog attach="fog" args={['#3a3a4a', 110, 300]} />
+      <ScenePresentation
+        camera={LUMI_CAMERA}
+        target={LUMI_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.78, 0.14, -0.62],
+          zenith: '#1b2a4a',
+          horizon: '#e8996a',
+          ground: '#2a2c20',
+          sunColor: '#ffb174',
+          sunSharpness: 320,
+          clouds: 0.42,
+          stars: 0.18,
+          fog: '#4a4a58',
+          fogDensity: 0.0018,
+          envIntensity: 0.85,
+        }}
+        post={{ bloom: 0.42, threshold: 0.84, exposure: 1.04, vignette: 0.54 }}
+        intro={{ duration: 3.8 }}
+      />
 
       <ResearchCore />
       <RingComplex />
@@ -603,10 +567,11 @@ export function LumiStationScene({ lang }: { lang: Lang }) {
 export const LUMI_CAMERA = { position: [0, 26, 78] as [number, number, number], fov: 45, far: 1000 };
 export const LUMI_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.16, minDistance: 18, maxDistance: 160, maxPolarAngle: Math.PI / 2 - 0.06, target: [0, 6, 0] as [number, number, number], enablePan: false };
 export function LumiLighting() {
-  return <>
-    <ambientLight intensity={0.55} color="#c8d4f0" />
-    <hemisphereLight args={['#ffdcaa', '#2d3d2a', 0.65]} />
-    <directionalLight position={[-70, 22, -26]} intensity={1.9} color="#ffc887" castShadow />
-    <directionalLight position={[40, 30, 40]} intensity={0.4} color="#a8c8ff" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.16} color="#c8d4f0" />
+      <SkyFill sky="#8ea8d0" ground="#2d3d2a" intensity={0.45} />
+      <KeyLight sun={[-0.78, 0.14, -0.62]} intensity={2.5} extent={100} distance={150} color="#ffbe8c" />
+    </>
+  );
 }

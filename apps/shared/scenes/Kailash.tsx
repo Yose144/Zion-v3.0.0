@@ -1,10 +1,11 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -31,10 +32,9 @@ function HimalayaRange() {
 function GlacialLake({ x, z, r = 9, sx = 1 }: { x: number; z: number; r?: number; sx?: number }) {
   return (
     <group position={[x, 0, z]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} scale={[sx, 1, 1]}>
-        <circleGeometry args={[r, 30]} />
-        <meshStandardMaterial color="#317e97" roughness={0.18} metalness={0.15} emissive="#1a6a76" emissiveIntensity={0.12} />
-      </mesh>
+      <group scale={[sx, 1, 1]}>
+        <SceneWater circle width={r * 2} position={[0, 0.04, 0]} tint="#1e5f74" repeat={3} speed={0.5} segments={40} sun={[0.42, 0.5, -0.76]} sky="#cfe0ee" />
+      </group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} scale={[sx * 1.14, 1.14, 1]}>
         <ringGeometry args={[r * 0.98, r * 1.0, 30]} />
         <meshStandardMaterial color="#c8d8ce" roughness={0.9} />
@@ -121,9 +121,9 @@ function Chorten({ x, z, s = 1 }: { x: number; z: number; s?: number }) {
 
 /** modlitební vlajky — instancované barevné obdélníky na šňůrách */
 function PrayerFlags({ anchors }: { anchors: { from: [number, number, number]; to: [number, number, number] }[] }) {
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const count = useMemo(() => anchors.length * 14, [anchors]);
-  useEffect(() => {
+  const ref = React.useRef<THREE.InstancedMesh>(null);
+  const count = React.useMemo(() => anchors.length * 14, [anchors]);
+  React.useEffect(() => {
     const m = ref.current;
     if (!m) return;
     const dummy = new THREE.Object3D();
@@ -207,7 +207,7 @@ function Cairn({ x, z, s = 1 }: { x: number; z: number; s?: number }) {
 
 /** poutníci na koře — jdoucí postavy s hůlkami */
 function Pilgrims({ path }: { path: [number, number][] }) {
-  const group = useRef<THREE.Group>(null);
+  const group = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     const g = group.current;
     if (!g) return;
@@ -243,7 +243,7 @@ function Pilgrims({ path }: { path: [number, number][] }) {
 
 /** krajina — údolí, stezka kory, skály, tráva */
 function Valley() {
-  const rocks = useMemo(() => {
+  const rocks = React.useMemo(() => {
     const arr: { p: [number, number]; s: number }[] = [];
     for (let i = 0; i < 60; i++) {
       const a = rng(i + 3) * Math.PI * 2;
@@ -256,15 +256,27 @@ function Valley() {
   }, []);
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
-        <circleGeometry args={[220, 72]} />
-        <meshStandardMaterial color="#5a4e3a" roughness={0.98} />
-      </mesh>
-      {/* světlejší pás údolí */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, -10]}>
-        <ringGeometry args={[0, 42, 48]} />
-        <meshStandardMaterial color="#6a5e44" roughness={0.95} />
-      </mesh>
+      <SceneTerrain
+        kind="snow"
+        size={760}
+        segments={170}
+        repeat={200}
+        seed={53}
+        level={-0.1}
+        height={(x, z, noise) => {
+          const distance = Math.hypot(x, z + 6);
+          const ridge = Math.max(0, Math.min(1, (distance - 60) / 120));
+          return ridge * (noise.ridged(x * 0.01, z * 0.01, 4) - 0.42) * 26;
+        }}
+        color={(x, _y, z, noise) => {
+          const distance = Math.hypot(x, z + 10);
+          const grain = noise.fbm(x * 0.03 + 1, z * 0.03 + 5, 3);
+          const valley = 1 - THREE.MathUtils.smoothstep(distance, 74, 150);
+          const rock: [number, number, number] = [0.2 + grain * 0.1, 0.18 + grain * 0.09, 0.16 + grain * 0.07];
+          const snowC: [number, number, number] = [0.82 + grain * 0.08, 0.86 + grain * 0.06, 0.9 + grain * 0.05];
+          return [rock[0] + (snowC[0] - rock[0]) * (1 - valley), rock[1] + (snowC[1] - rock[1]) * (1 - valley), rock[2] + (snowC[2] - rock[2]) * (1 - valley)];
+        }}
+      />
       {rocks.map((p, i) => (
         <mesh key={i} position={[p.p[0], 0.3 * p.s, p.p[1]]} scale={[1.5, p.s, 1.3]} castShadow>
           <sphereGeometry args={[0.7, 6, 5]} />
@@ -280,77 +292,36 @@ function Valley() {
   );
 }
 
-/** obloha — zlatá hodina, slunce za vrcholem Kailashe, pás mraků */
-function KailashSky() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 sunDir;
-          float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-          float noise(vec2 p){
-            vec2 i = floor(p), f = fract(p);
-            f = f * f * (3.0 - 2.0 * f);
-            float a = hash(vec3(i, 1.0)), b = hash(vec3(i + vec2(1.0, 0.0), 1.0));
-            float c = hash(vec3(i + vec2(0.0, 1.0), 1.0)), d = hash(vec3(i + vec2(1.0, 1.0), 1.0));
-            return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-          }
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 top = vec3(0.10, 0.22, 0.42);
-            vec3 hor = vec3(0.92, 0.62, 0.38);
-            vec3 c = mix(hor, top, smoothstep(-0.02, 0.5, d.y));
-            // slunce za vrcholem
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.9, 0.6) * pow(s, 900.0) * 3.6
-               + vec3(1.0, 0.72, 0.4) * pow(s, 40.0) * 0.6
-               + vec3(0.95, 0.6, 0.3) * pow(s, 6.0) * 0.3;
-            // pás tenkých mraků
-            float cl = noise(vec2(d.x * 6.0, d.y * 14.0)) * 0.5 + noise(vec2(d.x * 14.0, d.y * 30.0)) * 0.5;
-            float band = smoothstep(0.48, 0.7, cl) * smoothstep(0.02, 0.1, d.y) * (1.0 - smoothstep(0.2, 0.5, d.y));
-            c = mix(c, vec3(0.95, 0.85, 0.72), band * 0.5);
-            // měsíc — jemný kotouč vlevo nahoře
-            vec3 mdir = normalize(vec3(-0.7, 0.55, -0.3));
-            float moon = (1.0 - smoothstep(0.02, 0.028, length(d - mdir)));
-            c = mix(c, vec3(0.85, 0.88, 0.9), moon * 0.55);
-            gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
-          }
-        `,
-        uniforms: {
-          sunDir: { value: new THREE.Vector3(0.22, 0.17, -0.96).normalize() },
-        },
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[400, 32, 20]} />
-    </mesh>
-  );
-}
-
 export function KailashScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   const koraPath: [number, number][] = [[-30, 46], [-22, 34], [-16, 24], [-12, 14], [-10, 4], [-8, -6], [-4, -14]];
   return (
     <>
-      <ScenePresentation camera={KAILASH_CAMERA} target={KAILASH_CONTROLS.target} />
-      <KailashSky />
+      <ScenePresentation
+        camera={KAILASH_CAMERA}
+        target={KAILASH_CONTROLS.target}
+        atmosphere={{
+          sun: [0.42, 0.5, -0.76],
+          zenith: '#16304f',
+          horizon: '#a9c2d8',
+          ground: '#5a5e66',
+          sunColor: '#ffe6bc',
+          sunSharpness: 320,
+          clouds: 0.45,
+          stars: 0,
+          fog: '#9fb2c6',
+          fogDensity: 0.0009,
+          envIntensity: 1,
+        }}
+        post={{ bloom: 0.3, threshold: 0.9, exposure: 1, vignette: 0.45 }}
+        intro={{ duration: 3.8 }}
+      />
       <fog attach="fog" args={['#b3c1cf', 110, 330]} />
 
       <MountKailash />
       <HimalayaRange />
       <Valley />
+      <SceneMotes count={240} area={[80, 80]} height={34} speed={0.55} size={2.2} color="#eaf2ff" opacity={0.45} sway={1.2} seed={21} />
       <GlacialLake x={-14} z={-24} r={8.5} sx={1.3} />
       <GlacialLake x={10} z={-30} r={6} sx={1.5} />
       <Monastery x={-6} z={-16} />
@@ -383,10 +354,11 @@ export function KailashScene({ lang }: { lang: Lang }) {
 export const KAILASH_CAMERA = { position: [-6, 12, 58] as [number, number, number], fov: 46, far: 1200 };
 export const KAILASH_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.15, minDistance: 18, maxDistance: 150, maxPolarAngle: Math.PI / 2 - 0.06, target: [4, 12, -20] as [number, number, number], enablePan: false };
 export function KailashLighting() {
-  return <>
-    <ambientLight intensity={0.6} color="#e8dcc8" />
-    <hemisphereLight args={['#ffe8c0', '#3a3428', 0.75]} />
-    <directionalLight position={[50, 40, -60]} intensity={2} color="#ffdca0" castShadow />
-    <directionalLight position={[-40, 24, 40]} intensity={0.4} color="#a8c0e0" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.16} color="#e8dcc8" />
+      <SkyFill sky="#bcd4ec" ground="#4a4436" intensity={0.55} />
+      <KeyLight sun={[0.42, 0.5, -0.76]} intensity={2.9} extent={120} distance={200} color="#ffe0b0" />
+    </>
+  );
 }

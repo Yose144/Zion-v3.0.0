@@ -120,7 +120,7 @@ function checkCudaCapability(workspaceRoot, resourcesDir) {
   return result;
 }
 
-function detectPlatformFeatures(workspaceRoot, resourcesDir) {
+function detectPlatformFeatures(workspaceRoot, resourcesDir, edition = 'vip') {
   const platform = process.platform;
   const arch = os.arch();
 
@@ -128,34 +128,41 @@ function detectPlatformFeatures(workspaceRoot, resourcesDir) {
   // features must be enabled explicitly.
   const nativeFeatures = 'native-all';
 
-  // The desktop agent is the public-facing bundle: always use public_build
-  // so the TUI/banner/logs show only ZION + BOOST streams.
-  const publicFlag = 'public_build';
+  // Edition split (D0):
+  //   vip    — full Trinity: real coin names (ZANO/QTC/PEARL/VRSC), profit router,
+  //            license-gated, NO public_build.
+  //   public — BOOST branding: public_build hides coin names, BOOST 1/2 always on,
+  //            ZION-only for the user, QTC/PRL revenue to treasury/liquidity.
+  const isPublic = edition === 'public';
+  const publicFlag = isPublic ? 'public_build,' : '';
+  const editionLabel = isPublic ? 'public (BOOST branding)' : 'vip (full Trinity)';
 
   // Always bundle the built-in ratatui TUI so `npm run tui` can use --interactive.
   const tuiFlag = 'tui';
 
+  console.log(`[prepare-v31] Edition: ${editionLabel}`);
+
   if (platform === 'darwin') {
     if (arch === 'arm64') {
-      console.log('[prepare-v31] Apple Silicon detected -> enabling public build with Metal + OpenCL + all native hashers + TUI');
-      return `${publicFlag},auxpow,gpu-opencl,gpu-metal,${nativeFeatures},${tuiFlag}`;
+      console.log(`[prepare-v31] Apple Silicon detected -> ${editionLabel} with Metal + OpenCL + all native hashers + TUI`);
+      return `${publicFlag}auxpow,gpu-opencl,gpu-metal,${nativeFeatures},${tuiFlag}`;
     }
-    console.log('[prepare-v31] Intel Mac detected -> enabling public build with OpenCL + Metal + all native hashers + TUI');
-    return `${publicFlag},auxpow,gpu-opencl,gpu-metal,${nativeFeatures},${tuiFlag}`;
+    console.log(`[prepare-v31] Intel Mac detected -> ${editionLabel} with OpenCL + Metal + all native hashers + TUI`);
+    return `${publicFlag}auxpow,gpu-opencl,gpu-metal,${nativeFeatures},${tuiFlag}`;
   }
 
   if (platform === 'win32') {
     const cudaCheck = checkCudaCapability(workspaceRoot, resourcesDir);
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
+    const base = `${publicFlag}auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> building public build with CUDA backend + TUI');
+      console.log(`[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> ${editionLabel} with CUDA backend + TUI`);
       return `${base},gpu-cuda`;
     }
     if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU detected but no NVRTC runtime -> OpenCL-only public build + TUI (place nvrtc64_*.dll in resources for CUDA)');
+      console.log(`[prepare-v31] Windows + NVIDIA GPU detected but no NVRTC runtime -> OpenCL-only ${editionLabel} + TUI (place nvrtc64_*.dll in resources for CUDA)`);
     } else {
-      console.log('[prepare-v31] Windows detected -> enabling public build with OpenCL + native hashers + TUI');
+      console.log(`[prepare-v31] Windows detected -> ${editionLabel} with OpenCL + native hashers + TUI`);
     }
     return base;
   }
@@ -163,35 +170,46 @@ function detectPlatformFeatures(workspaceRoot, resourcesDir) {
   if (platform === 'linux') {
     const cudaCheck = checkCudaCapability(workspaceRoot, resourcesDir);
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
+    const base = `${publicFlag}auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> building public build with CUDA backend + TUI');
+      console.log(`[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> ${editionLabel} with CUDA backend + TUI`);
       return `${base},gpu-cuda`;
     }
-    console.log('[prepare-v31] Linux detected -> enabling public build with OpenCL + native hashers + TUI');
+    console.log(`[prepare-v31] Linux detected -> ${editionLabel} with OpenCL + native hashers + TUI`);
     return base;
   }
 
-  console.log('[prepare-v31] Unknown platform -> enabling public build with OpenCL + native hashers + TUI');
-  return `${publicFlag},auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
+  console.log(`[prepare-v31] Unknown platform -> ${editionLabel} with OpenCL + native hashers + TUI`);
+  return `${publicFlag}auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
 }
 
 function parseArgs(argv) {
-  const out = { noBuild: false, requireBinary: false, features: null, autoDetect: false };
+  const out = {
+    noBuild: false,
+    requireBinary: false,
+    features: null,
+    autoDetect: false,
+    edition: String(process.env.ZION_DESKTOP_EDITION || 'vip').trim().toLowerCase(),
+  };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--no-build') out.noBuild = true;
     else if (a === '--require' || a === '--require-rust') out.requireBinary = true;
     else if (a === '--auto') out.autoDetect = true;
     else if (a === '--features') { out.features = String(argv[i + 1] || '').trim(); i++; }
+    else if (a === '--edition') { out.edition = String(argv[i + 1] || 'vip').trim().toLowerCase(); i++; }
+  }
+  if (out.edition !== 'vip' && out.edition !== 'public') {
+    throw new Error(`Unknown --edition "${out.edition}" (expected vip|public)`);
   }
   return out;
 }
 
 // ── Build ──────────────────────────────────────────────────────────
 
-function buildV31Workspace(workspaceRoot, features) {
+function buildV31Workspace(workspaceRoot, features, edition = 'vip') {
   const cargoArgs = ['build', '--release', '--manifest-path', V31_WORKSPACE_MANIFEST];
+  const fallbackPrefix = edition === 'public' ? 'public_build,' : '';
 
   const buildEnv = { ...process.env };
   if (process.platform === 'darwin') {
@@ -214,7 +232,7 @@ function buildV31Workspace(workspaceRoot, features) {
       );
     }
     if (features && features !== 'default') {
-      const fallbackFeatures = 'public_build,native-all,tui';
+      const fallbackFeatures = `${fallbackPrefix}native-all,tui`;
       console.warn(`[prepare-v31] Build with [${features}] failed, retrying with [${fallbackFeatures}]...`);
       const fallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--bin', 'zion-miner', '--bin', 'zion-universal-miner', '--features', fallbackFeatures];
       const fallbackRes = spawnSync('cargo', fallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
@@ -377,11 +395,11 @@ function main() {
   cleanResources(resourcesDir);
   ensureDir(resourcesDir);
 
-  const features = args.features || detectPlatformFeatures(workspaceRoot, resourcesDir);
+  const features = args.features || detectPlatformFeatures(workspaceRoot, resourcesDir, args.edition);
 
   if (!args.noBuild) {
     console.log('[prepare-v31] Building V31 workspace binaries...');
-    buildV31Workspace(workspaceRoot, features);
+    buildV31Workspace(workspaceRoot, features, args.edition);
   } else {
     console.log('[prepare-v31] --no-build set; skipping cargo build');
   }

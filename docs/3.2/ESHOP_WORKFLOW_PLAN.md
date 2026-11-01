@@ -1,8 +1,12 @@
 # ZION eShop E2E Workflow Plan
 
 > **Goal:** Complete e-shop workflow — cart → checkout → order → email → invoice, fully functional end-to-end on `market.zionterranova.com`.
+> **Truth-sync:** 2026-10-31 — live host = **EDGE2** (`zion-marketplace` :3100).
+> Capabilities: `softLaunch=false`, `stripe=true`, `email=true`,
+> `modes.transfer|card|crypto|zion=true`, `commerce=false`.
+> Detail parity: [`MARKET_V2_PARITY.md`](MARKET_V2_PARITY.md). Gate ID: **5.B6**.
 
-## Current State (2026-08-06)
+## Current State (2026-08-06 → supersedováno 31. 10.)
 
 ### Already Implemented ✅
 
@@ -116,33 +120,55 @@ transfer) — **operator: cancel/delete after review.**
 | ZION customer wallet | ✅ address + seed generated (900 tokens) |
 | Rate limit | ✅ present (10/min) |
 
-### Launch blockers found 🔴
+### Launch blockers (stav 31. 10.)
 
-1. **`STRIPE_SECRET_KEY=""` + `STRIPE_WEBHOOK_SECRET=""` in prod env**
-   (`/opt/zion/APP&WEB/MarketPlace/.env` on EDGE2) → `/api/stripe/checkout`
-   returns "Stripe is not configured". Card payments dead. 👤 supply keys.
-2. **`SMTP_PASSWORD=""` in prod env** → journal: "Email notifications
-   disabled: SMTP not configured" — **zero transactional email in prod**
-   (customer confirmations, admin notifications, wallet seeds undelivered).
-   👤 supply password for `shop@newearth.cz` (`mail.webglobe.cz:587`).
-3. **12/20 products `inStock=false` despite `stock>0`** — all physical
-   merch (engr-*, star-*, wood-004) unbuyable. Not from seed (schema
-   default `true`); flag flipped elsewhere. 👤 decide: bug →
-   `UPDATE ShopProduct SET inStock=true WHERE stock>0 AND inStock=false`,
-   or intentional delisting (merch not ready).
+| # | Blocker (28. 10.) | Stav 31. 10. |
+|---|---|---|
+| 1 | Stripe keys empty | ✅ `STRIPE_SECRET_KEY` + webhook set → `card=true` |
+| 2 | SMTP password empty | ✅ `SMTP_PASSWORD` set → `email=true` (Resend stále prázdný = OK) |
+| 3 | Physical `inStock=false` | ⬜ 👤 policy — digi SKUs buyable; merch flags open |
+| 4 | 5.B6 formální E2E + sign-off | ✅ 31. 10. [`REPORT_2026-10-31_5B6_ESHOP_E2E.md`](REPORTS/REPORT_2026-10-31_5B6_ESHOP_E2E.md) — transfer+zion+email+invoice; Stripe session create |
+| 5 | Next 14 critical (`5.S2`) | ⬜ major bump před Stable |
+| 6 | Coinbase Commerce | ⬜ gated (`commerce=false`) — volitelné |
+| 7 | Loyalty wallet funding (W3.4) | ✅ 31. 10. — payout `zion1d2k5…` = **187 197 351 ZION** (95 118 UTXO); ⚠️ `getBalance` (account-model) hlásí 0 — UTXO balance měřit přes `getUtxos`! |
 
-### Soft-launch 2026-10-29 ✅ (B2B-1)
+### Soft-launch 2026-10-29 ✅ → exited 31. 10.
 
 - Digi/software SKUs buyable via **bank transfer** (card UI gated by
   `/api/shop/capabilities`).
 - Runbook: `docs/3.2/B2B_SOFT_LAUNCH.md`.
-- Wide public launch still needs Stripe + SMTP/Resend + Next 15/16.
+- **31. 10.:** `softLaunch=false` — Stripe + SMTP live; SHOPPAY + B2B shipped.
+- Wide Stable launch stále: Next 15/16 (`5.S2`) + 👤 merch/`inStock` policy.
 
 ### Minor bugs
 
 - `stripe/checkout` line-item: `unit_amount = priceCzk*quantity` with
   `quantity: 1` — totals correct, but checkout shows no "×N" for qty>1.
-- Order-success/admin flows untested pending Stripe/email credentials.
+- Admin cancel nevrací stock (design gap).
+
+### Paid-path audit 31. 10. (deployed `a7b083d92` + sweep `f932f2bc1`)
+
+- Admin mark-paid (bank transfer) nově: invoice `paid` + `distributeOrderBonus`
+  + confirmation email — dřív jen email (UI slibovalo „automaticky").
+- Paid transition = atomický claim (`updateMany … paymentStatus != 'paid'`)
+  v `markShopOrderPaid`, Stripe webhooku i admin route → Stripe retry ani
+  souběžné rail potvrzení neduplikují email/history.
+- `/api/stripe/verify` deleguje na `markShopOrderPaid` (history+invoice+dedup).
+- `sendZionPayout` vyžaduje `TX hash` **a** `Broadcast OK` — exit 0 bez
+  broadcast proof = failure, objednávka se neoznačí `distributed`.
+- **ZION bonus auto-payout:** `POST /api/shop/bonus-sweep` (Bearer
+  `SHOP_CONFIRM_SECRET`) — paid objednávky s `zionTokens>0` bez distribution
+  record, `status != 'cancelled'`; volá `zion-l1-watcher` každých
+  `BONUS_SWEEP_INTERVAL_S` (default 300 s). Objednávce bez walletu se
+  custodial wallet vygeneruje lazy (atomický claim) + wallet email.
+- ⚠️ **CLI pitfall (opraveno 31. 10.):** `/opt/zion/bin/zion` byl
+  `3.1.0-beta` (4. 8.) — `wallet send` emituje **v3-model tx** → node
+  validuje proti `v3_utxos` SQLite → `input does not exist` pro native
+  UTXOs. Native builder je až od `c2799b295` (22. 8.). Deployed **3.2.0**
+  z `/opt/zion/V31` (bak `zion.bak-v3.1.0-beta-20261031`).
+  `send --dry-run` **nebroadcastuje** — nepoužívat jako důkaz payout path.
+- Live E2E 31. 10.: TEST-PAIDFLOW → admin paid → bonus **900 ZION on-chain
+  `ed71f7d6…fe6412`** (~2 s i s 95k-UTXO peněženkou).
 
 ## Architecture
 

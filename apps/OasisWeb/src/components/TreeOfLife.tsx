@@ -265,7 +265,7 @@ interface LeafCanopyProps {
 
 // Logo-aligned canopy palette: Zion green, forest green, terra gold, earth brown,
 // with rasta red/gold accents and cosmic black for shadowed bases.
-const LEAF_PALETTE = ['#00F88A', '#0B3D1E', '#D4AF37', '#6B3A1E', '#e41e2b', '#0A0A0A', '#078930', '#fcd116'];
+const LEAF_PALETTE = ['#2f7d4f', '#0B3D1E', '#8a7434', '#6B3A1E', '#5c2b2b', '#0A0A0A', '#078930', '#9a8a3a'];
 
 function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
   const lineRef = useRef<THREE.LineSegments>(null);
@@ -462,7 +462,7 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
     const mat = new THREE.LineBasicMaterial({
       vertexColors: true,
       transparent: true,
-      opacity: 0.92,
+      opacity: 0.34,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       toneMapped: false,
@@ -1173,7 +1173,8 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       <pointLight position={[0, 2, 0]} intensity={2.2} distance={12} decay={1.5} color="#e41e2b" />
 
       <SporeField count={isMobile ? 120 : 200} rng={rng} />
-      <LeafCanopy anchors={leafAnchors} leavesPerAnchor={isMobile ? 1 : 2} rng={rng} />
+      {/* Jeden list na větev: dva dělaly z koruny mřížku, která se četla jako šum. */}
+      <LeafCanopy anchors={leafAnchors} leavesPerAnchor={1} rng={rng} />
       <KodamaField anchors={leafAnchors} count={isMobile ? 5 : 12} rng={rng} />
     </group>
   );

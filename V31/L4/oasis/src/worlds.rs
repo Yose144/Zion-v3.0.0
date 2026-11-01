@@ -32,6 +32,10 @@ pub struct WorldDef {
     pub galaxy_position: Option<GalaxyPosition>,
     #[serde(default, rename = "goldenEggClue")]
     pub golden_egg_clue: Option<u32>,
+    /// Access pass required to act on this world — `"archive"` =
+    /// marketplace-issued ZAP-… code (ZION Archive Pass).
+    #[serde(default, rename = "requiredPass")]
+    pub required_pass: Option<String>,
 }
 
 /// In-memory registry of all known OASIS worlds.

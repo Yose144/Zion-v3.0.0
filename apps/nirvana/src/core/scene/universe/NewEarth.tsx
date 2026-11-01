@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import * as React from 'react';
 import { useFrame } from '@react-three/fiber';
 import { TextLabel } from './Label';
 import * as THREE from 'three';
@@ -417,6 +418,52 @@ function MissionSites() {
   );
 }
 
+/** Tenká svítící atmosféra: Fresnel halo, které při okraji planety zesílí. */
+function Atmosphere({ radius }: { radius: number }) {
+  const material = React.useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uColor: { value: new THREE.Color('#7ec8ff') },
+          uIntensity: { value: 0.9 },
+        },
+        vertexShader: `
+          varying vec3 vNormal;
+          varying vec3 vWorld;
+          void main() {
+            vNormal = normalize(normalMatrix * normal);
+            vec4 world = modelMatrix * vec4(position, 1.0);
+            vWorld = world.xyz;
+            gl_Position = projectionMatrix * viewMatrix * world;
+          }
+        `,
+        fragmentShader: `
+          precision highp float;
+          uniform vec3 uColor;
+          uniform float uIntensity;
+          varying vec3 vNormal;
+          varying vec3 vWorld;
+          void main() {
+            vec3 viewDir = normalize(cameraPosition - vWorld);
+            float rim = pow(1.0 - abs(dot(normalize(vNormal), viewDir)), 2.6);
+            gl_FragColor = vec4(uColor, rim * uIntensity);
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        side: THREE.BackSide,
+      }),
+    [],
+  );
+  React.useEffect(() => () => material.dispose(), [material]);
+  return (
+    <mesh scale={1.055} material={material}>
+      <sphereGeometry args={[radius, 64, 40]} />
+    </mesh>
+  );
+}
+
 export function NewEarth() {
   const spin = useRef<THREE.Group>(null);
   const fallback = useMemo(() => makeFallbackTexture(), []);
@@ -442,11 +489,8 @@ export function NewEarth() {
         </mesh>
         <MissionSites />
       </group>
-      {/* atmosféra — halo */}
-      <mesh scale={1.07}>
-        <sphereGeometry args={[PLANET_R, 48, 32]} />
-        <meshBasicMaterial color="#7ec8ff" transparent opacity={0.13} side={THREE.BackSide} depthWrite={false} />
-      </mesh>
+      {/* atmosféra — Fresnel halo, ne plný obal */}
+      <Atmosphere radius={PLANET_R} />
       <Moon />
     </group>
   );

@@ -185,7 +185,7 @@ function Stat({ icon: Icon, label, value, max, color }: { icon: typeof Zap; labe
       <div className="h-8 w-1 overflow-hidden rounded-full bg-white/10">
         <div className="w-full rounded-full" style={{ height: `${pct * 100}%`, backgroundColor: color, marginTop: `${(1 - pct) * 100}%` }} />
       </div>
-      <span className="text-[7px] text-white/60">{label}</span>
+      <span className="text-[10px] text-white/60">{label}</span>
     </div>
   );
 }

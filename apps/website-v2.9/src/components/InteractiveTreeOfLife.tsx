@@ -1197,7 +1197,7 @@ export default function InteractiveTreeOfLife() {
                   <p className="text-gray-400 text-xs">&mdash; Yose / Zion Creator</p>
                   <p className="text-gray-600 text-[10px] mt-2">Peace &amp; One Love 4ever ☮️ · Om Namo Hiranyagarbha</p>
                 </div>
-                <p className="text-gray-700 text-[9px] mt-5">click anywhere to close</p>
+                <p className="text-gray-700 text-[10px] mt-5">click anywhere to close</p>
               </div>
             </motion.div>
           )}

@@ -292,7 +292,7 @@ function StatCard({
         {tip && (
           <div className="relative group/tooltip">
             <HelpCircle className="h-3 w-3 text-gray-600 cursor-help" />
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:block w-44 rounded-lg border border-white/10 bg-black/90 backdrop-blur-xl px-2 py-1.5 text-[10px] text-gray-300 shadow-xl z-20">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:block w-44 rounded-lg border border-white/10 bg-black/90 backdrop-blur-xl px-2 py-1.5 text-[11px] text-gray-300 shadow-xl z-20">
               {tip}
             </div>
           </div>
@@ -775,7 +775,7 @@ export default function DaoPage() {
             style={{ '--rc': '6, 105, 40' } as CSSProperties}
           >
             <div className="flex flex-wrap items-center gap-2 md:gap-3">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
+              <span className="text-[11px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
                 {DaoCopy.daoSections[cs ? 'cs' : 'en']}
               </span>
               {TABS.map((t) => {
@@ -1131,7 +1131,7 @@ export default function DaoPage() {
                               <div key={g.address} className="zion-rainbow-sub px-3 py-2.5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="text-sm font-medium text-white truncate">{g.name || g.address}</span>
-                                  <span className="zion-badge-green text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider shrink-0">active</span>
+                                  <span className="zion-badge-green text-[11px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider shrink-0">active</span>
                                 </div>
                                 {g.name && <p className="text-[11px] text-gray-500 font-mono truncate mt-0.5">{g.address}</p>}
                               </div>
@@ -1154,7 +1154,7 @@ export default function DaoPage() {
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="text-sm font-mono text-gray-200 truncate">{c.address}</span>
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-0.5">{DaoCopy.candidateAwaitingAdmission[cs ? 'cs' : 'en']}</p>
+                                <p className="text-[11px] text-gray-500 mt-0.5">{DaoCopy.candidateAwaitingAdmission[cs ? 'cs' : 'en']}</p>
                               </div>
                             ))}
                           </div>
@@ -1225,7 +1225,7 @@ export default function DaoPage() {
                         <div key={archetype.name} className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                           <div className="flex items-center gap-2 mb-1">
                             <span className={`font-bold text-sm ${archetype.color}`}>{archetype.name}</span>
-                            <span className="text-[10px] text-gray-500 uppercase tracking-wider">{archetype.role}</span>
+                            <span className="text-[11px] text-gray-500 uppercase tracking-wider">{archetype.role}</span>
                           </div>
                           <p className="text-xs text-gray-400">{archetype.desc}</p>
                         </div>
@@ -1237,12 +1237,12 @@ export default function DaoPage() {
                   <div className="flex items-center gap-3 mb-3">
                     <Sparkles className="h-5 w-5 text-zion-cyan" />
                     <h3 className="font-semibold text-white">{DaoCopy.consentEngine[cs ? 'cs' : 'en']}</h3>
-                    <span className="text-[10px] uppercase tracking-widest border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan px-2 py-0.5 rounded-full font-semibold">L2 DAO</span>
+                    <span className="text-[11px] uppercase tracking-widest border border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan px-2 py-0.5 rounded-full font-semibold">L2 DAO</span>
                   </div>
                   <p className="text-sm text-gray-400 max-w-3xl">
                     {DaoCopy.theConsentMechanismEnsuresCros[cs ? 'cs' : 'en']}
                   </p>
-                  <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
+                  <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
                     {[
                       { label: DaoCopy.propose[cs ? 'cs' : 'en'], detail: DaoCopy.anyCoAdmin[cs ? 'cs' : 'en'] },
                       { label: DaoCopy.consent[cs ? 'cs' : 'en'], detail: DaoCopy.affectedLayers[cs ? 'cs' : 'en'] },

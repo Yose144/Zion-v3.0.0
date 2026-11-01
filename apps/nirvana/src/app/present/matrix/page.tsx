@@ -42,7 +42,7 @@ export default function MatrixPresentPage() {
           </span>
         </div>
         <ProjectLanguageButton />
-        <SceneSoundToggle />
+        <SceneSoundToggle profile="space" />
         {hall && (
           <button
             type="button"

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getArchivePassForOrder, ARCHIVE_REDEEM_URL } from '@/lib/archive-pass';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +57,15 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         createdAt: order.createdAt,
         items: safeItems,
         invoices: order.invoices,
+        // ZAP-… archive pass is delivered with the paid order — expose it
+        // only after paymentStatus=paid (issued at the paid transition).
+        archivePass:
+          order.paymentStatus === 'paid'
+            ? (() => {
+                const p = getArchivePassForOrder(order.orderId);
+                return p ? { code: p.code, url: ARCHIVE_REDEEM_URL } : null;
+              })()
+            : null,
       },
     });
   } catch (error) {

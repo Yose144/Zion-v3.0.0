@@ -1,9 +1,10 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SceneMotes, SceneTerrain, SceneWater, SkyFill, gold as goldMaterial, stoneWarm } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -46,9 +47,9 @@ function glyphTexture() {
 
 /** hlavní pyramida — otevřená síň vpředu, zářící vrchol, paprsek do nebe */
 function GrandPyramid() {
-  const beam = useRef<THREE.Mesh>(null);
-  const tex = useMemo(() => glyphTexture(), []);
-  useEffect(() => () => tex.dispose(), [tex]);
+  const beam = React.useRef<THREE.Mesh>(null);
+  const tex = React.useMemo(() => glyphTexture(), []);
+  React.useEffect(() => () => tex.dispose(), [tex]);
   useFrame(({ clock }) => {
     const m = beam.current?.material as THREE.MeshBasicMaterial | undefined;
     if (m) m.opacity = 0.10 + Math.sin(motionTime(clock) * 1.4) * 0.025;
@@ -56,14 +57,13 @@ function GrandPyramid() {
   return (
     <group position={[0, 0, -26]}>
       {/* tělo pyramidy */}
-      <mesh castShadow receiveShadow>
+      <mesh castShadow receiveShadow material={stoneWarm(5, '#dcc094')}>
         <coneGeometry args={[24, 20, 4]} />
-        <meshStandardMaterial map={tex} roughness={0.85} />
       </mesh>
       {/* otevřená síň — svítící zlatý portál na čelní stěně */}
       <mesh position={[0, 3.4, 15.2]} rotation={[0, 0, Math.PI / 4]}>
         <planeGeometry args={[7, 7]} />
-        <meshStandardMaterial color="#ffe9a8" emissive="#ffca50" emissiveIntensity={0.65} transparent opacity={0.95} side={THREE.DoubleSide} />
+        <meshStandardMaterial map={tex} emissiveMap={tex} color="#ffe9a8" emissive="#ffca50" emissiveIntensity={0.9} transparent opacity={0.95} side={THREE.DoubleSide} />
       </mesh>
       {/* interiér — zlatá sloupučí síň naznačená uvnitř portálu */}
       <group position={[0, 3.4, 15.4]}>
@@ -103,8 +103,8 @@ function GrandPyramid() {
 
 /** meditující kosmická bytost — translucidní zlatá silueta v mandale */
 function CosmicBeing({ x, y, z }: { x: number; y: number; z: number }) {
-  const orb = useRef<THREE.Mesh>(null);
-  const rings = useRef<THREE.Group>(null);
+  const orb = React.useRef<THREE.Mesh>(null);
+  const rings = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     const t = motionTime(clock);
     if (orb.current) {
@@ -201,7 +201,7 @@ function GizaPyramids() {
 
 /** modrá hvězdná tvář — translucidní drátěná hlava z uzlů */
 function StarFace({ x, y, z }: { x: number; y: number; z: number }) {
-  const nodes = useMemo(() => {
+  const nodes = React.useMemo(() => {
     const pts: [number, number, number][] = [];
     // profil tváře z uzlů — ovál + obličejové linie
     for (let i = 0; i < 26; i++) {
@@ -212,21 +212,21 @@ function StarFace({ x, y, z }: { x: number; y: number; z: number }) {
     pts.push([0.9, 0.5, 2.6], [1.4, -0.6, 2.4], [0.6, -1.8, 2.2], [-0.8, 0.9, 2.3], [0.2, 2.4, 1.8], [-0.4, -3.2, 1.6]);
     return pts;
   }, []);
-  const edges = useMemo(() => {
+  const edges = React.useMemo(() => {
     const lines: [number, number][] = [];
     for (let i = 0; i < 26; i++) lines.push([i, (i + 1) % 26]);
     // paprskové spojnice do vnitřní sítě
     for (let i = 0; i < 26; i += 4) lines.push([i, 26 + (i % 6)]);
     return lines;
   }, []);
-  const geo = useMemo(() => {
+  const geo = React.useMemo(() => {
     const verts: number[] = [];
     for (const [a, b] of edges) verts.push(...nodes[a], ...nodes[b]);
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
     return g;
   }, [nodes, edges]);
-  useEffect(() => () => geo.dispose(), [geo]);
+  React.useEffect(() => () => geo.dispose(), [geo]);
   return (
     <group position={[x, y, z]} rotation={[0, 0.5, 0]}>
       <lineSegments geometry={geo}>
@@ -248,7 +248,7 @@ function StarFace({ x, y, z }: { x: number; y: number; z: number }) {
 
 /** Země + orbitální stanice */
 function EarthStation({ x, y, z }: { x: number; y: number; z: number }) {
-  const st = useRef<THREE.Group>(null);
+  const st = React.useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (st.current) st.current.rotation.y = motionTime(clock) * 0.1;
   });
@@ -291,7 +291,7 @@ function EarthStation({ x, y, z }: { x: number; y: number; z: number }) {
 
 /** zlatý energetický oblouk mezi dvěma body */
 function GoldArc({ from, to, lift = 6 }: { from: [number, number, number]; to: [number, number, number]; lift?: number }) {
-  const geo = useMemo(() => {
+  const geo = React.useMemo(() => {
     const a = new THREE.Vector3(...from);
     const b = new THREE.Vector3(...to);
     const mid = a.clone().lerp(b, 0.5);
@@ -299,7 +299,7 @@ function GoldArc({ from, to, lift = 6 }: { from: [number, number, number]; to: [
     const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
     return new THREE.TubeGeometry(curve, 40, 0.09, 5);
   }, [from[0], from[1], from[2], to[0], to[1], to[2], lift]);
-  useEffect(() => () => geo.dispose(), [geo]);
+  React.useEffect(() => () => geo.dispose(), [geo]);
   return (
     <mesh geometry={geo}>
       <meshBasicMaterial color="#ffca5e" transparent opacity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} />
@@ -312,10 +312,7 @@ function Oasis() {
   return (
     <group>
       {/* jezírko */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[14, 0.06, 12]} scale={[1.4, 1, 1]}>
-        <circleGeometry args={[8.5, 28]} />
-        <meshStandardMaterial color="#1e8a8a" roughness={0.1} metalness={0.2} emissive="#146a70" emissiveIntensity={0.6} />
-      </mesh>
+      <SceneWater width={24} depth={17} position={[14, 0.06, 12]} tint="#0b4a52" repeat={3} speed={0.7} sun={[-0.52, 0.07, -0.85]} sky="#e08a4a" />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[14, 0.02, 12]} scale={[1.55, 1.12, 1]}>
         <ringGeometry args={[8.5, 8.6, 28]} />
         <meshStandardMaterial color="#c8b888" roughness={0.9} />
@@ -383,10 +380,7 @@ function Oasis() {
 function SeaAndSails() {
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[80, -0.3, -30]}>
-        <planeGeometry args={[140, 120]} />
-        <meshStandardMaterial color="#1a6a7a" roughness={0.15} metalness={0.4} />
-      </mesh>
+      <SceneWater width={120} depth={130} position={[112, -3.1, -30]} tint="#0a3542" repeat={8} speed={1.4} sun={[-0.52, 0.07, -0.85]} sky="#d98a52" />
       {[...Array(4)].map((_, i) => (
         <group key={i} position={[60 + i * 9 - rng(i) * 4, 0, -52 - rng(i + 2) * 18]} rotation={[0, rng(i + 4) * 0.8 - 0.4, 0]}>
           <mesh position={[0, 0.3, 0]}>
@@ -411,15 +405,32 @@ function SeaAndSails() {
 function Desert() {
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]} receiveShadow>
-        <circleGeometry args={[260, 80]} />
-        <meshStandardMaterial color="#a8825c" roughness={0.98} />
-      </mesh>
-      {/* zelený pás údolí */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[8, -0.05, 8]}>
-        <ringGeometry args={[0, 46, 48]} />
-        <meshStandardMaterial color="#4a6838" roughness={0.95} />
-      </mesh>
+      <SceneTerrain
+        kind="sand"
+        size={760}
+        segments={170}
+        repeat={240}
+        seed={29}
+        level={-0.15}
+        height={(x, z, noise) => {
+          const distance = Math.hypot(x, z - 6);
+          const dunes = Math.max(0, Math.min(1, (distance - 64) / 90)) * ((noise.ridged(x * 0.012, z * 0.012, 3) - 0.5) * 9);
+          // The sea shelf drops away east of the oasis.
+          const shelf = THREE.MathUtils.smoothstep(x, 48, 76) * -6;
+          return dunes + shelf;
+        }}
+        color={(x, _y, z, noise) => {
+          const distance = Math.hypot(x, z - 6);
+          const dry = noise.fbm(x * 0.02 + 4, z * 0.02 + 1, 3);
+          const sand: [number, number, number] = [0.6 + dry * 0.1, 0.49 + dry * 0.08, 0.34 + dry * 0.06];
+          if (x > 58) return [0.22 + dry * 0.04, 0.23 + dry * 0.03, 0.21];
+          // The green band of the valley, faded at both edges instead of a hard ring.
+          const band = THREE.MathUtils.smoothstep(distance, 22, 34) * (1 - THREE.MathUtils.smoothstep(distance, 46, 58));
+          if (band <= 0.02) return sand;
+          const green: [number, number, number] = [0.2 + dry * 0.06, 0.31 + dry * 0.08, 0.15 + dry * 0.04];
+          return [sand[0] + (green[0] - sand[0]) * band, sand[1] + (green[1] - sand[1]) * band, sand[2] + (green[2] - sand[2]) * band];
+        }}
+      />
       {/* skaliska popředí */}
       {[...Array(10)].map((_, i) => {
         const a = -0.7 + i * 0.17;
@@ -452,59 +463,29 @@ function Desert() {
   );
 }
 
-/** obloha — noc nahoře, soumrak u obzoru, hvězdy, srpek */
-function AmentiSky() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 night = mix(vec3(0.02, 0.03, 0.09), vec3(0.05, 0.08, 0.2), d.y * 0.5 + 0.5);
-            vec3 dusk = mix(vec3(0.85, 0.5, 0.26), vec3(0.1, 0.08, 0.16), smoothstep(-0.02, 0.3, d.y));
-            vec3 c = mix(dusk, night, smoothstep(0.08, 0.4, d.y));
-            // hvězdy
-            vec3 cell = floor(d * 300.0);
-            float star = step(0.995, hash(cell));
-            float tw = 0.5 + 0.5 * hash(cell + 1.0);
-            c += vec3(1.0, 0.98, 0.9) * star * tw * 1.3 * smoothstep(0.05, 0.25, d.y);
-            // srpek vpravo nahoře
-            vec3 mdir = normalize(vec3(0.72, 0.6, -0.2));
-            float md = length(d - mdir);
-            float moon = (1.0 - smoothstep(0.023, 0.03, md)) - (1.0 - smoothstep(0.02, 0.026, length(d - mdir - vec3(0.013, 0.006, 0))));
-            c += vec3(0.95, 0.92, 0.8) * max(moon, 0.0) * 0.95;
-            gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
-          }
-        `,
-        uniforms: {},
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[420, 32, 20]} />
-    </mesh>
-  );
-}
-
 export function AmentiScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
-      <ScenePresentation camera={AMENTI_CAMERA} target={AMENTI_CONTROLS.target} />
-      <AmentiSky />
-      <fog attach="fog" args={['#3a2c20', 130, 380]} />
+      <ScenePresentation
+        camera={AMENTI_CAMERA}
+        target={AMENTI_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.52, 0.07, -0.85],
+          zenith: '#0b1230',
+          horizon: '#e08a4a',
+          ground: '#2a2018',
+          sunColor: '#ffb066',
+          sunSharpness: 420,
+          clouds: 0,
+          stars: 0.95,
+          fog: '#3a2c20',
+          fogDensity: 0.0013,
+          envIntensity: 0.8,
+        }}
+        post={{ bloom: 0.34, threshold: 0.86, exposure: 1.04, vignette: 0.55 }}
+        intro={{ duration: 4.2, rise: 0.3 }}
+      />
 
       <Desert />
       <GrandPyramid />
@@ -518,6 +499,7 @@ export function AmentiScene({ lang }: { lang: Lang }) {
       <GoldArc from={[0, 45, -26]} to={[40, 42, -54]} lift={8} />
       <GoldArc from={[-36, 36, -50]} to={[40, 38, -54]} lift={14} />
       <Oasis />
+      <SceneMotes count={260} area={[120, 120]} height={26} speed={0.5} size={2.8} color="#f0c9a0" opacity={0.35} sway={2.4} seed={9} />
       <SeaAndSails />
 
       {/* labely */}
@@ -535,10 +517,11 @@ export function AmentiScene({ lang }: { lang: Lang }) {
 export const AMENTI_CAMERA = { position: [2, 24, 82] as [number, number, number], fov: 48, far: 1400 };
 export const AMENTI_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.14, minDistance: 18, maxDistance: 240, maxPolarAngle: Math.PI / 2 - 0.05, target: [0, 22, -20] as [number, number, number], enablePan: false };
 export function AmentiLighting() {
-  return <>
-    <ambientLight intensity={0.45} color="#ffd8b0" />
-    <hemisphereLight args={['#e8c8a0', '#2a2018', 0.55]} />
-    <directionalLight position={[30, 30, 20]} intensity={1.4} color="#ffca80" castShadow />
-    <directionalLight position={[-30, 20, -30]} intensity={0.4} color="#6a8ac0" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.16} color="#ffd8b0" />
+      <SkyFill sky="#7f96c8" ground="#2a2018" intensity={0.42} />
+      <KeyLight sun={[-0.52, 0.07, -0.85]} intensity={2.1} extent={110} distance={180} color="#ffb671" />
+    </>
+  );
 }

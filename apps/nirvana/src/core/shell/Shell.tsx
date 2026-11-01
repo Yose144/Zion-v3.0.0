@@ -7,16 +7,20 @@ import { PORTALS, type SceneSlot } from '@/core/portals/manifest';
 import { backendForXr, resolveGpuBackend, type GpuBackend } from '@/core/scene/backends';
 import { SceneRoot } from '@/core/scene/SceneRoot';
 import { AccountPortal } from '@/portals/account/AccountPortal';
+import { ArchaPortal } from '@/portals/archa/ArchaPortal';
 import { BooksPortal } from '@/portals/books/BooksPortal';
 import { ChainPortal } from '@/portals/chain/ChainPortal';
 import { ComputePortal } from '@/portals/compute/ComputePortal';
 import { HarborPortal } from '@/portals/freeworld/HarborPortal';
 import { GatePortal } from '@/portals/gate/GatePortal';
+import { HiranPortal } from '@/portals/hiran/HiranPortal';
+import { ParkPortal } from '@/portals/park/ParkPortal';
 import { IssobellaPortal } from '@/portals/issobella/IssobellaPortal';
 import { MarketPortal } from '@/portals/market/MarketPortal';
 import { PoolPortal } from '@/portals/pool/PoolPortal';
 import { WorldPortal } from '@/portals/world/WorldPortal';
 import { parseWorlds, type WorldPoint } from '@/lib/worlds';
+import { normalizeHiranState, hiranReviewOverride, type HiranState } from '@/core/hiran/presence';
 
 const PANELS = new Set(PORTALS.map((p) => p.id));
 
@@ -27,6 +31,9 @@ const SLOT_COLOR: Record<SceneSlot, string> = {
   orbit: '#c084fc',
   gate: '#fcd116',
   ship: '#e41e2b',
+  sun: '#ffd166',
+  park: '#ffb46a',
+  sea: '#1d8fb3',
 };
 
 function readHash(): { portal: string | null; world: string | null } {
@@ -49,19 +56,30 @@ export function Shell() {
   const [worldsFailed, setWorldsFailed] = useState(false);
   const [portal, setPortal] = useState<string | null>(null);
   const [selectedWorld, setSelectedWorld] = useState<string | null>(null);
+  const [hiranState, setHiranState] = useState<HiranState>(() => hiranReviewOverride() ?? 'idle');
+  const [reviewState] = useState<HiranState | null>(() => hiranReviewOverride());
+  const [focus, setFocus] = useState<'earth' | 'sun' | 'jupiter'>('earth');
   const [xrWanted, setXrWanted] = useState(false);
   const [xrSupported, setXrSupported] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const hashInit = useRef(false);
 
   const openPortal = useCallback((id: string) => {
-    setPortal(PANELS.has(id) ? id : null);
+    const next = PANELS.has(id) ? id : null;
+    setPortal(next);
+    setFocus(next === 'hiran' ? 'sun' : next === 'park' ? 'jupiter' : 'earth');
     setMenuOpen(false);
+  }, []);
+
+  const closePortal = useCallback(() => {
+    setPortal(null);
+    setFocus('earth');
   }, []);
 
   const selectWorld = useCallback((id: string) => {
     setSelectedWorld(id);
     setPortal('world');
+    setFocus('earth');
     setMenuOpen(false);
   }, []);
 
@@ -70,11 +88,15 @@ export function Shell() {
     if (hashInit.current) return;
     hashInit.current = true;
     const { portal: p, world } = readHash();
-    if (p) setPortal(p);
+    if (p) {
+      setPortal(p);
+      setFocus(p === 'hiran' ? 'sun' : p === 'park' ? 'jupiter' : 'earth');
+    }
     if (world) setSelectedWorld(world);
     const onHash = () => {
       const next = readHash();
       setPortal(next.portal);
+      setFocus(next.portal === 'hiran' ? 'sun' : next.portal === 'park' ? 'jupiter' : 'earth');
       if (next.world) setSelectedWorld(next.world);
     };
     window.addEventListener('hashchange', onHash);
@@ -128,6 +150,27 @@ export function Shell() {
     };
   }, []);
 
+  // Hiran svítí i když je jeho okno zavřené — proto se stav zjišťuje jednou
+  // při mountu. Offline není chyba, je to stav: Slunce dýchá dál, jen tišeji.
+  // Revizní override pro art review: `?hiran=idle|thinking|offline|error`.
+  useEffect(() => {
+    // Revizní override `?hiran=` drží stav; jinak se zjistí jednou při mountu.
+    if (reviewState) return;
+    let live = true;
+    fetch('/api/hiran', { cache: 'no-store' })
+      .then(async (res) => {
+        const body = (await res.json().catch(() => ({}))) as { available?: boolean };
+        if (!live) return;
+        setHiranState(res.ok && body.available === true ? 'idle' : 'offline');
+      })
+      .catch(() => {
+        if (live) setHiranState('offline');
+      });
+    return () => {
+      live = false;
+    };
+  }, [reviewState]);
+
   function enterVr() {
     backendForXr();
     setBackend('webgl2');
@@ -153,6 +196,8 @@ export function Shell() {
           onSelectWorld={selectWorld}
           xr={xrWanted}
           label={t('gate')}
+          focus={focus}
+          hiranState={hiranState}
         />
       </div>
       <header className="chrome">
@@ -238,6 +283,19 @@ export function Shell() {
       {portal === 'gate' && <GatePortal onClose={() => setPortal(null)} />}
       {portal === 'issobella' && <IssobellaPortal onClose={() => setPortal(null)} />}
       {portal === 'compute' && <ComputePortal onClose={() => setPortal(null)} />}
+      {portal === 'park' && <ParkPortal onClose={closePortal} />}
+      {portal === 'archa' && <ArchaPortal onClose={closePortal} />}
+      {portal === 'hiran' && (
+        <HiranPortal
+          onClose={closePortal}
+          state={hiranState}
+          onStateChange={(next) => setHiranState(normalizeHiranState(next))}
+          focus={focus === 'sun' ? 'sun' : 'earth'}
+          onFocusSun={() => setFocus('sun')}
+          onFocusEarth={() => setFocus('earth')}
+          probe={!reviewState}
+        />
+      )}
     </main>
   );
 }

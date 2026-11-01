@@ -33,7 +33,7 @@ function CodeBlock({ code, title }: { code: string; title?: string }) {
   return (
     <div className="relative group">
       {title && (
-        <div className="text-[10px] text-white/30 uppercase tracking-wider mb-1.5">
+        <div className="text-[11px] text-white/30 uppercase tracking-wider mb-1.5">
           {title}
         </div>
       )}
@@ -189,7 +189,7 @@ export default function MiningGuidesClient() {
               >
                 <div>
                   <span className="text-sm font-medium text-white/80">{algo.name}</span>
-                  <span className="block md:hidden text-[10px] text-white/30 mt-0.5">
+                  <span className="block md:hidden text-[11px] text-white/30 mt-0.5">
                     {algo.type} · {algo.memory}
                   </span>
                 </div>
@@ -329,7 +329,7 @@ tar xzf xmrig-*.tar.gz && cd xmrig-*
                 {/* Metal (macOS) */}
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/5 border border-white/10 text-white/50">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] bg-white/5 border border-white/10 text-white/50">
                       Apple Silicon
                     </span>
                     <h4 className="text-sm font-medium text-white/80">Metal (macOS)</h4>
@@ -352,7 +352,7 @@ cargo build --release -p zion-miner --features metal
                 {/* CUDA */}
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-zion-cyan/10 border border-zion-cyan/20 text-zion-cyan">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] bg-zion-cyan/10 border border-zion-cyan/20 text-zion-cyan">
                       NVIDIA
                     </span>
                     <h4 className="text-sm font-medium text-white/80">CUDA (Linux/Windows)</h4>
@@ -378,7 +378,7 @@ cargo build --release -p zion-miner --features cuda
                 {/* OpenCL */}
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-zion-purple/10 border border-zion-purple/20 text-zion-purple">
+                    <span className="px-2 py-0.5 rounded-full text-[11px] bg-zion-purple/10 border border-zion-purple/20 text-zion-purple">
                       AMD
                     </span>
                     <h4 className="text-sm font-medium text-white/80">OpenCL (Linux/Windows)</h4>
@@ -621,7 +621,7 @@ curl -s http://localhost:8443 \\
               >
                 <div>
                   <span className="text-sm text-white/80">{row.hw}</span>
-                  <span className="block md:hidden text-[10px] text-white/25 mt-0.5">
+                  <span className="block md:hidden text-[11px] text-white/25 mt-0.5">
                     {row.hr} · {row.power}
                   </span>
                 </div>

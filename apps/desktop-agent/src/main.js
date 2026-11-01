@@ -8014,6 +8014,9 @@ ipcMain.handle('wallet-generate-qr', async (event, { text }) => {
 // ═══════════════════════════════════════════════════════════════════
 const GITHUB_RELEASES_API = 'https://api.github.com/repos/Zion-TerraNova/v3-Mainnet/releases';
 const DESKTOP_RELEASE_TAG_RE = /^v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)-desktop$/;
+// VIP edition: license-gated update feed. GitHub is the fallback when the
+// update server is unreachable or the license is not yet activated.
+const UPDATE_SERVER_URL = 'https://updates.zionterranova.com/api/releases';
 let _autoUpdaterAvailable = false;
 let _autoUpdater = null;
 let _updateReady = false;
@@ -8234,10 +8237,60 @@ ipcMain.handle('validate-license', async (event, key) => {
 
 // Fallback: query the GitHub releases API directly (works in dev mode without
 // electron-updater). License validation requires the (not yet deployed)
-// license server, so validate-only checks report as unavailable.
+// VIP edition: the license-gated update server is the primary feed; the
+// GitHub releases API is the fallback when the server is unreachable or the
+// license is not activated yet.
 async function _checkUpdateServer(licenseKey, validateOnly = false) {
+  // 1) License-gated update server (VIP primary).
+  if (UPDATE_SERVER_URL) {
+    try {
+      const url = new URL(UPDATE_SERVER_URL.replace('/api/releases', '/api/check-update'));
+      const body = JSON.stringify({
+        licenseKey: licenseKey || '',
+        platform: process.platform,
+        arch: process.arch,
+        currentVersion: app.getVersion(),
+      });
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 15000);
+      let res;
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-License-Key': licenseKey || '',
+          },
+          body,
+          signal: ctrl.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 403) {
+        return { success: false, error: data.error || 'Invalid or revoked license', licenseValid: false };
+      }
+      if (res.status === 200) {
+        if (validateOnly) return { success: true, licenseValid: true, ...data };
+        return {
+          success: true,
+          licenseValid: true,
+          updateAvailable: !!data.updateAvailable,
+          currentVersion: data.currentVersion || app.getVersion(),
+          latestVersion: data.latestVersion || app.getVersion(),
+          releaseNotes: data.releaseNotes || '',
+          releaseDate: data.releaseDate || '',
+          downloadUrl: data.downloadUrl || '',
+        };
+      }
+      // 404 / 5xx → fall through to GitHub fallback.
+    } catch { /* fall through */ }
+  }
+
+  // 2) GitHub releases fallback (also used when no license is activated).
   if (validateOnly) {
-    return { success: false, licenseValid: false, error: 'License validation is not available yet' };
+    return { success: false, licenseValid: false, error: 'License validation unavailable (update server unreachable)' };
   }
   try {
     const ctrl = new AbortController();

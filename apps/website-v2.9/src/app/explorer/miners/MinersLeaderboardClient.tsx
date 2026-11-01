@@ -101,7 +101,7 @@ export default function MinersLeaderboardClient() {
               <div key={s.label} className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-3">
                   <s.icon className={`h-4 w-4 ${s.color}`} />
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{s.label}</span>
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{s.label}</span>
                 </div>
                 <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
               </div>
@@ -124,13 +124,13 @@ export default function MinersLeaderboardClient() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/6">
-                    <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-4 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.rank[cs ? 'cs' : 'en']}</th>
-                    <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.address[cs ? 'cs' : 'en']}</th>
-                    <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.type[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.hashrate[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.shares[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.blocks[cs ? 'cs' : 'en']}</th>
-                    <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-4 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.balance[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-4 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.rank[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.address[cs ? 'cs' : 'en']}</th>
+                    <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.type[cs ? 'cs' : 'en']}</th>
+                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.hashrate[cs ? 'cs' : 'en']}</th>
+                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.shares[cs ? 'cs' : 'en']}</th>
+                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerMinersMinersLeaderboardClientCopy.blocks[cs ? 'cs' : 'en']}</th>
+                    <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-4 py-3.5">{ExplorerMinersMinersLeaderboardClientCopy.balance[cs ? 'cs' : 'en']}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -161,7 +161,7 @@ export default function MinersLeaderboardClient() {
                             </span>
                           </td>
                           <td className="px-3 py-3 hidden md:table-cell">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border ${
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider border ${
                               m.type === "pool"
                                 ? "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
                                 : "bg-zion-purple/10 text-zion-purple border-zion-purple/20"
@@ -182,7 +182,7 @@ export default function MinersLeaderboardClient() {
                             <span className="text-white text-xs font-semibold tabular-nums">
                               {(m.balance).toLocaleString(cs ? 'cs-CZ' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
                             </span>
-                            <span className="text-gray-600 text-[10px] ml-1">ZION</span>
+                            <span className="text-gray-600 text-[11px] ml-1">ZION</span>
                           </td>
                         </tr>
                       ))}

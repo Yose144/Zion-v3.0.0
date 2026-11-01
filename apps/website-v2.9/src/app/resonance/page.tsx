@@ -267,7 +267,7 @@ export default function ResonancePage() {
                     >
                       {f.hz}
                     </span>
-                    <span className="text-[10px] uppercase tracking-[0.28em] text-gray-500 font-semibold">
+                    <span className="text-[11px] uppercase tracking-[0.28em] text-gray-500 font-semibold">
                       {f.layer}
                     </span>
                   </div>

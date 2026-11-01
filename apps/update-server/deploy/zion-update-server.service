@@ -1,0 +1,23 @@
+[Unit]
+Description=ZION Update / License Server (VIP desktop autoupdate)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion/update-server
+EnvironmentFile=/etc/zion/update-server.env
+ExecStart=/usr/local/bin/node server.js
+Restart=on-failure
+RestartSec=5
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/zion/update-server/data
+
+[Install]
+WantedBy=multi-user.target

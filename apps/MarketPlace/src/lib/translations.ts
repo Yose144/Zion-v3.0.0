@@ -42,19 +42,19 @@ const t = {
   },
 
   hero: {
-    kicker: { cs: 'Živě na Base L2 · ERC-1155', en: 'Live on Base L2 · ERC-1155' },
+    kicker: { cs: 'ZION TerraNova · OASIS univerzum', en: 'ZION TerraNova · OASIS universe' },
     title1: { cs: 'OASIS Artefakt', en: 'OASIS Artifact' },
     title2: { cs: 'Tržiště', en: 'Marketplace' },
     description: {
-      cs: 'Obchodujte s avatary, loděmi, quest předměty, územními listinami a Zlatými vejci ze ZION OASIS univerza. Platte wZION na L2 nebo nativním ZION na L1.',
-      en: 'Trade avatars, ships, quest items, territory deeds, and Golden Eggs from the ZION OASIS universe. Pay with wZION on L2 or native ZION on L1.',
+      cs: 'Brána do světa OASIS — digitální kniha Království srdce s přístupem do ZION Archivu a sbírka unikátních artefaktů. Tržiště odstartuje spolu se spuštěním OASIS.',
+      en: 'Your gateway into the OASIS world — the digital book Kingdom of Hearts with ZION Archive access, and a collection of unique artifacts. The marketplace launches together with the OASIS world.',
     },
-    ctaPrimary: { cs: 'Prozkoumat trh', en: 'Explore Market' },
-    ctaSecondary: { cs: 'Vytvořit nabídku', en: 'Create Listing' },
+    ctaPrimary: { cs: 'Prozkoumat artefakty', en: 'Browse Artifacts' },
+    ctaSecondary: { cs: 'Koupit knihu', en: 'Buy the Book' },
   },
 
   stats: {
-    itemsListed: { cs: 'Nabízených předmětů', en: 'Items Listed' },
+    itemsListed: { cs: 'Artefaktů v kolekci', en: 'Artifacts in collection' },
     totalVolume: { cs: 'Celkový objem', en: 'Total Volume' },
     wzion: { cs: 'wZION', en: 'wZION' },
     activeAuctions: { cs: 'Aktivní aukce', en: 'Active Auctions' },
@@ -89,6 +89,20 @@ const t = {
     cosmeticsDesc: { cs: 'Skiny, stopy, efekty', en: 'Skins, trails, effects' },
   },
 
+  // Real Artifact.category values (DB / mint route)
+  cat: {
+    avatar: { cs: 'Avatary', en: 'Avatars' },
+    ship: { cs: 'Lodě', en: 'Ships' },
+    ship_skin: { cs: 'Skiny lodí', en: 'Ship skins' },
+    quest_item: { cs: 'Quest předměty', en: 'Quest items' },
+    consumable: { cs: 'Spotřební', en: 'Consumables' },
+    territory: { cs: 'Území', en: 'Territory' },
+    golden_egg: { cs: 'Zlatá vejce', en: 'Golden eggs' },
+    badge: { cs: 'Odznaky', en: 'Badges' },
+    music: { cs: 'Hudba', en: 'Music' },
+    art: { cs: 'Umění', en: 'Art' },
+  },
+
   book: {
     kicker: { cs: 'Novinka · Kniha', en: 'New · Book' },
     title: { cs: 'Království srdce', en: 'Kingdom of Hearts' },
@@ -97,8 +111,8 @@ const t = {
       en: 'The story of the ship a carpenter built',
     },
     description: {
-      cs: 'Duchovní legenda o tektonu z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 10 kapitol + epilog, každá s tabulkou „Kotva pravdy".',
-      en: 'A spiritual legend about the tekton of Nazareth who, in his father\'s workshop, built a ship for a sea found on no map — and called it the Kingdom of Hearts. 10 chapters + epilogue, each with a "Truth Anchor" table.',
+      cs: 'Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. 10 kapitol + epilog, každá s tabulkou „Kotva pravdy".',
+      en: 'A spiritual legend about the carpenter of Nazareth who, in his father\'s workshop, built a ship for a sea found on no map — and called it the Kingdom of Hearts. 10 chapters + epilogue, each with a "Truth Anchor" table.',
     },
     format: { cs: 'Digitální vydání · PDF · 10 kapitol + epilog', en: 'Digital edition · PDF · 10 chapters + epilogue' },
     delivery: { cs: 'PDF dodáváme ke stažení po objednávce', en: 'PDF delivered for download after ordering' },
@@ -159,6 +173,20 @@ const t = {
     chipApi: { cs: 'OpenAI-compatible API', en: 'OpenAI-compatible API' },
     chipFleet: { cs: 'Trial chat zdarma', en: 'Free trial chat' },
     cta: { cs: 'Otevřít AI', en: 'Open AI' },
+  },
+
+  marketLock: {
+    badge: { cs: 'Již brzy · Coming soon', en: 'Coming soon' },
+    title: {
+      cs: 'Tržiště s artefakty se otevře se spuštěním OASIS',
+      en: 'The artifact marketplace opens with the OASIS launch',
+    },
+    desc: {
+      cs: 'Prohlížejte si kolekci — nákup, přihazování i zakládání nabídek bude dostupné až ve chvíli, kdy odstartuje svět OASIS. Držitelé ZION Archive Pass vstoupí mezi prvními.',
+      en: 'Browse the collection — buying, bidding, and new listings unlock the moment the OASIS world launches. ZION Archive Pass holders enter first.',
+    },
+    ctaOasis: { cs: 'Vstoupit do OASIS', en: 'Enter OASIS' },
+    cta: { cs: 'Otevře se s OASIS', en: 'Opens with OASIS' },
   },
 
   explore: {
@@ -227,6 +255,7 @@ const t = {
     },
     topBid: { cs: 'Nejvyšší nabídka', en: 'Top Bid' },
     timeLeft: { cs: 'zbývá {time}', en: '{time} left' },
+    auctionEnded: { cs: 'aukce skončila', en: 'auction ended' },
     ended: { cs: 'Ukončeno', en: 'Ended' },
     bidPlaceholder: { cs: 'Částka příhozu (wZION)', en: 'Bid amount (wZION)' },
     placingBid: { cs: 'Odesílání nabídky…', en: 'Placing Bid…' },
@@ -308,6 +337,9 @@ const t = {
     minutesAgo: { cs: 'před {n} min', en: '{n}m ago' },
     hoursAgo: { cs: 'před {n} h', en: '{n}h ago' },
     daysAgo: { cs: 'před {n} d', en: '{n}d ago' },
+    emptyOwned: { cs: 'Žádné vlastněné artefakty', en: 'No owned artifacts' },
+    emptyListed: { cs: 'Žádné aktivní nabídky', en: 'No active listings' },
+    emptyActivity: { cs: 'Zatím žádná aktivita', en: 'No activity yet' },
   },
 
   shop: {
@@ -507,6 +539,16 @@ const t = {
     itemsTitle: { cs: 'Položky', en: 'Items' },
     invoiceDownload: { cs: 'Faktura {number}', en: 'Invoice {number}' },
     paymentPendingHint: { cs: 'Čeká na připsání platby. Po připsání zboží obratem odešleme.', en: 'Waiting for payment. We ship immediately once it clears.' },
+    archivePassTitle: { cs: '📚 ZION Archive Pass', en: '📚 ZION Archive Pass' },
+    archivePassHint: {
+      cs: 'Váš osobní kód ke knize — odemyká ZION Archiv, OASIS svět NIRVANA i portál nirvana.zionterranova.com. Zadejte ho všude stejně.',
+      en: 'Your personal book code — unlocks the ZION Archive, the OASIS world NIRVANA, and the nirvana.zionterranova.com portal. Enter it the same way everywhere.',
+    },
+    archivePassArchive: { cs: 'Otevřít Archiv', en: 'Open Archive' },
+    archivePassOasis: { cs: 'OASIS svět', en: 'OASIS world' },
+    archivePassNirvana: { cs: 'Portál Nirvana', en: 'Nirvana portal' },
+    archivePassCopy: { cs: 'Kopírovat', en: 'Copy' },
+    archivePassCopied: { cs: 'Zkopírováno ✓', en: 'Copied ✓' },
     backToShop: { cs: 'Zpět do obchodu', en: 'Back to shop' },
     loading: { cs: 'Načítání…', en: 'Loading…' },
   },
@@ -525,6 +567,7 @@ const t = {
     navInvoices: { cs: 'Faktury', en: 'Invoices' },
     navShipping: { cs: 'Doprava', en: 'Shipping' },
     navStripe: { cs: 'Stripe', en: 'Stripe' },
+    navGifts: { cs: 'Dárky', en: 'Gifts' },
     navStore: { cs: 'Obchod', en: 'Store' },
     themeLabel: { cs: 'Téma', en: 'Theme' },
     themeRasta: { cs: 'Rasta', en: 'Rasta' },
@@ -784,6 +827,11 @@ const t = {
     guideSubtitle: { cs: 'Jak nakupovat na ZION Marketu', en: 'How to shop on ZION Market' },
     faqTitle: { cs: 'Časté dotazy', en: 'FAQ' },
     faqSubtitle: { cs: 'Odpovědi na nejčastější otázky', en: 'Answers to frequently asked questions' },
+    complaintsTitle: { cs: 'Reklamační řád', en: 'Complaints Procedure' },
+    complaintsSubtitle: {
+      cs: 'Záruka, reklamace a odstoupení od smlouvy',
+      en: 'Warranty, complaints and withdrawal from contract',
+    },
   },
 
   footer: {

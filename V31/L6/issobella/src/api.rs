@@ -1,16 +1,18 @@
 //! REST API handlers for zion-issobella.
 
+use crate::anchor::{anchor_config, run_anchor_sweep, AnchorMode};
 use crate::config::IssobellaConfig;
 use crate::dao_client::{DaoClient, DaoClientConfig, MissionProposalInput};
 use crate::db::{
-    DisbursementRecord, IssobellaDb, MissionRecord, ObservationRecord, ResearchProposal,
+    DisbursementRecord, IssobellaDb, MissionRecord, ObservationRecord, PaperRecord,
+    ResearchProposal,
 };
 use crate::hiran_bridge::IssobellaHiranBridge;
 use crate::metrics::serve_metrics_text;
 use crate::metrics::IssobellaMetrics;
 use axum::{
-    extract::{Path, State},
-    http::StatusCode,
+    extract::{Path, Query, State},
+    http::{HeaderMap, StatusCode},
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
@@ -84,6 +86,12 @@ pub fn issobella_router(state: AppState) -> Router {
         .route("/api/v1/proposals/:id/reject", post(reject_proposal))
         .route("/api/v1/fund/balance", get(fund_balance))
         .route("/api/v1/fund/disbursements", get(list_fund_disbursements))
+        // ── DeSci papers (L1-anchored repository) ──────────────────────────
+        .route("/api/v1/papers", get(list_papers).post(submit_paper))
+        .route("/api/v1/papers/:id", get(get_paper))
+        .route("/api/v1/papers/:id/proof", get(paper_proof))
+        .route("/api/v1/papers/:id/publish", post(publish_paper))
+        .route("/api/v1/anchor/run", post(anchor_run))
         // ── Hiran AI endpoints ──────────────────────────────────────────────
         .route("/api/v1/ai/evaluate-mission", post(ai_evaluate_mission))
         .route("/api/v1/ai/analyze-proposal", post(ai_analyze_proposal))
@@ -523,6 +531,234 @@ async fn list_fund_disbursements(State(state): State<AppState>) -> impl IntoResp
     let db = state.db.lock().unwrap();
     match db.list_disbursements(None) {
         Ok(disbursements) => (StatusCode::OK, Json(ApiResponse::ok(disbursements))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
+    }
+}
+
+// ── DeSci papers handlers ───────────────────────────────────────────────────
+
+/// Admin gate — `x-api-key` (or `Authorization: Bearer`) must equal the
+/// configured `ISSOBELLA_API_KEY`. Fail-closed: with no key configured every
+/// admin call is denied instead of silently open.
+fn require_admin(
+    headers: &HeaderMap,
+    state: &AppState,
+) -> Result<(), (StatusCode, Json<ApiResponse>)> {
+    if state.api_key.is_empty() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json(ApiResponse::err("admin API key not configured on daemon")),
+        ));
+    }
+    let provided = headers
+        .get("x-api-key")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_string)
+        .or_else(|| {
+            headers
+                .get("authorization")
+                .and_then(|v| v.to_str().ok())
+                .and_then(|v| v.strip_prefix("Bearer "))
+                .map(str::to_string)
+        });
+    match provided {
+        Some(k) if k == state.api_key => Ok(()),
+        _ => Err((
+            StatusCode::UNAUTHORIZED,
+            Json(ApiResponse::err("invalid or missing admin API key")),
+        )),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ListPapersQuery {
+    pub all: Option<String>,
+}
+
+async fn list_papers(
+    State(state): State<AppState>,
+    Query(q): Query<ListPapersQuery>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    // Public surface = published only. `?all=1` requires the admin key.
+    let want_all = q.all.as_deref() == Some("1") || q.all.as_deref() == Some("true");
+    if want_all && require_admin(&headers, &state).is_err() {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(ApiResponse::err("?all=1 requires admin API key")),
+        );
+    }
+    let filter = if want_all { None } else { Some("published") };
+    let db = state.db.lock().unwrap();
+    match db.list_papers(filter) {
+        Ok(papers) => (StatusCode::OK, Json(ApiResponse::ok(papers))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct SubmitPaperRequest {
+    pub title: String,
+    pub authors: Vec<String>,
+    pub abstract_text: Option<String>,
+    pub content_url: Option<String>,
+    /// blake3 hex digest of the paper bytes (64-hex).
+    pub content_sha256: String,
+    /// "zis:<user.id>" — bound server-side by the website proxy; required.
+    pub submitted_by: Option<String>,
+    pub mission_id: Option<String>,
+    pub proposal_id: Option<String>,
+}
+
+async fn submit_paper(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<SubmitPaperRequest>,
+) -> impl IntoResponse {
+    if let Err(e) = require_admin(&headers, &state) {
+        return e;
+    }
+    if req.title.trim().is_empty() || req.authors.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::err("title and authors are required")),
+        );
+    }
+    let submitted_by = req.submitted_by.filter(|s| !s.trim().is_empty());
+    let Some(submitted_by) = submitted_by else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::err("submitted_by is required (zis:<user.id>)")),
+        );
+    };
+    if hex::decode(&req.content_sha256).map(|b| b.len() != 32).unwrap_or(true) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::err(
+                "content_sha256 must be a 64-char hex digest (blake3)",
+            )),
+        );
+    }
+
+    let mut paper = PaperRecord::new(&req.title, &req.authors, &req.content_sha256, &submitted_by);
+    paper.abstract_text = req.abstract_text;
+    paper.content_url = req.content_url;
+    paper.mission_id = req.mission_id;
+    paper.proposal_id = req.proposal_id;
+
+    let db = state.db.lock().unwrap();
+    match db.insert_paper(&paper) {
+        Ok(_) => (StatusCode::CREATED, Json(ApiResponse::ok(paper))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
+    }
+}
+
+async fn get_paper(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let db = state.db.lock().unwrap();
+    match db.get_paper(&id) {
+        Ok(paper) if paper.status == "published" => {
+            (StatusCode::OK, Json(ApiResponse::ok(paper)))
+        }
+        // Non-published papers exist but stay off the public surface.
+        Ok(_) => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::err("paper not found")),
+        ),
+        Err(e) => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
+    }
+}
+
+async fn paper_proof(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let paper = {
+        let db = state.db.lock().unwrap();
+        db.get_paper(&id)
+    };
+    match paper {
+        Ok(p) => (
+            StatusCode::OK,
+            Json(ApiResponse::ok(serde_json::json!({
+                "paper_id": p.id,
+                "content_sha256": p.content_sha256,
+                "status": p.status,
+                "anchor_txid": p.anchor_txid,
+                "anchor_height": p.anchor_height,
+                "anchor_mode": p.anchor_mode,
+                "merkle_path": p
+                    .merkle_path
+                    .as_deref()
+                    .and_then(|s| serde_json::from_str::<Value>(s).ok()),
+                "anchored_at": p.anchored_at,
+                "verify_hint": "b3sum the file → compare content_sha256 → fetch anchor_txid via /api/blockchain/tx/<txid> and check the memo carries the hash (ISSPAPER:v1:<hash>, or ISSANCHOR:v1:<root> + merkle_path replay)",
+            }))),
+        ),
+        Err(e) => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
+    }
+}
+
+async fn publish_paper(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    if let Err(e) = require_admin(&headers, &state) {
+        return e;
+    }
+    let db = state.db.lock().unwrap();
+    match db.publish_paper(&id) {
+        Ok(paper) => (StatusCode::OK, Json(ApiResponse::ok(paper))),
+        Err(crate::error::IssobellaError::PaperNotFound(_)) => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::err("paper not found")),
+        ),
+        Err(e) => (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct AnchorRunRequest {
+    /// "memo" | "batch" | "auto" (default).
+    pub mode: Option<String>,
+}
+
+async fn anchor_run(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Option<Json<AnchorRunRequest>>,
+) -> impl IntoResponse {
+    if let Err(e) = require_admin(&headers, &state) {
+        return e;
+    }
+    let mode = body
+        .and_then(|b| b.mode.clone())
+        .map(|m| AnchorMode::parse(&m))
+        .unwrap_or(AnchorMode::Auto);
+    let cfg = anchor_config(&state.config.l1_rpc_url);
+    match run_anchor_sweep(&state.db, &cfg, mode).await {
+        Ok(report) => (StatusCode::OK, Json(ApiResponse::ok(report))),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiResponse::err(&e.to_string())),

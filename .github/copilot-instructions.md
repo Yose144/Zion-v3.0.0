@@ -33,11 +33,11 @@ These instructions apply to the whole repository. Prefer more specific file-leve
 - For Rust miner/core/pool changes, prefer targeted cargo test or cargo test --no-run before broad workspace validation.
 - For desktop agent JavaScript changes, run node --check on apps/desktop-agent/src/main.js when that file changes.
 - For desktop agent Python mining fallback changes, run python3 -m py_compile on the touched Python miner files.
-- scripts/autopilot-2.9.8.sh already encodes the expected validation sequence for miner and desktop-agent deploy readiness; follow it unless the task explicitly needs a different path.
+- `scripts/autopilot-2.9.8.sh` is **legacy 2.9.x** and hardcodes decommissioned hosts; it is not the validation/deploy path. Use `V31/RELEASE_RUNBOOK.md` + `V31/deploy/POOL-DEPLOY-RUNBOOK.md` instead.
 
 ## Release Context
 
-- Current live network focus is v2.9.8 Deeksha canonical path.
+- Current live network focus is the **V31 `3.2.0` Mainnet Beta** line (`V31/`, protocol handshake `zion-v3-node/3.1.0-alpha`). v2.9.x material is legacy/reference.
 - Desktop-agent package metadata can lag runtime behavior. Do not bump version strings just because runtime code changed unless the task is explicitly about packaging or release alignment.
 
 ## Hiranyagarbha / Hiran model roadmap

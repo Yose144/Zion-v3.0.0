@@ -32,6 +32,11 @@ Environment overrides:
   G8_ZIS_HEALTH_URL            (http://127.0.0.1:8096/health)
   G8_STRATUM_HOST              (127.0.0.1)
   G8_STRATUM_PORT              (8444)
+                               On EDGE2 set G8_STRATUM_HOST to the EDGE
+                               public IP (62.171.141.136) — stratum is not
+                               on EDGE2 loopback; see
+                               V31/deploy/systemd/zion-g8-probe.service.d/
+                               10-edge2-stratum.conf
 
 Python stdlib only.
 """

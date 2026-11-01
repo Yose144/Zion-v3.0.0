@@ -23,11 +23,11 @@ import { useLang } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 const T = {
-  kicker: { cs: 'Inference API', en: 'Inference API' },
-  title: { cs: 'Hiranyagarbha API', en: 'Hiranyagarbha API' },
+  kicker: { cs: 'Zlatý zárod · AI ze ZION vesmíru', en: 'The Golden Embryo · AI from the ZION universe' },
+  title: { cs: 'Hiran — váš parťák pro kód i myšlenky', en: 'Hiran — your companion for code & ideas' },
   subtitle: {
-    cs: 'OpenAI-kompatibilní inference API hostované v EU. Žádný US cloud — data neopouštějí Evropu a nikdy se nepoužívají k trénování.',
-    en: 'OpenAI-compatible inference API hosted in the EU. No US cloud — your data never leaves Europe and is never used for training.',
+    cs: 'Coding agent, který žije ve vašem terminálu — a OpenAI-kompatibilní API pro vaše aplikace. Hostováno v EU, data nikdy neopouštějí Evropu a nikdy netrénujeme na tom, co píšete.',
+    en: 'A coding agent that lives in your terminal — plus an OpenAI-compatible API for your apps. Hosted in the EU, your data never leaves Europe and is never used for training.',
   },
   signIn: {
     cs: 'Pro vytvoření API klíče se nejdřív přihlaste přes ZIS (tlačítko Sign In v navigaci).',
@@ -374,8 +374,15 @@ function AiPricingInner() {
 
   return (
     <div className="rasta-info-page">
-      <section className="rasta-hero" aria-label="Hiranyagarbha">
-        <div className="rasta-hero-inner">
+      <section className="hiran-hero" aria-label="Hiranyagarbha">
+        {/* The art carries its own title band (HIRAN AI · AI pro vývojáře)
+            — rendered clean, no text overlay; info strip lives below. */}
+        <div
+          className="hiran-hero-art"
+          role="img"
+          aria-label="HIRAN AI — AI pro vývojáře · ZION Market · OASIS Ecosystem"
+        />
+        <div className="hiran-hero-actions">
           <div className="rasta-hero-kicker">
             <span className="dot" />
             {T.kicker[l]}
@@ -666,7 +673,7 @@ zion-hiran`}</pre>
 
           <SectionHead icon={Terminal} title={T.docsTitle[l]} />
           <div className="grid gap-4 lg:grid-cols-2">
-            <div>
+            <div className="min-w-0">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {T.docsCli[l]}
               </p>
@@ -674,7 +681,7 @@ zion-hiran`}</pre>
 zion hiran whoami
 zion hiran agent -p "…"`}</pre>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {T.docsApi[l]}
               </p>

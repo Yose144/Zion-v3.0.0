@@ -141,6 +141,24 @@ button {
   font-size: 1.1rem;
 }
 
+.portal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(232, 194, 90, 0.55);
+  border-radius: 8px;
+  color: #f0d78f;
+  text-decoration: none;
+  background: rgba(232, 194, 90, 0.12);
+  font-size: 0.9rem;
+}
+
+.portal-link:hover {
+  background: rgba(232, 194, 90, 0.24);
+}
+
 .portal ul {
   list-style: none;
   padding: 0;
@@ -483,7 +501,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   left: 0;
   right: 0;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
@@ -608,4 +626,1108 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     font-size: 0.7rem;
     padding: 0.35rem 0.55rem;
   }
+}
+
+/* The soundtrack button is optional chrome: keep it compact on small screens. */
+@media (max-width: 720px) {
+  .present-sound .present-sound-label {
+    display: none;
+  }
+
+  .present-chrome {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+  }
+
+  .present-chrome .present-sound {
+    display: none;
+  }
+}
+
+/* Loading veil for the project presentations — fades out when the scene settles. */
+.present-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: radial-gradient(circle at 50% 45%, rgba(24, 20, 16, 0.92), rgba(6, 7, 10, 0.98));
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
+.present-veil-label {
+  font-size: 11px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(243, 232, 208, 0.72);
+}
+
+.present-veil-track {
+  width: min(220px, 40vw);
+  height: 2px;
+  background: rgba(243, 232, 208, 0.18);
+  overflow: hidden;
+}
+
+.present-veil-bar {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(216, 178, 94, 0.4), rgba(243, 232, 208, 0.95));
+  transition: width 220ms ease;
+}
+
+/* ── Hiran — okno ve středu soustavy ─────────────────────────────────────
+   Zlatý orb na Slunci otevírá tenhle panel. Žádná tabulka, žádný formulář
+   s následky: jen otázka a odpověď. Offline je stav, ne chyba. */
+
+.hiran-portal {
+  width: min(26rem, calc(100% - 2rem));
+}
+
+.hiran-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+
+.hiran-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  background: #ffd166;
+  box-shadow: 0 0 8px rgba(255, 209, 102, 0.7);
+}
+
+.hiran-dot-thinking {
+  background: #a88eff;
+  box-shadow: 0 0 8px rgba(168, 142, 255, 0.7);
+  animation: hiran-pulse 1.1s ease-in-out infinite;
+}
+
+.hiran-dot-offline,
+.hiran-dot-error {
+  background: rgba(255, 209, 102, 0.35);
+  box-shadow: none;
+}
+
+@keyframes hiran-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.hiran-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.hiran-note-offline {
+  color: #ffd166;
+}
+
+.hiran-note-error {
+  color: #ff9a8a;
+}
+
+.hiran-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 15rem;
+  margin: 0.7rem 0 0;
+  padding-right: 0.15rem;
+  overflow-y: auto;
+}
+
+.hiran-msg {
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.7rem;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.hiran-msg-user {
+  align-self: flex-end;
+  background: rgba(255, 209, 102, 0.14);
+  border: 1px solid rgba(255, 209, 102, 0.3);
+}
+
+.hiran-msg-assistant {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hiran-thinking {
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.hiran-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+.hiran-suggestions button {
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  background: transparent;
+  color: inherit;
+  font-size: 0.76rem;
+}
+
+.hiran-form {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-end;
+  margin-top: 0.7rem;
+}
+
+.hiran-form textarea {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.hiran-form button {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.8rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  background: rgba(255, 209, 102, 0.12);
+  color: inherit;
+  font-size: 0.8rem;
+}
+
+.hiran-form button:disabled {
+  opacity: 0.4;
+}
+
+.hiran-actions {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hiran-actions button {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: inherit;
+  font-size: 0.78rem;
+}
+
+/* ── Hiran v /hiran — chrám jako vstup do světů ────────────────── */
+
+.present-hiran-panel {
+  position: absolute;
+  z-index: 20;
+  right: 1rem;
+  top: calc(4.4rem + env(safe-area-inset-top, 0px));
+  bottom: calc(5.6rem + env(safe-area-inset-bottom, 0px));
+  width: min(23rem, calc(100vw - 2rem));
+  display: flex;
+  flex-direction: column;
+  padding: 0.9rem 1rem;
+  overflow: auto;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 209, 102, 0.28);
+  background: rgba(10, 8, 14, 0.86);
+  backdrop-filter: blur(10px);
+}
+
+.present-hiran-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.3rem;
+  color: #ffe9a8;
+  letter-spacing: 0.06em;
+}
+
+.present-hiran-panel > header button {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  width: 1.9rem;
+  height: 1.9rem;
+  line-height: 1;
+  font-size: 1rem;
+}
+
+/* chat potřebuje v panelu menší strop vlákna */
+.present-hiran-panel .hiran-thread {
+  max-height: 30vh;
+}
+
+.present-hiran-open {
+  position: absolute;
+  z-index: 20;
+  right: 1rem;
+  bottom: calc(5.6rem + env(safe-area-inset-bottom, 0px));
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.55);
+  background: rgba(255, 209, 102, 0.16);
+  color: #ffe9a8;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.present-hiran-open:hover {
+  background: rgba(255, 209, 102, 0.28);
+}
+
+.present-hiran-gates {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: linear-gradient(0deg, rgba(8, 7, 2, 0.88), rgba(8, 7, 2, 0));
+}
+
+.present-hiran-gates::-webkit-scrollbar {
+  display: none;
+}
+
+.present-hiran-gates button {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.4);
+  color: #ede6d2;
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.present-hiran-gates button:hover {
+  border-color: rgba(255, 209, 102, 0.55);
+  color: #ffe9a8;
+}
+
+@media (max-width: 720px) {
+  .present-hiran-panel {
+    top: auto;
+    left: 0.6rem;
+    right: 0.6rem;
+    width: auto;
+    max-height: 62vh;
+    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+  }
+  .present-hiran-open {
+    left: 50%;
+    right: auto;
+    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+  }
+}
+
+/* Scény s overlayem mají dole pás bran — nápověda se zvedne nad něj. */
+.present.has-overlay .present-hint {
+  bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── Jupiter Station — pouť ─────────────────────────────────────────────
+   Svět je plátno, hra je jeden canvas, který je zároveň texturou na skříni.
+   Panel drží žetony, tabuli a jízdu. Nic z toho není money-path. */
+
+.park {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #060411;
+  color: #f4ead2;
+}
+
+.park-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.park-chrome {
+  position: absolute;
+  z-index: 12;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 1rem 0.7rem;
+  background: linear-gradient(180deg, rgba(5, 4, 11, 0.86), rgba(5, 4, 11, 0));
+  pointer-events: none;
+}
+
+.park-chrome > * {
+  pointer-events: auto;
+}
+
+.park-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.park-title strong {
+  font-size: 0.95rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #ffd166;
+}
+
+.park-title span {
+  font-size: 0.72rem;
+  color: rgba(244, 234, 210, 0.6);
+  letter-spacing: 0.06em;
+}
+
+.park-hud {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.park-tokens {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  background: rgba(255, 209, 102, 0.12);
+  color: #ffe9a8;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.park-btn {
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  background: rgba(255, 209, 102, 0.1);
+  color: #ffe9a8;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.park-btn:hover:not(:disabled) {
+  background: rgba(255, 209, 102, 0.22);
+}
+
+.park-btn:disabled {
+  opacity: 0.4;
+}
+
+/* herní dok — canvas žije tady a zároveň je texturou ve scéně */
+.park-dock {
+  position: absolute;
+  z-index: 14;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%) translateY(140%);
+  display: flex;
+  gap: 0.9rem;
+  align-items: stretch;
+  padding: 0.7rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  background: rgba(8, 6, 14, 0.92);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 220ms ease, opacity 220ms ease;
+}
+
+.park-dock.is-open {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.park-screen {
+  width: 340px;
+  height: 255px;
+  border-radius: 0.6rem;
+  background: #0b0812;
+  image-rendering: auto;
+  touch-action: none;
+}
+
+.park-dock-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 11rem;
+  font-size: 0.78rem;
+}
+
+.park-dock-copy strong {
+  color: #ffd166;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.park-dock-copy span {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  color: #fff3d0;
+}
+
+.park-dock-copy small {
+  color: rgba(244, 234, 210, 0.6);
+  line-height: 1.35;
+}
+
+/* panel: výběr hry, tabule, jízda */
+.park-panel {
+  position: absolute;
+  z-index: 12;
+  right: 1rem;
+  top: calc(4.4rem + env(safe-area-inset-top, 0px));
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: calc(100% - 6rem - env(safe-area-inset-bottom, 0px));
+  overflow: auto;
+  padding: 0.9rem 1rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 209, 102, 0.22);
+  background: rgba(8, 6, 14, 0.86);
+  backdrop-filter: blur(10px);
+}
+
+.park-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: rgba(255, 209, 102, 0.85);
+}
+
+.park-games {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.6rem 0;
+}
+
+.park-games button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  text-align: left;
+}
+
+.park-games button:hover {
+  border-color: rgba(255, 209, 102, 0.5);
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.park-games strong {
+  font-size: 0.86rem;
+  color: #ffe9a8;
+}
+
+.park-games small {
+  font-size: 0.7rem;
+  color: rgba(244, 234, 210, 0.55);
+  line-height: 1.35;
+}
+
+.park-ride-btn {
+  width: 100%;
+  margin-bottom: 0.7rem;
+}
+
+.park-board-head {
+  margin-top: 0.2rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.park-board-head input {
+  width: 7.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.4);
+  color: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+}
+
+.park-board-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.68rem;
+}
+
+.park-board-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: rgba(244, 234, 210, 0.75);
+}
+
+.park-board-col em {
+  font-style: normal;
+  color: rgba(255, 209, 102, 0.85);
+  letter-spacing: 0.06em;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+}
+
+.park-empty {
+  color: rgba(244, 234, 210, 0.3);
+}
+
+.park-notice {
+  margin: 0.6rem 0 0;
+  font-size: 0.74rem;
+  color: #7fe3d4;
+}
+
+.park-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: rgba(244, 234, 210, 0.45);
+}
+
+/* popisky ve scéně (drei Html — DOM, ne textury) */
+.park-sign {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.5rem;
+  background: rgba(6, 4, 17, 0.7);
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  color: #ffd166;
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+}
+
+.park-sign em {
+  font-style: normal;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: rgba(244, 234, 210, 0.6);
+}
+
+.park-cabinet {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  background: rgba(6, 4, 17, 0.72);
+  color: #ffe9a8;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.park-cabinet.is-active {
+  border-color: #7fe3d4;
+  color: #7fe3d4;
+}
+
+.park-ride {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 227, 212, 0.35);
+  background: rgba(6, 4, 17, 0.72);
+  color: #9ff0e6;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.park-ride.is-riding {
+  border-color: #ffd166;
+  color: #ffd166;
+}
+
+.park-board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  background: rgba(8, 6, 14, 0.9);
+  color: rgba(244, 234, 210, 0.8);
+  font-size: 0.62rem;
+  min-width: 8.5rem;
+}
+
+.park-board strong {
+  color: #ffd166;
+  letter-spacing: 0.16em;
+  font-size: 0.6rem;
+}
+
+.park-board-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.park-board-row em {
+  font-style: normal;
+  color: rgba(244, 234, 210, 0.65);
+}
+
+.park-board-row span {
+  color: #fff3d0;
+  font-variant-numeric: tabular-nums;
+}
+
+.park-board small {
+  color: rgba(244, 234, 210, 0.4);
+  font-size: 0.55rem;
+}
+
+@media (max-width: 760px) {
+  .park-panel {
+    left: 0.6rem;
+    right: 0.6rem;
+    width: auto;
+    top: auto;
+    bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
+    max-height: 58vh;
+  }
+  .park-dock {
+    flex-direction: column;
+    left: 0.5rem;
+    right: 0.5rem;
+    transform: translateY(140%);
+    width: auto;
+  }
+  .park-dock.is-open {
+    transform: translateY(0);
+  }
+  .park-screen {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+  .park-board-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .park-title strong { font-size: 0.78rem; letter-spacing: 0.1em; white-space: nowrap; }
+  .park-title span { display: none; }
+  .park-tokens { padding: 0.25rem 0.55rem; font-size: 0.74rem; }
+}
+
+/* střelnice — HUD během kola */
+.park-gallery-hud {
+  position: absolute;
+  z-index: 13;
+  top: calc(4.2rem + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 227, 212, 0.4);
+  background: rgba(6, 4, 17, 0.88);
+  backdrop-filter: blur(8px);
+  font-size: 0.8rem;
+}
+
+.park-gallery-hud strong {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: #7fe3d4;
+}
+
+.park-gallery-hud span {
+  font-variant-numeric: tabular-nums;
+  color: #fff3d0;
+}
+
+.park-gallery-hud span.is-low {
+  color: #ff7a6b;
+}
+
+/* denní výzva */
+.park-challenge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.2rem 0 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  background: linear-gradient(160deg, rgba(255, 209, 102, 0.12), rgba(255, 209, 102, 0.02));
+}
+
+.park-challenge.is-done {
+  border-color: rgba(127, 227, 212, 0.45);
+  background: linear-gradient(160deg, rgba(127, 227, 212, 0.12), rgba(127, 227, 212, 0.02));
+}
+
+.park-challenge strong {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: #ffd166;
+}
+
+.park-challenge.is-done strong {
+  color: #7fe3d4;
+}
+
+.park-challenge span {
+  font-size: 0.8rem;
+  color: #fff3d0;
+}
+
+.park-challenge small {
+  font-size: 0.68rem;
+  color: rgba(244, 234, 210, 0.55);
+}
+
+/* ── MARS ARENA — Quake-style deathmatch ─────────────────────────────── */
+
+.arena {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #2a1108;
+  color: #f6e7d8;
+  cursor: crosshair;
+}
+
+.arena-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.arena-crosshair {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  background:
+    linear-gradient(#ffe9a8, #ffe9a8) center / 2px 100% no-repeat,
+    linear-gradient(#ffe9a8, #ffe9a8) center / 100% 2px no-repeat;
+  opacity: 0.75;
+}
+
+.arena-hud {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 180, 106, 0.35);
+  background: rgba(12, 6, 4, 0.82);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+}
+
+.arena-hud .arena-health {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.arena-hud .arena-time {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+.arena-hud .arena-weapon {
+  color: #ffb46a;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+}
+
+.arena-tip {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: calc(4.4rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  color: rgba(246, 231, 216, 0.5);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.arena-respawn {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  padding: 0.7rem 1.4rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 122, 107, 0.5);
+  background: rgba(30, 6, 4, 0.85);
+  color: #ff7a6b;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arena-panel {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(34rem, calc(100vw - 2rem));
+  padding: 1.4rem 1.5rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 180, 106, 0.35);
+  background: rgba(14, 7, 5, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.arena-panel header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.arena-panel header strong {
+  font-size: 1.1rem;
+  letter-spacing: 0.22em;
+  color: #ffb46a;
+}
+
+.arena-panel header span {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.5);
+}
+
+.arena-panel p {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgba(246, 231, 216, 0.78);
+  margin: 0 0 0.8rem;
+}
+
+.arena-keys {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0;
+  margin: 0 0 1rem;
+  font-size: 0.78rem;
+  color: rgba(246, 231, 216, 0.7);
+}
+
+.arena-keys kbd {
+  display: inline-block;
+  min-width: 1.6rem;
+  padding: 0.15rem 0.4rem;
+  margin-right: 0.3rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(255, 180, 106, 0.4);
+  background: rgba(255, 180, 106, 0.1);
+  color: #ffd9a8;
+  font-family: inherit;
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.arena-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.arena-link {
+  color: rgba(255, 209, 102, 0.8);
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+
+.arena-link:hover {
+  color: #ffe9a8;
+}
+
+.arena-small {
+  margin: 0.9rem 0 0;
+  font-size: 0.7rem;
+  color: rgba(246, 231, 216, 0.42);
+}
+
+.arena-result {
+  display: flex;
+  gap: 1.6rem;
+  margin: 0.4rem 0 1rem;
+}
+
+.arena-result div {
+  display: flex;
+  flex-direction: column;
+}
+
+.arena-result em {
+  font-style: normal;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.5);
+}
+
+.arena-result strong {
+  font-size: 1.6rem;
+  color: #ffd166;
+  font-variant-numeric: tabular-nums;
+}
+
+.arena-notice {
+  color: #7fe3d4 !important;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 640px) {
+  .arena-hud {
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    padding: 0.4rem 0.7rem;
+  }
+  .arena-tip {
+    display: none;
+  }
+}
+
+.park-arena-link {
+  display: block;
+  margin: -0.3rem 0 0.7rem;
+  font-size: 0.78rem;
+  color: #ffb46a;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+
+.park-arena-link:hover {
+  color: #ffd9a8;
+}
+
+.arena-vr {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 180, 106, 0.55);
+  background: rgba(255, 180, 106, 0.15);
+  color: #ffd9a8;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+}
+
+/* ── VENUŠE — okruh ─────────────────────────────────────────────────── */
+
+.race .arena-stage canvas {
+  cursor: default;
+}
+
+.race-hud {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(200, 162, 255, 0.35);
+  background: rgba(12, 6, 22, 0.84);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.88rem;
+}
+
+.race-hud .race-speed {
+  color: #ffd166;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.race-hud .race-best {
+  color: #7fe3d4;
+}
+
+.race-hud .race-off {
+  color: #ff7a6b;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+.race-go {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 162, 255, 0.5);
+  background: rgba(16, 8, 28, 0.8);
+  color: #e0d0ff;
+  font-size: 0.86rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }

@@ -465,3 +465,18 @@ apps/Stripe.md
 
 # Local screenshots and browser audit evidence
 .artifacts/
+# Python venv for the scene audit harness (playwright, local only)
+.venv-audit/
+
+# ML model weights — never commit raw weights or quantized exports.
+# Split .xz parts that are already tracked are intentional (see RESTORE.md);
+# this only blocks NEW raw/single-file weights.
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.onnx
+
+# One-off source snapshots committed by mistake (48-entry stale tarball)
+apps/*/src-only.tar.gz
+apps/*/src-only*.zip

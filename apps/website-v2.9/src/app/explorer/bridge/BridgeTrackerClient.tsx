@@ -229,7 +229,7 @@ function PipelineStep({
           <span className="text-xs font-medium text-white">{label}</span>
           {done && <CheckCircle2 className="h-3.5 w-3.5 text-zion-cyan ml-auto" />}
         </div>
-        <p className="text-[10px] text-gray-500 leading-snug">{sub}</p>
+        <p className="text-[11px] text-gray-500 leading-snug">{sub}</p>
         {count !== undefined && (
           <p className={`text-lg font-bold tabular-nums mt-1 ${color}`}>{fmtNum(count)}</p>
         )}
@@ -353,13 +353,13 @@ export default function BridgeTrackerClient() {
             {/* Mini status panel */}
             <div className="grid gap-3 sm:grid-cols-2 lg:w-auto w-full">
               <div className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">L1 {ExplorerBridgeBridgeTrackerClientCopy.height[cs ? 'cs' : 'en']}</p>
+                <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">L1 {ExplorerBridgeBridgeTrackerClientCopy.height[cs ? 'cs' : 'en']}</p>
                 <p className="text-2xl font-semibold text-white mt-1 tabular-nums">
                   {fmtNum(data?.last_l1_height ?? 0)}
                 </p>
               </div>
               <div className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">EVM {ExplorerBridgeBridgeTrackerClientCopy.block[cs ? 'cs' : 'en']}</p>
+                <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">EVM {ExplorerBridgeBridgeTrackerClientCopy.block[cs ? 'cs' : 'en']}</p>
                 <p className="text-2xl font-semibold text-white mt-1 tabular-nums">
                   {fmtNum(data?.last_evm_block ?? 0)}
                 </p>
@@ -409,7 +409,7 @@ export default function BridgeTrackerClient() {
                 >
                   <div className="flex items-center gap-2 mb-3">
                     <card.icon className={`h-4 w-4 ${card.accent}`} />
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{card.label}</span>
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{card.label}</span>
                   </div>
                   <p className={`text-2xl font-bold tabular-nums ${card.accent}`}>{card.value}</p>
                 </div>
@@ -438,7 +438,7 @@ export default function BridgeTrackerClient() {
               <div className="flex items-center gap-2 mb-6">
                 <Lock className="h-5 w-5 text-zion-cyan" />
                 <h3 className="text-lg font-semibold text-white">L1 → Base</h3>
-                <span className="ml-auto text-[10px] uppercase tracking-wider text-gray-500">
+                <span className="ml-auto text-[11px] uppercase tracking-wider text-gray-500">
                   {ExplorerBridgeBridgeTrackerClientCopy.lockMint[cs ? 'cs' : 'en']}
                 </span>
               </div>
@@ -483,7 +483,7 @@ export default function BridgeTrackerClient() {
               <div className="flex items-center gap-2 mb-6">
                 <Flame className="h-5 w-5 text-zion-gold" />
                 <h3 className="text-lg font-semibold text-white">Base → L1</h3>
-                <span className="ml-auto text-[10px] uppercase tracking-wider text-gray-500">
+                <span className="ml-auto text-[11px] uppercase tracking-wider text-gray-500">
                   {ExplorerBridgeBridgeTrackerClientCopy.burnUnlock[cs ? 'cs' : 'en']}
                 </span>
               </div>
@@ -564,7 +564,7 @@ export default function BridgeTrackerClient() {
                 <span className="tabular-nums opacity-60">{f.count}</span>
               </button>
             ))}
-            <span className="ml-auto text-[10px] text-gray-500">
+            <span className="ml-auto text-[11px] text-gray-500">
               {cs ? `Skenováno ${chainHeight} bloků` : `Scanned ${chainHeight} blocks`} · {ExplorerBridgeBridgeTrackerClientCopy.updatesEvery15s[cs ? 'cs' : 'en']}
             </span>
           </div>
@@ -600,7 +600,7 @@ export default function BridgeTrackerClient() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-white/10 text-[10px] uppercase tracking-wider text-gray-500">
+                    <tr className="border-b border-white/10 text-[11px] uppercase tracking-wider text-gray-500">
                       <th className="text-left px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.txHash[cs ? 'cs' : 'en']}</th>
                       <th className="text-left px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.block_2[cs ? 'cs' : 'en']}</th>
                       <th className="text-left px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.sender[cs ? 'cs' : 'en']}</th>
@@ -658,7 +658,7 @@ export default function BridgeTrackerClient() {
                             <span className="font-mono text-xs font-semibold text-zion-gold tabular-nums">
                               {tx.amount_zion}
                             </span>
-                            <span className="text-[10px] text-gray-500 ml-1">ZION</span>
+                            <span className="text-[11px] text-gray-500 ml-1">ZION</span>
                           </td>
                           {/* Finality Progress */}
                           <td className="px-4 py-3">
@@ -667,14 +667,14 @@ export default function BridgeTrackerClient() {
                                 confirmations={tx.confirmations}
                                 threshold={finalityThreshold}
                               />
-                              <p className="text-[10px] text-gray-500 tabular-nums">
+                              <p className="text-[11px] text-gray-500 tabular-nums">
                                 {tx.confirmations}/{finalityThreshold} {ExplorerBridgeBridgeTrackerClientCopy.conf[cs ? 'cs' : 'en']}
                               </p>
                             </div>
                           </td>
                           {/* Status */}
                           <td className="px-4 py-3 text-center">
-                            <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full border text-[10px] font-medium ${badge.className}`}>
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full border text-[11px] font-medium ${badge.className}`}>
                               <StatusIcon className="h-3 w-3" />
                               {badge.label}
                             </span>
@@ -690,7 +690,7 @@ export default function BridgeTrackerClient() {
 
           {/* Recipient hint */}
           {filteredTxs.length > 0 && (
-            <p className="text-[10px] text-gray-600 mt-3 text-center">
+            <p className="text-[11px] text-gray-600 mt-3 text-center">
               {ExplorerBridgeBridgeTrackerClientCopy.clickTxHashForTransactionDetai[cs ? 'cs' : 'en']}
             </p>
           )}
@@ -745,7 +745,7 @@ export default function BridgeTrackerClient() {
                   <ExternalLink className="h-3.5 w-3.5 text-gray-500 ml-auto group-hover:text-white transition-colors" />
                 </div>
                 <p className="font-mono text-xs text-gray-400 break-all">{c.addr}</p>
-                <p className="text-[10px] text-gray-500 mt-1">{c.net} · Chain ID {c.chainId}</p>
+                <p className="text-[11px] text-gray-500 mt-1">{c.net} · Chain ID {c.chainId}</p>
               </a>
             ))}
           </div>

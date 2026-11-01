@@ -516,6 +516,26 @@ html body textarea:focus {
   box-shadow: 0 0 14px rgba(252, 209, 22, 0.15);
 }
 
+/* ── Tablet: split the nav pill bar into two rows of four ────────────────── */
+@media screen and (min-width: 481px) and (max-width: 980px) {
+  #header nav ul {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  #header nav ul li {
+    flex: 1 1 calc(25% - 0.25rem);
+    min-width: 0;
+  }
+
+  #header nav ul li a {
+    width: 100%;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    white-space: nowrap;
+  }
+}
+
 /* ── Floating menu (bottom-right hamburger) ──────────────────────────────── */
 .floating-menu {
   position: fixed;

@@ -154,7 +154,7 @@ function LeaderboardTab() {
                   <div className="flex items-center gap-1.5">
                     <span className="font-medium text-white">{entry.display_name || shorten(entry.address)}</span>
                     {entry.guild_name && (
-                      <span className="rounded-full bg-oasis-cyan/10 px-1.5 py-0.5 text-[9px] text-oasis-cyan">{entry.guild_name}</span>
+                      <span className="rounded-full bg-oasis-cyan/10 px-1.5 py-0.5 text-[10px] text-oasis-cyan">{entry.guild_name}</span>
                     )}
                   </div>
                 </td>
@@ -327,15 +327,15 @@ function GuildsTab({ address, addToast, onSync }: { address: string | null; addT
               <div className="mb-4 grid grid-cols-3 gap-3 text-center">
                 <div className="rounded-lg bg-white/5 p-2">
                   <p className="text-lg font-bold text-oasis-cyan">{selectedGuild.members.length}</p>
-                  <p className="text-[9px] uppercase text-white/70">Members</p>
+                  <p className="text-[10px] uppercase text-white/70">Members</p>
                 </div>
                 <div className="rounded-lg bg-white/5 p-2">
                   <p className="text-lg font-bold text-oasis-gold">{selectedGuild.guild_level}</p>
-                  <p className="text-[9px] uppercase text-white/70">Level</p>
+                  <p className="text-[10px] uppercase text-white/70">Level</p>
                 </div>
                 <div className="rounded-lg bg-white/5 p-2">
                   <p className="text-lg font-bold text-oasis-purple">{selectedGuild.quests_completed}</p>
-                  <p className="text-[9px] uppercase text-white/70">Quests</p>
+                  <p className="text-[10px] uppercase text-white/70">Quests</p>
                 </div>
               </div>
               <div className="mb-4">
@@ -467,7 +467,7 @@ function QuestsTab({ address, addToast, addXp, onSync }: { address: string | nul
               )}
             </div>
             <p className="mb-2 text-[11px] leading-snug text-white/70">{q.description}</p>
-            <div className="flex flex-wrap items-center gap-1.5 text-[9px]">
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
               <span className="rounded-full bg-oasis-purple/10 px-2 py-0.5 text-oasis-purple">{q.avatar_name}</span>
               <span className="rounded-full bg-oasis-gold/10 px-2 py-0.5 text-oasis-gold">{q.xp_reward} XP</span>
               <span className="rounded-full bg-oasis-emerald/10 px-2 py-0.5 text-oasis-emerald">CL {q.min_consciousness_level}</span>

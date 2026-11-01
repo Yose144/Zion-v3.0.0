@@ -263,7 +263,7 @@ $result = create_eshop_wallet_php(
     'wallet_id' => 'zw_A1B2C3D4',
     'address' => 'zion1l0u2x8m7e3a0e3p5q5k008q0q477e7h0a5y6k8y',
     'tokens' => 1000,
-    'mnemonic' => 'argue shift brother swift timber ugly index lecture punch total odor donkey',
+    'mnemonic' => '<redacted — real customer mnemonics are never reproduced in docs>',
     'qr_image' => 'zw_A1B2C3D4_recovery.png'
 ]
 ```

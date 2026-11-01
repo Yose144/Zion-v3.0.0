@@ -6,13 +6,16 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
-import { worldSlot, EARTH_ORBIT_R, EARTH_ORBIT_SPEED } from './positions';
+import type { HiranState } from '@/core/hiran/presence';
+import { worldSlot, EARTH_ORBIT_R, EARTH_ORBIT_SPEED, planetPosition } from './positions';
 import { NewEarth } from './NewEarth';
+import { SailingArk } from './SailingArk';
 import { IssobellaRing } from './IssobellaRing';
 import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { SpaceBackdrop } from './SpaceBackdrop';
-import { SolarSystem } from './SolarSystem';
+import { JUPITER, SolarSystem } from './SolarSystem';
+import { HiranSun } from './HiranSun';
 
 /** Portrait / úzké viewporty: širší fov + větší počáteční odstup,
  *  ať planeta nezaplní celý záběr a zůstane vidět kontext. */
@@ -22,7 +25,7 @@ function ResponsiveFraming() {
   const didInit = useRef(false);
   useEffect(() => {
     const aspect = size.width / Math.max(1, size.height);
-    camera.fov = aspect < 0.75 ? 64 : aspect < 1.1 ? 58 : 52;
+    camera.fov = aspect < 0.75 ? 66 : aspect < 1.1 ? 60 : 54;
     camera.updateProjectionMatrix();
     if (!didInit.current) {
       didInit.current = true;
@@ -33,22 +36,30 @@ function ResponsiveFraming() {
   return null;
 }
 
+/** Kamera stojí na Zemi. Když se otevře Hiran, odletí ke Slunci a zůstane
+ *  na jeho oběžné dráze; Země obíhá dál, takže scéna nezamrzne. */
+const SUN_CAM = new THREE.Vector3(17, 8, 17);
+const SUN_TARGET = new THREE.Vector3(0, 0, 0);
+
 /**
  * Vesmír Království srdce — heliocentrická soustava.
- * Slunce ve středu · planety na oběžných drahách · zemská soustava
- * (Nová Země + Issobella + OASIS pás + Brána) obíhá na vnější dráze.
- * Kamera kotví na zemi; odzoom až na pohled celého systému.
+ * Slunce ve středu (a v něm Hiran) · planety na oběžných drahách · zemská
+ * soustava (Nová Země + Issobella + OASIS pás + Brána) obíhá na vnější dráze.
  */
 export function Universe({
   worlds,
   portals,
   onOpen,
   onSelectWorld,
+  focus = 'earth',
+  hiranState = 'idle',
 }: {
   worlds: WorldPoint[];
   portals: Portal[];
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
+  focus?: 'earth' | 'sun' | 'jupiter';
+  hiranState?: HiranState;
 }) {
   const earthSys = useRef<THREE.Group>(null);
   const controls = useRef<{ target: THREE.Vector3 } | null>(null);
@@ -56,6 +67,15 @@ export function Universe({
   const lightTarget = useMemo(() => new THREE.Object3D(), []);
   const earthAngle = useRef(Math.PI * 0.18);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
+
+  const focusRef = useRef(focus);
+  const progress = useRef(1);
+  const fromCam = useRef(new THREE.Vector3());
+  const fromTarget = useRef(new THREE.Vector3());
+  const jupiterTarget = useMemo(() => new THREE.Vector3(), []);
+  const jupiterCam = useMemo(() => new THREE.Vector3(), []);
+  const jupiterOffset = useMemo(() => new THREE.Vector3(24, 13, 28), []);
 
   useEffect(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -64,6 +84,14 @@ export function Universe({
     preference.addEventListener('change', update);
     return () => preference.removeEventListener('change', update);
   }, []);
+
+  // Změna fokusu = nový přelet. Výchozí bod se zamrazí, cíl je pevný.
+  useEffect(() => {
+    focusRef.current = focus;
+    progress.current = 0;
+    fromCam.current.copy(camera.position);
+    if (controls.current) fromTarget.current.copy(controls.current.target);
+  }, [focus, camera]);
 
   const split = useMemo(() => {
     const ring: WorldPoint[] = [];
@@ -79,7 +107,7 @@ export function Universe({
   const ringPortal = portals.find((p) => p.scene.slot === 'ring');
   const gatePortal = portals.find((p) => p.scene.slot === 'gate');
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
     // zemská soustava obíhá Slunce — celý vesmír se točí kolem něj
     if (!reducedMotion) earthAngle.current += delta * EARTH_ORBIT_SPEED;
     const ex = Math.cos(earthAngle.current) * EARTH_ORBIT_R;
@@ -88,7 +116,30 @@ export function Universe({
     lightTarget.position.set(ex, 0, ez);
     // světlo stojí na straně Slunce → planeta má vždy denní/noční stranu správně
     if (light.current) light.current.position.set(ex * 0.5, 5, ez * 0.5);
-    if (controls.current) controls.current.target.set(ex, 0, ez);
+    if (!controls.current) return;
+
+    if (focusRef.current === 'jupiter') {
+      const [jx, jy, jz] = planetPosition(
+        JUPITER.id,
+        3,
+        JUPITER.orbitR,
+        JUPITER.speed,
+        clock.elapsedTime,
+      );
+      jupiterTarget.set(jx, jy + 4, jz);
+      jupiterCam.copy(jupiterTarget).add(jupiterOffset);
+      const p = (progress.current = Math.min(1, progress.current + delta / 1.8));
+      const t = 1 - Math.pow(1 - p, 3);
+      controls.current.target.lerpVectors(fromTarget.current, jupiterTarget, t);
+      if (p < 1) camera.position.lerpVectors(fromCam.current, jupiterCam, t);
+    } else if (focusRef.current === 'sun') {
+      const p = (progress.current = Math.min(1, progress.current + delta / 1.6));
+      const t = 1 - Math.pow(1 - p, 3);
+      controls.current.target.lerpVectors(fromTarget.current, SUN_TARGET, t);
+      if (p < 1) camera.position.lerpVectors(fromCam.current, SUN_CAM, t);
+    } else {
+      controls.current.target.set(ex, 0, ez);
+    }
   });
 
   return (
@@ -103,6 +154,7 @@ export function Universe({
       {/* zemská soustava — obíhá Slunce jako jeden svět */}
       <group ref={earthSys} position={[EARTH_ORBIT_R, 0, 0]}>
         <NewEarth />
+        <SailingArk onOpen={() => onOpen('archa')} />
         <IssobellaRing
           worlds={split.ring}
           portal={ringPortal}
@@ -113,7 +165,8 @@ export function Universe({
         {gatePortal && <StarGate portal={gatePortal} onOpen={onOpen} />}
       </group>
 
-      <SolarSystem />
+      <SolarSystem onOpenPark={() => onOpen('park')} />
+      <HiranSun state={hiranState} onOpen={() => onOpen('hiran')} />
 
       <ResponsiveFraming />
       <OrbitControls

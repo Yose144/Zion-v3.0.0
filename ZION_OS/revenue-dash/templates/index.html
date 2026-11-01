@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZION Revenue — BOOST streams</title>
+<style>
+  :root {
+    --bg: #0a0d0a;
+    --panel: #121712;
+    --border: #1f2a1f;
+    --green: #10b981;
+    --rasta-green: #066928;
+    --gold: #fcd116;
+    --red: #ef4444;
+    --muted: #8b9a8b;
+    --text: #e5efe5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    background: radial-gradient(1200px 600px at 50% -10%, #0f1a12 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 12px; margin-bottom: 20px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .card .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .card .v { font-size: 22px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .card .v.green { color: var(--green); }
+  .card .v.gold { color: var(--gold); }
+  .card .v.red { color: var(--red); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  th, td { padding: 10px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; background: #0e130e; }
+  tr:last-child td { border-bottom: none; }
+  tr.boost td:first-child { border-left: 3px solid var(--green); }
+  tr.zion td:first-child { border-left: 3px solid var(--gold); }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .pill.on { background: rgba(16,185,129,.15); color: var(--green); }
+  .pill.off { background: rgba(239,68,68,.15); color: var(--red); }
+  .pill.boost { background: rgba(16,185,129,.15); color: var(--green); }
+  .pill.zion { background: rgba(252,209,22,.15); color: var(--gold); }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .foot { margin-top: 16px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+  .foot code { color: var(--green); }
+  .err { color: var(--red); }
+  .loading { color: var(--muted); padding: 20px 0; }
+  .right { text-align: right; }
+</style>
+</head>
+<body>
+  <h1>ZION Revenue — BOOST streams</h1>
+  <div class="sub">
+    Zdroj: <span class="mono">{{ pool_api }}</span> · auto-refresh 30 s ·
+    pool wallet: <span class="mono">{{ pool_wallet }}</span>
+  </div>
+
+  <div class="cards" id="cards">
+    <div class="card"><div class="k">BOOST aktivní</div><div class="v green" id="c-boost">–</div></div>
+    <div class="card"><div class="k">Celkový hashrate</div><div class="v" id="c-hr">–</div></div>
+    <div class="card"><div class="k">Accepted shares (total)</div><div class="v" id="c-acc">–</div></div>
+    <div class="card"><div class="k">Coinů celkem</div><div class="v gold" id="c-coins">–</div></div>
+  </div>
+
+  <div id="table-wrap">
+    <div class="loading">Načítám…</div>
+  </div>
+
+  <div class="foot">
+    <strong>Jak číst:</strong> BOOST streamy (QTC, PRL, VRSC, ZANO, …) těží pro ZION —
+    výnos platí upstream pooly do pool walletu, ne do miner payout ledgeru.
+    Proto dashboard ukazuje <em>aktivitu</em> (hashrate, accepted shares, fee),
+    nikoli falešné USD číslo. Uživatelé public mineru dostávají jen ZION.
+    <br/>Fee: <code>fee_bps=100</code> = 1 % pool fee.
+  </div>
+
+<script>
+const REFRESH_MS = 30000;
+
+function fmtHash(h) {
+  if (!h || h <= 0) return '0 H/s';
+  const units = ['H/s','kH/s','MH/s','GH/s','TH/s','PH/s'];
+  let i = 0, v = h;
+  while (v >= 1000 && i < units.length - 1) { v /= 1000; i++; }
+  return v.toFixed(2) + ' ' + units[i];
+}
+function fmtInt(n) {
+  return Number(n || 0).toLocaleString('cs-CZ');
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function load() {
+  try {
+    const res = await fetch('/api/revenue', { cache: 'no-store' });
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || 'API error');
+
+    document.getElementById('c-boost').textContent = d.summary.boost_active;
+    document.getElementById('c-hr').textContent = fmtHash(d.summary.total_hashrate);
+    document.getElementById('c-acc').textContent = fmtInt(d.summary.total_accepted);
+    document.getElementById('c-coins').textContent = d.summary.coins_total;
+
+    const rows = d.rows.map(r => `
+      <tr class="${r.kind}">
+        <td><strong class="mono">${esc(r.coin.toUpperCase())}</strong></td>
+        <td><span class="pill ${r.kind}">${r.kind === 'boost' ? 'BOOST' : 'ZION'}</span></td>
+        <td><span class="pill ${r.connected ? 'on' : 'off'}">${r.connected ? 'connected' : 'down'}</span></td>
+        <td><span class="pill ${r.enabled ? 'on' : 'off'}">${r.enabled ? 'enabled' : 'off'}</span></td>
+        <td class="right mono">${fmtHash(r.hashrate_live)}</td>
+        <td class="right mono">${fmtInt(r.accepted_total)}</td>
+        <td class="right mono">${esc(r.payouts_24h)}</td>
+        <td class="right mono">${(r.fee_bps / 100).toFixed(2)} %</td>
+        <td class="right mono">${fmtInt(r.active_miners)}</td>
+      </tr>`).join('');
+
+    document.getElementById('table-wrap').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Coin</th><th>Stream</th><th>Leg</th><th>Enabled</th>
+          <th class="right">Hashrate</th><th class="right">Accepted</th>
+          <th class="right">Payouts 24h</th><th class="right">Fee</th>
+          <th class="right">Miners</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch (e) {
+    document.getElementById('table-wrap').innerHTML =
+      `<div class="err">Chyba: ${esc(e.message)}</div>`;
+  }
+}
+
+load();
+setInterval(load, REFRESH_MS);
+</script>
+</body>
+</html>

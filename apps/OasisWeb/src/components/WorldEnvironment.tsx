@@ -354,7 +354,7 @@ function NovaZemeBeacons({ size, isMobile }: { size: number; isMobile: boolean }
             {!isMobile && (
               <Html position={[0, size * 0.16, 0]} center distanceFactor={8}>
                 <div className="pointer-events-none select-none whitespace-nowrap rounded border border-white/10 bg-black/70 px-1.5 py-0.5 text-center shadow-lg backdrop-blur-sm">
-                  <span className="text-[8px] font-bold tracking-wide" style={{ color: p.color }}>{p.name}</span>
+                  <span className="text-[10px] font-bold tracking-wide" style={{ color: p.color }}>{p.name}</span>
                 </div>
               </Html>
             )}
@@ -402,7 +402,7 @@ function AvatarHologram({ world, color, size }: { world: World; color: string; s
           <p className="text-[10px] font-bold text-white" style={{ textShadow: `0 0 8px ${color}` }}>
             {avatar.name}
           </p>
-          <p className="text-[9px] text-oasis-cyan">{avatar.subtitle}</p>
+          <p className="text-[10px] text-oasis-cyan">{avatar.subtitle}</p>
         </div>
       </Html>
     </group>

@@ -109,7 +109,7 @@ export default function MainnetBetaClient() {
 
         <article className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="flex flex-wrap items-center gap-3 mb-4">
-            <span className="text-[10px] tracking-wider uppercase px-2.5 py-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
+            <span className="text-[11px] tracking-wider uppercase px-2.5 py-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
               {t.tag}
             </span>
             <span className="text-[11px] text-white/40 flex items-center gap-1.5">

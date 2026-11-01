@@ -95,13 +95,13 @@ export default function CestaPanel({ lang }: { lang: Lang }) {
                       {b.mantra}
                     </span>
                     {b.marker === 'here' && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-zion-gold">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-zion-gold">
                         <MapPin className="h-3 w-3" />
                         {Copy.here[l]}
                       </span>
                     )}
                     {b.marker === 'goal' && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-amber-300">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300">
                         <Flag className="h-3 w-3" />
                         {Copy.goal[l]}
                       </span>
@@ -145,7 +145,7 @@ export default function CestaPanel({ lang }: { lang: Lang }) {
           style={{ '--rc': '6, 182, 212' } as CSSProperties}
         >
           <div className="space-y-1.5">
-            <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-zion-cyan">
+            <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-zion-cyan">
               <Compass className="h-3.5 w-3.5" />
               {Copy.compassKicker[l]}
             </p>

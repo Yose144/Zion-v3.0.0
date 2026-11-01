@@ -483,7 +483,7 @@ export default function ChartsPageClient() {
                 style={{ "--rc": "228, 30, 43" } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">
+                  <span className="text-[11px] text-gray-400 uppercase tracking-wider">
                     {card.label}
                   </span>
                   <card.icon className={`w-4 h-4 ${card.color}`} />
@@ -635,7 +635,7 @@ export default function ChartsPageClient() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                    <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">
                       {ExplorerChartsChartsPageClientCopy.price[cs ? 'cs' : 'en']}
                     </div>
                     <div className="text-lg font-bold text-zion-gold tabular-nums">
@@ -643,7 +643,7 @@ export default function ChartsPageClient() {
                     </div>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                    <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">
                       {ExplorerChartsChartsPageClientCopy.change24h[cs ? 'cs' : 'en']}
                     </div>
                     <div className={`text-lg font-bold tabular-nums ${market.price_change_24h >= 0 ? 'text-zion-cyan' : 'text-zion-purple'}`}>
@@ -651,7 +651,7 @@ export default function ChartsPageClient() {
                     </div>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                    <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">
                       {ExplorerChartsChartsPageClientCopy.volume24h[cs ? 'cs' : 'en']}
                     </div>
                     <div className="text-lg font-bold text-white tabular-nums">
@@ -659,7 +659,7 @@ export default function ChartsPageClient() {
                     </div>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                    <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">
                       {ExplorerChartsChartsPageClientCopy.liquidity[cs ? 'cs' : 'en']}
                     </div>
                     <div className="text-lg font-bold text-white tabular-nums">

@@ -2,12 +2,45 @@
 """Browser acceptance matrix for the twelve shared project scenes (production or local)."""
 import argparse
 import json
+import os
 from pathlib import Path
 import re
+import sys
 import time
 from playwright.sync_api import sync_playwright
 
 SCENES = ['genesis-garden', 'dharma-temple', 'te-piko-ora', 'golden-republic-bohemia', 'bodhi-lanka', 'ekam', 'nova-amerika', 'uluru', 'maria-del-camino', 'boa-esperanca', 'kailash', 'amenti']
+# MATRIX has no Earth marker and the universe shell has no scene audit hook yet; both are
+# reachable in Nirvana only and are useful for beauty shots during the render programme.
+NIRVANA_ONLY = ['matrix']
+
+
+def average_hash(path, size=16):
+    """Perceptual fingerprint: 16x16 greyscale, one bit per pixel versus the mean."""
+    from PIL import Image
+    image = Image.open(path).convert('L').resize((size, size))
+    pixels = list(image.getdata())
+    mean = sum(pixels) / len(pixels)
+    return ''.join('1' if value >= mean else '0' for value in pixels)
+
+
+def hash_distance(a, b):
+    if not a or not b or len(a) != len(b):
+        return None
+    return sum(1 for x, y in zip(a, b) if x != y) * 100 / len(a)
+
+
+def local_chromium(explicit):
+    """Prefer a locally installed browser so audits never download playwright builds."""
+    if explicit:
+        return explicit
+    if sys.platform == 'darwin':
+        for name in ('Google Chrome', 'Chromium', 'Brave Browser', 'Microsoft Edge'):
+            candidate = f'/Applications/{name}.app/Contents/MacOS/{name}'
+            if Path(candidate).exists():
+                return candidate
+    return str(sorted((Path.home() / '.cache/ms-playwright').glob('chromium-*/chrome-linux64/chrome'))[-1])
+
 
 
 def main():
@@ -20,16 +53,27 @@ def main():
     parser.add_argument('--release', default='working-tree')
     parser.add_argument('--sample-seconds', type=float, default=10)
     parser.add_argument('--mount-timeout', type=int, default=60000, help='Milliseconds to wait for the scene to mount (software rendering can be slow)')
-    parser.add_argument('--gpu', choices=['sw', 'nvidia', 'amd'], default='sw', help='Renderer: sw = SwiftShader (comparable to the recorded baseline), nvidia/amd = local hardware via ANGLE')
+    parser.add_argument('--gpu', choices=['sw', 'nvidia', 'amd', 'metal'], default='metal' if sys.platform == 'darwin' else 'sw', help='Renderer: metal = local Apple GPU via ANGLE (macOS), sw = SwiftShader, nvidia/amd = local hardware via ANGLE')
     parser.add_argument('--chromium', default='')
     parser.add_argument('--startup-only', action='store_true', help='Check rendered scene and loaded scripts/styles without the interaction matrix')
+    parser.add_argument('--shots-only', action='store_true', help='Capture hero screenshots + render metrics only (art review, no interaction matrix)')
     parser.add_argument('--resume', action='store_true', help='Keep passed rows for this release and rerun incomplete or failed rows')
+    parser.add_argument('--strict-budget', action='store_true', help='Fail scenes above 600 draw calls, 450k triangles or below 30 fps')
+    parser.add_argument('--scorecard', default='', help='Write a markdown scorecard to this path')
+    parser.add_argument('--visual-baseline', default='', help='Directory of reference screenshots to compare against')
+    parser.add_argument('--visual-gate', type=float, default=0, help='Fail when the perceptual difference of the hero shot exceeds this percentage')
+    parser.add_argument('--budget-file', default='', help='Committed budget JSON (draw calls / triangles per scene) to compare against')
+    parser.add_argument('--write-budget', default='', help='Write the measured budget JSON to this path')
+    parser.add_argument('--budget-tolerance', type=float, default=15, help='Allowed growth of draw calls and triangles in percent')
     args = parser.parse_args()
     output = Path(args.output).resolve(); output.mkdir(parents=True, exist_ok=True)
-    selected = args.only.split(',') if args.only else SCENES
-    if any(scene not in SCENES for scene in selected): parser.error('unknown scene')
-    chromium = args.chromium or str(sorted((Path.home()/'.cache/ms-playwright').glob('chromium-*/chrome-linux64/chrome'))[-1])
+    selected = args.only.split(',') if args.only else SCENES + NIRVANA_ONLY
+    if any(scene not in SCENES + NIRVANA_ONLY for scene in selected): parser.error('unknown scene')
+    chromium = local_chromium(args.chromium)
     apps = ['nirvana', 'web'] if args.app == 'all' else [args.app]
+    budget = {}
+    if args.budget_file and Path(args.budget_file).exists():
+        budget = json.loads(Path(args.budget_file).read_text()).get('scenes', {})
     results = []
     if args.resume and (output/'results.json').exists():
         previous = json.loads((output/'results.json').read_text())
@@ -40,24 +84,89 @@ def main():
             'sw': ['--enable-unsafe-swiftshader'],
             'nvidia': ['--enable-gpu', '--use-gl=angle', '--use-angle=vulkan', '--enable-features=Vulkan'],
             'amd': ['--enable-gpu', '--use-gl=angle', '--use-angle=gl-egl'],
+            'metal': ['--enable-gpu', '--use-gl=angle', '--use-angle=metal', '--ignore-gpu-blocklist'],
         }[args.gpu]
         browser = p.chromium.launch(executable_path=chromium, headless=True, args=['--no-sandbox', *gpu_args])
         for app in apps:
             for scene in selected:
+                if scene in NIRVANA_ONLY and app != 'nirvana': continue
                 if any(row.get('app') == app and row.get('scene') == scene and row.get('status') == 'pass' for row in results): continue
                 row = {'app': app, 'scene': scene, 'release': args.release, 'renderer': args.gpu, 'errors': []}
                 context = browser.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1)
+                if os.environ.get('ZION_RENDER_AUDIT') == '1':
+                    # The presentations are gated by an access pass; a local production build can
+                    # opt in to audits by setting ZION_RENDER_AUDIT=1 on the server and here.
+                    context.set_extra_http_headers({'x-render-audit': '1'})
                 page = context.new_page(); page.set_default_timeout(60000)
                 page.on('pageerror', lambda e, row=row: row['errors'].append(str(e)))
                 page.on('console', lambda m, row=row: row['errors'].append(m.text) if re.search(r'Shader Error|synchronously unmount|React is not defined|Error creating WebGL', m.text) else None)
                 try:
                     base = args.nirvana_url if app == 'nirvana' else args.web_url
                     path = '/present/'+scene if app == 'nirvana' else '/terranova/'+('genesis' if scene == 'genesis-garden' else scene)
-                    response = page.goto(base.rstrip('/')+path+'?sceneAudit=1', wait_until='domcontentloaded', timeout=90000)
+                    query = '?sceneAudit=1' + ('&labels=0' if args.shots_only else '')
+                    response = page.goto(base.rstrip('/')+path+query, wait_until='domcontentloaded', timeout=90000)
                     assert response and response.status == 200, f'HTTP {response.status if response else None}'
+                    if app == 'web':
+                        # Website previews render only while they are on screen (frameloop is
+                        # gated by an IntersectionObserver), so scroll before waiting for frames.
+                        page.wait_for_function("document.querySelectorAll('canvas').length >= 2", timeout=args.mount_timeout)
+                        # The site also mounts a global background canvas; the project preview is
+                        # the last one on the page, so scroll that one into view.
+                        page.evaluate("(() => { const all = document.querySelectorAll('canvas'); const last = all[all.length - 1]; last?.scrollIntoView({ block: 'center' }); })()")
+                        page.wait_for_timeout(600)
                     page.wait_for_function('window.__projectScene?.frames >= 4 && window.__projectScene.invalidVertices >= 0', timeout=args.mount_timeout)
                     canvas = page.locator('canvas').first if app == 'nirvana' else page.locator('canvas').last
                     canvas.scroll_into_view_if_needed()
+                    if args.shots_only:
+                        # Art-review capture: stable frame (no auto-rotate), three compositions.
+                        page.emulate_media(reduced_motion='reduce')
+                        page.wait_for_function('window.__projectScene.reducedMotion')
+                        page.wait_for_timeout(600)
+                        row['render'] = page.evaluate('window.__projectScene')
+                        assert row['render']['invalidVertices'] == 0, 'non-finite geometry'
+                        for label, size in (('hero-1920', {'width': 1920, 'height': 1080}),
+                                            ('desktop-1440', {'width': 1440, 'height': 900}),
+                                            ('mobile-390', {'width': 390, 'height': 844})):
+                            page.set_viewport_size(size)
+                            page.wait_for_timeout(700)
+                            shot = output/f'{app}-{scene}-{label}.png'
+                            page.screenshot(path=str(shot), timeout=90000, animations='disabled')
+                            print(f'{app}/{scene}: {label}', flush=True)
+                            if args.visual_baseline and label == 'desktop-1440':
+                                reference = Path(args.visual_baseline) / shot.name
+                                if reference.exists():
+                                    delta = hash_distance(average_hash(shot), average_hash(reference))
+                                    row['visual_delta'] = round(delta, 2) if delta is not None else None
+                                    if args.visual_gate and delta is not None and delta > args.visual_gate:
+                                        raise AssertionError(f'visual delta {delta:.1f}% > {args.visual_gate}%')
+                                else:
+                                    row['visual_delta'] = 'new'
+                        row['metrics'] = {
+                            'fps': row['render']['fps'],
+                            'calls': row['render']['calls'],
+                            'triangles': row['render']['triangles'],
+                            'geometries': row['render']['geometries'],
+                            'textures': row['render']['textures'],
+                        }
+                        reference = budget.get(f"{app}/{scene}")
+                        if reference:
+                            limit = 1 + args.budget_tolerance / 100
+                            calls_limit = int(reference['calls'] * limit)
+                            tris_limit = int(reference['triangles'] * limit)
+                            row['budget_reference'] = reference
+                            assert row['metrics']['calls'] <= calls_limit, (
+                                f"draw calls {row['metrics']['calls']} exceed the committed budget {reference['calls']}"
+                            )
+                            assert row['metrics']['triangles'] <= tris_limit, (
+                                f"triangles {row['metrics']['triangles']} exceed the committed budget {reference['triangles']}"
+                            )
+                        if args.strict_budget:
+                            assert row['metrics']['calls'] <= 600, f"draw calls {row['metrics']['calls']} > 600"
+                            assert row['metrics']['triangles'] <= 450_000, f"triangles {row['metrics']['triangles']} > 450k"
+                            assert row['metrics']['fps'] >= 30, f"fps {row['metrics']['fps']:.1f} < 30"
+                        assert not row['errors'], 'browser runtime errors'
+                        row['status'] = 'pass'
+                        continue
                     if args.startup_only:
                         row['render'] = page.evaluate('window.__projectScene')
                         assert row['render']['invalidVertices'] == 0, 'non-finite geometry'
@@ -142,6 +251,46 @@ def main():
                     (output/'results.json').write_text(json.dumps({'release':args.release,'results':results},indent=2))
                     print(json.dumps(row),flush=True)
         browser.close()
+
+    if args.write_budget:
+        scenes = {}
+        for row in results:
+            metrics = row.get('metrics')
+            if not metrics:
+                continue
+            scenes[f"{row['app']}/{row['scene']}"] = {
+                'calls': metrics['calls'],
+                'triangles': metrics['triangles'],
+                'textures': metrics['textures'],
+            }
+        payload = {
+            'note': 'Draw-call and triangle budget per scene. Generated by audit-project-scenes.py --write-budget.',
+            'renderer': args.gpu,
+            'release': args.release,
+            'scenes': scenes,
+        }
+        Path(args.write_budget).write_text(json.dumps(payload, indent=2) + '\n')
+        print(f'budget: {args.write_budget}', flush=True)
+
+    if args.scorecard:
+        rows = [row for row in results if row.get('metrics')]
+        rows.sort(key=lambda item: -item['metrics']['calls'])
+        lines = [
+            f"# Scene scorecard — {args.release}",
+            '',
+            f"Renderer: {args.gpu}. Captured with reduced motion, 1440x900.",
+            '',
+            '| App | Scene | Draw calls | Triangles | Textures | FPS | Status |',
+            '| --- | --- | --- | --- | --- | --- | --- |',
+        ]
+        for row in rows:
+            m = row['metrics']
+            lines.append(
+                f"| {row['app']} | {row['scene']} | {m['calls']} | {m['triangles']} | {m['textures']} | {m['fps']:.1f} | {row['status']} |"
+            )
+        Path(args.scorecard).write_text('\n'.join(lines) + '\n')
+        print(f'scorecard: {args.scorecard}', flush=True)
+
     return 1 if any(row['status']=='fail' for row in results) else 0
 
 if __name__ == '__main__': raise SystemExit(main())

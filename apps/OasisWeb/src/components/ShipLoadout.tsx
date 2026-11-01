@@ -175,11 +175,11 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
                     </div>
                     <span className="mt-1 text-[10px] leading-tight text-white/60">{ship.description}</span>
                     <div className="mt-1.5 flex w-full items-center justify-between">
-                      <span className="text-[8px] font-bold uppercase tracking-wider text-white/50">{ship.class}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">{ship.class}</span>
                       {unlocked ? (
-                        selected && <span className="text-[8px] font-bold text-oasis-cyan">ACTIVE</span>
+                        selected && <span className="text-[10px] font-bold text-oasis-cyan">ACTIVE</span>
                       ) : (
-                        <span className={`text-[8px] font-bold ${canUnlock ? 'text-oasis-gold' : 'text-white/50'}`}>
+                        <span className={`text-[10px] font-bold ${canUnlock ? 'text-oasis-gold' : 'text-white/50'}`}>
                           {ship.unlockCost > 0 ? `${ship.unlockCost} Z` : 'Free'} · Lv{ship.unlockLevel}
                         </span>
                       )}

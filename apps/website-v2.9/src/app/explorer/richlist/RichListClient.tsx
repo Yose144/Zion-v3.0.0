@@ -425,7 +425,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                     </Link>
                     <ExplorerCopyButton text={entry.address} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />
                     {entry.label && (
-                      <span className="hidden md:inline text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full truncate max-w-[180px]">
+                      <span className="hidden md:inline text-[11px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full truncate max-w-[180px]">
                         {entry.label}
                       </span>
                     )}
@@ -456,7 +456,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                   {/* Type badge */}
                   <div className="flex justify-end">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border ${tc.bg} ${tc.border} ${tc.text}`}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border ${tc.bg} ${tc.border} ${tc.text}`}
                     >
                       <tc.icon className="w-3 h-3" />
                       {tc.label}

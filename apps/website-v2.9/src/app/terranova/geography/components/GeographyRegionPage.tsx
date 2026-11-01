@@ -83,7 +83,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaGeographyComponentsGeographyRegionPageCopy.availableInserts[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">

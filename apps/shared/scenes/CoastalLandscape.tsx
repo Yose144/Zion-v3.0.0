@@ -2,6 +2,7 @@
 'use client';
 
 import { React, useEffect, useMemo, useRef, useFrame, THREE } from '@genesis/runtime';
+import { OceanSurface } from './kit/ocean';
 
 // An illustrative La Palma landscape, rather than a surveyed site model.
 function coast(x: number) {
@@ -42,67 +43,22 @@ function VolcanicCoast() {
   </mesh>;
 }
 
-export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, shorelineZ, roughSea = false }: { level?: number; coastal?: boolean; lagoon?: boolean; shorelineZ?: number; roughSea?: boolean }) {
-  const material = useMemo(() => new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 }, roughness: { value: roughSea ? 2.2 : 1 }, coastal: { value: coastal ? 1 : 0 }, lagoon: { value: lagoon ? 1 : 0 }, shoreline: { value: new THREE.Vector2(shorelineZ === undefined ? 0 : 1, shorelineZ ?? 0) }, sun: { value: new THREE.Vector3(-0.75, 0.08, -0.66).normalize() } },
-    vertexShader: `
-      uniform float time;
-      uniform float roughness;
-      varying vec3 world;
-      void main() {
-        vec3 p = position;
-        p.z += (sin(p.x * .17 + time * .55) * .035 + sin(p.y * .23 - time * .42) * .025) * roughness;
-        world = (modelMatrix * vec4(p, 1.)).xyz;
-        gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.);
-      }
-    `,
-    fragmentShader: `
-      uniform float time;
-      uniform vec3 sun;
-      uniform float coastal;
-      uniform float roughness;
-      uniform float lagoon;
-      uniform vec2 shoreline;
-      varying vec3 world;
-      void main() {
-        vec2 p = world.xz;
-        float a = p.x * .23 + p.y * .39 + sin(p.x * .11 - p.y * .13) * 1.5 + time * .6;
-        float b = p.x * -.37 + p.y * .17 + sin(p.y * .19) * .9 - time * .42;
-        float attenuation = 1. / (1. + length(fwidth(p)) * .8);
-        vec3 n = normalize(vec3((cos(a) * .022 - cos(b) * .016) * attenuation * roughness, 1., (cos(a) * .018 + cos(b) * .027) * attenuation * roughness));
-        vec3 viewDir = normalize(cameraPosition - world);
-        float fresnel = pow(1. - max(dot(n, viewDir), 0.), 3.);
-        float distanceFade = smoothstep(90., 650., length(cameraPosition.xz - p));
-        float shore = -23. - max(p.x - 8., 0.) * .65 + sin(p.x * .12) * 2.5;
-        shore = mix(shore, shoreline.y - sin(p.x * .12) * 1.5, shoreline.x);
-        float nearShore = exp(-abs(p.y - shore + 2.4) * .38) * coastal;
-        vec3 water = mix(vec3(.025,.14,.23), vec3(.06,.33,.36), nearShore * .75);
-        vec3 tropical = mix(vec3(.015,.16,.25), vec3(.07,.54,.45), exp(-max(shore - p.y, 0.) * .045));
-        water = mix(water, tropical, lagoon);
-        water = mix(water, vec3(.31,.40,.48), fresnel * .65);
-        float reflection = pow(max(dot(reflect(-sun, n), viewDir), 0.), 45.);
-        water += vec3(1.,.69,.38) * reflection * .32;
-        float foam = nearShore * smoothstep(.65, .95, sin(p.y * 3. + sin(p.x * .6) - time * .65)) * .13;
-        water += vec3(.65,.78,.76) * foam;
-        water = mix(water, vec3(.52,.56,.61), distanceFade * .8);
-        gl_FragColor = vec4(water, 1.);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }
-    `,
-  }), [coastal, lagoon, shorelineZ, roughSea]);
-  const reducedMotion = useRef(false);
-  useEffect(() => {
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => { reducedMotion.current = query.matches; };
-    update(); query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
-  useEffect(() => () => material.dispose(), [material]);
-  useFrame((_, delta) => { if (!reducedMotion.current) material.uniforms.time.value += Math.min(delta, .05); });
-  return <mesh position={[0, level, 0]} rotation={[-Math.PI / 2, 0, 0]} material={material}>
-    <planeGeometry args={[2800, 2800, 100, 100]} />
-  </mesh>;
+export function AtlanticOcean({ level = -1.8, coastal = true, lagoon = false, shorelineZ, roughSea = false, sky = '#9fb6cc', deep = '#04141c', shallow = '#0a3b45' }: { level?: number; coastal?: boolean; lagoon?: boolean; shorelineZ?: number; roughSea?: boolean; sky?: string; deep?: string; shallow?: string }) {
+  // One ocean implementation for every sea scene; see kit/ocean.tsx.
+  return (
+    <OceanSurface
+      level={level}
+      foam={coastal || lagoon}
+      lagoon={lagoon}
+      roughness={roughSea ? 2.2 : 1}
+      shoreBase={shorelineZ ?? -23}
+      shoreSlope={shorelineZ === undefined ? 0.65 : 0}
+      sky={sky}
+      deep={deep}
+      shallow={shallow}
+      sun={[-0.75, 0.08, -0.66]}
+    />
+  );
 }
 
 function DistantSailboat() {

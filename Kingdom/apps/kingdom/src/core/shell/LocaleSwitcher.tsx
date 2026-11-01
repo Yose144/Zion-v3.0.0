@@ -1,0 +1,42 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useTransition } from 'react';
+import type { Locale } from '@zion/contract';
+import { LOCALE_COOKIE } from '@/core/locale';
+
+/**
+ * Jediné klientské tlačítko v Místnosti. Jazyk je cookie, texty se
+ * překládají na serveru — do prohlížeče nejde žádný slovník.
+ */
+export function LocaleSwitcher({ locale }: { locale: Locale }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  function choose(next: Locale) {
+    if (next === locale) return;
+    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
+    startTransition(() => router.refresh());
+  }
+
+  return (
+    <div className="k-row" style={{ gap: 4 }} data-pending={pending}>
+      {(['cs', 'en'] as const).map((code) => (
+        <button
+          key={code}
+          type="button"
+          className="k-ghost"
+          onClick={() => choose(code)}
+          aria-pressed={code === locale}
+          style={
+            code === locale
+              ? { color: 'var(--k-text)', borderColor: 'var(--k-accent)' }
+              : undefined
+          }
+        >
+          {code.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}

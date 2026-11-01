@@ -99,7 +99,7 @@ function generateLore(world: World): string {
 function StatBar({ icon: Icon, label, value, color }: { icon: typeof Shield; label: string; value: number; color: string }) {
   return (
     <div>
-      <div className="flex items-center justify-between text-[9px]">
+      <div className="flex items-center justify-between text-[10px]">
         <span className="flex items-center gap-1 text-white/70">
           <Icon className="h-2.5 w-2.5" style={{ color }} />
           {label}
@@ -222,7 +222,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
       <div className="mb-4 flex items-start justify-between">
         <div>
           <span
-            className="zion-badge text-[9px]"
+            className="zion-badge text-[10px]"
             style={{
               borderColor: `rgba(${rc}, 0.35)`,
               backgroundColor: `rgba(${rc}, 0.1)`,
@@ -303,7 +303,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                   <p className="mt-1.5 text-[11px] leading-snug text-white/70">{l5Project?.description ?? canonProject.desc}</p>
                 </div>
                 <span
-                  className="shrink-0 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider"
+                  className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                   style={{
                     border: `1px solid ${canonProject.color}40`,
                     background: `${canonProject.color}10`,
@@ -372,13 +372,13 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                         <p className="mt-0.5 text-[10px] text-white/60">{live?.location ?? p.location}</p>
                         <p className="mt-1.5 text-[11px] leading-snug text-white/70">{p.desc}</p>
                         {tranche && (
-                          <p className="mt-1 text-[9px] font-semibold text-rasta-green/90">
+                          <p className="mt-1 text-[10px] font-semibold text-rasta-green/90">
                             Founding tranche {formatZion(tranche.amount_zion)} · {tranche.status}
                           </p>
                         )}
                       </div>
                       <span
-                        className="shrink-0 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider"
+                        className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
                         style={{
                           border: `1px solid ${p.color}40`,
                           background: `${p.color}10`,
@@ -416,7 +416,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                 )}
               </div>
             )}
-            <p className="mt-3 text-[9px] text-white/60">
+            <p className="mt-3 text-[10px] text-white/60">
               Klikni na projekt → otevře detail na zionterranova.com ·{' '}
               <a
                 href="https://freeworld.zionterranova.com"
@@ -487,7 +487,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
             <StatBar icon={Cpu} label="Tech Level" value={intel.tech} color="#06b6d4" />
             <StatBar icon={Gem} label="Resources" value={intel.resources} color="#f59e0b" />
           </div>
-          <div className="mt-2 flex items-center gap-1.5 border-t border-white/5 pt-2 text-[9px]">
+          <div className="mt-2 flex items-center gap-1.5 border-t border-white/5 pt-2 text-[10px]">
             <Users2 className="h-2.5 w-2.5" style={{ color }} />
             <span className="text-white/70">Population:</span>
             <span className="font-semibold text-white">{intel.population}</span>
@@ -560,7 +560,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                     <div className="flex items-center gap-1.5">
                       <p className={`text-xs font-semibold ${done ? 'text-white/60 line-through' : 'text-white'}`}>{quest.title}</p>
                       {quest.real && (
-                        <span className="zion-badge zion-badge-gold text-[8px] py-0.5 px-1">LIVE</span>
+                        <span className="zion-badge zion-badge-gold text-[10px] py-0.5 px-1">LIVE</span>
                       )}
                     </div>
                     {quest.avatarName && (
@@ -634,7 +634,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                 <p className="text-sm font-semibold text-white">
                   {collectedEggs.includes(world.id) ? 'Collected' : `Clue ${world.goldenEggClue}`}
                 </p>
-                <p className="text-[9px] text-white/70">
+                <p className="text-[10px] text-white/70">
                   {collectedEggs.includes(world.id) ? '+500 XP' : '100 Z to claim'}
                 </p>
               </div>
@@ -669,8 +669,8 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
             style={{ '--rc': rc } as React.CSSProperties}
           >
             <ScanLine className="h-4 w-4 text-oasis-cyan" />
-            <span className="text-[9px] font-bold text-white/80">Scan</span>
-            <span className="text-[8px] text-white/60">+{25 + shipLoadout.scanner * 10} XP</span>
+            <span className="text-[10px] font-bold text-white/80">Scan</span>
+            <span className="text-[10px] text-white/60">+{25 + shipLoadout.scanner * 10} XP</span>
           </button>
           <button
             onClick={async () => {
@@ -688,8 +688,8 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
             style={{ '--rc': rc } as React.CSSProperties}
           >
             <Compass className="h-4 w-4 text-oasis-emerald" />
-            <span className="text-[9px] font-bold text-white/80">Explore</span>
-            <span className="text-[8px] text-white/60">XP + Z</span>
+            <span className="text-[10px] font-bold text-white/80">Explore</span>
+            <span className="text-[10px] text-white/60">XP + Z</span>
           </button>
           <button
             onClick={async () => {
@@ -705,8 +705,8 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
             style={{ '--rc': rc } as React.CSSProperties}
           >
             <Gem className="h-4 w-4 text-oasis-gold" />
-            <span className="text-[9px] font-bold text-white/80">Harvest</span>
-            <span className="text-[8px] text-white/60">+{intel.resources * 25 + shipLoadout.cargo * 20} Z</span>
+            <span className="text-[10px] font-bold text-white/80">Harvest</span>
+            <span className="text-[10px] text-white/60">+{intel.resources * 25 + shipLoadout.cargo * 20} Z</span>
           </button>
         </div>
 

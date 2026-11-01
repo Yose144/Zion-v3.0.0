@@ -112,7 +112,7 @@ function AddressList({ addrs, max = 3 }: { addrs: string; max?: number }) {
         const isAddr = a.startsWith('zion1');
         return (
           <div key={i} className="group flex items-center gap-2 min-w-0">
-            {label && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60 border border-white/10">{label}</span>}
+            {label && <span className="text-[11px] px-1.5 py-0.5 rounded bg-white/10 text-white/60 border border-white/10">{label}</span>}
             {isAddr ? (
               <Link href={`/explorer/address?addr=${a}`} className="text-sm font-mono text-zion-cyan hover:text-white transition break-all truncate" title={a}>
                 {truncHash(a, 18)}
@@ -141,7 +141,7 @@ function AddressRow({ label, addrs }: { label: string; addrs: string }) {
 function MiniInfo({ label, value, copy, mono, link, color }: { label: string; value: string; copy?: boolean; mono?: boolean; link?: string; color?: string }) {
   return (
     <div className="group flex items-start justify-between gap-3 py-1.5 border-b border-white/[0.04] last:border-0">
-      <span className="text-[10px] uppercase tracking-wider text-white/40 pt-1">{label}</span>
+      <span className="text-[11px] uppercase tracking-wider text-white/40 pt-1">{label}</span>
       <div className="flex items-center gap-2 min-w-0 justify-end">
         {link ? (
           <Link href={link} className={`text-[11px] ${mono ? "font-mono" : ""} ${color || "text-zion-cyan"} hover:text-white transition break-all truncate`} title={value}>{truncHash(value, 18)}</Link>
@@ -275,7 +275,7 @@ export default function TxDetailClient() {
             { label: ExplorerTxTxDetailClientCopy.outputs[cs ? 'cs' : 'en'], value: `${tx.outputs.length}`, color: "text-zion-cyan" },
           ]).map((item) => (
             <div key={item.label} className="zion-tile p-4">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
+              <p className="text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
               <p className={`text-lg font-bold tabular-nums ${item.color}`}>{item.value}</p>
             </div>
           ))}
@@ -360,7 +360,7 @@ export default function TxDetailClient() {
                 <div key={i} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
                   {inp.type === "coinbase" ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-zion-gold text-[10px] font-bold px-2 py-0.5 bg-zion-gold/10 rounded-md uppercase tracking-wider">
+                      <span className="text-zion-gold text-[11px] font-bold px-2 py-0.5 bg-zion-gold/10 rounded-md uppercase tracking-wider">
                         ⛏ Coinbase
                       </span>
                       <span className="text-gray-500 text-xs">{ExplorerTxTxDetailClientCopy.newCoinsGenerated[cs ? 'cs' : 'en']}</span>
@@ -368,7 +368,7 @@ export default function TxDetailClient() {
                   ) : (
                     <>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-zion-purple text-[10px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.input[cs ? 'cs' : 'en']} #{i}</span>
+                        <span className="text-zion-purple text-[11px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.input[cs ? 'cs' : 'en']} #{i}</span>
                         <span className="text-white text-sm font-semibold tabular-nums">{inp.amount.toFixed(4)} ZION</span>
                       </div>
                       <div className="space-y-0.5">
@@ -431,10 +431,10 @@ export default function TxDetailClient() {
               {tx.outputs.map((out, i) => (
                 <div key={i} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="flex items-center gap-2 text-zion-cyan text-[10px] font-mono uppercase tracking-wider">
+                    <span className="flex items-center gap-2 text-zion-cyan text-[11px] font-mono uppercase tracking-wider">
                       {ExplorerTxTxDetailClientCopy.output[cs ? 'cs' : 'en']} #{i}
                       {out.is_change && (
-                        <span className="px-1.5 py-0.5 rounded bg-zion-purple/15 text-zion-purple border border-zion-purple/25 text-[9px] font-semibold uppercase tracking-wider">
+                        <span className="px-1.5 py-0.5 rounded bg-zion-purple/15 text-zion-purple border border-zion-purple/25 text-[10px] font-semibold uppercase tracking-wider">
                           {ExplorerTxTxDetailClientCopy.changeBadge[cs ? 'cs' : 'en']}
                         </span>
                       )}

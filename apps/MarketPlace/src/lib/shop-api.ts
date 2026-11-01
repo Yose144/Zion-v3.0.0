@@ -152,6 +152,7 @@ export interface OrderStatusResult {
     createdAt: string;
     items: { name: string; quantity: number; priceCzk: number }[];
     invoices: { id: string; invoiceNumber: string; status: string; html: string | null }[];
+    archivePass?: { code: string; url: string } | null;
   };
   error?: string;
 }
@@ -184,6 +185,7 @@ export interface TrackOrderResult {
     createdAt: string;
     items: { name: string; quantity: number; priceCzk: number }[];
     invoices: { id: string; invoiceNumber: string; status: string }[];
+    archivePass?: { code: string; url: string } | null;
   };
   error?: string;
 }
@@ -253,6 +255,8 @@ export interface AdminOrdersListResult {
       addressStreet: string | null;
       addressCity: string | null;
       addressZip: string | null;
+      archivedAt: string | null;
+      deletedAt: string | null;
       note: string | null;
       newsletter: boolean;
       createdAt: string;
@@ -272,14 +276,23 @@ export interface AdminOrdersListResult {
       byStatus: Record<string, number>;
       byPayment: Record<string, number>;
     };
+    counts?: { archived: number; trash: number };
   };
   error?: string;
 }
+
+export type AdminOrdersView = 'active' | 'archived' | 'trash' | 'all';
+export type AdminOrdersSort =
+  | 'created_desc' | 'created_asc'
+  | 'total_desc' | 'total_asc'
+  | 'customer' | 'tokens_desc';
 
 export async function listAdminOrders(params?: {
   status?: string;
   paymentStatus?: string;
   search?: string;
+  view?: AdminOrdersView;
+  sort?: AdminOrdersSort;
   page?: number;
   limit?: number;
 }): Promise<AdminOrdersListResult | null> {
@@ -287,6 +300,8 @@ export async function listAdminOrders(params?: {
   if (params?.status) q.set('status', params.status);
   if (params?.paymentStatus) q.set('paymentStatus', params.paymentStatus);
   if (params?.search) q.set('search', params.search);
+  if (params?.view) q.set('view', params.view);
+  if (params?.sort) q.set('sort', params.sort);
   if (params?.page) q.set('page', String(params.page));
   if (params?.limit) q.set('limit', String(params.limit));
 
@@ -346,6 +361,85 @@ export async function sendInvoiceEmail(id: string): Promise<{ success: boolean; 
   } catch {
     return null;
   }
+}
+
+export type BulkOrderAction =
+  | 'archive' | 'unarchive' | 'trash' | 'restore' | 'delete'
+  | 'paid' | 'processing' | 'shipped' | 'completed' | 'cancelled';
+
+export interface BulkOrderResult {
+  success: boolean;
+  data?: {
+    action: string;
+    total: number;
+    okCount: number;
+    results: { orderId: string; ok: boolean; error?: string }[];
+  };
+  error?: string;
+}
+
+export async function bulkOrderAction(
+  ids: string[],
+  action: BulkOrderAction
+): Promise<BulkOrderResult | null> {
+  try {
+    const res = await fetch('/api/admin/orders/bulk', {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, action }),
+    });
+    const json = (await res.json()) as BulkOrderResult;
+    if (!res.ok) return { success: false, error: json.error ?? `HTTP ${res.status}` };
+    return json;
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
+  }
+}
+
+export async function updateOrderNote(
+  id: string,
+  note: string
+): Promise<{ success: boolean; error?: string } | null> {
+  try {
+    const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}/status`, {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note }),
+    });
+    return (await res.json()) as { success: boolean; error?: string };
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteOrderPermanent(
+  id: string
+): Promise<{ success: boolean; error?: string } | null> {
+  try {
+    const res = await fetch(`/api/admin/orders/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: adminHeaders(),
+    });
+    const json = await res.json();
+    if (!res.ok) return { success: false, error: json.error ?? `HTTP ${res.status}` };
+    return json;
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
+  }
+}
+
+export function adminOrdersExportUrl(params?: {
+  status?: string;
+  paymentStatus?: string;
+  search?: string;
+  view?: AdminOrdersView;
+}): string {
+  const q = new URLSearchParams();
+  if (params?.status) q.set('status', params.status);
+  if (params?.paymentStatus) q.set('paymentStatus', params.paymentStatus);
+  if (params?.search) q.set('search', params.search);
+  if (params?.view) q.set('view', params.view);
+  return `/api/admin/orders/export?${q.toString()}`;
 }
 
 export async function regenerateInvoice(
@@ -472,5 +566,72 @@ export async function getTokenStatus(id: string): Promise<TokenStatusResult | nu
     return (await res.json()) as TokenStatusResult;
   } catch (err) {
     return { found: false, error: err instanceof Error ? err.message : 'Network error' };
+  }
+}
+
+// ── Admin ZION Gifts ────────────────────────────────────────────────
+
+export interface AdminGiftResult {
+  success: boolean;
+  data?: {
+    orderId: string;
+    email: string;
+    amountZion: number;
+    paymentStatus: string;
+    wallet: string | null;
+    pass: { code: string } | null;
+    bonus: { txHash?: string; tokens?: number; status: string };
+  };
+  error?: string;
+}
+
+export async function sendAdminGift(input: {
+  email: string;
+  name?: string;
+  amountZion: number;
+  withPass?: boolean;
+  note?: string;
+}): Promise<AdminGiftResult | null> {
+  try {
+    const res = await fetch('/api/admin/gift', {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    const json = (await res.json()) as AdminGiftResult;
+    if (!res.ok) return { success: false, error: json.error ?? `HTTP ${res.status}` };
+    return json;
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
+  }
+}
+
+export interface AdminGiftListItem {
+  orderId: string;
+  customerEmail: string;
+  customerName: string;
+  zionTokens: number;
+  status: string;
+  paymentStatus: string;
+  customerWalletAddress: string | null;
+  note: string | null;
+  createdAt: string;
+  paidAt: string | null;
+  pass: { code: string } | null;
+  bonus: { status: string; txHash?: string; distributedAt?: string } | null;
+}
+
+export async function listAdminGifts(): Promise<{
+  success: boolean;
+  data?: AdminGiftListItem[];
+  error?: string;
+} | null> {
+  try {
+    const res = await fetch('/api/admin/gift', { headers: adminHeaders() });
+    const json = await res.json();
+    if (!res.ok) return { success: false, error: json.error ?? `HTTP ${res.status}` };
+    return json;
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
   }
 }

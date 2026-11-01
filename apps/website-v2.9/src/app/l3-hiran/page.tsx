@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import HiranyagarbhaChat from '@/components/HiranyagarbhaChat';
+import HiranPreviewLazy from '@/components/HiranPreviewLazy';
 
 const L3HiranCopy = {
   deployment: { cs: `Deployment`, en: `Deployment` },
@@ -595,6 +596,38 @@ export default function L3HiranPage() {
           </div>
         </motion.section>
 
+        {/* ── HIRAN V PROSTORU ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="zion-section p-6 md:p-8 space-y-4"
+          style={{ '--rc': '255, 209, 102' } as React.CSSProperties}
+        >
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3">
+                <Orbit className="h-6 w-6 text-zion-gold" />
+                {cs ? 'Hiran v prostoru' : 'Hiran in space'}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm text-gray-300">
+                {cs
+                  ? 'Zlatý zárodek na lotosovém květu, obklopený třinácti branami do světů Království srdce. Otoč chrám, přibliž orb — a klikni na bránu, která tě volá.'
+                  : 'The golden womb on a lotus, ringed by thirteen gates into the worlds of the Kingdom of Hearts. Turn the temple, approach the orb — and click the gate that calls you.'}
+              </p>
+            </div>
+            <Link
+              href="https://nirvana.zionterranova.com/hiran"
+              className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-zion-gold transition hover:bg-zion-gold/20"
+            >
+              <Sparkles className="h-3 w-3" />
+              {cs ? 'Otevřít v Nirvaně' : 'Open in Nirvana'}
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <HiranPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+        </motion.section>
+
         {/* ── THREE PILLARS ── */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
@@ -759,7 +792,7 @@ export default function L3HiranPage() {
                     <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
                       <step.icon className="h-4 w-4 text-zion-cyan shrink-0" />
                       <span className="text-sm font-semibold text-white">{step.label}</span>
-                      <span className="ml-auto text-[10px] uppercase tracking-widest text-gray-500">
+                      <span className="ml-auto text-[11px] uppercase tracking-widest text-gray-500">
                         {i === 0 && 'IntentRouter'}
                         {i === 1 && 'Planner'}
                         {i === 2 && 'Registry'}
@@ -917,7 +950,7 @@ export default function L3HiranPage() {
                 {CONSCIOUSNESS_LEVELS.map((lv, i) => (
                   <span
                     key={lv}
-                    className={`rounded-md px-2 py-1 text-[10px] font-bold border ${
+                    className={`rounded-md px-2 py-1 text-[11px] font-bold border ${
                       i < 5
                         ? 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan'
                         : 'border-zion-purple/20 bg-zion-purple/5 text-zion-purple/70'
@@ -992,8 +1025,8 @@ export default function L3HiranPage() {
                 {GGUF_VARIANTS.map((v) => (
                   <div key={v.name} className="rounded-lg border border-zion-cyan/20 bg-zion-cyan/5 px-2 py-2 text-center">
                     <p className="text-xs font-bold text-white">{v.name}</p>
-                    <p className="text-[10px] text-zion-cyan">{v.size}</p>
-                    <p className="text-[10px] text-gray-500">{v.note}</p>
+                    <p className="text-[11px] text-zion-cyan">{v.size}</p>
+                    <p className="text-[11px] text-gray-500">{v.note}</p>
                   </div>
                 ))}
               </div>
@@ -1029,7 +1062,7 @@ export default function L3HiranPage() {
               <div key={phase.phase} className="zion-rainbow-sub p-5" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <span className="text-sm font-bold text-white leading-tight">{phase.phase}</span>
-                  <span className="rounded-full bg-zion-cyan/10 px-2 py-0.5 text-[10px] font-semibold text-zion-cyan border border-zion-cyan/20 shrink-0">
+                  <span className="rounded-full bg-zion-cyan/10 px-2 py-0.5 text-[11px] font-semibold text-zion-cyan border border-zion-cyan/20 shrink-0">
                     {phase.status === 'done' ? (L3HiranCopy.done[cs ? 'cs' : 'en']) : phase.status}
                   </span>
                 </div>

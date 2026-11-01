@@ -64,6 +64,7 @@ pub mod hiran_bridge;
 pub mod leaderboard;
 pub mod levels;
 pub mod metrics;
+pub mod pass_store;
 pub mod player;
 pub mod prize_tiers;
 pub mod quests;

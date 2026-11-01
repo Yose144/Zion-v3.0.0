@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { useI18n } from '@/core/i18n';
+import { createAmbience, type Ambience, type AmbienceProfile } from './ambience';
 
 /**
  * Where the scene track is expected. Drop a file at this path and the player
@@ -10,53 +11,62 @@ import { useI18n } from '@/core/i18n';
  */
 export const MATRIX_TRACK = '/audio/matrix.mp3';
 
-type Status = 'checking' | 'missing' | 'ready';
+type Status = 'checking' | 'track' | 'ambient';
 
 /**
- * Scene soundtrack player, prepared ahead of the track itself.
+ * Scene sound: a track when one exists, otherwise a synthesised ambience.
  *
- * Browsers require a user gesture before audio may start, so nothing plays on
- * load. The button is inert until a file exists at `src`; once it does, the
- * track loops with a short fade in and out.
+ * The button is inert until it knows what it can play. If `/audio/<slug>.mp3` is missing
+ * (the current state for every scene), it falls back to a quiet procedural bed matched to
+ * the scene, so the control is never dead. Nothing autoplays — browsers require a gesture.
  */
-export function SceneSoundToggle({ src = MATRIX_TRACK }: { src?: string }) {
+export function SceneSoundToggle({ src = MATRIX_TRACK, profile = 'wind' }: { src?: string; profile?: AmbienceProfile }) {
   const { lang } = useI18n();
   const cs = lang === 'cs';
   const audio = useRef<HTMLAudioElement | null>(null);
+  const ambience = useRef<Ambience | null>(null);
   const fade = useRef<number | null>(null);
-  const [status, setStatus] = useState<Status>('checking');
+  const [status, setStatus] = useState<Status>('ambient');
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     fetch(src, { method: 'HEAD', cache: 'no-store' })
-      .then((response) => { if (!cancelled) setStatus(response.ok ? 'ready' : 'missing'); })
-      .catch(() => { if (!cancelled) setStatus('missing'); });
-    return () => { cancelled = true; };
+      .then((response) => {
+        if (!cancelled) setStatus(response.ok ? 'track' : 'ambient');
+      })
+      .catch(() => {
+        if (!cancelled) setStatus('ambient');
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [src]);
 
   useEffect(() => () => {
     if (fade.current) window.clearInterval(fade.current);
     audio.current?.pause();
-    audio.current = null;
+    ambience.current?.dispose();
   }, []);
 
-  const ensureAudio = () => {
-    if (audio.current) return audio.current;
-    const element = new Audio(src);
-    element.loop = true;
-    element.preload = 'auto';
-    element.volume = 0;
-    audio.current = element;
-    return element;
+  const ensureAudio = (): HTMLAudioElement => {
+    if (!audio.current) {
+      const element = new Audio(src);
+      element.loop = true;
+      element.volume = 0;
+      element.preload = 'none';
+      audio.current = element;
+    }
+    return audio.current;
   };
 
   const ramp = (element: HTMLAudioElement, target: number, done?: () => void) => {
     if (fade.current) window.clearInterval(fade.current);
     fade.current = window.setInterval(() => {
-      const next = element.volume + (target > element.volume ? 0.06 : -0.06);
-      element.volume = Math.max(0, Math.min(1, next));
-      if (Math.abs(element.volume - target) < 0.07) {
+      const step = target > element.volume ? 0.05 : -0.05;
+      const next = Math.max(0, Math.min(1, element.volume + step));
+      element.volume = next;
+      if (Math.abs(next - target) < 0.051) {
         if (fade.current) window.clearInterval(fade.current);
         fade.current = null;
         element.volume = target;
@@ -66,40 +76,59 @@ export function SceneSoundToggle({ src = MATRIX_TRACK }: { src?: string }) {
   };
 
   const toggle = async () => {
-    if (status !== 'ready') return;
-    const element = ensureAudio();
     if (playing) {
-      ramp(element, 0, () => { element.pause(); setPlaying(false); });
+      if (status === 'track') {
+        const element = ensureAudio();
+        ramp(element, 0, () => element.pause());
+      } else {
+        ambience.current?.stop();
+      }
+      setPlaying(false);
       return;
     }
+
+    if (status === 'track') {
+      const element = ensureAudio();
+      try {
+        await element.play();
+        ramp(element, 0.55);
+        setPlaying(true);
+      } catch {
+        setStatus('ambient');
+      }
+      return;
+    }
+
+    if (!ambience.current) ambience.current = createAmbience(profile);
     try {
-      await element.play();
-      ramp(element, 0.55);
+      await ambience.current.start();
       setPlaying(true);
     } catch {
-      setStatus('missing');
+      // A blocked audio context leaves the button off rather than throwing.
     }
   };
 
-  const label = status === 'missing'
-    ? (cs ? 'zvuk se připravuje' : 'sound pending')
-    : playing
-      ? (cs ? 'vypnout zvuk' : 'sound off')
+  const label = playing
+    ? (cs ? 'vypnout zvuk' : 'sound off')
+    : status === 'checking'
+      ? (cs ? 'zvuk se připravuje' : 'sound pending')
       : (cs ? 'zvuk' : 'sound');
 
   return (
     <button
       type="button"
-      className="present-link"
-      style={{ font: 'inherit', cursor: status === 'ready' ? 'pointer' : 'default', opacity: status === 'ready' ? 1 : 0.55 }}
+      className="present-link present-sound"
+      style={{ font: 'inherit', cursor: status === 'checking' ? 'default' : 'pointer', opacity: status === 'checking' ? 0.55 : 1 }}
       onClick={toggle}
       aria-pressed={playing}
-      aria-disabled={status !== 'ready'}
-      title={status === 'missing'
-        ? (cs ? `Podklad se doplní do ${src}` : `Track will be added at ${src}`)
-        : (cs ? 'Přehrát hudbu scény' : 'Play scene soundtrack')}
+      aria-disabled={status === 'checking'}
+      title={
+        status === 'track'
+          ? (cs ? 'Přehrát hudbu scény' : 'Play scene soundtrack')
+          : (cs ? 'Přehrát ambientní zvuk scény' : 'Play scene ambience')
+      }
     >
-      ♪ {label}
+      ♪ <span className="present-sound-label">{label}</span>
     </button>
   );
 }

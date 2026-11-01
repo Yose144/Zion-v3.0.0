@@ -5,7 +5,7 @@ export const PLANET_R = 4;
 export const RING_R = 6.4;
 export const RING_R2 = 7.15;
 export const ORBIT_R = 5.05;
-export const GATE_POS: [number, number, number] = [10.6, 2.1, -7.2];
+export const GATE_POS: [number, number, number] = [7.2, 1.2, 6.8];
 export const SUN_POS: [number, number, number] = [0, 0, 0];
 /** Oběžná dráha zemské soustavy — skutečná 3. dráha = 1 AU (1 AU = 30 jednotek). */
 export const EARTH_ORBIT_R = 30;
@@ -50,4 +50,16 @@ export function worldSlot(world: WorldPoint): WorldSlot {
   if (world.layer >= 6) return 'ring';
   if (world.layer === 5) return 'surface';
   return 'orbit';
+}
+
+/** Planety obíhají podle tohohle jediného vzorce — scéna i fokus se musí shodovat. */
+export function planetPosition(
+  id: string,
+  index: number,
+  orbitR: number,
+  speed: number,
+  t: number,
+): [number, number, number] {
+  const angle = hash01(id, 5) * Math.PI * 2 + index + t * speed;
+  return [Math.cos(angle) * orbitR, 0, Math.sin(angle) * orbitR];
 }

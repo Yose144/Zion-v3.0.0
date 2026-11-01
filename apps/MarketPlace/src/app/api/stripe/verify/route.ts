@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/db';
-import { distributeOrderBonus } from '@/lib/bonus-payout';
+import { markShopOrderPaid } from '@/lib/shop-zionpay';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,25 +40,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date();
     const paymentStatus = session.payment_status;
 
     if (paymentStatus === 'paid') {
-      await prisma.shopOrder.updateMany({
-        where: { orderId },
-        data: {
-          status: 'paid',
-          paymentStatus: 'paid',
-          paidAt: now,
-        },
+      // Shared paid-path: statusHistory, invoice, bonus payout, confirmation
+      // email — idempotent against the Stripe webhook (and vice versa).
+      await markShopOrderPaid(orderId, {
+        by: 'stripe-verify',
+        txRef:
+          typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id,
       });
-      await prisma.invoice.updateMany({
-        where: { order: { orderId } },
-        data: { status: 'paid', paidAt: now },
-      });
-      void distributeOrderBonus(orderId).catch((err) =>
-        console.error('Bonus payout failed:', err)
-      );
     } else if (paymentStatus === 'unpaid' && session.status === 'open') {
       // still pending
     } else {

@@ -140,7 +140,7 @@ export default function SouvislostiPanel({ lang }: { lang: Lang }) {
           sub={Copy.sub[l]}
         />
 
-        <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+        <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
           {Copy.label[l]}
         </p>
 
@@ -182,14 +182,14 @@ export default function SouvislostiPanel({ lang }: { lang: Lang }) {
 
         <Detail title={Copy.d3Title[l]} rc="6, 182, 212">
           <div className="space-y-4 text-sm leading-relaxed text-gray-300 sm:text-base">
-            <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-zion-cyan">
+            <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-zion-cyan">
               <Globe2 className="h-3.5 w-3.5" />
               {l === 'cs' ? 'Z tradice' : 'From tradition'}
             </p>
             <p>{Copy.tradP1[l]}</p>
             <p className="text-gray-400">{Copy.tradP2[l]}</p>
             <p className="text-sm italic text-gray-300">{Copy.tradBridge[l]}</p>
-            <p className="flex items-center gap-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-zion-gold">
+            <p className="flex items-center gap-2 pt-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-zion-gold">
               <Sunrise className="h-3.5 w-3.5" />
               {l === 'cs' ? 'Předání pochodně' : 'The passing of the torch'}
             </p>
@@ -211,7 +211,7 @@ export default function SouvislostiPanel({ lang }: { lang: Lang }) {
         </Detail>
 
         <div className="space-y-2 border-t border-white/8 pt-6 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.36em] text-zion-purple">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.36em] text-zion-purple">
             {Copy.mantraTitle[l]}
           </p>
           <p className="mx-auto max-w-2xl text-xl font-bold leading-snug text-white sm:text-2xl">

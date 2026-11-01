@@ -67,7 +67,7 @@ export default function SpotifyBanner({
           <div className="text-left">
             <p className="text-sm font-bold text-white flex items-center gap-2">
               {t[cs ? 'cs' : 'en']}
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#1DB954]/15 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-[#1DB954]">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#1DB954]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#1DB954]">
                 <Volume2 className="h-2.5 w-2.5" /> Live
               </span>
             </p>

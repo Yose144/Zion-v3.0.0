@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getActiveTokenCampaigns, campaignTokens } from '@/lib/shop-campaign';
 
 // GET /api/shop/products — list e-shop products with filters
 export async function GET(req: NextRequest) {
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
       : { createdAt: 'desc' as const };
 
   try {
-    const [products, total] = await Promise.all([
+    const [products, total, campaigns] = await Promise.all([
       prisma.shopProduct.findMany({
         where,
         orderBy,
@@ -28,10 +29,15 @@ export async function GET(req: NextRequest) {
         take: pageSize,
       }),
       prisma.shopProduct.count({ where }),
+      getActiveTokenCampaigns(),
     ]);
 
     return NextResponse.json({
-      data: products,
+      data: products.map((p) =>
+        campaigns[p.externalId] !== undefined
+          ? { ...p, tokens: campaignTokens(campaigns, p.externalId, p.tokens) }
+          : p,
+      ),
       total,
       page,
       pageSize,

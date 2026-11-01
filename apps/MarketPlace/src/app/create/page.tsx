@@ -10,6 +10,8 @@ import { useSetApprovalForAll, useIsApprovedForAll, useCreateListing, useCreateA
 import { MARKETPLACE_EVENT_ABIS, ZION_MARKETPLACE_ADDRESS } from '@/lib/contracts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLangT } from '@/lib/useTranslation';
+import { MARKET_LOCKED } from '@/lib/market-lock';
+import MarketLockedNotice from '@/components/MarketLockedNotice';
 
 const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'unique'] as const;
 const collections = ['OASIS Genesis', 'OASIS Quest', 'OASIS Ships', 'OASIS Territory', 'Golden Eggs', 'OASIS Cosmetics'];
@@ -188,6 +190,14 @@ export default function CreatePage() {
       setSubmitting(false);
     }
   };
+
+  if (MARKET_LOCKED) {
+    return (
+      <div className="max-w-md mx-auto mt-20">
+        <MarketLockedNotice compact />
+      </div>
+    );
+  }
 
   if (!isConnected) {
     return (

@@ -8,10 +8,13 @@
  *   orbit   — světy na vnitřní oběžné dráze (L4 OASIS)
  *   gate    — Brána, volně v prostoru (apex/IntroPage)
  *   ship    — na palubě lodi (účet, strojovna)
+ *   sun     — Hiran usedá ve středu soustavy (L3 AI Native)
+ *   park    — Jupiter Station, pouť (herní místo)
+ *   sea     — archa na velrybím koridoru (L5, třináctý uzel)
  */
 
 export type PortalStatus = 'stub' | 'wired';
-export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship';
+export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship' | 'sun' | 'park' | 'sea';
 export type SurfaceSpot = 'harbor' | 'market' | 'forge' | 'library' | 'beacon' | 'gate' | 'ring';
 
 export interface Portal {
@@ -33,6 +36,24 @@ export const PORTALS: Portal[] = [
     api: '/api/oasis/worlds',
     status: 'wired',
     scene: { slot: 'orbit' },
+  },
+  {
+    id: 'hiran',
+    layer: 'L3',
+    title: { cs: 'Hiran', en: 'Hiran' },
+    sourceApp: 'V31/L3/ai-native',
+    api: '/api/hiran',
+    status: 'wired',
+    scene: { slot: 'sun' },
+  },
+  {
+    id: 'park',
+    layer: 'L4',
+    title: { cs: 'Pouť', en: 'Fair' },
+    sourceApp: 'apps/nirvana',
+    api: 'local park',
+    status: 'wired',
+    scene: { slot: 'park' },
   },
   {
     id: 'chain',
@@ -78,6 +99,17 @@ export const PORTALS: Portal[] = [
     api: '/api/harbor',
     status: 'wired',
     scene: { slot: 'surface', spot: 'harbor' },
+  },
+  {
+    // Třináctý uzel L5 — archa Království srdce · Nirvana. Není to místo na
+    // pevnině, proto vlastní slot 'sea': pluje velrybím koridorem.
+    id: 'archa',
+    layer: 'L5',
+    title: { cs: 'Archa', en: 'The Ark' },
+    sourceApp: 'apps/shared/scenes/KralovstviSrdce',
+    api: 'concept study B3',
+    status: 'wired',
+    scene: { slot: 'sea' },
   },
   {
     id: 'issobella',

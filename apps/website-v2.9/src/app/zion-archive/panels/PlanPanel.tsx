@@ -58,29 +58,29 @@ function WorkstreamCard({ w, lang }: { w: NirvanaWorkstream; lang: Lang }) {
       className="h-full rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:p-5 space-y-3"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-300">
+        <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300">
           {w.layer}
         </span>
-        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
           {Copy.legendGoal[l]}
         </span>
       </div>
       <h3 className="text-base font-bold leading-snug text-white">{w.title[l]}</h3>
       <dl className="space-y-2 text-sm leading-relaxed">
         <div>
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">
             {Copy.goalLabel[l]}
           </dt>
           <dd className="text-gray-300">{w.goal[l]}</dd>
         </div>
         <div>
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">
             {Copy.acceptLabel[l]}
           </dt>
           <dd className="text-gray-400">{w.acceptance[l]}</dd>
         </div>
         <div>
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">
             {Copy.prereqLabel[l]}
           </dt>
           <dd className="text-gray-400">{w.prerequisite[l]}</dd>
@@ -148,13 +148,13 @@ export default function PlanPanel({ lang }: { lang: Lang }) {
 
         {/* status legend */}
         <ul className="flex flex-wrap gap-2" aria-label={l === 'cs' ? 'Legenda stavů' : 'Status legend'}>
-          <li className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
+          <li className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
             {Copy.legendReading[l]}
           </li>
-          <li className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300">
+          <li className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300">
             {Copy.legendGoal[l]}
           </li>
-          <li className="rounded-full border border-zion-purple/30 bg-zion-purple/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-zion-purple">
+          <li className="rounded-full border border-zion-purple/30 bg-zion-purple/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-zion-purple">
             {Copy.legendHypo[l]}
           </li>
         </ul>

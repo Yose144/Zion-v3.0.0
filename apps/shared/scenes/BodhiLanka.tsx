@@ -1,9 +1,10 @@
 /** @jsxRuntime classic */
 'use client';
 
-import { React, useFrame, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
+import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, ScenePalms, SceneTerrain, SceneWater, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -88,19 +89,19 @@ function Pavilion({ def }: { def: PavilionDef }) {
 
 /** dvojitá lotosová střecha — kopule + 10 velkých + 10 malých lupínků + pupen */
 function LotusRoof({ y, s }: { y: number; s: number }) {
-  const low = useMemo(() => {
+  const low = React.useMemo(() => {
     const g = new THREE.OctahedronGeometry(1, 1);
     g.scale(1.7 * s, 0.3 * s, 4.4 * s);
     g.translate(0, 0, 2.3 * s);
     return g;
   }, [s]);
-  const high = useMemo(() => {
+  const high = React.useMemo(() => {
     const g = new THREE.OctahedronGeometry(1, 1);
     g.scale(1.15 * s, 0.28 * s, 3.0 * s);
     g.translate(0, 0, 1.7 * s);
     return g;
   }, [s]);
-  useEffect(() => () => { low.dispose(); high.dispose(); }, [low, high]);
+  React.useEffect(() => () => { low.dispose(); high.dispose(); }, [low, high]);
   return (
     <group position={[0, y, 0]}>
       {/* pevné tělo střechy — zploštělá kopule pod lupínky */}
@@ -139,7 +140,7 @@ function LotusRoof({ y, s }: { y: number; s: number }) {
 
 /** Sri Maha Bodhi — mohutný rozložitý strom s opěrnými kořeny */
 function BodhiTree() {
-  const branches = useMemo(() => {
+  const branches = React.useMemo(() => {
     const arr: { a: THREE.Vector3; b: THREE.Vector3; r: number }[] = [];
     for (let i = 0; i < 9; i++) {
       const an = (i / 9) * Math.PI * 2 + 0.3;
@@ -153,7 +154,7 @@ function BodhiTree() {
     arr.push({ a: new THREE.Vector3(0, 6.8, 0), b: new THREE.Vector3(0.6, 14.5, 0.4), r: 0.6 });
     return arr;
   }, []);
-  const canopy = useMemo(() => {
+  const canopy = React.useMemo(() => {
     const arr: { p: [number, number, number]; s: number; c: string }[] = [];
     for (let i = 0; i < 40; i++) {
       const a = rng(i + 2) * Math.PI * 2;
@@ -166,7 +167,7 @@ function BodhiTree() {
     }
     return arr;
   }, []);
-  const roots = useMemo(() => {
+  const roots = React.useMemo(() => {
     const arr: { p: [number, number, number]; yaw: number; tilt: number }[] = [];
     for (let i = 0; i < 7; i++) {
       const a = (i / 7) * Math.PI * 2 + 0.2;
@@ -291,7 +292,7 @@ function CentralIsland() {
 
 /** klenutý dřevěný můstek Rama Setu mezi dvěma body */
 function Bridge({ from, to, w = 1.6 }: { from: [number, number]; to: [number, number]; w?: number }) {
-  const { deck, rails, posts, side } = useMemo(() => {
+  const { deck, rails, posts, side } = React.useMemo(() => {
     const a = new THREE.Vector3(from[0], 0.62, from[1]);
     const b = new THREE.Vector3(to[0], 0.62, to[1]);
     const mid = a.clone().lerp(b, 0.5); mid.y = 1.9;
@@ -322,7 +323,7 @@ function Bridge({ from, to, w = 1.6 }: { from: [number, number]; to: [number, nu
     for (let i = 1; i < 6; i++) posts.push(curve.getPoint(i / 6));
     return { deck, rails, posts, side };
   }, [from[0], from[1], to[0], to[1], w]);
-  useEffect(() => () => { deck.dispose(); rails.forEach(rail => rail.dispose()); }, [deck, rails]);
+  React.useEffect(() => () => { deck.dispose(); rails.forEach(rail => rail.dispose()); }, [deck, rails]);
   return (
     <group>
       <mesh geometry={deck} castShadow receiveShadow>
@@ -349,15 +350,15 @@ function Bridge({ from, to, w = 1.6 }: { from: [number, number]; to: [number, nu
 
 /** lotosová jezírka — voda, lilie, lotosy */
 function LotusPond() {
-  const water = useRef<THREE.Mesh>(null);
+  const water = React.useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     const m = water.current?.material as THREE.MeshStandardMaterial | undefined;
     if (m) m.emissiveIntensity = 0.14 + Math.sin(motionTime(clock) * 0.7) * 0.05;
   });
-  const lilies = useMemo(() => {
+  const lilies = React.useMemo(() => {
     const arr: { p: [number, number]; s: number; f: boolean }[] = [];
     let i = 0;
-    while (arr.length < 42 && i < 300) {
+    while (arr.length < 26 && i < 300) {
       i++;
       const a = rng(i * 3.7) * Math.PI * 2;
       const r = ISLAND_R + 2 + rng(i * 1.3) * (POND_OUT - ISLAND_R - 3.5);
@@ -369,10 +370,7 @@ function LotusPond() {
   return (
     <group>
       {/* vodní plocha jezírka + mělčina */}
-      <mesh ref={water} rotation={[-Math.PI / 2, 0, 0]} position={[0, WATER_Y, 0]}>
-        <circleGeometry args={[46, 72]} />
-        <meshStandardMaterial color="#286d71" roughness={0.22} metalness={0.12} transparent opacity={0.96} emissive="#162f2c" emissiveIntensity={0.08} />
-      </mesh>
+      <SceneWater circle width={92} position={[0, WATER_Y, 0]} tint="#0c3f48" repeat={4} speed={0.8} segments={84} sun={[-0.72, 0.26, -0.62]} sky="#f3bd82" />
       {/* mělká teplá voda u břehu */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, WATER_Y + 0.02, 0]}>
         <ringGeometry args={[POND_OUT + 1, 46, 72]} />
@@ -415,9 +413,9 @@ function LotusPond() {
 
 /** zahradní okraj — země, cesta, tropická džungle */
 function GardenRing() {
-  const palms = useMemo(() => {
+  const palms = React.useMemo(() => {
     const arr: { p: [number, number]; h: number }[] = [];
-    for (let i = 0; i < 46; i++) {
+    for (let i = 0; i < 30; i++) {
       const a = rng(i + 21) * Math.PI * 2;
       const r = 49 + rng(i + 31) * 22;
       const z = Math.cos(a) * r;
@@ -427,9 +425,9 @@ function GardenRing() {
     }
     return arr;
   }, []);
-  const shrubs = useMemo(() => {
+  const shrubs = React.useMemo(() => {
     const arr: { p: [number, number]; s: number; c: string }[] = [];
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 40; i++) {
       const a = rng(i + 77) * Math.PI * 2;
       const r = 46.5 + rng(i + 7) * 12;
       const z = Math.cos(a) * r;
@@ -441,25 +439,32 @@ function GardenRing() {
   return (
     <group>
       {/* země areálu */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, WATER_Y - 0.25, 0]} receiveShadow>
-        <ringGeometry args={[45.5, 140, 80]} />
-        <meshStandardMaterial color="#33401f" roughness={0.98} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} receiveShadow>
-        <circleGeometry args={[150, 64]} />
-        <meshStandardMaterial color="#2b3a20" roughness={0.98} />
-      </mesh>
+      <SceneTerrain
+        kind="grass"
+        size={700}
+        segments={170}
+        repeat={230}
+        seed={67}
+        level={-0.42}
+        height={(x, z, noise) => {
+          const distance = Math.hypot(x, z);
+          const rise = Math.max(0, Math.min(1, (distance - 62) / 90));
+          return rise * (noise.fbm(x * 0.014, z * 0.014, 4) - 0.45) * 12;
+        }}
+        color={(x, _y, z, noise) => {
+          const dry = noise.fbm(x * 0.025 + 3, z * 0.025 + 8, 3);
+          return [0.16 + dry * 0.08, 0.28 + dry * 0.1, 0.1 + dry * 0.05];
+        }}
+      />
       {/* vstupní cesta z jihu — kamenná promenáda */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.18, 33.5]}>
         <planeGeometry args={[1.8, 26]} />
         <meshStandardMaterial color="#a08d68" roughness={0.9} />
       </mesh>
-      {/* palmy */}
-      {palms.map((p, i) => (
-        <Palm key={i} pos={[p.p[0], -0.2, p.p[1]]} h={p.h} />
-      ))}
+      {/* palmy — jedna instancovaná geometrie pro celý háj */}
+      <ScenePalms items={palms.map((p) => ({ x: p.p[0], z: p.p[1], y: -0.2, h: p.h / 1.4 }))} />
       {shrubs.map((s, i) => (
-        <mesh key={i} position={[s.p[0], s.s * 0.4 - 0.2, s.p[1]]} scale={[1.3, s.s, 1.3]} castShadow>
+        <mesh key={i} position={[s.p[0], s.s * 0.4 - 0.2, s.p[1]]} scale={[1.3, s.s, 1.3]}>
           <sphereGeometry args={[0.8, 7, 6]} />
           <meshStandardMaterial color={s.c} roughness={0.95} />
         </mesh>
@@ -479,7 +484,7 @@ function Palm({ pos, h }: { pos: [number, number, number]; h: number }) {
       {Array.from({ length: fronds }, (_, i) => {
         const a = (i / fronds) * Math.PI * 2 + 0.4;
         return (
-          <mesh key={i} position={[Math.sin(a) * 0.9, h + 0.35, Math.cos(a) * 0.9]} rotation={[0.55 + (i % 2) * 0.2, a, 0]} scale={[0.55, 0.18, 2.6]} castShadow>
+          <mesh key={i} position={[Math.sin(a) * 0.9, h + 0.35, Math.cos(a) * 0.9]} rotation={[0.55 + (i % 2) * 0.2, a, 0]} scale={[0.55, 0.18, 2.6]}>
             <octahedronGeometry args={[0.9, 0]} />
             <meshStandardMaterial color={i % 2 ? '#4f7a34' : '#5d8a3c'} roughness={0.9} />
           </mesh>
@@ -535,59 +540,29 @@ function Stupas() {
   );
 }
 
-/** obloha — zlatý soumrak nad Indickým oceánem, slunce na západě */
-function SkySun() {
-  const mat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunDir;
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 c = d.y > 0.15 ? mix(mid, top, smoothstep(0.15, 0.65, d.y))
-                              : mix(low, mid, smoothstep(-0.05, 0.15, d.y));
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.9, 0.62) * pow(s, 300.0) * 3.4
-               + vec3(1.0, 0.68, 0.38) * pow(s, 28.0) * 0.55
-               + vec3(0.95, 0.5, 0.24) * pow(s, 6.5) * 0.24;
-            // jemná zlatá mlha nad obzorem
-            c = mix(c, vec3(0.88, 0.62, 0.38), (1.0 - smoothstep(-0.02, 0.18, d.y)) * 0.35);
-            gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
-          }
-        `,
-        uniforms: {
-          top: { value: new THREE.Color('#2e3c62') },
-          mid: { value: new THREE.Color('#c98444') },
-          low: { value: new THREE.Color('#f0b868') },
-          sunDir: { value: new THREE.Vector3(-0.82, 0.1, -0.3).normalize() },
-        },
-      }),
-    [],
-  );
-  useEffect(() => () => mat.dispose(), [mat]);
-  return (
-    <mesh material={mat} renderOrder={-10} frustumCulled={false}>
-      <sphereGeometry args={[300, 24, 16]} />
-    </mesh>
-  );
-}
-
 export function BodhiLankaScene({ lang }: { lang: Lang }) {
   const cs = lang === 'cs';
   return (
     <>
-      <ScenePresentation camera={LANKA_CAMERA} target={LANKA_CONTROLS.target} />
-      <SkySun />
-      <fog attach="fog" args={['#c98a4a', 90, 260]} />
+      <ScenePresentation
+        camera={LANKA_CAMERA}
+        target={LANKA_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.72, 0.26, -0.62],
+          zenith: '#2b3f6b',
+          horizon: '#f3bd82',
+          ground: '#3a3424',
+          sunColor: '#ffd2a0',
+          sunSharpness: 280,
+          clouds: 0.26,
+          stars: 0.08,
+          fog: '#c98a4a',
+          fogDensity: 0.0024,
+          envIntensity: 0.95,
+        }}
+        post={{ bloom: 0.38, threshold: 0.86, exposure: 1.02, vignette: 0.5 }}
+        intro={{ duration: 3.8 }}
+      />
 
       <LotusPond />
       <CentralIsland />
@@ -624,10 +599,11 @@ export function BodhiLankaScene({ lang }: { lang: Lang }) {
 export const LANKA_CAMERA = { position: [0, 26, 74] as [number, number, number], fov: 45, far: 900 };
 export const LANKA_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.18, minDistance: 20, maxDistance: 150, maxPolarAngle: Math.PI / 2 - 0.06, target: [0, 5, -2] as [number, number, number], enablePan: false };
 export function LankaLighting() {
-  return <>
-    <ambientLight intensity={0.62} color="#ffe4b8" />
-    <hemisphereLight args={['#ffdcaa', '#3d5233', 0.7]} />
-    <directionalLight position={[-60, 24, -22]} intensity={2.1} color="#ffc887" castShadow />
-    <directionalLight position={[42, 30, 42]} intensity={0.55} color="#d8ecff" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.14} color="#ffe4b8" />
+      <SkyFill sky="#b8cdea" ground="#3d5233" intensity={0.5} />
+      <KeyLight sun={[-0.72, 0.26, -0.62]} intensity={2.8} extent={90} distance={150} color="#ffcf9c" />
+    </>
+  );
 }

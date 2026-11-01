@@ -17,6 +17,10 @@ from ai_native_client import AINativeClient
 async def main():
     print("🧪 Testing AI Native Client Integration\n")
     local_url = os.getenv("ZION_AI_NATIVE_URL", "http://localhost:8001")
+    # NOTE: this default is the decommissioned 2.9.6 Zion2 host. The live AI
+    # layer is zion-v31-ai-native on EDGE2 (reach it via an SSH tunnel, or point
+    # ZION_PRIMARY_TESTNET_HOST at your own host). See
+    # docs/3.2/ops/STALE-HOST-REFS-2026-10-31.md.
     primary_host = os.getenv("ZION_PRIMARY_TESTNET_HOST", "91.98.122.165")
     
     # Use local test server for now

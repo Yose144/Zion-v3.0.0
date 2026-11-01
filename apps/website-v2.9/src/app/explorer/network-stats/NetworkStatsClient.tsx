@@ -109,7 +109,7 @@ function fmtSI(v: number): string {
 
 /* ─── Mini Sparkline ────────────────────────────────────────── */
 function Sparkline({ data, color, height = 48 }: { data: number[]; color: string; height?: number }) {
-  if (!data.length) return <div style={{ height }} className="flex items-center justify-center"><span className="text-[10px] text-gray-600">No data</span></div>;
+  if (!data.length) return <div style={{ height }} className="flex items-center justify-center"><span className="text-[11px] text-gray-600">No data</span></div>;
   const w = 200;
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -292,10 +292,10 @@ export default function NetworkStatsClient() {
                 <div key={card.label} className="zion-rainbow-sub p-5 flex flex-col" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <div className="flex items-center gap-2 mb-2">
                     <card.icon className={`h-4 w-4 ${card.color}`} />
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{card.label}</span>
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{card.label}</span>
                   </div>
                   <p className={`text-xl font-bold tabular-nums ${card.color}`}>{card.value}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{card.sub}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{card.sub}</p>
                   {card.spark.length > 1 && (
                     <div className="mt-auto pt-3">
                       <Sparkline data={card.spark} color={card.sparkColor} height={40} />
@@ -330,7 +330,7 @@ export default function NetworkStatsClient() {
                       <c.icon className="h-4 w-4" style={{ color: c.color }} />
                       <span className="text-sm font-medium text-white">{c.title}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-[10px]">
+                    <div className="flex items-center gap-1 text-[11px]">
                       {trend >= 0 ? (
                         <TrendingUp className="h-3 w-3 text-zion-cyan" />
                       ) : (
@@ -355,7 +355,7 @@ export default function NetworkStatsClient() {
                       { label: ExplorerNetworkStatsNetworkStatsClientCopy.max[cs ? 'cs' : 'en'], value: max },
                     ].map((s, i) => (
                       <div key={s.label} className={`text-center ${i < 2 ? "border-r border-white/6" : ""}`}>
-                        <p className="text-[10px] uppercase tracking-wider text-gray-500">{s.label}</p>
+                        <p className="text-[11px] uppercase tracking-wider text-gray-500">{s.label}</p>
                         <p className="text-xs font-semibold text-white tabular-nums mt-0.5">{fmtSI(s.value)}</p>
                       </div>
                     ))}

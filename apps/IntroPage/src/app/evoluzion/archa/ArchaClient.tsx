@@ -262,6 +262,16 @@ export default function ArchaClient() {
           >
             {t.status.link}
           </a>
+          <span className="mt-2 block">
+            <a
+              href="https://app.zionterranova.com/terranova/kralovstvi-srdce"
+              className="inline-block text-sm text-[#fcd116]/70 transition hover:text-[#fcd116]"
+            >
+              {lang === 'cs'
+                ? 'Třináctý uzel L5 — archa v síti Terra Nova →'
+                : 'The thirteenth L5 node — the ark in the Terra Nova network →'}
+            </a>
+          </span>
         </section>
 
         {/* Footer */}

@@ -62,10 +62,10 @@ const ghostBtn =
   'text-gray-400 transition-colors hover:border-white/25 hover:text-gray-200 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/60';
 const chip =
-  'shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] ' +
+  'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ' +
   'border-[rgba(var(--rc),0.3)] text-[rgb(var(--rc))]';
 const chipNeutral =
-  'shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-semibold ' +
+  'shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold ' +
   'uppercase tracking-[0.16em] text-gray-400';
 
 export default function SpolecniciPanel({ lang }: { lang: Lang }) {
@@ -88,7 +88,7 @@ export default function SpolecniciPanel({ lang }: { lang: Lang }) {
               <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-200">
                 {Copy.mainGroup[l]}
               </h3>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-600">
                 {bookCount(MAIN_BOOKS.length, l)}
               </span>
               <p className="w-full text-xs text-gray-500">{Copy.mainBlurb[l]}</p>
@@ -140,7 +140,7 @@ export default function SpolecniciPanel({ lang }: { lang: Lang }) {
                 <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-200">
                   {g.title[l]}
                 </h3>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-600">
                   {bookCount(g.items.length, l)}
                 </span>
                 <p className="w-full text-xs text-gray-500">{g.blurb[l]}</p>
@@ -209,7 +209,7 @@ export default function SpolecniciPanel({ lang }: { lang: Lang }) {
 
         {/* extra resources row */}
         <div className="space-y-2 border-t border-white/8 pt-5">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-500">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gray-500">
             {Copy.moreTitle[l]}
           </h3>
           <div className="flex flex-wrap gap-2">

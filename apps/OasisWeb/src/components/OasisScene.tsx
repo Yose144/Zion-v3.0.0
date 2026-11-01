@@ -27,8 +27,62 @@ import CameraCompassTracker from './CameraCompassTracker';
 import R3FErrorBoundary from './R3FErrorBoundary';
 import MobileTouchControls from './MobileTouchControls';
 import Planet, { NovaZeme } from './Planet';
+import { quality } from '../../../shared/scenes/kit/quality';
+import { SceneEnvironment } from '../../../shared/scenes/kit/environment';
 import type { CompassData } from './Compass';
 
+
+/**
+ * Měření pro render audit (`?sceneAudit=1`): FPS, draw calls, trojúhelníky, textury
+ * a počet světel. Stejný tvar, jaký používá Nirvana, aby šel porovnat.
+ */
+function OasisAudit() {
+  const { gl, scene, size } = useThree();
+  const enabled = useRef(false);
+  const frames = useRef(0);
+  const start = useRef(0);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    enabled.current = new URLSearchParams(window.location.search).get('sceneAudit') === '1';
+    if (!enabled.current) return;
+    start.current = performance.now();
+    // The composer renders several passes per frame; autoReset would leave only the
+    // last full-screen quad in info. Accumulate the whole frame and reset ourselves.
+    const renderer = gl as THREE.WebGLRenderer;
+    const previousAutoReset = renderer.info.autoReset;
+    renderer.info.autoReset = false;
+    renderer.info.reset();
+    return () => {
+      renderer.info.autoReset = previousAutoReset;
+      delete (window as unknown as Record<string, unknown>).__oasisAudit;
+    };
+  }, [gl]);
+  useFrame(() => {
+    if (!enabled.current) return;
+    frames.current += 1;
+    const now = performance.now();
+    let lights = 0;
+    scene.traverse((object) => {
+      if ((object as THREE.Light).isLight) lights += 1;
+    });
+    const renderer = gl as THREE.WebGLRenderer;
+    (window as unknown as Record<string, unknown>).__oasisAudit = {
+      frames: frames.current,
+      fps: (frames.current * 1000) / Math.max(1, now - start.current),
+      calls: renderer.info?.render?.calls ?? 0,
+      triangles: renderer.info?.render?.triangles ?? 0,
+      geometries: renderer.info?.memory?.geometries ?? 0,
+      textures: renderer.info?.memory?.textures ?? 0,
+      lights,
+      dpr: renderer.getPixelRatio?.() ?? 1,
+      tier: quality().tier,
+      width: size.width,
+      height: size.height,
+    };
+    (gl as THREE.WebGLRenderer).info.reset();
+  }, 1);
+  return null;
+}
 
 interface CameraRigProps {
   started: boolean;
@@ -336,7 +390,7 @@ export default function OasisScene({
         role="img"
         aria-label="ZION OASIS — interaktivní 3D mapa světů"
         camera={{ position: isMobile ? [0, 4, 22] : [0, 3.5, 34], fov: isMobile ? 60 : 55 }}
-        dpr={[1, isMobile ? 1 : 1]}
+        dpr={[1, isMobile ? Math.min(1.25, quality().dpr) : quality().dpr]}
         style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', inset: 0 }}
         gl={async (defaults) => {
           if (backend === 'webgpu') {
@@ -387,6 +441,8 @@ export default function OasisScene({
           }
         }}
       >
+        <OasisAudit />
+
         {/* Solid dark background — stars/nebula provide the space backdrop. */}
         {!isMobile && <fog attach="fog" args={['#05060a', 80, 200]} />}
 
@@ -399,9 +455,18 @@ export default function OasisScene({
         {/* HDRI environment — desktop only */}
         {!isMobile && (
           <R3FErrorBoundary label="Environment">
-            <Suspense fallback={null}>
-              <Environment preset="night" background={false} environmentIntensity={0.6} />
-            </Suspense>
+            <SceneEnvironment
+              dome={false}
+              envIntensity={0.55}
+              zenith="#0a1226"
+              horizon="#1d2742"
+              ground="#05070c"
+              sun={[-0.4, 0.5, -0.7]}
+              sunColor="#cdd8ff"
+              sunSharpness={90}
+              clouds={0}
+              stars={0}
+            />
           </R3FErrorBoundary>
         )}
 
@@ -611,7 +676,7 @@ export default function OasisScene({
 
         {useComposer ? (
           <EffectComposer multisampling={2}>
-            <Bloom intensity={0.62} luminanceThreshold={0.35} luminanceSmoothing={0.55} mipmapBlur radius={0.45} />
+            <Bloom intensity={0.38} luminanceThreshold={0.72} luminanceSmoothing={0.35} mipmapBlur radius={0.4} />
             <HueSaturation saturation={0.28} />
             <BrightnessContrast brightness={0.02} contrast={0.12} />
             <Vignette eskil={false} offset={0.22} darkness={0.7} />

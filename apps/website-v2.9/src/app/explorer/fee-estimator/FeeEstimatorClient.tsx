@@ -204,7 +204,7 @@ export default function FeeEstimatorClient() {
                 <div key={t.key} className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <div className="flex items-center gap-2 mb-3">
                     <t.icon className={`h-4 w-4 ${t.color}`} />
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{t.label}</span>
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{t.label}</span>
                   </div>
                   <p className={`text-2xl font-bold tabular-nums ${t.color}`}>{formatFee(t.fee)} ZION</p>
                   <p className="text-[11px] text-gray-500 mt-1">{t.sub}</p>
@@ -243,7 +243,7 @@ export default function FeeEstimatorClient() {
               { label: ExplorerFeeEstimatorFeeEstimatorClientCopy.k90thIle[cs ? 'cs' : 'en'], value: formatFee(fees?.urgent ?? 0) + " ZION", color: "text-zion-purple" },
             ].map((s) => (
               <div key={s.label} className="zion-tile p-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-1">{s.label}</p>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500 mb-1">{s.label}</p>
                 <p className={`text-lg font-bold tabular-nums ${s.color}`}>{s.value}</p>
               </div>
             ))}

@@ -425,7 +425,7 @@ export default function StatusPageClient() {
                 style={{ "--rc": "252, 209, 22" } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">
+                  <span className="text-[11px] text-gray-400 uppercase tracking-wider">
                     {info.label}
                   </span>
                   <info.icon className={`w-4 h-4 ${info.color}`} />
@@ -464,7 +464,7 @@ export default function StatusPageClient() {
                 style={{ "--rc": "6, 105, 40" } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">
+                  <span className="text-[11px] text-gray-400 uppercase tracking-wider">
                     {metric.label}
                   </span>
                   <metric.icon className={`w-4 h-4 ${metric.color}`} />
@@ -503,7 +503,7 @@ export default function StatusPageClient() {
                 style={{ "--rc": "228, 30, 43" } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">
+                  <span className="text-[11px] text-gray-400 uppercase tracking-wider">
                     {metric.label}
                   </span>
                   <metric.icon className={`w-4 h-4 ${metric.color}`} />
@@ -519,12 +519,12 @@ export default function StatusPageClient() {
           {peers?.peers && peers.peers.length > 0 && (
             <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
               <div className="grid grid-cols-[1fr_80px_80px_100px_100px_80px] min-w-[460px] gap-3 px-5 py-3 border-b border-white/6">
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.address[cs ? 'cs' : 'en']}</span>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.direction[cs ? 'cs' : 'en']}</span>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.height[cs ? 'cs' : 'en']}</span>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.version[cs ? 'cs' : 'en']}</span>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.state[cs ? 'cs' : 'en']}</span>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerStatusStatusPageClientCopy.idle[cs ? 'cs' : 'en']}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.address[cs ? 'cs' : 'en']}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.direction[cs ? 'cs' : 'en']}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.height[cs ? 'cs' : 'en']}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.version[cs ? 'cs' : 'en']}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.state[cs ? 'cs' : 'en']}</span>
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerStatusStatusPageClientCopy.idle[cs ? 'cs' : 'en']}</span>
               </div>
               {peers.peers.slice(0, 10).map((peer, i) => (
                 <div
@@ -581,7 +581,7 @@ export default function StatusPageClient() {
                 style={{ "--rc": "252, 209, 22" } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">
+                  <span className="text-[11px] text-gray-400 uppercase tracking-wider">
                     {metric.label}
                   </span>
                   <metric.icon className={`w-4 h-4 ${metric.color}`} />

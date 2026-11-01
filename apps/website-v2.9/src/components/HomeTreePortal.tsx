@@ -182,7 +182,7 @@ export default function HomeTreePortal() {
                         }}
                       >
                         <span
-                          className="text-[9px] font-bold"
+                          className="text-[10px] font-bold"
                           style={{ color: `rgb(${s.color})` }}
                         >
                           {i + 1}
@@ -192,17 +192,17 @@ export default function HomeTreePortal() {
                       {hovered === s.id && (
                         <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/15 bg-black/95 px-2.5 py-1.5 text-center z-20">
                           <p className="text-[10px] font-bold text-white">{s.name}</p>
-                          <p className="text-[8px] text-gray-400">{s.meaning}</p>
-                          <p className="text-[8px] font-semibold mt-0.5" style={{ color: `rgb(${s.color})` }}>{s.zionLayer}</p>
+                          <p className="text-[10px] text-gray-400">{s.meaning}</p>
+                          <p className="text-[10px] font-semibold mt-0.5" style={{ color: `rgb(${s.color})` }}>{s.zionLayer}</p>
                         </div>
                       )}
                     </motion.div>
                   ))}
 
                   {/* Pillar labels */}
-                  <div className="absolute bottom-1 left-[28%] -translate-x-1/2 text-[7px] uppercase tracking-wider text-gray-600">Severity</div>
-                  <div className="absolute bottom-1 left-[50%] -translate-x-1/2 text-[7px] uppercase tracking-wider text-gray-600">Equilibrium</div>
-                  <div className="absolute bottom-1 left-[72%] -translate-x-1/2 text-[7px] uppercase tracking-wider text-gray-600">Mercy</div>
+                  <div className="absolute bottom-1 left-[28%] -translate-x-1/2 text-[10px] uppercase tracking-wider text-gray-600">Severity</div>
+                  <div className="absolute bottom-1 left-[50%] -translate-x-1/2 text-[10px] uppercase tracking-wider text-gray-600">Equilibrium</div>
+                  <div className="absolute bottom-1 left-[72%] -translate-x-1/2 text-[10px] uppercase tracking-wider text-gray-600">Mercy</div>
                 </div>
               </div>
             </div>

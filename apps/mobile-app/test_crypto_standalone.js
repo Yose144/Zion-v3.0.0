@@ -11,6 +11,9 @@ const crypto = require('crypto');
 // Set SHA512 for @noble/ed25519 (required in Node.js)
 ed25519.etc.sha512Sync = (...m) => crypto.createHash('sha512').update(Buffer.concat(m)).digest();
 
+// Test fixture only — do NOT reuse for real wallets.
+// The expected address assertions below are pinned to this seed, so it
+// cannot be swapped without re-deriving the vectors.
 const TEST_MNEMONIC = 'plastic rude toilet offer raccoon melody ostrich weather lecture common dry figure';
 const EXPECTED_ADDRESS = 'zion1t2t5r3p697z4v6m4x242l4j7k6w3y470h4d7q7g';
 

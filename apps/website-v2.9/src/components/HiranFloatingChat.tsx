@@ -227,7 +227,7 @@ export default function HiranFloatingChat() {
                 <Send className="w-3 h-3 text-white" />
               </button>
             </div>
-            <p className="mt-1.5 text-center text-[9px] text-gray-600">{Copy.disclaimer[t]}</p>
+            <p className="mt-1.5 text-center text-[10px] text-gray-600">{Copy.disclaimer[t]}</p>
           </form>
         </div>
       )}

@@ -147,7 +147,7 @@ export default function Hero() {
                 >
                   <metric.icon className="w-4 h-4 text-zion-gold mb-1.5" />
                   <div className="text-base sm:text-lg font-bold text-white truncate">{metric.value}</div>
-                  <div className="text-[9px] uppercase tracking-wide text-zion-gold/70 mt-0.5 leading-tight">{metric.label}</div>
+                  <div className="text-[10px] uppercase tracking-wide text-zion-gold/70 mt-0.5 leading-tight">{metric.label}</div>
                 </motion.div>
               ))}
             </div>

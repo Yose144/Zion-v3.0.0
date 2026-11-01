@@ -71,6 +71,7 @@ const t = {
     terra_ekam: { cs: 'Ekam', en: 'Ekam' },
     terra_kailash: { cs: 'Kailash', en: 'Kailash' },
     terra_amenti: { cs: 'Amenti — Síně záznamu', en: 'Amenti — Halls of Records' },
+    terra_kralovstvi_srdce: { cs: 'Království srdce · Archa', en: 'Kingdom of the Heart · the Ark' },
     resonance: { cs: 'Rezonance', en: 'Resonance' },
     team: { cs: 'Tým', en: 'Team' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
@@ -677,7 +678,10 @@ export function tr<
   S extends keyof DeepRecord,
   K extends keyof DeepRecord[S],
 >(section: S, key: K, lang: Lang): string {
-  const entry = t[section][key] as { cs: string; en: string };
+  // Fail soft: a typo in a key must never crash a page (returns the dotted key).
+  const sectionObj = (t as unknown as Record<string, Record<string, { cs: string; en: string }>>)[String(section)];
+  const entry = sectionObj?.[String(key)];
+  if (!entry) return `${String(section)}.${String(key)}`;
   return entry[lang] ?? entry['cs'];
 }
 

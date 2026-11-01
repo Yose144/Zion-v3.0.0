@@ -1,57 +1,25 @@
 'use client';
 
-import { ProjectLanguageButton } from '@/core/shell/ProjectLanguageButton';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import Link from 'next/link';
+import { ProjectPresentation } from '@/core/scene/ProjectPresentation';
 import { BoaEsperancaScene, BoaEsperancaLighting, BOA_CAMERA, BOA_CONTROLS } from '../../../../../shared/scenes/BoaEsperanca';
-import { useI18n } from '@/core/i18n';
-import { MISSION_ORIGIN } from '@/lib/freeworld-sites';
 
 export default function BoaEsperancaPresentPage() {
-  const { lang } = useI18n();
-  const cs = lang === 'cs';
-
   return (
-    <main className="present">
-      <header className="present-chrome">
-        <Link href="/" className="present-back">
-          ← {cs ? 'Nirvana' : 'Nirvana'}
-        </Link>
-        <div className="present-title">
-          <strong>BOA ESPERANÇA</strong>
-          <span className="present-sub">
-            {cs ? 'Mys Dobré naděje · šev dvou oceánů' : 'Cape of Good Hope · seam of two oceans'}
-          </span>
-        </div>
-        <ProjectLanguageButton />
-        <a
-          className="present-link"
-          href={`${MISSION_ORIGIN}/terranova/boa-esperanca`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {cs ? 'komunita ↗' : 'community ↗'}
-        </a>
-      </header>
-
-      <Canvas
-        dpr={[1, 1.5]}
-        shadows
-        camera={BOA_CAMERA}
-        gl={{ antialias: true, alpha: true }}
-        style={{ position: 'absolute', inset: 0 }}
-      >
-        <BoaEsperancaLighting />
-
-        <BoaEsperancaScene lang={lang} />
-
-        <OrbitControls makeDefault {...BOA_CONTROLS} />
-      </Canvas>
-
-      <div className="present-hint">
-        {cs ? 'Táhni pro otočení · kolečko pro přiblížení' : 'Drag to rotate · scroll to zoom'}
-      </div>
-    </main>
+    <ProjectPresentation
+      title="BOA ESPERANÇA"
+      subtitle={{ cs: 'Mys Dobré naděje · šev dvou oceánů', en: 'Cape of Good Hope · seam of two oceans' }}
+      missionPath="/terranova/boa-esperanca"
+      camera={BOA_CAMERA}
+      controls={BOA_CONTROLS}
+      sound="boa-esperanca"
+      ambience="surf"
+    >
+      {(lang) => (
+        <>
+          <BoaEsperancaLighting />
+          <BoaEsperancaScene lang={lang} />
+        </>
+      )}
+    </ProjectPresentation>
   );
 }

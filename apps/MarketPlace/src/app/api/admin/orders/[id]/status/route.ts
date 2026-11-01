@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdminAuth } from '@/lib/admin-guard';
 import { sendPaymentConfirmation, sendShippingNotification } from '@/lib/email';
+import { distributeOrderBonus } from '@/lib/bonus-payout';
+import {
+  ARCHIVE_REDEEM_URL,
+  issueArchivePassForOrder,
+  revokeArchivePass,
+} from '@/lib/archive-pass';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +82,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
       },
     ];
 
+    // Atomically claim the pending→paid transition before the generic update:
+    // only the request that actually flips paymentStatus fires the paid
+    // side-effects (invoice, ZION bonus, confirmation email) — concurrent
+    // mark-paid calls otherwise see the same stale `before` snapshot.
+    const wantsPaid = update.paymentStatus === 'paid';
+    let paidClaim = false;
+    if (wantsPaid && before.paymentStatus !== 'paid') {
+      const claim = await prisma.shopOrder.updateMany({
+        where: { id: before.id, paymentStatus: { not: 'paid' } },
+        data: {
+          paymentStatus: 'paid',
+          paidAt: update.paidAt as Date,
+          ...(body.status === 'paid' ? { status: 'paid' } : {}),
+        },
+      });
+      paidClaim = claim.count === 1;
+    }
+
     const order = await prisma.shopOrder.updateMany({
       where: { OR: [{ id }, { orderId: id }] },
       data: update,
@@ -94,12 +118,27 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
 
     // Bank-transfer soft-launch: admin "mark paid" must notify customer (V2 parity).
-    const becamePaid =
-      updated &&
-      updated.paymentStatus === 'paid' &&
-      before.paymentStatus !== 'paid';
-    if (becamePaid) {
+    if (paidClaim && updated) {
+      // Same paid-path side effects as markShopOrderPaid / stripe webhook:
+      // mark the invoice paid, then pay the ZION bonus (idempotent, skips
+      // when the order has no tokens / no customer wallet).
+      await prisma.invoice.updateMany({
+        where: { order: { orderId: updated.orderId } },
+        data: { status: 'paid', paidAt: update.paidAt as Date },
+      });
+      void distributeOrderBonus(updated.orderId).catch((err) =>
+        console.error('Bonus payout failed:', err)
+      );
+      const archivePass = await issueArchivePassForOrder(updated).catch(
+        (err) => {
+          console.error('Archive pass issue failed:', err);
+          return null;
+        },
+      );
       void sendPaymentConfirmation({
+        archivePass: archivePass
+          ? { code: archivePass.code, url: ARCHIVE_REDEEM_URL }
+          : null,
         orderId: updated.orderId,
         customerName: updated.customerName,
         customerEmail: updated.customerEmail,
@@ -121,6 +160,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
         customerWalletAddress: updated.customerWalletAddress,
         customerWalletId: updated.orderId,
       }).catch((err) => console.error('mark-paid email failed:', err));
+    }
+
+    // Cancelled orders lose their archive pass (if one was issued at paid).
+    if (updated && updated.status === 'cancelled' && before.status !== 'cancelled') {
+      try {
+        revokeArchivePass(updated.orderId);
+      } catch (err) {
+        console.error('Archive pass revoke failed:', err);
+      }
     }
 
     // Status → shipped without separate shipping API still notifies when possible.

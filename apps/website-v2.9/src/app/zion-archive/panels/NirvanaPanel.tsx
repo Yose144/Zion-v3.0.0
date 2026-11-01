@@ -85,7 +85,7 @@ export default function NirvanaPanel({ lang }: { lang: Lang }) {
                 <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-200">
                   {Copy.groups[gi].title[l]}
                 </h3>
-                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">
                   {Copy.groups[gi].layer}
                 </span>
               </div>
@@ -120,7 +120,7 @@ export default function NirvanaPanel({ lang }: { lang: Lang }) {
                 <Sailboat className="h-5 w-5 text-zion-cyan" />
               </span>
               <div className="space-y-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-zion-cyan">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-zion-cyan">
                   {Copy.bridgeKicker[l]}
                 </p>
                 <h3 className="text-base font-bold text-white sm:text-lg">{Copy.bridgeTitle[l]}</h3>
@@ -147,7 +147,7 @@ export default function NirvanaPanel({ lang }: { lang: Lang }) {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:border-white/25 hover:text-white"
               >
                 MariaCaminho
-                {l === 'en' && <span className="text-[9px] uppercase tracking-wider text-gray-500">(CZ)</span>}
+                {l === 'en' && <span className="text-[10px] uppercase tracking-wider text-gray-500">(CZ)</span>}
               </Link>
               <Link
                 href="/terranova/maria-del-camino"

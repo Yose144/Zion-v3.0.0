@@ -304,13 +304,13 @@ export default function AddressDetailClient() {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-white tracking-tight">{ExplorerAddressAddressDetailClientCopy.address[cs ? 'cs' : 'en']}</h1>
               {isWatched && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-zion-gold/10 text-zion-gold border border-zion-gold/20" title={ExplorerAddressAddressDetailClientCopy.watched[cs ? 'cs' : 'en']}>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-zion-gold/10 text-zion-gold border border-zion-gold/20" title={ExplorerAddressAddressDetailClientCopy.watched[cs ? 'cs' : 'en']}>
                   <Star className="w-3 h-3 fill-current" />
                   {ExplorerAddressAddressDetailClientCopy.watched[cs ? 'cs' : 'en']}
                 </span>
               )}
               {data.known_label && (
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${
+                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider border ${
                   data.known_type === 'pool' ? 'bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20' :
                   data.known_type === 'dao' ? 'bg-zion-purple/10 text-zion-purple border-zion-purple/20' :
                   data.known_type === 'premine' ? 'bg-zion-gold/10 text-zion-gold border-zion-gold/20' :
@@ -325,7 +325,7 @@ export default function AddressDetailClient() {
                 </span>
               )}
               {data.is_miner && !data.known_label && (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20">
                   ⛏ {ExplorerAddressAddressDetailClientCopy.activeMiner[cs ? 'cs' : 'en']}
                 </span>
               )}
@@ -380,7 +380,7 @@ export default function AddressDetailClient() {
             { label: ExplorerAddressAddressDetailClientCopy.poolPaid[cs ? 'cs' : 'en'], value: `${data.balance.pool_paid.toFixed(2)} ZION`, color: "text-zion-gold" },
           ].map((s) => (
             <div key={s.label} className="zion-rainbow-sub rounded-[20px] bg-black/60 p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1.5">{s.label}</p>
+              <p className="text-[11px] uppercase tracking-[0.15em] text-white/30 mb-1.5">{s.label}</p>
               <p className={`text-xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
             </div>
           ))}
@@ -399,7 +399,7 @@ export default function AddressDetailClient() {
                 <Activity className="w-4 h-4 text-zion-purple" />
                 {ExplorerAddressAddressDetailClientCopy.transactionSummary[cs ? 'cs' : 'en']}
                 {data.totals_scope === 'window' && (
-                  <span className="text-[10px] font-normal text-white/30 normal-case">
+                  <span className="text-[11px] font-normal text-white/30 normal-case">
                     ({ExplorerAddressAddressDetailClientCopy.totalsWindowNote[cs ? 'cs' : 'en']} {data.totals_window ?? data.transactions.length} {cs ? 'z' : 'of'} {data.transaction_count.toLocaleString(locale)} tx)
                   </span>
                 )}
@@ -409,7 +409,7 @@ export default function AddressDetailClient() {
                   <DonutChart received={received} sent={sent} />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <p className="text-[9px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.total[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.total[cs ? 'cs' : 'en']}</p>
                       <p className="text-[11px] font-bold text-white tabular-nums">{total.toFixed(2)}</p>
                     </div>
                   </div>
@@ -418,26 +418,26 @@ export default function AddressDetailClient() {
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="w-2 h-2 rounded-full bg-zion-cyan" />
-                      <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.received[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.received[cs ? 'cs' : 'en']}</p>
                     </div>
                     <p className="text-lg font-bold text-zion-cyan tabular-nums">{received.toFixed(4)}</p>
-                    <p className="text-[10px] text-white/30">ZION</p>
+                    <p className="text-[11px] text-white/30">ZION</p>
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="w-2 h-2 rounded-full bg-zion-purple" />
-                      <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.sent[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.sent[cs ? 'cs' : 'en']}</p>
                     </div>
                     <p className="text-lg font-bold text-zion-purple tabular-nums">{sent.toFixed(4)}</p>
-                    <p className="text-[10px] text-white/30">ZION</p>
+                    <p className="text-[11px] text-white/30">ZION</p>
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="w-2 h-2 rounded-full bg-zion-gold" />
-                      <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.fees[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.fees[cs ? 'cs' : 'en']}</p>
                     </div>
                     <p className="text-lg font-bold text-zion-gold tabular-nums">{fees.toFixed(6)}</p>
-                    <p className="text-[10px] text-white/30">ZION</p>
+                    <p className="text-[11px] text-white/30">ZION</p>
                   </div>
                 </div>
               </div>
@@ -481,12 +481,12 @@ export default function AddressDetailClient() {
                 <div className="flex items-center gap-3">
                   <CIcon className={`w-6 h-6 ${cStyle.text}`} />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.consciousnessLevel[cs ? 'cs' : 'en']}</p>
+                    <p className="text-[11px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.consciousnessLevel[cs ? 'cs' : 'en']}</p>
                     <p className={`${cStyle.text} font-bold text-lg`}>{level.replace(/_/g, " ")}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.multiplier[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] uppercase tracking-wider text-white/30">{ExplorerAddressAddressDetailClientCopy.multiplier[cs ? 'cs' : 'en']}</p>
                   <p className={`${cStyle.text} font-bold text-2xl tabular-nums`}>{data.mining_stats.consciousness_multiplier}×</p>
                 </div>
               </div>
@@ -518,11 +518,11 @@ export default function AddressDetailClient() {
 
           {/* table header */}
           <div className="grid grid-cols-[70px_1fr_100px_90px_120px] min-w-[420px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerAddressAddressDetailClientCopy.type[cs ? 'cs' : 'en']}</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerAddressAddressDetailClientCopy.age[cs ? 'cs' : 'en']}</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.amount[cs ? 'cs' : 'en']}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerAddressAddressDetailClientCopy.type[cs ? 'cs' : 'en']}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerAddressAddressDetailClientCopy.age[cs ? 'cs' : 'en']}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.amount[cs ? 'cs' : 'en']}</span>
           </div>
 
           {(() => {
@@ -563,7 +563,7 @@ export default function AddressDetailClient() {
                     >
                       {/* type */}
                       <div className="flex items-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${typeClass}`}>{typeLabel}</span>
+                        <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider ${typeClass}`}>{typeLabel}</span>
                       </div>
 
                       {/* hash */}
@@ -623,19 +623,19 @@ export default function AddressDetailClient() {
                 <Layers className="w-4 h-4 text-zion-cyan" />
                 {ExplorerAddressAddressDetailClientCopy.utxoList[cs ? 'cs' : 'en']} ({data.utxos.length})
               </h2>
-              <span className="text-[10px] text-white/30 uppercase tracking-wider">
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">
                 {ExplorerAddressAddressDetailClientCopy.total[cs ? 'cs' : 'en']} {(data.utxos.reduce((s, u) => s + u.amount, 0) / FLOWERS_PER_ZION).toFixed(4)} ZION
               </span>
             </div>
 
             {/* table header */}
             <div className="grid grid-cols-[60px_1fr_80px_100px_100px_100px] min-w-[420px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">#</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.index[cs ? 'cs' : 'en']}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.height[cs ? 'cs' : 'en']}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.age[cs ? 'cs' : 'en']}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.amount[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">#</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.index[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.height[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.age[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.amount[cs ? 'cs' : 'en']}</span>
             </div>
 
             {data.utxos.length === 0 ? (
@@ -686,11 +686,11 @@ export default function AddressDetailClient() {
                         <Link href={`/explorer/address?addr=${encodeURIComponent(w.address)}`} className="text-[13px] font-mono text-zion-cyan hover:text-cyan-200 truncate transition-colors">
                           {w.address.slice(0, 20)}…{w.address.slice(-8)}
                         </Link>
-                        {w.label && <span className="text-[10px] text-white/40 truncate">— {w.label}</span>}
+                        {w.label && <span className="text-[11px] text-white/40 truncate">— {w.label}</span>}
                       </div>
-                      <p className="text-[10px] text-white/25 mt-0.5">{ExplorerAddressAddressDetailClientCopy.added[cs ? 'cs' : 'en']} {timeAgo(w.addedAt, cs)}</p>
+                      <p className="text-[11px] text-white/25 mt-0.5">{ExplorerAddressAddressDetailClientCopy.added[cs ? 'cs' : 'en']} {timeAgo(w.addedAt, cs)}</p>
                     </div>
-                    {current && <span className="text-[10px] uppercase tracking-wider text-zion-gold font-semibold flex-shrink-0">{ExplorerAddressAddressDetailClientCopy.current[cs ? 'cs' : 'en']}</span>}
+                    {current && <span className="text-[11px] uppercase tracking-wider text-zion-gold font-semibold flex-shrink-0">{ExplorerAddressAddressDetailClientCopy.current[cs ? 'cs' : 'en']}</span>}
                     <button
                       onClick={() => { const next = watchlist.filter((x) => x.address !== w.address); setWatchlist(next); saveWatchlist(next); }}
                       className="text-white/20 hover:text-zion-purple transition-colors flex-shrink-0 text-[11px]"

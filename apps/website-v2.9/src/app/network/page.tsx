@@ -745,7 +745,7 @@ export default function NetworkPage() {
                         <span className="text-[11px] text-gray-400 uppercase tracking-wider">{c.label}</span>
                       </div>
                       <p className={`text-lg font-bold ${c.ok ? 'text-zion-cyan' : 'text-zion-purple'}`}>{c.ok ? (NetworkCopy.ok[cs ? 'cs' : 'en']) : (NetworkCopy.fail[cs ? 'cs' : 'en'])}</p>
-                      <p className="text-[10px] text-gray-500 mt-0.5">{c.weight} {NetworkCopy.pts[cs ? 'cs' : 'en']}</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5">{c.weight} {NetworkCopy.pts[cs ? 'cs' : 'en']}</p>
                     </div>
                   ))}
                 </div>
@@ -894,12 +894,12 @@ export default function NetworkPage() {
                 <div key={i} className="zion-rainbow-sub p-4" style={{ '--rc': isCurrent ? '252, 209, 22' : isPast ? '52, 211, 153' : '255, 255, 255' } as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[11px] uppercase tracking-wider text-gray-500">{NetworkCopy.decade[cs ? 'cs' : 'en']} {i + 1}</span>
-                    {isCurrent && <span className="text-[9px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{NetworkCopy.now[cs ? 'cs' : 'en']}</span>}
-                    {isPast && <span className="text-[9px] text-zion-cyan">✓</span>}
+                    {isCurrent && <span className="text-[10px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{NetworkCopy.now[cs ? 'cs' : 'en']}</span>}
+                    {isPast && <span className="text-[10px] text-zion-cyan">✓</span>}
                   </div>
                   <p className={`text-lg font-bold font-mono ${isCurrent ? 'text-zion-gold' : isPast ? 'text-zion-cyan' : 'text-gray-400'}`}>{reward.toFixed(2)}</p>
-                  <p className="text-[10px] text-gray-500">ZION/{NetworkCopy.block[cs ? 'cs' : 'en']}</p>
-                  <p className="text-[10px] text-gray-500 mt-1 font-mono">{fmtLargeNum(decadeStart)}–{fmtLargeNum(decadeEnd)}</p>
+                  <p className="text-[11px] text-gray-500">ZION/{NetworkCopy.block[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] text-gray-500 mt-1 font-mono">{fmtLargeNum(decadeStart)}–{fmtLargeNum(decadeEnd)}</p>
                 </div>
               );
             })}
@@ -932,7 +932,7 @@ export default function NetworkPage() {
                       <p className="text-sm text-gray-400">{node.detail}</p>
                     </div>
                   </div>
-                  <span className={`text-[10px] rounded-full border ${node.border} px-3 py-1 ${node.color} uppercase tracking-widest`}>
+                  <span className={`text-[11px] rounded-full border ${node.border} px-3 py-1 ${node.color} uppercase tracking-widest`}>
                     {node.status}
                   </span>
                 </div>
@@ -1240,14 +1240,14 @@ function ChainStatCard({ label, value, sub, color, tip }: { label: string; value
         {tip && (
           <div className="relative group/tooltip">
             <HelpCircle className="h-3 w-3 text-gray-600 cursor-help" />
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:block w-44 zion-tile px-2 py-1.5 text-[10px] text-gray-300 shadow-xl z-20">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:block w-44 zion-tile px-2 py-1.5 text-[11px] text-gray-300 shadow-xl z-20">
               {tip}
             </div>
           </div>
         )}
       </div>
       <p className={`text-lg font-bold font-mono ${color} truncate`}>{value}</p>
-      {sub && <p className="text-[10px] text-gray-500 mt-0.5 font-mono">{sub}</p>}
+      {sub && <p className="text-[11px] text-gray-500 mt-0.5 font-mono">{sub}</p>}
     </div>
   );
 }

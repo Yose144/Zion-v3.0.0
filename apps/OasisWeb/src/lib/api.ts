@@ -214,12 +214,20 @@ async function fetchJson<T>(path: string): Promise<T | null> {
   }
 }
 
-async function postJson<T>(path: string, body: unknown): Promise<T | null> {
+async function postJson<T>(
+  path: string,
+  body: unknown,
+  headers?: Record<string, string>,
+): Promise<T | null> {
   try {
     const res = await fetch(`${API}${path}`, {
       method: 'POST',
       mode: 'cors',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...headers,
+      },
       body: JSON.stringify(body),
     });
     if (!res.ok) return null;
@@ -246,29 +254,58 @@ export const awardPlayerXp = (
     { source, amount, details },
   );
 
+// ── ZION Archive Pass ────────────────────────────────────────────────
+// Worlds with `requiredPass` demand a valid ZAP-… code (book purchase).
+// The code lives in localStorage per browser — each surface asks once,
+// the daemon validates every gated action server-side.
+
+const PASS_STORAGE_KEY = 'zion_pass';
+
+export const getStoredPass = (): string | null =>
+  typeof window !== 'undefined'
+    ? window.localStorage.getItem(PASS_STORAGE_KEY)
+    : null;
+
+export const setStoredPass = (code: string | null) => {
+  if (typeof window === 'undefined') return;
+  if (code) window.localStorage.setItem(PASS_STORAGE_KEY, code.trim());
+  else window.localStorage.removeItem(PASS_STORAGE_KEY);
+};
+
+export const verifyPass = async (code: string): Promise<boolean> => {
+  const res = await postJson<{ valid: boolean }>(
+    '/api/v1/oasis/pass/verify',
+    { code },
+  );
+  return res?.valid === true;
+};
+
 export const scanWorld = (address: string, worldId: string, xp: number) =>
   postJson<WorldActionResponse>(
     `/api/v1/oasis/player/${encodeURIComponent(address)}/worlds/${encodeURIComponent(worldId)}/scan`,
-    { xp },
+    { xp, pass: getStoredPass() },
   );
 
 export const approachWorld = (address: string, worldId: string, xp: number) =>
   postJson<WorldActionResponse>(
     `/api/v1/oasis/player/${encodeURIComponent(address)}/worlds/${encodeURIComponent(worldId)}/approach`,
-    { xp },
+    { xp, pass: getStoredPass() },
   );
 
 export const discoverWorld = (address: string, worldId: string, xp = 10) =>
   postJson<WorldActionResponse>(
     `/api/v1/oasis/player/${encodeURIComponent(address)}/worlds/${encodeURIComponent(worldId)}/discover`,
-    { xp },
+    { xp, pass: getStoredPass() },
   );
 
-export const discoverWorldClue = (address: string, worldId: string) =>
-  postJson<WorldClueResponse>(
+export const discoverWorldClue = (address: string, worldId: string) => {
+  const pass = getStoredPass();
+  return postJson<WorldClueResponse>(
     `/api/v1/oasis/player/${encodeURIComponent(address)}/worlds/${encodeURIComponent(worldId)}/clue`,
     {},
+    pass ? { 'x-zion-pass': pass } : undefined,
   );
+};
 
 export const getWorlds = () => fetchJson<World[]>('/api/v1/oasis/worlds');
 

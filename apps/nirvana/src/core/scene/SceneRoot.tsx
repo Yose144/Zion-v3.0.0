@@ -1,7 +1,7 @@
 'use client';
 
-import { Canvas, useFrame } from '@react-three/fiber';
-import { useEffect, useState } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useRef, useState } from 'react';
 import { XR, createXRStore, type XRStore } from '@react-three/xr';
 import * as THREE from 'three';
 import {
@@ -11,7 +11,10 @@ import {
   type GpuBackend,
 } from './backends';
 import { Universe } from './universe/Universe';
+import { quality } from '../../../../shared/scenes/kit/quality';
+import { ScenePost, sceneRenderStats } from '../../../../shared/scenes/kit/post';
 import type { Portal } from '@/core/portals/manifest';
+import type { HiranState } from '@/core/hiran/presence';
 import type { WorldPoint } from '@/lib/worlds';
 
 /** Classic materials render on WebGPU only after the node library is keyed
@@ -53,6 +56,37 @@ function DirectRenderer() {
   return null;
 }
 
+/** Publishes the same audit counters the project scenes use, so the universe is measurable. */
+function UniverseAudit() {
+  const { gl, size } = useThree();
+  const start = useRef(0);
+  const frames = useRef(0);
+  useEffect(() => {
+    if (typeof window === 'undefined' || new URLSearchParams(window.location.search).get('sceneAudit') !== '1') return;
+    start.current = performance.now();
+    return () => { delete (window as unknown as Record<string, unknown>).__projectScene; };
+  }, []);
+  useFrame(() => {
+    if (!start.current) return;
+    frames.current++;
+    const now = performance.now();
+    (window as unknown as Record<string, unknown>).__projectScene = {
+      frames: frames.current,
+      fps: (frames.current * 1000) / Math.max(1, now - start.current),
+      calls: sceneRenderStats.calls || gl.info.render.calls,
+      triangles: sceneRenderStats.triangles || gl.info.render.triangles,
+      geometries: gl.info.memory.geometries,
+      textures: gl.info.memory.textures,
+      invalidVertices: 0,
+      tier: quality().tier,
+      dpr: gl.getPixelRatio(),
+      width: size.width,
+      height: size.height,
+    };
+  });
+  return null;
+}
+
 function XrEntry({ store }: { store: XRStore }) {
   useEffect(() => {
     void store.enterVR();
@@ -67,6 +101,8 @@ export function SceneRoot({
   onSelectWorld,
   xr,
   label,
+  focus,
+  hiranState,
 }: {
   worlds: WorldPoint[];
   portals: Portal[];
@@ -74,6 +110,8 @@ export function SceneRoot({
   onSelectWorld: (id: string) => void;
   xr: boolean;
   label: string;
+  focus?: 'earth' | 'sun' | 'jupiter';
+  hiranState?: HiranState;
 }) {
   const [backend, setBackend] = useState<GpuBackend | null>(null);
   const [xrStore] = useState<XRStore>(() => createXRStore({ foveation: 0.5 }));
@@ -95,8 +133,8 @@ export function SceneRoot({
       <Canvas
         role="img"
         aria-label={label}
-        camera={{ position: [15, 5, 19], fov: 52, far: 6000 }}
-        dpr={[1, 1.75]}
+        camera={{ position: [24, 8, 31], fov: 50, far: 6000 }}
+        dpr={[1, quality().dpr]}
         style={{ width: '100%', height: '100%', display: 'block' }}
         gl={async (defaults) => {
           if (backend === 'webgpu' && !xr) {
@@ -142,6 +180,8 @@ export function SceneRoot({
               portals={portals}
               onOpen={onOpen}
               onSelectWorld={onSelectWorld}
+              focus={focus}
+              hiranState={hiranState}
             />
             <XrEntry store={xrStore} />
           </XR>
@@ -151,9 +191,16 @@ export function SceneRoot({
             portals={portals}
             onOpen={onOpen}
             onSelectWorld={onSelectWorld}
+            focus={focus}
+            hiranState={hiranState}
           />
         )}
-        <DirectRenderer />
+        <UniverseAudit />
+        {backend === 'webgl2' && quality().post ? (
+          <ScenePost bloom={0.42} threshold={0.82} exposure={1.1} vignette={0.5} grain={0.01} />
+        ) : (
+          <DirectRenderer />
+        )}
       </Canvas>
     </GpuBackendContext.Provider>
   );

@@ -282,7 +282,7 @@ export default function WhitepapersPage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
               {quickFacts.map((fact, i) => (
                 <div key={i} className="rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm px-3 py-3">
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{fact.label[lang]}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">{fact.label[lang]}</p>
                   <p className="text-sm font-semibold text-white font-mono break-all">{fact.value}</p>
                 </div>
               ))}

@@ -354,7 +354,7 @@ function ContractStats({
     <div className="mt-3 grid grid-cols-2 gap-2">
       {stats.map(({ label, value }) => (
         <div key={label} className="rounded-lg bg-black/30 border border-white/5 px-2.5 py-1.5">
-          <p className="text-[9px] uppercase tracking-wider text-white/40 mb-0.5">{label}</p>
+          <p className="text-[10px] uppercase tracking-wider text-white/40 mb-0.5">{label}</p>
           <p className="text-xs font-mono text-white/80 truncate" title={value}>
             {value}
           </p>
@@ -397,7 +397,7 @@ function ContractCard({
         <div className="flex items-center gap-1.5 shrink-0">
           {hasLive && (
             <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
               title={copy.live[cs ? 'cs' : 'en']}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -405,7 +405,7 @@ function ContractCard({
             </span>
           )}
           <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border whitespace-nowrap ${config.badge}`}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border whitespace-nowrap ${config.badge}`}
           >
             <CategoryIcon className="w-3 h-3" />
             {entry.category}

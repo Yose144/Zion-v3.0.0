@@ -16,9 +16,11 @@
 //! ```
 //!
 //! ## Node configuration (mainnet)
-//! | Node     | Base URL                  |
-//! |----------|---------------------------|
-//! | Helsinki | `http://77.42.31.72:8080` |
+//!
+//! The pool API is **not** exposed per-node on a public port. It listens on
+//! `127.0.0.1:8080` on EDGE (`62.171.141.136`) and nginx only proxies
+//! `/public/v1/*` from `https://pool.zionterranova.com` — `/stats` stays
+//! internal. See [`NodeConfig::mainnet`] for the descriptor helper.
 //!
 //! The pool `/stats` endpoint returns:
 //! ```json
@@ -41,13 +43,13 @@ use serde::{Deserialize, Serialize};
 /// Raw deserialized payload from `GET /stats`.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PoolRawStats {
-    /// Identifier for this pool / node (set by caller, e.g. "helsinki").
+    /// Identifier for this pool / node (set by caller, e.g. "edge-pool").
     #[serde(default)]
     pub node_id: String,
-    /// Display name (e.g. "Helsinki (EU-North)").
+    /// Display name (e.g. "EDGE (pool API)").
     #[serde(default)]
     pub node_name: String,
-    /// Base URL of this node (e.g. `http://77.42.31.72:8080`).
+    /// Base URL of this node (e.g. `http://127.0.0.1:8080`).
     #[serde(default)]
     pub node_url: String,
     /// API response health.
@@ -287,11 +289,19 @@ impl NodeConfig {
     }
 
     /// Known mainnet nodes.
+    ///
+    /// **Descriptor helper only — no runtime code consumes it.** Since the
+    /// 2026-10 EDGE/EDGE2 split the pool API is a localhost listener
+    /// (`127.0.0.1:8080` on EDGE, reached from EDGE2 over the
+    /// `zion-edge-tunnel` leg) and nginx exposes only `/public/v1/*` on
+    /// `https://pool.zionterranova.com`; `/stats` is internal. The old
+    /// public per-node endpoints (`helsinki`, Prague) are decommissioned — see
+    /// `docs/3.2/ops/STALE-HOST-REFS-2026-10-31.md`.
     pub fn mainnet() -> Vec<NodeConfig> {
         vec![NodeConfig {
-            id: "helsinki".into(),
-            name: "Helsinki (EU-North)".into(),
-            host: "77.42.31.72".into(),
+            id: "edge-pool".into(),
+            name: "EDGE (pool API, localhost)".into(),
+            host: "127.0.0.1".into(),
             pool_api_port: 8080,
             enabled: true,
         }]
@@ -304,11 +314,11 @@ impl NodeConfig {
 mod tests {
     use super::*;
 
-    fn helsinki_snap(latency: f64, uptime_h: u64, valid: u64, invalid: u64) -> PoolRawStats {
+    fn primary_snap(latency: f64, uptime_h: u64, valid: u64, invalid: u64) -> PoolRawStats {
         PoolRawStats {
-            node_id: "helsinki".into(),
-            node_name: "Helsinki (EU-North)".into(),
-            node_url: "http://77.42.31.72:8080".into(),
+            node_id: "edge-pool".into(),
+            node_name: "EDGE (pool API)".into(),
+            node_url: "http://127.0.0.1:8080".into(),
             ok: true,
             hashrate: RawHashrate {
                 pool: 1_500_000_000.0,
@@ -333,12 +343,12 @@ mod tests {
     #[test]
     fn test_to_pool_stats_uptime_scaling() {
         // 7 days uptime → 100%
-        let snap = helsinki_snap(50.0, 168, 100_000, 50);
+        let snap = primary_snap(50.0, 168, 100_000, 50);
         let ps = snap.to_pool_stats();
         assert!((ps.uptime_pct - 100.0).abs() < 0.01);
 
         // 3.5 days → 50%
-        let snap2 = helsinki_snap(50.0, 84, 100_000, 50);
+        let snap2 = primary_snap(50.0, 84, 100_000, 50);
         let ps2 = snap2.to_pool_stats();
         assert!((ps2.uptime_pct - 50.0).abs() < 0.01);
     }
@@ -346,7 +356,7 @@ mod tests {
     #[test]
     fn test_ingest_updates_optimizer() {
         let mut feed = TelemetryFeed::new();
-        feed.ingest(helsinki_snap(50.0, 168, 100_000, 10));
+        feed.ingest(primary_snap(50.0, 168, 100_000, 10));
         let stats = feed.stats();
         assert_eq!(stats.ingested, 1);
         assert_eq!(stats.known_pools, 1);
@@ -355,7 +365,7 @@ mod tests {
     #[test]
     fn test_ingest_error_snapshot_not_counted() {
         let mut feed = TelemetryFeed::new();
-        let mut bad = helsinki_snap(50.0, 168, 0, 0);
+        let mut bad = primary_snap(50.0, 168, 0, 0);
         bad.ok = false;
         feed.ingest(bad);
         assert_eq!(feed.ingested_count(), 0);
@@ -366,8 +376,8 @@ mod tests {
     fn test_ingest_many() {
         let mut feed = TelemetryFeed::new();
         let snaps = vec![
-            helsinki_snap(50.0, 168, 100_000, 10),
-            helsinki_snap(60.0, 168, 101_000, 11),
+            primary_snap(50.0, 168, 100_000, 10),
+            primary_snap(60.0, 168, 101_000, 11),
         ];
         feed.ingest_many(snaps);
         assert_eq!(feed.ingested_count(), 2);
@@ -386,8 +396,8 @@ mod tests {
     #[test]
     fn test_last_snapshot() {
         let mut feed = TelemetryFeed::new();
-        feed.ingest(helsinki_snap(40.0, 168, 100_000, 10));
-        let last = feed.last_snapshot("http://77.42.31.72:8080");
+        feed.ingest(primary_snap(40.0, 168, 100_000, 10));
+        let last = feed.last_snapshot("http://127.0.0.1:8080");
         assert!(last.is_some());
         assert!((last.unwrap().latency_ms - 40.0).abs() < 0.01);
     }
@@ -395,15 +405,15 @@ mod tests {
     #[test]
     fn test_node_config_base_url() {
         let nodes = NodeConfig::mainnet();
-        assert_eq!(nodes[0].base_url(), "http://77.42.31.72:8080");
+        assert_eq!(nodes[0].base_url(), "http://127.0.0.1:8080");
     }
 
     #[test]
     fn test_multiple_nodes_scored() {
         let mut feed = TelemetryFeed::new();
-        // Helsinki — good (override mock URL to the real address)
-        let mut hel = PoolRawStats::mock("helsinki", 1.5e9, 12, 50.0, 168);
-        hel.node_url = "http://77.42.31.72:8080".into();
+        // Primary — good (override mock URL to the real address)
+        let mut hel = PoolRawStats::mock("edge-pool", 1.5e9, 12, 50.0, 168);
+        hel.node_url = "http://127.0.0.1:8080".into();
         feed.ingest(hel);
         // Hypothetical backup — slightly worse
         let mut backup = PoolRawStats::mock("backup", 0.5e9, 3, 200.0, 48);
@@ -412,9 +422,9 @@ mod tests {
 
         let scores = feed.all_scores();
         assert_eq!(scores.len(), 2);
-        // Helsinki should score better (lower latency, higher uptime)
-        let hel = scores.iter().find(|(k, _)| k.contains("77.42")).unwrap().1;
+        // Primary should score better (lower latency, higher uptime)
+        let hel = scores.iter().find(|(k, _)| k.contains("127.0.0.1")).unwrap().1;
         let bak = scores.iter().find(|(k, _)| k.contains("backup")).unwrap().1;
-        assert!(hel > bak, "Helsinki should score higher than backup");
+        assert!(hel > bak, "primary node should score higher than backup");
     }
 }

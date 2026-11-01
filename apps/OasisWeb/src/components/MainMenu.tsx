@@ -139,7 +139,7 @@ function MainMenu({
                     <button
                       key={t.id}
                       onClick={() => setTab(t.id)}
-                      className={`flex flex-col items-center gap-0.5 rounded-lg py-2 text-[9px] font-semibold transition ${
+                      className={`flex flex-col items-center gap-0.5 rounded-lg py-2 text-[10px] font-semibold transition ${
                         active ? 'bg-white/10 text-oasis-cyan' : 'text-white/60 hover:text-white'
                       }`}
                     >
@@ -230,7 +230,7 @@ function QuickAction({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 rounded-lg border border-white/5 bg-white/[0.03] py-2 text-[9px] font-semibold transition hover:bg-white/10 ${color}`}
+      className={`flex flex-col items-center gap-0.5 rounded-lg border border-white/5 bg-white/[0.03] py-2 text-[10px] font-semibold transition hover:bg-white/10 ${color}`}
     >
       <Icon className="h-4 w-4" />
       {label}
@@ -312,12 +312,12 @@ function WorldsTab({
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[11px] font-semibold text-white">{w.name}</span>
-                    <span className="block truncate text-[9px] text-white/50">{w.location}</span>
+                    <span className="block truncate text-[10px] text-white/50">{w.location}</span>
                   </span>
-                  <span className="shrink-0 rounded px-1 py-0.5 font-mono text-[8px] text-white/60" style={{ border: `1px solid ${color}40` }}>
+                  <span className="shrink-0 rounded px-1 py-0.5 font-mono text-[10px] text-white/60" style={{ border: `1px solid ${color}40` }}>
                     L{w.layer}
                   </span>
-                  {found && <span className="shrink-0 text-[8px] text-rasta-green">✓</span>}
+                  {found && <span className="shrink-0 text-[10px] text-rasta-green">✓</span>}
                 </button>
               );
             })}
@@ -422,7 +422,7 @@ function Stat({ value, total, label, color }: { value: number; total?: number; l
   return (
     <div className="rounded-lg border border-white/5 bg-white/[0.03] p-2.5 text-center">
       <p className="text-lg font-bold" style={{ color }}>{value}</p>
-      <p className="text-[9px] text-white/60">{total !== undefined ? `${value}/${total} ${label}` : label}</p>
+      <p className="text-[10px] text-white/60">{total !== undefined ? `${value}/${total} ${label}` : label}</p>
     </div>
   );
 }

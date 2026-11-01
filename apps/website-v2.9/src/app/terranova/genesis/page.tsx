@@ -452,13 +452,13 @@ export default function ZahradaGenesisPage() {
         >
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 flex flex-col items-center gap-2 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
                 {TerranovaGenesisCopy.threeDPreview[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">
                 {TerranovaGenesisCopy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
               </h2>
-              <span className="inline-flex items-center gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+              <span className="inline-flex items-center gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-400">
                 {TerranovaGenesisCopy.conceptOnlyLabel[cs ? 'cs' : 'en']}
               </span>
             </div>
@@ -476,7 +476,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-6 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
                 {TerranovaGenesisCopy.sitePlan[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">
@@ -531,7 +531,7 @@ export default function ZahradaGenesisPage() {
                     cs ? 'Materiály' : 'Materials',
                     cs ? 'Solar + voda' : 'Solar + water',
                   ].map((tag) => (
-                    <span key={tag} className="zion-badge text-[10px]">{tag}</span>
+                    <span key={tag} className="zion-badge text-[11px]">{tag}</span>
                   ))}
                 </div>
               </div>
@@ -548,7 +548,7 @@ export default function ZahradaGenesisPage() {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaGenesisCopy.projectConcept[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
@@ -577,7 +577,7 @@ export default function ZahradaGenesisPage() {
                       <Icon className="h-5 w-5" style={{ color: f.color }} />
                     </span>
                     <span
-                      className="rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.15em]"
+                      className="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em]"
                       style={{ color: s.color, borderColor: s.border, backgroundColor: s.bg }}
                     >
                       {cs ? s.cs : s.en}
@@ -604,7 +604,7 @@ export default function ZahradaGenesisPage() {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaGenesisCopy.developmentPhases[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
@@ -674,7 +674,7 @@ export default function ZahradaGenesisPage() {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaGenesisCopy.physicalFoundation[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
@@ -772,7 +772,7 @@ export default function ZahradaGenesisPage() {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaGenesisCopy.communityGovernance[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
@@ -828,7 +828,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 max-w-2xl space-y-4">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65">
                 {TerranovaGenesisCopy.characterOfPlace[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">
@@ -866,7 +866,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
                 {TerranovaGenesisCopy.caminoSubtitle[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3 mb-4">
@@ -878,7 +878,7 @@ export default function ZahradaGenesisPage() {
               </p>
               <div className="mb-6">
                 <CaminhoDoJardimMap lang={cs ? 'cs' : 'en'} />
-                <p className="mt-2 text-[10px] uppercase tracking-widest text-white/40">
+                <p className="mt-2 text-[11px] uppercase tracking-widest text-white/40">
                   {cs
                     ? 'Koncept — schematické vedení, trasa není vyznačená ani proměřená (GPX pending)'
                     : 'Concept — schematic alignment, not waymarked or surveyed (GPX pending)'}
@@ -890,7 +890,7 @@ export default function ZahradaGenesisPage() {
                     <div className="flex items-center gap-2 shrink-0 sm:w-64">
                       <MapPin className="h-4 w-4 text-zion-gold shrink-0" />
                       <span className="text-sm font-semibold text-white">{leg.from} → {leg.to}</span>
-                      <span className="text-[10px] uppercase tracking-widest text-zion-gold/65">{leg.km}</span>
+                      <span className="text-[11px] uppercase tracking-widest text-zion-gold/65">{leg.km}</span>
                     </div>
                     <p className="text-sm text-white/70">{cs ? leg.descCs : leg.descEn}</p>
                   </div>
@@ -912,7 +912,7 @@ export default function ZahradaGenesisPage() {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaGenesisCopy.terraNovaNetwork[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
@@ -922,7 +922,7 @@ export default function ZahradaGenesisPage() {
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             {/* Header row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
               <div className="p-3 text-zion-gold/65">{TerranovaGenesisCopy.dimension[cs ? 'cs' : 'en']}</div>
               <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> {cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}</span></div>
               <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> {cs ? 'Dharma Temple' : 'Dharma Temple'}</span></div>
@@ -953,7 +953,7 @@ export default function ZahradaGenesisPage() {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaGenesisCopy.blockchainIntegration[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
@@ -971,7 +971,7 @@ export default function ZahradaGenesisPage() {
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
-                    <p className="text-[10px] text-zion-gold/55 capitalize">
+                    <p className="text-[11px] text-zion-gold/55 capitalize">
                       {item.status === 'active'
                         ? (TerranovaGenesisCopy.active[cs ? 'cs' : 'en'])
                         : item.status === 'planned'
@@ -997,7 +997,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
                 {TerranovaGenesisCopy.documentation[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">

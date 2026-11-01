@@ -3,7 +3,8 @@
 > One document covering the OASIS Artifact Marketplace, e-shop, admin dashboard, invoices, emails, theming, and deployment.
 > Source: `apps/MarketPlace/`
 > Live URL: `https://market.zionterranova.com`
-> Runtime: `systemd zion-marketplace.service` on Edge (`zionterranova.com`), port `3100`
+> Runtime: `systemd zion-marketplace.service` on **EDGE2** (`207.180.217.100`), port `3100`
+> **Truth-sync 2026-10-31:** prefer [`docs/3.2/MARKET_V2_PARITY.md`](../3.2/MARKET_V2_PARITY.md) for payment/capability status. This overview had stale “crypto placeholder / deploy to Edge” claims — corrected below.
 
 ---
 
@@ -30,8 +31,8 @@ Both flows share the same Next.js app, PostgreSQL database, admin dashboard, and
 | Auth | Admin API key (`X-API-Key` / `Authorization: Bearer`) + `ADMIN_USERS` login |
 | Email | `nodemailer` + SMTP (currently `mail.webglobe.cz`) |
 | Blockchain | wagmi/viem, WalletConnect/Reown, Base L2 |
-| Payments | Stripe checkout + manual bank transfer QR |
-| Deploy | `rsync .next` to Edge + `systemctl restart zion-marketplace.service` |
+| Payments | Stripe card · bank transfer QR · ZION L1 (SHOPPAY) · Coinbase Commerce (env-gated) |
+| Deploy | `apps/MarketPlace/deploy/deploy-marketplace.sh` → EDGE2 (`zion-edge2`) + restart `zion-marketplace` (+ `zion-l1-watcher`) |
 
 ---
 
@@ -104,10 +105,11 @@ apps/MarketPlace/
   - `zasilkovna-home` — home delivery
   - `zasilkovna` — pickup point
   - `virtualni-nakup` / `virtualni-odber` — digital delivery
-- Payment methods:
-  - `transfer` — bank transfer (default)
-  - `card` — Stripe checkout
-  - `crypto` — placeholder
+- Payment methods (see `/api/shop/capabilities`):
+  - `transfer` — bank transfer with Czech SPD QR (default)
+  - `card` — Stripe checkout (live when `STRIPE_SECRET_KEY` set)
+  - `zion` / `crypto` — ZION L1 SHOPPAY (vault + QR + `SHOPPAY:` memo; l1-watcher → `/api/shop/zion-confirm`)
+  - Coinbase Commerce — `/api/shop/commerce/*` when `COMMERCE_API_KEY` set
 
 ### 5.2 Create Order
 
@@ -144,10 +146,126 @@ Response:
 
 Status transitions are done from the admin dashboard (`/admin/orders`) via `PUT /api/admin/orders/[id]/status`.
 
-### 5.4 Stripe
+### 5.4 Stripe / ZION / Commerce
 
 - `POST /api/stripe/checkout` creates a Stripe Checkout session.
 - `POST /api/stripe/webhook` handles `checkout.session.completed` and marks order as paid.
+- `payment='zion'` on `/api/shop/orders` returns vault address, amount, `SHOPPAY:` memo, SVG QR; l1-watcher confirms after finality.
+- `POST /api/shop/commerce/checkout` + webhook — Coinbase Commerce (env-gated).
+
+### 5.5 ZION bonus payout (auto, 2026-10-31)
+
+Every paid order with `zionTokens > 0` receives its ZION bonus **on-chain** from
+the canonical pool payout wallet (`zion1d2k5…`, `ZION_L1_POOL_WALLET_PATH`) to
+the order's custodial `customerWalletAddress`:
+
+- Paid transitions claim atomically (`updateMany … paymentStatus != 'paid'`)
+  in `markShopOrderPaid`, the Stripe webhook and the admin status route —
+  retries/races can't double-send emails or history.
+- Rails: Stripe webhook + `/api/stripe/verify`, l1-watcher `zion-confirm`,
+  Coinbase Commerce webhook, admin mark-paid → all fire `distributeOrderBonus`.
+- **Sweep:** `POST /api/shop/bonus-sweep` (Bearer `SHOP_CONFIRM_SECRET`) pays
+  every `paid ∧ zionTokens>0 ∧ status != 'cancelled'` order lacking a
+  `tokens:<orderId>` `distributed` record — called by `zion-l1-watcher` every
+  `BONUS_SWEEP_INTERVAL_S` (default 300 s). Handles backfill + transient fails.
+- Orders without a custodial wallet get one lazily (atomic claim + encrypted
+  seed stored + wallet email).
+- `sendZionPayout` requires `TX hash` **and** `Broadcast OK` in CLI output —
+  exit-0 without broadcast proof = failure (no phantom `distributed`).
+- ⚠️ Requires `zion` CLI **≥ 3.2.0** at `ZION_CLI_PATH` — the old `3.1.0-beta`
+  emits v3-model txs that fail `submitUtxoTransaction` on the native node.
+- Manual retry: `POST /api/admin/tokens/distribute/[id]` (admin key);
+  status: `GET` same URL.
+
+### 5.6 Time-boxed token campaigns (2026-10-31)
+
+`ShopSetting` key `campaign:<externalId>` holds
+`{"tokens": N, "endsAt": "<ISO>", "label": "…"}`. While `endsAt` is in the
+future, `campaignTokens()` overrides the product's catalog `tokens` in
+`/api/shop/products` (display) **and** `/api/shop/orders` (server-side
+`zionTokens` snapshot). After expiry the overlay is ignored automatically —
+no revert needed. `zionTokens` is snapshotted at order creation, so orders
+placed during the campaign keep the campaign amount even after `endsAt`.
+
+Live campaign: `campaign:book-001` = 144 000 ZION „Genesis Guardian vstup"
+until `2026-12-24T23:59:59+01:00` (Štědrý večer 2026). Base catalog tokens
+for `book-001` stay 1440.
+
+### 5.7 ZION Archive Pass (2026-10-31)
+
+Buying a product flagged `ShopSetting archive-pass:<externalId>` issues a
+unique `ZAP-…` code at the paid transition (all 3 claim sites:
+`markShopOrderPaid`, Stripe webhook, admin status route). Codes live in a
+shared JSON store `/opt/zion/data/archive-market-codes.json` on EDGE2 —
+MarketPlace writes (atomic tmp+fsync+rename), `app.zionterranova.com`
+reads (`isValidMarketCode`, mtime-cached) as a second source in
+`isValidPassCode` alongside `ARCHIVE_PASS_CODES` env codes.
+
+- Grant flag: `ShopSetting archive-pass:book-001` — presence = grant;
+  optional `endsAt` (stop issuing) / `passExpiresAt` (code lifetime).
+- Delivery: rasta card in the payment-confirmation email (code + redeem
+  link `https://app.zionterranova.com/zion-archive`).
+- Redemption: existing ArchiveLock form → `POST /api/archive/access` →
+  90-day cookie; a ZIS-logged-in redeemer also binds a permanent
+  entitlement (`claimedVia:'code'`).
+- Revocation: order → `cancelled` sets `revokedAt` → code dies
+  immediately (cookie re-validates per request).
+- The reverse direction exists too: ZIS + linked OASIS player unlocks
+  the archive free (`zis-oasis`).
+
+#### 5.7.1 Cross-surface pass (2026-10-31, commits `4732d98d5`…`2ff58a8a8`)
+
+The same `ZAP-…` code works on three surfaces — guests without ZIS
+accounts enter the code on each ("kód zadají všude"):
+
+| Surface | Host | Validation |
+|---|---|---|
+| `app.zionterranova.com/zion-archive` | EDGE2 | direct file read (`archive-market-codes.ts`) + 90 d cookie via `/api/archive/access` |
+| `oasis.zionterranova.com` world **NIRVANA — První svět** (id `NIRVANA`, `requiredPass: "archive"` in `worlds.json`) | EDGE2 | daemon `pass_store.rs` reads the same JSON file (mtime/size cache, fail-closed); gated actions `scan/approach/discover/clue` take `x-zion-pass` header or JSON `pass` field → `403 {"error":"pass_required"}` |
+| `nirvana.zionterranova.com` portal + `/present/*` | EDGE | server-side `POST /api/pass` → canonical oracle `app.zionterranova.com/api/archive/verify` → `zion_nirvana_pass` httpOnly cookie (re-validated per GET → revocation propagates) |
+
+- `POST /api/archive/verify` (website) — public `{code}→{valid}`
+  oracle for sibling surfaces, per-IP throttled.
+- `POST /api/v1/oasis/pass/verify` (daemon) — same oracle shape for
+  OASIS clients.
+- OasisWeb: `PassPrompt` modal on first gated action; code persisted in
+  `localStorage zion_pass`, sent automatically on all world actions.
+- Delivery surfaces (commit `ab1a02833`): the code is visible to the
+  buyer in the payment-confirmation email **and** on the order pages —
+  `/order-success` (when the order is already paid) and `/order-tracking`
+  (rasta card + copy button + links to all three surfaces). Both
+  `GET /api/shop/track` and `GET /api/shop/orders/[orderId]` expose
+  `archivePass` only when `paymentStatus='paid'` — pending orders never
+  leak a code.
+- Camel-case fields are authoritative in the store (`revokedAt`,
+  `expiresAt`) — the Rust reader must `rename` them (a snake_case slip
+  silently ignored revocations; fixed in `2ff58a8a8`).
+- E2E verified 2026-10-31: issue → `valid` on all 3 → gated scan 403 →
+  scan with pass 200 → cancel → `invalid/403/access:false` everywhere.
+
+### 5.8 Artifact marketplace launch lock (2026-11-01, commit `dd25eb3fa`)
+
+The L2 artifact market is closed until the OASIS launch — browse allowed,
+all purchase paths locked behind a single flag.
+
+- `src/lib/market-lock.ts` — `MARKET_LOCKED = true`. Flip to `false` at
+  OASIS launch (rebuild required; the notice and all gates react
+  automatically).
+- `MarketLockedNotice` — "Tržiště s artefakty se otevře se spuštěním
+  OASIS" banner (cs/en). On the homepage it sits directly under the HIRAN
+  panel (`Hero → Book → HIRAN → notice → Featured → Stats → Categories`)
+  and inside the item-page price card in `compact` mode. Returns `null`
+  when unlocked.
+- Locked paths: `/item/[id]` buy button, auction bid, and the L1
+  `MARKETBUY:` memo instructions are replaced by the notice; `/create`
+  renders the notice instead of the mint/list form.
+- Server-side: `POST /api/mint` and `POST /api/listings/register` →
+  `503 {error:'Artifact marketplace opens with the OASIS launch'}`.
+- `l1-watcher.ts`: env `MARKET_LOCKED` (default `1` = locked). When
+  locked, detected `MARKETBUY:` payments are logged as
+  `[MARKET LOCKED] ... ignored` and **never** `relayerSettle` — an
+  operator refund may be needed for anyone who paid manually. Set
+  `MARKET_LOCKED=0` at launch.
 
 ---
 
@@ -321,18 +439,18 @@ npx prisma generate
 npm run build
 ```
 
-### 11.2 Deploy to Edge
+### 11.2 Deploy to EDGE2
+
+Use the hardened script (never rsync `.next/standalone/` into app root with `--delete`):
 
 ```bash
-rsync -az --delete -e 'ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29' \
-  apps/MarketPlace/.next \
-  zion-new:'/opt/zion/APP&WEB/MarketPlace/'
-
-ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new \
-  'systemctl restart zion-marketplace.service'
+apps/MarketPlace/deploy/deploy-marketplace.sh
+# SSH target: zion-edge2 → /opt/zion/APP&WEB/MarketPlace
+# Restarts: zion-marketplace + zion-l1-watcher
+# Protects: .env, watcher state; pre-flight package.json check
 ```
 
-Service file runs `npm run start` (port 3100) behind nginx.
+Service listens on `127.0.0.1:3100` behind nginx `market.zionterranova.com`.
 
 ---
 

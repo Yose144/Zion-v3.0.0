@@ -17,7 +17,8 @@ import ControlHud from './ControlHud';
 import type { CompassData } from './Compass';
 import { useGameStore } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
-import { getQuests, getAvatars, getTerritories, getWorlds, scanWorld as apiScanWorld, approachWorld as apiApproachWorld, discoverWorld as apiDiscoverWorld } from '../lib/api';
+import { getQuests, getAvatars, getTerritories, getWorlds, getStoredPass, scanWorld as apiScanWorld, approachWorld as apiApproachWorld, discoverWorld as apiDiscoverWorld } from '../lib/api';
+import PassPrompt from './PassPrompt';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import { useAuth } from '../contexts/AuthContext';
 import { CATEGORY_COLORS } from '../lib/categoryColors';
@@ -36,8 +37,11 @@ export default function OasisClient() {
   // Returning pilgrims skip WarpIntro and land straight at the stargate
   // (its threshold click still performs the audio-unlock gesture).
   const [phase, setPhase] = useState<'intro' | 'stargate' | 'arrival' | 'rite' | 'scene'>(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('oasis.visited') === '1') {
-      return 'stargate';
+    if (typeof window !== 'undefined') {
+      // Render audit / deep links: `?skipIntro=1` lands straight in the galaxy.
+      // Babylon shader compilation is slow and it is not the surface being tuned.
+      if (new URLSearchParams(window.location.search).get('skipIntro') === '1') return 'scene';
+      if (localStorage.getItem('oasis.visited') === '1') return 'stargate';
     }
     return 'intro';
   });
@@ -45,6 +49,17 @@ export default function OasisClient() {
   const [activeCategories, setActiveCategories] = useState<WorldCategory[]>(ALL_CATEGORIES);
   const [activeLayers, setActiveLayers] = useState<WorldLayer[]>(ALL_LAYERS);
   const [selectedWorld, setSelectedWorld] = useState<World | null>(null);
+  const [passGate, setPassGate] = useState<{ world: World; resume: () => void } | null>(null);
+
+  // Worlds with `requiredPass` need a stored ZAP-… code before any action;
+  // the daemon re-validates it on every gated API call.
+  const ensurePass = (world: World, action: () => void) => {
+    if (!world.requiredPass || getStoredPass()) {
+      action();
+      return;
+    }
+    setPassGate({ world, resume: action });
+  };
   const [view, setView] = useState<'galaxy' | 'world'>('galaxy');
   const [warping, setWarping] = useState(false);
   const [flightMode, setFlightMode] = useState(false);
@@ -304,6 +319,7 @@ export default function OasisClient() {
   };
 
   const handleWorldSelect = (world: World) => {
+    ensurePass(world, () => {
     if (!inGame) return;
     if (flightMode) setFlightMode(false);
     const firstDiscovery = !discoveredWorlds.includes(world.id);
@@ -318,6 +334,7 @@ export default function OasisClient() {
         apiDiscoverWorld(address, world.id).catch(() => {});
       }
     }
+    });
   };
 
   const handleCloseWorld = () => {
@@ -329,6 +346,7 @@ export default function OasisClient() {
 
   const handleEnterWorld = async () => {
     if (!inGame || !selectedWorld) return;
+    ensurePass(selectedWorld, async () => {
     playWarp();
     playScanComplete();
     setWarping(true);
@@ -343,6 +361,7 @@ export default function OasisClient() {
       await syncPlayer();
     }
     setTimeout(() => setWarping(false), 1500);
+    });
   };
 
   const handleExitFlight = () => {
@@ -360,6 +379,7 @@ export default function OasisClient() {
   };
 
   const handleApproachWorld = async (world: World) => {
+    ensurePass(world, async () => {
     if (!inGame) return;
     playApproach();
     playWarp();
@@ -379,6 +399,7 @@ export default function OasisClient() {
       await apiApproachWorld(address, world.id, xp);
       await syncPlayer();
     }
+    });
   };
 
   return (
@@ -547,6 +568,20 @@ export default function OasisClient() {
       <AnimatePresence>
         {phase === 'rite' && (
           <PilgrimRite onEnter={handleRiteEnter} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {passGate && (
+          <PassPrompt
+            world={passGate.world}
+            onCancel={() => setPassGate(null)}
+            onUnlocked={() => {
+              const { resume } = passGate;
+              setPassGate(null);
+              resume();
+            }}
+          />
         )}
       </AnimatePresence>
     </>

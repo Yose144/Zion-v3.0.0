@@ -78,7 +78,7 @@ def query_groq(prompt: str, model: str = "llama-3.3-70b-versatile") -> str:
 ### Groq API
 ```bash
 # Na Helsinki serveru
-export GROQ_API_KEY="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"
+export GROQ_API_KEY="<REDACTED-ROTATED-2026-10-31>"
 ```
 
 ### Server Process

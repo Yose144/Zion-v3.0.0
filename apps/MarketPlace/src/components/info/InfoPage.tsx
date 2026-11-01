@@ -6,15 +6,29 @@ import { useLangT } from '@/lib/useTranslation';
 import Link from 'next/link';
 
 interface InfoPageProps {
-  title: string;
+  title?: string;
+  /** Dot path into the translation dictionary, e.g. `info.termsTitle`. Wins over `title`. */
+  titleKey?: string;
   subtitle?: string;
+  /** Dot path into the translation dictionary, e.g. `info.termsSubtitle`. Wins over `subtitle`. */
+  subtitleKey?: string;
   icon?: string;
   children: ReactNode;
   showToc?: boolean;
 }
 
-export default function InfoPage({ title, subtitle, icon = '📄', children, showToc = false }: InfoPageProps) {
+export default function InfoPage({
+  title,
+  titleKey,
+  subtitle,
+  subtitleKey,
+  icon = '📄',
+  children,
+  showToc = false,
+}: InfoPageProps) {
   const { t } = useLangT();
+  const heading = titleKey ? t(titleKey) : title;
+  const subheading = subtitleKey ? t(subtitleKey) : subtitle;
 
   return (
     <div className="rasta-info-page">
@@ -24,8 +38,8 @@ export default function InfoPage({ title, subtitle, icon = '📄', children, sho
           <span className="rasta-info-version-badge">
             <FileText className="w-4 h-4 inline-block mr-2" /> {t('info.kicker')}
           </span>
-          <h1>{title}</h1>
-          {subtitle && <p className="rasta-info-subtitle">{subtitle}</p>}
+          <h1>{heading}</h1>
+          {subheading && <p className="rasta-info-subtitle">{subheading}</p>}
         </div>
       </section>
 

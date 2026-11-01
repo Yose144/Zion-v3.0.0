@@ -2,6 +2,7 @@
 
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { usePreviewVisibility } from './usePreviewVisibility';
 import { useEffect, useState } from 'react';
 import { EkamScene, EkamLighting, EKAM_CAMERA, EKAM_CONTROLS } from '../../../shared/scenes/Ekam';
 
@@ -25,6 +26,7 @@ export default function EkamPreview({
   className?: string;
 }) {
   const [available, setAvailable] = useState(true);
+  const { ref: shell, visible } = usePreviewVisibility<HTMLDivElement>();
 
   useEffect(() => {
     setAvailable(isWebGLAvailable());
@@ -41,8 +43,9 @@ export default function EkamPreview({
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 ${className}`}>
+    <div ref={shell} className={`relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 ${className}`}>
       <Canvas
+        frameloop={visible ? 'always' : 'never'}
         dpr={[1, 1.5]}
         shadows
         camera={EKAM_CAMERA}

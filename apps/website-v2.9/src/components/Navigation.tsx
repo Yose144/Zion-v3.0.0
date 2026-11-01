@@ -1,12 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe,
-  Wallet, BookOpen, Github, Scale,
+  Wallet, BookOpen, Github, Scale, ArrowRight,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
 import NotificationBell from './NotificationBell';
@@ -17,12 +16,27 @@ import { SITE_RELEASE_LABEL } from '@/lib/site';
 type NavItem = { href: string; label: string; children?: NavItem[] };
 type NavGroup = { title: string; color: string; items: NavItem[] };
 
+/* Stable DOM id for a nav href (used by aria-controls) */
+const anchorId = (prefix: string, href: string) =>
+  `${prefix}-${href.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}`;
+
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [openSub, setOpenSub] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [panelScrollable, setPanelScrollable] = useState(false);
   const pathname = usePathname() ?? '';
   const { lang, setLang } = useLang();
+
+  /* Current in-page anchor (hash) — read after mount to avoid hydration drift */
+  const [hash, setHash] = useState('');
+  useEffect(() => {
+    const sync = () => setHash(window.location.hash);
+    sync();
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, [pathname]);
 
   /* Shrink nav into a thin bar after scrolling down */
   useEffect(() => {
@@ -36,6 +50,13 @@ export default function Navigation() {
 
   const navItemMatches = (href: string) =>
     pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/quantum-revolution' && pathname.startsWith('/quantum-revolution')) || (href === '/tree-of-life' && pathname.startsWith('/tree-of-life'));
+
+  /* Href may carry a #hash — compare path and anchor separately so `/market#swap` is not active on `/market` */
+  const linkMatches = (href: string) => {
+    const [path, anchor] = href.split('#');
+    if (anchor) return pathname === path && hash === `#${anchor}`;
+    return navItemMatches(path);
+  };
 
   /* ── 4 menu groups ── */
   const navGroups: NavGroup[] = [
@@ -94,6 +115,7 @@ export default function Navigation() {
             { href: '/terranova/ekam', label: tr('nav', 'terra_ekam', lang) },
             { href: '/terranova/kailash', label: tr('nav', 'terra_kailash', lang) },
             { href: '/terranova/amenti', label: tr('nav', 'terra_amenti', lang) },
+            { href: '/terranova/kralovstvi-srdce', label: tr('nav', 'terra_kralovstvi_srdce', lang) },
           ],
         },
         { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },
@@ -122,6 +144,51 @@ export default function Navigation() {
   ];
 
   const activeGroup = navGroups.find((group) => group.title === openGroup);
+  /* Wide panel: split long link lists into two columns so the panel never looks half-empty.
+     Items that open a subtree span both columns — only use two columns when that leaves no hole. */
+  const multiCol = (() => {
+    const items = activeGroup?.items ?? [];
+    if (items.length < 4) return false;
+    const spanIndex = items.findIndex((item) => item.children?.length);
+    return spanIndex === -1 || spanIndex % 2 === 0;
+  })();
+  const panelScrollRef = useRef<HTMLDivElement>(null);
+
+  /* Detect whether the mega panel content overflows (drives the bottom fade) */
+  useEffect(() => {
+    const el = panelScrollRef.current;
+    if (!el) {
+      setPanelScrollable(false);
+      return;
+    }
+    const measure = () => setPanelScrollable(el.scrollHeight - el.clientHeight > 4);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [openGroup, openSub, lang]);
+
+  /* Open/close a group; auto-expand the sub-list that contains the current page */
+  const toggleGroup = (title: string) => {
+    const next = openGroup === title ? null : title;
+    setOpenGroup(next);
+    if (!next) {
+      setOpenSub(null);
+      return;
+    }
+    const group = navGroups.find((g) => g.title === next);
+    const matching = group?.items.find((item) =>
+      item.children?.some((child) => linkMatches(child.href))
+    );
+    setOpenSub(matching?.href ?? null);
+  };
+
+  const toggleSub = (href: string) => setOpenSub((cur) => (cur === href ? null : href));
+
+  const closeMenus = () => {
+    setIsOpen(false);
+    setOpenGroup(null);
+    setOpenSub(null);
+  };
 
   /* ── HERO icons — top panel, RASTA colored ── */
   /* Rasta: green (emerald) → gold (zion-gold) → red (rose/red) */
@@ -134,13 +201,6 @@ export default function Navigation() {
     { href: '/wallet', icon: Wallet, color: '252, 209, 22', label: tr('nav', 'wallet', lang) },            /* gold */
   ];
 
-  const groupLabels: Record<string, string> = {
-    [tr('nav', 'network_group', lang)]: tr('nav', 'network_group', lang),
-    [tr('nav', 'defi_group', lang)]: tr('nav', 'defi_group', lang),
-    [tr('nav', 'layers_group', lang)]: tr('nav', 'layers_group', lang),
-    [tr('nav', 'learn_group', lang)]: tr('nav', 'learn_group', lang),
-  };
-
   /* Close mobile menu on ACTUAL route change (not initial mount) */
   const prevPathname = useRef(pathname);
   useEffect(() => {
@@ -148,6 +208,7 @@ export default function Navigation() {
     prevPathname.current = pathname;
     setIsOpen(false);
     setOpenGroup(null);
+    setOpenSub(null);
   }, [pathname]);
 
   /* Scroll lock when mobile menu open — preserves scroll position + prior style */
@@ -205,6 +266,7 @@ export default function Navigation() {
       if (e.key === 'Escape') {
         setIsOpen(false);
         setOpenGroup(null);
+        setOpenSub(null);
       }
     };
     document.addEventListener('keydown', onKey);
@@ -218,6 +280,7 @@ export default function Navigation() {
       if (!target) return;
       if (!target.closest('[data-nav-desktop]')) {
         setOpenGroup(null);
+        setOpenSub(null);
       }
     };
     if (openGroup) {
@@ -240,7 +303,7 @@ export default function Navigation() {
   return (
     <nav
       className={`fixed left-0 right-0 z-50 transition-all duration-300 ease-out ${
-        scrolled ? 'top-0' : 'top-3 sm:top-4 md:top-5'
+        scrolled ? 'top-0' : 'top-2 sm:top-3 md:top-4'
       }`}
     >
       {/* Subtle ambient glow */}
@@ -248,7 +311,7 @@ export default function Navigation() {
       <div className={`relative mx-auto w-[min(96vw,1080px)] transition-all duration-300 ${scrolled ? 'py-0' : 'py-1'}`} data-nav-desktop>
         {/* ═══════════════════════════════════════════════════
             FLOOR 1 — MAIN BAR
-            Logo | 4 HERO icons (rasta) | lang + GitHub + auth + dashboard
+            Logo | 6 HERO icons (rasta) | lang + GitHub + auth + dashboard
             ═══════════════════════════════════════════════════ */}
         <div className="relative rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl p-[1px] shadow-[0_16px_60px_rgba(0,0,0,0.35)] transition-all duration-300">
           {/* Rasta gradient top accent line — thicker and narrower */}
@@ -274,14 +337,14 @@ export default function Navigation() {
             </div>
             <div className="flex flex-col leading-none transition-all duration-300">
               <span className="text-sm sm:text-base font-bold text-gradient-soft tracking-tight">ZION</span>
-              <span className="hidden sm:inline text-[6px] sm:text-[7px] px-1 sm:px-1 py-0.5 mt-0.5 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.18em] text-white/60">
+              <span className="hidden sm:inline text-[10px] sm:text-[10px] px-1 sm:px-1 py-0.5 mt-0.5 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.18em] text-white/60">
                 {SITE_RELEASE_LABEL}
               </span>
             </div>
           </Link>
 
-          {/* 4 HERO icons — BIG, rasta colored, inline in main bar */}
-          <div className="hidden xl:flex items-center justify-center gap-1.5">
+          {/* HERO icons — BIG, rasta colored, inline in main bar (labels appear from 2xl) */}
+          <div className="hidden xl:flex items-center justify-center gap-1 2xl:gap-1.5">
             {heroIcons.map((ml) => {
               const isActive = navItemMatches(ml.href);
               return (
@@ -301,9 +364,13 @@ export default function Navigation() {
                     style={{ color: isActive ? `rgb(${ml.color})` : `rgba(${ml.color}, 0.8)` }}
                   />
                   <span
-                    className="text-[10px] font-bold uppercase tracking-wider transition-all duration-300"
+                    className="hidden 2xl:inline text-[10px] font-bold uppercase tracking-wider transition-all duration-300"
                     style={{ color: isActive ? `rgb(${ml.color})` : 'rgba(255,255,255,0.7)' }}
                   >
+                    {ml.label}
+                  </span>
+                  {/* Icon-only mode gets a tooltip so the label stays discoverable */}
+                  <span className="pointer-events-none absolute -bottom-8 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded border border-white/10 bg-black/90 px-2 py-0.5 text-[10px] text-white/80 opacity-0 transition-opacity group-hover:opacity-100 2xl:hidden">
                     {ml.label}
                   </span>
                 </Link>
@@ -315,7 +382,7 @@ export default function Navigation() {
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-              className={`hidden sm:flex items-center gap-1 rounded-lg border border-white/15 bg-black/75 text-[10px] font-semibold hover:border-white/30 hover:bg-black transition-colors text-zion-gold/85 hover:text-white ${scrolled ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-1'}`}
+              className={`hidden sm:flex items-center gap-1 rounded-lg border border-white/15 bg-black/75 text-[10px] font-semibold hover:border-white/30 hover:bg-black transition-colors text-zion-gold/85 hover:text-white ${scrolled ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1'}`}
               title={lang === 'cs' ? tr('nav', 'switch_to_en', lang) : tr('nav', 'switch_to_cs', lang)}
             >
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
@@ -356,19 +423,19 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* ═══ FLOOR 2 — TEXT MENU (group dropdowns) ═══ */}
-        <div className="hidden xl:flex items-center justify-center gap-2 relative rounded-full border border-white/[0.06] bg-black/25 backdrop-blur-md px-3 py-1 shadow-none transition-all duration-300 mt-1.5 h-auto opacity-100 overflow-visible">
-          <div className="flex items-center gap-2 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
+        {/* ═══ FLOOR 2 — GROUP PILLS (visible from lg, where the icon bar is hidden) ═══ */}
+        <div className="hidden lg:flex items-center justify-center relative rounded-full border border-white/[0.06] bg-black/25 backdrop-blur-md px-3 py-1 shadow-none transition-all duration-300 mt-1.5 max-w-full overflow-hidden">
+          <div className="flex items-center gap-1.5 xl:gap-2 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
             {/* Group dropdown buttons */}
             {navGroups.map((group) => {
               const isActive = openGroup === group.title;
-              const groupHasActiveChild = group.items.some((item) => navItemMatches(item.href));
+              const groupHasActiveChild = group.items.some((item) => linkMatches(item.href) || item.children?.some((child) => linkMatches(child.href)));
               return (
                 <div key={group.title} className="relative shrink-0">
                   <button
                     type="button"
-                    onClick={() => setOpenGroup(isActive ? null : group.title)}
-                    className={`group inline-flex items-center gap-0.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] transition-all ${
+                    onClick={() => toggleGroup(group.title)}
+                    className={`group inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] xl:tracking-[0.22em] transition-all ${
                       isActive
                         ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_0_12px_rgba(252, 209, 22,0.12)]'
                         : groupHasActiveChild
@@ -376,52 +443,160 @@ export default function Navigation() {
                           : 'border-white/[0.08] bg-black/40 text-zion-gold/80 hover:border-zion-gold/25 hover:bg-black/60 hover:text-white'
                     }`}
                     aria-expanded={isActive}
+                    aria-controls="nav-mega-panel"
+                    aria-haspopup="true"
                   >
-                    <span className="group-hover:text-zion-gold transition-colors">{groupLabels[group.title] ?? group.title}</span>
-                    <ChevronDown className={`h-[8px] w-[8px] transition-transform ${isActive ? 'rotate-180 text-zion-gold' : 'text-current'}`} />
+                    <span
+                      className="h-1 w-1 rounded-full shrink-0"
+                      style={{ backgroundColor: `rgba(${group.color}, ${isActive || groupHasActiveChild ? 0.95 : 0.45})` }}
+                    />
+                    <span className="group-hover:text-zion-gold transition-colors">{group.title}</span>
+                    <ChevronDown className={`h-[9px] w-[9px] shrink-0 transition-transform ${isActive ? 'rotate-180 text-zion-gold' : 'text-current'}`} />
                   </button>
                 </div>
               );
             })}
           </div>
-
         </div>
 
-        {/* ═══ GROUP DROPDOWN PANEL ═══ */}
-        {activeGroup && (
-          <div className="mt-1 absolute left-1/2 -translate-x-1/2 w-[min(20rem,90vw)] rounded-2xl border border-white/10 bg-black/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl z-50">
-            <div className="mb-2 h-0.5 w-full rounded-full bg-linear-to-r from-zion-cyan/50 via-zion-gold/60 to-zion-purple/40" />
-            <div className="mb-3">
-              <p className="text-[10px] uppercase tracking-[0.35em] text-zion-gold/70">{groupLabels[activeGroup.title] ?? activeGroup.title}</p>
+        {/* ═══ MEGA PANEL — scrollable, subgroups collapsible (desktop only) ═══ */}
+        {activeGroup && !isOpen && (
+          <div
+            id="nav-mega-panel"
+            className="hidden lg:block absolute left-1/2 top-full z-50 mt-1.5 w-[min(46rem,94vw)] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/10 bg-black/92 shadow-[0_18px_60px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
+          >
+            <div
+              className="h-0.5 w-full"
+              style={{ background: `linear-gradient(to right, rgba(${activeGroup.color},0.25), rgba(${activeGroup.color},0.85), rgba(${activeGroup.color},0.25))` }}
+            />
+            {/* Panel header */}
+            <div className="flex items-center justify-between gap-3 px-4 pt-2.5 pb-1">
+              <div className="flex min-w-0 items-center gap-2">
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: `rgb(${activeGroup.color})`, boxShadow: `0 0 10px rgba(${activeGroup.color},0.7)` }}
+                />
+                <p className="truncate text-[10px] font-semibold uppercase tracking-[0.35em] text-zion-gold/70">{activeGroup.title}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenGroup(null)}
+                className="shrink-0 rounded-lg border border-white/10 p-1 text-white/50 transition-colors hover:border-white/25 hover:text-white"
+                aria-label={tr('nav', 'close_menu', lang)}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <div className="flex flex-col gap-1">
-              {activeGroup.items.map((item) => (
-                <div key={item.href}>
-                  <Link
-                    prefetch={false} href={item.href}
-                    className={`rounded-2xl px-4 py-3 text-sm font-semibold transition block ${
-                      navItemMatches(item.href) ? 'bg-white/10 text-white' : 'text-zion-gold/85 hover:bg-white/5 hover:text-white'
-                    }`}
-                    onClick={() => setOpenGroup(null)}
-                  >
-                    {item.label}
-                  </Link>
-                  {item.children?.map((child) => (
-                    <Link
-                      prefetch={false} key={child.href + child.label}
-                      href={child.href}
-                      className={`rounded-2xl pl-8 pr-4 py-2.5 text-[13px] transition block ${
-                        pathname === child.href ? 'bg-white/10 text-white' : 'text-zion-gold/75 hover:bg-white/5 hover:text-zion-gold'
+
+            {/* Scroll area — never grows past the viewport */}
+            <div
+              ref={panelScrollRef}
+              className="nav-scroll overflow-y-auto overscroll-contain px-3 pb-3"
+              style={{ maxHeight: 'calc(100dvh - 14.5rem)' }}
+            >
+              <div className={`grid gap-1 ${multiCol ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
+                {activeGroup.items.map((item) => {
+                  const hasKids = !!item.children?.length;
+                  const subOpen = openSub === item.href;
+                  const itemActive = linkMatches(item.href);
+                  const kidActive = item.children?.some((child) => linkMatches(child.href));
+                  const subId = anchorId('navsub', item.href);
+
+                  if (!hasKids) {
+                    return (
+                      <Link
+                        prefetch={false}
+                        key={item.href + item.label}
+                        href={item.href}
+                        onClick={() => setOpenGroup(null)}
+                        className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                          itemActive
+                            ? 'bg-white/10 text-white'
+                            : 'text-zion-gold/85 hover:bg-white/5 hover:text-white'
+                        }`}
+                      >
+                        <span className="truncate">{item.label}</span>
+                        {itemActive && <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zion-gold/70" />}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={item.href + item.label}
+                      className={`overflow-hidden rounded-xl border transition-colors ${multiCol ? 'sm:col-span-2' : ''} ${
+                        subOpen || kidActive ? 'border-white/10 bg-white/[0.03]' : 'border-white/[0.05] bg-transparent'
                       }`}
-                      onClick={() => setOpenGroup(null)}
                     >
-                      <span className="text-white/20 mr-2">└</span>
-                      {child.label}
-                    </Link>
-                  ))}
-                </div>
-              ))}
+                      <div className="flex items-stretch">
+                        <Link
+                          prefetch={false}
+                          href={item.href}
+                          onClick={() => setOpenGroup(null)}
+                          className={`flex min-w-0 flex-1 items-center gap-2 rounded-l-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                            itemActive ? 'text-white' : 'text-zion-gold/85 hover:text-white'
+                          }`}
+                        >
+                          <span className="truncate">{item.label}</span>
+                          {kidActive && !subOpen && (
+                            <span
+                              className="h-1 w-1 shrink-0 rounded-full"
+                              style={{ backgroundColor: `rgb(${activeGroup.color})` }}
+                            />
+                          )}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => toggleSub(item.href)}
+                          aria-expanded={subOpen}
+                          aria-controls={subId}
+                          aria-label={`${item.label} — ${subOpen ? tr('nav', 'close_menu', lang) : tr('nav', 'open_menu', lang)}`}
+                          className="flex shrink-0 items-center gap-1.5 border-l border-white/5 px-3 text-white/40 transition-colors hover:bg-white/5 hover:text-zion-gold"
+                        >
+                          <span className="text-[10px] font-semibold tabular-nums text-white/30">{item.children!.length}</span>
+                          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${subOpen ? 'rotate-180 text-zion-gold' : ''}`} />
+                        </button>
+                      </div>
+                      {subOpen && (
+                        <div
+                          id={subId}
+                          className="grid grid-cols-1 gap-0.5 border-t border-white/5 p-2 sm:grid-cols-2"
+                        >
+                          {item.children!.map((child) => {
+                            const childActive = linkMatches(child.href);
+                            return (
+                              <Link
+                                prefetch={false}
+                                key={child.href + child.label}
+                                href={child.href}
+                                onClick={() => setOpenGroup(null)}
+                                className={`group flex min-w-0 items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] transition-colors ${
+                                  childActive
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-zion-gold/70 hover:bg-white/5 hover:text-zion-gold'
+                                }`}
+                              >
+                                <span
+                                  className={`h-1 w-1 shrink-0 rounded-full transition-colors ${childActive ? 'bg-zion-gold' : 'bg-white/20 group-hover:bg-zion-gold/70'}`}
+                                />
+                                <span className="truncate">{child.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+            {/* Scroll affordance — only when the list is actually longer than the panel */}
+            {panelScrollable && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-10 rounded-b-2xl bg-linear-to-t from-black via-black/80 to-transparent"
+              />
+            )}
           </div>
         )}
 
@@ -431,9 +606,8 @@ export default function Navigation() {
             {/* Backdrop */}
             <div
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-              onClick={() => setIsOpen(false)}
+              onClick={closeMenus}
               aria-hidden="true"
-              
             />
             {/* Slide-in panel */}
             <div
@@ -442,7 +616,7 @@ export default function Navigation() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="mobile-nav-title"
-              className="fixed inset-y-0 right-0 flex h-screen w-[min(420px,94vw)] flex-col overflow-hidden border-l-2 border-zion-gold/30 bg-black/95 backdrop-blur-xl z-50 animate-[slideIn_0.25s_ease-out]"
+              className="fixed inset-y-0 right-0 flex h-screen h-dvh w-[min(420px,94vw)] flex-col overflow-hidden border-l-2 border-zion-gold/30 bg-black/95 backdrop-blur-xl z-50 animate-[slideIn_0.25s_ease-out]"
               style={{
                 height: '100dvh',
                 maxHeight: '100vh',
@@ -456,7 +630,7 @@ export default function Navigation() {
               >
                 <span id="mobile-nav-title" className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
-                  onClick={() => setIsOpen(false)}
+                  onClick={closeMenus}
                   className="p-2 rounded-xl border border-white/20 hover:border-zion-gold/50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label={tr('nav', 'close_menu', lang)}
                 >
@@ -466,7 +640,7 @@ export default function Navigation() {
               {/* Rasta accent line */}
               <div className="h-0.5 w-full bg-linear-to-r from-zion-cyan/50 via-zion-gold/60 to-zion-purple/40" />
               <div
-                className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-2"
+                className="nav-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-2"
                 style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
               >
                 {/* Home shortcut — always visible */}
@@ -485,43 +659,77 @@ export default function Navigation() {
                     <div key={group.title} className="border-t border-white/5 pt-2">
                       <button
                         type="button"
-                        onClick={() => setOpenGroup(isExpanded ? null : group.title)}
-                        className="w-full flex items-center justify-between rounded-xl px-3 py-3 text-sm uppercase tracking-[0.2em] text-zion-gold/85 hover:text-white hover:bg-white/5 min-h-[48px]"
+                        onClick={() => toggleGroup(group.title)}
+                        className="w-full flex items-center justify-between gap-2 rounded-xl px-3 py-3 text-sm uppercase tracking-[0.16em] text-zion-gold/85 hover:text-white hover:bg-white/5 min-h-[48px]"
                         aria-expanded={isExpanded}
+                        aria-controls={anchorId('navmobile', group.title)}
                       >
-                        <span>{groupLabels[group.title] ?? group.title}</span>
-                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180 text-white' : ''}`} />
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span
+                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: `rgba(${group.color}, ${isExpanded ? 0.95 : 0.5})` }}
+                          />
+                          <span className="truncate">{group.title}</span>
+                        </span>
+                        <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-white' : ''}`} />
                       </button>
                       {isExpanded && (
-                        <div className="mt-1 ml-1 border-l border-white/10 pl-2 space-y-0.5">
-                          {group.items.map((item) => (
-                            <div key={item.href + item.label}>
-                              <Link
-                                prefetch={false} href={item.href}
-                                className={`rounded-xl px-3 py-3 text-base font-medium transition min-h-[44px] flex items-center ${
-                                  navItemMatches(item.href)
-                                    ? 'bg-white/10 text-white'
-                                    : 'text-zion-gold/85 hover:bg-white/5 active:bg-white/10'
-                                }`}
-                                onClick={() => setIsOpen(false)}
-                              >
-                                {item.label}
-                              </Link>
-                              {item.children?.map((child) => (
-                                <Link
-                                  prefetch={false} key={child.href + child.label}
-                                  href={child.href}
-                                  className={`rounded-xl pl-7 pr-3 py-3 text-sm transition min-h-[44px] flex items-center ${
-                                    pathname === child.href ? 'bg-white/10 text-white' : 'text-zion-gold/75 hover:bg-white/5 active:bg-white/10'
-                                  }`}
-                                  onClick={() => setIsOpen(false)}
-                                >
-                                  <span className="text-white/20 mr-2">└</span>
-                                  {child.label}
-                                </Link>
-                              ))}
-                            </div>
-                          ))}
+                        <div id={anchorId('navmobile', group.title)} className="mt-1 ml-1 border-l border-white/10 pl-2 space-y-0.5">
+                          {group.items.map((item) => {
+                            const hasKids = !!item.children?.length;
+                            const subOpen = openSub === item.href;
+                            const subId = anchorId('navmobilesub', item.href);
+                            return (
+                              <div key={item.href + item.label}>
+                                <div className="flex items-stretch gap-1">
+                                  <Link
+                                    prefetch={false} href={item.href}
+                                    className={`min-w-0 flex-1 rounded-xl px-3 py-3 text-base font-medium transition min-h-[44px] flex items-center ${
+                                      linkMatches(item.href)
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-zion-gold/85 hover:bg-white/5 active:bg-white/10'
+                                    }`}
+                                    onClick={() => setIsOpen(false)}
+                                  >
+                                    <span className="truncate">{item.label}</span>
+                                  </Link>
+                                  {hasKids && (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleSub(item.href)}
+                                      aria-expanded={subOpen}
+                                      aria-controls={subId}
+                                      aria-label={`${item.label} — ${subOpen ? tr('nav', 'close_menu', lang) : tr('nav', 'open_menu', lang)}`}
+                                      className={`flex shrink-0 items-center gap-1 rounded-xl border px-3 min-h-[44px] min-w-[44px] justify-center transition-colors ${
+                                        subOpen
+                                          ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold'
+                                          : 'border-white/10 text-white/50 hover:border-white/25 hover:text-white'
+                                      }`}
+                                    >
+                                      <span className="text-[10px] font-semibold tabular-nums">{item.children!.length}</span>
+                                      <ChevronDown className={`h-4 w-4 transition-transform ${subOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+                                  )}
+                                </div>
+                                {hasKids && subOpen && (
+                                  <div id={subId} className="mb-1 ml-3 mt-1 border-l border-white/10 pl-2 space-y-0.5">
+                                    {item.children!.map((child) => (
+                                      <Link
+                                        prefetch={false} key={child.href + child.label}
+                                        href={child.href}
+                                        className={`rounded-xl px-3 py-2.5 text-sm transition min-h-[44px] flex items-center ${
+                                          linkMatches(child.href) ? 'bg-white/10 text-white' : 'text-zion-gold/75 hover:bg-white/5 active:bg-white/10'
+                                        }`}
+                                        onClick={() => setIsOpen(false)}
+                                      >
+                                        <span className="truncate">{child.label}</span>
+                                      </Link>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -531,7 +739,7 @@ export default function Navigation() {
                 <div className="flex justify-center">
                   <button
                     onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 text-xs font-semibold hover:border-white/30 transition-colors text-zion-gold/85 hover:text-white"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 text-xs font-semibold hover:border-white/30 transition-colors text-zion-gold/85 hover:text-white min-h-[44px]"
                   >
                     {lang === 'cs' ? tr('nav', 'language_toggle_mobile_cs', lang) : tr('nav', 'language_toggle_mobile_en', lang)}
                   </button>

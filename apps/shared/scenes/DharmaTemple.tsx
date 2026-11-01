@@ -4,6 +4,7 @@
 import { React, useFrame, useThree, useEffect, useLayoutEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SceneWater, SkyFill, stoneCool } from './kit';
 import { CoastalLandscape } from './CoastalLandscape';
 
 type Lang = 'cs' | 'en';
@@ -323,19 +324,18 @@ function WaterGardens() {
   return (
     <>
       {ponds.map((p, i) => (
-        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={p.pos}>
-          <circleGeometry args={[p.r, 40]} />
-          <meshPhysicalMaterial
-            color="#0e7a9c"
-            roughness={0.04}
-            metalness={0.7}
-            transparent
-            opacity={0.85}
-            clearcoat={1}
-            emissive="#0a4a5e"
-            emissiveIntensity={0.4}
-          />
-        </mesh>
+        <SceneWater
+          key={i}
+          circle
+          width={p.r * 2}
+          position={p.pos}
+          tint="#0d4552"
+          repeat={2}
+          speed={0.6}
+          segments={32}
+          sun={[-0.62, 0.22, -0.75]}
+          sky="#e6cfae"
+        />
       ))}
       {/* kamenné lemy jezírek */}
       {ponds.map((p, i) => (
@@ -449,53 +449,6 @@ function Forest() {
   );
 }
 
-/** Západ slunce nad oceánem — gradient oblohy + slunce (La Palma, hero) */
-function SkyAndSun() {
-  const skyMat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunDir;
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 c = d.y > 0.25 ? mix(mid, top, smoothstep(0.25, 0.8, d.y))
-                              : mix(low, mid, smoothstep(-0.06, 0.25, d.y));
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.88, 0.62) * pow(s, 1800.0) * 1.3
-               + vec3(1.0, 0.72, 0.4) * pow(s, 55.0) * 0.18
-               + vec3(0.95, 0.6, 0.3) * pow(s, 5.0) * 0.2;
-            gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
-          }
-        `,
-        uniforms: {
-          top: { value: new THREE.Color('#486c94') },
-          mid: { value: new THREE.Color('#b291a3') },
-          low: { value: new THREE.Color('#d8b6aa') },
-          sunDir: { value: new THREE.Vector3(-0.75, 0.08, -0.66).normalize() },
-        },
-      }),
-    [],
-  );
-
-  return (
-    <>
-      <mesh material={skyMat} renderOrder={-10} frustumCulled={false}>
-        <sphereGeometry args={[1800, 32, 20]} />
-      </mesh>
-    </>
-  );
-}
-
-
 export function DharmaTempleScene({ lang }: { lang: Lang }) {
   const domes = useMemo(() => {
     const list = [{ r: CENTER_R, pos: [0, PLATFORM_H, 0] as [number, number, number] }];
@@ -508,19 +461,35 @@ export function DharmaTempleScene({ lang }: { lang: Lang }) {
 
   return (
     <>
-      <ScenePresentation camera={DHARMA_CAMERA} target={DHARMA_CONTROLS.target} />
-      <SkyAndSun />
-      <fog attach="fog" args={['#c1c1cc', 55, 220]} />
+      <ScenePresentation
+        camera={DHARMA_CAMERA}
+        target={DHARMA_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.62, 0.22, -0.75],
+          zenith: '#2f4a72',
+          horizon: '#f0c9a0',
+          ground: '#3a3a30',
+          sunColor: '#ffd0a2',
+          sunSharpness: 260,
+          clouds: 0.34,
+          stars: 0,
+          fog: '#b9c4cf',
+          fogDensity: 0.0026,
+          envIntensity: 0.95,
+        }}
+        post={{ bloom: 0.34, threshold: 0.87, exposure: 1.02, vignette: 0.5 }}
+        intro={{ duration: 3.6 }}
+      />
 
       <CoastalLandscape />
       {/* kamenná plošina komplexu — Merkaba kruh */}
       <mesh position={[0, PLATFORM_H / 2, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[8.6, 9.0, PLATFORM_H, 48]} />
-        <meshStandardMaterial color="#7d6f52" roughness={0.95} />
+        <primitive object={stoneCool(3, '#cfc8b6')} attach="material" />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, PLATFORM_H + 0.005, 0]} receiveShadow>
         <circleGeometry args={[8.6, 64]} />
-        <meshStandardMaterial color="#94855f" roughness={0.95} />
+        <primitive object={stoneCool(4, '#e4ddcc')} attach="material" />
       </mesh>
       {/* zahradní kruhy na plošině — zelené pásy mezi kopulemi */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, PLATFORM_H + 0.008, 0]}>
@@ -565,11 +534,12 @@ export function DharmaTempleScene({ lang }: { lang: Lang }) {
 export const DHARMA_CAMERA = { position: [0, 10, 25] as [number, number, number], fov: 46, far: 2000 };
 export const DHARMA_CONTROLS = { autoRotate: true, autoRotateSpeed: 0.22, minDistance: 12, maxDistance: 65, maxPolarAngle: Math.PI / 2 - 0.08, target: [0, 2.4, 0] as [number, number, number], enablePan: false };
 export function DharmaLighting() {
-  return <>
-    <ambientLight intensity={0.65} color="#edf2ff" />
-    <hemisphereLight args={['#c5d9ee', '#42412b', 0.7]} />
-    <directionalLight position={[-14, 8, -10]} intensity={2} color="#ffd5a0" castShadow />
-    <directionalLight position={[12, 15, 12]} intensity={0.9} color="#d5e4ff" />
-    <pointLight position={[0, 4.5, 0]} intensity={2.6} color="#ffd700" distance={20} decay={2} />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.14} color="#edf2ff" />
+      <SkyFill sky="#bcd2ea" ground="#42412b" intensity={0.5} />
+      <KeyLight sun={[-0.62, 0.22, -0.75]} intensity={2.8} extent={70} distance={110} color="#ffd0a2" />
+      <pointLight position={[0, 4.5, 0]} intensity={2.6} color="#ffd700" distance={20} decay={2} />
+    </>
+  );
 }

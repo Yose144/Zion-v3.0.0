@@ -72,10 +72,10 @@ function MinerLite() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Pickaxe className="h-3 w-3 text-oasis-gold" />
-          <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">Miner</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Miner</span>
         </div>
         <span
-          className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] font-bold ${
+          className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
             poolOnline
               ? 'bg-rasta-green/15 text-rasta-green'
               : poolOnline === false
@@ -95,19 +95,19 @@ function MinerLite() {
 
       {/* Pool address */}
       <div className="flex items-center justify-between rounded-md bg-black/30 px-2 py-1">
-        <span className="text-[8px] text-white/60">Pool</span>
-        <code className="font-mono text-[8px] text-oasis-cyan">{poolAddr}</code>
+        <span className="text-[10px] text-white/60">Pool</span>
+        <code className="font-mono text-[10px] text-oasis-cyan">{poolAddr}</code>
       </div>
 
       {/* Player mining stats */}
       {address && blocks !== null && (
         <div className="grid grid-cols-2 gap-1.5">
           <div className="rounded-md bg-black/30 px-2 py-1.5 text-center">
-            <p className="text-[8px] uppercase tracking-wider text-white/60">Blocks</p>
+            <p className="text-[10px] uppercase tracking-wider text-white/60">Blocks</p>
             <p className="font-mono text-xs font-bold text-oasis-cyan">{blocks}</p>
           </div>
           <div className="rounded-md bg-black/30 px-2 py-1.5 text-center">
-            <p className="text-[8px] uppercase tracking-wider text-white/60">ZION</p>
+            <p className="text-[10px] uppercase tracking-wider text-white/60">ZION</p>
             <p className="font-mono text-xs font-bold text-oasis-gold">{zion}</p>
           </div>
         </div>
@@ -124,14 +124,16 @@ function MinerLite() {
       <div className="flex gap-1.5">
         <Link
           href="/miner"
-          className="flex flex-1 items-center justify-center gap-1 rounded-md border border-oasis-gold/20 bg-oasis-gold/10 px-2 py-1.5 text-[9px] font-bold text-oasis-gold transition hover:bg-oasis-gold/20"
+          className="flex flex-1 items-center justify-center gap-1 rounded-md border border-oasis-gold/20 bg-oasis-gold/10 px-2 py-1.5 text-[10px] font-bold text-oasis-gold transition hover:bg-oasis-gold/20"
         >
           <Pickaxe className="h-3 w-3" />
           Mine
         </Link>
         <a
-          href="/downloads/zion-public-miner-v3.0.6-linux-x86_64.AppImage"
-          className="flex items-center justify-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-[9px] font-bold text-white/80 transition hover:bg-white/10"
+          href="https://app.zionterranova.com/download"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-[10px] font-bold text-white/80 transition hover:bg-white/10"
           title="Download Desktop Miner"
         >
           <Download className="h-3 w-3" />
@@ -251,11 +253,11 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Globe2 className="h-3 w-3 text-oasis-gold" />
-            <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">Categories</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Categories</span>
           </div>
           <button
             onClick={toggleAll}
-            className={`zion-button-ghost text-[9px] uppercase tracking-wider ${allActive ? 'text-white bg-white/10' : ''}`}
+            className={`zion-button-ghost text-[10px] uppercase tracking-wider ${allActive ? 'text-white bg-white/10' : ''}`}
           >
             {allActive ? 'All' : 'None'}
           </button>
@@ -280,7 +282,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
                 </span>
                 <span className="flex-1 text-left">{cat.label}</span>
                 <span
-                  className="rounded px-1.5 py-0.5 text-[9px] font-mono"
+                  className="rounded px-1.5 py-0.5 text-[10px] font-mono"
                   style={{
                     backgroundColor: isActive ? `rgba(${cat.rgb}, 0.12)` : 'rgba(255,255,255,0.04)',
                     color: isActive ? cat.color : '#4a4a4a',
@@ -300,11 +302,11 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Layers className="h-3 w-3 text-oasis-purple" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">Galactic Layers</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Galactic Layers</span>
             </div>
             <button
               onClick={toggleAllLayers}
-              className={`zion-button-ghost text-[9px] uppercase tracking-wider ${allLayersActive ? 'text-white bg-white/10' : ''}`}
+              className={`zion-button-ghost text-[10px] uppercase tracking-wider ${allLayersActive ? 'text-white bg-white/10' : ''}`}
             >
               {allLayersActive ? 'All' : 'None'}
             </button>
@@ -325,7 +327,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
                   }}
                 >
                   <span
-                    className="flex h-4 w-4 items-center justify-center rounded text-[8px] font-bold"
+                    className="flex h-4 w-4 items-center justify-center rounded text-[10px] font-bold"
                     style={{
                       backgroundColor: isActive ? `rgba(${layer.rgb}, 0.2)` : 'rgba(255,255,255,0.05)',
                       color: isActive ? layer.color : '#4a4a4a',
@@ -335,10 +337,10 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
                   </span>
                   <span className="flex-1 text-left">
                     <span className="font-semibold">{layer.label}</span>
-                    <span className="ml-1.5 text-[8px] opacity-60">{layer.desc}</span>
+                    <span className="ml-1.5 text-[10px] opacity-60">{layer.desc}</span>
                   </span>
                   <span
-                    className="rounded px-1.5 py-0.5 text-[9px] font-mono"
+                    className="rounded px-1.5 py-0.5 text-[10px] font-mono"
                     style={{
                       backgroundColor: isActive ? `rgba(${layer.rgb}, 0.12)` : 'rgba(255,255,255,0.04)',
                       color: isActive ? layer.color : '#4a4a4a',
@@ -355,7 +357,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
 
       {/* Visible count footer */}
       <div className="zion-hud-panel flex shrink-0 items-center justify-between px-3 py-2">
-        <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">Visible</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Visible</span>
         <span className="font-mono text-[11px] font-bold text-oasis-cyan">
           {visibleCount} / {worlds.length}
         </span>

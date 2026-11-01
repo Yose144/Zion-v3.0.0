@@ -685,7 +685,7 @@ export default function WalletPage() {
                     </p>
                     <p className="text-lg font-bold text-white font-mono mt-0.5">{display}</p>
                     {w.address && (
-                      <p className="text-[10px] text-gray-600 font-mono mt-1 truncate">{w.address}</p>
+                      <p className="text-[11px] text-gray-600 font-mono mt-1 truncate">{w.address}</p>
                     )}
                   </div>
                 );
@@ -846,7 +846,7 @@ export default function WalletPage() {
               style={{ '--rc': '228, 30, 43' } as CSSProperties}
             >
               <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-6">
-                <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
+                <span className="text-[11px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
                   {WalletCopy.walletOperations[cs ? 'cs' : 'en']}
                 </span>
                 {TABS.map((t) => {

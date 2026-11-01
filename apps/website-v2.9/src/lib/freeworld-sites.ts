@@ -6,12 +6,16 @@
  * Amenti stay vision-stage with no committed allocation — and Ekam is
  * the only node already built (2008), held as a relationship, not a
  * project. Amenti (Giza) is the twelfth and final node on Earth.
+ * The thirteenth node is the Ark — Království srdce · Nirvana — a
+ * sailing colony on the whale corridor: a harbour that moves, so it
+ * has no pin on the planetary map either (body: 'ocean').
  * Matrix is the lunar sibling (Shackleton) — not a thirteenth continent,
  * not drawn on the planetary map, allocation stays zero.
  */
 
 export type FreeWorldSiteStatus = 'development' | 'preparation' | 'vision' | 'built';
-export type CelestialBody = 'earth' | 'moon';
+/** earth = land node · ocean = vessel on the whale corridor · moon = selenographic sibling */
+export type CelestialBody = 'earth' | 'ocean' | 'moon';
 
 export interface FreeWorldSite {
   key: string;
@@ -157,6 +161,22 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     allocationZion: 0,
   },
   {
+    // The thirteenth node — the Ark, Království srdce · Nirvana. A colony
+    // of at most one hundred people sailing the humpback corridor: the
+    // fourth vessel, the one that comes back for those left in the water.
+    // No pin — a harbour that moves is not a place (body: 'ocean'). Vision
+    // stage with four working studies behind it and no keel laid.
+    key: 'kralovstvi-srdce',
+    name: 'Království srdce · Nirvana',
+    // Represented on the tropical Atlantic whale corridor, not as a port.
+    lat: 15.0,
+    lon: -45.0,
+    status: 'vision',
+    href: '/terranova/kralovstvi-srdce',
+    allocationZion: 0,
+    body: 'ocean',
+  },
+  {
     // Shackleton crater, lunar south pole. Vision only — no funded
     // allocation and no Earth pin. The public community page is not
     // published yet; href stays on the L5 portal.
@@ -171,8 +191,8 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
   },
 ];
 
-/** Planetary map and the "12 communities" count — Matrix stays on the Moon. */
-export const EARTH_FREE_WORLD_SITES = FREE_WORLD_SITES.filter((site) => site.body !== 'moon');
+/** Planetary map and the "12 communities" count — the Ark sails the ocean and Matrix stays on the Moon. */
+export const EARTH_FREE_WORLD_SITES = FREE_WORLD_SITES.filter((site) => (site.body ?? 'earth') === 'earth');
 
 export const SITE_STATUS_COLOR: Record<FreeWorldSiteStatus, string> = {
   development: '#fcd116', // gold — reserved for active build phase

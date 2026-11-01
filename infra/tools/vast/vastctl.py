@@ -1137,7 +1137,8 @@ def _launch_group(mn):
         return "srb"
     if mn == "xmr":
         return "xmr"
-    if mn in ("zion", "zion50", "zionmax", "prl", "qtu", "qtc", "quantus"):
+    if mn in ("zion", "zionqtc", "zion50", "zionmax", "prl", "qtu",
+              "qtc", "quantus"):
         return "zion"
     return None
 
@@ -1267,9 +1268,11 @@ def cmd_daemon(args):
                     sess = set(r.get("sessions") or [])
                     # session-level expectation per mode (dual srb = 2 panes)
                     _SESS_WANT = {"srb": {"srb-qtu", "srb-prl"},
+                                  "srbpool": {"srb-qtu"},
                                   "srb-prl": {"srb-prl"},
                                   "srb-qtu": {"srb-qtu"},
-                                  "zion": {"zion"}, "zion50": {"zion"},
+                                  "zion": {"zion"}, "zionqtc": {"zion"},
+                                  "zion50": {"zion"},
                                   "zionmax": {"zion"}, "prl": {"zion"},
                                   "qtu": {"zion"}}
                     for grp, cfg in want.items():
@@ -1292,9 +1295,9 @@ def cmd_daemon(args):
                             else:
                                 continue
                         # pick smallest relaunch that restores the missing pane(s)
-                        if grp == "srb" and missing == {"srb-prl"}:
+                        if grp == "srb" and mode == "srb" and missing == {"srb-prl"}:
                             mode = "srb-prl"
-                        elif grp == "srb" and missing == {"srb-qtu"}:
+                        elif grp == "srb" and mode == "srb" and missing == {"srb-qtu"}:
                             mode = "srb-qtu"
                         key = f"{rid}:{grp}"
                         if time.time() - st["last_fix"].get(key, 0) < 300:
@@ -1443,25 +1446,30 @@ def _pool_wallet(pool, merged_wallet, plain_wallet):
     return plain_wallet
 
 
-def launch_srb(inst, iid, coins=("qtu", "prl")):
-    """SRBMiner sessions: PRL → luckypool, QTU → lproute, one tmux each."""
+def launch_srb(inst, iid, coins=("qtu",), pool=None, wallet=None):
+    """SRBMiner sessions: QTU → lproute (default) or `pool`/`wallet` override
+    (e.g. our own pool :8444 crediting the ZION wallet), PRL → luckypool."""
     coins = tuple("qtu" if c in ("qtc", "quantus") else c for c in coins)
     wq, wp = f"vast-{iid}-qtu", f"vast-{iid}-prl"
-    kills = ("tmux kill-session -t zion 2>/dev/null; "
-             "pkill -f 'zion-miner --pool' 2>/dev/null\n")
+    # group-isolated kill: replace only srb sessions/procs — a co-resident
+    # zion-miner (ZION stream @ low GPU duty) is a separate tenant
+    kills = "pkill -x SRBMiner-MULTI 2>/dev/null\n"
     sessions = []
     # tmux sessions start in $HOME — the binary lives under /root/miners, so
     # the session has to cd there itself.
     srb_cd = f"cd /root/miners/{SRB_DIR} &&"
     if "qtu" in coins:
-        kills += "tmux kill-session -t srb-qtu 2>/dev/null\n"
+        kills += ("tmux kill-session -t srb-qtu 2>/dev/null; "
+                  "tmux kill-session -t srbqtu 2>/dev/null\n")
         sessions.append(
             f'tmux new-session -d -s srb-qtu "{srb_cd} '
             f'exec ./SRBMiner-MULTI '
-            f'--algorithm quantus --pool {_pool_url(QTU_POOL)} --wallet {QTU_WALLET} '
+            f'--algorithm quantus --pool {_pool_url(pool or QTU_POOL)} '
+            f'--wallet {wallet or QTU_WALLET} '
             f'--worker {wq} --disable-cpu"')
     if "prl" in coins:
-        kills += "tmux kill-session -t srb-prl 2>/dev/null\n"
+        kills += ("tmux kill-session -t srb-prl 2>/dev/null; "
+                  "tmux kill-session -t srbpool 2>/dev/null\n")
         sessions.append(
             f'tmux new-session -d -s srb-prl "{srb_cd} '
             f'exec ./SRBMiner-MULTI '
@@ -1480,25 +1488,33 @@ sleep 4; tmux ls; pgrep -c -x SRBMiner-MULTI
     return script
 
 
-def launch_zion(inst, iid, prl_pct=50, qtu_pct=50):
-    """zion-miner native streams via our pool. pct=0 disables that stream."""
+def launch_zion(inst, iid, zion_pct=0, prl_pct=0, qtu_pct=0):
+    """zion-miner streams via our pool. pct=0 disables that stream.
+
+    zion_pct = ZION_GPU_TIME_DUTY_PCT for stream 1 (native ZION): 5 keeps
+    ZION at ~5% GPU so a co-resident miner (SRBMiner QTC) owns the card;
+    100 = ZION solo. Ext duties (prl/qtu) time-slice against stream 1.
+    """
     w = f"vast-dual-{iid}"   # matches ZION_POOL_AUXPOW_GPU_COIN2_ROUTE vast-dual*
+    s1 = "1" if zion_pct > 0 else "0"
     s2 = "1" if prl_pct > 0 else "0"
     s4 = "1" if qtu_pct > 0 else "0"
+    zion_duty = zion_pct if zion_pct > 0 else 100
+    pearl_env = ("ZION_STREAM2_FORCE_COIN=PRL ZION_PEARL_K=2048 "
+                 "ZION_PEARL_BATCH=64 ZION_PEARL_STREAMS=4 "
+                 "ZION_PEARL_CUMULATIVE_MMA=1 " if s2 == "1" else "")
     script = f'''
 {_ensure_tools()}
 mkdir -p /root/zion-native && cd /root/zion-native &&
 [ -x ./zion-miner ] || {{ echo "NO_BIN"; exit 1; }}
 tmux kill-session -t zion 2>/dev/null
-tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srb-prl 2>/dev/null
-pkill -x SRBMiner-MULTI 2>/dev/null; sleep 1
+pkill -f 'zion-miner --pool' 2>/dev/null; sleep 1
 tmux new-session -d -s zion 'while true; do env \
 ZION_MINER_ID={w} ZION_GPU_BACKEND=cuda ZION_PROFILE=pool ZION_VERBOSE=1 \
 ZION_INTERACTIVE=0 ZION_NO_STICKY=1 ZION_LOG_INTERVAL=15 \
 ZION_V3_TRINITY=1 ZION_AUTOTUNE=1 ZION_AUTOTUNE_SECS=3 ZION_IGNORE_GPU_SELF_TEST_FAIL=1 \
-ZION_STREAM1_ENABLED=0 ZION_STREAM3_ENABLED=0 \
-ZION_STREAM2_ENABLED={s2} ZION_STREAM2_FORCE_COIN=PRL ZION_PEARL_K=2048 \
-ZION_PEARL_BATCH=64 ZION_PEARL_STREAMS=4 ZION_PEARL_CUMULATIVE_MMA=1 \
+ZION_STREAM1_ENABLED={s1} ZION_GPU_TIME_DUTY_PCT={zion_duty} ZION_STREAM3_ENABLED=0 \
+ZION_STREAM2_ENABLED={s2} {pearl_env}\
 ZION_STREAM4_ENABLED={s4} ZION_STREAM4_FORCE_COIN=QTU ZION_QPOW_BACKEND=cuda \
 ZION_EXT_GPU_TIME_DUTY_PCT={prl_pct} ZION_EXT_GPU2_TIME_DUTY_PCT={qtu_pct} \
 ZION_EXT_GPU_GAP_MS=0 ZION_EXT_GPU_MAX_GAP_MS=5000 ZION_MINER_THREADS=4 \
@@ -1512,9 +1528,9 @@ sleep 4; tmux ls; pgrep -f "zion-miner --pool" | grep -v 'bash -c' | head -3
 
 STOP_SCRIPT = {
     "zion": "tmux kill-session -t zion 2>/dev/null; pkill -f 'zion-miner --pool' 2>/dev/null",
-    "srb": "tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srb-prl 2>/dev/null; pkill -x SRBMiner-MULTI 2>/dev/null",
-    "srb-prl": "tmux kill-session -t srb-prl 2>/dev/null",
-    "srb-qtu": "tmux kill-session -t srb-qtu 2>/dev/null",
+    "srb": "tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srb-prl 2>/dev/null; tmux kill-session -t srbqtu 2>/dev/null; tmux kill-session -t srbpool 2>/dev/null; pkill -x SRBMiner-MULTI 2>/dev/null",
+    "srb-prl": "tmux kill-session -t srb-prl 2>/dev/null; tmux kill-session -t srbpool 2>/dev/null",
+    "srb-qtu": "tmux kill-session -t srb-qtu 2>/dev/null; tmux kill-session -t srbqtu 2>/dev/null",
     "xmr": "pkill -x xmrig 2>/dev/null",
 }
 
@@ -1547,19 +1563,29 @@ def cmd_launch(args):
     if "all" in miners:
         miners = ["srb", "zion", "xmr"]
     if "full" in miners:
-        # one-button: SRBMiner PRL+QTU dual (production hashrate) + xmr cpu
-        # + zion binary installed standby (native stream still in dev)
-        miners = ["srb", "xmr", "_zion_install"]
-    ZION_DUTY = {"zion": (50, 50), "zion50": (50, 50), "zionmax": (100, 40),
-                 "prl": (100, 0), "qtu": (0, 100)}
+        # one-button: zion-miner ZION @5% GPU + SRBMiner QTC via our pool
+        # (pearl cancelled) + xmr cpu
+        miners = ["zion", "srbpool", "xmr"]
+    # mode → (zion_pct, prl_pct, qtu_pct); zion_pct = stream-1 GPU duty %
+    ZION_DUTY = {"zion": (5, 0, 0), "zionqtc": (60, 0, 40),
+                 "zion50": (50, 0, 50), "zionmax": (100, 0, 0),
+                 "qtu": (0, 0, 100), "prl": (0, 100, 0)}
     duty = getattr(args, "duty", None)
-    if isinstance(duty, str) and "," in duty:
+    if isinstance(duty, str):
         try:
             duty = tuple(int(x) for x in duty.split(","))
         except ValueError:
             duty = None
-    if duty:
-        ZION_DUTY[miners[0]] = duty
+    if duty and len(duty) >= 3:
+        ZION_DUTY[miners[0]] = tuple(duty[:3])
+    elif duty and len(duty) == 2:
+        # (prl,qtu) pair from the UI — keep the mode's stream-1 duty
+        z, _, _ = ZION_DUTY[miners[0]]
+        ZION_DUTY[miners[0]] = (z, *duty)
+    elif duty and len(duty) == 1:
+        # bare stream-1 duty (--duty 30) — keep the mode's ext streams
+        _, p, q = ZION_DUTY[miners[0]]
+        ZION_DUTY[miners[0]] = (*duty, p, q)
     for mn in miners:
         print(f"[{args.id}] launch {mn}…")
         if mn == "xmr":
@@ -1591,6 +1617,10 @@ def cmd_launch(args):
             script = launch_zion(inst, args.id, *ZION_DUTY[mn])
         elif mn == "_srb_install":
             script = install_srb_script()
+        elif mn == "srbpool":
+            # SRBMiner QTC through OUR pool :8444 — credits the ZION wallet
+            script = launch_srb(inst, args.id, ("qtu",),
+                                pool=ZION_POOL, wallet=ZION_WALLET)
         elif mn == "srb":
             script = launch_srb(inst, args.id)
         elif mn == "srb-prl":
@@ -1599,7 +1629,7 @@ def cmd_launch(args):
             script = launch_srb(inst, args.id, ("qtu",))
         else:
             print(f"  unknown miner '{mn}' "
-                  f"(full|zion|zionmax|prl|qtu|srb|srb-prl|srb-qtu|xmr|all)")
+                  f"(full|zion|zionqtc|zion50|zionmax|qtu|prl|srb|srb-qtu|srb-prl|xmr|all)")
             continue
         rc, out, err = ssh(inst, script, timeout=180)
         print((out + err).strip() or f"(exit {rc})")
@@ -1669,17 +1699,18 @@ def render_dashboard(rigs, ts):
   </div>
   <div class=btns>
     <span class=lbl>zion</span>
-    <button onclick="launch({r['id']},'zion')">50/50</button>
-    <button onclick="launch({r['id']},'prl')">prl</button>
-    <button onclick="launch({r['id']},'qtu')">qtu</button>
+    <button onclick="launch({r['id']},'zion')">z·5%</button>
+    <button onclick="launch({r['id']},'zionqtc')">z+qtc</button>
+    <button onclick="launch({r['id']},'zion50')">50/50</button>
+    <button onclick="launch({r['id']},'zionmax')">zion</button>
+    <button onclick="launch({r['id']},'qtu')">qtc</button>
     <button onclick="stop({r['id']},'zion')" class=red>■</button>
     <button onclick="logs({r['id']},'zion')">log</button>
   </div>
   <div class=btns>
     <span class=lbl>srb</span>
-    <button onclick="launch({r['id']},'srb')">dual</button>
-    <button onclick="launch({r['id']},'srb-prl')">prl</button>
-    <button onclick="launch({r['id']},'srb-qtu')">qtu</button>
+    <button onclick="launch({r['id']},'srbpool')">qtc·pool</button>
+    <button onclick="launch({r['id']},'srb')">qtc·lpr</button>
     <button onclick="stop({r['id']},'srb')" class=red>■</button>
     <button onclick="logs({r['id']},'srb')">log</button>
   </div>
@@ -3263,7 +3294,10 @@ def main():
     p = sub.add_parser("launch", help="start miners on a rig (tmux)")
     p.add_argument("id")
     p.add_argument("miners", nargs="+",
-                   help="full|zion|zionmax|prl|qtu|srb|srb-prl|srb-qtu|xmr|all")
+                   help="full|zion|zionqtc|zion50|zionmax|qtu|prl|srb|srbpool|srb-qtu|srb-prl|xmr|all")
+    p.add_argument("--duty", default=None,
+                   help="GPU duty %% override for the first zion mode: "
+                        "'30' = ZION stream only, 'p,q' = ext streams, 'z,p,q' = all")
     p = sub.add_parser("stop", help="stop miners on a rig")
     p.add_argument("id")
     p.add_argument("miners", nargs="+",

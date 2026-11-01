@@ -4,9 +4,17 @@
 import { React, useFrame, useThree, useEffect, useMemo, useRef, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
+import { KeyLight, SceneInstances, ScenePalms, SkyFill, sandGround } from './kit';
 import { LagoonLandscape } from './LagoonLandscape';
 
 type Lang = 'cs' | 'en';
+
+// Shared prop geometry and materials — instanced, so a stone circle is one draw call.
+const KILN_ROCK = new THREE.DodecahedronGeometry(1, 0);
+const STONE_MAT = new THREE.MeshStandardMaterial({ color: '#8d7f63', roughness: 0.95 });
+const FIRE_STONE_MAT = new THREE.MeshStandardMaterial({ color: '#6e6350', roughness: 1 });
+const LOG = new THREE.CylinderGeometry(0.11, 0.11, 0.8, 7);
+const LOG_MAT = new THREE.MeshStandardMaterial({ color: '#6e5233', roughness: 0.95 });
 
 /* ─── Te Pīko Ora — polynéská vesnice na Raiatee ──────────────────────
  * Masterplan: centrální palma (Pīko) + oheň, kruh A-frame chýší (fare)
@@ -199,7 +207,7 @@ function Palm({ pos, h = 4.2, lean = 0.12, scale = 1, fronds = 9 }: {
         <sphereGeometry args={[0.17, 8, 6]} />
         <meshStandardMaterial color="#5d4526" roughness={0.95} />
       </mesh>
-      {leaves.map((l, i) => <mesh key={i} position={[0, h + .06, 0]} rotation={[0, l.yaw, 0]} scale={[l.len * 1.5, l.len * 1.5, l.len * 1.5]} geometry={leafGeometry} castShadow>
+      {leaves.map((l, i) => <mesh key={i} position={[0, h + .06, 0]} rotation={[0, l.yaw, 0]} scale={[l.len * 1.5, l.len * 1.5, l.len * 1.5]} geometry={leafGeometry}>
         <meshStandardMaterial color={i % 3 === 0 ? '#537c36' : i % 3 === 1 ? '#356b38' : '#6b9045'} roughness={.92} side={THREE.DoubleSide} />
       </mesh>)}
       {h > 6 && [-.16, 0, .16].map((x, i) => <mesh key={i} position={[x, h - .15, .12]}><sphereGeometry args={[.13, 8, 6]} /><meshStandardMaterial color="#88703c" roughness={1} /></mesh>)}
@@ -222,26 +230,24 @@ function CenterPiko({ lang }: { lang: Lang }) {
   return (
     <group>
       {/* kamenný kruh — posvátný okraj píka */}
-      {Array.from({ length: 14 }, (_, i) => {
-        const a = (i / 14) * Math.PI * 2;
-        return (
-          <mesh key={i} position={[Math.cos(a) * 1.9, 0.1, Math.sin(a) * 1.9]} scale={[0.28, 0.16, 0.22]} rotation={[0, a, 0]} castShadow receiveShadow>
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshStandardMaterial color="#8d7f63" roughness={0.95} />
-          </mesh>
-        );
-      })}
+      <SceneInstances
+        geometry={KILN_ROCK}
+        material={STONE_MAT}
+        items={Array.from({ length: 14 }, (_, i) => {
+          const a = (i / 14) * Math.PI * 2;
+          return { position: [Math.cos(a) * 1.9, 0.1, Math.sin(a) * 1.9] as [number, number, number], rotation: [0, a, 0] as [number, number, number], scale: [0.28, 0.16, 0.22] as [number, number, number] };
+        })}
+      />
 
       {/* ohniště — kameny + plamen */}
-      {Array.from({ length: 9 }, (_, i) => {
-        const a = (i / 9) * Math.PI * 2;
-        return (
-          <mesh key={`f${i}`} position={[Math.cos(a) * 0.62, 0.08, 0.9 + Math.sin(a) * 0.62]} scale={0.14} castShadow>
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshStandardMaterial color="#6e6350" roughness={1} />
-          </mesh>
-        );
-      })}
+      <SceneInstances
+        geometry={KILN_ROCK}
+        material={FIRE_STONE_MAT}
+        items={Array.from({ length: 9 }, (_, i) => {
+          const a = (i / 9) * Math.PI * 2;
+          return { position: [Math.cos(a) * 0.62, 0.08, 0.9 + Math.sin(a) * 0.62] as [number, number, number], rotation: [0, a, 0] as [number, number, number], scale: 0.14 };
+        })}
+      />
       <mesh ref={flameRef} position={[0, 0.34, 0.9]}>
         <coneGeometry args={[0.22, 0.6, 7]} />
         <meshBasicMaterial color="#ff9a3c" transparent opacity={0.92} />
@@ -253,12 +259,14 @@ function CenterPiko({ lang }: { lang: Lang }) {
       <pointLight ref={fireRef} position={[0, 0.7, 0.9]} intensity={2.6} distance={7} color="#ff8a3c" decay={2} />
 
       {/* sedačky — klády v kruhu kolem ohně */}
-      {[0.35, 1.5, 2.6, 3.9, 5.1].map((a, i) => (
-        <mesh key={`s${i}`} position={[Math.cos(a) * 1.25, 0.16, 0.9 + Math.sin(a) * 1.25]} rotation={[0, -a, Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[0.11, 0.11, 0.8, 7]} />
-          <meshStandardMaterial color="#6e5233" roughness={0.95} />
-        </mesh>
-      ))}
+      <SceneInstances
+        geometry={LOG}
+        material={LOG_MAT}
+        items={[0.35, 1.5, 2.6, 3.9, 5.1].map((a) => ({
+          position: [Math.cos(a) * 1.25, 0.16, 0.9 + Math.sin(a) * 1.25] as [number, number, number],
+          rotation: [0, -a, Math.PI / 2] as [number, number, number],
+        }))}
+      />
 
       {/* Te Pīko — velká centrální palma */}
       <Palm pos={[0, 0, -0.6]} h={7.2} lean={0.05} fronds={13} />
@@ -478,57 +486,8 @@ function Jungle() {
         <dodecahedronGeometry args={[1, 0]} />
         <meshStandardMaterial color="#ffffff" roughness={0.9} />
       </instancedMesh>
-      {palms.map((p, i) => (
-        <Palm key={i} pos={[p.x, 0, p.z]} h={3.4 + p.s * 2} lean={p.lean} scale={p.s} fronds={8} />
-      ))}
-    </>
-  );
-}
-
-/** Hory Raiatea na horizontu + západ slunce nad lagunou */
-function SkyMountainsSun() {
-  const skyMat = React.useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        side: THREE.BackSide,
-        depthWrite: false,
-        vertexShader: `
-          varying vec3 vP;
-          void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }
-        `,
-        fragmentShader: `
-          varying vec3 vP;
-          uniform vec3 top; uniform vec3 mid; uniform vec3 low; uniform vec3 sunDir;
-          void main(){
-            vec3 d = normalize(vP);
-            vec3 c = d.y > 0.22 ? mix(mid, top, smoothstep(0.22, 0.75, d.y))
-                              : mix(low, mid, smoothstep(-0.05, 0.22, d.y));
-            float s = max(dot(d, sunDir), 0.0);
-            c += vec3(1.0, 0.92, 0.66) * pow(s, 1600.0) * 1.5
-               + vec3(1.0, 0.75, 0.42) * pow(s, 45.0) * 0.18
-               + vec3(0.98, 0.62, 0.3) * pow(s, 6.0) * 0.22;
-            gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
-            #include <colorspace_fragment>
-          }
-        `,
-        uniforms: {
-          top: { value: new THREE.Color('#4c7ba5') },
-          mid: { value: new THREE.Color('#c6b5a4') },
-          low: { value: new THREE.Color('#ebd2aa') },
-          sunDir: { value: new THREE.Vector3(-0.6, 0.05, -0.75).normalize() },
-        },
-      }),
-    [],
-  );
-
-  useEffect(() => () => skyMat.dispose(), [skyMat]);
-
-  return (
-    <>
-      <mesh material={skyMat} renderOrder={-10} frustumCulled={false}>
-        <sphereGeometry args={[1800, 24, 16]} />
-      </mesh>
+      {/* háj jako jedna instance; centrální rituální palma zůstává vlastní model */}
+      <ScenePalms items={palms.map((p) => ({ x: p.x, z: p.z, h: 3.4 + p.s * 2, yaw: p.lean }))} />
     </>
   );
 }
@@ -537,13 +496,29 @@ export function TePikoOraScene({ lang }: { lang: Lang }) {
   const roofTexture = useThatchTexture();
   return (
     <>
-      <ScenePresentation camera={PIKO_CAMERA} target={PIKO_CONTROLS.target} />
-      <SkyMountainsSun />
-      <fog attach="fog" args={['#bbcbd2', 70, 250]} />
+      <ScenePresentation
+        camera={PIKO_CAMERA}
+        target={PIKO_CONTROLS.target}
+        atmosphere={{
+          sun: [-0.5, 0.42, -0.76],
+          zenith: '#22508a',
+          horizon: '#bfe0ea',
+          ground: '#3a4030',
+          sunColor: '#ffe9c4',
+          sunSharpness: 300,
+          clouds: 0.4,
+          stars: 0,
+          fog: '#b8d2dc',
+          fogDensity: 0.0024,
+          envIntensity: 1,
+        }}
+        post={{ bloom: 0.28, threshold: 0.9, exposure: 1, vignette: 0.42 }}
+        intro={{ duration: 3.4 }}
+      />
 
       <LagoonLandscape />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .015, 0]} receiveShadow>
-        <circleGeometry args={[5.1, 64]} /><meshStandardMaterial color="#cbb68f" roughness={1} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .015, 0]} receiveShadow material={sandGround(7)}>
+        <circleGeometry args={[5.1, 64]} />
       </mesh>
 
       {/* radiální pěšiny z plázy k fare a mola */}
@@ -590,10 +565,11 @@ export function TePikoOraScene({ lang }: { lang: Lang }) {
 export const PIKO_CAMERA = {position: [2, 9.5, 23] as [number,number,number], fov: 46, far: 2000};
 export const PIKO_CONTROLS = {autoRotate:true, autoRotateSpeed:.18, minDistance:12, maxDistance:85, maxPolarAngle:Math.PI / 2 - .08, target:[0,2,-2] as [number,number,number], enablePan:false};
 export function PikoLighting() {
-  return <>
-    <ambientLight intensity={.65} color="#e9f3ff" />
-    <hemisphereLight args={['#c9e3f3','#494b30',.75]} />
-    <directionalLight position={[-16,12,-14]} intensity={2} color="#ffe0a8" castShadow />
-    <directionalLight position={[14,14,10]} intensity={.9} color="#d5eaff" />
-  </>;
+  return (
+    <>
+      <ambientLight intensity={0.14} color="#e9f3ff" />
+      <SkyFill sky="#c9e3f3" ground="#494b30" intensity={0.5} />
+      <KeyLight sun={[-0.5, 0.42, -0.76]} intensity={2.9} extent={50} distance={80} color="#ffe4b4" />
+    </>
+  );
 }

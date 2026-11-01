@@ -5,6 +5,7 @@ import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { assertSameOrigin } from '@/lib/csrf';
 import { getWalletClient, getMinterAccount, getPublicClient, NFT_ADDR, contractsConfigured } from '@/lib/server-chain';
 import { ARTIFACT_NFT_ABI } from '@/lib/contracts';
+import { MARKET_LOCKED } from '@/lib/market-lock';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,6 +31,13 @@ function toBytes32(input: string): `0x${string}` {
  * Body: { to, tokenId?, amount?, category, rarity, name?, description?, imageUri?, metadataUri?, stats? }
  */
 export async function POST(req: NextRequest) {
+  if (MARKET_LOCKED) {
+    return NextResponse.json(
+      { success: false, error: 'Artifact marketplace opens with the OASIS launch' },
+      { status: 503 },
+    );
+  }
+
   const csrf = assertSameOrigin(req);
   if (csrf) return csrf;
 

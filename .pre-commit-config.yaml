@@ -1,4 +1,4 @@
-# Pre-commit hooks for ZION 2.9.6 / V3 mainnet polish.
+# Pre-commit hooks for ZION TerraNova (active workspace: V31/).
 #
 # Defense-in-depth proti regresím F3 / F3b classy (committed plaintext secrets)
 # a proti lokálnímu drift od formátovacích / lint norem dokud GitHub Actions
@@ -16,7 +16,7 @@
 #   git commit --no-verify
 #
 # CI parity: fast hooks run on commit, expensive hooks (cargo clippy on full
-# V3 workspace) run on pre-push to keep the inner loop quick.
+# V31 workspace) run on pre-push to keep the inner loop quick.
 
 minimum_pre_commit_version: "3.5.0"
 
@@ -53,28 +53,21 @@ repos:
   # Local hooks — Rust toolchain on the host (no docker).
   - repo: local
     hooks:
-      - id: cargo-fmt-v3
-        name: cargo fmt (V3 workspace)
+      - id: cargo-fmt-v31
+        name: cargo fmt (V31 workspace)
         language: system
-        entry: cargo fmt --manifest-path V3/Cargo.toml --all --check
+        entry: cargo fmt --manifest-path V31/Cargo.toml --all --check
         pass_filenames: false
-        files: ^V3/.*\.rs$
-
-      - id: cargo-fmt-root
-        name: cargo fmt (root legacy workspace)
-        language: system
-        entry: cargo fmt --all --check
-        pass_filenames: false
-        files: ^(L[1-6]|crates|cli)/.*\.rs$
+        files: ^V31/.*\.rs$
 
       # Clippy is too slow for every commit (cold workspace can take minutes).
       # Run on pre-push instead, where latency tolerance is higher.
-      - id: cargo-clippy-v3
-        name: cargo clippy (V3 workspace, errors-only)
+      - id: cargo-clippy-v31
+        name: cargo clippy (V31 workspace, errors-only)
         language: system
-        entry: cargo clippy --manifest-path V3/Cargo.toml --workspace --all-targets --no-deps
+        entry: cargo clippy --manifest-path V31/Cargo.toml --workspace --all-targets --no-deps
         pass_filenames: false
-        files: ^V3/.*\.(rs|toml)$
+        files: ^V31/.*\.(rs|toml)$
         stages: [pre-push]
 
       # Quick syntactic check for desktop-agent JS (cheap; matches AGENTS.md guidance).

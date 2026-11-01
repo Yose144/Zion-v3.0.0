@@ -5,6 +5,7 @@ import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { assertSameOrigin } from '@/lib/csrf';
 import { getPublicClient, MARKETPLACE_ADDR, contractsConfigured } from '@/lib/server-chain';
 import { MARKETPLACE_ABI } from '@/lib/contracts';
+import { MARKET_LOCKED } from '@/lib/market-lock';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -20,6 +21,13 @@ export const runtime = 'nodejs';
  * Body: { chainListingId: string|number, txHash?: string }
  */
 export async function POST(req: NextRequest) {
+  if (MARKET_LOCKED) {
+    return NextResponse.json(
+      { success: false, error: 'Artifact marketplace opens with the OASIS launch' },
+      { status: 503 },
+    );
+  }
+
   const csrf = assertSameOrigin(req);
   if (csrf) return csrf;
 

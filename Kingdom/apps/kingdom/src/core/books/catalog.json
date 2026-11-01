@@ -1,0 +1,86 @@
+[
+  {
+    "id": "BodhiGaia",
+    "title": "BODHI GAIA — Kniha Země",
+    "tagline": "Zahrada Genesis · Dharma Temple (Nová Bodhi Gaia) · Te Pīko Ora · Golden Republic Bohemia · Bodhi Lanka — příběh a dokumentace vrstvy L5 pro 3.3 „Nirvana\"",
+    "en": true
+  },
+  {
+    "id": "Issobella",
+    "title": "ISSOBELLA — Kniha Nebe",
+    "tagline": "Orbitální stanice · Kvantový motor · Umělá gravitace · Posádka · Fond a slib — příběh a dokumentace vrstvy L6 pro 3.3 „Nirvana\"",
+    "en": true
+  },
+  {
+    "id": "KralovstviSrdce",
+    "title": "KRÁLOVSTVÍ SRDCE",
+    "tagline": "Co tato kniha je",
+    "en": false
+  },
+  {
+    "id": "KruhBohyni",
+    "title": "KRUH BOHYNÍ — Kniha Strážkyň",
+    "tagline": "Šest sedadel pro šest zahrad a jedno pro nebe — zjevená budoucnost ženského kruhu pro 3.3 „Nirvana\" a dál",
+    "en": false
+  },
+  {
+    "id": "Lumi",
+    "title": "LUMI — Cesta domů",
+    "tagline": "Kniha Lucerny — sjednocený příběh Nirvany, Bodhi Gaii a Issobelly pro 3.3 „Nirvana\" a příštích sto let",
+    "en": false
+  },
+  {
+    "id": "MariaCaminho",
+    "title": "MARIA CAMINHO — Kniha Cesty",
+    "tagline": "Kniha Cesty — tři zjevení na poutníkové stezce a flotila Tres Marias, která nese cestu přes tři oceány",
+    "en": false
+  },
+  {
+    "id": "Miriam",
+    "title": "MIRIAM — Kniha Růže",
+    "tagline": "Kniha Linie — příběh v podobenstvích o Tesařovi a Miriam, skryté řece svědků a městě, jehož brány se nezamykají",
+    "en": false
+  },
+  {
+    "id": "NaCeste",
+    "title": "NA CESTĚ — literární pokračování",
+    "tagline": "Lumen na flotile Tres Marias: jedna možná budoucnost, jedna otázka",
+    "en": false
+  },
+  {
+    "id": "nirvana",
+    "title": "NIRVANA — Příběhy Nové Země",
+    "tagline": "Kniha Západu: Dlouhodobý horizont, Globální Asimilace Pozornosti & Mise Amenti",
+    "en": true
+  },
+  {
+    "id": "NirvanaCloud",
+    "title": "NirvanaCloud",
+    "tagline": "Hluboké rozšíření knihy Nirvana — Šest světů, Bardo, Šambhala a dokončení Mise Amenti pro Generaci Z a příštích sto let",
+    "en": true
+  },
+  {
+    "id": "Ruze",
+    "title": "PŘÍBĚH RŮŽE — Co nelze vlastnit",
+    "tagline": "Malá kniha o Lumi, růži a zahradě za otevřenou bránou",
+    "en": false
+  },
+  {
+    "id": "SurtaSrdce",
+    "title": "SURTA SRDCE — sūtra srdce pro Surtu",
+    "tagline": "Kniha pro syna a pro všechny děti Nové země · soupis cesty od gate gate k om mani padme hūṃ",
+    "en": false
+  },
+  {
+    "id": "Maitreya",
+    "title": "ZION — Kniha Pátá: MAITREYA",
+    "tagline": "Pán Hiranyagarbhy · Dědic Zionu · Pád věží Babylonu · Nový svět",
+    "en": false
+  },
+  {
+    "id": "SulZeme",
+    "title": "ZION — Sůl této země",
+    "tagline": "Dvanáct zastavení na cestě k Oasis — a jedna otázka pro stavitele na konci",
+    "en": true
+  }
+]

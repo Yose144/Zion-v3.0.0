@@ -49,7 +49,7 @@ function StatTile({ icon: Icon, value, label, color }: StatTileProps) {
         style={{ color: `rgb(${rc})` }}
       />
       <p className="mt-1 text-sm font-bold tabular-nums text-white">{value}</p>
-      <p className="text-[9px] font-semibold uppercase tracking-wider text-white/70">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70">{label}</p>
     </div>
   );
 }
@@ -83,15 +83,15 @@ export default function PlayerHud() {
         <div className="flex items-start gap-3">
           <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-oasis-gold to-oasis-purple text-base font-bold text-white shadow-[0_0_20px_rgba(228,30,43,0.35)]">
             {level}
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-white/10 bg-oasis-black text-[9px] text-oasis-cyan">
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-white/10 bg-oasis-black text-[10px] text-oasis-cyan">
               {Math.round(progress * 100)}%
             </span>
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="zion-kicker py-1 px-2 text-[9px]">Pilgrim</span>
-              <span className="zion-badge zion-badge-gold text-[9px]">{consciousness}</span>
+              <span className="zion-kicker py-1 px-2 text-[10px]">Pilgrim</span>
+              <span className="zion-badge zion-badge-gold text-[10px]">{consciousness}</span>
             </div>
 
             <div className="mt-2">
@@ -110,7 +110,7 @@ export default function PlayerHud() {
                 <span className="font-mono truncate" title={address}>
                   {address.length > 18 ? `${address.slice(0, 12)}...${address.slice(-6)}` : address}
                 </span>
-                <span className="zion-badge zion-badge-cyan text-[8px] py-0.5 px-1.5">
+                <span className="zion-badge zion-badge-cyan text-[10px] py-0.5 px-1.5">
                   {getAddressType(address)}
                 </span>
               </div>

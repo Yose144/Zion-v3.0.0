@@ -45,6 +45,12 @@ const L1_SHOP_VAULT =
 const SHOP_CONFIRM_URL =
   process.env.SHOP_CONFIRM_URL ?? 'http://127.0.0.1:3100/api/shop/zion-confirm';
 const SHOP_CONFIRM_SECRET = process.env.SHOP_CONFIRM_SECRET ?? '';
+// Periodic bonus sweep — pays ZION bonuses for paid orders that slipped
+// through (backfill, transient payout failures, lazy wallets).
+const SHOP_SWEEP_URL =
+  process.env.SHOP_SWEEP_URL ??
+  SHOP_CONFIRM_URL.replace(/zion-confirm$/, 'bonus-sweep');
+const BONUS_SWEEP_INTERVAL_S = parseInt(process.env.BONUS_SWEEP_INTERVAL_S ?? '300', 10);
 // Shop payments confirm faster than L2 settlement (default 15 blocks)
 const SHOP_FINALITY_BLOCKS = parseInt(process.env.SHOP_FINALITY_BLOCKS ?? '15', 10);
 const L1_FINALITY_BLOCKS = parseInt(process.env.L1_FINALITY_BLOCKS ?? '60', 10);
@@ -56,6 +62,9 @@ const L1_START_HEIGHT = process.env.L1_START_HEIGHT
   ? parseInt(process.env.L1_START_HEIGHT, 10)
   : undefined;
 const L1_SCALE_FIX_HEIGHT = parseInt(process.env.L1_SCALE_FIX_HEIGHT ?? '0', 10);
+// Artifact marketplace is closed until OASIS launch — MARKETBUY memos are
+// detected+logged but never settled on L2. Set MARKET_LOCKED=0 at launch.
+const MARKET_LOCKED = (process.env.MARKET_LOCKED ?? '1') !== '0';
 
 const MIGRATION_DIVISOR = 1_000_000n; // 1e12 → 1e6 scale
 
@@ -345,6 +354,10 @@ async function scanBlock(block: L1Block) {
       if (output.address !== L1_BRIDGE_VAULT) continue;
       const memo = parseMarketBuyMemo(output.memo ?? null);
       if (!memo) continue;
+      if (MARKET_LOCKED) {
+        console.log(`  [MARKET LOCKED] MARKETBUY tx ${txHash} ignored — artifact market opens with OASIS`);
+        continue;
+      }
 
       const sender =
         tx.inputs[0]?.public_key
@@ -404,6 +417,10 @@ async function scanBlock(block: L1Block) {
 
     const memo = parseMarketBuyMemo(tx.memo ?? null);
     if (!memo) continue;
+    if (MARKET_LOCKED) {
+      console.log(`  [MARKET LOCKED] MARKETBUY tx ${tx.tx_id} ignored — artifact market opens with OASIS`);
+      continue;
+    }
 
     const amountFlowers = scaledAmount(toBigInt(tx.amount_zion), block.height);
 
@@ -460,6 +477,38 @@ async function confirmShopPayment(p: PendingShopPay): Promise<boolean> {
   } catch (e) {
     console.error(`  ❌ Shop confirm request error for ${p.orderId}:`, e);
     return false;
+  }
+}
+
+let lastSweepAt = 0;
+
+async function sweepBonusPayouts() {
+  if (!SHOP_CONFIRM_SECRET || BONUS_SWEEP_INTERVAL_S <= 0) return;
+  if (Date.now() - lastSweepAt < BONUS_SWEEP_INTERVAL_S * 1000) return;
+  lastSweepAt = Date.now();
+  try {
+    const res = await fetch(SHOP_SWEEP_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${SHOP_CONFIRM_SECRET}`,
+      },
+      body: JSON.stringify({}),
+    });
+    const json = (await res.json().catch(() => null)) as {
+      success?: boolean;
+      data?: { summary?: Record<string, number> };
+    } | null;
+    const s = json?.data?.summary;
+    if (res.ok && json?.success && s && (s.distributed || s.failed)) {
+      console.log(
+        `  [BONUS SWEEP] checked=${s.checked} distributed=${s.distributed} already=${s.already} skipped=${s.skipped} failed=${s.failed}`,
+      );
+    } else if (!res.ok || !json?.success) {
+      console.error(`  [BONUS SWEEP] request failed (${res.status})`);
+    }
+  } catch (e) {
+    console.error('  [BONUS SWEEP] request error:', e);
   }
 }
 
@@ -568,6 +617,11 @@ async function main() {
       await pollCycle();
     } catch (e) {
       console.error('Poll cycle error:', e);
+    }
+    try {
+      await sweepBonusPayouts();
+    } catch (e) {
+      console.error('Bonus sweep error:', e);
     }
     await new Promise((r) => setTimeout(r, L1_POLL_INTERVAL_S * 1000));
   }

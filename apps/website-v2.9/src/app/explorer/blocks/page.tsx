@@ -195,7 +195,7 @@ export default function BlocksPage() {
               </span>
             )}
             {sse.blockCount > 0 && (
-              <span className="text-[10px] text-zion-cyan tabular-nums">
+              <span className="text-[11px] text-zion-cyan tabular-nums">
                 {cs ? `+${sse.blockCount} nové` : `+${sse.blockCount} new`}
               </span>
             )}
@@ -225,14 +225,14 @@ export default function BlocksPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/6">
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{ExplorerBlocksCopy.height[cs ? 'cs' : 'en']}</th>
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{ExplorerBlocksCopy.age[cs ? 'cs' : 'en']}</th>
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerBlocksCopy.miner[cs ? 'cs' : 'en']}</th>
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">Hash</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">Txs</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{ExplorerBlocksCopy.size[cs ? 'cs' : 'en']}</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerBlocksCopy.difficulty[cs ? 'cs' : 'en']}</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{ExplorerBlocksCopy.reward[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{ExplorerBlocksCopy.height[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{ExplorerBlocksCopy.age[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerBlocksCopy.miner[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">Hash</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">Txs</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{ExplorerBlocksCopy.size[cs ? 'cs' : 'en']}</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerBlocksCopy.difficulty[cs ? 'cs' : 'en']}</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{ExplorerBlocksCopy.reward[cs ? 'cs' : 'en']}</th>
                 </tr>
               </thead>
               <tbody>
@@ -265,7 +265,7 @@ export default function BlocksPage() {
                               <span className="inline-flex items-center gap-1.5">
                                 <Link href={`/explorer/address?addr=${block.miner}`} className="group/miner inline-flex items-center">
                                   {known ? (
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${known.type === 'pool' ? 'bg-zion-gold/15 text-zion-gold border border-zion-gold/30' : 'bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20'}`}>
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold tracking-wide ${known.type === 'pool' ? 'bg-zion-gold/15 text-zion-gold border border-zion-gold/30' : 'bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20'}`}>
                                       {known.label}
                                     </span>
                                   ) : (
@@ -313,7 +313,7 @@ export default function BlocksPage() {
                         </td>
                         <td className="px-6 py-3 text-right">
                           <span className="text-zion-gold text-xs font-semibold tabular-nums">{block.reward.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</span>
-                          <span className="text-gray-600 text-[10px] ml-1">ZION</span>
+                          <span className="text-gray-600 text-[11px] ml-1">ZION</span>
                         </td>
                       </tr>
                     ))}

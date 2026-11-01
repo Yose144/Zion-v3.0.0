@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Check, ShoppingBag, Mail, HelpCircle, Loader2, XCircle, PackageSearch } from 'lucide-react';
+import { Check, ShoppingBag, Mail, HelpCircle, Loader2, XCircle, PackageSearch, BookOpen } from 'lucide-react';
 import { getOrderStatus, verifyStripeSession, type OrderStatusResult } from '@/lib/shop-api';
 import { useLangT } from '@/lib/useTranslation';
 import { COMPANY } from '@/lib/invoice';
@@ -146,6 +146,30 @@ function OrderSuccessContent() {
           </>
         )}
       </div>
+
+      {order?.archivePass && (
+        <div className="mb-8 rounded-2xl border border-rasta-gold/40 bg-gradient-to-br from-rasta-gold/10 to-rasta-green/10 p-5 text-left">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-rasta-gold">
+            <BookOpen className="w-4 h-4" /> {t('orderTracking.archivePassTitle')}
+          </h3>
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-black/40 px-3 py-2">
+            <code className="font-mono text-base font-bold tracking-widest text-rasta-green">
+              {order.archivePass.code}
+            </code>
+            <a
+              href={order.archivePass.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="zion-button-secondary text-xs whitespace-nowrap"
+            >
+              {t('orderTracking.archivePassArchive')} ↗
+            </a>
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-gray-400">
+            {t('orderTracking.archivePassHint')}
+          </p>
+        </div>
+      )}
 
       {sessionId && stripeVerified === false && (
         <div className="bg-rasta-gold/10 border border-rasta-gold/30 rounded-2xl p-4 mb-6 text-sm text-rasta-gold">
