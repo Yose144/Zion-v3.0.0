@@ -224,8 +224,32 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   mřížka a Slunce vypadá jako drátěná koule.
 - **Jména planet jsou DOM popisky** (`<Html>`), ne 3D spritely — sprite je při
   oddálení nečitelný.
-- **Rotační osa** je úsečka 1,75× průměr planety uvnitř nakloněné skupiny, takže
-  ukazuje skutečný sklon (Venuše 3,09 rad, Uran 1,71).
+- **Rotační osa** je tenká **krabička** `LINK_WIDTH` o délce 1,75× průměr
+  planety uvnitř nakloněné skupiny, takže ukazuje skutečný sklon (Venuše 3,09
+  rad, Uran 1,71). Dřív to byla vlasová WebGL linka, která s dálkou mizela.
+
+### Linky a brána ve vesmíru (2026-11-02)
+
+- **Jedna linka = jeden jazyk: `core/scene/universe/links.ts`.** Trvalé vodicí
+  linky berou barvu/šířku/průhlednost jen odtamtud — dráhy planet (`OrbitLine`),
+  vodící prstenec orbitálních světů, osy planet, rámečky dlaždic konzole i
+  trasa flotily. Dřív to byly čtyři idiomy v čtyřech barvách (`#8892b0` op 0,2 ·
+  vlas v barvě planety op 0,45 · fialová trubička op 0,14 · per-slot rámečky ·
+  kyanovalá trubice op 0,42) — čitelnost záležela na tom, kam se koukáte.
+- **`orbitWidth(r)`** dělá vzdálenější dráhu úměrně širší, takže od Slunce
+  mají všechny stejnou uhlovou tloušťťku (při r=30 = `LINK_WIDTH`, tedy přesně
+  to, co scéna používala dřív — mění se barva a průhlednost, ne geometrie).
+- **Mimo jazyk zůstává záměrně:** ornamenty (Śrí jantra a prstence Slunce,
+  prstenec Issobelly, Nová Země, stanice), interaktivní zvýraznění (hover
+  prstenec planety nese její tint, aby seděl k chipu) a particle pás světů.
+- **Brána je dítě Jupiteru.** `StarGate` se vykresluje v `SolarSystem.tsx` uvnitř
+  carrieru planety s `GATE_JUPITER_OFFSET` (`positions.ts`), ne v zemské soustavě
+  (`GATE_POS` je pryč) — obíhá s Jupiterem, takže je od něj pořád stejně daleko
+  a je ve záběru, když se na Jupiter doletí.
+- **Offset 12,9 jednotek není náhoda:** musí být větší než hit-sféra planety
+  (`max(size·2.6, 2.6)` = 9,36) + poloměr brány (3), jinak by klik na bránu
+  nejdřív trefil planetu a otevřel panel pouti místo vstupu do OASIS.
+  Stejná past platí pro jakýkoli objekt připnutý k interaktivní planetě.
 
 ### Avatary (A1–A4, 2026-11-01)
 
@@ -533,3 +557,44 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Bez změny wire formátu: `PROTO_VERSION` zůstává 3; `fight` E2E a serverové
   testy stačí pro změny lokálního balancu/UI. Při budoucí změně vstupu nebo
   snapshotu pokračuj bumpem protokolu a deploy pořadím server → aplikace.
+
+## Mars — Q3 model (2026-11-02)
+
+- **Fyzika je přepočtená ze zdroje Q3** (`bg_pmove.c`), ne od oka: 1 jednotka
+  = 0,03125 m (320 u/s → 10 m/s, 800 u/s² → 25 m/s², 270 u/s → 8,44 m/s).
+  Když někdo „zrychlí hru", musí měnit `Q3` v `physics.ts` a ne jednotlivé
+  konstanty — jinak se rozejde friccion a accel.
+- **Tření je NA ZEMI každý snímek**, ne jen bez klávesy. Bez toho hráč
+  klouže jako na ledě a Q3 pocit zmizí. Ve vzduchu tření není (to je to,
+  co dělá strafe jump).
+- **Skok vyžaduje puštění tlačítka** (`Body.jumpHeld`). Dřív šel držením
+  hopat donekonečna. Kdo to vrátí, zničí Q3 movement.
+- **`stepBody` nemá tvrdý strop rychlosti.** Rychlost se ustálí sama
+  (friction vs accel) a strafe jump umí překročit `Q3.maxSpeed`. Přidat
+  `if (speed > max) clamp` = zakázat strafe jump.
+- **`lineOfSight` normalizuje směr.** `rayBox` vrací `t` v jednotkách
+  směrového vektoru; poslat mu nenormalizovaný vektor a porovnávat s
+  vzdáleností v metrech = stěny **za** cílem blokují viditelnost (chyba
+  opravená 2026-11-02, dřív boti odmítali střílet přes volný prostor).
+- **Botí mozek míří z `PLAYER.eye`** (1,6 m), ne z `y+1.2`. Výška oka musí
+  sedět se serverem, jinak rány systematicky míjí o 0,4 m. `eyeHeight` /
+  `targetHeight` jsou v `DEFAULT_BOT_OPTIONS` a jsou to hodnoty ze
+  `weapons.ts`, ne konstanty „někde v bot.ts".
+- **Chyba míření 0,035 rad, ne víc.** 0,06 rad na 10 m = 0,62 m = přesně
+  poloměr zásahové koule → bot míjel v půlkách a vypadal hloupě.
+- **Boti v MP mají bias na lidi** (`+1000` ke vzdálenosti botů). Bez něj
+  se tři boti vyraždí mezi sebou (reálně se to stalo: `bot-1 → bot-3`) a
+  hráč se jen díval. Se člověkem v místnosti jdou všichni po něm.
+- **Frag limit platí jen pro lidi** (`!player.isBot`). Bot s 10 fragy
+  nesmí ukončit zápas člověku.
+- **Munici drží server** (`ammo`/`mgAmmo` ve snapshotu). Klient si ji
+  nesmí vymýšlet — rozjel by se se serverem (stejná past jako „trefil
+  jsem ho a nic").
+- **Sólová aréna má stále vlastní botí AI** — `core/arena/bot.ts` používá
+  jen server. Není to záměr, ale nedodělek; sjednocení je další krok.
+- **Deploy po bumpu protokolu:** NEJDŘÍV `deploy-nirvana-net.sh`, pak
+  `deploy-nirvana.sh`. Obráceně nový klient propadne `arena` fallbacku.
+- **Testy botů musí být deterministické.** `arena-bots.mjs` bojí v čisté
+  simulační části s jedním botem v místnosti; síť testuje jen transport.
+  Síťový test, kde tři boti bojují s člověkem, flakuje — boti si stínají
+  cíl a člověk umírá dřív, než vystřelí.
