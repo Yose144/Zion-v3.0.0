@@ -830,6 +830,10 @@ export default function L6IssobellaPage() {
               <Globe2 className="h-4 w-4 text-zion-cyan" />
               {L6IssobellaCopy.network[cs ? 'cs' : 'en']}
             </Link>
+            <Link href="/terranova/nabukano" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '56, 189, 248' } as React.CSSProperties}>
+              <Sparkles className="h-4 w-4 text-sky-300" />
+              Nabukano · Nebeská flotila
+            </Link>
             <Link href="/l5-free-world" className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/30 bg-zion-gold/5 px-6 py-3 text-sm font-semibold text-amber-200 hover:bg-zion-gold/10 transition-colors">
               L5 Free World <ArrowRight className="h-4 w-4" />
             </Link>
