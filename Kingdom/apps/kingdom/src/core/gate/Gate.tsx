@@ -49,7 +49,7 @@ export async function Gate({ locale }: { locale: Locale }) {
             {t(locale, 'gateSub')}
           </span>
 
-          <h1 className="k-gate-title">{t(locale, 'brand')}</h1>
+          <h1 className="k-gate-title">{t(locale, 'gateTitle')}</h1>
 
           <p className="k-hero-line">{text(hero.line, locale)}</p>
           <p className="k-hero-lead">{text(hero.lead, locale)}</p>

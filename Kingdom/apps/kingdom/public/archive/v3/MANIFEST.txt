@@ -1,0 +1,12 @@
+Archiv v3 — ZION — Nirvana v3.3
+Zdroj: apps/IntroPage/dist (apps/IntroPage, statický export)
+Vytvořeno: 2026-11-01T13:29:49Z
+Commit zdroje: 
+Commit archivu: e9bd0162f81c78856a565f558ac749d49de2b820
+
+Vynecháno (surové archivy, ne web):
+  legacy/    (~385 MB — staré verze webu, books, img)
+  portfolio/ (~33 MB)
+Důvod: do bundlu Kingdomu nepatří; zůstávají na původním umístění.
+
+Obsah: 59 HTML stránek, 24M celkem.

@@ -375,12 +375,17 @@ a {
 /* ---------- Brána ---------- */
 
 .k-gate {
+  /* Brána je nahoře, popisky pod ní (pokyn 👤 2026-11-01). Dřív byl text
+     přes bránu; teď jde ve sloupci — samotná brána se nemění. */
   min-height: calc(100dvh - 54px);
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
   position: relative;
   overflow: hidden;
-  padding: 40px 24px;
+  padding: 44px 24px 56px;
 }
 
 .k-gate-bg {
@@ -397,12 +402,14 @@ a {
 
 /* Skutečná brána (Stargate) — dekorace pod obsahem. */
 .k-gate-stage {
-  position: absolute;
-  inset: 0;
+  /* Ve flow (ne absolutně) — brána je hlavní prvek, text patří pod ni. */
+  position: relative;
+  inset: auto;
   display: grid;
   place-items: center;
   pointer-events: none;
-  opacity: 0.55;
+  opacity: 0.9;
+  flex: 0 0 auto;
 }
 
 .k-gate-stage > .stargate-wrap {
