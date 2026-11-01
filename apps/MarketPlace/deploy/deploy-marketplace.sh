@@ -54,6 +54,22 @@ if [[ ! -d "${ROOT_DIR}/.next/standalone/node_modules/.prisma" ]]; then
   exit 1
 fi
 
+# Standalone server si static ani public nekopíruje sám — když postbuild tiše
+# selže (build bez npm lifecycle, flatten exit 1), rsync --delete smaže i
+# poslední funkční kopii na serveru a celý web jede bez CSS/JS (2026-11-01:
+# všechny /_next/static/* → 404, stránky „rozbité"). Pojistka: dokopírovat
+# zdroje tady, fail když zdroj chybí.
+if [[ ! -d "${ROOT_DIR}/.next/standalone/.next/static" ]]; then
+  echo "[deploy-marketplace] WARN: standalone/.next/static chybí — dokopírovávám z .next/static"
+  [[ -d "${ROOT_DIR}/.next/static" ]] || { echo "[deploy-marketplace] ERROR: .next/static neexistuje — build je rozbitý" >&2; exit 1; }
+  cp -a "${ROOT_DIR}/.next/static" "${ROOT_DIR}/.next/standalone/.next/static"
+fi
+if [[ ! -d "${ROOT_DIR}/.next/standalone/public" ]]; then
+  echo "[deploy-marketplace] WARN: standalone/public chybí — dokopírovávám z public/"
+  mkdir -p "${ROOT_DIR}/.next/standalone/public"
+  cp -rL "${ROOT_DIR}/public/." "${ROOT_DIR}/.next/standalone/public/"
+fi
+
 # Remote pre-flight: refuse to --delete into a directory that does not look
 # like the MarketPlace app root (guards against wrong REMOTE_DIR / empty dirs).
 if ! SSH "test -f '${REMOTE_DIR}/package.json'"; then
@@ -127,10 +143,11 @@ prefix="$builder/apps/$app"
 fixed=0
 for link in $(find .next/standalone -type l); do
   target=$(readlink "$link")
-  case "$target" in
-    "$prefix"*) ;;
-    *) continue ;;
-  esac
+  # `case`+`;;` uvnitř heredocu v $( ) nedokáže sparsovat bash 3.2 (macOS) —
+  # proto prefix-match přes [[ = glob ]] místo case.
+  if [[ "$target" != "$prefix"* ]]; then
+    continue
+  fi
   rest=${target#"$prefix"}
   resolved="$remote$rest"
   if [ -e "$resolved" ]; then
@@ -168,10 +185,18 @@ echo "[deploy-marketplace] Smoke check..."
 sleep 3
 local_code=$(SSH "curl -s -o /dev/null -w '%{http_code}' --max-time 15 http://127.0.0.1:3100/" || echo 000)
 live_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 'https://market.zionterranova.com/')
-if [[ "$local_code" == "200" && "$live_code" == "200" ]]; then
-  echo "[deploy-marketplace] OK — local :3100=$local_code, live=$live_code. Deploy verified."
+# 200 na / nestačí — HTML se servíruje i bez static bundlu. Vytáhni z něj
+# skutečný /_next/static/* asset a ověř, že se servíruje (2026-11-01 incident).
+asset_path=$(curl -s --max-time 15 'https://market.zionterranova.com/' | grep -o '/_next/static/[^"]*' | head -1 || true)
+if [[ -n "$asset_path" ]]; then
+  asset_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://market.zionterranova.com${asset_path}")
 else
-  echo "[deploy-marketplace] FAIL — local :3100=$local_code, live=$live_code (want 200/200)" >&2
+  asset_code=000
+fi
+if [[ "$local_code" == "200" && "$live_code" == "200" && "$asset_code" == "200" ]]; then
+  echo "[deploy-marketplace] OK — local :3100=$local_code, live=$live_code, static=$asset_code ($asset_path). Deploy verified."
+else
+  echo "[deploy-marketplace] FAIL — local :3100=$local_code, live=$live_code, static=$asset_code ($asset_path) (want 200/200/200)" >&2
   SSH "systemctl status ${SERVICE} --no-pager -l | tail -15" || true
   exit 1
 fi

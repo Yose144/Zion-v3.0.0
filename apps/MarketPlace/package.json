@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3100",
     "build": "next build",
-    "postbuild": "node scripts/flatten-standalone.mjs && cp -r .next/static .next/standalone/.next/ 2>/dev/null || true; mkdir -p .next/standalone/public && cp -rL public/. .next/standalone/public/ 2>/dev/null || true",
+    "postbuild": "node scripts/flatten-standalone.mjs && mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/ && mkdir -p .next/standalone/public && cp -rL public/. .next/standalone/public/",
     "start": "next start -p 3100",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
