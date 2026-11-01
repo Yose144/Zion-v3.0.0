@@ -236,8 +236,8 @@ z IntroPage (22 rotujících kopií `2.png`), takže přebarvení by rozbilo tu 
 | 1 | G8 parita na EDGE2 | fix nasazen jen na EDGE (branu počítá jen EDGE) |
 | 2 | Re-baseline 3D měření | všechna čísla v `3D-SCENY-PLAN.md` jsou proti starému kódu; potřeba přeměřit z izolovaného worktree |
 | 3 | R6 art sjednocení universe | designové rozhodnutí (Brana = replika IntroPage) |
-| 4 | MarketPlace cancel nevrací sklad | pre-existing, money-path úkol |
-| 5 | R7 akceptace + deploy | blokováno K1.3 (deploy skripty vs. nový standalone layout) |
+| 4 | ~~MarketPlace cancel nevrací sklad~~ | **OPRAVENO 2026-11-01** (`a2d208283`) — cancel vrací sklad atomickým claimem a ruší nezaplacenou fakturu; E2E na produkci 999→997→999, faktura `cancelled` |
+| 5 | ~~R7 akceptace + deploy~~ | **HOTOVO** — web 12/12 a nirvana 13/13 lokálně i na produkci (se ZAP pasem), deploy z artefaktů čistého HEAD |
 | 6 | Web previews (R5) | 24 náhledů proti novému kódu neověřeno |
 
 ---
@@ -258,3 +258,36 @@ z IntroPage (22 rotujících kopií `2.png`), takže přebarvení by rozbilo tu 
 | `e9bd0162f` | fix(3d audit): fps jako okno, ne průměr od mountu |
 | `1adb29802` | feat(3d R6): přechod scéna ↔ portál |
 | `c6d298eaf` | fix(g8): potvrzovací retry sondy |
+
+---
+
+## 10. Dodatek — oprava zrušení objednávky (2026-11-01, `a2d208283`)
+
+Dvě mezery vedené v auditu od 2026-10-30, obojí reálně doložené:
+
+1. **Zrušená objednávka držela sklad navěky.** Vytvoření dělá `stock: decrement`
+   v transakci, cancel nedělal nic → oversell riziko. Teď cancel dělá symetrický
+   `increment` z `order.items` a vrací `inStock: true` u produktů, které se
+   mezitím vyprodaly. Přechod do `cancelled` je **atomický claim**
+   (`updateMany … status != 'cancelled'`), stejný vzor jako mark-paid, takže
+   dvojí cancel ani souběžné požadavky sklad nevrátí dvakrát.
+2. **Faktura zůstala `issued`.** Ruší se `draft`/`issued`; zaplacená zůstává
+   (peníze se pohnuly, vrácení je samostatný proces).
+
+Obnovení zrušené objednávky sklad **znovu nerezervuje** (mohlo by jít do minusu);
+zapíše se `console.warn` a operátor to dořeší v katalogu.
+
+**E2E na produkci:** `soft-002` 999 → 997 (objednávka qty 2) → **999** (cancel),
+druhý cancel beze změny, faktura `FV2026-000053/cancelled`.
+
+### Past, která při tom shodila produkci (a je teď ošetřená)
+
+Build z **git worktree** zapisuje Turbopack aliasy jako **absolutní** symlinky
+mířící na builderův `/tmp` (`@prisma/client-<hash>`, `puppeteer-<hash>`,
+`pino-<hash>`). Na serveru pak `Cannot find module …` a spadnou **všechny API
+routy** — stránky dál servíruje staticky, takže se to snadno přehlédne.
+
+Deploy skript po rsyncu absolutní odkazy přepíše na relativní a **odmítne
+restartovat**, pokud zůstane visící symlink. Dvě pasti cestou: bash 5.2 žere `&`
+v náhradě (`patsub_replacement`) a `REMOTE_DIR` obsahuje `&`; `ROOT_DIR` je
+v tom skriptu adresář appky, ne kořen workspace.
