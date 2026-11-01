@@ -13,8 +13,8 @@
 | Pipeline | ✅ ověřena E2E | `Hiran/2.3/v21-legacy/finetune/finetune_lora.py` — **+ fix messages/instruction schématu a diversity guard** (sync na rigu) |
 | Runtime | ✅ ověřen | `llama-server -m base.gguf --lora[-scaled] adapter.gguf` na EDGE2 (b11065) |
 | Validace | ✅ protokol | `docs/3.2/REPORTS/hiran-smoke-prompts.json` (8 held-out promptů, base-vs-adapter, scale sweep) |
-| Datové zásoby | 🟡 částečně | viz §3 — messages formát ready, coverage slabé |
-| Archiv | ✅ | EDGE `/opt/zion/hiran/` = `adapters/`, `base/`, `datasets/` |
+| Datové zásoby | ✅ v1 kompletní | viz §3 — **train 7 106 / eval 379**, messages, dedup, replay 21 % |
+| Archiv | ✅ | EDGE `/opt/zion/hiran/` = `adapters/`, `base/`, `datasets/` (+`datasets/dist/`) |
 
 ## 2. Sizing — co „FULL training" reálně znamená
 
@@ -34,24 +34,44 @@ nebo Llama-3.3-70B) nad bohatým datasetem. Větší base + dobrá data >> full-
 modelu na málo datech. Full-FT 8B má smysl až jako druhý stupeň, když data ukážou,
 že LoRA kapacita je úzké hrdlo.
 
-## 3. Dataset — jádro přípravy (teď největší leverage)
+## 3. Dataset — v1 hotový (2026-11-01)
 
-Současný stav: 3056 párů `curriculum-v2.1` (messages, fungoval) + 1495 párů
-curriculum (právě převedeno do messages) + 30 buddhism. **Pokrytí je úzké** —
-v2.1 je hlavně persona + CLI basics; curriculum jsou doc-dumpy.
+**`Hiran/2.3/dist/` = finální artefakty** (taky na EDGE `datasets/dist/`):
 
-### Coverage map — co Hiran musí znát (cíl ~8–15k párů)
-
-| Zdroj | Obsah → typ párů | Stav |
+| Soubor | Párů | Určení |
 |---|---|---|
-| `V3/` craty (zion-core, pool, miner, agent, ai, wallet, bridge, cli) | docstrings + pub API → „co dělá X", „jak použiju Y", Rust idiom | ✅ 886 párů (`v3_crates.jsonl`) — `build_v3_curriculum.py`; 533 items + 42 CLI (vč. subcommandů) + workspace/layers; ~½ docované API |
-| `V3/docs/*.md` | CLI guide, deploy, architektura → Q&A | 🟡 curriculum doc-dumpy → přepsat do reálných otázek |
-| `docs/3.2/REPORTS/*.md` | **ops paměť**: v3-tx CLI bug, anchor design, deploy pasti (fail2ban, sharp, next lock), mining duty | ✅ 400 párů (`ops.jsonl`) — `build_ops_curriculum.py`, 76 reportů |
-| `AGENTS.md` + `apps/*/AGENTS.md` | topologie, rozhodnutí, „pasti" | 🔲 |
-| `infra/RUNBOOK.md` | EDGE/EDGE2/nodes, služby, porty | 🔲 |
-| `canon/` (knihy, brand) | lore → maitreya flavor | 🟡 malý dataset |
-| Ops historie session (git log + deploy skripty) | „jak se nasazuje X", rollbacky | 🔲 |
-| Replay general | ~20 % obecných českých instruction párů (anti-forgetting) | 🔲 **povinné** — jinak se opakuje degradace z §7 reportu |
+| `hiran-full-train.jsonl` | **7 106** | trénink — messages, globálně dedup (162 dup out) |
+| `hiran-heldout-eval.jsonl` | **379** | held-out eval — 5 % per-source, **nikdy do tréninku** |
+
+Složení train (per-source, eval odečten):
+v2.1 curriculum 2 764 · **replay (bactrian cs) 1 520 = 21 %** · zion_core 856 ·
+v3_crates 842 · ops (REPORTS) 380 · cross_domain 329 · kb (AGENTS/RUNBOOK/V3-docs) 182 ·
+zion_advanced 181 · foundation 41 · rag_synthesis 11 · (buddhism 19 = duplikáty v2.1).
+
+**Buildery** (`Hiran/2.3/data/`): `convert_to_messages.py` (schéma fix),
+`build_ops_curriculum.py` (REPORTS→Q&A), `build_v3_curriculum.py` (docstringy+CLI),
+`build_replay.py` (Bactrian-X cs→messages, EN-artefakt filtry), `merge_full_dataset.py`
+(merge+dedup+eval split, seed 42 reprodukovatelné).
+
+### Coverage map — stav po v1
+
+| Zdroj | Stav |
+|---|---|
+| `V3/` craty docstringy + CLI | ✅ 886 (`v3_crates.jsonl`) |
+| `V3/docs/*.md` + `AGENTS.md` + `infra/RUNBOOK.md` | ✅ 191 (`kb.jsonl`) — RUNBOOK topologie, V3 docs, AGENTS pasti |
+| `docs/3.2/REPORTS/*.md` ops paměť | ✅ 400 (`ops.jsonl`) |
+| Replay general čeština ~20 % | ✅ 1 600 (`replay.jsonl`) — Bactrian-X cs, filtrované |
+| `canon/` lore | 🟡 19 buddhism (v rámci v2.1) — rozšířit až s maitreya fází |
+| V3 docs → *přepsané* reálné otázky | 🔲 v2 — teď doc-driven Q&A, ne příběhové |
+| Ops historie git/deploy | 🔲 v2 — částečně pokryto ops+kb |
+
+### Co je v2 rozšíření (až bude karta)
+
+- Cíl 8–15k: přidat ~2–6k párů — doc-dumpy curriculum přepsat na souvislé odpovědi
+  (teď jsou faktické, ale těžkopádné), více V3 docs, canon lore, git ops.
+- Replay škálovat s korpusem (pomer ~20–25 % držet).
+- Eval set držet oddělený — při v2 merge *znovu* použít `merge_full_dataset.py`
+  se stejným seedem + nové zdroje přidat (stará eval množina zůstane disjoint).
 
 ### Pipeline pravidla (z tvrdých lekcí)
 
@@ -68,7 +88,7 @@ v2.1 je hlavně persona + CLI basics; curriculum jsou doc-dumpy.
 
 ## 4. Checklist před zapnutím drahé karty
 
-- [ ] Dataset ≥8k párů, messages, replay mix, dedup, held-out oddělen
+- [x] Dataset messages, replay mix (21 %), dedup, **held-out oddělen** — 7 106/379 v `dist/` (v2 rozšíření k 8–15k = nice-to-have, ne blocker)
 - [ ] Výběr base modelu (licence! Llama-3.3-70B je gated → HF token; Qwen je pohodlnější)
 - [ ] Smoke run na existujícím rigu (30 párů) → ověřit pipeline s novým datasetem
 - [ ] Rig: volný disk ≥40 GB (base ~40 GB pro 32B / ~140 GB pro 70B → příp. přes

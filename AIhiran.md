@@ -60,7 +60,7 @@ EDGE2 (207.180.217.100, ssh zion-edge2):
 
 Vast rig 58077390:
   /root/hiran-train/outputs/zion-llama-lora/checkpoint-258   ← resume bod
-  /root/hiran-train/outputs/zion-core-lora/                  ← run 2 (běží)
+  /root/hiran-train/outputs/zion-core-lora/                  ← run 2 hotov (null-run, archiv)
   /root/hiran-train/data/{zion_train,zion_core}.jsonl
   /root/hiran-train/.hf                  ← HF cache (bnb-4bit base, 5.4 GB)
 
@@ -108,18 +108,24 @@ llama.cpp/convert_hf_to_gguf.py zion-merged --outtype q5_k_m ...
 2. `hiran-models.json`: alias `hiran-maitreya` → `mockup:false`, upstream `127.0.0.1:80XX`
 3. `systemctl restart zion-hiran-gateway` + smoke `POST /v1/chat/completions`
 
-## 6. Datové zdroje (další běhy)
+## 6. Datové zdroje (FULL v1 hotový — 2026-11-01)
 
-| Dataset | Páry | Velikost | Role |
-|---|---|---|---|
-| `hiran_curriculum_v2.1.jsonl` | 3056 | 10,7 MB | generalist (run 1 ✅) |
-| `curriculum/zion_core.jsonl` | 921 | 688 KB | V3/core specialist (run 2 🔵) |
-| `curriculum/cross_domain.jsonl` | 1033 | 285 KB | cross-domain |
-| `curriculum/zion_advanced.jsonl` | ~890 | 118 KB | advanced |
-| `curriculum/foundation.jsonl` | ~1021 | 18 KB | základy |
-| `curriculum/rag_synthesis.jsonl` | ~512 | 6 KB | RAG |
-| `zion_train_buddhism_guided.jsonl` | malý | 7 KB | maitreya/lore flavor |
-| builders | — | — | `data/build_dataset.py`, `boost_dataset.py`, `scrape_v3_docs.py` |
+**Finální artefakty** `Hiran/2.3/dist/` + EDGE `/opt/zion/hiran/datasets/dist/`:
+
+| Soubor | Párů | Určení |
+|---|---|---|
+| `hiran-full-train.jsonl` | **7 106** | trénink — messages, dedup, replay 21 % |
+| `hiran-heldout-eval.jsonl` | **379** | held-out eval — nikdy do tréninku |
+
+Zdroje → `Hiran/2.3/rebuild/HiranV2.2/data/curriculum-messages/`
+(v2.1 2916 · replay bactrian-cs 1600 · zion_core 901 · v3_crates 886 · ops 400 ·
+cross_domain 346 · kb AGENTS/RUNBOOK/V3docs 191 · advanced 190 · foundation 43 · rag 12).
+
+**Buildery** `Hiran/2.3/data/`: `convert_to_messages.py` (instruction→messages),
+`build_ops_curriculum.py` (REPORTS→Q&A), `build_v3_curriculum.py` (V31 docstringy+CLI),
+`build_replay.py` (Bactrian-X cs filtrované→messages), `merge_full_dataset.py`
+(merge+dedup+eval 5 %, seed 42). Legacy: `build_dataset.py`, `boost_dataset.py`,
+`scrape_v3_docs.py`.
 
 ## 7. Migrace na local node PC (👤)
 
