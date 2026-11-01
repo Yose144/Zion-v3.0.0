@@ -1,6 +1,7 @@
 import { createBreakout } from './breakout';
 import { createPong } from './pong';
 import { createSnake } from './snake';
+import { createTetris } from './tetris';
 import type { CanvasGameId, ParkGameDefinition } from './types';
 
 export const PARK_GAMES: ParkGameDefinition[] = [
@@ -21,6 +22,15 @@ export const PARK_GAMES: ParkGameDefinition[] = [
       en: 'Break the wall · three lives · mouse, arrows or the VR ray',
     },
     create: createBreakout,
+  },
+  {
+    id: 'tetris',
+    title: { cs: 'Tetris', en: 'Tetris' },
+    hint: {
+      cs: 'Skládej řádky · ← → posun, ↑ otočit, mezerník hodit · 100 za řádek',
+      en: 'Clear lines · ← → move, ↑ rotate, space drop · 100 per line',
+    },
+    create: createTetris,
   },
   {
     id: 'snake',

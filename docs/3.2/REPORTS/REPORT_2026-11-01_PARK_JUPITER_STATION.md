@@ -15,11 +15,11 @@ přiletíš → vybereš skříň → dohraješ → žetony + zápis do tabule �
 ```
 
 **Scéna** (`apps/nirvana/src/core/scene/park/ParkScene.tsx`): kruhová plošina
-v kosmu, tři arkádové skříně, ruské kolo s deseti gondolami, tabule skóre
-a Jupiter jako obloha (jediná textura v celé scéně).
+v kosmu, **čtyři arkádové skříně**, střelnice, ruské kolo s deseti gondolami,
+tabule skóre a Jupiter jako obloha (jediná textura v celé scéně).
 
-**Hry** (`apps/nirvana/src/core/park/games/`): Pong, Breakout, Snake — čistý
-canvas 2D, žádné assety, žádná knihovna.
+**Hry** (`apps/nirvana/src/core/park/games/`): Pong, Breakout, **Tetris**, Snake —
+čistý canvas 2D, žádné assety, žádná knihovna.
 
 Klíčový trik: **jeden canvas, dva pohledy.** Hra se kreslí do canvasu, který je
 zároveň `CanvasTexture` na obrazovce skříně. Proto ji vidí i hráč ve VR —
@@ -30,7 +30,7 @@ obrazovka je skutečný povrch, ne DOM.
 | Vstup | Co dělá |
 |---|---|
 | myš / dotyk | paddle u Pongu a Breakoutu (poloha ukazatele) |
-| šipky / WASD | totéž + Snake |
+| šipky / WASD | totéž + Snake; u Tetrisu ← → posun, ↑ otočit, mezerník hodit |
 | klik na skříň ve 3D | otevře hru (funguje i paprskem ve VR) |
 | klik na kolo | jízda (stojí 1 žeton) |
 | VR tlačítko | přepne canvas do XR session (`@react-three/xr` už v projektu byl) |
@@ -97,6 +97,7 @@ Environment=NIRVANA_PARK_SCORES_PATH=/opt/zion/data/nirvana-park-scores.json
 | Pong | hraje se, skóre se počítá, konec do 7 |
 | Breakout | paddle + cihly + 3 životy, skóre 10/cihla |
 | Snake | klávesy, jablko 25, náraz = konec |
+| Tetris | 10×16, sedm kostek, 100/250/450/700 za 1–4 řádky, gravitace zrychluje |
 | Žetony | 1 → 4 po střelnici (1 za hru + 2 za rekord) |
 | Střelnice | 70 bodů v gridu kliků, HUD + čas, konec → tabule |
 | Denní výzva | deterministická z data, +5 žetonů a vstupenka, jednou denně (test funkcí) |

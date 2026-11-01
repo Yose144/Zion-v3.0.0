@@ -30,9 +30,10 @@ interface Cabinet {
 }
 
 const CABINETS: Cabinet[] = [
-  { id: 'pong', angle: -5.6 },
-  { id: 'breakout', angle: 0 },
-  { id: 'snake', angle: 5.6 },
+  { id: 'pong', angle: -8.4 },
+  { id: 'breakout', angle: -2.8 },
+  { id: 'snake', angle: 2.8 },
+  { id: 'tetris', angle: 8.4 },
 ];
 
 function useJupiterTexture(): THREE.Texture | null {
