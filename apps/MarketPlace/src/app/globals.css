@@ -939,7 +939,7 @@ body.zion-shell {
 }
 
 .kralovstvi-hero-art {
-  width: min(100%, 88rem);
+  width: min(60%, 52.8rem);
   margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
   aspect-ratio: 1672 / 941;
   border-radius: 1rem;
@@ -973,6 +973,7 @@ body.zion-shell {
    fixed-height center crop that keeps the scene legible. */
 @media (max-width: 767px) {
   .kralovstvi-hero-art {
+    width: 100%;
     aspect-ratio: auto;
     height: clamp(280px, 62vw, 360px);
     max-height: none;
