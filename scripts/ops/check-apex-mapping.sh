@@ -63,6 +63,22 @@ else
   fail=1
 fi
 
+# Každá adresářová URL, na kterou portál odkazuje, musí mít index.html
+# (jinak nginx vrátí 403 — adresář bez indexu a bez autoindexu).
+ENTRIES="$(sed -n "s/.*path: '\([^']*\)'.*/\1/p" Kingdom/apps/kingdom/src/portals/archive/Portal.tsx)"
+for entry in $ENTRIES; do
+  if [[ "$entry" == */index.html || ! "$entry" == */ ]]; then
+    # soubor (např. blog.html) řeší smyčka výše
+    continue
+  fi
+  if [[ -f "$ARCH/${entry}index.html" ]]; then
+    :
+  else
+    red "  CHYBA: portál odkazuje na /${entry}, ale archiv tam nemá index.html"
+    fail=1
+  fi
+done
+
 # Vědomé mezery
 for missing in legacy portfolio; do
   if [[ -d "$ARCH/$missing" ]]; then

@@ -47,6 +47,11 @@ root, base = sys.argv[1], sys.argv[2]
 # Atributy a CSS url(), které začínají na "/" a nejsou "//" ani už prefixované.
 ATTR = re.compile(r'(?P<pre>\b(?:href|src|action|poster|data-src)=")(?P<url>/[^/"][^"]*)')
 CSS_URL = re.compile(r'(?P<pre>url\((?P<q>[\'"]?))(?P<url>/[^/"][^)]*)')
+# Meta refresh: `<meta http-equiv="refresh" content="0; url=/">`. Bez přepisu
+# by archivní stránka poslala prohlížeč na `/` — tedy na Bránu, ne do archivu.
+# Pozor: cíl může být i samotné "/" (stará homepage) — tehdy se má stát
+# "/archive/v3/", ne "/archive/v3" (bez lomítka by to bylo 404).
+META_REFRESH = re.compile(r'(?P<pre>content="\d+;\s*url=)(?P<url>/[^"]*)')
 
 def fix(html: str) -> str:
     def attr(m):
@@ -54,6 +59,15 @@ def fix(html: str) -> str:
             return m.group(0)
         return f"{m.group('pre')}{base}{m.group('url')}"
     html = ATTR.sub(attr, html)
+
+    def meta(m):
+        url = m.group('url')
+        if url.startswith('//') or url.startswith(base + '/'):
+            return m.group(0)
+        if url == '/':
+            return f"{m.group('pre')}{base}/"
+        return f"{m.group('pre')}{base}{url}"
+    html = META_REFRESH.sub(meta, html)
 
     def css(m):
         url = m.group('url').rstrip('\'"')

@@ -1,6 +1,7 @@
 # F6 — redirect mapa (připraveno, NEAKTIVNÍ)
 
-> **Datum:** 2026-11-01 · **Stav:** kód připraven, **nic nezapnuto** · **Flip = 👤**
+> **Datum:** 2026-11-01 · **Stav:** ✅ **ZAPNUTO a ověřeno** (apex, www, pool, freeworld, explorer) · zbývá `oasis.` a `nirvana.` (blocked)
+> **Rollback:** `bash Kingdom/infra/deploy/rollback-redirect.sh <povrch>` — zálohy v `/etc/nginx/backups/redirects/`; nic se nemazalo.
 > **Vztah:** fáze F6 v [`Kingdom/PLAN.md`](../../Kingdom/PLAN.md) §1. Podmínka z §3: appka zhasne, až má **všechny** veřejné stránky nahrazené a 30 dní běží redirect bez incidentu.
 
 ## Proč to není „prostě 301"
@@ -9,12 +10,12 @@ Plán F6 vyjmenovává `pool.` `oasis.` `nirvana.` `freeworld.` `explorer.` → 
 
 | Hostname | Dnes servíruje | Náhrada v Kingdomu | Verdikt |
 |---|---|---|---|
-| `pool.` | pool UI (mince, těžaři, výplaty, `/ops/`) | **Kovárna je 1:1** (mince, těžaři, historie, výplaty, detail těžaře, štěstí, bloky) | **ready** — jen `/ops/` a `/public/v1/` musí zůstat |
-| `freeworld.` | jediná stránka (granty/projekty klientsky) | **Přístav** (fond, granty, projekty server-side) | **ready** |
-| `explorer.` | 301 → `zionterranova.com/explorer/` | eXplorer žije na `app./explorer` | **done** (nic k práci) |
+| `pool.` | pool UI (mince, těžaři, výplaty, `/ops/`) | **Kovárna je 1:1** | ✅ **live** — `/ops/` (401) a `/public/v1/` (200) zůstaly |
+| `freeworld.` | jediná stránka | **Přístav** | ✅ **live** |
+| `explorer.` | 301 → apex `/explorer/` | eXplorer žije na `app./explorer` | ✅ **live** — přepnuto na `app./explorer` (přes apex by po flipu byl 404) |
 | `oasis.` | **11 stránek** — avatars, quests, golden-egg, ships, territories, guilds, leaderboard, dashboard, miner, onboarding | **žádná** | **blocked** |
 | `nirvana.` | hry a scény (`/park`, `/mars`, `/venus`, `/present/*`), chat, multiplayer | **žádná** | **blocked** |
-| `apex` | IntroPage — landing + **59 stránek** | Brána na `/`, zbytek v **Archivu v3** path-preserving (`/blog/x` → `/archive/v3/blog/x`) | **ready** — paths ověřené 59/59 |
+| `apex` + `www` | IntroPage — landing + **59 stránek** | Brána na `/`, zbytek v **Archivu v3** path-preserving | ✅ **live** — paths ověřené 59/59 |
 
 **Důsledek:** redirect `oasis.` nebo `nirvana.` na Kingdom by dnes rozbil funkci, kterou portál nemá — přesně to §3 zakazuje („žádná funkce nezmizela"). Proto jsou v mapě jako `blocked` **s důvodem** a `enable-redirect.sh` je odmítne (exit 3).
 
@@ -53,6 +54,26 @@ Protože Archiv v3 **zachovává strukturu cest**, nepotřebuje apex tabulku vý
 ## Důkaz, že přepis funguje (bez zásahu do produkce)
 
 Přepisovací logika puštěná na **kopii** vhostu v `/tmp`: změnil se jediný řádek (`try_files` → `return 301`), ostatních 15 `location` bloků zůstalo, závorky vyvážené (18/18).
+
+## Zapnuto 2026-11-01 (důkaz)
+
+| Hostname | dnes | cíl |
+|---|---|---|
+| `zionterranova.com/` | 301 | `kingdom.zionterranova.com/` (Brána) |
+| `zionterranova.com/blog/` | 301 | `/archive/v3/blog/` → 200 |
+| `www.zionterranova.com/` | 301 | `kingdom.zionterranova.com/` |
+| `pool.zionterranova.com/` | 301 | `/portal/pool/`; `/public/v1/coins` 200, `/ops/` 401 |
+| `freeworld.zionterranova.com/` | 301 | `/portal/freeworld/` |
+| `explorer.zionterranova.com/` | 301 | `app.zionterranova.com/explorer` (200) |
+
+**Nic se nemazalo:** `/var/www/zion-maintenance` (441 MB), `/var/www/pool` (3,2 MB), `/var/www/oasis` (17 MB), `/var/www/freeworld` (6 MB) i všechny appky v repu zůstaly; služby `nginx`, `zion-kingdom`, `zion-website`, `zion-marketplace` active; pool API 200.
+
+### Čtyři pasti, které flip odhalil
+
+1. **`sites-enabled/x.conf` nemusí být symlink.** U apexu to byl **obyčejný soubor**, takže editace `sites-available` nic nezměnila — a skript hlásil úspěch. `enable/rollback` teď cíl resolvují na serveru.
+2. **Deploy Kingdomu přepisuje vhost z repa.** Ručně vložený `location` zmizel prvním deployem → blok pro Archiv v3 musí být v `Kingdom/infra/nginx/kingdom.zionterranova.com.conf`.
+3. **Next neservíruje adresářové URL.** Archiv je export s `trailingSlash`, takže `/archive/v3/blog/` vracel 308 na `/blog` a 404. Řeší nginx `location ^~ /archive/v3/` s `try_files $uri $uri/` — stejná sémantika jako starý apex.
+4. **Meta refresh v archivech mířil na `/`.** 11 stránek má `content="0; url=/"`; po přesunu by skočily na Bránu. `build-archive-v3.sh` přepisuje i `url=` (včetně samotného `/` → `/archive/v3/`).
 
 ## Co musí vzniknout, než se `blocked` změní na `ready`
 

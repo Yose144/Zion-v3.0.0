@@ -18,11 +18,11 @@ const ENTRIES: Array<{ path: string; cs: string; en: string }> = [
   { path: 'blog/', cs: 'Blog', en: 'Blog' },
   { path: 'seeds/', cs: 'Semínka', en: 'Seeds' },
   { path: 'docs/', cs: 'Dokumenty', en: 'Docs' },
-  { path: 'whitepapers.html', cs: 'Whitepapery', en: 'Whitepapers' },
+  { path: 'wp/', cs: 'Whitepapery', en: 'Whitepapers' },
   { path: 'amenti/', cs: 'Amenti', en: 'Amenti' },
-  { path: 'archa/', cs: 'Archa', en: 'Ark' },
-  { path: 'vzestup.html', cs: 'Vzestup', en: 'Rise' },
+  { path: 'Vzestup/', cs: 'Vzestup', en: 'Rise' },
   { path: 'evoluzion/', cs: 'EvoluZion', en: 'EvoluZion' },
+  { path: 'camp/', cs: 'Kampaň', en: 'Campaign' },
 ];
 
 const BASE = '/archive/v3';

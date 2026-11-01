@@ -34,11 +34,19 @@ while IFS=$'\t' read -r surface vhost target status reason probe root_target; do
     red "$(printf '%-11s %-9s %s' "$surface" "CHYBA" "řádek nemá povinné sloupce")"; fail=1; continue
   fi
   probe="${probe:-$target}"
-  case "$status" in ready|blocked|done) ;; *) red "$(printf '%-11s %-9s %s' "$surface" "CHYBA" "neznámý stav '$status'")"; fail=1; continue ;; esac
+  case "$status" in live|ready|blocked|done) ;; *) red "$(printf '%-11s %-9s %s' "$surface" "CHYBA" "neznámý stav '$status'")"; fail=1; continue ;; esac
 
   today="$(curl -s -o /dev/null -w '%{http_code}' --max-time 12 "https://${vhost}/" || echo '---')"
 
-  if [[ "$status" == "ready" ]]; then
+  if [[ "$status" == "live" ]]; then
+    # Zapnuto: hostname musí skutečně vracet 301 a cíl musí žít.
+    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$probe" || echo '---')"
+    if [[ "$today" == "301" && "$code" == "200" ]]; then
+      green "$(printf '%-11s %-9s %-42s %s' "$surface" "$status" "${root_target:-$target}" "$today")"
+    else
+      red "$(printf '%-11s %-9s %-42s %s' "$surface" "$status" "$probe → $code, host $today" "$today")"; fail=1
+    fi
+  elif [[ "$status" == "ready" ]]; then
     # 2) cíl musí být živý (200) — jinak by redirect vedl do prázdna
     code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$probe" || echo '---')"
     if [[ "$code" == "200" ]]; then

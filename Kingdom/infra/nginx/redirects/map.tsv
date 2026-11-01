@@ -7,15 +7,16 @@
 #   root cíl   = kam jde `/` zvlášť (když se má lišit od zbytku); prázdné = stejné
 #
 # Stav:
+#   live    = ZAPNUTO a ověřeno (301 na živém hostu)
 #   ready   = parita doložena, redirect se smí zapnout po 👤 schválení
 #   blocked = v Kingdomu NENÍ náhrada → redirect by rozbil funkci
 #   done    = už přesměrováno jinde (nic k práci)
 #
 # Zdůvodnění a důkazy: docs/3.2/F6-REDIRECT-MAP.md
 
-pool	pool.zionterranova.com	https://kingdom.zionterranova.com/portal/pool	ready	Kovárna: mince, těžaři, historie, výplaty, detail těžaře, štěstí, bloky; /ops/ a /public/v1/ zůstávají		
-freeworld	freeworld.zionterranova.com	https://kingdom.zionterranova.com/portal/freeworld	ready	Přístav: fond, granty, projekty (server-side)		
-apex	zionterranova.com	https://kingdom.zionterranova.com/archive/v3	ready	Brána na `/`, zbytek do Archivu v3 (path-preserving: /blog/x → /archive/v3/blog/x) — ověřeno check-apex-mapping.sh	https://kingdom.zionterranova.com/archive/v3/index.html	https://kingdom.zionterranova.com/
+pool	pool.zionterranova.com	https://kingdom.zionterranova.com/portal/pool	live	Kovárna: mince, těžaři, historie, výplaty, detail těžaře, štěstí, bloky; /ops/ a /public/v1/ zůstávají		
+freeworld	freeworld.zionterranova.com	https://kingdom.zionterranova.com/portal/freeworld	live	Přístav: fond, granty, projekty (server-side)		
+apex	zionterranova.com	https://kingdom.zionterranova.com/archive/v3	live	Brána na `/`, zbytek do Archivu v3 (path-preserving: /blog/x → /archive/v3/blog/x) — ověřeno check-apex-mapping.sh	https://kingdom.zionterranova.com/archive/v3/index.html	https://kingdom.zionterranova.com/
 oasis	oasis.zionterranova.com	https://kingdom.zionterranova.com/room	blocked	11 stránek (avatars, quests, golden-egg, ships, territories, guilds, leaderboard, dashboard, miner, onboarding) v Kingdomu nejsou		
 nirvana	nirvana.zionterranova.com	https://kingdom.zionterranova.com/room	blocked	Hry a scény (/park, /mars, /venus, /present/*), chat, multiplayer v Kingdomu nejsou		
-explorer	explorer.zionterranova.com	https://zionterranova.com/explorer/	done	Už 301 (ověřeno 2026-11-01); eXplorer žije na app./explorer		
+explorer	explorer.zionterranova.com	https://app.zionterranova.com/explorer	live	301 na app./explorer (2026-11-01 opraveno — dřív mířilo na apex /explorer/, které je po přepnutí 404)	https://app.zionterranova.com/explorer	

@@ -20,8 +20,7 @@ MODE="${2:-}"
 ROW="$(awk -v s="$SURFACE" -F'\t' '$1==s {print; exit}' "$MAP")"
 [[ -n "$ROW" ]] || { echo "povrch '$SURFACE' není v mapě" >&2; exit 2; }
 IFS=$'\t' read -r _ vhost target status reason <<< "$ROW"
-VHOST="/etc/nginx/sites-available/${vhost}.conf"
-BASE="$(basename "$VHOST")"
+BASE="${vhost}.conf"
 
 if [[ "$MODE" == "--list" ]]; then
   ssh "$HOST" "ls -1t /etc/nginx/backups/redirects/${BASE}.bak-* 2>/dev/null" || {
@@ -29,13 +28,21 @@ if [[ "$MODE" == "--list" ]]; then
   exit 0
 fi
 
-ssh "$HOST" "bash -s -- '${VHOST}' '${BASE}'" <<'REMOTE'
+ssh "$HOST" "bash -s -- '${BASE}'" <<'REMOTE'
 set -euo pipefail
-vhost="$1"; base="$2"
-latest="$(ls -1t /etc/nginx/backups/redirects/${base}.bak-* 2>/dev/null | head -1)"
-[[ -n "$latest" ]] || { echo "žádná záloha pro $vhost" >&2; exit 1; }
-echo "    obnovuji: $latest"
-cp -p "$latest" "$vhost"
+name="$1"
+# Kam zálohu vrátit: symlink → jeho cíl, obyčejný soubor → soubor v sites-enabled.
+if [[ -L "/etc/nginx/sites-enabled/${name}" ]]; then
+  target="$(readlink -f "/etc/nginx/sites-enabled/${name}")"
+elif [[ -f "/etc/nginx/sites-enabled/${name}" ]]; then
+  target="/etc/nginx/sites-enabled/${name}"
+else
+  target="/etc/nginx/sites-available/${name}"
+fi
+latest="$(ls -1t /etc/nginx/backups/redirects/${name}.bak-* 2>/dev/null | head -1)"
+[[ -n "$latest" ]] || { echo "žádná záloha pro $name" >&2; exit 1; }
+echo "    obnovuji: $latest → $target"
+cp -p "$latest" "$target"
 REMOTE
 
 if ! ssh "$HOST" "nginx -t"; then

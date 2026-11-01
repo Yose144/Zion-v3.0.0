@@ -39,6 +39,11 @@ fi
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 VHOST="/etc/nginx/sites-available/${vhost}.conf"
 
+# ⚠️ Někde je sites-enabled SYMLINK do sites-available, jinde OBYČEJNÝ SOUBOR
+# (apex je takový). Editovat sites-available u obyčejného souboru znamená, že
+# nginx nic nezmění — a vypadá to, že se přepis povedl. Proto se cíl resolvuje
+# až na serveru a níž se pracuje s ním.
+
 echo "==> ${SURFACE}: ${vhost} → ${target}"
 echo "    vhost:  ${VHOST}"
 echo "    mód:    ${MODE}"
@@ -51,12 +56,25 @@ if [[ "$MODE" == "--dry-run" ]]; then
 fi
 
 # 1) záloha + přepis location /
-ssh "$HOST" "bash -s -- '${VHOST}' '${STAMP}' '${target}' '${root_target:-}'" <<'REMOTE'
+ssh "$HOST" "bash -s -- '${vhost}.conf' '${STAMP}' '${target}' '${root_target:-}'" <<'REMOTE'
 set -euo pipefail
-vhost="$1"; stamp="$2"; target="$3"; root_target="${4:-}"
+name="$1"; stamp="$2"; target="$3"; root_target="${4:-}"
+
+# Co nginx skutečně načítá: symlink → jego cíl, obyčejný soubor → ten soubor.
+if [[ -L "/etc/nginx/sites-enabled/${name}" ]]; then
+  vhost="$(readlink -f "/etc/nginx/sites-enabled/${name}")"
+elif [[ -f "/etc/nginx/sites-enabled/${name}" ]]; then
+  vhost="/etc/nginx/sites-enabled/${name}"
+elif [[ -f "/etc/nginx/sites-available/${name}" ]]; then
+  vhost="/etc/nginx/sites-available/${name}"
+else
+  echo "nenalezen vhost ${name} ani v sites-enabled, ani v sites-available" >&2; exit 1
+fi
+echo "    soubor: $vhost$([[ -L "/etc/nginx/sites-enabled/${name}" ]] && echo ' (symlink)' || echo ' (obyčejný soubor)')"
+
 backup_dir="/etc/nginx/backups/redirects"
 mkdir -p "$backup_dir"
-backup="${backup_dir}/$(basename "$vhost").bak-${stamp}"
+backup="${backup_dir}/${name}.bak-${stamp}"
 cp -p "$vhost" "$backup"
 echo "    záloha: $backup"
 
