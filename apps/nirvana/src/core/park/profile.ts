@@ -12,12 +12,16 @@ export interface ParkProfile {
   runs: number;
   /** Poslední návštěva (YYYY-MM-DD) — denní vstupenka. */
   day: string | null;
+  /** Zlaté vstupenky za splněné denní výzvy. */
+  tickets: number;
+  /** Den, kdy byla výzva naposledy splněna (YYYY-MM-DD). */
+  challengeDay: string | null;
 }
 
 export const WHEEL_COST = 1;
 const STORAGE_KEY = 'nirvana.park.v1';
 
-const EMPTY: ParkProfile = { tokens: 0, best: {}, runs: 0, day: null };
+const EMPTY: ParkProfile = { tokens: 0, best: {}, runs: 0, day: null, tickets: 0, challengeDay: null };
 
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -34,6 +38,8 @@ export function loadProfile(): ParkProfile {
       best: typeof parsed.best === 'object' && parsed.best ? parsed.best : {},
       runs: Math.max(0, Math.floor(Number(parsed.runs) || 0)),
       day: typeof parsed.day === 'string' ? parsed.day : null,
+      tickets: Math.max(0, Math.floor(Number(parsed.tickets) || 0)),
+      challengeDay: typeof parsed.challengeDay === 'string' ? parsed.challengeDay : null,
     };
     // denní vstupenka: první návštěva dne dostane žeton na kolo
     if (profile.day !== today()) {

@@ -1188,7 +1188,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 
 .park-board-list {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
   margin-top: 0.5rem;
   font-size: 0.68rem;
@@ -1388,4 +1388,41 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 
 .park-gallery-hud span.is-low {
   color: #ff7a6b;
+}
+
+/* denní výzva */
+.park-challenge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.2rem 0 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  background: linear-gradient(160deg, rgba(255, 209, 102, 0.12), rgba(255, 209, 102, 0.02));
+}
+
+.park-challenge.is-done {
+  border-color: rgba(127, 227, 212, 0.45);
+  background: linear-gradient(160deg, rgba(127, 227, 212, 0.12), rgba(127, 227, 212, 0.02));
+}
+
+.park-challenge strong {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: #ffd166;
+}
+
+.park-challenge.is-done strong {
+  color: #7fe3d4;
+}
+
+.park-challenge span {
+  font-size: 0.8rem;
+  color: #fff3d0;
+}
+
+.park-challenge small {
+  font-size: 0.68rem;
+  color: rgba(244, 234, 210, 0.55);
 }

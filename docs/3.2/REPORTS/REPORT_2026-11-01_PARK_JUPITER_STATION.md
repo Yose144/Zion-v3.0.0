@@ -65,6 +65,18 @@ DOM panel kryl polovinu terčů (přesně to se stalo při prvním pokusu: 0 zá
 protože kliky chytal panel, ne plátno). Terče jsou `ParkGameId: 'gallery'`,
 takže jdou do stejné tabule i žetonů jako ostatní hry.
 
+## 4d. Denní výzva — důvod se vracet
+
+`core/park/challenge.ts`: výzva se počítá z data, takže je stejná pro všechny;
+jednou denně, jen když trefíš hru i cíl. Odměna **+5 žetonů a zlatá vstupenka**.
+Karta je v panelu („DENNÍ VÝZVA · Pong · cíl 500"), po splnění zezelená.
+
+Cíle podle toho, kolik bodů hra reálně dává: Pong 500 (5 bodů), Breakout 300
+(30 cihel), Snake 200 (8 jablek), Střelnice 150 (15 zásahů).
+
+Ověřeno testem funkcí (ne jen okem): splnění → +5 žetonů a +1 vstupenka;
+pod cílem / špatná hra / druhá hra v týž den → nic.
+
 ## 4c. Perzistence tabule
 
 Na EDGE nasazen systemd drop-in
@@ -87,6 +99,7 @@ Environment=NIRVANA_PARK_SCORES_PATH=/opt/zion/data/nirvana-park-scores.json
 | Snake | klávesy, jablko 25, náraz = konec |
 | Žetony | 1 → 4 po střelnici (1 za hru + 2 za rekord) |
 | Střelnice | 70 bodů v gridu kliků, HUD + čas, konec → tabule |
+| Denní výzva | deterministická z data, +5 žetonů a vstupenka, jednou denně (test funkcí) |
 | „Hrát znovu" / „Ukončit" | obě cesty ověřené |
 | Kolo | jízda se spustí, kamera jede v gondole, „Sesednout" vrací |
 | Vesmír | dlaždice **Pouť** → fokus na Jupiter → okno → `/park` |

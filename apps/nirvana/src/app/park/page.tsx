@@ -14,9 +14,11 @@ import {
   WHEEL_COST,
   awardRun,
   loadProfile,
+  saveProfile,
   spendTokens,
   type ParkProfile,
 } from '@/core/park/profile';
+import { CHALLENGE_REWARD, claimChallenge, dailyChallenge } from '@/core/park/challenge';
 import { emptyScores, type ParkScores } from '@/core/park/scores';
 import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
 
@@ -145,6 +147,29 @@ export default function ParkPage() {
     return () => cancelAnimationFrame(rafRef.current);
   }, [texture, cs]);
 
+  // ── záznam dohrané hry: žetony, výzva, tabule ─────────────────────
+  const recordRun = useCallback(
+    (game: ParkGameId, value: number) => {
+      const awarded = awardRun(loadProfile(), game, value);
+      const challenge = claimChallenge(awarded.profile, game, value);
+      saveProfile(challenge.profile);
+      setProfile(challenge.profile);
+      const bits: string[] = [];
+      if (awarded.personalBest) bits.push(cs ? 'rekord' : 'record');
+      bits.push(`+${awarded.tokensGained} ${cs ? 'žetony' : 'tokens'}`);
+      if (challenge.claimed) bits.push(cs ? `denní výzva +${CHALLENGE_REWARD}` : `daily +${CHALLENGE_REWARD}`);
+      setNotice(bits.join(' · '));
+      void fetch('/api/park/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game, score: value, name: nick }),
+      })
+        .then(() => readScores())
+        .catch(() => undefined);
+    },
+    [cs, nick, readScores],
+  );
+
   // ── start / konec hry ────────────────────────────────────────────
   const startGame = useCallback(
     (id: CanvasGameId) => {
@@ -164,29 +189,11 @@ export default function ParkPage() {
           finishedRef.current = true;
           setScore(value);
           setFinished(true);
-          const current = loadProfile();
-          const result = awardRun(current, id, value);
-          setProfile(result.profile);
-          setNotice(
-            result.personalBest
-              ? cs
-                ? `Nový rekord · +${result.tokensGained} žetony`
-                : `New record · +${result.tokensGained} tokens`
-              : cs
-                ? `+${result.tokensGained} žeton`
-                : `+${result.tokensGained} token`,
-          );
-          void fetch('/api/park/scores', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ game: id, score: value, name: nick }),
-          })
-            .then(() => readScores())
-            .catch(() => undefined);
+          recordRun(id, value);
         },
       });
     },
-    [cs, nick, readScores],
+    [recordRun],
   );
 
   const stopGame = useCallback(() => {
@@ -243,27 +250,9 @@ export default function ParkPage() {
   const endGallery = useCallback(
     (value: number) => {
       setGallery(false);
-      const current = loadProfile();
-      const result = awardRun(current, 'gallery', value);
-      setProfile(result.profile);
-      setNotice(
-        result.personalBest
-          ? cs
-            ? `Nový rekord · +${result.tokensGained} žetony`
-            : `New record · +${result.tokensGained} tokens`
-          : cs
-            ? `+${result.tokensGained} žeton`
-            : `+${result.tokensGained} token`,
-      );
-      void fetch('/api/park/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game: 'gallery', score: value, name: nick }),
-      })
-        .then(() => readScores())
-        .catch(() => undefined);
+      recordRun('gallery', value);
     },
-    [cs, nick, readScores],
+    [recordRun],
   );
 
   const ride = useCallback(() => {
@@ -292,6 +281,8 @@ export default function ParkPage() {
 
   const game = active ? gameById(active) : null;
   const tokens = profile?.tokens ?? 0;
+  const challenge = dailyChallenge();
+  const challengeDone = profile?.challengeDay === challenge.day;
 
   const canvasNode = useMemo(
     () => <canvas ref={attachCanvas} className="park-screen" aria-label="herní obrazovka" />,
@@ -439,6 +430,28 @@ export default function ParkPage() {
           <button type="button" className="park-btn park-ride-btn" onClick={ride} disabled={riding}>
             {cs ? `Ruské kolo · ${WHEEL_COST} žeton` : `Ferris wheel · ${WHEEL_COST} token`}
           </button>
+
+          <div className={`park-challenge${challengeDone ? ' is-done' : ''}`}>
+            <strong>{cs ? 'DENNÍ VÝZVA' : 'DAILY CHALLENGE'}</strong>
+            <span>
+              {challenge.game === 'gallery'
+                ? cs
+                  ? 'Střelnice'
+                  : 'Gallery'
+                : gameById(challenge.game).title[cs ? 'cs' : 'en']}
+              {' · '}
+              {cs ? 'cíl' : 'target'} {challenge.target}
+            </span>
+            <small>
+              {challengeDone
+                ? cs
+                  ? 'splněno · zlatá vstupenka je tvoje'
+                  : 'done · golden ticket is yours'
+                : cs
+                  ? `+${challenge.reward} žetonů · jednou denně`
+                  : `+${challenge.reward} tokens · once a day`}
+            </small>
+          </div>
 
           <header className="park-board-head">
             <strong>{cs ? 'TABULE' : 'BOARD'}</strong>
