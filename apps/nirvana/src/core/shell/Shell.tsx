@@ -205,6 +205,10 @@ export function Shell() {
           fleetLeg={fleetLeg}
         />
       </div>
+      {/* Přechod scéna ↔ portál: krátký závoj, který při každé změně portálu
+          (otevření, zavření, přepnutí) jednou proběhne. `key` ho remountuje,
+          takže animace startuje znovu; pointer-events: none, aby nic neblokoval. */}
+      <div key={portal ?? 'home'} className="portal-veil" aria-hidden />
       <header className="chrome">
         <div>
           <strong>{t('title')}</strong>
