@@ -37,6 +37,7 @@ import {
   type Body,
   type Box4,
 } from '@/core/arena/physics';
+import { WEAPONS, ARMOR_ABSORB, spreadVector, TARGET_RADIUS } from '@/core/arena/weapons';
 
 /**
  * MARS ARENA — deathmatch v stylu Quake 3, celý procedurální.
@@ -45,7 +46,7 @@ import {
  * splash), tři boti se strafováním a dostřelem, zdraví/armor pickupy, frag
  * limit 10 nebo 3 minuty. Co tam není: modely, animace, zvuk, síťová hra.
  *
- * Ovládání: WASD, myš (pointer lock), mezerník skok, 1/2 zbraň, klik střelba.
+ * Ovládání: WASD, myš (pointer lock), mezerník skok, 1/2/3 zbraň (rail/rakety/MG), klik střelba.
  */
 
 export interface ArenaStats {
@@ -53,7 +54,7 @@ export interface ArenaStats {
   armor: number;
   frags: number;
   deaths: number;
-  weapon: 'rail' | 'rocket';
+  weapon: 'rail' | 'rocket' | 'mg';
   ammo: number;
   botsAlive: number;
   timeLeft: number;
@@ -76,14 +77,9 @@ export interface ArenaResult {
   reason: 'frags' | 'time';
 }
 
-const RAIL_DAMAGE = 55;
-const RAIL_COOLDOWN = 0.75;
-const ROCKET_DAMAGE = 85;
-const ROCKET_SPLASH = 60;
-const ROCKET_RADIUS = 3.2;
-const ROCKET_SPEED = 26;
-const ROCKET_COOLDOWN = 0.85;
-const ROCKET_AMMO = 12;
+/** Zbraně bereme ze **sdíleného modulu** (`weapons.ts`) — solo a server musí
+ *  shodně ubírat HP, jinak vznikne „trefil jsem ho a nic". Konkrétně Q3:
+ *  rail 100, rakety 100+100 splash, MG 8, armor 66 %. */
 const RESPAWN_TIME = 2.4;
 const BOT_RESPAWN = 3.2;
 
@@ -184,8 +180,9 @@ export function MarsArena({
   const armor = useRef(0);
   const frags = useRef(0);
   const deaths = useRef(0);
-  const weapon = useRef<'rail' | 'rocket'>('rail');
-  const ammo = useRef(ROCKET_AMMO);
+  const weapon = useRef<'rail' | 'rocket' | 'mg'>('rail');
+  const ammo = useRef(WEAPONS.rocket.ammo);
+  const mgAmmo = useRef(WEAPONS.mg.ammo);
   const cooldown = useRef(0);
   const deadUntil = useRef(0);
   const timeLeft = useRef(MATCH_SECONDS);
@@ -275,6 +272,7 @@ export function MarsArena({
       if (event.code === 'Space') jumpQueued.current = true;
       if (event.code === 'Digit1') weapon.current = 'rail';
       if (event.code === 'Digit2') weapon.current = 'rocket';
+      if (event.code === 'Digit3' && mgAmmo.current > 0) weapon.current = 'mg';
     };
     const onKeyUp = (event: KeyboardEvent) => keys.current.delete(event.code);
 
@@ -327,7 +325,8 @@ export function MarsArena({
     armor.current = 0;
     frags.current = 0;
     deaths.current = 0;
-    ammo.current = ROCKET_AMMO;
+    ammo.current = WEAPONS.rocket.ammo;
+    mgAmmo.current = WEAPONS.mg.ammo;
     weapon.current = 'rail';
     deadUntil.current = 0;
     player.current = {
@@ -380,10 +379,15 @@ export function MarsArena({
       dir = fireVector.set(0, 0, -1).applyEuler(fireEuler).normalize();
     }
 
-    if (weapon.current === 'rail') {
-      cooldown.current = now + RAIL_COOLDOWN;
-      const wall = raySolids(origin[0], origin[1], origin[2], dir.x, dir.y, dir.z, solids, 120);
-      const wallDist = wall?.t ?? 120;
+    if (weapon.current === 'rail' || weapon.current === 'mg') {
+      const isMg = weapon.current === 'mg';
+      const spec = isMg ? WEAPONS.mg : WEAPONS.rail;
+      cooldown.current = now + spec.cooldownMs / 1000;
+      // MG má rozptyl — rail přesně podle zaměření
+      const shotDir = isMg ? spreadVector(dir, WEAPONS.mg.spread) : dir;
+      const range = isMg ? WEAPONS.mg.range : 120;
+      const wall = raySolids(origin[0], origin[1], origin[2], shotDir.x, shotDir.y, shotDir.z, solids, range);
+      const wallDist = wall?.t ?? range;
 
       let bestBot: BotState | null = null;
       let bestT = wallDist;
@@ -393,13 +397,13 @@ export function MarsArena({
           origin[0],
           origin[1],
           origin[2],
-          dir.x,
-          dir.y,
-          dir.z,
+          shotDir.x,
+          shotDir.y,
+          shotDir.z,
           bot.body.x,
           bot.body.y + BOT_BODY.height * 0.6,
           bot.body.z,
-          0.62,
+          TARGET_RADIUS,
         );
         if (t !== null && t < bestT) {
           bestT = t;
@@ -408,18 +412,27 @@ export function MarsArena({
       }
 
       const end: [number, number, number] = [
-        origin[0] + dir.x * bestT,
-        origin[1] + dir.y * bestT,
-        origin[2] + dir.z * bestT,
+        origin[0] + shotDir.x * bestT,
+        origin[1] + shotDir.y * bestT,
+        origin[2] + shotDir.z * bestT,
       ];
       tracers.current.push({ id: nextId.current++, from: origin, to: end, ttl: now + 140 });
-      playRail();
+      if (isMg) {
+        if (mgAmmo.current <= 0) {
+          weapon.current = 'rail';
+          return;
+        }
+        mgAmmo.current -= 1;
+      } else {
+        playRail();
+      }
 
       if (bestBot) {
         playHit();
-        bestBot.health -= RAIL_DAMAGE;
+        bestBot.health -= spec.damage;
         if (bestBot.health <= 0) killBot(bestBot, now);
       }
+      if (isMg && mgAmmo.current <= 0) weapon.current = 'rail';
       return;
     }
 
@@ -429,17 +442,17 @@ export function MarsArena({
       return;
     }
     ammo.current -= 1;
-    cooldown.current = now + ROCKET_COOLDOWN;
+    cooldown.current = now + WEAPONS.rocket.cooldownMs / 1000;
     playRocket();
     rockets.current.push({
       id: nextId.current++,
       x: origin[0] + dir.x * 0.6,
       y: origin[1] + dir.y * 0.6,
       z: origin[2] + dir.z * 0.6,
-      vx: dir.x * ROCKET_SPEED,
-      vy: dir.y * ROCKET_SPEED,
-      vz: dir.z * ROCKET_SPEED,
-      ttl: now + 4000,
+      vx: dir.x * WEAPONS.rocket.speed,
+      vy: dir.y * WEAPONS.rocket.speed,
+      vz: dir.z * WEAPONS.rocket.speed,
+      ttl: now + WEAPONS.rocket.ttlMs,
     });
   }
 
@@ -454,7 +467,7 @@ export function MarsArena({
 
   function damagePlayer(amount: number, now: number) {
     if (now < deadUntil.current) return;
-    const absorbed = Math.min(armor.current, Math.round(amount * 0.6));
+    const absorbed = Math.min(armor.current, Math.round(amount * ARMOR_ABSORB));
     armor.current -= absorbed;
     health.current -= amount - absorbed;
     if (health.current > 0) playHurt();
@@ -629,10 +642,11 @@ export function MarsArena({
       );
       if (now > bot.nextJump) bot.nextJump = now + 1800 + Math.random() * 2200;
 
-      // dostřel
+      // dostřel — boti jedou **stejným modulem** jako MP boti (shared `bot.ts`),
+      // jen damage berou ze sdílených zbraní (rail), ne z vlastních čísel
       if (sees && !dead && now > bot.nextShot) {
-        bot.nextShot = now + 850 + Math.random() * 900;
-        if (Math.random() < 0.42) damagePlayer(11 + Math.round(Math.random() * 6), now);
+        bot.nextShot = now + WEAPONS.rail.cooldownMs + Math.random() * 900;
+        if (Math.random() < 0.42) damagePlayer(WEAPONS.rail.damage, now);
         tracers.current.push({
           id: nextId.current++,
           from: [bot.body.x, bot.body.y + BOT_BODY.height * 0.7, bot.body.z],
@@ -668,7 +682,7 @@ export function MarsArena({
             rocket.z - bot.body.z,
           );
           if (d < 1.1) {
-            bot.health -= ROCKET_DAMAGE;
+            bot.health -= WEAPONS.rocket.damage;
             if (bot.health <= 0) killBot(bot, now);
             exploded = true;
             break;
@@ -701,8 +715,8 @@ export function MarsArena({
               rocket.y - (bot.body.y + BOT_BODY.height * 0.5),
               rocket.z - bot.body.z,
             );
-            if (d < ROCKET_RADIUS) {
-              bot.health -= Math.round(ROCKET_SPLASH * (1 - d / ROCKET_RADIUS));
+            if (d < WEAPONS.rocket.radius) {
+              bot.health -= Math.round(WEAPONS.rocket.splash * (1 - d / WEAPONS.rocket.radius));
               if (bot.health <= 0) killBot(bot, now);
             }
           }
@@ -711,8 +725,8 @@ export function MarsArena({
             rocket.y - (player.current.y + 1),
             rocket.z - player.current.z,
           );
-          if (selfDist < ROCKET_RADIUS * 0.8) {
-            damagePlayer(Math.round(28 * (1 - selfDist / (ROCKET_RADIUS * 0.8))), now);
+          if (selfDist < WEAPONS.rocket.radius * 0.8) {
+            damagePlayer(Math.round(WEAPONS.rocket.splash * (1 - selfDist / (WEAPONS.rocket.radius * 0.8))), now);
           }
           continue;
         }
@@ -801,7 +815,7 @@ export function MarsArena({
       frags: frags.current,
       deaths: deaths.current,
       weapon: weapon.current,
-      ammo: ammo.current,
+      ammo: weapon.current === 'mg' ? mgAmmo.current : weapon.current === 'rocket' ? ammo.current : 0,
       botsAlive: bots.current.filter((bot) => bot.alive).length,
       timeLeft: Math.ceil(timeLeft.current),
       respawnIn: Math.max(0, Math.ceil((deadUntil.current - now) / 1000)),

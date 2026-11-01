@@ -26,7 +26,7 @@ const SURFACES = ['/', '/park', '/mars', '/venus', '/avatars'];
 const CONTROLS: Record<string, { cs: string; en: string }> = {
   '/': { cs: 'tažení myší = orbita · kolečko = přiblížení · klik na planetu = hra', en: 'drag = orbit · wheel = zoom · click a planet = game' },
   '/park': { cs: 'vyber skříň · ve hrách šipky/WASD a klik', en: 'pick a cabinet · arrows/WASD and click in games' },
-  '/mars': { cs: 'WASD · mezerník skok · 1/2 zbraň · klik střelba', en: 'WASD · space jump · 1/2 weapon · click fire' },
+  '/mars': { cs: 'WASD · mezerník skok · 1/2/3 zbraň · klik střelba', en: 'WASD · space jump · 1/2 weapon · click fire' },
   '/venus': { cs: 'W/S plyn a brzda · A/D zatáčení', en: 'W/S throttle and brake · A/D steer' },
   '/avatars': { cs: 'klikni postavu · pak Uložit', en: 'click a figure · then Save' },
 };

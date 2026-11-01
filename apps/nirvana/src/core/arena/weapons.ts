@@ -5,32 +5,52 @@
  * padaly by rány jinak než je vidět na obrazovce — a to je nejhorší druh chyby
  * v multiplayeru („trefil jsem ho a nic"). Konstanty proto bydlí tady a
  * `MarsArena.tsx` i `nirvana-net` je importují.
+ *
+ * Čísla jsou z **Quake 3** (id-Software/Q3-Arena, `g_weapon.c`, `g_missile.c`,
+ * `bg_public.h`), přepočtená do metrů (1 jednotka ≈ 0,03125 m):
+ *
+ * | zbraň        | Q3                          | tady              |
+ * |--------------|-----------------------------|-------------------|
+ * | railgun      | 100 dmg, 1,5 s mezi výstřely| 100 dmg, 1,2 s   |
+ * | rocket       | 100 + 100 splash, r=120 u   | 100 + 100, r=3,75 m |
+ * | machinegun   | 8 dmg na dávku, 100 ms      | 8 dmg, 100 ms, 50 |
+ * | armor        | `ARMOR_PROTECTION` 0,66    | 66 % poškození    |
  */
 
 import { raySolids, raySphere, type Box4 } from './physics';
 
-export type WeaponId = 'rail' | 'rocket';
+export type WeaponId = 'rail' | 'rocket' | 'mg';
 
 export const WEAPONS = {
   rail: {
-    damage: 55,
-    cooldownMs: 750,
+    damage: 100,
+    cooldownMs: 1200,
     /** Rail má nekonečno munice. */
     ammo: Number.POSITIVE_INFINITY,
+    /** Rail v Q3 jde skrz hráče; tady zasáhne prvního (rozdíl v balancingu). */
+    pierces: false,
   },
   rocket: {
-    damage: 85,
-    splash: 60,
-    radius: 3.2,
-    speed: 26,
-    cooldownMs: 850,
+    damage: 100,
+    splash: 100,
+    radius: 3.75,
+    speed: 28,
+    cooldownMs: 800,
     ammo: 12,
     ttlMs: 4000,
   },
+  mg: {
+    damage: 8,
+    cooldownMs: 100,
+    ammo: 50,
+    /** Rozptyl paprsku v radiánech (Q3 `MACHINEGUN_SPREAD` ≈ 0,035). */
+    spread: 0.035,
+    range: 120,
+  },
 } as const;
 
-/** Podíl poškození, který spolkne armor. */
-export const ARMOR_ABSORB = 0.6;
+/** Podíl poškození, který spolkne armor (Q3 `ARMOR_PROTECTION` = 0,66). */
+export const ARMOR_ABSORB = 0.66;
 /** Jak dlouho leží mrtvý hráč, než se vrátí na spawn (ms). */
 export const PLAYER_RESPAWN_MS = 2400;
 /** Poloměr zásahové koule hráče. */
@@ -63,6 +83,19 @@ export function aimVector(yaw: number, pitch: number): Vec3 {
     x: -Math.sin(yaw) * cosPitch,
     y: Math.sin(pitch),
     z: -Math.cos(yaw) * cosPitch,
+  };
+}
+
+/** Rozptyl paprsku (machinegun) — náhodný úhel ve dvou osách. */
+export function spreadVector(dir: Vec3, spread: number, random: () => number = Math.random): Vec3 {
+  if (spread <= 0) return dir;
+  const yaw = (random() * 2 - 1) * spread;
+  const pitch = (random() * 2 - 1) * spread;
+  const cos = Math.cos(pitch);
+  return {
+    x: dir.x * cos + dir.z * yaw,
+    y: dir.y + pitch * 0.6,
+    z: dir.z * cos - dir.x * yaw,
   };
 }
 

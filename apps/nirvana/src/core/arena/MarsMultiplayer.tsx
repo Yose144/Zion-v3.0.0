@@ -78,7 +78,8 @@ export function MarsMultiplayer({
   });
   const view = useRef({ yaw: PLAYER_SPAWN.yaw, pitch: -0.05 });
   const keys = useRef(new Set<string>());
-  const weapon = useRef<0 | 1>(0);
+  /** 0 = rail, 1 = rakety, 2 = strojní puška (Q3 sestava). */
+  const weapon = useRef<0 | 1 | 2>(0);
   const firing = useRef(false);
 
   const latest = useRef<Snapshot | null>(null);
@@ -94,6 +95,7 @@ export function MarsMultiplayer({
   const deaths = useRef(0);
   const alive = useRef(true);
   const timeLeft = useRef(180);
+  /** Munici má vlastní server (snapshot) — klient jen zobrazuje. */
   const ammo = useRef(12);
   const matchState = useRef<'running' | 'ended' | 'countdown' | null>(null);
   const roster = useRef<Map<string, string>>(new Map());
@@ -126,6 +128,12 @@ export function MarsMultiplayer({
         timeLeft.current = message.secondsLeft ?? 0;
         for (const player of next.players) {
           roster.current.set(player.id, roster.current.get(player.id) ?? player.id);
+        }
+        // munice i zbraň jsou serverové — klient si je jen přepíše ze snapshotu
+        const mine = next.players.find((player) => player.id === youPlayerId);
+        if (mine) {
+          ammo.current = mine.ammo ?? ammo.current;
+          if (mine.weapon !== weapon.current && mine.alive) weapon.current = mine.weapon;
         }
         const nextSlots = next.players
           .filter((player) => player.id !== youPlayerId)
@@ -164,6 +172,9 @@ export function MarsMultiplayer({
         id: player.id,
         name: player.name,
         avatarId: player.avatarId ?? null,
+        isBot: player.isBot === true,
+        weapon: player.weapon,
+        ammo: player.ammo ?? 0,
         x: Math.round(player.x * 100) / 100,
         y: Math.round(player.y * 100) / 100,
         z: Math.round(player.z * 100) / 100,
@@ -183,7 +194,8 @@ export function MarsMultiplayer({
       keys.current.add(event.code);
       if (event.code === 'Digit1') weapon.current = 0;
       if (event.code === 'Digit2') weapon.current = 1;
-      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'Digit1', 'Digit2'].includes(event.code)) {
+      if (event.code === 'Digit3') weapon.current = 2;
+      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'Digit1', 'Digit2', 'Digit3'].includes(event.code)) {
         event.preventDefault();
       }
     };
@@ -359,8 +371,8 @@ export function MarsMultiplayer({
       armor: Math.round(armor.current),
       frags: frags.current,
       deaths: deaths.current,
-      weapon: weapon.current === 1 ? 'rocket' : 'rail',
-      ammo: weapon.current === 1 ? ammo.current : 0,
+      weapon: weapon.current === 1 ? 'rocket' : weapon.current === 2 ? 'mg' : 'rail',
+      ammo: weapon.current === 1 || weapon.current === 2 ? ammo.current : 0,
       botsAlive: rows.filter((row) => row.alive && row.id !== youPlayerId).length,
       timeLeft: Math.round(timeLeft.current),
       respawnIn: alive.current ? 0 : 1,

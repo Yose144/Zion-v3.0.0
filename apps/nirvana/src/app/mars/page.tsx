@@ -133,7 +133,7 @@ export default function MarsPage() {
               {cs ? 'fraggy' : 'frags'} {mpStats?.frags ?? 0}/{FRAG_LIMIT}
             </span>
             <span className="arena-time">{mpStats?.timeLeft ?? MATCH_SECONDS}s</span>
-            <span className="arena-weapon">{mpStats?.weapon === 'rocket' ? 'ROCKET' : 'RAIL'}</span>
+            <span className="arena-weapon">{mpStats?.weapon === 'rocket' ? `ROCKET ×${mpStats?.ammo ?? 0}` : mpStats?.weapon === 'mg' ? `MG ×${mpStats?.ammo ?? 0}` : 'RAIL'}</span>
             <span className={`arena-weapon${mpStats?.connected ? '' : ' is-offline'}`}>
               {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : cs ? 'offline' : 'offline'}
             </span>
@@ -152,8 +152,8 @@ export default function MarsPage() {
           )}
           <div className="arena-tip">
             {cs
-              ? 'WASD pohyb · mezerník skok · 1/2 zbraň · klik střelba · Esc uvolní myš'
-              : 'WASD move · space jump · 1/2 weapon · click fire · Esc releases the mouse'}
+              ? 'WASD pohyb · mezerník skok · 1/2/3 zbraň · klik střelba · Esc uvolní myš'
+              : 'WASD move · space jump · 1/2/3 weapon · click fire · Esc releases the mouse'}
           </div>
           {mpStats?.matchState === 'ended' && (
             <div className="arena-respawn">
@@ -176,7 +176,7 @@ export default function MarsPage() {
             </span>
             <span className="arena-time">{stats.timeLeft}s</span>
             <span className="arena-weapon">
-              {stats.weapon === 'rail' ? 'RAIL' : `ROCKET ×${stats.ammo}`}
+              {stats.weapon === 'rail' ? 'RAIL' : stats.weapon === 'mg' ? `MG ×${stats.ammo}` : `ROCKET ×${stats.ammo}`}
             </span>
             {!presenting && (
               <button
@@ -192,8 +192,8 @@ export default function MarsPage() {
           </div>
           <div className="arena-tip">
             {cs
-              ? 'WASD pohyb · mezerník skok · 1/2 zbraň · klik střelba · Esc uvolní myš'
-              : 'WASD move · space jump · 1/2 weapon · click fire · Esc releases the mouse'}
+              ? 'WASD pohyb · mezerník skok · 1/2/3 zbraň · klik střelba · Esc uvolní myš'
+              : 'WASD move · space jump · 1/2/3 weapon · click fire · Esc releases the mouse'}
           </div>
           {stats.respawnIn > 0 && (
             <div className="arena-respawn">
@@ -225,7 +225,7 @@ export default function MarsPage() {
                   <kbd>mezerník</kbd> {cs ? 'skok' : 'jump'}
                 </li>
                 <li>
-                  <kbd>1</kbd>/<kbd>2</kbd> {cs ? 'rail / rakety' : 'rail / rockets'}
+                  <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> {cs ? 'rail / rakety / MG' : 'rail / rockets / MG'}
                 </li>
                 <li>
                   <kbd>klik</kbd> {cs ? 'střelba' : 'fire'}

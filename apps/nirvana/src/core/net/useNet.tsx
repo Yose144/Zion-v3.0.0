@@ -69,7 +69,7 @@ export interface ArenaInputFrame {
   pitch: number;
   jump: boolean;
   fire: boolean;
-  weapon: 0 | 1;
+  weapon: 0 | 1 | 2;
   /** Jen duel (Merkur): držený blok. Ostatní hry ignorují. */
   block?: boolean;
 }

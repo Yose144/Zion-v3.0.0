@@ -10,6 +10,7 @@
     "smoke": "node test/smoke.mjs",
     "live": "node test/live-zis.mjs",
     "arena": "node test/arena.mjs",
+    "arena-bots": "node test/arena-bots.mjs",
     "race": "node test/race.mjs",
     "fight": "node test/fight.mjs"
   },

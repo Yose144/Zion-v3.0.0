@@ -18,6 +18,13 @@ import {
   PLAYER_SPAWN,
   type ArenaPickup,
 } from '../../nirvana/src/core/arena/map.js';
+import { buildNavGrid, type NavGrid } from '../../nirvana/src/core/arena/nav.js';
+import {
+  createBotMemory,
+  stepBot,
+  type BotMemory,
+  type BotTarget,
+} from '../../nirvana/src/core/arena/bot.js';
 import {
   PLAYER,
   makeSolids,
@@ -35,6 +42,7 @@ import {
   aimVector,
   applyDamage,
   pickTarget,
+  spreadVector,
   type WeaponId,
 } from '../../nirvana/src/core/arena/weapons.js';
 
@@ -49,7 +57,6 @@ export interface ArenaInput {
   fire: boolean;
   weapon: WeaponId;
 }
-
 export interface ArenaPlayer {
   id: string;
   name: string;
@@ -60,12 +67,19 @@ export interface ArenaPlayer {
   frags: number;
   deaths: number;
   weapon: WeaponId;
+  /** Munice raketometu (rail je nekonečný). */
   ammo: number;
+  /** Munice strojní pušky — vlastní zásobník, jinak by MG vystřílela rakety. */
+  mgAmmo: number;
   alive: boolean;
   respawnAt: number;
   cooldownUntil: number;
   input: ArenaInput;
   lastHitBy: string | null;
+  /** Serverový bot (Q3 sestava: aréna nikdy není prázdná). */
+  isBot?: boolean;
+  /** Botí mozek — sdílený modul, stejný jako v sóle. */
+  memory?: BotMemory;
 }
 
 export interface Rocket {
@@ -92,6 +106,8 @@ export interface ArenaSim {
   rockets: Rocket[];
   solids: Box4[];
   pickups: ArenaPickup[];
+  /** Navigační mřížka pro boty (BFS po buňkách). */
+  nav: NavGrid;
   /** Kdy předmět zase bude k dispozici (ms), 0 = leží. */
   pickupReadyAt: Map<string, number>;
   startedAt: number;
@@ -107,6 +123,16 @@ const SPAWNS = BOT_SPAWNS;
 const PICKUP_RANGE = 1.6;
 /** Po konci zápasu se aréna po téhle době uklidí a začne nový. */
 const MATCH_RESTART_MS = 5000;
+/**
+ * Kolik botů má aréna držet, aby nebyla prázdná (Q3 sestava).
+ * `NIRVANA_ARENA_BOTS=0` je vypne — testy tak zůstanou deterministické
+ * (jinak by boti stříleli do testovacích hráčů a test by flakoval).
+ */
+const BOT_COUNT = Math.max(
+  0,
+  Number.parseInt(process.env.NIRVANA_ARENA_BOTS ?? '3', 10) || 0,
+);
+const BOT_NAMES = ['VALLIS', 'NOCTIS', 'ARES'];
 
 export function createArena(now: number): ArenaSim {
   return {
@@ -114,6 +140,7 @@ export function createArena(now: number): ArenaSim {
     rockets: [],
     solids: makeSolids(ARENA_BOXES),
     pickups: ARENA_PICKUPS,
+    nav: buildNavGrid(ARENA_BOXES),
     pickupReadyAt: new Map(),
     startedAt: now,
     state: 'running',
@@ -123,6 +150,20 @@ export function createArena(now: number): ArenaSim {
     spawnCursor: 0,
     events: [],
   };
+}
+
+function humanCount(sim: ArenaSim): number {
+  let count = 0;
+  for (const player of sim.players.values()) {
+    if (!player.isBot) count += 1;
+  }
+  return count;
+}
+
+/** Munice dané zbraně (`rail` je nekonečný). */
+function ammoOf(player: ArenaPlayer, weapon: WeaponId): number {
+  if (weapon === 'rail') return Number.POSITIVE_INFINITY;
+  return weapon === 'mg' ? player.mgAmmo : player.ammo;
 }
 
 function spawnPoint(sim: ArenaSim, usePlayerSpawn: boolean) {
@@ -165,6 +206,7 @@ export function addPlayer(
     deaths: 0,
     weapon: 'rail',
     ammo: WEAPONS.rocket.ammo,
+    mgAmmo: WEAPONS.mg.ammo,
     alive: true,
     respawnAt: 0,
     cooldownUntil: 0,
@@ -172,12 +214,48 @@ export function addPlayer(
     lastHitBy: null,
   };
   sim.players.set(id, player);
-  if (sim.players.size === 1) {
+  ensureBots(sim);
+  if (humanCount(sim) === 1) {
     sim.startedAt = now;
     sim.state = 'running';
     sim.events.push({ kind: 'match_start', at: now });
   }
   return player;
+}
+
+/**
+ * Doplní boty, aby aréna nebyla prázdná (M2a chyběli — „prázdná aréna je
+ * prázdná"). Bot je v simu jako běžný hráč, jen s `isBot` a vlastním mozkem.
+ *
+ * **Idempotentní:** chybějící boty doplní, existující nechá být — jinak by
+ * každý nový hráč vynuloval botům skóre a oni by začínali od nuly.
+ */
+export function ensureBots(sim: ArenaSim): void {
+  const existing = [...sim.players.values()].filter((player) => player.isBot);
+  for (let index = existing.length; index < BOT_COUNT; index++) {
+    const spawn = BOT_SPAWNS[index % BOT_SPAWNS.length]!;
+    const bot: ArenaPlayer = {
+      id: `bot-${index + 1}`,
+      name: BOT_NAMES[index % BOT_NAMES.length]!,
+      avatarId: null,
+      body: { x: spawn.x, y: 0.2, z: spawn.z, vx: 0, vy: 0, vz: 0, onGround: false },
+      hp: 100,
+      armor: 0,
+      frags: 0,
+      deaths: 0,
+      weapon: 'rail',
+      ammo: WEAPONS.rocket.ammo,
+      mgAmmo: WEAPONS.mg.ammo,
+      alive: true,
+      respawnAt: 0,
+      cooldownUntil: 0,
+      input: { forward: 0, strafe: 0, yaw: spawn.yaw, pitch: -0.05, jump: false, fire: false, weapon: 'rail' },
+      lastHitBy: null,
+      isBot: true,
+      memory: createBotMemory(),
+    };
+    sim.players.set(bot.id, bot);
+  }
 }
 
 export function removePlayer(sim: ArenaSim, id: string): void {
@@ -265,6 +343,17 @@ function fireRail(sim: ArenaSim, player: ArenaPlayer, now: number): void {
   }
 }
 
+/** Machinegun: rychlý spray s rozptylem (Q3 `MACHINEGUN_SPREAD`). */
+function fireMg(sim: ArenaSim, player: ArenaPlayer, now: number): void {
+  const dir = spreadVector(aimVector(player.input.yaw, player.input.pitch), WEAPONS.mg.spread);
+  const origin = { x: player.body.x, y: player.body.y + PLAYER.eye, z: player.body.z };
+  const hit = pickTarget(origin, dir, sim.solids, liveTargets(sim, player.id), WEAPONS.mg.range);
+  if (hit && hit.id) {
+    const victim = sim.players.get(hit.id);
+    if (victim) hurt(sim, victim, WEAPONS.mg.damage, player.id, 'mg', now);
+  }
+}
+
 function fireRocket(sim: ArenaSim, player: ArenaPlayer, now: number): void {
   const dir = aimVector(player.input.yaw, player.input.pitch);
   sim.rockets.push({
@@ -293,8 +382,41 @@ function explode(sim: ArenaSim, rocket: Rocket, x: number, y: number, z: number,
   }
 }
 
-function stepRockets(sim: ArenaSim, dt: number, now: number): void {
-  const survivors: Rocket[] = [];
+/**
+ * Boti jedou **stejným modulem** jako boti v sólové aréně
+ * (`core/arena/bot.ts`) — jinak by „boti jsou slabí" byl jen dojem a hráč
+ * by v MP potkal jiné boty než v sóle.
+ */
+function stepBots(sim: ArenaSim, dt: number, now: number): void {
+  const targets: BotTarget[] = [...sim.players.values()]
+    .filter((player) => player.alive)
+    .map((player) => ({
+      id: player.id,
+      x: player.body.x,
+      y: player.body.y,
+      z: player.body.z,
+      alive: player.alive,
+      isBot: player.isBot === true,
+    }));
+
+  for (const bot of sim.players.values()) {
+    if (!bot.isBot) continue;
+    if (!bot.alive) continue;
+    const memory = bot.memory ?? createBotMemory();
+    bot.memory = memory;
+
+    const intent = stepBot(memory, bot.body, targets, sim.nav, sim.solids, now, dt);
+    bot.input.forward = intent.forward;
+    bot.input.strafe = intent.strafe;
+    bot.input.jump = intent.jump;
+    bot.input.yaw = intent.yaw;
+    bot.input.pitch = intent.pitch;
+    bot.input.fire = intent.fire;
+    bot.input.weapon = 'rail';
+  }
+}
+
+function stepRockets(sim: ArenaSim, dt: number, now: number): void {  const survivors: Rocket[] = [];
   for (const rocket of sim.rockets) {
     if (now > rocket.ttl) {
       explode(sim, rocket, rocket.x, rocket.y, rocket.z, null, now);
@@ -367,6 +489,9 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
     return events;
   }
 
+  // ── boti: stejný mozek jako v sóle (shared modul) ──────────────────
+  stepBots(sim, dt, now);
+
   // respawny a smrt
   for (const player of sim.players.values()) {
     if (player.alive) continue;
@@ -376,6 +501,7 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       player.armor = 0;
       player.weapon = 'rail';
       player.ammo = WEAPONS.rocket.ammo;
+      player.mgAmmo = WEAPONS.mg.ammo;
       player.alive = true;
       player.respawnAt = 0;
       player.lastHitBy = null;
@@ -393,14 +519,21 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       jump: player.input.jump,
     }, dt, sim.solids);
 
-    // zbraň a střelba
+    // zbraň a střelba — každá zbraň má vlastní zásobník
     if (player.input.weapon !== player.weapon) {
-      if (player.input.weapon === 'rail' || player.ammo > 0) player.weapon = player.input.weapon;
+      if (player.input.weapon === 'rail' || ammoOf(player, player.input.weapon) > 0) {
+        player.weapon = player.input.weapon;
+      }
     }
     if (player.input.fire && now >= player.cooldownUntil) {
       if (player.weapon === 'rail') {
         player.cooldownUntil = now + WEAPONS.rail.cooldownMs;
         fireRail(sim, player, now);
+      } else if (player.weapon === 'mg') {
+        player.mgAmmo -= 1;
+        player.cooldownUntil = now + WEAPONS.mg.cooldownMs;
+        fireMg(sim, player, now);
+        if (player.mgAmmo <= 0) player.weapon = 'rail';
       } else if (player.ammo > 0) {
         player.ammo -= 1;
         player.cooldownUntil = now + WEAPONS.rocket.cooldownMs;
@@ -425,7 +558,8 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       sim.events.push({ kind: 'pickup', id: player.id, item: pickup.kind });
     }
 
-    if (player.frags >= FRAG_LIMIT) endMatch(sim, now);
+    // frag limit počítá jen lidi — bot nesmí vyhrát zápas člověku
+    if (!player.isBot && player.frags >= FRAG_LIMIT) endMatch(sim, now);
   }
 
   stepRockets(sim, dt, now);
@@ -472,6 +606,7 @@ function restartMatch(sim: ArenaSim, now: number): void {
     player.respawnAt = 0;
     player.weapon = 'rail';
     player.ammo = WEAPONS.rocket.ammo;
+    player.mgAmmo = WEAPONS.mg.ammo;
     player.cooldownUntil = 0;
     placeBody(player, spawnPoint(sim, false));
   }
@@ -491,8 +626,13 @@ export interface ArenaSnapshotPlayer {
   armor: number;
   frags: number;
   deaths: number;
-  weapon: 0 | 1;
+  weapon: 0 | 1 | 2;
+  /** Munice raketometu a strojní pušky (rail je nekonečný). */
+  ammo: number;
+  mgAmmo: number;
   alive: boolean;
+  /** Serverový bot (Q3 sestava) — tabule ho odliší. */
+  isBot?: boolean;
 }
 
 export function arenaSnapshot(sim: ArenaSim, now: number) {
@@ -509,8 +649,11 @@ export function arenaSnapshot(sim: ArenaSim, now: number) {
     armor: player.armor,
     frags: player.frags,
     deaths: player.deaths,
-    weapon: player.weapon === 'rocket' ? 1 : 0,
+    weapon: player.weapon === 'rocket' ? 1 : player.weapon === 'mg' ? 2 : 0,
+    ammo: player.weapon === 'mg' ? player.mgAmmo : player.ammo,
+    mgAmmo: player.mgAmmo,
     alive: player.alive,
+    isBot: player.isBot === true,
   }));
 
   return {

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
  * Test serverové arény: dva klienti, pohyb, zásah, frag, respawn.
+ * Boti jsou tady **vypnuti** (`NIRVANA_ARENA_BOTS=0`) — jinak by stříleli do
+ * testovacích hráčů a test by flakoval. Chování botů ověřuje `arena-bots.mjs`.
  *
  * Ověřuje, že server je autorita — klient jen posílá vstup a dostává
  * snapshoty. Zásah se počítá **na serveru** (hitscan proti stejné mapě
@@ -66,6 +68,8 @@ const server = spawn(process.execPath, [entry], {
     ...process.env,
     NIRVANA_NET_PORT: String(PORT),
     NIRVANA_NET_ALLOWED_ORIGINS: 'http://127.0.0.1:3999',
+    // deterministický test: boti by stříleli do testovacích hráčů
+    NIRVANA_ARENA_BOTS: '0',
     ZIS_URL: 'http://127.0.0.1:1',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
@@ -128,8 +132,8 @@ try {
   await a.opened;
   await b.opened;
 
-  a.send({ t: 'hello', proto: 3 });
-  b.send({ t: 'hello', proto: 3 });
+  a.send({ t: 'hello', proto: 4 });
+  b.send({ t: 'hello', proto: 4 });
   await a.waitFor((m) => m.t === 'welcome');
   await b.waitFor((m) => m.t === 'welcome');
 
@@ -144,7 +148,7 @@ try {
   check('quick join: stejná místnost', roomB.room.id === 'arena-1', roomB.room.id);
 
   const first = await a.waitFor((m) => m.t === 'snapshot' && m.players.length === 2);
-  check('snapshot: 2 hráči', first.players.length === 2, String(first.players.length));
+  check('snapshot: 2 hráči (boti vypnuti)', first.players.length === 2, String(first.players.length));
   check('snapshot: rakety pole', Array.isArray(first.projectiles), JSON.stringify(first.projectiles));
   check('snapshot: pickupy', Array.isArray(first.pickups) && first.pickups.length === 3,
     JSON.stringify(first.pickups));

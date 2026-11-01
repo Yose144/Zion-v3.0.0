@@ -266,12 +266,17 @@ export function stepBody(
   body.vy -= gravity * step;
 
   // 5) pohyb po osách + schod
+  const vxBefore = body.vx;
+  const vzBefore = body.vz;
   body.onGround = false;
   moveAxis(body, radius, height, 1, body.vy * step, solids);
   const blockedX = moveAxis(body, radius, height, 0, body.vx * step, solids);
   const blockedZ = moveAxis(body, radius, height, 2, body.vz * step, solids);
-  if ((blockedX || blockedZ) && body.onGround) {
-    tryStepUp(body, radius, height, solids, Q3.stepHeight);
+  if ((blockedX || blockedZ) && body.onGround && tryStepUp(body, radius, height, solids, Q3.stepHeight)) {
+    // výšlap se povedl — rychlost se neztrácí (jinak by hráč na schodech klouzal)
+    body.vx = vxBefore;
+    body.vz = vzBefore;
+    body.onGround = true;
   }
 
   // ochrana proti propadnutí (kdyby se hráč dostal mimo mapu)
@@ -281,7 +286,15 @@ export function stepBody(
   }
 }
 
-/** Vidí bod `b` z `a`? Vrací false, když stojí v cestě krabice. */
+/**
+ * Vidí bod `b` z `a`? Vrací false, když stojí v cestě krabice.
+ *
+ * **Past (chybila 2026-11-01):** `rayBox` vrací `t` v jednotkách **směrového
+ * vektoru**, ne v metrech. Když se mu poslal nenormalizovaný `b−a`, `t` bylo
+ * zkroucené a porovnání `t < dist − 0,05` pouštělo stěny **za** cílem jako
+ * překážku — na delší vzdálenost bot odmítal střílet přes volný prostor.
+ * Směr se proto normalizuje.
+ */
 export function lineOfSight(
   ax: number,
   ay: number,
@@ -296,9 +309,10 @@ export function lineOfSight(
   const dz = bz - az;
   const dist = Math.hypot(dx, dy, dz);
   if (dist < 0.001) return true;
+  const inv = 1 / dist;
 
   for (const box of solids) {
-    const t = rayBox(ax, ay, az, dx, dy, dz, box);
+    const t = rayBox(ax, ay, az, dx * inv, dy * inv, dz * inv, box);
     if (t !== null && t > 0.02 && t < dist - 0.05) return false;
   }
   return true;

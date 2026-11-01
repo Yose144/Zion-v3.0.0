@@ -10,7 +10,7 @@
  * server z cookie (`zion_session` → ZIS), tak si je nikdo nemůže přepsat.
  */
 
-export const PROTO_VERSION = 3;
+export const PROTO_VERSION = 4;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -38,10 +38,10 @@ export type GameId = 'arena' | 'race' | 'fight';
 /** `guest` = bez ZIS (hraje, ale nepíše), `zis` = ověřený uživatel. */
 export type Role = 'guest' | 'zis';
 export type RoomState = 'waiting' | 'running' | 'ended';
-/** 0 = rail, 1 = rakety — shodné s `MarsArena`. */
-export type WeaponId = 0 | 1;
+/** 0 = rail, 1 = rakety, 2 = strojní puška (Q3 sestava). */
+export type WeaponId = 0 | 1 | 2;
 /** Jméno zbraně do eventů (čitelnost > bajty). */
-export type WeaponName = 'rail' | 'rocket';
+export type WeaponName = 'rail' | 'rocket' | 'mg';
 
 /** Veřejná identita hráče — jen tohle smí do hry. Nikdy e-mail, role, adresy. */
 export interface NetIdentity {
@@ -106,6 +106,12 @@ export interface ArenaPlayerState {
   deaths: number;
   weapon: WeaponId;
   alive: boolean;
+  /** Serverový bot (Q3 sestava) — tabule ho odliší. */
+  isBot?: boolean;
+  /** Munice zbraně — server je vlastník (klient jen zobrazuje). */
+  ammo?: number;
+  /** Munice strojní pušky (vlastní zásobník vedle raket). */
+  mgAmmo?: number;
 }
 
 /** Stav vozidla na Venuši. */
