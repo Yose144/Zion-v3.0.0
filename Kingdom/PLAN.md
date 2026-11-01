@@ -147,7 +147,7 @@ soubory" — **jedna verze Reactu, Nextu a sdílených balíčků pro všech 6 w
 
 | # | Vlna | Obsah | Brána |
 |---|---|---|---|
-| **K1.1** | **Next 16 + React 19 ve všech 6 webech** | ✅ **pool-ui** (2026-11-01) → IntroPage → MarketPlace (security 1b) → srovnat zbytek na 16.4.x | pool-ui: build + deploy OK |
+| **K1.1** | **Next 16 + React 19 ve všech 6 webech** | ✅ **pool-ui** (2026-11-01) → ✅ **IntroPage** (2026-11-01) → MarketPlace (security 1b) → srovnat zbytek na 16.4.x | pool-ui: build + deploy OK; IntroPage: build + deploy OK (apex), rollback držen |
 | **K1.2** | **Root workspace** | `/package.json` s `workspaces: ["apps/*", "packages/*"]`, jeden lockfile; `Kingdom/packages/*` → `/packages/*` | `npm ci` v rootu, 6 buildů zelených |
 | **K1.3** | **Jeden Turbopack root** | `root: repo`, sjednotit standalone layout + **upravit všech 9 deploy skriptů** na nové cesty | každý deploy projde, rollback ověřen |
 | **K1.4** | **S3 se odblokuje sám** | `@zion/session` jako workspace závislost, žádný tarball ani registry | nirvana 73 → ~25 řádků, market −344 |

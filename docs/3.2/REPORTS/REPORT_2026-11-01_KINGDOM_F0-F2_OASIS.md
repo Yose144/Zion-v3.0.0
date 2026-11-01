@@ -223,7 +223,24 @@ První appka z migrace. Byla nejmenší a nejbezpečnější: **statický export
 
 **Poznámka:** `trailingSlash: true` zůstává — `/stats` → 301 `/stats/` je původní chování, ne regrese.
 
-**Zbývá (K1.1):** IntroPage, MarketPlace (security gate 1b — critical CVE), pak srovnat nirvana/OasisWeb/website-v2.9 na stejnou verzi. **S3/S4** čekají na K1.2–K1.4. kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
+### K1.1 — IntroPage na Next 16 + React 19 (2026-11-01)
+
+Druhá appka migrace, první **produkční povrch** (apex `zionterranova.com`). Statický export (`output: 'export'`, `distDir: 'dist'`), žádné API routes, žádné cookies — ale 48 stránek včetně 32 dynamických slugů a deset `next/image`.
+
+| Krok | Výsledek |
+|---|---|
+| `next` 14.2.30 → **16.4.3**, `react` 18 → **19.2.0**, `@types/react` 19 | `npm install` 37 s; **žádná změna kódu potřeba** |
+| Past `robots.ts`/`sitemap.ts` | **předřešená** — `export const dynamic = 'force-static'` tam už bylo; `robots.txt` i `sitemap.xml` se generují |
+| Past async `params` (Next 15+) | `blog/[slug]` a `seeds/[slug]` mají synchronní `params`, ale se `generateStaticParams` je Next 16 přijme — 27 blog + 5 seed slugů se prerenderovalo správně |
+| `tsc --noEmit` | čistý (Next si sám přepnul `jsx: react-jsx`, `target: ES2017`) |
+| Build | 48/48 statických stránek, 10,4 s compile + 1,4 s generování |
+| Lokální smoke test | 12/12 rout 200; **obsah homepage identický s live** (markery `ZION` 66×, `Amenti` 28× — 1:1), `$undefined` jen RSC payload jako na live |
+| Deploy | `deploy-intro.sh` → **13/13 rout 200** živě, assety (`/_next/static/chunks/*.css|js`, `/assets/css/*`, `/stargate/*`) všech 200 |
+| `vast-rigs/status.json` | rsync exclude fungoval — soubor zůstal čerstvý z daemonu (`ts` v čase deploye) |
+
+**Rollback připraven:** `/root/web-backups/zion-maintenance-bak-20261101T092603Z/` na EDGE2 (472 M, `rsync -a` před deployem). `nginx -s reload` proběhl bez chyby (varování „protocol options redefined" v `kingdom.`/`market.` konfech jsou pre-existing).
+
+**Zbývá (K1.1):** **MarketPlace** (security gate 1b — critical CVE), pak srovnat nirvana/OasisWeb na `16.4.3`. **S3/S4** čekají na K1.2–K1.4. kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
 
 ---
 
