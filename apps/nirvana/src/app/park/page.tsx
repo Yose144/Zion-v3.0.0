@@ -7,6 +7,7 @@ import { OrbitControls } from '@react-three/drei';
 import { XR, createXRStore } from '@react-three/xr';
 import * as THREE from 'three';
 import { useI18n } from '@/core/i18n';
+import { GAME_LINKS } from '@/core/games/links';
 import { PARK_CAMERA, ParkScene } from '@/core/scene/park/ParkScene';
 import { PARK_GAMES, gameById, type CanvasGameId, type ParkGameHandle, type ParkGameId } from '@/core/park/games';
 import { GAME_H, GAME_W, PARK_PALETTE } from '@/core/park/games/types';
@@ -438,15 +439,27 @@ export default function ParkPage() {
           <button type="button" className="park-btn park-ride-btn" onClick={ride} disabled={riding}>
             {cs ? `Ruské kolo · ${WHEEL_COST} žeton` : `Ferris wheel · ${WHEEL_COST} token`}
           </button>
-          <Link href="/mars" className="park-arena-link">
-            {cs ? 'Mars aréna · deathmatch →' : 'Mars arena · deathmatch →'}
-          </Link>
-          <Link href="/venus" className="park-arena-link">
-            {cs ? 'Venuše · okruh proti třem →' : 'Venus · circuit against three →'}
-          </Link>
-          <Link href="/avatars" className="park-arena-link">
-            {cs ? 'Můj avatar · 200 postav z OASISu →' : 'My avatar · 200 OASIS figures →'}
-          </Link>
+          <div className="park-games">
+            {GAME_LINKS.filter((game) => game.id !== 'park').map((game) => (
+              <Link
+                key={game.id}
+                href={game.href}
+                className="park-game-card"
+                style={{ ['--game-tone' as string]: game.tone }}
+              >
+                <span className="park-game-glyph" aria-hidden>
+                  {game.glyph}
+                </span>
+                <span className="park-game-text">
+                  <strong>{game.title[lang]}</strong>
+                  <em>{game.note[lang]}</em>
+                </span>
+                <span className="park-game-go" aria-hidden>
+                  →
+                </span>
+              </Link>
+            ))}
+          </div>
 
           <div className={`park-challenge${challengeDone ? ' is-done' : ''}`}>
             <strong>{cs ? 'DENNÍ VÝZVA' : 'DAILY CHALLENGE'}</strong>

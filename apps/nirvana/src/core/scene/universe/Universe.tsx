@@ -31,7 +31,8 @@ function ResponsiveFraming() {
     if (!didInit.current) {
       didInit.current = true;
       const d = aspect < 0.75 ? 1.85 : aspect < 1.1 ? 1.45 : 1;
-      camera.position.set(15 * d, 5 * d, 19 * d);
+      // kamera stojí u Země (ta je na 30) — ne u Slunce, jinak záběr driftuje
+      camera.position.set(EARTH_ORBIT_R + 11 * d, 6 * d, 19 * d);
     }
   }, [camera, size]);
   return null;
@@ -73,6 +74,7 @@ export function Universe({
   const light = useRef<THREE.DirectionalLight>(null);
   const lightTarget = useMemo(() => new THREE.Object3D(), []);
   const earthAngle = useRef(Math.PI * 0.18);
+  const lastEarth = useRef(new THREE.Vector3(EARTH_ORBIT_R, 0, 0));
   const [reducedMotion, setReducedMotion] = useState(false);
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
 
@@ -126,6 +128,20 @@ export function Universe({
     // světlo stojí na straně Slunce → planeta má vždy denní/noční stranu správně
     if (light.current) light.current.position.set(ex * 0.5, 5, ez * 0.5);
     if (!controls.current) return;
+
+    // Země obíhá Slunce → kamera i cíl se posouvají s ní, aby záběr neutíkal.
+    // (Dřív controls mířily na Slunce a Země nám proplouvala záběrem.)
+    if (focusRef.current === 'earth' && progress.current >= 1) {
+      const dx = ex - lastEarth.current.x;
+      const dz = ez - lastEarth.current.z;
+      if (dx !== 0 || dz !== 0) {
+        camera.position.x += dx;
+        camera.position.z += dz;
+        controls.current.target.x += dx;
+        controls.current.target.z += dz;
+      }
+    }
+    lastEarth.current.set(ex, 0, ez);
 
     if (focusRef.current === 'jupiter') {
       const [jx, jy, jz] = planetPosition(
@@ -197,12 +213,13 @@ export function Universe({
       </group>
 
       <SolarSystem onOpenPark={() => onOpen('park')} />
-      <HiranSun state={hiranState} onOpen={() => onOpen('hiran')} />
+      <HiranSun state={hiranState} onOpen={() => onOpen('hiran')} detail={focus === 'sun'} />
 
       <ResponsiveFraming />
       <OrbitControls
         ref={controls as never}
         makeDefault
+        target={[EARTH_ORBIT_R, 0, 0]}
         autoRotate={!reducedMotion}
         autoRotateSpeed={0.25}
         enableDamping

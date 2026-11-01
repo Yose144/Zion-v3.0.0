@@ -2543,3 +2543,239 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     min-height: 0;
   }
 }
+
+/* ── HERNÍ DOCK — jasně vidět, na co jde kliknout ──────────────────── */
+
+.games-dock {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(200, 162, 255, 0.3);
+  background: rgba(8, 4, 16, 0.82);
+  backdrop-filter: blur(8px);
+  max-width: min(56rem, calc(100vw - 10rem));
+}
+
+.games-dock-label {
+  display: flex;
+  align-items: center;
+  padding: 0 0.7rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.5);
+  border-right: 1px solid rgba(200, 162, 255, 0.2);
+  margin-right: 0.2rem;
+}
+
+.games-card {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.7rem;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+  color: #f6e7d8;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.games-card:hover,
+.games-card:focus-visible {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--game-tone, #ffb46a);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.games-card-glyph {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.games-card-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.games-card-text strong {
+  font-size: 0.84rem;
+  color: var(--game-tone, #ffb46a);
+  font-weight: 600;
+}
+
+.games-card-text em {
+  font-style: normal;
+  font-size: 0.68rem;
+  color: rgba(246, 231, 216, 0.55);
+  white-space: nowrap;
+}
+
+.games-card-go {
+  font-size: 0.9rem;
+  color: rgba(246, 231, 216, 0.35);
+  margin-left: 0.2rem;
+}
+
+.games-card:hover .games-card-go {
+  color: var(--game-tone, #ffb46a);
+}
+
+@media (max-width: 900px) {
+  .games-dock {
+    left: 0.5rem;
+    right: 0.5rem;
+    transform: none;
+    max-width: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .games-dock-label {
+    display: none;
+  }
+
+  .games-card-text em {
+    display: none;
+  }
+}
+
+/* ── konzole: sekce a štítky ───────────────────────────────────────── */
+
+.holo-section {
+  margin: 0.7rem 0 0.25rem;
+  padding: 0 0.15rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(200, 162, 255, 0.75);
+}
+
+.holo-section:first-child {
+  margin-top: 0.1rem;
+}
+
+.holo-section-dim {
+  color: rgba(246, 231, 216, 0.35);
+}
+
+.holo-drawer-tile {
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.6rem;
+}
+
+.holo-drawer-name {
+  flex: 1;
+  text-align: left;
+}
+
+.holo-drawer-tag {
+  font-style: normal;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.4);
+}
+
+.holo-drawer-tile:hover .holo-drawer-tag {
+  color: rgba(246, 231, 216, 0.75);
+}
+
+.holo-drawer-tag-play {
+  color: #ffd166;
+}
+
+.holo-drawer-tile.is-game {
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-left-width: 3px;
+}
+
+.holo-drawer-tag-soon {
+  color: rgba(255, 180, 106, 0.75);
+}
+
+.holo-drawer-tile.is-stub {
+  opacity: 0.62;
+}
+
+/* ── pouť: karty ostatních her ─────────────────────────────────────── */
+
+.park-games {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.5rem;
+  margin: 0.7rem 0 0.9rem;
+}
+
+.park-game-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(200, 162, 255, 0.22);
+  border-left: 3px solid var(--game-tone, #ffb46a);
+  background: rgba(255, 255, 255, 0.03);
+  color: #f6e7d8;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.park-game-card:hover,
+.park-game-card:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.park-game-glyph {
+  font-size: 1.05rem;
+}
+
+.park-game-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  flex: 1;
+}
+
+.park-game-text strong {
+  font-size: 0.82rem;
+  color: var(--game-tone, #ffb46a);
+}
+
+.park-game-text em {
+  font-style: normal;
+  font-size: 0.68rem;
+  color: rgba(246, 231, 216, 0.55);
+}
+
+.park-game-go {
+  color: rgba(246, 231, 216, 0.35);
+  font-size: 0.9rem;
+}
+
+.park-game-card:hover .park-game-go {
+  color: var(--game-tone, #ffb46a);
+}
+
+/* jména planet — DOM popisek, čitelný v každém přiblížení */
+.planet-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0.8;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 1);
+}

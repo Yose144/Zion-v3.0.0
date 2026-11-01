@@ -151,6 +151,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Co v MP není:** boti (prázdnou arénu nikdo nedoplňuje), zvuk, VR, tracery.
   Není to nedodělek, je to další krok — nemá se to hlásit jako hotové.
 
+### Navigace ke hrám a sluneční soustava (2026-11-01)
+
+- **Hry jsou routy, ne portály.** `/park`, `/mars`, `/venus`, `/avatars` se
+  otevírají `<Link>`em (nová stránka), kdežto portály v konzoli otevírají okno
+  ve scéně. Seznam her drží **`core/games/links.ts`** — konzole, pouť i
+  `GamesDock` ho sdílí; nová hra se přidává tam, ne na čtyři místa.
+- **`GamesDock`** je plovoucí lišta dole ve vesmíru (`/`), vždy viditelná.
+  Kdyby hry zmizely z UI, je to regrese — dřív nešly najít vůbec.
+- **Konzole (hamburger) má sekce** Hry / Světy / Systém / Připravujeme se
+  štítky (`hrát →`, `otevřít`, `ve výstavbu`). Stub portály jsou ztlumené.
+- **OrbitControls míří na Zemi**, ne na Slunce: kamera i `controls.target` se
+  posouvají o deltu oběhu Země. Když se to rozbije, Země proplouvá záběrem.
+- **Dráhy jsou komprimované** `r = 30·AU^0.55` (`orbitRadius()` v `SolarSystem.tsx`).
+  Lineární AU dalo Neptun 903 jednotek daleko — mimo jakýkoli rozumný záběr.
+  Země vychází na 30 = `EARTH_ORBIT_R`, takže fokus a zemská soustava sedí.
+- **Hiran na Slunci má `detail` prop:** plný ornament (jantra + lotos) jen při
+  fokusu na Slunce, z dálky se ztlumí a lotos se schová — jinak přes Slunce leží
+  mřížka a Slunce vypadá jako drátěná koule.
+- **Jména planet jsou DOM popisky** (`<Html>`), ne 3D spritely — sprite je při
+  oddálení nečitelný.
+- **Rotační osa** je úsečka 1,75× průměr planety uvnitř nakloněné skupiny, takže
+  ukazuje skutečný sklon (Venuše 3,09 rad, Uran 1,71).
+
 ### Avatary (A1–A4, 2026-11-01)
 
 - **Katalog je generovaný, ne ruční:** `core/avatars/catalog.ts` vzniká z

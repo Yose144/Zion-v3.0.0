@@ -1,7 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/core/session/AuthProvider';
+import { GamesDock } from '@/core/games/GamesDock';
+import { GAME_LINKS } from '@/core/games/links';
 import { useI18n } from '@/core/i18n';
 import { PORTALS, type SceneSlot } from '@/core/portals/manifest';
 import { backendForXr, resolveGpuBackend, type GpuBackend } from '@/core/scene/backends';
@@ -38,6 +41,10 @@ const SLOT_COLOR: Record<SceneSlot, string> = {
   sea: '#1d8fb3',
   fleet: '#38bdf8',
 };
+
+/** Rozdělení portálů v konzoli — hry jsou zvlášť (jsou to routy, ne portály). */
+const WORLDS = ['world', 'hiran', 'archa', 'fleet'];
+const SYSTEM = ['chain', 'pool', 'market', 'books', 'harbor', 'account'];
 
 function readHash(): { portal: string | null; world: string | null } {
   if (typeof window === 'undefined') return { portal: null, world: null };
@@ -248,7 +255,24 @@ export function Shell() {
           </button>
         </header>
         <div className="holo-drawer-tiles">
-          {PORTALS.map((p) => (
+          <p className="holo-section">◈ {lang === 'cs' ? 'Hry' : 'Games'}</p>
+          {GAME_LINKS.map((game) => (
+            <Link
+              key={game.id}
+              href={game.href}
+              className="holo-drawer-tile is-game"
+              style={{ borderLeftColor: game.tone }}
+            >
+              <span className="holo-drawer-dot" style={{ background: game.tone }} />
+              <span className="holo-drawer-name">{game.title[lang]}</span>
+              <em className="holo-drawer-tag holo-drawer-tag-play">
+                {lang === 'cs' ? 'hrát' : 'play'} →
+              </em>
+            </Link>
+          ))}
+
+          <p className="holo-section">◈ {lang === 'cs' ? 'Světy' : 'Worlds'}</p>
+          {PORTALS.filter((p) => WORLDS.includes(p.id)).map((p) => (
             <button
               key={p.id}
               type="button"
@@ -257,8 +281,42 @@ export function Shell() {
               onClick={() => openPortal(p.id)}
             >
               <span className="holo-drawer-dot" style={{ background: SLOT_COLOR[p.scene.slot] }} />
-              {p.title[lang]}
-              {p.status === 'stub' && <em className="holo-drawer-stub">·</em>}
+              <span className="holo-drawer-name">{p.title[lang]}</span>
+              <em className="holo-drawer-tag">{lang === 'cs' ? 'otevřít' : 'open'}</em>
+            </button>
+          ))}
+
+          <p className="holo-section">◈ {lang === 'cs' ? 'Systém' : 'System'}</p>
+          {PORTALS.filter((p) => SYSTEM.includes(p.id)).map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="holo-drawer-tile"
+              style={{ borderLeftColor: SLOT_COLOR[p.scene.slot] }}
+              onClick={() => openPortal(p.id)}
+            >
+              <span className="holo-drawer-dot" style={{ background: SLOT_COLOR[p.scene.slot] }} />
+              <span className="holo-drawer-name">{p.title[lang]}</span>
+              <em className="holo-drawer-tag">{lang === 'cs' ? 'otevřít' : 'open'}</em>
+            </button>
+          ))}
+
+          <p className="holo-section holo-section-dim">
+            ◈ {lang === 'cs' ? 'Připravujeme' : 'Coming soon'}
+          </p>
+          {PORTALS.filter((p) => p.status === 'stub').map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="holo-drawer-tile is-stub"
+              style={{ borderLeftColor: 'rgba(246,231,216,0.25)' }}
+              onClick={() => openPortal(p.id)}
+            >
+              <span className="holo-drawer-dot" style={{ background: 'rgba(246,231,216,0.3)' }} />
+              <span className="holo-drawer-name">{p.title[lang]}</span>
+              <em className="holo-drawer-tag holo-drawer-tag-soon">
+                {lang === 'cs' ? 've výstavbě' : 'in progress'}
+              </em>
             </button>
           ))}
         </div>
@@ -273,6 +331,7 @@ export function Shell() {
           )}
         </footer>
       </nav>
+      <GamesDock />
       {worldsFailed && <p className="notice">{t('worldsEmpty')}</p>}
       {portal === 'world' && (
         <WorldPortal

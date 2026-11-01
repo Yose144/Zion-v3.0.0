@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { SUN_POS, EARTH_ORBIT_R, planetPosition } from './positions';
+import { Html } from '@react-three/drei';
 import { TextLabel } from './Label';
 
 /**
@@ -97,14 +98,29 @@ void main() {
 
 interface PlanetDef {
   id: string;
+  name: string;
   tex: string;
-  orbitR: number;
+  /** Vzdálenost ve astronomických jednotkách (1 AU = dráha Země). */
+  au: number;
   size: number;
   speed: number; // úhlová rychlost oběhu rad/s
   spin: number; // rotace rad/s
   tint: string; // fallback + lehký nádech
   ring?: boolean;
-  tiltZ?: number; // axiální náklon (Uranus ~98°)
+  /** Axiální náklon v radiánech (Uranus ~98°, Venuše retrográdní). */
+  tiltZ?: number;
+}
+
+/**
+ * Komprese drah: lineární AU by dalo Neptun 903 jednotek daleko, kde už není
+ * vidět nic než prázdno. `r = 30 · AU^0.55` drží pořadí i poměry „blíž = těsněji“,
+ * ale celá soustava se vejde do ~200 jednotek — tedy do záběru, kde je vidět
+ * víc planet najednou. Země vychází přesně na 30 (EARTH_ORBIT_R).
+ */
+export const ORBIT_SCALE = 30;
+export const ORBIT_EXP = 0.55;
+export function orbitRadius(au: number): number {
+  return ORBIT_SCALE * Math.pow(au, ORBIT_EXP);
 }
 
 /**
@@ -115,13 +131,13 @@ interface PlanetDef {
  * tiltZ: skutečný axiální sklon v radiánech.
  */
 export const PLANETS: PlanetDef[] = [
-  { id: 'mercury', tex: 'mercury', orbitR: 11.7, size: 0.15, speed: 0.082, spin: 0.006, tint: '#b0a89c', tiltZ: 0.001 },
-  { id: 'venus', tex: 'venus_atmosphere', orbitR: 21.6, size: 0.35, speed: 0.033, spin: -0.002, tint: '#e8c98a', tiltZ: 3.09 },
-  { id: 'mars', tex: 'mars', orbitR: 45.6, size: 0.24, speed: 0.011, spin: 0.024, tint: '#c1622f', tiltZ: 0.44 },
-  { id: 'jupiter', tex: 'jupiter', orbitR: 156, size: 5.0, speed: 0.0017, spin: 0.06, tint: '#d8b58c', tiltZ: 0.05 },
-  { id: 'saturn', tex: 'saturn', orbitR: 288, size: 4.2, speed: 0.00067, spin: 0.055, tint: '#e3cf9f', ring: true, tiltZ: 0.47 },
-  { id: 'uranus', tex: 'uranus', orbitR: 576, size: 1.8, speed: 0.00024, spin: -0.04, tint: '#9fd8dc', tiltZ: 1.71 },
-  { id: 'neptune', tex: 'neptune', orbitR: 903, size: 1.75, speed: 0.00012, spin: 0.04, tint: '#4d6fd1', tiltZ: 0.49 },
+  { id: 'mercury', name: 'Merkur', tex: 'mercury', au: 0.387, size: 0.62, speed: 0.082, spin: 0.006, tint: '#b0a89c', tiltZ: 0.001 },
+  { id: 'venus', name: 'Venuše', tex: 'venus_atmosphere', au: 0.723, size: 0.92, speed: 0.033, spin: -0.002, tint: '#e8c98a', tiltZ: 3.09 },
+  { id: 'mars', name: 'Mars', tex: 'mars', au: 1.524, size: 0.74, speed: 0.011, spin: 0.024, tint: '#c1622f', tiltZ: 0.44 },
+  { id: 'jupiter', name: 'Jupiter', tex: 'jupiter', au: 5.203, size: 3.6, speed: 0.0017, spin: 0.06, tint: '#d8b58c', tiltZ: 0.05 },
+  { id: 'saturn', name: 'Saturn', tex: 'saturn', au: 9.537, size: 3.0, speed: 0.00067, spin: 0.055, tint: '#e3cf9f', ring: true, tiltZ: 0.47 },
+  { id: 'uranus', name: 'Uran', tex: 'uranus', au: 19.19, size: 1.5, speed: 0.00024, spin: -0.04, tint: '#9fd8dc', tiltZ: 1.71 },
+  { id: 'neptune', name: 'Neptun', tex: 'neptune', au: 30.07, size: 1.45, speed: 0.00012, spin: 0.04, tint: '#4d6fd1', tiltZ: 0.49 },
 ];
 
 /** Jedna planeta — oběh kolem Slunce + vlastní rotace. */
@@ -147,7 +163,7 @@ function Planet({ def, index }: { def: PlanetDef; index: number }) {
 
   useFrame(({ clock }, delta) => {
     if (!carrier.current) return;
-    const [x, y, z] = planetPosition(def.id, index, def.orbitR, def.speed, clock.elapsedTime);
+    const [x, y, z] = planetPosition(def.id, index, orbitRadius(def.au), def.speed, clock.elapsedTime);
     carrier.current.position.set(x, y, z);
     if (body.current) body.current.rotation.y += delta * def.spin;
   });
@@ -155,6 +171,16 @@ function Planet({ def, index }: { def: PlanetDef; index: number }) {
   return (
     <group ref={carrier}>
       <group rotation={[0, 0, def.tiltZ ?? 0]}>
+        {/* rotační osa — nakloněná přesně tak, jak planeta skutečně stojí */}
+        <line>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              args={[new Float32Array([0, -def.size * 1.75, 0, 0, def.size * 1.75, 0]), 3]}
+            />
+          </bufferGeometry>
+          <lineBasicMaterial color={def.tint} transparent opacity={0.45} />
+        </line>
         <mesh ref={body}>
           <sphereGeometry args={[def.size, 32, 32]} />
           <meshStandardMaterial key={tex ? 'tex' : 'flat'} map={tex ?? undefined} color={tex ? '#ffffff' : def.tint} roughness={0.85} metalness={0.02} />
@@ -165,6 +191,12 @@ function Planet({ def, index }: { def: PlanetDef; index: number }) {
           </mesh>
         )}
       </group>
+      {/* jméno planety jako DOM popisek — ve 3D spritu je při oddálení nečitelné */}
+      <Html center position={[0, def.size + 0.6, 0]} style={{ pointerEvents: 'none' }}>
+        <span className="planet-label" style={{ color: def.tint }}>
+          {def.name}
+        </span>
+      </Html>
     </group>
   );
 }
@@ -176,7 +208,7 @@ function OrbitLine({ r }: { r: number }) {
   return (
     <mesh rotation={[Math.PI / 2, 0, 0]}>
       <ringGeometry args={[r - 0.015 * (r / 30), r + 0.015 * (r / 30), 192]} />
-      <meshBasicMaterial color="#8892b0" transparent opacity={0.12} side={THREE.DoubleSide} depthWrite={false} />
+      <meshBasicMaterial color="#8892b0" transparent opacity={0.2} side={THREE.DoubleSide} depthWrite={false} />
     </mesh>
   );
 }
@@ -189,7 +221,7 @@ export function SolarSystem({ onOpenPark }: { onOpenPark?: () => void } = {}) {
       <OrbitLine r={EARTH_ORBIT_R} />
       {PLANETS.map((p, i) => (
         <group key={p.id}>
-          <OrbitLine r={p.orbitR} />
+          <OrbitLine r={orbitRadius(p.au)} />
           <Planet def={p} index={i} />
           {p.id === 'jupiter' && onOpenPark ? <JupiterStation onOpen={onOpenPark} index={i} def={p} /> : null}
         </group>
@@ -207,7 +239,7 @@ function JupiterStation({ onOpen, index, def }: { onOpen: () => void; index: num
 
   useFrame(({ clock }) => {
     if (!ring.current) return;
-    const [x, y, z] = planetPosition(def.id, index, def.orbitR, def.speed, clock.elapsedTime);
+    const [x, y, z] = planetPosition(def.id, index, orbitRadius(def.au), def.speed, clock.elapsedTime);
     ring.current.position.set(x, y + def.size + 1.6, z);
     ring.current.rotation.y = clock.elapsedTime * 0.25;
   });
