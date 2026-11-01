@@ -97,3 +97,28 @@ ssh zion-edge2 'grep "past MaxStartups" /var/log/auth.log | tail -3'   # SRC=62.
 # 3) po fixu
 ssh zion-edge2 'journalctl --since "-5 min" | grep -c "Started session-.*of User root"'
 ```
+
+## 7. Navazující fix — `/api/health` z 12,3 s na 0,18 s
+
+Při ověřování dashboardu po deployi vyšlo najevo, že `/api/health` (endpoint pro watchdog a externí
+monitoring) trval **8,7–12,3 s**. Dvě příčiny, obě opravené:
+
+1. **`build_status()` stahoval celý UTXO set.** `_get_utxo_balance()` volalo `getUtxos` bez pagingu;
+   pool/payout peněženka má **96 435 UTXO = 20 MB JSON** na jedno volání (změřeno: 0,83 s na nodu,
+   ~4 s přes tunel + parsování v Pythonu). Node přitom od 29. 10. umí `limit: 0` → odpověď má
+   **198 B** a nese hotový `total_amount`. Fix: objektové parametry `{"address":…, "limit":0}`,
+   čtení `total_amount`, fallback na plný set (kompatibilita se starším nodem / v3 cestou).
+   Pozor: parametry musí být **objekt**, ne `[{…}]` — node čte `params.get("address")` až pak `params.get(0)`.
+2. **`_build_health_map()` probíral 18 TCP portů sériově** (0,3 s timeout každý) → 5–9 s, když bylo
+   několik portů zavřených. Teď jeden paralelní průchod (`ThreadPoolExecutor(12)`) — sémantika stejná.
+
+| Endpoint | Před | Po |
+|---|---:|---:|
+| `build_status()` cold | 12,6–18,6 s | **4,8 s** |
+| `_build_health_map()` | 8,7–12,3 s | **0,04–0,18 s** |
+| `/api/health` (HTTP) | 8,7 s / 12,3 s cold | **0,18 s / 0,10 s** |
+| `/api/services`, `/api/ops/overview`, `/api/status` | — | 0,18 s / 0,49 s / 0,003 s |
+
+Zbylé ~4,8 s cold `build_status()` = 9 sekvenčních HTTP dotazů (0,28 s každý) + ~2 s subprocess.
+Cachuje se, takže request path je rychlá; paralelizace těch 9 dotazů je další, menší optimalizace.
+

@@ -6382,9 +6382,22 @@ def _get_utxo_balance(address: str) -> tuple[int, bool]:
     """
     if not address or not isinstance(address, str) or not address.startswith("zion1"):
         return 0, False
-    result, _, _ = _rpc_with_fallback("getUtxos", [address], timeout=5.0)
+    # 2026-11-01: ask for the balance only (`limit: 0` → `total_amount`).
+    # A whale/pool wallet carries ~96k UTXOs = 20 MB of JSON per call; the
+    # dashboard pulled the whole set and summed in Python (~4 s per wallet
+    # over the tunnel). Object params select the paged form; older nodes that
+    # ignore it still return the full set, which the fallback handles.
+    result, _, _ = _rpc_with_fallback("getUtxos", {"address": address, "limit": 0}, timeout=6.0)
     if not result or not isinstance(result, dict) or result.get("_rpc_error"):
-        return 0, False
+        result, _, _ = _rpc_with_fallback("getUtxos", [address], timeout=20.0)
+        if not result or not isinstance(result, dict) or result.get("_rpc_error"):
+            return 0, False
+    total = result.get("total_amount")
+    if total is not None:
+        try:
+            return int(total), True
+        except (TypeError, ValueError):
+            pass
     utxos = result.get("utxos") or []
     return sum(int(u.get("amount", 0)) for u in utxos), True
 
@@ -12417,18 +12430,22 @@ def _build_health_map() -> dict:
         "btcunlock": 8779,    # BTC unlock coordinator
         "postgresql": 5432,   # PG pres tunel
         "quantus": 9944, "pearl": 44207, "bitcoin": 8332,  # chainy na EDGE2
+        "website": 3000,      # Next.js website (edge:3000 = SSH forward na EDGE2)
     }
-    for sid, port in ext_ports.items():
+    # 2026-11-01: fan out the probes. Sequentially this was 18 × 0.3 s ≈ 5–9 s
+    # for /api/health whenever several ports were closed (a health endpoint that
+    # slow trips watchdogs). Same semantics, one round of parallel connects.
+    def _probe_ext(port: int) -> bool:
         try:
-            alive = tcp_probe("127.0.0.1", port, timeout=0.3)
+            return tcp_probe("127.0.0.1", port, timeout=0.3)
         except Exception:
-            alive = False
-        health[sid] = "up" if alive else "down"
-    # Nginx + website: check via SSH on Edge server (not tunneled locally)
-    try:
-        health["website"] = "up" if tcp_probe("127.0.0.1", 3000, timeout=0.4) else "down"
-    except Exception:
-        health["website"] = "down"
+            return False
+
+    with ThreadPoolExecutor(max_workers=12) as _pool:
+        _states = dict(zip(ext_ports.keys(), _pool.map(_probe_ext, ext_ports.values())))
+    for sid in ext_ports:
+        health[sid] = "up" if _states.get(sid) else "down"
+    # Nginx: check via systemd on Edge server (not tunneled locally)
     for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null")]:
         try:
             result = _run_edge_cmd(cmd, timeout=3)
