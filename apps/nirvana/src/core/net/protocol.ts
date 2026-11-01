@@ -1,0 +1,250 @@
+/**
+ * Drát Nirvany — **jediný zdroj pravdy** pro realtime protokol.
+ *
+ * Importuje ho klient (`apps/nirvana`, soubor se bundluje do prohlížeče)
+ * i služba (`apps/nirvana-net`, běží na Node 22). Když se formát změní,
+ * zvedni `PROTO_VERSION` — server starší verzi odmítne (`proto_mismatch`),
+ * aby se klient nepřipojil k neslučitelné hře a nepadal na neznámých polích.
+ *
+ * Co tu záměrně **není**: žádná identita od klienta. Jméno a avatar dodává
+ * server z cookie (`zion_session` → ZIS), tak si je nikdo nemůže přepsat.
+ */
+
+export const PROTO_VERSION = 1;
+
+/** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
+export const TICK_HZ = 30;
+export const SNAPSHOT_HZ = 15;
+export const INPUT_HZ = 20;
+
+export const MAX_PLAYERS = 8;
+export const MAX_ROOMS = 4;
+/** Maximum jednoho WS rámce. Větší = zahodit, ne parsovat. */
+export const MAX_FRAME_BYTES = 4096;
+/** Strop příchozích zpráv na spojení (vstup 20 Hz + rezerva). */
+export const MAX_INBOUND_PER_SEC = 40;
+
+export const CHAT_MAX_LEN = 240;
+export const CHAT_RATE_MESSAGES = 2;
+export const CHAT_RATE_WINDOW_MS = 2000;
+export const CHAT_HISTORY_LEN = 200;
+
+export const HEARTBEAT_MS = 20_000;
+export const IDLE_TIMEOUT_MS = 60_000;
+
+export type GameId = 'arena' | 'race';
+/** `guest` = bez ZIS (hraje, ale nepíše), `zis` = ověřený uživatel. */
+export type Role = 'guest' | 'zis';
+export type RoomState = 'waiting' | 'running' | 'ended';
+/** 0 = rail, 1 = rakety — shodné s `MarsArena`. */
+export type WeaponId = 0 | 1;
+
+/** Veřejná identita hráče — jen tohle smí do hry. Nikdy e-mail, role, adresy. */
+export interface NetIdentity {
+  id: string;
+  name: string;
+  role: Role;
+  /** URL avatara (ZIS sigil nebo upload), nebo null. */
+  avatar: string | null;
+  /** 0–202 = položka z OASIS rosteru, nebo null. */
+  avatarId: number | null;
+  callsign: string | null;
+}
+
+export interface PlayerSummary {
+  id: string;
+  name: string;
+  role: Role;
+}
+
+export interface RoomInfo {
+  id: string;
+  game: GameId;
+  players: number;
+  maxPlayers: number;
+  state: RoomState;
+}
+
+export interface SpawnPoint {
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+}
+
+/** Stav hráče v aréně (server-authoritative). */
+export interface ArenaPlayerState {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+  pitch: number;
+  hp: number;
+  armor: number;
+  frags: number;
+  deaths: number;
+  weapon: WeaponId;
+  alive: boolean;
+}
+
+/** Stav vozidla na Venuši. */
+export interface RacePlayerState {
+  id: string;
+  x: number;
+  z: number;
+  heading: number;
+  speed: number;
+  lap: number;
+  checkpoint: number;
+  offTrack: boolean;
+  finishedAtMs: number | null;
+}
+
+export type SnapshotPlayer = ArenaPlayerState | RacePlayerState;
+
+export interface ScoreRow {
+  id: string;
+  name: string;
+  frags: number;
+  deaths: number;
+}
+
+export type EventPayload =
+  | { kind: 'join'; player: PlayerSummary }
+  | { kind: 'leave'; id: string; name: string }
+  | { kind: 'chat'; id: string; name: string; role: Role; text: string; at: number }
+  | { kind: 'kill'; killer: string; victim: string; weapon: WeaponId; at: number }
+  | { kind: 'respawn'; id: string }
+  | { kind: 'match_start'; at: number }
+  | { kind: 'match_end'; scoreboard: ScoreRow[] };
+
+export type ErrorCode =
+  | 'proto_mismatch'
+  | 'bad_frame'
+  | 'unknown_type'
+  | 'rate_limited'
+  | 'room_full'
+  | 'busy'
+  | 'not_in_room'
+  | 'not_available'
+  | 'origin';
+
+export type ClientMessage =
+  | { t: 'hello'; proto: number }
+  | { t: 'join'; game: GameId; room?: string }
+  | { t: 'leave' }
+  | {
+      t: 'input';
+      seq: number;
+      /** Posun −1..1 (dopředu/vpravo), stejná konvence jako klávesy. */
+      mx: number;
+      mz: number;
+      yaw: number;
+      pitch: number;
+      jump: boolean;
+      fire: boolean;
+      weapon: WeaponId;
+    }
+  | { t: 'chat'; text: string }
+  | { t: 'ping'; at: number };
+
+export type ServerMessage =
+  | {
+      t: 'welcome';
+      proto: number;
+      you: NetIdentity;
+      rooms: RoomInfo[];
+      serverTime: number;
+      tickHz: number;
+      snapshotHz: number;
+    }
+  | {
+      t: 'room';
+      room: RoomInfo;
+      occupants: PlayerSummary[];
+      spawn: SpawnPoint | null;
+      history: { id: string; name: string; role: Role; text: string; at: number }[];
+    }
+  | { t: 'snapshot'; game: GameId; seq: number; time: number; players: SnapshotPlayer[] }
+  | { t: 'event'; event: EventPayload }
+  | { t: 'pong'; at: number; serverTime: number }
+  | { t: 'error'; code: ErrorCode; message?: string };
+
+export interface HealthResponse {
+  ok: boolean;
+  service: string;
+  proto: number;
+  build: string;
+  uptimeSec: number;
+  connections: number;
+  rooms: number;
+}
+
+// ── validace příchozích zpráv ─────────────────────────────────────────
+// Server nesmí věřit ničemu, co přijde z drátu: čísla se ořezávají do
+// rozsahů, řetězce do délek, neznámé typy se zahazují (vrátí `null`).
+
+function num(value: unknown, min: number, max: number, fallback = 0): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return value < min ? min : value > max ? max : value;
+}
+
+function str(value: unknown, maxLen: number): string {
+  return typeof value === 'string' ? value.slice(0, maxLen) : '';
+}
+
+/** `JSON.parse` + validace. `null` = zprávu zahodit (server odpoví `bad_frame`). */
+export function parseClientMessage(raw: string): ClientMessage | null {
+  if (raw.length > MAX_FRAME_BYTES) return null;
+
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+
+  const message = data as Record<string, unknown>;
+  switch (message.t) {
+    case 'hello':
+      return { t: 'hello', proto: num(message.proto, 0, 10_000) };
+
+    case 'join':
+      return {
+        t: 'join',
+        game: message.game === 'race' ? 'race' : 'arena',
+        room: typeof message.room === 'string' ? message.room.slice(0, 32) : undefined,
+      };
+
+    case 'leave':
+      return { t: 'leave' };
+
+    case 'input':
+      return {
+        t: 'input',
+        seq: num(message.seq, 0, 2_147_483_647),
+        mx: num(message.mx, -1, 1),
+        mz: num(message.mz, -1, 1),
+        yaw: num(message.yaw, -Math.PI, Math.PI),
+        pitch: num(message.pitch, -Math.PI / 2, Math.PI / 2),
+        jump: message.jump === true,
+        fire: message.fire === true,
+        weapon: message.weapon === 1 ? 1 : 0,
+      };
+
+    case 'chat':
+      return { t: 'chat', text: str(message.text, CHAT_MAX_LEN) };
+
+    case 'ping':
+      return { t: 'ping', at: num(message.at, 0, Number.MAX_SAFE_INTEGER) };
+
+    default:
+      return null;
+  }
+}
+
+export function encodeMessage(message: ServerMessage): string {
+  return JSON.stringify(message);
+}

@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "declaration": false,
+    "outDir": "dist",
+    // rootDir je `apps/`, protože protokol je jeden soubor v nirvaně —
+    // výstup je proto dist/nirvana-net/src/index.js + dist/nirvana/src/core/net/protocol.js
+    "rootDir": ".."
+  },
+  "include": ["src/**/*.ts", "../nirvana/src/core/net/protocol.ts"]
+}
