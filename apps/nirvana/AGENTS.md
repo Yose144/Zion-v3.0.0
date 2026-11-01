@@ -93,4 +93,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   kamera vrací na spawn — nesahej na `camera.rotation` mimo smyčku.
 - **Debug háček** `?arenaDebug=1` vystaví `window.__arenaDebug` (`state`, `aimAt`,
   `fire`). Používá se pro headless test zásahů; v produkci je jen v URL.
-- **Co tu není:** navigace botů, zvuk, viewmodel, VR ovládání. Nehlásit jako hotové.
+- **Navigace:** `core/arena/nav.ts` = mřížka 40×40 z krabic + BFS. Boti
+  přepočítávají cestu ~2×/s a jdou po waypointech; LOS rozhoduje, kdy strafovat.
+- **VR:** `<XR store>` + tlačítko VR; pravý ovladač míří, spoušť střílí. Pohyb
+  ve VR není — hráč stojí. Nehlásit jako hotové.
+- **Co tu není:** zvuk, viewmodel, multiplayer, VR pohyb.

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
+import { XR, createXRStore } from '@react-three/xr';
 import { useI18n } from '@/core/i18n';
 import { MarsArena, type ArenaResult, type ArenaStats } from '@/core/arena/MarsArena';
 import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
@@ -34,9 +35,13 @@ export default function MarsPage() {
   const { lang } = useI18n();
   const cs = lang === 'cs';
   const [phase, setPhase] = useState<Phase>('idle');
+  const [presenting, setPresenting] = useState(false);
+  const [xrStore] = useState(() => createXRStore({ foveation: 0.5 }));
   const [stats, setStats] = useState<ArenaStats>(EMPTY_STATS);
   const [result, setResult] = useState<ArenaResult | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => xrStore.subscribe((state) => setPresenting(Boolean(state.session))), [xrStore]);
 
   const endMatch = useCallback(
     (outcome: ArenaResult) => {
@@ -95,7 +100,14 @@ export default function MarsPage() {
           camera={{ position: [0, 1.7, 15], fov: 88, near: 0.05, far: 400 }}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >
-          <MarsArena running={phase === 'playing'} onStats={setStats} onEnd={endMatch} />
+          <XR store={xrStore}>
+            <MarsArena
+              running={phase === 'playing'}
+              xr={presenting}
+              onStats={setStats}
+              onEnd={endMatch}
+            />
+          </XR>
         </Canvas>
       </div>
 
@@ -114,6 +126,17 @@ export default function MarsPage() {
             <span className="arena-weapon">
               {stats.weapon === 'rail' ? 'RAIL' : `ROCKET ×${stats.ammo}`}
             </span>
+            {!presenting && (
+              <button
+                type="button"
+                className="arena-vr"
+                onClick={() => {
+                  void xrStore.enterVR();
+                }}
+              >
+                VR
+              </button>
+            )}
           </div>
           <div className="arena-tip">
             {cs
@@ -166,8 +189,8 @@ export default function MarsPage() {
               </div>
               <p className="arena-small">
                 {cs
-                  ? 'Myš se zamkne kliknutím do plátna. Ve VR to zatím nehraje — chybí pohyb ovladačem.'
-                  : 'The mouse locks when you click the canvas. Not playable in VR yet — controller movement is missing.'}
+                  ? 'Myš se zamkne kliknutím do plátna. Ve VR (tlačítko VR) míříš pravým ovladačem a střílíš spouští — hráč ale stojí, pohyb ovladačem ještě není.'
+                  : 'The mouse locks when you click the canvas. In VR (VR button) you aim with the right controller and fire with the trigger — the player stands still, controller movement is not implemented yet.'}
               </p>
             </>
           )}

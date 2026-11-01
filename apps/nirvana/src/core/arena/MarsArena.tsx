@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
+import { useXRInputSourceState } from '@react-three/xr';
 import * as THREE from 'three';
 import {
   ARENA_BOXES,
@@ -12,6 +13,7 @@ import {
   PLAYER_SPAWN,
   type ArenaBox,
 } from '@/core/arena/map';
+import { buildNavGrid, cellCenter, cellIndex, findPath, nearestWalkable } from '@/core/arena/nav';
 import {
   BOT_BODY,
   PLAYER,
@@ -46,6 +48,12 @@ export interface ArenaStats {
   respawnIn: number;
 }
 
+interface XrHandle {
+  firing: boolean;
+  /** Zamíření paprskem z pravého ovladače (null = nedostupné). */
+  aim: THREE.Vector3 | null;
+}
+
 export interface ArenaResult {
   frags: number;
   deaths: number;
@@ -74,6 +82,9 @@ interface BotState {
   nextJump: number;
   strafeDir: number;
   name: string;
+  path: number[];
+  pathIndex: number;
+  nextRepath: number;
 }
 
 interface Rocket {
@@ -96,17 +107,44 @@ interface Tracer {
 
 const BOT_NAMES = ['VALLIS', 'NOCTIS', 'ARES'];
 
+/**
+ * VR vstup: pravý ovladač míří, spoušť střílí.
+ * Pohyb po mapě ve VR zatím není — hráč stojí a brání se; boti přijdou.
+ * (Pointer lock v headsetu neexistuje, takže myš tu nemá co dělat.)
+ */
+function ArenaXrInput({ handle }: { handle: React.MutableRefObject<XrHandle> }) {
+  const right = useXRInputSourceState('controller', 'right');
+  const direction = useMemo(() => new THREE.Vector3(0, 0, -1), []);
+
+  useFrame(() => {
+    const trigger = right?.gamepad?.['xr-standard-trigger'];
+    handle.current.firing = trigger?.state === 'pressed';
+    const object = right?.object;
+    if (object) {
+      object.getWorldDirection(direction);
+      handle.current.aim = direction;
+    } else {
+      handle.current.aim = null;
+    }
+  });
+
+  return null;
+}
+
 export function MarsArena({
   running,
+  xr = false,
   onStats,
   onEnd,
 }: {
   running: boolean;
+  xr?: boolean;
   onStats: (stats: ArenaStats) => void;
   onEnd: (result: ArenaResult) => void;
 }) {
   const { camera, gl } = useThree();
   const solids = useMemo<Box4[]>(() => makeSolids(ARENA_BOXES), []);
+  const nav = useMemo(() => buildNavGrid(ARENA_BOXES), []);
 
   const player = useRef<Body>({
     x: PLAYER_SPAWN.x,
@@ -146,6 +184,9 @@ export function MarsArena({
       nextJump: 2 + index,
       strafeDir: index % 2 === 0 ? 1 : -1,
       name: BOT_NAMES[index]!,
+      path: [],
+      pathIndex: 0,
+      nextRepath: 0,
     })),
   );
   const rockets = useRef<Rocket[]>([]);
@@ -159,6 +200,7 @@ export function MarsArena({
   const pickupGroup = useRef<THREE.Group>(null);
 
   const lastStats = useRef('');
+  const xrHandle = useRef<XrHandle>({ firing: false, aim: null });
 
   // ── revizní háček pro testy: `?arenaDebug=1` ─────────────────────
   useEffect(() => {
@@ -283,20 +325,32 @@ export function MarsArena({
       nextJump: 2 + index,
       strafeDir: index % 2 === 0 ? 1 : -1,
       name: BOT_NAMES[index]!,
+      path: [],
+      pathIndex: 0,
+      nextRepath: 0,
     }));
   }, [running]);
 
   // ── střelba ──────────────────────────────────────────────────────
-  function fire(now: number) {
+  const fireVector = useMemo(() => new THREE.Vector3(), []);
+  const fireEuler = useMemo(() => new THREE.Euler(0, 0, 0, 'YXZ'), []);
+
+  function fire(now: number, fromController = false) {
     if (now < deadUntil.current || cooldown.current > now) return;
-    const origin: [number, number, number] = [
-      player.current.x,
-      player.current.y + PLAYER.eye,
-      player.current.z,
-    ];
-    const dir = new THREE.Vector3(0, 0, -1)
-      .applyEuler(new THREE.Euler(view.current.pitch, view.current.yaw, 0, 'YXZ'))
-      .normalize();
+
+    // ve VR střílíš z hlavy po paprsku ovladače
+    const vrAim = fromController ? xrHandle.current.aim : null;
+    const origin: [number, number, number] = vrAim
+      ? [player.current.x, player.current.y + PLAYER.eye, player.current.z]
+      : [player.current.x, player.current.y + PLAYER.eye, player.current.z];
+
+    let dir: THREE.Vector3;
+    if (vrAim) {
+      dir = fireVector.copy(vrAim).normalize();
+    } else {
+      fireEuler.set(view.current.pitch, view.current.yaw, 0);
+      dir = fireVector.set(0, 0, -1).applyEuler(fireEuler).normalize();
+    }
 
     if (weapon.current === 'rail') {
       cooldown.current = now + RAIL_COOLDOWN;
@@ -432,17 +486,23 @@ export function MarsArena({
       );
       jumpQueued.current = false;
 
-      if (firing.current) fire(now);
+      if (xr) {
+        if (xrHandle.current.firing) fire(now, true);
+      } else if (firing.current) {
+        fire(now);
+      }
 
-      camera.position.set(
-        player.current.x,
-        player.current.y + PLAYER.eye,
-        player.current.z,
-      );
-      camera.rotation.order = 'YXZ';
-      camera.rotation.y = view.current.yaw;
-      camera.rotation.x = view.current.pitch;
-      camera.rotation.z = 0;
+      if (!xr) {
+        camera.position.set(
+          player.current.x,
+          player.current.y + PLAYER.eye,
+          player.current.z,
+        );
+        camera.rotation.order = 'YXZ';
+        camera.rotation.y = view.current.yaw;
+        camera.rotation.x = view.current.pitch;
+        camera.rotation.z = 0;
+      }
     }
 
     // boti
@@ -461,8 +521,32 @@ export function MarsArena({
       const dx = player.current.x - bot.body.x;
       const dz = player.current.z - bot.body.z;
       const dist = Math.hypot(dx, dz);
-      const targetYaw = Math.atan2(-dx, -dz);
-      bot.yaw += ((targetYaw - bot.yaw + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, dt * 6);
+
+      // cesta mřížkou (BFS), přepočet ~2× za sekundu
+      if (now > bot.nextRepath) {
+        bot.nextRepath = now + 480 + Math.random() * 220;
+        const from = nearestWalkable(nav, cellIndex(bot.body.x, bot.body.z));
+        const to = nearestWalkable(nav, cellIndex(player.current.x, player.current.z));
+        bot.path = findPath(nav, from, to);
+        bot.pathIndex = 0;
+      }
+
+      let goalX = player.current.x;
+      let goalZ = player.current.z;
+      if (bot.path.length > 0) {
+        while (bot.pathIndex < bot.path.length) {
+          const [cx, cz] = cellCenter(bot.path[bot.pathIndex]!);
+          if (Math.hypot(cx - bot.body.x, cz - bot.body.z) < 0.7) bot.pathIndex += 1;
+          else break;
+        }
+        const node = bot.path[Math.min(bot.pathIndex, bot.path.length - 1)]!;
+        const [wx, wz] = cellCenter(node);
+        goalX = wx;
+        goalZ = wz;
+      }
+
+      const targetYaw = Math.atan2(-(goalX - bot.body.x), -(goalZ - bot.body.z));
+      bot.yaw += ((targetYaw - bot.yaw + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, dt * 7);
 
       const sees = lineOfSight(
         bot.body.x,
@@ -475,7 +559,8 @@ export function MarsArena({
       );
 
       // drží odstup: daleko = jde blíž, blízko = couvá, vždy strafuje
-      const approach = dist > 11 ? 1 : dist < 5 ? -1 : 0;
+      const toGoal = Math.hypot(goalX - bot.body.x, goalZ - bot.body.z);
+      const approach = toGoal > 1.2 ? 1 : dist > 11 ? 1 : dist < 5 ? -1 : 0;
       if (Math.random() < 0.01) bot.strafeDir *= -1;
 
       stepBody(
@@ -686,6 +771,8 @@ export function MarsArena({
       <hemisphereLight args={['#ffb27a', '#3a1408', 0.85]} />
       <directionalLight position={[18, 32, 12]} intensity={2.6} color="#ffd9b0" />
       <pointLight position={[0, 6, 0]} intensity={18} color="#ff8f5c" distance={28} decay={2} />
+
+      {xr && <ArenaXrInput handle={xrHandle} />}
 
       {/* mapa */}
       {ARENA_BOXES.map((box: ArenaBox, index) => (

@@ -1665,3 +1665,13 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 .park-arena-link:hover {
   color: #ffd9a8;
 }
+
+.arena-vr {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 180, 106, 0.55);
+  background: rgba(255, 180, 106, 0.15);
+  color: #ffd9a8;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+}
