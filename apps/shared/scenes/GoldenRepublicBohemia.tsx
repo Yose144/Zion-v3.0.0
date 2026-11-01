@@ -4,7 +4,7 @@
 import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, SceneTerrain, SkyFill } from './kit';
+import { KeyLight, SceneInstances, SceneTerrain, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -274,6 +274,22 @@ function Terraces() {
     }
     return arr;
   }, []);
+  // Keře: 70 samostatných mesh objektů = 70 draw calls. Instancing z toho dělá jeden.
+  const shrubGeometry = React.useMemo(() => new THREE.SphereGeometry(0.5, 6, 5), []);
+  const shrubMaterial = React.useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.95 }), []);
+  React.useEffect(
+    () => () => { shrubGeometry.dispose(); shrubMaterial.dispose(); },
+    [shrubGeometry, shrubMaterial],
+  );
+  const shrubItems = React.useMemo(
+    () =>
+      shrubs.map((s) => ({
+        position: s.pos,
+        scale: [1, s.s, 1] as [number, number, number],
+        color: s.c,
+      })),
+    [shrubs],
+  );
   return (
     <group>
       {levels.map((l, i) => (
@@ -289,12 +305,7 @@ function Terraces() {
           </mesh>
         </group>
       ))}
-      {shrubs.map((s, i) => (
-        <mesh key={i} position={s.pos} scale={[1, s.s, 1]} castShadow>
-          <sphereGeometry args={[0.5, 6, 5]} />
-          <meshStandardMaterial color={s.c} roughness={0.95} />
-        </mesh>
-      ))}
+      <SceneInstances geometry={shrubGeometry} material={shrubMaterial} items={shrubItems} />
     </group>
   );
 }
@@ -314,20 +325,46 @@ function ForestRing() {
     }
     return arr;
   }, []);
+  // Les: 90 stromů × 2 mesh objekty = 180 draw calls. Dvě instanced skupiny
+  // (kmeny, koruny) z toho dělají dva. Kmen má jednotkovou výšku a škáluje se
+  // jen v Y, takže poloměry zůstanou konstantní jako v původní geometrii.
+  const trunkGeometry = React.useMemo(() => new THREE.CylinderGeometry(0.09, 0.14, 1, 5), []);
+  const trunkMaterial = React.useMemo(
+    () => new THREE.MeshStandardMaterial({ color: '#4a3826', roughness: 0.95 }),
+    [],
+  );
+  const canopyGeometry = React.useMemo(() => new THREE.SphereGeometry(1, 6, 5), []);
+  const canopyMaterial = React.useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.95 }), []);
+  React.useEffect(
+    () => () => {
+      trunkGeometry.dispose();
+      trunkMaterial.dispose();
+      canopyGeometry.dispose();
+      canopyMaterial.dispose();
+    },
+    [trunkGeometry, trunkMaterial, canopyGeometry, canopyMaterial],
+  );
+  const trunkItems = React.useMemo(
+    () =>
+      trees.map((t) => ({
+        position: [t.pos[0], t.pos[1] + t.h / 2, t.pos[2]] as [number, number, number],
+        scale: [1, t.h, 1] as [number, number, number],
+      })),
+    [trees],
+  );
+  const canopyItems = React.useMemo(
+    () =>
+      trees.map((t, i) => ({
+        position: [t.pos[0], t.pos[1] + t.h + 0.5, t.pos[2]] as [number, number, number],
+        scale: 0.9 + t.h * 0.22,
+        color: ['#3f5a2e', '#4a6a34', '#557538'][i % 3],
+      })),
+    [trees],
+  );
   return (
     <group>
-      {trees.map((t, i) => (
-        <group key={i} position={t.pos}>
-          <mesh position={[0, t.h / 2, 0]} castShadow>
-            <cylinderGeometry args={[0.09, 0.14, t.h, 5]} />
-            <meshStandardMaterial color="#4a3826" roughness={0.95} />
-          </mesh>
-          <mesh position={[0, t.h + 0.5, 0]} castShadow>
-            <sphereGeometry args={[0.9 + t.h * 0.22, 6, 5]} />
-            <meshStandardMaterial color={['#3f5a2e', '#4a6a34', '#557538'][i % 3]} roughness={0.95} />
-          </mesh>
-        </group>
-      ))}
+      <SceneInstances geometry={trunkGeometry} material={trunkMaterial} items={trunkItems} />
+      <SceneInstances geometry={canopyGeometry} material={canopyMaterial} items={canopyItems} />
     </group>
   );
 }

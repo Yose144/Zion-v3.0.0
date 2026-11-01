@@ -5,7 +5,7 @@ import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { MountainTerrain } from './MountainTerrain';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, ScenePalms, SceneTerrain, SkyFill } from './kit';
+import { KeyLight, SceneInstances, ScenePalms, SceneTerrain, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -457,6 +457,47 @@ function Jungle() {
     }
     return arr;
   }, []);
+  // Listnáče: každý strom byl kmen + koruna jako dva samostatné meshe (~50 stromů
+  // = ~100 draw calls). Dvě instanced skupiny z toho dělají dva.
+  const broadleaf = React.useMemo(() => trees.filter((t) => t.t <= 0.55), [trees]);
+  const trunkGeometry = React.useMemo(() => new THREE.CylinderGeometry(0.1, 0.2, 1, 5), []);
+  const trunkMaterial = React.useMemo(
+    () => new THREE.MeshStandardMaterial({ color: '#4f3a24', roughness: 0.95 }),
+    [],
+  );
+  const canopyGeometry = React.useMemo(() => new THREE.SphereGeometry(1, 7, 6), []);
+  const canopyMaterial = React.useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.95 }), []);
+  React.useEffect(
+    () => () => {
+      trunkGeometry.dispose();
+      trunkMaterial.dispose();
+      canopyGeometry.dispose();
+      canopyMaterial.dispose();
+    },
+    [trunkGeometry, trunkMaterial, canopyGeometry, canopyMaterial],
+  );
+  const trunkItems = React.useMemo(
+    () =>
+      broadleaf.map((t) => {
+        // Poloměry původně rostly s t.t; základní kužel je 0.1/0.2, takže se
+        // škáluje v X/Z stejným faktorem a výška zvlášť.
+        const k = (0.1 + t.t * 0.06) / 0.1;
+        return {
+          position: [t.p[0], t.h / 2, t.p[1]] as [number, number, number],
+          scale: [k, t.h, k] as [number, number, number],
+        };
+      }),
+    [broadleaf],
+  );
+  const canopyItems = React.useMemo(
+    () =>
+      broadleaf.map((t, i) => ({
+        position: [t.p[0], t.h + 0.6, t.p[1]] as [number, number, number],
+        scale: 0.8 + t.t * 1.1 + t.h * 0.06,
+        color: ['#3f5e2e', '#4a6a34', '#55753a'][i % 3],
+      })),
+    [broadleaf],
+  );
   return (
     <group>
       {/* země */}
@@ -499,18 +540,8 @@ function Jungle() {
       ))}
       {/* stromy — palmy jako jedna instance, listnáče jako druhá vrstva */}
       <ScenePalms items={trees.filter((t) => t.t > 0.55).map((t) => ({ x: t.p[0], z: t.p[1], h: t.h * 0.85 }))} />
-      {trees.filter((t) => t.t <= 0.55).map((t, i) => (
-        <group key={`b${i}`} position={[t.p[0], 0, t.p[1]]}>
-          <mesh position={[0, t.h / 2, 0]} castShadow>
-            <cylinderGeometry args={[0.1 + t.t * 0.06, 0.2 + t.t * 0.08, t.h, 5]} />
-            <meshStandardMaterial color="#4f3a24" roughness={0.95} />
-          </mesh>
-          <mesh position={[0, t.h + 0.6, 0]} castShadow>
-            <sphereGeometry args={[0.8 + t.t * 1.1 + t.h * 0.06, 7, 6]} />
-            <meshStandardMaterial color={['#3f5e2e', '#4a6a34', '#55753a'][i % 3]} roughness={0.95} />
-          </mesh>
-        </group>
-      ))}
+      <SceneInstances geometry={trunkGeometry} material={trunkMaterial} items={trunkItems} />
+      <SceneInstances geometry={canopyGeometry} material={canopyMaterial} items={canopyItems} />
     </group>
   );
 }

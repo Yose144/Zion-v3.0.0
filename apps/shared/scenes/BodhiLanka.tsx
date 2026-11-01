@@ -4,7 +4,7 @@
 import { React, useFrame, THREE } from '@genesis/runtime';
 import { SceneLabel } from './SceneLabel';
 import { ScenePresentation, motionTime, motionDelta } from './ScenePresentation';
-import { KeyLight, ScenePalms, SceneTerrain, SceneWater, SkyFill } from './kit';
+import { KeyLight, SceneInstances, ScenePalms, SceneTerrain, SceneWater, SkyFill } from './kit';
 
 type Lang = 'cs' | 'en';
 
@@ -324,6 +324,30 @@ function Bridge({ from, to, w = 1.6 }: { from: [number, number]; to: [number, nu
     return { deck, rails, posts, side };
   }, [from[0], from[1], to[0], to[1], w]);
   React.useEffect(() => () => { deck.dispose(); rails.forEach(rail => rail.dispose()); }, [deck, rails]);
+  // Sloupky zábradlí: 5 stanovišť × 2 strany = 10 samostatných meshů na most,
+  // šest mostů = 60 draw calls. Jedna instance na most.
+  const postGeometry = React.useMemo(() => new THREE.CylinderGeometry(0.045, 0.05, 0.7, 5), []);
+  const postMaterial = React.useMemo(
+    () => new THREE.MeshStandardMaterial({ color: '#7a5c38', roughness: 0.85 }),
+    [],
+  );
+  React.useEffect(
+    () => () => { postGeometry.dispose(); postMaterial.dispose(); },
+    [postGeometry, postMaterial],
+  );
+  const postItems = React.useMemo(
+    () =>
+      posts.flatMap((p) =>
+        [-1, 1].map((s) => ({
+          position: [
+            p.x + side.x * s * w * 0.55,
+            p.y + 0.25,
+            p.z + side.z * s * w * 0.55,
+          ] as [number, number, number],
+        })),
+      ),
+    [posts, side, w],
+  );
   return (
     <group>
       <mesh geometry={deck} castShadow receiveShadow>
@@ -334,16 +358,7 @@ function Bridge({ from, to, w = 1.6 }: { from: [number, number]; to: [number, nu
           <meshStandardMaterial color="#caa55e" metalness={0.5} roughness={0.4} />
         </mesh>
       ))}
-      {posts.map((p, i) => (
-        <group key={i} position={p}>
-          {[-1, 1].map((s) => (
-            <mesh key={s} position={[side.x * s * w * 0.55, 0.25, side.z * s * w * 0.55]}>
-              <cylinderGeometry args={[0.045, 0.05, 0.7, 5]} />
-              <meshStandardMaterial color="#7a5c38" roughness={0.85} />
-            </mesh>
-          ))}
-        </group>
-      ))}
+      <SceneInstances geometry={postGeometry} material={postMaterial} items={postItems} />
     </group>
   );
 }
@@ -367,6 +382,79 @@ function LotusPond() {
     }
     return arr;
   }, []);
+  // Lekníny: 26 plováků + květy (6 lístků + střed) = ~96 samostatných mesh objektů.
+  // Tři instanced skupiny z toho dělají tři draw calls.
+  const padGeometry = React.useMemo(() => new THREE.CircleGeometry(0.55, 10), []);
+  const padMaterial = React.useMemo(() => new THREE.MeshStandardMaterial({ roughness: 0.9 }), []);
+  const petalGeometry = React.useMemo(() => new THREE.ConeGeometry(0.09, 0.34, 5), []);
+  const petalMaterial = React.useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: '#e88aa8',
+        roughness: 0.6,
+        emissive: '#a03a5a',
+        emissiveIntensity: 0.25,
+      }),
+    [],
+  );
+  const coreGeometry = React.useMemo(() => new THREE.SphereGeometry(0.09, 8, 6), []);
+  const coreMaterial = React.useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: '#f4c95e',
+        emissive: '#a06a1a',
+        emissiveIntensity: 0.4,
+      }),
+    [],
+  );
+  React.useEffect(
+    () => () => {
+      padGeometry.dispose();
+      padMaterial.dispose();
+      petalGeometry.dispose();
+      petalMaterial.dispose();
+      coreGeometry.dispose();
+      coreMaterial.dispose();
+    },
+    [padGeometry, padMaterial, petalGeometry, petalMaterial, coreGeometry, coreMaterial],
+  );
+  const padItems = React.useMemo(
+    () =>
+      lilies.map((l, i) => ({
+        position: [l.p[0], WATER_Y + 0.05, l.p[1]] as [number, number, number],
+        rotation: [-Math.PI / 2, 0, 0] as [number, number, number],
+        scale: [l.s, l.s * 0.9, 1] as [number, number, number],
+        color: i % 3 === 0 ? '#4d7038' : '#3f6030',
+      })),
+    [lilies],
+  );
+  const petalItems = React.useMemo(
+    () =>
+      lilies.flatMap((l) => {
+        if (!l.f) return [];
+        return Array.from({ length: 6 }, (_, k) => {
+          const a = (k / 6) * Math.PI * 2;
+          return {
+            position: [
+              l.p[0] + Math.sin(a) * 0.16,
+              WATER_Y + 0.24,
+              l.p[1] + Math.cos(a) * 0.16,
+            ] as [number, number, number],
+            rotation: [0.55, a, 0] as [number, number, number],
+          };
+        });
+      }),
+    [lilies],
+  );
+  const coreItems = React.useMemo(
+    () =>
+      lilies
+        .filter((l) => l.f)
+        .map((l) => ({
+          position: [l.p[0], WATER_Y + 0.27, l.p[1]] as [number, number, number],
+        })),
+    [lilies],
+  );
   return (
     <group>
       {/* vodní plocha jezírka + mělčina */}
@@ -382,31 +470,9 @@ function LotusPond() {
         <meshBasicMaterial color="#f4b95e" transparent opacity={0.08} depthWrite={false} />
       </mesh>
       {/* lilie + lotosy */}
-      {lilies.map((l, i) => (
-        <group key={i} position={[l.p[0], WATER_Y + 0.05, l.p[1]]}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} scale={[l.s, l.s * 0.9, 1]}>
-            <circleGeometry args={[0.55, 10]} />
-            <meshStandardMaterial color={i % 3 === 0 ? '#4d7038' : '#3f6030'} roughness={0.9} />
-          </mesh>
-          {l.f && (
-            <group position={[0, 0.1, 0]}>
-              {Array.from({ length: 6 }, (_, k) => {
-                const a = (k / 6) * Math.PI * 2;
-                return (
-                  <mesh key={k} position={[Math.sin(a) * 0.16, 0.09, Math.cos(a) * 0.16]} rotation={[0.55, a, 0]}>
-                    <coneGeometry args={[0.09, 0.34, 5]} />
-                    <meshStandardMaterial color="#e88aa8" roughness={0.6} emissive="#a03a5a" emissiveIntensity={0.25} />
-                  </mesh>
-                );
-              })}
-              <mesh position={[0, 0.12, 0]}>
-                <sphereGeometry args={[0.09, 8, 6]} />
-                <meshStandardMaterial color="#f4c95e" emissive="#a06a1a" emissiveIntensity={0.4} />
-              </mesh>
-            </group>
-          )}
-        </group>
-      ))}
+      <SceneInstances geometry={padGeometry} material={padMaterial} items={padItems} castShadow={false} />
+      <SceneInstances geometry={petalGeometry} material={petalMaterial} items={petalItems} castShadow={false} />
+      <SceneInstances geometry={coreGeometry} material={coreMaterial} items={coreItems} castShadow={false} />
     </group>
   );
 }
