@@ -108,6 +108,13 @@ export function playHit(): void {
   tone(2400, 0.06, 0.35, 'square', 1600);
 }
 
+/** Strojní puška: krátká dávka — tři cvaknutí pod sebou. */
+export function playMg(): void {
+  tone(1500, 0.05, 0.3, 'square', 900);
+  window.setTimeout(() => tone(1400, 0.05, 0.28, 'square', 850), 45);
+  noise(0.06, 0.12, 2600, 'highpass');
+}
+
 /** Zabití bota: dva tóny dolů. */
 export function playFrag(): void {
   tone(660, 0.1, 0.4, 'sine', 440);

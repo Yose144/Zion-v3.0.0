@@ -32,6 +32,7 @@ const { makeSolids, lineOfSight, PLAYER } = require('../dist/nirvana/src/core/ar
 const { ARENA_BOXES } = require('../dist/nirvana/src/core/arena/map.js');
 const { buildNavGrid } = require('../dist/nirvana/src/core/arena/nav.js');
 const { createBotMemory, stepBot, driveBot, nearestTarget } = require('../dist/nirvana/src/core/arena/bot.js');
+const { BOT_SKILLS } = require('../dist/nirvana/src/core/arena/bot.js');
 const arena = require('../dist/nirvana-net/src/arena.js');
 
 const PORT = Number(process.env.ARENA_BOTS_PORT ?? 3900 + Math.floor(Math.random() * 300));
@@ -59,6 +60,15 @@ console.log('\n== sdílený botí mozek ==');
   check('nearestTarget preferuje člověka', nearestTarget([otherBot, human], body)?.id === 'h1',
     nearestTarget([otherBot, human], body)?.id);
   check('bez lidí boti hrají proti sobě', nearestTarget([otherBot], body)?.id === 'bot-9');
+
+  // ── úrovně obtížnosti (Q3 easy/medium/hard) ────────────────────────
+  check('tři úrovně obtížnosti', ['easy', 'normal', 'hard'].every((s) => BOT_SKILLS[s]),
+    Object.keys(BOT_SKILLS).join(','));
+  check('hard míří přesněji než easy', BOT_SKILLS.hard.aimError < BOT_SKILLS.easy.aimError,
+    `${BOT_SKILLS.hard.aimError} < ${BOT_SKILLS.easy.aimError}`);
+  check('hard střílí rychleji než easy', BOT_SKILLS.hard.fireDelayMs < BOT_SKILLS.easy.fireDelayMs);
+  check('obtížnost NEMĚNÍ damage', !('damage' in BOT_SKILLS.hard) && !('damage' in BOT_SKILLS.easy),
+    'damage drží sdílená WEAPONS');
 
   let fired = 0;
   let clock = 0;
@@ -184,6 +194,37 @@ console.log('\n== serverová simulace (bot zasáhne člověka) ==');
   // Q3 MG: 8 dmg na ránu — proto musí být rozdíl dělitelný 8 a nesmí to být one-shot
   check('MG ubírá po 8 (není one-shot jako rail)', dmg > 0 && dmg % 8 === 0 && dmg < 100,
     `dmg=${dmg} hp=${target.hp}`);
+
+  // ── pickupy: MG náboje se berou a vracejí (Q3 ammo box) ────────────
+  {
+    const sim4 = arena.createArena(Date.now());
+    const human4 = arena.addPlayer(sim4, 'c_h2', 'Hráč', null, Date.now());
+    arena.ensureBots(sim4);
+    for (const p of [...sim4.players.values()]) {
+      if (p.isBot) sim4.players.delete(p.id);
+    }
+    const ammoPickup = sim4.pickups.find((p) => p.kind === 'ammo');
+    check('v mapě jsou MG náboje', Boolean(ammoPickup), JSON.stringify(sim4.pickups.map((p) => p.kind)));
+    human4.mgAmmo = 0;
+    human4.body.x = ammoPickup.x;
+    human4.body.z = ammoPickup.z;
+    human4.body.y = ammoPickup.y;
+    let now4 = Date.now();
+    for (let tick = 0; tick < 30; tick++) {
+      now4 += 1000 / 30;
+      arena.stepArena(sim4, 1 / 30, now4);
+    }
+    check('pickup doplní náboje na MG', human4.mgAmmo > 0, `mgAmmo=${human4.mgAmmo}`);
+  }
+
+  // ── tři boti = tři různé úrovně ────────────────────────────────────
+  {
+    const sim5 = arena.createArena(Date.now());
+    arena.addPlayer(sim5, 'c_h3', 'Hráč', null, Date.now());
+    arena.ensureBots(sim5);
+    const skills = [...sim5.players.values()].filter((p) => p.isBot).map((p) => p.skill);
+    check('boti mají různé úrovně', new Set(skills).size === 3, JSON.stringify(skills));
+  }
 }
 
 // ── 3) síťová část: místnost, pohyb, lidský frag ──────────────────────

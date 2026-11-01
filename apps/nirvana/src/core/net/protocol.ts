@@ -181,7 +181,7 @@ export type EventPayload =
   | { kind: 'chat'; id: string; name: string; role: Role; text: string; at: number }
   | { kind: 'kill'; killer: string; victim: string; weapon: WeaponName; at: number }
   | { kind: 'respawn'; id: string }
-  | { kind: 'pickup'; id: string; item: 'health' | 'armor' }
+  | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' }
   | { kind: 'system'; text: string; at: number }
   | { kind: 'match_start'; at: number }
   | { kind: 'match_end'; scoreboard: ScoreRow[] }

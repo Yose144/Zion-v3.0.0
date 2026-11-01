@@ -10,6 +10,7 @@ import {
   playHit,
   playHurt,
   playMatchEnd,
+  playMg,
   playPickup,
   playRail,
   playRocket,
@@ -25,11 +26,10 @@ import {
   PLAYER_SPAWN,
   type ArenaBox,
 } from '@/core/arena/map';
-import { buildNavGrid, cellCenter, cellIndex, findPath, nearestWalkable } from '@/core/arena/nav';
+import { buildNavGrid } from '@/core/arena/nav';
 import {
   BOT_BODY,
   PLAYER,
-  lineOfSight,
   makeSolids,
   raySolids,
   raySphere,
@@ -37,7 +37,8 @@ import {
   type Body,
   type Box4,
 } from '@/core/arena/physics';
-import { WEAPONS, ARMOR_ABSORB, spreadVector, TARGET_RADIUS } from '@/core/arena/weapons';
+import { WEAPONS, ARMOR_ABSORB, MG_AMMO_PICKUP, spreadVector, TARGET_RADIUS, TARGET_EYE_RATIO, pickTarget, aimVector } from '@/core/arena/weapons';
+import { createBotMemory, stepBot, driveBot, skillOptions, type BotMemory, type BotSkill, type BotTarget } from '@/core/arena/bot';
 
 /**
  * MARS ARENA — deathmatch v stylu Quake 3, celý procedurální.
@@ -85,17 +86,15 @@ const BOT_RESPAWN = 3.2;
 
 interface BotState {
   body: Body;
+  /** Směr pro vykreslení — plní ho `stepBot` (intention yaw). */
   yaw: number;
   health: number;
   alive: boolean;
   respawnAt: number;
-  nextShot: number;
-  nextJump: number;
-  strafeDir: number;
   name: string;
-  path: number[];
-  pathIndex: number;
-  nextRepath: number;
+  /** Sdílený botí mozek — stejný jako v MP. */
+  memory: BotMemory;
+  skill: BotSkill;
 }
 
 interface Rocket {
@@ -117,6 +116,21 @@ interface Tracer {
 }
 
 const BOT_NAMES = ['VALLIS', 'NOCTIS', 'ARES'];
+/** Každý bot má jinou úroveň (Q3 styl) — jen těžko je zaměnit. */
+const BOT_SKILL_BY_INDEX: BotSkill[] = ['easy', 'normal', 'hard'];
+
+function makeBot(spawn: { x: number; z: number; yaw: number }, index: number): BotState {
+  return {
+    body: { x: spawn.x, y: 0.1, z: spawn.z, vx: 0, vy: 0, vz: 0, onGround: false },
+    yaw: spawn.yaw,
+    health: 100,
+    alive: true,
+    respawnAt: 0,
+    name: BOT_NAMES[index % BOT_NAMES.length]!,
+    memory: createBotMemory(),
+    skill: BOT_SKILL_BY_INDEX[index % BOT_SKILL_BY_INDEX.length]!,
+  };
+}
 
 /**
  * VR vstup: pravý ovladač míří, spoušť střílí.
@@ -181,8 +195,8 @@ export function MarsArena({
   const frags = useRef(0);
   const deaths = useRef(0);
   const weapon = useRef<'rail' | 'rocket' | 'mg'>('rail');
-  const ammo = useRef(WEAPONS.rocket.ammo);
-  const mgAmmo = useRef(WEAPONS.mg.ammo);
+  const ammo = useRef<number>(WEAPONS.rocket.ammo);
+  const mgAmmo = useRef<number>(WEAPONS.mg.ammo);
   const cooldown = useRef(0);
   const deadUntil = useRef(0);
   const timeLeft = useRef(MATCH_SECONDS);
@@ -195,20 +209,7 @@ export function MarsArena({
   const locked = useRef(false);
 
   const bots = useRef<BotState[]>(
-    BOT_SPAWNS.map((spawn, index) => ({
-      body: { x: spawn.x, y: 0.1, z: spawn.z, vx: 0, vy: 0, vz: 0, onGround: false },
-      yaw: spawn.yaw,
-      health: 100,
-      alive: true,
-      respawnAt: 0,
-      nextShot: 1 + index * 0.4,
-      nextJump: 2 + index,
-      strafeDir: index % 2 === 0 ? 1 : -1,
-      name: BOT_NAMES[index]!,
-      path: [],
-      pathIndex: 0,
-      nextRepath: 0,
-    })),
+    BOT_SPAWNS.map((spawn, index) => makeBot(spawn, index)),
   );
   const rockets = useRef<Rocket[]>([]);
   const tracers = useRef<Tracer[]>([]);
@@ -342,20 +343,7 @@ export function MarsArena({
     rockets.current = [];
     tracers.current = [];
     pickups.current = ARENA_PICKUPS.map((pickup) => ({ ...pickup, until: 0 }));
-    bots.current = BOT_SPAWNS.map((spawn, index) => ({
-      body: { x: spawn.x, y: 0.1, z: spawn.z, vx: 0, vy: 0, vz: 0, onGround: false },
-      yaw: spawn.yaw,
-      health: 100,
-      alive: true,
-      respawnAt: 0,
-      nextShot: 1 + index * 0.4,
-      nextJump: 2 + index,
-      strafeDir: index % 2 === 0 ? 1 : -1,
-      name: BOT_NAMES[index]!,
-      path: [],
-      pathIndex: 0,
-      nextRepath: 0,
-    }));
+    bots.current = BOT_SPAWNS.map((spawn, index) => makeBot(spawn, index));
   }, [running]);
 
   // ── střelba ──────────────────────────────────────────────────────
@@ -423,6 +411,7 @@ export function MarsArena({
           return;
         }
         mgAmmo.current -= 1;
+        playMg();
       } else {
         playRail();
       }
@@ -568,7 +557,14 @@ export function MarsArena({
       }
     }
 
-    // boti
+    // ── boti: jeden mozek jako v MP (sdílený `core/arena/bot.ts`) ────
+    const playerTarget: BotTarget = {
+      id: 'player',
+      x: player.current.x,
+      y: player.current.y,
+      z: player.current.z,
+      alive: !dead,
+    };
     for (let index = 0; index < bots.current.length; index++) {
       const bot = bots.current[index]!;
       if (!bot.alive) {
@@ -581,82 +577,35 @@ export function MarsArena({
         continue;
       }
 
-      const dx = player.current.x - bot.body.x;
-      const dz = player.current.z - bot.body.z;
-      const dist = Math.hypot(dx, dz);
+      const options = skillOptions(bot.skill);
+      const intent = stepBot(bot.memory, bot.body, [playerTarget], nav, solids, now, dt, options);
+      bot.yaw = intent.yaw;
+      driveBot(bot.memory, bot.body, intent, dt, solids, BOT_BODY.radius, BOT_BODY.height, options.speed);
 
-      // cesta mřížkou (BFS), přepočet ~2× za sekundu
-      if (now > bot.nextRepath) {
-        bot.nextRepath = now + 480 + Math.random() * 220;
-        const from = nearestWalkable(nav, cellIndex(bot.body.x, bot.body.z));
-        const to = nearestWalkable(nav, cellIndex(player.current.x, player.current.z));
-        bot.path = findPath(nav, from, to);
-        bot.pathIndex = 0;
-      }
-
-      let goalX = player.current.x;
-      let goalZ = player.current.z;
-      if (bot.path.length > 0) {
-        while (bot.pathIndex < bot.path.length) {
-          const [cx, cz] = cellCenter(bot.path[bot.pathIndex]!);
-          if (Math.hypot(cx - bot.body.x, cz - bot.body.z) < 0.7) bot.pathIndex += 1;
-          else break;
-        }
-        const node = bot.path[Math.min(bot.pathIndex, bot.path.length - 1)]!;
-        const [wx, wz] = cellCenter(node);
-        goalX = wx;
-        goalZ = wz;
-      }
-
-      const targetYaw = Math.atan2(-(goalX - bot.body.x), -(goalZ - bot.body.z));
-      bot.yaw += ((targetYaw - bot.yaw + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, dt * 7);
-
-      const sees = lineOfSight(
-        bot.body.x,
-        bot.body.y + BOT_BODY.height * 0.7,
-        bot.body.z,
-        player.current.x,
-        player.current.y + PLAYER.eye * 0.8,
-        player.current.z,
-        solids,
-      );
-
-      // drží odstup: daleko = jde blíž, blízko = couvá, vždy strafuje
-      const toGoal = Math.hypot(goalX - bot.body.x, goalZ - bot.body.z);
-      const approach = toGoal > 1.2 ? 1 : dist > 11 ? 1 : dist < 5 ? -1 : 0;
-      if (Math.random() < 0.01) bot.strafeDir *= -1;
-
-      stepBody(
-        bot.body,
-        bot.yaw,
-        {
-          forward: approach,
-          strafe: bot.strafeDir * (sees ? 0.9 : 0.4),
-          jump: now > bot.nextJump && Math.random() < 0.02,
-          speed: 0.62,
-        },
-        dt,
-        solids,
-        BOT_BODY.radius,
-        BOT_BODY.height,
-      );
-      if (now > bot.nextJump) bot.nextJump = now + 1800 + Math.random() * 2200;
-
-      // dostřel — boti jedou **stejným modulem** jako MP boti (shared `bot.ts`),
-      // jen damage berou ze sdílených zbraní (rail), ne z vlastních čísel
-      if (sees && !dead && now > bot.nextShot) {
-        bot.nextShot = now + WEAPONS.rail.cooldownMs + Math.random() * 900;
-        if (Math.random() < 0.42) damagePlayer(WEAPONS.rail.damage, now);
+      // dostřel: **stejná hitscan cesta jako server** (`pickTarget` proti
+      // zásahové kouli), ne 42% pravděpodobnost — jinak by sólo boti byli
+      // jiný typ nepřítele než ti v MP
+      if (intent.fire && !dead) {
+        const dir = aimVector(intent.yaw, intent.pitch);
+        const origin = { x: bot.body.x, y: bot.body.y + PLAYER.eye, z: bot.body.z };
+        const target = {
+          id: 'player',
+          x: player.current.x,
+          y: player.current.y + PLAYER.height * TARGET_EYE_RATIO,
+          z: player.current.z,
+          radius: TARGET_RADIUS,
+        };
+        const hit = pickTarget(origin, dir, solids, [target]);
+        // paprsek může skončit o zeď před cílem — pak nedává ani zásah
+        const end = hit?.point ?? { x: origin.x + dir.x * 40, y: origin.y + dir.y * 40, z: origin.z + dir.z * 40 };
         tracers.current.push({
           id: nextId.current++,
-          from: [bot.body.x, bot.body.y + BOT_BODY.height * 0.7, bot.body.z],
-          to: [
-            player.current.x + (Math.random() - 0.5) * 1.2,
-            player.current.y + PLAYER.eye + (Math.random() - 0.5) * 1.0,
-            player.current.z + (Math.random() - 0.5) * 1.2,
-          ],
+          from: [origin.x, origin.y, origin.z],
+          to: [end.x, end.y, end.z],
           ttl: now + 90,
         });
+        playRail();
+        if (hit?.id === 'player') damagePlayer(WEAPONS.rail.damage, now);
       }
     }
 
@@ -747,6 +696,9 @@ export function MarsArena({
       if (pickup.kind === 'health') {
         if (health.current >= 100) continue;
         health.current = Math.min(100, health.current + 25);
+      } else if (pickup.kind === 'ammo') {
+        if (mgAmmo.current >= WEAPONS.mg.ammo) continue;
+        mgAmmo.current = Math.min(WEAPONS.mg.ammo, mgAmmo.current + MG_AMMO_PICKUP);
       } else {
         if (armor.current >= 100) continue;
         armor.current = Math.min(100, armor.current + 50);
@@ -914,7 +866,7 @@ export function MarsArena({
           <mesh key={pickup.id} visible={false}>
             <octahedronGeometry args={[0.42, 0]} />
             <meshBasicMaterial
-              color={pickup.kind === 'health' ? '#7fe3d4' : '#c8a2ff'}
+              color={pickup.kind === 'health' ? '#7fe3d4' : pickup.kind === 'ammo' ? '#ffb46a' : '#c8a2ff'}
               toneMapped={false}
             />
           </mesh>

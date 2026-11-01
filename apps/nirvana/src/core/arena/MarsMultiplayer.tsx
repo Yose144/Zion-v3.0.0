@@ -5,6 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ARENA_BOXES, ARENA_PICKUPS, PLAYER_SPAWN, type ArenaBox } from './map';
 import { PLAYER, makeSolids, stepBody, type Body } from './physics';
+import { WEAPONS } from './weapons';
 import type { ArenaStats } from './MarsArena';
 import { useNet, type ArenaInputFrame } from '@/core/net/useNet';
 import type {
@@ -15,6 +16,17 @@ import type {
 } from '@/core/net/protocol';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
 import { avatarLook } from '@/core/avatars/kit';
+import {
+  playDeath,
+  playFrag,
+  playHurt,
+  playMg,
+  playPickup,
+  playRail,
+  playRocket,
+  playMatchEnd,
+  unlockAudio,
+} from '@/core/arena/audio';
 
 /**
  * MARS ARENA — multiplayer.
@@ -97,6 +109,10 @@ export function MarsMultiplayer({
   const timeLeft = useRef(180);
   /** Munici má vlastní server (snapshot) — klient jen zobrazuje. */
   const ammo = useRef(12);
+  /** Místní cooldown zvuku — zvuk hraje klient, rány počítá server. */
+  const soundCooldown = useRef(0);
+  /** Poslední známé HP — pro zvuk zásahu (server posílá jen stav). */
+  const lastHp = useRef(100);
   const matchState = useRef<'running' | 'ended' | 'countdown' | null>(null);
   const roster = useRef<Map<string, string>>(new Map());
   /** Kdo je v místnosti a jaký má avatar — mění se jen při změně obsazení. */
@@ -106,6 +122,7 @@ export function MarsMultiplayer({
   useEffect(() => {
     // join až ve chvíli, kdy je socket opravdu otevřený — jinak se zpráva ztratí
     if (!running || !connected) return;
+    unlockAudio(); // prohlížeč chce gesto — tlačítko „Multiplayer" jím je
     joinArena();
     return () => leaveRoom();
   }, [running, connected, joinArena, leaveRoom]);
@@ -152,11 +169,21 @@ export function MarsMultiplayer({
 
       if (message.t === 'event') {
         const event = message.event;
-        if (event.kind === 'match_end') matchState.current = 'ended';
+        if (event.kind === 'match_end') {
+          matchState.current = 'ended';
+          playMatchEnd();
+        }
         if (event.kind === 'match_start') matchState.current = 'running';
         if (event.kind === 'presence') {
           for (const member of event.members) roster.current.set(member.id, member.name);
         }
+        // zvuk — stejné syntézy jako sólo, jen spouštěné událostmi serveru
+        if (event.kind === 'kill') {
+          if (event.killer === youPlayerId) playFrag();
+          if (event.victim === youPlayerId) playDeath();
+        }
+        if (event.kind === 'pickup' && event.id === youPlayerId) playPickup();
+        if (event.kind === 'respawn' && event.id === youPlayerId) playPickup();
       }
     });
   }, [subscribe]);
@@ -264,6 +291,9 @@ export function MarsMultiplayer({
     const snapshot = latest.current;
     const me = snapshot?.players.find((player) => player.id === youPlayerId);
     if (me) {
+      // zásah poznáme podle poklesu HP ve snapshotu (server je autorita)
+      if (me.hp < lastHp.current && me.alive) playHurt();
+      lastHp.current = me.hp;
       health.current = me.hp;
       armor.current = me.armor;
       frags.current = me.frags;
@@ -353,6 +383,15 @@ export function MarsMultiplayer({
       fire,
       weapon: weapon.current,
     };
+    // zvuk výstřelu hraje klient lokálně (server je autorita zásahů, ne zvuku);
+    // cooldown zrcadlí `WEAPONS`, aby se dávka nesekala do sebe
+    if (fire && now > soundCooldown.current) {
+      const spec = weapon.current === 0 ? WEAPONS.rail : weapon.current === 1 ? WEAPONS.rocket : WEAPONS.mg;
+      soundCooldown.current = now + spec.cooldownMs;
+      if (weapon.current === 0) playRail();
+      else if (weapon.current === 1) playRocket();
+      else playMg();
+    }
     sendInput(frame);
 
     // 7) HUD
@@ -460,7 +499,7 @@ export function MarsMultiplayer({
         >
           <boxGeometry args={[0.5, 0.5, 0.5]} />
           <meshBasicMaterial
-            color={pickup.kind === 'health' ? '#7fe3d4' : '#ffd166'}
+            color={pickup.kind === 'health' ? '#7fe3d4' : pickup.kind === 'ammo' ? '#ffb46a' : '#ffd166'}
             toneMapped={false}
           />
         </mesh>

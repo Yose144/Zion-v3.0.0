@@ -182,3 +182,23 @@ paralelní session prováděla `git add` přes celý strom a strhla moje
 staged soubory — stejně jako dřív `physics.ts`. Kód je v repu správně;
 popis je tady a v `AGENTS.md`. Oprava `d885f1013` (výška oka + chyba
 míření + deterministický test) už má vlastní commit.
+
+---
+
+## 10. Doplňující vlna (2026-11-02, deploy `20261101T233612Z`)
+
+Zavřeny tři mezery ze §8:
+
+| mezera | řešení |
+|---|---|
+| sólo boti měli **vlastní** AI | `MarsArena.tsx` teď volá `stepBot`/`driveBot` ze `core/arena/bot.ts` — **stejný modul jako server**; navíc dostřel je reálný `hitscan` přes `pickTarget`, ne 42% pravděpodobnost |
+| boti bez úrovní obtížnosti | `BOT_SKILLS` easy/normal/hard (Q3 styl), každý bot jiný; mění **jen** přesnost 0,085→0,018 rad, kadenci 1400→620 ms a rychlost 0,5→0,78 — **damage zůstává ve sdílených `WEAPONS`** |
+| MG bez nábojů a zvuku, žádný zvuk v MP | 2 pickupy `ammo` (`+25`, respawn 22 s) v sóle i na serveru; `playMg()`; **zvuk v MP**: výstřel lokálně (cooldown dle `WEAPONS`), zásah dle poklesu HP, kill/respawn/pickup/match_end z eventů; `unlockAudio()` při joinu |
+
+Ověřeno: sada 5/5 (`arena-bots` nově **24 kontrol**), `tsc` 0 chyb,
+E2E `mars-arena.mjs` **9/9**, živě `join arena` → 4 hráči / 3 boti /
+5 pickupů vč. MG nábojů.
+
+**Stále platí jako meze:** žádný zvuk pro rakety jiných hráčů (jen vlastní
+výstřely + eventy), VR nedotčeno, obtížnost botů není nastavitelná přes
+protokol (pevná sestava), MG nemá vlastní model (krychle + barva).

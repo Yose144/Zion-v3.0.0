@@ -80,7 +80,7 @@ export const BOT_SPAWNS: ArenaSpawn[] = [
 
 export interface ArenaPickup {
   id: string;
-  kind: 'health' | 'armor';
+  kind: 'health' | 'armor' | 'ammo';
   x: number;
   y: number;
   z: number;
@@ -92,6 +92,9 @@ export const ARENA_PICKUPS: ArenaPickup[] = [
   { id: 'h1', kind: 'health', x: -16, y: 0, z: 12, respawn: 18 },
   { id: 'h2', kind: 'health', x: 16, y: 0, z: -12, respawn: 18 },
   { id: 'a1', kind: 'armor', x: 0, y: 2, z: 0, respawn: 30 },
+  // náboje na MG (Q3 má ammo boxy; tady jsou dvě, aby obě strany měly šanci)
+  { id: 'm1', kind: 'ammo', x: -16, y: 0, z: -12, respawn: 22 },
+  { id: 'm2', kind: 'ammo', x: 16, y: 0, z: 12, respawn: 22 },
 ];
 
 /** Stěny jako data pro raycast (jen to, co blokuje střelu). */

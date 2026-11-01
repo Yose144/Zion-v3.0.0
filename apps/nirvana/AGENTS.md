@@ -624,3 +624,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Testy:** `npx tsx apps/nirvana/test/moba-sim.mjs` (21 kontrol, pravidla)
   a `node apps/nirvana/e2e/first-world.mjs` (11 kontrol, hra v prohlížeči;
   Chromium z puppeteer cache, playwright verzi nemá).
+
+### Doplňující vlna (2026-11-02)
+
+- **Sólo i MP boti jsou jeden modul** (`core/arena/bot.ts`). Sólový dostřel
+  je teď **reálný hitscan** přes `pickTarget`, ne 42% pravděpodobnost —
+  jinak by sólo a MP boti byli dva různí typy nepřátel.
+- **Úroveň mění jen parametry mozku** (`BOT_SKILLS`: přesnost, kadence,
+  rychlost), **nikdy damage**. Kdo do `BOT_SKILLS` přidá `damage`, rozbije
+  tím „trefil jsem ho a nic" — damage drží výhradně `WEAPONS`.
+- **Pickupy mají tři druhy** (`health`/`armor`/`ammo`) — barva je v obou
+  klientech i na serveru na třech místech; přidání čtvrtého druhu znamená
+  `map.ts` + oba renderery + serverový handler v `arena.ts`.
+- **Zvuk v MP hraje klient**, server ho neposílá. Výstřel = lokální (s
+  cooldownem dle `WEAPONS`), zásah = **pokles HP ve snapshotu**, kill/
+  respawn/pickup = eventy. Server je autorita zásahů, ne zvuku.
+- **`useRef(WEAPONS.mg.ammo)` inferuje literální typ `50`** — zápis
+  `ref.current = číslo` pak spadne na typu. Píši `useRef<number>(...)`.

@@ -21,8 +21,10 @@ import {
 import { buildNavGrid, type NavGrid } from '../../nirvana/src/core/arena/nav.js';
 import {
   createBotMemory,
+  skillOptions,
   stepBot,
   type BotMemory,
+  type BotSkill,
   type BotTarget,
 } from '../../nirvana/src/core/arena/bot.js';
 import {
@@ -35,6 +37,7 @@ import {
   type Box4,
 } from '../../nirvana/src/core/arena/physics.js';
 import {
+  MG_AMMO_PICKUP,
   PLAYER_RESPAWN_MS,
   TARGET_EYE_RATIO,
   TARGET_RADIUS,
@@ -80,6 +83,8 @@ export interface ArenaPlayer {
   isBot?: boolean;
   /** Botí mozek — sdílený modul, stejný jako v sóle. */
   memory?: BotMemory;
+  /** Úroveň obtížnosti (Q3 easy/medium/hard) — určuje parametry mozku. */
+  skill?: BotSkill;
 }
 
 export interface Rocket {
@@ -97,7 +102,7 @@ export interface Rocket {
 export type ArenaEvent =
   | { kind: 'kill'; killer: string; victim: string; weapon: WeaponId; at: number }
   | { kind: 'respawn'; id: string }
-  | { kind: 'pickup'; id: string; item: 'health' | 'armor' }
+  | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' }
   | { kind: 'match_start'; at: number }
   | { kind: 'match_end'; scoreboard: { id: string; name: string; frags: number; deaths: number }[] };
 
@@ -133,6 +138,8 @@ const BOT_COUNT = Math.max(
   Number.parseInt(process.env.NIRVANA_ARENA_BOTS ?? '3', 10) || 0,
 );
 const BOT_NAMES = ['VALLIS', 'NOCTIS', 'ARES'];
+/** Každý bot jiná úroveň — jako v sólo aréně (stejná sestava). */
+const BOT_SKILLS: BotSkill[] = ['easy', 'normal', 'hard'];
 
 export function createArena(now: number): ArenaSim {
   return {
@@ -253,6 +260,7 @@ export function ensureBots(sim: ArenaSim): void {
       lastHitBy: null,
       isBot: true,
       memory: createBotMemory(),
+      skill: BOT_SKILLS[index % BOT_SKILLS.length],
     };
     sim.players.set(bot.id, bot);
   }
@@ -405,7 +413,10 @@ function stepBots(sim: ArenaSim, dt: number, now: number): void {
     const memory = bot.memory ?? createBotMemory();
     bot.memory = memory;
 
-    const intent = stepBot(memory, bot.body, targets, sim.nav, sim.solids, now, dt);
+    // úroveň určuje jen parametry mozku (rychlost, přesnost, kadenci) —
+    // damage drží sdílená `WEAPONS` a nesmí se měnit podle obtížnosti
+    const options = skillOptions(bot.skill ?? 'normal');
+    const intent = stepBot(memory, bot.body, targets, sim.nav, sim.solids, now, dt, options);
     bot.input.forward = intent.forward;
     bot.input.strafe = intent.strafe;
     bot.input.jump = intent.jump;
@@ -552,8 +563,11 @@ export function stepArena(sim: ArenaSim, dt: number, now: number): ArenaEvent[] 
       if (distance > PICKUP_RANGE) continue;
       if (pickup.kind === 'health' && player.hp >= 100) continue;
       if (pickup.kind === 'armor' && player.armor >= 100) continue;
+      if (pickup.kind === 'ammo' && player.mgAmmo >= WEAPONS.mg.ammo) continue;
       if (pickup.kind === 'health') player.hp = Math.min(100, player.hp + 25);
-      else player.armor = Math.min(100, player.armor + 50);
+      else if (pickup.kind === 'ammo') {
+        player.mgAmmo = Math.min(WEAPONS.mg.ammo, player.mgAmmo + MG_AMMO_PICKUP);
+      } else player.armor = Math.min(100, player.armor + 50);
       sim.pickupReadyAt.set(pickup.id, now + pickup.respawn * 1000);
       sim.events.push({ kind: 'pickup', id: player.id, item: pickup.kind });
     }

@@ -51,6 +51,8 @@ export const WEAPONS = {
 
 /** Podíl poškození, který spolkne armor (Q3 `ARMOR_PROTECTION` = 0,66). */
 export const ARMOR_ABSORB = 0.66;
+/** Kolik nábojů na MG dá jeden pickup (Q3 ammo boxy dávají plný zásobník). */
+export const MG_AMMO_PICKUP = 25;
 /** Jak dlouho leží mrtvý hráč, než se vrátí na spawn (ms). */
 export const PLAYER_RESPAWN_MS = 2400;
 /** Poloměr zásahové koule hráče. */

@@ -84,6 +84,33 @@ export const DEFAULT_BOT_OPTIONS: Required<BotOptions> = {
   targetHeight: PLAYER.height * TARGET_EYE_RATIO,
 };
 
+/**
+ * Úrovně obtížnosti (Q3 má easy/medium/hard). Jednotlivé parametry —
+ * **ne** damage — protože damage drží sdílená `WEAPONS` a nesmí se
+ * rozjet podle obtížnosti (jinak „trefil jsem ho a nic").
+ */
+export type BotSkill = 'easy' | 'normal' | 'hard';
+
+export const BOT_SKILLS: Record<BotSkill, Required<BotOptions>> = {
+  easy: {
+    ...DEFAULT_BOT_OPTIONS,
+    aimError: 0.085,
+    fireDelayMs: 1400,
+    speed: 0.5,
+  },
+  normal: { ...DEFAULT_BOT_OPTIONS },
+  hard: {
+    ...DEFAULT_BOT_OPTIONS,
+    aimError: 0.018,
+    fireDelayMs: 620,
+    speed: 0.78,
+  },
+};
+
+export function skillOptions(skill: BotSkill): Required<BotOptions> {
+  return BOT_SKILLS[skill] ?? DEFAULT_BOT_OPTIONS;
+}
+
 export function createBotMemory(): BotMemory {
   return {
     path: [],

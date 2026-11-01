@@ -150,7 +150,7 @@ try {
   const first = await a.waitFor((m) => m.t === 'snapshot' && m.players.length === 2);
   check('snapshot: 2 hráči (boti vypnuti)', first.players.length === 2, String(first.players.length));
   check('snapshot: rakety pole', Array.isArray(first.projectiles), JSON.stringify(first.projectiles));
-  check('snapshot: pickupy', Array.isArray(first.pickups) && first.pickups.length === 3,
+  check('snapshot: pickupy', Array.isArray(first.pickups) && first.pickups.length === 5,
     JSON.stringify(first.pickups));
   check('snapshot: čas zápasu', typeof first.secondsLeft === 'number', String(first.secondsLeft));
 
