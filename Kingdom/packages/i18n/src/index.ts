@@ -33,7 +33,6 @@ const cs = {
   model: 'Model',
   comingSoon: 'Připravujeme',
   books: 'Knihy',
-  signInNote: 'Přihlášení a podepisování přijdou ve F4.',
   signOut: 'Odhlásit',
   mnemonic: 'Dvanáct slov',
   mnemonicHint: 'Fráze se odvodí v prohlížeči a hned se smaže. Do sítě jde jen podpis — klíč nikam neposíláme.',
@@ -88,6 +87,14 @@ const cs = {
   connected: 'připojeno',
   inStock: 'skladem',
   price: 'Cena',
+  acceptRate: 'Přijato',
+  lastShare: 'Poslední share',
+  openOps: 'Ovládání poolu',
+  opsBehindLogin:
+    'Operátorský povrch za přihlášením. Restart, drain a výplaty patří operátorovi — klient je neumí a Kingdom je nedělá.',
+  openGovernance: 'Otevřít správu protokolu',
+  voteNote:
+    'Hlas se podepisuje peněženkou v DAO. Kingdom ho neodesílá — nedrží tvůj klíč a nezná tvůj zůstatek.',
 } as const;
 
 export type TranslationKey = keyof typeof cs;
@@ -117,7 +124,6 @@ const en: Record<TranslationKey, string> = {
   model: 'Model',
   comingSoon: 'Coming soon',
   books: 'Books',
-  signInNote: 'Sign-in and signing arrive in F4.',
   signOut: 'Sign out',
   mnemonic: 'Twelve words',
   mnemonicHint: 'The phrase is derived in your browser and cleared right after. Only the signature leaves — the key never does.',
@@ -172,6 +178,14 @@ const en: Record<TranslationKey, string> = {
   connected: 'connected',
   inStock: 'in stock',
   price: 'Price',
+  acceptRate: 'Accept',
+  lastShare: 'Last share',
+  openOps: 'Pool operations',
+  opsBehindLogin:
+    'Operator surface behind a login. Restart, drain and payouts belong to the operator — a client cannot do them and Kingdom does not try.',
+  openGovernance: 'Open protocol governance',
+  voteNote:
+    'A vote is signed by your wallet in the DAO. Kingdom does not send it — it holds no key and does not know your balance.',
 };
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { cs, en };

@@ -14,5 +14,16 @@ export const manifest = definePortal({
   auth: 'session',
   windows: [{ id: 'identity', title: { cs: 'Identita', en: 'Identity' }, size: 'md' }],
   reads: [],
+  /* Jediný zápis, který Kingdom opravdu umí: podpis challenge v prohlížeči.
+     Klíč zůstává v prohlížeči, sem jde jen podpis — server ho ověří u ZIS. */
+  writes: [
+    {
+      id: 'sign-in',
+      title: { cs: 'Přihlášení podpisem', en: 'Sign-in by signature' },
+      auth: 'sign',
+      service: 'auth',
+      path: '/api/auth/login',
+    },
+  ],
   status: 'live',
 });

@@ -15,6 +15,7 @@ export const manifest = definePortal({
   windows: [{ id: 'coins', title: { cs: 'Mince', en: 'Coins' }, size: 'lg' }],
   reads: [
     { id: 'coins', service: 'pool', path: '/public/v1/coins', cache: 30 },
+    { id: 'miners', service: 'pool', path: '/public/v1/miners?limit=32', cache: 30 },
   ],
   status: 'live',
 });

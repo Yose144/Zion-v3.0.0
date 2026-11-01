@@ -265,6 +265,27 @@ Třetí appka migrace. `next` 16.2.12 → **16.4.3**, `react` zůstal **19.2.0**
 
 ---
 
+## F4 — zápisy a handoff (2026-11-01)
+
+F4 není „přidat tlačítka", ale **rozhodnout, co Kingdom smí udělat sám**. Pravidlo zní: co potřebuje klíč, zůstává mimo klienta; co jen čte, jde do portálu. Hotové čtyři věci:
+
+| Portál | Co umí | Kde končí | Proč |
+|---|---|---|---|
+| **Věž** (F4a) | rozhovor s Hiranem | model volá **server** (`/api/hiran/chat`), ne prohlížeč | klient nemá klíč ani interní URL; rate limit 20/min per IP |
+| **Tržiště** (F4b) | výloha produktů | klik vede na `market.zionterranova.com/shop?category=…` | pokladna, platba a doprava mají vlastní bezpečnostní model |
+| **Kovárna** (F4c) | 13 těžařů, hashrate, accept rate z `/public/v1/miners` | odkaz na `pool.zionterranova.com/ops/` (basic auth) | restart/drain/výplaty jsou operátorské úkony, ne klientské |
+| **Snem** (F4d) | 7 strážců, stav návrhů | odkaz na hlasování na `app.zionterranova.com/dao` | hlas podepisuje **peněženka**; Kingdom nemá klíč ani zůstatek |
+
+**Účet** deklaruje v manifestu jediný zápis, který opravdu umí: `sign-in` (`auth: 'sign'`, `POST /api/auth/login`). Ostatní portály `writes` nemají — prázdné pole je poctivější než seznam slibů.
+
+**Měření (live, 2026-11-01 11:50):** `/portal/pool` = 12 mincí, 13 těžařů, 355 MH/s, 26 karet; `/portal/dao` = 7 strážců, 0 návrhů (reálný stav), handoff karta; `/` a `/room` bez chyb v konzoli. `npm run verify` = codegen 9 portálů / 15 knih, `check` 108 souborů / 0 porušení, `tsc` čistý, build 4 statické routy + 4 API.
+
+**Past:** `Kingdom/node_modules` v pracovním stromu chyběl → `npm run typecheck` spadl na `tsc: not found`. Řešení `npm ci` v `Kingdom/` (vlastní lockfile, do `apps/` nesahá).
+
+**Past (cizí obsah):** codegen knihoven čte `canon/books/` — když tam paralelní session rozepíše novou knihu, `catalog.json` ji vezme i do buildu. Pro vlastní deploy: `git checkout …/catalog.json` **a** build spouštět jako `npm run build -w @zion/kingdom` (ne `npm run build`, který codegen volá znovu).
+
+---
+
 ## 2. Měření
 
 | Metrika | Hodnota | Jak |

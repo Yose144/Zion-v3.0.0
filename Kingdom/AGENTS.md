@@ -40,6 +40,9 @@ Pro dokumentační změny stačí `git diff --check`.
 
 ## Pasti, které už známe
 
+- **Chybí `Kingdom/node_modules` → `tsc: not found`.** `npm run codegen` a `npm run check` jsou čisté node skripty a projdou i bez závislostí, takže to vypadá jako rozbitý typecheck. Řešení: `npm ci` v `Kingdom/` (vlastní lockfile; do `apps/**` nesahá).
+- **`npm run build` volá codegen.** Když v `canon/books/` leží rozepsaná kniha jiné session, dostane se i do buildu. Pro deploy bez cizího obsahu: `git checkout apps/kingdom/src/core/books/catalog.json` **a** `npm run build -w @zion/kingdom` (ne root `build`).
+
 - **Next standalone v monorepu** zanoří app do `.next/standalone/<app>/` — `public/` a `static/` se musí stageovat vedle `server.js`, ne do rootu standalone. (Zděděno z `apps/nirvana/AGENTS.md`.)
 - **Async texture v R3F:** materiál zkompilovaný s `map={undefined}` se po přiřazení textury nepřepne na `USE_MAP` → použít `key={tex ? 'tex' : 'flat'}`.
 - **`DirectRenderer`:** `useFrame(cb, 1)`, jinak r3f rendruje dvakrát za frame.
