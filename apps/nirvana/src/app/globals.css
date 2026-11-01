@@ -3447,3 +3447,546 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     display: flex;
   }
 }
+
+/* ── PRVNÍ SVĚT — MOBA na Zemi (L4 × L5) ───────────────────────────── */
+
+.moba {
+  position: relative;
+  min-height: 100dvh;
+  padding: 6.5rem 1.25rem 3rem;
+  background:
+    radial-gradient(1200px 700px at 20% 0%, rgba(127, 227, 212, 0.1), transparent 60%),
+    radial-gradient(900px 600px at 85% 10%, rgba(255, 122, 107, 0.09), transparent 60%),
+    #04070d;
+  color: #e9f2ee;
+}
+
+.moba.is-live {
+  padding: 0;
+  overflow: hidden;
+  height: 100dvh;
+}
+
+.moba-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 76rem;
+  margin: 0 auto 1.5rem;
+}
+
+.moba.is-live .moba-head {
+  position: fixed;
+  top: 0.75rem;
+  left: 1rem;
+  z-index: 20;
+  margin: 0;
+  pointer-events: none;
+}
+
+.moba.is-live .moba-head h1,
+.moba.is-live .moba-head .moba-sub,
+.moba.is-live .moba-head .moba-kicker {
+  display: none;
+}
+
+.moba-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #7fe3d4;
+}
+
+.moba-head h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  letter-spacing: 0.06em;
+  background: linear-gradient(120deg, #7fe3d4, #ffd166 55%, #ff7a6b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.moba-sub {
+  margin: 0.5rem 0 0;
+  max-width: 46rem;
+  color: #9fb4ae;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.moba-head-links {
+  display: flex;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.moba-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgba(127, 227, 212, 0.3);
+  border-radius: 999px;
+  background: rgba(8, 20, 18, 0.7);
+  color: #bfe9e0;
+  font-size: 0.78rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.moba-link:hover {
+  background: rgba(127, 227, 212, 0.12);
+}
+
+.moba-pick {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 76rem;
+  margin: 0 auto;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+}
+
+@media (max-width: 900px) {
+  .moba-pick {
+    grid-template-columns: 1fr;
+  }
+}
+
+.moba-pick-block {
+  padding: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.1rem;
+  background: rgba(6, 14, 12, 0.72);
+}
+
+.moba-pick-block h2 {
+  margin: 0 0 0.8rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #7fe3d4;
+}
+
+.moba-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.moba-pick-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.8rem;
+  background: rgba(10, 20, 18, 0.8);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.moba-pick-card:hover {
+  border-color: rgba(127, 227, 212, 0.45);
+  transform: translateY(-1px);
+}
+
+.moba-pick-card.is-active {
+  border-color: #7fe3d4;
+  box-shadow: 0 0 0 1px rgba(127, 227, 212, 0.4), 0 10px 30px -18px rgba(127, 227, 212, 0.9);
+}
+
+.moba-pick-card strong {
+  font-size: 0.82rem;
+}
+
+.moba-pick-card span {
+  font-size: 0.68rem;
+  color: #8fa5a0;
+}
+
+.moba-pick-card em {
+  font-size: 0.62rem;
+  font-style: normal;
+  letter-spacing: 0.12em;
+  color: #ffd166;
+}
+
+.moba-pick-note {
+  margin: 0.9rem 0 0;
+  font-size: 0.74rem;
+  color: #8fa5a0;
+}
+
+.moba-rules {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #b9cbc6;
+}
+
+.moba-spells {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0.9rem 0;
+}
+
+.moba-spell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.7rem;
+  background: rgba(8, 16, 14, 0.85);
+}
+
+.moba-spell-key {
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: #ffd166;
+}
+
+.moba-spell strong {
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+
+.moba-spell small {
+  font-size: 0.6rem;
+  color: #8fa5a0;
+}
+
+.moba-start {
+  margin-top: 0.8rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(255, 209, 102, 0.5);
+  border-radius: 0.9rem;
+  background: linear-gradient(120deg, rgba(255, 209, 102, 0.18), rgba(127, 227, 212, 0.16));
+  color: #fff6df;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.moba-start:hover {
+  background: linear-gradient(120deg, rgba(255, 209, 102, 0.28), rgba(127, 227, 212, 0.22));
+}
+
+.moba-stage {
+  position: fixed;
+  inset: 0;
+}
+
+.moba-stage canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.moba-hud-top {
+  position: absolute;
+  top: 0.9rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(4, 10, 9, 0.78);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.moba-nexus {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+}
+
+.moba-nexus-bar {
+  width: 7rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.moba-nexus-bar i {
+  display: block;
+  height: 100%;
+  background: #7fe3d4;
+  transition: width 0.2s linear;
+}
+
+.moba-nexus.is-red .moba-nexus-bar i {
+  background: #ff7a6b;
+}
+
+.moba-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 4.5rem;
+}
+
+.moba-clock strong {
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+}
+
+.moba-clock small {
+  font-size: 0.58rem;
+  color: #8fa5a0;
+}
+
+.moba-nodes {
+  position: absolute;
+  top: 4.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+
+.moba-node {
+  padding: 0.15rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: #93a7a2;
+  background: rgba(4, 10, 9, 0.7);
+}
+
+.moba-node.is-blue {
+  color: #7fe3d4;
+  border-color: rgba(127, 227, 212, 0.5);
+}
+
+.moba-node.is-red {
+  color: #ff8b7d;
+  border-color: rgba(255, 122, 107, 0.5);
+}
+
+.moba-hud-bottom {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: none;
+  width: min(46rem, 94vw);
+}
+
+.moba-vitals {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.moba-bar {
+  position: relative;
+  flex: 1;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.moba-bar i {
+  display: block;
+  height: 100%;
+  transition: width 0.15s linear;
+}
+
+.moba-bar.is-hp i {
+  background: linear-gradient(90deg, #2fbf8f, #7fe3d4);
+}
+
+.moba-bar.is-mana i {
+  background: linear-gradient(90deg, #3a6fd8, #7fb0ff);
+}
+
+.moba-bar span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: rgba(4, 12, 10, 0.85);
+  font-weight: 700;
+}
+
+.moba-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 7rem;
+}
+
+.moba-score strong {
+  font-size: 0.72rem;
+}
+
+.moba-score span {
+  font-size: 0.6rem;
+  color: #8fa5a0;
+}
+
+.moba-spellbar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.moba-slot {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.7rem;
+  background: rgba(4, 10, 9, 0.82);
+}
+
+.moba-slot-key {
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  color: #ffd166;
+}
+
+.moba-slot strong {
+  font-size: 0.64rem;
+  line-height: 1.2;
+}
+
+.moba-slot small {
+  font-size: 0.55rem;
+  color: #8fa5a0;
+}
+
+.moba-slot-cd {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.62);
+  pointer-events: none;
+}
+
+.moba-tips {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: #7d918d;
+}
+
+.moba-banner {
+  position: absolute;
+  top: 6.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.4rem 1rem;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  border-radius: 999px;
+  background: rgba(4, 10, 9, 0.85);
+  color: #ffe9b0;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+}
+
+.moba-respawn {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.6rem 1.4rem;
+  border: 1px solid rgba(255, 122, 107, 0.5);
+  border-radius: 999px;
+  background: rgba(20, 6, 6, 0.85);
+  color: #ffb3a8;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+}
+
+.moba-result {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: rgba(3, 7, 6, 0.86);
+  backdrop-filter: blur(6px);
+  text-align: center;
+  padding: 2rem;
+}
+
+.moba-result strong {
+  font-size: clamp(1.4rem, 4vw, 2.4rem);
+  letter-spacing: 0.12em;
+  color: #ffe9b0;
+}
+
+.moba-result span {
+  max-width: 34rem;
+  color: #9fb4ae;
+  font-size: 0.9rem;
+}
+
+.moba-result-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+@media (max-width: 700px) {
+  .moba-hud-top {
+    gap: 0.5rem;
+    padding: 0.35rem 0.55rem;
+  }
+
+  .moba-nexus-bar {
+    width: 3.6rem;
+  }
+
+  .moba-spellbar {
+    gap: 0.25rem;
+  }
+
+  .moba-slot strong {
+    font-size: 0.56rem;
+  }
+
+  .moba-spells {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

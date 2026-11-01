@@ -598,3 +598,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   simulační části s jedním botem v místnosti; síť testuje jen transport.
   Síťový test, kde tři boti bojují s člověkem, flakuje — boti si stínají
   cíl a člověk umírá dřív, než vystřelí.
+
+## PRVNÍ SVĚT — MOBA `/earth` (2026-11-02)
+
+- **Kouzla jsou z kánonu, ne z hlavy.** `core/moba/spells.ts` čte `ability`
+  z `V31/L4/oasis/data/avatars.json` a podle 11 škol (`ward`, `fire`, `arrow`,
+  `blade`, `cosmic`, `mind`, `nature`, `storm`, `song`, `shadow`, `beast`)
+  složí Q/W/E/R. Stejné id = stejná sada; cizí hrdina jde vykreslit z `avatarId`.
+- **Sim je jeden modul** (`core/moba/sim.ts`) — pohyb, kouzla, minioni, věže,
+  Nexy, uzly, XP, respawn, konec. Klient posílá jen vstup (WASD + slot + bod
+  seslání), poškození počítá sim. Když se číslo kouzla mění, mění se tady.
+- **Uzly L5 jsou mechanika:** `NODE_SITES` (Kailash, Uluru, Ekam) — 2,6 s stání
+  = převzetí, +5 % poškození za uzel. Klíče sedí na `FREE_WORLD_MISSIONS`.
+  Nepřidávat uzly jen jako dekoraci — hráč je musí vidět v HUD.
+- **Kamera:** sleduje hrdinu přímo (`camera.position.set(x, 20, z + 17)`),
+  clamp je ±38/±26, jinak se u základny záběr rozjede a hrdina není uprostřed.
+- **HUD:** telemetrie chodí 5×/s přes `onStats` (ne React state ve `useFrame`).
+  Simulace běží v refu; `?mobaDebug=1` vystaví `window.__mobaDebug()`
+  (`cast`, `teleport`, `damageNexus`, snapshot) pro headless testy — bez něj
+  by E2E muselo hrát myší.
+- **Konec zápasu se detekuje centrálně** (na konci `stepMoba` kontrola Nexů),
+  ne jen v cestě „hrdina mlátí věž" — jinak debug/minion Nexu položí a hra běží dál.
+- **Co tu není:** multiplayer (bude `PROTO_VERSION` bump + serverová autorita),
+  obchod/itemy, mlha války, zvuk, dotyk na mobilu, VR. Nehlásit jako hotové.
+- **Testy:** `npx tsx apps/nirvana/test/moba-sim.mjs` (21 kontrol, pravidla)
+  a `node apps/nirvana/e2e/first-world.mjs` (11 kontrol, hra v prohlížeči;
+  Chromium z puppeteer cache, playwright verzi nemá).

@@ -19,6 +19,14 @@ export interface GameLink {
 
 export const GAME_LINKS: GameLink[] = [
   {
+    id: 'earth',
+    href: '/earth',
+    title: { cs: 'První svět', en: 'First World' },
+    note: { cs: 'MOBA · 3 linky · uzly L5', en: 'MOBA · 3 lanes · L5 nodes' },
+    glyph: '🌍',
+    tone: '#7fe3d4',
+  },
+  {
     id: 'park',
     href: '/park',
     title: { cs: 'Pouť', en: 'Fair' },

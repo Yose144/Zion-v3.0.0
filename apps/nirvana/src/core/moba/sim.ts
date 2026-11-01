@@ -1,0 +1,808 @@
+/**
+ * MOBA „PRVNÍ SVĚT" — simulace.
+ *
+ * Server i klient počítají **tentýž kód** (pravidlo z arény): klient posílá
+ * jen vstup a sim rozhoduje o poškození, smrti i vítězství. Kdyby klient
+ * počítal zásahy sám, hráč by viděl jiné číslo, než jaké dostal soupeř.
+ *
+ * Co hra obsahuje: tři linky, vlny minionů, věže, Nexy, tři uzly L5
+ * (převzetí = bonus k poškození) a **čtyři kouzla na postavu** z kánonu
+ * (`spells.ts`). Co záměrně není: obchod, itemy, úrovně kouzel, mlha války,
+ * multiplayer — to jsou další vrstvy, ne nedodělky.
+ */
+
+import { AVATARS_BY_ID } from '../avatars/catalog';
+import { avatarLook } from '../avatars/kit';
+import { spellsFor, type Spell, type SpellSlot } from './spells';
+import {
+  LANES,
+  MAP_HALF_X,
+  MAP_HALF_Z,
+  MATCH_SECONDS,
+  MINION_ATTACK_MS,
+  MINION_DAMAGE,
+  MINION_HP,
+  MINION_RANGE,
+  MINION_SPEED,
+  NODE_BONUS_PER_SITE,
+  NODE_CAPTURE_MS,
+  NODE_SITES,
+  SPAWNS,
+  STRUCTURES,
+  WAVE_INTERVAL_MS,
+  WAVE_SIZE,
+  type LaneId,
+  type Team,
+} from './map';
+
+export type UnitKind = 'hero' | 'minion' | 'tower' | 'nexus';
+
+export interface Hero {
+  id: string;
+  team: Team;
+  heroId: number;
+  name: string;
+  kind: 'hero';
+  x: number;
+  z: number;
+  hp: number;
+  maxHp: number;
+  mana: number;
+  maxMana: number;
+  level: number;
+  xp: number;
+  alive: boolean;
+  respawnAt: number;
+  shield: number;
+  shieldUntil: number;
+  slowUntil: number;
+  slowFactor: number;
+  spells: Spell[];
+  cooldowns: Record<SpellSlot, number>;
+  attackCooldown: number;
+  facing: number;
+  kills: number;
+  deaths: number;
+  damageDone: number;
+  isPlayer: boolean;
+  /** Kam se bot zrovna dívá / kam jde (jen pro AI). */
+  botLane: LaneId;
+  botCast: { slot: SpellSlot; x: number; z: number } | null;
+}
+
+export interface Minion {
+  id: string;
+  team: Team;
+  lane: LaneId;
+  x: number;
+  z: number;
+  hp: number;
+  maxHp: number;
+  cooldown: number;
+}
+
+export interface Tower {
+  id: string;
+  team: Team;
+  kind: 'tower' | 'nexus';
+  x: number;
+  z: number;
+  hp: number;
+  maxHp: number;
+  range: number;
+  damage: number;
+  attackMs: number;
+  cooldown: number;
+}
+
+export interface Projectile {
+  id: string;
+  team: Team;
+  x: number;
+  z: number;
+  dx: number;
+  dz: number;
+  speed: number;
+  radius: number;
+  damage: number;
+  ttl: number;
+  color: string;
+  owner: string;
+}
+
+export interface Effect {
+  id: string;
+  kind: 'aoe' | 'hit' | 'shield' | 'heal' | 'level' | 'capture';
+  x: number;
+  z: number;
+  radius: number;
+  color: string;
+  ttl: number;
+  maxTtl: number;
+}
+
+export interface NodeState {
+  key: string;
+  name: string;
+  x: number;
+  z: number;
+  owner: Team | null;
+  /** Postup převzetí podle týmu (ms). */
+  progress: Record<Team, number>;
+}
+
+export interface MobaInput {
+  moveX: number;
+  moveZ: number;
+  cast: { slot: SpellSlot; x: number; z: number } | null;
+  attack: boolean;
+}
+
+export const NO_INPUT: MobaInput = { moveX: 0, moveZ: 0, cast: null, attack: false };
+
+export interface MobaState {
+  now: number;
+  time: number;
+  ended: Team | null;
+  heroes: Hero[];
+  minions: Minion[];
+  towers: Tower[];
+  projectiles: Projectile[];
+  effects: Effect[];
+  nodes: NodeState[];
+  nextWaveAt: number;
+  wave: number;
+  seq: number;
+  banner: string | null;
+  bannerUntil: number;
+}
+
+// ── pomocné ──────────────────────────────────────────────────────────
+
+let SEQ = 0;
+const nextId = (prefix: string) => `${prefix}-${(SEQ += 1)}`;
+
+const distance = (ax: number, az: number, bx: number, bz: number) => Math.hypot(ax - bx, az - bz);
+
+function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z: number }, isPlayer: boolean): Hero {
+  const entry = AVATARS_BY_ID.get(heroId);
+  const cl = entry?.cl ?? 3;
+  const look = avatarLook(heroId);
+  const maxHp = 620 + cl * 34;
+  const maxMana = 320 + cl * 18;
+  return {
+    id,
+    team,
+    heroId,
+    name: entry?.name ?? 'Poutník',
+    kind: 'hero',
+    x: spawn.x,
+    z: spawn.z,
+    hp: maxHp,
+    maxHp,
+    mana: maxMana,
+    maxMana,
+    level: 1,
+    xp: 0,
+    alive: true,
+    respawnAt: 0,
+    shield: 0,
+    shieldUntil: 0,
+    slowUntil: 0,
+    slowFactor: 0,
+    spells: spellsFor(heroId, look.palette.glow),
+    cooldowns: { Q: 0, W: 0, E: 0, R: 0 },
+    attackCooldown: 0,
+    facing: team === 'blue' ? 0 : Math.PI,
+    kills: 0,
+    deaths: 0,
+    damageDone: 0,
+    isPlayer,
+    botLane: 'mid',
+    botCast: null,
+  };
+}
+
+export function createMoba(playerHeroId: number, enemyHeroId: number, now: number): MobaState {
+  const state: MobaState = {
+    now,
+    time: 0,
+    ended: null,
+    heroes: [
+      makeHero('hero-you', 'blue', playerHeroId, SPAWNS.blue, true),
+      makeHero('hero-foe', 'red', enemyHeroId, SPAWNS.red, false),
+    ],
+    minions: [],
+    towers: STRUCTURES.map((structure) => ({
+      id: structure.id,
+      team: structure.team,
+      kind: structure.kind,
+      x: structure.x,
+      z: structure.z,
+      hp: structure.hp,
+      maxHp: structure.hp,
+      range: structure.range,
+      damage: structure.damage,
+      attackMs: structure.attackMs,
+      cooldown: 0,
+    })),
+    projectiles: [],
+    effects: [],
+    nodes: NODE_SITES.map((site) => ({
+      key: site.key,
+      name: site.name,
+      x: site.x,
+      z: site.z,
+      owner: null,
+      progress: { blue: 0, red: 0 },
+    })),
+    nextWaveAt: now + 6000,
+    wave: 0,
+    seq: 0,
+    banner: 'PRVNÍ SVĚT — chraň svou Zemi',
+    bannerUntil: now + 4200,
+  };
+  return state;
+}
+
+/** Bonus k poškození podle převzatých uzlů L5. */
+export function nodeBonus(state: MobaState, team: Team): number {
+  const owned = state.nodes.filter((node) => node.owner === team).length;
+  return 1 + owned * NODE_BONUS_PER_SITE;
+}
+
+const levelScale = (hero: Hero) => 1 + (hero.level - 1) * 0.06;
+
+function addEffect(state: MobaState, kind: Effect['kind'], x: number, z: number, radius: number, color: string, ttl: number) {
+  state.effects.push({ id: nextId('fx'), kind, x, z, radius, color, ttl, maxTtl: ttl });
+}
+
+function damageHero(state: MobaState, hero: Hero, amount: number, source: string) {
+  if (!hero.alive) return;
+  let remaining = amount;
+  if (hero.shield > 0) {
+    const absorbed = Math.min(hero.shield, remaining);
+    hero.shield -= absorbed;
+    remaining -= absorbed;
+  }
+  hero.hp -= remaining;
+  if (hero.hp <= 0) {
+    hero.hp = 0;
+    hero.alive = false;
+    hero.deaths += 1;
+    hero.respawnAt = state.now + (6000 + hero.level * 1200);
+    addEffect(state, 'hit', hero.x, hero.z, 2.2, '#ff6b6b', 600);
+    const killer = state.heroes.find((candidate) => candidate.id === source);
+    if (killer && killer.team !== hero.team) {
+      killer.kills += 1;
+      gainXp(state, killer, 140);
+      state.banner = `${killer.name} srazil ${hero.name}`;
+      state.bannerUntil = state.now + 3500;
+    }
+  }
+}
+
+function damageMinion(state: MobaState, minion: Minion, amount: number, source: string) {
+  minion.hp -= amount;
+  if (minion.hp > 0) return;
+  state.minions = state.minions.filter((candidate) => candidate.id !== minion.id);
+  const killer = state.heroes.find((candidate) => candidate.id === source);
+  if (killer) {
+    gainXp(state, killer, 26);
+    killer.damageDone += amount;
+  }
+}
+
+function gainXp(state: MobaState, hero: Hero, amount: number) {
+  hero.xp += amount;
+  for (;;) {
+    const need = 120 + hero.level * 70;
+    if (hero.xp < need || hero.level >= 15) break;
+    hero.xp -= need;
+    hero.level += 1;
+    hero.maxHp += 55;
+    hero.maxMana += 18;
+    hero.hp = Math.min(hero.maxHp, hero.hp + 90);
+    hero.mana = Math.min(hero.maxMana, hero.mana + 40);
+    addEffect(state, 'level', hero.x, hero.z, 1.8, '#ffd166', 700);
+  }
+}
+
+function nearestEnemyHero(state: MobaState, hero: Hero, range: number): Hero | null {
+  let best: Hero | null = null;
+  let bestDistance = range;
+  for (const other of state.heroes) {
+    if (other.team === hero.team || !other.alive) continue;
+    const d = distance(hero.x, hero.z, other.x, other.z);
+    if (d < bestDistance) {
+      bestDistance = d;
+      best = other;
+    }
+  }
+  return best;
+}
+
+function nearestEnemyMinion(state: MobaState, hero: Hero, range: number): Minion | null {
+  let best: Minion | null = null;
+  let bestDistance = range;
+  for (const minion of state.minions) {
+    if (minion.team === hero.team) continue;
+    const d = distance(hero.x, hero.z, minion.x, minion.z);
+    if (d < bestDistance) {
+      bestDistance = d;
+      best = minion;
+    }
+  }
+  return best;
+}
+
+// ── kouzla ───────────────────────────────────────────────────────────
+
+function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: number) {
+  const spell = hero.spells.find((candidate) => candidate.slot === slot);
+  if (!spell) return;
+  if (!hero.alive || state.now < hero.cooldowns[slot]) return;
+  if (hero.mana < spell.mana) return;
+  const distanceToPoint = distance(hero.x, hero.z, x, z);
+  if (spell.range > 0 && distanceToPoint > spell.range + spell.radius) return;
+
+  hero.mana -= spell.mana;
+  hero.cooldowns[slot] = state.now + spell.cooldownMs;
+  hero.facing = Math.atan2(x - hero.x, z - hero.z);
+  const bonus = nodeBonus(state, hero.team) * levelScale(hero);
+
+  if (spell.kind === 'projectile') {
+    const dx = x - hero.x;
+    const dz = z - hero.z;
+    const length = Math.hypot(dx, dz) || 1;
+    state.projectiles.push({
+      id: nextId('proj'),
+      team: hero.team,
+      x: hero.x,
+      z: hero.z,
+      dx: dx / length,
+      dz: dz / length,
+      speed: spell.speed,
+      radius: spell.radius,
+      damage: spell.damage * bonus,
+      ttl: (spell.range + 4) / Math.max(1, spell.speed),
+      color: spell.color,
+      owner: hero.id,
+    });
+    addEffect(state, 'hit', hero.x, hero.z, 0.8, spell.color, 220);
+    return;
+  }
+
+  if (spell.kind === 'dash') {
+    const dx = x - hero.x;
+    const dz = z - hero.z;
+    const length = Math.hypot(dx, dz) || 1;
+    const step = Math.min(7, length);
+    hero.x = Math.max(-MAP_HALF_X, Math.min(MAP_HALF_X, hero.x + (dx / length) * step));
+    hero.z = Math.max(-MAP_HALF_Z, Math.min(MAP_HALF_Z, hero.z + (dz / length) * step));
+    addEffect(state, 'aoe', hero.x, hero.z, 1.6, spell.color, 320);
+    if (spell.damage > 0) {
+      for (const other of state.heroes) {
+        if (other.team === hero.team || !other.alive) continue;
+        if (distance(hero.x, hero.z, other.x, other.z) <= 2.2) damageHero(state, other, spell.damage * bonus, hero.id);
+      }
+    }
+    return;
+  }
+
+  if (spell.kind === 'buff') {
+    if (spell.shield > 0) {
+      hero.shield = spell.shield * levelScale(hero);
+      hero.shieldUntil = state.now + 6000;
+      addEffect(state, 'shield', hero.x, hero.z, 1.7, spell.color, 6000);
+    }
+    if (spell.heal > 0) {
+      hero.hp = Math.min(hero.maxHp, hero.hp + spell.heal * levelScale(hero));
+      addEffect(state, 'heal', hero.x, hero.z, 1.5, '#7bf0a8', 700);
+    }
+    return;
+  }
+
+  // AoE (E a R)
+  addEffect(state, 'aoe', x, z, spell.radius, spell.color, 620);
+  for (const other of state.heroes) {
+    if (other.team === hero.team || !other.alive) continue;
+    if (distance(x, z, other.x, other.z) > spell.radius + 0.8) continue;
+    damageHero(state, other, spell.damage * bonus, hero.id);
+    if (spell.slow > 0) {
+      other.slowUntil = state.now + spell.slowMs;
+      other.slowFactor = spell.slow;
+    }
+  }
+  for (const minion of [...state.minions]) {
+    if (minion.team === hero.team) continue;
+    if (distance(x, z, minion.x, minion.z) > spell.radius + 0.6) continue;
+    damageMinion(state, minion, spell.damage * bonus * 0.7, hero.id);
+  }
+}
+
+// ── AI ───────────────────────────────────────────────────────────────
+
+function stepBot(state: MobaState, hero: Hero, now: number) {
+  if (!hero.alive) return;
+  const foe = state.heroes.find((candidate) => candidate.team !== hero.team && candidate.alive);
+  const enemyMinion = nearestEnemyMinion(state, hero, 18);
+  const target = enemyMinion
+    ? { x: enemyMinion.x, z: enemyMinion.z, distance: distance(hero.x, hero.z, enemyMinion.x, enemyMinion.z) }
+    : foe
+      ? { x: foe.x, z: foe.z, distance: distance(hero.x, hero.z, foe.x, foe.z) }
+      : null;
+
+  // drž se linky, dokud není cíl
+  if (!target) {
+    hero.botCast = null;
+    return;
+  }
+
+  const move = target.distance > 6 ? 1 : target.distance < 3.4 ? -0.4 : 0;
+  const dx = target.x - hero.x;
+  const dz = target.z - hero.z;
+  const length = Math.hypot(dx, dz) || 1;
+  hero.x += (dx / length) * move * 4.4 * (1 / 30);
+  hero.z += (dz / length) * move * 4.4 * (1 / 30);
+
+  // kouzla: Q na dostřel, E na skupinu, R na finisher, W při zranění
+  const ready = (slot: SpellSlot) => now >= hero.cooldowns[slot];
+  const affordable = (slot: SpellSlot) => {
+    const spell = hero.spells.find((candidate) => candidate.slot === slot);
+    return spell ? hero.mana >= spell.mana : false;
+  };
+
+  if (hero.hp < hero.maxHp * 0.55 && ready('W') && affordable('W')) {
+    hero.botCast = { slot: 'W', x: hero.x, z: hero.z };
+    return;
+  }
+  if (target.distance < 11 && ready('Q') && affordable('Q')) {
+    hero.botCast = { slot: 'Q', x: target.x, z: target.z };
+    return;
+  }
+  if (target.distance < 8 && ready('E') && affordable('E')) {
+    hero.botCast = { slot: 'E', x: target.x, z: target.z };
+    return;
+  }
+  if (foe && ready('R') && affordable('R') && distance(hero.x, hero.z, foe.x, foe.z) < 12 && (foe.hp < foe.maxHp * 0.6 || hero.hp < hero.maxHp * 0.4)) {
+    hero.botCast = { slot: 'R', x: foe.x, z: foe.z };
+    return;
+  }
+  hero.botCast = null;
+}
+
+// ── krok simulace ────────────────────────────────────────────────────
+
+export function stepMoba(state: MobaState, dt: number, input: MobaInput, now: number): void {
+  if (state.ended) return;
+  state.now = now;
+  state.time += dt;
+  if (state.time >= MATCH_SECONDS) {
+    const blue = state.towers.filter((tower) => tower.team === 'blue' && tower.kind === 'nexus').reduce((sum, tower) => sum + tower.hp, 0);
+    const red = state.towers.filter((tower) => tower.team === 'red' && tower.kind === 'nexus').reduce((sum, tower) => sum + tower.hp, 0);
+    state.ended = blue >= red ? 'blue' : 'red';
+    state.banner = state.ended === 'blue' ? 'ZION drží Zemi' : 'Opozice prolomila linii';
+    state.bannerUntil = now + 6000;
+    return;
+  }
+
+  // ── vlny minionů ──────────────────────────────────────────────────
+  if (now >= state.nextWaveAt) {
+    state.nextWaveAt = now + WAVE_INTERVAL_MS;
+    state.wave += 1;
+    for (const lane of LANES) {
+      for (const team of ['blue', 'red'] as Team[]) {
+        for (let index = 0; index < WAVE_SIZE; index += 1) {
+          const base = team === 'blue' ? SPAWNS.blue : SPAWNS.red;
+          state.minions.push({
+            id: nextId(`minion-${team}`),
+            team,
+            lane: lane.id,
+            x: base.x + (team === 'blue' ? 6 : -6) + index * 1.4,
+            z: lane.z + (index - 1) * 1.2,
+            hp: MINION_HP,
+            maxHp: MINION_HP,
+            cooldown: 0,
+          });
+        }
+      }
+    }
+    state.banner = `Vlna ${state.wave}`;
+    state.bannerUntil = now + 2200;
+  }
+
+  // ── hrdinové ──────────────────────────────────────────────────────
+  for (const hero of state.heroes) {
+    if (!hero.alive) {
+      if (now >= hero.respawnAt) {
+        hero.alive = true;
+        hero.hp = hero.maxHp;
+        hero.mana = hero.maxMana;
+        hero.shield = 0;
+        const spawn = hero.team === 'blue' ? SPAWNS.blue : SPAWNS.red;
+        hero.x = spawn.x;
+        hero.z = spawn.z;
+        addEffect(state, 'level', hero.x, hero.z, 1.6, '#7fe3d4', 700);
+      }
+      continue;
+    }
+
+    if (state.now >= hero.shieldUntil) hero.shield = 0;
+    if (state.now >= hero.slowUntil) hero.slowFactor = 0;
+    hero.mana = Math.min(hero.maxMana, hero.mana + dt * 7);
+
+    const slow = 1 - hero.slowFactor;
+    const speed = 6.2 * slow;
+
+    if (hero.isPlayer) {
+      const length = Math.hypot(input.moveX, input.moveZ);
+      if (length > 0.05) {
+        const nx = input.moveX / length;
+        const nz = input.moveZ / length;
+        hero.x += nx * speed * dt;
+        hero.z += nz * speed * dt;
+        hero.facing = Math.atan2(nx, nz);
+      }
+      if (input.cast) castSpell(state, hero, input.cast.slot, input.cast.x, input.cast.z);
+    } else {
+      stepBot(state, hero, now);
+      const botCast = hero.botCast;
+      if (botCast) castSpell(state, hero, botCast.slot, botCast.x, botCast.z);
+    }
+
+    hero.x = Math.max(-MAP_HALF_X, Math.min(MAP_HALF_X, hero.x));
+    hero.z = Math.max(-MAP_HALF_Z, Math.min(MAP_HALF_Z, hero.z));
+
+    // automatický útok
+    if (now >= hero.attackCooldown) {
+      const wantsAttack = hero.isPlayer ? input.attack : true;
+      if (wantsAttack) {
+        const target = nearestEnemyHero(state, hero, 6.4) ?? nearestEnemyMinion(state, hero, 6.4);
+        if (target) {
+          hero.attackCooldown = now + 850;
+          hero.facing = Math.atan2(target.x - hero.x, target.z - hero.z);
+          const damage = (28 + (AVATARS_BY_ID.get(hero.heroId)?.cl ?? 3) * 3) * levelScale(hero) * nodeBonus(state, hero.team);
+          hero.damageDone += damage;
+          if ('heroId' in target) damageHero(state, target as Hero, damage, hero.id);
+          else damageMinion(state, target as Minion, damage, hero.id);
+          addEffect(state, 'hit', target.x, target.z, 0.7, '#ffe6a8', 180);
+        }
+      }
+    }
+  }
+
+  // ── minioni ───────────────────────────────────────────────────────
+  for (const minion of [...state.minions]) {
+    const lane = LANES.find((candidate) => candidate.id === minion.lane) ?? LANES[1]!;
+    const enemyBase = minion.team === 'blue' ? SPAWNS.red : SPAWNS.blue;
+    const enemyHero = state.heroes.find(
+      (hero) => hero.team !== minion.team && hero.alive && distance(minion.x, minion.z, hero.x, hero.z) <= MINION_RANGE,
+    );
+    const enemyMinion = state.minions.find(
+      (other) => other.team !== minion.team && distance(minion.x, minion.z, other.x, other.z) <= MINION_RANGE,
+    );
+
+    if (enemyHero || enemyMinion) {
+      if (now >= minion.cooldown) {
+        minion.cooldown = now + MINION_ATTACK_MS;
+        const target = enemyHero ?? enemyMinion!;
+        if (enemyHero) damageHero(state, enemyHero, MINION_DAMAGE, minion.id);
+        else damageMinion(state, enemyMinion!, MINION_DAMAGE, minion.id);
+        addEffect(state, 'hit', target.x, target.z, 0.5, '#ffb877', 150);
+      }
+      continue;
+    }
+
+    const dx = enemyBase.x - minion.x;
+    const length = Math.hypot(dx) || 1;
+    minion.x += (dx / length) * MINION_SPEED * dt;
+    minion.z += Math.sign(lane.z - minion.z) * Math.min(Math.abs(lane.z - minion.z), MINION_SPEED * dt * 0.6);
+  }
+
+  // ── věže a Nexy ───────────────────────────────────────────────────
+  for (const tower of state.towers) {
+    if (tower.hp <= 0) continue;
+    if (now < tower.cooldown) continue;
+    const minion = state.minions.find(
+      (candidate) => candidate.team !== tower.team && distance(tower.x, tower.z, candidate.x, candidate.z) <= tower.range,
+    );
+    const hero = state.heroes.find(
+      (candidate) => candidate.team !== tower.team && candidate.alive && distance(tower.x, tower.z, candidate.x, candidate.z) <= tower.range,
+    );
+    const target = minion ?? hero;
+    if (!target) continue;
+    tower.cooldown = now + tower.attackMs;
+    if (minion) damageMinion(state, minion, tower.damage, tower.id);
+    else damageHero(state, hero!, tower.damage, tower.id);
+    addEffect(state, 'hit', target.x, target.z, 0.6, tower.team === 'blue' ? '#7fe3d4' : '#ff7a6b', 220);
+  }
+
+  // ── projektily ────────────────────────────────────────────────────
+  for (const projectile of [...state.projectiles]) {
+    projectile.ttl -= dt;
+    projectile.x += projectile.dx * projectile.speed * dt;
+    projectile.z += projectile.dz * projectile.speed * dt;
+    let consumed = false;
+
+    for (const hero of state.heroes) {
+      if (hero.team === projectile.team || !hero.alive) continue;
+      if (distance(projectile.x, projectile.z, hero.x, hero.z) <= projectile.radius + 0.7) {
+        damageHero(state, hero, projectile.damage, projectile.owner);
+        addEffect(state, 'hit', hero.x, hero.z, 1.1, projectile.color, 260);
+        consumed = true;
+        break;
+      }
+    }
+    if (!consumed) {
+      for (const minion of [...state.minions]) {
+        if (minion.team === projectile.team) continue;
+        if (distance(projectile.x, projectile.z, minion.x, minion.z) <= projectile.radius + 0.5) {
+          damageMinion(state, minion, projectile.damage, projectile.owner);
+          consumed = true;
+          break;
+        }
+      }
+    }
+    if (consumed || projectile.ttl <= 0) {
+      state.projectiles = state.projectiles.filter((candidate) => candidate.id !== projectile.id);
+    }
+  }
+
+  // ── poškození struktur (hrdinové útočí na věže) ───────────────────
+  for (const hero of state.heroes) {
+    if (!hero.alive) continue;
+    for (const tower of state.towers) {
+      if (tower.hp <= 0 || tower.team === hero.team) continue;
+      if (distance(hero.x, hero.z, tower.x, tower.z) > 5.6) continue;
+      if (now < hero.attackCooldown - 400) continue;
+      const damage = 26 * levelScale(hero) * nodeBonus(state, hero.team);
+      tower.hp = Math.max(0, tower.hp - damage);
+      hero.damageDone += damage;
+      addEffect(state, 'hit', tower.x, tower.z, 0.8, '#ffe6a8', 180);
+      if (tower.hp === 0 && tower.kind === 'nexus') {
+        state.ended = hero.team;
+        state.banner = hero.team === 'blue' ? 'ZION drží Zemi' : 'Opozice prolomila linii';
+        state.bannerUntil = now + 8000;
+      }
+    }
+  }
+
+  // ── uzly L5 ───────────────────────────────────────────────────────
+  for (const node of state.nodes) {
+    for (const team of ['blue', 'red'] as Team[]) {
+      const present = state.heroes.some(
+        (hero) => hero.team === team && hero.alive && distance(hero.x, hero.z, node.x, node.z) <= 5.5,
+      );
+      if (!present) {
+        node.progress[team] = Math.max(0, node.progress[team] - dt * 400);
+        continue;
+      }
+      if (node.owner === team) continue;
+      node.progress[team] += dt * 1000;
+      if (node.progress[team] >= NODE_CAPTURE_MS) {
+        node.owner = team;
+        node.progress = { blue: 0, red: 0 };
+        addEffect(state, 'capture', node.x, node.z, 3.4, team === 'blue' ? '#7fe3d4' : '#ff7a6b', 1400);
+        state.banner = `${node.name} převzat — ${team === 'blue' ? 'ZION' : 'Opozice'}`;
+        state.bannerUntil = now + 3000;
+      }
+    }
+    if (node.owner) {
+      const rival: Team = node.owner === 'blue' ? 'red' : 'blue';
+      node.progress[rival] = Math.min(node.progress[rival], NODE_CAPTURE_MS * 0.9);
+    }
+  }
+
+  // ── efekty ────────────────────────────────────────────────────────
+  state.effects = state.effects.filter((effect) => {
+    effect.ttl -= dt * 1000;
+    return effect.ttl > 0;
+  });
+
+  // ── konec: Nexa padla (kýmkoli — debug, minion, hrdina) ───────────
+  if (!state.ended) {
+    for (const tower of state.towers) {
+      if (tower.kind !== 'nexus' || tower.hp > 0) continue;
+      state.ended = tower.team === 'blue' ? 'red' : 'blue';
+      state.banner = state.ended === 'blue' ? 'ZION drží Zemi' : 'Opozice prolomila linii';
+      state.bannerUntil = now + 8000;
+    }
+  }
+}
+
+export interface MobaSnapshot {
+  time: number;
+  ended: Team | null;
+  banner: string | null;
+  wave: number;
+  nextWaveIn: number;
+  nodes: NodeState[];
+  towers: { id: string; team: Team; kind: 'tower' | 'nexus'; x: number; z: number; hp: number; maxHp: number }[];
+  heroes: {
+    id: string;
+    team: Team;
+    name: string;
+    heroId: number;
+    x: number;
+    z: number;
+    hp: number;
+    maxHp: number;
+    mana: number;
+    maxMana: number;
+    shield: number;
+    level: number;
+    alive: boolean;
+    respawnIn: number;
+    cooldowns: Record<SpellSlot, number>;
+    kills: number;
+    deaths: number;
+  }[];
+  minions: { id: string; team: Team; x: number; z: number; hp: number; maxHp: number }[];
+  projectiles: { id: string; x: number; z: number; color: string }[];
+  effects: { id: string; kind: Effect['kind']; x: number; z: number; radius: number; color: string; alpha: number }[];
+}
+
+export function mobaSnapshot(state: MobaState): MobaSnapshot {
+  return {
+    time: state.time,
+    ended: state.ended,
+    banner: state.bannerUntil > state.now ? state.banner : null,
+    wave: state.wave,
+    nextWaveIn: Math.max(0, Math.round((state.nextWaveAt - state.now) / 1000)),
+    nodes: state.nodes,
+    towers: state.towers
+      .filter((tower) => tower.hp > 0 || tower.kind === 'nexus')
+      .map((tower) => ({
+        id: tower.id,
+        team: tower.team,
+        kind: tower.kind,
+        x: tower.x,
+        z: tower.z,
+        hp: tower.hp,
+        maxHp: tower.maxHp,
+      })),
+    heroes: state.heroes.map((hero) => ({
+      id: hero.id,
+      team: hero.team,
+      name: hero.name,
+      heroId: hero.heroId,
+      x: Math.round(hero.x * 100) / 100,
+      z: Math.round(hero.z * 100) / 100,
+      hp: Math.round(hero.hp),
+      maxHp: hero.maxHp,
+      mana: Math.round(hero.mana),
+      maxMana: hero.maxMana,
+      shield: Math.round(hero.shield),
+      level: hero.level,
+      alive: hero.alive,
+      respawnIn: hero.alive ? 0 : Math.max(0, Math.ceil((hero.respawnAt - state.now) / 1000)),
+      cooldowns: hero.cooldowns,
+      kills: hero.kills,
+      deaths: hero.deaths,
+    })),
+    minions: state.minions.map((minion) => ({
+      id: minion.id,
+      team: minion.team,
+      x: Math.round(minion.x * 100) / 100,
+      z: Math.round(minion.z * 100) / 100,
+      hp: minion.hp,
+      maxHp: minion.maxHp,
+    })),
+    projectiles: state.projectiles.map((projectile) => ({
+      id: projectile.id,
+      x: projectile.x,
+      z: projectile.z,
+      color: projectile.color,
+    })),
+    effects: state.effects.map((effect) => ({
+      id: effect.id,
+      kind: effect.kind,
+      x: effect.x,
+      z: effect.z,
+      radius: effect.radius,
+      color: effect.color,
+      alpha: Math.max(0, effect.ttl / effect.maxTtl),
+    })),
+  };
+}
