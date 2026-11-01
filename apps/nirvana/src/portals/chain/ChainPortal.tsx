@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/core/i18n';
+import { KingdomLink } from '@/core/portals/KingdomLink';
 
 interface ChainStats {
   block_height?: number;
@@ -71,6 +72,7 @@ export function ChainPortal({ onClose }: { onClose: () => void }) {
           )}
         </ul>
       )}
+      <KingdomLink portalId="chain" />
     </aside>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/core/i18n';
+import { KingdomLink } from '@/core/portals/KingdomLink';
 
 /**
  * Issobella — stanice na prstenci Nové Země. Okno je jen rozcestí: práce
@@ -43,6 +44,7 @@ export function IssobellaPortal({ onClose }: { onClose: () => void }) {
           {cs ? 'Všech 200 postav' : 'All 200 figures'}
         </a>
       </div>
+      <KingdomLink portalId="issobella" />
     </aside>
   );
 }

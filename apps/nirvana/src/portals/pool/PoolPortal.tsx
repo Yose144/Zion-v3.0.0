@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/core/i18n';
+import { KingdomLink } from '@/core/portals/KingdomLink';
 
 interface CoinRow {
   coin: string;
@@ -85,6 +86,7 @@ export function PoolPortal({ onClose }: { onClose: () => void }) {
           ))}
         </ul>
       )}
+      <KingdomLink portalId="pool" />
     </aside>
   );
 }

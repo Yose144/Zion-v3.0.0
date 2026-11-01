@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/core/i18n';
+import { KingdomLink } from '@/core/portals/KingdomLink';
 
 const OPEN = new Set(['pending', 'under_review', 'approved', 'on_dao']);
 const FLOWERS = 1_000_000;
@@ -108,6 +109,7 @@ export function HarborPortal({ onClose }: { onClose: () => void }) {
           )}
         </>
       )}
+      <KingdomLink portalId="harbor" />
     </aside>
   );
 }

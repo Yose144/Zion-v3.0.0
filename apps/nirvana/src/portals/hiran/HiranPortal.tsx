@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useI18n } from '@/core/i18n';
 import { HiranChat } from '@/core/hiran/HiranChat';
 import type { HiranState } from '@/core/hiran/presence';
+import { KingdomLink } from '@/core/portals/KingdomLink';
 
 /** Okno Hirana ve vesmíru — chat, stav a cesta do chrámu. */
 export function HiranPortal({
@@ -54,6 +55,7 @@ export function HiranPortal({
           </button>
         )}
       </div>
+      <KingdomLink portalId="hiran" />
     </aside>
   );
 }
