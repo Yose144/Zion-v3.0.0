@@ -55,7 +55,7 @@ body::before {
   height: 100vh;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.55;
+  opacity: 0.9;
   will-change: transform;
 }
 
@@ -104,6 +104,20 @@ a {
   animation: k-fade 420ms ease both;
 }
 
+/* Rasta pruh — jediná věc, která musí být vidět vždy: zelená → zlato → červená. */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #078930 0%, #078930 28%, #fcd116 50%, #e41e2b 72%, #e41e2b 100%);
+  box-shadow: 0 0 18px rgba(252, 209, 22, 0.45);
+  z-index: 50;
+  pointer-events: none;
+}
+
 .k-topbar {
   height: 54px;
   flex: 0 0 54px;
@@ -126,6 +140,30 @@ a {
   font-weight: 600;
   letter-spacing: 0.2px;
   white-space: nowrap;
+}
+
+/* Originální znak — široký rasta Z-glyph. Na úzkých displejích se zmenší. */
+.k-brand-glyph {
+  height: 30px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 0 10px rgba(252, 209, 22, 0.35));
+}
+
+@media (max-width: 640px) {
+  .k-brand-glyph {
+    height: 20px;
+  }
+  .k-brand-name {
+    display: none;
+  }
+}
+
+.k-gate-glyph {
+  width: min(40vw, 270px);
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 0 28px rgba(252, 209, 22, 0.35));
 }
 
 .k-brand-dot {
@@ -240,8 +278,24 @@ a {
   flex: 0 0 6px;
 }
 
+.k-rail-dot {
+  background: var(--rasta-green);
+  box-shadow: 0 0 8px rgba(7, 137, 48, 0.5);
+}
+
+.k-rail-item:nth-child(3n + 1) .k-rail-dot {
+  background: var(--rasta-gold);
+  box-shadow: 0 0 8px rgba(252, 209, 22, 0.45);
+}
+
+.k-rail-item:nth-child(3n + 2) .k-rail-dot {
+  background: var(--rasta-red);
+  box-shadow: 0 0 8px rgba(228, 30, 43, 0.45);
+}
+
 .k-rail-item[data-active='true'] .k-rail-dot {
   background: var(--k-accent);
+  box-shadow: 0 0 12px rgba(252, 209, 22, 0.8);
 }
 
 /* ---------- stage ---------- */
@@ -285,6 +339,25 @@ a {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
   gap: 12px;
+}
+
+/* Karty mají jemný rasta pruh — klient, ne web: i panely nesou paletu. */
+.k-card,
+.k-stat {
+  position: relative;
+}
+
+.k-card::before,
+.k-stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(7, 137, 48, 0.55), rgba(252, 209, 22, 0.75), rgba(228, 30, 43, 0.55));
+  opacity: 0.75;
 }
 
 .k-card {
@@ -460,7 +533,7 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 26px;
+  gap: 16px;
   position: relative;
   overflow: hidden;
   padding: 44px 24px 56px;
@@ -492,8 +565,9 @@ a {
 }
 
 .k-gate-stage > .stargate-wrap {
-  /* Celý kruh musí zůstat v záběru — vnější kovový prstenec je součást brány. */
-  width: min(68vmin, 620px);
+  /* Celý kruh musí zůstat v záběru — vnější kovový prstenec je součást brány.
+     Menší než dřív: pod bránou je teď znak a titulek, do 900px se musí vejít. */
+  width: min(52vmin, 460px);
   pointer-events: none;
 }
 

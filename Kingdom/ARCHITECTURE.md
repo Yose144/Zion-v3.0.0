@@ -7,7 +7,18 @@
 
 ## 1. Jedna věta
 
-**Kingdom je jediný klient ekosystému ZION.** Brána → Místnost → Světy a Portály. Služby zůstávají tam, kde jsou; Kingdom je jen čte.
+**Kingdom je herní klient ekosystému ZION** — a jednou **desktopová aplikace pod Electronem**, ne web.
+
+Brána → Místnost → Světy a Portály. Služby zůstávají tam, kde jsou; klient je čte (a v budoucnu
+píše přes wallet, kterou má u sebe — ne v prohlížeči).
+
+**Tři důsledky, které platí pro každé rozhodnutí:**
+1. **Klient, ne web** — design z desktop agenta (rasta One Love, warp pozadí, přechody mezi
+   okny), žádné „stránkové" vzory (dlouhé texty, patičky, breadcrumbs, marketing).
+2. **Wallet patří do klienta** — jednou poběží pod Electronem jako desktop agent: podpis,
+   transakce, seed, mining. Proto se session a čtení drží oddělené od UI už teď.
+3. **Electron je cíl, prohlížeč je současnost** — kód nesmí spoléhat na to, že je v prohlížeči
+   (žádné `window.open` flow, žádné cookie-only triky, žádné „přejdi na jiný web").
 
 ---
 

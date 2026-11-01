@@ -49,6 +49,13 @@ export async function Gate({ locale }: { locale: Locale }) {
             {t(locale, 'gateSub')}
           </span>
 
+          <img
+            src="/brand/zion-glyph.png"
+            alt="ZION"
+            className="k-gate-glyph"
+            width={360}
+            height={119}
+          />
           <h1 className="k-gate-title">{t(locale, 'gateTitle')}</h1>
 
           <p className="k-hero-line">{text(hero.line, locale)}</p>
