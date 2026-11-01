@@ -126,6 +126,23 @@ Audit ZIS (`apps/identity`, 4 171 LOC, 59 endpointů, 51 testů) ukázal, že **
 
 **Ověřeno:** challenge přes server vrací reálný `ZION-AUTH-V1` objekt (28–70 ms přes loopback), neplatný podpis → `401`, podpis ověřen klíčem (64 B). Plné přihlášení jsem na produkci **nespustil** — vytvořilo by uživatele v ZIS DB; crypto cesta je ověřená zvlášť.
 
+### ZIS S2 — kontraktní test našel reálnou chybu (2026-11-01)
+
+`Kingdom/scripts/check-zis-contract.mjs` volá živý ZIS a ověřuje **tvar odpovědí**, na kterých stojí celý ekosystém (health, JWKS, challenge, `/me`, verify, avatar). Není součástí `verify` — potřebuje síť.
+
+**První běh proti produkci: 13/14 ✓, 1 ✗.**
+
+```
+✗ POST /verify/ed25519 se špatným podpisem → 401 — dostal 500
+```
+
+**Root cause:** `apps/identity/src/lib/challenge.ts` — `verifyEd25519()` dělá
+`Buffer.from(publicKeyHex,'hex')` a hned `publicKeyToAddress()`, která hází na délce ≠ 32 bajtů. Vstup `publicKey: "00"` tedy skončil jako **500**, ne 401.
+
+Dopad: chybový 5xx místo 4xx (zapleveluje metriky, mate klienty, kteří čtou 5xx jako výpadek) a otevřená cesta k zaplavení error logu z jedné adresy.
+
+**Fix (staged, nenasazeno):** validace `pub.length === 32 && sig.length === 64` → `false` (→401), `publicKeyToAddress` i `ed.verify` v `try/catch`. Regresní test `apps/identity/test/verify-malformed.test.ts` (5 poškozených vstupů + chybějící výzva).
+
 **Zbývá (S2–S4):** kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
 
 ---
