@@ -37,7 +37,7 @@ function Sun() {
   const { camera } = useThree();
   const tex = useLazyTexture('/textures/sun-2k.jpg');
 
-  useFrame(({ clock }, delta) => {
+  useFrame(({ clock, camera }, delta) => {
     const t = clock.getElapsedTime();
     if (sun.current) sun.current.rotation.y += delta * 0.02;
     if (corona.current) corona.current.opacity = 0.19 + Math.sin(t * 1.3) * 0.06;
@@ -109,6 +109,10 @@ interface PlanetDef {
   ring?: boolean;
   /** Axiální náklon v radiánech (Uranus ~98°, Venuše retrográdní). */
   tiltZ?: number;
+  /** Interaktivní planeta = vstup do hry (`/mars`, `/venus`, `/park`). */
+  game?: 'mars' | 'venus' | 'park';
+  /** Co se stane po kliknutí — text na chipu. */
+  cta?: { cs: string; en: string };
 }
 
 /**
@@ -132,18 +136,69 @@ export function orbitRadius(au: number): number {
  */
 export const PLANETS: PlanetDef[] = [
   { id: 'mercury', name: 'Merkur', tex: 'mercury', au: 0.387, size: 0.62, speed: 0.082, spin: 0.006, tint: '#b0a89c', tiltZ: 0.001 },
-  { id: 'venus', name: 'Venuše', tex: 'venus_atmosphere', au: 0.723, size: 0.92, speed: 0.033, spin: -0.002, tint: '#e8c98a', tiltZ: 3.09 },
-  { id: 'mars', name: 'Mars', tex: 'mars', au: 1.524, size: 0.74, speed: 0.011, spin: 0.024, tint: '#c1622f', tiltZ: 0.44 },
-  { id: 'jupiter', name: 'Jupiter', tex: 'jupiter', au: 5.203, size: 3.6, speed: 0.0017, spin: 0.06, tint: '#d8b58c', tiltZ: 0.05 },
+  {
+    id: 'venus',
+    name: 'Venuše',
+    tex: 'venus_atmosphere',
+    au: 0.723,
+    size: 0.92,
+    speed: 0.033,
+    spin: -0.002,
+    tint: '#e8c98a',
+    tiltZ: 3.09,
+    game: 'venus',
+    cta: { cs: 'okruh →', en: 'circuit →' },
+  },
+  {
+    id: 'mars',
+    name: 'Mars',
+    tex: 'mars',
+    au: 1.524,
+    size: 0.74,
+    speed: 0.011,
+    spin: 0.024,
+    tint: '#c1622f',
+    tiltZ: 0.44,
+    game: 'mars',
+    cta: { cs: 'aréna →', en: 'arena →' },
+  },
+  {
+    id: 'jupiter',
+    name: 'Jupiter',
+    tex: 'jupiter',
+    au: 5.203,
+    size: 3.6,
+    speed: 0.0017,
+    spin: 0.06,
+    tint: '#d8b58c',
+    tiltZ: 0.05,
+    game: 'park',
+    cta: { cs: 'pouť →', en: 'fair →' },
+  },
   { id: 'saturn', name: 'Saturn', tex: 'saturn', au: 9.537, size: 3.0, speed: 0.00067, spin: 0.055, tint: '#e3cf9f', ring: true, tiltZ: 0.47 },
   { id: 'uranus', name: 'Uran', tex: 'uranus', au: 19.19, size: 1.5, speed: 0.00024, spin: -0.04, tint: '#9fd8dc', tiltZ: 1.71 },
   { id: 'neptune', name: 'Neptun', tex: 'neptune', au: 30.07, size: 1.45, speed: 0.00012, spin: 0.04, tint: '#4d6fd1', tiltZ: 0.49 },
 ];
 
 /** Jedna planeta — oběh kolem Slunce + vlastní rotace. */
-function Planet({ def, index }: { def: PlanetDef; index: number }) {
+function Planet({
+  def,
+  index,
+  lang,
+  selected,
+  onSelect,
+}: {
+  def: PlanetDef;
+  index: number;
+  lang: 'cs' | 'en';
+  selected: boolean;
+  onSelect?: (id: 'mars' | 'venus' | 'jupiter') => void;
+}) {
+  const [hover, setHover] = useState(false);
   const carrier = useRef<THREE.Group>(null);
   const body = useRef<THREE.Mesh>(null);
+  const ring = useRef<THREE.Mesh>(null);
+  const interactive = Boolean(def.game && onSelect);
   const tex = useLazyTexture(`/textures/2k_${def.tex}.jpg`);
   const ringTex = useLazyTexture(def.ring ? '/textures/2k_saturn_ring_alpha.png' : null);
   // Saturn ring: strip textura → u = radiální vzdálenost
@@ -161,11 +216,19 @@ function Planet({ def, index }: { def: PlanetDef; index: number }) {
     return g;
   }, [def.ring, def.size]);
 
-  useFrame(({ clock }, delta) => {
+  useFrame(({ clock, camera }, delta) => {
     if (!carrier.current) return;
     const [x, y, z] = planetPosition(def.id, index, orbitRadius(def.au), def.speed, clock.elapsedTime);
     carrier.current.position.set(x, y, z);
     if (body.current) body.current.rotation.y += delta * def.spin;
+    // cílový prstenec: rozsvítí se při hoveru i když je planeta zaměřená
+    if (ring.current) {
+      const mat = ring.current.material as THREE.MeshBasicMaterial;
+      const target = hover || selected ? 0.75 : 0;
+      mat.opacity += (target - mat.opacity) * Math.min(1, delta * 6);
+      ring.current.visible = mat.opacity > 0.01;
+      if (ring.current.visible) ring.current.quaternion.copy(camera.quaternion);
+    }
   });
 
   return (
@@ -191,11 +254,78 @@ function Planet({ def, index }: { def: PlanetDef; index: number }) {
           </mesh>
         )}
       </group>
-      {/* jméno planety jako DOM popisek — ve 3D spritu je při oddálení nečitelné */}
-      <Html center position={[0, def.size + 0.6, 0]} style={{ pointerEvents: 'none' }}>
-        <span className="planet-label" style={{ color: def.tint }}>
-          {def.name}
-        </span>
+      {/* cílový prstenec — jen u interaktivních planet, jinak by mátl */}
+      {interactive && (
+        <mesh ref={ring} visible={false}>
+          <ringGeometry args={[def.size * 1.75, def.size * 1.82, 64]} />
+          <meshBasicMaterial
+            color={def.tint}
+            transparent
+            opacity={0}
+            toneMapped={false}
+            side={THREE.DoubleSide}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
+
+      {/* neviditelná hit-sféra — 0,74 jednotky Marsu se na klik netrefí */}
+      {interactive && (
+        <mesh
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect?.(def.game as 'mars' | 'venus' | 'jupiter');
+          }}
+          onPointerOver={(event) => {
+            event.stopPropagation();
+            setHover(true);
+            document.body.style.cursor = 'pointer';
+          }}
+          onPointerOut={() => {
+            setHover(false);
+            document.body.style.cursor = 'auto';
+          }}
+        >
+          <sphereGeometry args={[Math.max(def.size * 2.6, 2.6), 16, 12]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
+
+      {/* chip: jméno + co se stane. Neinteraktivní planety mají jen tlumené jméno */}
+      <Html
+        center
+        position={[0, def.size + 0.6, 0]}
+        style={{ pointerEvents: interactive ? 'auto' : 'none' }}
+      >
+        {interactive ? (
+          <span
+            className={`planet-chip${hover || selected ? ' is-live' : ''}`}
+            style={{ ['--planet-tone' as string]: def.tint }}
+            role="button"
+            tabIndex={0}
+            onClick={() => onSelect?.(def.game as 'mars' | 'venus' | 'jupiter')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                onSelect?.(def.game as 'mars' | 'venus' | 'jupiter');
+              }
+            }}
+            onPointerOver={() => {
+              setHover(true);
+              document.body.style.cursor = 'pointer';
+            }}
+            onPointerOut={() => {
+              setHover(false);
+              document.body.style.cursor = 'auto';
+            }}
+          >
+            <strong>{def.name}</strong>
+            <em>{def.cta?.[lang]}</em>
+          </span>
+        ) : (
+          <span className="planet-label" style={{ color: def.tint }}>
+            {def.name}
+          </span>
+        )}
       </Html>
     </group>
   );
@@ -214,7 +344,17 @@ function OrbitLine({ r }: { r: number }) {
 }
 
 /** Slunce + planety + vodící dráha Země — všechny dráhy v rovině ekliptiky. */
-export function SolarSystem({ onOpenPark }: { onOpenPark?: () => void } = {}) {
+export function SolarSystem({
+  onOpenPark,
+  onSelectPlanet,
+  focused = 'earth',
+  lang = 'cs',
+}: {
+  onOpenPark?: () => void;
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter') => void;
+  focused?: string;
+  lang?: 'cs' | 'en';
+} = {}) {
   return (
     <group position={SUN_POS}>
       <Sun />
@@ -222,7 +362,7 @@ export function SolarSystem({ onOpenPark }: { onOpenPark?: () => void } = {}) {
       {PLANETS.map((p, i) => (
         <group key={p.id}>
           <OrbitLine r={orbitRadius(p.au)} />
-          <Planet def={p} index={i} />
+          <Planet def={p} index={i} lang={lang} selected={focused === p.id} onSelect={onSelectPlanet} />
           {p.id === 'jupiter' && onOpenPark ? <JupiterStation onOpen={onOpenPark} index={i} def={p} /> : null}
         </group>
       ))}

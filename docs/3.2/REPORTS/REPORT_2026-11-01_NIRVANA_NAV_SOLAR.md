@@ -67,3 +67,41 @@ se nemění (Jupiter station používá stejnou `orbitRadius()`).
   ne učebnicový diagram.
 - Měřítko planet je stylizované (Země je kvůli prstencům a Bráně velká), ne
   fyzikální: kdyby bylo reálné, byly by planety podpixelové.
+
+---
+
+# Dodatek — F1: planety jako vstupy (2026-11-01)
+
+👤 upřesnil zadání: odkazy nemají být v liště, ale **přímo na planetách**.
+Dock zůstal (bude z něj herní HUD ve F2), planety se staly vstupy.
+
+## Co je hotové
+
+| Věc | Detail |
+|---|---|
+| Interaktivní planety | **Mars** (→ aréna), **Venuše** (→ okruh), **Jupiter** (→ pouť) |
+| Mrtvé planety | Merkur, Saturn, Uran, Neptun: jen tlumené jméno, žádný hover, žádný kursor |
+| Hit-sféra | neviditelná koule `max(size·2,6; 2,6)` — Mars má 0,74 jednotky, jinak se netrefí |
+| Hover | zjasnění planety + **billboard halo** (ringGeometry natočený ke kameře) + `cursor: pointer` + zvýrazněný chip |
+| Chip | `MARS · aréna →` (DOM `<Html>`, klikatelný i klávesou Enter) |
+| Klik | **přiletí** (interpolace jako fokus na Slunce) a otevře **panel** s CTA |
+| Panel | název, jedna věta, `Hrát`/`Na start`/`Na pouť`, `← zpět k Zemi`; u Jupitera navíc `otevřít okno pouti` |
+| Fokus | `Universe` má nově `focus: 'mars' \| 'venus'` (dřív jen `jupiter`); cíl se počítá každý frame stejnou `planetPosition` |
+
+## Dvě chyby, které to odhalilo
+
+1. **Halo jako torus vypadalo jako Saturnovy prstence** — nahrazeno `ringGeometry`
+   natočenou ke kameře (`quaternion.copy(camera.quaternion)`).
+2. **Chip měl `pointerEvents: none`** → vidět byl, ale nešel kliknout. Teď má
+   `pointerEvents: auto` u interaktivních planet (a `role="button"` + Enter).
+
+## Ověřeno
+
+Headless (vesmír za ZAP pasem, stub `ARCHIVE_VERIFY_URL`):
+`3 interaktivní chipy + 4 mrtvé labely` → klik na Venuši → **panel se otevřel**
+→ `Na start` → **navigace na `/venus`**. 0 chyb v konzoli. `tsc` + `next build` čisté.
+
+## Co zbývá do F1
+
+- Hover ladit na skutečném displeji (headless ověří jen přítomnost a klik).
+- Mobil: panel se na `≤ 640 px` posouvá nad dock (CSS hotové, netestováno na zařízení).

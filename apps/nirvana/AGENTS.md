@@ -151,6 +151,23 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Co v MP není:** boti (prázdnou arénu nikdo nedoplňuje), zvuk, VR, tracery.
   Není to nedodělek, je to další krok — nemá se to hlásit jako hotové.
 
+### Planety jako vstupy do her (F1, 2026-11-01)
+
+- **Mars, Venuše, Jupiter jsou vstupy** (`PlanetDef.game`), ostatní planety jsou
+  mrtvé — jen tlumené jméno, žádný hover ani kursor. To je záměr: hranice
+  „na co jde kliknout" musí být vidět bez najetí.
+- **Hit-sféra je neviditelná koule** `max(size*2.6, 2.6)` s `opacity: 0` —
+  `visible={false}` **nefunguje**, raycast takový mesh ignoruje.
+- **Chip na planetě musí mít `pointerEvents: 'auto'`**, jinak je vidět a nejde
+  kliknout (stalo se). U mrtvých planet zůstává `none`.
+- **Halo = billboard** (`ringGeometry` + `quaternion.copy(camera.quaternion)`).
+  Torus v nakloněné rovině vypadá jako Saturnův prstenec — plete to.
+- **Klik = přiletět + panel**, ne rovnou skok do hry. `focus` v `Universe` má
+  `'mars' | 'venus'`; cíl se počítá **každý frame** stejnou `planetPosition`,
+  jinak planeta při přeletu uletí.
+- **`SceneRoot` má DVA stromy** (XR a non-XR) — nový prop je potřeba přidat do
+  obou, jinak se v běžném prohlížeči nic neděje (přesně to se stalo).
+
 ### Navigace ke hrám a sluneční soustava (2026-11-01)
 
 - **Hry jsou routy, ne portály.** `/park`, `/mars`, `/venus`, `/avatars` se

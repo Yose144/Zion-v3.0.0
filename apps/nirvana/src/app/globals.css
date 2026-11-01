@@ -2779,3 +2779,104 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   opacity: 0.8;
   text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 1);
 }
+
+/* ── PLANETY JAKO VSTUPY ───────────────────────────────────────────── */
+
+/* chip na planetě: jméno + co se stane */
+.planet-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--planet-tone, #ffb46a) 55%, transparent);
+  background: rgba(6, 4, 14, 0.72);
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.planet-chip strong {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--planet-tone, #ffb46a);
+}
+
+.planet-chip em {
+  font-style: normal;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.6);
+}
+
+.planet-chip.is-live {
+  background: rgba(255, 209, 102, 0.16);
+  border-color: var(--planet-tone, #ffb46a);
+  transform: scale(1.08);
+}
+
+.planet-chip.is-live em {
+  color: #ffd166;
+}
+
+/* panel po přiletění k planetě */
+.planet-panel {
+  position: absolute;
+  z-index: 40;
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  top: calc(4.2rem + env(safe-area-inset-top, 0px));
+  width: min(21rem, calc(100vw - 2rem));
+  padding: 0.85rem 0.95rem 0.95rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 180, 106, 0.45);
+  background: rgba(10, 5, 18, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.planet-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.planet-panel header strong {
+  font-size: 0.82rem;
+  letter-spacing: 0.22em;
+  color: #ffb46a;
+}
+
+.planet-panel-close {
+  background: none;
+  border: 0;
+  color: rgba(246, 231, 216, 0.6);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.planet-panel p {
+  margin: 0.5rem 0 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(246, 231, 216, 0.78);
+}
+
+.planet-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .planet-panel {
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    top: auto;
+    bottom: calc(5.6rem + env(safe-area-inset-bottom, 0px));
+  }
+}
