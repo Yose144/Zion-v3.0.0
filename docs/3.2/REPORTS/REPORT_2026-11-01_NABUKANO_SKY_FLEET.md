@@ -122,6 +122,18 @@ Operátor dodal **kanonickou studii 02** (`heros/habuk/Nabukano_ Three-Berth Doc
 - **3D `SkyFleet` překreslen:** hřeben + rotující obytný prstenec + rám se třemi kotvišti a lucernou na konci; tři rozdílné siluety (průzkumný / transport s gondolami / nákladní).
 - Kniha kap. 3 přepsaná na studii 02 (tabulka sekcí, tři lodě, „čtyři trupy, jeden dok, jedna osa").
 
+## 5c. N2 — detail modelu (hotovo)
+
+- Okna **obytného prstence** (32/20 podle tieru) i **obytné přídě** (2 pásy × 10/6) instancovaná → jeden draw call na pás.
+- **Příhradovina rámu** (14/8 diagonal) + 4 svislé vzpěry + tři kotviště, vše instancované.
+- **Prosklená zahrada** (03) jako půlválcový pás, solární křídla a radiátory, dvě nádrže.
+- **Lucerna** má klec: čtyři sloupky + wireframe + menší záře, ať nespolkne zadní lodě.
+- **Kamera fokusu sleduje obíhající flotilu** — bez toho loď odplouvala ze záběru 0,34 jednotky/s (cíl se hýbal, kamera ne).
+- **Měřeno** (`?sceneAudit=1`, swiftshader, 1000×700): **122 draw calls / 80 376 tris / 37 textur / 0 invalid vertices** (před N2: 117–121 / 59–72 k).
+- Deploy nirvana `nabukano-n2-20261101T150748Z`; lokální screenshoty `fleet-n2c/d` (ring s okny, rám se třemi loděmi, lucerna, Mars na obzoru).
+
+**Past pro měření:** `?sceneAudit=1` **nepřežije** hash-sync — `Shell` přepíše URL na `#portal=fleet` a query zmizí, takže audit v `UniverseAudit` skončí `null`. Měřit na holém `/?sceneAudit=1` (flotila je ve scéně i tam), nebo audit číst v prvním renderu.
+
 ## 6. Kolize s paralelními session (pro budoucí čtenáře)
 
 - **Kánon byl swept do cizího commitu:** `git add canon/…` jsem měl staged, ale souběžná session pustila `git add -A` a svazek odjel v `627713dfd` s názvem „fix(3d audit)…". Obsah je v pořádku, jen pod zavádějícím popisem. Historie se nepřepisovala.

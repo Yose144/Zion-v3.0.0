@@ -43,7 +43,7 @@ function ResponsiveFraming() {
 const SUN_CAM = new THREE.Vector3(17, 8, 17);
 const SUN_TARGET = new THREE.Vector3(0, 0, 0);
 /** Zdvižení kamery nad rovinu dráhy (aby se flotila nekoukala do hrany). */
-const FLEET_CAM_LIFT = new THREE.Vector3(0, 0.8, 0);
+const FLEET_CAM_LIFT = new THREE.Vector3(0, 1.6, 0);
 const FLEET_UP = new THREE.Vector3(0, 1, 0);
 const FLEET_CAM_TANGENT = new THREE.Vector3();
 
@@ -86,6 +86,7 @@ export function Universe({
   const jupiterCam = useMemo(() => new THREE.Vector3(), []);
   const jupiterOffset = useMemo(() => new THREE.Vector3(24, 13, 28), []);
   const fleetTarget = useMemo(() => new THREE.Vector3(), []);
+  const lastFleet = useRef(new THREE.Vector3());
   const fleetCam = useMemo(() => new THREE.Vector3(), []);
 
   useEffect(() => {
@@ -175,13 +176,20 @@ export function Universe({
       const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
       fleetCam
         .copy(fleetTarget)
-        .addScaledVector(radial, 2.0)
-        .addScaledVector(tangent, 2.6)
+        .addScaledVector(radial, 4.0)
+        .addScaledVector(tangent, 5.2)
         .add(FLEET_CAM_LIFT);
       const p = (progress.current = Math.min(1, progress.current + delta / 1.6));
       const t = 1 - Math.pow(1 - p, 3);
       controls.current.target.lerpVectors(fromTarget.current, fleetTarget, t);
-      if (p < 1) camera.position.lerpVectors(fromCam.current, fleetCam, t);
+      if (p < 1) {
+        camera.position.lerpVectors(fromCam.current, fleetCam, t);
+      } else if (lastFleet.current.lengthSq() > 0) {
+        // Flotila obíhá dál. Bez tohohle by kamera zůstala stát a loď by
+        // odplouvala ze záběru (0,34 jednotky za sekundu).
+        camera.position.addScaledVector(lastFleet.current, -1).add(fleetTarget);
+      }
+      lastFleet.current.copy(fleetTarget);
     } else {
       controls.current.target.set(ex, 0, ez);
     }

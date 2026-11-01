@@ -80,7 +80,9 @@ Cíl: scéna má číst jako **studie 02** (kanonická: dok se třemi kotvišti 
 | N2.1 | Rotující obytný prstenec s okny a zelení, plynulá rotace kolem podélné osy | ✅ hotovo (studie 02) |
 | N2.2 | **Dokovací rám pod trupem se třemi kotvišti** + lucerna na konci | ✅ hotovo (studie 02) |
 | N2.3 | Osm sekcí jako čitelné bloky: 01 můstek, 02 knihovna a jídelna, 03 zahrada, 04 ordinace, 05 izolační kajuta, 06 dokovací rám, 07 lucerna, 08 technické zázemí | mapování 1:1 na legendu na webu |
-| N2.4 | Tři doprovodné lodě podle desky: Santa María la Mayor (průzkumný), Nossa Senhora de Fátima (lunární transport s gondolami), María de las Nieves (nákladní) | rozdílné siluety, ne kopie |
+| N2.4 | Tři doprovodné lodě podle desky: Santa María la Mayor (průzkumný), Nossa Senhora de Fátima (lunární transport s gondolami), María de las Nieves (nákladní) | ✅ hotovo (rozdílné siluety) |
+| N2.5 | Okna prstence i obytné přídě **instancovaná**, příhradovina rámu, svislé vzpěry, prosklená zahrada, klec lucerny; počet instancí podle `quality().tier` | ✅ hotovo — 122 draw calls / 80 376 tris / 37 textur / 0 invalid vertices |
+| N2.6 | Kamera fokusu **sleduje obíhající flotilu** (bez toho loď odplouvala ze záběru 0,34 j/s) | ✅ hotovo |
 | N2.5 | LOD: `low` varianta pro mobil (méně segmentů, bez detailů) | `quality().tier` |
 
 **Brána:** `?sceneAudit=1` → **≤ +60 draw calls** proti stavu N1.3, **≤ 110 k tris**, **0 nových textur** (popisky jen nutné), ≥30 fps Tier B na GPU, 0 invalid vertices; srovnávací screenshot s deskou.
@@ -169,4 +171,5 @@ Cíl: scéna má číst jako **studie 02** (kanonická: dok se třemi kotvišti 
 | Datum | Změna |
 |---|---|
 | 2026-11-01 | v1.0 — vytvořeno po dodání kánonu, webu, scény, tras, hero a konceptové desky. Otevřené D1–D4. |
+| 2026-11-01 | v1.2 — **N2 hotová**: instancovaná okna prstence i přídě, příhradovina rámu, vzpěry, zahrada, klec lucerny, LOD podle tieru; kamera fokusu sleduje flotilu. Naměřeno 122 calls / 80 376 tris / 37 textur / 0 invalid. Deploy nirvana `nabukano-n2-20261101T150748Z`. |
 | 2026-11-01 | v1.1 — **D1 vyřešeno dodáním studie 02**: kanonická jsou mariánská jména, volací znaky LUMI / ISSOBELLA / TŘETÍ MARIE se ruší. Dok = rám pod trupem se třemi kotvišti; N2.1/N2.2 hotové. |
