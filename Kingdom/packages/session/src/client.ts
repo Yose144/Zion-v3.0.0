@@ -60,8 +60,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
     signal,
-    /* Server-side: cookies nikdy neposíláme automaticky, jen explicitně. */
-    credentials: 'omit',
+    /*
+     * Prohlížeč: cookie `zion_session` posílá sám (same-origin proxy konzumenta).
+     * Server: nikdy automaticky — cookie se předává explicitně v `sessionCookie`.
+     */
+    credentials: typeof window !== 'undefined' && !sessionCookie ? 'include' : 'omit',
     cache: 'no-store',
   });
 

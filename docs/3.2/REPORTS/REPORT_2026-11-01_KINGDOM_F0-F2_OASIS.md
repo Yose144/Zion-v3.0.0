@@ -178,7 +178,13 @@ Zjištění, které mění postup: **konzumenti nevolají ZIS přímo.** Nirvana
 
 Řešení je levnější než měnit CORS: klient umí `baseUrl: ''` = relativní cesta, takže jde přes stávající proxy konzumenta. **`@zion/session` proto dostal volitelný `CallOptions.baseUrl`** na všech pěti funkcích (`getChallenge`, `verifyEd25519`, `getCurrentUser`, `listSessions`, `logout`).
 
-**Recept pro nirvanu (73 řádků → ~25, bez CORS, bez změny volajících):**
+> **⚠️ Pokus o migraci nirvany narazil — a to je důležitý nález.** `file:` závislost (`"@zion/session": "file:../../Kingdom/packages/session"`) v nirvaně **nefunguje**, protože:
+> 1. npm vytvoří **symlink** do `Kingdom/packages/session`, což leží mimo Turbopack `root` (`apps/`) → `Module not found: Can't resolve '@zion/session'`.
+> 2. Když se root rozšíří na repo (`../..`), build projde — ale **změní layout standalone výstupu** z `.next/standalone/nirvana/` na `.next/standalone/apps/nirvana/` a začne stopovat `canon/`. Tím se rozbije `deploy-nirvana.sh`.
+>
+> **Závěr:** S3 do legacy appky bez monorepa nejde bezpečně přes `file:` dep. Cesty, které zbývají: (a) **`npm pack` + tarball** — funguje, ale vrací do repa artefakt, který jsem právě u Kingdmu rušil; (b) **publikovat balíček** (privátní registry / GitHub Packages) — čisté, ale infrastruktura; (c) **počkat na K1**, až se appky sloučí do jednoho workspace. Změny v nirvaně jsou **revertované**, produkce běží dál na svém kódu. `CallOptions.baseUrl` v balíčku zůstává — je správný a bude potřeba.
+>
+> **Původní recept (pro budoucnost, až bude workspace):**
 
 ```jsonc
 // apps/nirvana/package.json
