@@ -98,7 +98,13 @@ export default function Navigation() {
       items: [
         { href: '/world', label: tr('nav', 'world', lang) },
         { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
-        { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang) },
+        {
+          href: '/l4-oasis',
+          label: tr('nav', 'l4_oasis', lang),
+          children: [
+            { href: '/l4-oasis/avatars', label: tr('nav', 'l4_oasis_avatars', lang) },
+          ],
+        },
         {
           href: '/l5-free-world',
           label: tr('nav', 'l5_free_world', lang),

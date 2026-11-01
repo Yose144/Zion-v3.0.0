@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Valhalla Hall-Steward — concept portrait</title><desc id="desc">A welcoming hall keeper in a warm firelit gathering place, focused on rest and community.</desc>
+  <defs>
+    <radialGradient id="bg"><stop stop-color="#784b35"/><stop offset=".65" stop-color="#30212a"/><stop offset="1" stop-color="#11121b"/></radialGradient>
+    <linearGradient id="cloak" x2="1" y2="1"><stop stop-color="#557391"/><stop offset=".5" stop-color="#304355"/><stop offset="1" stop-color="#192735"/></linearGradient>
+    <linearGradient id="skin" x2=".8" y2="1"><stop stop-color="#edc29b"/><stop offset="1" stop-color="#aa7059"/></linearGradient>
+    <radialGradient id="fire"><stop stop-color="#ffc46d" stop-opacity=".8"/><stop offset="1" stop-color="#f37742" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/><circle cx="256" cy="223" r="200" fill="url(#fire)"/>
+  <path d="M70 248V147l64-53 63 53v75m112 26V147l64-53 63 53v75" fill="none" stroke="#e5b879" stroke-opacity=".55" stroke-width="9"/>
+  <path d="M88 489c14-100 69-151 168-151s154 51 168 151" fill="url(#cloak)" stroke="#adc5d0" stroke-opacity=".45" stroke-width="3"/>
+  <path d="M204 184c0-58 22-91 52-91s52 33 52 91v83c0 42-23 67-52 67s-52-25-52-67z" fill="url(#skin)"/>
+  <path d="M204 185c-1-62 18-112 53-112 40 0 58 49 53 111-15-9-26-25-32-41-21 21-44 35-73 42z" fill="#40312b"/>
+  <path d="M228 232q10 7 20 0m16 0q10 7 20 0" fill="none" stroke="#4b3630" stroke-width="4" stroke-linecap="round"/><path d="M256 237v30l-10 2m-13 24q23 12 46 0" fill="none" stroke="#855345" stroke-width="3" stroke-linecap="round"/>
+  <path d="m206 352 50 79 50-79-50-22z" fill="#d4c6a9"/><path d="M256 354v111" stroke="#8299a1" stroke-width="3"/>
+  <path d="M135 382c-20 19-21 43 0 61 21-18 21-42 0-61z" fill="#ffbb58"/><path d="M377 382c-20 19-21 43 0 61 21-18 21-42 0-61z" fill="#ffbb58"/>
+  <path d="M104 304h58m188 0h58" stroke="#e7c58c" stroke-opacity=".46" stroke-width="3"/><g fill="#ffe0aa"><circle cx="150" cy="126" r="3"/><circle cx="362" cy="125" r="3"/><circle cx="108" cy="214" r="2"/><circle cx="404" cy="214" r="2"/></g>
+</svg>

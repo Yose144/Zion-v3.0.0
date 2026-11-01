@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Maitreya — concept portrait</title><desc id="desc">A serene guide framed by a golden-cyan cosmic halo.</desc>
+  <defs>
+    <radialGradient id="bg"><stop stop-color="#243a61"/><stop offset="1" stop-color="#090e20"/></radialGradient>
+    <linearGradient id="robe" x2="1" y2="1"><stop stop-color="#f5d987"/><stop offset=".55" stop-color="#bc8c42"/><stop offset="1" stop-color="#6d4f38"/></linearGradient>
+    <linearGradient id="skin" x2=".8" y2="1"><stop stop-color="#e8bc91"/><stop offset="1" stop-color="#a96f5c"/></linearGradient>
+    <radialGradient id="halo"><stop stop-color="#fff3ba" stop-opacity=".9"/><stop offset=".55" stop-color="#d5a84f" stop-opacity=".38"/><stop offset="1" stop-color="#2cd6d1" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/><circle cx="256" cy="206" r="197" fill="url(#halo)"/>
+  <circle cx="256" cy="205" r="137" fill="none" stroke="#f1d68e" stroke-opacity=".65" stroke-width="2"/>
+  <circle cx="256" cy="205" r="149" fill="none" stroke="#55d8d0" stroke-opacity=".45" stroke-width="1" stroke-dasharray="3 11"/>
+  <path d="M98 489c12-102 65-151 158-151s146 49 158 151" fill="url(#robe)" stroke="#f5d987" stroke-opacity=".65" stroke-width="3"/>
+  <path d="m211 345 45 91 45-91-45-24z" fill="#e7c877" opacity=".8"/><path d="M219 390h74m-85 24h96" stroke="#fff0c3" stroke-opacity=".48" stroke-width="3"/>
+  <path d="M204 177c0-61 25-91 52-91 37 0 56 31 56 92v76c0 49-23 76-56 76s-52-31-52-77z" fill="url(#skin)"/>
+  <path d="M203 185c-4-62 16-111 54-111 40 0 63 40 57 106-13-7-27-22-34-39-21 24-46 39-77 44z" fill="#28202b"/>
+  <path d="M233 224q10 8 20 0m18 0q10 8 20 0" fill="none" stroke="#563c3b" stroke-width="4" stroke-linecap="round"/>
+  <path d="M246 254q10 8 20 0" fill="none" stroke="#7f4c45" stroke-width="3" stroke-linecap="round"/><path d="M239 282q17 12 35 0" fill="none" stroke="#743d3e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M253 138c-10-28-4-48 8-69 16 20 21 42 8 68" fill="#52c9bc" stroke="#aaf0d8" stroke-width="2"/><path d="M258 137c17-23 33-27 49-24-7 17-23 28-47 30" fill="#82dfc5"/>
+  <g fill="#fff0b0"><circle cx="112" cy="137" r="3"/><circle cx="382" cy="172" r="3"/><circle cx="151" cy="283" r="2"/><circle cx="362" cy="277" r="2"/><circle cx="323" cy="93" r="2"/></g>
+</svg>

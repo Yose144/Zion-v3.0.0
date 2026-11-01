@@ -52,6 +52,7 @@ const t = {
     learn_group: { cs: 'Učení', en: 'Learn' },
     l3_hiran:   { cs: 'L3 Hiran', en: 'L3 Hiran' },
     l4_oasis:   { cs: 'L4 Oasis', en: 'L4 Oasis' },
+    l4_oasis_avatars: { cs: 'Avatáři', en: 'Avatars' },
     l5_free_world: { cs: 'L5 Free World', en: 'L5 Free World' },
     l6_issobella: { cs: 'L6 Issobella', en: 'L6 Issobella' },
     terranova:  { cs: 'Terra Nova',   en: 'Terra Nova' },

@@ -72,6 +72,7 @@ const L4OasisCopy = {
   rarityLegendary: { cs: `Legendary`, en: `Legendary` },
   rarityOneOfOne: { cs: `One of One`, en: `One of One` },
   avatarQuestsNote: { cs: `Quest linie pro každého avatara — PvE, exploration, crafting, social. Odměny v XP a ZION.`, en: `A quest line for every avatar — PvE, exploration, crafting, social. Rewards in XP and ZION.` },
+  browseRoster: { cs: `Procházet celý roster — 200 avatarů v 23 kruzích`, en: `Browse the full roster — 200 avatars in 23 circles` },
   krishnaNote: { cs: `Krishna-Maitreya — „Integration of All Paths" — jediný One-of-One avatar, Final Boss a průvodce v skryté EKAM dimenzi. Vyžaduje CL9.`, en: `Krishna-Maitreya — "Integration of All Paths" — the only One-of-One avatar, Final Boss and guide in the hidden EKAM dimension. Requires CL9.` },
 
   treasure: { cs: `Poklad`, en: `Treasure` },
@@ -513,6 +514,13 @@ export default function L4OasisPage() {
               <p className="text-sm text-gray-300">{L4OasisCopy.krishnaNote[cs ? 'cs' : 'en']}</p>
             </div>
           </div>
+          <Link
+            href="/l4-oasis/avatars"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl border border-zion-gold/30 bg-zion-gold/10 px-5 py-2.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/15 transition-colors"
+          >
+            <Users className="h-4 w-4" />
+            {L4OasisCopy.browseRoster[cs ? 'cs' : 'en']} <ArrowRight className="h-4 w-4" />
+          </Link>
         </motion.section>
 
         {/* ── GOLDEN EGG ── */}

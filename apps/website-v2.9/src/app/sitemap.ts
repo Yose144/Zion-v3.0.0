@@ -62,6 +62,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/world', 0.7, 'weekly'),
     r('/l3-hiran', 0.7, 'monthly'),
     r('/l4-oasis', 0.7, 'monthly'),
+    r('/l4-oasis/avatars', 0.6, 'monthly'),
     r('/l5-free-world', 0.7, 'monthly'),
     r('/l6-issobella', 0.7, 'monthly'),
 

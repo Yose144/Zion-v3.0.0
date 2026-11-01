@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Neo — concept portrait</title><desc id="desc">An original cyberpunk guide in a dark coat, framed by abstract green code.</desc>
+  <defs>
+    <radialGradient id="bg"><stop stop-color="#154132"/><stop offset=".58" stop-color="#0b211d"/><stop offset="1" stop-color="#050a0b"/></radialGradient>
+    <linearGradient id="coat" x2="1" y2="1"><stop stop-color="#252d31"/><stop offset=".55" stop-color="#0c1115"/><stop offset="1" stop-color="#34403e"/></linearGradient>
+    <linearGradient id="skin" x2=".8" y2="1"><stop stop-color="#e4b79b"/><stop offset="1" stop-color="#9d6857"/></linearGradient>
+    <linearGradient id="code" x2="0" y2="1"><stop stop-color="#9aff8a" stop-opacity=".8"/><stop offset="1" stop-color="#36e876" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g fill="url(#code)" font-family="monospace" font-size="20" opacity=".8"><text x="38" y="82">01 10 01</text><text x="354" y="126">1 0 1</text><text x="54" y="239">0 1 0</text><text x="364" y="285">101 01</text></g>
+  <circle cx="256" cy="202" r="148" fill="none" stroke="#5af68d" stroke-opacity=".48" stroke-width="2"/><path d="M100 490c14-99 68-149 156-149s142 50 156 149" fill="url(#coat)" stroke="#657b70" stroke-width="3"/>
+  <path d="M198 179c0-60 23-91 58-91s58 31 58 91v82c0 45-25 71-58 71s-58-26-58-71z" fill="url(#skin)"/>
+  <path d="M194 192c-11-66 9-122 62-122 50 0 69 48 60 122-18-9-34-27-42-47-20 24-46 42-80 47z" fill="#17181b"/>
+  <path d="M210 232h37m18 0h37" stroke="#16191b" stroke-width="9"/><path d="M247 232h18" stroke="#697872" stroke-width="4"/><path d="M256 240l-6 28 13 2m-26 23q19 8 38 0" fill="none" stroke="#805b52" stroke-width="3" stroke-linecap="round"/>
+  <path d="M191 190c17 27 30 63 33 111l-23-8c-17-34-23-74-10-103zm130 0c-17 27-30 63-33 111l23-8c17-34 23-74 10-103z" fill="#171b1d"/>
+  <path d="m219 358 37 63 37-63-37-18z" fill="#53615b"/><path d="M115 404h54m174 0h54" stroke="#4af582" stroke-opacity=".6" stroke-width="2"/>
+  <g fill="#8cff9c"><circle cx="102" cy="137" r="3"/><circle cx="404" cy="164" r="3"/><circle cx="131" cy="294" r="2"/><circle cx="384" cy="305" r="2"/></g>
+</svg>

@@ -1,0 +1,1402 @@
+[
+  {
+    "id": "OASIS-001",
+    "name": "Krishna-Maitreya",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/001-krishna-maitreya.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-002",
+    "name": "Rama",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/002-rama.webp",
+    "finalPortrait": "/oasis-assets/final_portraits/002-rama.webp"
+  },
+  {
+    "id": "OASIS-003",
+    "name": "Sita",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/003-sita.webp",
+    "finalPortrait": "/oasis-assets/final_portraits/003-sita.webp"
+  },
+  {
+    "id": "OASIS-004",
+    "name": "Hanuman",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/004-hanuman.webp",
+    "finalPortrait": "/oasis-assets/final_portraits/004-hanuman.webp"
+  },
+  {
+    "id": "OASIS-005",
+    "name": "Maitreya",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/005-maitreya.webp",
+    "finalPortrait": "/oasis-assets/final_portraits/005-maitreya.webp"
+  },
+  {
+    "id": "OASIS-006",
+    "name": "Saraswati",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/006-saraswati.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-007",
+    "name": "Isis-Enamataru",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/007-isis-enamataru.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-008",
+    "name": "Issobela Guardian",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/008-issobela-guardian.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-009",
+    "name": "Shanti",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/009-shanti.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-010",
+    "name": "Bronu-Christ",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/010-bronu-christ.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-011",
+    "name": "Arjuna",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/011-arjuna.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-012",
+    "name": "Milan-Bhima",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/012-milan-bhima.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-013",
+    "name": "Artem-Vudce",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/013-artem-vudce.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-014",
+    "name": "Mama Yashoda",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/014-mama-yashoda.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-015",
+    "name": "Vishwakarma",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/015-vishwakarma.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-016",
+    "name": "Radha",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/016-radha.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-017",
+    "name": "Vyasa-Kamil",
+    "circle": "Hinduistická božstva",
+    "art": "/oasis-assets/concept_portraits/017-vyasa-kamil.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-018",
+    "name": "Meriam Rose",
+    "circle": "Křesťanští svatí",
+    "art": "/oasis-assets/concept_portraits/018-meriam-rose.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-019",
+    "name": "Yeshua Sananda",
+    "circle": "Křesťanští svatí",
+    "art": "/oasis-assets/concept_portraits/019-yeshua-sananda.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-020",
+    "name": "Panna Maria",
+    "circle": "Křesťanští svatí",
+    "art": "/oasis-assets/concept_portraits/020-panna-maria.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-021",
+    "name": "Tara",
+    "circle": "Buddhističtí mistři",
+    "art": "/oasis-assets/concept_portraits/021-tara.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-022",
+    "name": "Avalokiteshvara",
+    "circle": "Buddhističtí mistři",
+    "art": "/oasis-assets/concept_portraits/022-avalokiteshvara.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-023",
+    "name": "Vajrasattva",
+    "circle": "Buddhističtí mistři",
+    "art": "/oasis-assets/concept_portraits/023-vajrasattva.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-024",
+    "name": "Dalai Lama XIV",
+    "circle": "Buddhističtí mistři",
+    "art": "/oasis-assets/concept_portraits/024-dalai-lama-xiv.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-025",
+    "name": "El Morya",
+    "circle": "Ascendovaní mistři",
+    "art": "/oasis-assets/concept_portraits/025-el-morya.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-026",
+    "name": "Lanto",
+    "circle": "Ascendovaní mistři",
+    "art": "/oasis-assets/concept_portraits/026-lanto.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-027",
+    "name": "Paul the Venetian",
+    "circle": "Ascendovaní mistři",
+    "art": "/oasis-assets/concept_portraits/027-paul-the-venetian.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-028",
+    "name": "Serapis Bey",
+    "circle": "Ascendovaní mistři",
+    "art": "/oasis-assets/concept_portraits/028-serapis-bey.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-029",
+    "name": "Hilarion",
+    "circle": "Ascendovaní mistři",
+    "art": "/oasis-assets/concept_portraits/029-hilarion.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-030",
+    "name": "Lady Nada",
+    "circle": "Ascendovaní mistři",
+    "art": "/oasis-assets/concept_portraits/030-lady-nada.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-031",
+    "name": "Saint Germain",
+    "circle": "Ascendovaní mistři",
+    "art": "/oasis-assets/concept_portraits/031-saint-germain.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-032",
+    "name": "Sanat Kumara",
+    "circle": "Ascendovaní mistři",
+    "art": "/oasis-assets/concept_portraits/032-sanat-kumara.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-033",
+    "name": "Mahavatar Babaji",
+    "circle": "Ascendovaní mistři",
+    "art": "/oasis-assets/concept_portraits/033-mahavatar-babaji.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-034",
+    "name": "Lady Gaia-Vywamus",
+    "circle": "Ascendovaní mistři",
+    "art": "/oasis-assets/concept_portraits/034-lady-gaia-vywamus.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-035",
+    "name": "King Arthur",
+    "circle": "Historické legendy",
+    "art": "/oasis-assets/concept_portraits/035-king-arthur.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-036",
+    "name": "Karel IV",
+    "circle": "Historické legendy",
+    "art": "/oasis-assets/concept_portraits/036-karel-iv.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-037",
+    "name": "Albert Einstein",
+    "circle": "Historické legendy",
+    "art": "/oasis-assets/concept_portraits/037-albert-einstein.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-038",
+    "name": "Mahatma Gandhi",
+    "circle": "Historické legendy",
+    "art": "/oasis-assets/concept_portraits/038-mahatma-gandhi.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-039",
+    "name": "Subhadra",
+    "circle": "Historické legendy",
+    "art": "/oasis-assets/concept_portraits/039-subhadra.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-040",
+    "name": "Vasudeva",
+    "circle": "Historické legendy",
+    "art": "/oasis-assets/concept_portraits/040-vasudeva.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-041",
+    "name": "Neo",
+    "circle": "Hrdinové Matrixu",
+    "art": "/oasis-assets/concept_portraits/041-neo.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-042",
+    "name": "Trinity",
+    "circle": "Hrdinové Matrixu",
+    "art": "/oasis-assets/concept_portraits/042-trinity.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-043",
+    "name": "Morpheus",
+    "circle": "Hrdinové Matrixu",
+    "art": "/oasis-assets/concept_portraits/043-morpheus.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-044",
+    "name": "ZION The Last City",
+    "circle": "Hrdinové Matrixu",
+    "art": "/oasis-assets/concept_portraits/044-zion-the-last-city.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-045",
+    "name": "Sri Dattatreya",
+    "circle": "ZION Originals",
+    "art": "/oasis-assets/concept_portraits/045-sri-dattatreya.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-046",
+    "name": "Maly Princ",
+    "circle": "ZION Originals",
+    "art": "/oasis-assets/concept_portraits/046-maly-princ.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-047",
+    "name": "Hiranyagarbha",
+    "circle": "ZION Originals",
+    "art": "/oasis-assets/concept_portraits/047-hiranyagarbha.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-048",
+    "name": "Sri Kalki Avatar",
+    "circle": "ZION Originals",
+    "art": "/oasis-assets/concept_portraits/048-sri-kalki-avatar.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-049",
+    "name": "Elizabet",
+    "circle": "ZION Originals",
+    "art": "/oasis-assets/concept_portraits/049-elizabet.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-050",
+    "name": "Heȟáka Sápa (Black Elk)",
+    "circle": "Kruh prvních národů",
+    "art": "/oasis-assets/concept_portraits/050-hehaka-sapa-black-elk.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-051",
+    "name": "Ptesáŋ Wíŋ (White Buffalo Calf Woman)",
+    "circle": "Kruh prvních národů",
+    "art": "/oasis-assets/concept_portraits/051-ptesa-wi-white-buffalo-calf-woman.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-052",
+    "name": "Kókyangwúti (Spider Grandmother)",
+    "circle": "Kruh prvních národů",
+    "art": "/oasis-assets/concept_portraits/052-kokyangwuti-spider-grandmother.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-053",
+    "name": "Hunahpú & Xbalanqué (Hero Twins)",
+    "circle": "Kruh prvních národů",
+    "art": "/oasis-assets/concept_portraits/053-hunahpu-xbalanque-hero-twins.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-054",
+    "name": "Don Mariano",
+    "circle": "Kruh prvních národů",
+    "art": "/oasis-assets/concept_portraits/054-don-mariano.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-055",
+    "name": "Doña Rosalía Ixmukané",
+    "circle": "Kruh prvních národů",
+    "art": "/oasis-assets/concept_portraits/055-dona-rosalia-ixmukane.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-056",
+    "name": "Bílé Pero (White Feather)",
+    "circle": "Kruh prvních národů",
+    "art": "/oasis-assets/concept_portraits/056-bile-pero-white-feather.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-057",
+    "name": "Ohnivá Oka (Fire Eyes)",
+    "circle": "Kruh prvních národů",
+    "art": "/oasis-assets/concept_portraits/057-ohniva-oka-fire-eyes.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-058",
+    "name": "Davi Kopenawa",
+    "circle": "Kruh prvních národů",
+    "art": "/oasis-assets/concept_portraits/058-davi-kopenawa.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-059",
+    "name": "Heyókȟa (Sacred Clown)",
+    "circle": "Kruh prvních národů",
+    "art": "/oasis-assets/concept_portraits/059-heyokha-sacred-clown.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-060",
+    "name": "Lā'ila'i",
+    "circle": "Pacifický kruh",
+    "art": "/oasis-assets/concept_portraits/060-la-ila-i.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-061",
+    "name": "Pele",
+    "circle": "Pacifický kruh",
+    "art": "/oasis-assets/concept_portraits/061-pele.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-062",
+    "name": "Hiʻiaka",
+    "circle": "Pacifický kruh",
+    "art": "/oasis-assets/concept_portraits/062-hiiaka.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-063",
+    "name": "Kāne",
+    "circle": "Pacifický kruh",
+    "art": "/oasis-assets/concept_portraits/063-kane.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-064",
+    "name": "Kanaloa",
+    "circle": "Pacifický kruh",
+    "art": "/oasis-assets/concept_portraits/064-kanaloa.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-065",
+    "name": "Kū",
+    "circle": "Pacifický kruh",
+    "art": "/oasis-assets/concept_portraits/065-ku.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-066",
+    "name": "Lono",
+    "circle": "Pacifický kruh",
+    "art": "/oasis-assets/concept_portraits/066-lono.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-067",
+    "name": "Stará Kumu Lehua",
+    "circle": "Pacifický kruh",
+    "art": "/oasis-assets/concept_portraits/067-stara-kumu-lehua.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-068",
+    "name": "Hina",
+    "circle": "Pacifický kruh",
+    "art": "/oasis-assets/concept_portraits/068-hina.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-069",
+    "name": "Maui",
+    "circle": "Pacifický kruh",
+    "art": "/oasis-assets/concept_portraits/069-maui.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-070",
+    "name": "Padmasambhava",
+    "circle": "Tibetský kruh",
+    "art": "/oasis-assets/concept_portraits/070-padmasambhava.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-071",
+    "name": "Milarepa",
+    "circle": "Tibetský kruh",
+    "art": "/oasis-assets/concept_portraits/071-milarepa.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-072",
+    "name": "Tsongkhapa",
+    "circle": "Tibetský kruh",
+    "art": "/oasis-assets/concept_portraits/072-tsongkhapa.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-073",
+    "name": "Atiśa",
+    "circle": "Tibetský kruh",
+    "art": "/oasis-assets/concept_portraits/073-atisa.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-074",
+    "name": "Marpa Lotsawa",
+    "circle": "Tibetský kruh",
+    "art": "/oasis-assets/concept_portraits/074-marpa-lotsawa.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-075",
+    "name": "Machik Labdrön",
+    "circle": "Tibetský kruh",
+    "art": "/oasis-assets/concept_portraits/075-machik-labdron.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-076",
+    "name": "Mañjuśrī",
+    "circle": "Tibetský kruh",
+    "art": "/oasis-assets/concept_portraits/076-manjusri.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-077",
+    "name": "Samantabhadra",
+    "circle": "Tibetský kruh",
+    "art": "/oasis-assets/concept_portraits/077-samantabhadra.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-078",
+    "name": "Medicine Buddha",
+    "circle": "Tibetský kruh",
+    "art": "/oasis-assets/concept_portraits/078-medicine-buddha.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-079",
+    "name": "Longchen Rabjam",
+    "circle": "Tibetský kruh",
+    "art": "/oasis-assets/concept_portraits/079-longchen-rabjam.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-080",
+    "name": "Shiva",
+    "circle": "Indie — rozšířený kruh",
+    "art": "/oasis-assets/concept_portraits/080-shiva.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-081",
+    "name": "Parvati",
+    "circle": "Indie — rozšířený kruh",
+    "art": "/oasis-assets/concept_portraits/081-parvati.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-082",
+    "name": "Ganesha",
+    "circle": "Indie — rozšířený kruh",
+    "art": "/oasis-assets/concept_portraits/082-ganesha.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-083",
+    "name": "Lakshmi",
+    "circle": "Indie — rozšířený kruh",
+    "art": "/oasis-assets/concept_portraits/083-lakshmi.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-084",
+    "name": "Durga",
+    "circle": "Indie — rozšířený kruh",
+    "art": "/oasis-assets/concept_portraits/084-durga.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-085",
+    "name": "Kali",
+    "circle": "Indie — rozšířený kruh",
+    "art": "/oasis-assets/concept_portraits/085-kali.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-086",
+    "name": "Kartikeya",
+    "circle": "Indie — rozšířený kruh",
+    "art": "/oasis-assets/concept_portraits/086-kartikeya.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-087",
+    "name": "Surya",
+    "circle": "Indie — rozšířený kruh",
+    "art": "/oasis-assets/concept_portraits/087-surya.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-088",
+    "name": "Indra",
+    "circle": "Indie — rozšířený kruh",
+    "art": "/oasis-assets/concept_portraits/088-indra.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-089",
+    "name": "Ganga",
+    "circle": "Indie — rozšířený kruh",
+    "art": "/oasis-assets/concept_portraits/089-ganga.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-090",
+    "name": "Amaterasu",
+    "circle": "Japonský kruh",
+    "art": "/oasis-assets/concept_portraits/090-amaterasu.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-091",
+    "name": "Susanoo",
+    "circle": "Japonský kruh",
+    "art": "/oasis-assets/concept_portraits/091-susanoo.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-092",
+    "name": "Tsukuyomi",
+    "circle": "Japonský kruh",
+    "art": "/oasis-assets/concept_portraits/092-tsukuyomi.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-093",
+    "name": "Inari",
+    "circle": "Japonský kruh",
+    "art": "/oasis-assets/concept_portraits/093-inari.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-094",
+    "name": "Ōkuninushi",
+    "circle": "Japonský kruh",
+    "art": "/oasis-assets/concept_portraits/094-okuninushi.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-095",
+    "name": "Izanami",
+    "circle": "Japonský kruh",
+    "art": "/oasis-assets/concept_portraits/095-izanami.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-096",
+    "name": "Hachiman",
+    "circle": "Japonský kruh",
+    "art": "/oasis-assets/concept_portraits/096-hachiman.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-097",
+    "name": "Benzaiten",
+    "circle": "Japonský kruh",
+    "art": "/oasis-assets/concept_portraits/097-benzaiten.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-098",
+    "name": "Kūkai",
+    "circle": "Japonský kruh",
+    "art": "/oasis-assets/concept_portraits/098-kukai.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-099",
+    "name": "Nichiren",
+    "circle": "Japonský kruh",
+    "art": "/oasis-assets/concept_portraits/099-nichiren.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-100",
+    "name": "Xuanyuan Huangdi",
+    "circle": "Čínský kruh",
+    "art": "/oasis-assets/concept_portraits/100-xuanyuan-huangdi.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-101",
+    "name": "Xiwangmu",
+    "circle": "Čínský kruh",
+    "art": "/oasis-assets/concept_portraits/101-xiwangmu.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-102",
+    "name": "Laozi",
+    "circle": "Čínský kruh",
+    "art": "/oasis-assets/concept_portraits/102-laozi.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-103",
+    "name": "Kongzi (Confucius)",
+    "circle": "Čínský kruh",
+    "art": "/oasis-assets/concept_portraits/103-kongzi-confucius.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-104",
+    "name": "Guan Yu / Guandi",
+    "circle": "Čínský kruh",
+    "art": "/oasis-assets/concept_portraits/104-guan-yu-guandi.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-105",
+    "name": "Mazu",
+    "circle": "Čínský kruh",
+    "art": "/oasis-assets/concept_portraits/105-mazu.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-106",
+    "name": "Nezha",
+    "circle": "Čínský kruh",
+    "art": "/oasis-assets/concept_portraits/106-nezha.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-107",
+    "name": "Sun Wukong",
+    "circle": "Čínský kruh",
+    "art": "/oasis-assets/concept_portraits/107-sun-wukong.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-108",
+    "name": "Yu the Great",
+    "circle": "Čínský kruh",
+    "art": "/oasis-assets/concept_portraits/108-yu-the-great.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-109",
+    "name": "Lei Gong",
+    "circle": "Čínský kruh",
+    "art": "/oasis-assets/concept_portraits/109-lei-gong.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-110",
+    "name": "Dewi Sri",
+    "circle": "Indonéský kruh",
+    "art": "/oasis-assets/concept_portraits/110-dewi-sri.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-111",
+    "name": "Nyai Roro Kidul",
+    "circle": "Indonéský kruh",
+    "art": "/oasis-assets/concept_portraits/111-nyai-roro-kidul.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-112",
+    "name": "Semar",
+    "circle": "Indonéský kruh",
+    "art": "/oasis-assets/concept_portraits/112-semar.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-113",
+    "name": "Batara Guru",
+    "circle": "Indonéský kruh",
+    "art": "/oasis-assets/concept_portraits/113-batara-guru.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-114",
+    "name": "Barong Ket",
+    "circle": "Indonéský kruh",
+    "art": "/oasis-assets/concept_portraits/114-barong-ket.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-115",
+    "name": "Garuda",
+    "circle": "Indonéský kruh",
+    "art": "/oasis-assets/concept_portraits/115-garuda.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-116",
+    "name": "Gatotkaca",
+    "circle": "Indonéský kruh",
+    "art": "/oasis-assets/concept_portraits/116-gatotkaca.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-117",
+    "name": "Prince Panji",
+    "circle": "Indonéský kruh",
+    "art": "/oasis-assets/concept_portraits/117-prince-panji.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-118",
+    "name": "Roro Jonggrang",
+    "circle": "Indonéský kruh",
+    "art": "/oasis-assets/concept_portraits/118-roro-jonggrang.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-119",
+    "name": "Dewi Nawang Wulan",
+    "circle": "Indonéský kruh",
+    "art": "/oasis-assets/concept_portraits/119-dewi-nawang-wulan.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-120",
+    "name": "Seven Sisters Songline Steward",
+    "circle": "Australský kruh",
+    "art": "/oasis-assets/concept_portraits/120-seven-sisters-songline-steward.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-121",
+    "name": "Rainbow Serpent Country Law",
+    "circle": "Australský kruh",
+    "art": "/oasis-assets/concept_portraits/121-rainbow-serpent-country-law.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-122",
+    "name": "Bunjil",
+    "circle": "Australský kruh",
+    "art": "/oasis-assets/concept_portraits/122-bunjil.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-123",
+    "name": "Baiame",
+    "circle": "Australský kruh",
+    "art": "/oasis-assets/concept_portraits/123-baiame.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-124",
+    "name": "Tagai Navigator",
+    "circle": "Australský kruh",
+    "art": "/oasis-assets/concept_portraits/124-tagai-navigator.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-125",
+    "name": "Celestial Emu Dreaming Steward",
+    "circle": "Australský kruh",
+    "art": "/oasis-assets/concept_portraits/125-celestial-emu-dreaming-steward.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-126",
+    "name": "Djang'kawu Creator Voyagers",
+    "circle": "Australský kruh",
+    "art": "/oasis-assets/concept_portraits/126-djang-kawu-creator-voyagers.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-127",
+    "name": "Namarrkon",
+    "circle": "Australský kruh",
+    "art": "/oasis-assets/concept_portraits/127-namarrkon.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-128",
+    "name": "Country Knowledge Walk (Tjukurpa education frame)",
+    "circle": "Australský kruh",
+    "art": "/oasis-assets/concept_portraits/128-country-knowledge-walk-tjukurpa-education-frame.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-129",
+    "name": "Makarrata Treaty Bridge",
+    "circle": "Australský kruh",
+    "art": "/oasis-assets/concept_portraits/129-makarrata-treaty-bridge.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-130",
+    "name": "Papatūānuku",
+    "circle": "Kruh Aotearoa (NZ)",
+    "art": "/oasis-assets/concept_portraits/130-papatuanuku.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-131",
+    "name": "Ranginui",
+    "circle": "Kruh Aotearoa (NZ)",
+    "art": "/oasis-assets/concept_portraits/131-ranginui.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-132",
+    "name": "Tāne Mahuta",
+    "circle": "Kruh Aotearoa (NZ)",
+    "art": "/oasis-assets/concept_portraits/132-tane-mahuta.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-133",
+    "name": "Tangaroa (Māori strand)",
+    "circle": "Kruh Aotearoa (NZ)",
+    "art": "/oasis-assets/concept_portraits/133-tangaroa-maori-strand.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-134",
+    "name": "Rongo",
+    "circle": "Kruh Aotearoa (NZ)",
+    "art": "/oasis-assets/concept_portraits/134-rongo.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-135",
+    "name": "Tūmatauenga",
+    "circle": "Kruh Aotearoa (NZ)",
+    "art": "/oasis-assets/concept_portraits/135-tumatauenga.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-136",
+    "name": "Tāwhirimatea",
+    "circle": "Kruh Aotearoa (NZ)",
+    "art": "/oasis-assets/concept_portraits/136-tawhirimatea.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-137",
+    "name": "Haumiatiketike",
+    "circle": "Kruh Aotearoa (NZ)",
+    "art": "/oasis-assets/concept_portraits/137-haumiatiketike.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-138",
+    "name": "Hine-nui-te-pō",
+    "circle": "Kruh Aotearoa (NZ)",
+    "art": "/oasis-assets/concept_portraits/138-hine-nui-te-po.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-139",
+    "name": "Kupe Navigator",
+    "circle": "Kruh Aotearoa (NZ)",
+    "art": "/oasis-assets/concept_portraits/139-kupe-navigator.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-140",
+    "name": "Ọṣun",
+    "circle": "Africký kruh",
+    "art": "/oasis-assets/concept_portraits/140-osun.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-141",
+    "name": "Ṣàngó",
+    "circle": "Africký kruh",
+    "art": "/oasis-assets/concept_portraits/141-sango.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-142",
+    "name": "Ọbàtálá",
+    "circle": "Africký kruh",
+    "art": "/oasis-assets/concept_portraits/142-obatala.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-143",
+    "name": "Ọya",
+    "circle": "Africký kruh",
+    "art": "/oasis-assets/concept_portraits/143-oya.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-144",
+    "name": "Mawu-Lisa",
+    "circle": "Africký kruh",
+    "art": "/oasis-assets/concept_portraits/144-mawu-lisa.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-145",
+    "name": "Nyame / Nyankopon",
+    "circle": "Africký kruh",
+    "art": "/oasis-assets/concept_portraits/145-nyame-nyankopon.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-146",
+    "name": "Kwaku Ananse",
+    "circle": "Africký kruh",
+    "art": "/oasis-assets/concept_portraits/146-kwaku-ananse.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-147",
+    "name": "Ausar-Osiris",
+    "circle": "Africký kruh",
+    "art": "/oasis-assets/concept_portraits/147-ausar-osiris.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-148",
+    "name": "Maʿăt",
+    "circle": "Africký kruh",
+    "art": "/oasis-assets/concept_portraits/148-maat.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-149",
+    "name": "Anna Njinga",
+    "circle": "Africký kruh",
+    "art": "/oasis-assets/concept_portraits/149-anna-njinga.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-150",
+    "name": "Atlas",
+    "circle": "Kruh Atlantis",
+    "art": "/oasis-assets/concept_portraits/150-atlas.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-151",
+    "name": "Cleito",
+    "circle": "Kruh Atlantis",
+    "art": "/oasis-assets/concept_portraits/151-cleito.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-152",
+    "name": "Gadeirus",
+    "circle": "Kruh Atlantis",
+    "art": "/oasis-assets/concept_portraits/152-gadeirus.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-153",
+    "name": "Ampheres",
+    "circle": "Kruh Atlantis",
+    "art": "/oasis-assets/concept_portraits/153-ampheres.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-154",
+    "name": "Evaemon",
+    "circle": "Kruh Atlantis",
+    "art": "/oasis-assets/concept_portraits/154-evaemon.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-155",
+    "name": "Mneseus",
+    "circle": "Kruh Atlantis",
+    "art": "/oasis-assets/concept_portraits/155-mneseus.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-156",
+    "name": "Autochthon",
+    "circle": "Kruh Atlantis",
+    "art": "/oasis-assets/concept_portraits/156-autochthon.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-157",
+    "name": "Elasippus",
+    "circle": "Kruh Atlantis",
+    "art": "/oasis-assets/concept_portraits/157-elasippus.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-158",
+    "name": "Mestor",
+    "circle": "Kruh Atlantis",
+    "art": "/oasis-assets/concept_portraits/158-mestor.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-159",
+    "name": "Azaes",
+    "circle": "Kruh Atlantis",
+    "art": "/oasis-assets/concept_portraits/159-azaes.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-160",
+    "name": "Lemur Steward",
+    "circle": "Kruh Lemurie",
+    "art": "/oasis-assets/concept_portraits/160-lemur-steward.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-161",
+    "name": "Sclater Bridge",
+    "circle": "Kruh Lemurie",
+    "art": "/oasis-assets/concept_portraits/161-sclater-bridge.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-162",
+    "name": "Coral Notary",
+    "circle": "Kruh Lemurie",
+    "art": "/oasis-assets/concept_portraits/162-coral-notary.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-163",
+    "name": "Tide Column",
+    "circle": "Kruh Lemurie",
+    "art": "/oasis-assets/concept_portraits/163-tide-column.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-164",
+    "name": "Basalt Chronicle",
+    "circle": "Kruh Lemurie",
+    "art": "/oasis-assets/concept_portraits/164-basalt-chronicle.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-165",
+    "name": "Foam Seed",
+    "circle": "Kruh Lemurie",
+    "art": "/oasis-assets/concept_portraits/165-foam-seed.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-166",
+    "name": "Oceanic Bridge",
+    "circle": "Kruh Lemurie",
+    "art": "/oasis-assets/concept_portraits/166-oceanic-bridge.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-167",
+    "name": "Shelf Whisper",
+    "circle": "Kruh Lemurie",
+    "art": "/oasis-assets/concept_portraits/167-shelf-whisper.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-168",
+    "name": "Equinox Lull",
+    "circle": "Kruh Lemurie",
+    "art": "/oasis-assets/concept_portraits/168-equinox-lull.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-169",
+    "name": "Circle Closure",
+    "circle": "Kruh Lemurie",
+    "art": "/oasis-assets/concept_portraits/169-circle-closure.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-170",
+    "name": "Great Central Sun Steward",
+    "circle": "Kosmický kruh · Vzestup",
+    "art": "/oasis-assets/concept_portraits/170-great-central-sun-steward.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-171",
+    "name": "Photon Cadence",
+    "circle": "Kosmický kruh · Vzestup",
+    "art": "/oasis-assets/concept_portraits/171-photon-cadence.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-172",
+    "name": "Solar Logos Dual",
+    "circle": "Kosmický kruh · Vzestup",
+    "art": "/oasis-assets/concept_portraits/172-solar-logos-dual.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-173",
+    "name": "Telluric Soul Bridge",
+    "circle": "Kosmický kruh · Vzestup",
+    "art": "/oasis-assets/concept_portraits/173-telluric-soul-bridge.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-174",
+    "name": "Tube-of-Light Sentinel",
+    "circle": "Kosmický kruh · Vzestup",
+    "art": "/oasis-assets/concept_portraits/174-tube-of-light-sentinel.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-175",
+    "name": "Radiant Spiral",
+    "circle": "Kosmický kruh · Vzestup",
+    "art": "/oasis-assets/concept_portraits/175-radiant-spiral.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-176",
+    "name": "Seventh Ray Adjunct",
+    "circle": "Kosmický kruh · Vzestup",
+    "art": "/oasis-assets/concept_portraits/176-seventh-ray-adjunct.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-177",
+    "name": "Galactic Convenor",
+    "circle": "Kosmický kruh · Vzestup",
+    "art": "/oasis-assets/concept_portraits/177-galactic-convenor.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-178",
+    "name": "Lightbody Scribe",
+    "circle": "Kosmický kruh · Vzestup",
+    "art": "/oasis-assets/concept_portraits/178-lightbody-scribe.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-179",
+    "name": "Vzestup Capstone",
+    "circle": "Kosmický kruh · Vzestup",
+    "art": "/oasis-assets/concept_portraits/179-vzestup-capstone.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-180",
+    "name": "Valhalla Hall-Steward",
+    "circle": "Seversko-keltský kruh",
+    "art": "/oasis-assets/concept_portraits/180-valhalla-hall-steward.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-181",
+    "name": "Óðinn Wayfarer",
+    "circle": "Seversko-keltský kruh",
+    "art": "/oasis-assets/concept_portraits/181-oinn-wayfarer.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-182",
+    "name": "Þórr Storm-Host",
+    "circle": "Seversko-keltský kruh",
+    "art": "/oasis-assets/concept_portraits/182-orr-storm-host.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-183",
+    "name": "Freyja Van-Ruler",
+    "circle": "Seversko-keltský kruh",
+    "art": "/oasis-assets/concept_portraits/183-freyja-van-ruler.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-184",
+    "name": "Týr Oath-Fire",
+    "circle": "Seversko-keltský kruh",
+    "art": "/oasis-assets/concept_portraits/184-tyr-oath-fire.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-185",
+    "name": "Brigid Triple-Flame",
+    "circle": "Seversko-keltský kruh",
+    "art": "/oasis-assets/concept_portraits/185-brigid-triple-flame.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-186",
+    "name": "Dagda Peace-Harp",
+    "circle": "Seversko-keltský kruh",
+    "art": "/oasis-assets/concept_portraits/186-dagda-peace-harp.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-187",
+    "name": "Morrígan Sovereignty-Raven",
+    "circle": "Seversko-keltský kruh",
+    "art": "/oasis-assets/concept_portraits/187-morrigan-sovereignty-raven.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-188",
+    "name": "Lugh Samildanach",
+    "circle": "Seversko-keltský kruh",
+    "art": "/oasis-assets/concept_portraits/188-lugh-samildanach.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-189",
+    "name": "Manannán mac Lir",
+    "circle": "Seversko-keltský kruh",
+    "art": "/oasis-assets/concept_portraits/189-manannan-mac-lir.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-190",
+    "name": "Ré Solar-Barque",
+    "circle": "Kruh starověkého Egypta",
+    "art": "/oasis-assets/concept_portraits/190-re-solar-barque.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-191",
+    "name": "Hor Unifier",
+    "circle": "Kruh starověkého Egypta",
+    "art": "/oasis-assets/concept_portraits/191-hor-unifier.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-192",
+    "name": "Thoth Scribe",
+    "circle": "Kruh starověkého Egypta",
+    "art": "/oasis-assets/concept_portraits/192-thoth-scribe.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-193",
+    "name": "Hathor Jubilee",
+    "circle": "Kruh starověkého Egypta",
+    "art": "/oasis-assets/concept_portraits/193-hathor-jubilee.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-194",
+    "name": "Sekhmet Audit-Flame",
+    "circle": "Kruh starověkého Egypta",
+    "art": "/oasis-assets/concept_portraits/194-sekhmet-audit-flame.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-195",
+    "name": "Ptah Mason",
+    "circle": "Kruh starověkého Egypta",
+    "art": "/oasis-assets/concept_portraits/195-ptah-mason.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-196",
+    "name": "Anubis Threshold",
+    "circle": "Kruh starověkého Egypta",
+    "art": "/oasis-assets/concept_portraits/196-anubis-threshold.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-197",
+    "name": "Amun Hidden-Field",
+    "circle": "Kruh starověkého Egypta",
+    "art": "/oasis-assets/concept_portraits/197-amun-hidden-field.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-198",
+    "name": "Geb Foundation",
+    "circle": "Kruh starověkého Egypta",
+    "art": "/oasis-assets/concept_portraits/198-geb-foundation.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-199",
+    "name": "Nut Stellar Vault",
+    "circle": "Kruh starověkého Egypta",
+    "art": "/oasis-assets/concept_portraits/199-nut-stellar-vault.webp",
+    "finalPortrait": null
+  },
+  {
+    "id": "OASIS-200",
+    "name": "Bolon Yokte' K'uh",
+    "circle": "Kruh Maya",
+    "art": "/oasis-assets/concept_portraits/200-bolon-yokte-k-uh.webp",
+    "finalPortrait": null
+  }
+]
