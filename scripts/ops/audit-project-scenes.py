@@ -56,6 +56,8 @@ def main():
     parser.add_argument('--repeat', type=int, default=3, help='Render samples per scene; the median is reported')
     parser.add_argument('--cooldown', type=float, default=3.0, help='Seconds between the repeated render samples')
     parser.add_argument('--max-spread', type=float, default=15.0, help='Maximum allowed spread of the fps samples in percent; above it the row is marked unstable')
+    parser.add_argument('--settle', type=float, default=3.0, help='Seconds to let the scene settle before the first sample')
+    parser.add_argument('--warmup', type=int, default=1, help='Samples taken and discarded before measuring (shader compile, first-frame spikes)')
     parser.add_argument('--mount-timeout', type=int, default=60000, help='Milliseconds to wait for the scene to mount (software rendering can be slow)')
     parser.add_argument('--gpu', choices=['sw', 'nvidia', 'amd', 'metal'], default='metal' if sys.platform == 'darwin' else 'sw', help='Renderer: metal = local Apple GPU via ANGLE (macOS), sw = SwiftShader, nvidia/amd = local hardware via ANGLE')
     parser.add_argument('--chromium', default='')
@@ -132,6 +134,15 @@ def main():
                         # repeatedly, report the median, and refuse to call a noisy row a pass.
                         fps_samples = []
                         render = None
+                        if args.settle > 0:
+                            page.wait_for_timeout(int(args.settle * 1000))
+                        discarded = []
+                        for warm_idx in range(max(0, args.warmup)):
+                            warm = page.evaluate('window.__projectScene')
+                            discarded.append(round(float(warm['fps']), 2))
+                            page.wait_for_timeout(int(args.cooldown * 1000))
+                        if discarded:
+                            row['fps_discarded'] = discarded
                         for sample_idx in range(max(1, args.repeat)):
                             render = page.evaluate('window.__projectScene')
                             assert render['invalidVertices'] == 0, 'non-finite geometry'
