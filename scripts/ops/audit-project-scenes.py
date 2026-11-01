@@ -15,6 +15,13 @@ SCENES = ['genesis-garden', 'dharma-temple', 'te-piko-ora', 'golden-republic-boh
 # reachable in Nirvana only and are useful for beauty shots during the render programme.
 NIRVANA_ONLY = ['matrix']
 
+# Okamžité fps přes requestAnimationFrame. `__projectScene.fps` je průměr od
+# mountu, takže ho sráží start (dekódování textur, kompilace shaderů) — u universe
+# to dělalo 48 fps místo skutečných 59,8. Měříme proto okno, ne průměr od nuly.
+RAF_FPS_JS = '''seconds => new Promise(resolve => {
+  let frames=0,start=performance.now();function f(t){frames++;if(t-start<seconds*1000)requestAnimationFrame(f);else resolve(frames*1000/(t-start));}requestAnimationFrame(f);
+})'''
+
 
 def average_hash(path, size=16):
     """Perceptual fingerprint: 16x16 greyscale, one bit per pixel versus the mean."""
@@ -146,10 +153,13 @@ def main():
                         for sample_idx in range(max(1, args.repeat)):
                             render = page.evaluate('window.__projectScene')
                             assert render['invalidVertices'] == 0, 'non-finite geometry'
-                            fps_samples.append(round(float(render['fps']), 2))
+                            # Okno, ne průměr od mountu (viz RAF_FPS_JS).
+                            raf = float(page.evaluate(RAF_FPS_JS, min(args.sample_seconds, 4)))
+                            fps_samples.append(round(raf, 2))
                             if sample_idx + 1 < max(1, args.repeat):
                                 page.wait_for_timeout(int(args.cooldown * 1000))
                         row['render'] = render
+                        row['cumulative_fps'] = round(float(render['fps']), 2)
                         row['fps_samples'] = fps_samples
                         best, worst = max(fps_samples), min(fps_samples)
                         spread = (best / worst - 1) * 100 if worst > 0 else 100.0
@@ -220,9 +230,7 @@ def main():
                         row['status'] = 'pass'
                         continue
                     sample = args.sample_seconds if app == 'nirvana' else min(args.sample_seconds, 2)
-                    row['raf_fps'] = page.evaluate('''seconds => new Promise(resolve => {
-                      let frames=0,start=performance.now();function f(t){frames++;if(t-start<seconds*1000)requestAnimationFrame(f);else resolve(frames*1000/(t-start));}requestAnimationFrame(f);
-                    })''', sample)
+                    row['raf_fps'] = page.evaluate(RAF_FPS_JS, sample)
                     row['initial'] = page.evaluate('window.__projectScene')
                     assert row['initial']['invalidVertices'] == 0, 'non-finite geometry'
                     def screenshot(label):
