@@ -118,3 +118,43 @@ Do té doby appka běží. Nic se nemaže dopředu — ani když je to „kouzel
 | 2026-11-01 | v1.4 — **F2b hotová (13 světů).** `apps/shared/scenes` (10 900 LOC vč. `kit`) převzato do `packages/scenes/src/worlds/`; `@genesis/runtime` (alias, který si každá appka definovala v tsconfigu) nahrazen skutečným modulem `runtime.ts` — jediná instance React/R3F/three. Vlastní **`OrbitRig`** místo `drei` `OrbitControls` (stejné rozhraní: `target`, `enabled`, `autoRotate`, `min/maxDistance`, `maxPolarAngle`; tažení + kolečko) → –100 KB. **Katalog světů je v `@zion/world`** (jen texty), komponentová vazba v `@zion/scenes` — serverové stránky three nenačtou. Nová cesta **`/world/<id>`** (místo, ne portál) + sekce „Světy OASIS“ v Místnosti. Ověřeno CDP: Genesis Garden i Kailash renderují. Lazy chunk 294 KB gzip. |
 | 2026-11-01 | v1.3 — **F2a hotová (první svět OASIS).** `packages/world` = doména (`types`, `geometry`, `rng` s mulberry32, `orbit` — Nová Země / Issobella / Brána / `placeMarker` / `orbitCamera`). `packages/scenes` = web adaptér (three 0.186 + R3F 9.4, **bez drei a bez xr**): `OrbitScene`, `NewEarth`, `IssobellaRing`, `Gate`, `Markers`, `Starfield`. Scéna je **generovaná Portal Contractem** — markery z `manifest.ring`, klik → `/portal/<id>`. Lazy `next/dynamic` + `ssr:false` → three.js (237 KB gzip) se stahuje jen na `/room`; Brána zůstává bez WebGL. Nalezeno a opraveno: R3F kamera bez `lookAt`, `manifest.ring` v nirvana měřítku (x=12 → mimo záběr), `useLoader` bez `onLoad`, staged `public` smazaná buildem za běhu (textura 500 → prázdný `Suspense`). Report: `docs/3.2/REPORTS/REPORT_2026-11-01_KINGDOM_F0-F2_OASIS.md`. |
 | 2026-11-01 | v1.2 — **F1 hotová (Brána).** Obsah `apps/IntroPage` (`maintenance.html` + `intro-tabs.js` i18n) přepsán do typovaných dat `core/gate/content.ts` (hero, intro, tři cesty, vrstvy L1–L6) + `Rich` pro `**bold**`/`*kurzíva*`. Hero + **živý pás** (výška / difficulty / hashrate / block time / připojené mince) čtený přes `api.tryRead` s cache 20/30 s. Kotvy `#why` `#paths` `#layers`. Mrtvé klíče (`gateLead`) a mrtvé CSS (`.k-gate-text`) odstraněny. `check` 35 souborů / 0 porušení, build 351 ms. Starý IntroPage zůstává donor; DNS flip až F6. |
+
+---
+
+## 8. K1 — sloučení do jednoho workspace (předpoklad pro S3)
+
+> **Proč:** dnes má každá appka vlastní `node_modules` a lockfile. Sdílený balíček
+> (`@zion/session`) přes `file:` závislost **nefunguje** — npm udělá symlink mimo
+> Turbopack `root`, build spadne na `Can't resolve`. Ověřeno 2026-11-01 na nirvaně
+> (revertováno, produkce nedotčena).
+
+### Co K1 skutečně znamená
+
+Jeden `package.json` v rootu, jeden lockfile, jeden dependency graph. Ne „přesunout
+soubory" — **jedna verze Reactu, Nextu a sdílených balíčků pro všech 6 webů.**
+
+### Proč to nejde teď
+
+| Blokace | Detail |
+|---|---|
+| **Dvě generace Next** | 14.2.x (IntroPage, MarketPlace, pool-ui) vs 16.x (nirvana, OasisWeb, website-v2.9) |
+| **React 18 vs 19** | npm workspace je nucen hoistovat jednu verzi; druhá se rozbije |
+| **Next 14 má critical CVE** | MarketPlace — gate 1b, stejně se musí upgradovat |
+| **Turbopack root** | každá appka má `root: apps/`; sdílené balíčky leží výš |
+| **Standalone layout** | změna rootu mění `.next/standalone/<app>/` → `apps/<app>/` a rozbíjí deploy skripty |
+
+### Vlny
+
+| # | Vlna | Obsah | Brána |
+|---|---|---|---|
+| **K1.1** | **Next 16 + React 19 ve všech 6 webech** | pool-ui → IntroPage → MarketPlace (security 1b) → srovnat zbytek na 16.4.x | všechny buildí, `tsc` čistý, produkce nasazená |
+| **K1.2** | **Root workspace** | `/package.json` s `workspaces: ["apps/*", "packages/*"]`, jeden lockfile; `Kingdom/packages/*` → `/packages/*` | `npm ci` v rootu, 6 buildů zelených |
+| **K1.3** | **Jeden Turbopack root** | `root: repo`, sjednotit standalone layout + **upravit všech 9 deploy skriptů** na nové cesty | každý deploy projde, rollback ověřen |
+| **K1.4** | **S3 se odblokuje sám** | `@zion/session` jako workspace závislost, žádný tarball ani registry | nirvana 73 → ~25 řádků, market −344 |
+
+### Co NEDĚLAT
+
+- Nezačínat K1.2 před K1.1 — hoisting Reactu 18 a 19 rozbije buildy.
+- Nedělat tarball jako zkratku — vrací do repa artefakt, který jsme právě zrušili.
+- Neměnit Turbopack root jedné appky „jen tak" — mění layout standalone a tím deploy.
+
