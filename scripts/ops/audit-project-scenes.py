@@ -68,6 +68,7 @@ def main():
     parser.add_argument('--mount-timeout', type=int, default=60000, help='Milliseconds to wait for the scene to mount (software rendering can be slow)')
     parser.add_argument('--gpu', choices=['sw', 'nvidia', 'amd', 'metal'], default='metal' if sys.platform == 'darwin' else 'sw', help='Renderer: metal = local Apple GPU via ANGLE (macOS), sw = SwiftShader, nvidia/amd = local hardware via ANGLE')
     parser.add_argument('--chromium', default='')
+    parser.add_argument('--pass-code', default=os.environ.get('NIRVANA_PASS_CODE', ''), help='ZAP pass pro gated povrchy (produkce); bere se i z NIRVANA_PASS_CODE, nikdy se neloguje')
     parser.add_argument('--startup-only', action='store_true', help='Check rendered scene and loaded scripts/styles without the interaction matrix')
     parser.add_argument('--shots-only', action='store_true', help='Capture hero screenshots + render metrics only (art review, no interaction matrix)')
     parser.add_argument('--resume', action='store_true', help='Keep passed rows for this release and rerun incomplete or failed rows')
@@ -110,6 +111,17 @@ def main():
                     # The presentations are gated by an access pass; a local production build can
                     # opt in to audits by setting ZION_RENDER_AUDIT=1 on the server and here.
                     context.set_extra_http_headers({'x-render-audit': '1'})
+                if args.pass_code:
+                    # Produkce má ZAP pas zapnutý, takže `/` i `/present/*` vrací pass stránku.
+                    # Kód se vymění za cookie přes tentýž endpoint jako v prohlížeči; do logu
+                    # ani do results.json se nikdy nezapisuje.
+                    redeemed = context.request.post(
+                        f"{(args.nirvana_url if app == 'nirvana' else args.web_url).rstrip('/')}/api/pass",
+                        data={'code': args.pass_code},
+                        timeout=60000,
+                    )
+                    if not redeemed.ok:
+                        print(f'[audit] pass nebyl přijat (HTTP {redeemed.status}) — gated scény selžou', flush=True)
                 page = context.new_page(); page.set_default_timeout(60000)
                 page.on('pageerror', lambda e, row=row: row['errors'].append(str(e)))
                 page.on('console', lambda m, row=row: row['errors'].append(m.text) if re.search(r'Shader Error|synchronously unmount|React is not defined|Error creating WebGL', m.text) else None)
