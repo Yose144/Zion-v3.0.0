@@ -469,7 +469,7 @@ export default function AccountPage() {
             style={{ '--rc': '228, 30, 43' } as CSSProperties}
           >
             <div className="flex flex-wrap items-center gap-2 md:gap-3">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
+              <span className="text-[11px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
                 {AccountCopy.sections[cs ? 'cs' : 'en']}
               </span>
               {TABS.map((t) => {

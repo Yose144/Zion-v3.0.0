@@ -504,7 +504,7 @@ export default function MariaDelCaminoPage() {
                             <Icon className="h-4 w-4" />
                             <span className="text-sm font-semibold">{signal.value}</span>
                           </div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">
+                          <p className="text-[11px] uppercase tracking-widest text-gray-500 mt-1">
                             {cs ? signal.labelCs : signal.labelEn}
                           </p>
                         </div>
@@ -611,7 +611,7 @@ export default function MariaDelCaminoPage() {
         >
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
                 {Copy.threeDPreview[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">
@@ -658,7 +658,7 @@ export default function MariaDelCaminoPage() {
                     <div key={i} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
                       <div className="flex items-center gap-2 text-amber-200 mb-1">
                         <Sparkles className="h-4 w-4" />
-                        <span className="text-[10px] uppercase tracking-widest text-gray-500">
+                        <span className="text-[11px] uppercase tracking-widest text-gray-500">
                           {(cs ? ['Tři roucha', 'Svět v dlani', 'Precedent'] : ['Three robes', 'The world in hand', 'Precedent'])[i]}
                         </span>
                       </div>
@@ -669,7 +669,7 @@ export default function MariaDelCaminoPage() {
                 <div className="mt-6 border-t border-white/10 pt-5">
                   <div className="flex items-center gap-2 text-amber-200 mb-2">
                     <Flame className="h-4 w-4" />
-                    <span className="text-[10px] uppercase tracking-widest text-gray-500">
+                    <span className="text-[11px] uppercase tracking-widest text-gray-500">
                       {Copy.elizabethTitle[cs ? 'cs' : 'en']}
                     </span>
                   </div>
@@ -725,7 +725,7 @@ export default function MariaDelCaminoPage() {
                       {hulls.map((h) => {
                         const m = HULL_META[h] ?? HULL_META.I;
                         return (
-                          <span key={h} className={`text-[10px] uppercase tracking-widest ${m.text}`}>
+                          <span key={h} className={`text-[11px] uppercase tracking-widest ${m.text}`}>
                             {m.label[cs ? 'cs' : 'en']}
                           </span>
                         );
@@ -790,7 +790,7 @@ export default function MariaDelCaminoPage() {
                   <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sky-300 mb-1">
                       <PointIcon className="h-4 w-4" />
-                      <span className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
+                      <span className="text-[11px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
                     </div>
                     <p className="text-sm text-gray-300">{point}</p>
                   </div>
@@ -825,7 +825,7 @@ export default function MariaDelCaminoPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">
                       {cs ? phase.cs : phase.en}
-                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-sky-300">· {cs ? 'probíhá' : 'in progress'}</span>}
+                      {phase.active && <span className="ml-2 text-[11px] uppercase tracking-widest text-sky-300">· {cs ? 'probíhá' : 'in progress'}</span>}
                     </h3>
                     <p className="text-sm text-gray-400">{cs ? phase.descCs : phase.descEn}</p>
                   </div>

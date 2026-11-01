@@ -549,7 +549,7 @@ export default function WarpBtcSwapWidget() {
         <div className="space-y-2">
           {[t('step1'), t('step2'), t('step3'), t('step4')].map((s, i) => (
             <div key={i} className="flex gap-2.5 text-[11px] text-zinc-400">
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-zion-gold/15 border border-zion-gold/30 text-[9px] font-bold text-zion-gold">{i + 1}</span>
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-zion-gold/15 border border-zion-gold/30 text-[10px] font-bold text-zion-gold">{i + 1}</span>
               <span className="leading-relaxed">{s}</span>
             </div>
           ))}

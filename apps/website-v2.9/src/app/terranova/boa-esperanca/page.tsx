@@ -335,7 +335,7 @@ export default function BoaEsperancaPage() {
                             <Icon className="h-4 w-4" />
                             <span className="text-sm font-semibold">{signal.value}</span>
                           </div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">
+                          <p className="text-[11px] uppercase tracking-widest text-gray-500 mt-1">
                             {cs ? signal.labelCs : signal.labelEn}
                           </p>
                         </div>
@@ -388,7 +388,7 @@ export default function BoaEsperancaPage() {
         >
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-amber-200/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-amber-200/65 mb-1">
                 {Copy.threeDPreview[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">
@@ -451,7 +451,7 @@ export default function BoaEsperancaPage() {
                   <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-amber-300 mb-1">
                       <PointIcon className="h-4 w-4" />
-                      <span className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
+                      <span className="text-[11px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
                     </div>
                     <p className="text-sm text-gray-300">{point}</p>
                   </div>
@@ -486,7 +486,7 @@ export default function BoaEsperancaPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">
                       {cs ? phase.cs : phase.en}
-                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-amber-300">· {cs ? 'probíhá' : 'in progress'}</span>}
+                      {phase.active && <span className="ml-2 text-[11px] uppercase tracking-widest text-amber-300">· {cs ? 'probíhá' : 'in progress'}</span>}
                     </h3>
                     <p className="text-sm text-gray-400">{cs ? phase.descCs : phase.descEn}</p>
                   </div>

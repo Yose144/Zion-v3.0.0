@@ -201,7 +201,7 @@ function NativeSection({ cs }: { cs: boolean }) {
                     <div>
                       <p className="text-xs font-semibold text-zion-cyan">{label}</p>
                       <p className="text-xs font-mono text-gray-300 break-all">{entry.address}</p>
-                      <p className="text-[10px] text-gray-500">{entry.standard}</p>
+                      <p className="text-[11px] text-gray-500">{entry.standard}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-mono text-white">{balances[key] ?? '—'}</p>
@@ -687,7 +687,7 @@ export default function MultichainWalletPage() {
                         <li key={i} className="zion-rainbow-sub p-3">
                           <div className="flex items-center justify-between gap-2 mb-1">
                             <span className="text-xs uppercase tracking-wider text-gray-500">{a.chain}</span>
-                            <span className="text-[10px] rounded-full bg-white/10 px-2 py-0.5 text-gray-300">{a.purpose}</span>
+                            <span className="text-[11px] rounded-full bg-white/10 px-2 py-0.5 text-gray-300">{a.purpose}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <p className="font-mono text-sm text-white break-all flex-1">{a.address.encoded}</p>

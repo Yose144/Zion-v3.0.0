@@ -255,14 +255,14 @@ export default function QuantumRevolutionClient() {
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <Icon className="h-4 w-4" style={{ color: `rgba(${GOLD}, 0.8)` }} />
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                       {QuantumRevolutionQuantumRevolutionClientCopy.ch[cs ? 'cs' : 'en']} {ch.num}
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-gray-200 leading-tight mb-1">
                     {cs ? ch.titleCs : ch.titleEn}
                   </p>
-                  <p className="text-[10px] text-gray-500 leading-snug">
+                  <p className="text-[11px] text-gray-500 leading-snug">
                     {cs ? ch.subtitleCs : ch.subtitleEn}
                   </p>
                 </motion.div>
@@ -426,7 +426,7 @@ export default function QuantumRevolutionClient() {
                 ).map((tag) => (
                   <span
                     key={tag}
-                    className="zion-rainbow-sub text-[10px] px-2.5 py-1"
+                    className="zion-rainbow-sub text-[11px] px-2.5 py-1"
                     style={{ '--rc': GOLD } as React.CSSProperties}
                   >
                     {tag}
@@ -470,7 +470,7 @@ export default function QuantumRevolutionClient() {
       <section className="px-4 py-6">
         <div className="zion-container">
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-gray-600 mr-2">
+            <span className="text-[11px] uppercase tracking-wider text-gray-600 mr-2">
               {QuantumRevolutionQuantumRevolutionClientCopy.availableIn[cs ? 'cs' : 'en']}
             </span>
             {editions.map((ed) => (

@@ -1,5 +1,5 @@
 import InfoPage from '@/components/info/InfoPage';
-import { tr } from '@/lib/translations';
+import { T } from '@/components/info/T';
 import { COMPANY } from '@/lib/invoice';
 
 export const metadata = {
@@ -10,225 +10,397 @@ export const metadata = {
 export default function TermsPage() {
   return (
     <InfoPage
-      title={tr('info', 'termsTitle', 'cs')}
-      subtitle={tr('info', 'termsSubtitle', 'cs')}
+      titleKey="info.termsTitle"
+      subtitleKey="info.termsSubtitle"
       icon="📜"
     >
-      <p className="update-date">Poslední aktualizace: 28. července 2026</p>
+      <p className="update-date">
+        <T
+          cs="Poslední aktualizace: 28. července 2026"
+          en="Last updated: 28 July 2026 · The Czech version of these Commercial Terms is legally binding; this English translation is provided for convenience only."
+        />
+      </p>
 
       <div className="rasta-info-toc">
-        <h3>Obsah</h3>
+        <h3>
+          <T cs="Obsah" en="Contents" />
+        </h3>
         <ol>
-          <li><a href="#section1">Úvodní ustanovení</a></li>
-          <li><a href="#section2">Objednávka a uzavření smlouvy</a></li>
-          <li><a href="#section3">Ceny a platební podmínky</a></li>
-          <li><a href="#section4">Doprava a dodání</a></li>
-          <li><a href="#section5">Odstoupení od smlouvy</a></li>
-          <li><a href="#section6">Reklamace a záruka</a></li>
+          <li><a href="#section1"><T cs="Úvodní ustanovení" en="General provisions" /></a></li>
+          <li><a href="#section2"><T cs="Objednávka a uzavření smlouvy" en="Order and conclusion of the contract" /></a></li>
+          <li><a href="#section3"><T cs="Ceny a platební podmínky" en="Prices and payment terms" /></a></li>
+          <li><a href="#section4"><T cs="Doprava a dodání" en="Shipping and delivery" /></a></li>
+          <li><a href="#section5"><T cs="Odstoupení od smlouvy" en="Withdrawal from the contract" /></a></li>
+          <li><a href="#section6"><T cs="Reklamace a záruka" en="Complaints and warranty" /></a></li>
           <li><a href="#section7">ZION Token Reward Program</a></li>
-          <li><a href="#section8">Ochrana osobních údajů</a></li>
-          <li><a href="#section9">Závěrečná ustanovení</a></li>
+          <li><a href="#section8"><T cs="Ochrana osobních údajů" en="Personal data protection" /></a></li>
+          <li><a href="#section9"><T cs="Závěrečná ustanovení" en="Final provisions" /></a></li>
         </ol>
       </div>
 
-      <h2 id="section1">1. Úvodní ustanovení</h2>
+      <h2 id="section1">
+        <T cs="1. Úvodní ustanovení" en="1. General provisions" />
+      </h2>
 
-      <h3>1.1 Identifikace prodávajícího</h3>
+      <h3>
+        <T cs="1.1 Identifikace prodávajícího" en="1.1 Identification of the seller" />
+      </h3>
       <div className="seller-info">
-        <p><strong>Název:</strong> {COMPANY.name}</p>
-        <p><strong>IČ:</strong> {COMPANY.ico}</p>
-        <p><strong>DIČ:</strong> {COMPANY.dic}</p>
-        <p><strong>Sídlo:</strong> {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</p>
-        <p><strong>Zapsáno:</strong> {COMPANY.court}, Č. j. {COMPANY.fileNo}</p>
+        <p><strong><T cs="Název:" en="Name:" /></strong> {COMPANY.name}</p>
+        <p><strong><T cs="IČ:" en="Company ID:" /></strong> {COMPANY.ico}</p>
+        <p><strong><T cs="DIČ:" en="VAT ID:" /></strong> {COMPANY.dic}</p>
+        <p><strong><T cs="Sídlo:" en="Registered office:" /></strong> {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</p>
+        <p>
+          <strong><T cs="Zapsáno:" en="Registered:" /></strong> {COMPANY.court}, <T cs="Č. j." en="File no." /> {COMPANY.fileNo}
+        </p>
         <p><strong>E-mail:</strong> <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></p>
-        <p><strong>Web:</strong> <a href={`https://${COMPANY.web}`} target="_blank" rel="noopener noreferrer">https://{COMPANY.web}</a></p>
+        <p>
+          <strong>Web:</strong>{' '}
+          <a href={`https://${COMPANY.web}`} target="_blank" rel="noopener noreferrer">https://{COMPANY.web}</a>
+        </p>
       </div>
 
-      <h3>1.2 Transparentní účet</h3>
+      <h3>
+        <T cs="1.2 Transparentní účet" en="1.2 Transparent account" />
+      </h3>
       <div className="seller-info">
-        <p><strong>Banka:</strong> {COMPANY.bankName}</p>
-        <p><strong>Číslo účtu:</strong> {COMPANY.bankAccount}</p>
+        <p><strong><T cs="Banka:" en="Bank:" /></strong> {COMPANY.bankName}</p>
+        <p><strong><T cs="Číslo účtu:" en="Account number:" /></strong> {COMPANY.bankAccount}</p>
         <p><strong>IBAN:</strong> {COMPANY.iban}</p>
         <p><strong>BIC/SWIFT:</strong> {COMPANY.swift}</p>
       </div>
 
-      <h3>1.3 Definice pojmů</h3>
+      <h3>
+        <T cs="1.3 Definice pojmů" en="1.3 Definitions" />
+      </h3>
       <ul>
-        <li><strong>Prodávající</strong> – {COMPANY.name}, provozovatel internetového obchodu {COMPANY.web} a market.zionterranova.com</li>
-        <li><strong>Kupující</strong> – fyzická nebo právnická osoba, která uzavírá kupní smlouvu</li>
-        <li><strong>Zboží</strong> – produkty a digitální artefakty nabízené v internetovém obchodě</li>
-        <li><strong>Objednávka</strong> – závazný návrh kupujícího na uzavření kupní smlouvy</li>
+        <li>
+          <strong><T cs="Prodávající" en="Seller" /></strong>
+          <T
+            cs={` – ${COMPANY.name}, provozovatel internetového obchodu ${COMPANY.web} a market.zionterranova.com`}
+            en={` – ${COMPANY.name}, operator of the online shop ${COMPANY.web} and market.zionterranova.com`}
+          />
+        </li>
+        <li>
+          <strong><T cs="Kupující" en="Buyer" /></strong>
+          <T
+            cs=" – fyzická nebo právnická osoba, která uzavírá kupní smlouvu"
+            en=" – a natural or legal person concluding the purchase contract"
+          />
+        </li>
+        <li>
+          <strong><T cs="Zboží" en="Goods" /></strong>
+          <T
+            cs=" – produkty a digitální artefakty nabízené v internetovém obchodě"
+            en=" – products and digital artifacts offered in the online shop"
+          />
+        </li>
+        <li>
+          <strong><T cs="Objednávka" en="Order" /></strong>
+          <T
+            cs=" – závazný návrh kupujícího na uzavření kupní smlouvy"
+            en=" – the buyer’s binding proposal to conclude the purchase contract"
+          />
+        </li>
       </ul>
 
-      <h2 id="section2">2. Objednávka a uzavření smlouvy</h2>
+      <h2 id="section2">
+        <T cs="2. Objednávka a uzavření smlouvy" en="2. Order and conclusion of the contract" />
+      </h2>
 
-      <h3>2.1 Postup objednávky</h3>
+      <h3>
+        <T cs="2.1 Postup objednávky" en="2.1 Order process" />
+      </h3>
       <ol>
-        <li>Kupující vybere zboží a vloží ho do košíku</li>
-        <li>Vyplní dodací a fakturační údaje</li>
-        <li>Zvolí způsob dopravy a platby</li>
-        <li>Zkontroluje a odešle objednávku</li>
-        <li>Obdrží e-mail s potvrzením objednávky</li>
+        <li><T cs="Kupující vybere zboží a vloží ho do košíku" en="The buyer selects goods and adds them to the cart" /></li>
+        <li><T cs="Vyplní dodací a fakturační údaje" en="Fills in shipping and billing details" /></li>
+        <li><T cs="Zvolí způsob dopravy a platby" en="Chooses the delivery and payment method" /></li>
+        <li><T cs="Zkontroluje a odešle objednávku" en="Reviews and submits the order" /></li>
+        <li><T cs="Obdrží e-mail s potvrzením objednávky" en="Receives an order confirmation e-mail" /></li>
       </ol>
 
-      <h3>2.2 Uzavření kupní smlouvy</h3>
-      <p>Kupní smlouva je uzavřena okamžikem potvrzení objednávky prodávajícím. Potvrzení je zasláno na e-mailovou adresu kupujícího.</p>
+      <h3>
+        <T cs="2.2 Uzavření kupní smlouvy" en="2.2 Conclusion of the purchase contract" />
+      </h3>
+      <p>
+        <T
+          cs="Kupní smlouva je uzavřena okamžikem potvrzení objednávky prodávajícím. Potvrzení je zasláno na e-mailovou adresu kupujícího."
+          en="The purchase contract is concluded at the moment the seller confirms the order. The confirmation is sent to the buyer’s e-mail address."
+        />
+      </p>
 
-      <h2 id="section3">3. Ceny a platební podmínky</h2>
+      <h2 id="section3">
+        <T cs="3. Ceny a platební podmínky" en="3. Prices and payment terms" />
+      </h2>
 
-      <h3>3.1 Ceny</h3>
-      <p>Všechny ceny jsou uvedeny v českých korunách (CZK) včetně DPH. Cena je platná v okamžiku odeslání objednávky.</p>
+      <h3>
+        <T cs="3.1 Ceny" en="3.1 Prices" />
+      </h3>
+      <p>
+        <T
+          cs="Všechny ceny jsou uvedeny v českých korunách (CZK) včetně DPH. Cena je platná v okamžiku odeslání objednávky."
+          en="All prices are stated in Czech korunas (CZK) including VAT. The price is valid at the moment the order is submitted."
+        />
+      </p>
 
-      <h3>3.2 Způsoby platby</h3>
+      <h3>
+        <T cs="3.2 Způsoby platby" en="3.2 Payment methods" />
+      </h3>
       <table>
         <thead>
           <tr>
-            <th>Způsob platby</th>
-            <th>Popis</th>
+            <th><T cs="Způsob platby" en="Payment method" /></th>
+            <th><T cs="Popis" en="Description" /></th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Platba kartou</td>
-            <td>Online platba přes zabezpečenou bránu Stripe</td>
+            <td><T cs="Platba kartou" en="Card payment" /></td>
+            <td><T cs="Online platba přes zabezpečenou bránu Stripe" en="Online payment via the secure Stripe gateway" /></td>
           </tr>
           <tr>
-            <td>Bankovní převod</td>
-            <td>Platba na účet před odesláním zboží</td>
+            <td><T cs="Bankovní převod" en="Bank transfer" /></td>
+            <td><T cs="Platba na účet před odesláním zboží" en="Payment to the account before dispatch" /></td>
           </tr>
           <tr>
-            <td>Dobírka</td>
-            <td>Platba v hotovosti při převzetí zásilky</td>
+            <td><T cs="Dobírka" en="Cash on delivery" /></td>
+            <td><T cs="Platba v hotovosti při převzetí zásilky" en="Cash payment on collection of the parcel" /></td>
           </tr>
         </tbody>
       </table>
 
-      <h2 id="section4">4. Doprava a dodání</h2>
+      <h2 id="section4">
+        <T cs="4. Doprava a dodání" en="4. Shipping and delivery" />
+      </h2>
 
-      <h3>4.1 Způsoby dopravy</h3>
+      <h3>
+        <T cs="4.1 Způsoby dopravy" en="4.1 Delivery options" />
+      </h3>
       <table>
         <thead>
           <tr>
-            <th>Dopravce</th>
-            <th>Cena</th>
-            <th>Dodací doba</th>
+            <th><T cs="Dopravce" en="Carrier" /></th>
+            <th><T cs="Cena" en="Price" /></th>
+            <th><T cs="Dodací doba" en="Delivery time" /></th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Zásilkovna – výdejní místo</td>
+            <td><T cs="Zásilkovna – výdejní místo" en="Zásilkovna – pickup point" /></td>
             <td>79 Kč</td>
-            <td>1-3 pracovní dny</td>
+            <td><T cs="1-3 pracovní dny" en="1-3 business days" /></td>
           </tr>
           <tr>
-            <td>Zásilkovna – na adresu</td>
+            <td><T cs="Zásilkovna – na adresu" en="Zásilkovna – home delivery" /></td>
             <td>119 Kč</td>
-            <td>1-3 pracovní dny</td>
+            <td><T cs="1-3 pracovní dny" en="1-3 business days" /></td>
           </tr>
           <tr>
-            <td>Virtuální nákup (digitální doručení)</td>
-            <td>Zdarma</td>
-            <td>Okamžitě po potvrzení platby</td>
+            <td><T cs="Virtuální nákup (digitální doručení)" en="Virtual purchase (digital delivery)" /></td>
+            <td><T cs="Zdarma" en="Free" /></td>
+            <td><T cs="Okamžitě po potvrzení platby" en="Immediately after payment confirmation" /></td>
           </tr>
         </tbody>
       </table>
 
-      <h3>4.2 Dodací lhůta</h3>
-      <p>Standardní dodací lhůta je 3-7 pracovních dnů od potvrzení objednávky (resp. přijetí platby u platby předem).</p>
+      <h3>
+        <T cs="4.2 Dodací lhůta" en="4.2 Delivery period" />
+      </h3>
+      <p>
+        <T
+          cs="Standardní dodací lhůta je 3-7 pracovních dnů od potvrzení objednávky (resp. přijetí platby u platby předem)."
+          en="The standard delivery period is 3-7 business days from order confirmation (or from receipt of payment for prepaid orders)."
+        />
+      </p>
 
-      <h2 id="section5">5. Odstoupení od smlouvy</h2>
+      <h2 id="section5">
+        <T cs="5. Odstoupení od smlouvy" en="5. Withdrawal from the contract" />
+      </h2>
 
-      <h3>5.1 Právo na odstoupení</h3>
-      <p>Kupující – spotřebitel má právo odstoupit od smlouvy bez udání důvodu do <strong>14 dnů</strong> od převzetí zboží.</p>
+      <h3>
+        <T cs="5.1 Právo na odstoupení" en="5.1 Right of withdrawal" />
+      </h3>
+      <p>
+        <T
+          cs={<>Kupující – spotřebitel má právo odstoupit od smlouvy bez udání důvodu do <strong>14 dnů</strong> od převzetí zboží.</>}
+          en={<>The buyer – consumer has the right to withdraw from the contract without giving a reason within <strong>14 days</strong> of receiving the goods.</>}
+        />
+      </p>
 
-      <h3>5.2 Postup odstoupení</h3>
+      <h3>
+        <T cs="5.2 Postup odstoupení" en="5.2 Withdrawal process" />
+      </h3>
       <ol>
-        <li>Informujte nás e-mailem o svém rozhodnutí odstoupit od smlouvy</li>
-        <li>Zboží zašlete zpět na naši adresu (nepoškozené, v původním obalu)</li>
-        <li>Peníze vám vrátíme do 14 dnů od doručení vráceného zboží</li>
+        <li><T cs="Informujte nás e-mailem o svém rozhodnutí odstoupit od smlouvy" en="Inform us by e-mail of your decision to withdraw from the contract" /></li>
+        <li><T cs="Zboží zašlete zpět na naši adresu (nepoškozené, v původním obalu)" en="Send the goods back to our address (undamaged, in the original packaging)" /></li>
+        <li><T cs="Peníze vám vrátíme do 14 dnů od doručení vráceného zboží" en="We refund you within 14 days of receiving the returned goods" /></li>
       </ol>
 
-      <h3>5.3 Výjimky z práva na odstoupení</h3>
-      <p>Právo na odstoupení se nevztahuje na:</p>
+      <h3>
+        <T cs="5.3 Výjimky z práva na odstoupení" en="5.3 Exceptions to the right of withdrawal" />
+      </h3>
+      <p>
+        <T cs="Právo na odstoupení se nevztahuje na:" en="The right of withdrawal does not apply to:" />
+      </p>
       <ul>
-        <li>Zboží vyrobené na zakázku podle specifikací kupujícího</li>
-        <li>Zboží podléhající rychlé zkáze</li>
-        <li>Hygienické potřeby po porušení obalu</li>
+        <li><T cs="Zboží vyrobené na zakázku podle specifikací kupujícího" en="goods made to order according to the buyer’s specifications" /></li>
+        <li><T cs="Zboží podléhající rychlé zkáze" en="goods subject to rapid deterioration" /></li>
+        <li><T cs="Hygienické potřeby po porušení obalu" en="hygiene products once the packaging has been opened" /></li>
       </ul>
 
-      <h2 id="section6">6. Reklamace a záruka</h2>
+      <h2 id="section6">
+        <T cs="6. Reklamace a záruka" en="6. Complaints and warranty" />
+      </h2>
 
-      <h3>6.1 Záruční doba</h3>
-      <p>Na zboží poskytujeme záruku <strong>24 měsíců</strong> od data převzetí (pro spotřebitele).</p>
+      <h3>
+        <T cs="6.1 Záruční doba" en="6.1 Warranty period" />
+      </h3>
+      <p>
+        <T
+          cs={<>Na zboží poskytujeme záruku <strong>24 měsíců</strong> od data převzetí (pro spotřebitele).</>}
+          en={<>We provide a warranty of <strong>24 months</strong> from the date of receipt (for consumers).</>}
+        />
+      </p>
 
-      <h3>6.2 Uplatnění reklamace</h3>
+      <h3>
+        <T cs="6.2 Uplatnění reklamace" en="6.2 Filing a complaint" />
+      </h3>
       <ol>
-        <li>Kontaktujte nás e-mailem s popisem závady</li>
-        <li>Přiložte fotodokumentaci a číslo objednávky</li>
-        <li>Dohodneme se na dalším postupu</li>
+        <li><T cs="Kontaktujte nás e-mailem s popisem závady" en="Contact us by e-mail with a description of the defect" /></li>
+        <li><T cs="Přiložte fotodokumentaci a číslo objednávky" en="Attach photo documentation and the order number" /></li>
+        <li><T cs="Dohodneme se na dalším postupu" en="We agree on the next steps" /></li>
       </ol>
 
-      <h3>6.3 Lhůta pro vyřízení</h3>
-      <p>Reklamace bude vyřízena nejpozději do <strong>30 dnů</strong> od jejího uplatnění.</p>
+      <h3>
+        <T cs="6.3 Lhůta pro vyřízení" en="6.3 Handling period" />
+      </h3>
+      <p>
+        <T
+          cs={<>Reklamace bude vyřízena nejpozději do <strong>30 dnů</strong> od jejího uplatnění.</>}
+          en={<>The complaint will be handled no later than <strong>30 days</strong> after it is filed.</>}
+        />
+      </p>
 
       <h2 id="section7">7. ZION Token Reward Program</h2>
 
-      <h3>7.1 Podmínky programu</h3>
+      <h3>
+        <T cs="7.1 Podmínky programu" en="7.1 Programme terms" />
+      </h3>
       <ul>
-        <li>Tokeny jsou přidělovány automaticky k dokončeným objednávkám</li>
-        <li>Počet tokenů závisí na zakoupených produktech</li>
-        <li>Tokeny budou odeslány na wallet adresu uvedenou v objednávce</li>
-        <li>Program je aktivní v testovací fázi – tokeny budou odeslány po spuštění mainnetu</li>
+        <li><T cs="Tokeny jsou přidělovány automaticky k dokončeným objednávkám" en="Tokens are allocated automatically to completed orders" /></li>
+        <li><T cs="Počet tokenů závisí na zakoupených produktech" en="The number of tokens depends on the products purchased" /></li>
+        <li><T cs="Tokeny budou odeslány na wallet adresu uvedenou v objednávce" en="Tokens are sent to the wallet address provided in the order" /></li>
+        <li><T cs="Program je aktivní v testovací fázi – tokeny budou odeslány po spuštění mainnetu" en="The programme runs in a test phase – tokens are sent once the mainnet is live" /></li>
       </ul>
 
-      <h3>7.2 Důležité upozornění</h3>
-      <p>ZION tokeny jsou bonusem a nemají garantovanou peněžní hodnotu. Jedná se o experimentální projekt.</p>
+      <h3>
+        <T cs="7.2 Důležité upozornění" en="7.2 Important notice" />
+      </h3>
+      <p>
+        <T
+          cs="ZION tokeny jsou bonusem a nemají garantovanou peněžní hodnotu. Jedná se o experimentální projekt."
+          en="ZION tokens are a bonus and have no guaranteed monetary value. This is an experimental project."
+        />
+      </p>
 
-      <h2 id="section8">8. Ochrana osobních údajů</h2>
+      <h2 id="section8">
+        <T cs="8. Ochrana osobních údajů" en="8. Personal data protection" />
+      </h2>
 
-      <h3>8.1 Správce údajů</h3>
+      <h3>
+        <T cs="8.1 Správce údajů" en="8.1 Data controller" />
+      </h3>
       <div className="seller-info">
-        <p><strong>Správce:</strong> {COMPANY.name}</p>
-        <p><strong>IČ:</strong> {COMPANY.ico}</p>
-        <p><strong>DIČ:</strong> {COMPANY.dic}</p>
-        <p><strong>Sídlo:</strong> {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</p>
-        <p><strong>Zapsáno:</strong> {COMPANY.court}, Č. j. {COMPANY.fileNo}</p>
-        <p><strong>E-mail pro GDPR:</strong> <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></p>
+        <p><strong><T cs="Správce:" en="Controller:" /></strong> {COMPANY.name}</p>
+        <p><strong><T cs="IČ:" en="Company ID:" /></strong> {COMPANY.ico}</p>
+        <p><strong><T cs="DIČ:" en="VAT ID:" /></strong> {COMPANY.dic}</p>
+        <p><strong><T cs="Sídlo:" en="Registered office:" /></strong> {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</p>
+        <p>
+          <strong><T cs="Zapsáno:" en="Registered:" /></strong> {COMPANY.court}, <T cs="Č. j." en="File no." /> {COMPANY.fileNo}
+        </p>
+        <p>
+          <strong><T cs="E-mail pro GDPR:" en="GDPR e-mail:" /></strong>{' '}
+          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>
+        </p>
       </div>
 
-      <h3>8.2 Zpracovávané údaje</h3>
+      <h3>
+        <T cs="8.2 Zpracovávané údaje" en="8.2 Data processed" />
+      </h3>
       <ul>
-        <li>Jméno a příjmení</li>
-        <li>E-mailová adresa</li>
-        <li>Telefonní číslo</li>
-        <li>Doručovací adresa</li>
-        <li>Fakturační údaje</li>
+        <li><T cs="Jméno a příjmení" en="Full name" /></li>
+        <li><T cs="E-mailová adresa" en="E-mail address" /></li>
+        <li><T cs="Telefonní číslo" en="Phone number" /></li>
+        <li><T cs="Doručovací adresa" en="Delivery address" /></li>
+        <li><T cs="Fakturační údaje" en="Billing details" /></li>
       </ul>
 
-      <h3>8.3 Účel zpracování</h3>
+      <h3>
+        <T cs="8.3 Účel zpracování" en="8.3 Purpose of processing" />
+      </h3>
       <ul>
-        <li>Vyřízení objednávky a dodání zboží</li>
-        <li>Komunikace ohledně objednávky</li>
-        <li>Plnění zákonných povinností (účetnictví)</li>
-        <li>Zasílání newsletteru (pouze se souhlasem)</li>
+        <li><T cs="Vyřízení objednávky a dodání zboží" en="Processing the order and delivering the goods" /></li>
+        <li><T cs="Komunikace ohledně objednávky" en="Communication regarding the order" /></li>
+        <li><T cs="Plnění zákonných povinností (účetnictví)" en="Compliance with legal obligations (accounting)" /></li>
+        <li><T cs="Zasílání newsletteru (pouze se souhlasem)" en="Sending the newsletter (with consent only)" /></li>
       </ul>
 
-      <h3>8.4 Práva subjektu údajů</h3>
-      <p>Máte právo na přístup k údajům, jejich opravu, výmaz, omezení zpracování a přenositelnost. Kontaktujte nás na <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
+      <h3>
+        <T cs="8.4 Práva subjektu údajů" en="8.4 Data subject rights" />
+      </h3>
+      <p>
+        <T
+          cs="Máte právo na přístup k údajům, jejich opravu, výmaz, omezení zpracování a přenositelnost. Kontaktujte nás na "
+          en="You have the right to access, rectify, erase, restrict processing of and port your data. Contact us at "
+        />
+        <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.
+      </p>
 
-      <h2 id="section9">9. Závěrečná ustanovení</h2>
+      <h2 id="section9">
+        <T cs="9. Závěrečná ustanovení" en="9. Final provisions" />
+      </h2>
 
-      <h3>9.1 Platnost</h3>
-      <p>Tyto obchodní podmínky jsou platné a účinné od 1. prosince 2025.</p>
+      <h3>
+        <T cs="9.1 Platnost" en="9.1 Validity" />
+      </h3>
+      <p>
+        <T
+          cs="Tyto obchodní podmínky jsou platné a účinné od 1. prosince 2025."
+          en="These Commercial Terms are valid and effective from 1 December 2025."
+        />
+      </p>
 
-      <h3>9.2 Změny podmínek</h3>
-      <p>Prodávající si vyhrazuje právo tyto podmínky změnit. Změny budou zveřejněny na této stránce.</p>
+      <h3>
+        <T cs="9.2 Změny podmínek" en="9.2 Changes to the terms" />
+      </h3>
+      <p>
+        <T
+          cs="Prodávající si vyhrazuje právo tyto podmínky změnit. Změny budou zveřejněny na této stránce."
+          en="The seller reserves the right to change these terms. Changes are published on this page."
+        />
+      </p>
 
-      <h3>9.3 Rozhodné právo</h3>
-      <p>Tyto podmínky se řídí právním řádem České republiky.</p>
+      <h3>
+        <T cs="9.3 Rozhodné právo" en="9.3 Governing law" />
+      </h3>
+      <p>
+        <T
+          cs="Tyto podmínky se řídí právním řádem České republiky."
+          en="These terms are governed by the law of the Czech Republic."
+        />
+      </p>
 
-      <h3>9.4 Řešení sporů</h3>
-      <p>Případné spory lze řešit mimosoudně prostřednictvím <a href="https://www.coi.cz" target="_blank" rel="noopener noreferrer">České obchodní inspekce</a> nebo platformy <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">ODR</a>.</p>
+      <h3>
+        <T cs="9.4 Řešení sporů" en="9.4 Dispute resolution" />
+      </h3>
+      <p>
+        <T cs="Případné spory lze řešit mimosoudně prostřednictvím " en="Disputes may be resolved out of court through the " />
+        <a href="https://www.coi.cz" target="_blank" rel="noopener noreferrer">
+          <T cs="České obchodní inspekce" en="Czech Trade Inspection Authority" />
+        </a>
+        <T cs=" nebo platformy " en=" or the " />
+        <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">ODR</a>.
+      </p>
     </InfoPage>
   );
 }

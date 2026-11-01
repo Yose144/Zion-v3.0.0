@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import type { ShopOrderInput, ShippingMethod } from '@/types/shop';
 import { SHIPPING_PRICES } from '@/types/shop';
 import { sendAdminOrderNotification, sendCustomerOrderConfirmation, sendCustomerWalletEmail } from '@/lib/email';
+import { emailLangFromAcceptLanguage } from '@/lib/email-lang';
 import { getActiveTokenCampaigns, campaignTokens } from '@/lib/shop-campaign';
 import { createInvoiceForOrder } from '@/lib/invoice';
 import { generateCustomerWallet } from '@/lib/zion-l1';
@@ -300,6 +301,8 @@ export async function POST(req: NextRequest) {
       paymentStatus: order.paymentStatus,
       customerWalletAddress: order.customerWalletAddress,
       customerWalletId: order.orderId,
+      // English browsers get the English confirmation (falls back to cs).
+      lang: emailLangFromAcceptLanguage(req.headers.get('accept-language')),
     };
 
     // Send notifications in background; don't block the response
@@ -312,6 +315,7 @@ export async function POST(req: NextRequest) {
         orderId: order.orderId,
         address: customerWallet.address,
         seed: customerWallet.mnemonic,
+        lang: emailData.lang,
       }).catch((err) => console.error('Failed to send customer wallet email:', err));
     }
 

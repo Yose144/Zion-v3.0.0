@@ -634,7 +634,7 @@ export default function L5FreeWorldPage() {
                         <Icon className={`h-5 w-5 ${gate.color}`} />
                         <h3 className="font-semibold text-white text-sm leading-tight">{cs ? gate.title.cs : gate.title.en}</h3>
                       </div>
-                      <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${status.class}`}>
+                      <span className={`text-[11px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${status.class}`}>
                         {status.label}
                       </span>
                     </div>
@@ -699,14 +699,14 @@ export default function L5FreeWorldPage() {
                       <h3 className="font-semibold text-white">{community.name}</h3>
                       <p className="text-xs text-gray-500">{community.location}</p>
                     </div>
-                    <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${status.class}`}>
+                    <span className={`text-[11px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${status.class}`}>
                       {status.label}
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 mb-3">{community.desc}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {community.tags.map((tag) => (
-                      <span key={tag} className="text-[10px] rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-gray-400">{tag}</span>
+                      <span key={tag} className="text-[11px] rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-gray-400">{tag}</span>
                     ))}
                   </div>
                   {community.href && (

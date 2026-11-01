@@ -247,7 +247,7 @@ export default function DocsPage() {
                 >
                   <GitBranch className="w-3.5 h-3.5" />
                   {v.label}
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded border ${v.tagColor}`}>
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded border ${v.tagColor}`}>
                     {getVersionTag(v)}
                   </span>
                 </button>
@@ -403,7 +403,7 @@ export default function DocsPage() {
                             <span className={`font-mono font-semibold ${isActiveVersion ? 'text-white' : 'text-gray-400'}`}>
                               {version.label}
                             </span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${version.tagColor}`}>
+                            <span className={`text-[11px] px-1.5 py-0.5 rounded border ${version.tagColor}`}>
                               {getVersionTag(version)}
                             </span>
                           </div>
@@ -576,7 +576,7 @@ export default function DocsPage() {
                           <span className={`font-mono font-semibold ${isActiveVersion ? 'text-white' : 'text-gray-400'}`}>
                             {version.label}
                           </span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${version.tagColor}`}>
+                          <span className={`text-[11px] px-1.5 py-0.5 rounded border ${version.tagColor}`}>
                             {getVersionTag(version)}
                           </span>
                         </div>

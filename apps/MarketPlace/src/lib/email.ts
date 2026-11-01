@@ -10,6 +10,7 @@ import {
 } from './v2-email';
 import { getActiveTheme } from './settings';
 import { generateInvoicePdf } from './invoice-pdf';
+import { emailLocale, resolveEmailLang, tl, type EmailLang } from './email-lang';
 
 interface AttachmentInput {
   filename: string;
@@ -144,6 +145,14 @@ function formatPrice(amount: number): string {
   return `${Math.round(amount).toLocaleString('cs-CZ')} Kč`;
 }
 
+function formatPriceLang(amount: number, lang: EmailLang): string {
+  return `${Math.round(amount).toLocaleString(emailLocale(lang))} Kč`;
+}
+
+function formatNumberLang(value: number, lang: EmailLang): string {
+  return value.toLocaleString(emailLocale(lang));
+}
+
 function formatItems(items: unknown): string {
   if (!Array.isArray(items)) return '';
   return items
@@ -172,6 +181,13 @@ function shippingMethodLabel(method: string): string {
   return method || 'Neuvedeno';
 }
 
+function shippingMethodLabelLang(method: string, lang: EmailLang): string {
+  if (method === 'zasilkovna-home') return tl(lang, 'Doručení domů (Zásilkovna)', 'Home delivery (Zásilkovna)');
+  if (method === 'zasilkovna') return tl(lang, 'Výdejní místo Zásilkovna', 'Zásilkovna pickup point');
+  if (method?.includes('virtualni')) return tl(lang, 'Digitální doručení', 'Digital delivery');
+  return method || tl(lang, 'Neuvedeno', 'Not specified');
+}
+
 export interface OrderEmailData {
   orderId: string;
   customerName: string;
@@ -196,6 +212,8 @@ export interface OrderEmailData {
   customerWalletId?: string | null;
   /** ZION Archive pass issued at paid transition (book purchases) */
   archivePass?: { code: string; url: string } | null;
+  /** Customer language for outgoing e-mail (defaults to SHOP_EMAIL_LANG / cs) */
+  lang?: EmailLang;
 }
 
 export async function sendAdminOrderNotification(order: OrderEmailData): Promise<void> {
@@ -321,8 +339,13 @@ export async function sendCustomerOrderConfirmation(
   }
 
   const cfg = emailConfig();
+  const lang = resolveEmailLang(order);
 
-  const subject = `Potvrzení objednávky #${order.orderId} - ${cfg.shopName}`;
+  const subject = tl(
+    lang,
+    `Potvrzení objednávky #${order.orderId} - ${cfg.shopName}`,
+    `Order confirmation #${order.orderId} - ${cfg.shopName}`,
+  );
 
   try {
     const theme = await getActiveTheme();
@@ -333,7 +356,7 @@ export async function sendCustomerOrderConfirmation(
       try {
         attachments = [
           {
-            filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.pdf`,
+            filename: `${lang === 'cs' ? 'faktura' : 'invoice'}-${order.orderId.replace(/\s+/g, '_')}.pdf`,
             content: await generateInvoicePdf(invoiceHtml),
             contentType: 'application/pdf',
           },
@@ -367,43 +390,59 @@ export async function sendPaymentConfirmation(order: OrderEmailData): Promise<vo
   }
 
   const cfg = emailConfig();
+  const lang = resolveEmailLang(order);
+  const t = (cs: string, en: string) => tl(lang, cs, en);
 
-  const subject = `Platba přijata - objednávka #${order.orderId} - ${cfg.shopName}`;
+  const subject = t(
+    `Platba přijata - objednávka #${order.orderId} - ${cfg.shopName}`,
+    `Payment received - order #${order.orderId} - ${cfg.shopName}`,
+  );
   const html = buildRastaEmail({
+    lang,
     title: subject,
-    badge: '⚡ PLATBA PŘIJATA ⚡',
+    badge: t('⚡ PLATBA PŘIJATA ⚡', '⚡ PAYMENT RECEIVED ⚡'),
     heroEmoji: '💚',
-    headline: 'Jah Bless! Platba dorazila',
-    intro: `Děkujeme, ${escapeHtml(order.customerName)}! Vaše platba byla úspěšně přijata. ✨`,
+    headline: t('Jah Bless! Platba dorazila', 'Jah Bless! Your payment arrived'),
+    intro: t(
+      `Děkujeme, ${escapeHtml(order.customerName)}! Vaše platba byla úspěšně přijata. ✨`,
+      `Thank you, ${escapeHtml(order.customerName)}! Your payment has been received successfully. ✨`,
+    ),
     content:
       rastaCard({
-        heading: '📋 Detaily platby',
-        body: `<table width="100%" cellpadding="0" cellspacing="0">${rastaRow('🔖 Objednávka:', `<strong style="color:#FFD700;">${escapeHtml(order.orderId)}</strong>`)}${rastaRow('💰 Částka:', `<strong style="color:#FFD700;">${formatPrice(order.totalCzk)}</strong>`, { big: true })}${rastaRow('Stav:', '<span style="display:inline-block;padding:5px 14px;background:#1c7b1c;color:#fff;font-weight:700;border-radius:999px;font-size:13px;">✅ Zaplaceno</span>')}</table>`,
+        heading: t('📋 Detaily platby', '📋 Payment details'),
+        body: `<table width="100%" cellpadding="0" cellspacing="0">${rastaRow(t('🔖 Objednávka:', '🔖 Order:'), `<strong style="color:#FFD700;">${escapeHtml(order.orderId)}</strong>`)}${rastaRow(t('💰 Částka:', '💰 Amount:'), `<strong style="color:#FFD700;">${formatPriceLang(order.totalCzk, lang)}</strong>`, { big: true })}${rastaRow(t('Stav:', 'Status:'), `<span style="display:inline-block;padding:5px 14px;background:#1c7b1c;color:#fff;font-weight:700;border-radius:999px;font-size:13px;">✅ ${t('Zaplaceno', 'Paid')}</span>`)}</table>`,
       }) +
       rastaCard({
-        heading: '⚡ Co bude dál?',
+        heading: t('⚡ Co bude dál?', '⚡ What happens next?'),
         body: `<ul style="color: #a8ffb0; font-size: 15px; line-height: 1.8; margin: 0; padding-left: 24px;">
-          <li style="margin-bottom:8px;">📦 <strong>Zpracování:</strong> Vaši objednávku připravujeme k odeslání</li>
-          <li style="margin-bottom:8px;">🎁 <strong>ZION bonus:</strong> Tokeny Vám budou připsány na peněženku</li>
-          <li>💚 <strong>Podpora:</strong> ${escapeHtml(cfg.shopEmail)}</li>
+          <li style="margin-bottom:8px;">📦 <strong>${t('Zpracování:', 'Processing:')}</strong> ${t('Vaši objednávku připravujeme k odeslání', 'we are preparing your order for dispatch')}</li>
+          <li style="margin-bottom:8px;">🎁 <strong>${t('ZION bonus:', 'ZION bonus:')}</strong> ${t('Tokeny Vám budou připsány na peněženku', 'the tokens will be credited to your wallet')}</li>
+          <li>💚 <strong>${t('Podpora:', 'Support:')}</strong> ${escapeHtml(cfg.shopEmail)}</li>
         </ul>`,
         tone: 'gold',
       }) +
       (order.archivePass
         ? rastaCard({
             heading: '📚 ZION Archive Pass',
-            body: `<p style="color:#a8ffb0;font-size:15px;margin:0 0 14px;">K této objednávce získáváte přístup do <strong style="color:#FFD700;">ZION Archivu</strong> — knihovny knih a korpusu. Váš osobní pass kód:</p>
+            body: `<p style="color:#a8ffb0;font-size:15px;margin:0 0 14px;">${t(
+              'K této objednávce získáváte přístup do <strong style="color:#FFD700;">ZION Archivu</strong> — knihovny knih a korpusu. Váš osobní pass kód:',
+              'This order unlocks access to the <strong style="color:#FFD700;">ZION Archive</strong> — the library of books and the corpus. Your personal pass code:',
+            )}</p>
             <div style="background:#0d0d0d;border:1px solid #1c7b1c;border-radius:8px;padding:16px;text-align:center;margin-bottom:14px;"><code style="color:#FFD700;font-size:20px;font-weight:700;letter-spacing:2px;">${escapeHtml(order.archivePass.code)}</code></div>
-            <p style="color:#a8ffb0;font-size:14px;margin:0 0 12px;">Zadejte ho na stránce archivu — přístup zůstává v tomto prohlížeči 90 dní, přihlášením přes ZIS účet ho navážete natrvalo.</p>
-            <p style="margin:0;text-align:center;"><a href="${escapeHtml(order.archivePass.url)}" style="display:inline-block;background:#1c7b1c;color:#fff;font-weight:700;padding:12px 28px;border-radius:999px;text-decoration:none;">📖 Otevřít ZION Archiv</a></p>`,
+            <p style="color:#a8ffb0;font-size:14px;margin:0 0 12px;">${t(
+              'Zadejte ho na stránce archivu — přístup zůstává v tomto prohlížeči 90 dní, přihlášením přes ZIS účet ho navážete natrvalo.',
+              'Enter it on the archive page — access stays in this browser for 90 days; signing in with a ZIS account links it permanently.',
+            )}</p>
+            <p style="margin:0;text-align:center;"><a href="${escapeHtml(order.archivePass.url)}" style="display:inline-block;background:#1c7b1c;color:#fff;font-weight:700;padding:12px 28px;border-radius:999px;text-decoration:none;">📖 ${t('Otevřít ZION Archiv', 'Open the ZION Archive')}</a></p>`,
           })
         : ''),
   });
-  const body = `Dobrý den, ${order.customerName},
+  const body = t(
+    `Dobrý den, ${order.customerName},
 
 Vaše platba za objednávku #${order.orderId} byla úspěšně přijata.
 
-Celková částka: ${formatPrice(order.totalCzk)}
+Celková částka: ${formatPriceLang(order.totalCzk, lang)}
 ${order.archivePass ? `
 ZION Archive Pass: ${order.archivePass.code}
 Aktivace: ${order.archivePass.url}
@@ -412,7 +451,22 @@ Vaše zboží bude co nejdříve odesláno.
 
 S pozdravem,
 Tým ZION Terra Nova
-`;
+`,
+    `Hello ${order.customerName},
+
+your payment for order #${order.orderId} has been received successfully.
+
+Total amount: ${formatPriceLang(order.totalCzk, lang)}
+${order.archivePass ? `
+ZION Archive Pass: ${order.archivePass.code}
+Activation: ${order.archivePass.url}
+` : ''}
+Your goods will be dispatched as soon as possible.
+
+Best regards,
+The ZION Terra Nova team
+`,
+  );
 
   try {
     await sendMail({
@@ -436,29 +490,49 @@ export async function sendInvoiceEmail(order: OrderEmailData, invoiceHtml: strin
   }
 
   const cfg = emailConfig();
+  const lang = resolveEmailLang(order);
+  const t = (cs: string, en: string) => tl(lang, cs, en);
 
-  const subject = `Faktura k objednávce #${order.orderId} - ${cfg.shopName}`;
+  const subject = t(
+    `Faktura k objednávce #${order.orderId} - ${cfg.shopName}`,
+    `Invoice for order #${order.orderId} - ${cfg.shopName}`,
+  );
   const html = buildRastaEmail({
+    lang,
     title: subject,
-    badge: '⚡ FAKTURA ⚡',
+    badge: t('⚡ FAKTURA ⚡', '⚡ INVOICE ⚡'),
     heroEmoji: '📄',
-    headline: 'Vaše faktura je připravena',
-    intro: `Dobrý den ${escapeHtml(order.customerName)}, fakturu k objednávce najdete v příloze tohoto e-mailu (PDF).`,
+    headline: t('Vaše faktura je připravena', 'Your invoice is ready'),
+    intro: t(
+      `Dobrý den ${escapeHtml(order.customerName)}, fakturu k objednávce najdete v příloze tohoto e-mailu (PDF).`,
+      `Hello ${escapeHtml(order.customerName)}, the invoice for your order is attached to this e-mail (PDF).`,
+    ),
     content: rastaCard({
-      heading: '📄 Faktura',
-      body: `<table width="100%" cellpadding="0" cellspacing="0">${rastaRow('🔖 Objednávka:', `<strong style="color:#FFD700;">${escapeHtml(order.orderId)}</strong>`)}${rastaRow('💰 Celková částka:', `<strong style="color:#FFD700;">${formatPrice(order.totalCzk)}</strong>`, { big: true })}${rastaRow('Příloha:', 'PDF faktura')}</table>`,
+      heading: t('📄 Faktura', '📄 Invoice'),
+      body: `<table width="100%" cellpadding="0" cellspacing="0">${rastaRow(t('🔖 Objednávka:', '🔖 Order:'), `<strong style="color:#FFD700;">${escapeHtml(order.orderId)}</strong>`)}${rastaRow(t('💰 Celková částka:', '💰 Total amount:'), `<strong style="color:#FFD700;">${formatPriceLang(order.totalCzk, lang)}</strong>`, { big: true })}${rastaRow(t('Příloha:', 'Attachment:'), t('PDF faktura', 'PDF invoice'))}</table>`,
       tone: 'gold',
     }),
   });
-  const body = `Dobrý den, ${order.customerName},
+  const body = t(
+    `Dobrý den, ${order.customerName},
 
 v příloze Vám zasíláme fakturu k objednávce #${order.orderId}.
 
-Celková částka: ${formatPrice(order.totalCzk)}
+Celková částka: ${formatPriceLang(order.totalCzk, lang)}
 
 S pozdravem,
 Tým ZION Terra Nova
-`;
+`,
+    `Hello ${order.customerName},
+
+please find the invoice for order #${order.orderId} attached.
+
+Total amount: ${formatPriceLang(order.totalCzk, lang)}
+
+Best regards,
+The ZION Terra Nova team
+`,
+  );
 
   try {
     const pdf = await generateInvoicePdf(invoiceHtml);
@@ -471,7 +545,7 @@ Tým ZION Terra Nova
       html,
       attachments: [
         {
-          filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.pdf`,
+          filename: `${lang === 'cs' ? 'faktura' : 'invoice'}-${order.orderId.replace(/\s+/g, '_')}.pdf`,
           content: pdf,
           contentType: 'application/pdf',
         },
@@ -498,6 +572,7 @@ interface TokenBonusInput {
   customerEmail: string;
   tokens: number;
   txHash?: string;
+  lang?: EmailLang;
 }
 
 export async function sendTokenBonusEmail(input: TokenBonusInput): Promise<void> {
@@ -507,40 +582,63 @@ export async function sendTokenBonusEmail(input: TokenBonusInput): Promise<void>
   }
 
   const cfg = emailConfig();
-  const subject = `ZION token bonus - objednávka #${input.orderId}`;
+  const lang = resolveEmailLang(input);
+  const t = (cs: string, en: string) => tl(lang, cs, en);
+
+  const subject = t(
+    `ZION token bonus - objednávka #${input.orderId}`,
+    `ZION token bonus - order #${input.orderId}`,
+  );
   const txInfo = input.txHash && input.txHash !== 'pending'
     ? `Tx hash: ${input.txHash}`
-    : 'Tx hash bude doplněn po zapsání on-chain.';
+    : t('Tx hash bude doplněn po zapsání on-chain.', 'The tx hash will be added once recorded on-chain.');
 
   const txBlock = input.txHash && input.txHash !== 'pending'
-    ? rastaMonoBox('🔗 Transakce (on-chain):', input.txHash)
-    : `<p style="color:#8a8f94;font-size:13px;text-align:center;margin:16px 0 0 0;">Tx hash bude doplněn po zapsání on-chain.</p>`;
+    ? rastaMonoBox(t('🔗 Transakce (on-chain):', '🔗 Transaction (on-chain):'), input.txHash)
+    : `<p style="color:#8a8f94;font-size:13px;text-align:center;margin:16px 0 0 0;">${t('Tx hash bude doplněn po zapsání on-chain.', 'The tx hash will be added once recorded on-chain.')}</p>`;
 
   const html = buildRastaEmail({
+    lang,
     title: subject,
     badge: '🎁 ZION TOKEN BONUS 🎁',
     heroEmoji: '🎁',
-    headline: 'Jah Bless! Bonus připsán',
-    intro: `Děkujeme za objednávku <strong style="color:#FFD700;">#${escapeHtml(input.orderId)}</strong>, ${escapeHtml(input.customerName)}! 🙏`,
+    headline: t('Jah Bless! Bonus připsán', 'Jah Bless! Bonus credited'),
+    intro: t(
+      `Děkujeme za objednávku <strong style="color:#FFD700;">#${escapeHtml(input.orderId)}</strong>, ${escapeHtml(input.customerName)}! 🙏`,
+      `Thank you for your order <strong style="color:#FFD700;">#${escapeHtml(input.orderId)}</strong>, ${escapeHtml(input.customerName)}! 🙏`,
+    ),
     content: rastaCard({
-      heading: '⚡ Váš ZION bonus',
-      body: `<p style="color:#9af59a;font-size:15px;text-align:center;margin:0 0 8px 0;">Připsáno na Vaši peněženku:</p>
-        <p style="color:#00ff7f;font-size:34px;font-weight:700;text-align:center;margin:0 0 20px 0;text-shadow:0 0 24px rgba(0,255,127,0.4);">${input.tokens.toLocaleString('cs-CZ')} ZION ⚡</p>
+      heading: t('⚡ Váš ZION bonus', '⚡ Your ZION bonus'),
+      body: `<p style="color:#9af59a;font-size:15px;text-align:center;margin:0 0 8px 0;">${t('Připsáno na Vaši peněženku:', 'Credited to your wallet:')}</p>
+        <p style="color:#00ff7f;font-size:34px;font-weight:700;text-align:center;margin:0 0 20px 0;text-shadow:0 0 24px rgba(0,255,127,0.4);">${formatNumberLang(input.tokens, lang)} ZION ⚡</p>
         ${txBlock}`,
     }),
   });
 
-  const body = `Dobrý den, ${input.customerName},
+  const body = t(
+    `Dobrý den, ${input.customerName},
 
 děkujeme za Vaši objednávku #${input.orderId}.
 
-Jako bonus Vám bylo připsáno ${input.tokens.toLocaleString('cs-CZ')} ZION tokenů.
+Jako bonus Vám bylo připsáno ${formatNumberLang(input.tokens, lang)} ZION tokenů.
 
 ${txInfo}
 
 S pozdravem,
 Tým ZION Terra Nova
-`;
+`,
+    `Hello ${input.customerName},
+
+thank you for your order #${input.orderId}.
+
+As a bonus you have been credited with ${formatNumberLang(input.tokens, lang)} ZION tokens.
+
+${txInfo}
+
+Best regards,
+The ZION Terra Nova team
+`,
+  );
 
   try {
     await sendMail({
@@ -564,36 +662,56 @@ export async function sendShippingNotification(order: OrderEmailData): Promise<v
   }
 
   const cfg = emailConfig();
+  const lang = resolveEmailLang(order);
+  const t = (cs: string, en: string) => tl(lang, cs, en);
 
   const trackingInfo = order.trackingNumber
-    ? `Sledovací číslo: ${order.trackingNumber}`
-    : 'Sledovací číslo bude doplněno.';
+    ? t(`Sledovací číslo: ${order.trackingNumber}`, `Tracking number: ${order.trackingNumber}`)
+    : t('Sledovací číslo bude doplněno.', 'The tracking number will be added shortly.');
 
   const trackingBlock = order.trackingNumber
-    ? rastaMonoBox('📦 Sledovací číslo:', order.trackingNumber)
-    : `<p style="color:#8a8f94;font-size:13px;text-align:center;margin:16px 0 0 0;">Sledovací číslo bude doplněno.</p>`;
+    ? rastaMonoBox(t('📦 Sledovací číslo:', '📦 Tracking number:'), order.trackingNumber)
+    : `<p style="color:#8a8f94;font-size:13px;text-align:center;margin:16px 0 0 0;">${t('Sledovací číslo bude doplněno.', 'The tracking number will be added shortly.')}</p>`;
 
-  const subject = `Zásilka odeslána - objednávka #${order.orderId} - ${cfg.shopName}`;
+  const subject = t(
+    `Zásilka odeslána - objednávka #${order.orderId} - ${cfg.shopName}`,
+    `Order dispatched - order #${order.orderId} - ${cfg.shopName}`,
+  );
   const html = buildRastaEmail({
+    lang,
     title: subject,
-    badge: '⚡ ZÁSILKA ODESLÁNA ⚡',
+    badge: t('⚡ ZÁSILKA ODESLÁNA ⚡', '⚡ ORDER DISPATCHED ⚡'),
     heroEmoji: '🚚',
-    headline: 'Vaše zásilka je na cestě',
-    intro: `Dobrý den ${escapeHtml(order.customerName)}, objednávka <strong style="color:#FFD700;">#${escapeHtml(order.orderId)}</strong> byla právě odeslána. 🌿`,
+    headline: t('Vaše zásilka je na cestě', 'Your parcel is on its way'),
+    intro: t(
+      `Dobrý den ${escapeHtml(order.customerName)}, objednávka <strong style="color:#FFD700;">#${escapeHtml(order.orderId)}</strong> byla právě odeslána. 🌿`,
+      `Hello ${escapeHtml(order.customerName)}, order <strong style="color:#FFD700;">#${escapeHtml(order.orderId)}</strong> has just been dispatched. 🌿`,
+    ),
     content: rastaCard({
-      heading: '🚚 Odeslání',
-      body: `<table width="100%" cellpadding="0" cellspacing="0">${rastaRow('🔖 Objednávka:', `<strong style="color:#FFD700;">${escapeHtml(order.orderId)}</strong>`)}${rastaRow('Doprava:', escapeHtml(shippingMethodLabel(order.shipping)))}</table>${trackingBlock}`,
+      heading: t('🚚 Odeslání', '🚚 Dispatch'),
+      body: `<table width="100%" cellpadding="0" cellspacing="0">${rastaRow(t('🔖 Objednávka:', '🔖 Order:'), `<strong style="color:#FFD700;">${escapeHtml(order.orderId)}</strong>`)}${rastaRow(t('Doprava:', 'Delivery:'), escapeHtml(shippingMethodLabelLang(order.shipping, lang)))}</table>${trackingBlock}`,
     }),
   });
-  const body = `Dobrý den, ${order.customerName},
+  const body = t(
+    `Dobrý den, ${order.customerName},
 
-Vaše objednávka #${order.orderId} byla odeslana.
+Vaše objednávka #${order.orderId} byla odeslána.
 
 ${trackingInfo}
 
 S pozdravem,
 Tým ZION Terra Nova
-`;
+`,
+    `Hello ${order.customerName},
+
+your order #${order.orderId} has been dispatched.
+
+${trackingInfo}
+
+Best regards,
+The ZION Terra Nova team
+`,
+  );
 
   try {
     await sendMail({
@@ -616,6 +734,7 @@ interface CustomerWalletInput {
   customerEmail: string;
   address: string;
   seed: string;
+  lang?: EmailLang;
 }
 
 export async function sendCustomerWalletEmail(input: CustomerWalletInput): Promise<void> {
@@ -625,28 +744,44 @@ export async function sendCustomerWalletEmail(input: CustomerWalletInput): Promi
   }
 
   const cfg = emailConfig();
-  const subject = `Vaše ZION peněženka - objednávka #${input.orderId}`;
+  const lang = resolveEmailLang(input);
+  const t = (cs: string, en: string) => tl(lang, cs, en);
+
+  const subject = t(
+    `Vaše ZION peněženka - objednávka #${input.orderId}`,
+    `Your ZION wallet - order #${input.orderId}`,
+  );
 
   const html = buildRastaEmail({
+    lang,
     title: subject,
-    badge: '🔐 ZION PENĚŽENKA 🔐',
+    badge: t('🔐 ZION PENĚŽENKA 🔐', '🔐 ZION WALLET 🔐'),
     heroEmoji: '🔐',
-    headline: 'Vaše ZION peněženka',
-    intro: `K objednávce <strong style="color:#FFD700;">#${escapeHtml(input.orderId)}</strong> jsme Vám vytvořili ZION L1 peněženku — po zaplacení na ni připíšeme Váš bonus. ⚡`,
+    headline: t('Vaše ZION peněženka', 'Your ZION wallet'),
+    intro: t(
+      `K objednávce <strong style="color:#FFD700;">#${escapeHtml(input.orderId)}</strong> jsme Vám vytvořili ZION L1 peněženku — po zaplacení na ni připíšeme Váš bonus. ⚡`,
+      `We created a ZION L1 wallet for your order <strong style="color:#FFD700;">#${escapeHtml(input.orderId)}</strong> — your bonus is credited to it once paid. ⚡`,
+    ),
     content:
       rastaCard({
-        heading: '📍 Adresa peněženky',
-        body: rastaMonoBox('ZION L1 adresa:', input.address),
+        heading: t('📍 Adresa peněženky', '📍 Wallet address'),
+        body: rastaMonoBox(t('ZION L1 adresa:', 'ZION L1 address:'), input.address),
       }) +
       rastaCard({
-        heading: '🌱 Seed phrase (12 slov)',
-        body: rastaMonoBox('Seed phrase — uchovejte offline:', input.seed) +
-          rastaWarning('⚠️ <strong>DŮLEŽITÉ:</strong> Seed phrase si uložte na bezpečném místu — je to jediný způsob, jak získat plný přístup k Vašim tokenům. Nikomu ji neukazujte.'),
+        heading: t('🌱 Seed phrase (12 slov)', '🌱 Seed phrase (12 words)'),
+        body: rastaMonoBox(t('Seed phrase — uchovejte offline:', 'Seed phrase — keep it offline:'), input.seed) +
+          rastaWarning(
+            t(
+              '⚠️ <strong>DŮLEŽITÉ:</strong> Seed phrase si uložte na bezpečném místu — je to jediný způsob, jak získat plný přístup k Vašim tokenům. Nikomu ji neukazujte.',
+              '⚠️ <strong>IMPORTANT:</strong> store the seed phrase in a safe place — it is the only way to gain full access to your tokens. Never show it to anyone.',
+            ),
+          ),
         tone: 'gold',
       }),
   });
 
-  const body = `Dobrý den, ${input.customerName},
+  const body = t(
+    `Dobrý den, ${input.customerName},
 
 k objednávce #${input.orderId} jsme pro Vás automaticky vytvořili ZION L1 peněženku,
 na kterou Vám bude po zaplacení odeslán bonus v ZION tokenech.
@@ -659,7 +794,22 @@ jak získat plný přístup k Vašim tokenům v budoucnu. Nikomu jej neukazujte.
 
 S pozdravem,
 Tým ZION Terra Nova
-`;
+`,
+    `Hello ${input.customerName},
+
+we automatically created a ZION L1 wallet for your order #${input.orderId},
+to which your ZION token bonus will be sent once the order is paid.
+
+Your address: ${input.address}
+Seed phrase (12 words): ${input.seed}
+
+⚠️ IMPORTANT: store the seed phrase in a safe place. It is the only way
+to gain full access to your tokens in the future. Never show it to anyone.
+
+Best regards,
+The ZION Terra Nova team
+`,
+  );
 
   try {
     await sendMail({

@@ -182,7 +182,7 @@ function ControlHud({
           className="zion-hud-panel !relative hidden flex-col gap-2 p-2.5 sm:flex"
           style={{ width: mode === 'expanded' ? '12rem' : '9rem' }}
         >
-          <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-oasis-cyan">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-oasis-cyan">
             <Rocket className="h-3 w-3" />
             <span>Ship Status</span>
           </div>
@@ -191,27 +191,27 @@ function ControlHud({
           <div className="grid grid-cols-3 gap-1">
             <div className="rounded-lg border border-oasis-cyan/20 bg-oasis-cyan/5 p-1 text-center" title="Boost">
               <Zap className="mx-auto h-3 w-3 text-oasis-cyan" />
-              <p className="text-[9px] font-bold text-white">{shipLoadout.boost}</p>
+              <p className="text-[10px] font-bold text-white">{shipLoadout.boost}</p>
             </div>
             <div className="rounded-lg border border-oasis-gold/20 bg-oasis-gold/5 p-1 text-center" title="Cargo">
               <Package className="mx-auto h-3 w-3 text-oasis-gold" />
-              <p className="text-[9px] font-bold text-white">{shipLoadout.cargo}</p>
+              <p className="text-[10px] font-bold text-white">{shipLoadout.cargo}</p>
             </div>
             <div className="rounded-lg border border-oasis-purple/20 bg-oasis-purple/5 p-1 text-center" title="Scanner">
               <ScanLine className="mx-auto h-3 w-3 text-oasis-purple" />
-              <p className="text-[9px] font-bold text-white">{shipLoadout.scanner}</p>
+              <p className="text-[10px] font-bold text-white">{shipLoadout.scanner}</p>
             </div>
           </div>
 
           {/* Hull color indicator */}
           <div className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: shipLoadout.color, boxShadow: `0 0 8px ${shipLoadout.color}` }} />
-            <span className="text-[9px] text-white/70">Hull</span>
+            <span className="text-[10px] text-white/70">Hull</span>
           </div>
 
           {/* Credits */}
           <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1">
-            <span className="flex items-center gap-1 text-[9px] text-white/70">
+            <span className="flex items-center gap-1 text-[10px] text-white/70">
               <Fuel className="h-2.5 w-2.5" />
               Fuel
             </span>
@@ -224,11 +224,11 @@ function ControlHud({
               animate={{ opacity: 1 }}
               className="space-y-1.5 border-t border-white/5 pt-2"
             >
-              <p className="text-[8px] font-bold uppercase tracking-wider text-white/60">Quick Tune</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/60">Quick Tune</p>
               {(['boost', 'cargo', 'scanner'] as (keyof ShipLoadout)[]).map((k) => {
                 const lvl = shipLoadout[k] as number;
                 return (
-                  <div key={k} className="flex items-center justify-between text-[9px]">
+                  <div key={k} className="flex items-center justify-between text-[10px]">
                     <span className="capitalize text-white/70">{k}</span>
                     <div className="flex items-center gap-1">
                       <div className="flex gap-0.5">
@@ -417,7 +417,7 @@ function ControlHud({
           className="zion-hud-panel !relative hidden flex-col gap-2 p-2.5 sm:flex"
           style={{ width: mode === 'expanded' ? '12rem' : '9rem' }}
         >
-          <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-oasis-gold">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-oasis-gold">
             <Orbit className="h-3 w-3" />
             <span>Navigation</span>
           </div>
@@ -426,24 +426,24 @@ function ControlHud({
           {flightMode ? (
             <div className="rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-[9px] text-white/70">
+                <span className="flex items-center gap-1 text-[10px] text-white/70">
                   <Gauge className="h-3 w-3 text-oasis-cyan" />
                   SPD
                 </span>
                 <div className="text-right">
                   <span className="text-sm font-bold tabular-nums text-white">{flightSpeed.toFixed(1)}</span>
-                  <span className="ml-0.5 text-[9px] text-white/60">/{Math.round(maxSpeed)}</span>
+                  <span className="ml-0.5 text-[10px] text-white/60">/{Math.round(maxSpeed)}</span>
                 </div>
               </div>
             </div>
           ) : (
             <div className="rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-[9px] text-white/70">
+                <span className="flex items-center gap-1 text-[10px] text-white/70">
                   <Radar className="h-3 w-3 text-oasis-purple" />
                   Scan
                 </span>
-                <span className="text-[9px] text-white/60">Idle</span>
+                <span className="text-[10px] text-white/60">Idle</span>
               </div>
             </div>
           )}
@@ -451,7 +451,7 @@ function ControlHud({
           {/* Throttle slider (flight mode) */}
           {flightMode && (
             <div>
-              <div className="mb-1 flex items-center justify-between text-[9px] text-white/70">
+              <div className="mb-1 flex items-center justify-between text-[10px] text-white/70">
                 <span className="flex items-center gap-1">
                   <Rocket className="h-2.5 w-2.5" /> Throttle
                 </span>
@@ -464,9 +464,9 @@ function ControlHud({
                 className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-oasis-cyan"
               />
               <div className="mt-1 grid grid-cols-3 gap-1">
-                <button onClick={() => onThrottleChange(0)} className="zion-button-ghost !py-1 text-[8px]" title="Stop (1)">STOP</button>
-                <button onClick={() => onThrottleChange(0.5)} className="zion-button-ghost !py-1 text-[8px]" title="Half (2)">½</button>
-                <button onClick={() => onThrottleChange(1)} className="zion-button-ghost !py-1 text-[8px] text-oasis-cyan" title="Full (3)">FULL</button>
+                <button onClick={() => onThrottleChange(0)} className="zion-button-ghost !py-1 text-[10px]" title="Stop (1)">STOP</button>
+                <button onClick={() => onThrottleChange(0.5)} className="zion-button-ghost !py-1 text-[10px]" title="Half (2)">½</button>
+                <button onClick={() => onThrottleChange(1)} className="zion-button-ghost !py-1 text-[10px] text-oasis-cyan" title="Full (3)">FULL</button>
               </div>
             </div>
           )}
@@ -533,7 +533,7 @@ function ControlHud({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="space-y-0.5 border-t border-white/5 pt-1.5 text-[8px] text-white/60"
+              className="space-y-0.5 border-t border-white/5 pt-1.5 text-[10px] text-white/60"
             >
               <div className="flex justify-between"><span>WASD</span><span>move</span></div>
               <div className="flex justify-between"><span>Q/E</span><span>up/down</span></div>
@@ -549,7 +549,7 @@ function ControlHud({
       {/* Expand/collapse toggle */}
       <button
         onClick={() => setMode((m) => (m === 'compact' ? 'expanded' : 'compact'))}
-        className="mt-2 flex items-center gap-1 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[9px] font-semibold text-white/70 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
+        className="mt-2 flex items-center gap-1 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[10px] font-semibold text-white/70 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
       >
         <Settings className="h-3 w-3" />
         {mode === 'expanded' ? 'Collapse' : 'Expand'}

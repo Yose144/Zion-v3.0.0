@@ -41,7 +41,7 @@ function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
   const map: Record<string, string> = { coinbase: "bg-zion-gold/15 text-zion-gold", payout: "bg-zion-cyan/15 text-zion-cyan", transfer: "bg-zion-cyan/15 text-zion-cyan" };
   const cls = map[type] || "bg-white/10 text-white/60";
   const label = type === 'coinbase' ? 'coinbase' : type === 'payout' ? (ExplorerTransactionsTransactionsPageClientCopy.payout[cs ? 'cs' : 'en']) : type === 'transfer' ? (ExplorerTransactionsTransactionsPageClientCopy.transfer[cs ? 'cs' : 'en']) : type;
-  return <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${cls}`}>{label}</span>;
+  return <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider ${cls}`}>{label}</span>;
 }
 
 function timeAgo(ts: number, cs: boolean) {
@@ -214,12 +214,12 @@ export default function TransactionsPageClient() {
           {/* table header */}
           <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] md:grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] gap-3 px-5 py-3 border-b border-white/6">
             <span />
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.type[cs ? 'cs' : 'en']}</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.age[cs ? 'cs' : 'en']}</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.block[cs ? 'cs' : 'en']}</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerTransactionsTransactionsPageClientCopy.amount[cs ? 'cs' : 'en']}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.type[cs ? 'cs' : 'en']}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.age[cs ? 'cs' : 'en']}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.block[cs ? 'cs' : 'en']}</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerTransactionsTransactionsPageClientCopy.amount[cs ? 'cs' : 'en']}</span>
           </div>
 
           {/* loading skeleton */}

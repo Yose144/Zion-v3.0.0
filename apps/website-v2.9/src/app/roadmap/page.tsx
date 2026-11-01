@@ -825,7 +825,7 @@ export default function RoadmapPage() {
                 className="zion-rainbow-sub p-5"
                 style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
               >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zion-purple">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zion-purple">
                   {pillar.layer}
                 </p>
                 <h3 className="text-base font-semibold text-white mt-2">{pillar.title}</h3>

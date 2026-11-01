@@ -170,7 +170,7 @@ export default function HomeQuickLinks() {
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white">Doge vs ZION</h3>
-                <span className="rounded-full border border-zion-gold/30 bg-zion-gold/10 px-2 py-0.5 text-[9px] font-bold text-zion-gold">
+                <span className="rounded-full border border-zion-gold/30 bg-zion-gold/10 px-2 py-0.5 text-[10px] font-bold text-zion-gold">
                   {HomeQuickLinksCopy.arcade[cs ? 'cs' : 'en']}
                 </span>
               </div>

@@ -274,7 +274,7 @@ export default function Navigation() {
             </div>
             <div className="flex flex-col leading-none transition-all duration-300">
               <span className="text-sm sm:text-base font-bold text-gradient-soft tracking-tight">ZION</span>
-              <span className="hidden sm:inline text-[6px] sm:text-[7px] px-1 sm:px-1 py-0.5 mt-0.5 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.18em] text-white/60">
+              <span className="hidden sm:inline text-[10px] sm:text-[10px] px-1 sm:px-1 py-0.5 mt-0.5 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.18em] text-white/60">
                 {SITE_RELEASE_LABEL}
               </span>
             </div>
@@ -315,7 +315,7 @@ export default function Navigation() {
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-              className={`hidden sm:flex items-center gap-1 rounded-lg border border-white/15 bg-black/75 text-[10px] font-semibold hover:border-white/30 hover:bg-black transition-colors text-zion-gold/85 hover:text-white ${scrolled ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-1'}`}
+              className={`hidden sm:flex items-center gap-1 rounded-lg border border-white/15 bg-black/75 text-[10px] font-semibold hover:border-white/30 hover:bg-black transition-colors text-zion-gold/85 hover:text-white ${scrolled ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1'}`}
               title={lang === 'cs' ? tr('nav', 'switch_to_en', lang) : tr('nav', 'switch_to_cs', lang)}
             >
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
@@ -442,7 +442,7 @@ export default function Navigation() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="mobile-nav-title"
-              className="fixed inset-y-0 right-0 flex h-screen w-[min(420px,94vw)] flex-col overflow-hidden border-l-2 border-zion-gold/30 bg-black/95 backdrop-blur-xl z-50 animate-[slideIn_0.25s_ease-out]"
+              className="fixed inset-y-0 right-0 flex h-screen h-dvh w-[min(420px,94vw)] flex-col overflow-hidden border-l-2 border-zion-gold/30 bg-black/95 backdrop-blur-xl z-50 animate-[slideIn_0.25s_ease-out]"
               style={{
                 height: '100dvh',
                 maxHeight: '100vh',

@@ -67,7 +67,7 @@ export default function Features() {
                   <div className="flex items-center justify-between">
                     <track.icon className={`h-4 w-4 ${accent.icon}`} />
                     <span
-                      className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full ${accent.badge}`}
+                      className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full ${accent.badge}`}
                     >
                       {statusLabel.active[cs ? 'cs' : 'en']}
                     </span>

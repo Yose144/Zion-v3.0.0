@@ -139,10 +139,10 @@ function FeeHistogram({ txs, cs }: { txs: MempoolTx[]; cs: boolean }) {
   return (
     <div className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">
+        <p className="text-[11px] uppercase tracking-[0.3em] text-white/40">
           {ExplorerMempoolMempoolPageClientCopy.feeDistribution[cs ? 'cs' : 'en']}
         </p>
-        <span className="text-[10px] text-white/30">{ExplorerMempoolMempoolPageClientCopy.flowersByte[cs ? 'cs' : 'en']}</span>
+        <span className="text-[11px] text-white/30">{ExplorerMempoolMempoolPageClientCopy.flowersByte[cs ? 'cs' : 'en']}</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-32" preserveAspectRatio="none">
         <defs>
@@ -199,7 +199,7 @@ function FeeHistogram({ txs, cs }: { txs: MempoolTx[]; cs: boolean }) {
           );
         })}
       </svg>
-      <div className="flex justify-between text-[9px] text-white/30 mt-1 tabular-nums">
+      <div className="flex justify-between text-[10px] text-white/30 mt-1 tabular-nums">
         <span>{buckets[0]?.lo.toFixed(1)} fl/B</span>
         <span>{buckets[buckets.length - 1]?.hi.toFixed(1)} fl/B</span>
       </div>
@@ -304,7 +304,7 @@ export default function MempoolPageClient() {
               transition={{ duration: 2, repeat: Infinity }}
               className={`h-2 w-2 rounded-full ${wsConnected ? "bg-zion-cyan" : "bg-zion-gold"}`}
             />
-            <span className="text-[10px] text-white/50">
+            <span className="text-[11px] text-white/50">
               {wsConnected ? (ExplorerMempoolMempoolPageClientCopy.wsLive[cs ? 'cs' : 'en']) : (ExplorerMempoolMempoolPageClientCopy.polling5s[cs ? 'cs' : 'en'])}
             </span>
           </div>
@@ -346,7 +346,7 @@ export default function MempoolPageClient() {
         <div className="grid md:grid-cols-2 gap-4 mb-6">
           <FeeHistogram txs={data?.transactions ?? []} cs={cs} />
           <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 mb-3">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-white/40 mb-3">
               {ExplorerMempoolMempoolPageClientCopy.feeStatistics[cs ? 'cs' : 'en']}
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -372,7 +372,7 @@ export default function MempoolPageClient() {
                 className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-zion-gold/50"
               />
             </div>
-            <span className="text-[10px] text-white/30 tabular-nums">
+            <span className="text-[11px] text-white/30 tabular-nums">
               {filteredAndSorted.length}/{data?.count ?? 0}
             </span>
           </div>
@@ -380,7 +380,7 @@ export default function MempoolPageClient() {
           {/* table header */}
           <div className="grid grid-cols-[32px_1fr_90px_100px_100px_120px] min-w-[480px] gap-3 px-5 py-3 border-b border-white/6">
             <span />
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">
               TX Hash
             </span>
             <SortHeader
@@ -402,7 +402,7 @@ export default function MempoolPageClient() {
               dir={sortDir}
               onClick={() => toggleSort("fee")}
             />
-            <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">
+            <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">
               {ExplorerMempoolMempoolPageClientCopy.status[cs ? 'cs' : 'en']}
             </span>
           </div>
@@ -477,22 +477,22 @@ export default function MempoolPageClient() {
                 {/* status */}
                 <div className="flex items-center justify-end gap-1">
                   {tx.double_spend_seen && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-zion-purple/15 text-zion-purple">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-zion-purple/15 text-zion-purple">
                       double-spend
                     </span>
                   )}
                   {tx.kept_by_block && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-zion-cyan/15 text-zion-cyan">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-zion-cyan/15 text-zion-cyan">
                       kept
                     </span>
                   )}
                   {tx.relayed && !tx.double_spend_seen && !tx.kept_by_block && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-zion-cyan/15 text-zion-cyan">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-zion-cyan/15 text-zion-cyan">
                       relayed
                     </span>
                   )}
                   {!tx.relayed && !tx.double_spend_seen && !tx.kept_by_block && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-white/5 text-white/40">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-white/5 text-white/40">
                       pending
                     </span>
                   )}
@@ -531,7 +531,7 @@ function StatCard({
     <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">{label}</p>
+        <p className="text-[11px] uppercase tracking-[0.3em] text-white/40">{label}</p>
       </div>
       <p className="text-xl font-bold text-white tabular-nums">{value}</p>
     </div>
@@ -541,7 +541,7 @@ function StatCard({
 function FeeStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-lg bg-white/5 p-3">
-      <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 mb-1">{label}</p>
+      <p className="text-[11px] uppercase tracking-[0.2em] text-white/40 mb-1">{label}</p>
       <p className="text-sm font-mono text-zion-gold tabular-nums">{value.toFixed(6)}</p>
     </div>
   );
@@ -563,7 +563,7 @@ function SortHeader({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1 text-[10px] uppercase tracking-[0.15em] font-medium transition-colors ${
+      className={`flex items-center gap-1 text-[11px] uppercase tracking-[0.15em] font-medium transition-colors ${
         active ? "text-zion-gold" : "text-white/30 hover:text-white/60"
       } ${align === "right" ? "justify-end" : "justify-start"}`}
     >

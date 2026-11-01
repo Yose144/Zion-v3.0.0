@@ -72,7 +72,7 @@ export default function VirtualJoystick({ onChange, onEnd, label, size = 96 }: V
       onTouchCancel={end}
     >
       {label && (
-        <span className="pointer-events-none absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] uppercase tracking-wider text-white/50">
+        <span className="pointer-events-none absolute -top-4 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-wider text-white/50">
           {label}
         </span>
       )}

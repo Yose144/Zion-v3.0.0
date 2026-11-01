@@ -402,7 +402,7 @@ export default function WebTerminal() {
               <div className="min-w-0 text-left">
                 <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-white">
                   ZION Terminal
-                  <span className="inline-flex items-center gap-1 rounded-full bg-zion-cyan/15 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-zion-cyan">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-zion-cyan/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zion-cyan">
                     <Activity className="h-2.5 w-2.5" /> Interactive
                   </span>
                 </p>
@@ -517,7 +517,7 @@ export default function WebTerminal() {
           <div className="mb-2 flex flex-wrap gap-1">
             <button
               onClick={() => setActiveCategory('All')}
-              className={`rounded-md px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider transition-all ${activeCategory === 'All' ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider transition-all ${activeCategory === 'All' ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-500 hover:text-gray-300'}`}
             >
               All
             </button>
@@ -527,7 +527,7 @@ export default function WebTerminal() {
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider transition-all ${activeCategory === cat ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-500 hover:text-gray-300'}`}
+                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider transition-all ${activeCategory === cat ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-500 hover:text-gray-300'}`}
                 >
                   <Icon className="h-2.5 w-2.5" />
                   {cat}
@@ -597,7 +597,7 @@ export default function WebTerminal() {
                     </div>
                   )}
                   {line.type === 'system' && (
-                    <pre className="overflow-x-auto whitespace-pre text-[9px] leading-snug text-zion-cyan/70 sm:text-[10px] md:text-xs">{line.text}</pre>
+                    <pre className="overflow-x-auto whitespace-pre text-[10px] leading-snug text-zion-cyan/70 sm:text-[10px] md:text-xs">{line.text}</pre>
                   )}
                 </div>
               ))}
@@ -646,7 +646,7 @@ export default function WebTerminal() {
                               <q.icon className="mt-0.5 h-3 w-3 shrink-0 text-zion-cyan/70" />
                               <div className="min-w-0">
                                 <p className="font-mono text-[11px] text-gray-200">{q.label}</p>
-                                <p className="text-[9px] text-gray-500">{q.desc}</p>
+                                <p className="text-[10px] text-gray-500">{q.desc}</p>
                               </div>
                             </button>
                           ))}
@@ -655,7 +655,7 @@ export default function WebTerminal() {
                     );
                   })}
                   <div className="mt-2 border-t border-white/10 pt-2">
-                    <p className="text-[9px] text-gray-600">
+                    <p className="text-[10px] text-gray-600">
                       Aliases: ls/h/? = help · v/whoami = version · clr/cls = clear · ex = explorer · net = network
                     </p>
                   </div>

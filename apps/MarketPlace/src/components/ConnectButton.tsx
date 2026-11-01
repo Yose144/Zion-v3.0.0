@@ -201,7 +201,7 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
       >
         <span className={`status-dot ${wrongChain ? 'status-inactive' : 'status-active'}`} />
         {isZionAddr && (
-          <span className="w-4 h-4 rounded bg-gradient-to-br from-zion-gold/40 to-zion-cyan/30 flex items-center justify-center text-[9px] font-bold">
+          <span className="w-4 h-4 rounded bg-gradient-to-br from-zion-gold/40 to-zion-cyan/30 flex items-center justify-center text-[10px] font-bold">
             Z
           </span>
         )}

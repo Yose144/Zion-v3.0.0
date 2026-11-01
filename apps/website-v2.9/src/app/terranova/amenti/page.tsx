@@ -516,7 +516,7 @@ export default function AmentiPage() {
 
                   <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
                     {Copy.quote[cs ? 'cs' : 'en']}
-                    <cite className="block mt-2 not-italic text-[10px] uppercase tracking-[0.25em] text-white/35">
+                    <cite className="block mt-2 not-italic text-[11px] uppercase tracking-[0.25em] text-white/35">
                       {cs ? 'Smaragdové desky Thovtovy — Deska II' : 'The Emerald Tablets of Thoth — Tablet II'}
                     </cite>
                   </blockquote>
@@ -534,7 +534,7 @@ export default function AmentiPage() {
                             <Icon className="h-4 w-4" />
                             <span className="text-sm font-semibold">{signal.value}</span>
                           </div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">
+                          <p className="text-[11px] uppercase tracking-widest text-gray-500 mt-1">
                             {cs ? signal.labelCs : signal.labelEn}
                           </p>
                         </div>
@@ -587,7 +587,7 @@ export default function AmentiPage() {
         >
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': ACCENT } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
-              <p className={`text-[10px] uppercase tracking-[0.45em] ${ACCENT_TEXT}/65 mb-1`}>
+              <p className={`text-[11px] uppercase tracking-[0.45em] ${ACCENT_TEXT}/65 mb-1`}>
                 {Copy.threeDPreview[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">
@@ -656,7 +656,7 @@ export default function AmentiPage() {
               <div className="p-4 md:p-6">
                 <p className="text-base md:text-lg font-semibold text-white">{Copy.heartTitle[cs ? 'cs' : 'en']}</p>
                 <p className="mt-1 text-sm md:text-base text-gray-400 leading-relaxed">{Copy.heartBody[cs ? 'cs' : 'en']}</p>
-                <p className="mt-3 text-[10px] md:text-xs font-bold tracking-[0.3em] text-emerald-300">{Copy.heartMantra[cs ? 'cs' : 'en']}</p>
+                <p className="mt-3 text-[11px] md:text-xs font-bold tracking-[0.3em] text-emerald-300">{Copy.heartMantra[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -666,7 +666,7 @@ export default function AmentiPage() {
                   <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '52, 211, 153' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-emerald-300 mb-1">
                       <PointIcon className="h-4 w-4" />
-                      <span className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
+                      <span className="text-[11px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
                     </div>
                     <p className="text-sm text-gray-300">{point}</p>
                   </div>
@@ -728,7 +728,7 @@ export default function AmentiPage() {
                 className="w-32 shrink-0 rounded-lg border border-emerald-300/20 md:w-40"
               />
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-300">{Copy.featuredBookTag[cs ? 'cs' : 'en']}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-emerald-300">{Copy.featuredBookTag[cs ? 'cs' : 'en']}</p>
                 <h3 className="mt-1 text-xl font-semibold text-white">{Copy.featuredBookTitle[cs ? 'cs' : 'en']}</h3>
                 <p className="mt-2 text-sm text-gray-400">{Copy.featuredBookDesc[cs ? 'cs' : 'en']}</p>
                 <div className="mt-4 flex flex-wrap gap-1.5">
@@ -738,7 +738,7 @@ export default function AmentiPage() {
                       href={`${APEX}${href}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-bold tracking-widest text-emerald-200 transition hover:bg-emerald-300/20"
+                      className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[11px] font-bold tracking-widest text-emerald-200 transition hover:bg-emerald-300/20"
                     >
                       {langCode}
                     </a>
@@ -762,7 +762,7 @@ export default function AmentiPage() {
                           href={`${APEX}${href}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-bold tracking-widest text-gray-400 transition hover:border-emerald-300/40 hover:text-emerald-200"
+                          className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] font-bold tracking-widest text-gray-400 transition hover:border-emerald-300/40 hover:text-emerald-200"
                         >
                           {langCode}
                         </a>
@@ -822,7 +822,7 @@ export default function AmentiPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">
                       {cs ? phase.cs : phase.en}
-                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-emerald-200">· {cs ? 'probíhá' : 'in progress'}</span>}
+                      {phase.active && <span className="ml-2 text-[11px] uppercase tracking-widest text-emerald-200">· {cs ? 'probíhá' : 'in progress'}</span>}
                     </h3>
                     <p className="text-sm text-gray-400">{cs ? phase.descCs : phase.descEn}</p>
                   </div>
@@ -918,7 +918,7 @@ export default function AmentiPage() {
               {ANCHORS.map((a) => (
                 <div key={a.whatCs} className="zion-rainbow-sub p-4 flex flex-col sm:flex-row sm:items-center gap-3" style={{ '--rc': '52, 211, 153' } as React.CSSProperties}>
                   <span
-                    className="shrink-0 inline-flex items-center justify-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-widest"
+                    className="shrink-0 inline-flex items-center justify-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-widest"
                     style={{ borderColor: `${a.color}55`, color: a.color, background: `${a.color}14` }}
                   >
                     {cs ? a.statusCs : a.statusEn}

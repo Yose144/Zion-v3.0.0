@@ -488,7 +488,7 @@ export default function L6IssobellaPage() {
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                  <span className={`absolute right-3 top-3 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${mission.badgeColor}`}>
+                  <span className={`absolute right-3 top-3 text-[11px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${mission.badgeColor}`}>
                     {mission.phase}
                   </span>
                 </div>
@@ -497,7 +497,7 @@ export default function L6IssobellaPage() {
                   <p className="text-sm text-gray-400 mb-4">{mission.desc}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {mission.tags.map((tag) => (
-                      <span key={tag} className="text-[10px] rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-gray-400">{tag}</span>
+                      <span key={tag} className="text-[11px] rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-gray-400">{tag}</span>
                     ))}
                   </div>
                 </div>
@@ -553,7 +553,7 @@ export default function L6IssobellaPage() {
                   loading="lazy"
                   className="w-full h-auto rounded-2xl border border-white/10 transition-transform duration-500 group-hover:scale-[1.02]"
                 />
-                <figcaption className="text-center text-[10px] uppercase tracking-widest text-gray-500">
+                <figcaption className="text-center text-[11px] uppercase tracking-widest text-gray-500">
                   {L6IssobellaCopy.stationMockupCaption[cs ? 'cs' : 'en']}
                 </figcaption>
               </figure>
@@ -665,7 +665,7 @@ export default function L6IssobellaPage() {
               <div key={track.name} className={`zion-rainbow-sub p-5 transition-colors hover:bg-white/5 ${track.accent}`} style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-3">
                   <track.icon className={`h-6 w-6 ${track.color}`} />
-                  <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${track.badge}`}>{track.trl}</span>
+                  <span className={`text-[11px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${track.badge}`}>{track.trl}</span>
                 </div>
                 <h3 className="font-semibold text-white mb-2">{track.name}</h3>
                 <p className="text-sm text-gray-400">{track.desc}</p>
@@ -678,7 +678,7 @@ export default function L6IssobellaPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {qmRoadmap.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zion-cyan/30 bg-zion-cyan/10 text-[10px] font-bold text-zion-cyan leading-none text-center">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zion-cyan/30 bg-zion-cyan/10 text-[11px] font-bold text-zion-cyan leading-none text-center">
                     {item.year}
                   </div>
                   <p className="text-sm text-gray-400">{item.label}</p>

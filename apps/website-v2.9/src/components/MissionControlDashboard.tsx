@@ -1172,7 +1172,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
                   <span className="font-mono text-gray-400">{inc.started ? new Date(inc.started).toLocaleString() : '—'}</span>
                   <span className="font-mono text-gray-300">{inc.duration_seconds != null ? fmtG8Downtime(inc.duration_seconds, cs) : '—'}</span>
                   <span className="text-gray-400">{inc.signals.join(', ')}</span>
-                  {inc.critical && <span className="text-[9px] font-semibold uppercase tracking-wider text-red-300">{cs ? 'kritický' : 'critical'}</span>}
+                  {inc.critical && <span className="text-[10px] font-semibold uppercase tracking-wider text-red-300">{cs ? 'kritický' : 'critical'}</span>}
                 </div>
               ))}
               <p className="text-[10px] text-gray-500 pt-1">
@@ -1243,7 +1243,7 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
           <div className="font-semibold text-white text-sm sm:text-base">{name}</div>
           <div className="text-[10px] sm:text-xs text-gray-500 font-mono truncate">{ip}</div>
         </div>
-        <span className={`ml-auto inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border uppercase tracking-widest ${statusStyle}`}>
+        <span className={`ml-auto inline-flex items-center gap-1 text-[10px] sm:text-[10px] font-semibold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border uppercase tracking-widest ${statusStyle}`}>
           <StatusIcon className="h-3 w-3" /> {statusLabel}
         </span>
       </div>
@@ -1255,14 +1255,14 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
         <MiniMetric label={MissionControlDashboardCopy.lastBlock[cs ? 'cs' : 'en']} value={fmtLastBlock(s?.time_since_last_block)} color={isStale ? 'text-zion-gold' : 'text-white'} />
         <MiniMetric label={MissionControlDashboardCopy.containers[cs ? 'cs' : 'en']} value={containersLabel} />
         <div className="zion-tile p-3">
-          <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">{MissionControlDashboardCopy.memory[cs ? 'cs' : 'en']}</p>
+          <p className="text-[10px] uppercase tracking-[0.5px] text-gray-400">{MissionControlDashboardCopy.memory[cs ? 'cs' : 'en']}</p>
           <p className={`text-base font-bold font-mono ${valColor(memPct)}`}>{memPct == null ? '—' : `${memPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div className={`h-full rounded-full ${barColor(memPct)}`} style={{ width: `${memPct ?? 0}%` }} />
           </div>
         </div>
         <div className="zion-tile p-3">
-          <p className="text-[9px] uppercase tracking-[0.5px] text-gray-400">{MissionControlDashboardCopy.disk[cs ? 'cs' : 'en']}</p>
+          <p className="text-[10px] uppercase tracking-[0.5px] text-gray-400">{MissionControlDashboardCopy.disk[cs ? 'cs' : 'en']}</p>
           <p className={`text-base font-bold font-mono ${valColor(diskPct)}`}>{diskPct == null ? '—' : `${diskPct}%`}</p>
           <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div className={`h-full rounded-full ${barColor(diskPct)}`} style={{ width: `${diskPct ?? 0}%` }} />
@@ -1277,7 +1277,7 @@ function ServerCard({ node, name, flag, ip }: { node?: ServerNode; name: string;
 function MiniMetric({ label, value, color = 'text-white' }: { label: string; value: string; color?: string }) {
   return (
     <div className="zion-tile p-2.5 sm:p-3 min-w-0">
-      <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.15em] sm:tracking-[0.2em] text-gray-400 truncate">{label}</p>
+      <p className="text-[10px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] text-gray-400 truncate">{label}</p>
       <p className={`text-sm sm:text-base font-bold font-mono truncate ${color}`}>{value}</p>
     </div>
   );
@@ -1457,7 +1457,7 @@ function AreaChart({ data: d, timestamps, label, color = '#10b981', unit = '', h
         <div className="text-sm font-mono font-bold" style={{ color }}>{latestStr}{unit}</div>
       </div>
       <div className="flex gap-2">
-        <div className="flex flex-col justify-between text-[8px] text-gray-600 font-mono w-8 shrink-0">
+        <div className="flex flex-col justify-between text-[10px] text-gray-600 font-mono w-8 shrink-0">
           <span>{yMax}</span><span>{yMidLabel}</span><span>{yMin}</span>
         </div>
         <div className="flex-1 min-w-0">
@@ -1476,7 +1476,7 @@ function AreaChart({ data: d, timestamps, label, color = '#10b981', unit = '', h
             <polyline points={polyline} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           {tLabels.length > 0 && (
-            <div className="flex justify-between text-[8px] text-gray-600 font-mono mt-1">
+            <div className="flex justify-between text-[10px] text-gray-600 font-mono mt-1">
               {tLabels.map((t, i) => <span key={i}>{t}</span>)}
             </div>
           )}
@@ -1630,25 +1630,25 @@ function V3MetricsSection({
         <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><Heart className="h-4 w-4 text-zion-purple" /> PPLNS Reward Engine</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Window Size</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">Window Size</p>
             <p className="text-base sm:text-lg font-mono font-bold text-zion-purple truncate">{fmt(m.pplnsWindowSize)}</p>
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Window Used</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">Window Used</p>
             <p className="text-base sm:text-lg font-mono font-bold text-zion-purple truncate">{fmt(m.pplnsWindowUsed)}</p>
             {pplnsPct != null && <MetricBar value={m.pplnsWindowUsed ?? 0} max={m.pplnsWindowSize ?? 1} color="bg-zion-purple" />}
             <p className="text-[10px] text-gray-500">{pplnsPct != null ? (cs ? `${pplnsPct.toFixed(1)} % zaplneno` : `${pplnsPct.toFixed(1)}% full`) : ''}</p>
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Registered Miners</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">Registered Miners</p>
             <p className="text-base sm:text-lg font-mono font-bold text-zion-cyan truncate">{fmt(m.pplnsMiners)}</p>
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Total Paid</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">Total Paid</p>
             <p className="text-base sm:text-lg font-mono font-bold text-zion-gold truncate">{fmt(m.pplnsPaid)} <span className="text-[10px] text-gray-500">ZION</span></p>
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Payout Rounds</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">Payout Rounds</p>
             <p className="text-base sm:text-lg font-mono font-bold text-zion-gold truncate">{fmt(m.pplnsRounds)}</p>
           </div>
         </div>
@@ -1659,24 +1659,24 @@ function V3MetricsSection({
         <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><HardDrive className="h-4 w-4 text-zion-cyan" /> Network Infrastructure <span className="text-[10px] text-gray-500 font-normal">ZION network</span></h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="zion-tile p-3">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> {MissionControlDashboardCopy.cpuLoad[cs ? 'cs' : 'en']}</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> {MissionControlDashboardCopy.cpuLoad[cs ? 'cs' : 'en']}</p>
             <p className="text-lg font-mono font-bold text-zion-cyan">{m.serverLoad1?.toFixed(1) ?? '—'}</p>
             <p className="text-[10px] text-gray-500">{m.serverLoad5?.toFixed(1) ?? '—'} / {m.serverLoad15?.toFixed(1) ?? '—'} (5m/15m)</p>
           </div>
           <div className="zion-tile p-3">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">{MissionControlDashboardCopy.memory[cs ? 'cs' : 'en']}</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">{MissionControlDashboardCopy.memory[cs ? 'cs' : 'en']}</p>
             <p className={`text-lg font-mono font-bold ${memPct != null && memPct > 85 ? 'text-zion-purple' : 'text-zion-purple'}`}>{memPct != null ? `${memPct.toFixed(1)}%` : '—'}</p>
             {m.memTotal && m.memAvail && <MetricBar value={m.memTotal - m.memAvail} max={m.memTotal} color={memPct != null && memPct > 85 ? 'bg-zion-purple' : 'bg-zion-purple'} />}
             <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.memAvail)} volne / ${fmtBytes(m.memTotal)}` : `${fmtBytes(m.memAvail)} free / ${fmtBytes(m.memTotal)}`}</p>
           </div>
           <div className="zion-tile p-3">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">Disk</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">Disk</p>
             <p className={`text-lg font-mono font-bold ${diskPct != null && diskPct > 85 ? 'text-zion-purple' : 'text-zion-gold'}`}>{diskPct != null ? `${diskPct.toFixed(1)}%` : '—'}</p>
             {m.diskTotal && m.diskAvail && <MetricBar value={m.diskTotal - m.diskAvail} max={m.diskTotal} color={diskPct != null && diskPct > 85 ? 'bg-zion-purple' : 'bg-zion-gold'} />}
             <p className="text-[10px] text-gray-500">{cs ? `${fmtBytes(m.diskAvail)} volne / ${fmtBytes(m.diskTotal)}` : `${fmtBytes(m.diskAvail)} free / ${fmtBytes(m.diskTotal)}`}</p>
           </div>
           <div className="zion-tile p-3">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400">{MissionControlDashboardCopy.serverUptime[cs ? 'cs' : 'en']}</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">{MissionControlDashboardCopy.serverUptime[cs ? 'cs' : 'en']}</p>
             <p className="text-lg font-mono font-bold text-zion-cyan">{fmtUptime(uptime)}</p>
             <p className="text-[10px] text-gray-500">{MissionControlDashboardCopy.since[cs ? 'cs' : 'en']} {m.bootTime ? new Date(m.bootTime * 1000).toLocaleDateString(locale) : '—'}</p>
           </div>
@@ -1923,7 +1923,7 @@ function PoolSection({ primary }: { primary?: PoolData }) {
 function PoolNodeCard({ name, flag, pool }: { name: string; flag: string; pool?: PoolData }) {
   if (!pool?.ok && !pool?.miners) return (
     <div className="zion-rainbow-sub p-3 sm:p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-      <div className="flex items-center gap-2 mb-3"><span>{flag}</span><span className="font-semibold text-sm text-white">{name}</span><span className="ml-auto inline-flex items-center gap-1 text-[9px] sm:text-[10px] text-red-200 border border-zion-purple/30 bg-zion-purple/10 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 uppercase tracking-widest"><XCircle className="h-3 w-3" /> Offline</span></div>
+      <div className="flex items-center gap-2 mb-3"><span>{flag}</span><span className="font-semibold text-sm text-white">{name}</span><span className="ml-auto inline-flex items-center gap-1 text-[10px] sm:text-[10px] text-red-200 border border-zion-purple/30 bg-zion-purple/10 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 uppercase tracking-widest"><XCircle className="h-3 w-3" /> Offline</span></div>
     </div>
   );
   const m = pool.miners ?? {};
@@ -1934,7 +1934,7 @@ function PoolNodeCard({ name, flag, pool }: { name: string; flag: string; pool?:
     <div className="zion-rainbow-sub p-3 sm:p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-3 sm:mb-4 flex-wrap">
         <span className="text-lg sm:text-xl">{flag}</span><span className="font-semibold text-sm sm:text-base text-white">{name}</span>
-        <span className={`ml-auto inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold border rounded-full px-2 sm:px-3 py-0.5 sm:py-1 uppercase tracking-widest ${pool.blockchain?.connected ? 'text-emerald-200 bg-zion-cyan/10 border-zion-cyan/30' : 'text-red-200 bg-zion-purple/10 border-zion-purple/30'}`}>
+        <span className={`ml-auto inline-flex items-center gap-1 text-[10px] sm:text-[10px] font-semibold border rounded-full px-2 sm:px-3 py-0.5 sm:py-1 uppercase tracking-widest ${pool.blockchain?.connected ? 'text-emerald-200 bg-zion-cyan/10 border-zion-cyan/30' : 'text-red-200 bg-zion-purple/10 border-zion-purple/30'}`}>
           {pool.blockchain?.connected ? (m.active ?? 0) > 0 ? <><CircleDot className="h-3 w-3" /> Active</> : <><CircleDot className="h-3 w-3" /> Idle</> : <><XCircle className="h-3 w-3" /> Disconnected</>}
         </span>
       </div>
@@ -3697,8 +3697,8 @@ export default function MissionControlDashboard() {
                         <div className={`absolute -left-[21px] sm:-left-[25px] top-1.5 w-3 h-3 rounded-full border-2 ${item.done ? 'bg-zion-cyan border-zion-cyan' : item.failed ? 'bg-zion-gold border-zion-gold' : item.active ? 'bg-zion-cyan border-zion-cyan shadow-[0_0_12px_var(--color-cyan-400)]' : 'bg-black border-gray-600'}`} />
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-[11px] text-gray-500">{item.date}</p>
-                          {item.failed && <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border border-zion-gold/40 bg-zion-gold/10 text-zion-gold">GATE FAIL</span>}
-                          {item.done && <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border border-zion-cyan/40 bg-zion-cyan/10 text-zion-cyan">DONE</span>}
+                          {item.failed && <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border border-zion-gold/40 bg-zion-gold/10 text-zion-gold">GATE FAIL</span>}
+                          {item.done && <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border border-zion-cyan/40 bg-zion-cyan/10 text-zion-cyan">DONE</span>}
                         </div>
                         <p className={`text-sm font-semibold ${item.color ?? 'text-white'}`}>{item.title}</p>
                         <p className="text-xs text-gray-500">{item.desc}</p>
@@ -3761,14 +3761,14 @@ export default function MissionControlDashboard() {
                         className={`absolute top-0 bottom-0 rounded-xl bg-linear-to-r ${row.color} opacity-60 flex items-center px-2 sm:px-3`}
                         style={{ width: row.width, left: row.offset }}
                       >
-                        <span className="text-[9px] sm:text-[11px] text-white font-medium truncate">{row.phases}</span>
+                        <span className="text-[10px] sm:text-[11px] text-white font-medium truncate">{row.phases}</span>
                       </div>
                     </div>
                   </div>
                 ))}
                 <div className="flex items-center gap-2 sm:gap-4 mt-2 min-w-0">
                   <div className="w-24 sm:w-28 md:w-36 shrink-0" />
-                  <div className="flex-1 flex justify-between text-[8px] sm:text-[10px] text-gray-600 px-1">
+                  <div className="flex-1 flex justify-between text-[10px] sm:text-[10px] text-gray-600 px-1">
                     {['2026 Q1', 'Q2', 'Q3', 'Q4', '2027 Q1', 'Q2', 'Q3', 'Q4', '2028'].map((q) => (
                       <span key={q}>{q}</span>
                     ))}

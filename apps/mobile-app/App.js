@@ -4,6 +4,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createStackNavigator} from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Linking, StatusBar} from 'react-native';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 import {parseZionUri} from './src/utils/zionUri';
 import GalacticBackground from './src/components/common/GalacticBackground';
@@ -286,51 +287,53 @@ const App = () => {
   }, []);
 
   return (
-    <IAPProvider>
-      <WalletProvider>
-        <MiningProvider>
-          <GalacticBackground>
-          <NavigationContainer ref={navigationRef} theme={navTheme}>
-            <StatusBar
-              barStyle="light-content"
-              backgroundColor="transparent"
-              translucent
-            />
-            <RootStack.Navigator
-              screenOptions={{
-                headerShown: false,
-                cardStyle: {backgroundColor: 'transparent'},
-              }}>
-              <RootStack.Screen
-                name="Onboarding"
-                component={OnboardingScreen}
-              />
-              <RootStack.Screen
-                name="Main"
-                component={MainTabs}
-              />
-              <RootStack.Screen
-                name="Paywall"
-                component={PaywallScreen}
-                options={{
-                  headerShown: true,
-                  headerTitle: 'Upgrade',
-                  headerStyle: {
-                    backgroundColor: 'rgba(13, 13, 13, 0.95)',
-                    elevation: 0,
-                    shadowOpacity: 0,
-                    borderBottomWidth: 0,
-                  },
-                  headerTintColor: colors.text.primary,
-                  cardStyle: {backgroundColor: 'transparent'},
-                }}
-              />
-            </RootStack.Navigator>
-          </NavigationContainer>
-          </GalacticBackground>
-        </MiningProvider>
-      </WalletProvider>
-    </IAPProvider>
+    <SafeAreaProvider>
+      <IAPProvider>
+        <WalletProvider>
+          <MiningProvider>
+            <GalacticBackground>
+              <NavigationContainer ref={navigationRef} theme={navTheme}>
+                <StatusBar
+                  barStyle="light-content"
+                  backgroundColor="transparent"
+                  translucent
+                />
+                <RootStack.Navigator
+                  screenOptions={{
+                    headerShown: false,
+                    cardStyle: {backgroundColor: 'transparent'},
+                  }}>
+                  <RootStack.Screen
+                    name="Onboarding"
+                    component={OnboardingScreen}
+                  />
+                  <RootStack.Screen
+                    name="Main"
+                    component={MainTabs}
+                  />
+                  <RootStack.Screen
+                    name="Paywall"
+                    component={PaywallScreen}
+                    options={{
+                      headerShown: true,
+                      headerTitle: 'Upgrade',
+                      headerStyle: {
+                        backgroundColor: 'rgba(13, 13, 13, 0.95)',
+                        elevation: 0,
+                        shadowOpacity: 0,
+                        borderBottomWidth: 0,
+                      },
+                      headerTintColor: colors.text.primary,
+                      cardStyle: {backgroundColor: 'transparent'},
+                    }}
+                  />
+                </RootStack.Navigator>
+              </NavigationContainer>
+            </GalacticBackground>
+          </MiningProvider>
+        </WalletProvider>
+      </IAPProvider>
+    </SafeAreaProvider>
   );
 };
 

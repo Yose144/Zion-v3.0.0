@@ -26,7 +26,7 @@ function EarthStaticFallback({ className }: { className?: string }) {
       <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(228,30,43,0.10),transparent_45%)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-t from-black/25 to-transparent" />
       <div className="pointer-events-none absolute inset-3 rounded-[16px] border border-white/[0.06]" />
-      <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 truncate text-center text-[9px] font-medium uppercase tracking-[0.42em] text-rasta-gold/50">
+      <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 truncate text-center text-[10px] font-medium uppercase tracking-[0.42em] text-rasta-gold/50">
         ZION Terra Nova · Earth · Solar System
       </p>
       <div className="absolute inset-x-0 bottom-0 top-9 flex items-center justify-center sm:top-10">

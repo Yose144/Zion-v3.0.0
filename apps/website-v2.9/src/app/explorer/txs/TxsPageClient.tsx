@@ -84,7 +84,7 @@ function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
           ? ExplorerTxsTxsPageClientCopy.transfer[cs ? 'cs' : 'en']
           : type;
   return (
-    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${cls}`}>
+    <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider ${cls}`}>
       {label}
     </span>
   );
@@ -377,12 +377,12 @@ export default function TxsPageClient() {
             {/* table header */}
             <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] gap-3 px-5 py-3 border-b border-white/6">
               <span />
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.type[cs ? 'cs' : 'en']}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.age[cs ? 'cs' : 'en']}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.block[cs ? 'cs' : 'en']}</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerTxsTxsPageClientCopy.amount[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.type[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.age[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTxsTxsPageClientCopy.block[cs ? 'cs' : 'en']}</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">Fee</span>
+              <span className="text-[11px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerTxsTxsPageClientCopy.amount[cs ? 'cs' : 'en']}</span>
             </div>
 
             {/* loading skeleton */}

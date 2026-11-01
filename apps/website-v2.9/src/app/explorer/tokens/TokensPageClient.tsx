@@ -149,7 +149,7 @@ function Stat({
 }) {
   return (
     <div className="zion-rainbow-sub p-3">
-      <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">
+      <p className="text-[11px] text-white/40 uppercase tracking-wider mb-1">
         {label}
       </p>
       <p className={`text-sm font-mono font-semibold ${accent}`}>{value}</p>
@@ -182,13 +182,13 @@ function TokenCard({ token, cs }: { token: TokenDisplay; cs: boolean }) {
             <p className="text-sm text-white/60 truncate">{token.name}</p>
           </div>
         </div>
-        <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border bg-zion-cyan/10 border-zion-cyan/20 text-zion-cyan">
+        <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-zion-cyan/10 border-zion-cyan/20 text-zion-cyan">
           {token.type}
         </span>
       </div>
 
       <div className="zion-rainbow-sub p-4">
-        <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">
+        <p className="text-[11px] text-white/40 uppercase tracking-wider mb-1">
           {TokensPageClientCopy.price[cs ? "cs" : "en"]}
         </p>
         <div className="flex items-end gap-3 flex-wrap">
@@ -241,7 +241,7 @@ function TokenCard({ token, cs }: { token: TokenDisplay; cs: boolean }) {
       </div>
 
       <div className="zion-rainbow-sub p-3 mt-auto">
-        <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">
+        <p className="text-[11px] text-white/40 uppercase tracking-wider mb-2">
           {TokensPageClientCopy.contractOrAddress[cs ? "cs" : "en"]}
         </p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -372,7 +372,7 @@ function VolumeByPairChart({
                 <div className="w-20 shrink-0 text-right text-[11px] font-mono text-white/80">
                   {fmtCurrency(pair.volume_24h)}
                 </div>
-                <div className="w-24 hidden sm:block text-right text-[10px] text-white/40 uppercase">
+                <div className="w-24 hidden sm:block text-right text-[11px] text-white/40 uppercase">
                   {dexDisplayName(pair.dex, cs)}
                 </div>
               </div>

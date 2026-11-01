@@ -68,7 +68,7 @@ function EdgeRow({
         href={href}
         className="group flex items-center gap-4 rounded-2xl border border-white/8 bg-white/[0.02] p-4 transition-colors hover:border-zion-gold/30 hover:bg-zion-gold/[0.04] sm:p-5"
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zion-gold/25 bg-zion-gold/10 text-[10px] font-bold uppercase tracking-wider text-zion-gold">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zion-gold/25 bg-zion-gold/10 text-[11px] font-bold uppercase tracking-wider text-zion-gold">
           {num}
         </span>
         <span className="min-w-0 flex-1 font-bold text-white transition-colors group-hover:text-zion-gold">
@@ -102,7 +102,7 @@ export default function KnihaPanel({ lang }: { lang: Lang }) {
           ].map((f) => (
             <span
               key={f}
-              className="rounded-full border border-zion-gold/25 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-zion-gold"
+              className="rounded-full border border-zion-gold/25 bg-zion-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-zion-gold"
             >
               {f}
             </span>

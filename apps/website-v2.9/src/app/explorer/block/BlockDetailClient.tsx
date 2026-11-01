@@ -333,7 +333,7 @@ export default function BlockDetailClient() {
                 color={block.is_pool_block ? 'text-zion-cyan' : undefined}
                 link={`/explorer/address?addr=${block.miner}`}
                 badge={block.is_pool_block ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wider border bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20">
                     Pool
                   </span>
                 ) : undefined}
@@ -352,7 +352,7 @@ export default function BlockDetailClient() {
             { label: ExplorerBlockBlockDetailClientCopy.txCount[cs ? 'cs' : 'en'], value: `${block.tx_count}`, color: "text-zion-cyan" },
           ].map((item) => (
             <div key={item.label} className="zion-tile p-4">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
+              <p className="text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
               <p className={`text-lg font-bold tabular-nums ${item.color}`}>{item.value}</p>
             </div>
           ))}
@@ -378,15 +378,15 @@ export default function BlockDetailClient() {
                 };
                 return (
                   <div key={key} className="zion-tile p-4">
-                    <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">{labelMap[key][cs ? 'cs' : 'en']}</p>
+                    <p className="text-[11px] uppercase tracking-[0.15em] text-white/30 mb-1">{labelMap[key][cs ? 'cs' : 'en']}</p>
                     <p className="text-lg font-bold tabular-nums text-white">{item.amount.toFixed(4)} ZION</p>
                     <p className="text-[11px] text-white/40 tabular-nums">{item.pct.toFixed(2)}%</p>
                     {item.address ? (
-                      <Link href={`/explorer/address?addr=${item.address}`} className="text-[10px] font-mono truncate mt-1 block text-zion-cyan hover:text-white transition" title={item.address}>
+                      <Link href={`/explorer/address?addr=${item.address}`} className="text-[11px] font-mono truncate mt-1 block text-zion-cyan hover:text-white transition" title={item.address}>
                         {KNOWN_ADDRESS_MAP.get(item.address)?.label || truncHash(item.address, 10)}
                       </Link>
                     ) : (
-                      <p className="text-[10px] text-white/25 font-mono truncate mt-1">{cs ? 'spáleno' : 'burned'}</p>
+                      <p className="text-[11px] text-white/25 font-mono truncate mt-1">{cs ? 'spáleno' : 'burned'}</p>
                     )}
                   </div>
                 );
@@ -410,18 +410,18 @@ export default function BlockDetailClient() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.04]">
-                  <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{ExplorerBlockBlockDetailClientCopy.type[cs ? 'cs' : 'en']}</th>
-                  <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3">Hash</th>
-                  <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">From → To</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Fee</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{ExplorerBlockBlockDetailClientCopy.amount[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{ExplorerBlockBlockDetailClientCopy.type[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3">Hash</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden lg:table-cell">From → To</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Fee</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{ExplorerBlockBlockDetailClientCopy.amount[cs ? 'cs' : 'en']}</th>
                 </tr>
               </thead>
               <tbody>
                 {(block.txs || []).map((tx, i) => (
                   <tr key={tx.tx_hash || i} className="group border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
                     <td className="px-6 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border ${
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wider border ${
                         tx.type === "coinbase"
                           ? "bg-zion-gold/10 text-zion-gold border-zion-gold/20"
                           : "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
@@ -481,7 +481,7 @@ export default function BlockDetailClient() {
                     </td>
                     <td className="px-6 py-3 text-right">
                       <span className="text-white font-semibold text-xs tabular-nums">{tx.amount.toFixed(4)}</span>
-                      <span className="text-gray-600 text-[10px] ml-1">ZION</span>
+                      <span className="text-gray-600 text-[11px] ml-1">ZION</span>
                     </td>
                   </tr>
                 ))}

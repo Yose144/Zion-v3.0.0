@@ -365,11 +365,11 @@ function StatBar({ label, value, max, color }: { label: string; value: number; m
   const pct = Math.min(1, value / max);
   return (
     <div className="flex flex-col items-center gap-1">
-      <span className="text-[8px] text-white/60">{label}</span>
+      <span className="text-[10px] text-white/60">{label}</span>
       <div className="h-12 w-1.5 overflow-hidden rounded-full bg-white/10">
         <div className="w-full rounded-full" style={{ height: `${pct * 100}%`, backgroundColor: color, marginTop: `${(1 - pct) * 100}%` }} />
       </div>
-      <span className="text-[8px] font-bold" style={{ color }}>{value}</span>
+      <span className="text-[10px] font-bold" style={{ color }}>{value}</span>
     </div>
   );
 }

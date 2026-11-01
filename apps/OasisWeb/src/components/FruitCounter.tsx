@@ -27,10 +27,10 @@ export default function FruitCounter() {
         <div className="mb-1.5 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Apple className="h-3.5 w-3.5 text-rasta-green" />
-            <span className="zion-kicker text-[9px] py-0.5 px-1.5">Fruit of the Tree</span>
+            <span className="zion-kicker text-[10px] py-0.5 px-1.5">Fruit of the Tree</span>
           </div>
           {fruitBlessings > 0 && (
-            <span className="zion-badge zion-badge-gold text-[8px] py-0.5 px-1.5">
+            <span className="zion-badge zion-badge-gold text-[10px] py-0.5 px-1.5">
               x{fruitBlessings}
             </span>
           )}
@@ -70,7 +70,7 @@ export default function FruitCounter() {
           </AnimatePresence>
         </div>
 
-        <p className="mt-1 hidden text-[9px] text-white/60 sm:block">
+        <p className="mt-1 hidden text-[10px] text-white/60 sm:block">
           Click glowing fruits on the Tree to collect
         </p>
       </motion.div>

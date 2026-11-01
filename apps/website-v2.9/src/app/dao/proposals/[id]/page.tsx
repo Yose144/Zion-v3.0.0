@@ -192,17 +192,17 @@ export default function ProposalDetailPage() {
               <span className="text-xs font-mono text-gray-500">
                 {C.proposal[cs ? 'cs' : 'en']} #{proposal.id}
               </span>
-              <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${statusClass}`}>
+              <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] uppercase tracking-wider ${statusClass}`}>
                 <Clock className="h-3 w-3" />
                 {awaitingTally ? (cs ? 'Awaiting tally' : 'Awaiting tally') : proposal.state}
               </span>
               {proposal.proposal_type && (
-                <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-gray-400">
+                <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] uppercase tracking-wider text-gray-400">
                   {proposal.proposal_type}
                 </span>
               )}
               {proposal.has_passed && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-zion-gold">
+                <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-2.5 py-0.5 text-[11px] uppercase tracking-wider text-zion-gold">
                   <CheckCircle2 className="h-3 w-3" />
                   {cs ? 'Schváleno hlasy' : 'Passed by votes'}
                 </span>

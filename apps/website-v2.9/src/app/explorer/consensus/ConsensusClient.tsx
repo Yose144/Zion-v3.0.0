@@ -298,19 +298,19 @@ export default function ConsensusClient() {
             {consensus?.network && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                 <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Výška' : 'Height'}</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Výška' : 'Height'}</p>
                   <p className="text-lg font-semibold text-white tabular-nums">{formatNumber(consensus.network.chain_height)}</p>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Obtížnost' : 'Difficulty'}</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Obtížnost' : 'Difficulty'}</p>
                   <p className="text-lg font-semibold text-zion-gold tabular-nums">{formatNumber(consensus.network.current_difficulty)}</p>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Cíl bloku' : 'Target block'}</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Cíl bloku' : 'Target block'}</p>
                   <p className="text-lg font-semibold text-zion-cyan tabular-nums">{consensus.consensus?.target_block_time ?? 60}s</p>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Max supply' : 'Max supply'}</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Max supply' : 'Max supply'}</p>
                   <p className="text-lg font-semibold text-white tabular-nums">{formatNumber(consensus.consensus?.max_supply ?? 144_000_000_000)}</p>
                 </div>
               </div>
@@ -367,10 +367,10 @@ export default function ConsensusClient() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/6">
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ExplorerConsensusConsensusClientCopy.decade[cs ? 'cs' : 'en']}</th>
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{ExplorerConsensusConsensusClientCopy.rewardBlock[cs ? 'cs' : 'en']}</th>
-                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{ExplorerConsensusConsensusClientCopy.blocks[cs ? 'cs' : 'en']}</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ExplorerConsensusConsensusClientCopy.share[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ExplorerConsensusConsensusClientCopy.decade[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{ExplorerConsensusConsensusClientCopy.rewardBlock[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3">{ExplorerConsensusConsensusClientCopy.blocks[cs ? 'cs' : 'en']}</th>
+                  <th className="text-right text-[11px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3">{ExplorerConsensusConsensusClientCopy.share[cs ? 'cs' : 'en']}</th>
                 </tr>
               </thead>
               <tbody>

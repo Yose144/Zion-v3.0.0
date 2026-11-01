@@ -323,7 +323,7 @@ export default function DharmaTemplePage() {
         >
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
                 {TerranovaDharmaTempleCopy.threeDPreview[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">
@@ -344,7 +344,7 @@ export default function DharmaTemplePage() {
         >
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
                 {TerranovaDharmaTempleCopy.sitePlan[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">
@@ -399,7 +399,7 @@ export default function DharmaTemplePage() {
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <p className="text-white/85 font-bold text-sm">{s.val}</p>
-                    <p className="text-zion-gold/55 text-[10px]">{s.label}</p>
+                    <p className="text-zion-gold/55 text-[11px]">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -415,7 +415,7 @@ export default function DharmaTemplePage() {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaDharmaTempleCopy.projectConcept[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
@@ -443,7 +443,7 @@ export default function DharmaTemplePage() {
                       <Icon className="h-5 w-5 text-zion-gold" />
                     </span>
                     <span
-                      className="rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.15em]"
+                      className="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em]"
                       style={{ color: s.color, borderColor: s.border, backgroundColor: s.bg }}
                     >
                       {cs ? s.cs : s.en}
@@ -469,7 +469,7 @@ export default function DharmaTemplePage() {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaDharmaTempleCopy.developmentPhases[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
@@ -537,7 +537,7 @@ export default function DharmaTemplePage() {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaDharmaTempleCopy.terraNovaNetwork[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
@@ -547,7 +547,7 @@ export default function DharmaTemplePage() {
 
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             {/* Header row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[11px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
               <div className="p-3 text-zion-gold/65">{TerranovaDharmaTempleCopy.dimension[cs ? 'cs' : 'en']}</div>
               <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Zahrada Genesis</span></div>
               <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Dharma Temple</span></div>
@@ -577,7 +577,7 @@ export default function DharmaTemplePage() {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaDharmaTempleCopy.blockchainIntegration[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
@@ -595,7 +595,7 @@ export default function DharmaTemplePage() {
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
-                    <p className="text-[10px] text-zion-gold/55 capitalize">
+                    <p className="text-[11px] text-zion-gold/55 capitalize">
                       {item.status === 'active'
                         ? (TerranovaDharmaTempleCopy.active[cs ? 'cs' : 'en'])
                         : item.status === 'planned'
@@ -621,7 +621,7 @@ export default function DharmaTemplePage() {
         >
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
                 {TerranovaDharmaTempleCopy.documentation[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">

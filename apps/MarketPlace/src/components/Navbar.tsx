@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import ConnectButton from './ConnectButton';
 import { useCart } from './shop/CartContext';
@@ -20,12 +20,63 @@ const navLinkKeys = [
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
   const { count } = useCart();
   const { t } = useLangT();
 
   useEffect(() => {
     document.body.classList.toggle('rasta-menu-open', open);
     return () => document.body.classList.remove('rasta-menu-open');
+  }, [open]);
+
+  /* Close on route change so the drawer never stays open after navigation. */
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  /* Escape closes the drawer and returns focus to the hamburger. */
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  /* Focus trap: keep Tab inside the open drawer. */
+  useEffect(() => {
+    if (!open || !menuRef.current) return;
+    const root = menuRef.current;
+    const focusables = () =>
+      Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.offsetParent !== null);
+    const first = focusables()[0];
+    first?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const items = focusables();
+      if (items.length === 0) return;
+      const firstEl = items[0];
+      const lastEl = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === firstEl) {
+        e.preventDefault();
+        lastEl.focus();
+      } else if (!e.shiftKey && document.activeElement === lastEl) {
+        e.preventDefault();
+        firstEl.focus();
+      }
+    };
+    root.addEventListener('keydown', onKeyDown);
+    return () => root.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
   const isActive = (href: string) =>
@@ -90,10 +141,12 @@ export default function Navbar() {
             </div>
 
             <button
+              ref={toggleRef}
               onClick={() => setOpen(!open)}
               className={`rasta-hamburger ${open ? 'active' : ''}`}
               aria-label={open ? t('nav.close') : t('nav.open')}
               aria-expanded={open}
+              aria-controls="rasta-mobile-menu"
             >
               <span className="bar" />
               <span className="bar" />
@@ -103,7 +156,12 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <div className={`rasta-mobile-menu ${open ? 'open' : ''}`} aria-hidden={!open}>
+      <div
+        ref={menuRef}
+        id="rasta-mobile-menu"
+        className={`rasta-mobile-menu ${open ? 'open' : ''}`}
+        aria-hidden={!open}
+      >
         <div className="rasta-mobile-brand">
           <img
             src="/logo/org/symbol-200x200.png"

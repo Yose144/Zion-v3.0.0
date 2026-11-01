@@ -365,7 +365,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
             <div className="space-y-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-[0.28em] text-zion-gold/65">
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-zion-gold/65">
                     {project.eyebrow}
                   </p>
                   <div>
@@ -408,7 +408,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
                     className="zion-tile px-3 py-2 text-center"
                   >
                     <p className="text-sm font-semibold text-white">{metric.value}</p>
-                    <p className="mt-0.5 text-[10px] uppercase tracking-[0.16em] text-zion-gold/65">
+                    <p className="mt-0.5 text-[11px] uppercase tracking-[0.16em] text-zion-gold/65">
                       {cs ? metric.labelCs : metric.labelEn}
                     </p>
                   </div>

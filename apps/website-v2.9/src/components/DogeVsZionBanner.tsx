@@ -66,7 +66,7 @@ function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
             sizes="64px"
             className="h-14 w-14 object-contain"
           />
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-zion-gold/30 bg-zion-blue/70 px-2 py-0.5 text-[8px] font-bold text-zion-gold z-20 animate-pulse-glow">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-zion-gold/30 bg-zion-blue/70 px-2 py-0.5 text-[10px] font-bold text-zion-gold z-20 animate-pulse-glow">
             DOGE
           </span>
         </motion.div>
@@ -74,16 +74,16 @@ function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
         {/* Center content */}
         <div className="flex-1 text-center">
           <div className="mb-1.5 flex flex-wrap items-center justify-center gap-1.5">
-            <span className="rounded-full border border-zion-gold/20 bg-zion-gold/10 px-2 py-0.5 text-[8px] font-bold text-zion-gold backdrop-blur-sm">
+            <span className="rounded-full border border-zion-gold/20 bg-zion-gold/10 px-2 py-0.5 text-[10px] font-bold text-zion-gold backdrop-blur-sm">
               🐕 1 sig
             </span>
-            <span className="rounded-full border border-zion-cyan/20 bg-zion-cyan/10 px-2 py-0.5 text-[8px] font-bold text-zion-cyan backdrop-blur-sm">
+            <span className="rounded-full border border-zion-cyan/20 bg-zion-cyan/10 px-2 py-0.5 text-[10px] font-bold text-zion-cyan backdrop-blur-sm">
               🛡️ 5/5 sigs
             </span>
-            <span className="rounded-full border border-zion-purple/20 bg-zion-purple/10 px-2 py-0.5 text-[8px] font-bold text-zion-purple backdrop-blur-sm">
+            <span className="rounded-full border border-zion-purple/20 bg-zion-purple/10 px-2 py-0.5 text-[10px] font-bold text-zion-purple backdrop-blur-sm">
               💰 $0.0002
             </span>
-            <span className="rounded-full border border-zion-cyan/20 bg-zion-cyan/10 px-2 py-0.5 text-[8px] font-bold text-zion-cyan backdrop-blur-sm">
+            <span className="rounded-full border border-zion-cyan/20 bg-zion-cyan/10 px-2 py-0.5 text-[10px] font-bold text-zion-cyan backdrop-blur-sm">
               🔒 100M ZION
             </span>
           </div>
@@ -102,7 +102,7 @@ function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
           className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-2 border-zion-cyan/30 bg-zion-cyan/10 shadow-[0_12px_40px_rgba(6,105,40,0.25)] overflow-hidden"
         >
           <StargateLogo className="w-full h-full" />
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-zion-cyan/30 bg-zion-blue/70 px-2 py-0.5 text-[8px] font-bold text-zion-cyan z-20 animate-pulse-glow">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-zion-cyan/30 bg-zion-blue/70 px-2 py-0.5 text-[10px] font-bold text-zion-cyan z-20 animate-pulse-glow">
             ZION
           </span>
         </motion.div>

@@ -471,17 +471,17 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
               ) : (
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   <div className="bg-black/25 rounded-lg p-2.5 text-center border border-white/5">
-                    <div className="text-[9px] text-gray-500 uppercase mb-0.5">{C.balance[cs ? 'cs' : 'en']}</div>
+                    <div className="text-[10px] text-gray-500 uppercase mb-0.5">{C.balance[cs ? 'cs' : 'en']}</div>
                     <div className="text-sm font-bold text-emerald-400">
                       {w.balance ? w.balance.free_qtc.toFixed(6) : '0.000000'}
                     </div>
                   </div>
                   <div className="bg-black/25 rounded-lg p-2.5 text-center border border-white/5">
-                    <div className="text-[9px] text-gray-500 uppercase mb-0.5">{C.nonce[cs ? 'cs' : 'en']}</div>
+                    <div className="text-[10px] text-gray-500 uppercase mb-0.5">{C.nonce[cs ? 'cs' : 'en']}</div>
                     <div className="text-sm font-bold">{w.balance ? w.balance.nonce : '0'}</div>
                   </div>
                   <div className="bg-black/25 rounded-lg p-2.5 text-center border border-white/5">
-                    <div className="text-[9px] text-gray-500 uppercase mb-0.5">{C.transfers[cs ? 'cs' : 'en']}</div>
+                    <div className="text-[10px] text-gray-500 uppercase mb-0.5">{C.transfers[cs ? 'cs' : 'en']}</div>
                     <div className="text-sm font-bold">{w.history?.length ?? 0}</div>
                   </div>
                 </div>

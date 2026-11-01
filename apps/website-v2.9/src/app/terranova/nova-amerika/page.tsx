@@ -310,7 +310,7 @@ export default function NovaAmerikaPage() {
                             <Icon className="h-4 w-4" />
                             <span className="text-sm font-semibold">{signal.value}</span>
                           </div>
-                          <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">
+                          <p className="text-[11px] uppercase tracking-widest text-gray-500 mt-1">
                             {cs ? signal.labelCs : signal.labelEn}
                           </p>
                         </div>
@@ -406,7 +406,7 @@ export default function NovaAmerikaPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">
                       {cs ? phase.cs : phase.en}
-                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-teal-300">· {cs ? 'probíhá' : 'in progress'}</span>}
+                      {phase.active && <span className="ml-2 text-[11px] uppercase tracking-widest text-teal-300">· {cs ? 'probíhá' : 'in progress'}</span>}
                     </h3>
                     <p className="text-sm text-gray-400">{cs ? phase.descCs : phase.descEn}</p>
                   </div>
@@ -449,7 +449,7 @@ export default function NovaAmerikaPage() {
         >
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
                 {Copy.conceptTitle[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">
@@ -479,7 +479,7 @@ export default function NovaAmerikaPage() {
         >
           <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
             <div className="relative z-10 mb-4 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
                 {Copy.threeDPreview[cs ? 'cs' : 'en']}
               </p>
               <h2 className="text-xl font-bold text-white">

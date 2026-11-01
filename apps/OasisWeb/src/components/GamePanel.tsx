@@ -75,7 +75,7 @@ function StatTile({ icon: Icon, value, label, color }: StatTileProps) {
     <div className="zion-rainbow-sub p-2" style={{ '--rc': rc } as React.CSSProperties}>
       <Icon className="h-3 w-3" style={{ color: `rgb(${rc})` }} />
       <p className="mt-0.5 text-xs font-bold tabular-nums text-white">{value}</p>
-      <p className="text-[8px] font-semibold uppercase tracking-wider text-white/70">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70">{label}</p>
     </div>
   );
 }
@@ -106,7 +106,7 @@ export function ShipTab() {
           </div>
           <div className="flex-1">
             <p className="text-xs font-semibold text-white">Vessel Chassis</p>
-            <p className="text-[8px] text-white/60">Lv {playerLevel} · {unlockedShips.length}/{SHIP_MODELS.length} unlocked</p>
+            <p className="text-[10px] text-white/60">Lv {playerLevel} · {unlockedShips.length}/{SHIP_MODELS.length} unlocked</p>
           </div>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-1.5">
@@ -157,13 +157,13 @@ export function ShipTab() {
                     }}
                   />
                 </div>
-                <span className="mt-0.5 text-[8px] leading-tight text-white/60">{ship.description}</span>
+                <span className="mt-0.5 text-[10px] leading-tight text-white/60">{ship.description}</span>
                 <div className="mt-1 flex w-full items-center justify-between">
-                  <span className="text-[7px] font-bold uppercase tracking-wider text-white/50">{ship.class}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">{ship.class}</span>
                   {unlocked ? (
-                    selected && <span className="text-[7px] font-bold text-oasis-cyan">ACTIVE</span>
+                    selected && <span className="text-[10px] font-bold text-oasis-cyan">ACTIVE</span>
                   ) : (
-                    <span className={`text-[7px] font-bold ${canUnlock ? 'text-oasis-gold' : 'text-white/50'}`}>
+                    <span className={`text-[10px] font-bold ${canUnlock ? 'text-oasis-gold' : 'text-white/50'}`}>
                       {ship.unlockCost > 0 ? `${ship.unlockCost} Z` : 'Free'} · Lv{ship.unlockLevel}
                     </span>
                   )}
@@ -192,7 +192,7 @@ export function ShipTab() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold capitalize text-white">{key}</p>
-                    <p className="text-[9px] text-white/70">{SHIP_DESCRIPTIONS[key]}</p>
+                    <p className="text-[10px] text-white/70">{SHIP_DESCRIPTIONS[key]}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -205,7 +205,7 @@ export function ShipTab() {
                       else addToast('Not enough credits', 'warning', 2500);
                     }}
                     disabled={!canAfford || maxed}
-                    className={`mt-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold transition ${
+                    className={`mt-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold transition ${
                       maxed
                         ? 'bg-rasta-green/20 text-rasta-green'
                         : canAfford
@@ -427,9 +427,9 @@ export function IdentityTab() {
             )}
             {webauthnOk && (
               <div className="space-y-1 border-t border-white/10 pt-1.5">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/50">Passkeys</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Passkeys</p>
                 {passkeys.map((k) => (
-                  <div key={k.id} className="flex items-center gap-1.5 text-[9px] text-white/70">
+                  <div key={k.id} className="flex items-center gap-1.5 text-[10px] text-white/70">
                     <Fingerprint className="h-3 w-3 shrink-0 text-oasis-cyan" />
                     <span className="min-w-0 flex-1 truncate">
                       {k.label || 'Passkey'} · {k.deviceType === 'multiDevice' ? 'synced' : 'this device'}
@@ -463,7 +463,7 @@ export function IdentityTab() {
           </div>
         ) : (
           <div className="mt-2 space-y-1.5">
-            <p className="text-[9px] leading-relaxed text-white/60">
+            <p className="text-[10px] leading-relaxed text-white/60">
               Log in with a ZION wallet to sync your pilgrim across devices.
             </p>
             {webauthnOk && (
@@ -476,7 +476,7 @@ export function IdentityTab() {
                 {passkeyBusy ? 'Waiting for device…' : 'Sign in with Passkey'}
               </button>
             )}
-            <p className="text-[9px] text-white/40">
+            <p className="text-[10px] text-white/40">
               {webauthnOk ? 'Or use an existing mnemonic / generate a new one below.' : 'Use an existing mnemonic or generate a new one below.'}
             </p>
           </div>
@@ -492,7 +492,7 @@ export function IdentityTab() {
           placeholder="pilgrim-0001 or zion1..."
           className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-xs text-white placeholder-white/50 outline-none focus:border-oasis-purple focus:ring-1 focus:ring-oasis-purple"
         />
-        <p className="mt-0.5 text-[9px] text-white/60">
+        <p className="mt-0.5 text-[10px] text-white/60">
           Type: <span className="text-oasis-purple">{getAddressType(input) || 'empty'}</span>
         </p>
         <button onClick={handleSave} className="zion-button-primary mt-1.5 w-full text-[10px]">
@@ -510,7 +510,7 @@ export function IdentityTab() {
           <span className="ml-auto flex items-center gap-1.5">
             <button
               onClick={() => setEditingAvatar(true)}
-              className="rounded-md border border-white/15 bg-white/5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/70 transition-colors hover:border-white/30 hover:text-white"
+              className="rounded-md border border-white/15 bg-white/5 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/70 transition-colors hover:border-white/30 hover:text-white"
             >
               Edit
             </button>
@@ -581,18 +581,18 @@ export function IdentityTab() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/30 p-1.5">
               <Wallet className="h-3 w-3 text-oasis-cyan" />
-              <code className="flex-1 text-[9px] text-white">{generated.address}</code>
+              <code className="flex-1 text-[10px] text-white">{generated.address}</code>
               <button onClick={() => copy(generated.address, 'Address')} className="text-white/70 hover:text-white">
                 <Copy className="h-3 w-3" />
               </button>
             </div>
             <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/30 p-1.5">
-              <code className="flex-1 text-[8px] text-oasis-gold">{generated.mnemonic}</code>
+              <code className="flex-1 text-[10px] text-oasis-gold">{generated.mnemonic}</code>
               <button onClick={() => copy(generated.mnemonic, 'Mnemonic')} className="text-white/70 hover:text-white">
                 <Copy className="h-3 w-3" />
               </button>
             </div>
-            <p className="text-[9px] text-rasta-red/80">Save this seed. Shown only once.</p>
+            <p className="text-[10px] text-rasta-red/80">Save this seed. Shown only once.</p>
           </div>
         ) : (
           <button
@@ -722,7 +722,7 @@ export function AudioTab({ music, muted, onToggleMute }: {
         </div>
 
         <div className="mt-2 rounded-lg border border-white/10 bg-white/5 p-2">
-          <div className="mb-1 flex items-center justify-between text-[9px] text-white/70">
+          <div className="mb-1 flex items-center justify-between text-[10px] text-white/70">
             <span>Volume</span>
             <span className="font-mono text-oasis-cyan">{Math.round(music.volume * 100)}%</span>
           </div>
@@ -782,13 +782,13 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
       {player && (
         <div className="grid grid-cols-2 gap-2">
           <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-            <p className="text-[9px] text-white/70">Pilgrim</p>
+            <p className="text-[10px] text-white/70">Pilgrim</p>
             <p className="truncate text-xs font-semibold text-white">
               {player.display_name || player.address.slice(0, 8)}
             </p>
           </div>
           <div className="zion-rainbow-sub p-2" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-            <p className="text-[9px] text-white/70">Total XP</p>
+            <p className="text-[10px] text-white/70">Total XP</p>
             <p className="text-xs font-semibold text-white">{player.total_xp}</p>
           </div>
         </div>
@@ -798,14 +798,14 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
         <div className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5">
           <User className="h-3 w-3 text-oasis-purple" />
           <div>
-            <p className="text-[9px] text-white/70">Avatars</p>
+            <p className="text-[10px] text-white/70">Avatars</p>
             <p className="font-mono text-xs text-white">{avatarCount}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5">
           <Trophy className="h-3 w-3 text-oasis-gold" />
           <div>
-            <p className="text-[9px] text-white/70">Quests</p>
+            <p className="text-[10px] text-white/70">Quests</p>
             <p className="font-mono text-xs text-white">{realQuests.length}</p>
           </div>
         </div>
@@ -813,7 +813,7 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
 
       {territories.length > 0 && (
         <div className="zion-rainbow-sub p-2" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-          <div className="mb-1.5 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-oasis-purple">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-oasis-purple">
             <MapIcon className="h-3 w-3" />
             Hot Territories
           </div>
@@ -821,7 +821,7 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
             {territories.slice().sort((a: any, b: any) => (b.defense_power ?? 0) - (a.defense_power ?? 0)).slice(0, 3).map((t: any) => (
               <div key={t.id} className="flex items-center justify-between text-[10px]">
                 <span className="truncate text-white/80">{t.name}</span>
-                <span className="zion-badge zion-badge-cyan text-[8px] py-0.5 px-1.5">{t.controller ?? 'Unclaimed'}</span>
+                <span className="zion-badge zion-badge-cyan text-[10px] py-0.5 px-1.5">{t.controller ?? 'Unclaimed'}</span>
               </div>
             ))}
           </div>
@@ -830,7 +830,7 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
 
       {leaders.length > 0 && (
         <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-          <div className="mb-1.5 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-oasis-cyan">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-oasis-cyan">
             <Trophy className="h-3 w-3" />
             Top Pilgrims
           </div>
@@ -945,19 +945,19 @@ export default function GamePanel({
           <div className="mt-3 flex items-start gap-2.5">
             <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-oasis-gold to-oasis-purple text-sm font-bold text-white shadow-[0_0_20px_rgba(228,30,43,0.35)]">
               {level}
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white/10 bg-oasis-black text-[8px] text-oasis-cyan">
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white/10 bg-oasis-black text-[10px] text-oasis-cyan">
                 {Math.round(progress * 100)}%
               </span>
             </div>
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-1">
-                <span className="zion-kicker py-0.5 px-1.5 text-[8px]">Pilgrim</span>
-                <span className="zion-badge zion-badge-gold text-[8px]">{consciousness}</span>
+                <span className="zion-kicker py-0.5 px-1.5 text-[10px]">Pilgrim</span>
+                <span className="zion-badge zion-badge-gold text-[10px]">{consciousness}</span>
               </div>
 
               <div className="mt-1.5">
-                <div className="flex items-center justify-between text-[9px]">
+                <div className="flex items-center justify-between text-[10px]">
                   <span className="font-mono text-oasis-cyan">{xp} / {level * XP_PER_LEVEL} XP</span>
                   <span className="text-white/70">Lv {level}</span>
                 </div>
@@ -967,7 +967,7 @@ export default function GamePanel({
               </div>
 
               {address && (
-                <div className="mt-1 flex items-center gap-1 text-[9px] text-white/80">
+                <div className="mt-1 flex items-center gap-1 text-[10px] text-white/80">
                   <Wallet className="h-2.5 w-2.5 text-oasis-cyan" />
                   <span className="font-mono truncate" title={address}>
                     {address.length > 16 ? `${address.slice(0, 10)}...${address.slice(-4)}` : address}
@@ -979,7 +979,7 @@ export default function GamePanel({
 
           {/* Discovery banner */}
           <div className="mt-2.5 flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1">
-            <div className="flex items-center gap-1.5 text-[9px] text-white/80">
+            <div className="flex items-center gap-1.5 text-[10px] text-white/80">
               <ScanLine className="h-2.5 w-2.5 text-oasis-emerald" />
               <span>Scanned</span>
             </div>
@@ -1000,7 +1000,7 @@ export default function GamePanel({
           </div>
 
           {/* Ship quick stats */}
-          <div className="mt-2.5 flex items-center justify-between gap-1.5 border-t border-white/5 pt-2 text-[9px]">
+          <div className="mt-2.5 flex items-center justify-between gap-1.5 border-t border-white/5 pt-2 text-[10px]">
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => { setExpanded(true); setTab('ship'); }}
@@ -1055,7 +1055,7 @@ export default function GamePanel({
           {/* Expand/collapse button */}
           <button
             onClick={() => setExpanded((e) => !e)}
-            className="mt-2.5 flex w-full items-center justify-center gap-1 rounded-lg border border-white/5 bg-white/[0.03] py-1.5 text-[9px] font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
+            className="mt-2.5 flex w-full items-center justify-center gap-1 rounded-lg border border-white/5 bg-white/[0.03] py-1.5 text-[10px] font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
           >
             <Settings className="h-3 w-3" />
             {expanded ? 'Collapse' : 'Game Settings'}
@@ -1083,7 +1083,7 @@ export default function GamePanel({
                       <button
                         key={t.id}
                         onClick={() => setTab(t.id)}
-                        className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[9px] font-semibold transition ${
+                        className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-semibold transition ${
                           active ? `bg-white/10 text-${t.color}` : 'text-white/70 hover:text-white'
                         }`}
                       >

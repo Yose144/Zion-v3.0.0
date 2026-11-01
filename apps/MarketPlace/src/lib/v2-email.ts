@@ -1,5 +1,6 @@
 import type { OrderEmailData } from './email';
 import type { ShopTheme } from './settings';
+import { emailLocale, resolveEmailLang, tl, type EmailLang } from './email-lang';
 import { COMPANY as COMPANY_BASE, companySupportEmail } from './company';
 
 const COMPANY = {
@@ -19,31 +20,38 @@ function escapeHtml(input: string | null | undefined): string {
     .replace(/'/g, '&#039;');
 }
 
-function formatPrice(amount: number): string {
-  return `${Math.round(amount).toLocaleString('cs-CZ')} Kč`;
+function formatPrice(amount: number, lang: EmailLang = 'cs'): string {
+  return `${Math.round(amount).toLocaleString(emailLocale(lang))} Kč`;
 }
 
-function paymentMethodText(method: string): string {
-  if (method === 'card' || method === 'stripe') return 'Platební karta';
-  if (method === 'transfer') return 'Bankovní převod';
-  if (method === 'cash') return 'Hotově / Dobírka';
-  if (method === 'crypto') return 'Kryptoměna';
-  return method || 'Neuvedeno';
+function formatNumber(value: number, lang: EmailLang = 'cs'): string {
+  return value.toLocaleString(emailLocale(lang));
 }
 
-function shippingMethodText(method: string): string {
-  if (method === 'zasilkovna-home') return 'Doručení domů (Zásilkovna)';
-  if (method === 'zasilkovna') return 'Výdejní místo Zásilkovna';
-  if (method?.includes('virtualni')) return 'Digitální doručení';
-  return method || 'Neuvedeno';
+function paymentMethodText(method: string, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
+  if (method === 'card' || method === 'stripe') return t('Platební karta', 'Card payment');
+  if (method === 'transfer') return t('Bankovní převod', 'Bank transfer');
+  if (method === 'cash') return t('Hotově / Dobírka', 'Cash / Cash on delivery');
+  if (method === 'crypto') return t('Kryptoměna', 'Cryptocurrency');
+  return method || t('Neuvedeno', 'Not specified');
 }
 
-function paymentStatusText(status: string): string {
+function shippingMethodText(method: string, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
+  if (method === 'zasilkovna-home') return t('Doručení domů (Zásilkovna)', 'Home delivery (Zásilkovna)');
+  if (method === 'zasilkovna') return t('Výdejní místo Zásilkovna', 'Zásilkovna pickup point');
+  if (method?.includes('virtualni')) return t('Digitální doručení', 'Digital delivery');
+  return method || t('Neuvedeno', 'Not specified');
+}
+
+function paymentStatusText(status: string, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   const s = (status || '').toLowerCase();
-  if (s === 'paid') return 'Zaplaceno';
-  if (s === 'pending') return 'Čeká na platbu';
-  if (s === 'failed') return 'Zrušeno';
-  return status || 'Neuvedeno';
+  if (s === 'paid') return t('Zaplaceno', 'Paid');
+  if (s === 'pending') return t('Čeká na platbu', 'Awaiting payment');
+  if (s === 'failed') return t('Zrušeno', 'Cancelled');
+  return status || t('Neuvedeno', 'Not specified');
 }
 
 function paymentStatusColor(status: string): string {
@@ -54,8 +62,8 @@ function paymentStatusColor(status: string): string {
   return '#666666';
 }
 
-function formatOrderDate(): string {
-  return new Date().toLocaleDateString('cs-CZ');
+function formatOrderDate(lang: EmailLang = 'cs'): string {
+  return new Date().toLocaleDateString(emailLocale(lang));
 }
 
 function formatAddress(order: OrderEmailData): string {
@@ -63,10 +71,11 @@ function formatAddress(order: OrderEmailData): string {
   return parts.join(', ');
 }
 
-function formatItemsHtml(order: OrderEmailData): string {
+function formatItemsHtml(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   const items = Array.isArray(order.items) ? order.items : [];
   if (items.length === 0) {
-    return '<p style="color:#9af59a;text-align:center;padding:14px 0;">Žádné položky</p>';
+    return `<p style="color:#9af59a;text-align:center;padding:14px 0;">${t('Žádné položky', 'No items')}</p>`;
   }
 
   const rows = items
@@ -75,14 +84,14 @@ function formatItemsHtml(order: OrderEmailData): string {
       const qty = Math.max(1, Math.round((raw.quantity as number) || 1));
       const price = Math.round((raw.priceCzk as number) || 0);
       const total = qty * price;
-      const name = String(raw.name ?? 'Produkt');
+      const name = String(raw.name ?? (lang === 'cs' ? 'Produkt' : 'Product'));
       return `
         <tr>
           <td style="color:#e5e7eb;font-size:15px;padding:14px 10px;border-bottom:1px solid rgba(255,255,255,0.08);vertical-align:middle;">
             <strong style="color:#fff;">${escapeHtml(name)}</strong>
           </td>
           <td style="color:#9af59a;font-size:15px;text-align:center;padding:14px 10px;border-bottom:1px solid rgba(255,255,255,0.08);vertical-align:middle;width:80px;">${qty}x</td>
-          <td style="color:#FFD700;font-size:16px;text-align:right;padding:14px 10px;border-bottom:1px solid rgba(255,255,255,0.08);vertical-align:middle;width:120px;font-weight:700;">${formatPrice(total)}</td>
+          <td style="color:#FFD700;font-size:16px;text-align:right;padding:14px 10px;border-bottom:1px solid rgba(255,255,255,0.08);vertical-align:middle;width:120px;font-weight:700;">${formatPrice(total, lang)}</td>
         </tr>`;
     })
     .join('');
@@ -90,22 +99,23 @@ function formatItemsHtml(order: OrderEmailData): string {
   return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">${rows}</table>`;
 }
 
-function formatItemsText(order: OrderEmailData): string {
+function formatItemsText(order: OrderEmailData, lang: EmailLang = 'cs'): string {
   const items = Array.isArray(order.items) ? order.items : [];
-  if (items.length === 0) return 'Žádné položky';
+  if (items.length === 0) return tl(lang, 'Žádné položky', 'No items');
   return items
     .map((it) => {
       const raw = it as Record<string, unknown>;
       const qty = Math.max(1, Math.round((raw.quantity as number) || 1));
       const price = Math.round((raw.priceCzk as number) || 0);
       const total = qty * price;
-      const name = String(raw.name ?? 'Produkt');
-      return `- ${name} - ${qty}x - ${formatPrice(total)}`;
+      const name = String(raw.name ?? tl(lang, 'Produkt', 'Product'));
+      return `- ${name} - ${qty}x - ${formatPrice(total, lang)}`;
     })
     .join('\n');
 }
 
-function formatShippingHtml(order: OrderEmailData): string {
+function formatShippingHtml(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   if (order.shipping?.includes('virtualni')) {
     return '';
   }
@@ -116,9 +126,9 @@ function formatShippingHtml(order: OrderEmailData): string {
   } else if (order.shipping === 'zasilkovna') {
     const pp = order.pickupPoint as Record<string, unknown> | undefined;
     if (pp?.name) {
-      address = `Výdejní místo: ${escapeHtml(String(pp.name))}, ${escapeHtml(String(pp.city ?? ''))}`;
+      address = `${t('Výdejní místo', 'Pickup point')}: ${escapeHtml(String(pp.name))}, ${escapeHtml(String(pp.city ?? ''))}`;
     } else {
-      address = 'Zásilkovna - výdejní místo (bude upřesněno)';
+      address = t('Zásilkovna - výdejní místo (bude upřesněno)', 'Zásilkovna pickup point (to be specified)');
     }
   } else {
     address = escapeHtml(order.shipping);
@@ -126,31 +136,32 @@ function formatShippingHtml(order: OrderEmailData): string {
 
   return `
     <div style="background: linear-gradient(145deg, rgba(34,139,34,0.15), rgba(0,0,0,0.4)); border: 2px solid rgba(0,255,0,0.25); border-radius: 18px; padding: 32px; margin-bottom: 36px; box-shadow: inset 0 2px 8px rgba(0,255,0,0.1);">
-      <h3 style="color: #FFD700; margin: 0 0 20px 0; font-size: 22px; text-align: center; letter-spacing: 1px; font-weight: 700;">🚚 Doprava</h3>
+      <h3 style="color: #FFD700; margin: 0 0 20px 0; font-size: 22px; text-align: center; letter-spacing: 1px; font-weight: 700;">🚚 ${t('Doprava', 'Shipping')}</h3>
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
         <tr>
-          <td style="color: #9af59a; font-size: 15px; font-weight: 600;">Jméno:</td>
+          <td style="color: #9af59a; font-size: 15px; font-weight: 600;">${t('Jméno', 'Name')}:</td>
           <td style="color: #fff; font-size: 16px; text-align: right;">${escapeHtml(order.customerName)}</td>
         </tr>
         <tr>
-          <td style="color: #9af59a; font-size: 15px; font-weight: 600; padding-top: 8px;">Adresa:</td>
+          <td style="color: #9af59a; font-size: 15px; font-weight: 600; padding-top: 8px;">${t('Adresa', 'Address')}:</td>
           <td style="color: #fff; font-size: 16px; text-align: right; padding-top: 8px;">${address || '—'}</td>
         </tr>
         <tr>
-          <td style="color: #9af59a; font-size: 15px; font-weight: 600; padding-top: 8px;">Způsob dopravy:</td>
-          <td style="color: #fff; font-size: 16px; text-align: right; padding-top: 8px;">${escapeHtml(shippingMethodText(order.shipping))}</td>
+          <td style="color: #9af59a; font-size: 15px; font-weight: 600; padding-top: 8px;">${t('Způsob dopravy', 'Delivery method')}:</td>
+          <td style="color: #fff; font-size: 16px; text-align: right; padding-top: 8px;">${escapeHtml(shippingMethodText(order.shipping, lang))}</td>
         </tr>
         ${order.shippingCzk > 0 ? `
         <tr>
-          <td style="color: #9af59a; font-size: 15px; font-weight: 600; padding-top: 8px;">Poštovné:</td>
-          <td style="color: #FFD700; font-size: 16px; text-align: right; padding-top: 8px; font-weight: 700;">${formatPrice(order.shippingCzk)}</td>
+          <td style="color: #9af59a; font-size: 15px; font-weight: 600; padding-top: 8px;">${t('Poštovné', 'Shipping fee')}:</td>
+          <td style="color: #FFD700; font-size: 16px; text-align: right; padding-top: 8px; font-weight: 700;">${formatPrice(order.shippingCzk, lang)}</td>
         </tr>` : ''}
       </table>
     </div>
   `;
 }
 
-function formatShippingText(order: OrderEmailData): string {
+function formatShippingText(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   if (order.shipping?.includes('virtualni')) return '';
 
   let address = '';
@@ -159,21 +170,22 @@ function formatShippingText(order: OrderEmailData): string {
   } else if (order.shipping === 'zasilkovna') {
     const pp = order.pickupPoint as Record<string, unknown> | undefined;
     address = pp?.name
-      ? `Výdejní místo: ${String(pp.name)}, ${String(pp.city ?? '')}`
-      : 'Zásilkovna - výdejní místo (bude upřesněno)';
+      ? `${t('Výdejní místo', 'Pickup point')}: ${String(pp.name)}, ${String(pp.city ?? '')}`
+      : t('Zásilkovna - výdejní místo (bude upřesněno)', 'Zásilkovna pickup point (to be specified)');
   } else {
     address = order.shipping;
   }
 
-  return `Doprava:
-Jméno: ${order.customerName}
-Adresa: ${address || '—'}
-Způsob dopravy: ${shippingMethodText(order.shipping)}${
-    order.shippingCzk > 0 ? `\nPoštovné: ${formatPrice(order.shippingCzk)}` : ''
+  return `${t('Doprava', 'Shipping')}:
+${t('Jméno', 'Name')}: ${order.customerName}
+${t('Adresa', 'Address')}: ${address || '—'}
+${t('Způsob dopravy', 'Delivery method')}: ${shippingMethodText(order.shipping, lang)}${
+    order.shippingCzk > 0 ? `\n${t('Poštovné', 'Shipping fee')}: ${formatPrice(order.shippingCzk, lang)}` : ''
   }`;
 }
 
-function formatPaymentInstructionsHtml(order: OrderEmailData): string {
+function formatPaymentInstructionsHtml(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   const status = (order.paymentStatus || '').toLowerCase();
   if (status === 'paid') {
     return '';
@@ -189,27 +201,27 @@ function formatPaymentInstructionsHtml(order: OrderEmailData): string {
       <tr>
         <td colspan="2" style="padding-top: 16px;">
           <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 24px; border: 1px solid rgba(255,215,0,0.2);">
-            <p style="color: #FFD700; font-size: 15px; margin: 0 0 16px 0; font-weight: 700; text-align: center;">💳 Instrukce k platbě</p>
+            <p style="color: #FFD700; font-size: 15px; margin: 0 0 16px 0; font-weight: 700; text-align: center;">💳 ${t('Instrukce k platbě', 'Payment instructions')}</p>
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
               <tr>
                 <td style="vertical-align: top; padding-right: 16px; color: #e5e7eb; font-size: 14px; line-height: 1.8;" width="55%">
-                  <strong style="color:#9af59a;">Příjemce:</strong> ${escapeHtml(COMPANY.name)}<br>
-                  <strong style="color:#9af59a;">IČO:</strong> ${escapeHtml(COMPANY.ico)} · DIČ: ${escapeHtml(COMPANY.dic)}<br>
-                  <strong style="color:#9af59a;">Číslo účtu:</strong> ${escapeHtml(COMPANY.bankAccount)} (${escapeHtml(COMPANY.bankName)})<br>
+                  <strong style="color:#9af59a;">${t('Příjemce', 'Beneficiary')}:</strong> ${escapeHtml(COMPANY.name)}<br>
+                  <strong style="color:#9af59a;">IČO:</strong> ${escapeHtml(COMPANY.ico)} · ${t('DIČ', 'VAT')}: ${escapeHtml(COMPANY.dic)}<br>
+                  <strong style="color:#9af59a;">${t('Číslo účtu', 'Account number')}:</strong> ${escapeHtml(COMPANY.bankAccount)} (${escapeHtml(COMPANY.bankName)})<br>
                   <strong style="color:#9af59a;">IBAN:</strong> ${escapeHtml(COMPANY.iban)}<br>
                   <strong style="color:#9af59a;">SWIFT:</strong> ${escapeHtml(COMPANY.swift)}<br>
-                  <strong style="color:#9af59a;">Variabilní symbol:</strong> ${escapeHtml(order.orderId)}<br>
-                  <strong style="color:#9af59a;">Částka:</strong> ${formatPrice(order.totalCzk)}<br>
-                  <strong style="color:#9af59a;">Zpráva:</strong> Objednávka ${escapeHtml(order.orderId)}
+                  <strong style="color:#9af59a;">${t('Variabilní symbol', 'Variable symbol')}:</strong> ${escapeHtml(order.orderId)}<br>
+                  <strong style="color:#9af59a;">${t('Částka', 'Amount')}:</strong> ${formatPrice(order.totalCzk, lang)}<br>
+                  <strong style="color:#9af59a;">${t('Zpráva', 'Message')}:</strong> ${t('Objednávka', 'Order')} ${escapeHtml(order.orderId)}
                 </td>
                 <td style="vertical-align: top; text-align: center;" width="45%">
-                  <img src="${qrUrl}" alt="QR platba" width="150" height="150" style="border-radius: 8px; background-color: #ffffff; padding: 4px; display: block; margin: 0 auto;" />
-                  <p style="color: #8a8f94; font-size: 11px; margin: 8px 0 0 0;">Naskenujte v bankovní aplikaci</p>
+                  <img src="${qrUrl}" alt="${t('QR platba', 'Payment QR')}" width="150" height="150" style="border-radius: 8px; background-color: #ffffff; padding: 4px; display: block; margin: 0 auto;" />
+                  <p style="color: #8a8f94; font-size: 11px; margin: 8px 0 0 0;">${t('Naskenujte v bankovní aplikaci', 'Scan in your banking app')}</p>
                 </td>
               </tr>
             </table>
             <p style="color: #8a8f94; font-size: 12px; margin: 16px 0 0 0; text-align: center;">
-              Platbu prosím uhraďte do 7 dnů. Po přijetí platby Vás budeme kontaktovat.
+              ${t('Platbu prosím uhraďte do 7 dnů. Po přijetí platby Vás budeme kontaktovat.', 'Please pay within 7 days. We will contact you once the payment is received.')}
             </p>
           </div>
         </td>
@@ -220,28 +232,30 @@ function formatPaymentInstructionsHtml(order: OrderEmailData): string {
   return '';
 }
 
-function formatPaymentInstructionsText(order: OrderEmailData): string {
+function formatPaymentInstructionsText(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   const status = (order.paymentStatus || '').toLowerCase();
   if (status === 'paid') return '';
 
   if (order.payment === 'transfer') {
-    return `Instrukce k platbě:
-Příjemce: ${COMPANY.name}
-IČO: ${COMPANY.ico} · DIČ: ${COMPANY.dic}
-Číslo účtu: ${COMPANY.bankAccount} (${COMPANY.bankName})
+    return `${t('Instrukce k platbě', 'Payment instructions')}:
+${t('Příjemce', 'Beneficiary')}: ${COMPANY.name}
+IČO: ${COMPANY.ico} · ${t('DIČ', 'VAT')}: ${COMPANY.dic}
+${t('Číslo účtu', 'Account number')}: ${COMPANY.bankAccount} (${COMPANY.bankName})
 IBAN: ${COMPANY.iban}
 SWIFT: ${COMPANY.swift}
-Variabilní symbol: ${order.orderId}
-Částka: ${formatPrice(order.totalCzk)}
-Zpráva: Objednávka ${order.orderId}
+${t('Variabilní symbol', 'Variable symbol')}: ${order.orderId}
+${t('Částka', 'Amount')}: ${formatPrice(order.totalCzk, lang)}
+${t('Zpráva', 'Message')}: ${t('Objednávka', 'Order')} ${order.orderId}
 
-Platbu prosím uhraďte do 7 dnů.`;
+${t('Platbu prosím uhraďte do 7 dnů.', 'Please pay within 7 days.')}`;
   }
 
   return '';
 }
 
-function formatDigitalDownloadsHtml(order: OrderEmailData): string {
+function formatDigitalDownloadsHtml(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   const items = Array.isArray(order.items) ? (order.items as Record<string, unknown>[]) : [];
   const digi = items.filter((it) => {
     if (it.digital === true) return true;
@@ -251,25 +265,25 @@ function formatDigitalDownloadsHtml(order: OrderEmailData): string {
 
   const rows = digi
     .map((it) => {
-      const name = escapeHtml(String(it.name ?? 'Digitální produkt'));
+      const name = escapeHtml(String(it.name ?? t('Digitální produkt', 'Digital product')));
       const links: string[] = [];
       if (typeof it.filesUrl === 'string' && it.filesUrl) {
         links.push(
-          `<a href="${escapeHtml(it.filesUrl)}" style="color:#FFD700;font-weight:700;">Soubory / download</a>`,
+          `<a href="${escapeHtml(it.filesUrl)}" style="color:#FFD700;font-weight:700;">${t('Soubory / download', 'Files / download')}</a>`,
         );
       }
       if (typeof it.instructionsUrl === 'string' && it.instructionsUrl) {
         links.push(
-          `<a href="${escapeHtml(it.instructionsUrl)}" style="color:#9af59a;">Instrukce (PDF)</a>`,
+          `<a href="${escapeHtml(it.instructionsUrl)}" style="color:#9af59a;">${t('Instrukce (PDF)', 'Instructions (PDF)')}</a>`,
         );
       }
       if (typeof it.modelUrl === 'string' && it.modelUrl) {
         links.push(
-          `<a href="${escapeHtml(it.modelUrl)}" style="color:#9af59a;">3D model</a>`,
+          `<a href="${escapeHtml(it.modelUrl)}" style="color:#9af59a;">${t('3D model', '3D model')}</a>`,
         );
       }
       if (links.length === 0) {
-        links.push('<span style="color:#8a8f94;">Odkazy pošleme po potvrzení platby.</span>');
+        links.push(`<span style="color:#8a8f94;">${t('Odkazy pošleme po potvrzení platby.', 'We will send the links once the payment is confirmed.')}</span>`);
       }
       return `<li style="margin:0 0 12px 0;"><strong style="color:#00ff7f;">${name}</strong><br>${links.join(' · ')}</li>`;
     })
@@ -277,16 +291,17 @@ function formatDigitalDownloadsHtml(order: OrderEmailData): string {
 
   return `
     <div style="background: linear-gradient(145deg, rgba(255,215,0,0.12), rgba(0,0,0,0.5)); border: 2px solid rgba(255,215,0,0.35); border-radius: 18px; padding: 28px; margin-bottom: 36px;">
-      <h3 style="color:#FFD700;margin:0 0 16px 0;font-size:20px;text-align:center;">📥 Digitální stažení</h3>
+      <h3 style="color:#FFD700;margin:0 0 16px 0;font-size:20px;text-align:center;">📥 ${t('Digitální stažení', 'Digital downloads')}</h3>
       <ul style="color:#9af59a;font-size:14px;line-height:1.6;margin:0;padding-left:18px;">${rows}</ul>
       <p style="color:#8a8f94;font-size:12px;margin:16px 0 0 0;text-align:center;">
-        Uložte si odkazy. Podpora: ${escapeHtml(COMPANY.supportEmail)}
+        ${t('Uložte si odkazy.', 'Save the links for later.')} ${t('Podpora', 'Support')}: ${escapeHtml(COMPANY.supportEmail)}
       </p>
     </div>
   `;
 }
 
-function formatZionTokenSectionHtml(order: OrderEmailData): string {
+function formatZionTokenSectionHtml(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   const tokens = order.zionTokens || 0;
   if (tokens === 0) return '';
 
@@ -301,18 +316,18 @@ function formatZionTokenSectionHtml(order: OrderEmailData): string {
       <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 28px; border: 2px solid rgba(0,255,127,0.3); margin-bottom: 20px;">
         <table width="100%" cellpadding="10" cellspacing="0">
           <tr>
-            <td style="color: #9af59a; font-size: 16px; font-weight: 600;">💎 Bonus tokeny:</td>
-            <td style="color: #00ff7f; font-size: 26px; font-weight: 700; text-align: right;">${tokens.toLocaleString('cs-CZ')} ZION ⚡</td>
+            <td style="color: #9af59a; font-size: 16px; font-weight: 600;">💎 ${t('Bonus tokeny', 'Bonus tokens')}:</td>
+            <td style="color: #00ff7f; font-size: 26px; font-weight: 700; text-align: right;">${formatNumber(tokens, lang)} ZION ⚡</td>
           </tr>
           <tr>
             <td colspan="2" style="padding-top: 16px;">
-              <p style="color: #8a8f94; font-size: 13px; margin: 0 0 10px 0;">🔐 Wallet ID / objednávka:</p>
+              <p style="color: #8a8f94; font-size: 13px; margin: 0 0 10px 0;">🔐 ${t('Wallet ID / objednávka', 'Wallet ID / order')}:</p>
               <p style="color: #00ff7f; font-size: 15px; font-family: monospace; word-break: break-all; margin: 0; font-weight: 700; background: rgba(0,255,127,0.1); padding: 12px; border-radius: 8px;">${escapeHtml(walletId)}</p>
             </td>
           </tr>
           <tr>
             <td colspan="2" style="padding-top: 16px;">
-              <p style="color: #8a8f94; font-size: 13px; margin: 0 0 10px 0;">📍 ZION L1 adresa:</p>
+              <p style="color: #8a8f94; font-size: 13px; margin: 0 0 10px 0;">📍 ${t('ZION L1 adresa', 'ZION L1 address')}:</p>
               <p style="color: #00ff7f; font-size: 14px; font-family: monospace; word-break: break-all; margin: 0; font-weight: 600; background: rgba(0,255,127,0.08); padding: 12px; border-radius: 8px;">${escapeHtml(walletAddress)}</p>
             </td>
           </tr>
@@ -320,35 +335,41 @@ function formatZionTokenSectionHtml(order: OrderEmailData): string {
         ${
           walletQr
             ? `<div style="text-align:center;margin-top:18px;">
-                <img src="${walletQr}" alt="Wallet QR" width="140" height="140" style="border-radius:8px;background:#fff;padding:4px;" />
-                <p style="color:#8a8f94;font-size:11px;margin:8px 0 0 0;">QR adresa peněženky</p>
+                <img src="${walletQr}" alt="${t('QR adresa peněženky', 'Wallet QR')}" width="140" height="140" style="border-radius:8px;background:#fff;padding:4px;" />
+                <p style="color:#8a8f94;font-size:11px;margin:8px 0 0 0;">${t('QR adresa peněženky', 'Wallet address QR')}</p>
               </div>`
             : ''
         }
       </div>
       <div style="background: rgba(255,215,0,0.1); border-left: 4px solid #FFD700; padding: 16px; border-radius: 8px;">
         <p style="color: #FFD700; font-size: 14px; margin: 0; line-height: 1.6;">
-          ⚠️ <strong>DŮLEŽITÉ:</strong> Seed phrase jsme poslali samostatným e-mailem — uložte ji offline.
-          Bonus ZION se připíše na tuto peněženku po uhrazení objednávky (admin / payout).
+          ⚠️ <strong>${t('DŮLEŽITÉ', 'IMPORTANT')}:</strong>
+          ${t(
+            'Seed phrase jsme poslali samostatným e-mailem — uložte ji offline. Bonus ZION se připíše na tuto peněženku po uhrazení objednávky (admin / payout).',
+            'We sent the seed phrase in a separate e-mail — store it offline. The ZION bonus is credited to this wallet once the order is paid (admin / payout).',
+          )}
         </p>
       </div>
       <div style="margin-top: 20px; padding: 18px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(0,255,127,0.2);">
-        <h4 style="color: #FFD700; margin: 0 0 12px 0; font-size: 15px; text-align: center;">📖 Co s tokeny můžete dělat?</h4>
+        <h4 style="color: #FFD700; margin: 0 0 12px 0; font-size: 15px; text-align: center;">📖 ${t('Co s tokeny můžete dělat?', 'What can you do with the tokens?')}</h4>
         <ul style="color: #a8ffb0; font-size: 14px; line-height: 1.7; margin: 0; padding-left: 22px;">
-          <li>💰 Platby v ekosystému ZION</li>
-          <li>🔒 Staking a odměny</li>
-          <li>🗳️ Governance / DAO</li>
-          <li>⚡ Consciousness mining</li>
+          <li>💰 ${t('Platby v ekosystému ZION', 'Payments in the ZION ecosystem')}</li>
+          <li>🔒 ${t('Staking a odměny', 'Staking and rewards')}</li>
+          <li>🗳️ ${t('Governance / DAO', 'Governance / DAO')}</li>
+          <li>⚡ ${t('Consciousness mining', 'Consciousness mining')}</li>
         </ul>
       </div>`
     : `
       <div style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 20px; border: 1px solid rgba(0,255,127,0.2);">
         <p style="color: #9af59a; font-size: 16px; text-align: center; margin: 0 0 12px 0;">
-          <strong style="color:#00ff7f;font-size:22px;">${tokens.toLocaleString('cs-CZ')} ZION</strong>
+          <strong style="color:#00ff7f;font-size:22px;">${formatNumber(tokens, lang)} ZION</strong>
         </p>
         <p style="color: #8a8f94; font-size: 13px; line-height: 1.6; margin: 0; text-align:center;">
-          Bonus evidujeme k objednávce. Po zaplacení připravíme / připíšeme tokeny na ZION L1.
-          Dotazy: ${escapeHtml(COMPANY.supportEmail)}.
+          ${t(
+            'Bonus evidujeme k objednávce. Po zaplacení připravíme / připíšeme tokeny na ZION L1.',
+            'We track the bonus against your order. After payment we prepare / credit the tokens on ZION L1.',
+          )}
+          ${t('Dotazy', 'Questions')}: ${escapeHtml(COMPANY.supportEmail)}.
         </p>
       </div>`;
 
@@ -363,32 +384,43 @@ function formatZionTokenSectionHtml(order: OrderEmailData): string {
         🎁 ZION TOKEN BONUS 🎁
       </h3>
       <p style="color: #9af59a; font-size: 16px; text-align: center; margin: 0 0 24px 0; line-height: 1.6;">
-        Jah Bless! 🙏 Za váš nákup jste získali <strong style="color: #00ff7f; font-size: 20px;">ZION tokeny</strong> jako poděkování!
+        ${t(
+          'Jah Bless! 🙏 Za váš nákup jste získali <strong style="color: #00ff7f; font-size: 20px;">ZION tokeny</strong> jako poděkování!',
+          'Jah Bless! 🙏 Your purchase earned you <strong style="color: #00ff7f; font-size: 20px;">ZION tokens</strong> as a thank-you!',
+        )}
       </p>
       ${walletBlock}
     </div>
   `;
 }
 
-function formatZionTokenSectionText(order: OrderEmailData): string {
+function formatZionTokenSectionText(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   const tokens = order.zionTokens || 0;
   if (tokens === 0) return '';
   const parts = [
     `🎁 ZION TOKEN BONUS 🎁`,
-    `Jah Bless! Za váš nákup jste získali ${tokens.toLocaleString('cs-CZ')} ZION.`,
+    t(
+      `Jah Bless! Za váš nákup jste získali ${formatNumber(tokens, lang)} ZION.`,
+      `Jah Bless! Your purchase earned you ${formatNumber(tokens, lang)} ZION.`,
+    ),
   ];
   if (order.customerWalletAddress) {
     parts.push(`Wallet ID: ${order.customerWalletId || order.orderId}`);
-    parts.push(`ZION adresa: ${order.customerWalletAddress}`);
-    parts.push('Seed phrase je v samostatném e-mailu — uložte offline.');
-    parts.push('Bonus se připíše po uhrazení objednávky.');
+    parts.push(`${t('ZION adresa', 'ZION address')}: ${order.customerWalletAddress}`);
+    parts.push(t('Seed phrase je v samostatném e-mailu — uložte offline.', 'The seed phrase is in a separate e-mail — store it offline.'));
+    parts.push(t('Bonus se připíše po uhrazení objednávky.', 'The bonus is credited once the order is paid.'));
   } else {
-    parts.push('Bonus evidujeme k objednávce; po zaplacení připíšeme na ZION L1.');
+    parts.push(t(
+      'Bonus evidujeme k objednávce; po zaplacení připíšeme na ZION L1.',
+      'We track the bonus against your order; once paid we credit it on ZION L1.',
+    ));
   }
   return parts.join('\n');
 }
 
-function formatQrCodeSectionHtml(order: OrderEmailData): string {
+function formatQrCodeSectionHtml(order: OrderEmailData, lang: EmailLang = 'cs'): string {
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   if (order.payment !== 'transfer') return '';
   const iban = COMPANY.iban.replace(/\s/g, '');
   const vs = order.orderId.replace(/\D/g, '').slice(0, 10);
@@ -398,11 +430,11 @@ function formatQrCodeSectionHtml(order: OrderEmailData): string {
   return `
     <div style="text-align: center; margin: 24px 0; padding: 20px; background: #0a0a0a; border-radius: 16px; border: 2px solid rgba(255,215,0,0.3);">
       <p style="color: #FFD700; font-size: 16px; font-weight: bold; margin: 0 0 15px 0;">
-        📱 QR kód pro platbu
+        📱 ${t('QR kód pro platbu', 'Payment QR code')}
       </p>
-      <img src="${qrUrl}" alt="QR platba" style="width: 280px; max-width: 100%; height: auto; border-radius: 12px; border: 3px solid #FFD700; background: #fff;" />
+      <img src="${qrUrl}" alt="${t('QR platba', 'Payment QR')}" style="width: 280px; max-width: 100%; height: auto; border-radius: 12px; border: 3px solid #FFD700; background: #fff;" />
       <p style="color: #00ff7f; font-size: 13px; margin: 15px 0 5px 0;">
-        ✅ Naskenujte v bankovní aplikaci
+        ✅ ${t('Naskenujte v bankovní aplikaci', 'Scan in your banking app')}
       </p>
     </div>
   `;
@@ -419,30 +451,33 @@ export async function buildV2OrderConfirmationEmail(
   order: OrderEmailData,
   _theme: ShopTheme = 'rasta'
 ): Promise<{ html: string; text: string }> {
-  const orderDate = formatOrderDate();
-  const paymentMethod = paymentMethodText(order.payment);
-  const paymentStatus = paymentStatusText(order.paymentStatus);
+  const lang = resolveEmailLang(order);
+  const t = (cs: string, en: string) => tl(lang, cs, en);
+
+  const orderDate = formatOrderDate(lang);
+  const paymentMethod = paymentMethodText(order.payment, lang);
+  const paymentStatus = paymentStatusText(order.paymentStatus, lang);
   const statusColor = paymentStatusColor(order.paymentStatus);
-  const itemsHtml = formatItemsHtml(order);
-  const shippingHtml = formatShippingHtml(order);
-  const paymentInstructions = formatPaymentInstructionsHtml(order);
-  const qrSection = formatQrCodeSectionHtml(order);
-  const zionTokenSection = formatZionTokenSectionHtml(order);
-  const digitalDownloads = formatDigitalDownloadsHtml(order);
+  const itemsHtml = formatItemsHtml(order, lang);
+  const shippingHtml = formatShippingHtml(order, lang);
+  const paymentInstructions = formatPaymentInstructionsHtml(order, lang);
+  const qrSection = formatQrCodeSectionHtml(order, lang);
+  const zionTokenSection = formatZionTokenSectionHtml(order, lang);
+  const digitalDownloads = formatDigitalDownloadsHtml(order, lang);
   const isPaid = order.paymentStatus.toLowerCase() === 'paid';
   const processingInfo = isPaid
-    ? 'Vaši objednávku nyní zpracováváme a připravujeme k odeslání'
-    : 'Po obdržení platby začneme okamžitě zpracovávat Vaši objednávku';
+    ? t('Vaši objednávku nyní zpracováváme a připravujeme k odeslání', 'We are processing your order and preparing it for dispatch')
+    : t('Po obdržení platby začneme okamžitě zpracovávat Vaši objednávku', 'We will start processing your order as soon as the payment arrives');
   const deliveryInfo = isPaid
-    ? 'Očekávaná dodací lhůta 3-5 pracovních dnů'
-    : 'Po zaplacení očekávaná dodací lhůta 3-5 pracovních dnů';
+    ? t('Očekávaná dodací lhůta 3-5 pracovních dnů', 'Expected delivery within 3-5 business days')
+    : t('Po zaplacení očekávaná dodací lhůta 3-5 pracovních dnů', 'Once paid, expected delivery within 3-5 business days');
 
   const html = `<!DOCTYPE html>
-<html lang="cs">
+<html lang="${lang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZION - Potvrzení objednávky #${escapeHtml(order.orderId)}</title>
+    <title>ZION - ${t('Potvrzení objednávky', 'Order confirmation')} #${escapeHtml(order.orderId)}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Trebuchet MS', 'Verdana', sans-serif; background: radial-gradient(circle at 20% 20%, rgba(0,255,0,0.15), transparent 40%), radial-gradient(circle at 80% 15%, rgba(255,215,0,0.15), transparent 45%), radial-gradient(circle at 50% 90%, rgba(220,20,60,0.18), transparent 40%), #0a0a0a;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(145deg, rgba(0,0,0,0.85), rgba(0,0,0,0.96)); padding: 50px 20px;">
@@ -458,10 +493,10 @@ export async function buildV2OrderConfirmationEmail(
                                     ${escapeHtml(COMPANY.name)}
                                 </div>
                                 <div style="color: #9af59a; font-size: 12px; margin-bottom: 16px;">
-                                    IČO ${escapeHtml(COMPANY.ico)} · DIČ ${escapeHtml(COMPANY.dic)}
+                                    ${t('IČO', 'Company ID')} ${escapeHtml(COMPANY.ico)} · ${t('DIČ', 'VAT')} ${escapeHtml(COMPANY.dic)}
                                 </div>
                                 <div style="display: inline-block; padding: 11px 22px; border-radius: 999px; background: rgba(0,0,0,0.4); color: #FFD700; font-size: 13px; letter-spacing: 3.5px; border: 1px solid rgba(255,215,0,0.5); text-transform: uppercase; font-weight: 600;">
-                                    ⚡ ESHOP OBJEDNÁVKA ⚡
+                                    ⚡ ${t('ESHOP OBJEDNÁVKA', 'ESHOP ORDER')} ⚡
                                 </div>
                                 <h1 style="color: #FFD700; margin: 18px 0 8px 0; font-size: 32px; text-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 40px rgba(255,215,0,0.3); font-weight: 700;">
                                     ZION TERRA NOVA
@@ -481,23 +516,26 @@ export async function buildV2OrderConfirmationEmail(
                                     <div style="position: absolute; width: 110px; height: 110px; border-radius: 50%; border: 2px dashed rgba(255,215,0,0.3); animation: spin 20s linear infinite;"></div>
                                 </div>
                                 <h2 style="color: #FFD700; margin: 0; font-size: 30px; letter-spacing: 0.8px; font-weight: 700; text-shadow: 0 4px 16px rgba(0,0,0,0.5);">
-                                    Jah Bless! 🙏 Objednávka přijata
+                                    ${t('Jah Bless! 🙏 Objednávka přijata', 'Jah Bless! 🙏 Order received')}
                                 </h2>
                                 <p style="color: #a8ffb0; margin: 16px 0 0 0; font-size: 16px; line-height: 1.6;">
-                                    Díky za důvěru! 💚 Vaše objednávka byla úspěšně zpracována.<br>
-                                    <span style="color: #FFD700; font-weight: 600;">ZION rodina</span> se rozrůstá o dalšího strážce světla. ✨
+                                    ${t('Díky za důvěru! 💚 Vaše objednávka byla úspěšně zpracována.', 'Thank you for your trust! 💚 Your order has been processed successfully.')}<br>
+                                    ${t(
+                                      '<span style="color: #FFD700; font-weight: 600;">ZION rodina</span> se rozrůstá o dalšího strážce světla. ✨',
+                                      'The <span style="color: #FFD700; font-weight: 600;">ZION family</span> gains another keeper of the light. ✨',
+                                    )}
                                 </p>
                             </div>
 
                             <div style="background: linear-gradient(145deg, rgba(34,139,34,0.2), rgba(0,0,0,0.4)); border: 2px solid rgba(0,255,0,0.35); border-radius: 18px; padding: 32px; margin-bottom: 36px; box-shadow: inset 0 2px 8px rgba(0,255,0,0.1);">
                                 <h3 style="color: #FFD700; margin: 0 0 24px 0; font-size: 22px; text-align: center; letter-spacing: 1px; font-weight: 700; border-bottom: 2px solid rgba(255,215,0,0.3); padding-bottom: 16px;">
-                                    📋 Detaily objednávky
+                                    📋 ${t('Detaily objednávky', 'Order details')}
                                 </h3>
 
                                 <table width="100%" cellpadding="12" cellspacing="0">
                                     <tr>
                                         <td style="color: #9af59a; font-size: 15px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 600;">
-                                            🔖 Číslo objednávky:
+                                            🔖 ${t('Číslo objednávky', 'Order number')}:
                                         </td>
                                         <td style="color: #FFD700; font-size: 17px; text-align: right; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 700; letter-spacing: 1px;">
                                             ${escapeHtml(order.orderId)}
@@ -505,7 +543,7 @@ export async function buildV2OrderConfirmationEmail(
                                     </tr>
                                     <tr>
                                         <td style="color: #9af59a; font-size: 15px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 600;">
-                                            👤 Jméno:
+                                            👤 ${t('Jméno', 'Name')}:
                                         </td>
                                         <td style="color: #fff; font-size: 16px; text-align: right; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
                                             ${escapeHtml(order.customerName)}
@@ -521,7 +559,7 @@ export async function buildV2OrderConfirmationEmail(
                                     </tr>
                                     <tr>
                                         <td style="color: #9af59a; font-size: 15px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 600;">
-                                            📅 Datum objednávky:
+                                            📅 ${t('Datum objednávky', 'Order date')}:
                                         </td>
                                         <td style="color: #fff; font-size: 16px; text-align: right; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
                                             ${orderDate}
@@ -529,10 +567,10 @@ export async function buildV2OrderConfirmationEmail(
                                     </tr>
                                     <tr>
                                         <td style="color: #9af59a; font-size: 15px; padding: 10px 0; font-weight: 600;">
-                                            💰 Celková cena:
+                                            💰 ${t('Celková cena', 'Total price')}:
                                         </td>
                                         <td style="color: #FFD700; font-size: 22px; text-align: right; padding: 10px 0; font-weight: 700;">
-                                            ${formatPrice(order.totalCzk)}
+                                            ${formatPrice(order.totalCzk, lang)}
                                         </td>
                                     </tr>
                                 </table>
@@ -540,7 +578,7 @@ export async function buildV2OrderConfirmationEmail(
 
                             <div style="background: linear-gradient(145deg, rgba(220,20,60,0.15), rgba(0,0,0,0.4)); border: 2px solid rgba(220,20,60,0.3); border-radius: 18px; padding: 32px; margin-bottom: 36px; box-shadow: inset 0 2px 8px rgba(220,20,60,0.1);">
                                 <h3 style="color: #FFD700; margin: 0 0 24px 0; font-size: 22px; text-align: center; letter-spacing: 1px; font-weight: 700; border-bottom: 2px solid rgba(255,215,0,0.3); padding-bottom: 16px;">
-                                    🛒 Položky objednávky
+                                    🛒 ${t('Položky objednávky', 'Order items')}
                                 </h3>
 
                                 ${itemsHtml}
@@ -554,17 +592,17 @@ export async function buildV2OrderConfirmationEmail(
 
                             <div style="background: linear-gradient(145deg, rgba(255,215,0,0.15), rgba(0,0,0,0.4)); border: 2px solid rgba(255,215,0,0.35); border-radius: 18px; padding: 32px; margin-bottom: 36px; box-shadow: inset 0 2px 8px rgba(255,215,0,0.1);">
                                 <h3 style="color: #FFD700; margin: 0 0 20px 0; font-size: 22px; text-align: center; letter-spacing: 1px; font-weight: 700;">
-                                    💳 Informace o platbě
+                                    💳 ${t('Informace o platbě', 'Payment information')}
                                 </h3>
 
                                 <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 24px; border: 1px solid rgba(255,215,0,0.2);">
                                     <table width="100%" cellpadding="8" cellspacing="0">
                                         <tr>
-                                            <td style="color: #9af59a; font-size: 15px; font-weight: 600;">Způsob platby:</td>
+                                            <td style="color: #9af59a; font-size: 15px; font-weight: 600;">${t('Způsob platby', 'Payment method')}:</td>
                                             <td style="color: #fff; font-size: 16px; text-align: right;">${escapeHtml(paymentMethod)}</td>
                                         </tr>
                                         <tr>
-                                            <td style="color: #9af59a; font-size: 15px; font-weight: 600;">Status platby:</td>
+                                            <td style="color: #9af59a; font-size: 15px; font-weight: 600;">${t('Status platby', 'Payment status')}:</td>
                                             <td style="text-align: right;">
                                                 <span style="display: inline-block; padding: 6px 16px; background: ${statusColor}; color: #000; font-weight: 700; border-radius: 999px; font-size: 14px;">
                                                     ${escapeHtml(paymentStatus)}
@@ -580,13 +618,13 @@ export async function buildV2OrderConfirmationEmail(
 
                             <div style="background: linear-gradient(145deg, rgba(34,139,34,0.15), rgba(0,0,0,0.3)); border: 2px solid rgba(0,255,0,0.25); border-radius: 18px; padding: 28px; margin-bottom: 24px;">
                                 <h3 style="color: #FFD700; margin: 0 0 18px 0; font-size: 20px; text-align: center; letter-spacing: 0.8px; font-weight: 700;">
-                                    ⚡ Co bude dál?
+                                    ⚡ ${t('Co bude dál?', 'What happens next?')}
                                 </h3>
                                 <ul style="color: #a8ffb0; font-size: 15px; line-height: 1.8; margin: 0; padding-left: 24px;">
-                                    <li style="margin-bottom: 10px;">✅ <strong>Potvrzení:</strong> Tímto emailem potvrzujeme přijetí objednávky</li>
-                                    <li style="margin-bottom: 10px;">📦 <strong>Zpracování:</strong> ${processingInfo}</li>
-                                    <li style="margin-bottom: 10px;">🚚 <strong>Doručení:</strong> ${deliveryInfo}</li>
-                                    <li>💚 <strong>Podpora:</strong> Pro jakékoliv dotazy nás kontaktujte na ${escapeHtml(COMPANY.supportEmail)}</li>
+                                    <li style="margin-bottom: 10px;">✅ <strong>${t('Potvrzení', 'Confirmation')}:</strong> ${t('Tímto emailem potvrzujeme přijetí objednávky', 'This e-mail confirms we have received your order')}</li>
+                                    <li style="margin-bottom: 10px;">📦 <strong>${t('Zpracování', 'Processing')}:</strong> ${processingInfo}</li>
+                                    <li style="margin-bottom: 10px;">🚚 <strong>${t('Doručení', 'Delivery')}:</strong> ${deliveryInfo}</li>
+                                    <li>💚 <strong>${t('Podpora', 'Support')}:</strong> ${t('Pro jakékoliv dotazy nás kontaktujte na', 'For any questions contact us at')} ${escapeHtml(COMPANY.supportEmail)}</li>
                                 </ul>
                             </div>
 
@@ -600,18 +638,18 @@ export async function buildV2OrderConfirmationEmail(
                                     ☮️ Peace & One Love ☮️
                                 </p>
                                 <p style="color: #999; font-size: 13px; margin: 0 0 8px 0; line-height: 1.6;">
-                                    Tento email byl odeslán z <strong style="color: #FFD700;">ZION eShop</strong><br>
+                                    ${t('Tento email byl odeslán z', 'This e-mail was sent from')} <strong style="color: #FFD700;">ZION eShop</strong><br>
                                     ZION TerraNova ® | <strong style="color:#fff;">${escapeHtml(COMPANY.name)}</strong><br>
-                                    IČO ${escapeHtml(COMPANY.ico)} · DIČ ${escapeHtml(COMPANY.dic)} · ${escapeHtml(COMPANY.address)}, ${escapeHtml(COMPANY.city)}
+                                    ${t('IČO', 'Company ID')} ${escapeHtml(COMPANY.ico)} · ${t('DIČ', 'VAT')} ${escapeHtml(COMPANY.dic)} · ${escapeHtml(COMPANY.address)}, ${escapeHtml(COMPANY.city)}
                                 </p>
                                 <div style="margin: 16px 0;">
                                     <a href="${escapeHtml(COMPANY.shopUrl)}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #1f9b1f, #00ff7f); color: #000; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 15px; box-shadow: 0 6px 20px rgba(0,255,0,0.3); border: 2px solid rgba(255,215,0,0.4); letter-spacing: 0.5px;">
-                                        🛒 Přejít do eshopu
+                                        🛒 ${t('Přejít do eshopu', 'Go to the e-shop')}
                                     </a>
                                 </div>
                                 <p style="color: #666; font-size: 12px; margin: 16px 0 0 0;">
                                     © 2026 ZION Terra Nova • All Rights Reserved<br>
-                                    Podpora: <a href="mailto:${escapeHtml(COMPANY.supportEmail)}" style="color:#9af59a;">${escapeHtml(COMPANY.supportEmail)}</a>
+                                    ${t('Podpora', 'Support')}: <a href="mailto:${escapeHtml(COMPANY.supportEmail)}" style="color:#9af59a;">${escapeHtml(COMPANY.supportEmail)}</a>
                                 </p>
                             </div>
                         </td>
@@ -624,43 +662,43 @@ export async function buildV2OrderConfirmationEmail(
 </body>
 </html>`;
 
-  const paymentInstructionsText = formatPaymentInstructionsText(order);
-  const shippingText = formatShippingText(order);
-  const zionText = formatZionTokenSectionText(order);
+  const paymentInstructionsText = formatPaymentInstructionsText(order, lang);
+  const shippingText = formatShippingText(order, lang);
+  const zionText = formatZionTokenSectionText(order, lang);
 
-  const text = `ZION TERRA NOVA - Potvrzení objednávky #${order.orderId}
+  const text = `ZION TERRA NOVA - ${t('Potvrzení objednávky', 'Order confirmation')} #${order.orderId}
 =======================================
 
-Jah Bless! Objednávka přijata.
+${t('Jah Bless! Objednávka přijata.', 'Jah Bless! Order received.')}
 
-Díky za důvěru. Vaše objednávka byla úspěšně zpracována.
+${t('Díky za důvěru. Vaše objednávka byla úspěšně zpracována.', 'Thank you for your trust. Your order has been processed successfully.')}
 
-Detaily objednávky:
-  Číslo objednávky: ${order.orderId}
-  Jméno: ${order.customerName}
+${t('Detaily objednávky', 'Order details')}:
+  ${t('Číslo objednávky', 'Order number')}: ${order.orderId}
+  ${t('Jméno', 'Name')}: ${order.customerName}
   Email: ${order.customerEmail}
-  Datum: ${orderDate}
-  Celková cena: ${formatPrice(order.totalCzk)}
+  ${t('Datum', 'Date')}: ${orderDate}
+  ${t('Celková cena', 'Total price')}: ${formatPrice(order.totalCzk, lang)}
 
-Položky:
-${formatItemsText(order)}
+${t('Položky', 'Items')}:
+${formatItemsText(order, lang)}
 
 ${zionText}
 
 ${shippingText}
 
-Informace o platbě:
-  Způsob platby: ${paymentMethod}
-  Status: ${paymentStatus}
+${t('Informace o platbě', 'Payment information')}:
+  ${t('Způsob platby', 'Payment method')}: ${paymentMethod}
+  ${t('Status', 'Status')}: ${paymentStatus}
   ${paymentInstructionsText.replace(/\n/g, '\n  ')}
 
-Co bude dál:
-- Potvrzení: Tímto emailem potvrzujeme přijetí objednávky
-- Zpracování: ${processingInfo}
-- Doručení: ${deliveryInfo}
-- Podpora: Pro dotazy kontaktujte ${COMPANY.supportEmail}
+${t('Co bude dál', 'What happens next')}:
+- ${t('Potvrzení', 'Confirmation')}: ${t('Tímto emailem potvrzujeme přijetí objednávky', 'This e-mail confirms we have received your order')}
+- ${t('Zpracování', 'Processing')}: ${processingInfo}
+- ${t('Doručení', 'Delivery')}: ${deliveryInfo}
+- ${t('Podpora', 'Support')}: ${t('Pro dotazy kontaktujte', 'For questions contact')} ${COMPANY.supportEmail}
 
-Přejít do eshopu: ${COMPANY.shopUrl}
+${t('Přejít do eshopu', 'Go to the e-shop')}: ${COMPANY.shopUrl}
 
 Peace & One Love
 ZION Terra Nova
@@ -687,6 +725,8 @@ export interface RastaEmailOpts {
   intro?: string;
   /** one or more rastaCard()/custom blocks, joined in order */
   content: string;
+  /** cs | en — controls the footer strings and <html lang> */
+  lang?: EmailLang;
 }
 
 /** A rounded section card in rasta palette. */
@@ -730,12 +770,14 @@ export function rastaWarning(text: string): string {
 }
 
 export function buildRastaEmail(opts: RastaEmailOpts): string {
+  const lang: EmailLang = opts.lang ?? 'cs';
+  const t = (cs: string, en: string) => tl(lang, cs, en);
   const badge = opts.badge ?? '⚡ ZION ESHOP ⚡';
   const intro = opts.intro
     ? `<p style="color: #a8ffb0; margin: 16px 0 0 0; font-size: 16px; line-height: 1.6; text-align: center;">${opts.intro}</p>`
     : '';
   return `<!DOCTYPE html>
-<html lang="cs">
+<html lang="${lang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -754,7 +796,7 @@ export function buildRastaEmail(opts: RastaEmailOpts): string {
                                     ${escapeHtml(COMPANY.name)}
                                 </div>
                                 <div style="color: #9af59a; font-size: 12px; margin-bottom: 16px;">
-                                    IČO ${escapeHtml(COMPANY.ico)} · DIČ ${escapeHtml(COMPANY.dic)}
+                                    ${t('IČO', 'Company ID')} ${escapeHtml(COMPANY.ico)} · ${t('DIČ', 'VAT')} ${escapeHtml(COMPANY.dic)}
                                 </div>
                                 <div style="display: inline-block; padding: 11px 22px; border-radius: 999px; background: rgba(0,0,0,0.4); color: #FFD700; font-size: 13px; letter-spacing: 3.5px; border: 1px solid rgba(255,215,0,0.5); text-transform: uppercase; font-weight: 600;">
                                     ${badge}
@@ -789,18 +831,18 @@ export function buildRastaEmail(opts: RastaEmailOpts): string {
                                     ☮️ Peace &amp; One Love ☮️
                                 </p>
                                 <p style="color: #999; font-size: 13px; margin: 0 0 8px 0; line-height: 1.6;">
-                                    Tento email byl odeslán z <strong style="color: #FFD700;">ZION eShop</strong><br>
+                                    ${t('Tento email byl odeslán z', 'This e-mail was sent from')} <strong style="color: #FFD700;">ZION eShop</strong><br>
                                     ZION TerraNova ® | <strong style="color:#fff;">${escapeHtml(COMPANY.name)}</strong><br>
-                                    IČO ${escapeHtml(COMPANY.ico)} · DIČ ${escapeHtml(COMPANY.dic)} · ${escapeHtml(COMPANY.address)}, ${escapeHtml(COMPANY.city)}
+                                    ${t('IČO', 'Company ID')} ${escapeHtml(COMPANY.ico)} · ${t('DIČ', 'VAT')} ${escapeHtml(COMPANY.dic)} · ${escapeHtml(COMPANY.address)}, ${escapeHtml(COMPANY.city)}
                                 </p>
                                 <div style="margin: 16px 0;">
                                     <a href="${escapeHtml(COMPANY.shopUrl)}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #1f9b1f, #00ff7f); color: #000; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 15px; box-shadow: 0 6px 20px rgba(0,255,0,0.3); border: 2px solid rgba(255,215,0,0.4); letter-spacing: 0.5px;">
-                                        🛒 Přejít do eshopu
+                                        🛒 ${t('Přejít do eshopu', 'Go to the e-shop')}
                                     </a>
                                 </div>
                                 <p style="color: #666; font-size: 12px; margin: 16px 0 0 0;">
                                     © 2026 ZION Terra Nova • All Rights Reserved<br>
-                                    Podpora: <a href="mailto:${escapeHtml(COMPANY.supportEmail)}" style="color:#9af59a;">${escapeHtml(COMPANY.supportEmail)}</a>
+                                    ${t('Podpora', 'Support')}: <a href="mailto:${escapeHtml(COMPANY.supportEmail)}" style="color:#9af59a;">${escapeHtml(COMPANY.supportEmail)}</a>
                                 </p>
                             </div>
                         </td>

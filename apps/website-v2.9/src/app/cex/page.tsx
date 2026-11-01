@@ -250,7 +250,7 @@ export default function CexPage() {
             </span>
             <button
               onClick={refresh}
-              className="ml-auto inline-flex items-center gap-1 text-[10px] text-gray-500 hover:text-white transition-colors"
+              className="ml-auto inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-white transition-colors"
             >
               <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
               {CexCopy.refresh[cs ? 'cs' : 'en']}
@@ -271,7 +271,7 @@ export default function CexPage() {
               <Activity className="h-3.5 w-3.5 text-zion-gold" />
               <span className="text-gray-300">{CexCopy.dexPrice[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">${bestPrice.toFixed(6)}</span>
-              <span className={`text-[10px] ${dex?.source === 'dexscreener' ? 'text-zion-cyan' : 'text-zion-gold'}`}>
+              <span className={`text-[11px] ${dex?.source === 'dexscreener' ? 'text-zion-cyan' : 'text-zion-gold'}`}>
                 {dex?.source === 'dexscreener' ? 'live' : (dex?.source ?? 'seed')}
               </span>
             </div>
@@ -307,12 +307,12 @@ export default function CexPage() {
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 px-3 py-1 text-[10px] font-semibold text-zion-cyan">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 px-3 py-1 text-[11px] font-semibold text-zion-cyan">
                   <CheckCircle2 className="h-3 w-3" />
                   {CexCopy.availableNow[cs ? 'cs' : 'en']}
                 </span>
                 {dex?.source === 'dexscreener' && (
-                  <span className="text-[10px] text-gray-500">via DexScreener</span>
+                  <span className="text-[11px] text-gray-500">via DexScreener</span>
                 )}
               </div>
               <h2 className="text-2xl font-bold text-white">{CexCopy.dexTradingUniswapV3[cs ? 'cs' : 'en']}</h2>
@@ -332,24 +332,24 @@ export default function CexPage() {
           {/* DEX aggregate stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.price[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500">{CexCopy.price[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">${bestPrice.toFixed(6)}</p>
-              <p className="text-[10px] text-gray-500">USD / wZION</p>
+              <p className="text-[11px] text-gray-500">USD / wZION</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.volume24h[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500">{CexCopy.volume24h[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_volume_24h ?? 0)}</p>
-              <p className="text-[10px] text-gray-500">{CexCopy.total[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] text-gray-500">{CexCopy.total[cs ? 'cs' : 'en']}</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.liquidity[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500">{CexCopy.liquidity[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_liquidity_usd ?? 0)}</p>
-              <p className="text-[10px] text-gray-500">{CexCopy.inPools[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] text-gray-500">{CexCopy.inPools[cs ? 'cs' : 'en']}</p>
             </div>
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.txns24h[cs ? 'cs' : 'en']}</p>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500">{CexCopy.txns24h[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">{(dex?.total_txns_24h ?? 0).toLocaleString()}</p>
-              <p className="text-[10px] text-gray-500">
+              <p className="text-[11px] text-gray-500">
                 <span className="text-zion-cyan">{dex?.total_buys_24h ?? 0} buys</span>
                 {' · '}
                 <span className="text-zion-purple">{dex?.total_sells_24h ?? 0} sells</span>
@@ -377,7 +377,7 @@ export default function CexPage() {
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-white">{pair.pair}</span>
-                          <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] text-gray-500 uppercase">{pair.dex}</span>
+                          <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-gray-500 uppercase">{pair.dex}</span>
                         </div>
                       </td>
                       <td className="p-3 text-right font-mono text-white">${pair.price_usd.toFixed(6)}</td>
@@ -389,7 +389,7 @@ export default function CexPage() {
                       </td>
                       <td className="p-3 text-right font-mono text-gray-300">{formatVolume(pair.liquidity_usd)}</td>
                       <td className="p-3 text-right font-mono text-gray-300">{formatVolume(pair.volume_24h)}</td>
-                      <td className="p-3 text-right text-[10px]">
+                      <td className="p-3 text-right text-[11px]">
                         <span className="text-zion-cyan">{pair.txns_24h.buys}B</span>
                         {' / '}
                         <span className="text-zion-purple">{pair.txns_24h.sells}S</span>
@@ -406,7 +406,7 @@ export default function CexPage() {
               href={`https://dexscreener.com/base/${CONTRACTS.UniV3PoolUSDT}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white transition-colors"
               style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
             >
               <BarChart3 className="h-3 w-3" /> DexScreener <ExternalLink className="h-2.5 w-2.5" />
@@ -415,7 +415,7 @@ export default function CexPage() {
               href={`https://basescan.org/token/${CONTRACTS.wZION}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white transition-colors"
               style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
             >
               wZION Contract <ExternalLink className="h-2.5 w-2.5" />
@@ -424,7 +424,7 @@ export default function CexPage() {
               href={`https://app.uniswap.org/pools?chain=base&token0=${CONTRACTS.wZION}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
+              className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-white transition-colors"
               style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
             >
               Uniswap Pools <ExternalLink className="h-2.5 w-2.5" />
@@ -478,13 +478,13 @@ export default function CexPage() {
                             <div>
                               <span className="font-semibold text-white">{ex.name}</span>
                               {ex.countries && (
-                                <p className="text-[9px] text-gray-500">{ex.countries}</p>
+                                <p className="text-[10px] text-gray-500">{ex.countries}</p>
                               )}
                             </div>
                           </div>
                         </td>
                         <td className="p-4">
-                          <span className={`inline-flex items-center gap-1.5 rounded-full ${status.bg} ${status.border} border px-3 py-1 text-[10px] font-semibold ${status.color}`}>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full ${status.bg} ${status.border} border px-3 py-1 text-[11px] font-semibold ${status.color}`}>
                             <StatusIcon className="h-3 w-3" />
                             {cs ? status.labelCs : status.label}
                           </span>
@@ -492,18 +492,18 @@ export default function CexPage() {
                         <td className="p-4">
                           <div className="flex flex-wrap gap-1">
                             {ex.pairs.map((pair) => (
-                              <span key={pair} className="rounded bg-white/5 px-2 py-0.5 text-[10px] font-mono text-gray-300">
+                              <span key={pair} className="rounded bg-white/5 px-2 py-0.5 text-[11px] font-mono text-gray-300">
                                 {pair}
                               </span>
                             ))}
                           </div>
                         </td>
                         <td className="p-4">
-                          <span className={`text-[10px] ${ex.kyc_required ? 'text-zion-gold' : 'text-zion-cyan'}`}>
+                          <span className={`text-[11px] ${ex.kyc_required ? 'text-zion-gold' : 'text-zion-cyan'}`}>
                             {ex.kyc_required ? 'Required' : 'No'}
                           </span>
                         </td>
-                        <td className="p-4 text-[10px] font-mono text-gray-300">{ex.fee_spot ?? '—'}</td>
+                        <td className="p-4 text-[11px] font-mono text-gray-300">{ex.fee_spot ?? '—'}</td>
                         <td className="p-4 text-xs text-gray-400 max-w-xs">{ex.notes ?? '—'}</td>
                         <td className="p-4 text-right">
                           <a
@@ -538,7 +538,7 @@ export default function CexPage() {
             {/* DEX path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-[10px] font-mono text-zion-cyan">DEX</span>
+                <span className="rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-[11px] font-mono text-zion-cyan">DEX</span>
                 <h3 className="font-semibold text-white text-sm">{CexCopy.viaUniswapRecommended[cs ? 'cs' : 'en']}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
@@ -561,7 +561,7 @@ export default function CexPage() {
             {/* CEX path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-2 py-1 text-[10px] font-mono text-zion-gold">CEX</span>
+                <span className="rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-2 py-1 text-[11px] font-mono text-zion-gold">CEX</span>
                 <h3 className="font-semibold text-white text-sm">{CexCopy.viaCentralizedExchange[cs ? 'cs' : 'en']}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
@@ -571,13 +571,13 @@ export default function CexPage() {
                 <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {CexCopy.tradeZionUsdtPair[cs ? 'cs' : 'en']}</li>
                 <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {CexCopy.withdrawZionToOwnWallet[cs ? 'cs' : 'en']}</li>
               </ol>
-              <p className="mt-4 text-[10px] text-zion-gold/70">{CexCopy.cexListingPlannedNotYetAvailab[cs ? 'cs' : 'en']}</p>
+              <p className="mt-4 text-[11px] text-zion-gold/70">{CexCopy.cexListingPlannedNotYetAvailab[cs ? 'cs' : 'en']}</p>
             </div>
 
             {/* Bridge path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-[10px] font-mono text-zion-cyan">Bridge</span>
+                <span className="rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-[11px] font-mono text-zion-cyan">Bridge</span>
                 <h3 className="font-semibold text-white text-sm">{CexCopy.l1L2Bridge[cs ? 'cs' : 'en']}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">

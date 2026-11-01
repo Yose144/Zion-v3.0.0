@@ -52,7 +52,7 @@ export default function OnboardingHint({ onClose }: { onClose?: () => void }) {
         >
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <span className="zion-kicker text-[9px] py-1 px-2">Onboarding</span>
+              <span className="zion-kicker text-[10px] py-1 px-2">Onboarding</span>
               <h2 className="mt-1.5 text-lg font-bold text-white">Welcome, Pilgrim</h2>
               <p className="mt-0.5 text-[11px] leading-relaxed text-white/80">
                 Explore {worldCount} OASIS worlds, complete quests, and collect Golden Eggs.

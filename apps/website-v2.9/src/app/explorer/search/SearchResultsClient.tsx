@@ -150,7 +150,7 @@ export default function SearchResultsClient() {
                   style={active ? ({ '--rc': '6, 105, 40' } as React.CSSProperties) : undefined}
                 >
                   <span>{label}</span>
-                  <span className={`text-[10px] rounded-md px-1.5 py-0.5 ${active ? 'bg-black/30 text-white' : 'bg-white/5 text-gray-500'}`}>
+                  <span className={`text-[11px] rounded-md px-1.5 py-0.5 ${active ? 'bg-black/30 text-white' : 'bg-white/5 text-gray-500'}`}>
                     {count}
                   </span>
                 </button>
@@ -199,7 +199,7 @@ export default function SearchResultsClient() {
                         : type === "transaction" ? (ExplorerSearchSearchResultsClientCopy.transactions[cs ? 'cs' : 'en'])
                         : (ExplorerSearchSearchResultsClientCopy.addresses[cs ? 'cs' : 'en'])}
                     </h2>
-                    <span className="text-[10px] text-gray-500 ml-2">{items.length}</span>
+                    <span className="text-[11px] text-gray-500 ml-2">{items.length}</span>
                   </div>
                   <div className="space-y-2">
                     {items.map((item) => (

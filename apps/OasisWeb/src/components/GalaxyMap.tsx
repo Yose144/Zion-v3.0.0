@@ -357,7 +357,7 @@ export default function GalaxyMap({ worlds, activeCategories, activeLayers, sele
                 {!isMobile && (
                   <Html distanceFactor={14} center position={[0, ds + 0.65, 0]}>
                     <div className="pointer-events-none select-none rounded border border-white/10 bg-black/70 px-2 py-1 text-center shadow-lg backdrop-blur-sm">
-                      <span className="whitespace-nowrap text-[9px] font-semibold tracking-wide text-white/90" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>{hoveredWorld.name}</span>
+                      <span className="whitespace-nowrap text-[10px] font-semibold tracking-wide text-white/90" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>{hoveredWorld.name}</span>
                     </div>
                   </Html>
                 )}

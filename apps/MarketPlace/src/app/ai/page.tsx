@@ -673,7 +673,7 @@ zion-hiran`}</pre>
 
           <SectionHead icon={Terminal} title={T.docsTitle[l]} />
           <div className="grid gap-4 lg:grid-cols-2">
-            <div>
+            <div className="min-w-0">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {T.docsCli[l]}
               </p>
@@ -681,7 +681,7 @@ zion-hiran`}</pre>
 zion hiran whoami
 zion hiran agent -p "…"`}</pre>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
                 {T.docsApi[l]}
               </p>

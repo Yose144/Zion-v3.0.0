@@ -56,7 +56,7 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${mono.variable} ${display.variable}`}>
+    <html lang="cs" suppressHydrationWarning className={`${inter.variable} ${mono.variable} ${display.variable}`}>
       <body className="antialiased font-sans zion-shell">
         <StarfieldCanvas />
         <div className="orb orb-rasta-red" aria-hidden="true" />

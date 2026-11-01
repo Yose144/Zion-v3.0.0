@@ -184,7 +184,7 @@ function DonutChart({
         y="45%"
         textAnchor="middle"
         dominantBaseline="middle"
-        className="fill-white text-[10px] uppercase tracking-widest"
+        className="fill-white text-[11px] uppercase tracking-widest"
       >
         ZION
       </text>
@@ -392,7 +392,7 @@ function SupplyOverTimeChart({
           </g>
         ))}
       </svg>
-      <div className="flex items-center gap-4 mt-3 text-[10px]">
+      <div className="flex items-center gap-4 mt-3 text-[11px]">
         <span className="flex items-center gap-1.5 text-white/40">
           <span className="w-3 h-1 rounded-full bg-zion-purple" />
           {ExplorerSupplySupplyPageClientCopy.circulatingSupply[cs ? 'cs' : 'en']}
@@ -601,7 +601,7 @@ export default function SupplyPageClient() {
                 >
                   <div className="flex items-center gap-2 mb-3">
                     <card.icon className={`h-4 w-4 ${card.accent}`} />
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{card.label}</span>
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-gray-500">{card.label}</span>
                   </div>
                   <p className={`text-2xl font-bold tabular-nums ${card.accent}`}>{card.value}</p>
                   <p className="text-[11px] text-gray-500 mt-1">{card.sub}</p>
@@ -763,12 +763,12 @@ export default function SupplyPageClient() {
                       <td className="py-3 text-gray-400">{d.pct}</td>
                       <td className="py-3 pr-3">
                         {isActive && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-zion-gold/10 border border-zion-gold/30 px-2 py-0.5 text-[10px] text-zion-gold uppercase tracking-wider">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-zion-gold/10 border border-zion-gold/30 px-2 py-0.5 text-[11px] text-zion-gold uppercase tracking-wider">
                             <Activity className="h-3 w-3" /> {ExplorerSupplySupplyPageClientCopy.active[cs ? 'cs' : 'en']}
                           </span>
                         )}
                         {isPast && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-zion-cyan/10 border border-zion-cyan/30 px-2 py-0.5 text-[10px] text-zion-cyan uppercase tracking-wider">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-zion-cyan/10 border border-zion-cyan/30 px-2 py-0.5 text-[11px] text-zion-cyan uppercase tracking-wider">
                             <TrendingUp className="h-3 w-3" /> {ExplorerSupplySupplyPageClientCopy.done[cs ? 'cs' : 'en']}
                           </span>
                         )}

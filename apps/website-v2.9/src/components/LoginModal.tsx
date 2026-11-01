@@ -331,10 +331,10 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                           <Wallet className="h-3.5 w-3.5 text-zion-gold shrink-0" />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-white truncate">{w.name}</p>
-                            <p className="text-[9px] text-zion-gold/70 truncate font-mono">{w.address}</p>
+                            <p className="text-[10px] text-zion-gold/70 truncate font-mono">{w.address}</p>
                           </div>
                           {w.keyType === 'trezor' || w.keyType === 'ledger' ? (
-                            <span className="text-[8px] text-zion-gold/60 uppercase">HW</span>
+                            <span className="text-[10px] text-zion-gold/60 uppercase">HW</span>
                           ) : null}
                         </button>
                       ))}

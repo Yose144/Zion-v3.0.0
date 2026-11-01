@@ -28,6 +28,8 @@ export default function StarfieldCanvas() {
     let cachedGradient: CanvasGradient | null = null;
     let lastFrameTime = 0;
     let rafId = 0;
+    let running = false;
+    let reduced = false;
 
     const rebuildGradient = () => {
       const g = ctx.createRadialGradient(
@@ -60,6 +62,7 @@ export default function StarfieldCanvas() {
     };
 
     const animate = (timestamp: number) => {
+      if (!running) return;
       rafId = requestAnimationFrame(animate);
       const frameInterval = 1000 / FPS_LIMIT;
       const delta = timestamp - lastFrameTime;
@@ -124,19 +127,77 @@ export default function StarfieldCanvas() {
       }
     };
 
+    /** Paint one frame without starting the loop (reduced motion / paused tab). */
+    const drawStaticFrame = () => {
+      ctx.fillStyle = '#080808';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (!cachedGradient) return;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = cachedGradient;
+      ctx.globalAlpha = GRADIENT_ALPHA;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 1;
+      const hw = canvas.width / 2;
+      const hh = canvas.height / 2;
+      for (const star of stars) {
+        const z = Math.max(star.z, 1);
+        const x = (star.x / z) * canvas.width + hw;
+        const y = (star.y / z) * canvas.height + hh;
+        const size = (1 - z / canvas.width) * star.size * 2;
+        const alpha = Math.min(1, 0.08 + (1 - z / canvas.width) * 0.92);
+        ctx.fillStyle = `rgba(${STAR_COLOR[0]},${STAR_COLOR[1]},${STAR_COLOR[2]},${alpha})`;
+        ctx.beginPath();
+        ctx.arc(x, y, Math.max(size * 0.65, 0.55), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+
     const onResize = () => {
       resize();
       seedStars();
+      if (!running) drawStaticFrame();
+    };
+
+    const start = () => {
+      if (running) return;
+      running = true;
+      lastFrameTime = 0;
+      rafId = requestAnimationFrame(animate);
+    };
+
+    const stop = () => {
+      running = false;
+      cancelAnimationFrame(rafId);
+    };
+
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncMotion = () => {
+      reduced = motionQuery.matches;
+      if (reduced) {
+        stop();
+        drawStaticFrame();
+      } else if (!document.hidden) {
+        start();
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.hidden) stop();
+      else if (!reduced) start();
     };
 
     resize();
     seedStars();
-    rafId = requestAnimationFrame(animate);
+    syncMotion();
     window.addEventListener('resize', onResize);
+    document.addEventListener('visibilitychange', onVisibility);
+    motionQuery.addEventListener?.('change', syncMotion);
 
     return () => {
-      cancelAnimationFrame(rafId);
+      stop();
       window.removeEventListener('resize', onResize);
+      document.removeEventListener('visibilitychange', onVisibility);
+      motionQuery.removeEventListener?.('change', syncMotion);
     };
   }, []);
 

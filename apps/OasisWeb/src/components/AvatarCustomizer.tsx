@@ -178,7 +178,7 @@ export default function AvatarCustomizer({ seed, avatarSrc, onDone, doneLabel = 
                 className={`flex flex-col items-center gap-1 rounded-xl border p-2 transition-colors ${active ? 'border-white/40 bg-white/10' : 'border-white/10 bg-black/30 hover:border-white/20'}`}
               >
                 <Icon size={16} style={{ color: active ? neonColor : 'rgba(255,255,255,0.5)' }} />
-                <span className="text-[9px] font-semibold text-white/80">{a.label}</span>
+                <span className="text-[10px] font-semibold text-white/80">{a.label}</span>
               </button>
             );
           })}

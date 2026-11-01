@@ -303,7 +303,7 @@ function SecBadge({ state }: { state: SecState }) {
   if (state !== "cached") return null;
   return (
     <span
-      className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
+      className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300"
       title="Serving the daemon's last-good data — the source did not answer this cycle"
     >
       cached
@@ -1259,19 +1259,19 @@ export default function Dashboard() {
                             <span className={`truncate font-mono text-xs font-semibold ${m.internal ? "text-[#fcd116]" : "text-white"}`}>
                               {m.hf.split("/").pop()}
                             </span>
-                            {m.internal && <span className="shrink-0 rounded-full border border-[#fcd116]/40 bg-[#fcd116]/10 px-1.5 py-px text-[8px] font-semibold text-[#fcd116]">ZION</span>}
-                            {m.tags.includes("trinity") && <span className="shrink-0 rounded-full border border-[#f0abfc]/40 bg-[#f0abfc]/10 px-1.5 py-px text-[8px] font-semibold text-[#f0abfc]">trinity</span>}
+                            {m.internal && <span className="shrink-0 rounded-full border border-[#fcd116]/40 bg-[#fcd116]/10 px-1.5 py-px text-[10px] font-semibold text-[#fcd116]">ZION</span>}
+                            {m.tags.includes("trinity") && <span className="shrink-0 rounded-full border border-[#f0abfc]/40 bg-[#f0abfc]/10 px-1.5 py-px text-[10px] font-semibold text-[#f0abfc]">trinity</span>}
                             {(m.tags.includes("coder-ready") || (m.tags.includes("code") && !m.mockup)) && (
-                              <span className="shrink-0 rounded-full border border-[#79c0ff]/50 bg-[#79c0ff]/10 px-1.5 py-px text-[8px] font-semibold text-[#79c0ff]">coder-ready</span>
+                              <span className="shrink-0 rounded-full border border-[#79c0ff]/50 bg-[#79c0ff]/10 px-1.5 py-px text-[10px] font-semibold text-[#79c0ff]">coder-ready</span>
                             )}
-                            {m.tags.includes("live") && <span className="shrink-0 rounded-full border border-[#34d399]/50 bg-[#34d399]/10 px-1.5 py-px text-[8px] font-semibold text-[#6ee7b7]">live</span>}
-                            {m.mockup && <span className="shrink-0 text-[8px] italic text-white/35">planned</span>}
+                            {m.tags.includes("live") && <span className="shrink-0 rounded-full border border-[#34d399]/50 bg-[#34d399]/10 px-1.5 py-px text-[10px] font-semibold text-[#6ee7b7]">live</span>}
+                            {m.mockup && <span className="shrink-0 text-[10px] italic text-white/35">planned</span>}
                           </div>
                           <div className="truncate text-[10px] text-white/35">{m.hf.split("/")[0]} · {m.desc}</div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-2 text-[10px] font-medium text-white/55">{m.params}</td>
                         <td className="whitespace-nowrap px-3 py-2">
-                          <span className={`rounded-full border px-1.5 py-px text-[9px] font-semibold ${
+                          <span className={`rounded-full border px-1.5 py-px text-[10px] font-semibold ${
                             fits ? "border-[#34d399]/40 text-[#6ee7b7]" : "border-[#ff7b72]/40 text-[#ff9b93]"
                           }`}>
                             {m.vram_gb} GB {fits ? "fits" : "tight"}
@@ -1280,15 +1280,15 @@ export default function Dashboard() {
                         <td className="px-3 py-2 max-lg:hidden">
                           <div className="flex flex-wrap gap-1">
                             {m.tags.filter((t) => !["live", "trinity", "coder-ready"].includes(t)).map((t) => (
-                              <span key={t} className="rounded-full bg-white/[0.06] px-1.5 py-px text-[9px] text-white/45">{t}</span>
+                              <span key={t} className="rounded-full bg-white/[0.06] px-1.5 py-px text-[10px] text-white/45">{t}</span>
                             ))}
-                            {m.gated && <span className="rounded-full border border-[#fcd116]/30 px-1.5 py-px text-[9px] text-[#fcd116]">gated</span>}
-                            {m.latest_vllm && <span className="rounded-full border border-[#79c0ff]/30 px-1.5 py-px text-[9px] text-[#79c0ff]" title="auto-deploy uses vllm-openai:latest">new vLLM</span>}
+                            {m.gated && <span className="rounded-full border border-[#fcd116]/30 px-1.5 py-px text-[10px] text-[#fcd116]">gated</span>}
+                            {m.latest_vllm && <span className="rounded-full border border-[#79c0ff]/30 px-1.5 py-px text-[10px] text-[#79c0ff]" title="auto-deploy uses vllm-openai:latest">new vLLM</span>}
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-2 text-right">
                           {m.internal ? (
-                            <span className="text-[9px] italic text-white/30">llama.cpp</span>
+                            <span className="text-[10px] italic text-white/30">llama.cpp</span>
                           ) : (
                             <>
                               <button
@@ -1378,8 +1378,8 @@ export default function Dashboard() {
                                   className="flex w-full items-center gap-2 border-b border-white/[0.04] px-3 py-2 text-left text-xs transition last:border-0 hover:bg-white/[0.04]"
                                 >
                                   <span className="min-w-0 flex-1 truncate font-mono text-white/80">{m.hf}</span>
-                                  {m.gated && <span className="shrink-0 rounded-full border border-[#fcd116]/30 px-1.5 text-[9px] text-[#fcd116]">gated</span>}
-                                  <span className="shrink-0 text-[9px] text-white/30">♥{m.likes} ↓{(m.downloads / 1000).toFixed(0)}k</span>
+                                  {m.gated && <span className="shrink-0 rounded-full border border-[#fcd116]/30 px-1.5 text-[10px] text-[#fcd116]">gated</span>}
+                                  <span className="shrink-0 text-[10px] text-white/30">♥{m.likes} ↓{(m.downloads / 1000).toFixed(0)}k</span>
                                 </button>
                               ))}
                             </div>
@@ -1388,13 +1388,13 @@ export default function Dashboard() {
                             <table className="w-full min-w-[680px] text-left">
                               <tbody>
                                 <tr className="border-y border-[#fcd116]/15 bg-[#fcd116]/[0.04]">
-                                  <td colSpan={5} className="px-3 py-1.5 text-[9px] font-semibold uppercase tracking-wider text-[#fcd116]/80">
+                                  <td colSpan={5} className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#fcd116]/80">
                                     Hiran · own GGUF · llama.cpp
                                   </td>
                                 </tr>
                                 {internal.map(row)}
                                 <tr className="border-y border-white/[0.08] bg-white/[0.02]">
-                                  <td colSpan={5} className="px-3 py-1.5 text-[9px] font-semibold uppercase tracking-wider text-white/45">
+                                  <td colSpan={5} className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/45">
                                     Public · vLLM · HF weights on deploy
                                   </td>
                                 </tr>
@@ -1410,14 +1410,14 @@ export default function Dashboard() {
                         <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] bg-white/[0.02] px-3 py-2.5 sm:px-4">
                           <h3 className="text-sm font-semibold text-white">Chat</h3>
                           <span className="text-[10px] text-white/35">{eps.length} endpoint{eps.length === 1 ? "" : "s"} online</span>
-                          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold ${
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
                             ai.hiran?.reachable
                               ? "border-[#34d399]/40 bg-[#34d399]/10 text-[#6ee7b7]"
                               : "border-white/15 bg-black/30 text-white/40"
                           }`}>
                             hiran {ai.hiran ? (ai.hiran.reachable ? "●" : "○ off") : "…"}
                           </span>
-                          <span className="ml-auto text-[9px] text-white/30">routed via model · vLLM rig → SSH · hiran → :8003</span>
+                          <span className="ml-auto text-[10px] text-white/30">routed via model · vLLM rig → SSH · hiran → :8003</span>
                         </div>
                         <div className="p-3 sm:p-4">
                           {eps.length > 0 ? (
@@ -1488,14 +1488,14 @@ export default function Dashboard() {
                       <div className="mt-4 overflow-hidden rounded-xl border border-[#79c0ff]/25 bg-gradient-to-br from-[#79c0ff]/[0.06] to-black/20">
                         <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] bg-white/[0.02] px-3 py-2.5 sm:px-4">
                           <h3 className="text-sm font-semibold text-white">Coding Agent</h3>
-                          <span className="rounded-full border border-[#79c0ff]/35 bg-[#79c0ff]/10 px-2 py-0.5 text-[9px] font-semibold text-[#9ecbff]">
+                          <span className="rounded-full border border-[#79c0ff]/35 bg-[#79c0ff]/10 px-2 py-0.5 text-[10px] font-semibold text-[#9ecbff]">
                             fleet · code.run
                           </span>
                           <span className="text-[10px] text-white/35">
                             {codeAgents.filter((a) => (a.age_s ?? 1e9) < 300).length}/{codeAgents.length} agents live
                           </span>
                           {codeState && (
-                            <span className="ml-auto rounded-full border border-white/15 px-2 py-0.5 font-mono text-[9px] text-white/55">
+                            <span className="ml-auto rounded-full border border-white/15 px-2 py-0.5 font-mono text-[10px] text-white/55">
                               {codeState}{codeTaskId ? ` · ${codeTaskId}` : ""}
                             </span>
                           )}
@@ -1855,7 +1855,7 @@ export default function Dashboard() {
                             {title}
                           </span>
                         </div>
-                        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${on ? "border-[#34d399]/30 text-[#34d399]" : "border-white/10 text-white/25"}`}>
+                        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${on ? "border-[#34d399]/30 text-[#34d399]" : "border-white/10 text-white/25"}`}>
                           {on ? "running" : "stopped"}
                         </span>
                       </div>
@@ -1961,7 +1961,7 @@ export default function Dashboard() {
                     </div>
                     {logsOpen[r.id] && (
                       <pre className="mt-2.5 max-h-64 overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/50 p-3 text-[10px] leading-relaxed text-white/60">
-                        <span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-white/35">logs · {logsOpen[r.id]}</span>
+                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-white/35">logs · {logsOpen[r.id]}</span>
                         {logs[r.id] ?? "loading…"}
                       </pre>
                     )}
@@ -2116,7 +2116,7 @@ export default function Dashboard() {
                       {r.alerts.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1" title={r.alerts.join(", ")}>
                           {r.alerts.filter((a) => a !== "has_alerts").map((a) => (
-                            <span key={a} className="rounded border border-[#ff7b72]/40 bg-[#ff7b72]/10 px-1 py-0.5 text-[9px] font-semibold text-[#ff7b72]">⚠{a}</span>
+                            <span key={a} className="rounded border border-[#ff7b72]/40 bg-[#ff7b72]/10 px-1 py-0.5 text-[10px] font-semibold text-[#ff7b72]">⚠{a}</span>
                           ))}
                         </div>
                       )}
@@ -2127,7 +2127,7 @@ export default function Dashboard() {
                     </td>
                     <td className="whitespace-nowrap px-3 py-3 text-xs text-white/70">
                       {r.hash > 0 && <div className="font-semibold text-white">{fmtHps(r.hash)}</div>}
-                      {r.hash2 > 0 && <div className="font-semibold text-[#34d399]">{fmtHps(r.hash2)} <span className="text-[9px] font-normal text-white/35">aux</span></div>}
+                      {r.hash2 > 0 && <div className="font-semibold text-[#34d399]">{fmtHps(r.hash2)} <span className="text-[10px] font-normal text-white/35">aux</span></div>}
                       {r.hash === 0 && r.hash2 === 0 && <span className="text-white/25">—</span>}
                       {(r.acc > 0 || r.rej > 0) && <div className="text-[10px] text-white/40">A{r.acc}·R{r.rej}</div>}
                     </td>
@@ -2219,17 +2219,17 @@ export default function Dashboard() {
                           <b className="text-sm text-white">{a.hostname || a.rig_id}</b>
                           <span className="text-[10px] text-white/30">#{a.rig_id}</span>
                           {a.enrolled === true && (
-                            <span className="rounded border border-[#34d399]/40 bg-[#34d399]/10 px-1.5 py-px text-[9px] font-bold uppercase tracking-wider text-[#34d399]" title="per-rig secret auth">
+                            <span className="rounded border border-[#34d399]/40 bg-[#34d399]/10 px-1.5 py-px text-[10px] font-bold uppercase tracking-wider text-[#34d399]" title="per-rig secret auth">
                               enrolled
                             </span>
                           )}
                           {a.enrolled === false && (
-                            <span className="rounded border border-amber-400/40 bg-amber-400/10 px-1.5 py-px text-[9px] font-bold uppercase tracking-wider text-amber-300" title="legacy shared-token auth — re-enroll for per-rig secret">
+                            <span className="rounded border border-amber-400/40 bg-amber-400/10 px-1.5 py-px text-[10px] font-bold uppercase tracking-wider text-amber-300" title="legacy shared-token auth — re-enroll for per-rig secret">
                               shared
                             </span>
                           )}
                           {a.offline_alert && (
-                            <span className="rounded border border-[#ff7b72]/50 bg-[#ff7b72]/10 px-1.5 py-px text-[9px] font-bold uppercase tracking-wider text-[#ff7b72]">
+                            <span className="rounded border border-[#ff7b72]/50 bg-[#ff7b72]/10 px-1.5 py-px text-[10px] font-bold uppercase tracking-wider text-[#ff7b72]">
                               offline
                             </span>
                           )}
@@ -2422,7 +2422,7 @@ export default function Dashboard() {
                                   </b>
                                 ))}
                                 {g.sessions > g.names.length && (
-                                  <span className="text-[9px] text-white/30">×{g.sessions} sessions</span>
+                                  <span className="text-[10px] text-white/30">×{g.sessions} sessions</span>
                                 )}
                               </div>
                               <div className="mt-0.5 truncate text-[10px] text-white/35" title={g.address}>

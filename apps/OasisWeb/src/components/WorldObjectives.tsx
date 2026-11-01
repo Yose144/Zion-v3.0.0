@@ -168,7 +168,7 @@ function ObjectiveNodeMesh({ node, world, size }: { node: ObjectiveNode; world: 
       </mesh>
       {hovered && (
         <Html center distanceFactor={9} position={[0, nodeRadius * 3.2, 0]}>
-          <div className="pointer-events-none select-none whitespace-nowrap rounded border border-white/15 bg-black/80 px-2 py-0.5 text-[9px] font-bold tracking-wide" style={{ color: style.color }}>
+          <div className="pointer-events-none select-none whitespace-nowrap rounded border border-white/15 bg-black/80 px-2 py-0.5 text-[10px] font-bold tracking-wide" style={{ color: style.color }}>
             {style.label}
           </div>
         </Html>
