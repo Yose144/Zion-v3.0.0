@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<title>ZION Terra Nova — údržba · maintenance</title>
+<style>
+  :root {
+    --gold: #fcd116;
+    --red: #e41e2b;
+    --green: #2ea84a;
+    --fg: #f5f2e8;
+    --muted: rgba(245, 242, 232, 0.55);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color: var(--fg);
+    background:
+      radial-gradient(60rem 34rem at 50% -12rem, rgba(252, 209, 22, 0.10), transparent 62%),
+      radial-gradient(50rem 30rem at 12% 112%, rgba(228, 30, 43, 0.06), transparent 60%),
+      radial-gradient(50rem 30rem at 88% 112%, rgba(6, 105, 40, 0.10), transparent 60%),
+      linear-gradient(180deg, #0c0c0c 0%, #050505 60%, #000 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.25rem;
+    min-height: 100dvh;
+  }
+  .wrap {
+    width: min(34rem, 100%);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.6rem;
+  }
+  .emblem {
+    width: clamp(7rem, 26vw, 9.5rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgba(252, 209, 22, 0.35),
+      0 0 42px rgba(252, 209, 22, 0.28),
+      0 24px 90px rgba(0, 0, 0, 0.5);
+    animation: breathe 5s ease-in-out infinite;
+  }
+  .emblem svg { display: block; width: 100%; height: 100%; }
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(252,209,22,0.35), 0 0 32px rgba(252,209,22,0.20), 0 24px 90px rgba(0,0,0,0.5); }
+    50%      { box-shadow: 0 0 0 1px rgba(252,209,22,0.55), 0 0 56px rgba(252,209,22,0.36), 0 24px 90px rgba(0,0,0,0.5); }
+  }
+  .kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+    color: rgba(252, 209, 22, 0.75);
+    font-weight: 600;
+    margin-bottom: -0.7rem;
+  }
+  h1 {
+    font-size: clamp(1.7rem, 6vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+  }
+  h1 .en {
+    display: block;
+    font-size: 0.55em;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.55rem;
+  }
+  .card {
+    position: relative;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.028);
+    border: 1px solid rgba(252, 209, 22, 0.28);
+    border-radius: 1.65rem;
+    padding: 1.9rem 1.6rem 1.7rem;
+    box-shadow: 0 24px 90px rgba(0, 0, 0, 0.42);
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--red) 0%, var(--gold) 50%, var(--green) 100%);
+    opacity: 0.85;
+  }
+  .card p { line-height: 1.65; }
+  .cs { font-size: 1.02rem; }
+  .en { font-size: 0.86rem; color: var(--muted); margin-top: 0.8rem; }
+  .eta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.35rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(252, 209, 22, 0.7);
+  }
+  .eta::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 10px var(--gold);
+    animation: blink 1.8s ease-in-out infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+  .foot {
+    font-size: 0.72rem;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: rgba(245, 242, 232, 0.35);
+  }
+  .foot b { color: rgba(252, 209, 22, 0.6); font-weight: 600; }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="emblem" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <defs>
+          <radialGradient id="space" cx="50%" cy="45%" r="65%">
+            <stop offset="0%" stop-color="#0a0a1a"/>
+            <stop offset="40%" stop-color="#050510"/>
+            <stop offset="100%" stop-color="#020208"/>
+          </radialGradient>
+          <radialGradient id="orbBody" cx="36%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#fffbeb"/>
+            <stop offset="6%" stop-color="#fde68a"/>
+            <stop offset="18%" stop-color="#fbbf24"/>
+            <stop offset="38%" stop-color="#f59e0b"/>
+            <stop offset="58%" stop-color="#d97706"/>
+            <stop offset="82%" stop-color="#78350f"/>
+            <stop offset="100%" stop-color="#1c0a02"/>
+          </radialGradient>
+          <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.5"/>
+            <stop offset="40%" stop-color="#f59e0b" stop-opacity="0.2"/>
+            <stop offset="70%" stop-color="#f59e0b" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="specular" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
+            <stop offset="70%" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="512" height="512" fill="url(#space)"/>
+        <g fill="#ffffff">
+          <circle cx="48" cy="72" r="0.8" opacity="0.6"/><circle cx="112" cy="40" r="1.2" opacity="0.8"/>
+          <circle cx="180" cy="68" r="0.6" opacity="0.5"/><circle cx="340" cy="52" r="1.0" opacity="0.7"/>
+          <circle cx="420" cy="88" r="0.7" opacity="0.5"/><circle cx="468" cy="44" r="1.3" opacity="0.9"/>
+          <circle cx="72" cy="140" r="0.9" opacity="0.6"/><circle cx="24" cy="200" r="0.5" opacity="0.4"/>
+          <circle cx="460" cy="160" r="0.8" opacity="0.6"/><circle cx="488" cy="220" r="1.1" opacity="0.7"/>
+          <circle cx="40" cy="300" r="0.7" opacity="0.5"/><circle cx="472" cy="300" r="0.6" opacity="0.4"/>
+          <circle cx="60" cy="380" r="1.0" opacity="0.7"/><circle cx="440" cy="400" r="0.8" opacity="0.6"/>
+          <circle cx="100" cy="440" r="0.5" opacity="0.4"/><circle cx="380" cy="460" r="1.2" opacity="0.8"/>
+          <circle cx="240" cy="470" r="0.6" opacity="0.5"/><circle cx="200" cy="24" r="0.8" opacity="0.6"/>
+        </g>
+        <g stroke="rgba(251,191,36,0.7)" stroke-width="0.6" fill="none" stroke-linejoin="round" transform="translate(256 256)">
+          <rect x="-86" y="-86" width="172" height="172" rx="1"/>
+          <rect x="-82" y="-82" width="164" height="164" rx="1"/>
+          <line x1="0" y1="-86" x2="0" y2="-94"/><line x1="-6" y1="-90" x2="6" y2="-90"/>
+          <line x1="0" y1="86" x2="0" y2="94"/><line x1="-6" y1="90" x2="6" y2="90"/>
+          <line x1="-86" y1="0" x2="-94" y2="0"/><line x1="-90" y1="-6" x2="-90" y2="6"/>
+          <line x1="86" y1="0" x2="94" y2="0"/><line x1="90" y1="-6" x2="90" y2="6"/>
+          <circle cx="0" cy="0" r="78"/><circle cx="0" cy="0" r="62"/>
+          <circle cx="0" cy="0" r="56"/><circle cx="0" cy="0" r="44"/>
+          <polygon points="0,-84 -78,46 78,46"/><polygon points="0,-66 -62,38 62,38"/>
+          <polygon points="0,-48 -46,30 46,30"/><polygon points="0,-30 -30,22 30,22"/>
+          <polygon points="0,84 -78,-46 78,-46"/><polygon points="0,66 -62,-38 62,-38"/>
+          <polygon points="0,48 -46,-30 46,-30"/><polygon points="0,30 -30,-22 30,-22"/>
+          <polygon points="0,12 -18,-14 18,-14"/>
+          <circle cx="0" cy="0" r="1.8" fill="rgba(255,251,230,0.9)" stroke="none"/>
+        </g>
+        <circle cx="256" cy="256" r="140" fill="url(#orbGlow)"/>
+        <circle cx="256" cy="256" r="88" fill="url(#orbBody)"/>
+        <ellipse cx="232" cy="228" rx="28" ry="24" fill="url(#specular)" opacity="0.8"/>
+        <circle cx="288" cy="284" r="12" fill="rgba(253,230,138,0.5)" opacity="0.6"/>
+        <circle cx="256" cy="256" r="86" fill="none" stroke="rgba(255,215,128,0.25)" stroke-width="2"/>
+        <g fill="#fbbf24">
+          <circle cx="196" cy="196" r="2" opacity="0.7"/><circle cx="320" cy="200" r="1.5" opacity="0.5"/>
+          <circle cx="310" cy="320" r="2" opacity="0.6"/><circle cx="200" cy="310" r="1.8" opacity="0.5"/>
+          <circle cx="256" cy="170" r="1.5" opacity="0.4"/>
+        </g>
+        <text x="256" y="440" text-anchor="middle" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="28" font-weight="800" letter-spacing="6" fill="#fbbf24" opacity="0.95">ZION</text>
+        <text x="256" y="464" text-anchor="middle" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="11" font-weight="500" letter-spacing="3" fill="#9333EA" opacity="0.7">TERRA NOVA</text>
+      </svg>
+    </div>
+
+    <p class="kicker">Zion Terra Nova</p>
+    <h1>
+      Probíhá údržba
+      <span class="en">Under maintenance</span>
+    </h1>
+
+    <div class="card">
+      <p class="cs">Pracujeme na vylepšení ekosystému.<br>Brzy jsme zpět — děkujeme za trpělivost.</p>
+      <p class="en">We&rsquo;re upgrading the ecosystem.<br>Back soon — thank you for your patience.</p>
+      <span class="eta">Brzy zpět · back soon</span>
+    </div>
+
+    <p class="foot"><b>ZION</b> &nbsp;·&nbsp; One Love</p>
+  </main>
+</body>
+</html>
