@@ -1,9 +1,9 @@
 # REPORT — Opatrný úklid EDGE1 + EDGE2 (2026-11-01)
 
 > **TL;DR:** uvolněno **16 GB** (EDGE2 124 → 115 GB, EDGE1 100 → 93 GB), 0 failed unitů,
-> všechny služby active, chain 105 575. Mazaly se jen caches, build artefakty a snapsh Environmentaly
-> deployů — nic živého. Velké položky (bitcoin, tréninkový `hiran/`, zálohy) jsou níže jako
-> **návrh k rozhodnutí**, nesaháno na ně.
+> všechny služby active, chain 105 575. Mazaly se jen caches, build artefakty a snapshoty deployů —
+> nic živého. **Tréninková data Hirana (`/opt/zion/hiran`, 23 G) nebyla dotčena ani jedním bajtem** —
+> fp16 15 G + gguf 5,4 G + adapters 2,4 G + datasets 33 M jsou na místě (ověřeno po úklidu).
 
 ## 1. Co se smazalo
 
@@ -43,7 +43,7 @@ neuvolnil, ale zavřela se expozice. Soubor je v `V31/AGENTS.md`, `docs/3.2/Hira
 | `/opt/quantus/data` | EDGE2 | 17 G | chain data, ne rebuildovatelné |
 | `/opt/pearl/.venv` | EDGE2 | 4,7 G | `pearl-gateway` z něj startuje |
 | `/opt/zion/backups` | EDGE1 | 12 G | zálohy; retention 42 daily je politika, ne junk |
-| `/opt/zion/hiran` | EDGE1 | 23 G | tréninkové artefakty (fp16 base, gguf, adaptery) |
+| `/opt/zion/hiran` | EDGE1 | 23 G | **tréninková data — nikde jinde nejsou, nemazat** (fp16 base, adaptery, datasety) |
 | `/opt/zion/canonical-main` | EDGE1 | 2,6 G | checkout z 29. 9., žádný odkaz — ale je to "canonical" strom |
 | `/opt/zion/V31` | EDGE1 | 5,4 G | z něj se buildí pool/node binárky |
 | `/root/web-backups` | EDGE2 | 1,2 G | dnešní zálohy (1. 11.) |
@@ -51,13 +51,25 @@ neuvolnil, ale zavřela se expozice. Soubor je v `V31/AGENTS.md`, `docs/3.2/Hira
 
 ## 3. Návrh dalšího kola (potřebuje 👤)
 
+> **⚠️ TRÉNINKOVÁ DATA HIRANA SE NEMAŽOU.** `/opt/zion/hiran/base` (fp16 15 G + gguf 5,4 G),
+> `adapters` (2,4 G) a `datasets` (33 M) = **23 G, které nikde jinde nejsou**. Dřívější návrh
+> „smazat fp16, stáhne se znovu z HF" byl špatný — base model se sice stáhnout dá, ale **natrénované
+> adaptery a datasety ne**. Tuhle sekci ber jako zákaz, ne jako nabídku.
+
 | # | Co | Zisk | Cena |
 |---|---|---:|---|
-| 1 | `/opt/zion/hiran/base/fp16` (trénink ve fp16) | **15 G** | smazat = nutný re-download z HF před dalším tréninkem |
-| 2 | `/opt/zion/bitcoin` — `prune=20000` → `prune=2000` | **~28 G** | restart bitcoind; BTC swap je stejně `enabled:false` (safety hold) |
-| 3 | `/opt/zion/canonical-main` (checkout 29. 9., 0 odkazů) | 2,6 G | žádná — jen potvrzení, že to není "zdroj pravdy" |
-| 4 | `backup-edge.sh` retention 42 → 21 daily | cap 20 → 10 G | kratší okno denních záloh (weekly zůstávají) |
-| 5 | `/opt/zion/hiran/base/gguf` (5,4 G) | 5,4 G | pokud se konvertované gguf už jen distribuují z `hiran-models/` |
+| 1 | `/opt/zion/bitcoin` — `prune=20000` → `prune=2000` | **~28 G** | restart bitcoind; BTC swap je stejně `enabled:false` (safety hold) |
+| 2 | `canonical-main` (checkout 29. 9., 0 odkazů v repu) | 2,6 G | potvrdit, že to není „zdroj pravdy" |
+| 3 | `backup-edge.sh` retention 42 → 21 daily | cap 20 → 10 G | kratší okno denních záloh (weekly zůstávají) |
+| 4 | **duplikát** `hiran-models/Meta-Llama-3.1-8B-Instruct-Q5_K_M.gguf` (md5 `7a9dd5ff…`, **byte-identical** s `hiran/base/gguf/`) | 5,4 G | nic — obě kopie jsou na EDGE1, veřejný HF model; smazat lze tu v `hiran-models/`, `base/gguf/` zůstává tréninkové |
+
+### Co s tréninkovými daty dál (doporučení)
+
+23 G tréninkových dat **nemá nikde zálohu** — to je větší riziko než místo na disku. Doporučuji
+je **zabackupovat**, ne mazat: buď `tar` do `/opt/zion/backups/weekly/hiran-train-<ts>.tar.gz`
+(na EDGE1 zůstane), nebo lépe off-site (`sync-edge-backups.sh` už tahá EDGE → operátorský stroj).
+Rád to připravím, ale mazání fp16/adapters/datasets neudělám ani na vyžádání bez výslovného
+„ano, mám je jinde".
 
 ## 4. Ověření po úklidu
 
