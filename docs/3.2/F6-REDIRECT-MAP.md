@@ -14,7 +14,7 @@ Plán F6 vyjmenovává `pool.` `oasis.` `nirvana.` `freeworld.` `explorer.` → 
 | `explorer.` | 301 → `zionterranova.com/explorer/` | eXplorer žije na `app./explorer` | **done** (nic k práci) |
 | `oasis.` | **11 stránek** — avatars, quests, golden-egg, ships, territories, guilds, leaderboard, dashboard, miner, onboarding | **žádná** | **blocked** |
 | `nirvana.` | hry a scény (`/park`, `/mars`, `/venus`, `/present/*`), chat, multiplayer | **žádná** | **blocked** |
-| `apex` | IntroPage — landing + **48 stránek** (blog, seeds, legal) | Brána = landing, **ne** blog/články | **blocked** na 48 stránek |
+| `apex` | IntroPage — landing + **59 stránek** | Brána = landing; zbytek je v **Archivu v3** (`/portal/archive` → `/archive/v3/…`, 2026-11-01) | **téměř ready** — chybí jen rozhodnout mapování cest (`/blog/x` → `/archive/v3/blog/x`) |
 
 **Důsledek:** redirect `oasis.` nebo `nirvana.` na Kingdom by dnes rozbil funkci, kterou portál nemá — přesně to §3 zakazuje („žádná funkce nezmizela"). Proto jsou v mapě jako `blocked` **s důvodem** a `enable-redirect.sh` je odmítne (exit 3).
 
