@@ -31,6 +31,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import v31
 import marketplace
 
+# Unified ops console (rigs + pool + SMOS + agents) — /api/ops/*
+# Optional: a broken copy must never prevent the dashboard from booting.
+try:
+    import ops_console as _ops_console
+except Exception as _exc:  # pragma: no cover
+    _ops_console = None
+    print(f"[dashboard] ops_console unavailable: {_exc}", file=sys.stderr)
+
 # ── TTL cache helper for expensive RPC/log scrapers ─────────────────────
 
 def _ttl_cache_fn(ttl_seconds: float, max_size: int = 256):
@@ -12987,6 +12995,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
         route = parsed.path
         params = urllib.parse.parse_qs(parsed.query)
 
+        # ── Unified ops console (rigs / pool / SMOS / agents) ────────────
+        if route.startswith("/api/ops/") and _ops_console is not None:
+            if _ops_console.handle(self, route, params):
+                return
+
         # ── WebSocket upgrade (/ws) ──────────────────────────────────────
         if route == "/ws":
             upgrade = self.headers.get("Upgrade", "").lower()
@@ -15516,6 +15529,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
             payload = json.loads(raw.decode("utf-8")) if raw else {}
         except Exception:
             payload = {}
+
+        # ── Unified ops console actions (launch / stop / rent / exec …) ──
+        if route.startswith("/api/ops/") and _ops_console is not None:
+            if _ops_console.handle(
+                self, route, urllib.parse.parse_qs(parsed.query), "POST", payload
+            ):
+                return
 
         if route.startswith("/api/dao"):
             # Proxy POST /api/dao/* to DAO daemon on port 8450

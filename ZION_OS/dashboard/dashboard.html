@@ -876,6 +876,9 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         </div>
       </div>
       <div class="zion-nav-group">
+        <button onclick="switchTab('rigs')" id="tab-rigs"><i class="fas fa-microchip"></i> Rigs</button>
+      </div>
+      <div class="zion-nav-group">
         <button><i class="fas fa-gears"></i> Ops ▾</button>
         <div class="zion-nav-dropdown">
           <button onclick="switchTab('services')" id="tab-services"><i class="fas fa-heart-pulse"></i> Services Health</button>
@@ -910,6 +913,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <button onclick="switchTab('genesis')" id="tab-genesis" class="zion-quick-link zql-layers"><i class="fas fa-bolt"></i> Genesis</button>
       <button onclick="switchTab('blockers')" id="tab-blockers" class="zion-quick-link zql-layers"><i class="fas fa-triangle-exclamation"></i> Blockers</button>
       <button onclick="switchTab('ops')" id="tab-ops" class="zion-quick-link zql-ops"><i class="fas fa-wrench"></i> Ops</button>
+      <button onclick="switchTab('rigs')" id="tab-rigs-quick" class="zion-quick-link zql-ops"><i class="fas fa-microchip"></i> Rigs</button>
       <button onclick="switchTab('marketplace-orders')" id="tab-marketplace-orders-quick" class="zion-quick-link zql-ai"><i class="fas fa-shopping-bag"></i> Marketplace</button>
       <button onclick="switchTab('servers-setup')" id="tab-servers-setup" class="zion-quick-link zql-ops"><i class="fas fa-server"></i> Servers</button>
       <button onclick="switchTab('launch-day')" id="tab-launch-day" class="zion-quick-link zql-ai"><i class="fas fa-rocket"></i> Launch</button>
@@ -6661,6 +6665,42 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
   </div>
 
   <!-- ═════════ TAB: Fleet ═════════ -->
+  <!-- ══ Rigs & Fleet (unified ops console) ══════════════════════════════ -->
+  <div id="pane-rigs" class="hidden space-y-4">
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 class="text-2xl font-bold text-gradient flex items-center gap-2">
+            <i class="fas fa-microchip"></i> Rigs &amp; Fleet
+          </h1>
+          <p class="text-xs text-gray-400 mt-1">
+            Rented GPU fleet, project pool and agents in one place
+            <span id="rigs-src" class="text-gray-500"></span>
+          </p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <span id="rigs-freshness" class="text-[10px] px-2 py-1 rounded-full bg-black/40 border border-white/10 text-gray-400">—</span>
+          <button onclick="loadRigs()" class="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition">⟳ Refresh</button>
+          <a href="/vast-rigs/" target="_blank" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Prototyp ↗</a>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-4">
+        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Rigs</div><div id="rig-kpi-rigs" class="text-lg font-bold text-zion-cyan">—</div><div id="rig-kpi-rigs-sub" class="text-[10px] text-gray-500">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Cost</div><div id="rig-kpi-cost" class="text-lg font-bold text-zion-gold">—</div><div id="rig-kpi-cost-sub" class="text-[10px] text-gray-500">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Fleet hashrate</div><div id="rig-kpi-fleet" class="text-lg font-bold text-emerald-400">—</div><div id="rig-kpi-fleet-sub" class="text-[10px] text-gray-500">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Pool hashrate</div><div id="rig-kpi-pool" class="text-lg font-bold text-zion-purple">—</div><div id="rig-kpi-pool-sub" class="text-[10px] text-gray-500">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Pool accept</div><div id="rig-kpi-accept" class="text-lg font-bold text-emerald-400">—</div><div id="rig-kpi-accept-sub" class="text-[10px] text-gray-500">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Blocks</div><div id="rig-kpi-blocks" class="text-lg font-bold text-white">—</div><div id="rig-kpi-blocks-sub" class="text-[10px] text-gray-500">—</div></div>
+      </div>
+    </div>
+
+    <div id="rigs-body" class="space-y-4">
+      <div class="zion-panel p-8 text-center text-sm text-gray-500">Loading fleet…</div>
+    </div>
+  </div>
+
   <div id="pane-fleet" class="hidden space-y-4">
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
