@@ -1,20 +1,49 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Package, BarChart3, Gavel, Users } from 'lucide-react';
 import { useLangT } from '@/lib/useTranslation';
 
-const stats = [
-  { labelKey: 'stats.itemsListed', value: '12,847', icon: Package, rc: '7, 137, 48' },
-  { labelKey: 'stats.totalVolume', value: '847k', subKey: 'stats.wzion', icon: BarChart3, rc: '252, 209, 22' },
-  { labelKey: 'stats.activeAuctions', value: '34', icon: Gavel, rc: '228, 30, 43' },
-  { labelKey: 'stats.holders', value: '2,193', icon: Users, rc: '7, 137, 48' },
-];
+interface MarketStats {
+  artifacts: number;
+  activeListings: number;
+  activeAuctions: number;
+  sales: number;
+  volumeWei: string;
+  volumeWzion: number;
+  holders: number;
+  categories: Record<string, number>;
+}
+
+function formatWzion(v: number): string {
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
+  return v % 1 === 0 ? String(v) : v.toFixed(2);
+}
 
 export default function StatsSection() {
   const { t } = useLangT();
+  const [stats, setStats] = useState<MarketStats | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/stats')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (!cancelled && data) setStats(data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const cards = [
+    { labelKey: 'stats.itemsListed', value: stats ? stats.artifacts.toLocaleString() : '—', icon: Package, rc: '7, 137, 48' },
+    { labelKey: 'stats.totalVolume', value: stats ? formatWzion(stats.volumeWzion) : '—', subKey: 'stats.wzion', icon: BarChart3, rc: '252, 209, 22' },
+    { labelKey: 'stats.activeAuctions', value: stats ? String(stats.activeAuctions) : '—', icon: Gavel, rc: '228, 30, 43' },
+    { labelKey: 'stats.holders', value: stats ? stats.holders.toLocaleString() : '—', icon: Users, rc: '7, 137, 48' },
+  ];
+
   return (
     <section className="zion-hero-grid">
-      {stats.map((s) => {
+      {cards.map((s) => {
         const Icon = s.icon;
         return (
           <div

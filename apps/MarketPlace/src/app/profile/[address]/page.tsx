@@ -8,18 +8,7 @@ import ZisAvatar from '@/components/ZisAvatar';
 import { getProfileItems, getProfileActivity, type ProfileItemsResponse, type ProfileActivity } from '@/lib/market-api';
 import { useLangT } from '@/lib/useTranslation';
 
-const mockOwned: ArtifactCardData[] = [
-  { id: '101', name: 'Tree of Life Avatar', image: '', collection: 'OASIS Genesis', rarity: 'mythic', price: '2,500', listingType: 'fixed' },
-  { id: '102', name: 'Ship HUD Mk-III', image: '', collection: 'OASIS Ships', rarity: 'rare', listingType: 'none' },
-  { id: '103', name: 'Crystal of Insight', image: '', collection: 'OASIS Quest', rarity: 'rare', price: '150', listingType: 'auction', bestBid: '180', endsAt: Date.now() + 36e5 * 2 },
-];
-
-const mockActivity: ProfileActivity[] = [
-  { id: '1', type: 'Sale', item: 'Warp Gate Key', price: '900 wZION', time: '2026-07-28T10:00:00Z' },
-  { id: '2', type: 'Purchase', item: 'Golden Egg #001', price: '5,000 wZION', time: '2026-07-25T10:00:00Z' },
-  { id: '3', type: 'Listed', item: 'Tree of Life Avatar', price: '2,500 wZION', time: '2026-07-23T10:00:00Z' },
-  { id: '4', type: 'Minted', item: 'Ship HUD Mk-III', price: '—', time: '2026-07-20T10:00:00Z' },
-];
+const EMPTY_ACTIVITY: ProfileActivity[] = [];
 
 function getActivityType(type: string, t: (path: string, params?: Record<string, string | number>) => string) {
   const map: Record<string, string> = {
@@ -66,7 +55,7 @@ export default function ProfilePage() {
     Promise.all([getProfileItems(addr), getProfileActivity(addr)]).then(([p, a]) => {
       if (cancelled) return;
       setProfile(p);
-      setActivity(a ?? mockActivity);
+      setActivity(a ?? EMPTY_ACTIVITY);
       setLoading(false);
     });
     return () => { cancelled = true; };
@@ -82,11 +71,11 @@ export default function ProfilePage() {
       rarity: item.rarity as ArtifactCardData['rarity'],
       listingType: 'none' as const,
     })) ?? [];
-    return created.length > 0 ? created : mockOwned;
+    return created;
   }, [profile]);
 
   const listedItems = useMemo((): ArtifactCardData[] => {
-    if (!profile?.listed.length) return mockOwned.filter((i) => i.listingType !== 'none');
+    if (!profile?.listed.length) return [];
     return profile.listed.map((l) => ({
       id: l.artifact.id,
       name: l.artifact.name,
@@ -183,6 +172,9 @@ export default function ProfilePage() {
       ) : (
         <>
           {tab === 'owned' && (
+            ownedItems.length === 0 ? (
+              <div className="zion-section p-12 text-center text-sm text-gray-500">{t('profile.emptyOwned')}</div>
+            ) : (
             <div className="grid grid-cols-2 mobile-keep-cols sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {ownedItems.map((item, i) => (
                 <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.05}s` }}>
@@ -190,9 +182,13 @@ export default function ProfilePage() {
                 </div>
               ))}
             </div>
+            )
           )}
 
           {tab === 'listed' && (
+            listedItems.length === 0 ? (
+              <div className="zion-section p-12 text-center text-sm text-gray-500">{t('profile.emptyListed')}</div>
+            ) : (
             <div className="grid grid-cols-2 mobile-keep-cols sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {listedItems.map((item, i) => (
                 <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 0.05}s` }}>
@@ -200,12 +196,16 @@ export default function ProfilePage() {
                 </div>
               ))}
             </div>
+            )
           )}
 
           {tab === 'activity' && (
             <div className="zion-section p-5">
               <div className="space-y-1">
-                {(activity ?? mockActivity).map((a, i) => (
+                {(activity ?? []).length === 0 && (
+                  <div className="py-8 text-center text-sm text-gray-500">{t('profile.emptyActivity')}</div>
+                )}
+                {(activity ?? []).map((a, i) => (
                   <div key={a.id} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
                     <div className="flex items-center gap-3">
                       <span className={`status-dot ${

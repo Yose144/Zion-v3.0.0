@@ -106,6 +106,17 @@ export default function ItemDetailPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const timeLeftText = useMemo(() => {
+    if (!display.endsAt) return '—';
+    const diff = display.endsAt - Date.now();
+    if (diff <= 0) return t('item.auctionEnded');
+    const h = Math.floor(diff / 3_600_000);
+    const m = Math.floor((diff % 3_600_000) / 60_000);
+    return h > 0
+      ? `${t('common.hours', { n: h })} ${t('common.minutes', { n: m })}`
+      : t('common.minutes', { n: m });
+  }, [display.endsAt, t]);
+
   const buyButtonText = useMemo(() => {
     if (!isConnected) return t('item.connectToBuy');
     if (isOwner) return t('item.ownItem');
@@ -326,11 +337,11 @@ export default function ItemDetailPage() {
                   <span className="text-xs text-gray-500">{t('item.topBid')}</span>
                   <span className="text-xs text-rasta-gold flex items-center gap-1">
                     <span className="status-dot status-pending" />
-                    {t('item.timeLeft', { time: `${t('common.hours', { n: 5 })} ${t('common.minutes', { n: 23 })}` })}
+                    {t('item.timeLeft', { time: timeLeftText })}
                   </span>
                 </div>
                 <div className="text-3xl font-black text-rasta-gold mb-4 font-display">
-                  {t('common.price', { price: price, symbol: t('common.wzion') })}
+                  {t('common.price', { price: display.bestBid ?? price, symbol: t('common.wzion') })}
                 </div>
                 {MARKET_LOCKED ? (
                   <MarketLockedNotice compact />

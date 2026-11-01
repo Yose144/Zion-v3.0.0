@@ -1,24 +1,26 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { UserCircle, Rocket, Swords, Map, Egg, Sparkles, type LucideIcon } from 'lucide-react';
 import { type ArtifactCardData } from '@/components/ItemCard';
 import { useLangT } from '@/lib/useTranslation';
 
+// slug = real Artifact.category value so /explore?category=<slug> filters
+// against actual DB rows (counts also come from /api/stats).
 const categories: {
   nameKey: string;
   descKey: string;
   slug: string;
   icon: LucideIcon;
   rarity: ArtifactCardData['rarity'];
-  count: string;
 }[] = [
-  { nameKey: 'categories.avatars', descKey: 'categories.avatarsDesc', slug: 'avatars', icon: UserCircle, rarity: 'unique', count: '2.1k' },
-  { nameKey: 'categories.ships', descKey: 'categories.shipsDesc', slug: 'ships', icon: Rocket, rarity: 'legendary', count: '847' },
-  { nameKey: 'categories.questItems', descKey: 'categories.questItemsDesc', slug: 'quest-items', icon: Swords, rarity: 'epic', count: '5.3k' },
-  { nameKey: 'categories.territory', descKey: 'categories.territoryDesc', slug: 'territory', icon: Map, rarity: 'rare', count: '312' },
-  { nameKey: 'categories.goldenEggs', descKey: 'categories.goldenEggsDesc', slug: 'golden-eggs', icon: Egg, rarity: 'mythic', count: '24' },
-  { nameKey: 'categories.cosmetics', descKey: 'categories.cosmeticsDesc', slug: 'cosmetics', icon: Sparkles, rarity: 'uncommon', count: '4.2k' },
+  { nameKey: 'categories.avatars', descKey: 'categories.avatarsDesc', slug: 'avatar', icon: UserCircle, rarity: 'unique' },
+  { nameKey: 'categories.ships', descKey: 'categories.shipsDesc', slug: 'ship', icon: Rocket, rarity: 'legendary' },
+  { nameKey: 'categories.questItems', descKey: 'categories.questItemsDesc', slug: 'quest_item', icon: Swords, rarity: 'epic' },
+  { nameKey: 'categories.territory', descKey: 'categories.territoryDesc', slug: 'territory', icon: Map, rarity: 'rare' },
+  { nameKey: 'categories.goldenEggs', descKey: 'categories.goldenEggsDesc', slug: 'golden_egg', icon: Egg, rarity: 'mythic' },
+  { nameKey: 'categories.cosmetics', descKey: 'categories.cosmeticsDesc', slug: 'badge', icon: Sparkles, rarity: 'uncommon' },
 ];
 
 const rarityColor: Record<ArtifactCardData['rarity'], string> = {
@@ -33,6 +35,17 @@ const rarityColor: Record<ArtifactCardData['rarity'], string> = {
 
 export default function CategoriesSection() {
   const { t } = useLangT();
+  const [counts, setCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/stats')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (!cancelled && data?.categories) setCounts(data.categories); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <section>
       <div className="flex items-center gap-4 mb-6">
@@ -57,7 +70,7 @@ export default function CategoriesSection() {
               <div className="text-[11px] text-gray-400 mb-3 leading-tight">{t(cat.descKey)}</div>
               <div className="flex items-center justify-center gap-2">
                 <span className={`rarity-badge rarity-${cat.rarity}`}>{t(`rarity.${cat.rarity}`)}</span>
-                <span className="text-[10px] text-gray-500 font-mono">{cat.count}</span>
+                <span className="text-[10px] text-gray-500 font-mono">{counts[cat.slug] ?? '—'}</span>
               </div>
             </Link>
           );

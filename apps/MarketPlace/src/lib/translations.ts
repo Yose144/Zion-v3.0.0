@@ -89,6 +89,20 @@ const t = {
     cosmeticsDesc: { cs: 'Skiny, stopy, efekty', en: 'Skins, trails, effects' },
   },
 
+  // Real Artifact.category values (DB / mint route)
+  cat: {
+    avatar: { cs: 'Avatary', en: 'Avatars' },
+    ship: { cs: 'Lodě', en: 'Ships' },
+    ship_skin: { cs: 'Skiny lodí', en: 'Ship skins' },
+    quest_item: { cs: 'Quest předměty', en: 'Quest items' },
+    consumable: { cs: 'Spotřební', en: 'Consumables' },
+    territory: { cs: 'Území', en: 'Territory' },
+    golden_egg: { cs: 'Zlatá vejce', en: 'Golden eggs' },
+    badge: { cs: 'Odznaky', en: 'Badges' },
+    music: { cs: 'Hudba', en: 'Music' },
+    art: { cs: 'Umění', en: 'Art' },
+  },
+
   book: {
     kicker: { cs: 'Novinka · Kniha', en: 'New · Book' },
     title: { cs: 'Království srdce', en: 'Kingdom of Hearts' },
@@ -241,6 +255,7 @@ const t = {
     },
     topBid: { cs: 'Nejvyšší nabídka', en: 'Top Bid' },
     timeLeft: { cs: 'zbývá {time}', en: '{time} left' },
+    auctionEnded: { cs: 'aukce skončila', en: 'auction ended' },
     ended: { cs: 'Ukončeno', en: 'Ended' },
     bidPlaceholder: { cs: 'Částka příhozu (wZION)', en: 'Bid amount (wZION)' },
     placingBid: { cs: 'Odesílání nabídky…', en: 'Placing Bid…' },
@@ -322,6 +337,9 @@ const t = {
     minutesAgo: { cs: 'před {n} min', en: '{n}m ago' },
     hoursAgo: { cs: 'před {n} h', en: '{n}h ago' },
     daysAgo: { cs: 'před {n} d', en: '{n}d ago' },
+    emptyOwned: { cs: 'Žádné vlastněné artefakty', en: 'No owned artifacts' },
+    emptyListed: { cs: 'Žádné aktivní nabídky', en: 'No active listings' },
+    emptyActivity: { cs: 'Zatím žádná aktivita', en: 'No activity yet' },
   },
 
   shop: {
