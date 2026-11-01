@@ -6674,30 +6674,94 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
             <i class="fas fa-microchip"></i> Rigs &amp; Fleet
           </h1>
           <p class="text-xs text-gray-400 mt-1">
-            Rented GPU fleet, project pool and agents in one place
+            Rented GPU fleet, project pool and AI inference in one place
             <span id="rigs-src" class="text-gray-500"></span>
           </p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
           <span id="rigs-freshness" class="text-[10px] px-2 py-1 rounded-full bg-black/40 border border-white/10 text-gray-400">—</span>
-          <button onclick="loadRigs()" class="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition">⟳ Refresh</button>
+          <button onclick="rigsReload()" class="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition">⟳ Refresh</button>
           <a href="https://zionterranova.com/vast-rigs/" target="_blank" rel="noopener" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition" title="Next.js prototyp — zdroj pravdy je tato záložka">Prototyp ↗</a>
         </div>
       </div>
 
-      <!-- KPIs -->
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-4">
-        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Rigs</div><div id="rig-kpi-rigs" class="text-lg font-bold text-zion-cyan">—</div><div id="rig-kpi-rigs-sub" class="text-[10px] text-gray-500">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Cost</div><div id="rig-kpi-cost" class="text-lg font-bold text-zion-gold">—</div><div id="rig-kpi-cost-sub" class="text-[10px] text-gray-500">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Fleet hashrate</div><div id="rig-kpi-fleet" class="text-lg font-bold text-emerald-400">—</div><div id="rig-kpi-fleet-sub" class="text-[10px] text-gray-500">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Pool hashrate</div><div id="rig-kpi-pool" class="text-lg font-bold text-zion-purple">—</div><div id="rig-kpi-pool-sub" class="text-[10px] text-gray-500">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Pool accept</div><div id="rig-kpi-accept" class="text-lg font-bold text-emerald-400">—</div><div id="rig-kpi-accept-sub" class="text-[10px] text-gray-500">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Blocks</div><div id="rig-kpi-blocks" class="text-lg font-bold text-white">—</div><div id="rig-kpi-blocks-sub" class="text-[10px] text-gray-500">—</div></div>
+      <div class="flex flex-wrap items-center gap-1.5 mt-4" role="tablist" aria-label="Rigs sections">
+        <button id="rigs-nav-fleet" onclick="rigsView('fleet')" class="text-xs font-semibold px-4 py-2 rounded-lg border border-zion-gold/50 bg-zion-gold/15 text-zion-gold transition">Fleet</button>
+        <button id="rigs-nav-market" onclick="rigsView('market')" class="text-xs font-semibold px-4 py-2 rounded-lg border border-white/10 bg-black/30 text-gray-400 hover:text-white hover:border-white/25 transition">GPU market</button>
+        <button id="rigs-nav-ai" onclick="rigsView('ai')" class="text-xs font-semibold px-4 py-2 rounded-lg border border-white/10 bg-black/30 text-gray-400 hover:text-white hover:border-white/25 transition">AI inference</button>
+        <span class="text-[10px] text-gray-500 ml-auto">jeden control plane · vastctl @ edge:8088</span>
       </div>
     </div>
 
-    <div id="rigs-body" class="space-y-4">
-      <div class="zion-panel p-8 text-center text-sm text-gray-500">Loading fleet…</div>
+    <!-- ── FLEET ─────────────────────────────────────────────────────── -->
+    <div id="rigs-view-fleet" class="space-y-4">
+      <div class="zion-panel p-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Rigs</div><div id="rig-kpi-rigs" class="text-lg font-bold text-zion-cyan">—</div><div id="rig-kpi-rigs-sub" class="text-[10px] text-gray-500">—</div></div>
+          <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Cost</div><div id="rig-kpi-cost" class="text-lg font-bold text-zion-gold">—</div><div id="rig-kpi-cost-sub" class="text-[10px] text-gray-500">—</div></div>
+          <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Fleet hashrate</div><div id="rig-kpi-fleet" class="text-lg font-bold text-emerald-400">—</div><div id="rig-kpi-fleet-sub" class="text-[10px] text-gray-500">—</div></div>
+          <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Pool hashrate</div><div id="rig-kpi-pool" class="text-lg font-bold text-zion-purple">—</div><div id="rig-kpi-pool-sub" class="text-[10px] text-gray-500">—</div></div>
+          <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Pool accept</div><div id="rig-kpi-accept" class="text-lg font-bold text-emerald-400">—</div><div id="rig-kpi-accept-sub" class="text-[10px] text-gray-500">—</div></div>
+          <div class="bg-black/30 rounded-xl p-3"><div class="text-[10px] text-gray-500 uppercase mb-1">Blocks</div><div id="rig-kpi-blocks" class="text-lg font-bold text-white">—</div><div id="rig-kpi-blocks-sub" class="text-[10px] text-gray-500">—</div></div>
+        </div>
+      </div>
+      <div id="rigs-body" class="space-y-4">
+        <div class="zion-panel p-8 text-center text-sm text-gray-500">Loading fleet…</div>
+      </div>
+    </div>
+
+    <!-- ── GPU MARKET ────────────────────────────────────────────────── -->
+    <div id="rigs-view-market" class="hidden space-y-4">
+      <div class="zion-panel p-4">
+        <div class="flex flex-wrap items-end gap-2">
+          <label class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">GPU model
+            <select id="mkt-gpu" class="mt-1 block min-h-9 rounded-lg border border-white/15 bg-black/40 px-2 text-xs text-white focus:border-zion-gold/60 focus:outline-none">
+              <option value="any">any GPU</option>
+              <option value="RTX_3060" selected>RTX 3060</option>
+              <option value="RTX_3070">RTX 3070</option>
+              <option value="RTX_3080">RTX 3080</option>
+              <option value="RTX_3090">RTX 3090</option>
+              <option value="RTX_4060">RTX 4060</option>
+              <option value="RTX_4070">RTX 4070</option>
+              <option value="RTX_4080">RTX 4080</option>
+              <option value="RTX_4090">RTX 4090</option>
+              <option value="RTX_5090">RTX 5090</option>
+              <option value="A40">A40</option>
+              <option value="A100_PCIE">A100 PCIE</option>
+              <option value="L40S">L40S</option>
+              <option value="H100_PCIE">H100 PCIE</option>
+              <option value="H200_NVL">H200 NVL</option>
+            </select>
+          </label>
+          <label class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Max $/h
+            <input id="mkt-dph" type="number" min="0" step="0.01" placeholder="no limit"
+              class="mt-1 block min-h-9 w-28 rounded-lg border border-white/15 bg-black/40 px-2 text-xs text-white placeholder-gray-600 focus:border-zion-gold/60 focus:outline-none">
+          </label>
+          <button onclick="loadMarket()" id="mkt-search" class="min-h-9 rounded-lg border border-zion-gold/50 bg-zion-gold/15 px-4 text-xs font-semibold text-zion-gold transition hover:bg-zion-gold/25">Search offers</button>
+          <button onclick="mktCheapest()" class="min-h-9 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20">⚡ cheapest</button>
+          <span id="mkt-meta" class="text-[10px] text-gray-500 ml-auto"></span>
+        </div>
+        <p class="mt-3 text-[11px] text-amber-300/80">
+          <i class="fas fa-triangle-exclamation"></i> Rent begins billing your vast.ai account immediately — potvrzení + záznam v auditu.
+        </p>
+      </div>
+      <div id="market-results" class="space-y-4"></div>
+    </div>
+
+    <!-- ── AI INFERENCE ──────────────────────────────────────────────── -->
+    <div id="rigs-view-ai" class="hidden space-y-4">
+      <div class="zion-panel p-4">
+        <h2 class="text-sm font-bold text-white mb-3 flex items-center gap-2"><i class="fas fa-brain text-zion-purple"></i> Inference na ridech</h2>
+        <div id="ai-rigs"><div class="text-xs text-gray-500">Loading…</div></div>
+      </div>
+      <div class="zion-panel p-4">
+        <h2 class="text-sm font-bold text-white mb-3 flex items-center gap-2"><i class="fas fa-layer-group text-zion-cyan"></i> Model catalog</h2>
+        <div id="ai-catalog"><div class="text-xs text-gray-500">Loading…</div></div>
+      </div>
+      <div class="zion-panel p-4">
+        <h2 class="text-sm font-bold text-white mb-3 flex items-center gap-2"><i class="fas fa-comments text-emerald-400"></i> Chat</h2>
+        <div id="ai-chat-area"><div class="text-xs text-gray-500">Loading…</div></div>
+      </div>
     </div>
   </div>
 

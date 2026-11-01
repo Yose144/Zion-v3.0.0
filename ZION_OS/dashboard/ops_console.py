@@ -22,6 +22,9 @@ Routes (GET unless noted):
     /api/ops/overview          one merged snapshot + KPIs for the UI
     /api/ops/fleet             rigs only (vast + smos + agents)
     /api/ops/pool              pool stats + top miners + recent blocks
+    /api/ops/market            GPU market offers (vast.ai), cheapest first
+    /api/ops/ai                inference status per rig + model catalog
+    /api/ops/audit             recent operator actions (whitelisted proxy log)
     /api/ops/status            raw vastctl snapshot (debug)
     /api/ops/logs?id=&src=     miner/session log tail (proxied)
     POST /api/ops/action       {"action": "...", "params": {...}}
@@ -43,6 +46,7 @@ POOL_URL = os.environ.get("OPS_POOL_URL", "http://127.0.0.1:8080")
 STATUS_JSON = os.environ.get(
     "OPS_STATUS_JSON", "/var/www/zion-maintenance/vast-rigs/status.json"
 )
+AUDIT_PATH = os.environ.get("OPS_AUDIT_PATH", "/opt/zion/data/dashboard-ops-audit.jsonl")
 
 TIMEOUT = float(os.environ.get("OPS_HTTP_TIMEOUT", "8"))
 SNAP_TTL = float(os.environ.get("OPS_SNAP_TTL", "10"))
@@ -370,6 +374,89 @@ def logs(params: dict) -> dict:
     }
 
 
+# ── market / inference read-through ─────────────────────────────────────────
+
+def market(params: dict) -> dict:
+    gpu = (params.get("gpu") or ["any"])[0] or "any"
+    if not re.fullmatch(r"[A-Za-z0-9_ .+-]{1,40}", gpu):
+        return {"error": "bad gpu filter"}
+    qs: dict[str, str] = {"gpu": gpu, "limit": str(min(int((params.get("limit") or ["30"])[0] or 30), 100))}
+    dph = (params.get("max_dph") or [""])[0].strip()
+    if dph:
+        try:
+            qs["max_dph"] = str(float(dph))
+        except ValueError:
+            pass
+    code, raw = _http(f"{VASTCTL_URL}/api/offers?" + urllib.parse.urlencode(qs), timeout=40)
+    if code != 200:
+        return {"error": f"offers API returned HTTP {code}", "offers": []}
+    try:
+        offers = json.loads(raw.decode("utf-8", "replace"))
+    except Exception:
+        return {"error": "offers API returned invalid JSON", "offers": []}
+    offers = [o for o in offers if isinstance(o, dict)]
+    offers.sort(key=lambda o: float(o.get("dph_total") or 9e9))
+    return {"offers": offers, "count": len(offers), "gpu": gpu}
+
+
+def ai() -> dict:
+    status, via = _json(f"{VASTCTL_URL}/api/ai/status", timeout=25), "serve"
+    if not isinstance(status, dict):
+        return {"error": "AI status unavailable", "rigs": [], "catalog": []}
+    catalog = _json(f"{VASTCTL_URL}/api/inference/catalog", timeout=15) or []
+    status["catalog"] = catalog if isinstance(catalog, list) else []
+    status["source"] = via
+    return status
+
+
+# ── audit trail ─────────────────────────────────────────────────────────────
+
+_audit_mem: list[dict] = []
+
+
+def _audit(actor: str, name: str, params: dict, result: dict) -> None:
+    rec = {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "actor": actor,
+        "action": name,
+        "params": {k: (str(v)[:120]) for k, v in (params or {}).items()},
+        "ok": bool(result.get("ok")),
+        "http": result.get("http"),
+    }
+    _audit_mem.append(rec)
+    del _audit_mem[:-300]
+    try:
+        import pathlib
+
+        path = pathlib.Path(AUDIT_PATH)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    except Exception:
+        pass  # audit is best-effort, never block the action
+
+
+def audit(limit: int = 40) -> dict:
+    rows: list[dict] = []
+    try:
+        with open(AUDIT_PATH, "rb") as fh:
+            fh.seek(0, 2)
+            size = fh.tell()
+            fh.seek(max(0, size - 64000))
+            tail = fh.read().decode("utf-8", "replace")
+        for line in tail.splitlines()[-limit:]:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except Exception:
+                continue
+    except Exception:
+        rows = list(_audit_mem[-limit:])
+    return {"entries": rows[-limit:], "path": AUDIT_PATH}
+
+
 def action(name: str, params: dict, method: str | None = None) -> dict:
     if not name or not _ALLOWED_ACTION.match(name):
         return {"ok": False, "error": f"action '{name}' is not allowed"}
@@ -408,6 +495,16 @@ def handle(handler, route: str, params: dict, method: str = "GET",
             handler._json(fleet())
         elif route == "/api/ops/pool":
             handler._json(pool())
+        elif route == "/api/ops/market":
+            handler._json(market(params))
+        elif route == "/api/ops/ai":
+            handler._json(ai())
+        elif route == "/api/ops/audit":
+            try:
+                limit = int((params.get("limit") or ["40"])[0])
+            except Exception:
+                limit = 40
+            handler._json(audit(max(1, min(limit, 300))))
         elif route == "/api/ops/logs":
             handler._json(logs(params))
         elif route == "/api/ops/status":
@@ -418,7 +515,15 @@ def handle(handler, route: str, params: dict, method: str = "GET",
             act_params = body.get("params") or {}
             if not isinstance(act_params, dict):
                 act_params = {}
-            handler._json(action(name, act_params, body.get("method")))
+            result = action(name, act_params, body.get("method"))
+            actor = ""
+            try:
+                actor = getattr(handler, "client_address", ("",))[0]
+                actor = f"{actor}:{getattr(handler, 'headers', {}).get('X-Real-IP', '')}"
+            except Exception:
+                pass
+            _audit(actor or "unknown", name, act_params, result)
+            handler._json(result)
         else:
             handler._json({"error": "unknown ops route"}, status=404)
     except Exception as exc:  # never take the dashboard down for an ops panel
