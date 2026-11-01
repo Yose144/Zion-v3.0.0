@@ -54,12 +54,18 @@ a denní výzva (`fight: 170`) fungují jako u arény/závodu.
 - 8 hráčů/místnost neplatí pro duel: ten je dvoudenní kapací (`FIGHT_ROOM_SIZE`).
 - Historie zápasů se neukládá (tabule pouti je max 10 na hru).
 
-## Deploy (pořadí je důležité)
+## Deploy — HOTOVO (2026-11-01 21:04–21:06 CET)
 
-`PROTO_VERSION=3`: **nejdřív** `deploy-nirvana-net.sh`, **ihned vzápětí**
-`deploy-nirvana.sh`. Starý klient na novém serveru dostane `proto_mismatch`
-(odpojí se a po reloadu je OK); nový klient na starém serveru by se trefil
-do `arena` fallbacku — proto nesázet appku před službou.
+Pořadí dle plánu: `deploy-nirvana-net.sh` FIRST (release `20261101T200406Z`),
+vzápětí `deploy-nirvana.sh` (release `20261101T200457Z`, healthy ~10 s).
+Důvod: `PROTO_VERSION=3` — starý klient na novém serveru dostane
+`proto_mismatch` (reload pomůže); obráceně by se nový klient trefil do
+`arena` fallbacku starého parseru.
+
+**Živě ověřeno zvenčí:** `/mercury` 200, `net/health proto 3`, WS
+`welcome {proto:3, role:guest, tick:30}` a reálný `join fight` → místnost
+`fight-1` cap 2, snapshot `countdown` s meta-botem „Stín" na +4.
+Rollbacky: `/opt/zion/APP&WEB/{nirvana,nirvana-net}.before-20261101T200*`.
 
 ## Pasti (pro příště)
 
