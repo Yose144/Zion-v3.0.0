@@ -62,6 +62,9 @@ const L1_START_HEIGHT = process.env.L1_START_HEIGHT
   ? parseInt(process.env.L1_START_HEIGHT, 10)
   : undefined;
 const L1_SCALE_FIX_HEIGHT = parseInt(process.env.L1_SCALE_FIX_HEIGHT ?? '0', 10);
+// Artifact marketplace is closed until OASIS launch — MARKETBUY memos are
+// detected+logged but never settled on L2. Set MARKET_LOCKED=0 at launch.
+const MARKET_LOCKED = (process.env.MARKET_LOCKED ?? '1') !== '0';
 
 const MIGRATION_DIVISOR = 1_000_000n; // 1e12 → 1e6 scale
 
@@ -351,6 +354,10 @@ async function scanBlock(block: L1Block) {
       if (output.address !== L1_BRIDGE_VAULT) continue;
       const memo = parseMarketBuyMemo(output.memo ?? null);
       if (!memo) continue;
+      if (MARKET_LOCKED) {
+        console.log(`  [MARKET LOCKED] MARKETBUY tx ${txHash} ignored — artifact market opens with OASIS`);
+        continue;
+      }
 
       const sender =
         tx.inputs[0]?.public_key
@@ -410,6 +417,10 @@ async function scanBlock(block: L1Block) {
 
     const memo = parseMarketBuyMemo(tx.memo ?? null);
     if (!memo) continue;
+    if (MARKET_LOCKED) {
+      console.log(`  [MARKET LOCKED] MARKETBUY tx ${tx.tx_id} ignored — artifact market opens with OASIS`);
+      continue;
+    }
 
     const amountFlowers = scaledAmount(toBigInt(tx.amount_zion), block.height);
 

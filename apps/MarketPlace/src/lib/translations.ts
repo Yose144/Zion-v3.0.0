@@ -161,6 +161,20 @@ const t = {
     cta: { cs: 'Otevřít AI', en: 'Open AI' },
   },
 
+  marketLock: {
+    badge: { cs: 'Již brzy · Coming soon', en: 'Coming soon' },
+    title: {
+      cs: 'Tržiště s artefakty se otevře se spuštěním OASIS',
+      en: 'The artifact marketplace opens with the OASIS launch',
+    },
+    desc: {
+      cs: 'Prohlížejte si kolekci — nákup, přihazování i zakládání nabídek bude dostupné až ve chvíli, kdy odstartuje svět OASIS. Držitelé ZION Archive Pass vstoupí mezi prvními.',
+      en: 'Browse the collection — buying, bidding, and new listings unlock the moment the OASIS world launches. ZION Archive Pass holders enter first.',
+    },
+    ctaOasis: { cs: 'Vstoupit do OASIS', en: 'Enter OASIS' },
+    cta: { cs: 'Otevře se s OASIS', en: 'Opens with OASIS' },
+  },
+
   explore: {
     kicker: { cs: 'Tržiště', en: 'Marketplace' },
     title: { cs: 'Prozkoumat artefakty', en: 'Explore Artifacts' },

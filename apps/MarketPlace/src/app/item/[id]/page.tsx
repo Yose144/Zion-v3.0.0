@@ -9,6 +9,8 @@ import { getItem, type ItemDetailData } from '@/lib/market-api';
 import { useBuyFixed, useBid, useApproveWZION, useWZIONAllowance, priceToWei } from '@/hooks/useMarket';
 import { useLangT } from '@/lib/useTranslation';
 import { ArtifactPlaceholder } from '@/components/ArtifactPlaceholder';
+import { MARKET_LOCKED } from '@/lib/market-lock';
+import MarketLockedNotice from '@/components/MarketLockedNotice';
 
 // No mock data — only real OASIS / marketplace artifacts
 
@@ -210,6 +212,10 @@ export default function ItemDetailPage() {
                   {t('common.price', { price: price, symbol: t('common.wzion') })}
                 </div>
 
+                {MARKET_LOCKED ? (
+                  <MarketLockedNotice compact />
+                ) : (
+                <>
                 {/* Payment method selector */}
                 <div className="flex gap-2 mb-4">
                   <button
@@ -310,6 +316,8 @@ export default function ItemDetailPage() {
                     </div>
                   </div>
                 )}
+                </>
+                )}
               </>
             )}
             {display.listingType === 'auction' && (
@@ -324,6 +332,9 @@ export default function ItemDetailPage() {
                 <div className="text-3xl font-black text-rasta-gold mb-4 font-display">
                   {t('common.price', { price: price, symbol: t('common.wzion') })}
                 </div>
+                {MARKET_LOCKED ? (
+                  <MarketLockedNotice compact />
+                ) : (
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -342,6 +353,7 @@ export default function ItemDetailPage() {
                     {bidding ? t('item.placingBid') : !display.listingId ? t('item.notListed') : t('item.placeBid')}
                   </button>
                 </div>
+                )}
               </>
             )}
             {(!display.listingType || display.listingType === 'none') && (
