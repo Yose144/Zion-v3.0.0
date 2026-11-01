@@ -123,8 +123,9 @@ done
 
 # --- Kingdom (samostatný workspace, plochý stage) ---
 if [[ -d "$KINGDOM_DIR" ]]; then
-  if [[ -f "$KINGDOM_DIR/.next/standalone-flat/server.js" ]] && [[ -f "$KINGDOM_DIR/.next/standalone-flat/node_modules/next/package.json" ]]; then
-    green "$(printf '%-22s %-12s %s' "kingdom" "OK" ".next/standalone-flat — server.js + node_modules/next")"
+  KFLAT="$(find "$KINGDOM_DIR/.next" -maxdepth 1 -type d -name 'standalone-flat*' 2>/dev/null | head -1 || true)"
+  if [[ -n "$KFLAT" ]] && [[ -f "$KFLAT/server.js" ]] && [[ -f "$KFLAT/node_modules/next/package.json" ]]; then
+    green "$(printf '%-22s %-12s %s' "kingdom" "OK" "$(basename "$KFLAT") — server.js + node_modules/next")"
   elif [[ -d "$KINGDOM_DIR/.next" ]]; then
     red "$(printf '%-22s %-12s %s' "kingdom" "CHYBA" "chybí .next/standalone-flat (spusť stage.mjs)")"
     fail=1

@@ -113,6 +113,15 @@ const cs = {
   history: 'Historie poolu',
   lastHour: 'poslední hodina',
   samples: 'vzorků',
+  payouts: 'Výplaty',
+  lookupMiner: 'Najít těžaře',
+  minerPlaceholder: 'zion1… (peněženka)',
+  minerHint: 'Zadej peněženku a Enter. Čte se nezávazně — odměny vyplácí pool, ne Kingdom.',
+  unpaid: 'Nevyplaceno',
+  estDaily: 'Odhad / den',
+  windowShare: 'Podíl v okně',
+  workers: 'Workeři',
+  confirmations: 'Potvrzení',
 } as const;
 
 export type TranslationKey = keyof typeof cs;
@@ -222,6 +231,15 @@ const en: Record<TranslationKey, string> = {
   history: 'Pool history',
   lastHour: 'last hour',
   samples: 'samples',
+  payouts: 'Payouts',
+  lookupMiner: 'Find a miner',
+  minerPlaceholder: 'zion1… (wallet)',
+  minerHint: 'Type a wallet and press Enter. Read only — payouts are the pool’s job, not Kingdom’s.',
+  unpaid: 'Unpaid',
+  estDaily: 'Est. / day',
+  windowShare: 'Window share',
+  workers: 'Workers',
+  confirmations: 'Confirmations',
 };
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { cs, en };

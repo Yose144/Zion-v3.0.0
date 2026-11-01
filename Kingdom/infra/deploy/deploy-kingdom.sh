@@ -28,13 +28,18 @@ if [ "${SKIP_BUILD:-0}" != "1" ]; then
 fi
 
 echo "==> stage standalone"
-node apps/kingdom/scripts/stage.mjs
+# stage.mjs vypíše cestu k artefaktu na poslední řádek (adresář je unikátní per PID)
+STAGE_OUT="$(node apps/kingdom/scripts/stage.mjs)"
+echo "$STAGE_OUT"
+FLAT_DIR="$(printf '%s\n' "$STAGE_OUT" | tail -1)"
+[[ -f "$FLAT_DIR/server.js" ]] || { echo "chybí $FLAT_DIR/server.js" >&2; exit 1; }
 
 echo "==> rsync"
 ssh "$HOST" "mkdir -p '$ROOT'"
 # stage.mjs staví plochý artefakt (server.js + node_modules vedle sebe), protože
 # unit má WorkingDirectory=.../current/apps/kingdom a spouští `node server.js`.
-rsync -az --delete apps/kingdom/.next/standalone-flat/ "$HOST:$BUILD/"
+rsync -az --delete "$FLAT_DIR/" "$HOST:$BUILD/"
+rm -rf "$FLAT_DIR"
 ssh "$HOST" "chown -R zion:zion '$BUILD'"
 
 echo "==> unit + vhost"

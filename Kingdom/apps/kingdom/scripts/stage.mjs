@@ -11,7 +11,7 @@
  * je lockfile v rootu repa). Proto se server.js **hledá**, nekonstruuje.
  */
 import { cpSync, existsSync, readdirSync, rmSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const APP_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -57,7 +57,13 @@ export function stageStandalone(appDir = APP_DIR) {
    * Sdílený node_modules leží o úroveň výš (od root lockfilu v repu), a mazat
    * ho by znamenalo artefakt bez `next` — přesně to jednou rozbilo market.
    */
-  const flat = join(appDir, '.next', 'standalone-flat');
+  /*
+   * Unikátní jméno stage adresáře: dvě souběžné session (nebo build + deploy)
+   * by si jinak mazaly stejný `.next/standalone-flat` a rsync padal na
+   * „file has vanished" (kód 24). Cestu vypisujeme na poslední řádek pro
+   * deploy skript.
+   */
+  const flat = join(appDir, '.next', `standalone-flat-${process.pid}`);
   rmSync(flat, { recursive: true, force: true });
   cpSync(appOut, flat, { recursive: true });
 
@@ -83,11 +89,13 @@ export function stageStandalone(appDir = APP_DIR) {
   if (!existsSync(join(flat, 'node_modules', 'next'))) {
     throw new Error('ve stage chybí node_modules/next — artefakt by nenaběhl');
   }
-  console.log(`flat: .next/standalone-flat/ (${existsSync(join(flat, 'server.js')) ? 'server.js ok' : 'CHYBÍ server.js'})`);
+  console.log(`flat: .next/${basename(flat)}/ (${existsSync(join(flat, 'server.js')) ? 'server.js ok' : 'CHYBÍ server.js'})`);
 
   return flat;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  stageStandalone();
+  const flat = stageStandalone();
+  // Poslední řádek = cesta k artefaktu (deploy skript ji čte).
+  console.log(flat);
 }

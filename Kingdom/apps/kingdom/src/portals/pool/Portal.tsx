@@ -55,10 +55,55 @@ interface HistoryPayload {
   samples?: HistorySample[];
 }
 
+interface Payout {
+  address: string;
+  coin?: string;
+  amount_flowers?: number;
+  status?: string;
+  confirmed?: boolean;
+  confirmations?: number;
+  height?: number;
+  ts?: number | null;
+}
+
+interface PayoutsPayload {
+  payouts?: Payout[];
+}
+
+interface MinerWorker {
+  name?: string;
+  accepted?: number;
+  rejected?: number;
+  hashrate?: number;
+}
+
+interface MinerDetail {
+  wallet?: string;
+  coin?: string;
+  active?: boolean;
+  unpaid?: string;
+  unpaid_unit?: string;
+  est_daily?: number;
+  window_share?: number;
+  worker_count?: number;
+  shares?: { accepted?: number; rejected?: number };
+  workers?: MinerWorker[];
+}
+
+/** flowers = 1e6 jednotek mince (tak to pool hlásí u všech coinů). */
+const FLOWERS = 1_000_000;
+
 /**
  * Jméno workera z poolu je tečkovaná cesta
  * (`adresa.worker.adresa.worker.gpu0`) — do karty stačí poslední dva úseky.
  */
+/** `zion1abcd…wxyz` — do seznamu stačí konce, celá adresa patří do eXploreru. */
+function shortAddress(value: string | undefined): string {
+  if (!value) return '—';
+  if (value.length <= 16) return value;
+  return `${value.slice(0, 8)}…${value.slice(-6)}`;
+}
+
 function shortWorker(worker: string | undefined): string {
   const parts = (worker ?? '').split('.').filter(Boolean);
   if (parts.length === 0) return '—';
@@ -77,11 +122,25 @@ function shareRatio(miner: Miner): { accepted: number; rate: number | null } {
   return { accepted, rate: total > 0 ? (accepted / total) * 100 : null };
 }
 
-export default async function PoolPortal({ locale }: { locale: Locale }) {
-  const [payload, minersPayload, historyPayload] = await Promise.all([
+export default async function PoolPortal({
+  locale,
+  search,
+}: {
+  locale: Locale;
+  search?: Record<string, string | string[] | undefined>;
+}) {
+  const rawWallet = typeof search?.miner === 'string' ? search.miner.trim() : '';
+  /* Základ cesty je v manifestu, peněženka je vstup od člověka. */
+  const minerSpec = rawWallet
+    ? { ...readSpec(manifest, 'miner'), path: `${readSpec(manifest, 'miner').path}/${encodeURIComponent(rawWallet)}` }
+    : null;
+
+  const [payload, minersPayload, historyPayload, payoutsPayload, minerDetail] = await Promise.all([
     api.tryRead<CoinsPayload>(readSpec(manifest, 'coins')),
     api.tryRead<MinersPayload>(readSpec(manifest, 'miners')),
     api.tryRead<HistoryPayload>(readSpec(manifest, 'history')),
+    api.tryRead<PayoutsPayload>(readSpec(manifest, 'payouts')),
+    minerSpec ? api.tryRead<MinerDetail>(minerSpec) : Promise.resolve(null),
   ]);
 
   if (!payload?.coins?.length) {
@@ -104,6 +163,7 @@ export default async function PoolPortal({ locale }: { locale: Locale }) {
   const historyMax = historySamples.reduce((max, sample) => Math.max(max, sample.hashrate ?? 0), 0);
   const historyLast = historySamples[historySamples.length - 1];
   const historyAccepted = historySamples.reduce((sum, sample) => sum + (sample.accepted ?? 0), 0);
+  const payouts = (payoutsPayload?.payouts ?? []).slice(0, 12);
 
   return (
     <>
@@ -195,6 +255,124 @@ export default async function PoolPortal({ locale }: { locale: Locale }) {
           })}
         </div>
       )}
+
+      {/*
+       * Hledání těžaře (F5 P2). Stejný vzorec jako adresa v Řetězu: GET formulář,
+       * server čte `?miner=`, žádný klientský stav, žádný fetch v portálu.
+       */}
+      <form method="get" action="/portal/pool" className="k-card" style={{ marginTop: 26, gap: 10 }}>
+        <div className="k-card-title">{t(locale, 'lookupMiner')}</div>
+        <div className="k-row" style={{ gap: 10, flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            name="miner"
+            defaultValue={rawWallet}
+            placeholder={t(locale, 'minerPlaceholder')}
+            aria-label={t(locale, 'lookupMiner')}
+            className="k-input"
+            style={{ flex: '1 1 320px', fontFamily: 'var(--k-mono, monospace)' }}
+            spellCheck={false}
+            autoComplete="off"
+          />
+          <button type="submit" className="k-btn">
+            {t(locale, 'lookupMiner')}
+          </button>
+        </div>
+        <p className="k-sub" style={{ margin: 0 }}>
+          {t(locale, 'minerHint')}
+        </p>
+      </form>
+
+      {rawWallet ? (
+        minerDetail ? (
+          <div className="k-card" style={{ marginTop: 14 }}>
+            <div className="k-card-title">{shortAddress(minerDetail.wallet ?? rawWallet)}</div>
+            <div className="k-stats" style={{ marginTop: 10 }}>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'unpaid')}</div>
+                <div className="k-stat-value">
+                  {fmtNumber(locale, Number(minerDetail.unpaid ?? 0) / FLOWERS, 4)}
+                  <span className="k-stat-unit">{(minerDetail.coin ?? '').toUpperCase()}</span>
+                </div>
+              </div>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'estDaily')}</div>
+                <div className="k-stat-value">
+                  {fmtNumber(locale, (minerDetail.est_daily ?? 0) / FLOWERS, 4)}
+                </div>
+              </div>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'windowShare')}</div>
+                <div className="k-stat-value">
+                  {fmtNumber(locale, (minerDetail.window_share ?? 0) * 100, 2)}
+                  <span className="k-stat-unit">%</span>
+                </div>
+              </div>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'acceptRate')}</div>
+                <div className="k-stat-value">
+                  {(() => {
+                    const ok = minerDetail.shares?.accepted ?? 0;
+                    const bad = minerDetail.shares?.rejected ?? 0;
+                    return ok + bad > 0 ? `${fmtNumber(locale, (ok / (ok + bad)) * 100, 1)} %` : '—';
+                  })()}
+                </div>
+              </div>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'workers')}</div>
+                <div className="k-stat-value">{fmtNumber(locale, minerDetail.worker_count ?? 0)}</div>
+              </div>
+            </div>
+            {(minerDetail.workers ?? []).length > 0 ? (
+              <div className="k-meta" style={{ marginTop: 10 }}>
+                {(minerDetail.workers ?? []).map((worker) => (
+                  <span key={worker.name} title={`${fmtNumber(locale, worker.accepted ?? 0)} shares`}>
+                    {worker.name || '—'} · {fmtCompact(locale, worker.hashrate ?? 0)} H/s
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="k-empty" style={{ marginTop: 14 }}>
+            {t(locale, 'noData')}
+          </div>
+        )
+      ) : null}
+
+      {payouts.length > 0 ? (
+        <>
+          <div className="k-stage-head" style={{ marginTop: 26 }}>
+            <h2 className="k-section-title">{t(locale, 'payouts')}</h2>
+          </div>
+          <div className="k-grid">
+            {payouts.map((payout, index) => (
+              <article key={`${payout.address}-${payout.height}-${index}`} className="k-card">
+                <div className="k-card-title">
+                  {fmtNumber(locale, (payout.amount_flowers ?? 0) / FLOWERS, 4)}
+                  <span className="k-stat-unit">{(payout.coin ?? '').toUpperCase()}</span>
+                </div>
+                <div className="k-meta">
+                  <span className="k-badge" data-tone={payout.confirmed ? 'live' : 'soon'}>
+                    {payout.status ?? '—'}
+                  </span>
+                  {typeof payout.height === 'number' ? (
+                    <span>
+                      {t(locale, 'block')} {fmtNumber(locale, payout.height)}
+                    </span>
+                  ) : null}
+                  <span>
+                    {t(locale, 'confirmations')}: {fmtNumber(locale, payout.confirmations ?? 0)}
+                  </span>
+                </div>
+                <p className="k-code" style={{ marginTop: 6 }}>
+                  {shortAddress(payout.address)}
+                </p>
+              </article>
+            ))}
+          </div>
+        </>
+      ) : null}
 
       {historySamples.length > 1 ? (
         <>
