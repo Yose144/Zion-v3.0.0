@@ -218,7 +218,7 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
         mkdir -p '$bindir'
         for b in $BINS; do
           for f in /target/'$target'/release/\$b /target/'$target'/release/\$b.exe; do
-            [ -f \"\$f\" ] && cp \"\$f\" '$bindir/'
+            if [ -f \"\$f\" ]; then cp \"\$f\" '$bindir/'; fi
           done
         done
         chown -R \$HOST_UID:\$HOST_GID '$bindir' /target 2>/dev/null || true
@@ -236,7 +236,9 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
     local tdir="${CARGO_TARGET_DIR:-$V31/target}"
     for b in $BINS; do
       for f in "$tdir/$target/release/$b" "$tdir/$target/release/$b.exe"; do
-        [ -f "$f" ] && cp "$f" "$bindir/"
+        # `[ -f ... ] && cp` jako poslední příkaz vrací 1, když soubor není
+        # (např. .exe u macOS) → se `set -e` shodí celý build_one. Explicitní if.
+        if [ -f "$f" ]; then cp "$f" "$bindir/"; fi
       done
     done
   fi
