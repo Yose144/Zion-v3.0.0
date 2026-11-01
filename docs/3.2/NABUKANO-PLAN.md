@@ -98,7 +98,7 @@ Cíl: scéna má číst jako **studie 02** (kanonická: dok se třemi kotvišti 
 | N3.3 | `focus: 'moon'` + `FleetLeg = 'lumi' \| 'issobella' \| 'matrix'`; oblouk z doku k Měsíci |
 | N3.4 | Okno flotily: třetí tlačítko trasy + honest label |
 
-**Brána:** přelet na Měsíc tam/zpět bez smyčky, reduced-motion = statický stav, mobil OK.
+**Stav (1. 11.): ✅ hotovo** — `Moon` v `NewEarth` používá `moonPosition()` (jeden vzorec pro scénu i fokus), Měsíc leží **dál než flotila** (24 R vs 15,5 R), klik na Měsíc otevře **portál `matrix`** (nový slot `moon`) a fokus `'moon'`; `FleetRoute` má třetí leg **`matrix`** (dok → Měsíc) a okno flotily třetí tlačítko. Nenasazeno v době psaní: deploy `nabukano-n3-20261101T153715Z`.
 
 ---
 
@@ -171,5 +171,6 @@ Cíl: scéna má číst jako **studie 02** (kanonická: dok se třemi kotvišti 
 | Datum | Změna |
 |---|---|
 | 2026-11-01 | v1.0 — vytvořeno po dodání kánonu, webu, scény, tras, hero a konceptové desky. Otevřené D1–D4. |
+| 2026-11-01 | v1.3 — **N3 hotová**: Měsíc jako objekt s vlastním fokusem (`'moon'`), portál `matrix` + slot `moon`, třetí leg trasy `matrix`. Deploy nirvana `nabukano-n3-20261101T153715Z`. |
 | 2026-11-01 | v1.2 — **N2 hotová**: instancovaná okna prstence i přídě, příhradovina rámu, vzpěry, zahrada, klec lucerny, LOD podle tieru; kamera fokusu sleduje flotilu. Naměřeno 122 calls / 80 376 tris / 37 textur / 0 invalid. Deploy nirvana `nabukano-n2-20261101T150748Z`. |
 | 2026-11-01 | v1.1 — **D1 vyřešeno dodáním studie 02**: kanonická jsou mariánská jména, volací znaky LUMI / ISSOBELLA / TŘETÍ MARIE se ruší. Dok = rám pod trupem se třemi kotvišti; N2.1/N2.2 hotové. |

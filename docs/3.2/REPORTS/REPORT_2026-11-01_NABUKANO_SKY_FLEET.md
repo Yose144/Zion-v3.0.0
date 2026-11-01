@@ -134,6 +134,15 @@ Operátor dodal **kanonickou studii 02** (`heros/habuk/Nabukano_ Three-Berth Doc
 
 **Past pro měření:** `?sceneAudit=1` **nepřežije** hash-sync — `Shell` přepíše URL na `#portal=fleet` a query zmizí, takže audit v `UniverseAudit` skončí `null`. Měřit na holém `/?sceneAudit=1` (flotila je ve scéně i tam), nebo audit číst v prvním renderu.
 
+## 5d. N3 — Měsíc a trasa k Matrixu (hotovo)
+
+- `positions.ts` má **`moonPosition(t)`** (jeden vzorec pro scénu, fokus i trasu); Měsíc obíhá Zemi na **24 R**, tedy **dál než flotila (15,5 R)** — flotila je „mezi Zemí a Měsícem", jak říká kniha.
+- `Moon` v `NewEarth` už neposílá `window.open` na prezentaci: **klik = portál `matrix`** (nový slot `moon`) + fokus `'moon'`. Okno `MatrixPortal` shrne Shackleton (89,9° S, led ve stínu, tři habitaty + skleník), přizná, že základna neexistuje, a nabídne `/present/matrix` a uzly L6.
+- **Třetí leg trasy:** `FleetLeg = 'lumi' | 'issobella' | 'matrix'` — `matrix` je jediný leg vedoucí **z doku ven**: oblouk z flotily k Měsíci, světlo dojde za 6 s. Okno flotily má třetí tlačítko „K Měsíci (Matrix)".
+- Popisek Měsíce zmenšen (0,85 → 0,42), aby zblízka nepřerůstal planetu.
+- **Ověřeno lokálně:** deep-link `#portal=matrix` otevře okno a doletí k Měsíci (screenshot `moon-focus.png`), tlačítko „K Měsíci" vykreslí oblouk z doku (`moon-route.png`), 0 chyb.
+- Deploy nirvana `nabukano-n3-20261101T153715Z` (první pokus spadl na `rsync code 24` — souběžná session smazala `.next/standalone-flat-*` uprostřed přenosu; druhý pokus prošel).
+
 ## 6. Kolize s paralelními session (pro budoucí čtenáře)
 
 - **Kánon byl swept do cizího commitu:** `git add canon/…` jsem měl staged, ale souběžná session pustila `git add -A` a svazek odjel v `627713dfd` s názvem „fix(3d audit)…". Obsah je v pořádku, jen pod zavádějícím popisem. Historie se nepřepisovala.

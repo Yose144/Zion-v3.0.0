@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
 import type { HiranState } from '@/core/hiran/presence';
-import { worldSlot, EARTH_ORBIT_R, EARTH_ORBIT_SPEED, planetPosition, fleetPosition } from './positions';
+import { worldSlot, EARTH_ORBIT_R, EARTH_ORBIT_SPEED, planetPosition, fleetPosition, moonPosition } from './positions';
 import { NewEarth } from './NewEarth';
 import { SailingArk } from './SailingArk';
 import { SkyFleet, FleetRoute, type FleetLeg } from './SkyFleet';
@@ -15,7 +15,7 @@ import { IssobellaRing } from './IssobellaRing';
 import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { SpaceBackdrop } from './SpaceBackdrop';
-import { JUPITER, SolarSystem, orbitRadius } from './SolarSystem';
+import { PLANETS, SolarSystem, orbitRadius } from './SolarSystem';
 import { HiranSun } from './HiranSun';
 
 /** Portrait / úzké viewporty: širší fov + větší počáteční odstup,
@@ -57,6 +57,7 @@ export function Universe({
   portals,
   onOpen,
   onSelectWorld,
+  onSelectPlanet,
   focus = 'earth',
   hiranState = 'idle',
   fleetLeg = null,
@@ -65,7 +66,9 @@ export function Universe({
   portals: Portal[];
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
-  focus?: 'earth' | 'sun' | 'jupiter' | 'fleet';
+  /** Klik na planetu — přiletí a otevře panel s CTA. */
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter') => void;
+  focus?: 'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'fleet' | 'moon';
   hiranState?: HiranState;
   fleetLeg?: FleetLeg | null;
 }) {
@@ -144,16 +147,20 @@ export function Universe({
     }
     lastEarth.current.set(ex, 0, ez);
 
-    if (focusRef.current === 'jupiter') {
-      const [jx, jy, jz] = planetPosition(
-        JUPITER.id,
-        3,
-        orbitRadius(JUPITER.au),
-        JUPITER.speed,
+    const focusPlanet = PLANETS.find((planet) => planet.id === focusRef.current);
+    if (focusPlanet) {
+      // Planeta obíhá — cíl i kamera se musí počítat každý frame stejným vzorcem.
+      const index = PLANETS.indexOf(focusPlanet);
+      const [px, py, pz] = planetPosition(
+        focusPlanet.id,
+        index,
+        orbitRadius(focusPlanet.au),
+        focusPlanet.speed,
         clock.elapsedTime,
       );
-      jupiterTarget.set(jx, jy + 4, jz);
-      jupiterCam.copy(jupiterTarget).add(jupiterOffset);
+      const distance = Math.max(3.6, focusPlanet.size * 3.4 + 1.6);
+      jupiterTarget.set(px, py + focusPlanet.size * 0.4, pz);
+      jupiterCam.set(px + distance * 0.75, py + distance * 0.5, pz + distance);
       const p = (progress.current = Math.min(1, progress.current + delta / 1.8));
       const t = 1 - Math.pow(1 - p, 3);
       controls.current.target.lerpVectors(fromTarget.current, jupiterTarget, t);
@@ -163,6 +170,27 @@ export function Universe({
       const t = 1 - Math.pow(1 - p, 3);
       controls.current.target.lerpVectors(fromTarget.current, SUN_TARGET, t);
       if (p < 1) camera.position.lerpVectors(fromCam.current, SUN_CAM, t);
+    } else if (focusRef.current === 'moon') {
+      // Měsíc obíhá Zemi — cíl i kamera jedním vzorcem jako scéna.
+      const mt = reducedMotion ? 0 : clock.elapsedTime;
+      const [mx, my, mz] = moonPosition(mt);
+      fleetTarget.set(ex + mx, my, ez + mz);
+      const radial = fleetTarget.clone().normalize();
+      const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
+      fleetCam
+        .copy(fleetTarget)
+        .addScaledVector(radial, 3.2)
+        .addScaledVector(tangent, 2.4)
+        .add(FLEET_CAM_LIFT);
+      const p = (progress.current = Math.min(1, progress.current + delta / 1.6));
+      const t = 1 - Math.pow(1 - p, 3);
+      controls.current.target.lerpVectors(fromTarget.current, fleetTarget, t);
+      if (p < 1) {
+        camera.position.lerpVectors(fromCam.current, fleetCam, t);
+      } else if (lastFleet.current.lengthSq() > 0) {
+        camera.position.addScaledVector(lastFleet.current, -1).add(fleetTarget);
+      }
+      lastFleet.current.copy(fleetTarget);
     } else if (focusRef.current === 'fleet') {
       // Flotila obíhá Zemi — cíl se musí počítat stejným vzorcem jako scéna.
       const ft = reducedMotion ? 0 : clock.elapsedTime;
@@ -206,7 +234,7 @@ export function Universe({
 
       {/* zemská soustava — obíhá Slunce jako jeden svět */}
       <group ref={earthSys} position={[EARTH_ORBIT_R, 0, 0]}>
-        <NewEarth />
+        <NewEarth onOpenMatrix={() => onOpen('matrix')} />
         <SailingArk onOpen={() => onOpen('archa')} />
         <SkyFleet onOpen={() => onOpen('fleet')} reducedMotion={reducedMotion} />
         {fleetLeg && <FleetRoute key={fleetLeg} leg={fleetLeg} reducedMotion={reducedMotion} />}
@@ -220,7 +248,7 @@ export function Universe({
         {gatePortal && <StarGate portal={gatePortal} onOpen={onOpen} />}
       </group>
 
-      <SolarSystem onOpenPark={() => onOpen('park')} />
+      <SolarSystem onOpenPark={() => onOpen('park')} onSelectPlanet={onSelectPlanet} focused={focus} />
       <HiranSun state={hiranState} onOpen={() => onOpen('hiran')} detail={focus === 'sun'} />
 
       <ResponsiveFraming />

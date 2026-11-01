@@ -84,3 +84,16 @@ export function fleetPosition(t: number): [number, number, number] {
 export function fleetHeading(t: number): number {
   return -(FLEET_ANGLE0 + t * FLEET_SPEED) - Math.PI / 2;
 }
+
+/* ─── Měsíc (Matrix) ──────────────────────────────────────────────────────
+ * Cislunární prostor: Měsíc leží DÁL než flotila, protože flotila je „mezi
+ * Zemí a Měsícem". Jeden vzorec pro scénu, fokus i trasu.
+ */
+export const MOON_ORBIT_R = 24;
+export const MOON_SPEED = 0.05;
+export const MOON_ANGLE0 = Math.PI * 0.35;
+
+export function moonPosition(t: number): [number, number, number] {
+  const a = MOON_ANGLE0 + t * MOON_SPEED;
+  return [Math.cos(a) * MOON_ORBIT_R, Math.sin(a * 0.55) * 1.4, Math.sin(a) * MOON_ORBIT_R];
+}

@@ -25,6 +25,7 @@ export function FleetPortal({
   const legs: { id: FleetLeg; label: string }[] = [
     { id: 'lumi', label: cs ? 'Z LUMI (Kostarika)' : 'From LUMI (Costa Rica)' },
     { id: 'issobella', label: cs ? 'Z prstence Issobella' : 'From the Issobella ring' },
+    { id: 'matrix', label: cs ? 'K Měsíci (Matrix)' : 'To the Moon (Matrix)' },
   ];
 
   return (

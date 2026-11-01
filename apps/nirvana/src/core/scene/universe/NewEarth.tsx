@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useFrame } from '@react-three/fiber';
 import { TextLabel } from './Label';
 import * as THREE from 'three';
-import { PLANET_R, latLonToVec3 } from './positions';
+import { PLANET_R, latLonToVec3, moonPosition } from './positions';
 import { EARTH_MISSIONS, LUNAR_MISSIONS, MISSION_ORIGIN, MISSION_STATUS_COLOR } from '@/lib/freeworld-sites';
 
 /** Procedurální mapa — instant fallback dokud se reálné textury nenačtou. */
@@ -83,10 +83,9 @@ const MOON_R = 0.55;
 
 /** Měsíc — reálná textura (Solar System Scope), obíhá Novou Zemi mimo prstenec Issobelly.
  *  Matrix je maják na Shackletonu; klik otevře lunární základnu. */
-function Moon() {
+function Moon({ onOpen }: { onOpen: () => void }) {
   const ref = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
-  const angle = useRef(Math.PI * 0.35);
   const [tex, setTex] = useState<THREE.Texture | null>(null);
   const [hovered, setHovered] = useState(false);
   const mission = LUNAR_MISSIONS[0];
@@ -121,8 +120,8 @@ function Moon() {
   }, []);
 
   const open = () => {
-    if (!mission?.present) return;
-    window.open(mission.present, '_blank', 'noopener');
+    // Fokus na Měsíc + okno Matrixu (portál 'matrix'); prezentace je v okně.
+    onOpen();
   };
 
   const hover = (on: boolean) => {
@@ -132,9 +131,8 @@ function Moon() {
 
   useFrame(({ clock }, delta) => {
     if (!ref.current) return;
-    angle.current += delta * 0.11;
-    const r = 9.6;
-    ref.current.position.set(Math.cos(angle.current) * r, Math.sin(angle.current * 0.55) * 0.9, Math.sin(angle.current) * r);
+    const [mx, my, mz] = moonPosition(clock.elapsedTime);
+    ref.current.position.set(mx, my, mz);
     ref.current.rotation.y += delta * 0.05;
     if (ring.current) {
       const s = 1 + 0.28 * Math.sin(clock.getElapsedTime() * 2.4);
@@ -182,9 +180,9 @@ function Moon() {
       </mesh>
       <TextLabel
         text={hovered ? `${mission?.name ?? 'Matrix'}  ↗` : (mission?.name ?? 'Matrix')}
-        position={[0, MOON_R + 0.95, 0]}
+        position={[0, MOON_R + 0.75, 0]}
         color={hovered ? '#ffffff' : color}
-        height={0.85}
+        height={0.42}
         onClick={open}
       />
     </group>
@@ -464,7 +462,7 @@ function Atmosphere({ radius }: { radius: number }) {
   );
 }
 
-export function NewEarth() {
+export function NewEarth({ onOpenMatrix }: { onOpenMatrix?: () => void } = {}) {
   const spin = useRef<THREE.Group>(null);
   const fallback = useMemo(() => makeFallbackTexture(), []);
   const maps = useEarthMaps(fallback);
@@ -491,7 +489,7 @@ export function NewEarth() {
       </group>
       {/* atmosféra — Fresnel halo, ne plný obal */}
       <Atmosphere radius={PLANET_R} />
-      <Moon />
+      <Moon onOpen={() => onOpenMatrix?.()} />
     </group>
   );
 }

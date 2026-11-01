@@ -100,6 +100,7 @@ export function SceneRoot({
   portals,
   onOpen,
   onSelectWorld,
+  onSelectPlanet,
   xr,
   label,
   focus,
@@ -110,9 +111,11 @@ export function SceneRoot({
   portals: Portal[];
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
+  /** Klik na planetu ve sluneční soustavě. */
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter') => void;
   xr: boolean;
   label: string;
-  focus?: 'earth' | 'sun' | 'jupiter' | 'fleet';
+  focus?: 'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'fleet' | 'moon';
   hiranState?: HiranState;
   fleetLeg?: FleetLeg | null;
 }) {
@@ -184,6 +187,7 @@ export function SceneRoot({
               onOpen={onOpen}
               onSelectWorld={onSelectWorld}
               focus={focus}
+              onSelectPlanet={onSelectPlanet}
               hiranState={hiranState}
               fleetLeg={fleetLeg}
             />
@@ -195,6 +199,7 @@ export function SceneRoot({
             portals={portals}
             onOpen={onOpen}
             onSelectWorld={onSelectWorld}
+            onSelectPlanet={onSelectPlanet}
             focus={focus}
             hiranState={hiranState}
             fleetLeg={fleetLeg}

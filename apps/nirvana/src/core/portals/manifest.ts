@@ -12,10 +12,11 @@
  *   park    — Jupiter Station, pouť (herní místo)
  *   sea     — archa na velrybím koridoru (L5, třináctý uzel)
  *   fleet   — nebeská flotila na oběžné dráze Nové Země (L6, pohyblivý uzel)
+ *   moon    — Měsíc, Matrix na Shackletonu (zrcadlo dvanácti pozemských misí)
  */
 
 export type PortalStatus = 'stub' | 'wired';
-export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship' | 'sun' | 'park' | 'sea' | 'fleet';
+export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship' | 'sun' | 'park' | 'sea' | 'fleet' | 'moon';
 export type SurfaceSpot = 'harbor' | 'market' | 'forge' | 'library' | 'beacon' | 'gate' | 'ring';
 
 export interface Portal {
@@ -122,6 +123,17 @@ export const PORTALS: Portal[] = [
     api: 'concept — no endpoint',
     status: 'wired',
     scene: { slot: 'fleet' },
+  },
+  {
+    // Měsíc — Matrix na Shackletonu. Není to pozemský pin: drží obraz
+    // dvanácti misí nad nimi („jak nahoře, tak dole").
+    id: 'matrix',
+    layer: 'L5',
+    title: { cs: 'Matrix', en: 'Matrix' },
+    sourceApp: 'apps/shared/scenes/Matrix',
+    api: 'concept — no endpoint',
+    status: 'wired',
+    scene: { slot: 'moon' },
   },
   {
     id: 'issobella',

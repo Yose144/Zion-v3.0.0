@@ -3,7 +3,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { fleetPosition, fleetHeading, latLonToVec3, PLANET_R, RING_R } from './positions';
+import { fleetPosition, fleetHeading, latLonToVec3, moonPosition, PLANET_R, RING_R } from './positions';
 import { TextLabel } from './Label';
 import { quality } from '../../../../../shared/scenes/kit/quality';
 
@@ -385,7 +385,7 @@ export function SkyFleet({ onOpen, reducedMotion = false }: { onOpen: () => void
 }
 
 /** Trasa (leg) — koncept, ne let. LUMI je pozemský uzel v Kostarice. */
-export type FleetLeg = 'lumi' | 'issobella';
+export type FleetLeg = 'lumi' | 'issobella' | 'matrix';
 
 /** Souřadnice pozemního uzlu LUMI (Nová Amerika, Kostarika) — stejné jako v freeworld-sites. */
 const LUMI = { lat: 9.75, lon: -83.75 };
@@ -408,11 +408,15 @@ export function FleetRoute({ leg, reducedMotion = false }: { leg: FleetLeg; redu
 
   const curve = useMemo(() => {
     const t = clock.elapsedTime;
-    const end = new THREE.Vector3(...fleetPosition(t));
+    const fleet = new THREE.Vector3(...fleetPosition(t));
+    // 'matrix' je jediný leg, který vede Z doku: flotila → Měsíc (Shackleton).
     const start =
-      leg === 'lumi'
-        ? new THREE.Vector3(...latLonToVec3(LUMI.lat, LUMI.lon, PLANET_R + 0.04))
-        : new THREE.Vector3(Math.cos(0.55) * RING_R, 0, Math.sin(0.55) * RING_R).applyEuler(RING_TILT);
+      leg === 'matrix'
+        ? fleet.clone()
+        : leg === 'lumi'
+          ? new THREE.Vector3(...latLonToVec3(LUMI.lat, LUMI.lon, PLANET_R + 0.04))
+          : new THREE.Vector3(Math.cos(0.55) * RING_R, 0, Math.sin(0.55) * RING_R).applyEuler(RING_TILT);
+    const end = leg === 'matrix' ? new THREE.Vector3(...moonPosition(t)) : fleet;
     const mid = start.clone().lerp(end, 0.5);
     // oblouk se zvedá podle vzdálenosti — krátký skok není půl kruhu
     mid.y += start.distanceTo(end) * 0.34;

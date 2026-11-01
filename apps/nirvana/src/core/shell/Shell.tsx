@@ -17,6 +17,7 @@ import { ComputePortal } from '@/portals/compute/ComputePortal';
 import { HarborPortal } from '@/portals/freeworld/HarborPortal';
 import { GatePortal } from '@/portals/gate/GatePortal';
 import { FleetPortal } from '@/portals/fleet/FleetPortal';
+import { MatrixPortal } from '@/portals/matrix/MatrixPortal';
 import type { FleetLeg } from '@/core/scene/universe/SkyFleet';
 import { HiranPortal } from '@/portals/hiran/HiranPortal';
 import { ParkPortal } from '@/portals/park/ParkPortal';
@@ -40,6 +41,7 @@ const SLOT_COLOR: Record<SceneSlot, string> = {
   park: '#ffb46a',
   sea: '#1d8fb3',
   fleet: '#38bdf8',
+  moon: '#c9c2b6',
 };
 
 /** Rozdělení portálů v konzoli — hry jsou zvlášť (jsou to routy, ne portály). */
@@ -68,7 +70,11 @@ export function Shell() {
   const [selectedWorld, setSelectedWorld] = useState<string | null>(null);
   const [hiranState, setHiranState] = useState<HiranState>(() => hiranReviewOverride() ?? 'idle');
   const [reviewState] = useState<HiranState | null>(() => hiranReviewOverride());
-  const [focus, setFocus] = useState<'earth' | 'sun' | 'jupiter' | 'fleet'>('earth');
+  const [focus, setFocus] = useState<
+    'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'fleet' | 'moon'
+  >('earth');
+  /** Vybraná planeta = přiletěli jsme a nabízíme vstup do hry. */
+  const [planet, setPlanet] = useState<'mars' | 'venus' | 'jupiter' | null>(null);
   const [fleetLeg, setFleetLeg] = useState<FleetLeg | null>(null);
   const [xrWanted, setXrWanted] = useState(false);
   const [xrSupported, setXrSupported] = useState(false);
@@ -78,7 +84,7 @@ export function Shell() {
   const openPortal = useCallback((id: string) => {
     const next = PANELS.has(id) ? id : null;
     setPortal(next);
-    setFocus(next === 'hiran' ? 'sun' : next === 'park' ? 'jupiter' : next === 'fleet' ? 'fleet' : 'earth');
+    setFocus(next === 'hiran' ? 'sun' : next === 'park' ? 'jupiter' : next === 'fleet' ? 'fleet' : next === 'matrix' ? 'moon' : 'earth');
     setMenuOpen(false);
   }, []);
 
@@ -101,13 +107,13 @@ export function Shell() {
     const { portal: p, world } = readHash();
     if (p) {
       setPortal(p);
-      setFocus(p === 'hiran' ? 'sun' : p === 'park' ? 'jupiter' : p === 'fleet' ? 'fleet' : 'earth');
+      setFocus(p === 'hiran' ? 'sun' : p === 'park' ? 'jupiter' : p === 'fleet' ? 'fleet' : p === 'matrix' ? 'moon' : 'earth');
     }
     if (world) setSelectedWorld(world);
     const onHash = () => {
       const next = readHash();
       setPortal(next.portal);
-      setFocus(next.portal === 'hiran' ? 'sun' : next.portal === 'park' ? 'jupiter' : next.portal === 'fleet' ? 'fleet' : 'earth');
+      setFocus(next.portal === 'hiran' ? 'sun' : next.portal === 'park' ? 'jupiter' : next.portal === 'fleet' ? 'fleet' : next.portal === 'matrix' ? 'moon' : 'earth');
       if (next.world) setSelectedWorld(next.world);
     };
     window.addEventListener('hashchange', onHash);
@@ -189,6 +195,19 @@ export function Shell() {
     setMenuOpen(false);
   }
 
+  /** Klik na planetu: přiletět a otevřít panel s CTA (ne rovnou skočit do hry). */
+  const selectPlanet = useCallback((id: 'mars' | 'venus' | 'jupiter') => {
+    setPlanet(id);
+    setFocus(id);
+    setPortal(null);
+    setMenuOpen(false);
+  }, []);
+
+  const backToEarth = useCallback(() => {
+    setPlanet(null);
+    setFocus('earth');
+  }, []);
+
   const toggleLang = useCallback(() => {
     setLang(lang === 'cs' ? 'en' : 'cs');
   }, [lang, setLang]);
@@ -205,6 +224,7 @@ export function Shell() {
           portals={PORTALS}
           onOpen={openPortal}
           onSelectWorld={selectWorld}
+          onSelectPlanet={selectPlanet}
           xr={xrWanted}
           label={t('gate')}
           focus={focus}
@@ -331,6 +351,50 @@ export function Shell() {
           )}
         </footer>
       </nav>
+      {planet && (
+        <section className="planet-panel" aria-label={planet}>
+          <header>
+            <strong>
+              {planet === 'mars' ? 'MARS' : planet === 'venus' ? 'VENUŠE' : 'JUPITER'}
+            </strong>
+            <button type="button" className="planet-panel-close" onClick={backToEarth} aria-label="×">
+              ×
+            </button>
+          </header>
+          <p>
+            {planet === 'mars'
+              ? 'Aréna z krabic — rail, rakety, tři boti. Sólo i online proti lidem.'
+              : planet === 'venus'
+                ? 'Okruh na hovercraftu, tři kola, tři soupeři. Sólo i online.'
+                : 'Jupiter Station — pouť, arkády, ruské kolo a tabule skóre.'}
+          </p>
+          <div className="planet-panel-actions">
+            <Link
+              href={planet === 'mars' ? '/mars' : planet === 'venus' ? '/venus' : '/park'}
+              className="park-btn"
+              onClick={() => setPlanet(null)}
+            >
+              {planet === 'mars' ? 'Hrát arénu' : planet === 'venus' ? 'Na start' : 'Na pouť'}
+            </Link>
+            {planet === 'jupiter' && (
+              <button
+                type="button"
+                className="arena-link"
+                onClick={() => {
+                  setPlanet(null);
+                  openPortal('park');
+                }}
+              >
+                otevřít okno pouti
+              </button>
+            )}
+            <button type="button" className="arena-link" onClick={backToEarth}>
+              ← zpět k Zemi
+            </button>
+          </div>
+        </section>
+      )}
+
       <GamesDock />
       {worldsFailed && <p className="notice">{t('worldsEmpty')}</p>}
       {portal === 'world' && (
@@ -353,6 +417,7 @@ export function Shell() {
       {portal === 'compute' && <ComputePortal onClose={() => setPortal(null)} />}
       {portal === 'park' && <ParkPortal onClose={closePortal} />}
       {portal === 'archa' && <ArchaPortal onClose={closePortal} />}
+      {portal === 'matrix' && <MatrixPortal onClose={closePortal} />}
       {portal === 'fleet' && (
         <FleetPortal onClose={closePortal} leg={fleetLeg} onSelectLeg={setFleetLeg} />
       )}
