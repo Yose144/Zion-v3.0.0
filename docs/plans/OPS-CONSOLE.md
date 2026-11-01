@@ -49,6 +49,9 @@ tedy nemůže být zneužit jako obecný proxy.
 | `GET /api/ops/overview` | sloučený snapshot: `fleet{rigs,running,dph_h,dph_day,coins[],shares}` + `pool{sessions,workers,hashrate,accept_pct,blocks,luck,top_miners[]}` + `rigs[]`, `smos`, `agents`, `fresh/errors`, `source`, `stale` |
 | `GET /api/ops/fleet` | jen rigy + SMOS + agenti |
 | `GET /api/ops/pool` | pool `/stats` + top minery + posledních 10 bloků |
+| `GET /api/ops/market?gpu=&max_dph=&limit=` | nabídky GPU z vast.ai, seřazené od nejlevnější |
+| `GET /api/ops/ai` | stav inference per rig + katalog modelů |
+| `GET /api/ops/audit?limit=` | poslední akce operátora (JSONL) |
 | `GET /api/ops/status` | surový vastctl snapshot (debug) |
 | `GET /api/ops/logs?id=&src=` | tail logů z rigu (proxy na vastctl, 25 s timeout) |
 | `POST /api/ops/action` | `{"action":"launch\|stop\|rent\|exec\|smos/action\|inference/…","params":{…}}` → proxy na vastctl |
@@ -78,15 +81,34 @@ Cache: snapshot 10 s, pool 15 s. Každé volání má timeout; modul nikdy nesho
 
 ## 5. Co chybí (F2+)
 
-1. **GPU market + rent** v dashboardu (`/api/offers`, `/api/rent`) — dnes jen v prototypu.
-2. **AI inference** panely (deploy/chat/catalog) — tamtéž.
+1. ~~**GPU market + rent** v dashboardu~~ → **hotové (F2.1)**: `Rigs → GPU market`,
+   offers z vast.ai od nejlevnější, filtr `max $/h`, rent za dvojím potvrzením + audit.
+2. ~~**AI inference** panely~~ → **hotové (F2.1)**: `Rigs → AI inference` (stav rigů/VRAM/modelů,
+   katalog s deploy, chat proti libovolnému naběhnutému endpointu).
 3. **Agenti (2.B11)**: enrollment dnes končí na `https://zionterranova.com/api/agent/` → EDGE2:8088 →
    tunel na PC. Po přesunu na EDGE je potřeba buď tunel EDGE2→EDGE:8088 (permitopen), nebo přepsat
    agent URL na dashboard. Registr agentů (`~/.local/share/vastctl-agents.json`) je zatím na PC.
-4. **Akce s následky** (rent = reálné peníze, stop = výpadek) chtějí potvrzení + audit log v dashboardu.
+4. ~~Akce s následky chtějí potvrzení + audit~~ → **hotové (F2.1)**: `POST /api/ops/action` zapisuje
+   každou akci do `/opt/zion/data/dashboard-ops-audit.jsonl` (best-effort, nikdy neblokuje) a
+   záložka Fleet má kartu **Audit akcí**.
 5. **Alerty**: `vastctl serve` má `/api/alerts/*`; napojit na existující Alerts tab.
 6. **Retire prototypu** `/vast-rigs` — až bude F2 hotová, smazat (a `/vast-ops` proxy + PC tunely).
 7. **SMOS**: `ZionRig` je offline (samostatný problém, viz AGENTS).
+8. **Latence marketu**: dotaz na offers trvá 5–15 s (vast.ai API); UI proto počítá sekundy a
+   `/api/ops/market` má 40s timeout. Zvážit server-side cache 60 s, aby opakované hledání bylo zdarma.
+
+## 5b. F2.1 — co přibylo v UI
+
+`Rigs` má tři pod-záložky (jedno místo, žádná nová top-level položka v menu):
+
+| Pod-záložka | Obsah |
+|---|---|
+| **Fleet** | KPI, tabulka rigů (rozbalení = minery + akce), pool top workery, Zdrojе, **Audit akcí** |
+| **GPU market** | filtr GPU + max $/h, nabídky od nejlevnější ($/h, $/den, reliability, CUDA, RAM, disk, net), **Rent** = confirm + přepsání `RENT` |
+| **AI inference** | stav inference per rig (VRAM bar, modely, util/temp/W), katalog modelů (internal = llama.cpp, ostatní deploy), chat s výběrem endpointu |
+
+Akce jdou výhradně přes `POST /api/ops/action` (whitelist) — `rent`, `launch`, `stop`, `exec`,
+`inference/*`, `smos/*`. Každá se zapíše do auditu (kdo/odkud, parametry, ok/http).
 
 ## 6. Provozní pravidla
 

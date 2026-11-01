@@ -13822,7 +13822,13 @@ async function loadMarket(){
   const box = document.getElementById('market-results');
   const meta = document.getElementById('mkt-meta');
   if(!box) return;
-  box.innerHTML = '<div class="zion-panel p-6 text-center text-sm text-gray-500">Hledám nabídky na vast.ai…</div>';
+  box.innerHTML = '<div class="zion-panel p-6 text-center text-sm text-gray-500">Hledám nabídky na vast.ai… <span class="mkt-wait text-gray-600">0 s</span></div>';
+  let _mktTick = 0;
+  const _mktTimer = setInterval(() => {
+    _mktTick++;
+    const el = box.querySelector('.mkt-wait');
+    if(el) el.textContent = _mktTick + ' s';
+  }, 1000);
   const gpu = document.getElementById('mkt-gpu')?.value || 'any';
   const dph = (document.getElementById('mkt-dph')?.value || '').trim();
   const q = new URLSearchParams({ gpu, limit: '30' });
@@ -13839,6 +13845,8 @@ async function loadMarket(){
     _mktRender(d.offers || [], gpu);
   }catch(e){
     box.innerHTML = '<div class="zion-panel p-6 text-sm text-red-300">Market unreachable — ' + escapeHtml(String(e)) + '</div>';
+  }finally{
+    clearInterval(_mktTimer);
   }
 }
 
