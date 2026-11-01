@@ -1,0 +1,12 @@
+[Unit]
+Description=ZION PostgreSQL dump on EDGE2 (daily)
+Documentation=file:///opt/zion/scripts/backup-pg-edge2.sh
+
+[Timer]
+OnCalendar=*-*-* 03:20:00
+RandomizedDelaySec=600
+Persistent=true
+Unit=zion-pg-backup.service
+
+[Install]
+WantedBy=timers.target

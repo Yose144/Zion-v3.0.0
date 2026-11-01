@@ -48,6 +48,11 @@ DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
 RETENTION_DAILY=42
 RETENTION_WEEKLY=4
 
+# EDGE2 (primary: chain + app stack). Its PostgreSQL holds the data that has no
+# SQLite equivalent on EDGE any more — see the 7b section below.
+EDGE2_HOST="${ZION_EDGE2_HOST:-207.180.217.100}"
+EDGE2_SSH_KEY="${ZION_EDGE2_SSH_KEY:-/etc/zion/keys/edge2-probe}"
+
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
@@ -256,16 +261,36 @@ else
     log "${YELLOW}  ⚠  /etc/letsencrypt/live not found${NC}"
 fi
 
+# ── 7b. PostgreSQL dumps from EDGE2 (ZIS + MarketPlace) ─────────────────────
+# The v3 split moved ZIS and MarketPlace to PostgreSQL on EDGE2; the SQLite
+# stubs left on EDGE (/opt/zion/data/zis.db, marketplace.db) are 0 bytes, so
+# without this step the archive looks healthy but carries no users/orders.
+# EDGE2 dumps itself (zion-pg-backup.timer, daily 03:20); mirror the newest
+# set into the daily archive so one tarball still tells the whole story.
+log "Mirroring PostgreSQL dumps from EDGE2..."
+PG_BACKUP="${BACKUP_DIR}/daily/pg_${TIMESTAMP}"
+mkdir -p "${PG_BACKUP}"
+if rsync -az --timeout=90 \
+       -e "ssh -i ${EDGE2_SSH_KEY} -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new" \
+       "root@${EDGE2_HOST}:/opt/zion/backups/pg/" "${PG_BACKUP}/" 2>/dev/null \
+   && compgen -G "${PG_BACKUP}/*.dump" > /dev/null; then
+    log "${GREEN}  ✓ PostgreSQL dumps mirrored ($(du -sh "${PG_BACKUP}" | cut -f1), $(find "${PG_BACKUP}" -name '*.dump' | wc -l | tr -d ' ') dumps)${NC}"
+else
+    log "${YELLOW}  ⚠  EDGE2 PostgreSQL mirror failed — archive continues WITHOUT PG data${NC}"
+fi
+
 # ── 8. Compress daily backup ────────────────────────────────────────────────
 DAILY_TAR="${BACKUP_DIR}/daily/zion-edge-${TIMESTAMP}.tar.gz"
 if tar -czf "${DAILY_TAR}" -C "${BACKUP_DIR}/daily" \
        "node_state_${TIMESTAMP}" "v31_data_${TIMESTAMP}" \
        "app_state_${TIMESTAMP}" "config_${TIMESTAMP}" \
        "systemd_${TIMESTAMP}" "nginx_${TIMESTAMP}" \
-       "fail2ban_${TIMESTAMP}" "letsencrypt_${TIMESTAMP}"; then
+       "fail2ban_${TIMESTAMP}" "letsencrypt_${TIMESTAMP}" \
+       "pg_${TIMESTAMP}"; then
     rm -rf "${NODE_BACKUP}" "${V31_BACKUP}" "${APP_BACKUP}" \
            "${CONFIG_BACKUP}" "${SYSTEMD_BACKUP}" \
-           "${NGINX_BACKUP}" "${F2B_BACKUP}" "${CERT_BACKUP}"
+           "${NGINX_BACKUP}" "${F2B_BACKUP}" "${CERT_BACKUP}" \
+           "${PG_BACKUP}"
     SIZE=$(du -sh "${DAILY_TAR}" | cut -f1)
     chown zion:zion "${DAILY_TAR}" 2>/dev/null || true
     log "${GREEN}  ✓ Daily backup: ${DAILY_TAR} (${SIZE})${NC}"

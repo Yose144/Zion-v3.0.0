@@ -1,0 +1,22 @@
+[Unit]
+Description=ZION PostgreSQL dump (EDGE2: ZIS identity + MarketPlace)
+Documentation=file:///opt/zion/scripts/backup-pg-edge2.sh
+# ZIS and MarketPlace moved to PostgreSQL on EDGE2 during the v3 split; the
+# EDGE backup tars SQLite files only, so these two databases had no backup.
+After=postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+User=postgres
+Group=postgres
+ExecStart=/bin/bash /opt/zion/scripts/backup-pg-edge2.sh
+Nice=15
+IOSchedulingClass=idle
+# The script only writes inside its backup dir and talks to the local socket.
+ReadWritePaths=/opt/zion/backups/pg
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+TimeoutStartSec=600
