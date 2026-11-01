@@ -210,7 +210,20 @@ export const verifyEd25519 = (a: string, pk: string, sig: string) =>
 
 Zbývá doladit jednu věc: `getCurrentUser` v balíčku čte cookie **explicitně** (server), zatímco nirvana volá z prohlížeče s `credentials: 'include'`. Adaptér proto musí předat `sessionCookie: undefined` a nechat hlavičku na prohlížeči — drobná úprava `request()`.
 
-**Zbývá (S3 dokončení, S4):** kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
+### K1.1 — pool-ui na Next 16 + React 19 (2026-11-01)
+
+První appka z migrace. Byla nejmenší a nejbezpečnější: **statický export**, žádné `next/image`, žádné fonty, žádné cookies.
+
+| Krok | Výsledek |
+|---|---|
+| `next` 14.2.30 → **16.4.3**, `react` 18 → **19.2.0** | `npm install` 23 s |
+| `tsc --noEmit` | čistý (Next si sám přepnul `jsx` na `react-jsx`) |
+| Build | **jediná reálná změna:** Next 16 vyžaduje `export const dynamic = 'force-static'` u metadata rout (`robots.ts`, `sitemap.ts`) — doplněno |
+| Deploy | `deploy-pool.sh` → **site 200 / api 200**, všech 5 stránek 200 (`/stats/`, `/miner/`, `/coin/`, `/payouts/`), `/ops/` 401 = basic auth (správně) |
+
+**Poznámka:** `trailingSlash: true` zůstává — `/stats` → 301 `/stats/` je původní chování, ne regrese.
+
+**Zbývá (K1.1):** IntroPage, MarketPlace (security gate 1b — critical CVE), pak srovnat nirvana/OasisWeb/website-v2.9 na stejnou verzi. **S3/S4** čekají na K1.2–K1.4. kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
 
 ---
 

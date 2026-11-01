@@ -1,5 +1,8 @@
 import type { MetadataRoute } from 'next';
 
+/* Next 16 + `output: 'export'` vyžaduje explicitní statiku u metadata rout. */
+export const dynamic = 'force-static';
+
 const BASE = 'https://pool.zionterranova.com';
 
 const ROUTES: { path: string; priority: number; freq: MetadataRoute.Sitemap[number]['changeFrequency'] }[] = [
