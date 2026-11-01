@@ -157,3 +157,44 @@ kvůli částkám nad 2^53. Když RPC mlčí, vrací **200 s `ok:false`** a HUD 
 - Čísla jsou orientační, ne účetní — HUD není peněženka; posílat ZION jde dál
   přes ZIS/Účet.
 - Žetony se čtou z `localStorage`, takže v jiném prohlížeči jsou jiné.
+
+---
+
+# Dodatek — F3: Issobella (orbitální observatoř + šatník)
+
+Issobella byla stub portál („tracker se připojuje"). Teď má **vlastní 3D scénu**
+podle canonu ostatních L5 a v ní **výběr avatara**.
+
+## Co je hotové
+
+| Věc | Detail |
+|---|---|
+| scéna | `apps/shared/scenes/Issobella.tsx` — kruhová pozorovatelna (podlaha se zlatými vlysy, obvodový prstenec, 16 sloupků), hvězdné pole (jedna instancovaná vrstva), **Nová Země za stanicí**, 6 holografických panelů, ústřední podstavec se světelným sloupem |
+| šatník | **12 výklenků** v kruhu — koule v barvě paprsku + jméno; klik vybere avatara |
+| stránka | `/present/issobella` (`ProjectPresentation` + overlay panel: jméno, paprsek, **Uložit**, odkaz na všech 200) |
+| portál | `IssobellaPortal` je rozcestí — `Vstoupit do stanice` → prezentace, `Všech 200 postav` → `/avatars`; manifest `status: wired` |
+| uložení | `PATCH /api/auth/me` → `avatar3d.avatarId` (stejná cesta jako `/avatars`) |
+
+## Dvě chyby, které to odhalilo
+
+1. **Planeta pod podlahou není vidět** — první verze dala Novou Zemi na `y = -26`
+   pod kruhovou podlahu, takže stanice vypadala jako prázdný sál. Musela být
+   **za** stanicí a nad obzorem (`[0, -14, -38]`, radius 22).
+2. **`SceneLabel` nemá `color`** a `KeyLight` bere `sun`, ne `position` —
+   sdílené scény mají jiné API než nirvanské komponenty; typecheck to chytí.
+
+## Ověřeno
+
+Headless: scéna se vykreslí (`canvas` 1), panel šatníku je vidět, **klik na
+kouli změnil výběr** (`Krishna-Maitreya` → `Hanuman · RubyGold`), 0 chyb
+v konzoli. `tsc` + `next build` čisté (route `/present/issobella` v buildu).
+Live: všech 5 herních povrchů 200, `/present/issobella` **307** = ZAP pas
+(správně, prezentace jsou za branou).
+
+## Meze
+
+- **Webový náhled (`/terranova/issobella`) nevznikl** — scéna je zatím jen
+  v nirvaně; přidat `IssobellaPreview` na web je samostatný krok podle README.
+- Šatník ukazuje 12 kurátorovaných postav; všech 200 je na `/avatars`.
+- Label se může překrýt s koulí na úzkém viewportu (sdílený declutter řeší
+  kolize mezi labely, ne label × mesh).
