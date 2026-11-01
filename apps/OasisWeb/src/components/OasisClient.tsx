@@ -37,8 +37,11 @@ export default function OasisClient() {
   // Returning pilgrims skip WarpIntro and land straight at the stargate
   // (its threshold click still performs the audio-unlock gesture).
   const [phase, setPhase] = useState<'intro' | 'stargate' | 'arrival' | 'rite' | 'scene'>(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('oasis.visited') === '1') {
-      return 'stargate';
+    if (typeof window !== 'undefined') {
+      // Render audit / deep links: `?skipIntro=1` lands straight in the galaxy.
+      // Babylon shader compilation is slow and it is not the surface being tuned.
+      if (new URLSearchParams(window.location.search).get('skipIntro') === '1') return 'scene';
+      if (localStorage.getItem('oasis.visited') === '1') return 'stargate';
     }
     return 'intro';
   });

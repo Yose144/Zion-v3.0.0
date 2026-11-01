@@ -178,6 +178,8 @@ export interface EnvironmentProps extends SkyOptions {
   fogDensity?: number;
   /** How strongly the environment map lights materials. */
   envIntensity?: number;
+  /** Draw the visible sky dome. Space scenes set false and keep their own starfield. */
+  dome?: boolean;
 }
 
 /**
@@ -185,7 +187,7 @@ export interface EnvironmentProps extends SkyOptions {
  * It does not add a sun light — pair it with `<KeyLight sun={...}>` so the shadow
  * direction matches the visible sun.
  */
-export function SceneEnvironment({ fog, fogDensity = 0.0018, envIntensity = 1, ...skyProps }: EnvironmentProps) {
+export function SceneEnvironment({ fog, fogDensity = 0.0018, envIntensity = 1, dome = true, ...skyProps }: EnvironmentProps) {
   const options = { ...DEFAULTS, ...skyProps };
   const { gl, scene } = useThree();
 
@@ -242,7 +244,7 @@ export function SceneEnvironment({ fog, fogDensity = 0.0018, envIntensity = 1, .
     };
   }, [gl, scene, fog, fogDensity, envIntensity, JSON.stringify(options)]);
 
-  return <SceneSky {...skyProps} />;
+  return dome ? <SceneSky {...skyProps} /> : null;
 }
 
 export interface KeyLightProps {

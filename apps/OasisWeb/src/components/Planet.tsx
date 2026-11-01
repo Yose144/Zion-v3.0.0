@@ -177,9 +177,9 @@ export default function Planet({
         </mesh>
       )}
 
-      {/* Light to illuminate planet */}
-      <pointLight position={[radius + 1, 0.5, radius + 1]} intensity={1.5} color="#ffffff" distance={radius * 6} />
-      <ambientLight intensity={0.4} />
+      {/* Osvětlení planety řeší scéna jedním klíčovým světlem a IBL; dřív tu bylo
+          point + ambient světlo pro každou planetu — se třinácti planetami to bylo
+          přes dvacet světel ve framu. Emise v materiálu drží čitelnost. */}
 
       {/* Label (desktop only, if provided) */}
       {label && !isMobile && (
