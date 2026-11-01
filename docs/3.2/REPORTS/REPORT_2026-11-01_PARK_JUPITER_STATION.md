@@ -136,7 +136,7 @@ Environment=NIRVANA_PARK_SCORES_PATH=/opt/zion/data/nirvana-park-scores.json
 
 | Povrch | Deploy | Rollback |
 |---|---|---|
-| Nirvana (EDGE) | `20261101T011122Z`, střelnice `20261101T013716Z` | `/opt/zion/APP&WEB/nirvana.before-20261101T013716Z` |
+| Nirvana (EDGE) | `20261101T011122Z`, střelnice `20261101T013716Z`, denní výzva + Tetris `20261101T015749Z` | `/opt/zion/APP&WEB/nirvana.before-20261101T013716Z` |
 
 Live ověřeno: `/park` 200, `GET /api/park/scores` 200, `POST` rank 1,
 Breakout dohrán na živém buildu, **střelnice 70 b. live**, tabule si pamatuje skóre přes restart (`persist · 250`), konzole bez nových chyb (jen pre-existing `401`).
