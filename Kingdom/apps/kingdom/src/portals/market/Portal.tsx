@@ -42,15 +42,22 @@ export default async function MarketPortal({ locale }: { locale: Locale }) {
         <span>
           {payload.data.length} / {payload.total} {t(locale, 'products').toLowerCase()}
         </span>
-        <a href={EXTERNAL.library} style={{ color: 'var(--k-accent)' }}>
-          {t(locale, 'open')} →
+        <a href={EXTERNAL.shop} target="_blank" rel="noreferrer" style={{ color: 'var(--rasta-gold)' }}>
+          {t(locale, 'openShop')} →
         </a>
       </div>
 
       <div className="k-grid">
         {products.map(({ product, src }) => {
           return (
-            <article key={product.id} className="k-card">
+            <a
+              key={product.id}
+              className="k-card"
+              data-link="true"
+              href={`${EXTERNAL.shop}?category=${encodeURIComponent(product.category)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
               <div className="k-thumb">
                 {src ? (
                   <img src={src} alt="" loading="lazy" decoding="async" width={320} height={128} />
@@ -68,7 +75,7 @@ export default async function MarketPortal({ locale }: { locale: Locale }) {
                   </span>
                 ) : null}
               </div>
-            </article>
+            </a>
           );
         })}
       </div>

@@ -4,8 +4,8 @@ export const manifest = definePortal({
   id: 'market',
   title: { cs: 'Tržiště', en: 'Market' },
   summary: {
-    cs: 'Výloha obchodu. Pokladna, platba a doprava zůstávají na marketu.',
-    en: 'Shop window. Checkout, payment and shipping stay on the market.',
+    cs: 'Výloha obchodu. Kliknutí otevře e-shop — pokladna, platba a doprava zůstávají na marketu.',
+    en: 'Shop window. A click opens the shop — checkout, payment and shipping stay on the market.',
   },
   icon: 'bag',
   order: 30,

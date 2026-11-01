@@ -94,6 +94,18 @@ a {
 }
 
 @media (max-width: 780px) {
+  .k-topbar {
+    height: auto;
+    min-height: 54px;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    column-gap: 12px;
+    padding: 8px 14px;
+  }
+  .k-topbar-spacer {
+    display: none;
+  }
   .k-body {
     grid-template-columns: minmax(0, 1fr);
   }

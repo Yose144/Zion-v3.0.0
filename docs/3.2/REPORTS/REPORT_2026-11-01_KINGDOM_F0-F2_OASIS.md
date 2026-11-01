@@ -161,6 +161,17 @@ Poslední portál, který říkal „připravuji", je hotový:
 - Chování při spícím uzlu: `200 {offline:true}` a viditelná poznámka — ne 5xx. Ověřeno živě: inference uzel je teď offline (operátor spí), takže chat správně řekl „Hiran spí" místo chybové stránky.
 - **Opravena nepravda v UI:** probe měří *gateway*, ne model — karta proto hlásí `gateway: up`, ne „online". Model může spát i při běžící gateway a UI to nemá slibovat.
 
+### Kingdom F4b — Tržiště předává štafetu e-shopu (2026-11-01)
+
+E-shop na marketu je **modální** (`/shop` + modal, produkty nemají vlastní URL), takže výloha v Kingdomu nemůže odkazovat na „detail produktu" — žádný neexistuje. Místo falešného detailu vede každá karta rovnou do e-shopu s **deep-linkem na kategorii**:
+
+```
+https://market.zionterranova.com/shop?category=books
+https://market.zionterranova.com/shop?category=digital
+```
+
+Ověřeno: odkazy jsou v HTML, `?category=books` → **200**. Manifest to říká nahlas: „Kliknutí otevře e-shop — pokladna, platba a doprava zůstávají na marketu."
+
 **Zbývá (S3–S4):** kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
 
 ---

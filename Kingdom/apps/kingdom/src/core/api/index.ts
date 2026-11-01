@@ -63,4 +63,6 @@ export async function assetExists(url: string | null, timeoutMs = 1500): Promise
 export const EXTERNAL = {
   library: process.env.KINGDOM_LIBRARY_URL ?? 'https://app.zionterranova.com',
   ops: process.env.KINGDOM_OPS_URL ?? 'https://dashboard.zionterranova.com',
+  /** E-shop žije na marketu — Kingdom je výloha, pokladna zůstává tam. */
+  shop: process.env.KINGDOM_SHOP_URL ?? 'https://market.zionterranova.com/shop',
 } as const;
