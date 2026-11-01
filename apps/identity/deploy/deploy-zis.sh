@@ -36,7 +36,17 @@ fi
 # 2. Sync files to server
 echo "[2/6] Syncing to server..."
 $SSH_CMD "mkdir -p $ZIS_DIR/deploy"
-rsync -avz --delete \
+
+# Build artefakty se mažou PŘED rsyncem, ne přes `--delete`:
+# `--delete` u víc zdrojů do jednoho adresáře maže i `.env` a `node_modules`
+# (což je v cíli legitimní obsah) a skončí kódem 23 — a protože skript běží
+# se `set -e`, deploy se zastaví ve kroku 2 a služba se vůbec nerestartuje.
+# Přesně to se stalo 2026-11-01: soubory se nakopírovaly, restart neproběhl.
+$SSH_CMD "rm -rf $ZIS_DIR/lib $ZIS_DIR/routes $ZIS_DIR/*.js $ZIS_DIR/*.d.ts $ZIS_DIR/*.js.map"
+
+# `--chown`: rsync běží jako root a jinak zachová uid z build stroje
+# (macOS 501:staff) — služba pak jede nad soubory, které nevlastní `zion`.
+rsync -avz --chown=zion:zion \
     --exclude node_modules \
     --exclude .env \
     -e "ssh" \

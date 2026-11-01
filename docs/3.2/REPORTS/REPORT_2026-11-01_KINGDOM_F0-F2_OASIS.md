@@ -141,9 +141,16 @@ Audit ZIS (`apps/identity`, 4 171 LOC, 59 endpointů, 51 testů) ukázal, že **
 
 Dopad: chybový 5xx místo 4xx (zapleveluje metriky, mate klienty, kteří čtou 5xx jako výpadek) a otevřená cesta k zaplavení error logu z jedné adresy.
 
-**Fix (staged, nenasazeno):** validace `pub.length === 32 && sig.length === 64` → `false` (→401), `publicKeyToAddress` i `ed.verify` v `try/catch`. Regresní test `apps/identity/test/verify-malformed.test.ts` (5 poškozených vstupů + chybějící výzva).
+**Fix:** validace `pub.length === 32 && sig.length === 64` → `false` (→401), `publicKeyToAddress` i `ed.verify` v `try/catch`. Regresní test `apps/identity/test/verify-malformed.test.ts` (5 poškozených vstupů + chybějící výzva).
 
-**Zbývá (S2–S4):** kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
+**Nasazeno 2026-11-01 01:40 UTC** (pokyn 👤 „nasadit všude"). Kontraktní test po nasazení: **14/14 OK**, `zis_http_requests_total{route="/api/auth/verify/ed25519",status="401"}` roste místo `500`. Restart `zion-zis` 2,4 s, health OK. Kingdom přes to dál funguje (challenge 42 ms, poškozený podpis → 401).
+
+⚠️ **Deploy skript měl dvě chyby, obě opravené:**
+
+1. **`rsync --delete` u víc zdrojů** do jednoho adresáře maže i `.env` a `node_modules` → skončí kódem 23 → `set -e` zastaví deploy ve kroku 2 → **služba se vůbec nerestartuje**. Přesně to se stalo: soubory se nakopírovaly, restart neproběhl, musel jsem ho dokončit ručně. Fix: artefakty se mažou explicitně před rsyncem, `--delete` je pryč.
+2. **Chybělo `--chown=zion:zion`** — rsync jako root zachová uid z macu (`501:staff`), takže služba běžela nad soubory, které nevlastní. Fix: `--chown` v rsyncu.
+
+**Zbývá (S3–S4):** kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
 
 ---
 
