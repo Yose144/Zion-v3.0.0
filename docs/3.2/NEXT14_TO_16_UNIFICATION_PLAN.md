@@ -27,11 +27,13 @@ Sjednotit všechny 6 webů na jednu generaci Next (16.x) + React 19, aby:
 | `pool-ui` | 16.4.3 | 19.2.0 | ✅ | ✅ 2026-11-01 (`pool.zionterranova.com`) |
 | `IntroPage` | 16.4.3 | 19.2.0 | ✅ | ✅ 2026-11-01 (apex `zionterranova.com`) |
 | `MarketPlace` | 14.2.5 | 18.3.1 | — | ⏳ gate 1b |
-| `nirvana` | 16.2.9 | 19.2.0 | ✅ | ⏳ srovnat na 16.4.3 |
-| `OasisWeb` | 16.2.9 | 19.2.0 | ✅ | ⏳ srovnat na 16.4.3 |
+| `nirvana` | 16.4.3 | 19.2.0 | ✅ | ✅ (manifest srovnán; build/deploy patří herní session) |
+| `OasisWeb` | 16.4.3 | 19.2.0 | ✅ | ✅ 2026-11-01 (`oasis.zionterranova.com`) |
 | `website-v2.9` | 16.4.3 | 19.2.0 | ✅ (jen `--webpack`) | ✅ |
 
 **Zkušenost z 1–2:** obě appky prošly **bez zásahu do kódu**. Jediná reálná změna u pool-ui byly `force-static` metadata routy; u IntroPage byly už dopředu. Synchronní `params` u `[slug]` rout Next 16 se `generateStaticParams` přijme — migrace na Promise není blokující.
+
+**⚠️ Past, která stála hodinu (OasisWeb):** build padal na `ENOENT` uvnitř `.next` (`_buildManifest.js.tmp`, `page.js.nft.json`, `pages-manifest.json`) u **Turbopacku i webpacku**, s podvrženou stopou „workspace root není správný" (`apps/package-lock.json` nutí Next inferovat root `apps/`). Nebyla to konfigurace — v `apps/OasisWeb` běžela **souběžná session s `rm -rf .next dist && next build` v cyklu**, která mazala výstup uprostřed buildu. **Recept:** build v izolovaném `git worktree` (`git worktree add /tmp/x HEAD --detach` + `npm install` + build) — prošel napoprvé, bez jakékoli změny `next.config.ts`. Pravidlo: **dva buildy v jednom `apps/<app>` nejdou**; při podezření zkontroluj `ps aux | grep next-build` a hleď na `rm -rf .next`.
 
 ## 3. Klíčové kroky per app
 
