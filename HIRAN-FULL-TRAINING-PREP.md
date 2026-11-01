@@ -46,7 +46,7 @@ v2.1 je hlavně persona + CLI basics; curriculum jsou doc-dumpy.
 |---|---|---|
 | `V3/` craty (zion-core, pool, miner, agent, ai, wallet, bridge, cli) | docstrings + pub API → „co dělá X", „jak použiju Y", Rust idiom | 🔲 největší mezera |
 | `V3/docs/*.md` | CLI guide, deploy, architektura → Q&A | 🟡 curriculum doc-dumpy → přepsat do reálných otázek |
-| `docs/3.2/REPORTS/*.md` | **ops paměť**: v3-tx CLI bug, anchor design, deploy pasti (fail2ban, sharp, next lock), mining duty | 🔲 zlato — reálné incidenty |
+| `docs/3.2/REPORTS/*.md` | **ops paměť**: v3-tx CLI bug, anchor design, deploy pasti (fail2ban, sharp, next lock), mining duty | ✅ 400 párů (`ops.jsonl`) — `build_ops_curriculum.py`, 76 reportů |
 | `AGENTS.md` + `apps/*/AGENTS.md` | topologie, rozhodnutí, „pasti" | 🔲 |
 | `infra/RUNBOOK.md` | EDGE/EDGE2/nodes, služby, porty | 🔲 |
 | `canon/` (knihy, brand) | lore → maitreya flavor | 🟡 malý dataset |
