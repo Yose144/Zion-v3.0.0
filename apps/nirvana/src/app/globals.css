@@ -1426,3 +1426,242 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-size: 0.68rem;
   color: rgba(244, 234, 210, 0.55);
 }
+
+/* ── MARS ARENA — Quake-style deathmatch ─────────────────────────────── */
+
+.arena {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #2a1108;
+  color: #f6e7d8;
+  cursor: crosshair;
+}
+
+.arena-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.arena-crosshair {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  background:
+    linear-gradient(#ffe9a8, #ffe9a8) center / 2px 100% no-repeat,
+    linear-gradient(#ffe9a8, #ffe9a8) center / 100% 2px no-repeat;
+  opacity: 0.75;
+}
+
+.arena-hud {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 180, 106, 0.35);
+  background: rgba(12, 6, 4, 0.82);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+}
+
+.arena-hud .arena-health {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.arena-hud .arena-time {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+.arena-hud .arena-weapon {
+  color: #ffb46a;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+}
+
+.arena-tip {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: calc(4.4rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  color: rgba(246, 231, 216, 0.5);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.arena-respawn {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  padding: 0.7rem 1.4rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 122, 107, 0.5);
+  background: rgba(30, 6, 4, 0.85);
+  color: #ff7a6b;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arena-panel {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(34rem, calc(100vw - 2rem));
+  padding: 1.4rem 1.5rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 180, 106, 0.35);
+  background: rgba(14, 7, 5, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.arena-panel header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.arena-panel header strong {
+  font-size: 1.1rem;
+  letter-spacing: 0.22em;
+  color: #ffb46a;
+}
+
+.arena-panel header span {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.5);
+}
+
+.arena-panel p {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgba(246, 231, 216, 0.78);
+  margin: 0 0 0.8rem;
+}
+
+.arena-keys {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0;
+  margin: 0 0 1rem;
+  font-size: 0.78rem;
+  color: rgba(246, 231, 216, 0.7);
+}
+
+.arena-keys kbd {
+  display: inline-block;
+  min-width: 1.6rem;
+  padding: 0.15rem 0.4rem;
+  margin-right: 0.3rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(255, 180, 106, 0.4);
+  background: rgba(255, 180, 106, 0.1);
+  color: #ffd9a8;
+  font-family: inherit;
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.arena-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.arena-link {
+  color: rgba(255, 209, 102, 0.8);
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+
+.arena-link:hover {
+  color: #ffe9a8;
+}
+
+.arena-small {
+  margin: 0.9rem 0 0;
+  font-size: 0.7rem;
+  color: rgba(246, 231, 216, 0.42);
+}
+
+.arena-result {
+  display: flex;
+  gap: 1.6rem;
+  margin: 0.4rem 0 1rem;
+}
+
+.arena-result div {
+  display: flex;
+  flex-direction: column;
+}
+
+.arena-result em {
+  font-style: normal;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(246, 231, 216, 0.5);
+}
+
+.arena-result strong {
+  font-size: 1.6rem;
+  color: #ffd166;
+  font-variant-numeric: tabular-nums;
+}
+
+.arena-notice {
+  color: #7fe3d4 !important;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 640px) {
+  .arena-hud {
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    padding: 0.4rem 0.7rem;
+  }
+  .arena-tip {
+    display: none;
+  }
+}
+
+.park-arena-link {
+  display: block;
+  margin: -0.3rem 0 0.7rem;
+  font-size: 0.78rem;
+  color: #ffb46a;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+
+.park-arena-link:hover {
+  color: #ffd9a8;
+}

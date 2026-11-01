@@ -34,11 +34,18 @@ import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
  * zobrazuje na dvou místech. Proto ji vidí i hráč ve VR.
  */
 
-/** Tabule vede i střelnici — ta není canvas, ale skóre má stejné. */
-const BOARD: { id: ParkGameId; title: { cs: string; en: string } }[] = [
+/** Názvy všech her, které mají skóre — canvas i 3D. */
+const TITLES: { id: ParkGameId; title: { cs: string; en: string } }[] = [
   ...PARK_GAMES.map((game) => ({ id: game.id as ParkGameId, title: game.title })),
   { id: 'gallery', title: { cs: 'Střelnice', en: 'Gallery' } },
+  { id: 'arena', title: { cs: 'Mars aréna', en: 'Mars arena' } },
 ];
+
+const BOARD = TITLES;
+
+function titleOf(id: ParkGameId, cs: boolean): string {
+  return TITLES.find((entry) => entry.id === id)?.title[cs ? 'cs' : 'en'] ?? id;
+}
 
 export default function ParkPage() {
   const { lang } = useI18n();
@@ -430,15 +437,14 @@ export default function ParkPage() {
           <button type="button" className="park-btn park-ride-btn" onClick={ride} disabled={riding}>
             {cs ? `Ruské kolo · ${WHEEL_COST} žeton` : `Ferris wheel · ${WHEEL_COST} token`}
           </button>
+          <Link href="/mars" className="park-arena-link">
+            {cs ? 'Mars aréna · deathmatch →' : 'Mars arena · deathmatch →'}
+          </Link>
 
           <div className={`park-challenge${challengeDone ? ' is-done' : ''}`}>
             <strong>{cs ? 'DENNÍ VÝZVA' : 'DAILY CHALLENGE'}</strong>
             <span>
-              {challenge.game === 'gallery'
-                ? cs
-                  ? 'Střelnice'
-                  : 'Gallery'
-                : gameById(challenge.game).title[cs ? 'cs' : 'en']}
+              {titleOf(challenge.game, cs)}
               {' · '}
               {cs ? 'cíl' : 'target'} {challenge.target}
             </span>

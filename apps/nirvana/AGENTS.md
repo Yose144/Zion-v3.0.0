@@ -82,3 +82,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   z prvního pokusu: 0 zásahů).
 - **VR:** XR session se otevírá, ale na headsetu to není otestované. Interakce
   jsou raycast (klik na skříň/kolo), takže by měly projít; nehlásit víc, než víme.
+
+## Mars Arena — `/mars` (2026-11-01)
+
+- **Mapa je data, ne model.** `core/arena/map.ts` = 22 AABB krabic; fyzika i
+  hitscan z nich počítají intervaly. Nová zeď = jeden řádek v poli.
+- **Pohyb se řeší po osách** (`physics.ts`): posun → překryv → vytlačení na líc.
+  Když se hráč zasekne, hledej chybu tam, ne v mřížce.
+- **Pointer lock**: klik do plátna zamkne myš, `Esc` uvolní; po smrti hráče se
+  kamera vrací na spawn — nesahej na `camera.rotation` mimo smyčku.
+- **Debug háček** `?arenaDebug=1` vystaví `window.__arenaDebug` (`state`, `aimAt`,
+  `fire`). Používá se pro headless test zásahů; v produkci je jen v URL.
+- **Co tu není:** navigace botů, zvuk, viewmodel, VR ovládání. Nehlásit jako hotové.
