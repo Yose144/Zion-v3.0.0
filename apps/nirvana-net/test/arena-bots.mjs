@@ -81,12 +81,13 @@ console.log('\n== serverová simulace (bot zasáhne člověka) ==');
   const human = arena.addPlayer(sim, 'c_human', 'Hráč', null, Date.now());
   arena.ensureBots(sim);
 
-  // oba na volné linii (z=16 je mimo schody i platformu)
-  human.body.x = 8;
+  // oba na volné linii (z=16 je mimo schody i platformu); 6 m = v dosahu
+  // i s rezervou pro chybu míření
+  human.body.x = 0;
   human.body.z = 16;
   human.body.y = 0.2;
   const bot = [...sim.players.values()].find((p) => p.isBot);
-  bot.body.x = -8;
+  bot.body.x = -6;
   bot.body.z = 16;
   bot.body.y = 0.2;
 
@@ -107,6 +108,48 @@ console.log('\n== serverová simulace (bot zasáhne člověka) ==');
   const botFrags = [...sim.players.values()].filter((p) => p.isBot).reduce((s, p) => s + p.frags, 0);
   check('frag šel některému botovi', botFrags >= 1, `boti frags=${botFrags} killer=${kill?.killer}`);
 
+  // ── bot se vrátí (respawn) ─────────────────────────────────────────
+  const deadBotId = kill?.killer;
+  let botBack = false;
+  for (let tick = 0; tick < 30 * 4 && !botBack; tick++) {
+    now += 1000 / 30;
+    arena.stepArena(sim, 1 / 30, now);
+    const back = [...sim.players.values()].find((p) => p.id === deadBotId);
+    if (back && back.alive && back.hp === 100) botBack = true;
+  }
+  check('zabitý bot se vrátí do hry', botBack, `id=${deadBotId}`);
+
+  // ── člověk zabije bota (rail = one-shot) — deterministicky ──────────
+  const sim3 = arena.createArena(Date.now());
+  const human3 = arena.addPlayer(sim3, 'c_h', 'Hráč', null, Date.now());
+  arena.ensureBots(sim3);
+  human3.body.x = 0; human3.body.z = 16; human3.body.y = 0.2;
+  const victimBot = [...sim3.players.values()].find((p) => p.isBot);
+  // ostatní boty z místnosti vyndáme — jinak by člověka odkopali dřív,
+  // než by stihl vystřelit (test musí být deterministický)
+  for (const p of [...sim3.players.values()]) {
+    if (p.isBot && p.id !== victimBot.id) sim3.players.delete(p.id);
+  }
+  victimBot.body.x = -6; victimBot.body.z = 16; victimBot.body.y = 0.2;
+  victimBot.alive = true;
+
+  let now3 = Date.now();
+  let botDead = null;
+  for (let tick = 0; tick < 30 * 6 && !botDead; tick++) {
+    now3 += 1000 / 30;
+    const dx = victimBot.body.x - human3.body.x;
+    const dy = (victimBot.body.y + 1.05) - (human3.body.y + PLAYER.eye);
+    const dz = victimBot.body.z - human3.body.z;
+    const len = Math.hypot(dx, dy, dz) || 1;
+    human3.input.yaw = Math.atan2(-dx / len, -dz / len);
+    human3.input.pitch = Math.asin(dy / len);
+    human3.input.fire = true;
+    human3.input.weapon = 'rail';
+    const events = arena.stepArena(sim3, 1 / 30, now3);
+    botDead = events.find((e) => e.kind === 'kill' && e.victim === victimBot.id) ?? null;
+  }
+  check('člověk zabije bota (rail = Q3 one-shot)', Boolean(botDead), JSON.stringify(botDead));
+
   // ── MG: 8 dmg na ránu, rozptyl — NENÍ one-shot jako rail ──────────
   const sim2 = arena.createArena(Date.now());
   const human2 = arena.addPlayer(sim2, 'c_h', 'Hráč', null, Date.now());
@@ -117,6 +160,10 @@ console.log('\n== serverová simulace (bot zasáhne člověka) ==');
   human2.ammo = 999;
   human2.mgAmmo = 999;
   const target = [...sim2.players.values()].find((p) => p.isBot);
+  // jen jeden bot — ostatní by člověka zabili rail a test by ztratil smysl
+  for (const p of [...sim2.players.values()]) {
+    if (p.isBot && p.id !== target.id) sim2.players.delete(p.id);
+  }
   target.body.x = 6; target.body.z = 16; target.body.y = 0.2;
 
   let now2 = Date.now();
@@ -221,42 +268,15 @@ try {
   });
   check('boti se pohybují (sdílená fyzika)', moved.some((d) => d > 1), moved.map((d) => d.toFixed(1)).join('/'));
 
-  // ── člověk zabije bota (rail = Q3 100 dmg = one-shot) ─────────────
-  const botTarget = bots.find((p) => p.alive);
-  let botKilled = null;
-  for (let i = 0; i < 90 && !botKilled; i++) {
-    const snap = a.last((m) => m.t === 'snapshot');
-    const me = snap.players.find((p) => p.id === roomA.youPlayerId);
-    const foe = snap.players.find((p) => p.id === botTarget.id);
-    if (me && foe && foe.alive) {
-      const dx = foe.x - me.x;
-      const dy = (foe.y + 1.05) - (me.y + 1.6);
-      const dz = foe.z - me.z;
-      const len = Math.hypot(dx, dy, dz) || 1;
-      a.send({
-        t: 'input', seq: 700 + i, mx: 0, mz: 0,
-        yaw: Math.atan2(-dx / len, -dz / len),
-        pitch: Math.asin(dy / len),
-        jump: false, fire: true, weapon: 0,
-      });
-    }
-    await sleep(100);
-    botKilled = a.last((m) => m.t === 'event' && m.event.kind === 'kill' &&
-      m.event.victim === botTarget.id && m.event.killer === roomA.youPlayerId);
-  }
-  check('člověk zabije bota (rail = Q3 dmg)', Boolean(botKilled),
-    JSON.stringify(a.inbox.filter((m) => m.t === 'event' && m.event.kind === 'kill').slice(-3)));
+  // ── transport: zbraň + munice ve snapshotu (server je vlastník) ────
+  const anyBots = snapshot.players.filter((p) => p.isBot);
+  const hasWeaponData = snapshot.players.every((p) => typeof p.weapon === 'number' && typeof p.ammo === 'number');
+  check('snapshot nese zbraň i munici', hasWeaponData,
+    JSON.stringify(snapshot.players.map((p) => ({ w: p.weapon, a: p.ammo }))));
 
-  // ── bot se vrátí ──────────────────────────────────────────────────
-  const backAt = Date.now() + PLAYER_RESPAWN_MS + 1500;
-  let respawned = null;
-  while (Date.now() < backAt && !respawned) {
-    await sleep(200);
-    const snap = a.last((m) => m.t === 'snapshot');
-    const foe = snap?.players.find((p) => p.id === botTarget.id);
-    if (foe && foe.alive && foe.hp === 100) respawned = foe;
-  }
-  check('bot se vrátí do hry', Boolean(respawned));
+  // ── stav zápasu je 'running' (match_start poslán) ──────────────────
+  check('zápas běží', a.last((m) => m.t === 'event' && m.event.kind === 'match_start') !== null);
+  check('boti jsou v každém snapshotu', anyBots.length === 3);
 
   // ── frag limit jen pro lidi (deterministicky, přímo v simu) ───────
   {

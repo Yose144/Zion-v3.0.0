@@ -14,9 +14,9 @@
  * Žádné Reactu, žádného DOM — čistá logika, kterou jde testovat v Node.
  */
 
-import { lineOfSight, stepBody, type Body, type Box4 } from './physics';
+import { PLAYER, lineOfSight, stepBody, type Body, type Box4 } from './physics';
 import { cellCenter, cellIndex, findPath, nearestWalkable, type NavGrid } from './nav';
-import { aimVector } from './weapons';
+import { aimVector, TARGET_EYE_RATIO } from './weapons';
 
 export interface BotTarget {
   id: string;
@@ -64,16 +64,24 @@ export interface BotOptions {
   aimError?: number;
   /** Doba mezi výstřely (ms). */
   fireDelayMs?: number;
-  /** Svislý bod, do kterého bot míří (hlava hráče). */
+  /** Výška oka, ze které bot míří — MUSÍ sedět se `PLAYER.eye`, jinak
+   *  bot počítá z jedné výšky a server střílí z jiné a rány míjí. */
+  eyeHeight?: number;
+  /** Výška středu zásahové koule cíle — `PLAYER.height * TARGET_EYE_RATIO`. */
   targetHeight?: number;
 }
 
 export const DEFAULT_BOT_OPTIONS: Required<BotOptions> = {
   speed: 0.62,
   engageRange: 26,
-  aimError: 0.06,
+  // 0,035 rad ≈ 2° — na 10 m to dává 0,35 m odchylku, tedy zásah pod
+  // poloměrem 0,62 m. Vyšší hodnota (0,06) dělala z botů střelce, kteří
+  // na delší vzdálenost míjeli skoro vždy.
+  aimError: 0.035,
   fireDelayMs: 850,
-  targetHeight: 1.35,
+  // stejné hodnoty jako používá server při testu zásahu
+  eyeHeight: PLAYER.eye,
+  targetHeight: PLAYER.height * TARGET_EYE_RATIO,
 };
 
 export function createBotMemory(): BotMemory {
@@ -170,7 +178,7 @@ export function stepBot(
   const targetYaw = Math.atan2(-(target.x - self.x), -(target.z - self.z));
   const targetDist = Math.hypot(target.x - self.x, target.z - self.z);
   const targetPitch = Math.atan2(
-    target.y + opt.targetHeight - (self.y + 1.2),
+    target.y + opt.targetHeight - (self.y + opt.eyeHeight),
     Math.max(0.2, targetDist),
   );
 
@@ -183,10 +191,10 @@ export function stepBot(
   const yaw = targetYaw + memory.aimErrorX;
   const pitch = Math.max(-0.9, Math.min(0.9, targetPitch + memory.aimErrorY));
 
-  // ── viditelnost ────────────────────────────────────────────────────
+  // ── viditelnost (z téže výšky, ze které bot míří) ───────────────────
   const sees = lineOfSight(
     self.x,
-    self.y + 1.2,
+    self.y + opt.eyeHeight,
     self.z,
     target.x,
     target.y + opt.targetHeight,
