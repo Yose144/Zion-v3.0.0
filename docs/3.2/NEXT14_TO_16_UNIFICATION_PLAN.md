@@ -28,12 +28,14 @@ Sjednotit všechny 6 webů na jednu generaci Next (16.x) + React 19, aby:
 | `IntroPage` | 16.4.3 | 19.2.0 | ✅ | ✅ 2026-11-01 (apex `zionterranova.com`) |
 | `MarketPlace` | 16.4.3 | 19.2.0 | ✅ | ⏳ **build OK, deploy čeká** (gate 1b — money-path, chce TEST-K11-* objednávku) |
 | `nirvana` | 16.4.3 | 19.2.0 | ✅ | ✅ (manifest srovnán; build/deploy patří herní session) |
-| `OasisWeb` | 16.4.3 | 19.2.0 | ✅ | ✅ 2026-11-01 (`oasis.zionterranova.com`) |
+| `OasisWeb` | 16.4.3 | 19.2.0 | ✅ | ✅ 2026-11-01 (`oasis.zionterranova.com`) — **jediná appka, která potřebovala config fix** (`reactBrowserBailout: false`, React #438) |
 | `website-v2.9` | 16.4.3 | 19.2.0 | ✅ (jen `--webpack`) | ✅ |
 
 **Zkušenost z 1–2:** obě appky prošly **bez zásahu do kódu**. Jediná reálná změna u pool-ui byly `force-static` metadata routy; u IntroPage byly už dopředu. Synchronní `params` u `[slug]` rout Next 16 se `generateStaticParams` přijme — migrace na Promise není blokující.
 
-**⚠️ Past, která stála hodinu (OasisWeb):** build padal na `ENOENT` uvnitř `.next` (`_buildManifest.js.tmp`, `page.js.nft.json`, `pages-manifest.json`) u **Turbopacku i webpacku**, s podvrženou stopou „workspace root není správný" (`apps/package-lock.json` nutí Next inferovat root `apps/`). Nebyla to konfigurace — v `apps/OasisWeb` běžela **souběžná session s `rm -rf .next dist && next build` v cyklu**, která mazala výstup uprostřed buildu. **Recept:** build v izolovaném `git worktree` (`git worktree add /tmp/x HEAD --detach` + `npm install` + build) — prošel napoprvé, bez jakékoli změny `next.config.ts`. Pravidlo: **dva buildy v jednom `apps/<app>` nejdou**; při podezření zkontroluj `ps aux | grep next-build` a hleď na `rm -rf .next`.
+**⚠️ `OasisWeb` je výjimka — potřeboval jednu řádku configu (React #438).** Next 16.4 zapíná `experimental.reactBrowserBailout` (`next/dynamic` se `ssr: false`). Bailout objekt, který se předává do `use()`, umí zpracovat **jen React canary, který si Next veze interně** — s veřejným Reactem 19.2.0 `use()` spadne na React #438 a ErrorBoundary zobrazí „Something went wrong". Naměřeno live: **8 z 11 rout prázdných, `canvas=0`**. React 19.3.1 to **nespraví** (ověřeno). Fix = `experimental: { reactBrowserBailout: false }` v `apps/OasisWeb/next.config.ts`. Ostatní appky to nepostihne: `website-v2.9` je `output: 'standalone'` (85× `ssr:false` OK), `IntroPage` (4×) a `pool-ui` (0×) jsou statické exporty a v prohlížeči prošly. **Test:** `curl` 200 nestačí — u statického exportu měř `pageerror` + `canvas` v prohlížeči (postup v reportu `REPORT_2026-11-01_KINGDOM_F0-F2_OASIS.md` §K1.1 OasisWeb).
+
+**⚠️ Past s `ENOENT` v `.next` (jiná věc než #438):** build padal na `ENOENT` uvnitř `.next` (`_buildManifest.js.tmp`, `page.js.nft.json`, `pages-manifest.json`) u **Turbopacku i webpacku**, s podvrženou stopou „workspace root není správný" (`apps/package-lock.json` nutí Next inferovat root `apps/`). Nebyla to konfigurace — v `apps/OasisWeb` běžela **souběžná session s `rm -rf .next dist && next build` v cyklu**, která mazala výstup uprostřed buildu. **Recept:** build v izolovaném `git worktree` (`git worktree add /tmp/x HEAD --detach` + `npm install` + build). Pravidlo: **dva buildy v jednom `apps/<app>` nejdou**; při podezření zkontroluj `ps aux | grep next-build`.
 
 ## 3. Klíčové kroky per app
 

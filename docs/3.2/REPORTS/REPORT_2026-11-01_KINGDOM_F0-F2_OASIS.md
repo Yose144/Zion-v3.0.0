@@ -240,7 +240,28 @@ Druhá appka migrace, první **produkční povrch** (apex `zionterranova.com`). 
 
 **Rollback připraven:** `/root/web-backups/zion-maintenance-bak-20261101T092603Z/` na EDGE2 (472 M, `rsync -a` před deployem). `nginx -s reload` proběhl bez chyby (varování „protocol options redefined" v `kingdom.`/`market.` konfech jsou pre-existing).
 
-**Zbývá (K1.1):** **MarketPlace** (security gate 1b — critical CVE), pak srovnat nirvana/OasisWeb na `16.4.3`. **S3/S4** čekají na K1.2–K1.4. kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
+### K1.1 — OasisWeb na Next 16 + React 19 (2026-11-01) — **jediná appka, která potřebovala zásah**
+
+Třetí appka migrace. `next` 16.2.12 → **16.4.3**, `react` zůstal **19.2.0**. Build prošel, `tsc` čistý — a přesto byla stránka po nasazení **rozbitá**: 8 z 11 rout spadlo na `Something went wrong`.
+
+| Krok | Výsledek |
+|---|---|
+| `next` 16.2.12 → **16.4.3** (React 19.2.0 beze změny) | `npm install` 26 s, `tsc --noEmit` čistý, build 13 statických rout |
+| HTTP smoke test (curl) | **11/11 rout 200** — nic nenapovídalo problému |
+| **Runtime smoke test (Playwright)** | **8/11 rout**: `Minified React error #438` → ErrorBoundary → prázdná stránka, `canvas=0` (3D scéna se vůbec nenamountovala) |
+| Příčina | Next 16.4 zapíná `experimental.reactBrowserBailout: true` (bailout cesta pro `next/dynamic` se `ssr: false`). Bailout objekt předávaný do `use()` umí zpracovat jen **React canary, který si Next veze interně**; s veřejným Reactem 19.2.0 `use()` objekt odmítne (`formatProdErrorMessage(438)`) a ErrorBoundary zobrazí chybu. **React 19.3.1 to nespraví** (ověřeno) — není to tedy „starý React", ale rozchod Nextu s npm Reactem. |
+| Fix | `next.config.ts`: `experimental: { reactBrowserBailout: false }` — jedna řádka, vrací chování 16.2 (`BailoutToCSRError`) |
+| Po fixu | **11/11 rout**: `canvas=1` (kromě `/miner`, kde plátno není záměrně), jediná chyba = pre-existing `401` z `/api/auth/me` |
+| Deploy | `deploy-oasis-web.sh` → `oasis.zionterranova.com`; záloha `/root/oasis-web-root.bak-20261101T101841Z.tar.gz` na EDGE2 |
+| Rollback | `ssh zion-edge2 'tar -xzf /root/oasis-web-root.bak-20261101T101841Z.tar.gz -C /var/www'` |
+
+**Proč to nikdo nechytil napoprvé:** HTTP 200 + shoda CSS tříd vypadají jako úspěch — statický export ale dodá HTML, které se v prohlížeči zahodí. **Regrese se pozná jen v prohlížeči** (`pageerror` + `canvas`), ne v `curl`.
+
+**Které appky to nepostihne:** `website-v2.9` (85× `ssr: false`) běží na `output: 'standalone'` a je v pořádku; `IntroPage` (4×) a `pool-ui` (0×) jsou statické exporty a také v pořádku — ověřeno v prohlížeči 2026-11-01. OasisWeb má **22** `ssr: false` a jako jediný kombinuje statický export s bailout cestou.
+
+**Měřeno:** lokální statický server háže #438 i pro **bajty, které na live fungují** — tj. lokální „ověřeno" u téhle appky **nic nedokazuje**. Rozhoduje až live v prohlížeči.
+
+**Zbývá (K1.1):** **MarketPlace** (security gate 1b — critical CVE). `nirvana` (16.4.3, deployla herní session) i `OasisWeb` (16.4.3, nasazeno) jsou srovnané. **S3/S4** čekají na K1.2–K1.4. kontraktní test proti živému ZIS · migrace konzumentů na `@zion/session` (market → pool-ui → nirvana → website) + sjednocení env na `ZIS_URL` · rozhodnout CSRF jednou (dnes jen MarketPlace) a doplnit `kingdom.`/`nirvana.` do CORS.
 
 ---
 
