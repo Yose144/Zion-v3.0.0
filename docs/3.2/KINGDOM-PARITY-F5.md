@@ -27,8 +27,9 @@
 | mince, upstream nohy, payout mode, fee | **má** | `/public/v1/coins` |
 | těžaři: worker, hashrate, accept rate, shares | **má** (F4, 2026-11-01) | `/public/v1/miners`, cache 30 s |
 | historie poolu (hashrate, accepted, online) | **má** (F5, 2026-11-01) | `/public/v1/history?limit=60` (12 KB / 3 s místo 1 MB / 12 s), sloupcový pruh bez knihovny |
-| výplaty, luck, nalezené bloky | **chybí** | P2: `/public/v1/payouts`, `/public/v1/blocks` |
-| detail těžaře (jeho historie, payouty) | **chybí** | P2: chce `/public/v1/miner/{coin}/{wallet}/…` + vstup na adresu |
+| výplaty (částka, stav, blok, potvrzení) | **má** (F5 P2, 2026-11-01) | `/public/v1/payouts?limit=12`, flowers/1e6 |
+| luck, nalezené bloky | **chybí** | P3 — `/public/v1/blocks` |
+| detail těžaře (nevyplaceno, odhad, podíl, workeři) | **má** (F5 P2, 2026-11-01) | formulář `?miner=`, `/public/v1/miner/zion/<wallet>` |
 | ovládání poolu (restart, drain) | handoff | `/ops/` za basic auth — operátorské, ne klientské |
 
 ## 3. Tržiště ← `market.zionterranova.com`, `/market`
@@ -89,7 +90,7 @@
 | Stav | Portály |
 |---|---|
 | **100 % (má / platný handoff)** | Přístav, Věž, Snem, Knihovna, Účet (čtení) |
-| **~90 %** | Řetěz (má hledání adresy), Kovárna (má historii; chybí výplaty a detail těžaře) |
+| **~95 %** | Řetěz (hledání adresy), Kovárna (historie, výplaty, detail těžaře); chybí jen luck a nalezené bloky |
 | **~60 %** | Tržiště (katalog/pokladna = handoff; DeFi mimo rozsah) |
 | **blokováno** | Issobella (čeká na 6.B4) |
 
@@ -97,4 +98,4 @@
 
 **Do F5 zbývá:** zúžení `website-v2.9` o duplicitní povrchy (`/pool`, `/market`, `/l4-oasis`, `/explorer`)
 na odkazy — to je druhá půlka F5 a smí se udělat až po 30 dnech redirectu podle §3 plánu.
-Dále P2: detail těžaře a výplaty v Kovárně.
+P2 hotové (2026-11-01): výplaty a detail těžaře v Kovárně. Zbývá P3: luck a nalezené bloky.
