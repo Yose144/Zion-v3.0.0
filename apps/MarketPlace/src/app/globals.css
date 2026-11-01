@@ -930,9 +930,9 @@ body.zion-shell {
   pointer-events: none;
 }
 
-/* Království Srdce banner hero — the art carries its own title band +
-   timeline, so it renders clean full-bleed; actions live in a strip
-   below instead of an overlay. */
+/* Království Srdce banner hero — the art is a full illustrated scene
+   ("Zionský ráj s orbitálním habitatem") with its own decorative frame;
+   actions live in a strip below instead of an overlay. */
 .kralovstvi-hero {
   position: relative;
   z-index: 2;
@@ -941,7 +941,7 @@ body.zion-shell {
 .kralovstvi-hero-art {
   width: min(100%, 88rem);
   margin: clamp(0.5rem, 2vw, 1.5rem) auto 0;
-  aspect-ratio: 1984 / 793;
+  aspect-ratio: 1672 / 941;
   border-radius: 1rem;
   background-image: url('/kralovstvi-srdce-hero.webp');
   background-size: cover;
@@ -969,9 +969,8 @@ body.zion-shell {
   margin: 0.75rem auto 1.25rem;
 }
 
-/* Mobile: full aspect ratio would render the banner tiny (≈150 px tall,
-   title unreadable) — switch to a fixed-height center crop that keeps
-   the tree, Buddha and title band legible. */
+/* Mobile: full aspect ratio would render the banner tiny — switch to a
+   fixed-height center crop that keeps the scene legible. */
 @media (max-width: 767px) {
   .kralovstvi-hero-art {
     aspect-ratio: auto;
