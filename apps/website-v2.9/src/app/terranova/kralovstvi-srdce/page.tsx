@@ -532,8 +532,8 @@ export default function KralovstviSrdcePage() {
                 srcSet="/images/kralovstvi-srdce/hero-m.webp 960w, /images/kralovstvi-srdce/hero.webp 1600w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt={cs
-                  ? 'Království srdce — tři lodě flotily, keporkaci a břeh Nové země pod hvězdnou oblohou'
-                  : 'The Kingdom of the Heart — the fleet’s three ships, humpback whales and the shore of the new world under a starry sky'}
+                  ? 'Království srdce — archa za západu slunce u pobřeží Nové země, na přídi Malý princ a dívka s lucernou, u boku keporkak'
+                  : 'The Kingdom of the Heart — the ark at sunset off the shore of the new world, the Little Prince and a girl with a lantern on the prow, a humpback alongside'}
                 width={1600}
                 height={639}
                 loading="eager"
@@ -618,23 +618,38 @@ export default function KralovstviSrdcePage() {
               })}
             </div>
           </div>
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-            <img
-              src="/images/kralovstvi-srdce/paradise.webp"
-              alt={cs
-                ? 'Zahrada a chrám na břehu s plujícími loděmi — představa kolonie, kterou archa zásobuje'
-                : 'A garden and temple on the shore with sailing ships — the colony the ark supplies'}
-              width={1280}
-              height={720}
-              loading="lazy"
-              decoding="async"
-              className="w-full object-cover"
-            />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/kralovstvi-srdce/shipyard.webp"
+                alt={cs
+                  ? 'Tesař z Nazareta hoblí trám pro velkou archu — v dílně, kde příběh začal, s Malým princem a dívkou s lucernou'
+                  : 'The carpenter of Nazareth planes a beam for the great ark — in the workshop where the story began, watched by the Little Prince and the girl with the lantern'}
+                width={1280}
+                height={720}
+                loading="lazy"
+                decoding="async"
+                className="w-full object-cover"
+              />
+            </div>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/kralovstvi-srdce/paradise.webp"
+                alt={cs
+                  ? 'Zahrada a chrám na břehu s plujícími loděmi — představa kolonie, kterou archa zásobuje'
+                  : 'A garden and temple on the shore with sailing ships — the colony the ark supplies'}
+                width={1280}
+                height={720}
+                loading="lazy"
+                decoding="async"
+                className="w-full object-cover"
+              />
+            </div>
           </div>
           <p className="mt-3 text-center text-xs leading-relaxed text-white/50">
             {cs
-              ? 'Vize, ne stavba: kýl archy položen není. Obrázek je ilustrace směru, kterým se studie ubírá.'
-              : 'A vision, not a construction: no keel has been laid. The image illustrates the direction the studies are taking.'}
+              ? 'Vize, ne stavba: kýl archy položen není. Obrázky jsou ilustrace směru, kterým se studie ubírá.'
+              : 'A vision, not a construction: no keel has been laid. The images illustrate the direction the studies are taking.'}
           </p>
         </motion.section>
 
