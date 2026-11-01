@@ -143,6 +143,15 @@ Operátor dodal **kanonickou studii 02** (`heros/habuk/Nabukano_ Three-Berth Doc
 - **Ověřeno lokálně:** deep-link `#portal=matrix` otevře okno a doletí k Měsíci (screenshot `moon-focus.png`), tlačítko „K Měsíci" vykreslí oblouk z doku (`moon-route.png`), 0 chyb.
 - Deploy nirvana `nabukano-n3-20261101T153715Z` (první pokus spadl na `rsync code 24` — souběžná session smazala `.next/standalone-flat-*` uprostřed přenosu; druhý pokus prošel).
 
+## 5e. N4 — prezentace a webový náhled (hotovo)
+
+- **Jeden zdroj geometrie:** `apps/shared/scenes/kit/vessels.tsx` exportuje `NabukanoModel` (+ `SkyMaria`, `SISTERS`). Hlavní scéna vesmíru (`SkyFleet`) i prezentace i webový náhled kreslí tentýž model — dřív by vznikla třetí kopie trupu.
+- **Sdílená scéna** `apps/shared/scenes/NebeskaFlotila.tsx`: Země jako obrovský oblouk (střed −112, r 104 — z orbity je vidět jen lem), prach z 220 částic, `ScenePresentation` s noční atmosférou a `post` bloom. Exportuje `NEBESKA_CAMERA`, `NEBESKA_CONTROLS`, `NebeskaFlotilaScene`, `NebeskaFlotilaLighting`.
+- **Nirvana:** `/present/nebeska-flotila` přes `ProjectPresentation` (ambience `space`); okno flotily má nové CTA **„Prohlédnout flotilu"**. Mirror `freeworld-sites` dostal `present: '/present/nebeska-flotila'`.
+- **Web 2.9:** `NebeskaFlotilaPreview` + `NebeskaFlotilaPreviewLazy` a nová sekce **„3D model"** na `/terranova/nabukano` (stejná scéna, OrbitControls, lazy canvas, WebGL fallback).
+- **Naměřeno** (`?sceneAudit=1`): 55 draw calls / 21 884 tris / 12 textur / `budgetOk: true` / 0 invalid vertices.
+- **Deploy:** web `nabukano-n4-20261101T160108Z`, nirvana `nabukano-n4-nir-20261101T160405Z`. Live: web 200 + sekce v HTML, nirvana `/present/nebeska-flotila` **307** bez ZAP pasu (správně).
+
 ## 6. Kolize s paralelními session (pro budoucí čtenáře)
 
 - **Kánon byl swept do cizího commitu:** `git add canon/…` jsem měl staged, ale souběžná session pustila `git add -A` a svazek odjel v `627713dfd` s názvem „fix(3d audit)…". Obsah je v pořádku, jen pod zavádějícím popisem. Historie se nepřepisovala.

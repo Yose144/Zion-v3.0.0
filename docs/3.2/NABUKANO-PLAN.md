@@ -106,12 +106,12 @@ Cíl: scéna má číst jako **studie 02** (kanonická: dok se třemi kotvišti 
 
 | Úkol | Co |
 |---|---|
-| N4.1 | `apps/shared/scenes/kit/vessels.ts` — vytáhnout trupy z `MariaDelCamino.tsx` + `KralovstviSrdce.tsx` (jeden zdroj pro moře i nebe) |
+| N4.1 | `apps/shared/scenes/kit/vessels.tsx` — **`NabukanoModel`** (jeden zdroj geometrie lodi pro scénu, prezentaci i web) | ✅ hotovo; trupy mořských lodí se neextrahovaly — kosmická loď je jiná geometrie, extrakce by byla refactor bez užitku |
 | N4.2 | `apps/shared/scenes/NebeskaFlotila.tsx` — kompozice pro prezentaci (kamera, `CONTROLS`, `lang`) |
 | N4.3 | Wrapper `apps/nirvana/src/app/present/nebeska-flotila/page.tsx` + thin re-export |
 | N4.4 | Web: `NebeskaFlotilaPreview` + `Lazy`, sekce na `/terranova/nabukano` |
 
-**Brána:** textury pod stropem 32 (každý `SceneLabel` = CanvasTexture), `budgetOk`, mobil, CS/EN, 0 chyb.
+**Stav (1. 11.): ✅ hotovo** — `apps/shared/scenes/NebeskaFlotila.tsx` (Země jako oblouk, prach, model z kitu), nirvana `/present/nebeska-flotila`, web `NebeskaFlotilaPreview` + `Lazy` a sekce „3D model" na `/terranova/nabukano`. **Naměřeno:** 55 draw calls / 21 884 tris / 12 textur / `budgetOk: true` / 0 invalid vertices. Deploy web `nabukano-n4-20261101T160108Z`, nirvana `nabukano-n4-nir-20261101T160405Z`.
 
 ---
 
@@ -171,6 +171,7 @@ Cíl: scéna má číst jako **studie 02** (kanonická: dok se třemi kotvišti 
 | Datum | Změna |
 |---|---|
 | 2026-11-01 | v1.0 — vytvořeno po dodání kánonu, webu, scény, tras, hero a konceptové desky. Otevřené D1–D4. |
+| 2026-11-01 | v1.4 — **N4 hotová**: `kit/vessels.tsx` (NabukanoModel), sdílená scéna `NebeskaFlotila`, `/present/nebeska-flotila`, webový 3D náhled + sekce na misijní stránce. |
 | 2026-11-01 | v1.3 — **N3 hotová**: Měsíc jako objekt s vlastním fokusem (`'moon'`), portál `matrix` + slot `moon`, třetí leg trasy `matrix`. Deploy nirvana `nabukano-n3-20261101T153715Z`. |
 | 2026-11-01 | v1.2 — **N2 hotová**: instancovaná okna prstence i přídě, příhradovina rámu, vzpěry, zahrada, klec lucerny, LOD podle tieru; kamera fokusu sleduje flotilu. Naměřeno 122 calls / 80 376 tris / 37 textur / 0 invalid. Deploy nirvana `nabukano-n2-20261101T150748Z`. |
 | 2026-11-01 | v1.1 — **D1 vyřešeno dodáním studie 02**: kanonická jsou mariánská jména, volací znaky LUMI / ISSOBELLA / TŘETÍ MARIE se ruší. Dok = rám pod trupem se třemi kotvišti; N2.1/N2.2 hotové. |
