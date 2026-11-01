@@ -483,3 +483,6 @@ apps/Stripe.md
 # One-off source snapshots committed by mistake (48-entry stale tarball)
 apps/*/src-only.tar.gz
 apps/*/src-only*.zip
+
+# OASIS avatar renderer — esbuild bundle
+scripts/ops/oasis-avatar-render/.build/

@@ -58,6 +58,7 @@ function Studio({ glow }: { glow: string }) {
 
 function Stage() {
   const [look, setLook] = useState<AvatarLook | null>(null);
+  const [mode, setMode] = useState<'portrait' | 'sheet'>('portrait');
   const [nonce, setNonce] = useState(0);
   const group = useRef<THREE.Group>(null);
   const { camera } = useThree();
@@ -67,6 +68,15 @@ function Stage() {
     api.__render = (id: number | null) =>
       new Promise<boolean>((resolve) => {
         resolveNext = resolve;
+        setMode('portrait');
+        setLook(avatarLook(id));
+        setNonce((value) => value + 1);
+      });
+    /** Turnaround: front / tři-čtvrtě / bok / záda na jedné zemi. */
+    api.__renderSheet = (id: number | null) =>
+      new Promise<boolean>((resolve) => {
+        resolveNext = resolve;
+        setMode('sheet');
         setLook(avatarLook(id));
         setNonce((value) => value + 1);
       });
@@ -75,14 +85,21 @@ function Stage() {
   }, []);
 
   useEffect(() => {
-    if (!look || !group.current) return;
+    if (!look) return;
+    const perspective = camera as THREE.PerspectiveCamera;
+    if (mode === 'sheet') {
+      perspective.position.set(0, 1.12, 6.4);
+      perspective.lookAt(0, 1.02, 0);
+      perspective.updateProjectionMatrix();
+      return;
+    }
+    if (!group.current) return;
     const box = new THREE.Box3().setFromObject(group.current);
     if (box.isEmpty()) return;
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
     box.getSize(size);
     box.getCenter(center);
-    const perspective = camera as THREE.PerspectiveCamera;
     const fov = (perspective.fov * Math.PI) / 180;
     const aspect = perspective.aspect;
     // vertikální i horizontální fit + 12 % rezerva
@@ -92,14 +109,36 @@ function Stage() {
     perspective.position.set(center.x + 0.34, center.y + 0.06, center.z + distance);
     perspective.lookAt(center.x, center.y, center.z);
     perspective.updateProjectionMatrix();
-  }, [look, camera, nonce]);
+  }, [look, camera, nonce, mode]);
+
+  const sheetViews = [
+    { x: -1.62, yaw: 0, label: 'front' },
+    { x: -0.54, yaw: 0.62, label: 'three-quarter' },
+    { x: 0.54, yaw: Math.PI / 2, label: 'side' },
+    { x: 1.62, yaw: Math.PI, label: 'back' },
+  ];
 
   return (
     <>
       {look && <Studio glow={look.palette.glow} />}
-      <group ref={group} rotation={[0, 0.2, 0]}>
-        {look && <AvatarModel look={look} />}
-      </group>
+      {mode === 'sheet' ? (
+        <>
+          {sheetViews.map((view) => (
+            <group key={view.label} position={[view.x, 0, 0]} rotation={[0, view.yaw, 0]}>
+              {look && <AvatarModel look={look} />}
+            </group>
+          ))}
+          {/* společná zemní linie */}
+          <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[7.6, 2.4]} />
+            <meshBasicMaterial color="#0c0916" transparent opacity={0.55} />
+          </mesh>
+        </>
+      ) : (
+        <group ref={group} rotation={[0, 0.2, 0]}>
+          {look && <AvatarModel look={look} />}
+        </group>
+      )}
       <Settler nonce={nonce} />
     </>
   );

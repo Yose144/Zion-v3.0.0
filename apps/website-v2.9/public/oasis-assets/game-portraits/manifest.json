@@ -1,517 +1,517 @@
 {
   "note": "Herní 3D náhledy avatarů (procedurální model z apps/nirvana). Finální portréty se doplní jako samostatná vrstva.",
-  "generatedAt": "2026-11-01T21:36:39.051Z",
+  "generatedAt": "2026-11-01T22:25:32.552Z",
   "count": 200,
   "entries": [
     {
       "id": 0,
       "name": "Krishna-Maitreya",
       "file": "/oasis-assets/game-portraits/000-krishna-maitreya.webp",
-      "bytes": 9750
+      "bytes": 10166
     },
     {
       "id": 1,
       "name": "Rama",
       "file": "/oasis-assets/game-portraits/001-rama.webp",
-      "bytes": 6880
+      "bytes": 8842
     },
     {
       "id": 2,
       "name": "Sita",
       "file": "/oasis-assets/game-portraits/002-sita.webp",
-      "bytes": 7502
+      "bytes": 8122
     },
     {
       "id": 3,
       "name": "Hanuman",
       "file": "/oasis-assets/game-portraits/003-hanuman.webp",
-      "bytes": 5266
+      "bytes": 7130
     },
     {
       "id": 4,
       "name": "Maitreya",
       "file": "/oasis-assets/game-portraits/004-maitreya.webp",
-      "bytes": 10222
+      "bytes": 9416
     },
     {
       "id": 5,
       "name": "Saraswati",
       "file": "/oasis-assets/game-portraits/005-saraswati.webp",
-      "bytes": 6276
+      "bytes": 7836
     },
     {
       "id": 6,
       "name": "Isis-Enamataru",
       "file": "/oasis-assets/game-portraits/006-isis-enamataru.webp",
-      "bytes": 6104
+      "bytes": 6888
     },
     {
       "id": 8,
       "name": "Issobela Guardian",
       "file": "/oasis-assets/game-portraits/008-issobela-guardian.webp",
-      "bytes": 8734
+      "bytes": 8134
     },
     {
       "id": 9,
       "name": "Shanti",
       "file": "/oasis-assets/game-portraits/009-shanti.webp",
-      "bytes": 6526
+      "bytes": 8030
     },
     {
       "id": 10,
       "name": "Bronu-Christ",
       "file": "/oasis-assets/game-portraits/010-bronu-christ.webp",
-      "bytes": 7520
+      "bytes": 9916
     },
     {
       "id": 11,
       "name": "Arjuna",
       "file": "/oasis-assets/game-portraits/011-arjuna.webp",
-      "bytes": 8012
+      "bytes": 8238
     },
     {
       "id": 12,
       "name": "Milan-Bhima",
       "file": "/oasis-assets/game-portraits/012-milan-bhima.webp",
-      "bytes": 7990
+      "bytes": 7862
     },
     {
       "id": 13,
       "name": "Artem-Vudce",
       "file": "/oasis-assets/game-portraits/013-artem-vudce.webp",
-      "bytes": 6250
+      "bytes": 7096
     },
     {
       "id": 14,
       "name": "Mama Yashoda",
       "file": "/oasis-assets/game-portraits/014-mama-yashoda.webp",
-      "bytes": 6558
+      "bytes": 6976
     },
     {
       "id": 15,
       "name": "Vishwakarma",
       "file": "/oasis-assets/game-portraits/015-vishwakarma.webp",
-      "bytes": 6990
+      "bytes": 9570
     },
     {
       "id": 16,
       "name": "Radha",
       "file": "/oasis-assets/game-portraits/016-radha.webp",
-      "bytes": 6276
+      "bytes": 8456
     },
     {
       "id": 17,
       "name": "Vyasa-Kamil",
       "file": "/oasis-assets/game-portraits/017-vyasa-kamil.webp",
-      "bytes": 8272
+      "bytes": 9700
     },
     {
       "id": 18,
       "name": "Meriam Rose",
       "file": "/oasis-assets/game-portraits/018-meriam-rose.webp",
-      "bytes": 6692
+      "bytes": 8436
     },
     {
       "id": 19,
       "name": "Yeshua Sananda",
       "file": "/oasis-assets/game-portraits/019-yeshua-sananda.webp",
-      "bytes": 7620
+      "bytes": 8006
     },
     {
       "id": 20,
       "name": "Tara",
       "file": "/oasis-assets/game-portraits/020-tara.webp",
-      "bytes": 7634
+      "bytes": 6302
     },
     {
       "id": 21,
       "name": "Avalokiteshvara",
       "file": "/oasis-assets/game-portraits/021-avalokiteshvara.webp",
-      "bytes": 7548
+      "bytes": 7512
     },
     {
       "id": 22,
       "name": "Vajrasattva",
       "file": "/oasis-assets/game-portraits/022-vajrasattva.webp",
-      "bytes": 5204
+      "bytes": 6584
     },
     {
       "id": 23,
       "name": "King Arthur",
       "file": "/oasis-assets/game-portraits/023-king-arthur.webp",
-      "bytes": 8102
+      "bytes": 8432
     },
     {
       "id": 24,
       "name": "Mahavatar Babaji",
       "file": "/oasis-assets/game-portraits/024-mahavatar-babaji.webp",
-      "bytes": 6328
+      "bytes": 9046
     },
     {
       "id": 25,
       "name": "Lady Gaia-Vywamus",
       "file": "/oasis-assets/game-portraits/025-lady-gaia-vywamus.webp",
-      "bytes": 6064
+      "bytes": 8092
     },
     {
       "id": 26,
       "name": "Saint Germain",
       "file": "/oasis-assets/game-portraits/026-saint-germain.webp",
-      "bytes": 8210
+      "bytes": 7432
     },
     {
       "id": 27,
       "name": "Serapis Bey",
       "file": "/oasis-assets/game-portraits/027-serapis-bey.webp",
-      "bytes": 5760
+      "bytes": 7194
     },
     {
       "id": 28,
       "name": "Sanat Kumara",
       "file": "/oasis-assets/game-portraits/028-sanat-kumara.webp",
-      "bytes": 9416
+      "bytes": 9886
     },
     {
       "id": 29,
       "name": "El Morya",
       "file": "/oasis-assets/game-portraits/029-el-morya.webp",
-      "bytes": 6018
+      "bytes": 8338
     },
     {
       "id": 30,
       "name": "Lanto",
       "file": "/oasis-assets/game-portraits/030-lanto.webp",
-      "bytes": 6102
+      "bytes": 9070
     },
     {
       "id": 31,
       "name": "Paul the Venetian",
       "file": "/oasis-assets/game-portraits/031-paul-the-venetian.webp",
-      "bytes": 7024
+      "bytes": 6742
     },
     {
       "id": 32,
       "name": "Hilarion",
       "file": "/oasis-assets/game-portraits/032-hilarion.webp",
-      "bytes": 5048
+      "bytes": 6572
     },
     {
       "id": 33,
       "name": "Lady Nada",
       "file": "/oasis-assets/game-portraits/033-lady-nada.webp",
-      "bytes": 6718
+      "bytes": 7202
     },
     {
       "id": 35,
       "name": "Karel IV",
       "file": "/oasis-assets/game-portraits/035-karel-iv.webp",
-      "bytes": 6418
+      "bytes": 7268
     },
     {
       "id": 36,
       "name": "Albert Einstein",
       "file": "/oasis-assets/game-portraits/036-albert-einstein.webp",
-      "bytes": 7102
+      "bytes": 8678
     },
     {
       "id": 37,
       "name": "Mahatma Gandhi",
       "file": "/oasis-assets/game-portraits/037-mahatma-gandhi.webp",
-      "bytes": 8610
+      "bytes": 8862
     },
     {
       "id": 38,
       "name": "Panna Maria",
       "file": "/oasis-assets/game-portraits/038-panna-maria.webp",
-      "bytes": 6434
+      "bytes": 7358
     },
     {
       "id": 39,
       "name": "Subhadra",
       "file": "/oasis-assets/game-portraits/039-subhadra.webp",
-      "bytes": 5740
+      "bytes": 7500
     },
     {
       "id": 40,
       "name": "Elizabet",
       "file": "/oasis-assets/game-portraits/040-elizabet.webp",
-      "bytes": 6318
+      "bytes": 7988
     },
     {
       "id": 41,
       "name": "Vasudeva",
       "file": "/oasis-assets/game-portraits/041-vasudeva.webp",
-      "bytes": 5868
+      "bytes": 8888
     },
     {
       "id": 42,
       "name": "Sri Dattatreya",
       "file": "/oasis-assets/game-portraits/042-sri-dattatreya.webp",
-      "bytes": 7708
+      "bytes": 10190
     },
     {
       "id": 43,
       "name": "Maly Princ",
       "file": "/oasis-assets/game-portraits/043-maly-princ.webp",
-      "bytes": 6020
+      "bytes": 9276
     },
     {
       "id": 44,
       "name": "Hiranyagarbha",
       "file": "/oasis-assets/game-portraits/044-hiranyagarbha.webp",
-      "bytes": 10906
+      "bytes": 11650
     },
     {
       "id": 45,
       "name": "Sri Kalki Avatar",
       "file": "/oasis-assets/game-portraits/045-sri-kalki-avatar.webp",
-      "bytes": 9954
+      "bytes": 11678
     },
     {
       "id": 46,
       "name": "Neo",
       "file": "/oasis-assets/game-portraits/046-neo.webp",
-      "bytes": 7876
+      "bytes": 9782
     },
     {
       "id": 47,
       "name": "Trinity",
       "file": "/oasis-assets/game-portraits/047-trinity.webp",
-      "bytes": 7376
+      "bytes": 7142
     },
     {
       "id": 48,
       "name": "Morpheus",
       "file": "/oasis-assets/game-portraits/048-morpheus.webp",
-      "bytes": 7100
+      "bytes": 7832
     },
     {
       "id": 50,
       "name": "ZION The Last City",
       "file": "/oasis-assets/game-portraits/050-zion-the-last-city.webp",
-      "bytes": 11008
+      "bytes": 10822
     },
     {
       "id": 51,
       "name": "Dalai Lama XIV",
       "file": "/oasis-assets/game-portraits/051-dalai-lama-xiv.webp",
-      "bytes": 9408
+      "bytes": 9426
     },
     {
       "id": 52,
       "name": "Heȟáka Sápa (Black Elk)",
       "file": "/oasis-assets/game-portraits/052-hehaka-sapa-black-elk.webp",
-      "bytes": 7158
+      "bytes": 7924
     },
     {
       "id": 53,
       "name": "Ptesáŋ Wíŋ (White Buffalo Calf Woman)",
       "file": "/oasis-assets/game-portraits/053-ptesa-wi-white-buffalo-calf-woman.webp",
-      "bytes": 6000
+      "bytes": 6674
     },
     {
       "id": 54,
       "name": "Kókyangwúti (Spider Grandmother)",
       "file": "/oasis-assets/game-portraits/054-kokyangwuti-spider-grandmother.webp",
-      "bytes": 9790
+      "bytes": 9484
     },
     {
       "id": 55,
       "name": "Hunahpú & Xbalanqué (Hero Twins)",
       "file": "/oasis-assets/game-portraits/055-hunahpu-xbalanque-hero-twins.webp",
-      "bytes": 8698
+      "bytes": 8886
     },
     {
       "id": 56,
       "name": "Don Mariano",
       "file": "/oasis-assets/game-portraits/056-don-mariano.webp",
-      "bytes": 7764
+      "bytes": 7126
     },
     {
       "id": 57,
       "name": "Doña Rosalía Ixmukané",
       "file": "/oasis-assets/game-portraits/057-dona-rosalia-ixmukane.webp",
-      "bytes": 6324
+      "bytes": 7274
     },
     {
       "id": 58,
       "name": "Bílé Pero (White Feather)",
       "file": "/oasis-assets/game-portraits/058-bile-pero-white-feather.webp",
-      "bytes": 6552
+      "bytes": 7046
     },
     {
       "id": 59,
       "name": "Ohnivá Oka (Fire Eyes)",
       "file": "/oasis-assets/game-portraits/059-ohniva-oka-fire-eyes.webp",
-      "bytes": 7916
+      "bytes": 7662
     },
     {
       "id": 60,
       "name": "Davi Kopenawa",
       "file": "/oasis-assets/game-portraits/060-davi-kopenawa.webp",
-      "bytes": 6760
+      "bytes": 7012
     },
     {
       "id": 61,
       "name": "Heyókȟa (Sacred Clown)",
       "file": "/oasis-assets/game-portraits/061-heyokha-sacred-clown.webp",
-      "bytes": 9314
+      "bytes": 8298
     },
     {
       "id": 62,
       "name": "Lā\\'ila\\'i",
       "file": "/oasis-assets/game-portraits/062-la-ila-i.webp",
-      "bytes": 6078
+      "bytes": 7030
     },
     {
       "id": 63,
       "name": "Pele",
       "file": "/oasis-assets/game-portraits/063-pele.webp",
-      "bytes": 7694
+      "bytes": 8264
     },
     {
       "id": 64,
       "name": "Hiʻiaka",
       "file": "/oasis-assets/game-portraits/064-hi-iaka.webp",
-      "bytes": 5496
+      "bytes": 6988
     },
     {
       "id": 65,
       "name": "Kāne",
       "file": "/oasis-assets/game-portraits/065-kane.webp",
-      "bytes": 7606
+      "bytes": 8058
     },
     {
       "id": 66,
       "name": "Kanaloa",
       "file": "/oasis-assets/game-portraits/066-kanaloa.webp",
-      "bytes": 9228
+      "bytes": 7664
     },
     {
       "id": 67,
       "name": "Kū",
       "file": "/oasis-assets/game-portraits/067-ku.webp",
-      "bytes": 7470
+      "bytes": 7166
     },
     {
       "id": 68,
       "name": "Lono",
       "file": "/oasis-assets/game-portraits/068-lono.webp",
-      "bytes": 7708
+      "bytes": 8036
     },
     {
       "id": 69,
       "name": "Stará Kumu Lehua",
       "file": "/oasis-assets/game-portraits/069-stara-kumu-lehua.webp",
-      "bytes": 7944
+      "bytes": 8398
     },
     {
       "id": 70,
       "name": "Hina",
       "file": "/oasis-assets/game-portraits/070-hina.webp",
-      "bytes": 8092
+      "bytes": 6482
     },
     {
       "id": 71,
       "name": "Maui",
       "file": "/oasis-assets/game-portraits/071-maui.webp",
-      "bytes": 9102
+      "bytes": 9006
     },
     {
       "id": 72,
       "name": "Padmasambhava",
       "file": "/oasis-assets/game-portraits/072-padmasambhava.webp",
-      "bytes": 5588
+      "bytes": 6138
     },
     {
       "id": 73,
       "name": "Milarepa",
       "file": "/oasis-assets/game-portraits/073-milarepa.webp",
-      "bytes": 7146
+      "bytes": 8838
     },
     {
       "id": 74,
       "name": "Tsongkhapa",
       "file": "/oasis-assets/game-portraits/074-tsongkhapa.webp",
-      "bytes": 6608
+      "bytes": 7744
     },
     {
       "id": 75,
       "name": "Atiśa",
       "file": "/oasis-assets/game-portraits/075-atisa.webp",
-      "bytes": 8268
+      "bytes": 7660
     },
     {
       "id": 76,
       "name": "Marpa Lotsawa",
       "file": "/oasis-assets/game-portraits/076-marpa-lotsawa.webp",
-      "bytes": 6002
+      "bytes": 7012
     },
     {
       "id": 77,
       "name": "Machik Labdrön",
       "file": "/oasis-assets/game-portraits/077-machik-labdron.webp",
-      "bytes": 9426
+      "bytes": 9918
     },
     {
       "id": 78,
       "name": "Mañjuśrī",
       "file": "/oasis-assets/game-portraits/078-manjusri.webp",
-      "bytes": 9814
+      "bytes": 8196
     },
     {
       "id": 79,
       "name": "Samantabhadra",
       "file": "/oasis-assets/game-portraits/079-samantabhadra.webp",
-      "bytes": 9848
+      "bytes": 10186
     },
     {
       "id": 80,
       "name": "Medicine Buddha",
       "file": "/oasis-assets/game-portraits/080-medicine-buddha.webp",
-      "bytes": 6312
+      "bytes": 6288
     },
     {
       "id": 81,
       "name": "Longchen Rabjam",
       "file": "/oasis-assets/game-portraits/081-longchen-rabjam.webp",
-      "bytes": 5694
+      "bytes": 6228
     },
     {
       "id": 82,
       "name": "Shiva",
       "file": "/oasis-assets/game-portraits/082-shiva.webp",
-      "bytes": 9260
+      "bytes": 8280
     },
     {
       "id": 83,
       "name": "Parvati",
       "file": "/oasis-assets/game-portraits/083-parvati.webp",
-      "bytes": 7922
+      "bytes": 7806
     },
     {
       "id": 84,
       "name": "Ganesha",
       "file": "/oasis-assets/game-portraits/084-ganesha.webp",
-      "bytes": 6574
+      "bytes": 6988
     },
     {
       "id": 85,
       "name": "Lakshmi",
       "file": "/oasis-assets/game-portraits/085-lakshmi.webp",
-      "bytes": 7060
+      "bytes": 7270
     },
     {
       "id": 86,
       "name": "Durga",
       "file": "/oasis-assets/game-portraits/086-durga.webp",
-      "bytes": 7858
+      "bytes": 8940
     },
     {
       "id": 87,
       "name": "Kali",
       "file": "/oasis-assets/game-portraits/087-kali.webp",
-      "bytes": 6380
+      "bytes": 7936
     },
     {
       "id": 88,
@@ -523,685 +523,685 @@
       "id": 89,
       "name": "Surya",
       "file": "/oasis-assets/game-portraits/089-surya.webp",
-      "bytes": 5448
+      "bytes": 6338
     },
     {
       "id": 90,
       "name": "Indra",
       "file": "/oasis-assets/game-portraits/090-indra.webp",
-      "bytes": 5990
+      "bytes": 7802
     },
     {
       "id": 91,
       "name": "Ganga",
       "file": "/oasis-assets/game-portraits/091-ganga.webp",
-      "bytes": 7696
+      "bytes": 6990
     },
     {
       "id": 92,
       "name": "Amaterasu",
       "file": "/oasis-assets/game-portraits/092-amaterasu.webp",
-      "bytes": 7544
+      "bytes": 6680
     },
     {
       "id": 93,
       "name": "Susanoo",
       "file": "/oasis-assets/game-portraits/093-susanoo.webp",
-      "bytes": 5678
+      "bytes": 8420
     },
     {
       "id": 94,
       "name": "Tsukuyomi",
       "file": "/oasis-assets/game-portraits/094-tsukuyomi.webp",
-      "bytes": 5262
+      "bytes": 6310
     },
     {
       "id": 95,
       "name": "Inari",
       "file": "/oasis-assets/game-portraits/095-inari.webp",
-      "bytes": 6102
+      "bytes": 7862
     },
     {
       "id": 96,
       "name": "Ōkuninushi",
       "file": "/oasis-assets/game-portraits/096-okuninushi.webp",
-      "bytes": 5966
+      "bytes": 7902
     },
     {
       "id": 97,
       "name": "Izanami",
       "file": "/oasis-assets/game-portraits/097-izanami.webp",
-      "bytes": 5386
+      "bytes": 7068
     },
     {
       "id": 98,
       "name": "Hachiman",
       "file": "/oasis-assets/game-portraits/098-hachiman.webp",
-      "bytes": 7118
+      "bytes": 9178
     },
     {
       "id": 99,
       "name": "Benzaiten",
       "file": "/oasis-assets/game-portraits/099-benzaiten.webp",
-      "bytes": 7306
+      "bytes": 9274
     },
     {
       "id": 100,
       "name": "Kūkai",
       "file": "/oasis-assets/game-portraits/100-kukai.webp",
-      "bytes": 5326
+      "bytes": 6392
     },
     {
       "id": 101,
       "name": "Nichiren",
       "file": "/oasis-assets/game-portraits/101-nichiren.webp",
-      "bytes": 5634
+      "bytes": 6738
     },
     {
       "id": 102,
       "name": "Xuanyuan Huangdi",
       "file": "/oasis-assets/game-portraits/102-xuanyuan-huangdi.webp",
-      "bytes": 6254
+      "bytes": 6866
     },
     {
       "id": 103,
       "name": "Xiwangmu",
       "file": "/oasis-assets/game-portraits/103-xiwangmu.webp",
-      "bytes": 7136
+      "bytes": 8592
     },
     {
       "id": 104,
       "name": "Laozi",
       "file": "/oasis-assets/game-portraits/104-laozi.webp",
-      "bytes": 5176
+      "bytes": 7762
     },
     {
       "id": 105,
       "name": "Kongzi (Confucius)",
       "file": "/oasis-assets/game-portraits/105-kongzi-confucius.webp",
-      "bytes": 5238
+      "bytes": 7644
     },
     {
       "id": 106,
       "name": "Guan Yu / Guandi",
       "file": "/oasis-assets/game-portraits/106-guan-yu-guandi.webp",
-      "bytes": 6608
+      "bytes": 8210
     },
     {
       "id": 107,
       "name": "Mazu",
       "file": "/oasis-assets/game-portraits/107-mazu.webp",
-      "bytes": 6302
+      "bytes": 6742
     },
     {
       "id": 108,
       "name": "Nezha",
       "file": "/oasis-assets/game-portraits/108-nezha.webp",
-      "bytes": 5020
+      "bytes": 6446
     },
     {
       "id": 109,
       "name": "Sun Wukong",
       "file": "/oasis-assets/game-portraits/109-sun-wukong.webp",
-      "bytes": 7526
+      "bytes": 7664
     },
     {
       "id": 110,
       "name": "Yu the Great",
       "file": "/oasis-assets/game-portraits/110-yu-the-great.webp",
-      "bytes": 5084
+      "bytes": 6018
     },
     {
       "id": 111,
       "name": "Lei Gong",
       "file": "/oasis-assets/game-portraits/111-lei-gong.webp",
-      "bytes": 5320
+      "bytes": 6276
     },
     {
       "id": 112,
       "name": "Dewi Sri",
       "file": "/oasis-assets/game-portraits/112-dewi-sri.webp",
-      "bytes": 7088
+      "bytes": 7928
     },
     {
       "id": 113,
       "name": "Nyai Roro Kidul",
       "file": "/oasis-assets/game-portraits/113-nyai-roro-kidul.webp",
-      "bytes": 7516
+      "bytes": 8502
     },
     {
       "id": 114,
       "name": "Semar",
       "file": "/oasis-assets/game-portraits/114-semar.webp",
-      "bytes": 7588
+      "bytes": 8134
     },
     {
       "id": 115,
       "name": "Batara Guru",
       "file": "/oasis-assets/game-portraits/115-batara-guru.webp",
-      "bytes": 5754
+      "bytes": 6528
     },
     {
       "id": 116,
       "name": "Barong Ket",
       "file": "/oasis-assets/game-portraits/116-barong-ket.webp",
-      "bytes": 7010
+      "bytes": 7990
     },
     {
       "id": 117,
       "name": "Garuda",
       "file": "/oasis-assets/game-portraits/117-garuda.webp",
-      "bytes": 7186
+      "bytes": 7038
     },
     {
       "id": 118,
       "name": "Gatotkaca",
       "file": "/oasis-assets/game-portraits/118-gatotkaca.webp",
-      "bytes": 4856
+      "bytes": 5978
     },
     {
       "id": 119,
       "name": "Prince Panji",
       "file": "/oasis-assets/game-portraits/119-prince-panji.webp",
-      "bytes": 5950
+      "bytes": 7316
     },
     {
       "id": 120,
       "name": "Roro Jonggrang",
       "file": "/oasis-assets/game-portraits/120-roro-jonggrang.webp",
-      "bytes": 5858
+      "bytes": 6542
     },
     {
       "id": 121,
       "name": "Dewi Nawang Wulan",
       "file": "/oasis-assets/game-portraits/121-dewi-nawang-wulan.webp",
-      "bytes": 6534
+      "bytes": 7214
     },
     {
       "id": 122,
       "name": "Seven Sisters Songline Steward",
       "file": "/oasis-assets/game-portraits/122-seven-sisters-songline-steward.webp",
-      "bytes": 5376
+      "bytes": 6186
     },
     {
       "id": 123,
       "name": "Rainbow Serpent Country Law",
       "file": "/oasis-assets/game-portraits/123-rainbow-serpent-country-law.webp",
-      "bytes": 6476
+      "bytes": 7494
     },
     {
       "id": 124,
       "name": "Bunjil",
       "file": "/oasis-assets/game-portraits/124-bunjil.webp",
-      "bytes": 6302
+      "bytes": 7262
     },
     {
       "id": 125,
       "name": "Baiame",
       "file": "/oasis-assets/game-portraits/125-baiame.webp",
-      "bytes": 6358
+      "bytes": 7590
     },
     {
       "id": 126,
       "name": "Tagai Navigator",
       "file": "/oasis-assets/game-portraits/126-tagai-navigator.webp",
-      "bytes": 7670
+      "bytes": 8244
     },
     {
       "id": 127,
       "name": "Celestial Emu Dreaming Steward",
       "file": "/oasis-assets/game-portraits/127-celestial-emu-dreaming-steward.webp",
-      "bytes": 5698
+      "bytes": 7348
     },
     {
       "id": 128,
       "name": "Djang\\'kawu Creator Voyagers",
       "file": "/oasis-assets/game-portraits/128-djang-kawu-creator-voyagers.webp",
-      "bytes": 5858
+      "bytes": 6812
     },
     {
       "id": 129,
       "name": "Namarrkon",
       "file": "/oasis-assets/game-portraits/129-namarrkon.webp",
-      "bytes": 6158
+      "bytes": 6826
     },
     {
       "id": 130,
       "name": "Country Knowledge Walk (Tjukurpa education frame)",
       "file": "/oasis-assets/game-portraits/130-country-knowledge-walk-tjukurpa-education-frame.webp",
-      "bytes": 8210
+      "bytes": 8808
     },
     {
       "id": 131,
       "name": "Makarrata Treaty Bridge",
       "file": "/oasis-assets/game-portraits/131-makarrata-treaty-bridge.webp",
-      "bytes": 7022
+      "bytes": 7220
     },
     {
       "id": 132,
       "name": "Papatūānuku",
       "file": "/oasis-assets/game-portraits/132-papatuanuku.webp",
-      "bytes": 6576
+      "bytes": 7596
     },
     {
       "id": 133,
       "name": "Ranginui",
       "file": "/oasis-assets/game-portraits/133-ranginui.webp",
-      "bytes": 5936
+      "bytes": 7482
     },
     {
       "id": 134,
       "name": "Tāne Mahuta",
       "file": "/oasis-assets/game-portraits/134-tane-mahuta.webp",
-      "bytes": 7508
+      "bytes": 7418
     },
     {
       "id": 135,
       "name": "Tangaroa (Māori strand)",
       "file": "/oasis-assets/game-portraits/135-tangaroa-maori-strand.webp",
-      "bytes": 6114
+      "bytes": 7370
     },
     {
       "id": 136,
       "name": "Rongo",
       "file": "/oasis-assets/game-portraits/136-rongo.webp",
-      "bytes": 5546
+      "bytes": 6360
     },
     {
       "id": 137,
       "name": "Tūmatauenga",
       "file": "/oasis-assets/game-portraits/137-tumatauenga.webp",
-      "bytes": 7248
+      "bytes": 8050
     },
     {
       "id": 138,
       "name": "Tāwhirimatea",
       "file": "/oasis-assets/game-portraits/138-tawhirimatea.webp",
-      "bytes": 6762
+      "bytes": 7688
     },
     {
       "id": 139,
       "name": "Haumiatiketike",
       "file": "/oasis-assets/game-portraits/139-haumiatiketike.webp",
-      "bytes": 5512
+      "bytes": 6454
     },
     {
       "id": 140,
       "name": "Hine-nui-te-pō",
       "file": "/oasis-assets/game-portraits/140-hine-nui-te-po.webp",
-      "bytes": 5542
+      "bytes": 6336
     },
     {
       "id": 141,
       "name": "Kupe Navigator",
       "file": "/oasis-assets/game-portraits/141-kupe-navigator.webp",
-      "bytes": 6024
+      "bytes": 7494
     },
     {
       "id": 142,
       "name": "Ọṣun",
       "file": "/oasis-assets/game-portraits/142-osun.webp",
-      "bytes": 7396
+      "bytes": 7506
     },
     {
       "id": 143,
       "name": "Ṣàngó",
       "file": "/oasis-assets/game-portraits/143-sango.webp",
-      "bytes": 5682
+      "bytes": 6590
     },
     {
       "id": 144,
       "name": "Ọbàtálá",
       "file": "/oasis-assets/game-portraits/144-obatala.webp",
-      "bytes": 5334
+      "bytes": 5996
     },
     {
       "id": 145,
       "name": "Ọya",
       "file": "/oasis-assets/game-portraits/145-oya.webp",
-      "bytes": 5762
+      "bytes": 6638
     },
     {
       "id": 146,
       "name": "Mawu-Lisa",
       "file": "/oasis-assets/game-portraits/146-mawu-lisa.webp",
-      "bytes": 4864
+      "bytes": 5680
     },
     {
       "id": 147,
       "name": "Nyame / Nyankopon",
       "file": "/oasis-assets/game-portraits/147-nyame-nyankopon.webp",
-      "bytes": 6034
+      "bytes": 6838
     },
     {
       "id": 148,
       "name": "Kwaku Ananse",
       "file": "/oasis-assets/game-portraits/148-kwaku-ananse.webp",
-      "bytes": 7248
+      "bytes": 7022
     },
     {
       "id": 149,
       "name": "Ausar-Osiris",
       "file": "/oasis-assets/game-portraits/149-ausar-osiris.webp",
-      "bytes": 6778
+      "bytes": 7712
     },
     {
       "id": 150,
       "name": "Maʿăt",
       "file": "/oasis-assets/game-portraits/150-ma-at.webp",
-      "bytes": 6682
+      "bytes": 7410
     },
     {
       "id": 151,
       "name": "Anna Njinga",
       "file": "/oasis-assets/game-portraits/151-anna-njinga.webp",
-      "bytes": 7096
+      "bytes": 8020
     },
     {
       "id": 152,
       "name": "Atlas",
       "file": "/oasis-assets/game-portraits/152-atlas.webp",
-      "bytes": 9512
+      "bytes": 10112
     },
     {
       "id": 153,
       "name": "Cleito",
       "file": "/oasis-assets/game-portraits/153-cleito.webp",
-      "bytes": 6780
+      "bytes": 7450
     },
     {
       "id": 154,
       "name": "Gadeirus",
       "file": "/oasis-assets/game-portraits/154-gadeirus.webp",
-      "bytes": 6116
+      "bytes": 7098
     },
     {
       "id": 155,
       "name": "Ampheres",
       "file": "/oasis-assets/game-portraits/155-ampheres.webp",
-      "bytes": 7604
+      "bytes": 8356
     },
     {
       "id": 156,
       "name": "Evaemon",
       "file": "/oasis-assets/game-portraits/156-evaemon.webp",
-      "bytes": 7008
+      "bytes": 7728
     },
     {
       "id": 157,
       "name": "Mneseus",
       "file": "/oasis-assets/game-portraits/157-mneseus.webp",
-      "bytes": 6972
+      "bytes": 7938
     },
     {
       "id": 158,
       "name": "Autochthon",
       "file": "/oasis-assets/game-portraits/158-autochthon.webp",
-      "bytes": 6774
+      "bytes": 7408
     },
     {
       "id": 159,
       "name": "Elasippus",
       "file": "/oasis-assets/game-portraits/159-elasippus.webp",
-      "bytes": 6182
+      "bytes": 7078
     },
     {
       "id": 160,
       "name": "Mestor",
       "file": "/oasis-assets/game-portraits/160-mestor.webp",
-      "bytes": 6540
+      "bytes": 7914
     },
     {
       "id": 161,
       "name": "Azaes",
       "file": "/oasis-assets/game-portraits/161-azaes.webp",
-      "bytes": 7526
+      "bytes": 8330
     },
     {
       "id": 162,
       "name": "Lemur Steward",
       "file": "/oasis-assets/game-portraits/162-lemur-steward.webp",
-      "bytes": 6450
+      "bytes": 7258
     },
     {
       "id": 163,
       "name": "Sclater Bridge",
       "file": "/oasis-assets/game-portraits/163-sclater-bridge.webp",
-      "bytes": 5604
+      "bytes": 6700
     },
     {
       "id": 164,
       "name": "Coral Notary",
       "file": "/oasis-assets/game-portraits/164-coral-notary.webp",
-      "bytes": 5648
+      "bytes": 6516
     },
     {
       "id": 165,
       "name": "Tide Column",
       "file": "/oasis-assets/game-portraits/165-tide-column.webp",
-      "bytes": 5852
+      "bytes": 6826
     },
     {
       "id": 166,
       "name": "Basalt Chronicle",
       "file": "/oasis-assets/game-portraits/166-basalt-chronicle.webp",
-      "bytes": 7210
+      "bytes": 8320
     },
     {
       "id": 167,
       "name": "Foam Seed",
       "file": "/oasis-assets/game-portraits/167-foam-seed.webp",
-      "bytes": 8530
+      "bytes": 8406
     },
     {
       "id": 168,
       "name": "Oceanic Bridge",
       "file": "/oasis-assets/game-portraits/168-oceanic-bridge.webp",
-      "bytes": 6136
+      "bytes": 7538
     },
     {
       "id": 169,
       "name": "Shelf Whisper",
       "file": "/oasis-assets/game-portraits/169-shelf-whisper.webp",
-      "bytes": 5304
+      "bytes": 6274
     },
     {
       "id": 170,
       "name": "Equinox Lull",
       "file": "/oasis-assets/game-portraits/170-equinox-lull.webp",
-      "bytes": 5524
+      "bytes": 6222
     },
     {
       "id": 171,
       "name": "Circle Closure",
       "file": "/oasis-assets/game-portraits/171-circle-closure.webp",
-      "bytes": 5702
+      "bytes": 6556
     },
     {
       "id": 172,
       "name": "Great Central Sun Steward",
       "file": "/oasis-assets/game-portraits/172-great-central-sun-steward.webp",
-      "bytes": 5842
+      "bytes": 6546
     },
     {
       "id": 173,
       "name": "Photon Cadence",
       "file": "/oasis-assets/game-portraits/173-photon-cadence.webp",
-      "bytes": 6276
+      "bytes": 7348
     },
     {
       "id": 174,
       "name": "Solar Logos Dual",
       "file": "/oasis-assets/game-portraits/174-solar-logos-dual.webp",
-      "bytes": 7142
+      "bytes": 7522
     },
     {
       "id": 175,
       "name": "Telluric Soul Bridge",
       "file": "/oasis-assets/game-portraits/175-telluric-soul-bridge.webp",
-      "bytes": 6648
+      "bytes": 7926
     },
     {
       "id": 176,
       "name": "Tube-of-Light Sentinel",
       "file": "/oasis-assets/game-portraits/176-tube-of-light-sentinel.webp",
-      "bytes": 7232
+      "bytes": 8020
     },
     {
       "id": 177,
       "name": "Radiant Spiral",
       "file": "/oasis-assets/game-portraits/177-radiant-spiral.webp",
-      "bytes": 6366
+      "bytes": 7242
     },
     {
       "id": 178,
       "name": "Seventh Ray Adjunct",
       "file": "/oasis-assets/game-portraits/178-seventh-ray-adjunct.webp",
-      "bytes": 4848
+      "bytes": 5580
     },
     {
       "id": 179,
       "name": "Galactic Convenor",
       "file": "/oasis-assets/game-portraits/179-galactic-convenor.webp",
-      "bytes": 6692
+      "bytes": 7770
     },
     {
       "id": 180,
       "name": "Lightbody Scribe",
       "file": "/oasis-assets/game-portraits/180-lightbody-scribe.webp",
-      "bytes": 6610
+      "bytes": 7382
     },
     {
       "id": 181,
       "name": "Vzestup Capstone",
       "file": "/oasis-assets/game-portraits/181-vzestup-capstone.webp",
-      "bytes": 5498
+      "bytes": 6282
     },
     {
       "id": 182,
       "name": "Valhalla Hall-Steward",
       "file": "/oasis-assets/game-portraits/182-valhalla-hall-steward.webp",
-      "bytes": 7918
+      "bytes": 8532
     },
     {
       "id": 183,
       "name": "Óðinn Wayfarer",
       "file": "/oasis-assets/game-portraits/183-o-inn-wayfarer.webp",
-      "bytes": 5884
+      "bytes": 6810
     },
     {
       "id": 184,
       "name": "Þórr Storm-Host",
       "file": "/oasis-assets/game-portraits/184-orr-storm-host.webp",
-      "bytes": 6342
+      "bytes": 7224
     },
     {
       "id": 185,
       "name": "Freyja Van-Ruler",
       "file": "/oasis-assets/game-portraits/185-freyja-van-ruler.webp",
-      "bytes": 5984
+      "bytes": 8876
     },
     {
       "id": 186,
       "name": "Týr Oath-Fire",
       "file": "/oasis-assets/game-portraits/186-tyr-oath-fire.webp",
-      "bytes": 6060
+      "bytes": 8944
     },
     {
       "id": 187,
       "name": "Brigid Triple-Flame",
       "file": "/oasis-assets/game-portraits/187-brigid-triple-flame.webp",
-      "bytes": 5608
+      "bytes": 8384
     },
     {
       "id": 188,
       "name": "Dagda Peace-Harp",
       "file": "/oasis-assets/game-portraits/188-dagda-peace-harp.webp",
-      "bytes": 6126
+      "bytes": 8452
     },
     {
       "id": 189,
       "name": "Morrígan Sovereignty-Raven",
       "file": "/oasis-assets/game-portraits/189-morrigan-sovereignty-raven.webp",
-      "bytes": 5644
+      "bytes": 8914
     },
     {
       "id": 190,
       "name": "Lugh Samildanach",
       "file": "/oasis-assets/game-portraits/190-lugh-samildanach.webp",
-      "bytes": 7964
+      "bytes": 8238
     },
     {
       "id": 191,
       "name": "Manannán mac Lir",
       "file": "/oasis-assets/game-portraits/191-manannan-mac-lir.webp",
-      "bytes": 7156
+      "bytes": 7996
     },
     {
       "id": 192,
       "name": "Ré Solar-Barque",
       "file": "/oasis-assets/game-portraits/192-re-solar-barque.webp",
-      "bytes": 5802
+      "bytes": 7114
     },
     {
       "id": 193,
       "name": "Hor Unifier",
       "file": "/oasis-assets/game-portraits/193-hor-unifier.webp",
-      "bytes": 7014
+      "bytes": 7358
     },
     {
       "id": 194,
       "name": "Thoth Scribe",
       "file": "/oasis-assets/game-portraits/194-thoth-scribe.webp",
-      "bytes": 7628
+      "bytes": 8512
     },
     {
       "id": 195,
       "name": "Hathor Jubilee",
       "file": "/oasis-assets/game-portraits/195-hathor-jubilee.webp",
-      "bytes": 9136
+      "bytes": 9944
     },
     {
       "id": 196,
       "name": "Sekhmet Audit-Flame",
       "file": "/oasis-assets/game-portraits/196-sekhmet-audit-flame.webp",
-      "bytes": 6842
+      "bytes": 7714
     },
     {
       "id": 197,
       "name": "Ptah Mason",
       "file": "/oasis-assets/game-portraits/197-ptah-mason.webp",
-      "bytes": 5552
+      "bytes": 6354
     },
     {
       "id": 198,
       "name": "Anubis Threshold",
       "file": "/oasis-assets/game-portraits/198-anubis-threshold.webp",
-      "bytes": 5964
+      "bytes": 6864
     },
     {
       "id": 199,
       "name": "Amun Hidden-Field",
       "file": "/oasis-assets/game-portraits/199-amun-hidden-field.webp",
-      "bytes": 6536
+      "bytes": 7534
     },
     {
       "id": 200,
       "name": "Geb Foundation",
       "file": "/oasis-assets/game-portraits/200-geb-foundation.webp",
-      "bytes": 5748
+      "bytes": 6734
     },
     {
       "id": 201,
       "name": "Nut Stellar Vault",
       "file": "/oasis-assets/game-portraits/201-nut-stellar-vault.webp",
-      "bytes": 6412
+      "bytes": 7348
     },
     {
       "id": 202,
       "name": "Bolon Yokte\\' K\\'uh",
       "file": "/oasis-assets/game-portraits/202-bolon-yokte-k-uh.webp",
-      "bytes": 4884
+      "bytes": 5418
     }
   ]
 }

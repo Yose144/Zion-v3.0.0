@@ -28,6 +28,7 @@ const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');
 const OUT_DIR = join(repo, 'apps/website-v2.9/public/oasis-assets/game-portraits');
+const SHEET_DIR = join(repo, 'apps/website-v2.9/public/oasis-assets/character-sheets');
 const BUILD_DIR = join(here, '.build');
 
 const args = process.argv.slice(2);
@@ -41,6 +42,10 @@ const WIDTH = Number(value('width', 448));
 const HEIGHT = Number(value('height', 560));
 const LIMIT = Number(value('limit', 0));
 const FORCE = flag('force');
+/** Turnaroundy (front / 3-4 / bok / záda) pro produkční character sheet. */
+const SHEETS = flag('sheets');
+const SHEET_WIDTH = 1600;
+const SHEET_HEIGHT = 900;
 const IDS = value('ids', null)
   ?.split(',')
   .map((id) => Number(id.trim()))
@@ -110,6 +115,53 @@ function backdrop(hex) {
 </svg>`);
 }
 
+const escapeXml = (value) =>
+  String(value).replace(/[<>&'"]/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[char]));
+
+/** Pozadí sheetu (bez popisků) — popisky jdou jako druhá vrstva nad render. */
+function sheetBackground() {
+  return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${SHEET_WIDTH}" height="${SHEET_HEIGHT}">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#100a1c"/>
+      <stop offset="55%" stop-color="#0a0714"/>
+      <stop offset="100%" stop-color="#050309"/>
+    </linearGradient>
+  </defs>
+  <rect width="${SHEET_WIDTH}" height="${SHEET_HEIGHT}" fill="url(#bg)"/>
+</svg>`);
+}
+
+/** Popisky nad renderem (transparentní podklad). */
+function sheetLabels(entry, palette) {
+  const swatches = palette
+    .slice(0, 5)
+    .map(
+      (hex, index) =>
+        `<circle cx="${64 + index * 34}" cy="${SHEET_HEIGHT - 54}" r="11" fill="${hex}" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.5"/>`,
+    )
+    .join('');
+  const labels = ['FRONT', 'THREE-QUARTER', 'SIDE', 'BACK']
+    .map(
+      (label, index) =>
+        `<text x="${(SHEET_WIDTH / 8) * (index * 2 + 1)}" y="${SHEET_HEIGHT - 92}" fill="#9aa2b6" font-size="15" font-family="Helvetica, Arial, sans-serif" letter-spacing="3" text-anchor="middle">${label}</text>`,
+    )
+    .join('');
+
+  return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${SHEET_WIDTH}" height="${SHEET_HEIGHT}">
+  <rect x="0" y="0" width="${SHEET_WIDTH}" height="118" fill="#070410" fill-opacity="0.72"/>
+  <text x="48" y="58" fill="#ffffff" font-size="30" font-family="Helvetica, Arial, sans-serif" font-weight="600">${escapeXml(entry.name)}</text>
+  <text x="48" y="88" fill="#c9b06a" font-size="17" font-family="Helvetica, Arial, sans-serif">${escapeXml(entry.subtitle)}</text>
+  <text x="${SHEET_WIDTH - 48}" y="58" fill="#8b93a7" font-size="15" font-family="Helvetica, Arial, sans-serif" text-anchor="end" letter-spacing="2">OASIS-${String(entry.id).padStart(3, '0')}</text>
+  <text x="${SHEET_WIDTH - 48}" y="86" fill="#8b93a7" font-size="14" font-family="Helvetica, Arial, sans-serif" text-anchor="end">${escapeXml(entry.ray)} · ${escapeXml(entry.rarity)} · CL ${entry.cl}</text>
+  <rect x="0" y="${SHEET_HEIGHT - 118}" width="${SHEET_WIDTH}" height="118" fill="#070410" fill-opacity="0.82"/>
+  <line x1="48" y1="${SHEET_HEIGHT - 118}" x2="${SHEET_WIDTH - 48}" y2="${SHEET_HEIGHT - 118}" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1"/>
+  ${labels}
+  ${swatches}
+  <text x="${SHEET_WIDTH - 48}" y="${SHEET_HEIGHT - 50}" fill="#5f6678" font-size="13" font-family="Helvetica, Arial, sans-serif" text-anchor="end">ZION OASIS · procedurální model · kanonické atributy</text>
+</svg>`);
+}
+
 async function bundle() {
   const { build } = require('esbuild');
   await mkdir(BUILD_DIR, { recursive: true });
@@ -156,8 +208,37 @@ async function writeManifest(catalog) {
   console.log(`manifest: ${entries.length} karet`);
 }
 
-async function main() {
-  const catalog = await loadCatalog();
+/** Manifest turnaroundů — id → cesta k character sheetu. */
+async function writeSheetManifest(catalog) {
+  const entries = [];
+  for (const entry of catalog) {
+    const file = join(SHEET_DIR, `${String(entry.id).padStart(3, '0')}-${slug(entry.name)}.webp`);
+    if (!existsSync(file)) continue;
+    const info = await stat(file);
+    entries.push({
+      id: entry.id,
+      name: entry.name,
+      file: `/oasis-assets/character-sheets/${String(entry.id).padStart(3, '0')}-${slug(entry.name)}.webp`,
+      bytes: info.size,
+    });
+  }
+  const manifest = {
+    note:
+      'Turnaround sheet (front / three-quarter / side / back) pro modeláře i pro generování finálních portrétů.',
+    generatedAt: new Date().toISOString(),
+    count: entries.length,
+    entries,
+  };
+  await writeFile(join(SHEET_DIR, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+  const map = Object.fromEntries(entries.map((entry) => [String(entry.id), entry.file]));
+  await writeFile(
+    join(repo, 'apps/website-v2.9/src/lib/oasis/character-sheet-images.json'),
+    JSON.stringify(map, null, 2) + '\n',
+  );
+  console.log(`manifest sheetů: ${entries.length}`);
+}
+
+async function main() {  const catalog = await loadCatalog();
   let targets = catalog;
   if (IDS) targets = targets.filter((entry) => IDS.includes(entry.id));
   if (LIMIT > 0) targets = targets.slice(0, LIMIT);
@@ -243,10 +324,47 @@ async function main() {
       }
     }
     console.log(`hotovo za ${((Date.now() - started) / 1000).toFixed(1)} s`);
+
+    // ── turnaroundy (produkční character sheet) ──────────────────────
+    if (SHEETS) {
+      await page.setViewport({ width: SHEET_WIDTH, height: SHEET_HEIGHT, deviceScaleFactor: 1 });
+      await mkdir(SHEET_DIR, { recursive: true });
+      const sheetTargets = targets;
+      const sheetStarted = Date.now();
+      let sheetIndex = 0;
+      for (const entry of sheetTargets) {
+        sheetIndex += 1;
+        await page.evaluate((id) => window.__renderSheet(id), entry.id);
+        const look = await page.evaluate((id) => window.__look(id), entry.id);
+        const canvas = await page.$('canvas');
+        if (!canvas) throw new Error('plátno zmizelo (sheet)');
+        const shot = await canvas.screenshot({ omitBackground: true, type: 'png' });
+        const palette = [look?.palette?.trim, look?.palette?.robe, look?.palette?.glow, look?.palette?.skin].filter(Boolean);
+        const file = join(SHEET_DIR, `${String(entry.id).padStart(3, '0')}-${slug(entry.name)}.webp`);
+        await sharp(sheetBackground())
+          .composite([
+            {
+              input: await sharp(shot).resize(SHEET_WIDTH, SHEET_HEIGHT, { fit: 'fill' }).png().toBuffer(),
+              top: 0,
+              left: 0,
+            },
+            { input: sheetLabels(entry, palette), top: 0, left: 0 },
+          ])
+          .webp({ quality: 80, effort: 5 })
+          .toFile(file);
+
+        if (sheetIndex % 10 === 0 || sheetIndex === sheetTargets.length) {
+          const perItem = (Date.now() - sheetStarted) / sheetIndex;
+          console.log(`  sheet ${sheetIndex}/${sheetTargets.length} · ${Math.round(perItem)} ms/sheet`);
+        }
+      }
+      console.log(`turnaroundy hotové za ${((Date.now() - sheetStarted) / 1000).toFixed(1)} s`);
+    }
   } finally {
     await browser.close();
   }
   await writeManifest(catalog);
+  if (SHEETS) await writeSheetManifest(catalog);
 }
 
 main().catch((error) => {

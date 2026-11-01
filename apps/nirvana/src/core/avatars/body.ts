@@ -242,7 +242,7 @@ export function buildAvatarMesh(look: AvatarLook): AvatarMeshData {
   for (const side of [-1, 1]) {
     solid.push(
       piece(new THREE.SphereGeometry(px(0.093), 14, 12), robe, {
-        pos: [side * px(0.228), SHOULDER_Y, 0],
+        pos: [side * px(0.208), SHOULDER_Y, 0],
       }),
     );
     if (look.pauldrons > 0) {
@@ -371,7 +371,7 @@ export function buildAvatarMesh(look: AvatarLook): AvatarMeshData {
   switch (look.hair) {
     case 'short':
       solid.push(
-        piece(new THREE.SphereGeometry(0.153, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.46), hair, {
+        piece(new THREE.SphereGeometry(0.153, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.34), hair, {
           pos: [0, HEAD_Y + 0.004, -0.006],
           scale: [1, 1.06, 1],
         }),
@@ -390,7 +390,7 @@ export function buildAvatarMesh(look: AvatarLook): AvatarMeshData {
       break;
     case 'topknot': {
       solid.push(
-        piece(new THREE.SphereGeometry(0.152, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.44), hair, {
+        piece(new THREE.SphereGeometry(0.152, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.3), hair, {
           pos: [0, HEAD_Y + 0.006, -0.004],
         }),
       );
@@ -410,7 +410,7 @@ export function buildAvatarMesh(look: AvatarLook): AvatarMeshData {
     }
     case 'long': {
       solid.push(
-        piece(new THREE.SphereGeometry(0.154, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), hair, {
+        piece(new THREE.SphereGeometry(0.154, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.34), hair, {
           pos: [0, HEAD_Y + 0.004, -0.004],
         }),
       );
@@ -431,7 +431,7 @@ export function buildAvatarMesh(look: AvatarLook): AvatarMeshData {
     }
     case 'braids': {
       solid.push(
-        piece(new THREE.SphereGeometry(0.152, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.44), hair, {
+        piece(new THREE.SphereGeometry(0.152, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.32), hair, {
           pos: [0, HEAD_Y + 0.004, -0.004],
         }),
       );
@@ -469,7 +469,7 @@ export function buildAvatarMesh(look: AvatarLook): AvatarMeshData {
       // na +Z (předek), takže zadní oblouk je 0,36π…1,64π — první pokus
       // omylem zakryl obličej.
       solid.push(
-        piece(new THREE.CylinderGeometry(0.155, 0.235, 0.46, 16, 1, true, Math.PI * 0.36, Math.PI * 1.28), trim, {
+        piece(new THREE.CylinderGeometry(0.155, 0.235, 0.46, 16, 1, true, Math.PI * 0.58, Math.PI * 0.84), trim, {
           pos: [0, HEAD_Y - 0.1, -0.01],
           scale: [1, 1, 0.96],
         }),
@@ -600,14 +600,14 @@ export function buildAvatarMesh(look: AvatarLook): AvatarMeshData {
   // ── plášť přes ramena ───────────────────────────────────────────────
   if (look.cape) {
     solid.push(
-      piece(new THREE.CylinderGeometry(px(0.215), px(0.34), 0.18, 16, 1, true), robeDark, {
+      piece(new THREE.CylinderGeometry(px(0.2), px(0.28), 0.14, 16, 1, true), robeDark, {
         pos: [0, SHOULDER_Y - 0.05, -0.01],
       }),
     );
     // zadní díl pláště — část pláště, ne rovná deska
     solid.push(
       piece(
-        new THREE.CylinderGeometry(px(0.3), px(0.44), 1.05, 18, 1, true, Math.PI * 0.68, Math.PI * 0.64),
+        new THREE.CylinderGeometry(px(0.24), px(0.33), 0.82, 18, 1, true, Math.PI * 0.68, Math.PI * 0.64),
         robeDark,
         { pos: [0, HIP_Y + 0.02, 0], scale: [1, 1, 0.92] },
       ),
@@ -653,15 +653,15 @@ export function buildAvatarMesh(look: AvatarLook): AvatarMeshData {
   if (has('staff')) {
     solid.push(
       piece(new THREE.CylinderGeometry(0.02, 0.024, 1.86, 8), '#6b4a2f', {
-        pos: [px(0.34), 1.02, 0.02],
+        pos: [px(0.29), 1.0, 0.1],
       }),
     );
     glow.push(
-      piece(new THREE.SphereGeometry(0.072, 12, 10), glowColor, { pos: [px(0.34), 1.98, 0.02] }),
+      piece(new THREE.SphereGeometry(0.072, 12, 10), glowColor, { pos: [px(0.29), 1.96, 0.1] }),
     );
     metal.push(
       piece(new THREE.TorusGeometry(0.055, 0.012, 6, 12), metalColor, {
-        pos: [px(0.34), 1.9, 0.02],
+        pos: [px(0.29), 1.88, 0.1],
         rot: [Math.PI / 2, 0, 0],
       }),
     );
@@ -828,10 +828,230 @@ export function buildAvatarMesh(look: AvatarLook): AvatarMeshData {
 
   if (has('spear')) {
     solid.push(
-      piece(new THREE.CylinderGeometry(0.016, 0.016, 1.9, 6), '#7a5a3a', { pos: [px(0.34), 1.05, 0] }),
+      piece(new THREE.CylinderGeometry(0.016, 0.016, 1.9, 6), '#7a5a3a', { pos: [px(0.29), 1.05, 0.1] }),
     );
     metal.push(
-      piece(new THREE.ConeGeometry(0.05, 0.19, 6), '#cfd6e4', { pos: [px(0.34), 2.06, 0] }),
+      piece(new THREE.ConeGeometry(0.05, 0.19, 6), '#cfd6e4', { pos: [px(0.29), 2.06, 0.1] }),
+    );
+  }
+
+  // ── atributy z kánonu ───────────────────────────────────────────────
+  if (has('flute')) {
+    // flétna držená šikmo u hrudi — Krišna
+    solid.push(
+      piece(new THREE.CylinderGeometry(0.016, 0.016, 0.34, 8), '#c8a26a', {
+        pos: [px(0.2), 1.2, 0.2],
+        rot: [0.2, 0, 1.15],
+      }),
+    );
+    for (let hole = 0; hole < 4; hole += 1) {
+      metal.push(
+        piece(new THREE.TorusGeometry(0.017, 0.004, 5, 8), '#8a6a3a', {
+          pos: [px(0.2) + (hole - 1.5) * 0.06, 1.2 + (hole - 1.5) * 0.03, 0.2],
+          rot: [1.45, 0, 1.15],
+        }),
+      );
+    }
+  }
+
+  if (has('trident')) {
+    solid.push(
+      piece(new THREE.CylinderGeometry(0.02, 0.022, 2.0, 8), '#6b4a2f', { pos: [px(0.29), 1.1, 0.1] }),
+    );
+    metal.push(
+      piece(new THREE.BoxGeometry(0.06, 0.05, 0.05), metalColor, { pos: [px(0.29), 2.02, 0.1] }),
+    );
+    for (const offset of [-0.075, 0, 0.075]) {
+      metal.push(
+        piece(new THREE.CylinderGeometry(0.011, 0.006, 0.26, 6), '#cfd6e4', {
+          pos: [px(0.29) + offset, 2.16, 0.1],
+          rot: [0, 0, offset === 0 ? 0 : offset > 0 ? -0.16 : 0.16],
+        }),
+      );
+    }
+    glow.push(
+      piece(new THREE.SphereGeometry(0.02, 6, 6), glowColor, { pos: [px(0.29), 2.3, 0.1] }),
+    );
+  }
+
+  if (has('chakra')) {
+    // Sudaršana čakra — disk s paprsky, vznáší se u ruky
+    metal.push(
+      piece(new THREE.TorusGeometry(0.13, 0.014, 6, 26), metalColor, {
+        pos: [px(0.34), 1.34, 0.02],
+        rot: [0.35, 0, 0],
+      }),
+    );
+    for (let spoke = 0; spoke < 8; spoke += 1) {
+      const angle = (spoke / 8) * Math.PI * 2;
+      metal.push(
+        piece(new THREE.BoxGeometry(0.008, 0.12, 0.008), metalColor, {
+          pos: [px(0.34) + Math.cos(angle) * 0.065, 1.34 + Math.sin(angle) * 0.065, 0.02],
+          rot: [0.35, 0, angle],
+        }),
+      );
+    }
+    glow.push(
+      piece(new THREE.CircleGeometry(0.05, 16), glowColor, {
+        pos: [px(0.34), 1.34, 0.035],
+        rot: [0.35, 0, 0],
+      }),
+    );
+  }
+
+  if (has('vajra')) {
+    // dorje — dvojitý hrot
+    metal.push(
+      piece(new THREE.SphereGeometry(0.035, 10, 8), metalColor, { pos: [px(0.32), 1.16, 0.1] }),
+    );
+    for (const dir of [-1, 1]) {
+      metal.push(
+        piece(new THREE.ConeGeometry(0.026, 0.16, 6), metalColor, {
+          pos: [px(0.32), 1.16 + dir * 0.1, 0.1],
+          rot: [0, 0, dir === 1 ? 0 : Math.PI],
+        }),
+      );
+    }
+    glow.push(
+      piece(new THREE.OctahedronGeometry(0.018, 0), glowColor, { pos: [px(0.32), 1.16, 0.1] }),
+    );
+  }
+
+  if (has('cross')) {
+    metal.push(
+      piece(new THREE.BoxGeometry(0.035, 0.42, 0.02), '#d9c27a', {
+        pos: [px(0.3), 1.16, 0.16],
+        rot: [0, 0, 0.1],
+      }),
+    );
+    metal.push(
+      piece(new THREE.BoxGeometry(0.2, 0.032, 0.02), '#d9c27a', {
+        pos: [px(0.3), 1.28, 0.16],
+        rot: [0, 0, 0.1],
+      }),
+    );
+  }
+
+  if (has('crescent')) {
+    metal.push(
+      piece(new THREE.TorusGeometry(0.1, 0.016, 6, 20, Math.PI * 1.15), metalColor, {
+        pos: [px(0.32), 1.9, 0.02],
+        rot: [0.2, 0, 2.4],
+      }),
+    );
+  }
+
+  if (has('ankh')) {
+    metal.push(
+      piece(new THREE.TorusGeometry(0.045, 0.012, 6, 16), metalColor, { pos: [px(0.31), 1.42, 0.12] }),
+    );
+    metal.push(
+      piece(new THREE.BoxGeometry(0.028, 0.34, 0.022), metalColor, { pos: [px(0.31), 1.2, 0.12] }),
+    );
+    metal.push(
+      piece(new THREE.BoxGeometry(0.17, 0.028, 0.022), metalColor, { pos: [px(0.31), 1.3, 0.12] }),
+    );
+  }
+
+  if (has('bell')) {
+    metal.push(
+      piece(new THREE.ConeGeometry(0.06, 0.11, 12, 1, true), metalColor, {
+        pos: [px(0.3), 1.28, 0.14],
+      }),
+    );
+    metal.push(
+      piece(new THREE.SphereGeometry(0.018, 8, 6), metalColor, { pos: [px(0.3), 1.35, 0.14] }),
+    );
+    solid.push(
+      piece(new THREE.CylinderGeometry(0.012, 0.012, 0.06, 6), '#6b4a2f', { pos: [px(0.3), 1.4, 0.14] }),
+    );
+  }
+
+  if (has('lantern')) {
+    metal.push(
+      piece(new THREE.BoxGeometry(0.1, 0.14, 0.1), metalColor, { pos: [px(0.3), 1.06, 0.16] }),
+    );
+    glow.push(
+      piece(new THREE.SphereGeometry(0.045, 10, 8), glowColor, { pos: [px(0.3), 1.06, 0.16] }),
+    );
+    metal.push(
+      piece(new THREE.TorusGeometry(0.045, 0.007, 5, 12), metalColor, {
+        pos: [px(0.3), 1.16, 0.16],
+        rot: [Math.PI / 2, 0, 0],
+      }),
+    );
+  }
+
+  if (has('feather')) {
+    // paví pero — Krišna ho nosí ve vlasech
+    const stemX = 0.12;
+    solid.push(
+      piece(new THREE.CylinderGeometry(0.006, 0.006, 0.2, 5), '#d8d2c6', {
+        pos: [stemX, HEAD_Y + 0.2, -0.02],
+        rot: [0.2, 0, -0.35],
+      }),
+    );
+    glow.push(
+      piece(new THREE.CircleGeometry(0.055, 16), glowColor, {
+        pos: [stemX + 0.05, HEAD_Y + 0.3, -0.02],
+        rot: [0, -0.3, 0],
+      }),
+    );
+    solid.push(
+      piece(new THREE.SphereGeometry(0.014, 8, 6), '#2f6b8a', { pos: [stemX + 0.05, HEAD_Y + 0.29, -0.015] }),
+    );
+  }
+
+  if (has('mirror')) {
+    metal.push(
+      piece(new THREE.CircleGeometry(0.09, 20), '#e6eef7', { pos: [px(0.3), 1.34, 0.15] }),
+    );
+    metal.push(
+      piece(new THREE.TorusGeometry(0.09, 0.012, 6, 20), metalColor, { pos: [px(0.3), 1.34, 0.15] }),
+    );
+    metal.push(
+      piece(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 6), metalColor, { pos: [px(0.3), 1.24, 0.15] }),
+    );
+  }
+
+  if (has('hammer')) {
+    solid.push(
+      piece(new THREE.CylinderGeometry(0.018, 0.018, 0.5, 6), '#6b4a2f', { pos: [px(0.32), 1.2, 0.05] }),
+    );
+    metal.push(
+      piece(new THREE.BoxGeometry(0.16, 0.1, 0.1), metalColor, { pos: [px(0.32), 1.45, 0.05] }),
+    );
+  }
+
+  if (has('axe')) {
+    solid.push(
+      piece(new THREE.CylinderGeometry(0.018, 0.018, 0.56, 6), '#6b4a2f', { pos: [px(0.32), 1.22, 0.04] }),
+    );
+    metal.push(
+      piece(new THREE.ConeGeometry(0.1, 0.18, 4), '#cfd6e4', {
+        pos: [px(0.32) + 0.08, 1.44, 0.04],
+        rot: [0, 0, -Math.PI / 2],
+      }),
+    );
+  }
+
+  if (has('cobra')) {
+    // kobra sepnutá kolem ramene (Šiva) — jen náznak, had není model
+    for (let segment = 0; segment < 4; segment += 1) {
+      solid.push(
+        piece(new THREE.SphereGeometry(0.028, 8, 6), '#3f6b4a', {
+          pos: [px(0.18) + segment * 0.02, 1.42 - segment * 0.05, 0.12 - segment * 0.02],
+        }),
+      );
+    }
+    solid.push(
+      piece(new THREE.SphereGeometry(0.04, 10, 8), '#4b7d56', {
+        pos: [px(0.15), 1.25, 0.2],
+        scale: [1, 1.3, 0.8],
+      }),
+    );
+    glow.push(
+      piece(new THREE.SphereGeometry(0.012, 6, 6), '#ffd166', { pos: [px(0.15) + 0.018, 1.28, 0.24] }),
     );
   }
 

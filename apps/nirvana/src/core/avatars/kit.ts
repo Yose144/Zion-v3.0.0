@@ -12,6 +12,7 @@
  */
 
 import { AVATARS_BY_ID, RAY_COLOR, type AvatarEntry, type AvatarRay } from './catalog';
+import { AVATAR_CANON } from './canon';
 
 export type BodyType = 'slim' | 'standard' | 'heavy';
 
@@ -38,7 +39,21 @@ export type Ornament =
   | 'drum'
   | 'orb'
   | 'banner'
-  | 'spear';
+  | 'spear'
+  | 'flute'
+  | 'trident'
+  | 'chakra'
+  | 'vajra'
+  | 'cross'
+  | 'crescent'
+  | 'ankh'
+  | 'bell'
+  | 'lantern'
+  | 'feather'
+  | 'mirror'
+  | 'hammer'
+  | 'axe'
+  | 'cobra';
 
 export interface AvatarLook {
   id: number;
@@ -191,11 +206,25 @@ export function avatarLook(
 
   const ornamentCount = rarity === 'Rare' ? (random() < 0.45 ? 1 : 0) : rarity === 'Epic' ? 1 : 2;
   const ornaments: Ornament[] = [];
-  for (let index = 0; index < ornamentCount; index += 1) {
+
+  // ── kánon je první: co postava v tradici drží, to má v ruce ─────────
+  // (Šiva trojzubec, Krišna flétnu, Sarasvatí vínu…). Zbytek se dorovná
+  // deterministicky, aby každá postava nebyla „jen jeden symbol“.
+  const canon = AVATAR_CANON[entry?.id ?? -1];
+  if (canon) {
+    for (const symbol of canon.symbols) {
+      if (ornaments.length >= 3) break;
+      if (!ornaments.includes(symbol as Ornament)) ornaments.push(symbol as Ornament);
+    }
+  }
+
+  for (let index = ornaments.length; index < Math.max(ornamentCount, ornaments.length); index += 1) {
     const candidate = pick(random, ORNAMENTS, 'orb');
     if (!ornaments.includes(candidate)) ornaments.push(candidate);
   }
-  if (rarity === 'Legendary' || rarity === 'OneOfOne') ornaments.unshift('halo');
+  if (rarity === 'Legendary' || rarity === 'OneOfOne') {
+    if (!ornaments.includes('halo')) ornaments.unshift('halo');
+  }
 
   // ── silueta z kánonu ────────────────────────────────────────────────
   // Archetyp z podtitulu; když ho text nenese, rozhodne náhoda (deterministicky).
@@ -234,7 +263,7 @@ export function avatarLook(
     mystic: ['turban', 'none', 'circlet'],
     wanderer: ['none', 'feathers', 'none'],
   };
-  const headwear = pick(random, HEADWEAROF[archetype], 'none');
+  const headwear = (canon?.headwear as AvatarHeadwear | null) ?? pick(random, HEADWEAROF[archetype], 'none');
   const pose = pick(random, ['neutral', 'open', 'guard', 'raise'] as const, 'neutral');
   const beard =
     (archetype === 'sage' || archetype === 'warrior' || archetype === 'mystic') && random() < 0.42;
@@ -248,7 +277,7 @@ export function avatarLook(
   const warmRay = ray === 'RubyGold' || ray === 'Yellow' || ray === 'AllRays';
   const metal = warmRay ? '#e8c07a' : ray === 'Obsidian' ? '#8f7a9c' : '#c9d4e4';
   const hairColor =
-    (cl >= 8 && (archetype === 'sage' || archetype === 'mystic')) || rarity === 'OneOfOne'
+    (cl >= 8 && archetype === 'sage') || rarity === 'OneOfOne'
       ? '#e6e2d6'
       : pick(random, HAIR, '#2c1e16');
 
@@ -276,7 +305,7 @@ export function avatarLook(
       robe: shade(accent, 0.55),
       trim: accent,
       glow: shade(accent, 1.15),
-      skin: pick(random, SKIN, '#d7b48b'),
+      skin: canon?.skin ?? pick(random, SKIN, '#d7b48b'),
     },
     ornaments,
     auraRings: rarity === 'OneOfOne' ? 2 : rarity === 'Legendary' ? 1 : 0,

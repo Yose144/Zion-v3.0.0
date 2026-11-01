@@ -14,14 +14,18 @@ import {
   type OasisAvatar, type OasisAvatarCircle, type OasisAvatarRay, type OasisAvatarRarity,
 } from '@/lib/oasis/avatars';
 import GAME_PORTRAITS from '@/lib/oasis/game-portraits.json';
+import CHARACTER_SHEET_IMAGES from '@/lib/oasis/character-sheet-images.json';
 
 /**
  * Herní náhled: postava vyrenderovaná z **téhož modelu, jaký běží ve hře**
  * (`apps/nirvana/src/core/avatars`). Generuje `scripts/ops/oasis-avatar-render`.
- * Finální portréty přijdou jako druhá vrstva — změní se jen tento zdroj.
+ * Turnaround (`character-sheet-images.json`) je tentýž model ze čtyř pohledů —
+ * podklad pro modeláře i pro generování finálních portrétů.
  */
 const PORTRAITS = GAME_PORTRAITS as Record<string, string>;
+const SHEETS = CHARACTER_SHEET_IMAGES as Record<string, string>;
 const portraitOf = (a: OasisAvatar): string | null => PORTRAITS[String(a.id)] ?? null;
+const sheetOf = (a: OasisAvatar): string | null => SHEETS[String(a.id)] ?? null;
 
 const OASIS_URL = 'https://oasis.zionterranova.com';
 
@@ -60,6 +64,15 @@ const Copy = {
   artConcept: { cs: 'Konceptový portrét · OASIS Collection', en: 'Concept portrait · OASIS Collection' },
   artFinal: { cs: 'Detailní portrét · OASIS Collection', en: 'Detailed portrait · OASIS Collection' },
   artGame: { cs: 'Herní 3D náhled · procedurální model', en: 'In-game 3D preview · procedural model' },
+  sheetLabel: { cs: 'Character sheet · front / 3-4 / bok / záda', en: 'Character sheet · front / 3-4 / side / back' },
+  symbolsLabel: { cs: 'Atributy z kánonu', en: 'Canon attributes' },
+  promptLabel: { cs: 'Prompt pro finální portrét', en: 'Final portrait prompt' },
+  promptHint: {
+    cs: 'Zkopíruj do generátoru obrázků spolu s referenčním turnaroundem.',
+    en: 'Paste into an image generator together with the turnaround reference.',
+  },
+  copyPrompt: { cs: 'Kopírovat prompt', en: 'Copy prompt' },
+  copied: { cs: 'Zkopírováno', en: 'Copied' },
   heroAlt: { cs: 'Brána ZION OASIS — úvodní ilustrace', en: 'ZION OASIS gateway — cover illustration' },
   close: { cs: 'Zavřít', en: 'Close' },
   idLabel: { cs: 'č.', en: 'no.' },
@@ -105,6 +118,32 @@ const CIRCLE_NOTES: Partial<Record<OasisAvatarCircle, { cs: string; en: string }
 
 const RAY_ORDER: OasisAvatarRay[] = ['AllRays', 'Blue', 'Pink', 'Yellow', 'Violet', 'White', 'Green', 'RubyGold', 'Obsidian'];
 const RARITY_ORDER: OasisAvatarRarity[] = ['Rare', 'Epic', 'Legendary', 'OneOfOne'];
+
+/** Kanonický spec (atributy, paleta, prompt) — tahá se lazy, jen když je detail otevřený. */
+interface SheetSpec {
+  id: number;
+  symbols: string[];
+  palette: string[];
+  skin: string | null;
+  headwear: string | null;
+  companions: string[];
+  culture: string;
+  prompt: string;
+}
+
+let specsPromise: Promise<SheetSpec[]> | null = null;
+function loadSpecs(): Promise<SheetSpec[]> {
+  if (!specsPromise) {
+    specsPromise = fetch('/oasis-assets/character-sheets/specs.json')
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+      .then((data: { entries: SheetSpec[] }) => data.entries)
+      .catch(() => {
+        specsPromise = null;
+        return [];
+      });
+  }
+  return specsPromise;
+}
 
 function AvatarVisual({ a, size, cs }: { a: OasisAvatar; size: 'card' | 'modal'; cs: boolean }) {
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
@@ -218,6 +257,18 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
   const rarity = RARITY_META[a.rarity] ?? RARITY_META.Rare;
   const [profile, setProfile] = useState<string | null>(null);
   const [profileFailed, setProfileFailed] = useState(false);
+  const [spec, setSpec] = useState<SheetSpec | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let dead = false;
+    void loadSpecs().then((entries) => {
+      if (!dead) setSpec(entries.find((entry) => entry.id === a.id) ?? null);
+    });
+    return () => {
+      dead = true;
+    };
+  }, [a.id]);
 
   useEffect(() => {
     if (!a.hasProfile) return;
@@ -296,6 +347,72 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
             {Copy.nftLabel[cs ? 'cs' : 'en']}: {a.rarity}
           </span>
         </div>
+
+        {sheetOf(a) && (
+          <figure className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+            <img
+              src={sheetOf(a)!}
+              alt={cs ? `${a.name} — character sheet` : `${a.name} — character sheet`}
+              loading="lazy"
+              decoding="async"
+              className="w-full"
+            />
+            <figcaption className="border-t border-white/10 px-3 py-2 text-[10px] uppercase tracking-wider text-gray-500">
+              {Copy.sheetLabel[cs ? 'cs' : 'en']}
+            </figcaption>
+          </figure>
+        )}
+
+        {spec && (spec.symbols.length > 0 || spec.palette.length > 0) && (
+          <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="text-[10px] uppercase tracking-wider text-gray-500">
+              {Copy.symbolsLabel[cs ? 'cs' : 'en']}
+            </span>
+            {spec.symbols.map((symbol) => (
+              <span key={symbol} className="rounded-full border border-zion-cyan/25 bg-zion-cyan/10 px-2 py-0.5 text-cyan-200">
+                {symbol}
+              </span>
+            ))}
+            {spec.palette.map((hex) => (
+              <span
+                key={hex}
+                title={hex}
+                className="inline-block h-4 w-4 rounded-full border border-white/25"
+                style={{ background: hex }}
+              />
+            ))}
+          </div>
+        )}
+
+        {spec?.prompt && (
+          <div className="mt-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-zion-gold">
+                <Sparkles className="h-3.5 w-3.5" /> {Copy.promptLabel[cs ? 'cs' : 'en']}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  const text = spec.prompt;
+                  void navigator.clipboard?.writeText(text).then(
+                    () => {
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    },
+                    () => setCopied(false),
+                  );
+                }}
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] text-gray-200 transition-colors hover:bg-white/10"
+              >
+                {copied ? Copy.copied[cs ? 'cs' : 'en'] : Copy.copyPrompt[cs ? 'cs' : 'en']}
+              </button>
+            </div>
+            <p className="mt-1 text-[11px] text-gray-500">{Copy.promptHint[cs ? 'cs' : 'en']}</p>
+            <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/40 p-3 text-[11px] leading-relaxed text-gray-300">
+              {spec.prompt}
+            </pre>
+          </div>
+        )}
 
         {infoRows.length > 0 && (
           <div className="mt-5 grid gap-2 sm:grid-cols-2">

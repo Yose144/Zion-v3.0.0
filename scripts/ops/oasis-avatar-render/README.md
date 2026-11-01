@@ -36,6 +36,9 @@ node scripts/ops/oasis-avatar-render/render.mjs --ids 0,4,19 --force
 
 # jiné rozměry
 node scripts/ops/oasis-avatar-render/render.mjs --width 640 --height 800 --force
+
+# + produkční turnaround (front / 3-4 / bok / záda) pro každou postavu
+node scripts/ops/oasis-avatar-render/render.mjs --force --sheets
 ```
 
 Výstup:
@@ -44,6 +47,28 @@ Výstup:
 - `apps/website-v2.9/public/oasis-assets/game-portraits/manifest.json` (id → cesta, bajty)
 - `apps/website-v2.9/src/lib/oasis/game-portraits.json` — statický import pro Next
   (`public/` se importovat nedá; stránka z něj skládá cestu k portrétu)
+- `--sheets`: `public/oasis-assets/character-sheets/<id>-<slug>.webp` (1600×900,
+  čtyři pohledy na společné zemi, popisky FRONT/THREE-QUARTER/SIDE/BACK,
+  paleta) + `manifest.json` + `src/lib/oasis/character-sheet-images.json`
+
+## Kanonické atributy a prompt pack
+
+```bash
+node scripts/ops/oasis-canon/build-canon.mjs
+```
+
+Čte `V31/L4/oasis/data/avatars.json`, esence web2.9, `SACRED_TRINITY/` a
+`AVATAR_ROSTER.md`, a pro každou postavu sestaví **vizuální zadání**: atributy
+(flétna, trojzubec, čakra, vajra, kříž, srpek, anch…), kanonickou paletu, pleť,
+pokrývku hlavy, doprovodná zvířata a hotový anglický **prompt** pro generátor
+portrétů (turnaround + art direction + negativní vymezení).
+
+Výstupy:
+
+- `apps/nirvana/src/core/avatars/canon.ts` — mapa pro kreslení ve hře i na webu
+- `apps/website-v2.9/src/lib/oasis/character-sheets.json` + `public/oasis-assets/character-sheets/specs.json`
+  — plný spec + prompt (stránka si ho tahá lazy jen při otevření detailu)
+
 
 Kontrola stránky bez deploye:
 

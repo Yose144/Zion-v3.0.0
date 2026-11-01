@@ -1,0 +1,1207 @@
+{
+  "note": "Turnaround sheet (front / three-quarter / side / back) pro modeláře i pro generování finálních portrétů.",
+  "generatedAt": "2026-11-01T22:25:32.593Z",
+  "count": 200,
+  "entries": [
+    {
+      "id": 0,
+      "name": "Krishna-Maitreya",
+      "file": "/oasis-assets/character-sheets/000-krishna-maitreya.webp",
+      "bytes": 49598
+    },
+    {
+      "id": 1,
+      "name": "Rama",
+      "file": "/oasis-assets/character-sheets/001-rama.webp",
+      "bytes": 32194
+    },
+    {
+      "id": 2,
+      "name": "Sita",
+      "file": "/oasis-assets/character-sheets/002-sita.webp",
+      "bytes": 35358
+    },
+    {
+      "id": 3,
+      "name": "Hanuman",
+      "file": "/oasis-assets/character-sheets/003-hanuman.webp",
+      "bytes": 39382
+    },
+    {
+      "id": 4,
+      "name": "Maitreya",
+      "file": "/oasis-assets/character-sheets/004-maitreya.webp",
+      "bytes": 39584
+    },
+    {
+      "id": 5,
+      "name": "Saraswati",
+      "file": "/oasis-assets/character-sheets/005-saraswati.webp",
+      "bytes": 34794
+    },
+    {
+      "id": 6,
+      "name": "Isis-Enamataru",
+      "file": "/oasis-assets/character-sheets/006-isis-enamataru.webp",
+      "bytes": 36794
+    },
+    {
+      "id": 8,
+      "name": "Issobela Guardian",
+      "file": "/oasis-assets/character-sheets/008-issobela-guardian.webp",
+      "bytes": 39964
+    },
+    {
+      "id": 9,
+      "name": "Shanti",
+      "file": "/oasis-assets/character-sheets/009-shanti.webp",
+      "bytes": 34860
+    },
+    {
+      "id": 10,
+      "name": "Bronu-Christ",
+      "file": "/oasis-assets/character-sheets/010-bronu-christ.webp",
+      "bytes": 45820
+    },
+    {
+      "id": 11,
+      "name": "Arjuna",
+      "file": "/oasis-assets/character-sheets/011-arjuna.webp",
+      "bytes": 36858
+    },
+    {
+      "id": 12,
+      "name": "Milan-Bhima",
+      "file": "/oasis-assets/character-sheets/012-milan-bhima.webp",
+      "bytes": 33562
+    },
+    {
+      "id": 13,
+      "name": "Artem-Vudce",
+      "file": "/oasis-assets/character-sheets/013-artem-vudce.webp",
+      "bytes": 37578
+    },
+    {
+      "id": 14,
+      "name": "Mama Yashoda",
+      "file": "/oasis-assets/character-sheets/014-mama-yashoda.webp",
+      "bytes": 32172
+    },
+    {
+      "id": 15,
+      "name": "Vishwakarma",
+      "file": "/oasis-assets/character-sheets/015-vishwakarma.webp",
+      "bytes": 40494
+    },
+    {
+      "id": 16,
+      "name": "Radha",
+      "file": "/oasis-assets/character-sheets/016-radha.webp",
+      "bytes": 36552
+    },
+    {
+      "id": 17,
+      "name": "Vyasa-Kamil",
+      "file": "/oasis-assets/character-sheets/017-vyasa-kamil.webp",
+      "bytes": 50546
+    },
+    {
+      "id": 18,
+      "name": "Meriam Rose",
+      "file": "/oasis-assets/character-sheets/018-meriam-rose.webp",
+      "bytes": 36374
+    },
+    {
+      "id": 19,
+      "name": "Yeshua Sananda",
+      "file": "/oasis-assets/character-sheets/019-yeshua-sananda.webp",
+      "bytes": 42920
+    },
+    {
+      "id": 20,
+      "name": "Tara",
+      "file": "/oasis-assets/character-sheets/020-tara.webp",
+      "bytes": 28472
+    },
+    {
+      "id": 21,
+      "name": "Avalokiteshvara",
+      "file": "/oasis-assets/character-sheets/021-avalokiteshvara.webp",
+      "bytes": 37390
+    },
+    {
+      "id": 22,
+      "name": "Vajrasattva",
+      "file": "/oasis-assets/character-sheets/022-vajrasattva.webp",
+      "bytes": 27762
+    },
+    {
+      "id": 23,
+      "name": "King Arthur",
+      "file": "/oasis-assets/character-sheets/023-king-arthur.webp",
+      "bytes": 34224
+    },
+    {
+      "id": 24,
+      "name": "Mahavatar Babaji",
+      "file": "/oasis-assets/character-sheets/024-mahavatar-babaji.webp",
+      "bytes": 43060
+    },
+    {
+      "id": 25,
+      "name": "Lady Gaia-Vywamus",
+      "file": "/oasis-assets/character-sheets/025-lady-gaia-vywamus.webp",
+      "bytes": 35992
+    },
+    {
+      "id": 26,
+      "name": "Saint Germain",
+      "file": "/oasis-assets/character-sheets/026-saint-germain.webp",
+      "bytes": 37884
+    },
+    {
+      "id": 27,
+      "name": "Serapis Bey",
+      "file": "/oasis-assets/character-sheets/027-serapis-bey.webp",
+      "bytes": 36702
+    },
+    {
+      "id": 28,
+      "name": "Sanat Kumara",
+      "file": "/oasis-assets/character-sheets/028-sanat-kumara.webp",
+      "bytes": 48508
+    },
+    {
+      "id": 29,
+      "name": "El Morya",
+      "file": "/oasis-assets/character-sheets/029-el-morya.webp",
+      "bytes": 38810
+    },
+    {
+      "id": 30,
+      "name": "Lanto",
+      "file": "/oasis-assets/character-sheets/030-lanto.webp",
+      "bytes": 34828
+    },
+    {
+      "id": 31,
+      "name": "Paul the Venetian",
+      "file": "/oasis-assets/character-sheets/031-paul-the-venetian.webp",
+      "bytes": 31152
+    },
+    {
+      "id": 32,
+      "name": "Hilarion",
+      "file": "/oasis-assets/character-sheets/032-hilarion.webp",
+      "bytes": 28564
+    },
+    {
+      "id": 33,
+      "name": "Lady Nada",
+      "file": "/oasis-assets/character-sheets/033-lady-nada.webp",
+      "bytes": 37976
+    },
+    {
+      "id": 35,
+      "name": "Karel IV",
+      "file": "/oasis-assets/character-sheets/035-karel-iv.webp",
+      "bytes": 31672
+    },
+    {
+      "id": 36,
+      "name": "Albert Einstein",
+      "file": "/oasis-assets/character-sheets/036-albert-einstein.webp",
+      "bytes": 42310
+    },
+    {
+      "id": 37,
+      "name": "Mahatma Gandhi",
+      "file": "/oasis-assets/character-sheets/037-mahatma-gandhi.webp",
+      "bytes": 41918
+    },
+    {
+      "id": 38,
+      "name": "Panna Maria",
+      "file": "/oasis-assets/character-sheets/038-panna-maria.webp",
+      "bytes": 34268
+    },
+    {
+      "id": 39,
+      "name": "Subhadra",
+      "file": "/oasis-assets/character-sheets/039-subhadra.webp",
+      "bytes": 32092
+    },
+    {
+      "id": 40,
+      "name": "Elizabet",
+      "file": "/oasis-assets/character-sheets/040-elizabet.webp",
+      "bytes": 36530
+    },
+    {
+      "id": 41,
+      "name": "Vasudeva",
+      "file": "/oasis-assets/character-sheets/041-vasudeva.webp",
+      "bytes": 37026
+    },
+    {
+      "id": 42,
+      "name": "Sri Dattatreya",
+      "file": "/oasis-assets/character-sheets/042-sri-dattatreya.webp",
+      "bytes": 53400
+    },
+    {
+      "id": 43,
+      "name": "Maly Princ",
+      "file": "/oasis-assets/character-sheets/043-maly-princ.webp",
+      "bytes": 41784
+    },
+    {
+      "id": 44,
+      "name": "Hiranyagarbha",
+      "file": "/oasis-assets/character-sheets/044-hiranyagarbha.webp",
+      "bytes": 54054
+    },
+    {
+      "id": 45,
+      "name": "Sri Kalki Avatar",
+      "file": "/oasis-assets/character-sheets/045-sri-kalki-avatar.webp",
+      "bytes": 45040
+    },
+    {
+      "id": 46,
+      "name": "Neo",
+      "file": "/oasis-assets/character-sheets/046-neo.webp",
+      "bytes": 40118
+    },
+    {
+      "id": 47,
+      "name": "Trinity",
+      "file": "/oasis-assets/character-sheets/047-trinity.webp",
+      "bytes": 35448
+    },
+    {
+      "id": 48,
+      "name": "Morpheus",
+      "file": "/oasis-assets/character-sheets/048-morpheus.webp",
+      "bytes": 38828
+    },
+    {
+      "id": 50,
+      "name": "ZION The Last City",
+      "file": "/oasis-assets/character-sheets/050-zion-the-last-city.webp",
+      "bytes": 46182
+    },
+    {
+      "id": 51,
+      "name": "Dalai Lama XIV",
+      "file": "/oasis-assets/character-sheets/051-dalai-lama-xiv.webp",
+      "bytes": 51616
+    },
+    {
+      "id": 52,
+      "name": "Heȟáka Sápa (Black Elk)",
+      "file": "/oasis-assets/character-sheets/052-hehaka-sapa-black-elk.webp",
+      "bytes": 33944
+    },
+    {
+      "id": 53,
+      "name": "Ptesáŋ Wíŋ (White Buffalo Calf Woman)",
+      "file": "/oasis-assets/character-sheets/053-ptesa-wi-white-buffalo-calf-woman.webp",
+      "bytes": 36336
+    },
+    {
+      "id": 54,
+      "name": "Kókyangwúti (Spider Grandmother)",
+      "file": "/oasis-assets/character-sheets/054-kokyangwuti-spider-grandmother.webp",
+      "bytes": 56092
+    },
+    {
+      "id": 55,
+      "name": "Hunahpú & Xbalanqué (Hero Twins)",
+      "file": "/oasis-assets/character-sheets/055-hunahpu-xbalanque-hero-twins.webp",
+      "bytes": 48468
+    },
+    {
+      "id": 56,
+      "name": "Don Mariano",
+      "file": "/oasis-assets/character-sheets/056-don-mariano.webp",
+      "bytes": 30298
+    },
+    {
+      "id": 57,
+      "name": "Doña Rosalía Ixmukané",
+      "file": "/oasis-assets/character-sheets/057-dona-rosalia-ixmukane.webp",
+      "bytes": 39342
+    },
+    {
+      "id": 58,
+      "name": "Bílé Pero (White Feather)",
+      "file": "/oasis-assets/character-sheets/058-bile-pero-white-feather.webp",
+      "bytes": 36098
+    },
+    {
+      "id": 59,
+      "name": "Ohnivá Oka (Fire Eyes)",
+      "file": "/oasis-assets/character-sheets/059-ohniva-oka-fire-eyes.webp",
+      "bytes": 42922
+    },
+    {
+      "id": 60,
+      "name": "Davi Kopenawa",
+      "file": "/oasis-assets/character-sheets/060-davi-kopenawa.webp",
+      "bytes": 32094
+    },
+    {
+      "id": 61,
+      "name": "Heyókȟa (Sacred Clown)",
+      "file": "/oasis-assets/character-sheets/061-heyokha-sacred-clown.webp",
+      "bytes": 39786
+    },
+    {
+      "id": 62,
+      "name": "Lā\\'ila\\'i",
+      "file": "/oasis-assets/character-sheets/062-la-ila-i.webp",
+      "bytes": 33254
+    },
+    {
+      "id": 63,
+      "name": "Pele",
+      "file": "/oasis-assets/character-sheets/063-pele.webp",
+      "bytes": 42748
+    },
+    {
+      "id": 64,
+      "name": "Hiʻiaka",
+      "file": "/oasis-assets/character-sheets/064-hi-iaka.webp",
+      "bytes": 28564
+    },
+    {
+      "id": 65,
+      "name": "Kāne",
+      "file": "/oasis-assets/character-sheets/065-kane.webp",
+      "bytes": 39128
+    },
+    {
+      "id": 66,
+      "name": "Kanaloa",
+      "file": "/oasis-assets/character-sheets/066-kanaloa.webp",
+      "bytes": 44786
+    },
+    {
+      "id": 67,
+      "name": "Kū",
+      "file": "/oasis-assets/character-sheets/067-ku.webp",
+      "bytes": 38800
+    },
+    {
+      "id": 68,
+      "name": "Lono",
+      "file": "/oasis-assets/character-sheets/068-lono.webp",
+      "bytes": 41910
+    },
+    {
+      "id": 69,
+      "name": "Stará Kumu Lehua",
+      "file": "/oasis-assets/character-sheets/069-stara-kumu-lehua.webp",
+      "bytes": 42540
+    },
+    {
+      "id": 70,
+      "name": "Hina",
+      "file": "/oasis-assets/character-sheets/070-hina.webp",
+      "bytes": 28200
+    },
+    {
+      "id": 71,
+      "name": "Maui",
+      "file": "/oasis-assets/character-sheets/071-maui.webp",
+      "bytes": 42540
+    },
+    {
+      "id": 72,
+      "name": "Padmasambhava",
+      "file": "/oasis-assets/character-sheets/072-padmasambhava.webp",
+      "bytes": 31180
+    },
+    {
+      "id": 73,
+      "name": "Milarepa",
+      "file": "/oasis-assets/character-sheets/073-milarepa.webp",
+      "bytes": 36380
+    },
+    {
+      "id": 74,
+      "name": "Tsongkhapa",
+      "file": "/oasis-assets/character-sheets/074-tsongkhapa.webp",
+      "bytes": 34488
+    },
+    {
+      "id": 75,
+      "name": "Atiśa",
+      "file": "/oasis-assets/character-sheets/075-atisa.webp",
+      "bytes": 33348
+    },
+    {
+      "id": 76,
+      "name": "Marpa Lotsawa",
+      "file": "/oasis-assets/character-sheets/076-marpa-lotsawa.webp",
+      "bytes": 34898
+    },
+    {
+      "id": 77,
+      "name": "Machik Labdrön",
+      "file": "/oasis-assets/character-sheets/077-machik-labdron.webp",
+      "bytes": 41826
+    },
+    {
+      "id": 78,
+      "name": "Mañjuśrī",
+      "file": "/oasis-assets/character-sheets/078-manjusri.webp",
+      "bytes": 39062
+    },
+    {
+      "id": 79,
+      "name": "Samantabhadra",
+      "file": "/oasis-assets/character-sheets/079-samantabhadra.webp",
+      "bytes": 45460
+    },
+    {
+      "id": 80,
+      "name": "Medicine Buddha",
+      "file": "/oasis-assets/character-sheets/080-medicine-buddha.webp",
+      "bytes": 29884
+    },
+    {
+      "id": 81,
+      "name": "Longchen Rabjam",
+      "file": "/oasis-assets/character-sheets/081-longchen-rabjam.webp",
+      "bytes": 29416
+    },
+    {
+      "id": 82,
+      "name": "Shiva",
+      "file": "/oasis-assets/character-sheets/082-shiva.webp",
+      "bytes": 50264
+    },
+    {
+      "id": 83,
+      "name": "Parvati",
+      "file": "/oasis-assets/character-sheets/083-parvati.webp",
+      "bytes": 39794
+    },
+    {
+      "id": 84,
+      "name": "Ganesha",
+      "file": "/oasis-assets/character-sheets/084-ganesha.webp",
+      "bytes": 36160
+    },
+    {
+      "id": 85,
+      "name": "Lakshmi",
+      "file": "/oasis-assets/character-sheets/085-lakshmi.webp",
+      "bytes": 30118
+    },
+    {
+      "id": 86,
+      "name": "Durga",
+      "file": "/oasis-assets/character-sheets/086-durga.webp",
+      "bytes": 50242
+    },
+    {
+      "id": 87,
+      "name": "Kali",
+      "file": "/oasis-assets/character-sheets/087-kali.webp",
+      "bytes": 37442
+    },
+    {
+      "id": 88,
+      "name": "Kartikeya",
+      "file": "/oasis-assets/character-sheets/088-kartikeya.webp",
+      "bytes": 31210
+    },
+    {
+      "id": 89,
+      "name": "Surya",
+      "file": "/oasis-assets/character-sheets/089-surya.webp",
+      "bytes": 29670
+    },
+    {
+      "id": 90,
+      "name": "Indra",
+      "file": "/oasis-assets/character-sheets/090-indra.webp",
+      "bytes": 33744
+    },
+    {
+      "id": 91,
+      "name": "Ganga",
+      "file": "/oasis-assets/character-sheets/091-ganga.webp",
+      "bytes": 30656
+    },
+    {
+      "id": 92,
+      "name": "Amaterasu",
+      "file": "/oasis-assets/character-sheets/092-amaterasu.webp",
+      "bytes": 32084
+    },
+    {
+      "id": 93,
+      "name": "Susanoo",
+      "file": "/oasis-assets/character-sheets/093-susanoo.webp",
+      "bytes": 35538
+    },
+    {
+      "id": 94,
+      "name": "Tsukuyomi",
+      "file": "/oasis-assets/character-sheets/094-tsukuyomi.webp",
+      "bytes": 27562
+    },
+    {
+      "id": 95,
+      "name": "Inari",
+      "file": "/oasis-assets/character-sheets/095-inari.webp",
+      "bytes": 33586
+    },
+    {
+      "id": 96,
+      "name": "Ōkuninushi",
+      "file": "/oasis-assets/character-sheets/096-okuninushi.webp",
+      "bytes": 33462
+    },
+    {
+      "id": 97,
+      "name": "Izanami",
+      "file": "/oasis-assets/character-sheets/097-izanami.webp",
+      "bytes": 30890
+    },
+    {
+      "id": 98,
+      "name": "Hachiman",
+      "file": "/oasis-assets/character-sheets/098-hachiman.webp",
+      "bytes": 39558
+    },
+    {
+      "id": 99,
+      "name": "Benzaiten",
+      "file": "/oasis-assets/character-sheets/099-benzaiten.webp",
+      "bytes": 37100
+    },
+    {
+      "id": 100,
+      "name": "Kūkai",
+      "file": "/oasis-assets/character-sheets/100-kukai.webp",
+      "bytes": 30098
+    },
+    {
+      "id": 101,
+      "name": "Nichiren",
+      "file": "/oasis-assets/character-sheets/101-nichiren.webp",
+      "bytes": 32180
+    },
+    {
+      "id": 102,
+      "name": "Xuanyuan Huangdi",
+      "file": "/oasis-assets/character-sheets/102-xuanyuan-huangdi.webp",
+      "bytes": 33228
+    },
+    {
+      "id": 103,
+      "name": "Xiwangmu",
+      "file": "/oasis-assets/character-sheets/103-xiwangmu.webp",
+      "bytes": 35548
+    },
+    {
+      "id": 104,
+      "name": "Laozi",
+      "file": "/oasis-assets/character-sheets/104-laozi.webp",
+      "bytes": 29602
+    },
+    {
+      "id": 105,
+      "name": "Kongzi (Confucius)",
+      "file": "/oasis-assets/character-sheets/105-kongzi-confucius.webp",
+      "bytes": 36642
+    },
+    {
+      "id": 106,
+      "name": "Guan Yu / Guandi",
+      "file": "/oasis-assets/character-sheets/106-guan-yu-guandi.webp",
+      "bytes": 34662
+    },
+    {
+      "id": 107,
+      "name": "Mazu",
+      "file": "/oasis-assets/character-sheets/107-mazu.webp",
+      "bytes": 30576
+    },
+    {
+      "id": 108,
+      "name": "Nezha",
+      "file": "/oasis-assets/character-sheets/108-nezha.webp",
+      "bytes": 28652
+    },
+    {
+      "id": 109,
+      "name": "Sun Wukong",
+      "file": "/oasis-assets/character-sheets/109-sun-wukong.webp",
+      "bytes": 33490
+    },
+    {
+      "id": 110,
+      "name": "Yu the Great",
+      "file": "/oasis-assets/character-sheets/110-yu-the-great.webp",
+      "bytes": 27852
+    },
+    {
+      "id": 111,
+      "name": "Lei Gong",
+      "file": "/oasis-assets/character-sheets/111-lei-gong.webp",
+      "bytes": 32800
+    },
+    {
+      "id": 112,
+      "name": "Dewi Sri",
+      "file": "/oasis-assets/character-sheets/112-dewi-sri.webp",
+      "bytes": 29408
+    },
+    {
+      "id": 113,
+      "name": "Nyai Roro Kidul",
+      "file": "/oasis-assets/character-sheets/113-nyai-roro-kidul.webp",
+      "bytes": 35832
+    },
+    {
+      "id": 114,
+      "name": "Semar",
+      "file": "/oasis-assets/character-sheets/114-semar.webp",
+      "bytes": 31594
+    },
+    {
+      "id": 115,
+      "name": "Batara Guru",
+      "file": "/oasis-assets/character-sheets/115-batara-guru.webp",
+      "bytes": 32408
+    },
+    {
+      "id": 116,
+      "name": "Barong Ket",
+      "file": "/oasis-assets/character-sheets/116-barong-ket.webp",
+      "bytes": 32894
+    },
+    {
+      "id": 117,
+      "name": "Garuda",
+      "file": "/oasis-assets/character-sheets/117-garuda.webp",
+      "bytes": 33484
+    },
+    {
+      "id": 118,
+      "name": "Gatotkaca",
+      "file": "/oasis-assets/character-sheets/118-gatotkaca.webp",
+      "bytes": 27068
+    },
+    {
+      "id": 119,
+      "name": "Prince Panji",
+      "file": "/oasis-assets/character-sheets/119-prince-panji.webp",
+      "bytes": 34954
+    },
+    {
+      "id": 120,
+      "name": "Roro Jonggrang",
+      "file": "/oasis-assets/character-sheets/120-roro-jonggrang.webp",
+      "bytes": 31526
+    },
+    {
+      "id": 121,
+      "name": "Dewi Nawang Wulan",
+      "file": "/oasis-assets/character-sheets/121-dewi-nawang-wulan.webp",
+      "bytes": 39486
+    },
+    {
+      "id": 122,
+      "name": "Seven Sisters Songline Steward",
+      "file": "/oasis-assets/character-sheets/122-seven-sisters-songline-steward.webp",
+      "bytes": 34544
+    },
+    {
+      "id": 123,
+      "name": "Rainbow Serpent Country Law",
+      "file": "/oasis-assets/character-sheets/123-rainbow-serpent-country-law.webp",
+      "bytes": 38348
+    },
+    {
+      "id": 124,
+      "name": "Bunjil",
+      "file": "/oasis-assets/character-sheets/124-bunjil.webp",
+      "bytes": 28058
+    },
+    {
+      "id": 125,
+      "name": "Baiame",
+      "file": "/oasis-assets/character-sheets/125-baiame.webp",
+      "bytes": 34664
+    },
+    {
+      "id": 126,
+      "name": "Tagai Navigator",
+      "file": "/oasis-assets/character-sheets/126-tagai-navigator.webp",
+      "bytes": 33380
+    },
+    {
+      "id": 127,
+      "name": "Celestial Emu Dreaming Steward",
+      "file": "/oasis-assets/character-sheets/127-celestial-emu-dreaming-steward.webp",
+      "bytes": 38750
+    },
+    {
+      "id": 128,
+      "name": "Djang\\'kawu Creator Voyagers",
+      "file": "/oasis-assets/character-sheets/128-djang-kawu-creator-voyagers.webp",
+      "bytes": 32018
+    },
+    {
+      "id": 129,
+      "name": "Namarrkon",
+      "file": "/oasis-assets/character-sheets/129-namarrkon.webp",
+      "bytes": 29658
+    },
+    {
+      "id": 130,
+      "name": "Country Knowledge Walk (Tjukurpa education frame)",
+      "file": "/oasis-assets/character-sheets/130-country-knowledge-walk-tjukurpa-education-frame.webp",
+      "bytes": 40182
+    },
+    {
+      "id": 131,
+      "name": "Makarrata Treaty Bridge",
+      "file": "/oasis-assets/character-sheets/131-makarrata-treaty-bridge.webp",
+      "bytes": 32746
+    },
+    {
+      "id": 132,
+      "name": "Papatūānuku",
+      "file": "/oasis-assets/character-sheets/132-papatuanuku.webp",
+      "bytes": 36332
+    },
+    {
+      "id": 133,
+      "name": "Ranginui",
+      "file": "/oasis-assets/character-sheets/133-ranginui.webp",
+      "bytes": 38260
+    },
+    {
+      "id": 134,
+      "name": "Tāne Mahuta",
+      "file": "/oasis-assets/character-sheets/134-tane-mahuta.webp",
+      "bytes": 32890
+    },
+    {
+      "id": 135,
+      "name": "Tangaroa (Māori strand)",
+      "file": "/oasis-assets/character-sheets/135-tangaroa-maori-strand.webp",
+      "bytes": 29610
+    },
+    {
+      "id": 136,
+      "name": "Rongo",
+      "file": "/oasis-assets/character-sheets/136-rongo.webp",
+      "bytes": 29194
+    },
+    {
+      "id": 137,
+      "name": "Tūmatauenga",
+      "file": "/oasis-assets/character-sheets/137-tumatauenga.webp",
+      "bytes": 37006
+    },
+    {
+      "id": 138,
+      "name": "Tāwhirimatea",
+      "file": "/oasis-assets/character-sheets/138-tawhirimatea.webp",
+      "bytes": 37974
+    },
+    {
+      "id": 139,
+      "name": "Haumiatiketike",
+      "file": "/oasis-assets/character-sheets/139-haumiatiketike.webp",
+      "bytes": 29208
+    },
+    {
+      "id": 140,
+      "name": "Hine-nui-te-pō",
+      "file": "/oasis-assets/character-sheets/140-hine-nui-te-po.webp",
+      "bytes": 33154
+    },
+    {
+      "id": 141,
+      "name": "Kupe Navigator",
+      "file": "/oasis-assets/character-sheets/141-kupe-navigator.webp",
+      "bytes": 33676
+    },
+    {
+      "id": 142,
+      "name": "Ọṣun",
+      "file": "/oasis-assets/character-sheets/142-osun.webp",
+      "bytes": 34644
+    },
+    {
+      "id": 143,
+      "name": "Ṣàngó",
+      "file": "/oasis-assets/character-sheets/143-sango.webp",
+      "bytes": 32582
+    },
+    {
+      "id": 144,
+      "name": "Ọbàtálá",
+      "file": "/oasis-assets/character-sheets/144-obatala.webp",
+      "bytes": 27396
+    },
+    {
+      "id": 145,
+      "name": "Ọya",
+      "file": "/oasis-assets/character-sheets/145-oya.webp",
+      "bytes": 29018
+    },
+    {
+      "id": 146,
+      "name": "Mawu-Lisa",
+      "file": "/oasis-assets/character-sheets/146-mawu-lisa.webp",
+      "bytes": 26128
+    },
+    {
+      "id": 147,
+      "name": "Nyame / Nyankopon",
+      "file": "/oasis-assets/character-sheets/147-nyame-nyankopon.webp",
+      "bytes": 37620
+    },
+    {
+      "id": 148,
+      "name": "Kwaku Ananse",
+      "file": "/oasis-assets/character-sheets/148-kwaku-ananse.webp",
+      "bytes": 32976
+    },
+    {
+      "id": 149,
+      "name": "Ausar-Osiris",
+      "file": "/oasis-assets/character-sheets/149-ausar-osiris.webp",
+      "bytes": 36220
+    },
+    {
+      "id": 150,
+      "name": "Maʿăt",
+      "file": "/oasis-assets/character-sheets/150-ma-at.webp",
+      "bytes": 34868
+    },
+    {
+      "id": 151,
+      "name": "Anna Njinga",
+      "file": "/oasis-assets/character-sheets/151-anna-njinga.webp",
+      "bytes": 31550
+    },
+    {
+      "id": 152,
+      "name": "Atlas",
+      "file": "/oasis-assets/character-sheets/152-atlas.webp",
+      "bytes": 37622
+    },
+    {
+      "id": 153,
+      "name": "Cleito",
+      "file": "/oasis-assets/character-sheets/153-cleito.webp",
+      "bytes": 37866
+    },
+    {
+      "id": 154,
+      "name": "Gadeirus",
+      "file": "/oasis-assets/character-sheets/154-gadeirus.webp",
+      "bytes": 30354
+    },
+    {
+      "id": 155,
+      "name": "Ampheres",
+      "file": "/oasis-assets/character-sheets/155-ampheres.webp",
+      "bytes": 42086
+    },
+    {
+      "id": 156,
+      "name": "Evaemon",
+      "file": "/oasis-assets/character-sheets/156-evaemon.webp",
+      "bytes": 42024
+    },
+    {
+      "id": 157,
+      "name": "Mneseus",
+      "file": "/oasis-assets/character-sheets/157-mneseus.webp",
+      "bytes": 31970
+    },
+    {
+      "id": 158,
+      "name": "Autochthon",
+      "file": "/oasis-assets/character-sheets/158-autochthon.webp",
+      "bytes": 38242
+    },
+    {
+      "id": 159,
+      "name": "Elasippus",
+      "file": "/oasis-assets/character-sheets/159-elasippus.webp",
+      "bytes": 32562
+    },
+    {
+      "id": 160,
+      "name": "Mestor",
+      "file": "/oasis-assets/character-sheets/160-mestor.webp",
+      "bytes": 35832
+    },
+    {
+      "id": 161,
+      "name": "Azaes",
+      "file": "/oasis-assets/character-sheets/161-azaes.webp",
+      "bytes": 34228
+    },
+    {
+      "id": 162,
+      "name": "Lemur Steward",
+      "file": "/oasis-assets/character-sheets/162-lemur-steward.webp",
+      "bytes": 38368
+    },
+    {
+      "id": 163,
+      "name": "Sclater Bridge",
+      "file": "/oasis-assets/character-sheets/163-sclater-bridge.webp",
+      "bytes": 35242
+    },
+    {
+      "id": 164,
+      "name": "Coral Notary",
+      "file": "/oasis-assets/character-sheets/164-coral-notary.webp",
+      "bytes": 33204
+    },
+    {
+      "id": 165,
+      "name": "Tide Column",
+      "file": "/oasis-assets/character-sheets/165-tide-column.webp",
+      "bytes": 31418
+    },
+    {
+      "id": 166,
+      "name": "Basalt Chronicle",
+      "file": "/oasis-assets/character-sheets/166-basalt-chronicle.webp",
+      "bytes": 35232
+    },
+    {
+      "id": 167,
+      "name": "Foam Seed",
+      "file": "/oasis-assets/character-sheets/167-foam-seed.webp",
+      "bytes": 35422
+    },
+    {
+      "id": 168,
+      "name": "Oceanic Bridge",
+      "file": "/oasis-assets/character-sheets/168-oceanic-bridge.webp",
+      "bytes": 35794
+    },
+    {
+      "id": 169,
+      "name": "Shelf Whisper",
+      "file": "/oasis-assets/character-sheets/169-shelf-whisper.webp",
+      "bytes": 27438
+    },
+    {
+      "id": 170,
+      "name": "Equinox Lull",
+      "file": "/oasis-assets/character-sheets/170-equinox-lull.webp",
+      "bytes": 30324
+    },
+    {
+      "id": 171,
+      "name": "Circle Closure",
+      "file": "/oasis-assets/character-sheets/171-circle-closure.webp",
+      "bytes": 33206
+    },
+    {
+      "id": 172,
+      "name": "Great Central Sun Steward",
+      "file": "/oasis-assets/character-sheets/172-great-central-sun-steward.webp",
+      "bytes": 36194
+    },
+    {
+      "id": 173,
+      "name": "Photon Cadence",
+      "file": "/oasis-assets/character-sheets/173-photon-cadence.webp",
+      "bytes": 32632
+    },
+    {
+      "id": 174,
+      "name": "Solar Logos Dual",
+      "file": "/oasis-assets/character-sheets/174-solar-logos-dual.webp",
+      "bytes": 35376
+    },
+    {
+      "id": 175,
+      "name": "Telluric Soul Bridge",
+      "file": "/oasis-assets/character-sheets/175-telluric-soul-bridge.webp",
+      "bytes": 37828
+    },
+    {
+      "id": 176,
+      "name": "Tube-of-Light Sentinel",
+      "file": "/oasis-assets/character-sheets/176-tube-of-light-sentinel.webp",
+      "bytes": 35696
+    },
+    {
+      "id": 177,
+      "name": "Radiant Spiral",
+      "file": "/oasis-assets/character-sheets/177-radiant-spiral.webp",
+      "bytes": 34634
+    },
+    {
+      "id": 178,
+      "name": "Seventh Ray Adjunct",
+      "file": "/oasis-assets/character-sheets/178-seventh-ray-adjunct.webp",
+      "bytes": 28942
+    },
+    {
+      "id": 179,
+      "name": "Galactic Convenor",
+      "file": "/oasis-assets/character-sheets/179-galactic-convenor.webp",
+      "bytes": 39680
+    },
+    {
+      "id": 180,
+      "name": "Lightbody Scribe",
+      "file": "/oasis-assets/character-sheets/180-lightbody-scribe.webp",
+      "bytes": 38436
+    },
+    {
+      "id": 181,
+      "name": "Vzestup Capstone",
+      "file": "/oasis-assets/character-sheets/181-vzestup-capstone.webp",
+      "bytes": 32992
+    },
+    {
+      "id": 182,
+      "name": "Valhalla Hall-Steward",
+      "file": "/oasis-assets/character-sheets/182-valhalla-hall-steward.webp",
+      "bytes": 43498
+    },
+    {
+      "id": 183,
+      "name": "Óðinn Wayfarer",
+      "file": "/oasis-assets/character-sheets/183-o-inn-wayfarer.webp",
+      "bytes": 36930
+    },
+    {
+      "id": 184,
+      "name": "Þórr Storm-Host",
+      "file": "/oasis-assets/character-sheets/184-orr-storm-host.webp",
+      "bytes": 32240
+    },
+    {
+      "id": 185,
+      "name": "Freyja Van-Ruler",
+      "file": "/oasis-assets/character-sheets/185-freyja-van-ruler.webp",
+      "bytes": 37344
+    },
+    {
+      "id": 186,
+      "name": "Týr Oath-Fire",
+      "file": "/oasis-assets/character-sheets/186-tyr-oath-fire.webp",
+      "bytes": 36518
+    },
+    {
+      "id": 187,
+      "name": "Brigid Triple-Flame",
+      "file": "/oasis-assets/character-sheets/187-brigid-triple-flame.webp",
+      "bytes": 39568
+    },
+    {
+      "id": 188,
+      "name": "Dagda Peace-Harp",
+      "file": "/oasis-assets/character-sheets/188-dagda-peace-harp.webp",
+      "bytes": 35946
+    },
+    {
+      "id": 189,
+      "name": "Morrígan Sovereignty-Raven",
+      "file": "/oasis-assets/character-sheets/189-morrigan-sovereignty-raven.webp",
+      "bytes": 38424
+    },
+    {
+      "id": 190,
+      "name": "Lugh Samildanach",
+      "file": "/oasis-assets/character-sheets/190-lugh-samildanach.webp",
+      "bytes": 34446
+    },
+    {
+      "id": 191,
+      "name": "Manannán mac Lir",
+      "file": "/oasis-assets/character-sheets/191-manannan-mac-lir.webp",
+      "bytes": 38236
+    },
+    {
+      "id": 192,
+      "name": "Ré Solar-Barque",
+      "file": "/oasis-assets/character-sheets/192-re-solar-barque.webp",
+      "bytes": 33264
+    },
+    {
+      "id": 193,
+      "name": "Hor Unifier",
+      "file": "/oasis-assets/character-sheets/193-hor-unifier.webp",
+      "bytes": 34848
+    },
+    {
+      "id": 194,
+      "name": "Thoth Scribe",
+      "file": "/oasis-assets/character-sheets/194-thoth-scribe.webp",
+      "bytes": 33634
+    },
+    {
+      "id": 195,
+      "name": "Hathor Jubilee",
+      "file": "/oasis-assets/character-sheets/195-hathor-jubilee.webp",
+      "bytes": 38170
+    },
+    {
+      "id": 196,
+      "name": "Sekhmet Audit-Flame",
+      "file": "/oasis-assets/character-sheets/196-sekhmet-audit-flame.webp",
+      "bytes": 36346
+    },
+    {
+      "id": 197,
+      "name": "Ptah Mason",
+      "file": "/oasis-assets/character-sheets/197-ptah-mason.webp",
+      "bytes": 31422
+    },
+    {
+      "id": 198,
+      "name": "Anubis Threshold",
+      "file": "/oasis-assets/character-sheets/198-anubis-threshold.webp",
+      "bytes": 30540
+    },
+    {
+      "id": 199,
+      "name": "Amun Hidden-Field",
+      "file": "/oasis-assets/character-sheets/199-amun-hidden-field.webp",
+      "bytes": 29714
+    },
+    {
+      "id": 200,
+      "name": "Geb Foundation",
+      "file": "/oasis-assets/character-sheets/200-geb-foundation.webp",
+      "bytes": 33090
+    },
+    {
+      "id": 201,
+      "name": "Nut Stellar Vault",
+      "file": "/oasis-assets/character-sheets/201-nut-stellar-vault.webp",
+      "bytes": 31022
+    },
+    {
+      "id": 202,
+      "name": "Bolon Yokte\\' K\\'uh",
+      "file": "/oasis-assets/character-sheets/202-bolon-yokte-k-uh.webp",
+      "bytes": 25070
+    }
+  ]
+}

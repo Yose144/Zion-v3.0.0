@@ -262,6 +262,26 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   jinak web ukazuje starou podobu než hra.
 - **Kamera portrétu se počítá z bounding boxu** postavy — hůl/kopí přes 2 m jinak
   uřízne hlavu. Pevná kamera to nezvládne.
+
+### Kánon v modelu a character sheets (2026-11-01)
+
+- **`canon.ts` je generovaný** (`node scripts/ops/oasis-canon/build-canon.mjs`)
+  ze `V31/L4/oasis/data/avatars.json`, esencí web2.9, `SACRED_TRINITY/` a
+  `AVATAR_ROSTER.md`. Drží atributy (flétna, trojzubec, čakra, vajra, kříž, srpek,
+  anch…), paletu, pleť a pokrývku hlavy. Needitovat ručně.
+- **Kánon má v `kit.ts` přednost před deterministickou náhodou** — atributy se
+  doplní jen do počtu podle vzácnosti (max 3 + halo). Když v kánonu atribut chybí,
+  rozhodne id. Díky tomu je Krišna modrý s flétnou a Šiva s trojzubcem, ale
+  neznámý avatar se pořád vykreslí.
+- **Fyzické znaky (sloní hlava, vanara, ptačí muž) se nekreslí** — model z primitiv
+  to neumí, takže žijí jen v promptu (`ANATOMY` v generátoru). Nepřidávat je do
+  geometrie bez pořádného modelu.
+- **Turnaround sheet** (`render.mjs --sheets`) = 1600×900, čtyři pohledy na společné
+  zemi, popisky a paleta. Je to **podklad pro modeláře a pro generování portrétů**,
+  ne finální asset. Když se změní model, sheets se musí přerenderovat spolu s kartami.
+- **Pozor na vlasy:** `SphereGeometry` s `thetaLength` ≥ 0,44π sahá na obočí a
+  vypadá jako maska přes oči — používat ≤ 0,36π.
+
 - **Ukládá se do ZIS** `avatar3d.avatarId` (+ `callsign`, `bodyType`,
   `neonColor`). ZIS schéma (`apps/identity/src/routes/auth.ts`,
   `UpdateProfileSchema`) muselo `avatarId` povolit — do té doby ho zod tiše
