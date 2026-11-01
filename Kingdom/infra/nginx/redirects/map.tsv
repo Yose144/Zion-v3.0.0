@@ -1,0 +1,17 @@
+# F6 redirect mapa — jeden řádek = jeden povrch
+# Formát: surface | vhost | cíl redirectu | stav | důvod
+#
+# Stav:
+#   ready   = parita doložena, redirect se smí zapnout po 👤 schválení
+#   blocked = v Kingdomu NENÍ náhrada → redirect by rozbil funkci
+#   done    = už přesměrováno jinde (nic k práci)
+#
+# Skripty čtou tenhle soubor: enable/rollback/check.
+# Zdůvodnění a důkazy: docs/3.2/F6-REDIRECT-MAP.md
+
+pool	pool.zionterranova.com	https://kingdom.zionterranova.com/portal/pool	ready	Kovárna: mince, těžaři, historie, výplaty, detail těžaře, štěstí, bloky; /ops/ a /public/v1/ zůstávají
+freeworld	freeworld.zionterranova.com	https://kingdom.zionterranova.com/portal/freeworld	ready	Přístav: fond, granty, projekty (server-side)
+apex	zionterranova.com	https://kingdom.zionterranova.com/	blocked	IntroPage má 48 stránek (blog, seeds, legal), Brána je nemá — chybí domov pro ně
+oasis	oasis.zionterranova.com	https://kingdom.zionterranova.com/room	blocked	11 stránek (avatars, quests, golden-egg, ships, territories, guilds, leaderboard, dashboard, miner, onboarding) v Kingdomu nejsou
+nirvana	nirvana.zionterranova.com	https://kingdom.zionterranova.com/room	blocked	Hry a scény (/park, /mars, /venus, /present/*, chat, multiplayer) v Kingdomu nejsou
+explorer	explorer.zionterranova.com	https://zionterranova.com/explorer/	done	Už 301 (ověřeno 2026-11-01); eXplorer žije na app./explorer
