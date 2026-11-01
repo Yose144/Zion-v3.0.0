@@ -10,7 +10,8 @@ const nextConfig = {
   // `webpack` blokem níže (aliasy pro optional native deps wallet SDK).
   // `turbopack.root` musí být `apps/` — appka importuje `apps/shared/**`, které
   // leží mimo vlastní adresář (stejný pattern jako `apps/website-v2.9`).
-  turbopack: { root: resolve(__dirname, '..') },
+  // K1.2: lockfile i node_modules jsou v rootu repa (root workspace), ne v apps/.
+  turbopack: { root: resolve(__dirname, '../..') },
   images: {
     // No next/image usage in the codebase — disables the /_next/image
     // optimizer endpoint entirely (npm audit GHSA-2xp9/GHSA-2464 class).

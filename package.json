@@ -1,0 +1,32 @@
+{
+  "name": "zion-ecosystem",
+  "private": true,
+  "description": "ZION TerraNova — jediný workspace pro veřejné weby (K1.2). Rust (V31) a nesouvisející appky mají vlastní stromy.",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "workspaces": [
+    "apps/pool-ui",
+    "apps/IntroPage",
+    "apps/MarketPlace",
+    "apps/nirvana",
+    "apps/OasisWeb",
+    "apps/website-v2.9",
+    "apps/shared",
+    "apps/zion-wallet-sdk"
+  ],
+  "scripts": {
+    "build:pool-ui": "npm run build -w zion-pool-ui",
+    "build:intro": "npm run build -w zion-intro",
+    "build:market": "npm run build -w zion-marketplace",
+    "build:nirvana": "npm run build -w zion-nirvana",
+    "build:oasis": "npm run build -w oasis-web",
+    "build:web": "npm run build -w zion-web-v3.2.0",
+    "build:all": "npm run build:pool-ui && npm run build:intro && npm run build:nirvana && npm run build:oasis && npm run build:web && npm run build:market",
+    "postinstall": "npm run db:generate -w zion-marketplace"
+  },
+  "overrides": {
+    "three": "^0.186.1",
+    "@types/three": "^0.186.0"
+  }
+}
