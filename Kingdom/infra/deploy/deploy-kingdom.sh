@@ -32,7 +32,9 @@ node apps/kingdom/scripts/stage.mjs
 
 echo "==> rsync"
 ssh "$HOST" "mkdir -p '$ROOT'"
-rsync -az --delete apps/kingdom/.next/standalone/ "$HOST:$BUILD/"
+# stage.mjs staví plochý artefakt (server.js + node_modules vedle sebe), protože
+# unit má WorkingDirectory=.../current/apps/kingdom a spouští `node server.js`.
+rsync -az --delete apps/kingdom/.next/standalone-flat/ "$HOST:$BUILD/"
 ssh "$HOST" "chown -R zion:zion '$BUILD'"
 
 echo "==> unit + vhost"

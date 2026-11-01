@@ -15,7 +15,7 @@
 //
 // Idempotentní: když je layout už plochý, nic nedělá.
 import { cpSync, existsSync, readdirSync, rmSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 
 const standalone = join(process.cwd(), '.next', 'standalone');
 
@@ -55,6 +55,25 @@ if (!nested) {
 
 // Zkopíruj obsah appky nahoru (přepiš stejná jména, nic nemaž).
 cpSync(nested, standalone, { recursive: true, force: true });
+
+/*
+ * `node_modules` Next trasuje po úrovních: v rootu standalone stromu může být
+ * jen částečný (`next/dist`), plný balíček o úroveň výš (např. pod jménem
+ * workspace cesty). Slijeme je od nejhlubšího k rootu — hlubší vyhrává.
+ */
+const levels = [];
+for (let dir = nested; dir.startsWith(standalone) && dir !== standalone; dir = dirname(dir)) {
+  levels.push(dir);
+}
+levels.push(standalone);
+let merged = 0;
+for (const level of levels) {
+  const nm = join(level, 'node_modules');
+  if (!existsSync(nm)) continue;
+  cpSync(nm, join(standalone, 'node_modules'), { recursive: true, force: false, errorOnExist: false });
+  merged += 1;
+}
+if (merged > 0) console.log(`[flatten-standalone] node_modules slit z ${merged} úrovní`);
 
 // Uklidit zanořený adresář a jeho rodiče, pokud zůstaly prázdné.
 rmSync(nested, { recursive: true, force: true });

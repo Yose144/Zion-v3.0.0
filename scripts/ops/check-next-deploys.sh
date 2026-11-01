@@ -31,6 +31,11 @@ APPS=(
   "apps/OasisWeb|oasis-web|apps/OasisWeb/deploy/deploy-oasis-web.sh|static"
 )
 
+# Kingdom je samostatný workspace (vlastní lockfile), ale root lockfile v repu
+# mu taky posunul standalone strom — proto ho kontrolujeme taky.
+KINGDOM_DIR="Kingdom/apps/kingdom"
+KINGDOM_SCRIPT="Kingdom/infra/deploy/deploy-kingdom.sh"
+
 red() { printf '\033[31m%s\033[0m\n' "$*"; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
 
@@ -71,7 +76,8 @@ for entry in "${APPS[@]}"; do
       fail=1
     fi
   else
-    server="$(find "$dir/.next/standalone" -maxdepth 4 -name server.js 2>/dev/null | head -1)"
+    # `|| true` — `set -e` + pipefail by jinak shodily skript, když standalone chybí
+    server="$(find "$dir/.next/standalone" -maxdepth 4 -name server.js 2>/dev/null | head -1 || true)"
     if [[ -z "$server" ]]; then
       state="CHYBA"; detail="server.js nenalezen pod .next/standalone"
       fail=1
@@ -114,6 +120,19 @@ for entry in "${APPS[@]}"; do
     red "$(printf '%-22s %-12s %s' "$name" "$state" "$detail")"
   fi
 done
+
+# --- Kingdom (samostatný workspace, plochý stage) ---
+if [[ -d "$KINGDOM_DIR" ]]; then
+  if [[ -f "$KINGDOM_DIR/.next/standalone-flat/server.js" ]] && [[ -f "$KINGDOM_DIR/.next/standalone-flat/node_modules/next/package.json" ]]; then
+    green "$(printf '%-22s %-12s %s' "kingdom" "OK" ".next/standalone-flat — server.js + node_modules/next")"
+  elif [[ -d "$KINGDOM_DIR/.next" ]]; then
+    red "$(printf '%-22s %-12s %s' "kingdom" "CHYBA" "chybí .next/standalone-flat (spusť stage.mjs)")"
+    fail=1
+  else
+    red "$(printf '%-22s %-12s %s' "kingdom" "NEBUILD" "chybí .next — spusť build")"
+    fail=1
+  fi
+fi
 
 echo
 if [[ "$fail" -eq 0 ]]; then
