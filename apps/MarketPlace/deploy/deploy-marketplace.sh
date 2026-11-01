@@ -108,6 +108,59 @@ SSH "cd '${REMOTE_DIR}' && npx prisma generate >/dev/null 2>&1 && \
   mkdir -p .next/standalone/node_modules/.prisma/client && \
   cp -a node_modules/.prisma/client/. .next/standalone/node_modules/.prisma/client/"
 
+echo "[deploy-marketplace] Relativizing absolute symlinks in the bundle"
+# Turbopack zapisuje alias externích modulů jako symlink. Když build běží v git
+# worktree (ne v hlavním stromu), resolved realpath je **absolutní** a míří na
+# builderův /tmp — na serveru pak `Cannot find module '@prisma/client-<hash>'`
+# nebo `puppeteer-<hash>` a spadnou VŠECHNY API routy (stránky dál servíruje
+# staticky, takže se to snadno přehlédne).
+#
+# Cesty se do vzdáleného skriptu vkládají přes placeholder, protože REMOTE_DIR
+# obsahuje `&` a argument by se v remote shellu rozpadl.
+REMOTE_SCRIPT=$(cat <<'EOS'
+set -eu
+cd '@REMOTE@'
+remote=$(pwd); app=$(basename "$remote"); builder='@BUILDER@'
+# Builder cesta obsahuje i podadresář appky:
+#   <builder>/apps/<app>/.next/standalone/...  ->  <remote>/.next/standalone/...
+prefix="$builder/apps/$app"
+fixed=0
+for link in $(find .next/standalone -type l); do
+  target=$(readlink "$link")
+  case "$target" in
+    "$prefix"*) ;;
+    *) continue ;;
+  esac
+  rest=${target#"$prefix"}
+  resolved="$remote$rest"
+  if [ -e "$resolved" ]; then
+    rel=$(realpath --relative-to="$(dirname "$link")" "$resolved")
+    ln -sfn "$rel" "$link"
+    fixed=$((fixed + 1))
+  else
+    echo "  CHYBA: cíl $rest v bundlu není" >&2
+  fi
+done
+echo "  přepsáno absolutních odkazů: $fixed"
+dangling=0
+for link in $(find .next/standalone -type l); do
+  [ -e "$link" ] || { echo "  CHYBA: visící symlink $link -> $(readlink "$link")" >&2; dangling=$((dangling + 1)); }
+done
+if [ "$dangling" -gt 0 ]; then
+  echo "  $dangling visících symlinků — nerestartuji, API by spadly" >&2
+  exit 1
+fi
+EOS
+)
+# bash 5.2+ žere `&` v náhradě (patsub_replacement) a REMOTE_DIR obsahuje `&`.
+shopt -u patsub_replacement 2>/dev/null || true
+# ROOT_DIR je v tomhle skriptu adresář appky; builder cesty v symlinkách míří
+# z kořene workspace (root package.json je o dvě úrovně výš).
+REPO_ROOT="$(cd "${ROOT_DIR}/../.." && pwd)"
+REMOTE_SCRIPT="${REMOTE_SCRIPT//@REMOTE@/${REMOTE_DIR}}"
+REMOTE_SCRIPT="${REMOTE_SCRIPT//@BUILDER@/${REPO_ROOT}}"
+SSH bash -s <<<"${REMOTE_SCRIPT}"
+
 echo "[deploy-marketplace] Fixing ownership and restarting ${SERVICE} + zion-l1-watcher"
 SSH "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE} zion-l1-watcher.service"
 
