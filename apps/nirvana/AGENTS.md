@@ -75,5 +75,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `NIRVANA_PARK_SCORES_PATH` (soubor zapisovatelný uživatelem služby).
 - **Vesmír:** `planetPosition()` v `positions.ts` je jediný vzorec dráhy —
   scéna i fokus na Jupiter ho musí používat, jinak se kamera dívá vedle planety.
+- **Střelnice** (`ShootingGallery.tsx`) je 3D hra, ne canvas: terče jsou meshe
+  a klik je raycast. Při startu se **schová panel a vypne OrbitControls** — jinak
+  DOM panel kryje polovinu terčů a kliky chytá on, ne plátno (reálná chyba
+  z prvního pokusu: 0 zásahů).
 - **VR:** XR session se otevírá, ale na headsetu to není otestované. Interakce
   jsou raycast (klik na skříň/kolo), takže by měly projít; nehlásit víc, než víme.

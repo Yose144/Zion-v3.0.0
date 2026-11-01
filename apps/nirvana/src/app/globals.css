@@ -1356,3 +1356,36 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   .park-title span { display: none; }
   .park-tokens { padding: 0.25rem 0.55rem; font-size: 0.74rem; }
 }
+
+/* střelnice — HUD během kola */
+.park-gallery-hud {
+  position: absolute;
+  z-index: 13;
+  top: calc(4.2rem + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 227, 212, 0.4);
+  background: rgba(6, 4, 17, 0.88);
+  backdrop-filter: blur(8px);
+  font-size: 0.8rem;
+}
+
+.park-gallery-hud strong {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: #7fe3d4;
+}
+
+.park-gallery-hud span {
+  font-variant-numeric: tabular-nums;
+  color: #fff3d0;
+}
+
+.park-gallery-hud span.is-low {
+  color: #ff7a6b;
+}

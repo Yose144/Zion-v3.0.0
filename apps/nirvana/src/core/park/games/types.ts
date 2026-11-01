@@ -10,7 +10,9 @@
  *     jen zdroje stejných dvou signálů.
  */
 
-export type ParkGameId = 'pong' | 'breakout' | 'snake';
+export type CanvasGameId = 'pong' | 'breakout' | 'snake';
+/** Cokoli, co jde hrát a zapsat do tabule. Střelnice je 3D, ne canvas. */
+export type ParkGameId = CanvasGameId | 'gallery';
 
 export interface ParkGameHooks {
   /** Aktuální skóre (volá se při každé změně, ne každý frame). */
@@ -30,7 +32,7 @@ export interface ParkGameHandle {
 }
 
 export interface ParkGameDefinition {
-  id: ParkGameId;
+  id: CanvasGameId;
   title: { cs: string; en: string };
   hint: { cs: string; en: string };
   /** Vytvoří hru nad existujícím canvasem a spustí ji. */

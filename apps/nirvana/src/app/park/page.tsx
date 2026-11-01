@@ -8,7 +8,7 @@ import { XR, createXRStore } from '@react-three/xr';
 import * as THREE from 'three';
 import { useI18n } from '@/core/i18n';
 import { PARK_CAMERA, ParkScene } from '@/core/scene/park/ParkScene';
-import { PARK_GAMES, gameById, type ParkGameHandle, type ParkGameId } from '@/core/park/games';
+import { PARK_GAMES, gameById, type CanvasGameId, type ParkGameHandle, type ParkGameId } from '@/core/park/games';
 import { GAME_H, GAME_W, PARK_PALETTE } from '@/core/park/games/types';
 import {
   WHEEL_COST,
@@ -18,6 +18,7 @@ import {
   type ParkProfile,
 } from '@/core/park/profile';
 import { emptyScores, type ParkScores } from '@/core/park/scores';
+import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
 
 /**
  * Jupiter Station — pouť.
@@ -31,13 +32,22 @@ import { emptyScores, type ParkScores } from '@/core/park/scores';
  * zobrazuje na dvou místech. Proto ji vidí i hráč ve VR.
  */
 
+/** Tabule vede i střelnici — ta není canvas, ale skóre má stejné. */
+const BOARD: { id: ParkGameId; title: { cs: string; en: string } }[] = [
+  ...PARK_GAMES.map((game) => ({ id: game.id as ParkGameId, title: game.title })),
+  { id: 'gallery', title: { cs: 'Střelnice', en: 'Gallery' } },
+];
+
 export default function ParkPage() {
   const { lang } = useI18n();
   const cs = lang === 'cs';
 
   const [profile, setProfile] = useState<ParkProfile | null>(null);
   const [scores, setScores] = useState<ParkScores>(emptyScores());
-  const [active, setActive] = useState<ParkGameId | null>(null);
+  const [active, setActive] = useState<CanvasGameId | null>(null);
+  const [gallery, setGallery] = useState(false);
+  const [galleryScore, setGalleryScore] = useState(0);
+  const [galleryTime, setGalleryTime] = useState(GALLERY_SECONDS);
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
   const [riding, setRiding] = useState(false);
@@ -50,7 +60,7 @@ export default function ParkPage() {
   const handleRef = useRef<ParkGameHandle | null>(null);
   const pointerRef = useRef<number | null>(null);
   const rafRef = useRef(0);
-  const activeRef = useRef<ParkGameId | null>(null);
+  const activeRef = useRef<CanvasGameId | null>(null);
   const startedAt = useRef(0);
   const finishedRef = useRef(false);
   const [xrStore] = useState(() => createXRStore({ foveation: 0.5 }));
@@ -137,7 +147,7 @@ export default function ParkPage() {
 
   // ── start / konec hry ────────────────────────────────────────────
   const startGame = useCallback(
-    (id: ParkGameId) => {
+    (id: CanvasGameId) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       handleRef.current?.stop();
@@ -221,6 +231,41 @@ export default function ParkPage() {
     };
   }, [active]);
 
+  const startGallery = useCallback(() => {
+    stopGame();
+    setRiding(false);
+    setGalleryScore(0);
+    setGalleryTime(GALLERY_SECONDS);
+    setGallery(true);
+    setNotice(cs ? 'Střelnice · 25 sekund' : 'Gallery · 25 seconds');
+  }, [cs, stopGame]);
+
+  const endGallery = useCallback(
+    (value: number) => {
+      setGallery(false);
+      const current = loadProfile();
+      const result = awardRun(current, 'gallery', value);
+      setProfile(result.profile);
+      setNotice(
+        result.personalBest
+          ? cs
+            ? `Nový rekord · +${result.tokensGained} žetony`
+            : `New record · +${result.tokensGained} tokens`
+          : cs
+            ? `+${result.tokensGained} žeton`
+            : `+${result.tokensGained} token`,
+      );
+      void fetch('/api/park/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: 'gallery', score: value, name: nick }),
+      })
+        .then(() => readScores())
+        .catch(() => undefined);
+    },
+    [cs, nick, readScores],
+  );
+
   const ride = useCallback(() => {
     const current = profile ?? loadProfile();
     if (current.tokens < WHEEL_COST) {
@@ -270,8 +315,12 @@ export default function ParkPage() {
                 screenTexture={texture}
                 scores={scores}
                 riding={riding}
+                gallery={gallery}
                 onSelectGame={startGame}
                 onRide={ride}
+                onGalleryScore={setGalleryScore}
+                onGalleryTime={setGalleryTime}
+                onGalleryEnd={endGallery}
               />
             </XR>
           ) : (
@@ -282,10 +331,14 @@ export default function ParkPage() {
                 screenTexture={texture}
                 scores={scores}
                 riding={riding}
+                gallery={gallery}
                 onSelectGame={startGame}
                 onRide={ride}
+                onGalleryScore={setGalleryScore}
+                onGalleryTime={setGalleryTime}
+                onGalleryEnd={endGallery}
               />
-              {!riding && (
+              {!riding && !gallery && (
                 <OrbitControls
                   makeDefault
                   autoRotate={!active}
@@ -330,6 +383,21 @@ export default function ParkPage() {
         </div>
       </header>
 
+      {gallery && (
+        <section className="park-gallery-hud" aria-live="polite">
+          <strong>{cs ? 'STŘELNICE' : 'GALLERY'}</strong>
+          <span>
+            {galleryScore} {cs ? 'b.' : 'pts'}
+          </span>
+          <span className={galleryTime <= 5 ? 'is-low' : ''}>
+            {galleryTime} {cs ? 's' : 's'}
+          </span>
+          <button type="button" className="park-btn" onClick={() => setGallery(false)}>
+            {cs ? 'Ukončit' : 'Quit'}
+          </button>
+        </section>
+      )}
+
       {/* herní obrazovka — jeden canvas, dva pohledy */}
       <div className={`park-dock${active ? ' is-open' : ''}`} aria-hidden={!active}>
         {canvasNode}
@@ -352,7 +420,7 @@ export default function ParkPage() {
         )}
       </div>
 
-      {!active && (
+      {!active && !gallery && (
         <section className="park-panel">
           <header>
             <strong>{cs ? 'VYBER SI SKŘÍŇ' : 'PICK A CABINET'}</strong>
@@ -365,6 +433,9 @@ export default function ParkPage() {
               </button>
             ))}
           </div>
+          <button type="button" className="park-btn park-ride-btn" onClick={startGallery}>
+            {cs ? 'Střelnice · 25 s · 3D terče' : 'Shooting gallery · 25 s · 3D targets'}
+          </button>
           <button type="button" className="park-btn park-ride-btn" onClick={ride} disabled={riding}>
             {cs ? `Ruské kolo · ${WHEEL_COST} žeton` : `Ferris wheel · ${WHEEL_COST} token`}
           </button>
@@ -380,7 +451,7 @@ export default function ParkPage() {
             />
           </header>
           <div className="park-board-list">
-            {PARK_GAMES.map((entry) => (
+            {BOARD.map((entry) => (
               <div key={entry.id} className="park-board-col">
                 <em>{entry.title[cs ? 'cs' : 'en']}</em>
                 {(scores[entry.id] ?? []).slice(0, 5).map((row, index) => (

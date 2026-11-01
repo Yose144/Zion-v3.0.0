@@ -1,7 +1,7 @@
 import { createBreakout } from './breakout';
 import { createPong } from './pong';
 import { createSnake } from './snake';
-import type { ParkGameDefinition, ParkGameId } from './types';
+import type { CanvasGameId, ParkGameDefinition } from './types';
 
 export const PARK_GAMES: ParkGameDefinition[] = [
   {
@@ -33,8 +33,8 @@ export const PARK_GAMES: ParkGameDefinition[] = [
   },
 ];
 
-export function gameById(id: ParkGameId): ParkGameDefinition {
+export function gameById(id: CanvasGameId): ParkGameDefinition {
   return PARK_GAMES.find((game) => game.id === id) ?? PARK_GAMES[0]!;
 }
 
-export type { ParkGameDefinition, ParkGameHandle, ParkGameId } from './types';
+export type { CanvasGameId, ParkGameDefinition, ParkGameHandle, ParkGameId } from './types';

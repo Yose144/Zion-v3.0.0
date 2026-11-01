@@ -54,6 +54,30 @@ obrazovka je skutečný povrch, ne DOM.
   že existují.
 - **Nedotýká se L1**, emisí, genesis ani výplat.
 
+## 4b. Střelnice — jediná hra, která není na obrazovce
+
+Čtvrtý game: **pět 3D terčů** poletuje před pultem, klik (myš) nebo paprsek (VR)
+je srazí. 25 sekund, 10 bodů za zásah, po zásahu terč na půl sekundy zmizí a
+vrátí se jinde. Protože je to čistý raycast, je to nejpřirozenější věc ve VR.
+
+Při startu se kamera postaví na střeleckou pozici a panel se schová — jinak by
+DOM panel kryl polovinu terčů (přesně to se stalo při prvním pokusu: 0 zásahů,
+protože kliky chytal panel, ne plátno). Terče jsou `ParkGameId: 'gallery'`,
+takže jdou do stejné tabule i žetonů jako ostatní hry.
+
+## 4c. Perzistence tabule
+
+Na EDGE nasazen systemd drop-in
+`/etc/systemd/system/zion-nirvana.service.d/park-scores.conf`:
+
+```
+Environment=NIRVANA_PARK_SCORES_PATH=/opt/zion/data/nirvana-park-scores.json
+```
+
+`/opt/zion/data` je vlastněný uživatelem `zion`, takže zápis projde. Ověřeno
+živě: `POST /api/park/scores` → `{"persisted":true}` a soubor existuje
+(`-rw-r--r-- zion zion`). Restart už tabuli nevymaže.
+
 ## 5. Naměřeno / ověřeno (lokálně)
 
 | Věc | Výsledek |
@@ -61,7 +85,8 @@ obrazovka je skutečný povrch, ne DOM.
 | Pong | hraje se, skóre se počítá, konec do 7 |
 | Breakout | paddle + cihly + 3 životy, skóre 10/cihla |
 | Snake | klávesy, jablko 25, náraz = konec |
-| Žetony | 1 → 2 po dohrání (award funguje) |
+| Žetony | 1 → 4 po střelnici (1 za hru + 2 za rekord) |
+| Střelnice | 70 bodů v gridu kliků, HUD + čas, konec → tabule |
 | „Hrát znovu" / „Ukončit" | obě cesty ověřené |
 | Kolo | jízda se spustí, kamera jede v gondole, „Sesednout" vrací |
 | Vesmír | dlaždice **Pouť** → fokus na Jupiter → okno → `/park` |

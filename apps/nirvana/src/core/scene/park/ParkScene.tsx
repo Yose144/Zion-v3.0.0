@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { PARK_GAMES, type ParkGameId } from '@/core/park/games';
+import { PARK_GAMES, type CanvasGameId } from '@/core/park/games';
+import { ShootingGallery } from './ShootingGallery';
 import type { ParkScores } from '@/core/park/scores';
 
 /**
@@ -24,7 +25,7 @@ const WHEEL_CENTER: [number, number, number] = [0, 8.6, -13];
 const CABINET_Z = -3.5;
 
 interface Cabinet {
-  id: ParkGameId;
+  id: CanvasGameId;
   angle: number;
 }
 
@@ -109,12 +110,12 @@ function Cabinet({
   texture,
   onSelect,
 }: {
-  id: ParkGameId;
+  id: CanvasGameId;
   angle: number;
   lang: 'cs' | 'en';
   active: boolean;
   texture: THREE.CanvasTexture | null;
-  onSelect: (id: ParkGameId) => void;
+  onSelect: (id: CanvasGameId) => void;
 }) {
   const game = PARK_GAMES.find((entry) => entry.id === id) ?? PARK_GAMES[0]!;
   const x = angle;
@@ -287,6 +288,31 @@ function FerrisWheel({ riding, onRide }: { riding: boolean; onRide: () => void }
   );
 }
 
+/** Střelecká pozice — při střelnici se kamera postaví před pult a nesmí se hýbat. */
+function GalleryCamera({ active }: { active: boolean }) {
+  const camera = useThree((state) => state.camera);
+  const started = useRef(false);
+  const pos = useMemo(() => new THREE.Vector3(1.0, 3.2, 6.5), []);
+  const look = useMemo(() => new THREE.Vector3(8.75, 1.9, 3.05), []);
+
+  useEffect(() => {
+    if (!active) started.current = false;
+  }, [active]);
+
+  useFrame(() => {
+    if (!active) return;
+    if (!started.current) {
+      camera.position.copy(pos);
+      started.current = true;
+    } else {
+      camera.position.lerp(pos, 0.15);
+    }
+    camera.lookAt(look);
+  });
+
+  return null;
+}
+
 /** Kamera jede v gondole — jediná věc v parku, která je lepší ve VR. */
 function RideCamera({ active }: { active: boolean }) {
   const camera = useThree((state) => state.camera);
@@ -360,16 +386,24 @@ export function ParkScene({
   screenTexture,
   scores,
   riding,
+  gallery,
   onSelectGame,
   onRide,
+  onGalleryScore,
+  onGalleryTime,
+  onGalleryEnd,
 }: {
   lang: 'cs' | 'en';
-  activeGame: ParkGameId | null;
+  activeGame: CanvasGameId | null;
   screenTexture: THREE.CanvasTexture | null;
   scores: ParkScores;
   riding: boolean;
-  onSelectGame: (id: ParkGameId) => void;
+  gallery: boolean;
+  onSelectGame: (id: CanvasGameId) => void;
   onRide: () => void;
+  onGalleryScore: (score: number) => void;
+  onGalleryTime: (secondsLeft: number) => void;
+  onGalleryEnd: (score: number) => void;
 }) {
   const jupiter = useJupiterTexture();
   const planet = useRef<THREE.Mesh>(null);
@@ -417,6 +451,13 @@ export function ParkScene({
         />
       ))}
 
+      {gallery && <GalleryCamera active={gallery} />}
+      <ShootingGallery
+        active={gallery}
+        onScore={onGalleryScore}
+        onTime={onGalleryTime}
+        onEnd={onGalleryEnd}
+      />
       <FerrisWheel riding={riding} onRide={onRide} />
       <RideCamera active={riding} />
     </>

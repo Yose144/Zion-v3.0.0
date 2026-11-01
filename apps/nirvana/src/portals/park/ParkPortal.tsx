@@ -48,6 +48,9 @@ export function ParkPortal({ onClose }: { onClose: () => void }) {
             <strong>{scores[game.id]?.[0]?.score ?? 0}</strong>
           </li>
         ))}
+        <li>
+          {cs ? 'Střelnice' : 'Gallery'} <strong>{scores.gallery?.[0]?.score ?? 0}</strong>
+        </li>
       </ul>
 
       <div className="hiran-actions">
