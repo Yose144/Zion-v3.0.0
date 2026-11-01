@@ -77,8 +77,8 @@ export function createAsteroids(canvas: HTMLCanvasElement, hooks: ParkGameHooks)
     /** Odpočet před novou vlnou (0 = vlna běží). */
     respawnTimer: 0,
   };
-  /** Ukazatel drží směr — jeho hodnota se mění jen při pohybu myši. */
-  let pointerAngle: number | null = null;
+  /** Ukazatel řídí jako volant: 0 = vlevo, 1 = vpravo, null = pryč. */
+  let pointerX: number | null = null;
 
   function wrap(value: number, max: number): number {
     if (value < -10) return value + max + 20;
@@ -156,7 +156,7 @@ export function createAsteroids(canvas: HTMLCanvasElement, hooks: ParkGameHooks)
     keys.left = false;
     keys.right = false;
     keys.fire = false;
-    pointerAngle = null;
+    pointerX = null;
     resetShip();
     hooks.onScore(0);
     spawnWave();
@@ -216,18 +216,12 @@ export function createAsteroids(canvas: HTMLCanvasElement, hooks: ParkGameHooks)
       if (ship.guard > 0) ship.guard -= dt;
 
       // ── řízení ────────────────────────────────────────────────
-      // ukazatel míří na kurzor; bez něj platí klávesy (ve VR paprsek)
-      if (pointerAngle !== null) {
-        let diff = pointerAngle - ship.angle;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        const maxTurn = ROTATE * dt;
-        ship.angle += Math.max(-maxTurn, Math.min(maxTurn, diff));
-        // mířit = tlačit — jinak se s ukazatelem nedá ovládat
-        if (Math.abs(diff) < 1.1) {
-          ship.vx += Math.cos(ship.angle) * THRUST * dt;
-          ship.vy += Math.sin(ship.angle) * THRUST * dt;
-        }
+      // ukazatel je volant (ve VR paprsek) a zároveň plyn; bez něj platí klávesy
+      if (pointerX !== null) {
+        const steer = Math.max(-1, Math.min(1, (pointerX - 0.5) * 3));
+        ship.angle += steer * ROTATE * dt;
+        ship.vx += Math.cos(ship.angle) * THRUST * dt;
+        ship.vy += Math.sin(ship.angle) * THRUST * dt;
       } else {
         if (keys.left) ship.angle -= ROTATE * dt;
         if (keys.right) ship.angle += ROTATE * dt;
