@@ -950,3 +950,409 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 .present.has-overlay .present-hint {
   bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
 }
+
+/* ── Jupiter Station — pouť ─────────────────────────────────────────────
+   Svět je plátno, hra je jeden canvas, který je zároveň texturou na skříni.
+   Panel drží žetony, tabuli a jízdu. Nic z toho není money-path. */
+
+.park {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #060411;
+  color: #f4ead2;
+}
+
+.park-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.park-chrome {
+  position: absolute;
+  z-index: 12;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 1rem 0.7rem;
+  background: linear-gradient(180deg, rgba(5, 4, 11, 0.86), rgba(5, 4, 11, 0));
+  pointer-events: none;
+}
+
+.park-chrome > * {
+  pointer-events: auto;
+}
+
+.park-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.park-title strong {
+  font-size: 0.95rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #ffd166;
+}
+
+.park-title span {
+  font-size: 0.72rem;
+  color: rgba(244, 234, 210, 0.6);
+  letter-spacing: 0.06em;
+}
+
+.park-hud {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.park-tokens {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  background: rgba(255, 209, 102, 0.12);
+  color: #ffe9a8;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.park-btn {
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  background: rgba(255, 209, 102, 0.1);
+  color: #ffe9a8;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.park-btn:hover:not(:disabled) {
+  background: rgba(255, 209, 102, 0.22);
+}
+
+.park-btn:disabled {
+  opacity: 0.4;
+}
+
+/* herní dok — canvas žije tady a zároveň je texturou ve scéně */
+.park-dock {
+  position: absolute;
+  z-index: 14;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%) translateY(140%);
+  display: flex;
+  gap: 0.9rem;
+  align-items: stretch;
+  padding: 0.7rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  background: rgba(8, 6, 14, 0.92);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 220ms ease, opacity 220ms ease;
+}
+
+.park-dock.is-open {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.park-screen {
+  width: 340px;
+  height: 255px;
+  border-radius: 0.6rem;
+  background: #0b0812;
+  image-rendering: auto;
+  touch-action: none;
+}
+
+.park-dock-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 11rem;
+  font-size: 0.78rem;
+}
+
+.park-dock-copy strong {
+  color: #ffd166;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.park-dock-copy span {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  color: #fff3d0;
+}
+
+.park-dock-copy small {
+  color: rgba(244, 234, 210, 0.6);
+  line-height: 1.35;
+}
+
+/* panel: výběr hry, tabule, jízda */
+.park-panel {
+  position: absolute;
+  z-index: 12;
+  right: 1rem;
+  top: calc(4.4rem + env(safe-area-inset-top, 0px));
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: calc(100% - 6rem - env(safe-area-inset-bottom, 0px));
+  overflow: auto;
+  padding: 0.9rem 1rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 209, 102, 0.22);
+  background: rgba(8, 6, 14, 0.86);
+  backdrop-filter: blur(10px);
+}
+
+.park-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: rgba(255, 209, 102, 0.85);
+}
+
+.park-games {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.6rem 0;
+}
+
+.park-games button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  text-align: left;
+}
+
+.park-games button:hover {
+  border-color: rgba(255, 209, 102, 0.5);
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.park-games strong {
+  font-size: 0.86rem;
+  color: #ffe9a8;
+}
+
+.park-games small {
+  font-size: 0.7rem;
+  color: rgba(244, 234, 210, 0.55);
+  line-height: 1.35;
+}
+
+.park-ride-btn {
+  width: 100%;
+  margin-bottom: 0.7rem;
+}
+
+.park-board-head {
+  margin-top: 0.2rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.park-board-head input {
+  width: 7.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.4);
+  color: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+}
+
+.park-board-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.68rem;
+}
+
+.park-board-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: rgba(244, 234, 210, 0.75);
+}
+
+.park-board-col em {
+  font-style: normal;
+  color: rgba(255, 209, 102, 0.85);
+  letter-spacing: 0.06em;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+}
+
+.park-empty {
+  color: rgba(244, 234, 210, 0.3);
+}
+
+.park-notice {
+  margin: 0.6rem 0 0;
+  font-size: 0.74rem;
+  color: #7fe3d4;
+}
+
+.park-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: rgba(244, 234, 210, 0.45);
+}
+
+/* popisky ve scéně (drei Html — DOM, ne textury) */
+.park-sign {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.5rem;
+  background: rgba(6, 4, 17, 0.7);
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  color: #ffd166;
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+}
+
+.park-sign em {
+  font-style: normal;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: rgba(244, 234, 210, 0.6);
+}
+
+.park-cabinet {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  background: rgba(6, 4, 17, 0.72);
+  color: #ffe9a8;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.park-cabinet.is-active {
+  border-color: #7fe3d4;
+  color: #7fe3d4;
+}
+
+.park-ride {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 227, 212, 0.35);
+  background: rgba(6, 4, 17, 0.72);
+  color: #9ff0e6;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.park-ride.is-riding {
+  border-color: #ffd166;
+  color: #ffd166;
+}
+
+.park-board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  background: rgba(8, 6, 14, 0.9);
+  color: rgba(244, 234, 210, 0.8);
+  font-size: 0.62rem;
+  min-width: 8.5rem;
+}
+
+.park-board strong {
+  color: #ffd166;
+  letter-spacing: 0.16em;
+  font-size: 0.6rem;
+}
+
+.park-board-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.park-board-row em {
+  font-style: normal;
+  color: rgba(244, 234, 210, 0.65);
+}
+
+.park-board-row span {
+  color: #fff3d0;
+  font-variant-numeric: tabular-nums;
+}
+
+.park-board small {
+  color: rgba(244, 234, 210, 0.4);
+  font-size: 0.55rem;
+}
+
+@media (max-width: 760px) {
+  .park-panel {
+    left: 0.6rem;
+    right: 0.6rem;
+    width: auto;
+    top: auto;
+    bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
+    max-height: 58vh;
+  }
+  .park-dock {
+    flex-direction: column;
+    left: 0.5rem;
+    right: 0.5rem;
+    transform: translateY(140%);
+    width: auto;
+  }
+  .park-dock.is-open {
+    transform: translateY(0);
+  }
+  .park-screen {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+  .park-board-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .park-title strong { font-size: 0.78rem; letter-spacing: 0.1em; white-space: nowrap; }
+  .park-title span { display: none; }
+  .park-tokens { padding: 0.25rem 0.55rem; font-size: 0.74rem; }
+}

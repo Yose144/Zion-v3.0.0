@@ -51,3 +51,15 @@ export function worldSlot(world: WorldPoint): WorldSlot {
   if (world.layer === 5) return 'surface';
   return 'orbit';
 }
+
+/** Planety obíhají podle tohohle jediného vzorce — scéna i fokus se musí shodovat. */
+export function planetPosition(
+  id: string,
+  index: number,
+  orbitR: number,
+  speed: number,
+  t: number,
+): [number, number, number] {
+  const angle = hash01(id, 5) * Math.PI * 2 + index + t * speed;
+  return [Math.cos(angle) * orbitR, 0, Math.sin(angle) * orbitR];
+}

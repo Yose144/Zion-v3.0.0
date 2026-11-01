@@ -18,6 +18,7 @@ Proxy v `apps/nirvana/src/app/api/` sahají na veřejné HTTPS. Shell si neotev�
 
 | Okno | Co v něm je | Odkud to bere |
 |---|---|---|
+| Pouť | Jupiter Station: tři arkádové skříně, ruské kolo, tabule skóre. Klik na skříň otevře hru. | `/park` (vlastní stránka) |
 | Svět | 410 bodů. Klik ukáže název, vrstvu, místo, náladu a krátké shrnutí. | `oasis.zionterranova.com` |
 | Hiran | Otázka a odpověď. Když inferenční uzel spí, okno to řekne a Slunce ztlumí pečeť. Tlačítko „Vstoupit do chrámu" vede na `/hiran`. | `app.zionterranova.com/api/ai-chat` |
 | Řetěz | Výška, obtížnost, počet peerů. | `app.zionterranova.com/api/blockchain/stats` |
@@ -53,6 +54,15 @@ Svět na plátně je OASIS katalog. Let mezi světy, questy a celá scéna Oasis
 - **Apexová brána.** Úvodní stránka `zionterranova.com` je dnes statická. Až se DNS bude měnit, tahle místnost může být to, co člověk uvidí jako první. Do té doby je Brána popisek.
 - **Desktop a mobil.** Jsou klienti se svojí binárkou a svojí session. Místnost je web. Sjednocení s nimi je až sdílená session a stejné pojmenování oken, ne sloučení balíčků.
 - **`zion-compute`.** Spec v [`docs/3.3/ENGINE-SRDCE.md`](docs/3.3/ENGINE-SRDCE.md) je jiná stopa (Hash / Care / Scene). Tenhle klient je Scene v prohlížeči. Hash zůstává v mineru.
+
+## Jupiter Station — pouť
+
+`/park` je první místo v Nirvaně, kde se dá **hrát**: Pong, Breakout a Snake na
+skříních, ruské kolo a tabule skóre. Hry jsou canvas 2D, který je zároveň texturou
+na obrazovce skříně — proto je vidí i hráč ve VR. Žetony jsou jen v prohlížeči
+a nekupují nic, co má hodnotu; park nehraje o peníze.
+
+Do vesmíru je pozvánka: dlaždice **Pouť** v konzoli a prstenec u Jupitera.
 
 ## Chrám Hirana
 

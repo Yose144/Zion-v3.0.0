@@ -9,10 +9,11 @@
  *   gate    — Brána, volně v prostoru (apex/IntroPage)
  *   ship    — na palubě lodi (účet, strojovna)
  *   sun     — Hiran usedá ve středu soustavy (L3 AI Native)
+ *   park    — Jupiter Station, pouť (herní místo)
  */
 
 export type PortalStatus = 'stub' | 'wired';
-export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship' | 'sun';
+export type SceneSlot = 'core' | 'surface' | 'ring' | 'orbit' | 'gate' | 'ship' | 'sun' | 'park';
 export type SurfaceSpot = 'harbor' | 'market' | 'forge' | 'library' | 'beacon' | 'gate' | 'ring';
 
 export interface Portal {
@@ -43,6 +44,15 @@ export const PORTALS: Portal[] = [
     api: '/api/hiran',
     status: 'wired',
     scene: { slot: 'sun' },
+  },
+  {
+    id: 'park',
+    layer: 'L4',
+    title: { cs: 'Pouť', en: 'Fair' },
+    sourceApp: 'apps/nirvana',
+    api: 'local park',
+    status: 'wired',
+    scene: { slot: 'park' },
   },
   {
     id: 'chain',

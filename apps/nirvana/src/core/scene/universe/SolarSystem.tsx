@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { SUN_POS, EARTH_ORBIT_R, hash01 } from './positions';
+import { SUN_POS, EARTH_ORBIT_R, planetPosition } from './positions';
+import { TextLabel } from './Label';
 
 /**
  * Sluneční soustava — reálné textury Solar System Scope
@@ -113,7 +114,7 @@ interface PlanetDef {
  * Velikosti: reálné poměry (Jupiter 11.2× Země) × 0.45.
  * tiltZ: skutečný axiální sklon v radiánech.
  */
-const PLANETS: PlanetDef[] = [
+export const PLANETS: PlanetDef[] = [
   { id: 'mercury', tex: 'mercury', orbitR: 11.7, size: 0.15, speed: 0.082, spin: 0.006, tint: '#b0a89c', tiltZ: 0.001 },
   { id: 'venus', tex: 'venus_atmosphere', orbitR: 21.6, size: 0.35, speed: 0.033, spin: -0.002, tint: '#e8c98a', tiltZ: 3.09 },
   { id: 'mars', tex: 'mars', orbitR: 45.6, size: 0.24, speed: 0.011, spin: 0.024, tint: '#c1622f', tiltZ: 0.44 },
@@ -127,7 +128,6 @@ const PLANETS: PlanetDef[] = [
 function Planet({ def, index }: { def: PlanetDef; index: number }) {
   const carrier = useRef<THREE.Group>(null);
   const body = useRef<THREE.Mesh>(null);
-  const angle = useRef(hash01(def.id, 5) * Math.PI * 2 + index);
   const tex = useLazyTexture(`/textures/2k_${def.tex}.jpg`);
   const ringTex = useLazyTexture(def.ring ? '/textures/2k_saturn_ring_alpha.png' : null);
   // Saturn ring: strip textura → u = radiální vzdálenost
@@ -145,10 +145,10 @@ function Planet({ def, index }: { def: PlanetDef; index: number }) {
     return g;
   }, [def.ring, def.size]);
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
     if (!carrier.current) return;
-    angle.current += delta * def.speed;
-    carrier.current.position.set(Math.cos(angle.current) * def.orbitR, 0, Math.sin(angle.current) * def.orbitR);
+    const [x, y, z] = planetPosition(def.id, index, def.orbitR, def.speed, clock.elapsedTime);
+    carrier.current.position.set(x, y, z);
     if (body.current) body.current.rotation.y += delta * def.spin;
   });
 
@@ -169,6 +169,8 @@ function Planet({ def, index }: { def: PlanetDef; index: number }) {
   );
 }
 
+export const JUPITER = PLANETS[3]!;
+
 /** Vodící dráha planety. */
 function OrbitLine({ r }: { r: number }) {
   return (
@@ -180,7 +182,7 @@ function OrbitLine({ r }: { r: number }) {
 }
 
 /** Slunce + planety + vodící dráha Země — všechny dráhy v rovině ekliptiky. */
-export function SolarSystem() {
+export function SolarSystem({ onOpenPark }: { onOpenPark?: () => void } = {}) {
   return (
     <group position={SUN_POS}>
       <Sun />
@@ -189,8 +191,51 @@ export function SolarSystem() {
         <group key={p.id}>
           <OrbitLine r={p.orbitR} />
           <Planet def={p} index={i} />
+          {p.id === 'jupiter' && onOpenPark ? <JupiterStation onOpen={onOpenPark} index={i} def={p} /> : null}
         </group>
       ))}
+    </group>
+  );
+}
+
+/**
+ * Jupiter Station sedí u Jupitera jako prstenec — z dálky je vidět jen zlatý
+ * kroužek a popisek, klik otevře okno pouti.
+ */
+function JupiterStation({ onOpen, index, def }: { onOpen: () => void; index: number; def: PlanetDef }) {
+  const ring = useRef<THREE.Group>(null);
+
+  useFrame(({ clock }) => {
+    if (!ring.current) return;
+    const [x, y, z] = planetPosition(def.id, index, def.orbitR, def.speed, clock.elapsedTime);
+    ring.current.position.set(x, y + def.size + 1.6, z);
+    ring.current.rotation.y = clock.elapsedTime * 0.25;
+  });
+
+  return (
+    <group
+      ref={ring}
+      onClick={(event) => {
+        event.stopPropagation();
+        onOpen();
+      }}
+      onPointerOver={(event) => {
+        event.stopPropagation();
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={() => {
+        document.body.style.cursor = 'auto';
+      }}
+    >
+      <mesh rotation={[Math.PI / 2.6, 0, 0]}>
+        <torusGeometry args={[def.size * 1.15, 0.1, 8, 64]} />
+        <meshBasicMaterial color="#ffb46a" toneMapped={false} />
+      </mesh>
+      <mesh>
+        <octahedronGeometry args={[0.38, 0]} />
+        <meshBasicMaterial color="#ffe9a8" toneMapped={false} />
+      </mesh>
+      <TextLabel text="JUPITER STATION · POUŤ" position={[0, 3.6, 0]} color="#ffb46a" height={0.8} onClick={onOpen} />
     </group>
   );
 }

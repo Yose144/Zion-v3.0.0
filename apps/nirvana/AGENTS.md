@@ -60,3 +60,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   i pro orb ve vesmíru). Přesná konstrukce je otevřený úkol, ne hotová věc.
 - **`/audio/hiran.mp3` neexistuje** → 404 v konzoli při mountu; zvuk jde ze
   syntetizované ambience. Není to regrese.
+
+## Jupiter Station — `/park` (2026-11-01)
+
+- **Jeden canvas, dva pohledy.** Hra se kreslí do `<canvas>` v `park-dock` a ten
+  samý element je `CanvasTexture` na obrazovce skříně. Nemnožit na „DOM hru"
+  a „3D hru" — VR hráč vidí právě ten canvas.
+- **Stavy:** `active` (která hra), `finished` (dohráno), `riding` (jízda).
+  Po dohrání handle **nechat běžet** (kreslí si vlastní „KONEC HRY"), jinak
+  attract screen hru přepíše.
+- **Žetony** jsou `localStorage` (`nirvana.park.v1`), žádná hodnota, žádný cashout.
+  Nepřidávat směnu za ZION bez samostatného rozhodnutí operátora.
+- **Tabule** `/api/park/scores` je v paměti procesu; pro perzistenci nastavit
+  `NIRVANA_PARK_SCORES_PATH` (soubor zapisovatelný uživatelem služby).
+- **Vesmír:** `planetPosition()` v `positions.ts` je jediný vzorec dráhy —
+  scéna i fokus na Jupiter ho musí používat, jinak se kamera dívá vedle planety.
+- **VR:** XR session se otevírá, ale na headsetu to není otestované. Interakce
+  jsou raycast (klik na skříň/kolo), takže by měly projít; nehlásit víc, než víme.

@@ -7,13 +7,13 @@ import * as THREE from 'three';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
 import type { HiranState } from '@/core/hiran/presence';
-import { worldSlot, EARTH_ORBIT_R, EARTH_ORBIT_SPEED } from './positions';
+import { worldSlot, EARTH_ORBIT_R, EARTH_ORBIT_SPEED, planetPosition } from './positions';
 import { NewEarth } from './NewEarth';
 import { IssobellaRing } from './IssobellaRing';
 import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { SpaceBackdrop } from './SpaceBackdrop';
-import { SolarSystem } from './SolarSystem';
+import { JUPITER, SolarSystem } from './SolarSystem';
 import { HiranSun } from './HiranSun';
 
 /** Portrait / úzké viewporty: širší fov + větší počáteční odstup,
@@ -57,7 +57,7 @@ export function Universe({
   portals: Portal[];
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
-  focus?: 'earth' | 'sun';
+  focus?: 'earth' | 'sun' | 'jupiter';
   hiranState?: HiranState;
 }) {
   const earthSys = useRef<THREE.Group>(null);
@@ -72,6 +72,9 @@ export function Universe({
   const progress = useRef(1);
   const fromCam = useRef(new THREE.Vector3());
   const fromTarget = useRef(new THREE.Vector3());
+  const jupiterTarget = useMemo(() => new THREE.Vector3(), []);
+  const jupiterCam = useMemo(() => new THREE.Vector3(), []);
+  const jupiterOffset = useMemo(() => new THREE.Vector3(24, 13, 28), []);
 
   useEffect(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -103,7 +106,7 @@ export function Universe({
   const ringPortal = portals.find((p) => p.scene.slot === 'ring');
   const gatePortal = portals.find((p) => p.scene.slot === 'gate');
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
     // zemská soustava obíhá Slunce — celý vesmír se točí kolem něj
     if (!reducedMotion) earthAngle.current += delta * EARTH_ORBIT_SPEED;
     const ex = Math.cos(earthAngle.current) * EARTH_ORBIT_R;
@@ -114,7 +117,21 @@ export function Universe({
     if (light.current) light.current.position.set(ex * 0.5, 5, ez * 0.5);
     if (!controls.current) return;
 
-    if (focusRef.current === 'sun') {
+    if (focusRef.current === 'jupiter') {
+      const [jx, jy, jz] = planetPosition(
+        JUPITER.id,
+        3,
+        JUPITER.orbitR,
+        JUPITER.speed,
+        clock.elapsedTime,
+      );
+      jupiterTarget.set(jx, jy + 4, jz);
+      jupiterCam.copy(jupiterTarget).add(jupiterOffset);
+      const p = (progress.current = Math.min(1, progress.current + delta / 1.8));
+      const t = 1 - Math.pow(1 - p, 3);
+      controls.current.target.lerpVectors(fromTarget.current, jupiterTarget, t);
+      if (p < 1) camera.position.lerpVectors(fromCam.current, jupiterCam, t);
+    } else if (focusRef.current === 'sun') {
       const p = (progress.current = Math.min(1, progress.current + delta / 1.6));
       const t = 1 - Math.pow(1 - p, 3);
       controls.current.target.lerpVectors(fromTarget.current, SUN_TARGET, t);
@@ -146,7 +163,7 @@ export function Universe({
         {gatePortal && <StarGate portal={gatePortal} onOpen={onOpen} />}
       </group>
 
-      <SolarSystem />
+      <SolarSystem onOpenPark={() => onOpen('park')} />
       <HiranSun state={hiranState} onOpen={() => onOpen('hiran')} />
 
       <ResponsiveFraming />
