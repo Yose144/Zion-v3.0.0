@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ARENA_BOXES, ARENA_PICKUPS, PLAYER_SPAWN, type ArenaBox } from './map';
@@ -13,6 +13,8 @@ import type {
   RocketView,
   ServerMessage,
 } from '@/core/net/protocol';
+import { AvatarModel } from '@/core/avatars/AvatarModel';
+import { avatarLook } from '@/core/avatars/kit';
 
 /**
  * MARS ARENA — multiplayer.
@@ -37,10 +39,9 @@ export interface MpStats extends ArenaStats {
   players: MpPlayerRow[];
   connected: boolean;
   ping: number | null;
-  matchState: 'running' | 'ended' | null;
+  matchState: 'running' | 'ended' | 'countdown' | null;
 }
 
-const MAX_REMOTE = 7;
 const ROCKET_POOL = 8;
 /** Vzdálenost, od které se predikce „srovná" na server (teleport). */
 const SNAP_DISTANCE = 1.6;
@@ -50,7 +51,7 @@ interface Snapshot {
   players: ArenaPlayerState[];
   projectiles: RocketView[];
   pickups: PickupView[];
-  state: 'running' | 'ended';
+  state: 'running' | 'ended' | 'countdown';
 }
 
 export function MarsMultiplayer({
@@ -94,8 +95,10 @@ export function MarsMultiplayer({
   const alive = useRef(true);
   const timeLeft = useRef(180);
   const ammo = useRef(12);
-  const matchState = useRef<'running' | 'ended' | null>(null);
+  const matchState = useRef<'running' | 'ended' | 'countdown' | null>(null);
   const roster = useRef<Map<string, string>>(new Map());
+  /** Kdo je v místnosti a jaký má avatar — mění se jen při změně obsazení. */
+  const [slots, setSlots] = useState<{ id: string; avatarId: number | null }[]>([]);
 
   // ── připojení do místnosti ──────────────────────────────────────────
   useEffect(() => {
@@ -110,18 +113,31 @@ export function MarsMultiplayer({
     return subscribe((message: ServerMessage) => {
       if (message.t === 'snapshot' && message.game === 'arena') {
         previous.current = latest.current;
-        latest.current = {
+        const next: Snapshot = {
           at: Date.now(),
           players: message.players as ArenaPlayerState[],
           projectiles: message.projectiles ?? [],
           pickups: message.pickups ?? [],
           state: message.state ?? 'running',
         };
-        matchState.current = message.state ?? 'running';
+        latest.current = next;
+        matchState.current = next.state;
         timeLeft.current = message.secondsLeft ?? 0;
-        for (const player of latest.current.players) {
+        for (const player of next.players) {
           roster.current.set(player.id, roster.current.get(player.id) ?? player.id);
         }
+        const nextSlots = next.players
+          .filter((player) => player.id !== youPlayerId)
+          .map((player) => ({ id: player.id, avatarId: player.avatarId ?? null }));
+        setSlots((current) => {
+          if (current.length !== nextSlots.length) return nextSlots;
+          return current.every(
+            (slot, index) =>
+              slot.id === nextSlots[index]?.id && slot.avatarId === nextSlots[index]?.avatarId,
+          )
+            ? current
+            : nextSlots;
+        });
         return;
       }
 
@@ -145,6 +161,8 @@ export function MarsMultiplayer({
       connected,
       players: (latest.current?.players ?? []).map((player) => ({
         id: player.id,
+        name: player.name,
+        avatarId: player.avatarId ?? null,
         x: Math.round(player.x * 100) / 100,
         y: Math.round(player.y * 100) / 100,
         z: Math.round(player.z * 100) / 100,
@@ -290,16 +308,7 @@ export function MarsMultiplayer({
         group.position.set(targetX, before ? before.y + (player.y - before.y) * blend : player.y, targetZ);
         group.rotation.y = player.yaw;
         group.visible = player.alive;
-        const body = group.children[0] as THREE.Mesh | undefined;
-        const head = group.children[1] as THREE.Mesh | undefined;
-        const tint = player.alive ? colorFor(player.id) : '#4a2a24';
-        if (body) (body.material as THREE.MeshStandardMaterial).color.set(tint);
-        if (head) head.visible = player.alive;
       }
-    }
-    for (; slot < MAX_REMOTE; slot++) {
-      const group = remoteRefs.current[slot];
-      if (group) group.visible = false;
     }
 
     // 5) rakety a pickupy
@@ -401,23 +410,15 @@ export function MarsMultiplayer({
         </mesh>
       ))}
 
-      {/* ostatní hráči (pool — počet se mění za běhu) */}
-      {Array.from({ length: MAX_REMOTE }, (_, index) => (
+      {/* ostatní hráči — každý svým avatarem z OASIS rosteru */}
+      {slots.map((slot, index) => (
         <group
-          key={`remote-${index}`}
-          visible={false}
+          key={slot.id}
           ref={(node) => {
             remoteRefs.current[index] = node;
           }}
         >
-          <mesh position={[0, 0.9, 0]} castShadow>
-            <boxGeometry args={[0.8, 1.2, 0.55]} />
-            <meshStandardMaterial color="#c8f56a" roughness={0.45} metalness={0.2} />
-          </mesh>
-          <mesh position={[0, 1.72, 0]}>
-            <sphereGeometry args={[0.26, 12, 10]} />
-            <meshStandardMaterial color="#ffd166" roughness={0.4} metalness={0.3} />
-          </mesh>
+          <AvatarModel look={avatarLook(slot.avatarId)} />
         </group>
       ))}
 
@@ -463,12 +464,4 @@ export function MarsMultiplayer({
       </mesh>
     </>
   );
-}
-
-/** Barva protivníka z id — stabilní, ale ne „duha" (max 6 odstínů). */
-function colorFor(id: string): string {
-  const palette = ['#c8f56a', '#ff9de2', '#7fe3d4', '#ffd166', '#a8b4ff', '#ffb46a'];
-  let hash = 0;
-  for (let index = 0; index < id.length; index++) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
-  return palette[hash % palette.length]!;
 }

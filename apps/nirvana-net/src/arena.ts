@@ -53,6 +53,7 @@ export interface ArenaInput {
 export interface ArenaPlayer {
   id: string;
   name: string;
+  avatarId: number | null;
   body: Body;
   hp: number;
   armor: number;
@@ -145,11 +146,18 @@ function placeBody(player: ArenaPlayer, spawn: { x: number; z: number; yaw: numb
   player.input.pitch = -0.05;
 }
 
-export function addPlayer(sim: ArenaSim, id: string, name: string, now: number): ArenaPlayer {
+export function addPlayer(
+  sim: ArenaSim,
+  id: string,
+  name: string,
+  avatarId: number | null,
+  now: number,
+): ArenaPlayer {
   const spawn = spawnPoint(sim, sim.players.size === 0);
   const player: ArenaPlayer = {
     id,
     name,
+    avatarId,
     body: { x: spawn.x, y: 0.2, z: spawn.z, vx: 0, vy: 0, vz: 0, onGround: false },
     hp: 100,
     armor: 0,
@@ -473,6 +481,7 @@ function restartMatch(sim: ArenaSim, now: number): void {
 export interface ArenaSnapshotPlayer {
   id: string;
   name: string;
+  avatarId: number | null;
   x: number;
   y: number;
   z: number;
@@ -490,6 +499,7 @@ export function arenaSnapshot(sim: ArenaSim, now: number) {
   const players: ArenaSnapshotPlayer[] = [...sim.players.values()].map((player) => ({
     id: player.id,
     name: player.name,
+    avatarId: player.avatarId,
     x: Math.round(player.body.x * 100) / 100,
     y: Math.round(player.body.y * 100) / 100,
     z: Math.round(player.body.z * 100) / 100,

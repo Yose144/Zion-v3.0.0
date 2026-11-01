@@ -36,8 +36,8 @@ const check = (name, ok, detail = '') => {
   console.log('\n== simulace (bez sítě) ==');
   const sim = race.createRace(1000);
   const track = buildTrack();
-  const a = race.addRacePlayer(sim, 'p_a', 'Jezdec A', 1000);
-  const b = race.addRacePlayer(sim, 'p_b', 'Jezdec B', 1000);
+  const a = race.addRacePlayer(sim, 'p_a', 'Jezdec A', 3, 1000);
+  const b = race.addRacePlayer(sim, 'p_b', 'Jezdec B', null, 1000);
 
   const dt = 1 / 30;
   let now = 1000;
@@ -150,6 +150,8 @@ try {
   check('snapshot závodu: 2 jezdci', snapshot.players.length === 2);
   check('snapshot: jména', snapshot.players.every((p) => typeof p.name === 'string' && p.name.length > 0),
     JSON.stringify(snapshot.players.map((p) => p.name)));
+  check('snapshot: avatarId (host = null)', snapshot.players.every((p) => p.avatarId === null),
+    JSON.stringify(snapshot.players.map((p) => p.avatarId)));
   check('snapshot: odpočet', snapshot.state === 'countdown' && snapshot.countdown > 0,
     JSON.stringify({ state: snapshot.state, countdown: snapshot.countdown }));
   check('snapshot: tři kola', snapshot.laps === 3, String(snapshot.laps));

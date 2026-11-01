@@ -91,6 +91,8 @@ export interface ArenaPlayerState {
   id: string;
   /** Jméno ze serveru (identita), aby tabule nemusela mapovat id → jméno. */
   name: string;
+  /** Vybraný avatar z OASIS rosteru (ZIS `avatar3d.avatarId`), nebo null. */
+  avatarId: number | null;
   x: number;
   y: number;
   z: number;
@@ -108,6 +110,7 @@ export interface ArenaPlayerState {
 export interface RacePlayerState {
   id: string;
   name: string;
+  avatarId: number | null;
   x: number;
   z: number;
   heading: number;

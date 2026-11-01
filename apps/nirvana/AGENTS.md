@@ -151,6 +151,33 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Co v MP není:** boti (prázdnou arénu nikdo nedoplňuje), zvuk, VR, tracery.
   Není to nedodělek, je to další krok — nemá se to hlásit jako hotové.
 
+### Avatary (A1–A4, 2026-11-01)
+
+- **Katalog je generovaný, ne ruční:** `core/avatars/catalog.ts` vzniká z
+  `V31/L4/oasis/data/avatars.json` skriptem
+  `node scripts/ops/gen-avatar-catalog.mjs` (200 záznamů, jen id/jméno/podtitul/
+  paprsek/vzácnost/CL). Needitovat ručně — po změně rosteru spustit generátor.
+- **Vzhled se počítá z id.** `core/avatars/kit.ts` (`avatarLook`) je čistá
+  deterministická funkce: id → semínko → tělo, výška, ornamenty, aura; paprsek
+  a vzácnost berou z katalogu. Proto jde cizí hráč vykreslit jen z `avatarId`,
+  bez stahování rosteru.
+- **Model je z primitiv** (`AvatarModel.tsx`, ~18 meshů) — v repu nejsou žádné
+  glb/gltf, takže „namodelovat 200 postav" nejde. Kit je navržený tak, aby šel
+  později vyměnit za skutečné modely bez změny zbytku.
+- **Ukládá se do ZIS** `avatar3d.avatarId` (+ `callsign`, `bodyType`,
+  `neonColor`). ZIS schéma (`apps/identity/src/routes/auth.ts`,
+  `UpdateProfileSchema`) muselo `avatarId` povolit — do té doby ho zod tiše
+  zahazoval. Bez deploye ZIS se avatar neuloží (a nikdo to nepozná, protože
+  PATCH vrátí 200).
+- **Jméno:** `callsign` z `avatar3d` má přednost před `displayName` (tak to
+  dělá i web). Chat i tabule proto ukazují callsign.
+- **Stránka `/avatars`** je veřejná: host si prohlíží, uložit může jen
+  přihlášený. Náhled je jeden `<Canvas>` (ne 200) — 200 modelů v gridu by
+  zabilo i slušný stroj.
+- **Past s layoutem:** `.avatars` musí mít pevnou výšku (`100dvh`), jinak
+  seznam 200 položek roztáhne scénu na tisíce pixelů a kamera kouká dovnitř
+  modelu. A kamera musí `lookAt` na hrudník — výchozí cíl (0,0,0) uřízne hlavu.
+
 ### Multiplayer závodu (M2b, 2026-11-01)
 
 - **Stejná trať, stejná fyzika.** `apps/nirvana-net/src/race.ts` pouští

@@ -444,6 +444,9 @@ export default function ParkPage() {
           <Link href="/venus" className="park-arena-link">
             {cs ? 'Venuše · okruh proti třem →' : 'Venus · circuit against three →'}
           </Link>
+          <Link href="/avatars" className="park-arena-link">
+            {cs ? 'Můj avatar · 200 postav z OASISu →' : 'My avatar · 200 OASIS figures →'}
+          </Link>
 
           <div className={`park-challenge${challengeDone ? ' is-done' : ''}`}>
             <strong>{cs ? 'DENNÍ VÝZVA' : 'DAILY CHALLENGE'}</strong>

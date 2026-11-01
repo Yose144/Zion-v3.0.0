@@ -133,6 +133,21 @@ try {
   });
   check('displayName nastaven', patched.status === 200, `${patched.status} ${JSON.stringify(patched.body)}`);
 
+  // ── 2b) avatar z rosteru (ZIS musí avatarId přijmout a vydat zpět) ──
+  const AVATAR_ID = 42;
+  const avatarPatched = await api('/api/auth/me', {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', cookie: cookieHeader },
+    body: JSON.stringify({
+      avatar3d: { avatarId: AVATAR_ID, callsign: 'Test Avatar', bodyType: 'standard' },
+    }),
+  });
+  check('avatar uložen do ZIS', avatarPatched.status === 200,
+    `${avatarPatched.status} ${JSON.stringify(avatarPatched.body)}`);
+  const me = await api('/api/auth/me', { headers: { cookie: cookieHeader } });
+  check('ZIS vrací avatarId', me.body?.avatar3d?.avatarId === AVATAR_ID,
+    JSON.stringify(me.body?.avatar3d));
+
   // ── 3) host (bez cookie) poslouchá ──────────────────────────────────
   const guest = connect(null);
   await guest.opened;
@@ -146,7 +161,8 @@ try {
   player.send({ t: 'hello', proto: 2 });
   const welcome = await player.waitFor((m) => m.t === 'welcome');
   check('zis: role zis', welcome.you.role === 'zis', welcome.you.role);
-  check('zis: jméno z ZIS', welcome.you.name === displayName, `${welcome.you.name} != ${displayName}`);
+  // callsign z `avatar3d` má přednost před displayName (tak to dělá ZIS i web)
+  check('zis: jméno = callsign z avatar3d', welcome.you.name === 'Test Avatar', welcome.you.name);
   check('zis: id z ZIS', welcome.you.id === `u_${userId}`, welcome.you.id);
   check('zis: seznam přítomných', Array.isArray(welcome.members) && welcome.members.length >= 2,
     String(welcome.members?.length));
@@ -154,7 +170,7 @@ try {
   player.send({ t: 'chat', text: 'Živý test z produkce — M1 ✅' });
   const seen = await guest.waitFor((m) => m.t === 'event' && m.event.kind === 'chat');
   check('host dostane zprávu', seen.event.text.includes('Živý test'), seen.event.text);
-  check('autor = jméno ze ZIS', seen.event.name === displayName, seen.event.name);
+  check('autor = jméno ze ZIS', seen.event.name === 'Test Avatar', seen.event.name);
 
   // ── 5) úklid: smazat účet ───────────────────────────────────────────
   const deleteSignature = await challengeAndSign(address, seed);

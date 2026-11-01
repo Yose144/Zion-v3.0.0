@@ -30,6 +30,7 @@ export interface RaceInput {
 export interface RacePlayer {
   id: string;
   name: string;
+  avatarId: number | null;
   craft: Craft;
   lap: LapState;
   input: RaceInput;
@@ -91,13 +92,20 @@ export function createRace(now: number): RaceSim {
   };
 }
 
-export function addRacePlayer(sim: RaceSim, id: string, name: string, now: number): RacePlayer {
+export function addRacePlayer(
+  sim: RaceSim,
+  id: string,
+  name: string,
+  avatarId: number | null,
+  now: number,
+): RacePlayer {
   const slot = GRID[sim.players.size % GRID.length]!;
   const craft = spawnCraft(sim.track, slot.sample, slot.lateral);
   const lap = newLapState(slot.sample);
   const player: RacePlayer = {
     id,
     name,
+    avatarId,
     craft,
     lap,
     input: { throttle: 0, steer: 0 },
@@ -242,6 +250,7 @@ function drain(sim: RaceSim): RaceEvent[] {
 export interface RaceSnapshotPlayer {
   id: string;
   name: string;
+  avatarId: number | null;
   x: number;
   z: number;
   heading: number;
@@ -256,6 +265,7 @@ export function raceSnapshot(sim: RaceSim, now: number) {
   const players: RaceSnapshotPlayer[] = [...sim.players.values()].map((player) => ({
     id: player.id,
     name: player.name,
+    avatarId: player.avatarId,
     x: Math.round(player.craft.x * 100) / 100,
     z: Math.round(player.craft.z * 100) / 100,
     heading: Math.round(player.craft.heading * 1000) / 1000,

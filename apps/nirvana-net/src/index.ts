@@ -384,8 +384,8 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string): void {
 
   room.players.set(conn.id, conn);
   conn.room = room;
-  if (room.arena) addPlayer(room.arena, conn.id, conn.identity.name, Date.now());
-  if (room.race) addRacePlayer(room.race, conn.id, conn.identity.name, Date.now());
+  if (room.arena) addPlayer(room.arena, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
+  if (room.race) addRacePlayer(room.race, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
 
   send(conn, {
     t: 'room',

@@ -6,11 +6,23 @@
 
 export const ZIS_SESSION_COOKIE = 'zion_session';
 
+export interface ZisAvatar3d {
+  callsign?: string;
+  bodyType?: 'slim' | 'standard' | 'heavy';
+  neonColor?: string;
+  augmentation?: 'reflexes' | 'neural' | 'tech' | 'bio' | 'stealth';
+  /** Vybraný avatar z OASIS rosteru. */
+  avatarId?: number;
+}
+
 export interface ZisUser {
   id: string;
   primaryAddress: string;
   displayName?: string | null;
   role?: string;
+  /** ZIS vrací i tyhle pole — avatar (URL) a 3D podobu hráče. */
+  avatar?: string | null;
+  avatar3d?: ZisAvatar3d | null;
 }
 
 async function zisFetch<T>(path: string, init?: RequestInit): Promise<T> {
