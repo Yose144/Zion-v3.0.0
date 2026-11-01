@@ -66,6 +66,33 @@ interface Payout {
   ts?: number | null;
 }
 
+interface CoinBlockStats {
+  luck_100?: number;
+  luck_500?: number;
+  found?: number;
+  confirmed?: number;
+  orphaned?: number;
+  pending?: number;
+}
+
+interface CoinStats {
+  blocks?: CoinBlockStats;
+  payouts_24h?: string;
+}
+
+interface FoundBlock {
+  height?: number;
+  hash?: string;
+  miner?: string;
+  luck_pct?: number;
+  status?: string;
+  ts?: number;
+}
+
+interface BlocksPayload {
+  blocks?: FoundBlock[];
+}
+
 interface PayoutsPayload {
   payouts?: Payout[];
 }
@@ -104,6 +131,16 @@ function shortAddress(value: string | undefined): string {
   return `${value.slice(0, 8)}…${value.slice(-6)}`;
 }
 
+/** Relativní čas z unixové značky (sekundy). */
+function agoSeconds(locale: Locale, timestamp: number | undefined): string {
+  if (!timestamp) return '—';
+  const seconds = Math.max(0, Math.floor(Date.now() / 1000) - timestamp);
+  if (seconds < 60) return locale === 'cs' ? `${seconds} s` : `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return locale === 'cs' ? `${minutes} min` : `${minutes}m`;
+  return locale === 'cs' ? `${Math.floor(minutes / 60)} h` : `${Math.floor(minutes / 60)}h`;
+}
+
 function shortWorker(worker: string | undefined): string {
   const parts = (worker ?? '').split('.').filter(Boolean);
   if (parts.length === 0) return '—';
@@ -135,13 +172,16 @@ export default async function PoolPortal({
     ? { ...readSpec(manifest, 'miner'), path: `${readSpec(manifest, 'miner').path}/${encodeURIComponent(rawWallet)}` }
     : null;
 
-  const [payload, minersPayload, historyPayload, payoutsPayload, minerDetail] = await Promise.all([
-    api.tryRead<CoinsPayload>(readSpec(manifest, 'coins')),
-    api.tryRead<MinersPayload>(readSpec(manifest, 'miners')),
-    api.tryRead<HistoryPayload>(readSpec(manifest, 'history')),
-    api.tryRead<PayoutsPayload>(readSpec(manifest, 'payouts')),
-    minerSpec ? api.tryRead<MinerDetail>(minerSpec) : Promise.resolve(null),
-  ]);
+  const [payload, minersPayload, historyPayload, payoutsPayload, coinStats, blocksPayload, minerDetail] =
+    await Promise.all([
+      api.tryRead<CoinsPayload>(readSpec(manifest, 'coins')),
+      api.tryRead<MinersPayload>(readSpec(manifest, 'miners')),
+      api.tryRead<HistoryPayload>(readSpec(manifest, 'history')),
+      api.tryRead<PayoutsPayload>(readSpec(manifest, 'payouts')),
+      api.tryRead<CoinStats>(readSpec(manifest, 'coinStats')),
+      api.tryRead<BlocksPayload>(readSpec(manifest, 'blocks')),
+      minerSpec ? api.tryRead<MinerDetail>(minerSpec) : Promise.resolve(null),
+    ]);
 
   if (!payload?.coins?.length) {
     return <div className="k-empty">{t(locale, 'unavailable')}</div>;
@@ -164,6 +204,7 @@ export default async function PoolPortal({
   const historyLast = historySamples[historySamples.length - 1];
   const historyAccepted = historySamples.reduce((sum, sample) => sum + (sample.accepted ?? 0), 0);
   const payouts = (payoutsPayload?.payouts ?? []).slice(0, 12);
+  const foundBlocks = (blocksPayload?.blocks ?? []).slice(0, 8);
 
   return (
     <>
@@ -255,6 +296,84 @@ export default async function PoolPortal({
           })}
         </div>
       )}
+
+      {/*
+       * P3: štěstí a nalezené bloky. `coins/zion/stats` je agregace (luck 100/500,
+       * počty bloků, výplaty za 24 h), `blocks` jsou konkrétní bloky.
+       * Obojí čtení, cache 60 s — pool to počítá z ledgeru, ne z RPC.
+       */}
+      {coinStats?.blocks || foundBlocks.length > 0 ? (
+        <>
+          <div className="k-stage-head" style={{ marginTop: 26 }}>
+            <h2 className="k-section-title">{t(locale, 'foundBlocks')}</h2>
+          </div>
+
+          {coinStats?.blocks ? (
+            <div className="k-stats" style={{ marginBottom: 12 }}>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'luck')} 100</div>
+                <div className="k-stat-value">
+                  {fmtNumber(locale, coinStats.blocks.luck_100 ?? 0, 1)}
+                  <span className="k-stat-unit">%</span>
+                </div>
+              </div>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'luck')} 500</div>
+                <div className="k-stat-value">
+                  {fmtNumber(locale, coinStats.blocks.luck_500 ?? 0, 1)}
+                  <span className="k-stat-unit">%</span>
+                </div>
+              </div>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'foundBlocks')}</div>
+                <div className="k-stat-value">{fmtNumber(locale, coinStats.blocks.found ?? 0)}</div>
+              </div>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'confirmedBlocks')}</div>
+                <div className="k-stat-value">{fmtNumber(locale, coinStats.blocks.confirmed ?? 0)}</div>
+              </div>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'orphanedBlocks')}</div>
+                <div className="k-stat-value">{fmtNumber(locale, coinStats.blocks.orphaned ?? 0)}</div>
+              </div>
+              <div className="k-stat">
+                <div className="k-stat-label">{t(locale, 'payouts24h')}</div>
+                <div className="k-stat-value">
+                  {fmtNumber(locale, Number(coinStats.payouts_24h ?? 0) / FLOWERS)}
+                  <span className="k-stat-unit">ZION</span>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {foundBlocks.length > 0 ? (
+            <div className="k-grid">
+              {foundBlocks.map((block) => (
+                <article key={`${block.height}-${block.hash}`} className="k-card">
+                  <div className="k-card-title">
+                    {t(locale, 'block')} {fmtNumber(locale, block.height ?? 0)}
+                  </div>
+                  <div className="k-meta">
+                    <span
+                      className="k-badge"
+                      data-tone={block.status === 'confirmed' ? 'live' : 'soon'}
+                    >
+                      {block.status ?? '—'}
+                    </span>
+                    <span>
+                      {t(locale, 'luck')}: {fmtNumber(locale, block.luck_pct ?? 0, 1)} %
+                    </span>
+                    <span>{agoSeconds(locale, block.ts)}</span>
+                  </div>
+                  <p className="k-code" style={{ marginTop: 6 }}>
+                    {shortAddress(block.miner)}
+                  </p>
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </>
+      ) : null}
 
       {/*
        * Hledání těžaře (F5 P2). Stejný vzorec jako adresa v Řetězu: GET formulář,

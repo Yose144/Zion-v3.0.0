@@ -18,6 +18,8 @@ export const manifest = definePortal({
     { id: 'miners', service: 'pool', path: '/public/v1/miners?limit=32', cache: 30 },
     { id: 'history', service: 'pool', path: '/public/v1/history?limit=60', cache: 60 },
     { id: 'payouts', service: 'pool', path: '/public/v1/payouts?limit=12', cache: 60 },
+    { id: 'coinStats', service: 'pool', path: '/public/v1/coins/zion/stats', cache: 60 },
+    { id: 'blocks', service: 'pool', path: '/public/v1/blocks?limit=8', cache: 60 },
     /* Základ cesty; peněženka je vstup od člověka, portál připojuje `/<addr>`. */
     { id: 'miner', service: 'pool', path: '/public/v1/miner/zion', cache: 30 },
   ],

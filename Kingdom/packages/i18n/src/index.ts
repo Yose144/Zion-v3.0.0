@@ -122,6 +122,11 @@ const cs = {
   windowShare: 'Podíl v okně',
   workers: 'Workeři',
   confirmations: 'Potvrzení',
+  luck: 'Štěstí',
+  foundBlocks: 'Nalezené bloky',
+  confirmedBlocks: 'Potvrzené',
+  orphanedBlocks: 'Osiřelé',
+  payouts24h: 'Vyplaceno / 24 h',
 } as const;
 
 export type TranslationKey = keyof typeof cs;
@@ -240,6 +245,11 @@ const en: Record<TranslationKey, string> = {
   windowShare: 'Window share',
   workers: 'Workers',
   confirmations: 'Confirmations',
+  luck: 'Luck',
+  foundBlocks: 'Found blocks',
+  confirmedBlocks: 'Confirmed',
+  orphanedBlocks: 'Orphaned',
+  payouts24h: 'Paid / 24h',
 };
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { cs, en };
