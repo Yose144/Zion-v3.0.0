@@ -69,4 +69,6 @@ export const EXTERNAL = {
   poolOps: process.env.KINGDOM_POOL_OPS_URL ?? 'https://pool.zionterranova.com/ops/',
   /** Hlasování DAO — podepsané peněženkou, ne Kingdomem. */
   dao: process.env.KINGDOM_DAO_URL ?? 'https://app.zionterranova.com/dao',
+  /** Plný eXplorer (bloky, adresy, historie) — portál drží jen okno. */
+  explorer: process.env.KINGDOM_EXPLORER_URL ?? 'https://app.zionterranova.com/explorer',
 } as const;

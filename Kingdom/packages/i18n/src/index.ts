@@ -95,6 +95,13 @@ const cs = {
   openGovernance: 'Otevřít správu protokolu',
   voteNote:
     'Hlas se podepisuje peněženkou v DAO. Kingdom ho neodesílá — nedrží tvůj klíč a nezná tvůj zůstatek.',
+  blocks: 'Poslední bloky',
+  transactions: 'Poslední transakce',
+  openExplorer: 'Otevřít eXplorer',
+  explorerNote:
+    'Do bloku se dá kliknout hloub, ale adresy a historii drží eXplorer. Kingdom ukazuje okno, ne celý archiv.',
+  block: 'Blok',
+  txs: 'transakcí',
 } as const;
 
 export type TranslationKey = keyof typeof cs;
@@ -186,6 +193,13 @@ const en: Record<TranslationKey, string> = {
   openGovernance: 'Open protocol governance',
   voteNote:
     'A vote is signed by your wallet in the DAO. Kingdom does not send it — it holds no key and does not know your balance.',
+  blocks: 'Latest blocks',
+  transactions: 'Latest transactions',
+  openExplorer: 'Open eXplorer',
+  explorerNote:
+    'You can dig into a block, but addresses and history live in eXplorer. Kingdom shows a window, not the whole archive.',
+  block: 'Block',
+  txs: 'txs',
 };
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { cs, en };
