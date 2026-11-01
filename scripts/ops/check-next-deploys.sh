@@ -77,7 +77,7 @@ for entry in "${APPS[@]}"; do
     fi
   else
     # `|| true` — `set -e` + pipefail by jinak shodily skript, když standalone chybí
-    server="$(find "$dir/.next/standalone" -maxdepth 4 -name server.js 2>/dev/null | head -1 || true)"
+    server="$(find "$dir/.next/standalone" -maxdepth 4 -name server.js -not -path "*/node_modules/*" 2>/dev/null | head -1 || true)"
     if [[ -z "$server" ]]; then
       state="CHYBA"; detail="server.js nenalezen pod .next/standalone"
       fail=1
@@ -126,7 +126,7 @@ if [[ -d "$KINGDOM_DIR" ]]; then
   # Po deployi je stage adresář uklizený (deploy skript ho maže) — to je správný
   # stav. Rozhoduje, že existuje build, ze kterého stage vznikne.
   KFLAT="$(find "$KINGDOM_DIR/.next" -maxdepth 1 -type d -name 'standalone-flat*' 2>/dev/null | head -1 || true)"
-  KSERVER="$(find "$KINGDOM_DIR/.next/standalone" -maxdepth 5 -name server.js 2>/dev/null | head -1 || true)"
+  KSERVER="$(find "$KINGDOM_DIR/.next/standalone" -maxdepth 5 -name server.js -not -path "*/node_modules/*" 2>/dev/null | head -1 || true)"
   if [[ -n "$KFLAT" ]] && [[ -f "$KFLAT/server.js" ]] && [[ -f "$KFLAT/node_modules/next/package.json" ]]; then
     green "$(printf '%-22s %-12s %s' "kingdom" "OK" "$(basename "$KFLAT") — artefakt připraven")"
   elif [[ -n "$KSERVER" ]]; then
