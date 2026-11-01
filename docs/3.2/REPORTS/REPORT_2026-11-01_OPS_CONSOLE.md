@@ -1,6 +1,6 @@
 # REPORT 2026-11-01 — OPS CONSOLE: jednotná správa rigů, poolu a inference v dashboardu
 
-**Stav:** F1 + F2.1 + F2.2 hotové a nasazené na produkci (EDGE).
+**Stav:** F1 + F2.1 + F2.2 + F2.3 hotové a nasazené na produkci (EDGE).
 **Kde:** `https://dashboard.zionterranova.com/dashboard` → záložka **Rigs**.
 **Kód:** `ZION_OS/dashboard/{ops_console.py, app.py, dashboard.html, dashboard.js}`,
 `infra/tools/vast/deploy-vastctl-edge.sh`, `ZION_OS/dashboard/deploy-dashboard.sh`.
@@ -183,11 +183,10 @@ a každá se audituje.
 
 ## 6. Meze a co zbývá
 
-1. **Agenti (2.B11)** — enrollment pořád končí na `https://zionterranova.com/api/agent/` → EDGE2:8088
-   → tunel na PC; registr je na PC, na EDGE prázdný. Potřebuje tunel EDGE2→EDGE:8088 (`permitopen`)
-   nebo přepsání agent URL + kopii registru. **Jediná věc, která reálně blokuje „vše na jednom místě“.**
+1. ~~**Agenti (2.B11)**~~ — **hotové ve F2.3** (viz výše): ingress, registr i runtime jsou na EDGE,
+   na operátorském PC už neběží žádná část control plane.
 2. **Alerty** — `vastctl /api/alerts/*` chce ops token; napojit na existující Alerts tab.
-3. **Retire prototypu** `/vast-rigs` + `/vast-ops` proxy + PC tunelů (až bude 1 hotové).
+3. **Retire prototypu** `/vast-rigs` + `/vast-ops` proxy (až bude 2 hotové).
 4. **Latence marketu** — 5–15 s (vast.ai API); zvážit server-side cache 60 s.
 5. **Provision bez stropu rizik** — nyní pronajímá jen když neexistuje žádný GPU rig (silná pojistka);
    pokud bude potřeba víc rigů, dodat explicitní limit `OPS_MAX_RIGS`.
