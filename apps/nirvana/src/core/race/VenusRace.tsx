@@ -4,22 +4,33 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
-  CHECKPOINTS,
   LAPS,
   SAMPLES,
   TRACK_WIDTH,
   buildTrack,
   checkpointIndices,
-  lateralOffset,
   nearestSample,
 } from '@/core/race/track';
+import { MAX_SPEED, type Craft, spawnCraft, stepCraft } from '@/core/race/physics';
+import {
+  PLAYER_ID,
+  PLAYER_LATERAL,
+  buildStandings,
+  createRivals,
+  newLapState,
+  stepRival,
+  advanceLap,
+  type LapState,
+  type Rival,
+  type StandingRow,
+} from '@/core/race/rivals';
 
 /**
- * VENUŠE — time trial na hovercraftu.
+ * VENUŠE — tři kola proti třem soupeřům.
  *
- * Arkádová fyzika, ne simulace: plyn/vzduch/brzda, zatáčení úměrné rychlosti,
- * a trať, která tě sama drží na silnici (mimo ni tě zpomalí a přitáhne zpět).
- * Tři kola, tři checkpointy na kolo, čas se počítá od prvního plynu.
+ * Arkádová fyzika, ne simulace: plyn/brzda, zatáčení úměrné rychlosti a trať,
+ * která tě sama drží na silnici. Hráč i boti jedou **stejný** `stepCraft`;
+ * boti se liší jen rozhodováním (brzdný bod, stopa) — viz `rivals.ts`.
  */
 
 export interface RaceStats {
@@ -31,20 +42,27 @@ export interface RaceStats {
   bestLap: number | null;
   offTrack: boolean;
   started: boolean;
+  position: number;
+  standings: StandingRow[];
 }
 
 export interface RaceResult {
   totalSeconds: number;
   bestLap: number | null;
   laps: number;
+  position: number;
+  standings: StandingRow[];
 }
 
-const MAX_SPEED = 34;
-const ACCEL = 22;
-const DRAG = 3.4;
-const STEER = 1.9;
-const LATERAL_WALL = TRACK_WIDTH / 2 - 0.6;
-const LATERAL_WARN = TRACK_WIDTH / 2 - 1.5;
+function trackLength(track: { x: number; z: number }[]): number {
+  let total = 0;
+  for (let i = 0; i < track.length; i++) {
+    const a = track[i]!;
+    const b = track[(i + 1) % track.length]!;
+    total += Math.hypot(b.x - a.x, b.z - a.z);
+  }
+  return total;
+}
 
 export function VenusRace({
   running,
@@ -58,52 +76,77 @@ export function VenusRace({
   const { camera } = useThree();
   const track = useMemo(() => buildTrack(), []);
   const checkpoints = useMemo(() => checkpointIndices(), []);
+  const metresPerProgress = useMemo(() => trackLength(track) / SAMPLES, [track]);
 
-  const craft = useRef({
-    x: track[0]!.x,
-    z: track[0]!.z,
-    heading: Math.atan2(track[0]!.tx, track[0]!.tz),
-    speed: 0,
-    sample: 0,
-  });
+  const player = useRef<Craft>(spawnCraft(track, 0, PLAYER_LATERAL));
+  const playerLap = useRef<LapState>(newLapState());
+  const rivals = useRef<Rival[]>(createRivals(track));
+
   const race = useRef({
     started: false,
     startTime: 0,
-    lap: 1,
-    lapStart: 0,
-    lastLap: null as number | null,
-    bestLap: null as number | null,
-    nextCheckpoint: 1,
     finished: false,
     offTrack: false,
-    impactAt: 0,
   });
+  /**
+   * Simulované hodiny (ms). Fyzika má `dt` zastropované na 50 ms, aby se na
+   * pomalém stroji neskákalo okny; měřit čas skutečnými hodinami by proto na
+   * 15 fps nafouklo kolo o čtvrtinu a tabule by nebyla srovnatelná.
+   */
+  const clock = useRef(0);
   const keys = useRef(new Set<string>());
   const lastStats = useRef('');
   const craftGroup = useRef<THREE.Group>(null);
+  const rivalGroups = useRef<(THREE.Group | null)[]>([]);
   const camTarget = useMemo(() => new THREE.Vector3(), []);
   const camPos = useMemo(() => new THREE.Vector3(), []);
+
+  const standings = () =>
+    buildStandings({
+      playerLap: playerLap.current,
+      rivals: rivals.current,
+      startTime: race.current.startTime,
+      metresPerProgress,
+    });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (new URLSearchParams(window.location.search).get('raceDebug') !== '1') return;
     (window as unknown as Record<string, unknown>).__raceDebug = () => {
-      const index = nearestSample(track, craft.current.x, craft.current.z, craft.current.sample);
+      const car = player.current;
+      const index = nearestSample(track, car.x, car.z, car.sample);
       const point = track[index]!;
+      const rows = standings();
       return {
-        x: Math.round(craft.current.x * 10) / 10,
-        z: Math.round(craft.current.z * 10) / 10,
-        sample: craft.current.sample,
+        x: Math.round(car.x * 10) / 10,
+        z: Math.round(car.z * 10) / 10,
+        sample: car.sample,
         index,
-        lateral: Math.round(lateralOffset(point, craft.current.x, craft.current.z) * 100) / 100,
-        heading: Math.round(craft.current.heading * 100) / 100,
-        speed: Math.round(craft.current.speed * 10) / 10,
+        lateral: Math.round(((car.x - point.x) * point.nx + (car.z - point.z) * point.nz) * 100) / 100,
+        heading: Math.round(car.heading * 100) / 100,
+        speed: Math.round(car.speed * 10) / 10,
         trackX: Math.round(point.x * 10) / 10,
         trackZ: Math.round(point.z * 10) / 10,
         offTrack: race.current.offTrack,
+        lap: playerLap.current.lap,
+        nextCheckpoint: playerLap.current.nextCheckpoint,
+        finishedAt: playerLap.current.finishedAt,
+        standings: rows.map((row) => ({
+          id: row.id,
+          lap: row.lap,
+          gap: row.gap,
+          totalSeconds: row.totalSeconds === null ? null : Math.round(row.totalSeconds * 100) / 100,
+        })),
+        rivals: rivals.current.map((rival) => ({
+          id: rival.spec.id,
+          speed: Math.round(rival.craft.speed * 10) / 10,
+          sample: rival.craft.sample,
+          lap: rival.lap.lap,
+          done: rival.lap.finishedAt !== null,
+        })),
       };
     };
-  }, [track]);
+  }, [track, checkpoints, metresPerProgress]);
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
@@ -123,25 +166,11 @@ export function VenusRace({
 
   useEffect(() => {
     if (!running) return;
-    craft.current = {
-      x: track[0]!.x,
-      z: track[0]!.z,
-      heading: Math.atan2(track[0]!.tx, track[0]!.tz),
-      speed: 0,
-      sample: 0,
-    };
-    race.current = {
-      started: false,
-      startTime: 0,
-      lap: 1,
-      lapStart: 0,
-      lastLap: null,
-      bestLap: null,
-      nextCheckpoint: 1,
-      finished: false,
-      offTrack: false,
-      impactAt: 0,
-    };
+    player.current = spawnCraft(track, 0, PLAYER_LATERAL);
+    playerLap.current = newLapState();
+    rivals.current = createRivals(track);
+    race.current = { started: false, startTime: 0, finished: false, offTrack: false };
+    lastStats.current = '';
   }, [running, track]);
 
   // ── geometrie tratě ────────────────────────────────────────────────
@@ -192,17 +221,22 @@ export function VenusRace({
     return geometry;
   }, [track]);
 
-  useEffect(() => () => {
-    road.dispose();
-    edges.dispose();
-  }, [road, edges]);
+  useEffect(
+    () => () => {
+      road.dispose();
+      edges.dispose();
+    },
+    [road, edges],
+  );
 
   useFrame((_, delta) => {
     if (!running) return;
     const dt = Math.min(0.05, delta);
-    const now = performance.now();
+    clock.current += dt * 1000;
+    const now = clock.current;
     const state = race.current;
-    const car = craft.current;
+    const car = player.current;
+    const lap = playerLap.current;
 
     const throttle =
       (keys.current.has('KeyW') || keys.current.has('ArrowUp') ? 1 : 0) -
@@ -214,70 +248,32 @@ export function VenusRace({
     if (!state.started && throttle !== 0) {
       state.started = true;
       state.startTime = now;
-      state.lapStart = now;
+      lap.lapStart = now;
+      for (const rival of rivals.current) rival.lap.lapStart = now;
     }
 
-    // zrychlení, odpor, zatáčení podle rychlosti
-    car.speed += throttle * ACCEL * dt;
-    car.speed -= car.speed * DRAG * dt * 0.32;
-    car.speed = Math.max(-8, Math.min(MAX_SPEED, car.speed));
+    const step = stepCraft(car, { throttle, steer }, track, dt, now);
+    state.offTrack = step.offTrack;
 
-    const grip = Math.min(1, Math.abs(car.speed) / 8);
-    car.heading += steer * STEER * dt * grip * (car.speed < 0 ? -1 : 1);
-
-    car.x += Math.sin(car.heading) * car.speed * dt;
-    car.z += Math.cos(car.heading) * car.speed * dt;
-
-    // trať drží vozítko: mimo pás se zpomalí a přitáhne
-    const index = nearestSample(track, car.x, car.z, car.sample);
-    car.sample = index;
-    const point = track[index]!;
-    const lateral = lateralOffset(point, car.x, car.z);
-    state.offTrack = Math.abs(lateral) > LATERAL_WARN;
-
-    if (Math.abs(lateral) > LATERAL_WALL) {
-      // okraj je zeď: náraz tě zpomalí jednou, pak po něm kloužeš (žádné trvalé brzdění)
-      if (now - state.impactAt > 420) {
-        state.impactAt = now;
-        car.speed *= 0.82;
-      }
-      const clamped = Math.sign(lateral) * LATERAL_WALL;
-      // podélný postup zachovat, opravit jen stranu — jinak auto zamrzne ve zdi
-      const along = (car.x - point.x) * point.tx + (car.z - point.z) * point.tz;
-      car.x = point.x + point.tx * along + point.nx * clamped;
-      car.z = point.z + point.tz * along + point.nz * clamped;
-      const tangentYaw = Math.atan2(point.tx, point.tz);
-      const delta = ((tangentYaw - car.heading + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-      car.heading += delta * Math.min(1, dt * 3.2);
-    }
-
-    // checkpointy v pořadí
     if (state.started && !state.finished) {
-      const target = checkpoints[state.nextCheckpoint % CHECKPOINTS]!;
-      const distance = Math.min(
-        Math.abs(index - target),
-        SAMPLES - Math.abs(index - target),
-      );
-      if (distance <= 4) {
-        state.nextCheckpoint += 1;
-        if (state.nextCheckpoint > CHECKPOINTS) {
-          // kolo hotové
-          const lapSeconds = (now - state.lapStart) / 1000;
-          state.lastLap = lapSeconds;
-          state.bestLap = state.bestLap === null ? lapSeconds : Math.min(state.bestLap, lapSeconds);
-          state.lapStart = now;
-          state.nextCheckpoint = 1;
-          state.lap += 1;
-          if (state.lap > LAPS) {
-            state.finished = true;
-            onFinish({
-              totalSeconds: (now - state.startTime) / 1000,
-              bestLap: state.bestLap,
-              laps: LAPS,
-            });
-          }
-        }
+      const lapStep = advanceLap(lap, step.index, checkpoints, now);
+      if (lapStep.finished) {
+        state.finished = true;
+        const rows = standings();
+        const position = Math.max(1, rows.findIndex((row) => row.id === PLAYER_ID) + 1);
+        onFinish({
+          totalSeconds: lap.finishedAt === null ? 0 : (lap.finishedAt - state.startTime) / 1000,
+          bestLap: lap.bestLap,
+          laps: LAPS,
+          position,
+          standings: rows,
+        });
       }
+    }
+
+    // soupeři jedou, jen když závod začal (do té doby stojí na roštu)
+    if (state.started) {
+      for (const rival of rivals.current) stepRival(rival, track, checkpoints, dt, now);
     }
 
     // kamera za vozítkem
@@ -293,21 +289,33 @@ export function VenusRace({
     camTarget.set(car.x + forwardX * 6, 1.2, car.z + forwardZ * 6);
     camera.lookAt(camTarget);
 
+    const bob = Math.sin(now * 0.003) * 0.04;
     if (craftGroup.current) {
-      craftGroup.current.position.set(car.x, 0.55, car.z);
+      craftGroup.current.position.set(car.x, 0.55 + bob, car.z);
       craftGroup.current.rotation.y = car.heading;
       craftGroup.current.rotation.z = -steer * 0.12 * speedRatio;
     }
 
+    rivals.current.forEach((rival, index) => {
+      const group = rivalGroups.current[index];
+      if (!group) return;
+      group.position.set(rival.craft.x, 0.55 + Math.sin(now * 0.0026 + index) * 0.04, rival.craft.z);
+      group.rotation.y = rival.craft.heading;
+    });
+
+    const rows = standings();
+    const position = Math.max(1, rows.findIndex((row) => row.id === PLAYER_ID) + 1);
     const stats: RaceStats = {
       speed: Math.round(Math.abs(car.speed) * 3.6),
-      lap: Math.min(LAPS, state.lap),
+      lap: Math.min(LAPS, lap.lap),
       laps: LAPS,
       elapsed: state.started ? Math.round((now - state.startTime) / 100) / 10 : 0,
-      lastLap: state.lastLap,
-      bestLap: state.bestLap,
+      lastLap: lap.lastLap,
+      bestLap: lap.bestLap,
       offTrack: state.offTrack,
       started: state.started,
+      position,
+      standings: rows,
     };
     const key = JSON.stringify(stats);
     if (key !== lastStats.current) {
@@ -339,6 +347,15 @@ export function VenusRace({
         <lineBasicMaterial color="#ffb46a" transparent opacity={0.9} />
       </lineSegments>
 
+      {/* startovní čára */}
+      <mesh
+        position={[track[0]!.x, 0.1, track[0]!.z]}
+        rotation={[0, Math.atan2(track[0]!.tx, track[0]!.tz), 0]}
+      >
+        <planeGeometry args={[TRACK_WIDTH, 1.6]} />
+        <meshStandardMaterial color="#f6e7d8" roughness={0.8} />
+      </mesh>
+
       {/* checkpointy jako brány */}
       {checkpoints.map((index, order) => {
         const point = track[index]!;
@@ -366,22 +383,45 @@ export function VenusRace({
         );
       })}
 
-      {/* hovercraft */}
-      <group ref={craftGroup} position={[track[0]!.x, 0.55, track[0]!.z]}>
-        <mesh position={[0, 0.1, 0]}>
-          <boxGeometry args={[1.5, 0.32, 3]} />
-          <meshStandardMaterial color="#ffd166" metalness={0.6} roughness={0.35} />
-        </mesh>
-        <mesh position={[0, 0.42, -0.2]}>
-          <boxGeometry args={[0.9, 0.34, 1.3]} />
-          <meshStandardMaterial color="#2b2233" metalness={0.4} roughness={0.5} />
-        </mesh>
-        <mesh position={[0, 0.78, 0.1]}>
-          <sphereGeometry args={[0.28, 12, 10]} />
-          <meshBasicMaterial color="#7fe3d4" toneMapped={false} />
-        </mesh>
+      {/* soupeři */}
+      {rivals.current.map((rival, index) => (
+        <group
+          key={rival.spec.id}
+          ref={(node) => {
+            rivalGroups.current[index] = node;
+          }}
+          position={[rival.craft.x, 0.55, rival.craft.z]}
+          rotation={[0, rival.craft.heading, 0]}
+        >
+          <CraftMesh body={rival.spec.color} canopy="#141020" />
+        </group>
+      ))}
+
+      {/* hovercraft hráče */}
+      <group ref={craftGroup} position={[track[0]!.x + track[0]!.nx * PLAYER_LATERAL, 0.55, track[0]!.z + track[0]!.nz * PLAYER_LATERAL]}>
+        <CraftMesh body="#ffd166" canopy="#7fe3d4" />
         <pointLight position={[0, 0.3, -2]} intensity={4} color="#7fe3d4" distance={8} decay={2} />
       </group>
+    </>
+  );
+}
+
+/** Stejný trup pro hráče i soupeře — liší se jen barvou. */
+function CraftMesh({ body, canopy }: { body: string; canopy: string }) {
+  return (
+    <>
+      <mesh position={[0, 0.1, 0]}>
+        <boxGeometry args={[1.5, 0.32, 3]} />
+        <meshStandardMaterial color={body} metalness={0.6} roughness={0.35} />
+      </mesh>
+      <mesh position={[0, 0.42, -0.2]}>
+        <boxGeometry args={[0.9, 0.34, 1.3]} />
+        <meshStandardMaterial color="#2b2233" metalness={0.4} roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0.78, 0.1]}>
+        <sphereGeometry args={[0.28, 12, 10]} />
+        <meshBasicMaterial color={canopy} toneMapped={false} />
+      </mesh>
     </>
   );
 }

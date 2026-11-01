@@ -442,7 +442,7 @@ export default function ParkPage() {
             {cs ? 'Mars aréna · deathmatch →' : 'Mars arena · deathmatch →'}
           </Link>
           <Link href="/venus" className="park-arena-link">
-            {cs ? 'Venuše · okruh na hovercraftu →' : 'Venus · hovercraft circuit →'}
+            {cs ? 'Venuše · okruh proti třem →' : 'Venus · circuit against three →'}
           </Link>
 
           <div className={`park-challenge${challengeDone ? ' is-done' : ''}`}>

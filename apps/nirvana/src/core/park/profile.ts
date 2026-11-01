@@ -88,3 +88,11 @@ export function spendTokens(profile: ParkProfile, amount: number): ParkProfile |
   saveProfile(next);
   return next;
 }
+
+/** Žetony navíc — pódium v závodě, odměna za výzvu. Taky se hned ukládá. */
+export function grantTokens(profile: ParkProfile, amount: number): ParkProfile {
+  if (amount <= 0) return profile;
+  const next: ParkProfile = { ...profile, tokens: profile.tokens + amount };
+  saveProfile(next);
+  return next;
+}

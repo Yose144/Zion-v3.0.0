@@ -173,8 +173,13 @@ Poslední nasazené buildy: nirvana `20261101T081445Z`, web `20261031T211657Z`.
    `useXRControllerLocomotion` (v `@react-three/xr` je) místo ručního čtení os.
 2. **Zvuk doladit.** `core/arena/audio.ts` je hotový základ; chybí hlasitosti
    per zbraň, doppler u raket a zvuk motoru na Venuši.
-3. **Soupeři na Venuši.** Trať i checkpointy už mají indexy vzorků — stačí na
-   ně posadit tři boty s stejnou fyzikou a cílem `nextCheckpoint`.
+3. ~~**Soupeři na Venuši.**~~ **✅ hotovo 2026-11-01** — tři boti (Jitřenka,
+   Fosfor, Vega) na **stejné fyzice** jako hráč, AI = feed-forward na směr
+   tratě + korekce odchylky; pořadí, pódium (`+3/+2/+1` žetony), výsledková
+   tabulka. Report: `docs/3.2/REPORTS/REPORT_2026-11-01_VENUS_RIVALS.md`.
+   Vedlejší nález: čas se měřil hodinami prohlížeče, takže na pomalém stroji
+   nafukoval kolo — teď simulované hodiny (stejné na každém fps). **Nenasazeno**,
+   čeká na deploy.
 4. **Další světy.** `planetPosition()` v `universe/positions.ts` a vzor z pouti
    jsou připravené; Neptun jako kasino by byl další krok (pozor: **jen žetony,
    dokud to operátor nerozhodne jinak** — reálné sázky jsou money-path).

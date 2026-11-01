@@ -106,7 +106,34 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Okraj tratě je zeď, ne pružina.** Při klampování zachovej podélný postup
   (`along`), jinak auto zamrzne na místě — stalo se to při prvním pokusu.
 - **Skóre = laps/seconds**, takže vyšší je lepší; nepřevracej tabuli.
+  Pořadí v závodě (1.–3. = žetony navíc) je věc HUD, ne skóre na tabuli.
 - **Zvuk:** `core/arena/audio.ts` (syntéza). Nové zvuky přidávej tam, ne jako soubory.
+
+### Soupeři (2026-11-01)
+
+- **Jedna fyzika pro všechny.** `core/race/physics.ts` → `stepCraft()`; hráč
+  posílá klávesy, bot `{throttle, steer}`. Nikdy nedělej botům druhý integrátor:
+  rozdíl by dělala pravidla, ne um. `spawnCraft()` a konstanty jsou tam taky.
+- **Bot míří na směr tratě, ne na bod.** Tětiva k bodu ~1 s dopředu nutí
+  zatáčet víc než trať, řízení saturuje a bot skončí ve zdi (reálně: 196 s na
+  3 kola a ani jedno nedojel). Správně: `headingError = směr tratě(index+look) −
+  heading` + korekce `lateral`. Křivost se počítá jako Δyaw / Δs, ne Δyaw.
+- **Rozdíl mezi boty = jen `skill`** (kH/kL, stopa, `vCap`). Žádný
+  rubber-banding — kazí srovnatelnost časů s lidskými.
+- **Pořadí se počítá z ujeté vzdálenosti** (`LapState.travelled` = sčítaný
+  přírůstek indexu). Nezaváděj „checkpointy + zlomek cesty k dalšímu“ — mezi
+  branami je zlomek nulový a všichni za vedoucím hlásí stejnou ztrátu.
+  `travelled` je záporný pro rošt za startovní čárou (viz `startTravelled`).
+- **Čas se měří simulovanými hodinami** (`clock += dt`), ne `performance.now()`.
+  Fyzika má `dt = min(0,05, delta)`; na 15 fps by skutečné hodiny nafoukly kolo
+  o čtvrtinu a tabule by nebyla srovnatelná.
+- **`advanceLap()` je jediné počítání kol** pro hráče i boty. Nová pravidla
+  (tresty, cut detection) patří sem, ne do `useFrame`.
+- **Deska pořadí** (`.race-board`) je vpravo nahoře a nesmí překrývat HUD;
+  na mobilu se HUD zalamuje (`.race-hud span { white-space: nowrap }`).
+- **Znaménko řízení:** `A` (kladný steer) **zmenšuje** kladný `lateral`.
+  Při testech klávesnicí to ověř v simulaci, ne okem.
+- **Kolize auto–auto nejsou.** Závodníci se projíždějí; je to záměr, ne bug.
 
 ## Zvuk a VR v aréně (2026-11-01)
 

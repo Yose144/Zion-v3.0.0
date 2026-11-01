@@ -7,7 +7,7 @@ import { XR, createXRStore } from '@react-three/xr';
 import { useI18n } from '@/core/i18n';
 import { MarsArena, type ArenaResult, type ArenaStats } from '@/core/arena/MarsArena';
 import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
-import { awardRun, loadProfile } from '@/core/park/profile';
+import { awardRun, loadProfile, saveProfile } from '@/core/park/profile';
 import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
 
 /**
@@ -51,6 +51,8 @@ export default function MarsPage() {
 
       const awarded = awardRun(loadProfile(), 'arena', outcome.score);
       const challenge = claimChallenge(awarded.profile, 'arena', outcome.score);
+      // odměna za výzvu se musí uložit, jinak se zobrazí a zmizí (stará chyba)
+      if (challenge.claimed) saveProfile(challenge.profile);
       const nickname = (() => {
         try {
           return window.localStorage.getItem('nirvana.park.name') ?? 'hrac';

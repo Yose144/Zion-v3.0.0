@@ -1716,6 +1716,131 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-size: 0.72rem;
 }
 
+.race-hud .race-pos {
+  color: #ffb46a;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* pořadí za jízdy — vpravo nahoře, aby nepřekáželo v cestě */
+.race-board {
+  position: absolute;
+  z-index: 13;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  right: 1rem;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(200, 162, 255, 0.28);
+  background: rgba(12, 6, 22, 0.82);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.race-board li {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 0.42rem;
+  color: rgba(246, 231, 216, 0.82);
+}
+
+.race-board li.me {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+.race-board i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.race-board .race-board-gap {
+  color: rgba(246, 231, 216, 0.62);
+  font-size: 0.74rem;
+}
+
+.race-board li.me .race-board-gap {
+  color: #ffd166;
+}
+
+.race-board .race-board-place {
+  color: rgba(246, 231, 216, 0.5);
+  font-size: 0.72rem;
+}
+
+.race-board.final {
+  position: static;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0.2rem 0 0.6rem;
+  pointer-events: auto;
+}
+
+/* ve výsledkové tabulce je podklad panel, takže tlumené barvy nemají na čem
+   vyniknout — text musí být čitelnější než na HUD desce */
+.race-board.final li {
+  color: rgba(246, 231, 216, 0.92);
+}
+
+.race-board.final .race-board-place {
+  color: rgba(246, 231, 216, 0.72);
+}
+
+.race-board.final .race-board-gap {
+  color: rgba(246, 231, 216, 0.72);
+}
+
+.race-verdict {
+  font-size: 0.95rem !important;
+  color: #e0d0ff !important;
+  margin: 0 0 0.6rem !important;
+}
+
+.race-verdict.win {
+  color: #c8f56a !important;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .race-hud {
+    gap: 0.45rem;
+    font-size: 0.72rem;
+    padding: 0.35rem 0.6rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100vw - 1rem);
+  }
+
+  .race-hud .race-speed {
+    font-size: 0.84rem;
+  }
+
+  .race-board {
+    top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    right: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.72rem;
+  }
+
+  .race-board .race-board-gap {
+    font-size: 0.68rem;
+  }
+}
+
+/* položky HUD se nesmí lámat uprostřed („45 km/h“ na dva řádky) */
+.race-hud span {
+  white-space: nowrap;
+}
+
 .race-go {
   position: absolute;
   z-index: 13;
