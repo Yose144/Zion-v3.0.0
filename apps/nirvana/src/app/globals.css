@@ -2133,3 +2133,63 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   color: rgba(246, 231, 216, 0.55);
   padding-left: 0.2rem;
 }
+
+/* ── MULTIPLAYER ARÉNA — tabule hráčů ──────────────────────────────── */
+
+.arena-board {
+  position: absolute;
+  z-index: 13;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 9rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(255, 180, 106, 0.28);
+  background: rgba(20, 8, 4, 0.82);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.arena-board li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  color: rgba(246, 231, 216, 0.82);
+}
+
+.arena-board li.is-leader {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+.arena-board .arena-board-score {
+  color: rgba(246, 231, 216, 0.6);
+}
+
+.arena-board li.is-leader .arena-board-score {
+  color: #ffd166;
+}
+
+.arena-hud .arena-weapon.is-offline {
+  color: #ff7a6b;
+}
+
+.park-btn-mp {
+  border-color: rgba(127, 227, 212, 0.6) !important;
+  color: #7fe3d4 !important;
+}
+
+@media (max-width: 640px) {
+  .arena-board {
+    top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    right: calc(0.5rem + env(safe-area-inset-right, 0px));
+    font-size: 0.72rem;
+    min-width: 7rem;
+  }
+}

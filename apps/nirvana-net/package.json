@@ -2,13 +2,14 @@
   "name": "zion-nirvana-net",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "description": "Realtime služba pro hru v Nirvaně — WebSocket na /net (multiplayer + chat)",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/nirvana-net/src/index.js",
     "dev": "tsc -p tsconfig.json && node dist/nirvana-net/src/index.js",
-    "smoke": "node test/smoke.mjs"
+    "smoke": "node test/smoke.mjs",
+    "live": "node test/live-zis.mjs",
+    "arena": "node test/arena.mjs"
   },
   "dependencies": {
     "ws": "^8.18.3"
@@ -16,6 +17,8 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/ws": "^8.18.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@noble/ed25519": "^2.3.0",
+    "@noble/hashes": "^1.8.0"
   }
 }

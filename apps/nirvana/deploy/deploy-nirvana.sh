@@ -49,7 +49,9 @@ else
   # a appku zanořil do `.next/standalone/apps/<app>`. Produkce ale běží ze
   # `WorkingDirectory=/opt/zion/APP&WEB/nirvana` + `node server.js`, takže
   # artefakt před nasazením **zplošťujeme**: app dir + node_modules vedle sebe.
-  FLAT_DIR="${ROOT_DIR}/.next/standalone-flat"
+  # unikátní jméno: souběžný deploy jiné session by jinak mazal stejný adresář
+  FLAT_DIR="${ROOT_DIR}/.next/standalone-flat-$$"
+  trap 'rm -rf "$FLAT_DIR"' EXIT
   rm -rf "$FLAT_DIR"
   mkdir -p "$FLAT_DIR"
   cp -a "${APP_DIR}/." "$FLAT_DIR/"

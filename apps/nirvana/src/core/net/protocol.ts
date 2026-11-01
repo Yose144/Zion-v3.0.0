@@ -38,6 +38,8 @@ export type Role = 'guest' | 'zis';
 export type RoomState = 'waiting' | 'running' | 'ended';
 /** 0 = rail, 1 = rakety — shodné s `MarsArena`. */
 export type WeaponId = 0 | 1;
+/** Jméno zbraně do eventů (čitelnost > bajty). */
+export type WeaponName = 'rail' | 'rocket';
 
 /** Veřejná identita hráče — jen tohle smí do hry. Nikdy e-mail, role, adresy. */
 export interface NetIdentity {
@@ -87,6 +89,8 @@ export interface SpawnPoint {
 /** Stav hráče v aréně (server-authoritative). */
 export interface ArenaPlayerState {
   id: string;
+  /** Jméno ze serveru (identita), aby tabule nemusela mapovat id → jméno. */
+  name: string;
   x: number;
   y: number;
   z: number;
@@ -115,6 +119,21 @@ export interface RacePlayerState {
 
 export type SnapshotPlayer = ArenaPlayerState | RacePlayerState;
 
+/** Raketa ve snapshotu (pohybuje se jen server). */
+export interface RocketView {
+  id: number;
+  owner: string;
+  x: number;
+  y: number;
+  z: number;
+}
+
+/** Pickup: `taken` = právě sebrán, vrátí se po `respawn` sekundách. */
+export interface PickupView {
+  id: string;
+  taken: boolean;
+}
+
 export interface ScoreRow {
   id: string;
   name: string;
@@ -123,11 +142,16 @@ export interface ScoreRow {
 }
 
 export type EventPayload =
-  | { kind: 'join'; player: PlayerSummary }
-  | { kind: 'leave'; id: string; name: string }
+  /**
+   * Kdo je v kanálu — posílá se **každému zvlášť** při každé změně.
+   * (Dřívější `join`/`leave` chodily za každý kanál zvlášť, takže klient
+   * při přechodu park → aréna napočítal člena dvakrát.)
+   */
+  | { kind: 'presence'; members: PlayerSummary[]; online: number }
   | { kind: 'chat'; id: string; name: string; role: Role; text: string; at: number }
-  | { kind: 'kill'; killer: string; victim: string; weapon: WeaponId; at: number }
+  | { kind: 'kill'; killer: string; victim: string; weapon: WeaponName; at: number }
   | { kind: 'respawn'; id: string }
+  | { kind: 'pickup'; id: string; item: 'health' | 'armor' }
   | { kind: 'system'; text: string; at: number }
   | { kind: 'match_start'; at: number }
   | { kind: 'match_end'; scoreboard: ScoreRow[] };
@@ -183,10 +207,23 @@ export type ServerMessage =
       t: 'room';
       room: RoomInfo;
       occupants: PlayerSummary[];
+      /** Id hráče v serverové simulaci (klient podle něj pozná sebe ve snapshotech). */
+      youPlayerId?: string;
       spawn: SpawnPoint | null;
       history: ChatLine[];
     }
-  | { t: 'snapshot'; game: GameId; seq: number; time: number; players: SnapshotPlayer[] }
+  | {
+      t: 'snapshot';
+      game: GameId;
+      seq: number;
+      time: number;
+      players: SnapshotPlayer[];
+      /** Jen aréna: rakety ve vzduchu. */
+      projectiles?: RocketView[];
+      pickups?: PickupView[];
+      state?: 'running' | 'ended';
+      secondsLeft?: number;
+    }
   | { t: 'event'; event: EventPayload }
   | { t: 'pong'; at: number; serverTime: number }
   | { t: 'error'; code: ErrorCode; message?: string };

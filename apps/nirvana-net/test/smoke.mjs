@@ -167,8 +167,10 @@ try {
     String(zisWelcome.you.avatar),
   );
 
-  const joinEvent = await guest.waitFor((m) => m.t === 'event' && m.event.kind === 'join');
-  check('host vidí join', joinEvent.event.player.role === 'zis');
+  const presence = await guest.waitFor(
+    (m) => m.t === 'event' && m.event.kind === 'presence' && m.event.members.some((x) => x.role === 'zis'),
+  );
+  check('host vidí přítomnost', presence.event.online === 2, String(presence.event.online));
 
   // ── chat: oba ho vidí, text se čistí ────────────────────────────────
   zisClient.send({ t: 'chat', text: 'Ahoj <script>alert(1)</script>  světe' });
@@ -222,15 +224,17 @@ try {
   check('room: arena-1', room.room.id === 'arena-1', room.room.id);
   check('room: 1 hráč', room.room.players === 1);
 
-  // jiní hráči se mezitím odpojují, takže čekáme konkrétně na odchod Poutníka
-  const parkLeave = await guest.waitFor(
-    (m) => m.t === 'event' && m.event.kind === 'leave' && m.event.name === 'Poutník',
+  // park po odchodu do místnosti pošle nový seznam (bez Poutníka)
+  const parkWithout = await guest.waitFor(
+    (m) => m.t === 'event' && m.event.kind === 'presence' && !m.event.members.some((x) => x.name === 'Poutník'),
   );
-  check('park ohlásí odchod do místnosti', parkLeave.event.name === 'Poutník');
+  check('park ohlásí odchod do místnosti', parkWithout.event.online >= 1);
 
   zisClient.send({ t: 'leave' });
   await sleep(200);
-  const back = await guest.waitFor((m) => m.t === 'event' && m.event.kind === 'join' && m.event.player.name === 'Poutník');
+  const back = await guest.waitFor(
+    (m) => m.t === 'event' && m.event.kind === 'presence' && m.event.members.some((x) => x.name === 'Poutník'),
+  );
   check('návrat do parku ohlášen', Boolean(back));
 
   // ── validace ────────────────────────────────────────────────────────

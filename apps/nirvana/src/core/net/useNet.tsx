@@ -45,6 +45,29 @@ export interface NetApi {
   lastError: string | null;
   connected: boolean;
   sendChat: (text: string) => boolean;
+
+  /** Id hráče v serverové simulaci (po `join`); hra podle něj pozná sebe. */
+  youPlayerId: string | null;
+  roomId: string | null;
+  joinArena: () => void;
+  leaveRoom: () => void;
+  /**
+   * Herní data tečou přes subscription, ne přes React state — snapshoty
+   * chodí 15×/s a překreslovat kvůli tomu celý strom by bylo plýtvání.
+   */
+  subscribe: (handler: (message: ServerMessage) => void) => () => void;
+  /** Vstup do hry (20 Hz, přebytek se zahazuje). */
+  sendInput: (input: ArenaInputFrame) => void;
+}
+
+export interface ArenaInputFrame {
+  forward: number;
+  strafe: number;
+  yaw: number;
+  pitch: number;
+  jump: boolean;
+  fire: boolean;
+  weapon: 0 | 1;
 }
 
 const MAX_LINES = 200;
@@ -82,6 +105,11 @@ export function NetProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<NetLine[]>([]);
   const [rtt, setRtt] = useState<number | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [youPlayerId, setYouPlayerId] = useState<string | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
+
+  const listeners = useRef(new Set<(message: ServerMessage) => void>());
+  const lastInputAt = useRef(0);
 
   const socketRef = useRef<WebSocket | null>(null);
   const attemptRef = useRef(0);
@@ -133,7 +161,14 @@ export function NetProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        for (const listener of listeners.current) listener(message);
+
         switch (message.t) {
+          case 'room': {
+            setRoomId(message.room.id);
+            setYouPlayerId(message.youPlayerId ?? null);
+            return;
+          }
           case 'welcome': {
             setYou(message.you);
             setOnline(message.online);
@@ -156,16 +191,10 @@ export function NetProvider({ children }: { children: ReactNode }) {
               });
             } else if (payload.kind === 'system') {
               append({ kind: 'system', text: payload.text, at: payload.at });
-            } else if (payload.kind === 'join') {
-              setOnline((value) => value + 1);
-              setMembers((list) =>
-                list.some((member) => member.id === payload.player.id)
-                  ? list
-                  : [...list, payload.player],
-              );
-            } else if (payload.kind === 'leave') {
-              setOnline((value) => Math.max(0, value - 1));
-              setMembers((list) => list.filter((member) => member.id !== payload.id));
+            } else if (payload.kind === 'presence') {
+              // server posílá celý seznam — žádné počítání dopředu/zpět
+              setMembers(payload.members);
+              setOnline(payload.online);
             }
             return;
           }
@@ -191,6 +220,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
         setYou(null);
         setOnline(0);
         setMembers([]);
+        setRoomId(null);
+        setYouPlayerId(null);
         if (closedRef.current) return;
         const delay = BACKOFF_MS[Math.min(attemptRef.current, BACKOFF_MS.length - 1)] ?? 15_000;
         attemptRef.current += 1;
@@ -226,6 +257,51 @@ export function NetProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const subscribe = useCallback((handler: (message: ServerMessage) => void) => {
+    listeners.current.add(handler);
+    return () => {
+      listeners.current.delete(handler);
+    };
+  }, []);
+
+  const send = useCallback((payload: unknown) => {
+    const socket = socketRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    socket.send(JSON.stringify(payload));
+    return true;
+  }, []);
+
+  const joinArena = useCallback(() => {
+    send({ t: 'join', game: 'arena' });
+  }, [send]);
+
+  const leaveRoom = useCallback(() => {
+    send({ t: 'leave' });
+    setRoomId(null);
+    setYouPlayerId(null);
+  }, [send]);
+
+  const sendInput = useCallback(
+    (input: ArenaInputFrame) => {
+      const now = Date.now();
+      // 20 Hz stačí; server stejně jede na 30 Hz a starší vstupy zahazuje
+      if (now - lastInputAt.current < 45) return;
+      lastInputAt.current = now;
+      send({
+        t: 'input',
+        seq: now % 1_000_000,
+        mx: Math.round(input.strafe * 100) / 100,
+        mz: Math.round(input.forward * 100) / 100,
+        yaw: Math.round(input.yaw * 1000) / 1000,
+        pitch: Math.round(input.pitch * 1000) / 1000,
+        jump: input.jump,
+        fire: input.fire,
+        weapon: input.weapon,
+      });
+    },
+    [send],
+  );
+
   const value = useMemo<NetApi>(
     () => ({
       status,
@@ -237,8 +313,29 @@ export function NetProvider({ children }: { children: ReactNode }) {
       lastError,
       connected: status === 'open',
       sendChat,
+      youPlayerId,
+      roomId,
+      joinArena,
+      leaveRoom,
+      subscribe,
+      sendInput,
     }),
-    [status, you, online, members, lines, rtt, lastError, sendChat],
+    [
+      status,
+      you,
+      online,
+      members,
+      lines,
+      rtt,
+      lastError,
+      sendChat,
+      youPlayerId,
+      roomId,
+      joinArena,
+      leaveRoom,
+      subscribe,
+      sendInput,
+    ],
   );
 
   return <NetContext.Provider value={value}>{children}</NetContext.Provider>;

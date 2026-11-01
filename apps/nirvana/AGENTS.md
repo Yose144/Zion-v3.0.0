@@ -126,6 +126,31 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   Pozor: propíše se do bundlu — před deployem build bez té proměnné (dělá to
   deploy skript sám).
 
+### Multiplayer arény (M2a, 2026-11-01)
+
+- **Server je autorita.** `apps/nirvana-net/src/arena.ts` počítá pohyb (`stepBody`
+  z `core/arena/physics.ts`), zásahy (`pickTarget` z `core/arena/weapons.ts`),
+  smrt, respawn, pickupy i skóre. Klient posílá **jen vstup** 20 Hz a kreslí
+  snapshoty 15 Hz.
+- **Jedna fyzika a jedna čísla.** `physics.ts`, `map.ts` i `weapons.ts` sdílí
+  klient a server (žádná druhá implementace). Když se změní poškození zbraně,
+  mění se na jednom místě — jinak by hráč viděl jiné zásahy, než server počítá.
+- **Predikce vlastního pohybu** běží stejnou `stepBody`; když se rozejde se
+  serverem o > 1,6 m, srovná se (teleport), jinak se plynule dorovnává 18 %/frame.
+  Ostatní hráči se interpolují mezi dvěma posledními snapshoty.
+- **Snapshoty tečou přes `subscribe()`**, ne přes React state — 15×/s by jinak
+  překreslovalo celý 3D strom. Chat a presence naopak state jsou (nízká frekvence).
+- **Presence, ne join/leave.** Hráč je členem parku a pak arény; `join`/`leave`
+  chodily za každý kanál zvlášť a klient napočítal člena dvakrát. Server teď
+  posílá **každému jeho vlastní seznam** (`event.kind === 'presence'`).
+- **Jméno hráče je ve snapshotu** (`ArenaPlayerState.name`). Mapovat
+  `presence` (identity id) na snapshot (connection id) nejde — tabule ukazovala
+  `c_9448…` místo jména.
+- **Zpětná vazba „trefil jsem"**: zásah se pozná podle HP ve snapshotu, ne
+  z klientské střely. Tracery/audio v MP zatím nejsou (sólo je má).
+- **Co v MP není:** boti (prázdnou arénu nikdo nedoplňuje), zvuk, VR, tracery.
+  Není to nedodělek, je to další krok — nemá se to hlásit jako hotové.
+
 ## Jupiter Station — `/park` (2026-11-01)
 
 - **Jeden canvas, dva pohledy.** Hra se kreslí do `<canvas>` v `park-dock` a ten

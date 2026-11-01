@@ -6,6 +6,7 @@ import { Canvas } from '@react-three/fiber';
 import { XR, createXRStore } from '@react-three/xr';
 import { useI18n } from '@/core/i18n';
 import { MarsArena, type ArenaResult, type ArenaStats } from '@/core/arena/MarsArena';
+import { MarsMultiplayer, type MpStats } from '@/core/arena/MarsMultiplayer';
 import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
 import { awardRun, loadProfile, saveProfile } from '@/core/park/profile';
 import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
@@ -38,6 +39,9 @@ export default function MarsPage() {
   const [presenting, setPresenting] = useState(false);
   const [xrStore] = useState(() => createXRStore({ foveation: 0.5 }));
   const [stats, setStats] = useState<ArenaStats>(EMPTY_STATS);
+  /** `mp` = online aréna (server-authoritative), jinak sólo proti botům. */
+  const [mp, setMp] = useState(false);
+  const [mpStats, setMpStats] = useState<MpStats | null>(null);
   const [result, setResult] = useState<ArenaResult | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -102,18 +106,64 @@ export default function MarsPage() {
           camera={{ position: [0, 1.7, 15], fov: 88, near: 0.05, far: 400 }}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >
-          <XR store={xrStore}>
-            <MarsArena
-              running={phase === 'playing'}
-              xr={presenting}
-              onStats={setStats}
-              onEnd={endMatch}
-            />
-          </XR>
+          {mp ? (
+            <MarsMultiplayer running={phase === 'playing'} onStats={setMpStats} />
+          ) : (
+            <XR store={xrStore}>
+              <MarsArena
+                running={phase === 'playing'}
+                xr={presenting}
+                onStats={setStats}
+                onEnd={endMatch}
+              />
+            </XR>
+          )}
         </Canvas>
       </div>
 
-      {phase === 'playing' && (
+      {phase === 'playing' && mp && (
+        <>
+          <div className="arena-crosshair" aria-hidden />
+          <div className="arena-hud">
+            <span className="arena-health" style={{ color: (mpStats?.health ?? 100) > 60 ? '#7fe3d4' : (mpStats?.health ?? 100) > 25 ? '#ffd166' : '#ff7a6b' }}>
+              ❤ {mpStats?.health ?? 100}
+            </span>
+            <span className="arena-armor">🛡 {mpStats?.armor ?? 0}</span>
+            <span className="arena-frags">
+              {cs ? 'fraggy' : 'frags'} {mpStats?.frags ?? 0}/{FRAG_LIMIT}
+            </span>
+            <span className="arena-time">{mpStats?.timeLeft ?? MATCH_SECONDS}s</span>
+            <span className="arena-weapon">{mpStats?.weapon === 'rocket' ? 'ROCKET' : 'RAIL'}</span>
+            <span className={`arena-weapon${mpStats?.connected ? '' : ' is-offline'}`}>
+              {mpStats?.connected ? `${mpStats?.ping ?? 0} ms` : cs ? 'offline' : 'offline'}
+            </span>
+          </div>
+          {mpStats && mpStats.players.length > 1 && (
+            <ol className="arena-board">
+              {mpStats.players.map((row) => (
+                <li key={row.id} className={row.id === mpStats.players[0]?.id ? 'is-leader' : undefined}>
+                  <span className="arena-board-name">{row.name}</span>
+                  <span className="arena-board-score">
+                    {row.frags}/{row.deaths}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+          <div className="arena-tip">
+            {cs
+              ? 'WASD pohyb · mezerník skok · 1/2 zbraň · klik střelba · Esc uvolní myš'
+              : 'WASD move · space jump · 1/2 weapon · click fire · Esc releases the mouse'}
+          </div>
+          {mpStats?.matchState === 'ended' && (
+            <div className="arena-respawn">
+              {cs ? 'konec zápasu — nový začne za chvíli' : 'match over — new one starts shortly'}
+            </div>
+          )}
+        </>
+      )}
+
+      {phase === 'playing' && !mp && (
         <>
           <div className="arena-crosshair" aria-hidden />
           <div className="arena-hud">
@@ -185,10 +235,25 @@ export default function MarsPage() {
                 <button type="button" className="park-btn" onClick={() => setPhase('playing')}>
                   {cs ? 'Vstoupit do arény' : 'Enter the arena'}
                 </button>
+                <button
+                  type="button"
+                  className="park-btn park-btn-mp"
+                  onClick={() => {
+                    setMp(true);
+                    setPhase('playing');
+                  }}
+                >
+                  {cs ? 'Multiplayer — proti lidem' : 'Multiplayer — against people'}
+                </button>
                 <Link href="/park" className="arena-link">
                   {cs ? '← zpět na pouť' : '← back to the fair'}
                 </Link>
               </div>
+              <p className="arena-small">
+                {cs
+                  ? 'Multiplayer: server počítá pohyb i zásahy, ty posíláš jen vstup. Chat (T) je pro přihlášené.'
+                  : 'Multiplayer: the server computes movement and hits, you only send input. Chat (T) is for signed-in users.'}
+              </p>
               <p className="arena-small">
                 {cs
                   ? 'Myš se zamkne kliknutím do plátna. Ve VR (tlačítko VR) míříš pravým ovladačem a střílíš spouští — hráč ale stojí, pohyb ovladačem ještě není.'

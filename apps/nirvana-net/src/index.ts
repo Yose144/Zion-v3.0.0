@@ -49,6 +49,15 @@ import {
   type RoomState,
   type ServerMessage,
 } from '../../nirvana/src/core/net/protocol.js';
+import {
+  addPlayer,
+  arenaSnapshot,
+  createArena,
+  removePlayer,
+  setInput,
+  stepArena,
+  type ArenaSim,
+} from './arena.js';
 import { identityCacheSize, resolveIdentity } from './zis.js';
 
 const SERVICE = 'zion-nirvana-net';
@@ -77,8 +86,6 @@ interface Conn {
   identity: NetIdentity;
   /** Identita ze ZIS se resolvuje asynchronně hned po připojení. */
   identityReady: Promise<NetIdentity>;
-  /** Už jsme ohlásili `join` do kanálu (aby `leave` nevisel bez protějšku). */
-  announced: boolean;
   helloSent: boolean;
   alive: boolean;
   room: Room | null;
@@ -96,6 +103,8 @@ interface Room {
   state: RoomState;
   createdAt: number;
   players: Map<string, Conn>;
+  /** Aréna má serverovou simulaci; chat místnost ne. */
+  arena: ArenaSim | null;
 }
 
 const rooms = new Map<string, Room>();
@@ -202,24 +211,22 @@ function broadcastChannel(channel: string, message: ServerMessage, exceptId?: st
   }
 }
 
-function announceJoin(conn: Conn): void {
-  if (conn.announced) return;
-  conn.announced = true;
-  broadcastChannel(
-    channelOf(conn),
-    { t: 'event', event: { kind: 'join', player: summary(conn.identity) } },
-    conn.id,
-  );
-}
-
-function announceLeave(conn: Conn, channel: string): void {
-  if (!conn.announced) return;
-  conn.announced = false;
-  broadcastChannel(
-    channel,
-    { t: 'event', event: { kind: 'leave', id: conn.identity.id, name: conn.identity.name } },
-    conn.id,
-  );
+/**
+ * Presence: každý člen kanálu dostane **svůj** aktuální seznam.
+ *
+ * Dřív se posílaly `join`/`leave` eventy — jenže hráč je členem parku a pak
+ * arény, takže při přechodu přišly dva `join` a klient napočítal člena dvakrát.
+ * Jeden snapshot seznamu tohle řeší u zdroje.
+ */
+function syncPresence(channel: string): void {
+  const members = membersOf(channel);
+  const list = members.map((member) => summary(member.identity));
+  for (const member of members) {
+    send(member, {
+      t: 'event',
+      event: { kind: 'presence', members: list, online: list.length },
+    });
+  }
 }
 
 /** Očista textu: pryč s HTML tagy, řídicími znaky a `<`/`>`, strop délky. */
@@ -300,6 +307,7 @@ function createRoom(game: GameId): Room {
     state: 'waiting',
     createdAt: Date.now(),
     players: new Map(),
+    arena: game === 'arena' ? createArena(Date.now()) : null,
   };
   rooms.set(room.id, room);
   log(`room created id=${room.id} total=${rooms.size}`);
@@ -311,8 +319,8 @@ function leaveRoom(conn: Conn, reason: string): void {
   if (!room) return;
 
   const channel = `arena:${room.id}`;
-  announceLeave(conn, channel);
   conn.room = null;
+  if (room.arena) removePlayer(room.arena, conn.id);
   room.players.delete(conn.id);
   log(`leave room=${room.id} id=${conn.identity.id} reason=${reason} players=${room.players.size}`);
 
@@ -320,11 +328,13 @@ function leaveRoom(conn: Conn, reason: string): void {
     rooms.delete(room.id);
     channels.delete(channel);
     log(`room removed id=${room.id} total=${rooms.size}`);
+  } else {
+    syncPresence(channel);
   }
 
   // zpátky do parku — ohlásit se tam a dát vědět, že je hráč zase venku
   if (conn.helloSent) {
-    announceJoin(conn);
+    syncPresence('park');
     sendSystem(conn, 'jsi zpátky v parku');
   }
 }
@@ -359,22 +369,23 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string): void {
     room = createRoom(game);
   }
 
-  // odchod z parku musí být ohlášený dřív, než se změní kanál
-  announceLeave(conn, 'park');
-
   room.players.set(conn.id, conn);
   conn.room = room;
+  if (room.arena) addPlayer(room.arena, conn.id, conn.identity.name, Date.now());
 
   send(conn, {
     t: 'room',
     room: roomInfo(room),
     occupants: [...room.players.values()].map((player) => summary(player.identity)),
-    // M0/M1: bez simulace není kam hráče postavit. M2a doplní spawn z `ARENA_SPAWN`.
+    youPlayerId: room.arena ? conn.id : undefined,
+    // spawn posílá server až ve snapshotech; klient si drží vlastní predikci
     spawn: null,
     history: [...historyOf(`arena:${room.id}`)],
   });
 
-  announceJoin(conn);
+  // park přišel o hráče, aréna o něm dostane vědět
+  syncPresence('park');
+  syncPresence(`arena:${room.id}`);
   log(`join room=${room.id} id=${conn.identity.id} role=${conn.identity.role} players=${room.players.size}`);
 }
 
@@ -404,7 +415,7 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         online: membersOf(channel).length,
         members: membersOf(channel).map((member) => summary(member.identity)),
       });
-      announceJoin(conn);
+      syncPresence(channel);
       log(
         `hello id=${conn.identity.id} role=${conn.identity.role} name=${conn.identity.name} channel=${channel}`,
       );
@@ -423,10 +434,23 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
       leaveRoom(conn, 'leave');
       return;
 
-    case 'input':
-      // M2a: tady se vstup vloží do serverové smyčky a vznikne z něj snapshot.
-      if (!conn.room) sendError(conn, 'not_in_room');
+    case 'input': {
+      const arena = conn.room?.arena;
+      if (!conn.room || !arena) {
+        sendError(conn, 'not_in_room');
+        return;
+      }
+      setInput(arena, conn.id, {
+        forward: message.mz,
+        strafe: message.mx,
+        yaw: message.yaw,
+        pitch: message.pitch,
+        jump: message.jump,
+        fire: message.fire,
+        weapon: message.weapon === 1 ? 'rocket' : 'rail',
+      });
       return;
+    }
 
     case 'chat':
       postChat(conn, message.text);
@@ -445,7 +469,6 @@ function onConnection(socket: WebSocket, request: IncomingMessage): void {
     socket,
     identity: guest,
     identityReady: resolveIdentity(request.headers.cookie, guest),
-    announced: false,
     helloSent: false,
     alive: true,
     room: null,
@@ -491,10 +514,10 @@ function onConnection(socket: WebSocket, request: IncomingMessage): void {
   });
 
   socket.on('close', () => {
-    const channel = channelOf(conn);
     leaveRoom(conn, 'close');
-    announceLeave(conn, channel);
+    const channel = channelOf(conn);
     connections.delete(conn.id);
+    if (conn.helloSent) syncPresence(channel);
     log(`disconnect id=${conn.id} conns=${connections.size}`);
   });
 
@@ -627,6 +650,40 @@ server.on('upgrade', (request, socket, head) => {
 
 sockets.on('connection', onConnection);
 
+// ── herní smyčka ──────────────────────────────────────────────────────
+// Jeden interval pro všechny arény: pevný krok (ne wall-clock delta), aby
+// simulace nezávisela na tom, jak rychle běží event loop.
+const TICK_MS = 1000 / TICK_HZ;
+const SNAPSHOT_EVERY = Math.max(1, Math.round(TICK_HZ / SNAPSHOT_HZ));
+let tickCount = 0;
+
+const gameLoop = setInterval(() => {
+  const now = Date.now();
+  tickCount += 1;
+
+  for (const room of rooms.values()) {
+    const arena = room.arena;
+    if (!arena || room.players.size === 0) continue;
+
+    const events = stepArena(arena, TICK_MS / 1000, now);
+    room.state = arena.state === 'running' ? 'running' : 'ended';
+    for (const event of events) {
+      broadcastChannel(`arena:${room.id}`, { t: 'event', event });
+    }
+
+    if (tickCount % SNAPSHOT_EVERY === 0) {
+      const snapshot = arenaSnapshot(arena, now);
+      broadcastChannel(`arena:${room.id}`, {
+        t: 'snapshot',
+        game: 'arena',
+        seq: arena.seq,
+        time: now,
+        ...snapshot,
+      });
+    }
+  }
+}, TICK_MS);
+
 const heartbeat = setInterval(() => {
   const now = Date.now();
   for (const conn of connections.values()) {
@@ -643,6 +700,7 @@ const heartbeat = setInterval(() => {
 function shutdown(signal: string): void {
   log(`shutdown signal=${signal}`);
   clearInterval(heartbeat);
+  clearInterval(gameLoop);
   for (const conn of connections.values()) conn.socket.close(1001, 'server shutdown');
   sockets.close();
   server.close(() => process.exit(0));
