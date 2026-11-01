@@ -68,8 +68,17 @@ echo "[deploy-marketplace] Syncing to ${EDGE_HOST}:${REMOTE_DIR}"
 # runtime at .next/standalone/server.js inside the source tree. NEVER rsync
 # .next/standalone/ directly into REMOTE_DIR: it deletes src/, scripts/,
 # prisma/ AND ships the traced dev .env over the production one (2026-10-30).
+#
+# `--exclude='/node_modules'` je ZÁMĚRNĚ kotvené na kořen appky. Bez kotvy
+# vzor matchuje i vnořené cesty, takže se nepřenese:
+#   .next/standalone/node_modules            (runtime deps bundlu)
+#   .next/standalone/.next/node_modules      (Turbopack aliasy, např. symlink
+#                                             @prisma/client-<hash> → @prisma/client)
+# Následek je tichý: na serveru zůstane stará generace Next a běží mix
+# (2026-11-01: next 14 runtime + next 16 manifesty → pád na `canonicalBase`),
+# resp. `Cannot find module '@prisma/client-<hash>'`.
 rsync -avz --delete \
-  --exclude='node_modules' \
+  --exclude='/node_modules' \
   --exclude='.env' \
   --exclude='.env.*' \
   --exclude='.l1-watcher-state.json' \
@@ -79,10 +88,20 @@ rsync -avz --delete \
   "${ROOT_DIR}/" \
   "${EDGE_USER}@${EDGE_HOST}:${REMOTE_DIR}/"
 
+echo "[deploy-marketplace] Verifying bundled Next matches the local build"
+LOCAL_NEXT="$(node -p "require('${ROOT_DIR}/.next/standalone/node_modules/next/package.json').version" 2>/dev/null || echo missing)"
+REMOTE_NEXT="$(SSH "node -p \"require('${REMOTE_DIR}/.next/standalone/node_modules/next/package.json').version\"" 2>/dev/null | tr -d '\r' || echo missing)"
+if [[ "${LOCAL_NEXT}" != "${REMOTE_NEXT}" ]]; then
+  echo "[deploy-marketplace] ERROR: bundled Next mismatch (local=${LOCAL_NEXT} remote=${REMOTE_NEXT})." >&2
+  echo "[deploy-marketplace] Refusing to restart — prod keeps running the previous build in memory." >&2
+  exit 1
+fi
+echo "[deploy-marketplace] Bundled Next ${LOCAL_NEXT} OK"
+
 echo "[deploy-marketplace] Regenerating Prisma client on ${EDGE_HOST}"
-# rsync excludes ALL node_modules — including .next/standalone/node_modules/.prisma —
-# so the bundled client never updates on deploy (schema drift bug, 2026-11-01).
-# Regenerate server-side (correct engine platform) and copy it into the bundle.
+# Regenerace na serveru: engine se musí sestavit pro platformu serveru
+# (binaryTargets v prisma/schema.prisma) a node_modules/@prisma/client je
+# v rsyncu záměrně vynechaný.
 SSH "cd '${REMOTE_DIR}' && npx prisma generate >/dev/null 2>&1 && \
   mkdir -p .next/standalone/node_modules/.prisma/client && \
   cp -a node_modules/.prisma/client/. .next/standalone/node_modules/.prisma/client/"
