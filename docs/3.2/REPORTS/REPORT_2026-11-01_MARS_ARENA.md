@@ -1,6 +1,7 @@
 # REPORT 2026-11-01 — MARS ARENA (Quake-style deathmatch)
 
-> **Stav:** hratelné a ověřené lokálně; nasazeno na EDGE.
+> **Stav:** hratelné, ověřené lokálně i live; nasazeno na EDGE `20261101T072741Z`.
+> **Live ověřeno:** rail srazil bota 100 → 0 hp a fragy 0 → 1 na produkčním buildu.
 > **Route:** `/mars` (veřejná). Vstup z pouti: odkaz „Mars aréna · deathmatch →".
 > **Rozsah:** jen `apps/nirvana`. L1, peníze, výplaty ani pass gate se nedotýkají.
 
