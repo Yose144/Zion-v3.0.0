@@ -238,7 +238,7 @@ export function createAsteroids(canvas: HTMLCanvasElement, hooks: ParkGameHooks)
       ship.x = wrap(ship.x + ship.vx * dt, GAME_W);
       ship.y = wrap(ship.y + ship.vy * dt, GAME_H);
 
-      if ((keys.fire || pointerAngle !== null) && state.fireCooldown <= 0) {
+      if ((keys.fire || pointerX !== null) && state.fireCooldown <= 0) {
         fire();
         state.fireCooldown = FIRE_COOLDOWN;
       }
@@ -349,7 +349,7 @@ export function createAsteroids(canvas: HTMLCanvasElement, hooks: ParkGameHooks)
       ctx.strokeStyle = flicker ? 'rgba(244, 234, 210, 0.35)' : PARK_PALETTE.gold;
       ctx.lineWidth = 2;
       ctx.stroke();
-      if (keys.thrust || pointerAngle !== null) {
+      if (keys.thrust || pointerX !== null) {
         ctx.beginPath();
         ctx.moveTo(-7, 4);
         ctx.lineTo(-16 - Math.random() * 6, 0);
@@ -404,12 +404,8 @@ export function createAsteroids(canvas: HTMLCanvasElement, hooks: ParkGameHooks)
   return {
     frame,
     pointer: (x) => {
-      if (x === null) {
-        pointerAngle = null;
-        return;
-      }
-      // kurzor je v horní polovině → míří směrem nahoru jako loď
-      pointerAngle = Math.atan2((GAME_H / 2 - GAME_H / 3) - GAME_H / 2, (x * GAME_W - ship.x) || 0.001);
+      // null = ukazatel pryč → hra přejde na klávesy (ve VR na nic)
+      pointerX = x === null ? null : Math.max(0, Math.min(1, x));
     },
     key: (code, down) => {
       if (code === 'ArrowLeft' || code === 'KeyA') keys.left = down;
@@ -423,7 +419,7 @@ export function createAsteroids(canvas: HTMLCanvasElement, hooks: ParkGameHooks)
       keys.left = false;
       keys.right = false;
       keys.fire = false;
-      pointerAngle = null;
+      pointerX = null;
     },
   };
 }
