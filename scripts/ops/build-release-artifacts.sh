@@ -214,7 +214,7 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
         fi
         case '$features' in *gpu-opencl*) [ -f /usr/include/CL/cl.h ] || { apt-get update -qq && apt-get install -y -qq ocl-icd-opencl-dev >/dev/null; } ;; esac
         rustup target add '$target' >/dev/null 2>&1 || true
-        cargo build --release --target '$target' ${lockflag[*]} ${jobs_flag[*]} ${pkg_flags[*]} ${feat_flags[*]} 2>&1
+        cargo build --release --target '$target' ${lockflag[*]+"${lockflag[*]}"} ${jobs_flag[*]+"${jobs_flag[*]}"} ${pkg_flags[*]+"${pkg_flags[*]}"} ${feat_flags[*]+"${feat_flags[*]}"} 2>&1
         mkdir -p '$bindir'
         for b in $BINS; do
           for f in /target/'$target'/release/\$b /target/'$target'/release/\$b.exe; do
@@ -224,11 +224,18 @@ build_one() { # build_one <target> <features> <bindir-out> <logfile> <variant>
         chown -R \$HOST_UID:\$HOST_GID '$bindir' /target 2>/dev/null || true
       " > "$logf" 2>&1
   else
+    # macOS bash 3.2 + `set -u`: expanding an EMPTY array with "${a[@]}" is
+    # "unbound variable". The +"${a[@]}" idiom keeps it safe.
     ( cd "$V31" && ZION_GIT_SHA="$SHORT_SHA" cargo build --release --target "$target" \
-        "${lockflag[@]}" "${jobs_flag[@]}" "${pkg_flags[@]}" "${feat_flags[@]}" ) > "$logf" 2>&1
+        ${lockflag[@]+"${lockflag[@]}"} ${jobs_flag[@]+"${jobs_flag[@]}"} \
+        ${pkg_flags[@]+"${pkg_flags[@]}"} ${feat_flags[@]+"${feat_flags[@]}"} ) > "$logf" 2>&1
     mkdir -p "$bindir"
+    # CARGO_TARGET_DIR lets a clean worktree reuse the main checkout's build
+    # cache instead of duplicating ~11 GB of target/ (disk on the dev Mac is
+    # tight). Without it, behaviour is unchanged.
+    local tdir="${CARGO_TARGET_DIR:-$V31/target}"
     for b in $BINS; do
-      for f in "$V31/target/$target/release/$b" "$V31/target/$target/release/$b.exe"; do
+      for f in "$tdir/$target/release/$b" "$tdir/$target/release/$b.exe"; do
         [ -f "$f" ] && cp "$f" "$bindir/"
       done
     done
