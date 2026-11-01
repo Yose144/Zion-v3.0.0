@@ -8,7 +8,7 @@ import {
   CheckCircle2, Clock, Heart, Zap, Crown, BookOpen, FileText,
   Satellite, Orbit, Microscope, Atom, Magnet, Radar, Flame,
   Activity, Eye, Brain, Sun, Moon, Target, Users, Anchor,
-  Cpu, Radio, Scale, ChevronRight, Compass, Gauge
+  Cpu, Radio, Scale, ChevronRight, Compass, Gauge, Leaf
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import L6StationPreviewLazy from '@/components/L6StationPreviewLazy';
@@ -64,6 +64,11 @@ const L6IssobellaCopy = {
   quantumMotorBayDesc: { cs: 'Bezpečné testování kvantového pohonu a energetiky s izolací a senzory.', en: 'Safe testing of quantum propulsion and power with isolation and sensors.' },
   dockingLogistics: { cs: 'Docking & Logistics', en: 'Docking & Logistics' },
   dockingLogisticsDesc: { cs: 'Zásobovací porty, sklad, robotická ruka a crew docking.', en: 'Supply ports, storage, robotic arm, and crew docking.' },
+
+  study02Subtitle: { cs: 'Koncepční studie 02', en: 'Concept study 02' },
+  study02Title: { cs: 'Řezy a interiéry — zahradní město', en: 'Sections & interiors — garden city' },
+  study02Body: { cs: 'Druhá koncepční deska Issobelly: průřez prstencové stanice s botanickými kopulemi, promenádou, kajutami, jídelnou, laboratořemi a centrálním uzlem — doplněná řezy obytného sektoru a uzlu.', en: 'The second Issobella concept board: a cutaway of the ring station with botanical domes, a promenade, cabins, a dining hall, labs and a central node — with sections of the residential sector and the node.' },
+  study02Note: { cs: 'Umělecká architektonická vize — dispozice i umělá gravitace jsou k ověření; na oběžné dráze zatím žádný modul není.', en: 'An artistic architectural vision — the layout and artificial gravity are still to be verified; no module is in orbit yet.' },
 
   artificialGravity: { cs: 'Umělá gravitace', en: 'Artificial gravity' },
   agBody: { cs: 'Rotace stanice vytváří odstředivé zrychlení. Nižší RPM znamená menší Coriolis a pohodlnější pobyt.', en: 'Station rotation creates centrifugal acceleration. Lower RPM means less Coriolis and a more comfortable stay.' },
@@ -128,7 +133,7 @@ const getMissions = (cs: boolean) => [
     name: L6IssobellaCopy.groundStation[cs ? 'cs' : 'en'],
     phase: cs ? 'Vize 2027+' : 'Vision 2027+',
     desc: L6IssobellaCopy.groundStationDesc[cs ? 'cs' : 'en'],
-    image: '/docs/l6/img/l6iii.jpeg',
+    image: '/images/l6-issobella/ground-station.webp',
     tags: cs ? ['Kostarika', 'TT&C', 'Observatoř'] : ['Costa Rica', 'TT&C', 'Observatory'],
     color: 'border-teal-400/30 bg-teal-400/5',
     badgeColor: 'border-teal-400/30 bg-teal-400/10 text-teal-300',
@@ -138,7 +143,7 @@ const getMissions = (cs: boolean) => [
     name: L6IssobellaCopy.orbitalStation[cs ? 'cs' : 'en'],
     phase: cs ? 'Vize 2040+' : 'Vision 2040+',
     desc: L6IssobellaCopy.orbitalStationDesc[cs ? 'cs' : 'en'],
-    image: '/docs/l6/img/Von_braun_station_2.jpg',
+    image: '/images/l6-issobella/artificial-gravity.webp',
     tags: cs ? ['Stanice', 'LEO', 'DAO'] : ['Station', 'LEO', 'DAO'],
     color: 'border-zion-purple/30 bg-zion-purple/5',
     badgeColor: 'border-zion-purple/30 bg-zion-purple/10 text-zion-purple',
@@ -148,7 +153,7 @@ const getMissions = (cs: boolean) => [
     name: L6IssobellaCopy.setiDeepResearch[cs ? 'cs' : 'en'],
     phase: cs ? 'Vize 2035+' : 'Vision 2035+',
     desc: L6IssobellaCopy.setiDesc[cs ? 'cs' : 'en'],
-    image: '/docs/l6/img/torsss1.jpg',
+    image: '/images/l6-issobella/seti-observatory.webp',
     tags: cs ? ['SETI', 'Deep Space', 'Komunita'] : ['SETI', 'Deep Space', 'Community'],
     color: 'border-zion-cyan/30 bg-zion-cyan/5',
     badgeColor: 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan',
@@ -158,7 +163,7 @@ const getMissions = (cs: boolean) => [
     name: L6IssobellaCopy.orbitalMining[cs ? 'cs' : 'en'],
     phase: cs ? 'Vize 2045+' : 'Vision 2045+',
     desc: L6IssobellaCopy.orbitalMiningDesc[cs ? 'cs' : 'en'],
-    image: '/docs/l6/img/oa9d8jviznw51.jpg',
+    image: '/images/l6-issobella/mining-asteroid.webp',
     tags: cs ? ['Asteroidy', 'Regolit', 'Ekonomika'] : ['Asteroids', 'Regolith', 'Economy'],
     color: 'border-zion-gold/30 bg-zion-gold/5',
     badgeColor: 'border-zion-gold/30 bg-zion-gold/10 text-zion-gold',
@@ -210,6 +215,17 @@ const getAgConfig = (cs: boolean) => [
   { label: L6IssobellaCopy.agMainTorus[cs ? 'cs' : 'en'], value: L6IssobellaCopy.agTorusValue[cs ? 'cs' : 'en'], icon: Orbit },
   { label: L6IssobellaCopy.agCentrifuge[cs ? 'cs' : 'en'], value: L6IssobellaCopy.agCentrifugeValue[cs ? 'cs' : 'en'], icon: Gauge },
   { label: L6IssobellaCopy.agMicroLab[cs ? 'cs' : 'en'], value: L6IssobellaCopy.agMicroLabValue[cs ? 'cs' : 'en'], icon: Microscope },
+];
+
+const getStudy02Zones = (cs: boolean) => [
+  { name: cs ? 'Botanické kopule' : 'Botanical domes', detail: cs ? 'Uzavřené ekosystémy' : 'Closed ecosystems' },
+  { name: cs ? 'Promenáda' : 'Promenade', detail: cs ? 'Obytný okruh' : 'The residential circuit' },
+  { name: cs ? 'Obytné moduly' : 'Residential modules', detail: cs ? 'Kajuty a apartmány' : 'Cabins and apartments' },
+  { name: cs ? 'Společná jídelna' : 'Common dining', detail: cs ? 'A společenské prostory' : 'And social spaces' },
+  { name: cs ? 'Výzkumné laboratoře' : 'Research labs', detail: cs ? 'Botanika a ekosystémy' : 'Botany and ecosystems' },
+  { name: cs ? 'Technické prostory' : 'Technical spaces', detail: cs ? 'Podpora života' : 'Life support' },
+  { name: cs ? 'Radiální most' : 'Radial bridge', detail: cs ? 'Spojení s centrálním uzlem' : 'Link to the central node' },
+  { name: cs ? 'Centrální uzel' : 'Central node', detail: cs ? 'Řídicí, obytné a společné prostory' : 'Command, residential and common spaces' },
 ];
 
 const getQuantumTracks = (cs: boolean) => [
@@ -294,6 +310,7 @@ export default function L6IssobellaPage() {
   const modules = getModules(cs);
   const agRows = getAgRows(cs);
   const agConfig = getAgConfig(cs);
+  const study02Zones = getStudy02Zones(cs);
   const qmTracks = getQuantumTracks(cs);
   const qmRoadmap = getQuantumRoadmap(cs);
   const humanRisks = getHumanRisks(cs);
@@ -561,6 +578,58 @@ export default function L6IssobellaPage() {
           </div>
         </motion.section>
 
+        {/* ── CONCEPT STUDY 02 ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="zion-rainbow-card p-5 md:p-8"
+          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L6IssobellaCopy.study02Subtitle[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Leaf className="h-7 w-7 text-emerald-400" />
+              {L6IssobellaCopy.study02Title[cs ? 'cs' : 'en']}
+            </h2>
+            <p className="text-sm text-gray-400">{L6IssobellaCopy.study02Body[cs ? 'cs' : 'en']}</p>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30 mb-4">
+            <img
+              src="/images/l6-issobella/study-02.webp"
+              srcSet="/images/l6-issobella/study-02-m.webp 960w, /images/l6-issobella/study-02.webp 1536w"
+              sizes="(max-width: 1100px) calc(100vw - 2rem), 1024px"
+              alt={cs
+                ? 'Koncepční studie 02 — řezy prstencové stanice Issobella s botanickými kopulemi, kajutami, jídelnou a centrálním uzlem'
+                : 'Concept study 02 — sections of the Issobella ring station with botanical domes, cabins, a dining hall and a central node'}
+              width={1536}
+              height={1024}
+              loading="lazy"
+              decoding="async"
+              className="w-full object-contain"
+            />
+          </div>
+          <p className="mb-6 text-center text-xs leading-relaxed text-white/50">
+            {L6IssobellaCopy.study02Note[cs ? 'cs' : 'en']}
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {study02Zones.map((zone, i) => (
+              <div key={zone.name} className="zion-rainbow-sub flex items-start gap-3 p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-400/10 text-[11px] font-bold text-emerald-300 leading-none">
+                  {i + 1}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-white">{zone.name}</p>
+                  <p className="text-sm text-gray-400">{zone.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
         {/* ── ARTIFICIAL GRAVITY ── */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
@@ -614,10 +683,10 @@ export default function L6IssobellaPage() {
             <div className="space-y-5">
               <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                 <img
-                  src="/docs/l6/img/Von_braun_station_2.jpg"
-                    alt={cs ? 'Rotační orbitální stanice' : 'Rotating orbital station'}
-                    width={900}
-                    height={700}
+                  src="/images/l6-issobella/artificial-gravity.webp"
+                    alt={cs ? 'Uvnitř prstence — umělá gravitace, Issobella vize 2040' : 'Inside the ring — artificial gravity, Issobella vision 2040'}
+                    width={1600}
+                    height={900}
                     loading="lazy"
                     decoding="async"
                     className="w-full object-cover transition-transform duration-500 group-hover:scale-105"
