@@ -61,6 +61,42 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **`/audio/hiran.mp3` neexistuje** → 404 v konzoli při mountu; zvuk jde ze
   syntetizované ambience. Není to regrese.
 
+## Realtime služba `/net` — multiplayer a chat (2026-11-01, M0)
+
+- **Next ve standalone režimu neumí WebSocket** (dokumentace: „cannot be used
+  together" s vlastním serverem). Proto je realtime **samostatný proces**
+  `zion-nirvana-net` (`apps/nirvana-net`, Node 22, `ws`) na `127.0.0.1:3011`,
+  nginx ho vystavuje na `wss://nirvana.zionterranova.com/net`.
+- **Protokol je jeden soubor** `src/core/net/protocol.ts` — importuje ho klient
+  i služba. Když se formát změní, zvedni `PROTO_VERSION`; server starší verzi
+  odmítne (`proto_mismatch`), aby klient nepadal na neznámých polích.
+- **Identita nikdy od klienta.** V M0 je každé spojení `guest` (`host-xxx`).
+  Jméno a avatar se v M1 dotáhnou z cookie `zion_session` → ZIS na serveru.
+- **Služba nic nepíše na disk** — jen drží místnosti v paměti. Historie chatu
+  (M1) je ring buffer; restart = prázdno. Je to záměr, ne nedodělek.
+- **Build kvůli sdílenému protokolu** skládá strom o úroveň výš:
+  `dist/nirvana-net/src/index.js` + `dist/nirvana/src/core/net/protocol.js`.
+  Unit spouští ten první; `rootDir: ".."` v `tsconfig.json` je důvod.
+- **Deploy:** `bash apps/nirvana-net/deploy/deploy-nirvana-net.sh` (poprvé
+  `--install-unit`). Skript dělá stage → `mv` swap → restart → `/net/health`
+  a při selhání health sám vrátí zálohu.
+- **nginx:** `map $http_upgrade $connection_upgrade` je **v souboru vhostu**
+  (sites-enabled se includuje do `http`, takže je to legální) + `location /net`
+  s `proxy_read_timeout 3600s` a `limit_conn nirvana_net 8`. Zálohy confů patří
+  do `/etc/nginx/backups/`, **nikdy** do `sites-enabled`.
+- **Node na produkci:** `zion-nirvana.service` běžel na `/usr/bin/node` **18.19.1**
+  (Next 16 chce ≥ 20.9). 2026-11-01 přepnuto na `/usr/local/bin/node` (22.23.2);
+  záloha unitu `/root/zion-nirvana.service.bak-node18-20261101`. Když se servis
+  „chová divně", první kontrola je `readlink -f /proc/$(systemctl show
+  zion-nirvana -p MainPID --value)/exe`.
+- **Ověření:** `cd apps/nirvana-net && npm run smoke` (20 kontrol: handshake,
+  místnosti, presence, rate limit, Origin, úklid). Živě: `curl /net/health`,
+  `/net/metrics`, WS upgrade z Node klienta s `Origin` hlavičkou.
+- **Past při deployi:** rsync `node_modules/ws` selže, když cíl nemá
+  `node_modules/` — skript proto dělá `mkdir -p <stage>/node_modules`.
+- **Past se SSH:** EDGE banuje rychlé sériové SSH (fail2ban). Deploy skript drží
+  jedno `ControlMaster` spojení; ruční zásahy dělej přes `zion-v6` (IPv6).
+
 ## Jupiter Station — `/park` (2026-11-01)
 
 - **Jeden canvas, dva pohledy.** Hra se kreslí do `<canvas>` v `park-dock` a ten
