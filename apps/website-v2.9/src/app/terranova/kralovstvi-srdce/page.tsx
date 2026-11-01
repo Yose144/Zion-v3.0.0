@@ -532,8 +532,8 @@ export default function KralovstviSrdcePage() {
                 srcSet="/images/kralovstvi-srdce/hero-m.webp 960w, /images/kralovstvi-srdce/hero.webp 1600w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt={cs
-                  ? 'Království srdce — tři lodě flotily, keporkaci a břeh Nové země pod hvězdnou oblohou'
-                  : 'The Kingdom of the Heart — the fleet’s three ships, humpback whales and the shore of the new world under a starry sky'}
+                  ? 'Království srdce · Nirvana — archa na volném moři, keporkaci, tři lodě flotily a Malý princ s dívkou s lucernou na přídi'
+                  : 'Kingdom of the Heart · Nirvana — the ark on the open sea, humpback whales, the fleet’s three ships and the Little Prince with the girl with the lantern on the prow'}
                 width={1600}
                 height={639}
                 loading="eager"
@@ -890,6 +890,19 @@ export default function KralovstviSrdcePage() {
                     <span className="text-[11px] uppercase tracking-widest text-gray-500">{Copy.keelTitle[cs ? 'cs' : 'en']}</span>
                   </div>
                   <p className="text-sm text-gray-300 leading-relaxed">{Copy.keelBody[cs ? 'cs' : 'en']}</p>
+                </div>
+                <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                  <img
+                    src="/images/kralovstvi-srdce/timeline.webp"
+                    alt={cs
+                      ? 'Časová osa sítě: 2008 EvoluZion · 2012 Srdce Amenti · 2026 Nirvana · 2029 OASIS · L6 Issobella'
+                      : 'Timeline of the network: 2008 EvoluZion · 2012 Heart of Amenti · 2026 Nirvana · 2029 OASIS · L6 Issobella'}
+                    width={1600}
+                    height={639}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full object-cover"
+                  />
                 </div>
               </div>
             </div>

@@ -490,12 +490,14 @@ export default function L5FreeWorldPage() {
             </div>
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/l5-free-world/hero.webp"
-                srcSet="/images/l5-free-world/hero-m.webp 960w, /images/l5-free-world/hero.webp 1672w"
+                src="/images/kralovstvi-srdce/hero.webp"
+                srcSet="/images/kralovstvi-srdce/hero-m.webp 960w, /images/kralovstvi-srdce/hero.webp 1600w"
                 sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-                alt={cs ? 'L5 Free World — dvanáct bodů Terra Nova ve fyzickém světě' : 'L5 Free World — the twelve Terra Nova nodes in the physical world'}
-                width={1672}
-                height={941}
+                alt={cs
+                  ? 'L5 Free World — třináctý uzel: archa Království srdce · Nirvana, keporkaci a břeh Nové země'
+                  : 'L5 Free World — the thirteenth node: the ark Kingdom of the Heart · Nirvana, humpback whales and the shore of the new world'}
+                width={1600}
+                height={640}
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
