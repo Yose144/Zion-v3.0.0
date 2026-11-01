@@ -63,7 +63,7 @@ výskyt hodnoty.
 
 | # | Nález | Dopad | Doporučení |
 |---|---|---|---|
-| H1 | **Secrety byly do 1. 11. world-readable** (`edge-environment.sh` 0644) a jsou i v zálohách (`backups/daily/*.tar.gz`, 34× `.bak`, `web-backups/…/.env`) | kdokoli s účtem na boxu (nebo kdo získá zálohu) má payout klíč, WARP mnemonic, DB hesla | **rotace klíčů** (👤 „zatím ne") — hodnoty považuj za exponované. Práva už zpevněná (600/640), zálohy `umask 077` |
+| H1 ✅ | **Secrety byly do 1. 11. world-readable** (`edge-environment.sh` 0644) a jsou i v zálohách (`backups/daily/*.tar.gz`, 34× `.bak`, `web-backups/…/.env`) | kdokoli s účtem na boxu (nebo kdo získá zálohu) má payout klíč, WARP mnemonic, DB hesla | **service-to-service klíče ROTOVÁNY 2. 11.** (viz §7); peněženky rotovat nelze bez migrace fondů → 👤. Práva už zpevněná (600/640), zálohy `umask 077` |
 | H2 | RPC stream allowlist na EDGE `:8443` obsahuje **/16 rozsahy** (`46.135.0.0/16`, `109.81.0.0/16`, `109.164.0.0/16`, `185.63.0.0/16`) | velké části ISP prostoru (CGNAT) dosáhnou na operatorské RPC | zúžit na explicitní IP; /16 byl kompromis kvůli měnící se IP operátora |
 | M1 | `dashboard.zionterranova.com/api/health` je **bez auth** (AUTH_EXEMPT_ROUTES) | inventář služeb a jejich stav | nechat (watchdog), nebo vyžadovat token pro detailní pole |
 | M2 | Veřejné P2P porty: bitcoind 8333, quantus 30333, zion 8335/8336, 44108 | plocha pro skenování/flood; pro veřejný chain je P2P záměr | zvážit, zda bitcoind/quantus musí být globálně (může stačit peering s EDGE) |
@@ -117,3 +117,33 @@ ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no zion-edge2 t
 | EDGE2 `/etc/zion/edge-environment.sh.bak-apikey-1791709884` | 0644 → 600 |
 
 Nasazeno a ověřeno živě 2026-11-02 (nginx reload, `vastctl-serve` restart, ssh reload; nové SSH spojení prošlo, heslo odmítnuto).
+
+## 7. Rotace klíčů — provedeno 2. 11. 2026
+
+👤: „máme je zálohované" → odblokovalo rotaci těch, které držíme na obou stranách.
+Skript `infra/scripts/rotate-service-keys.sh` (záloha → zápis → restart v pořadí → verifikace).
+
+| Klíč | Kdo ho validuje | Kdo ho posílá | Stav |
+|---|---|---|---|
+| `ZION_POOL_API_KEY`, `ZION_POOL_API_ADMIN_KEY` | `zion-v31-pool` (EDGE) | dashboard (EDGE), `pool-standby-sync` (EDGE2) | ✅ otočeno |
+| `ZION_DAO_API_KEY` | `zion-v31-dao` (EDGE2) | free-world, issobella (EDGE2) | ✅ otočeno |
+| `FREE_WORLD_API_KEY` | `zion-v31-free-world` (EDGE2) | žádný interní klient | ✅ otočeno |
+| `ZION_POOL_ZIS_SERVICE_KEY` ↔ `ZIS_SERVICE_KEY` | `zion-zis` (EDGE2) | `zion-v31-pool` (EDGE) | ✅ otočeno |
+
+**Co rotovat nelze** (rozhodnutí 👤):
+
+| Co | Proč |
+|---|---|
+| `WARP_MNEMONIC`, `ZION_WALLET_MNEMONIC`, `ZION_POOL_WALLET_KEY`, `ZION_POOL_PAYOUT_SK_HEX`, `shop-vault.json`, `pool-payout-wallet.json` | nejsou klíče, ale **peněženky** — rotace = nová adresa + **převod fondů** + přepsání payout adresy u minerů |
+| `PRL_RPC_PASS`, `QTC_*`, `ZION_POOL_AUXPOW_PASSWORD_*` | credentialy **třetích stran** (upstream pooly) |
+| TLS klíče | spravuje `certbot` (auto-renew 2×/den) |
+
+**Ověření po rotaci:** pool `/health` 200 · 2 sessions / 6 accepted / 0 rejected · dashboard `/api/ops/overview` 200 ·
+ZIS/DAO/free-world/issobella 200 · 0 auth chyb v journalech · veřejné povrchy (app, nirvana, rpc) 200.
+Zálohy: `/etc/zion/env/*.bak-rotate-*`, `/etc/zion/pool-standby.env.bak-rotate-*`, `/opt/zion/identity/.env.bak-rotate-*`.
+
+> **⚠️ OPS PAST při rotaci:** UFW má na EDGE `2222/tcp LIMIT` (rate-limit) a operátorská IPv6 se mění
+> (`2a00:102b:5001:…` není ve whitelistu). Skript s desítkami rychlých `ssh` proto dostal
+> `Connection refused` — **vypadá to jako fail2ban ban, ale `fail2ban-client banned` byl čistý**.
+> Řešení: dávkové operace přes `ControlMaster`, nebo `ssh -o ProxyJump=zion-edge2 -p 2222 …`
+> (cesta z EDGE2 je whitelistovaná). Při diagnostice vždy rozliš „ban vs rate-limit vs mrtvý sshd".
