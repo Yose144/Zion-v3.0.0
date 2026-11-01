@@ -10,7 +10,7 @@
  * server z cookie (`zion_session` → ZIS), tak si je nikdo nemůže přepsat.
  */
 
-export const PROTO_VERSION = 1;
+export const PROTO_VERSION = 2;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -51,10 +51,22 @@ export interface NetIdentity {
   callsign: string | null;
 }
 
+/** Jedna zpráva v chatu. `role` nese, kdo ji smí napsat (`zis`). */
+export interface ChatLine {
+  id: string;
+  name: string;
+  role: Role;
+  text: string;
+  at: number;
+}
+
 export interface PlayerSummary {
   id: string;
   name: string;
   role: Role;
+  /** Avatar (ZIS sigil/upload) — host ho nemá, proto null. */
+  avatar: string | null;
+  avatarId: number | null;
 }
 
 export interface RoomInfo {
@@ -116,6 +128,7 @@ export type EventPayload =
   | { kind: 'chat'; id: string; name: string; role: Role; text: string; at: number }
   | { kind: 'kill'; killer: string; victim: string; weapon: WeaponId; at: number }
   | { kind: 'respawn'; id: string }
+  | { kind: 'system'; text: string; at: number }
   | { kind: 'match_start'; at: number }
   | { kind: 'match_end'; scoreboard: ScoreRow[] };
 
@@ -128,6 +141,7 @@ export type ErrorCode =
   | 'busy'
   | 'not_in_room'
   | 'not_available'
+  | 'read_only'
   | 'origin';
 
 export type ClientMessage =
@@ -158,13 +172,19 @@ export type ServerMessage =
       serverTime: number;
       tickHz: number;
       snapshotHz: number;
+      /** Historie kanálu, do kterého hráč padne (mimo místnost = `park`). */
+      history: ChatLine[];
+      /** Kolik hráčů je v jeho kanálu (včetně něj). */
+      online: number;
+      /** Kdo je v kanálu — pro seznam přítomných s avatary. */
+      members: PlayerSummary[];
     }
   | {
       t: 'room';
       room: RoomInfo;
       occupants: PlayerSummary[];
       spawn: SpawnPoint | null;
-      history: { id: string; name: string; role: Role; text: string; at: number }[];
+      history: ChatLine[];
     }
   | { t: 'snapshot'; game: GameId; seq: number; time: number; players: SnapshotPlayer[] }
   | { t: 'event'; event: EventPayload }

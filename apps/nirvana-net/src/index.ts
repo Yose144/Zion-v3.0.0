@@ -6,14 +6,16 @@
  * smyčka a chat bydlí tady. Web (port 3010) zůstává nedotčený a tahle služba
  * je za nginxem na `/net`.
  *
- * Co služba dělá v tuhle chvíli (M0):
+ * Stav (M0 + M1):
  *   - HTTP: `GET /net/health` (JSON) a `GET /net/metrics` (Prometheus)
- *   - WS:   `hello → welcome`, `join → room`, `leave`, `ping → pong`
- *   - drží místnosti a seznam přítomných (presence pro chat v M1)
+ *   - WS:   `hello → welcome`, `join → room`, `leave`, `chat`, `ping → pong`
+ *   - **identita ze ZIS** (cookie `zion_session` → `/api/auth/me`, cache 60 s):
+ *     přihlášený píše, host jen čte
+ *   - kanály: `park` (mimo místnost) a `arena:<room>` (v místnosti)
  *   - **nesimuluje hru** — to je M2a (arény) a M2b (Venuše)
  *
- * Co záměrně nedělá: nevěří klientovi identitu (jméno/avatar dodá server v M1
- * z cookie `zion_session` → ZIS), neukládá nic na disk, neposílá žádné peníze.
+ * Co záměrně nedělá: neukládá nic na disk (historie je ring buffer v paměti),
+ * nevěří klientovi identitu, neposílá žádné peníze.
  */
 
 import { randomBytes } from 'node:crypto';
@@ -22,6 +24,9 @@ import { WebSocket, WebSocketServer } from 'ws';
 
 import {
   CHAT_HISTORY_LEN,
+  CHAT_MAX_LEN,
+  CHAT_RATE_MESSAGES,
+  CHAT_RATE_WINDOW_MS,
   HEARTBEAT_MS,
   IDLE_TIMEOUT_MS,
   MAX_FRAME_BYTES,
@@ -33,17 +38,18 @@ import {
   TICK_HZ,
   encodeMessage,
   parseClientMessage,
+  type ChatLine,
   type ClientMessage,
   type ErrorCode,
   type GameId,
   type HealthResponse,
   type NetIdentity,
   type PlayerSummary,
-  type Role,
   type RoomInfo,
   type RoomState,
   type ServerMessage,
 } from '../../nirvana/src/core/net/protocol.js';
+import { identityCacheSize, resolveIdentity } from './zis.js';
 
 const SERVICE = 'zion-nirvana-net';
 const PORT = Number(process.env.NIRVANA_NET_PORT ?? 3011);
@@ -61,27 +67,26 @@ const stats = {
   messagesIn: 0,
   messagesOut: 0,
   rejected: 0,
+  chat: 0,
   byType: new Map<string, number>(),
 };
-
-interface ChatLine {
-  id: string;
-  name: string;
-  role: Role;
-  text: string;
-  at: number;
-}
 
 interface Conn {
   id: string;
   socket: WebSocket;
   identity: NetIdentity;
+  /** Identita ze ZIS se resolvuje asynchronně hned po připojení. */
+  identityReady: Promise<NetIdentity>;
+  /** Už jsme ohlásili `join` do kanálu (aby `leave` nevisel bez protějšku). */
+  announced: boolean;
   helloSent: boolean;
   alive: boolean;
   room: Room | null;
-  /** Okno pro rate limit (1 s). */
+  /** Okno pro rate limit zpráv (1 s). */
   windowStart: number;
   windowCount: number;
+  /** Časy posledních zpráv v chatu (okno `CHAT_RATE_WINDOW_MS`). */
+  chatTimes: number[];
   lastSeen: number;
 }
 
@@ -91,12 +96,13 @@ interface Room {
   state: RoomState;
   createdAt: number;
   players: Map<string, Conn>;
-  chat: ChatLine[];
 }
 
 const rooms = new Map<string, Room>();
 const connections = new Map<string, Conn>();
 const roomCounters = new Map<GameId, number>();
+/** Historie kanálů — jen v paměti, po restartu prázdná (záměr, žádná DB). */
+const channels = new Map<string, ChatLine[]>();
 
 // ── pomocné ───────────────────────────────────────────────────────────
 
@@ -114,15 +120,18 @@ function sendError(conn: Conn, code: ErrorCode, message?: string): void {
   send(conn, { t: 'error', code, message });
 }
 
-function broadcast(room: Room, message: ServerMessage, exceptId?: string): void {
-  for (const player of room.players.values()) {
-    if (player.id === exceptId) continue;
-    send(player, message);
-  }
+function sendSystem(conn: Conn, text: string): void {
+  send(conn, { t: 'event', event: { kind: 'system', text, at: Date.now() } });
 }
 
 function summary(identity: NetIdentity): PlayerSummary {
-  return { id: identity.id, name: identity.name, role: identity.role };
+  return {
+    id: identity.id,
+    name: identity.name,
+    role: identity.role,
+    avatar: identity.avatar,
+    avatarId: identity.avatarId,
+  };
 }
 
 function roomInfo(room: Room): RoomInfo {
@@ -135,12 +144,7 @@ function roomInfo(room: Room): RoomInfo {
   };
 }
 
-/**
- * Identita hráče. **V M0 jen host** — jméno si nikdo neposílá sám.
- * V M1 sem přibude resoluce cookie `zion_session` → ZIS (`/api/auth/me`)
- * a `role` se překlopí na `zis`; zbytek hry se nemění.
- */
-function identityForConnection(): NetIdentity {
+function guestIdentity(): NetIdentity {
   const id = `g_${randomBytes(4).toString('hex')}`;
   return {
     id,
@@ -168,6 +172,123 @@ function rateLimited(conn: Conn, now: number): boolean {
   return conn.windowCount > MAX_INBOUND_PER_SEC;
 }
 
+// ── kanály a chat ─────────────────────────────────────────────────────
+
+function channelOf(conn: Conn): string {
+  return conn.room ? `arena:${conn.room.id}` : 'park';
+}
+
+function historyOf(channel: string): ChatLine[] {
+  return channels.get(channel) ?? [];
+}
+
+function pushLine(channel: string, line: ChatLine): void {
+  const history = channels.get(channel) ?? [];
+  history.push(line);
+  if (history.length > CHAT_HISTORY_LEN) history.splice(0, history.length - CHAT_HISTORY_LEN);
+  channels.set(channel, history);
+}
+
+function membersOf(channel: string): Conn[] {
+  return [...connections.values()].filter(
+    (conn) => conn.helloSent && channelOf(conn) === channel,
+  );
+}
+
+function broadcastChannel(channel: string, message: ServerMessage, exceptId?: string): void {
+  for (const conn of membersOf(channel)) {
+    if (conn.id === exceptId) continue;
+    send(conn, message);
+  }
+}
+
+function announceJoin(conn: Conn): void {
+  if (conn.announced) return;
+  conn.announced = true;
+  broadcastChannel(
+    channelOf(conn),
+    { t: 'event', event: { kind: 'join', player: summary(conn.identity) } },
+    conn.id,
+  );
+}
+
+function announceLeave(conn: Conn, channel: string): void {
+  if (!conn.announced) return;
+  conn.announced = false;
+  broadcastChannel(
+    channel,
+    { t: 'event', event: { kind: 'leave', id: conn.identity.id, name: conn.identity.name } },
+    conn.id,
+  );
+}
+
+/** Očista textu: pryč s HTML tagy, řídicími znaky a `<`/`>`, strop délky. */
+function cleanText(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, CHAT_MAX_LEN);
+}
+
+function handleCommand(conn: Conn, channel: string, text: string): void {
+  const [command, ...rest] = text.split(' ');
+  switch (command?.toLowerCase()) {
+    case '/who': {
+      const names = membersOf(channel).map((member) =>
+        member.identity.role === 'zis' ? member.identity.name : `${member.identity.name} (host)`,
+      );
+      sendSystem(conn, names.length > 0 ? `v kanálu (${names.length}): ${names.join(', ')}` : 'nikdo tu není');
+      return;
+    }
+    case '/help':
+      sendSystem(conn, 'příkazy: /who (kdo je tu) · /help · jinak piš rovnou');
+      return;
+    default:
+      sendSystem(conn, `neznámý příkaz ${command ?? ''} — zkus /help`);
+  }
+}
+
+/**
+ * Chat. Psát smí jen přihlášený (ZIS); host dostane `read_only`, ne ticho.
+ * Rate limit je per spojení (2 zprávy / 2 s) — server, ne UI.
+ */
+function postChat(conn: Conn, raw: string): void {
+  if (conn.identity.role !== 'zis') {
+    sendError(conn, 'read_only', 'piš jako přihlášený (ZIS)');
+    return;
+  }
+
+  const now = Date.now();
+  conn.chatTimes = conn.chatTimes.filter((time) => now - time < CHAT_RATE_WINDOW_MS);
+  if (conn.chatTimes.length >= CHAT_RATE_MESSAGES) {
+    sendError(conn, 'rate_limited', 'příliš rychle');
+    return;
+  }
+
+  const text = cleanText(raw);
+  if (!text) return;
+  conn.chatTimes.push(now);
+
+  if (text.startsWith('/')) {
+    handleCommand(conn, channelOf(conn), text);
+    return;
+  }
+
+  const line: ChatLine = {
+    id: conn.identity.id,
+    name: conn.identity.name,
+    role: conn.identity.role,
+    text,
+    at: now,
+  };
+  pushLine(channelOf(conn), line);
+  stats.chat += 1;
+  broadcastChannel(channelOf(conn), { t: 'event', event: { kind: 'chat', ...line } });
+}
+
 // ── místnosti ─────────────────────────────────────────────────────────
 
 function createRoom(game: GameId): Room {
@@ -179,7 +300,6 @@ function createRoom(game: GameId): Room {
     state: 'waiting',
     createdAt: Date.now(),
     players: new Map(),
-    chat: [],
   };
   rooms.set(room.id, room);
   log(`room created id=${room.id} total=${rooms.size}`);
@@ -189,13 +309,23 @@ function createRoom(game: GameId): Room {
 function leaveRoom(conn: Conn, reason: string): void {
   const room = conn.room;
   if (!room) return;
+
+  const channel = `arena:${room.id}`;
+  announceLeave(conn, channel);
   conn.room = null;
   room.players.delete(conn.id);
-  broadcast(room, { t: 'event', event: { kind: 'leave', id: conn.identity.id, name: conn.identity.name } });
   log(`leave room=${room.id} id=${conn.identity.id} reason=${reason} players=${room.players.size}`);
+
   if (room.players.size === 0) {
     rooms.delete(room.id);
+    channels.delete(channel);
     log(`room removed id=${room.id} total=${rooms.size}`);
+  }
+
+  // zpátky do parku — ohlásit se tam a dát vědět, že je hráč zase venku
+  if (conn.helloSent) {
+    announceJoin(conn);
+    sendSystem(conn, 'jsi zpátky v parku');
   }
 }
 
@@ -229,6 +359,9 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string): void {
     room = createRoom(game);
   }
 
+  // odchod z parku musí být ohlášený dřív, než se změní kanál
+  announceLeave(conn, 'park');
+
   room.players.set(conn.id, conn);
   conn.room = room;
 
@@ -236,18 +369,18 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string): void {
     t: 'room',
     room: roomInfo(room),
     occupants: [...room.players.values()].map((player) => summary(player.identity)),
-    // M0: bez simulace není kam hráče postavit. M2a doplní spawn z `ARENA_SPAWN`.
+    // M0/M1: bez simulace není kam hráče postavit. M2a doplní spawn z `ARENA_SPAWN`.
     spawn: null,
-    history: room.chat.map((line) => ({ ...line })),
+    history: [...historyOf(`arena:${room.id}`)],
   });
 
-  broadcast(room, { t: 'event', event: { kind: 'join', player: summary(conn.identity) } }, conn.id);
+  announceJoin(conn);
   log(`join room=${room.id} id=${conn.identity.id} role=${conn.identity.role} players=${room.players.size}`);
 }
 
 // ── zprávy ────────────────────────────────────────────────────────────
 
-function handleMessage(conn: Conn, message: ClientMessage): void {
+async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> {
   switch (message.t) {
     case 'hello': {
       if (message.proto !== PROTO_VERSION) {
@@ -255,7 +388,10 @@ function handleMessage(conn: Conn, message: ClientMessage): void {
         conn.socket.close(1002, 'proto_mismatch');
         return;
       }
+      conn.identity = await conn.identityReady;
       conn.helloSent = true;
+
+      const channel = channelOf(conn);
       send(conn, {
         t: 'welcome',
         proto: PROTO_VERSION,
@@ -264,7 +400,14 @@ function handleMessage(conn: Conn, message: ClientMessage): void {
         serverTime: Date.now(),
         tickHz: TICK_HZ,
         snapshotHz: SNAPSHOT_HZ,
+        history: [...historyOf(channel)],
+        online: membersOf(channel).length,
+        members: membersOf(channel).map((member) => summary(member.identity)),
       });
+      announceJoin(conn);
+      log(
+        `hello id=${conn.identity.id} role=${conn.identity.role} name=${conn.identity.name} channel=${channel}`,
+      );
       return;
     }
 
@@ -286,8 +429,7 @@ function handleMessage(conn: Conn, message: ClientMessage): void {
       return;
 
     case 'chat':
-      // M1: až bude ZIS identita, protáhne se text filtrem, rate limitem a historií.
-      sendError(conn, 'not_available', 'chat dorazí s identitou ZIS (M1)');
+      postChat(conn, message.text);
       return;
 
     case 'ping':
@@ -297,21 +439,23 @@ function handleMessage(conn: Conn, message: ClientMessage): void {
 }
 
 function onConnection(socket: WebSocket, request: IncomingMessage): void {
+  const guest = guestIdentity();
   const conn: Conn = {
     id: `c_${randomBytes(6).toString('hex')}`,
     socket,
-    identity: identityForConnection(),
+    identity: guest,
+    identityReady: resolveIdentity(request.headers.cookie, guest),
+    announced: false,
     helloSent: false,
     alive: true,
     room: null,
     windowStart: Date.now(),
     windowCount: 0,
+    chatTimes: [],
     lastSeen: Date.now(),
   };
   connections.set(conn.id, conn);
-  log(
-    `connect id=${conn.id} ip=${request.socket.remoteAddress ?? '?'} conns=${connections.size}`,
-  );
+  log(`connect id=${conn.id} ip=${request.socket.remoteAddress ?? '?'} conns=${connections.size}`);
 
   socket.on('pong', () => {
     conn.alive = true;
@@ -332,8 +476,7 @@ function onConnection(socket: WebSocket, request: IncomingMessage): void {
       return;
     }
 
-    const raw = data.toString();
-    const message = parseClientMessage(raw);
+    const message = parseClientMessage(data.toString());
     if (!message) {
       stats.rejected += 1;
       sendError(conn, 'bad_frame');
@@ -342,11 +485,15 @@ function onConnection(socket: WebSocket, request: IncomingMessage): void {
 
     stats.messagesIn += 1;
     stats.byType.set(message.t, (stats.byType.get(message.t) ?? 0) + 1);
-    handleMessage(conn, message);
+    void handleMessage(conn, message).catch((error: unknown) => {
+      log(`handler error id=${conn.id} ${String(error)}`);
+    });
   });
 
   socket.on('close', () => {
+    const channel = channelOf(conn);
     leaveRoom(conn, 'close');
+    announceLeave(conn, channel);
     connections.delete(conn.id);
     log(`disconnect id=${conn.id} conns=${connections.size}`);
   });
@@ -378,6 +525,15 @@ function metricsText(): string {
     '# HELP nirvana_net_players hráči v místnostech',
     '# TYPE nirvana_net_players gauge',
     `nirvana_net_players ${[...rooms.values()].reduce((sum, room) => sum + room.players.size, 0)}`,
+    '# HELP nirvana_net_chat_lines zpráv v paměti (všechny kanály)',
+    '# TYPE nirvana_net_chat_lines gauge',
+    `nirvana_net_chat_lines ${[...channels.values()].reduce((sum, history) => sum + history.length, 0)}`,
+    '# HELP nirvana_net_zis_cache položek v cache identit',
+    '# TYPE nirvana_net_zis_cache gauge',
+    `nirvana_net_zis_cache ${identityCacheSize()}`,
+    '# HELP nirvana_net_chat_messages_total odeslané chatové zprávy',
+    '# TYPE nirvana_net_chat_messages_total counter',
+    `nirvana_net_chat_messages_total ${stats.chat}`,
     '# HELP nirvana_net_messages_total zprávy po směru',
     '# TYPE nirvana_net_messages_total counter',
     `nirvana_net_messages_total{direction="in"} ${stats.messagesIn}`,

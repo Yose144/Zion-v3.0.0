@@ -96,6 +96,35 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `node_modules/` — skript proto dělá `mkdir -p <stage>/node_modules`.
 - **Past se SSH:** EDGE banuje rychlé sériové SSH (fail2ban). Deploy skript drží
   jedno `ControlMaster` spojení; ruční zásahy dělej přes `zion-v6` (IPv6).
+- **K1.2 (root workspace) rozbil deploy:** `node_modules` ve standalone stromu
+  leží o úroveň výš (`.next/standalone/node_modules`) a appka je zanořená
+  v `.next/standalone/apps/<app>`. `deploy-nirvana.sh` proto artefakt před
+  nasazením **zplošťuje** do `.next/standalone-flat` (app dir + node_modules
+  vedle sebe), aby unit zůstal `WorkingDirectory=…/nirvana` + `node server.js`.
+  Když se změní layout standalone výstupu, tohle je první místo, kde to spadne
+  („incomplete standalone artifact").
+
+### Chat (M1, 2026-11-01)
+
+- **Identitu dodává server.** Klient posílá jen `hello` a text; jméno, avatar
+  i právo psát plyne z cookie `zion_session` → ZIS `/api/auth/me` (cache 60 s).
+  Nikdy neposílej jméno z prohlížeče — jinak si kdokoli napíše „admin".
+- **Kanály:** `park` (mimo místnost) a `arena:<room>`. Historie 200 zpráv
+  v RAM, po restartu služby prázdná (záměr, žádná DB).
+- **Psát smí jen `zis`.** Host dostane `read_only`; UI to vysvětlí, ale
+  rozhoduje server.
+- **Rate limit je serverový** (2 zprávy / 2 s) — UI ho jen zobrazí.
+- **Čištění textu:** pryč s HTML tagy (`<[^>]*>`), řídicími znaky a `<`/`>`,
+  strop 240 znaků. Vnitřní text tagu zůstává jako text („alert(1)"), to je OK.
+- **Klávesy v inputu nesmí utéct do hry:** `onKeyDown/onKeyUp` volá
+  `stopPropagation`, jinak `W` rozjede vozítko na Venuši (otestováno).
+- **`T` otevře chat, `Esc` zavře**; otevření uvolní pointer lock (aréna).
+- **Jeden `NetProvider` v `app/layout.tsx`** = jedno WS na kartu. `ChatDock`
+  je tamtéž, takže chat je na každé stránce včetně her.
+- **Lokální test:** `NEXT_PUBLIC_NIRVANA_NET_URL=ws://127.0.0.1:3011/net`
+  při buildu (jinak klient míří na `ws://<host>/net`, což dev server neumí).
+  Pozor: propíše se do bundlu — před deployem build bez té proměnné (dělá to
+  deploy skript sám).
 
 ## Jupiter Station — `/park` (2026-11-01)
 

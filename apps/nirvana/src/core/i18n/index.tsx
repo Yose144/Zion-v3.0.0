@@ -59,6 +59,18 @@ const COPY = {
   hiranSend: { cs: 'Odeslat', en: 'Send' },
   hiranFocusSun: { cs: 'Přiblížit ke Slunci', en: 'Fly to the Sun' },
   hiranBackToEarth: { cs: 'Zpět k Zemi', en: 'Back to Earth' },
+  chat: { cs: 'Chat', en: 'Chat' },
+  chatOnline: { cs: 'online', en: 'online' },
+  chatConnecting: { cs: 'připojuji…', en: 'connecting…' },
+  chatOffline: { cs: 'offline', en: 'offline' },
+  chatEmpty: { cs: 'Zatím ticho. Napiš první zprávu.', en: 'Quiet so far. Say something.' },
+  chatPlaceholder: { cs: 'Napiš zprávu…', en: 'Write a message…' },
+  chatSend: { cs: 'Odeslat', en: 'Send' },
+  chatGuest: {
+    cs: 'Psát může jen přihlášený — host vidí, ale nemluví.',
+    en: 'Only signed-in users can write — guests can read, not speak.',
+  },
+  chatGuestLink: { cs: 'Přihlásit se', en: 'Sign in' },
 } as const;
 
 type CopyKey = keyof typeof COPY;
