@@ -13,6 +13,15 @@ import {
   AVATAR_CIRCLES, OASIS_AVATARS,
   type OasisAvatar, type OasisAvatarCircle, type OasisAvatarRay, type OasisAvatarRarity,
 } from '@/lib/oasis/avatars';
+import GAME_PORTRAITS from '@/lib/oasis/game-portraits.json';
+
+/**
+ * Herní náhled: postava vyrenderovaná z **téhož modelu, jaký běží ve hře**
+ * (`apps/nirvana/src/core/avatars`). Generuje `scripts/ops/oasis-avatar-render`.
+ * Finální portréty přijdou jako druhá vrstva — změní se jen tento zdroj.
+ */
+const PORTRAITS = GAME_PORTRAITS as Record<string, string>;
+const portraitOf = (a: OasisAvatar): string | null => PORTRAITS[String(a.id)] ?? null;
 
 const OASIS_URL = 'https://oasis.zionterranova.com';
 
@@ -50,6 +59,7 @@ const Copy = {
   nftLabel: { cs: 'NFT vzácnost', en: 'NFT rarity' },
   artConcept: { cs: 'Konceptový portrét · OASIS Collection', en: 'Concept portrait · OASIS Collection' },
   artFinal: { cs: 'Detailní portrét · OASIS Collection', en: 'Detailed portrait · OASIS Collection' },
+  artGame: { cs: 'Herní 3D náhled · procedurální model', en: 'In-game 3D preview · procedural model' },
   heroAlt: { cs: 'Brána ZION OASIS — úvodní ilustrace', en: 'ZION OASIS gateway — cover illustration' },
   close: { cs: 'Zavřít', en: 'Close' },
   idLabel: { cs: 'č.', en: 'no.' },
@@ -98,9 +108,11 @@ const RARITY_ORDER: OasisAvatarRarity[] = ['Rare', 'Epic', 'Legendary', 'OneOfOn
 
 function AvatarVisual({ a, size, cs }: { a: OasisAvatar; size: 'card' | 'modal'; cs: boolean }) {
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
-  const src = size === 'modal' ? (a.art.full || a.art.card) : a.art.card;
+  const portrait = portraitOf(a);
+  // Herní 3D náhled má přednost; koncept z OASIS Collection je fallback.
+  const src = portrait ?? (size === 'modal' ? (a.art.full || a.art.card) : a.art.card);
   const initial = (a.name.trim()[0] ?? '?').toUpperCase();
-  const box = size === 'modal' ? 'h-40 w-40 text-3xl md:h-48 md:w-48' : 'h-16 w-16 text-xl';
+  const box = size === 'modal' ? 'h-56 w-44 text-3xl md:h-64 md:w-52' : 'h-16 w-16 text-xl';
   if (src) {
     return (
       <img
@@ -126,70 +138,77 @@ function AvatarVisual({ a, size, cs }: { a: OasisAvatar; size: 'card' | 'modal';
 function AvatarCard({ a, cs, onOpen }: { a: OasisAvatar; cs: boolean; onOpen: () => void }) {
   const ray = RAY_META[a.ray] ?? RAY_META.Blue;
   const rarity = RARITY_META[a.rarity] ?? RARITY_META.Rare;
+  const src = portraitOf(a) ?? a.art.card;
+  const initial = (a.name.trim()[0] ?? '?').toUpperCase();
+  const detail = Copy.detailLabel[cs ? 'cs' : 'en'];
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="zion-rainbow-sub group flex h-full w-full flex-col gap-3 p-4 text-left transition-colors hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/50"
       style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
-      aria-label={`${a.name} — ${Copy.detailLabel[cs ? 'cs' : 'en']}`}
+      aria-label={`${a.name} — ${detail}`}
+      className="group relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#08050f] text-left transition duration-300 hover:-translate-y-1 hover:border-white/30 hover:shadow-[0_18px_40px_-16px_rgba(0,0,0,0.9)] focus:outline-none focus-visible:ring-2 focus-visible:ring-zion-gold/60"
     >
-      <div className="flex items-start gap-3">
-        <AvatarVisual a={a} size="card" cs={cs} />
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold leading-snug text-white">{a.name}</h3>
-          <p className="text-xs leading-snug text-gray-400">{a.subtitle}</p>
+      {/* portrét — poměr 4:5 jako v herním rosteru */}
+      <div className="relative aspect-[4/5] w-full overflow-hidden" style={{ background: ray.orb }}>
+        {src ? (
+          <img
+            src={src}
+            alt={cs ? `Portrét avatara: ${a.name}` : `Avatar portrait: ${a.name}`}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover transition duration-500 will-change-transform group-hover:scale-[1.06]"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-black/70" aria-hidden>
+            {initial}
+          </div>
+        )}
+
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2.5">
+          <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold backdrop-blur ${rarity.badge}`}>
+            <Gem className="h-2.5 w-2.5" /> {rarity[cs ? 'cs' : 'en']}
+          </span>
+          <span className="rounded-full border border-zion-gold/40 bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-zion-gold backdrop-blur">
+            CL{a.cl}
+          </span>
+        </div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-3 pb-2.5 pt-10">
+          <h3 className="truncate text-sm font-semibold text-white">{a.name}</h3>
+          <p className="truncate text-[11px] text-zion-gold/85">{a.subtitle}</p>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold ${rarity.badge}`}>
-          {rarity[cs ? 'cs' : 'en']}
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-gray-300">
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: ray.hex }} />
-          {ray[cs ? 'cs' : 'en']}
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/25 bg-zion-gold/5 px-2 py-0.5 text-zion-gold">
-          CL{a.cl}{a.clName ? ` · ${a.clName}` : ''}
-        </span>
-        {a.quests.length > 0 && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-gray-400">
-            <Swords className="h-2.5 w-2.5" /> {a.quests.length} {Copy.quests[cs ? 'cs' : 'en']}
+
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
+        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-gray-400">
+          <span className="inline-flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: ray.hex }} />
+            {ray[cs ? 'cs' : 'en']}
           </span>
+          {a.quests.length > 0 && (
+            <span className="inline-flex items-center gap-1">
+              <Swords className="h-2.5 w-2.5" /> {a.quests.length} {Copy.quests[cs ? 'cs' : 'en']}
+            </span>
+          )}
+          {a.key && (
+            <span className="inline-flex items-center gap-1 text-amber-300/90">
+              <KeyRound className="h-2.5 w-2.5" /> {a.key}
+            </span>
+          )}
+        </div>
+        {(a.essence.cs || a.essence.en) && (
+          <p className="line-clamp-2 text-[11px] leading-relaxed text-gray-300">
+            {a.essence[cs ? 'cs' : 'en'] || a.essence.en}
+          </p>
         )}
-        {a.key && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/25 bg-zion-gold/5 px-2 py-0.5 text-amber-300">
-            <KeyRound className="h-2.5 w-2.5" /> {a.key}
+        <p className="mt-auto flex items-center justify-between gap-2 pt-1 text-[10px] uppercase tracking-wider text-gray-500">
+          <span className="truncate">{a.role || a.location}</span>
+          <span className="inline-flex shrink-0 items-center gap-0.5 text-zion-gold/70 transition-colors group-hover:text-zion-gold">
+            {detail} <ChevronRight className="h-3 w-3" />
           </span>
-        )}
+        </p>
       </div>
-      {(a.essence.cs || a.essence.en) && (
-        <p className="line-clamp-4 text-[11px] leading-relaxed text-gray-300">{a.essence[cs ? 'cs' : 'en'] || a.essence.en}</p>
-      )}
-      {(a.role || a.location) && (
-        <p className="text-[11px] leading-relaxed text-gray-400">
-          {a.role && <span className="text-gray-300">{a.role}</span>}
-          {a.role && a.location && ' · '}
-          {a.location}
-        </p>
-      )}
-      {a.ability && (
-        <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-gray-300">
-          <Zap className="mt-0.5 h-3 w-3 shrink-0 text-zion-gold" />
-          <span>{a.ability}</span>
-        </p>
-      )}
-      {a.teaching && (
-        <p className="border-l-2 border-zion-purple/40 pl-2 text-[11px] italic leading-relaxed text-gray-400">
-          {a.teaching}
-        </p>
-      )}
-      <p className="mt-auto flex items-center justify-between gap-2 pt-1 text-[10px] uppercase tracking-wider text-gray-500">
-        <span className="truncate">{a.questLine ? `${Copy.questLineLabel[cs ? 'cs' : 'en']}: ${a.questLine}` : ''}</span>
-        <span className="inline-flex shrink-0 items-center gap-0.5 text-zion-gold/70 transition-colors group-hover:text-zion-gold">
-          {Copy.detailLabel[cs ? 'cs' : 'en']} <ChevronRight className="h-3 w-3" />
-        </span>
-      </p>
     </button>
   );
 }
@@ -254,7 +273,9 @@ function AvatarModal({ a, cs, onClose }: { a: OasisAvatar; cs: boolean; onClose:
             {a.quote && <p className="mt-2 text-xs italic leading-relaxed text-gray-400">„{a.quote}“</p>}
             {a.art.card && (
               <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] uppercase tracking-wider text-gray-400">
-                {(a.art.final ? Copy.artFinal : Copy.artConcept)[cs ? 'cs' : 'en']}
+                {(portraitOf(a) ? Copy.artGame : a.art.final ? Copy.artFinal : Copy.artConcept)[
+                  cs ? 'cs' : 'en'
+                ]}
               </span>
             )}
           </div>
@@ -571,7 +592,7 @@ export default function OasisAvatarsPage() {
                   </span>
                   {note && <span className="text-xs italic text-gray-500">{note[cs ? 'cs' : 'en']}</span>}
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {list.map((a) => <AvatarCard key={a.id} a={a} cs={cs} onOpen={() => setSelected(a)} />)}
                 </div>
               </motion.div>

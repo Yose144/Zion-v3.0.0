@@ -236,6 +236,28 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Model je z primitiv** (`AvatarModel.tsx`, ~18 meshů) — v repu nejsou žádné
   glb/gltf, takže „namodelovat 200 postav" nejde. Kit je navržený tak, aby šel
   později vyměnit za skutečné modely bez změny zbytku.
+
+### Avatary — bohatší model a portréty (2026-11-01)
+
+- **Geometrie se staví v `body.ts`, ne v JSX.** `buildAvatarMesh(look)` složí
+  ~45 dílů do **tří bufferů** (tělo / kov / světlo) s barvou ve vrcholech;
+  postava je tak 1–3 draw calls místo ~18. Ve hře se potká až 8 avatarů, takže
+  na tom záleží. `AvatarModel.tsx` je jen tenký renderer (props se nemění).
+- **Pozor na úhly u `SphereGeometry` / `CylinderGeometry`:** `phiStart` u koule
+  jde od −X přes **+Z (předek)**, `thetaStart` u válce začíná na **+Z**. První
+  pokusy o kápi a závoj proto kreslily přes obličej — zadní oblouk je u koule
+  kolem `1,5π`, u válce `0,36π…1,64π`.
+- **Vzhled je deterministický a datový:** `kit.ts` bere z podtitulu archetyp
+  (warrior/sage/royal/artist/healer/mystic/wanderer) a z něj oděv, vlasy,
+  pokrývku hlavy, plášť i postoj. `ray`/`rarity`/`cl` z katalogu dávají paletu,
+  korunu a auru. Neměnit na náhodu — cizí hráč se kreslí jen z `avatarId`.
+- **Portréty na webu vznikají z tohoto modelu:** `scripts/ops/oasis-avatar-render/`
+  (headless Chromium + ANGLE/Metal) vyrenderuje 200 karet do
+  `apps/website-v2.9/public/oasis-assets/game-portraits/`. Když se model změní,
+  karty se musí přerenderovat (`node scripts/ops/oasis-avatar-render/render.mjs --force`),
+  jinak web ukazuje starou podobu než hra.
+- **Kamera portrétu se počítá z bounding boxu** postavy — hůl/kopí přes 2 m jinak
+  uřízne hlavu. Pevná kamera to nezvládne.
 - **Ukládá se do ZIS** `avatar3d.avatarId` (+ `callsign`, `bodyType`,
   `neonColor`). ZIS schéma (`apps/identity/src/routes/auth.ts`,
   `UpdateProfileSchema`) muselo `avatarId` povolit — do té doby ho zod tiše
@@ -290,6 +312,33 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   z prvního pokusu: 0 zásahů).
 - **VR:** XR session se otevírá, ale na headsetu to není otestované. Interakce
   jsou raycast (klik na skříň/kolo), takže by měly projít; nehlásit víc, než víme.
+
+### Jupiter Station — rozšíření (2026-11-01)
+
+- **Pátá skříň = Asteroidy** (`core/park/games/asteroids.ts`). Stejný kontrakt
+  jako ostatní canvas hry: `frame` ve smyčce nic nealokuje (skály, střely i
+  hvězdy jsou předalokovaná pole), vstup je abstraktní `pointer`/`key`.
+  Ukazatel je volant i plyn (ve VR paprsek), takže hra jde hrát i bez kláves.
+- **Skříně jsou pravidelný oblouk** (`CABINETS` v `ParkScene.tsx`, −11,2 … 11,2).
+  Nová hra se přidává do tohoto pole + `PARK_GAMES`, ne na čtyři místa.
+- **Tabule zná všechny hry, co se dají zahrát.** `TITLES` v `page.tsx`,
+  `emptyScores()` v `scores.ts`, `GAMES` + `emptyBoard()` v API routě a
+  `GAMES`/`TARGETS` v `challenge.ts` musí sedět — jinak skóre zmizí
+  (Merkur `fight` na tabuli chyběl, protože se přidal jen na server).
+- **Ruské kolo má konec.** Při jídě se kolo točí rychleji (0,26 rad/s = otočka
+  ~24 s) a kamera jede stejnou rychlostí jako gondola; po 25 s se jízda
+  dokončí sama. První dokončená jízda dne vrátí vstupné (`claimRideBonus`) —
+  bilance je nula, takže z toho nejde tisknout žetony. Sesednutí předčasně je
+  jen konec, bez bonusu.
+- **Klávesy canvas her se pouští při ztrátě fokusu** (blur / visibilitychange),
+  stejně jako u Merkuru — jinak Had jede dál po přepnutí tabu.
+- **Skříň ukazuje rekord, výzva ukazuje postup** (`profile.best`), takže hráč
+  vidí, jak daleko je od cíle.
+- **E2E: `apps/nirvana/e2e/park-fair.mjs`.** Logika Asteroid běží v Node nad
+  falešným canvasem (Proxy, který zaznamenává `fillRect`/`translate` — stav hry
+  je vidět jen z kresby); prohlížečová část ověřuje pět skříní, spuštění/ukončení
+  hry, žetony (dohraná hra dává, předčasný odchod ne), tabuli Merkura přes API
+  a ukončení jízdy. Spustit s appkou na `:3010`.
 
 ## Mars Arena — `/mars` (2026-11-01)
 
