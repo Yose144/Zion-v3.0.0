@@ -36,6 +36,14 @@ export default function NebeskaFlotilaPreview({
 
   useEffect(() => {
     setAvailable(isWebGLAvailable());
+    // Next/React někdy nechá canvas v defaultu 300×150, dokud nedorazí resize.
+    const kick = () => window.dispatchEvent(new Event('resize'));
+    const t1 = window.setTimeout(kick, 120);
+    const t2 = window.setTimeout(kick, 600);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
   }, []);
 
   if (!available) {
@@ -51,7 +59,11 @@ export default function NebeskaFlotilaPreview({
   }
 
   return (
-    <div ref={shell} className={`relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 ${className}`}>
+    <div
+      ref={shell}
+      className={`relative block w-full overflow-hidden rounded-3xl border border-white/10 bg-black/40 ${className}`}
+      style={{ height: 'inherit', minHeight: 320 }}
+    >
       <Canvas
         frameloop={visible ? 'always' : 'never'}
         dpr={[1, 1.5]}
