@@ -14,6 +14,7 @@ import { ComputePortal } from '@/portals/compute/ComputePortal';
 import { HarborPortal } from '@/portals/freeworld/HarborPortal';
 import { GatePortal } from '@/portals/gate/GatePortal';
 import { FleetPortal } from '@/portals/fleet/FleetPortal';
+import type { FleetLeg } from '@/core/scene/universe/SkyFleet';
 import { HiranPortal } from '@/portals/hiran/HiranPortal';
 import { ParkPortal } from '@/portals/park/ParkPortal';
 import { IssobellaPortal } from '@/portals/issobella/IssobellaPortal';
@@ -61,6 +62,7 @@ export function Shell() {
   const [hiranState, setHiranState] = useState<HiranState>(() => hiranReviewOverride() ?? 'idle');
   const [reviewState] = useState<HiranState | null>(() => hiranReviewOverride());
   const [focus, setFocus] = useState<'earth' | 'sun' | 'jupiter' | 'fleet'>('earth');
+  const [fleetLeg, setFleetLeg] = useState<FleetLeg | null>(null);
   const [xrWanted, setXrWanted] = useState(false);
   const [xrSupported, setXrSupported] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -200,6 +202,7 @@ export function Shell() {
           label={t('gate')}
           focus={focus}
           hiranState={hiranState}
+          fleetLeg={fleetLeg}
         />
       </div>
       <header className="chrome">
@@ -287,7 +290,9 @@ export function Shell() {
       {portal === 'compute' && <ComputePortal onClose={() => setPortal(null)} />}
       {portal === 'park' && <ParkPortal onClose={closePortal} />}
       {portal === 'archa' && <ArchaPortal onClose={closePortal} />}
-      {portal === 'fleet' && <FleetPortal onClose={closePortal} />}
+      {portal === 'fleet' && (
+        <FleetPortal onClose={closePortal} leg={fleetLeg} onSelectLeg={setFleetLeg} />
+      )}
       {portal === 'hiran' && (
         <HiranPortal
           onClose={closePortal}

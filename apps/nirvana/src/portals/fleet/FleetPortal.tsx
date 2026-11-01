@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/core/i18n';
+import type { FleetLeg } from '@/core/scene/universe/SkyFleet';
 
 /**
  * Okno nebeské flotily — pohyblivý uzel L6.
@@ -9,9 +10,22 @@ import { useI18n } from '@/core/i18n';
  * existuje. Nic z toho neexistuje — proto je v okně status u každého trupu
  * a žádné číslo, které by se dalo splést s hardwarem.
  */
-export function FleetPortal({ onClose }: { onClose: () => void }) {
+export function FleetPortal({
+  onClose,
+  leg,
+  onSelectLeg,
+}: {
+  onClose: () => void;
+  leg: FleetLeg | null;
+  onSelectLeg: (next: FleetLeg | null) => void;
+}) {
   const { t, lang } = useI18n();
   const cs = lang === 'cs';
+
+  const legs: { id: FleetLeg; label: string }[] = [
+    { id: 'lumi', label: cs ? 'Z LUMI (Kostarika)' : 'From LUMI (Costa Rica)' },
+    { id: 'issobella', label: cs ? 'Z prstence Issobella' : 'From the Issobella ring' },
+  ];
 
   return (
     <aside className="portal" role="dialog" aria-label={cs ? 'Nebeská flotila' : 'The sky fleet'}>
@@ -48,6 +62,37 @@ export function FleetPortal({ onClose }: { onClose: () => void }) {
         {cs
           ? 'Kýl položený není a žádný trup neexistuje. Nahoru dnes vozí jiní — flotila si nekupuje slávu, kupuje místo. Kniha Nabukano je kánon, tohle okno je jeho obraz.'
           : 'No keel has been laid and no hull exists. Others carry people up today — the fleet buys a place, not glory. The book Nabukano is the canon; this window is its image.'}
+      </p>
+
+      <div className="hiran-actions">
+        {legs.map((l) => (
+          <button
+            key={l.id}
+            type="button"
+            onClick={() => onSelectLeg(leg === l.id ? null : l.id)}
+            style={{
+              borderColor: leg === l.id ? '#7fd3ff' : undefined,
+              color: leg === l.id ? '#bfe9ff' : undefined,
+            }}
+          >
+            {l.label}
+          </button>
+        ))}
+        {leg && (
+          <button type="button" onClick={() => onSelectLeg(null)}>
+            {cs ? 'Zrušit trasu' : 'Clear the route'}
+          </button>
+        )}
+      </div>
+
+      <p className="muted">
+        {leg
+          ? cs
+            ? 'Trasa je animace konceptu: oblouk a světlo na cestě. Žádný let, žádný čas příletu, žádný slib — jen obraz toho, kudy by cesta vedla.'
+            : 'The route is a concept animation: an arc and a light along it. No flight, no arrival time, no promise — only an image of where the path would lead.'
+          : cs
+            ? 'Vyber trasu a uvidíš oblouk od startu k doku. Je to obraz, ne jízdní řád.'
+            : 'Pick a route to see the arc from the start to the dock. It is an image, not a timetable.'}
       </p>
 
       <div className="hiran-actions">

@@ -194,3 +194,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Naměřeno (swiftshader, 800×600, dpr 1, `?sceneAudit=1`):** 125 draw calls,
   72 386 tris, 39 textur, `invalidVertices: 0`, tier A. Flotila přidává
   ~30 draw calls, jen když je v záběru (frustum culling).
+- **Trasa (leg) se zamrazuje `key`.** `FleetRoute` počítá oblouk v `useMemo`
+  z `clock.elapsedTime` v okamžiku mountu; v `Universe` je proto
+  `{fleetLeg && <FleetRoute key={fleetLeg} … />}`. Bez `key` by se start i cíl
+  přepočítávaly každý frame (nová geometrie = smetí v paměti) a oblouk by
+  odjížděl od LUMI, jak flotila obíhá.
+- **Trasa je animace konceptu, ne let.** Okno to říká nahlas (`FleetPortal`);
+  v kódu proto žádná fyzika, žádné ETA — jen křivka a světlo, které po ní
+  dojde za 6 s a zůstane u doku.

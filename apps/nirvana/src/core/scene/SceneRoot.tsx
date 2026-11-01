@@ -11,6 +11,7 @@ import {
   type GpuBackend,
 } from './backends';
 import { Universe } from './universe/Universe';
+import type { FleetLeg } from './universe/SkyFleet';
 import { quality } from '../../../../shared/scenes/kit/quality';
 import { ScenePost, sceneRenderStats } from '../../../../shared/scenes/kit/post';
 import type { Portal } from '@/core/portals/manifest';
@@ -103,6 +104,7 @@ export function SceneRoot({
   label,
   focus,
   hiranState,
+  fleetLeg,
 }: {
   worlds: WorldPoint[];
   portals: Portal[];
@@ -112,6 +114,7 @@ export function SceneRoot({
   label: string;
   focus?: 'earth' | 'sun' | 'jupiter' | 'fleet';
   hiranState?: HiranState;
+  fleetLeg?: FleetLeg | null;
 }) {
   const [backend, setBackend] = useState<GpuBackend | null>(null);
   const [xrStore] = useState<XRStore>(() => createXRStore({ foveation: 0.5 }));
@@ -182,6 +185,7 @@ export function SceneRoot({
               onSelectWorld={onSelectWorld}
               focus={focus}
               hiranState={hiranState}
+              fleetLeg={fleetLeg}
             />
             <XrEntry store={xrStore} />
           </XR>
@@ -193,6 +197,7 @@ export function SceneRoot({
             onSelectWorld={onSelectWorld}
             focus={focus}
             hiranState={hiranState}
+            fleetLeg={fleetLeg}
           />
         )}
         <UniverseAudit />

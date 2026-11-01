@@ -10,7 +10,7 @@ import type { HiranState } from '@/core/hiran/presence';
 import { worldSlot, EARTH_ORBIT_R, EARTH_ORBIT_SPEED, planetPosition, fleetPosition } from './positions';
 import { NewEarth } from './NewEarth';
 import { SailingArk } from './SailingArk';
-import { SkyFleet } from './SkyFleet';
+import { SkyFleet, FleetRoute, type FleetLeg } from './SkyFleet';
 import { IssobellaRing } from './IssobellaRing';
 import { StarGate } from './StarGate';
 import { OrbitalWorlds } from './OrbitalWorlds';
@@ -56,6 +56,7 @@ export function Universe({
   onSelectWorld,
   focus = 'earth',
   hiranState = 'idle',
+  fleetLeg = null,
 }: {
   worlds: WorldPoint[];
   portals: Portal[];
@@ -63,6 +64,7 @@ export function Universe({
   onSelectWorld: (id: string) => void;
   focus?: 'earth' | 'sun' | 'jupiter' | 'fleet';
   hiranState?: HiranState;
+  fleetLeg?: FleetLeg | null;
 }) {
   const earthSys = useRef<THREE.Group>(null);
   const controls = useRef<{ target: THREE.Vector3 } | null>(null);
@@ -176,6 +178,7 @@ export function Universe({
         <NewEarth />
         <SailingArk onOpen={() => onOpen('archa')} />
         <SkyFleet onOpen={() => onOpen('fleet')} reducedMotion={reducedMotion} />
+        {fleetLeg && <FleetRoute key={fleetLeg} leg={fleetLeg} reducedMotion={reducedMotion} />}
         <IssobellaRing
           worlds={split.ring}
           portal={ringPortal}
