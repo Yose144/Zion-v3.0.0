@@ -90,9 +90,14 @@ zion_advanced 181 · foundation 41 · rag_synthesis 11 · (buddhism 19 = duplik�
 
 - [x] Dataset messages, replay mix (21 %), dedup, **held-out oddělen** — 7 106/379 v `dist/` (v2 rozšíření k 8–15k = nice-to-have, ne blocker)
 - [ ] Výběr base modelu (licence! Llama-3.3-70B je gated → HF token; Qwen je pohodlnější)
-- [ ] Smoke run na existujícím rigu (30 párů) → ověřit pipeline s novým datasetem
-- [ ] Rig: volný disk ≥40 GB (base ~40 GB pro 32B / ~140 GB pro 70B → příp. přes
-      huggingface cache čištění), `finetune_lora.py` aktuální verze syncnuta
+- [x] Smoke run na rigu (2026-11-01): 60 stratifikovaných párů, 1 epocha, 2 opt-steps
+      → **eval_loss 3.17 = reálná hodnota** (žádná memorace jako 0.008 null-runu,
+      žádný overfit 0.28). Pipeline + nový dataset ověřeny E2E. Pád až na save = disk.
+- [x] Rig disk vyčištěn: 250 MB → **2,2 GB volných** (outputs checkpointy smazány,
+      vše archivováno na EDGE vč. run2-ep2). Stačí na 8B run (3×500 MB checkpointy);
+      pro větší model = nový rig s ≥40 GB diskem.
+- [ ] Rig: `finetune_lora.py` aktuální verze syncnuta ✅ (je), base model pro 70B
+      se stáhne na novém rigu z HF (nebo z EDGE archivu 8B pro smoke)
 - [ ] Budget: 70B QLoRA ≈ 4–8× pomalejší než 8B → odhad hodin × cena; mining
       koexistence reálná jen při ≤50 % GPU util
 - [ ] Rollback plán: checkpoint každých 50 kroků → rsync na EDGE (disk rigu hlídat!)

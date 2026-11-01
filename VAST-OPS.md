@@ -41,10 +41,12 @@ Služby (user systemd na zionserver):
 - RTX 3060 12 GB, $0.0544/h (~$39/měs), ssh6.vast.ai:27582
 - Mining: SRBMiner quantus 105,9 MH/s + xmrig rx/0 3 852 H/s — **zion-miner
   stále vypnutý** (restart: `vastctl launch zion --duty 28` — 👤)
-- Hiran archiv: `/root/hiran-train/` (outputs z run 1+2, .hf cache 5,4 GB)
-- ⚠️ **disk ~1,6 GB volných** — před dalším tréninkem nutno vyčistit
-  `outputs/*/checkpoint-*` a příp. `.hf` cache
+- Hiran archiv: `/root/hiran-train/` (finální adaptéry run 1+2, .hf cache 5,4 GB)
+- ✅ **disk 2,2 GB volných** (2026-11-01 vyčištěny všechny checkpointy — archiv
+  na EDGE kompletní vč. run2-ep2; zbývají jen top-level final safetensors)
 - Pipeline fix (`finetune_lora.py` messages+guard) je na rigu syncnutá
+- ✅ Smoke run 2026-11-01: 60 párů nového FULL datasetu, eval_loss **3.17** —
+  pipeline ověřena (žádná memorace); padl až save = tenkrát plný disk
 
 ## 4. Cesta k FULL trainingu (vazba na `HIRAN-FULL-TRAINING-PREP.md`)
 
@@ -66,7 +68,7 @@ Další kroky:
 ## 5. 👤 Fronta rozhodnutí
 
 - [ ] `zion-miner` restart na 58077390 (`vastctl launch zion --duty 28`)
-- [ ] Čištění disku rigu před jakýmkoliv runem
+- [x] Čištění disku rigu — ✅ 2,2 GB (2026-11-01)
 - [ ] Volba base modelu pro FULL (Llama-3.3-70B gated × Qwen2.5-72B otevřený)
 - [ ] Budget schválení pro A100 run (~odhad podle §2 PREP docu)
 - [ ] Alias `hiran-maitreya`/`hiran-issobella` zůstávají mockupy do validace
