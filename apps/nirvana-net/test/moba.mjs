@@ -208,6 +208,11 @@ try {
     const snapBefore = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba;
     const before = snapBefore.heroes.find((hero) => hero.id === roomA.youPlayerId);
     console.log('    (cast:', JSON.stringify({ hero: { x: before.x, z: before.z, alive: before.alive, mana: before.mana }, target: { x: target.x, z: target.z }, dist: Math.round(Math.hypot(before.x - target.x, before.z - target.z)) }), ')');
+    // Projektil žije jen dokud něco netrefí — na blízkého miniona to může být
+    // pod 500 ms, takže `length > 0` v jednom vzorku padalo podle štěstí
+    // (reálně 1 ze 3 běhů). Deterministicky: stačí, že byl v některém
+    // snapshotu po seslání.
+    const castFrom = a.inbox.length;
     a.send({
       t: 'input',
       seq: 99,
@@ -222,7 +227,14 @@ try {
       castX: target.x,
       castZ: target.z,
     });
+    // Projektil žije jen dokud něco netrefí — na blízkého miniona to může být
+    // pod 500 ms, a pak by `length > 0` v jednom vzorku padalo podle štěstí
+    // (reálně flakovalo 1 ze 3 běhů). Deterministicky: stačí, že byl
+    // v některém snapshotu po seslání.
     await sleep(500);
+    const sawProjectile = a.inbox
+      .slice(castFrom)
+      .some((m) => m.t === 'snapshot' && m.game === 'moba' && m.moba.projectiles.length > 0);
     const after = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba;
     const meAfter = after.heroes.find((hero) => hero.id === roomA.youPlayerId);
     // Server kouzlo přijal: mana spadla a běží cooldown. Samotný zásah závisí
@@ -233,7 +245,7 @@ try {
       meAfter.mana < before.mana && meAfter.cooldowns.Q > 0,
       `mana ${before.mana} → ${meAfter.mana}, cd ${meAfter.cooldowns.Q}`,
     );
-    check('kouzlo: projektil je ve snapshotu', after.projectiles.length > 0, String(after.projectiles.length));
+    check('kouzlo: projektil je ve snapshotu', sawProjectile || after.projectiles.length > 0, `viděn=${sawProjectile}, na konci=${after.projectiles.length}`);
   }
 
   // úklid: odpojení A → místnost má o hráče méně

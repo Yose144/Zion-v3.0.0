@@ -590,8 +590,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Munici drží server** (`ammo`/`mgAmmo` ve snapshotu). Klient si ji
   nesmí vymýšlet — rozjel by se se serverem (stejná past jako „trefil
   jsem ho a nic").
-- **Sólová aréna má stále vlastní botí AI** — `core/arena/bot.ts` používá
-  jen server. Není to záměr, ale nedodělek; sjednocení je další krok.
+- **Sólová i multiplayerová aréna používají stejný `core/arena/bot.ts`**
+  (sjednoceno 2026-11-02). Dřív mělo sólo vlastní AI s pravděpodobnostním
+  zásahem — dva různé typy nepřítele. Kdo přidá druhý mozek, rozbije tím
+  pravidlo „co platí v MP, platí i v sólu".
 - **Deploy po bumpu protokolu:** NEJDŘÍV `deploy-nirvana-net.sh`, pak
   `deploy-nirvana.sh`. Obráceně nový klient propadne `arena` fallbacku.
 - **Testy botů musí být deterministické.** `arena-bots.mjs` bojí v čisté
@@ -666,3 +668,55 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   respawn/pickup = eventy. Server je autorita zásahů, ne zvuku.
 - **`useRef(WEAPONS.mg.ammo)` inferuje literální typ `50`** — zápis
   `ref.current = číslo` pak spadne na typu. Píši `useRef<number>(...)`.
+
+## Mobilní ovládání a responsivita (2026-11-02)
+
+- **Dvě cesty vstupu, ne jedna.** Hry, které čtou klávesnici (Venuše, pouť),
+  dostanou `TouchButton` z `core/games/TouchPad.tsx` — pošle syntetický
+  `keydown`/`keyup`, takže hra nemá druhý vstup. FPS (Mars) potřebuje
+  `core/arena/ArenaTouch.tsx`, protože pohled je **spojitý pohyb**, ne stisk.
+  Nutit FPS do syntetických kláves = nehratelná hra.
+- **`requestPointerLock` na mobilu neexistuje.** Aréna bez `ArenaTouch`
+  znamenala, že se hráč nerozhlédne vůbec — ne že se rozhlíží špatně.
+- **Dotykový stav jde refem, ne React state.** `ArenaTouchState` se čte
+  v `useFrame`; přes state by se 60×/s překresloval celý 3D strom.
+  `readTouch()` ho aplikuje do **stejných refů** jako klávesnice, takže
+  `MarsArena`/`MarsMultiplayer` nemají dvě větve vstupu.
+- **`stopPropagation` v `TouchButton` je povinné.** Bez něj stisk rozjede
+  hru i při psaní do inputu (přesně tahle chyba se stala u chatu na Venuši).
+- **`pointerRef` v pouti se nikde nenastavoval** — arkády (Pong, Breakout,
+  Asteroidy) nereagovaly na myš ani dotyk, jen na klávesy. Od 2026-11-02 ho
+  plní `onCanvasPointer` na plátně (`pointermove` + `pointerdown`), rozsah
+  **0..1** (hry to tak čekají: pong `pointer * GAME_W`, asteroidy
+  `(pointerX - 0.5) * 3`). Kdo přidá novou hru, musí pointer číst stejně.
+- **Herní HUD patří na mobilu NAHORU.** `.arena-hud` i `.race-hud` seděly
+  `bottom: 1,1rem` — přesně v místě joysticku a PALBY. Přesun je v
+  `@media (hover: none) and (pointer: coarse)`, spolu s `.arena-tip`
+  a tabulemi (`.arena-board`/`.race-board` na `top: 4,6rem`).
+- **`.game-hud` se zalamuje, ne ořezává.** `overflow-x: auto` na ≤900 px
+  schovalo žetony a ZION za okraj — nebyly vidět vůbec.
+- **Během hry schovej navigaci a chat** (`body[data-playing='1']`, nastavuje
+  a v cleanupu uklízí každá herní stránka). Bez toho zbývá na hru ~640 px
+  z 844 a joystick leží na liště. **Nová hra to musí nastavovat taky.**
+- **3D popisky (`drei <Html>`) potřebují `zIndexRange`.** Bez něj lezou nad
+  chrome (`z-index: 12`→`20` v pouti) a „RUSKÉ KOLO" se překrývalo
+  s titulem. Na ≤760 px se popisky schovávají úplně — panel je vypisuje.
+- **Audit musí do hry opravdu vstoupit.** `e2e/mobile-audit.mjs` klikne na
+  start a počítá konkrétní selektor (`.arena-touch`/`.touch-pad`/
+  `.duel-touch`/`.park-touch`). První verze počítala „tlačítka ve spodní
+  půlce" a prošla s jediným tlačítkem chatu — falešná zelená.
+- **Deploy z git worktree: `node_modules` nesmí být symlink.** Next si
+  symlinku všimne i ve standalone stromu (`.next/standalone/node_modules`
+  → symlink), takže `next` v artefaktu chybí a server padne na
+  `Cannot find module 'next'` (a deploy se rollbackne). Používej
+  `cp -al` (hardlink klon), ne `ln -s`. A `cp -a` přes symlink píše
+  **do cíle symlinku** — takhle jsem si zanesl `next` do hlavního stromu.
+- **Po každém commitu zkontroluj `PROTO_VERSION` proti živému netu.**
+  Paralelní session dělá `git add` přes celý strom a strhne cizí staged
+  soubory; tak se proto 5 dostal do commitu, který měl být jen o mobilu,
+  a produkce 35 minut vracela `proto_mismatch`. Kontrola:
+  `grep PROTO_VERSION src/core/net/protocol.ts` vs
+  `curl -s https://nirvana.zionterranova.com/net/health`.
+- **Meze:** netestováno na skutečném telefonu (jen headless Chromium
+  s `isMobile`/`hasTouch`), landscape jen media query, citlivost pohledu
+  je konstanta, žádný gyroskop/haptika. `/earth` (MOBA) dotyk neověřen.
