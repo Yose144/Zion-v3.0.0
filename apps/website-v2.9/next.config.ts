@@ -164,6 +164,15 @@ const nextConfig: NextConfig = {
       { source: '/dex', destination: '/market#dex', permanent: true },
       { source: '/dex/:path*', destination: '/market#dex', permanent: true },
       { source: '/ziondex', destination: '/market#dex', permanent: true },
+      // Shop je samostatná aplikace na market.zionterranova.com — /shop na app.
+      // vracelo 404. Subcesty (/shop/cart) mapujeme bez prefixu, protože market
+      // má vlastní routy /cart, /explore, /api/items… (ověřeno live 2026-11-02).
+      { source: '/shop', destination: 'https://market.zionterranova.com/shop', permanent: true },
+      {
+        source: '/shop/:path*',
+        destination: 'https://market.zionterranova.com/:path*',
+        permanent: true,
+      },
       // dao.zionterranova.com (Phase A): once DNS+nginx route the host here,
       // canonicalize onto the app domain under /dao. Order matters: the
       // explicit /dao passthrough must precede the catch-all path map.

@@ -177,6 +177,16 @@ export class LinkEngine {
     return this.edges;
   }
 
+  /** Sousedé přes spoje — HUD z nich dělá „skoč na…“ tlačítka. */
+  neighbors(id: string): string[] {
+    const out: string[] = [];
+    for (const e of this.edges) {
+      if (e.from === id && !out.includes(e.to)) out.push(e.to);
+      else if (e.to === id && !out.includes(e.from)) out.push(e.from);
+    }
+    return out;
+  }
+
   getCurrentFocus(): string {
     return this.current;
   }
@@ -532,6 +542,7 @@ export const DEFAULT_LINK_EDGES: LinkEdge[] = [
   { from: 'earth', to: 'fleet', kind: 'orbit' },
   { from: 'earth', to: 'issobella', kind: 'orbit' },
   { from: 'earth', to: 'archa', kind: 'orbit' },
+  { from: 'earth', to: 'jupiter', kind: 'route' },
   { from: 'jupiter', to: 'gate', kind: 'orbit' },
 ];
 

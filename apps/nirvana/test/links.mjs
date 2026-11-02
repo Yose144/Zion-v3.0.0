@@ -105,6 +105,13 @@ const fs = frameFor(small, ctx);
 const fb = frameFor(big, ctx);
 ok('větší objekt = dál', fb.cam.distanceTo(fb.target) > fs.cam.distanceTo(fs.target));
 
+console.log('=== cíl: sousedé přes spoje ===');
+const jN = engine.neighbors('jupiter');
+ok('Jupiter má spoje na gate i Zemi', jN.includes('gate') && jN.includes('earth'), JSON.stringify(jN));
+const gN = engine.neighbors('gate');
+ok('Brána má spoj na Jupiter', gN.includes('jupiter'), JSON.stringify(gN));
+ok('neexistující id nemá sousedy', engine.neighbors('nope').length === 0);
+
 console.log('=== cíl: arkPosition je jedna formule ===');
 const t0 = 0;
 const [ax, ay, az] = arkPosition(t0);

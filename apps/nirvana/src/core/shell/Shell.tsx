@@ -285,7 +285,7 @@ export function Shell() {
       {/* Přechod scéna ↔ portál: krátký závoj, který při každé změně portálu
           (otevření, zavření, přepnutí) jednou proběhne. `key` ho remountuje,
           takže animace startuje znovu; pointer-events: none, aby nic neblokoval. */}
-      <LinkNavHud />
+      <LinkNavHud onFocus={setFocus} />
       <div key={portal ?? 'home'} className="portal-veil" aria-hidden />
       <header className="chrome">
         <div>
