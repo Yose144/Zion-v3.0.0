@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { dampFactor } from '@/core/design/motion';
 import { PARK_GAMES, type CanvasGameId } from '@/core/park/games';
 import { ShootingGallery } from './ShootingGallery';
 import type { ParkScores } from '@/core/park/scores';
@@ -303,13 +304,13 @@ function GalleryCamera({ active }: { active: boolean }) {
     if (!active) started.current = false;
   }, [active]);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!active) return;
     if (!started.current) {
       camera.position.copy(pos);
       started.current = true;
     } else {
-      camera.position.lerp(pos, 0.15);
+      camera.position.lerp(pos, dampFactor(delta));
     }
     camera.lookAt(look);
   });
@@ -348,7 +349,7 @@ function RideCamera({ active }: { active: boolean }) {
       camera.position.copy(pos);
       started.current = true;
     } else {
-      camera.position.lerp(pos, Math.min(1, delta * 9));
+      camera.position.lerp(pos, dampFactor(delta));
     }
     // z gondoly dolů do nádvoří: kabiny, tabule, Jupiter v pozadí
     look.set(0, 2.4, 3);

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { dampFactor } from '@/core/design/motion';
 import { LAPS, buildTrack, checkpointIndices } from './track';
 import { MAX_SPEED, type Craft, spawnCraft, stepCraft } from './physics';
 import { TrackStage } from './TrackStage';
@@ -183,7 +184,7 @@ export function VenusMultiplayer({
       4.2 + speedRatio * 0.8,
       craft.current.z - forwardZ * (9 + speedRatio * 3),
     );
-    camera.position.lerp(camPos, Math.min(1, dt * 4.5));
+    camera.position.lerp(camPos, dampFactor(dt));
     camTarget.set(craft.current.x + forwardX * 6, 1.2, craft.current.z + forwardZ * 6);
     camera.lookAt(camTarget);
 

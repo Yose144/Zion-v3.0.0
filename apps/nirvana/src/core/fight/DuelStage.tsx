@@ -2,6 +2,7 @@
 
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { dampFactor } from '@/core/design/motion';
 import { useMemo, useRef, type MutableRefObject } from 'react';
 import { ARENA_HALF, type Fighter } from './duel';
 
@@ -87,7 +88,7 @@ export function DuelCamera({
   useFrame((_, delta) => {
     const mid = THREE.MathUtils.clamp((a.current.x + b.current.x) / 2, -2.5, 2.5);
     const spread = Math.abs(a.current.x - b.current.x);
-    const k = 1 - Math.exp(-6 * Math.min(0.05, delta));
+    const k = dampFactor(delta);
     desired.set(mid, 2.05, 8.4 + Math.min(3.8, spread * 0.25));
     camera.position.lerp(desired, k);
     if (camera instanceof THREE.PerspectiveCamera) {

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { dampFactor } from '@/core/design/motion';
 import {
   LAPS,
   SAMPLES,
@@ -230,7 +231,7 @@ export function VenusRace({
       4.2 + speedRatio * 0.8,
       car.z - forwardZ * (9 + speedRatio * 3),
     );
-    camera.position.lerp(camPos, Math.min(1, dt * 4.5));
+    camera.position.lerp(camPos, dampFactor(dt));
     camTarget.set(car.x + forwardX * 6, 1.2, car.z + forwardZ * 6);
     camera.lookAt(camTarget);
 

@@ -34,6 +34,7 @@ import {
   GATE_JUPITER_OFFSET,
 } from './positions';
 import { PLANETS, orbitRadius, planetIndex } from './planetCatalog';
+import { MOTION, easeOutCubic } from '../../design/motion';
 
 export type LinkKind =
   | 'planet'
@@ -112,9 +113,9 @@ export interface LinkEdge {
   kind?: 'route' | 'orbit';
 }
 
-const DEFAULT_DURATION = 1.6;
+const DEFAULT_DURATION = MOTION.fly;
 const FOLLOW_LERP = 0.16;
-const easeOut = (p: number) => 1 - Math.pow(1 - p, 3);
+const easeOut = easeOutCubic;
 
 /** Jeden framing pro všechny — žádná druhá kopie výpočtu vzdálenosti. */
 export function frameFor(target: LinkTarget, ctx: LinkCtx): LinkFrame {
@@ -139,7 +140,7 @@ export class LinkEngine {
   private current = 'earth';
   private pending: string | null = null;
   private progress = 1;
-  private duration = DEFAULT_DURATION;
+  private duration: number = DEFAULT_DURATION;
   private fromCam = new THREE.Vector3();
   private fromTarget = new THREE.Vector3();
   private lastAnchor = new THREE.Vector3();

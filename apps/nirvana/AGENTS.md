@@ -806,3 +806,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   k Jupiteru (dist od Slunce ~69,5 — dřív kamera letěla k Slunci), `← Země`
   vrátí a HUD zmizí. Jediná konzolová chyba je pre-existing `401` z
   `/api/auth/me`.
+
+## Jednotný design pohybu a linek (2026-11-02)
+
+- **Jedna čísla pro všechny přechody:** `core/design/motion.ts` drží
+  `MOTION` (fast/base/slow/veil/fly + `followRate`) a `dampFactor` /
+  `easeOutCubic`. CSS protějšek jsou `--zion-motion-*` a `--zion-ease*`
+  v `globals.css`; hodnoty musí zůstat v syncu.
+- **Kamera v každé scéně dohání stejně.** `camera.position.lerp(..., dampFactor(delta))`
+  nahradilo `dt*4.5` (Venuše), `0.15` (pouť), `delta*9` (gondola) i
+  `1-exp(-6*…)` (Merkur). Frame-rate independent: při 15 fps nezpomalí.
+  Kdo přidá třetí herní kameru, použije `dampFactor`, ne vlastní konstantu.
+- **Jedna čísla pro všechny linky:** `core/design/links.ts` (`LINK_COLOR`,
+  `LINK_WIDTH`, `LINK_OPACITY`, `LINK_ACTIVE_OPACITY`, `LINK_KINDS`,
+  `orbitWidth`). `scene/universe/links.ts` je jen re-export kvůli starým
+  importům — nový kód importuje z `@/core/design/links`.
+- **`LINK_KINDS`** rozlišuje dráhu / osu / trasu / stopu / prstenec / spoj
+  (šířka + klidová a aktivní průhlednost). `LinkLayer` bere styl odsud,
+  ne z vlastních konstant.
+- **Meze jazyka:** ornamenty (jantra, prstence Slunce, Issobella ring, stanice,
+  brána) a interaktivní tint planety zůstávají mimo — jsou to předměty, ne
+  linky. Herní geometrie (okraj tratě, klec) je gameplay, ne linka.
+- **CSS tokeny** používají `.portal-veil`, `.planet-chip`, `.link-nav-*`.
+  Kdo píše nový přechod, použije `var(--zion-motion-*) var(--zion-ease*)`,
+  ne novou milisekundu.
+- **Test:** `npx tsx apps/nirvana/test/links.mjs` (37 kontrol) ověřuje i
+  `dampFactor` (60 fps ~0,14), konvergenci `damp`, `easeOutCubic` a `motionCss`.

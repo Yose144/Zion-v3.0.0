@@ -121,5 +121,21 @@ const euler = new THREE.Euler(ARK_TILT[0], ARK_TILT[1], ARK_TILT[2]);
 local.applyEuler(euler);
 ok('arkPosition(0) = Euler(orbit)', Math.abs(ax - local.x) < 1e-6 && Math.abs(ay - local.y) < 1e-6 && Math.abs(az - local.z) < 1e-6, `${ax.toFixed(3)},${ay.toFixed(3)},${az.toFixed(3)} vs ${local.x.toFixed(3)},${local.y.toFixed(3)},${local.z.toFixed(3)}`);
 
+console.log('=== cíl: motion tokeny ===');
+{
+  const { MOTION, motionCss, dampFactor, damp, easeOutCubic } = await import('../src/core/design/motion.ts');
+  ok('motionCss(0.24) = 240ms', motionCss(0.24) === '240ms', motionCss(0.24));
+  const k = dampFactor(0.0167, MOTION.followRate);
+  ok('dampFactor při 60 fps ~0,14', k > 0.12 && k < 0.16, k.toFixed(4));
+  ok('dampFactor(0) = 0', dampFactor(0) === 0);
+  ok('dampFactor roste s deltou', dampFactor(0.1) > dampFactor(0.01));
+  let v = 0;
+  for (let i = 0; i < 200; i++) v = damp(v, 10, 1 / 60, MOTION.followRate);
+  ok('damp konverguje k cíli', Math.abs(v - 10) < 0.01, v.toFixed(4));
+  ok('easeOutCubic(0)=0', easeOutCubic(0) === 0);
+  ok('easeOutCubic(1)=1', easeOutCubic(1) === 1);
+  ok('easeOutCubic roste', easeOutCubic(0.3) < easeOutCubic(0.6));
+}
+
 console.log(`\n${fail === 0 ? 'PASS' : 'FAIL'} — ${pass} prošlo, ${fail} selhalo`);
 process.exit(fail === 0 ? 0 : 1);

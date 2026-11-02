@@ -15,7 +15,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { getGlobalLinkEngine } from './LinkEngine';
-import { LINK_COLOR, LINK_OPACITY, LINK_ACTIVE_OPACITY } from './links';
+import { LINK_COLOR, LINK_KINDS } from './links';
 
 const SEGMENTS = 20;
 
@@ -71,8 +71,9 @@ export function LinkLayer() {
 
       const mat = mats.current[i];
       if (mat) {
+        const style = LINK_KINDS[edge.kind ?? 'route'];
         const active = edge.from === current || edge.to === current;
-        const target = active ? LINK_ACTIVE_OPACITY : LINK_OPACITY * 0.55;
+        const target = active ? style.activeOpacity : style.opacity;
         mat.opacity += (target - mat.opacity) * 0.12;
       }
     }
@@ -96,7 +97,7 @@ export function LinkLayer() {
             ref={(el) => { mats.current[i] = el; }}
             color={LINK_COLOR}
             transparent
-            opacity={LINK_OPACITY * 0.55}
+            opacity={LINK_KINDS[edge.kind ?? 'route'].opacity}
             depthWrite={false}
             toneMapped={false}
           />

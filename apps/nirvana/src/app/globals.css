@@ -1,6 +1,21 @@
 @import "tailwindcss";
 @import "../../../shared/ui/tokens.css";
 
+/* ── Jednotný design pohybu a linek (sync s core/design/motion.ts + links.ts) ──
+   Jediná čísla pro všechny přechody a linky v aplikaci. Renderery je berou
+   z TS tokenů, CSS z těchto proměnných — hodnoty musí zůstat stejné. */
+:root {
+  --zion-motion-fast: 160ms;
+  --zion-motion-base: 240ms;
+  --zion-motion-slow: 360ms;
+  --zion-motion-veil: 450ms;
+  --zion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --zion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --zion-link-color: #a6c8ff;
+  --zion-link-opacity: 0.45;
+  --zion-link-active-opacity: 0.9;
+}
+
 html,
 body {
   margin: 0;
@@ -224,7 +239,7 @@ button {
   letter-spacing: 0.06em;
   white-space: nowrap;
   backdrop-filter: blur(8px);
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: transform var(--zion-motion-fast) var(--zion-ease), border-color var(--zion-motion-fast) var(--zion-ease), box-shadow var(--zion-motion-fast) var(--zion-ease);
   cursor: pointer;
 }
 
@@ -273,7 +288,7 @@ button {
   letter-spacing: 0.1em;
   backdrop-filter: blur(8px);
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--zion-motion-base) var(--zion-ease);
 }
 
 .link-nav-hud.is-hidden {
@@ -313,7 +328,7 @@ button {
   font-size: 0.62rem;
   letter-spacing: 0.06em;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background var(--zion-motion-fast) var(--zion-ease), border-color var(--zion-motion-fast) var(--zion-ease);
 }
 
 .link-nav-hud .link-nav-back:hover,
@@ -334,7 +349,7 @@ button {
   font-size: 0.6rem;
   letter-spacing: 0.05em;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: background var(--zion-motion-fast) var(--zion-ease), border-color var(--zion-motion-fast) var(--zion-ease), color var(--zion-motion-fast) var(--zion-ease);
 }
 
 .link-nav-hud .link-nav-neighbor:hover,
@@ -2404,7 +2419,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   pointer-events: none;
   background: radial-gradient(ellipse at 50% 50%, rgba(4, 6, 20, 0) 30%, rgba(4, 6, 20, 0.9) 100%);
   opacity: 0;
-  animation: portal-veil 340ms ease-out forwards;
+  animation: portal-veil var(--zion-motion-veil) var(--zion-ease-out) forwards;
 }
 
 @keyframes portal-veil {
