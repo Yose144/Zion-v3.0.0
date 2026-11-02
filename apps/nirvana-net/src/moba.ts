@@ -23,10 +23,10 @@ import {
 } from '../../nirvana/src/core/moba/sim.js';
 import { AVATARS_BY_ID } from '../../nirvana/src/core/avatars/catalog.js';
 
-/** Tři na každé straně (3v3) — víc by se na tři linky nevešlo. */
-export const MOBA_ROOM_SIZE = 6;
+/** Pět na každé straně (5v5). */
+export const MOBA_ROOM_SIZE = 10;
 /** Kolik hrdinů má mít každá strana. */
-const TEAM_SIZE = 3;
+const TEAM_SIZE = 5;
 /** Jak dlouho se čeká na druhého hráče, než nastoupí boti. */
 const BOT_FILL_DELAY_MS = 6000;
 /** Odpočet před startem (ms). */
@@ -196,6 +196,7 @@ export function mobaRoomSnapshot(room: MobaRoomSim, now: number): MobaRoomSnapsh
           towers: [],
           heroes: [],
           minions: [],
+          monsters: [],
           projectiles: [],
           effects: [],
         },

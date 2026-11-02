@@ -7,8 +7,6 @@ import { AuthProvider } from '@/contexts/AuthContext';
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  minimumScale: 1,
-  maximumScale: 1,
   viewportFit: 'cover',
   themeColor: '#0d0d0d',
 };
@@ -45,9 +43,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <AuthProvider>
-          <main id="main-content">
-            {children}
-          </main>
+          {children}
           <ToastContainer />
         </AuthProvider>
       </body>

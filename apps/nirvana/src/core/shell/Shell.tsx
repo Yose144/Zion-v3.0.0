@@ -26,6 +26,7 @@ import { PoolPortal } from '@/portals/pool/PoolPortal';
 import { WorldPortal } from '@/portals/world/WorldPortal';
 import { parseWorlds, type WorldPoint } from '@/lib/worlds';
 import { normalizeHiranState, hiranReviewOverride, type HiranState } from '@/core/hiran/presence';
+import { getGlobalLinkEngine } from '@/core/scene/universe/LinkEngine';
 
 const PANELS = new Set(PORTALS.map((p) => p.id));
 
@@ -118,9 +119,32 @@ export function Shell() {
   const openPortal = useCallback((id: string) => {
     const next = PANELS.has(id) ? id : null;
     setPortal(next);
-    setFocus(next === 'hiran' ? 'sun' : next === 'park' ? 'jupiter' : next === 'fleet' ? 'fleet' : next === 'matrix' ? 'moon' : 'earth');
+    // Kanonizovat přes LinkEngine
+    const linkEngine = getGlobalLinkEngine();
+    if (next === 'hiran') {
+      setFocus('sun');
+      linkEngine.flyTo('sun', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
+    } else if (next === 'park') {
+      setFocus('jupiter');
+      linkEngine.flyTo('jupiter', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
+    } else if (next === 'fleet') {
+      setFocus('fleet');
+      linkEngine.flyTo('fleet', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
+    } else if (next === 'matrix') {
+      setFocus('moon');
+      linkEngine.flyTo('moon', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
+    } else if (next === 'archa') {
+      setFocus('earth');
+      linkEngine.flyTo('archa', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
+    } else if (next === 'issobella') {
+      setFocus('earth');
+      linkEngine.flyTo('issobella', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
+    } else {
+      setFocus('earth');
+      linkEngine.flyTo('earth', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
+    }
     setMenuOpen(false);
-  }, []);
+  }, [lang]);
 
   const closePortal = useCallback(() => {
     setPortal(null);

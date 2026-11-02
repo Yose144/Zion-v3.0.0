@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { EARTH_ORBIT_R, planetPosition, fleetPosition, moonPosition } from './positions';
+import { EARTH_ORBIT_R, planetPosition, fleetPosition, moonPosition, GATE_JUPITER_OFFSET } from './positions';
 import { PLANETS, orbitRadius } from './SolarSystem';
 
 export type LinkKind = 'planet' | 'gate' | 'station' | 'ark' | 'fleet' | 'moon' | 'sun' | 'world';
@@ -315,6 +315,97 @@ export function createDefaultLinkTargets(): LinkTarget[] {
     },
   });
 
+  // Gate / OASIS (StarGate na Jupiteru)
+  targets.push({
+    id: 'gate',
+    kind: 'gate',
+    accent: '#fcd116',
+    label: { cs: 'Brána do OASIS', en: 'Gate to OASIS' },
+    cta: { cs: 'Vstoupit ↗', en: 'Enter ↗' },
+    getFocus: (ctx: LinkCtx) => {
+      const jupiterDef = PLANETS.find((p) => p.id === 'jupiter')!;
+      const index = PLANETS.indexOf(jupiterDef);
+      const [px, py, pz] = planetPosition(
+        'jupiter',
+        index,
+        orbitRadius(jupiterDef.au),
+        jupiterDef.speed,
+        ctx.clock.elapsedTime,
+      );
+      const gatePos = new THREE.Vector3(px + GATE_JUPITER_OFFSET[0], py + GATE_JUPITER_OFFSET[1], pz + GATE_JUPITER_OFFSET[2]);
+      const target = gatePos.clone();
+      const cam = gatePos.clone().add(new THREE.Vector3(0, 2, 6));
+      return {
+        cam,
+        target,
+        duration: 1.6,
+      };
+    },
+  });
+
+  // Archa (SailingArk)
+  targets.push({
+    id: 'archa',
+    kind: 'ark',
+    accent: '#1d8fb3',
+    label: { cs: 'Archa', en: 'The Ark' },
+    cta: { cs: 'Otevřít →', en: 'Open →' },
+    getFocus: (ctx: LinkCtx) => {
+      // SailingArk je součástí zemské soustavy (child earthSys) - aproximace
+      const target = new THREE.Vector3(ctx.earthPos.x + 12, ctx.earthPos.y + 0.8, ctx.earthPos.z + 6);
+      const cam = target.clone().add(new THREE.Vector3(4, 3, 8));
+      return {
+        cam,
+        target,
+        duration: 1.6,
+      };
+    },
+  });
+
+  // Matrix (moon)
+  targets.push({
+    id: 'matrix',
+    kind: 'moon',
+    accent: '#00ff88',
+    label: { cs: 'Matrix', en: 'Matrix' },
+    cta: { cs: 'Vstoupit →', en: 'Enter →' },
+    getFocus: (ctx: LinkCtx) => {
+      const mt = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
+      const [mx, my, mz] = moonPosition(mt);
+      const moonTarget = new THREE.Vector3(ctx.earthPos.x + mx, my, ctx.earthPos.z + mz);
+      const radial = moonTarget.clone().normalize();
+      const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
+      const moonCam = new THREE.Vector3()
+        .copy(moonTarget)
+        .addScaledVector(radial, 3.2)
+        .addScaledVector(tangent, 2.4)
+        .add(FLEET_CAM_LIFT);
+      return {
+        cam: moonCam,
+        target: moonTarget,
+        duration: 1.6,
+      };
+    },
+  });
+
+  // Issobella (ring)
+  targets.push({
+    id: 'issobella',
+    kind: 'station',
+    accent: '#c084fc',
+    label: { cs: 'Issobella', en: 'Issobella' },
+    cta: { cs: 'Otevřít →', en: 'Open →' },
+    getFocus: (ctx: LinkCtx) => {
+      const target = new THREE.Vector3(ctx.earthPos.x + 4, ctx.earthPos.y + 1.2, ctx.earthPos.z - 3);
+      const cam = target.clone().add(new THREE.Vector3(2, 2, 5));
+      return {
+        cam,
+        target,
+        duration: 1.6,
+      };
+    },
+  });
+
   return targets;
 }
 
@@ -327,3 +418,16 @@ export function useLinkEngine() {
   }
   return engineRef.current;
 }
+
+// Export singleton for non-React usage
+let globalLinkEngine: LinkEngine | null = null;
+
+export function getGlobalLinkEngine(): LinkEngine {
+  if (!globalLinkEngine) {
+    globalLinkEngine = new LinkEngine();
+    const targets = createDefaultLinkTargets();
+    targets.forEach((t) => globalLinkEngine!.register(t));
+  }
+  return globalLinkEngine;
+}
+

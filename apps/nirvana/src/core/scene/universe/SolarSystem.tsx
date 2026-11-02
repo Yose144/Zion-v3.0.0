@@ -9,6 +9,7 @@ import { Html } from '@react-three/drei';
 import { TextLabel } from './Label';
 import { StarGate } from './StarGate';
 import type { Portal } from '@/core/portals/manifest';
+import { getGlobalLinkEngine } from './LinkEngine';
 
 /**
  * Sluneční soustava — reálné textury Solar System Scope
@@ -283,6 +284,10 @@ function Planet({
         <mesh
           onClick={(event) => {
             event.stopPropagation();
+            try {
+              const engine = getGlobalLinkEngine();
+              engine.flyTo(def.id, { camera: (window as any).__nirvanaCamera, controls: (window as any).__nirvanaControls, clock: { elapsedTime: performance.now()/1000 }, earthPos: new THREE.Vector3(30, 0, 0), reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches, lang: 'cs' } as any);
+            } catch {}
             onSelect?.(def.game as 'mars' | 'venus' | 'jupiter' | 'mercury');
           }}
           onPointerOver={(event) => {
@@ -312,9 +317,19 @@ function Planet({
             style={{ ['--planet-tone' as string]: def.tint }}
             role="button"
             tabIndex={0}
-            onClick={() => onSelect?.(def.game as 'mars' | 'venus' | 'jupiter' | 'mercury')}
+            onClick={() => {
+              try {
+                const engine = getGlobalLinkEngine();
+                engine.flyTo(def.id, { camera: (window as any).__nirvanaCamera, controls: (window as any).__nirvanaControls, clock: { elapsedTime: performance.now()/1000 }, earthPos: new THREE.Vector3(30, 0, 0), reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches, lang: 'cs' } as any);
+              } catch {}
+              onSelect?.(def.game as 'mars' | 'venus' | 'jupiter' | 'mercury');
+            }}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
+                try {
+                  const engine = getGlobalLinkEngine();
+                  engine.flyTo(def.id, { camera: (window as any).__nirvanaCamera, controls: (window as any).__nirvanaControls, clock: { elapsedTime: performance.now()/1000 }, earthPos: new THREE.Vector3(30, 0, 0), reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches, lang: 'cs' } as any);
+                } catch {}
                 onSelect?.(def.game as 'mars' | 'venus' | 'jupiter' | 'mercury');
               }
             }}

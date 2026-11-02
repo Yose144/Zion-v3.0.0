@@ -18,7 +18,7 @@ export default function GameLayout({
       style={{ height: '100dvh', width: '100vw' }}
     >
       {!isGameScene && <Navbar />}
-      <main className="relative h-full w-full">
+      <main id="main-content" className="relative h-full w-full">
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>
     </div>

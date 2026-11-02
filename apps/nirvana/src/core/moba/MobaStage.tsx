@@ -17,11 +17,12 @@ import { avatarLook } from '@/core/avatars/kit';
 import type { MobaSnapshot } from './sim';
 import { LANES, NODE_SITES, NODE_CAPTURE_MS, STRUCTURES } from './map';
 
-const MAX_HEROES = 4;
+const MAX_HEROES = 10;
 const MAX_TOWERS = STRUCTURES.length;
-const MAX_MINIONS = 120;
-const MAX_PROJECTILES = 40;
-const MAX_EFFECTS = 40;
+const MAX_MINIONS = 180;
+const MAX_MONSTERS = 20;
+const MAX_PROJECTILES = 60;
+const MAX_EFFECTS = 60;
 
 export function MobaStage({
   snapshotRef,
@@ -42,6 +43,7 @@ export function MobaStage({
   const towerRefs = useRef<(THREE.Group | null)[]>([]);
   const nodeRefs = useRef<(THREE.Group | null)[]>([]);
   const minionMesh = useRef<THREE.InstancedMesh>(null);
+  const monsterMesh = useRef<THREE.InstancedMesh>(null);
   const projectileMesh = useRef<THREE.InstancedMesh>(null);
   const effectMesh = useRef<THREE.InstancedMesh>(null);
 
@@ -141,6 +143,29 @@ export function MobaStage({
         tmp.updateMatrix();
         mesh.setMatrixAt(index, tmp.matrix);
         color.set(minion ? (minion.team === 'blue' ? '#7fe3d4' : '#ff7a6b') : '#000000');
+        mesh.setColorAt(index, color);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+
+    // ── neutrální monstra ─────────────────────────────────────────────
+    if (monsterMesh.current) {
+      const mesh = monsterMesh.current;
+      const monsters = snapshot.monsters ?? [];
+      for (let index = 0; index < mesh.count; index += 1) {
+        const monster = monsters[index];
+        if (!monster || !monster.alive) {
+          tmp.position.set(0, -60, 0);
+          tmp.scale.setScalar(0.001);
+        } else {
+          const scale = monster.type === 'ancient' ? 2.2 : monster.type === 'medium' ? 1.4 : 0.9;
+          tmp.position.set(monster.x, monster.type === 'ancient' ? 1.6 : 0.8, monster.z);
+          tmp.scale.setScalar(scale);
+        }
+        tmp.updateMatrix();
+        mesh.setMatrixAt(index, tmp.matrix);
+        color.set(monster && monster.alive ? (monster.type === 'ancient' ? '#ffd166' : monster.type === 'medium' ? '#f59e0b' : '#a78bfa') : '#000000');
         mesh.setColorAt(index, color);
       }
       mesh.instanceMatrix.needsUpdate = true;
@@ -305,10 +330,14 @@ export function MobaStage({
         );
       })}
 
-      {/* minioni, projektily, efekty */}
+      {/* minioni, monstra, projektily, efekty */}
       <instancedMesh ref={minionMesh} args={[undefined, undefined, MAX_MINIONS]} frustumCulled={false}>
         <sphereGeometry args={[0.5, 10, 8]} />
         <meshStandardMaterial vertexColors roughness={0.45} emissive="#ffffff" emissiveIntensity={0.35} />
+      </instancedMesh>
+      <instancedMesh ref={monsterMesh} args={[undefined, undefined, MAX_MONSTERS]} frustumCulled={false}>
+        <sphereGeometry args={[0.6, 12, 10]} />
+        <meshStandardMaterial vertexColors roughness={0.35} emissive="#ffffff" emissiveIntensity={0.4} />
       </instancedMesh>
       <instancedMesh ref={projectileMesh} args={[undefined, undefined, MAX_PROJECTILES]} frustumCulled={false}>
         <sphereGeometry args={[0.3, 8, 6]} />

@@ -61,7 +61,7 @@ function readBoard(): Board {
   board = emptyBoard();
   if (STORE_PATH) {
     try {
-      const raw = fs.readFileSync(STORE_PATH, 'utf8');
+      const raw = fs.readFileSync(/*turbopackIgnore: true*/ STORE_PATH, 'utf8');
       const parsed = JSON.parse(raw) as Partial<Board>;
       for (const game of GAMES) {
         const list = Array.isArray(parsed?.[game]) ? parsed[game]! : [];

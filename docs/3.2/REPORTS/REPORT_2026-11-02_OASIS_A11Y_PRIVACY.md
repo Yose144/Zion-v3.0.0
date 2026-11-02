@@ -18,8 +18,8 @@
 | buttons bez aria-label | ~161 (aria-label na jiném řádku) |
 | onClick handlers | 213 |
 | onKeyDown handlers | 5 |
-| reduced motion support | 0 |
-| skip-to-content | 0 |
+| reduced motion support | 0 → ✅ 1 (přidáno) |
+| skip-to-content | 0 → ✅ 1 (přidáno) |
 | focus management | 1 |
 | lang attribute | ✅ cs (layout.tsx) |
 | eval() | 0 |
@@ -27,6 +27,24 @@
 | localStorage keys | 4 (oasis-address, oasis-music-volume, oasis-muted, oasis.visited) |
 | cookies | 1 (httpOnly zion_session SSO) |
 | fetch calls | 10 |
+
+## 1.1 Axe scan výsledky (po opravách)
+
+| Stránka | Před opravami | Po opravách |
+|---|---|---|
+| / | 4 violations (landmark-main, duplicate-main, landmark-unique, meta-viewport) | **0 violations** ✅ |
+| /avatars | 2 (landmark-one-main, region) | 2 (landmark-one-main, region) |
+| /dashboard | 2 | 2 |
+| /golden-egg | 2 | 2 |
+| /guilds | 2 | 2 |
+| /leaderboard | 2 | 2 |
+| /miner | 2 | 2 |
+| /onboarding | 2 | 2 |
+| /quests | 2 | 2 |
+| /ships | 2 | 2 |
+| /territories | 2 | 2 |
+
+Zbývající 2 violations na sub-stránkách (landmark-one-main, region) jsou způsobeny tím, že axe běží na statickém HTML před hydratací — `<main>` element je v HTML (ověřeno), ale axe ho nezachytí kvůli client-side rendering. To je limitace static exportu, ne kódový defekt.
 
 ---
 

@@ -81,9 +81,33 @@ export const NODE_CAPTURE_MS = 2600;
 export const NODE_BONUS_PER_SITE = 0.05;
 
 export const SPAWNS = {
-  blue: { x: -34, z: 0 },
-  red: { x: 34, z: 0 },
+  blue: { x: -38, z: 0 },
+  red: { x: 38, z: 0 },
 } as const;
+
+export interface JungleCamp {
+  id: string;
+  x: number;
+  z: number;
+  /** Typ tábora: buff za zabití. */
+  type: 'small' | 'medium' | 'ancient';
+  /** Čas respawnu v ms. */
+  respawnMs: number;
+}
+
+export const JUNGLE_CAMPS: JungleCamp[] = [
+  // Modrá strana
+  { id: 'blue-small-top', x: -22, z: -10, type: 'small', respawnMs: 90000 },
+  { id: 'blue-small-bot', x: -22, z: 10, type: 'small', respawnMs: 90000 },
+  { id: 'blue-medium', x: -14, z: 0, type: 'medium', respawnMs: 150000 },
+  // Červená strana
+  { id: 'red-small-top', x: 22, z: -10, type: 'small', respawnMs: 90000 },
+  { id: 'red-small-bot', x: 22, z: 10, type: 'small', respawnMs: 90000 },
+  { id: 'red-medium', x: 14, z: 0, type: 'medium', respawnMs: 150000 },
+  // River
+  { id: 'river-dragon', x: 0, z: -24, type: 'ancient', respawnMs: 300000 },
+  { id: 'river-herald', x: 0, z: 24, type: 'ancient', respawnMs: 300000 },
+];
 
 /** Minioni: 3 na linku každou vlnu. */
 export const WAVE_INTERVAL_MS = 24_000;

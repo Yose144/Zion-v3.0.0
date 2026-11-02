@@ -31,11 +31,21 @@ import {
   STRUCTURES,
   WAVE_INTERVAL_MS,
   WAVE_SIZE,
+  JUNGLE_CAMPS,
   type LaneId,
   type Team,
+  type JungleCamp,
 } from './map';
 
-export type UnitKind = 'hero' | 'minion' | 'tower' | 'nexus';
+export type UnitKind = 'hero' | 'minion' | 'tower' | 'nexus' | 'monster';
+
+export type BuffType = 'strength' | 'ward' | 'speed' | 'ancient';
+
+export interface Buff {
+  type: BuffType;
+  until: number;
+  power: number;
+}
 
 /** Tři itemy — každý mění jinou věc, aby šlo hrát „na build". */
 export type ItemId = 'blade' | 'aegis' | 'boots';
@@ -75,10 +85,15 @@ export const AEGIS_MULT = 0.9;
 export const AEGIS_HP = 250;
 export const BOOTS_MULT = 1.15;
 
-/** Rychlost podle itemů a zpomalení. */
-export function heroSpeed(hero: { items: ItemId[]; slowFactor: number }): number {
+/** Rychlost podle itemů, buffů a zpomalení. */
+export function heroSpeed(hero: { items: ItemId[]; slowFactor: number; buffs?: Buff[] }): number {
   const boots = hero.items.includes('boots') ? BOOTS_MULT : 1;
-  return BASE_SPEED * boots * (1 - hero.slowFactor);
+  let speed = BASE_SPEED * boots * (1 - hero.slowFactor);
+  const now = Date.now();
+  for (const buff of hero.buffs ?? []) {
+    if (buff.until > now && buff.type === 'speed') speed *= 1 + buff.power;
+  }
+  return speed;
 }
 
 export interface Hero {
@@ -111,6 +126,7 @@ export interface Hero {
   /** Zlato ze zabití a uzlu; za něj se kupují itemy. */
   gold: number;
   items: ItemId[];
+  buffs: Buff[];
   isPlayer: boolean;
   /** Kam se bot zrovna dívá / kam jde (jen pro AI). */
   botLane: LaneId;
@@ -187,12 +203,29 @@ export interface MobaInput {
 
 export const NO_INPUT: MobaInput = { moveX: 0, moveZ: 0, cast: null, attack: false };
 
+export interface Monster {
+  id: string;
+  campId: string;
+  x: number;
+  z: number;
+  hp: number;
+  maxHp: number;
+  damage: number;
+  range: number;
+  attackMs: number;
+  cooldown: number;
+  type: JungleCamp['type'];
+  alive: boolean;
+  respawnAt: number;
+}
+
 export interface MobaState {
   now: number;
   time: number;
   ended: Team | null;
   heroes: Hero[];
   minions: Minion[];
+  monsters: Monster[];
   towers: Tower[];
   projectiles: Projectile[];
   effects: Effect[];
@@ -246,6 +279,7 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     damageDone: 0,
     gold: 320,
     items: [],
+    buffs: [],
     isPlayer,
     botLane: 'mid',
     botCast: null,
@@ -282,12 +316,32 @@ export function createMobaMatch(seats: MobaSeat[], now: number): MobaState {
     hero.z += offset;
   });
 
+  const monsters: Monster[] = JUNGLE_CAMPS.map((camp) => {
+    const stats = camp.type === 'ancient' ? { hp: 1800, damage: 65, range: 6, attackMs: 1400 } : camp.type === 'medium' ? { hp: 900, damage: 38, range: 5, attackMs: 1300 } : { hp: 550, damage: 24, range: 4.5, attackMs: 1200 };
+    return {
+      id: nextId(`monster-${camp.id}`),
+      campId: camp.id,
+      x: camp.x,
+      z: camp.z,
+      hp: stats.hp,
+      maxHp: stats.hp,
+      damage: stats.damage,
+      range: stats.range,
+      attackMs: stats.attackMs,
+      cooldown: 0,
+      type: camp.type,
+      alive: true,
+      respawnAt: 0,
+    };
+  });
+
   const state: MobaState = {
     now,
     time: 0,
     ended: null,
     heroes,
     minions: [],
+    monsters,
     towers: STRUCTURES.map((structure) => ({
       id: structure.id,
       team: structure.team,
@@ -338,10 +392,22 @@ export function nodeBonus(state: MobaState, team: Team): number {
 }
 
 const levelScale = (hero: Hero) => 1 + (hero.level - 1) * 0.06;
-/** Odchozí poškození podle itemů. */
-const damageOut = (hero: Hero) => (hero.items.includes('blade') ? BLADE_MULT : 1);
-/** Příchozí poškození podle itemů (Aegis tlumí). */
-const damageIn = (hero: Hero) => (hero.items.includes('aegis') ? AEGIS_MULT : 1);
+/** Odchozí poškození podle itemů a buffů. */
+const damageOut = (hero: Hero, now: number) => {
+  let mult = hero.items.includes('blade') ? BLADE_MULT : 1;
+  for (const buff of hero.buffs) {
+    if (buff.until > now && buff.type === 'strength') mult *= 1 + buff.power;
+  }
+  return mult;
+};
+/** Příchozí poškození podle itemů a buffů (Aegis tlumí, ward posiluje). */
+const damageIn = (hero: Hero, now: number) => {
+  let mult = hero.items.includes('aegis') ? AEGIS_MULT : 1;
+  for (const buff of hero.buffs) {
+    if (buff.until > now && buff.type === 'ward') mult *= 1 - buff.power * 0.5;
+  }
+  return Math.max(0.5, mult);
+};
 
 function addEffect(state: MobaState, kind: Effect['kind'], x: number, z: number, radius: number, color: string, ttl: number) {
   state.effects.push({ id: nextId('fx'), kind, x, z, radius, color, ttl, maxTtl: ttl });
@@ -349,7 +415,7 @@ function addEffect(state: MobaState, kind: Effect['kind'], x: number, z: number,
 
 function damageHero(state: MobaState, hero: Hero, amount: number, source: string) {
   if (!hero.alive) return;
-  let remaining = amount * damageIn(hero);
+  let remaining = amount * damageIn(hero, state.now);
   if (hero.shield > 0) {
     const absorbed = Math.min(hero.shield, remaining);
     hero.shield -= absorbed;
@@ -373,6 +439,21 @@ function damageHero(state: MobaState, hero: Hero, amount: number, source: string
   }
 }
 
+function applyJungleBuff(hero: Hero, type: JungleCamp['type'], now: number) {
+  if (type === 'small') {
+    hero.buffs.push({ type: 'speed', until: now + 90000, power: 0.15 });
+    hero.buffs.push({ type: 'strength', until: now + 90000, power: 0.12 });
+  } else if (type === 'medium') {
+    hero.buffs.push({ type: 'strength', until: now + 120000, power: 0.25 });
+    hero.buffs.push({ type: 'ward', until: now + 120000, power: 0.15 });
+  } else if (type === 'ancient') {
+    hero.buffs.push({ type: 'ancient', until: now + 150000, power: 1 });
+    hero.buffs.push({ type: 'strength', until: now + 150000, power: 0.4 });
+    hero.buffs.push({ type: 'ward', until: now + 150000, power: 0.25 });
+    hero.buffs.push({ type: 'speed', until: now + 150000, power: 0.2 });
+  }
+}
+
 function damageMinion(state: MobaState, minion: Minion, amount: number, source: string) {
   minion.hp -= amount;
   if (minion.hp > 0) return;
@@ -382,6 +463,26 @@ function damageMinion(state: MobaState, minion: Minion, amount: number, source: 
     gainXp(state, killer, 26);
     killer.gold = Math.min(3000, killer.gold + 24);
     killer.damageDone += amount;
+  }
+}
+
+function damageMonster(state: MobaState, monster: Monster, amount: number, source: string) {
+  if (!monster.alive) return;
+  monster.hp -= amount;
+  if (monster.hp > 0) return;
+  monster.alive = false;
+  const camp = JUNGLE_CAMPS.find((c) => c.id === monster.campId);
+  if (camp) {
+    monster.respawnAt = state.now + camp.respawnMs;
+    const killer = state.heroes.find((candidate) => candidate.id === source);
+    if (killer) {
+      gainXp(state, killer, camp.type === 'ancient' ? 250 : camp.type === 'medium' ? 120 : 60);
+      killer.gold = Math.min(3000, killer.gold + (camp.type === 'ancient' ? 175 : camp.type === 'medium' ? 90 : 45));
+      killer.damageDone += amount;
+      applyJungleBuff(killer, camp.type, state.now);
+      state.banner = `${killer.name} zabil ${camp.type === 'ancient' ? 'Prastaré stvoření' : camp.type === 'medium' ? 'Středního tábora' : 'Jungle monstra'}`;
+      state.bannerUntil = state.now + 3200;
+    }
   }
 }
 
@@ -441,7 +542,7 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
   hero.mana -= spell.mana;
   hero.cooldowns[slot] = state.now + spell.cooldownMs;
   hero.facing = Math.atan2(x - hero.x, z - hero.z);
-  const bonus = nodeBonus(state, hero.team) * levelScale(hero) * damageOut(hero);
+  const bonus = nodeBonus(state, hero.team) * levelScale(hero) * damageOut(hero, state.now);
 
   if (spell.kind === 'projectile') {
     const dx = x - hero.x;
@@ -609,6 +710,39 @@ export function stepMoba(
     state.bannerUntil = now + 2200;
   }
 
+  // ── buffy ─────────────────────────────────────────────────────────
+  for (const hero of state.heroes) {
+    hero.buffs = hero.buffs.filter((buff) => buff.until > state.now);
+  }
+
+  // ── monstra ───────────────────────────────────────────────────────
+  for (const monster of state.monsters) {
+    if (!monster.alive) {
+      if (state.now >= monster.respawnAt) {
+        const camp = JUNGLE_CAMPS.find((c) => c.id === monster.campId);
+        if (camp) {
+          const stats = camp.type === 'ancient' ? { hp: 1800, damage: 65, range: 6, attackMs: 1400 } : camp.type === 'medium' ? { hp: 900, damage: 38, range: 5, attackMs: 1300 } : { hp: 550, damage: 24, range: 4.5, attackMs: 1200 };
+          monster.hp = stats.hp;
+          monster.maxHp = stats.hp;
+          monster.damage = stats.damage;
+          monster.range = stats.range;
+          monster.attackMs = stats.attackMs;
+        }
+        monster.alive = true;
+        monster.cooldown = 0;
+      }
+      continue;
+    }
+    if (state.now < monster.cooldown) continue;
+    const target = state.heroes.find(
+      (hero) => hero.alive && distance(monster.x, monster.z, hero.x, hero.z) <= monster.range,
+    );
+    if (!target) continue;
+    monster.cooldown = state.now + monster.attackMs;
+    damageHero(state, target, monster.damage, monster.id);
+    addEffect(state, 'hit', target.x, target.z, 0.6, '#ff9f1a', 200);
+  }
+
   // ── hrdinové ──────────────────────────────────────────────────────
   for (const hero of state.heroes) {
     if (!hero.alive) {
@@ -655,7 +789,20 @@ export function stepMoba(
     if (now >= hero.attackCooldown) {
       const wantsAttack = input ? input.attack : true;
       if (wantsAttack) {
-        const target = nearestEnemyHero(state, hero, 6.4) ?? nearestEnemyMinion(state, hero, 6.4);
+        let target: Hero | Minion | Monster | null = nearestEnemyHero(state, hero, 6.4) ?? nearestEnemyMinion(state, hero, 6.4);
+        if (!target) {
+          let best: Monster | null = null;
+          let bestDistance = 6.4;
+          for (const monster of state.monsters) {
+            if (!monster.alive) continue;
+            const d = distance(hero.x, hero.z, monster.x, monster.z);
+            if (d < bestDistance) {
+              bestDistance = d;
+              best = monster;
+            }
+          }
+          target = best;
+        }
         if (target) {
           hero.attackCooldown = now + 850;
           hero.facing = Math.atan2(target.x - hero.x, target.z - hero.z);
@@ -663,9 +810,10 @@ export function stepMoba(
             (28 + (AVATARS_BY_ID.get(hero.heroId)?.cl ?? 3) * 3) *
             levelScale(hero) *
             nodeBonus(state, hero.team) *
-            damageOut(hero);
+            damageOut(hero, state.now);
           hero.damageDone += damage;
-          if ('heroId' in target) damageHero(state, target as Hero, damage, hero.id);
+          if ('heroId' in target && 'team' in target) damageHero(state, target as Hero, damage, hero.id);
+          else if ('campId' in target) damageMonster(state, target as Monster, damage, hero.id);
           else damageMinion(state, target as Minion, damage, hero.id);
           addEffect(state, 'hit', target.x, target.z, 0.7, '#ffe6a8', 180);
         }
@@ -757,7 +905,7 @@ export function stepMoba(
       if (tower.hp <= 0 || tower.team === hero.team) continue;
       if (distance(hero.x, hero.z, tower.x, tower.z) > 5.6) continue;
       if (now < hero.attackCooldown - 400) continue;
-      const damage = 26 * levelScale(hero) * nodeBonus(state, hero.team) * damageOut(hero);
+      const damage = 26 * levelScale(hero) * nodeBonus(state, hero.team) * damageOut(hero, state.now);
       tower.hp = Math.max(0, tower.hp - damage);
       hero.damageDone += damage;
       addEffect(state, 'hit', tower.x, tower.z, 0.8, '#ffe6a8', 180);
@@ -865,8 +1013,10 @@ export interface MobaSnapshot {
     deaths: number;
     gold: number;
     items: ItemId[];
+    buffs: Buff[];
   }[];
   minions: { id: string; team: Team; x: number; z: number; hp: number; maxHp: number }[];
+  monsters: { id: string; x: number; z: number; hp: number; maxHp: number; type: JungleCamp['type']; alive: boolean }[];
   projectiles: { id: string; x: number; z: number; color: string }[];
   effects: { id: string; kind: Effect['kind']; x: number; z: number; radius: number; color: string; alpha: number }[];
 }
@@ -910,6 +1060,7 @@ export function mobaSnapshot(state: MobaState): MobaSnapshot {
       deaths: hero.deaths,
       gold: Math.round(hero.gold),
       items: hero.items,
+      buffs: hero.buffs,
     })),
     minions: state.minions.map((minion) => ({
       id: minion.id,
@@ -918,6 +1069,15 @@ export function mobaSnapshot(state: MobaState): MobaSnapshot {
       z: Math.round(minion.z * 100) / 100,
       hp: minion.hp,
       maxHp: minion.maxHp,
+    })),
+    monsters: state.monsters.map((monster) => ({
+      id: monster.id,
+      x: Math.round(monster.x * 100) / 100,
+      z: Math.round(monster.z * 100) / 100,
+      hp: monster.alive ? monster.hp : 0,
+      maxHp: monster.maxHp,
+      type: monster.type,
+      alive: monster.alive,
     })),
     projectiles: state.projectiles.map((projectile) => ({
       id: projectile.id,

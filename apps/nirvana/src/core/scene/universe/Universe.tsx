@@ -119,6 +119,10 @@ export function Universe({
 
   useFrame((state, delta) => {
     const { clock } = state;
+    if (typeof window !== 'undefined') {
+      (window as any).__nirvanaCamera = camera;
+      (window as any).__nirvanaControls = controls.current;
+    }
     // zemská soustava obíhá Slunce — celý vesmír se točí kolem něj
     if (!reducedMotion) earthAngle.current += delta * EARTH_ORBIT_SPEED;
     const ex = Math.cos(earthAngle.current) * EARTH_ORBIT_R;
