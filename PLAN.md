@@ -55,7 +55,7 @@ G9 externí audit (posunut, Stable bez data — neblokuje RC kvalitu)
 
 ### Priorita 2 (V33 gates)
 4. ✅ **NCL 1 worker + 1 job typ** — V33-5 gate, 2 integrační testy, 44/44 pass
-5. **DeSci papers repo + L1 hash anchor** (6.B4) — Issobella DeSci, kód existuje
+5. ✅ **DeSci papers repo + L1 hash anchor** (6.B4) — backend kompletní (anchor.rs + db + api), 23/23 testů pass, web frontend + proxy existují
 6. **OASIS a11y/privacy plný scan** (V33-10) — bezpečnostní gate
 7. **ZionDex on-chain settlement** — QuoterV2/SwapRouter + solvency + funded E2E
 
@@ -139,7 +139,7 @@ Viz `docs/3.2/DEFERRED_3.2.md`:
 2. 🤖 DR drill plán → provedení (potřebuje čistý host)
 3. 🤖 Release artefakty dokončení (OpenCL/GPU host + rebuild z RC commitu)
 4. ✅ 🤖 NCL 1 worker + 1 job typ (V33-5 gate) — 2 integrační testy (LlmInference lifecycle + CodeAnalysis failure), 44/44 pass
-5. 🤖 DeSci papers repo + L1 hash anchor (6.B4)
+5. ✅ 🤖 DeSci papers repo + L1 hash anchor (6.B4) — backend + web + proxy, 23/23 testů pass
 6. 🤖 OASIS a11y/privacy plný scan (V33-10)
 
 ---

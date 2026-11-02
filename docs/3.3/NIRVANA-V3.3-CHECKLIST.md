@@ -175,7 +175,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 
 ## N6 · Issobella (L6)
 
-- [ ] 🤖 DeSci repozitář `/l6-issobella/papers` + L1 hash anchor (6.B4)
+- [x] 🤖 DeSci repozitář `/l6-issobella/papers` + L1 hash anchor (6.B4) — ✅ 2. 11. 2026: backend kompletní (anchor.rs: memo-direct + merkle-batch, reorg-safe confirm, merkle path/verify, 8 unit testů), DB lifecycle (12 testů: paper anchor + batch anchor), l1_scanner (3 testy). Web frontend `/l6-issobella/papers` (256 ř.) + API proxy existují. 23/23 testů pass.
 - [ ] 🤖 Alcubierre-Ekam jako publikovatelný matematický draft — HYPOTÉZA, falsifikační kritéria (charta M6)
 - [ ] 👤 Nezávislé review → V33-7
 - [ ] 🔀 NCL vědecký pilot (po miner↔NCL spike)
