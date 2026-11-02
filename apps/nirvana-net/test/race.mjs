@@ -133,8 +133,8 @@ try {
   const b = client();
   await a.opened;
   await b.opened;
-  a.send({ t: 'hello', proto: 5 });
-  b.send({ t: 'hello', proto: 5 });
+  a.send({ t: 'hello', proto: 6 });
+  b.send({ t: 'hello', proto: 6 });
   await a.waitFor((m) => m.t === 'welcome');
   await b.waitFor((m) => m.t === 'welcome');
 

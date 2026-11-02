@@ -285,7 +285,7 @@ try {
 
   const a = client();
   await a.opened;
-  a.send({ t: 'hello', proto: 4 });
+  a.send({ t: 'hello', proto: 6 });
   await a.waitFor((m) => m.t === 'welcome');
   a.send({ t: 'join', game: 'arena' });
   const roomA = await a.waitFor((m) => m.t === 'room');
