@@ -16,9 +16,24 @@ const BASE = process.env.NIRVANA_BASE ?? 'http://127.0.0.1:3010';
 /** Na šířku je málo výšky — ovládání se zmenšuje, chce to vlastní běh. */
 const LANDSCAPE = process.env.MOBILE_LANDSCAPE === '1';
 const VIEWPORT = LANDSCAPE ? { width: 844, height: 390 } : { width: 390, height: 844 };
-const EXE =
-  process.env.CHROME_PATH ??
-  '/Users/yeshuae/.cache/puppeteer/chrome-headless-shell/mac_arm-156.0.8078.47/chrome-headless-shell-mac-arm64/chrome-headless-shell';
+/**
+ * Prohlížeč: `CHROME_PATH` → puppeteer cache → systémový Chrome.
+ * Cache se občas uklidí (stalo se 2026-11-02, audit spadl na chybějící
+ * binárce), takže poslední instance musí být něco, co na stroji opravdu je.
+ */
+const CHROME_CANDIDATES = [
+  process.env.CHROME_PATH,
+  '/Users/yeshuae/.cache/puppeteer/chrome-headless-shell/mac_arm-156.0.8078.47/chrome-headless-shell-mac-arm64/chrome-headless-shell',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Chromium.app/Contents/MacOS/Chromium',
+].filter(Boolean);
+
+const { existsSync } = await import('node:fs');
+const EXE = CHROME_CANDIDATES.find((path) => existsSync(path));
+if (!EXE) {
+  console.error('mobile-audit: žádný prohlížeč — nastav CHROME_PATH');
+  process.exit(2);
+}
 
 /** Co od každé stránky čekáme po vstupu do hry. */
 const PAGES = [
