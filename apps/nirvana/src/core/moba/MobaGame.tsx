@@ -22,6 +22,8 @@ const STEP = 1 / 30;
 
 export interface MobaStats {
   snapshot: MobaSnapshot;
+  /** Id hrdiny, kterého ovládáš (pro minimapu a zvýraznění). */
+  youId: string | null;
   spells: { slot: SpellSlot; name: string; cooldown: number; cooldownMs: number; mana: number; color: string }[];
   playerHp: number;
   playerMaxHp: number;
@@ -64,6 +66,7 @@ export function statsFromSnapshot(
   const you = snapshot.heroes.find((hero) => hero.id === youId) ?? snapshot.heroes[0];
   return {
     snapshot,
+    youId,
     spells: spells.map((spell) => ({
       slot: spell.slot,
       name: spell.name,

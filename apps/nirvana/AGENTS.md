@@ -633,8 +633,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   session dělala `git add` přes celý strom a strhla staged soubory. Obsah je
   v pořádku a otestovaný, jen zpráva commitu mluví o mobilním ovládání.
   Report: `docs/3.2/REPORTS/REPORT_2026-11-02_FIRST_WORLD_ONLINE.md`.
-- **Co tu není:** obchod/itemy, mlha války, minimapa, zvuk, dotyk na mobilu,
-  VR, predikce vlastního hrdiny. Nehlásit jako hotové.
+- **Predikce vlastního pohybu (online):** `MobaOnline` drží `selfPose`, posouvá
+  ho rychlostí `PREDICT_SPEED = 6.2` (musí sedět se `sim.ts`), při odchylce
+  > 1,6 m se teleportuje na server, jinak dorovnává 18 %/frame. Predikuje se
+  **jen pohyb** — zásahy a smrt rozhoduje server. `MobaStage` bere `selfPose`
+  a kreslí z něj vlastního hrdinu i kameru.
+- **Minimapa** (`MobaMinimap`) kreslí z jednoho snapshotu 5×/s: linky, věže,
+  Nexy, uzly L5 s barvou vlastníka, minioni a hrdinové (tvůj s bílým kroužkem).
+  Chce `MobaStats.youId`; nepřidávat jí vlastní stav.
+- **Past s throttlem:** `sendMobaInput` má 20 Hz limit a **vrací boolean**.
+  Zařazené kouzlo se smí smazat jen po skutečném odeslání, jinak se tiše
+  ztratí (přesně to odhalil E2E online test).
+- **Co tu není:** obchod/itemy, mlha války, zvuk, dotyk na mobilu, VR.
+  Nehlásit jako hotové.
 - **Testy:** `npx tsx apps/nirvana/test/moba-sim.mjs` (21 kontrol, pravidla)
   a `node apps/nirvana/e2e/first-world.mjs` (11 kontrol, hra v prohlížeči;
   Chromium z puppeteer cache, playwright verzi nemá).

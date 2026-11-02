@@ -95,3 +95,43 @@ node apps/nirvana-net/test/moba.mjs
 node apps/nirvana/e2e/first-world.mjs
 node apps/nirvana/e2e/moba-online.mjs
 ```
+
+---
+
+## Dodatek: predikce pohybu + minimapa (stejný den)
+
+### Predikce vlastního hrdiny
+
+Server posílá snapshoty 15 Hz, takže vlastní postava cukala. `MobaOnline`
+teď drží **predikovanou polohu** a počítá ji stejnou rychlostí jako sim
+(`PREDICT_SPEED = 6.2`, stejná konstanta jako v `sim.ts`):
+
+- každý frame posune predikci podle vstupu,
+- odchylka > **1,6 m** = teleport na server (stejná hranice jako v aréně),
+- jinak plynulé dorovnání 18 %/frame,
+- **predikuje se jen pohyb** — poškození, smrt i kouzla rozhoduje server.
+
+`MobaStage` dostal `selfPose` a kreslí vlastního hrdinu (i kameru) z predikce.
+Když hrdina zemře, predikce se vypne a scéna se řídí serverem.
+
+### Minimapa
+
+`MobaMinimap` kreslí z jednoho snapshotu (žádný vlastní stav): tři linky, věže
+a Nexy (barvy stran, mrtvé věže ztlumené), **uzly L5** s barvou vlastníka,
+minioni jako tečky a hrdinové s bílým kroužkem u toho tvého. Aktualizace 5×/s
+spolu s HUD — na mapu to stačí a herní smyčku to nezatěžuje.
+
+### Chyba, kterou odhalil E2E
+
+Kouzlo se občas **tiše ztratilo**: `sendMobaInput` má throttle 20 Hz a volající
+zahazoval zařazené kouzlo bez ohledu na to, jestli se zpráva opravdu odeslala.
+Nově hook vrací `boolean` a kouzlo se maže jen po skutečném odeslání (navíc
+expiruje po 400 ms, aby neviselo, když hráč odjede kurzorem mimo plochu).
+
+### Ověření dodatku
+
+| Co | Výsledek |
+|---|---|
+| E2E online 2v2 | **13/13** — navíc „minimapa kreslí" (painted pixely) a „predikce aktivní a u serveru" |
+| E2E sólo | 11/11 (minimapa je i v sólo HUD) |
+| `tsc` + `next build` | čisté |

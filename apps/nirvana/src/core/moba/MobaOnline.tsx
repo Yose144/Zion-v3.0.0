@@ -20,6 +20,15 @@ import { MobaStage } from './MobaStage';
 import { statsFromSnapshot, type MobaStats } from './MobaGame';
 import type { MobaSnapshot } from './sim';
 
+/**
+ * Rychlost predikce. Serverovej sim jede 6,2 m/s (viz `sim.ts`); když se
+ * číslo změní tam, musí se změnit i tady — jinak se postava viditelně
+ * rozjíždí a dorovnává.
+ */
+const PREDICT_SPEED = 6.2;
+/** Odchylka, od které se predikce „teleportuje" na server (m). */
+const PREDICT_SNAP = 1.6;
+
 const MobaChart = {
   connecting: { cs: 'Připojuji se k Zemi…', en: 'Connecting to Earth…' },
   waiting: { cs: 'Čekám na hráče — volná sedla doplní boti.', en: 'Waiting for players — bots fill empty seats.' },
@@ -41,6 +50,7 @@ export function MobaOnline({
   debug?: boolean;
 }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
+  const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
   const { youPlayerId } = useNet();
 
   return (
@@ -50,8 +60,16 @@ export function MobaOnline({
       camera={{ position: [0, 20, 17], fov: 42, near: 0.5, far: 220 }}
       gl={{ antialias: true }}
     >
-      <OnlineController heroId={heroId} onStats={onStats} onEnd={onEnd} onPhase={onPhase} debug={debug} snapshotRef={snapshotRef} />
-      <MobaStage snapshotRef={snapshotRef} youId={youPlayerId ?? 'hero-you'} />
+      <OnlineController
+        heroId={heroId}
+        onStats={onStats}
+        onEnd={onEnd}
+        onPhase={onPhase}
+        debug={debug}
+        snapshotRef={snapshotRef}
+        selfPose={selfPose}
+      />
+      <MobaStage snapshotRef={snapshotRef} youId={youPlayerId ?? 'hero-you'} selfPose={selfPose} />
     </Canvas>
   );
 }
@@ -63,6 +81,7 @@ function OnlineController({
   onPhase,
   debug,
   snapshotRef,
+  selfPose,
 }: {
   heroId: number;
   onStats: (stats: MobaStats) => void;
@@ -70,13 +89,14 @@ function OnlineController({
   onPhase?: (phase: 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline') => void;
   debug?: boolean;
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
+  selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
 }) {
   const { camera, gl } = useThree();
   const { subscribe, joinGame, leaveRoom, sendMobaInput, connected, youPlayerId } = useNet();
   const keys = useRef(new Set<string>());
   const pointer = useRef({ x: 0, y: 0 });
   const attack = useRef(false);
-  const queuedCast = useRef<{ slot: 'Q' | 'W' | 'E' | 'R' } | null>(null);
+  const queuedCast = useRef<{ slot: 'Q' | 'W' | 'E' | 'R'; at: number } | null>(null);
   const lastStats = useRef(0);
   const endedSent = useRef(false);
   const serverNow = useRef({ offset: 0, at: Date.now() });
@@ -85,6 +105,7 @@ function OnlineController({
   const castPoint = useMemo(() => new THREE.Vector3(), []);
   const spells = useMemo(() => spellsForAvatar(heroId), [heroId]);
   const phaseRef = useRef<string>('connecting');
+  const lastFrame = useRef(0);
 
   // ── připojení a odběr snapshotů ─────────────────────────────────────
   useEffect(() => {
@@ -123,10 +144,10 @@ function OnlineController({
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
       keys.current.add(event.code);
-      if (event.code === 'KeyQ') queuedCast.current = { slot: 'Q' };
-      if (event.code === 'KeyW') queuedCast.current = { slot: 'W' };
-      if (event.code === 'KeyE') queuedCast.current = { slot: 'E' };
-      if (event.code === 'KeyR') queuedCast.current = { slot: 'R' };
+      if (event.code === 'KeyQ') queuedCast.current = { slot: 'Q', at: Date.now() };
+      if (event.code === 'KeyW') queuedCast.current = { slot: 'W', at: Date.now() };
+      if (event.code === 'KeyE') queuedCast.current = { slot: 'E', at: Date.now() };
+      if (event.code === 'KeyR') queuedCast.current = { slot: 'R', at: Date.now() };
       if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR'].includes(event.code)) event.preventDefault();
     };
     const up = (event: KeyboardEvent) => keys.current.delete(event.code);
@@ -167,14 +188,44 @@ function OnlineController({
 
     raycaster.setFromCamera(new THREE.Vector2(pointer.current.x, pointer.current.y), camera);
     const hit = raycaster.ray.intersectPlane(groundPlane, castPoint);
+    // kouzlo starší než 400 ms zahodit (hráč mezitím mohl kliknout jinam)
+    if (queuedCast.current && Date.now() - queuedCast.current.at > 400) queuedCast.current = null;
     const cast = queuedCast.current && hit ? { slot: queuedCast.current.slot, x: castPoint.x, z: castPoint.z } : null;
-    queuedCast.current = null;
 
-    // vstup na server (hook sám omezuje na 20 Hz)
-    sendMobaInput({ moveX: strafe, moveZ: -forward, attack: attack.current, cast });
+    // vstup na server (hook sám omezuje na 20 Hz). Kouzlo se maže jen když
+    // se opravdu odeslalo — jinak by ho throttle tiše zahodil (reálná chyba).
+    const sent = sendMobaInput({ moveX: strafe, moveZ: -forward, attack: attack.current, cast });
+    if (sent && cast) queuedCast.current = null;
 
     const snapshot = snapshotRef.current;
     if (!snapshot) return;
+
+    // ── predikce vlastního pohybu ────────────────────────────────────
+    // Server posílá 15 Hz; bez predikce by se vlastní postava cukala.
+    // Predikuje se JEN pohyb — poškození a smrt rozhoduje server.
+    const you = snapshot.heroes.find((hero) => hero.id === youPlayerId) ?? null;
+    if (you) {
+      const frameNow = Date.now();
+      const frameDt = Math.min(0.1, (frameNow - lastFrame.current) / 1000 || 1 / 60);
+      lastFrame.current = frameNow;
+      const pose = selfPose.current ?? { x: you.x, z: you.z, active: you.alive };
+      const length = Math.hypot(strafe, -forward);
+      if (you.alive && length > 0.05) {
+        pose.x += (strafe / length) * PREDICT_SPEED * frameDt;
+        pose.z += (-forward / length) * PREDICT_SPEED * frameDt;
+      }
+      const error = Math.hypot(pose.x - you.x, pose.z - you.z);
+      if (!you.alive || error > PREDICT_SNAP) {
+        pose.x = you.x;
+        pose.z = you.z;
+      } else {
+        // plynulé dorovnání (stejná logika jako u arény)
+        pose.x += (you.x - pose.x) * 0.18;
+        pose.z += (you.z - pose.z) * 0.18;
+      }
+      pose.active = you.alive;
+      selfPose.current = pose;
+    }
 
     const now = Date.now();
     if (now - lastStats.current > 200) {
@@ -211,6 +262,7 @@ function OnlineController({
         towers: snapshot.towers.map((tower) => ({ id: tower.id, hp: Math.round(tower.hp) })),
         nodes: snapshot.nodes.map((node) => ({ key: node.key, owner: node.owner })),
         ended: snapshot.ended,
+        predicted: selfPose.current,
       });
     }
   });

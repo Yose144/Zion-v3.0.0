@@ -52,8 +52,12 @@ export interface NetApi {
   joinArena: () => void;
   /** Připojení do hry (`arena` = Mars, `race` = Venuše, `fight` = Merkur). */
   joinGame: (game: 'arena' | 'race' | 'fight' | 'moba', heroId?: number) => void;
-  /** MOBA: kouzlo na bod + držený útok. */
-  sendMobaInput: (input: { moveX: number; moveZ: number; attack: boolean; cast: { slot: 'Q' | 'W' | 'E' | 'R'; x: number; z: number } | null }) => void;
+  /**
+   * MOBA: kouzlo na bod + držený útok.
+   * Vrací `true`, když se zpráva opravdu poslala — kouzlo se nesmí ztratit
+   * jen proto, že ho zrovna zahodil throttle (20 Hz).
+   */
+  sendMobaInput: (input: { moveX: number; moveZ: number; attack: boolean; cast: { slot: 'Q' | 'W' | 'E' | 'R'; x: number; z: number } | null }) => boolean;
   leaveRoom: () => void;
   /**
    * Herní data tečou přes subscription, ne přes React state — snapshoty
@@ -317,7 +321,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
   const sendMobaInput = useCallback<NetApi['sendMobaInput']>(
     (input) => {
       const now = Date.now();
-      if (now - lastInputAt.current < 45) return;
+      if (now - lastInputAt.current < 45) return false;
       lastInputAt.current = now;
       send({
         t: 'input',
@@ -334,6 +338,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
         castX: input.cast ? Math.round(input.cast.x * 100) / 100 : undefined,
         castZ: input.cast ? Math.round(input.cast.z * 100) / 100 : undefined,
       });
+      return true;
     },
     [send],
   );

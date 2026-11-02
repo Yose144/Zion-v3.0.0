@@ -26,9 +26,16 @@ const MAX_EFFECTS = 40;
 export function MobaStage({
   snapshotRef,
   youId,
+  selfPose,
 }: {
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
   youId: string;
+  /**
+   * Predikovaná poloha vlastního hrdiny (online). Server posílá 15 Hz, takže
+   * bez predikce by se vlastní postava cukala; zásahy dál rozhoduje server,
+   * predikuje se **jen pohyb**.
+   */
+  selfPose?: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
 }) {
   const { camera } = useThree();
   const heroRefs = useRef<(THREE.Group | null)[]>([]);
@@ -60,10 +67,12 @@ export function MobaStage({
       setSlots(snapshot.heroes.map((hero) => ({ id: hero.id, heroId: hero.heroId })));
     }
 
+    const predicted = selfPose?.current;
     snapshot.heroes.forEach((hero, index) => {
       const group = heroRefs.current[index];
       if (!group) return;
-      group.position.set(hero.x, 0, hero.z);
+      const usePredict = predicted?.active && hero.id === youId;
+      group.position.set(usePredict ? predicted!.x : hero.x, 0, usePredict ? predicted!.z : hero.z);
       group.visible = hero.alive;
       const ring = group.children[1] as THREE.Mesh | undefined;
       const material = ring?.material as THREE.MeshBasicMaterial | undefined;
@@ -73,8 +82,9 @@ export function MobaStage({
     // ── kamera drží tvého hrdinu na středu ──────────────────────────
     const you = snapshot.heroes.find((hero) => hero.id === youId) ?? snapshot.heroes[0];
     if (you) {
-      const targetX = THREE.MathUtils.clamp(you.x, -38, 38);
-      const targetZ = THREE.MathUtils.clamp(you.z, -26, 26);
+      const predictedNow = selfPose?.current?.active ? selfPose.current : null;
+      const targetX = THREE.MathUtils.clamp(predictedNow?.x ?? you.x, -38, 38);
+      const targetZ = THREE.MathUtils.clamp(predictedNow?.z ?? you.z, -26, 26);
       camera.position.set(targetX, 20, targetZ + 17);
       camera.lookAt(targetX, 0.9, targetZ);
     }

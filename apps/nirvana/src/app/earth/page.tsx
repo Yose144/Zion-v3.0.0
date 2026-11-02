@@ -18,6 +18,7 @@ import { AVATARS } from '@/core/avatars/catalog';
 import { useI18n } from '@/core/i18n';
 import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
+import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
 import { spellsForAvatar } from '@/core/moba/spells';
 
@@ -291,6 +292,12 @@ export default function EarthPage() {
               {cs ? 'WASD pohyb · Q/W/E/R kouzlo · levé tlačítko útok' : 'WASD move · Q/W/E/R cast · left click attack'}
             </div>
           </div>
+
+          <MobaMinimap
+            snapshot={stats?.snapshot ?? null}
+            youId={stats?.youId ?? null}
+            label={cs ? 'Minimapa Prvního světa' : 'First World minimap'}
+          />
 
           {stats?.snapshot.banner && <div className="moba-banner">{stats.snapshot.banner}</div>}
 

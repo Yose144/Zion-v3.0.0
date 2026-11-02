@@ -106,6 +106,22 @@ try {
     check('kouzlo: A má cooldown', meAfter.cooldowns.Q > 0, JSON.stringify(meAfter.cooldowns));
     check('kouzlo: A spotřeboval manu', meAfter.mana < meBefore.mana, `${meBefore.mana} → ${meAfter.mana}`);
 
+    // minimapa: plátno existuje a má nenulový obsah
+    const minimap = await a.page.evaluate(() => {
+      const canvas = document.querySelector('.moba-minimap canvas');
+      if (!canvas) return null;
+      const context = canvas.getContext('2d');
+      const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let painted = 0;
+      for (let index = 3; index < data.length; index += 4) if (data[index] > 0) painted += 1;
+      return { width: canvas.width, height: canvas.height, painted };
+    });
+    check('minimapa: plátno kreslí', Boolean(minimap && minimap.painted > 500), JSON.stringify(minimap));
+
+    // predikce: vlastní hrdina má predikovanou polohu blízko serveru
+    const predicted = (await debug(a))?.predicted;
+    check('predikce: aktivní a u serveru', Boolean(predicted?.active) && Math.hypot(predicted.x - meAfter.x, predicted.z - meAfter.z) < 4, JSON.stringify(predicted));
+
     check('A: bez chyb v konzoli', a.errors.length === 0, a.errors.slice(0, 2).join(' | '));
     check('B: bez chyb v konzoli', b.errors.length === 0, b.errors.slice(0, 2).join(' | '));
     await a.page.screenshot({ path: `${OUT}/online-a.png` });
