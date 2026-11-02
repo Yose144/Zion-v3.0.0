@@ -2999,9 +2999,11 @@ function srbAlgoForCoin(coin) {
     ? 'pearlhash' : 'quantus';
 }
 function srbEngineWanted(config) {
+  // Engine is per-rig (binary + user preference); the coin check is applied
+  // per stream — stream 4 can be SRB-supported even when stream 2 is not.
   if (resolveQtcEngine(config) !== 'srbminer') return false;
   if (!config || config.gpu !== true) return false;
-  return srbCoinIsExternal(config.gpuCoin);
+  return true;
 }
 
 function resolveSrbMinerPath(config) {
@@ -3727,7 +3729,7 @@ function startMiningV31(config, v31Path) {
   // faster on RDNA. Disable stream2 so zion-miner keeps only ZION (stream1,
   // small GPU duty) + CPU stream; the card otherwise belongs to SRBMiner.
   const useSrbQtc = wantsGpu && config.stream2 !== false
-    && !gpuCoinAuto && srbEngineWanted(config);
+    && !gpuCoinAuto && srbEngineWanted(config) && srbCoinIsExternal(gpuCoin);
   // Stream 4's second external GPU coin can likewise run on the sidecar
   // (e.g. PRL while stream 2 does QTU) — decided inside the quad block.
   let useSrbExt4 = false;
