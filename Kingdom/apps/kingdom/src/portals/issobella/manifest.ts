@@ -13,6 +13,12 @@ export const manifest = definePortal({
   ring: { x: 1.05, z: -2.6, hue: 172 },
   auth: 'none',
   windows: [{ id: 'papers', title: { cs: 'Papers', en: 'Papers' }, size: 'lg' }],
-  reads: [{ id: 'health', service: 'issobella', path: '/api/issobella/health', cache: 60 }],
-  status: 'placeholder',
+  reads: [
+    { id: 'health', service: 'issobella', path: '/api/issobella/health', cache: 60 },
+    { id: 'papers', service: 'issobella', path: '/api/issobella/papers', cache: 60 },
+    /* Základ cesty; portál připojuje `?id=`, protože id je vstup od člověka. */
+    { id: 'paper', service: 'issobella', path: '/api/issobella/papers', cache: 60 },
+    { id: 'proof', service: 'issobella', path: '/api/issobella/papers', cache: 60 },
+  ],
+  status: 'live',
 });
