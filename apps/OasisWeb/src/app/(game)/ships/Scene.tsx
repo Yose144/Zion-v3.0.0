@@ -310,7 +310,7 @@ function ShipDetail({ shipId, onClose }: { shipId: ShipModelId; onClose: () => v
     <div className="space-y-3 text-sm">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold" style={{ color: ship.color }}>{ship.label}</h3>
-        <button onClick={onClose} className="text-white/70 hover:text-white">✕</button>
+        <button onClick={onClose} aria-label="Close ship panel" className="text-white/70 hover:text-white">✕</button>
       </div>
       <p className="text-xs text-white/70">{ship.description}</p>
       <div className="flex gap-2 text-[10px]">

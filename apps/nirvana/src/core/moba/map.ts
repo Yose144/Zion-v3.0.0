@@ -21,13 +21,13 @@ export interface Lane {
   to: number;
 }
 
-export const MAP_HALF_X = 42;
-export const MAP_HALF_Z = 30;
+export const MAP_HALF_X = 46;
+export const MAP_HALF_Z = 34;
 
 export const LANES: Lane[] = [
-  { id: 'top', z: -16, from: -32, to: 32 },
-  { id: 'mid', z: 0, from: -32, to: 32 },
-  { id: 'bottom', z: 16, from: -32, to: 32 },
+  { id: 'top', z: -18, from: -36, to: 36 },
+  { id: 'mid', z: 0, from: -36, to: 36 },
+  { id: 'bottom', z: 18, from: -36, to: 36 },
 ];
 
 export interface Structure {
@@ -42,20 +42,20 @@ export interface Structure {
   attackMs: number;
 }
 
-export const NEXUS_HP = 3200;
-export const TOWER_HP = 1400;
+export const NEXUS_HP = 4000;
+export const TOWER_HP = 1700;
 
 export const STRUCTURES: Structure[] = [
   // ── modrá (ZION) ────────────────────────────────────────────────────
-  { id: 'blue-nexus', team: 'blue', kind: 'nexus', x: -38, z: 0, hp: NEXUS_HP, range: 8, damage: 46, attackMs: 1100 },
+  { id: 'blue-nexus', team: 'blue', kind: 'nexus', x: -42, z: 0, hp: NEXUS_HP, range: 9, damage: 54, attackMs: 1100 },
   ...LANES.flatMap((lane): Structure[] => [
-    { id: `blue-tower-inner-${lane.id}`, team: 'blue', kind: 'tower', x: -20, z: lane.z, hp: TOWER_HP, range: 9, damage: 58, attackMs: 1100 },
-    { id: `blue-tower-outer-${lane.id}`, team: 'blue', kind: 'tower', x: -10, z: lane.z, hp: TOWER_HP, range: 9, damage: 58, attackMs: 1100 },
-    { id: `red-tower-inner-${lane.id}`, team: 'red', kind: 'tower', x: 20, z: lane.z, hp: TOWER_HP, range: 9, damage: 58, attackMs: 1100 },
-    { id: `red-tower-outer-${lane.id}`, team: 'red', kind: 'tower', x: 10, z: lane.z, hp: TOWER_HP, range: 9, damage: 58, attackMs: 1100 },
+    { id: `blue-tower-inner-${lane.id}`, team: 'blue', kind: 'tower', x: -24, z: lane.z, hp: TOWER_HP, range: 10, damage: 66, attackMs: 1050 },
+    { id: `blue-tower-outer-${lane.id}`, team: 'blue', kind: 'tower', x: -12, z: lane.z, hp: TOWER_HP, range: 10, damage: 66, attackMs: 1050 },
+    { id: `red-tower-inner-${lane.id}`, team: 'red', kind: 'tower', x: 24, z: lane.z, hp: TOWER_HP, range: 10, damage: 66, attackMs: 1050 },
+    { id: `red-tower-outer-${lane.id}`, team: 'red', kind: 'tower', x: 12, z: lane.z, hp: TOWER_HP, range: 10, damage: 66, attackMs: 1050 },
   ]),
   // ── červená (Opozice) ───────────────────────────────────────────────
-  { id: 'red-nexus', team: 'red', kind: 'nexus', x: 38, z: 0, hp: NEXUS_HP, range: 8, damage: 46, attackMs: 1100 },
+  { id: 'red-nexus', team: 'red', kind: 'nexus', x: 42, z: 0, hp: NEXUS_HP, range: 9, damage: 54, attackMs: 1100 },
 ];
 
 /**

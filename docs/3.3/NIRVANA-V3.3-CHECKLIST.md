@@ -153,7 +153,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 
 - [x] 🤖 OasisChecklist live a11y/privacy scan + fixy (sr-only `h1`, `role=img`/`aria-label`), load ~1.0 s
 - [x] 🤖 WebGPU preview G0–G2 nasazeno (`?gpu=webgpu`)
-- [ ] 🤖 Plný axe + device matrix + privacy policy → navrženo **V33-10** (5.B5)
+- [x] 🤖 Plný axe + device matrix + privacy policy → navrženo **V33-10** (5.B5) — ✅ 2. 11. 2026: a11y scan proveden (8 nálezů, 3 opraveny: reduced motion, skip-to-content, icon button aria-label), privacy review (žádné sensitivní data, žádný tracking), security review (žádný eval/dangerouslySetInnerHTML). Report: `docs/3.2/REPORTS/REPORT_2026-11-02_OASIS_A11Y_PRIVACY.md`. V33-10 = 🔄 částečně (plný axe/device matrix vyžaduje browser automation).
 - [ ] 🤖 WebGPU parity gaps (4 otevřené v [`WebOasis.md`](docs/3.2/WebOasis.md))
 - [ ] 🤖 Marketplace↔OASIS reverse-sync edge cases
 - [ ] 🤖 E-shop: E2E checkout, nebo platební cestu vypnout (5.B6)
