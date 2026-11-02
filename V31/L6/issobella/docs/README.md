@@ -20,11 +20,11 @@ Tato složka je primárním zdrojem pravdy pro L6 vrstvu ZION TerraNova V31 Main
 
 | Soubor | Obsah |
 |--------|-------|
-| [`L6data/Architektura.md`](../../../L6data/Architektura.md) | Architektura stanice, moduly, energetika |
-| [`L6data/Kvantovy_Motor.md`](../../../L6data/Kvantovy_Motor.md) | Návrh a roadmap kvantového motoru |
-| [`L6data/Umela_Gravitace.md`](../../../L6data/Umela_Gravitace.md) | Fyzika a design umělé gravitace |
-| [`L6data/Lidske_Faktory.md`](../../../L6data/Lidske_Faktory.md) | Biomedicína a psychologie posádky |
-| [`L6data/GPT_Podklady.md`](../../../L6data/GPT_Podklady.md) | Kompaktní kontext pro GPT |
+| [`L6data/Architektura.md`](../../../../canon/l6/Architektura.md) | Architektura stanice, moduly, energetika |
+| [`L6data/Kvantovy_Motor.md`](../../../../canon/l6/Kvantovy_Motor.md) | Návrh a roadmap kvantového motoru |
+| [`L6data/Umela_Gravitace.md`](../../../../canon/l6/Umela_Gravitace.md) | Fyzika a design umělé gravitace |
+| [`L6data/Lidske_Faktory.md`](../../../../canon/l6/Lidske_Faktory.md) | Biomedicína a psychologie posádky |
+| [`L6data/GPT_Podklady.md`](../../../../canon/l6/GPT_Podklady.md) | Kompaktní kontext pro GPT |
 
 ---
 
@@ -32,8 +32,8 @@ Tato složka je primárním zdrojem pravdy pro L6 vrstvu ZION TerraNova V31 Main
 
 - Hlavní README: [`../README.md`](../README.md)
 - Legacy V3 L6 docs: [`../../../archive/V3/L6/issobella/docs`](../../../../archive/V3/L6/issobella/docs)
-- L5 Free World (pozemní podpora): [`../../L5/free-world`](../L5/free-world)
-- L2 DAO (governance): [`../../L2/dao`](../L2/dao)
+- L5 Free World (pozemní podpora): [`../../L5/free-world`](../../../L5/free-world)
+- L2 DAO (governance): [`../../L2/dao`](../../../L2/dao)
 - ZION whitepaper: [`../../../docs/WP/ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md`](../../../../docs/WP/ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md)
 
 ---
@@ -57,7 +57,7 @@ L6 Issobella  ──>  TATO VRSTVA (orbitální stanice)
 |-----------|------|
 | `zion-issobella` crate | Implementován (Axum API, SQLite, L1 scanner, metriky) |
 | CLI integrace | `zion issobella` subcommandy |
-| Systemd service | [`deploy/systemd/zion-v31-issobella.service`](../../deploy/systemd/zion-v31-issobella.service) |
+| Systemd service | [`deploy/systemd/zion-v31-issobella.service`](../../../deploy/systemd/zion-v31-issobella.service) |
 | DAO client | Propojení s L2 DAO |
 | Hiran AI bridge | Volitelný AI pro posuzování misí a návrhů |
 | Testy | Unit + integrační |

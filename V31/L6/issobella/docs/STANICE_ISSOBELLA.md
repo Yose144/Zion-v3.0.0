@@ -129,14 +129,14 @@ Issobela má právo vetovat návrhy, které škodí dětem. Toto veto nelze pře
 - Rotující **habitation torus** pro dlouhodobý pobyt posádky.
 - Cílová úroveň **0,38 g** (Mars) pro běžný život; rehabilitační zóna **1,0 g**.
 - Nízké RPM (< 2,5) pro minimalizaci Coriolisových efektů a motion sickness.
-- Podrobný fyzikální a designový návrh: [`L6data/Umela_Gravitace.md`](../../../L6data/Umela_Gravitace.md).
+- Podrobný fyzikální a designový návrh: [`L6data/Umela_Gravitace.md`](../../../../canon/l6/Umela_Gravitace.md).
 
 ### Kvantový motor / kvantová energetika
 
 - Testovací modul (**Quantum Motor Bay**) propojený s L5 Free World výzkumnými laboratořemi.
 - Více výzkumných cest: iontový / plazmový / Hall / spekulativní kvantově-koherentní systémy.
 - Bezpečnostní brány (G0–G5) před instalací na stanici.
-- Podrobný výzkumný plán: [`L6data/Kvantovy_Motor.md`](../../../L6data/Kvantovy_Motor.md).
+- Podrobný výzkumný plán: [`L6data/Kvantovy_Motor.md`](../../../../canon/l6/Kvantovy_Motor.md).
 
 ### ZION Space Node
 
@@ -186,6 +186,6 @@ Issobela má právo vetovat návrhy, které škodí dětem. Toto veto nelze pře
 - [`FINANCOVANI.md`](FINANCOVANI.md) — Jak je stanice financována
 - [`CASOVA_OSA.md`](CASOVA_OSA.md) — Milníky a roadmap
 - [`V31_SOFTWARE.md`](V31_SOFTWARE.md) — Software daemon `zion-issobella`
-- [`L6data/Kvantovy_Motor.md`](../../../L6data/Kvantovy_Motor.md) — Výzkumný návrh kvantového motoru
-- [`L6data/Umela_Gravitace.md`](../../../L6data/Umela_Gravitace.md) — Návrh umělé gravitace
-- [`L6data/Architektura.md`](../../../L6data/Architektura.md) — Architektura stanice
+- [`L6data/Kvantovy_Motor.md`](../../../../canon/l6/Kvantovy_Motor.md) — Výzkumný návrh kvantového motoru
+- [`L6data/Umela_Gravitace.md`](../../../../canon/l6/Umela_Gravitace.md) — Návrh umělé gravitace
+- [`L6data/Architektura.md`](../../../../canon/l6/Architektura.md) — Architektura stanice

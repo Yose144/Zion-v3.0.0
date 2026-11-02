@@ -57,4 +57,4 @@ Tři pravdy na celou knihu, nauč se je jako rodné jméno:
 
 ---
 
-*A teď, Surti — první brána. Odejdi se mnou.* → [První brána — gate](./02-Gate-Prvni-Brana.md)
+*A teď, Surti — první brána. Odejdi se mnou.* → [První brána — gate](../../../canon/books/SurtaSrdce/02-Gate-Prvni-Brana.md)

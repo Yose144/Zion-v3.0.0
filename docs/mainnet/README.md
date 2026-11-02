@@ -74,9 +74,9 @@ Primary reference:
 
 ## Related Documentation
 
-- [Legal Documents](../../legal/) - Legal disclaimers
+- [Legal Documents](../LEGAL/) - Legal disclaimers
 - [Technical Docs](../) - Technical specifications
-- [Deployment](../../2.9.5/deployment/) - Deployment guides
+- [Deployment](../2.9.5/PRODUCTION_DEPLOYMENT.md) - Deployment guides
 
 ---
 

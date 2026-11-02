@@ -54,18 +54,18 @@ Live na: `https://oasis.zionterranova.com`
   - Inspirace: CodePen / Three.js Journey galaxy (`branches`, `spin`, `randomnessPower`).
   - Barevný přechod: zlaté jádro → fialový okraj.
   - Měkká kulatá particle textura, `AdditiveBlending`, rotace.
-  - Soubor: [`apps/OasisWeb/src/components/Galaxy.tsx`](apps/OasisWeb/src/components/Galaxy.tsx)
+  - Soubor: [`apps/OasisWeb/src/components/Galaxy.tsx`](../../apps/OasisWeb/src/components/Galaxy.tsx)
 - **Strom života (v0.0.1):**
   - Procedurální fraktální strom s 3D trubičkovými větvemi (`TubeGeometry`).
   - Zlaté větve s `emissive`, 9 svítících plodů, fialové kořeny, glow aura sprite.
-  - Soubor: [`apps/OasisWeb/src/components/TreeOfLife.tsx`](apps/OasisWeb/src/components/TreeOfLife.tsx)
+  - Soubor: [`apps/OasisWeb/src/components/TreeOfLife.tsx`](../../apps/OasisWeb/src/components/TreeOfLife.tsx)
 - **Další vizuální prvky:** `GalaxyCore` (zářící jádro), `Nebula` (průhledné sprite oblaky), `TerritoryRing` (8 světů kolem stromu), `World` (interaktivní planety).
 
 ### 2.3 OASIS intro landing page (zionterranova.com)
 
 - **Není maintenance — je to vstupní portál do OASIS a celého ZION ekosystému.**
 - Live na: `https://zionterranova.com` (systémový nginx servuje `maintenance.html` z `/var/www/maintenance/`).
-- Zdroj: [`apps/website-v2.9/public/maintenance.html`](apps/website-v2.9/public/maintenance.html)
+- Zdroj: [`apps/website-v2.9/public/maintenance.html`](../../apps/website-v2.9/public/maintenance.html)
 - Hlavní prvek: interaktivní Stargate → `https://oasis.zionterranova.com/`.
 - Obsah: hero s glass/rainbow card, L1–L6 mikro karty (2 řady po 3), status bar, CTA tlačítka, glass footer.
 - Současně běží plný Next.js web2.9 na `https://app.zionterranova.com` (oddělená doména, systemd `zion-website.service` → nginx proxy → `127.0.0.1:3000`).
@@ -120,18 +120,18 @@ npm run start
 
 | Co | Kde |
 |---|---|
-| **V31 workspace** | [`V31/README.md`](V31/README.md) |
-| **V31 build plán** | [`V31/ALPHA_BUILD_PLAN.md`](V31/ALPHA_BUILD_PLAN.md) |
-| **V31 bezpečnostní pravidla** | [`V31/AGENTS.md`](V31/AGENTS.md) |
-| **Globální AGENTS / provoz** | [`AGENTS.md`](AGENTS.md) |
-| **Live status** | [`StatusV3.md`](StatusV3.md) |
-| **Kořenový README** | [`README.md`](README.md) |
-| **OASIS web zdroj** | [`apps/OasisWeb/`](apps/OasisWeb/) |
-| **OASIS intro page** | [`apps/website-v2.9/public/maintenance.html`](apps/website-v2.9/public/maintenance.html) |
-| **Web2.9 source** | [`apps/website-v2.9/`](apps/website-v2.9/) |
-| **3.0.7 archiv** | [`docs/3.0.7/`](docs/3.0.7/) |
-| **3.0.8 / V31 prep archiv** | [`docs/3.0.8/`](docs/3.0.8/) |
-| **3.0.6 archiv** | [`docs/3.0.6/`](docs/3.0.6/) |
+| **V31 workspace** | [`V31/README.md`](../../V31/README.md) |
+| **V31 build plán** | [`V31/ALPHA_BUILD_PLAN.md`](../../V31/ALPHA_BUILD_PLAN.md) |
+| **V31 bezpečnostní pravidla** | [`V31/AGENTS.md`](../../V31/AGENTS.md) |
+| **Globální AGENTS / provoz** | [`AGENTS.md`](../../AGENTS.md) |
+| **Live status** | [`StatusV3.md`](../3.2/StatusV3.md) |
+| **Kořenový README** | [`README.md`](../../README.md) |
+| **OASIS web zdroj** | [`apps/OasisWeb/`](../../apps/OasisWeb) |
+| **OASIS intro page** | [`apps/website-v2.9/public/maintenance.html`](../../apps/website-v2.9/public/maintenance.html) |
+| **Web2.9 source** | [`apps/website-v2.9/`](../../apps/website-v2.9) |
+| **3.0.7 archiv** | [`docs/3.0.7/`](../3.0.7) |
+| **3.0.8 / V31 prep archiv** | [`docs/3.0.8/`](../3.0.8) |
+| **3.0.6 archiv** | [`docs/3.0.6/`](../3.0.6) |
 
 ---
 
@@ -143,7 +143,7 @@ npm run start
 - ~~WARP API rate limiting + auth v `zion-multichain`.~~ **Hotovo (2026-07-30):** per-IP token bucket, optional `Authorization: Bearer <api_key>`, `/health` public.
 - ~~Stress test `HeightAwareDeeksha` fork gating.~~ **Hotovo (2026-07-30):** boundary CHV3/Fire + sweep 0–5500 v `zion-core`.
 - ~~Tag `v3.1.0-alpha.2`.~~ **Hotovo (2026-07-30):** tag vytvořen a pushnut, workspace build prochází.
-- ~~Finální cut-over z V3 Edge na V31.~~ **Hotovo (2026-07-30):** viz [`V31/CUTOVER_PLAN.md`](V31/CUTOVER_PLAN.md).
+- ~~Finální cut-over z V3 Edge na V31.~~ **Hotovo (2026-07-30):** viz [`V31/CUTOVER_PLAN.md`](../../V31/CUTOVER_PLAN.md).
 - ~~Plná L4–L6 end-to-end verifikace (Oasis, Free World, Issobella).~~ **Hotovo (2026-07-30):** `V31/smoke` cross-layer test propojuje Oasis player, Free World grant a Issobella proposal přes AI-Native bridge.
 - **OASIS web v0.0.1** — galaxy + tree of life nasazeno (2026-07-31).
 - **OASIS web v0.1.0** — multi-page herní klient: `/dashboard`, `/avatars`, `/quests`, `/leaderboard`, `/onboarding`, navbar, API integration.
@@ -153,4 +153,4 @@ npm run start
 
 ---
 
-**Pokud nevíš, kde začít — začni ve [`V31/README.md`](V31/README.md) a pak [`V31/ALPHA_BUILD_PLAN.md`](V31/ALPHA_BUILD_PLAN.md). Pro webovou OASIS viz [`apps/OasisWeb/README.md`](apps/OasisWeb/README.md).**
+**Pokud nevíš, kde začít — začni ve [`V31/README.md`](../../V31/README.md) a pak [`V31/ALPHA_BUILD_PLAN.md`](../../V31/ALPHA_BUILD_PLAN.md). Pro webovou OASIS viz [`apps/OasisWeb/README.md`](../../apps/OasisWeb/README.md).**
