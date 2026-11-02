@@ -210,3 +210,66 @@ export function spellsForAvatar(id: number): Spell[] {
 }
 
 export const SPELL_SLOTS: SpellSlot[] = ['Q', 'W', 'E', 'R'];
+
+// ── mechanické rozdíly škol ───────────────────────────────────────────
+//
+// Do 2. 11. 2026 se všech 11 škol chovalo stejně (dmg + shield + heal +
+// slow), takže hrdinové splývali — rozhodovalo jen id, ne kánon. Níž je
+// každá škola jiná **mechanikou**, ne jen číslem.
+//
+// Všechno se počítá v `sim.ts` (jeden zdroj pravdy pro sólo i server).
+// Klient dostane výsledek ve snapshotu (buffy) — sám nic nepočítá.
+
+export interface SchoolTraits {
+  /** Podíl poškození jako hoření na 3 s (oheň). */
+  burn?: number;
+  /** Projektil projde skrz první cíl (šíp). */
+  pierce?: boolean;
+  /** Podíl poškození na druhý cíl do 6 m od zásahu (bouře). */
+  chain?: number;
+  /** Násobek poškození proti cílům pod `executeBelow` (čepel, stín). */
+  execute?: number;
+  executeBelow?: number;
+  /** Podíl štítu dostane i nejbližší spojenec do 8 m (ward). */
+  allyShield?: number;
+  /** Podíl many, který W vrátí (kosmické). */
+  manaSurge?: number;
+  /** Léčení rozložené do 4 s místo naráz (příroda, píseň). */
+  healOverTime?: boolean;
+  /** Podíl nepřátelského štítu, který zásah strhne (mysl). */
+  shieldBreak?: number;
+  /** Násobek poloměru dopadu u dash kouzla (bestie). */
+  dashRadius?: number;
+}
+
+export const SCHOOL_TRAITS: Record<SpellSchool, SchoolTraits> = {
+  ward: { allyShield: 0.6 },
+  fire: { burn: 0.4 },
+  arrow: { pierce: true },
+  blade: { execute: 0.45, executeBelow: 0.35 },
+  cosmic: { manaSurge: 0.25 },
+  mind: { shieldBreak: 0.7 },
+  nature: { healOverTime: true },
+  storm: { chain: 0.5 },
+  song: { healOverTime: true, allyShield: 0.35 },
+  shadow: { execute: 0.6, executeBelow: 0.4 },
+  beast: { dashRadius: 1.7 },
+};
+
+/**
+ * Krátký popis mechaniky pro HUD. Hráč nemá číst zdroják, aby zjistil,
+ * že jeho oheň pálí a ward kryje spojence.
+ */
+export const SCHOOL_LABEL: Record<SpellSchool, { cs: string; en: string }> = {
+  ward: { cs: 'štít i pro spojence', en: 'shields an ally too' },
+  fire: { cs: 'spálí (hoření 3 s)', en: 'burns over 3 s' },
+  arrow: { cs: 'prolétne skrz', en: 'pierces through' },
+  blade: { cs: 'doráží zraněné', en: 'executes the wounded' },
+  cosmic: { cs: 'vrací manu', en: 'restores mana' },
+  mind: { cs: 'strhne štít', en: 'strips shields' },
+  nature: { cs: 'léčí postupně', en: 'heals over time' },
+  storm: { cs: 'řetězí na druhý cíl', en: 'chains to a second target' },
+  song: { cs: 'léčí a štítí', en: 'heals and shields' },
+  shadow: { cs: 'popraví zraněné', en: 'executes the wounded' },
+  beast: { cs: 'skok do šířky', en: 'wide leap' },
+};

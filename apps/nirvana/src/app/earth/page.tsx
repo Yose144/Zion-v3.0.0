@@ -22,7 +22,7 @@ import { MobaOnline } from '@/core/moba/MobaOnline';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
 import { ITEMS, type ItemId } from '@/core/moba/sim';
-import { spellsForAvatar } from '@/core/moba/spells';
+import { SCHOOL_LABEL, spellsForAvatar } from '@/core/moba/spells';
 import { SPELL_LABEL } from '@/core/moba/keys';
 import { MobaTouch } from '@/core/moba/MobaTouch';
 
@@ -189,7 +189,8 @@ export default function EarthPage() {
                   <strong>{spell.name}</strong>
                   <small>
                     {spell.damage > 0 ? `${spell.damage} dmg` : spell.shield > 0 ? `${spell.shield} štít` : 'podpora'} ·{' '}
-                    {Math.round(spell.cooldownMs / 100) / 10}s
+                    {Math.round(spell.cooldownMs / 100) / 10}s ·{' '}
+                    {cs ? SCHOOL_LABEL[spell.school].cs : SCHOOL_LABEL[spell.school].en}
                   </small>
                 </div>
               ))}

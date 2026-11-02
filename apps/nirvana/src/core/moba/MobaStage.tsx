@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
 import { avatarLook } from '@/core/avatars/kit';
 import type { MobaSnapshot } from './sim';
-import { LANES, NODE_SITES, NODE_CAPTURE_MS, STRUCTURES } from './map';
+import { LANES, NODE_SITES, NODE_CAPTURE_MS, STRUCTURES, isStructureProtected } from './map';
 
 const MAX_HEROES = 10;
 const MAX_TOWERS = STRUCTURES.length;
@@ -100,12 +100,22 @@ export function MobaStage({
       group.position.set(tower.x, 0, tower.z);
       group.visible = tower.hp > 0;
       group.scale.setScalar((tower.kind === 'nexus' ? 1.6 : 1) * (0.55 + (tower.hp / tower.maxHp) * 0.45));
+      // Nedobytná struktura (krytá vnější věží / Nexa krytá lajnou) svítí šedě.
+      const shielded = isStructureProtected(snapshot.towers, tower.id);
       const crystal = group.children[2] as THREE.Mesh | undefined;
       const crystalMaterial = crystal?.material as THREE.MeshBasicMaterial | undefined;
-      if (crystalMaterial) crystalMaterial.color.set(tower.team === 'blue' ? '#7fe3d4' : '#ff7a6b');
+      if (crystalMaterial) {
+        crystalMaterial.color.set(
+          shielded ? '#64748b' : tower.team === 'blue' ? '#7fe3d4' : '#ff7a6b',
+        );
+      }
       const body = group.children[1] as THREE.Mesh | undefined;
       const bodyMaterial = body?.material as THREE.MeshStandardMaterial | undefined;
-      if (bodyMaterial) bodyMaterial.emissive.set(tower.team === 'blue' ? '#0f3f3a' : '#3f1414');
+      if (bodyMaterial) {
+        bodyMaterial.emissive.set(
+          shielded ? '#111827' : tower.team === 'blue' ? '#0f3f3a' : '#3f1414',
+        );
+      }
     }
 
     // ── uzly L5 ──────────────────────────────────────────────────────

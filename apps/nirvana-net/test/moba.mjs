@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /**
- * Test serverové MOBA „První svět" (2v2) — bez prohlížeče.
+ * Test serverové MOBA „První svět" (multiplayer, velikost týmu drží server)
+ * — bez prohlížeče. Test je záměrně **nezávislý na počtu hrdinů**: server
+ * rozhoduje, kolik jich je (3v3/5v5), test jen ověří, že to sedí a že obě
+ * strany jsou vyrovnané.
  *
  * Server drží simulaci; test posílá jen vstupy a kontroluje snapshoty.
  * Ověřuje: místnost, doplnění botů, start po odpočtu, pohyb, kouzlo,
@@ -154,7 +157,12 @@ try {
   const roomB = await b.waitFor((m) => m.t === 'room');
   check('místnost: dva lidi', roomB.occupants.length === 2, String(roomB.occupants.length));
   check('místnost: hra moba', roomA.room.game === 'moba', roomA.room.game);
-  check('místnost: kapacita 6 (3v3)', roomA.room.maxPlayers === 6, String(roomA.room.maxPlayers));
+  const maxPlayers = roomA.room.maxPlayers;
+  check(
+    'místnost: kapacita sudá a aspoň 2',
+    typeof maxPlayers === 'number' && maxPlayers >= 2 && maxPlayers % 2 === 0,
+    String(maxPlayers),
+  );
   check('místnost: youPlayerId', Boolean(roomA.youPlayerId && roomB.youPlayerId));
 
   // čekáme na odpočet + start (boti se doplní)
@@ -162,13 +170,22 @@ try {
     (m) => m.t === 'snapshot' && m.game === 'moba' && m.moba?.heroes?.length >= 2 && m.state === 'running',
     25_000,
   );
-  check('start: simulace běží (3v3 + boti)', started.moba.heroes.length === 6, String(started.moba.heroes.length));
+  check(
+    `start: simulace běží (${maxPlayers} hrdinů + boti)`,
+    started.moba.heroes.length === maxPlayers,
+    String(started.moba.heroes.length),
+  );
   check('start: dvě strany', new Set(started.moba.heroes.map((hero) => hero.team)).size === 2);
   check('start: tři uzly L5', started.moba.nodes.length === 3);
 
   const meA = started.moba.heroes.find((hero) => hero.id === roomA.youPlayerId);
   check('start: hráč A je ve hře', Boolean(meA), roomA.youPlayerId ?? 'null');
-  check('start: každá strana tři', ['blue', 'red'].every((team) => started.moba.heroes.filter((hero) => hero.team === team).length === 3));
+  check(
+    'start: každá strana stejně silná',
+    ['blue', 'red'].every(
+      (team) => started.moba.heroes.filter((hero) => hero.team === team).length === maxPlayers / 2,
+    ),
+  );
 
   // obchod: server kupuje jen když je zlato (start 320 < 400)
   const goldStart = meA.gold;

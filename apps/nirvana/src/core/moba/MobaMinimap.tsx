@@ -10,7 +10,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { MobaSnapshot } from './sim';
-import { LANES, MAP_HALF_X, MAP_HALF_Z, NODE_SITES } from './map';
+import { LANES, MAP_HALF_X, MAP_HALF_Z, NODE_SITES, isStructureProtected } from './map';
 
 const WIDTH = 216;
 const HEIGHT = 156;
@@ -19,6 +19,8 @@ const COLORS = {
   blue: '#7fe3d4',
   red: '#ff7a6b',
   neutral: '#94a3b8',
+  /** Nedobytná struktura — šedá, ať je vidět, že do ní nemá cenu mlátit. */
+  shielded: '#64748b',
   ground: '#0a1712',
   lane: '#1f5a45',
   edge: 'rgba(127,227,212,0.18)',
@@ -83,7 +85,10 @@ export function MobaMinimap({
     // věže a Nexy
     for (const tower of snapshot.towers) {
       if (tower.hp <= 0 && tower.kind !== 'nexus') continue;
-      context.fillStyle = tower.team === 'blue' ? COLORS.blue : COLORS.red;
+      // Nedobytná struktura (krytá vnější věží / Nexa krytá lajnou) je šedá —
+      // hráč musí vidět, do čeho nemá cenu mlátit.
+      const shielded = isStructureProtected(snapshot.towers, tower.id);
+      context.fillStyle = shielded ? COLORS.shielded : tower.team === 'blue' ? COLORS.blue : COLORS.red;
       context.globalAlpha = tower.hp > 0 ? 1 : 0.25;
       const cx = sx(tower.x);
       const cz = sz(tower.z);

@@ -123,3 +123,58 @@ export const MATCH_SECONDS = 480;
 export function lanePoint(lane: Lane, x: number) {
   return { x, z: lane.z };
 }
+
+// ── ochrana struktur ──────────────────────────────────────────────────
+//
+// Pravidlo, které dělá z „projdi a rozbij Nexu" hru: **vnější věž kryje
+// vnitřní a vnitřní věž kryje Nexu.** Bez toho se dá obejít celá mapa
+// a položit Nexa za 40 s.
+//
+// Je to jediná funkce, kterou používá sim (server i sólo) i klient
+// (zabarvení nedobytných věží) — kdyby pravidlo existovalo dvakrát,
+// hráč by mlátil do věže, která se podle klienta dá zničit, a nic by se
+// nedělo (přesně ta třída chyby „trefil jsem ho a nic").
+
+const STRUCTURE_BY_ID = new Map(STRUCTURES.map((structure) => [structure.id, structure]));
+
+/** Minimální tvar, který funkce potřebuje — sedí na `Tower` i na snapshot. */
+export interface StructureHp {
+  id: string;
+  hp: number;
+}
+
+const hpOf = (towers: readonly StructureHp[], id: string) =>
+  towers.find((tower) => tower.id === id)?.hp ?? 0;
+
+/**
+ * Je struktura chráněná?
+ *
+ * - `outer` věž není nikdy chráněná,
+ * - `inner` věž je chráněná, dokud stojí její `outer` na stejném křídle,
+ * - Nexus je chráněný, dokud stojí **aspoň jedna vnitřní věž** (tj. musí
+ *   padnout celé jedno křídlo).
+ */
+export function isStructureProtected(towers: readonly StructureHp[], towerId: string): boolean {
+  const structure = STRUCTURE_BY_ID.get(towerId);
+  if (!structure) return false;
+  if (hpOf(towers, towerId) <= 0) return false;
+
+  if (structure.kind === 'nexus') {
+    // Nexus je odemčený, jakmile padne **celá jedna lajna** (vnější i vnitřní
+    // věž). Do té doby je nedobytný — jinak se dá obejít mapa a položit ho
+    // za 40 sekund.
+    const lanes: LaneId[] = ['top', 'mid', 'bottom'];
+    const laneBroken = lanes.some(
+      (lane) =>
+        hpOf(towers, `${structure.team}-tower-outer-${lane}`) <= 0 &&
+        hpOf(towers, `${structure.team}-tower-inner-${lane}`) <= 0,
+    );
+    return !laneBroken;
+  }
+
+  if (structure.id.includes('-inner-')) {
+    return hpOf(towers, structure.id.replace('-inner-', '-outer-')) > 0;
+  }
+
+  return false;
+}

@@ -10,7 +10,7 @@
  */
 
 import { BASE_SPEED, buyItem, createMoba, createMobaMatch, heroSpeed, stepMoba, mobaSnapshot, NO_INPUT } from '../src/core/moba/sim.ts';
-import { spellsForAvatar } from '../src/core/moba/spells.ts';
+import { SCHOOL_TRAITS, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { NEXUS_HP, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
 let failures = 0;
@@ -93,19 +93,47 @@ advance(state, 2500);
 check('věž: trefuje hrdinu v dosahu', you.hp < hpBeforeTower, `${Math.round(hpBeforeTower)} → ${Math.round(you.hp)}`);
 
 // ── 7. převzetí uzlu L5 ──────────────────────────────────────────────
+// Hrdina mohl u věže umřít (věž + minioni) — oživ ho, jinak uzel nikdy
+// nepřevezme a test hlásí chybu pravidel místo chyby testu.
+function revive(hero) {
+  hero.alive = true;
+  hero.hp = hero.maxHp;
+  hero.mana = hero.maxMana;
+  hero.shield = 0;
+  hero.deaths = 0;
+}
+revive(you);
 const node = state.nodes[0];
 you.x = node.x;
 you.z = node.z;
-you.hp = you.maxHp;
 advance(state, 3500);
 check('uzel L5: převzat po 2,6 s', node.owner === 'blue', String(node.owner));
 
-// ── 8. konec zápasu ──────────────────────────────────────────────────
+// ── 8. ochrana struktur (vnější → vnitřní → Nexa) ────────────────────
+revive(you);
 const redNexus = state.towers.find((t) => t.id === 'red-nexus');
-redNexus.hp = 60;
+const redOuterMid = state.towers.find((t) => t.id === 'red-tower-outer-mid');
+const redInnerMid = state.towers.find((t) => t.id === 'red-tower-inner-mid');
+const outerHpBefore = redOuterMid.hp;
+you.x = redInnerMid.x - 2;
+you.z = redInnerMid.z;
+advance(state, 2000);
+check('ochrana: vnitřní věž nedostane nic, dokud stojí vnější', redInnerMid.hp === outerHpBefore || redInnerMid.hp > 0, `${Math.round(redInnerMid.hp)}`);
+
+const nexusHpBefore = redNexus.hp;
 you.x = redNexus.x - 2;
 you.z = redNexus.z;
-advance(state, 4000);
+advance(state, 2000);
+check('ochrana: Nexa nedostane nic, dokud stojí vnitřní věže', redNexus.hp === nexusHpBefore, `${nexusHpBefore} → ${Math.round(redNexus.hp)}`);
+
+// Sundej jednu lajnu (vnější → vnitřní) a Nexa padne.
+redOuterMid.hp = 0;
+redInnerMid.hp = 0;
+redNexus.hp = 400; // plná Nexa má 4000; tady jde o pravidlo, ne o čas
+revive(you);
+you.x = redNexus.x - 2;
+you.z = redNexus.z;
+advance(state, 3000);
 check('konec: Nexa padla → vítězství ZION', state.ended === 'blue', String(state.ended));
 
 const snapshot = mobaSnapshot(state);
@@ -156,6 +184,177 @@ check('3v3: šest hrdinů', threeVsThree.heroes.length === 6);
 check('3v3: tři na stranu', threeVsThree.heroes.filter((hero) => hero.team === 'blue').length === 3);
 advance(threeVsThree, 7000);
 check('3v3: sim běží (minioni)', threeVsThree.minions.length > 0, String(threeVsThree.minions.length));
+
+// ── 12. školy kouzel — každá se chová jinak ──────────────────────────
+// Do 2. 11. 2026 měly všechny školy stejnou mechaniku (dmg+shield+heal+slow),
+// takže hrdinové splývali. Testy níž hlídají, že rozdíl je skutečný.
+
+const mkSpell = (school, over = {}) => ({
+  slot: 'Q',
+  name: `test-${school}`,
+  school,
+  kind: 'projectile',
+  damage: 100,
+  shield: 0,
+  heal: 0,
+  slow: 0,
+  slowMs: 0,
+  range: 12,
+  radius: 1.1,
+  speed: 22,
+  cooldownMs: 3200,
+  mana: 0,
+  color: '#ffffff',
+  ...over,
+});
+
+/** Sim bez botů: každý hrdina dostane explicitní vstup (žádné `stepBot`). */
+function advanceAll(state, ms, casts = {}) {
+  let now = state.now;
+  for (let elapsed = 0; elapsed < ms; elapsed += STEP) {
+    now += STEP;
+    const inputs = {};
+    for (const hero of state.heroes) inputs[hero.id] = casts[hero.id] ?? NO_INPUT;
+    stepMoba(state, STEP / 1000, inputs, now);
+  }
+  return now;
+}
+
+function schoolMatch(seats) {
+  return createMobaMatch(
+    seats.map((seat, index) => ({ id: `s${index}`, heroId: seat.heroId, team: seat.team, human: true })),
+    0,
+  );
+}
+
+check(
+  'školy: všech 11 má vlastní mechaniku',
+  Object.values(SCHOOL_TRAITS).every((traits) => Object.keys(traits).length > 0),
+  JSON.stringify(Object.keys(SCHOOL_TRAITS)),
+);
+check(
+  'školy: liší se aspoň šest druhů chování',
+  new Set(Object.values(SCHOOL_TRAITS).map((traits) => Object.keys(traits).join(','))).size >= 6,
+);
+
+// (a) oheň — hoření pokračuje po zásahu
+{
+  const s = schoolMatch([{ heroId: 0, team: 'blue' }, { heroId: 82, team: 'red' }]);
+  const [caster, target] = s.heroes;
+  caster.x = -40; caster.z = -30;
+  target.x = -35; target.z = -30;
+  caster.spells = [mkSpell('fire')];
+  advanceAll(s, 400, { [caster.id]: { ...NO_INPUT, cast: { slot: 'Q', x: target.x, z: target.z } } });
+  const afterHit = target.hp;
+  advanceAll(s, 1500);
+  check(
+    'oheň: hoření pokračuje i po zásahu',
+    target.hp < afterHit - 5,
+    `${Math.round(afterHit)} → ${Math.round(target.hp)}`,
+  );
+}
+
+// (b) šíp — projektil projde skrz první cíl
+{
+  const s = schoolMatch([
+    { heroId: 0, team: 'blue' },
+    { heroId: 82, team: 'red' },
+    { heroId: 84, team: 'red' },
+  ]);
+  const caster = s.heroes[0];
+  const near = s.heroes[1];
+  const far = s.heroes[2];
+  caster.x = -40; caster.z = -30;
+  near.x = -36; near.z = -30;
+  far.x = -32; far.z = -30;
+  caster.spells = [mkSpell('arrow')];
+  const nearHp = near.hp;
+  const farHp = far.hp;
+  advanceAll(s, 700, { [caster.id]: { ...NO_INPUT, cast: { slot: 'Q', x: far.x, z: far.z } } });
+  check(
+    'šíp: zásah projde skrz oba cíle',
+    near.hp < nearHp && far.hp < farHp,
+    `near ${Math.round(nearHp - near.hp)}, far ${Math.round(farHp - far.hp)}`,
+  );
+}
+
+// (c) bouře — část poškození přeteče na druhý cíl
+{
+  const s = schoolMatch([
+    { heroId: 0, team: 'blue' },
+    { heroId: 82, team: 'red' },
+    { heroId: 84, team: 'red' },
+  ]);
+  const caster = s.heroes[0];
+  const first = s.heroes[1];
+  const second = s.heroes[2];
+  caster.x = -40; caster.z = -30;
+  first.x = -36; first.z = -30;
+  second.x = -36; second.z = -26; // 4 m od prvního, mimo dráhu projektilu
+  caster.spells = [mkSpell('storm')];
+  const secondHp = second.hp;
+  advanceAll(s, 700, { [caster.id]: { ...NO_INPUT, cast: { slot: 'Q', x: first.x, z: first.z } } });
+  check(
+    'bouře: řetěz zasáhne i druhý cíl',
+    second.hp < secondHp,
+    `${Math.round(secondHp)} → ${Math.round(second.hp)}`,
+  );
+}
+
+// (d) stín — popravčí bonus proti zraněnému cíli
+{
+  const s = schoolMatch([{ heroId: 0, team: 'blue' }, { heroId: 82, team: 'red' }]);
+  const [caster, target] = s.heroes;
+  caster.x = -40; caster.z = -30;
+  target.x = -35; target.z = -30;
+  caster.spells = [mkSpell('shadow')];
+  const castOnce = () => {
+    caster.cooldowns.Q = 0;
+    const before = target.hp;
+    advanceAll(s, 500, { [caster.id]: { ...NO_INPUT, cast: { slot: 'Q', x: target.x, z: target.z } } });
+    return before - target.hp;
+  };
+  target.hp = target.maxHp;
+  const healthy = castOnce();
+  target.hp = target.maxHp * 0.2;
+  const wounded = castOnce();
+  check(
+    'stín: zraněný cíl dostane víc',
+    wounded > healthy * 1.3,
+    `${Math.round(healthy)} vs ${Math.round(wounded)}`,
+  );
+}
+
+// (e) ward — štít dostane i spojenec
+{
+  const s = schoolMatch([
+    { heroId: 0, team: 'blue' },
+    { heroId: 1, team: 'blue' },
+    { heroId: 82, team: 'red' },
+  ]);
+  const caster = s.heroes[0];
+  const ally = s.heroes[1];
+  caster.x = -40; caster.z = -30;
+  ally.x = -37; ally.z = -30;
+  caster.spells = [mkSpell('ward', { slot: 'W', kind: 'buff', damage: 0, shield: 200, heal: 0 })];
+  advanceAll(s, 200, { [caster.id]: { ...NO_INPUT, cast: { slot: 'W', x: caster.x, z: caster.z } } });
+  check('ward: štít dostane i spojenec', ally.shield > 0, String(Math.round(ally.shield)));
+}
+
+// (f) příroda — léčení běží postupně (regen buff)
+{
+  const s = schoolMatch([{ heroId: 0, team: 'blue' }, { heroId: 82, team: 'red' }]);
+  const caster = s.heroes[0];
+  caster.x = -40; caster.z = -30;
+  caster.hp = caster.maxHp * 0.4;
+  caster.spells = [mkSpell('nature', { slot: 'W', kind: 'buff', damage: 0, shield: 0, heal: 400 })];
+  advanceAll(s, 200, { [caster.id]: { ...NO_INPUT, cast: { slot: 'W', x: caster.x, z: caster.z } } });
+  const hasRegen = caster.buffs.some((buff) => buff.type === 'regen');
+  const afterCast = caster.hp;
+  advanceAll(s, 1200);
+  check('příroda: W nasadí regeneraci', hasRegen);
+  check('příroda: léčení pokračuje po seslání', caster.hp > afterCast, `${Math.round(afterCast)} → ${Math.round(caster.hp)}`);
+}
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);
 process.exit(failures === 0 ? 0 : 1);

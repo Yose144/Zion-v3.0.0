@@ -13,8 +13,9 @@
 
 import { AVATARS_BY_ID } from '../avatars/catalog';
 import { avatarLook } from '../avatars/kit';
-import { spellsFor, type Spell, type SpellSlot } from './spells';
+import { SCHOOL_TRAITS, spellsFor, type Spell, type SpellSchool, type SpellSlot } from './spells';
 import {
+  JUNGLE_CAMPS,
   LANES,
   MAP_HALF_X,
   MAP_HALF_Z,
@@ -31,20 +32,23 @@ import {
   STRUCTURES,
   WAVE_INTERVAL_MS,
   WAVE_SIZE,
-  JUNGLE_CAMPS,
-  type LaneId,
-  type Team,
+  isStructureProtected,
   type JungleCamp,
+  type LaneId,
+  type StructureHp,
+  type Team,
 } from './map';
 
 export type UnitKind = 'hero' | 'minion' | 'tower' | 'nexus' | 'monster';
 
-export type BuffType = 'strength' | 'ward' | 'speed' | 'ancient';
+export type BuffType = 'strength' | 'ward' | 'speed' | 'ancient' | 'burn' | 'regen';
 
 export interface Buff {
   type: BuffType;
   until: number;
   power: number;
+  /** Kdo buff způsobil (hoření) — kvůli připsání zabití. */
+  source?: string;
 }
 
 /** Tři itemy — každý mění jinou věc, aby šlo hrát „na build". */
@@ -171,6 +175,12 @@ export interface Projectile {
   ttl: number;
   color: string;
   owner: string;
+  /** Škola kouzla — rozhoduje o chování při zásahu (hoření, řetěz…). */
+  school: SpellSchool;
+  /** Šíp projde skrz cíl, místo aby se spotřeboval. */
+  pierce: boolean;
+  /** Cíle, které už dostaly zásah (u průrazného projektilu). */
+  hitIds: string[];
 }
 
 export interface Effect {
@@ -439,6 +449,67 @@ function damageHero(state: MobaState, hero: Hero, amount: number, source: string
   }
 }
 
+// ── školy kouzel ─────────────────────────────────────────────────────
+
+/**
+ * Zásah kouzlem — co se stane navíc podle školy.
+ *
+ * Do 2. 11. 2026 se školy chovaly stejně; odsud má každá svou mechaniku
+ * (`SCHOOL_TRAITS` ve `spells.ts`). Volá se **po** `damageHero`, takže
+ * `amount` je už skutečně udělené poškození (po bonusech a úrovni).
+ */
+function applyOnHit(
+  state: MobaState,
+  casterId: string,
+  casterTeam: Team,
+  target: Hero,
+  amount: number,
+  school: SpellSchool,
+): void {
+  const traits = SCHOOL_TRAITS[school];
+  if (!traits || !target.alive) return;
+
+  // Mysl: zásah strhne část štítu („vidíš, že to byl jen přelud").
+  if (traits.shieldBreak && target.shield > 0) {
+    target.shield = Math.max(0, target.shield * (1 - traits.shieldBreak));
+    addEffect(state, 'hit', target.x, target.z, 1.2, '#d8b4fe', 260);
+  }
+
+  // Oheň: hoření na 3 s. Stejný sesilatel prodlouží a posílí, nesčítá.
+  if (traits.burn) {
+    const dps = (amount * traits.burn) / 3;
+    const existing = target.buffs.find((buff) => buff.type === 'burn' && buff.source === casterId);
+    if (existing) {
+      existing.until = state.now + 3000;
+      existing.power = Math.max(existing.power, dps);
+    } else {
+      target.buffs.push({ type: 'burn', until: state.now + 3000, power: dps, source: casterId });
+    }
+  }
+
+  // Bouře: část poškození přeteče na druhý cíl do 6 m.
+  if (traits.chain) {
+    const second = state.heroes.find(
+      (other) =>
+        other !== target &&
+        other.team !== casterTeam &&
+        other.alive &&
+        distance(other.x, other.z, target.x, target.z) <= 6,
+    );
+    if (second) {
+      damageHero(state, second, amount * traits.chain, casterId);
+      addEffect(state, 'hit', second.x, second.z, 1, '#9ad7ff', 240);
+    }
+  }
+}
+
+/** Popravčí bonus — čepel a stín trestají zraněné cíle. */
+function schoolDamage(school: SpellSchool, target: Hero, base: number): number {
+  const traits = SCHOOL_TRAITS[school];
+  if (!traits?.execute || !traits.executeBelow) return base;
+  return target.hp / target.maxHp <= traits.executeBelow ? base * (1 + traits.execute) : base;
+}
+
 function applyJungleBuff(hero: Hero, type: JungleCamp['type'], now: number) {
   if (type === 'small') {
     hero.buffs.push({ type: 'speed', until: now + 90000, power: 0.15 });
@@ -561,6 +632,9 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
       ttl: (spell.range + 4) / Math.max(1, spell.speed),
       color: spell.color,
       owner: hero.id,
+      school: spell.school,
+      pierce: SCHOOL_TRAITS[spell.school]?.pierce === true,
+      hitIds: [],
     });
     addEffect(state, 'hit', hero.x, hero.z, 0.8, spell.color, 220);
     return;
@@ -575,23 +649,66 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
     hero.z = Math.max(-MAP_HALF_Z, Math.min(MAP_HALF_Z, hero.z + (dz / length) * step));
     addEffect(state, 'aoe', hero.x, hero.z, 1.6, spell.color, 320);
     if (spell.damage > 0) {
+      // Bestie dopadá v širším kruhu (`dashRadius`) — skok má váhu.
+      const hitRadius = 2.2 * (SCHOOL_TRAITS[spell.school]?.dashRadius ?? 1);
       for (const other of state.heroes) {
         if (other.team === hero.team || !other.alive) continue;
-        if (distance(hero.x, hero.z, other.x, other.z) <= 2.2) damageHero(state, other, spell.damage * bonus, hero.id);
+        if (distance(hero.x, hero.z, other.x, other.z) > hitRadius) continue;
+        const dealt = schoolDamage(spell.school, other, spell.damage * bonus);
+        damageHero(state, other, dealt, hero.id);
+        if (other.alive) applyOnHit(state, hero.id, hero.team, other, dealt, spell.school);
       }
     }
     return;
   }
 
   if (spell.kind === 'buff') {
+    const traits = SCHOOL_TRAITS[spell.school];
     if (spell.shield > 0) {
-      hero.shield = spell.shield * levelScale(hero);
+      const shield = spell.shield * levelScale(hero);
+      hero.shield = shield;
       hero.shieldUntil = state.now + 6000;
       addEffect(state, 'shield', hero.x, hero.z, 1.7, spell.color, 6000);
+
+      // Ward a píseň štítí i nejbližšího spojence.
+      if (traits?.allyShield) {
+        const ally = state.heroes
+          .filter(
+            (other) =>
+              other !== hero &&
+              other.team === hero.team &&
+              other.alive &&
+              distance(hero.x, hero.z, other.x, other.z) <= 8,
+          )
+          .sort((a, b) => distance(hero.x, hero.z, a.x, a.z) - distance(hero.x, hero.z, b.x, b.z))[0];
+        if (ally) {
+          ally.shield = Math.max(ally.shield, shield * traits.allyShield);
+          ally.shieldUntil = state.now + 6000;
+          addEffect(state, 'shield', ally.x, ally.z, 1.7, spell.color, 6000);
+        }
+      }
     }
     if (spell.heal > 0) {
-      hero.hp = Math.min(hero.maxHp, hero.hp + spell.heal * levelScale(hero));
-      addEffect(state, 'heal', hero.x, hero.z, 1.5, '#7bf0a8', 700);
+      const heal = spell.heal * levelScale(hero);
+      if (traits?.healOverTime) {
+        // Příroda a píseň léčí postupně — nedá se tím utéct z boje.
+        const existing = hero.buffs.find((buff) => buff.type === 'regen');
+        if (existing) {
+          existing.until = state.now + 4000;
+          existing.power = Math.max(existing.power, heal / 4);
+        } else {
+          hero.buffs.push({ type: 'regen', until: state.now + 4000, power: heal / 4 });
+        }
+        addEffect(state, 'heal', hero.x, hero.z, 1.5, '#7bf0a8', 1200);
+      } else {
+        hero.hp = Math.min(hero.maxHp, hero.hp + heal);
+        addEffect(state, 'heal', hero.x, hero.z, 1.5, '#7bf0a8', 700);
+      }
+    }
+    // Kosmické: W vrátí část many.
+    if (traits?.manaSurge) {
+      hero.mana = Math.min(hero.maxMana, hero.mana + hero.maxMana * traits.manaSurge);
+      addEffect(state, 'heal', hero.x, hero.z, 1.2, '#a5b4fc', 500);
     }
     return;
   }
@@ -601,7 +718,9 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
   for (const other of state.heroes) {
     if (other.team === hero.team || !other.alive) continue;
     if (distance(x, z, other.x, other.z) > spell.radius + 0.8) continue;
-    damageHero(state, other, spell.damage * bonus, hero.id);
+    const dealt = schoolDamage(spell.school, other, spell.damage * bonus);
+    damageHero(state, other, dealt, hero.id);
+    if (other.alive) applyOnHit(state, hero.id, hero.team, other, dealt, spell.school);
     if (spell.slow > 0) {
       other.slowUntil = state.now + spell.slowMs;
       other.slowFactor = spell.slow;
@@ -763,6 +882,13 @@ export function stepMoba(
     if (state.now >= hero.slowUntil) hero.slowFactor = 0;
     hero.mana = Math.min(hero.maxMana, hero.mana + dt * 7);
 
+    // Hoření a regenerace — buffy, které působí každý snímek.
+    for (const buff of hero.buffs) {
+      if (buff.type === 'burn') damageHero(state, hero, buff.power * dt, buff.source ?? 'burn');
+      else if (buff.type === 'regen') hero.hp = Math.min(hero.maxHp, hero.hp + buff.power * dt);
+    }
+    if (!hero.alive) continue;
+
     const speed = heroSpeed(hero);
 
     const input = inputs[hero.id];
@@ -876,20 +1002,31 @@ export function stepMoba(
 
     for (const hero of state.heroes) {
       if (hero.team === projectile.team || !hero.alive) continue;
+      if (projectile.hitIds.includes(hero.id)) continue;
       if (distance(projectile.x, projectile.z, hero.x, hero.z) <= projectile.radius + 0.7) {
-        damageHero(state, hero, projectile.damage, projectile.owner);
+        const dealt = schoolDamage(projectile.school, hero, projectile.damage);
+        damageHero(state, hero, dealt, projectile.owner);
+        if (hero.alive) applyOnHit(state, projectile.owner, projectile.team, hero, dealt, projectile.school);
         addEffect(state, 'hit', hero.x, hero.z, 1.1, projectile.color, 260);
-        consumed = true;
-        break;
+        projectile.hitIds.push(hero.id);
+        // Šíp projde dál, ostatní projektily se spotřebují.
+        if (!projectile.pierce) {
+          consumed = true;
+          break;
+        }
       }
     }
     if (!consumed) {
       for (const minion of [...state.minions]) {
         if (minion.team === projectile.team) continue;
+        if (projectile.hitIds.includes(minion.id)) continue;
         if (distance(projectile.x, projectile.z, minion.x, minion.z) <= projectile.radius + 0.5) {
           damageMinion(state, minion, projectile.damage, projectile.owner);
-          consumed = true;
-          break;
+          projectile.hitIds.push(minion.id);
+          if (!projectile.pierce) {
+            consumed = true;
+            break;
+          }
         }
       }
     }
@@ -903,6 +1040,8 @@ export function stepMoba(
     if (!hero.alive) continue;
     for (const tower of state.towers) {
       if (tower.hp <= 0 || tower.team === hero.team) continue;
+      // Vnější věž kryje vnitřní, vnitřní kryje Nexu (viz `map.ts`).
+      if (isStructureProtected(state.towers, tower.id)) continue;
       if (distance(hero.x, hero.z, tower.x, tower.z) > 5.6) continue;
       if (now < hero.attackCooldown - 400) continue;
       const damage = 26 * levelScale(hero) * nodeBonus(state, hero.team) * damageOut(hero, state.now);
