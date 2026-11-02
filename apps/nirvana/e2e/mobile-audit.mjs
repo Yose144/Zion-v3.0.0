@@ -41,6 +41,13 @@ const PAGES = [
     minControls: 4,
   },
   { path: '/park', name: 'Pouť', start: /Pong/i, control: '.park-touch', minControls: 5 },
+  {
+    path: '/earth',
+    name: 'Země (MOBA)',
+    start: /Vstoupit na Zemi|Enter Earth/i,
+    control: '.moba-touch',
+    minControls: 6,
+  },
   { path: '/avatars', name: 'Avatar', start: null, control: null, minControls: 0 },
 ];
 

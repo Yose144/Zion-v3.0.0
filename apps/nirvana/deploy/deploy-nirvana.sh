@@ -30,6 +30,17 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
+# ── Pojistka: appka a net musí mluvit stejným protokolem ────────────────
+# 2026-11-02: proto 5 se dostal do commitu omylem, appka se nasadila bez netu
+# a produkce 35 minut vracela `proto_mismatch`. Tohle to zastaví před buildem.
+if [[ "${ZION_SKIP_PROTO_CHECK:-0}" != "1" ]]; then
+  if ! bash "${ROOT_DIR}/../../scripts/ops/nirvana-proto-check.sh"; then
+    echo "[deploy-nirvana] ERROR: protokol klienta a netu se rozchází — viz výše." >&2
+    echo "[deploy-nirvana]        (obejít jen vědomě: ZION_SKIP_PROTO_CHECK=1)" >&2
+    exit 1
+  fi
+fi
+
 if [[ -n "$ARTIFACT_DIR" ]]; then
   APP_DIR="$(cd "$ARTIFACT_DIR" && pwd)"
 else
