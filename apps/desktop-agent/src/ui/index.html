@@ -7452,7 +7452,11 @@
               <select id="gpu-coin2-select" class="algo-select">
                 <option value="" selected>Off</option>
               </select>
-              <div class="slider-hint">Quad mode: a second GPU coin time-sliced on the same card (e.g. QTC on Stream 2 + ZANO on Stream 4). Must differ from Stream 2 — the pool drops the second stream on collision.</div>
+              <div class="slider-hint">Quad mode: a second GPU coin on the same rig (e.g. QTU on Stream 2 + PRL on Stream 4). QTU/PRL on Stream 4 run on the SRBMiner sidecar like Stream 2 — other coins use the internal time-sliced kernel. Must differ from Stream 2 — the pool drops the second stream on collision.</div>
+
+              <label class="wizard-label-sm" style="margin-top: 10px;">Stream 4 SRBMiner GPUs</label>
+              <input id="srbminer-gpuid2-input" class="algo-select" type="text" placeholder="empty — same GPUs as Stream 2" spellcheck="false">
+              <div class="slider-hint">Optional pin for the Stream 4 sidecar (e.g. <code>0</code>) — leave empty to use the same GPUs as Stream 2. Comma-separated OpenCL device ids or <code>auto</code>.</div>
 
               <div class="section-divider">CPU Stream</div>
 

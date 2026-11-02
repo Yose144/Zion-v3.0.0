@@ -1471,6 +1471,18 @@ function setupControls() {
     });
   }
 
+  // Stream 4 sidecar GPU pin — empty falls back to the Stream 2 selection.
+  const srbGpuId2Input = document.getElementById('srbminer-gpuid2-input');
+  if (srbGpuId2Input) {
+    srbGpuId2Input.value = config.srbminerGpuId2 || '';
+    srbGpuId2Input.addEventListener('change', () => {
+      const v = srbGpuId2Input.value.trim().replace(/[^0-9,a-zA-Z]/g, '');
+      config.srbminerGpuId2 = v;
+      srbGpuId2Input.value = v;
+      void applyMiningSelection(`srbminerGpuId2=${encodeURIComponent(v)}`);
+    });
+  }
+
   // Pearl sidecar endpoint + payout — empty keeps the fallback chain
   // (prlPool → shared srbminerPool → LuckyPool default; prlWallet → pool wallet).
   const srbPrlPoolInput = document.getElementById('srbminer-prlpool-input');

@@ -2915,20 +2915,25 @@ let srbInstances = []; // { proc, gpuId, apiPort, worker, logPath }
 let srbPollTimer = null;
 let srbSpawnTimer = null;
 let srbRestarts = 0;
-let srbShareCounts = { accepted: -1, rejected: -1 };
+let srbShareCounts = {}; // { [streamIndex]: { accepted, rejected } }
 let _srbPollCount = 0;
 // Last-known parts of the combined hashrate (sidecar + internal miner),
 // recomposed in srbApplyStats / the metrics-summary parser.
 let _srbLastHr = 0;
 let _v31LastTotalHr = 0;
 const SRB_API_PORT_BASE = 21550;
+const SRB_API_PORT_BASE_S4 = 21560;
 const SRB_MAX_RESTARTS = 3;
+// A sidecar set that ran stably for this long earns a fresh restart budget —
+// otherwise 3 transient crashes across days would disable it permanently.
+const SRB_STABLE_REARM_MS = 10 * 60 * 1000;
+let _srbSetStartedAt = 0;
 function srbIsRunning() {
   return srbInstances.some((i) => i && i.proc);
 }
 /** @returns {string[]|null} numeric GPU ids, or null for auto/all (single process). */
-function parseSrbGpuIds(config) {
-  const raw = String(config?.srbminerGpuId || '').trim().toLowerCase();
+function parseSrbGpuIds(config, key = 'srbminerGpuId') {
+  const raw = String(config?.[key] || '').trim().toLowerCase();
   if (!raw || raw === 'auto' || raw === 'all') return null;
   const ids = raw.split(/[,\s]+/).map((s) => s.trim()).filter((s) => /^\d+$/.test(s));
   return ids.length ? ids : null;
@@ -2942,10 +2947,12 @@ const SRB_DEFAULT_PRL_POOL = 'pearl-eu2.luckypool.io:3360';
 // identity and Pearl rewards are unchanged. A Nock address is base58
 // (letters/digits, no 0/O/I/l) — never a 0x wrapped-NOCK address on Base.
 const SRB_DEFAULT_PRL_WALLET = 'prl1pwqx7esdehf58j4yqq68q0kts3zy5j2cf8c9gnn9tc3qaj6ptaq6qy35v6h+58CRHqNYCGcDZLUga3YB3NRJwH6Hri7d778aVo5DVifWNusb4Lnc2E7';
-// What the running sidecar actually mines — feeds stream-2 card labels +
-// share events (was hardcoded QTU before Pearl support landed in 3.7.6).
-let srbActiveCoin = 'QTU';
-let srbActiveAlgo = 'quantus';
+// What the running sidecars actually mine per stream — feeds stream card
+// labels + share events (was hardcoded QTU before Pearl support landed in
+// 3.7.6). Stream 2 = gpuCoin, stream 4 = gpuCoin2.
+const srbStreamInfo = { 2: { coin: 'QTU', algo: 'quantus' }, 4: { coin: '', algo: '' } };
+// Per-stream sidecar hashrate — summed into _srbLastHr for the top line.
+const _srbStreamHr = { 2: 0, 4: 0 };
 // Rolling per-GPU hashrate history (keyed by PCI bus — survives device-id
 // renumbering). ~60 samples @20s poll ≈ last 20 minutes; used for
 // min/avg/max on the GPU cards and the dip detector.
@@ -3012,9 +3019,9 @@ function resolveSrbMinerPath(config) {
   return null;
 }
 
-function srbApplyStats(stats) {
-  // Merge SRBMiner API telemetry into the stream-2 (gpu-external) slot using
-  // the same per-index merge as the "stream stats" stdout parser.
+function srbApplyStats(stats, streamIndex = 2) {
+  // Merge SRBMiner API telemetry into the stream's (gpu-external / gpu2) slot
+  // using the same per-index merge as the "stream stats" stdout parser.
   if (!Array.isArray(minerStats.streams)) minerStats.streams = [];
   const merged = {};
   for (const s of minerStats.streams) {
@@ -3022,12 +3029,13 @@ function srbApplyStats(stats) {
   }
   const acc = stats.accepted | 0;
   const rej = stats.rejected | 0;
-  merged[2] = {
-    index: 2,
-    label: srbActiveCoin,
-    coin: srbActiveCoin,
+  const info = srbStreamInfo[streamIndex] || srbStreamInfo[2];
+  merged[streamIndex] = {
+    index: streamIndex,
+    label: info.coin,
+    coin: info.coin,
     engine: 'srbminer',
-    algorithm: srbActiveAlgo,
+    algorithm: info.algo,
     hashrate_10s: stats.hashrate,
     hashrate_60s: stats.hashrate,
     hashrate_15m: stats.hashrate,
@@ -3038,7 +3046,8 @@ function srbApplyStats(stats) {
   minerStats.streams = Object.keys(merged).map(Number).sort((a, b) => a - b).map(i => merged[i]);
   // Fold sidecar hashrate into the top-line total — recomputed from stored
   // parts (never +=; the metrics summary would otherwise drift each tick).
-  _srbLastHr = stats.active === true ? (stats.hashrate || 0) : 0;
+  _srbStreamHr[streamIndex] = stats.active === true ? (stats.hashrate || 0) : 0;
+  _srbLastHr = _srbStreamHr[2] + _srbStreamHr[4];
   const srbTotal = _v31LastTotalHr + _srbLastHr;
   if (srbTotal > 0) {
     minerStats.hashrate = srbTotal;
@@ -3072,11 +3081,11 @@ function srbApplyStats(stats) {
     minerStats.gpus_eff = totalHr > 0 && totalP > 0 ? (totalHr / 1e6) / totalP : null;
   }
   // Synthetic share events (same mechanism as the stream-stats parser).
-  const prev = srbShareCounts;
+  const prev = srbShareCounts[streamIndex] || { accepted: -1, rejected: -1 };
   if (prev.accepted >= 0) {
     if (acc > prev.accepted) {
-      try { sendToRenderer('share-event', { stream: 2, coin: srbActiveCoin, accepted: true, status: 'accepted', algorithm: srbActiveAlgo, ts: Date.now() }); } catch {}
-      try { enqueueMinerOutputToRenderer('stdout', `[SRB] share accepted (total ${acc})`); } catch {}
+      try { sendToRenderer('share-event', { stream: streamIndex, coin: info.coin, accepted: true, status: 'accepted', algorithm: info.algo, ts: Date.now() }); } catch {}
+      try { enqueueMinerOutputToRenderer('stdout', `[SRB] share accepted s${streamIndex} (total ${acc})`); } catch {}
     }
     if (rej > prev.rejected) {
       let lastReject = null;
@@ -3099,11 +3108,11 @@ function srbApplyStats(stats) {
           } catch {}
         }
       } catch {}
-      try { sendToRenderer('share-event', { stream: 2, coin: srbActiveCoin, accepted: false, status: 'rejected', reason: (lastReject && lastReject.reason) || 'rejected', algorithm: srbActiveAlgo, ts: Date.now() }); } catch {}
-      try { enqueueMinerOutputToRenderer('stdout', `[SRB] share rejected (total ${rej})${lastReject ? ` [${lastReject.reason}] ${lastReject.gpu}` : ''}`); } catch {}
+      try { sendToRenderer('share-event', { stream: streamIndex, coin: info.coin, accepted: false, status: 'rejected', reason: (lastReject && lastReject.reason) || 'rejected', algorithm: info.algo, ts: Date.now() }); } catch {}
+      try { enqueueMinerOutputToRenderer('stdout', `[SRB] share rejected s${streamIndex} (total ${rej})${lastReject ? ` [${lastReject.reason}] ${lastReject.gpu}` : ''}`); } catch {}
     }
   }
-  srbShareCounts = { accepted: acc, rejected: rej };
+  srbShareCounts[streamIndex] = { accepted: acc, rejected: rej };
 }
 
 function srbParseGpuDevices(j, algo, idxOffset) {
@@ -3164,35 +3173,39 @@ async function pollOneSrbApi(apiPort) {
 async function pollSrbStats() {
   try {
     const targets = srbInstances.length
-      ? srbInstances.map((inst, i) => ({ port: inst.apiPort, idxOffset: Number(inst.gpuId) || i }))
-      : [{ port: SRB_API_PORT_BASE, idxOffset: 0 }];
-    let totalHr = 0;
-    let totalAcc = 0;
-    let totalRej = 0;
+      ? srbInstances.map((inst, i) => ({ port: inst.apiPort, idxOffset: Number(inst.gpuId) || i, streamIndex: inst.streamIndex || 2 }))
+      : [{ port: SRB_API_PORT_BASE, idxOffset: 0, streamIndex: 2 }];
+    const perStream = new Map();
     const gpus = [];
     let any = false;
     for (const t of targets) {
       const one = await pollOneSrbApi(t.port);
       if (!one) continue;
       any = true;
-      totalHr += one.hashrate;
-      totalAcc += one.accepted;
-      totalRej += one.rejected;
+      const agg = perStream.get(t.streamIndex) || { hashrate: 0, accepted: 0, rejected: 0 };
+      agg.hashrate += one.hashrate;
+      agg.accepted += one.accepted;
+      agg.rejected += one.rejected;
+      perStream.set(t.streamIndex, agg);
       gpus.push(...srbParseGpuDevices(one.j, one.algo, t.idxOffset));
     }
     if (!any) return;
-    srbApplyStats({
-      hashrate: totalHr,
-      accepted: totalAcc,
-      rejected: totalRej,
-      active: true,
-      gpu: gpus[0] ? {
-        core_clock: gpus[0].clock_mhz, temperature: gpus[0].temp_c,
-        asic_power: gpus[0].power_w, fan_speed_rpm: gpus[0].fan_rpm,
-        model: gpus[0].model
-      } : null,
-      gpus
-    });
+    let firstStream = true;
+    for (const [si, agg] of perStream) {
+      srbApplyStats({
+        hashrate: agg.hashrate,
+        accepted: agg.accepted,
+        rejected: agg.rejected,
+        active: true,
+        gpu: firstStream && gpus[0] ? {
+          core_clock: gpus[0].clock_mhz, temperature: gpus[0].temp_c,
+          asic_power: gpus[0].power_w, fan_speed_rpm: gpus[0].fan_rpm,
+          model: gpus[0].model
+        } : null,
+        gpus: firstStream ? gpus : null
+      }, si);
+      firstStream = false;
+    }
     // Synthetic per-GPU telemetry line for the mining console + miner.log —
     // one compact row every ~60s summarising each card (rate·temp·power·eff,
     // plus a "dip" marker when a card is far below its rolling average, the
@@ -3241,8 +3254,63 @@ function verifySrbBinaryIntegrity(srbPath, isCustom) {
   } catch { return true; } // unreadable VERSION.txt — nothing to verify against
 }
 
+// Build the set of sidecar plans: stream 2 carries gpuCoin, stream 4 (when
+// enabled and a different, SRB-supported coin) carries gpuCoin2. Each plan
+// expands to one process per pinned GPU id on its own API port base.
+function srbCoinPlans(config) {
+  const plans = [];
+  const canon = (c) => {
+    c = String(c || '').trim().toUpperCase();
+    if (!c || c === 'AUTO') return null;
+    if (!srbCoinIsExternal(c)) return null;
+    if (['PRL', 'PEARL', 'PEARLHASH'].includes(c)) return 'PRL';
+    return 'QTU';
+  };
+  const c1 = config?.stream2 === false ? null : canon(config?.gpuCoin);
+  const c2raw = canon(config?.gpuCoin2);
+  const c2 = config?.stream4 === false || !c2raw || c2raw === c1 ? null : c2raw;
+  const push = (coin, streamIndex, gpuIdKey, portBase, tag) => {
+    // 'QTC' and 'QTU' are the same coin to the sidecar — never plan it twice.
+    if (plans.some((p) => p.coin === coin)) return;
+    const isPearl = coin === 'PRL';
+    // Pearl pool: dedicated key → shared srbminerPool (our :8444 serves both
+    // dialects) → public LuckyPool default (same upstream the pool bridges).
+    let pool = String(isPearl
+      ? (config?.srbminerPrlPool || config?.srbminerPool || SRB_DEFAULT_PRL_POOL)
+      : (config?.srbminerPool || SRB_DEFAULT_POOL)).trim();
+    // SRBMiner requires an explicit stratum scheme — bare host:port fails
+    // to connect even though the endpoint is reachable.
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(pool)) pool = `stratum+tcp://${pool}`;
+    let wallet = String(isPearl
+      ? (config?.srbminerPrlWallet || SRB_DEFAULT_PRL_WALLET)
+      : (config?.srbminerWallet || SRB_DEFAULT_WALLET)).trim();
+    // The `+merge` suffix on a pearl wallet is a LuckyPool merge-mining
+    // hint — our own pearl stratum rejects it via wallet_is_valid and
+    // closes the session (connect→reconnect loop). Strip it whenever the
+    // pearl leg resolves to our pool; keep it for dedicated upstreams.
+    if (isPearl && wallet.includes('+')) {
+      const poolHost = pool.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').split('/')[0];
+      const ours = [
+        config?.srbminerPool,
+        config?.pool && `${config.pool.host}:${config.pool.port}`,
+      ].filter(Boolean).map((p) => String(p).replace(/^[a-z][a-z0-9+.-]*:\/\//i, ''));
+      if (ours.includes(poolHost)) wallet = wallet.split('+')[0];
+    }
+    // Stream 4 with no explicit pin falls back to the Stream 2 selection.
+    const idKey = gpuIdKey === 'srbminerGpuId2' && !String(config?.srbminerGpuId2 || '').trim()
+      ? 'srbminerGpuId' : gpuIdKey;
+    plans.push({
+      coin, algo: isPearl ? 'pearlhash' : 'quantus', streamIndex,
+      pool, wallet, tag,
+      gpuIds: parseSrbGpuIds(config, idKey), portBase,
+    });
+  };
+  if (c1) push(c1, 2, 'srbminerGpuId', SRB_API_PORT_BASE, '');
+  if (c2) push(c2, 4, 'srbminerGpuId2', SRB_API_PORT_BASE_S4, 's4');
+  return plans.filter((p) => !srbInstances.some((x) => x.proc && x.streamIndex === p.streamIndex));
+}
+
 function startSrbMiner(config, worker) {
-  if (srbIsRunning()) return;
   const srbPath = resolveSrbMinerPath(config);
   if (!srbPath) {
     logApp('srb-missing', 'SRBMiner-MULTI binary not found in resources/srbminer');
@@ -3251,46 +3319,12 @@ function startSrbMiner(config, worker) {
   }
   const isCustomBin = !!config?.srbminerPath && srbPath === String(config.srbminerPath);
   if (!verifySrbBinaryIntegrity(srbPath, isCustomBin)) return;
-  const srbCoin = String(config?.gpuCoin || 'QTU').trim().toUpperCase() || 'QTU';
-  const srbAlgo = srbAlgoForCoin(srbCoin);
-  const srbIsPearl = srbAlgo === 'pearlhash';
-  // Pearl pool: dedicated key → shared srbminerPool (our :8444 serves both
-  // dialects) → public LuckyPool default (same upstream the pool bridges to).
-  const srbPoolRaw = srbIsPearl
-    ? (config?.srbminerPrlPool || config?.srbminerPool || SRB_DEFAULT_PRL_POOL)
-    : (config?.srbminerPool || SRB_DEFAULT_POOL);
-  let srbPool = String(srbPoolRaw).trim();
-  // SRBMiner requires an explicit stratum scheme — bare host:port fails to
-  // connect even though the endpoint is reachable.
-  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(srbPool)) srbPool = `stratum+tcp://${srbPool}`;
-  const srbWallet = String(
-    srbIsPearl
-      ? (config?.srbminerPrlWallet || SRB_DEFAULT_PRL_WALLET)
-      : (config?.srbminerWallet || SRB_DEFAULT_WALLET)).trim();
-  srbActiveCoin = srbIsPearl ? 'PRL' : 'QTU';
-  srbActiveAlgo = srbAlgo;
+  const plans = srbCoinPlans(config);
+  if (!plans.length) return;
   // Our worker names carry an internal "@g=zion" group hint that upstream
   // pools reject at login — strip it and keep only safe worker chars.
   const srbWorkerRaw = String(config?.srbminerWorker || worker || 'desktop').split('@')[0];
   const srbWorkerBase = sanitizeWorkerName(srbWorkerRaw).replace(/[^A-Za-z0-9._-]/g, '') || 'desktop';
-  const parsedGpuIds = parseSrbGpuIds(config);
-  // Multi numeric ids → one process per GPU (disjoint EN1). auto/all → one
-  // process owning every card. Single id → one pinned process.
-  const launchSpecs = parsedGpuIds && parsedGpuIds.length > 1
-    ? parsedGpuIds.map((id, i) => ({
-        gpuId: id,
-        worker: `${srbWorkerBase}.gpu${id}`.replace(/[^A-Za-z0-9._-]/g, ''),
-        apiPort: SRB_API_PORT_BASE + i,
-        logPath: path.join(USER_DATA_PATH, `srbminer-gpu${id}.log`),
-        gpuArg: id,
-      }))
-    : [{
-        gpuId: parsedGpuIds ? parsedGpuIds[0] : 'all',
-        worker: srbWorkerBase,
-        apiPort: SRB_API_PORT_BASE,
-        logPath: path.join(USER_DATA_PATH, 'srbminer.log'),
-        gpuArg: parsedGpuIds ? parsedGpuIds[0] : null,
-      }];
 
   try { if (process.platform !== 'win32') fs.chmodSync(srbPath, 0o755); } catch {}
   const ANSI_RE = /\x1b\[[0-9;?]*[A-Za-z]|\[[0-9;]+m/g;
@@ -3299,14 +3333,40 @@ function startSrbMiner(config, worker) {
     ? String(config.srbminerExtraArgs).split(/\s+/).filter(Boolean)
     : [];
 
-  srbInstances = [];
-  srbShareCounts = { accepted: -1, rejected: -1 };
+  if (!srbIsRunning()) { srbShareCounts = {}; _srbSetStartedAt = Date.now(); }
+
+  // Expand each plan: multiple numeric ids → one process per GPU (disjoint
+  // EN1, sequential API ports from the plan base); auto/all or a single id
+  // → one process.
+  const launchSpecs = [];
+  for (const plan of plans) {
+    srbStreamInfo[plan.streamIndex] = { coin: plan.coin, algo: plan.algo };
+    const sfx = plan.tag ? `.${plan.tag}` : '';
+    const lpre = plan.tag ? `srbminer-${plan.tag}` : 'srbminer';
+    const specs = plan.gpuIds && plan.gpuIds.length > 1
+      ? plan.gpuIds.map((id, i) => ({
+          gpuId: id,
+          worker: `${srbWorkerBase}${sfx}.gpu${id}`.replace(/[^A-Za-z0-9._-]/g, ''),
+          apiPort: plan.portBase + i,
+          logPath: path.join(USER_DATA_PATH, `${lpre}-gpu${id}.log`),
+          gpuArg: id,
+        }))
+      : [{
+          gpuId: plan.gpuIds ? plan.gpuIds[0] : 'all',
+          worker: `${srbWorkerBase}${sfx}`.replace(/[^A-Za-z0-9._-]/g, ''),
+          apiPort: plan.portBase,
+          logPath: path.join(USER_DATA_PATH,
+            plan.gpuIds ? `${lpre}-gpu${plan.gpuIds[0]}.log` : `${lpre}.log`),
+          gpuArg: plan.gpuIds ? plan.gpuIds[0] : null,
+        }];
+    for (const s of specs) launchSpecs.push({ ...s, plan });
+  }
 
   for (const spec of launchSpecs) {
     const args = [
-      '--algorithm', srbAlgo,
-      '--pool', srbPool,
-      '--wallet', srbWallet,
+      '--algorithm', spec.plan.algo,
+      '--pool', spec.plan.pool,
+      '--wallet', spec.plan.wallet,
       '--worker', spec.worker,
       '--password', 'x',
       '--disable-cpu',
@@ -3330,15 +3390,16 @@ function startSrbMiner(config, worker) {
       logApp('srb-spawn-fail', JSON.stringify({ error: e?.message || String(e), gpuId: spec.gpuId }));
       continue;
     }
-    const inst = { proc, gpuId: spec.gpuId, apiPort: spec.apiPort, worker: spec.worker, logPath: spec.logPath };
+    const inst = { proc, gpuId: spec.gpuId, apiPort: spec.apiPort, worker: spec.worker, logPath: spec.logPath, streamIndex: spec.plan.streamIndex, coin: spec.plan.coin };
     srbInstances.push(inst);
     logApp('srb-spawn', JSON.stringify({
-      pid: proc.pid, pool: srbPool, worker: spec.worker, gpuId: spec.gpuId, apiPort: spec.apiPort
+      pid: proc.pid, pool: spec.plan.pool, worker: spec.worker, gpuId: spec.gpuId,
+      apiPort: spec.apiPort, coin: spec.plan.coin, stream: spec.plan.streamIndex
     }));
-    console.error(`[SRB] spawned PID ${proc.pid} gpu=${spec.gpuId} → ${srbPool} worker ${spec.worker}`);
+    console.error(`[SRB] spawned PID ${proc.pid} ${spec.plan.coin} gpu=${spec.gpuId} → ${spec.plan.pool} worker ${spec.worker}`);
     try {
       enqueueMinerOutputToRenderer('stdout',
-        `[SRB] spawned pid ${proc.pid} gpu=${spec.gpuId} → ${srbPool} worker ${spec.worker}`);
+        `[SRB] spawned pid ${proc.pid} ${spec.plan.coin} gpu=${spec.gpuId} → ${spec.plan.pool} worker ${spec.worker}`);
     } catch {}
 
     // SRBMiner's stdout is a full-screen ANSI TUI — don't mirror raw by default.
@@ -3380,6 +3441,7 @@ function startSrbMiner(config, worker) {
       // If all instances died, clear poller and maybe restart the set.
       if (!srbIsRunning()) {
         if (srbPollTimer) { clearInterval(srbPollTimer); srbPollTimer = null; }
+        if (Date.now() - _srbSetStartedAt > SRB_STABLE_REARM_MS) srbRestarts = 0;
         if (!minerStopping && !minerUserStopRequested && srbRestarts < SRB_MAX_RESTARTS) {
           srbRestarts++;
           srbSpawnTimer = setTimeout(() => { srbSpawnTimer = null; startSrbMiner(config, worker); }, 15000);
@@ -3404,15 +3466,20 @@ function stopSrbMiner() {
   srbRestarts = 0;
   _srbLastHr = 0;
   _srbPollCount = 0;
+  _srbStreamHr[2] = 0;
+  _srbStreamHr[4] = 0;
+  srbShareCounts = {};
+  srbStreamInfo[4] = { coin: '', algo: '' };
   minerStats.gpus = [];
   minerStats.gpus_total_power_w = null;
   minerStats.gpus_eff = null;
   _gpuHrHistory.clear();
-  // Reflect stopped state on the QTU stream card immediately.
+  // Reflect stopped state on the sidecar stream cards immediately.
   try {
     if (Array.isArray(minerStats.streams)) {
       minerStats.streams = minerStats.streams.map(s =>
-        s && Number(s.index) === 2 ? { ...s, active: false, hashrate_10s: 0, hashrate_60s: 0, hashrate_15m: 0 } : s);
+        s && (Number(s.index) === 2 || Number(s.index) === 4)
+          ? { ...s, active: false, hashrate_10s: 0, hashrate_60s: 0, hashrate_15m: 0 } : s);
     }
   } catch {}
   const procs = srbInstances.map((i) => i.proc).filter(Boolean);
@@ -3661,6 +3728,9 @@ function startMiningV31(config, v31Path) {
   // small GPU duty) + CPU stream; the card otherwise belongs to SRBMiner.
   const useSrbQtc = wantsGpu && config.stream2 !== false
     && !gpuCoinAuto && srbEngineWanted(config);
+  // Stream 4's second external GPU coin can likewise run on the sidecar
+  // (e.g. PRL while stream 2 does QTU) — decided inside the quad block.
+  let useSrbExt4 = false;
   // Per-stream switches (Trinity card toggles). Stream1 can only be off
   // when an external stream remains — both the UI and this guard ensure
   // the miner never ends up with zero active streams.
@@ -3696,29 +3766,41 @@ function startMiningV31(config, v31Path) {
       }
     }
     // Quad mode: second GPU external stream. Requires tripleStream + GPU
-    // and a coin different from gpuCoin (pool dedups on collision).
+    // and a coin different from gpuCoin (pool dedups on collision). 'QTC'
+    // and 'QTU' canonicalize to one coin — treat them as a collision.
+    const canonCoin = (c) => String(c || '').trim().toUpperCase() === 'QTC' ? 'QTU'
+      : String(c || '').trim().toUpperCase();
     const gpuCoin2 = String(config.gpuCoin2 || '').trim();
     const gpuCoin2Valid = config.stream4 !== false
       && gpuCoin2 && gpuCoin2.toLowerCase() !== 'auto'
-      && gpuCoin2.toUpperCase() !== gpuCoin.toUpperCase();
+      && canonCoin(gpuCoin2) !== canonCoin(gpuCoin);
     if (wantsGpu && gpuCoin2Valid) {
-      // VRAM preflight: a DAG-family coin on stream4 (e.g. ZANO ProgPoW
-      // ~2 GiB) plus the base miner context must fit in free GPU memory,
-      // otherwise the miner's DAG init fails and stream4 sits idle.
-      const freeMib = _gpuFreeMib();
-      const needMib = 1600 + _coinGpuMemMib(gpuCoin)
-        + _coinGpuMemMib(gpuCoin2) + 300;
-      if (freeMib !== null && freeMib < needMib) {
-        console.warn(`[quad] stream4 ${gpuCoin2.toUpperCase()} skipped — ` +
-          `VRAM preflight: ${freeMib} MiB free < ${needMib} MiB required ` +
-          `(DAG + stream buffers). Free GPU memory or pick a lighter coin.`);
-        sendToRendererNow('quad-vram-warning', {
-          coin: gpuCoin2.toUpperCase(), freeMib, needMib
-        });
+      if (srbEngineWanted(config) && srbCoinIsExternal(gpuCoin2)) {
+        // SRBMiner owns stream 4 too — its second plan spawns the sidecar;
+        // the internal stream stays disabled either way.
+        useSrbExt4 = true;
+        env.ZION_STREAM4_ENABLED = '0';
+        _activeExtCoins.gpu2 = ['PRL', 'PEARL', 'PEARLHASH'].includes(gpuCoin2.toUpperCase())
+          ? 'PRL' : 'QTU';
       } else {
-        env.ZION_STREAM4_ENABLED = '1';
-        env.ZION_STREAM4_FORCE_COIN = gpuCoin2.toUpperCase();
-        _activeExtCoins.gpu2 = gpuCoin2.toUpperCase();
+        // VRAM preflight: a DAG-family coin on stream4 (e.g. ZANO ProgPoW
+        // ~2 GiB) plus the base miner context must fit in free GPU memory,
+        // otherwise the miner's DAG init fails and stream4 sits idle.
+        const freeMib = _gpuFreeMib();
+        const needMib = 1600 + _coinGpuMemMib(gpuCoin)
+          + _coinGpuMemMib(gpuCoin2) + 300;
+        if (freeMib !== null && freeMib < needMib) {
+          console.warn(`[quad] stream4 ${gpuCoin2.toUpperCase()} skipped — ` +
+            `VRAM preflight: ${freeMib} MiB free < ${needMib} MiB required ` +
+            `(DAG + stream buffers). Free GPU memory or pick a lighter coin.`);
+          sendToRendererNow('quad-vram-warning', {
+            coin: gpuCoin2.toUpperCase(), freeMib, needMib
+          });
+        } else {
+          env.ZION_STREAM4_ENABLED = '1';
+          env.ZION_STREAM4_FORCE_COIN = gpuCoin2.toUpperCase();
+          _activeExtCoins.gpu2 = gpuCoin2.toUpperCase();
+        }
       }
     }
     env.ZION_AUTONOMOUS = (config.autonomous === true && cpuCoinAuto && gpuCoinAuto) ? '1' : '0';
@@ -4050,7 +4132,7 @@ function startMiningV31(config, v31Path) {
   // ── 19. SRBMiner sidecar (QTC engine) ──────────────────────────────────────
   // Delayed so zion-miner initialises its GPU context first; SRBMiner then
   // takes the rest of the card for QTU.
-  if (useSrbQtc) {
+  if (useSrbQtc || useSrbExt4) {
     if (srbSpawnTimer) { clearTimeout(srbSpawnTimer); srbSpawnTimer = null; }
     srbSpawnTimer = setTimeout(() => {
       srbSpawnTimer = null;
@@ -4058,7 +4140,8 @@ function startMiningV31(config, v31Path) {
         startSrbMiner(config, worker);
       }
     }, 8000);
-    log(`[V31-FAST] QTC engine: SRBMiner sidecar (internal stream2 disabled)\n`);
+    const owned = [useSrbQtc && 's2', useSrbExt4 && 's4'].filter(Boolean).join('+');
+    log(`[V31-FAST] SRBMiner sidecar owns ${owned} (internal stream disabled)\n`);
   }
 
   log(`[V31-FAST] Startup complete in ${Date.now() - t0}ms\n`);
