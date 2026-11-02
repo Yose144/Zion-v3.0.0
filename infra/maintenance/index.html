@@ -384,9 +384,9 @@ try {
         varying float vTw;
         void main() {
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          float tw = 0.62 + 0.38 * sin(uTime * (0.5 + fract(aPhase) * 1.1) + aPhase * 7.0);
+          float tw = 0.82 + 0.18 * sin(uTime * (0.5 + fract(aPhase) * 0.9) + aPhase * 7.0);
           vTw = tw;
-          gl_PointSize = aSize * tw * 150.0 / -mv.z;
+          gl_PointSize = aSize * (0.9 + 0.1 * tw) * 150.0 / -mv.z;
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
@@ -394,7 +394,7 @@ try {
         void main() {
           vec2 uv = gl_PointCoord - 0.5;
           float d = length(uv) * 2.0;
-          float a = smoothstep(1.0, 0.3, d) * vTw * 0.9;
+          float a = smoothstep(1.0, 0.3, d) * vTw * 0.85;
           vec3 col = mix(vec3(1.0, 0.93, 0.78), vec3(1.0, 0.82, 0.45), d);
           gl_FragColor = vec4(col, a);
         }`,
@@ -502,7 +502,7 @@ try {
         uniform vec3 uTop; uniform vec3 uMid; uniform vec3 uBot;
         varying float vY; varying vec3 vN;
         void main() {
-          vec3 c = vY > 0.0 ? mix(uMid, uTop, pow(vY, 0.8)) : mix(uMid, uBot, pow(-vY, 0.7));
+          vec3 c = vY > 0.0 ? mix(uMid, uTop, pow(max(vY, 0.0), 0.8)) : mix(uMid, uBot, pow(max(-vY, 0.0), 0.7));
           float light = 0.85 + 0.15 * vN.z;
           gl_FragColor = vec4(c * light, 1.0);
         }`,
@@ -620,7 +620,7 @@ try {
       composer = new Post.EffectComposer(renderer, rt);
       composer.addPass(new Post.RenderPass(scene, camera));
       const bloom = new Post.UnrealBloomPass(
-        new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.4, 0.82
+        new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.4, 0.85
       );
       composer.addPass(bloom);
       composer.addPass(new Post.OutputPass());
@@ -644,7 +644,8 @@ try {
     camBase.y = innerWidth < 640 ? 2.4 : 2.1;
     camera.updateProjectionMatrix();
   }
-  addEventListener('resize', resize);
+  let rsz;
+  addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(resize, 140); });
   resize();
 
   const t0 = performance.now();
@@ -664,7 +665,7 @@ try {
     yantraGroup.lookAt(camera.position);
     yantraGroup.translateZ(ORB_R * 1.05);
     yantra.rotation.z = t * 0.05;
-    yantraMat.opacity = 0.85 + 0.15 * Math.sin(t * 1.1);
+    yantraMat.opacity = 0.92 + 0.08 * Math.sin(t * 1.1);
 
     /* hvězdy třpytí */
     starUniforms.uTime.value = t;
@@ -690,7 +691,11 @@ try {
     const pos = dustGeo.attributes.position;
     for (let i = 0; i < DUST_N; i++) {
       let y = pos.getY(i) + dustSpd[i] * 0.016;
-      if (y > 3.6) y = -0.6;
+      if (y > 3.6) {
+        y = -0.6;
+        const a = Math.random() * Math.PI * 2, r = 0.6 + Math.random() * 2.4;
+        pos.setX(i, Math.cos(a) * r); pos.setZ(i, Math.sin(a) * r);
+      }
       pos.setY(i, y);
     }
     pos.needsUpdate = true;
