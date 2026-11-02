@@ -628,6 +628,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   ho používá sólo (`MobaGame`, lokální sim) i online (`MobaOnline`, data ze
   serveru). Nepřidávat druhou kopii fyziky pro síť.
 - **Deploy pořadí:** nejdřív `deploy-nirvana-net.sh`, pak appku (proto 5).
+- **⚠️ Poznámka k historii:** tahle dávka (2v2 online, `moba.ts`, protokol 5,
+  `MobaOnline`, E2E `moba-online.mjs`) přistála v commitu `ee1f097c6` — paralelní
+  session dělala `git add` přes celý strom a strhla staged soubory. Obsah je
+  v pořádku a otestovaný, jen zpráva commitu mluví o mobilním ovládání.
+  Report: `docs/3.2/REPORTS/REPORT_2026-11-02_FIRST_WORLD_ONLINE.md`.
 - **Co tu není:** obchod/itemy, mlha války, minimapa, zvuk, dotyk na mobilu,
   VR, predikce vlastního hrdiny. Nehlásit jako hotové.
 - **Testy:** `npx tsx apps/nirvana/test/moba-sim.mjs` (21 kontrol, pravidla)

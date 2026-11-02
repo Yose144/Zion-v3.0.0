@@ -4245,6 +4245,62 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   }
 }
 
+/* MOBA — přepínač režimu a stav připojení */
+.moba-mode {
+  display: inline-flex;
+  gap: 0.35rem;
+  padding: 0.2rem;
+  margin-bottom: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(4, 10, 9, 0.7);
+}
+
+.moba-mode-btn {
+  padding: 0.35rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #93a7a2;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.moba-mode-btn.is-active {
+  background: rgba(127, 227, 212, 0.16);
+  color: #d8fff6;
+}
+
+.moba-status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1rem 1.6rem;
+  border: 1px solid rgba(127, 227, 212, 0.35);
+  border-radius: 1rem;
+  background: rgba(4, 10, 9, 0.86);
+  text-align: center;
+  pointer-events: none;
+}
+
+.moba-status strong {
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: #d8fff6;
+}
+
+.moba-status span {
+  font-size: 0.75rem;
+  color: #8fa5a0;
+  max-width: 22rem;
+}
+
 /* Na telefonu jsou 3D popisky scény nečitelné a lezou do hlavičky
  * („RUSKÉ KOLO" se překrývalo s titulem). Panel ty názvy vypisuje. */
 @media (max-width: 760px) {
