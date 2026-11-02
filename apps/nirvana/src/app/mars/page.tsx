@@ -8,6 +8,7 @@ import { useI18n } from '@/core/i18n';
 import { MarsArena, type ArenaResult, type ArenaStats } from '@/core/arena/MarsArena';
 import { MarsMultiplayer, type MpStats } from '@/core/arena/MarsMultiplayer';
 import { ArenaTouchControls, createTouchState } from '@/core/arena/ArenaTouch';
+import { LOOK_MAX, LOOK_MIN, getLookSensitivity, setLookSensitivity } from '@/core/arena/settings';
 import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
 import { awardRun, loadProfile, saveProfile } from '@/core/park/profile';
 import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
@@ -48,10 +49,13 @@ export default function MarsPage() {
   /** Dotykové ovládání — na mobilu joystick + tažení místo WASD a myši. */
   const touch = useRef(createTouchState());
   const [coarse, setCoarse] = useState(false);
+  /** Násobek citlivosti pohledu — načte se až v efektu (localStorage není na serveru). */
+  const [look, setLook] = useState(1);
 
   useEffect(() => {
     const query = window.matchMedia('(hover: none) and (pointer: coarse)');
     setCoarse(query.matches);
+    setLook(getLookSensitivity());
     const onChange = () => setCoarse(query.matches);
     query.addEventListener('change', onChange);
     return () => query.removeEventListener('change', onChange);
@@ -263,6 +267,20 @@ export default function MarsPage() {
                   <kbd>klik</kbd> {cs ? 'střelba' : 'fire'}
                 </li>
               </ul>
+              {coarse && (
+                <label className="arena-slider">
+                  <span>{cs ? 'citlivost pohledu' : 'look sensitivity'}</span>
+                  <input
+                    type="range"
+                    min={LOOK_MIN}
+                    max={LOOK_MAX}
+                    step={0.1}
+                    value={look}
+                    onChange={(event) => setLook(setLookSensitivity(Number(event.target.value)))}
+                  />
+                  <b>{look.toFixed(1)}×</b>
+                </label>
+              )}
               <div className="arena-actions">
                 <button type="button" className="park-btn" onClick={() => setPhase('playing')}>
                   {cs ? 'Vstoupit do arény' : 'Enter the arena'}

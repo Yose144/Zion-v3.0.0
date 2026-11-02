@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
+import { getLookSensitivity } from './settings';
 
 /**
  * DOTYKOVÉ OVLÁDÁNÍ ARÉNY (Mars).
@@ -37,8 +38,8 @@ export function createTouchState(): ArenaTouchState {
   return { moveX: 0, moveY: 0, lookX: 0, lookY: 0, fire: false, jump: false, weapon: null };
 }
 
-/** Úhel pohledu na pixel — blízko myšímu 0,0022, ale pro prst jemnější. */
-const LOOK_SENSITIVITY = 0.0034;
+/** Úhel pohledu na pixel — základ; hráč si ho násobí v nastavení. */
+const LOOK_BASE = 0.0034;
 /** Poloměr joysticku v px (posun pro plnou výchylku). */
 const STICK_RADIUS = 46;
 
@@ -110,8 +111,11 @@ export function ArenaTouchControls({ state }: { state: MutableRefObject<ArenaTou
           const dx = event.clientX - lookLast.current.x;
           const dy = event.clientY - lookLast.current.y;
           lookLast.current = { x: event.clientX, y: event.clientY };
-          state.current.lookX += dx * LOOK_SENSITIVITY;
-          state.current.lookY += dy * LOOK_SENSITIVITY;
+          // citlivost se čte z nastavení (localStorage) — na tabletu je
+          // výchozí hodnota pomalá a hráč si ji musí moct zvednout
+          const factor = getLookSensitivity();
+          state.current.lookX += dx * LOOK_BASE * factor;
+          state.current.lookY += dy * LOOK_BASE * factor;
         }}
         onPointerUp={() => {
           lookPointer.current = null;

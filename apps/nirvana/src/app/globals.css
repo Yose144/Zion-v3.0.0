@@ -4491,3 +4491,29 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     padding: 0 0.35rem;
   }
 }
+
+/* ── Citlivost pohledu (jen dotyk) ──────────────────────────────────
+ * Výchozí hodnota je akorát na telefon, na tabletu pomalá. Slider je
+ * v panelu arény, aby se dal změnit bez opuštění hry.
+ */
+.arena-slider {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0.2rem;
+  font-size: 0.72rem;
+  color: rgba(246, 231, 216, 0.75);
+}
+
+.arena-slider input[type='range'] {
+  flex: 1;
+  min-width: 6rem;
+  accent-color: #ffb46a;
+}
+
+.arena-slider b {
+  min-width: 2.4rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #ffb46a;
+}

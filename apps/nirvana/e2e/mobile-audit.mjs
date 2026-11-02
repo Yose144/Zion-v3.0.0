@@ -13,6 +13,9 @@ try {
 }
 
 const BASE = process.env.NIRVANA_BASE ?? 'http://127.0.0.1:3010';
+/** Na šířku je málo výšky — ovládání se zmenšuje, chce to vlastní běh. */
+const LANDSCAPE = process.env.MOBILE_LANDSCAPE === '1';
+const VIEWPORT = LANDSCAPE ? { width: 844, height: 390 } : { width: 390, height: 844 };
 const EXE =
   process.env.CHROME_PATH ??
   '/Users/yeshuae/.cache/puppeteer/chrome-headless-shell/mac_arm-156.0.8078.47/chrome-headless-shell-mac-arm64/chrome-headless-shell';
@@ -25,6 +28,8 @@ const PAGES = [
     start: /Vstoupit do arény|Enter the arena/i,
     control: '.arena-touch',
     minControls: 3,
+    /* citlivost pohledu musí jít změnit — na tabletu je výchozí pomalá */
+    slider: 'input[type="range"]',
   },
   {
     path: '/venus',
@@ -58,7 +63,7 @@ const browser = await chromium.launch({
 });
 
 const context = await browser.newContext({
-  viewport: { width: 390, height: 844 },
+  viewport: VIEWPORT,
   deviceScaleFactor: 3,
   isMobile: true,
   hasTouch: true,
@@ -88,7 +93,21 @@ for (const spec of PAGES) {
     );
     if (overflow > 2) fail(spec.name, `horizontální přesah ${overflow}px`);
 
-    // ── 2) vstup do hry a dotykové ovládání ─────────────────────────
+    // ── 2) nastavení citlivosti (jen aréna) ─────────────────────────
+    if (spec.slider) {
+      const slider = page.locator(spec.slider).first();
+      const visible = await slider.isVisible().catch(() => false);
+      if (!visible) fail(spec.name, 'chybí ovladač citlivosti pohledu');
+      else {
+        // změna musí přežít (localStorage), jinak si hráč nic nenastaví
+        await slider.fill('2.5').catch(() => {});
+        const stored = await page.evaluate(() => window.localStorage.getItem('nirvana.arena.look'));
+        if (stored !== '2.5') fail(spec.name, `citlivost se neuložila (${stored})`);
+        await slider.fill('1').catch(() => {});
+      }
+    }
+
+    // ── 3) vstup do hry a dotykové ovládání ─────────────────────────
     let controls = 0;
     if (spec.start) {
       const button = page.getByRole('button', { name: spec.start }).first();
@@ -135,7 +154,7 @@ for (const spec of PAGES) {
       `OK   ${spec.name.padEnd(12)} overflow=${overflow}px ovládání=${controls} chyby=${errors.length}`,
     );
     await page.screenshot({
-      path: `.artifacts/render/mobile-20261102/${spec.name.replace(/\s+/g, '-').toLowerCase()}.png`,
+      path: `.artifacts/render/mobile-20261102/${spec.name.replace(/\s+/g, '-').toLowerCase()}${LANDSCAPE ? '-landscape' : ''}.png`,
     });
   } catch (error) {
     fail(spec.name, error.message.split('\n')[0]);
@@ -145,5 +164,5 @@ for (const spec of PAGES) {
 }
 
 await browser.close();
-console.log(`\nmobile-audit: ${problems === 0 ? 'PASSED' : `${problems} problémů`}`);
+console.log(`\nmobile-audit${LANDSCAPE ? ' (na šířku)' : ''}: ${problems === 0 ? 'PASSED' : `${problems} problémů`}`);
 process.exit(problems === 0 ? 0 : 1);
