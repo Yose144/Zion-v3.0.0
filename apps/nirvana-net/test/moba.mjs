@@ -19,7 +19,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const entry = join(here, '..', 'dist', 'nirvana-net', 'src', 'index.js');
 const PORT = Number(process.env.MOBA_PORT ?? 3800 + Math.floor(Math.random() * 400));
 const WS_URL = `ws://127.0.0.1:${PORT}/net`;
-const PROTO = 5;
+const PROTO = 6;
 
 let failures = 0;
 const check = (name, ok, detail = '') => {
@@ -154,7 +154,7 @@ try {
   const roomB = await b.waitFor((m) => m.t === 'room');
   check('místnost: dva lidi', roomB.occupants.length === 2, String(roomB.occupants.length));
   check('místnost: hra moba', roomA.room.game === 'moba', roomA.room.game);
-  check('místnost: kapacita 4', roomA.room.maxPlayers === 4, String(roomA.room.maxPlayers));
+  check('místnost: kapacita 6 (3v3)', roomA.room.maxPlayers === 6, String(roomA.room.maxPlayers));
   check('místnost: youPlayerId', Boolean(roomA.youPlayerId && roomB.youPlayerId));
 
   // čekáme na odpočet + start (boti se doplní)
@@ -162,12 +162,20 @@ try {
     (m) => m.t === 'snapshot' && m.game === 'moba' && m.moba?.heroes?.length >= 2 && m.state === 'running',
     25_000,
   );
-  check('start: simulace běží', started.moba.heroes.length === 4, String(started.moba.heroes.length));
+  check('start: simulace běží (3v3 + boti)', started.moba.heroes.length === 6, String(started.moba.heroes.length));
   check('start: dvě strany', new Set(started.moba.heroes.map((hero) => hero.team)).size === 2);
   check('start: tři uzly L5', started.moba.nodes.length === 3);
 
   const meA = started.moba.heroes.find((hero) => hero.id === roomA.youPlayerId);
   check('start: hráč A je ve hře', Boolean(meA), roomA.youPlayerId ?? 'null');
+  check('start: každá strana tři', ['blue', 'red'].every((team) => started.moba.heroes.filter((hero) => hero.team === team).length === 3));
+
+  // obchod: server kupuje jen když je zlato (start 320 < 400)
+  const goldStart = meA.gold;
+  a.send({ t: 'buy', item: 'boots' });
+  await sleep(400);
+  const afterBuy = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba.heroes.find((hero) => hero.id === roomA.youPlayerId);
+  check('obchod: bez zlata nic nekoupí', afterBuy.items.length === 0 && afterBuy.gold === goldStart, `${afterBuy.gold} / ${afterBuy.items.length}`);
 
   // pohyb: posílat vstup a čekat, až se pozice změní
   const startX = meA.x;

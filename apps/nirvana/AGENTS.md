@@ -646,8 +646,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Past s throttlem:** `sendMobaInput` má 20 Hz limit a **vrací boolean**.
   Zařazené kouzlo se smí smazat jen po skutečném odeslání, jinak se tiše
   ztratí (přesně to odhalil E2E online test).
-- **Co tu není:** obchod/itemy, mlha války, zvuk, dotyk na mobilu, VR.
-  Nehlásit jako hotové.
+- **Zvuk je syntéza** (`core/moba/audio.ts`) a odvozuje se z **rozdílu
+  snapshotů** (`useMobaAudio`): sim eventy neposílá. AudioContext jen po gestu.
+- **Obchod:** zlato (minion 24, hrdina 180, uzel 70), tři itemy za 400 — Čepel
+  (+25 % dmg), Aegis (+250 HP, −10 % incoming), Sandály (+15 % speed). Nákup
+  jde přes sim (`buyItem`), online zprávou `{t:'buy'}` (proto 6). Rychlost
+  hrdiny se bere z `heroSpeed()` — klientská predikce musí číst stejnou hodnotu,
+  jinak se postava rozjíždí.
+- **3v3:** místnost cap 6, tři na stranu, boti doplní zbytek; **duplicitní
+  hrdina** se nahradí volným z poolu (`lastError` to řekne). Sim je na počet
+  hrdinů nezávislý — 2v2/3v3 jsou jen data.
+- **Co tu není:** mlha války, dotyk na mobilu, VR. Nehlásit jako hotové.
 - **Testy:** `npx tsx apps/nirvana/test/moba-sim.mjs` (21 kontrol, pravidla)
   a `node apps/nirvana/e2e/first-world.mjs` (11 kontrol, hra v prohlížeči;
   Chromium z puppeteer cache, playwright verzi nemá).

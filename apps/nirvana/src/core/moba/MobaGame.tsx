@@ -14,7 +14,9 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { createMoba, mobaSnapshot, stepMoba, NO_INPUT, type MobaSnapshot, type MobaState } from './sim';
+import { buyItem, createMoba, mobaSnapshot, stepMoba, NO_INPUT, type ItemId, type MobaSnapshot, type MobaState } from './sim';
+import { mobaAudio, unlockMobaAudio } from './audio';
+import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
 import type { SpellSlot } from './spells';
 
@@ -24,6 +26,8 @@ export interface MobaStats {
   snapshot: MobaSnapshot;
   /** Id hrdiny, kterého ovládáš (pro minimapu a zvýraznění). */
   youId: string | null;
+  gold: number;
+  items: ItemId[];
   spells: { slot: SpellSlot; name: string; cooldown: number; cooldownMs: number; mana: number; color: string }[];
   playerHp: number;
   playerMaxHp: number;
@@ -54,6 +58,8 @@ export interface MobaProps {
   onEnd?: (winner: 'blue' | 'red') => void;
   /** Ladicí háček pro headless testy (`?mobaDebug=1`). */
   debug?: boolean;
+  /** Obchod: stránka sem zapíše item, ovladač ho hned koupí. */
+  buyRequest?: React.MutableRefObject<ItemId | null>;
 }
 
 /** Sestaví HUD data ze snapshotu — společná pro sólo i online. */
@@ -79,6 +85,8 @@ export function statsFromSnapshot(
     playerMaxHp: you?.maxHp ?? 1,
     playerMana: you?.mana ?? 0,
     playerMaxMana: you?.maxMana ?? 1,
+    gold: you?.gold ?? 0,
+    items: you?.items ?? [],
     playerLevel: you?.level ?? 1,
     kills: you?.kills ?? 0,
     deaths: you?.deaths ?? 0,
@@ -88,7 +96,7 @@ export function statsFromSnapshot(
   };
 }
 
-export function MobaGame({ playerHeroId, enemyHeroId, running, onStats, onEnd, debug }: MobaProps) {
+export function MobaGame({ playerHeroId, enemyHeroId, running, onStats, onEnd, debug, buyRequest }: MobaProps) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   return (
     <Canvas
@@ -104,11 +112,18 @@ export function MobaGame({ playerHeroId, enemyHeroId, running, onStats, onEnd, d
         onStats={onStats}
         onEnd={onEnd}
         debug={debug}
+        buyRequest={buyRequest}
         snapshotRef={snapshotRef}
       />
       <MobaStage snapshotRef={snapshotRef} youId="hero-you" />
+      <MobaAudioBridge snapshotRef={snapshotRef} youId="hero-you" />
     </Canvas>
   );
+}
+
+function MobaAudioBridge({ snapshotRef, youId }: { snapshotRef: React.MutableRefObject<MobaSnapshot | null>; youId: string | null }) {
+  useMobaAudio(snapshotRef, youId);
+  return null;
 }
 
 function SoloController({
@@ -118,6 +133,7 @@ function SoloController({
   onStats,
   onEnd,
   debug,
+  buyRequest,
   snapshotRef,
 }: MobaProps & { snapshotRef: React.MutableRefObject<MobaSnapshot | null> }) {
   const { camera, gl } = useThree();
@@ -136,6 +152,7 @@ function SoloController({
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
+      unlockMobaAudio();
       keys.current.add(event.code);
       if (event.code === 'KeyQ') queuedCast.current = { slot: 'Q' };
       if (event.code === 'KeyW') queuedCast.current = { slot: 'W' };
@@ -152,6 +169,7 @@ function SoloController({
       pointer.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     };
     const downPointer = (event: PointerEvent) => {
+      unlockMobaAudio();
       if (event.button === 0) attack.current = true;
     };
     const upPointer = () => {
@@ -194,10 +212,21 @@ function SoloController({
     const cast = queuedCast.current && hit ? { slot: queuedCast.current.slot, x: castPoint.x, z: castPoint.z } : null;
     queuedCast.current = null;
 
+    if (cast) {
+      const spell = you.spells.find((candidate) => candidate.slot === cast.slot);
+      if (spell) mobaAudio.spell(spell.color);
+    }
     const input = { moveX: strafe, moveZ: -forward, cast, attack: attack.current };
     const inputs = { [you.id]: input };
     for (let elapsed = 0; elapsed < dt; elapsed += STEP) {
       stepMoba(state.current, STEP, inputs, now + elapsed * 1000);
+    }
+
+    // obchod: požadavek ze stránky hned aplikuj (server/sólo rozhodne o zlatě)
+    if (buyRequest?.current) {
+      const item = buyRequest.current;
+      buyRequest.current = null;
+      if (buyItem(you, item)) mobaAudio.buy();
     }
 
     const snapshot = mobaSnapshot(state.current);

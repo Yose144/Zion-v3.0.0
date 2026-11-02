@@ -10,9 +10,9 @@
  * server z cookie (`zion_session` → ZIS), tak si je nikdo nemůže přepsat.
  */
 
-import type { MobaSnapshot } from '../moba/sim';
+import type { ItemId, MobaSnapshot } from '../moba/sim';
 
-export const PROTO_VERSION = 5;
+export const PROTO_VERSION = 6;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -220,6 +220,8 @@ export type ErrorCode =
 export type ClientMessage =
   | { t: 'hello'; proto: number }
   | { t: 'join'; game: GameId; room?: string; heroId?: number }
+  /** MOBA: nákup itemu (jen v místnosti typu `moba`). */
+  | { t: 'buy'; item: ItemId }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -372,6 +374,15 @@ export function parseClientMessage(raw: string): ClientMessage | null {
             : undefined,
         castX: num(message.castX, -60, 60),
         castZ: num(message.castZ, -60, 60),
+      };
+
+    case 'buy':
+      return {
+        t: 'buy',
+        item:
+          message.item === 'blade' || message.item === 'aegis' || message.item === 'boots'
+            ? message.item
+            : 'blade',
       };
 
     case 'chat':

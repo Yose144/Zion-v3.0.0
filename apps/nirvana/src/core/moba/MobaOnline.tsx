@@ -18,6 +18,9 @@ import { useNet } from '@/core/net/useNet';
 import { spellsForAvatar } from './spells';
 import { MobaStage } from './MobaStage';
 import { statsFromSnapshot, type MobaStats } from './MobaGame';
+import { mobaAudio, unlockMobaAudio } from './audio';
+import { useMobaAudio } from './useMobaAudio';
+import type { ItemId } from './sim';
 import type { MobaSnapshot } from './sim';
 
 /**
@@ -42,12 +45,15 @@ export function MobaOnline({
   onEnd,
   onPhase,
   debug,
+  buyRequest,
 }: {
   heroId: number;
   onStats: (stats: MobaStats) => void;
   onEnd?: (winner: 'blue' | 'red') => void;
   onPhase?: (phase: 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline') => void;
   debug?: boolean;
+  /** Obchod: stránka sem zapíše item, ovladač ho pošle serveru. */
+  buyRequest?: React.MutableRefObject<ItemId | null>;
 }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
@@ -66,12 +72,25 @@ export function MobaOnline({
         onEnd={onEnd}
         onPhase={onPhase}
         debug={debug}
+        buyRequest={buyRequest}
         snapshotRef={snapshotRef}
         selfPose={selfPose}
       />
       <MobaStage snapshotRef={snapshotRef} youId={youPlayerId ?? 'hero-you'} selfPose={selfPose} />
+      <OnlineAudioBridge snapshotRef={snapshotRef} youId={youPlayerId ?? null} />
     </Canvas>
   );
+}
+
+function OnlineAudioBridge({
+  snapshotRef,
+  youId,
+}: {
+  snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
+  youId: string | null;
+}) {
+  useMobaAudio(snapshotRef, youId);
+  return null;
 }
 
 function OnlineController({
@@ -80,6 +99,7 @@ function OnlineController({
   onEnd,
   onPhase,
   debug,
+  buyRequest,
   snapshotRef,
   selfPose,
 }: {
@@ -88,11 +108,12 @@ function OnlineController({
   onEnd?: (winner: 'blue' | 'red') => void;
   onPhase?: (phase: 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline') => void;
   debug?: boolean;
+  buyRequest?: React.MutableRefObject<ItemId | null>;
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
   selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
 }) {
   const { camera, gl } = useThree();
-  const { subscribe, joinGame, leaveRoom, sendMobaInput, connected, youPlayerId } = useNet();
+  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, connected, youPlayerId } = useNet();
   const keys = useRef(new Set<string>());
   const pointer = useRef({ x: 0, y: 0 });
   const attack = useRef(false);
@@ -143,6 +164,7 @@ function OnlineController({
   // ── vstup ───────────────────────────────────────────────────────────
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
+      unlockMobaAudio();
       keys.current.add(event.code);
       if (event.code === 'KeyQ') queuedCast.current = { slot: 'Q', at: Date.now() };
       if (event.code === 'KeyW') queuedCast.current = { slot: 'W', at: Date.now() };
@@ -157,6 +179,7 @@ function OnlineController({
       pointer.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     };
     const downPointer = (event: PointerEvent) => {
+      unlockMobaAudio();
       if (event.button === 0) attack.current = true;
     };
     const upPointer = () => {
@@ -194,8 +217,18 @@ function OnlineController({
 
     // vstup na server (hook sám omezuje na 20 Hz). Kouzlo se maže jen když
     // se opravdu odeslalo — jinak by ho throttle tiše zahodil (reálná chyba).
+    if (cast) {
+      const spell = spells.find((candidate) => candidate.slot === cast.slot);
+      if (spell) mobaAudio.spell(spell.color);
+    }
     const sent = sendMobaInput({ moveX: strafe, moveZ: -forward, attack: attack.current, cast });
     if (sent && cast) queuedCast.current = null;
+
+    // obchod: požadavek ze stránky pošli serveru (rozhodne o zlatě)
+    if (buyRequest?.current) {
+      sendBuy(buyRequest.current);
+      buyRequest.current = null;
+    }
 
     const snapshot = snapshotRef.current;
     if (!snapshot) return;

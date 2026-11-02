@@ -52,6 +52,7 @@ import {
 } from '../../nirvana/src/core/net/protocol.js';
 import {
   addMobaSeat,
+  buyMobaItem,
   createMobaRoom,
   mobaRoomSnapshot,
   removeMobaSeat,

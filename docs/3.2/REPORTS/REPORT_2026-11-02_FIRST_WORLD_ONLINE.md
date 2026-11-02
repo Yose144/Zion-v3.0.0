@@ -135,3 +135,47 @@ expiruje po 400 ms, aby neviselo, když hráč odjede kurzorem mimo plochu).
 | E2E online 2v2 | **13/13** — navíc „minimapa kreslí" (painted pixely) a „predikce aktivní a u serveru" |
 | E2E sólo | 11/11 (minimapa je i v sólo HUD) |
 | `tsc` + `next build` | čisté |
+
+---
+
+## Dodatek 2: zvuk, obchod a 3v3 (autonomní dávka)
+
+### Zvuk (syntéza, žádné soubory)
+
+`core/moba/audio.ts` — WebAudio z oscilátorů a šumu, stejné pravidlo jako
+u arény: v repu není jediný zvukový soubor. AudioContext se otevírá až po gestu.
+
+Zvuky: zásah, kouzlo (podle barvy postavy), smrt, převzetí uzlu L5, nová vlna,
+nákup, konec zápasu (vítězný a prohraný akord).
+
+`useMobaAudio.ts` je **jeden háček pro sólo i online**: sim eventy neposílá
+(snapshot je jediný zdroj pravdy), takže zvuk se odvozuje z rozdílu dvou
+snapshotů — spadlo mi HP → zásah, změnil se vlastník uzlu → převzetí…
+Když zvuk selže, hra běží dál.
+
+### Obchod a ekonomika
+
+- zlato: start **320**, minion **+24**, hrdina **+180**, převzetí uzlu **+70**
+- tři itemy za **400**: **Čepel** (+25 % poškození), **Aegis** (+250 max HP,
+  −10 % příchozího poškození), **Sandály** (+15 % rychlosti)
+- nákup jde přes sim (`buyItem`), takže **sólo i server rozhodují stejně**;
+  online posílá novou zprávu `{t:'buy', item}` (protokol **6**)
+- HUD: zlato + tři tlačítka (koupeno / cena / zamčeno, když není zlato)
+
+### 3v3
+
+- místnost má kapacitu **6**, každá strana **3 hrdiny**; volná sedla dál plní boti
+- **zákaz duplicit:** když je vybraný hrdina obsazený, server dá první volného
+  z botího poolu a poznamená to (`lastError`)
+- sim je na počet hrdinů nezávislý (`createMobaMatch`), takže 2v2/3v3 jsou jen
+  data — fyzika i kouzla zůstávají stejné
+
+### Ověření dodatku
+
+| Co | Výsledek |
+|---|---|
+| Sim test (`tsx`) | **31/31** — přibylo zlato, koupě, efekty itemů, 3v3 |
+| Server test `test/moba.mjs` | **17/17** — kapacita 6, tři na stranu, nákup bez zlata nic nekoupí |
+| Regrese sítě | smoke / arena / race OK, fight PASSED (proto 6) |
+| E2E sólo | 11/11 |
+| **E2E online 3v3** | **17/17** — 6 hrdinů, tři na stranu, obchod v HUD, minimapa, predikce |

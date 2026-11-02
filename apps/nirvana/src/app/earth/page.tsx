@@ -12,7 +12,7 @@
  * hraje jinak než Šiva. Zdroj: `core/moba/spells.ts`.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { AVATARS } from '@/core/avatars/catalog';
 import { useI18n } from '@/core/i18n';
@@ -20,6 +20,7 @@ import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
+import { ITEMS, type ItemId } from '@/core/moba/sim';
 import { spellsForAvatar } from '@/core/moba/spells';
 
 /** Dvanáct startovních hrdinů — zbytek rosteru jde vybrat na `/avatars`. */
@@ -40,6 +41,7 @@ export default function EarthPage() {
   const [mode, setMode] = useState<Mode>('solo');
   const [onlinePhase, setOnlinePhase] = useState<OnlinePhase>('connecting');
   const [stats, setStats] = useState<MobaStats | null>(EMPTY_STATS);
+  const buyRequest = useRef<ItemId | null>(null);
   const [winner, setWinner] = useState<'blue' | 'red' | null>(null);
 
   const hero = useMemo(() => AVATARS.find((entry) => entry.id === heroId) ?? AVATARS[0]!, [heroId]);
@@ -177,6 +179,7 @@ export default function EarthPage() {
               running
               onStats={onStats}
               onEnd={onEnd}
+              buyRequest={buyRequest}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           ) : (
@@ -185,6 +188,7 @@ export default function EarthPage() {
               onStats={onStats}
               onEnd={onEnd}
               onPhase={setOnlinePhase}
+              buyRequest={buyRequest}
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           )}
@@ -284,6 +288,31 @@ export default function EarthPage() {
                     <small>{spell.mana} mp</small>
                     {cooldownPct > 0 && <i className="moba-slot-cd" style={{ height: `${cooldownPct}%` }} />}
                   </div>
+                );
+              })}
+            </div>
+
+            <div className="moba-shop" aria-label={cs ? 'Obchod' : 'Shop'}>
+              <span className="moba-shop-gold" title={cs ? 'zlato' : 'gold'}>
+                ◈ {stats?.gold ?? 0}
+              </span>
+              {ITEMS.map((item) => {
+                const owned = (stats?.items ?? []).includes(item.id);
+                const affordable = (stats?.gold ?? 0) >= item.cost;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`moba-shop-item${owned ? ' is-owned' : ''}`}
+                    disabled={owned || !affordable}
+                    title={item.note[cs ? 'cs' : 'en']}
+                    onClick={() => {
+                      buyRequest.current = item.id;
+                    }}
+                  >
+                    <strong>{item.name[cs ? 'cs' : 'en']}</strong>
+                    <small>{owned ? (cs ? 'koupeno' : 'owned') : `${item.cost} ◈`}</small>
+                  </button>
                 );
               })}
             </div>

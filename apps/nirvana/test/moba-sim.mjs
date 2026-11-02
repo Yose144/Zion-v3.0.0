@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { createMoba, stepMoba, mobaSnapshot, NO_INPUT } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, buyItem, createMoba, createMobaMatch, heroSpeed, stepMoba, mobaSnapshot, NO_INPUT } from '../src/core/moba/sim.ts';
 import { spellsForAvatar } from '../src/core/moba/spells.ts';
 import { NEXUS_HP, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
@@ -121,6 +121,41 @@ while (!slow.ended && guard < 500) {
   guard += 1;
 }
 check('limit: zápas skončí do 8 minut', slow.ended !== null, `čas ${Math.round(slow.time)} s`);
+
+// ── 10. ekonomika a itemy ───────────────────────────────────────────
+const shop = createMoba(4, 19, 0);
+const buyer = shop.heroes[0];
+check('ekonomika: startovní zlato', buyer.gold >= 300, String(buyer.gold));
+buyer.gold = 500; // v reálu se na první item našetří z minionů
+const goldBefore = buyer.gold;
+const bought = buyItem(buyer, 'boots');
+check('obchod: koupě sandálů', bought && buyer.items.includes('boots'), JSON.stringify(buyer.items));
+check('obchod: zlato se odečetlo', buyer.gold === goldBefore - 400, String(buyer.gold));
+check('obchod: sandály zrychlují', heroSpeed(buyer) > BASE_SPEED, `${heroSpeed(buyer).toFixed(2)} vs ${BASE_SPEED}`);
+check('obchod: podruhé nekoupíš', !buyItem(buyer, 'boots'));
+buyer.gold = 0;
+check('obchod: bez zlata nekoupíš', !buyItem(buyer, 'aegis'));
+
+buyer.gold = 400;
+const maxHpBefore = buyer.maxHp;
+check('obchod: Aegis přidá HP', buyItem(buyer, 'aegis') && buyer.maxHp === maxHpBefore + 250, `${maxHpBefore} → ${buyer.maxHp}`);
+
+// ── 11. 3v3 (šest hrdinů) ───────────────────────────────────────────
+const threeVsThree = createMobaMatch(
+  [
+    { id: 'a', heroId: 0, team: 'blue', human: true },
+    { id: 'b', heroId: 1, team: 'blue', human: false },
+    { id: 'c', heroId: 2, team: 'blue', human: false },
+    { id: 'd', heroId: 82, team: 'red', human: true },
+    { id: 'e', heroId: 85, team: 'red', human: false },
+    { id: 'f', heroId: 86, team: 'red', human: false },
+  ],
+  0,
+);
+check('3v3: šest hrdinů', threeVsThree.heroes.length === 6);
+check('3v3: tři na stranu', threeVsThree.heroes.filter((hero) => hero.team === 'blue').length === 3);
+advance(threeVsThree, 7000);
+check('3v3: sim běží (minioni)', threeVsThree.minions.length > 0, String(threeVsThree.minions.length));
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);
 process.exit(failures === 0 ? 0 : 1);

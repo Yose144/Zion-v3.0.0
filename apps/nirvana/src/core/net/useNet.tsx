@@ -58,6 +58,8 @@ export interface NetApi {
    * jen proto, že ho zrovna zahodil throttle (20 Hz).
    */
   sendMobaInput: (input: { moveX: number; moveZ: number; attack: boolean; cast: { slot: 'Q' | 'W' | 'E' | 'R'; x: number; z: number } | null }) => boolean;
+  /** MOBA: nákup itemu (server rozhodne, jestli na něj je zlato). */
+  sendBuy: (item: 'blade' | 'aegis' | 'boots') => void;
   leaveRoom: () => void;
   /**
    * Herní data tečou přes subscription, ne přes React state — snapshoty
@@ -343,6 +345,13 @@ export function NetProvider({ children }: { children: ReactNode }) {
     [send],
   );
 
+  const sendBuy = useCallback<NetApi['sendBuy']>(
+    (item) => {
+      send({ t: 'buy', item });
+    },
+    [send],
+  );
+
   const value = useMemo<NetApi>(
     () => ({
       status,
@@ -362,6 +371,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       subscribe,
       sendInput,
       sendMobaInput,
+      sendBuy,
     }),
     [
       status,
@@ -380,6 +390,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       subscribe,
       sendInput,
       sendMobaInput,
+      sendBuy,
     ],
   );
 

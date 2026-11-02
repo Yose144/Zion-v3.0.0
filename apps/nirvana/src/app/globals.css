@@ -4418,3 +4418,76 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     right: 0.5rem;
   }
 }
+
+/* MOBA — obchod v HUD */
+.moba-shop {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+  width: 100%;
+  pointer-events: auto;
+}
+
+.moba-shop-gold {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.55rem;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  border-radius: 0.6rem;
+  background: rgba(4, 10, 9, 0.85);
+  color: #ffd166;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.moba-shop-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.6rem;
+  background: rgba(4, 10, 9, 0.82);
+  color: #e9f2ee;
+  cursor: pointer;
+  text-align: left;
+}
+
+.moba-shop-item:hover:not(:disabled) {
+  border-color: rgba(255, 209, 102, 0.5);
+  background: rgba(255, 209, 102, 0.1);
+}
+
+.moba-shop-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.moba-shop-item.is-owned {
+  border-color: rgba(127, 227, 212, 0.5);
+  color: #bfe9e0;
+}
+
+.moba-shop-item strong {
+  font-size: 0.64rem;
+  line-height: 1.2;
+}
+
+.moba-shop-item small {
+  font-size: 0.55rem;
+  color: #8fa5a0;
+}
+
+@media (max-width: 700px) {
+  .moba-shop-item strong {
+    font-size: 0.56rem;
+  }
+
+  .moba-shop-gold {
+    font-size: 0.62rem;
+    padding: 0 0.35rem;
+  }
+}

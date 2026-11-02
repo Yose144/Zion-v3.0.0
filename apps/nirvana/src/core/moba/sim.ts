@@ -37,6 +37,50 @@ import {
 
 export type UnitKind = 'hero' | 'minion' | 'tower' | 'nexus';
 
+/** Tři itemy — každý mění jinou věc, aby šlo hrát „na build". */
+export type ItemId = 'blade' | 'aegis' | 'boots';
+
+export interface MobaItem {
+  id: ItemId;
+  name: { cs: string; en: string };
+  cost: number;
+  note: { cs: string; en: string };
+}
+
+export const ITEMS: MobaItem[] = [
+  {
+    id: 'blade',
+    name: { cs: 'Čepel', en: 'Blade' },
+    cost: 400,
+    note: { cs: '+25 % poškození', en: '+25% damage' },
+  },
+  {
+    id: 'aegis',
+    name: { cs: 'Aegis', en: 'Aegis' },
+    cost: 400,
+    note: { cs: '+250 max HP, −10 % příchozího poškození', en: '+250 max HP, −10% incoming damage' },
+  },
+  {
+    id: 'boots',
+    name: { cs: 'Sandály', en: 'Boots' },
+    cost: 400,
+    note: { cs: '+15 % rychlosti', en: '+15% movement speed' },
+  },
+];
+
+/** Základní rychlost hrdiny (m/s) — stejné číslo používá klientská predikce. */
+export const BASE_SPEED = 6.2;
+export const BLADE_MULT = 1.25;
+export const AEGIS_MULT = 0.9;
+export const AEGIS_HP = 250;
+export const BOOTS_MULT = 1.15;
+
+/** Rychlost podle itemů a zpomalení. */
+export function heroSpeed(hero: { items: ItemId[]; slowFactor: number }): number {
+  const boots = hero.items.includes('boots') ? BOOTS_MULT : 1;
+  return BASE_SPEED * boots * (1 - hero.slowFactor);
+}
+
 export interface Hero {
   id: string;
   team: Team;
@@ -64,6 +108,9 @@ export interface Hero {
   kills: number;
   deaths: number;
   damageDone: number;
+  /** Zlato ze zabití a uzlu; za něj se kupují itemy. */
+  gold: number;
+  items: ItemId[];
   isPlayer: boolean;
   /** Kam se bot zrovna dívá / kam jde (jen pro AI). */
   botLane: LaneId;
@@ -197,6 +244,8 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     kills: 0,
     deaths: 0,
     damageDone: 0,
+    gold: 320,
+    items: [],
     isPlayer,
     botLane: 'mid',
     botCast: null,
@@ -289,6 +338,10 @@ export function nodeBonus(state: MobaState, team: Team): number {
 }
 
 const levelScale = (hero: Hero) => 1 + (hero.level - 1) * 0.06;
+/** Odchozí poškození podle itemů. */
+const damageOut = (hero: Hero) => (hero.items.includes('blade') ? BLADE_MULT : 1);
+/** Příchozí poškození podle itemů (Aegis tlumí). */
+const damageIn = (hero: Hero) => (hero.items.includes('aegis') ? AEGIS_MULT : 1);
 
 function addEffect(state: MobaState, kind: Effect['kind'], x: number, z: number, radius: number, color: string, ttl: number) {
   state.effects.push({ id: nextId('fx'), kind, x, z, radius, color, ttl, maxTtl: ttl });
@@ -296,7 +349,7 @@ function addEffect(state: MobaState, kind: Effect['kind'], x: number, z: number,
 
 function damageHero(state: MobaState, hero: Hero, amount: number, source: string) {
   if (!hero.alive) return;
-  let remaining = amount;
+  let remaining = amount * damageIn(hero);
   if (hero.shield > 0) {
     const absorbed = Math.min(hero.shield, remaining);
     hero.shield -= absorbed;
@@ -312,6 +365,7 @@ function damageHero(state: MobaState, hero: Hero, amount: number, source: string
     const killer = state.heroes.find((candidate) => candidate.id === source);
     if (killer && killer.team !== hero.team) {
       killer.kills += 1;
+      killer.gold = Math.min(3000, killer.gold + 180);
       gainXp(state, killer, 140);
       state.banner = `${killer.name} srazil ${hero.name}`;
       state.bannerUntil = state.now + 3500;
@@ -326,6 +380,7 @@ function damageMinion(state: MobaState, minion: Minion, amount: number, source: 
   const killer = state.heroes.find((candidate) => candidate.id === source);
   if (killer) {
     gainXp(state, killer, 26);
+    killer.gold = Math.min(3000, killer.gold + 24);
     killer.damageDone += amount;
   }
 }
@@ -386,7 +441,7 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
   hero.mana -= spell.mana;
   hero.cooldowns[slot] = state.now + spell.cooldownMs;
   hero.facing = Math.atan2(x - hero.x, z - hero.z);
-  const bonus = nodeBonus(state, hero.team) * levelScale(hero);
+  const bonus = nodeBonus(state, hero.team) * levelScale(hero) * damageOut(hero);
 
   if (spell.kind === 'projectile') {
     const dx = x - hero.x;
@@ -574,8 +629,7 @@ export function stepMoba(
     if (state.now >= hero.slowUntil) hero.slowFactor = 0;
     hero.mana = Math.min(hero.maxMana, hero.mana + dt * 7);
 
-    const slow = 1 - hero.slowFactor;
-    const speed = 6.2 * slow;
+    const speed = heroSpeed(hero);
 
     const input = inputs[hero.id];
     if (input) {
@@ -605,7 +659,11 @@ export function stepMoba(
         if (target) {
           hero.attackCooldown = now + 850;
           hero.facing = Math.atan2(target.x - hero.x, target.z - hero.z);
-          const damage = (28 + (AVATARS_BY_ID.get(hero.heroId)?.cl ?? 3) * 3) * levelScale(hero) * nodeBonus(state, hero.team);
+          const damage =
+            (28 + (AVATARS_BY_ID.get(hero.heroId)?.cl ?? 3) * 3) *
+            levelScale(hero) *
+            nodeBonus(state, hero.team) *
+            damageOut(hero);
           hero.damageDone += damage;
           if ('heroId' in target) damageHero(state, target as Hero, damage, hero.id);
           else damageMinion(state, target as Minion, damage, hero.id);
@@ -699,7 +757,7 @@ export function stepMoba(
       if (tower.hp <= 0 || tower.team === hero.team) continue;
       if (distance(hero.x, hero.z, tower.x, tower.z) > 5.6) continue;
       if (now < hero.attackCooldown - 400) continue;
-      const damage = 26 * levelScale(hero) * nodeBonus(state, hero.team);
+      const damage = 26 * levelScale(hero) * nodeBonus(state, hero.team) * damageOut(hero);
       tower.hp = Math.max(0, tower.hp - damage);
       hero.damageDone += damage;
       addEffect(state, 'hit', tower.x, tower.z, 0.8, '#ffe6a8', 180);
@@ -725,6 +783,11 @@ export function stepMoba(
       node.progress[team] += dt * 1000;
       if (node.progress[team] >= NODE_CAPTURE_MS) {
         node.owner = team;
+        for (const hero of state.heroes) {
+          if (hero.team !== team || !hero.alive) continue;
+          if (distance(hero.x, hero.z, node.x, node.z) > 6.5) continue;
+          hero.gold = Math.min(3000, hero.gold + 70);
+        }
         node.progress = { blue: 0, red: 0 };
         addEffect(state, 'capture', node.x, node.z, 3.4, team === 'blue' ? '#7fe3d4' : '#ff7a6b', 1400);
         state.banner = `${node.name} převzat — ${team === 'blue' ? 'ZION' : 'Opozice'}`;
@@ -754,6 +817,26 @@ export function stepMoba(
   }
 }
 
+/** Nákup itemu — vrací `false`, když na něj není zlato nebo už ho má. */
+export function buyItem(hero: Hero, itemId: ItemId): boolean {
+  const item = ITEMS.find((candidate) => candidate.id === itemId);
+  if (!item) return false;
+  if (hero.items.includes(itemId)) return false;
+  if (hero.gold < item.cost) return false;
+  hero.gold -= item.cost;
+  hero.items.push(itemId);
+  if (itemId === 'aegis') {
+    hero.maxHp += AEGIS_HP;
+    hero.hp = Math.min(hero.maxHp, hero.hp + AEGIS_HP);
+  }
+  return true;
+}
+
+/** Najde hrdinu podle id v jakémkoli stavu (pro server i debug). */
+export function heroById(state: MobaState, id: string): Hero | null {
+  return state.heroes.find((hero) => hero.id === id) ?? null;
+}
+
 export interface MobaSnapshot {
   time: number;
   ended: Team | null;
@@ -780,6 +863,8 @@ export interface MobaSnapshot {
     cooldowns: Record<SpellSlot, number>;
     kills: number;
     deaths: number;
+    gold: number;
+    items: ItemId[];
   }[];
   minions: { id: string; team: Team; x: number; z: number; hp: number; maxHp: number }[];
   projectiles: { id: string; x: number; z: number; color: string }[];
@@ -823,6 +908,8 @@ export function mobaSnapshot(state: MobaState): MobaSnapshot {
       cooldowns: hero.cooldowns,
       kills: hero.kills,
       deaths: hero.deaths,
+      gold: Math.round(hero.gold),
+      items: hero.items,
     })),
     minions: state.minions.map((minion) => ({
       id: minion.id,

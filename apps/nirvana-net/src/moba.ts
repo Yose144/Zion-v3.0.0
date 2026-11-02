@@ -10,18 +10,23 @@
  */
 
 import {
+  buyItem,
   createMobaMatch,
+  heroById,
   mobaSnapshot,
   stepMoba,
   NO_INPUT,
+  type ItemId,
   type MobaInput,
   type MobaSeat,
   type MobaState,
 } from '../../nirvana/src/core/moba/sim.js';
 import { AVATARS_BY_ID } from '../../nirvana/src/core/avatars/catalog.js';
 
-/** Dva na každé straně — víc by se na tři linky nevešlo. */
-export const MOBA_ROOM_SIZE = 4;
+/** Tři na každé straně (3v3) — víc by se na tři linky nevešlo. */
+export const MOBA_ROOM_SIZE = 6;
+/** Kolik hrdinů má mít každá strana. */
+const TEAM_SIZE = 3;
 /** Jak dlouho se čeká na druhého hráče, než nastoupí boti. */
 const BOT_FILL_DELAY_MS = 6000;
 /** Odpočet před startem (ms). */
@@ -52,7 +57,7 @@ export interface MobaRoomSim {
 }
 
 /** Záloha pro doplnění botů — známé postavy, ať to není náhodný šum. */
-const BOT_HEROES = [82, 85, 86, 3, 19, 20];
+const BOT_HEROES = [82, 85, 86, 84, 3, 19, 20, 5];
 
 export function createMobaRoom(now: number): MobaRoomSim {
   return {
@@ -77,7 +82,15 @@ function teamCount(room: MobaRoomSim, team: 'blue' | 'red'): number {
 /** Přidá hráče do volného sedla. Vrací false, když je plno. */
 export function addMobaSeat(room: MobaRoomSim, connId: string, heroId: number | undefined, now: number): boolean {
   if (room.seats.size >= MOBA_ROOM_SIZE) return false;
-  const safeHero = heroId !== undefined && AVATARS_BY_ID.has(heroId) ? heroId : 0;
+  const wanted = heroId !== undefined && AVATARS_BY_ID.has(heroId) ? heroId : 0;
+  // zákaz duplicit: obsazený hrdina → první volný z poolu (hráč to uvidí v HUD)
+  const taken = new Set([...room.seats.values()].map((seat) => seat.heroId));
+  let safeHero = wanted;
+  if (taken.has(wanted)) {
+    const free = BOT_HEROES.find((id) => !taken.has(id));
+    safeHero = free ?? wanted;
+    room.lastError = `hrdina ${wanted} je obsazený, dostal jsi ${safeHero}`;
+  }
   const team: 'blue' | 'red' = teamCount(room, 'blue') <= teamCount(room, 'red') ? 'blue' : 'red';
   room.seats.set(connId, { id: connId, heroId: safeHero, team, human: true });
   room.inputs.set(connId, NO_INPUT);
@@ -90,6 +103,14 @@ export function removeMobaSeat(room: MobaRoomSim, connId: string): void {
   room.inputs.delete(connId);
 }
 
+/** Nákup itemu pro hráče v místnosti. */
+export function buyMobaItem(room: MobaRoomSim, connId: string, itemId: ItemId): boolean {
+  if (!room.sim) return false;
+  const hero = heroById(room.sim, connId);
+  if (!hero) return false;
+  return buyItem(hero, itemId);
+}
+
 export function setMobaInput(room: MobaRoomSim, connId: string, input: MobaInput): void {
   if (!room.seats.has(connId)) return;
   room.inputs.set(connId, input);
@@ -99,7 +120,7 @@ export function setMobaInput(room: MobaRoomSim, connId: string, input: MobaInput
 function fillBots(room: MobaRoomSim): void {
   let index = 0;
   for (const team of ['blue', 'red'] as const) {
-    while (teamCount(room, team) < 2) {
+    while (teamCount(room, team) < TEAM_SIZE) {
       const heroId = BOT_HEROES[index % BOT_HEROES.length]!;
       index += 1;
       const id = `bot-${team}-${index}`;

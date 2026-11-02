@@ -69,15 +69,19 @@ try {
   const b = await openPlayer('B');
 
   // oba se musí dočkat běžícího zápasu se čtyřmi hrdiny (2 lidé + 2 boti)
-  const runningA = await poll(a, (state) => state.phase === 'running' && state.heroes.length === 4, 40_000);
-  check('A: zápas běží se 4 hrdiny', Boolean(runningA), JSON.stringify(await debug(a)));
-  const runningB = await poll(b, (state) => state.phase === 'running' && state.heroes.length === 4, 40_000);
-  check('B: zápas běží se 4 hrdiny', Boolean(runningB));
+  const runningA = await poll(a, (state) => state.phase === 'running' && state.heroes.length === 6, 45_000);
+  check('A: zápas běží se 6 hrdiny (3v3)', Boolean(runningA), JSON.stringify(await debug(a)));
+  const runningB = await poll(b, (state) => state.phase === 'running' && state.heroes.length === 6, 45_000);
+  check('B: zápas běží se 6 hrdiny (3v3)', Boolean(runningB));
 
   if (runningA && runningB) {
     check('A: vidí vlastní id', runningA.heroes.some((hero) => hero.id === runningA.you), String(runningA.you));
     check('B: vidí vlastní id', runningB.heroes.some((hero) => hero.id === runningB.you), String(runningB.you));
     check('A i B: dvě strany', new Set(runningA.heroes.map((hero) => hero.team)).size === 2);
+    check(
+      'každá strana tři hrdinové',
+      ['blue', 'red'].every((team) => runningA.heroes.filter((hero) => hero.team === team).length === 3),
+    );
     check('A i B: tři uzly L5', runningA.nodes.length === 3 && runningB.nodes.length === 3);
 
     // A pošle pohyb — B musí vidět, že se A pohnul (server je autorita)
@@ -120,6 +124,15 @@ try {
 
     // predikce: vlastní hrdina má predikovanou polohu blízko serveru
     const predicted = (await debug(a))?.predicted;
+    // obchod: tři itemy v HUD (startovní zlato 320 < 400 → tlačítka zamčená)
+    const shop = await a.page.evaluate(() => {
+      const items = [...document.querySelectorAll('.moba-shop-item')];
+      return { count: items.length, disabled: items.filter((item) => item.disabled).length, gold: document.querySelector('.moba-shop-gold')?.textContent ?? '' };
+    });
+    check('obchod: tři itemy v HUD', shop.count === 3, JSON.stringify(shop));
+    check('obchod: bez zlata zamčeno', shop.disabled === 3, JSON.stringify(shop));
+    check('obchod: zlato vidět', /\d/.test(shop.gold), shop.gold);
+
     check('predikce: aktivní a u serveru', Boolean(predicted?.active) && Math.hypot(predicted.x - meAfter.x, predicted.z - meAfter.z) < 4, JSON.stringify(predicted));
 
     check('A: bez chyb v konzoli', a.errors.length === 0, a.errors.slice(0, 2).join(' | '));
