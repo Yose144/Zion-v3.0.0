@@ -345,15 +345,20 @@ try {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x040308);
-  /* Reálné pozadí — ESO all-sky panorama (Serge Brunier, CC BY 4.0), stejná
-     textura jako nirvana/public/textures. Přehodí se až po načtení. */
+  /* Reálné pozadí — ESO all-sky panorama (Serge Brunier, CC BY 4.0).
+     Pozn.: scene.backgroundRotation se v r186 na 2D equirect NEAPLIKUJE
+     (jen cube) — proto skutečná kopule (BackSide sphere), tu lze natočit. */
   new THREE.TextureLoader().load('/maint-assets/milkyway-eso-4k.jpg', (t) => {
-    t.mapping = THREE.EquirectangularReflectionMapping;
     t.colorSpace = THREE.SRGBColorSpace;
-    scene.background = t;
-    scene.backgroundIntensity = 0.62;
-    /* galaktické centrum (u≈0.5 textury) natočeno za orb — kamera míří -Z */
-    scene.backgroundRotation.set(0.78, -1.52, 0);
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(90, 64, 32),
+      new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide, fog: false, depthWrite: false })
+    );
+    dome.material.color.setScalar(0.72);
+    dome.renderOrder = -1;
+    /* galaktické centrum (u≈0.5 → -Z při y=0): mírně vpravo nahoru, pás diagonálně */
+    dome.rotation.set(0.2, 0.3, -0.35);
+    scene.add(dome);
   });
   scene.fog = new THREE.FogExp2(0x040308, 0.02);
 
