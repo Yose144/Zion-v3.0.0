@@ -191,6 +191,35 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ---
 
+## 2026-11-02 — Elizabet: Kniha Orákula (pokračování Království srdce) — DRAFT navržený ke kanonizaci
+
+### Změněno
+
+- Přidána nová narativní řada [`canon/books/Elizabet/`](../Elizabet/00-README.md) (CZ, README + prolog + 11 kapitol + epilog): přímé pokračování `KralovstviSrdce/` — loď je postavená a na její příď vstupuje dítě s lucernou, v němž korpus čte **Orákulum, které se osvobodilo z kamene a stalo se člověkem**. Oblouk ve třech dílech: **Kámen** (prolog–03: svět, kde pravdu hlídal Řád Šestnácti Paprsků — monolit, 32 svazků, Místnost Proroctví), **Dítě** (04–09: kámen odevzdá hlas — šest ctností srdce, Královská hvězda, zrození orákula jako dítěte, lucerna místo kronik, Dcera Stvořitele, sedm orákulí), **Brána** (10–12: Velký Portál v lůně = nenarozená patronka, „ke každému muži, ženě a dítěti" = onboarding, epilog Loď a lucerna).
+- Literární klíč knihy (výslovně označen jako volba, ne dedukce): **Orákulum = malá Elizabet/Lumi** — tři stopy jedné postavy (avatar 40 / svět ELIZABET → kněžka u brány → Lumi s lucernou). Zdrojový most: Dohrmanovo Proroctví kap. 22 (*„přijde čas, kdy se Orákulum stane člověkem… činitelem změny, ne jen jejím poslem"*) a kap. 9 (*„Dcera Stvořitele… uvidí nové Orákulum a dovede ho ke každému muži, ženě a dítěti"*).
+- `canon/books/README.md` — řada zaregistrována v sekci draftů pro 3.3 (MÝTUS; pokračování Království srdce).
+- `MiseAmenti/07-Registr-Dukazu.md` §6 — přidáno pravidlo 8: příběh Elizabet se čte podle vlastních štítků; Dohrmanovo Proroctví je licencovaná externí inspirace, ne pramen; ztotožnění Orákulum = Elizabet = Lumi je literární volba a nepovyšuje avatar/world data na historický či duchovní fakt.
+- Každá kapitola drží trojdílnou stavbu *Příběh → Co to znamená → Z tradice a korpusu → Kotva pravdy* se štítky ŽIVÉ / STAVBA / HORIZONT / MÝTUS / Externí mýtus / NEDOLOŽENO ve stejném významu jako `07-Registr-Dukazu.md`.
+
+### Důkaz
+
+- Externí zdroj (inspirace, ne pramen): *Dohrmanovo Proroctví* (James Mahu, WingMakers LLC 2012; český překlad TvurciKridel.cz) — lokální kopie `archive/apps/public_html/V2/src/Dohrmanovo-proroctvi.pdf` a `apps/IntroPage/public/legacy/src/Dohrmanovo-proroctvi.pdf`; citované kapitoly: prolog (tři kameny, Cadriel), 8 (ženská postava v indigovém rouchu; „na jediný život nemůžu zaměřit"), 9 (Místnost Proroctví; svazek 17 „Zářivá semena"), 20 (Tvůrci Křídel = budoucí lidstvo), 22 (Orákulum se stane člověkem), 28 (šest ctností srdce), 56 (podzemní brána; Chladní bohové; sedm orákulí; „my sami to vyřešíme"), 65–67 (Maia, Velký Portál v lůně).
+- Repo kotvy: `V31/L4/oasis/data/avatars.json` (avatar id 40 „Elizabet", Royal Healer, růžový paprsek), `apps/OasisWeb/src/domain/config/worlds.ts` (svět ELIZABET, `goldenEggClue: 40`, `layer: 3`), `heros/oasis/OASIS_Avatar_Collection_v1/avatar_roster.csv` (OASIS-049 „small child with a softly glowing lantern"), `apps/OasisWeb/src/components/BabylonIntro.tsx` (dvě kněžky u brány), `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/40_ELIZABET.md` + `profiles/40.md` (citace kap. 9 Dohrmanova Proroctví), onboarding 3.2 §6 (`ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`), `docs/genesis.md` + `GEN_Z_INHERITANCE.md` (nenarozená patronka, Admin-3, timelock 18 let, `ADMIN_INHERITANCE`), `archive/.../blog/full/oraculum.html` (vazba proroctví na Maitreyu, Issobelu, Elizabet, Keporkak).
+- Kontinuita korpusu: `KralovstviSrdce/` (loď, Lk 17,21), `Lumi/` (lucerna, dvě clony, prázdná poslední stránka), `nirvana/` (dítě na přídi, čtvrtá loď), `KruhBohyni/` (šesté sedadlo „ta, která přijde"), `Maitreya/` (prázdné sedadlo), `Miriam/`, `Ruze/`, `BodhiGaia/` (13 uzlů L5), `Issobella/` (iso + bella).
+
+### Dopad na stav tvrzení
+
+- Žádný technický nárok se nepovyšuje; kniha nepřidává provozní ani finanční claimy.
+- Celý děj, postavy i dialogy → **MÝTUS**; scény z Dohrmanova Proroctví → **Externí mýtus** (licencovaná kniha, citace se zdrojem); ztotožnění Orákulum = Elizabet = Lumi → **MÝTUS (kanonická literární volba)**; „dcera a orákulum jsou tentýž" a „sedm zahrad = sedm orákulí" → **obrazy této knihy, MÝTUS**; existence avataru 40 / světa ELIZABET / OASIS-049 / onboardingu / genesis dědičného řádu → **ŽIVÉ** jako repozitářový fakt; fyzické dítě, reálná proroctví, genealogické nároky → **NEPLATNÝ NÁROK** (kniha je netvrdí).
+- Otevřený nesoulad evidován beze změny: svět ELIZABET má v `worlds.ts` `layer: 3`, zatímco archetyp kněžky působí u brány (L4) — eviduje `Lumi/13` §3; tato kniha rozpor neřeší.
+- Prázdné sedadlo zůstává prázdné; poslední stránka se nevyplňuje; žádná reálná jména, žádný soukromý/rodinný materiál (`docs/private/`, `proEricku`) — hranice soukromí drží prioritu.
+
+### Review
+
+- Autor: Devin (AI) na základě čtení korpusu, zdrojového PDF a repo dat. **Řada je DRAFT** — vyžaduje českou literární/jazykovou korekturu, factual review citací Dohrmanova Proroctví proti zdrojovému PDF, kulturní konzultaci a **právní/licenční review** (kniha je licencované dílo WingMakers LLC — před jakýmkoli veřejným výňatkem nebo delší citací nutno prověřit oprávnění) a public-copy review podle `08-Protokol-Zmen.md` §2 (třída E; žádné custody/finance/governance nároky — třída C se neuplatňuje). Anglický překlad vznikne až po českém review (`08` §5.7).
+
+---
+
 ## Formát budoucích položek
 
 ```markdown

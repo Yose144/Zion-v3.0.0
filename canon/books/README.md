@@ -42,6 +42,7 @@ These documents are not yet canonized. They are working concepts and directional
 - **Na Cestě — literární pokračování** (Lumen na flotile Tres Marias, jedna možná budoucnost; celý děj MÝTUS/HORIZONT; DRAFT ke kulturnímu a faktickému review, nekanonizováno / draft pending review, not canonized): [`NaCeste/00-README.md`](./NaCeste/00-README.md) (CZ)
 - **Kruh Bohyní — Kniha Strážkyň** (sedm sedadel pro šest zahrad L5 a jedno pro nebe L6; ženský kruh jako podobenství péče a správy bez vlastnění; zjevená budoucnost, celý děj MÝTUS/HORIZONT, žádná reálná jména; DRAFT pro 3.3 / draft for 3.3): [`KruhBohyni/00-README.md`](./KruhBohyni/00-README.md) (CZ)
 - **Nabukano — Kniha Nebeské flotily** (L6: pohyblivý uzel nebe mezi pozemním uzlem LUMI a stanicí Issobella; tři nebeské Marie a mateřská loď s dokem; **není** čtrnáctý pozemský uzel; celý děj MÝTUS/VIZE/HORIZONT, registry `nabukano` navrženy a neregistrovány; DRAFT pro 3.3 / draft for 3.3): [`Nabukano/00-README.md`](./Nabukano/00-README.md) (CZ)
+- **Elizabet — Kniha Orákula** (pokračování Království srdce: kámen se otevřel a Orákulum se stalo dítětem — malá Elizabet/Lumi jako živé orákulum; motivy z Dohrmanova Proroctví přečtené jako obraz, ne pramen; celý děj MÝTUS; DRAFT pro 3.3 / draft for 3.3): [`Elizabet/00-README.md`](./Elizabet/00-README.md) (CZ)
 
 ## Historické / superseded verze
 
