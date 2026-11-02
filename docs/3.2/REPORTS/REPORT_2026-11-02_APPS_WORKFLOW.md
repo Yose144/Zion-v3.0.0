@@ -111,13 +111,26 @@ curl: (60) SSL: no alternative certificate subject name matches
             target hostname 'api.zionterranova.com'
 ```
 
-**Příčina:** DNS `api.` i `dex.` míří na `62.171.141.136` (**EDGE1**), ale
-služby běží na **EDGE2** (`zion-hiran-gateway` :8007, `warpd` :8454). EDGE1
-nemá cert s tímto SAN → TLS selže dřív, než se dostane k HTTP.
+**Příčina (upřesněno 2. 11. živou sondou na EDGE2):**
+- DNS `api.` i `dex.` míří na `62.171.141.136` (**EDGE1**); `dex.` přes wildcard.
+- **EDGE2 už vhosty má** — `api.zionterranova.com.conf` a
+  `dex.zionterranova.com.conf` jsou v `/etc/nginx/sites-enabled/` (od 31. 10.).
+- S `Host:` hlavičkou obcházející DNS vrací EDGE2 **200**, cílové služby žijí
+  (`zion-hiran-gateway` :8007 → 200, `warpd` :8454 → 200).
+- **Chybí jediná věc: certifikát.** EDGE2 na `api.`/`dex.` servíruje apex cert
+  (`CN=zionterranova.com`, SAN jen `www` + `zionterranova.com`) → TLS selže.
 
 **Není to regrese aplikací** — je to známý rozpor z revize 31. 10.
-(`NIRVANA-V3.3-CHECKLIST.md`). Řešení = repoint DNS na EDGE2 + vhost + cert
-(vhost `infra/nginx/edge2/api.zionterranova.com.conf` už v repu je).
+(`NIRVANA-V3.3-CHECKLIST.md`, `infra/dns/zionterranova.com.zone.md` Fáze 3).
+
+**Co zbývá (nejde autonomně — DNS je u webglobe.cz, certbot má jen
+nginx/standalone/webroot, žádný DNS-01 plugin):**
+
+1. webglobe.cz: `api` A `62.171.141.136` → `207.180.217.100`; přidat explicitní
+   `dex` A → `207.180.217.100`
+2. na EDGE2: `certbot --nginx -d api.zionterranova.com -d dex.zionterranova.com`
+3. ověřit `curl https://api.zionterranova.com/health` a `…/dex/prices/:token/history`
+4. `dex` potřebuje doplnit `/prices/:token/history` ve `warpd` (per rozhodnutí 👤)
 
 ### 🟡 2. Odstávka schovala dva legální povrchy
 
@@ -133,13 +146,18 @@ místo redirectu — drobnost, ale kazí dojem z rozbitého odkazu.
 
 ### 🔴 4. `update-server` není nikde nasazený
 
-`apps/update-server/` je v repu (Fastify + SQLite), ale:
-- **nemá `build` script** v `package.json` (jen `start`/`dev`/`migrate`)
-- **nemá `deploy/` skript**
-- **nemá systemd unit** na EDGE1 ani EDGE2
-- **nemá `node_modules`** lokálně
+`apps/update-server/` je v repu (Fastify + SQLite) a **má unit template**
+`deploy/zion-update-server.service` (User=zion, `ProtectSystem=strict`,
+`ReadWritePaths=/opt/zion/update-server/data`). Co chybí:
 
-To je konzistentní s `AGENTS.md` („Deploy update server — pending, requires user
+- **`build` script** v `package.json` — doplněn 2. 11. (`node --check` na
+  `server.js`, `db.js`, `iap.js`; projekt se nekompiluje, takže jde o validaci)
+- **deploy skript** (`.sh`) — unit template existuje, ale nic ho nenainstaluje
+- **instalace na serverech** — `systemctl list-units` na EDGE1 ani EDGE2
+  žádný `zion-update-server` nemá
+- **`node_modules`** lokálně
+
+Konzistentní s `AGENTS.md` („Deploy update server — pending, requires user
 action“), ale znamená to, že **auto-update desktopu je zatím jen na papíře**.
 
 ### 🟡 5. Tři aplikace nemají lokálně `node_modules`
@@ -158,21 +176,27 @@ po `npm install`.
 | **Desktop/mobile buildy** | vyžadují Apple Silicon / Windows toolchain |
 | **Health endpointy aplikací** | většina Next apps health route nemá; ověřeno jen HTTP 200 na rootu |
 
-## 7. Doporučení (v pořadí dopadu)
+## 7. Co se 2. 11. opravilo autonomně
 
-1. **Repoint DNS `api.` + `dex.` na EDGE2** a nasadit vhost + cert → odemkne
-   2 mrtvé povrchy. (`api.` má vhost v repu, `dex.` potřebuje
-   `/prices/:token/history`.)
-2. **Přidat redirect `app.zionterranova.com/shop` → `market.zionterranova.com`**
-   (jedna nginx/Next routa).
-3. **Rozhodnout osud `update-server`**: buď doplnit `build` + `deploy/` + unit
-   a nasadit, nebo sekci v `AGENTS.md` označit jako „zrušeno“ — teď visí
-   v polovině.
-4. **Doplnit `build` script do `update-server/package.json`** — i kdyby se
-   nenasazoval, `npm run build` by měl existovat kvůli CI.
-5. **Zvážit health route** u `website-v2.9`, `marketplace`, `nirvana`
-   (`/api/health` → `{status, build}`), aby šel stav ověřit strojově, ne jen
-   HTTP 200 na HTML.
+| Fix | Soubor | Stav |
+|---|---|---|
+| `/shop` + `/shop/:path*` → `market.zionterranova.com` | `apps/website-v2.9/next.config.ts` | commitnuto |
+| `/api/health` pro nirvanu (stav netu + `proto_match`) | `apps/nirvana/src/app/api/health/route.ts` | commitnuto |
+| `build` script (`node --check` trojice) | `apps/update-server/package.json` | commitnuto |
+
+Ověřeno: `tsc --noEmit` v nirvaně **0 chyb**, `node --check` v update-serveru
+prošel, `package.json` validní. `website-v2.9` má `ignoreBuildErrors: true`
+(pre-existing TS chyby v `PoolDashboard`/`LifeTreeVisualization` build neblokují).
+
+## 8. Doporučení (v pořadí dopadu)
+
+1. **Repoint DNS `api.` + `dex.` na EDGE2** a vystavit cert → odemkne
+   2 mrtvé povrchy. Vhosty i služby jsou připravené (§5.1).
+2. **Nasadit website-v2.9** — bez deploye zůstává `/shop` 404 (patch je
+   commitnutý, ale Next redirecty jsou build-time).
+3. **Rozhodnout osud `update-server`**: doplnit `deploy/*.sh` + nainstalovat
+   unit, nebo sekci v `AGENTS.md` označit jako „zrušeno“ — teď visí v polovině.
+4. **Dopsat `/prices/:token/history`** do `warpd` (blokuje publikaci `dex.`).
 
 ---
 

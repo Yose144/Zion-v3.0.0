@@ -103,10 +103,24 @@ EDGE1 (`/opt/zion`, git checkout) neměl jen díru po přesunu. `docs/` tam byl
 
 | Věc | Proč |
 |---|---|
-| **121 souborů navíc na EDGE1** | staré kopie knih v `docs/WP-Mainet/`, lokálně přesunuté do `canon/books/`. Duplikáty, neškodí; `rsync --delete` je destruktivní → čeká na rozhodnutí |
 | **EDGE2 dokumentaci nemá** | je to web/app box, ne source checkout; runtime na dokumentaci nic nepotřebuje |
 | **~2600 odkazů v `archive/`, `PUBLIC/`, `docs/docs2.9/`** | historické snapshoty, opravovat nemá smysl |
 | **`/nirvana/cist`, `/maitreya/cist`** v `canon/books/SurtaSrdce/` | nejsou to soubory, ale routy webu; checker je správně ignoruje (absolutní cesta bez přípony) |
+
+### 5.1 EDGE1 držel 79 dokumentů, které v repu nejsou
+
+Při kontrole duplikátů (121 souborů navíc oproti repu) se ukázalo, že
+**79 z nich nemá v repu obdobu** — jsou to starší verze kapitol knih
+(`docs/WP-Mainet/MiseAmenti`, `NirvanaCloud`, `SulZeme`…), které se lokálně
+přepsaly nebo přejmenovaly. Md5 kontrola: 42 duplikátů, 79 unikátů (2,1 MB).
+
+**Mazat by byla ztráta.** Proto jsme je stáhli do
+`.artifacts/edge1-unique-docs-20261102/` (gitignored, 79/79 souborů,
+checksumy shodné s EDGE1). Nic se nesmazalo.
+
+Rozhodnutí, co s nimi (přejmenovat a vrátit do `canon/books/`, nebo zahodit),
+je na 👤 — vizuálně jde o starší verze téhož obsahu, ale to je editorské
+rozhodnutí, ne technické.
 
 ## 6. Ponaučení
 
