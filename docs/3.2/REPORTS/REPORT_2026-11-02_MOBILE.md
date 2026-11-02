@@ -228,10 +228,8 @@ Pak je standalone strom reálný (81 MB místo 26 MB) a `next` v něm je.
 - **Bez gyroskopu, bez haptiky, bez gamepadu.**
 - **VR netestováno na headsetu** (platilo už dřív) a na mobilu je VR
   tlačítko schované — headset se tímhle netýká.
-- **`/earth` (MOBA) není v auditu.** V době práce byla v pracovním stromu
-  jako WIP paralelní session, takže se do mobilního passu nevzala. Stránka
-  žije (200), ale **dotykové ovládání MOBA je neověřené** — ať to
-  paralelní session dotáhne spolu s online režimem.
+- **`/earth` (MOBA) je doděláno ve druhé vlně** (viz §10) — má joystick,
+  kouzla a ÚTOK, ověřeno i funkčně (kouzlo sníží manu).
 - **Merkur měl dotyk už dřív** (`duel-touch`); přibylo mu jen skrytí
   navigace během duelu.
 - **Multiplayer s dotykem** je zapojený (stejné refy), ale boti v MP se
@@ -254,3 +252,126 @@ Pak je standalone strom reálný (81 MB místo 26 MB) a `next` v něm je.
 | `src/core/scene/park/ParkScene.tsx` | `zIndexRange` na 4 `<Html>` |
 | `src/app/globals.css` | ~200 řádků mobilních pravidel |
 | `e2e/mobile-audit.mjs` | **nový** — audit, který do hry opravdu vstoupí |
+
+
+---
+
+## 10. Druhá vlna — MOBA `/earth` a pojistky
+
+### 10.1 Blokující chyba: `W` bylo pohyb i kouzlo
+
+```js
+keys.current.add(event.code);                        // WASD = pohyb
+if (event.code === 'KeyW') queuedCast.current = { slot: 'W' };  // i kouzlo W
+```
+
+Chůze vpřed tedy **neustále frontovala kouzlo W** — na desktopu samočinné
+sesílání, na mobilu neřešitelné (tlačítko W by hrdinu zároveň poslalo
+dopředu). Kouzla teď mají vlastní mapu `core/moba/keys.ts`:
+
+| slot | klávesa | proč |
+|---|---|---|
+| Q | `Q` | volná |
+| W | **`F`** | `W` patří pohybu vpřed |
+| E | `E` | volná |
+| R | `R` | volná |
+
+Sloty zůstávají `Q/W/E/R` — je to identita kouzla v sim, snapshotu
+i protokolu; měnit ji by znamenalo sáhnout na síť. UI ale zobrazuje
+`SPELL_LABEL` (tedy „F"), ne slot.
+
+### 10.2 Dotyk: posílat hře tytéž události, ne přepisovat smyčku
+
+`core/moba/MobaTouch.tsx` needituje vstup hry — posílá jí **to, co by
+poslala klávesnice a myš**:
+
+- joystick → syntetické `keydown`/`keyup` na `KeyW/A/S/D` (rozdílově,
+  aby se neposílalo 60×/s totéž),
+- kouzlo → `keydown` na klávesu ze `SPELL_KEY`,
+- ÚTOK → syntetický `pointerdown` na plátno, **držený 140 ms** (hra čte
+  `attack` jednou za snímek; krátký ťuk by propadl).
+
+Dvě věci, bez kterých to nefunguje:
+
+1. **Zamíření se jen odposlouchává, nesbírá.** Vrstva s `pointer-events:
+   auto` nad plátnem by sežrala ťuk a hra by vůbec nezaútočila. Řešení:
+   `pointerdown` listener na `window` (capture) si jen pamatuje souřadnice.
+2. **Klepnutí bez pohybu nenastaví `pointer`.** Hra aktualizovala pozici
+   jen na `pointermove`, takže ťuk (a klik bez pohybu myši) seslal kouzlo
+   na poslední staré místo. `downPointer` teď volá i `move(event)`.
+
+### 10.3 HUD na mobilu: každá věc vlastní řádek
+
+Původně se na 390 px tlouklo všechno navzájem: Menu leželo na časovači,
+uzly L5 na maně, obchod přetékal přes hrdinu. Teď:
+
+```
+Menu | ZION · čas · OPOZICE      ← 1. řádek
+Kailash · Uluru · Ekam          ← 2. řádek (uzly)
+HP · mana · zlato · obchod      ← 3. řádek (obchod scrolluje)
+minimapa                        ← pod HUDem vpravo
+...hra...
+joystick            Q F E R ÚTOK ← dole
+```
+
+Seznam kouzel v HUD se na dotyku schovává — nahrazují ho tlačítka.
+Nápověda přestala tvrdit „WASD a levé tlačítko", na dotyku říká
+„joystick · Q/F/E/R · ÚTOK".
+
+### 10.4 Jak je to ověřené (ne jen spočítané prvky)
+
+Audit u `/earth` nově dělá **funkční** kontrolu:
+
+1. dotkne se joysticku → musí odejít `keydown` s `KeyW`,
+2. klepne doprostřed scény, pak na kouzlo Q → **musí spadnout mana**:
+   `kouzlo: mana 482 → 455 (dotyk prošel do simulace)`.
+
+To je důkaz, že cesta dotyk → syntetická událost → `queuedCast` → simulace
+opravdu vede, ne že tam jen existuje tlačítko.
+
+### 10.5 Pojistka proti rozpadu protokolu
+
+`scripts/ops/nirvana-proto-check.sh` + pre-flight v `deploy-nirvana.sh`.
+Rozlišuje dvě situace, protože každá chce jiný zásah:
+
+| stav | co to znamená | co skript udělá |
+|---|---|---|
+| klient == server | v pořádku | pustí deploy |
+| klient > server | appka by mluvila nověji než net | **BLOKUJE** deploy, řekne „nasaď net" |
+| klient < server | net je napřed | varuje, řekne „nasaď appku" |
+
+Obejít se dá jen vědomě: `ZION_SKIP_PROTO_CHECK=1`.
+
+### 10.6 Citlivost pohledu a šířka
+
+- Citlivost je násobek 0,4–2,5× (`core/arena/settings.ts`, localStorage),
+  ovladač v panelu arény, audit kontroluje, že se hodnota opravdu uloží.
+- Audit umí `MOBILE_LANDSCAPE=1` (844×390). Na šířku i na výšku prochází
+  všech 6 povrchů bez přesahu.
+
+### 10.7 Incident: zmizel `node_modules` i Chromium
+
+Během práce někdo uklidil disk — `node_modules`, `.next` a puppeteer cache
+byly pryč. Build i audit tím umřely. Co z toho plyne:
+
+- `npm ci` padal na `ENOENT ... zion-wallet-sdk-2.0.0.tgz`: lockfile držel
+  záznam na tgz, kterou K1.2 smazal (zdroj je workspace link). Záznam
+  odstraněn → `npm ci` projde (2067 balíčků).
+- Audit teď zkouší `CHROME_PATH` → puppeteer cache → systémový Chrome.
+- **Deploy ordering se tím nezměnil, ale ověření ano:** po každém úklidu
+  je potřeba `npm ci` (s `--ignore-scripts`, jinak padá
+  `db:generate -w zion-marketplace`, protože Prisma ještě není).
+
+---
+
+## 11. Meze druhé vlny
+
+- **Skutečný telefon pořád chybí** — vše je headless Chrome s emulací.
+- **Kouzlo se sesílá na poslední klepnutí**, ne na „táhni a pusť" jako
+  v jiných MOBA. Je to použitelné, ale ne plynulé.
+- **Obchod na mobilu scrolluje vodorovně** — ověřeno jen vizuálně, nákup
+  dotykem jsem netestoval (gold 320 < cena 400, takže by ani neprošel).
+- **Online 3v3 na dotyku** — ověřeno jen sólo; síťová cesta používá
+  stejný `MobaOnline`, ale dotyk v něm testovaný není.
+- **Landscape HUD MOBA** je zmenšený media query, ne odladěný na otočeném
+  telefonu.

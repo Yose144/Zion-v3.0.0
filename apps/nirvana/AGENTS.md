@@ -727,5 +727,37 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `grep PROTO_VERSION src/core/net/protocol.ts` vs
   `curl -s https://nirvana.zionterranova.com/net/health`.
 - **Meze:** netestováno na skutečném telefonu (jen headless Chromium
-  s `isMobile`/`hasTouch`), landscape jen media query, citlivost pohledu
-  je konstanta, žádný gyroskop/haptika. `/earth` (MOBA) dotyk neověřen.
+  s `isMobile`/`hasTouch`), landscape jen media query, žádný gyroskop
+  ani haptika.
+- **Deploy ověřuje protokol sám.** `deploy-nirvana.sh` volá
+  `scripts/ops/nirvana-proto-check.sh` a zastaví se, když je klient novější
+  než net. Obejít jen vědomě: `ZION_SKIP_PROTO_CHECK=1`.
+- **Citlivost pohledu** je násobek 0,4–2,5× v `core/arena/settings.ts`
+  (localStorage, mezipaměť kvůli `pointermove` 60×/s). Ovladač je v panelu
+  arény a jen na `coarse`.
+- **Úklid disku umí zabít build i audit.** 2026-11-02 zmizel `node_modules`,
+  `.next` i puppeteer cache. Po úklidu: `npm ci --ignore-scripts`
+  (bez `--ignore-scripts` padá `db:generate -w zion-marketplace`) a audit
+  si sám najde systémový Chrome, když cache chybí.
+
+### MOBA `/earth` na dotyku (2026-11-02)
+
+- **Kouzla nejsou Q/W/E/R.** `W` je pohyb vpřed (WASD), takže slot `W`
+  je klávesa **`F`** (`core/moba/keys.ts`). Sloty zůstávají `Q/W/E/R` —
+  je to identita kouzla v sim, snapshotu i protokolu; přejmenovat slot
+  znamená sáhnout na síť. UI zobrazuje `SPELL_LABEL`, nikdy `slot`.
+- **Dotyk posílá hře tytéž události, ne nový vstup.** `MobaTouch.tsx`
+  dispatchuje `keydown`/`keyup` (joystick, kouzla) a `pointerdown` (útok).
+  Herní smyčka zůstala nedotčená — kdyby se do ní přidala druhá větev
+  vstupu, rozejde se to se sítí.
+- **Útok se drží 140 ms.** Hra čte `attack` jednou za snímek; krátký ťuk
+  nastaví `true` i `false` mezi dvěma snímky a hrdina nezaútočí.
+- **Zamíření se jen odposlouchává** (`pointerdown` na `window`, capture).
+  Vrstva nad plátnem s `pointer-events: auto` by sežrala ťuk a hra by
+  vůbec neútočila.
+- **`downPointer` musí nastavit i `pointer`** (volá `move(event)`). Dotyk
+  neposílá `pointermove`, takže bez toho se kouzlo seslalo na poslední
+  staré místo — a to samé platilo pro klik myší bez pohybu.
+- **Test musí být funkční, ne vizuální.** Audit u `/earth` ověřuje, že
+  joystick pošle `KeyW` a že kouzlo **sníží manu** (482 → 455). Počítání
+  tlačítek by prošlo i s tlačítky, která nic nedělají.
