@@ -856,13 +856,13 @@ Stav podle korpusu, poctivě: Archa je **VISION** — koncept + čtyři technick
 | Prvek příběhu | Co je ověřitelné |
 |---|---|
 | **Jméno Království srdce na kýlu** | Korpus — [`KralovstviSrdce/09`](../KralovstviSrdce/09-Flotila-se-Schazi.md): na kýlu každé lodi, co nese lidi domů, totéž jméno. |
-| **Čtvrté plavidlo vedle Tres Marías** | Koncept [`ARCHA-NOEMOVA.md`](../../../ARCHA-NOEMOVA.md) (repo root) + studie [`docs/3.2/ArchaNoemova.md`](../../../docs/3.2/ArchaNoemova.md) — VISION, neregistrováno. |
+| **Čtvrté plavidlo vedle Tres Marías** | Koncept [`ARCHA-NOEMOVA.md`](../../../docs/3.3/ARCHA-NOEMOVA.md) (repo root) + studie [`docs/3.2/ArchaNoemova.md`](../../../docs/3.2/ArchaNoemova.md) — VISION, neregistrováno. |
 | **Sto lidí / malá vesnice** | Studie B — kolonie-archa ≤100 osob, sociokratická ústava, role po dvou (parametr studie, ne slib). |
 | **Velrybí navigace** | Studie B — sezónní migrace mírné pásma ↔ tropika, obcházení cyklónů, itinerář přes L5 uzly (koncept, ne trasa). |
 | **Semenný archiv −18 °C** | Studie A/C — seed vault 30–60 tisíc akcesí, duplikát na uzlu; inspirováno Svalbard standardem (pracovní odhad). |
 | **Plachty a energie** | Studie B/C — sail-primary 2 500–4 000 m², PV ~200 kWp, hydrogenerace; diesel jako rezerva („léky, ne strava" — fráze studie). |
 | **Malý princ jako patron** | Korpus — [`MariaCaminho` Epilog](../MariaCaminho/Epilog-More-Nekonci.md): dítě drží svět na všech třech trupech; čtvrté roucho (mořská barva) je nový příběh této epizody. |
-| **„Postav si loď…" věta na můstku** | PŘÍBĚH této epizody — navazuje na [`KralovstviSrdce`](./../../KralovstviSrdce/00-README.md), kde loď vznikla v dílně jako midraš. |
+| **„Postav si loď…" věta na můstku** | PŘÍBĚH této epizody — navazuje na [`KralovstviSrdce`](../KralovstviSrdce/00-README.md), kde loď vznikla v dílně jako midraš. |
 | **Registry `archa-nirvana`** | Návrh `vision` — **neregistrován** v L5 API (ověřitelné dotazem na registry). |
 
 ---

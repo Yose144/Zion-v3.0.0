@@ -52,7 +52,7 @@ Draw calls a trojúhelníky jsou v normě; **fps drží dole světla, post a dev
 - **O0 — měření.** `?sceneAudit=1` publikuje fps / draw calls / trojúhelníky / textury /
   světla / tier / dpr. `?skipIntro=1` preskočí Babylon i rite. V auditu se vypíná
   `renderer.info.autoReset`, jinak composer hlásí jen svůj poslední full-screen pass.
-  Nový skript [`scripts/ops/audit-oasis.mjs`](scripts/ops/audit-oasis.mjs) — Playwright
+  Nový skript [`scripts/ops/audit-oasis.mjs`](../../scripts/ops/audit-oasis.mjs) — Playwright
   z repa, volby `--url --route --output --dsf --gpu`, zapisuje `results.json` + `shot.png`.
 - **O1 — kit v OasisWeb.** `src/lib/genesis-runtime.ts` + `tsconfig` path, DPR z `quality()`.
 - **O2 — světlo a IBL.** drei `Environment preset="night"` (stahoval HDRI z CDN) nahrazen
@@ -173,7 +173,7 @@ takže tam je rezerva.
 ## 9. Odkazy
 
 - [`OASIS-RENDER-CANON.md`](OASIS-RENDER-CANON.md) — pravidla (vrstvy, anti-patterns, rozpočty, deploy).
-- [`scripts/ops/audit-oasis.mjs`](scripts/ops/audit-oasis.mjs) — měření.
+- [`scripts/ops/audit-oasis.mjs`](../../scripts/ops/audit-oasis.mjs) — měření.
 - `apps/nirvana` — referenční implementace (`ProjectPresentation`, `ScenePresentation`, kit).
 - [`NIRVANA-RENDER-AAA.md`](NIRVANA-RENDER-AAA.md) — jak vypadal stejný program u scén.
 

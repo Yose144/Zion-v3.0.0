@@ -1,7 +1,7 @@
 # K1.2 — root workspace (jeden lockfile pro 6 webů)
 
 > **Datum:** 2026-11-01 · **Větev:** `k12-root-workspace` (nemergnuto) · **Stav:** buildy zelené, deploy čeká na rozhodnutí 👤
-> **Vztah:** položka K1.2 v [`Kingdom/PLAN.md`](../../Kingdom/PLAN.md) §8. K1.3 (jeden Turbopack root + sjednocený standalone layout) je částečně předjednaná, protože K1.2 ji vynutila.
+> **Vztah:** položka K1.2 v [`Kingdom/PLAN.md`](../../../Kingdom/PLAN.md) §8. K1.3 (jeden Turbopack root + sjednocený standalone layout) je částečně předjednaná, protože K1.2 ji vynutila.
 
 ## 1. Co je hotové
 

@@ -55,7 +55,7 @@ Svět na plátně je OASIS katalog. Let mezi světy, questy a celá scéna Oasis
 - **Issobella.** Až bude mít veřejné JSON, dostane okno ve stejném tvaru jako přístav: čtení, bez skrytého klíče.
 - **Apexová brána.** Úvodní stránka `zionterranova.com` je dnes statická. Až se DNS bude měnit, tahle místnost může být to, co člověk uvidí jako první. Do té doby je Brána popisek.
 - **Desktop a mobil.** Jsou klienti se svojí binárkou a svojí session. Místnost je web. Sjednocení s nimi je až sdílená session a stejné pojmenování oken, ne sloučení balíčků.
-- **`zion-compute`.** Spec v [`docs/3.3/ENGINE-SRDCE.md`](docs/3.3/ENGINE-SRDCE.md) je jiná stopa (Hash / Care / Scene). Tenhle klient je Scene v prohlížeči. Hash zůstává v mineru.
+- **`zion-compute`.** Spec v [`docs/3.3/ENGINE-SRDCE.md`](ENGINE-SRDCE.md) je jiná stopa (Hash / Care / Scene). Tenhle klient je Scene v prohlížeči. Hash zůstává v mineru.
 
 ## Jupiter Station — pouť
 

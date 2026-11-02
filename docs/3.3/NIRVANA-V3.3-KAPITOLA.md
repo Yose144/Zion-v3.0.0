@@ -2,19 +2,19 @@
 
 > **Datum:** 2026-10-29 · **HEAD:** `4040126ad` (`main`, v sync s origin)
 > **Co tento soubor je:** čtecí paluba nad execution plány. Spojuje živý ekosystém do jednoho obrazu lodi.
-> **Co tento soubor není:** přejmenování fází N0–N7, přepis knihy [`canon/books/KralovstviSrdce/`](canon/books/KralovstviSrdce/00-README.md), ani nová vrstva pravdy.
+> **Co tento soubor není:** přejmenování fází N0–N7, přepis knihy [`canon/books/KralovstviSrdce/`](../../canon/books/KralovstviSrdce/00-README.md), ani nová vrstva pravdy.
 
 Pravda zůstává v pořadí z [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) §0: kód a živé sondy, Registr důkazů, execution (N0–N7, DoD V33-1…9), charta, vize, narativ. Tahle kapitola je **čtení** těch vrstev, ne jejich náhrada.
 
 Veřejný podtitul (web `/roadmap#nirvana` a archiv `#plan-v33`): **„3.3 Nirvana — loď Království srdce“**. Fáze se jmenují dál N0–N7. Kniha Království srdce zůstává **MÝTUS / DRAFT** s kotvou pravdy. Přejmenování releasu je operátorské rozhodnutí a v téhle vlně se nedělá.
 
-Strojovna (Hash / Care / Scene) je specifikovaná v [`docs/3.3/ENGINE-SRDCE.md`](docs/3.3/ENGINE-SRDCE.md). Není to druhý miner a není v DoD 3.3.
+Strojovna (Hash / Care / Scene) je specifikovaná v [`docs/3.3/ENGINE-SRDCE.md`](ENGINE-SRDCE.md). Není to druhý miner a není v DoD 3.3.
 
 ---
 
 ## Paluba
 
-Štítky jsou stejné jako v [Registru důkazů](canon/books/MiseAmenti/07-Registr-Dukazu.md): **ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS**.
+Štítky jsou stejné jako v [Registru důkazů](../../canon/books/MiseAmenti/07-Registr-Dukazu.md): **ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS**.
 
 | Část lodi | Vrstva | Stav 29. 10. | Co se smí říct |
 |---|---|---|---|
@@ -39,7 +39,7 @@ DoD v3.3 zůstává **0/9**. G8 run #5 běží do ~24. 11. G9 je od 26. 10. poza
 | EDGE | `62.171.141.136` | Pool (reálné IP minerů — záměrně ne za nginx), node2 :9446, node3 :9447, Grafana, Prometheus, fallback-miner |
 | Tunel | edge ↔ EDGE2 ~1 ms | Cross-box RPC je prakticky lokální |
 
-`V31/`, `scripts/` a `ZION_OS/` zůstávají v rootu. Jejich jméno je součást produkčního kontraktu ([`REPO-MAP.md`](REPO-MAP.md)).
+`V31/`, `scripts/` a `ZION_OS/` zůstávají v rootu. Jejich jméno je součást produkčního kontraktu ([`REPO-MAP.md`](../../REPO-MAP.md)).
 
 ---
 
@@ -49,17 +49,17 @@ Jeden příběh, víc hostname. Tahle vlna je **neslévá** do jednoho Next mono
 
 | Hostname | App | Stack | Vlastní | Duplicita |
 |---|---|---|---|---|
-| `zionterranova.com` | [`apps/IntroPage`](apps/IntroPage) | Next 14, statický export | Apex, brána | Vedle app webu; `public_html` je starý V2 strom |
-| `app.zionterranova.com` | [`apps/website-v2.9`](apps/website-v2.9) | Next 16.4.3, React 19, `3.2.0` | Explorer, `/pool`, vrstvy L3–L6, archiv knih | Vlastní `zion-*` CSS, ne sdílený i18n |
+| `zionterranova.com` | [`apps/IntroPage`](../../apps/IntroPage) | Next 14, statický export | Apex, brána | Vedle app webu; `public_html` je starý V2 strom |
+| `app.zionterranova.com` | [`apps/website-v2.9`](../../apps/website-v2.9) | Next 16.4.3, React 19, `3.2.0` | Explorer, `/pool`, vrstvy L3–L6, archiv knih | Vlastní `zion-*` CSS, ne sdílený i18n |
 | `freeworld.zionterranova.com` | IntroPage `freeworld/` + web `/l5-free-world` | statický build + proxy na web | L5 portál | Třetí L5 povrch vedle webu |
-| `oasis.zionterranova.com` | [`apps/OasisWeb`](apps/OasisWeb) | Next 16.2.9, statický export | 3D klient, WebGPU = render | Web `/l4-oasis` je jen rozcestník |
-| `pool.zionterranova.com` | [`apps/pool-ui`](apps/pool-ui) | Next 14.2.30 | Dashboard minerů, ops konzole | Web `/pool` je druhý pool UI |
-| `market.zionterranova.com` | [`apps/MarketPlace`](apps/MarketPlace) | Next 14.2.5 | Obchod, Stripe, B2B | Vlastní Prisma vedle `apps/shared` |
-| `auth.zionterranova.com` | [`apps/identity`](apps/identity) | Fastify 5 | ZIS | — |
-| — (klient) | [`apps/desktop-agent`](apps/desktop-agent) | Electron `3.2.0` | Miner + wallet | Hlavičky říkaly Alpha; srovnáno na Beta v téhle vlně, bez deploye |
-| — (klient) | [`apps/mobile-app`](apps/mobile-app) | RN, **build aplikace 3.0.6** | Wallet preview | Síťový štítek už byl `v3.2 · Mainnet Beta`; kódové jméno na obrazovce srovnáno, semver buildu se nemění |
-| — (knihovna) | [`apps/zion-wallet-sdk`](apps/zion-wallet-sdk) | `2.0.0` | RPC/wallet helper | Web pinuje vendored `.tgz` |
-| — (ops) | [`apps/shared`](apps/shared) | db-sync + CSS tokeny | Postgres sync | Website tokeny neimportuje |
+| `oasis.zionterranova.com` | [`apps/OasisWeb`](../../apps/OasisWeb) | Next 16.2.9, statický export | 3D klient, WebGPU = render | Web `/l4-oasis` je jen rozcestník |
+| `pool.zionterranova.com` | [`apps/pool-ui`](../../apps/pool-ui) | Next 14.2.30 | Dashboard minerů, ops konzole | Web `/pool` je druhý pool UI |
+| `market.zionterranova.com` | [`apps/MarketPlace`](../../apps/MarketPlace) | Next 14.2.5 | Obchod, Stripe, B2B | Vlastní Prisma vedle `apps/shared` |
+| `auth.zionterranova.com` | [`apps/identity`](../../apps/identity) | Fastify 5 | ZIS | — |
+| — (klient) | [`apps/desktop-agent`](../../apps/desktop-agent) | Electron `3.2.0` | Miner + wallet | Hlavičky říkaly Alpha; srovnáno na Beta v téhle vlně, bez deploye |
+| — (klient) | [`apps/mobile-app`](../../apps/mobile-app) | RN, **build aplikace 3.0.6** | Wallet preview | Síťový štítek už byl `v3.2 · Mainnet Beta`; kódové jméno na obrazovce srovnáno, semver buildu se nemění |
+| — (knihovna) | [`apps/zion-wallet-sdk`](../../apps/zion-wallet-sdk) | `2.0.0` | RPC/wallet helper | Web pinuje vendored `.tgz` |
+| — (ops) | [`apps/shared`](../../apps/shared) | db-sync + CSS tokeny | Postgres sync | Website tokeny neimportuje |
 
 i18n je roztříštěné (website `LanguageContext`, pool-ui `lib/i18n`, marketplace vlastní hook, freeworld `data-i18n`). Sdílený balík v téhle vlně nevzniká.
 
@@ -86,8 +86,8 @@ i18n je roztříštěné (website `LanguageContext`, pool-ui `lib/i18n`, marketp
 
 | Cesta | Verdikt |
 |---|---|
-| `docs/WP-Mainet/SurtaSrdce/01-Dopis-pro-Surtu.md` | Starší nezařazený opis. Kanon je [`canon/books/SurtaSrdce/01-Dopis-pro-Surtu.md`](canon/books/SurtaSrdce/01-Dopis-pro-Surtu.md) (má přesnější pasáž o mahásamádhi). Poznámka v [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md). Kanon se tím opisem nepřepisuje. |
-| `L4data/img/OasisMaitreya.png` | Jedinečný obrázek, v `canon/l4` nebyl. Přesunut do [`canon/l4/img/OasisMaitreya.png`](canon/l4/img/OasisMaitreya.png). Prázdný root `L4data/` zaniká. Do UI zatím není zapojený. |
+| `docs/WP-Mainet/SurtaSrdce/01-Dopis-pro-Surtu.md` | Starší nezařazený opis. Kanon je [`canon/books/SurtaSrdce/01-Dopis-pro-Surtu.md`](../../canon/books/SurtaSrdce/01-Dopis-pro-Surtu.md) (má přesnější pasáž o mahásamádhi). Poznámka v [`docs/WP-Mainet/README.md`](../WP-Mainet/README.md). Kanon se tím opisem nepřepisuje. |
+| `L4data/img/OasisMaitreya.png` | Jedinečný obrázek, v `canon/l4` nebyl. Přesunut do [`canon/l4/img/OasisMaitreya.png`](../../canon/l4/img/OasisMaitreya.png). Prázdný root `L4data/` zaniká. Do UI zatím není zapojený. |
 
 ---
 

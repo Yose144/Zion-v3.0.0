@@ -1,7 +1,7 @@
 # REPORT 2026-11-01 — Desktop Agent D0–D5 (VIP + Public)
 
 > **Scope:** oba desktop klienti — VIP (`apps/desktop-agent`, placený) a Public (`apps/public-miner`, zdarma) — one-click mining, build matrix, licence/autoupdate, BOOST revenue.
-> **Plán:** [`DESKTOP-AGENT-COMPLETE-PLAN.md`](../../../DESKTOP-AGENT-COMPLETE-PLAN.md) v1.3
+> **Plán:** [`DESKTOP-AGENT-COMPLETE-PLAN.md`](../../3.3/DESKTOP-AGENT-COMPLETE-PLAN.md) v1.3
 > **Build guide pro GPU stroj:** [`docs/3.2/ops/DESKTOP-GPU-BUILD-GUIDE.md`](../ops/DESKTOP-GPU-BUILD-GUIDE.md)
 > **Baseline commit:** `d83a24041` (+ tento report)
 
@@ -97,7 +97,7 @@ Paralelní stopy (MarketPlace, nirvana) dodaly změny, na které desktop navazuj
 | Hiran Sun portál (nirvana `#portal=hiran`, `/api/hiran` proxy) | `906f3ee8f` | desktop `ai-chat-ask` používá `HIRAN_INFERENCE_URL`; fallback EDGE2 CPU |
 | VR test (1M ZION bonus, block 104061) | `a7b083d92` | — |
 
-Detail: [`DESKTOP-AGENT-COMPLETE-PLAN.md`](../../../DESKTOP-AGENT-COMPLETE-PLAN.md) §13.
+Detail: [`DESKTOP-AGENT-COMPLETE-PLAN.md`](../../3.3/DESKTOP-AGENT-COMPLETE-PLAN.md) §13.
 
 ---
 

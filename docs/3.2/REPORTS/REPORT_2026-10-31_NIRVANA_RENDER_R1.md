@@ -1,6 +1,6 @@
 # NIRVANA RENDER — R0 + R1: GPU harness, Render Kit, první art dávka
 
-**31. 10. 2026.** První etapa programu [`NIRVANA-RENDER-AAA.md`](../../../NIRVANA-RENDER-AAA.md).
+**31. 10. 2026.** První etapa programu [`NIRVANA-RENDER-AAA.md`](../../3.3/NIRVANA-RENDER-AAA.md).
 Nenahrazuje funkční akceptaci z [`REPORT_2026-10-31_PROJECT_SCENE_TUNING.md`](REPORT_2026-10-31_PROJECT_SCENE_TUNING.md) —
 ta zůstává platná (24/24 PASS). Tohle je vrstva navrch: výtvarná kvalita a měřený výkon.
 

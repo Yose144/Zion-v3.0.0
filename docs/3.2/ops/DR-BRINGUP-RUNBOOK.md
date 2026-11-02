@@ -3,7 +3,7 @@
 > **Stav: MANUÁLNÍ failover. Watchdog je alert-only a NIKDY nepromotuje.**
 > Kanonický postup pro **aktivaci, promote, ověření, rollback a failback** warm standby poolu.
 > Ověřeno živými sondami **2026-10-31** (EDGE `62.171.141.136` + EDGE2 `207.180.217.100`).
-> Nadřazený dokument: [`infra/RUNBOOK.md`](../../../infra/RUNBOOK.md) §Pool HA · plán: [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../../../NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §W1.3
+> Nadřazený dokument: [`infra/RUNBOOK.md`](../../../infra/RUNBOOK.md) §Pool HA · plán: [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../../3.3/NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §W1.3
 
 ---
 

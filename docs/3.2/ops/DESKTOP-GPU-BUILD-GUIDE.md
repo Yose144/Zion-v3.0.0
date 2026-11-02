@@ -2,7 +2,7 @@
 
 > **Pro:** navázání na stroji s CUDA/OpenCL GPU. macOS arm64 buildy jsou hotové (viz `DESKTOP-AGENT-COMPLETE-PLAN.md` D3).
 > **Datum:** 2026-11-01 · **Commit baseline:** `d83a24041` (nebo novější `main`)
-> **Související:** [`DESKTOP-AGENT-COMPLETE-PLAN.md`](../../../DESKTOP-AGENT-COMPLETE-PLAN.md) · [`AGENTS.md`](../../../AGENTS.md) (SMOS/GLIBC gotchy)
+> **Související:** [`DESKTOP-AGENT-COMPLETE-PLAN.md`](../../3.3/DESKTOP-AGENT-COMPLETE-PLAN.md) · [`AGENTS.md`](../../../AGENTS.md) (SMOS/GLIBC gotchy)
 
 ---
 

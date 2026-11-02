@@ -112,9 +112,9 @@ ollama create v1-local-backup -f ~/backups/.../v1.Modelfile
 
 ## 6. Souvislosti v repu
 
-- Upgrade plán Hiranyagarbhy: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](../../HIRANYAGARBHA_UPGRADE_PLAN.md); **operativní plán v2.1:** [`PLAN_v2.1.md`](../../HiranV2.1/PLAN_v2.1.md)
-- Koncept v2.1: [`Hiran_v2.1.md`](../../HiranV2.1/Hiran_v2.1.md)
-- Fine-tune pipeline / GGUF: [`HiranV2.1/finetune/README.md`](../../HiranV2.1/finetune/README.md), [`gpuVast.md`](../../HiranV2.1/gpuVast.md)
+- Upgrade plán Hiranyagarbhy: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](../../archive/HiranV2.1/HIRANYAGARBHA_UPGRADE_PLAN.md); **operativní plán v2.1:** [`PLAN_v2.1.md`](../../archive/HiranV2.1/PLAN_v2.1.md)
+- Koncept v2.1: [`Hiran_v2.1.md`](../../archive/HiranV2.1/Hiran_v2.1.md)
+- Fine-tune pipeline / GGUF: [`HiranV2.1/finetune/README.md`](../../archive/HiranV2.1/finetune/README.md), [`gpuVast.md`](../../archive/HiranV2.1/gpuVast.md)
 
 ---
 

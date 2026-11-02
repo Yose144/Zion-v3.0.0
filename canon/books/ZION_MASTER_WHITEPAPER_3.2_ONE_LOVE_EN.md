@@ -457,7 +457,7 @@ not mean "more features." It means **the production stack is exercised.**
 - F4 1000+ miner simulation
 - F5 Backup / DR drill
 
-The full execution plan is in [`V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3.2.md).
+The full execution plan is in [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md).
 
 ---
 
@@ -481,13 +481,13 @@ One planet. One people. One love.
 
 # References and source of truth
 
-- Live status: [`StatusV3.md`](../../../docs/3.2/StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)
-- Execution plan: [`V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3.2.md)
-- Launch and marketing plan: [`OneLoveV3.2.md`](../../../docs/3.2/OneLoveV3.2.md)
-- Agent rules: [`AGENTS.md`](../../AGENTS.md) · [`V31/AGENTS.md`](../../../V31/AGENTS.md)
-- Hard reset playbook: [`HARD_RESET_PLAYBOOK.md`](../../../docs/3.2/HARD_RESET_PLAYBOOK.md)
-- Session report: [`V31_3.2.0_SESSION_REPORT.md`](../../../docs/3.1/REPORTS/V31_3.2.0_SESSION_REPORT.md)
-- Trinity tuning: [`REPORT_2026-08-09_TRINITY_TUNING_FINAL.md`](../../../docs/3.1/REPORTS/REPORT_2026-08-09_TRINITY_TUNING_FINAL.md)
+- Live status: [`StatusV3.md`](../../docs/3.2/StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
+- Execution plan: [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)
+- Launch and marketing plan: [`OneLoveV3.2.md`](../../docs/3.2/OneLoveV3.2.md)
+- Agent rules: [`AGENTS.md`](../../AGENTS.md) · [`V31/AGENTS.md`](../../V31/AGENTS.md)
+- Hard reset playbook: [`HARD_RESET_PLAYBOOK.md`](../../docs/3.2/HARD_RESET_PLAYBOOK.md)
+- Session report: [`V31_3.2.0_SESSION_REPORT.md`](../../docs/3.1/REPORTS/V31_3.2.0_SESSION_REPORT.md)
+- Trinity tuning: [`REPORT_2026-08-09_TRINITY_TUNING_FINAL.md`](../../docs/3.1/REPORTS/REPORT_2026-08-09_TRINITY_TUNING_FINAL.md)
 
 ---
 

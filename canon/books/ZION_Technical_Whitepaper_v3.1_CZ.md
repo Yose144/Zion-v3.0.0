@@ -240,7 +240,7 @@ jediný coinbase.
 > Síť byla 20. 7. 2026 hard-resetována s neomezenou retencí. Tento genesis
 > hash patří k resetovanému řetězci.
 
-Viz [`genesis.md`](../../../docs/genesis.md) pro úplnou tabulku premine alokace a
+Viz [`genesis.md`](../../docs/genesis.md) pro úplnou tabulku premine alokace a
 genesis zprávu.
 
 ### 6.2 Distribuce premine
@@ -396,7 +396,7 @@ DAO **nemůže** změnit následující parametry — jsou to konstituční kame
 ### 11.1 Zveřejněné zranitelnosti (2026-07)
 
 Pět zranitelností bylo zveřejněno a opraveno v hard resetu 3.0.4. Viz
-[`security/SECURITY_DISCLOSURE_2026-07.md`](../security/SECURITY_DISCLOSURE_2026-07.md)
+[`security/SECURITY_DISCLOSURE_2026-07.md`](../../docs/security/SECURITY_DISCLOSURE_2026-07.md)
 pro plné detaily.
 
 | ID | Závažnost | Popis | Stav |
@@ -509,9 +509,9 @@ rozestavěné, ne hotové.
 
 ## 16. Reference
 
-- Zdrojový kód: adresář [V3/](../../../archive/V3/) v tomto repozitáři
-- Genesis dokumentace: [`genesis.md`](../../../docs/genesis.md)
-- Security discloures: [`security/SECURITY_DISCLOSURE_2026-07.md`](../security/SECURITY_DISCLOSURE_2026-07.md)
+- Zdrojový kód: adresář [V3/](../../archive/V3) v tomto repozitáři
+- Genesis dokumentace: [`genesis.md`](../../docs/genesis.md)
+- Security discloures: [`security/SECURITY_DISCLOSURE_2026-07.md`](../../docs/security/SECURITY_DISCLOSURE_2026-07.md)
 - Narativní doprovod: *Bajka (WpLite)* a *Kniha Zrození*
 - Kronika příběhu: *WpStory6 — Tři proudy jedné řeky*
 

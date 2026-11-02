@@ -1,7 +1,7 @@
 # Next.js 14 → 16 unifikace (W4 K3) — migrační plán (design, read-only)
 
 > **Stav:** 🚧 **probíhá** — rozhodnutí „RC first" bylo pro tento povrch revidováno; migrace K1.1 jede po appkách (viz §2b).
-> **Rozpor:** #10 v [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../../NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §2.
+> **Rozpor:** #10 v [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../3.3/NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §2.
 > **Ověřeno 1. 11.:** **všech 6 webů na Next 16.4.3 + React 19** (pool-ui, IntroPage, OasisWeb, website-v2.9, nirvana, MarketPlace). Next 14 už v `apps/` není.
 
 ## 1. Cíl

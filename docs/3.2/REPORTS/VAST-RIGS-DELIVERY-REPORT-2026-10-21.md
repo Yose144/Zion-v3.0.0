@@ -27,31 +27,31 @@ garantovaný inference výkon.
 ## Provedené změny
 
 - **Responzivní UI Vast rigs** v
-  [`apps/IntroPage/src/app/vast-rigs/Dashboard.tsx`](./apps/IntroPage/src/app/vast-rigs/Dashboard.tsx):
+  [`apps/IntroPage/src/app/vast-rigs/Dashboard.tsx`](../../../apps/IntroPage/src/app/vast-rigs/Dashboard.tsx):
   upravené rozvržení rig karet a ovládání pro úzké displeje, nabídky GPU pro
   mobilní zobrazení a tabulky pro širší obrazovky. Opravena také mobilní šířka
   karet a horizontální přetékání.
 - **Read-only AI status API** v
-  [`infra/tools/vast/vastctl.py`](./infra/tools/vast/vastctl.py): endpoint
+  [`infra/tools/vast/vastctl.py`](../../../infra/tools/vast/vastctl.py): endpoint
   `/api/ai/status` agreguje dostupné rig/GPU údaje a stav lokálního
   OpenAI-kompatibilního inference API. Zobrazuje GPU metriky (například VRAM,
   vytížení, teplotu a příkon, pokud je instance poskytne) a modely dostupné přes
   inference API. Probe endpointu je omezen na lokální adresu a číselný port.
 - **Backend testy** v
-  [`infra/tools/vast/test_vastctl.py`](./infra/tools/vast/test_vastctl.py): parsování
+  [`infra/tools/vast/test_vastctl.py`](../../../infra/tools/vast/test_vastctl.py): parsování
   GPU/modelů, agregace stavu, případ bez model serveru, selhání probe,
   validace lokálního URL a portu.
 - **Dokumentace** v
-  [`VASTAI-MINING.md`](./VASTAI-MINING.md): popis AI status pilotu a omezení
+  [`VASTAI-MINING.md`](../../plans/VASTAI-MINING.md): popis AI status pilotu a omezení
   sdílené VRAM a GPU výkonu.
 - **Vast inference worker ovládání** v
-  [`infra/tools/vast/vast_inference.py`](./infra/tools/vast/vast_inference.py) a
-  [`infra/tools/vast/vastctl.py`](./infra/tools/vast/vastctl.py): potvrzené deploy/stop/
+  [`infra/tools/vast/vast_inference.py`](../../../infra/tools/vast/vast_inference.py) a
+  [`infra/tools/vast/vastctl.py`](../../../infra/tools/vast/vastctl.py): potvrzené deploy/stop/
   status akce a příkaz pro SSH port-forward. Akce cílí pouze na již běžící
   instanci; deployment váže vLLM host port na loopback a povoluje jen oficiální
   version-tagged vLLM image.
 - **Sjednocené inference UI** v
-  [`apps/IntroPage/src/app/vast-rigs/Dashboard.tsx`](./apps/IntroPage/src/app/vast-rigs/Dashboard.tsx):
+  [`apps/IntroPage/src/app/vast-rigs/Dashboard.tsx`](../../../apps/IntroPage/src/app/vast-rigs/Dashboard.tsx):
   přehledný worker setup panel, výběr modelu a VRAM cíle a responsivní tlačítka
   Deploy, Check, Copy SSH tunnel a Stop na kartě každého rigu. Deploy a Stop
   vyžadují potvrzení; tunnel příkaz lze zkopírovat do clipboardu.
@@ -83,7 +83,7 @@ garantovaný inference výkon.
   změny. Byly vráceny v `2c7f7d906` před produkčním buildem a nasazením.
 - Všechny změny byly pushnuty fast-forwardem na `origin/main`, bez force push.
 - Čistý statický build z commitu `2c7f7d906` byl nasazen skriptem
-  [`apps/IntroPage/deploy/deploy-intro.sh`](./apps/IntroPage/deploy/deploy-intro.sh)
+  [`apps/IntroPage/deploy/deploy-intro.sh`](../../../apps/IntroPage/deploy/deploy-intro.sh)
   do `/var/www/zion-maintenance` na Edge; `nginx -t` uspěl a nginx byl reloadnut.
 - Uživatelská služba `vastctl-serve.service` běží z
   `~/.local/share/vastctl-release/infra/tools/vast` a Edge reverse tunnel API smoke

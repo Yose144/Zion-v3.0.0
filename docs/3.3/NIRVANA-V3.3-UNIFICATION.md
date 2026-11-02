@@ -13,7 +13,7 @@ Ekosystém je funkční, ale strukturálně rozpadavý:
 - **12 appek** (`apps/*`), každá vlastní Next/Electron/RN stack, 2 generace Next (14 vs 16), 4 vlastní i18n implementace, 3 CSS token systémy, duplicitní UI (web `/pool` vs `apps/pool-ui`, web `/market` vs `apps/MarketPlace`)
 - **8+ hostname** = 8 vstupních bodů, každý vlastní layout, navigace, auth UX (session cookie už je sjednocená — zbytek ne)
 - `apps/nirvana` (v1, commit `7fa9a7062`) je **portal-reader** — čte API cizích appek do jednoho plátna. Dobrý důkaz konceptu, ale je to 13. appka, ne sjednocení.
-- Strojovna (`zion-compute`) je specifikovaná ([`docs/3.3/ENGINE-SRDCE.md`](docs/3.3/ENGINE-SRDCE.md)) jako orchestrátor GPU času — řeší těžaře, ne klienty.
+- Strojovna (`zion-compute`) je specifikovaná ([`docs/3.3/ENGINE-SRDCE.md`](ENGINE-SRDCE.md)) jako orchestrátor GPU času — řeší těžaře, ne klienty.
 
 **Cíl:** jeden klient, který unese denní cestu člověka — a architektura, která umožní, aby se do něj staré appky **vstřebaly** (ne obešly iframy a ne přepsaly naráz).
 

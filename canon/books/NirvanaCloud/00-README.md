@@ -74,7 +74,7 @@ Každá kapitola má tři vrstvy, stejně jako zbytek série Nirvana a Sůl Zem�
 - **Road to Zion — čtyři knihy:** [`../marketing/ROAD_TO_ZION_CZ.md`](../marketing/ROAD_TO_ZION_CZ.md)
 - **Aktuální stav sítě:** [`../../../StatusV3.md`](../../../docs/3.2/StatusV3.md)
 - **Hiran / Hiranyagarbha AI vývoj (v2.3 → v2.4 Maestro → v2.5 Amṛtabhoja):** [`../../3.0.6/HIRAN_OVERVIEW.md`](../../../docs/3.0.6/HIRAN_OVERVIEW.md)
-- **ZION Codex Bodhisattva Vow:** [`../../../public/docs/ZION_CODEX_BODHISATTVA.md`](../../../public/docs/ZION_CODEX_BODHISATTVA.md)
+- **ZION Codex Bodhisattva Vow:** [`../../../public/docs/ZION_CODEX_BODHISATTVA.md`](../../../archive/PUBLIC/docs/ZION_CODEX_BODHISATTVA.md)
 - **OASIS svět Tibetu:** [`../../docs2.9/ZION_OASIS/WORLDS/WORLD_TIBET.md`](../../../docs/docs2.9/ZION_OASIS/WORLDS/WORLD_TIBET.md)
 
 ---

@@ -31,10 +31,10 @@ Tato složka je primárním zdrojem pravdy pro L6 vrstvu ZION TerraNova V31 Main
 ## Rychlé odkazy
 
 - Hlavní README: [`../README.md`](../README.md)
-- Legacy V3 L6 docs: [`../../../archive/V3/L6/issobella/docs`](../archive/V3/L6/issobella/docs)
+- Legacy V3 L6 docs: [`../../../archive/V3/L6/issobella/docs`](../../../../archive/V3/L6/issobella/docs)
 - L5 Free World (pozemní podpora): [`../../L5/free-world`](../L5/free-world)
 - L2 DAO (governance): [`../../L2/dao`](../L2/dao)
-- ZION whitepaper: [`../../../docs/WP/ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md`](../../../docs/WP/ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md)
+- ZION whitepaper: [`../../../docs/WP/ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md`](../../../../docs/WP/ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md)
 
 ---
 
@@ -61,7 +61,7 @@ L6 Issobella  ──>  TATO VRSTVA (orbitální stanice)
 | DAO client | Propojení s L2 DAO |
 | Hiran AI bridge | Volitelný AI pro posuzování misí a návrhů |
 | Testy | Unit + integrační |
-| Web UI | [`apps/website-v2.9/src/app/l6-issobella/page.tsx`](../../../apps/website-v2.9/src/app/l6-issobella/page.tsx) |
+| Web UI | [`apps/website-v2.9/src/app/l6-issobella/page.tsx`](../../../../apps/website-v2.9/src/app/l6-issobella/page.tsx) |
 | Orbitální hardware | Dlouhodobá vize (2040+) |
 
 ---

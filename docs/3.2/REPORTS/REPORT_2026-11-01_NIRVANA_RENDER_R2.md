@@ -1,6 +1,6 @@
 # NIRVANA RENDER — R2 (všech 13 scén) + R5 (web previews)
 
-**31. 10. 2026.** Druhá etapa programu [`NIRVANA-RENDER-AAA.md`](../../../NIRVANA-RENDER-AAA.md).
+**31. 10. 2026.** Druhá etapa programu [`NIRVANA-RENDER-AAA.md`](../../3.3/NIRVANA-RENDER-AAA.md).
 Navazuje na [`REPORT_2026-10-31_NIRVANA_RENDER_R1.md`](REPORT_2026-10-31_NIRVANA_RENDER_R1.md)
 (Render Kit + první pětice scén).
 
@@ -139,7 +139,7 @@ Příště je čistší buildit web přímo na Linuxu.
 
 ## Kanon a poslední úpravy
 
-- [`OASIS-RENDER-CANON.md`](../../../OASIS-RENDER-CANON.md) — závazný způsob renderu pro
+- [`OASIS-RENDER-CANON.md`](../../3.3/OASIS-RENDER-CANON.md) — závazný způsob renderu pro
   další scény i celý OASIS: vrstvy, frame pipeline, tiery a rozpočty, recepty, API kitu,
   anti-patterns, měření, nasazení (včetně `sharp`), checklist.
 - Te Pīko Ora: háj přešel na `ScenePalms` (574 → 385 draw calls), laguna dostala tropickou

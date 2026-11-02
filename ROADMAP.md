@@ -18,7 +18,7 @@
 >
 > **Technický execution companion 3.3:** [`V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md)
 >
-> **Aktuální plánování (2026-10-26):** mapa 3.3 [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) · checklist 3.3 [`NIRVANA-V3.3-CHECKLIST.md`](NIRVANA-V3.3-CHECKLIST.md) · cesta 3.2 ALPHA → BETA → Mainnet Stable [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) — sekce „Where we are now" níže je historický snapshot k 2026-08-31.
+> **Aktuální plánování (2026-10-26):** mapa 3.3 [`NIRVANA-V3.3-MAP.md`](docs/3.3/NIRVANA-V3.3-MAP.md) · checklist 3.3 [`NIRVANA-V3.3-CHECKLIST.md`](docs/3.3/NIRVANA-V3.3-CHECKLIST.md) · cesta 3.2 ALPHA → BETA → Mainnet Stable [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) — sekce „Where we are now" níže je historický snapshot k 2026-08-31.
 >
 > **Canonical 3.2 forward plan:** [`docs/3.2/ROADMAP.md`](./docs/3.2/ROADMAP.md)
 >
@@ -44,7 +44,7 @@ ZION v3 is **3.2.0 Mainnet Beta** — live on two hosts (EDGE2 = primary + web i
 - Trinity / multi-stream mining validated on the Edge pool (ZION + external GPU/CPU streams).
 - Native SQLite TX/address index active; explorer reads net-of-change amounts.
 - ZIS Identity Service live on `auth.zionterranova.com` (EdDSA/JWKS).
-- **Next stage is RC quality, not new features:** see [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) — it is the single entry point for all v3.3 planning (waves W0–W6, acceptance gates KS-1…KS-9, critical path).
+- **Next stage is RC quality, not new features:** see [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](docs/3.3/NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) — it is the single entry point for all v3.3 planning (waves W0–W6, acceptance gates KS-1…KS-9, critical path).
 
 Historical 3.1 reports are archived in [`docs/3.1/REPORTS/`](./docs/3.1/REPORTS/).
 

@@ -2,7 +2,7 @@
 
 > **Status:** 🟣 **NÁVRH K DISKUSI** — interní pracovní dokument, ne veřejný text.
 > **Datum:** 2026-10-31 · **Příprava:** ZION / Terra Nova L5
-> **Souvisí:** [`../../ARCHA-NOEMOVA.md`](../../ARCHA-NOEMOVA.md) (koncept a kánonické kotvy), [`TreeMarias.md`](./TreeMarias.md) (flotila Tres Marías), [`L5MariaDelCamino.md`](./L5MariaDelCamino.md), [`L5_PROOF_OF_IMPACT.md`](./L5_PROOF_OF_IMPACT.md)
+> **Souvisí:** [`../../ARCHA-NOEMOVA.md`](../3.3/ARCHA-NOEMOVA.md) (koncept a kánonické kotvy), [`TreeMarias.md`](./TreeMarias.md) (flotila Tres Marías), [`L5MariaDelCamino.md`](./L5MariaDelCamino.md), [`L5_PROOF_OF_IMPACT.md`](./L5_PROOF_OF_IMPACT.md)
 > **Registry (návrh):** program `archa-nirvana`, status `vision` — neregistrován
 >
 > **Dokument obsahuje ČTYŘI studie (aditivně, nic nepřepsáno):**

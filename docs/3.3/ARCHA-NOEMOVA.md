@@ -4,8 +4,8 @@
 
 > **Status:** 🟣 **KONCEPT K DISKUSI** — seed dokument; rozvine se později, nic se zatím nestaví ani neregistruje.
 > **Datum:** 2026-10-31 · **Příprava:** ZION / Terra Nova L5
-> **Realizační studie:** [`docs/3.2/ArchaNoemova.md`](docs/3.2/ArchaNoemova.md) — **čtyři studie aditivně:** A (rescue/svatyně ~340 osob, 365 d) + B (kolonie-archa ≤100 lidí, absolutní soběstačnost, sail-primary, velrybí navigace) + C (stavební plány, hmotnosti, bilance soběstačnosti, 8 variant) + D (hluboká analýza: syntéza, FMEA, kalorický runway, lifecycle)
-> **Souvisí:** [`docs/3.2/TreeMarias.md`](docs/3.2/TreeMarias.md) (flotila Tres Marías), [`canon/books/KralovstviSrdce/`](canon/books/KralovstviSrdce/00-README.md) (kniha — loď, kterou postavil tesař), [`canon/books/MariaCaminho/`](canon/books/MariaCaminho/00-README.md), [`canon/books/nirvana/13-Tres-Marias.md`](canon/books/nirvana/13-Tres-Marias.md), **[`canon/books/nirvana/14-Archa.md`](canon/books/nirvana/14-Archa.md) (příběh — čtvrté plavidlo)**, [`canon/books/SurtaSrdce/`](canon/books/SurtaSrdce/00-README.md), [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) (v3.3 release nese tytéž dva názvy)
+> **Realizační studie:** [`docs/3.2/ArchaNoemova.md`](../3.2/ArchaNoemova.md) — **čtyři studie aditivně:** A (rescue/svatyně ~340 osob, 365 d) + B (kolonie-archa ≤100 lidí, absolutní soběstačnost, sail-primary, velrybí navigace) + C (stavební plány, hmotnosti, bilance soběstačnosti, 8 variant) + D (hluboká analýza: syntéza, FMEA, kalorický runway, lifecycle)
+> **Souvisí:** [`docs/3.2/TreeMarias.md`](../3.2/TreeMarias.md) (flotila Tres Marías), [`canon/books/KralovstviSrdce/`](../../canon/books/KralovstviSrdce/00-README.md) (kniha — loď, kterou postavil tesař), [`canon/books/MariaCaminho/`](../../canon/books/MariaCaminho/00-README.md), [`canon/books/nirvana/13-Tres-Marias.md`](../../canon/books/nirvana/13-Tres-Marias.md), **[`canon/books/nirvana/14-Archa.md`](../../canon/books/nirvana/14-Archa.md) (příběh — čtvrté plavidlo)**, [`canon/books/SurtaSrdce/`](../../canon/books/SurtaSrdce/00-README.md), [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) (v3.3 release nese tytéž dva názvy)
 > **Registry (návrh):** program `archa-nirvana`, status `vision` — v L5 API zatím neregistrován
 
 ---
@@ -63,7 +63,7 @@ Flotila L5 má tři Marie — lodě poutníků (království, cesta, horizont). 
 
 ## 6. Další kroky
 
-1. 👤 Diskuse nad tímto konceptem + nad [`docs/3.2/ArchaNoemova.md`](docs/3.2/ArchaNoemova.md) (realizační studie — varianta A refit ~90 m vs B full-ark ~135 m).
+1. 👤 Diskuse nad tímto konceptem + nad [`docs/3.2/ArchaNoemova.md`](../3.2/ArchaNoemova.md) (realizační studie — varianta A refit ~90 m vs B full-ark ~135 m).
 2. Po schválení: zápis do L5 registry (`POST /api/v1/projects`, status `vision`/`planning`) — EDGE2 `zion-free-world :8095`.
 3. Propojit s `TreeMarias.md` §4.3 (horizont trupu III) a trasou `L5MariaDelCamino.md`.
 4. Canon: rozhodnout literární osud archy — jestli plavidlo vstoupí do příběhu korpusu.

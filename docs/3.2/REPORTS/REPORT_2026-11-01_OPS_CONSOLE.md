@@ -4,7 +4,7 @@
 **Kde:** `https://dashboard.zionterranova.com/dashboard` → záložka **Rigs**.
 **Kód:** `ZION_OS/dashboard/{ops_console.py, app.py, dashboard.html, dashboard.js}`,
 `infra/tools/vast/deploy-vastctl-edge.sh`, `ZION_OS/dashboard/deploy-dashboard.sh`.
-**Plán:** [`docs/plans/OPS-CONSOLE.md`](../plans/OPS-CONSOLE.md).
+**Plán:** [`docs/plans/OPS-CONSOLE.md`](../../plans/OPS-CONSOLE.md).
 
 ---
 

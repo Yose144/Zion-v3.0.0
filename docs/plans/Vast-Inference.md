@@ -12,7 +12,7 @@
 >
 > Detail lokální části (LM Studio ↔ Continue, VRAM/TDR pravidla) →
 > [`VASTAI-MINING.md`](VASTAI-MINING.md) §5.3–§5.5.
-> Nouzová oprava produkční inference → [`AI-NATIVE-HIRAN-REPORT-2026-10-22.md`](AI-NATIVE-HIRAN-REPORT-2026-10-22.md).
+> Nouzová oprava produkční inference → [`AI-NATIVE-HIRAN-REPORT-2026-10-22.md`](../3.2/REPORTS/AI-NATIVE-HIRAN-REPORT-2026-10-22.md).
 
 ---
 
@@ -372,7 +372,7 @@ zastavuje **minery**, ne instanci; zrušení pronájmu = Vast UI/API
 | Cesta | Obsah |
 |---|---|
 | [`VASTAI-MINING.md`](VASTAI-MINING.md) §5 | Panel, vLLM helper, **LM Studio + Continue**, VRAM/TDR, game agenti |
-| [`AI-NATIVE-HIRAN-REPORT-2026-10-22.md`](AI-NATIVE-HIRAN-REPORT-2026-10-22.md) | Produkční LLM řetězec PC ↔ EDGE2, fallback chain, konstytuční prompt |
+| [`AI-NATIVE-HIRAN-REPORT-2026-10-22.md`](../3.2/REPORTS/AI-NATIVE-HIRAN-REPORT-2026-10-22.md) | Produkční LLM řetězec PC ↔ EDGE2, fallback chain, konstytuční prompt |
 | `infra/tools/vast/vastctl.py` | Panel backend + `serve` (`:8088`), `offers`, `rent`, `launch`, `stop`, `daemon` |
 | `infra/tools/vast/vast_inference.py` | Docker/vLLM deploy helper (validace, loopback, health) |
 | `infra/tools/vast/vastctl-serve.service` | user unit pro panelové API |

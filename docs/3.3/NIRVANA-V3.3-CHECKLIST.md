@@ -1,9 +1,9 @@
 # ZION V3.3 „NIRVANA" — Execution Checklist
 
 > **Datum:** 2026-10-29 (snapshot položek níže je z 26. 10.; posun je v rámečku) · **Doplněk k:** [`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md) · **Vstupní bod plánování:** [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md)
-> **⚠️ 2026-11-01:** tento checklist neobsahuje položky vlny 1. 11. (NIRVANA multiplayer M0–M2, avatary A1–A4, ops konzole F1–F2.3, 6.B4 DeSci, Kingdom, maintenance 503) — aktuální stav je v plánu **§7 změnovej log v1.6–v1.13** a v [`docs/3.2/REPORTS/REPORT_2026-11-01_NIRVANA_DEN.md`](docs/3.2/REPORTS/REPORT_2026-11-01_NIRVANA_DEN.md); code-vs-doc kanonizace 1. 11. viz [`AGENTS.md`](AGENTS.md) entry TRUTH-SYNC.
-> **Paluba:** [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md) · **Strojovna:** [`docs/3.3/ENGINE-SRDCE.md`](docs/3.3/ENGINE-SRDCE.md)
-> **Mapa (registr plánů, crosswalk, závislosti, ekosystém):** [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) · **N0 detail (3.2 ALPHA → BETA → STABLE):** [`docs/3.2/3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md) — ID typu `2.B1` / `7.S1` / `P0-1` odkazují tam.
+> **⚠️ 2026-11-01:** tento checklist neobsahuje položky vlny 1. 11. (NIRVANA multiplayer M0–M2, avatary A1–A4, ops konzole F1–F2.3, 6.B4 DeSci, Kingdom, maintenance 503) — aktuální stav je v plánu **§7 změnovej log v1.6–v1.13** a v [`docs/3.2/REPORTS/REPORT_2026-11-01_NIRVANA_DEN.md`](../3.2/REPORTS/REPORT_2026-11-01_NIRVANA_DEN.md); code-vs-doc kanonizace 1. 11. viz [`AGENTS.md`](../../AGENTS.md) entry TRUTH-SYNC.
+> **Paluba:** [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md) · **Strojovna:** [`docs/3.3/ENGINE-SRDCE.md`](ENGINE-SRDCE.md)
+> **Mapa (registr plánů, crosswalk, závislosti, ekosystém):** [`NIRVANA-V3.3-MAP.md`](NIRVANA-V3.3-MAP.md) · **N0 detail (3.2 ALPHA → BETA → STABLE):** [`docs/3.2/3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md) — ID typu `2.B1` / `7.S1` / `P0-1` odkazují tam.
 > **Značky vlastníka:** 🤖 = autonomní (kód/testy/dokumenty end-to-end) · 🔀 = autonomní příprava + operátorské schválení/flip · 👤 = operátor (rozhodnutí, peníze, klíče, fyzický svět)
 > **Pravidlo:** Devin nikdy neflipuje produkční money-paths, nevydává verze, nevybírá dodavatele — vždy připraví PR/artefakt/důkaz a počká na 👤 sign-off.
 > **Topologie:** EDGE2 = primary node + web ingress + app stack · EDGE = pool (reálné IP minerů) + followeři + ops. Detail v `AGENTS.md`.
@@ -39,16 +39,16 @@ Checklistové checkboxy pod tímhle rámečkem se hromadně nepřepisovaly. DoD 
 
 ## N0 · Foundation Closure = 3.2 Mainnet Stable
 
-Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Zde jen brány.
+Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md). Zde jen brány.
 
-- [x] Beta gate — ekosystém F0–F6 sjednocený, web cutover na EDGE2 (22. 10.), root `3.2.0-beta.1` ([`AUDIT-3.2-BETA-PLAN.md`](docs/plans/AUDIT-3.2-BETA-PLAN.md))
-- [x] Interní audit money-paths vlny 1–7 nasazené + live verifikace 26. 10. ([`AUDIT-REPORT.md`](docs/plans/AUDIT-REPORT.md))
+- [x] Beta gate — ekosystém F0–F6 sjednocený, web cutover na EDGE2 (22. 10.), root `3.2.0-beta.1` ([`AUDIT-3.2-BETA-PLAN.md`](../plans/AUDIT-3.2-BETA-PLAN.md))
+- [x] Interní audit money-paths vlny 1–7 nasazené + live verifikace 26. 10. ([`AUDIT-REPORT.md`](../plans/AUDIT-REPORT.md))
 - [~] **P0** produkční defekty z verifikace 26. 10. — 2/3 opraveny téhož dne
   - [x] 🔀 P0-1 ✅ 26. 10. — L5 scanner restartován, catch-up 6 732 bloků na tip 97 064, zápis ověřen; recovery dump smazaného inode v `/data/zion/` (0 ztráta) (6.B1)
   - [x] 🔀 P0-2 ✅ 26. 10. — db-sync credentials sjednoceny s rolí `zion`, 0 chyb od restartu, upserty `MiningWorker` běží (8.B1)
   - [ ] 🔀 P0-3 rotace PRL RPC credentialu (👤) + per-service env subsety (7.B6)
 - [ ] **G8 — 30 dní ≥99.9 %, žádný incident ≥900 s**
-  - [x] 🤖 RCA run #2 + live stall 21. 10. → fixy (pool RPC timeout 4→12 s, pool-side pre-orphan pryč, watchdog 30 s/3-fail) nasazené ([`REPORT_2026-10-21_G8_STALL_RCA.md`](docs/3.2/REPORTS/REPORT_2026-10-21_G8_STALL_RCA.md))
+  - [x] 🤖 RCA run #2 + live stall 21. 10. → fixy (pool RPC timeout 4→12 s, pool-side pre-orphan pryč, watchdog 30 s/3-fail) nasazené ([`REPORT_2026-10-21_G8_STALL_RCA.md`](../3.2/REPORTS/REPORT_2026-10-21_G8_STALL_RCA.md))
   - [x] 🤖 RCA run #3 (SPOF tunelu v sondě) → probe na lokální followery + vlastní probe na EDGE2
   - [x] 👤 Start run #5 (25. 10.) — uzavřen 29. 10., navázán run #6
   - [x] 🤖 Alert sink firing test + 40d retence doložit (8.B9) — `REPORT_2026-10-28_G8_ALERT_SINK.md`: firing+resolved přes reálný Alertmanager 28.10., append-only jsonl 29d+ bez rotace, 40d span doběhne ~8.11.
@@ -80,7 +80,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 ## N1 · Identity & Value Transfer (L2 + ZIS)
 
 - [ ] 🔀 BTC swap re-enable → `WARP_BTC_SWAP_ENABLED=1` capped (po N0 + G9)
-- [ ] **ZionDex on-chain settlement** ([`ZionDex-OnChain-Settlement-Plan.md`](docs/3.2/ZionDex-OnChain-Settlement-Plan.md))
+- [ ] **ZionDex on-chain settlement** ([`ZionDex-OnChain-Settlement-Plan.md`](../3.2/ZionDex-OnChain-Settlement-Plan.md))
   - [ ] 👤 §7 rozhodnutí: zdroj wZION pro hot wallet, seed USDT/USDC, volba DEX, ETH na gas (4.B7)
   - [ ] 🤖 QuoterV2/SwapRouter v `EvmAdapter` + solvency guard (4.B6)
   - [ ] 🤖 In-memory AMM pryč z produkční cesty
@@ -94,7 +94,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 Legacy HS256 verify odstraněn po grace expiry (3.B5) — 31. 10. `verifyLegacyToken` + fallbacky pryč (keys/auth/server), HS256 tokeny → 401; prod env čistý (JWT_LEGACY_SECRET nikdy nenastaven, JWT_SECRET = cookie signing); deployed EDGE2, JWKS Ed25519 — `REPORTS/REPORT_2026-10-31_3B5_LEGACY_HS256_REMOVAL.md`
 - [x] 🤖 ZIS agent sub-accounts — Prisma schema + budgety (design + migrace draft) — 31. 10. `docs/3.2/ZIS_AGENT_SUBACCOUNTS_DESIGN.md`: `AgentSubAccount`+`AgentBudget` modely (scoped `zag_` bearer, atomic conditional-update budgety, `wallet:withdraw` nikdy issuabilný — F-1/F-6), API draft, SQL migrace, rollout gates; implementace = follow-up
 - [x] 🤖 Mobile app 3.0.6 — API audit + preview marking (3.B6) — 31. 10. `REPORTS/REPORT_2026-10-31_3B6_MOBILE_APP_AUDIT.md`: preview stage ✅ (config+UI+pkg), 5/8 endpointů live, 3 dead vhosts (api/dex/updates — nikdy nenasazené, graceful degradace); full API sladění = 👤 deploy-vs-cut
-- [ ] 🤖 QTC integrace ([`QUANTUS-INTEGRATION-PLAN.md`](docs/3.2/QUANTUS-INTEGRATION-PLAN.md)): F1 adapter (gated testnet) → F2 keyring → F3 watchtower → F5 wallet pod ZIS
+- [ ] 🤖 QTC integrace ([`QUANTUS-INTEGRATION-PLAN.md`](../3.2/QUANTUS-INTEGRATION-PLAN.md)): F1 adapter (gated testnet) → F2 keyring → F3 watchtower → F5 wallet pod ZIS
 - [ ] 🔀 DAO: guardian registry deploy, treasury sign flow + 👤 klíč (4.B8); ~~QV rozhodnutí~~ ✅ 4.B9 — DECIDED 31. 10. `REPORTS/REPORT_2026-10-31_4B9_DAO_QV_DECISION.md`: DAO zůstává stake-weighted (naivní QV = sybil-zranitelné √N amplifikací; advisory QV už existuje v `consent.rs`)
 - [x] 🤖 Premine unlock dry-run na regtestu před výškou 144 000 (1.B5) — PASS 28. 10.; výška ~27.–28. 11. a exekuce zůstávají 👤
 - [ ] 👤 Nové chain piloty (Solana watcher v kódu) — každý přes M1.6 gate
@@ -108,7 +108,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 QTC adapter F1 gated live testy + F3 watchtower design (4.B10) — 31. 10. `REPORTS/REPORT_2026-10-31_4B10_QTC_ADAPTER_WATCHTOWER.md`: `quantus_live_readonly`+`dryrun` ✅ vs "Quantus" mainnet (fin 323386, partialFee decode OK); stale Planck-era assert fix (`h>1M`→`h>0`); F3 design = kompozice DepositWatcher+WithdrawalProcessor+SolvencyGuard; solvency registry fix (`chain_id_from_str`+`quantus`, `token_decimals`+`QTC`→12); send_testnet = 👤 Heisenberg seed
 - [x] 🤖 GPU KAT parity CPU/OpenCL/CUDA (1.B1) — 31. 10. `REPORTS/REPORT_2026-10-31_1B1_GPU_KAT_PARITY.md`: Ekam Deeksha **bit-identický** na GTX 1070 Ti CUDA + RX 5600 XT OpenCL + 1070 Ti OpenCL (vč. scratchpad mezistavů); QPoW+Pearl parity PASS (pearl OCL gates na obou kartách); **16 auxpow algos bit-exact AMD** (vč. **equihash 200,9 — Wagner sol valid + sha256d≡**) / 12 NV-OCL / 7 CUDA; **9 defect classes opraveno** — k256 0.14 `FieldArithmetic` compat, SM75 tensor-gate skip, `reqd_work_group_size` launch fix, ROCm `inline`→`static inline` (autolykos+nexapow hidden-symbol), ROCm strict arg introspection (`Float2`/`Uint8`/`Uint16`/`uchar*` buffery), pearl v2 smem `PEARL_DISABLE_V2` guard <49 476 B (GP104), **KAT-harness varint bug** (wire sol `fd4005`+1344 B — GPU sol validní celou dobu), **Blake2b σ[3] `tail0` misplacement** ve všech 3 Wagner kernelech, **ROCm VRAM overcommit guard** `check_vram_fits` (zelhash 6.5 GB > 5.98 GiB → čistý SKIP místo page-fault SIGABRT); Metal = N/A (no hw); residual = zelhash AMD HW kapacita (CUDA 8 GB PASS — žádný correctness defect)
 
-## N2 · Pool & Revenue Engine (+ [`POOL-FLEET-EXPANSION-PLAN.md`](docs/plans/POOL-FLEET-EXPANSION-PLAN.md) W1–W7)
+## N2 · Pool & Revenue Engine (+ [`POOL-FLEET-EXPANSION-PLAN.md`](../plans/POOL-FLEET-EXPANSION-PLAN.md) W1–W7)
 
 - [x] 🤖 PRL dry-batch review tooling `scripts/prl-payout-review.sh`
 - [x] 🤖 Pearl `FWD_MAX` fix (share loss 17.5 % → 0 dropů)
@@ -146,7 +146,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [ ] 🤖 Dharma: keyword filter → policy manifest (povolené typy akcí + human-approval gate) — kryptografické mantinely = HORIZONT
 - [ ] 🤖 Amitabha draft-only UI (plán s náklady/příjemci/riziky/zrušením, bez exekuce) — až po M2
 - [ ] 🤖 Red-team (prompt injection, confused deputy, privilege escalation, tx substituce) — exit M3
-- [ ] 🤖 [`HIRAN-MARKETPLACE-PLAN.md`](docs/plans/HIRAN-MARKETPLACE-PLAN.md) F2 gateway `/v1/models` + F4 provoz
+- [ ] 🤖 [`HIRAN-MARKETPLACE-PLAN.md`](../plans/HIRAN-MARKETPLACE-PLAN.md) F2 gateway `/v1/models` + F4 provoz
 - [ ] 👤 HW upgrade (RTX 3090+/48 GB) — bez něj 8B model + RAG
 
 ## N4 · OASIS (L4)
@@ -154,7 +154,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 OasisChecklist live a11y/privacy scan + fixy (sr-only `h1`, `role=img`/`aria-label`), load ~1.0 s
 - [x] 🤖 WebGPU preview G0–G2 nasazeno (`?gpu=webgpu`)
 - [x] 🤖 Plný axe + device matrix + privacy policy → navrženo **V33-10** (5.B5) — ✅ 2. 11. 2026: axe scan proveden na 11 stránkách (playwright + axe-core 4.14). Před opravami: / = 4 violations, sub-stránky = 2 violations. Po opravách: / = 0 violations ✅, sub-stránky = 2 (landmark-one-main + region — způsobeno static exportem, main element v HTML ověřen). Privacy review ✅ (žádné sensitivní data, žádný tracking). Security review ✅ (žádný eval/dangerouslySetInnerHTML). Opravy: reduced motion, skip-to-content, viewport (maximumScale odstraněno), icon button aria-label. Report: `docs/3.2/REPORTS/REPORT_2026-11-02_OASIS_A11Y_PRIVACY.md`. V33-10 = 🔄 částečně (plný device matrix vyžaduje více viewportů).
-- [ ] 🤖 WebGPU parity gaps (4 otevřené v [`WebOasis.md`](docs/3.2/WebOasis.md))
+- [ ] 🤖 WebGPU parity gaps (4 otevřené v [`WebOasis.md`](../3.2/WebOasis.md))
 - [ ] 🤖 Marketplace↔OASIS reverse-sync edge cases
 - [ ] 🤖 E-shop: E2E checkout, nebo platební cestu vypnout (5.B6)
 - [ ] 🤖 On-chain parcel/artefakt anchoring — design + regtest pilot
@@ -185,7 +185,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 Truth-sync dokumentace + refresh Registru důkazů (9.B5; seznam rozporů = mapa §8) ✅ 28. 10.: REPO-MAP (public/→archive/PUBLIC + nový export model), Registr (Passkeys→STAVBA, Hiran inference→ŽIVÉ, Maestro→ŽIVÉ read-only, +premine řádek), StatusV3 update 2026-10-28
 - [x] 🤖 Public copy `/roadmap`, `nirvana-roadmap.ts`, `/zion-archive#plan-v33` sladit s mapou (9.B6) — 29. 10.: podtitul lodi, šest workstreamů beze změny, žádné slíbené datum
 - [ ] 🤖 Charta R9: factual/legal/cultural review veřejných textů
-- [ ] 🤖 CoinGecko re-apply package ([`COINGECKO_REAPPLY_ROADMAP.md`](docs/3.2/COINGECKO_REAPPLY_ROADMAP.md), 17 prerekvizit)
+- [ ] 🤖 CoinGecko re-apply package ([`COINGECKO_REAPPLY_ROADMAP.md`](../3.2/COINGECKO_REAPPLY_ROADMAP.md), 17 prerekvizit)
 - [ ] 👤 Bug bounty + komunitní kanály
 - [ ] 👤 Publikace „v3.3 Nirvana" — jen po DoD
 
@@ -199,12 +199,12 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 | V33-2 Externí audit | report + mitigace | ⏸️ posunuto 👤 26. 10. |
 | V33-3 Value transfer | BTC swap lock→claim + refund on-chain; ZionDex deposit→swap→withdraw | ❌ holdy / settlement nehotový |
 | V33-4 Identita | passkey E2E na ≥3 produkčních webech | 🔄 routes + mocked E2E |
-| V33-5 L3 sandbox | Maestro 3 reálné úlohy s audit logem + approval gate; NCL ≥1 job typ | 🔄 Maestro read-only live, NCL bez jobů |
+| V33-5 L3 sandbox | Maestro 3 reálné úlohy s audit logem + approval gate; NCL ≥1 job typ | 🔄 Maestro read-only live; **NCL lifecycle ✅ 2. 11.** (2 integrační testy: LlmInference + CodeAnalysis failure, 44/44 pass) |
 | V33-6 L5 dopad | ≥1 pilot s veřejným rozpočtem a výsledkem | ❌ (P0-1 ✅, scanner na tipu) |
-| V33-7 L6 repro | dokument s L1 anchorem | ❌ |
+| V33-7 L6 repro | dokument s L1 anchorem | 🔄 **backend ✅ 2. 11.** (anchor.rs memo+batch, merkle path/verify, 23/23 testů), chybí publikovaný dokument s reálným anchorem |
 | V33-8 Kvalita | `cargo test --workspace` + clippy + `npm/cargo audit` 0 critical | 🔄 testy ✅ 2 839/0; clippy pool 32 warn test-only; **audit triage ✅ 28.10** (`AUDIT-TRIAGE.md`): cargo 9 vuln major-only fix, npm next-critical — upgrade naplánován před Stable |
 | V33-9 Pool produkce | PRL + QTU native payouty live, ≥1 externí miner per leg | ❌ PRL dry-run, QTC deficit |
-| *V33-10 (návrh)* | OASIS preview: a11y + security + privacy review + změřený výkon (charta M4/R6) | 🔄 částečný scan |
+| *V33-10 (návrh)* | OASIS preview: a11y + security + privacy review + změřený výkon (charta M4/R6) | 🔄 **axe scan ✅ 2. 11.** (11 stránek, / = 0 violations, 3 opravy), privacy+security OK; device matrix chybí |
 | *V33-11 (návrh)* | nezávislý operátor nodu + restore bez EDGE i EDGE2 (charta M7/R8) | ❌ |
 
 ## Finální release gates — Exekuční charta R1–R9
@@ -223,7 +223,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 
 ## Rychlá autonomní fronta (další kroky)
 
-1. 🔀 P0-3 — rotace PRL RPC credentialu (👤) + per-service env subsety; P0-1/P0-2 ✅ 26. 10. · audit 31.10. v [`docs/3.2/P0-3-SHARED-ENV-AUDIT.md`](docs/3.2/P0-3-SHARED-ENV-AUDIT.md): 186 vars, 24 secret-ish, 15 služeb sdílí `edge-environment.sh` (mode 0644) — subset plan + rotace runbook připraveny, čeká 👤
+1. 🔀 P0-3 — rotace PRL RPC credentialu (👤) + per-service env subsety; P0-1/P0-2 ✅ 26. 10. · audit 31.10. v [`docs/3.2/P0-3-SHARED-ENV-AUDIT.md`](../3.2/P0-3-SHARED-ENV-AUDIT.md): 186 vars, 24 secret-ish, 15 služeb sdílí `edge-environment.sh` (mode 0644) — subset plan + rotace runbook připraveny, čeká 👤
 2. ~~🤖 Provenance manifest + build z čistého `git archive` (8.B3)~~ ✅ 28. 10. (collector + baseline; `git archive` build nese `.git-archive-sha`)
 3. ~~🤖 Health checky zápisových cest + lag alerty L5/L6/db-sync/payout sweep (8.B4, 6.B2)~~ ✅ 28. 10. (`ZionPoolPayoutStale` + freshness metriky nasazené)
 4. ~~🤖 Stale-block RCA nad A1.2 metrikami (2.B1)~~ ✅ 26. 10. (`REPORT_2026-10-26_POOL_ORPHAN_RCA.md`)

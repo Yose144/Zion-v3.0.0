@@ -444,7 +444,7 @@ multi-hop latence).
 - F4 Simulace 1000+ minerů
 - F5 Backup / DR drill
 
-Plný execuční plán je v [`V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3.2.md).
+Plný execuční plán je v [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md).
 
 ---
 
@@ -467,13 +467,13 @@ Jedna planeta. Jeden lid. One Love.
 
 # Reference a zdroje pravdy
 
-- Live status: [`StatusV3.md`](../../../docs/3.2/StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)
-- Execuční plán: [`V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3.2.md)
-- Launch a marketing plán: [`OneLoveV3.2.md`](../../../docs/3.2/OneLoveV3.2.md)
-- Pravidla pro agenty: [`AGENTS.md`](../../AGENTS.md) · [`V31/AGENTS.md`](../../../V31/AGENTS.md)
-- Playbook hard resetu: [`HARD_RESET_PLAYBOOK.md`](../../../docs/3.2/HARD_RESET_PLAYBOOK.md)
-- Session report: [`V31_3.2.0_SESSION_REPORT.md`](../../../docs/3.1/REPORTS/V31_3.2.0_SESSION_REPORT.md)
-- Trinity tuning: [`REPORT_2026-08-09_TRINITY_TUNING_FINAL.md`](../../../docs/3.1/REPORTS/REPORT_2026-08-09_TRINITY_TUNING_FINAL.md)
+- Live status: [`StatusV3.md`](../../docs/3.2/StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
+- Execuční plán: [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)
+- Launch a marketing plán: [`OneLoveV3.2.md`](../../docs/3.2/OneLoveV3.2.md)
+- Pravidla pro agenty: [`AGENTS.md`](../../AGENTS.md) · [`V31/AGENTS.md`](../../V31/AGENTS.md)
+- Playbook hard resetu: [`HARD_RESET_PLAYBOOK.md`](../../docs/3.2/HARD_RESET_PLAYBOOK.md)
+- Session report: [`V31_3.2.0_SESSION_REPORT.md`](../../docs/3.1/REPORTS/V31_3.2.0_SESSION_REPORT.md)
+- Trinity tuning: [`REPORT_2026-08-09_TRINITY_TUNING_FINAL.md`](../../docs/3.1/REPORTS/REPORT_2026-08-09_TRINITY_TUNING_FINAL.md)
 
 ---
 

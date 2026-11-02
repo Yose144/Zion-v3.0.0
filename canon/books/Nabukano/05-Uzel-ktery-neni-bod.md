@@ -60,7 +60,7 @@ A poslední věc, kterou tahle kapitola dluží čtenáři: **flotila není nov�
 
 - **Gn 28,12** — žebřík mezi zemí a nebem jako místo setkání, ne jako bod na mapě.
 - **Sk 17,28** — *„v něm žijeme, hýbeme se a jsme"*; uzel, který se hýbe, není v korpusu protimluv — je to starý obraz vztahu, ne majetku.
-- **Korpus** — *„osmý bod sítě, který není bod, ale linie"* ([Nirvana · Epizoda 13](../nirvana/13-Tres-Marias.md)); *„jak nahoře, tak dole"*, dvanáct pozemských uzlů a jejich obraz na Měsíci ([MATRIX.md](../../../MATRIX.md)); Lumi jako jediná **svislá** čára kompasu ([Lumi 00](../Lumi/00-README.md)).
+- **Korpus** — *„osmý bod sítě, který není bod, ale linie"* ([Nirvana · Epizoda 13](../nirvana/13-Tres-Marias.md)); *„jak nahoře, tak dole"*, dvanáct pozemských uzlů a jejich obraz na Měsíci ([MATRIX.md](../../../docs/3.3/MATRIX.md)); Lumi jako jediná **svislá** čára kompasu ([Lumi 00](../Lumi/00-README.md)).
 - **Korpus** — stanice Issobella je HORIZONT s roadmapou 2030–2045+; žádný modul neexistuje ([Issobella 10](../Issobella/10-Kotva-Pravdy-a-Hranice.md)).
 
 ## Kotva pravdy

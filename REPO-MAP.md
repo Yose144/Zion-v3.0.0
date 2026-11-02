@@ -1,6 +1,6 @@
 # REPO-MAP — Mapa workspace `~/2.9.6-main`
 
-> **Kompletní přehled, co je kde.** Aktualizováno **2026-11-01** — kanonizace code-vs-doc (doplněn `Kingdom/`, `nirvana`, `nirvana-net`, `public-miner`, `update-server`, `infra/maintenance/`, re-měření počtů; viz `AGENTS.md` TRUTH-SYNC). Předtím 2026-10-31 — po F2 git-reorganizaci (batche 1–8, viz [`docs/ECOSYSTEM-REBUILD-PLAN.md`](docs/ECOSYSTEM-REBUILD-PLAN.md)) a po repo-hygiene průchodu B9 (viz níže).
+> **Kompletní přehled, co je kde.** Aktualizováno **2026-11-02** — úklid root dokumentace: 21 plánovacích `.md` přesunuto z rootu do **`docs/3.3/`** (rozcestník [`docs/3.3/README.md`](docs/3.3/README.md)), v rootu zůstává jen [`PLAN.md`](PLAN.md) jako jediný aktivní plán. Předtím 2026-11-01 — kanonizace code-vs-doc (doplněn `Kingdom/`, `nirvana`, `nirvana-net`, `public-miner`, `update-server`, `infra/maintenance/`, re-měření počtů; viz `AGENTS.md` TRUTH-SYNC). Předtím 2026-10-31 — po F2 git-reorganizaci (batche 1–8, viz [`docs/ECOSYSTEM-REBUILD-PLAN.md`](docs/ECOSYSTEM-REBUILD-PLAN.md)) a po repo-hygiene průchodu B9 (viz níže).
 >
 > Zásada: **runtime a ops obsah zůstává v repu** (deferral, §2). Co v repu záměrně **nezůstává**: mrtvé meta-workspace manifesty, stub adresáře a build artefakty, které nic nekonzumuje — ty se mažou, ne archivují (viz B9 níže).
 >
@@ -15,7 +15,7 @@
 | `apps/` | Celý web+app ekosystem (14 aplikací) | 4046 | ← bývalé `APP&WEB/`. website-v2.9 (Next 16, app.zionterranova.com), IntroPage (apex static), OasisWeb, MarketPlace, pool-ui, identity (ZIS), desktop-agent, mobile-app, shared, zion-wallet-sdk, **nirvana** (Next 16 + R3F, nirvana.zionterranova.com, hry /park /mars /venus /avatars), **nirvana-net** (WS služba `zion-nirvana-net` :3011, protokol sdílí s `apps/nirvana/src/core/net/protocol.ts`), public-miner, update-server |
 | `Kingdom/` | Kingdom klient — vlastní npm workspace (apps/, packages/), 490 souborů | 490 | `kingdom.zionterranova.com` (:3020); portál `/portal/<id>`, session přes cookie `.zionterranova.com` (společná se ZIS); z Nirvany se odkazuje přes `core/portals/KingdomLink.tsx`. Vlastní `Kingdom/AGENTS.md` |
 | `canon/` | Kanonický obsah/korpus | 554 | `l2`–`l6` (DAO ústava, layer docs, artwork, Issobella), `brand/` (LOGO + build), `books/` (WP-Mainet knihy) |
-| `docs/` | Dokumentace + reporty | 3007 | `3.2/` aktuální (REPORTS/, ops/), `3.1/`, `3.0.x/`, `marketing/`, `ops/` — reporty patří do `docs/3.2/REPORTS/`, neparkovat v rootu |
+| `docs/` | Dokumentace + reporty | 3122 | `3.3/` plánovací dokumenty NIRVANY (24 souborů, přesunuté z rootu 2. 11. — rozcestník [`docs/3.3/README.md`](docs/3.3/README.md)), `3.2/` aktuální stav + REPORTS/ + ops/, `3.1/`, `3.0.x/`, `marketing/`, `ops/`, `plans/` — reporty patří do `docs/3.2/REPORTS/`, plány do `docs/3.3/`, neparkovat v rootu (v rootu jen [`PLAN.md`](PLAN.md)) |
 | `infra/` | Infrastruktura + deploy | 117 | `nginx/` (edge-current+edge2 vhosty), `dns/` (zóna+runbook), `edge-deploy/` (48 souborů), `vast/`, `config/`, `mining/`, `tools/` (vastctl), `maintenance/` (503 stránka www/apex/kingdom, nasazena 1. 11.) |
 | `archive/` | Historické/mrtvý materiál | 4115 | `V3/` (stará V3 kopie), `WarpBeta/`, `config/`, `misc/`, `2.9.9/`, **`PUBLIC/`** (snapshot bývalého veřejného subsetu — tracked `public/` zanikl 2026-10, viz níže) |
 

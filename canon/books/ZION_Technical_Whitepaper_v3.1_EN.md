@@ -239,7 +239,7 @@ is the sole coinbase.
 > The network was hard-reset on 2026-07-20 with unlimited retention. This
 > genesis hash applies to the reset chain.
 
-See [`genesis.md`](../../../docs/genesis.md) for the full premine allocation table and
+See [`genesis.md`](../../docs/genesis.md) for the full premine allocation table and
 genesis message.
 
 ### 6.2 Premine Distribution
@@ -396,7 +396,7 @@ constitutional stones:
 
 Five vulnerabilities were disclosed and remediated in the 3.0.4 hard
 reset. See
-[`security/SECURITY_DISCLOSURE_2026-07.md`](../security/SECURITY_DISCLOSURE_2026-07.md)
+[`security/SECURITY_DISCLOSURE_2026-07.md`](../../docs/security/SECURITY_DISCLOSURE_2026-07.md)
 for full details.
 
 | ID | Severity | Description | Status |
@@ -508,9 +508,9 @@ work in progress, not finished.
 
 ## 16. References
 
-- Source code: [V3/](../../../archive/V3/) directory in this repository
-- Genesis documentation: [`genesis.md`](../../../docs/genesis.md)
-- Security disclosures: [`security/SECURITY_DISCLOSURE_2026-07.md`](../security/SECURITY_DISCLOSURE_2026-07.md)
+- Source code: [V3/](../../archive/V3) directory in this repository
+- Genesis documentation: [`genesis.md`](../../docs/genesis.md)
+- Security disclosures: [`security/SECURITY_DISCLOSURE_2026-07.md`](../../docs/security/SECURITY_DISCLOSURE_2026-07.md)
 - Narrative companion: *Fable Edition* (WpLite) and *Book of Genesis*
 - Story chronicle: *WpStory6 — Three Streams of One River*
 

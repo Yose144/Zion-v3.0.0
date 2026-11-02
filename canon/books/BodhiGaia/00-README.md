@@ -103,7 +103,7 @@ Tato kniha nevytváří nový svět. **Sjednocuje to, co už v repozitáři, na 
 
 - **Kanonický integrační corpus 3.3:** [`../MiseAmenti/README.md`](../MiseAmenti/README.md) · Registr důkazů: [`07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) · Workstream M5: [`04-Exekucni-Charta-3.3.md`](../MiseAmenti/04-Exekucni-Charta-3.3.md)
 - **Rozhodnutí G10 (L5/L6 run mode):** [`docs/3.2/L5_L6_ACTIVATION_PLAN.md`](../../../docs/3.2/L5_L6_ACTIVATION_PLAN.md)
-- **Technické komunitní dokumenty L5:** [`public/V3/L5/docs/README.md`](../../../public/V3/L5/docs/README.md)
+- **Technické komunitní dokumenty L5:** [`public/V3/L5/docs/README.md`](../../../archive/PUBLIC/V3/L5/docs/README.md)
 - **Technický plán 3.3, kap. 6:** [`V33_NIRVANA_MASTER_PLAN.md`](../../../docs/3.2/V33_NIRVANA_MASTER_PLAN.md)
 - **Aktuální stav sítě:** [`StatusV3.md`](../../../docs/3.2/StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)
 - **Narativní kořeny:** [`Sůl této země`](../SulZeme/00-README.md) · [`Nirvana`](../nirvana/00-README.md) · [`NirvanaCloud`](../NirvanaCloud/00-README.md) · [`Road to Zion`](../marketing/ROAD_TO_ZION_CZ.md)

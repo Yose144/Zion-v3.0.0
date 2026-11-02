@@ -4,4 +4,4 @@
 
 Kanon má přesnější pasáž (mahásamádhi 29. 9. 2026, věk dvanácti let, loď Santa María la Mayor). Tento opis ji zjednodušuje a **nepřepisuje** knihu. Nezařazovat do website archive a nepoužívat jako zdroj pravdy.
 
-Viz [`NIRVANA-V3.3-KAPITOLA.md`](../../NIRVANA-V3.3-KAPITOLA.md).
+Viz [`NIRVANA-V3.3-KAPITOLA.md`](../3.3/NIRVANA-V3.3-KAPITOLA.md).

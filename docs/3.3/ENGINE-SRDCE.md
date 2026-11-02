@@ -1,8 +1,8 @@
 # Strojovna lodi — `zion-compute`
 
 > **Datum:** 2026-10-29 · **Stav:** specifikace. Žádný crate, žádný kernel, žádný deploy.
-> **Kapitola:** [`NIRVANA-V3.3-KAPITOLA.md`](../../NIRVANA-V3.3-KAPITOLA.md)
-> **Mimo DoD 3.3.** UE5, pixel streaming a Proof-of-Care na L1 zůstávají NON-DoD ([`NIRVANA-V3.3-PLAN.md`](../../NIRVANA-V3.3-PLAN.md)).
+> **Kapitola:** [`NIRVANA-V3.3-KAPITOLA.md`](NIRVANA-V3.3-KAPITOLA.md)
+> **Mimo DoD 3.3.** UE5, pixel streaming a Proof-of-Care na L1 zůstávají NON-DoD ([`NIRVANA-V3.3-PLAN.md`](NIRVANA-V3.3-PLAN.md)).
 
 Veřejné jméno v kapitole je **strojovna**. Technické jméno budoucího crate je **`zion-compute`**. Sedí vedle [`V31/L3/ncl`](../../V31/L3/ncl) jako rozšíření NCL, ne jako fork [`V31/L1/miner`](../../V31/L1/miner).
 

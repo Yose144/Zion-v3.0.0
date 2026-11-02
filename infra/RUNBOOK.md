@@ -91,7 +91,7 @@ Health: `curl https://app.zionterranova.com/api/health` (28 služeb), `https://a
 ## Pool HA (active-passive) — STAV: připraveno, NEaktivováno
 
 > Rozhodnutí 👤 2026-10-31: HA stack **dokumentovat + oficiálně aktivovat** (2.S5 uzavřeno ve prospěch A4.2 active-passive).
-> **Aktivace je blokovaná, dokud není doložené fencing.** Detail: [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §W2.
+> **Aktivace je blokovaná, dokud není doložené fencing.** Detail: [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../docs/3.3/NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §W2.
 
 ### Co existuje (EDGE2)
 

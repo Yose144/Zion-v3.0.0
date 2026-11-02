@@ -34,7 +34,7 @@ A druhý důsledek: dok mění smysl celé flotily. Není to výprava, která n�
 
 - **Mt 8,20 / Lk 9,58** — *„Lišky mají doupata a ptáci hnízda, ale Syn člověka nemá kde hlavu složit."* Dok je odpověď na ten verš, ne jeho opakování: místo, kde je hlava složena, aniž by se z toho stala usedlost.
 - **Žd 4,9–11** — *„Božímu lidu zbývá odpočinutí"*; odpočinek jako cíl cesty, ne jako její přerušení.
-- **Korpus** — archa je *„přístav, který se pohybuje"* ([Nirvana · Epizoda 14](../nirvana/14-Archa.md)); na arše je semenný archiv, lékařský stůl a plný uzel ([ARCHA-NOEMOVA.md](../../../ARCHA-NOEMOVA.md)).
+- **Korpus** — archa je *„přístav, který se pohybuje"* ([Nirvana · Epizoda 14](../nirvana/14-Archa.md)); na arše je semenný archiv, lékařský stůl a plný uzel ([ARCHA-NOEMOVA.md](../../../docs/3.3/ARCHA-NOEMOVA.md)).
 - **Korpus** — navigátor **Korma** a pravidlo *„tady se neběhá"*; kajuty, společné jídlo, *„čas bez slavení se rozpustí jako sůl ve vodě"* ([Lumi, kap. 09](../Lumi/09-Strom-nad-Zemi.md)); posádka jako společenství, ne jako osádka ([Issobella, kap. 04](../Issobella/04-Posadka.md)).
 - **Historie** — dokování na oběžné dráze (Saljut, Mir, ISS) není romantika: je to přenos paliva, orientace, vzduchu a lidí v jednom gestu. Flotila si z toho bere jediné pravidlo: **kdo má dok, má i údržbu.**
 

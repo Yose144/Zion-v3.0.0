@@ -51,6 +51,6 @@ Interní — nedoporučuje se veřejně. Pokud ano, za nginx basic auth
 
 ## Související
 
-- [`DESKTOP-AGENT-COMPLETE-PLAN.md`](../../DESKTOP-AGENT-COMPLETE-PLAN.md) §8 — Public revenue model
+- [`DESKTOP-AGENT-COMPLETE-PLAN.md`](../../docs/3.3/DESKTOP-AGENT-COMPLETE-PLAN.md) §8 — Public revenue model
 - [`AGENTS.md`](../../AGENTS.md) — pool wallet, BOOST streamy
 - `V31/L1/pool/src/api.rs` — `/public/v1/coins/*` implementace

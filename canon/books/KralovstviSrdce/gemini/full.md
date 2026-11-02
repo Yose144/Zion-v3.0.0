@@ -188,7 +188,7 @@ Vzal špičku nože a ukázal chlapci tenkou černou linku mezi dvěma cedrovým
 - **1 Pt 3,20–21** — Noemova archa je v Novém zákoně výslovně čtena jako předobraz (*typos*) záchrany skrze vodu.
 - **Kanonická vazba v ZIONu:**
   1. **Jizva jako letokruh:** Obraz rány po blesku, která místo zatření hlínou obrostla dvojnásobně pevným dřevem, přesně odpovídá tomu, jak korpus ZION popisuje *Noc hada* (léto 2026 — veřejné přiznání kritické zranitelnosti, hard genesis reset 6. 8. 2026 a nová ústavní kotva v [`Maitreya/00-CANON-ANCHORS.md`](../../Maitreya/00-CANON-ANCHORS.md)): *„Chyba, která se nezametá pod koberec, ale přizná a opraví, se stane nejpevnějším žebrem trupu.“*
-  2. **Čtvrté plavidlo v rouše *kofer*:** V [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) a [`ARCHA-NOEMOVA.md`](../../../../ARCHA-NOEMOVA.md) nese čtvrté plavidlo flotily ZION právě tento program z Gn 6,14 — patronem na přídi je Malý princ ve čtvrtém rouše barvy moře (*kofer* — přikrytí a záchrana).
+  2. **Čtvrté plavidlo v rouše *kofer*:** V [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) a [`ARCHA-NOEMOVA.md`](../../../../docs/3.3/ARCHA-NOEMOVA.md) nese čtvrté plavidlo flotily ZION právě tento program z Gn 6,14 — patronem na přídi je Malý princ ve čtvrtém rouše barvy moře (*kofer* — přikrytí a záchrana).
 
 ### Kotva pravdy
 
@@ -198,7 +198,7 @@ Vzal špičku nože a ukázal chlapci tenkou černou linku mezi dvěma cedrovým
 | Jazyková příbuznost *kofer* (smola) — *kipur* (smíření) — *kapóret* (přikrytí) | **ŽIVÉ (hebrejská lexikografie a tradice)** | Kořen כפר (*k-p-r*) v biblické hebrejštině |
 | Archa jako předobraz záchrany skrze vodu | **PÍSMO / TRADICE** | 1 Pt 3,20–21 |
 | Podobenství o křivém dřevu a ráně po blesku | **MÝTUS / PŘÍBĚH** | Literární obraz této knihy; v korpusu ZION zrcadlí princip otevřeného přiznání chyb (*Noc hada*, *Na Cestě*) |
-| *Kofer* jako klíčové slovo pro čtvrté plavidlo *Archa* | **HORIZONT / VIZE** | [`ARCHA-NOEMOVA.md`](../../../../ARCHA-NOEMOVA.md) §1; [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) |
+| *Kofer* jako klíčové slovo pro čtvrté plavidlo *Archa* | **HORIZONT / VIZE** | [`ARCHA-NOEMOVA.md`](../../../../docs/3.3/ARCHA-NOEMOVA.md) §1; [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) |
 
 ---
 
@@ -1226,7 +1226,7 @@ Seděla tam dívka, která od dětství četla hvězdy — **Sarah Issobela**, s
 # ČÁST IV · FLOTILA A ARCHA
 *(Linie přes oceány a návrat pro posledního)*
 
-> *Poznámka k vrstvě:* Závěrečná část opouští pevninu a vyplouvá znovu na moře — tentokrát v plné šíři korpusu ZION. Propojuje knihu [`Maria Caminho — Kniha Cesty`](../../MariaCaminho/00-README.md), [`Nirvana 13 — Tres Marías`](../../nirvana/13-Tres-Marias.md), [`Na Cestě`](../../NaCeste/00-README.md), [`Surta Srdce`](../../SurtaSrdce/00-README.md), [`Nirvana 14 — Archa`](../../nirvana/14-Archa.md), [`ARCHA-NOEMOVA.md`](../../../../ARCHA-NOEMOVA.md) a závěrečné obrazy [`Lumi/11`](../../Lumi/11-Sto-Let-Lucerny.md) a [`Miriam/11–12`](../../Miriam/12-Reka-a-Dite-s-Lucernou.md).
+> *Poznámka k vrstvě:* Závěrečná část opouští pevninu a vyplouvá znovu na moře — tentokrát v plné šíři korpusu ZION. Propojuje knihu [`Maria Caminho — Kniha Cesty`](../../MariaCaminho/00-README.md), [`Nirvana 13 — Tres Marías`](../../nirvana/13-Tres-Marias.md), [`Na Cestě`](../../NaCeste/00-README.md), [`Surta Srdce`](../../SurtaSrdce/00-README.md), [`Nirvana 14 — Archa`](../../nirvana/14-Archa.md), [`ARCHA-NOEMOVA.md`](../../../../docs/3.3/ARCHA-NOEMOVA.md) a závěrečné obrazy [`Lumi/11`](../../Lumi/11-Sto-Let-Lucerny.md) a [`Miriam/11–12`](../../Miriam/12-Reka-a-Dite-s-Lucernou.md).
 
 ---
 
@@ -1471,13 +1471,13 @@ A nad kormidelním můstkem Archy je vyryta věta, která vysvětluje, proč tes
 ### Z Písma, tradice a korpusu ZION
 
 - **Gn 6,14–22; Mt 12,40** — Noemova archa (*gófer* a *kofer*, po dvou ze všeho živého) a Jonášova veliká ryba proměněná v pokojnou navigaci po boku velryb (keporkaků).
-- **Kanonická vazba v ZIONu:** Kapitola spojuje čtrnáctou epizodu Nirvany ([`nirvana/14-Archa.md`](../../nirvana/14-Archa.md)), kořenový koncepční dokument [`ARCHA-NOEMOVA.md`](../../../../ARCHA-NOEMOVA.md) a čtyři inženýrské studie v [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) (Studie A: záchranná/svatyňová kapacita ~340 osob; Studie B: kolonie-archa ≤100 lidí s absolutní soběstačností a velrybí navigací; Studie C: hmotnostní a energetická bilance; Studie D: FMEA a kalorický runway) se jménem celého vydání [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../../../../NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md).
+- **Kanonická vazba v ZIONu:** Kapitola spojuje čtrnáctou epizodu Nirvany ([`nirvana/14-Archa.md`](../../nirvana/14-Archa.md)), kořenový koncepční dokument [`ARCHA-NOEMOVA.md`](../../../../docs/3.3/ARCHA-NOEMOVA.md) a čtyři inženýrské studie v [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) (Studie A: záchranná/svatyňová kapacita ~340 osob; Studie B: kolonie-archa ≤100 lidí s absolutní soběstačností a velrybí navigací; Studie C: hmotnostní a energetická bilance; Studie D: FMEA a kalorický runway) se jménem celého vydání [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../../../../docs/3.3/NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md).
 
 ### Kotva pravdy
 
 | Prvek v kapitole | Stav | Kotva a ověření |
 |---|---|---|
-| Čtvrté plavidlo *Archa — Nirvana · Království srdce* (studie A–D: ≤100 kolonistů, ~85 m, plachty 2500–4000 m², PV ~200 kWp) | **VIZE / STUDIE (žádný kýl není položen)** | [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md); [`ARCHA-NOEMOVA.md`](../../../../ARCHA-NOEMOVA.md); [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) |
+| Čtvrté plavidlo *Archa — Nirvana · Království srdce* (studie A–D: ≤100 kolonistů, ~85 m, plachty 2500–4000 m², PV ~200 kWp) | **VIZE / STUDIE (žádný kýl není položen)** | [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md); [`ARCHA-NOEMOVA.md`](../../../../docs/3.3/ARCHA-NOEMOVA.md); [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) |
 | Semenný archiv −18 °C (30–60 tis. akcesí), *Knowledge Ark*, zdvojená matice dovedností („po dvou“), velrybí navigace | **STUDIE (pracovní parametry k ověření námořními architekty)** | [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) Studie B a C |
 | Program `archa-nirvana` v L5 API registru | **NEREGISTROVÁNO (návrh `vision`)** | [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) §Kotva pravdy |
 | Malý princ ve čtvrtém rouše barvy moře (*kofer*) a nápis *„Postav si loď…“* | **MÝTUS / PŘÍBĚH** | [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) |

@@ -11,7 +11,7 @@
 > **Status:** MÝTUS / DRAFT — navrženo ke kanonizaci třídou E podle [`MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) (kulturní / veřejná komunikace). Registry: návrh `nabukano`, stav `vision`, **0 ZION**.
 > **Vytvořeno:** 2026-11-01 pro verzi **3.3 „Nirvana"**.
 > **Vrstva:** **L6** — první *pohyblivý uzel nebe*. Protějšek archy, která je pohyblivým uzlem L5 na vodě ([Epizoda 14](../nirvana/14-Archa.md)).
-> **Místo v kompasu:** *Nad* — mezi stanicí Issobella ([Kniha Nebe](../Issobella/00-README.md)) a Matrixem na Měsíci ([MATRIX.md](../../../MATRIX.md)). Ne nahoře bez lidí: nahoru se jede výtahem.
+> **Místo v kompasu:** *Nad* — mezi stanicí Issobella ([Kniha Nebe](../Issobella/00-README.md)) a Matrixem na Měsíci ([MATRIX.md](../../../docs/3.3/MATRIX.md)). Ne nahoře bez lidí: nahoru se jede výtahem.
 
 ---
 
@@ -49,7 +49,7 @@ Kniha se čte jako pokračování, ne jako dodatek: **Království srdce** skon�
 - **[Lumi — Cesta domů](../Lumi/00-README.md)** — osa. *„Jedno jméno drží dole zahradu a nahoře nebe"* (kap. 08–09). Flotila je loď té osy.
 - **[Království srdce](../KralovstviSrdce/00-README.md)** — jméno vyryté na kýlu každé lodi, co nese lidi domů (kap. 09).
 - **[Nirvana · Tres Marías](../nirvana/13-Tres-Marias.md)** a **[Archa](../nirvana/14-Archa.md)** — co už pluje po vodě; tato kniha je zvedá o patro výš.
-- **[MATRIX.md](../../../MATRIX.md)** — „jak nahoře, tak dole": dvanáct pozemských uzlů drží povrch, Matrix jejich obraz nad ním. Flotila je třetí patro téhož pravidla.
+- **[MATRIX.md](../../../docs/3.3/MATRIX.md)** — „jak nahoře, tak dole": dvanáct pozemských uzlů drží povrch, Matrix jejich obraz nad ním. Flotila je třetí patro téhož pravidla.
 
 ## Co tato kniha není
 

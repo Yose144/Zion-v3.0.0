@@ -425,10 +425,10 @@ cargo run --release -p zion-core --bin zion-node
 - [ZION Codex — Bodhisattva Vow](../ZION_CODEX_BODHISATTVA.md) — Foundational vow: 4 Great Vows, 8 Bodhisattvas, 8 Guardian pledges, 11 Sefirot validator vows
 - [evoluZion V2](./evoluZionV2.md) — PoW → Proof-of-Care evolution (10-year hybrid roadmap)
 - [Genesis Block](../genesis.md) — Genesis block, premine allocations, creator signature
-- [Architecture](../../V3/docs) — L1/L2 architecture docs
-- [Mainnet Constants](../../V3/docs/MAINNET_CONSTANTS.md) — Canonical chain parameters
-- [CLI Reference](../../V3/docs/CLI_REFERENCE.md) — Full CLI command reference
-- [ZION Oasis](../../V3/L4/oasis/README.md) — L4 consciousness mining game (architecture, quests, Golden Egg)
+- [Architecture](../../archive/V3/docs) — L1/L2 architecture docs
+- [Mainnet Constants](../../archive/V3/docs/MAINNET_CONSTANTS.md) — Canonical chain parameters
+- [CLI Reference](../../archive/V3/docs/CLI_REFERENCE.md) — Full CLI command reference
+- [ZION Oasis](../../archive/V3/L4/oasis/README.md) — L4 consciousness mining game (architecture, quests, Golden Egg)
 
 ### Legal
 - [Legal Disclaimer](../LEGAL_DISCLAIMER.md) — No investment advice, no warranty, risks

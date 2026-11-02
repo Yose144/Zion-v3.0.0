@@ -148,8 +148,8 @@ Příběh smí být krásný, ale fakta o síti musí být přesná. **Příběh
 | [`ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`](./ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md) | Hloubkový onboarding (technický + narativní) |
 | [`SulZeme/00-README.md`](./SulZeme/00-README.md) | Kniha Sůl této země — 12 zastavení |
 | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](./ZION_Technical_Whitepaper_v3.1_CZ.md) | Technická reference (konsensus, emise, architektura) |
-| [`../../V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3.2.md) | Technický plán cesty k Mainnet Stable |
-| [`../../StatusV3.md`](../../../docs/3.2/StatusV3.md) | Živý stav sítě a topologie |
+| [`../../V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md) | Technický plán cesty k Mainnet Stable |
+| [`../../StatusV3.md`](../../docs/3.2/StatusV3.md) | Živý stav sítě a topologie |
 
 ---
 

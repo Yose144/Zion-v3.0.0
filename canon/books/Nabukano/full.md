@@ -11,7 +11,7 @@
 > **Status:** MÝTUS / DRAFT — navrženo ke kanonizaci třídou E podle [`MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) (kulturní / veřejná komunikace). Registry: návrh `nabukano`, stav `vision`, **0 ZION**.
 > **Vytvořeno:** 2026-11-01 pro verzi **3.3 „Nirvana"**.
 > **Vrstva:** **L6** — první *pohyblivý uzel nebe*. Protějšek archy, která je pohyblivým uzlem L5 na vodě ([Epizoda 14](../nirvana/14-Archa.md)).
-> **Místo v kompasu:** *Nad* — mezi stanicí Issobella ([Kniha Nebe](../Issobella/00-README.md)) a Matrixem na Měsíci ([MATRIX.md](../../../MATRIX.md)). Ne nahoře bez lidí: nahoru se jede výtahem.
+> **Místo v kompasu:** *Nad* — mezi stanicí Issobella ([Kniha Nebe](../Issobella/00-README.md)) a Matrixem na Měsíci ([MATRIX.md](../../../docs/3.3/MATRIX.md)). Ne nahoře bez lidí: nahoru se jede výtahem.
 
 ---
 
@@ -49,7 +49,7 @@ Kniha se čte jako pokračování, ne jako dodatek: **Království srdce** skon�
 - **[Lumi — Cesta domů](../Lumi/00-README.md)** — osa. *„Jedno jméno drží dole zahradu a nahoře nebe"* (kap. 08–09). Flotila je loď té osy.
 - **[Království srdce](../KralovstviSrdce/00-README.md)** — jméno vyryté na kýlu každé lodi, co nese lidi domů (kap. 09).
 - **[Nirvana · Tres Marías](../nirvana/13-Tres-Marias.md)** a **[Archa](../nirvana/14-Archa.md)** — co už pluje po vodě; tato kniha je zvedá o patro výš.
-- **[MATRIX.md](../../../MATRIX.md)** — „jak nahoře, tak dole": dvanáct pozemských uzlů drží povrch, Matrix jejich obraz nad ním. Flotila je třetí patro téhož pravidla.
+- **[MATRIX.md](../../../docs/3.3/MATRIX.md)** — „jak nahoře, tak dole": dvanáct pozemských uzlů drží povrch, Matrix jejich obraz nad ním. Flotila je třetí patro téhož pravidla.
 
 ## Co tato kniha není
 
@@ -329,7 +329,7 @@ A druhý důsledek: dok mění smysl celé flotily. Není to výprava, která n�
 
 - **Mt 8,20 / Lk 9,58** — *„Lišky mají doupata a ptáci hnízda, ale Syn člověka nemá kde hlavu složit."* Dok je odpověď na ten verš, ne jeho opakování: místo, kde je hlava složena, aniž by se z toho stala usedlost.
 - **Žd 4,9–11** — *„Božímu lidu zbývá odpočinutí"*; odpočinek jako cíl cesty, ne jako její přerušení.
-- **Korpus** — archa je *„přístav, který se pohybuje"* ([Nirvana · Epizoda 14](../nirvana/14-Archa.md)); na arše je semenný archiv, lékařský stůl a plný uzel ([ARCHA-NOEMOVA.md](../../../ARCHA-NOEMOVA.md)).
+- **Korpus** — archa je *„přístav, který se pohybuje"* ([Nirvana · Epizoda 14](../nirvana/14-Archa.md)); na arše je semenný archiv, lékařský stůl a plný uzel ([ARCHA-NOEMOVA.md](../../../docs/3.3/ARCHA-NOEMOVA.md)).
 - **Korpus** — navigátor **Korma** a pravidlo *„tady se neběhá"*; kajuty, společné jídlo, *„čas bez slavení se rozpustí jako sůl ve vodě"* ([Lumi, kap. 09](../Lumi/09-Strom-nad-Zemi.md)); posádka jako společenství, ne jako osádka ([Issobella, kap. 04](../Issobella/04-Posadka.md)).
 - **Historie** — dokování na oběžné dráze (Saljut, Mir, ISS) není romantika: je to přenos paliva, orientace, vzduchu a lidí v jednom gestu. Flotila si z toho bere jediné pravidlo: **kdo má dok, má i údržbu.**
 
@@ -414,7 +414,7 @@ A poslední věc, kterou tahle kapitola dluží čtenáři: **flotila není nov�
 
 - **Gn 28,12** — žebřík mezi zemí a nebem jako místo setkání, ne jako bod na mapě.
 - **Sk 17,28** — *„v něm žijeme, hýbeme se a jsme"*; uzel, který se hýbe, není v korpusu protimluv — je to starý obraz vztahu, ne majetku.
-- **Korpus** — *„osmý bod sítě, který není bod, ale linie"* ([Nirvana · Epizoda 13](../nirvana/13-Tres-Marias.md)); *„jak nahoře, tak dole"*, dvanáct pozemských uzlů a jejich obraz na Měsíci ([MATRIX.md](../../../MATRIX.md)); Lumi jako jediná **svislá** čára kompasu ([Lumi 00](../Lumi/00-README.md)).
+- **Korpus** — *„osmý bod sítě, který není bod, ale linie"* ([Nirvana · Epizoda 13](../nirvana/13-Tres-Marias.md)); *„jak nahoře, tak dole"*, dvanáct pozemských uzlů a jejich obraz na Měsíci ([MATRIX.md](../../../docs/3.3/MATRIX.md)); Lumi jako jediná **svislá** čára kompasu ([Lumi 00](../Lumi/00-README.md)).
 - **Korpus** — stanice Issobella je HORIZONT s roadmapou 2030–2045+; žádný modul neexistuje ([Issobella 10](../Issobella/10-Kotva-Pravdy-a-Hranice.md)).
 
 ## Kotva pravdy
