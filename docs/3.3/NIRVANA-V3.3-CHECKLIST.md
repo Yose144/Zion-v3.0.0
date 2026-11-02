@@ -141,7 +141,7 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [x] 🤖 Inference: GPU primár (stanice) + CPU fallback (EDGE2), konstituční prompt, RAG 39 docs / 138 chunků
 - [x] 🤖 Maestro první read-only E2E úloha (intent→plan→health_poller→report) + audit log — M2.1 (5.B2) ✅ 28. 10.: `POST /v2/orchestrate "check system health"` → SystemHealth plan, 6/6 steps Success; **fix `ProtectSystem=strict` bez `ReadWritePaths` tiše zabíjel audit** → `ReadWritePaths=/opt/zion/data/l3-audit` v unit (repo+EDGE2, `.bak-20261028-rwp`), audit jsonl zapisuje
 - [ ] 🤖 Citace + retrieval confidence gate + faktický eval set (5.B1)
-- [ ] 🤖 NCL: registrace 1 workeru + 1 pilotní job typ → V33-5
+- [x] 🤖 NCL: registrace 1 workeru + 1 pilotní job typ → V33-5 — ✅ 2. 11. 2026: 2 nové integrační testy (full lifecycle LlmInference + failure lifecycle CodeAnalysis), 44/44 testů pass. Worker registration, job submission, scheduling, completion, failure, reputation — vše ověřeno.
 - [ ] 🤖 Miner↔NCL spike: `ZION_NCL_*` opt-in pull-job loop v `L1/miner` (off default, reward jen regtest)
 - [ ] 🤖 Dharma: keyword filter → policy manifest (povolené typy akcí + human-approval gate) — kryptografické mantinely = HORIZONT
 - [ ] 🤖 Amitabha draft-only UI (plán s náklady/příjemci/riziky/zrušením, bez exekuce) — až po M2

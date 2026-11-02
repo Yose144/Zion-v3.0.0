@@ -571,4 +571,167 @@ mod tests {
         let (status, _) = result.unwrap_err();
         assert_eq!(status, StatusCode::NOT_FOUND);
     }
+
+    /// End-to-end lifecycle: register worker → submit job → schedule → complete → verify reputation.
+    /// This is the "≥1 job type" verification for V33-5 (NCL ≥1 job typ).
+    #[tokio::test]
+    async fn test_ncl_full_lifecycle_llm_inference() {
+        let state = make_state();
+
+        // 1. Register a worker with OnnxRuntime backend
+        let reg = register_worker(
+            State(state.clone()),
+            Json(RegisterWorkerRequest {
+                address: "zion1nclworker".into(),
+                backends: vec![ComputeBackend::OnnxRuntime],
+                max_concurrent: 2,
+                consciousness_level: 3,
+            }),
+        )
+        .await
+        .unwrap();
+        assert!(reg.0.ok, "worker registration failed");
+
+        // 2. Submit an LlmInference job
+        let submit = submit_job(
+            State(state.clone()),
+            Json(SubmitJobRequest {
+                submitter: "zion1submitter".into(),
+                model_id: "gpt-mini".into(),
+                backend: ComputeBackend::OnnxRuntime,
+                input_hash: "abc123".into(),
+                reward_flowers: 50_000,
+                max_duration_secs: 60,
+                priority: 7,
+                min_consciousness: 0,
+                task_type: NclTaskType::LlmInference,
+            }),
+        )
+        .await
+        .unwrap();
+        let job_id = submit.0.job_id;
+        assert_eq!(submit.0.status, NclJobStatus::Queued);
+
+        // 3. Schedule — should assign the job to the worker
+        let sched = schedule(State(state.clone())).await.unwrap();
+        assert_eq!(sched.0["assigned"], 1);
+        assert_eq!(sched.0["queued_remaining"], 0);
+
+        // 4. Verify job is now Assigned/Running
+        let status = get_job(State(state.clone()), Path(job_id)).await.unwrap();
+        assert_eq!(status.0.job_id, job_id);
+        assert!(
+            status.0.status == NclJobStatus::Assigned || status.0.status == NclJobStatus::Running,
+            "expected Assigned or Running, got {:?}",
+            status.0.status
+        );
+
+        // 5. Complete the job
+        let worker_id = {
+            let sched_lock = state.scheduler.lock().unwrap();
+            sched_lock
+                .get_job(&job_id)
+                .and_then(|j| j.worker_id.clone())
+                .unwrap_or_default()
+        };
+        assert!(!worker_id.is_empty(), "worker_id should be set after scheduling");
+
+        let complete = complete_job(
+            State(state.clone()),
+            Path(job_id),
+            Json(CompleteJobRequest {
+                worker_id: worker_id.clone(),
+                output_hash: "output_xyz".into(),
+                duration_ms: 150.0,
+            }),
+        )
+        .await
+        .unwrap();
+        assert!(complete.0.ok);
+
+        // 6. Verify job is Completed
+        let final_status = get_job(State(state.clone()), Path(job_id)).await.unwrap();
+        assert_eq!(final_status.0.status, NclJobStatus::Completed);
+        assert_eq!(final_status.0.output_hash, Some("output_xyz".into()));
+
+        // 7. Verify reputation was updated
+        let board = list_workers(State(state)).await.unwrap();
+        let arr = board.0["workers"].as_array().unwrap();
+        assert_eq!(arr.len(), 1);
+        assert_eq!(arr[0]["jobs_completed"], 1);
+    }
+
+    /// Failure lifecycle: submit → schedule → fail → verify reputation failure recorded.
+    #[tokio::test]
+    async fn test_ncl_job_failure_lifecycle() {
+        let state = make_state();
+
+        // Register worker
+        let _ = register_worker(
+            State(state.clone()),
+            Json(RegisterWorkerRequest {
+                address: "zion1failworker".into(),
+                backends: vec![ComputeBackend::Wasm],
+                max_concurrent: 1,
+                consciousness_level: 0,
+            }),
+        )
+        .await
+        .unwrap();
+
+        // Submit a Wasm job
+        let submit = submit_job(
+            State(state.clone()),
+            Json(SubmitJobRequest {
+                submitter: "zion1user".into(),
+                model_id: "wasm-task".into(),
+                backend: ComputeBackend::Wasm,
+                input_hash: "input_fail".into(),
+                reward_flowers: 5_000,
+                max_duration_secs: 30,
+                priority: 3,
+                min_consciousness: 0,
+                task_type: NclTaskType::CodeAnalysis,
+            }),
+        )
+        .await
+        .unwrap();
+        let job_id = submit.0.job_id;
+
+        // Schedule
+        let sched = schedule(State(state.clone())).await.unwrap();
+        assert_eq!(sched.0["assigned"], 1);
+
+        // Get worker_id
+        let worker_id = {
+            let sched_lock = state.scheduler.lock().unwrap();
+            sched_lock
+                .get_job(&job_id)
+                .and_then(|j| j.worker_id.clone())
+                .unwrap_or_default()
+        };
+
+        // Fail the job
+        let fail = fail_job(
+            State(state.clone()),
+            Path(job_id),
+            Json(FailJobRequest {
+                worker_id: worker_id.clone(),
+                reason: "timeout exceeded".into(),
+            }),
+        )
+        .await
+        .unwrap();
+        assert!(fail.0.ok);
+
+        // Verify job is Failed
+        let final_status = get_job(State(state.clone()), Path(job_id)).await.unwrap();
+        assert_eq!(final_status.0.status, NclJobStatus::Failed);
+
+        // Verify reputation failure was recorded
+        let board = list_workers(State(state)).await.unwrap();
+        let arr = board.0["workers"].as_array().unwrap();
+        assert_eq!(arr.len(), 1);
+        assert_eq!(arr[0]["jobs_failed"], 1);
+    }
 }

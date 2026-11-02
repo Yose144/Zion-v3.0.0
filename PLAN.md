@@ -54,7 +54,7 @@ G9 externí audit (posunut, Stable bez data — neblokuje RC kvalitu)
 3. **Release artefakty (9.B4)** — Linux default ✅ + gpu-opencl ✅ (binárky buildnuty, `--version` ověřen). aarch64-apple-darwin + x86_64-apple-darwin = potřebuje Mac. x86_64-pc-windows-gnu = potřebuje mingw-w64 (není nainstalován, sudo nedostupné). Builder `scripts/ops/build-release-artifacts.sh` hotový.
 
 ### Priorita 2 (V33 gates)
-4. **NCL 1 worker + 1 job typ** — V33-5 gate, Maestro read-only už žije
+4. ✅ **NCL 1 worker + 1 job typ** — V33-5 gate, 2 integrační testy, 44/44 pass
 5. **DeSci papers repo + L1 hash anchor** (6.B4) — Issobella DeSci, kód existuje
 6. **OASIS a11y/privacy plný scan** (V33-10) — bezpečnostní gate
 7. **ZionDex on-chain settlement** — QuoterV2/SwapRouter + solvency + funded E2E
@@ -138,7 +138,7 @@ Viz `docs/3.2/DEFERRED_3.2.md`:
 1. 🔀 HA stratum fencing analýza (blokuje aktivaci)
 2. 🤖 DR drill plán → provedení (potřebuje čistý host)
 3. 🤖 Release artefakty dokončení (OpenCL/GPU host + rebuild z RC commitu)
-4. 🤖 NCL 1 worker + 1 job typ (V33-5 gate)
+4. ✅ 🤖 NCL 1 worker + 1 job typ (V33-5 gate) — 2 integrační testy (LlmInference lifecycle + CodeAnalysis failure), 44/44 pass
 5. 🤖 DeSci papers repo + L1 hash anchor (6.B4)
 6. 🤖 OASIS a11y/privacy plný scan (V33-10)
 
