@@ -865,3 +865,54 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   mazání stale světů, plus motion tokeny.
 - **Debug hook:** `window.__nirvanaLink` (vedle `__nirvanaCamera`) — používá
   se v headless testech k `flyTo` bez klikání do 3D.
+
+## PRVNÍ SVĚT — školy kouzel a ochrana struktur (2026-11-02)
+
+- **Školy kouzel se liší mechanikou, ne jen číslem.** `SCHOOL_TRAITS`
+  v `core/moba/spells.ts` je jediná tabulka: ward kryje štítem spojence, oheň
+  pálí 3 s (DoT), šíp prolétne skrz, čepel a stín dorážejí zraněné, kosmické
+  vrací manu, mysl strhne štít, příroda a píseň léčí postupně, bouře řetězí,
+  bestie skáče do šířky. Kdo přidá další chování, přidá **řádek sem** a
+  zpracování do `applyOnHit` v `sim.ts` — ne druhou větev v každém kouzle.
+- **Hoření a regenerace jsou buffy** (`BuffType` `'burn'` / `'regen'`), ne
+  nový stav hrdiny. Sim je počítá každý snímek; `source` nese id sesilatele,
+  aby se zabití připsalo správnému hrdinovi. Když se buffy začnou zobrazovat
+  v HUD, `BuffType` je zároveň seznam, který je potřeba vykreslit.
+- **Ochrana struktur je jedna funkce** (`isStructureProtected` v `core/moba/map.ts`)
+  a používají ji **sim, 3D scéna i minimapa**. Pravidlo: vnější věž kryje
+  vnitřní, Nexa je nedobytná, dokud nepadne **celá jedna lajna** (vnější +
+  vnitřní věž). Kdyby pravidlo existovalo dvakrát, hráč by mlátil do věže,
+  která je podle klienta zničitelná a podle serveru ne.
+- **Nedobytné struktury svítí šedě** (`#64748b`), a to v `MobaStage`
+  (krystal + emissive) i na minimapě. Bez toho hráč nepozná, proč se nic neděje.
+- **`damageNexus` v debug háčku obchází pravidla** (sahá přímo na HP), takže
+  se hodí na test konce zápasu, ale **nedokazuje** ochranu. Ochranu hlídá
+  `test/moba-sim.mjs`.
+
+### Testy, které byly rozbité (a jak)
+
+- **`test/moba-sim.mjs` padal ještě před touhle změnou:** hrdina v testu věže
+  umřel a testy 7–8 s ním pak hýbaly jako s živým. Řešení: `revive(hero)`
+  před každým krokem, který počítá s živým hrdinou.
+- **`nirvana-net/test/moba.mjs` byl napsaný na 3v3**, ale server je od
+  commitu `f9d971f94` **5v5** (`MOBA_ROOM_SIZE = 10`). Test teď čte
+  `room.maxPlayers` a ověřuje „sudá a ≥ 2" + vyrovnané strany — přežije
+  další změnu velikosti týmu.
+- **E2E `e2e/first-world.mjs` měl tři chyby, které nesouvisely s pravidly:**
+  (a) kouzlo se sesílalo na soupeře 60 m daleko (Q má dostřel 12), (b)
+  `damageNexus(3400)` nechá Nexe 600 HP z 4000, (c) pevné `sleep` místo
+  čekání na podmínku — simulace běží po krocích, takže na swiftshaderu se
+  posune pomaleji než skutečné hodiny a test byl zelený jen na Macu.
+  Řešení: teleport i seslání v **jednom** `evaluate` (bot se mezi dotazy
+  pohne) a polling z Node (`waitFor`), ne `page.waitForFunction`.
+
+### Prohlížeč v E2E
+
+- **`e2e/_browser.mjs`** řeší Playwright/Puppeteer i cestu k Chromiu na
+  jednom místě (dřív měl každý skript hardcoded `/Users/yeshuae/…`).
+  Pořadí: `PLAYWRIGHT_MODULE` → `playwright` v projektu → puppeteer cache →
+  systémový Chrome/Chromium (`CHROME_PATH` má přednost).
+- **Puppeteer fallback** srovnává dva rozdíly: `browser.newPage({viewport})`
+  a `waitUntil: 'networkidle'` → `'networkidle0'`. Víc E2E nepotřebuje.
+- **Nikdy nepiš `page.waitForFunction(fn, args, opts)`** — Playwright a
+  Puppeteer mají jiné pořadí argumentů. Polluj z Node.

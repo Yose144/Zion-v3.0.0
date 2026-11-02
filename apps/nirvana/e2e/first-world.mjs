@@ -7,16 +7,7 @@
 // Spustit: node apps/nirvana/e2e/first-world.mjs
 // Předpoklad: `next start -p 3010` (nebo BASE=…).
 
-let chromium;
-try {
-  ({ chromium } = await import('playwright'));
-} catch {
-  const { createRequire } = await import('node:module');
-  const require = createRequire(import.meta.url);
-  const globalPath =
-    process.env.PLAYWRIGHT_MODULE ?? '/Users/yeshuae/.nvm/versions/node/v20.19.6/lib/node_modules/playwright';
-  ({ chromium } = require(globalPath));
-}
+import { launch } from './_browser.mjs';
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:3010';
 const OUT = process.env.OUT ?? '.artifacts/render/first-world-20261102';
@@ -28,17 +19,9 @@ const check = (name, ok, detail = '') => {
 };
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Chromium bereme z puppeteer cache — playwright si tu verzi nestáhl (stejná
-// past jako u mercury-duel; EXE jde přepsat přes CHROME_PATH).
-const EXE =
-  process.env.CHROME_PATH ??
-  '/Users/yeshuae/.cache/puppeteer/chrome-headless-shell/mac_arm-156.0.8078.47/chrome-headless-shell-mac-arm64/chrome-headless-shell';
-
-const browser = await chromium.launch({
-  executablePath: EXE,
-  headless: true,
-  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=metal', '--ignore-gpu-blocklist', '--hide-scrollbars'],
-});
+// Prohlížeč řeší `_browser.mjs` (CHROME_PATH → puppeteer cache → systémový).
+// Dřív tu byla hardcoded cesta z macOS, takže test jinde nesel.
+const browser = await launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
 page.on('pageerror', (error) => errors.push(error.message));
@@ -66,34 +49,58 @@ try {
   check('start: čtyři kouzla', start?.spells?.length === 4 && start.spells[3].slot === 'R');
   await page.screenshot({ path: `${OUT}/start.png` });
 
-  // vlna minionů
-  await sleep(8000);
-  const withWave = await debug();
-  check('vlna: minioni přišli', (withWave?.minions ?? 0) > 0, String(withWave?.minions));
+  // Čekej na **podmínku**, ne na pevný čas: simulace běží po krocích a na
+  // pomalém GPU (swiftshader) se posune pomaleji než skutečné hodiny.
+  // Pevné `sleep` dělalo test zelený na Macu a červený jinde.
+  // Polling z Node (ne `page.waitForFunction(fn, args, opts)`), protože
+  // Playwright a Puppeteer mají jiné pořadí argumentů — tohle je přenosné.
+  const waitFor = async (predicate, timeout = 45_000) => {
+    const deadline = Date.now() + timeout;
+    while (Date.now() < deadline) {
+      if (await predicate()) return true;
+      await sleep(250);
+    }
+    return false;
+  };
 
-  // kouzlo na soupeře
-  const foe = withWave.heroes.find((hero) => hero.team === 'red');
-  const before = foe.hp;
-  await page.evaluate(({ x, z }) => window.__mobaDebug().cast('Q', x, z), { x: foe.x, z: foe.z });
-  await sleep(600);
+  // vlna minionů
+  const waveArrived = await waitFor(async () => ((await debug())?.minions ?? 0) > 0);
+  const withWave = await debug();
+  check('vlna: minioni přišli', waveArrived, String(withWave?.minions));
+
+  // kouzlo na soupeře — nejdřív se k němu musíme dostat na dostřel (Q = 12 m)
+  // Teleport i seslání v **jednom** evaluate: soupeř je bot a mezi dvěma
+  // dotazy na stránku se pohne, takže bychom mířili tam, kde už není.
+  const before = withWave.heroes.find((hero) => hero.team === 'red').hp;
+  await page.evaluate(() => {
+    const debugNow = window.__mobaDebug();
+    const foe = debugNow.heroes.find((hero) => hero.team === 'red');
+    if (!foe) return;
+    window.__mobaDebug().teleport(foe.x - 6, foe.z);
+    window.__mobaDebug().cast('Q', foe.x, foe.z);
+  });
+  const foeHurt = await waitFor(async () => {
+    const now = (await debug())?.heroes?.find((hero) => hero.team === 'red');
+    return (now?.hp ?? before) < before;
+  }, 15_000);
   const afterCast = await debug();
   const foeAfter = afterCast.heroes.find((hero) => hero.team === 'red');
-  check('kouzlo: soupeř ztratil HP', foeAfter.hp < before, `${before} → ${foeAfter.hp}`);
+  check('kouzlo: soupeř ztratil HP', foeHurt, `${before} → ${foeAfter.hp}`);
   await page.screenshot({ path: `${OUT}/fight.png` });
 
   // uzly: teleport na uzel a čekat na převzetí (Kailash -12/-26)
   await page.evaluate(() => {
     window.__mobaDebug().teleport(-12, -26);
   });
-  await sleep(3600);
-  const captured = await debug();
-  check('uzel L5: převzat', captured.nodes.some((node) => node.owner === 'blue'), JSON.stringify(captured.nodes));
+  const captured = await waitFor(async () =>
+    ((await debug())?.nodes ?? []).some((node) => node.owner === 'blue'),
+  );
+  check('uzel L5: převzat', captured, JSON.stringify((await debug()).nodes));
 
-  // konec zápasu
-  await page.evaluate(() => window.__mobaDebug().damageNexus(3400));
-  await sleep(2200);
-  const ended = await debug();
-  check('konec: Nexa padla', ended.ended === 'blue', String(ended.ended));
+  // konec zápasu — Nexa má 4000 HP, takže ho sundej celou
+  await page.evaluate(() => window.__mobaDebug().damageNexus(4000));
+  const ended = await waitFor(async () => (await debug())?.ended === 'blue', 20_000);
+  check('konec: Nexa padla', ended, String((await debug()).ended));
   const resultOverlay = await page.$('.moba-result');
   check('konec: overlayer s výsledkem', Boolean(resultOverlay));
   await page.screenshot({ path: `${OUT}/victory.png` });
