@@ -4,7 +4,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { TextLabel } from './Label';
 import * as THREE from 'three';
-import { RING_R, RING_R2, ringPosition } from './positions';
+import { RING_R, RING_R2, ringPosition, ringSpinAngle } from './positions';
 import { IssobellaStation } from './IssobellaStation';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
@@ -50,8 +50,8 @@ export function IssobellaRing({
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }, [stationData]);
 
-  useFrame(({ clock }, delta) => {
-    if (ring.current) ring.current.rotation.y += delta * 0.03;
+  useFrame(({ clock }) => {
+    if (ring.current) ring.current.rotation.y = ringSpinAngle(clock.elapsedTime);
     if (glow.current) glow.current.opacity = 0.16 + Math.sin(clock.getElapsedTime() * 1.1) * 0.05;
   });
 

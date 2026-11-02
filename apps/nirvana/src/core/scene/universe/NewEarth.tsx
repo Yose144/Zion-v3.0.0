@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useFrame } from '@react-three/fiber';
 import { TextLabel } from './Label';
 import * as THREE from 'three';
-import { PLANET_R, latLonToVec3, moonPosition } from './positions';
+import { PLANET_R, GLOBE_SPIN_SPEED, latLonToVec3, moonPosition } from './positions';
 import { EARTH_MISSIONS, LUNAR_MISSIONS, MISSION_ORIGIN, MISSION_STATUS_COLOR } from '@/lib/freeworld-sites';
 
 /** Procedurální mapa — instant fallback dokud se reálné textury nenačtou. */
@@ -193,7 +193,7 @@ function Moon({ onOpen }: { onOpen: () => void }) {
  *  Instancované světelné sloupky + pulzující kruhy na povrchu +
  *  jmenovky; hover zvýrazní bod (kurzor odkazu, halo + tooltip ↗),
  *  klik otevře 3D prezentaci nebo stránku komunity. */
-function MissionSites() {
+function MissionSites({ onSelectMission }: { onSelectMission?: (key: string) => void } = {}) {
   const pillars = useRef<THREE.InstancedMesh>(null);
   const tips = useRef<THREE.InstancedMesh>(null);
   const hits = useRef<THREE.InstancedMesh>(null);
@@ -211,6 +211,7 @@ function MissionSites() {
       EARTH_MISSIONS.map((m) => {
         const n = new THREE.Vector3(...latLonToVec3(m.lat, m.lon, 1));
         return {
+          key: m.key,
           name: m.name,
           url: m.present ?? MISSION_ORIGIN + m.path,
           n,
@@ -310,7 +311,10 @@ function MissionSites() {
     }
   });
 
-  const open = (i: number) => window.open(data[i].url, '_blank', 'noopener');
+  const open = (i: number) => {
+    if (onSelectMission) onSelectMission(data[i].key);
+    else window.open(data[i].url, '_blank', 'noopener');
+  };
   const hoverRef = useRef<number | null>(null);
   const setHover = (i: number | null) => {
     if (hoverRef.current === i) return;
@@ -409,7 +413,7 @@ function MissionSites() {
           ]}
           color={`#${d.color.getHexString()}`}
           height={0.19}
-          onClick={() => window.open(d.url, '_blank', 'noopener')}
+          onClick={() => open(data.indexOf(d))}
         />
       ))}
     </>
@@ -462,13 +466,20 @@ function Atmosphere({ radius }: { radius: number }) {
   );
 }
 
-export function NewEarth({ onOpenMatrix }: { onOpenMatrix?: () => void } = {}) {
+export function NewEarth({
+  onOpenMatrix,
+  onSelectMission,
+}: {
+  onOpenMatrix?: () => void;
+  onSelectMission?: (key: string) => void;
+} = {}) {
   const spin = useRef<THREE.Group>(null);
   const fallback = useMemo(() => makeFallbackTexture(), []);
   const maps = useEarthMaps(fallback);
 
-  useFrame((_, delta) => {
-    if (spin.current) spin.current.rotation.y += delta * 0.02;
+  useFrame(({ clock }) => {
+    // deterministická rotace: fokus na misii počítá stejný úhel
+    if (spin.current) spin.current.rotation.y = clock.elapsedTime * GLOBE_SPIN_SPEED;
   });
 
   return (
@@ -485,7 +496,7 @@ export function NewEarth({ onOpenMatrix }: { onOpenMatrix?: () => void } = {}) {
             metalness={0.02}
           />
         </mesh>
-        <MissionSites />
+        <MissionSites onSelectMission={onSelectMission} />
       </group>
       {/* atmosféra — Fresnel halo, ne plný obal */}
       <Atmosphere radius={PLANET_R} />

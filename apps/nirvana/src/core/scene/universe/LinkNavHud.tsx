@@ -14,9 +14,9 @@
 
 import { useEffect, useState } from 'react';
 import { getGlobalLinkEngine } from './LinkEngine';
-import type { LinkTarget, UniverseFocus } from './LinkEngine';
+import type { LinkTarget } from './LinkEngine';
 
-export function LinkNavHud({ onFocus }: { onFocus?: (id: UniverseFocus) => void }) {
+export function LinkNavHud({ onFocus }: { onFocus?: (id: string) => void }) {
   const engine = getGlobalLinkEngine();
   const [id, setId] = useState(engine.getCurrentFocus());
   const [target, setTarget] = useState<LinkTarget | null>(engine.getTarget(id) ?? null);
@@ -46,7 +46,7 @@ export function LinkNavHud({ onFocus }: { onFocus?: (id: UniverseFocus) => void 
 
   const go = (next: string) => {
     engine.flyTo(next);
-    onFocus?.(next as UniverseFocus);
+    onFocus?.(next);
   };
 
   const neighbors = engine

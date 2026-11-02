@@ -3,7 +3,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { ORBIT_R, orbitPosition } from './positions';
+import { ORBIT_R, orbitBeltAngle, orbitPosition } from './positions';
 import { LINK_COLOR, LINK_OPACITY, LINK_RADIUS } from './links';
 import type { WorldPoint } from '@/lib/worlds';
 import { layerColor } from '@/lib/worlds';
@@ -22,8 +22,9 @@ export function OrbitalWorlds({
 }) {
   const belt = useRef<THREE.Group>(null);
 
-  useFrame((_, delta) => {
-    if (belt.current) belt.current.rotation.y += delta * 0.05;
+  useFrame(({ clock }) => {
+    // deterministická rotace: fokus na svět počítá stejný úhel
+    if (belt.current) belt.current.rotation.y = orbitBeltAngle(clock.elapsedTime);
   });
 
   const { picked, beltGeo } = useMemo(() => {

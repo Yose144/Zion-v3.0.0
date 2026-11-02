@@ -121,6 +121,44 @@ const euler = new THREE.Euler(ARK_TILT[0], ARK_TILT[1], ARK_TILT[2]);
 local.applyEuler(euler);
 ok('arkPosition(0) = Euler(orbit)', Math.abs(ax - local.x) < 1e-6 && Math.abs(ay - local.y) < 1e-6 && Math.abs(az - local.z) < 1e-6, `${ax.toFixed(3)},${ay.toFixed(3)},${az.toFixed(3)} vs ${local.x.toFixed(3)},${local.y.toFixed(3)},${local.z.toFixed(3)}`);
 
+console.log('=== cíl: L5 misie a světy jako navigační cíle ===');
+{
+  const { registerWorldTargets } = await import('../src/core/scene/universe/LinkEngine.ts');
+  const mission = engine.getTarget('mission:uluru');
+  ok('misie uluru je v registru', !!mission);
+  if (mission) {
+    const a = mission.anchor(ctx);
+    ok('anchor misie je konečný', Number.isFinite(a.x) && Number.isFinite(a.y) && Number.isFinite(a.z));
+    engine.flyTo('mission:uluru');
+    let g = 0;
+    while (engine.isTransitioning() && g++ < 1000) engine.update(ctx, 0.05);
+    ok('current = mission:uluru', engine.getCurrentFocus() === 'mission:uluru', engine.getCurrentFocus());
+    ok('kamera je u misie (< 10 j.)', camera.position.distanceTo(a) < 10, camera.position.distanceTo(a).toFixed(2));
+  }
+
+  registerWorldTargets(engine, [
+    { id: 'w-ring', name: 'Ring World', layer: 6 },
+    { id: 'w-orbit', name: 'Orbit World', layer: 4 },
+  ]);
+  const rw = engine.getTarget('world:w-ring');
+  const ow = engine.getTarget('world:w-orbit');
+  ok('prstencový svět je v registru', !!rw);
+  ok('orbitální svět je v registru', !!ow);
+  for (const t of [rw, ow]) {
+    if (!t) continue;
+    const a = t.anchor(ctx);
+    ok(`anchor ${t.id} je konečný`, Number.isFinite(a.x) && Number.isFinite(a.y) && Number.isFinite(a.z));
+  }
+  engine.flyTo('world:w-ring');
+  let g2 = 0;
+  while (engine.isTransitioning() && g2++ < 1000) engine.update(ctx, 0.05);
+  ok('current = world:w-ring', engine.getCurrentFocus() === 'world:w-ring', engine.getCurrentFocus());
+  // stale world targets get removed
+  registerWorldTargets(engine, [{ id: 'w-new', name: 'New', layer: 4 }]);
+  ok('stale world cíl zmizel', !engine.getTarget('world:w-ring'));
+  ok('nový world cíl existuje', !!engine.getTarget('world:w-new'));
+}
+
 console.log('=== cíl: motion tokeny ===');
 {
   const { MOTION, motionCss, dampFactor, damp, easeOutCubic } = await import('../src/core/design/motion.ts');

@@ -832,3 +832,36 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   ne novou milisekundu.
 - **Test:** `npx tsx apps/nirvana/test/links.mjs` (37 kontrol) ověřuje i
   `dampFactor` (60 fps ~0,14), konvergenci `damp`, `easeOutCubic` a `motionCss`.
+
+## Navigační engine — odkazy na planety, světy a L5 (2026-11-02)
+
+- **„Link“ = odkaz/navigační cíl, ne vizuální čára.** Jeden registr
+  (`LinkEngine`) drží **všechno, na co jde kliknout a přiletět**: planety,
+  světy L4/L6, L5 misie na glóbu, stanici, Měsíc, flotilu, archu, bránu, Slunce.
+  Vizuální linky jsou jiná věc (`core/design/links.ts`).
+- **`focus` je `string`, ne unie.** Cílem může být `earth`, `mars`,
+  `mission:<key>`, `world:<id>`. Kdo přidá nový typ cíle, nemusí rozšiřovat
+  typovou unii ve třech souborech — zaregistruje id v engine.
+- **Světy jsou data, ne komponenty.** `registerWorldTargets(engine, worlds)`
+  (volá `Universe` po načtení katalogu) vytvoří `world:<id>` pro prstencové
+  (L6) i oběžné (L4) světy a smaže ty, které z katalogu zmizely.
+- **L5 misie jsou statické cíle.** `mission:<key>` pro `EARTH_MISSIONS`
+  s `anchor()` na rotujícím glóbu Nové Země.
+- **Rotace musí být funkce času, ne akumulátor.** Glóbus (`0,02·t`), pás světů
+  (`0,05·t`) a prstenec Issobelly (`0,03·t`) nastavují `rotation.y = f(t)`
+  (`GLOBE_SPIN_SPEED` / `ORBIT_BELT_SPEED` / `RING_SPIN_SPEED`). Kdyby scéna
+  dál dělala `+= delta·speed`, fokus by na svět/misii míjel (stejná past jako
+  u archy a flotily).
+- **Jedno chování kliknutí:** klik na planetu, svět i L5 misii = přiletět +
+  otevřít panel ve stejném designu (`.planet-panel`). L5 už neotevírá nový
+  tab (`window.open`) — otevírá panel s CTA na interní prezentaci, teprve
+  ta vede na web.
+- **Světy se přiblíží.** Dřív klik na svět otevřel jen portál a kamera
+  zůstala na Zemi; teď `selectWorld` nastaví `focus='world:<id>'`.
+- **HUD sousedé** (`LinkNavHud`) umí skočit na propojený bod a `← Země`;
+  `onFocus` je `string`, takže projde i `world:`/`mission:`.
+- **Test:** `npx tsx apps/nirvana/test/links.mjs` (60 kontrol) ověřuje
+  registr misií a světů, `flyTo('mission:uluru')`, `flyTo('world:…')`,
+  mazání stale světů, plus motion tokeny.
+- **Debug hook:** `window.__nirvanaLink` (vedle `__nirvanaCamera`) — používá
+  se v headless testech k `flyTo` bez klikání do 3D.

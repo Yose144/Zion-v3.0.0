@@ -25,6 +25,7 @@ import { MarketPortal } from '@/portals/market/MarketPortal';
 import { PoolPortal } from '@/portals/pool/PoolPortal';
 import { WorldPortal } from '@/portals/world/WorldPortal';
 import { parseWorlds, type WorldPoint } from '@/lib/worlds';
+import { FREE_WORLD_MISSIONS, MISSION_ORIGIN, MISSION_STATUS_COLOR } from '@/lib/freeworld-sites';
 import { normalizeHiranState, hiranReviewOverride, type HiranState } from '@/core/hiran/presence';
 import type { UniverseFocus } from '@/core/scene/universe/LinkEngine';
 import { LinkNavHud } from '@/core/scene/universe/LinkNavHud';
@@ -120,9 +121,11 @@ export function Shell() {
   const [selectedWorld, setSelectedWorld] = useState<string | null>(null);
   const [hiranState, setHiranState] = useState<HiranState>(() => hiranReviewOverride() ?? 'idle');
   const [reviewState] = useState<HiranState | null>(() => hiranReviewOverride());
-  const [focus, setFocus] = useState<UniverseFocus>('earth');
+  const [focus, setFocus] = useState<string>('earth');
   /** Vybraná planeta = přiletěli jsme a nabízíme vstup do hry. ('jupiter' def používá key 'park'.) */
   const [planet, setPlanet] = useState<'mars' | 'venus' | 'mercury' | 'park' | null>(null);
+  /** Vybraná L5 misie na glóbu — stejný panel jako planeta. */
+  const [missionKey, setMissionKey] = useState<string | null>(null);
   const [fleetLeg, setFleetLeg] = useState<FleetLeg | null>(null);
   const [xrWanted, setXrWanted] = useState(false);
   const [xrSupported, setXrSupported] = useState(false);
@@ -146,7 +149,16 @@ export function Shell() {
   const selectWorld = useCallback((id: string) => {
     setSelectedWorld(id);
     setPortal('world');
-    setFocus('earth');
+    setFocus(`world:${id}`);
+    setMenuOpen(false);
+  }, []);
+
+  /** Klik na L5 misii: přiletět na bod a otevřít stejný panel jako planeta. */
+  const selectMission = useCallback((key: string) => {
+    setMissionKey(key);
+    setFocus(`mission:${key}`);
+    setPortal(null);
+    setPlanet(null);
     setMenuOpen(false);
   }, []);
 
@@ -247,6 +259,7 @@ export function Shell() {
 
   /** Klik na planetu: přiletět a otevřít panel s CTA (ne rovnou skočit do hry). */
   const selectPlanet = useCallback((id: 'mars' | 'venus' | 'jupiter' | 'mercury') => {
+    setMissionKey(null);
     setPlanet(id === 'jupiter' ? 'park' : id);
     setFocus(id);
     setPortal(null);
@@ -255,6 +268,7 @@ export function Shell() {
 
   const backToEarth = useCallback(() => {
     setPlanet(null);
+    setMissionKey(null);
     setFocus('earth');
   }, []);
 
@@ -275,6 +289,7 @@ export function Shell() {
           onOpen={openPortal}
           onSelectWorld={selectWorld}
           onSelectPlanet={selectPlanet}
+          onSelectMission={selectMission}
           xr={xrWanted}
           label={t('gate')}
           focus={focus}
@@ -437,6 +452,49 @@ export function Shell() {
           </div>
         </section>
       )}
+
+      {missionKey &&
+        (() => {
+          const m = FREE_WORLD_MISSIONS.find((x) => x.key === missionKey);
+          if (!m) return null;
+          const statusLabel =
+            m.status === 'built' ? 'stojí' : m.status === 'preparation' ? 'v přípravě' : 'vize';
+          const href = m.present ?? `${MISSION_ORIGIN}${m.path}`;
+          const inner = m.present ? (
+            <Link href={href} className="park-btn" onClick={() => setMissionKey(null)}>
+              Otevřít prezentaci
+            </Link>
+          ) : (
+            <a href={href} className="park-btn" target="_blank" rel="noopener noreferrer">
+              Otevřít stránku
+            </a>
+          );
+          return (
+            <section className="planet-panel" aria-label={m.name}>
+              <header>
+                <strong>{m.name}</strong>
+                <button
+                  type="button"
+                  className="planet-panel-close"
+                  onClick={backToEarth}
+                  aria-label="×"
+                >
+                  ×
+                </button>
+              </header>
+              <p>
+                <span style={{ color: MISSION_STATUS_COLOR[m.status] }}>{statusLabel}</span>
+                {' · L5 Free World'}
+              </p>
+              <div className="planet-panel-actions">
+                {inner}
+                <button type="button" className="arena-link" onClick={backToEarth}>
+                  ← zpět k Zemi
+                </button>
+              </div>
+            </section>
+          );
+        })()}
 
       {worldsFailed && <p className="notice">{t('worldsEmpty')}</p>}
       {portal === 'world' && (

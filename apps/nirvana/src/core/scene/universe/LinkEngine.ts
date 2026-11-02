@@ -30,9 +30,15 @@ import {
   fleetPosition,
   moonPosition,
   arkPosition,
+  missionAnchor,
+  worldAnchor,
+  worldSlot,
   ISSOBELLA_FOCUS,
   GATE_JUPITER_OFFSET,
 } from './positions';
+import type { WorldPoint } from '../../../lib/worlds';
+import { layerColor } from '../../../lib/worlds';
+import { EARTH_MISSIONS, MISSION_STATUS_COLOR } from '../../../lib/freeworld-sites';
 import { PLANETS, orbitRadius, planetIndex } from './planetCatalog';
 import { MOTION, easeOutCubic } from '../../design/motion';
 
@@ -45,6 +51,7 @@ export type LinkKind =
   | 'moon'
   | 'sun'
   | 'world'
+  | 'mission'
   | 'earth';
 
 /** Cíle, na které umí kamera doletět — jeden typ pro Shell, SceneRoot i Universe. */
@@ -531,7 +538,58 @@ export function createDefaultLinkTargets(): LinkTarget[] {
     anchor: issobellaAnchor,
   });
 
+  // L5 misie na povrchu rotující Nové Země (stejný glóbus, stejná rotace).
+  for (const m of EARTH_MISSIONS) {
+    targets.push({
+      id: `mission:${m.key}`,
+      kind: 'mission',
+      accent: MISSION_STATUS_COLOR[m.status],
+      label: { cs: m.name, en: m.name },
+      cta: { cs: 'Otevřít →', en: 'Open →' },
+      size: 0.3,
+      follow: true,
+      framing: { minDistance: 5, radius: 3.4, duration: 1.2 },
+      anchor: (ctx) => {
+        const t = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
+        return new THREE.Vector3(...missionAnchor(m.lat, m.lon, t, ctx.earthPos));
+      },
+    });
+  }
+
   return targets;
+}
+
+/**
+ * Registr L4/L6 světů — volá ho `Universe` při načtení katalogu. Světy jsou
+ * data, ne komponenty: každý dostane `world:<id>` cíl se stejnou rotací, jakou
+ * má prstenec / pás ve scéně, takže klik na svět přiletí přesně na něj.
+ */
+export function registerWorldTargets(engine: LinkEngine, worlds: WorldPoint[]) {
+  const keep = new Set<string>();
+  for (const slot of ['ring', 'orbit'] as const) {
+    const list = worlds.filter((w) => worldSlot(w) === slot);
+    list.forEach((w, i) => {
+      const id = `world:${w.id}`;
+      keep.add(id);
+      engine.register({
+        id,
+        kind: 'world',
+        accent: layerColor(w.layer),
+        label: { cs: w.name, en: w.name },
+        cta: { cs: 'Otevřít →', en: 'Open →' },
+        size: 0.35,
+        follow: true,
+        framing: { minDistance: 6, radius: 3.4, duration: 1.2 },
+        anchor: (ctx) => {
+          const t = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
+          return new THREE.Vector3(...worldAnchor(w, i, list.length, slot, t, ctx.earthPos));
+        },
+      });
+    });
+  }
+  for (const t of engine.getTargets()) {
+    if (t.id.startsWith('world:') && !keep.has(t.id)) engine.unregister(t.id);
+  }
 }
 
 /**

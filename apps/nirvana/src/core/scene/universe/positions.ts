@@ -134,3 +134,65 @@ export function arkPosition(t: number): [number, number, number] {
  * kde stojí stanice. Jeden bod pro scénu i kameru.
  */
 export const ISSOBELLA_FOCUS: [number, number, number] = [RING_R, 0.6, 0];
+
+/* ─── Deterministické rotace (jeden vzorec pro scénu i kameru) ────────────
+ * Dřív scény akumulovaly `rotation.y += delta * speed`, takže se poloha
+ * nedala spočítat z `elapsedTime` a fokus na svět/misi míjel. Teď je rotace
+ * funkce času: `angle(t) = speed * t`. Scéna i `LinkEngine` volají totéž.
+ */
+export const GLOBE_SPIN_SPEED = 0.02; // Nová Země + misie
+export const ORBIT_BELT_SPEED = 0.05; // pás L4 světů
+export const RING_SPIN_SPEED = 0.03; // prstenec Issobelly
+export const RING_TILT: [number, number, number] = [0.32, 0, -0.14];
+
+export function globeSpin(t: number): number {
+  return GLOBE_SPIN_SPEED * t;
+}
+export function orbitBeltAngle(t: number): number {
+  return ORBIT_BELT_SPEED * t;
+}
+export function ringSpinAngle(t: number): number {
+  return RING_SPIN_SPEED * t;
+}
+
+/** Výška markeru L5 misie nad povrchem (stejná jako v `NewEarth`). */
+export const MISSION_ALT = 0.72;
+
+const _spinEuler = new THREE.Euler(0, 0, 0, 'XYZ');
+const _missionLocal = new THREE.Vector3();
+
+/** Světová poloha L5 misie na rotujícím glóbu Nové Země. */
+export function missionAnchor(
+  lat: number,
+  lon: number,
+  t: number,
+  earthPos: THREE.Vector3,
+  alt: number = MISSION_ALT,
+): [number, number, number] {
+  const [x, y, z] = latLonToVec3(lat, lon, PLANET_R + alt + 0.025);
+  _missionLocal.set(x, y, z);
+  _spinEuler.set(0, globeSpin(t), 0);
+  _missionLocal.applyEuler(_spinEuler);
+  return [earthPos.x + _missionLocal.x, _missionLocal.y, earthPos.z + _missionLocal.z];
+}
+
+/** Světová poloha světa na prstenci / oběžné dráze (stejná rotace jako scéna). */
+export function worldAnchor(
+  world: WorldPoint,
+  index: number,
+  total: number,
+  slot: WorldSlot,
+  t: number,
+  earthPos: THREE.Vector3,
+): [number, number, number] {
+  const local =
+    slot === 'ring' ? ringPosition(world, index, total, RING_R) : orbitPosition(world, index, total);
+  _missionLocal.set(local[0], local[1], local[2]);
+  if (slot === 'ring') {
+    _spinEuler.set(RING_TILT[0], ringSpinAngle(t), RING_TILT[2]);
+  } else {
+    _spinEuler.set(0, orbitBeltAngle(t), 0);
+  }
+  _missionLocal.applyEuler(_spinEuler);
+  return [earthPos.x + _missionLocal.x, _missionLocal.y, earthPos.z + _missionLocal.z];
+}

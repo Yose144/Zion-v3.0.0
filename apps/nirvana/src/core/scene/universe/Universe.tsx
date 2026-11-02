@@ -17,7 +17,7 @@ import { OrbitalWorlds } from './OrbitalWorlds';
 import { SpaceBackdrop } from './SpaceBackdrop';
 import { SolarSystem } from './SolarSystem';
 import { HiranSun } from './HiranSun';
-import { useLinkEngine, type UniverseFocus } from './LinkEngine';
+import { useLinkEngine, registerWorldTargets } from './LinkEngine';
 import { LinkTrail } from './LinkTrail';
 import { LinkLayer } from './LinkLayer';
 
@@ -55,6 +55,7 @@ export function Universe({
   onOpen,
   onSelectWorld,
   onSelectPlanet,
+  onSelectMission,
   focus = 'earth',
   hiranState = 'idle',
   fleetLeg = null,
@@ -65,7 +66,9 @@ export function Universe({
   onSelectWorld: (id: string) => void;
   /** Klik na planetu — přiletí a otevře panel s CTA. */
   onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
-  focus?: UniverseFocus;
+  /** Klik na L5 misii na glóbu — stejná navigace jako planeta. */
+  onSelectMission?: (key: string) => void;
+  focus?: string;
   hiranState?: HiranState;
   fleetLeg?: FleetLeg | null;
 }) {
@@ -95,6 +98,11 @@ export function Universe({
     linkEngine.flyTo(focus);
   }, [focus, linkEngine]);
 
+  // Světy jsou data — registrují se do stejného engine jako planety a misie.
+  useEffect(() => {
+    registerWorldTargets(linkEngine, worlds);
+  }, [worlds, linkEngine]);
+
   const split = useMemo(() => {
     const ring: WorldPoint[] = [];
     const orbit: WorldPoint[] = [];
@@ -114,6 +122,7 @@ export function Universe({
     if (typeof window !== 'undefined') {
       (window as any).__nirvanaCamera = camera;
       (window as any).__nirvanaControls = controls.current;
+      (window as any).__nirvanaLink = linkEngine;
     }
     // zemská soustava obíhá Slunce — celý vesmír se točí kolem něj
     if (!reducedMotion) earthAngle.current += delta * EARTH_ORBIT_SPEED;
@@ -151,7 +160,7 @@ export function Universe({
 
       {/* zemská soustava — obíhá Slunce jako jeden svět */}
       <group ref={earthSys} position={[EARTH_ORBIT_R, 0, 0]}>
-        <NewEarth onOpenMatrix={() => onOpen('matrix')} />
+        <NewEarth onOpenMatrix={() => onOpen('matrix')} onSelectMission={onSelectMission} />
         <SailingArk onOpen={() => onOpen('archa')} />
         <SkyFleet onOpen={() => onOpen('fleet')} reducedMotion={reducedMotion} />
         {fleetLeg && <FleetRoute key={fleetLeg} leg={fleetLeg} reducedMotion={reducedMotion} />}

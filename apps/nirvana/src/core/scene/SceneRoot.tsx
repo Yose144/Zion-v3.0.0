@@ -11,7 +11,6 @@ import {
   type GpuBackend,
 } from './backends';
 import { Universe } from './universe/Universe';
-import type { UniverseFocus } from './universe/LinkEngine';
 import type { FleetLeg } from './universe/SkyFleet';
 import { quality } from '../../../../shared/scenes/kit/quality';
 import { ScenePost, sceneRenderStats } from '../../../../shared/scenes/kit/post';
@@ -102,6 +101,7 @@ export function SceneRoot({
   onOpen,
   onSelectWorld,
   onSelectPlanet,
+  onSelectMission,
   xr,
   label,
   focus,
@@ -114,9 +114,12 @@ export function SceneRoot({
   onSelectWorld: (id: string) => void;
   /** Klik na planetu ve sluneční soustavě. */
   onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
+  /** Klik na L5 misii na glóbu. */
+  onSelectMission?: (key: string) => void;
   xr: boolean;
   label: string;
-  focus?: UniverseFocus;
+  /** Id cíle v `LinkEngine` (`earth`, `mars`, `mission:uluru`, `world:…`). */
+  focus?: string;
   hiranState?: HiranState;
   fleetLeg?: FleetLeg | null;
 }) {
@@ -189,6 +192,7 @@ export function SceneRoot({
               onSelectWorld={onSelectWorld}
               focus={focus}
               onSelectPlanet={onSelectPlanet}
+              onSelectMission={onSelectMission}
               hiranState={hiranState}
               fleetLeg={fleetLeg}
             />
@@ -201,6 +205,7 @@ export function SceneRoot({
             onOpen={onOpen}
             onSelectWorld={onSelectWorld}
             onSelectPlanet={onSelectPlanet}
+            onSelectMission={onSelectMission}
             focus={focus}
             hiranState={hiranState}
             fleetLeg={fleetLeg}
