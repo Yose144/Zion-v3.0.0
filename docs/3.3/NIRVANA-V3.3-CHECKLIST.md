@@ -129,8 +129,8 @@ Detail všech položek: [`3.2.1-3.2.9_PLAN.md`](docs/3.2/3.2.1-3.2.9_PLAN.md). Z
 - [~] 🔀 HA stratum — **rozhodnutí 👤 31. 10.: dokumentovat + oficiálně aktivovat** (2.S5 uzavřeno ve prospěch A4.2 active-passive)
   - [x] 🤖 Inventura: EDGE2 má `zion-pool-standby.service` (`/opt/zion/bin/zion-pool-standby`, inactive) + `zion-pool-ha-watchdog.timer` (30 s) + `zion-pool-standby-sync.timer` (60 s) + `zion-pool-standby-dbsync.timer` (60 min) — dřív **nedokumentováno**
   - [x] 👤 Rozhodnutí 31. 10. — ne rozebírat, ale zprovoznit bezpečně
-  - [ ] 🤖 Fencing analýza `pool-ha-watchdog.sh` — promote **jen** po prokázaném failu + stop primary; 30 s interval bez fencingu = dvojí výplata (**blokuje aktivaci**)
-  - [ ] 🤖 `docs/3.2/ops/POOL-HA-RUNBOOK.md` + zápis do `AGENTS.md` / `StatusV3.md` / `infra/RUNBOOK.md`
+  - [x] 🤖 Fencing analýza `pool-ha-watchdog.sh` — promote **jen** po prokázaném failu + stop primary; 30 s interval bez fencingu = dvojí výplata (**blokuje aktivaci**) — ✅ 2. 11. 2026: G1-G6 guard implementován, 7 gaps identifikováno, runbook vytvořen
+  - [x] 🤖 `docs/3.2/ops/POOL-HA-RUNBOOK.md` + zápis do `AGENTS.md` — ✅ 2. 11. 2026: runbook vytvořen, AGENTS.md aktualizován s odkazem
   - [ ] 🔀 Staged activation: `log-only` → 👤 flip `armed`
 - [ ] 👤 ≥1 externí miner na každé nativní legě (V33-9; HW SM75+/RDNA+ pro PRL)
 

@@ -23,6 +23,18 @@
 
 set -euo pipefail
 
+# ── DEPRECATION GUARD ──────────────────────────────────────────────────────
+# This script targets the LEGACY V3 edge deploy (infra/edge-deploy/) which
+# is DEPRECATED since 2026-08-04 (V3 archived to archive/V3/).
+# The active deploy is V31/deploy/deploy-edge.sh.
+# To run this legacy script anyway, set ALLOW_LEGACY_EDGE_DEPLOY=1.
+if [[ "${ALLOW_LEGACY_EDGE_DEPLOY:-0}" != "1" ]]; then
+    echo "[DEPRECATED] infra/edge-deploy/deploy-edge.sh targets legacy V3 and is deprecated."
+    echo "             Use V31/deploy/deploy-edge.sh for the active V31 Mainnet Alpha deploy."
+    echo "             To force-run this legacy script, set ALLOW_LEGACY_EDGE_DEPLOY=1."
+    exit 1
+fi
+
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 EDGE_USER="${ZION_EDGE_USER:-root}"
 EDGE_HOST="${ZION_EDGE_HOST:-62.171.141.136}"

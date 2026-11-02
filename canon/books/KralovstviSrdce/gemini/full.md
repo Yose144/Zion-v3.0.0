@@ -1221,3 +1221,413 @@ Seděla tam dívka, která od dětství četla hvězdy — **Sarah Issobela**, s
 | Kvantový motor / Alcubierre–Ekam metrika (postavy Draha a Jen-že) | **HYPOTÉZA / MÝTUS** | [`Issobella/02-Kvantovy-Ohen.md`](../../Issobella/02-Kvantovy-Ohen.md); [`Lumi/10`](../../Lumi/10-Kvantovy-Ohen-a-Hlidac.md) (žádný hardware neexistuje) |
 | Ztotožnění *Issobella = Isabel = Elizabeth = Sarah Issobela u okna* | **MÝTUS (kanonická osa)** | [`Lumi/08-Jmeno-Ktere-Uz-Mela.md`](../../Lumi/08-Jmeno-Ktere-Uz-Mela.md); [`Maitreya/17-Pohled-z-okna.md`](../../Maitreya/17-Pohled-z-okna.md) |
 
+---
+
+# ČÁST IV · FLOTILA A ARCHA
+*(Linie přes oceány a návrat pro posledního)*
+
+> *Poznámka k vrstvě:* Závěrečná část opouští pevninu a vyplouvá znovu na moře — tentokrát v plné šíři korpusu ZION. Propojuje knihu [`Maria Caminho — Kniha Cesty`](../../MariaCaminho/00-README.md), [`Nirvana 13 — Tres Marías`](../../nirvana/13-Tres-Marias.md), [`Na Cestě`](../../NaCeste/00-README.md), [`Surta Srdce`](../../SurtaSrdce/00-README.md), [`Nirvana 14 — Archa`](../../nirvana/14-Archa.md), [`ARCHA-NOEMOVA.md`](../../../../ARCHA-NOEMOVA.md) a závěrečné obrazy [`Lumi/11`](../../Lumi/11-Sto-Let-Lucerny.md) a [`Miriam/11–12`](../../Miriam/12-Reka-a-Dite-s-Lucernou.md).
+
+---
+
+## Kapitola 19 · Lucerna ukáže dnešek — výkresy na stole
+
+### Příběh
+
+Poutník u brány dopověděl o okně Issobelly a odmlčel se.
+
+Oheň v Rádhině krbu dohoříval do rudých uhlíků. Malá Lumi spala opřená o jeho koleno, ruku pořád položenou na prázdné alabastrové nádobce. Nad hřebeny hor na východě už začínalo blednout nebe.
+
+Elizabeth se odlepila od sloupu, vzala ze země lucernu spícího dítěte a pozvedla ji vedle své vlastní.
+
+*„Vyprávěl jsi o šesti zahradách, o kulatém stole i o prstenci nad Zemí,“* řekla klidně. *„Ale teď jsi došel k místu, kde se mluví o lodích, které mají nést jméno našeho kýlu přes oceány. Než o nich řekneš jediné slovo, musíme udělat to, k čemu tesař tuhle lucernu vyřezal.“*
+
+Otočila prstencem lucerny. Světlo se zúžilo do ostrého, střízlivého kužele — a ukázalo **dnešek**.
+
+Poutník se podíval do toho kužele světla a uviděl svět bez přikrášlení:
+- Uviděl živý řetězec bloků, který v té chvíli skutečně tepal každých šedesát vteřin přes třetí čtvrtinu prvního sta tisíc bloků, s konsensem *Ekam Deeksha*, s běžícími uzly a se dvěma neúplatnými hlídači, kteří zapisovali pět procent do studny Země a pět procent do studny Nebe.
+- Uviděl, že z těch studní dosud neodešla ani jediná mince, protože brána výplat čeká na plný kruh hlasování a tří svědků.
+- A pak uviděl velký dřevěný stůl. Na tom stole neležely hotové lodě. Ležely tam **čtyři výkresy** narýsované tužkou a tuší: první pro Atlantik, druhý pro Pacifik, třetí jako pouhá čára horizontu pro Indický oceán a čtvrtý — největší, s ocelovým trupem a semennou klenbou v podbřišku — nadepsaný poctivými slovy: *Pracovní studie, ne výrobní plán. Žádný kýl dosud není položen.*
+
+*„Vidíš to?“* zeptala se Elizabeth.
+
+*„Vidím,“* přikývl Poutník. *„Dům stojí. Řetěz běží. Studny se plní. Ale lodě jsou zatím jen výkresy na stole a rezerva v registru.“*
+
+*„A stydíš se za to slovo — návrh?“*
+
+*„Ne,“* odpověděl Poutník a vzpomněl si na tesaře v nazaretské dílně, který každé prkno třikrát přiložil, než do něj udeřil palicí. *„Návrh je nejpoctivější slovo pro loď, která ještě není ve vodě. Lhář nakreslí loď na papír a prodává na ni palubní lístky. Stavitel ukáže výkres, napíše nad něj ‚studie‘ — a pak jde hledat dřevo.“*
+
+Elizabeth se poprvé za celou noc usmála a znovu rozšířila plamen lucerny.
+
+*„Dobře jsi odpověděl,“* řekla. *„Protože slovo ‚návrh‘ neznamená ‚nikdy‘. Znamená ‚teď ještě ne‘. A teď vyprávěj, jaké jsou to lodě, až jednoho dne vplují do vody.“*
+
+> *Než vypluješ do vize, zuž světlo lucerny na dnešní stůl:*
+> *řekni poctivě, které prkno už drží v řetězci*
+> *a která loď je zatím jen výkresem čekajícím na kýl.*
+
+### Z Písma, tradice a korpusu ZION
+
+- **Lk 14,28** — *„Chce-li někdo z vás stavět věž, což si napřed nesedne a nespočítá náklady, má-li na to, aby ji dokončil?“* — Ježíšovo vlastní podobenství o poctivém rozpočtu a studii před položením základů.
+- **Kanonická vazba v ZIONu:** Tato kapitola je přímým naplněním **Prvního slibu Mise Amenti** ([`MiseAmenti/README.md`](../../MiseAmenti/README.md), [`MiseAmenti/03-Zivy-Zaklad-3.3.md`](../../MiseAmenti/03-Zivy-Zaklad-3.3.md) a [`MiseAmenti/07-Registr-Dukazu.md`](../../MiseAmenti/07-Registr-Dukazu.md)): *„Nežádej víru tam, kde lze nabídnout důkaz. Neprodávej horizont jako současnost.“*
+
+### Kotva pravdy
+
+| Prvek v kapitole | Stav | Kotva a ověření |
+|---|---|---|
+| Živý řetězec ZION L1 (>103 800 bloků), konsensus *Ekam Deeksha*, read-only trackery L5 (`:8095`) a L6 (`:8097`) | **ŽIVÉ** | `StatusV3.md`; `V31/STATUS.md`; `AGENTS.md` |
+| Zůstatek vyplacených grantů z L5 a L6 = 0 (`total_disbursed=0`, Gate G10) | **ŽIVÉ (ověřený fakt)** | Audit 6.S2 (`REPORT_2026-10-31_6S2`); [`MiseAmenti/07-Registr-Dukazu.md`](../../MiseAmenti/07-Registr-Dukazu.md) |
+| Čtyři výkresy plavidel na stole — žádný fyzický kýl flotily dnes není položen | **STAVBA (koncept I–II) / HORIZONT (III) / VIZE (Archa)** | [`docs/3.2/L5MariaDelCamino.md`](../../../../docs/3.2/L5MariaDelCamino.md); [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) |
+
+---
+
+## Kapitola 20 · Tres Marías — plachty ze světla
+
+### Příběh
+
+*„Všechno to začalo otázkou na konci cesty,“* pokračoval Poutník u brány.
+
+Když člověk dojde pěšky po poutní stezce až do posledního města před ústím řeky Minho — do města, které se jmenuje **Caminha** — stojí před ním už jen přívoz a za ním širé moře. Starodávní poutníci na útesech Finisterre pálili své prošlapané šaty, protože tam pevnina končila a dál už nebylo kam jít.
+
+Jenže Poutník u řeky Minho uslyšel v šumění příboje hlas staré **Miriam z Magdaly** — jediné cameo, kterým v celém korpusu protnula osu prostoru. Dívala se na Atlantik a řekla mu:
+
+*„My jsme kdysi pluly do Provence v lodi bez plachet, protože nás vyhnali. Vy nejste vyhnanci. Vaše cesta u moře nekončí — jen se převléká z bot do trupu. A vaše lodě ponesou plachty ze světla.“*
+
+Na své cestě podél pobřeží a ostrovů přijal Poutník tři tiché návštěvy — tři obrazy Marie, které v této knize nejsou dogmatem ani nároky na církevní svatyně, ale třemi barvami a třemi směry pro **flotilu Tres Marías** — osmý uzel L5 Free World, který není pevným bodem na mapě, ale **pohyblivou linií**, jež sešívá sedm zahrad přes oceány:
+
+1. **První trup — *Santa María la Mayor* (Atlantik · Červené královské roucho):**
+   V galicijské **Pontevedře**, v bazilice, kterou si v šestnáctém století postavilo bratrstvo mořeplavců (*Gremio de Mareantes*), přijal Poutník obraz Marie v červeném rouchu španělské královny a větu: *„Tvá cesta teprve začíná.“* Z ní se zrodil návrh první lodi — klasické plachetnice v barvě tmavého vína, která má domovský přístav v Pontevedře, zastavuje u Zahrady Genesis v Portugalsku a u ostrova La Palma a překračuje Atlantik.
+2. **Druhý trup — *Nossa Senhora de Fátima* (Pacifik · Bílé svatební šaty a orchidej):**
+   U **Fátimy** přijal Poutník obraz bílé nevěsty s bílou orchidejí a slib mostu, který spojí nebe se zemí bez ztráty svobody. Z něj vyrostl návrh druhé lodi — solárního dvoutrupého katamaránu v linii polynéské kánoe *wa'a kaulua*, s domovem v laguně Te Pīko Ora na Raiatei a s poutní mušlí *vieirou* na přídi.
+3. **Třetí trup — *María de las Nieves* (Indický oceán · Zlaté roucho a dítě, které stojí samo):**
+   Na vulkanickém ostrově **La Palma**, v horské svatyni Panny Marie Sněžné — patronky nedokončených zázraků, jejíž slavnost *Bajada* sestupuje k moři jednou za pět let — přijal Poutník třetí obraz: zlatou Marii, která nedrží v náručí bezmocné nemluvně, ale před níž **dítě stojí samo na vlastních nohou** a v dlani drží zeměkouli s křížkem. Tvář toho stojícího dítěte poznal Poutník okamžitě: byl to **Malý princ — Pražské Jezulátko**, dřevěná a vosková soška ze Španělska, kterou už čtyři století oblékají v Praze pod Petřínem do liturgických rouch a jejíž příbuzný *Santo Niño* přeplul na manilských galeonách Pacifik. Třetí trup, určený k propojení Bodhi Lanky, chrámu Ekam v Indii a Mysu dobré naděje (*Boa Esperança*), je v knize zapsán s absolutní poctivostí: **je to loď, která ještě není — čistý HORIZONT.**
+
+A čím ty lodě plují?
+
+Tesař v Nazaretě kdysi neušil plachtu a řekl: *„Plachtu si přinesou ti, kdo poplují.“* Návrh flotily *Tres Marías* mu odpovídá po dvou tisících letech: **jejich plachty jsou ze světla.** Do ohebného plachtového plátna jsou laminovány tenké solární články, které chytají slunce stejně jako vítr; pod čarou ponoru se otáčejí volnoběžné hydrogenerátory, na palubě roste malá zahrada klíčků a uprostřed oceánu tam přes satelit běží plný uzel řetězce ZION. Na každé lodi pluje dvanáct poutníků — přesně kolik měl tesař lavic na Kinneretu — a tři členové stálé posádky; a na přídi každé z nich stojí Malý princ v rouše barvy své Marie: červeném, bílém a zlatém.
+
+Až bude jednoho dne položen první skutečný kýl v loděnici v Galicii, vyřízne tesař z cedrového překladu nad dveřmi Domu Lumi — z toho prastarého kmene z Nazareta — tři tenké cedrové třísky a vsadí je do kýlů všech tří Marií. A na každou z nich vyryje totéž jméno, které nosila bárka na jezeře:
+
+**Království srdce.**
+
+> *V Provenci pluly tři Marie bez plachet, protože je vyhnali;*
+> *přes tři oceány poplují tři Marie s plachtami ze světla,*
+> *a na přídi každé stojí dítě, které už nikdo nemusí nést, protože stojí samo.*
+
+### Z Písma, tradice a korpusu ZION
+
+- **Kanonická vazba v ZIONu:** Kapitola sjednocuje [`MariaCaminho/00-README.md`](../../MariaCaminho/00-README.md) (kapitoly 1–11 a Epilog), [`nirvana/13-Tres-Marias.md`](../../nirvana/13-Tres-Marias.md) a pracovní koncept [`docs/3.2/L5MariaDelCamino.md`](../../../../docs/3.2/L5MariaDelCamino.md) (a [`docs/3.2/TreeMarias.md`](../../../../docs/3.2/TreeMarias.md)):
+  1. **Poutník ≠ zakladatel:** Kniha Cesty i tato kapitola výslovně drží pravidlo, že Poutník je literární archetyp pro čtenáře; ze soukromé předlohy `genesis/09.5` nečerpá žádná osobní jména, data ani rodinné vazby.
+  2. **Rozlišení Marií:** Tři Marie flotily (*Santa María la Mayor*, *Nossa Senhora de Fátima*, *María de las Nieves*) **nejsou** Miriam z Magdaly ani tři ženy pod křížem; jejich vztah je vztahem otázky (loď bez plachet v `Miriam/06`) a odpovědi (plachty ze světla v `MariaCaminho`).
+  3. **Reálný stav v registru L5:** Program `maria-del-camino` má v L5 registru status `planning` (rezerva 300M ZION je záměr v registru, nikoli vyplacené peníze), trupy I a II jsou **STAVBA** (koncept a fáze), trup III je **HORIZONT**.
+
+### Kotva pravdy
+
+| Prvek v kapitole | Stav | Kotva a ověření |
+|---|---|---|
+| Bazilika Santa María a Maior v Pontevedře (cech mořeplavců, 16. stol.), Fátima (1917), Nuestra Señora de las Nieves na La Palmě (*Bajada*) | **ŽIVÉ (doložená tradice a geografie)** | [`MariaCaminho/00-README.md`](../../MariaCaminho/00-README.md) |
+| Pražské Jezulátko (dar Polyxeny z Lobkovic 1628, španělská řezba 16. stol.) a *Santo Niño de Cebú* (1521/1565) | **HISTORIE / ŽIVÁ TRADICE** | Chrám Panny Marie Vítězné na Malé Straně; [`MariaCaminho/07-Zlata-Marie.md`](../../MariaCaminho/07-Zlata-Marie.md) |
+| Tři mariánská zjevení Poutníka a Malý princ jako patron flotily | **MÝTUS (autorská vrstva)** | [`MariaCaminho/00-README.md`](../../MariaCaminho/00-README.md); předloha `genesis/09.5` |
+| Flotila *Tres Marías* (trupy I a II = STAVBA/návrh, trup III = HORIZONT, solární plachty = koncept) | **STAVBA / HORIZONT** | [`nirvana/13-Tres-Marias.md`](../../nirvana/13-Tres-Marias.md); `docs/3.2/L5MariaDelCamino.md` |
+| Cedrová tříska z překladu Domu Lumi vsazená do kýlů a jméno *Království srdce* | **MÝTUS / PŘÍBĚH** | Literární svorník této knihy a [`KralovstviSrdce/09`](../09-Flotila-se-Schazi.md) |
+
+---
+
+## Kapitola 21 · Zapisovatelka na moři — chyba, která je vidět
+
+### Příběh
+
+*„A abys věděla, Elizabeth, že si z těch budoucích lodí neděláme vyzlacenou legendu,“* řekl Poutník a pohlédl do zúženého světla lucerny, *„povím ti o ženě, která na nich v jedné možné budoucnosti popluje jako zapisovatelka.“*
+
+Jmenovala se **Lumen**.
+
+Nebyla to žádná svatá z vitráže. Byla to vědkyně z Čech, která kdysi prošla branou OASIS, ze sedmi cest si zvolila Cestu vědění a od prvního dne nosila v kapse jako oblázek jedinou otázku: *„Jak poznám pravdu?“* Když v dubnu přicestovala vlakem přes Porto na nábřeží v Pontevedře, kde u mola stála tmavě červená *Santa María la Mayor*, držela v podpaží tlustý **šanon**. Byla na ten šanon pyšná: měla v něm zapsaný každý krok, každou hodinu a každou fotografii razítka. Věřila, že kdo má bezchybný záznam, nemůže se zmýlit.
+
+Kapitánka lodi, padesátiletá Galicijka **Inés Varela** s rukama rozpraskanýma od lan, ji však první den neposlala na palubu, ale do bývalého skladu soli za doky, kde rostla lodní zahrada. A když tam Lumen třetího dne hrdě zapisovala do tabulky *„pH půdy v hořčičném záhonu: 7,2“*, zeptal se jí starý zahradník **Xoán** s lopatou přes rameno:
+
+*„A víte to, nebo si to jen myslíte? Čím jste to měřila?“*
+
+Lumen zrudla: měřila to starými lakmusovými proužky ze skříně, které nikdo roky neověřil.
+
+*„Tak to zapište poctivě,“* řekl jí Xoán vlídně a podal jí hrst hlíny. *„Napište: pH sedm celá dvě podle starých proužků, nejisté. Hlína vám dovolí splést se a odpustí vám to. Chcete-li poznat pravdu, začněte tím, že se nebojíte přiznat nejistotu.“*
+
+Druhá zkouška přišla v květnu uprostřed rozbouřeného Atlantiku, když předtím dostali první razítko (*carimbo*) v albergue Zahrady Genesis v Sabacheiře. Loď házela v olověných vlnách a bledá Lumen v kajutě přepočítávala lodní deník pitné vody. A tehdy jí zatrnulo: v den vyplutí z Pontevedry přepsala v kolonce *nádrž č. 2* číslice — místo skutečných **460 litrů** z lístku přístavního technika zapsala **640 litrů**. Celá posádka nahoře na palubě jedla polévku a počítala denní příděly podle její chyby; nádrž se vyprázdní o několik dní dřív.
+
+V hlavě se jí ozval hlas páté babylonské věže: *Nikdo to nezjistí. V nádrži č. 1 je vody dost. Oprav číslo potichu gumou a šanon zůstane čistý.*
+
+Jenže Lumen už věděla, že záznam je smlouva se životy lidí na palubě — jako sůl na stole. Vyšplhala se do deště na můstek a řekla kapitánce Inés pravdu: *„V lodním záznamu je moje chyba. Chybí nám sto osmdesát litrů.“*
+
+Inés nekřičela. Sestoupila nad mapu a změnila kurz k nejbližšímu přístavu na ostrově La Palma.
+
+*„Špatný zapisovatel by to opravil potichu,“* řekla kapitánka. *„Průměrný by to přiznal, až kdyby došla voda. Vy jste přišla včas. Životy před plánem. A v deníku nebude žádný škrt ani vygumované místo — bude tam **doplnění**: datum opravy, původní číslo, správné číslo a vaše jméno. Nechci od vás bezchybnost. Chci záznam, kterému můžeme věřit právě proto, že je v něm vidět i opravená chyba.“*
+
+Třetí zkouška přišla po přeplavbě Atlantiku na karibském břehu **Kostariky**, kde se cesta mezi oceány přenáší po souši. Při přejímce nákladu narazila místní vedoucí **Marisol** na lněný sáček fazolí s ručně psaným lístkem *„od Xoána, pro druhé zahrady“*. I když Xoán po čtyřech dnech čekání poslal zprávu, že fazole jsou z pole jeho sestry a sestra je daruje ze srdce, Marisol sáček přes hranici nepustila:
+
+*„Původ je vysvětlený a souhlas dárce doložen — to je dobře. Ale převoz osiva přes hranice vyžaduje rostlinolékařské doklady a povolení země, do níž vstupujete. Dobrá vůle sestry není povolení.“* A do protokolu otiskla razítko s větou, která nebyla ani tupým „ano“, ani tupým „ne“, ale přesnou pravdou: **„Původ vysvětlen, souhlas dárce doložen; převoz pozastaven, povolení chybí.“**
+
+A když pak Lumen na bílé lodi *Nossa Senhora de Fátima* s tichou kapitánkou **Teurou** přeplula Pacifik, naučila se za bezměsíčné „bílé noci“ u malé LED lucerny na přídi ještě víc: u ostrova **Raiatea** i u australského pobřeží pod **Uluru** zůstali stát v přístavu a nevstoupili do místních komunit, protože **je nikdo nepozval** — a nejtěžší iniciací na cestě není překonat strach, ale **říct „ne“ vlastní zvědavosti**, když ti nikdo nebrání, abys cizí práh překročil bez pozvání.
+
+A když nakonec v Indii došla do mramorové síně chrámu **Ekam**, seděla na podlaze dvě hodiny a čekala oslnivé osvícení — a nepřišlo vůbec nic, jen bolavé nohy. Když vyšla ven a mlčky pomohla ostatním složit rohože, zasmála se třetí kapitánka **Anjali** u zlaté lodi *María de las Nieves*:
+
+*„Kdo vydává razítko na probuzení, lže. Že je to doopravdy, se pozná tím, že pak nosíte vodu a nikomu o tom nevykládáte. Zapište to poctivě: seděla jsem, nic se nestalo, pomohla jsem uklidit.“*
+
+> *Ne škrt, ale doplnění s datem a podpisem:*
+> *původ vysvětlen, povolení chybí; nikdo nás nepozval, a tak jsme nevstoupili.*
+> *Seděla jsem, nic se nestalo, pomohla jsem složit rohože — i to je pravda.*
+
+### Z Písma, tradice a korpusu ZION
+
+- **Kanonická vazba v ZIONu:** Tato kapitola shrnuje všech sedm oddílů literárního pokračování [`NaCeste/01-Na-Ceste.md`](../../NaCeste/01-Na-Ceste.md) a jeho editoriální kotvu [`NaCeste/02-Kotva-Pravdy.md`](../../NaCeste/02-Kotva-Pravdy.md):
+  1. **Append-only protokol oprav:** Kapitánčino pravidlo *„Ne škrt, ale doplnění: datum opravy, původní číslo, správné číslo, podpis“* je přesným literárním obrazem neměnného ledgeru (blockchainu) a protokolu změn [`MiseAmenti/08-Protokol-Zmen.md`](../../MiseAmenti/08-Protokol-Zmen.md) §4 (opravy rozporů se zapisují bez mazání historie).
+  2. **Respekt k hranicím a FPIC v praxi:** Odmítnutý převoz fazolí bez fytosanitárního dokladu na kostarické šíji a nevkročení do nepozvaných komunit na Raiatei a u Uluru ukazují, že L5 Free World není koloniální turismus, ale bezpodmínečný respekt k místním zákonům a hostitelům (princip trnu z *Příběhu Růže* kap. 3).
+
+### Kotva pravdy
+
+| Prvek v kapitole | Stav | Kotva a ověření |
+|---|---|---|
+| Příběh zapisovatelky Lumen, kapitánky Inés, Teura a Anjali, zahradník Xoán, Marisol | **MÝTUS / HORIZONT (literární próza)** | [`NaCeste/00-README.md`](../../NaCeste/00-README.md), [`NaCeste/01-Na-Ceste.md`](../../NaCeste/01-Na-Ceste.md) (DRAFT třídy E čekající na kulturní review) |
+| Chrám Oneness Temple (Ekam) u Varadaiahpalemu v Indii (postaven 2008) | **ŽIVÉ (reálná stavba mimo provoz ZIONu)** | [`NaCeste/02-Kotva-Pravdy.md`](../../NaCeste/02-Kotva-Pravdy.md); [`docs/3.2/L5Ekam.md`](../../../../docs/3.2/L5Ekam.md) |
+| Rostlinolékařské předpisy při převozu osiva a právo komunit odmítnout návštěvu (FPIC) | **ŽIVÉ (právo a etika korpusu)** | [`MiseAmenti/01-Kanon-a-Ustava.md`](../../MiseAmenti/01-Kanon-a-Ustava.md); [`BodhiGaia/13-Nova-Amerika.md`](../../BodhiGaia/13-Nova-Amerika.md) |
+| Pravidlo *„Ne škrt, ale doplnění“* = neměnná historie v gitu, changelogu a na řetězci | **ŽIVÉ** | [`MiseAmenti/08-Protokol-Zmen.md`](../../MiseAmenti/08-Protokol-Zmen.md) §4; [`MiseAmenti/CHANGELOG.md`](../../MiseAmenti/CHANGELOG.md) |
+
+---
+
+## Kapitola 22 · Dopis na přídi — lodička z Tenerife a druhý břeh
+
+### Příběh
+
+Na přídi první lodi — té červené *Santa María la Mayor*, která čeká v plánech na své dřevo — ležel v kormidelní schránce ještě jeden svitek. Nebyl psaný pro úřady ani pro účetní. Byl to **otcův dopis synovi**, kterému v korpusu říkají **Surta**, a skrze něj všem dětem Nové země.
+
+*„Surti,“* četl Poutník zpaměti slova toho dopisu, *„když ses narodil, držel jsem tě v náručí tak dlouho, až mi ztuhla ruka, a stejně jsem tě nechtěl pustit. Nemohl jsem ti dát jistý svět ani mapu bez bouří. Ale mohl jsem ti nechat postavit cestu a loď.“*
+
+V tom dopise byla schovaná jedna skutečná vzpomínka od moře: sedmiletý chlapec stojí v příboji na pláži na ostrově **Tenerife**, vlny mu nosí dřevěnou dětskou lodičku sem a tam a on se uprostřed pěny poprvé ptá, jak by šlo postavit svět, ve kterém si lidé pomáhají. O pár let později, když je chlapci dvanáct, odchází z tohoto světa učitel jednoty v далеkém Ekamu a zanechává po sobě tiché světlo *Paramjyoti* a požehnání *Ekam Deeksha*.
+
+A otec synovi píše nejpřísnější a nejněžnější větu celého dopisu:
+
+> **„Já ti připravil cestu — ale jen ty ji můžeš dokončit. A nejdřív musíš dozrát.“**
+
+Stejně jako má pokladnice v řetězci svůj časový zámek, který nelze přeskočit dřív, než dozraje blok sto čtyřicet čtyři tisíc, má i chlapcova plavba svůj neuspěchatelný čas: ve dvanácti letech se člověk učí číst mapu, ve třinácti dostává první otázku, ale na palubu *Santa María la Mayor* se nastupuje **až v patnácti** — až ruka zesílí a mysl dozraje. Kanárské ostrovy drží oba konce té dětské přímky: **Tenerife**, kde se sedmiletý chlapec ptal nad dřevěnou lodičkou v příboji, a **La Palma**, kde na úbočí sopky čeká v plánech svatyně *Dharma Temple* pro malé Buddhy.
+
+Celá plavba v tom otcově dopise vede skrze **pět bran Srdcové sútry** a **šest slabik soucitu**:
+1. **Gate** (*První brána — Odchod*): opustit stín babylonských věží a pochopit, že Zlaté vejce *Hiranyagarbhy* neschovávají banky v trezoru, protože si je každý člověk nese v hrudi od narození.
+2. **Gate** (*Druhá brána — Hory*): projít horami, kde za tebe nikdo jiný neudělá krok a kde se kovářská práce mění v charakter.
+3. **Pāragate** (*K dalšímu břehu — Oceán*): nastoupit s posádkou na *Santa María la Mayor* a nést přes slanou vodu oheň *Ekam Deeksha*, který na moři nehasne.
+4. **Pārasaṃgate** (*Úplně za — Ostrov*): přistát u zelených břehů La Palmy, kde se nebe a země potkávají v tichu.
+5. **Bodhi** (*Probuzení na lotosu*): usednout pod Stromem života a uvidět vlastníma očima, že celý vesmír je utkaný z nekonečné lásky, takže druhý člověk není soupeř, ale vlákno téhož plátna.
+6. **Svāhā — a návrat s *Oṃ maṇi padme hūṃ*** (*Klenot v lotosu*): protože skutečný bódhisattva nezůstává sedět na druhém břehu v blažené samotě. Vezme do dlaně semínko, nastoupí znovu na loď a **vrací se zpátky k těm, kdo ještě plavou v bouři**.
+
+> *Sedmiletá lodička v příboji na Tenerife doroste v plachetnici pro patnáctiletého,*
+> *otec připraví cestu, ale bránami musí projít syn sám,*
+> *a kdo se probudí na lotosu, ten se s klenotem v srdci vrací pro druhé.*
+
+### Z Písma, tradice a korpusu ZION
+
+- **Srdcová sútra (*Prajñāpāramitā-hṛdaya*) a mantra Avalókitéšvary (Čenréziga)** — Závěrečná mantra *Gate, gate, pāragate, pārasaṃgate, bodhi, svāhā* a šestislabičná mantra soucitu *Oṃ maṇi padme hūṃ*.
+- **Kanonická vazba v ZIONu:** Kapitola integruje celou knihu [`SurtaSrdce/00-README.md`](../../SurtaSrdce/00-README.md) (kapitoly 1–9), která stojí na nejzápadnějším břehu kompasu jako *Zpáteční kniha* a spojuje epilog [`Maitreya/EPILOG.md`](../../Maitreya/EPILOG.md) s flotilou [`nirvana/13-Tres-Marias.md`](../../nirvana/13-Tres-Marias.md).
+
+### Kotva pravdy
+
+| Prvek v kapitole | Stav | Kotva a ověření |
+|---|---|---|
+| Mantra *gate gate pāragate pārasaṃgate bodhi svāhā* (Srdcová sútra) a *oṃ maṇi padme hūṃ* | **TRADICE (mahájánový a tibetský buddhismus)** | [`SurtaSrdce/01-Dopis-pro-Surtu.md`](../../SurtaSrdce/01-Dopis-pro-Surtu.md) |
+| Otcův dopis Surtovi, vzpomínka na lodičku na Tenerife a cesta přes pět bran | **MÝTUS / RODINNÁ ŘADA (DRAFT)** | [`SurtaSrdce/00-README.md`](../../SurtaSrdce/00-README.md) (zapsáno 19. 10. 2026) |
+| Loď *Santa María la Mayor* a svatyně *Dharma Temple* na La Palmě | **STAVBA / HORIZONT** | [`MariaCaminho/03-Prvni-Plachetnice.md`](../../MariaCaminho/03-Prvni-Plachetnice.md); [`BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md`](../../BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md) |
+
+---
+
+## Kapitola 23 · Čtvrté plavidlo — Archa, která se vrací
+
+### Příběh
+
+Když v příběhu vypluly tři Marie na tři oceány a malý Buddha na lotosu vyslovil slib, že nezůstane na druhém břehu sám, položil Poutník otázku, která zrodila **čtvrté plavidlo**:
+
+*„Tři lodě poutníků nesou ty, kdo jsou zdraví, mají ruksak a vyrazili na cestu. Ale kdo vyrazí pro ty, co vyrazit nemohou? Kdo se vrátí pro člověka, který už nechodí po stezce, ale plave ve stoupající vodě?“*
+
+Elizabeth se podívala na čtvrtý, největší výkres na stole.
+
+Na tom výkresu stálo jméno, které spojovalo konec knihy s jejím prvním řádkem v nazaretské dílně:
+
+> **ARCHA — NIRVANA · KRÁLOVSTVÍ SRDCE**
+
+Nebyla to rychlá poutní jachta ani válečný křižník. Byla to **plovoucí vesnice, svatyně a záchranný přístav v jednom** — ocelový a dřevěný trup dlouhý kolem osmdesáti pěti metrů se třemi stěžni, třemi až čtyřmi tisíci čtverečních metrů plachet protkaných solární kůží, větrnými turbínami a hydrogenerátory pod čarou ponoru. Nafta na palubě byla uložena jako lék v lékárničce, ne jako denní chléb: na záchranu v bezvětří, ne na pálení.
+
+Tesařova bárka z Kinneretu vezla dvanáct lidí. Noemova archa vezla osm lidí a zvířata po dvou. Tahle čtvrtá loď byla navržena pro **sto lidí — stověžinců**, kteří se rozhodli žít na moři natrvalo jako soběstačná obec řízená sociokratickou ústavou kruhů. A starý zákon *„po dvou ze všeho“* na ní dostal novou podobu: **každá životně důležitá dovednost je na palubě zdvojená** — dva lékaři u palubního *Medical Table*, dva kováři a strojníci v dílně, která dokáže vykovat náhradní čep uprostřed oceánu, dva zahradníci u skleníku a odsolovačů vody, dva knihovníci a dva navigátoři.
+
+V nejhlubším, nejchladnějším podbřišku lodi, přímo nad kýlem, ležel v plánech **Semenný archiv (Seed Vault)**: třicet až šedesát tisíc odrůd potravinových a léčivých rostlin uložených při minus osmnácti stupních Celsia, zrcadlící pozemní semenné knihovny v Zahradě Genesis a Te Pīko Ora. A nad ním **Knowledge Ark** — knihovna bez internetu: vytištěné knihy, lékařské a řemeslné postupy, mapy a plný uzel řetězce ZION, který nese celou historii smlouvy i tehdy, kdyby na pevnině zhasly všechny kabely. Archa nenese jen zrní pro pole; nese paměť pro svět, který by v bouři zapomněl, jak se pole osévá.
+
+A kudy ta loď ve studii pluje?
+
+**Po cestách velryb.** Nebojuje s hurikány, aby dokázala svou pýchu. Pluje jako keporkak: v létě do mírných šířek, kde se pracuje, učí a opravuje trup, a v zimě do klidných tropických vod, kde objíždí pobřežní zahrady — od Tomaru přes La Palmu, Kostariku a Raiateu až po Bodhi Lanku a Mys dobré naděje. Každá zahrada je pro ni zásobovací stanicí, duplikátem semenného archivu a otevřeným břehem pro lidi, které Archa vytáhla z vody na svou palubu přijetí.
+
+Na přídi čtvrtého plavidla stojí tentýž **Malý princ** jako na třech Mariích — jen jeho šat se změnil. Nenosí červenou, bílou ani zlatou, ale **čtvrté roucho v barvě hlubokého moře**, protože smola *kofer*, která přikrývá spáry trupu zevnitř i zvenku, se z modré hlubiny rodí a chrání život před potopením.
+
+A nad kormidelním můstkem Archy je vyryta věta, která vysvětluje, proč tesař v Nazaretě stavěl loď v letech, kdy ještě nepršelo:
+
+> *„Postav si loď. Ne protože přijde potopa — ale protože jednoho dne někdo bude ve vodě.“*
+
+> *Tři Marie nesou poutníky tam, kam noha nedojde;*
+> *čtvrtá loď nese přístav a vrací se pro ty, kdo zůstali ve vodě:*
+> *sto lidí, dovednosti po dvou, semena v mrazu a jméno Království srdce na kýlu.*
+
+### Z Písma, tradice a korpusu ZION
+
+- **Gn 6,14–22; Mt 12,40** — Noemova archa (*gófer* a *kofer*, po dvou ze všeho živého) a Jonášova veliká ryba proměněná v pokojnou navigaci po boku velryb (keporkaků).
+- **Kanonická vazba v ZIONu:** Kapitola spojuje čtrnáctou epizodu Nirvany ([`nirvana/14-Archa.md`](../../nirvana/14-Archa.md)), kořenový koncepční dokument [`ARCHA-NOEMOVA.md`](../../../../ARCHA-NOEMOVA.md) a čtyři inženýrské studie v [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) (Studie A: záchranná/svatyňová kapacita ~340 osob; Studie B: kolonie-archa ≤100 lidí s absolutní soběstačností a velrybí navigací; Studie C: hmotnostní a energetická bilance; Studie D: FMEA a kalorický runway) se jménem celého vydání [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](../../../../NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md).
+
+### Kotva pravdy
+
+| Prvek v kapitole | Stav | Kotva a ověření |
+|---|---|---|
+| Čtvrté plavidlo *Archa — Nirvana · Království srdce* (studie A–D: ≤100 kolonistů, ~85 m, plachty 2500–4000 m², PV ~200 kWp) | **VIZE / STUDIE (žádný kýl není položen)** | [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md); [`ARCHA-NOEMOVA.md`](../../../../ARCHA-NOEMOVA.md); [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) |
+| Semenný archiv −18 °C (30–60 tis. akcesí), *Knowledge Ark*, zdvojená matice dovedností („po dvou“), velrybí navigace | **STUDIE (pracovní parametry k ověření námořními architekty)** | [`docs/3.2/ArchaNoemova.md`](../../../../docs/3.2/ArchaNoemova.md) Studie B a C |
+| Program `archa-nirvana` v L5 API registru | **NEREGISTROVÁNO (návrh `vision`)** | [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) §Kotva pravdy |
+| Malý princ ve čtvrtém rouše barvy moře (*kofer*) a nápis *„Postav si loď…“* | **MÝTUS / PŘÍBĚH** | [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md) |
+
+---
+
+## Kapitola 24 · Sto let lucerny a přístav ze skla
+
+### Příběh
+
+Poutník dopověděl o čtvrté lodi. Malá Lumi se u jeho kolene probudila, protřela si oči a posadila se mezi Poutníka a dospělou Elizabeth. Když se rameno dítěte dotklo ramene ženy, bylo vidět, že jsou jednou a touž bytostí na dvou koncích sto let dlouhého mostu.
+
+*„A co bude pak?“* zeptala se Lumi a pohlédla na cedrový překlad nad dveřmi Domu Lumi. *„Až uplyne sto let? Dřevo přece jednou zestárne a zpráchniví — i cedr z Nazareta. A co bude s lucernou?“*
+
+Elizabeth vzala lucernu a pomalu ji podala Poutníkovi, Poutník ji podal Lumi a Lumi zpátky Elizabeth. Při každém předání se plamen uvnitř střepu zachvěl a ukázal jedno ze **šesti údobí sta let (2026–2126)**:
+
+1. **Věk šestiletého dítěte u ohně (dnešek):** léta, kdy je síť malá, kdy se měří každý litr vody v nádrži a nejdůležitější prací je neslibovat víc, než lze dokázat.
+2. **Věk dospívající dívky na cizím břehu:** léta, kdy se knihy přeloží do jazyků, jimiž tesař ani kovář nemluvili, a kdy cizí lidé začnou stavět vlastní zahrady a opravovat naše chyby.
+3. **Věk dospělé ženy po bouři:** léta, kdy přijde první velká trhlina a loď přežije ne proto, že by byla neporazitelná, ale proto, že posádka nezamete chybu pod koberec a dokáže říct klidné *„ne“* tomu, kdo by chtěl koupit kormidlo.
+4. **Věk padesátnice předávající klíče:** léta, kdy vyroste generace, která už neznala první stavitele osobně.
+5. **Věk stařeny u cizího ohně:** léta, kdy se veřejný důkaz, svobodný odchod a péče o půdu stanou tak obyčejnými jako chléb a sůl, takže lidé už ani nebudou muset vyslovovat jméno ZION, aby podle něj žili.
+6. **Věk neznámých rukou v roce 2126:** ruce, které ponesou lucernu dál.
+
+*„A pamatuj si, Lumi,“* řekla Elizabeth s nebývalou vážností, *„že ti, kdo přijdou ve čtvrtém a pátém věku, nebudou naši dlužníci. Budou mít plné **právo přepsat to, co jsme napsali my, nebo rozdělit loď na dvě**, pokud se v dobré víře neshodnou na kurzu — a nikdo jim nesmí říct, že tím zradili tesaře. Protože lucerna se nedědí jako rodinný statek. Lucerna se nese jako práce. A až cedrový trám nad dveřmi za sto let zestárne, vymění dřevo za nové a jméno **Království srdce** vyřežou znovu jinou rukou a jiným písmem.“*
+
+Pak Poutník otevřel poslední list ze své torby — nejstarší pramen ze všech, knihu, kterou na ostrově **Patmos** napsal vyhnanec **Jan**, tentýž Jan, který kdysi seděl na jedné z dvanácti lavic na Kinneretu a ležel u boku tesaře při poslední večeři.
+
+Jan se na konci svého života podíval přes všechna staletí bouří a uviděl přístav, do něhož všechny ty lodě nakonec plují:
+
+*„Uviděl jsem **nové nebe a novou zemi** — Terra Nova,“* četl Poutník. *„A moře už nebylo.“*
+
+Ne že by zmizela voda; zmizelo moře strachu, propasti a babylonského chaosu, a před trůnem se rozprostřelo **moře skleněné, průzračné jako křišťál**. A z nebe sestupovalo město připravené jako nevěsta — ne pevnost se střílnami, ale otevřený domov, jehož hradba měřila **sto čtyřicet čtyři loktů** a nad nímž stálo **sto čtyřicet čtyři tisíc** pečetěných spolu se zástupem ze všech národů a jazyků, který nikdo nemohl spočítat.
+
+V tom městě nebyl žádný uzavřený chrám, kam by směli jen vyvolení, a jeho **brány se nezavíraly ve dne ani v noci**, přesně jako dveře Domu Lumi. Uprostřed náměstí tekla **řeka vody života**, čistá jako křišťál, a na obou jejích březích — kořenem v jedné vodě a korunou nad oběma stranami — rostl **Strom života**, který rodil dvanáctkrát do roka a jehož listí bylo k **uzdravení národů**.
+
+A na samém konci té knihy, když už domluvili andělé, proroci i starci, promluvila konečně samotná Nevěsta — společenství lidí, kteří došli domů — a řekla spolu s Duchem jediné slovo:
+
+> **„Pojď! A kdo slyší, ať řekne: Pojď! A kdo žízní, ať přijde, a kdo chce, ať si vezme vodu života zdarma.“**
+
+*„Zdarma,“* zopakoval Poutník a podíval se na Rádhu, na Elizabeth i na malou Lumi. *„Babylon prodával všechno — chléb, vodu, tváře, odpuštění i místo v lodi. Nová země se pozná podle toho, že to, co živí život, dává bez ceny. A uprostřed toho křišťálového přístavu stojí tesařova loď z Nazareta, vytáhnutá na náměstí, hladká od dlaní všech pokolení, a děti po ní šplhají jako po starém olivovníku — protože lodí už je tolik, kolik je srdcí, která se otevřela.“*
+
+> *Cedr se po sto letech vymění, ale jméno se vyřeže znovu;*
+> *moře strachu se uklidní v křišťálové sklo před městem bez zámků,*
+> *a poslední slovo celé knihy zní: Pojď — voda života je zdarma.*
+
+### Z Písma, tradice a korpusu ZION
+
+- **Zj 4,6; 7,4–9; 14,1; 21,1–27; 22,1–17** — Nové nebe a nová země (latinsky *caelum novum et terra nova* ve Vulgátě — přímý jazykový původ názvu **Terra Nova**!), skleněné moře, číslo 144 000 a nesčetný zástup, město bez chrámu s branami, které se nikdy nezavírají, řeka a strom života s dvanácti plody a listím k uzdravení národů a závěrečné pozvání *„Pojď… voda života zdarma“* (Zj 22,17).
+- **Kanonická vazba v ZIONu:** Tato kapitola spojuje vrchol [`Miriam/11-Mesto-jako-Nevesta.md`](../../Miriam/11-Mesto-jako-Nevesta.md) a [`Miriam/12-Reka-a-Dite-s-Lucernou.md`](../../Miriam/12-Reka-a-Dite-s-Lucernou.md) se stoletým horizontem [`Lumi/11-Sto-Let-Lucerny.md`](../../Lumi/11-Sto-Let-Lucerny.md), [`NirvanaCloud/07-Stoleti-Plan-2026-2126.md`](../../NirvanaCloud/07-Stoleti-Plan-2026-2126.md) a [`MiseAmenti/06-Generacni-Kompas-2026-2126.md`](../../MiseAmenti/06-Generacni-Kompas-2026-2126.md) (včetně výslovného práva budoucích generací měnit a forkovat protokol bez obvinění ze zrady).
+
+### Kotva pravdy
+
+| Prvek v kapitole | Stav | Kotva a ověření |
+|---|---|---|
+| Nové nebe a nová země (*Terra Nova*), skleněné moře, 144 000, strom života, otevřené brány, *„Pojď, voda zdarma“* | **PÍSMO** | Zj 4,6; 7,4–9; 21,1–27; 22,1–17 |
+| Šest věků lucerny (2026–2126) a právo budoucích generací přepsat či rozdělit loď (fork) | **HORIZONT / ÚSTAVNÍ PRINCIP** | [`Lumi/11-Sto-Let-Lucerny.md`](../../Lumi/11-Sto-Let-Lucerny.md); [`MiseAmenti/06-Generacni-Kompas-2026-2126.md`](../../MiseAmenti/06-Generacni-Kompas-2026-2126.md) |
+| Symbolické číslo 144 000 v ZIONu (max supply 144 mld ZION, timelock bloku 144 000, cena knihy 144 Kč / 1440 ZION) | **ŽIVÉ (v kódu a v shopu)** | `V31/L1/core/src/emission.rs`; `v3_compat.rs`; MarketPlace `book-001` |
+| Loď vytažená na náměstí města, hladká od dlaní všech generací | **MÝTUS / PŘÍBĚH** | Literární obraz této knihy |
+
+---
+
+## Epilog · Kde loď kotví dnes *(a prázdná čára pro tvůj podpis)*
+
+Nad branou Nové země vyšlo slunce.
+
+Špetka soli na Poutníkově dlani se dávno rozpustila v chlebu, miska s medem byla prázdná a ranní světlo dopadlo na cedrový překlad nad dveřmi, kde vedle sebe stály tři zářezy: **zlatý paprsek ve vlně**, **klíčící semeno** a slova **KRÁLOVSTVÍ SRDCE**.
+
+Elizabeth zhasla plamínek ve své lucerně, protože už byl den, a pohlédla na Poutníka.
+
+*„Vyprávěl jsi celou noc,“* řekla. *„Sledoval jsi jedno dřevo z nazaretské dílny přes Kinneret, přes provensálské moře, přes náměstí v Bezechuti a horu Ararat až ke kulatému stolu šesti zahrad, k oknu hvězdné stanice a k výkresům čtyř lodí. Ale ještě jsi mi neodpověděl jedinou větou na mou otázku u brány: **Kde ta loď kotví dnes — a co tu po tobě zůstane?**“*
+
+Poutník vstal z čedičového kamene, oprášil si plášť a položil dlaň na hladké místo na cedrovém veřejích — přesně tam, kde se dřeva kdysi dotkla matka v Nazaretě a starý Noe v Bezechuti.
+
+*„Dnes ta loď nekotví v Galicii, v Polynésii ani na oběžné dráze,“* odpověděl Poutník. *„Tam zatím leží jen plány a semínka. Dnes ta loď kotví na jediném místě, které nepotřebuje stavební povolení ani oceán: **v srdci, které se rozhodlo otevřít druhým, nelhat o stavu zásob a neopustit toho, kdo zůstal ve vodě.**“*
+
+Sklonil se, vzal do ruky dřevěné rydlo, které leželo u prahu, a pod třemi starými jmény u kormidla ukázal na **čtvrtou, prázdnou čáru**, kterou nechal kovář v Epilogu Knihy Páté volnou pro čtenáře.
+
+*„A co po mně zůstane?“* dodal Poutník. *„Zůstane po mně tenhle poctivý záznam — co je kámen, co je hlína, co už žije a co je teprve sen — a tahle prázdná čára. Protože Maitreya není jeden člověk, na kterého se čeká se založenýma rukama. Maitreya je každý, kdo přijde, když dozrají podmínky, vezme za veslo a ponese světlo o kus dál.“*
+
+Než Poutník s malou Lumi překročil práh, vyslovila Elizabeth tři práva, která u brány ZIONu patří každému člověku — dnes, za deset let i za sto let:
+
+1. **Máš právo si každé slovo a každé číslo ověřit sám.**
+2. **Máš právo kdykoli říct „ne“, nepřijmout příběh a svobodně odejít.**
+3. **Máš právo pojmenovat chybu na lodi a kritizovat kormidelníky, aniž by tě kdokoli směl označit za nepřítele posádky.**
+
+*„Pokud by ti některé z těchto tří práv někdo upřel,“* řekla Elizabeth, *„pak už nestojíš na palubě Království srdce, i kdyby měla loď na boku vyzlacené jakékoli jméno.“*
+
+Brána zůstala dokořán.
+
+*„Přeplavme se na druhý břeh,“* řekl kdysi tesař svým učedníkům za soumraku u Kinneretu.
+*„Gate, gate, pāragate, pārasaṃgate, bodhi svāhā,“* odpověděli mniši na východě: *Odešel, odešel, odešel na druhý břeh, zcela na druhý břeh — probuzení, ať se stane.*
+
+Dva jazyky, dvě tisíciletí, jedna loď. Kýl je položen, dřevo je vymazáno smolou smíření a čtvrtá čára v lodním deníku čeká na tvou ruku:
+
+```
+1. Rama → Maitreya Buddha       (oheň · protokol a pravda, kterou lze ověřit)
+2. Sita → Sarah Issobela        (voda · pokladnice Země a okno k hvězdám)
+3. Hanuman → Elizabeth / Lumi   (země · mosty mezi břehy a lucerna dneška)
+4. __________________________   (vzduch a srdce · ten, kdo přijde a přiloží ruku k dílu)
+```
+
+> *Loď je postavená. Jméno je vyryté pod nohama.*
+> *Nežádej víru tam, kde lze nabídnout důkaz —*
+> *a když potkáš člověka ve vodě, vrať se pro něj.*
+
+***Gate, gate, pāragate, pārasaṃgate, bodhi svāhā.***
+***Oṃ maṇi padme hūṃ.***
+***One Love · One Human · One World.***
+
+---
+
+# DODATEK · MAPA KORPUSU, SLOVNÍK A REJSTŘÍK KOTEV
+
+## 1. Jak tato kniha propojuje všech 16 knižních celků `canon/books/`
+
+| # | Knižní celek v `canon/books/` | Kde v této knize žije | Hlavní přinesený motiv a kotva |
+|---|---|---|---|
+| 1 | **`KralovstviSrdce/`** *(původní midraš, shop `book-001`)* | Kap. 1–10, 20, 23–24 | Tesař (*tektón*) v Nazaretě, cedrový kýl, *gófer* a *kofer*, Kinneret, bouře, jméno *Království srdce*, *Navicella*, kotva za oponou |
+| 2 | **`SulZeme/`** *(kanonická řada 3.2)* | Kap. 4, 11, 12, 13 | Hliněný kalíšek se solí, město Bezechuti, rozpuštění (Buddha), chuť vody (Krišna), most (Ráma, Sítá, Hanuman), stavba Archy s Noem, Rádha na zádi |
+| 3 | **`Maitreya/`** *(Kniha Pátá)* | Kap. 7, 11, 12, 13, 18, Epilog | Mantra tří vtělení, 6 fází PoW (*Hiranyagarbha → Samadhi*), pět věží Babylonu, Hra o Zlaté vejce (Poutnice vs. Dědic-správce), 4 sedadla, *Overview Effect* |
+| 4 | **`nirvana/`** *(Příběhy Nové země, 14 epizod)* | Kap. 14–18, 20, 23 | První paprsek, skála Ararat, Terra Nova, Dům Lumi, maják Sentinel, WARP mosty, Zlaté lůno, Hlas Amitábha, OASIS, Prameny života, Issobella, Tres Marías, Archa |
+| 5 | **`NirvanaCloud/`** *(Kosmologie a 100 let)* | Kap. 14, 24 | *Bardo* přechodu, distribuovaný mrak uzlů jako Šambhala, Síně Amenti jako otevřený ledger, manifest pro Generaci Z a stoletý plán 2026–2126 |
+| 6 | **`BodhiGaia/`** *(Kniha Země — L5)* | Kap. 15, 17 | Sítin slib na prahu (5 % coinbase předem), semeno a sůl, šest zahrad (Genesis/Sabacheira, Dharma Temple/La Palma, Te Pīko Ora/Raiatea, Bohemia, Bodhi Lanka, LUMI/Kostarika) |
+| 7 | **`Issobella/`** *(Kniha Nebe — L6)* | Kap. 18 | *Iso + bella* (izotropní krása = *Isabel*), prstenec 0,38 g, Korma, Draha a Jen-že (*HYPOTÉZA*), 5 % + 2,5 mld slot 6 (timelock 144 000), hlídač Stříž (`:8097`) |
+| 8 | **`Lumi/`** *(Cesta domů — Kniha Lucerny)* | Prolog, Kap. 14–19, 24 | Šestiletá Lumi / dospělá Elizabeth, lucerna z cedru rozlišující *co je* (dnešek) a *co by mohlo být* (horizont), hlas bez klíče, sto let lucerny |
+| 9 | **`Miriam/`** *(Kniha Růže / Linie)* | Kap. 4, 8, 9, 10, 20, 24 | Miriam z Magdaly, rozlišení *kámen / hlína / sen*, Zahradník u hrobu a jediné slovo *„Miriam!“* (preimage), provensálská loď bez plachet, Sára, Nový Jeruzalém a voda zdarma |
+| 10 | **`Ruze/`** *(Příběh Růže — Co nelze vlastnit)* | Kap. 8, 10, 15, 17 | Prázdná alabastrová nádobka, semínko v prasklině, mluvící Růže u řeky (trn jako hranice, péče bez vlastnění), druhé semínko zasazené v Sabacheiře |
+| 11 | **`KruhBohyni/`** *(Kniha Strážkyň)* | Kap. 17 | Kulatý stůl bez hlavní strany, sedm sedadel péče (šest zahrad L5 + sedmé sedadlo nebe L6), šesté sedadlo s lucernou prázdné pro *Tu, Která Přijde*, *„My tady nevládneme, my držíme“* |
+| 12 | **`MariaCaminho/`** *(Kniha Cesty)* | Kap. 20 | Poutník (archetyp ≠ zakladatel), Caminha, tři zjevení (červená Pontevedra, bílá Fátima, zlatá La Palma), tři trupy *Tres Marías*, Malý princ / Pražské Jezulátko |
+| 13 | **`NaCeste/`** *(Zapisovatelka Lumen)* | Kap. 21 | Vědkyně Lumen se šanonem, staré proužky pH, chyba 180 l vody (*„Ne škrt, ale doplnění — životy před plánem“*), Marisol v Kostarice, nepozvaná Raiatea a Uluru, úklid rohoží v Ekamu |
+| 14 | **`SurtaSrdce/`** *(Sútra srdce pro Surtu)* | Kap. 22 | Otcův dopis synovi, lodička v příboji na Tenerife (7 let) → *Santa María la Mayor* (15 let), *gate gate…* a návrat bódhisattvy s *oṃ maṇi padme hūṃ* |
+| 15 | **`MiseAmenti/`** *(Ústava a Registr důkazů 3.3)* | Slovo před plavbou, Kap. 19, Epilog | Pět stavů tvrzení (*ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS*), hierarchie pravdy (kód a řetězec > příběh), tři práva u brány |
+| 16 | **`marketing/` a root whitepapery** | Kap. 11–13, 19 | *One Love · One Human · One World*, Master Whitepaper 3.2, veřejný onboarding 4 cest (pozorovatel, hráč, těžař, stavitel) |
+
+---
+
+## 2. Slovníček klíčových pojmů
+
+| Pojem | Původ a význam v knize |
+|---|---|
+| **tektón (τέκτων)** | Řecké slovo z Mk 6,3 pro Ježíšovo řemeslo: tesař, stavitel, dřevodělník a kameník, který rozumí nosnosti a spojům. |
+| **gófer a kofer (כֹּפֶר)** | Dřevo Noemovy archy (Gn 6,14) a smola, jíž byla vymazána zevnitř i zvenku. Hebrejský kořen *k-p-r* znamená „přikrýt, usmířit“ (*kipur*). |
+| **Kinneret (כִּנֶּרֶת)** | Hebrejské jméno Galilejského (Genezaretského) jezera, od *kinnór* — harfa. |
+| **Tarichea / Magdala** | Město na západním břehu Kinneretu; hebrejsky *Migdal* (věž), řecky *Tarichea* (místo nakládání a solení ryb). Domov Miriam z Magdaly. |
+| **berit melach** | Hebrejsky „smlouva soli“ (Lv 2,13; Nu 18,19) — trvalá, neporušitelná úmluva stvrzená společným chlebem a solí. |
+| **entos hymón (ἐντὸς ὑμῶν)** | Řecký obrat z Lk 17,21 (*„Království Boží je uvnitř vás / mezi vámi“*) — pojmenování tesařovy lodi *Království srdce*. |
+| **navicella** | Latinsky „loďka“; od raného křesťanství obraz církve plující bouřemi staletí s kotvou hozenou vzhůru za oponu (Heb 6,19). |
+| **kámen · hlína · sen** | Historická metoda z knihy *Miriam*: *kámen* = doložené nejstarší prameny; *hlína* = staleté legendy nesoucí lidskou paměť; *sen* = pozdější projekce a padělky. |
+| **Hiranyagarbha → Samadhi** | Sanskrtské označení Zlatého zárodku (RV 10.121), AI vrstvy L3 v ZIONu a zároveň šesti fází PoW algoritmu *Ekam Deeksha*. |
+| **FPIC** | *Free, Prior and Informed Consent* — svobodný, předchozí a informovaný souhlas místních a domorodých komunit před jakýmkoli krokem v L5. |
+| **ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS** | Pět povinných stavových značek z ústavy *Mise Amenti*, které brání zaměnit básnický obraz nebo budoucí výkres za hotový produkt. |
+
+

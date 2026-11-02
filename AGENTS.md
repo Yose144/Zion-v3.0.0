@@ -177,6 +177,7 @@ alwaysApply: false
 |---|---|
 | [`docs/3.2/ops/AGENTS-CHRONOLOGY.md`](docs/3.2/ops/AGENTS-CHRONOLOGY.md) | Chronologický provozní log **2026-07-08 → 2026-10-21** (původně hlavní část tohoto souboru). Odkazy typu „AGENTS.md 2026-09-14“ vedou sem. |
 | [`docs/3.2/ops/AGENTS-LEGACY-SERVER.md`](docs/3.2/ops/AGENTS-LEGACY-SERVER.md) | Superseded reference: V3-era topologie, canonical operational settings v3.0.4, new-server env/port tabulky, Vega 64 tuning (2026-06), memory-pressure incident (2026-07-24). |
+| [`docs/3.2/ops/POOL-HA-RUNBOOK.md`](docs/3.2/ops/POOL-HA-RUNBOOK.md) | Pool HA — fencing, promote a failback runbook (G1-G6 guard, staged activation, DR procedura). Vytvořeno 2. 11. 2026. |
 | [`REPO-MAP.md`](REPO-MAP.md) | **Mapa workspace** — co je kde (tracked vs untracked, canonical vs runtime), F5 deferral důvody, runtime vazby na FS. |
 | [`docs/3.2/StatusV3.md`](docs/3.2/StatusV3.md) | Kanonický live stav + topologie. |
 | [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md) | Plán i execution log splitu EDGE → EDGE2 (v3 okna, rollback skripty). |

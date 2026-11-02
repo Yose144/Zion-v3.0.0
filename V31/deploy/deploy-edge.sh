@@ -177,14 +177,23 @@ log "Rebuilding V31 binaries on Edge..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     . /root/.cargo/env || . /opt/zion/.cargo/env
     cd '${REMOTE_ROOT}/V31'
-    cargo build --release --bin zion-node --bin zion-pool --bin zion-miner --bin zion-universal-miner --bin zion-dao --bin zion-oasis --bin warpd 2>&1
+    # Remove workspace members that don't exist on the Edge build tree (cli, smoke)
+    # so `cargo build -p` doesn't fail on missing crates.
+    sed -i '/\"cli\",/d;/\"smoke\",/d' Cargo.toml 2>/dev/null || true
+    # Build only production packages (clean -p flags, no obsolete zion-bridge binary)
+    cargo build --release \
+        -p zion-core -p zion-pool -p zion-miner -p zion-dao \
+        -p zion-multichain -p zion-oasis 2>&1
 "
 
 # ── Step 5b: Stop standalone services and copy binaries to /usr/local/bin ──
 # Stop first so cp -f does not hit "Text file busy" on a running executable.
+# NOTE: Only services that actually exist in V31/deploy/systemd/ are managed here.
+# Legacy zion-edge-* units (agent, python-dashboard, dex) are NOT part of V31
+# and are disabled during Step 7 cleanup.
 log "Stopping standalone services before binary update..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
-    systemctl stop zion-edge-agent zion-edge-python-dashboard 2>/dev/null || true
+    systemctl stop zion-v31-miner 2>/dev/null || true
 "
 
 log "Installing standalone binaries to /usr/local/bin..."
@@ -213,12 +222,25 @@ fi
 log "Installing systemd services..."
 SERVICES=(
     zion-v31-node
+    zion-v31-node2
+    zion-v31-node3
     zion-v31-pool
+    zion-v31-pool-standby
     zion-v31-multichain
     zion-v31-dao
     zion-v31-oasis
+    zion-v31-free-world
+    zion-v31-issobella
     zion-v31-miner
     zion-v31-watchdog
+    zion-g8-probe
+    zion-g8-evidence
+    zion-hiran-gateway
+    zion-hiran-inference
+    zion-v31-ai-native
+    zion-website
+    zion-marketplace
+    zion-zis
     zion-edge-backup
     zion-edge-maintenance
 )
@@ -321,12 +343,17 @@ sleep 3
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-multichain zion-v31-dao zion-v31-oasis || true"
 sleep 3
 
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-node2 zion-v31-node3 || true"
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-miner || true"
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-agent || true"
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-python-dashboard || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-free-world zion-v31-issobella || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-g8-probe zion-g8-evidence.timer || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-hiran-gateway zion-hiran-inference || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-ai-native || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-website zion-marketplace || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-zis || true"
 
 # Restart timers (will not start oneshot services, just activate timers)
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-watchdog.timer zion-edge-backup.timer zion-edge-maintenance.timer || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-watchdog.timer zion-edge-backup.timer zion-edge-maintenance.timer zion-g8-evidence.timer || true"
 
 # ── Step 9: Website already deployed via Docker in Step 6 ──
 log "Verifying website container..."
@@ -358,7 +385,7 @@ sleep 10
 
 echo ""
 echo "=== Deployment Status ==="
-for svc in zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-miner zion-edge-backup zion-edge-maintenance zion-zis; do
+for svc in zion-v31-node zion-v31-node2 zion-v31-node3 zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-free-world zion-v31-issobella zion-v31-miner zion-g8-probe zion-hiran-gateway zion-hiran-inference zion-v31-ai-native zion-website zion-marketplace zion-zis zion-edge-backup zion-edge-maintenance; do
     STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl is-active ${svc}" 2>/dev/null || true)
     if [[ "$STATUS" == "active" ]]; then
         echo -e "${GREEN}  ${svc} : ACTIVE${NC}"

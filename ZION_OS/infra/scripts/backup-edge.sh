@@ -291,6 +291,31 @@ fi
 _ZERO=$(find "${BACKUP_DIR}/daily" -maxdepth 4 -name '*.db' -size 0 -print -delete 2>/dev/null | wc -l | tr -d ' ')
 [[ "${_ZERO}" != "0" ]] && log "${YELLOW}  ⚠  dropped ${_ZERO} empty .db stub(s) from the archive${NC}"
 
+# ── 7d. Optional binaries (G-DR-1) ─────────────────────────────────────────
+# Includes V31 release binaries in the backup so that a DR restore on a clean
+# host doesn't require a Rust toolchain + 30 min rebuild. Increases backup
+# size by ~2 GB. Enable: ZION_BACKUP_INCLUDE_BINARIES=1
+if [[ "${ZION_BACKUP_INCLUDE_BINARIES:-0}" == "1" ]]; then
+    log "Backing up V31 release binaries..."
+    BIN_BACKUP="${V31_BACKUP}/binaries"
+    mkdir -p "${BIN_BACKUP}"
+    for bin in zion-node zion-pool zion-miner zion-dao warpd zion-oasis; do
+        src="/opt/zion/V31/target/release/${bin}"
+        if [[ -f "${src}" ]]; then
+            cp -a "${src}" "${BIN_BACKUP}/" 2>/dev/null && \
+                log "${GREEN}  ✓ ${bin}${NC}" || \
+                log "${YELLOW}  ⚠  ${bin} copy failed${NC}"
+        else
+            log "${YELLOW}  ⚠  ${bin} not found — skipping${NC}"
+        fi
+    done
+    # zion-pool-standby (if exists)
+    if [[ -f "/opt/zion/bin/zion-pool-standby" ]]; then
+        cp -a "/opt/zion/bin/zion-pool-standby" "${BIN_BACKUP}/" 2>/dev/null && \
+            log "${GREEN}  ✓ zion-pool-standby${NC}"
+    fi
+fi
+
 # ── 8. Compress daily backup ────────────────────────────────────────────────
 DAILY_TAR="${BACKUP_DIR}/daily/zion-edge-${TIMESTAMP}.tar.gz"
 if tar -czf "${DAILY_TAR}" -C "${BACKUP_DIR}/daily" \
@@ -309,6 +334,44 @@ if tar -czf "${DAILY_TAR}" -C "${BACKUP_DIR}/daily" \
 else
     log "${RED}  ✗ Failed to create daily backup${NC}"
     exit 1
+fi
+
+# ── 8b. Optional encryption (G-DR-3) ────────────────────────────────────────
+# Encrypts the daily tar.gz with GPG (symmetric or asymmetric) so that
+# off-site copies are safe even if the storage medium is compromised.
+# Enable: ZION_BACKUP_ENCRYPT=1  (uses symmetric passphrase from
+# ZION_BACKUP_GPG_PASSPHRASE, or recipient from ZION_BACKUP_GPG_RECIPIENT)
+if [[ "${ZION_BACKUP_ENCRYPT:-0}" == "1" ]]; then
+    if command -v gpg >/dev/null 2>&1; then
+        ENC_TAR="${DAILY_TAR}.gpg"
+        if [[ -n "${ZION_BACKUP_GPG_RECIPIENT:-}" ]]; then
+            # Asymmetric: encrypt to recipient (public key must be imported)
+            if gpg --batch --yes --trust-model always \
+                --recipient "${ZION_BACKUP_GPG_RECIPIENT}" \
+                --encrypt --output "${ENC_TAR}" "${DAILY_TAR}" 2>/dev/null; then
+                rm -f "${DAILY_TAR}"
+                DAILY_TAR="${ENC_TAR}"
+                log "${GREEN}  ✓ Encrypted (asymmetric) → ${ENC_TAR}${NC}"
+            else
+                log "${RED}  ✗ GPG asymmetric encryption failed — keeping unencrypted${NC}"
+            fi
+        elif [[ -n "${ZION_BACKUP_GPG_PASSPHRASE:-}" ]]; then
+            # Symmetric: passphrase-based
+            if printf '%s' "${ZION_BACKUP_GPG_PASSPHRASE}" | \
+                gpg --batch --yes --passphrase-fd 0 --symmetric \
+                    --cipher-algo AES256 --output "${ENC_TAR}" "${DAILY_TAR}" 2>/dev/null; then
+                rm -f "${DAILY_TAR}"
+                DAILY_TAR="${ENC_TAR}"
+                log "${GREEN}  ✓ Encrypted (symmetric AES256) → ${ENC_TAR}${NC}"
+            else
+                log "${RED}  ✗ GPG symmetric encryption failed — keeping unencrypted${NC}"
+            fi
+        else
+            log "${YELLOW}  ⚠  ZION_BACKUP_ENCRYPT=1 but no recipient/passphrase set — skipping${NC}"
+        fi
+    else
+        log "${YELLOW}  ⚠  gpg not found — skipping encryption${NC}"
+    fi
 fi
 
 # ── 9. Weekly snapshot (Sunday) ─────────────────────────────────────────────
