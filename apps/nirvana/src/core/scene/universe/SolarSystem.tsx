@@ -6,10 +6,10 @@ import * as THREE from 'three';
 import { SUN_POS, EARTH_ORBIT_R, planetPosition } from './positions';
 import { LINK_COLOR, LINK_OPACITY, LINK_WIDTH, orbitWidth } from './links';
 import { Html } from '@react-three/drei';
-import { TextLabel } from './Label';
 import { StarGate } from './StarGate';
 import type { Portal } from '@/core/portals/manifest';
 import { PLANETS, orbitRadius, type PlanetDef } from './planetCatalog';
+import { NavHalo } from './NavHalo';
 
 // Zpětně kompatibilní re-export — ostatní moduly (a testy) importují odsud.
 export { PLANETS, ORBIT_SCALE, ORBIT_EXP, orbitRadius, JUPITER } from './planetCatalog';
@@ -124,7 +124,6 @@ function Planet({
   const [hover, setHover] = useState(false);
   const carrier = useRef<THREE.Group>(null);
   const body = useRef<THREE.Mesh>(null);
-  const ring = useRef<THREE.Mesh>(null);
   const interactive = Boolean(def.game && onSelect);
   const tex = useLazyTexture(`/textures/2k_${def.tex}.jpg`);
   const ringTex = useLazyTexture(def.ring ? '/textures/2k_saturn_ring_alpha.png' : null);
@@ -148,14 +147,6 @@ function Planet({
     const [x, y, z] = planetPosition(def.id, index, orbitRadius(def.au), def.speed, clock.elapsedTime);
     carrier.current.position.set(x, y, z);
     if (body.current) body.current.rotation.y += delta * def.spin;
-    // cílový prstenec: rozsvítí se při hoveru i když je planeta zaměřená
-    if (ring.current) {
-      const mat = ring.current.material as THREE.MeshBasicMaterial;
-      const target = hover || selected ? 0.75 : 0;
-      mat.opacity += (target - mat.opacity) * Math.min(1, delta * 6);
-      ring.current.visible = mat.opacity > 0.01;
-      if (ring.current.visible) ring.current.quaternion.copy(camera.quaternion);
-    }
   });
 
   return (
@@ -184,19 +175,15 @@ function Planet({
           </mesh>
         )}
       </group>
-      {/* cílový prstenec — jen u interaktivních planet, jinak by mátl */}
+      {/* jednotný hover indikátor — stejný kruh jako u všech ostatních odkazů.
+          Žádný název pod ním; jméno ukáže až panel po kliknutí. */}
       {interactive && (
-        <mesh ref={ring} visible={false}>
-          <ringGeometry args={[def.size * 1.75, def.size * 1.82, 64]} />
-          <meshBasicMaterial
-            color={def.tint}
-            transparent
-            opacity={0}
-            toneMapped={false}
-            side={THREE.DoubleSide}
-            depthWrite={false}
-          />
-        </mesh>
+        <NavHalo
+          active={hover || selected}
+          color={def.tint}
+          radius={def.size * 1.75}
+          thickness={Math.max(0.02, def.size * 0.05)}
+        />
       )}
 
       {/* neviditelná hit-sféra — 0,74 jednotky Marsu se na klik netrefí */}
@@ -223,44 +210,16 @@ function Planet({
         </mesh>
       )}
 
-      {/* chip: jméno + co se stane. Neinteraktivní planety mají jen tlumené jméno */}
-      <Html
-        center
-        position={[0, def.size + 0.6, 0]}
-        style={{ pointerEvents: interactive ? 'auto' : 'none' }}
-      >
-        {interactive ? (
-          <span
-            className={`planet-chip${hover || selected ? ' is-live' : ''}`}
-            style={{ ['--planet-tone' as string]: def.tint }}
-            role="button"
-            tabIndex={0}
-            onClick={() => {
-              onSelect?.(def.id as 'mars' | 'venus' | 'jupiter' | 'mercury');
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                onSelect?.(def.id as 'mars' | 'venus' | 'jupiter' | 'mercury');
-              }
-            }}
-            onPointerOver={() => {
-              setHover(true);
-              document.body.style.cursor = 'pointer';
-            }}
-            onPointerOut={() => {
-              setHover(false);
-              document.body.style.cursor = 'auto';
-            }}
-          >
-            <strong>{def.name}</strong>
-            <em>{def.cta?.[lang]}</em>
-          </span>
-        ) : (
+      {/* Neinteraktivní planety (Saturn…) nejsou odkazy — nesou jen tlumené
+          jméno pro orientaci. Interaktivní světy jméno nemají: hover = kruh,
+          klik = panel. */}
+      {!interactive && (
+        <Html center position={[0, def.size + 0.6, 0]} style={{ pointerEvents: 'none' }}>
           <span className="planet-label" style={{ color: def.tint }}>
             {def.name}
           </span>
-        )}
-      </Html>
+        </Html>
+      )}
 
       {/* brána do OASIS — připnutá k téhle planetě (Jupiter), ne k Zemi */}
       {gate && <StarGate portal={gate.portal} onOpen={gate.onOpen} />}
@@ -334,6 +293,7 @@ export function SolarSystem({
  */
 function JupiterStation({ onOpen, index, def }: { onOpen: () => void; index: number; def: PlanetDef }) {
   const ring = useRef<THREE.Group>(null);
+  const [hover, setHover] = useState(false);
 
   useFrame(({ clock }) => {
     if (!ring.current) return;
@@ -351,12 +311,15 @@ function JupiterStation({ onOpen, index, def }: { onOpen: () => void; index: num
       }}
       onPointerOver={(event) => {
         event.stopPropagation();
+        setHover(true);
         document.body.style.cursor = 'pointer';
       }}
       onPointerOut={() => {
+        setHover(false);
         document.body.style.cursor = 'auto';
       }}
     >
+      <NavHalo active={hover} color="#ffb46a" radius={def.size * 1.35} thickness={def.size * 0.06} />
       <mesh rotation={[Math.PI / 2.6, 0, 0]}>
         <torusGeometry args={[def.size * 1.15, 0.1, 8, 64]} />
         <meshBasicMaterial color="#ffb46a" toneMapped={false} />
@@ -365,7 +328,6 @@ function JupiterStation({ onOpen, index, def }: { onOpen: () => void; index: num
         <octahedronGeometry args={[0.38, 0]} />
         <meshBasicMaterial color="#ffe9a8" toneMapped={false} />
       </mesh>
-      <TextLabel text="JUPITER STATION · POUŤ" position={[0, 3.6, 0]} color="#ffb46a" height={0.8} onClick={onOpen} />
     </group>
   );
 }

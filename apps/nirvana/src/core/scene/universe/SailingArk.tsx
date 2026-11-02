@@ -1,10 +1,10 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { PLANET_R } from './positions';
-import { TextLabel } from './Label';
+import { NavHalo } from './NavHalo';
 
 /**
  * Archa Království srdce obíhající Novou Zemi — třináctý uzel nemá pin na
@@ -31,6 +31,7 @@ export function SailingArk({ onOpen }: { onOpen: () => void }) {
     if (orbit.current) orbit.current.rotation.y = 0;
   });
 
+  const [hover, setHover] = useState(false);
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
   return (
@@ -43,8 +44,8 @@ export function SailingArk({ onOpen }: { onOpen: () => void }) {
             stop(e);
             onOpen();
           }}
-          onPointerOver={() => (document.body.style.cursor = 'pointer')}
-          onPointerOut={() => (document.body.style.cursor = 'auto')}
+          onPointerOver={() => { setHover(true); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { setHover(false); document.body.style.cursor = 'auto'; }}
         >
           <sphereGeometry args={[0.34, 8, 6]} />
         </mesh>
@@ -93,7 +94,7 @@ export function SailingArk({ onOpen }: { onOpen: () => void }) {
           <meshBasicMaterial color="#7fd4f5" transparent opacity={0.22} depthWrite={false} blending={THREE.AdditiveBlending} />
         </mesh>
 
-        <TextLabel text="Archa · Království srdce" position={[0, 0.42, 0]} color="#9fe4ff" height={0.12} onClick={onOpen} />
+        <NavHalo active={hover} color="#1d8fb3" radius={0.34} thickness={0.02} />
       </group>
     </group>
   );

@@ -1,8 +1,9 @@
 'use client';
 
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { NavHalo } from './NavHalo';
 
 /**
  * Issobella — orbitální stanice L6 podle kanonické předlohy
@@ -81,6 +82,7 @@ export function IssobellaStation({
   onClick?: () => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
+  const [hover, setHover] = useState(false);
   const domesRef = useRef<THREE.InstancedMesh>(null);
   const watersRef = useRef<THREE.InstancedMesh>(null);
   const spokesRef = useRef<THREE.InstancedMesh>(null);
@@ -139,8 +141,19 @@ export function IssobellaStation({
         e.stopPropagation();
         onClick();
       }}
+      onPointerOver={(e) => {
+        if (!onClick) return;
+        e.stopPropagation();
+        setHover(true);
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={() => {
+        setHover(false);
+        document.body.style.cursor = 'auto';
+      }}
     >
       <group scale={scale}>
+        <NavHalo active={hover} color="#c084fc" radius={0.26} thickness={0.02} />
         {/* Habitat ring — stříbrný panelový trup */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[0.16, 0.026, 12, seg]} />

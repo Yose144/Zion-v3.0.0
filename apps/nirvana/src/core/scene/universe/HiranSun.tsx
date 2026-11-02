@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { SUN_POS } from './positions';
 
 const SUN_POS_VEC = new THREE.Vector3(SUN_POS[0], SUN_POS[1], SUN_POS[2]);
-import { TextLabel } from './Label';
+import { NavHalo } from './NavHalo';
 import { hiranAccent, hiranActivity, type HiranState } from '@/core/hiran/presence';
 import { sriYantraGeometry } from '../../../../../shared/scenes/kit/yantra';
 
@@ -84,6 +84,7 @@ const LOTUS_BANDS = [
 
 export function HiranSun({ state, onOpen, detail = false }: { state: HiranState; onOpen: () => void; detail?: boolean }) {
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [hover, setHover] = useState(false);
   const camera = useThree((s) => s.camera);
 
   const yantraGeo = useMemo(() => sriYantraGeometry({ radius: YANTRA_R }), []);
@@ -259,9 +260,11 @@ export function HiranSun({ state, onOpen, detail = false }: { state: HiranState;
         }}
         onPointerOver={(e) => {
           e.stopPropagation();
+          setHover(true);
           document.body.style.cursor = 'pointer';
         }}
         onPointerOut={() => {
+          setHover(false);
           document.body.style.cursor = 'auto';
         }}
       >
@@ -269,13 +272,8 @@ export function HiranSun({ state, onOpen, detail = false }: { state: HiranState;
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
-      <TextLabel
-        text="HIRAN"
-        position={[0, -SUN_R - 4.2, 0]}
-        color="#ffe9a8"
-        height={1.4}
-        onClick={onOpen}
-      />
+      {/* jednotný hover kruh — stejný jako u planet a světů, žádný název */}
+      <NavHalo active={hover} color="#ffd166" radius={SUN_R * 1.18} thickness={0.09} />
     </group>
   );
 }

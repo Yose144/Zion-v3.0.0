@@ -18,8 +18,6 @@ import { SpaceBackdrop } from './SpaceBackdrop';
 import { SolarSystem } from './SolarSystem';
 import { HiranSun } from './HiranSun';
 import { useLinkEngine, registerWorldTargets } from './LinkEngine';
-import { LinkTrail } from './LinkTrail';
-import { LinkLayer } from './LinkLayer';
 
 /** Portrait / úzké viewporty: širší fov + větší počáteční odstup,
  *  ať planeta nezaplní celý záběr a zůstane vidět kontext. */
@@ -182,8 +180,6 @@ export function Universe({
         onOpenPortal={onOpen}
       />
       <HiranSun state={hiranState} onOpen={() => onOpen('hiran')} detail={focus === 'sun'} />
-      <LinkLayer />
-      <LinkTrail visible={linkEngine.isTransitioning()} />
 
       <ResponsiveFraming />
       <OrbitControls

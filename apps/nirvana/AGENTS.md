@@ -916,3 +916,28 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   a `waitUntil: 'networkidle'` → `'networkidle0'`. Víc E2E nepotřebuje.
 - **Nikdy nepiš `page.waitForFunction(fn, args, opts)`** — Playwright a
   Puppeteer mají jiné pořadí argumentů. Polluj z Node.
+
+## Jednotný hover kruh pro odkazy (2026-11-02, druhá vlna)
+
+- **Jediný signál „tady se dá kliknout“ je kruh** (`NavHalo`). Najedeš na
+  Slunce, planetu, svět L4/L6, L5 misii, Měsíc, flotilu, archu, bránu nebo
+  stanici → objeví se stejný dvojitý prstenec v barvě cíle. Žádný název pod
+  ním; jméno ukáže až panel po kliknutí. Dřív měl každý objekt jiný label
+  (HTML chip u planet, 3D `TextLabel` u světů/misí/flotily/archy/Slunce).
+- **`NavHalo`** (`core/scene/universe/NavHalo.tsx`) je billboard (otočený ke
+  kameře), aditivní blend, `active` řídí rodič, barvu dodá akcent cíle.
+  Používá ho: `SolarSystem` (planety, Jupiter Station), `HiranSun`,
+  `OrbitalWorlds` (hovered instance), `IssobellaRing` + `IssobellaStation`,
+  `NewEarth` (Měsíc + L5 misie), `SkyFleet`, `SailingArk`, `StarGate`.
+- **Interaktivní objekty nemají jméno.** Planety s `game` přišly o HTML chip
+  (`.planet-chip`); neinteraktivní planety (Saturn…) si nechaly tlumené jméno —
+  nejsou to odkazy. Světy/misie/měsíc/flotila/archa/brána/Slunce přišly o 3D
+  `TextLabel`. Kdo přidá nový odkaz, přidá `NavHalo`, ne jméno.
+- **Vizuální spojnice jsou pryč.** `LinkLayer` (spoje mezi body) a `LinkTrail`
+  (stopa kamery) byly smazány — user je nechtěl („linka“ ≠ odkaz).
+  `DEFAULT_LINK_EDGES` v engine zůstává jen jako data pro HUD „skoč na…“.
+- **Přínos:** textury ve scéně spadly z 40 na 21 (každý `TextLabel` je vlastní
+  `CanvasTexture`), draw calls 175 → 153. Ověřeno headless.
+- **Klik na planetu funguje dál** přes neviditelnou hit-sféru
+  (`opacity: 0`, ne `visible={false}`) — ověřeno headless klikem na
+  projekci Merkuru: `focus=mercury`, panel se otevřel.

@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as React from 'react';
 import { useFrame } from '@react-three/fiber';
-import { TextLabel } from './Label';
+import { NavHalo } from './NavHalo';
 import * as THREE from 'three';
 import { PLANET_R, GLOBE_SPIN_SPEED, latLonToVec3, moonPosition } from './positions';
 import { EARTH_MISSIONS, LUNAR_MISSIONS, MISSION_ORIGIN, MISSION_STATUS_COLOR } from '@/lib/freeworld-sites';
@@ -178,13 +178,8 @@ function Moon({ onOpen }: { onOpen: () => void }) {
         <sphereGeometry args={[MOON_R * 1.45, 12, 10]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <TextLabel
-        text={hovered ? `${mission?.name ?? 'Matrix'}  ↗` : (mission?.name ?? 'Matrix')}
-        position={[0, MOON_R + 0.75, 0]}
-        color={hovered ? '#ffffff' : color}
-        height={0.42}
-        onClick={open}
-      />
+      {/* jednotný hover kruh — žádný název, stejný jako u planet a světů */}
+      <NavHalo active={hovered} color={color} radius={MOON_R * 1.55} thickness={0.03} />
     </group>
   );
 }
@@ -198,7 +193,6 @@ function MissionSites({ onSelectMission }: { onSelectMission?: (key: string) => 
   const tips = useRef<THREE.InstancedMesh>(null);
   const hits = useRef<THREE.InstancedMesh>(null);
   const rings = useRef<THREE.InstancedMesh>(null);
-  const halo = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState<number | null>(null);
   const tipScale = useRef<number[]>([]);
   const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -295,20 +289,6 @@ function MissionSites({ onSelectMission }: { onSelectMission?: (key: string) => 
     });
     if (r) r.instanceMatrix.needsUpdate = true;
     if (tp) tp.instanceMatrix.needsUpdate = true;
-    const hl = halo.current;
-    if (hl) {
-      if (hovered != null) {
-        const d = data[hovered];
-        quat.setFromUnitVectors(FWD, d.n);
-        hl.quaternion.copy(quat);
-        hl.position.copy(d.n).multiplyScalar(PLANET_R + d.h + 0.02);
-        const s = 1 + 0.16 * Math.sin(t * 6);
-        hl.scale.setScalar(s);
-        hl.visible = true;
-      } else {
-        hl.visible = false;
-      }
-    }
   });
 
   const open = (i: number) => {
@@ -377,45 +357,20 @@ function MissionSites({ onSelectMission }: { onSelectMission?: (key: string) => 
         <sphereGeometry args={[0.16, 10, 8]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </instancedMesh>
-      {/* halo — zlatý kruh kolem hovered bodu */}
-      <group ref={halo} visible={false}>
-        <mesh>
-          <torusGeometry args={[0.17, 0.014, 8, 32]} />
-          <meshBasicMaterial color="#ffd870" transparent opacity={0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
-        </mesh>
-        <mesh>
-          <torusGeometry args={[0.24, 0.006, 8, 32]} />
-          <meshBasicMaterial color="#ffe9a8" transparent opacity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} />
-        </mesh>
-      </group>
-      {/* tooltip — jméno + ↗ nad hovered bodem */}
+      {/* jednotný hover kruh na hovered misii (barva = stav misie) */}
       {hovered != null && (
-        <TextLabel
-          text={`${data[hovered].name}  ↗`}
+        <NavHalo
+          active
+          color={`#${data[hovered].color.getHexString()}`}
+          radius={0.2}
+          thickness={0.02}
           position={[
-            data[hovered].n.x * (PLANET_R + data[hovered].h + 0.62),
-            data[hovered].n.y * (PLANET_R + data[hovered].h + 0.62),
-            data[hovered].n.z * (PLANET_R + data[hovered].h + 0.62),
+            data[hovered].n.x * (PLANET_R + data[hovered].h + 0.02),
+            data[hovered].n.y * (PLANET_R + data[hovered].h + 0.02),
+            data[hovered].n.z * (PLANET_R + data[hovered].h + 0.02),
           ]}
-          color="#ffffff"
-          height={0.3}
-          onClick={() => open(hovered)}
         />
       )}
-      {data.map((d) => (
-        <TextLabel
-          key={d.name}
-          text={d.name}
-          position={[
-            d.n.x * (PLANET_R + d.h + 0.34),
-            d.n.y * (PLANET_R + d.h + 0.34),
-            d.n.z * (PLANET_R + d.h + 0.34),
-          ]}
-          color={`#${d.color.getHexString()}`}
-          height={0.19}
-          onClick={() => open(data.indexOf(d))}
-        />
-      ))}
     </>
   );
 }

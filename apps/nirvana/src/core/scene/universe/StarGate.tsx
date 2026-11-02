@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { GATE_JUPITER_OFFSET } from './positions';
 import type { Portal } from '@/core/portals/manifest';
 import { getGlobalLinkEngine } from './LinkEngine';
+import { NavHalo } from './NavHalo';
 
 /**
  * Brána — stejný obraz jako StarGate na IntroPage.
@@ -142,7 +143,7 @@ export function StarGate({ portal, onOpen }: { portal: Portal; onOpen: (id: stri
     event?.stopPropagation();
     try {
       const engine = getGlobalLinkEngine();
-      engine.flyTo('gate', { camera: (window as any).__nirvanaCamera, controls: (window as any).__nirvanaControls, clock: { elapsedTime: performance.now()/1000 }, earthPos: new THREE.Vector3(30, 0, 0), reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches, lang: 'cs' } as any);
+      engine.flyTo('gate');
     } catch {}
     // Vstup do brány = vstup do OASIS. Panel v liště vede na totéž místo.
     window.open(OASIS_URL, '_blank', 'noopener,noreferrer');
@@ -167,6 +168,7 @@ export function StarGate({ portal, onOpen }: { portal: Portal; onOpen: (id: stri
 
   return (
     <group ref={group} position={GATE_JUPITER_OFFSET} scale={scale}>
+      <NavHalo active={hover} color="#fcd116" radius={RADIUS * 1.06} thickness={0.06} />
       {/* tmavé pozadí brány + kovový prstenec, stejné jako rádiusový gradient v CSS */}
       <mesh position={[0, 0, -0.06]} {...hit}>
         <circleGeometry args={[RADIUS, 72]} />

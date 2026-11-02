@@ -1,12 +1,13 @@
 'use client';
 
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ORBIT_R, orbitBeltAngle, orbitPosition } from './positions';
 import { LINK_COLOR, LINK_OPACITY, LINK_RADIUS } from './links';
 import type { WorldPoint } from '@/lib/worlds';
 import { layerColor } from '@/lib/worlds';
+import { NavHalo } from './NavHalo';
 
 const PICK_COUNT = 12;
 
@@ -21,6 +22,7 @@ export function OrbitalWorlds({
   onSelectWorld: (id: string) => void;
 }) {
   const belt = useRef<THREE.Group>(null);
+  const [hover, setHover] = useState<number | null>(null);
 
   useFrame(({ clock }) => {
     // deterministická rotace: fokus na svět počítá stejný úhel
@@ -97,10 +99,30 @@ export function OrbitalWorlds({
             e.stopPropagation();
             if (e.instanceId != null) onSelectWorld(pickedData[e.instanceId].id);
           }}
+          onPointerMove={(e) => {
+            e.stopPropagation();
+            if (e.instanceId != null) {
+              setHover(e.instanceId);
+              document.body.style.cursor = 'pointer';
+            }
+          }}
+          onPointerOut={() => {
+            setHover(null);
+            document.body.style.cursor = 'auto';
+          }}
         >
           <sphereGeometry args={[0.07, 10, 10]} />
           <meshBasicMaterial />
         </instancedMesh>
+      )}
+      {hover != null && pickedData[hover] && (
+        <NavHalo
+          active
+          color={pickedData[hover].color.getStyle()}
+          radius={0.16}
+          thickness={0.014}
+          position={pickedData[hover].pos}
+        />
       )}
     </group>
   );

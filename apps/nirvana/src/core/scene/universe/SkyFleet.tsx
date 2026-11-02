@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { fleetPosition, fleetHeading, latLonToVec3, moonPosition, PLANET_R, RING_R } from './positions';
 import { LINK_ACTIVE_OPACITY, LINK_COLOR, LINK_OPACITY, LINK_RADIUS } from './links';
-import { TextLabel } from './Label';
+import { NavHalo } from './NavHalo';
 import { NabukanoModel } from '../../../../../shared/scenes/kit/vessels';
 
 /**
@@ -30,6 +30,7 @@ export function SkyFleet({ onOpen, reducedMotion = false }: { onOpen: () => void
     }
   });
 
+  const [hover, setHover] = useState(false);
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
   return (
@@ -41,8 +42,8 @@ export function SkyFleet({ onOpen, reducedMotion = false }: { onOpen: () => void
           stop(e);
           onOpen();
         }}
-        onPointerOver={() => (document.body.style.cursor = 'pointer')}
-        onPointerOut={() => (document.body.style.cursor = 'auto')}
+        onPointerOver={() => { setHover(true); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { setHover(false); document.body.style.cursor = 'auto'; }}
       >
         <sphereGeometry args={[0.8, 10, 8]} />
       </mesh>
@@ -56,7 +57,7 @@ export function SkyFleet({ onOpen, reducedMotion = false }: { onOpen: () => void
         <NabukanoModel animate={!reducedMotion} />
       </group>
 
-      <TextLabel text="Nabukano · Nebeská flotila" position={[0, 0.5, 0]} color="#9fe4ff" height={0.055} onClick={onOpen} />
+      <NavHalo active={hover} color="#38bdf8" radius={0.85} thickness={0.03} />
     </group>
   );
 }

@@ -1,14 +1,14 @@
 'use client';
 
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { TextLabel } from './Label';
 import * as THREE from 'three';
 import { RING_R, RING_R2, ringPosition, ringSpinAngle } from './positions';
 import { IssobellaStation } from './IssobellaStation';
 import type { Portal } from '@/core/portals/manifest';
 import type { WorldPoint } from '@/lib/worlds';
 import { layerColor } from '@/lib/worlds';
+import { NavHalo } from './NavHalo';
 
 const TILT: [number, number, number] = [Math.PI / 2 - 0.32, 0, 0.14];
 
@@ -26,6 +26,7 @@ export function IssobellaRing({
   const ring = useRef<THREE.Group>(null);
   const glow = useRef<THREE.MeshBasicMaterial>(null);
   const stations = useRef<THREE.InstancedMesh>(null);
+  const [hover, setHover] = useState<number | null>(null);
   const stationData = useMemo(
     () =>
       worlds.map((w, i) => ({
@@ -83,18 +84,30 @@ export function IssobellaRing({
             e.stopPropagation();
             if (e.instanceId != null) onSelectWorld(stationData[e.instanceId].id);
           }}
+          onPointerMove={(e) => {
+            e.stopPropagation();
+            if (e.instanceId != null) {
+              setHover(e.instanceId);
+              document.body.style.cursor = 'pointer';
+            }
+          }}
+          onPointerOut={() => {
+            setHover(null);
+            document.body.style.cursor = 'auto';
+          }}
         >
           <octahedronGeometry args={[0.08, 0]} />
           <meshBasicMaterial />
         </instancedMesh>
       )}
-      {portal && (
-        <TextLabel
-          text={`${portal.title.cs} · L6`}
-          position={[0, 0.7, RING_R]}
-          color="#ffe9b0"
-          height={0.34}
-          onClick={() => onOpen(portal.id)}
+      {/* jednotný hover kruh pro stanice L6 — žádný název */}
+      {hover != null && stationData[hover] && (
+        <NavHalo
+          active
+          color={stationData[hover].color.getStyle()}
+          radius={0.17}
+          thickness={0.014}
+          position={stationData[hover].pos}
         />
       )}
     </group>
