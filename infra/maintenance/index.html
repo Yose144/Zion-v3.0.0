@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#000000">
+<link rel="preload" href="/maint-assets/milkyway-eso-4k.jpg" as="image" fetchpriority="low">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='26' fill='%23f5a623'/%3E%3Ccircle cx='32' cy='32' r='30' fill='none' stroke='%23fcd116' stroke-width='2'/%3E%3C/svg%3E">
 <title>ZION Terra Nova — údržba · maintenance</title>
 <style>
@@ -20,7 +21,11 @@
   body {
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
     color: var(--fg);
-    background: linear-gradient(180deg, #0c0c0c 0%, #050505 60%, #000 100%);
+    /* Reálná all-sky fotografie (ESO/Serge Brunier, CC BY 4.0) — viditelná i bez WebGL */
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.72) 100%),
+      url('/maint-assets/milkyway-eso-4k.jpg') center 30% / cover no-repeat,
+      #000;
     overflow: hidden;
     height: 100dvh;
   }
@@ -46,8 +51,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.9rem;
-    padding: 2rem 1.25rem max(2.2rem, env(safe-area-inset-bottom));
+    gap: 0.6rem;
+    padding: 1rem 1.25rem max(1.15rem, env(safe-area-inset-bottom));
     pointer-events: none;
   }
   .kicker {
@@ -59,10 +64,10 @@
     text-shadow: 0 2px 18px rgba(0, 0, 0, 0.8);
   }
   h1 {
-    font-size: clamp(1.6rem, 5.5vw, 2.3rem);
+    font-size: clamp(1.45rem, 5vw, 2.1rem);
     font-weight: 800;
     letter-spacing: 0.02em;
-    line-height: 1.15;
+    line-height: 1.12;
     text-align: center;
     text-shadow: 0 2px 24px rgba(0, 0, 0, 0.85);
   }
@@ -73,7 +78,7 @@
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-top: 0.5rem;
+    margin-top: 0.35rem;
   }
   .card {
     position: relative;
@@ -83,8 +88,8 @@
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(252, 209, 22, 0.28);
-    border-radius: 1.65rem;
-    padding: 1.6rem 1.5rem 1.5rem;
+    border-radius: 1.45rem;
+    padding: 1.15rem 1.3rem 1.05rem;
     box-shadow: 0 24px 90px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     pointer-events: auto;
@@ -98,13 +103,13 @@
     opacity: 0.85;
   }
   .card p { line-height: 1.65; }
-  .cs { font-size: 1.02rem; }
-  .en { font-size: 0.86rem; color: var(--muted); margin-top: 0.75rem; }
+  .cs { font-size: 0.98rem; }
+  .en { font-size: 0.82rem; color: var(--muted); margin-top: 0.55rem; }
   .eta {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 1.2rem;
+    margin-top: 0.85rem;
     font-size: 0.7rem;
     letter-spacing: 0.3em;
     text-transform: uppercase;
@@ -340,7 +345,16 @@ try {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x040308);
-  scene.fog = new THREE.FogExp2(0x040308, 0.028);
+  /* Reálné pozadí — ESO all-sky panorama (Serge Brunier, CC BY 4.0), stejná
+     textura jako nirvana/public/textures. Přehodí se až po načtení. */
+  new THREE.TextureLoader().load('/maint-assets/milkyway-eso-4k.jpg', (t) => {
+    t.mapping = THREE.EquirectangularReflectionMapping;
+    t.colorSpace = THREE.SRGBColorSpace;
+    scene.background = t;
+    scene.backgroundIntensity = 0.62;
+    scene.backgroundRotation.set(0.62, -0.35, 0); // naklopený galaktický pás
+  });
+  scene.fog = new THREE.FogExp2(0x040308, 0.02);
 
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
   const camBase = new THREE.Vector3(0, 2.1, 8.4);
@@ -349,7 +363,7 @@ try {
   /* ── světla ── */
   scene.add(new THREE.AmbientLight(0x2e2517, 1.6));
   const orbLight = new THREE.PointLight(0xffc14d, 34, 0, 2);
-  orbLight.position.set(0, 1.58, 0);
+  orbLight.position.set(0, 1.72, 0);
   scene.add(orbLight);
   const rim = new THREE.DirectionalLight(0x8fb8ff, 0.5);
   rim.position.set(-6, 5, -4);
@@ -407,9 +421,9 @@ try {
   const starsFar = starField(500, 70, 110, 3.2);
   scene.add(stars, starsFar);
 
-  /* ── mlhovina ── */
+  /* ── mlhovina — jemný nádech nad reálným nebem (podbarví galaktický pás) ── */
   const nebulaTex = glowTexture('rgba(99,52,237,0.5)', 'rgba(99,52,237,0.12)');
-  for (const [x, y, z, s, o] of [[-14, 7, -30, 34, 0.16], [12, 9, -34, 30, 0.12], [0, -3, -40, 44, 0.10]]) {
+  for (const [x, y, z, s, o] of [[-14, 7, -30, 34, 0.08], [12, 9, -34, 30, 0.06]]) {
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: nebulaTex, transparent: true, opacity: o, depthWrite: false, blending: THREE.AdditiveBlending }));
     sp.position.set(x, y, z); sp.scale.setScalar(s); scene.add(sp);
   }
@@ -484,7 +498,8 @@ try {
 
   /* ── ORB — Hiranyagarbha ── */
   const orbGroup = new THREE.Group();
-  orbGroup.position.y = 1.58;
+  const ORB_Y = 1.72;
+  orbGroup.position.y = ORB_Y;
   scene.add(orbGroup);
 
   const ORB_R = 0.95;
@@ -575,7 +590,7 @@ try {
 
   /* prstence Ø 2.35–2.7 */
   const ringGroup = new THREE.Group();
-  ringGroup.position.y = 1.58;
+  ringGroup.position.y = 1.72;
   scene.add(ringGroup);
   for (const [r, tilt] of [[1.42, 1.12], [1.62, 1.9]]) {
     const t = new THREE.Mesh(
@@ -651,7 +666,7 @@ try {
   resize();
 
   const t0 = performance.now();
-  const camTarget = new THREE.Vector3(0, 1.22, 0);
+  const camTarget = new THREE.Vector3(0, 0.92, 0);
 
   function frame() {
     const t = (performance.now() - t0) / 1000;
@@ -659,7 +674,7 @@ try {
     /* nádech orb — 5 s */
     const breath = 1 + Math.sin(t * (Math.PI * 2 / 5)) * 0.014;
     orbGroup.scale.setScalar(breath);
-    orbGroup.position.y = 1.58 + Math.sin(t * 0.55) * 0.05;
+    orbGroup.position.y = ORB_Y + Math.sin(t * 0.55) * 0.05;
     orbLight.position.y = orbGroup.position.y;
 
     /* jantra čelí kameře, pomalu se točí kolem vlastní osy, jemně pulzuje */
