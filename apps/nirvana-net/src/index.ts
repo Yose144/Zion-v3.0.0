@@ -773,17 +773,33 @@ const gameLoop = setInterval(() => {
       room.state =
         room.moba.phase === 'running' ? 'running' : room.moba.phase === 'ended' ? 'ended' : 'waiting';
       if (tickCount % SNAPSHOT_EVERY === 0) {
-        const snapshot = mobaRoomSnapshot(room.moba, now);
-        broadcastChannel(`arena:${room.id}`, {
-          t: 'snapshot',
-          game: 'moba',
-          seq: room.moba.seq,
-          time: now,
-          players: [],
-          moba: snapshot.moba,
-          countdown: snapshot.countdown,
-          state: snapshot.phase === 'running' ? 'running' : snapshot.phase === 'ended' ? 'ended' : 'countdown',
-        });
+        // **Mlha války:** každý tým dostane jiný snapshot. Skládá se jednou
+        // na tým (ne na hráče) — 5v5 by jinak stavělo 10 snapshotů za tick.
+        const channel = `arena:${room.id}`;
+        const byTeam = new Map<string, Conn[]>();
+        for (const conn of membersOf(channel)) {
+          const seat = room.moba.seats.get(conn.id);
+          const key = seat?.team ?? '*';
+          const list = byTeam.get(key) ?? [];
+          list.push(conn);
+          byTeam.set(key, list);
+        }
+        for (const [key, conns] of byTeam) {
+          const viewerTeam = key === '*' ? undefined : (key as 'blue' | 'red');
+          const snapshot = mobaRoomSnapshot(room.moba, now, viewerTeam);
+          const message: ServerMessage = {
+            t: 'snapshot',
+            game: 'moba',
+            seq: room.moba.seq,
+            time: now,
+            players: [],
+            moba: snapshot.moba,
+            countdown: snapshot.countdown,
+            state:
+              snapshot.phase === 'running' ? 'running' : snapshot.phase === 'ended' ? 'ended' : 'countdown',
+          };
+          for (const conn of conns) send(conn, message);
+        }
       }
       continue;
     }

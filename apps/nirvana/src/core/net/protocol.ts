@@ -12,7 +12,15 @@
 
 import type { ItemId, MobaSnapshot } from '../moba/sim';
 
-export const PROTO_VERSION = 6;
+/**
+ * Historie:
+ *  5 — MOBA online 2v2 (`moba.ts`, snapshoty, vstup)
+ *  6 — obchod s itemy (`buy`) + 3v3
+ *  7 — **mlha války**: snapshot se posílá per tým, takže starý klient by
+ *      viděl celou mapu (cheat) a nový klient na starém serveru by neviděl
+ *      nic filtrované. Verze se musí potkat.
+ */
+export const PROTO_VERSION = 7;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;

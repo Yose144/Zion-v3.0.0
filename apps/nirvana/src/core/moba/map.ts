@@ -120,6 +120,29 @@ export const MINION_ATTACK_MS = 1200;
 
 export const MATCH_SECONDS = 480;
 
+// ── mlha války ────────────────────────────────────────────────────────
+//
+// Bez mlhy je celá mapa průhledná: jungling nemá smysl (soupeř tě vidí
+// u tábora), gank neexistuje (nikdo se neplíží) a past je jen dekorace.
+// Vidění drží **jednotky**, ne mapa — stejně jako v klasické MOBA.
+//
+// Čísla jsou v metrech a schválně štědrá: hra se hraje na 46×34 m, takže
+// hrdina (14 m) vidí zhruba třetinu šířky.
+export const VISION = {
+  hero: 14,
+  minion: 8,
+  tower: 12,
+  /** Vlastněný uzel L5 svítí — odměna za převzetí. */
+  node: 10,
+} as const;
+
+/** Jeden zdroj vidění ve světě. */
+export interface VisionSource {
+  x: number;
+  z: number;
+  radius: number;
+}
+
 export function lanePoint(lane: Lane, x: number) {
   return { x, z: lane.z };
 }

@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { createRequire } from 'node:module';
 import { WebSocket } from 'ws';
+import { PROTO_VERSION as PROTO } from '../dist/nirvana/src/core/net/protocol.js';
 
 // sdílená fyzika/mapa z nirvany (build služby je CommonJS)
 const require = createRequire(import.meta.url);
@@ -132,8 +133,8 @@ try {
   await a.opened;
   await b.opened;
 
-  a.send({ t: 'hello', proto: 6 });
-  b.send({ t: 'hello', proto: 6 });
+  a.send({ t: 'hello', proto: PROTO });
+  b.send({ t: 'hello', proto: PROTO });
   await a.waitFor((m) => m.t === 'welcome');
   await b.waitFor((m) => m.t === 'welcome');
 

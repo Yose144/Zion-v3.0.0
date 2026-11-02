@@ -19,6 +19,7 @@ import { sha256 } from '@noble/hashes/sha2';
 import { sha512 } from '@noble/hashes/sha512';
 import { ripemd160 } from '@noble/hashes/legacy';
 import { WebSocket } from 'ws';
+import { PROTO_VERSION as PROTO } from '../dist/nirvana/src/core/net/protocol.js';
 
 // @noble/ed25519 v2 potřebuje sync SHA-512 (stejně jako `apps/nirvana/src/lib/zionWallet.ts`)
 etc.sha512Sync = (...messages) => sha512(etc.concatBytes(...messages));
@@ -151,14 +152,14 @@ try {
   // ── 3) host (bez cookie) poslouchá ──────────────────────────────────
   const guest = connect(null);
   await guest.opened;
-  guest.send({ t: 'hello', proto: 6 });
+  guest.send({ t: 'hello', proto: PROTO });
   const guestWelcome = await guest.waitFor((m) => m.t === 'welcome');
   check('host: role guest', guestWelcome.you.role === 'guest');
 
   // ── 4) přihlášený hráč ──────────────────────────────────────────────
   const player = connect(cookieHeader);
   await player.opened;
-  player.send({ t: 'hello', proto: 6 });
+  player.send({ t: 'hello', proto: PROTO });
   const welcome = await player.waitFor((m) => m.t === 'welcome');
   check('zis: role zis', welcome.you.role === 'zis', welcome.you.role);
   // callsign z `avatar3d` má přednost před displayName (tak to dělá ZIS i web)

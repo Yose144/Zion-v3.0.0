@@ -30,6 +30,7 @@ import {
   NODE_SITES,
   SPAWNS,
   STRUCTURES,
+  VISION,
   WAVE_INTERVAL_MS,
   WAVE_SIZE,
   isStructureProtected,
@@ -1160,7 +1161,49 @@ export interface MobaSnapshot {
   effects: { id: string; kind: Effect['kind']; x: number; z: number; radius: number; color: string; alpha: number }[];
 }
 
-export function mobaSnapshot(state: MobaState): MobaSnapshot {
+/** Zdroj vidění pro tým — hrdinové, minioni, věže a vlastněné uzly. */
+export function visionSources(state: MobaState, team: Team): { x: number; z: number; radius: number }[] {
+  const sources: { x: number; z: number; radius: number }[] = [];
+  for (const hero of state.heroes) {
+    if (hero.team === team && hero.alive) sources.push({ x: hero.x, z: hero.z, radius: VISION.hero });
+  }
+  for (const minion of state.minions) {
+    if (minion.team === team) sources.push({ x: minion.x, z: minion.z, radius: VISION.minion });
+  }
+  for (const tower of state.towers) {
+    if (tower.team === team && tower.hp > 0) sources.push({ x: tower.x, z: tower.z, radius: VISION.tower });
+  }
+  for (const node of state.nodes) {
+    if (node.owner === team) sources.push({ x: node.x, z: node.z, radius: VISION.node });
+  }
+  return sources;
+}
+
+/** Je bod vidět týmem? (Projektil letící mlhou nemá prozradit střelce.) */
+export function isVisibleTo(
+  sources: { x: number; z: number; radius: number }[],
+  x: number,
+  z: number,
+): boolean {
+  for (const source of sources) {
+    if (distance(x, z, source.x, source.z) <= source.radius) return true;
+  }
+  return false;
+}
+
+/**
+ * Snapshot hry.
+ *
+ * `viewerTeam` zapíná **mlhu války**: nepřátelské jednotky, monstra
+ * a projektily se posílají jen když je tým vidí. Vlastní tým, struktury
+ * (věže jde vidět vždycky) a uzly L5 se posílají vždy — bez toho by mapa
+ * přestala být mapou.
+ *
+ * Bez `viewerTeam` se posílá všechno (debug, sólo bez mlhy, divák).
+ */
+export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot {
+  const sources = viewerTeam ? visionSources(state, viewerTeam) : null;
+  const sees = (x: number, z: number) => !sources || isVisibleTo(sources, x, z);
   return {
     time: state.time,
     ended: state.ended,
@@ -1179,51 +1222,62 @@ export function mobaSnapshot(state: MobaState): MobaSnapshot {
         hp: tower.hp,
         maxHp: tower.maxHp,
       })),
-    heroes: state.heroes.map((hero) => ({
-      id: hero.id,
-      team: hero.team,
-      name: hero.name,
-      heroId: hero.heroId,
-      x: Math.round(hero.x * 100) / 100,
-      z: Math.round(hero.z * 100) / 100,
-      hp: Math.round(hero.hp),
-      maxHp: hero.maxHp,
-      mana: Math.round(hero.mana),
-      maxMana: hero.maxMana,
-      shield: Math.round(hero.shield),
-      level: hero.level,
-      alive: hero.alive,
-      respawnIn: hero.alive ? 0 : Math.max(0, Math.ceil((hero.respawnAt - state.now) / 1000)),
-      cooldowns: hero.cooldowns,
-      kills: hero.kills,
-      deaths: hero.deaths,
-      gold: Math.round(hero.gold),
-      items: hero.items,
-      buffs: hero.buffs,
+    heroes: state.heroes
+      // Nepřítel se posílá jen živý a viděný — mrtvý hrdina v mlze nemá
+      // prozrazovat, kde se za 20 s objeví.
+      .filter((hero) => !viewerTeam || hero.team === viewerTeam || (hero.alive && sees(hero.x, hero.z)))
+      .map((hero) => ({
+        id: hero.id,
+        team: hero.team,
+        name: hero.name,
+        heroId: hero.heroId,
+        x: Math.round(hero.x * 100) / 100,
+        z: Math.round(hero.z * 100) / 100,
+        hp: Math.round(hero.hp),
+        maxHp: hero.maxHp,
+        mana: Math.round(hero.mana),
+        maxMana: hero.maxMana,
+        shield: Math.round(hero.shield),
+        level: hero.level,
+        alive: hero.alive,
+        respawnIn: hero.alive ? 0 : Math.max(0, Math.ceil((hero.respawnAt - state.now) / 1000)),
+        cooldowns: hero.cooldowns,
+        kills: hero.kills,
+        deaths: hero.deaths,
+        gold: Math.round(hero.gold),
+        items: hero.items,
+        buffs: hero.buffs,
     })),
-    minions: state.minions.map((minion) => ({
-      id: minion.id,
-      team: minion.team,
-      x: Math.round(minion.x * 100) / 100,
-      z: Math.round(minion.z * 100) / 100,
-      hp: minion.hp,
-      maxHp: minion.maxHp,
-    })),
-    monsters: state.monsters.map((monster) => ({
-      id: monster.id,
-      x: Math.round(monster.x * 100) / 100,
-      z: Math.round(monster.z * 100) / 100,
-      hp: monster.alive ? monster.hp : 0,
-      maxHp: monster.maxHp,
-      type: monster.type,
-      alive: monster.alive,
-    })),
-    projectiles: state.projectiles.map((projectile) => ({
-      id: projectile.id,
-      x: projectile.x,
-      z: projectile.z,
-      color: projectile.color,
-    })),
+    minions: state.minions
+      .filter((minion) => !viewerTeam || minion.team === viewerTeam || sees(minion.x, minion.z))
+      .map((minion) => ({
+        id: minion.id,
+        team: minion.team,
+        x: Math.round(minion.x * 100) / 100,
+        z: Math.round(minion.z * 100) / 100,
+        hp: minion.hp,
+        maxHp: minion.maxHp,
+      })),
+    monsters: state.monsters
+      .filter((monster) => sees(monster.x, monster.z))
+      .map((monster) => ({
+        id: monster.id,
+        x: Math.round(monster.x * 100) / 100,
+        z: Math.round(monster.z * 100) / 100,
+        hp: monster.alive ? monster.hp : 0,
+        maxHp: monster.maxHp,
+        type: monster.type,
+        alive: monster.alive,
+      })),
+    projectiles: state.projectiles
+      // Projektil v mlze prozradí, odkud letí — vlastní se posílají vždy.
+      .filter((projectile) => !viewerTeam || projectile.team === viewerTeam || sees(projectile.x, projectile.z))
+      .map((projectile) => ({
+        id: projectile.id,
+        x: projectile.x,
+        z: projectile.z,
+        color: projectile.color,
+      })),
     effects: state.effects.map((effect) => ({
       id: effect.id,
       kind: effect.kind,

@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { WebSocket } from 'ws';
+import { PROTO_VERSION as PROTO } from '../dist/nirvana/src/core/net/protocol.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const entry = join(here, '..', 'dist', 'nirvana-net', 'src', 'index.js');
@@ -129,7 +130,7 @@ try {
 
   const health = await waitForHealth();
   check('health: ok', health.ok === true && health.service === 'zion-nirvana-net', JSON.stringify(health));
-  check('health: proto 6', health.proto === 6, String(health.proto));
+  check(`health: proto ${PROTO}`, health.proto === PROTO, String(health.proto));
   check('health: bez spojení', health.connections === 0 && health.rooms === 0);
 
   const metrics = await (await fetch(`${BASE}/metrics`)).text();
@@ -139,7 +140,7 @@ try {
   // ── host: čte, ale nepíše ───────────────────────────────────────────
   const guest = client();
   await guest.opened;
-  guest.send({ t: 'hello', proto: 6 });
+  guest.send({ t: 'hello', proto: PROTO });
   const guestWelcome = await guest.waitFor((m) => m.t === 'welcome');
   check('host: role guest', guestWelcome.you.role === 'guest' && /^host-/.test(guestWelcome.you.name));
   check('host: prázdná historie', guestWelcome.history.length === 0);
@@ -152,7 +153,7 @@ try {
   // ── přihlášený (ZIS) ────────────────────────────────────────────────
   const zisClient = client({ headers: { Cookie: 'zion_session=good' } });
   await zisClient.opened;
-  zisClient.send({ t: 'hello', proto: 6 });
+  zisClient.send({ t: 'hello', proto: PROTO });
   const zisWelcome = await zisClient.waitFor((m) => m.t === 'welcome');
   check('zis: role zis', zisWelcome.you.role === 'zis', zisWelcome.you.role);
   check('zis: jméno z callsignu', zisWelcome.you.name === 'Poutník', zisWelcome.you.name);
@@ -204,7 +205,7 @@ try {
   // ── neplatná session = host ─────────────────────────────────────────
   const badCookie = client({ headers: { Cookie: 'zion_session=rozbitá' } });
   await badCookie.opened;
-  badCookie.send({ t: 'hello', proto: 6 });
+  badCookie.send({ t: 'hello', proto: PROTO });
   const badWelcome = await badCookie.waitFor((m) => m.t === 'welcome');
   check('neplatná session → host', badWelcome.you.role === 'guest');
   badCookie.close();
@@ -213,7 +214,7 @@ try {
   await sleep(200);
   const late = client();
   await late.opened;
-  late.send({ t: 'hello', proto: 6 });
+  late.send({ t: 'hello', proto: PROTO });
   const lateWelcome = await late.waitFor((m) => m.t === 'welcome');
   check('historie pro nováčka', lateWelcome.history.length >= 1, String(lateWelcome.history.length));
   late.close();
@@ -264,7 +265,7 @@ try {
 
   const good = client({ headers: { Origin: 'https://nirvana.zionterranova.com' } });
   await good.opened;
-  good.send({ t: 'hello', proto: 6 });
+  good.send({ t: 'hello', proto: PROTO });
   await good.waitFor((m) => m.t === 'welcome');
   check('povolený Origin projde', true);
   good.close();

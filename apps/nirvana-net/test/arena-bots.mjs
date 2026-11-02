@@ -23,6 +23,7 @@ import { dirname, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { createRequire } from 'node:module';
 import { WebSocket } from 'ws';
+import { PROTO_VERSION as PROTO } from '../dist/nirvana/src/core/net/protocol.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const entry = join(here, '..', 'dist', 'nirvana-net', 'src', 'index.js');
@@ -285,7 +286,7 @@ try {
 
   const a = client();
   await a.opened;
-  a.send({ t: 'hello', proto: 6 });
+  a.send({ t: 'hello', proto: PROTO });
   await a.waitFor((m) => m.t === 'welcome');
   a.send({ t: 'join', game: 'arena' });
   const roomA = await a.waitFor((m) => m.t === 'room');

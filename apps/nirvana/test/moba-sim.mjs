@@ -9,9 +9,9 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, buyItem, createMoba, createMobaMatch, heroSpeed, stepMoba, mobaSnapshot, NO_INPUT } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, buyItem, createMoba, createMobaMatch, heroSpeed, isVisibleTo, stepMoba, mobaSnapshot, visionSources, NO_INPUT } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellsForAvatar } from '../src/core/moba/spells.ts';
-import { NEXUS_HP, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
+import { NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
 let failures = 0;
 const check = (name, ok, detail = '') => {
@@ -354,6 +354,52 @@ check(
   advanceAll(s, 1200);
   check('příroda: W nasadí regeneraci', hasRegen);
   check('příroda: léčení pokračuje po seslání', caster.hp > afterCast, `${Math.round(afterCast)} → ${Math.round(caster.hp)}`);
+}
+
+// ── 13. mlha války ───────────────────────────────────────────────────
+// Bez mlhy je celá mapa průhledná: jungling nemá smysl a gank neexistuje.
+{
+  const s = createMobaMatch(
+    [
+      { id: 'me', heroId: 0, team: 'blue', human: true },
+      { id: 'ally', heroId: 1, team: 'blue', human: true },
+      { id: 'foe', heroId: 82, team: 'red', human: true },
+    ],
+    0,
+  );
+  const me = s.heroes.find((hero) => hero.id === 'me');
+  const ally = s.heroes.find((hero) => hero.id === 'ally');
+  const foe = s.heroes.find((hero) => hero.id === 'foe');
+
+  me.x = -40; me.z = -30;
+  ally.x = 40; ally.z = -30; // spojenec daleko — vidět musí být vždy
+  foe.x = -20; foe.z = -30; // 20 m od nás, mimo vidění hrdiny (14 m)
+
+  const sources = visionSources(s, 'blue');
+  check('mlha: tým má zdroje vidění', sources.length >= 2, String(sources.length));
+  check('mlha: hrdina vidí 14 m', isVisibleTo(sources, me.x + VISION.hero - 1, me.z) && !isVisibleTo(sources, me.x + VISION.hero + 2, me.z - 30));
+
+  const far = mobaSnapshot(s, 'blue');
+  check('mlha: vzdálený soupeř není ve snapshotu', !far.heroes.some((hero) => hero.id === 'foe'));
+  check('mlha: vlastní tým je ve snapshotu vždy', far.heroes.some((hero) => hero.id === 'ally'));
+  check('mlha: struktury jdou vidět vždy', far.towers.length >= 14, String(far.towers.length));
+
+  foe.x = me.x + 6; foe.z = me.z;
+  const near = mobaSnapshot(s, 'blue');
+  check('mlha: blízký soupeř je ve snapshotu', near.heroes.some((hero) => hero.id === 'foe'));
+
+  // Bez `viewerTeam` (divák/debug) jde všechno — testy a debug to potřebují.
+  const all = mobaSnapshot(s);
+  check('mlha: bez diváka se posílá vše', all.heroes.length === 3, String(all.heroes.length));
+
+  // Vlastní tým protistrany soupeře nevidí (opačný směr).
+  foe.x = 20; foe.z = -30;
+  const redView = mobaSnapshot(s, 'red');
+  check(
+    'mlha: soupeř nevidí naše hrdiny',
+    !redView.heroes.some((hero) => hero.id === 'me' || hero.id === 'ally'),
+    redView.heroes.map((hero) => hero.id).join(','),
+  );
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

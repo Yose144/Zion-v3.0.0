@@ -17,12 +17,13 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { WebSocket } from 'ws';
+import { PROTO_VERSION as PROTO } from '../dist/nirvana/src/core/net/protocol.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const entry = join(here, '..', 'dist', 'nirvana-net', 'src', 'index.js');
 const PORT = Number(process.env.MOBA_PORT ?? 3800 + Math.floor(Math.random() * 400));
 const WS_URL = `ws://127.0.0.1:${PORT}/net`;
-const PROTO = 6;
+
 
 let failures = 0;
 const check = (name, ok, detail = '') => {
@@ -170,21 +171,36 @@ try {
     (m) => m.t === 'snapshot' && m.game === 'moba' && m.moba?.heroes?.length >= 2 && m.state === 'running',
     25_000,
   );
-  check(
-    `start: simulace běží (${maxPlayers} hrdinů + boti)`,
-    started.moba.heroes.length === maxPlayers,
-    String(started.moba.heroes.length),
-  );
-  check('start: dvě strany', new Set(started.moba.heroes.map((hero) => hero.team)).size === 2);
-  check('start: tři uzly L5', started.moba.nodes.length === 3);
-
+  // S mlhou války nevidí hráč celou mapu — vidí **svůj tým** (a to, co
+  // jeho jednotky skutečně vidí). Test to musí respektovat, jinak by
+  // vyžadoval cheat.
   const meA = started.moba.heroes.find((hero) => hero.id === roomA.youPlayerId);
   check('start: hráč A je ve hře', Boolean(meA), roomA.youPlayerId ?? 'null');
+  check('start: tři uzly L5', started.moba.nodes.length === 3);
+  check('start: struktury jdou vidět vždy', started.moba.towers.length >= 14, String(started.moba.towers.length));
+
+  const teamA = meA.team;
+  const ownTeam = started.moba.heroes.filter((hero) => hero.team === teamA);
   check(
-    'start: každá strana stejně silná',
-    ['blue', 'red'].every(
-      (team) => started.moba.heroes.filter((hero) => hero.team === team).length === maxPlayers / 2,
-    ),
+    `mlha: A vidí celý svůj tým (${maxPlayers / 2})`,
+    ownTeam.length === maxPlayers / 2,
+    String(ownTeam.length),
+  );
+  // Na startu stojí armády proti sobě (~76 m), takže soupeře vidět NEMÁ.
+  const enemyVisible = started.moba.heroes.filter((hero) => hero.team !== teamA);
+  check('mlha: soupeře na druhé straně mapy nevidím', enemyVisible.length === 0, String(enemyVisible.length));
+
+  // Protistrana vidí svůj tým, ne ten náš — každý dostává jiný snapshot.
+  const startedB = await b.waitFor(
+    (m) => m.t === 'snapshot' && m.game === 'moba' && m.state === 'running',
+    25_000,
+  );
+  const meB = startedB.moba.heroes.find((hero) => hero.id === roomB.youPlayerId);
+  check('mlha: B vidí sám sebe', Boolean(meB));
+  check(
+    'mlha: B nevidí hrdinu A',
+    !startedB.moba.heroes.some((hero) => hero.id === roomA.youPlayerId),
+    startedB.moba.heroes.map((hero) => hero.id).join(','),
   );
 
   // obchod: server kupuje jen když je zlato (start 320 < 400)

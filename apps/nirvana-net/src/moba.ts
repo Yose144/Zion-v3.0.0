@@ -22,6 +22,7 @@ import {
   type MobaState,
 } from '../../nirvana/src/core/moba/sim.js';
 import { AVATARS_BY_ID } from '../../nirvana/src/core/avatars/catalog.js';
+import type { Team } from '../../nirvana/src/core/moba/map.js';
 
 /** Pět na každé straně (5v5). */
 export const MOBA_ROOM_SIZE = 10;
@@ -182,10 +183,18 @@ export interface MobaRoomSnapshot {
   phase: MobaPhase;
 }
 
-export function mobaRoomSnapshot(room: MobaRoomSim, now: number): MobaRoomSnapshot {
+/**
+ * Snapshot místnosti. `viewerTeam` zapíná mlhu války — server posílá každému
+ * týmu jen to, co jeho jednotky vidí (jeden snapshot na tým, ne na hráče).
+ */
+export function mobaRoomSnapshot(
+  room: MobaRoomSim,
+  now: number,
+  viewerTeam?: Team,
+): MobaRoomSnapshot {
   return {
     moba: room.sim
-      ? mobaSnapshot(room.sim)
+      ? mobaSnapshot(room.sim, viewerTeam)
       : {
           time: 0,
           ended: null,

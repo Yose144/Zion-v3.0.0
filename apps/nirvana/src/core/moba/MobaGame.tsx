@@ -232,7 +232,8 @@ function SoloController({
       if (buyItem(you, item)) mobaAudio.buy();
     }
 
-    const snapshot = mobaSnapshot(state.current);
+    // Mlha války: kreslíme jen to, co náš tým vidí (stejné pravidlo jako server).
+    const snapshot = mobaSnapshot(state.current, you.team);
     snapshotRef.current = snapshot;
     spellList.current = you.spells.map((spell) => ({
       slot: spell.slot,
@@ -254,6 +255,8 @@ function SoloController({
     if (debug) {
       (window as unknown as Record<string, unknown>).__mobaDebug = () => {
         const current = state.current!;
+        // Debug háček vrací **nefiltrovaný** snapshot — testy potřebují
+        // videt soupeře i mimo dosah (a je to jen v `?mobaDebug=1`).
         const snapshotNow = mobaSnapshot(current);
         return {
           camera: { x: Math.round(camera.position.x), z: Math.round(camera.position.z), y: Math.round(camera.position.y) },

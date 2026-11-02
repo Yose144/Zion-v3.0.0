@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { WebSocket } from 'ws';
+import { PROTO_VERSION as PROTO } from '../dist/nirvana/src/core/net/protocol.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const entry = join(here, '..', 'dist', 'nirvana-net', 'src', 'index.js');
@@ -247,7 +248,7 @@ try {
   const b = client();
   const c = client();
   await Promise.all([a.opened, b.opened, c.opened]);
-  for (const socket of [a, b, c]) socket.send({ t: 'hello', proto: 6 });
+  for (const socket of [a, b, c]) socket.send({ t: 'hello', proto: PROTO });
   await a.waitFor((m) => m.t === 'welcome');
   await b.waitFor((m) => m.t === 'welcome');
   await c.waitFor((m) => m.t === 'welcome');
