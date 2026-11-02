@@ -168,6 +168,18 @@ export class LinkEngine {
     this.notify();
   }
 
+  /** Bulk registrace (stovky světů) — jedna notifikace, ne jedna na cíl. */
+  registerMany(targets: LinkTarget[]) {
+    for (const t of targets) this.targets.set(t.id, t);
+    this.notify();
+  }
+
+  /** Bulk odregistrace — jedna notifikace. */
+  unregisterMany(ids: string[]) {
+    for (const id of ids) this.targets.delete(id);
+    this.notify();
+  }
+
   getTarget(id: string): LinkTarget | undefined {
     return this.targets.get(id);
   }
@@ -566,12 +578,13 @@ export function createDefaultLinkTargets(): LinkTarget[] {
  */
 export function registerWorldTargets(engine: LinkEngine, worlds: WorldPoint[]) {
   const keep = new Set<string>();
+  const fresh: LinkTarget[] = [];
   for (const slot of ['ring', 'orbit'] as const) {
     const list = worlds.filter((w) => worldSlot(w) === slot);
     list.forEach((w, i) => {
       const id = `world:${w.id}`;
       keep.add(id);
-      engine.register({
+      fresh.push({
         id,
         kind: 'world',
         accent: layerColor(w.layer),
@@ -587,9 +600,12 @@ export function registerWorldTargets(engine: LinkEngine, worlds: WorldPoint[]) {
       });
     });
   }
-  for (const t of engine.getTargets()) {
-    if (t.id.startsWith('world:') && !keep.has(t.id)) engine.unregister(t.id);
-  }
+  const stale = engine
+    .getTargets()
+    .filter((t) => t.id.startsWith('world:') && !keep.has(t.id))
+    .map((t) => t.id);
+  if (stale.length) engine.unregisterMany(stale);
+  engine.registerMany(fresh);
 }
 
 /**
