@@ -6,6 +6,8 @@ import * as THREE from 'three';
 import { ARENA_BOXES, ARENA_PICKUPS, PLAYER_SPAWN, type ArenaBox } from './map';
 import { PLAYER, makeSolids, stepBody, type Body } from './physics';
 import { WEAPONS } from './weapons';
+import { readTouch, type ArenaTouchState } from './ArenaTouch';
+import type { MutableRefObject } from 'react';
 import type { ArenaStats } from './MarsArena';
 import { useNet, type ArenaInputFrame } from '@/core/net/useNet';
 import type {
@@ -69,9 +71,12 @@ interface Snapshot {
 export function MarsMultiplayer({
   running,
   onStats,
+  touch,
 }: {
   running: boolean;
   onStats: (stats: MpStats) => void;
+  /** Dotykové ovládání (mobil) — stejné refy jako klávesnice. */
+  touch?: MutableRefObject<ArenaTouchState>;
 }) {
   const { camera, gl } = useThree();
   const { subscribe, sendInput, joinArena, leaveRoom, youPlayerId, connected, rtt } = useNet();
@@ -277,10 +282,15 @@ export function MarsMultiplayer({
     const dt = Math.min(0.05, delta);
     const now = Date.now();
 
-    const forward = (keys.current.has('KeyW') ? 1 : 0) - (keys.current.has('KeyS') ? 1 : 0);
-    const strafe = (keys.current.has('KeyD') ? 1 : 0) - (keys.current.has('KeyA') ? 1 : 0);
-    const jump = keys.current.has('Space');
-    const fire = firing.current;
+    // dotyk (mobil): pohled se aplikuje tady, pohyb jde do stejných čísel
+    const touchInput = readTouch(touch, view, (next) => {
+      weapon.current = next;
+    });
+
+    const forward = (keys.current.has('KeyW') ? 1 : 0) - (keys.current.has('KeyS') ? 1 : 0) + touchInput.forward;
+    const strafe = (keys.current.has('KeyD') ? 1 : 0) - (keys.current.has('KeyA') ? 1 : 0) + touchInput.strafe;
+    const jump = keys.current.has('Space') || touchInput.jump;
+    const fire = firing.current || touchInput.fire;
 
     // 1) predikce vlastního pohybu stejnou fyzikou jako server
     if (alive.current) {

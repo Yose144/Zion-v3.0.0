@@ -39,6 +39,8 @@ import {
 } from '@/core/arena/physics';
 import { WEAPONS, ARMOR_ABSORB, MG_AMMO_PICKUP, spreadVector, TARGET_RADIUS, TARGET_EYE_RATIO, pickTarget, aimVector } from '@/core/arena/weapons';
 import { createBotMemory, stepBot, driveBot, skillOptions, type BotMemory, type BotSkill, type BotTarget } from '@/core/arena/bot';
+import { readTouch, type ArenaTouchState } from '@/core/arena/ArenaTouch';
+import type { MutableRefObject } from 'react';
 
 /**
  * MARS ARENA — deathmatch v stylu Quake 3, celý procedurální.
@@ -170,11 +172,14 @@ export function MarsArena({
   xr = false,
   onStats,
   onEnd,
+  touch,
 }: {
   running: boolean;
   xr?: boolean;
   onStats: (stats: ArenaStats) => void;
   onEnd: (result: ArenaResult) => void;
+  /** Dotykové ovládání (mobil) — stejné refy jako klávesnice. */
+  touch?: MutableRefObject<ArenaTouchState>;
 }) {
   const { camera, gl } = useThree();
   const solids = useMemo<Box4[]>(() => makeSolids(ARENA_BOXES), []);
@@ -508,14 +513,23 @@ export function MarsArena({
 
     // hráč
     if (!dead) {
+      // dotyk (mobil) — pohled se aplikuje tady, pohyb jde do stejných čísel
+      const touchInput = readTouch(touch, view, (next) => {
+        if (next === 0) weapon.current = 'rail';
+        else if (next === 1) weapon.current = 'rocket';
+        else if (mgAmmo.current > 0) weapon.current = 'mg';
+      });
+
       const forward = xr
         ? xrHandle.current.forward
         : (keys.current.has('KeyW') || keys.current.has('ArrowUp') ? 1 : 0) -
-          (keys.current.has('KeyS') || keys.current.has('ArrowDown') ? 1 : 0);
+          (keys.current.has('KeyS') || keys.current.has('ArrowDown') ? 1 : 0) +
+          touchInput.forward;
       const strafe = xr
         ? xrHandle.current.strafe
         : (keys.current.has('KeyD') || keys.current.has('ArrowRight') ? 1 : 0) -
-          (keys.current.has('KeyA') || keys.current.has('ArrowLeft') ? 1 : 0);
+          (keys.current.has('KeyA') || keys.current.has('ArrowLeft') ? 1 : 0) +
+          touchInput.strafe;
 
       // ve VR je „vpřed" tam, kam se dívá hlava — ne kam se dívala myš
       let moveYaw = view.current.yaw;
@@ -527,7 +541,11 @@ export function MarsArena({
       stepBody(
         player.current,
         moveYaw,
-        { forward, strafe, jump: jumpQueued.current || (xr && keys.current.has('Space')) },
+        {
+          forward,
+          strafe,
+          jump: jumpQueued.current || (xr && keys.current.has('Space')) || touchInput.jump,
+        },
         dt,
         solids,
       );
@@ -535,7 +553,7 @@ export function MarsArena({
 
       if (xr) {
         if (xrHandle.current.firing) fire(now, true);
-      } else if (firing.current) {
+      } else if (firing.current || touchInput.fire) {
         fire(now);
       }
 

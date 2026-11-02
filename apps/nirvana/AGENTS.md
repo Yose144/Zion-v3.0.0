@@ -619,8 +619,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   by E2E muselo hrát myší.
 - **Konec zápasu se detekuje centrálně** (na konci `stepMoba` kontrola Nexů),
   ne jen v cestě „hrdina mlátí věž" — jinak debug/minion Nexu položí a hra běží dál.
-- **Co tu není:** multiplayer (bude `PROTO_VERSION` bump + serverová autorita),
-  obchod/itemy, mlha války, zvuk, dotyk na mobilu, VR. Nehlásit jako hotové.
+- **Online 2v2 (protokol 5):** server `apps/nirvana-net/src/moba.ts` drží
+  simulaci, klient posílá jen vstup (`attack`, `castSlot`, `castX/Z`) a kreslí
+  snapshoty. Volná sedla doplní boti po 6 s, odpočet 4 s, pauza 12 s po konci.
+  **Kouzlo je jednorázové** — server po ticku `cast` vyčistí, jinak by se
+  sesílalo každý snímek (přesně tahle chyba se stala).
+- **Vykreslení je oddělené od ovládání:** `MobaStage` čte jen snapshot, takže
+  ho používá sólo (`MobaGame`, lokální sim) i online (`MobaOnline`, data ze
+  serveru). Nepřidávat druhou kopii fyziky pro síť.
+- **Deploy pořadí:** nejdřív `deploy-nirvana-net.sh`, pak appku (proto 5).
+- **Co tu není:** obchod/itemy, mlha války, minimapa, zvuk, dotyk na mobilu,
+  VR, predikce vlastního hrdiny. Nehlásit jako hotové.
 - **Testy:** `npx tsx apps/nirvana/test/moba-sim.mjs` (21 kontrol, pravidla)
   a `node apps/nirvana/e2e/first-world.mjs` (11 kontrol, hra v prohlížeči;
   Chromium z puppeteer cache, playwright verzi nemá).

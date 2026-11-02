@@ -1,0 +1,254 @@
+#!/usr/bin/env node
+/**
+ * Test serverové MOBA „První svět" (2v2) — bez prohlížeče.
+ *
+ * Server drží simulaci; test posílá jen vstupy a kontroluje snapshoty.
+ * Ověřuje: místnost, doplnění botů, start po odpočtu, pohyb, kouzlo,
+ * převzetí uzlu L5, konec a úklid po odpojení.
+ *
+ * Spustit: node apps/nirvana-net/test/moba.mjs (po `npm run build`)
+ */
+
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { WebSocket } from 'ws';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const entry = join(here, '..', 'dist', 'nirvana-net', 'src', 'index.js');
+const PORT = Number(process.env.MOBA_PORT ?? 3800 + Math.floor(Math.random() * 400));
+const WS_URL = `ws://127.0.0.1:${PORT}/net`;
+const PROTO = 5;
+
+let failures = 0;
+const check = (name, ok, detail = '') => {
+  console.log(`  ${ok ? 'OK  ' : 'FAIL'} ${name}${detail && !ok ? ` — ${detail}` : ''}`);
+  if (!ok) failures += 1;
+};
+
+function client() {
+  const socket = new WebSocket(WS_URL);
+  socket.on('error', () => {});
+  const inbox = [];
+  socket.on('message', (data) => inbox.push(JSON.parse(data.toString())));
+  const opened = new Promise((resolve, reject) => {
+    socket.once('open', resolve);
+    socket.once('error', reject);
+  });
+  opened.catch(() => {});
+  return {
+    socket,
+    inbox,
+    opened,
+    send: (message) => socket.send(JSON.stringify(message)),
+    last(match) {
+      return [...inbox].reverse().find(match) ?? null;
+    },
+    async waitFor(match, ms = 8000) {
+      const started = Date.now();
+      for (;;) {
+        const found = this.last(match);
+        if (found) return found;
+        if (Date.now() - started > ms) throw new Error('timeout waiting for message');
+        await sleep(40);
+      }
+    },
+    close: () => socket.close(),
+  };
+}
+
+const server = spawn(process.execPath, [entry], {
+  env: {
+    ...process.env,
+    NIRVANA_NET_PORT: String(PORT),
+    NIRVANA_NET_ALLOWED_ORIGINS: 'http://127.0.0.1:3999',
+    ZIS_URL: 'http://127.0.0.1:1',
+  },
+  stdio: ['ignore', 'pipe', 'pipe'],
+});
+let log = '';
+server.stdout.on('data', (chunk) => {
+  log += chunk.toString();
+});
+server.stderr.on('data', (chunk) => {
+  log += chunk.toString();
+});
+const exited = new Promise((resolve) => server.once('exit', (code) => resolve(code)));
+
+async function waitForHealth() {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    const state = await Promise.race([exited, sleep(100).then(() => 'running')]);
+    if (state !== 'running') throw new Error(`služba spadla (exit ${state}):\n${log}`);
+    try {
+      const response = await fetch(`http://127.0.0.1:${PORT}/net/health`);
+      if (response.ok) return;
+    } catch {
+      // ještě nabíhá
+    }
+  }
+  throw new Error(`služba nenaběhla:\n${log}`);
+}
+
+
+/** Dojdi k bodu — server je autorita, takže posíláme vstup a čteme snapshoty. */
+async function walkTo(client, youId, x, z, steps = 140) {
+  for (let index = 0; index < steps; index += 1) {
+    const snapshot = client.last((m) => m.t === 'snapshot' && m.game === 'moba')?.moba;
+    const me = snapshot?.heroes.find((hero) => hero.id === youId);
+    if (!me) return null;
+    if (!me.alive) {
+      await sleep(150);
+      continue;
+    }
+    const dx = x - me.x;
+    const dz = z - me.z;
+    const length = Math.hypot(dx, dz) || 1;
+    if (length < 2.5) {
+      // zastav: poslední vstup by jinak hrdinu táhl dál z dosahu
+      client.send({
+        t: 'input',
+        seq: 9999,
+        mx: 0,
+        mz: 0,
+        yaw: 0,
+        pitch: 0,
+        jump: false,
+        fire: false,
+        weapon: 0,
+      });
+      return me;
+    }
+    client.send({
+      t: 'input',
+      seq: index,
+      mx: dx / length,
+      mz: dz / length,
+      yaw: 0,
+      pitch: 0,
+      jump: false,
+      fire: false,
+      weapon: 0,
+    });
+    await sleep(90);
+  }
+  return client.last((m) => m.t === 'snapshot' && m.game === 'moba')?.moba.heroes.find((hero) => hero.id === youId) ?? null;
+}
+
+try {
+  await waitForHealth();
+  console.log(`\n== MOBA na :${PORT} ==`);
+
+  const a = client();
+  const b = client();
+  await a.opened;
+  await b.opened;
+  a.send({ t: 'hello', proto: PROTO });
+  b.send({ t: 'hello', proto: PROTO });
+  await a.waitFor((m) => m.t === 'welcome');
+  await b.waitFor((m) => m.t === 'welcome');
+
+  a.send({ t: 'join', game: 'moba', heroId: 0 });
+  b.send({ t: 'join', game: 'moba', heroId: 82 });
+  const roomA = await a.waitFor((m) => m.t === 'room');
+  const roomB = await b.waitFor((m) => m.t === 'room');
+  check('místnost: dva lidi', roomB.occupants.length === 2, String(roomB.occupants.length));
+  check('místnost: hra moba', roomA.room.game === 'moba', roomA.room.game);
+  check('místnost: kapacita 4', roomA.room.maxPlayers === 4, String(roomA.room.maxPlayers));
+  check('místnost: youPlayerId', Boolean(roomA.youPlayerId && roomB.youPlayerId));
+
+  // čekáme na odpočet + start (boti se doplní)
+  const started = await a.waitFor(
+    (m) => m.t === 'snapshot' && m.game === 'moba' && m.moba?.heroes?.length >= 2 && m.state === 'running',
+    25_000,
+  );
+  check('start: simulace běží', started.moba.heroes.length === 4, String(started.moba.heroes.length));
+  check('start: dvě strany', new Set(started.moba.heroes.map((hero) => hero.team)).size === 2);
+  check('start: tři uzly L5', started.moba.nodes.length === 3);
+
+  const meA = started.moba.heroes.find((hero) => hero.id === roomA.youPlayerId);
+  check('start: hráč A je ve hře', Boolean(meA), roomA.youPlayerId ?? 'null');
+
+  // pohyb: posílat vstup a čekat, až se pozice změní
+  const startX = meA.x;
+  const startZ = meA.z;
+  for (let index = 0; index < 20; index += 1) {
+    a.send({ t: 'input', seq: index, mx: 1, mz: 0, yaw: 0, pitch: 0, jump: false, fire: false, weapon: 0 });
+    await sleep(50);
+  }
+  await sleep(400);
+  const moved = a
+    .last((m) => m.t === 'snapshot' && m.game === 'moba')
+    ?.moba.heroes.find((hero) => hero.id === roomA.youPlayerId);
+  check('pohyb: server posunul hrdinu', Math.hypot(moved.x - startX, moved.z - startZ) > 0.4, `${startX},${startZ} → ${moved.x},${moved.z}`);
+
+  // uzel L5: dojdi na Kailash (-12/-26) a chvíli tam stůj (blízko modré)
+  const atNode = await walkTo(a, roomA.youPlayerId, -12, -26, 220);
+  console.log(`    (poloha po chůzi: ${atNode ? `${Math.round(atNode.x)},${Math.round(atNode.z)} hp=${Math.round(atNode.hp)}` : 'null'})`);
+  await sleep(3400);
+  const captured = a.last((m) => m.t === 'snapshot' && m.game === 'moba');
+  console.log('    (uzly:', JSON.stringify(captured.moba.nodes.map((n) => ({ k: n.key, o: n.owner, p: n.progress }))), ')');
+  check(
+    'uzel L5: převzat po stání',
+    captured.moba.nodes.some((node) => node.owner === 'blue'),
+    JSON.stringify(captured.moba.nodes.map((node) => node.owner)),
+  );
+
+  // kouzlo: sešli Q na nepřátelského miniona (stojí na lince, netřeba honit hrdinu)
+  let target = null;
+  for (let index = 0; index < 60 && !target; index += 1) {
+    const snapshot = a.last((m) => m.t === 'snapshot' && m.game === 'moba')?.moba;
+    const me = snapshot?.heroes.find((hero) => hero.id === roomA.youPlayerId);
+    const minion = snapshot?.minions.find((candidate) => candidate.team === 'red');
+    if (me && minion && Math.hypot(minion.x - me.x, minion.z - me.z) < 10) target = minion;
+    else await sleep(200);
+  }
+  check('kouzlo: nepřátelský minion v dosahu', Boolean(target));
+  if (target) {
+    const snapBefore = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba;
+    const before = snapBefore.heroes.find((hero) => hero.id === roomA.youPlayerId);
+    console.log('    (cast:', JSON.stringify({ hero: { x: before.x, z: before.z, alive: before.alive, mana: before.mana }, target: { x: target.x, z: target.z }, dist: Math.round(Math.hypot(before.x - target.x, before.z - target.z)) }), ')');
+    a.send({
+      t: 'input',
+      seq: 99,
+      mx: 0,
+      mz: 0,
+      yaw: 0,
+      pitch: 0,
+      jump: false,
+      fire: false,
+      weapon: 0,
+      castSlot: 'Q',
+      castX: target.x,
+      castZ: target.z,
+    });
+    await sleep(500);
+    const after = a.last((m) => m.t === 'snapshot' && m.game === 'moba').moba;
+    const meAfter = after.heroes.find((hero) => hero.id === roomA.youPlayerId);
+    // Server kouzlo přijal: mana spadla a běží cooldown. Samotný zásah závisí
+    // na tom, jestli projektil miniona trefí (minion se hýbe) — proto se tu
+    // netestuje smrt, ale že se kouzlo opravdu spustilo na serveru.
+    check(
+      'kouzlo: server přijal Q (mana + cooldown)',
+      meAfter.mana < before.mana && meAfter.cooldowns.Q > 0,
+      `mana ${before.mana} → ${meAfter.mana}, cd ${meAfter.cooldowns.Q}`,
+    );
+    check('kouzlo: projektil je ve snapshotu', after.projectiles.length > 0, String(after.projectiles.length));
+  }
+
+  // úklid: odpojení A → místnost má o hráče méně
+  a.close();
+  await sleep(800);
+  b.send({ t: 'leave' });
+  await sleep(600);
+  const health = await (await fetch(`http://127.0.0.1:${PORT}/net/health`)).json();
+  check('úklid: místnosti zmizely', health.rooms === 0, JSON.stringify(health.rooms));
+  b.close();
+} finally {
+  server.kill('SIGTERM');
+  await sleep(300);
+  if (!server.killed) server.kill('SIGKILL');
+}
+
+console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);
+process.exit(failures === 0 ? 0 : 1);

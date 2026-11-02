@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
 import { useI18n } from '@/core/i18n';
@@ -10,6 +10,7 @@ import { LAPS, raceScore } from '@/core/race/track';
 import type { StandingRow } from '@/core/race/rivals';
 import { awardRun, grantTokens, loadProfile, saveProfile } from '@/core/park/profile';
 import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
+import { TouchButton, TouchPad } from '@/core/games/TouchPad';
 
 /** VENUŠE — tři kola proti třem soupeřům. Čas, pořadí, osobní rekord a tabule. */
 
@@ -47,6 +48,25 @@ export default function VenusPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [mp, setMp] = useState(false);
   const [mpStats, setMpStats] = useState<MpRaceStats | null>(null);
+  /** Dotykové ovládání — na mobilu plyn/brzda/zatáčení místo WASD. */
+  const [coarse, setCoarse] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia('(hover: none) and (pointer: coarse)');
+    setCoarse(query.matches);
+    const onChange = () => setCoarse(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+
+  // během hry na mobilu schovej navigaci a chat (celá obrazovka pro hru)
+  useEffect(() => {
+    if (!coarse) return;
+    document.body.dataset.playing = phase === 'playing' ? '1' : '';
+    return () => {
+      document.body.dataset.playing = '';
+    };
+  }, [coarse, phase]);
 
   const finish = useCallback(
     (outcome: RaceResult) => {
@@ -99,6 +119,23 @@ export default function VenusPage() {
           )}
         </Canvas>
       </div>
+
+      {phase === 'playing' && coarse && (
+        <TouchPad>
+          <TouchButton code="KeyW" className="is-up">
+            {cs ? 'PLYN' : 'GAS'}
+          </TouchButton>
+          <TouchButton code="KeyS" className="is-down">
+            {cs ? 'BRZDA' : 'BRAKE'}
+          </TouchButton>
+          <TouchButton code="KeyA" className="is-left">
+            ←
+          </TouchButton>
+          <TouchButton code="KeyD" className="is-right">
+            →
+          </TouchButton>
+        </TouchPad>
+      )}
 
       {phase === 'playing' && mp && (
         <>

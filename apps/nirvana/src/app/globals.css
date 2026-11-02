@@ -972,7 +972,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 
 .park-chrome {
   position: absolute;
-  z-index: 12;
+  z-index: 20;
   top: 0;
   left: 0;
   right: 0;
@@ -1335,8 +1335,9 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     right: 0.6rem;
     width: auto;
     top: auto;
-    bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
-    max-height: 58vh;
+    /* nad herní lištou (ta je na mobilu dvouřádková a sahá do ~8,2 rem) */
+    bottom: calc(8.4rem + env(safe-area-inset-bottom, 0px));
+    max-height: 46vh;
   }
   .park-dock {
     flex-direction: column;
@@ -3020,8 +3021,6 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     right: 0.5rem;
     transform: none;
     max-width: none;
-    overflow-x: auto;
-    scrollbar-width: none;
   }
 
   .game-hud-controls {
@@ -3033,11 +3032,31 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   }
 
   .game-hud.is-compact {
-    max-width: calc(100vw - 1rem);
+    max-width: none;
     right: 0.5rem;
     left: 0.5rem;
-    overflow-x: auto;
-    scrollbar-width: none;
+  }
+}
+
+/* Na úzkém displeji se lišta **zalamuje** — dřív měla `overflow-x: auto`
+   a žetony/ZION se ořezávaly za okrajem, takže nebyly vidět vůbec. */
+@media (max-width: 760px) {
+  .game-hud.is-dock,
+  .game-hud.is-compact {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0.22rem;
+  }
+
+  .game-hud-tabs,
+  .game-hud-stats {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .game-hud-chip {
+    padding: 0.18rem 0.42rem;
+    font-size: 0.68rem;
   }
 }
 
@@ -3988,5 +4007,329 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 
   .moba-spells {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ── Dotykové ovládání arény (Mars) ──────────────────────────────────
+ * FPS potřebuje joystick + tažení pro pohled; na mobilu neexistuje
+ * pointer lock, takže bez tohohle by se hráč nerozhlédl.
+ */
+.arena-touch {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  display: none;
+  pointer-events: none;
+}
+
+.arena-touch-look {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 55%;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.arena-touch-stick {
+  position: absolute;
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  width: 7.5rem;
+  height: 7.5rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  background: rgba(10, 6, 4, 0.35);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+  touch-action: none;
+  display: grid;
+  place-items: center;
+}
+
+.arena-touch-knob {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: rgba(255, 209, 102, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  transition: transform 0.04s linear;
+}
+
+.arena-touch-actions {
+  position: absolute;
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.arena-touch-btn {
+  min-width: 4.2rem;
+  min-height: 4.2rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 209, 102, 0.5);
+  background: rgba(10, 6, 4, 0.55);
+  color: #ffe9a8;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  touch-action: none;
+  user-select: none;
+}
+
+.arena-touch-btn.is-small {
+  min-width: 3.3rem;
+  min-height: 3.3rem;
+  font-size: 0.62rem;
+}
+
+.arena-touch-btn.is-fire {
+  min-width: 5.4rem;
+  min-height: 5.4rem;
+  background: rgba(255, 122, 107, 0.35);
+  border-color: rgba(255, 122, 107, 0.75);
+  color: #ffd9d2;
+}
+
+/* Na dotykovém zařízení se ovládání ukáže; na myši zůstává klávesnice. */
+@media (hover: none) and (pointer: coarse) {
+  .arena-touch {
+    display: block;
+  }
+}
+
+/* Během hry na mobilu schovej navigaci a chat — celá obrazovka patří hře. */
+@media (hover: none) and (pointer: coarse) {
+  body[data-playing='1'] .game-hud,
+  body[data-playing='1'] .chat-dock-btn {
+    display: none;
+  }
+}
+
+/* Na šířku (telefon otočený) je málo výšky — ovládání zmenšit. */
+@media (max-height: 480px) and (hover: none) and (pointer: coarse) {
+  .arena-touch-stick {
+    width: 5.6rem;
+    height: 5.6rem;
+  }
+  .arena-touch-knob {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+  .arena-touch-btn {
+    min-width: 3.2rem;
+    min-height: 3.2rem;
+    font-size: 0.62rem;
+  }
+  .arena-touch-btn.is-fire {
+    min-width: 4.2rem;
+    min-height: 4.2rem;
+  }
+}
+
+/* ── Obecná dotyková tlačítka (hry, které čtou klávesnici) ─────────── */
+.touch-pad {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  display: none;
+  pointer-events: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .touch-pad {
+    display: block;
+  }
+}
+
+.touch-key {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  min-width: 4.2rem;
+  min-height: 4.2rem;
+  padding: 0.2rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(10, 8, 6, 0.55);
+  backdrop-filter: blur(2px);
+  color: #f6e7d8;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+
+.touch-key:active {
+  background: rgba(255, 209, 102, 0.35);
+  border-color: rgba(255, 209, 102, 0.8);
+}
+
+.touch-key.is-left {
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+.touch-key.is-right {
+  left: calc(5.8rem + env(safe-area-inset-left, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+.touch-key.is-up {
+  right: calc(5.8rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+.touch-key.is-down {
+  right: calc(1rem + env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-height: 480px) and (hover: none) and (pointer: coarse) {
+  .touch-key {
+    min-width: 3.2rem;
+    min-height: 3.2rem;
+    font-size: 0.62rem;
+  }
+  .touch-key.is-right {
+    left: calc(4.6rem + env(safe-area-inset-left, 0px));
+  }
+  .touch-key.is-up {
+    right: calc(4.6rem + env(safe-area-inset-right, 0px));
+  }
+}
+
+/* ── Aréna na dotyku: HUD nahoru, ovládání dole ─────────────────────
+ * Dřív HUD seděl dole (bottom 1,1 rem) — přesně v místě joysticku a PALBY,
+ * takže si hráč zakryl zdraví i munici. Na mobilu jde nahoru.
+ */
+@media (hover: none) and (pointer: coarse) {
+  .arena-hud {
+    top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    left: 0.5rem;
+    right: 0.5rem;
+    transform: none;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.76rem;
+  }
+
+  /* instrukce pod HUDem, ne přes ovládání */
+  .arena-tip {
+    top: calc(3.4rem + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    font-size: 0.58rem;
+    white-space: normal;
+    text-align: center;
+    max-width: 92vw;
+  }
+
+  /* tabule hráčů pod HUDem (nahoře vpravo by se s ním tloukla) */
+  .arena-board {
+    top: calc(4.6rem + env(safe-area-inset-top, 0px));
+    right: 0.5rem;
+    min-width: 7.5rem;
+    font-size: 0.68rem;
+  }
+
+  /* VR na telefonu nemá smysl */
+  .arena-vr {
+    display: none;
+  }
+}
+
+/* Na telefonu jsou 3D popisky scény nečitelné a lezou do hlavičky
+ * („RUSKÉ KOLO" se překrývalo s titulem). Panel ty názvy vypisuje. */
+@media (max-width: 760px) {
+  .park-cabinet,
+  .park-ride,
+  .park-sign,
+  .park-board {
+    display: none;
+  }
+}
+
+/* ── Venuše na dotyku: HUD nahoru, plyn/brzda/zatáčení dole ─────────
+ * Stejná past jako v aréně — HUD seděl dole v místě tlačítek.
+ */
+@media (hover: none) and (pointer: coarse) {
+  .race-hud {
+    top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    left: 0.5rem;
+    right: 0.5rem;
+    transform: none;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.74rem;
+  }
+
+  /* tabule pořadí pod HUDem, ať se s ním netluče */
+  .race-board {
+    top: calc(3.6rem + env(safe-area-inset-top, 0px));
+    right: 0.5rem;
+    font-size: 0.68rem;
+  }
+}
+
+/* Avatar: stránka je `100dvh` s vnitřním scrollem, takže lišta jinak
+ * překrývá konec seznamu i náhled. Odsazení patří na kontejner. */
+@media (max-width: 760px) {
+  .avatars {
+    padding-bottom: calc(8.8rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── Pouť na dotyku: D-pad + AKCE v doku ───────────────────────────
+ * Arkády čtou klávesy (šipky, mezerník) a pozici pálky z pointeru.
+ * Na mobilu chybí obojí — odsud to jde: tlačítka posílají syntetické
+ * klávesy, tažení po plátně nastavuje `pointer`.
+ */
+.park-touch {
+  display: none;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .park-touch {
+    display: flex;
+  }
+}
+
+.park-touch-row {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: center;
+}
+
+.park-touch .touch-key {
+  position: static;
+  min-width: 3.2rem;
+  min-height: 2.6rem;
+  border-radius: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.park-touch .touch-key.is-small {
+  min-width: 3.8rem;
+  font-size: 0.7rem;
+}
+
+@media (max-width: 760px) {
+  /* plátno ať se vejde i s ovládáním nad lištou */
+  .park-screen {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
   }
 }

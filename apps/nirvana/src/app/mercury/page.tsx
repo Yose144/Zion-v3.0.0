@@ -103,6 +103,24 @@ export default function MercuryPage() {
   const [mpStats, setMpStats] = useState<DuelMpStats>(EMPTY_MP);
   const [notice, setNotice] = useState<string | null>(null);
   const recorded = useRef(false);
+  const [coarse, setCoarse] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia('(hover: none) and (pointer: coarse)');
+    setCoarse(query.matches);
+    const onChange = () => setCoarse(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+
+  // během duelu na mobilu schovej navigaci a chat (celá obrazovka pro hru)
+  useEffect(() => {
+    if (!coarse) return;
+    document.body.dataset.playing = phase === 'playing' ? '1' : '';
+    return () => {
+      document.body.dataset.playing = '';
+    };
+  }, [coarse, phase]);
 
   // výsledek online duelu — zapíše se NA JEDNOU po `duel_end`, příští zápas resetuje guard
   useEffect(() => {

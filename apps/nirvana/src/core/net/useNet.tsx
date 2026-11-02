@@ -51,7 +51,9 @@ export interface NetApi {
   roomId: string | null;
   joinArena: () => void;
   /** Připojení do hry (`arena` = Mars, `race` = Venuše, `fight` = Merkur). */
-  joinGame: (game: 'arena' | 'race' | 'fight') => void;
+  joinGame: (game: 'arena' | 'race' | 'fight' | 'moba', heroId?: number) => void;
+  /** MOBA: kouzlo na bod + držený útok. */
+  sendMobaInput: (input: { moveX: number; moveZ: number; attack: boolean; cast: { slot: 'Q' | 'W' | 'E' | 'R'; x: number; z: number } | null }) => void;
   leaveRoom: () => void;
   /**
    * Herní data tečou přes subscription, ne přes React state — snapshoty
@@ -276,8 +278,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const joinGame = useCallback(
-    (game: 'arena' | 'race' | 'fight') => {
-      send({ t: 'join', game });
+    (game: 'arena' | 'race' | 'fight' | 'moba', heroId?: number) => {
+      send({ t: 'join', game, heroId });
     },
     [send],
   );
@@ -312,6 +314,30 @@ export function NetProvider({ children }: { children: ReactNode }) {
     [send],
   );
 
+  const sendMobaInput = useCallback<NetApi['sendMobaInput']>(
+    (input) => {
+      const now = Date.now();
+      if (now - lastInputAt.current < 45) return;
+      lastInputAt.current = now;
+      send({
+        t: 'input',
+        seq: now % 1_000_000,
+        mx: Math.round(input.moveX * 100) / 100,
+        mz: Math.round(input.moveZ * 100) / 100,
+        yaw: 0,
+        pitch: 0,
+        jump: false,
+        fire: false,
+        weapon: 0,
+        attack: input.attack,
+        castSlot: input.cast?.slot,
+        castX: input.cast ? Math.round(input.cast.x * 100) / 100 : undefined,
+        castZ: input.cast ? Math.round(input.cast.z * 100) / 100 : undefined,
+      });
+    },
+    [send],
+  );
+
   const value = useMemo<NetApi>(
     () => ({
       status,
@@ -330,6 +356,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       leaveRoom,
       subscribe,
       sendInput,
+      sendMobaInput,
     }),
     [
       status,
@@ -347,6 +374,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       leaveRoom,
       subscribe,
       sendInput,
+      sendMobaInput,
     ],
   );
 

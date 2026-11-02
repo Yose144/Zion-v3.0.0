@@ -1,0 +1,119 @@
+// E2E: PRVNÍ SVĚT — online 2v2 ve dvou prohlížečích.
+//
+// Předpoklady (jako u mercury-duel):
+//   - `zion-nirvana-net` běží na :3011 s originem http://127.0.0.1:3010
+//   - appka je buildnutá s NEXT_PUBLIC_NIRVANA_NET_URL=ws://127.0.0.1:3011/net
+//   - `next start -p 3010`
+//
+// Spustit: node apps/nirvana/e2e/moba-online.mjs
+
+let chromium;
+try {
+  ({ chromium } = await import('playwright'));
+} catch {
+  const { createRequire } = await import('node:module');
+  const require = createRequire(import.meta.url);
+  const globalPath =
+    process.env.PLAYWRIGHT_MODULE ?? '/Users/yeshuae/.nvm/versions/node/v20.19.6/lib/node_modules/playwright';
+  ({ chromium } = require(globalPath));
+}
+
+const BASE = process.env.BASE ?? 'http://127.0.0.1:3010';
+const OUT = process.env.OUT ?? '.artifacts/render/first-world-20261102';
+const EXE =
+  process.env.CHROME_PATH ??
+  '/Users/yeshuae/.cache/puppeteer/chrome-headless-shell/mac_arm-156.0.8078.47/chrome-headless-shell-mac-arm64/chrome-headless-shell';
+
+let failures = 0;
+const check = (name, ok, detail = '') => {
+  console.log(`  ${ok ? 'OK  ' : 'FAIL'} ${name}${detail && !ok ? ` — ${detail}` : ''}`);
+  if (!ok) failures += 1;
+};
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const browser = await chromium.launch({
+  executablePath: EXE,
+  headless: true,
+  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=metal', '--ignore-gpu-blocklist'],
+});
+
+async function openPlayer(label) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 820 } });
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error' && !message.text().includes('401')) errors.push(message.text());
+  });
+  await page.goto(`${BASE}/earth?mobaDebug=1`, { waitUntil: 'networkidle', timeout: 120_000 });
+  await page.waitForSelector('.moba-start', { timeout: 30_000 });
+  // přepni na online
+  await page.click('.moba-mode-btn:nth-child(2)');
+  await page.click('.moba-start');
+  await page.waitForFunction('typeof window.__mobaDebug === "function"', { timeout: 60_000 });
+  return { page, errors, label };
+}
+
+const debug = (player) => player.page.evaluate(() => window.__mobaDebug?.() ?? null);
+const poll = async (player, predicate, timeoutMs = 30_000) => {
+  const started = Date.now();
+  for (;;) {
+    const state = await debug(player);
+    if (state && predicate(state)) return state;
+    if (Date.now() - started > timeoutMs) return null;
+    await sleep(250);
+  }
+};
+
+try {
+  const a = await openPlayer('A');
+  const b = await openPlayer('B');
+
+  // oba se musí dočkat běžícího zápasu se čtyřmi hrdiny (2 lidé + 2 boti)
+  const runningA = await poll(a, (state) => state.phase === 'running' && state.heroes.length === 4, 40_000);
+  check('A: zápas běží se 4 hrdiny', Boolean(runningA), JSON.stringify(await debug(a)));
+  const runningB = await poll(b, (state) => state.phase === 'running' && state.heroes.length === 4, 40_000);
+  check('B: zápas běží se 4 hrdiny', Boolean(runningB));
+
+  if (runningA && runningB) {
+    check('A: vidí vlastní id', runningA.heroes.some((hero) => hero.id === runningA.you), String(runningA.you));
+    check('B: vidí vlastní id', runningB.heroes.some((hero) => hero.id === runningB.you), String(runningB.you));
+    check('A i B: dvě strany', new Set(runningA.heroes.map((hero) => hero.team)).size === 2);
+    check('A i B: tři uzly L5', runningA.nodes.length === 3 && runningB.nodes.length === 3);
+
+    // A pošle pohyb — B musí vidět, že se A pohnul (server je autorita)
+    const before = runningA.heroes.find((hero) => hero.id === runningA.you);
+    await a.page.keyboard.down('KeyD');
+    await sleep(900);
+    await a.page.keyboard.up('KeyD');
+    await sleep(500);
+    const movedB = await poll(
+      b,
+      (state) => {
+        const seen = state.heroes.find((hero) => hero.id === before.id);
+        return seen && Math.abs(seen.x - before.x) > 0.3;
+      },
+      8000,
+    );
+    check('pohyb se propsal druhému hráči', Boolean(movedB));
+
+    // kouzlo: A sešle Q, B uvidí projektil nebo změnu stavu
+    const snapshotBefore = await debug(a);
+    await a.page.keyboard.press('KeyQ');
+    await sleep(900);
+    const snapshotAfter = await debug(a);
+    const meBefore = snapshotBefore.heroes.find((hero) => hero.id === snapshotBefore.you);
+    const meAfter = snapshotAfter.heroes.find((hero) => hero.id === snapshotAfter.you);
+    check('kouzlo: A má cooldown', meAfter.cooldowns.Q > 0, JSON.stringify(meAfter.cooldowns));
+    check('kouzlo: A spotřeboval manu', meAfter.mana < meBefore.mana, `${meBefore.mana} → ${meAfter.mana}`);
+
+    check('A: bez chyb v konzoli', a.errors.length === 0, a.errors.slice(0, 2).join(' | '));
+    check('B: bez chyb v konzoli', b.errors.length === 0, b.errors.slice(0, 2).join(' | '));
+    await a.page.screenshot({ path: `${OUT}/online-a.png` });
+    await b.page.screenshot({ path: `${OUT}/online-b.png` });
+  }
+} finally {
+  await browser.close();
+}
+
+console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);
+process.exit(failures === 0 ? 0 : 1);

@@ -171,7 +171,7 @@ function Cabinet({
         <planeGeometry args={[1.86, 0.4]} />
         <meshBasicMaterial color="#e8a33d" transparent opacity={active ? 0.85 : 0.4} />
       </mesh>
-      <Html position={[0, 3.7, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
+      <Html zIndexRange={[11, 0]} position={[0, 3.7, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>
         <span className={`park-cabinet${active ? ' is-active' : ''}`}>{game.title[lang]}</span>
       </Html>
       {active && (
@@ -283,7 +283,7 @@ function FerrisWheel({ riding, onRide }: { riding: boolean; onRide: () => void }
         </group>
       ))}
 
-      <Html position={[0, WHEEL_R + 1.8, 0]} center distanceFactor={18} style={{ pointerEvents: 'none' }}>
+      <Html zIndexRange={[11, 0]} position={[0, WHEEL_R + 1.8, 0]} center distanceFactor={18} style={{ pointerEvents: 'none' }}>
         <span className={`park-ride${riding ? ' is-riding' : ''}${hover ? ' is-hover' : ''}`}>
           {riding ? 'jízda…' : 'ruské kolo'}
         </span>
@@ -369,7 +369,7 @@ function ScoreBoard({ scores, lang }: { scores: ParkScores; lang: 'cs' | 'en' })
         <planeGeometry args={[2.65, 4.5]} />
         <meshBasicMaterial color="#0d0a14" />
       </mesh>
-      <Html position={[0, 2.4, 0.2]} center distanceFactor={11} style={{ pointerEvents: 'none' }}>
+      <Html zIndexRange={[11, 0]} position={[0, 2.4, 0.2]} center distanceFactor={11} style={{ pointerEvents: 'none' }}>
         <div className="park-board">
           <strong>{lang === 'cs' ? 'TABULE POUTI' : 'FAIR BOARD'}</strong>
           {PARK_GAMES.map((game) => (
@@ -436,7 +436,7 @@ export function ParkScene({
       </mesh>
 
       <Deck />
-      <Html position={[0, 12.5, -9]} center distanceFactor={26} style={{ pointerEvents: 'none' }}>
+      <Html zIndexRange={[11, 0]} position={[0, 12.5, -9]} center distanceFactor={26} style={{ pointerEvents: 'none' }}>
         <span className="park-sign">
           JUPITER STATION
           <em>{lang === 'cs' ? 'pouť · hraj o žetony' : 'fair · play for tokens'}</em>

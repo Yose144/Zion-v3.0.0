@@ -10,7 +10,9 @@
  * server z cookie (`zion_session` → ZIS), tak si je nikdo nemůže přepsat.
  */
 
-export const PROTO_VERSION = 4;
+import type { MobaSnapshot } from '../moba/sim';
+
+export const PROTO_VERSION = 5;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -34,7 +36,7 @@ export const CHAT_HISTORY_LEN = 200;
 export const HEARTBEAT_MS = 20_000;
 export const IDLE_TIMEOUT_MS = 60_000;
 
-export type GameId = 'arena' | 'race' | 'fight';
+export type GameId = 'arena' | 'race' | 'fight' | 'moba';
 /** `guest` = bez ZIS (hraje, ale nepíše), `zis` = ověřený uživatel. */
 export type Role = 'guest' | 'zis';
 export type RoomState = 'waiting' | 'running' | 'ended';
@@ -217,7 +219,7 @@ export type ErrorCode =
 
 export type ClientMessage =
   | { t: 'hello'; proto: number }
-  | { t: 'join'; game: GameId; room?: string }
+  | { t: 'join'; game: GameId; room?: string; heroId?: number }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -232,6 +234,11 @@ export type ClientMessage =
       weapon: WeaponId;
       /** Jen duel (Merkur): držení bloku. Aréna/závod ji ignoruje. */
       block?: boolean;
+      /** Jen MOBA (První svět): držený útok a kouzlo na bod. */
+      attack?: boolean;
+      castSlot?: 'Q' | 'W' | 'E' | 'R';
+      castX?: number;
+      castZ?: number;
     }
   | { t: 'chat'; text: string }
   | { t: 'ping'; at: number };
@@ -266,6 +273,7 @@ export type ServerMessage =
       game: GameId;
       seq: number;
       time: number;
+      /** Aréna/závod/duel: stav hráčů. MOBA posílá `moba` a tohle nechává prázdné. */
       players: SnapshotPlayer[];
       /** Jen aréna: rakety ve vzduchu. */
       projectiles?: RocketView[];
@@ -280,6 +288,8 @@ export type ServerMessage =
       laps?: number;
       /** Duel: číslo aktuálního kola (1..). */
       round?: number;
+      /** MOBA (První svět): celý stav hry — hrdinové, věže, uzly, efekty. */
+      moba?: MobaSnapshot;
     }
   | { t: 'event'; event: EventPayload }
   | { t: 'pong'; at: number; serverTime: number }
@@ -328,8 +338,16 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     case 'join':
       return {
         t: 'join',
-        game: message.game === 'race' ? 'race' : message.game === 'fight' ? 'fight' : 'arena',
+        game:
+          message.game === 'race'
+            ? 'race'
+            : message.game === 'fight'
+              ? 'fight'
+              : message.game === 'moba'
+                ? 'moba'
+                : 'arena',
         room: typeof message.room === 'string' ? message.room.slice(0, 32) : undefined,
+        heroId: typeof message.heroId === 'number' ? num(message.heroId, 0, 202) : undefined,
       };
 
     case 'leave':
@@ -347,6 +365,13 @@ export function parseClientMessage(raw: string): ClientMessage | null {
         fire: message.fire === true,
         weapon: message.weapon === 1 ? 1 : 0,
         block: message.block === true,
+        attack: message.attack === true,
+        castSlot:
+          message.castSlot === 'Q' || message.castSlot === 'W' || message.castSlot === 'E' || message.castSlot === 'R'
+            ? message.castSlot
+            : undefined,
+        castX: num(message.castX, -60, 60),
+        castZ: num(message.castZ, -60, 60),
       };
 
     case 'chat':

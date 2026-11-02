@@ -23,6 +23,7 @@ import {
 import { CHALLENGE_REWARD, claimChallenge, dailyChallenge } from '@/core/park/challenge';
 import { emptyScores, type ParkScores } from '@/core/park/scores';
 import { GALLERY_SECONDS } from '@/core/scene/park/ShootingGallery';
+import { TouchButton } from '@/core/games/TouchPad';
 
 /**
  * Jupiter Station — pouť.
@@ -106,10 +107,34 @@ export default function ParkPage() {
     }
   }, [readScores]);
 
+  // během hry na mobilu schovej navigaci a chat (celá obrazovka pro hru)
+  useEffect(() => {
+    document.body.dataset.playing = active ? '1' : '';
+    return () => {
+      document.body.dataset.playing = '';
+    };
+  }, [active]);
+
   // ── canvas + textura ─────────────────────────────────────────────
+  /** Dotyk/myš na plátně = pozice pálky/kormidla (0..1). */
+  const onCanvasPointer = useCallback((event: PointerEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / Math.max(1, rect.width);
+    pointerRef.current = Math.max(0, Math.min(1, x));
+  }, []);
+
   const attachCanvas = useCallback((element: HTMLCanvasElement | null) => {
+    const previous = canvasRef.current;
+    if (previous && previous !== element) {
+      previous.removeEventListener('pointermove', onCanvasPointer);
+      previous.removeEventListener('pointerdown', onCanvasPointer);
+    }
     canvasRef.current = element;
     if (!element) return;
+    element.addEventListener('pointermove', onCanvasPointer);
+    element.addEventListener('pointerdown', onCanvasPointer);
     element.width = GAME_W;
     element.height = GAME_H;
     const map = new THREE.CanvasTexture(element);
@@ -452,6 +477,27 @@ export default function ParkPage() {
       {/* herní obrazovka — jeden canvas, dva pohledy */}
       <div className={`park-dock${active ? ' is-open' : ''}`} aria-hidden={!active}>
         {canvasNode}
+        <div className="park-touch">
+          <div className="park-touch-row">
+            <TouchButton code="ArrowLeft" className="is-left">
+              ←
+            </TouchButton>
+            <TouchButton code="ArrowRight" className="is-right">
+              →
+            </TouchButton>
+          </div>
+          <div className="park-touch-row">
+            <TouchButton code="ArrowUp" className="is-small">
+              ↑
+            </TouchButton>
+            <TouchButton code="Space" className="is-small">
+              {cs ? 'AKCE' : 'ACTION'}
+            </TouchButton>
+            <TouchButton code="ArrowDown" className="is-small">
+              ↓
+            </TouchButton>
+          </div>
+        </div>
         {game && (
           <div className="park-dock-copy">
             <strong>{game.title[cs ? 'cs' : 'en']}</strong>

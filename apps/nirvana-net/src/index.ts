@@ -51,6 +51,16 @@ import {
   type ServerMessage,
 } from '../../nirvana/src/core/net/protocol.js';
 import {
+  addMobaSeat,
+  createMobaRoom,
+  mobaRoomSnapshot,
+  removeMobaSeat,
+  setMobaInput,
+  stepMobaRoom,
+  MOBA_ROOM_SIZE,
+  type MobaRoomSim,
+} from './moba.js';
+import {
   addPlayer,
   arenaSnapshot,
   createArena,
@@ -128,6 +138,8 @@ interface Room {
   race: RaceSim | null;
   /** Merkur má duel (best of 3). */
   fight: FightRoomSim | null;
+  /** První svět má MOBA zápas (2v2). */
+  moba: MobaRoomSim | null;
 }
 
 const rooms = new Map<string, Room>();
@@ -168,7 +180,9 @@ function summary(identity: NetIdentity): PlayerSummary {
 
 /** Kapacita místnosti podle hry — duel je vždy dva. */
 function capOf(game: GameId): number {
-  return game === 'fight' ? FIGHT_ROOM_SIZE : MAX_PLAYERS;
+  if (game === 'fight') return FIGHT_ROOM_SIZE;
+  if (game === 'moba') return MOBA_ROOM_SIZE;
+  return MAX_PLAYERS;
 }
 
 function roomInfo(room: Room): RoomInfo {
@@ -338,6 +352,7 @@ function createRoom(game: GameId): Room {
     arena: game === 'arena' ? createArena(Date.now()) : null,
     race: game === 'race' ? createRace(Date.now()) : null,
     fight: game === 'fight' ? createFight(Date.now()) : null,
+    moba: game === 'moba' ? createMobaRoom(Date.now()) : null,
   };
   rooms.set(room.id, room);
   log(`room created id=${room.id} total=${rooms.size}`);
@@ -353,6 +368,7 @@ function leaveRoom(conn: Conn, reason: string): void {
   if (room.arena) removePlayer(room.arena, conn.id);
   if (room.race) removeRacePlayer(room.race, conn.id);
   if (room.fight) removeFightPlayer(room.fight, conn.id);
+  if (room.moba) removeMobaSeat(room.moba, conn.id);
   room.players.delete(conn.id);
   log(`leave room=${room.id} id=${conn.identity.id} reason=${reason} players=${room.players.size}`);
 
@@ -371,7 +387,7 @@ function leaveRoom(conn: Conn, reason: string): void {
   }
 }
 
-function joinRoom(conn: Conn, game: GameId, wanted?: string): void {
+function joinRoom(conn: Conn, game: GameId, wanted?: string, heroId?: number): void {
   if (!conn.helloSent) {
     sendError(conn, 'bad_frame', 'nejdřív hello');
     return;
@@ -406,12 +422,13 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string): void {
   if (room.arena) addPlayer(room.arena, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
   if (room.race) addRacePlayer(room.race, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
   if (room.fight) addFightPlayer(room.fight, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
+  if (room.moba) addMobaSeat(room.moba, conn.id, heroId ?? conn.identity.avatarId ?? 0, Date.now());
 
   send(conn, {
     t: 'room',
     room: roomInfo(room),
     occupants: [...room.players.values()].map((player) => summary(player.identity)),
-    youPlayerId: room.arena || room.race || room.fight ? conn.id : undefined,
+    youPlayerId: room.arena || room.race || room.fight || room.moba ? conn.id : undefined,
     // spawn posílá server až ve snapshotech; klient si drží vlastní predikci
     spawn: null,
     history: [...historyOf(`arena:${room.id}`)],
@@ -457,7 +474,7 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
     }
 
     case 'join':
-      joinRoom(conn, message.game, message.room);
+      joinRoom(conn, message.game, message.room, message.heroId);
       return;
 
     case 'leave':
@@ -483,6 +500,16 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
           jump: message.jump,
           fire: message.fire,
           weapon: message.weapon === 1 ? 'rocket' : 'rail',
+        });
+        return;
+      }
+      if (another.moba) {
+        // MOBA: `mx`/`mz` pohyb, `castSlot`+`castX/Z` kouzlo, `attack` útok
+        setMobaInput(another.moba, conn.id, {
+          moveX: message.mx,
+          moveZ: message.mz,
+          cast: message.castSlot ? { slot: message.castSlot, x: message.castX ?? 0, z: message.castZ ?? 0 } : null,
+          attack: message.attack === true,
         });
         return;
       }
@@ -735,6 +762,26 @@ const gameLoop = setInterval(() => {
           seq: room.fight.seq,
           time: now,
           ...snapshot,
+        });
+      }
+      continue;
+    }
+
+    if (room.moba) {
+      stepMobaRoom(room.moba, TICK_MS / 1000, now);
+      room.state =
+        room.moba.phase === 'running' ? 'running' : room.moba.phase === 'ended' ? 'ended' : 'waiting';
+      if (tickCount % SNAPSHOT_EVERY === 0) {
+        const snapshot = mobaRoomSnapshot(room.moba, now);
+        broadcastChannel(`arena:${room.id}`, {
+          t: 'snapshot',
+          game: 'moba',
+          seq: room.moba.seq,
+          time: now,
+          players: [],
+          moba: snapshot.moba,
+          countdown: snapshot.countdown,
+          state: snapshot.phase === 'running' ? 'running' : snapshot.phase === 'ended' ? 'ended' : 'countdown',
         });
       }
       continue;

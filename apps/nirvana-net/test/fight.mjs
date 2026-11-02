@@ -247,7 +247,7 @@ try {
   const b = client();
   const c = client();
   await Promise.all([a.opened, b.opened, c.opened]);
-  for (const socket of [a, b, c]) socket.send({ t: 'hello', proto: 4 });
+  for (const socket of [a, b, c]) socket.send({ t: 'hello', proto: 5 });
   await a.waitFor((m) => m.t === 'welcome');
   await b.waitFor((m) => m.t === 'welcome');
   await c.waitFor((m) => m.t === 'welcome');

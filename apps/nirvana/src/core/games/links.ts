@@ -22,7 +22,7 @@ export const GAME_LINKS: GameLink[] = [
     id: 'earth',
     href: '/earth',
     title: { cs: 'První svět', en: 'First World' },
-    note: { cs: 'MOBA · 3 linky · uzly L5', en: 'MOBA · 3 lanes · L5 nodes' },
+    note: { cs: 'MOBA · 3 linky · uzly L5 · online 2v2', en: 'MOBA · 3 lanes · L5 nodes · online 2v2' },
     glyph: '🌍',
     tone: '#7fe3d4',
   },

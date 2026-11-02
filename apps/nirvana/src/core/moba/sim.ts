@@ -203,15 +203,41 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
   };
 }
 
-export function createMoba(playerHeroId: number, enemyHeroId: number, now: number): MobaState {
+/** Jedno sedlo zápasu — hráč nebo bot na dané straně. */
+export interface MobaSeat {
+  id: string;
+  heroId: number;
+  team: Team;
+  /** true = ovládá ho hráč (dostává vstup), false = bot. */
+  human?: boolean;
+}
+
+/**
+ * Zápas z rozpisu sedaček — používá server pro 2v2 i sólo (sólo je jen
+ * rozpis se dvěma sedačkami). Počet hrdinů není pevný, sim se přizpůsobí.
+ */
+export function createMobaMatch(seats: MobaSeat[], now: number): MobaState {
+  const heroes = seats.map((seat) =>
+    makeHero(
+      seat.id,
+      seat.team,
+      seat.heroId,
+      seat.team === 'blue' ? SPAWNS.blue : SPAWNS.red,
+      seat.human === true,
+    ),
+  );
+  // rozestup, ať se hrdinové ve spawnu nepřekrývají
+  heroes.forEach((hero, index) => {
+    const offset = (index % 2) * 2.4 - 1.2;
+    hero.x += hero.team === 'blue' ? offset : -offset;
+    hero.z += offset;
+  });
+
   const state: MobaState = {
     now,
     time: 0,
     ended: null,
-    heroes: [
-      makeHero('hero-you', 'blue', playerHeroId, SPAWNS.blue, true),
-      makeHero('hero-foe', 'red', enemyHeroId, SPAWNS.red, false),
-    ],
+    heroes,
     minions: [],
     towers: STRUCTURES.map((structure) => ({
       id: structure.id,
@@ -243,6 +269,17 @@ export function createMoba(playerHeroId: number, enemyHeroId: number, now: numbe
     bannerUntil: now + 4200,
   };
   return state;
+}
+
+/** Sólo 1v1 — tenký obal nad `createMobaMatch` (klient i testy). */
+export function createMoba(playerHeroId: number, enemyHeroId: number, now: number): MobaState {
+  return createMobaMatch(
+    [
+      { id: 'hero-you', heroId: playerHeroId, team: 'blue', human: true },
+      { id: 'hero-foe', heroId: enemyHeroId, team: 'red', human: false },
+    ],
+    now,
+  );
 }
 
 /** Bonus k poškození podle převzatých uzlů L5. */
@@ -474,7 +511,12 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
 
 // ── krok simulace ────────────────────────────────────────────────────
 
-export function stepMoba(state: MobaState, dt: number, input: MobaInput, now: number): void {
+export function stepMoba(
+  state: MobaState,
+  dt: number,
+  inputs: Record<string, MobaInput>,
+  now: number,
+): void {
   if (state.ended) return;
   state.now = now;
   state.time += dt;
@@ -535,7 +577,8 @@ export function stepMoba(state: MobaState, dt: number, input: MobaInput, now: nu
     const slow = 1 - hero.slowFactor;
     const speed = 6.2 * slow;
 
-    if (hero.isPlayer) {
+    const input = inputs[hero.id];
+    if (input) {
       const length = Math.hypot(input.moveX, input.moveZ);
       if (length > 0.05) {
         const nx = input.moveX / length;
@@ -556,7 +599,7 @@ export function stepMoba(state: MobaState, dt: number, input: MobaInput, now: nu
 
     // automatický útok
     if (now >= hero.attackCooldown) {
-      const wantsAttack = hero.isPlayer ? input.attack : true;
+      const wantsAttack = input ? input.attack : true;
       if (wantsAttack) {
         const target = nearestEnemyHero(state, hero, 6.4) ?? nearestEnemyMinion(state, hero, 6.4);
         if (target) {

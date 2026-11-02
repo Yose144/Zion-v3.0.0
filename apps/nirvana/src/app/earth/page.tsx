@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { AVATARS } from '@/core/avatars/catalog';
 import { useI18n } from '@/core/i18n';
 import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
+import { MobaOnline } from '@/core/moba/MobaOnline';
 import { NODE_SITES } from '@/core/moba/map';
 import { spellsForAvatar } from '@/core/moba/spells';
 
@@ -24,6 +25,8 @@ import { spellsForAvatar } from '@/core/moba/spells';
 const STARTERS = [0, 1, 2, 3, 4, 5, 82, 84, 85, 86, 19, 20];
 
 type Phase = 'pick' | 'playing' | 'ended';
+type Mode = 'solo' | 'online';
+type OnlinePhase = 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline';
 
 const EMPTY_STATS: MobaStats | null = null;
 
@@ -33,6 +36,8 @@ export default function EarthPage() {
   const [heroId, setHeroId] = useState(0);
   const [foeId, setFoeId] = useState(82);
   const [phase, setPhase] = useState<Phase>('pick');
+  const [mode, setMode] = useState<Mode>('solo');
+  const [onlinePhase, setOnlinePhase] = useState<OnlinePhase>('connecting');
   const [stats, setStats] = useState<MobaStats | null>(EMPTY_STATS);
   const [winner, setWinner] = useState<'blue' | 'red' | null>(null);
 
@@ -43,8 +48,9 @@ export default function EarthPage() {
   const start = useCallback(() => {
     setStats(null);
     setWinner(null);
+    setOnlinePhase(mode === 'online' ? 'connecting' : 'running');
     setPhase('playing');
-  }, []);
+  }, [mode]);
 
   const onStats = useCallback((next: MobaStats) => setStats(next), []);
   const onEnd = useCallback((result: 'blue' | 'red') => {
@@ -85,6 +91,22 @@ export default function EarthPage() {
       {phase !== 'playing' && (
         <section className="moba-pick">
           <div className="moba-pick-block">
+            <div className="moba-mode">
+              <button
+                type="button"
+                className={`moba-mode-btn${mode === 'solo' ? ' is-active' : ''}`}
+                onClick={() => setMode('solo')}
+              >
+                {cs ? 'Sólo vs bot' : 'Solo vs bot'}
+              </button>
+              <button
+                type="button"
+                className={`moba-mode-btn${mode === 'online' ? ' is-active' : ''}`}
+                onClick={() => setMode('online')}
+              >
+                {cs ? 'Online 2v2' : 'Online 2v2'}
+              </button>
+            </div>
             <h2>{cs ? 'Vyber si hrdinu' : 'Pick your hero'}</h2>
             <div className="moba-pick-grid">
               {STARTERS.map((id) => {
@@ -147,14 +169,55 @@ export default function EarthPage() {
 
       {phase === 'playing' && (
         <div className="moba-stage">
-          <MobaGame
-            playerHeroId={heroId}
-            enemyHeroId={foeId}
-            running
-            onStats={onStats}
-            onEnd={onEnd}
-            debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
-          />
+          {mode === 'solo' ? (
+            <MobaGame
+              playerHeroId={heroId}
+              enemyHeroId={foeId}
+              running
+              onStats={onStats}
+              onEnd={onEnd}
+              debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
+            />
+          ) : (
+            <MobaOnline
+              heroId={heroId}
+              onStats={onStats}
+              onEnd={onEnd}
+              onPhase={setOnlinePhase}
+              debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
+            />
+          )}
+
+          {mode === 'online' && (onlinePhase === 'connecting' || onlinePhase === 'waiting' || onlinePhase === 'countdown' || onlinePhase === 'offline') && (
+            <div className="moba-status" role="status" aria-live="polite">
+              <strong>
+                {onlinePhase === 'offline'
+                  ? cs
+                    ? 'Server neodpovídá'
+                    : 'Server offline'
+                  : onlinePhase === 'countdown'
+                    ? cs
+                      ? 'Zápas začíná'
+                      : 'Match starting'
+                    : onlinePhase === 'waiting'
+                      ? cs
+                        ? 'Čekám na hráče'
+                        : 'Waiting for players'
+                      : cs
+                        ? 'Připojuji se'
+                        : 'Connecting'}
+              </strong>
+              <span>
+                {onlinePhase === 'offline'
+                  ? cs
+                    ? 'Zkus to znovu za chvíli.'
+                    : 'Try again in a moment.'
+                  : cs
+                    ? 'Volná sedla doplní boti, hra nečeká.'
+                    : 'Empty seats are filled by bots, the game does not wait.'}
+              </span>
+            </div>
+          )}
 
           <div className="moba-hud-top">
             <div className="moba-nexus is-blue">

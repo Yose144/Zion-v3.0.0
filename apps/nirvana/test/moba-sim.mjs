@@ -26,7 +26,7 @@ function advance(state, ms, input = NO_INPUT) {
   let now = state.now;
   for (let elapsed = 0; elapsed < ms; elapsed += STEP) {
     now += STEP;
-    stepMoba(state, STEP / 1000, input, now);
+    stepMoba(state, STEP / 1000, { 'hero-you': input }, now);
   }
   return now;
 }
@@ -68,7 +68,7 @@ foe.x = 4;
 foe.z = 0;
 const foeHpBefore = foe.hp;
 const now4 = advance(state, 200);
-stepMoba(state, 1 / 30, { ...NO_INPUT, cast: { slot: 'Q', x: 4, z: 0 } }, now4 + 33);
+stepMoba(state, 1 / 30, { 'hero-you': { ...NO_INPUT, cast: { slot: 'Q', x: 4, z: 0 } } }, now4 + 33);
 advance(state, 900, NO_INPUT);
 check('kouzlo Q: soupeř ztratil HP', foe.hp < foeHpBefore, `${foeHpBefore} → ${foe.hp}`);
 check('kouzlo Q: spotřebovalo manu', you.mana < you.maxMana, `${Math.round(you.mana)}/${you.maxMana}`);
@@ -80,7 +80,7 @@ you.x = -34;
 you.z = 0;
 you.hp = you.maxHp * 0.5;
 const now5 = state.now;
-stepMoba(state, 1 / 30, { ...NO_INPUT, cast: { slot: 'W', x: you.x, z: you.z } }, now5 + 33);
+stepMoba(state, 1 / 30, { 'hero-you': { ...NO_INPUT, cast: { slot: 'W', x: you.x, z: you.z } } }, now5 + 33);
 const shielded = you.shield > 0 || you.hp > you.maxHp * 0.5;
 check('kouzlo W: štít nebo heal', shielded, `shield=${Math.round(you.shield)} hp=${Math.round(you.hp)}`);
 

@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Canvas } from '@react-three/fiber';
 import { XR, createXRStore } from '@react-three/xr';
 import { useI18n } from '@/core/i18n';
 import { MarsArena, type ArenaResult, type ArenaStats } from '@/core/arena/MarsArena';
 import { MarsMultiplayer, type MpStats } from '@/core/arena/MarsMultiplayer';
+import { ArenaTouchControls, createTouchState } from '@/core/arena/ArenaTouch';
 import { FRAG_LIMIT, MATCH_SECONDS } from '@/core/arena/map';
 import { awardRun, loadProfile, saveProfile } from '@/core/park/profile';
 import { CHALLENGE_REWARD, claimChallenge } from '@/core/park/challenge';
@@ -44,6 +45,26 @@ export default function MarsPage() {
   const [mpStats, setMpStats] = useState<MpStats | null>(null);
   const [result, setResult] = useState<ArenaResult | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Dotykové ovládání — na mobilu joystick + tažení místo WASD a myši. */
+  const touch = useRef(createTouchState());
+  const [coarse, setCoarse] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia('(hover: none) and (pointer: coarse)');
+    setCoarse(query.matches);
+    const onChange = () => setCoarse(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+
+  // během hry na mobilu schovej navigaci a chat (celá obrazovka pro hru)
+  useEffect(() => {
+    if (!coarse) return;
+    document.body.dataset.playing = phase === 'playing' ? '1' : '';
+    return () => {
+      document.body.dataset.playing = '';
+    };
+  }, [coarse, phase]);
 
   useEffect(() => xrStore.subscribe((state) => setPresenting(Boolean(state.session))), [xrStore]);
 
@@ -107,7 +128,7 @@ export default function MarsPage() {
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         >
           {mp ? (
-            <MarsMultiplayer running={phase === 'playing'} onStats={setMpStats} />
+            <MarsMultiplayer running={phase === 'playing'} onStats={setMpStats} touch={touch} />
           ) : (
             <XR store={xrStore}>
               <MarsArena
@@ -115,11 +136,14 @@ export default function MarsPage() {
                 xr={presenting}
                 onStats={setStats}
                 onEnd={endMatch}
+                touch={touch}
               />
             </XR>
           )}
         </Canvas>
       </div>
+
+      {phase === 'playing' && coarse && <ArenaTouchControls state={touch} />}
 
       {phase === 'playing' && mp && (
         <>
@@ -151,9 +175,13 @@ export default function MarsPage() {
             </ol>
           )}
           <div className="arena-tip">
-            {cs
-              ? 'WASD pohyb · mezerník skok · 1/2/3 zbraň · klik střelba · Esc uvolní myš'
-              : 'WASD move · space jump · 1/2/3 weapon · click fire · Esc releases the mouse'}
+            {coarse
+              ? cs
+                ? 'joystick = pohyb · tažení vpravo = rozhlížení · PALBA / SKOK / ZB'
+                : 'stick = move · drag right = look · FIRE / JUMP / WP'
+              : cs
+                ? 'WASD pohyb · mezerník skok · 1/2/3 zbraň · klik střelba · Esc uvolní myš'
+                : 'WASD move · space jump · 1/2/3 weapon · click fire · Esc releases the mouse'}
           </div>
           {mpStats?.matchState === 'ended' && (
             <div className="arena-respawn">
@@ -191,9 +219,13 @@ export default function MarsPage() {
             )}
           </div>
           <div className="arena-tip">
-            {cs
-              ? 'WASD pohyb · mezerník skok · 1/2/3 zbraň · klik střelba · Esc uvolní myš'
-              : 'WASD move · space jump · 1/2/3 weapon · click fire · Esc releases the mouse'}
+            {coarse
+              ? cs
+                ? 'joystick = pohyb · tažení vpravo = rozhlížení · PALBA / SKOK / ZB'
+                : 'stick = move · drag right = look · FIRE / JUMP / WP'
+              : cs
+                ? 'WASD pohyb · mezerník skok · 1/2/3 zbraň · klik střelba · Esc uvolní myš'
+                : 'WASD move · space jump · 1/2/3 weapon · click fire · Esc releases the mouse'}
           </div>
           {stats.respawnIn > 0 && (
             <div className="arena-respawn">
@@ -219,7 +251,7 @@ export default function MarsPage() {
               </p>
               <ul className="arena-keys">
                 <li>
-                  <kbd>WASD</kbd> {cs ? 'pohyb' : 'move'}
+                  <kbd>{coarse ? 'joystick' : 'WASD'}</kbd> {cs ? 'pohyb' : 'move'}
                 </li>
                 <li>
                   <kbd>mezerník</kbd> {cs ? 'skok' : 'jump'}
