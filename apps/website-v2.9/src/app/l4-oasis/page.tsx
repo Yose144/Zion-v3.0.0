@@ -12,6 +12,7 @@ import {
   MonitorPlay, MousePointerClick
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import OasisPreviewLazy from '@/components/OasisPreviewLazy';
 
 const OASIS_URL = 'https://oasis.zionterranova.com';
 
@@ -537,6 +538,9 @@ export default function L4OasisPage() {
               <Trophy className="h-7 w-7 text-zion-gold" />
               {L4OasisCopy.goldenEggTitle[cs ? 'cs' : 'en']}
             </h2>
+          </div>
+          <div className="mb-6">
+            <OasisPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
