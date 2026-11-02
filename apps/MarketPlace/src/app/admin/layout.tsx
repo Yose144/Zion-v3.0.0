@@ -87,6 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <a href="/admin/shipping" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navShipping')}</a>
               <a href="/admin/stripe" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navStripe')}</a>
               <a href="/admin/gifts" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navGifts')}</a>
+              <a href="/admin/accounting" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navAccounting')}</a>
               <a href="/" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-rasta-gold">{t('admin.navStore')}</a>
               <div className="flex items-center gap-2 ml-2 pl-3 border-l border-white/10">
                 <label htmlFor="admin-theme" className="text-xs text-white/60">{t('admin.themeLabel')}</label>

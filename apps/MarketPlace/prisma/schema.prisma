@@ -286,3 +286,49 @@ model Invoice {
   @@index([orderId])
   @@index([status])
 }
+
+// ── Ledger (podvojné účetnictví Omnity.One s.r.o.) ─────────────────
+// UCETNICTVI-PLAN.md — neplátce DPH, bez zaměstnanců
+
+model LedgerAccount {
+  id        String   @id @default(cuid())
+  code      String   @unique // "221" — účet dle českého účtového rozvrhu (vyhl. 500/2002)
+  name      String
+  class     Int      // účtová třída 0–6
+  synthetic String?  // nadřazený syntetický účet (analytika)
+  active    Boolean  @default(true)
+  system    Boolean  @default(false) // seed účet — nemazat
+  createdAt DateTime @default(now())
+
+  @@index([class])
+}
+
+model LedgerEntry {
+  id          String   @id @default(cuid())
+  entryNumber String   @unique // číslo účetního dokladu "U-2026-0001"
+  date        DateTime // okamžik uskutečnění účetního případu
+  description String
+  documentRef String?  // označení účetního dokladu (č. faktury, VS, č. výpisu)
+  sourceType  String?  // invoice | order_paid | manual | bank | opening
+  sourceId    String?  // id zdrojového záznamu (invoice.id, order.id)
+  period      Int      // účetní období — kalendářní rok
+  postedBy    String?  // podpisový záznam zaúčtování
+  createdAt   DateTime @default(now())
+  lines       LedgerEntryLine[]
+
+  @@index([date])
+  @@index([period])
+  @@index([sourceType, sourceId])
+}
+
+model LedgerEntryLine {
+  id          String      @id @default(cuid())
+  entryId     String
+  entry       LedgerEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  accountCode String      // odkaz na LedgerAccount.code
+  side        String      // "MD" (má dát) | "DAL" (dal)
+  amountHal   Int         // haléře — přesnost pro rozpad DPH i bankovní párování
+
+  @@index([entryId])
+  @@index([accountCode])
+}
