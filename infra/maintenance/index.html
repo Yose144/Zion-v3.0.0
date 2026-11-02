@@ -428,42 +428,7 @@ try {
     sp.position.set(x, y, z); sp.scale.setScalar(s); scene.add(sp);
   }
 
-  /* ── podlaha + zlaté kruhy ── */
-  const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(16, 64),
-    new THREE.MeshStandardMaterial({ color: 0x070604, roughness: 0.35, metalness: 0.6 })
-  );
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -1.02;
-  scene.add(floor);
-
-  const poolTex = glowTexture('rgba(255,197,77,0.55)', 'rgba(245,158,11,0.18)');
-  const pool = new THREE.Mesh(
-    new THREE.PlaneGeometry(11, 11),
-    new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false })
-  );
-  pool.rotation.x = -Math.PI / 2;
-  pool.position.y = -0.9;
-  scene.add(pool);
-
-  const ripples = [];
-  for (let i = 0; i < 4; i++) {
-    const pts = [];
-    for (let s = 0; s <= 128; s++) {
-      const a = (s / 128) * Math.PI * 2;
-      pts.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a)));
-    }
-    const m = new THREE.LineLoop(
-      new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicMaterial({ color: 0xffc94d, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
-    );
-    m.position.y = -0.88;
-    m.userData.phase = i / 4;
-    scene.add(m);
-    ripples.push(m);
-  }
-
-  /* ── LOTOS — 12/10/8 lístků, perleť se zlatým okrajem ── */
+  /* ── LOTOS — 12/10/8 lístků, perleť se zlatým okrajem (vznáší se ve vesmíru) ── */
   const lotus = new THREE.Group();
   lotus.position.y = -0.55;
   scene.add(lotus);
@@ -696,13 +661,6 @@ try {
 
     /* lotos jemně dýchá s orbem */
     lotus.scale.setScalar(1 + Math.sin(t * (Math.PI * 2 / 5) - 0.6) * 0.008);
-
-    /* zlaté kruhy na podlaze */
-    for (const r of ripples) {
-      const p = (t * 0.14 + r.userData.phase) % 1;
-      r.scale.setScalar(0.6 + p * 5.4);
-      r.material.opacity = (1 - p) * (1 - p) * 0.4;
-    }
 
     /* prach stoupá */
     const pos = dustGeo.attributes.position;
