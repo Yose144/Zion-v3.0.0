@@ -7,12 +7,13 @@
  * vlny minionů, věže, Nexy a **tři uzly L5** (Kailash, Uluru, Ekam), které
  * se dají převzít a dávají týmu bonus k poškození.
  *
- * Každá postava má **čtyři kouzla z kánonu** — Q/W/E/R se odvozují z její
+ * Každá postava má **čtyři kouzla z kánonu** — sloty Q/W/E/R (klávesy
+ * Q/F/E/R, protože `W` je pohyb vpřed — viz `core/moba/keys.ts`) se odvozují z její
  * ability (`Dharma Shield`, `Agni Pariksha`, `Cosmic Vision`…), takže Krišna
  * hraje jinak než Šiva. Zdroj: `core/moba/spells.ts`.
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { AVATARS } from '@/core/avatars/catalog';
 import { useI18n } from '@/core/i18n';
@@ -22,6 +23,8 @@ import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
 import { ITEMS, type ItemId } from '@/core/moba/sim';
 import { spellsForAvatar } from '@/core/moba/spells';
+import { SPELL_LABEL } from '@/core/moba/keys';
+import { MobaTouch } from '@/core/moba/MobaTouch';
 
 /** Dvanáct startovních hrdinů — zbytek rosteru jde vybrat na `/avatars`. */
 const STARTERS = [0, 1, 2, 3, 4, 5, 82, 84, 85, 86, 19, 20];
@@ -43,6 +46,26 @@ export default function EarthPage() {
   const [stats, setStats] = useState<MobaStats | null>(EMPTY_STATS);
   const buyRequest = useRef<ItemId | null>(null);
   const [winner, setWinner] = useState<'blue' | 'red' | null>(null);
+
+  /** Dotykové ovládání — na mobilu joystick + kouzla místo WASD a QWER. */
+  const [coarse, setCoarse] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia('(hover: none) and (pointer: coarse)');
+    setCoarse(query.matches);
+    const onChange = () => setCoarse(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+
+  // během hry na mobilu schovej navigaci a chat (celá obrazovka pro hru)
+  useEffect(() => {
+    if (!coarse) return;
+    document.body.dataset.playing = phase === 'playing' ? '1' : '';
+    return () => {
+      document.body.dataset.playing = '';
+    };
+  }, [coarse, phase]);
 
   const hero = useMemo(() => AVATARS.find((entry) => entry.id === heroId) ?? AVATARS[0]!, [heroId]);
   const foe = useMemo(() => AVATARS.find((entry) => entry.id === foeId) ?? AVATARS[0]!, [foeId]);
@@ -142,7 +165,15 @@ export default function EarthPage() {
           <div className="moba-pick-block">
             <h2>{cs ? 'Jak se hraje' : 'How to play'}</h2>
             <ul className="moba-rules">
-              <li>{cs ? 'WASD pohyb, držené levé tlačítko útok.' : 'WASD to move, hold left mouse to attack.'}</li>
+              <li>
+                {coarse
+                  ? cs
+                    ? 'Joystick pohyb, ÚTOK útok, Q/F/E/R kouzla. Klepni do země a pak na kouzlo — sešle se tam.'
+                    : 'Stick to move, ATTACK to strike, Q/F/E/R spells. Tap the ground, then a spell — it casts there.'
+                  : cs
+                    ? 'WASD pohyb, držené levé tlačítko útok.'
+                    : 'WASD to move, hold left mouse to attack.'}
+              </li>
               <li>{cs ? 'Q/W/E/R kouzlo na kurzor. Mana a cooldowny platí.' : 'Q/W/E/R casts at the cursor. Mana and cooldowns apply.'}</li>
               <li>{cs ? 'Chraň svůj Nex a znič protivníkův — nebo vyhraj na čas.' : 'Protect your Nexus, destroy theirs — or win on time.'}</li>
               <li>
@@ -154,7 +185,7 @@ export default function EarthPage() {
             <div className="moba-spells">
               {spells.map((spell) => (
                 <div key={spell.slot} className="moba-spell" style={{ borderColor: `${spell.color}66` }}>
-                  <span className="moba-spell-key">{spell.slot}</span>
+                  <span className="moba-spell-key">{SPELL_LABEL[spell.slot]}</span>
                   <strong>{spell.name}</strong>
                   <small>
                     {spell.damage > 0 ? `${spell.damage} dmg` : spell.shield > 0 ? `${spell.shield} štít` : 'podpora'} ·{' '}
@@ -192,6 +223,8 @@ export default function EarthPage() {
               debug={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mobaDebug') === '1'}
             />
           )}
+
+          {coarse && <MobaTouch spells={spells} />}
 
           {mode === 'online' && (onlinePhase === 'connecting' || onlinePhase === 'waiting' || onlinePhase === 'countdown' || onlinePhase === 'offline') && (
             <div className="moba-status" role="status" aria-live="polite">
@@ -283,7 +316,7 @@ export default function EarthPage() {
                 const cooldownPct = spell.cooldownMs ? Math.min(100, (spell.cooldown / spell.cooldownMs) * 100) : 0;
                 return (
                   <div key={spell.slot} className="moba-slot" style={{ borderColor: `${spell.color}88` }}>
-                    <span className="moba-slot-key">{spell.slot}</span>
+                    <span className="moba-slot-key">{SPELL_LABEL[spell.slot]}</span>
                     <strong>{spell.name}</strong>
                     <small>{spell.mana} mp</small>
                     {cooldownPct > 0 && <i className="moba-slot-cd" style={{ height: `${cooldownPct}%` }} />}
@@ -318,7 +351,13 @@ export default function EarthPage() {
             </div>
 
             <div className="moba-tips">
-              {cs ? 'WASD pohyb · Q/W/E/R kouzlo · levé tlačítko útok' : 'WASD move · Q/W/E/R cast · left click attack'}
+              {coarse
+                ? cs
+                  ? 'joystick pohyb · Q/F/E/R kouzlo · ÚTOK'
+                  : 'stick move · Q/F/E/R cast · ATTACK'
+                : cs
+                  ? 'WASD pohyb · Q/F/E/R kouzlo · levé tlačítko útok'
+                  : 'WASD move · Q/F/E/R cast · left click attack'}
             </div>
           </div>
 

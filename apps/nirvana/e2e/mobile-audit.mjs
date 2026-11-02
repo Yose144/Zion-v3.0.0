@@ -52,6 +52,8 @@ const PAGES = [
     start: /Vstoupit na Zemi|Enter Earth/i,
     control: '.moba-touch',
     minControls: 6,
+    /* klepnutí do země + kouzlo musí opravdu seslat (spadne mana) */
+    cast: { bar: '.moba-bar.is-mana span', button: '.moba-touch-btn.is-spell' },
   },
   { path: '/avatars', name: 'Avatar', start: null, control: null, minControls: 0 },
 ];
@@ -117,13 +119,48 @@ for (const spec of PAGES) {
       if (spec.control) {
         const visible = await page.locator(spec.control).isVisible().catch(() => false);
         controls = await page
-          .locator(`${spec.control} button, ${spec.control} .arena-touch-stick`)
+          .locator(`${spec.control} button, ${spec.control} .arena-touch-stick, ${spec.control} .moba-touch-stick`)
           .count()
           .catch(() => 0);
         if (!visible) fail(spec.name, `dotykové ovládání ${spec.control} není vidět`);
         if (controls < spec.minControls) {
           fail(spec.name, `málo ovládacích prvků (${controls} < ${spec.minControls})`);
         }
+      }
+
+      // kouzlo přes dotyk musí doletět až do simulace
+      if (spec.cast) {
+        const readMana = async () => {
+          const text = await page.locator(spec.cast.bar).first().innerText().catch(() => '0 / 0');
+          return Number(text.split('/')[0].trim()) || 0;
+        };
+        // joystick musí poslat pohyb (klávesa W) — jinak hrdina stojí
+        await page.evaluate(() => {
+          window.__mobaKeys = [];
+          window.addEventListener('keydown', (e) => window.__mobaKeys.push(e.code));
+        });
+        const stick = await page.locator('.moba-touch-stick').boundingBox();
+        if (stick) {
+          await page.mouse.move(stick.x + stick.width / 2, stick.y + stick.height / 2);
+          await page.mouse.down();
+          await page.mouse.move(stick.x + stick.width / 2, stick.y + stick.height / 2 - 30);
+          await page.waitForTimeout(150);
+          await page.mouse.up();
+          const keys = await page.evaluate(() => window.__mobaKeys ?? []);
+          if (!keys.includes('KeyW')) fail(spec.name, `joystick neposlal pohyb (${keys.join(',')})`);
+        } else {
+          fail(spec.name, 'joystick nemá rozměry');
+        }
+
+        const before = await readMana();
+        // klepnutí do scény = zamíření (a útok), pak kouzlo na to místo
+        await page.mouse.click(VIEWPORT.width / 2, VIEWPORT.height / 2);
+        await page.waitForTimeout(250);
+        await page.locator(spec.cast.button).first().click({ force: true }).catch(() => {});
+        await page.waitForTimeout(700);
+        const after = await readMana();
+        if (!(after < before)) fail(spec.name, `kouzlo nesnížilo manu (${before} → ${after})`);
+        else console.log(`      kouzlo: mana ${before} → ${after} (dotyk prošel do simulace)`);
       }
 
       // během hry na mobilu nemá navigace překážet

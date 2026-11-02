@@ -19,6 +19,7 @@ import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
 import type { SpellSlot } from './spells';
+import { SPELL_BY_KEY } from './keys';
 
 const STEP = 1 / 30;
 
@@ -154,11 +155,10 @@ function SoloController({
     const down = (event: KeyboardEvent) => {
       unlockMobaAudio();
       keys.current.add(event.code);
-      if (event.code === 'KeyQ') queuedCast.current = { slot: 'Q' };
-      if (event.code === 'KeyW') queuedCast.current = { slot: 'W' };
-      if (event.code === 'KeyE') queuedCast.current = { slot: 'E' };
-      if (event.code === 'KeyR') queuedCast.current = { slot: 'R' };
-      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'KeyQ', 'KeyE', 'KeyR'].includes(event.code)) {
+      // Kouzla nejsou Q/W/E/R: `W` je pohyb vpřed (viz `core/moba/keys.ts`).
+      const slot = SPELL_BY_KEY[event.code];
+      if (slot) queuedCast.current = { slot };
+      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'KeyQ', 'KeyE', 'KeyR', 'KeyF'].includes(event.code)) {
         event.preventDefault();
       }
     };
@@ -170,6 +170,9 @@ function SoloController({
     };
     const downPointer = (event: PointerEvent) => {
       unlockMobaAudio();
+      // Dotyk (a klik bez předchozího pohybu) neposílá `pointermove`, takže
+      // bez tohohle by se kouzlo seslalo na poslední staré místo.
+      move(event);
       if (event.button === 0) attack.current = true;
     };
     const upPointer = () => {

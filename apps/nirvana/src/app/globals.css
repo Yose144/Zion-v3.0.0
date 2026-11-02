@@ -4517,3 +4517,213 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-variant-numeric: tabular-nums;
   color: #ffb46a;
 }
+
+/* ── MOBA (/earth) na dotyku ─────────────────────────────────────────
+ * Hra čte WASD, pozici kurzoru a Q/W/E/R. Dotyk posílá tytéž události
+ * (viz `core/moba/MobaTouch.tsx`), takže herní smyčka zůstala nedotčená.
+ */
+.moba-touch {
+  position: absolute;
+  inset: 0;
+  z-index: 19;
+  display: none;
+  pointer-events: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .moba-touch {
+    display: block;
+  }
+}
+
+.moba-touch-stick {
+  position: absolute;
+  left: calc(0.9rem + env(safe-area-inset-left, 0px));
+  bottom: calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  width: 7rem;
+  height: 7rem;
+  border-radius: 50%;
+  border: 1px solid rgba(127, 227, 212, 0.4);
+  background: rgba(4, 12, 10, 0.4);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+  touch-action: none;
+  display: grid;
+  place-items: center;
+}
+
+.moba-touch-knob {
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 50%;
+  background: rgba(127, 227, 212, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.moba-touch-actions {
+  position: absolute;
+  right: calc(0.9rem + env(safe-area-inset-right, 0px));
+  bottom: calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+  pointer-events: auto;
+}
+
+.moba-touch-spells {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.moba-touch-btn {
+  min-width: 3.1rem;
+  min-height: 3.1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(4, 12, 10, 0.6);
+  color: #d8fff6;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  touch-action: none;
+  user-select: none;
+}
+
+.moba-touch-btn.is-spell b {
+  font-size: 1rem;
+}
+
+.moba-touch-btn.is-fire {
+  min-width: 5rem;
+  min-height: 3.6rem;
+  border-radius: 50%;
+  border-color: rgba(255, 122, 107, 0.8);
+  background: rgba(255, 122, 107, 0.3);
+  color: #ffd9d2;
+  font-size: 0.72rem;
+}
+
+/* ── MOBA na dotyku: HUD jako sloupec nahoře, ovládání dole ─────────
+ * Na 390 px se původní řádky tloukly: Menu leželo na časovači, uzly L5
+ * na maně a obchod přetékal přes hrdinu. Každá věc má vlastní řádek.
+ */
+@media (hover: none) and (pointer: coarse) {
+  /* Menu je escape hatch — vlastní roh, ať nezakrývá čas */
+  .moba.is-live > .moba-link {
+    position: absolute;
+    z-index: 21;
+    top: calc(0.42rem + env(safe-area-inset-top, 0px));
+    left: calc(0.5rem + env(safe-area-inset-left, 0px));
+    padding: 0.22rem 0.5rem;
+    font-size: 0.64rem;
+  }
+
+  /* 1. řádek: ZION · čas · OPOZICE (vpravo od Menu) */
+  .moba-hud-top {
+    top: calc(0.4rem + env(safe-area-inset-top, 0px));
+    left: 5.7rem;
+    right: calc(0.5rem + env(safe-area-inset-right, 0px));
+    transform: none;
+    width: auto;
+    gap: 0.3rem;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.62rem;
+  }
+
+  .moba-clock strong {
+    font-size: 0.78rem;
+  }
+
+  /* bary nexů na 390 px jinak vytlačí časovač z obrazovky */
+  .moba-nexus-bar {
+    width: 3.6rem;
+  }
+
+  .moba-nexus {
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    gap: 0.25rem;
+  }
+
+  /* 2. řádek: uzly L5 */
+  .moba-nodes {
+    top: calc(2.45rem + env(safe-area-inset-top, 0px));
+    gap: 0.25rem;
+  }
+
+  .moba-node {
+    font-size: 0.55rem;
+    padding: 0.1rem 0.45rem;
+  }
+
+  /* 3. řádek: životy/mana + jméno + obchod */
+  .moba-hud-bottom {
+    top: calc(4.1rem + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    left: calc(0.5rem + env(safe-area-inset-left, 0px));
+    right: calc(0.5rem + env(safe-area-inset-right, 0px));
+    transform: none;
+    width: auto;
+    gap: 0.28rem;
+  }
+
+  .moba-vitals {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .moba-score {
+    min-width: 0;
+    align-items: flex-start;
+  }
+
+  /* kouzla nahrazují dotyková tlačítka — seznam by jen jedl místo */
+  .moba-spellbar {
+    display: none;
+  }
+
+  /* obchod se posouvá vodorovně, ať nikdy nepřeteče přes hru */
+  .moba-shop {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .moba-shop::-webkit-scrollbar {
+    display: none;
+  }
+
+  .moba-shop > * {
+    flex: 0 0 auto;
+  }
+
+  /* uvitací banner ležel na obchodu — na mobilu jde nad ovládání */
+  .moba-banner {
+    top: auto;
+    bottom: calc(10.4rem + env(safe-area-inset-bottom, 0px));
+    max-width: 92vw;
+    font-size: 0.66rem;
+    text-align: center;
+  }
+
+  /* minimapa nahoru pod HUD, ne do cesty prstu */
+  .moba-minimap {
+    top: calc(9.4rem + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    right: calc(0.5rem + env(safe-area-inset-right, 0px));
+  }
+}
+
+@media (max-height: 480px) and (hover: none) and (pointer: coarse) {
+  .moba-touch-stick {
+    width: 5.4rem;
+    height: 5.4rem;
+  }
+  .moba-touch-knob {
+    width: 2rem;
+    height: 2rem;
+  }
+  .moba-touch-btn {
+    min-width: 2.6rem;
+    min-height: 2.6rem;
+  }
+}
