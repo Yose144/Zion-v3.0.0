@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import type { WorldPoint } from '@/lib/worlds';
 
 /** Nová Země — geografie scény. Radiály a úhly jsou canon-stable. */
@@ -107,3 +108,29 @@ export function moonPosition(t: number): [number, number, number] {
   const a = MOON_ANGLE0 + t * MOON_SPEED;
   return [Math.cos(a) * MOON_ORBIT_R, Math.sin(a * 0.55) * 1.4, Math.sin(a) * MOON_ORBIT_R];
 }
+
+/* ─── Archa Království srdce ──────────────────────────────────────────────
+ * Pluje po velrybím koridoru kolem Nové Země. Jeden vzorec pro scénu i fokus:
+ * `SailingArk` i `LinkEngine` volají `arkPosition(t)`, takže kamera doletí
+ * přesně tam, kde loď je (dřív se fokus aproximoval a míjel).
+ */
+export const ARK_ORBIT_R = PLANET_R + 0.42;
+export const ARK_SPEED = 0.045;
+export const ARK_ANGLE0 = 2.35;
+export const ARK_TILT: [number, number, number] = [0.44, 0.2, 0.08];
+
+const _arkEuler = new THREE.Euler(ARK_TILT[0], ARK_TILT[1], ARK_TILT[2]);
+const _arkVec = new THREE.Vector3();
+
+export function arkPosition(t: number): [number, number, number] {
+  const a = ARK_ANGLE0 + t * ARK_SPEED;
+  // stejná rotace jako `orbit` group v `SailingArk.tsx` (three Euler XYZ)
+  _arkVec.set(Math.cos(a) * ARK_ORBIT_R, 0, Math.sin(a) * ARK_ORBIT_R).applyEuler(_arkEuler);
+  return [_arkVec.x, _arkVec.y, _arkVec.z];
+}
+
+/* ─── Issobella (L6 ring) ─────────────────────────────────────────────────
+ * Střed prstence je v počátku zemské soustavy; fokus míří na jeho okraj,
+ * kde stojí stanice. Jeden bod pro scénu i kameru.
+ */
+export const ISSOBELLA_FOCUS: [number, number, number] = [RING_R, 0.6, 0];

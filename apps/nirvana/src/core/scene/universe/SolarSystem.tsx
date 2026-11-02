@@ -9,7 +9,11 @@ import { Html } from '@react-three/drei';
 import { TextLabel } from './Label';
 import { StarGate } from './StarGate';
 import type { Portal } from '@/core/portals/manifest';
-import { getGlobalLinkEngine } from './LinkEngine';
+import { PLANETS, orbitRadius, type PlanetDef } from './planetCatalog';
+
+// Zpětně kompatibilní re-export — ostatní moduly (a testy) importují odsud.
+export { PLANETS, ORBIT_SCALE, ORBIT_EXP, orbitRadius, JUPITER } from './planetCatalog';
+export type { PlanetDef } from './planetCatalog';
 
 /**
  * Sluneční soustava — reálné textury Solar System Scope
@@ -99,90 +103,6 @@ void main() {
   gl_FragColor = vec4(col, col.r + col.g * 0.5);
 }
 `;
-
-interface PlanetDef {
-  id: string;
-  name: string;
-  tex: string;
-  /** Vzdálenost ve astronomických jednotkách (1 AU = dráha Země). */
-  au: number;
-  size: number;
-  speed: number; // úhlová rychlost oběhu rad/s
-  spin: number; // rotace rad/s
-  tint: string; // fallback + lehký nádech
-  ring?: boolean;
-  /** Axiální náklon v radiánech (Uranus ~98°, Venuše retrográdní). */
-  tiltZ?: number;
-  /** Interaktivní planeta = vstup do hry (`/mars`, `/venus`, `/mercury`, `/park`). */
-  game?: 'mars' | 'venus' | 'park' | 'mercury';
-  /** Co se stane po kliknutí — text na chipu. */
-  cta?: { cs: string; en: string };
-}
-
-/**
- * Komprese drah: lineární AU by dalo Neptun 903 jednotek daleko, kde už není
- * vidět nic než prázdno. `r = 30 · AU^0.55` drží pořadí i poměry „blíž = těsněji“,
- * ale celá soustava se vejde do ~200 jednotek — tedy do záběru, kde je vidět
- * víc planet najednou. Země vychází přesně na 30 (EARTH_ORBIT_R).
- */
-export const ORBIT_SCALE = 30;
-export const ORBIT_EXP = 0.55;
-export function orbitRadius(au: number): number {
-  return ORBIT_SCALE * Math.pow(au, ORBIT_EXP);
-}
-
-/**
- * Dráhy: reálné AU poměry lineárně — 1 AU = 30 jednotek
- * (Merkur 0.39 → 11.7, Neptun 30.1 → 903). Zemská soustava
- * na své 3. dráze = 30. Rychlosti: Kepler ∝ r^-1.5, Země = 0.02.
- * Velikosti: reálné poměry (Jupiter 11.2× Země) × 0.45.
- * tiltZ: skutečný axiální sklon v radiánech.
- */
-export const PLANETS: PlanetDef[] = [
-  { id: 'mercury', name: 'Merkur', tex: 'mercury', au: 0.387, size: 0.62, speed: 0.082, spin: 0.006, tint: '#b0a89c', tiltZ: 0.001, game: 'mercury', cta: { cs: 'souboj →', en: 'duel →' } },
-  {
-    id: 'venus',
-    name: 'Venuše',
-    tex: 'venus_atmosphere',
-    au: 0.723,
-    size: 0.92,
-    speed: 0.033,
-    spin: -0.002,
-    tint: '#e8c98a',
-    tiltZ: 3.09,
-    game: 'venus',
-    cta: { cs: 'okruh →', en: 'circuit →' },
-  },
-  {
-    id: 'mars',
-    name: 'Mars',
-    tex: 'mars',
-    au: 1.524,
-    size: 0.74,
-    speed: 0.011,
-    spin: 0.024,
-    tint: '#c1622f',
-    tiltZ: 0.44,
-    game: 'mars',
-    cta: { cs: 'aréna →', en: 'arena →' },
-  },
-  {
-    id: 'jupiter',
-    name: 'Jupiter',
-    tex: 'jupiter',
-    au: 5.203,
-    size: 3.6,
-    speed: 0.0017,
-    spin: 0.06,
-    tint: '#d8b58c',
-    tiltZ: 0.05,
-    game: 'park',
-    cta: { cs: 'pouť →', en: 'fair →' },
-  },
-  { id: 'saturn', name: 'Saturn', tex: 'saturn', au: 9.537, size: 3.0, speed: 0.00067, spin: 0.055, tint: '#e3cf9f', ring: true, tiltZ: 0.47 },
-  { id: 'uranus', name: 'Uran', tex: 'uranus', au: 19.19, size: 1.5, speed: 0.00024, spin: -0.04, tint: '#9fd8dc', tiltZ: 1.71 },
-  { id: 'neptune', name: 'Neptun', tex: 'neptune', au: 30.07, size: 1.45, speed: 0.00012, spin: 0.04, tint: '#4d6fd1', tiltZ: 0.49 },
-];
 
 /** Jedna planeta — oběh kolem Slunce + vlastní rotace. */
 function Planet({
@@ -284,11 +204,9 @@ function Planet({
         <mesh
           onClick={(event) => {
             event.stopPropagation();
-            try {
-              const engine = getGlobalLinkEngine();
-              engine.flyTo(def.id, { camera: (window as any).__nirvanaCamera, controls: (window as any).__nirvanaControls, clock: { elapsedTime: performance.now()/1000 }, earthPos: new THREE.Vector3(30, 0, 0), reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches, lang: 'cs' } as any);
-            } catch {}
-            onSelect?.(def.game as 'mars' | 'venus' | 'jupiter' | 'mercury');
+            // Jediná cesta: klik označí planetu, `focus` prop spustí přelet
+            // v `LinkEngine`. Žádné druhé flyTo s půjčenou kamerou.
+            onSelect?.(def.id as 'mars' | 'venus' | 'jupiter' | 'mercury');
           }}
           onPointerOver={(event) => {
             event.stopPropagation();
@@ -318,19 +236,11 @@ function Planet({
             role="button"
             tabIndex={0}
             onClick={() => {
-              try {
-                const engine = getGlobalLinkEngine();
-                engine.flyTo(def.id, { camera: (window as any).__nirvanaCamera, controls: (window as any).__nirvanaControls, clock: { elapsedTime: performance.now()/1000 }, earthPos: new THREE.Vector3(30, 0, 0), reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches, lang: 'cs' } as any);
-              } catch {}
-              onSelect?.(def.game as 'mars' | 'venus' | 'jupiter' | 'mercury');
+              onSelect?.(def.id as 'mars' | 'venus' | 'jupiter' | 'mercury');
             }}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
-                try {
-                  const engine = getGlobalLinkEngine();
-                  engine.flyTo(def.id, { camera: (window as any).__nirvanaCamera, controls: (window as any).__nirvanaControls, clock: { elapsedTime: performance.now()/1000 }, earthPos: new THREE.Vector3(30, 0, 0), reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches, lang: 'cs' } as any);
-                } catch {}
-                onSelect?.(def.game as 'mars' | 'venus' | 'jupiter' | 'mercury');
+                onSelect?.(def.id as 'mars' | 'venus' | 'jupiter' | 'mercury');
               }
             }}
             onPointerOver={() => {
@@ -358,7 +268,6 @@ function Planet({
   );
 }
 
-export const JUPITER = PLANETS[3]!;
 
 /** Vodící dráha planety — jedna barva a průhlednost s ostatními linkami (links.ts). */
 function OrbitLine({ r }: { r: number }) {

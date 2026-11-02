@@ -1,0 +1,118 @@
+/**
+ * LinkEngine unit test — bez prohlížeče.
+ *
+ * Ověřuje, že jednotný engine:
+ *   1. má pro každý cíl konečný anchor (žádné NaN / prázdné vektory),
+ *   2. přelet na planetu skončí u planety (ne u Slunce jako dřív u Jupiteru),
+ *   3. přelet zpět na Zemi vrátí `current='earth'`,
+ *   4. `arkPosition` dává stejný bod jako scene (jedna formule).
+ *
+ * Spuštění: npx tsx apps/nirvana/test/links.mjs
+ */
+import * as THREE from 'three';
+import {
+  LinkEngine,
+  createDefaultLinkTargets,
+  frameFor,
+  DEFAULT_LINK_EDGES,
+} from '../src/core/scene/universe/LinkEngine.ts';
+import { arkPosition, ARK_TILT, ARK_ORBIT_R, ARK_ANGLE0 } from '../src/core/scene/universe/positions.ts';
+
+let pass = 0;
+let fail = 0;
+function ok(name, cond, extra = '') {
+  if (cond) {
+    pass++;
+    console.log(`  ✓ ${name}`);
+  } else {
+    fail++;
+    console.log(`  ✗ ${name}${extra ? ' — ' + extra : ''}`);
+  }
+}
+
+const camera = new THREE.PerspectiveCamera(55, 1.6, 0.1, 5000);
+camera.position.set(40, 6, 19);
+const controls = { target: new THREE.Vector3(30, 0, 0) };
+const ctx = {
+  camera,
+  controls,
+  clock: { elapsedTime: 100 },
+  earthPos: new THREE.Vector3(30, 0, 0),
+  reducedMotion: false,
+  lang: 'cs',
+};
+
+const engine = new LinkEngine();
+const targets = createDefaultLinkTargets();
+for (const t of targets) engine.register(t);
+engine.setEdges(DEFAULT_LINK_EDGES);
+
+console.log('=== cíl: registr ===');
+ok('má Zemi', !!engine.getTarget('earth'));
+ok('má Jupiter', !!engine.getTarget('jupiter'));
+ok('má bránu', !!engine.getTarget('gate'));
+ok('má archu', !!engine.getTarget('archa'));
+
+console.log('=== cíl: anchor je konečný ===');
+for (const t of targets) {
+  const a = t.anchor(ctx);
+  ok(
+    `anchor ${t.id} je konečný`,
+    Number.isFinite(a.x) && Number.isFinite(a.y) && Number.isFinite(a.z),
+    `${a.x},${a.y},${a.z}`,
+  );
+}
+
+console.log('=== cíl: přelet na Mars skončí u Marsu ===');
+const marsTarget = engine.getTarget('mars');
+const marsPos = marsTarget.anchor(ctx);
+engine.flyTo('mars');
+let guard = 0;
+while (engine.isTransitioning() && guard++ < 1000) {
+  engine.update(ctx, 0.05);
+}
+ok('current = mars', engine.getCurrentFocus() === 'mars', engine.getCurrentFocus());
+const dMars = camera.position.distanceTo(marsPos);
+ok('kamera je u Marsu (< 12 j.)', dMars < 12, `d=${dMars.toFixed(2)}`);
+ok('kamera není u Slunce (> 5 j.)', camera.position.length() > 5, `|cam|=${camera.position.length().toFixed(2)}`);
+ok('controls.target je u Marsu', controls.target.distanceTo(marsPos) < 4, `d=${controls.target.distanceTo(marsPos).toFixed(2)}`);
+
+console.log('=== cíl: návrat na Zemi ===');
+engine.flyTo('earth');
+guard = 0;
+while (engine.isTransitioning() && guard++ < 1000) {
+  engine.update(ctx, 0.05);
+}
+ok('current = earth', engine.getCurrentFocus() === 'earth', engine.getCurrentFocus());
+ok('controls.target je u Země', controls.target.distanceTo(ctx.earthPos) < 2, `d=${controls.target.distanceTo(ctx.earthPos).toFixed(2)}`);
+
+console.log('=== cíl: pohyblivý cíl se sleduje (translate) ===');
+engine.flyTo('earth');
+guard = 0;
+while (engine.isTransitioning() && guard++ < 1000) engine.update(ctx, 0.05);
+const camBefore = camera.position.clone();
+const tgtBefore = controls.target.clone();
+// Země se posune o +2 v x; kamera i target musí jít s ní.
+ctx.earthPos.x += 2;
+engine.update(ctx, 0.05);
+ok('kamera sleduje Zemi (+2 x)', Math.abs(camera.position.x - (camBefore.x + 2)) < 0.001, camera.position.x.toFixed(3));
+ok('controls.target sleduje Zemi (+2 x)', Math.abs(controls.target.x - (tgtBefore.x + 2)) < 0.001, controls.target.x.toFixed(3));
+
+console.log('=== cíl: frameFor respektuje velikost ===');
+const small = { id: 'x', kind: 'moon', label: { cs: 'x', en: 'x' }, anchor: () => new THREE.Vector3(), size: 0.5, framing: { radius: 3.4 } };
+const big = { ...small, size: 4 };
+const fs = frameFor(small, ctx);
+const fb = frameFor(big, ctx);
+ok('větší objekt = dál', fb.cam.distanceTo(fb.target) > fs.cam.distanceTo(fs.target));
+
+console.log('=== cíl: arkPosition je jedna formule ===');
+const t0 = 0;
+const [ax, ay, az] = arkPosition(t0);
+const a0 = ARK_ANGLE0;
+const local = new THREE.Vector3(Math.cos(a0) * ARK_ORBIT_R, 0, Math.sin(a0) * ARK_ORBIT_R);
+const euler = new THREE.Euler(ARK_TILT[0], ARK_TILT[1], ARK_TILT[2]);
+local.applyEuler(euler);
+ok('arkPosition(0) = Euler(orbit)', Math.abs(ax - local.x) < 1e-6 && Math.abs(ay - local.y) < 1e-6 && Math.abs(az - local.z) < 1e-6, `${ax.toFixed(3)},${ay.toFixed(3)},${az.toFixed(3)} vs ${local.x.toFixed(3)},${local.y.toFixed(3)},${local.z.toFixed(3)}`);
+
+console.log(`\n${fail === 0 ? 'PASS' : 'FAIL'} — ${pass} prošlo, ${fail} selhalo`);
+process.exit(fail === 0 ? 0 : 1);

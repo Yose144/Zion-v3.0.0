@@ -3,53 +3,60 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { LINK_COLOR } from './links';
+import { LINK_COLOR, LINK_ACTIVE_OPACITY } from './links';
 
 export function LinkTrail({ visible = false }: { visible?: boolean }) {
-  const lineRef = useRef<THREE.Line>(null);
-  const points = useRef<THREE.Vector3[]>([
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0, 0, 0),
-  ]);
+  const lineRef = useRef<any>(null);
   const geometryRef = useRef<THREE.BufferGeometry>(null);
+  const points = useRef<THREE.Vector3[]>([]);
+  const timeRef = useRef(0);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!visible || !lineRef.current || !geometryRef.current) return;
     
-    // Create a simple curved trail
+    timeRef.current += delta;
     const camera = state.camera;
-    const time = state.clock.elapsedTime;
+    const target = (state.controls as { target?: THREE.Vector3 })?.target ?? new THREE.Vector3();
     
-    points.current[0].copy(camera.position).add(new THREE.Vector3(
-      Math.sin(time * 2) * 2,
-      Math.cos(time * 1.5) * 1,
-      Math.sin(time * 0.8) * 2
-    ));
+    // Create a smooth curve from camera to target
+    const segments = 12;
+    const points: THREE.Vector3[] = [];
     
-    points.current[1].copy(camera.position).add(new THREE.Vector3(
-      Math.cos(time * 1.2) * 4,
-      Math.sin(time * 0.9) * 2,
-      Math.cos(time * 1.7) * 4
-    ));
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const point = new THREE.Vector3().lerpVectors(camera.position, target, t);
+      
+      // Add gentle wave
+      const wave = Math.sin(t * Math.PI * 3 + timeRef.current * 2) * 0.8;
+      point.y += wave * (1 - Math.abs(t - 0.5) * 2);
+      
+      // Add perpendicular drift
+      const drift = Math.cos(t * Math.PI * 2 + timeRef.current * 1.5) * 0.3;
+      const perp = new THREE.Vector3(-target.z + camera.position.z, 0, target.x - camera.position.x).normalize();
+      point.addScaledVector(perp, drift);
+      
+      points.push(point);
+    }
     
-    // End point would be target - simplified
-    points.current[2].copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(10));
+    geometryRef.current.setFromPoints(points);
     
-    geometryRef.current.setFromPoints(points.current);
+    // Animate opacity
+    const mat = lineRef.current.material as THREE.LineBasicMaterial;
+    mat.opacity = 0.2 + Math.sin(timeRef.current * 3) * 0.15;
   });
 
   if (!visible) return null;
 
   return (
-    <line ref={lineRef}>
+    <line ref={lineRef as any}>
       <bufferGeometry ref={geometryRef} />
       <lineBasicMaterial 
         color={LINK_COLOR} 
         transparent 
-        opacity={0.3} 
+        opacity={0.35} 
         linewidth={2}
         blending={THREE.AdditiveBlending}
+        depthWrite={false}
       />
     </line>
   );

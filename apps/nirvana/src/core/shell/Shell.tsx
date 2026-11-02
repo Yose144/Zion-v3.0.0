@@ -26,9 +26,24 @@ import { PoolPortal } from '@/portals/pool/PoolPortal';
 import { WorldPortal } from '@/portals/world/WorldPortal';
 import { parseWorlds, type WorldPoint } from '@/lib/worlds';
 import { normalizeHiranState, hiranReviewOverride, type HiranState } from '@/core/hiran/presence';
-import { getGlobalLinkEngine } from '@/core/scene/universe/LinkEngine';
+import type { UniverseFocus } from '@/core/scene/universe/LinkEngine';
+import { LinkNavHud } from '@/core/scene/universe/LinkNavHud';
 
 const PANELS = new Set(PORTALS.map((p) => p.id));
+
+/**
+ * Portál → kam se má kamera přiblížit. Jediná mapa; dřív to bylo sedm
+ * if-větví s `flyTo(..., { camera: null as any })`, které při kliknutí házely.
+ */
+const PORTAL_FOCUS: Record<string, UniverseFocus> = {
+  hiran: 'sun',
+  park: 'jupiter',
+  fleet: 'fleet',
+  matrix: 'moon',
+  archa: 'archa',
+  issobella: 'issobella',
+  gate: 'gate',
+};
 
 const SLOT_COLOR: Record<SceneSlot, string> = {
   core: '#7ec8ff',
@@ -105,9 +120,7 @@ export function Shell() {
   const [selectedWorld, setSelectedWorld] = useState<string | null>(null);
   const [hiranState, setHiranState] = useState<HiranState>(() => hiranReviewOverride() ?? 'idle');
   const [reviewState] = useState<HiranState | null>(() => hiranReviewOverride());
-  const [focus, setFocus] = useState<
-    'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'mercury' | 'fleet' | 'moon'
-  >('earth');
+  const [focus, setFocus] = useState<UniverseFocus>('earth');
   /** Vybraná planeta = přiletěli jsme a nabízíme vstup do hry. ('jupiter' def používá key 'park'.) */
   const [planet, setPlanet] = useState<'mars' | 'venus' | 'mercury' | 'park' | null>(null);
   const [fleetLeg, setFleetLeg] = useState<FleetLeg | null>(null);
@@ -119,32 +132,11 @@ export function Shell() {
   const openPortal = useCallback((id: string) => {
     const next = PANELS.has(id) ? id : null;
     setPortal(next);
-    // Kanonizovat přes LinkEngine
-    const linkEngine = getGlobalLinkEngine();
-    if (next === 'hiran') {
-      setFocus('sun');
-      linkEngine.flyTo('sun', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
-    } else if (next === 'park') {
-      setFocus('jupiter');
-      linkEngine.flyTo('jupiter', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
-    } else if (next === 'fleet') {
-      setFocus('fleet');
-      linkEngine.flyTo('fleet', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
-    } else if (next === 'matrix') {
-      setFocus('moon');
-      linkEngine.flyTo('moon', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
-    } else if (next === 'archa') {
-      setFocus('earth');
-      linkEngine.flyTo('archa', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
-    } else if (next === 'issobella') {
-      setFocus('earth');
-      linkEngine.flyTo('issobella', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
-    } else {
-      setFocus('earth');
-      linkEngine.flyTo('earth', { camera: null as any, controls: null, clock: { elapsedTime: 0 }, earthPos: new (require('three').Vector3)(30, 0, 0), reducedMotion: false, lang });
-    }
+    // Jediná cesta: nastav fokus, přelet spustí `LinkEngine` přes `focus` prop.
+    // Portál → cílový bod scény (kanonická mapa, ne sedm if-větví s flyTo).
+    setFocus(PORTAL_FOCUS[next ?? ''] ?? 'earth');
     setMenuOpen(false);
-  }, [lang]);
+  }, []);
 
   const closePortal = useCallback(() => {
     setPortal(null);
@@ -293,6 +285,7 @@ export function Shell() {
       {/* Přechod scéna ↔ portál: krátký závoj, který při každé změně portálu
           (otevření, zavření, přepnutí) jednou proběhne. `key` ho remountuje,
           takže animace startuje znovu; pointer-events: none, aby nic neblokoval. */}
+      <LinkNavHud />
       <div key={portal ?? 'home'} className="portal-veil" aria-hidden />
       <header className="chrome">
         <div>

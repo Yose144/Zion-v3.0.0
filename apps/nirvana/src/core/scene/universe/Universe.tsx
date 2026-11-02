@@ -15,10 +15,11 @@ import { SkyFleet, FleetRoute, type FleetLeg } from './SkyFleet';
 import { IssobellaRing } from './IssobellaRing';
 import { OrbitalWorlds } from './OrbitalWorlds';
 import { SpaceBackdrop } from './SpaceBackdrop';
-import { PLANETS, SolarSystem } from './SolarSystem';
+import { SolarSystem } from './SolarSystem';
 import { HiranSun } from './HiranSun';
-import { useLinkEngine } from './LinkEngine';
+import { useLinkEngine, type UniverseFocus } from './LinkEngine';
 import { LinkTrail } from './LinkTrail';
+import { LinkLayer } from './LinkLayer';
 
 /** Portrait / úzké viewporty: širší fov + větší počáteční odstup,
  *  ať planeta nezaplní celý záběr a zůstane vidět kontext. */
@@ -64,7 +65,7 @@ export function Universe({
   onSelectWorld: (id: string) => void;
   /** Klik na planetu — přiletí a otevře panel s CTA. */
   onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
-  focus?: 'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'mercury' | 'fleet' | 'moon';
+  focus?: UniverseFocus;
   hiranState?: HiranState;
   fleetLeg?: FleetLeg | null;
 }) {
@@ -73,12 +74,10 @@ export function Universe({
   const light = useRef<THREE.DirectionalLight>(null);
   const lightTarget = useMemo(() => new THREE.Object3D(), []);
   const earthAngle = useRef(Math.PI * 0.18);
-  const lastEarth = useRef(new THREE.Vector3(EARTH_ORBIT_R, 0, 0));
   const [reducedMotion, setReducedMotion] = useState(false);
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
 
   const linkEngine = useLinkEngine();
-  const focusRef = useRef(focus);
   const earthPosVec = useMemo(() => new THREE.Vector3(EARTH_ORBIT_R, 0, 0), []);
   const lastFleet = useRef(new THREE.Vector3());
 
@@ -90,18 +89,11 @@ export function Universe({
     return () => preference.removeEventListener('change', update);
   }, []);
 
-  // Změna fokusu = nový přelet pomocí LinkEngine
+  // Změna fokusu = označit cíl v engine. Skutečný přelet spustí update()
+  // ve `useFrame` s živým kontextem (kamera, controls, čas, poloha Země).
   useEffect(() => {
-    focusRef.current = focus;
-    linkEngine.flyTo(focus, {
-      camera,
-      controls: controls.current,
-      clock: { elapsedTime: 0 },
-      earthPos: earthPosVec,
-      reducedMotion,
-      lang: 'cs',
-    });
-  }, [focus, camera, linkEngine, earthPosVec, reducedMotion]);
+    linkEngine.flyTo(focus);
+  }, [focus, linkEngine]);
 
   const split = useMemo(() => {
     const ring: WorldPoint[] = [];
@@ -134,20 +126,7 @@ export function Universe({
     if (light.current) light.current.position.set(ex * 0.5, 5, ez * 0.5);
     if (!controls.current) return;
 
-    // Země obíhá Slunce → kamera i cíl se posouvají s ní, aby záběr neutíkal.
-    if (focusRef.current === 'earth' && !linkEngine.isTransitioning()) {
-      const dx = ex - lastEarth.current.x;
-      const dz = ez - lastEarth.current.z;
-      if (dx !== 0 || dz !== 0) {
-        camera.position.x += dx;
-        camera.position.z += dz;
-        controls.current.target.x += dx;
-        controls.current.target.z += dz;
-      }
-    }
-    lastEarth.current.set(ex, 0, ez);
-
-    // Použít LinkEngine pro všechny přelety
+    // Všechny přelety i sledování pohyblivých cílů (včetně Země) řeší engine.
     linkEngine.update(
       {
         camera,
@@ -194,6 +173,7 @@ export function Universe({
         onOpenPortal={onOpen}
       />
       <HiranSun state={hiranState} onOpen={() => onOpen('hiran')} detail={focus === 'sun'} />
+      <LinkLayer />
       <LinkTrail visible={linkEngine.isTransitioning()} />
 
       <ResponsiveFraming />

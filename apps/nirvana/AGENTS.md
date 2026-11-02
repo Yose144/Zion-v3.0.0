@@ -761,3 +761,48 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Test musí být funkční, ne vizuální.** Audit u `/earth` ověřuje, že
   joystick pošle `KeyW` a že kouzlo **sníží manu** (482 → 455). Počítání
   tlačítek by prošlo i s tlačítky, která nic nedělají.
+
+## Link engine — jednotný engine pro linky a kameru (2026-11-02)
+
+- **Jeden registr, jedna framing funkce, jedna cesta přeletu.** `LinkEngine`
+  (`core/scene/universe/LinkEngine.ts`) drží všechny „linkovatelné“ body scény
+  (planety, brána, stanice, archa, flotila, Měsíc, Slunce, Země). Každý má
+  `anchor(ctx)` ve světových souřadnicích a `frameFor()` z něj spočítá kameru.
+  Kdo přidá nový bod, přidá **jeden záznam** — ne druhou kopii výpočtu
+  vzdálenosti (`size*3.4+1.6`) do dalšího souboru.
+- **Pohyblivý cíl se počítá každý frame.** Během přeletu se destinace
+  přepočítává z živého `anchor()`, takže planeta neuletí. Po příletu engine
+  posouvá kameru i `controls.target` o **deltu** anchoru — tím zůstane cíl
+  v záběru a uživatel může dál rotovat/zoomovat. Dřívější „lerp zpět na
+  pevný offset“ bojoval s myší.
+- **Kamera se neposílá z komponent.** `flyTo(id)` jen označí cíl; skutečný
+  přelet spustí `update(ctx, delta)` ve `useFrame` s živým kontextem. Zmizely
+  hacky `camera: null as any` (Shell) a `window.__nirvanaCamera` (SolarSystem).
+  `Shell` má jedinou mapu `PORTAL_FOCUS` portál → cíl.
+- **Jeden typ fokusu.** `UniverseFocus` (`earth | sun | jupiter | mars | venus |
+  mercury | fleet | moon | archa | issobella | gate`) používají `Shell`,
+  `SceneRoot` i `Universe`. Přidání cíle = jeden člen unie + jeden registr.
+- **Planety jsou v `planetCatalog.ts`, ne v rendereru.** `SolarSystem.tsx`
+  je jen vykresluje a re-exportuje kvůli zpětné kompatibilitě. Kdyby katalog
+  zůstal v rendereru, `LinkEngine` by ho importoval a vznikl kruhový import.
+- **Archa má jednu formuli.** `arkPosition(t)` v `positions.ts` počítá světovou
+  polohu přes `THREE.Euler(ARK_TILT)` — přesně tu rotaci, kterou má `orbit`
+  group v `SailingArk.tsx`. Dřív fokus aproximoval `earthPos + (12,0.8,6)`
+  a kamera míjela loď.
+- **Linky kreslí `LinkLayer`.** Data (co je s čím spojené) drží
+  `DEFAULT_LINK_EDGES`, styl `links.ts`, renderer `LinkLayer.tsx` (předalokované
+  buffery, žádná alokace ve frame). Spoj, který se dotýká označeného bodu,
+  svítí. Trvalé linky (dráhy, osy) zůstávají v `SolarSystem`/`links.ts` — jsou
+  to jiné prvky než spoje mezi body.
+- **Označený bod je vidět a jde se vrátit.** `LinkNavHud` čte engine přes
+  `subscribe` (ne polling) a nabízí `← Země`; `Escape` dělá totéž. Na Zemi se
+  HUD schová.
+- **Test bez prohlížeče:** `npx tsx apps/nirvana/test/links.mjs` — 26 kontrol
+  (anchory konečné, přelet na Mars skončí u Marsu, návrat na Zemi, sledování
+  pohyblivého cíle, `frameFor` respektuje velikost, `arkPosition` = Euler).
+- **Ověřeno headless (Chromium):** `/` má 175 draw calls / 90 444 tris /
+  40 textur / 0 invalid vertices; klik na Merkur přiletí (kamera se posune
+  >5 j.), panel se otevře, HUD + `← Země` jsou vidět; klik na Jupiter přiletí
+  k Jupiteru (dist od Slunce ~69,5 — dřív kamera letěla k Slunci), `← Země`
+  vrátí a HUD zmizí. Jediná konzolová chyba je pre-existing `401` z
+  `/api/auth/me`.

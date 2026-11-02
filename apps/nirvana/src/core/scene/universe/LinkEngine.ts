@@ -1,34 +1,66 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+/**
+ * LinkEngine — jediný engine pro linky a kameru ve vesmírné scéně.
+ *
+ * Co řeší (a co dřív bylo na třech místech):
+ *   1. Registr všech „linkovatelných“ bodů scény (planety, brána, stanice,
+ *      archa, flotila, Měsíc, Slunce, Země) — každý má `anchor()` ve světových
+ *      souřadnicích. Pohyblivé body počítají polohu stejným vzorcem jako scéna
+ *      (`positions.ts`), takže kamera doletí tam, kde objekt skutečně je.
+ *   2. Přelet kamery (`flyTo`) — jeden tween, jedna easing křivka, jedna
+ *      framing funkce (`frameFor`). Žádné druhé kopie `distance*3.4+1.6`.
+ *   3. Sledování pohyblivých cílů po příletu — posun kamery i `controls.target`
+ *      o delta anchoru, takže planeta zůstane v záběru a uživatel může dál
+ *      rotovat/zoomovat (dřív se kamera lerpovala zpět a bojovala s myší).
+ *   4. „Označený bod“ (`current`) — kdo je právě zaměřený; HUD i vrstva linek
+ *      z něj čtou. `flyTo('earth')` = návrat.
+ *
+ * Volání z komponent je bez kontextu: `flyTo(id)` jen označí cíl, skutečný
+ * přelet spustí nejbližší `update(ctx, delta)` uvnitř `<Canvas>`. Tím zmizely
+ * hacky typu `camera: null as any` v `Shell.tsx` a `window.__nirvanaCamera`
+ * v `SolarSystem.tsx`.
+ */
+
+import { useEffect, useReducer } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { EARTH_ORBIT_R, planetPosition, fleetPosition, moonPosition, GATE_JUPITER_OFFSET } from './positions';
-import { PLANETS, orbitRadius } from './SolarSystem';
+import {
+  planetPosition,
+  fleetPosition,
+  moonPosition,
+  arkPosition,
+  ISSOBELLA_FOCUS,
+  GATE_JUPITER_OFFSET,
+} from './positions';
+import { PLANETS, orbitRadius, planetIndex } from './planetCatalog';
 
-export type LinkKind = 'planet' | 'gate' | 'station' | 'ark' | 'fleet' | 'moon' | 'sun' | 'world';
+export type LinkKind =
+  | 'planet'
+  | 'gate'
+  | 'station'
+  | 'ark'
+  | 'fleet'
+  | 'moon'
+  | 'sun'
+  | 'world'
+  | 'earth';
 
-export interface LinkFocus {
-  cam: THREE.Vector3;
-  target: THREE.Vector3;
-  fov?: number;
-  minDistance?: number;
-  maxDistance?: number;
-  duration?: number; // seconds for transition
-}
+/** Cíle, na které umí kamera doletět — jeden typ pro Shell, SceneRoot i Universe. */
+export type UniverseFocus =
+  | 'earth'
+  | 'sun'
+  | 'jupiter'
+  | 'mars'
+  | 'venus'
+  | 'mercury'
+  | 'fleet'
+  | 'moon'
+  | 'archa'
+  | 'issobella'
+  | 'gate';
 
-export interface LinkTarget {
-  id: string;
-  kind: LinkKind;
-  accent?: string;
-  label: { cs: string; en: string };
-  cta?: { cs: string; en: string };
-  getFocus: (ctx: LinkCtx) => LinkFocus;
-  onArrive?: (ctx: LinkCtx) => void;
-  priority?: number;
-}
-
+/** Kontext, který engine dostane z `useFrame` — nic z toho si nedrží. */
 export interface LinkCtx {
   camera: THREE.PerspectiveCamera;
   controls: OrbitControlsImpl | null;
@@ -38,396 +70,492 @@ export interface LinkCtx {
   lang: 'cs' | 'en';
 }
 
-const SUN_CAM = new THREE.Vector3(17, 8, 17);
-const SUN_TARGET = new THREE.Vector3(0, 0, 0);
-const FLEET_CAM_LIFT = new THREE.Vector3(0, 1.6, 0);
-const FLEET_UP = new THREE.Vector3(0, 1, 0);
-const FLEET_CAM_TANGENT = new THREE.Vector3();
+export interface LinkFraming {
+  /** Násobek poloměru pro vzdálenost kamery (planety: 3.4). */
+  radius?: number;
+  /** Minimální vzdálenost (malé objekty: 3.6). */
+  minDistance?: number;
+  /** Zdroj dat pro fokus (planeta, flotila…). */
+  size?: number;
+  /** Offset kamery ve zlomcích vzdálenosti [x, y, z] (planety: 0.75, 0.5, 1). */
+  offset?: [number, number, number];
+  /** Vlastní framing (flotila, Měsíc, brána…) — přebíjí offset. */
+  compute?: (anchor: THREE.Vector3, ctx: LinkCtx) => LinkFrame;
+  duration?: number;
+}
+
+export interface LinkFrame {
+  cam: THREE.Vector3;
+  target: THREE.Vector3;
+  duration: number;
+}
+
+export interface LinkTarget {
+  id: string;
+  kind: LinkKind;
+  accent?: string;
+  label: { cs: string; en: string };
+  cta?: { cs: string; en: string };
+  /** Světová poloha — volá se každý frame (pohyblivé cíle). */
+  anchor: (ctx: LinkCtx) => THREE.Vector3;
+  size?: number;
+  framing?: LinkFraming;
+  /** Sledovat po příletu (posunout kameru i target o delta anchoru). */
+  follow?: boolean;
+}
+
+export interface LinkEdge {
+  from: string;
+  to: string;
+  accent?: string;
+  /** Jen dekorativní spoje (ne trasy, po kterých jde skočit). */
+  kind?: 'route' | 'orbit';
+}
+
+const DEFAULT_DURATION = 1.6;
+const FOLLOW_LERP = 0.16;
+const easeOut = (p: number) => 1 - Math.pow(1 - p, 3);
+
+/** Jeden framing pro všechny — žádná druhá kopie výpočtu vzdálenosti. */
+export function frameFor(target: LinkTarget, ctx: LinkCtx): LinkFrame {
+  const anchor = target.anchor(ctx);
+  const size = target.size ?? target.framing?.size ?? 1;
+  const f = target.framing ?? {};
+  if (f.compute) return f.compute(anchor, ctx);
+
+  const dist = Math.max(f.minDistance ?? 3.6, size * (f.radius ?? 3.4) + 1.6);
+  const [ox, oy, oz] = f.offset ?? [0.75, 0.5, 1];
+  const lift = size * 0.4;
+  return {
+    cam: new THREE.Vector3(anchor.x + dist * ox, anchor.y + dist * oy, anchor.z + dist * oz),
+    target: new THREE.Vector3(anchor.x, anchor.y + lift, anchor.z),
+    duration: f.duration ?? DEFAULT_DURATION,
+  };
+}
 
 export class LinkEngine {
   private targets = new Map<string, LinkTarget>();
-  private currentFocus: string = 'earth';
+  private edges: LinkEdge[] = [];
+  private current = 'earth';
+  private pending: string | null = null;
   private progress = 1;
+  private duration = DEFAULT_DURATION;
   private fromCam = new THREE.Vector3();
   private fromTarget = new THREE.Vector3();
-  private toCam = new THREE.Vector3();
-  private toTarget = new THREE.Vector3();
-  private duration = 1.6;
-  private onArriveCb?: (target: LinkTarget) => void;
+  private lastAnchor = new THREE.Vector3();
+  private hasAnchor = false;
+  private arrived = true;
+  private onArriveCb?: (target: LinkTarget | null) => void;
+  private listeners = new Set<() => void>();
+  /** Poslední kontext z `update` — používá ho `LinkLayer` pro anchor(). */
+  private lastCtx: LinkCtx | null = null;
 
   register(target: LinkTarget) {
     this.targets.set(target.id, target);
+    this.notify();
   }
 
   unregister(id: string) {
     this.targets.delete(id);
+    this.notify();
   }
 
   getTarget(id: string): LinkTarget | undefined {
     return this.targets.get(id);
   }
 
-  getCurrentFocus(): string {
-    return this.currentFocus;
+  getTargets(): LinkTarget[] {
+    return Array.from(this.targets.values());
   }
 
-  flyTo(id: string, ctx: LinkCtx, onArrive?: (target: LinkTarget) => void) {
-    if (id === this.currentFocus && this.progress >= 1) return;
+  setEdges(edges: LinkEdge[]) {
+    this.edges = edges;
+    this.notify();
+  }
 
-    this.currentFocus = id;
-    this.progress = 0;
-    this.fromCam.copy(ctx.camera.position);
-    if (ctx.controls) {
-      this.fromTarget.copy(ctx.controls.target);
-    } else {
-      this.fromTarget.set(0, 0, 0);
-    }
+  getEdges(): LinkEdge[] {
+    return this.edges;
+  }
+
+  getCurrentFocus(): string {
+    return this.current;
+  }
+
+  /** Označí cíl a spustí přelet při nejbližším `update`. */
+  flyTo(id: string, onArrive?: (target: LinkTarget | null) => void) {
+    if (!this.targets.has(id)) return;
+    this.pending = id;
     this.onArriveCb = onArrive;
+    this.notify();
+  }
 
+  /** Okamžitý skok (reduced motion / teleport). */
+  snapTo(id: string, ctx: LinkCtx) {
     const target = this.targets.get(id);
-    if (target) {
-      const focus = target.getFocus(ctx);
-      this.toCam.copy(focus.cam);
-      this.toTarget.copy(focus.target);
-      this.duration = focus.duration ?? 1.6;
-    } else if (id === 'earth') {
-      this.toTarget.copy(ctx.earthPos);
-      this.duration = 1.2;
-    } else {
-      // Fallback
-      this.toTarget.set(0, 0, 0);
-      this.duration = 1.6;
-    }
+    if (!target || !ctx.controls) return;
+    this.current = id;
+    this.pending = null;
+    this.progress = 1;
+    this.arrived = true;
+    const f = frameFor(target, ctx);
+    ctx.camera.position.copy(f.cam);
+    ctx.controls.target.copy(f.target);
+    this.lastAnchor.copy(target.anchor(ctx));
+    this.hasAnchor = true;
+    this.notify();
+  }
+
+  isTransitioning(): boolean {
+    return this.progress < 1 || this.pending !== null;
+  }
+
+  /** Subscribe for HUD (current focus changes). */
+  subscribe(fn: () => void): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+
+  private notify() {
+    for (const fn of this.listeners) fn();
+  }
+
+  private begin(ctx: LinkCtx) {
+    const id = this.pending!;
+    this.pending = null;
+    const target = this.targets.get(id);
+    if (!target) return;
+    this.current = id;
+    this.progress = 0;
+    this.arrived = false;
+    this.hasAnchor = false;
+    this.fromCam.copy(ctx.camera.position);
+    if (ctx.controls) this.fromTarget.copy(ctx.controls.target);
+    else this.fromTarget.set(0, 0, 0);
+    this.duration = frameFor(target, ctx).duration;
+    this.notify();
+  }
+
+  getLastCtx(): LinkCtx | null {
+    return this.lastCtx;
   }
 
   update(ctx: LinkCtx, delta: number): boolean {
     if (!ctx.controls) return false;
+    this.lastCtx = ctx;
+    if (this.pending) this.begin(ctx);
 
-    // Handle earth following
-    if (this.currentFocus === 'earth' && this.progress >= 1) {
-      const dx = ctx.earthPos.x - ctx.earthPos.x; // will be handled by caller
-      // Earth following is handled externally for now
-      ctx.controls.target.copy(ctx.earthPos);
-      return false;
+    const target = this.targets.get(this.current);
+
+    // ── přelet ──
+    if (this.progress < 1) {
+      this.progress = Math.min(1, this.progress + delta / Math.max(0.001, this.duration));
+      const k = easeOut(this.progress);
+      if (target) {
+        // Cíl se počítá každý frame z živého anchoru — pohyblivá planeta
+        // tak během přeletu neuletí.
+        const f = frameFor(target, ctx);
+        ctx.controls.target.lerpVectors(this.fromTarget, f.target, k);
+        ctx.camera.position.lerpVectors(this.fromCam, f.cam, k);
+      }
+      if (this.progress >= 1) {
+        this.arrived = true;
+        if (target) {
+          this.lastAnchor.copy(target.anchor(ctx));
+          this.hasAnchor = true;
+        }
+        const cb = this.onArriveCb;
+        this.onArriveCb = undefined;
+        cb?.(target ?? null);
+      }
+      return this.progress < 1;
     }
 
-    if (this.progress >= 1) {
-      // Check if we're following a moving target
-      const target = this.targets.get(this.currentFocus);
-      if (target && target.kind === 'fleet') {
-        const ft = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
-        const [fx, fy, fz] = fleetPosition(ft);
-        const fleetTarget = new THREE.Vector3(ctx.earthPos.x + fx, fy, ctx.earthPos.z + fz);
-        const radial = fleetTarget.clone().normalize();
-        const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
-        const fleetCam = new THREE.Vector3()
-          .copy(fleetTarget)
-          .addScaledVector(radial, 4.0)
-          .addScaledVector(tangent, 5.2)
-          .add(FLEET_CAM_LIFT);
-        
-        // Smooth follow
-        ctx.controls.target.lerp(fleetTarget, 0.1);
-        ctx.camera.position.lerp(fleetCam, 0.1);
-      } else if (target && target.kind === 'moon') {
-        const mt = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
-        const [mx, my, mz] = moonPosition(mt);
-        const moonTarget = new THREE.Vector3(ctx.earthPos.x + mx, my, ctx.earthPos.z + mz);
-        const radial = moonTarget.clone().normalize();
-        const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
-        const moonCam = new THREE.Vector3()
-          .copy(moonTarget)
-          .addScaledVector(radial, 3.2)
-          .addScaledVector(tangent, 2.4)
-          .add(FLEET_CAM_LIFT);
-        
-        ctx.controls.target.lerp(moonTarget, 0.1);
-        ctx.camera.position.lerp(moonCam, 0.1);
-      } else if (target && target.kind === 'planet') {
-        const planetDef = PLANETS.find((p) => p.id === target.id);
-        if (planetDef) {
-          const index = PLANETS.indexOf(planetDef);
-          const [px, py, pz] = planetPosition(
-            planetDef.id,
-            index,
-            orbitRadius(planetDef.au),
-            planetDef.speed,
-            ctx.clock.elapsedTime,
-          );
-          const distance = Math.max(3.6, planetDef.size * 3.4 + 1.6);
-          const planetTarget = new THREE.Vector3(px, py + planetDef.size * 0.4, pz);
-          const planetCam = new THREE.Vector3(px + distance * 0.75, py + distance * 0.5, pz + distance);
-          
-          ctx.controls.target.lerp(planetTarget, 0.05);
-          ctx.camera.position.lerp(planetCam, 0.05);
+    // ── sledování po příletu ──
+    if (target?.follow && this.arrived) {
+      const anchor = target.anchor(ctx);
+      if (this.hasAnchor) {
+        const dx = anchor.x - this.lastAnchor.x;
+        const dy = anchor.y - this.lastAnchor.y;
+        const dz = anchor.z - this.lastAnchor.z;
+        if (dx !== 0 || dy !== 0 || dz !== 0) {
+          ctx.camera.position.x += dx;
+          ctx.camera.position.y += dy;
+          ctx.camera.position.z += dz;
+          ctx.controls.target.x += dx;
+          ctx.controls.target.y += dy;
+          ctx.controls.target.z += dz;
         }
       }
-      return false;
+      this.lastAnchor.copy(anchor);
+      this.hasAnchor = true;
     }
 
-    // Animate transition
-    this.progress = Math.min(1, this.progress + delta / this.duration);
-    const t = 1 - Math.pow(1 - this.progress, 3); // ease-out cubic
-    
-    ctx.controls.target.lerpVectors(this.fromTarget, this.toTarget, t);
-    ctx.camera.position.lerpVectors(this.fromCam, this.toCam, t);
-    
-    if (this.progress >= 1 && this.onArriveCb) {
-      const target = this.targets.get(this.currentFocus);
-      if (target) {
-        this.onArriveCb(target);
-      }
-      this.onArriveCb = undefined;
-    }
-    
-    return this.progress < 1;
+    return false;
   }
+}
 
-  isTransitioning(): boolean {
-    return this.progress < 1;
-  }
+/* ─── Registrace výchozích cílů ─────────────────────────────────────────── */
+
+function planetAnchor(id: string) {
+  return (ctx: LinkCtx): THREE.Vector3 => {
+    const def = PLANETS.find((p) => p.id === id);
+    if (!def) return new THREE.Vector3();
+    const index = planetIndex(id);
+    const t = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
+    return new THREE.Vector3(...planetPosition(id, index, orbitRadius(def.au), def.speed, t));
+  };
+}
+
+/** Brána je dítě Jupiteru — obíhá s ním, takže anchor = Jupiter + offset. */
+function gateAnchor(ctx: LinkCtx): THREE.Vector3 {
+  const def = PLANETS.find((p) => p.id === 'jupiter')!;
+  const index = planetIndex('jupiter');
+  const t = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
+  const [jx, jy, jz] = planetPosition('jupiter', index, orbitRadius(def.au), def.speed, t);
+  return new THREE.Vector3(
+    jx + GATE_JUPITER_OFFSET[0],
+    jy + GATE_JUPITER_OFFSET[1],
+    jz + GATE_JUPITER_OFFSET[2],
+  );
+}
+
+function fleetAnchor(ctx: LinkCtx): THREE.Vector3 {
+  const t = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
+  const [fx, fy, fz] = fleetPosition(t);
+  return new THREE.Vector3(ctx.earthPos.x + fx, fy, ctx.earthPos.z + fz);
+}
+
+function moonAnchor(ctx: LinkCtx): THREE.Vector3 {
+  const t = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
+  const [mx, my, mz] = moonPosition(t);
+  return new THREE.Vector3(ctx.earthPos.x + mx, my, ctx.earthPos.z + mz);
+}
+
+function arkAnchor(ctx: LinkCtx): THREE.Vector3 {
+  const t = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
+  const [ax, ay, az] = arkPosition(t);
+  return new THREE.Vector3(ctx.earthPos.x + ax, ay, ctx.earthPos.z + az);
+}
+
+function issobellaAnchor(ctx: LinkCtx): THREE.Vector3 {
+  return new THREE.Vector3(
+    ctx.earthPos.x + ISSOBELLA_FOCUS[0],
+    ISSOBELLA_FOCUS[1],
+    ctx.earthPos.z + ISSOBELLA_FOCUS[2],
+  );
+}
+
+/** Odstup od středu pro orbitální/flotilní fokus — kamera stojí dál od Slunce. */
+function radialCam(anchor: THREE.Vector3, out: number, side: number, lift: number): THREE.Vector3 {
+  const radial = anchor.clone().normalize();
+  const up = new THREE.Vector3(0, 1, 0);
+  const tangent = new THREE.Vector3().crossVectors(up, radial).normalize();
+  return new THREE.Vector3()
+    .copy(anchor)
+    .addScaledVector(radial, out)
+    .addScaledVector(tangent, side)
+    .add(new THREE.Vector3(0, lift, 0));
 }
 
 export function createDefaultLinkTargets(): LinkTarget[] {
   const targets: LinkTarget[] = [];
 
-  // Planets
-  PLANETS.forEach((planet, index) => {
-    if (planet.game) {
-      targets.push({
-        id: planet.id,
-        kind: 'planet',
-        accent: planet.tint,
-        label: { cs: planet.name, en: planet.name },
-        cta: planet.cta || { cs: 'Prozkoumat →', en: 'Explore →' },
-        getFocus: (ctx: LinkCtx) => {
-          const [px, py, pz] = planetPosition(
-            planet.id,
-            index,
-            orbitRadius(planet.au),
-            planet.speed,
-            ctx.clock.elapsedTime,
-          );
-          const distance = Math.max(3.6, planet.size * 3.4 + 1.6);
-          const target = new THREE.Vector3(px, py + planet.size * 0.4, pz);
-          const cam = new THREE.Vector3(px + distance * 0.75, py + distance * 0.5, pz + distance);
-          return {
-            cam,
-            target,
-            duration: 1.8,
-          };
-        },
-      });
-    }
+  // Země — výchozí bod, sleduje oběžnou dráhu.
+  targets.push({
+    id: 'earth',
+    kind: 'earth',
+    accent: '#6fb1ff',
+    label: { cs: 'Nová Země', en: 'New Earth' },
+    cta: { cs: 'Přiblížit →', en: 'Approach →' },
+    size: 4,
+    follow: true,
+    framing: { offset: [11 / 4, 6 / 4, 19 / 4], minDistance: 1, radius: 1, duration: 1.3 },
+    anchor: (ctx) => ctx.earthPos.clone(),
   });
 
-  // Sun/Hiran
+  // Planety s herním vstupem.
+  for (const planet of PLANETS) {
+    if (!planet.game) continue;
+    targets.push({
+      id: planet.id,
+      kind: 'planet',
+      accent: planet.tint,
+      label: { cs: planet.name, en: planet.name },
+      cta: planet.cta,
+      size: planet.size,
+      follow: true,
+      framing: { radius: 3.4, minDistance: 3.6, duration: 1.8 },
+      anchor: planetAnchor(planet.id),
+    });
+  }
+
+  // Slunce / Hiran.
   targets.push({
     id: 'sun',
     kind: 'sun',
     accent: '#ffd166',
     label: { cs: 'Hiran', en: 'Hiran' },
     cta: { cs: 'Otevřít →', en: 'Open →' },
-    getFocus: () => ({
-      cam: SUN_CAM.clone(),
-      target: SUN_TARGET.clone(),
+    framing: {
       duration: 1.6,
-    }),
+      compute: () => ({
+        cam: new THREE.Vector3(17, 8, 17),
+        target: new THREE.Vector3(0, 0, 0),
+        duration: 1.6,
+      }),
+    },
+    anchor: () => new THREE.Vector3(0, 0, 0),
   });
 
-  // Fleet
+  // Nebeská flotila.
   targets.push({
     id: 'fleet',
     kind: 'fleet',
     accent: '#38bdf8',
     label: { cs: 'Nebeská flotila', en: 'Celestial Fleet' },
     cta: { cs: 'Přiblížit →', en: 'Approach →' },
-    getFocus: (ctx: LinkCtx) => {
-      const ft = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
-      const [fx, fy, fz] = fleetPosition(ft);
-      const fleetTarget = new THREE.Vector3(ctx.earthPos.x + fx, fy, ctx.earthPos.z + fz);
-      const radial = fleetTarget.clone().normalize();
-      const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
-      const fleetCam = new THREE.Vector3()
-        .copy(fleetTarget)
-        .addScaledVector(radial, 4.0)
-        .addScaledVector(tangent, 5.2)
-        .add(FLEET_CAM_LIFT);
-      return {
-        cam: fleetCam,
-        target: fleetTarget,
+    size: 2,
+    follow: true,
+    framing: {
+      duration: 1.6,
+      compute: (anchor) => ({
+        cam: radialCam(anchor, 4.0, 5.2, 1.6),
+        target: anchor.clone(),
         duration: 1.6,
-      };
+      }),
     },
+    anchor: fleetAnchor,
   });
 
-  // Moon
+  // Měsíc / Matrix.
   targets.push({
     id: 'moon',
     kind: 'moon',
     accent: '#c9c2b6',
-    label: { cs: 'Měsíc', en: 'Moon' },
+    label: { cs: 'Měsíc · Matrix', en: 'Moon · Matrix' },
     cta: { cs: 'Přiblížit →', en: 'Approach →' },
-    getFocus: (ctx: LinkCtx) => {
-      const mt = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
-      const [mx, my, mz] = moonPosition(mt);
-      const moonTarget = new THREE.Vector3(ctx.earthPos.x + mx, my, ctx.earthPos.z + mz);
-      const radial = moonTarget.clone().normalize();
-      const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
-      const moonCam = new THREE.Vector3()
-        .copy(moonTarget)
-        .addScaledVector(radial, 3.2)
-        .addScaledVector(tangent, 2.4)
-        .add(FLEET_CAM_LIFT);
-      return {
-        cam: moonCam,
-        target: moonTarget,
+    size: 1.4,
+    follow: true,
+    framing: {
+      duration: 1.6,
+      compute: (anchor) => ({
+        cam: radialCam(anchor, 3.2, 2.4, 1.6),
+        target: anchor.clone(),
         duration: 1.6,
-      };
+      }),
     },
+    anchor: moonAnchor,
   });
 
-  // Jupiter (park/station)
+  // Jupiter Station (pouť) — kotví na Jupiteru.
   targets.push({
     id: 'jupiter',
     kind: 'station',
     accent: '#ffb46a',
     label: { cs: 'Jupiter Station', en: 'Jupiter Station' },
     cta: { cs: 'Na pouť →', en: 'To fair →' },
-    getFocus: (ctx: LinkCtx) => {
-      const jupiterDef = PLANETS.find((p) => p.id === 'jupiter')!;
-      const index = PLANETS.indexOf(jupiterDef);
-      const [px, py, pz] = planetPosition(
-        'jupiter',
-        index,
-        orbitRadius(jupiterDef.au),
-        jupiterDef.speed,
-        ctx.clock.elapsedTime,
-      );
-      const distance = Math.max(3.6, jupiterDef.size * 3.4 + 1.6);
-      const target = new THREE.Vector3(px, py + jupiterDef.size * 0.4, pz);
-      const cam = new THREE.Vector3(px + distance * 0.75, py + distance * 0.5, pz + distance);
-      return {
-        cam,
-        target,
-        duration: 1.8,
-      };
-    },
+    size: 3.6,
+    follow: true,
+    framing: { radius: 3.4, minDistance: 3.6, duration: 1.8 },
+    anchor: planetAnchor('jupiter'),
   });
 
-  // Gate / OASIS (StarGate na Jupiteru)
+  // Brána do OASIS — dítě Jupiteru.
   targets.push({
     id: 'gate',
     kind: 'gate',
     accent: '#fcd116',
     label: { cs: 'Brána do OASIS', en: 'Gate to OASIS' },
     cta: { cs: 'Vstoupit ↗', en: 'Enter ↗' },
-    getFocus: (ctx: LinkCtx) => {
-      const jupiterDef = PLANETS.find((p) => p.id === 'jupiter')!;
-      const index = PLANETS.indexOf(jupiterDef);
-      const [px, py, pz] = planetPosition(
-        'jupiter',
-        index,
-        orbitRadius(jupiterDef.au),
-        jupiterDef.speed,
-        ctx.clock.elapsedTime,
-      );
-      const gatePos = new THREE.Vector3(px + GATE_JUPITER_OFFSET[0], py + GATE_JUPITER_OFFSET[1], pz + GATE_JUPITER_OFFSET[2]);
-      const target = gatePos.clone();
-      const cam = gatePos.clone().add(new THREE.Vector3(0, 2, 6));
-      return {
-        cam,
-        target,
+    size: 2,
+    follow: true,
+    framing: {
+      duration: 1.6,
+      compute: (anchor) => ({
+        cam: anchor.clone().add(new THREE.Vector3(0, 2, 6)),
+        target: anchor.clone(),
         duration: 1.6,
-      };
+      }),
     },
+    anchor: gateAnchor,
   });
 
-  // Archa (SailingArk)
+  // Archa Království srdce — obíhá Novou Zemi.
   targets.push({
     id: 'archa',
     kind: 'ark',
     accent: '#1d8fb3',
     label: { cs: 'Archa', en: 'The Ark' },
     cta: { cs: 'Otevřít →', en: 'Open →' },
-    getFocus: (ctx: LinkCtx) => {
-      // SailingArk je součástí zemské soustavy (child earthSys) - aproximace
-      const target = new THREE.Vector3(ctx.earthPos.x + 12, ctx.earthPos.y + 0.8, ctx.earthPos.z + 6);
-      const cam = target.clone().add(new THREE.Vector3(4, 3, 8));
-      return {
-        cam,
-        target,
+    size: 1,
+    follow: true,
+    framing: {
+      duration: 1.6,
+      compute: (anchor) => ({
+        cam: anchor.clone().add(new THREE.Vector3(4, 3, 8)),
+        target: anchor.clone(),
         duration: 1.6,
-      };
+      }),
     },
+    anchor: arkAnchor,
   });
 
-  // Matrix (moon)
-  targets.push({
-    id: 'matrix',
-    kind: 'moon',
-    accent: '#00ff88',
-    label: { cs: 'Matrix', en: 'Matrix' },
-    cta: { cs: 'Vstoupit →', en: 'Enter →' },
-    getFocus: (ctx: LinkCtx) => {
-      const mt = ctx.reducedMotion ? 0 : ctx.clock.elapsedTime;
-      const [mx, my, mz] = moonPosition(mt);
-      const moonTarget = new THREE.Vector3(ctx.earthPos.x + mx, my, ctx.earthPos.z + mz);
-      const radial = moonTarget.clone().normalize();
-      const tangent = FLEET_CAM_TANGENT.crossVectors(FLEET_UP, radial).normalize();
-      const moonCam = new THREE.Vector3()
-        .copy(moonTarget)
-        .addScaledVector(radial, 3.2)
-        .addScaledVector(tangent, 2.4)
-        .add(FLEET_CAM_LIFT);
-      return {
-        cam: moonCam,
-        target: moonTarget,
-        duration: 1.6,
-      };
-    },
-  });
-
-  // Issobella (ring)
+  // Issobella — L6 science ring.
   targets.push({
     id: 'issobella',
     kind: 'station',
     accent: '#c084fc',
     label: { cs: 'Issobella', en: 'Issobella' },
     cta: { cs: 'Otevřít →', en: 'Open →' },
-    getFocus: (ctx: LinkCtx) => {
-      const target = new THREE.Vector3(ctx.earthPos.x + 4, ctx.earthPos.y + 1.2, ctx.earthPos.z - 3);
-      const cam = target.clone().add(new THREE.Vector3(2, 2, 5));
-      return {
-        cam,
-        target,
+    size: 1.5,
+    follow: true,
+    framing: {
+      duration: 1.6,
+      compute: (anchor) => ({
+        cam: anchor.clone().add(new THREE.Vector3(2, 2, 5)),
+        target: anchor.clone(),
         duration: 1.6,
-      };
+      }),
     },
+    anchor: issobellaAnchor,
   });
 
   return targets;
 }
 
-export function useLinkEngine() {
-  const engineRef = useRef<LinkEngine | null>(null);
-  if (!engineRef.current) {
-    engineRef.current = new LinkEngine();
-    const targets = createDefaultLinkTargets();
-    targets.forEach((t) => engineRef.current!.register(t));
-  }
-  return engineRef.current;
-}
+/**
+ * Linky mezi body — jediný seznam. Kreslí je `LinkLayer`, engine je jen drží,
+ * aby „co je s čím spojené“ bylo na jednom místě.
+ */
+export const DEFAULT_LINK_EDGES: LinkEdge[] = [
+  { from: 'earth', to: 'moon', kind: 'orbit' },
+  { from: 'earth', to: 'fleet', kind: 'orbit' },
+  { from: 'earth', to: 'issobella', kind: 'orbit' },
+  { from: 'earth', to: 'archa', kind: 'orbit' },
+  { from: 'jupiter', to: 'gate', kind: 'orbit' },
+];
 
-// Export singleton for non-React usage
+/* ─── Singleton ─────────────────────────────────────────────────────────── */
+
 let globalLinkEngine: LinkEngine | null = null;
 
 export function getGlobalLinkEngine(): LinkEngine {
   if (!globalLinkEngine) {
     globalLinkEngine = new LinkEngine();
-    const targets = createDefaultLinkTargets();
-    targets.forEach((t) => globalLinkEngine!.register(t));
+    for (const t of createDefaultLinkTargets()) globalLinkEngine.register(t);
+    globalLinkEngine.setEdges(DEFAULT_LINK_EDGES);
   }
   return globalLinkEngine;
 }
 
+export function useLinkEngine() {
+  return getGlobalLinkEngine();
+}
+
+/** Re-render HUD při změně fokusu (malá frekvence, ne 60×/s). */
+export function useLinkFocus(): string {
+  const engine = getGlobalLinkEngine();
+  const [, force] = useReducer((x: number) => x + 1, 0);
+  useEffect(() => engine.subscribe(force), [engine, force]);
+  return engine.getCurrentFocus();
+}

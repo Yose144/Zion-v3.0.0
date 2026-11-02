@@ -11,6 +11,7 @@ import {
   type GpuBackend,
 } from './backends';
 import { Universe } from './universe/Universe';
+import type { UniverseFocus } from './universe/LinkEngine';
 import type { FleetLeg } from './universe/SkyFleet';
 import { quality } from '../../../../shared/scenes/kit/quality';
 import { ScenePost, sceneRenderStats } from '../../../../shared/scenes/kit/post';
@@ -115,7 +116,7 @@ export function SceneRoot({
   onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
   xr: boolean;
   label: string;
-  focus?: 'earth' | 'sun' | 'jupiter' | 'mars' | 'venus' | 'mercury' | 'fleet' | 'moon';
+  focus?: UniverseFocus;
   hiranState?: HiranState;
   fleetLeg?: FleetLeg | null;
 }) {
