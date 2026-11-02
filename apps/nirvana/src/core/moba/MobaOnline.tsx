@@ -285,18 +285,25 @@ function OnlineController({
     }
 
     if (debug) {
-      (window as unknown as Record<string, unknown>).__mobaDebug = () => ({
-        phase: phaseRef.current,
-        you: youPlayerId,
-        time: Math.round(snapshot.time),
-        wave: snapshot.wave,
-        heroes: snapshot.heroes,
-        minions: snapshot.minions.length,
-        towers: snapshot.towers.map((tower) => ({ id: tower.id, hp: Math.round(tower.hp) })),
-        nodes: snapshot.nodes.map((node) => ({ key: node.key, owner: node.owner })),
-        ended: snapshot.ended,
-        predicted: selfPose.current,
-      });
+      // Háček čte **refy**, ne hodnotu z tohoto snímku: když prohlížeč
+      // uspí kartu na pozadí, `useFrame` přestane běžet a háček by držel
+      // starý snapshot (v E2E to vypadalo, že hráč nic nevidí).
+      (window as unknown as Record<string, unknown>).__mobaDebug = () => {
+        const snap = snapshotRef.current;
+        if (!snap) return { phase: phaseRef.current, you: youPlayerId, heroes: [], time: 0 };
+        return {
+          phase: phaseRef.current,
+          you: youPlayerId,
+          time: Math.round(snap.time),
+          wave: snap.wave,
+          heroes: snap.heroes,
+          minions: snap.minions.length,
+          towers: snap.towers.map((tower) => ({ id: tower.id, hp: Math.round(tower.hp) })),
+          nodes: snap.nodes.map((node) => ({ key: node.key, owner: node.owner })),
+          ended: snap.ended,
+          predicted: selfPose.current,
+        };
+      };
     }
   });
 

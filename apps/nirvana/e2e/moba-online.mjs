@@ -7,22 +7,10 @@
 //
 // Spustit: node apps/nirvana/e2e/moba-online.mjs
 
-let chromium;
-try {
-  ({ chromium } = await import('playwright'));
-} catch {
-  const { createRequire } = await import('node:module');
-  const require = createRequire(import.meta.url);
-  const globalPath =
-    process.env.PLAYWRIGHT_MODULE ?? '/Users/yeshuae/.nvm/versions/node/v20.19.6/lib/node_modules/playwright';
-  ({ chromium } = require(globalPath));
-}
+import { launch } from './_browser.mjs';
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:3010';
 const OUT = process.env.OUT ?? '.artifacts/render/first-world-20261102';
-const EXE =
-  process.env.CHROME_PATH ??
-  '/Users/yeshuae/.cache/puppeteer/chrome-headless-shell/mac_arm-156.0.8078.47/chrome-headless-shell-mac-arm64/chrome-headless-shell';
 
 let failures = 0;
 const check = (name, ok, detail = '') => {
@@ -31,11 +19,8 @@ const check = (name, ok, detail = '') => {
 };
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const browser = await chromium.launch({
-  executablePath: EXE,
-  headless: true,
-  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=metal', '--ignore-gpu-blocklist'],
-});
+// Prohlížeč řeší `_browser.mjs` (Playwright → Puppeteer → systémový Chrome).
+const browser = await launch({ headless: true });
 
 async function openPlayer(label) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 820 } });
@@ -68,40 +53,60 @@ try {
   const a = await openPlayer('A');
   const b = await openPlayer('B');
 
-  // oba se musí dočkat běžícího zápasu se čtyřmi hrdiny (2 lidé + 2 boti)
-  const runningA = await poll(a, (state) => state.phase === 'running' && state.heroes.length === 6, 45_000);
-  check('A: zápas běží se 6 hrdiny (3v3)', Boolean(runningA), JSON.stringify(await debug(a)));
-  const runningB = await poll(b, (state) => state.phase === 'running' && state.heroes.length === 6, 45_000);
-  check('B: zápas běží se 6 hrdiny (3v3)', Boolean(runningB));
+  // Zápas běží. S **mlhou války** ale hráč nevidí celou mapu — vidí svůj
+  // tým (a to, co jeho jednotky vidí), takže test nesmí čekat 6 hrdinů.
+  const runningA = await poll(a, (state) => state.phase === 'running' && state.heroes.length >= 1, 45_000);
+  check('A: zápas běží', Boolean(runningA), JSON.stringify(await debug(a)));
+  const runningB = await poll(b, (state) => state.phase === 'running' && state.heroes.length >= 1, 45_000);
+  check('B: zápas běží', Boolean(runningB));
 
   if (runningA && runningB) {
     check('A: vidí vlastní id', runningA.heroes.some((hero) => hero.id === runningA.you), String(runningA.you));
     check('B: vidí vlastní id', runningB.heroes.some((hero) => hero.id === runningB.you), String(runningB.you));
-    check('A i B: dvě strany', new Set(runningA.heroes.map((hero) => hero.team)).size === 2);
+    const teamA = runningA.heroes.find((hero, index) => hero.id === runningA.you)?.team;
     check(
-      'každá strana tři hrdinové',
-      ['blue', 'red'].every((team) => runningA.heroes.filter((hero) => hero.team === team).length === 3),
+      'mlha: na startu vidím jen svůj tým',
+      runningA.heroes.every((hero) => hero.team === teamA),
+      runningA.heroes.map((hero) => `${hero.team}:${hero.id}`).join(' '),
+    );
+    check(
+      'mlha: soupeřova hrdina není ve snapshotu',
+      !runningA.heroes.some((hero) => hero.id === runningB.you),
+      String(runningB.you),
     );
     check('A i B: tři uzly L5', runningA.nodes.length === 3 && runningB.nodes.length === 3);
 
-    // A pošle pohyb — B musí vidět, že se A pohnul (server je autorita)
+    // A pošle pohyb — vlastní posun musí potvrdit server (predikce nestačí).
     const before = runningA.heroes.find((hero) => hero.id === runningA.you);
+    // Stránka musí být vpředu — hra správně pouští klávesy při `blur`
+    // a pozadí navíc throttluje requestAnimationFrame.
+    await a.page.bringToFront();
+    await sleep(300);
     await a.page.keyboard.down('KeyD');
     await sleep(900);
     await a.page.keyboard.up('KeyD');
     await sleep(500);
-    const movedB = await poll(
-      b,
+    const movedA = await poll(
+      a,
       (state) => {
         const seen = state.heroes.find((hero) => hero.id === before.id);
         return seen && Math.abs(seen.x - before.x) > 0.3;
       },
       8000,
     );
-    check('pohyb se propsal druhému hráči', Boolean(movedB));
+    check('pohyb: server potvrdil posun', Boolean(movedA));
+    // Protistrana ho vidět NEMÁ — jsou na opačných koncích mapy.
+    const bSeesA = await poll(
+      b,
+      (state) => state.heroes.some((hero) => hero.id === before.id),
+      1500,
+    );
+    check('mlha: protistrana A nevidí', !bSeesA);
 
     // kouzlo: A sešle Q, B uvidí projektil nebo změnu stavu
     const snapshotBefore = await debug(a);
+    await a.page.bringToFront();
+    await sleep(200);
     await a.page.keyboard.press('KeyQ');
     await sleep(900);
     const snapshotAfter = await debug(a);
