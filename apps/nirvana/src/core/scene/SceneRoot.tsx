@@ -113,7 +113,7 @@ export function SceneRoot({
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
   /** Klik na planetu ve sluneční soustavě. */
-  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn') => void;
   /** Klik na L5 misii na glóbu. */
   onSelectMission?: (key: string) => void;
   xr: boolean;

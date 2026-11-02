@@ -117,7 +117,7 @@ function Planet({
   index: number;
   lang: 'cs' | 'en';
   selected: boolean;
-  onSelect?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
+  onSelect?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn') => void;
   /** Brána je dítě planety — obíhá s ní (Jupiter ji drží pořád nablízku). */
   gate?: { portal: Portal; onOpen: (id: string) => void };
 }) {
@@ -193,7 +193,7 @@ function Planet({
             event.stopPropagation();
             // Jediná cesta: klik označí planetu, `focus` prop spustí přelet
             // v `LinkEngine`. Žádné druhé flyTo s půjčenou kamerou.
-            onSelect?.(def.id as 'mars' | 'venus' | 'jupiter' | 'mercury');
+            onSelect?.(def.id as 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn');
           }}
           onPointerOver={(event) => {
             event.stopPropagation();
@@ -256,7 +256,7 @@ export function SolarSystem({
   onOpenPortal,
 }: {
   onOpenPark?: () => void;
-  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn') => void;
   focused?: string;
   lang?: 'cs' | 'en';
   /** Brána do OASIS — vykreslí se jako dítě Jupiteru. */

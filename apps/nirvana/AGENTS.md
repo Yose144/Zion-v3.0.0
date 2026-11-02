@@ -941,3 +941,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Klik na planetu funguje dál** přes neviditelnou hit-sféru
   (`opacity: 0`, ne `visible={false}`) — ověřeno headless klikem na
   projekci Merkuru: `focus=mercury`, panel se otevřel.
+
+## Saturn — Kroniky / Archiv kruhů (`/saturn`, 2026-11-02)
+
+- **Prstence = hřbety knih.** 15 kapitol = `FREE_WORLD_MISSIONS` (L5 uzly).
+  Hover = `NavHalo` (stejný jako ve vesmíru), klik = kapitola v panelu.
+  Žádná jména ve 3D.
+- **Barva hřbetu = stav** uzlu (`built` bílá, `preparation` cyan, `vision`
+  fialová) — `MISSION_STATUS_COLOR`.
+- **Vstup:** planeta Saturn má `game: 'saturn'` → ve vesmíru je odkaz
+  (kruh, klik, panel `SATURN`) → `/saturn`. Přidán i do `GAME_LINKS`.
+- **Routa je veřejná** (jako `/park`), mimo ZAP pass.
+- **Textury** jsou `public/textures/2k_saturn.jpg` a
+  `2k_saturn_ring_alpha.png`; prstenec má přemapované UV (radiální osa).
+- **Rotace hřbetů** je `0,03·t` (deterministická), ne akumulátor.
+- **Meze:** VR a mobil netestované; L4/L6 světy (411) v archivu nejsou —
+  patří do `WorldPortal`; žádná animace otevírání knihy.

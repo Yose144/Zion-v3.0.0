@@ -63,7 +63,7 @@ export function Universe({
   onOpen: (id: string) => void;
   onSelectWorld: (id: string) => void;
   /** Klik na planetu — přiletí a otevře panel s CTA. */
-  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury') => void;
+  onSelectPlanet?: (id: 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn') => void;
   /** Klik na L5 misii na glóbu — stejná navigace jako planeta. */
   onSelectMission?: (key: string) => void;
   focus?: string;

@@ -52,6 +52,7 @@ ok('má Zemi', !!engine.getTarget('earth'));
 ok('má Jupiter', !!engine.getTarget('jupiter'));
 ok('má bránu', !!engine.getTarget('gate'));
 ok('má archu', !!engine.getTarget('archa'));
+  ok('má Saturn (Kroniky)', !!engine.getTarget('saturn'));
 
 console.log('=== cíl: anchor je konečný ===');
 for (const t of targets) {

@@ -77,7 +77,7 @@ function readHash(): { portal: string | null; world: string | null } {
 }
 
 /** Panel po kliknutí na planetu — titulek, note, CTA. Klíč = hodnota `def.game`. */
-const PLANET_PANELS: Record<'mars' | 'venus' | 'mercury' | 'park', {
+const PLANET_PANELS: Record<'mars' | 'venus' | 'mercury' | 'park' | 'saturn', {
   title: string;
   note: string;
   href: string;
@@ -102,6 +102,12 @@ const PLANET_PANELS: Record<'mars' | 'venus' | 'mercury' | 'park', {
     href: '/mercury',
     cta: 'Do klece',
   },
+  saturn: {
+    title: 'SATURN',
+    note: 'Kroniky — archiv kruhů. Prstence jako hřbety knih: každý segment je jeden svět.',
+    href: '/saturn',
+    cta: 'Otevřít kroniky',
+  },
   park: {
     title: 'JUPITER',
     note: 'Jupiter Station — pouť, arkády, ruské kolo a tabule skóre.',
@@ -123,7 +129,7 @@ export function Shell() {
   const [reviewState] = useState<HiranState | null>(() => hiranReviewOverride());
   const [focus, setFocus] = useState<string>('earth');
   /** Vybraná planeta = přiletěli jsme a nabízíme vstup do hry. ('jupiter' def používá key 'park'.) */
-  const [planet, setPlanet] = useState<'mars' | 'venus' | 'mercury' | 'park' | null>(null);
+  const [planet, setPlanet] = useState<'mars' | 'venus' | 'mercury' | 'park' | 'saturn' | null>(null);
   /** Vybraná L5 misie na glóbu — stejný panel jako planeta. */
   const [missionKey, setMissionKey] = useState<string | null>(null);
   const [fleetLeg, setFleetLeg] = useState<FleetLeg | null>(null);
@@ -258,7 +264,7 @@ export function Shell() {
   }
 
   /** Klik na planetu: přiletět a otevřít panel s CTA (ne rovnou skočit do hry). */
-  const selectPlanet = useCallback((id: 'mars' | 'venus' | 'jupiter' | 'mercury') => {
+  const selectPlanet = useCallback((id: 'mars' | 'venus' | 'jupiter' | 'mercury' | 'saturn') => {
     setMissionKey(null);
     setPlanet(id === 'jupiter' ? 'park' : id);
     setFocus(id);

@@ -4909,3 +4909,146 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     min-height: 2.6rem;
   }
 }
+
+/* ── Saturn — Kroniky / Archiv kruhů ──────────────────────────────────── */
+.saturn-chrome {
+  position: absolute;
+  top: calc(1rem + env(safe-area-inset-top, 0px));
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  pointer-events: none;
+}
+.saturn-chrome strong {
+  display: block;
+  font-size: 0.9rem;
+  letter-spacing: 0.28em;
+  color: #e3cf9f;
+}
+.saturn-chrome span {
+  display: block;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  color: rgba(246, 231, 216, 0.6);
+}
+.saturn-back {
+  pointer-events: auto;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(227, 207, 159, 0.35);
+  background: rgba(6, 8, 16, 0.7);
+  color: #e3cf9f;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  transition: background var(--zion-motion-fast) var(--zion-ease),
+    border-color var(--zion-motion-fast) var(--zion-ease);
+}
+.saturn-back:hover,
+.saturn-back:focus-visible {
+  background: rgba(227, 207, 159, 0.16);
+  border-color: rgba(227, 207, 159, 0.7);
+  outline: none;
+}
+.saturn-panel {
+  position: absolute;
+  left: calc(1rem + env(safe-area-inset-left, 0px));
+  top: calc(4.6rem + env(safe-area-inset-top, 0px));
+  z-index: 20;
+  width: min(17rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 7rem);
+  overflow: auto;
+  padding: 0.75rem 0.8rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(227, 207, 159, 0.28);
+  background: rgba(8, 9, 18, 0.82);
+  backdrop-filter: blur(10px);
+}
+.saturn-hint {
+  margin: 0 0 0.6rem;
+  font-size: 0.66rem;
+  line-height: 1.45;
+  color: rgba(246, 231, 216, 0.62);
+}
+.saturn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+.saturn-list button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: rgba(246, 231, 216, 0.82);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--zion-motion-fast) var(--zion-ease),
+    border-color var(--zion-motion-fast) var(--zion-ease);
+}
+.saturn-list button:hover,
+.saturn-list button:focus-visible {
+  background: rgba(227, 207, 159, 0.1);
+  outline: none;
+}
+.saturn-list button.is-active {
+  background: rgba(126, 200, 255, 0.14);
+  border-color: rgba(126, 200, 255, 0.45);
+  color: #eaf3ff;
+}
+.saturn-list button i,
+.saturn-legend i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.saturn-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  color: rgba(246, 231, 216, 0.55);
+}
+.saturn-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.saturn-detail {
+  border-color: rgba(227, 207, 159, 0.45);
+}
+.saturn-detail header strong {
+  color: #e3cf9f;
+}
+@media (max-width: 640px) {
+  .saturn-panel {
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    top: auto;
+    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    max-height: 36vh;
+  }
+  .saturn-detail {
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    top: auto;
+    bottom: calc(37vh + 0.9rem);
+  }
+}

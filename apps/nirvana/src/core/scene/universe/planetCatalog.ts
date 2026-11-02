@@ -24,7 +24,7 @@ export interface PlanetDef {
   /** Axiální náklon v radiánech (Uranus ~98°, Venuše retrográdní). */
   tiltZ?: number;
   /** Interaktivní planeta = vstup do hry (`/mars`, `/venus`, `/mercury`, `/park`). */
-  game?: 'mars' | 'venus' | 'park' | 'mercury';
+  game?: 'mars' | 'venus' | 'park' | 'mercury' | 'saturn';
   /** Co se stane po kliknutí — text na chipu. */
   cta?: { cs: string; en: string };
 }
@@ -87,7 +87,20 @@ export const PLANETS: PlanetDef[] = [
     game: 'park',
     cta: { cs: 'pouť →', en: 'fair →' },
   },
-  { id: 'saturn', name: 'Saturn', tex: 'saturn', au: 9.537, size: 3.0, speed: 0.00067, spin: 0.055, tint: '#e3cf9f', ring: true, tiltZ: 0.47 },
+  {
+    id: 'saturn',
+    name: 'Saturn',
+    tex: 'saturn',
+    au: 9.537,
+    size: 3.0,
+    speed: 0.00067,
+    spin: 0.055,
+    tint: '#e3cf9f',
+    ring: true,
+    tiltZ: 0.47,
+    game: 'saturn',
+    cta: { cs: 'kroniky →', en: 'chronicles →' },
+  },
   { id: 'uranus', name: 'Uran', tex: 'uranus', au: 19.19, size: 1.5, speed: 0.00024, spin: -0.04, tint: '#9fd8dc', tiltZ: 1.71 },
   { id: 'neptune', name: 'Neptun', tex: 'neptune', au: 30.07, size: 1.45, speed: 0.00012, spin: 0.04, tint: '#4d6fd1', tiltZ: 0.49 },
 ];

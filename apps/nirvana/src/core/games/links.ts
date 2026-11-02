@@ -59,6 +59,14 @@ export const GAME_LINKS: GameLink[] = [
     tone: '#e8a15c',
   },
   {
+    id: 'saturn',
+    href: '/saturn',
+    title: { cs: 'Saturn — Kroniky', en: 'Saturn — Chronicles' },
+    note: { cs: 'archiv kruhů · 15 kapitol', en: 'ring archive · 15 chapters' },
+    glyph: '🪐',
+    tone: '#e3cf9f',
+  },
+  {
     id: 'avatars',
     href: '/avatars',
     title: { cs: 'Avatar', en: 'Avatar' },
