@@ -350,14 +350,17 @@ try {
      (jen cube) — proto skutečná kopule (BackSide sphere), tu lze natočit. */
   new THREE.TextureLoader().load('/maint-assets/milkyway-eso-4k.jpg', (t) => {
     t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    /* ČÁSTEČNÁ kopule — celá 4K mapa na 180°×90° místo 360°×180° → ~2x ostrosti.
+       phi -π..0 = přední hemisféra kolem -Z; theta 32°..122° = pás přes
+       galaktické jádro (u≈0.5, v≈0.48) ≈ směr (0, +15°, -Z). Okraje mimo záběr. */
     const dome = new THREE.Mesh(
-      new THREE.SphereGeometry(90, 64, 32),
+      new THREE.SphereGeometry(90, 96, 48, -Math.PI, Math.PI, 0.556, 1.75),
       new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide, fog: false, depthWrite: false })
     );
     dome.material.color.setScalar(0.72);
     dome.renderOrder = -1;
-    /* galaktické centrum (u≈0.5 → -Z při y=0): mírně vpravo nahoru, pás diagonálně */
-    dome.rotation.set(0.2, 0.3, -0.35);
+    dome.rotation.z = -0.3; // pás diagonálně
     scene.add(dome);
   });
   scene.fog = new THREE.FogExp2(0x040308, 0.02);
