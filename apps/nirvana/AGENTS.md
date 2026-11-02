@@ -957,3 +957,38 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Rotace hřbetů** je `0,03·t` (deterministická), ne akumulátor.
 - **Meze:** VR a mobil netestované; L4/L6 světy (411) v archivu nejsou —
   patří do `WorldPortal`; žádná animace otevírání knihy.
+
+## PRVNÍ SVĚT — mlha války (2026-11-02, protokol 7)
+
+- **Vidění drží jednotky, ne mapa.** `VISION` v `core/moba/map.ts`:
+  hrdina 14 m, minion 8 m, věž 12 m, vlastněný uzel L5 10 m. Kdo chce jiná
+  čísla, mění je tam — `visionSources()` v `sim.ts` je čte odtamtud.
+- **Filtruje se až snapshot, ne sim.** Sim počítá celou mapu (monstra, boti
+  i zásahy), `mobaSnapshot(state, viewerTeam)` zahodí to, co tým nevidí.
+  Kdyby se filtrovala sim, AI by hrála naslepo a hra by se rozpadla.
+- **Co se posílá vždy:** vlastní tým (i mrtvý — respawn timer), struktury
+  a uzly L5. Bez struktur by mapa přestala být mapou.
+- **Co se filtruje:** nepřátelští hrdinové (jen živí a vidění — mrtvý v mlze
+  nemá prozradit, kde se objeví), minioni, monstra a projektily (projektil
+  letící mlhou prozradí střelce).
+- **`mobaSnapshot()` bez `viewerTeam` = divák/debug** a posílá všechno.
+  Debug háček v sólu to používá schválně, aby testy viděly soupeře.
+- **Server skládá snapshot jednou na tým**, ne na hráče. 5v5 × 15 Hz by
+  jinak stavělo 10 snapshotů za tick.
+- **Sólo má mlhu taky** (`MobaGame` posílá `you.team`) — jinak by sólo
+  a multiplayer byla dvě různé hry.
+- **PROTO_VERSION 7.** Formát zpráv se neměnil, ale **semantika ano**:
+  starý klient by viděl celou mapu (cheat). Deploy **net první**.
+
+### Pasti, na které jsem u toho narazil
+
+- **Testy měly `proto: 6` jako literál na sedmi místech.** Bump shodil
+  smoke/arena/fight. Teď importují `PROTO_VERSION` z protokolu
+  (`../dist/nirvana/src/core/net/protocol.js`) — další bump je nerozbije.
+- **`__mobaDebug` v `MobaOnline` se plnil v `useFrame`.** Když prohlížeč
+  uspí kartu na pozadí, smyčka přestane běžet a háček navěky vrací starý
+  snapshot (`time: 0`, prázdná pole) — v E2E to vypadá jako rozbitá hra,
+  přitom server posílá správná data. Háček musí číst **refy**.
+- **Dva prohlížeče v E2E: klávesy jdou jen do stránky vpředu.** Hra správně
+  pouští vstup při `blur`, takže `page.keyboard.down()` na pozadí nic
+  neudělá. Před vstupem volej `page.bringToFront()`.
