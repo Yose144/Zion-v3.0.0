@@ -386,7 +386,9 @@ try {
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           float tw = 0.82 + 0.18 * sin(uTime * (0.5 + fract(aPhase) * 0.9) + aPhase * 7.0);
           vTw = tw;
-          gl_PointSize = aSize * (0.9 + 0.1 * tw) * 150.0 / -mv.z;
+          /* body za kamerou: záporné gl_PointSize = undefined behavior → flickr */
+          float dist = -mv.z;
+          gl_PointSize = dist > 0.5 ? aSize * (0.9 + 0.1 * tw) * 150.0 / dist : 0.0;
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
@@ -418,7 +420,7 @@ try {
     new THREE.MeshStandardMaterial({ color: 0x070604, roughness: 0.35, metalness: 0.6 })
   );
   floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -0.92;
+  floor.position.y = -1.02;
   scene.add(floor);
 
   const poolTex = glowTexture('rgba(255,197,77,0.55)', 'rgba(245,158,11,0.18)');
@@ -527,7 +529,7 @@ try {
       fragmentShader: `
         uniform vec3 uColor; varying vec3 vN; varying vec3 vV;
         void main() {
-          float f = pow(1.0 - abs(dot(vN, vV)), 2.6);
+          float f = pow(max(0.0, 1.0 - abs(dot(vN, vV))), 2.6);
           gl_FragColor = vec4(uColor, f * 0.9);
         }`,
     })
@@ -615,7 +617,7 @@ try {
   if (Post) {
     try {
       const rt = new THREE.WebGLRenderTarget(innerWidth, innerHeight, {
-        type: THREE.HalfFloatType, samples: 4,
+        type: THREE.HalfFloatType,
       });
       composer = new Post.EffectComposer(renderer, rt);
       composer.addPass(new Post.RenderPass(scene, camera));
