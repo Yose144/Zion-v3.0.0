@@ -1549,11 +1549,13 @@ function setupControls() {
         addLogEntry('Trinity enabled automatically (stream toggled on)', 'info');
       }
       // Stream 4 needs a coin — pick a default when enabling with none.
+      // Prefer the complementary SRB coin (PRL pairs with QTU on the sidecar;
+      // falls back to the internal kernel when SRBMiner is absent).
       if (on && i === 4) {
         const c2 = String(config.gpuCoin2 || '').trim();
         const g1 = String(config.gpuCoin || '').toUpperCase();
         if (!c2 || c2.toLowerCase() === 'auto' || c2.toUpperCase() === g1) {
-          config.gpuCoin2 = g1 === 'ZANO' ? 'QTU' : 'ZANO';
+          config.gpuCoin2 = ['PRL', 'PEARL', 'PEARLHASH'].includes(g1) ? 'QTU' : 'PRL';
         }
       }
       syncStreamToggles();
