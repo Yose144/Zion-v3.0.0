@@ -103,7 +103,7 @@ Každý večer, když vymetl hobliny a poslední soused odešel, postavila jeho 
 
 Ale když vesnice ztichla a v olejové lampičce zůstal jen úzký plamínek, odhrnul tesař hrubé plátno v zadním koutě dílny. Tam, na dřevěných kozách, pomalu rostla **loď**.
 
-Nebyla veliká — osm loktů na délku, tak akorát pro dvanáct veslařů a jedno místo u kormidelního vesla na zádi. Její kýl vytesal z jediného kmene starého cedru, který před lety свалиla bouře na severních svazích, a žebra ohýbal nad kotlem s vroucí vodou tak trpělivě, jako se ohýbají prsty kolem dlaně dítěte.
+Nebyla veliká — osm loktů na délku, tak akorát pro dvanáct veslařů a jedno místo u kormidelního vesla na zádi. Její kýl vytesal z jediného kmene starého cedru, který před lety svalila bouře na severních svazích, a žebra ohýbal nad kotlem s vroucí vodou tak trpělivě, jako se ohýbají prsty kolem dlaně dítěte.
 
 Sousedé, když občas zahlédli cíp odhrnutého plátna, kroutili hlavou.
 
@@ -132,7 +132,7 @@ Jedné noci, krátce předtím, než měl dílnu navždy opustit, vešla dovnit�
 - **Mk 6,3 a Mt 13,55** — V Markově evangeliu říkají obyvatelé Nazareta: *„Není to ten tesař (řecky tektón), syn Mariin?“* (u Matouše *„syn toho tesaře“*). Slovo *tektón* označovalo stavitele pracujícího se dřevem i kamenem — člověka, který rozumí statice, spojům a nosnosti.
 - **Mt 11,29–30** — *„Vezměte na sebe mé jho… neboť mé jho netlačí a břemeno mé je lehké.“* Už Justin Mučedník v *Dialogu s Tryfónem* (polovina 2. století, kap. 88) zaznamenal živou paměť, že Ježíš v Nazaretě skutečně vyráběl pluhy a jha, která sloužila jako hmatatelné podobenství spravedlivé míry.
 - **Galilejská loď z 1. století** — V roce 1986 bylo při nízkém stavu vody v bahně u kibucu Ginosar (poblíž Magdaly) objeveno vrakové torzo rybářské lodi datované do 1. stol. př. n. l. až 1. stol. n. l. Měřila 8,27 m na délku, 2,3 m na šířku, byla postavena z libanonského cedru a dubových žeber a unesla dvanáct veslařů s kormidelníkem (celkem až 15 osob). S Ježíšem ji žádný přímý nápis nespojuje, ale přesně ukazuje měřítko a dřevo, které příběh popisuje.
-- **Kanonická vazba v ZIONu:** Věta *„Loď se staví v tichých letech, dřív než začne pršet“* je přímým kořenem [`SulZeme/05-Archa.md`](../../SulZeme/05-Archa.md), [`Maitreya/PROLOG.md`](../../Maitreya/PROLOG.md) i [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md). Hладké místo na cedrovém kýlu od matčiny dlaně se v Části II a III stane poznávacím znamením téhož dřeva v Bezechuti i v Domě Lumi.
+- **Kanonická vazba v ZIONu:** Věta *„Loď se staví v tichých letech, dřív než začne pršet“* je přímým kořenem [`SulZeme/05-Archa.md`](../../SulZeme/05-Archa.md), [`Maitreya/PROLOG.md`](../../Maitreya/PROLOG.md) i [`nirvana/14-Archa.md`](../../nirvana/14-Archa.md). Hladké místo na cedrovém kýlu od matčiny dlaně se v Části II a III stane poznávacím znamením téhož dřeva v Bezechuti i v Domě Lumi.
 
 ### Kotva pravdy
 
@@ -961,7 +961,7 @@ Jmenovala se po babičce **Elizabeth** — Alžběta, což v staré řeči zname
 
 Tesař, který právě kontroloval dubové čepy u kormidla, se zastavil a pohlédl směrem jejího prstu.
 
-Mlhu tam проtínal tenký, zlatavě modrý pruh čistého světla. Neukazoval ještě stromy ani přístav, ale byl klidný, živý a nezpochybnitelný: znamení, že bouře entropie narazila na svou mez. Od toho rána říkali děvčátku na palubě **Lumi** — podle prvního paprsku.
+Mlhu tam protínal tenký, zlatavě modrý pruh čistého světla. Neukazoval ještě stromy ani přístav, ale byl klidný, živý a nezpochybnitelný: znamení, že bouře entropie narazila na svou mez. Od toho rána říkali děvčátku na palubě **Lumi** — podle prvního paprsku.
 
 Tesař té noci nespal. Vzal odřezek cedrového dřeva, který zbyl, když v Bezechuti vsazovali nazaretský kýl do trupu Archy — dřevo ze stejného kmene, který kdysi slyšel kázání na Kinneretu — a silný střep skla z rozbité lodní lampy. Do svítání z nich dlátem vyřezal malou **lucernu** ve tvaru semínka.
 
@@ -1195,7 +1195,7 @@ Nakonec se Lumi v záři lucerny podívala k širokému iluminátoru stanice.
 
 Seděla tam dívka, která od dětství četla hvězdy — **Sarah Issobela**, sestra kovářova syna z Bezechuti — a vedle ní se odrážel obraz jejího bratra, který dole na Zemi držel pohromadě palubu lodi. Dívali se spolu dolů na modrou kouli, na níž už nebyly vidět žádné hraniční čáry ani stíny pěti babylonských věží, jen síť drobných světel v domech a zahradách.
 
-*„Vidíš to?“* řekla sestra u okna. *„Jedna planeta, jeden lid, jedna láska nejsou tři hesla na plakát. Je to popis toho единého, co při pohledu shora zůstane skutečné.“*
+*„Vidíš to?“* řekla sestra u okna. *„Jedna planeta, jeden lid, jedna láska nejsou tři hesla na plakát. Je to popis toho jediného, co při pohledu shora zůstane skutečné.“*
 
 > *Izotropní nebe nemá vyvolený střed,*
 > *hlídač na útesu počítá dary, na které sám nesmí sáhnout,*
@@ -1399,7 +1399,7 @@ Na přídi první lodi — té červené *Santa María la Mayor*, která čeká 
 
 *„Surti,“* četl Poutník zpaměti slova toho dopisu, *„když ses narodil, držel jsem tě v náručí tak dlouho, až mi ztuhla ruka, a stejně jsem tě nechtěl pustit. Nemohl jsem ti dát jistý svět ani mapu bez bouří. Ale mohl jsem ti nechat postavit cestu a loď.“*
 
-V tom dopise byla schovaná jedna skutečná vzpomínka od moře: sedmiletý chlapec stojí v příboji na pláži na ostrově **Tenerife**, vlny mu nosí dřevěnou dětskou lodičku sem a tam a on se uprostřed pěny poprvé ptá, jak by šlo postavit svět, ve kterém si lidé pomáhají. O pár let později, když je chlapci dvanáct, odchází z tohoto světa učitel jednoty v далеkém Ekamu a zanechává po sobě tiché světlo *Paramjyoti* a požehnání *Ekam Deeksha*.
+V tom dopise byla schovaná jedna skutečná vzpomínka od moře: sedmiletý chlapec stojí v příboji na pláži na ostrově **Tenerife**, vlny mu nosí dřevěnou dětskou lodičku sem a tam a on se uprostřed pěny poprvé ptá, jak by šlo postavit svět, ve kterém si lidé pomáhají. O pár let později, když je chlapci dvanáct, odchází z tohoto světa učitel jednoty v dalekém Ekamu a zanechává po sobě tiché světlo *Paramjyoti* a požehnání *Ekam Deeksha*.
 
 A otec synovi píše nejpřísnější a nejněžnější větu celého dopisu:
 

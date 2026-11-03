@@ -310,7 +310,7 @@ Starý žalm to zkusil přede mnou, poťouře: *sjíždějí na moře v lodích�
 
 Každý, kdo někdy vedl knihu, zná ten pocit: **povinnost zapisovat do prázdná.**
 
-Tentokrát to nebyla chyba písmа. Tesař to věděl třikrát a posádka mu nevěřila, protože nikdo nechce zapsat, že loď, kterou zná, má jít pod vodu. Byl zrada a polibek; byl dřevo jiného druhu — ne loď, **trám** (*prokletý, kdo visí na dřevě*, Gal 3,13 / Dt 21,23). A pak tři dny, o kterých Písmo mlčí tak, že je slyšet.
+Tentokrát to nebyla chyba písma. Tesař to věděl třikrát a posádka mu nevěřila, protože nikdo nechce zapsat, že loď, kterou zná, má jít pod vodu. Byl zrada a polibek; byl dřevo jiného druhu — ne loď, **trám** (*prokletý, kdo visí na dřevě*, Gal 3,13 / Dt 21,23). A pak tři dny, o kterých Písmo mlčí tak, že je slyšet.
 
 Jediné, co po něm zůstalo v číslech, je jeho vlastní znamení: *jako byl Jonáš ve střeve velké ryby tři dny a tři noci, tak bude Syn člověka ve střeve země* (Mt 12,40; Jon 1,17).
 
