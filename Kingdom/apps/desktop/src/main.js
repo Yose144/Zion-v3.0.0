@@ -678,6 +678,20 @@ let minerShareDeltaSamples = [];
 // We detect the increment and emit a synthetic share-event to the renderer.
 let _streamShareCounts = { 1: { accepted: -1, rejected: -1 }, 2: { accepted: -1, rejected: -1 }, 3: { accepted: -1, rejected: -1 } };
 
+// Shares counted from real share events in stdout (V3 Trinity lines, stream-stats
+// deltas, SRB sidecar). The miner's Prometheus /metrics counters can stay at 0 on
+// the Trinity path while the pool accepts shares, so stdout events are the ground
+// truth for share totals; the HTTP poll merges with Math.max below.
+let _stdoutShareTotals = { accepted: 0, rejected: 0 };
+function _countStdoutShares(accDelta, rejDelta) {
+  if (accDelta > 0) _stdoutShareTotals.accepted += accDelta;
+  if (rejDelta > 0) _stdoutShareTotals.rejected += rejDelta;
+  if (!accDelta && !rejDelta) return;
+  if (_stdoutShareTotals.accepted > Number(minerStats.accepted || 0)) minerStats.accepted = _stdoutShareTotals.accepted;
+  if (_stdoutShareTotals.rejected > Number(minerStats.rejected || 0)) minerStats.rejected = _stdoutShareTotals.rejected;
+  minerStats.shares = Number(minerStats.accepted || 0) + Number(minerStats.rejected || 0);
+}
+
 // Resolved external coins for the active miner spawn ('' = auto/none).
 // Set when the miner env is built; used by the parsers below to map
 // coin → stream index / label / algorithm dynamically (QTU, ZANO, VRSC…).
@@ -821,6 +835,7 @@ function resetMinerTelemetryForNewSpawn() {
   // Reset trinity per-stream telemetry on new spawn
   minerStats.streams = [];
   _streamShareCounts = { 1: { accepted: -1, rejected: -1 }, 2: { accepted: -1, rejected: -1 }, 3: { accepted: -1, rejected: -1 } };
+  _stdoutShareTotals = { accepted: 0, rejected: 0 };
   Object.assign(minerStats, {
     hashrate: 0,
     shares: 0,
@@ -3101,6 +3116,9 @@ function srbApplyStats(stats, streamIndex = 2) {
   // Synthetic share events (same mechanism as the stream-stats parser).
   const prev = srbShareCounts[streamIndex] || { accepted: -1, rejected: -1 };
   if (prev.accepted >= 0) {
+    if (acc > prev.accepted || rej > prev.rejected) {
+      _countStdoutShares(Math.max(0, acc - prev.accepted), Math.max(0, rej - prev.rejected));
+    }
     if (acc > prev.accepted) {
       try { sendToRenderer('share-event', { stream: streamIndex, coin: info.coin, accepted: true, status: 'accepted', algorithm: info.algo, ts: Date.now() }); } catch {}
       try { enqueueMinerOutputToRenderer('stdout', `[SRB] share accepted s${streamIndex} (total ${acc})`); } catch {}
@@ -4808,6 +4826,9 @@ function maybeEmitShareEvent(output) {
     const coin = trinityAccM[1].toUpperCase();
     const streamIdx = _coinStreamIndex(coin);
     const algo = _coinAlgo(coin);
+    _countStdoutShares(1, 0);
+    const _streamEntry = Array.isArray(minerStats.streams) ? minerStats.streams.find((s) => s && s.index === streamIdx) : null;
+    if (_streamEntry) _streamEntry.accepted = (_streamEntry.accepted || 0) + 1;
     try {
       sendToRenderer('share-event', {
         stream: streamIdx, coin, accepted: true, algorithm: algo,
@@ -4821,6 +4842,9 @@ function maybeEmitShareEvent(output) {
     const coin = trinityRejM[1].toUpperCase();
     const streamIdx = _coinStreamIndex(coin);
     const algo = _coinAlgo(coin);
+    _countStdoutShares(0, 1);
+    const _streamEntry = Array.isArray(minerStats.streams) ? minerStats.streams.find((s) => s && s.index === streamIdx) : null;
+    if (_streamEntry) _streamEntry.rejected = (_streamEntry.rejected || 0) + 1;
     try {
       sendToRenderer('share-event', {
         stream: streamIdx, coin, accepted: false, algorithm: algo,
@@ -5626,6 +5650,7 @@ function parseMinerOutput(output) {
       if (prev && prev.accepted >= 0) {
         const accDelta = accepted - prev.accepted;
         const rejDelta = rejected - prev.rejected;
+        if (accDelta > 0 || rejDelta > 0) _countStdoutShares(accDelta, rejDelta);
         if (accDelta > 0) {
           try {
             sendToRenderer('share-event', {
@@ -6026,6 +6051,9 @@ ipcMain.handle('apply-mining-config', async (_event, patch) => {
     }
   }
   saveConfig(merged);
+  // Notify every open surface (standalone window AND the Kingdom-embedded
+  // iframe) so renderers re-fetch instead of saving stale state back.
+  try { sendToRenderer('config-updated'); } catch {}
 
   const running = !!minerProcess || startMiningInProgress;
   if (!running) {
@@ -9510,9 +9538,7 @@ app.whenReady().then(async () => {
   // hwDetectDone flag makes it a one-shot.
   setTimeout(() => {
     firstRunHardwareDetect().then(() => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('config-updated');
-      }
+      try { sendToRenderer('config-updated'); } catch {}
     }).catch(() => {});
   }, 3000);
 
@@ -9553,9 +9579,7 @@ app.whenReady().then(async () => {
       autoSelectBestPool().then(best => {
         if (best) {
           dbg(`[startup] Auto-selected pool: ${best.name} (${best.host})`);
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('config-updated');
-          }
+          try { sendToRenderer('config-updated'); } catch {}
         }
       }).catch(err => console.error('[startup] Pool auto-select failed:', err.message));
     } else {
@@ -9716,9 +9740,9 @@ setInterval(() => {
             }
             const acc = typeof pm.zion_miner_shares_accepted === 'number' ? pm.zion_miner_shares_accepted : null;
             const rej = typeof pm.zion_miner_shares_rejected === 'number' ? pm.zion_miner_shares_rejected : null;
-            if (acc != null) minerStats.accepted = acc;
-            if (rej != null) minerStats.rejected = rej;
-            if (acc != null || rej != null) minerStats.shares = (acc || 0) + (rej || 0);
+            if (acc != null) minerStats.accepted = Math.max(acc, _stdoutShareTotals.accepted);
+            if (rej != null) minerStats.rejected = Math.max(rej, _stdoutShareTotals.rejected);
+            if (acc != null || rej != null) minerStats.shares = Number(minerStats.accepted || 0) + Number(minerStats.rejected || 0);
             const total = typeof pm.zion_miner_total_hashes === 'number' ? pm.zion_miner_total_hashes : null;
             if (total != null) minerStats.total_hashes = total;
             if (typeof pm.zion_miner_jobs_received === 'number') minerStats.jobs_received = pm.zion_miner_jobs_received;
