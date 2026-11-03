@@ -282,8 +282,8 @@ enum WalletCommand {
         dry_run: bool,
     },
     /// Consolidate the wallet UTXO set: repeated self-send rounds that merge
-    /// the smallest UTXOs (dust) into single outputs so future sends fit
-    /// under the node's 100 KB transaction-size limit.
+    /// the largest UTXOs into single outputs, producing big spendable outputs
+    /// so future sends fit under the node's 100 KB transaction-size limit.
     Consolidate {
         /// Wallet file path (default: ~/.zion/wallet.json).
         #[arg(short, long)]
@@ -925,7 +925,7 @@ async fn main() -> anyhow::Result<()> {
                     if total <= round_fee {
                         println!(
                             "Round {round}: batch of {} UTXOs holds only {} flowers < fee {}; \
-                             stopping (dust too small to consolidate profitably)",
+                             stopping (remaining UTXOs too small to consolidate)",
                             batch.len(),
                             total,
                             round_fee
