@@ -2878,7 +2878,10 @@ function createTray() {
   tray.setToolTip('ZION Miner v3.2.0 Ekam Deeksha');
   
   tray.on('click', () => {
-    showWindow();
+    // V kingdom módu je mainWindow null — otevři kingdom okno, agent jen fallback.
+    if (mainWindow && !mainWindow.isDestroyed()) showWindow();
+    else if (kingdomUrl) createKingdomWindow();
+    else createWindow();
   });
 }
 

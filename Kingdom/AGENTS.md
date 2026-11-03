@@ -80,3 +80,13 @@ Pro dokumentační změny stačí `git diff --check`.
 - **Embed pás ≠ fullscreen svět.** Ve stránce, která scrolluje, `wheel` na plátně nesmí zoomovat — `OrbitRig` má `enableZoom: false`, jinak se scroll zasekne na scéně.
 - **E2E proti rotující scéně:** markery autoRotatem plynou → sweep pozici znovu najdi těsně před klikem, jinak míjíš. A `router.push` na datový portál trvá **sekundy** (upstream timeout) — URL pollluj ~5 s, ne fixní wait.
 - **Favicon:** `public/favicon.png` stačí na `<link>`, ale prohlížeč si bez deklarace žádá `/favicon.ico` → 404 v konzoli. `src/app/icon.png` (file convention) ji umlčí.
+
+## Pasti z desktop-agenta v Kingdomu (2026-11-03)
+
+- **`dialog.showErrorBox` je synchronní blocking modál.** Zamrzne celý main proces — heartbeat, IPC, DevTools — dokud user neklikne OK. S `mainWindow === null` (kingdom mód) je navíc neparentovaný a lehce se ztratí za okny. Nikdy ho nevolat z IPC start path — vrať `{success:false,error}` + `logErr` do `miner-output`.
+- **Preload neběží v subframech.** Agent iframe (`/agent/index.html`) nedostane `electronAPI` z preloadu — shim v `index.html` ho přebírá z `window.parent` (same-origin). A `sandbox: false` na okně je nutný, jinak wrapper preload nemůže `require('./preload.js')`.
+- **Klient sdílí `zion-desktop-agent` userData** (`app.setPath` před prvním `getPath`) — peněženky/`miner_config.json`/logy přejdou bez migrace. Pozor: `pkill` hlavního procesu nechává sirotka `server.js` (ELECTRON_RUN_AS_NODE) držet port — kill pattern `Kingdom/node_modules/electron` i `bundle/server.js`, a `Singleton*` symlinky můžou po tuhém killu blokovat další start.
+- **`pgrep -f zion-miner` na macOS + `/proc/pid/exe`:** reaper stray minerů je Linux-centrický — readlinkSync na /proc na macOS hodí (chyta catch), ale čísluj to, jinak se větví podle platformy.
+- **Miner `/metrics` nemapuje Trinity:** `zion_miner_hash_rate`/`shares_accepted` na :9116 drží 0, i když `V3 Trinity` loguje `share accepted` — dashboard ukazuje 0.00/0 při reálné těžbě. Upstream miner bug, ne integrace.
+- **`start-mining` volá `saveConfig(config)`** — IPC test přepíše reálný `miner_config.json`. V testech čti+obnov config, nebo počítej se změnou.
+- **`startMining()` bez configu** vrací `Wallet missing` — UI config skládá samo; IPC voláno prázdné nikdy nemine.
