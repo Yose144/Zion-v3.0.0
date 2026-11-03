@@ -169,6 +169,32 @@ export const BATTLE_SPELL_RANGE = 6;
 // Návrat do základny po channelu. Přeruší ho pohyb, kouzlo, útok i zásah —
 // stejně jako v Mobile Legends, kde recall není „zadarmo únik".
 export const RECALL_CHANNEL_MS = 4000;
+
+// ── battle spelly (F21) ───────────────────────────────────────────
+// Jeden slot jako v Mobile Legends, ale na výběr ze tří. Efekty i cooldowny
+// drží sim; hráč volí jen id (sólo i v `join` pro multiplayer).
+export type BattleSpellId = 'flicker' | 'heal' | 'purify';
+
+export const BATTLE_SPELLS: Record<
+  BattleSpellId,
+  { cooldownMs: number; name: { cs: string; en: string }; note: { cs: string; en: string } }
+> = {
+  flicker: {
+    cooldownMs: 60_000,
+    name: { cs: 'Blik', en: 'Flicker' },
+    note: { cs: 'skok až 6 m', en: 'blink up to 6 m' },
+  },
+  heal: {
+    cooldownMs: 45_000,
+    name: { cs: 'Léčení', en: 'Heal' },
+    note: { cs: '+260 HP', en: '+260 HP' },
+  },
+  purify: {
+    cooldownMs: 50_000,
+    name: { cs: 'Očista', en: 'Purify' },
+    note: { cs: 'smaže hoření a zpomalení, +30 % rychlosti', en: 'clears burn/slow, +30% speed' },
+  },
+};
 export const RESPAWN_PER_LEVEL_MS = 1500;
 /** Základna léčí — bez toho se hrdina po souboji nikdy nevrátí do hry. */
 export const FOUNTAIN_RADIUS = 9;
@@ -595,6 +621,8 @@ export interface Hero {
   battleSpellAt: number;
   /** Začátek recall channelu (0 = neprobíhá). */
   recallAt: number;
+  /** Vybraný battle spell (`flicker` | `heal` | `purify`). */
+  battleSpell: BattleSpellId;
   items: ItemId[];
   buffs: Buff[];
   isPlayer: boolean;
@@ -783,7 +811,14 @@ const nextId = (prefix: string) => `${prefix}-${(SEQ += 1)}`;
 
 const distance = (ax: number, az: number, bx: number, bz: number) => Math.hypot(ax - bx, az - bz);
 
-function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z: number }, isPlayer: boolean): Hero {
+function makeHero(
+  id: string,
+  team: Team,
+  heroId: number,
+  spawn: { x: number; z: number },
+  isPlayer: boolean,
+  battleSpell: BattleSpellId = 'flicker',
+): Hero {
   const entry = AVATARS_BY_ID.get(heroId);
   const cl = entry?.cl ?? 3;
   const look = avatarLook(heroId);
@@ -826,6 +861,7 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     buybackAt: 0,
     battleSpellAt: 0,
     recallAt: 0,
+    battleSpell,
     itemCooldowns: {},
     talentPicks: {},
     items: [],
@@ -845,6 +881,8 @@ export interface MobaSeat {
   team: Team;
   /** true = ovládá ho hráč (dostává vstup), false = bot. */
   human?: boolean;
+  /** Battle spell — v multiplayeru od klienta (server ho jen předá do sim). */
+  battleSpell?: BattleSpellId;
 }
 
 /** Boss sílí s časem zápasu — na konci je mnohem tvrdší než na startu. */
@@ -894,6 +932,7 @@ export function createMobaMatch(seats: MobaSeat[], now: number, botSkill: BotSki
       seat.heroId,
       seat.team === 'blue' ? SPAWNS.blue : SPAWNS.red,
       seat.human === true,
+      seat.battleSpell ?? 'flicker',
     ),
   );
   // Boti se rozřadí do linek **symetricky podle týmu** — dřív brali index
@@ -979,10 +1018,16 @@ export function createMobaMatch(seats: MobaSeat[], now: number, botSkill: BotSki
 }
 
 /** Sólo 1v1 — tenký obal nad `createMobaMatch` (klient i testy). */
-export function createMoba(playerHeroId: number, enemyHeroId: number, now: number, botSkill: BotSkill = 'normal'): MobaState {
+export function createMoba(
+  playerHeroId: number,
+  enemyHeroId: number,
+  now: number,
+  botSkill: BotSkill = 'normal',
+  battleSpell: BattleSpellId = 'flicker',
+): MobaState {
   return createMobaMatch(
     [
-      { id: 'hero-you', heroId: playerHeroId, team: 'blue', human: true },
+      { id: 'hero-you', heroId: playerHeroId, team: 'blue', human: true, battleSpell },
       { id: 'hero-foe', heroId: enemyHeroId, team: 'red', human: false },
     ],
     now,
@@ -2261,14 +2306,31 @@ export function cancelRecall(hero: Hero): void {
 export function useBattleSpell(state: MobaState, hero: Hero, x: number, z: number): boolean {
   if (!hero.alive) return false;
   if (state.now < hero.battleSpellAt) return false;
-  const dx = x - hero.x;
-  const dz = z - hero.z;
-  const length = Math.hypot(dx, dz) || 1;
-  const step = Math.min(BATTLE_SPELL_RANGE, length);
-  hero.x = Math.max(-MAP_HALF_X, Math.min(MAP_HALF_X, hero.x + (dx / length) * step));
-  hero.z = Math.max(-MAP_HALF_Z, Math.min(MAP_HALF_Z, hero.z + (dz / length) * step));
-  hero.battleSpellAt = state.now + BATTLE_SPELL_COOLDOWN_MS;
-  addEffect(state, 'aoe', hero.x, hero.z, 1.5, '#a5b4fc', 340);
+  const spell = BATTLE_SPELLS[hero.battleSpell];
+
+  if (hero.battleSpell === 'flicker') {
+    const dx = x - hero.x;
+    const dz = z - hero.z;
+    const length = Math.hypot(dx, dz) || 1;
+    const step = Math.min(BATTLE_SPELL_RANGE, length);
+    hero.x = Math.max(-MAP_HALF_X, Math.min(MAP_HALF_X, hero.x + (dx / length) * step));
+    hero.z = Math.max(-MAP_HALF_Z, Math.min(MAP_HALF_Z, hero.z + (dz / length) * step));
+    addEffect(state, 'aoe', hero.x, hero.z, 1.5, '#a5b4fc', 340);
+  } else if (hero.battleSpell === 'heal') {
+    const before = hero.hp;
+    hero.hp = Math.min(hero.maxHp, hero.hp + 260);
+    hero.healingDone += hero.hp - before;
+    addEffect(state, 'heal', hero.x, hero.z, 1.8, '#7bf0a8', 700);
+  } else {
+    // Očista: pryč s hořením i zpomalením, krátký sprint navrch.
+    hero.buffs = hero.buffs.filter((buff) => buff.type !== 'burn');
+    hero.slowFactor = 0;
+    hero.slowUntil = 0;
+    hero.buffs.push({ type: 'speed', until: state.now + 2000, power: 0.3 });
+    addEffect(state, 'shield', hero.x, hero.z, 2, '#ffe08a', 600);
+  }
+
+  hero.battleSpellAt = state.now + spell.cooldownMs;
   return true;
 }
 
@@ -2397,6 +2459,8 @@ export interface MobaSnapshot {
     battleSpellIn: number;
     /** Zbývající channel recallu (ms), 0 = neprobíhá. */
     recallIn: number;
+    /** Vybraný battle spell. */
+    battleSpell: BattleSpellId;
     /** Cena buybacku; 0 = nedostupný (živý nebo na cooldownu). */
     buybackCost: number;
     buffs: Buff[];
@@ -2564,6 +2628,7 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         talentPending: pendingTalent(hero),
         battleSpellIn: Math.max(0, hero.battleSpellAt - state.now),
         recallIn: hero.recallAt > 0 ? Math.max(0, RECALL_CHANNEL_MS - (state.now - hero.recallAt)) : 0,
+        battleSpell: hero.battleSpell,
         buybackCost: !hero.alive && state.now >= hero.buybackAt ? buybackCost(hero) : 0,
         buffs: hero.buffs,
     })),

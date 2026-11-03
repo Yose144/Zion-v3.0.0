@@ -5731,3 +5731,58 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   border-color: rgba(255, 209, 102, 0.55);
   color: #ffd166;
 }
+
+/* ── MOBA F21: quick chat a MVP ───────────────────────────────────── */
+
+.moba-quickchat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.moba-quickchat-btn {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid rgba(127, 227, 212, 0.35);
+  border-radius: 999px;
+  background: rgba(4, 10, 9, 0.82);
+  color: #bff3e8;
+  font-size: 0.62rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.moba-quickchat-btn:hover {
+  border-color: rgba(127, 227, 212, 0.7);
+  background: rgba(127, 227, 212, 0.16);
+}
+
+.moba-mvp {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0.6rem auto 0;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(255, 209, 102, 0.6);
+  border-radius: 0.9rem;
+  background: rgba(255, 209, 102, 0.12);
+  color: #ffe9b8;
+}
+
+.moba-mvp > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  text-align: left;
+}
+
+.moba-mvp strong {
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+}
+
+.moba-mvp span {
+  font-size: 0.65rem;
+  color: rgba(255, 233, 184, 0.8);
+}

@@ -17,7 +17,7 @@ import {
   type PlayerSummary,
   type ServerMessage,
 } from './protocol';
-import type { ItemId } from '../moba/sim';
+import type { BattleSpellId, ItemId } from '../moba/sim';
 
 /**
  * Jedno WebSocket spojení na celou aplikaci.
@@ -52,7 +52,7 @@ export interface NetApi {
   roomId: string | null;
   joinArena: () => void;
   /** Připojení do hry (`arena` = Mars, `race` = Venuše, `fight` = Merkur). */
-  joinGame: (game: 'arena' | 'race' | 'fight' | 'moba', heroId?: number) => void;
+  joinGame: (game: 'arena' | 'race' | 'fight' | 'moba', heroId?: number, battleSpell?: BattleSpellId) => void;
   /**
    * MOBA: kouzlo na bod + držený útok.
    * Vrací `true`, když se zpráva opravdu poslala — kouzlo se nesmí ztratit
@@ -301,8 +301,8 @@ export function NetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const joinGame = useCallback(
-    (game: 'arena' | 'race' | 'fight' | 'moba', heroId?: number) => {
-      send({ t: 'join', game, heroId });
+    (game: 'arena' | 'race' | 'fight' | 'moba', heroId?: number, battleSpell?: BattleSpellId) => {
+      send({ t: 'join', game, heroId, battleSpell });
     },
     [send],
   );

@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeSentry, placeWard, sellItem, snapAim, startRecall, stepMoba, useBattleSpell, useItem, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
+import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeSentry, placeWard, sellItem, snapAim, startRecall, stepMoba, useBattleSpell, useItem, NO_INPUT, type BattleSpellId, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
@@ -39,6 +39,7 @@ export interface MobaStats {
   talentPending: number | null;
   battleSpellIn: number;
   recallIn: number;
+  battleSpell: BattleSpellId;
   spells: { slot: SpellSlot; name: string; school: SpellSchool; cooldown: number; cooldownMs: number; mana: number; color: string; rank: number }[];
   playerHp: number;
   playerMaxHp: number;
@@ -86,6 +87,8 @@ export interface MobaProps {
   talentRequest?: React.MutableRefObject<{ tier: number; pick: number } | null>;
   /** Auto-aim (mobil): kouzlo se přichytí na blízkého nepřítele. */
   autoAim?: boolean;
+  /** Battle spell vybraný před zápasem (sólo). */
+  battleSpell?: BattleSpellId;
 }
 
 /** Sestaví HUD data ze snapshotu — společná pro sólo i online. */
@@ -128,6 +131,7 @@ export function statsFromSnapshot(
     talentPending: you?.talentPending ?? null,
     battleSpellIn: you?.battleSpellIn ?? 0,
     recallIn: you?.recallIn ?? 0,
+    battleSpell: you?.battleSpell ?? 'flicker',
     playerLevel: you?.level ?? 1,
     playerHeroId: you?.heroId ?? 0,
     xp: you?.xp ?? 0,
@@ -153,6 +157,7 @@ export function MobaGame({
   buybackRequest,
   talentRequest,
   autoAim,
+  battleSpell,
 }: MobaProps) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const floaters = useRef<DamageFloater[]>([]);
@@ -179,6 +184,7 @@ export function MobaGame({
         buybackRequest={buybackRequest}
         talentRequest={talentRequest}
         autoAim={autoAim}
+        battleSpell={battleSpell}
         snapshotRef={snapshotRef}
       />
       <MobaStage snapshotRef={snapshotRef} youId="hero-you" floaters={floaters} cameraRef={cameraRef} />
@@ -206,6 +212,7 @@ function SoloController({
   buybackRequest,
   talentRequest,
   autoAim,
+  battleSpell,
   snapshotRef,
 }: MobaProps & { snapshotRef: React.MutableRefObject<MobaSnapshot | null> }) {
   const { camera, gl } = useThree();
@@ -292,7 +299,7 @@ function SoloController({
   useFrame(() => {
     if (!running) return;
     const now = performance.now();
-    if (!state.current) state.current = createMoba(playerHeroId, enemyHeroId, now, botSkill ?? 'normal');
+    if (!state.current) state.current = createMoba(playerHeroId, enemyHeroId, now, botSkill ?? 'normal', battleSpell ?? 'flicker');
     const you = state.current.heroes[0]!;
 
     const dt = Math.min(0.1, (now - lastTick.current) / 1000 || STEP);

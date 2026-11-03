@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isHidden, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeSentry, placeWard, sellItem, snapAim, startRecall, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useBattleSpell, useItem, visionSources, RECALL_CHANNEL_MS, NO_INPUT, SENTRY_DURATION_MS, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isHidden, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeSentry, placeWard, sellItem, snapAim, startRecall, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useBattleSpell, useItem, visionSources, BATTLE_SPELLS, RECALL_CHANNEL_MS, NO_INPUT, SENTRY_DURATION_MS, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
@@ -965,6 +965,42 @@ check(
   victim.buffs.push({ type: 'burn', until: d.now + 2000, power: 900, source: 'test' });
   advance(d, 300);
   check('recall: zásah ho zruší', victim.recallAt === 0, String(victim.recallAt));
+}
+
+// ── volba battle spellu (F21) ──────────────────────────────────────
+{
+  console.log('\n-- battle spelly --');
+  check('battle spell: tři na výběr', Object.keys(BATTLE_SPELLS).length === 3, Object.keys(BATTLE_SPELLS).join(','));
+
+  // heal
+  const h = createMoba(0, 82, 13_000_000, 'normal', 'heal');
+  const healer = h.heroes.find((hero) => hero.id === 'hero-you');
+  check('battle spell: volba projde do hrdiny', healer.battleSpell === 'heal');
+  healer.hp = 100;
+  const before = healer.hp;
+  check('heal: vyléčí', useBattleSpell(h, healer, 0, 0) && healer.hp > before + 200, `${before} → ${Math.round(healer.hp)}`);
+  check('heal: cooldown z BATTLE_SPELLS', healer.battleSpellAt === h.now + 45_000, String(healer.battleSpellAt - h.now));
+
+  // purify
+  const p2 = createMoba(0, 82, 13_000_000, 'normal', 'purify');
+  const purifier = p2.heroes.find((hero) => hero.id === 'hero-you');
+  purifier.buffs.push({ type: 'burn', until: p2.now + 3000, power: 50 });
+  purifier.slowFactor = 0.4;
+  check('purify: smaže hoření i zpomalení', useBattleSpell(p2, purifier, 0, 0)
+    && !purifier.buffs.some((buff) => buff.type === 'burn')
+    && purifier.slowFactor === 0);
+  check('purify: přidá sprint', purifier.buffs.some((buff) => buff.type === 'speed'));
+
+  // seat s battleSpellem (multiplayer)
+  const match = createMobaMatch(
+    [
+      { id: 'b1', heroId: 0, team: 'blue', human: true, battleSpell: 'purify' },
+      { id: 'r1', heroId: 82, team: 'red', human: false },
+    ],
+    13_000_000,
+  );
+  check('battle spell: z joinu do sedačky', match.heroes[0].battleSpell === 'purify');
+  check('battle spell: bot má výchozí', match.heroes[1].battleSpell === 'flicker');
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

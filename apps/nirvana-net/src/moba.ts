@@ -25,6 +25,7 @@ import {
   useItem,
   stepMoba,
   NO_INPUT,
+  type BattleSpellId,
   type ItemId,
   type MobaInput,
   type MobaSeat,
@@ -52,6 +53,8 @@ export interface MobaSeatInfo {
   heroId: number;
   team: 'blue' | 'red';
   human: boolean;
+  /** Battle spell — v multiplayeru volba hráče, boti mají Flicker. */
+  battleSpell?: BattleSpellId;
 }
 
 export interface MobaRoomSim {
@@ -90,7 +93,13 @@ function teamCount(room: MobaRoomSim, team: 'blue' | 'red'): number {
 }
 
 /** Přidá hráče do volného sedla. Vrací false, když je plno. */
-export function addMobaSeat(room: MobaRoomSim, connId: string, heroId: number | undefined, now: number): boolean {
+export function addMobaSeat(
+  room: MobaRoomSim,
+  connId: string,
+  heroId: number | undefined,
+  now: number,
+  battleSpell?: BattleSpellId,
+): boolean {
   if (room.seats.size >= MOBA_ROOM_SIZE) return false;
   const wanted = heroId !== undefined && AVATARS_BY_ID.has(heroId) ? heroId : 0;
   // zákaz duplicit: obsazený hrdina → první volný z poolu (hráč to uvidí v HUD)
@@ -102,7 +111,7 @@ export function addMobaSeat(room: MobaRoomSim, connId: string, heroId: number | 
     room.lastError = `hrdina ${wanted} je obsazený, dostal jsi ${safeHero}`;
   }
   const team: 'blue' | 'red' = teamCount(room, 'blue') <= teamCount(room, 'red') ? 'blue' : 'red';
-  room.seats.set(connId, { id: connId, heroId: safeHero, team, human: true });
+  room.seats.set(connId, { id: connId, heroId: safeHero, team, human: true, battleSpell: battleSpell ?? 'flicker' });
   room.inputs.set(connId, NO_INPUT);
   if (room.phase === 'waiting') room.startAt = Math.min(room.startAt || now + BOT_FILL_DELAY_MS, now + BOT_FILL_DELAY_MS + 4000);
   return true;

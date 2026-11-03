@@ -18,7 +18,7 @@ import { useNet } from '@/core/net/useNet';
 import { spellsForAvatar } from './spells';
 import { MobaStage } from './MobaStage';
 import { statsFromSnapshot, type MobaStats } from './MobaGame';
-import { itemTotals, snapAim, type ItemId } from './sim';
+import { itemTotals, snapAim, type BattleSpellId, type ItemId } from './sim';
 import { MobaFxOverlay, type DamageFloater } from './MobaFxOverlay';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
@@ -53,6 +53,7 @@ const MobaChart = {
 
 export function MobaOnline({
   heroId,
+  battleSpell,
   onStats,
   onEnd,
   onPhase,
@@ -64,6 +65,8 @@ export function MobaOnline({
   autoAim,
 }: {
   heroId: number;
+  /** Battle spell vybraný před zápasem (jde do `join`). */
+  battleSpell?: BattleSpellId;
   onStats: (stats: MobaStats) => void;
   onEnd?: (winner: 'blue' | 'red') => void;
   onPhase?: (phase: 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline') => void;
@@ -134,6 +137,7 @@ function OnlineAudioBridge({
 
 function OnlineController({
   heroId,
+  battleSpell,
   onStats,
   onEnd,
   onPhase,
@@ -147,6 +151,8 @@ function OnlineController({
   selfPose,
 }: {
   heroId: number;
+  /** Battle spell vybraný před zápasem (jde do `join`). */
+  battleSpell?: BattleSpellId;
   onStats: (stats: MobaStats) => void;
   onEnd?: (winner: 'blue' | 'red') => void;
   onPhase?: (phase: 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline') => void;
@@ -187,7 +193,7 @@ function OnlineController({
       return;
     }
     onPhase?.('connecting');
-    joinGame('moba', heroId);
+    joinGame('moba', heroId, battleSpell);
     return () => leaveRoom();
   }, [connected, heroId, joinGame, leaveRoom, onPhase]);
 

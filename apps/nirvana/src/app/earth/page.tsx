@@ -19,9 +19,10 @@ import { AVATARS } from '@/core/avatars/catalog';
 import { useI18n } from '@/core/i18n';
 import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
+import { useNet } from '@/core/net/useNet';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
-import { ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, talentRole, totalXpAt, type BotSkill, type ItemId, type TalentRole } from '@/core/moba/sim';
+import { BATTLE_SPELLS, ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, talentRole, totalXpAt, type BattleSpellId, type BotSkill, type ItemId, type TalentRole } from '@/core/moba/sim';
 
 /** Rychlé hledání itemu podle id — používá inventář i obchod. */
 const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
@@ -40,6 +41,14 @@ type Mode = 'solo' | 'online';
 type OnlinePhase = 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline';
 
 const EMPTY_STATS: MobaStats | null = null;
+
+/** Rychlé zprávy pro multiplayer (server je čistí i rate-limituje). */
+const QUICK_CHAT = [
+  { cs: 'Dobrá práce!', en: 'Well played!' },
+  { cs: 'Potřebuji pomoc!', en: 'Need help!' },
+  { cs: 'Jdeme na Nexu!', en: 'Go Nexus!' },
+  { cs: 'Pozor, mlha.', en: 'Careful, fog.' },
+];
 
 /** Doporučený build podle archetypu — pro rychlý nákup na mobilu. */
 const RECOMMENDED: Record<TalentRole, ItemId[]> = {
@@ -142,9 +151,11 @@ export default function EarthPage() {
   const [phase, setPhase] = useState<Phase>('pick');
   const [mode, setMode] = useState<Mode>('solo');
   const [botSkill, setBotSkill] = useState<BotSkill>('normal');
+  const [battleSpell, setBattleSpell] = useState<BattleSpellId>('flicker');
   const [scoreboard, setScoreboard] = useState(false);
   const [onlinePhase, setOnlinePhase] = useState<OnlinePhase>('connecting');
   const [stats, setStats] = useState<MobaStats | null>(EMPTY_STATS);
+  const { sendChat } = useNet();
   const buyRequest = useRef<ItemId | null>(null);
   const sellRequest = useRef<ItemId | null>(null);
   const buybackRequest = useRef(false);
@@ -273,6 +284,20 @@ export default function EarthPage() {
                 );
               })}
             </div>
+            <div className="moba-difficulty">
+              <span>{cs ? 'Battle spell' : 'Battle spell'}</span>
+              {(['flicker', 'heal', 'purify'] as BattleSpellId[]).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`moba-mode-btn${battleSpell === id ? ' is-active' : ''}`}
+                  title={BATTLE_SPELLS[id].note[cs ? 'cs' : 'en']}
+                  onClick={() => setBattleSpell(id)}
+                >
+                  {BATTLE_SPELLS[id].name[cs ? 'cs' : 'en']}
+                </button>
+              ))}
+            </div>
             {mode === 'solo' && (
               <div className="moba-difficulty">
                 <span>{cs ? 'Obtížnost bota' : 'Bot difficulty'}</span>
@@ -343,6 +368,7 @@ export default function EarthPage() {
               playerHeroId={heroId}
               enemyHeroId={foeId}
               botSkill={botSkill}
+              battleSpell={battleSpell}
               running
               onStats={onStats}
               onEnd={onEnd}
@@ -356,6 +382,7 @@ export default function EarthPage() {
           ) : (
             <MobaOnline
               heroId={heroId}
+              battleSpell={battleSpell}
               onStats={onStats}
               onEnd={onEnd}
               onPhase={setOnlinePhase}
@@ -524,7 +551,7 @@ export default function EarthPage() {
                   window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyV', bubbles: true }));
                 }}
               >
-                ⚡
+                {stats?.battleSpell === 'heal' ? '✚' : stats?.battleSpell === 'purify' ? '✦' : '⚡'}
                 {(stats?.battleSpellIn ?? 0) > 0 && (
                   <small>{Math.ceil((stats?.battleSpellIn ?? 0) / 1000)}</small>
                 )}
@@ -688,6 +715,23 @@ export default function EarthPage() {
               </div>
             )}
 
+            {mode === 'online' && (
+              <div className="moba-quickchat">
+                {QUICK_CHAT.map((message) => (
+                  <button
+                    key={message.cs}
+                    type="button"
+                    className="moba-quickchat-btn"
+                    onClick={() => {
+                      sendChat(cs ? message.cs : message.en);
+                    }}
+                  >
+                    {cs ? message.cs : message.en}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="moba-tips">
               {coarse
                 ? cs
@@ -788,6 +832,27 @@ export default function EarthPage() {
           <span>
             {cs ? 'Kdo ovládne první svět, určí směr celého OASIS.' : 'Whoever holds the first world sets the course of OASIS.'}
           </span>
+          {stats && (
+            (() => {
+              const score = (hero: MobaStats['snapshot']['heroes'][number]) =>
+                hero.damage + hero.kills * 250 + hero.healing * 0.6 + hero.gold * 0.5;
+              const mvp = [...stats.snapshot.heroes].sort((a, b) => score(b) - score(a))[0];
+              if (!mvp) return null;
+              return (
+                <div className="moba-mvp">
+                  <Portrait heroId={mvp.heroId} name={mvp.name} size="card" />
+                  <div>
+                    <strong>MVP · {mvp.name}</strong>
+                    <span>
+                      {mvp.kills}/{mvp.deaths} · {mvp.damage} dmg · {mvp.healing} heal ·{' '}
+                      {Math.round(mvp.gold)} ◈
+                    </span>
+                  </div>
+                </div>
+              );
+            })()
+          )}
+
           {stats && (
             <div className="moba-result-board">
               <TeamBoard

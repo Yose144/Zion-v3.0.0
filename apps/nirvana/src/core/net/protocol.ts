@@ -12,6 +12,7 @@
 
 import {
   ITEMS,
+  type BattleSpellId,
   type ItemId,
   type MobaSnapshot,
 } from '../moba/sim';
@@ -54,8 +55,10 @@ const asItemId = (value: unknown): ItemId | null =>
  *      Starý klient by neuměl Flicker spustit a neviděl by jeho cooldown.
  * 18 — **recall**: zpráva `recall` a `recallIn` u hrdiny.
  *      Starý klient by recall neuměl spustit a neviděl by channel.
+ * 19 — **battle spelly**: `join` nese `battleSpell` a snapshot `battleSpell`
+ *      u hrdiny. Starý klient by v multiplayeru vždy dostal Flicker.
  */
-export const PROTO_VERSION = 18;
+export const PROTO_VERSION = 19;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -262,7 +265,7 @@ export type ErrorCode =
 
 export type ClientMessage =
   | { t: 'hello'; proto: number }
-  | { t: 'join'; game: GameId; room?: string; heroId?: number }
+  | { t: 'join'; game: GameId; room?: string; heroId?: number; battleSpell?: BattleSpellId }
   /** MOBA: nákup itemu (jen v místnosti typu `moba`). */
   | { t: 'buy'; item: ItemId }
   /** MOBA: prodej itemu (vrací 60 % ceny). */
@@ -409,6 +412,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
                 : 'arena',
         room: typeof message.room === 'string' ? message.room.slice(0, 32) : undefined,
         heroId: typeof message.heroId === 'number' ? num(message.heroId, 0, 202) : undefined,
+        battleSpell:
+          message.battleSpell === 'heal' || message.battleSpell === 'purify' || message.battleSpell === 'flicker'
+            ? message.battleSpell
+            : undefined,
       };
 
     case 'leave':

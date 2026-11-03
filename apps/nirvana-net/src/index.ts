@@ -50,6 +50,7 @@ import {
   type RoomState,
   type ServerMessage,
 } from '../../nirvana/src/core/net/protocol.js';
+import type { BattleSpellId } from '../../nirvana/src/core/moba/sim.js';
 import {
   addMobaSeat,
   buyMobaItem,
@@ -396,7 +397,7 @@ function leaveRoom(conn: Conn, reason: string): void {
   }
 }
 
-function joinRoom(conn: Conn, game: GameId, wanted?: string, heroId?: number): void {
+function joinRoom(conn: Conn, game: GameId, wanted?: string, heroId?: number, battleSpell?: BattleSpellId): void {
   if (!conn.helloSent) {
     sendError(conn, 'bad_frame', 'nejdřív hello');
     return;
@@ -431,7 +432,7 @@ function joinRoom(conn: Conn, game: GameId, wanted?: string, heroId?: number): v
   if (room.arena) addPlayer(room.arena, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
   if (room.race) addRacePlayer(room.race, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
   if (room.fight) addFightPlayer(room.fight, conn.id, conn.identity.name, conn.identity.avatarId, Date.now());
-  if (room.moba) addMobaSeat(room.moba, conn.id, heroId ?? conn.identity.avatarId ?? 0, Date.now());
+  if (room.moba) addMobaSeat(room.moba, conn.id, heroId ?? conn.identity.avatarId ?? 0, Date.now(), battleSpell);
 
   send(conn, {
     t: 'room',
@@ -483,7 +484,7 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
     }
 
     case 'join':
-      joinRoom(conn, message.game, message.room, message.heroId);
+      joinRoom(conn, message.game, message.room, message.heroId, message.battleSpell);
       return;
 
     case 'leave':
