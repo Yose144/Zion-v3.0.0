@@ -5225,3 +5225,130 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   border-color: rgba(127, 227, 212, 0.5);
   color: #7fe3d4;
 }
+
+/* ── MOBA F6: scoreboard, obtížnost, pozápasový souhrn ───────────── */
+
+.moba-difficulty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.6rem 0 0.2rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(233, 242, 238, 0.55);
+}
+
+.moba-scoreboard-toggle {
+  position: absolute;
+  top: 4.4rem;
+  right: 1rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.7rem;
+  background: rgba(4, 10, 9, 0.85);
+  color: #d8f5ef;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.moba-scoreboard-toggle.is-open {
+  border-color: rgba(255, 209, 102, 0.6);
+  color: #ffd166;
+}
+
+.moba-scoreboard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(52rem, 94vw);
+  max-height: 78vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.9rem;
+  background: rgba(3, 8, 7, 0.94);
+  pointer-events: auto;
+  z-index: 6;
+}
+
+.moba-scoreboard h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 209, 102, 0.85);
+}
+
+.moba-board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.moba-board > strong {
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  color: rgba(233, 242, 238, 0.6);
+}
+
+.moba-board.is-blue > strong {
+  color: #7fe3d4;
+}
+
+.moba-board.is-red > strong {
+  color: #ff7a6b;
+}
+
+.moba-board table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+}
+
+.moba-board th,
+.moba-board td {
+  padding: 0.2rem 0.35rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.moba-board th:first-child,
+.moba-board td:first-child {
+  text-align: left;
+}
+
+.moba-board thead th {
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(233, 242, 238, 0.45);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.moba-board tbody tr.is-you {
+  background: rgba(255, 209, 102, 0.12);
+  color: #ffe9b8;
+}
+
+.moba-result-board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  width: min(52rem, 94vw);
+  margin-top: 0.6rem;
+  text-align: left;
+}
+
+.moba-result-board .moba-board {
+  flex: 1 1 20rem;
+}

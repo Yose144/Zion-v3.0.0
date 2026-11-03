@@ -56,10 +56,24 @@ try {
   const invSlots = await page.$$('.moba-inv-slot');
   check('obchod: šest slotů inventáře', invSlots.length === 6, String(invSlots.length));
   await page.click('.moba-shop-toggle');
+
+  // scoreboard (F6) — Tab nebo tlačítko; musí mít dvě tabulky (modrá/červená)
+  await page.click('.moba-scoreboard-toggle');
+  await page.waitForSelector('.moba-scoreboard', { timeout: 5000 }).catch(() => {});
+  const boards = await page.$$('.moba-board');
+  check('scoreboard: dvě tabulky týmů', boards.length === 2, String(boards.length));
+  await page.click('.moba-scoreboard-toggle');
   await page.waitForSelector('.moba-shop-panel', { timeout: 5000 }).catch(() => {});
   const shopItems = await page.$$('.moba-shop-item');
   check('obchod: patnáct itemů v panelu (14 + ward)', shopItems.length === 15, String(shopItems.length));
   await page.click('.moba-shop-toggle');
+
+  // scoreboard (F6) — Tab nebo tlačítko; musí mít dvě tabulky (modrá/červená)
+  await page.click('.moba-scoreboard-toggle');
+  await page.waitForSelector('.moba-scoreboard', { timeout: 5000 }).catch(() => {});
+  const boards = await page.$$('.moba-board');
+  check('scoreboard: dvě tabulky týmů', boards.length === 2, String(boards.length));
+  await page.click('.moba-scoreboard-toggle');
 
   // Čekej na **podmínku**, ne na pevný čas: simulace běží po krocích a na
   // pomalém GPU (swiftshader) se posune pomaleji než skutečné hodiny.

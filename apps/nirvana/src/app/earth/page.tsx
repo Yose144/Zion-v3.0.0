@@ -21,7 +21,7 @@ import { MobaGame, type MobaStats } from '@/core/moba/MobaGame';
 import { MobaOnline } from '@/core/moba/MobaOnline';
 import { MobaMinimap } from '@/core/moba/MobaMinimap';
 import { NODE_SITES } from '@/core/moba/map';
-import { ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, type ItemId } from '@/core/moba/sim';
+import { ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, totalXpAt, type BotSkill, type ItemId } from '@/core/moba/sim';
 
 /** Rychlé hledání itemu podle id — používá inventář i obchod. */
 const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
@@ -38,6 +38,61 @@ type OnlinePhase = 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' 
 
 const EMPTY_STATS: MobaStats | null = null;
 
+/** Jedna tabulka scoreboardu — tým, K/D, zlato (+GPM), poškození, léčení. */
+function TeamBoard({
+  heroes,
+  team,
+  cs,
+  youId,
+  minutes,
+}: {
+  heroes: MobaStats['snapshot']['heroes'];
+  team: 'blue' | 'red';
+  cs: boolean;
+  youId: string | null;
+  minutes: number;
+}) {
+  const list = heroes
+    .filter((hero) => hero.team === team)
+    .sort((a, b) => b.kills - a.kills || b.gold - a.gold);
+  const gpm = (hero: (typeof list)[number]) => Math.round(hero.gold / Math.max(0.1, minutes));
+  const xpm = (hero: (typeof list)[number]) => Math.round(totalXpAt(hero.level, hero.xp) / Math.max(0.1, minutes));
+
+  return (
+    <div className={`moba-board is-${team}`}>
+      <strong>{team === 'blue' ? 'ZION' : cs ? 'OPOZICE' : 'OPPOSITION'}</strong>
+      <table>
+        <thead>
+          <tr>
+            <th>{cs ? 'Hrdina' : 'Hero'}</th>
+            <th>Lv</th>
+            <th>K/D</th>
+            <th>{cs ? 'Zlato' : 'Gold'}</th>
+            <th>GPM</th>
+            <th>XPM</th>
+            <th>{cs ? 'Dmg' : 'Dmg'}</th>
+            <th>{cs ? 'Léčení' : 'Heal'}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {list.map((hero) => (
+            <tr key={hero.id} className={hero.id === youId ? 'is-you' : undefined}>
+              <td>{hero.name}</td>
+              <td>{hero.level}</td>
+              <td>{hero.kills}/{hero.deaths}</td>
+              <td>{Math.round(hero.gold)}</td>
+              <td>{gpm(hero)}</td>
+              <td>{xpm(hero)}</td>
+              <td>{hero.damage ?? 0}</td>
+              <td>{hero.healing ?? 0}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function EarthPage() {
   const { lang } = useI18n();
   const cs = lang === 'cs';
@@ -45,6 +100,8 @@ export default function EarthPage() {
   const [foeId, setFoeId] = useState(82);
   const [phase, setPhase] = useState<Phase>('pick');
   const [mode, setMode] = useState<Mode>('solo');
+  const [botSkill, setBotSkill] = useState<BotSkill>('normal');
+  const [scoreboard, setScoreboard] = useState(false);
   const [onlinePhase, setOnlinePhase] = useState<OnlinePhase>('connecting');
   const [stats, setStats] = useState<MobaStats | null>(EMPTY_STATS);
   const buyRequest = useRef<ItemId | null>(null);
@@ -55,6 +112,18 @@ export default function EarthPage() {
 
   /** Dotykové ovládání — na mobilu joystick + kouzla místo WASD a QWER. */
   const [coarse, setCoarse] = useState(false);
+
+  // Tab = scoreboard (drží se jen během hry, aby nekradl fokus jinde)
+  useEffect(() => {
+    const down = (event: KeyboardEvent) => {
+      if (event.code !== 'Tab') return;
+      if (phase !== 'playing') return;
+      event.preventDefault();
+      setScoreboard((open) => !open);
+    };
+    window.addEventListener('keydown', down);
+    return () => window.removeEventListener('keydown', down);
+  }, [phase]);
 
   useEffect(() => {
     const query = window.matchMedia('(hover: none) and (pointer: coarse)');
@@ -161,6 +230,21 @@ export default function EarthPage() {
                 );
               })}
             </div>
+            {mode === 'solo' && (
+              <div className="moba-difficulty">
+                <span>{cs ? 'Obtížnost bota' : 'Bot difficulty'}</span>
+                {(['easy', 'normal', 'hard'] as BotSkill[]).map((skill) => (
+                  <button
+                    key={skill}
+                    type="button"
+                    className={`moba-mode-btn${botSkill === skill ? ' is-active' : ''}`}
+                    onClick={() => setBotSkill(skill)}
+                  >
+                    {skill === 'easy' ? (cs ? 'Lehký' : 'Easy') : skill === 'hard' ? (cs ? 'Těžký' : 'Hard') : cs ? 'Normální' : 'Normal'}
+                  </button>
+                ))}
+              </div>
+            )}
             <p className="moba-pick-note">
               {cs
                 ? `${hero.name} proti ${foe.name} · ${spells.map((spell) => spell.name).join(' · ')}`
@@ -214,6 +298,7 @@ export default function EarthPage() {
             <MobaGame
               playerHeroId={heroId}
               enemyHeroId={foeId}
+              botSkill={botSkill}
               running
               onStats={onStats}
               onEnd={onEnd}
@@ -456,7 +541,7 @@ export default function EarthPage() {
                   ? 'joystick pohyb · Q/F/E/R kouzlo · ÚTOK'
                   : 'stick move · Q/F/E/R cast · ATTACK'
                 : cs
-                  ? 'WASD pohyb · Q/F/E/R kouzlo · G ward · levé tlačítko útok'
+                  ? 'WASD pohyb · Q/F/E/R kouzlo · G ward · Tab scoreboard · levé tlačítko útok'
                   : 'WASD move · Q/F/E/R cast · left click attack'}
             </div>
           </div>
@@ -468,6 +553,35 @@ export default function EarthPage() {
           />
 
           {stats?.snapshot.banner && <div className="moba-banner">{stats.snapshot.banner}</div>}
+
+          <button
+            type="button"
+            className={`moba-scoreboard-toggle${scoreboard ? ' is-open' : ''}`}
+            onClick={() => setScoreboard((open) => !open)}
+            title={cs ? 'scoreboard (Tab)' : 'scoreboard (Tab)'}
+          >
+            Σ
+          </button>
+
+          {scoreboard && stats && (
+            <div className="moba-scoreboard" role="dialog" aria-label={cs ? 'scoreboard' : 'scoreboard'}>
+              <h3>{cs ? 'Scoreboard' : 'Scoreboard'} · {clock}</h3>
+              <TeamBoard
+                heroes={stats.snapshot.heroes}
+                team="blue"
+                cs={cs}
+                youId={stats.youId}
+                minutes={Math.max(0.1, stats.snapshot.time / 60)}
+              />
+              <TeamBoard
+                heroes={stats.snapshot.heroes}
+                team="red"
+                cs={cs}
+                youId={stats.youId}
+                minutes={Math.max(0.1, stats.snapshot.time / 60)}
+              />
+            </div>
+          )}
 
           {(stats?.respawnIn ?? 0) > 0 && (
             <div className="moba-respawn">
@@ -496,6 +610,24 @@ export default function EarthPage() {
           <span>
             {cs ? 'Kdo ovládne první svět, určí směr celého OASIS.' : 'Whoever holds the first world sets the course of OASIS.'}
           </span>
+          {stats && (
+            <div className="moba-result-board">
+              <TeamBoard
+                heroes={stats.snapshot.heroes}
+                team="blue"
+                cs={cs}
+                youId={stats.youId}
+                minutes={Math.max(0.1, stats.snapshot.time / 60)}
+              />
+              <TeamBoard
+                heroes={stats.snapshot.heroes}
+                team="red"
+                cs={cs}
+                youId={stats.youId}
+                minutes={Math.max(0.1, stats.snapshot.time / 60)}
+              />
+            </div>
+          )}
           <div className="moba-result-actions">
             <button type="button" className="moba-start" onClick={start}>
               {cs ? 'Hrát znovu' : 'Play again'}

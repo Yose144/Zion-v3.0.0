@@ -39,8 +39,11 @@ const asItemId = (value: unknown): ItemId | null =>
  *      o co se hraje.
  * 12 — **vidění a smrt**: wardy (`wards`, `help` zprávy `ward`/`buyback`)
  *      a cena buybacku. Starý klient by wardy neviděl a nemohl je položit.
+ * 13 — **meta**: snapshot hrdiny nese `damage` a `healing` (scoreboard).
+ *      Starý klient by měl tabulku bez poškození — jen kosmetika, ale je to
+ *      jiný snapshot.
  */
-export const PROTO_VERSION = 12;
+export const PROTO_VERSION = 13;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;

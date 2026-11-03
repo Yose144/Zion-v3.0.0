@@ -310,6 +310,28 @@ export const ASSIST_KILL_XP = 70;
 /** XP potřebné na další level — jedno místo pro sim i HUD. */
 export const xpNeeded = (level: number) => 120 + level * 70;
 
+/** Celkové XP nasbírané na daném levelu (pro XPM ve scoreboardu). */
+export const totalXpAt = (level: number, xp: number) => {
+  let total = xp;
+  for (let current = 1; current < level; current += 1) total += xpNeeded(current);
+  return total;
+};
+
+// ── obtížnost botů (F6) ───────────────────────────────────────────
+//
+// Obtížnost mění **jen rozhodování** (přesnost, kadence, ochota ustoupit),
+// nikdy poškození — jinak by „hard" znamenal jinou hru, ne lepší soupeře.
+export type BotSkill = 'easy' | 'normal' | 'hard';
+
+export const BOT_SKILLS: Record<
+  BotSkill,
+  { aimError: number; castDelay: number; retreatHp: number }
+> = {
+  easy: { aimError: 3.2, castDelay: 1100, retreatHp: 0.3 },
+  normal: { aimError: 1.4, castDelay: 450, retreatHp: 0.55 },
+  hard: { aimError: 0.45, castDelay: 120, retreatHp: 0.72 },
+};
+
 /** Rychlost podle itemů, buffů a zpomalení. */
 export function heroSpeed(hero: { items: ItemId[]; slowFactor: number; buffs?: Buff[] }): number {
   let speed = BASE_SPEED * (1 + itemTotals(hero.items).speed) * (1 - hero.slowFactor);
@@ -350,6 +372,7 @@ export interface Hero {
   kills: number;
   deaths: number;
   damageDone: number;
+  healingDone: number;
   /** Zlato ze zabití a uzlu; za něj se kupují itemy. */
   gold: number;
   /** Aegis z bosse — jednorázové vzkříšení (spotřebuje se při smrti). */
@@ -364,6 +387,10 @@ export interface Hero {
   /** Kam se bot zrovna dívá / kam jde (jen pro AI). */
   botLane: LaneId;
   botCast: { slot: SpellSlot; x: number; z: number } | null;
+  /** Kdy může bot znovu seslat (kadence podle obtížnosti). */
+  botNextCast: number;
+  /** Kolik kouzel bot seslal (diagnostika obtížnosti, neposílá se). */
+  botCasts: number;
 }
 
 export interface Minion {
@@ -512,6 +539,8 @@ export interface MobaState {
   wards: Ward[];
   boss: Boss;
   nextRuneAt: number;
+  /** Obtížnost botů — v online drží server `normal`. */
+  botSkill: BotSkill;
   towers: Tower[];
   projectiles: Projectile[];
   effects: Effect[];
@@ -565,6 +594,7 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     kills: 0,
     deaths: 0,
     damageDone: 0,
+    healingDone: 0,
     gold: 320,
     aegis: false,
     wards: 0,
@@ -574,6 +604,8 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     isPlayer,
     botLane: 'mid',
     botCast: null,
+    botNextCast: 0,
+    botCasts: 0,
   };
 }
 
@@ -625,7 +657,7 @@ function makeRunes(cycle: number, wave: number): Rune[] {
  * Zápas z rozpisu sedaček — používá server pro 2v2 i sólo (sólo je jen
  * rozpis se dvěma sedačkami). Počet hrdinů není pevný, sim se přizpůsobí.
  */
-export function createMobaMatch(seats: MobaSeat[], now: number): MobaState {
+export function createMobaMatch(seats: MobaSeat[], now: number, botSkill: BotSkill = 'normal'): MobaState {
   const heroes = seats.map((seat) =>
     makeHero(
       seat.id,
@@ -688,6 +720,7 @@ export function createMobaMatch(seats: MobaSeat[], now: number): MobaState {
     wards: [],
     boss: makeBoss(0),
     nextRuneAt: now + RUNE_INTERVAL_MS,
+    botSkill,
     nodes: NODE_SITES.map((site) => ({
       key: site.key,
       name: site.name,
@@ -706,13 +739,14 @@ export function createMobaMatch(seats: MobaSeat[], now: number): MobaState {
 }
 
 /** Sólo 1v1 — tenký obal nad `createMobaMatch` (klient i testy). */
-export function createMoba(playerHeroId: number, enemyHeroId: number, now: number): MobaState {
+export function createMoba(playerHeroId: number, enemyHeroId: number, now: number, botSkill: BotSkill = 'normal'): MobaState {
   return createMobaMatch(
     [
       { id: 'hero-you', heroId: playerHeroId, team: 'blue', human: true },
       { id: 'hero-foe', heroId: enemyHeroId, team: 'red', human: false },
     ],
     now,
+    botSkill,
   );
 }
 
@@ -1117,7 +1151,9 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
         }
         addEffect(state, 'heal', hero.x, hero.z, 1.5, '#7bf0a8', 1200);
       } else {
+        const before = hero.hp;
         hero.hp = Math.min(hero.maxHp, hero.hp + heal);
+        hero.healingDone += hero.hp - before;
         addEffect(state, 'heal', hero.x, hero.z, 1.5, '#7bf0a8', 700);
       }
     }
@@ -1167,7 +1203,10 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
     return;
   }
 
-  const move = target.distance > 6 ? 1 : target.distance < 3.4 ? -0.4 : 0;
+  const skill = BOT_SKILLS[state.botSkill];
+  // Obtížnost mění jen rozhodování: přesnost míření, kadenci a ochotu ustoupit.
+  const retreating = hero.hp < hero.maxHp * skill.retreatHp;
+  const move = retreating ? -1 : target.distance > 6 ? 1 : target.distance < 3.4 ? -0.4 : 0;
   const dx = target.x - hero.x;
   const dz = target.z - hero.z;
   const length = Math.hypot(dx, dz) || 1;
@@ -1178,23 +1217,42 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
   const ready = (slot: SpellSlot) => now >= hero.cooldowns[slot];
   const affordable = (slot: SpellSlot) => {
     const spell = hero.spells.find((candidate) => candidate.slot === slot);
-    return spell ? hero.mana >= spell.mana : false;
+    return spell ? hero.mana >= spellMana(spell.mana, Math.max(1, spellRank(hero.level, slot))) : false;
+  };
+  // Deterministická „třeska" — stejná hra pro všechny, ale slabší bot míří hůř.
+  const wobble = (seed: number) => {
+    const value = Math.sin(seed * 12.9898) * 43758.5453;
+    return value - Math.floor(value);
+  };
+  const aim = (x: number, z: number) => ({
+    x: x + (wobble(now * 0.001 + hero.x) - 0.5) * 2 * skill.aimError,
+    z: z + (wobble(now * 0.0013 + hero.z) - 0.5) * 2 * skill.aimError,
+  });
+  const canCast = now >= hero.botNextCast;
+  const cast = (slot: SpellSlot, x: number, z: number) => {
+    const point = slot === 'W' ? { x: hero.x, z: hero.z } : aim(x, z);
+    hero.botCast = { slot, x: point.x, z: point.z };
+    hero.botNextCast = now + skill.castDelay;
+    hero.botCasts += 1;
   };
 
-  if (hero.hp < hero.maxHp * 0.55 && ready('W') && affordable('W')) {
-    hero.botCast = { slot: 'W', x: hero.x, z: hero.z };
+  if (canCast && hero.hp < hero.maxHp * Math.max(0.5, skill.retreatHp) && ready('W') && affordable('W')) {
+    cast('W', hero.x, hero.z);
     return;
   }
+  if (hero.botCast) return;
+  if (!canCast) return;
+
   if (target.distance < 11 && ready('Q') && affordable('Q')) {
-    hero.botCast = { slot: 'Q', x: target.x, z: target.z };
+    cast('Q', target.x, target.z);
     return;
   }
   if (target.distance < 8 && ready('E') && affordable('E')) {
-    hero.botCast = { slot: 'E', x: target.x, z: target.z };
+    cast('E', target.x, target.z);
     return;
   }
   if (foe && ready('R') && affordable('R') && distance(hero.x, hero.z, foe.x, foe.z) < 12 && (foe.hp < foe.maxHp * 0.6 || hero.hp < hero.maxHp * 0.4)) {
-    hero.botCast = { slot: 'R', x: foe.x, z: foe.z };
+    cast('R', foe.x, foe.z);
     return;
   }
   hero.botCast = null;
@@ -1399,7 +1457,11 @@ export function stepMoba(
     // Hoření a regenerace — buffy, které působí každý snímek.
     for (const buff of hero.buffs) {
       if (buff.type === 'burn') damageHero(state, hero, buff.power * dt, buff.source ?? 'burn');
-      else if (buff.type === 'regen') hero.hp = Math.min(hero.maxHp, hero.hp + buff.power * dt);
+      else if (buff.type === 'regen') {
+        const before = hero.hp;
+        hero.hp = Math.min(hero.maxHp, hero.hp + buff.power * dt);
+        hero.healingDone += hero.hp - before;
+      }
     }
     if (!hero.alive) continue;
 
@@ -1789,6 +1851,8 @@ export interface MobaSnapshot {
     kills: number;
     deaths: number;
     gold: number;
+    damage: number;
+    healing: number;
     items: ItemId[];
     aegis: boolean;
     wards: number;
@@ -1937,6 +2001,8 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         kills: hero.kills,
         deaths: hero.deaths,
         gold: Math.round(hero.gold),
+        damage: Math.round(hero.damageDone),
+        healing: Math.round(hero.healingDone),
         items: hero.items,
         aegis: hero.aegis,
         wards: hero.wards,

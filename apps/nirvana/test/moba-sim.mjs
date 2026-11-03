@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, placeWard, sellItem, stepMoba, mobaSnapshot, visionSources, NO_INPUT, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, placeWard, sellItem, stepMoba, mobaSnapshot, totalXpAt, visionSources, NO_INPUT, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
@@ -702,6 +702,40 @@ check(
   advance(r, 300);
   const respawnMs = victim.respawnAt - r.now;
   check('respawn: škáluje s levelem', respawnMs > 15_000 && respawnMs < 25_000, String(Math.round(respawnMs)));
+}
+
+// ── meta: obtížnost botů, poškození/léčení, scoreboard (F6) ────────
+{
+  console.log('\n-- meta --');
+
+  // obtížnost mění jen rozhodování: přesnost a kadence
+  check('boti: easy míří hůř než hard', BOT_SKILLS.easy.aimError > BOT_SKILLS.hard.aimError);
+  check('boti: easy má delší pauzu mezi kouzly', BOT_SKILLS.easy.castDelay > BOT_SKILLS.hard.castDelay);
+
+  // a opravdu to poznat ve hře: hard toho za stejný čas sešle víc
+  const easy = createMoba(0, 82, 6_000_000, 'easy');
+  const hard = createMoba(0, 82, 6_000_000, 'hard');
+  advance(easy, 12_000, { ...NO_INPUT, attack: true });
+  advance(hard, 12_000, { ...NO_INPUT, attack: true });
+  const easyCasts = easy.heroes.find((hero) => hero.id === 'hero-foe').botCasts;
+  const hardCasts = hard.heroes.find((hero) => hero.id === 'hero-foe').botCasts;
+  check('boti: hard sešle víc kouzel', hardCasts > easyCasts, `${easyCasts} vs ${hardCasts}`);
+
+  // poškození a léčení jde do snapshotu (scoreboard z něj žije)
+  const s = createMoba(0, 82, 6_000_000);
+  const hero = s.heroes.find((candidate) => candidate.id === 'hero-you');
+  hero.damageDone = 1234;
+  hero.hp = 100;
+  hero.buffs.push({ type: 'regen', until: s.now + 2000, power: 40 });
+  advance(s, 500);
+  check('meta: regenerace se počítá do léčení', hero.healingDone > 0, String(Math.round(hero.healingDone)));
+  const snap = mobaSnapshot(s);
+  const snapHero = snap.heroes.find((candidate) => candidate.id === 'hero-you');
+  check('meta: snapshot nese damage', snapHero.damage >= 1234, String(snapHero.damage));
+  check('meta: snapshot nese healing', snapHero.healing > 0, String(snapHero.healing));
+
+  // celkové XP pro XPM roste s levelem
+  check('meta: totalXpAt roste', totalXpAt(5, 0) > totalXpAt(3, 0), `${totalXpAt(3, 0)} → ${totalXpAt(5, 0)}`);
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

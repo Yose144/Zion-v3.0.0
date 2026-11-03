@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { buyItem, buyback, createMoba, mobaSnapshot, placeWard, sellItem, stepMoba, NO_INPUT, type ItemId, type MobaSnapshot, type MobaState } from './sim';
+import { buyItem, buyback, createMoba, mobaSnapshot, placeWard, sellItem, stepMoba, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
@@ -59,6 +59,8 @@ export interface SpellMeta {
 export interface MobaProps {
   playerHeroId: number;
   enemyHeroId: number;
+  /** Obtížnost bota — mění jen rozhodování, nikdy poškození. */
+  botSkill?: BotSkill;
   running: boolean;
   onStats: (stats: MobaStats) => void;
   onEnd?: (winner: 'blue' | 'red') => void;
@@ -116,7 +118,18 @@ export function statsFromSnapshot(
   };
 }
 
-export function MobaGame({ playerHeroId, enemyHeroId, running, onStats, onEnd, debug, buyRequest }: MobaProps) {
+export function MobaGame({
+  playerHeroId,
+  enemyHeroId,
+  botSkill,
+  running,
+  onStats,
+  onEnd,
+  debug,
+  buyRequest,
+  sellRequest,
+  buybackRequest,
+}: MobaProps) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   return (
     <Canvas
@@ -128,11 +141,14 @@ export function MobaGame({ playerHeroId, enemyHeroId, running, onStats, onEnd, d
       <SoloController
         playerHeroId={playerHeroId}
         enemyHeroId={enemyHeroId}
+        botSkill={botSkill}
         running={running}
         onStats={onStats}
         onEnd={onEnd}
         debug={debug}
         buyRequest={buyRequest}
+        sellRequest={sellRequest}
+        buybackRequest={buybackRequest}
         snapshotRef={snapshotRef}
       />
       <MobaStage snapshotRef={snapshotRef} youId="hero-you" />
@@ -149,6 +165,7 @@ function MobaAudioBridge({ snapshotRef, youId }: { snapshotRef: React.MutableRef
 function SoloController({
   playerHeroId,
   enemyHeroId,
+  botSkill,
   running,
   onStats,
   onEnd,
@@ -225,7 +242,7 @@ function SoloController({
   useFrame(() => {
     if (!running) return;
     const now = performance.now();
-    if (!state.current) state.current = createMoba(playerHeroId, enemyHeroId, now);
+    if (!state.current) state.current = createMoba(playerHeroId, enemyHeroId, now, botSkill ?? 'normal');
     const you = state.current.heroes[0]!;
 
     const dt = Math.min(0.1, (now - lastTick.current) / 1000 || STEP);
