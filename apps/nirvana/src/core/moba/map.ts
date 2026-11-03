@@ -120,8 +120,8 @@ export const JUNGLE_CAMPS: JungleCamp[] = [
 ];
 
 /** Minioni: 3 na linku každou vlnu. */
-export const WAVE_INTERVAL_MS = 24_000;
-export const WAVE_SIZE = 3;
+export const WAVE_INTERVAL_MS = 18_000;
+export const WAVE_SIZE = 4;
 export const MINION_HP = 240;
 export const MINION_DAMAGE = 16;
 export const MINION_SPEED = 3.4;

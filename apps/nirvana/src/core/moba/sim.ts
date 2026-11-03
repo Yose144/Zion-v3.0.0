@@ -161,6 +161,9 @@ export const BUYBACK_COOLDOWN_MS = 180_000;
 export const BUYBACK_HP_RATIO = 0.6;
 export const RESPAWN_BASE_MS = 5000;
 export const RESPAWN_PER_LEVEL_MS = 1500;
+/** Základna léčí — bez toho se hrdina po souboji nikdy nevrátí do hry. */
+export const FOUNTAIN_RADIUS = 9;
+export const FOUNTAIN_REGEN = 0.12;
 
 /** Cena buybacku — roste s levely, aby se nevyplatil pořád. */
 export function buybackCost(hero: Hero): number {
@@ -362,8 +365,8 @@ export const BASE_SPEED = 6.2;
 // poměry drží standard: last hit > asistence, smrt něco stojí, věž platí.
 export const GOLD_CAP = 9999;
 export const PASSIVE_GOLD_PER_SEC = 2;
-export const MINION_GOLD = 24;
-export const MINION_XP = 26;
+export const MINION_GOLD = 22;
+export const MINION_XP = 55;
 /** Kdo je v tomto okruhu, dostane XP (a asistencia zlato). */
 export const XP_SHARE_RADIUS = 14;
 /** Spojenci (ne zabiják) dostanou tuhle část XP. */
@@ -400,9 +403,9 @@ export const BOT_SKILLS: Record<
   BotSkill,
   { aimError: number; castDelay: number; retreatHp: number }
 > = {
-  easy: { aimError: 3.2, castDelay: 1100, retreatHp: 0.3 },
-  normal: { aimError: 1.4, castDelay: 450, retreatHp: 0.55 },
-  hard: { aimError: 0.45, castDelay: 120, retreatHp: 0.72 },
+  easy: { aimError: 3.2, castDelay: 1100, retreatHp: 0.2 },
+  normal: { aimError: 1.4, castDelay: 450, retreatHp: 0.32 },
+  hard: { aimError: 0.45, castDelay: 120, retreatHp: 0.42 },
 };
 
 /**
@@ -878,6 +881,16 @@ export function createMobaMatch(seats: MobaSeat[], now: number, botSkill: BotSki
       seat.human === true,
     ),
   );
+  // Boti se rozřadí do linek **symetricky podle týmu** — dřív brali index
+  // v celém poli, takže modrá kryla top+mid a červená bottom+top, a modrá
+  // vyhrávala 6/6 jen kvůli rozřazení (odhalil balance harness).
+  const laneCursor: Record<string, number> = { blue: 0, red: 0 };
+  heroes.forEach((hero) => {
+    if (hero.isPlayer) return;
+    hero.botLane = LANES[laneCursor[hero.team]! % LANES.length]!.id;
+    laneCursor[hero.team] = (laneCursor[hero.team] ?? 0) + 1;
+  });
+
   // rozestup, ať se hrdinové ve spawnu nepřekrývají
   heroes.forEach((hero, index) => {
     const offset = (index % 2) * 2.4 - 1.2;
@@ -1404,23 +1417,44 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
 
 function stepBot(state: MobaState, hero: Hero, now: number) {
   if (!hero.alive) return;
-  const foe = state.heroes.find((candidate) => candidate.team !== hero.team && candidate.alive);
-  const enemyMinion = nearestEnemyMinion(state, hero, 18);
+  // Záběr 12 m: dřív bot viděl nepřítele po celé mapě a jen ho honil
+  // (harness: 100 s a level 1, protože nikdy nebyl u dying minionů).
+  const foe = state.heroes.find(
+    (candidate) =>
+      candidate.team !== hero.team &&
+      candidate.alive &&
+      !isHidden(state, candidate, hero.team) &&
+      distance(hero.x, hero.z, candidate.x, candidate.z) <= 12,
+  );
+  const enemyMinion = nearestEnemyMinion(state, hero, 12);
   const target = enemyMinion
     ? { x: enemyMinion.x, z: enemyMinion.z, distance: distance(hero.x, hero.z, enemyMinion.x, enemyMinion.z) }
     : foe
       ? { x: foe.x, z: foe.z, distance: distance(hero.x, hero.z, foe.x, foe.z) }
       : null;
 
-  // drž se linky, dokud není cíl
+  // Nikdo v dosahu → **jdi do své linky**. Do F11 bot jen stál v základně,
+  // takže bez hráče ve hře nevzniklo XP, zlato ani věž (balance harness to
+  // odhalil na první běh: 0 killů, level 1, 0 itemů).
   if (!target) {
     hero.botCast = null;
+    const lane = LANES.find((candidate) => candidate.id === hero.botLane) ?? LANES[1]!;
+    const direction = hero.team === 'blue' ? 1 : -1;
+    const step = 4.4 * (1 / 30);
+    // Zastav se u nepřátelské základny (dál už jen umíráš).
+    const stopAt = direction * 34;
+    const canAdvance = direction > 0 ? hero.x < stopAt : hero.x > stopAt;
+    if (canAdvance) hero.x += direction * step;
+    hero.z += Math.sign(lane.z - hero.z) * Math.min(Math.abs(lane.z - hero.z), step);
+    hero.facing = direction > 0 ? Math.PI / 2 : -Math.PI / 2;
     return;
   }
 
   const skill = BOT_SKILLS[state.botSkill];
   // Obtížnost mění jen rozhodování: přesnost míření, kadenci a ochotu ustoupit.
-  const retreating = hero.hp < hero.maxHp * skill.retreatHp;
+  // Nedobíjej, když soupeř umírá — jinak se duel nikdy nedokončí.
+  const finishing = Boolean(foe && foe.hp < foe.maxHp * 0.3);
+  const retreating = !finishing && hero.hp < hero.maxHp * skill.retreatHp;
   const move = retreating ? -1 : target.distance > 6 ? 1 : target.distance < 3.4 ? -0.4 : 0;
   const dx = target.x - hero.x;
   const dz = target.z - hero.z;
@@ -1482,7 +1516,6 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
     cast('W', hero.x, hero.z);
     return;
   }
-  if (hero.botCast) return;
   if (!canCast) return;
 
   if (target.distance < 11 && ready('Q') && affordable('Q')) {
@@ -1717,6 +1750,13 @@ export function stepMoba(
     // Regenerace z itemů (Lotosový štít).
     const regen = itemTotals(hero.items).regen + talentTotals(hero).regen;
     if (regen > 0) hero.hp = Math.min(hero.maxHp, hero.hp + regen * dt);
+    // Základna (fontána) léčí i doplňuje manu — jinak se zraněný hrdina
+    // nikdy nevrátí do hry a jen stojí u spawnu (odhalil balance harness).
+    const spawn = hero.team === 'blue' ? SPAWNS.blue : SPAWNS.red;
+    if (distance(hero.x, hero.z, spawn.x, spawn.z) <= FOUNTAIN_RADIUS) {
+      hero.hp = Math.min(hero.maxHp, hero.hp + hero.maxHp * FOUNTAIN_REGEN * dt);
+      hero.mana = Math.min(hero.maxMana, hero.mana + hero.maxMana * FOUNTAIN_REGEN * dt);
+    }
 
     // Hoření a regenerace — buffy, které působí každý snímek.
     for (const buff of hero.buffs) {
@@ -1745,6 +1785,10 @@ export function stepMoba(
     } else {
       stepBot(state, hero, now);
       const botCast = hero.botCast;
+      // `botCast` se musí vyčistit i když castSpell neprojde (dosah/mana) —
+      // jinak bot navěky stojí se zařazeným kouzlem (regrese, kterou odhalil
+      // balance harness: boti zamrzli v půlce mapy).
+      hero.botCast = null;
       if (botCast) castSpell(state, hero, botCast.slot, botCast.x, botCast.z);
     }
 
@@ -1792,7 +1836,7 @@ export function stepMoba(
           hero.attackCooldown = now + 850;
           hero.facing = Math.atan2(target.x - hero.x, target.z - hero.z);
           const damage =
-            (28 + (AVATARS_BY_ID.get(hero.heroId)?.cl ?? 3) * 3) *
+            (36 + (AVATARS_BY_ID.get(hero.heroId)?.cl ?? 3) * 3) *
             levelScale(hero) *
             nodeBonus(state, hero.team) *
             damageOut(hero, state.now);
