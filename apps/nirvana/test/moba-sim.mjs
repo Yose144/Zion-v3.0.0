@@ -818,5 +818,41 @@ check(
   check('talenty: bot si vybere sám', bot.talentPicks[10] !== undefined, JSON.stringify(bot.talentPicks));
 }
 
+// ── boti a aktivní itemy (F9) ──────────────────────────────────────
+{
+  console.log('\n-- boti a aktiva --');
+  const s = createMoba(0, 82, 9_000_000);
+  const bot = s.heroes.find((hero) => hero.id === 'hero-foe');
+  bot.gold = 6000;
+  advance(s, 3000);
+  const hasActive = bot.items.some((id) => ITEMS.find((item) => item.id === id)?.active);
+  check('bot: koupí aktivní item', hasActive, bot.items.join(','));
+  check('bot: neutratí všechny sloty hned', bot.items.length <= ITEM_SLOTS, String(bot.items.length));
+
+  // léčivý prach: bot si vyléčí, když je nízko
+  const heal = createMoba(0, 82, 9_000_000);
+  const wounded = heal.heroes.find((hero) => hero.id === 'hero-foe');
+  wounded.gold = 9999;
+  buyItem(wounded, 'dust');
+  wounded.hp = 100;
+  advance(heal, 300);
+  check('bot: použije léčení v ohrožení', wounded.hp > 100 || (wounded.itemCooldowns.dust ?? 0) > 0, `${Math.round(wounded.hp)} hp`);
+
+  // skok: bot dotahuje cíl na 10 m
+  const chase = createMoba(0, 82, 9_000_000);
+  const chaser = chase.heroes.find((hero) => hero.id === 'hero-foe');
+  const prey = chase.heroes.find((hero) => hero.id === 'hero-you');
+  chaser.gold = 9999;
+  buyItem(chaser, 'blink');
+  chaser.x = 10;
+  chaser.z = 0;
+  prey.x = 0;
+  prey.z = 0;
+  const blinkBefore = Math.hypot(chaser.x - prey.x, chaser.z - prey.z);
+  advance(chase, 200);
+  const blinkAfter = Math.hypot(chaser.x - prey.x, chaser.z - prey.z);
+  check('bot: skočí na cíl (nebo má cooldown)', blinkAfter < blinkBefore || (chaser.itemCooldowns.blink ?? 0) > 0, `${blinkBefore.toFixed(1)} → ${blinkAfter.toFixed(1)}`);
+}
+
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);
 process.exit(failures === 0 ? 0 : 1);

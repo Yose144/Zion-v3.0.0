@@ -1411,6 +1411,33 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
     hero.botCasts += 1;
   };
 
+  // Aktivní itemy: bot je používá reaktivně (léčení/štít při zranění,
+  // skok na dotahovačku nebo na útěk). `useItem` sám hlídá cooldown.
+  const hpRatio = hero.hp / hero.maxHp;
+  if (hpRatio < 0.55) {
+    const dust = activeItemOf(hero, 'heal');
+    if (dust && useItem(state, hero, dust, hero.x, hero.z)) return;
+  }
+  if (hpRatio < 0.7) {
+    const barrier = activeItemOf(hero, 'shield');
+    if (barrier && useItem(state, hero, barrier, hero.x, hero.z)) return;
+  }
+  const blink = activeItemOf(hero, 'blink');
+  if (blink) {
+    if (retreating) {
+      // útěk: skok pryč od cíle
+      const awayX = hero.x - (target.x - hero.x);
+      const awayZ = hero.z - (target.z - hero.z);
+      if (useItem(state, hero, blink, awayX, awayZ)) return;
+    }
+    if (target.distance > 8 && target.distance < 14) {
+      // dotahovačka: skok na cíl
+      if (useItem(state, hero, blink, target.x, target.z)) return;
+    }
+  }
+  const surge = activeItemOf(hero, 'haste');
+  if (surge && target.distance > 5 && useItem(state, hero, surge, hero.x, hero.z)) return;
+
   if (canCast && hero.hp < hero.maxHp * Math.max(0.5, skill.retreatHp) && ready('W') && affordable('W')) {
     cast('W', hero.x, hero.z);
     return;
@@ -1445,15 +1472,27 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
 }
 
 /** Build bota podle školy jeho kouzel — agresivní školy kupují čepel první. */
+/** Build bota podle školy jeho kouzel — včetně aktivních itemů (F9). */
 function botBuild(hero: Hero): ItemId[] {
   const school = hero.spells?.[0]?.school ?? 'cosmic';
   if (school === 'fire' || school === 'arrow' || school === 'blade' || school === 'storm' || school === 'shadow' || school === 'beast') {
-    return ['blade', 'boots', 'aegis'];
+    // agresivní: čepel, boty, skok na dotahovačku, pak HP
+    return ['blade', 'boots', 'blink', 'aegis'];
   }
   if (school === 'ward' || school === 'nature' || school === 'song') {
-    return ['aegis', 'boots', 'blade'];
+    // podpůrný: HP první, bariéra na přežití, boty, čepel
+    return ['aegis', 'barrier', 'boots', 'blade'];
   }
-  return ['boots', 'blade', 'aegis'];
+  return ['boots', 'barrier', 'blade', 'aegis'];
+}
+
+/** Najdi v inventáři item s danou aktivní schopností (nebo null). */
+function activeItemOf(hero: Hero, kind: ItemActiveKind): ItemId | null {
+  for (const id of hero.items) {
+    const item = ITEMS.find((candidate) => candidate.id === id);
+    if (item?.active?.kind === kind) return id;
+  }
+  return null;
 }
 
 // ── minioni a inhibitory (F3) ───────────────────────────────────────
