@@ -1214,3 +1214,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **PROTO_VERSION 15** → deploy **net první**.
 - **Testy:** `test/moba-sim.mjs` (162 kontrol: čekání na 10/15, neplatný
   index, dvojitá volba, součet efektů, role ze školy, bot si vybere sám).
+
+## PRVNÍ SVĚT — boti a aktivní itemy (F9, 2026-11-03)
+
+- **Botí build obsahuje aktiva podle archetypu** (`botBuild`): agresivní
+  čepel → boty → skok → aegis; podpůrný aegis → bariéra → boty → čepel;
+  kontrolní boty → bariéra → čepel. Bez toho měl po F7 hráč výhodu timingu.
+- **Používání je reaktivní, ne náhodné:** léčení pod 55 % HP, bariéra pod
+  70 %, skok na dotahovačku (8–14 m) nebo na útěk, Příval při pronásledování.
+  Všechno jde přes `useItem`, takže **cooldowny hlídá sim** — bot si nesmí
+  vést vlastní časovač (druhá pravda = rozjeté chování).
+- **`activeItemOf(hero, kind)`** hledá item podle druhu schopnosti (`shield`,
+  `heal`, `haste`, `blink`), ne podle id — když se přidá druhý štít, bot ho
+  najde taky.
+- **Bot se rozhoduje deterministicky** (žádné `Math.random`), takže simulace
+  i testy jsou reprodukovatelné.
+- **Testy:** `test/moba-sim.mjs` (166 kontrol: bot koupí aktivum, vyléčí se
+  v ohrožení, skočí na cíl).

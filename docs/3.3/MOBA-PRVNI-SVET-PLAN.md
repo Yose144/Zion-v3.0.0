@@ -116,6 +116,13 @@ rychlost, vidění, mana, síla kouzel, regenerace. Efekty se sčítají stejně
 jako itemy; boti si volí sami. **Protokol:** `talent`, `talents`,
 `talentPending` → 14 → 15.
 
+## 2d. F9 — boti a aktivní itemy *(hotovo 2026-11-03)*
+
+Botí build obsahuje aktivní itemy podle archetypu a bot je používá
+reaktivně (léčení/štít při zranění, skok na dotahovačku nebo na útěk,
+Příval při pronásledování). Cooldowny hlídá `useItem` v sim, takže bot
+nemá druhou pravdu. Bez protokolové změny.
+
 ## 3. Co záměrně neděláme
 
 - **Courier** — u 5v5 s krátkým zápasem nemá co řešit; obchod v základně stačí.
