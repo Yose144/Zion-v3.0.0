@@ -39,9 +39,20 @@ export function MobaEmoteWheel({
   // Kolečko se otevírá u kurzoru/tlačítka, ale sektory mají 78 px od středu.
   // Bez clampu u spodního okraje (kde emote tlačítko je) půlka zmizí mimo
   // obrazovku — přesně to odhalil screenshot.
+  //
+  // Druhá chyba ze screenshotu: i po clampu seděly sektory **na HUD**
+  // (lišta schopností, rychlý chat, nápověda) a nebylo vidět, co je pod nimi.
+  // Proto má spodek větší rezervu než ostatní strany — kolečko se zvedne nad
+  // HUD. Rezerva je relativní, aby v landscape na telefonu nezůstalo nahoře.
+  const viewportWidth = typeof window === 'undefined' ? 1440 : window.innerWidth;
+  const viewportHeight = typeof window === 'undefined' ? 900 : window.innerHeight;
   const margin = RADIUS + 44;
-  const originX = Math.min(Math.max(origin.x, margin), window.innerWidth - margin);
-  const originY = Math.min(Math.max(origin.y, margin), window.innerHeight - margin);
+  const reserveBottom = Math.min(300, Math.max(120, viewportHeight * 0.34));
+  const originX = Math.min(Math.max(origin.x, margin), viewportWidth - margin);
+  const originY = Math.min(
+    Math.max(origin.y, margin),
+    Math.max(margin, viewportHeight - reserveBottom),
+  );
 
   // klik mimo nebo Esc zavře
   useEffect(() => {
