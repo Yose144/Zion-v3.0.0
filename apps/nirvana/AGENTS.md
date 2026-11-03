@@ -1455,3 +1455,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **PROTO_VERSION 17** (`battlespell`, `battleSpellIn`) → deploy **net první**.
 - **Testy:** `test/moba-sim.mjs` (183 kontrol: skok 6 m, cooldown, snapAim
   s mrtvým/nepřítelem/mimo dosah).
+
+### Past: audit many vs fontána
+
+- **Mobile audit četl manu 700 ms po seslání** — jenže hrdina stojí ve fontáně,
+  která od F9 doplňuje 12 % many za sekundu, takže rozdíl zmizel a audit
+  hlásil „kouzlo nesnížilo manu" i když kouzlo prošlo (cooldown Q byl
+  nastavený). Čte se **160 ms** po kliku.
+- Obecné pravidlo: **funkční test nesmí měřit veličinu, kterou hra sama
+  regeneruje.** Když to jinak nejde, měř **okamžitě** nebo použij stav, který
+  se neobnovuje (cooldown, počet projektilů).

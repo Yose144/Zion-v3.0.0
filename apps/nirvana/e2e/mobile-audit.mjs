@@ -172,7 +172,9 @@ for (const spec of PAGES) {
         await page.mouse.click(VIEWPORT.width / 2, VIEWPORT.height / 2);
         await page.waitForTimeout(250);
         await page.locator(spec.cast.button).first().click({ force: true }).catch(() => {});
-        await page.waitForTimeout(700);
+        // Čti **hned**: hrdina stojí ve fontáně, která od F9 doplňuje manu
+        // 12 %/s — po 700 ms byl rozdíl pryč a audit hlásil falešnou chybu.
+        await page.waitForTimeout(160);
         const after = await readMana();
         if (!(after < before)) fail(spec.name, `kouzlo nesnížilo manu (${before} → ${after})`);
         else console.log(`      kouzlo: mana ${before} → ${after} (dotyk prošel do simulace)`);
