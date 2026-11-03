@@ -226,7 +226,7 @@ export function MobaTouch({ spells }: { spells: { slot: SpellSlot; name: string;
                 cast(spell.slot);
               }}
             >
-              <SpellIcon school={spell.school} color={spell.color} size={22} />
+              <SpellIcon slot={spell.slot} color={spell.color} size={22} />
               <b>{SPELL_LABEL[spell.slot]}</b>
             </button>
           ))}

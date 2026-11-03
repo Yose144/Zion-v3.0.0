@@ -279,7 +279,7 @@ export default function EarthPage() {
               {spells.map((spell) => (
                 <div key={spell.slot} className="moba-spell" style={{ borderColor: `${spell.color}66` }}>
                   <span className="moba-spell-key">{SPELL_LABEL[spell.slot]}</span>
-                  <SpellIcon school={spell.school} color={spell.color} size={26} />
+                  <SpellIcon slot={spell.slot} color={spell.color} size={26} />
                   <strong>{spell.name}</strong>
                   <small>
                     {spell.damage > 0 ? `${spell.damage} dmg` : spell.shield > 0 ? `${spell.shield} štít` : 'podpora'} ·{' '}
@@ -431,7 +431,7 @@ export default function EarthPage() {
                   <div key={spell.slot} className={`moba-slot${spell.rank ? '' : ' is-locked'}`} style={{ borderColor: `${spell.color}88` }}>
                     <span className="moba-slot-key">{SPELL_LABEL[spell.slot]}</span>
                     <div className="moba-slot-body">
-                      <SpellIcon school={spell.school} color={spell.color} size={22} />
+                      <SpellIcon slot={spell.slot} color={spell.color} size={22} />
                       <div className="moba-slot-text">
                         <strong>{spell.name}</strong>
                         <small>
