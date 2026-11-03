@@ -3789,45 +3789,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   }
 }
 
-/* Na telefonu byly karty hrdinů dvě na řádek (9,5rem), takže se k tlačítku
-   startu muselo proskrolovat šest řádků. Tři sloupce + menší portrét zkrátí
-   výběr na čtvrtinu — start je na jedné obrazovce. */
-@media (max-width: 560px) {
-  .moba-pick {
-    gap: 0.8rem;
-    padding: 0 0.2rem;
-  }
 
-  .moba-pick-block {
-    padding: 0.8rem;
-  }
-
-  .moba-pick-grid {
-    grid-template-columns: repeat(auto-fill, minmax(5.6rem, 1fr));
-    gap: 0.35rem;
-  }
-
-  .moba-pick-card {
-    padding: 0.4rem 0.45rem;
-    gap: 0.1rem;
-    align-items: center;
-    text-align: center;
-  }
-
-  .moba-pick-card strong {
-    font-size: 0.7rem;
-    line-height: 1.2;
-  }
-
-  /* podtitul se na 5,6rem nevejde a jen posouvá kartu do výšky */
-  .moba-pick-card span {
-    display: none;
-  }
-
-  .moba-portrait.is-card {
-    width: 2.6rem;
-    height: 2.6rem;
-  }
 }
 
 .moba-pick-block {
@@ -5992,6 +5954,27 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     align-items: center;
     justify-content: center;
   }
+
+  /* ikonové taby lišty mají po schování textu jen 28 px na šířku */
+  .game-hud-tab {
+    min-width: 2.5rem;
+  }
+
+  /* žetony a přihlášení: 24 px je minimum podle WCAG 2.5.8, měly 20 */
+  .game-hud-chip,
+  .avatars-chip,
+  .avatars-signin,
+  .saturn-list button {
+    min-height: 2.25rem;
+  }
+}
+
+/* odkaz pod bránou je v odstavci s 15px řádkem — prstem se trefuje špatně */
+@media (hover: none) and (pointer: coarse) {
+  .pass-gate a {
+    display: inline-block;
+    padding: 0.35rem 0.15rem;
+  }
 }
 
 
@@ -6017,3 +6000,48 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     font-size: 2.4rem;
   }
 }
+
+
+/* ── MOBA pick na telefonu ─────────────────────────────────────────────
+   Pravidla musí být **až za** základními (`.moba-pick-grid` a
+   `.moba-portrait.is-card`) — media query nepřidává specificitu, takže
+   dřívější blok by základní pravidla jen přebil. */
+/* Na telefonu byly karty hrdinů dvě na řádek (9,5rem), takže se k tlačítku
+   startu muselo proskrolovat šest řádků. Tři sloupce + menší portrét zkrátí
+   výběr na čtvrtinu — start je na jedné obrazovce. */
+@media (max-width: 560px) {
+  .moba-pick {
+    gap: 0.8rem;
+    padding: 0 0.2rem;
+  }
+
+  .moba-pick-block {
+    padding: 0.8rem;
+  }
+
+  .moba-pick-grid {
+    grid-template-columns: repeat(auto-fill, minmax(5.6rem, 1fr));
+    gap: 0.35rem;
+  }
+
+  .moba-pick-card {
+    padding: 0.4rem 0.45rem;
+    gap: 0.1rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .moba-pick-card strong {
+    font-size: 0.7rem;
+    line-height: 1.2;
+  }
+
+  /* podtitul se na 5,6rem nevejde a jen posouvá kartu do výšky */
+  .moba-pick-card span {
+    display: none;
+  }
+
+  .moba-portrait.is-card {
+    width: 2.6rem;
+    height: 2.6rem;
+  }
