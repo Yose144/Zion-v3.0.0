@@ -75,14 +75,14 @@ export function PassGate({ children }: { children: React.ReactNode }) {
   if (state === 'open') return <>{children}</>;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#02030a] p-4 text-white">
+    <div className="pass-gate flex min-h-screen items-center justify-center bg-[#02030a] p-4 text-white">
       {state === 'loading' ? (
         <div className="text-center text-white/50">
           <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
           <p className="text-sm">{t('gateOpening')}</p>
         </div>
       ) : (
-        <div className="w-full max-w-md rounded-2xl border border-amber-400/25 bg-black/60 p-8 text-center shadow-2xl backdrop-blur">
+        <div className="pass-gate-card w-full max-w-md rounded-2xl border border-amber-400/25 bg-black/60 p-8 text-center shadow-2xl backdrop-blur">
           <div className="text-5xl">🌅</div>
           <h1 className="mt-4 text-xl font-bold tracking-wide text-amber-200">
             {t('gateTitle')}
