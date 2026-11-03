@@ -639,7 +639,10 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return new URLSearchParams(window.location.search).get('q') ?? '';
+  });
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
   const [tab, setTab] = useState<'all' | 'pending' | 'paid' | 'shipped' | 'archived' | 'trash'>('all');
@@ -676,7 +679,7 @@ export default function AdminOrdersPage() {
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, paymentStatus, page, view, sort]);
+  }, [status, paymentStatus, page, view, sort, search]);
 
   const switchTab = (t: typeof tab) => {
     setTab(t);
@@ -755,10 +758,8 @@ export default function AdminOrdersPage() {
       timer = setTimeout(() => {
         setSearch(value);
         setPage(1);
-        load();
       }, 400);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stats = data?.stats;

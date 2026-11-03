@@ -96,8 +96,8 @@ Přesný seznam = seed v `src/lib/accounting/coa.ts`, rozšiřitelný.
 
 ## 8. Fáze
 
-- **F1 — ledger MVP:** schema, COA seed, posting engine, deník/HL UI, manuální doklad, sync-orders (idempotentní), obratová předvaha. *← implementujeme teď*
-- **F2 — výstupy:** export deníku CSV, hlavní kniha per účet, inventurní soupis stavů, doklady-k-návaznosti (Invoice↔Entry linky).
+- **F1 — ledger MVP:** schema, COA seed, posting engine, deník/HL UI, manuální doklad, sync-orders (idempotentní), obratová předvaha. *← hotovo 2026-11-02*
+- **F2 — výstupy:** export deníku CSV, hlavní kniha per účet, inventurní soupis stavů, doklady-k-návaznosti (Invoice↔Entry linky). *← hotovo 2026-11-03*
 - **F3 — banka + crypto:** Fio API import výpisů (token read-only), auto-párování VS→objednávka; crypto lots (FIFO) ledger.
 - **F4 — year-end:** rozvaha zkr. + VZZ + příloha → PDF; `DPPDP*` XML gen per XSD; ISDS SOAP klient (test env nejdřív); §21b příloha.
 - **F5 — IO režim:** `DPHDP3` generátor (jen nákupy služeb ze zahraničí), registrace-IO checklist.
@@ -106,13 +106,24 @@ Přesný seznam = seed v `src/lib/accounting/coa.ts`, rozšiřitelný.
 ## 9. Definition of done (F1) — stav 2026-11-02
 
 - [x] Schéma: `LedgerAccount`/`LedgerEntry`/`LedgerEntryLine` v `prisma/schema.prisma` — `prisma validate` ✓, klient vygenerován
-- [ ] `npx prisma db push` na EDGE2 — **deploy krok, lokálně bez Postgres neověřeno**
+- [x] `npx prisma db push` na EDGE2 — **hotovo 2026-11-03** (`migrate diff` = jen CREATE TABLE/INDEX/FK, žádný DROP)
 - [x] Manuální doklad odmítne nevyvážený zápis (MD≠DAL), <2 řádky, záporné částky — ověřeno tsx testem (validace před DB)
 - [x] `sync-orders` idempotentní (`sourceType+sourceId` lookup před vytvořením); faktury → 311/602|604, platby → 221/159.9/311, zrušené → storno
 - [x] Obratová předvaha v `/api/admin/accounting/balance` (MD=DAL kontrola v response)
 - [x] Admin UI `/admin/accounting` (předvaha, deník, form dokladu, seed+sync tlačítka); nav „Účetnictví"; cs/en překlady
 - [x] `typecheck` čistý; eslint nových souborů čistý (2 chyby v `layout.tsx` pre-existing)
-- [ ] Live ověření UI proti DB (až po db push + lokálním/prostředí s daty)
+- [x] Live ověření proti DB — **2026-11-03**: seed 71 účtů, doklad `U-2024-0001` zaúčtován, předvaha `MD=DAL`
+
+## 9b. Definition of done (F2) — stav 2026-11-03
+
+- [x] Hlavní kniha per účet — `generalLedger()` + `/api/admin/accounting/ledger`; počáteční stav z předchozích období, průběžný zůstatek, obraty, konečný stav
+- [x] Inventurní soupis stavů — `inventoryReport()` + `/api/admin/accounting/inventory`; aktiva/závazky/kapitál/VH + kontrolní rozdíl (aktiva − pasiva − VH = 0)
+- [x] Doklady a návaznosti — `documentsWithLinks()` + `/api/admin/accounting/documents`; Entry ↔ Invoice/Order linky a počet nezaúčtovaných dokladů
+- [x] CSV export deníku, hlavní knihy i inventury — `/api/admin/accounting/export` (středník, desetinná čárka, UTF-8 BOM pro Excel)
+- [x] UI: pět záložek v `/admin/accounting` + export respektující aktivní záložku; cs/en překlady
+- [x] Oprava `flatten-standalone.mjs` (root `node_modules` sám do sebe → `ERR_FS_CP_EINVAL`)
+- [x] Ověřeno live na produkční DB (opening carry-forward, kontrolní rozdíl 0, CSV, 401 bez klíče)
+- [ ] Sync existujících objednávek (51 faktur + 4 platby) — **rozhodnutí 👤**, je to reálný zápis
 
 ## 10. Později / rozhodnutí pro 👤
 

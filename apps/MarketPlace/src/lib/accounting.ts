@@ -408,3 +408,354 @@ export function formatHal(amountHal: number): string {
   const hal = abs % 100;
   return `${sign}${czk.toLocaleString('cs-CZ')},${String(hal).padStart(2, '0')}`;
 }
+
+// ── F2: Hlavní kniha per účet ─────────────────────────────────────
+// Zůstatek je vždy MD − DAL: kladný = MD (aktivní/debetní), záporný = DAL (pasivní).
+
+export interface GeneralLedgerLine {
+  entryId: string;
+  entryNumber: string;
+  date: Date;
+  description: string;
+  documentRef: string | null;
+  sourceType: string | null;
+  side: EntrySide;
+  amountHal: number;
+  balanceHal: number;
+}
+
+export interface GeneralLedgerResult {
+  accountCode: string;
+  name: string;
+  cls: number;
+  period: number;
+  openingHal: number;
+  mdHal: number;
+  dalHal: number;
+  closingHal: number;
+  lines: GeneralLedgerLine[];
+}
+
+export async function generalLedger(
+  accountCode: string,
+  period: number
+): Promise<GeneralLedgerResult | null> {
+  const account = await prisma.ledgerAccount.findUnique({ where: { code: accountCode } });
+  if (!account) return null;
+
+  // počáteční stav = vše z předchozích období
+  const opening = await prisma.ledgerEntryLine.findMany({
+    where: { accountCode, entry: { period: { lt: period } } },
+    select: { side: true, amountHal: true },
+  });
+  const openingHal = opening.reduce(
+    (s, l) => s + (l.side === 'MD' ? l.amountHal : -l.amountHal),
+    0
+  );
+
+  const raw = await prisma.ledgerEntryLine.findMany({
+    where: { accountCode, entry: { period } },
+    include: {
+      entry: {
+        select: {
+          id: true,
+          entryNumber: true,
+          date: true,
+          description: true,
+          documentRef: true,
+          sourceType: true,
+        },
+      },
+    },
+    orderBy: [{ entry: { date: 'asc' } }, { entry: { entryNumber: 'asc' } }],
+  });
+
+  let running = openingHal;
+  let mdHal = 0;
+  let dalHal = 0;
+  const lines: GeneralLedgerLine[] = raw.map((l) => {
+    const delta = l.side === 'MD' ? l.amountHal : -l.amountHal;
+    if (l.side === 'MD') mdHal += l.amountHal;
+    else dalHal += l.amountHal;
+    running += delta;
+    return {
+      entryId: l.entry.id,
+      entryNumber: l.entry.entryNumber,
+      date: l.entry.date,
+      description: l.entry.description,
+      documentRef: l.entry.documentRef,
+      sourceType: l.entry.sourceType,
+      side: l.side === 'DAL' ? 'DAL' : 'MD',
+      amountHal: l.amountHal,
+      balanceHal: running,
+    };
+  });
+
+  return {
+    accountCode,
+    name: account.name,
+    cls: account.class,
+    period,
+    openingHal,
+    mdHal,
+    dalHal,
+    closingHal: running,
+    lines,
+  };
+}
+
+// ── F2: Inventurní soupis stavů (rozvahové účty k 31. 12.) ────────
+
+export type InventoryKind = 'asset' | 'liability' | 'equity';
+
+export interface InventoryRow {
+  accountCode: string;
+  name: string;
+  cls: number;
+  kind: InventoryKind;
+  balanceHal: number; // MD − DAL
+}
+
+export interface InventoryReport {
+  period: number;
+  rows: InventoryRow[];
+  assetsHal: number;
+  liabilitiesHal: number;
+  equityHal: number;
+  profitHal: number;
+  controlDiffHal: number;
+  mdTotalHal: number;
+  dalTotalHal: number;
+  balanced: boolean;
+}
+
+export async function inventoryReport(period: number): Promise<InventoryReport> {
+  const grouped = await prisma.ledgerEntryLine.groupBy({
+    by: ['accountCode', 'side'],
+    where: { entry: { period: { lte: period } } },
+    _sum: { amountHal: true },
+  });
+
+  const balanceByAccount = new Map<string, number>();
+  let mdTotalHal = 0;
+  let dalTotalHal = 0;
+  for (const g of grouped) {
+    const amount = g._sum.amountHal ?? 0;
+    if (g.side === 'MD') mdTotalHal += amount;
+    else dalTotalHal += amount;
+    const delta = g.side === 'MD' ? amount : -amount;
+    balanceByAccount.set(g.accountCode, (balanceByAccount.get(g.accountCode) ?? 0) + delta);
+  }
+
+  const accounts = await prisma.ledgerAccount.findMany();
+  const meta = new Map(accounts.map((a) => [a.code, a]));
+
+  const rows: InventoryRow[] = [];
+  let profitHal = 0; // −(Σ třída 5 + Σ třída 6)
+
+  for (const [accountCode, balanceHal] of balanceByAccount) {
+    const account = meta.get(accountCode);
+    const cls = account?.class ?? parseInt(accountCode[0] ?? '9', 10);
+    if (balanceHal === 0) continue;
+
+    if (cls === 5 || cls === 6) {
+      profitHal -= balanceHal;
+      continue;
+    }
+    if (cls !== 0 && cls !== 1 && cls !== 2 && cls !== 4) continue;
+
+    let kind: InventoryKind;
+    if (cls === 4) kind = 'equity';
+    else if (cls === 2) kind = balanceHal >= 0 ? 'asset' : 'liability';
+    else kind = 'asset';
+
+    rows.push({
+      accountCode,
+      name: account?.name ?? accountCode,
+      cls,
+      kind,
+      balanceHal,
+    });
+  }
+
+  rows.sort((a, b) => a.accountCode.localeCompare(b.accountCode, 'cs'));
+
+  let assetsHal = 0;
+  let liabilitiesHal = 0;
+  let equityHal = 0;
+  for (const r of rows) {
+    if (r.kind === 'asset') assetsHal += r.balanceHal;
+    else if (r.kind === 'liability') liabilitiesHal -= r.balanceHal;
+    else equityHal -= r.balanceHal;
+  }
+
+  return {
+    period,
+    rows,
+    assetsHal,
+    liabilitiesHal,
+    equityHal,
+    profitHal,
+    controlDiffHal: assetsHal - liabilitiesHal - equityHal - profitHal,
+    mdTotalHal,
+    dalTotalHal,
+    balanced: mdTotalHal === dalTotalHal,
+  };
+}
+
+// ── F2: Doklady a návaznosti (Entry ↔ Invoice/Order) ──────────────
+
+export interface DocumentRow {
+  entryId: string;
+  entryNumber: string;
+  date: Date;
+  description: string;
+  documentRef: string | null;
+  sourceType: string;
+  totalHal: number;
+  orderId: string | null;
+  invoiceNumber: string | null;
+  invoiceStatus: string | null;
+}
+
+export interface DocumentsReport {
+  period: number;
+  rows: DocumentRow[];
+  unposted: { invoices: number; paidOrders: number };
+}
+
+export async function documentsWithLinks(period: number): Promise<DocumentsReport> {
+  const entries = await prisma.ledgerEntry.findMany({
+    where: { period },
+    include: { lines: { select: { side: true, amountHal: true } } },
+    orderBy: [{ date: 'desc' }, { entryNumber: 'desc' }],
+  });
+
+  const invoiceIds = entries
+    .filter((e) => e.sourceType === 'invoice' || e.sourceType === 'invoice_storno')
+    .map((e) => e.sourceId)
+    .filter((v): v is string => !!v);
+  const orderIds = entries
+    .filter((e) => e.sourceType === 'order_paid')
+    .map((e) => e.sourceId)
+    .filter((v): v is string => !!v);
+
+  const invoices = invoiceIds.length
+    ? await prisma.invoice.findMany({
+        where: { id: { in: invoiceIds } },
+        include: { order: { select: { orderId: true, id: true } } },
+      })
+    : [];
+  const orders = orderIds.length
+    ? await prisma.shopOrder.findMany({
+        where: { id: { in: orderIds } },
+        select: { id: true, orderId: true },
+      })
+    : [];
+
+  const invoiceById = new Map(invoices.map((i) => [i.id, i]));
+  const orderById = new Map(orders.map((o) => [o.id, o]));
+
+  const rows: DocumentRow[] = entries.map((e) => {
+    const totalHal = e.lines
+      .filter((l) => l.side === 'MD')
+      .reduce((s, l) => s + l.amountHal, 0);
+
+    let orderId: string | null = null;
+    let invoiceNumber: string | null = null;
+    let invoiceStatus: string | null = null;
+
+    if (e.sourceId && (e.sourceType === 'invoice' || e.sourceType === 'invoice_storno')) {
+      const inv = invoiceById.get(e.sourceId);
+      if (inv) {
+        invoiceNumber = inv.invoiceNumber;
+        invoiceStatus = inv.status;
+        orderId = inv.order.orderId;
+      }
+    } else if (e.sourceId && e.sourceType === 'order_paid') {
+      orderId = orderById.get(e.sourceId)?.orderId ?? null;
+    }
+
+    return {
+      entryId: e.id,
+      entryNumber: e.entryNumber,
+      date: e.date,
+      description: e.description,
+      documentRef: e.documentRef,
+      sourceType: e.sourceType ?? 'manual',
+      totalHal,
+      orderId,
+      invoiceNumber,
+      invoiceStatus,
+    };
+  });
+
+  // co ještě není zaúčtované (F1 sync je idempotentní, tohle je kontrola úplnosti)
+  const postedInvoiceIds = new Set(
+    (
+      await prisma.ledgerEntry.findMany({
+        where: { sourceType: 'invoice', sourceId: { not: null } },
+        select: { sourceId: true },
+      })
+    ).map((e) => e.sourceId as string)
+  );
+  const postedStornoIds = new Set(
+    (
+      await prisma.ledgerEntry.findMany({
+        where: { sourceType: 'invoice_storno', sourceId: { not: null } },
+        select: { sourceId: true },
+      })
+    ).map((e) => e.sourceId as string)
+  );
+  const postedOrderIds = new Set(
+    (
+      await prisma.ledgerEntry.findMany({
+        where: { sourceType: 'order_paid', sourceId: { not: null } },
+        select: { sourceId: true },
+      })
+    ).map((e) => e.sourceId as string)
+  );
+
+  const invoiceCandidates = await prisma.invoice.findMany({
+    where: { status: { in: ['issued', 'sent', 'paid'] } },
+    include: { order: { select: { status: true } } },
+  });
+  const unpostedInvoices = invoiceCandidates.filter((inv) =>
+    inv.order.status === 'cancelled'
+      ? !postedStornoIds.has(inv.id)
+      : !postedInvoiceIds.has(inv.id)
+  ).length;
+
+  const paidOrders = await prisma.shopOrder.findMany({
+    where: { paymentStatus: 'paid', status: { not: 'cancelled' } },
+    select: { id: true },
+  });
+  const unpostedPaidOrders = paidOrders.filter((o) => !postedOrderIds.has(o.id)).length;
+
+  return { period, rows, unposted: { invoices: unpostedInvoices, paidOrders: unpostedPaidOrders } };
+}
+
+// ── F2: CSV ──────────────────────────────────────────────────────
+// Česká konvence: středník jako oddělovač, desetinná čárka, UTF-8 BOM (Excel).
+
+export function csvCell(value: string | number | null | undefined): string {
+  const s = value === null || value === undefined ? '' : String(value);
+  return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+export function csvRow(values: ReadonlyArray<string | number | null | undefined>): string {
+  return values.map(csvCell).join(';');
+}
+
+export function halToCsvAmount(amountHal: number): string {
+  const sign = amountHal < 0 ? '-' : '';
+  const abs = Math.abs(amountHal);
+  return `${sign}${Math.floor(abs / 100)},${String(abs % 100).padStart(2, '0')}`;
+}
+
+export function csvDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}

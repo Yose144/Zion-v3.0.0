@@ -66,11 +66,14 @@ for (let dir = nested; dir.startsWith(standalone) && dir !== standalone; dir = d
   levels.push(dir);
 }
 levels.push(standalone);
+const destNm = join(standalone, 'node_modules');
 let merged = 0;
 for (const level of levels) {
   const nm = join(level, 'node_modules');
+  // Root level JE cíl — `cp` se sebou samým padá na EINVAL (ERR_FS_CP_EINVAL).
+  if (nm === destNm) continue;
   if (!existsSync(nm)) continue;
-  cpSync(nm, join(standalone, 'node_modules'), { recursive: true, force: false, errorOnExist: false });
+  cpSync(nm, destNm, { recursive: true, force: false, errorOnExist: false });
   merged += 1;
 }
 if (merged > 0) console.log(`[flatten-standalone] node_modules slit z ${merged} úrovní`);
