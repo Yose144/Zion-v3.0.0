@@ -1,0 +1,17 @@
+{
+  "edition": "gemini",
+  "lang": "EN",
+  "source": "Kingdom_of_the_Heart_gemini_EN.md",
+  "words": 32932,
+  "headings": 142,
+  "paragraphs": 546,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 151,
+    "bytes": 439748
+  },
+  "epub": {
+    "documents": 8,
+    "bytes": 80623
+  }
+}

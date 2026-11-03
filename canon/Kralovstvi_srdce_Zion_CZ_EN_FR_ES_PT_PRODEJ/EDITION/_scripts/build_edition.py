@@ -87,7 +87,13 @@ FILE_STEM = {
 # build:        zda se má sázet (00-nova-plavba má hotové produkty v rootu)
 EDITIONS: dict[str, dict] = {
     "00-nova-plavba": {
-        "label": "Nová plavba · Ilustrovaná",
+        "label": {
+            "CZ": "Nová plavba · Ilustrovaná",
+            "EN": "New Voyage · Illustrated",
+            "ES": "Nueva Travesía · Ilustrada",
+            "FR": "Nouvelle Traversée · Illustrée",
+            "PT": "Nova Travessia · Ilustrada",
+        },
         "note": "Vlajková prodejní edice. Produkty jsou v kořeni prodejního adresáře (CZ/ … PT/).",
         "build": False,
         "root_products": True,
@@ -95,55 +101,105 @@ EDITIONS: dict[str, dict] = {
         "toc_levels": [1, 2],
     },
     "klasicka": {
-        "label": "Klasická edice · Původní midraš",
+        "label": {
+            "CZ": "Klasická edice · Původní midraš",
+            "EN": "Classic Edition · The Original Midrash",
+            "ES": "Edición Clásica · El Midrash Original",
+            "FR": "Édition Classique · Le Midrash Original",
+            "PT": "Edição Clássica · O Midrash Original",
+        },
         "note": "Deset zastavení, každé s oddíly Příběh / Z Písma a tradice / Kotva pravdy.",
         "build": True,
         "break_levels": [1],
         "toc_levels": [1],
     },
     "cloude": {
-        "label": "Cedrový kýl · Literární rozšíření",
+        "label": {
+            "CZ": "Cedrový kýl · Literární rozšíření",
+            "EN": "Cedar Keel · Literary Expansion",
+            "ES": "Quilla de Cedro · Expansión Literaria",
+            "FR": "Quille de Cèdre · Expansion Littéraire",
+            "PT": "Quilha de Cedro · Expansão Literária",
+        },
         "note": "Zdroj je zatím prostý text bez nadpisů — před prodejem potřebuje redakci do Markdownu.",
         "build": True,
         "break_levels": [],
         "toc_levels": [],
     },
     "gemini": {
-        "label": "Gemini edice · Svorník korpusu",
+        "label": {
+            "CZ": "Gemini edice · Svorník korpusu",
+            "EN": "Gemini Edition · The Corpus Keystone",
+            "ES": "Edición Gemini · La Clave del Corpus",
+            "FR": "Édition Gemini · La Clé du Corpus",
+            "PT": "Edição Gemini · A Chave do Corpus",
+        },
         "note": "Čtyřiadvacet kapitol ve čtyřech částech, každá s oddílem Z Písma a Kotvou pravdy.",
         "build": True,
         "break_levels": [1, 2],
         "toc_levels": [1, 2],
     },
     "gpt": {
-        "label": "GPT edice · Tesař, který zůstává u práce",
+        "label": {
+            "CZ": "GPT edice · Tesař, který zůstává u práce",
+            "EN": "GPT Edition · The Carpenter Who Stays at the Work",
+            "ES": "Edición GPT · El Carpintero que Permanece en la Obra",
+            "FR": "Édition GPT · Le Charpentier Qui Reste à l'Ouvrage",
+            "PT": "Edição GPT · O Carpinteiro Que Fica na Obra",
+        },
         "note": "Pokračování kapitol 10–24; první půle se přebírá z Gemini edice.",
         "build": True,
         "break_levels": [1, 2],
         "toc_levels": [1, 2],
     },
     "groq": {
-        "label": "Groq edice · Loď, která se ptá",
+        "label": {
+            "CZ": "Groq edice · Loď, která se ptá",
+            "EN": "Groq Edition · The Boat That Asks",
+            "ES": "Edición Groq · La Barca que Pregunta",
+            "FR": "Édition Groq · La Barque Qui Interroge",
+            "PT": "Edição Groq · O Barco Que Pergunta",
+        },
         "note": "Edice spáry: co není doložené, zůstává jako otázka.",
         "build": True,
         "break_levels": [1, 2],
         "toc_levels": [1, 2],
     },
     "quen": {
-        "label": "Quen edice · Účetnice",
+        "label": {
+            "CZ": "Quen edice · Účetnice",
+            "EN": "Qwen Edition · The Accountant",
+            "ES": "Edición Qwen · La Contable",
+            "FR": "Édition Qwen · La Comptable",
+            "PT": "Edição Qwen · A Contadora",
+        },
         "note": "Loď, která nemá uzavřený účet; kapitoly jsou nejvyšší úroveň.",
         "build": True,
         "break_levels": [1],
         "toc_levels": [1],
     },
     "deepseek": {
-        "label": "DeepSeek edice · Kniha Kýlu",
+        "label": {
+            "CZ": "DeepSeek edice · Kniha Kýlu",
+            "EN": "DeepSeek Edition · The Book of the Keel",
+            "ES": "Edición DeepSeek · El Libro de la Quilla",
+            "FR": "Édition DeepSeek · Le Livre de la Quille",
+            "PT": "Edição DeepSeek · O Livro da Quilha",
+        },
         "note": "Prolog, dvanáct zastavení, epilog a doslov; vyprávěno dřevem.",
         "build": True,
         "break_levels": [1],
         "toc_levels": [1],
     },
 }
+
+
+def edition_label(slug: str, lang: str) -> str:
+    """Lokalizovaný název edice (fallback na češtinu)."""
+    labels = EDITIONS.get(slug, {}).get("label", {})
+    if isinstance(labels, str):
+        return labels
+    return labels.get(lang) or labels.get("CZ") or slug
 
 # ── fonty ─────────────────────────────────────────────────────────────────────
 FONT_DIRS = [
@@ -1043,7 +1099,7 @@ def resolve_meta(md_path: Path, slug: str, lang: str, blocks: list[Block]) -> tu
         "lang": lang_info["bcp47"],
         "lang_name": lang_info["lang_name"],
         "edition_slug": slug,
-        "edition_label": cfg.get("label", slug),
+        "edition_label": edition_label(slug, lang),
         "status_note": "pracovní rukopis",
         "colophon_notes": [
             "Toto vydání je literární legenda. Evangelia o stavbě lodi tesařovýma rukama nevyprávějí; "
@@ -1081,7 +1137,7 @@ def scan() -> list[dict]:
                 md = PRODEJ_ROOT / f"{stem}.md"
                 rows.append({
                     "slug": slug,
-                    "label": cfg.get("label", slug),
+                    "label": edition_label(slug, "CZ"),
                     "build": False,
                     "lang": lang,
                     "md": md,
@@ -1103,7 +1159,7 @@ def scan() -> list[dict]:
                 stems = md.with_suffix("")
                 rows.append({
                     "slug": slug,
-                    "label": cfg.get("label", slug),
+                    "label": edition_label(slug, "CZ"),
                     "build": cfg.get("build", True),
                     "lang": lang,
                     "md": md,
@@ -1140,7 +1196,7 @@ def status_matrix(rows: list[dict]) -> str:
                 if r["epub"].exists():
                     marks.append("EPUB")
                 cells.append(" · ".join(marks) if marks else "—")
-        lines.append(f"| {cfg.get('label', slug)} | " + " | ".join(cells) + " |")
+        lines.append(f"| {edition_label(slug, 'CZ')} | " + " | ".join(cells) + " |")
     return "\n".join(lines)
 
 
@@ -1161,7 +1217,7 @@ def write_status(rows: list[dict]) -> None:
         if not edir.exists():
             continue
         lines = [
-            f"# {cfg.get('label', slug)}",
+            f"# {edition_label(slug, 'CZ')}",
             "",
             cfg.get("note", ""),
             "",
