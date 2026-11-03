@@ -71,6 +71,8 @@ export interface NetApi {
   sendBattleSpell: (x: number, z: number) => void;
   /** MOBA: recall — návrat do základny po channelu. */
   sendRecall: () => void;
+  /** MOBA: emote (0–3) — bublina nad hrdinou pro ostatní. */
+  sendEmote: (id: number) => void;
   /** MOBA: buyback (mrtvý hráč zaplatí a vrátí se). */
   sendBuyback: () => void;
   /** MOBA: aktivní item (klávesy 1–6), bod má smysl u skoku. */
@@ -404,6 +406,13 @@ export function NetProvider({ children }: { children: ReactNode }) {
     [send],
   );
 
+  const sendEmote = useCallback<NetApi['sendEmote']>(
+    (id) => {
+      send({ t: 'emote', id });
+    },
+    [send],
+  );
+
   const sendBuyback = useCallback<NetApi['sendBuyback']>(
     () => {
       send({ t: 'buyback' });
@@ -450,6 +459,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendSentry,
       sendBattleSpell,
       sendRecall,
+      sendEmote,
       sendBuyback,
       sendUseItem,
       sendTalent,
@@ -477,6 +487,7 @@ export function NetProvider({ children }: { children: ReactNode }) {
       sendSentry,
       sendBattleSpell,
       sendRecall,
+      sendEmote,
       sendBuyback,
       sendUseItem,
       sendTalent,

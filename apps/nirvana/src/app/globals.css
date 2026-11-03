@@ -5791,3 +5791,28 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   margin: 0.6rem 0 0.2rem;
   justify-content: flex-start;
 }
+
+/* ── MOBA F22: emotes ─────────────────────────────────────────────── */
+
+.moba-emotes {
+  display: flex;
+  gap: 0.3rem;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.moba-emote-btn {
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.6rem;
+  background: rgba(4, 10, 9, 0.8);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.moba-emote-btn:hover {
+  border-color: rgba(255, 209, 102, 0.6);
+  background: rgba(255, 209, 102, 0.14);
+}

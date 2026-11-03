@@ -22,15 +22,31 @@ export interface DamageFloater {
   z: number;
   amount: number;
   /** `out` = poškození nepříteli (světlé), `in` = dostané (červené). */
-  kind: 'out' | 'in';
+  kind: 'out' | 'in' | 'emote';
   born: number;
   /** Vodorovný posun, aby se čísla z AoE nepřekrývala. */
   drift: number;
+  /** Text emote (u `kind: 'emote'`). */
+  text?: string;
 }
 
 export const DAMAGE_TTL = 900;
+/** Emote bublina žije déle — má se přečíst. */
+export const EMOTE_TTL = 2200;
 
 let nextId = 1;
+export function pushEmote(
+  list: DamageFloater[],
+  x: number,
+  y: number,
+  z: number,
+  text: string,
+  now: number,
+) {
+  list.push({ id: nextId++, x, y, z, amount: 0, kind: 'emote', born: now, drift: 0, text });
+  if (list.length > 40) list.splice(0, list.length - 40);
+}
+
 export function pushDamage(
   list: DamageFloater[],
   x: number,
@@ -91,26 +107,39 @@ export function MobaFxOverlay({
       for (let index = list.length - 1; index >= 0; index -= 1) {
         const floater = list[index]!;
         const age = now - floater.born;
-        if (age > DAMAGE_TTL) {
+        const ttl = floater.kind === 'emote' ? EMOTE_TTL : DAMAGE_TTL;
+        if (age > ttl) {
           list.splice(index, 1);
           continue;
         }
-        const progress = age / DAMAGE_TTL;
+        const progress = age / ttl;
         vector.current.set(floater.x, floater.y + progress * 1.6, floater.z);
         vector.current.project(camera);
         if (vector.current.z > 1) continue;
         const sx = (vector.current.x * 0.5 + 0.5) * width + floater.drift;
         const sy = (-vector.current.y * 0.5 + 0.5) * height;
         const alpha = 1 - progress * progress;
-        const size = 17 + (1 - progress) * 7;
+        const size = floater.kind === 'emote' ? 20 : 17 + (1 - progress) * 7;
         context.globalAlpha = alpha;
         context.font = `800 ${size}px system-ui, sans-serif`;
         context.textAlign = 'center';
-        context.lineWidth = 3;
-        context.strokeStyle = 'rgba(0,0,0,0.75)';
-        context.strokeText(String(floater.amount), sx, sy);
-        context.fillStyle = floater.kind === 'in' ? '#ff8b7b' : '#ffe9a8';
-        context.fillText(String(floater.amount), sx, sy);
+        if (floater.kind === 'emote') {
+          // bublina: tmavé pozadí + text, ať je čitelná i nad světlou zemí
+          const label = floater.text ?? '';
+          const width = context.measureText(label).width + 16;
+          context.fillStyle = 'rgba(6, 14, 12, 0.85)';
+          context.beginPath();
+          context.roundRect(sx - width / 2, sy - size, width, size + 12, 10);
+          context.fill();
+          context.fillStyle = '#ffe9b8';
+          context.fillText(label, sx, sy);
+        } else {
+          context.lineWidth = 3;
+          context.strokeStyle = 'rgba(0,0,0,0.75)';
+          context.strokeText(String(floater.amount), sx, sy);
+          context.fillStyle = floater.kind === 'in' ? '#ff8b7b' : '#ffe9a8';
+          context.fillText(String(floater.amount), sx, sy);
+        }
       }
       context.globalAlpha = 1;
     };

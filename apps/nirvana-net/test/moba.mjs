@@ -225,6 +225,16 @@ try {
   check('obchod: prodej item odebere', !afterSell.items.includes('fang'), afterSell.items.join(','));
   check('obchod: prodej vrátí zlato', afterSell.gold > goldBeforeSell, `${goldBeforeSell} → ${afterSell.gold}`);
 
+  // emote: server ho má přeposlat jako event celé místnosti
+  a.send({ t: 'emote', id: 2 });
+  await sleep(400);
+  const emoteEvent = a.last((m) => m.t === 'event' && m.event?.kind === 'emote');
+  check(
+    'emote: server přepošle bublinu',
+    emoteEvent?.event?.emote === 2 && emoteEvent.event.playerId === roomA.youPlayerId,
+    JSON.stringify(emoteEvent?.event ?? null),
+  );
+
   // pohyb: posílat vstup a čekat, až se pozice změní
   const startX = meA.x;
   const startZ = meA.z;
@@ -250,14 +260,27 @@ try {
     JSON.stringify(captured.moba.nodes.map((node) => node.owner)),
   );
 
-  // kouzlo: sešli Q na nepřátelského miniona (stojí na lince, netřeba honit hrdinu)
+  // kouzlo: sešli Q na nepřátelského miniona. Vlny jsou od F19 rychlejší
+  // (18 s, 4 minioni), takže u uzlu nemusí být zrovna žádný — test proto
+  // k nejbližšímu dojde, místo aby čekal na náhodu.
   let target = null;
-  for (let index = 0; index < 60 && !target; index += 1) {
+  for (let index = 0; index < 40 && !target; index += 1) {
     const snapshot = a.last((m) => m.t === 'snapshot' && m.game === 'moba')?.moba;
     const me = snapshot?.heroes.find((hero) => hero.id === roomA.youPlayerId);
-    const minion = snapshot?.minions.find((candidate) => candidate.team === 'red');
-    if (me && minion && Math.hypot(minion.x - me.x, minion.z - me.z) < 10) target = minion;
-    else await sleep(200);
+    const minions = snapshot?.minions.filter((candidate) => candidate.team === 'red') ?? [];
+    if (!me || minions.length === 0) {
+      await sleep(250);
+      continue;
+    }
+    const nearest = [...minions].sort(
+      (left, right) =>
+        Math.hypot(left.x - me.x, left.z - me.z) - Math.hypot(right.x - me.x, right.z - me.z),
+    )[0];
+    if (Math.hypot(nearest.x - me.x, nearest.z - me.z) < 10) {
+      target = nearest;
+      break;
+    }
+    await walkTo(a, roomA.youPlayerId, nearest.x, nearest.z, 30);
   }
   check('kouzlo: nepřátelský minion v dosahu', Boolean(target));
   if (target) {

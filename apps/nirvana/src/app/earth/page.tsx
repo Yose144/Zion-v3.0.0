@@ -29,6 +29,7 @@ const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
 import { SCHOOL_LABEL, spellsForAvatar } from '@/core/moba/spells';
 import { SpellIcon } from '@/core/moba/spellIcons';
 import { portraitUrl } from '@/core/moba/portraits';
+import { recommendNextItem, standingFrom } from '@/core/moba/build';
 import { talentsFor } from '@/core/moba/sim';
 import { SPELL_LABEL } from '@/core/moba/keys';
 import { MobaTouch } from '@/core/moba/MobaTouch';
@@ -50,12 +51,6 @@ const QUICK_CHAT = [
   { cs: 'Pozor, mlha.', en: 'Careful, fog.' },
 ];
 
-/** Doporučený build podle archetypu — pro rychlý nákup na mobilu. */
-const RECOMMENDED: Record<TalentRole, ItemId[]> = {
-  aggressive: ['blade', 'boots', 'blink', 'aegis', 'lotus', 'crown'],
-  support: ['aegis', 'barrier', 'boots', 'lotus', 'crown', 'blade'],
-  control: ['boots', 'barrier', 'blade', 'lotus', 'crown', 'aegis'],
-};
 
 /** Portrét hrdiny s fallbackem na iniciálu (katalog má mezery v id). */
 function Portrait({
@@ -155,7 +150,7 @@ export default function EarthPage() {
   const [scoreboard, setScoreboard] = useState(false);
   const [onlinePhase, setOnlinePhase] = useState<OnlinePhase>('connecting');
   const [stats, setStats] = useState<MobaStats | null>(EMPTY_STATS);
-  const { sendChat } = useNet();
+  const { sendChat, sendEmote } = useNet();
   const buyRequest = useRef<ItemId | null>(null);
   const sellRequest = useRef<ItemId | null>(null);
   const buybackRequest = useRef(false);
@@ -624,7 +619,13 @@ export default function EarthPage() {
                 {(() => {
                   const items = stats?.items ?? [];
                   const role = talentRole(spells[0]?.school ?? 'cosmic');
-                  const next = RECOMMENDED[role].find((id) => !items.includes(id));
+                  const mine = stats?.snapshot.heroes.filter((hero) => hero.team === (stats?.snapshot.heroes.find((h) => h.id === stats?.youId)?.team ?? 'blue')) ?? [];
+                  const theirs = stats?.snapshot.heroes.filter((hero) => hero.team !== (stats?.snapshot.heroes.find((h) => h.id === stats?.youId)?.team ?? 'blue')) ?? [];
+                  const standing = standingFrom({
+                    ally: mine.reduce((sum, hero) => sum + hero.kills, 0),
+                    enemy: theirs.reduce((sum, hero) => sum + hero.kills, 0),
+                  });
+                  const next = recommendNextItem(role, items, standing);
                   if (!next) return null;
                   const item = ITEM_BY_ID.get(next);
                   if (!item) return null;
@@ -711,6 +712,24 @@ export default function EarthPage() {
                       })}
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
+
+            {mode === 'online' && (
+              <div className="moba-emotes">
+                {['👍', '⚠️', '🎯', '🛡️'].map((emote, index) => (
+                  <button
+                    key={emote}
+                    type="button"
+                    className="moba-emote-btn"
+                    title={cs ? 'emote' : 'emote'}
+                    onClick={() => {
+                      sendEmote(index);
+                    }}
+                  >
+                    {emote}
+                  </button>
                 ))}
               </div>
             )}

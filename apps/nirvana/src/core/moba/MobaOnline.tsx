@@ -19,7 +19,7 @@ import { spellsForAvatar } from './spells';
 import { MobaStage } from './MobaStage';
 import { statsFromSnapshot, type MobaStats } from './MobaGame';
 import { itemTotals, snapAim, type BattleSpellId, type ItemId } from './sim';
-import { MobaFxOverlay, type DamageFloater } from './MobaFxOverlay';
+import { MobaFxOverlay, pushEmote, type DamageFloater } from './MobaFxOverlay';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import type { MobaSnapshot } from './sim';
@@ -43,6 +43,8 @@ function predictedSpeed(hero: { items: ItemId[]; buffs?: { type: string; power: 
 }
 /** Odchylka, od které se predikce „teleportuje" na server (m). */
 const PREDICT_SNAP = 1.6;
+
+const EMOTE_LABELS = ['👍', '⚠️', '🎯', '🛡️'];
 
 const MobaChart = {
   connecting: { cs: 'Připojuji se k Zemi…', en: 'Connecting to Earth…' },
@@ -108,6 +110,7 @@ export function MobaOnline({
           buybackRequest={buybackRequest}
           talentRequest={talentRequest}
           autoAim={autoAim}
+          floaters={floaters}
           snapshotRef={snapshotRef}
           selfPose={selfPose}
         />
@@ -147,6 +150,7 @@ function OnlineController({
   buybackRequest,
   talentRequest,
   autoAim,
+  floaters,
   snapshotRef,
   selfPose,
 }: {
@@ -162,6 +166,7 @@ function OnlineController({
   buybackRequest?: React.MutableRefObject<boolean>;
   talentRequest?: React.MutableRefObject<{ tier: number; pick: number } | null>;
   autoAim?: boolean;
+  floaters: React.MutableRefObject<DamageFloater[]>;
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
   selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
 }) {
@@ -199,6 +204,13 @@ function OnlineController({
 
   useEffect(() => {
     return subscribe((message) => {
+      if (message.t === 'event' && message.event.kind === 'emote') {
+        const event = message.event;
+        const hero = snapshotRef.current?.heroes.find((candidate) => candidate.id === event.playerId);
+        const label = EMOTE_LABELS[event.emote] ?? '👍';
+        if (hero) pushEmote(floaters.current, hero.x, 2.6, hero.z, label, performance.now());
+        return;
+      }
       if (message.t !== 'snapshot' || message.game !== 'moba' || !message.moba) return;
       snapshotRef.current = message.moba;
       if (typeof message.time === 'number') {

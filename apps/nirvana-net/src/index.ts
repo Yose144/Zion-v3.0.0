@@ -645,6 +645,18 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
       postChat(conn, message.text);
       return;
 
+    case 'emote': {
+      if (!conn.room?.moba) {
+        sendError(conn, conn.room ? 'not_available' : 'not_in_room');
+        return;
+      }
+      broadcastChannel(channelOf(conn), {
+        t: 'event',
+        event: { kind: 'emote', playerId: conn.id, emote: message.id, at: Date.now() },
+      });
+      return;
+    }
+
     case 'ping':
       send(conn, { t: 'pong', at: message.at, serverTime: Date.now() });
       return;

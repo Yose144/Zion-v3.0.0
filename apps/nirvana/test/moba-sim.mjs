@@ -11,6 +11,7 @@
 
 import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isHidden, isVisibleTo, ITEMS, ITEM_SLOTS, pendingTalent, pickTalent, placeSentry, placeWard, sellItem, snapAim, startRecall, stepMoba, mobaSnapshot, talentRole, talentsFor, talentTotals, totalXpAt, useBattleSpell, useItem, visionSources, BATTLE_SPELLS, RECALL_CHANNEL_MS, NO_INPUT, SENTRY_DURATION_MS, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
+import { recommendNextItem, standingFrom } from '../src/core/moba/build.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
 let failures = 0;
@@ -1001,6 +1002,21 @@ check(
   );
   check('battle spell: z joinu do sedačky', match.heroes[0].battleSpell === 'purify');
   check('battle spell: bot má výchozí', match.heroes[1].battleSpell === 'flicker');
+}
+
+// ── adaptivní doporučený build (F22) ───────────────────────────────
+{
+  console.log('\n-- doporučený build --');
+  check('build: vyrovnaný stav bere archetyp', standingFrom({ ally: 5, enemy: 5 }) === 'even');
+  check('build: náskok 3+ = ahead', standingFrom({ ally: 8, enemy: 5 }) === 'ahead');
+  check('build: ztráta 3+ = behind', standingFrom({ ally: 4, enemy: 9 }) === 'behind');
+
+  check('build: agresivní začne čepelí', recommendNextItem('aggressive', []) === 'blade');
+  check('build: podpůrný začne aegisou', recommendNextItem('support', []) === 'aegis');
+  check('build: při ztrátě kup přežití', recommendNextItem('aggressive', [], 'behind') === 'aegis');
+  check('build: při náskoku tlač damage', recommendNextItem('support', [], 'ahead') === 'blade');
+  check('build: koupené přeskočí', recommendNextItem('aggressive', ['blade'], 'even') === 'boots');
+  check('build: plný build = null', recommendNextItem('aggressive', ['blade', 'boots', 'blink', 'aegis', 'lotus', 'crown'], 'even') === null);
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

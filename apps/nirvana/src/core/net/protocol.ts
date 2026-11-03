@@ -57,8 +57,10 @@ const asItemId = (value: unknown): ItemId | null =>
  *      Starý klient by recall neuměl spustit a neviděl by channel.
  * 19 — **battle spelly**: `join` nese `battleSpell` a snapshot `battleSpell`
  *      u hrdiny. Starý klient by v multiplayeru vždy dostal Flicker.
+ * 20 — **emotes**: zpráva `emote` a event `emote` (bublina nad hrdinou).
+ *      Starý klient by emote neuměl poslat ani zobrazit.
  */
-export const PROTO_VERSION = 19;
+export const PROTO_VERSION = 20;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -231,6 +233,7 @@ export type EventPayload =
   | { kind: 'respawn'; id: string }
   | { kind: 'pickup'; id: string; item: 'health' | 'armor' | 'ammo' }
   | { kind: 'system'; text: string; at: number }
+  | { kind: 'emote'; playerId: string; emote: number; at: number }
   | { kind: 'match_start'; at: number }
   | { kind: 'match_end'; scoreboard: ScoreRow[] }
   | { kind: 'race_start'; at: number }
@@ -284,6 +287,8 @@ export type ClientMessage =
   | { t: 'battlespell'; x: number; z: number }
   /** MOBA: recall — návrat do základny po channelu. */
   | { t: 'recall' }
+  /** MOBA: emote (0–3) — bublina nad hrdinou pro celý tým/soupeře. */
+  | { t: 'emote'; id: number }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -466,6 +471,9 @@ export function parseClientMessage(raw: string): ClientMessage | null {
 
     case 'recall':
       return { t: 'recall' };
+
+    case 'emote':
+      return { t: 'emote', id: num(message.id, 0, 3) };
 
     case 'talent': {
       const tier = Number(message.tier);
