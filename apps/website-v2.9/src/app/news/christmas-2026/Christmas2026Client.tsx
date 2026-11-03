@@ -13,21 +13,27 @@ const Article = {
     intro:
       'Tři zprávy v jedné. Na Štědrý den míří vánoční prodej digitální knihy Království srdce — příběhu tesaře a lodi, která v ekosystému nesla jméno všemu, co stavíme. Zároveň se ekosystém rozšiřuje o nový herní klient Kingdom, který zůstává ve vývoji, a o Nirvanu — první svět OASIS, který už je živý a otevřený.',
     imageAlt:
-      'Království srdce — archa s princem a dívkou s lucernou; vánoční prodej knihy, klient Kingdom a svět Nirvana',
+      'Vánoce 2026 — tesař s knihou, archa na vodě, brána Kingdom a svět Nirvana v jednom obraze',
     sections: [
       {
         icon: BookOpen,
         title: 'Království srdce — vánoční prodej odstartoval',
+        image: '/images/news/christmas-2026/kralovstvi-srdce-1200.webp',
+        imageAlt: 'Tesařova dílna — tesař s dětmi a lucernou u hoblice, v pozadí archa ve stavební dok',
         text: 'Duchovní legenda o tesaři z Nazareta, který v dílně svého otce stavěl loď pro moře, jež není na žádné mapě — a říkal jí Království srdce. Deset kapitol a epilog, každá kapitola s tabulkou „Kotva pravdy“, která odděluje Písmo, tradici a autorův obraz. Digitální vydání ke stažení je v obchodě za 144 Kč — nově jako ilustrovaná edice v pěti jazycích (CZ · EN · FR · ES · PT), PDF i EPUB. Ke knize patří ZION Archive Pass — vstup do ZION Archivu — a do 24. 12. 2026 vánoční bonus: 144 000 ZION a Genesis vstup pro Guardians ekosystému.',
       },
       {
         icon: Gamepad2,
         title: 'Kingdom — nový herní klient (ve vývoji)',
+        image: '/images/news/christmas-2026/kingdom-1200.webp',
+        imageAlt: 'Zlatá brána Kingdom s lucernou — portály do světů a služeb ekosystému',
         text: 'Ekosystém dnes tvoří dvanáct aplikací a čtrnáct hostname — Kingdom je jeden klient, do kterého se postupně vstřebají: Brána (vstup) → Místnost (shell) → Světy a Portály. Cílem je desktopová aplikace na Electronu — okno bez prohlížeče s peněženkou, těžbou a tray agentem přímo uvnitř. Kingdom přitom nic nevlastní: žádnou databázi, žádné peníze ani klíče — jen čte živá data ze služeb přes portály Řetěz, Kovárna (pool), Tržiště, Snem (DAO), Knihovna (14 knih), Přístav (L5), Věž (Hiran) a Issobella, a nese už třináct světů OASIS. Webová podoba na kingdom.zionterranova.com zatím stojí za závěsou údržby — klient je ve vývoji a o spuštění dáme vědět.',
       },
       {
         icon: Globe,
         title: 'Nirvana — první svět OASIS je živý',
+        image: '/images/news/christmas-2026/nirvana-worlds-1200.webp',
+        imageAlt: 'Vesmír Nirvany — planety otevírají hry: Venuše, Měsíc, Saturn, Mars, Země a strom Brány do OASIS',
         text: 'První svět OASIS se jmenuje Nirvana a běží na nirvana.zionterranova.com. Vesmír, ve kterém planety otevírají hry: Země — MOBA se třemi linkami a uzly L5 (online 2v2), Mars — aréna deathmatch sólo i online, Venuše — závodní okruh na tři kola, Merkur — souboj best of 3 online, Saturn — Kroniky (archiv patnácti kapitol), Pouť s arkádami a kolem a šatník s 200 avatary z OASISu. Chat a multiplayer běží přes vlastní realtime službu a ovládání funguje i na dotykových zařízeních.',
       },
       {
@@ -55,21 +61,27 @@ const Article = {
     intro:
       'Three updates in one. The Christmas sale of the digital book Kingdom of the Heart is heading for Christmas Eve — the story of a carpenter and the ship that lent its name to everything we are building in this ecosystem. At the same time, the ecosystem gains a new game client, Kingdom, which remains in development, and Nirvana — the first OASIS world, already live and open.',
     imageAlt:
-      'Kingdom of the Heart — the ark with the prince and a girl holding a lantern; the Christmas book sale, the Kingdom client and the world of Nirvana',
+      'Christmas 2026 — the carpenter with the book, the ark at sea, the Kingdom gate and the world of Nirvana in one picture',
     sections: [
       {
         icon: BookOpen,
         title: 'Kingdom of the Heart — the Christmas sale has started',
+        image: '/images/news/christmas-2026/kralovstvi-srdce-1200.webp',
+        imageAlt: 'The carpenter’s workshop — a carpenter with children and a lantern at the bench, the ark in its drydock behind',
         text: 'A spiritual legend about a carpenter of Nazareth who built a ship in his father’s workshop — for a sea that is on no map — and called it the Kingdom of the Heart. Ten chapters and an epilogue, each chapter carrying an “Anchor of Truth” table that separates Scripture, tradition and the author’s imagination. The digital download edition is in the shop for 144 CZK — now as an illustrated edition in five languages (CZ · EN · FR · ES · PT), PDF and EPUB. The book includes a ZION Archive Pass — entry to the ZION Archive — and until 24 December 2026 a Christmas bonus: 144,000 ZION and Genesis entry for the ecosystem’s Guardians.',
       },
       {
         icon: Gamepad2,
         title: 'Kingdom — the new game client (in development)',
+        image: '/images/news/christmas-2026/kingdom-1200.webp',
+        imageAlt: 'Kingdom’s golden gate with the lantern — portals into the ecosystem’s worlds and services',
         text: 'The ecosystem today spans twelve applications and fourteen hostnames — Kingdom is the single client they will gradually be absorbed into: the Gate (entry) → the Room (shell) → Worlds and Portals. The goal is a desktop Electron app — a browserless window with the wallet, mining and tray agent built right in. Kingdom owns nothing: no database, no money or keys — it only reads live data from the services through the Chain, Forge (pool), Market, Senate (DAO), Library (14 books), Harbor (L5), Tower (Hiran) and Issobella portals, and already carries thirteen OASIS worlds. The web version at kingdom.zionterranova.com currently sits behind a maintenance curtain — the client is in development and we will announce its launch.',
       },
       {
         icon: Globe,
         title: 'Nirvana — the first OASIS world is live',
+        image: '/images/news/christmas-2026/nirvana-worlds-1200.webp',
+        imageAlt: 'The Nirvana universe — planets open games: Venus, the Moon, Saturn, Mars, Earth and the Gate-to-OASIS tree',
         text: 'The first OASIS world is called Nirvana and runs at nirvana.zionterranova.com. A universe where planets open games: Earth — a MOBA with three lanes and L5 nodes (online 2v2), Mars — a deathmatch arena solo and online, Venus — a three-lap racing circuit, Mercury — an online best-of-3 duel, Saturn — the Chronicles (a fifteen-chapter archive), the Fair with arcades and a wheel, and a wardrobe of 200 OASIS avatars. Chat and multiplayer run on a dedicated realtime service, and the controls work on touch devices too.',
       },
       {
@@ -124,8 +136,8 @@ export default function Christmas2026Client() {
 
           <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-2xl border border-white/10">
             <img
-              src="/images/kralovstvi-srdce/hero.webp"
-              srcSet="/images/kralovstvi-srdce/hero-m.webp 960w, /images/kralovstvi-srdce/hero.webp 1672w"
+              src="/images/news/christmas-2026/hero-1600.webp"
+              srcSet="/images/news/christmas-2026/hero-960.webp 960w, /images/news/christmas-2026/hero-1600.webp 1600w"
               sizes="(min-width: 768px) 46rem, 100vw"
               alt={t.imageAlt}
               width={1672}
@@ -145,6 +157,17 @@ export default function Christmas2026Client() {
                 key={i}
                 className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:p-5"
               >
+                {'image' in section && section.image && (
+                  <div className="relative mb-4 aspect-[16/7] overflow-hidden rounded-xl border border-white/10">
+                    <img
+                      src={section.image}
+                      alt={section.imageAlt ?? ''}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+                  </div>
+                )}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zion-gold/10 border border-zion-gold/20">
                     <section.icon className="h-5 w-5 text-zion-gold" />

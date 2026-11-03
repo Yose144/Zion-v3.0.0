@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
-import HolographicEarthLazy from './HolographicEarthLazy';
+import NirvanaPreview from './NirvanaPreview';
 import HeroSlider from './HeroSlider';
 import MainnetCountdown from './MainnetCountdown';
 
@@ -153,7 +153,7 @@ export default function Hero() {
             </div>
           </motion.div>
 
-          {/* ─── RIGHT col — HolographicEarth + Launch Countdown ─── */}
+          {/* ─── RIGHT col — Nirvana preview + Launch Countdown ─── */}
           <motion.div
             initial={false}
             animate={{ opacity: 1, y: 0 }}
@@ -164,7 +164,7 @@ export default function Hero() {
             <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-zion-purple/25 via-zion-cyan/15 to-transparent blur-3xl pointer-events-none" />
 
             <div className="mb-4 z-10 mx-auto flex w-full max-w-sm justify-center lg:mx-0 lg:max-w-md">
-              <HolographicEarthLazy className="w-full shrink-0" />
+              <NirvanaPreview className="w-full shrink-0" />
             </div>
 
             {/* Mainnet Countdown panel — sized to match HolographicEarth */}
