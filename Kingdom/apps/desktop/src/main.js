@@ -3532,20 +3532,23 @@ function startMiningV31(config, v31Path) {
   // ── 1. Validate wallet ─────────────────────────────────────────────────────
   const wallet = String(config?.wallet || '').trim();
   if (!wallet) {
-    dialog.showErrorBox('Wallet Missing', 'Set your ZION wallet address in Settings or Wallet tab before starting mining.');
+    // Ne dialog.showErrorBox — synchronní modál zamrzne celý main proces
+    // (v embedded iframu uživatel dialog ani nemusí najít). Chyba jde do
+    // rendereru, který ji ukáže v UI.
+    logErr('[V31-FAST] Wallet missing — set a ZION wallet in Settings or Wallet tab.\n');
     startMiningInProgress = false;
     if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
-    return { success: false, error: 'Wallet missing' };
+    return { success: false, error: 'Wallet missing — set your ZION wallet in Settings or Wallet tab.' };
   }
   const addrType = WalletGenerator.getAddressType(wallet);
   if (addrType !== 'zion1') {
     const hint = addrType === 'legacy'
       ? 'You are using a legacy ZION... address. The chain only credits zion1... addresses.'
       : 'Invalid address format.';
-    dialog.showErrorBox('Invalid Wallet Address', `${hint}\n\nPlease create/select a zion1... wallet in the Wallet tab.`);
+    logErr(`[V31-FAST] Invalid wallet: ${hint}\n`);
     startMiningInProgress = false;
     if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
-    return { success: false, error: 'Invalid wallet address' };
+    return { success: false, error: `${hint} Please create/select a zion1... wallet in the Wallet tab.` };
   }
 
   // Payout coin routing: default pays the miner's ZION earnings to the zion1
@@ -3556,10 +3559,7 @@ function startMiningV31(config, v31Path) {
   if (String(config?.payoutCoin || '').trim().toLowerCase() === 'qtc') {
     const qtcAddr = _nativeLoadWalletData(wallet)?.data?.qtcAddress || null;
     if (!qtcAddr || !QuantusWallet.isValidQuantusAddress(qtcAddr)) {
-      dialog.showErrorBox(
-        'QTC Payout Selected',
-        'The active wallet has no linked QTC address. Generate or link one in Wallet → QTC card, or switch Pool payout back to ZION.'
-      );
+      logErr('[V31-FAST] QTC payout selected but no QTC address linked.\n');
       startMiningInProgress = false;
       if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
       return { success: false, error: 'QTC payout selected but no QTC address linked' };
@@ -3568,10 +3568,7 @@ function startMiningV31(config, v31Path) {
   } else if (String(config?.payoutCoin || '').trim().toLowerCase() === 'prl') {
     const prlAddr = _nativeLoadWalletData(wallet)?.data?.prlAddress || null;
     if (!prlAddr || !PearlWallet.isValidPearlAddress(prlAddr)) {
-      dialog.showErrorBox(
-        'PRL Payout Selected',
-        'The active wallet has no linked PRL address. Generate or link one in Wallet → PRL card, or switch Pool payout back to ZION.'
-      );
+      logErr('[V31-FAST] PRL payout selected but no PRL address linked.\n');
       startMiningInProgress = false;
       if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
       return { success: false, error: 'PRL payout selected but no PRL address linked' };
@@ -3582,9 +3579,9 @@ function startMiningV31(config, v31Path) {
   // ── 2. Verify binary exists ────────────────────────────────────────────────
   if (!fs.existsSync(v31Path)) {
     const defMsg = process.platform === 'win32'
-      ? `V31 miner not found at: ${v31Path}\n\nWindows Defender may have quarantined zion-miner.exe.`
+      ? `V31 miner not found at: ${v31Path} — Windows Defender may have quarantined zion-miner.exe.`
       : `V31 miner not found at: ${v31Path}`;
-    dialog.showErrorBox('Miner Not Found', defMsg);
+    logErr(`[V31-FAST] ${defMsg}\n`);
     startMiningInProgress = false;
     if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
     return { success: false, error: 'V31 miner not found' };
