@@ -51,7 +51,7 @@ function grassTexture(): THREE.CanvasTexture {
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(16, 13);
+  texture.repeat.set(30, 26);
   texture.anisotropy = 4;
   return texture;
 }
@@ -198,7 +198,7 @@ export function MobaTerrain() {
 
       {/* země — velký disk s texturou trávy */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-        <circleGeometry args={[72, 72]} />
+        <circleGeometry args={[160, 72]} />
         <meshStandardMaterial map={ground} color="#8fbfa8" roughness={1} metalness={0} />
       </mesh>
 

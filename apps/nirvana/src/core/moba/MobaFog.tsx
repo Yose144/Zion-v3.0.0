@@ -17,13 +17,20 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { MAP_HALF_X, MAP_HALF_Z, VISION } from './map';
+import { VISION } from './map';
 import type { MobaSnapshot } from './sim';
 
 const WIDTH = 256;
 const HEIGHT = 192;
 /** Jak často se maska překresluje (s). */
 const REFRESH = 0.15;
+/**
+ * Mlha pokrývá i okolí hřiště (lesy a obzor) — kdyby končila na hraně mapy,
+ * vypadala by jako tmavý obdélník doprostřed obrazovky (přesně to ukázal
+ * screenshot). Světové rozměry plánu, ne mapy.
+ */
+const FOG_HALF_X = 120;
+const FOG_HALF_Z = 100;
 
 export function MobaFog({
   snapshotRef,
@@ -70,23 +77,30 @@ export function MobaFog({
       return;
     }
 
-    const sx = (x: number) => ((x + MAP_HALF_X) / (MAP_HALF_X * 2)) * WIDTH;
+    const sx = (x: number) => ((x + FOG_HALF_X) / (FOG_HALF_X * 2)) * WIDTH;
     // Plane je otočený o −90° kolem X, takže osa Z jde v textuře opačně.
-    const sy = (z: number) => ((MAP_HALF_Z - z) / (MAP_HALF_Z * 2)) * HEIGHT;
-    const radius = (meters: number) => (meters / (MAP_HALF_X * 2)) * WIDTH;
+    const sy = (z: number) => ((FOG_HALF_Z - z) / (FOG_HALF_Z * 2)) * HEIGHT;
+    const rx = (meters: number) => (meters / (FOG_HALF_X * 2)) * WIDTH;
+    const ry = (meters: number) => (meters / (FOG_HALF_Z * 2)) * HEIGHT;
 
     const reveal = (x: number, z: number, meters: number) => {
       const px = sx(x);
       const py = sy(z);
-      const pr = Math.max(2, radius(meters));
-      const gradient = context.createRadialGradient(px, py, pr * 0.45, px, py, pr);
+      const ax = Math.max(2, rx(meters));
+      const ay = Math.max(2, ry(meters));
+      // Elipsa, protože plán není čtvercový — kruh by se v textuře rozjel.
+      const gradient = context.createRadialGradient(px, py, Math.min(ax, ay) * 0.45, px, py, Math.max(ax, ay));
       gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
       context.globalCompositeOperation = 'destination-out';
       context.fillStyle = gradient;
+      context.save();
+      context.translate(px, py);
+      context.scale(ax / ay, 1);
       context.beginPath();
-      context.arc(px, py, pr, 0, Math.PI * 2);
+      context.arc(0, 0, ay, 0, Math.PI * 2);
       context.fill();
+      context.restore();
       context.globalCompositeOperation = 'source-over';
     };
 
@@ -111,7 +125,7 @@ export function MobaFog({
 
   return (
     <mesh position={[0, 0.07, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={2}>
-      <planeGeometry args={[MAP_HALF_X * 2, MAP_HALF_Z * 2]} />
+      <planeGeometry args={[FOG_HALF_X * 2, FOG_HALF_Z * 2]} />
       <meshBasicMaterial map={texture} transparent depthWrite={false} toneMapped={false} />
     </mesh>
   );
