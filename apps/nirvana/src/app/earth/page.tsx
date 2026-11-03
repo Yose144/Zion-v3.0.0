@@ -284,20 +284,6 @@ export default function EarthPage() {
                 );
               })}
             </div>
-            <div className="moba-difficulty">
-              <span>{cs ? 'Battle spell' : 'Battle spell'}</span>
-              {(['flicker', 'heal', 'purify'] as BattleSpellId[]).map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={`moba-mode-btn${battleSpell === id ? ' is-active' : ''}`}
-                  title={BATTLE_SPELLS[id].note[cs ? 'cs' : 'en']}
-                  onClick={() => setBattleSpell(id)}
-                >
-                  {BATTLE_SPELLS[id].name[cs ? 'cs' : 'en']}
-                </button>
-              ))}
-            </div>
             {mode === 'solo' && (
               <div className="moba-difficulty">
                 <span>{cs ? 'Obtížnost bota' : 'Bot difficulty'}</span>
@@ -352,6 +338,20 @@ export default function EarthPage() {
                     {cs ? SCHOOL_LABEL[spell.school].cs : SCHOOL_LABEL[spell.school].en}
                   </small>
                 </div>
+              ))}
+            </div>
+            <div className="moba-difficulty moba-difficulty-start">
+              <span>{cs ? 'Battle spell' : 'Battle spell'}</span>
+              {(['flicker', 'heal', 'purify'] as BattleSpellId[]).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`moba-mode-btn${battleSpell === id ? ' is-active' : ''}`}
+                  title={BATTLE_SPELLS[id].note[cs ? 'cs' : 'en']}
+                  onClick={() => setBattleSpell(id)}
+                >
+                  {BATTLE_SPELLS[id].name[cs ? 'cs' : 'en']}
+                </button>
               ))}
             </div>
             <button type="button" className="moba-start" onClick={start}>
@@ -872,6 +872,20 @@ export default function EarthPage() {
             </div>
           )}
           <div className="moba-result-actions">
+            <div className="moba-difficulty moba-difficulty-start">
+              <span>{cs ? 'Battle spell' : 'Battle spell'}</span>
+              {(['flicker', 'heal', 'purify'] as BattleSpellId[]).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`moba-mode-btn${battleSpell === id ? ' is-active' : ''}`}
+                  title={BATTLE_SPELLS[id].note[cs ? 'cs' : 'en']}
+                  onClick={() => setBattleSpell(id)}
+                >
+                  {BATTLE_SPELLS[id].name[cs ? 'cs' : 'en']}
+                </button>
+              ))}
+            </div>
             <button type="button" className="moba-start" onClick={start}>
               {cs ? 'Hrát znovu' : 'Play again'}
             </button>

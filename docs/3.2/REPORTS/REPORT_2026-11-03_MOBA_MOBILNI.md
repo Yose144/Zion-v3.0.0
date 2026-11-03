@@ -55,11 +55,23 @@ channelu. Boti recall nepoužívají (pohyb by ho hned zrušil).
 Testy: moba-sim **189/189** (6 nových). První běh testu „rušilo monstrum" —
 hrdina stál v táboře; správné chování, špatné místo v testu.
 
+## 4c. Battle spelly, quick chat a MVP (F21)
+
+- **Volba battle spellu**: Flicker (blink 6 m, 60 s) / Heal (+260 HP, 45 s) /
+  Purify (smaže hoření i zpomalení, +30 % rychlosti, 50 s). Volba je na pick
+  screenu a **v multiplayeru jde v `join`** — server ji předá do sedačky.
+- **Quick chat**: čtyři předvolané zprávy v HUD (jen online), přes existující
+  chat se sanitizací i rate limitem.
+- **MVP obrazovka**: karta s nejlepším hráčem podle
+  `dmg + kill×250 + heal×0,6 + zlato×0,5` + portrét.
+
+Testy: moba-sim **197/197** (8 nových). Protokol 18 → 19.
+
 ## 5. Co dál
 
-1. **Volba battle spellu** před zápasem (Flicker / Heal / Purify).
-2. **Quick chat + emotes** (radiální menu).
-3. **MVP obrazovka** po zápase (nejvíc dmg/gold/heal).
+1. **Emotes** (radiální menu, ne jen text).
+2. **Volba itemu v doporučeném buildu** podle situace.
+3. **Replay/spectate**.
 
 ---
 

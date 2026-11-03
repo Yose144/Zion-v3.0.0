@@ -5786,3 +5786,8 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-size: 0.65rem;
   color: rgba(255, 233, 184, 0.8);
 }
+
+.moba-difficulty-start {
+  margin: 0.6rem 0 0.2rem;
+  justify-content: flex-start;
+}

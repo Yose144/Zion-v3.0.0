@@ -1480,3 +1480,18 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Test pozor na tábory:** první běh testu „rušilo monstrum", protože hrdina
   stál v džungli. Správné chování, špatné místo v testu.
 - **PROTO_VERSION 18** (`recall`, `recallIn`) → deploy **net první**.
+
+## PRVNÍ SVĚT — battle spelly, quick chat, MVP (F21, 2026-11-03, protokol 19)
+
+- **Battle spell je volba, ne konstanta.** `BATTLE_SPELLS` v sim: Flicker
+  (blink 6 m, 60 s), Heal (+260 HP, 45 s), Purify (smaže hoření i zpomalení,
+  +30 % rychlosti, 50 s). Efekt i cooldown drží sim; hráč volí jen id.
+- **Multiplayer:** volba jde v `join` (`battleSpell`), server ji předá do
+  `MobaSeat` a ta do `makeHero`. Boti mají výchozí `flicker`.
+- **Quick chat** jsou čtyři předvolané zprávy v HUD (jen online). Jdou přes
+  **existující chat**, takže platí serverová sanitizace i rate limit
+  (2 zprávy / 2 s) — žádná druhá cesta pro text.
+- **MVP** se počítá z snapshotu: `dmg + kill×250 + heal×0,6 + zlato×0,5`.
+  Je to UX skóre, ne pravidlo — patří do `earth/page.tsx`, ne do sim.
+- **`battleSpell` musí dojít do stats** (`MobaStats.battleSpell`), jinak HUD
+  kreslí špatnou ikonu (⚡/✚/✦).
