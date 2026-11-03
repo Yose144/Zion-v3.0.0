@@ -3,6 +3,7 @@ import { t } from '@zion/i18n';
 import { getSession } from '@/core/session/server';
 import { LoginForm } from '@/core/session/LoginForm';
 import { LogoutButton } from '@/core/session/LogoutButton';
+import { DesktopWalletPanel } from './DesktopWalletPanel';
 
 /**
  * Účet — jediné místo, kde Kingdom sahá na identitu.
@@ -14,12 +15,18 @@ export default async function AccountPortal({ locale }: { locale: Locale }) {
   const user = await getSession();
 
   if (!user) {
-    return <LoginForm locale={locale} />;
+    return (
+      <>
+        <LoginForm locale={locale} />
+        <DesktopWalletPanel locale={locale} />
+      </>
+    );
   }
 
   const address = user.primaryAddress ?? user.linkedAddresses?.[0]?.address ?? '—';
 
   return (
+    <>
     <div className="k-card" style={{ maxWidth: 640 }}>
       <div className="k-row" style={{ justifyContent: 'space-between' }}>
         <div className="k-card-title">{t(locale, 'signedIn')}</div>
@@ -67,5 +74,7 @@ export default async function AccountPortal({ locale }: { locale: Locale }) {
           : 'The session covers the whole ecosystem (*.zionterranova.com). A portal never keeps its own login — it only reads who is signed in.'}
       </p>
     </div>
+    <DesktopWalletPanel locale={locale} />
+  </>
   );
 }
