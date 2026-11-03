@@ -185,7 +185,7 @@ export function MobaTerrain() {
   useFrame(({ clock }) => {
     const material = water.current?.material as THREE.MeshStandardMaterial | undefined;
     if (!material) return;
-    material.opacity = 0.5 + Math.sin(clock.elapsedTime * 1.4) * 0.08;
+    material.opacity = 0.42 + Math.sin(clock.elapsedTime * 1.4) * 0.06;
   });
 
   return (
@@ -225,7 +225,7 @@ export function MobaTerrain() {
       {/* řeka — voda s kamennými břehy */}
       <mesh ref={water} position={[RIVER.x, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[RIVER.halfWidth * 2, MAP_HALF_Z * 2 + 6]} />
-        <meshStandardMaterial color="#2f7f9f" transparent opacity={0.55} roughness={0.2} metalness={0.35} />
+        <meshStandardMaterial color="#2a6b86" transparent opacity={0.45} roughness={0.25} metalness={0.3} />
       </mesh>
       {[-1, 1].map((side) => (
         <mesh

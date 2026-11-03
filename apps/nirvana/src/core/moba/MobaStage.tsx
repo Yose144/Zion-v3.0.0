@@ -326,10 +326,28 @@ export function MobaStage({
             <circleGeometry args={[bush.r, 20]} />
             <meshBasicMaterial color="#123a27" transparent opacity={0.55} />
           </mesh>
-          <mesh position={[0, 0.9, 0]} scale={[1, 0.8, 1]}>
-            <icosahedronGeometry args={[bush.r * 0.85, 1]} />
-            <meshStandardMaterial color="#1f6b45" emissive="#0b2a1b" emissiveIntensity={0.9} transparent opacity={0.6} flatShading />
-          </mesh>
+          {/* tři plošší laloky — jeden balon vypadal jako zelený balvan */}
+          {[
+            [0, 0.55, 0, 1],
+            [bush.r * 0.45, 0.4, bush.r * 0.3, 0.72],
+            [-bush.r * 0.4, 0.45, -bush.r * 0.28, 0.66],
+          ].map(([dx, dy, dz, scale], lobe) => (
+            <mesh
+              key={`lobe-${lobe}`}
+              position={[dx, dy, dz]}
+              scale={[scale, scale * 0.62, scale]}
+            >
+              <icosahedronGeometry args={[bush.r * 0.72, 1]} />
+              <meshStandardMaterial
+                color="#1f6b45"
+                emissive="#0b2a1b"
+                emissiveIntensity={0.8}
+                transparent
+                opacity={0.62}
+                flatShading
+              />
+            </mesh>
+          ))}
         </group>
       ))}
 
@@ -343,7 +361,7 @@ export function MobaStage({
           }}
         >
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
-            <torusGeometry args={[3.2, 0.16, 8, 40]} />
+            <torusGeometry args={[2.6, 0.14, 8, 40]} />
             <meshBasicMaterial color="#94a3b8" toneMapped={false} />
           </mesh>
           <mesh position={[0, 0.5, 0]}>
@@ -384,12 +402,12 @@ export function MobaStage({
           bossRef.current = node;
         }}
       >
-        <mesh position={[0, 1.9, 0]}>
-          <icosahedronGeometry args={[1.9, 1]} />
+        <mesh position={[0, 1.35, 0]}>
+          <icosahedronGeometry args={[1.35, 1]} />
           <meshStandardMaterial color="#4c1d95" emissive="#7c3aed" emissiveIntensity={1.1} roughness={0.35} flatShading />
         </mesh>
-        <mesh position={[0, 1.9, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[2.4, 0.16, 8, 32]} />
+        <mesh position={[0, 1.35, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[1.85, 0.13, 8, 32]} />
           <meshBasicMaterial color="#c084fc" toneMapped={false} />
         </mesh>
         {/* kamenný kruh kolem lairů — boss není jen krystal ve trávě */}
@@ -398,10 +416,10 @@ export function MobaStage({
           return (
             <mesh
               key={`boss-stone-${index}`}
-              position={[Math.cos(angle) * 4.2, 0.55, Math.sin(angle) * 4.2]}
+              position={[Math.cos(angle) * 3.4, 0.45, Math.sin(angle) * 3.4]}
               rotation={[0.1 * index, angle, 0.08]}
             >
-              <dodecahedronGeometry args={[0.7 + (index % 2) * 0.25, 0]} />
+              <dodecahedronGeometry args={[0.55 + (index % 2) * 0.2, 0]} />
               <meshStandardMaterial color="#3f3d44" roughness={0.95} flatShading />
             </mesh>
           );
