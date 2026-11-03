@@ -8,6 +8,7 @@ const emptyModule = resolve(rootDir, 'src/lib/empty-module.ts');
 
 const nextConfig: NextConfig = {
   output: "standalone", // Enabled — Docker build uses standalone (image 2.5GB→~200MB). Local dev unaffected (next dev ignores this).
+  allowedDevOrigins: ['127.0.0.1'],
   poweredByHeader: false,
   compress: true,
   compiler: {
