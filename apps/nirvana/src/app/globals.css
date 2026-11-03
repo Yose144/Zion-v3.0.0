@@ -4028,6 +4028,19 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   background: linear-gradient(90deg, #3a6fd8, #7fb0ff);
 }
 
+.moba-bar.is-xp {
+  height: 0.5rem;
+}
+
+.moba-bar.is-xp i {
+  background: linear-gradient(90deg, #b58b2a, #ffd166);
+}
+
+.moba-bar.is-xp span {
+  font-size: 0.5rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
 .moba-bar span {
   position: absolute;
   inset: 0;
@@ -4073,6 +4086,10 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 0.7rem;
   background: rgba(4, 10, 9, 0.82);
+}
+
+.moba-slot.is-locked {
+  opacity: 0.45;
 }
 
 .moba-slot-key {

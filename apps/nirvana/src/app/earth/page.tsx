@@ -304,6 +304,12 @@ export default function EarthPage() {
                   {stats?.playerMana ?? 0} / {stats?.playerMaxMana ?? 0}
                 </span>
               </div>
+              <div className="moba-bar is-xp" title={cs ? 'zkušenosti' : 'experience'}>
+                <i style={{ width: `${((stats?.xp ?? 0) / (stats?.xpNeed ?? 1)) * 100}%` }} />
+                <span>
+                  XP {stats?.xp ?? 0} / {stats?.xpNeed ?? 1}
+                </span>
+              </div>
               <div className="moba-score">
                 <strong>{hero.name}</strong>
                 <span>
@@ -313,13 +319,15 @@ export default function EarthPage() {
             </div>
 
             <div className="moba-spellbar">
-              {(stats?.spells ?? spells.map((spell) => ({ ...spell, cooldown: 0 }))).map((spell) => {
+              {(stats?.spells ?? spells.map((spell) => ({ slot: spell.slot, name: spell.name, cooldown: 0, cooldownMs: spell.cooldownMs, mana: spell.mana, color: spell.color, rank: 1 }))).map((spell) => {
                 const cooldownPct = spell.cooldownMs ? Math.min(100, (spell.cooldown / spell.cooldownMs) * 100) : 0;
                 return (
-                  <div key={spell.slot} className="moba-slot" style={{ borderColor: `${spell.color}88` }}>
+                  <div key={spell.slot} className={`moba-slot${spell.rank ? '' : ' is-locked'}`} style={{ borderColor: `${spell.color}88` }}>
                     <span className="moba-slot-key">{SPELL_LABEL[spell.slot]}</span>
                     <strong>{spell.name}</strong>
-                    <small>{spell.mana} mp</small>
+                    <small>
+                      {spell.rank ? `T${spell.rank} · ${spell.mana} mp` : cs ? 'zamčeno do lv 6' : 'locked until lv 6'}
+                    </small>
                     {cooldownPct > 0 && <i className="moba-slot-cd" style={{ height: `${cooldownPct}%` }} />}
                   </div>
                 );

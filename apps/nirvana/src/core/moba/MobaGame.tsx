@@ -19,6 +19,7 @@ import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
 import type { SpellSlot } from './spells';
+import { spellRank } from './spells';
 import { SPELL_BY_KEY } from './keys';
 
 const STEP = 1 / 30;
@@ -29,12 +30,14 @@ export interface MobaStats {
   youId: string | null;
   gold: number;
   items: ItemId[];
-  spells: { slot: SpellSlot; name: string; cooldown: number; cooldownMs: number; mana: number; color: string }[];
+  spells: { slot: SpellSlot; name: string; cooldown: number; cooldownMs: number; mana: number; color: string; rank: number }[];
   playerHp: number;
   playerMaxHp: number;
   playerMana: number;
   playerMaxMana: number;
   playerLevel: number;
+  xp: number;
+  xpNeed: number;
   kills: number;
   deaths: number;
   respawnIn: number;
@@ -81,6 +84,7 @@ export function statsFromSnapshot(
       cooldownMs: spell.cooldownMs,
       mana: spell.mana,
       color: spell.color,
+      rank: spellRank(you?.level ?? 1, spell.slot),
     })),
     playerHp: you?.hp ?? 0,
     playerMaxHp: you?.maxHp ?? 1,
@@ -89,6 +93,8 @@ export function statsFromSnapshot(
     gold: you?.gold ?? 0,
     items: you?.items ?? [],
     playerLevel: you?.level ?? 1,
+    xp: you?.xp ?? 0,
+    xpNeed: you?.xpNeed ?? 1,
     kills: you?.kills ?? 0,
     deaths: you?.deaths ?? 0,
     respawnIn: you?.respawnIn ?? 0,

@@ -9,8 +9,8 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, buyItem, createMoba, createMobaMatch, heroSpeed, isVisibleTo, stepMoba, mobaSnapshot, visionSources, NO_INPUT } from '../src/core/moba/sim.ts';
-import { SCHOOL_TRAITS, spellsForAvatar } from '../src/core/moba/spells.ts';
+import { BASE_SPEED, buyItem, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, stepMoba, mobaSnapshot, visionSources, NO_INPUT } from '../src/core/moba/sim.ts';
+import { SCHOOL_TRAITS, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
 let failures = 0;
@@ -400,6 +400,45 @@ check(
     !redView.heroes.some((hero) => hero.id === 'me' || hero.id === 'ally'),
     redView.heroes.map((hero) => hero.id).join(','),
   );
+}
+
+// ── ekonomika a postup (F1) ─────────────────────────────────────────
+{
+  console.log('\n-- ekonomika a postup --');
+  const s = createMoba(0, 82, 1_000_000);
+  const me = s.heroes.find((hero) => hero.id === 'hero-you');
+
+  // Pasivní zlato: 2/s. Bez něj by prohrávající linka neměla cestu k itemu.
+  const goldBefore = me.gold;
+  advance(s, 3000);
+  const gained = me.gold - goldBefore;
+  check('ekonomika: pasivní zlato ~2/s', gained >= 4 && gained <= 8, String(gained));
+
+  // Strop zlata je 9999, ne 3000 — jinak by dražší itemy nešly koupit.
+  check('ekonomika: strop zlata 9999', GOLD_CAP === 9999, String(GOLD_CAP));
+
+  // Stupně kouzel: Q/W/E na 1/4/7/10, R na 6/11/15.
+  check('postup: Q stupeň 1 na levelu 1', spellRank(1, 'Q') === 1);
+  check('postup: Q stupeň 2 na levelu 4', spellRank(4, 'Q') === 2);
+  check('postup: Q stupeň 4 na levelu 10', spellRank(10, 'Q') === 4);
+  check('postup: R zamčená do levelu 6', spellRank(1, 'R') === 0 && spellRank(5, 'R') === 0);
+  check('postup: R stupeň 1 na levelu 6', spellRank(6, 'R') === 1);
+  check('postup: R stupeň 3 na levelu 15', spellRank(15, 'R') === 3);
+
+  // Zamčená ultimátka se nesmí seslat (level 1) — ani nespotřebuje manu.
+  const manaBefore = me.mana;
+  const cdBefore = me.cooldowns.R;
+  stepMoba(s, STEP / 1000, { 'hero-you': { ...NO_INPUT, cast: { slot: 'R', x: me.x + 3, z: me.z } } }, s.now + STEP);
+  check(
+    'postup: R na levelu 1 se nes sesle',
+    me.cooldowns.R === cdBefore && me.mana === manaBefore,
+    `cd=${me.cooldowns.R} mana=${me.mana}`,
+  );
+
+  // Snapshot nese XP — HUD bez toho nemá co kreslit.
+  const snap = mobaSnapshot(s);
+  const snapMe = snap.heroes.find((hero) => hero.id === 'hero-you');
+  check('postup: snapshot nese xp a xpNeed', typeof snapMe.xp === 'number' && snapMe.xpNeed > 0, `${snapMe.xp}/${snapMe.xpNeed}`);
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

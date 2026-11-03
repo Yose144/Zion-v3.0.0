@@ -211,6 +211,23 @@ export function spellsForAvatar(id: number): Spell[] {
 
 export const SPELL_SLOTS: SpellSlot[] = ['Q', 'W', 'E', 'R'];
 
+/**
+ * Stupeň kouzla z úrovně hrdiny — malá hra, žádné skill pointy (model HotS).
+ *
+ * Q/W/E: 1. stupeň od 1. úrovně, dál na 4., 7. a 10.
+ * R (ultimátka): odemčená na 6. úrovni, dál na 11. a 15.
+ *
+ * Klient si stupeň počítá **stejnou funkcí** ze snapshotu (`level`), takže se
+ * nemusí posílat v protokolu — a nemůže se rozejít se serverem.
+ */
+export function spellRank(level: number, slot: SpellSlot): number {
+  if (slot === 'R') return level >= 15 ? 3 : level >= 11 ? 2 : level >= 6 ? 1 : 0;
+  return Math.max(1, Math.min(4, 1 + Math.floor((level - 1) / 3)));
+}
+
+/** +22 % k síle kouzla za každý stupeň nad prvním. */
+export const SPELL_RANK_SCALE = 0.22;
+
 // ── mechanické rozdíly škol ───────────────────────────────────────────
 //
 // Do 2. 11. 2026 se všech 11 škol chovalo stejně (dmg + shield + heal +

@@ -19,8 +19,10 @@ import type { ItemId, MobaSnapshot } from '../moba/sim';
  *  7 — **mlha války**: snapshot se posílá per tým, takže starý klient by
  *      viděl celou mapu (cheat) a nový klient na starém serveru by neviděl
  *      nic filtrované. Verze se musí potkat.
+ *  8 — **ekonomika**: hrdina nese `xp` a `xpNeed` (HUD ukazuje postup),
+ *      zlato má nový strop a přibylo pasivní zlato/deny/asistence.
  */
-export const PROTO_VERSION = 7;
+export const PROTO_VERSION = 8;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;

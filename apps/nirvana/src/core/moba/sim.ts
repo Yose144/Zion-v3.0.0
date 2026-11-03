@@ -13,7 +13,7 @@
 
 import { AVATARS_BY_ID } from '../avatars/catalog';
 import { avatarLook } from '../avatars/kit';
-import { SCHOOL_TRAITS, spellsFor, type Spell, type SpellSchool, type SpellSlot } from './spells';
+import { SCHOOL_TRAITS, SPELL_RANK_SCALE, spellRank, spellsFor, type Spell, type SpellSchool, type SpellSlot } from './spells';
 import {
   JUNGLE_CAMPS,
   LANES,
@@ -89,6 +89,34 @@ export const BLADE_MULT = 1.25;
 export const AEGIS_MULT = 0.9;
 export const AEGIS_HP = 250;
 export const BOOTS_MULT = 1.15;
+
+// ── Ekonomika (F1) — viz docs/3.3/MOBA-PRVNI-SVET-PLAN.md ─────────
+//
+// Bez pasivního zlata nemá prohrávající linka cestu zpět; bez sdíleného XP
+// je hra o jednom hrdinovi. Čísla jsou zmenšená na 8minutový zápas, ale
+// poměry drží standard: last hit > asistence, smrt něco stojí, věž platí.
+export const GOLD_CAP = 9999;
+export const PASSIVE_GOLD_PER_SEC = 2;
+export const MINION_GOLD = 24;
+export const MINION_XP = 26;
+/** Kdo je v tomto okruhu, dostane XP (a asistencia zlato). */
+export const XP_SHARE_RADIUS = 14;
+/** Spojenci (ne zabiják) dostanou tuhle část XP. */
+export const XP_ALLY_RATIO = 0.5;
+/** Vlastní minion pod tímhle podílem HP jde dorazit (deny). */
+export const DENY_HP_RATIO = 0.5;
+export const ASSIST_GOLD_RATIO = 0.4;
+export const GOLD_LOSS_RATIO = 0.1;
+export const GOLD_LOSS_CAP = 200;
+export const TOWER_GOLD_TEAM = 120;
+export const TOWER_GOLD_LASTHIT = 60;
+export const TOWER_XP = 120;
+export const HERO_BOUNTY = 180;
+export const HERO_KILL_XP = 140;
+export const ASSIST_KILL_XP = 70;
+
+/** XP potřebné na další level — jedno místo pro sim i HUD. */
+export const xpNeeded = (level: number) => 120 + level * 70;
 
 /** Rychlost podle itemů, buffů a zpomalení. */
 export function heroSpeed(hero: { items: ItemId[]; slowFactor: number; buffs?: Buff[] }): number {
@@ -438,12 +466,22 @@ function damageHero(state: MobaState, hero: Hero, amount: number, source: string
     hero.alive = false;
     hero.deaths += 1;
     hero.respawnAt = state.now + (6000 + hero.level * 1200);
+    // Smrt stojí zlato (unreliable) — jinak je umírání jen zrychlení hry.
+    const lost = Math.min(GOLD_LOSS_CAP, Math.round(hero.gold * GOLD_LOSS_RATIO));
+    hero.gold = Math.max(0, hero.gold - lost);
     addEffect(state, 'hit', hero.x, hero.z, 2.2, '#ff6b6b', 600);
     const killer = state.heroes.find((candidate) => candidate.id === source);
     if (killer && killer.team !== hero.team) {
       killer.kills += 1;
-      killer.gold = Math.min(3000, killer.gold + 180);
-      gainXp(state, killer, 140);
+      killer.gold = Math.min(GOLD_CAP, killer.gold + HERO_BOUNTY);
+      gainXp(state, killer, HERO_KILL_XP);
+      // Asistence: spojenci v okruhu dostanou část odměny i XP.
+      for (const ally of state.heroes) {
+        if (ally === killer || ally.team !== killer.team || !ally.alive) continue;
+        if (distance(ally.x, ally.z, hero.x, hero.z) > XP_SHARE_RADIUS) continue;
+        ally.gold = Math.min(GOLD_CAP, ally.gold + Math.round(HERO_BOUNTY * ASSIST_GOLD_RATIO));
+        gainXp(state, ally, ASSIST_KILL_XP);
+      }
       state.banner = `${killer.name} srazil ${hero.name}`;
       state.bannerUntil = state.now + 3500;
     }
@@ -531,10 +569,24 @@ function damageMinion(state: MobaState, minion: Minion, amount: number, source: 
   if (minion.hp > 0) return;
   state.minions = state.minions.filter((candidate) => candidate.id !== minion.id);
   const killer = state.heroes.find((candidate) => candidate.id === source);
-  if (killer) {
-    gainXp(state, killer, 26);
-    killer.gold = Math.min(3000, killer.gold + 24);
+  // Deny: vlastní hrdina dorazil vlastního miniona (jen pod 50 % HP —
+  // hlídá výběr cíle, sem se jiný případ nedostane).
+  const denied = killer !== undefined && killer.team === minion.team;
+  // XP dostávají hrdinové **druhé strany** v okruhu, ne jen zabiják:
+  // zabiják plnou dávku, spojenci polovinu; denied minion dá jen 50 %.
+  for (const hero of state.heroes) {
+    if (!hero.alive || hero.team === minion.team) continue;
+    if (distance(hero.x, hero.z, minion.x, minion.z) > XP_SHARE_RADIUS) continue;
+    const isKiller = killer?.id === hero.id;
+    const ratio = denied ? 0.5 : isKiller ? 1 : XP_ALLY_RATIO;
+    gainXp(state, hero, Math.round(MINION_XP * ratio));
+  }
+  if (killer && !denied) {
+    killer.gold = Math.min(GOLD_CAP, killer.gold + MINION_GOLD);
     killer.damageDone += amount;
+  }
+  if (killer && denied) {
+    addEffect(state, 'hit', minion.x, minion.z, 0.6, '#94a3b8', 200);
   }
 }
 
@@ -549,7 +601,7 @@ function damageMonster(state: MobaState, monster: Monster, amount: number, sourc
     const killer = state.heroes.find((candidate) => candidate.id === source);
     if (killer) {
       gainXp(state, killer, camp.type === 'ancient' ? 250 : camp.type === 'medium' ? 120 : 60);
-      killer.gold = Math.min(3000, killer.gold + (camp.type === 'ancient' ? 175 : camp.type === 'medium' ? 90 : 45));
+      killer.gold = Math.min(GOLD_CAP, killer.gold + (camp.type === 'ancient' ? 175 : camp.type === 'medium' ? 90 : 45));
       killer.damageDone += amount;
       applyJungleBuff(killer, camp.type, state.now);
       state.banner = `${killer.name} zabil ${camp.type === 'ancient' ? 'Prastaré stvoření' : camp.type === 'medium' ? 'Středního tábora' : 'Jungle monstra'}`;
@@ -558,10 +610,32 @@ function damageMonster(state: MobaState, monster: Monster, amount: number, sourc
   }
 }
 
+/** Poškození struktury — jedno místo pro hrdiny i miniony (odměna týmu). */
+function damageTower(state: MobaState, tower: Tower, amount: number, attacker: Hero | null) {
+  if (tower.hp <= 0) return;
+  tower.hp = Math.max(0, tower.hp - amount);
+  if (attacker) attacker.damageDone += amount;
+  addEffect(state, 'hit', tower.x, tower.z, 0.8, '#ffe6a8', 180);
+  if (tower.hp > 0) return;
+
+  // Věž padla — zlato a XP pro celý tým, kdo ji dorazil, dostane prémii.
+  const team: Team = attacker ? attacker.team : tower.team === 'blue' ? 'red' : 'blue';
+  for (const hero of state.heroes) {
+    if (hero.team !== team) continue;
+    hero.gold = Math.min(GOLD_CAP, hero.gold + TOWER_GOLD_TEAM);
+    gainXp(state, hero, TOWER_XP);
+  }
+  if (attacker) attacker.gold = Math.min(GOLD_CAP, attacker.gold + TOWER_GOLD_LASTHIT);
+  if (tower.kind === 'tower') {
+    state.banner = `${team === 'blue' ? 'ZION' : 'Opozice'} zničila ${tower.id.includes('-outer-') ? 'vnější' : 'vnitřní'} věž`;
+    state.bannerUntil = state.now + 2600;
+  }
+}
+
 function gainXp(state: MobaState, hero: Hero, amount: number) {
   hero.xp += amount;
   for (;;) {
-    const need = 120 + hero.level * 70;
+    const need = xpNeeded(hero.level);
     if (hero.xp < need || hero.level >= 15) break;
     hero.xp -= need;
     hero.level += 1;
@@ -606,6 +680,9 @@ function nearestEnemyMinion(state: MobaState, hero: Hero, range: number): Minion
 function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: number) {
   const spell = hero.spells.find((candidate) => candidate.slot === slot);
   if (!spell) return;
+  const rank = spellRank(hero.level, slot);
+  // Ultimátka je do 6. úrovně zamčená — jinak by R bylo silnější než Q hned od startu.
+  if (rank < 1) return;
   if (!hero.alive || state.now < hero.cooldowns[slot]) return;
   if (hero.mana < spell.mana) return;
   const distanceToPoint = distance(hero.x, hero.z, x, z);
@@ -614,7 +691,9 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
   hero.mana -= spell.mana;
   hero.cooldowns[slot] = state.now + spell.cooldownMs;
   hero.facing = Math.atan2(x - hero.x, z - hero.z);
-  const bonus = nodeBonus(state, hero.team) * levelScale(hero) * damageOut(hero, state.now);
+  // Stupeň kouzla nahrazuje `levelScale` — jinak by se level počítal dvakrát.
+  const rankBonus = 1 + (rank - 1) * SPELL_RANK_SCALE;
+  const bonus = nodeBonus(state, hero.team) * damageOut(hero, state.now) * rankBonus;
 
   if (spell.kind === 'projectile') {
     const dx = x - hero.x;
@@ -666,7 +745,7 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
   if (spell.kind === 'buff') {
     const traits = SCHOOL_TRAITS[spell.school];
     if (spell.shield > 0) {
-      const shield = spell.shield * levelScale(hero);
+      const shield = spell.shield * rankBonus;
       hero.shield = shield;
       hero.shieldUntil = state.now + 6000;
       addEffect(state, 'shield', hero.x, hero.z, 1.7, spell.color, 6000);
@@ -690,7 +769,7 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
       }
     }
     if (spell.heal > 0) {
-      const heal = spell.heal * levelScale(hero);
+      const heal = spell.heal * rankBonus;
       if (traits?.healOverTime) {
         // Příroda a píseň léčí postupně — nedá se tím utéct z boje.
         const existing = hero.buffs.find((buff) => buff.type === 'regen');
@@ -882,6 +961,8 @@ export function stepMoba(
     if (state.now >= hero.shieldUntil) hero.shield = 0;
     if (state.now >= hero.slowUntil) hero.slowFactor = 0;
     hero.mana = Math.min(hero.maxMana, hero.mana + dt * 7);
+    // Pasivní příjem — i prohrávající linka musí mít cestu k itemu.
+    hero.gold = Math.min(GOLD_CAP, hero.gold + PASSIVE_GOLD_PER_SEC * dt);
 
     // Hoření a regenerace — buffy, které působí každý snímek.
     for (const buff of hero.buffs) {
@@ -930,6 +1011,22 @@ export function stepMoba(
           }
           target = best;
         }
+        if (!target) {
+          // Deny: vlastní minion pod 50 % HP. Bez toho by obránce nemohl
+          // nepříteli odepřít zlato — a linka by byla jen o poslední ráně.
+          let denyTarget: Minion | null = null;
+          let denyDistance = 6.4;
+          for (const minion of state.minions) {
+            if (minion.team !== hero.team) continue;
+            if (minion.hp >= minion.maxHp * DENY_HP_RATIO) continue;
+            const d = distance(hero.x, hero.z, minion.x, minion.z);
+            if (d < denyDistance) {
+              denyDistance = d;
+              denyTarget = minion;
+            }
+          }
+          target = denyTarget;
+        }
         if (target) {
           hero.attackCooldown = now + 850;
           hero.facing = Math.atan2(target.x - hero.x, target.z - hero.z);
@@ -966,6 +1063,23 @@ export function stepMoba(
         if (enemyHero) damageHero(state, enemyHero, MINION_DAMAGE, minion.id);
         else damageMinion(state, enemyMinion!, MINION_DAMAGE, minion.id);
         addEffect(state, 'hit', target.x, target.z, 0.5, '#ffb877', 150);
+      }
+      continue;
+    }
+
+    // Bez jednotky v dosahu útočí minion na strukturu — jinak by linka
+    // nikdy netlačila a hra by se rozhodovala jen souboji hrdinů.
+    const structure = state.towers.find(
+      (tower) =>
+        tower.team !== minion.team &&
+        tower.hp > 0 &&
+        !isStructureProtected(state.towers, tower.id) &&
+        distance(minion.x, minion.z, tower.x, tower.z) <= MINION_RANGE,
+    );
+    if (structure) {
+      if (now >= minion.cooldown) {
+        minion.cooldown = now + MINION_ATTACK_MS;
+        damageTower(state, structure, MINION_DAMAGE, null);
       }
       continue;
     }
@@ -1046,9 +1160,7 @@ export function stepMoba(
       if (distance(hero.x, hero.z, tower.x, tower.z) > 5.6) continue;
       if (now < hero.attackCooldown - 400) continue;
       const damage = 26 * levelScale(hero) * nodeBonus(state, hero.team) * damageOut(hero, state.now);
-      tower.hp = Math.max(0, tower.hp - damage);
-      hero.damageDone += damage;
-      addEffect(state, 'hit', tower.x, tower.z, 0.8, '#ffe6a8', 180);
+      damageTower(state, tower, damage, hero);
       if (tower.hp === 0 && tower.kind === 'nexus') {
         state.ended = hero.team;
         state.banner = hero.team === 'blue' ? 'ZION drží Zemi' : 'Opozice prolomila linii';
@@ -1074,7 +1186,7 @@ export function stepMoba(
         for (const hero of state.heroes) {
           if (hero.team !== team || !hero.alive) continue;
           if (distance(hero.x, hero.z, node.x, node.z) > 6.5) continue;
-          hero.gold = Math.min(3000, hero.gold + 70);
+          hero.gold = Math.min(GOLD_CAP, hero.gold + 70);
         }
         node.progress = { blue: 0, red: 0 };
         addEffect(state, 'capture', node.x, node.z, 3.4, team === 'blue' ? '#7fe3d4' : '#ff7a6b', 1400);
@@ -1146,6 +1258,8 @@ export interface MobaSnapshot {
     maxMana: number;
     shield: number;
     level: number;
+    xp: number;
+    xpNeed: number;
     alive: boolean;
     respawnIn: number;
     cooldowns: Record<SpellSlot, number>;
@@ -1239,6 +1353,8 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         maxMana: hero.maxMana,
         shield: Math.round(hero.shield),
         level: hero.level,
+        xp: Math.round(hero.xp),
+        xpNeed: xpNeeded(hero.level),
         alive: hero.alive,
         respawnIn: hero.alive ? 0 : Math.max(0, Math.ceil((hero.respawnAt - state.now) / 1000)),
         cooldowns: hero.cooldowns,
