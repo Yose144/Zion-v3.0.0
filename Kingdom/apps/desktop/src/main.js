@@ -9434,6 +9434,16 @@ function createKingdomWindow() {
     event.preventDefault();
     shell.openExternal(url);
   });
+  // Zavření okna nesmí zabít běžící těžbu — s aktivním minerem/nodem (nebo
+  // minimizeToTray) okno jen schováme; tray click / 'Kingdom' ho znovu otevře.
+  kingdomWindow.on('close', (event) => {
+    if (app.isQuitting) return;
+    const busy = !!minerProcess || startMiningInProgress || (nodeProcess && !nodeProcess.killed);
+    if (busy || loadConfig().minimizeToTray) {
+      event.preventDefault();
+      kingdomWindow.hide();
+    }
+  });
   kingdomWindow.on('closed', () => { kingdomWindow = null; });
   kingdomWindow.loadURL(kingdomUrl);
   return kingdomWindow;
@@ -9611,10 +9621,11 @@ app.on('will-quit', () => {
 
 app.on('window-all-closed', () => {
   // Tray app: do not quit on Windows/Linux when window closes/crashes.
-  // Users can quit from tray.
-  if (process.platform === 'darwin') {
-    app.quit();
-  }
+  // On macOS quit only when nothing is running — an active miner/node keeps
+  // the app alive in the tray so closing the window can't kill production.
+  if (process.platform !== 'darwin') return;
+  const busy = !!minerProcess || startMiningInProgress || (nodeProcess && !nodeProcess.killed);
+  if (!busy) app.quit();
 });
 
 app.on('before-quit', () => {
