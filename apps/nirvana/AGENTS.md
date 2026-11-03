@@ -1051,3 +1051,40 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   seznamu — když se přidá item, nemusí se sahat do protokolu.
 - **Testy:** `test/moba-sim.mjs` (92 kontrol: recepty, sloty, prodej, efekty)
   a `apps/nirvana-net/test/moba.mjs` (22, včetně buy/sell proti serveru).
+
+## PRVNÍ SVĚT — mapa: bushe, inhibitory, super minioni (F3, 2026-11-03, protokol 10)
+
+- **Bush je past na vidění, ne dekorace.** `BUSHES` v `map.ts` (8 keřů) +
+  `bushAt()`; v `mobaSnapshot` platí: jednotka v bushi je vidět, jen když je
+  zdroj vidění blíž než `BUSH_REVEAL` (3,4 m). Sim vidí všechno — filtruje se
+  až snapshot, stejně jako u mlhy. Kdo přidá keř, přidá ho do `BUSHES`
+  a objeví se i na minimapě (kreslí se z téhož pole).
+- **Řeka je jen vizuál** (pás `RIVER` ve středu). Nezpomaluje — trestal by
+  půlku mapy a nikdo by přes ni nešel.
+- **Řetěz krytí má čtyři články:** vnější → vnitřní → základnová → inhibitor.
+  Nexa je odemčená, jakmile padne **inhibitor** na kterékoli lince
+  (`isStructureProtected`). Když se řetěz rozbije, hráč mlátí do věže, která
+  se podle klienta dá zničit, a nic se neděje — jeden zdroj pravdy, tři
+  konzumenti (sim, scéna, minimapa).
+- **Inhibitor nestřílí** (`damage 0`, `range 0`) — jeho hodnota je v tom, že
+  po pádu pouští do linky **super miniona** a po `INHIBITOR_RESPAWN_MS`
+  (5 min) vyroste zpátky. Respawn řeší smyčka věží (`tower.respawnAt`).
+- **Minion má vlastní staty** (`damage/range/attackMs/speed/super`), ne
+  globální konstanty. Super minion (680 HP, 42 dmg, 2× zlato a XP) se pozná
+  v sim, ve scéně (větší) i na minimapě (větší čtvereček). Nový typ miniona
+  = nová položka ve `spawnMinion`, ne druhá smyčka.
+- **Počty struktur:** 26 (18 věží + 6 inhibitorů + 2 Nexy). Testy i E2E
+  kontrolují tenhle počet — když se mapa rozšíří, musí se změnit na jednom
+  místě (test i `STRUCTURES`).
+- **PROTO_VERSION 10** (`kind: 'inhibitor'`, `super` u minionů) → deploy
+  **net první**.
+- **Testy:** `test/moba-sim.mjs` (105 kontrol: bush z dálky/zblízka, řetěz
+  krytí, super minion po pádu inhibitoru, respawn).
+
+### Past, která se málem stala
+
+- **Root `node_modules` se rozbil** (chyběl `.bin/tsc` a @types) — `npx tsc`
+  začal vracet „This is not the tsc command" a `next/server` nešel najít.
+  Pozná se to podle `ls node_modules/.bin`; řeší `npm ci` v rootu. Před
+  deployem zkontroluj, že typecheck opravdu proběhl — jinak se „čistý"
+  build vydává za ověřený.

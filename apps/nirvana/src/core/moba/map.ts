@@ -33,7 +33,7 @@ export const LANES: Lane[] = [
 export interface Structure {
   id: string;
   team: Team;
-  kind: 'tower' | 'nexus';
+  kind: 'tower' | 'nexus' | 'inhibitor';
   x: number;
   z: number;
   hp: number;
@@ -44,13 +44,23 @@ export interface Structure {
 
 export const NEXUS_HP = 4000;
 export const TOWER_HP = 1700;
+/** Třetí věž je blíž základně a je tvrdší. */
+export const BASE_TOWER_HP = 2200;
+/** Inhibitor nestřílí — jeho cena je v super minionech, které pustí. */
+export const INHIBITOR_HP = 1800;
+/** Za jak dlouho inhibitor znovu vyroste (ms). */
+export const INHIBITOR_RESPAWN_MS = 300_000;
 
 export const STRUCTURES: Structure[] = [
   // ── modrá (ZION) ────────────────────────────────────────────────────
   { id: 'blue-nexus', team: 'blue', kind: 'nexus', x: -42, z: 0, hp: NEXUS_HP, range: 9, damage: 54, attackMs: 1100 },
   ...LANES.flatMap((lane): Structure[] => [
+    { id: `blue-inhibitor-${lane.id}`, team: 'blue', kind: 'inhibitor', x: -37, z: lane.z, hp: INHIBITOR_HP, range: 0, damage: 0, attackMs: 1000 },
+    { id: `blue-tower-base-${lane.id}`, team: 'blue', kind: 'tower', x: -33, z: lane.z, hp: BASE_TOWER_HP, range: 11, damage: 78, attackMs: 1000 },
     { id: `blue-tower-inner-${lane.id}`, team: 'blue', kind: 'tower', x: -24, z: lane.z, hp: TOWER_HP, range: 10, damage: 66, attackMs: 1050 },
     { id: `blue-tower-outer-${lane.id}`, team: 'blue', kind: 'tower', x: -12, z: lane.z, hp: TOWER_HP, range: 10, damage: 66, attackMs: 1050 },
+    { id: `red-inhibitor-${lane.id}`, team: 'red', kind: 'inhibitor', x: 37, z: lane.z, hp: INHIBITOR_HP, range: 0, damage: 0, attackMs: 1000 },
+    { id: `red-tower-base-${lane.id}`, team: 'red', kind: 'tower', x: 33, z: lane.z, hp: BASE_TOWER_HP, range: 11, damage: 78, attackMs: 1000 },
     { id: `red-tower-inner-${lane.id}`, team: 'red', kind: 'tower', x: 24, z: lane.z, hp: TOWER_HP, range: 10, damage: 66, attackMs: 1050 },
     { id: `red-tower-outer-${lane.id}`, team: 'red', kind: 'tower', x: 12, z: lane.z, hp: TOWER_HP, range: 10, damage: 66, attackMs: 1050 },
   ]),
@@ -143,6 +153,44 @@ export interface VisionSource {
   radius: number;
 }
 
+// ── bushe a řeka (F3) ─────────────────────────────────────────────────
+//
+// Bush je **past na vidění**: jednotka v něm není vidět, dokud se k němu
+// nepřiblížíš. Nutí to hrát opatrně a dělá z ganku skutečnou hrozbu.
+// Řeka je jen vizuál (střed mapy) — nezpomaluje, jinak by trestala půlku mapy.
+
+export interface Bush {
+  x: number;
+  z: number;
+  r: number;
+}
+
+export const BUSHES: Bush[] = [
+  // linky
+  { x: -8, z: -18, r: 3.2 },
+  { x: 8, z: -18, r: 3.2 },
+  { x: -8, z: 18, r: 3.2 },
+  { x: 8, z: 18, r: 3.2 },
+  { x: -16, z: 0, r: 3.2 },
+  { x: 16, z: 0, r: 3.2 },
+  // jungle (kolem táborů, ne na nich)
+  { x: -16, z: -8, r: 2.8 },
+  { x: 16, z: 8, r: 2.8 },
+];
+
+/** Jak blízko musí být zdroj vidění, aby jednotku v bushi odhalil. */
+export const BUSH_REVEAL = 3.4;
+
+export function bushAt(x: number, z: number): Bush | null {
+  for (const bush of BUSHES) {
+    if ((x - bush.x) ** 2 + (z - bush.z) ** 2 <= bush.r * bush.r) return bush;
+  }
+  return null;
+}
+
+/** Řeka ve středu mapy — jen vizuál (modrý pás přes celou šířku). */
+export const RIVER = { x: 0, halfWidth: 4.5 } as const;
+
 export function lanePoint(lane: Lane, x: number) {
   return { x, z: lane.z };
 }
@@ -183,20 +231,25 @@ export function isStructureProtected(towers: readonly StructureHp[], towerId: st
   if (hpOf(towers, towerId) <= 0) return false;
 
   if (structure.kind === 'nexus') {
-    // Nexus je odemčený, jakmile padne **celá jedna lajna** (vnější i vnitřní
-    // věž). Do té doby je nedobytný — jinak se dá obejít mapa a položit ho
-    // za 40 sekund.
+    // Nexus je odemčený, jakmile padne **inhibitor** na kterékoli lince.
+    // Do té doby je nedobytný — jinak se dá obejít mapa a položit ho za 40 s.
     const lanes: LaneId[] = ['top', 'mid', 'bottom'];
     const laneBroken = lanes.some(
-      (lane) =>
-        hpOf(towers, `${structure.team}-tower-outer-${lane}`) <= 0 &&
-        hpOf(towers, `${structure.team}-tower-inner-${lane}`) <= 0,
+      (lane) => hpOf(towers, `${structure.team}-inhibitor-${lane}`) <= 0,
     );
     return !laneBroken;
   }
 
-  if (structure.id.includes('-inner-')) {
-    return hpOf(towers, structure.id.replace('-inner-', '-outer-')) > 0;
+  // Řetěz krytí: vnější → vnitřní → základnová → inhibitor.
+  const chain: [string, string][] = [
+    ['-inner-', '-outer-'],
+    ['-base-', '-inner-'],
+    ['-inhibitor-', '-tower-base-'],
+  ];
+  for (const [needle, guardian] of chain) {
+    if (structure.id.includes(needle)) {
+      return hpOf(towers, structure.id.replace(needle, guardian)) > 0;
+    }
   }
 
   return false;

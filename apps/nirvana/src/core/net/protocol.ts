@@ -31,8 +31,11 @@ const asItemId = (value: unknown): ItemId | null =>
  *      zlato má nový strop a přibylo pasivní zlato/deny/asistence.
  *  9 — **itemy**: 14 itemů s recepty a 6 sloty; nová zpráva `sell`.
  *      Starý klient by neznal nová id itemů v inventáři.
+ * 10 — **mapa**: inhibitory (`kind: 'inhibitor'`) a super minioni (`super`).
+ *      Starý klient by inhibitory kreslil jako věže a super miniony jako
+ *      obyčejné — liší se jen tvarem a velikostí, ale je to jiná mapa.
  */
-export const PROTO_VERSION = 9;
+export const PROTO_VERSION = 10;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;

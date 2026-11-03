@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
 import { avatarLook } from '@/core/avatars/kit';
 import type { MobaSnapshot } from './sim';
-import { LANES, NODE_SITES, NODE_CAPTURE_MS, STRUCTURES, isStructureProtected } from './map';
+import { BUSHES, LANES, MAP_HALF_Z, NODE_SITES, NODE_CAPTURE_MS, RIVER, STRUCTURES, isStructureProtected } from './map';
 
 const MAX_HEROES = 10;
 const MAX_TOWERS = STRUCTURES.length;
@@ -99,7 +99,9 @@ export function MobaStage({
       if (!group) continue;
       group.position.set(tower.x, 0, tower.z);
       group.visible = tower.hp > 0;
-      group.scale.setScalar((tower.kind === 'nexus' ? 1.6 : 1) * (0.55 + (tower.hp / tower.maxHp) * 0.45));
+      const kindScale =
+        tower.kind === 'nexus' ? 1.6 : tower.kind === 'inhibitor' ? 1.3 : tower.id.includes('-base-') ? 1.15 : 1;
+      group.scale.setScalar(kindScale * (0.55 + (tower.hp / tower.maxHp) * 0.45));
       // Nedobytná struktura (krytá vnější věží / Nexa krytá lajnou) svítí šedě.
       const shielded = isStructureProtected(snapshot.towers, tower.id);
       const crystal = group.children[2] as THREE.Mesh | undefined;
@@ -147,8 +149,8 @@ export function MobaStage({
           tmp.position.set(0, -60, 0);
           tmp.scale.setScalar(0.001);
         } else {
-          tmp.position.set(minion.x, 0.5, minion.z);
-          tmp.scale.setScalar(1.05);
+          tmp.position.set(minion.x, minion.super ? 0.8 : 0.5, minion.z);
+          tmp.scale.setScalar(minion.super ? 1.75 : 1.05);
         }
         tmp.updateMatrix();
         mesh.setMatrixAt(index, tmp.matrix);
@@ -266,6 +268,26 @@ export function MobaStage({
         </group>
       ))}
 
+      {/* řeka — jen vizuál, nezpomaluje */}
+      <mesh position={[RIVER.x, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[RIVER.halfWidth * 2, MAP_HALF_Z * 2]} />
+        <meshBasicMaterial color="#2f6f8f" transparent opacity={0.35} />
+      </mesh>
+
+      {/* bushe — v nich tě nepřítel nevidí, dokud nepřijde blíž */}
+      {BUSHES.map((bush, index) => (
+        <group key={`bush-${index}`} position={[bush.x, 0, bush.z]}>
+          <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[bush.r, 20]} />
+            <meshBasicMaterial color="#123a27" transparent opacity={0.55} />
+          </mesh>
+          <mesh position={[0, 0.9, 0]} scale={[1, 0.8, 1]}>
+            <icosahedronGeometry args={[bush.r * 0.85, 1]} />
+            <meshStandardMaterial color="#1f6b45" emissive="#0b2a1b" emissiveIntensity={0.9} transparent opacity={0.6} flatShading />
+          </mesh>
+        </group>
+      ))}
+
       {/* uzly L5 */}
       {NODE_SITES.map((site, index) => (
         <group
@@ -302,14 +324,29 @@ export function MobaStage({
             <circleGeometry args={[2.2, 18]} />
             <meshBasicMaterial color="#0a1a16" transparent opacity={0.7} />
           </mesh>
-          <mesh position={[0, 1.8, 0]}>
-            <coneGeometry args={[0.9, 3.4, 6]} />
-            <meshStandardMaterial color="#34505f" emissive="#123742" emissiveIntensity={1.2} roughness={0.4} />
-          </mesh>
-          <mesh position={[0, 3.9, 0]}>
-            <octahedronGeometry args={[0.55, 0]} />
-            <meshBasicMaterial color="#7fe3d4" toneMapped={false} />
-          </mesh>
+          {structure.kind === 'inhibitor' ? (
+            <>
+              <mesh position={[0, 1.5, 0]}>
+                <cylinderGeometry args={[0.8, 1.15, 3, 6]} />
+                <meshStandardMaterial color="#4a3a1f" emissive="#3a2a10" emissiveIntensity={1.1} roughness={0.5} />
+              </mesh>
+              <mesh position={[0, 3.3, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                <torusGeometry args={[1.15, 0.14, 8, 24]} />
+                <meshBasicMaterial color="#ffd166" toneMapped={false} />
+              </mesh>
+            </>
+          ) : (
+            <>
+              <mesh position={[0, 1.8, 0]}>
+                <coneGeometry args={[0.9, 3.4, 6]} />
+                <meshStandardMaterial color="#34505f" emissive="#123742" emissiveIntensity={1.2} roughness={0.4} />
+              </mesh>
+              <mesh position={[0, 3.9, 0]}>
+                <octahedronGeometry args={[0.55, 0]} />
+                <meshBasicMaterial color="#7fe3d4" toneMapped={false} />
+              </mesh>
+            </>
+          )}
         </group>
       ))}
 

@@ -45,7 +45,7 @@ try {
   const start = await debug();
   check('start: dva hrdinové', start?.heroes?.length === 2, JSON.stringify(start?.heroes?.length));
   check('start: tři uzly L5', start?.nodes?.length === 3, String(start?.nodes?.length));
-  check('start: čtrnáct struktur', start?.towers?.length === 14, String(start?.towers?.length));
+  check('start: 26 struktur (věže + inhibitory + Nexy)', start?.towers?.length === 26, String(start?.towers?.length));
   check('start: čtyři kouzla', start?.spells?.length === 4 && start.spells[3].slot === 'R');
   await page.screenshot({ path: `${OUT}/start.png` });
 

@@ -10,7 +10,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { MobaSnapshot } from './sim';
-import { LANES, MAP_HALF_X, MAP_HALF_Z, NODE_SITES, isStructureProtected } from './map';
+import { BUSHES, LANES, MAP_HALF_X, MAP_HALF_Z, NODE_SITES, RIVER, isStructureProtected } from './map';
 
 const WIDTH = 216;
 const HEIGHT = 156;
@@ -63,6 +63,18 @@ export function MobaMinimap({
       context.stroke();
     }
 
+    // řeka
+    context.fillStyle = 'rgba(47, 111, 143, 0.55)';
+    context.fillRect(sx(RIVER.x - RIVER.halfWidth), 0, (sx(RIVER.x + RIVER.halfWidth) - sx(RIVER.x - RIVER.halfWidth)), HEIGHT);
+
+    // bushe — v nich soupeře nevidíš, takže je musíš vidět na mapě
+    context.fillStyle = 'rgba(31, 107, 69, 0.85)';
+    for (const bush of BUSHES) {
+      context.beginPath();
+      context.arc(sx(bush.x), sz(bush.z), Math.max(2, (bush.r / (MAP_HALF_X * 2)) * WIDTH), 0, Math.PI * 2);
+      context.fill();
+    }
+
     if (!snapshot) return;
 
     // uzly L5
@@ -96,6 +108,15 @@ export function MobaMinimap({
         context.beginPath();
         context.arc(cx, cz, 7, 0, Math.PI * 2);
         context.fill();
+      } else if (tower.kind === 'inhibitor') {
+        // inhibitor je kosočtverec — pozná se na první pohled od věže
+        context.beginPath();
+        context.moveTo(cx, cz - 4.5);
+        context.lineTo(cx + 4.5, cz);
+        context.lineTo(cx, cz + 4.5);
+        context.lineTo(cx - 4.5, cz);
+        context.closePath();
+        context.fill();
       } else {
         context.fillRect(cx - 2.5, cz - 2.5, 5, 5);
       }
@@ -105,8 +126,9 @@ export function MobaMinimap({
     // minioni
     for (const minion of snapshot.minions) {
       context.fillStyle = minion.team === 'blue' ? COLORS.blue : COLORS.red;
-      context.globalAlpha = 0.55;
-      context.fillRect(sx(minion.x) - 1, sz(minion.z) - 1, 2, 2);
+      context.globalAlpha = minion.super ? 0.95 : 0.55;
+      const size = minion.super ? 3.5 : 2;
+      context.fillRect(sx(minion.x) - size / 2, sz(minion.z) - size / 2, size, size);
     }
     context.globalAlpha = 1;
 

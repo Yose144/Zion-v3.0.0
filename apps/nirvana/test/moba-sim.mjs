@@ -11,7 +11,7 @@
 
 import { BASE_SPEED, buyItem, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, sellItem, stepMoba, mobaSnapshot, visionSources, NO_INPUT } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
-import { NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
+import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
 let failures = 0;
 const check = (name, ok, detail = '') => {
@@ -46,7 +46,13 @@ check('kouzla: R má delší cooldown než Q', krishna[3].cooldownMs > krishna[0
 const state = createMoba(0, 82, 0);
 check('start: dva hrdinové', state.heroes.length === 2);
 check('start: tři uzly L5', state.nodes.length === 3, String(state.nodes.length));
-check('start: dvanáct věží + dva Nexy', state.towers.length === 14, String(state.towers.length));
+check(
+  'start: 18 věží + 6 inhibitorů + 2 Nexy',
+  state.towers.length === 26 &&
+    state.towers.filter((tower) => tower.kind === 'tower').length === 18 &&
+    state.towers.filter((tower) => tower.kind === 'inhibitor').length === 6,
+  String(state.towers.length),
+);
 check('start: Nexy mají plné HP', state.towers.filter((t) => t.kind === 'nexus').every((t) => t.hp === NEXUS_HP));
 
 // ── 3. vlny minionů ──────────────────────────────────────────────────
@@ -126,9 +132,12 @@ you.z = redNexus.z;
 advance(state, 2000);
 check('ochrana: Nexa nedostane nic, dokud stojí vnitřní věže', redNexus.hp === nexusHpBefore, `${nexusHpBefore} → ${Math.round(redNexus.hp)}`);
 
-// Sundej jednu lajnu (vnější → vnitřní) a Nexa padne.
+// Sundej jednu lajnu celou (vnější → vnitřní → základnová → inhibitor);
+// teprve pád inhibitoru odemyká Nexu.
 redOuterMid.hp = 0;
 redInnerMid.hp = 0;
+state.towers.find((t) => t.id === 'red-tower-base-mid').hp = 0;
+state.towers.find((t) => t.id === 'red-inhibitor-mid').hp = 0;
 redNexus.hp = 400; // plná Nexa má 4000; tady jde o pravidlo, ne o čas
 revive(you);
 you.x = redNexus.x - 2;
@@ -507,6 +516,72 @@ check(
   buyItem(h3, 'lotus');
   advance(s3, 1000);
   check('itemy: Lotos regeneruje', h3.hp > 100, String(Math.round(h3.hp)));
+}
+
+// ── mapa: bushe, inhibitory, super minioni (F3) ────────────────────
+{
+  console.log('\n-- mapa --');
+  const s = createMoba(0, 82, 3_000_000);
+  const me = s.heroes.find((hero) => hero.id === 'hero-you');
+  const foe = s.heroes.find((hero) => hero.id === 'hero-foe');
+  const bush = BUSHES[0];
+
+  // bush jako past na vidění: z dálky soupeře v bushi nevidíš…
+  foe.x = bush.x;
+  foe.z = bush.z;
+  me.x = bush.x + 12;
+  me.z = bush.z + 10;
+  check('bush: soupeř v bushi není z dálky vidět', !mobaSnapshot(s, 'blue').heroes.some((hero) => hero.id === foe.id));
+
+  // …ale zblízka ano (do BUSH_REVEAL)
+  me.x = bush.x + 2.4;
+  me.z = bush.z;
+  check('bush: zblízka je vidět', mobaSnapshot(s, 'blue').heroes.some((hero) => hero.id === foe.id));
+
+  // mimo bush platí normální vidění
+  foe.x = bush.x + 30;
+  foe.z = bush.z + 30;
+  me.x = bush.x + 30;
+  me.z = bush.z + 24;
+  check('bush: mimo bush platí normální radius', mobaSnapshot(s, 'blue').heroes.some((hero) => hero.id === foe.id));
+
+  // ochrana: vnější → vnitřní → základnová → inhibitor → Nexa
+  const m = createMoba(0, 82, 3_000_000);
+  const hp = (id) => m.towers.find((tower) => tower.id === id);
+  check('ochrana: vnitřní věž krytá vnější', isStructureProtected(m.towers, 'blue-tower-inner-mid'));
+  check('ochrana: základnová věž krytá vnitřní', isStructureProtected(m.towers, 'blue-tower-base-mid'));
+  check('ochrana: inhibitor krytý základnovou', isStructureProtected(m.towers, 'blue-inhibitor-mid'));
+  check('ochrana: Nexa krytá, dokud stojí inhibitory', isStructureProtected(m.towers, 'blue-nexus'));
+
+  hp('blue-tower-outer-mid').hp = 0;
+  check('ochrana: po vnější věži je vnitřní odemčená', !isStructureProtected(m.towers, 'blue-tower-inner-mid'));
+  hp('blue-tower-inner-mid').hp = 0;
+  check('ochrana: po vnitřní je základnová odemčená', !isStructureProtected(m.towers, 'blue-tower-base-mid'));
+  hp('blue-tower-base-mid').hp = 0;
+  check('ochrana: po základnové je inhibitor odemčený', !isStructureProtected(m.towers, 'blue-inhibitor-mid'));
+  hp('blue-inhibitor-mid').hp = 0;
+  check('ochrana: po inhibitoru je Nexa odemčená', !isStructureProtected(m.towers, 'blue-nexus'));
+
+  // padlý inhibitor pustí super miniona do linky
+  const w = createMoba(0, 82, 3_000_000);
+  advance(w, 7000);
+  const redInhibitor = w.towers.find((tower) => tower.id === 'red-inhibitor-mid');
+  redInhibitor.hp = 0;
+  redInhibitor.respawnAt = w.now + INHIBITOR_RESPAWN_MS;
+  advance(w, 25000);
+  check(
+    'inhibitor: padlý inhibitor pustí super miniona',
+    w.minions.some((minion) => minion.team === 'blue' && minion.lane === 'mid' && minion.super),
+    w.minions.filter((minion) => minion.super).length + ' super',
+  );
+
+  // inhibitor se po pěti minutách obnoví
+  const r = createMoba(0, 82, 3_000_000);
+  const inhibitor = r.towers.find((tower) => tower.id === 'red-inhibitor-top');
+  inhibitor.hp = 0;
+  inhibitor.respawnAt = r.now + 1000;
+  advance(r, 1500);
+  check('inhibitor: po respawnu má plné HP', inhibitor.hp === inhibitor.maxHp, String(inhibitor.hp));
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

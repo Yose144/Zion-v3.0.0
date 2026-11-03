@@ -177,7 +177,7 @@ try {
   const meA = started.moba.heroes.find((hero) => hero.id === roomA.youPlayerId);
   check('start: hráč A je ve hře', Boolean(meA), roomA.youPlayerId ?? 'null');
   check('start: tři uzly L5', started.moba.nodes.length === 3);
-  check('start: struktury jdou vidět vždy', started.moba.towers.length >= 14, String(started.moba.towers.length));
+  check('start: struktury jdou vidět vždy', started.moba.towers.length >= 26, String(started.moba.towers.length));
 
   const teamA = meA.team;
   const ownTeam = started.moba.heroes.filter((hero) => hero.team === teamA);

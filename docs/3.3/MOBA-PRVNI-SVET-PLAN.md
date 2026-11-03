@@ -61,10 +61,14 @@ Opraveno: server multiplayeru zprávu `buy` vůbec nezpracovával.
 
 *Ověřeno: moba-sim 92/92, net moba test 22/22 (buy+sell proti serveru).*
 
-### F3 — Mapa a terén
-Bushe (blokují vidění, uvnitř nejsi vidět), řeka (střed), průchodnost jen po
-linkách + jungle; T1/T2/T3 + **inhibitory** (po zničení super minioni, respawn 5 min).
-**Protokol:** busy jen mění filtr vidění (server), terén je sdílený modul → bez bumpu.
+### F3 — Mapa a terén *(hotovo 2026-11-03, protokol 10)*
+**Bushe** (8 keřů — jednotka v nich není vidět, dokud se nepřiblížíš na 3,4 m),
+**řeka** (vizuál ve středu, nezpomaluje), **třetí věž + inhibitor** v každé
+lince (18 věží + 6 inhibitorů + 2 Nexy), super minioni po pádu inhibitoru
+a jeho respawn po 5 minutách. **Protokol:** `kind: 'inhibitor'` a `super`
+u minionů → 9 → 10.
+
+*Ověřeno: moba-sim 105/105 (13 nových), E2E proti produkci.*
 
 ### F4 — Objektivy a runy
 Runy (bounty / haste / double damage) každé 2 min, **Roshan-like boss** s Aegis

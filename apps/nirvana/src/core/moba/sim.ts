@@ -15,6 +15,9 @@ import { AVATARS_BY_ID } from '../avatars/catalog';
 import { avatarLook } from '../avatars/kit';
 import { SCHOOL_TRAITS, SPELL_RANK_SCALE, spellRank, spellsFor, type Spell, type SpellSchool, type SpellSlot } from './spells';
 import {
+  BUSH_REVEAL,
+  bushAt,
+  INHIBITOR_RESPAWN_MS,
   JUNGLE_CAMPS,
   LANES,
   MAP_HALF_X,
@@ -325,13 +328,19 @@ export interface Minion {
   z: number;
   hp: number;
   maxHp: number;
+  damage: number;
+  range: number;
+  attackMs: number;
+  speed: number;
+  /** Super minion — spawne se, když padne nepřátelský inhibitor v lince. */
+  super: boolean;
   cooldown: number;
 }
 
 export interface Tower {
   id: string;
   team: Team;
-  kind: 'tower' | 'nexus';
+  kind: 'tower' | 'nexus' | 'inhibitor';
   x: number;
   z: number;
   hp: number;
@@ -340,6 +349,8 @@ export interface Tower {
   damage: number;
   attackMs: number;
   cooldown: number;
+  /** Inhibitor po zničení vyroste znovu (`INHIBITOR_RESPAWN_MS`). */
+  respawnAt: number;
 }
 
 export interface Projectile {
@@ -546,6 +557,7 @@ export function createMobaMatch(seats: MobaSeat[], now: number): MobaState {
       damage: structure.damage,
       attackMs: structure.attackMs,
       cooldown: 0,
+      respawnAt: 0,
     })),
     projectiles: [],
     effects: [],
@@ -732,10 +744,10 @@ function damageMinion(state: MobaState, minion: Minion, amount: number, source: 
     if (distance(hero.x, hero.z, minion.x, minion.z) > XP_SHARE_RADIUS) continue;
     const isKiller = killer?.id === hero.id;
     const ratio = denied ? 0.5 : isKiller ? 1 : XP_ALLY_RATIO;
-    gainXp(state, hero, Math.round(MINION_XP * ratio));
+    gainXp(state, hero, Math.round((minion.super ? MINION_XP * 2 : MINION_XP) * ratio));
   }
   if (killer && !denied) {
-    killer.gold = Math.min(GOLD_CAP, killer.gold + MINION_GOLD);
+    killer.gold = Math.min(GOLD_CAP, killer.gold + (minion.super ? MINION_GOLD * 2 : MINION_GOLD));
     killer.damageDone += amount;
   }
   if (killer && denied) {
@@ -788,8 +800,15 @@ function damageTower(state: MobaState, tower: Tower, amount: number, attacker: H
     gainXp(state, hero, TOWER_XP);
   }
   if (attacker) attacker.gold = Math.min(GOLD_CAP, attacker.gold + TOWER_GOLD_LASTHIT);
+  if (tower.kind === 'inhibitor') {
+    tower.respawnAt = state.now + INHIBITOR_RESPAWN_MS;
+    state.banner = `${tower.team === 'blue' ? 'ZION' : 'Opozice'} přišla o inhibitor — super minioni!`;
+    state.bannerUntil = state.now + 4000;
+    return;
+  }
   if (tower.kind === 'tower') {
-    state.banner = `${team === 'blue' ? 'ZION' : 'Opozice'} zničila ${tower.id.includes('-outer-') ? 'vnější' : 'vnitřní'} věž`;
+    const label = tower.id.includes('-base-') ? 'základnovou věž' : tower.id.includes('-outer-') ? 'vnější věž' : 'vnitřní věž';
+    state.banner = `${team === 'blue' ? 'ZION' : 'Opozice'} zničila ${label}`;
     state.bannerUntil = state.now + 2600;
   }
 }
@@ -1044,6 +1063,39 @@ function botBuild(hero: Hero): ItemId[] {
   return ['boots', 'blade', 'aegis'];
 }
 
+// ── minioni a inhibitory (F3) ───────────────────────────────────────
+
+/** Super minion je tvrdší a platí za něj víc — odměna za prolomenou linku. */
+const SUPER_MINION = { hp: 680, damage: 42, range: 5.2, attackMs: 1100, speed: 3.4 } as const;
+
+function spawnMinion(state: MobaState, team: Team, lane: LaneId, index: number, isSuper: boolean) {
+  const base = team === 'blue' ? SPAWNS.blue : SPAWNS.red;
+  const stats = isSuper
+    ? SUPER_MINION
+    : { hp: MINION_HP, damage: MINION_DAMAGE, range: MINION_RANGE, attackMs: MINION_ATTACK_MS, speed: MINION_SPEED };
+  state.minions.push({
+    id: nextId(`minion-${team}`),
+    team,
+    lane,
+    x: base.x + (team === 'blue' ? 6 : -6) + index * 1.4,
+    z: (LANES.find((candidate) => candidate.id === lane)?.z ?? 0) + (index - 1) * 1.2,
+    hp: stats.hp,
+    maxHp: stats.hp,
+    damage: stats.damage,
+    range: stats.range,
+    attackMs: stats.attackMs,
+    speed: stats.speed,
+    super: isSuper,
+    cooldown: 0,
+  });
+}
+
+/** Stojí inhibitor daného týmu v lince? (Když spadl, teče super minion.) */
+function inhibitorDown(state: MobaState, team: Team, lane: LaneId): boolean {
+  const inhibitor = state.towers.find((tower) => tower.id === `${team}-inhibitor-${lane}`);
+  return Boolean(inhibitor && inhibitor.hp <= 0);
+}
+
 // ── krok simulace ────────────────────────────────────────────────────
 
 export function stepMoba(
@@ -1071,18 +1123,11 @@ export function stepMoba(
     for (const lane of LANES) {
       for (const team of ['blue', 'red'] as Team[]) {
         for (let index = 0; index < WAVE_SIZE; index += 1) {
-          const base = team === 'blue' ? SPAWNS.blue : SPAWNS.red;
-          state.minions.push({
-            id: nextId(`minion-${team}`),
-            team,
-            lane: lane.id,
-            x: base.x + (team === 'blue' ? 6 : -6) + index * 1.4,
-            z: lane.z + (index - 1) * 1.2,
-            hp: MINION_HP,
-            maxHp: MINION_HP,
-            cooldown: 0,
-          });
+          spawnMinion(state, team, lane.id, index, false);
         }
+        // Padlý nepřátelský inhibitor pouští do linky super miniona.
+        const rival: Team = team === 'blue' ? 'red' : 'blue';
+        if (inhibitorDown(state, rival, lane.id)) spawnMinion(state, team, lane.id, WAVE_SIZE, true);
       }
     }
     state.banner = `Vlna ${state.wave}`;
@@ -1233,18 +1278,18 @@ export function stepMoba(
     const lane = LANES.find((candidate) => candidate.id === minion.lane) ?? LANES[1]!;
     const enemyBase = minion.team === 'blue' ? SPAWNS.red : SPAWNS.blue;
     const enemyHero = state.heroes.find(
-      (hero) => hero.team !== minion.team && hero.alive && distance(minion.x, minion.z, hero.x, hero.z) <= MINION_RANGE,
+      (hero) => hero.team !== minion.team && hero.alive && distance(minion.x, minion.z, hero.x, hero.z) <= minion.range,
     );
     const enemyMinion = state.minions.find(
-      (other) => other.team !== minion.team && distance(minion.x, minion.z, other.x, other.z) <= MINION_RANGE,
+      (other) => other.team !== minion.team && distance(minion.x, minion.z, other.x, other.z) <= minion.range,
     );
 
     if (enemyHero || enemyMinion) {
       if (now >= minion.cooldown) {
-        minion.cooldown = now + MINION_ATTACK_MS;
+        minion.cooldown = now + minion.attackMs;
         const target = enemyHero ?? enemyMinion!;
-        if (enemyHero) damageHero(state, enemyHero, MINION_DAMAGE, minion.id);
-        else damageMinion(state, enemyMinion!, MINION_DAMAGE, minion.id);
+        if (enemyHero) damageHero(state, enemyHero, minion.damage, minion.id);
+        else damageMinion(state, enemyMinion!, minion.damage, minion.id);
         addEffect(state, 'hit', target.x, target.z, 0.5, '#ffb877', 150);
       }
       continue;
@@ -1257,25 +1302,37 @@ export function stepMoba(
         tower.team !== minion.team &&
         tower.hp > 0 &&
         !isStructureProtected(state.towers, tower.id) &&
-        distance(minion.x, minion.z, tower.x, tower.z) <= MINION_RANGE,
+        distance(minion.x, minion.z, tower.x, tower.z) <= minion.range,
     );
     if (structure) {
       if (now >= minion.cooldown) {
-        minion.cooldown = now + MINION_ATTACK_MS;
-        damageTower(state, structure, MINION_DAMAGE, null);
+        minion.cooldown = now + minion.attackMs;
+        damageTower(state, structure, minion.damage, null);
       }
       continue;
     }
 
     const dx = enemyBase.x - minion.x;
     const length = Math.hypot(dx) || 1;
-    minion.x += (dx / length) * MINION_SPEED * dt;
-    minion.z += Math.sign(lane.z - minion.z) * Math.min(Math.abs(lane.z - minion.z), MINION_SPEED * dt * 0.6);
+    minion.x += (dx / length) * minion.speed * dt;
+    minion.z += Math.sign(lane.z - minion.z) * Math.min(Math.abs(lane.z - minion.z), minion.speed * dt * 0.6);
   }
 
   // ── věže a Nexy ───────────────────────────────────────────────────
   for (const tower of state.towers) {
-    if (tower.hp <= 0) continue;
+    if (tower.hp <= 0) {
+      // Inhibitor se po pěti minutách obnoví — linka se musí dát zavřít.
+      if (tower.kind === 'inhibitor' && tower.respawnAt > 0 && now >= tower.respawnAt) {
+        tower.hp = tower.maxHp;
+        tower.respawnAt = 0;
+        state.banner = `${tower.team === 'blue' ? 'ZION' : 'Opozice'} obnovila inhibitor`;
+        state.bannerUntil = now + 3000;
+        addEffect(state, 'level', tower.x, tower.z, 2.4, tower.team === 'blue' ? '#7fe3d4' : '#ff7a6b', 900);
+      }
+      continue;
+    }
+    // Inhibitor nestřílí (range 0) — jeho hodnota je v super minionech.
+    if (tower.damage <= 0 || tower.range <= 0) continue;
     if (now < tower.cooldown) continue;
     const minion = state.minions.find(
       (candidate) => candidate.team !== tower.team && distance(tower.x, tower.z, candidate.x, candidate.z) <= tower.range,
@@ -1450,7 +1507,7 @@ export interface MobaSnapshot {
   wave: number;
   nextWaveIn: number;
   nodes: NodeState[];
-  towers: { id: string; team: Team; kind: 'tower' | 'nexus'; x: number; z: number; hp: number; maxHp: number }[];
+  towers: { id: string; team: Team; kind: 'tower' | 'nexus' | 'inhibitor'; x: number; z: number; hp: number; maxHp: number }[];
   heroes: {
     id: string;
     team: Team;
@@ -1475,7 +1532,7 @@ export interface MobaSnapshot {
     items: ItemId[];
     buffs: Buff[];
   }[];
-  minions: { id: string; team: Team; x: number; z: number; hp: number; maxHp: number }[];
+  minions: { id: string; team: Team; x: number; z: number; hp: number; maxHp: number; super: boolean }[];
   monsters: { id: string; x: number; z: number; hp: number; maxHp: number; type: JungleCamp['type']; alive: boolean }[];
   projectiles: { id: string; x: number; z: number; color: string }[];
   effects: { id: string; kind: Effect['kind']; x: number; z: number; radius: number; color: string; alpha: number }[];
@@ -1526,7 +1583,15 @@ export function isVisibleTo(
  */
 export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot {
   const sources = viewerTeam ? visionSources(state, viewerTeam) : null;
-  const sees = (x: number, z: number) => !sources || isVisibleTo(sources, x, z);
+  // Bush je past na vidění: jednotka v něm je vidět, jen když je zdroj
+  // vidění hodně blízko. Odsud se to filtruje pro snapshot (sim vidí vše).
+  const sees = (x: number, z: number) => {
+    if (!sources) return true;
+    if (bushAt(x, z)) {
+      return sources.some((source) => distance(source.x, source.z, x, z) <= Math.min(source.radius, BUSH_REVEAL));
+    }
+    return isVisibleTo(sources, x, z);
+  };
   return {
     time: state.time,
     ended: state.ended,
@@ -1582,6 +1647,7 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         z: Math.round(minion.z * 100) / 100,
         hp: minion.hp,
         maxHp: minion.maxHp,
+        super: minion.super,
       })),
     monsters: state.monsters
       .filter((monster) => sees(monster.x, monster.z))
