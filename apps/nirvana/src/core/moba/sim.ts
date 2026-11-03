@@ -862,6 +862,25 @@ function stepBot(state: MobaState, hero: Hero, now: number) {
     return;
   }
   hero.botCast = null;
+
+  // Nákup: bot musí utrácet. Bez toho by pasivní zlato zvýhodnilo jen
+  // člověka — bot by hromadil 900 zlaťáků a prohrával staty.
+  for (const itemId of botBuild(hero)) {
+    if (hero.items.includes(itemId)) continue;
+    if (buyItem(hero, itemId)) break;
+  }
+}
+
+/** Build bota podle školy jeho kouzel — agresivní školy kupují čepel první. */
+function botBuild(hero: Hero): ItemId[] {
+  const school = hero.spells[0]?.school ?? 'cosmic';
+  if (school === 'fire' || school === 'arrow' || school === 'blade' || school === 'storm' || school === 'shadow' || school === 'beast') {
+    return ['blade', 'boots', 'aegis'];
+  }
+  if (school === 'ward' || school === 'nature' || school === 'song') {
+    return ['aegis', 'boots', 'blade'];
+  }
+  return ['boots', 'blade', 'aegis'];
 }
 
 // ── krok simulace ────────────────────────────────────────────────────

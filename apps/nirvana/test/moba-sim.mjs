@@ -439,6 +439,13 @@ check(
   const snap = mobaSnapshot(s);
   const snapMe = snap.heroes.find((hero) => hero.id === 'hero-you');
   check('postup: snapshot nese xp a xpNeed', typeof snapMe.xp === 'number' && snapMe.xpNeed > 0, `${snapMe.xp}/${snapMe.xpNeed}`);
+
+  // Boti utrácejí: bez toho by pasivní zlato zvýhodnilo jen člověka.
+  const bot = s.heroes.find((hero) => hero.id === 'hero-foe');
+  bot.gold = 500;
+  advance(s, 1200);
+  check('bot: koupí item, když má zlato', bot.items.length >= 1, String(bot.items.length));
+  check('bot: zlato se odečetlo', bot.gold < 500, String(Math.round(bot.gold)));
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);
