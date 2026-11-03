@@ -60,20 +60,13 @@ try {
   // scoreboard (F6) — Tab nebo tlačítko; musí mít dvě tabulky (modrá/červená)
   await page.click('.moba-scoreboard-toggle');
   await page.waitForSelector('.moba-scoreboard', { timeout: 5000 }).catch(() => {});
-  const boards = await page.$$('.moba-board');
-  check('scoreboard: dvě tabulky týmů', boards.length === 2, String(boards.length));
+  const teamBoards = await page.$$('.moba-board');
+  check('scoreboard: dvě tabulky týmů', teamBoards.length === 2, String(teamBoards.length));
   await page.click('.moba-scoreboard-toggle');
   await page.waitForSelector('.moba-shop-panel', { timeout: 5000 }).catch(() => {});
   const shopItems = await page.$$('.moba-shop-item');
   check('obchod: patnáct itemů v panelu (14 + ward)', shopItems.length === 15, String(shopItems.length));
   await page.click('.moba-shop-toggle');
-
-  // scoreboard (F6) — Tab nebo tlačítko; musí mít dvě tabulky (modrá/červená)
-  await page.click('.moba-scoreboard-toggle');
-  await page.waitForSelector('.moba-scoreboard', { timeout: 5000 }).catch(() => {});
-  const boards = await page.$$('.moba-board');
-  check('scoreboard: dvě tabulky týmů', boards.length === 2, String(boards.length));
-  await page.click('.moba-scoreboard-toggle');
 
   // Čekej na **podmínku**, ne na pevný čas: simulace běží po krocích a na
   // pomalém GPU (swiftshader) se posune pomaleji než skutečné hodiny.
@@ -127,8 +120,10 @@ try {
   await page.evaluate(() => window.__mobaDebug().damageNexus(4000));
   const ended = await waitFor(async () => (await debug())?.ended === 'blue', 20_000);
   check('konec: Nexa padla', ended, String((await debug()).ended));
-  const resultOverlay = await page.$('.moba-result');
-  check('konec: overlayer s výsledkem', Boolean(resultOverlay));
+  // Overlay je React state — po `ended` se může objevit až o snímek později
+  // (a s tabulkami F6 je render o pár ms delší). Čekej na selektor, ne na jeden dotaz.
+  const resultOverlay = await waitFor(async () => Boolean(await page.$('.moba-result')), 8000);
+  check('konec: overlayer s výsledkem', resultOverlay);
   await page.screenshot({ path: `${OUT}/victory.png` });
 
   check('konzole bez chyb', errors.length === 0, errors.slice(0, 3).join(' | '));

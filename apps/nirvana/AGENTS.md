@@ -1139,3 +1139,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Testy:** `test/moba-sim.mjs` (133 kontrol: nákup/limit wardu, položení
   mimo dosah, vidění skrz bush, expirace po 90 s, buyback cena/HP/cooldown,
   respawn scaling).
+
+## PRVNÍ SVĚT — meta: scoreboard a obtížnost (F6, 2026-11-03, protokol 13)
+
+- **Scoreboard žije ze snapshotu.** Sim počítá `damageDone`/`healingDone`
+  (léčení i z regenerace), snapshot je posílá jako `damage`/`healing`.
+  Kdyby si klient počítal vlastní čísla, nikdy by neseděla se serverem.
+- **GPM/XPM se dopočítávají z snapshotu:** zlato / minuty a `totalXpAt(level, xp)`
+  / minuty. Proto existuje `totalXpAt` — bez něj by XPM nešlo spočítat.
+- **Obtížnost botů mění jen rozhodování** (`BOT_SKILLS`: přesnost míření,
+  kadence kouzel, ochota ustoupit). Nikdy poškození — jinak by „hard" byla
+  jiná hra, ne lepší soupeř. V online drží server `normal`, sólo si vybírá
+  na pick screenu.
+- **Míření botů je deterministické** (sin-hash z času a pozice), takže stejná
+  hra dá stejný výsledek — testy na tom staví.
+- **`botCasts` je diagnostický čítač** (neposílá se) — test obtížnosti
+  porovnává, kolik kouzel bot za stejný čas sešle.
+- **Pozor na wrapper komponenty:** `MobaGame` je jen obal nad `SoloController`
+  a **musí přeposílat všechny request refy**. Zahazoval `sellRequest` a
+  `buybackRequest`, takže prodej itemů a buyback v sólu od F2/F5 tiše
+  nefungovaly (page je předávala dál, ale komponenta je nepřevzala).
+  Když se přidá nový ref, zkontroluj obě úrovně.
+- **Tab přepíná scoreboard** a je to `event.preventDefault()` — jinak by
+  prohlížeč odvedl fokus z plátna.
+- **PROTO_VERSION 13** (`damage`/`healing` ve snapshotu) → deploy **net první**.
+- **Testy:** `test/moba-sim.mjs` (140 kontrol: obtížnost, poškození/léčení
+  ve snapshotu, totalXpAt) a E2E scoreboard (dvě tabulky).

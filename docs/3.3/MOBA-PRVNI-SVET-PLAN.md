@@ -89,10 +89,15 @@ vidění 10 m na 90 s) — vidí jen vlastní tým a funguje i proti bushům.
 
 *Ověřeno: moba-sim 133/133 (14 nových).*
 
-### F6 — Meta a kvalita
-Scoreboard (GPM/XPM, damage, healing), pozápasový souhrn, obtížnosti botů
-(easy/normal/hard mění jen rozhodování, nikdy damage), replay/spectate režim,
-den-noc cyklus (volitelně).
+### F6 — Meta a kvalita *(hotovo 2026-11-03, protokol 13)*
+**Scoreboard** (Tab / tlačítko Σ): Lv, K/D, zlato, GPM, XPM, poškození,
+léčení — dvě tabulky týmů, tvůj řádek zvýrazněný. Stejné tabulky i na
+obrazovce vítězství. **Obtížnost botů** easy/normal/hard: mění jen rozhodování
+(přesnost, kadence, ochota ustoupit), nikdy poškození. **Protokol:** `damage`
+a `healing` ve snapshotu → 12 → 13.
+
+*Ověřeno: moba-sim 140/140 (7 nových), E2E scoreboard.*
+Replay/spectate a den-noc zůstávají jako volitelné nad rámec F6.
 
 ---
 
