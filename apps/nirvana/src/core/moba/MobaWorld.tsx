@@ -52,9 +52,9 @@ function jungleWalls(): Block[] {
       out.push({
         x: x + jitter,
         z: z + (random() - 0.5) * 0.8,
-        scale: 0.75 + random() * 0.5,
-        rotation: (random() - 0.5) * 0.5,
-        height: 1.4 + random() * 0.9,
+        scale: 0.9 + random() * 0.7,
+        rotation: random() * Math.PI,
+        height: 1.1 + random() * 0.8,
       });
     }
   }
@@ -103,6 +103,9 @@ function makeMotes(): Float32Array {
   return positions;
 }
 
+/** Kolik stébel rákosí se rozsype podél řeky. */
+const REEDS = 42;
+
 export function MobaWorld() {
   const walls = useMemo(() => jungleWalls(), []);
   const rocks = useMemo(() => jungleRocks(), []);
@@ -114,7 +117,10 @@ export function MobaWorld() {
   const lanternPole = useRef<THREE.InstancedMesh>(null);
   const lanternGlow = useRef<THREE.InstancedMesh>(null);
   const campStone = useRef<THREE.InstancedMesh>(null);
+  const campRing = useRef<THREE.InstancedMesh>(null);
+  const reedMesh = useRef<THREE.InstancedMesh>(null);
   const pitStone = useRef<THREE.InstancedMesh>(null);
+  const reeds = REEDS;
   const mountains = useRef<THREE.InstancedMesh>(null);
   const motesRef = useRef<THREE.Points>(null);
 
@@ -151,6 +157,36 @@ export function MobaWorld() {
     });
     if (lanternPole.current) lanternPole.current.instanceMatrix.needsUpdate = true;
     if (lanternGlow.current) lanternGlow.current.instanceMatrix.needsUpdate = true;
+
+    // kruhy doupat v barvě typu
+    const color = new THREE.Color();
+    JUNGLE_CAMPS.forEach((camp, index) => {
+      helper.position.set(camp.x, 0.05, camp.z);
+      helper.rotation.set(-Math.PI / 2, 0, 0);
+      helper.scale.setScalar(1);
+      helper.updateMatrix();
+      campRing.current?.setMatrixAt(index, helper.matrix);
+      color.set(camp.type === 'ancient' ? '#c084fc' : camp.type === 'medium' ? '#7fb0ff' : '#7fe3d4');
+      campRing.current?.setColorAt(index, color);
+    });
+    if (campRing.current) {
+      campRing.current.instanceMatrix.needsUpdate = true;
+      if (campRing.current.instanceColor) campRing.current.instanceColor.needsUpdate = true;
+    }
+
+    // rákosí podél řeky
+    const reedRandom = makeRandom(31337);
+    for (let index = 0; index < reeds; index += 1) {
+      const side = index % 2 === 0 ? -1 : 1;
+      const alongZ = (reedRandom() * 2 - 1) * (MAP_HALF_Z - 8);
+      const x = side * (4.6 + reedRandom() * 1.1);
+      helper.position.set(x, 0.55, alongZ);
+      helper.rotation.set(0, reedRandom() * Math.PI, 0.05 * side);
+      helper.scale.set(1, 0.8 + reedRandom() * 0.9, 1);
+      helper.updateMatrix();
+      reedMesh.current?.setMatrixAt(index, helper.matrix);
+    }
+    if (reedMesh.current) reedMesh.current.instanceMatrix.needsUpdate = true;
 
     // doupata: dva balvany na kemp (8 kempů = 16 instancí)
     let campIndex = 0;
@@ -190,7 +226,7 @@ export function MobaWorld() {
       mountains.current?.setMatrixAt(index, helper.matrix);
     }
     if (mountains.current) mountains.current.instanceMatrix.needsUpdate = true;
-  }, [lanterns, walls, rocks]);
+  }, [lanterns, walls, rocks, reeds]);
 
   // jiskry se pomalu otáčejí a lucerny dýchají
   useFrame((frame) => {
@@ -205,8 +241,14 @@ export function MobaWorld() {
     <group>
       {/* zdi v džungli */}
       <instancedMesh ref={wallMesh} args={[undefined, undefined, walls.length]} frustumCulled={false}>
-        <boxGeometry args={[2.6, 1, 1.5]} />
-        <meshStandardMaterial color="#3c4a44" emissive="#0a1a16" emissiveIntensity={0.35} roughness={0.95} flatShading />
+        <dodecahedronGeometry args={[1, 0]} />
+        <meshStandardMaterial
+          color="#2b3a34"
+          emissive="#0c2418"
+          emissiveIntensity={0.55}
+          roughness={0.96}
+          flatShading
+        />
       </instancedMesh>
 
       {/* balvany */}
@@ -223,6 +265,18 @@ export function MobaWorld() {
       <instancedMesh ref={lanternGlow} args={[undefined, undefined, lanterns.length]} frustumCulled={false}>
         <sphereGeometry args={[0.22, 8, 6]} />
         <meshBasicMaterial color="#ffd9a0" toneMapped={false} />
+      </instancedMesh>
+
+      {/* rákosí podél řeky */}
+      <instancedMesh ref={reedMesh} args={[undefined, undefined, reeds]} frustumCulled={false}>
+        <coneGeometry args={[0.09, 1.1, 4]} />
+        <meshStandardMaterial color="#2f6b4a" emissive="#0b2417" emissiveIntensity={0.4} roughness={0.95} flatShading />
+      </instancedMesh>
+
+      {/* doupata kempů — plochý kruh v barvě typu, ať je vidět, co tam je */}
+      <instancedMesh ref={campRing} args={[undefined, undefined, JUNGLE_CAMPS.length]} frustumCulled={false}>
+        <ringGeometry args={[2.1, 2.7, 20]} />
+        <meshBasicMaterial vertexColors transparent opacity={0.5} toneMapped={false} />
       </instancedMesh>
 
       {/* doupata kempů */}
