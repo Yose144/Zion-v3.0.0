@@ -164,6 +164,18 @@ přepravky; po opravě na dodecahedry s mechovým emissivem čtou jako hřeben.
 - **Lucerny** poletují (opacity 0,75 ± 0,2); materiál musel být `transparent`.
 - Všechno počítané z `clock.elapsedTime` — žádný React state, žádné re-rendery.
 
+## 5h. F18 — portréty hrdinů
+
+Web už má 200 portrétů vyrenderovaných ze **stejného** avatar modelu, takže
+se negeneruje druhá sada: `scripts/ops/gen-moba-portraits.mjs` je zkopíruje
+do `apps/nirvana/public/portraits/<id>.webp` (1,8 MB) a zapíše seznam id do
+`portraits.generated.ts`. `portraitUrl()` vrací `null` pro chybějící id
+(katalog má mezery — 200 souborů na id 0–202), takže UI kreslí iniciálu
+místo 404 obrázku.
+
+Portréty jsou v HUD, na pick screenu a ve scoreboardu. **Naměřeno:** 60 fps,
+80 draw calls (portréty jsou DOM, ne geometrie).
+
 ## 6. Co dál (grafika)
 
 1. **Kontaktní stíny** pod hrdiny a miniony (levné, hodně pomůže čitelnosti).

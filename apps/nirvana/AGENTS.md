@@ -1420,3 +1420,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   nikdy nehromadí dole a nepotřebuje respawn logiku.
 - **Lucerna musí být `transparent`**, jinak `opacity` nic nedělá (basic
   materiál je jinak neprůhledný a flicker je neviditelný).
+
+## PRVNÍ SVĚT — portréty hrdinů (F18, 2026-11-03)
+
+- **Negeneruj druhou sadu.** Web už má 200 portrétů ze **stejného** avatar
+  modelu (`apps/website-v2.9/public/oasis-assets/game-portraits`).
+  `node scripts/ops/gen-moba-portraits.mjs` je zkopíruje do
+  `apps/nirvana/public/portraits/<id>.webp` (1,8 MB) a zapíše seznam id do
+  `portraits.generated.ts`. Po změně avatar modelu se musí přerenderovat
+  webové karty a pak spustit tenhle skript.
+- **`portraitUrl()` vrací `null` pro chybějící id** (katalog má mezery:
+  200 souborů na id 0–202). UI pak kreslí iniciálu — nikdy se nenačítá 404
+  obrázek, který by bliknul jako rozbitý.
+- Portréty jsou v HUD (vedle jména), na pick screenu (karta hrdiny)
+  a ve scoreboardu (mini varianta).
+- **Portrét musí být `object-position: center 22%`** — model je vycentrovaný
+  na tělo, takže na kruzích 2,2rem uřízne hlavu kdekoli jinde.

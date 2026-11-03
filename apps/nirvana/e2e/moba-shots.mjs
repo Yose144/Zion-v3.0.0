@@ -37,6 +37,8 @@ page.on('console', (message) => {
 
 await page.goto(`${BASE}/earth?mobaDebug=1`, { waitUntil: 'networkidle', timeout: 120_000 });
 await page.waitForSelector('.moba-start', { timeout: 60_000 });
+await page.screenshot({ path: join(OUT, '00-pick.png') });
+console.log(`  snímek: ${join(OUT, '00-pick.png')}`);
 await page.click('.moba-start');
 await sleep(4000);
 
