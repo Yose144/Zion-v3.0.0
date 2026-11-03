@@ -1567,6 +1567,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Dotykové cíle:** minimum 40 px (`min-height: 2.5rem`) v
   `@media (hover: none) and (pointer: coarse)`. Lišta her, odkazy v chrome,
   přepínač režimu, pás bran, filtry avatara. Žetony mají 24 px (WCAG 2.5.8).
+- **Test funkčnosti nesmí čekat „jedno čtení po X ms".** Mobile audit četl
+  manu 160 ms po klepnutí na kouzlo; HUD posílá telemetrii 5×/s a fontána
+  doplňuje 12 %/s, takže se snížení na pomalém snímku stihlo dorovnat a test
+  hlásil falešnou chybu (482 → 482), přestože kouzlo prošlo (propad je vidět
+  až ~200 ms po). Správně: 25 vzorků po 40 ms a hledat **propad** > 8 many
+  (regenerace ~2 za vzorek, kouzlo stojí 26).
 - **Nástroje:** `.artifacts/probe/responsive.mjs` (9 rout × 4 viewporty,
   počítá přesah a prvky mimo viewport, ignoruje vodorovné scrollovací pásy)
   a `.artifacts/probe/shots-responsive.mjs` (screenshoty výška/šířka).
