@@ -151,6 +151,8 @@ const cs = {
   walletCopied: 'Zkopírováno',
   walletSent: 'Odesláno',
   walletWorking: 'Pracuji…',
+  mining: 'Mining',
+  miningClientOnly: 'Mining je součást desktop klienta — stáhni Kingdom pro tvůj rig.',
 } as const;
 
 export type TranslationKey = keyof typeof cs;
@@ -298,6 +300,8 @@ const en: Record<TranslationKey, string> = {
   walletCopied: 'Copied',
   walletSent: 'Sent',
   walletWorking: 'Working…',
+  mining: 'Mining',
+  miningClientOnly: 'Mining lives in the desktop client — get Kingdom for your rig.',
 };
 
 const dictionaries: Record<Locale, Record<TranslationKey, string>> = { cs, en };

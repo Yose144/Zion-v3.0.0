@@ -1,2 +1,14 @@
 bundle/
 dist/
+__pycache__/
+*.pyc
+
+# Miner/node binárky — stejná sémantika jako donor (v gitu jen 3 soubory níže)
+resources/*
+!resources/mining/
+resources/mining/*
+!resources/mining/cosmic_harmony_deeksha_fallback.py
+!resources/srbminer/
+resources/srbminer/*
+!resources/srbminer/ReadMe.txt
+!resources/srbminer/VERSION.txt

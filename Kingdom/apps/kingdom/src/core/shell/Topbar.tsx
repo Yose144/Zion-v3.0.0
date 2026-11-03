@@ -18,6 +18,7 @@ export function Topbar({ locale }: { locale: Locale }) {
       <nav className="k-nav">
         <Link href="/">{t(locale, 'gate')}</Link>
         <Link href="/room">{t(locale, 'room')}</Link>
+        <Link href="/portal/mining">{t(locale, 'mining')}</Link>
       </nav>
 
       <span className="k-topbar-spacer" />

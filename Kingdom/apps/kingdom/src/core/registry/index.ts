@@ -19,8 +19,10 @@ import { manifest as m7 } from '../../portals/issobella/manifest';
 import v7 from '../../portals/issobella/Portal';
 import { manifest as m8 } from '../../portals/market/manifest';
 import v8 from '../../portals/market/Portal';
-import { manifest as m9 } from '../../portals/pool/manifest';
-import v9 from '../../portals/pool/Portal';
+import { manifest as m9 } from '../../portals/mining/manifest';
+import v9 from '../../portals/mining/Portal';
+import { manifest as m10 } from '../../portals/pool/manifest';
+import v10 from '../../portals/pool/Portal';
 
 import type { ComponentType } from 'react';
 import type { Locale, PortalManifest } from '@zion/contract';
@@ -52,7 +54,8 @@ const entries: PortalEntry[] = [
   { manifest: m6, view: v6 as unknown as PortalView }, // hiran
   { manifest: m7, view: v7 as unknown as PortalView }, // issobella
   { manifest: m8, view: v8 as unknown as PortalView }, // market
-  { manifest: m9, view: v9 as unknown as PortalView }, // pool
+  { manifest: m9, view: v9 as unknown as PortalView }, // mining
+  { manifest: m10, view: v10 as unknown as PortalView }, // pool
 ];
 
 /** Všechny portály v deterministickém pořadí: manifest.order, pak manifest.id. */

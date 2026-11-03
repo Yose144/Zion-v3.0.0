@@ -258,6 +258,10 @@ function cleanupStrayMinerProcesses(preferRustBackend) {
 if (process.platform === 'win32' && !app.isPackaged) {
   // Keep dev `npm start` isolated from the installed app's singleton/userData namespace.
   app.setName('zion-desktop-agent-dev');
+} else {
+  // Kingdom klient = přímý nástupce desktop-agenta → sdílí jeho userData:
+  // peněženky, miner config a session přejdou bez migrace.
+  app.setPath('userData', path.join(app.getPath('appData'), 'zion-desktop-agent'));
 }
 
 // Keep cache clean on Windows without overriding userData paths.
@@ -9380,7 +9384,10 @@ function createKingdomWindow() {
       preload: path.join(__dirname, 'preload-kingdom.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      // sandbox: false — sandboxed preload umí require jen builtin subset,
+      // ne relativní ./preload.js (electronAPI pro agent iframe). Stránka
+      // stejně nemá node přístup (contextIsolation) a jede jen náš origin.
+      sandbox: false,
       webviewTag: false,
     },
   });

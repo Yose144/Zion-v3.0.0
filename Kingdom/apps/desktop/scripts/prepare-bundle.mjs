@@ -14,4 +14,12 @@ rmSync(dest, { recursive: true, force: true });
 cpSync(flat, dest, { recursive: true });
 // Flat stage adresář je per-pid pracovní kopie — bundle držíme v desktopu.
 rmSync(flat, { recursive: true, force: true });
+
+// Agent UI do embedded serveru: mining portál embeduje /agent/index.html
+// v iframu — servíruje ho Next static z bundle/public/agent/.
+const agentUiSrc = join(appDir, 'src', 'ui');
+const agentUiDest = join(dest, 'public', 'agent');
+rmSync(agentUiDest, { recursive: true, force: true });
+cpSync(agentUiSrc, agentUiDest, { recursive: true });
+console.log(`agent ui: ${agentUiDest}`);
 console.log(`bundle: ${dest}`);

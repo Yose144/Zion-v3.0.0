@@ -6,6 +6,11 @@
 // Renderer nikdy nevidí seed/klíč; dostává jen serializovatelné výsledky.
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Agent IPC je sdílené: preload běží i v subframech, takže agent UI
+// embedované v mining portálu (/agent/index.html v iframu) dostává
+// stejné electronAPI jako jeho původní okno.
+require('./preload.js');
+
 const invoke = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 
 contextBridge.exposeInMainWorld('zion', {
