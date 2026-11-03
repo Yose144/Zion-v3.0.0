@@ -91,6 +91,11 @@ export type ItemId =
   | 'ember'
   | 'scepter'
   | 'crown'
+  // aktivní
+  | 'blink'
+  | 'barrier'
+  | 'dust'
+  | 'surge'
   // spotřební
   | 'ward';
 
@@ -119,6 +124,17 @@ export interface MobaItem {
   bonus: ItemBonus;
   /** Spotřební item — nezabírá slot, kupuje se do zásoby (ward). */
   consumable?: boolean;
+  /** Aktivní schopnost itemu (klávesa 1–6). */
+  active?: ItemActive;
+}
+
+export type ItemActiveKind = 'blink' | 'shield' | 'heal' | 'haste';
+
+export interface ItemActive {
+  kind: ItemActiveKind;
+  cooldownMs: number;
+  /** Síla podle druhu: metry (blink), štít/HP (shield/heal), podíl (haste). */
+  power: number;
 }
 
 /** Kolik itemů se vejde hrdinovi do inventáře. */
@@ -248,6 +264,39 @@ export const ITEMS: MobaItem[] = [
     note: { cs: '+30 % poškození, +300 max HP', en: '+30% damage, +300 max HP' },
     bonus: { damage: 0.3, hp: 300 },
   },
+  // ── aktivní ─────────────────────────────────────────────────────
+  {
+    id: 'blink',
+    name: { cs: 'Skok', en: 'Blink' },
+    cost: 900,
+    note: { cs: 'aktivní (1–6): skok až 7 m · 12 s', en: 'active (1–6): blink up to 7 m · 12 s' },
+    bonus: {},
+    active: { kind: 'blink', cooldownMs: 12_000, power: 7 },
+  },
+  {
+    id: 'barrier',
+    name: { cs: 'Bariéra', en: 'Barrier' },
+    cost: 700,
+    note: { cs: 'aktivní (1–6): +300 štítu na 4 s · 20 s', en: 'active (1–6): +300 shield for 4 s · 20 s' },
+    bonus: {},
+    active: { kind: 'shield', cooldownMs: 20_000, power: 300 },
+  },
+  {
+    id: 'dust',
+    name: { cs: 'Léčivý prach', en: 'Healing Dust' },
+    cost: 600,
+    note: { cs: 'aktivní (1–6): +250 HP · 25 s', en: 'active (1–6): +250 HP · 25 s' },
+    bonus: {},
+    active: { kind: 'heal', cooldownMs: 25_000, power: 250 },
+  },
+  {
+    id: 'surge',
+    name: { cs: 'Příval', en: 'Surge' },
+    cost: 650,
+    note: { cs: 'aktivní (1–6): +40 % rychlosti na 4 s · 18 s', en: 'active (1–6): +40% speed for 4 s · 18 s' },
+    bonus: {},
+    active: { kind: 'haste', cooldownMs: 18_000, power: 0.4 },
+  },
   // ── spotřební ───────────────────────────────────────────────────
   {
     id: 'ward',
@@ -332,10 +381,18 @@ export const BOT_SKILLS: Record<
   hard: { aimError: 0.45, castDelay: 120, retreatHp: 0.72 },
 };
 
-/** Rychlost podle itemů, buffů a zpomalení. */
-export function heroSpeed(hero: { items: ItemId[]; slowFactor: number; buffs?: Buff[] }): number {
+/**
+ * Rychlost podle itemů, buffů a zpomalení.
+ *
+ * `now` je **simulační čas** (`state.now`), ne `Date.now()` — buffy se ukládají
+ * v sim hodinách, takže reálné hodiny je vždycky považovaly za propadlé
+ * (rychlostní buffy z run a Přívalu proto nikdy nefungovaly).
+ */
+export function heroSpeed(
+  hero: { items: ItemId[]; slowFactor: number; buffs?: Buff[] },
+  now = Date.now(),
+): number {
   let speed = BASE_SPEED * (1 + itemTotals(hero.items).speed) * (1 - hero.slowFactor);
-  const now = Date.now();
   for (const buff of hero.buffs ?? []) {
     if (buff.until > now && buff.type === 'speed') speed *= 1 + buff.power;
   }
@@ -379,6 +436,8 @@ export interface Hero {
   aegis: boolean;
   /** Kolik wardů má v zásobě (spotřební item, nezabírá slot). */
   wards: number;
+  /** Kdy půjde aktivní item znovu použít (sim čas per item). */
+  itemCooldowns: Partial<Record<ItemId, number>>;
   /** Kdy může hrdina znovu buybackovat (ms, sim čas). */
   buybackAt: number;
   items: ItemId[];
@@ -599,6 +658,7 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     aegis: false,
     wards: 0,
     buybackAt: 0,
+    itemCooldowns: {},
     items: [],
     buffs: [],
     isPlayer,
@@ -1465,7 +1525,7 @@ export function stepMoba(
     }
     if (!hero.alive) continue;
 
-    const speed = heroSpeed(hero);
+    const speed = heroSpeed(hero, state.now);
 
     const input = inputs[hero.id];
     if (input) {
@@ -1806,6 +1866,43 @@ export function buyback(hero: Hero, now: number): boolean {
   return true;
 }
 
+/**
+ * Použij aktivní item (klávesa 1–6). Server rozhoduje o cooldownu i efektu;
+ * klient posílá jen id a bod (u bliku), nikdy neúčtuje nic sám.
+ */
+export function useItem(state: MobaState, hero: Hero, itemId: ItemId, x: number, z: number): boolean {
+  const item = ITEM_BY_ID.get(itemId);
+  if (!item?.active) return false;
+  if (!hero.alive) return false;
+  if (!hero.items.includes(itemId)) return false;
+  if (state.now < (hero.itemCooldowns[itemId] ?? 0)) return false;
+
+  const active = item.active;
+  if (active.kind === 'blink') {
+    const dx = x - hero.x;
+    const dz = z - hero.z;
+    const length = Math.hypot(dx, dz) || 1;
+    const step = Math.min(active.power, length);
+    hero.x = Math.max(-MAP_HALF_X, Math.min(MAP_HALF_X, hero.x + (dx / length) * step));
+    hero.z = Math.max(-MAP_HALF_Z, Math.min(MAP_HALF_Z, hero.z + (dz / length) * step));
+    addEffect(state, 'aoe', hero.x, hero.z, 1.6, '#a5b4fc', 320);
+  } else if (active.kind === 'shield') {
+    hero.shield = Math.max(hero.shield, active.power);
+    hero.shieldUntil = state.now + 4000;
+    addEffect(state, 'shield', hero.x, hero.z, 1.8, '#a5b4fc', 800);
+  } else if (active.kind === 'heal') {
+    const before = hero.hp;
+    hero.hp = Math.min(hero.maxHp, hero.hp + active.power);
+    hero.healingDone += hero.hp - before;
+    addEffect(state, 'heal', hero.x, hero.z, 1.6, '#7bf0a8', 700);
+  } else {
+    hero.buffs.push({ type: 'speed', until: state.now + 4000, power: active.power });
+    addEffect(state, 'capture', hero.x, hero.z, 1.4, '#7fe3d4', 500);
+  }
+  hero.itemCooldowns[itemId] = state.now + active.cooldownMs;
+  return true;
+}
+
 /** Prodej itemu — vrací vrácené zlato (0 = item nemá). */
 export function sellItem(hero: Hero, itemId: ItemId): number {
   const item = ITEM_BY_ID.get(itemId);
@@ -1856,6 +1953,8 @@ export interface MobaSnapshot {
     items: ItemId[];
     aegis: boolean;
     wards: number;
+    /** Zbývající cooldowny aktivních itemů (ms). */
+    itemCooldowns: Record<string, number>;
     /** Cena buybacku; 0 = nedostupný (živý nebo na cooldownu). */
     buybackCost: number;
     buffs: Buff[];
@@ -2006,6 +2105,9 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         items: hero.items,
         aegis: hero.aegis,
         wards: hero.wards,
+        itemCooldowns: Object.fromEntries(
+          Object.entries(hero.itemCooldowns).map(([id, at]) => [id, Math.max(0, (at ?? 0) - state.now)]),
+        ),
         buybackCost: !hero.alive && state.now >= hero.buybackAt ? buybackCost(hero) : 0,
         buffs: hero.buffs,
     })),

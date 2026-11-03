@@ -436,28 +436,55 @@ export default function EarthPage() {
               <span className="moba-ward-count" title={cs ? 'wardy (G položí)' : 'wards (G places)'}>
                 🛡 {stats?.wards ?? 0}
               </span>
-              <div className="moba-inventory" title={cs ? 'inventář (klikni pro prodej)' : 'inventory (click to sell)'}>
+              <div className="moba-inventory" title={cs ? 'inventář: 1–6 použije aktivní item, klik prodá' : 'inventory: 1–6 uses an active item, click sells'}>
                 {Array.from({ length: ITEM_SLOTS }).map((_, index) => {
                   const itemId = stats?.items[index];
                   const item = itemId ? ITEM_BY_ID.get(itemId) : undefined;
+                  const cooldown = itemId ? stats?.itemCooldowns?.[itemId] ?? 0 : 0;
+                  const cooldownPct = item?.active && cooldown > 0
+                    ? Math.min(100, (cooldown / item.active.cooldownMs) * 100)
+                    : 0;
                   return (
                     <button
                       key={index}
                       type="button"
-                      className={`moba-inv-slot${item ? ' is-filled' : ''}`}
+                      className={`moba-inv-slot${item ? ' is-filled' : ''}${item?.active ? ' is-active' : ''}`}
                       disabled={!item}
                       title={
                         item
-                          ? `${item.name[cs ? 'cs' : 'en']} — ${item.note[cs ? 'cs' : 'en']} · ${cs ? 'prodej' : 'sell'} +${Math.round(item.cost * SELL_RATIO)} ◈`
+                          ? `${item.name[cs ? 'cs' : 'en']} — ${item.note[cs ? 'cs' : 'en']}${item.active ? ` · ${cs ? 'klávesa' : 'key'} ${index + 1}` : ` · ${cs ? 'prodej' : 'sell'} +${Math.round(item.cost * SELL_RATIO)} ◈`}`
                           : cs
                             ? 'prázdný slot'
                             : 'empty slot'
                       }
                       onClick={() => {
-                        if (itemId) sellRequest.current = itemId;
+                        if (!itemId) return;
+                        // Aktivní item se používá stejnou cestou jako klávesa 1–6 —
+                        // dotyk tak nepotřebuje druhý vstup.
+                        if (item?.active) {
+                          window.dispatchEvent(new KeyboardEvent('keydown', { code: `Digit${index + 1}`, bubbles: true }));
+                          return;
+                        }
+                        sellRequest.current = itemId;
                       }}
                     >
                       {item ? item.name[cs ? 'cs' : 'en'] : '·'}
+                      {item && <em className="moba-inv-key">{index + 1}</em>}
+                      {cooldownPct > 0 && <i className="moba-inv-cd" style={{ height: `${cooldownPct}%` }} />}
+                      {item?.active && (
+                        <span
+                          role="button"
+                          tabIndex={-1}
+                          className="moba-inv-sell"
+                          title={cs ? 'prodat' : 'sell'}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            sellRequest.current = itemId!;
+                          }}
+                        >
+                          ×
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -541,7 +568,7 @@ export default function EarthPage() {
                   ? 'joystick pohyb · Q/F/E/R kouzlo · ÚTOK'
                   : 'stick move · Q/F/E/R cast · ATTACK'
                 : cs
-                  ? 'WASD pohyb · Q/F/E/R kouzlo · G ward · Tab scoreboard · levé tlačítko útok'
+                  ? 'WASD pohyb · Q/F/E/R kouzlo · 1–6 aktivní item · G ward · Tab scoreboard · levé tlačítko útok'
                   : 'WASD move · Q/F/E/R cast · left click attack'}
             </div>
           </div>

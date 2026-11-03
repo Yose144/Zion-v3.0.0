@@ -9,7 +9,7 @@
  * Spuštění: npx tsx apps/nirvana/test/moba-sim.mjs
  */
 
-import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, placeWard, sellItem, stepMoba, mobaSnapshot, totalXpAt, visionSources, NO_INPUT, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
+import { BASE_SPEED, BOT_SKILLS, buyItem, buyback, buybackCost, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, placeWard, sellItem, stepMoba, mobaSnapshot, totalXpAt, useItem, visionSources, NO_INPUT, WARD_DURATION_MS, WARD_STOCK_MAX } from '../src/core/moba/sim.ts';
 import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
@@ -460,7 +460,7 @@ check(
 // ── itemy: recepty, sloty, prodej (F2) ──────────────────────────────
 {
   console.log('\n-- itemy --');
-  check('itemy: 15 itemů (14 + ward)', ITEMS.length === 15, String(ITEMS.length));
+  check('itemy: 19 itemů (14 + ward + 4 aktivní)', ITEMS.length === 19, String(ITEMS.length));
   check('itemy: 6 slotů', ITEM_SLOTS === 6, String(ITEM_SLOTS));
 
   const s = createMoba(0, 82, 2_000_000);
@@ -736,6 +736,45 @@ check(
 
   // celkové XP pro XPM roste s levelem
   check('meta: totalXpAt roste', totalXpAt(5, 0) > totalXpAt(3, 0), `${totalXpAt(3, 0)} → ${totalXpAt(5, 0)}`);
+}
+
+// ── aktivní itemy (F7) ─────────────────────────────────────────────
+{
+  console.log('\n-- aktivní itemy --');
+  const s = createMoba(0, 82, 7_000_000);
+  const hero = s.heroes.find((candidate) => candidate.id === 'hero-you');
+  hero.gold = 9999;
+  buyItem(hero, 'blink');
+  hero.x = 0;
+  hero.z = 0;
+
+  // blink: posun k bodu, max 7 m
+  check('item aktivní: skok posune hrdinu', useItem(s, hero, 'blink', 20, 0) && Math.round(hero.x) === 7, String(hero.x));
+  check('item aktivní: skok má cooldown', !useItem(s, hero, 'blink', 20, 0));
+  check('item aktivní: cooldown je ve snapshotu', (mobaSnapshot(s).heroes.find((h) => h.id === hero.id).itemCooldowns.blink ?? 0) > 0);
+
+  // bariéra: štít
+  buyItem(hero, 'barrier');
+  check('item aktivní: bariéra dá štít', useItem(s, hero, 'barrier', 0, 0) && hero.shield >= 300, String(Math.round(hero.shield)));
+
+  // léčivý prach: HP a léčení do statů
+  buyItem(hero, 'dust');
+  hero.hp = 100;
+  check('item aktivní: prach vyléčí', useItem(s, hero, 'dust', 0, 0) && hero.hp > 300, String(Math.round(hero.hp)));
+  check('item aktivní: léčení se počítá', hero.healingDone > 0, String(Math.round(hero.healingDone)));
+
+  // příval: rychlost
+  buyItem(hero, 'surge');
+  // buffy jsou v sim hodinách — heroSpeed proto chce `s.now`, ne Date.now()
+  const before = heroSpeed(hero, s.now);
+  useItem(s, hero, 'surge', 0, 0);
+  check('item aktivní: příval zrychlí', heroSpeed(hero, s.now) > before, `${before.toFixed(2)} → ${heroSpeed(hero, s.now).toFixed(2)}`);
+
+  // item, který hrdina nemá, nejde použít
+  check('item aktivní: cizí item nejde použít', !useItem(s, hero, 'crown', 0, 0));
+  // a pasivní item taky ne
+  buyItem(hero, 'blade');
+  check('item aktivní: pasivní item nejde použít', !useItem(s, hero, 'blade', 0, 0));
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);

@@ -42,8 +42,11 @@ const asItemId = (value: unknown): ItemId | null =>
  * 13 — **meta**: snapshot hrdiny nese `damage` a `healing` (scoreboard).
  *      Starý klient by měl tabulku bez poškození — jen kosmetika, ale je to
  *      jiný snapshot.
+ * 14 — **aktivní itemy**: zpráva `use` a `itemCooldowns` u hrdiny.
+ *      Starý klient by itemy neuměl spustit (klávesy 1–6) a neviděl by
+ *      jejich cooldowny.
  */
-export const PROTO_VERSION = 13;
+export const PROTO_VERSION = 14;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;
@@ -259,6 +262,8 @@ export type ClientMessage =
   | { t: 'ward'; x: number; z: number }
   /** MOBA: buyback — mrtvý hráč zaplatí a vrátí se do hry. */
   | { t: 'buyback' }
+  /** MOBA: použití aktivního itemu (bod má smysl u skoku). */
+  | { t: 'use'; item: ItemId; x?: number; z?: number }
   | { t: 'leave' }
   | {
       t: 'input';
@@ -428,6 +433,12 @@ export function parseClientMessage(raw: string): ClientMessage | null {
 
     case 'buyback':
       return { t: 'buyback' };
+
+    case 'use': {
+      const item = asItemId(message.item);
+      if (!item) return null;
+      return { t: 'use', item, x: num(message.x, -60, 60), z: num(message.z, -60, 60) };
+    }
 
     case 'chat':
       return { t: 'chat', text: str(message.text, CHAT_MAX_LEN) };

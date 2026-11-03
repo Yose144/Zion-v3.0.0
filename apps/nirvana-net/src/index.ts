@@ -60,6 +60,7 @@ import {
   removeMobaSeat,
   sellMobaItem,
   setMobaInput,
+  useMobaItem,
   stepMobaRoom,
   MOBA_ROOM_SIZE,
   type MobaRoomSim,
@@ -524,6 +525,16 @@ async function handleMessage(conn: Conn, message: ClientMessage): Promise<void> 
         return;
       }
       placeMobaWard(room.moba, conn.id, message.x, message.z);
+      return;
+    }
+
+    case 'use': {
+      const room = conn.room;
+      if (!room?.moba) {
+        sendError(conn, room ? 'not_available' : 'not_in_room');
+        return;
+      }
+      useMobaItem(room.moba, conn.id, message.item, message.x ?? 0, message.z ?? 0);
       return;
     }
 

@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { buyItem, buyback, createMoba, mobaSnapshot, placeWard, sellItem, stepMoba, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
+import { buyItem, buyback, createMoba, mobaSnapshot, placeWard, sellItem, stepMoba, useItem, NO_INPUT, type BotSkill, type ItemId, type MobaSnapshot, type MobaState } from './sim';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
@@ -32,6 +32,7 @@ export interface MobaStats {
   items: ItemId[];
   wards: number;
   buybackCost: number;
+  itemCooldowns: Record<string, number>;
   spells: { slot: SpellSlot; name: string; cooldown: number; cooldownMs: number; mana: number; color: string; rank: number }[];
   playerHp: number;
   playerMaxHp: number;
@@ -107,6 +108,7 @@ export function statsFromSnapshot(
     items: you?.items ?? [],
     wards: you?.wards ?? 0,
     buybackCost: you?.buybackCost ?? 0,
+    itemCooldowns: you?.itemCooldowns ?? {},
     playerLevel: you?.level ?? 1,
     xp: you?.xp ?? 0,
     xpNeed: you?.xpNeed ?? 1,
@@ -182,6 +184,7 @@ function SoloController({
   const attack = useRef(false);
   const queuedCast = useRef<{ slot: SpellSlot } | null>(null);
   const queuedWard = useRef(false);
+  const queuedItem = useRef<ItemId | null>(null);
   const lastStats = useRef(0);
   const lastTick = useRef(0);
   const endedSent = useRef(false);
@@ -199,6 +202,13 @@ function SoloController({
       if (slot) queuedCast.current = { slot };
       // G = ward na zem (samostatná akce, ne kouzlo — ward má vlastní zásobu).
       if (event.code === 'KeyG') queuedWard.current = true;
+      // 1–6 = aktivní item ve slotu (standard MOBA)
+      const digit = /^Digit([1-6])$/.exec(event.code);
+      if (digit) {
+        const slotIndex = Number(digit[1]) - 1;
+        const item = state.current?.heroes.find((hero) => hero.isPlayer)?.items[slotIndex];
+        if (item) queuedItem.current = item;
+      }
       if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'KeyQ', 'KeyE', 'KeyR', 'KeyF'].includes(event.code)) {
         event.preventDefault();
       }
@@ -265,6 +275,13 @@ function SoloController({
     if (queuedWard.current) {
       if (hit) queuedWard.current = false;
       if (hit && placeWard(state.current, you, castPoint.x, castPoint.z)) mobaAudio.buy();
+    }
+
+    // aktivní item (1–6) — bod bere z kurzoru, stejně jako kouzlo
+    if (queuedItem.current) {
+      const item = queuedItem.current;
+      if (hit) queuedItem.current = null;
+      if (hit && useItem(state.current, you, item, castPoint.x, castPoint.z)) mobaAudio.buy();
     }
 
     // buyback (tlačítko v overlayeru smrti)

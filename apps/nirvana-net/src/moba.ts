@@ -18,6 +18,7 @@ import {
   mobaSnapshot,
   placeWard,
   sellItem,
+  useItem,
   stepMoba,
   NO_INPUT,
   type ItemId,
@@ -122,6 +123,14 @@ export function placeMobaWard(room: MobaRoomSim, connId: string, x: number, z: n
   const hero = heroById(room.sim, connId);
   if (!hero) return false;
   return placeWard(room.sim, hero, x, z);
+}
+
+/** Aktivní item — server rozhodne o cooldownu i efektu. */
+export function useMobaItem(room: MobaRoomSim, connId: string, itemId: ItemId, x: number, z: number): boolean {
+  if (!room.sim) return false;
+  const hero = heroById(room.sim, connId);
+  if (!hero) return false;
+  return useItem(room.sim, hero, itemId, x, z);
 }
 
 /** Buyback — server rozhodne o ceně i cooldownu. */

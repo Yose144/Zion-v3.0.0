@@ -18,9 +18,9 @@ import { useNet } from '@/core/net/useNet';
 import { spellsForAvatar } from './spells';
 import { MobaStage } from './MobaStage';
 import { statsFromSnapshot, type MobaStats } from './MobaGame';
+import { itemTotals, type ItemId } from './sim';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
-import type { ItemId } from './sim';
 import type { MobaSnapshot } from './sim';
 
 /**
@@ -29,6 +29,17 @@ import type { MobaSnapshot } from './sim';
  * rozjíždí a dorovnává.
  */
 const PREDICT_SPEED = 6.2;
+
+/**
+ * Rychlost predikce ze snapshotu — boty, runy a Příval mění rychlost, takže
+ * konstanta 6,2 by se se serverem rozešla (postava by cukala a dorovnávala).
+ */
+function predictedSpeed(hero: { items: ItemId[]; buffs?: { type: string; power: number }[] }): number {
+  // Bonusy itemů bere `itemTotals` — žádná druhá tabulka čísel v klientovi.
+  const itemSpeed = itemTotals(hero.items).speed;
+  const buffSpeed = (hero.buffs ?? []).filter((buff) => buff.type === 'speed').reduce((sum, buff) => sum + buff.power, 0);
+  return PREDICT_SPEED * (1 + itemSpeed + buffSpeed);
+}
 /** Odchylka, od které se predikce „teleportuje" na server (m). */
 const PREDICT_SNAP = 1.6;
 
@@ -122,12 +133,13 @@ function OnlineController({
   selfPose: React.MutableRefObject<{ x: number; z: number; active: boolean } | null>;
 }) {
   const { camera, gl } = useThree();
-  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendBuyback, connected, youPlayerId } = useNet();
+  const { subscribe, joinGame, leaveRoom, sendMobaInput, sendBuy, sendSell, sendWard, sendBuyback, sendUseItem, connected, youPlayerId } = useNet();
   const keys = useRef(new Set<string>());
   const pointer = useRef({ x: 0, y: 0 });
   const attack = useRef(false);
   const queuedCast = useRef<{ slot: 'Q' | 'W' | 'E' | 'R'; at: number } | null>(null);
   const queuedWard = useRef(false);
+  const queuedItem = useRef<ItemId | null>(null);
   const lastStats = useRef(0);
   const endedSent = useRef(false);
   const serverNow = useRef({ offset: 0, at: Date.now() });
@@ -182,6 +194,14 @@ function OnlineController({
       if (event.code === 'KeyR') queuedCast.current = { slot: 'R', at: Date.now() };
       // G = ward na zem (stejná klávesa jako v sólu)
       if (event.code === 'KeyG') queuedWard.current = true;
+      // 1–6 = aktivní item (id vezmi ze snapshotu, ne z lokálního stavu)
+      const digit = /^Digit([1-6])$/.exec(event.code);
+      if (digit) {
+        const slotIndex = Number(digit[1]) - 1;
+        const hero = snapshotRef.current?.heroes.find((candidate) => candidate.id === youPlayerId);
+        const item = hero?.items[slotIndex];
+        if (item) queuedItem.current = item;
+      }
       if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR', 'KeyG'].includes(event.code)) event.preventDefault();
     };
     const up = (event: KeyboardEvent) => keys.current.delete(event.code);
@@ -249,6 +269,11 @@ function OnlineController({
       if (hit) queuedWard.current = false;
       if (hit) sendWard(castPoint.x, castPoint.z);
     }
+    if (queuedItem.current) {
+      const item = queuedItem.current;
+      if (hit) queuedItem.current = null;
+      if (hit) sendUseItem(item, castPoint.x, castPoint.z);
+    }
     if (buybackRequest?.current) {
       buybackRequest.current = false;
       sendBuyback();
@@ -268,8 +293,9 @@ function OnlineController({
       const pose = selfPose.current ?? { x: you.x, z: you.z, active: you.alive };
       const length = Math.hypot(strafe, -forward);
       if (you.alive && length > 0.05) {
-        pose.x += (strafe / length) * PREDICT_SPEED * frameDt;
-        pose.z += (-forward / length) * PREDICT_SPEED * frameDt;
+        const speed = predictedSpeed(you);
+        pose.x += (strafe / length) * speed * frameDt;
+        pose.z += (-forward / length) * speed * frameDt;
       }
       const error = Math.hypot(pose.x - you.x, pose.z - you.z);
       if (!you.alive || error > PREDICT_SNAP) {
