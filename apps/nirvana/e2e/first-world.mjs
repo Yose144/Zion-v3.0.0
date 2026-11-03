@@ -49,6 +49,16 @@ try {
   check('start: čtyři kouzla', start?.spells?.length === 4 && start.spells[3].slot === 'R');
   await page.screenshot({ path: `${OUT}/start.png` });
 
+  // obchod (F2): inventář a panel se opravdu vykreslí — počítají se reálné
+  // selektory, ne „nějaká tlačítka" (jinak projde i prázdný panel).
+  const invSlots = await page.$$('.moba-inv-slot');
+  check('obchod: šest slotů inventáře', invSlots.length === 6, String(invSlots.length));
+  await page.click('.moba-shop-toggle');
+  await page.waitForSelector('.moba-shop-panel', { timeout: 5000 }).catch(() => {});
+  const shopItems = await page.$$('.moba-shop-item');
+  check('obchod: čtrnáct itemů v panelu', shopItems.length === 14, String(shopItems.length));
+  await page.click('.moba-shop-toggle');
+
   // Čekej na **podmínku**, ne na pevný čas: simulace běží po krocích a na
   // pomalém GPU (swiftshader) se posune pomaleji než skutečné hodiny.
   // Pevné `sleep` dělalo test zelený na Macu a červený jinde.

@@ -1023,3 +1023,31 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Snapshot nese `xp` a `xpNeed`** → `PROTO_VERSION 8`, deploy **net první**.
 - **Testy:** `npx tsx test/moba-sim.mjs` (77 kontrol, z toho 12 na ekonomiku,
   deny, stupně kouzel a nákup bota).
+
+## PRVNÍ SVĚT — itemy a obchod (F2, 2026-11-03, protokol 9)
+
+- **Bonusy itemů se sčítají, ne větví.** `ITEMS` v `sim.ts` má u každého itemu
+  `bonus` (damage/armor/hp/mana/speed/regen/vision) a `itemTotals(items)` je
+  jediné místo, odkud čte poškození, obrana, rychlost, vidění i regenerace.
+  Nový item = jeden záznam v `ITEMS`, ne nová větev v sim.
+- **Maxima se dopočítávají** (`recomputeHeroStats`): `maxHp = baseMaxHp +
+  (level−1)·55 + itemy`. Kdyby se přičítala inkrementálně jako dřív, prodej
+  itemu by nechal hrdinovi navíc HP a hráč by z toho mohl těžit.
+- **Recepty:** `components` + `cost` = cena hotového itemu. Při nákupu se
+  vlastněné komponenty **spotřebují** a platí se `cost − cena komponent`;
+  slot se tím uvolní, takže složení jde i s plným inventářem (6 slotů).
+- **Prodej** je 60 % ceny (`SELL_RATIO`) a jde kliknutím na slot v inventáři —
+  samostatné tlačítko by na mobilu nemělo místo.
+- **Orlí oko je protihra mlhy:** `visionSources()` přičítá `itemTotals().vision`
+  k radiusu hrdiny. Item, který mění vidění, musí jít tudy — ne druhou cestou.
+- **Obchod v multiplayeru byl mrtvý.** Protokol zprávu `buy` od protokolu 6
+  parsoval, ale `index.ts` ji nikdy nezpracoval; test to maskoval, protože
+  kontroloval jen „bez zlata nekoupí" (což platilo i bez handleru). Od F2 je
+  tam `case 'buy'` i `case 'sell'` a test kupuje Tesák (300 < start 320).
+- **Test „bez zlata nekoupí" nesmí porovnávat zlato přesně** — od F1 roste
+  pasivně (2/s). Porovnává se jen, že se neutratilo.
+- **PROTO_VERSION 9** (nová id itemů v inventáři) → deploy **net první**.
+- **Net itemy:** `parseClient` validuje id proti `ITEMS`, ne proti ručnímu
+  seznamu — když se přidá item, nemusí se sahat do protokolu.
+- **Testy:** `test/moba-sim.mjs` (92 kontrol: recepty, sloty, prodej, efekty)
+  a `apps/nirvana-net/test/moba.mjs` (22, včetně buy/sell proti serveru).

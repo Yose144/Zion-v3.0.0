@@ -53,10 +53,13 @@ Sim + HUD; **mění snapshot → protokol 8**.
 
 *Ověřeno: `moba-sim.mjs` 77/77 (12 nových), tsc čistý, live net `proto 8`.*
 
-### F2 — Itemy a obchod
-6 slotů, ~14 itemů ve stromu (komponenty → recepty), prodej za 60 %, obchod jen
-v základně (nebo „courier" = doručení po 5 s). **Protokol:** nákup je už dnes
-zpráva `buy`; přibudou id itemů a `sell` → bump.
+### F2 — Itemy a obchod *(hotovo 2026-11-03, protokol 9)*
+6 slotů, **14 itemů** (6 základních + 8 složených), recepty (komponenty se
+spotřebují, platí se rozdíl), prodej za 60 %, efekty damage/armor/HP/mana/
+speed/regen/vision. **Protokol:** nová id itemů + zpráva `sell` → 8 → 9.
+Opraveno: server multiplayeru zprávu `buy` vůbec nezpracovával.
+
+*Ověřeno: moba-sim 92/92, net moba test 22/22 (buy+sell proti serveru).*
 
 ### F3 — Mapa a terén
 Bushe (blokují vidění, uvnitř nejsi vidět), řeka (střed), průchodnost jen po
