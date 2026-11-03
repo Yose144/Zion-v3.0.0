@@ -1094,6 +1094,11 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   display: none;
 }
 
+/* pás se dá scrollovat vodorovně — fade na pravém okraji to musí naznačit */
+.present-hiran-gates {
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 3.4rem), transparent 100%);
+}
+
 .present-hiran-gates button {
   flex: 0 0 auto;
   padding: 0.35rem 0.7rem;
@@ -3789,9 +3794,6 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   }
 }
 
-
-}
-
 .moba-pick-block {
   padding: 1.1rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -4350,6 +4352,15 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   .game-hud.is-dock,
   .game-hud.is-compact {
     right: calc(4.9rem + env(safe-area-inset-right, 0px));
+    /* užší lišta musí zalomit žetony, jinak „přihlásit" přeteče pod chat */
+    flex-wrap: wrap;
+    row-gap: 0.22rem;
+  }
+
+  .game-hud-tabs,
+  .game-hud-stats {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .arena-touch-stick {
@@ -6045,3 +6056,4 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     width: 2.6rem;
     height: 2.6rem;
   }
+}
