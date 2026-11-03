@@ -24,6 +24,8 @@ export interface DamageFloater {
   /** `out` = poškození nepříteli (světlé), `in` = dostané (červené). */
   kind: 'out' | 'in';
   born: number;
+  /** Vodorovný posun, aby se čísla z AoE nepřekrývala. */
+  drift: number;
 }
 
 export const DAMAGE_TTL = 900;
@@ -39,7 +41,17 @@ export function pushDamage(
   now: number,
 ) {
   if (amount < 1) return;
-  list.push({ id: nextId++, x, y, z, amount: Math.round(amount), kind, born: now });
+  list.push({
+    id: nextId++,
+    x,
+    y,
+    z,
+    amount: Math.round(amount),
+    kind,
+    born: now,
+    // deterministický rozptyl podle id (žádný Math.random ve smyčce)
+    drift: ((nextId % 7) - 3) * 9,
+  });
   // strop, aby se při AoE nedělaly stovky čísel
   if (list.length > 40) list.splice(0, list.length - 40);
 }
@@ -87,10 +99,10 @@ export function MobaFxOverlay({
         vector.current.set(floater.x, floater.y + progress * 1.6, floater.z);
         vector.current.project(camera);
         if (vector.current.z > 1) continue;
-        const sx = (vector.current.x * 0.5 + 0.5) * width;
+        const sx = (vector.current.x * 0.5 + 0.5) * width + floater.drift;
         const sy = (-vector.current.y * 0.5 + 0.5) * height;
         const alpha = 1 - progress * progress;
-        const size = 15 + (1 - progress) * 5;
+        const size = 17 + (1 - progress) * 7;
         context.globalAlpha = alpha;
         context.font = `800 ${size}px system-ui, sans-serif`;
         context.textAlign = 'center';
