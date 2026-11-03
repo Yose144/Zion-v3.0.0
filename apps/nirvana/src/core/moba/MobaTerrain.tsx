@@ -35,15 +35,15 @@ function grassTexture(): THREE.CanvasTexture {
   canvas.width = size;
   canvas.height = size;
   const context = canvas.getContext('2d')!;
-  context.fillStyle = '#1d4a3b';
+  context.fillStyle = '#245746';
   context.fillRect(0, 0, size, size);
   const random = makeRandom(7);
   for (let index = 0; index < 900; index += 1) {
     const x = random() * size;
     const y = random() * size;
     const radius = 2 + random() * 9;
-    const shade = 30 + Math.floor(random() * 40);
-    context.fillStyle = `rgba(${shade}, ${90 + shade}, ${70 + shade}, ${0.05 + random() * 0.12})`;
+    const shade = 40 + Math.floor(random() * 30);
+    context.fillStyle = `rgba(${shade}, ${100 + shade}, ${80 + shade}, ${0.03 + random() * 0.06})`;
     context.beginPath();
     context.arc(x, y, radius, 0, Math.PI * 2);
     context.fill();
@@ -51,7 +51,7 @@ function grassTexture(): THREE.CanvasTexture {
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(10, 8);
+  texture.repeat.set(16, 13);
   texture.anisotropy = 4;
   return texture;
 }
@@ -223,7 +223,7 @@ export function MobaTerrain() {
         <group key={`base-${index}`} position={[base.x, 0, 0]}>
           <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <circleGeometry args={[9, 48]} />
-            <meshStandardMaterial color="#20272b" roughness={0.7} metalness={0.2} />
+            <meshStandardMaterial color="#3a4448" roughness={0.75} metalness={0.15} />
           </mesh>
           <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[8.4, 9, 48]} />
@@ -232,18 +232,19 @@ export function MobaTerrain() {
         </group>
       ))}
 
-      {/* zříceniny u base — čtyři sloupy, ať základna není prázdný kruh */}
+      {/* sutiny u základny — NÍZKÉ, aby nekoukaly do kamery (vysoké sloupy
+          zakrývaly hrdinu i celý spodek obrazovky — vidět na screenshotu) */}
       {[-38, 38].map((baseX) =>
-        [0, 1, 2, 3].map((index) => {
-          const angle = (index / 4) * Math.PI * 2 + Math.PI / 4;
+        [0, 1, 2, 3, 4].map((index) => {
+          const angle = (index / 5) * Math.PI * 2 + 0.4;
           return (
             <mesh
-              key={`pillar-${baseX}-${index}`}
-              position={[baseX + Math.cos(angle) * 10.4, 1.6 + (index % 2) * 0.5, Math.sin(angle) * 10.4]}
-              rotation={[0, angle, 0.04 + (index % 2) * 0.06]}
+              key={`rubble-${baseX}-${index}`}
+              position={[baseX + Math.cos(angle) * 11.6, 0.28, Math.sin(angle) * 11.6]}
+              rotation={[0.1 * index, angle, 0.06 * index]}
             >
-              <cylinderGeometry args={[0.42, 0.52, 3.2 + (index % 2) * 1, 6]} />
-              <meshStandardMaterial color="#6b6660" roughness={0.9} metalness={0.05} flatShading />
+              <dodecahedronGeometry args={[0.55 + (index % 2) * 0.2, 0]} />
+              <meshStandardMaterial color="#5b5750" roughness={0.95} flatShading />
             </mesh>
           );
         }),

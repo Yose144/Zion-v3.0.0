@@ -153,8 +153,9 @@ export function MobaStage({
       if (!group) continue;
       group.position.set(tower.x, 0, tower.z);
       group.visible = tower.hp > 0;
+      // Nexa je velká, ale ne tak, aby z výšky zakrývala hrdinu (1,6 → 1,35).
       const kindScale =
-        tower.kind === 'nexus' ? 1.6 : tower.kind === 'inhibitor' ? 1.3 : tower.id.includes('-base-') ? 1.15 : 1;
+        tower.kind === 'nexus' ? 1.35 : tower.kind === 'inhibitor' ? 1.2 : tower.id.includes('-base-') ? 1.12 : 1;
       group.scale.setScalar(kindScale * (0.55 + (tower.hp / tower.maxHp) * 0.45));
       // Nedobytná struktura (krytá vnější věží / Nexa krytá lajnou) svítí šedě.
       const shielded = isStructureProtected(snapshot.towers, tower.id);
@@ -427,18 +428,17 @@ export function MobaStage({
               <meshBasicMaterial color="#7fe3d4" toneMapped={false} />
             </mesh>
           )}
-          {/* 3: týmová korouhev — pozná se strana i bez barvy krystalu */}
-          {structure.kind !== 'inhibitor' && (
-            <mesh position={[structure.team === 'blue' ? -1.15 : 1.15, 2.4, 0]} rotation={[0, 0, 0.12]}>
-              <planeGeometry args={[0.7, 1.6]} />
-              <meshBasicMaterial
-                color={structure.team === 'blue' ? '#7fe3d4' : '#ff7a6b'}
-                transparent
-                opacity={0.55}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-          )}
+          {/* 3: týmový prstenec u paty — z výšky čitelnější než praporek
+              (svislá deska vypadala jako plovoucí obdélník) */}
+          <mesh position={[0, 0.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[1.9, 2.25, 24]} />
+            <meshBasicMaterial
+              color={structure.team === 'blue' ? '#7fe3d4' : '#ff7a6b'}
+              transparent
+              opacity={0.5}
+              toneMapped={false}
+            />
+          </mesh>
         </group>
       ))}
 
