@@ -67,11 +67,23 @@ hrdina stál v táboře; správné chování, špatné místo v testu.
 
 Testy: moba-sim **197/197** (8 nových). Protokol 18 → 19.
 
+## 4d. Emotes a adaptivní build (F22)
+
+- **Emotes**: čtyři bubliny (👍 ⚠️ 🎯 🛡️) v HUD. Klient pošle `emote`,
+  **server ho přepošle celé místnosti** a klient vykreslí bublinu nad hrdinou
+  (2,2 s) přes stejný 2D overlay jako čísla poškození.
+- **Adaptivní doporučený build**: `standingFrom` (ahead/even/behind podle
+  rozdílu zabití) + `recommendNextItem` — při ztrátě 3+ kup přežití, při
+  náskoku 3+ damage, jinak archetyp. Čistá funkce, testovaná samostatně.
+
+Testy: moba-sim **206/206** (9 nových), nirvana-net moba **24/24** (nově
+emote přeposlaný serverem). Protokol 19 → 20.
+
 ## 5. Co dál
 
-1. **Emotes** (radiální menu, ne jen text).
-2. **Volba itemu v doporučeném buildu** podle situace.
-3. **Replay/spectate**.
+1. **Replay/spectate** (uložit průběh zápasu a přehrát).
+2. **Radiální emote menu** (držení tlačítka místo řady).
+3. **Rank/leaderboard** pro opakované hraní.
 
 ---
 

@@ -1495,3 +1495,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   Je to UX skóre, ne pravidlo — patří do `earth/page.tsx`, ne do sim.
 - **`battleSpell` musí dojít do stats** (`MobaStats.battleSpell`), jinak HUD
   kreslí špatnou ikonu (⚡/✚/✦).
+
+## PRVNÍ SVĚT — emotes a adaptivní build (F22, 2026-11-03, protokol 20)
+
+- **Emote jde přes server.** Klient pošle `{t:'emote', id}`, server ověří, že
+  je v MOBA místnosti, a **přepošle event celé místnosti** (`kind: 'emote'`,
+  `playerId`). Klient si najde hrdinu podle `playerId` ve snapshotu a vykreslí
+  bublinu přes `MobaFxOverlay` (stejný 2D canvas jako čísla poškození).
+  Kdyby si emote kreslil jen odesílatel, multiplayer by ho neviděl.
+- **Bublina žije 2,2 s** (`EMOTE_TTL`), čísla 0,9 s — text se má přečíst.
+- **Adaptivní build je čistá funkce** (`core/moba/build.ts`):
+  `standingFrom({ally, enemy})` → ahead/even/behind a `recommendNextItem`.
+  Při ztrátě 3+ zabití kup přežití, při náskoku 3+ damage. Testuje se
+  samostatně, takže se nemůže rozejít s UI.
+- **POZOR na test minionů:** vlny jsou od F19 rychlejší (18 s, 4 minioni),
+  takže u uzlu L5 nemusí být zrovna žádný nepřátelský minion. Test k
+  nejbližšímu **dojde**, místo aby čekal na náhodu (jinak flakuje).
