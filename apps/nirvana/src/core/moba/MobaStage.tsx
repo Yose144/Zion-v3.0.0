@@ -14,6 +14,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
 import { MobaTerrain } from './MobaTerrain';
+import { MobaFog } from './MobaFog';
 import { avatarLook } from '@/core/avatars/kit';
 import type { MobaSnapshot } from './sim';
 import { BOSS_SPOT, BUSHES, NODE_SITES, NODE_CAPTURE_MS, RUNE_SPOTS, STRUCTURES, isStructureProtected } from './map';
@@ -63,9 +64,10 @@ export function MobaStage({
   const tmp = useMemo(() => new THREE.Object3D(), []);
   const color = useMemo(() => new THREE.Color(), []);
 
-  useFrame(() => {
+  useFrame((frame) => {
     const snapshot = snapshotRef.current;
     if (!snapshot) return;
+    const time = frame.clock.elapsedTime;
 
     // ── hrdinové: pohled dopočítaný z `heroId` ───────────────────────
     const composition = snapshot.heroes.map((hero) => `${hero.id}:${hero.heroId}`).join(',');
@@ -99,8 +101,9 @@ export function MobaStage({
       const rune = snapshot.runes?.[index];
       group.visible = Boolean(rune);
       if (!rune) return;
-      group.position.set(rune.x, 1.1, rune.z);
+      group.position.set(rune.x, 1.1 + Math.sin(time * 2.2 + index) * 0.18, rune.z);
       const orb = group.children[0] as THREE.Mesh | undefined;
+      if (orb) orb.rotation.y = time * 1.8;
       const orbMaterial = orb?.material as THREE.MeshBasicMaterial | undefined;
       if (orbMaterial) {
         orbMaterial.color.set(
@@ -119,7 +122,8 @@ export function MobaStage({
           tmp.position.set(0, -60, 0);
           tmp.scale.setScalar(0.001);
         } else {
-          tmp.position.set(ward.x, 1.1, ward.z);
+          tmp.position.set(ward.x, 1.1 + Math.sin(time * 3 + index) * 0.1, ward.z);
+          tmp.rotation.set(0, time * 1.4, 0);
           tmp.scale.setScalar(1);
         }
         tmp.updateMatrix();
@@ -176,6 +180,12 @@ export function MobaStage({
           shielded ? '#111827' : tower.team === 'blue' ? '#0f3f3a' : '#3f1414',
         );
       }
+      // krystal se otáčí a jemně dýchá — statická věž vypadá jako kulisa
+      if (crystal instanceof THREE.Mesh) {
+        crystal.rotation.y = time * (tower.kind === 'nexus' ? 0.45 : 0.8);
+        crystal.position.y = (tower.kind === 'nexus' ? 4.2 : tower.kind === 'inhibitor' ? 3.8 : 3.7) +
+          Math.sin(time * 1.6 + tower.x * 0.1) * 0.12;
+      }
     }
 
     // ── uzly L5 ──────────────────────────────────────────────────────
@@ -207,7 +217,10 @@ export function MobaStage({
           tmp.position.set(0, -60, 0);
           tmp.scale.setScalar(0.001);
         } else {
-          tmp.position.set(minion.x, minion.super ? 0.8 : 0.5, minion.z);
+          // pochod: malý pohyb svisle, aby minioni neklouzali jako kameny
+          const hop = Math.sin(time * 7 + index * 1.7) * 0.07;
+          tmp.position.set(minion.x, (minion.super ? 0.8 : 0.5) + hop, minion.z);
+          tmp.rotation.set(0, 0, 0);
           tmp.scale.setScalar(minion.super ? 1.75 : 1.05);
         }
         tmp.updateMatrix();
@@ -238,7 +251,7 @@ export function MobaStage({
       mesh.instanceMatrix.needsUpdate = true;
     }
 
-    // ── neutrální monstra ─────────────────────────────────────────────
+    // ── neutrální monstra (dýchají) ──────────────────────────────────
     if (monsterMesh.current) {
       const mesh = monsterMesh.current;
       const monsters = snapshot.monsters ?? [];
@@ -271,6 +284,7 @@ export function MobaStage({
           tmp.scale.setScalar(0.001);
         } else {
           tmp.position.set(projectile.x, 1.1, projectile.z);
+          tmp.rotation.set(0, 0, 0);
           tmp.scale.setScalar(0.6);
         }
         tmp.updateMatrix();
@@ -318,6 +332,9 @@ export function MobaStage({
 
       {/* terén: tráva, cesty, řeka, lesy, skály, zříceniny */}
       <MobaTerrain />
+
+      {/* mlha války — jen vizuál; server už neviděné jednotky neposílá */}
+      <MobaFog snapshotRef={snapshotRef} youId={youId} />
 
       {/* bushe — v nich tě nepřítel nevidí, dokud nepřijde blíž */}
       {BUSHES.map((bush, index) => (
