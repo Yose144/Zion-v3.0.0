@@ -5494,3 +5494,47 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   pointer-events: none;
   z-index: 3;
 }
+
+/* ── MOBA F15: ikony kouzel ───────────────────────────────────────── */
+
+.moba-slot-body {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.moba-slot-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.moba-slot-text strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.moba-spell-icon {
+  flex: none;
+  opacity: 0.95;
+}
+
+.moba-spell .moba-spell-icon {
+  margin-bottom: 0.15rem;
+}
+
+.moba-touch-btn.is-spell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+}
+
+.moba-touch-btn.is-spell b {
+  font-size: 0.62rem;
+  line-height: 1;
+}

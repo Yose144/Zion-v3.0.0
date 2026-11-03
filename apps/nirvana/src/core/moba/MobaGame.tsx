@@ -18,7 +18,7 @@ import { buyItem, buyback, createMoba, mobaSnapshot, pickTalent, placeSentry, pl
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
-import type { SpellSlot } from './spells';
+import type { SpellSchool, SpellSlot } from './spells';
 import { spellCooldown, spellMana, spellRank } from './spells';
 import { MobaFxOverlay, type DamageFloater } from './MobaFxOverlay';
 import { SPELL_BY_KEY } from './keys';
@@ -37,7 +37,7 @@ export interface MobaStats {
   buybackCost: number;
   itemCooldowns: Record<string, number>;
   talentPending: number | null;
-  spells: { slot: SpellSlot; name: string; cooldown: number; cooldownMs: number; mana: number; color: string; rank: number }[];
+  spells: { slot: SpellSlot; name: string; school: SpellSchool; cooldown: number; cooldownMs: number; mana: number; color: string; rank: number }[];
   playerHp: number;
   playerMaxHp: number;
   playerMana: number;
@@ -56,6 +56,7 @@ export interface MobaStats {
 export interface SpellMeta {
   slot: SpellSlot;
   name: string;
+  school: SpellSchool;
   cooldownMs: number;
   mana: number;
   color: string;
@@ -99,6 +100,7 @@ export function statsFromSnapshot(
       return {
         slot: spell.slot,
         name: spell.name,
+        school: spell.school,
         cooldown: Math.max(0, (you?.cooldowns?.[spell.slot] ?? 0) - now),
         cooldownMs: spellCooldown(spell.cooldownMs, Math.max(1, rank)),
         mana: spellMana(spell.mana, Math.max(1, rank)),
@@ -346,6 +348,7 @@ function SoloController({
     spellList.current = you.spells.map((spell) => ({
       slot: spell.slot,
       name: spell.name,
+      school: spell.school,
       cooldownMs: spell.cooldownMs,
       mana: spell.mana,
       color: spell.color,

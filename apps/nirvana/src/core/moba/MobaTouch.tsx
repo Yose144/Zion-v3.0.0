@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { SPELL_KEY, SPELL_LABEL } from './keys';
-import type { SpellSlot } from './spells';
+import type { SpellSchool, SpellSlot } from './spells';
+import { SpellIcon } from './spellIcons';
 
 /**
  * DOTYKOVÉ OVLÁDÁNÍ MOBA (`/earth`).
@@ -33,7 +34,7 @@ function sendKey(code: string, down: boolean) {
   window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { code, bubbles: true }));
 }
 
-export function MobaTouch({ spells }: { spells: { slot: SpellSlot; name: string; color: string }[] }) {
+export function MobaTouch({ spells }: { spells: { slot: SpellSlot; name: string; color: string; school: SpellSchool }[] }) {
   const stickRef = useRef<HTMLDivElement>(null);
   const knobRef = useRef<HTMLSpanElement>(null);
   const stickPointer = useRef<number | null>(null);
@@ -225,6 +226,7 @@ export function MobaTouch({ spells }: { spells: { slot: SpellSlot; name: string;
                 cast(spell.slot);
               }}
             >
+              <SpellIcon school={spell.school} color={spell.color} size={22} />
               <b>{SPELL_LABEL[spell.slot]}</b>
             </button>
           ))}

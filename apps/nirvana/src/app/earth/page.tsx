@@ -26,6 +26,7 @@ import { ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, totalXpAt, type BotSkill
 /** Rychlé hledání itemu podle id — používá inventář i obchod. */
 const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
 import { SCHOOL_LABEL, spellsForAvatar } from '@/core/moba/spells';
+import { SpellIcon } from '@/core/moba/spellIcons';
 import { talentsFor } from '@/core/moba/sim';
 import { SPELL_LABEL } from '@/core/moba/keys';
 import { MobaTouch } from '@/core/moba/MobaTouch';
@@ -278,6 +279,7 @@ export default function EarthPage() {
               {spells.map((spell) => (
                 <div key={spell.slot} className="moba-spell" style={{ borderColor: `${spell.color}66` }}>
                   <span className="moba-spell-key">{SPELL_LABEL[spell.slot]}</span>
+                  <SpellIcon school={spell.school} color={spell.color} size={26} />
                   <strong>{spell.name}</strong>
                   <small>
                     {spell.damage > 0 ? `${spell.damage} dmg` : spell.shield > 0 ? `${spell.shield} štít` : 'podpora'} ·{' '}
@@ -423,15 +425,20 @@ export default function EarthPage() {
             </div>
 
             <div className="moba-spellbar">
-              {(stats?.spells ?? spells.map((spell) => ({ slot: spell.slot, name: spell.name, cooldown: 0, cooldownMs: spell.cooldownMs, mana: spell.mana, color: spell.color, rank: 1 }))).map((spell) => {
+              {(stats?.spells ?? spells.map((spell) => ({ slot: spell.slot, name: spell.name, school: spell.school, cooldown: 0, cooldownMs: spell.cooldownMs, mana: spell.mana, color: spell.color, rank: 1 }))).map((spell) => {
                 const cooldownPct = spell.cooldownMs ? Math.min(100, (spell.cooldown / spell.cooldownMs) * 100) : 0;
                 return (
                   <div key={spell.slot} className={`moba-slot${spell.rank ? '' : ' is-locked'}`} style={{ borderColor: `${spell.color}88` }}>
                     <span className="moba-slot-key">{SPELL_LABEL[spell.slot]}</span>
-                    <strong>{spell.name}</strong>
-                    <small>
-                      {spell.rank ? `T${spell.rank} · ${spell.mana} mp` : cs ? 'zamčeno do lv 6' : 'locked until lv 6'}
-                    </small>
+                    <div className="moba-slot-body">
+                      <SpellIcon school={spell.school} color={spell.color} size={22} />
+                      <div className="moba-slot-text">
+                        <strong>{spell.name}</strong>
+                        <small>
+                          {spell.rank ? `T${spell.rank} · ${spell.mana} mp` : cs ? 'zamčeno do lv 6' : 'locked until lv 6'}
+                        </small>
+                      </div>
+                    </div>
                     {cooldownPct > 0 && <i className="moba-slot-cd" style={{ height: `${cooldownPct}%` }} />}
                   </div>
                 );

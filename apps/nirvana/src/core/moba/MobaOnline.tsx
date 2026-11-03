@@ -353,6 +353,7 @@ function OnlineController({
           spells.map((spell) => ({
             slot: spell.slot,
             name: spell.name,
+            school: spell.school,
             cooldownMs: spell.cooldownMs,
             mana: spell.mana,
             color: spell.color,
