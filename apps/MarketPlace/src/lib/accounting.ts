@@ -117,7 +117,9 @@ const ACCOUNT_CLASS: Record<string, number> = Object.fromEntries(
 
 const REVENUE_SERVICE = '602';
 const REVENUE_GOODS = '604';
+const REVENUE_OTHER = '648';
 const RECEIVABLES = '311';
+const REFUND_LIABILITY = '325'; // závazek k vrácení po zrušení zaplacené objednávky
 const BANK = '221';
 const CRYPTO_INVENTORY = '159.9';
 
@@ -184,28 +186,38 @@ export async function postEntry(input: PostEntryInput) {
     if (existing) return { entry: existing, created: false };
   }
 
-  const entryNumber = await nextEntryNumber(period);
-  const entry = await prisma.ledgerEntry.create({
-    data: {
-      entryNumber,
-      date: input.date,
-      description: input.description.slice(0, 500),
-      documentRef: input.documentRef?.slice(0, 100) ?? null,
-      sourceType: input.sourceType ?? 'manual',
-      sourceId: input.sourceId ?? null,
-      period,
-      postedBy: input.postedBy ?? null,
-      lines: {
-        create: input.lines.map((l) => ({
-          accountCode: l.accountCode,
-          side: l.side,
-          amountHal: l.amountHal,
-        })),
-      },
-    },
-    include: { lines: true },
-  });
-  return { entry, created: true };
+  // Souběžné doklady si mohou vybrat stejné číslo (findFirst + create není
+  // atomické). P2002 = unique conflict → přečti číslo znovu a opakuj.
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 1; ; attempt++) {
+    const entryNumber = await nextEntryNumber(period);
+    try {
+      const entry = await prisma.ledgerEntry.create({
+        data: {
+          entryNumber,
+          date: input.date,
+          description: input.description.slice(0, 500),
+          documentRef: input.documentRef?.slice(0, 100) ?? null,
+          sourceType: input.sourceType ?? 'manual',
+          sourceId: input.sourceId ?? null,
+          period,
+          postedBy: input.postedBy ?? null,
+          lines: {
+            create: input.lines.map((l) => ({
+              accountCode: l.accountCode,
+              side: l.side,
+              amountHal: l.amountHal,
+            })),
+          },
+        },
+        include: { lines: true },
+      });
+      return { entry, created: true };
+    } catch (e) {
+      if ((e as { code?: string })?.code === 'P2002' && attempt < MAX_ATTEMPTS) continue;
+      throw e;
+    }
+  }
 }
 
 // ── Auto-posting: faktury + zaplacené objednávky ──────────────────
@@ -240,6 +252,31 @@ function revenueLinesForOrder(items: OrderItemLite[], shippingCzk: number) {
   }));
 }
 
+// Rozdíl mezi součtem položek a účtovanou částkou: nadbytek jde na 648
+// (ostatní výnosy, typicky zaokrouhlení), schodek = sleva na MD výnosového
+// účtu. Vrací 0–1 řádků; používá se i pro dorovnání stran dokladu.
+function diffLine(diffHal: number): PostingLine[] {
+  if (diffHal > 0) return [{ accountCode: REVENUE_OTHER, side: 'DAL', amountHal: diffHal }];
+  if (diffHal < 0) return [{ accountCode: REVENUE_GOODS, side: 'MD', amountHal: -diffHal }];
+  return [];
+}
+
+// Výnosové řádky dorovnané přesně na fakturovanou částku — jinak by na 311
+// (a v obratu 60x) zůstal nesoulad, když se items v JSONu liší od totalCzk.
+function reconcileRevenueLines(lines: PostingLine[], targetHal: number): PostingLine[] {
+  const sum = lines.reduce((s, l) => s + l.amountHal, 0);
+  if (sum === targetHal) return lines;
+  if (lines.length === 0) {
+    return [{ accountCode: REVENUE_GOODS, side: 'DAL', amountHal: targetHal }];
+  }
+  return [...lines, ...diffLine(targetHal - sum)];
+}
+
+// Storna se staví převrácením stran výnosových řádků (zrcadlí i slevový MD řádek).
+function flipSides(lines: PostingLine[]): PostingLine[] {
+  return lines.map((l) => ({ ...l, side: l.side === 'MD' ? 'DAL' : 'MD' }));
+}
+
 export interface SyncResult {
   invoicesPosted: number;
   paymentsPosted: number;
@@ -252,8 +289,16 @@ export async function syncOrdersToLedger(): Promise<SyncResult> {
   const res: SyncResult = { invoicesPosted: 0, paymentsPosted: 0, stornosPosted: 0, skipped: 0, errors: [] };
 
   // 1) Faktury → 311 / 60x (vystavení = vznik pohledávky + výnos)
+  // Cancel-flow nastaví fakturám status 'cancelled' — ty je potřeba zahrnout,
+  // jinak by storno větev nikdy neproběhla a výnos + pohledávka zůstaly
+  // v knihách navždy (pro storno ale musí být faktura už zaúčtovaná).
   const invoices = await prisma.invoice.findMany({
-    where: { status: { in: ['issued', 'sent', 'paid'] } },
+    where: {
+      OR: [
+        { status: { in: ['issued', 'sent', 'paid'] } },
+        { status: 'cancelled', order: { status: 'cancelled' } },
+      ],
+    },
     include: { order: true },
   });
 
@@ -261,41 +306,59 @@ export async function syncOrdersToLedger(): Promise<SyncResult> {
     const order = inv.order;
     try {
       if (order.status === 'cancelled') {
-        // storno: obrácené strany, stejné částky — jen jednou
-        const exists = await prisma.ledgerEntry.findFirst({
-          where: { sourceType: 'invoice_storno', sourceId: inv.id },
+        const wasPosted = await prisma.ledgerEntry.findFirst({
+          where: { sourceType: 'invoice', sourceId: inv.id },
+          select: { id: true },
         });
-        if (exists) { res.skipped++; continue; }
+        if (!wasPosted) { res.skipped++; continue; }
+
+        // U zaplacené objednávky je 311 už vyrovnaná (faktura MD + úhrada DAL)
+        // — storno revenue proto jde proti 325 závazku k vrácení, ne zpět na
+        // 311 (to by vytvořilo fiktivní pohledávku).
+        const paidEntry = await prisma.ledgerEntry.findFirst({
+          where: { sourceType: 'order_paid', sourceId: order.id },
+          select: { id: true },
+        });
+        const settled = order.paymentStatus === 'paid' || !!paidEntry;
+
         const items = (order.items as OrderItemLite[]) ?? [];
-        const revLines = revenueLinesForOrder(items, order.shippingCzk ?? 0);
-        const total = revLines.reduce((s, l) => s + l.amountHal, 0);
+        const totalHal = hal(inv.totalCzk);
+        const revLines = reconcileRevenueLines(
+          revenueLinesForOrder(items, order.shippingCzk ?? 0), totalHal);
         const stornoLines: PostingLine[] = [
-          { accountCode: RECEIVABLES, side: 'DAL', amountHal: total },
-          ...revLines.map((l) => ({ ...l, side: 'MD' as const })),
+          ...flipSides(revLines),
+          {
+            accountCode: settled ? REFUND_LIABILITY : RECEIVABLES,
+            side: 'DAL',
+            amountHal: totalHal,
+          },
         ];
-        await postEntry({
+        const { created } = await postEntry({
           date: new Date(),
-          description: `Storno faktury ${inv.invoiceNumber} (objednávka ${order.orderId} zrušena)`,
+          description: settled
+            ? `Storno faktury ${inv.invoiceNumber} — zaplacená objednávka ${order.orderId} zrušena, závazek k vrácení`
+            : `Storno faktury ${inv.invoiceNumber} — objednávka ${order.orderId} zrušena`,
           documentRef: inv.invoiceNumber,
           sourceType: 'invoice_storno',
           sourceId: inv.id,
           lines: stornoLines,
           postedBy: 'auto-sync',
         });
-        res.stornosPosted++;
+        if (created) res.stornosPosted++; else res.skipped++;
         continue;
       }
 
       const items = (order.items as OrderItemLite[]) ?? [];
-      const revLines = revenueLinesForOrder(items, order.shippingCzk ?? 0);
-      const total = revLines.reduce((s, l) => s + l.amountHal, 0);
+      const totalHal = hal(inv.totalCzk);
+      const revLines = reconcileRevenueLines(
+        revenueLinesForOrder(items, order.shippingCzk ?? 0), totalHal);
       const { created } = await postEntry({
         date: inv.issuedAt,
         description: `Faktura ${inv.invoiceNumber} — ${order.customerName} (${order.orderId})`,
         documentRef: inv.invoiceNumber,
         sourceType: 'invoice',
         sourceId: inv.id,
-        lines: [{ accountCode: RECEIVABLES, side: 'MD', amountHal: total }, ...revLines],
+        lines: [{ accountCode: RECEIVABLES, side: 'MD', amountHal: totalHal }, ...revLines],
         postedBy: 'auto-sync',
       });
       if (created) res.invoicesPosted++;
@@ -305,56 +368,63 @@ export async function syncOrdersToLedger(): Promise<SyncResult> {
     }
   }
 
-  // 2) Zaplacené objednávky → 221/159.9 / 311 (uhrada pohledávky)
+  // 2) Zaplacené objednávky → 221/159.9 MD. Kreditní strana:
+  //    zaúčtovaná faktura → 311 (uhrada pohledávky), jinak přímé výnosy,
+  //    zrušená bez faktury → 325 (peníze dorazily, závazek k vrácení).
   const paidOrders = await prisma.shopOrder.findMany({
-    where: { paymentStatus: 'paid', status: { not: 'cancelled' } },
-    include: { invoices: true },
+    where: { paymentStatus: 'paid' },
+    include: { invoices: { select: { id: true, invoiceNumber: true } } },
   });
 
   for (const order of paidOrders) {
-    // zaúčtuj platbu jen pokud existuje pohledávka z faktury — jinak přímý prodej
-    const hasInvoiceEntry = order.invoices.length > 0;
-    const creditAccount = hasInvoiceEntry ? RECEIVABLES : order.items
-      ? (() => {
-          // bez faktury: přímá úhrada výnosů — rozpad dle položek zvlášť níže
-          return null;
-        })()
-      : null;
-
-    const debitAccount =
-      order.payment === 'crypto' ? CRYPTO_INVENTORY : BANK;
+    const debitAccount = order.payment === 'crypto' ? CRYPTO_INVENTORY : BANK;
 
     try {
-      const items = (order.items as OrderItemLite[]) ?? [];
-      if (creditAccount) {
-        const { created } = await postEntry({
-          date: order.paidAt ?? order.updatedAt,
-          description: `Úhrada objednávky ${order.orderId} (${order.payment}) — ${order.customerName}`,
-          documentRef: order.invoices[0]?.invoiceNumber ?? order.orderId,
-          sourceType: 'order_paid',
-          sourceId: order.id,
-          lines: [
-            { accountCode: debitAccount, side: 'MD', amountHal: hal(order.totalCzk) },
-            { accountCode: creditAccount, side: 'DAL', amountHal: hal(order.totalCzk) },
-          ],
-          postedBy: 'auto-sync',
-        });
-        if (created) res.paymentsPosted++; else res.skipped++;
+      // Rozhoduje existence účetního zápisu faktury — Invoice řádek sám
+      // nestačí (draft/cancelled faktura se neúčtuje → 311 by šla do minusu).
+      const postedInvoice = order.invoices.length
+        ? await prisma.ledgerEntry.findFirst({
+            where: {
+              sourceType: 'invoice',
+              sourceId: { in: order.invoices.map((i) => i.id) },
+            },
+            select: { id: true },
+          })
+        : null;
+
+      const totalHal = hal(order.totalCzk);
+      let lines: PostingLine[];
+      let description: string;
+      if (order.status === 'cancelled' && !postedInvoice) {
+        lines = [
+          { accountCode: debitAccount, side: 'MD', amountHal: totalHal },
+          { accountCode: REFUND_LIABILITY, side: 'DAL', amountHal: totalHal },
+        ];
+        description = `Úhrada zrušené objednávky ${order.orderId} (${order.payment}) — závazek k vrácení`;
+      } else if (postedInvoice) {
+        lines = [
+          { accountCode: debitAccount, side: 'MD', amountHal: totalHal },
+          { accountCode: RECEIVABLES, side: 'DAL', amountHal: totalHal },
+        ];
+        description = `Úhrada objednávky ${order.orderId} (${order.payment}) — ${order.customerName}`;
       } else {
-        // bez faktury — rovnou proti výnosovým účtům
-        const revLines = revenueLinesForOrder(items, order.shippingCzk ?? 0);
-        const total = revLines.reduce((s, l) => s + l.amountHal, 0);
-        const { created } = await postEntry({
-          date: order.paidAt ?? order.updatedAt,
-          description: `Přímá úhrada ${order.orderId} (${order.payment}) — ${order.customerName}`,
-          documentRef: order.orderId,
-          sourceType: 'order_paid',
-          sourceId: order.id,
-          lines: [{ accountCode: debitAccount, side: 'MD', amountHal: total }, ...revLines],
-          postedBy: 'auto-sync',
-        });
-        if (created) res.paymentsPosted++; else res.skipped++;
+        const items = (order.items as OrderItemLite[]) ?? [];
+        const revLines = reconcileRevenueLines(
+          revenueLinesForOrder(items, order.shippingCzk ?? 0), totalHal);
+        lines = [{ accountCode: debitAccount, side: 'MD', amountHal: totalHal }, ...revLines];
+        description = `Přímá úhrada ${order.orderId} (${order.payment}) — ${order.customerName}`;
       }
+
+      const { created } = await postEntry({
+        date: order.paidAt ?? order.updatedAt,
+        description,
+        documentRef: order.invoices[0]?.invoiceNumber ?? order.orderId,
+        sourceType: 'order_paid',
+        sourceId: order.id,
+        lines,
+        postedBy: 'auto-sync',
+      });
+      if (created) res.paymentsPosted++; else res.skipped++;
     } catch (e) {
       res.errors.push(`${order.orderId}: ${e instanceof Error ? e.message : 'err'}`);
     }
@@ -717,17 +787,25 @@ export async function documentsWithLinks(period: number): Promise<DocumentsRepor
   );
 
   const invoiceCandidates = await prisma.invoice.findMany({
-    where: { status: { in: ['issued', 'sent', 'paid'] } },
+    where: {
+      OR: [
+        { status: { in: ['issued', 'sent', 'paid'] } },
+        { status: 'cancelled', order: { status: 'cancelled' } },
+      ],
+    },
     include: { order: { select: { status: true } } },
   });
   const unpostedInvoices = invoiceCandidates.filter((inv) =>
+    // storno dává smysl jen nad zaúčtovanou fakturou — nezaúčtovanou zrušenou
+    // netřeba hlásit (sync ji správně přeskočí)
     inv.order.status === 'cancelled'
-      ? !postedStornoIds.has(inv.id)
+      ? postedInvoiceIds.has(inv.id) && !postedStornoIds.has(inv.id)
       : !postedInvoiceIds.has(inv.id)
   ).length;
 
   const paidOrders = await prisma.shopOrder.findMany({
-    where: { paymentStatus: 'paid', status: { not: 'cancelled' } },
+    // i zrušené zaplacené objednávky se účtují (325 závazek k vrácení)
+    where: { paymentStatus: 'paid' },
     select: { id: true },
   });
   const unpostedPaidOrders = paidOrders.filter((o) => !postedOrderIds.has(o.id)).length;

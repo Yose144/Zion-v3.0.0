@@ -125,6 +125,17 @@ Přesný seznam = seed v `src/lib/accounting/coa.ts`, rozšiřitelný.
 - [x] Ověřeno live na produkční DB (opening carry-forward, kontrolní rozdíl 0, CSV, 401 bez klíče)
 - [ ] Sync existujících objednávek (51 faktur + 4 platby) — **rozhodnutí 👤**, je to reálný zápis
 
+## 9c. Opravy sync pravidel — stav 2026-11-03
+
+- [x] Storno zrušených faktur skutečně probíhá (faktury `cancelled` na zrušené objednávce se do syncu zahrnují; storno jen nad zaúčtovanou fakturou)
+- [x] Zaplacená+zrušená → závazek **325** k vrácení místo fiktivní pohledávky 311; nezaplacená+zrušená → storno proti 311
+- [x] Platba se řídí existencí ledger dokladu faktury, ne počtem `Invoice` řádků (draft/cancelled → přímé výnosy, ne záporná 311)
+- [x] Výnosové řádky dorovnané na fakturovanou částku (diff → `DAL 648` / `MD 604` sleva) — 311 se vždy vyrovná
+- [x] Zaplacená zrušená bez faktury → jediný doklad `221/159.9 → 325`
+- [x] P2002 retry číslování dokladů (souběžné zápisy)
+- [x] Regresní harness `scripts/test-accounting-sync.ts` — 58 kontrol přes 13 scénářů (mock prisma)
+- Report: `docs/3.2/REPORTS/REPORT_2026-11-03_UCETNICTVI_SYNC_FIX.md`
+
 ## 10. Později / rozhodnutí pro 👤
 
 - FIFO vs vážený průměr pro crypto inventarizaci
