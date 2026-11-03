@@ -139,6 +139,15 @@ chyběla fontána, asymetrické linky, timeout vždy pro modrou) a podle dat se
 doladila ekonomika, vlny, poškození a HP struktur. Výsledek: 342 s, 58 %
 zápasů končí Nexou, vyrovnané výhry, level ~9, ~4 itemy.
 
+## 2g. F11 — terén a modely *(hotovo 2026-11-03)*
+
+Rovina s neonovými proužky → svět: tráva s procedurální texturou, udusané
+cesty, řeka s břehy a „dýchající" vodou, kamenné plácky základen, sutiny,
+les (120 stromů v instancích), skály, kamenný kruh u bosse, nové modely věží
+(podstavec + tělo + krystal + prstenec) a inhibitorů (obelisk s runovým
+prstencem). Minioni jsou broušené kameny, monstra icosahedra. Všechno je
+dekorace — sim se nemění.
+
 ## 3. Co záměrně neděláme
 
 - **Courier** — u 5v5 s krátkým zápasem nemá co řešit; obchod v základně stačí.

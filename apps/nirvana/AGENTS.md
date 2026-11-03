@@ -1279,3 +1279,26 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   10/14 výher, 11 věží, 1,8 inhibitoru, 7,5 zabití, level 8,8, 3,7 itemu.
   Ber to jako **hratelné, ne vyladěné** — další iterace chce 100+ zápasů
   a lidské sehrávky.
+
+## PRVNÍ SVĚT — terén a grafika (F11, 2026-11-03)
+
+- **Terén je dekorace, ne pravidla.** `MobaTerrain.tsx` kreslí trávu, cesty,
+  řeku, lesy, skály a sutiny; kolize ani vidění z něj nepochází (to drží
+  `map.ts`/`sim.ts`). Kdo přidá překážku, musí si ujasnit, jestli má být
+  vidět, nebo i blokovat — druhé znamená sáhnout do mapy.
+- **Statické objekty = instancing.** 120 stromů jsou dva instanced meshe
+  (kmeny + koruny), 34 skál jeden. Matice se nastaví **jednou**
+  v `useLayoutEffect`, ne ve frame.
+- **Deterministické rozestupy** (vlastní LCG v `MobaTerrain`) — scéna musí
+  být při každém načtení stejná; `Math.random()` by dělal jiný svět pokaždé.
+- **Vysoké objekty u základny koukají do kamery.** První verze měla čtyři
+  3–4 m sloupy kolem spawnu a hráč neviděl ani svou postavu. Zešikma shora
+  (kamera y=20, z+17) zakrývá výhled cokoli vyššího než ~1 m v blízkosti
+  hrdiny — proto jsou sutiny nízké a dál od středu.
+- **Svislé plochy (praporky) z výšky vypadají jako plovoucí desky.** Týmová
+  barva věže patří do **prstence u paty**, ne na korouhev.
+- **Screenshot je součást ověření.** `e2e/first-world.mjs` ukládá
+  `start.png`/`fight.png`/`victory.png`; bez pohledu na ně se „grafika
+  hotová" nedá tvrdit. (Tři chyby výše našel až screenshot.)
+- **Nexa zmenšena (1,6 → 1,35)** a věže sníženy — z výšky jinak dominují
+  záběru víc než hrdina.
