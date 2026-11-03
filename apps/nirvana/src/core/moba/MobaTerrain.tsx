@@ -56,6 +56,22 @@ function grassTexture(): THREE.CanvasTexture {
   return texture;
 }
 
+/** Obloha — svislý přechod od teplého obzoru k temné výšce. */
+function skyTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 4;
+  canvas.height = 256;
+  const context = canvas.getContext('2d')!;
+  const gradient = context.createLinearGradient(0, 0, 0, 256);
+  gradient.addColorStop(0, '#0a1b17');
+  gradient.addColorStop(0.45, '#123a30');
+  gradient.addColorStop(0.78, '#2c6a55');
+  gradient.addColorStop(1, '#c98f5a');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 4, 256);
+  return new THREE.CanvasTexture(canvas);
+}
+
 /** Procedurální textura cesty — udusaná hlína s kamínky. */
 function pathTexture(): THREE.CanvasTexture {
   const size = 128;
@@ -134,6 +150,7 @@ export function MobaTerrain() {
   const stones = useRef<THREE.InstancedMesh>(null);
   const ground = useMemo(() => grassTexture(), []);
   const path = useMemo(() => pathTexture(), []);
+  const sky = useMemo(() => skyTexture(), []);
   const trees = useMemo(() => scatterForest(120, 1337), []);
   const rocks = useMemo(() => scatterRocks(34, 4242), []);
 
@@ -173,6 +190,12 @@ export function MobaTerrain() {
 
   return (
     <group>
+      {/* obloha — inverzní koule s přechodem; fog vypnutý, jinak by ji sežral */}
+      <mesh position={[0, 0, 0]}>
+        <sphereGeometry args={[170, 24, 16]} />
+        <meshBasicMaterial map={sky} side={THREE.BackSide} fog={false} toneMapped={false} />
+      </mesh>
+
       {/* země — velký disk s texturou trávy */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
         <circleGeometry args={[72, 72]} />

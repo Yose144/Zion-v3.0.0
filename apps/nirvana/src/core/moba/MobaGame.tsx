@@ -370,6 +370,13 @@ function SoloController({
           nodes: snapshotNow.nodes.map((node) => ({ key: node.key, owner: node.owner })),
           runes: snapshotNow.runes.length,
           boss: { alive: snapshotNow.boss.alive, hp: Math.round(snapshotNow.boss.hp) },
+          // Renderer info pro grafické audity (draw calls, trojúhelníky, textury).
+          renderer: {
+            calls: gl.info.render.calls,
+            triangles: gl.info.render.triangles,
+            geometries: gl.info.memory.geometries,
+            textures: gl.info.memory.textures,
+          },
           ended: snapshotNow.ended,
           spells: current.heroes[0]!.spells.map((spell) => ({
             slot: spell.slot,

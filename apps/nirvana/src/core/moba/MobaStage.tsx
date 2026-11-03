@@ -25,6 +25,8 @@ const MAX_MONSTERS = 20;
 const MAX_PROJECTILES = 60;
 const MAX_EFFECTS = 60;
 const MAX_WARDS = 12;
+/** Kontaktní stíny pod miniony — druhý instanced mesh, ne shadow mapa. */
+const MAX_SHADOWS = 180;
 
 export function MobaStage({
   snapshotRef,
@@ -47,6 +49,7 @@ export function MobaStage({
   const runeRefs = useRef<(THREE.Group | null)[]>([]);
   const bossRef = useRef<THREE.Group | null>(null);
   const wardMesh = useRef<THREE.InstancedMesh>(null);
+  const shadowMesh = useRef<THREE.InstancedMesh>(null);
   const minionMesh = useRef<THREE.InstancedMesh>(null);
   const monsterMesh = useRef<THREE.InstancedMesh>(null);
   const projectileMesh = useRef<THREE.InstancedMesh>(null);
@@ -214,6 +217,25 @@ export function MobaStage({
       }
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+
+    // stíny pod miniony (druhý instanced mesh, stejné pozice)
+    if (shadowMesh.current) {
+      const mesh = shadowMesh.current;
+      for (let index = 0; index < mesh.count; index += 1) {
+        const minion = snapshot.minions[index];
+        if (!minion) {
+          tmp.position.set(0, -60, 0);
+          tmp.scale.setScalar(0.001);
+        } else {
+          tmp.position.set(minion.x, 0.03, minion.z);
+          tmp.rotation.set(-Math.PI / 2, 0, 0);
+          tmp.scale.setScalar(minion.super ? 1.5 : 0.9);
+        }
+        tmp.updateMatrix();
+        mesh.setMatrixAt(index, tmp.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
     }
 
     // ── neutrální monstra ─────────────────────────────────────────────
@@ -470,6 +492,11 @@ export function MobaStage({
               <ringGeometry args={[1.9, 2.15, 32]} />
               <meshBasicMaterial color="#ffd166" transparent opacity={0.75} toneMapped={false} />
             </mesh>
+            {/* kontaktní stín — hrdina nesmí „plavat" nad terénem */}
+            <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <circleGeometry args={[0.95, 18]} />
+              <meshBasicMaterial color="#000000" transparent opacity={0.32} depthWrite={false} />
+            </mesh>
           </group>
         );
       })}
@@ -482,6 +509,10 @@ export function MobaStage({
       <instancedMesh ref={monsterMesh} args={[undefined, undefined, MAX_MONSTERS]} frustumCulled={false}>
         <icosahedronGeometry args={[0.72, 0]} />
         <meshStandardMaterial vertexColors roughness={0.5} emissive="#ffffff" emissiveIntensity={0.35} flatShading />
+      </instancedMesh>
+      <instancedMesh ref={shadowMesh} args={[undefined, undefined, MAX_SHADOWS]} frustumCulled={false}>
+        <circleGeometry args={[0.62, 12]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.3} depthWrite={false} />
       </instancedMesh>
       <instancedMesh ref={wardMesh} args={[undefined, undefined, MAX_WARDS]} frustumCulled={false}>
         <coneGeometry args={[0.28, 1.1, 6]} />

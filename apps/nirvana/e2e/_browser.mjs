@@ -83,13 +83,25 @@ export function resolveExecutable() {
   return found;
 }
 
+/**
+ * GPU režim. Výchozí je swiftshader (funguje všude, ale fps je bezcenné).
+ * `ZION_GPU=metal` zapne skutečnou GPU (na macOS ANGLE/Metal) — používá se
+ * pro screenshoty a měření fps, ne pro CI.
+ */
+function gpuArgs() {
+  if (process.env.ZION_GPU === 'metal') {
+    return ['--no-sandbox', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-gpu-rasterization'];
+  }
+  return ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader'];
+}
+
 /** Spustí prohlížeč. Playwright, když je; jinak puppeteer (stejné API v rozsahu E2E). */
 export async function launch(options = {}) {
   const chromium = await loadChromium();
   if (chromium) {
     return chromium.launch({
       executablePath: resolveExecutable(),
-      args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
+      args: gpuArgs(),
       ...options,
     });
   }
@@ -108,8 +120,9 @@ async function launchPuppeteer(options) {
   const puppeteer = await import('puppeteer');
   const browser = await puppeteer.default.launch({
     executablePath: resolveExecutable(),
-    headless: true,
-    args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
+    // Nový headless umí GPU; starý (`shell`) padá na softwarový raster.
+    headless: process.env.ZION_GPU === 'metal' ? 'new' : true,
+    args: gpuArgs(),
     ...options,
   });
 
