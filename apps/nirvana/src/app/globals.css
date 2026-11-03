@@ -4348,6 +4348,14 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 
 /* Na šířku sedí lišta dole u okraje (na výšku je zvednutá nad chat), takže
    si musí nechat místo pro bublinu chatu — jinak schová ZION. */
+/* Na šířku je bublina chatu široká (popisek „CHAT"), takže se do 4,9rem
+   rezervy nevešla a poslední žeton lišty pod ni zalezl. Ikona stačí. */
+@media (max-height: 480px) {
+  .chat-dock-btn .chat-dock-label {
+    display: none;
+  }
+}
+
 @media (max-height: 480px) and (hover: none) and (pointer: coarse) {
   .game-hud.is-dock,
   .game-hud.is-compact {
@@ -5121,6 +5129,11 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     width: auto;
     top: auto;
     bottom: calc(39vh + 4.4rem);
+  }
+
+  /* seznam je scrollovaný — bez fade vypadá poslední řádek jako rozbitý */
+  .saturn-panel {
+    mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 1.5rem), transparent 100%);
   }
 }
 
@@ -6055,5 +6068,27 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   .moba-portrait.is-card {
     width: 2.6rem;
     height: 2.6rem;
+  }
+}
+
+
+/* ── MOBA pick na výšku: start na jedné obrazovce ──────────────────────
+   I po zhuštění na tři sloupce (12 hrdinů) zůstával start pod okrajem,
+   protože hlavička je vysoká a seznam čtyři řádky. Na výšku se proto
+   seznam scrolluje uvnitř karty a marketingový podtitul jde pryč. */
+@media (max-width: 560px) and (orientation: portrait) {
+  .moba-sub {
+    display: none;
+  }
+
+  .moba-head h1 {
+    font-size: 1.8rem;
+  }
+
+  .moba-pick-grid {
+    max-height: 40vh;
+    overflow-y: auto;
+    padding-right: 0.2rem;
+    mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 1.2rem), transparent 100%);
   }
 }
