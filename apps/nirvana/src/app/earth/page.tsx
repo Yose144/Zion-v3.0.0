@@ -744,17 +744,6 @@ export default function EarthPage() {
               </div>
             )}
 
-            {emoteWheel && (
-              <MobaEmoteWheel
-                origin={emoteWheel}
-                language={cs ? 'cs' : 'en'}
-                onPick={(index) => {
-                  sendEmote(index);
-                  setEmoteWheel(null);
-                }}
-                onClose={() => setEmoteWheel(null)}
-              />
-            )}
 
             {mode === 'online' && (
               <div className="moba-quickchat">
@@ -865,6 +854,20 @@ export default function EarthPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Radiální menu patří mimo `.moba-stage`: HUD má `transform`, takže
+          `position: fixed` uvnitř něj je relativní k HUD a menu zmizí. */}
+      {emoteWheel && (
+        <MobaEmoteWheel
+          origin={emoteWheel}
+          language={cs ? 'cs' : 'en'}
+          onPick={(index) => {
+            sendEmote(index);
+            setEmoteWheel(null);
+          }}
+          onClose={() => setEmoteWheel(null)}
+        />
       )}
 
       {phase === 'ended' && (
