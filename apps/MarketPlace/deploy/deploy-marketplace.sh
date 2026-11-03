@@ -36,7 +36,10 @@ echo "[deploy-marketplace] Installing deps + generating Prisma client..."
 # K1.2: root workspace — jeden lockfile a jeden node_modules v rootu repa.
 # `npm ci` uvnitř appky by vytvořil druhý strom a rozbil workspace.
 cd "$ROOT_DIR"
-(cd ../.. && npm ci)
+# --ignore-scripts: postinstall `db:generate -w zion-marketplace` běží dřív,
+# než je .bin/prisma na místě → ENOENT/127 (2026-11-02). Client se generuje
+# explicitně na dalším řádku.
+(cd ../.. && npm ci --ignore-scripts)
 npm run db:generate
 
 echo "[deploy-marketplace] Building (standalone)..."

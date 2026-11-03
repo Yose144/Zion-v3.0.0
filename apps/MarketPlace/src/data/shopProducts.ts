@@ -58,6 +58,23 @@ export const shopProducts: ShopProductSeed[] = [
     digital: true,
     active: true,
   },
+  {
+    externalId: 'zion-pass-001',
+    name: 'ZION Pass — vstup do Nirvany a Archivu',
+    category: 'books',
+    description:
+      'Digitální průkaz do světa ZION. ZION Pass otevírá vstup do Nirvany (3D portál Království srdce — hry, světy, chat) i do ZION Archivu (kanonické texty, Kroniky, edice). Po zaplacení přijde jedinečný kód ZAP-…, který se uplatní na nirvana.zionterranova.com i v ZION Archivu. 🛡️ BONUS: 108 000 ZION na tvoji ZION peněženku.',
+    priceCzk: 108,
+    oldPriceCzk: undefined,
+    image: '/shop/img/books/kralovstvi-srdce-wide.webp',
+    badge: '🛡️ ZION Pass',
+    inStock: true,
+    size: 'ZAP kód · okamžité doručení',
+    stock: 999,
+    tokens: 108000,
+    digital: true,
+    active: true,
+  },
   // WoodArt
   {
     externalId: 'wood-003',
