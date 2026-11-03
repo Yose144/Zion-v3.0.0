@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProjectPresentation } from '@/core/scene/ProjectPresentation';
 import { HiranChat } from '@/core/hiran/HiranChat';
@@ -33,6 +33,20 @@ export default function HiranPresentPage() {
   const cs = lang === 'cs';
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<HiranSceneState>('idle');
+  /**
+   * Popisky bran kreslí scéna jako 3D text. Na telefonu se jich třináct
+   * překrývá („Kailash" přes „Království srdce"), takže se tam nekreslí —
+   * jména drží pás bran dole. Šířku čte efekt, aby se nerozešel SSR render.
+   */
+  const [wideEnough, setWideEnough] = useState(true);
+
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 760px)');
+    const update = () => setWideEnough(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
 
   const enter = useCallback(
     (gate: HiranGate) => {
@@ -95,6 +109,7 @@ export default function HiranPresentPage() {
             state={state}
             onSelectGate={enter}
             onOrbClick={() => setOpen(true)}
+            gateLabels={wideEnough}
           />
         </>
       )}

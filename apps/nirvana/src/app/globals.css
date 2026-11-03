@@ -1123,14 +1123,31 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   .present-hiran-open {
     left: 50%;
     right: auto;
-    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(5.2rem + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%);
+  }
+
+  /* Pás bran je vodorovně scrollovatelný a sahá pod bublinu chatu; bez
+     pravého insetu poslední brány zůstaly pod ní a nešly přečíst. */
+  .present-hiran-gates {
+    padding-right: calc(4.6rem + env(safe-area-inset-right, 0px));
   }
 }
 
 /* Scény s overlayem mají dole pás bran — nápověda se zvedne nad něj. */
 .present.has-overlay .present-hint {
   bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Na telefonu se nápověda a CTA „Zeptat se Hirana" překrývaly (obojí na
+   4,6rem) a text nešel přečíst. Nápověda jde nad tlačítko. */
+@media (max-width: 720px) {
+  .present.has-overlay .present-hint {
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: calc(8.6rem + env(safe-area-inset-bottom, 0px));
+    font-size: 0.62rem;
+  }
 }
 
 /* ── Jupiter Station — pouť ─────────────────────────────────────────────
@@ -2718,6 +2735,14 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     height: auto;
     min-height: 100dvh;
     overflow: visible;
+    /* herní lišta je fixed dole — bez rezervy zajela na jméno postavy */
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* seznam se ořezával uprostřed řádku bez jakéhokoli náznaku, že se dá
+     scrollovat */
+  .avatars-items {
+    mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 1.6rem), transparent 100%);
   }
 
   .avatars-body {
@@ -3240,6 +3265,12 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     padding: 0.18rem 0.42rem;
     font-size: 0.68rem;
   }
+
+  /* Bublina chatu sedí vpravo dole (fixed) a na užších displejích si brala
+     poslední žeton lišty („přihlásit"). Lišta proto končí před ní. */
+  .game-hud.is-dock {
+    right: calc(4.9rem + env(safe-area-inset-right, 0px));
+  }
 }
 
 @media (max-width: 640px) {
@@ -3753,6 +3784,47 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 @media (max-width: 900px) {
   .moba-pick {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Na telefonu byly karty hrdinů dvě na řádek (9,5rem), takže se k tlačítku
+   startu muselo proskrolovat šest řádků. Tři sloupce + menší portrét zkrátí
+   výběr na čtvrtinu — start je na jedné obrazovce. */
+@media (max-width: 560px) {
+  .moba-pick {
+    gap: 0.8rem;
+    padding: 0 0.2rem;
+  }
+
+  .moba-pick-block {
+    padding: 0.8rem;
+  }
+
+  .moba-pick-grid {
+    grid-template-columns: repeat(auto-fill, minmax(5.6rem, 1fr));
+    gap: 0.35rem;
+  }
+
+  .moba-pick-card {
+    padding: 0.4rem 0.45rem;
+    gap: 0.1rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .moba-pick-card strong {
+    font-size: 0.7rem;
+    line-height: 1.2;
+  }
+
+  /* podtitul se na 5,6rem nevejde a jen posouvá kartu do výšky */
+  .moba-pick-card span {
+    display: none;
+  }
+
+  .moba-portrait.is-card {
+    width: 2.6rem;
+    height: 2.6rem;
   }
 }
 
@@ -5058,15 +5130,16 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
     right: 0.5rem;
     width: auto;
     top: auto;
-    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
-    max-height: 36vh;
+    /* nad bublinou chatu — ta jinak seděla na posledních kapitolách */
+    bottom: calc(4.4rem + env(safe-area-inset-bottom, 0px));
+    max-height: 34vh;
   }
   .saturn-detail {
     left: 0.5rem;
     right: 0.5rem;
     width: auto;
     top: auto;
-    bottom: calc(37vh + 0.9rem);
+    bottom: calc(39vh + 4.4rem);
   }
 }
 
@@ -5887,4 +5960,28 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 .moba-emote-btn.is-open {
   border-color: rgba(255, 209, 102, 0.9);
   background: rgba(255, 209, 102, 0.22);
+}
+
+
+/* ── Dotykové cíle ─────────────────────────────────────────────────────
+   Na telefonu měly některé ovládací prvky výšku 19–30 px (lišta her,
+   odkazy v chrome, přepínač režimu). 40 px je nejmenší rozměr, který jde
+   spolehlivě trefit prstem; šířku necháváme obsahu. */
+@media (hover: none) and (pointer: coarse) {
+  .game-hud-tab,
+  .present-back,
+  .present-link,
+  .present-hiran-gates button,
+  .present-hiran-open,
+  .moba-mode-btn,
+  .moba-link,
+  .arena-link,
+  .saturn-back,
+  .avatars-ray,
+  .park-title a {
+    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }

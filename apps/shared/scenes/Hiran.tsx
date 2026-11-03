@@ -375,11 +375,14 @@ function Gate({
   index,
   total,
   onSelect,
+  showLabel = true,
 }: {
   gate: HiranGate;
   index: number;
   total: number;
   onSelect?: (gate: HiranGate) => void;
+  /** Na úzkém displeji se popisky 13 bran překrývají — kreslí se jen na širokém. */
+  showLabel?: boolean;
 }) {
   const angle = (index / Math.max(1, total)) * Math.PI * 2;
   const color = gateColor(index, total);
@@ -453,7 +456,9 @@ function Gate({
       <mesh position={[0, GATE_Y + 3.05, 0]} material={gold(0.22)}>
         <octahedronGeometry args={[0.26, 0]} />
       </mesh>
-      <SceneLabel position={[0, GATE_Y + 4.0, 0]} text={gate.name} scale={0.95} />
+      {showLabel ? (
+        <SceneLabel position={[0, GATE_Y + 4.0, 0]} text={gate.name} scale={0.95} />
+      ) : null}
     </group>
   );
 }
@@ -464,12 +469,15 @@ export function HiranScene({
   state = 'idle',
   onSelectGate,
   onOrbClick,
+  gateLabels = true,
 }: {
   lang: Lang;
   gates?: HiranGate[];
   state?: HiranSceneState;
   onSelectGate?: (gate: HiranGate) => void;
   onOrbClick?: () => void;
+  /** `false` na úzkém displeji: 13 popisků se v malém záběru překrývá. */
+  gateLabels?: boolean;
 }) {
   const cs = lang === 'cs';
   return (
@@ -500,7 +508,14 @@ export function HiranScene({
       <GoldenOrb state={state} onOrbClick={onOrbClick} />
 
       {gates.map((gate, index) => (
-        <Gate key={gate.key} gate={gate} index={index} total={gates.length} onSelect={onSelectGate} />
+        <Gate
+          key={gate.key}
+          gate={gate}
+          index={index}
+          total={gates.length}
+          onSelect={onSelectGate}
+          showLabel={gateLabels}
+        />
       ))}
 
       <SceneMotes
