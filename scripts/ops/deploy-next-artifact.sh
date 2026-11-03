@@ -37,6 +37,11 @@ swapped=1
 systemctl restart "$service"
 curl -fsS --retry 10 --retry-all-errors --retry-delay 2 --max-time 10 -o /dev/null "http://127.0.0.1:$port/"
 systemctl is-active "$service"
+# Retence: poslední 3 .before-* stačí na rollback, nejnovější .failed-* na
+# postmortem, .stage-* starší 1 h jsou sirotci po přerušeném deployi.
+ls -1d "${target}".before-* 2>/dev/null | sort | head -n -3 | xargs -r rm -rf || true
+ls -1d "${target}".failed-* 2>/dev/null | sort | head -n -1 | xargs -r rm -rf || true
+find "${target}".stage-* -maxdepth 0 -mmin +60 -exec rm -rf {} + 2>/dev/null || true
 REMOTE
 if ! curl -fsS --retry 8 --retry-all-errors --retry-delay 2 --max-time 15 -o /dev/null "$site/"; then
   printf -v rollback_args '%q ' "$target" "$backup" "$service"

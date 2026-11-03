@@ -107,4 +107,7 @@ fi
 
 echo "[nirvana-net] health: $HEALTH"
 ssh_ "systemctl is-active '$SERVICE' && systemctl show -p ActiveEnterTimestamp --value '$SERVICE'"
+# retence: poslední 3 .before-* na rollback, nejnovější .failed-* na postmortem,
+# .stage-* starší 1 h = sirotci
+ssh_ "ls -1d '$REMOTE_DIR'.before-* 2>/dev/null | sort | head -n -3 | xargs -r rm -rf; ls -1d '$REMOTE_DIR'.failed-* 2>/dev/null | sort | head -n -1 | xargs -r rm -rf; find '$REMOTE_DIR'.stage-* -maxdepth 0 -mmin +60 -exec rm -rf {} + 2>/dev/null; true"
 echo "[nirvana-net] hotovo ($RELEASE); předchozí verze (pokud byla) v $BACKUP"
