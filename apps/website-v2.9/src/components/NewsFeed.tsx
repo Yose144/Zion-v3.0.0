@@ -35,6 +35,27 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'christmas-2026',
+    date: '2026-11-03',
+    tag: { cs: 'Vánoce', en: 'Christmas' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'Vánoce v ZION — kniha Království srdce v prodeji, klient Kingdom a svět Nirvana',
+      en: 'Christmas at ZION — Kingdom of the Heart on sale, the Kingdom client and the world of Nirvana',
+    },
+    summary: {
+      cs: 'Vánoční prodej digitální knihy Království srdce odstartoval: ilustrovaná edice v pěti jazycích (PDF + EPUB, 144 Kč), ZION Archive Pass v ceně a Genesis bonus 144 000 ZION do 24. 12. Ekosystém zároveň roste o nový herní klient Kingdom — ve vývoji, s portály do živých služeb a desktopem s peněženkou a těžbou — a o první svět OASIS: Nirvana už běží živě se sedmi hrami (online MOBA, aréna, souboje, závody), chatem a multiplayerem. Vstup na ZAP kód.',
+      en: 'The Christmas sale of the Kingdom of the Heart digital book has started: an illustrated edition in five languages (PDF + EPUB, 144 CZK), a ZION Archive Pass included and a 144,000 ZION Genesis bonus until 24 December. The ecosystem also gains a new game client — Kingdom, still in development, with portals into live services and a desktop wallet-and-mining build — and the first OASIS world: Nirvana is already live with seven games (online MOBA, arena, duels, racing), chat and multiplayer. Entry via ZAP code.',
+    },
+    href: '/news/christmas-2026',
+    image: '/images/kralovstvi-srdce/hero.webp',
+    imageSrcSet: '/images/kralovstvi-srdce/hero-m.webp 960w, /images/kralovstvi-srdce/hero.webp 1672w',
+    imageAlt: {
+      cs: 'Království srdce — archa s princem a dívkou s lucernou',
+      en: 'Kingdom of the Heart — the ark with the prince and a girl holding a lantern',
+    },
+  },
+  {
     slug: 'zion-v320-mainnet-beta',
     date: '2026-10-26',
     tag: { cs: 'Aktualizace', en: 'Update' },
