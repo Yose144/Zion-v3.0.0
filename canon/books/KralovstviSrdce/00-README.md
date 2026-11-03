@@ -40,3 +40,16 @@ Příběh se čte jako legenda — a je napsaný tak, aby fungoval i pro děti. 
 ## Kompas — kam kniha patří
 
 Kniha stojí mezi **[Maitreyou](../Maitreya/00-README.md)** (mantra tří vtělení — tato kniha je její třetí verš rozvinutý v příběh) a **[Surta Srdce](../SurtaSrdce/00-README.md)** (loď, která jednou popluje vedle Santa María la Mayor) — a podporou jí je **[Nirvana / Tres Marías](../nirvana/13-Tres-Marias.md)**, flotila, do které loď nakonec vplouvá.
+
+## Edice
+
+Deset kapitol výše je hlavní text. Složky vedle něj jsou pracovní čtení. Žádné ho nenahrazuje a žádné nemění `full.md` ani samostatné kapitoly.
+
+| Edice | Tah |
+|---|---|
+| [`cloude/full.md`](./cloude/full.md) | Literární rozšíření midraše |
+| [`gemini/`](./gemini/00-README.md) | Svorník korpusu, dvacet čtyři kapitol |
+| [`gpt/`](./gpt/00-README.md) | Tesař zůstává u práce i v druhé půli |
+| [`Kralovstvi_srdce_Nova_plavba_Balicek/`](./Kralovstvi_srdce_Nova_plavba_Balicek/Redakcni_pruvodce.md) | Čtenářský rukopis, 3. 11. 2026 |
+| [`groq/`](./groq/00-README.md) | Edice spáry: loď je otázka, fakt se nezalepuje |
+| [`DeepSeek/`](./DeepSeek/00-README.md) | **Kniha Kýlu**: vypráví dřevo. Tvar, který přežil, a míra, kterou lze zkopírovat |
