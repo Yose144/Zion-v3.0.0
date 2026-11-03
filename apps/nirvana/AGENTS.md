@@ -1302,3 +1302,27 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   hotová" nedá tvrdit. (Tři chyby výše našel až screenshot.)
 - **Nexa zmenšena (1,6 → 1,35)** a věže sníženy — z výšky jinak dominují
   záběru víc než hrdina.
+
+## PRVNÍ SVĚT — GPU render a ladění grafiky (F12, 2026-11-03)
+
+- **Screenshoty jen na skutečné GPU.** `e2e/_browser.mjs` bere `ZION_GPU=metal`
+  (ANGLE/Metal + nový headless, `--enable-gpu`), výchozí zůstává swiftshader
+  pro CI. Swiftshader dá ~3 fps a velké screenshoty padají na timeout.
+- **`e2e/moba-shots.mjs`** udělá pět pohledů (základna, uzel, řeka, linka,
+  varianta bez HUD) a změří fps + `renderer.info` (draw calls, triangles,
+  geometries, textures). Čísla vytáhne z debug háčku (`__mobaDebug().renderer`)
+  — bez toho se výkon „měří" odhadem.
+- **Naměřeno (1600×900, M1 Metal):** **60 fps** (16,7 ms), **67 draw calls**,
+  22,8 tis. trojúhelníků, **4 textury** (tráva, cesta, obloha, + interní).
+  Scéna je daleko pod rozpočtem univerza (175+ calls).
+- **Obloha je inverzní koule s gradientem** (`skyTexture`) a `fog={false}` —
+  s fogem by ji mlha sežrala a horizont by zmizel.
+- **Kontaktní stíny místo shadow map:** instanced kruhy pod miniony
+  (`MAX_SHADOWS`) + kruh v grupě hrdiny. Stíny jsou nejlevnější způsob, jak
+  jednotky „přilepit" k zemi; skutečné `castShadow` by stály framebuffer.
+- **Co odhalil až render** (kód to neukáže): boss byl obrovský balon, bushe
+  vypadaly jako zelené balvany, řeka byla přesaturovaná a prstenec uzlu
+  působil jako prázdný kruh. Všechno je opravené, ale **platí pravidlo:
+  bez pohledu na snímek se „grafika hotová" netvrdí.**
+- **Velký šedý mnohoúhelník u řeky je Prastaré stvoření** (jungle tábor
+  `river-dragon`), ne chyba — z výšky vypadá jako placatý kámen.

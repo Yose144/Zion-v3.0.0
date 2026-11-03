@@ -76,6 +76,21 @@ Po opravě (`moba-f11b/start.png`) je vidět hrdina, cesty, kameny i les.
   by chtěly skutečné assety.
 - **Stromy jsou dva meshe na celý les** — zblízka jsou to kužely, ne koruny.
 
+## 5b. F12 — GPU render, obloha a stíny
+
+- **`ZION_GPU=metal`** v `e2e/_browser.mjs` (ANGLE/Metal, nový headless) —
+  screenshoty a fps na skutečné GPU, CI zůstává na swiftshaderu.
+- **`e2e/moba-shots.mjs`** — pět pohledů + fps + draw calls z `gl.info`
+  (debug háček vrací `renderer`).
+- **Obloha:** inverzní koule s gradientem (teplý obzor), `fog={false}`.
+- **Kontaktní stíny:** instanced kruhy pod miniony + kruh pod hrdinou
+  (jednotky neplavou nad terénem) — místo shadow map.
+- **Ladění po renderu:** boss 1,9 → 1,35, bushe jako tři laloky, řeka
+  tmavší (0,45), prstenec uzlu 3,2 → 2,6.
+
+**Naměřeno (M1 Metal, 1600×900):** 60 fps (16,7 ms), **67 draw calls**,
+22,8 tis. trojúhelníků, 4 textury, 0 chyb v konzoli.
+
 ## 6. Co dál (grafika)
 
 1. **Kontaktní stíny** pod hrdiny a miniony (levné, hodně pomůže čitelnosti).
