@@ -1347,3 +1347,23 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   v textuře roztáhl podle strany.
 - **Naměřeno po mlze (M1 Metal, 1600×900):** 60 fps, **69 draw calls**,
   22,9 tis. trojúhelníků, 5 textur (tráva, cesta, obloha, mlha, interní).
+
+## PRVNÍ SVĚT — poškození jako čísla (F14, 2026-11-03)
+
+- **Sim neposílá damage eventy, takže čísla vznikají rozdílem HP mezi
+  snapshoty.** Díky tomu to funguje v sólu i online **bez změny protokolu**;
+  cena je, že číslo je součet za jeden snapshot (15 Hz), ne jednotlivé rány.
+- **Kreslí se do 2D canvasu nad scénou** (`MobaFxOverlay`), ne do DOM ani do
+  3D spritů: DOM element pro každé číslo by při 15 snímcích/s zabil výkon.
+  Světové souřadnice projektuje **kamera z r3f**, kterou `MobaStage` předává
+  přes `cameraRef` — bez toho by overlay nevěděl, kam číslo patří.
+- **Kdo zmizí v mlze, tomu se stav HP zahodí.** Jinak by po odhalení naskočilo
+  jedno obrovské číslo za celou dobu v mlze.
+- **Strop 40 čísel a rozptyl podle id** — AoE by jinak vyrobilo stovky
+  překrývajících se textů.
+- **Červená = dostané, zlatá = udělené** (podle týmu hrdiny ve snapshotu).
+- **🔴 Wrapper komponenty znovu:** `MobaOnline` zahazoval `sellRequest`,
+  `buybackRequest` a `talentRequest`, takže v multiplayeru nešel prodat item
+  (F2), buyback (F5) ani vybrat talent (F8). Stejná chyba jako u `MobaGame`
+  ve F6. **Pravidlo: každý nový `*Request` ref musí projít VŠEMI vrstvami
+  (page → wrapper → controller) — jinak tiše zmizí.**

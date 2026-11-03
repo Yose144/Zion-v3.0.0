@@ -105,6 +105,24 @@ Po opravě (`moba-f11b/start.png`) je vidět hrdina, cesty, kameny i les.
 **Naměřeno po mlze (M1 Metal, 1600×900):** 60 fps, **69 draw calls**,
 22,9 tis. trojúhelníků, 5 textur, 0 chyb v konzoli.
 
+## 5d. F14 — plovoucí čísla poškození
+
+- **`MobaFxOverlay`**: 2D canvas nad scénou, světové souřadnice se projektují
+  kamerou z r3f (`cameraRef` z `MobaStage`). DOM element pro každé číslo by
+  zabil výkon.
+- **Čísla vznikají rozdílem HP mezi snapshoty** — sim damage eventy neposílá,
+  takže tohle funguje v sólu i online bez změny protokolu. Cena: číslo je
+  součet za jeden snapshot (15 Hz), ne jednotlivá rána.
+- Červená = dostané, zlatá = udělené; strop 40 čísel, rozptyl podle id;
+  kdo zmizí v mlze, tomu se stav HP zahodí (jinak naskočí číslo za celou
+  dobu v mlze).
+- **Nalezená chyba:** `MobaOnline` (wrapper) zahazoval `sellRequest`,
+  `buybackRequest`, `talentRequest` → v multiplayeru nešel prodat item,
+  buyback ani vybrat talent. Teď se přeposílají.
+
+**Naměřeno:** 60 fps, 65 draw calls, 38,7 tis. trojúhelníků (hrdinové
+v záběru), 0 chyb v konzoli.
+
 ## 6. Co dál (grafika)
 
 1. **Kontaktní stíny** pod hrdiny a miniony (levné, hodně pomůže čitelnosti).
