@@ -1,0 +1,17 @@
+{
+  "edition": "gpt",
+  "lang": "CZ",
+  "source": "Kralovstvi_srdce_gpt_CZ.md",
+  "words": 6435,
+  "headings": 87,
+  "paragraphs": 285,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 48,
+    "bytes": 197667
+  },
+  "epub": {
+    "documents": 6,
+    "bytes": 24960
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "edition": "groq",
+  "lang": "CZ",
+  "source": "Kralovstvi_srdce_groq_CZ.md",
+  "words": 7441,
+  "headings": 73,
+  "paragraphs": 222,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 48,
+    "bytes": 197226
+  },
+  "epub": {
+    "documents": 5,
+    "bytes": 25640
+  }
+}

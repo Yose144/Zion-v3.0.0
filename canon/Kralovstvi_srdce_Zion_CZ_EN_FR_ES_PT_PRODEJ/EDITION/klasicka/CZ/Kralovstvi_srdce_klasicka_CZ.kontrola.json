@@ -1,0 +1,17 @@
+{
+  "edition": "klasicka",
+  "lang": "CZ",
+  "source": "Kralovstvi_srdce_klasicka_CZ.md",
+  "words": 5220,
+  "headings": 56,
+  "paragraphs": 133,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 29,
+    "bytes": 164943
+  },
+  "epub": {
+    "documents": 13,
+    "bytes": 25176
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "edition": "deepseek",
+  "lang": "CZ",
+  "source": "Kralovstvi_srdce_deepseek_CZ.md",
+  "words": 22986,
+  "headings": 196,
+  "paragraphs": 735,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 113,
+    "bytes": 350479
+  },
+  "epub": {
+    "documents": 18,
+    "bytes": 80878
+  }
+}

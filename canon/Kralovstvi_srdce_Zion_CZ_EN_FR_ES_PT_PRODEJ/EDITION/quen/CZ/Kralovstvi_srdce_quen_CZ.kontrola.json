@@ -1,0 +1,17 @@
+{
+  "edition": "quen",
+  "lang": "CZ",
+  "source": "Kralovstvi_srdce_quen_CZ.md",
+  "words": 5903,
+  "headings": 56,
+  "paragraphs": 160,
+  "generated": "2026-11-04",
+  "pdf": {
+    "pages": 42,
+    "bytes": 194700
+  },
+  "epub": {
+    "documents": 19,
+    "bytes": 32433
+  }
+}
