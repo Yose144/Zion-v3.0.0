@@ -15,9 +15,15 @@ import * as THREE from 'three';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
 import { MobaTerrain } from './MobaTerrain';
 import { MobaFog } from './MobaFog';
+import { pushDamage, type DamageFloater } from './MobaFxOverlay';
 import { avatarLook } from '@/core/avatars/kit';
 import type { MobaSnapshot } from './sim';
 import { BOSS_SPOT, BUSHES, NODE_SITES, NODE_CAPTURE_MS, RUNE_SPOTS, STRUCTURES, isStructureProtected } from './map';
+
+/** Tým hráče — podle snapshotu (online id, sólo `hero-you`). */
+function youIdTeam(snapshot: MobaSnapshot, youId: string): 'blue' | 'red' | null {
+  return snapshot.heroes.find((hero) => hero.id === youId)?.team ?? null;
+}
 
 const MAX_HEROES = 10;
 const MAX_TOWERS = STRUCTURES.length;
@@ -33,9 +39,15 @@ export function MobaStage({
   snapshotRef,
   youId,
   selfPose,
+  floaters,
+  cameraRef,
 }: {
   snapshotRef: React.MutableRefObject<MobaSnapshot | null>;
   youId: string;
+  /** Plovoucí čísla poškození (plní se tady, kreslí se v `MobaFxOverlay`). */
+  floaters?: React.MutableRefObject<DamageFloater[]>;
+  /** Kamera pro projekci světových souřadnic do overlay canvasu. */
+  cameraRef?: React.MutableRefObject<THREE.Camera | null>;
   /**
    * Predikovaná poloha vlastního hrdiny (online). Server posílá 15 Hz, takže
    * bez predikce by se vlastní postava cukala; zásahy dál rozhoduje server,
@@ -50,6 +62,7 @@ export function MobaStage({
   const runeRefs = useRef<(THREE.Group | null)[]>([]);
   const bossRef = useRef<THREE.Group | null>(null);
   const wardMesh = useRef<THREE.InstancedMesh>(null);
+  const prevHp = useRef(new Map<string, number>());
   const shadowMesh = useRef<THREE.InstancedMesh>(null);
   const minionMesh = useRef<THREE.InstancedMesh>(null);
   const monsterMesh = useRef<THREE.InstancedMesh>(null);
@@ -68,6 +81,33 @@ export function MobaStage({
     const snapshot = snapshotRef.current;
     if (!snapshot) return;
     const time = frame.clock.elapsedTime;
+    if (cameraRef) cameraRef.current = camera;
+
+    // ── poškození: rozdíl HP mezi snapshoty (sim damage eventy neposílá) ──
+    if (floaters) {
+      const seen = new Set<string>();
+      for (const hero of snapshot.heroes) {
+        seen.add(hero.id);
+        const previous = prevHp.current.get(hero.id);
+        if (previous !== undefined && hero.hp < previous) {
+          pushDamage(
+            floaters.current,
+            hero.x,
+            2.3,
+            hero.z,
+            previous - hero.hp,
+            hero.team === youIdTeam(snapshot, youId) ? 'in' : 'out',
+            performance.now(),
+          );
+        }
+        prevHp.current.set(hero.id, hero.hp);
+      }
+      // kdo zmizel v mlze, tomu se stav zahodí (jinak by po odhalení
+      // naskočilo obrovské číslo za celou dobu v mlze)
+      for (const id of [...prevHp.current.keys()]) {
+        if (!seen.has(id)) prevHp.current.delete(id);
+      }
+    }
 
     // ── hrdinové: pohled dopočítaný z `heroId` ───────────────────────
     const composition = snapshot.heroes.map((hero) => `${hero.id}:${hero.heroId}`).join(',');

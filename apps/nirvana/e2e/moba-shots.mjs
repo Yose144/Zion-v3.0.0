@@ -75,19 +75,20 @@ await page.evaluate(() => window.__mobaDebug().teleport(0, -26));
 await sleep(1200);
 await shot('03-river');
 
-// 4) souboj: nech přijít vlnu a sešli kouzlo
+// 4) souboj: skoč k nepříteli a zasáhni ho (screenshot musí mít čísla)
 await page.evaluate(() => {
   const debug = window.__mobaDebug();
-  debug.teleport(6, 0);
+  const foe = debug.heroes.find((hero) => hero.team === 'red' && hero.alive);
+  if (foe) debug.teleport(foe.x + 4, foe.z);
+  else debug.teleport(6, 0);
 });
-await sleep(5000);
+await sleep(800);
 await page.evaluate(() => {
   const debug = window.__mobaDebug();
-  const foe = debug.heroes.find((hero) => hero.team === 'red' && hero.alive) ??
-    (debug.teleport(0, 0), null);
+  const foe = debug.heroes.find((hero) => hero.team === 'red' && hero.alive);
   if (foe) debug.cast('Q', foe.x, foe.z);
 });
-await sleep(1200);
+await sleep(450);
 await shot('04-lane');
 await shot('04-lane-clean', { hideHud: true });
 

@@ -19,6 +19,7 @@ import { spellsForAvatar } from './spells';
 import { MobaStage } from './MobaStage';
 import { statsFromSnapshot, type MobaStats } from './MobaGame';
 import { itemTotals, type ItemId } from './sim';
+import { MobaFxOverlay, type DamageFloater } from './MobaFxOverlay';
 import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import type { MobaSnapshot } from './sim';
@@ -58,6 +59,8 @@ export function MobaOnline({
   debug,
   buyRequest,
   sellRequest,
+  buybackRequest,
+  talentRequest,
 }: {
   heroId: number;
   onStats: (stats: MobaStats) => void;
@@ -75,28 +78,42 @@ export function MobaOnline({
 }) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
   const selfPose = useRef<{ x: number; z: number; active: boolean } | null>(null);
+  const floaters = useRef<DamageFloater[]>([]);
+  const cameraRef = useRef<THREE.Camera | null>(null);
   const { youPlayerId } = useNet();
 
   return (
-    <Canvas
-      dpr={[1, 1.8]}
-      shadows={false}
-      camera={{ position: [0, 20, 17], fov: 42, near: 0.5, far: 220 }}
-      gl={{ antialias: true }}
-    >
-      <OnlineController
-        heroId={heroId}
-        onStats={onStats}
-        onEnd={onEnd}
-        onPhase={onPhase}
-        debug={debug}
-        buyRequest={buyRequest}
-        snapshotRef={snapshotRef}
-        selfPose={selfPose}
-      />
-      <MobaStage snapshotRef={snapshotRef} youId={youPlayerId ?? 'hero-you'} selfPose={selfPose} />
-      <OnlineAudioBridge snapshotRef={snapshotRef} youId={youPlayerId ?? null} />
-    </Canvas>
+    <>
+      <MobaFxOverlay floaters={floaters} cameraRef={cameraRef} />
+      <Canvas
+        dpr={[1, 1.8]}
+        shadows={false}
+        camera={{ position: [0, 20, 17], fov: 42, near: 0.5, far: 220 }}
+        gl={{ antialias: true }}
+      >
+        <OnlineController
+          heroId={heroId}
+          onStats={onStats}
+          onEnd={onEnd}
+          onPhase={onPhase}
+          debug={debug}
+          buyRequest={buyRequest}
+          sellRequest={sellRequest}
+          buybackRequest={buybackRequest}
+          talentRequest={talentRequest}
+          snapshotRef={snapshotRef}
+          selfPose={selfPose}
+        />
+        <MobaStage
+          snapshotRef={snapshotRef}
+          youId={youPlayerId ?? 'hero-you'}
+          selfPose={selfPose}
+          floaters={floaters}
+          cameraRef={cameraRef}
+        />
+        <OnlineAudioBridge snapshotRef={snapshotRef} youId={youPlayerId ?? null} />
+      </Canvas>
+    </>
   );
 }
 

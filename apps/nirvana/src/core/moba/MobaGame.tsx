@@ -20,6 +20,7 @@ import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
 import type { SpellSlot } from './spells';
 import { spellCooldown, spellMana, spellRank } from './spells';
+import { MobaFxOverlay, type DamageFloater } from './MobaFxOverlay';
 import { SPELL_BY_KEY } from './keys';
 
 const STEP = 1 / 30;
@@ -142,7 +143,11 @@ export function MobaGame({
   talentRequest,
 }: MobaProps) {
   const snapshotRef = useRef<MobaSnapshot | null>(null);
+  const floaters = useRef<DamageFloater[]>([]);
+  const cameraRef = useRef<THREE.Camera | null>(null);
   return (
+    <>
+    <MobaFxOverlay floaters={floaters} cameraRef={cameraRef} />
     <Canvas
       dpr={[1, 1.8]}
       shadows={false}
@@ -163,9 +168,10 @@ export function MobaGame({
         talentRequest={talentRequest}
         snapshotRef={snapshotRef}
       />
-      <MobaStage snapshotRef={snapshotRef} youId="hero-you" />
+      <MobaStage snapshotRef={snapshotRef} youId="hero-you" floaters={floaters} cameraRef={cameraRef} />
       <MobaAudioBridge snapshotRef={snapshotRef} youId="hero-you" />
     </Canvas>
+    </>
   );
 }
 
