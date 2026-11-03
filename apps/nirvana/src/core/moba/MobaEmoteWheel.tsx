@@ -36,6 +36,13 @@ export function MobaEmoteWheel({
 }) {
   const root = useRef<HTMLDivElement>(null);
 
+  // Kolečko se otevírá u kurzoru/tlačítka, ale sektory mají 78 px od středu.
+  // Bez clampu u spodního okraje (kde emote tlačítko je) půlka zmizí mimo
+  // obrazovku — přesně to odhalil screenshot.
+  const margin = RADIUS + 44;
+  const originX = Math.min(Math.max(origin.x, margin), window.innerWidth - margin);
+  const originY = Math.min(Math.max(origin.y, margin), window.innerHeight - margin);
+
   // klik mimo nebo Esc zavře
   useEffect(() => {
     const down = (event: PointerEvent) => {
@@ -61,7 +68,7 @@ export function MobaEmoteWheel({
     <div
       ref={root}
       className="moba-emote-wheel"
-      style={{ left: origin.x, top: origin.y }}
+      style={{ left: originX, top: originY }}
       role="menu"
       aria-label={language === 'cs' ? 'emoty' : 'emotes'}
     >
