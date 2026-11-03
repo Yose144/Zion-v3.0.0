@@ -2848,14 +2848,20 @@ function createTray() {
       click: () => {
         const config = loadConfig();
         if (config.wallet) {
-          startMining(config);
+          const res = startMining(config);
+          if (!res?.success) {
+            if (kingdomUrl) createKingdomWindow();
+            else if (mainWindow && !mainWindow.isDestroyed()) showWindow();
+            else createWindow();
+            try { sendToRenderer('miner-error', { message: res?.error || 'Failed to start mining' }); } catch {}
+          }
         } else {
-          showWindow();
-          dialog.showMessageBox(mainWindow, {
-            type: 'warning',
-            title: 'Wallet Required',
-            message: 'Please configure your ZION wallet address first.'
-          });
+          // No modal dialog — open the visible surface and let the renderer
+          // show the reason (kingdom window exists even when mainWindow is null).
+          if (kingdomUrl) createKingdomWindow();
+          else if (mainWindow && !mainWindow.isDestroyed()) showWindow();
+          else createWindow();
+          try { sendToRenderer('miner-error', { message: 'Configure your ZION wallet address first (Wallet tab → Use active wallet).' }); } catch {}
         }
       }
     },
@@ -2869,7 +2875,9 @@ function createTray() {
     {
       label: 'Show Window',
       click: () => {
-        if (mainWindow && !mainWindow.isDestroyed()) showWindow();
+        // V kingdom módu je primární povrch kingdom okno — ne standalone agent.
+        if (kingdomUrl) createKingdomWindow();
+        else if (mainWindow && !mainWindow.isDestroyed()) showWindow();
         else createWindow();
       }
     },
