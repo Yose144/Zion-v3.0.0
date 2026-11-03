@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
 import { avatarLook } from '@/core/avatars/kit';
 import type { MobaSnapshot } from './sim';
-import { BUSHES, LANES, MAP_HALF_Z, NODE_SITES, NODE_CAPTURE_MS, RIVER, STRUCTURES, isStructureProtected } from './map';
+import { BOSS_SPOT, BUSHES, LANES, MAP_HALF_Z, NODE_SITES, NODE_CAPTURE_MS, RIVER, RUNE_SPOTS, STRUCTURES, isStructureProtected } from './map';
 
 const MAX_HEROES = 10;
 const MAX_TOWERS = STRUCTURES.length;
@@ -42,6 +42,8 @@ export function MobaStage({
   const heroRefs = useRef<(THREE.Group | null)[]>([]);
   const towerRefs = useRef<(THREE.Group | null)[]>([]);
   const nodeRefs = useRef<(THREE.Group | null)[]>([]);
+  const runeRefs = useRef<(THREE.Group | null)[]>([]);
+  const bossRef = useRef<THREE.Group | null>(null);
   const minionMesh = useRef<THREE.InstancedMesh>(null);
   const monsterMesh = useRef<THREE.InstancedMesh>(null);
   const projectileMesh = useRef<THREE.InstancedMesh>(null);
@@ -79,7 +81,37 @@ export function MobaStage({
       const ring = group.children[1] as THREE.Mesh | undefined;
       const material = ring?.material as THREE.MeshBasicMaterial | undefined;
       if (material) material.color.set(hero.team === 'blue' ? '#7fe3d4' : '#ff7a6b');
+      // Aegis = zlatý prstenec; hráč musí vidět, že má vzkříšení.
+      const aegisRing = group.children[2] as THREE.Mesh | undefined;
+      if (aegisRing) aegisRing.visible = hero.aegis;
     });
+
+    // ── runy ────────────────────────────────────────────────────────
+    RUNE_SPOTS.forEach((_spot, index) => {
+      const group = runeRefs.current[index];
+      if (!group) return;
+      const rune = snapshot.runes?.[index];
+      group.visible = Boolean(rune);
+      if (!rune) return;
+      group.position.set(rune.x, 1.1, rune.z);
+      const orb = group.children[0] as THREE.Mesh | undefined;
+      const orbMaterial = orb?.material as THREE.MeshBasicMaterial | undefined;
+      if (orbMaterial) {
+        orbMaterial.color.set(
+          rune.type === 'bounty' ? '#ffd166' : rune.type === 'haste' ? '#7fe3d4' : '#ff7a6b',
+        );
+      }
+    });
+
+    // ── boss ────────────────────────────────────────────────────────
+    if (bossRef.current) {
+      const boss = snapshot.boss;
+      bossRef.current.visible = Boolean(boss?.alive);
+      if (boss?.alive) {
+        bossRef.current.position.set(boss.x, 0, boss.z);
+        bossRef.current.scale.setScalar(0.7 + (boss.hp / boss.maxHp) * 0.5);
+      }
+    }
 
     // ── kamera drží tvého hrdinu na středu ──────────────────────────
     const you = snapshot.heroes.find((hero) => hero.id === youId) ?? snapshot.heroes[0];
@@ -312,6 +344,43 @@ export function MobaStage({
         </group>
       ))}
 
+      {/* runy */}
+      {RUNE_SPOTS.map((spot, index) => (
+        <group
+          key={`rune-${spot.id}`}
+          visible={false}
+          ref={(node) => {
+            runeRefs.current[index] = node;
+          }}
+        >
+          <mesh>
+            <octahedronGeometry args={[0.75, 0]} />
+            <meshBasicMaterial color="#ffd166" toneMapped={false} />
+          </mesh>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
+            <ringGeometry args={[1.1, 1.3, 24]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={0.35} toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Prastarý strážce (boss) */}
+      <group
+        position={[BOSS_SPOT.x, 0, BOSS_SPOT.z]}
+        ref={(node) => {
+          bossRef.current = node;
+        }}
+      >
+        <mesh position={[0, 1.9, 0]}>
+          <icosahedronGeometry args={[1.9, 1]} />
+          <meshStandardMaterial color="#4c1d95" emissive="#7c3aed" emissiveIntensity={1.1} roughness={0.35} flatShading />
+        </mesh>
+        <mesh position={[0, 1.9, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[2.4, 0.16, 8, 32]} />
+          <meshBasicMaterial color="#c084fc" toneMapped={false} />
+        </mesh>
+      </group>
+
       {/* věže a Nexy */}
       {STRUCTURES.map((structure, index) => (
         <group
@@ -372,6 +441,11 @@ export function MobaStage({
             <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <circleGeometry args={[1.6, 24]} />
               <meshBasicMaterial color="#7fe3d4" transparent opacity={0.28} toneMapped={false} />
+            </mesh>
+            {/* Aegis — zlatý prstenec, viditelný jen dokud vzkříšení drží */}
+            <mesh visible={false} position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[1.9, 2.15, 32]} />
+              <meshBasicMaterial color="#ffd166" transparent opacity={0.75} toneMapped={false} />
             </mesh>
           </group>
         );

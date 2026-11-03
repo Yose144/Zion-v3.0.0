@@ -228,6 +228,19 @@ export function spellRank(level: number, slot: SpellSlot): number {
 /** +22 % k síle kouzla za každý stupeň nad prvním. */
 export const SPELL_RANK_SCALE = 0.22;
 
+/**
+ * Mana a cooldown podle stupně — **počítá to klient i server stejnou funkcí**,
+ * takže HUD neukazuje jiné číslo, než jaké sim opravdu strhne.
+ * Mana roste (+15 %/stupeň), cooldown klesá (−7 %/stupeň).
+ */
+export function spellMana(baseMana: number, rank: number): number {
+  return Math.round(baseMana * (1 + 0.15 * Math.max(0, rank - 1)));
+}
+
+export function spellCooldown(baseCooldownMs: number, rank: number): number {
+  return Math.round(baseCooldownMs * (1 - 0.07 * Math.max(0, rank - 1)));
+}
+
 // ── mechanické rozdíly škol ───────────────────────────────────────────
 //
 // Do 2. 11. 2026 se všech 11 škol chovalo stejně (dmg + shield + heal +

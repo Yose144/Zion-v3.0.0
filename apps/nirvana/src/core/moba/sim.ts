@@ -13,8 +13,14 @@
 
 import { AVATARS_BY_ID } from '../avatars/catalog';
 import { avatarLook } from '../avatars/kit';
-import { SCHOOL_TRAITS, SPELL_RANK_SCALE, spellRank, spellsFor, type Spell, type SpellSchool, type SpellSlot } from './spells';
+import { SCHOOL_TRAITS, SPELL_RANK_SCALE, spellCooldown, spellMana, spellRank, spellsFor, type Spell, type SpellSchool, type SpellSlot } from './spells';
 import {
+  BOSS_BASE_DAMAGE,
+  BOSS_BASE_HP,
+  BOSS_DAMAGE_PER_MIN,
+  BOSS_HP_PER_MIN,
+  BOSS_RESPAWN_MS,
+  BOSS_SPOT,
   BUSH_REVEAL,
   bushAt,
   INHIBITOR_RESPAWN_MS,
@@ -31,6 +37,9 @@ import {
   NODE_BONUS_PER_SITE,
   NODE_CAPTURE_MS,
   NODE_SITES,
+  RUNE_INTERVAL_MS,
+  RUNE_PICKUP_RANGE,
+  RUNE_SPOTS,
   SPAWNS,
   STRUCTURES,
   VISION,
@@ -38,6 +47,7 @@ import {
   WAVE_SIZE,
   isStructureProtected,
   type JungleCamp,
+  type RuneType,
   type LaneId,
   type StructureHp,
   type Team,
@@ -312,6 +322,8 @@ export interface Hero {
   damageDone: number;
   /** Zlato ze zabití a uzlu; za něj se kupují itemy. */
   gold: number;
+  /** Aegis z bosse — jednorázové vzkříšení (spotřebuje se při smrti). */
+  aegis: boolean;
   items: ItemId[];
   buffs: Buff[];
   isPlayer: boolean;
@@ -420,6 +432,32 @@ export interface Monster {
   respawnAt: number;
 }
 
+export interface Rune {
+  id: string;
+  spotId: string;
+  type: RuneType;
+  x: number;
+  z: number;
+  /** Kdy se má runa objevit (ms od začátku zápasu, sim čas). */
+  spawnAt: number;
+}
+
+export interface Boss {
+  id: string;
+  x: number;
+  z: number;
+  hp: number;
+  maxHp: number;
+  damage: number;
+  range: number;
+  attackMs: number;
+  cooldown: number;
+  alive: boolean;
+  respawnAt: number;
+  /** Kolik minut zápasu měl boss při posledním spawnu (škálování). */
+  level: number;
+}
+
 export interface MobaState {
   now: number;
   time: number;
@@ -427,6 +465,9 @@ export interface MobaState {
   heroes: Hero[];
   minions: Minion[];
   monsters: Monster[];
+  runes: Rune[];
+  boss: Boss;
+  nextRuneAt: number;
   towers: Tower[];
   projectiles: Projectile[];
   effects: Effect[];
@@ -481,6 +522,7 @@ function makeHero(id: string, team: Team, heroId: number, spawn: { x: number; z:
     deaths: 0,
     damageDone: 0,
     gold: 320,
+    aegis: false,
     items: [],
     buffs: [],
     isPlayer,
@@ -496,6 +538,41 @@ export interface MobaSeat {
   team: Team;
   /** true = ovládá ho hráč (dostává vstup), false = bot. */
   human?: boolean;
+}
+
+/** Boss sílí s časem zápasu — na konci je mnohem tvrdší než na startu. */
+function makeBoss(minutes: number): Boss {
+  const hp = Math.round(BOSS_BASE_HP * (1 + minutes * BOSS_HP_PER_MIN));
+  const damage = Math.round(BOSS_BASE_DAMAGE * (1 + minutes * BOSS_DAMAGE_PER_MIN));
+  return {
+    id: 'boss',
+    x: BOSS_SPOT.x,
+    z: BOSS_SPOT.z,
+    hp,
+    maxHp: hp,
+    damage,
+    range: 6.5,
+    attackMs: 1500,
+    cooldown: 0,
+    alive: true,
+    respawnAt: 0,
+    level: minutes,
+  };
+}
+
+/** Druh runy se střídá deterministicky — stejná hra pro všechny. */
+const RUNE_TYPES: RuneType[] = ['bounty', 'haste', 'power'];
+
+/** Runy na obou místech; druh se posouvá s cyklem, aby se neopakoval pořád stejný. */
+function makeRunes(cycle: number, wave: number): Rune[] {
+  return RUNE_SPOTS.map((spot, index) => ({
+    id: `rune-${spot.id}-${wave}-${cycle}`,
+    spotId: spot.id,
+    type: RUNE_TYPES[(cycle + index) % RUNE_TYPES.length]!,
+    x: spot.x,
+    z: spot.z,
+    spawnAt: 0,
+  }));
 }
 
 /**
@@ -561,6 +638,9 @@ export function createMobaMatch(seats: MobaSeat[], now: number): MobaState {
     })),
     projectiles: [],
     effects: [],
+    runes: makeRunes(0, 0),
+    boss: makeBoss(0),
+    nextRuneAt: now + RUNE_INTERVAL_MS,
     nodes: NODE_SITES.map((site) => ({
       key: site.key,
       name: site.name,
@@ -627,6 +707,15 @@ function damageHero(state: MobaState, hero: Hero, amount: number, source: string
   }
   hero.hp -= remaining;
   if (hero.hp <= 0) {
+    // Aegis z bosse: jednorázové vzkříšení místo smrti.
+    if (hero.aegis) {
+      hero.aegis = false;
+      hero.hp = Math.round(hero.maxHp * 0.6);
+      addEffect(state, 'shield', hero.x, hero.z, 2.6, '#ffd166', 1200);
+      state.banner = `${hero.name} — Aegis ho vrátila do boje`;
+      state.bannerUntil = state.now + 3200;
+      return;
+    }
     hero.hp = 0;
     hero.alive = false;
     hero.deaths += 1;
@@ -813,6 +902,25 @@ function damageTower(state: MobaState, tower: Tower, amount: number, attacker: H
   }
 }
 
+/** Zabití bosse — zlato, XP a Aegis (jednorázové vzkříšení). */
+function damageBoss(state: MobaState, amount: number, source: string) {
+  const boss = state.boss;
+  if (!boss.alive) return;
+  boss.hp -= amount;
+  if (boss.hp > 0) return;
+  boss.hp = 0;
+  boss.alive = false;
+  boss.respawnAt = state.now + BOSS_RESPAWN_MS;
+  const killer = state.heroes.find((hero) => hero.id === source);
+  if (killer) {
+    killer.gold = Math.min(GOLD_CAP, killer.gold + 250);
+    gainXp(state, killer, 220);
+    killer.aegis = true;
+    state.banner = `${killer.name} zabil Prastarého strážce — Aegis!`;
+    state.bannerUntil = state.now + 4200;
+  }
+}
+
 function gainXp(state: MobaState, hero: Hero, amount: number) {
   hero.xp += amount;
   for (;;) {
@@ -864,12 +972,13 @@ function castSpell(state: MobaState, hero: Hero, slot: SpellSlot, x: number, z: 
   // Ultimátka je do 6. úrovně zamčená — jinak by R bylo silnější než Q hned od startu.
   if (rank < 1) return;
   if (!hero.alive || state.now < hero.cooldowns[slot]) return;
-  if (hero.mana < spell.mana) return;
+  const manaCost = spellMana(spell.mana, rank);
+  if (hero.mana < manaCost) return;
   const distanceToPoint = distance(hero.x, hero.z, x, z);
   if (spell.range > 0 && distanceToPoint > spell.range + spell.radius) return;
 
-  hero.mana -= spell.mana;
-  hero.cooldowns[slot] = state.now + spell.cooldownMs;
+  hero.mana -= manaCost;
+  hero.cooldowns[slot] = state.now + spellCooldown(spell.cooldownMs, rank);
   hero.facing = Math.atan2(x - hero.x, z - hero.z);
   // Stupeň kouzla nahrazuje `levelScale` — jinak by se level počítal dvakrát.
   const rankBonus = 1 + (rank - 1) * SPELL_RANK_SCALE;
@@ -1134,6 +1243,54 @@ export function stepMoba(
     state.bannerUntil = now + 2200;
   }
 
+  // ── runy ──────────────────────────────────────────────────────────
+  if (now >= state.nextRuneAt) {
+    state.nextRuneAt = now + RUNE_INTERVAL_MS;
+    const cycle = Math.floor(state.time / (RUNE_INTERVAL_MS / 1000));
+    state.runes = makeRunes(cycle, state.wave);
+    state.banner = 'Runy se objevily';
+    state.bannerUntil = now + 2200;
+  }
+
+  // sebrání runy — kdo doběhne první
+  for (const rune of [...state.runes]) {
+    const taker = state.heroes.find(
+      (hero) => hero.alive && distance(hero.x, hero.z, rune.x, rune.z) <= RUNE_PICKUP_RANGE,
+    );
+    if (!taker) continue;
+    state.runes = state.runes.filter((candidate) => candidate.id !== rune.id);
+    if (rune.type === 'bounty') {
+      taker.gold = Math.min(GOLD_CAP, taker.gold + 120);
+    } else if (rune.type === 'haste') {
+      taker.buffs.push({ type: 'speed', until: now + 10_000, power: 0.35 });
+    } else {
+      taker.buffs.push({ type: 'strength', until: now + 10_000, power: 0.3 });
+    }
+    addEffect(state, 'capture', rune.x, rune.z, 2.2, rune.type === 'bounty' ? '#ffd166' : rune.type === 'haste' ? '#7fe3d4' : '#ff7a6b', 900);
+    state.banner = `${taker.name} sebral runu ${rune.type === 'bounty' ? 'bounty' : rune.type === 'haste' ? 'spěchu' : 'síly'}`;
+    state.bannerUntil = now + 2600;
+  }
+
+  // ── boss ──────────────────────────────────────────────────────────
+  const boss = state.boss;
+  if (!boss.alive) {
+    if (now >= boss.respawnAt) {
+      const next = makeBoss(Math.floor(state.time / 60));
+      state.boss = { ...next, alive: true, respawnAt: 0, cooldown: 0 };
+      state.banner = 'Prastarý strážce se probudil';
+      state.bannerUntil = now + 3000;
+    }
+  } else if (now >= boss.cooldown) {
+    const target = state.heroes
+      .filter((hero) => hero.alive && distance(hero.x, hero.z, boss.x, boss.z) <= boss.range)
+      .sort((a, b) => distance(a.x, a.z, boss.x, boss.z) - distance(b.x, b.z, boss.x, boss.z))[0];
+    if (target) {
+      boss.cooldown = now + boss.attackMs;
+      damageHero(state, target, boss.damage, boss.id);
+      addEffect(state, 'hit', target.x, target.z, 0.9, '#c084fc', 220);
+    }
+  }
+
   // ── buffy ─────────────────────────────────────────────────────────
   for (const hero of state.heroes) {
     hero.buffs = hero.buffs.filter((buff) => buff.until > state.now);
@@ -1225,7 +1382,10 @@ export function stepMoba(
     if (now >= hero.attackCooldown) {
       const wantsAttack = input ? input.attack : true;
       if (wantsAttack) {
-        let target: Hero | Minion | Monster | null = nearestEnemyHero(state, hero, 6.4) ?? nearestEnemyMinion(state, hero, 6.4);
+        let target: Hero | Minion | Monster | Boss | null = nearestEnemyHero(state, hero, 6.4) ?? nearestEnemyMinion(state, hero, 6.4);
+        if (!target && state.boss.alive && distance(hero.x, hero.z, state.boss.x, state.boss.z) <= 7.2) {
+          target = state.boss;
+        }
         if (!target) {
           let best: Monster | null = null;
           let bestDistance = 6.4;
@@ -1265,6 +1425,7 @@ export function stepMoba(
             damageOut(hero, state.now);
           hero.damageDone += damage;
           if ('heroId' in target && 'team' in target) damageHero(state, target as Hero, damage, hero.id);
+          else if (target === state.boss) damageBoss(state, damage, hero.id);
           else if ('campId' in target) damageMonster(state, target as Monster, damage, hero.id);
           else damageMinion(state, target as Minion, damage, hero.id);
           addEffect(state, 'hit', target.x, target.z, 0.7, '#ffe6a8', 180);
@@ -1530,9 +1691,14 @@ export interface MobaSnapshot {
     deaths: number;
     gold: number;
     items: ItemId[];
+    aegis: boolean;
     buffs: Buff[];
   }[];
   minions: { id: string; team: Team; x: number; z: number; hp: number; maxHp: number; super: boolean }[];
+  /** Runy na mapě — kdo je sebere, dostane zlato nebo buff. */
+  runes: { id: string; type: RuneType; x: number; z: number }[];
+  /** Prastarý strážce (boss) — Aegis a týmové zlato. */
+  boss: { id: string; x: number; z: number; hp: number; maxHp: number; alive: boolean; respawnIn: number };
   monsters: { id: string; x: number; z: number; hp: number; maxHp: number; type: JungleCamp['type']; alive: boolean }[];
   projectiles: { id: string; x: number; z: number; color: string }[];
   effects: { id: string; kind: Effect['kind']; x: number; z: number; radius: number; color: string; alpha: number }[];
@@ -1636,6 +1802,7 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         deaths: hero.deaths,
         gold: Math.round(hero.gold),
         items: hero.items,
+        aegis: hero.aegis,
         buffs: hero.buffs,
     })),
     minions: state.minions
@@ -1649,6 +1816,16 @@ export function mobaSnapshot(state: MobaState, viewerTeam?: Team): MobaSnapshot 
         maxHp: minion.maxHp,
         super: minion.super,
       })),
+    runes: state.runes.map((rune) => ({ id: rune.id, type: rune.type, x: rune.x, z: rune.z })),
+    boss: {
+      id: state.boss.id,
+      x: state.boss.x,
+      z: state.boss.z,
+      hp: Math.round(state.boss.hp),
+      maxHp: state.boss.maxHp,
+      alive: state.boss.alive,
+      respawnIn: state.boss.alive ? 0 : Math.max(0, Math.ceil((state.boss.respawnAt - state.now) / 1000)),
+    },
     monsters: state.monsters
       .filter((monster) => sees(monster.x, monster.z))
       .map((monster) => ({

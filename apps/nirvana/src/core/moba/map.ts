@@ -188,6 +188,43 @@ export function bushAt(x: number, z: number): Bush | null {
   return null;
 }
 
+// ── runy a boss (F4) ──────────────────────────────────────────────────
+//
+// Runy jsou rozhodovací bod: dávají zlato nebo buff, takže se o ně soupeří.
+// Boss je jediná odměna, která se nedá koupit — Aegis (jednorázové vzkříšení).
+
+export type RuneType = 'bounty' | 'haste' | 'power';
+
+export interface RuneSpot {
+  id: string;
+  x: number;
+  z: number;
+}
+
+export const RUNE_SPOTS: RuneSpot[] = [
+  { id: 'rune-south', x: -6, z: -28 },
+  { id: 'rune-north', x: 6, z: 28 },
+];
+
+/** Jak často se runa objeví (ms). */
+export const RUNE_INTERVAL_MS = 120_000;
+/** Jak blízko musí hrdina být, aby runu sebral. */
+export const RUNE_PICKUP_RANGE = 2.4;
+
+export interface BossSpot {
+  x: number;
+  z: number;
+}
+
+/** Boss sedí v řece na jihu — mimo linky, ale blízko středu mapy. */
+export const BOSS_SPOT: BossSpot = { x: 0, z: -32 };
+export const BOSS_RESPAWN_MS = 480_000;
+export const BOSS_BASE_HP = 3200;
+export const BOSS_BASE_DAMAGE = 85;
+/** Každou minutu zápasu je boss tvrdší (stejně jako v Dotě/LoL). */
+export const BOSS_HP_PER_MIN = 0.14;
+export const BOSS_DAMAGE_PER_MIN = 0.08;
+
 /** Řeka ve středu mapy — jen vizuál (modrý pás přes celou šířku). */
 export const RIVER = { x: 0, halfWidth: 4.5 } as const;
 

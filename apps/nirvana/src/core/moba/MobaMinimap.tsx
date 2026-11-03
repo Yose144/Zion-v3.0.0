@@ -77,6 +77,22 @@ export function MobaMinimap({
 
     if (!snapshot) return;
 
+    // runy — rozhodovací body, musí být vidět dřív než je soupeř sebere
+    for (const rune of snapshot.runes ?? []) {
+      context.fillStyle = rune.type === 'bounty' ? '#ffd166' : rune.type === 'haste' ? COLORS.blue : COLORS.red;
+      context.beginPath();
+      context.arc(sx(rune.x), sz(rune.z), 3, 0, Math.PI * 2);
+      context.fill();
+    }
+
+    // boss (Prastarý strážce)
+    if (snapshot.boss?.alive) {
+      context.fillStyle = '#c084fc';
+      context.beginPath();
+      context.arc(sx(snapshot.boss.x), sz(snapshot.boss.z), 5, 0, Math.PI * 2);
+      context.fill();
+    }
+
     // uzly L5
     for (const site of NODE_SITES) {
       const owner = snapshot.nodes.find((node) => node.key === site.key)?.owner ?? null;

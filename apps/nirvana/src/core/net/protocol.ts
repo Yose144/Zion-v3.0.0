@@ -34,8 +34,11 @@ const asItemId = (value: unknown): ItemId | null =>
  * 10 — **mapa**: inhibitory (`kind: 'inhibitor'`) a super minioni (`super`).
  *      Starý klient by inhibitory kreslil jako věže a super miniony jako
  *      obyčejné — liší se jen tvarem a velikostí, ale je to jiná mapa.
+ * 11 — **objektivy**: runy a boss (`runes`, `boss`) + `aegis` u hrdiny.
+ *      Starý klient by runy ani bosse nekreslil, takže by hráč neviděl,
+ *      o co se hraje.
  */
-export const PROTO_VERSION = 10;
+export const PROTO_VERSION = 11;
 
 /** Hz serverové smyčky, rozesílání stavu a vstupu klienta. */
 export const TICK_HZ = 30;

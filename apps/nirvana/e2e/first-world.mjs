@@ -47,6 +47,8 @@ try {
   check('start: tři uzly L5', start?.nodes?.length === 3, String(start?.nodes?.length));
   check('start: 26 struktur (věže + inhibitory + Nexy)', start?.towers?.length === 26, String(start?.towers?.length));
   check('start: čtyři kouzla', start?.spells?.length === 4 && start.spells[3].slot === 'R');
+  check('objektivy: dvě runy na startu', start?.runes === 2, String(start?.runes));
+  check('objektivy: boss je na mapě', start?.boss?.alive === true, JSON.stringify(start?.boss));
   await page.screenshot({ path: `${OUT}/start.png` });
 
   // obchod (F2): inventář a panel se opravdu vykreslí — počítají se reálné

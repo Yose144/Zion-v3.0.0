@@ -19,7 +19,7 @@ import { mobaAudio, unlockMobaAudio } from './audio';
 import { useMobaAudio } from './useMobaAudio';
 import { MobaStage } from './MobaStage';
 import type { SpellSlot } from './spells';
-import { spellRank } from './spells';
+import { spellCooldown, spellMana, spellRank } from './spells';
 import { SPELL_BY_KEY } from './keys';
 
 const STEP = 1 / 30;
@@ -79,15 +79,20 @@ export function statsFromSnapshot(
   return {
     snapshot,
     youId,
-    spells: spells.map((spell) => ({
-      slot: spell.slot,
-      name: spell.name,
-      cooldown: Math.max(0, (you?.cooldowns?.[spell.slot] ?? 0) - now),
-      cooldownMs: spell.cooldownMs,
-      mana: spell.mana,
-      color: spell.color,
-      rank: spellRank(you?.level ?? 1, spell.slot),
-    })),
+    spells: spells.map((spell) => {
+      // Mana i cooldown se mění se stupněm — stejné funkce jako v sim,
+      // jinak by HUD ukazoval jiné číslo, než server opravdu strhne.
+      const rank = spellRank(you?.level ?? 1, spell.slot);
+      return {
+        slot: spell.slot,
+        name: spell.name,
+        cooldown: Math.max(0, (you?.cooldowns?.[spell.slot] ?? 0) - now),
+        cooldownMs: spellCooldown(spell.cooldownMs, Math.max(1, rank)),
+        mana: spellMana(spell.mana, Math.max(1, rank)),
+        color: spell.color,
+        rank,
+      };
+    }),
     playerHp: you?.hp ?? 0,
     playerMaxHp: you?.maxHp ?? 1,
     playerMana: you?.mana ?? 0,
@@ -280,6 +285,8 @@ function SoloController({
           minions: snapshotNow.minions.length,
           towers: snapshotNow.towers.map((tower) => ({ id: tower.id, hp: Math.round(tower.hp) })),
           nodes: snapshotNow.nodes.map((node) => ({ key: node.key, owner: node.owner })),
+          runes: snapshotNow.runes.length,
+          boss: { alive: snapshotNow.boss.alive, hp: Math.round(snapshotNow.boss.hp) },
           ended: snapshotNow.ended,
           spells: current.heroes[0]!.spells.map((spell) => ({
             slot: spell.slot,

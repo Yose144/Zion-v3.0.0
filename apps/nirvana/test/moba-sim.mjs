@@ -10,7 +10,7 @@
  */
 
 import { BASE_SPEED, buyItem, createMoba, createMobaMatch, GOLD_CAP, heroSpeed, isVisibleTo, ITEMS, ITEM_SLOTS, sellItem, stepMoba, mobaSnapshot, visionSources, NO_INPUT } from '../src/core/moba/sim.ts';
-import { SCHOOL_TRAITS, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
+import { SCHOOL_TRAITS, spellCooldown, spellMana, spellRank, spellsForAvatar } from '../src/core/moba/spells.ts';
 import { BUSHES, INHIBITOR_RESPAWN_MS, isStructureProtected, NEXUS_HP, VISION, WAVE_INTERVAL_MS } from '../src/core/moba/map.ts';
 
 let failures = 0;
@@ -582,6 +582,65 @@ check(
   inhibitor.respawnAt = r.now + 1000;
   advance(r, 1500);
   check('inhibitor: po respawnu má plné HP', inhibitor.hp === inhibitor.maxHp, String(inhibitor.hp));
+}
+
+// ── objektivy: runy, boss, Aegis, stupňování kouzel (F4) ───────────
+{
+  console.log('\n-- objektivy --');
+  const s = createMoba(0, 82, 4_000_000);
+  const hero = s.heroes.find((candidate) => candidate.id === 'hero-you');
+
+  // runy se objeví hned na startu (bounty na jihu, haste na severu)
+  check('runy: na startu jsou dvě', s.runes.length === 2, String(s.runes.length));
+  const bounty = s.runes.find((rune) => rune.type === 'bounty');
+  check('runy: první je bounty', Boolean(bounty), s.runes.map((rune) => rune.type).join(','));
+
+  // sebrání: hrdina dostane zlato
+  const goldBefore = hero.gold;
+  hero.x = bounty.x;
+  hero.z = bounty.z;
+  advance(s, 200);
+  check('runy: sebrání dá zlato', hero.gold > goldBefore + 100, `${goldBefore} → ${Math.round(hero.gold)}`);
+  check('runy: sebraná runa zmizí', !s.runes.some((rune) => rune.id === bounty.id));
+
+  // boss: základní čísla a škálování
+  check('boss: startovní HP', s.boss.maxHp === 3200, String(s.boss.maxHp));
+  check('boss: sedí v řece', Math.round(s.boss.x) === 0 && Math.round(s.boss.z) === -32);
+
+  // zabití bosse → Aegis
+  s.boss.hp = 1;
+  hero.x = s.boss.x + 2.2;
+  hero.z = s.boss.z;
+  hero.attackCooldown = 0;
+  // Útok je vstup (`attack: true`) — bez něj hrdina jen stojí a boss ho mlátí.
+  advance(s, 1400, { ...NO_INPUT, attack: true });
+  check('boss: zabití dá Aegis', hero.aegis === true);
+  check('boss: po zabití je mrtvý', s.boss.alive === false);
+  check('boss: respawn je naplánovaný', s.boss.respawnAt > s.now, String(Math.round((s.boss.respawnAt - s.now) / 1000)));
+
+  // Aegis vzkřísí hrdinu (jednorázově) místo smrti
+  const deathsBefore = hero.deaths;
+  hero.hp = 1;
+  hero.buffs.push({ type: 'burn', until: s.now + 2000, power: 600, source: 'test' });
+  advance(s, 300);
+  check('aegis: hrdina žije', hero.alive === true);
+  check('aegis: nezapočítala se smrt', hero.deaths === deathsBefore, String(hero.deaths));
+  check('aegis: spotřebovala se', hero.aegis === false);
+
+  // stupňování kouzel: mana roste, cooldown klesá
+  check('kouzla: mana roste se stupněm', spellMana(100, 4) > spellMana(100, 1), `${spellMana(100, 1)} → ${spellMana(100, 4)}`);
+  check('kouzla: cooldown klesá se stupněm', spellCooldown(10000, 4) < spellCooldown(10000, 1), `${spellCooldown(10000, 1)} → ${spellCooldown(10000, 4)}`);
+
+  // sim opravdu strhne víc many na vyšším stupni
+  const s2 = createMoba(0, 82, 4_000_000);
+  const caster = s2.heroes.find((candidate) => candidate.id === 'hero-you');
+  caster.level = 10;
+  caster.mana = caster.maxMana;
+  const spell = caster.spells.find((candidate) => candidate.slot === 'Q');
+  const manaBefore = caster.mana;
+  stepMoba(s2, STEP / 1000, { 'hero-you': { ...NO_INPUT, cast: { slot: 'Q', x: caster.x + 3, z: caster.z } } }, s2.now + STEP);
+  const spent = manaBefore - caster.mana;
+  check('kouzla: sim strhne manu podle stupně', spent === spellMana(spell.mana, 4), `${Math.round(spent)} vs ${spellMana(spell.mana, 4)}`);
 }
 
 console.log(`\n${failures === 0 ? 'VŠE OK' : `${failures} CHYB`}`);
