@@ -13,9 +13,10 @@ import { useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { AvatarModel } from '@/core/avatars/AvatarModel';
+import { MobaTerrain } from './MobaTerrain';
 import { avatarLook } from '@/core/avatars/kit';
 import type { MobaSnapshot } from './sim';
-import { BOSS_SPOT, BUSHES, LANES, MAP_HALF_Z, NODE_SITES, NODE_CAPTURE_MS, RIVER, RUNE_SPOTS, STRUCTURES, isStructureProtected } from './map';
+import { BOSS_SPOT, BUSHES, NODE_SITES, NODE_CAPTURE_MS, RUNE_SPOTS, STRUCTURES, isStructureProtected } from './map';
 
 const MAX_HEROES = 10;
 const MAX_TOWERS = STRUCTURES.length;
@@ -283,49 +284,17 @@ export function MobaStage({
 
   return (
     <>
-      <color attach="background" args={['#04070d']} />
-      <fog attach="fog" args={['#04070d', 46, 120]} />
-      <ambientLight intensity={1.35} color="#d9ecff" />
-      <directionalLight position={[18, 30, 12]} intensity={3} color="#fff2d8" />
-      <directionalLight position={[-16, 22, -10]} intensity={1.1} color="#9ff0dd" />
+      <color attach="background" args={['#07130f']} />
+      <fog attach="fog" args={['#07130f', 52, 132]} />
+      <ambientLight intensity={0.9} color="#cfe9dd" />
+      <hemisphereLight args={['#7fe3d4', '#0d211a', 0.55]} />
+      <directionalLight position={[18, 34, 14]} intensity={2.6} color="#ffeccb" />
+      <directionalLight position={[-16, 22, -10]} intensity={0.9} color="#9ff0dd" />
       <pointLight position={[-20, 8, 0]} intensity={40} color="#4fe0c0" distance={40} decay={2} />
       <pointLight position={[20, 8, 0]} intensity={40} color="#ff6b6b" distance={40} decay={2} />
 
-      {/* Země */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
-        <circleGeometry args={[48, 64]} />
-        <meshStandardMaterial color="#1d4a3b" roughness={0.95} emissive="#0a1f19" emissiveIntensity={0.6} />
-      </mesh>
-
-      {/* základny */}
-      <mesh position={[-38, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[9, 40]} />
-        <meshBasicMaterial color="#7fe3d4" transparent opacity={0.16} />
-      </mesh>
-      <mesh position={[38, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[9, 40]} />
-        <meshBasicMaterial color="#ff7a6b" transparent opacity={0.16} />
-      </mesh>
-
-      {/* tři linky */}
-      {LANES.map((lane) => (
-        <group key={lane.id}>
-          <mesh position={[0, 0.01, lane.z]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[64, 5.5]} />
-            <meshBasicMaterial color="#2f8a68" transparent opacity={0.75} />
-          </mesh>
-          <mesh position={[0, 0.02, lane.z]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[64, 0.35]} />
-            <meshBasicMaterial color="#8bf0c4" transparent opacity={0.75} />
-          </mesh>
-        </group>
-      ))}
-
-      {/* řeka — jen vizuál, nezpomaluje */}
-      <mesh position={[RIVER.x, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[RIVER.halfWidth * 2, MAP_HALF_Z * 2]} />
-        <meshBasicMaterial color="#2f6f8f" transparent opacity={0.35} />
-      </mesh>
+      {/* terén: tráva, cesty, řeka, lesy, skály, zříceniny */}
+      <MobaTerrain />
 
       {/* bushe — v nich tě nepřítel nevidí, dokud nepřijde blíž */}
       {BUSHES.map((bush, index) => (
@@ -400,6 +369,20 @@ export function MobaStage({
           <torusGeometry args={[2.4, 0.16, 8, 32]} />
           <meshBasicMaterial color="#c084fc" toneMapped={false} />
         </mesh>
+        {/* kamenný kruh kolem lairů — boss není jen krystal ve trávě */}
+        {[0, 1, 2, 3, 4, 5].map((index) => {
+          const angle = (index / 6) * Math.PI * 2;
+          return (
+            <mesh
+              key={`boss-stone-${index}`}
+              position={[Math.cos(angle) * 4.2, 0.55, Math.sin(angle) * 4.2]}
+              rotation={[0.1 * index, angle, 0.08]}
+            >
+              <dodecahedronGeometry args={[0.7 + (index % 2) * 0.25, 0]} />
+              <meshStandardMaterial color="#3f3d44" roughness={0.95} flatShading />
+            </mesh>
+          );
+        })}
       </group>
 
       {/* věže a Nexy */}
@@ -410,32 +393,51 @@ export function MobaStage({
             towerRefs.current[index] = node;
           }}
         >
-          <mesh position={[0, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[2.2, 18]} />
-            <meshBasicMaterial color="#0a1a16" transparent opacity={0.7} />
+          {/* 0: kamenný podstavec se zemí */}
+          <mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[structure.kind === 'nexus' ? 3.2 : 2.3, 20]} />
+            <meshStandardMaterial color="#1b2327" roughness={0.85} metalness={0.25} />
           </mesh>
+          {/* 1: tělo — frame mění jen emissive */}
           {structure.kind === 'inhibitor' ? (
-            <>
-              <mesh position={[0, 1.5, 0]}>
-                <cylinderGeometry args={[0.8, 1.15, 3, 6]} />
-                <meshStandardMaterial color="#4a3a1f" emissive="#3a2a10" emissiveIntensity={1.1} roughness={0.5} />
-              </mesh>
-              <mesh position={[0, 3.3, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[1.15, 0.14, 8, 24]} />
-                <meshBasicMaterial color="#ffd166" toneMapped={false} />
-              </mesh>
-            </>
+            <mesh position={[0, 1.9, 0]}>
+              <cylinderGeometry args={[0.55, 1.05, 3.8, 4]} />
+              <meshStandardMaterial color="#3b3222" emissive="#2a1f0d" emissiveIntensity={1.1} roughness={0.6} flatShading />
+            </mesh>
+          ) : structure.kind === 'nexus' ? (
+            <mesh position={[0, 1.6, 0]}>
+              <cylinderGeometry args={[1.5, 2.2, 3.2, 8]} />
+              <meshStandardMaterial color="#2b3b45" emissive="#0f2b33" emissiveIntensity={1.2} roughness={0.4} metalness={0.35} />
+            </mesh>
           ) : (
-            <>
-              <mesh position={[0, 1.8, 0]}>
-                <coneGeometry args={[0.9, 3.4, 6]} />
-                <meshStandardMaterial color="#34505f" emissive="#123742" emissiveIntensity={1.2} roughness={0.4} />
-              </mesh>
-              <mesh position={[0, 3.9, 0]}>
-                <octahedronGeometry args={[0.55, 0]} />
-                <meshBasicMaterial color="#7fe3d4" toneMapped={false} />
-              </mesh>
-            </>
+            <mesh position={[0, 1.7, 0]}>
+              <cylinderGeometry args={[0.62, 1.0, 3.4, 8]} />
+              <meshStandardMaterial color="#33454f" emissive="#0f2a31" emissiveIntensity={1.2} roughness={0.45} metalness={0.3} />
+            </mesh>
+          )}
+          {/* 2: krystal / runový prstenec — barvu mění frame */}
+          {structure.kind === 'inhibitor' ? (
+            <mesh position={[0, 3.8, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[1.05, 0.13, 8, 24]} />
+              <meshBasicMaterial color="#ffd166" toneMapped={false} />
+            </mesh>
+          ) : (
+            <mesh position={[0, structure.kind === 'nexus' ? 4.2 : 3.7, 0]}>
+              <octahedronGeometry args={[structure.kind === 'nexus' ? 1.05 : 0.62, 0]} />
+              <meshBasicMaterial color="#7fe3d4" toneMapped={false} />
+            </mesh>
+          )}
+          {/* 3: týmová korouhev — pozná se strana i bez barvy krystalu */}
+          {structure.kind !== 'inhibitor' && (
+            <mesh position={[structure.team === 'blue' ? -1.15 : 1.15, 2.4, 0]} rotation={[0, 0, 0.12]}>
+              <planeGeometry args={[0.7, 1.6]} />
+              <meshBasicMaterial
+                color={structure.team === 'blue' ? '#7fe3d4' : '#ff7a6b'}
+                transparent
+                opacity={0.55}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
           )}
         </group>
       ))}
@@ -474,12 +476,12 @@ export function MobaStage({
 
       {/* minioni, monstra, projektily, efekty */}
       <instancedMesh ref={minionMesh} args={[undefined, undefined, MAX_MINIONS]} frustumCulled={false}>
-        <sphereGeometry args={[0.5, 10, 8]} />
-        <meshStandardMaterial vertexColors roughness={0.45} emissive="#ffffff" emissiveIntensity={0.35} />
+        <octahedronGeometry args={[0.58, 0]} />
+        <meshStandardMaterial vertexColors roughness={0.4} metalness={0.25} emissive="#ffffff" emissiveIntensity={0.3} flatShading />
       </instancedMesh>
       <instancedMesh ref={monsterMesh} args={[undefined, undefined, MAX_MONSTERS]} frustumCulled={false}>
-        <sphereGeometry args={[0.6, 12, 10]} />
-        <meshStandardMaterial vertexColors roughness={0.35} emissive="#ffffff" emissiveIntensity={0.4} />
+        <icosahedronGeometry args={[0.72, 0]} />
+        <meshStandardMaterial vertexColors roughness={0.5} emissive="#ffffff" emissiveIntensity={0.35} flatShading />
       </instancedMesh>
       <instancedMesh ref={wardMesh} args={[undefined, undefined, MAX_WARDS]} frustumCulled={false}>
         <coneGeometry args={[0.28, 1.1, 6]} />
