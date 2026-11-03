@@ -85,8 +85,9 @@ pub use transaction::{Transaction, TransactionInput, TransactionOutput};
 pub use utxo::{Outpoint, UtxoError, UtxoSet};
 pub use v31_wallet::{
     build_batch_payout, build_htlc_claim, build_htlc_lock, build_htlc_refund, build_send,
-    build_send_with_memo, htlc_output_script, BatchRecipient, BuildResult, SpendableUtxo,
-    WalletError, MAX_BATCH_RECIPIENTS, MIN_PAYOUT_AMOUNT,
+    build_send_with_memo, estimate_send_fee, htlc_output_script, max_tx_inputs_for,
+    plan_consolidation, BatchRecipient, BuildResult, SpendableUtxo, WalletError,
+    MAX_BATCH_RECIPIENTS, MIN_PAYOUT_AMOUNT,
 };
 pub use zion_cosmic_harmony::EkamDeeksha;
 

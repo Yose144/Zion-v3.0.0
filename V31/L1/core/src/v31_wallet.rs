@@ -55,6 +55,16 @@ pub enum WalletError {
     FeeTooLow { fee: u64, minimum: u64 },
     TooManyRecipients(usize),
     SigningFailed,
+    /// The funding amount is spread over more UTXOs than fit under the
+    /// [`fee::MAX_TX_SIZE`] serialized-size cap. `covered` is what the
+    /// `max_inputs` largest UTXOs sum to, `needed` is amount + fee.
+    TooManyInputs {
+        max_inputs: usize,
+        covered: u64,
+        needed: u64,
+    },
+    /// The built transaction exceeds the network serialized-size limit.
+    TxTooLarge { size: usize, max: usize },
 }
 
 impl std::fmt::Display for WalletError {
@@ -70,18 +80,71 @@ impl std::fmt::Display for WalletError {
                 write!(f, "too many recipients: {n} (max {MAX_BATCH_RECIPIENTS})")
             }
             Self::SigningFailed => write!(f, "signing failed"),
+            Self::TooManyInputs {
+                max_inputs,
+                covered,
+                needed,
+            } => write!(
+                f,
+                "largest {max_inputs} UTXOs cover only {covered} of {needed} flowers — \
+                 transaction would exceed max size; consolidate the wallet UTXO set first"
+            ),
+            Self::TxTooLarge { size, max } => {
+                write!(f, "transaction too large: {size} bytes exceeds max {max}")
+            }
         }
     }
 }
 
 impl std::error::Error for WalletError {}
 
-/// Select UTXOs using largest-first strategy.
+// ── Serialized-size budget ─────────────────────────────────────────────
+//
+// The node bounds transactions by `serde_json::to_vec(tx).len()`
+// (`Node::check_tx_size`, `fee::MAX_TX_SIZE` = 100 KB). `Hash` ([u8; 32])
+// and `script`/`memo` (`Vec<u8>`) serialize as JSON number arrays — ~4
+// chars per byte worst case — so one signed input costs ~560 bytes on the
+// wire, not the ~132 bytes `fee::estimate_tx_size` uses for the fee market.
+// Coin selection must therefore cap input count by the JSON budget, or the
+// built transaction is rejected at broadcast ("transaction too large").
+
+/// Conservative upper bound on the JSON-serialized size of one signed
+/// input: 32-byte hash array ≈ 129 chars, 96-byte sig‖pk script ≈ 385,
+/// field names, index and punctuation ≈ 40.
+const JSON_BYTES_PER_INPUT_UPPER: usize = 560;
+
+/// Conservative upper bound on the JSON-serialized size of one output:
+/// amount string + `Address` object (~110 chars) + empty script + names.
+const JSON_BYTES_PER_OUTPUT_UPPER: usize = 220;
+
+/// JSON cost of one memo byte inside a `Vec<u8>` number array.
+const JSON_BYTES_PER_MEMO_BYTE: usize = 4;
+
+/// Reserved headroom for the transaction envelope (`{"version":…,"inputs":…}`)
+/// plus safety margin for digit-length variance.
+const JSON_BASE_BYTES: usize = 300;
+
+/// Maximum number of inputs whose signed JSON encoding fits under
+/// [`fee::MAX_TX_SIZE`] for a transaction with `num_outputs` outputs and a
+/// `memo_len`-byte memo.
+pub fn max_tx_inputs_for(num_outputs: usize, memo_len: usize) -> usize {
+    let reserved = JSON_BASE_BYTES
+        + num_outputs * JSON_BYTES_PER_OUTPUT_UPPER
+        + memo_len * JSON_BYTES_PER_MEMO_BYTE;
+    (fee::MAX_TX_SIZE.saturating_sub(reserved) / JSON_BYTES_PER_INPUT_UPPER)
+        .min(fee::MAX_TX_INPUTS)
+}
+
+/// Select UTXOs using largest-first strategy, bounded by `max_inputs`.
 ///
 /// Returns selected UTXOs and total selected amount, or error if insufficient.
+/// When the input cap is hit before `target` is reached the error is
+/// [`WalletError::TooManyInputs`] — the funds exist but are too fragmented
+/// for a single transaction and the wallet needs UTXO consolidation.
 fn select_utxos(
     available: &[SpendableUtxo],
     target: u64,
+    max_inputs: usize,
 ) -> Result<(Vec<&SpendableUtxo>, u64), WalletError> {
     if available.is_empty() {
         return Err(WalletError::NoUtxos);
@@ -93,6 +156,13 @@ fn select_utxos(
     let mut selected = Vec::new();
     let mut total: u64 = 0;
     for utxo in sorted {
+        if selected.len() >= max_inputs {
+            return Err(WalletError::TooManyInputs {
+                max_inputs,
+                covered: total,
+                needed: target,
+            });
+        }
         total = total
             .checked_add(utxo.amount)
             .ok_or(WalletError::InsufficientFunds {
@@ -109,6 +179,59 @@ fn select_utxos(
         available: total,
         needed: target,
     })
+}
+
+/// Minimum fee (in flowers) required to send `amount` given the wallet's
+/// current UTXO set. Coin selection depends on the fee (it is part of the
+/// target) while the fee depends on the selected input count — iterate a
+/// few times until stable. Used by `zion wallet send --fee auto`.
+pub fn estimate_send_fee(
+    amount: u64,
+    available_utxos: &[SpendableUtxo],
+) -> Result<u64, WalletError> {
+    let mut fee = fee::MIN_TX_FEE;
+    for _ in 0..6 {
+        let target = amount
+            .checked_add(fee)
+            .ok_or(WalletError::InsufficientFunds {
+                available: 0,
+                needed: u64::MAX,
+            })?;
+        let (selected, _) = select_utxos(available_utxos, target, max_tx_inputs_for(2, 0))?;
+        let required = fee::minimum_fee_for_size(fee::estimate_tx_size(selected.len(), 2));
+        if required <= fee {
+            return Ok(fee);
+        }
+        fee = required;
+    }
+    Ok(fee)
+}
+
+/// Plan one consolidation round: the `max_inputs` largest spendable UTXOs.
+/// Merging the top of the set produces the biggest possible merged output
+/// per round, which unblocks large sends (the input cap is what rejects
+/// them) in the fewest transactions. Returns the batch and its total, or
+/// `None` when fewer than `min_batch` UTXOs remain — spending a single
+/// UTXO to self would not reduce the set.
+pub fn plan_consolidation(
+    available: &[SpendableUtxo],
+    max_inputs: usize,
+    min_batch: usize,
+) -> Option<(Vec<SpendableUtxo>, u64)> {
+    let mut sorted: Vec<&SpendableUtxo> = available.iter().collect();
+    sorted.sort_by(|a, b| b.amount.cmp(&a.amount).then(a.tx_hash.cmp(&b.tx_hash)));
+    let batch: Vec<SpendableUtxo> = sorted
+        .into_iter()
+        .take(max_inputs)
+        .cloned()
+        .collect();
+    if batch.len() < min_batch {
+        return None;
+    }
+    let total = batch
+        .iter()
+        .try_fold(0u64, |acc, u| acc.checked_add(u.amount))?;
+    Some((batch, total))
 }
 
 /// Validate and normalize a `zion1...` destination address.
@@ -144,11 +267,15 @@ pub fn build_batch_payout(
             needed: u64::MAX,
         })?;
 
+    // Bound inputs by the serialized-size budget: one recipient output is
+    // reserved for change, so the tx carries recipients.len() + 1 outputs.
+    let max_inputs = max_tx_inputs_for(recipients.len() + 1, 0);
+
     // If we don't have enough UTXOs to cover payouts + fee, but we DO have
     // enough to cover just the payouts, reduce the last recipient's amount
     // by the fee shortfall. This avoids "insufficient funds" when the pool
     // has exactly the right amount for payouts but no reserve for the fee.
-    let (selected, total) = match select_utxos(available_utxos, target) {
+    let (selected, total) = match select_utxos(available_utxos, target, max_inputs) {
         Ok(result) => result,
         Err(WalletError::InsufficientFunds { available, .. }) if available >= total_payout => {
             // Recompute with fee absorbed into payouts
@@ -170,7 +297,7 @@ pub fn build_batch_payout(
                         adjusted_recipients[last].amount.saturating_sub(fee);
                 }
                 let final_total: u64 = adjusted_recipients.iter().map(|r| r.amount).sum();
-                let (sel, tot) = select_utxos(available_utxos, final_total)?;
+                let (sel, tot) = select_utxos(available_utxos, final_total, max_inputs)?;
                 return build_batch_payout_inner(
                     signing_key,
                     change_address,
@@ -183,7 +310,7 @@ pub fn build_batch_payout(
                     None,
                 );
             }
-            let (sel, tot) = select_utxos(available_utxos, new_target)?;
+            let (sel, tot) = select_utxos(available_utxos, new_target, max_inputs)?;
             return build_batch_payout_inner(
                 signing_key,
                 change_address,
@@ -198,6 +325,17 @@ pub fn build_batch_payout(
         }
         Err(e) => return Err(e),
     };
+
+    // The node prices fees off `estimate_tx_size` — check against the real
+    // selected input count so the tx is not built just to be rejected.
+    let min_fee =
+        fee::minimum_fee_for_size(fee::estimate_tx_size(selected.len(), recipients.len() + 1));
+    if fee < min_fee {
+        return Err(WalletError::FeeTooLow {
+            fee,
+            minimum: min_fee,
+        });
+    }
 
     build_batch_payout_inner(
         signing_key,
@@ -263,7 +401,17 @@ pub fn build_send_with_memo(
             needed: u64::MAX,
         })?;
 
-    let (selected, total) = select_utxos(available_utxos, target)?;
+    // One recipient output plus a possible change output.
+    let max_inputs = max_tx_inputs_for(2, memo.len());
+    let (selected, total) = select_utxos(available_utxos, target, max_inputs)?;
+
+    let min_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(selected.len(), 2));
+    if fee < min_fee {
+        return Err(WalletError::FeeTooLow {
+            fee,
+            minimum: min_fee,
+        });
+    }
 
     build_batch_payout_inner(
         signing_key,
@@ -463,6 +611,19 @@ fn build_batch_payout_inner(
         input.script.extend_from_slice(&public_key);
     }
 
+    // Exact check against the node's wire-size bound (`serde_json::to_vec`
+    // is what `Node::check_tx_size` measures). The input cap above is a
+    // conservative estimate; this is the authoritative backstop.
+    let json_size = serde_json::to_vec(&tx)
+        .map(|bytes| bytes.len())
+        .unwrap_or(usize::MAX);
+    if json_size > fee::MAX_TX_SIZE {
+        return Err(WalletError::TxTooLarge {
+            size: json_size,
+            max: fee::MAX_TX_SIZE,
+        });
+    }
+
     Ok(BuildResult {
         transaction: tx,
         change_amount: change,
@@ -512,7 +673,7 @@ pub fn build_htlc_lock(
             needed: u64::MAX,
         })?;
 
-    let (selected, total) = select_utxos(available_utxos, target)?;
+    let (selected, total) = select_utxos(available_utxos, target, max_tx_inputs_for(2, 0))?;
 
     let refund_address = crypto::derive_address(refund_pk);
     let script = htlc_output_script(hashlock, timeout, claimant_pk, refund_pk);
@@ -661,6 +822,134 @@ mod tests {
     use super::*;
     use crate::crypto::{derive_address, generate_keypair};
     use crate::utxo::UtxoSet;
+
+    fn dust_utxos(count: usize, amount_each: u64, address: &str) -> Vec<SpendableUtxo> {
+        (0..count)
+            .map(|i| {
+                let mut tx_hash = [0u8; 32];
+                tx_hash[..8].copy_from_slice(&(i as u64).to_le_bytes());
+                SpendableUtxo {
+                    tx_hash,
+                    output_index: 0,
+                    amount: amount_each,
+                    address: address.to_string(),
+                    script: vec![],
+                    block_height: 1,
+                    is_coinbase: false,
+                }
+            })
+            .collect()
+    }
+
+    #[test]
+    fn send_caps_inputs_under_json_size_budget() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let to = derive_address(&[9u8; 32]);
+        // 400 tiny UTXOs — the balance is enough, but covering 200 ZION
+        // needs more inputs than fit under the 100 KB serialized-size cap.
+        let utxos = dust_utxos(400, 1_000_000, &addr);
+        let err = build_send_with_memo(&sk, &addr, &to, 200_000_000, 10_000_000, &utxos, b"")
+            .unwrap_err();
+        match err {
+            WalletError::TooManyInputs {
+                max_inputs,
+                covered,
+                needed,
+            } => {
+                assert!(max_inputs < 400);
+                assert!(covered < needed);
+            }
+            other => panic!("expected TooManyInputs, got {other}"),
+        }
+    }
+
+    #[test]
+    fn send_under_input_cap_builds_tx_that_fits() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let to = derive_address(&[9u8; 32]);
+        // Boundary: 170 ZION across 1-ZION UTXOs needs ~170 inputs — inside
+        // the cap but large enough that the serde check actually matters.
+        let utxos = dust_utxos(200, 1_000_000, &addr);
+        let fee = 100_000;
+        let build =
+            build_send_with_memo(&sk, &addr, &to, 170_000_000, fee, &utxos, b"ok").unwrap();
+        assert!(build.transaction.inputs.len() >= 170);
+        let size = serde_json::to_vec(&build.transaction).unwrap().len();
+        assert!(size <= fee::MAX_TX_SIZE, "built tx {size} exceeds cap");
+    }
+
+    #[test]
+    fn send_rejects_fee_below_size_minimum() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let to = derive_address(&[9u8; 32]);
+        // 150 ZION across 1-ZION UTXOs needs 16 inputs → min fee 2284 > 1.
+        let utxos = dust_utxos(80, 10_000_000, &addr);
+        let err = build_send_with_memo(&sk, &addr, &to, 150_000_000, 1, &utxos, b"").unwrap_err();
+        assert!(matches!(err, WalletError::FeeTooLow { fee: 1, .. }));
+    }
+
+    #[test]
+    fn batch_inner_backstops_oversized_tx() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let to = derive_address(&[9u8; 32]);
+        // Bypass the selection cap by calling the inner builder directly —
+        // the post-build serde check must still refuse the tx.
+        let dust = dust_utxos(300, 10_000_000, &addr);
+        let selected: Vec<&SpendableUtxo> = dust.iter().collect();
+        let total: u64 = selected.iter().map(|u| u.amount).sum();
+        let err = build_batch_payout_inner(
+            &sk,
+            &addr,
+            &[BatchRecipient {
+                address: to,
+                amount: 10_000_000,
+            }],
+            10_000_000,
+            &selected,
+            total,
+            1,
+            b"",
+            None,
+        )
+        .unwrap_err();
+        assert!(matches!(err, WalletError::TxTooLarge { .. }));
+    }
+
+    #[test]
+    fn estimate_send_fee_converges() {
+        let addr = derive_address(&[5u8; 32]);
+        let utxos = dust_utxos(60, 10_000_000, &addr);
+        let fee = estimate_send_fee(150_000_000, &utxos).unwrap();
+        // 16 inputs → est size 52 + 16*132 + 2*60 = 2284 → fee must cover it.
+        let min = fee::minimum_fee_for_size(fee::estimate_tx_size(16, 2));
+        assert!(fee >= min, "estimated fee {fee} below {min}");
+    }
+
+    #[test]
+    fn plan_consolidation_picks_largest_first() {
+        let addr = derive_address(&[5u8; 32]);
+        let mut utxos = dust_utxos(10, 1_000, &addr);
+        utxos.push(SpendableUtxo {
+            tx_hash: [9u8; 32],
+            output_index: 0,
+            amount: 9_000_000,
+            address: addr,
+            script: vec![],
+            block_height: 1,
+            is_coinbase: false,
+        });
+        let (batch, total) = plan_consolidation(&utxos, 5, 2).unwrap();
+        assert_eq!(batch.len(), 5);
+        // Largest-first: the 9M utxo plus the four 1k ones.
+        assert_eq!(total, 9_000_000 + 4_000);
+        assert_eq!(batch[0].amount, 9_000_000);
+        // Below min_batch → no plan.
+        assert!(plan_consolidation(&utxos[..1], 5, 2).is_none());
+    }
 
     #[test]
     fn build_and_validate_payout() {

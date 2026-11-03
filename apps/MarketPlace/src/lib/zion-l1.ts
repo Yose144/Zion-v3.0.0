@@ -183,7 +183,9 @@ function ensurePoolWallet(): string {
 export async function sendZionPayout(
   toAddress: string,
   amountZion: number,
-  feeZion: number = parseFloat(process.env.ZION_L1_PAYOUT_FEE ?? '0.01'),
+  feeZion: number | 'auto' = process.env.ZION_L1_PAYOUT_FEE === 'auto'
+    ? 'auto'
+    : parseFloat(process.env.ZION_L1_PAYOUT_FEE ?? '0.01'),
   memo?: string
 ): Promise<ZionPayoutResult> {
   if (!isValidZionAddress(toAddress)) {
@@ -207,7 +209,7 @@ export async function sendZionPayout(
     '--amount',
     amountZion.toString(),
     '--fee',
-    feeZion.toString(),
+    feeZion === 'auto' ? 'auto' : feeZion.toString(),
     '--rpc',
     rpc,
   ];

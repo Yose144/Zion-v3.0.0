@@ -267,9 +267,10 @@ enum WalletCommand {
         /// Amount in ZION (not flowers).
         #[arg(short, long)]
         amount: f64,
-        /// Transaction fee in ZION (default: 0.01).
+        /// Transaction fee in ZION (default: 0.01) or "auto" to cover the
+        /// minimum required for the selected input count.
         #[arg(short, long, default_value = "0.01")]
-        fee: f64,
+        fee: String,
         /// Optional memo.
         #[arg(short, long)]
         memo: Option<String>,
@@ -277,6 +278,36 @@ enum WalletCommand {
         #[arg(long, default_value = "127.0.0.1:9445")]
         rpc: String,
         /// Dry-run: build and sign but do not broadcast.
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Consolidate the wallet UTXO set: repeated self-send rounds that merge
+    /// the smallest UTXOs (dust) into single outputs so future sends fit
+    /// under the node's 100 KB transaction-size limit.
+    Consolidate {
+        /// Wallet file path (default: ~/.zion/wallet.json).
+        #[arg(short, long)]
+        wallet: Option<PathBuf>,
+        /// Sender secret key as hex (64 characters). Derives sender address.
+        #[arg(long)]
+        secret_key_hex: Option<String>,
+        /// L1 RPC URL (default: 127.0.0.1:9445).
+        #[arg(long, default_value = "127.0.0.1:9445")]
+        rpc: String,
+        /// Max inputs per consolidation transaction (default: the largest
+        /// count that fits under the serialized-size cap).
+        #[arg(long)]
+        max_inputs: Option<usize>,
+        /// Max consolidation transactions per run.
+        #[arg(long, default_value = "20")]
+        rounds: usize,
+        /// Stop once the wallet's UTXO count drops to this many or fewer.
+        #[arg(long, default_value = "10")]
+        target_utxos: usize,
+        /// Fee floor in ZION; each round pays max(this, minimum for its size).
+        #[arg(short, long)]
+        fee: Option<f64>,
+        /// Dry-run: print the planned rounds without broadcasting.
         #[arg(long)]
         dry_run: bool,
     },
@@ -546,6 +577,79 @@ fn load_config(path: Option<PathBuf>) -> anyhow::Result<MultichainConfig> {
     Ok(config)
 }
 
+/// Load the Ed25519 signing key + sender address from `--secret-key-hex`
+/// or a wallet JSON file (`{"secret_key","address"}`).
+fn load_wallet_signing_key(
+    wallet: Option<PathBuf>,
+    secret_key_hex: Option<String>,
+) -> anyhow::Result<(ed25519_dalek::SigningKey, String)> {
+    let from_bytes = |sk_bytes: Vec<u8>| -> anyhow::Result<ed25519_dalek::SigningKey> {
+        if sk_bytes.len() != 32 {
+            bail!("secret key must be 32 bytes, got {}", sk_bytes.len());
+        }
+        let mut sk_arr = [0u8; 32];
+        sk_arr.copy_from_slice(&sk_bytes);
+        Ok(ed25519_dalek::SigningKey::from_bytes(&sk_arr))
+    };
+
+    if let Some(sk_hex) = secret_key_hex {
+        let sk_bytes = zion_core::crypto::from_hex(&sk_hex)
+            .ok_or_else(|| anyhow!("invalid secret key hex"))?;
+        let signing_key = from_bytes(sk_bytes)?;
+        let sender_address =
+            zion_core::crypto::derive_address(&signing_key.verifying_key().to_bytes());
+        return Ok((signing_key, sender_address));
+    }
+
+    let wallet_path = wallet.unwrap_or_else(|| {
+        dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join(".zion")
+            .join("wallet.json")
+    });
+    if !wallet_path.exists() {
+        bail!("wallet file not found: {}", wallet_path.display());
+    }
+    let raw = std::fs::read_to_string(&wallet_path)?;
+    let wallet_data: serde_json::Value = serde_json::from_str(&raw)?;
+    let sk_hex = wallet_data["secret_key"]
+        .as_str()
+        .ok_or_else(|| anyhow!("wallet file missing 'secret_key' field"))?;
+    let sender_address = wallet_data["address"]
+        .as_str()
+        .ok_or_else(|| anyhow!("wallet file missing 'address' field"))?;
+    let sk_bytes = zion_core::crypto::from_hex(sk_hex)
+        .ok_or_else(|| anyhow!("invalid secret key hex"))?;
+    let signing_key = from_bytes(sk_bytes)?;
+    Ok((signing_key, sender_address.to_string()))
+}
+
+/// Drop immature coinbase UTXOs (need 100 confirmations) and, when
+/// `p2pkh_only`, contract/scripted outputs a plain signature cannot spend.
+fn filter_mature_utxos(
+    mut utxos: Vec<zion_core::SpendableUtxo>,
+    chain_height: u64,
+    p2pkh_only: bool,
+) -> Vec<zion_core::SpendableUtxo> {
+    let maturity = 100u64;
+    let before = utxos.len();
+    utxos.retain(|u| {
+        if p2pkh_only && !u.script.is_empty() {
+            return false;
+        }
+        if u.is_coinbase {
+            chain_height.saturating_sub(u.block_height) >= maturity
+        } else {
+            true
+        }
+    });
+    let dropped = before - utxos.len();
+    if dropped > 0 {
+        println!("Filtered {dropped} immature or scripted UTXOs (coinbase age < {maturity} blocks)");
+    }
+    utxos
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
@@ -664,59 +768,30 @@ async fn main() -> anyhow::Result<()> {
                 rpc,
                 dry_run,
             } => {
-                // Reconstruct signing key and determine sender address
-                let (signing_key, sender_address) = if let Some(sk_hex) = secret_key_hex {
-                    let sk_bytes = zion_core::crypto::from_hex(&sk_hex)
-                        .ok_or_else(|| anyhow!("invalid secret key hex"))?;
-                    if sk_bytes.len() != 32 {
-                        bail!("secret key must be 32 bytes, got {}", sk_bytes.len());
-                    }
-                    let mut sk_arr = [0u8; 32];
-                    sk_arr.copy_from_slice(&sk_bytes);
-                    let signing_key = ed25519_dalek::SigningKey::from_bytes(&sk_arr);
-                    let sender_address =
-                        zion_core::crypto::derive_address(&signing_key.verifying_key().to_bytes());
-                    (signing_key, sender_address)
-                } else {
-                    let wallet_path = wallet.unwrap_or_else(|| {
-                        dirs::home_dir()
-                            .unwrap_or_else(|| PathBuf::from("."))
-                            .join(".zion")
-                            .join("wallet.json")
-                    });
-                    if !wallet_path.exists() {
-                        bail!("wallet file not found: {}", wallet_path.display());
-                    }
-                    let raw = std::fs::read_to_string(&wallet_path)?;
-                    let wallet_data: serde_json::Value = serde_json::from_str(&raw)?;
-                    let sk_hex = wallet_data["secret_key"]
-                        .as_str()
-                        .ok_or_else(|| anyhow!("wallet file missing 'secret_key' field"))?;
-                    let sender_address = wallet_data["address"]
-                        .as_str()
-                        .ok_or_else(|| anyhow!("wallet file missing 'address' field"))?;
-                    let sk_bytes = zion_core::crypto::from_hex(sk_hex)
-                        .ok_or_else(|| anyhow!("invalid secret key hex"))?;
-                    if sk_bytes.len() != 32 {
-                        bail!("secret key must be 32 bytes, got {}", sk_bytes.len());
-                    }
-                    let mut sk_arr = [0u8; 32];
-                    sk_arr.copy_from_slice(&sk_bytes);
-                    let signing_key = ed25519_dalek::SigningKey::from_bytes(&sk_arr);
-                    (signing_key, sender_address.to_string())
-                };
+                let (signing_key, sender_address) = load_wallet_signing_key(wallet, secret_key_hex)?;
 
                 // Convert ZION to flowers (6 decimals)
                 let amount_flowers = (amount * 1_000_000.0) as u64;
-                let fee_flowers = (fee * 1_000_000.0) as u64;
+                let auto_fee = fee.trim().eq_ignore_ascii_case("auto");
+                let mut fee_flowers = if auto_fee {
+                    0
+                } else {
+                    let fee_zion: f64 = fee
+                        .trim()
+                        .parse()
+                        .map_err(|_| anyhow!("invalid --fee '{}': expected ZION amount or 'auto'", fee))?;
+                    (fee_zion * 1_000_000.0) as u64
+                };
 
-                println!("Sending {} ZION to {} (fee: {} ZION)", amount, to, fee);
+                println!("Sending {} ZION to {} (fee: {})", amount, to, fee);
                 println!("From: {}", sender_address);
                 if let Some(ref m) = memo {
                     println!("Memo: {}", m);
                 }
 
-                if dry_run {
+                // Explicit fee + dry-run can short-circuit offline; --fee
+                // auto needs the live UTXO set to price the transaction.
+                if dry_run && !auto_fee {
                     println!("\n[Dry-run] Would build and sign transaction, but not broadcast.");
                     println!("Amount: {} flowers", amount_flowers);
                     println!("Fee:    {} flowers", fee_flowers);
@@ -730,23 +805,7 @@ async fn main() -> anyhow::Result<()> {
                 let chain_info =
                     crate::rpc::node_rpc::call(&rpc, "getChainInfo", serde_json::json!({})).await?;
                 let chain_height = chain_info["result"]["chain_height"].as_u64().unwrap_or(0);
-                let maturity = 100u64;
-                let before = utxos.len();
-                utxos.retain(|u| {
-                    if u.is_coinbase {
-                        let age = chain_height.saturating_sub(u.block_height);
-                        age >= maturity
-                    } else {
-                        true
-                    }
-                });
-                if utxos.len() < before {
-                    println!(
-                        "Filtered {} immature coinbase UTXOs (age < {} blocks)",
-                        before - utxos.len(),
-                        maturity
-                    );
-                }
+                utxos = filter_mature_utxos(utxos, chain_height, true);
 
                 if utxos.is_empty() {
                     bail!("no spendable UTXOs found for address {}", sender_address);
@@ -758,6 +817,19 @@ async fn main() -> anyhow::Result<()> {
                     total_available,
                     utxos.len()
                 );
+
+                if auto_fee {
+                    fee_flowers = zion_core::estimate_send_fee(amount_flowers, &utxos)
+                        .map_err(|e| anyhow!("fee estimation failed: {}", e))?;
+                    println!("Auto fee: {} flowers ({} ZION)", fee_flowers, fee_flowers as f64 / 1_000_000.0);
+                }
+
+                if dry_run {
+                    println!("\n[Dry-run] Would build and sign transaction, but not broadcast.");
+                    println!("Amount: {} flowers", amount_flowers);
+                    println!("Fee:    {} flowers", fee_flowers);
+                    return Ok(());
+                }
 
                 // Build and sign V31 native UTXO transaction. `--memo` is stored
                 // as raw UTF-8 bytes in the transaction and is part of the
@@ -790,6 +862,118 @@ async fn main() -> anyhow::Result<()> {
                     Ok(result) => println!("Broadcast OK. Result: {}", result),
                     Err(e) => bail!("broadcast failed: {}", e),
                 }
+            }
+            WalletCommand::Consolidate {
+                wallet,
+                secret_key_hex,
+                rpc,
+                max_inputs,
+                rounds,
+                target_utxos,
+                fee,
+                dry_run,
+            } => {
+                const MEMO: &[u8] = b"CONSOLIDATE";
+                let (signing_key, sender_address) = load_wallet_signing_key(wallet, secret_key_hex)?;
+                println!("Consolidating UTXOs for {}", sender_address);
+
+                let mut utxos = crate::rpc::node_rpc::fetch_utxos(&rpc, &sender_address).await?;
+                let chain_info =
+                    crate::rpc::node_rpc::call(&rpc, "getChainInfo", serde_json::json!({})).await?;
+                let chain_height = chain_info["result"]["chain_height"].as_u64().unwrap_or(0);
+                utxos = filter_mature_utxos(utxos, chain_height, true);
+                let mut remaining = utxos.len();
+                println!(
+                    "Spendable: {} UTXOs, {} flowers total",
+                    remaining,
+                    utxos.iter().map(|u| u.amount).sum::<u64>()
+                );
+                if remaining <= target_utxos {
+                    println!("Already at or below --target-utxos {target_utxos}; nothing to do.");
+                    return Ok(());
+                }
+
+                // The builder accounts for a possible change output, so plan
+                // batches under the same 2-output bound it enforces.
+                let cap = max_inputs
+                    .unwrap_or_else(|| zion_core::max_tx_inputs_for(2, MEMO.len()))
+                    .min(zion_core::max_tx_inputs_for(2, MEMO.len()))
+                    .max(2);
+                let fee_floor = fee.map(|z| (z * 1_000_000.0) as u64).unwrap_or(0);
+                let mut spent = std::collections::HashSet::new();
+                let mut broadcast = 0usize;
+
+                for round in 1..=rounds {
+                    let avail: Vec<zion_core::SpendableUtxo> = utxos
+                        .iter()
+                        .filter(|u| !spent.contains(&(u.tx_hash, u.output_index)))
+                        .cloned()
+                        .collect();
+                    if avail.len() <= target_utxos {
+                        break;
+                    }
+                    let Some((batch, total)) = zion_core::plan_consolidation(&avail, cap, 2)
+                    else {
+                        break;
+                    };
+                    // The builder prices the fee for a possible change
+                    // output too (est with 2 outputs) — match that bound.
+                    let round_fee = zion_core::fee::minimum_fee_for_size(
+                        zion_core::fee::estimate_tx_size(batch.len(), 2),
+                    )
+                    .max(fee_floor);
+                    if total <= round_fee {
+                        println!(
+                            "Round {round}: batch of {} UTXOs holds only {} flowers < fee {}; \
+                             stopping (dust too small to consolidate profitably)",
+                            batch.len(),
+                            total,
+                            round_fee
+                        );
+                        break;
+                    }
+                    let amount = total - round_fee;
+                    println!(
+                        "Round {round}: {} inputs → {} flowers (fee {}){}",
+                        batch.len(),
+                        amount,
+                        round_fee,
+                        if dry_run { " [dry-run]" } else { "" }
+                    );
+                    for u in &batch {
+                        spent.insert((u.tx_hash, u.output_index));
+                    }
+                    if dry_run {
+                        remaining = avail.len() - batch.len();
+                        continue;
+                    }
+                    let built = zion_core::build_send_with_memo(
+                        &signing_key,
+                        &sender_address,
+                        &sender_address,
+                        amount,
+                        round_fee,
+                        &batch,
+                        MEMO,
+                    )
+                    .map_err(|e| anyhow!("consolidation tx build failed: {}", e))?;
+                    let tx_json = serde_json::to_value(&built.transaction)
+                        .map_err(|e| anyhow!("failed to serialize transaction: {e}"))?;
+                    let tx_id = hex::encode(built.transaction.hash().0);
+                    match crate::rpc::node_rpc::submit_utxo_tx_json(&rpc, &tx_json).await {
+                        Ok(_) => {
+                            println!("  broadcast OK tx={}", tx_id);
+                            broadcast += 1;
+                        }
+                        Err(e) => bail!("round {round} broadcast failed: {}", e),
+                    }
+                    remaining = avail.len() - batch.len() + 1; // spent batch, +1 merged output (unconfirmed)
+                }
+
+                println!(
+                    "Done: {broadcast} consolidation tx(s) broadcast, ~{remaining} UTXOs remain. \
+                     Re-run after confirmation to merge further."
+                );
             }
         },
         Command::Bridge(bridge) => {

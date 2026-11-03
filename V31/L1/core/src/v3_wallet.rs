@@ -82,6 +82,13 @@ pub enum WalletError {
     AmountTooSmall(u64),
     TooManyRecipients(usize),
     SigningFailed,
+    /// Funding the amount needs more inputs than fit under the node's
+    /// serialized-size cap — the wallet needs UTXO consolidation.
+    TooManyInputs {
+        max_inputs: usize,
+        covered: u64,
+        needed: u64,
+    },
 }
 
 impl std::fmt::Display for WalletError {
@@ -99,18 +106,48 @@ impl std::fmt::Display for WalletError {
                 write!(f, "too many recipients: {n} (max {MAX_BATCH_RECIPIENTS})")
             }
             Self::SigningFailed => write!(f, "signing failed"),
+            Self::TooManyInputs {
+                max_inputs,
+                covered,
+                needed,
+            } => write!(
+                f,
+                "largest {max_inputs} UTXOs cover only {covered} of {needed} flowers — \
+                 transaction would exceed max size; consolidate the wallet UTXO set first"
+            ),
         }
     }
 }
 
 // ── Coin selection ─────────────────────────────────────────────────────
 
-/// Select UTXOs using largest-first strategy.
+/// Conservative bound on the JSON-serialized size of one signed v3 input:
+/// 32-byte prev hash + 64-byte signature + 32-byte public key, all as
+/// `Vec<u8>`/`[u8; 32]` number arrays (~4 chars/byte) plus field names —
+/// ≈ 560 bytes. The node bounds `serde_json::to_vec(tx).len()` at
+/// `fee::MAX_TX_SIZE`; `fee::estimate_tx_size` (132 B/input) prices fees
+/// only and understates the wire size ~4×.
+const JSON_BYTES_PER_INPUT_UPPER: usize = 560;
+const JSON_BYTES_PER_OUTPUT_UPPER: usize = 220;
+const JSON_BASE_BYTES: usize = 300;
+
+/// Maximum inputs that fit under [`fee::MAX_TX_SIZE`] for a v3 transaction
+/// with `num_outputs` outputs.
+fn max_tx_inputs_for(num_outputs: usize) -> usize {
+    (fee::MAX_TX_SIZE
+        .saturating_sub(JSON_BASE_BYTES + num_outputs * JSON_BYTES_PER_OUTPUT_UPPER)
+        / JSON_BYTES_PER_INPUT_UPPER)
+        .min(fee::MAX_TX_INPUTS)
+}
+
+/// Select UTXOs using largest-first strategy, bounded by `max_inputs`.
 ///
 /// Returns selected UTXOs and total selected amount, or error if insufficient.
+/// Hitting the cap before `target` yields [`WalletError::TooManyInputs`].
 fn select_utxos(
     available: &[SpendableUtxo],
     target: u64,
+    max_inputs: usize,
 ) -> Result<(Vec<&SpendableUtxo>, u64), WalletError> {
     if available.is_empty() {
         return Err(WalletError::NoUtxos);
@@ -122,6 +159,13 @@ fn select_utxos(
     let mut selected = Vec::new();
     let mut total: u64 = 0;
     for utxo in sorted {
+        if selected.len() >= max_inputs {
+            return Err(WalletError::TooManyInputs {
+                max_inputs,
+                covered: total,
+                needed: target,
+            });
+        }
         selected.push(utxo);
         total = total.saturating_add(utxo.amount);
         if total >= target {
@@ -173,7 +217,17 @@ pub fn build_and_sign(
             needed: u64::MAX,
         })?;
 
-    let (selected, total) = select_utxos(available_utxos, target)?;
+    let (selected, total) = select_utxos(available_utxos, target, max_tx_inputs_for(2))?;
+
+    // Re-check the fee against the real selected input count — the
+    // pre-selection estimate assumed at most 10 inputs.
+    let min_fee_real = fee::minimum_fee_for_size(fee::estimate_tx_size(selected.len(), 2));
+    if params.fee < min_fee_real {
+        return Err(WalletError::FeeTooLow {
+            fee: params.fee,
+            minimum: min_fee_real,
+        });
+    }
 
     let change = total - target;
 
@@ -269,7 +323,8 @@ pub fn build_batch_payout(
             needed: u64::MAX,
         })?;
 
-    let (selected, total) = select_utxos(available_utxos, target)?;
+    let (selected, total) =
+        select_utxos(available_utxos, target, max_tx_inputs_for(recipients.len() + 1))?;
     let change = total - target;
 
     // Build outputs
