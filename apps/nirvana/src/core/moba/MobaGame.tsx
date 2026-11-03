@@ -43,6 +43,8 @@ export interface MobaStats {
   playerMana: number;
   playerMaxMana: number;
   playerLevel: number;
+  /** Id avataru hráče — HUD podle něj kreslí portrét. */
+  playerHeroId: number;
   xp: number;
   xpNeed: number;
   kills: number;
@@ -121,6 +123,7 @@ export function statsFromSnapshot(
     itemCooldowns: you?.itemCooldowns ?? {},
     talentPending: you?.talentPending ?? null,
     playerLevel: you?.level ?? 1,
+    playerHeroId: you?.heroId ?? 0,
     xp: you?.xp ?? 0,
     xpNeed: you?.xpNeed ?? 1,
     kills: you?.kills ?? 0,

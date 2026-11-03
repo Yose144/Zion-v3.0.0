@@ -27,6 +27,7 @@ import { ITEMS, ITEM_SLOTS, SELL_RATIO, WARD_STOCK_MAX, totalXpAt, type BotSkill
 const ITEM_BY_ID = new Map(ITEMS.map((item) => [item.id, item]));
 import { SCHOOL_LABEL, spellsForAvatar } from '@/core/moba/spells';
 import { SpellIcon } from '@/core/moba/spellIcons';
+import { portraitUrl } from '@/core/moba/portraits';
 import { talentsFor } from '@/core/moba/sim';
 import { SPELL_LABEL } from '@/core/moba/keys';
 import { MobaTouch } from '@/core/moba/MobaTouch';
@@ -39,6 +40,35 @@ type Mode = 'solo' | 'online';
 type OnlinePhase = 'connecting' | 'waiting' | 'countdown' | 'running' | 'ended' | 'offline';
 
 const EMPTY_STATS: MobaStats | null = null;
+
+/** Portrét hrdiny s fallbackem na iniciálu (katalog má mezery v id). */
+function Portrait({
+  heroId,
+  name,
+  size = 'md',
+}: {
+  heroId: number;
+  name: string;
+  size?: 'md' | 'card' | 'mini';
+}) {
+  const url = portraitUrl(heroId);
+  if (!url) {
+    return (
+      <span className={`moba-portrait is-${size} is-fallback`} aria-hidden="true">
+        {name.slice(0, 1)}
+      </span>
+    );
+  }
+  return (
+    <img
+      className={`moba-portrait is-${size}`}
+      src={url}
+      alt=""
+      loading="lazy"
+      draggable={false}
+    />
+  );
+}
 
 /** Jedna tabulka scoreboardu — tým, K/D, zlato (+GPM), poškození, léčení. */
 function TeamBoard({
@@ -79,7 +109,9 @@ function TeamBoard({
         <tbody>
           {list.map((hero) => (
             <tr key={hero.id} className={hero.id === youId ? 'is-you' : undefined}>
-              <td>{hero.name}</td>
+              <td>
+                <Portrait heroId={hero.heroId} name={hero.name} size="mini" /> {hero.name}
+              </td>
               <td>{hero.level}</td>
               <td>{hero.kills}/{hero.deaths}</td>
               <td>{Math.round(hero.gold)}</td>
@@ -226,6 +258,7 @@ export default function EarthPage() {
                       setFoeId(id === 82 ? 85 : 82);
                     }}
                   >
+                    <Portrait heroId={id} name={entry.name} size="card" />
                     <strong>{entry.name}</strong>
                     <span>{entry.subtitle}</span>
                     <em>CL {entry.cl}</em>
@@ -417,6 +450,7 @@ export default function EarthPage() {
                 </span>
               </div>
               <div className="moba-score">
+                <Portrait heroId={stats?.playerHeroId ?? heroId} name={hero.name} />
                 <strong>{hero.name}</strong>
                 <span>
                   Lv {stats?.playerLevel ?? 1} · {stats?.kills ?? 0}/{stats?.deaths ?? 0}

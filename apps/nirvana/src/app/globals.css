@@ -5538,3 +5538,56 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   font-size: 0.62rem;
   line-height: 1;
 }
+
+/* ── MOBA F18: portréty hrdinů ────────────────────────────────────── */
+
+.moba-portrait {
+  display: inline-block;
+  object-fit: cover;
+  object-position: center 22%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex: none;
+}
+
+.moba-portrait.is-md {
+  width: 2.2rem;
+  height: 2.2rem;
+}
+
+.moba-portrait.is-card {
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 0.7rem;
+  margin-bottom: 0.3rem;
+}
+
+.moba-portrait.is-mini {
+  width: 1.1rem;
+  height: 1.1rem;
+  vertical-align: -0.2rem;
+}
+
+.moba-portrait.is-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #d8f5ef;
+  font-size: 0.85rem;
+}
+
+.moba-portrait.is-card.is-fallback {
+  font-size: 1.4rem;
+}
+
+.moba-portrait.is-mini.is-fallback {
+  font-size: 0.55rem;
+}
+
+.moba-score {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
