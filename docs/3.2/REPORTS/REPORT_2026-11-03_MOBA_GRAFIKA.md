@@ -91,6 +91,20 @@ Po opravě (`moba-f11b/start.png`) je vidět hrdina, cesty, kameny i les.
 **Naměřeno (M1 Metal, 1600×900):** 60 fps (16,7 ms), **67 draw calls**,
 22,8 tis. trojúhelníků, 4 textury, 0 chyb v konzoli.
 
+## 5c. F13 — animace a vizuální mlha
+
+- **Animace:** minioni poskakují, monstra se otáčejí, krystaly věží/Nex rotují
+  a dýchají, runy se vznášejí, wardy pulzují. Všechno z `clock.elapsedTime`
+  ve `useFrame` — žádný React state.
+- **Vizuální mlha (`MobaFog`):** tmavý plán 240×200 m s průhledovými dírami
+  podle zdrojů vidění ze **snapshotu**. Maska je CanvasTexture 256×192,
+  překreslovaná 6–7×/s; díry jsou elipsy (plán není čtvercový).
+- **Past:** `tmp` (Object3D instancí) je sdílený — smyčky, které nechtějí
+  rotaci, ji musí vynulovat, jinak se minioni nakloní podle stínů.
+
+**Naměřeno po mlze (M1 Metal, 1600×900):** 60 fps, **69 draw calls**,
+22,9 tis. trojúhelníků, 5 textur, 0 chyb v konzoli.
+
 ## 6. Co dál (grafika)
 
 1. **Kontaktní stíny** pod hrdiny a miniony (levné, hodně pomůže čitelnosti).

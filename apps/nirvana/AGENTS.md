@@ -1326,3 +1326,24 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   bez pohledu na snímek se „grafika hotová" netvrdí.**
 - **Velký šedý mnohoúhelník u řeky je Prastaré stvoření** (jungle tábor
   `river-dragon`), ne chyba — z výšky vypadá jako placatý kámen.
+
+## PRVNÍ SVĚT — animace a vizuální mlha (F13, 2026-11-03)
+
+- **Animace jsou zdarma, když jdou z `clock.elapsedTime`.** Minioni poskakují,
+  krystaly věží/Nex rotují, runy se vznášejí, wardy pulzují — žádný state,
+  žádné re-rendery, jen math ve `useFrame`. Nepřidávej kvůli tomu React state.
+- **`tmp` (Object3D pro instance) je jeden sdílený objekt.** Smyčka, která
+  nechce rotaci, ji musí explicitně vynulovat — jinak se minioni nakloní
+  podle stínů (stíny nastavují `-π/2`). Stalo se to při prvním pokusu.
+- **Vizuální mlha je maska, ne druhá simulace.** `MobaFog` kreslí tmavý plán
+  s průhledovými dírami podle **snapshotu** (vlastní hrdinové, minioni, věže,
+  uzly, wardy). Online klient nemá sim stav, takže zdroje musí jít ze
+  snapshotu — jinak by mlha v multiplayeru neseděla.
+- **Maska se překresluje 6–7×/s** do CanvasTexture 256×192, ne každý frame.
+  Větší rozlišení je zbytečné (je to měkký přechod) a dražší.
+- **Mlha musí pokrývat i okolí hřiště** (240×200 m), jinak vypadá jako tmavý
+  obdélník doprostřed obrazovky — přesně to ukázal první screenshot.
+- **Díry vidění jsou elipsy**, protože plán není čtvercový; kruh by se
+  v textuře roztáhl podle strany.
+- **Naměřeno po mlze (M1 Metal, 1600×900):** 60 fps, **69 draw calls**,
+  22,9 tis. trojúhelníků, 5 textur (tráva, cesta, obloha, mlha, interní).
